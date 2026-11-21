@@ -1,0 +1,63 @@
+{
+ "dump": "C:/Users/Admin/refav1_sweep/dumps/dump_cos_ext",
+ "n_windows": 282,
+ "K": 10,
+ "tol": 1e-05,
+ "lat_vocab": [
+  "LANE_KEEP",
+  "LANE_CHANGE_L",
+  "LANE_CHANGE_R",
+  "ABORT_LC",
+  "NUDGE_L",
+  "NUDGE_R",
+  "TURN_L",
+  "TURN_R"
+ ],
+ "overall": {
+  "n": 282,
+  "match_rate_POOLED": 0.49645390070921985,
+  "match_rate_CURVATURE": 0.8652482269503546,
+  "match_rate_ACCEL": 0.6028368794326241,
+  "kappa_diff_p95": 0.07999999821186066,
+  "kappa_diff_max": 0.07999999821186066,
+  "accel_diff_p95": 1.5,
+  "accel_diff_max": 1.5
+ },
+ "zero_curvature_tokens": {
+  "n": 244,
+  "match_rate_POOLED": 0.5737704918032787,
+  "match_rate_CURVATURE": 1.0,
+  "match_rate_ACCEL": 0.5737704918032787,
+  "kappa_diff_p95": 0.0,
+  "kappa_diff_max": 0.0,
+  "accel_diff_p95": 1.5,
+  "accel_diff_max": 1.5
+ },
+ "curvature_carrying_tokens": {
+  "n": 38,
+  "match_rate_POOLED": 0.0,
+  "match_rate_CURVATURE": 0.0,
+  "match_rate_ACCEL": 0.7894736842105263,
+  "kappa_diff_p95": 0.07999999821186066,
+  "kappa_diff_max": 0.07999999821186066,
+  "accel_diff_p95": 1.253000259399414,
+  "accel_diff_max": 1.4102091789245605
+ },
+ "decoded_lat_hist": {
+  "LANE_KEEP": 244,
+  "TURN_L": 7,
+  "TURN_R": 31
+ },
+ "CONTROL_shifted_token": {
+  "match_rate": 0.0851063829787234,
+  "diff_p50": 0.027180563658475876,
+  "note": "must be LOW; a high value means the test discriminates nothing (e.g. both sides all-zero)"
+ },
+ "PASS": false,
+ "verdict": {
+  "LATERAL_is_a_lookup_on_the_decoded_token": false,
+  "holds_on_turn_windows_too": false,
+  "control_discriminates": true,
+  "LONGITUDINAL_also_a_lookup": false
+ }
+}

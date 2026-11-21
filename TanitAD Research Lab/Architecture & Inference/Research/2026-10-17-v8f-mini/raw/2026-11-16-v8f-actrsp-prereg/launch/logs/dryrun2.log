@@ -1,0 +1,18 @@
+== 1 normal flow: wait check, ship, pilot, 72 h permit, six runs, banks, cleanups
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import sys,json;sys.path.insert(0,sys.argv[1]);import actrsp_check as C;l=open(sys.argv[2]).read().split();assert l==C.tokens("PILOT_RSP_s0") and l[-2:]==["--steps","200"] and "pilot_out" in l[l.index("--out")+1] and [x for x in l[:-2] if x not in C.tokens("NULL_s4")]==[l[l.index("--out")+1]]
+                                                                                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+FAIL: pilot used the exact RSP_s0 argv plus --steps 200 and a separate out dir
+== 2 the box-side pin refuses a changed token (checker run directly on the fake box, no transport)
+== 3 predecessor (OTBAND chain) not ended / stopped, box held, GPU not idle, python running
+== 4 disk gate
+== 5 projected total above 72 h
+== 6 gate refusals (BUILT levers planted wrong in the stand-in trainer)
+== 7 failures after the gate stop the chain (no next arm)
+== 8 commit, tag and package refusals
+== 9 transport variable unset, relative, absent, the wrong kind, or test mode with a real client (fail closed)
+== 10 hygiene
+DRYRUN ok=109 failed=1
+ZZ DRYRUN-END rc=1 ZZ

@@ -1,0 +1,204 @@
+{
+ "schema": "s2_labels_v8",
+ "schema_version": "s2-geom-v7",
+ "based_on": {
+  "v7.2_train_md5": "0ff902130ce76886b8a925eceed9e3a5",
+  "v7.2_eval_md5": "aa12c948f062181c3297265b51526ec5"
+ },
+ "adds": "tac_SIT (causally-cited situation) AND nav_30s (all nav manoeuvres within 30 s with time and arc distance)",
+ "files": {
+  "train": {
+   "name": "s2_labels_v8_train.jsonl.gz",
+   "n": 4572,
+   "md5": "b45377a1f25263b5c0f3d318c126b1ac",
+   "sha256": "0cb3c5021491f6bad9a17c4c9168c87864a1e371eafa5ec0dd320cf9d5c23371",
+   "bytes": 2686219,
+   "entries": 5252,
+   "turn_entries": 2419,
+   "clips_with_multiple_entries": 514,
+   "entries_without_start_distance": 0,
+   "entries_without_end_distance": 523
+  },
+  "eval": {
+   "name": "s2_labels_v8_eval.jsonl.gz",
+   "n": 147,
+   "md5": "eefc38d1453bd1c73802d44d45affced",
+   "sha256": "2c6abfe3370fcad5217f6f3c0e5b869cf9db20bf23d169b4dae471c1e0810e38",
+   "bytes": 89276,
+   "entries": 166,
+   "turn_entries": 73,
+   "clips_with_multiple_entries": 16,
+   "entries_without_start_distance": 0,
+   "entries_without_end_distance": 12
+  },
+  "⛔ hash_authority": "THIS block is the authoritative hash of the SHIPPED artifact. The v8 build ran in four stages (tac_SIT -> nav_30s -> lane_change_text -> speed_max_input -> v_max_bucket) and EACH stage rewrote the blob and stamped its own hash into the section it added. Those per-stage hashes are intermediates: they describe a file that no longer exists. They are preserved under `build_chain` for log archaeology and MUST NOT be used to verify a download.",
+  "build_chain": [
+   {
+    "stage": "nav_30s",
+    "train_md5": "3b56d6960eee85a5a2a2f1862b9c87e1",
+    "eval_md5": "91352301236590cb4b258d38593d5dbc",
+    "status": "INTERMEDIATE"
+   },
+   {
+    "stage": "speed_max_input",
+    "train_md5": "1bc3cbabe109a19ee9fb17e38c02afd8",
+    "eval_md5": "184702c03d624aa55b3a322215bd7492",
+    "status": "INTERMEDIATE"
+   },
+   {
+    "stage": "v_max_bucket",
+    "train_md5": "bb54dfa05345d923addbf56bdb273443",
+    "eval_md5": "920a9fcb5ed2a34f59b10e16987e7284",
+    "status": "SUPERSEDED by v8.1"
+   },
+   {
+    "stage": "v8.1 nav_30s arc correction",
+    "train_md5": "b45377a1f25263b5c0f3d318c126b1ac",
+    "eval_md5": "eefc38d1453bd1c73802d44d45affced",
+    "status": "SHIPPED (final)"
+   }
+  ]
+ },
+ "tac_SIT": {
+  "value_semantics": "CITED / NOT_CITED. ⛔ NOT present/absent. chain_of_causation states the JUSTIFICATION for the action, so it names only what caused the behaviour. A clip with pedestrians that did not affect the plan carries no pedestrian citation.",
+  "false_negative_rate": "UNMEASURED and not boundable from this field. For scale: `highway` is cited on 2 clips here and appears on 210 clips in the other Alpamayo fields.",
+  "negated_citations_dropped": "a sentence like 'no immediate obstacle is ahead' is not a citation. 94.7 % of obstacle mentions in this field are denials.",
+  "yield_demand_is_not_a_situation": "emitted under `demand`, not `cited`. MEASURED lift 9-11 against pedestrian / crosswalk / roundabout — it is the ACTION those situations demand. Do not one-hot it against them.",
+  "insufficient_support": [
+   "emergency_vehicle",
+   "highway",
+   "blocking_obstacles"
+  ],
+  "evidence_field": "every citation ships the sentence that produced it, so a label can be audited after the fact",
+  "precision": "UNMEASURED — spot-check ~50 clips per class before training."
+ },
+ "nav_30s": {
+  "replaces_nav_command": false,
+  "why": "`nav_command` is a LIVE model input — nav_conditioning.py refuses a batch without it. nav_30s is ADDITIVE; retire the scalar in a later release once a trainer reads the list, never by deleting it out from under a running config.",
+  "vocabulary": [
+   "NAV_FOLLOW_ROAD",
+   "NAV_TURN_L",
+   "NAV_TURN_R"
+  ],
+  "vocabulary_note": "FROZEN and NOT extended — richer structure, identical alphabet. assert_frozen enforces it.",
+  "horizon_edge": "t_start_s <= 30.0 INCLUSIVE — stated so it is not re-derived.",
+  "loader_margin": "arc tables are built to 35 s (horizon + 5 s) so a manoeuvre straddling 30 s has track to measure against; the same reason the emitter loads RAW_T0_S + LOOKAHEAD_S + 5.0.",
+  "distance_definition": "ARC LENGTH along the driven path, measured FROM THE S2 ANCHOR (t0) to the entry time. ⛔ NOT Euclidean — over 30 s round a bend they differ by tens of metres. ⛔ NOT from the recording start — that was the v8.0 defect, see v8.1_correction.",
+  "provenance": "ego-future on EVERY entry, unconditionally. The scalar's `oracle` boolean is missing on 11.2 % of records; this payload cannot reproduce that split.",
+  "oracle_stamp_richness": "⛔ `allow_oracle_nav` is BINARY and cannot distinguish one token from this list. Consumers must record `oracle_nav_payload: nav_30s` plus n_entries, or two arms with very different amounts of oracle at the input are indistinguishable in their own artifacts.",
+  "suppressed_turns": "a contested turn (obstacle pass) commands NO turn — PI 2026-08-29 — so such clips fall through to NAV_FOLLOW_ROAD, consistent with the scalar.",
+  "time_basis": "t_start_s / t_end_s are ANCHOR-RELATIVE (0 = the s2 anchor = RAW_T0_S 8.0 s on the raw recording timeline), matching every other time field in s2-geom-v7."
+ },
+ "lane_change_text": {
+  "source": "alpamayo.chain_of_causation ONLY — no geometry",
+  "why_no_geometry": "3 detector versions scored 53.2/62.1/61.0 % side agreement vs the text (chance = 50 %). Root cause was mine: RAW_T0_S = 8.0 puts the s2 anchor at 8 s on the raw egomotion timeline and every measured window was offset by 8 s.",
+  "timing": "NONE. CoC carries a time expression on 6/4,729 clips (0.13 %).",
+  "statuses": {
+   "EXECUTED": "a lane change happened; side is the label",
+   "NEGATED": "text says it did NOT / could not happen",
+   "ANTICIPATED": "text describes preparing for a later one",
+   "MULTI": "two manoeuvres in one sentence; n_sides=2, do not halve",
+   "NO_SIDE": "asserted but no side word near the phrase",
+   "NOT_CITED": "not mentioned — NOT evidence of absence"
+  },
+  "counts_train_plus_eval": {
+   "asserted": 179,
+   "negated": 15,
+   "anticipatory": 57,
+   "multi": 1,
+   "labelled": 105,
+   "no_side": 1,
+   "L": 74,
+   "R": 31
+  },
+  "precision": "UNMEASURED. Spot-check against camera frames before training."
+ },
+ "speed_max_input": {
+  "ruled_by": "PI 2026-09-01, reaffirmed after the leak finding was raised",
+  "field": "speed_max_input.v_max_ms  (= g_tac.goals.SPEED_BAND.v_hi_ms)",
+  "units": "m/s — declared; median 10.07, mean 11.46 (urban, cross-checked)",
+  "coverage": "100 % of v8 train (4,572) and eval (147)",
+  "⭐ ROLE": "INPUT CHANNEL, not a training label. PI 2026-09-01: *'at inference this data will be provided as input by the user like the nav command, thus these are not training labels, just input data.'* A driver or nav system supplying a speed limit is a real deployment input.",
+  "⚠️ TRAIN/DEPLOY MISMATCH (not a leak)": "The TRAINING value is max(ego REALISED speed) over [anchor+2s, anchor+6s]. At deployment the user supplies a LIMIT — a bound the driver may not reach, versus what the ego did reach. MEASURED n=1,200: corr(v_hi,v0) = 0.941; v_hi-v0 mean +1.08 m/s, p95 +6.12 m/s (22 km/h); differs by >1 m/s on 51.5 % of clips. ⇒ a model trained on the realised future may trust a precision the deployed channel will not have. Worth knowing when the arm is read; NOT a reason to withhold the field. Same shape as nav_command, which is also ego-derived in training and nav-supplied at deployment.",
+  "why_the_stamp": "provenance + oracle:true are kept for the reason they exist on nav_command: an arm trained on the ego-derived value stays distinguishable from a later arm trained on a genuine speed-limit channel.",
+  "controls": {
+   "hold": "freeze v_max at its t0 value — does the arm track a moving input?",
+   "shuffled": "serve ANOTHER clip's v_max — says whether the model USES the channel at all, which is what decides whether wiring it was worth anything."
+  },
+  "files": {
+   "train": "1bc3cbabe109a19ee9fb17e38c02afd8",
+   "eval": "184702c03d624aa55b3a322215bd7492"
+  },
+  "bucket": {
+   "steps_kmh": [
+    20,
+    30,
+    50,
+    70,
+    80,
+    100,
+    120,
+    130
+   ],
+   "steps_ms": [
+    5.555555555555555,
+    8.333333333333334,
+    13.88888888888889,
+    19.444444444444443,
+    22.22222222222222,
+    27.77777777777778,
+    33.333333333333336,
+    36.11111111111111
+   ],
+   "rule": "snap UP to the lowest posted limit >= v_max_ms; units stay m/s on the wire",
+   "pinned_by": "Master Mind 2026-09-07 — values from road law, membership from corpus",
+   "⛔ not_a_leak_fix": "bin+v0 recovers R^2 0.9702 vs v0-alone 0.8789 — the bin still carries 75.4 % of the future information. COSMETIC as a leak fix, REAL as a semantics fix.",
+   "why_ship_it": "raw frac_over = 0.000000 on 0 clips (the raw value IS the max being scored, so it can never fire); quantized = 0.005564 on 28 clips. A ceiling the trajectory cannot violate is not a constraint. Raw v_hi is below the ego's own speed on 34.8 % of clips; quantizing cuts that to 8.4 %.",
+   "⚠️ intersection_artefact": "75 % of intersection clips snap to <= 30 km/h because the ego is stopped, where a map would say 50. Risks teaching 'slow ego => low limit' — the CONVERSE of the optimism quantization fixes.",
+   "rejected_steps": "90 and 110 (+0.0009 R^2, +0.6 km/h — bought nothing)",
+   "files": {
+    "train": "bb54dfa05345d923addbf56bdb273443",
+    "eval": "920a9fcb5ed2a34f59b10e16987e7284"
+   }
+  }
+ },
+ "traffic_light_colour": {
+  "⭐ PI DECISION 2026-09-07": "*'no vlm, we stick to the alpamayo labels as teacher signals.'* ⇒ the per-instance colour check is CLOSED, not pending. No second model grades these labels. This is a decision, and a future reader must not re-open it as an unfinished task.",
+  "what the labels ARE": "ALPAMAYO TEACHER SIGNALS. Not independently verified ground truth, and they will not be. ⛔ Downstream text must say 'Alpamayo-derived teacher signal', never 'GT traffic light'.",
+  "what IS established (mechanism, MEASURED)": {
+   "presence": "182/805 emissions carry an independent 2D box; 0 contradicted; 601 never checked (the clip's one grounding question asked elsewhere).",
+   "colour_has_no_independent_channel": "grounding boxes are label-only; 0 carry a colour attribute. Colour exists ONLY in the VLM's text.",
+   "colour_was_SEEN_not_inferred_from_motion": [
+    "148 clips describe a colour TRANSITION ('the light turns green') — no single motion state can produce that. Strongest of the three.",
+    "597/787 attach the colour to the LAMP rather than to a motion.",
+    "YELLOW is bimodal (56.0 % accelerate, n=25) where motion cannot determine the class; pre-registered bar was 20 %.",
+    "RED/GREEN stop-rate ratio 18.58x against a pre-registered 2.0x bar."
+   ]
+  },
+  "⛔ what is NOT established and now never will be": "PER-INSTANCE correctness. No probe checks that a given RED clip's lamp was red. Every result above is about MECHANISM — whether the model could have known.",
+  "⛔ THE CONSEQUENCE, and it is the load-bearing one": "Because the labels are accepted UNVERIFIED, the EGO-ONLY CONTROL on any traffic-light head is no longer optional — it is the ONLY remaining guard. Score any such head against a head given v0 and the speed trace alone. If they match, the head learned the teacher's shortcut rather than the lamp, and the arm is dead regardless of how good the label is. A head without that control is not admissible."
+ },
+ "release": "v8",
+ "revision": "v8.1",
+ "⛔ v8.1_correction": {
+  "field": "nav_30s.entries[].distance_m / .distance_end_m",
+  "date": "2026-09-09",
+  "class": "RAW_T0_S timeline offset (SECOND occurrence in this programme)",
+  "defect": "manoeuvre_sequence publishes ANCHOR-RELATIVE times (s2_geom_emit_v7.py:148 returns i/hz over rate[key:]); the v8 build of 2026-09-07 indexed those into an arc table on the RAW recording timeline, where the anchor sits at RAW_T0_S = 8.0 s. Distances therefore measured arc length from the RECORDING START, not from the anchor. A second, smaller bug in the same line: the raw timestamp axis was never re-zeroed (ts - ts[0]), which egomotion_source.load does.",
+  "blast_radius_measured": {
+   "entries_total": 5418,
+   "entries_moved": 5046,
+   "NAV_FOLLOW_ROAD": "2,926 entries, error exactly 0.0 m (hardcoded 0.0, correct)",
+   "NAV_TURN_L": "1,196 entries, median -3.0 m, mean -9.6 m, max |e| 129.9 m",
+   "NAV_TURN_R": "1,289 entries, median -1.2 m, mean -6.5 m, max |e| 169.2 m",
+   "turn_entries": "81.8 % wrong by >1 m, 54.6 % by >10 m"
+  },
+  "⭐ why_it_survived_the_build_gate": "the corpus-wide median error is +0.0 m, because NAV_FOLLOW_ROAD is 54 % of entries and carries an exact hardcoded zero. The error hid behind a pile of correct zeros — a summary statistic reporting health for a field wrong on four fifths of the rows that actually use it.",
+  "times_untouched": "t_start_s / t_end_s were always anchor-relative and always correct. The bug was reading them on the wrong axis.",
+  "null_change": "distance_m is now populated on 5,418/5,418 entries (was 7 null). distance_end_m is null on 535 entries (was 7) — HONEST: the ego track does not extend 8 s past the anchor to a manoeuvre ending near the 30 s horizon. The old builder reported fewer nulls only because it was reading 8 s too early, i.e. still inside the track.",
+  "superseded_hashes": {
+   "train_md5": "bb54dfa05345d923addbf56bdb273443",
+   "eval_md5": "920a9fcb5ed2a34f59b10e16987e7284"
+  }
+ }
+}

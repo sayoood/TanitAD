@@ -1,0 +1,44 @@
+{
+ "produced_by": "stack/scripts/build_refcv6_speed_max_window.py",
+ "rule": "CONTAINING WINDOW over {30, 50, 100, 120} km/h; > 120 clamps to 120 and is counted",
+ "speed_max_derivation_v6": "refcv6 4-way one-hot set-speed, CONTAINING-WINDOW quantization over {30, 50, 100, 120} km/h: (0,30]->30, (30,50]->50, (50,100]->100, (100,120]->120, and > 120 CLAMPS to 120 (counted and reported). Source field v7.2/v8 g_tac.goals.SPEED_BAND.v_hi_ms (oracle, provenance ego-future: max of the ego's OWN REALISED speed over [t0+2 s, +6 s]); the PI authorised the future-ego derivation explicitly on 2026-09-16 provided the value lands in the containing window. It models a max SET speed - a limiter the driver sets - so the realised speed sits INSIDE the window and never above it. INPUT, never a training signal: no loss reaches this channel in refcv6.",
+ "source_labels": "s2_labels_v8.0_eval.jsonl.gz",
+ "source_md5": "38a6239903478c078702d12b518b4bac",
+ "split": "eval",
+ "n_clips": 147,
+ "n_with_speed_band": 147,
+ "n_without_speed_band": 0,
+ "sids_without_speed_band_sample": [],
+ "census": {
+  "n": 147,
+  "steps_kmh": [
+   30,
+   50,
+   100,
+   120
+  ],
+  "counts": [
+   49,
+   52,
+   39,
+   7
+  ],
+  "shares": [
+   0.333333,
+   0.353741,
+   0.265306,
+   0.047619
+  ],
+  "over_ceiling": 1,
+  "over_ceiling_share": 0.006803,
+  "slack_kmh_p50": 12.74,
+  "slack_kmh_p95": 46.648,
+  "entropy_bits": 1.7757,
+  "_units": "m_s",
+  "_derivation": "refcv6 4-way one-hot set-speed, CONTAINING-WINDOW quantization over {30, 50, 100, 120} km/h: (0,30]->30, (30,50]->50, (50,100]->100, (100,120]->120, and > 120 CLAMPS to 120 (counted and reported). Source field v7.2/v8 g_tac.goals.SPEED_BAND.v_hi_ms (oracle, provenance ego-future: max of the ego's OWN REALISED speed over [t0+2 s, +6 s]); the PI authorised the future-ego derivation explicitly on 2026-09-16 provided the value lands in the containing window. It models a max SET speed - a limiter the driver sets - so the realised speed sits INSIDE the window and never above it. INPUT, never a training signal: no loss reaches this channel in refcv6."
+ },
+ "sidecar": "speed_max_window_v6_eval.jsonl",
+ "join_key": "sid = stable_episode_id(clip_id)",
+ "clip_id_column_present": false,
+ "⛔": "this is a SIDECAR; the label blob is NOT modified. Join on `sid` = stable_episode_id(clip_id) -- the corpus's only admissible join key, and the one `LazyV2Episode` actually carries. A clip with no SPEED_BAND carries bin=null and an all-zero one-hot (the 'not known' state), never bin 0."
+}

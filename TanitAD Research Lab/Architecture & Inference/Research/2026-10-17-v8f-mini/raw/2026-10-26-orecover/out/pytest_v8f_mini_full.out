@@ -1,0 +1,269 @@
+..FFF......Fs                                                            [100%]
+================================== FAILURES ===================================
+____________ test_verdict_wm1_passes_only_when_both_seeds_beat_2F _____________
+
+argv = ['--eval-dir', 'E:\\Projects\\TanitAD-artifacts\\orecover_build\\pt\\f_v8f_mini_full\\test_verdict_wm1_passes_only_w0\...:\\Projects\\TanitAD-artifacts\\orecover_build\\pt\\f_v8f_mini_full\\test_verdict_wm1_passes_only_w0\\a\\verdict.json']
+
+    def main(argv=None):
+        ap = argparse.ArgumentParser()
+        ap.add_argument("--eval-dir", required=True)
+        ap.add_argument("--runs-dir", required=True)
+        ap.add_argument("--out", required=True)
+        a = ap.parse_args(argv)
+        try:
+>           from taniteval.ci import paired_episode_cluster_bootstrap
+E           ModuleNotFoundError: No module named 'taniteval.ci'
+
+TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-v8f-mini\code\v8f_mini_full_verdict.py:101: ModuleNotFoundError
+
+During handling of the above exception, another exception occurred:
+
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/orecover_build/pt/f_v8f_mini_full/test_verdict_wm1_passes_only_w0')
+
+    @pytest.mark.skipif(not VERDICT.exists(), reason="verdict not in this checkout")
+    def test_verdict_wm1_passes_only_when_both_seeds_beat_2F(tmp_path):
+>       v = _run(tmp_path / "a")
+            ^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_mini_full.py:117: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_mini_full.py:111: in _run
+    assert _verdict().main(["--eval-dir", str(ev), "--runs-dir", str(rd), "--out", str(out)]) == 0
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+argv = ['--eval-dir', 'E:\\Projects\\TanitAD-artifacts\\orecover_build\\pt\\f_v8f_mini_full\\test_verdict_wm1_passes_only_w0\...:\\Projects\\TanitAD-artifacts\\orecover_build\\pt\\f_v8f_mini_full\\test_verdict_wm1_passes_only_w0\\a\\verdict.json']
+
+    def main(argv=None):
+        ap = argparse.ArgumentParser()
+        ap.add_argument("--eval-dir", required=True)
+        ap.add_argument("--runs-dir", required=True)
+        ap.add_argument("--out", required=True)
+        a = ap.parse_args(argv)
+        try:
+            from taniteval.ci import paired_episode_cluster_bootstrap
+        except ImportError:                                  # run from the repo checkout: <repo>/<pkg path>/code/this file
+            sys.path.insert(0, str(Path(__file__).resolve().parents[5] / "taniteval"))
+>           from taniteval.ci import paired_episode_cluster_bootstrap
+E           ModuleNotFoundError: No module named 'taniteval.ci'
+
+TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-v8f-mini\code\v8f_mini_full_verdict.py:104: ModuleNotFoundError
+____________________ test_verdict_refuses_mixed_provenance ____________________
+
+argv = ['--eval-dir', 'E:\\Projects\\TanitAD-artifacts\\orecover_build\\pt\\f_v8f_mini_full\\test_verdict_refuses_mixed_pro0\...-out', 'E:\\Projects\\TanitAD-artifacts\\orecover_build\\pt\\f_v8f_mini_full\\test_verdict_refuses_mixed_pro0\\x.json']
+
+    def main(argv=None):
+        ap = argparse.ArgumentParser()
+        ap.add_argument("--eval-dir", required=True)
+        ap.add_argument("--runs-dir", required=True)
+        ap.add_argument("--out", required=True)
+        a = ap.parse_args(argv)
+        try:
+>           from taniteval.ci import paired_episode_cluster_bootstrap
+E           ModuleNotFoundError: No module named 'taniteval.ci'
+
+TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-v8f-mini\code\v8f_mini_full_verdict.py:101: ModuleNotFoundError
+
+During handling of the above exception, another exception occurred:
+
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/orecover_build/pt/f_v8f_mini_full/test_verdict_refuses_mixed_pro0')
+
+    @pytest.mark.skipif(not VERDICT.exists(), reason="verdict not in this checkout")
+    def test_verdict_refuses_mixed_provenance(tmp_path):
+        V = _verdict()
+        for i, kw in enumerate((dict(holdout="0" * 64), dict(drop=("M2b", 1)))):
+            ev, rd = _world(tmp_path / f"r{i}", **kw)
+            with pytest.raises(SystemExit, match="REFUSED"):
+>               V.main(["--eval-dir", str(ev), "--runs-dir", str(rd), "--out", str(tmp_path / "x.json")])
+
+stack\tests\test_v8f_mini_full.py:139: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+argv = ['--eval-dir', 'E:\\Projects\\TanitAD-artifacts\\orecover_build\\pt\\f_v8f_mini_full\\test_verdict_refuses_mixed_pro0\...-out', 'E:\\Projects\\TanitAD-artifacts\\orecover_build\\pt\\f_v8f_mini_full\\test_verdict_refuses_mixed_pro0\\x.json']
+
+    def main(argv=None):
+        ap = argparse.ArgumentParser()
+        ap.add_argument("--eval-dir", required=True)
+        ap.add_argument("--runs-dir", required=True)
+        ap.add_argument("--out", required=True)
+        a = ap.parse_args(argv)
+        try:
+            from taniteval.ci import paired_episode_cluster_bootstrap
+        except ImportError:                                  # run from the repo checkout: <repo>/<pkg path>/code/this file
+            sys.path.insert(0, str(Path(__file__).resolve().parents[5] / "taniteval"))
+>           from taniteval.ci import paired_episode_cluster_bootstrap
+E           ModuleNotFoundError: No module named 'taniteval.ci'
+
+TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-v8f-mini\code\v8f_mini_full_verdict.py:104: ModuleNotFoundError
+__ test_bars_are_copied_and_the_paired_deltas_are_paired_on_the_same_windows __
+
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/orecover_build/pt/f_v8f_mini_full/test_bars_are_copied_and_the_p0')
+
+    def test_bars_are_copied_and_the_paired_deltas_are_paired_on_the_same_windows(tmp_path):
+>       rc, md, r = _main(_world(tmp_path))
+                    ^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_mini_full_report.py:97: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_mini_full_report.py:91: in _main
+    rc = _load().main(["--verdict", str(tmp / "verdict.json"), "--eval-dir", str(tmp / "eval"), "--out", str(out), "--json",
+TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-v8f-mini\code\v8f_mini_full_report.py:310: in main
+    E = _eval_module()
+        ^^^^^^^^^^^^^^
+TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-v8f-mini\code\v8f_mini_full_report.py:58: in _eval_module
+    spec.loader.exec_module(m)
+<frozen importlib._bootstrap_external>:1026: in exec_module
+    ???
+<frozen importlib._bootstrap>:488: in _call_with_frames_removed
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    #!/usr/bin/env python3
+    """RA-1 evaluator + verdict.  Spec: Project Steering/PREREG_HJ_STAGE0.md (H-HJ-SENS-1 / H-HJ-K-1 / H-HJ-COST-1).  CPU is enough.
+    
+        # one arm -> <out>/eval.json + <out>/perwindow.npz
+        python stack/scripts/ra1_hjepa_eval.py eval --ckpt <run>/final.pt --eval-cache D:/tanitad/cache --p10-prior <p10_prior.pt> \
+            --grid-json <eval_grid_windows.json> --train-cache D:/tanitad/cache --out <run>/eval
+        # all arms -> verdict.json (the bars exactly as pre-registered + the branch they select)
+        python stack/scripts/ra1_hjepa_eval.py verdict --run R0@0=<dir> --run A0:b0.08@0=<dir> --run A1:b0.08g100@0=<dir> ... --out verdict.json
+    
+    TIERS (EVAL_DOCTRINE, stamped on every block).  SENS and COST are **T0** (teacher-forced: the rollout consumes RECORDED future actions;
+    the +6 s goal state is the TRUE future frame's latent) -- a world-model diagnostic, never "driving".  K and the four families are the
+    readout's own trajectory from the t0 observation + t0 kinematics, no recorded future action consumed: **T1-class open-loop trajectory
+    prediction** (the model supplies its own output; it does not drive).
+    ESTIMATOR: paired episode-cluster bootstrap (taniteval/ci.py), B = 2000, over the eval episodes.  It answers "would another draw of
+    EPISODES say this?" ONLY.  Training-seed variance is read from the 2-seed floor in `verdict`; inference-seed variance is 0 (the readout
+    and the rollout are deterministic; only the donor permutation of SENS is seeded, and it is fixed).
+    CONTROLS that must read their known values (recorded, and a failure sets `instrument_ok=false`): SENS self-swap == exactly 0.0;
+    P10 - P10 == +0.0000 [0, 0]; ADE(gt, gt) == 0; cache P10 vs the banked refit predictions (when --p10-ref-pred is given).
+    
+    SELECTION (PREREG_HJ_STAGE0 Amendment 1).  The best A1 (beta, gamma) cell is chosen on the fixed 60-clip TRAIN HOLDOUT that every arm
+    was trained WITHOUT (`eval` scores it whenever `--train-cache` is given and the checkpoint carries its holdout record; the arrays
+    `hold_*` and the `holdout` block of eval.json), by mean seed-0 ADE@6s there.  `verdict` has NO fallback: an A1 run without holdout
+    numbers is REFUSED, never selected on the eval-141 windows that score K.  Every cell's eval-141 numbers are still reported, labelled
+    NON_DECIDING; eval-141 scores K once, for the chosen cell.
+    
+    PAIRED FAMILIES (binding four-family rule, CLAUDE.md).  `families.arm` / `families.p10` carry SINGLE-arm episode-cluster intervals; a
+    two-arm difference taken from them would be a combination in quadrature, which is invalid (the arms share windows).  So `eval` also
+    publishes `families.paired_arm_minus_p10`: for the seven LONGITUDINAL / LATERAL MAE components below, arm - P10 through
+    `ci.paired_episode_cluster_bootstrap` on the SAME windows, and saves the per-window components (`fam_arm_*` / `fam_p10_*`) into
+    `perwindow.npz` so ANY later pairing (arm vs arm, per stratum) needs no re-run.  TACTICAL decision-agreement is not paired yet: its
+    per-window classes are not saved (a stated work item inside the block).  Additive: no pre-existing key changes.
+    """
+    from __future__ import annotations
+    
+    import argparse
+    import hashlib
+    import json
+    import math
+    import os
+    import sys
+    import time
+    
+    REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    for _p in (os.path.join(REPO, "stack"), os.path.join(REPO, "taniteval")):
+        if _p not in sys.path:
+            sys.path.insert(0, _p)
+    
+    import numpy as np  # noqa: E402
+    import torch  # noqa: E402
+    
+    from tanitad.data import ra1_pooled as RD  # noqa: E402
+    from tanitad.data import v8f_mini_data as D  # noqa: E402
+    from tanitad.models import ra1_hjepa as R  # noqa: E402
+    from tanitad.models.hjepa import rho_within_episode  # noqa: E402
+    from tanitad.models.v8f_mini import load_p10, p10_meta  # noqa: E402
+>   from taniteval import ci  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+E   ImportError: cannot import name 'ci' from 'taniteval' (unknown location)
+
+stack\scripts\ra1_hjepa_eval.py:56: ImportError
+_____________ test_a_missing_control_run_is_left_out_not_refused ______________
+
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/orecover_build/pt/f_v8f_mini_full/test_a_missing_control_run_is_0')
+
+    def test_a_missing_control_run_is_left_out_not_refused(tmp_path):
+>       rc, md, r = _main(_world(tmp_path, drop="M1-navshuf_s1", floors=False))
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_mini_full_report.py:128: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_mini_full_report.py:91: in _main
+    rc = _load().main(["--verdict", str(tmp / "verdict.json"), "--eval-dir", str(tmp / "eval"), "--out", str(out), "--json",
+TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-v8f-mini\code\v8f_mini_full_report.py:310: in main
+    E = _eval_module()
+        ^^^^^^^^^^^^^^
+TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-v8f-mini\code\v8f_mini_full_report.py:58: in _eval_module
+    spec.loader.exec_module(m)
+<frozen importlib._bootstrap_external>:1026: in exec_module
+    ???
+<frozen importlib._bootstrap>:488: in _call_with_frames_removed
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    #!/usr/bin/env python3
+    """RA-1 evaluator + verdict.  Spec: Project Steering/PREREG_HJ_STAGE0.md (H-HJ-SENS-1 / H-HJ-K-1 / H-HJ-COST-1).  CPU is enough.
+    
+        # one arm -> <out>/eval.json + <out>/perwindow.npz
+        python stack/scripts/ra1_hjepa_eval.py eval --ckpt <run>/final.pt --eval-cache D:/tanitad/cache --p10-prior <p10_prior.pt> \
+            --grid-json <eval_grid_windows.json> --train-cache D:/tanitad/cache --out <run>/eval
+        # all arms -> verdict.json (the bars exactly as pre-registered + the branch they select)
+        python stack/scripts/ra1_hjepa_eval.py verdict --run R0@0=<dir> --run A0:b0.08@0=<dir> --run A1:b0.08g100@0=<dir> ... --out verdict.json
+    
+    TIERS (EVAL_DOCTRINE, stamped on every block).  SENS and COST are **T0** (teacher-forced: the rollout consumes RECORDED future actions;
+    the +6 s goal state is the TRUE future frame's latent) -- a world-model diagnostic, never "driving".  K and the four families are the
+    readout's own trajectory from the t0 observation + t0 kinematics, no recorded future action consumed: **T1-class open-loop trajectory
+    prediction** (the model supplies its own output; it does not drive).
+    ESTIMATOR: paired episode-cluster bootstrap (taniteval/ci.py), B = 2000, over the eval episodes.  It answers "would another draw of
+    EPISODES say this?" ONLY.  Training-seed variance is read from the 2-seed floor in `verdict`; inference-seed variance is 0 (the readout
+    and the rollout are deterministic; only the donor permutation of SENS is seeded, and it is fixed).
+    CONTROLS that must read their known values (recorded, and a failure sets `instrument_ok=false`): SENS self-swap == exactly 0.0;
+    P10 - P10 == +0.0000 [0, 0]; ADE(gt, gt) == 0; cache P10 vs the banked refit predictions (when --p10-ref-pred is given).
+    
+    SELECTION (PREREG_HJ_STAGE0 Amendment 1).  The best A1 (beta, gamma) cell is chosen on the fixed 60-clip TRAIN HOLDOUT that every arm
+    was trained WITHOUT (`eval` scores it whenever `--train-cache` is given and the checkpoint carries its holdout record; the arrays
+    `hold_*` and the `holdout` block of eval.json), by mean seed-0 ADE@6s there.  `verdict` has NO fallback: an A1 run without holdout
+    numbers is REFUSED, never selected on the eval-141 windows that score K.  Every cell's eval-141 numbers are still reported, labelled
+    NON_DECIDING; eval-141 scores K once, for the chosen cell.
+    
+    PAIRED FAMILIES (binding four-family rule, CLAUDE.md).  `families.arm` / `families.p10` carry SINGLE-arm episode-cluster intervals; a
+    two-arm difference taken from them would be a combination in quadrature, which is invalid (the arms share windows).  So `eval` also
+    publishes `families.paired_arm_minus_p10`: for the seven LONGITUDINAL / LATERAL MAE components below, arm - P10 through
+    `ci.paired_episode_cluster_bootstrap` on the SAME windows, and saves the per-window components (`fam_arm_*` / `fam_p10_*`) into
+    `perwindow.npz` so ANY later pairing (arm vs arm, per stratum) needs no re-run.  TACTICAL decision-agreement is not paired yet: its
+    per-window classes are not saved (a stated work item inside the block).  Additive: no pre-existing key changes.
+    """
+    from __future__ import annotations
+    
+    import argparse
+    import hashlib
+    import json
+    import math
+    import os
+    import sys
+    import time
+    
+    REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    for _p in (os.path.join(REPO, "stack"), os.path.join(REPO, "taniteval")):
+        if _p not in sys.path:
+            sys.path.insert(0, _p)
+    
+    import numpy as np  # noqa: E402
+    import torch  # noqa: E402
+    
+    from tanitad.data import ra1_pooled as RD  # noqa: E402
+    from tanitad.data import v8f_mini_data as D  # noqa: E402
+    from tanitad.models import ra1_hjepa as R  # noqa: E402
+    from tanitad.models.hjepa import rho_within_episode  # noqa: E402
+    from tanitad.models.v8f_mini import load_p10, p10_meta  # noqa: E402
+>   from taniteval import ci  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+E   ImportError: cannot import name 'ci' from 'taniteval' (unknown location)
+
+stack\scripts\ra1_hjepa_eval.py:56: ImportError
+=========================== short test summary info ===========================
+FAILED stack\tests\test_v8f_mini_full.py::test_verdict_wm1_passes_only_when_both_seeds_beat_2F
+FAILED stack\tests\test_v8f_mini_full.py::test_verdict_refuses_mixed_provenance
+FAILED stack\tests\test_v8f_mini_full_report.py::test_bars_are_copied_and_the_paired_deltas_are_paired_on_the_same_windows
+FAILED stack\tests\test_v8f_mini_full_report.py::test_a_missing_control_run_is_left_out_not_refused
+4 failed, 8 passed, 1 skipped in 8.59s

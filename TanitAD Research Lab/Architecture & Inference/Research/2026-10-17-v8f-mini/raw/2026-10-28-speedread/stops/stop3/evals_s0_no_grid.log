@@ -1,0 +1,25 @@
+Traceback (most recent call last):
+  File "E:\Projects\TanitAD-artifacts\speedread_run\run_with_taniteval.py", line 11, in <module>
+    runpy.run_path(script, run_name="__main__")
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen runpy>", line 287, in run_path
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "F:/TanitAD-scratch/speedread/tree_f3971165/stack/scripts/v8f_mini_eval_speedread.py", line 787, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "F:/TanitAD-scratch/speedread/tree_f3971165/stack/scripts/v8f_mini_eval_speedread.py", line 783, in main
+    return {"extract": cmd_extract, "fit": cmd_fit, "evals": cmd_evals, "read": cmd_read}[a.cmd](a)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "F:/TanitAD-scratch/speedread/tree_f3971165/stack/scripts/v8f_mini_eval_speedread.py", line 674, in cmd_evals
+    rc = E.main(argv)
+  File "F:\TanitAD-scratch\speedread\tree_f3971165\stack\scripts\v8f_mini_eval.py", line 669, in main
+    return {"floors": cmd_floors, "run": cmd_run, "compare": cmd_compare, "compare-beta": cmd_compare_beta}[a.mode](a)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "F:\TanitAD-scratch\speedread\tree_f3971165\stack\scripts\v8f_mini_eval.py", line 255, in cmd_run
+    grid, J, X = ctx_from_args(a, cfg.kin_mode)       # the scoring context is built in the CHECKPOINT's representation
+                 ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "F:\TanitAD-scratch\speedread\tree_f3971165\stack\scripts\v8f_mini_eval.py", line 57, in ctx_from_args
+    grid = json.load(open(a.eval_grid))
+                     ~~~~^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'F:\\TanitAD-scratch\\speedread\\tree_f3971165\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-10-17-v8f-mini\\raw\\eval_grid_windows.json'

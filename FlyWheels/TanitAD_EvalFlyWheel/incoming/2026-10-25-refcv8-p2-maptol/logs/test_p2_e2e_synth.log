@@ -1,0 +1,20 @@
+PASS synthetic lane GT cells per band == construction arithmetic
+PASS synthetic crosswalk GT cells per band == 120 x stripes
+PASS jittered lane: exact inter = 0 (shift 3 >= width 2)
+PASS jittered lane: tpp5 == pred (every predicted lane cell within 5 cells of GT)
+PASS jittered lane: tpp1 == 0 (shift 3 > 1 cell: nearest GT cell is 2 away)
+PASS arm B lane absent: pred 0 and tpg10 == 0
+PASS GT identical across arms (the pairing identity)
+PASS census: lane thickness is 2 cells for every lane cell
+PASS census: crosswalk stripe thickness is 3 cells
+[p2-read] wrote C:\Users\Admin\refcv8_pf\perc8tol\smoke\e2e_synth\read\P2_TOL.json in 0.2 s
+[p2-read] wrote C:\Users\Admin\refcv8_pf\perc8tol\smoke\e2e_synth\read\RESULT.md
+ C:\Users\Admin\venvs\tanitad\Lib\site-packages\numpy\lib\_nanfunctions_impl.py:1396: RuntimeWarning: All-NaN slice encountered
+  return _nanquantile_unchecked(
+
+PASS p2_tol_read.py exits 0
+PASS verdict armA lane 0-20: shift 3 -> R_5 = 1 (all GT within 5), P_5 = 1, IoU_5/IoU_0 huge -> MISPLACED
+PASS verdict armB lane 0-20: lane absent -> ABSENT
+PASS C6 bootstrap-stream control equal on every cell
+PASS RESULT.md written
+ZZP2E2E fails=0 ZZ

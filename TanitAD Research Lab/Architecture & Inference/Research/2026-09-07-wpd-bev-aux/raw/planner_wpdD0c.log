@@ -1,0 +1,53 @@
+[v3] --sel-score-emitted on a ddim arm: sel_score_emitted_t -1 -> 0 (the emitted fan IS the denoised state; -1 would index the refinement loop's embedding table instead)
+[ego] ego_state_inject build: feeding the MEASURED ego block (v0, a_long, yaw_rate, curvature, keep=1) at t0 to every forward — refc_v3.ego_state_from_batch, the trainer's own entry
+[v3] nav_from_v7: follow 29 / left 1 / right 10, missing 0 (of 40 clips; md5=aa12c948f062181c3297265b51526ec5)
+[model] C:\Users\Admin\wpd-probe\ckpt\ckpt_D0c.pt step=4000 arm=hier anchors=117 horizons=[5, 10, 15, 20, 30, 40, 50, 60] window=8 decoder=diffusion/2 config<-config.json[argv] -> refc_v3_train.build_parser + _pin_trainer_cfg (the trainer's own build path)
+[grid] 2s: dt=0.5 s K=4 instants=[0.5, 1.0, 1.5, 2.0] s <- model slots [5, 10, 15, 20] (indices [0, 1, 2, 3]); dropped [30, 40, 50, 60]
+[units] action_units=steer — the RECORDED channel 1 is a road-wheel STEER angle (physicalai.py:621). kappa = tan(steer)/2.9 is applied before integration; `ha` is NOT comparable to a kappa-unit refav1 run (`ha0` is, it is zero).
+[roll] 3422 windows / 40 episodes · arms=['os', 'ha', 'ha0', 'ha0_ext', 'os_navshuf', 'os_navzero'] · fed conditionings=['nav_true', 'nav_shuffled'] + a SEPARATE nav_cmd=None forward (nav_zero) · nav_shuffle changed 1382/3422
+[nav-null] os_navzero = model(..., nav_cmd=None): the E13 tactical + strategic injection is SKIPPED (refc_v3.py:437-441; nav_injected reads False), and the CORE collapses to one_hot(0)='follow' (refc.py:2021-2024). ⚠️ At the core that is a COLLAPSE ONTO THE MAJORITY TOKEN, not a removal — NAV_COMMANDS has no 'unknown' and nav_known_channel is False (refc.py:594) — so this arm is a LOWER BOUND on nav dependence. ⛔ nav_known is NOT usable as the null: refc.py:2042-2045 raises when the gate is off.
+[cost] first forward (2 fed row(s) + 1 nav-null call, 3 rows total) took 0.78 s -> ESTIMATED 0.74 h for 3422 windows (forward only; IO/analysis extra)
+  [1/40] 01be5919-6e6 86 windows 39s
+  [2/40] 060531e1-993 85 windows 75s
+  [3/40] 0fa2b231-435 86 windows 111s
+  [4/40] 10804db8-d07 85 windows 148s
+  [5/40] 11e40da1-3d9 86 windows 184s
+  [6/40] 126b3a97-087 85 windows 221s
+  [7/40] 13c95b6a-5d1 86 windows 257s
+  [8/40] 14157960-84d 85 windows 293s
+  [9/40] 142a3a72-6cd 86 windows 329s
+  [10/40] 14bc9fcf-c04 85 windows 364s
+  [11/40] 16d89725-2f3 86 windows 400s
+  [12/40] 17775e74-2d8 86 windows 437s
+  [13/40] 18b72291-84f 85 windows 473s
+  [14/40] 1bd040a8-182 86 windows 510s
+  [15/40] 1c3a2c7c-7e8 84 windows 545s
+  [16/40] 204b15b4-bd0 86 windows 580s
+  [17/40] 2172a5a3-8a1 85 windows 616s
+  [18/40] 24fee8a5-9cc 86 windows 653s
+  [19/40] 2602baaa-436 85 windows 688s
+  [20/40] 262b900f-2cf 86 windows 724s
+  [21/40] 269478eb-2da 88 windows 762s
+  [22/40] 27f44280-3e5 86 windows 798s
+  [23/40] 2cd0f4e4-dce 85 windows 834s
+  [24/40] 2e8a2df2-3f7 86 windows 870s
+  [25/40] 316f3c56-914 85 windows 906s
+  [26/40] 31d0adc4-4e8 86 windows 943s
+  [27/40] 32f9b6b2-edc 85 windows 978s
+  [28/40] 330b4626-96d 86 windows 1015s
+  [29/40] 34a1e12e-95c 85 windows 1051s
+  [30/40] 37e61793-36e 86 windows 1088s
+  [31/40] 38fe80c1-caf 85 windows 1124s
+  [32/40] 3971a8c6-0c5 86 windows 1162s
+  [33/40] 39bf584e-5bb 85 windows 1198s
+  [34/40] 3ef3dcc8-7fd 85 windows 1234s
+  [35/40] 3ff11411-fa2 86 windows 1270s
+  [36/40] 42745b48-a01 85 windows 1306s
+  [37/40] 45358841-692 86 windows 1342s
+  [38/40] 45a9f7ec-991 85 windows 1378s
+  [39/40] 45aea78c-776 86 windows 1414s
+  [40/40] 47241da8-c00 85 windows 1450s
+[dump] 3422 windows over 40 episodes (0 skipped: none)
+[provenance] REAL_CHECKPOINT_ON_REAL_CORPUS - ckpt=TRAINED corpus=FULL step=4000 eps=40 windows=3422 anchors=117
+REFCV3_DUMP_DONE
+[dump-only] C:\Users\Admin\wpd-probe\dumps\wpdD0c; analyse later with --analyze-only

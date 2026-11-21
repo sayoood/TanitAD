@@ -1,0 +1,61 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "arm": "no-o6",
+ "step": 2000,
+ "n_clips": 24,
+ "parity": false,
+ "delta_autocorr": {
+  "lag1_cos_mean": -0.0863,
+  "lag5_cos_mean": 0.0175
+ },
+ "controls": {
+  "hold": 0.0,
+  "mean_delta": -0.000509
+ },
+ "oracle": {
+  "ridge_0.0001": {
+   "em": -2.893262,
+   "ci95": [
+    -4.998888,
+    -1.67994
+   ]
+  },
+  "ridge_0.01": {
+   "em": -0.201518,
+   "ci95": [
+    -0.66165,
+    0.053608
+   ]
+  },
+  "ridge_1": {
+   "em": -0.043178,
+   "ci95": [
+    -0.17424,
+    0.031842
+   ]
+  },
+  "ridge_100": {
+   "em": 0.001609,
+   "ci95": [
+    -0.000631,
+    0.003256
+   ]
+  },
+  "ridge_10000": {
+   "em": -0.000404,
+   "ci95": [
+    -0.000783,
+    -0.000118
+   ]
+  }
+ },
+ "oracle_best_em": 0.001609,
+ "oracle_best_lambda": 100.0,
+ "oracle_best_ci95": [
+  -0.000631,
+  0.003256
+ ],
+ "materiality_floor": 0.01,
+ "verdict": "NOT LINEARLY PREDICTABLE: the best fitted LINEAR oracle explains only 0.16% of held-out per-tick movement (CI [-0.0006, +0.0033], not materially above HOLD). \u26d4 THIS IS A ONE-DIRECTIONAL INFERENCE AND MUST NOT BE READ AS 'unpredictable by any predictor'. A linear oracle BEATING hold proves the target is learnable; a linear oracle FAILING proves only that it is not learnable BY A LINEAR MAP. In 2048 dims with nonlinear scene motion that is a WEAK lower bound -- the nonlinear question needs a nonlinear probe (v7tiny_mlp_oracle.py). \u26a0\ufe0f SCOPE: measured on this arm's own latents at this step count; it does NOT transfer to another model or training length unmeasured."
+}

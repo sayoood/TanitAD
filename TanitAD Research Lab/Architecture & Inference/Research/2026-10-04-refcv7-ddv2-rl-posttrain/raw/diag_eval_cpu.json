@@ -1,0 +1,170 @@
+{
+ "_tier": "T0 zero-training diagnostics",
+ "_evidence_class": "MEASURED (ours)",
+ "split": "eval",
+ "n_windows": 2,
+ "windows_digest": "3b90928f5cab83f116150ba90f8fbbafe6934af7df3875d49fec9628a05b1f89",
+ "build_s": 4.8,
+ "dataset_build_s": 125.4,
+ "D1_parity": {
+  "fan_bitwise_all": true,
+  "u0_bitwise_all": true,
+  "fan_max_abs_max": 0.0,
+  "traj_in_fan_all": true,
+  "trainer_forward_same_sampler_inputs_all": true
+ },
+ "D1b_group_tiling_max_abs": 0.0,
+ "D3_tick_states_eq_roll_all": true,
+ "D3_tick_states_max_abs": 0.0,
+ "D2_clamp_rates_mean": {
+  "x0_out_of_box_a_lon": 0.12252938374876976,
+  "x0_final_out_of_box_a_lon": 0.17788461223244667,
+  "input_out_of_box_a_lon": 0.057972755283117294,
+  "deployed_u0_resid_out_of_box_a_lon": 0.09401709586381912,
+  "x0_out_of_box_a_lat": 0.16901709139347076,
+  "x0_final_out_of_box_a_lat": 0.17067307978868484,
+  "input_out_of_box_a_lat": 0.12333066388964653,
+  "deployed_u0_resid_out_of_box_a_lat": 0.16826923191547394
+ },
+ "D5_known_values": {
+  "human_nc1_frac": 1.0,
+  "human_dac1_frac": 0.5,
+  "human_ttc1_frac": 1.0,
+  "human_comfort1_frac": 1.0,
+  "human_pdms_mean": 0.5,
+  "identity_equal_all": true,
+  "ep_fast_eq_1_frac": 0.5,
+  "ep_slow_mean": 0.0,
+  "spd_fast_mean": 0.4399546980857849,
+  "dac_dead_windows": 0,
+  "dac_shift6m_zero_frac": 1.0,
+  "nc_control": {
+   "n_built": 2,
+   "n_nc_below_1": 2
+  }
+ },
+ "D5_rows": [
+  {
+   "sha12": "7695875eaea9",
+   "t0": 19,
+   "human": {
+    "nc": 1.0,
+    "dac": 0.0,
+    "ep": 0.0,
+    "ttc": 1.0,
+    "comfort": 1.0,
+    "pdms": 0.0,
+    "spd": 1.0,
+    "progress_m": 0.0
+   },
+   "identity_equal": true,
+   "ep_fast": 0.0,
+   "ep_slow": 0.0,
+   "spd_fast": 0.8799093961715698,
+   "dac_shift6m": [
+    0.0,
+    0.0
+   ],
+   "nc_control": {
+    "nc": 0.0,
+    "tick": 5,
+    "agent_xy": [
+     17.66,
+     -0.15
+    ],
+    "v": 27.22,
+    "pdms": 0.0,
+    "fail": true
+   },
+   "dac_dead": false,
+   "n_tracks_scored": 25,
+   "chain_reward_mean": 0.4594016969203949,
+   "chain_dac_mean": 0.4594016969203949,
+   "chain_nc_mean": 0.8611111044883728
+  },
+  {
+   "sha12": "198bb4517e28",
+   "t0": 15,
+   "human": {
+    "nc": 1.0,
+    "dac": 1.0,
+    "ep": 1.0,
+    "ttc": 1.0,
+    "comfort": 1.0,
+    "pdms": 1.0,
+    "spd": 1.0,
+    "progress_m": 76.9967269897461
+   },
+   "identity_equal": true,
+   "ep_fast": 1.0,
+   "ep_slow": 0.0,
+   "spd_fast": 0.0,
+   "dac_shift6m": [
+    0.0,
+    0.0
+   ],
+   "nc_control": {
+    "nc": 0.0,
+    "tick": 11,
+    "agent_xy": [
+     36.89,
+     2.99
+    ],
+    "v": 29.98,
+    "pdms": 0.0,
+    "fail": true
+   },
+   "dac_dead": false,
+   "n_tracks_scored": 75,
+   "chain_reward_mean": 0.17332756519317627,
+   "chain_dac_mean": 0.4059829115867615,
+   "chain_nc_mean": 0.46367520093917847
+  }
+ ],
+ "D4_D6_rl_step": [
+  {
+   "micro": 1,
+   "step_s": 10.61,
+   "s_per_window": 10.61,
+   "peak_mem_GB": null,
+   "timing": {
+    "capture_s": 4.458,
+    "rollout_s": 1.156,
+    "reward_s": 0.26,
+    "grad_s": 4.708
+   },
+   "grad_norm": 0.7868334054946899,
+   "grad_groups": [
+    "adaln.0",
+    "adaln.1",
+    "adaln.2",
+    "adaln.3",
+    "cascade.control_heads.0",
+    "cascade.control_heads.1",
+    "cascade.control_heads.2",
+    "cascade.control_heads.3",
+    "layers.0",
+    "layers.1",
+    "layers.2",
+    "layers.3",
+    "time_mlp.1",
+    "time_mlp.3",
+    "traj_proj"
+   ],
+   "frac_positive_after_bar": 0.021367521956562996,
+   "frac_admitted_by_bar": 1.0,
+   "frac_constraint_fail": 0.5512820482254028,
+   "reward_mean": 0.44871795177459717,
+   "human_pdms_mean": 0.0,
+   "cand_dac_mean": 0.44871795177459717,
+   "cand_nc_mean": 0.8632478713989258,
+   "cand_ep_mean": 0.44871795177459717,
+   "cand_ttc_mean": 0.7136752009391785,
+   "cand_comfort_mean": 0.8311966061592102,
+   "reward_group_std_pos_frac": 0.03418803587555885,
+   "rows_with_positive": 1,
+   "chain_endpoint_spread_m": 10.470785140991211,
+   "il_m": 0.18133994191884992
+  }
+ ]
+}

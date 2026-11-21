@@ -1,0 +1,35 @@
+2026-11-17T20:06:10Z SEEDED-FROM-STAGE-A read/dump_{K2,K0} (PLAN-RESET DEV dumps) + read/EVAL_{K2,K0}.json (FIT-threshold EVALs) from /home/nvidia/r8ns/r9e2/runs/E2WISE_PLAN0/stageA; A-PASS 0.484951 0.466485
+2026-11-17T20:06:10Z START dry=0 k0=/home/nvidia/r8ns/r9e2/runs/r9e2-K0 k2=/home/nvidia/r8ns/r9e2/runs/r9e2-K2DC out=/home/nvidia/r8ns/r9e2/runs/E2WISE_PLAN0/stageB tree=/home/nvidia/r8ns/r9e2/read_tree_9697fa4df004_k2dc_raw1c48ee8f split=/home/nvidia/r8ns/r9dump/DEV_HOLD_SPLIT.json seeds=0,1 ckpt_name=model_wise_plan_a000.pt (raw weights, EMA check dropped)
+2026-11-17T20:06:10Z SCIPY-SHIM eval / families / verdict use /home/nvidia/r8ns/r9e2/read_tree_9697fa4df004_k2dc_raw1c48ee8f/stack/ops/r9e2_read/../r9e1_read/shim_scipy
+2026-11-17T20:06:10Z INPUTS-OK pins, run dirs, split, S2, lift-valid, camblind PKG, scripts, gates checked before the lock
+2026-11-17T20:06:10Z LOCK-WAIT taking the Thor GPU lock /home/nvidia/refcv7_post/thor_gpu.lock (<= 43200s)
+2026-11-17T20:06:10Z LOCK-TAKEN /home/nvidia/refcv7_post/thor_gpu.lock
+2026-11-17T20:06:10Z GPU-CHECK no compute app (dry run: skipped)
+2026-11-17T20:06:10Z ROLL-START K0 tag E2_K0_pf ckpt /home/nvidia/r8ns/r9e2/runs/r9e2-K0/model_wise_plan_a000.pt
+2026-11-17T21:23:49Z ROLL-DONE K0 rc=0 /home/nvidia/r8ns/r9e2/runs/E2WISE_PLAN0/stageB/E2_K0_pf
+2026-11-17T21:23:49Z ROLL-START K2 tag E2_K2_pf ckpt /home/nvidia/r8ns/r9e2/runs/r9e2-K2DC/model_wise_plan_a000.pt
+2026-11-17T22:46:10Z ROLL-DONE K2 rc=0 /home/nvidia/r8ns/r9e2/runs/E2WISE_PLAN0/stageB/E2_K2_pf
+2026-11-17T22:46:10Z CAMBLIND-START seed 0 derange-seed 0
+2026-11-17T22:59:10Z CAMBLIND-DONE seed 0 rc=0 /home/nvidia/r8ns/r9e2/runs/E2WISE_PLAN0/stageB/E2_K2_camblind/blind_roll_s0.json
+2026-11-17T22:59:10Z CAMBLIND-START seed 1 derange-seed 0
+2026-11-17T23:12:09Z CAMBLIND-DONE seed 1 rc=0 /home/nvidia/r8ns/r9e2/runs/E2WISE_PLAN0/stageB/E2_K2_camblind/blind_roll_s1.json
+2026-11-17T23:12:09Z DUMP-SKIP K2: /home/nvidia/r8ns/r9e2/runs/E2WISE_PLAN0/stageB/read/dump_K2/dump.json exists
+2026-11-17T23:12:09Z DUMP-SKIP K0: /home/nvidia/r8ns/r9e2/runs/E2WISE_PLAN0/stageB/read/dump_K0/dump.json exists
+2026-11-17T23:12:09Z MAPSEL-START K2 seed 0 own-planes skip ckpt /home/nvidia/r8ns/r9e2/runs/r9e2-K2DC/model_wise_plan_a000.pt
+2026-11-17T23:24:07Z MAPSEL-DONE K2 seed 0 rc=0 /home/nvidia/r8ns/r9e2/runs/E2WISE_PLAN0/stageB/E2_K2_mapsel/trace_s0.npz own-planes skip
+2026-11-17T23:24:07Z MAPSEL-START K2 seed 1 own-planes skip ckpt /home/nvidia/r8ns/r9e2/runs/r9e2-K2DC/model_wise_plan_a000.pt
+2026-11-17T23:36:05Z MAPSEL-DONE K2 seed 1 rc=0 /home/nvidia/r8ns/r9e2/runs/E2WISE_PLAN0/stageB/E2_K2_mapsel/trace_s1.npz own-planes skip
+2026-11-17T23:36:05Z MAPSEL-START K0 seed 0 own-planes require ckpt /home/nvidia/r8ns/r9e2/runs/r9e2-K0/model_wise_plan_a000.pt
+2026-11-17T23:49:51Z MAPSEL-DONE K0 seed 0 rc=0 /home/nvidia/r8ns/r9e2/runs/E2WISE_PLAN0/stageB/E2_K0_mapsel/trace_s0.npz own-planes require
+2026-11-17T23:49:51Z MAPSEL-START K0 seed 1 own-planes require ckpt /home/nvidia/r8ns/r9e2/runs/r9e2-K0/model_wise_plan_a000.pt
+2026-11-18T00:03:36Z MAPSEL-DONE K0 seed 1 rc=0 /home/nvidia/r8ns/r9e2/runs/E2WISE_PLAN0/stageB/E2_K0_mapsel/trace_s1.npz own-planes require
+2026-11-18T00:03:36Z LOCK-RELEASED /home/nvidia/refcv7_post/thor_gpu.lock (rolls, camera-blind, dumps and the MAPSEL rolls were the only GPU steps)
+2026-11-18T00:03:40Z FAMILIES-DONE seed 0 rc=0 /home/nvidia/r8ns/r9e2/runs/E2WISE_PLAN0/stageB/read/families_s0.json
+2026-11-18T00:03:42Z DISTKEEP-DONE seed 0 rc=0 /home/nvidia/r8ns/r9e2/runs/E2WISE_PLAN0/stageB/read/distkeep_s0.json (merged into families_s0.json under LONGITUDINAL)
+2026-11-18T00:03:45Z CAMBLIND-READ-DONE seed 0 rc=0 /home/nvidia/r8ns/r9e2/runs/E2WISE_PLAN0/stageB/read/camblind_s0.json
+2026-11-18T00:03:49Z FAMILIES-DONE seed 1 rc=0 /home/nvidia/r8ns/r9e2/runs/E2WISE_PLAN0/stageB/read/families_s1.json
+2026-11-18T00:03:51Z DISTKEEP-DONE seed 1 rc=0 /home/nvidia/r8ns/r9e2/runs/E2WISE_PLAN0/stageB/read/distkeep_s1.json (merged into families_s1.json under LONGITUDINAL)
+2026-11-18T00:03:54Z CAMBLIND-READ-DONE seed 1 rc=0 /home/nvidia/r8ns/r9e2/runs/E2WISE_PLAN0/stageB/read/camblind_s1.json
+2026-11-18T00:03:54Z EVAL-SKIP K2: /home/nvidia/r8ns/r9e2/runs/E2WISE_PLAN0/stageB/read/EVAL_K2.json exists
+2026-11-18T00:03:54Z EVAL-SKIP K0: /home/nvidia/r8ns/r9e2/runs/E2WISE_PLAN0/stageB/read/EVAL_K0.json exists
+2026-11-18T00:03:54Z AWAIT-S6C rolls done; S6c files missing: /home/nvidia/r8ns/r9e2/runs/E2WISE_PLAN0/stageB/read/s6c/S6C_K2_s0.json /home/nvidia/r8ns/r9e2/runs/E2WISE_PLAN0/stageB/read/s6c/S6C_K2_s1.json /home/nvidia/r8ns/r9e2/runs/E2WISE_PLAN0/stageB/read/s6c/S6C_K0_s0.json /home/nvidia/r8ns/r9e2/runs/E2WISE_PLAN0/stageB/read/s6c/S6C_K0_s1.json -- see /home/nvidia/r8ns/r9e2/runs/E2WISE_PLAN0/stageB/AWAIT_S6C; exit 5, INPUTS.json NOT written, judge NOT run

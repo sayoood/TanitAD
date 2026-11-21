@@ -1,0 +1,117 @@
+{
+ "tool": "refe_ego_probe/1",
+ "tier": "T0",
+ "ckpt": "E:/Projects/TanitAD/data/refe_runs_eval/sft4_peek/model_sft4_B_u400.pt",
+ "ckpt_sha256": "8b4dba4818b5cc96c640fe892efe114037ace7cec9dda060c5b4cdd5fb92410d",
+ "n_tokens": 8,
+ "n_logs": 4,
+ "arms": [
+  "A0",
+  "A0r",
+  "AX0",
+  "AXP",
+  "AXM",
+  "DEAD",
+  "GREY",
+  "SWAP"
+ ],
+ "device": "cuda",
+ "rule": "navsim_v1_lane",
+ "goal_fix": "pdm_route",
+ "repair_last_heading": true,
+ "nav_mode": "goal",
+ "C1_determinism": {
+  "n": 4,
+  "n_tokens_total": 8,
+  "traj_bit_identical": 4,
+  "logit_bit_identical": 4,
+  "pick_equal": 4,
+  "trunk_bit_identical": 4,
+  "max_abs_traj_m": 0.0,
+  "max_abs_logit": 0.0,
+  "PASS": true
+ },
+ "C2_identity_vs_table": {
+  "n": 8,
+  "logit_bit_identical": 8,
+  "pick_equal": 8,
+  "max_abs_logit": 0.0,
+  "max_abs_props8_m": 0.0,
+  "PASS_strict": true,
+  "PASS_fallback": true
+ },
+ "C3_reachability": {
+  "A0": {
+   "n_ok": 8,
+   "n": 8
+  },
+  "A0r": {
+   "n_ok": 8,
+   "n": 8
+  },
+  "AX0": {
+   "n_ok": 8,
+   "n": 8
+  },
+  "AXP": {
+   "n_ok": 8,
+   "n": 8
+  },
+  "AXM": {
+   "n_ok": 8,
+   "n": 8
+  },
+  "DEAD": {
+   "n_ok": 8,
+   "n": 8
+  },
+  "GREY": {
+   "n_ok": 8,
+   "n": 8
+  },
+  "SWAP": {
+   "n_ok": 8,
+   "n": 8
+  }
+ },
+ "C3_failures_first10": [],
+ "C4_memo": {
+  "hits": 32,
+  "misses": 17,
+  "bypasses": 4,
+  "grey_hits": 7,
+  "grey_fresh_checks": 2,
+  "grey_fresh_checks_bit_identical": 2
+ },
+ "C5_ego_slots_real": {
+  "frac_yaw_rate_nonzero": 0.0,
+  "frac_steer_nonzero": 0.0,
+  "ax_pcts_1_50_99": [
+   -2.195538605749607,
+   -0.08372460212558508,
+   1.0834618458151815
+  ],
+  "ay_pcts_1_50_99": [
+   -0.23553201965987683,
+   0.6363377869129181,
+   2.9119074571132657
+  ]
+ },
+ "timing": {
+  "loop_s": 56.2,
+  "wall_s": 135.5,
+  "s_per_token": 7.021,
+  "mean_infer_s_per_arm": {
+   "A0": 2.888541877269745,
+   "A0r": 1.1837020516395569,
+   "AX0": 0.020489811897277832,
+   "AXP": 0.019909590482711792,
+   "AXM": 0.019269973039627075,
+   "DEAD": 0.02041149139404297,
+   "GREY": 0.44523102045059204,
+   "SWAP": 1.1559593379497528
+  }
+ },
+ "gt_valid_share": 1.0,
+ "controls_pass": true
+}

@@ -1,0 +1,84 @@
+{
+ "_what": "Stage A cross-arm aggregates AND the ONE-VARIABLE PROOF: that L1-RL-s0 and L1-NORL-s0 differ in exactly one thing, read off their own step-0 rows.",
+ "_evidence_class": "MEASURED (ours)",
+ "_why_this_file": "A flag in argv is a claim about the LAUNCH. These are the trainer's own per-step readings, which is a claim about the RUN. The control is admissible because the RL term measurably did nothing in it, not because --arm norl was typed.",
+ "step0_identity": {
+  "fields_compared": 44,
+  "identical": 35,
+  "differ": {
+   "fetch_s": {
+    "rl": 0.905,
+    "norl": 1.488
+   },
+   "frac_nonzero_adv_used": {
+    "rl": 0.236111119389534,
+    "norl": 0.0
+   },
+   "grad_norm": {
+    "rl": 29.060272216796875,
+    "norl": 3.0444931983947754
+   },
+   "grad_norm_clipped": {
+    "rl": 29.060272216796875,
+    "norl": 3.0444931983947754
+   },
+   "loss": {
+    "rl": 0.24668123479932547,
+    "norl": 0.06531604193150997
+   },
+   "param_delta_norm": {
+    "rl": 0.010238385759294033,
+    "norl": 0.01010840106755495
+   },
+   "rl_coef_abs_sum": {
+    "rl": 0.4386337101459503,
+    "norl": 0.0
+   },
+   "rl_part": {
+    "rl": 0.18136519264055523,
+    "norl": -2.272602661612666e-10
+   },
+   "wall_s": {
+    "rl": 3.5,
+    "norl": 6.1
+   }
+  },
+  "_note": "`timing` is excluded: it is wall-clock, not a state variable. Every field that differs is downstream of the RL term; every other field -- including il_matched_anchor_m, chain_endpoint_spread_m, reward_mean and frac_positive_after_bar -- is BIT-IDENTICAL, which is what proves same seed, same data order, same init."
+ },
+ "L1-RL-s0": {
+  "n_rows": 600,
+  "grad_norm_max": 216.7806,
+  "steps_clipped_over_100": 3,
+  "wall_s_last": 1875.5,
+  "rl_coef_abs_sum_first_last": [
+   0.438634,
+   0.374608
+  ],
+  "frac_nonzero_adv_used_first_last": [
+   0.236111,
+   0.021902
+  ],
+  "rl_part_first_last": [
+   0.18136519264055523,
+   -0.10363207521976989
+  ]
+ },
+ "L1-NORL-s0": {
+  "n_rows": 600,
+  "grad_norm_max": 79.7136,
+  "steps_clipped_over_100": 0,
+  "wall_s_last": 2056.8,
+  "rl_coef_abs_sum_first_last": [
+   0.0,
+   0.0
+  ],
+  "frac_nonzero_adv_used_first_last": [
+   0.0,
+   0.0
+  ],
+  "rl_part_first_last": [
+   -2.272602661612666e-10,
+   -1.3719750335816627e-10
+  ]
+ }
+}

@@ -1,0 +1,94 @@
+{
+ "gate": "C-REACH (planted)",
+ "recipe_source": "D:/Projects/TanitAD-artifacts/l2_offprop/recipe_chosen.json",
+ "planted_amp": 10.0,
+ "recipe": {
+  "lr": 0.001,
+  "epochs": 15,
+  "batch": 256,
+  "lam_bce": 10.0,
+  "betas": [
+   0.9,
+   0.999
+  ],
+  "eps": 1e-08,
+  "planted_amp": 10.0,
+  "prox": 0.3
+ },
+ "per_seed": {
+  "seed0": {
+   "A1_OOF_all": {
+    "point": 0.9983818770226537,
+    "lo": 0.9961098118497782,
+    "hi": 1.0,
+    "n_valid_resamples": 10000,
+    "den": 9888.0
+   },
+   "A1_OOF_lon": {
+    "point": 0.9983383528923045,
+    "lo": 0.9959863669745205,
+    "hi": 1.0,
+    "n_valid_resamples": 10000,
+    "den": 9629.0
+   },
+   "A1_OOF_lat": {
+    "point": 1.0,
+    "lo": 1.0,
+    "hi": 1.0,
+    "n_valid_resamples": 10000,
+    "den": 259.0
+   },
+   "steps_per_fold": [
+    465,
+    480,
+    480,
+    420,
+    510
+   ]
+  },
+  "seed1": {
+   "A1_OOF_all": {
+    "point": 0.9991909385113269,
+    "lo": 0.998228866534932,
+    "hi": 1.0,
+    "n_valid_resamples": 10000,
+    "den": 9888.0
+   },
+   "A1_OOF_lon": {
+    "point": 0.9991691764461522,
+    "lo": 0.9981701696477732,
+    "hi": 1.0,
+    "n_valid_resamples": 10000,
+    "den": 9629.0
+   },
+   "A1_OOF_lat": {
+    "point": 1.0,
+    "lo": 1.0,
+    "hi": 1.0,
+    "n_valid_resamples": 10000,
+    "den": 259.0
+   },
+   "steps_per_fold": [
+    465,
+    480,
+    480,
+    420,
+    510
+   ]
+  }
+ },
+ "A1_OOF_all_points": {
+  "seed0": 0.9983818770226537,
+  "seed1": 0.9991909385113269
+ },
+ "bar": 0.98,
+ "pass": true,
+ "seconds": 13.9,
+ "note": "reads the PLANTED arm only (a label-derived feature is appended on purpose); no unplanted head is trained or read.  Bar must hold on BOTH training seeds (MM addendum).",
+ "recipe_sha256": "c7f5b75b0a8f25f96c00dcc379ac583fa9c80622ce5600ad4af8387159119263",
+ "code_sha256": {
+  "l2lib.py": "942033d373868a3028686a564ee99cc476dc8d82b22fc19544afc0052e898b4b",
+  "gates.py": "9f74763b309700bd2daebbb44a7d2d20e471151392b2252fb7492e2a1a285bc1",
+  "synthetic.py": "a02e032ac747fa9c1b6dd139c3a52010ad09dc7030e7051d67ed910e019e0f85"
+ }
+}

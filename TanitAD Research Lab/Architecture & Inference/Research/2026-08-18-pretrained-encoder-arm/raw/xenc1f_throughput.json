@@ -1,0 +1,58 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060, wall clock)",
+ "eval_tier": "N/A - a cost measurement, not an eval",
+ "device": "NVIDIA GeForce RTX 4060",
+ "torch": "2.11.0+cu128",
+ "batch": 2,
+ "_scope_warning": "ENCODER PATH ONLY. The whole-step ratio is STRICTLY SMALLER than these ratios, because a real S-W step also runs a 189,960,707-param predictor and every loss. Quoting an encoder ratio as a step ratio is the wrong-scope family.",
+ "runs": {
+  "incumbent_ViT5Encoder": {
+   "batch": 2,
+   "iters": 8,
+   "warmup": 3,
+   "secs_per_iter_median": 0.19265,
+   "secs_per_iter_min": 0.19072,
+   "secs_per_iter_max": 0.19748,
+   "secs_per_window_median": 0.09633,
+   "windows_per_s": 10.381,
+   "peak_mem_GiB": 0.7709,
+   "_probe": "torch.cuda.max_memory_allocated() only",
+   "_scope": "ENCODER PATH ONLY (encoder -> readout), not a full train step"
+  },
+  "E-XENC-1_frozen": {
+   "batch": 2,
+   "iters": 8,
+   "warmup": 3,
+   "secs_per_iter_median": 0.13326,
+   "secs_per_iter_min": 0.13031,
+   "secs_per_iter_max": 0.13529,
+   "secs_per_window_median": 0.06663,
+   "windows_per_s": 15.008,
+   "peak_mem_GiB": 0.4262,
+   "_probe": "torch.cuda.max_memory_allocated() only",
+   "_scope": "ENCODER PATH ONLY (encoder -> readout), not a full train step"
+  },
+  "E-XENC-1F_trainable": {
+   "batch": 2,
+   "iters": 8,
+   "warmup": 3,
+   "secs_per_iter_median": 0.4136,
+   "secs_per_iter_min": 0.41109,
+   "secs_per_iter_max": 0.41883,
+   "secs_per_window_median": 0.2068,
+   "windows_per_s": 4.836,
+   "peak_mem_GiB": 2.8821,
+   "_probe": "torch.cuda.max_memory_allocated() only",
+   "_scope": "ENCODER PATH ONLY (encoder -> readout), not a full train step",
+   "backbone_tensors_without_grad": [
+    "embeddings.mask_token"
+   ],
+   "n_backbone_tensors_without_grad": 1
+  }
+ },
+ "ratios_vs_incumbent_ENCODER_PATH_ONLY": {
+  "incumbent_ViT5Encoder": 1.0,
+  "E-XENC-1_frozen": 0.6917,
+  "E-XENC-1F_trainable": 2.1469
+ }
+}

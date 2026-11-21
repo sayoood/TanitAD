@@ -1,0 +1,40 @@
+  50/400 episodes, 1400 windows, 4s
+  100/400 episodes, 2800 windows, 9s
+  150/400 episodes, 4200 windows, 13s
+  200/400 episodes, 5600 windows, 18s
+  250/400 episodes, 7001 windows, 22s
+  300/400 episodes, 8402 windows, 27s
+  350/400 episodes, 9803 windows, 31s
+  400/400 episodes, 11203 windows, 36s
+
+=== g_tac geometry census — n=11203 windows, d=400 episodes, stride=5, cache=physicalai-train-14231cd29c74 ===
+
+LAT:
+  CORRIDOR_OFFSET           7960   71.05 %
+  ABSTAIN                   1769   15.79 %
+  LAT_UNCONSTRAINED         1474   13.16 %
+LON:
+  LON_UNCONSTRAINED         8526   76.10 %
+  ABSTAIN                   2004   17.89 %
+  STOP_POINT                 673    6.01 %
+
+|lat_offset| (m), n=9434:
+  p50=5.525  p75=13.233  p90=22.172  p95=29.444  p99=53.658  max=84.827  mean=9.237
+
+CONTROL naive (refuted) gate: fired 8184/11203 = 73.05 %   vs curvature-relative 71.05 %
+
+CONTROL oracle circle = the CEILING any circular corridor can reach
+  overall: p50=1.891 m  p90=10.534 m  n=11003   (lane bar 0.75 m)
+        theta band   share       n  oracle p50  clears lane bar?
+  [0.00, 0.05)   25.6%    2818       0.128  YES
+  [0.05, 0.10)    8.3%     913       0.894  no
+  [0.10, 0.20)    9.9%    1090       1.711  no
+  [0.20, 0.50)   16.4%    1802       3.468  no
+  [0.50, 1.00)   17.5%    1928       6.208  no
+  [1.00,  inf)   22.3%    2452       4.820  no
+CONTROL synthetic bend R=100 v=20: offset=-0.00106 m token=LAT_UNCONSTRAINED -> PASS
+CONTROL synthetic bend R=300 v=30: offset=-0.00022 m token=LAT_UNCONSTRAINED -> PASS
+CONTROL constant-only: lat majority 0.7105, lon majority 0.761
+degenerate_lat=False degenerate_lon=False
+
+wrote TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-08-22-g-tac-geometry-floor/raw/census_train400_refuted_arm.json

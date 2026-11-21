@@ -1,0 +1,220 @@
+{
+ "schema": "v8f-speedsub-v1",
+ "claim": "H-V8F-SPEEDSUB-1",
+ "outcome": "PASS",
+ "detail": null,
+ "next": "T1-kin zero-training substitution of the banked ego read-out on the DAG-OACC / DAG-ORC base, both seeds, under its own PREREG (PREREG_V8F_SPEEDSUB section 6)",
+ "F_m": 0.1207,
+ "F_pass_m": 0.06035,
+ "controls": {
+  "0": {
+   "S1_identity_eq_own": true,
+   "S2_nonspeed_untouched": true,
+   "S3_tick_mirror": true,
+   "S4_eid_aligned": true,
+   "S5_own_eq_speedread_own": true,
+   "S6_gt_eq_speedread_gt": true,
+   "S7_ego_path_eq_identity_pred": true,
+   "S7b_identity_pred_eq_speedread_banked": true,
+   "S10_substitution_reaches_O": true,
+   "S8_readout_sha": true,
+   "S9_shuffle_registered_and_aligned": true
+  },
+  "1": {
+   "S1_identity_eq_own": true,
+   "S2_nonspeed_untouched": true,
+   "S3_tick_mirror": true,
+   "S4_eid_aligned": true,
+   "S5_own_eq_speedread_own": true,
+   "S6_gt_eq_speedread_gt": true,
+   "S7_ego_path_eq_identity_pred": true,
+   "S7b_identity_pred_eq_speedread_banked": true,
+   "S10_substitution_reaches_O": true,
+   "S8_readout_sha": true,
+   "S9_shuffle_registered_and_aligned": true
+  },
+  "S11_train_parity": true,
+  "S12_disjoint": true,
+  "S13_selection_rule_picks_mlp_ego": true,
+  "S6b_gt_delta_eq_speedread_read_json": {
+   "0": true,
+   "1": true
+  }
+ },
+ "rows": {
+  "0": {
+   "ego": {
+    "delta": -0.129,
+    "lo": -0.2107,
+    "hi": -0.0548
+   },
+   "egoshuf": {
+    "delta": 6.7181,
+    "lo": 5.6709,
+    "hi": 7.8141
+   },
+   "gt": {
+    "delta": -0.7164,
+    "lo": -0.8182,
+    "hi": -0.6234
+   },
+   "capture": 0.18006700167504186,
+   "regression_arm_separated_worse": true
+  },
+  "1": {
+   "ego": {
+    "delta": -0.0686,
+    "lo": -0.1151,
+    "hi": -0.0232
+   },
+   "egoshuf": {
+    "delta": 6.4923,
+    "lo": 5.3813,
+    "hi": 7.6678
+   },
+   "gt": {
+    "delta": -0.6676,
+    "lo": -0.7613,
+    "hi": -0.5753
+   },
+   "capture": 0.10275614140203715,
+   "regression_arm_separated_worse": true
+  }
+ },
+ "tier": "T1-class open loop (X_s's own held S / T outputs; only the five speed cells O reads are replaced)",
+ "tier_gt": "T0 (reads the eval GT): ceiling / control only, never a result",
+ "tier_regression": "deliberate-regression arm (the read-out's cells shuffled across windows): a control, never a result",
+ "estimator": "taniteval.ci.paired_episode_cluster_bootstrap, B=2000, seed 0; answers 'another draw of EPISODES' only (H-ESTIM-SEED-1)",
+ "readout_sha256": "a205609ab47325a0ad9c0141be8ae3a0fec653d59c6db17ec1cf0d460bf2316d",
+ "selected_readout": "mlp_ego",
+ "cells": {
+  "0": {
+   "T_own": {
+    "rmse": [
+     2.893956390703904,
+     1.9189585710501018,
+     2.79528202883946,
+     2.257062896104925,
+     2.0926707483921057
+    ],
+    "skill": [
+     0.8669598995565604,
+     0.9363999514657373,
+     0.8743591421696678,
+     0.9214110587712784,
+     0.9190776975551934
+    ]
+   },
+   "mlp_ego": {
+    "rmse": [
+     2.5403897171474754,
+     0.7516777450972616,
+     2.5570426100113286,
+     1.8607009105233692,
+     1.7142910417196433
+    ],
+    "skill": [
+     0.8974821967409977,
+     0.9902413524233672,
+     0.8948630054017513,
+     0.9465894247758337,
+     0.9456955355627659
+    ]
+   },
+   "const": {
+    "rmse": [
+     7.934155362680025,
+     7.609162785152064,
+     7.886061977569392,
+     8.051243147064667,
+     7.356424603281631
+    ],
+    "skill": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "n_present": [
+    2334,
+    2351,
+    2317,
+    2351,
+    2351
+   ],
+   "cells": [
+    "lon_v_target_ms",
+    "v_a_ms",
+    "v_end_ms",
+    "v_lo_ms",
+    "v_hi_ms"
+   ]
+  },
+  "1": {
+   "T_own": {
+    "rmse": [
+     2.7470247150504656,
+     1.3019804717882135,
+     2.691649326824768,
+     2.1425159163035583,
+     1.8019760700495646
+    ],
+    "skill": [
+     0.8801263489980359,
+     0.9707224190568788,
+     0.8835025054809259,
+     0.9291854941804549,
+     0.9399981746875036
+    ]
+   },
+   "mlp_ego": {
+    "rmse": [
+     2.5403897171474754,
+     0.7516777450972616,
+     2.5570426100113286,
+     1.8607009105233692,
+     1.7142910417196433
+    ],
+    "skill": [
+     0.8974821967409977,
+     0.9902413524233672,
+     0.8948630054017513,
+     0.9465894247758337,
+     0.9456955355627659
+    ]
+   },
+   "const": {
+    "rmse": [
+     7.934155362680025,
+     7.609162785152064,
+     7.886061977569392,
+     8.051243147064667,
+     7.356424603281631
+    ],
+    "skill": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "n_present": [
+    2334,
+    2351,
+    2317,
+    2351,
+    2351
+   ],
+   "cells": [
+    "lon_v_target_ms",
+    "v_a_ms",
+    "v_end_ms",
+    "v_lo_ms",
+    "v_hi_ms"
+   ]
+  }
+ }
+}

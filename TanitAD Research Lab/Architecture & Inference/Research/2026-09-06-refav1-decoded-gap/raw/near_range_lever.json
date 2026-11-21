@@ -1,0 +1,93 @@
+{
+ "task": "D-REFAV1-DK-DECODED -- near-range lever (two-stage CEILING)",
+ "evidence_class": "MEASURED (ours)",
+ "scope_warning": "the NEAR rows assume a PERFECT near/far gate. This is a CEILING on a two-stage design and is NOT a vision-only capability number.",
+ "decode_quality": {
+  "all_range_mae_m": 11.127780757374092,
+  "near_range_mae_m": 3.412975622451116,
+  "mean_shortfall_m_on_violating": 9.1
+ },
+ "rows": {
+  "ALL-RANGE head | ALL LEAD windows": {
+   "n_violating": 21,
+   "n_adequate": 69,
+   "n_no_pred": 0,
+   "sens_n": 16,
+   "sensitivity": 0.7619047619047619,
+   "spec_n": 61,
+   "specificity": 0.8840579710144928
+  },
+  "  pixel floor  | ALL LEAD windows": {
+   "n_violating": 21,
+   "n_adequate": 69,
+   "n_no_pred": 0,
+   "sens_n": 13,
+   "sensitivity": 0.6190476190476191,
+   "spec_n": 61,
+   "specificity": 0.8840579710144928
+  },
+  "  constant CTL | ALL LEAD windows": {
+   "n_violating": 21,
+   "n_adequate": 69,
+   "n_no_pred": 0,
+   "sens_n": 11,
+   "sensitivity": 0.5238095238095238,
+   "spec_n": 64,
+   "specificity": 0.927536231884058
+  },
+  "NEAR head      | NEAR (<=30 m) [ORACLE-GATED CEILING]": {
+   "n_violating": 16,
+   "n_adequate": 39,
+   "n_no_pred": 0,
+   "sens_n": 14,
+   "sensitivity": 0.875,
+   "spec_n": 29,
+   "specificity": 0.7435897435897436
+  },
+  "  pixel floor  | NEAR windows": {
+   "n_violating": 16,
+   "n_adequate": 39,
+   "n_no_pred": 0,
+   "sens_n": 13,
+   "sensitivity": 0.8125,
+   "spec_n": 29,
+   "specificity": 0.7435897435897436
+  },
+  "  constant CTL | NEAR windows": {
+   "n_violating": 16,
+   "n_adequate": 39,
+   "n_no_pred": 0,
+   "sens_n": 12,
+   "sensitivity": 0.75,
+   "spec_n": 30,
+   "specificity": 0.7692307692307693
+  },
+  "ALL-RANGE head | NEAR windows [attribution control]": {
+   "n_violating": 16,
+   "n_adequate": 39,
+   "n_no_pred": 0,
+   "sens_n": 12,
+   "sensitivity": 0.75,
+   "spec_n": 34,
+   "specificity": 0.8717948717948718
+  }
+ },
+ "near_vs_constant": {
+  "near_head": {
+   "sens": 0.875,
+   "spec": 0.7435897435897436
+  },
+  "constant": {
+   "sens": 0.75,
+   "spec": 0.7692307692307693
+  },
+  "reading": "\u26d4 the constant control very nearly clears BAR-2 on the NEAR subset too, so the bar is NOT a discriminating instrument there -- restricting to <=30 m removes exactly the windows a constant gets wrong. The discriminating statistic is the separation from the constant at MATCHED specificity, which the operating-point sweep reports, not a single pass/fail."
+ },
+ "BAR2_on_near_windows": {
+  "sensitivity": 0.875,
+  "bar": 0.8,
+  "specificity": 0.7435897435897436,
+  "bar_spec": 0.7,
+  "would_clear": true
+ }
+}

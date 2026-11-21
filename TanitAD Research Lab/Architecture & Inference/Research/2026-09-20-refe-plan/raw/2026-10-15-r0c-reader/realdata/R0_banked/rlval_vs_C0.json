@@ -1,0 +1,347 @@
+{
+ "arms": {
+  "C": {
+   "D_at_pick_mean": 0.0024598499999999995,
+   "PDMS_x100": 90.05977159722221,
+   "R_fan_mean_x100": 73.42565181202256,
+   "R_pick_x100": 84.72573221944445,
+   "fan_best_x100": 98.38969625,
+   "fan_random_x100": 77.4653425358073,
+   "g3": {
+    "max_allowed": 0.55,
+    "min_allowed": 0.894,
+    "note": "bounds are the review's, derived from a navtest baseline (0.914 pick/fan-mean, shortest-bin 0.506); applied to RL-val here",
+    "pick_ok": true,
+    "pick_over_fan_mean_path": 0.925160547073932,
+    "share_ok": true,
+    "shortest_bin_share": 0.4046666666666667
+   },
+   "n_logs": 75,
+   "n_sets": 3000,
+   "skill": 0.6019028942754056,
+   "slow_pick_telemetry": {
+    "longest_bin_share": 0.123,
+    "mean_fan_path_m": 19.70611780739616,
+    "mean_pick_path_m": 17.761917368223845,
+    "median_rank_by_length_0_longest": 47.5,
+    "n": 3000,
+    "pick_length_quintile_shares_shortest_first": [
+     0.4046666666666667,
+     0.23266666666666666,
+     0.15966666666666668,
+     0.08,
+     0.123
+    ],
+    "pick_over_fan_mean_path": 0.925160547073932,
+    "share_pick_shorter_than_fan_median": 0.735,
+    "shortest_bin_share": 0.4046666666666667
+   },
+   "subscores_x100": {
+    "C": 100.0,
+    "DAC": 97.66666666666667,
+    "DDC": 98.16666666666667,
+    "EP": 83.06391966666666,
+    "NC": 99.3,
+    "TTC": 96.66666666666667
+   },
+   "unsafe_picks": 171,
+   "zero_picks": 90
+  },
+  "R": {
+   "D_at_pick_mean": 0.002814523333333334,
+   "PDMS_x100": 91.22299347222223,
+   "R_fan_mean_x100": 73.42565181202256,
+   "R_pick_x100": 87.35471406388889,
+   "fan_best_x100": 98.38969625,
+   "fan_random_x100": 77.4653425358073,
+   "g3": {
+    "max_allowed": 0.55,
+    "min_allowed": 0.894,
+    "note": "bounds are the review's, derived from a navtest baseline (0.914 pick/fan-mean, shortest-bin 0.506); applied to RL-val here",
+    "pick_ok": true,
+    "pick_over_fan_mean_path": 0.985770272869142,
+    "share_ok": true,
+    "shortest_bin_share": 0.30566666666666664
+   },
+   "n_logs": 75,
+   "n_sets": 3000,
+   "skill": 0.6574946650363352,
+   "slow_pick_telemetry": {
+    "longest_bin_share": 0.186,
+    "mean_fan_path_m": 19.70611780739616,
+    "mean_pick_path_m": 18.75196496631474,
+    "median_rank_by_length_0_longest": 39.0,
+    "n": 3000,
+    "pick_length_quintile_shares_shortest_first": [
+     0.30566666666666664,
+     0.20133333333333334,
+     0.17766666666666667,
+     0.12933333333333333,
+     0.186
+    ],
+    "pick_over_fan_mean_path": 0.985770272869142,
+    "share_pick_shorter_than_fan_median": 0.6086666666666667,
+    "shortest_bin_share": 0.30566666666666664
+   },
+   "subscores_x100": {
+    "C": 100.0,
+    "DAC": 97.93333333333332,
+    "DDC": 97.28333333333333,
+    "EP": 86.53820999999999,
+    "NC": 99.0,
+    "TTC": 95.66666666666667
+   },
+   "unsafe_picks": 191,
+   "zero_picks": 90
+  }
+ },
+ "base": "C",
+ "eligibility": {
+  "missing_pdm": 0,
+  "missing_terms": 0,
+  "path_lengths_missing": 0,
+  "rl_val_logs": 75,
+  "rl_val_scene_coverage": 1.0,
+  "rl_val_scenes": 3000,
+  "rl_val_scenes_with_a_used_set": 3000,
+  "scored_sets_per_arm": {
+   "C": 3000,
+   "R": 3000
+  },
+  "sets_scored_by_every_arm": 3000,
+  "sets_used": 3000,
+  "stale_or_mismatched_ckpt": 0
+ },
+ "estimator": "paired log-cluster bootstrap (cluster unit log_name), 10000 resamples, 95 %, seed 20260927; proxy_eval.boot, the estimator of eval/stage3_full.py. It answers 'another draw of LOGS' only; training variance (one seed per arm) and inference variance are NOT measured here.",
+ "inputs": {
+  "pdm_dir": "pdm_val",
+  "pdm_stats": {
+   "bad_pdms": 0,
+   "duplicates": 0,
+   "lines": 3000
+  },
+  "rl_val_scenes_sha256": "39f425dc3f0866ec6e6bb4e553e85f19287e65273e261d6743dd9c2ad5b8b24c",
+  "scores_sha256": {
+   "C": "5a524381fa8075dd5d74ca390525dada829935770403d2f7fb8ea431cebdb9f5",
+   "R": "65dcd60e12744717ec535cbbbc07d4aa6ef4f52a8be1438baf98c1ac232aea46"
+  },
+  "terms_stats": {
+   "bad": 0,
+   "lines": 3000
+  }
+ },
+ "not_computed": [
+  "four metric families (read on the full navtest endpoint)",
+  "g4 longitudinal bias rows (need plan-vs-reference traces, not in the lookup)"
+ ],
+ "paired_vs_base": {
+  "R": {
+   "K4": {
+    "bound": 0.5,
+    "breach": false,
+    "note": "K4 stops an arm on TWO consecutive checks; one breach here is a flag, not the stop",
+    "pdms_delta": 1.163221875
+   },
+   "adverse": [
+    "DDC",
+    "TTC"
+   ],
+   "g5": {
+    "NC_fall_ok": true,
+    "TTC_fall_ok": false,
+    "bound": 0.5,
+    "note": "point deltas, x100 units; review g5 'NC and TTC may not fall by > 0.5 each versus control'"
+   },
+   "n_sets": 3000,
+   "primary": {
+    "adverse": false,
+    "arm_mean_x100": 91.22299347222223,
+    "base_mean_x100": 90.05977159722221,
+    "better": 1231,
+    "ci95": [
+     0.5873357050786489,
+     1.7367502573800964
+    ],
+    "mean": 1.163221875,
+    "n": 3000,
+    "n_logs": 75,
+    "tied": 1319,
+    "worse": 450
+   },
+   "quantities": {
+    "C": {
+     "adverse": false,
+     "arm_mean_x100": 100.0,
+     "base_mean_x100": 100.0,
+     "better": 0,
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "mean": 0.0,
+     "n": 3000,
+     "n_logs": 75,
+     "tied": 3000,
+     "worse": 0
+    },
+    "D": {
+     "arm_mean_x100": 0.28145233333333336,
+     "base_mean_x100": 0.24598499999999995,
+     "better": 35,
+     "ci95": [
+      -0.055781447890554295,
+      0.1589961924064434
+     ],
+     "mean": 0.03546733333333334,
+     "n": 3000,
+     "n_logs": 75,
+     "tied": 2929,
+     "worse": 36
+    },
+    "DAC": {
+     "adverse": false,
+     "arm_mean_x100": 97.93333333333332,
+     "base_mean_x100": 97.66666666666667,
+     "better": 23,
+     "ci95": [
+      -0.21521622734691956,
+      0.7332402234636871
+     ],
+     "mean": 0.26666666666666666,
+     "n": 3000,
+     "n_logs": 75,
+     "tied": 2962,
+     "worse": 15
+    },
+    "DDC": {
+     "adverse": true,
+     "arm_mean_x100": 97.28333333333333,
+     "base_mean_x100": 98.16666666666667,
+     "better": 2,
+     "ci95": [
+      -1.4214320243410015,
+      -0.451231485975792
+     ],
+     "mean": -0.8833333333333333,
+     "n": 3000,
+     "n_logs": 75,
+     "tied": 2951,
+     "worse": 47
+    },
+    "EP": {
+     "adverse": false,
+     "arm_mean_x100": 86.53820999999999,
+     "base_mean_x100": 83.06391966666666,
+     "better": 1249,
+     "ci95": [
+      2.7185666948039504,
+      4.267348525876657
+     ],
+     "mean": 3.4742903333333337,
+     "n": 3000,
+     "n_logs": 75,
+     "tied": 1337,
+     "worse": 414
+    },
+    "NC": {
+     "adverse": false,
+     "arm_mean_x100": 99.0,
+     "base_mean_x100": 99.3,
+     "better": 4,
+     "ci95": [
+      -0.6521048042982095,
+      0.0
+     ],
+     "mean": -0.3,
+     "n": 3000,
+     "n_logs": 75,
+     "tied": 2982,
+     "worse": 14
+    },
+    "PDMS": {
+     "adverse": false,
+     "arm_mean_x100": 91.22299347222223,
+     "base_mean_x100": 90.05977159722221,
+     "better": 1231,
+     "ci95": [
+      0.5873357050786489,
+      1.7367502573800964
+     ],
+     "mean": 1.163221875,
+     "n": 3000,
+     "n_logs": 75,
+     "tied": 1319,
+     "worse": 450
+    },
+    "R": {
+     "adverse": false,
+     "arm_mean_x100": 87.35471406388889,
+     "base_mean_x100": 84.72573221944445,
+     "better": 1244,
+     "ci95": [
+      1.9396058200593649,
+      3.325827866380416
+     ],
+     "mean": 2.6289818444444446,
+     "n": 3000,
+     "n_logs": 75,
+     "tied": 1286,
+     "worse": 470
+    },
+    "TTC": {
+     "adverse": true,
+     "arm_mean_x100": 95.66666666666667,
+     "base_mean_x100": 96.66666666666667,
+     "better": 29,
+     "ci95": [
+      -1.7009477954315677,
+      -0.33509824231910684
+     ],
+     "mean": -1.0,
+     "n": 3000,
+     "n_logs": 75,
+     "tied": 2912,
+     "worse": 59
+    }
+   }
+  }
+ },
+ "paths_loaded": true,
+ "reward_cfg": {
+  "guard": true,
+  "lam_d": 0.15,
+  "use_k": false,
+  "use_l": false,
+  "w_prog": 0.5
+ },
+ "rl_val_scenes_checked": true,
+ "rule": "navsim_v1_lane",
+ "selfcheck": {
+  "selfpair": {
+   "all_quantities_exactly_zero": true,
+   "ci95": [
+    0.0,
+    0.0
+   ],
+   "mean": 0.0,
+   "ok": true
+  },
+  "swap": {
+   "ok": true,
+   "per_quantity": {
+    "C": true,
+    "D": true,
+    "DAC": true,
+    "DDC": true,
+    "EP": true,
+    "NC": true,
+    "PDMS": true,
+    "R": true,
+    "TTC": true
+   },
+   "tolerance": 1e-12
+  }
+ },
+ "tier": "lookup of the true NAVSIM v1.1 PDMS of the scorer's pick on RL-val sets of the frozen fan (open-loop plan, pseudo-simulation); selection of hyper-parameters / early stops only, never an endpoint",
+ "tool": "rl_val_eval/1"
+}

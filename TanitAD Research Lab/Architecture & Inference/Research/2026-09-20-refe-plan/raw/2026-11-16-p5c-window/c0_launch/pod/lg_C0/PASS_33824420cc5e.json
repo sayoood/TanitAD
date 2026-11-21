@@ -1,0 +1,213 @@
+{
+ "binding": {
+  "argv": [
+   "--backbone",
+   "vitl16",
+   "--targets",
+   "/workspace/data/refe_navtrain/train_grow_cmd_3c_p7",
+   "--images",
+   "/workspace/data/navtrain_pixels",
+   "--calib",
+   "/workspace/data/refe_p7/p7_reserve/calib/calib_table.json",
+   "--metric-cache",
+   "/workspace/data/refe_navtrain/metric_cache",
+   "--scorer-sees-trunk",
+   "--yaw-wrap",
+   "off",
+   "--nav-mode",
+   "command",
+   "--labeller",
+   "online",
+   "--label-workers",
+   "13",
+   "--label-chunks",
+   "2",
+   "--init-from",
+   "/workspace/data/refe_runs/p7_reserve_head/model_final.pt",
+   "--epochs",
+   "0",
+   "--steps",
+   "2000",
+   "--epoch-unit",
+   "scenes",
+   "--batch",
+   "4",
+   "--accum",
+   "64",
+   "--lr",
+   "5e-5",
+   "--weight-decay",
+   "0.01",
+   "--amp",
+   "bf16",
+   "--score-w",
+   "0.1",
+   "--w-field",
+   "0.0",
+   "--ego-yaw-table",
+   "/workspace/data/refe_navtrain/ego_yaw_navtrain.json.gz",
+   "--seed",
+   "0",
+   "--tf32",
+   "--compile",
+   "--workers",
+   "2",
+   "--log-every",
+   "1",
+   "--ckpt-every-min",
+   "20",
+   "--out",
+   "/workspace/data/refe_runs/p5c_c0",
+   "--resume"
+  ],
+  "argv_sha256": "cad9cc4a02a7bdfcee6b41c4108ba60fe3b87d128ed3110c6cbc84ffd84bb37c",
+  "commit": "33824420cc5e73471d74d669bd260ff76c00e3f8",
+  "data": {
+   "--calib": {
+    "bytes": 2108538,
+    "kind": "file",
+    "method": "sha256-v1",
+    "path": "/workspace/data/refe_p7/p7_reserve/calib/calib_table.json",
+    "sha256": "cfa287b8c76ca3cd657392d56cdfbb23458d0a72c406db50022ffb8cc841138a"
+   },
+   "--ego-yaw-table": {
+    "bytes": 2018782,
+    "kind": "file",
+    "method": "sha256-v1",
+    "path": "/workspace/data/refe_navtrain/ego_yaw_navtrain.json.gz",
+    "sha256": "3a0873cc1302afa45a960235a063d20699608236669eced5d8074fae69215a55"
+   },
+   "--images": {
+    "bytes": 77507226902,
+    "kind": "dir",
+    "listing_sha256": "05231a36178681691eb689d374e6163626ad83fa4eda8a6e2986a0c2ab4a6538",
+    "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; _v2manifest.pt excluded -- a cache rewrites it on first use)",
+    "n_files": 372552,
+    "path": "/workspace/data/navtrain_pixels"
+   },
+   "--init-from": {
+    "bytes": 1298292047,
+    "kind": "file",
+    "method": "sha256-v1",
+    "path": "/workspace/data/refe_runs/p7_reserve_head/model_final.pt",
+    "sha256": "2613fc17b9e5d63342c9f42120c5612a6ec7061fda72f83dac46ddd2e70fd3fe"
+   },
+   "--metric-cache": {
+    "bytes": 41047312372,
+    "kind": "dir",
+    "listing_sha256": "79c7ba964ccc3a7a1494112362dc7a9e928c3da033b27de9f15f04086186d100",
+    "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; _v2manifest.pt excluded -- a cache rewrites it on first use)",
+    "n_files": 112589,
+    "path": "/workspace/data/refe_navtrain/metric_cache"
+   },
+   "--targets": {
+    "bytes": 519051148,
+    "kind": "dir",
+    "listing_sha256": "804c80a42cb1b9a0d6697c535a9dec3ba8ca72116ceae91a6a4ff696ee7c40fc",
+    "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; _v2manifest.pt excluded -- a cache rewrites it on first use)",
+    "n_files": 3,
+    "path": "/workspace/data/refe_navtrain/train_grow_cmd_3c_p7"
+   },
+   "gate:egr_json": {
+    "bytes": 715,
+    "kind": "file",
+    "method": "sha256-v1",
+    "path": "/workspace/data/refe_p5c/evidence_c0/egr/g_egr_result.json",
+    "sha256": "cdd16b9887f27155b13da180aeb61d2ac007ce9d291414df26695155ef6daac9"
+   },
+   "gate:lab_json": {
+    "bytes": 370,
+    "kind": "file",
+    "method": "sha256-v1",
+    "path": "/workspace/data/refe_p5c/evidence_c0/lab.json",
+    "sha256": "d6bd6bbfb9d4b0f7b9d2fdf39cf44008243270ade5cca76876db0006d5adf81e"
+   },
+   "gate:mem_metrics": {
+    "bytes": 4603,
+    "kind": "file",
+    "method": "sha256-v1",
+    "path": "/workspace/data/refe_p5c/evidence_c0/mem_metrics.jsonl",
+    "sha256": "cb01f6f8810de3727b563a71493f136d636c5aadfe93a489231b5ca81d7abeac"
+   }
+  },
+  "data_sha256": "116d5a5c2fc72c47bdd4d7c2cd2e76681ffd309b1eeb39dec2d3ecba8e163e50",
+  "gate_inputs": {
+   "gate:egr_json": "/workspace/data/refe_p5c/evidence_c0/egr/g_egr_result.json",
+   "gate:lab_json": "/workspace/data/refe_p5c/evidence_c0/lab.json",
+   "gate:mem_metrics": "/workspace/data/refe_p5c/evidence_c0/mem_metrics.jsonl"
+  },
+  "profile": "refe_p5c_c0",
+  "trainer": "refe/train.py",
+  "tree_sha256": "945f405c87f5be56ec6be86c88b9168a8a70193d4970cb360a73c74c2fd7b39d"
+ },
+ "checks": {
+  "G-CKPT": {
+   "evidence_sha256": "da075b03c3623f4ae05d24f907edeaf32bf8100383c90893ce9a19875c4562ab",
+   "finished_utc": "2026-11-16T18:35:15Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-CLOCK": {
+   "evidence_sha256": "5eba3c0c8ae207f83fa3941bb89654cab4d1b81637a135e0d414bf81ff9a38cd",
+   "finished_utc": "2026-11-16T18:36:21Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-DVB": {
+   "evidence_sha256": "654bf78486b2736ef28aff36bf67daf20fc22542c06b11e560779433222899a6",
+   "finished_utc": "2026-11-16T18:36:11Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-EGR": {
+   "evidence_sha256": "3b26b4ff31b8eb803b4d4d34d4e983e650d2363659d47bd8e6573271c81978ea",
+   "finished_utc": "2026-11-16T18:51:36Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-EVAL": {
+   "evidence_sha256": "963e1c74bccaeb798ce405fe406bd1c48158bd716beccdf87c8ee19484b4954f",
+   "finished_utc": "2026-11-16T18:36:36Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-HYG": {
+   "evidence_sha256": "4e464aafd2397666d2e47de93106d29532a031841719a2011e9c983e7c66ea6e",
+   "finished_utc": "2026-11-16T18:36:09Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-LIVE": {
+   "evidence_sha256": "0c1fdc4ec18f9354bd64cfa9cc7055b2ac9ddf9b804105ba4823087534716f61",
+   "finished_utc": "2026-11-16T18:36:21Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-LIVE-LAB": {
+   "evidence_sha256": "7acc1fe36ee80af7915e8b9e235d2dc81043cd3c4b191e42ed3664f5535254fc",
+   "finished_utc": "2026-11-16T18:51:36Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-LIVE-MEM": {
+   "evidence_sha256": "6941b291018523fec6d1420cd6c3d5fe6511850bb173b22e15b0540d7749cfa5",
+   "finished_utc": "2026-11-16T18:51:36Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-SUITE": {
+   "evidence_sha256": "03576409638a6a3c8dbf05aa135d7f1e623c54c34a0dc43cce2298db18f660a5",
+   "finished_utc": "2026-11-16T18:51:36Z",
+   "reasons": [],
+   "status": "PASS"
+  }
+ },
+ "created_utc": "2026-11-16T18:51:48Z",
+ "gate_sha256": "9df171953938b31754609d12bf0929cd0ac73aced4cac202643c3fbac77067be",
+ "hmac_sha256": "a800c69cf7c8df8d274433269d5abfe2a612ee2de3d8cd31352f02a2fe65f0bd",
+ "key_id": "78fe0a954b6832b5",
+ "kind": "launch-gate-token",
+ "reasons": [],
+ "schema": "tanitad.launch_gate/1",
+ "verdict": "PASS"
+}

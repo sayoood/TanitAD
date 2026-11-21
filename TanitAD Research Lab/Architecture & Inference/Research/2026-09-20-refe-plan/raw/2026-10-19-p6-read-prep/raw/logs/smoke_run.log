@@ -1,0 +1,58 @@
+[2026-10-19T11:38:03+0200] smoke: 3 tokens of 2021.10.05.06.24.06_veh-50_00717_01300, device cpu, RAM available 7.70 GB
+{
+ "what": "CPU smoke of the landed S0 dump script (fan path) against S0's banked fan logits",
+ "ckpt": "D:/Projects/TanitAD/data/refe_runs_eval/p2/model_final.pt",
+ "device": "cpu",
+ "unit": "L1b95fda46f",
+ "log": "2021.10.05.06.24.06_veh-50_00717_01300",
+ "tokens": [
+  "000c188876bf5dba",
+  "03db2416cdf053cb",
+  "054cdd17191c5952"
+ ],
+ "dump_rc": 0,
+ "seconds": 131.6,
+ "peak_rss_gb": 3.06,
+ "tolerance_logits": 0.005,
+ "tokens_compared": [
+  {
+   "token": "000c188876bf5dba",
+   "max_abs_logit_diff_cpu_vs_s0_gpu": 0.0007486343383789062,
+   "pass": true,
+   "pick_cpu": 45,
+   "pick_s0": 45,
+   "pick_equal": true,
+   "s0_pick_margin_top1_minus_top2_aggregate": 0.00970639729766376,
+   "fingerprint_equal": true,
+   "negative_control_max_abs_diff_vs_other_token": 4.863880395889282,
+   "negative_control_reads_FAIL": true
+  },
+  {
+   "token": "03db2416cdf053cb",
+   "max_abs_logit_diff_cpu_vs_s0_gpu": 0.0008056089282035828,
+   "pass": true,
+   "pick_cpu": 48,
+   "pick_s0": 48,
+   "pick_equal": true,
+   "s0_pick_margin_top1_minus_top2_aggregate": 0.0027347453935231414,
+   "fingerprint_equal": true,
+   "negative_control_max_abs_diff_vs_other_token": 3.884653091430664,
+   "negative_control_reads_FAIL": true
+  },
+  {
+   "token": "054cdd17191c5952",
+   "max_abs_logit_diff_cpu_vs_s0_gpu": 0.0012841224670410156,
+   "pass": true,
+   "pick_cpu": 8,
+   "pick_s0": 8,
+   "pick_equal": true,
+   "s0_pick_margin_top1_minus_top2_aggregate": 0.0006311488901071804,
+   "fingerprint_equal": true,
+   "negative_control_max_abs_diff_vs_other_token": 3.8991894721984863,
+   "negative_control_reads_FAIL": true
+  }
+ ],
+ "max_abs_logit_diff": 0.0012841224670410156,
+ "PASS": true,
+ "NOT_REPRODUCED": "the SET path (score_trajectories on the stored fit sets' traj3): the stored trajectories live only on the pod (`/workspace/data/refe_navtrain/onpolicy/sets`) and S0's work/sets was deleted after the bank was banked; the pod is off limits to this step.  The fan path above is the same forward, the same weights and the same hooks; the set path differs only in the trajectories it is fed."
+}

@@ -1,0 +1,33 @@
+C:\Users\Admin\mmhbc\patched\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_vdac_hb.py:126: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+  return float(bce), float(hub)
+mutation arm                                                                                     result  how
+launch_gate pinned argv: HBC-s0 with cell dropped                                                RED     pinned_argv_refusals non-empty
+launch_gate pinned argv: HBC-s0 with bw dropped                                                  RED     pinned_argv_refusals non-empty
+launch_gate pinned argv: HBC-s0 with lora lr dropped                                             RED     pinned_argv_refusals non-empty
+launch_gate pinned argv: HBC-s0 with trunk lora off                                              RED     pinned_argv_refusals non-empty
+launch_gate pinned argv: HBC-s0 with batch 8                                                     RED     pinned_argv_refusals non-empty
+CLI: HBC with aux_drv_lora_lr=None refused (a lever declared, not built)                         RED     needs --aux-drv-lora-lr
+CLI: HBC with aux_drv_trunk_lora='off' refused (a lever declared, not built)                     RED     --aux-drv-lora-lr is set but
+CLI: HBC with aux_drv_bw=0.0 refused (a lever declared, not built)                               RED     --aux-drv-bw-band-m is set but --aux-drv-bw is 0
+pod script: HBC-s0 ALLOC dropped                                                                 RED     the trainer's environment reads UNSET
+postgate WITHOUT --n-params on a 1 m arm (the chain before this edit)                            RED     head has 2440450
+postgate: a head count that is not the built one                                                 RED     head has
+module: bw 3 named, weight line deleted from the loss                                            RED     weight not applied
+module: the 1 m query tensor frozen (the head's 5,120 queries do not train)                      RED     NO gradient
+module: the head's backward never runs (the loss does not reach the head or the copy)            RED     NO gradient
+module: a dead weight-0 control (a probe that cannot read zero)                                  RED     EXACTLY 0.0
+G21 on the 1 m rig under REFE_AUX_MUTATE_HB_P6CTX (head reads P6's ctx)                          RED     NO gradient
+G21 on the 1 m rig under REFE_AUX_MUTATE_HB_DETACH (copy detached)                               RED     NO gradient
+G21 on the 1 m rig under REFE_AUX_MUTATE_HB_SHARE (shared copy)                                  RED     copy_storage_disjoint
+G21 on the 1 m rig under REFE_AUX_MUTATE_HB_UNFREEZE_SP (P6 scene_proj unfrozen)                 RED     requires_grad True
+module: the 1 m head reads P6's ctx: its queries train, the copy does not                        RED     LoRA tensor holds NO gradient
+trainer: the select_actx wiring line DELETED (1 m head, copy never trained)                      RED     NO gradient
+trainer: cell AND bw dropped from the build while HB is built (declared 1 m, built 2 m)          RED     --aux-drv-cell
+trainer: ONLY the boundary weight dropped from the build (1 m head built, copy built, weight 1 / RED     --aux-drv-bw
+trainer: the copy not built while the 1 m head is (G-DVB aux_drv_trunk_lora)                     RED     aux_hb
+trainer: HB.lora_step line deleted (HBC)                                                         RED     the reachability check (copy moved) fails
+HBC preflight under REFE_AUX_MUTATE_HB_P6CTX (head reads P6's ctx)                               RED     rc != 0, no PREFLIGHT_PASS.json
+HBC preflight under REFE_AUX_MUTATE_HB_DETACH (copy detached)                                    RED     rc != 0, no PREFLIGHT_PASS.json
+trainer: the shuffle seed dropped from the label source (the control would train on TRUE labels) RED     --aux-drv-shuffle-seed
+ZZTEST_PASS 97

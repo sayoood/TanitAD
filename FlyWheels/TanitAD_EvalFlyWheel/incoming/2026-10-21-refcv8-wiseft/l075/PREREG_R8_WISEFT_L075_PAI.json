@@ -1,0 +1,24 @@
+{
+ "id": "R8-WISEFT-L075-PAI",
+ "filed": "2026-10-21 16:57 Europe/Berlin (clock read 16:57:10), BEFORE the theta_0.75 PhysicalAI battery is launched; no theta_0.75 PhysicalAI number exists on any surface",
+ "status": "PRE-REGISTERED lever test; changes no registered verdict; no navtest read",
+ "why": "theta_0.5 FAILS SHIP-R8 on clause (2) only (fd020a6): E1 = S2 ADE of RETIME_DEPLOY8 - ha0_ext_pose +0.0014 [-0.0095, +0.0120] / +0.0012, a tie, where EMA-48,852 reads -0.0342 [-0.0474, -0.0216] / -0.0329 (separated). The paired theta_0.5 - EMA-48,852 S2 read localises the loss to progress at <= 2 s (ADE +0.043, along-track +0.083, both separated). On the registered navtrain sample theta_0.75 keeps most of the NavSim gain: 71.12 / 71.03, minus EMA-48,852 +7.73 [+6.06, +9.75] / +8.01 (log level; admissible under the stage-1 rule). Rule Zero's next arm: move lambda toward refcv8 as trained until E1 separates.",
+ "arm": {
+  "theta_0.75": "0.25 x refcv7-50,400 + 0.75 x refcv8 EMA-48,852 on the 1,027 shared float keys; the 34 refcv8-only keys and 104 non-float keys from EMA-48,852 (build_wiseft.py on Thor, e8911b1; readback bit-exact; |theta - theta8| / |theta7 - theta8| = 0.2500)",
+  "ckpt": "ckpt_wiseft_l0p75.pt, md5 dc5a3a5a428e3a6af685fa109a9dae38 (pulled to the dev box and re-hashed 16:55)"
+ },
+ "instrument": {
+  "battery": "run_bcand.sh = run_bwise050.sh (the theta_0.5 run: 9,083 s, feed parity PASS both seeds) parameterised by ckpt / md5 / tag / job / label ONLY; seeds 0,1, perframe_full, the shared dev-box GPU lock; tree stepwise075_pf",
+  "verdict": "wise_ship_lane.sh UNCHANGED: SHIP-R8 AMENDMENT 3 in a private pf package with the REGISTERED per-frame RETIME table (installed sha256 2aacc9ff...); its control mode reproduced the banked step48852ema_pf verdict clause by clause at 14:16",
+  "beside": "paired_48852_wise075.py = paired_48852_wise050.py relabelled (tree / label / outdir / prose only): theta_0.75 - EMA-48,852 per family on the same windows, paired episode-cluster bootstrap; diagnostic, never a bar"
+ },
+ "rule": "R8-WISEFT-PAI (44eec8f) UNCHANGED: every SHIP-R8 AMENDMENT 3 clause applied to the candidate's tree exactly as to EMA-48,852's.",
+ "committed_outcomes": {
+  "PASS": "theta_0.75 keeps refcv8's PhysicalAI SHIP-R8 pass while carrying +7.7 navtrain PDMS over EMA-48,852; it enters the family selection below",
+  "FAIL_E1_only": "the lambda trade-off does not restore the 2 s precision at 0.75: no lambda in the built grid {0.5, 0.75} is ship-eligible; next lever = the R8-WISEFT-MOD locus arm (if one exists) under the same rule, else the training-side refcv9 recipe; the two-deliverable PI item stands",
+  "FAIL_other": "stated with its clause(s); theta_0.75 is not a candidate"
+ },
+ "family_selection": "REGISTERED NOW, before any theta_0.75 or MOD-arm PhysicalAI number: the single-deliverable WiSE candidate = among {theta_0.75, the R8-WISEFT-MOD locus arm if one exists} the arm that PASSES SHIP-R8 with the HIGHEST mean navtrain PDMS (registered sample, R8_LEGAL seeds 0/1). theta_0.5 is excluded by its banked FAIL. None passes => stated; the PI chooses between two deliverables (theta_0.5 for NavSim, EMA-48,852 for PhysicalAI) and a training-side fix.",
+ "navtest": "NO navtest read is run under this registration. navtest has been read for EMA-48,852 (the option-(b) report) and for theta_0.5 (R8-WISEFT stage 2); a third read in the same family is a PI decision, filed beside the result.",
+ "tier": "T1 self-action OPEN LOOP on logged eval139 frames (the SHIP-R8 tier); one training seed; inference seeds 0/1"
+}

@@ -1,0 +1,52 @@
+PREREG_N1D_T0T1  READ  (card sha256 5ef1ba4f142b380bd2d4bfbd426070e0bcc93587b53554d0217fb9110c85d9f7, verified)
+tier: T0 = tick-0 open-loop plan (dump ol) vs T1-kin = rolled 6 s track (dump cl, m=10 causal); label = read_otband.labels 3-class kinematic; evidence: MEASURED (ours, banked NAVRBD D1-HO dumps, CPU, zero training)
+estimator: taniteval.ci.paired_episode_cluster_bootstrap B 2000 seed 0 over 497 episodes ('another draw of EPISODES' only); levels use episode_cluster_bootstrap. bar 0.0383. windows 5736 / episodes 497.
+
+LABEL (overall): DECODE-LOSES  (both seeds agree)
+  N1D_s0: DECODE-LOSES  T0-T1 +0.0070 [-0.0155,+0.0274] (bar +0.0383 not met); F-PLAN tree acc 0.7028 minus T0 acc 0.6266 = +0.0762 (point difference between two estimators, bar 0.0383 met)
+  N1D_s1: DECODE-LOSES  T0-T1 -0.0150 [-0.0348,+0.0026] (bar +0.0383 not met); F-PLAN tree acc 0.6937 minus T0 acc 0.6349 = +0.0588 (point difference between two estimators, bar 0.0383 met)
+
+== TAC-LAT accuracy per arm (point [95% episode-cluster CI]) ==
+  N1D_s0: T0 0.6266 [0.6055,0.6468]   T1 0.6196 [0.5983,0.6419]
+  N1D_s1: T0 0.6349 [0.6141,0.6544]   T1 0.6499 [0.6296,0.6699]
+  N1R_s0: T0 0.6102 [0.5885,0.6308]   T1 0.5905 [0.5695,0.6122]
+  N1R_s1: T0 0.6194 [0.5984,0.6393]   T1 0.6328 [0.6125,0.6535]
+
+== T0 - T1 per arm (paired) ==
+  N1D_s0: +0.0070 [-0.0155, +0.0274] not separated (n 5736/497 ep)
+  N1D_s1: -0.0150 [-0.0348, +0.0026] not separated (n 5736/497 ep)
+  N1R_s0: +0.0197 [-0.0026, +0.0405] not separated (n 5736/497 ep)
+  N1R_s1: -0.0134 [-0.0334, +0.0059] not separated (n 5736/497 ep)
+
+== N1D - N1R at T0 (paired) ==
+  s0: +0.0164 [+0.0087, +0.0241] separated (n 5736/497 ep)
+  s1: +0.0155 [+0.0043, +0.0264] separated (n 5736/497 ep)
+== N1D - N1R at T1 (paired; reproduces banked D1-HO) ==
+  s0: +0.0291 [+0.0174, +0.0409] separated (n 5736/497 ep)
+  s1: +0.0171 [+0.0044, +0.0300] separated (n 5736/497 ep)
+== fade: (N1D T0-T1) - (N1R T0-T1), paired ==
+  s0: -0.0127 [-0.0253, -0.0005] separated (n 5736/497 ep)
+  s1: -0.0016 [-0.0158, +0.0118] not separated (n 5736/497 ep)
+
+== controls ==
+  K1 self-pair: delta 0.0 CI [0.0,0.0] pass True
+  K-RE N1D_s0: recomputed 0.619595536960 banked 0.619595536960 abs diff 0.0e+00 pass True
+  K-RE N1D_s1: recomputed 0.649930264993 banked 0.649930264993 abs diff 0.0e+00 pass True
+  K-RE N1R_s0: recomputed 0.590481171548 banked 0.590481171548 abs diff 0.0e+00 pass True
+  K-RE N1R_s1: recomputed 0.632845188285 banked 0.632845188285 abs diff 0.0e+00 pass True
+  K-CONST: majority accuracy 0.338215 (card 0.338215) pass True
+  K-T0 N1D_s0|feat1: max |ol - extractor plan0| 0.0 m over 5736 windows pass True
+  K-T0 N1D_s0|feat2: max |ol - extractor plan0| 0.0 m over 5736 windows pass True
+  K-T0 N1D_s1|feat1: max |ol - extractor plan0| 0.0 m over 5736 windows pass True
+  K-T0 N1D_s1|feat2: max |ol - extractor plan0| 0.0 m over 5736 windows pass True
+  K-T0 note: N1D arms only: the extractor was run for N1D only; N1R ol is read the same way from its dump, its parity vs an extractor is not measured
+  all controls pass: True
+
+== informational: T0/T1 label agreement per window ==
+  N1D_s0: 0.6485
+  N1D_s1: 0.6728
+  N1R_s0: 0.6447
+  N1R_s1: 0.6724
+
+reading: neither T0-T1 gap clears the bar (s0 +0.0070, s1 -0.0150, CIs include 0, opposite signs): the roundabout-decision accuracy of the open-loop plan at t0 equals that of the rolled track. The decision is already lost in decoding: the plan feature at NOW decodes it at 0.70/0.69 (tree), the plan head delivers 0.627/0.635. N1D's gain over N1R is present at T0 (+0.016, +0.016, both separated) and not larger than that at T1, so it does not fade over the rollout; at s0 the gain is larger at T1 (fade term -0.0127 separated, s1 not).
+SHUF null (Task 2): see SHUF_NULL.json / READ_SHUF.txt (running at time of writing; see HANDOFF_T0T1.md).

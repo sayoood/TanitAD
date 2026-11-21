@@ -1,0 +1,190 @@
+{
+ "tool": "result_r7.py",
+ "tag": "step5000",
+ "written": "2026-09-28T14:19:53+0200",
+ "ckpt": "D:/refcv7_eval_kit/ckpt/ckpt_5000.pt",
+ "ckpt_md5": "06eb9dfde9f3783a782cebef22259ce4",
+ "step": 5000,
+ "spec_sha256": "f7e10359c2b7de97ac0e3abb810b8307d5d5c89e424111459403f9cf521e380e",
+ "is_milestone": true,
+ "tier": "T1 self-action OPEN LOOP (status UNRULED for an action-free model); never closed loop, never driving performance",
+ "estimator": "FULL-SET point estimate; paired episode-cluster bootstrap, n_boot 2000, seed 0",
+ "g0": {
+  "G0": "FAIL",
+  "amendment": "A2",
+  "G0_as_registered": "FAIL",
+  "reasons_as_registered": [
+   "eval_traj [STOCHASTIC] in-run 0.64714 vs seeds mean 0.673517 (sd 0.00212)"
+  ],
+  "reasons": [
+   "eval_traj [STOCHASTIC] in-run 0.64714 vs seeds mean 0.673517 (sd 0.00212)"
+  ],
+  "by_class_counts": {
+   "DETECTION": 96,
+   "EXCLUDED": 11,
+   "MATCHED": 29,
+   "UNDEFINED": 98,
+   "DERIVED": 2,
+   "DETECTION_LOWSUPPORT": 238,
+   "COUNT": 210,
+   "SMOOTH": 180,
+   "STOCHASTIC": 5,
+   "MAP10_COUNTS": 160,
+   "MAP10_IOU": 80
+  },
+  "medians": {
+   "SMOOTH": 0.0005145704690715198,
+   "MATCHED": 0.0006423607731686711,
+   "MAP10_COUNTS": 2.974891490751365e-05,
+   "DETECTION_abs01": 0.000174999999999979
+  },
+  "mutation_detection": {
+   "m1": {
+    "detected": true,
+    "n_terms_out": 7,
+    "how": null
+   },
+   "m2": {
+    "detected": true,
+    "n_terms_out": 60,
+    "how": null
+   },
+   "m4": {
+    "detected": true,
+    "n_terms_out": 3,
+    "how": null
+   }
+  },
+  "blind_spots_named": [],
+  "wrapper_clause": "PASS",
+  "requires_grad_control": {
+   "batch": 2,
+   "ddim_eps": "zeros",
+   "n_terms": 444,
+   "n_differ": 23,
+   "differ_first20": {
+    "loss": [
+     84.3409652709961,
+     84.34097290039062
+    ],
+    "traj": [
+     0.5637490153312683,
+     0.5637524127960205
+    ],
+    "cls": [
+     0.000560046813916415,
+     0.0005600470467470586
+    ],
+    "law": [
+     0.0001766727800713852,
+     0.00017667279462330043
+    ],
+    "sel_v3": [
+     0.3819347023963928,
+     0.3819347620010376
+    ],
+    "cascade": [
+     3.2933382987976074,
+     3.2933387756347656
+    ],
+    "agent_cls": [
+     1.6978588104248047,
+     1.6978586912155151
+    ],
+    "agent_centre": [
+     1.1587098836898804,
+     1.1587151288986206
+    ],
+    "agent_layer0": [
+     12.186903953552246,
+     12.186902046203613
+    ],
+    "agent_layer1": [
+     12.736627578735352,
+     12.736629486083984
+    ],
+    "agent_presence_layer1": [
+     0.5110008716583252,
+     0.5110008120536804
+    ],
+    "agent_layer2": [
+     12.725199699401855,
+     12.725205421447754
+    ],
+    "box3d_presence": [
+     0.5171372294425964,
+     0.5171371698379517
+    ],
+    "box3d_centre": [
+     1.1193790435791016,
+     1.1193788051605225
+    ],
+    "box3d_size": [
+     2.5707569122314453,
+     2.570756673812866
+    ],
+    "box3d_yaw": [
+     0.58877032995224,
+     0.5887700319290161
+    ],
+    "box3d_rates": [
+     9.396661758422852,
+     9.396660804748535
+    ],
+    "box3d_z": [
+     0.2201046496629715,
+     0.22010456025600433
+    ],
+    "box3d_h": [
+     0.44796106219291687,
+     0.44796091318130493
+    ],
+    "box3d_layer0": [
+     13.543840408325195,
+     13.543841361999512
+    ]
+   },
+   "max_rel_all": 6.0265555412116486e-06,
+   "differ_all_rel": {
+    "loss": 9.045894254038924e-08,
+    "traj": 6.0265555412116486e-06,
+    "cls": 4.1573425268805974e-07,
+    "law": 8.23664812569718e-08,
+    "sel_v3": 1.5605977776151287e-07,
+    "cascade": 1.4478839248832027e-07,
+    "agent_cls": 7.021154457534372e-08,
+    "agent_centre": 4.526766202710854e-06,
+    "agent_layer0": 1.565080548826796e-07,
+    "agent_layer1": 1.4975303478268814e-07,
+    "agent_presence_layer1": 1.1664294149236712e-07,
+    "agent_layer2": 4.4966256197193223e-07,
+    "box3d_presence": 1.1525885467506627e-07,
+    "box3d_centre": 2.129918194102001e-07,
+    "box3d_size": 9.274256074823214e-08,
+    "box3d_yaw": 5.061790798818416e-07,
+    "box3d_rates": 1.0149075713525693e-07,
+    "box3d_z": 4.0620208296366124e-07,
+    "box3d_h": 3.3264411689939223e-07,
+    "box3d_layer0": 7.041387727959647e-08,
+    "box3d_layer1": 7.221581667928277e-08,
+    "box3d_presence_layer1": 2.2997191812907727e-07,
+    "box3d_presence_layer2": 1.1525885467506627e-07
+   }
+  },
+  "json": "D:\\refcv7_eval_kit\\battery\\step5000\\g0.json"
+ },
+ "bars_planner": null,
+ "inference_seed_replicate": null,
+ "baselines_missing": null,
+ "strategic": {
+  "status": "NOT APPLICABLE",
+  "n": 0,
+  "reason": "strategic layer OFF"
+ },
+ "families": {
+  "0": "NOT RUN",
+  "1": "NOT RUN"
+ },
+ "bars_map": "NOT RUN (no perc_score.json)",
+ "bars_box": "NOT RUN (no perc_score.json)"
+}

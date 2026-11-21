@@ -1,0 +1,37 @@
+  SPEED: amp=bf16 tf32=True compile=True fused_adam=False workers=2   (DEPARTURE from the paper's FP32)
+  NAV MODE: command -- the student is conditioned on the discrete navigation command (the paper's input), not on goal points
+  ABLATION: the PDM loss reaches the backbone LoRA (REFe's extra detach removed)
+  trunk: loaded 366 tensors from /workspace/data/backbones/dinov3-vitl16 (missing 0, unused 0)
+  WARM START (PREREG_P2): 643 tensors from /workspace/data/refe_runs/p7_reserve_head/model_final.pt (refe-full-v1, sha256 2613fc17b9e5)
+  REFe vitl16 322.08 M total / 19.00 M trainable (5.90 %)  device=cuda
+  WTA reach: at most 4 of 64 proposals updated per step (6.2 %)
+  SCORER (P6): ONLINE PDM labeller -- each micro-batch's OWN proposals are scored by NAVSIM's simulator while the next forward runs (lag 0); the fixed candidate bank is NOT loaded
+  targets: 150,603 rows from ['targets_rank0.jsonl', 'targets_rank1.jsonl']  per rank {0: 92896, 1: 57707}
+  images: 150,603/150,603 tuples resolve ALL cameras under /workspace/data/navtrain_pixels  (372,520 loose frames indexed, 0 containers, 2.2 s)
+  calib: 150,603/150,603 tuples carry their own rig (21 distinct rigs) <- /workspace/data/refe_p7/p7_reserve/calib/calib_table.json
+  scenes: 92,896 over 150,603 tuples  (rows per scene: 1 x 35,189, 2 x 57,707)
+  NAV COMMAND (P6): sources {'row': 92896, 'goal_rule': 57707}  (row = NAVSIM driving_command carried by the bank; goal_rule = nav_command.goal_to_command, MEASURED 0.90 agreement with NAVSIM on navtest -- below SPEC_P6 D6's 95 % bar)
+  EGO YAW (WP YAW): ego[4] <- 10 x ego_pose.angular_rate_z for 150,603/150,603 rows (103,288 table tokens, sha256 3a0873cc1302, rad/s, CCW-positive (z up), ego body frame)  <- /workspace/data/refe_navtrain/ego_yaw_navtrain.json.gz
+  bank: 150,603 tuples in 92,896 scenes   epoch = one pass over 92,896 scenes   batch 4   training
+  optimiser: AdamW lr 5e-05 wd 0.01  schedule: cosine -> 0 over 4 steps
+  ONLINE LABELLER: backend pdm  workers 13  chunks/set 2  metric cache /workspace/data/refe_navtrain/metric_cache  timeout 900 s
+  score-loss normaliser: 64.0000 covered candidates/sample x batch (CONSTANT, so --accum is exactly equivalent to one large batch)
+  gradient accumulation: 64 micro-batches of 4 = effective batch 256  (paper: 256)
+    step     0  traj_L1   0.1380  score  0.0161  winners 4/4  assign_d   0.00 m  scorer_cov 100.0 %  lr 4.27e-05    65.3s
+      on-policy: sets  256  pick 0.926  random 0.693  best 0.973  skill  0.832  drift  0.00 m  label lag     0.0 steps
+    step     1  traj_L1   0.3763  score  0.0396  winners 4/4  assign_d   0.00 m  scorer_cov 100.0 %  lr 2.50e-05   116.0s
+      on-policy: sets  256  pick 0.935  random 0.701  best 0.983  skill  0.830  drift  0.00 m  label lag     0.0 steps
+    step     2  traj_L1   0.1453  score  0.0195  winners 4/4  assign_d   0.00 m  scorer_cov 100.0 %  lr 7.32e-06   166.8s
+      on-policy: sets  256  pick 0.945  random 0.720  best 0.983  skill  0.854  drift  0.00 m  label lag     0.0 steps
+    step     3  traj_L1   0.1591  score  0.0213  winners 4/4  assign_d   0.00 m  scorer_cov 100.0 %  lr 0.00e+00   217.8s
+      on-policy: sets  256  pick 0.897  random 0.675  best 0.959  skill  0.781  drift  0.00 m  label lag     0.0 steps
+
+  scorer coverage: 1,024 of 1,024 samples carried PDM targets (100.0 %)
+  batches with NO scorer supervision at all: 0 (they contribute zero gradient, not a zero target)
+  assignment distance per candidate (the floor is set by the CANDIDATE SET, not by
+  model quality -- teacher/lat should converge, over-curb/stopped should not):
+      candidate       n    whole run    last 25 %   (the trailing column is the one that answers the question)
+
+  traj L1: first 0.1380 -> last 0.1591   (-15.3 % reduction)
+  saved /workspace/data/refe_p5c/evidence_c0/mem_run/model_final.pt (sha256 abc2d5b77498) and summary.json (done=true)
+TRAIN_DONE

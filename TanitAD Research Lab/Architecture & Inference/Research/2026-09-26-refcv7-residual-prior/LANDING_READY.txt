@@ -1,0 +1,68 @@
+## 2026-09-27 batch 1, REVISION 2 (replaces the 2026-09-26 batch-1 list, which was never landed): refcv7 NEW-1 -- the plan is a residual on a causal kinematic prior (SPEC_REFCV7 sec. 1 NEW-1, sec. 7 A2, sec. 10 A5) -- plus the fix for the 21 RL-stack regressions the Thor full-suite gate found at b3f7ea6. Full files at their REPO paths under code/fix/.
+# Base blobs read at 12953d2d230832c4a45343306de7a8fb8a13e1fb (branch tip when regenerated; its stack/ code is identical to ab436ee for all 8 shared files -- base blob column). Full files; line endings as each tip blob (EOL column).
+# If the tip moves before landing: re-run code/finalize_after_fixes.py <work_root>; a moved anchor FAILS loudly, and its printed lines replace the block below.
+# Verified on clean git-archive trees of 12953d2d23 (RESULT.md sec. 11): NOT RUN LOCALLY (RAM-gated all session, stood down by the MM before any test file ran; static checks only, RESULT.md sec. 11c). Definitive: the MM's Thor full-suite gate, tip 56ae4eb vs tip + these 10 files.
+# ⛔ OPEN (RESULT.md sec. 0): (1) the ego_actions RL declaration is a build-independent seam EXCLUSION (TEMPORARY), not a per-build requirement -- MM to confirm; (2) SPEC sec. 10 A5's 'G-DVB refuses any other mode for a refcv7 launch' is NOT built here -- check_refcv7_required belongs to the fixes agent's batch 2; owner to be named.
+# <package path>  ->  <repo path>     (comment above each: tip base blob | new blob = git hash-object --no-filters | EOL)
+# stack/tanitad/refs/refc.py: base 177d24e92d1092cd3dd3120119693567720866f7 | new 6638d443533fb87e228f6bce7acf3e765ff93bed | CRLF
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/code/fix/stack/tanitad/refs/refc.py  ->  stack/tanitad/refs/refc.py
+# stack/tanitad/refs/refc_v3.py: base 550d96b2e8220ab9c7da1205c3f908aaafab1ea7 | new 774d3a3b1d5f7fa4439362494aae9fdcbb1cda9a | LF
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/code/fix/stack/tanitad/refs/refc_v3.py  ->  stack/tanitad/refs/refc_v3.py
+# stack/scripts/refc_v3_train.py: base abf5129708b096525ebcda9da56f3a49a4048e1d | new 9cac3dabca2b2fbac29a1d0b625f95215f71d985 | CRLF
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/code/fix/stack/scripts/refc_v3_train.py  ->  stack/scripts/refc_v3_train.py
+# stack/tanitad/train/declared_vs_built.py: base 1bb1e481d973df4141b2aac84e7ecd4b5f53d8c3 | new a50ff690a364966ee21215938b4d34dc0a0a79d8 | LF
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/code/fix/stack/tanitad/train/declared_vs_built.py  ->  stack/tanitad/train/declared_vs_built.py
+# stack/tests/test_declared_vs_built.py: base 061238c8897047bddd92372d8cf6d10f1bf17f59 | new 5137fde792a8b5b6a4c51bafdbc876a6ee2ff239 | LF
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/code/fix/stack/tests/test_declared_vs_built.py  ->  stack/tests/test_declared_vs_built.py
+# stack/tanitad/rl/ddv2_refc_chain.py: base 1f387a4acd6c908947b04911b5bc06b2c408dde4 | new 5a37c67fae4da9ee5389890698d6ecdbd4a85c65 | CRLF
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/code/fix/stack/tanitad/rl/ddv2_refc_chain.py  ->  stack/tanitad/rl/ddv2_refc_chain.py
+# stack/tests/test_ddv2_refc_chain.py: base 2282f85901478c54eb529e2ec1fe186a2af2974d | new e080cd6d70ffd9c55e0cdafb86b385f9bca0d5be | LF
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/code/fix/stack/tests/test_ddv2_refc_chain.py  ->  stack/tests/test_ddv2_refc_chain.py
+# stack/tanitad/channel_admissibility.py: base 383ae777e391a0b5763c6e940053ade86fb0d355 | new e4e7fd814258a2fc19f51532381ef2fde386e7d3 | LF
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/code/fix/stack/tanitad/channel_admissibility.py  ->  stack/tanitad/channel_admissibility.py
+# stack/tanitad/models/kinematic_prior.py: base NEW | new 3438b8f7ca7b7e8206b1fb506541522809601c72 | LF
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/code/fix/stack/tanitad/models/kinematic_prior.py  ->  stack/tanitad/models/kinematic_prior.py
+# stack/tests/test_residual_prior.py: base NEW | new 68970c38bcf1b7ab072b0633a32b22be27ae061f | LF
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/code/fix/stack/tests/test_residual_prior.py  ->  stack/tests/test_residual_prior.py
+# package files (code/diffs_vs_tip_ab436ee/ is SUPERSEDED by diffs_vs_tip_12953d2/ and deliberately not listed):
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/RESULT.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/LANDING_READY.txt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/code/apply_residual_prior_edits.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/code/finalize_after_fixes.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/code/measure_anchor_train.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/code/measure_prior_vs_echo.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/code/mutation_matrix.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/code/offmode_digest.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/code/probe_f1_withheld_fan_speed.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/code/probe_kappa_sources.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/code/suite_ab_perfile.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/code/write_diffs.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/code/diffs_vs_tip_12953d2/stack_scripts_refc_v3_train.py.diff
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/code/diffs_vs_tip_12953d2/stack_tanitad_channel_admissibility.py.diff
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/code/diffs_vs_tip_12953d2/stack_tanitad_refs_refc.py.diff
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/code/diffs_vs_tip_12953d2/stack_tanitad_refs_refc_v3.py.diff
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/code/diffs_vs_tip_12953d2/stack_tanitad_rl_ddv2_refc_chain.py.diff
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/code/diffs_vs_tip_12953d2/stack_tanitad_train_declared_vs_built.py.diff
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/code/diffs_vs_tip_12953d2/stack_tests_test_ddv2_refc_chain.py.diff
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/code/diffs_vs_tip_12953d2/stack_tests_test_declared_vs_built.py.diff
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/code/fix/EDIT_MANIFEST.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/raw/EDIT_MANIFEST_12953d2.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/raw/EDIT_MANIFEST_ab436ee.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/raw/finalize_ab436ee.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/raw/measure_anchor_train.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/raw/measure_anchor_train.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/raw/measure_prior_vs_echo.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/raw/measure_prior_vs_echo.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/raw/mutation_matrix_final_ab436ee_subset.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/raw/mutation_matrix_fixes_plus_new1.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/raw/mutation_matrix_tip_plus_new1_27tests.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/raw/offmode_digest_cand_CONTROL_ha0_ext_pose.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/raw/offmode_digest_cand_default.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/raw/offmode_digest_cand_off.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/raw/offmode_digest_tip_59f0d46.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/raw/probe_f1_withheld_fan_speed.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/raw/probe_kappa_sources.txt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/raw/suite_ab_curated_ab436ee.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/raw/suite_ab_curated_ab436ee_state.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/raw/suite_ab_pre_fixes_59f0d46_partial_state.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-residual-prior/raw/thor_gate_b3f7ea6_new1_regressions.json

@@ -1,0 +1,39 @@
+DRY RUN — NOT A SCORER-FT VERDICT
+(CTRL-ID: C1 vs C1 (T == C))
+
+VERDICT: DRY RUN:O4 | O4: FAIL: the representation path does not carry the margin at this dose. one seed per arm: training variance was NOT measured for this arm (a Stage-1 outcome is accepted on one seed, decided before data)
+NEXT ARM (committed in the card, Rule Zero): the selection line closes. Generation TEACHER-N7 (`PREREG_P5C_NEXT` section 5 rank 3), OR explicit proposal-geometry inputs to the EP head (architecture: PI). Both are named blockers on the PI and the L40
+tier: T1 (NAVSIM v1 PDMS, open-loop pseudo-simulation of the executed LQR-tracked plan; not closed loop, not T0)
+estimator: paired log-cluster bootstrap, 10000 draws, seed 20260927; answers: another draw of LOGS only; another TRAINING run = the seed pair (Ts - Cs, F = |Cs - C|; H-ESTIM-SEED-1); another INFERENCE run = none (deterministic argmax, CTRL-DET)
+look 1 of H-SCORERFT-1 (Stage 1: T, C); multiplicity across cards is not corrected; card sha256 adc1b2ae8d3cc9b3dfed00a20a3c39197428cda8492be34af3bb9ed24010ec91
+n tokens 12146, logs 136; arms {'T': 'C1', 'C': 'C1'}; stage 1
+controls: CTRL-SET=PASS, CTRL-T=PASS, CTRL-T=PASS, CTRL-CSV=PASS, CTRL-CSV=PASS, CTRL-SEAM=PASS, CTRL-ID=PASS  (all pass: True)
+  NOT AVAILABLE: CTRL-ARGV: no pod argv files exist for these arms (stand-ins): a real read REFUSES without --argv-t/-c(/-ts/-cs)
+  NOT AVAILABLE: CTRL-W0: no step-0 digest of C and no C1 reference digest for these arms (stand-ins): a real read REFUSES without --w0-digest-c and --w0-ref
+  NOT AVAILABLE: CTRL-DET: no re-run seam of T on 200 tokens (--det-seam-t): a real read REFUSES without it
+P1 d0 = T - C PDMS (tracked): 0.0000 [0.0000, 0.0000] -> FAIL
+G1 (T - C, tracked, none separated adverse): PASS []
+  sub nc: tracked 0.0000 [0.0000, 0.0000] | transparent (no tracker in this number) 0.0000 [0.0000, 0.0000]
+  sub dac: tracked 0.0000 [0.0000, 0.0000] | transparent (no tracker in this number) 0.0000 [0.0000, 0.0000]
+  sub ttc: tracked 0.0000 [0.0000, 0.0000] | transparent (no tracker in this number) 0.0000 [0.0000, 0.0000]
+  sub ep: tracked 0.0000 [0.0000, 0.0000] | transparent (no tracker in this number) 0.0000 [0.0000, 0.0000]
+  sub c: tracked 0.0000 [0.0000, 0.0000] | transparent (no tracker in this number) 0.0000 [0.0000, 0.0000]
+  sub ddc: tracked 0.0000 [0.0000, 0.0000] | transparent (no tracker in this number) 0.0000 [0.0000, 0.0000]  [DDC: reported, not a guard]
+P2: PENDING (Stage 2)
+P3: PENDING (Stage 2)
+GOAL 94.55: T 92.55 [91.80, 93.26] -> BELOW GOAL
+GOAL 94.55: C 92.55 [91.80, 93.26] -> BELOW GOAL
+M1 EP Spearman T - C: 0.0000 [0.0000, 0.0000] moved=False
+M2 zeroed-pick rate T - C (pp): 0.0000 [0.0000, 0.0000]
+M3 regret (oracle - pick) T - C: 0.0000 [0.0000, 0.0000] moved=False
+M4 oracle-of-64 T - C: 0.0000 [0.0000, 0.0000] damaged=False
+transparent comfort T - C, transparent_20_pose_plan: 0.0000 [0.0000, 0.0000] (descriptive, no clause)
+transparent comfort T - C, transparent_8_submitted_poses: 0.0000 [0.0000, 0.0000] (descriptive, no clause)
+families (each stands alone, never pooled):
+  LONGITUDINAL: NOT SUPPLIED (no fam_ci JSON (T vs C))
+  LATERAL: NOT SUPPLIED (no fam_ci JSON (T vs C))
+  lead-agent (headway / time-gap / TTC): 
+  TACTICAL (b) selection quality: computed; (c) goal-setting: NOT COMPUTABLE (n = 12146)
+  STRATEGIC: NOT SUPPLIED
+  separated adverse qualifiers: none
+ADOPT would not clear C1's own GUARD-FAIL (TM+C: transparent comfort, the longitudinal speed bias); those stay open on the lineage

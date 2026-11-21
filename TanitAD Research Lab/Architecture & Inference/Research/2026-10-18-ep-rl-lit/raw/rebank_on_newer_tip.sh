@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# Re-banks the 11 primaries of the LIT-EP-RL pass on a NEWER tip (run in an export of that tip, repo root). The staged library.json/LIBRARY.md
+# were built on tip c58a17e; their delta is purely additive (11 new entries, 23 cited_by/tag/note additions, 0 removals). If the tip's
+# library.json has moved since, prefer this script over copying the staged files, then run: python tools/kb_add.py --verify
+set -e
+export CUDA_VISIBLE_DEVICES=-1 PYTHONIOENCODING=utf-8
+python tools/kb_add.py 2603.29163 --tag navsim-ep-mechanism --note 'SparseDriveV2: factorized vocabulary (geometric paths x velocity profiles) + coarse-to-fine scoring; 92.0 PDMS on navtest with ResNet-34' --cited-by 'TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md'
+python tools/kb_add.py 2609.01799 --tag navsim-ep-mechanism --note 'Designing Versatile Samples for Learned Trajectory Scoring (sample/vocabulary design for learned scorers)' --cited-by 'TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md'
+python tools/kb_add.py 2610.13781 --tag rl-posttrain --note 'SimVTA: GRPO with rendered futures; NAVSIM v1 PDMS 86.2 -> 91.3 from a WAM init' --cited-by 'TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md'
+python tools/kb_add.py 2603.13842 --tag rl-posttrain --note 'PaIR-Drive: parallel IL and RL branches, GRPO refines IL plan at inference; 91.2 PDMS' --cited-by 'TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md'
+python tools/kb_add.py 2605.21139 --tag rl-posttrain --note 'CoPhy: GRPO with physical (BEV world-model rollouts, hard safety constraints) + cognitive reward' --cited-by 'TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md'
+python tools/kb_add.py 2608.10403 --tag rl-posttrain --note 'TPSP: threat-guided scene perturbation for safe online RL; NC/TTC gains on navhard' --cited-by 'TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md'
+python tools/kb_add.py 2510.08562 --tag navsim-ep-mechanism --note 'ResAD: normalized residual trajectory modeling (inertial reference)' --cited-by 'TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md'
+python tools/kb_add.py 2509.20938 --tag rl-posttrain --note 'AR E2E planning with multi-objective policy refinement (NAVSIM)' --cited-by 'TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md'
+python tools/kb_add.py 2609.29813 --tag navsim-ep-mechanism --note 'S2Planner multi-scale semantic planner (NAVSIM)' --cited-by 'TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md'
+python tools/kb_add.py 2602.05863 --tag rl-posttrain --note 'Constrained GRPO: Lagrangian GRPO scalarising standardised per-constraint advantages; includes a driving benchmark' --cited-by 'TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md'
+python tools/kb_add.py 2605.19524 --tag rl-posttrain --note 'SafeAlign-VLA: negative-enhanced SFT + anchor-based GRPO over positive/negative anchors; NAVSIM v1 89.1' --cited-by 'TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md'
+# cited_by additions for the already-banked primaries (no note, no tag):
+python tools/kb_add.py 2406.15349 --cited-by 'TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md'
+python tools/kb_add.py 2503.12820 --cited-by 'TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md'
+python tools/kb_add.py 2406.06978 --cited-by 'TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md'
+python tools/kb_add.py 2506.06659 --cited-by 'TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md'
+python tools/kb_add.py 2504.01941 --cited-by 'TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md'
+python tools/kb_add.py 2606.07170 --cited-by 'TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md'
+python tools/kb_add.py 2601.05083 --cited-by 'TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md'
+python tools/kb_add.py 2512.07745 --cited-by 'TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md'
+python tools/kb_add.py 2506.08052 --cited-by 'TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md'
+python tools/kb_add.py 2511.23369 --cited-by 'TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md'
+python tools/kb_add.py 2505.15111 --cited-by 'TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md'
+python tools/kb_add.py 2506.06664 --cited-by 'TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md'
+python tools/kb_add.py 2607.08072 --cited-by 'TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md'
+python tools/kb_add.py 2607.00399 --cited-by 'TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md'
+python tools/kb_add.py 2606.24231 --cited-by 'TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md'
+python tools/kb_add.py 2605.04647 --cited-by 'TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md'
+python tools/kb_add.py 2605.15120 --cited-by 'TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md'
+python tools/kb_add.py 2510.04333 --cited-by 'TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md'
+python tools/kb_add.py 2609.06055 --cited-by 'TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md'
+python tools/kb_add.py 2510.24108 --cited-by 'TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md'
+python tools/kb_add.py 2509.17940 --cited-by 'TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md'
+python tools/kb_add.py 2603.06049 --cited-by 'TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md'
+python tools/kb_add.py 2605.19771 --cited-by 'TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md'

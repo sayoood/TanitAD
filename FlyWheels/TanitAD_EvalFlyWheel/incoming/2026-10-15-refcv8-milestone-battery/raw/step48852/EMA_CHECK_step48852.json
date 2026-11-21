@@ -1,0 +1,64 @@
+{
+ "tool": "ema_check_r8.py",
+ "started": "2026-10-20T20:59:40",
+ "raw": "E:/refcv8_eval_kit/ckpt/ckpt_48852.pt",
+ "ema": "E:/refcv8_eval_kit/ckpt/ckpt_ema_48852.pt",
+ "ok": true,
+ "device": "cpu",
+ "raw_step": 48852,
+ "ema_step": 48852,
+ "ema_meta": {
+  "ema_decay": 0.9998,
+  "num_updates": 48852,
+  "kind": "ema_model_only"
+ },
+ "md5": {
+  "raw": "ba49eab9411e21b1376ae52dde802036",
+  "ema": "b4364029b68f29a33eeb4aebbbbd002b"
+ },
+ "tensors": {
+  "keys_equal": true,
+  "n_keys_raw": 1165,
+  "n_keys_ema": 1165,
+  "n_shape_mismatch": 0,
+  "n_dtype_mismatch": 0,
+  "n_float_tensors": 1061,
+  "n_float_differing": 821,
+  "n_float_identical": 240,
+  "max_abs_diff": 0.07631850242614746,
+  "rel_l2_distance": 0.0006804588137949177,
+  "top5_max_abs": [
+   {
+    "key": "core.lon_log_prior",
+    "max_abs": 0.07631850242614746
+   },
+   {
+    "key": "core.lat_log_prior",
+    "max_abs": 0.06665825843811035
+   },
+   {
+    "key": "_perception.box_refpts.xy",
+    "max_abs": 0.0095367431640625
+   },
+   {
+    "key": "core.decoder.r8_mod.proj.3.weight",
+    "max_abs": 0.006260782480239868
+   },
+   {
+    "key": "core.decoder.r8_sub.mlp.0.weight",
+    "max_abs": 0.005982398986816406
+   }
+  ]
+ },
+ "strict_load": {
+  "step": 48852,
+  "strict": true,
+  "missing": 0,
+  "unexpected": 0,
+  "n_keys": 1165,
+  "param_breakdown_equal": true,
+  "build_s": 5.0
+ },
+ "why_not_ok": [],
+ "wall_s": 9.2
+}

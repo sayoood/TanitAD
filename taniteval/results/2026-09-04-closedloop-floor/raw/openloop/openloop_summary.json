@@ -1,0 +1,50 @@
+{
+  "scene": "00040136-e651-4abd-991d-0655ccda9430",
+  "n_ticks": 199,
+  "stride": 3,
+  "n_frames_rendered": 199,
+  "render_ms_mean": 68.90367383333906,
+  "render_ms_p50": 67.52181053161621,
+  "wall_s": 17.09705114364624,
+  "arms": {
+    "cl_ha0": {
+      "scoring": "/home/nvidia/cl_out_floor/openloop/rollouts_cl_ha0_openloop.json",
+      "video": "/home/nvidia/cl_out_floor/openloop/video_cl_ha0_openloop.json",
+      "n_windows": 190,
+      "n_clusters": 9
+    },
+    "cl_ha": {
+      "scoring": "/home/nvidia/cl_out_floor/openloop/rollouts_cl_ha_openloop.json",
+      "video": "/home/nvidia/cl_out_floor/openloop/video_cl_ha_openloop.json",
+      "n_windows": 190,
+      "n_clusters": 9
+    },
+    "cl_ha0_ext": {
+      "scoring": "/home/nvidia/cl_out_floor/openloop/rollouts_cl_ha0_ext_openloop.json",
+      "video": "/home/nvidia/cl_out_floor/openloop/video_cl_ha0_ext_openloop.json",
+      "n_windows": 190,
+      "n_clusters": 9
+    }
+  },
+  "render_quality": {
+    "layers": "background,road",
+    "all_dynamic_layers": false,
+    "sky_gain": 0.3,
+    "sky_ramp_deg": [
+      0.0,
+      6.0
+    ],
+    "cull_scale_quantile": 0.95,
+    "cull": {
+      "quantile": 0.95,
+      "scale_thresh_m": 1.4263,
+      "n_dropped": 153506,
+      "n_kept": 2952008
+    },
+    "rolling_shutter": false,
+    "shutter_s": 0.0,
+    "shutter_type": "ROLLING_TOP_TO_BOTTOM"
+  },
+  "frames_dir": null,
+  "shared_observation_note": "ONE render pass drove every arm in this process, so the arms are paired on IDENTICAL pixels by construction. `frame_md5` in each rollout file is the per-tick digest of the rendered frame; it is the same list in every arm's file by identity, and it lets a later re-render be checked bit-exactly rather than assumed to reproduce."
+}

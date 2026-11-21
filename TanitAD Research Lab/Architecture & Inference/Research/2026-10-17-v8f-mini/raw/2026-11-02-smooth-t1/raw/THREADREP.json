@@ -1,0 +1,1376 @@
+{
+ "what": "thread-noise replicate: the same four sg72 rollouts at 2 threads (card rollouts: 1 thread; banked Y: 16); decides nothing",
+ "tier": "T1-kin",
+ "evidence_class": "MEASURED (ours)",
+ "estimator": "paired episode-cluster bootstrap, B=2000, seed 0; answers another draw of EPISODES only",
+ "arms": {
+  "CTRL": {
+   "per_seed": {
+    "s0": {
+     "A": {
+      "D1": true,
+      "D2": false,
+      "D3": true,
+      "D3_by_family": {
+       "LONGITUDINAL": true,
+       "LATERAL": true,
+       "TACTICAL": true,
+       "STRATEGIC": true
+      },
+      "separated_worse_rows": [
+       "L2 curvature MAE (GT>=5.2)",
+       "M1 crawl share",
+       "curvature MAE"
+      ],
+      "separated_better_rows": [
+       "ADE6",
+       "DK-TG",
+       "L1 lateral-accel MAE",
+       "S-POS@30",
+       "S-POS@50",
+       "S-POS@80",
+       "TAC-LAT",
+       "TAC-LON",
+       "accel MAE",
+       "along-track MAE",
+       "cross-track MAE",
+       "heading MAE",
+       "speed MAE"
+      ],
+      "DOMINANT": false
+     },
+     "XY": {
+      "crawl_separated_better": {
+       "yaw-rate MAE": true,
+       "curvature MAE": true,
+       "L2 curvature MAE (GT>=5.2)": true,
+       "M1 crawl share": true
+      },
+      "crawl_all_separated_better": true,
+      "ade6_delta": -0.054427334905422134,
+      "ade6_within_guard": true,
+      "non_crawl_separated_worse": [],
+      "n_separated_worse_all": 0,
+      "MOVED_seed": true,
+      "HARMS_seed": false
+     }
+    },
+    "s1": {
+     "A": {
+      "D1": true,
+      "D2": false,
+      "D3": true,
+      "D3_by_family": {
+       "LONGITUDINAL": true,
+       "LATERAL": true,
+       "TACTICAL": true,
+       "STRATEGIC": true
+      },
+      "separated_worse_rows": [
+       "L2 curvature MAE (GT>=5.2)",
+       "M1 crawl share",
+       "curvature MAE",
+       "yaw-rate MAE"
+      ],
+      "separated_better_rows": [
+       "ADE6",
+       "DK-HW",
+       "DK-TG",
+       "L1 lateral-accel MAE",
+       "S-POS@30",
+       "S-POS@50",
+       "S-POS@80",
+       "TAC-LAT",
+       "TAC-LON",
+       "accel MAE",
+       "along-track MAE",
+       "cross-track MAE",
+       "heading MAE",
+       "speed MAE"
+      ],
+      "DOMINANT": false
+     },
+     "XY": {
+      "crawl_separated_better": {
+       "yaw-rate MAE": true,
+       "curvature MAE": false,
+       "L2 curvature MAE (GT>=5.2)": false,
+       "M1 crawl share": false
+      },
+      "crawl_all_separated_better": false,
+      "ade6_delta": -0.06713772920821512,
+      "ade6_within_guard": true,
+      "non_crawl_separated_worse": [],
+      "n_separated_worse_all": 0,
+      "MOVED_seed": false,
+      "HARMS_seed": false
+     }
+    }
+   },
+   "rows": {
+    "s0": {
+     "XP": {
+      "ADE6": {
+       "delta": -1.2555787972719457,
+       "lo": -1.4503065365986831,
+       "hi": -1.0678334490323045,
+       "separated": true
+      },
+      "speed MAE": {
+       "delta": -0.833001727795761,
+       "lo": -1.0377688384633479,
+       "hi": -0.6583105700516564,
+       "separated": true
+      },
+      "along-track MAE": {
+       "delta": -0.7192169302183499,
+       "lo": -0.8805936486033918,
+       "hi": -0.5626520438842741,
+       "separated": true
+      },
+      "accel MAE": {
+       "delta": -0.9389028109394322,
+       "lo": -1.3074337061477548,
+       "hi": -0.6218985010729624,
+       "separated": true
+      },
+      "DK-VIOL": {
+       "delta": 0.01680672268907563,
+       "lo": -0.015726315439808663,
+       "hi": 0.06250853825136607,
+       "separated": false
+      },
+      "DK-HW": {
+       "delta": -0.2604073273645476,
+       "lo": -0.6426396249585272,
+       "hi": 0.06753865947992055,
+       "separated": false
+      },
+      "DK-TG": {
+       "delta": -0.05880332242457477,
+       "lo": -0.12257896562704317,
+       "hi": -0.00114491484581896,
+       "separated": true
+      },
+      "heading MAE": {
+       "delta": -3.451801839792692,
+       "lo": -4.213634110758906,
+       "hi": -2.7527897375300294,
+       "separated": true
+      },
+      "yaw-rate MAE": {
+       "delta": -1.3765733513707343,
+       "lo": -3.9126457255824807,
+       "hi": 1.0255419550031397,
+       "separated": false
+      },
+      "curvature MAE": {
+       "delta": 0.05776981320745103,
+       "lo": 0.03644512194976273,
+       "hi": 0.08209052351685496,
+       "separated": true
+      },
+      "cross-track MAE": {
+       "delta": -1.0009490782253583,
+       "lo": -1.1468412242628783,
+       "hi": -0.8671317204033357,
+       "separated": true
+      },
+      "L1 lateral-accel MAE": {
+       "delta": -2.7324256633679664,
+       "lo": -4.098942943517702,
+       "hi": -1.582337738829829,
+       "separated": true
+      },
+      "L2 curvature MAE (GT>=5.2)": {
+       "delta": 0.03252873718204099,
+       "lo": 0.013525209876005822,
+       "hi": 0.05900202110831515,
+       "separated": true
+      },
+      "TAC-LAT": {
+       "delta": 0.20383493122134222,
+       "lo": 0.16388486428004995,
+       "hi": 0.24500510842368636,
+       "separated": true
+      },
+      "TAC-LON": {
+       "delta": 0.17507294706127552,
+       "lo": 0.11379623020008338,
+       "hi": 0.238852010724513,
+       "separated": true
+      },
+      "S-POS@30": {
+       "delta": -1.6442949128822302,
+       "lo": -2.1653890823496056,
+       "hi": -1.1863745977468867,
+       "separated": true
+      },
+      "S-POS@50": {
+       "delta": -4.574442346793062,
+       "lo": -5.809040289400885,
+       "hi": -3.5098066712599136,
+       "separated": true
+      },
+      "S-POS@80": {
+       "delta": -9.828452723958469,
+       "lo": -12.117346125155205,
+       "hi": -7.7692123564336155,
+       "separated": true
+      },
+      "M1 crawl share": {
+       "delta": 0.048340355394094925,
+       "lo": 0.03022415738022053,
+       "hi": 0.06984402997960032,
+       "separated": true
+      }
+     },
+     "XY": {
+      "ADE6": {
+       "delta": -0.054427334905422134,
+       "lo": -0.08592397359020398,
+       "hi": -0.02298535650594953,
+       "separated": true
+      },
+      "speed MAE": {
+       "delta": -0.05691557129960282,
+       "lo": -0.09624241163888853,
+       "hi": -0.019231595889051312,
+       "separated": true
+      },
+      "along-track MAE": {
+       "delta": -0.038273123257259026,
+       "lo": -0.06836547262904473,
+       "hi": -0.01044233729989331,
+       "separated": true
+      },
+      "accel MAE": {
+       "delta": -0.12170441078070181,
+       "lo": -0.22828422159259845,
+       "hi": -0.025814945083723975,
+       "separated": true
+      },
+      "DK-VIOL": {
+       "delta": 0.015126050420168067,
+       "lo": -0.0035398230088495575,
+       "hi": 0.04181345169517739,
+       "separated": false
+      },
+      "DK-HW": {
+       "delta": 0.0633748651409712,
+       "lo": -0.06565423609323057,
+       "hi": 0.19118525989741067,
+       "separated": false
+      },
+      "DK-TG": {
+       "delta": 0.01672496525517407,
+       "lo": -0.013377034690222675,
+       "hi": 0.054275628167840304,
+       "separated": false
+      },
+      "heading MAE": {
+       "delta": -0.861570659981189,
+       "lo": -1.2325874072685965,
+       "hi": -0.5484742529823591,
+       "separated": true
+      },
+      "yaw-rate MAE": {
+       "delta": -4.853727557736906,
+       "lo": -6.7268106658253295,
+       "hi": -3.15761506060459,
+       "separated": true
+      },
+      "curvature MAE": {
+       "delta": -0.027638300730795935,
+       "lo": -0.041816199419482475,
+       "hi": -0.014763026676486407,
+       "separated": true
+      },
+      "cross-track MAE": {
+       "delta": -0.03899814669838654,
+       "lo": -0.06140929827136273,
+       "hi": -0.01712030586653695,
+       "separated": true
+      },
+      "L1 lateral-accel MAE": {
+       "delta": -0.26965083874451523,
+       "lo": -0.5717677600737605,
+       "hi": 0.05509281510615209,
+       "separated": false
+      },
+      "L2 curvature MAE (GT>=5.2)": {
+       "delta": -0.010369284116180247,
+       "lo": -0.0204724998419976,
+       "hi": -0.0003887262769630364,
+       "separated": true
+      },
+      "TAC-LAT": {
+       "delta": 0.013338891204668612,
+       "lo": 0.0025020329441201,
+       "hi": 0.02418682235195997,
+       "separated": true
+      },
+      "TAC-LON": {
+       "delta": 0.035431429762401004,
+       "lo": 0.013767065483230185,
+       "hi": 0.05875061223426427,
+       "separated": true
+      },
+      "S-POS@30": {
+       "delta": -0.20181987573271187,
+       "lo": -0.305983033828281,
+       "hi": -0.11015180189176806,
+       "separated": true
+      },
+      "S-POS@50": {
+       "delta": -0.33816409935457237,
+       "lo": -0.5177103797396836,
+       "hi": -0.18101226174747886,
+       "separated": true
+      },
+      "S-POS@80": {
+       "delta": -0.5404962563511653,
+       "lo": -0.8388485796531017,
+       "hi": -0.27900976692308843,
+       "separated": true
+      },
+      "M1 crawl share": {
+       "delta": -0.00801460202447304,
+       "lo": -0.013490917325162778,
+       "hi": -0.0031429000082268477,
+       "separated": true
+      }
+     },
+     "vs_card_rollouts": {
+      "XP": {
+       "max_abs_delta_diff": 4.980445026281366e-05,
+       "rows_whose_separated_flag_or_sign_differs": [],
+       "max_abs_delta_diff_by_row": {
+        "ADE6": 2.549582187594268e-07,
+        "speed MAE": 3.771861028734058e-06,
+        "along-track MAE": 1.670925328212114e-06,
+        "accel MAE": 6.815212034161355e-06,
+        "DK-VIOL": 0.0,
+        "DK-HW": 1.86272059754522e-06,
+        "DK-TG": 1.946991534662601e-08,
+        "heading MAE": 4.021457087377556e-05,
+        "yaw-rate MAE": 4.980445026281366e-05,
+        "curvature MAE": 2.6838240380078204e-08,
+        "cross-track MAE": 1.0703818007495869e-06,
+        "L1 lateral-accel MAE": 1.5734215359497483e-05,
+        "L2 curvature MAE (GT>=5.2)": 2.422589794118246e-07,
+        "TAC-LAT": 0.0,
+        "TAC-LON": 0.0,
+        "S-POS@30": 5.492750438484961e-06,
+        "S-POS@50": 1.9690003089323227e-05,
+        "S-POS@80": 4.4474462447041674e-05,
+        "M1 crawl share": 0.0
+       }
+      },
+      "XY": {
+       "max_abs_delta_diff": 5.1986437773154925e-05,
+       "rows_whose_separated_flag_or_sign_differs": [],
+       "max_abs_delta_diff_by_row": {
+        "ADE6": 2.549582195573996e-07,
+        "speed MAE": 3.7718610289005916e-06,
+        "along-track MAE": 1.6709253278374137e-06,
+        "accel MAE": 6.815212034078089e-06,
+        "DK-VIOL": 0.0,
+        "DK-HW": 1.8384489016004535e-06,
+        "DK-TG": 1.4683493785444535e-08,
+        "heading MAE": 4.0214570872776356e-05,
+        "yaw-rate MAE": 4.979174429387001e-05,
+        "curvature MAE": 2.7236553158671573e-08,
+        "cross-track MAE": 1.0703818005206034e-06,
+        "L1 lateral-accel MAE": 1.5727520407571305e-05,
+        "L2 curvature MAE (GT>=5.2)": 2.3035501279036752e-07,
+        "TAC-LAT": 0.0,
+        "TAC-LON": 0.0,
+        "S-POS@30": 6.452592434702531e-06,
+        "S-POS@50": 1.913550712229206e-05,
+        "S-POS@80": 5.1986437773154925e-05,
+        "M1 crawl share": 0.0
+       }
+      }
+     }
+    },
+    "s1": {
+     "XP": {
+      "ADE6": {
+       "delta": -1.1902859237535595,
+       "lo": -1.398617727580901,
+       "hi": -0.9781954494408903,
+       "separated": true
+      },
+      "speed MAE": {
+       "delta": -0.8141181804537975,
+       "lo": -1.037674205288242,
+       "hi": -0.6190956838068568,
+       "separated": true
+      },
+      "along-track MAE": {
+       "delta": -0.630164211041581,
+       "lo": -0.8196057024804496,
+       "hi": -0.4509939572641249,
+       "separated": true
+      },
+      "accel MAE": {
+       "delta": -0.9719854528100081,
+       "lo": -1.3432603083407249,
+       "hi": -0.6572900824491733,
+       "separated": true
+      },
+      "DK-VIOL": {
+       "delta": 0.0,
+       "lo": -0.019573825971669807,
+       "hi": 0.021175237369187038,
+       "separated": false
+      },
+      "DK-HW": {
+       "delta": -0.5171427931759994,
+       "lo": -0.9056562075371358,
+       "hi": -0.21182145998638013,
+       "separated": true
+      },
+      "DK-TG": {
+       "delta": -0.08694079784025313,
+       "lo": -0.1542047748076241,
+       "hi": -0.027790299284667797,
+       "separated": true
+      },
+      "heading MAE": {
+       "delta": -2.895738480058708,
+       "lo": -3.606175732351327,
+       "hi": -2.201313175658162,
+       "separated": true
+      },
+      "yaw-rate MAE": {
+       "delta": 4.133379854825825,
+       "lo": 1.1648525694868286,
+       "hi": 7.358236252647134,
+       "separated": true
+      },
+      "curvature MAE": {
+       "delta": 0.12103713411243293,
+       "lo": 0.07566172227877489,
+       "hi": 0.1726966536338294,
+       "separated": true
+      },
+      "cross-track MAE": {
+       "delta": -1.021725025728955,
+       "lo": -1.168556521017293,
+       "hi": -0.8803445219041103,
+       "separated": true
+      },
+      "L1 lateral-accel MAE": {
+       "delta": -2.608344904483962,
+       "lo": -3.8411536046218973,
+       "hi": -1.515233930031318,
+       "separated": true
+      },
+      "L2 curvature MAE (GT>=5.2)": {
+       "delta": 0.050511655050969446,
+       "lo": 0.02693909999559494,
+       "hi": 0.07910070996581696,
+       "separated": true
+      },
+      "TAC-LAT": {
+       "delta": 0.212588578574406,
+       "lo": 0.17089589994580034,
+       "hi": 0.25396163469557964,
+       "separated": true
+      },
+      "TAC-LON": {
+       "delta": 0.1638182576073364,
+       "lo": 0.10208227040816327,
+       "hi": 0.2225,
+       "separated": true
+      },
+      "S-POS@30": {
+       "delta": -1.7415374667412813,
+       "lo": -2.220883274370139,
+       "hi": -1.3272985627924536,
+       "separated": true
+      },
+      "S-POS@50": {
+       "delta": -4.759901331113302,
+       "lo": -5.859120886732184,
+       "hi": -3.748333689654826,
+       "separated": true
+      },
+      "S-POS@80": {
+       "delta": -10.29990380285046,
+       "lo": -12.371291745418457,
+       "hi": -8.330690744008361,
+       "separated": true
+      },
+      "M1 crawl share": {
+       "delta": 0.056506682429534764,
+       "lo": 0.03473775743242262,
+       "hi": 0.08287622819455498,
+       "separated": true
+      }
+     },
+     "XY": {
+      "ADE6": {
+       "delta": -0.06713772920821512,
+       "lo": -0.10144573038672353,
+       "hi": -0.03578389959167054,
+       "separated": true
+      },
+      "speed MAE": {
+       "delta": -0.11115074683258747,
+       "lo": -0.1631103014147566,
+       "hi": -0.06305107871942092,
+       "separated": true
+      },
+      "along-track MAE": {
+       "delta": -0.0426056855169856,
+       "lo": -0.07381633502576883,
+       "hi": -0.011745005444063868,
+       "separated": true
+      },
+      "accel MAE": {
+       "delta": -0.37058569420099174,
+       "lo": -0.5472166999112611,
+       "hi": -0.21910088004747486,
+       "separated": true
+      },
+      "DK-VIOL": {
+       "delta": 0.0033613445378151263,
+       "lo": -0.00897706430905545,
+       "hi": 0.014185237471009374,
+       "separated": false
+      },
+      "DK-HW": {
+       "delta": -0.02959523229767866,
+       "lo": -0.11640847702175766,
+       "hi": 0.05206403237702468,
+       "separated": false
+      },
+      "DK-TG": {
+       "delta": -0.011697485668848208,
+       "lo": -0.04355178041433229,
+       "hi": 0.021830910399846828,
+       "separated": false
+      },
+      "heading MAE": {
+       "delta": -0.8418452391130166,
+       "lo": -1.1815680270373787,
+       "hi": -0.5690754648882232,
+       "separated": true
+      },
+      "yaw-rate MAE": {
+       "delta": -4.555992008598294,
+       "lo": -6.280762333394345,
+       "hi": -2.915069454302734,
+       "separated": true
+      },
+      "curvature MAE": {
+       "delta": -0.014118574968571614,
+       "lo": -0.03968744275130215,
+       "hi": 0.009705387290789532,
+       "separated": false
+      },
+      "cross-track MAE": {
+       "delta": -0.04755741186087808,
+       "lo": -0.0728970718046472,
+       "hi": -0.022962236071355856,
+       "separated": true
+      },
+      "L1 lateral-accel MAE": {
+       "delta": -0.7603229641111732,
+       "lo": -1.1823171441455773,
+       "hi": -0.3599888413948468,
+       "separated": true
+      },
+      "L2 curvature MAE (GT>=5.2)": {
+       "delta": -0.0024285479326268075,
+       "lo": -0.019495099587251322,
+       "hi": 0.012317303529776285,
+       "separated": false
+      },
+      "TAC-LAT": {
+       "delta": 0.015423092955398083,
+       "lo": 0.0020842017507294707,
+       "hi": 0.03209704158078098,
+       "separated": true
+      },
+      "TAC-LON": {
+       "delta": 0.026677782409337224,
+       "lo": -0.0008340283569641367,
+       "hi": 0.05333388912046686,
+       "separated": false
+      },
+      "S-POS@30": {
+       "delta": -0.3100468711867252,
+       "lo": -0.5076867870911675,
+       "hi": -0.14032274357298866,
+       "separated": true
+      },
+      "S-POS@50": {
+       "delta": -0.5164325031372341,
+       "lo": -0.8573749743628134,
+       "hi": -0.22289691824501245,
+       "separated": true
+      },
+      "S-POS@80": {
+       "delta": -0.8490636909146313,
+       "lo": -1.4105235515450807,
+       "hi": -0.37416007611657914,
+       "separated": true
+      },
+      "M1 crawl share": {
+       "delta": -0.0038670538675763116,
+       "lo": -0.008803459009754485,
+       "hi": 0.0011688333516218406,
+       "separated": false
+      }
+     },
+     "vs_card_rollouts": {
+      "XP": {
+       "max_abs_delta_diff": 5.9137934765196576e-05,
+       "rows_whose_separated_flag_or_sign_differs": [],
+       "max_abs_delta_diff_by_row": {
+        "ADE6": 9.219993484244071e-07,
+        "speed MAE": 1.9249677529753484e-07,
+        "along-track MAE": 3.7885549108995775e-07,
+        "accel MAE": 1.6060819632013335e-06,
+        "DK-VIOL": 0.0,
+        "DK-HW": 4.869218468428471e-06,
+        "DK-TG": 4.362413855568681e-07,
+        "heading MAE": 2.0612005524611732e-05,
+        "yaw-rate MAE": 5.9137934765196576e-05,
+        "curvature MAE": 1.005016459137975e-06,
+        "cross-track MAE": 5.368684061757278e-07,
+        "L1 lateral-accel MAE": 1.0971229746914446e-07,
+        "L2 curvature MAE (GT>=5.2)": 3.1462249621139193e-06,
+        "TAC-LAT": 0.0,
+        "TAC-LON": 0.0,
+        "S-POS@30": 1.3544418966393579e-06,
+        "S-POS@50": 3.5717778139598977e-06,
+        "S-POS@80": 6.109564832712522e-06,
+        "M1 crawl share": 1.637357959197172e-05
+       }
+      },
+      "XY": {
+       "max_abs_delta_diff": 5.91379347643084e-05,
+       "rows_whose_separated_flag_or_sign_differs": [],
+       "max_abs_delta_diff_by_row": {
+        "ADE6": 9.219993483272626e-07,
+        "speed MAE": 1.9249677514487917e-07,
+        "along-track MAE": 3.788554910552633e-07,
+        "accel MAE": 1.606081963367867e-06,
+        "DK-VIOL": 0.0,
+        "DK-HW": 4.806414339517118e-06,
+        "DK-TG": 4.0274984190562246e-07,
+        "heading MAE": 2.061200552738729e-05,
+        "yaw-rate MAE": 5.91379347643084e-05,
+        "curvature MAE": 1.005016459113689e-06,
+        "cross-track MAE": 5.368684062798112e-07,
+        "L1 lateral-accel MAE": 1.0971229835732288e-07,
+        "L2 curvature MAE (GT>=5.2)": 3.146224962128231e-06,
+        "TAC-LAT": 0.0,
+        "TAC-LON": 0.0,
+        "S-POS@30": 4.532739467877356e-06,
+        "S-POS@50": 6.828101699607458e-06,
+        "S-POS@80": 1.5902950719959286e-05,
+        "M1 crawl share": 1.6373579591970853e-05
+       }
+      }
+     }
+    }
+   },
+   "outcome": "NO EFFECT",
+   "DOMINANT": false,
+   "HARMS_condition": false,
+   "MOVED_condition": false,
+   "moved_and_harms": false,
+   "outcome_of_card_rollouts": "NO EFFECT"
+  },
+  "SOUP": {
+   "per_seed": {
+    "s0": {
+     "A": {
+      "D1": true,
+      "D2": false,
+      "D3": true,
+      "D3_by_family": {
+       "LONGITUDINAL": true,
+       "LATERAL": true,
+       "TACTICAL": true,
+       "STRATEGIC": true
+      },
+      "separated_worse_rows": [
+       "L2 curvature MAE (GT>=5.2)",
+       "M1 crawl share",
+       "curvature MAE"
+      ],
+      "separated_better_rows": [
+       "ADE6",
+       "DK-TG",
+       "L1 lateral-accel MAE",
+       "S-POS@30",
+       "S-POS@50",
+       "S-POS@80",
+       "TAC-LAT",
+       "TAC-LON",
+       "accel MAE",
+       "along-track MAE",
+       "cross-track MAE",
+       "heading MAE",
+       "speed MAE"
+      ],
+      "DOMINANT": false
+     },
+     "XY": {
+      "crawl_separated_better": {
+       "yaw-rate MAE": true,
+       "curvature MAE": true,
+       "L2 curvature MAE (GT>=5.2)": true,
+       "M1 crawl share": true
+      },
+      "crawl_all_separated_better": true,
+      "ade6_delta": -0.0686585377746598,
+      "ade6_within_guard": true,
+      "non_crawl_separated_worse": [],
+      "n_separated_worse_all": 0,
+      "MOVED_seed": true,
+      "HARMS_seed": false
+     }
+    },
+    "s1": {
+     "A": {
+      "D1": true,
+      "D2": false,
+      "D3": true,
+      "D3_by_family": {
+       "LONGITUDINAL": true,
+       "LATERAL": true,
+       "TACTICAL": true,
+       "STRATEGIC": true
+      },
+      "separated_worse_rows": [
+       "L2 curvature MAE (GT>=5.2)",
+       "M1 crawl share",
+       "curvature MAE",
+       "yaw-rate MAE"
+      ],
+      "separated_better_rows": [
+       "ADE6",
+       "DK-HW",
+       "DK-TG",
+       "L1 lateral-accel MAE",
+       "S-POS@30",
+       "S-POS@50",
+       "S-POS@80",
+       "TAC-LAT",
+       "TAC-LON",
+       "accel MAE",
+       "along-track MAE",
+       "cross-track MAE",
+       "heading MAE",
+       "speed MAE"
+      ],
+      "DOMINANT": false
+     },
+     "XY": {
+      "crawl_separated_better": {
+       "yaw-rate MAE": true,
+       "curvature MAE": true,
+       "L2 curvature MAE (GT>=5.2)": true,
+       "M1 crawl share": true
+      },
+      "crawl_all_separated_better": true,
+      "ade6_delta": -0.05581992095453343,
+      "ade6_within_guard": true,
+      "non_crawl_separated_worse": [],
+      "n_separated_worse_all": 0,
+      "MOVED_seed": true,
+      "HARMS_seed": false
+     }
+    }
+   },
+   "rows": {
+    "s0": {
+     "XP": {
+      "ADE6": {
+       "delta": -1.1928099058304376,
+       "lo": -1.407842355524146,
+       "hi": -0.9880028046670316,
+       "separated": true
+      },
+      "speed MAE": {
+       "delta": -0.7816910849951538,
+       "lo": -0.9918792603924652,
+       "hi": -0.595576605654876,
+       "separated": true
+      },
+      "along-track MAE": {
+       "delta": -0.6290974091554874,
+       "lo": -0.8126135265218272,
+       "hi": -0.45818919350873266,
+       "separated": true
+      },
+      "accel MAE": {
+       "delta": -0.8790977207261946,
+       "lo": -1.258111367204907,
+       "hi": -0.5583228990916618,
+       "separated": true
+      },
+      "DK-VIOL": {
+       "delta": 0.0067226890756302525,
+       "lo": -0.019573026304331418,
+       "hi": 0.034555986842105174,
+       "separated": false
+      },
+      "DK-HW": {
+       "delta": -0.20400045864089397,
+       "lo": -0.5885191284554419,
+       "hi": 0.13672753929839596,
+       "separated": false
+      },
+      "DK-TG": {
+       "delta": -0.05596869424822315,
+       "lo": -0.11731399273378969,
+       "hi": -0.001832800522052656,
+       "separated": true
+      },
+      "heading MAE": {
+       "delta": -2.9613009145971914,
+       "lo": -3.749518822806475,
+       "hi": -2.1786157115329776,
+       "separated": true
+      },
+      "yaw-rate MAE": {
+       "delta": 1.9306235579630466,
+       "lo": -1.0566001029245105,
+       "hi": 5.0079108466475075,
+       "separated": false
+      },
+      "curvature MAE": {
+       "delta": 0.09191513811204836,
+       "lo": 0.05841938053458261,
+       "hi": 0.13007180459932544,
+       "separated": true
+      },
+      "cross-track MAE": {
+       "delta": -1.0265367327239268,
+       "lo": -1.1728907412247755,
+       "hi": -0.8943424720783193,
+       "separated": true
+      },
+      "L1 lateral-accel MAE": {
+       "delta": -2.6418312538892006,
+       "lo": -4.000736859773736,
+       "hi": -1.5148681169276268,
+       "separated": true
+      },
+      "L2 curvature MAE (GT>=5.2)": {
+       "delta": 0.06282616025071337,
+       "lo": 0.027911514753574472,
+       "hi": 0.10758455005380708,
+       "separated": true
+      },
+      "TAC-LAT": {
+       "delta": 0.1846602751146311,
+       "lo": 0.14165919516263553,
+       "hi": 0.2273755977290211,
+       "separated": true
+      },
+      "TAC-LON": {
+       "delta": 0.14672780325135473,
+       "lo": 0.07919801722187798,
+       "hi": 0.21377083333333322,
+       "separated": true
+      },
+      "S-POS@30": {
+       "delta": -1.606170397839672,
+       "lo": -2.152549377701488,
+       "hi": -1.1336698189747578,
+       "separated": true
+      },
+      "S-POS@50": {
+       "delta": -4.582516038246466,
+       "lo": -5.844884457646922,
+       "hi": -3.4774000335795683,
+       "separated": true
+      },
+      "S-POS@80": {
+       "delta": -10.191666792221831,
+       "lo": -12.607693171205524,
+       "hi": -8.07481760094937,
+       "separated": true
+      },
+      "M1 crawl share": {
+       "delta": 0.06664832982365398,
+       "lo": 0.04281460769925914,
+       "hi": 0.09273080853069632,
+       "separated": true
+      }
+     },
+     "XY": {
+      "ADE6": {
+       "delta": -0.0686585377746598,
+       "lo": -0.10169312731236031,
+       "hi": -0.03598515879460147,
+       "separated": true
+      },
+      "speed MAE": {
+       "delta": -0.08360583885078338,
+       "lo": -0.12294392442387947,
+       "hi": -0.04557023124152824,
+       "separated": true
+      },
+      "along-track MAE": {
+       "delta": -0.06353071613728031,
+       "lo": -0.09184636514208518,
+       "hi": -0.035794937179587906,
+       "separated": true
+      },
+      "accel MAE": {
+       "delta": -0.22198798066076658,
+       "lo": -0.33235370128348446,
+       "hi": -0.12372162596117547,
+       "separated": true
+      },
+      "DK-VIOL": {
+       "delta": 0.0033613445378151263,
+       "lo": -0.0065364834458373515,
+       "hi": 0.014467201299892546,
+       "separated": false
+      },
+      "DK-HW": {
+       "delta": -0.03649098667228734,
+       "lo": -0.1832542122945809,
+       "hi": 0.08051295210652047,
+       "separated": false
+      },
+      "DK-TG": {
+       "delta": -0.0200146675352814,
+       "lo": -0.06226268351770437,
+       "hi": 0.02547057924895656,
+       "separated": false
+      },
+      "heading MAE": {
+       "delta": -1.146301520664261,
+       "lo": -1.6052309912568852,
+       "hi": -0.7475899658956006,
+       "separated": true
+      },
+      "yaw-rate MAE": {
+       "delta": -6.417842559244914,
+       "lo": -8.3857261582145,
+       "hi": -4.724141391874264,
+       "separated": true
+      },
+      "curvature MAE": {
+       "delta": -0.0354028833207824,
+       "lo": -0.05381232555595204,
+       "hi": -0.019375955085906033,
+       "separated": true
+      },
+      "cross-track MAE": {
+       "delta": -0.03132779062546011,
+       "lo": -0.05744413184477472,
+       "hi": -0.006925399268317673,
+       "separated": true
+      },
+      "L1 lateral-accel MAE": {
+       "delta": -0.5906901065926755,
+       "lo": -0.8591291719967513,
+       "hi": -0.34522136309954393,
+       "separated": true
+      },
+      "L2 curvature MAE (GT>=5.2)": {
+       "delta": -0.021858335436577,
+       "lo": -0.037189682577078824,
+       "hi": -0.007088434022761826,
+       "separated": true
+      },
+      "TAC-LAT": {
+       "delta": 0.006669445602334306,
+       "lo": -0.0050123923632625625,
+       "hi": 0.01750018236765319,
+       "separated": false
+      },
+      "TAC-LON": {
+       "delta": 0.0358482701125469,
+       "lo": 0.017497230194127262,
+       "hi": 0.05583333333333333,
+       "separated": true
+      },
+      "S-POS@30": {
+       "delta": -0.3366642474180982,
+       "lo": -0.5276494864539915,
+       "hi": -0.1759478477827504,
+       "separated": true
+      },
+      "S-POS@50": {
+       "delta": -0.5546663382914548,
+       "lo": -0.8784831379915876,
+       "hi": -0.2737375844395794,
+       "separated": true
+      },
+      "S-POS@80": {
+       "delta": -0.8017044201361887,
+       "lo": -1.263989540610332,
+       "hi": -0.39198248767941846,
+       "separated": true
+      },
+      "M1 crawl share": {
+       "delta": -0.007252497451904385,
+       "lo": -0.012652322834165857,
+       "hi": -0.002093813111485022,
+       "separated": true
+      }
+     },
+     "vs_card_rollouts": {
+      "XP": {
+       "max_abs_delta_diff": 0.00046649599183612445,
+       "rows_whose_separated_flag_or_sign_differs": [],
+       "max_abs_delta_diff_by_row": {
+        "ADE6": 2.6686515479656947e-06,
+        "speed MAE": 2.5716988805157825e-07,
+        "along-track MAE": 3.0236179824338905e-06,
+        "accel MAE": 1.2643965058289908e-06,
+        "DK-VIOL": 0.0,
+        "DK-HW": 3.412719974199563e-06,
+        "DK-TG": 1.7307911302777423e-06,
+        "heading MAE": 3.8099587479134556e-05,
+        "yaw-rate MAE": 0.00046649599183612445,
+        "curvature MAE": 9.19638009966306e-07,
+        "cross-track MAE": 3.880138403911104e-07,
+        "L1 lateral-accel MAE": 5.078118987045244e-05,
+        "L2 curvature MAE (GT>=5.2)": 5.093696679864257e-07,
+        "TAC-LAT": 0.0,
+        "TAC-LON": 0.0,
+        "S-POS@30": 1.6306026564549825e-06,
+        "S-POS@50": 6.026058001928902e-06,
+        "S-POS@80": 1.8865152135560947e-05,
+        "M1 crawl share": 0.0
+       }
+      },
+      "XY": {
+       "max_abs_delta_diff": 0.000466293060724432,
+       "rows_whose_separated_flag_or_sign_differs": [],
+       "max_abs_delta_diff_by_row": {
+        "ADE6": 2.668651548007328e-06,
+        "speed MAE": 2.5716988838464516e-07,
+        "along-track MAE": 3.023617982281235e-06,
+        "accel MAE": 1.2643965056347017e-06,
+        "DK-VIOL": 0.0,
+        "DK-HW": 3.5374600675860957e-06,
+        "DK-TG": 1.7987383055216577e-06,
+        "heading MAE": 3.809958747891251e-05,
+        "yaw-rate MAE": 0.000466293060724432,
+        "curvature MAE": 9.189370028805932e-07,
+        "cross-track MAE": 3.880138406686662e-07,
+        "L1 lateral-accel MAE": 5.075970212731207e-05,
+        "L2 curvature MAE (GT>=5.2)": 5.294439961410491e-07,
+        "TAC-LAT": 0.0,
+        "TAC-LON": 0.0,
+        "S-POS@30": 1.387504114380711e-07,
+        "S-POS@50": 1.6932608613018374e-06,
+        "S-POS@80": 1.5145812648387214e-05,
+        "M1 crawl share": 0.0
+       }
+      }
+     }
+    },
+    "s1": {
+     "XP": {
+      "ADE6": {
+       "delta": -1.1894998254310993,
+       "lo": -1.393760809432505,
+       "hi": -0.984742811361493,
+       "separated": true
+      },
+      "speed MAE": {
+       "delta": -0.77366687200391,
+       "lo": -0.9864258043721071,
+       "hi": -0.5882322779387112,
+       "separated": true
+      },
+      "along-track MAE": {
+       "delta": -0.6259983494429979,
+       "lo": -0.8049227515226016,
+       "hi": -0.44972675441100185,
+       "separated": true
+      },
+      "accel MAE": {
+       "delta": -0.7964141664288751,
+       "lo": -1.1397225588172806,
+       "hi": -0.4913446106075525,
+       "separated": true
+      },
+      "DK-VIOL": {
+       "delta": -0.0067226890756302525,
+       "lo": -0.026467465146502833,
+       "hi": 0.012170473586736043,
+       "separated": false
+      },
+      "DK-HW": {
+       "delta": -0.5480796045102012,
+       "lo": -0.9299543185561449,
+       "hi": -0.22179405599127594,
+       "separated": true
+      },
+      "DK-TG": {
+       "delta": -0.08632707444903069,
+       "lo": -0.14666070871542664,
+       "hi": -0.03562007462807823,
+       "separated": true
+      },
+      "heading MAE": {
+       "delta": -2.9474642605333474,
+       "lo": -3.631840328156729,
+       "hi": -2.3097256796193872,
+       "separated": true
+      },
+      "yaw-rate MAE": {
+       "delta": 3.0977841752111748,
+       "lo": 0.22136971870946717,
+       "hi": 6.218001112793093,
+       "separated": true
+      },
+      "curvature MAE": {
+       "delta": 0.10680962812801359,
+       "lo": 0.06668786850876567,
+       "hi": 0.15326909693023272,
+       "separated": true
+      },
+      "cross-track MAE": {
+       "delta": -1.0188566533879817,
+       "lo": -1.1607454832170423,
+       "hi": -0.8829211096214048,
+       "separated": true
+      },
+      "L1 lateral-accel MAE": {
+       "delta": -2.5743258346242164,
+       "lo": -3.8473276492249817,
+       "hi": -1.4600752907182948,
+       "separated": true
+      },
+      "L2 curvature MAE (GT>=5.2)": {
+       "delta": 0.04536991685040209,
+       "lo": 0.022429808582884413,
+       "hi": 0.07389880878413184,
+       "separated": true
+      },
+      "TAC-LAT": {
+       "delta": 0.21383909962484368,
+       "lo": 0.17472530059772032,
+       "hi": 0.2547956630525438,
+       "separated": true
+      },
+      "TAC-LON": {
+       "delta": 0.15839933305543977,
+       "lo": 0.09751979991663193,
+       "hi": 0.21719239353202713,
+       "separated": true
+      },
+      "S-POS@30": {
+       "delta": -1.7972356145389867,
+       "lo": -2.2609871575339797,
+       "hi": -1.3947829845705464,
+       "separated": true
+      },
+      "S-POS@50": {
+       "delta": -5.025271476546204,
+       "lo": -6.155008012200709,
+       "hi": -3.9714133288809297,
+       "separated": true
+      },
+      "S-POS@80": {
+       "delta": -10.761917801442763,
+       "lo": -12.948847863957152,
+       "hi": -8.679168161629631,
+       "separated": true
+      },
+      "M1 crawl share": {
+       "delta": 0.057644366043103926,
+       "lo": 0.03644554820473805,
+       "hi": 0.08225883898083279,
+       "separated": true
+      }
+     },
+     "XY": {
+      "ADE6": {
+       "delta": -0.05581992095453343,
+       "lo": -0.08894841748107578,
+       "hi": -0.022882120853818178,
+       "separated": true
+      },
+      "speed MAE": {
+       "delta": -0.11389380543586458,
+       "lo": -0.16767930192024166,
+       "hi": -0.06271755632165393,
+       "separated": true
+      },
+      "along-track MAE": {
+       "delta": -0.021381246653720633,
+       "lo": -0.04938727771547941,
+       "hi": 0.008522645300186826,
+       "separated": false
+      },
+      "accel MAE": {
+       "delta": -0.48942933725439497,
+       "lo": -0.6983845280118778,
+       "hi": -0.2999711832048058,
+       "separated": true
+      },
+      "DK-VIOL": {
+       "delta": -0.0033613445378151263,
+       "lo": -0.012007441416577464,
+       "hi": 0.0039243358633775935,
+       "separated": false
+      },
+      "DK-HW": {
+       "delta": -0.07919976649008646,
+       "lo": -0.21616544749321864,
+       "hi": 0.035570614496439924,
+       "separated": false
+      },
+      "DK-TG": {
+       "delta": 0.00498445167520731,
+       "lo": -0.024760517359767753,
+       "hi": 0.04331444520116122,
+       "separated": false
+      },
+      "heading MAE": {
+       "delta": -0.637540773141302,
+       "lo": -0.9458428885456568,
+       "hi": -0.3869519507239337,
+       "separated": true
+      },
+      "yaw-rate MAE": {
+       "delta": -5.692687786131463,
+       "lo": -7.679675567239664,
+       "hi": -3.9568318183131814,
+       "separated": true
+      },
+      "curvature MAE": {
+       "delta": -0.01749196985491745,
+       "lo": -0.03563427142197865,
+       "hi": -0.00017602248082340712,
+       "separated": true
+      },
+      "cross-track MAE": {
+       "delta": -0.058392403804191986,
+       "lo": -0.0842952622414782,
+       "hi": -0.03361852802575436,
+       "separated": true
+      },
+      "L1 lateral-accel MAE": {
+       "delta": -1.1617106333394818,
+       "lo": -1.666943302751879,
+       "hi": -0.7007473044427162,
+       "separated": true
+      },
+      "L2 curvature MAE (GT>=5.2)": {
+       "delta": -0.013804040095353541,
+       "lo": -0.031795682944381655,
+       "hi": -0.0007589636710993876,
+       "separated": true
+      },
+      "TAC-LAT": {
+       "delta": 0.010837849103793247,
+       "lo": -0.0008340370556328577,
+       "hi": 0.022926219258024176,
+       "separated": false
+      },
+      "TAC-LON": {
+       "delta": 0.015423092955398083,
+       "lo": -0.009184637329774255,
+       "hi": 0.03916707482284285,
+       "separated": false
+      },
+      "S-POS@30": {
+       "delta": -0.23018227195462143,
+       "lo": -0.38188872311013294,
+       "hi": -0.10004336208380167,
+       "separated": true
+      },
+      "S-POS@50": {
+       "delta": -0.37324466203410117,
+       "lo": -0.6209497673703294,
+       "hi": -0.1650573257960801,
+       "separated": true
+      },
+      "S-POS@80": {
+       "delta": -0.5872474164206475,
+       "lo": -0.9837252579932457,
+       "hi": -0.26104008473908896,
+       "separated": true
+      },
+      "M1 crawl share": {
+       "delta": -0.004388424274026955,
+       "lo": -0.008859102500536372,
+       "hi": -0.00018861369074759442,
+       "separated": true
+      }
+     },
+     "vs_card_rollouts": {
+      "XP": {
+       "max_abs_delta_diff": 3.575807509292872e-05,
+       "rows_whose_separated_flag_or_sign_differs": [],
+       "max_abs_delta_diff_by_row": {
+        "ADE6": 1.1347227333313725e-06,
+        "speed MAE": 2.890593323146007e-06,
+        "along-track MAE": 1.372374644592611e-06,
+        "accel MAE": 4.708714140821968e-08,
+        "DK-VIOL": 0.0,
+        "DK-HW": 2.695065454250134e-06,
+        "DK-TG": 7.674344067593042e-07,
+        "heading MAE": 1.8728528422773394e-05,
+        "yaw-rate MAE": 1.7632702226766384e-05,
+        "curvature MAE": 7.532271960319914e-08,
+        "cross-track MAE": 2.0459370864145399e-07,
+        "L1 lateral-accel MAE": 1.177340712477104e-05,
+        "L2 curvature MAE (GT>=5.2)": 1.3595750679371021e-06,
+        "TAC-LAT": 0.0,
+        "TAC-LON": 0.0,
+        "S-POS@30": 6.26377053736249e-06,
+        "S-POS@50": 1.54319015868154e-05,
+        "S-POS@80": 3.575807509292872e-05,
+        "M1 crawl share": 0.0
+       }
+      },
+      "XY": {
+       "max_abs_delta_diff": 1.8728528422773394e-05,
+       "rows_whose_separated_flag_or_sign_differs": [],
+       "max_abs_delta_diff_by_row": {
+        "ADE6": 1.1347227322697218e-06,
+        "speed MAE": 2.890593322729673e-06,
+        "along-track MAE": 1.3723746445128138e-06,
+        "accel MAE": 4.708714140821968e-08,
+        "DK-VIOL": 0.0,
+        "DK-HW": 2.6063929996905655e-06,
+        "DK-TG": 7.652717723318631e-07,
+        "heading MAE": 1.8728528422773394e-05,
+        "yaw-rate MAE": 1.8206291329647684e-05,
+        "curvature MAE": 8.85198066999382e-08,
+        "cross-track MAE": 2.0459370814879252e-07,
+        "L1 lateral-accel MAE": 1.1737251083276945e-05,
+        "L2 curvature MAE (GT>=5.2)": 1.3647069830348413e-06,
+        "TAC-LAT": 0.0,
+        "TAC-LON": 0.0,
+        "S-POS@30": 6.745675805552853e-06,
+        "S-POS@50": 1.250361589938409e-05,
+        "S-POS@80": 1.4893912754221361e-05,
+        "M1 crawl share": 0.0
+       }
+      }
+     }
+    }
+   },
+   "outcome": "MOVED",
+   "DOMINANT": false,
+   "HARMS_condition": false,
+   "MOVED_condition": true,
+   "moved_and_harms": false,
+   "outcome_of_card_rollouts": "MOVED"
+  }
+ }
+}

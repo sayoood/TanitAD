@@ -30,7 +30,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from tanitad.scena import (VectorIndex, parse, vector, write_scenarios_json)
 from tanitad.scena.parse import STAGES
 
-DB = (Path(__file__).resolve().parents[2] / "TanitAD Research Hub" /
+DB = (Path(__file__).resolve().parents[2] / "TanitAD Research Lab" /
       "Opponent Analyzer" / "SCENARIO_DATABASE.md")
 
 pytestmark = pytest.mark.skipif(

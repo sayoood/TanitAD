@@ -1,0 +1,81 @@
+{
+ "tool": "old_dumper_batch_probe/1",
+ "keys": 24,
+ "old_b1": {
+  "rc": 0,
+  "wall_sec": 23.0,
+  "sets": 24
+ },
+ "old_b4": {
+  "rc": 0,
+  "wall_sec": 23.3,
+  "sets": 24
+ },
+ "old_b1_vs_old_b4": {
+  "compare": "onpolicy_dump batch 1 vs batch 4, same GPU, same 24 keys",
+  "keys_in_a": 24,
+  "keys_in_b": 24,
+  "common": 24,
+  "bit_identical": 0,
+  "not_identical": 24,
+  "values_compared": 92160,
+  "values_different": 59156,
+  "max_abs_delta": 0.25,
+  "median_max_delta_over_unequal": 0.125,
+  "first_unequal": [
+   [
+    [
+     "2021.05.12.19.36.12_veh-35_01400_01643",
+     "33cc567cb8405ed4",
+     0,
+     0
+    ],
+    0.0625
+   ],
+   [
+    [
+     "2021.05.12.19.36.12_veh-35_01400_01643",
+     "704c31a8c06b5f1b",
+     0,
+     0
+    ],
+    0.125
+   ],
+   [
+    [
+     "2021.05.12.19.36.12_veh-35_01400_01643",
+     "b6a5bafe44c25002",
+     0,
+     0
+    ],
+    0.03125999999999962
+   ]
+  ]
+ },
+ "new_b1_vs_old_b1": {
+  "compare": "rl_fan_dump vs onpolicy_dump, both at batch 1",
+  "keys_in_a": 24,
+  "keys_in_b": 24,
+  "common": 24,
+  "bit_identical": 24,
+  "not_identical": 0,
+  "values_compared": 92160,
+  "values_different": 0,
+  "max_abs_delta": 0.0,
+  "median_max_delta_over_unequal": 0.0,
+  "first_unequal": []
+ },
+ "new_b4_vs_old_b4": {
+  "compare": "rl_fan_dump vs onpolicy_dump, both at batch 4",
+  "keys_in_a": 24,
+  "keys_in_b": 24,
+  "common": 24,
+  "bit_identical": 24,
+  "not_identical": 0,
+  "values_compared": 92160,
+  "values_different": 0,
+  "max_abs_delta": 0.0,
+  "median_max_delta_over_unequal": 0.0,
+  "first_unequal": []
+ }
+}

@@ -1,0 +1,1918 @@
+{
+ "prereg": "c26f7b8a2e9816307ae6889f62908226d663afd3e83b7346e3bbb6c6f78db5f3",
+ "n_rows": 12146,
+ "n_error_lines": 0,
+ "n_primary": 12110,
+ "controls": {
+  "C-COV": {
+   "pass": true,
+   "tokens": 12146,
+   "expect": 12146,
+   "primary": 12110,
+   "expect_primary": 12110,
+   "error_lines": 0,
+   "every_arm_on_every_token": true
+  },
+  "C-BUILD": {
+   "pass": true,
+   "controls": {
+    "C-BUILD-COV": true,
+    "C-BUILD-T-IS-BANKED": true,
+    "C-SEAM": true
+   }
+  },
+  "C-PIN": {
+   "pass": true,
+   "mismatch": []
+  },
+  "C-EST": {
+   "pass": true,
+   "proxy_eval_boot": [
+    0.8980603585520233,
+    0.8856315214923324,
+    0.9099836951943507
+   ],
+   "ours": [
+    0.8980603585520233,
+    0.8856315214923324,
+    0.9099836951943509
+   ],
+   "max_abs_dev": 1.1102230246251565e-16
+  },
+  "C-ID-H": {
+   "pass": true,
+   "tol": 1e-06,
+   "tokens_compared": 12146,
+   "missing_in_reference": 0,
+   "tokens_over_tol": 0,
+   "max_abs_diff": 0.0,
+   "max_abs_diff_by_metric": {
+    "nc": 0.0,
+    "dac": 0.0,
+    "ddc": 0.0,
+    "ep": 0.0,
+    "ttc": 0.0,
+    "c": 0.0,
+    "pdms": 0.0
+   },
+   "pdms_all_tokens_x100": 89.7861,
+   "reference_pdms_all_tokens_x100": 89.7861,
+   "reference": "C:\\Users\\Admin\\n1_run\\inputs\\refe_p4_teacher_navtest.csv"
+  },
+  "C-REG": {
+   "pass": true,
+   "N1W_pdms": 52.3849,
+   "N1T_pdms": 89.806,
+   "bar": "PDMS(N1W) <= PDMS(N1T) - 10.0"
+  }
+ },
+ "diag_human_vs_banked_harness": {
+  "n": 12146,
+  "tokens_over_tol": 0,
+  "max_abs_diff": 0.0,
+  "note": "diagnostic, decides nothing: the banked human seam is NAVSIM's human, the W-TRANSP human arm is the DB's logged future (they differ on the 36 C1 tokens by construction)"
+ },
+ "scorer_of_record": "pinned W3 harness CSVs (FALLBACK ROUTE: C-ID-H failed on W-TRANSP)",
+ "tables": {
+  "primary_12110": {
+   "N1T_tracked": {
+    "nc": {
+     "mean": 99.3683,
+     "ci95": [
+      99.1032,
+      99.6053
+     ],
+     "ci_bonferroni_K42": [
+      98.9269,
+      99.7201
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "dac": {
+     "mean": 95.2271,
+     "ci95": [
+      94.2448,
+      96.1649
+     ],
+     "ci_bonferroni_K42": [
+      93.5965,
+      96.8235
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ddc": {
+     "mean": 98.9678,
+     "ci95": [
+      98.6402,
+      99.2522
+     ],
+     "ci_bonferroni_K42": [
+      98.4194,
+      99.4114
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ep": {
+     "mean": 85.1812,
+     "ci95": [
+      83.7769,
+      86.5785
+     ],
+     "ci_bonferroni_K42": [
+      82.8481,
+      87.3476
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ttc": {
+     "mean": 97.1511,
+     "ci95": [
+      96.4934,
+      97.7906
+     ],
+     "ci_bonferroni_K42": [
+      96.0498,
+      98.1719
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "c": {
+     "mean": 99.9174,
+     "ci95": [
+      99.8427,
+      99.9752
+     ],
+     "ci_bonferroni_K42": [
+      99.7859,
+      99.9925
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "pdms": {
+     "mean": 89.806,
+     "ci95": [
+      88.5632,
+      90.9984
+     ],
+     "ci_bonferroni_K42": [
+      87.773,
+      91.6723
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "zero_rows": {
+     "pdms": 647,
+     "dac": 578,
+     "nc": 75
+    }
+   },
+   "N1C_tracked": {
+    "nc": {
+     "mean": 99.6821,
+     "ci95": [
+      99.525,
+      99.825
+     ],
+     "ci_bonferroni_K42": [
+      99.4169,
+      99.8986
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "dac": {
+     "mean": 99.0091,
+     "ci95": [
+      98.602,
+      99.358
+     ],
+     "ci_bonferroni_K42": [
+      98.2367,
+      99.5456
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ddc": {
+     "mean": 99.0917,
+     "ci95": [
+      98.774,
+      99.3647
+     ],
+     "ci_bonferroni_K42": [
+      98.575,
+      99.5457
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ep": {
+     "mean": 88.7584,
+     "ci95": [
+      88.0764,
+      89.4714
+     ],
+     "ci_bonferroni_K42": [
+      87.622,
+      89.9049
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ttc": {
+     "mean": 98.7614,
+     "ci95": [
+      98.3423,
+      99.1538
+     ],
+     "ci_bonferroni_K42": [
+      98.0728,
+      99.3664
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "c": {
+     "mean": 99.8101,
+     "ci95": [
+      99.6919,
+      99.9111
+     ],
+     "ci_bonferroni_K42": [
+      99.6075,
+      99.9602
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "pdms": {
+     "mean": 94.099,
+     "ci95": [
+      93.5957,
+      94.5907
+     ],
+     "ci_bonferroni_K42": [
+      93.2548,
+      94.906
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "zero_rows": {
+     "pdms": 154,
+     "dac": 120,
+     "nc": 36
+    }
+   },
+   "N1W_tracked": {
+    "nc": {
+     "mean": 87.0768,
+     "ci95": [
+      85.1599,
+      88.9622
+     ],
+     "ci_bonferroni_K42": [
+      84.0027,
+      90.1539
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "dac": {
+     "mean": 72.147,
+     "ci95": [
+      68.5248,
+      75.5719
+     ],
+     "ci_bonferroni_K42": [
+      66.1889,
+      77.9907
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ddc": {
+     "mean": 89.8183,
+     "ci95": [
+      88.3303,
+      91.311
+     ],
+     "ci_bonferroni_K42": [
+      87.432,
+      92.1287
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ep": {
+     "mean": 53.5101,
+     "ci95": [
+      50.3161,
+      56.7783
+     ],
+     "ci_bonferroni_K42": [
+      48.3761,
+      59.1406
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ttc": {
+     "mean": 68.5879,
+     "ci95": [
+      65.5584,
+      71.7264
+     ],
+     "ci_bonferroni_K42": [
+      63.7641,
+      73.8586
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "c": {
+     "mean": 87.2337,
+     "ci95": [
+      84.9524,
+      89.3674
+     ],
+     "ci_bonferroni_K42": [
+      83.3513,
+      90.7524
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "pdms": {
+     "mean": 52.3849,
+     "ci95": [
+      49.9742,
+      54.7991
+     ],
+     "ci_bonferroni_K42": [
+      48.5802,
+      56.4543
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "zero_rows": {
+     "pdms": 4550,
+     "dac": 3373,
+     "nc": 1463
+    }
+   },
+   "N1M_tracked": {
+    "nc": {
+     "mean": 98.9761,
+     "ci95": [
+      98.6132,
+      99.2945
+     ],
+     "ci_bonferroni_K42": [
+      98.3618,
+      99.498
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "dac": {
+     "mean": 98.6788,
+     "ci95": [
+      98.2183,
+      99.0763
+     ],
+     "ci_bonferroni_K42": [
+      97.8525,
+      99.3046
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ddc": {
+     "mean": 99.0999,
+     "ci95": [
+      98.7835,
+      99.3755
+     ],
+     "ci_bonferroni_K42": [
+      98.5821,
+      99.5493
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ep": {
+     "mean": 88.0343,
+     "ci95": [
+      87.2904,
+      88.8001
+     ],
+     "ci_bonferroni_K42": [
+      86.8004,
+      89.3552
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ttc": {
+     "mean": 97.4319,
+     "ci95": [
+      96.8072,
+      98.0001
+     ],
+     "ci_bonferroni_K42": [
+      96.3922,
+      98.32
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "c": {
+     "mean": 99.5293,
+     "ci95": [
+      99.35,
+      99.7007
+     ],
+     "ci_bonferroni_K42": [
+      99.2365,
+      99.7987
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "pdms": {
+     "mean": 92.9775,
+     "ci95": [
+      92.3116,
+      93.612
+     ],
+     "ci_bonferroni_K42": [
+      91.88,
+      93.9752
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "zero_rows": {
+     "pdms": 268,
+     "dac": 160,
+     "nc": 119
+    }
+   },
+   "human_tracked": {
+    "nc": {
+     "mean": 100.0,
+     "ci95": [
+      100.0,
+      100.0
+     ],
+     "ci_bonferroni_K42": [
+      100.0,
+      100.0
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "dac": {
+     "mean": 100.0,
+     "ci95": [
+      100.0,
+      100.0
+     ],
+     "ci_bonferroni_K42": [
+      100.0,
+      100.0
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ddc": {
+     "mean": 98.8233,
+     "ci95": [
+      98.3837,
+      99.2019
+     ],
+     "ci_bonferroni_K42": [
+      98.1064,
+      99.4045
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ep": {
+     "mean": 86.9387,
+     "ci95": [
+      85.0852,
+      88.5769
+     ],
+     "ci_bonferroni_K42": [
+      84.0258,
+      89.4698
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ttc": {
+     "mean": 100.0,
+     "ci95": [
+      100.0,
+      100.0
+     ],
+     "ci_bonferroni_K42": [
+      100.0,
+      100.0
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "c": {
+     "mean": 99.9587,
+     "ci95": [
+      99.91,
+      99.9925
+     ],
+     "ci_bonferroni_K42": [
+      99.8693,
+      100.0
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "pdms": {
+     "mean": 94.5509,
+     "ci95": [
+      93.7788,
+      95.2338
+     ],
+     "ci_bonferroni_K42": [
+      93.3321,
+      95.6064
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "zero_rows": {
+     "pdms": 0,
+     "dac": 0,
+     "nc": 0
+    }
+   },
+   "CERT_tracked": {
+    "nc": {
+     "mean": 99.6656,
+     "ci95": [
+      99.5101,
+      99.8117
+     ],
+     "ci_bonferroni_K42": [
+      99.4017,
+      99.8744
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "dac": {
+     "mean": 99.7275,
+     "ci95": [
+      99.4853,
+      99.9079
+     ],
+     "ci_bonferroni_K42": [
+      99.267,
+      99.9723
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ddc": {
+     "mean": 99.0958,
+     "ci95": [
+      98.778,
+      99.3687
+     ],
+     "ci_bonferroni_K42": [
+      98.5915,
+      99.5482
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ep": {
+     "mean": 89.4137,
+     "ci95": [
+      88.7223,
+      90.1059
+     ],
+     "ci_bonferroni_K42": [
+      88.2863,
+      90.5979
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ttc": {
+     "mean": 98.7283,
+     "ci95": [
+      98.3031,
+      99.122
+     ],
+     "ci_bonferroni_K42": [
+      98.0267,
+      99.3415
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "c": {
+     "mean": 99.8018,
+     "ci95": [
+      99.6912,
+      99.8982
+     ],
+     "ci_bonferroni_K42": [
+      99.6128,
+      99.9483
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "pdms": {
+     "mean": 94.7534,
+     "ci95": [
+      94.2998,
+      95.1933
+     ],
+     "ci_bonferroni_K42": [
+      94.009,
+      95.4512
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "zero_rows": {
+     "pdms": 70,
+     "dac": 33,
+     "nc": 37
+    }
+   }
+  },
+  "all_12146_sensitivity": {
+   "N1T_tracked": {
+    "nc": {
+     "mean": 99.3702,
+     "ci95": [
+      99.1058,
+      99.6067
+     ],
+     "ci_bonferroni_K42": [
+      98.9312,
+      99.7211
+     ],
+     "n": 12146,
+     "n_logs": 136
+    },
+    "dac": {
+     "mean": 95.2001,
+     "ci95": [
+      94.2057,
+      96.1459
+     ],
+     "ci_bonferroni_K42": [
+      93.5781,
+      96.7601
+     ],
+     "n": 12146,
+     "n_logs": 136
+    },
+    "ddc": {
+     "mean": 98.9709,
+     "ci95": [
+      98.6428,
+      99.2544
+     ],
+     "ci_bonferroni_K42": [
+      98.4251,
+      99.4126
+     ],
+     "n": 12146,
+     "n_logs": 136
+    },
+    "ep": {
+     "mean": 85.1623,
+     "ci95": [
+      83.7605,
+      86.5656
+     ],
+     "ci_bonferroni_K42": [
+      82.8516,
+      87.3274
+     ],
+     "n": 12146,
+     "n_logs": 136
+    },
+    "ttc": {
+     "mean": 97.1596,
+     "ci95": [
+      96.5031,
+      97.7974
+     ],
+     "ci_bonferroni_K42": [
+      96.0573,
+      98.1763
+     ],
+     "n": 12146,
+     "n_logs": 136
+    },
+    "c": {
+     "mean": 99.9177,
+     "ci95": [
+      99.8432,
+      99.9753
+     ],
+     "ci_bonferroni_K42": [
+      99.7865,
+      99.9925
+     ],
+     "n": 12146,
+     "n_logs": 136
+    },
+    "pdms": {
+     "mean": 89.7861,
+     "ci95": [
+      88.5474,
+      90.9737
+     ],
+     "ci_bonferroni_K42": [
+      87.7516,
+      91.6385
+     ],
+     "n": 12146,
+     "n_logs": 136
+    },
+    "zero_rows": {
+     "pdms": 652,
+     "dac": 583,
+     "nc": 75
+    }
+   },
+   "N1C_tracked": {
+    "nc": {
+     "mean": 99.683,
+     "ci95": [
+      99.5258,
+      99.8255
+     ],
+     "ci_bonferroni_K42": [
+      99.4181,
+      99.8989
+     ],
+     "n": 12146,
+     "n_logs": 136
+    },
+    "dac": {
+     "mean": 98.9873,
+     "ci95": [
+      98.5789,
+      99.3427
+     ],
+     "ci_bonferroni_K42": [
+      98.1882,
+      99.5199
+     ],
+     "n": 12146,
+     "n_logs": 136
+    },
+    "ddc": {
+     "mean": 99.0944,
+     "ci95": [
+      98.7776,
+      99.3673
+     ],
+     "ci_bonferroni_K42": [
+      98.5789,
+      99.5491
+     ],
+     "n": 12146,
+     "n_logs": 136
+    },
+    "ep": {
+     "mean": 88.7383,
+     "ci95": [
+      88.0559,
+      89.448
+     ],
+     "ci_bonferroni_K42": [
+      87.6192,
+      89.8881
+     ],
+     "n": 12146,
+     "n_logs": 136
+    },
+    "ttc": {
+     "mean": 98.765,
+     "ci95": [
+      98.3486,
+      99.1567
+     ],
+     "ci_bonferroni_K42": [
+      98.0789,
+      99.3688
+     ],
+     "n": 12146,
+     "n_logs": 136
+    },
+    "c": {
+     "mean": 99.8106,
+     "ci95": [
+      99.6927,
+      99.9114
+     ],
+     "ci_bonferroni_K42": [
+      99.6081,
+      99.9603
+     ],
+     "n": 12146,
+     "n_logs": 136
+    },
+    "pdms": {
+     "mean": 94.0798,
+     "ci95": [
+      93.5749,
+      94.5745
+     ],
+     "ci_bonferroni_K42": [
+      93.2184,
+      94.8846
+     ],
+     "n": 12146,
+     "n_logs": 136
+    },
+    "zero_rows": {
+     "pdms": 157,
+     "dac": 123,
+     "nc": 36
+    }
+   },
+   "CERT_tracked": {
+    "nc": {
+     "mean": 99.6666,
+     "ci95": [
+      99.5107,
+      99.8124
+     ],
+     "ci_bonferroni_K42": [
+      99.404,
+      99.8755
+     ],
+     "n": 12146,
+     "n_logs": 136
+    },
+    "dac": {
+     "mean": 99.7283,
+     "ci95": [
+      99.487,
+      99.9081
+     ],
+     "ci_bonferroni_K42": [
+      99.2688,
+      99.9724
+     ],
+     "n": 12146,
+     "n_logs": 136
+    },
+    "ddc": {
+     "mean": 99.0985,
+     "ci95": [
+      98.7812,
+      99.3708
+     ],
+     "ci_bonferroni_K42": [
+      98.5953,
+      99.5494
+     ],
+     "n": 12146,
+     "n_logs": 136
+    },
+    "ep": {
+     "mean": 89.4163,
+     "ci95": [
+      88.7255,
+      90.1061
+     ],
+     "ci_bonferroni_K42": [
+      88.285,
+      90.5828
+     ],
+     "n": 12146,
+     "n_logs": 136
+    },
+    "ttc": {
+     "mean": 98.7321,
+     "ci95": [
+      98.3075,
+      99.1236
+     ],
+     "ci_bonferroni_K42": [
+      98.0287,
+      99.3441
+     ],
+     "n": 12146,
+     "n_logs": 136
+    },
+    "c": {
+     "mean": 99.8024,
+     "ci95": [
+      99.6918,
+      99.8986
+     ],
+     "ci_bonferroni_K42": [
+      99.6141,
+      99.9485
+     ],
+     "n": 12146,
+     "n_logs": 136
+    },
+    "pdms": {
+     "mean": 94.757,
+     "ci95": [
+      94.3033,
+      95.1948
+     ],
+     "ci_bonferroni_K42": [
+      94.0188,
+      95.4574
+     ],
+     "n": 12146,
+     "n_logs": 136
+    },
+    "zero_rows": {
+     "pdms": 70,
+     "dac": 33,
+     "nc": 37
+    }
+   },
+   "human_tracked": {
+    "nc": {
+     "mean": 100.0,
+     "ci95": [
+      100.0,
+      100.0
+     ],
+     "ci_bonferroni_K42": [
+      100.0,
+      100.0
+     ],
+     "n": 12146,
+     "n_logs": 136
+    },
+    "dac": {
+     "mean": 100.0,
+     "ci95": [
+      100.0,
+      100.0
+     ],
+     "ci_bonferroni_K42": [
+      100.0,
+      100.0
+     ],
+     "n": 12146,
+     "n_logs": 136
+    },
+    "ddc": {
+     "mean": 98.8268,
+     "ci95": [
+      98.3906,
+      99.2039
+     ],
+     "ci_bonferroni_K42": [
+      98.1121,
+      99.4086
+     ],
+     "n": 12146,
+     "n_logs": 136
+    },
+    "ep": {
+     "mean": 86.9629,
+     "ci95": [
+      85.1081,
+      88.5981
+     ],
+     "ci_bonferroni_K42": [
+      84.0382,
+      89.4908
+     ],
+     "n": 12146,
+     "n_logs": 136
+    },
+    "ttc": {
+     "mean": 100.0,
+     "ci95": [
+      100.0,
+      100.0
+     ],
+     "ci_bonferroni_K42": [
+      100.0,
+      100.0
+     ],
+     "n": 12146,
+     "n_logs": 136
+    },
+    "c": {
+     "mean": 99.9012,
+     "ci95": [
+      99.7924,
+      99.976
+     ],
+     "ci_bonferroni_K42": [
+      99.7024,
+      100.0
+     ],
+     "n": 12146,
+     "n_logs": 136
+    },
+    "pdms": {
+     "mean": 94.5514,
+     "ci95": [
+      93.781,
+      95.2328
+     ],
+     "ci_bonferroni_K42": [
+      93.3384,
+      95.6021
+     ],
+     "n": 12146,
+     "n_logs": 136
+    },
+    "zero_rows": {
+     "pdms": 0,
+     "dac": 0,
+     "nc": 0
+    }
+   }
+  }
+ },
+ "primary": {
+  "contrast": "N1C - N1T, paired PDMS x100, tracked (W-TRANSP), primary 12,110",
+  "delta": {
+   "mean": 4.2929,
+   "ci95": [
+    3.3305,
+    5.3187
+   ],
+   "ci_bonferroni_K42": [
+    2.7651,
+    6.0401
+   ],
+   "n": 12110,
+   "n_logs": 136
+  },
+  "N1C_dac": 99.0091,
+  "N1C_pdms": {
+   "mean": 94.099,
+   "ci95": [
+    93.5957,
+    94.5907
+   ],
+   "ci_bonferroni_K42": [
+    93.2548,
+    94.906
+   ],
+   "n": 12110,
+   "n_logs": 136
+  },
+  "N1T_pdms": {
+   "mean": 89.806,
+   "ci95": [
+    88.5632,
+    90.9984
+   ],
+   "ci_bonferroni_K42": [
+    87.773,
+    91.6723
+   ],
+   "n": 12110,
+   "n_logs": 136
+  },
+  "rule": "CONFIRMED iff delta >= +3.0 AND ci95 lo > 0 AND N1C DAC >= 98.5",
+  "outcome": "CONFIRMED",
+  "dac_delta": {
+   "mean": 3.782,
+   "ci95": [
+    2.8535,
+    4.7624
+   ],
+   "ci_bonferroni_K42": [
+    2.2887,
+    5.4416
+   ],
+   "n": 12110,
+   "n_logs": 136
+  },
+  "sensitivity_all_12146": {
+   "mean": 4.2937,
+   "ci95": [
+    3.3314,
+    5.3162
+   ],
+   "ci_bonferroni_K42": [
+    2.7614,
+    6.0344
+   ],
+   "n": 12146,
+   "n_logs": 136
+  }
+ },
+ "paper_level": {
+  "N1C": {
+   "pdms": {
+    "mean": 94.099,
+    "ci95": [
+     93.5957,
+     94.5907
+    ],
+    "ci_bonferroni_K42": [
+     93.2548,
+     94.906
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "dac": {
+    "mean": 99.0091,
+    "ci95": [
+     98.602,
+     99.358
+    ],
+    "ci_bonferroni_K42": [
+     98.2367,
+     99.5456
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "level": "BELOW",
+   "gap_to_paper_pdms": 1.701,
+   "decomposition_mean_field": {
+    "what": "PDMS formula on the arm's sub-score MEANS; each sub-score swapped one at a time to the paper's Table 4 value (descriptive, never a bar)",
+    "formula_on_means_x100": 93.5309,
+    "residual_actual_minus_formula": 0.5681,
+    "swap_gain_x100": {
+     "nc": 0.1106,
+     "dac": 0.8416,
+     "ep": 1.1274,
+     "ttc": 0.1392,
+     "c": -0.1333
+    }
+   }
+  },
+  "rule": "PAPER LEVEL iff PDMS >= 95.8 AND DAC >= 99.9; NEAR iff >= 95.3 AND >= 99.5; else BELOW (point values)",
+  "human_anchored_descriptive": {
+   "our_human": 94.5509,
+   "paper_human": 94.8,
+   "human_anchored_paper_level": 95.5509,
+   "N1C_minus_human": {
+    "mean": -0.4519,
+    "ci95": [
+     -1.2111,
+     0.3484
+    ],
+    "ci_bonferroni_K42": [
+     -1.6642,
+     0.8412
+    ],
+    "n": 12110,
+    "n_logs": 136
+   }
+  }
+ },
+ "secondary_CERT": {
+  "label": "teacher + map-certified selection (NEVER the teacher alone, NEVER checkpoint identity)",
+  "decides": "nothing",
+  "choice_primary": {
+   "N1C": 12023,
+   "N1M": 61,
+   "N1T": 26
+  },
+  "none_pass_primary": 33,
+  "CERT_minus_N1C": {
+   "mean": 0.6545,
+   "ci95": [
+    0.4352,
+    0.8929
+   ],
+   "ci_bonferroni_K42": [
+    0.3065,
+    1.0515
+   ],
+   "n": 12110,
+   "n_logs": 136
+  },
+  "CERT_minus_N1C_dac": {
+   "mean": 0.7184,
+   "ci95": [
+    0.4737,
+    0.9888
+   ],
+   "ci_bonferroni_K42": [
+    0.3378,
+    1.1641
+   ],
+   "n": 12110,
+   "n_logs": 136
+  },
+  "CERT_minus_N1T": {
+   "mean": 4.9474,
+   "ci95": [
+    3.9721,
+    5.966
+   ],
+   "ci_bonferroni_K42": [
+    3.3538,
+    6.6784
+   ],
+   "n": 12110,
+   "n_logs": 136
+  },
+  "paper_read_descriptive": {
+   "pdms": {
+    "mean": 94.7534,
+    "ci95": [
+     94.2998,
+     95.1933
+    ],
+    "ci_bonferroni_K42": [
+     94.009,
+     95.4512
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "dac": {
+    "mean": 99.7275,
+    "ci95": [
+     99.4853,
+     99.9079
+    ],
+    "ci_bonferroni_K42": [
+     99.267,
+     99.9723
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "level": "BELOW",
+   "gap_to_paper_pdms": 1.0466,
+   "decomposition_mean_field": {
+    "what": "PDMS formula on the arm's sub-score MEANS; each sub-score swapped one at a time to the paper's Table 4 value (descriptive, never a bar)",
+    "formula_on_means_x100": 94.4503,
+    "residual_actual_minus_formula": 0.3031,
+    "swap_gain_x100": {
+     "nc": 0.1274,
+     "dac": 0.1634,
+     "ep": 0.864,
+     "ttc": 0.1539,
+     "c": -0.1328
+    }
+   }
+  }
+ },
+ "transparent_descriptive": "from the W-TRANSP rows (not in the harness CSVs)",
+ "k_ledger": {
+  "entry": "ONE K entry (TF-N1). N1T (identity), N1W (regression), N1M (CERT input) and CERT (secondary) are logged under it as non-selection reads",
+  "K": 42
+ },
+ "families_summary": {
+  "N1C": {
+   "tier": "T1 (executed, LQR-tracked; W-TRANSP scenery, NOT harness-identical)",
+   "strategic": {
+    "status": "PAUSED",
+    "reason": "PI ruling 2026-09-19 (PI_DECISION_QUEUE item 25): the strategic layer is switched off temporarily. NOT a pass; also unavailable in NAVSIM.",
+    "tier": "T1"
+   },
+   "longitudinal": {
+    "speed_mae_mps": 0.7728,
+    "speed_bias_mps": 0.3347,
+    "speed_rmse_mps": 1.1207,
+    "target_speed_acc_note": "fraction of the 96880 horizon STEPS (not windows) whose |speed error| is within the band. Bands are PROPOSED reporting tolerances, not a gate.",
+    "along_mae_m": 1.0985,
+    "along_bias_m": 0.4598,
+    "along_final_bias_m": 1.1004,
+    "accel_mae_mps2": 0.493,
+    "dt_s": 0.5,
+    "rate_scaling_note": "speed ~ 1/dt, accel ~ 1/dt^2. Numbers computed with a wrong dt are off by those powers; along_* are dt-invariant.",
+    "n_windows": 12110,
+    "tier": "T1",
+    "target_speed_acc": {
+     "within_0.5_mps": 0.5137,
+     "within_1.0_mps": 0.7311,
+     "within_2.0_mps": 0.9088
+    },
+    "ego_progress": {
+     "status": "OK",
+     "convention": "human_dir",
+     "progress_ratio_mean": 1.0974,
+     "progress_ratio_median": 1.0811,
+     "progress_error_mean": 0.2025,
+     "under_progress_rate": 0.3072,
+     "gt_progress_mean_m": 20.0771,
+     "n": 12017,
+     "n_windows": 12110,
+     "n_excluded_low_gt_progress": 93,
+     "min_progress_m": 0.5,
+     "t0_axis_gt_self_ratio": 0.9711,
+     "definition": "along-track distance covered / the human's, both projected on the human's own final-displacement direction; dt-invariant; <1 = under-drives, >1 = over-drives; GT scores exactly 1.0 by construction",
+     "published_motivation": "arXiv 2605.00066 \u2014 Ego Progress alone rho=0.83 vs closed-loop Driving Score while traditional L2 gives rho=-0.36 (p=0.43, n=8, NO CI). Direction only; those magnitudes are NOT a target."
+    },
+    "distance_keeping": {
+     "n": 6188,
+     "n_windows": 12110,
+     "dt_s": 0.5,
+     "gap_convention": "rig-origin to lead rear face (along - size_x/2); NOT bumper-to-bumper",
+     "ttc_cap_s": 30.0,
+     "status": "OK",
+     "mean_headway_min_m": 16.8905,
+     "mean_time_gap_min_s": 4.9988,
+     "n_time_gap": 5654,
+     "mean_min_ttc_s": 13.6532,
+     "n_closing": 4677,
+     "censoring_note": "1511 of 6188 windows never close on the lead and are censored at TTC_CAP_S=30.0s. The mean is over censored data \u2014 quote n_closing beside it, never the mean alone.",
+     "admitted_by": "D-LEAD-1 discrimination control, 2026-08-03 \u2014 GT vs hold-v0 CV, PASS on all three metrics, paired episode-cluster bootstrap, 14,027 windows / 1,431 clusters"
+    }
+   },
+   "lateral": {
+    "heading_mae_deg": 2.6084,
+    "yaw_rate_mae_degps": 2.829,
+    "curvature_mae_1pm": 0.01266,
+    "curvature_bias_1pm": 0.000596,
+    "cross_mae_m": 0.3914,
+    "cross_bias_m": -0.1101,
+    "cross_final_mae_m": 0.9729,
+    "_along_mae_m_for_context": 1.0985,
+    "_projection_based_alternative": "taniteval/taniteval/lateral.py::frenet_dense decomposes pred-gt in the GT PATH's own frame (along^2 + cross^2 == ||pred-gt||^2); driving.py publishes it as headline.pathgeom_crosstrack_m.",
+    "n_steps_heading": 89693,
+    "n_steps_curvature": 77622,
+    "n_steps_yaw_rate": 77622,
+    "excluded_below_min_ds": 7187,
+    "min_ds_m": 0.25,
+    "min_ds_mps": 0.5,
+    "dt_s": 0.5,
+    "n_windows": 12110,
+    "tier": "T1"
+   },
+   "tactical": {
+    "status": "OK",
+    "source": "trajectory-derived (four_families.tactical_from_trajectory)",
+    "lateral_decision": {
+     "status": "OK",
+     "n": 12110,
+     "n_windows": 12110,
+     "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+     "tier": "T1",
+     "accuracy": 0.9327,
+     "kappa": 0.8767
+    },
+    "longitudinal_decision": {
+     "status": "OK",
+     "n": 12110,
+     "n_windows": 12110,
+     "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+     "tier": "T1",
+     "accuracy": 0.6827,
+     "kappa": 0.5251
+    },
+    "maneuver_5way_collapsed": {
+     "status": "OK",
+     "n": 12110,
+     "n_windows": 12110,
+     "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+     "tier": "T1",
+     "accuracy": 0.7992,
+     "kappa": 0.7447
+    },
+    "goal_setting": {
+     "status": "OK",
+     "n": 12110,
+     "n_windows": 12110,
+     "goal_point_error_m": 2.967,
+     "_goal_point_error_is": "the final-displacement error (FDE) at the tactical horizon \u2014 reported for continuity, NOT offered as a new metric",
+     "goal_bearing_mae_deg": 2.4245,
+     "goal_bearing_bias_deg": -0.6423,
+     "n_bearing": 12017,
+     "n_excluded_goal_below_0.5m": 93,
+     "goal_range_ratio": 1.1005,
+     "goal_long_bias_m": 1.1004,
+     "goal_lat_bias_m": -0.1864,
+     "tier": "T1"
+    }
+   }
+  },
+  "N1T": {
+   "tier": "T1 (executed, LQR-tracked; W-TRANSP scenery, NOT harness-identical)",
+   "strategic": {
+    "status": "PAUSED",
+    "reason": "PI ruling 2026-09-19 (PI_DECISION_QUEUE item 25): the strategic layer is switched off temporarily. NOT a pass; also unavailable in NAVSIM.",
+    "tier": "T1"
+   },
+   "longitudinal": {
+    "speed_mae_mps": 0.7305,
+    "speed_bias_mps": 0.3297,
+    "speed_rmse_mps": 1.0529,
+    "target_speed_acc_note": "fraction of the 96880 horizon STEPS (not windows) whose |speed error| is within the band. Bands are PROPOSED reporting tolerances, not a gate.",
+    "along_mae_m": 1.068,
+    "along_bias_m": 0.498,
+    "along_final_bias_m": 1.0559,
+    "accel_mae_mps2": 0.4296,
+    "dt_s": 0.5,
+    "rate_scaling_note": "speed ~ 1/dt, accel ~ 1/dt^2. Numbers computed with a wrong dt are off by those powers; along_* are dt-invariant.",
+    "n_windows": 12110,
+    "tier": "T1",
+    "target_speed_acc": {
+     "within_0.5_mps": 0.5284,
+     "within_1.0_mps": 0.7486,
+     "within_2.0_mps": 0.9256
+    },
+    "ego_progress": {
+     "status": "OK",
+     "convention": "human_dir",
+     "progress_ratio_mean": 1.1072,
+     "progress_ratio_median": 1.0784,
+     "progress_error_mean": 0.2073,
+     "under_progress_rate": 0.296,
+     "gt_progress_mean_m": 20.0771,
+     "n": 12017,
+     "n_windows": 12110,
+     "n_excluded_low_gt_progress": 93,
+     "min_progress_m": 0.5,
+     "t0_axis_gt_self_ratio": 0.9711,
+     "definition": "along-track distance covered / the human's, both projected on the human's own final-displacement direction; dt-invariant; <1 = under-drives, >1 = over-drives; GT scores exactly 1.0 by construction",
+     "published_motivation": "arXiv 2605.00066 \u2014 Ego Progress alone rho=0.83 vs closed-loop Driving Score while traditional L2 gives rho=-0.36 (p=0.43, n=8, NO CI). Direction only; those magnitudes are NOT a target."
+    },
+    "distance_keeping": {
+     "n": 6217,
+     "n_windows": 12110,
+     "dt_s": 0.5,
+     "gap_convention": "rig-origin to lead rear face (along - size_x/2); NOT bumper-to-bumper",
+     "ttc_cap_s": 30.0,
+     "status": "OK",
+     "mean_headway_min_m": 16.6258,
+     "mean_time_gap_min_s": 4.9422,
+     "n_time_gap": 5686,
+     "mean_min_ttc_s": 12.9883,
+     "n_closing": 4773,
+     "censoring_note": "1444 of 6217 windows never close on the lead and are censored at TTC_CAP_S=30.0s. The mean is over censored data \u2014 quote n_closing beside it, never the mean alone.",
+     "admitted_by": "D-LEAD-1 discrimination control, 2026-08-03 \u2014 GT vs hold-v0 CV, PASS on all three metrics, paired episode-cluster bootstrap, 14,027 windows / 1,431 clusters"
+    }
+   },
+   "lateral": {
+    "heading_mae_deg": 2.9459,
+    "yaw_rate_mae_degps": 2.9955,
+    "curvature_mae_1pm": 0.012491,
+    "curvature_bias_1pm": 0.000169,
+    "cross_mae_m": 0.3888,
+    "cross_bias_m": -0.1173,
+    "cross_final_mae_m": 0.9444,
+    "_along_mae_m_for_context": 1.068,
+    "_projection_based_alternative": "taniteval/taniteval/lateral.py::frenet_dense decomposes pred-gt in the GT PATH's own frame (along^2 + cross^2 == ||pred-gt||^2); driving.py publishes it as headline.pathgeom_crosstrack_m.",
+    "n_steps_heading": 90003,
+    "n_steps_curvature": 77937,
+    "n_steps_yaw_rate": 77937,
+    "excluded_below_min_ds": 6877,
+    "min_ds_m": 0.25,
+    "min_ds_mps": 0.5,
+    "dt_s": 0.5,
+    "n_windows": 12110,
+    "tier": "T1"
+   },
+   "tactical": {
+    "status": "OK",
+    "source": "trajectory-derived (four_families.tactical_from_trajectory)",
+    "lateral_decision": {
+     "status": "OK",
+     "n": 12110,
+     "n_windows": 12110,
+     "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+     "tier": "T1",
+     "accuracy": 0.9307,
+     "kappa": 0.874
+    },
+    "longitudinal_decision": {
+     "status": "OK",
+     "n": 12110,
+     "n_windows": 12110,
+     "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+     "tier": "T1",
+     "accuracy": 0.6844,
+     "kappa": 0.5277
+    },
+    "maneuver_5way_collapsed": {
+     "status": "OK",
+     "n": 12110,
+     "n_windows": 12110,
+     "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+     "tier": "T1",
+     "accuracy": 0.8002,
+     "kappa": 0.7461
+    },
+    "goal_setting": {
+     "status": "OK",
+     "n": 12110,
+     "n_windows": 12110,
+     "goal_point_error_m": 2.841,
+     "_goal_point_error_is": "the final-displacement error (FDE) at the tactical horizon \u2014 reported for continuity, NOT offered as a new metric",
+     "goal_bearing_mae_deg": 2.3908,
+     "goal_bearing_bias_deg": -0.6616,
+     "n_bearing": 12017,
+     "n_excluded_goal_below_0.5m": 93,
+     "goal_range_ratio": 1.1099,
+     "goal_long_bias_m": 1.0559,
+     "goal_lat_bias_m": -0.1856,
+     "tier": "T1"
+    }
+   }
+  },
+  "N1W": {
+   "tier": "T1 (executed, LQR-tracked; W-TRANSP scenery, NOT harness-identical)",
+   "strategic": {
+    "status": "PAUSED",
+    "reason": "PI ruling 2026-09-19 (PI_DECISION_QUEUE item 25): the strategic layer is switched off temporarily. NOT a pass; also unavailable in NAVSIM.",
+    "tier": "T1"
+   },
+   "longitudinal": {
+    "speed_mae_mps": 0.8117,
+    "speed_bias_mps": 0.3522,
+    "speed_rmse_mps": 1.1104,
+    "target_speed_acc_note": "fraction of the 96880 horizon STEPS (not windows) whose |speed error| is within the band. Bands are PROPOSED reporting tolerances, not a gate.",
+    "along_mae_m": 1.314,
+    "along_bias_m": 0.7007,
+    "along_final_bias_m": 1.0198,
+    "accel_mae_mps2": 0.4868,
+    "dt_s": 0.5,
+    "rate_scaling_note": "speed ~ 1/dt, accel ~ 1/dt^2. Numbers computed with a wrong dt are off by those powers; along_* are dt-invariant.",
+    "n_windows": 12110,
+    "tier": "T1",
+    "target_speed_acc": {
+     "within_0.5_mps": 0.4439,
+     "within_1.0_mps": 0.7051,
+     "within_2.0_mps": 0.9242
+    },
+    "ego_progress": {
+     "status": "OK",
+     "convention": "human_dir",
+     "progress_ratio_mean": 1.1551,
+     "progress_ratio_median": 1.0577,
+     "progress_error_mean": 0.3198,
+     "under_progress_rate": 0.3818,
+     "gt_progress_mean_m": 20.0771,
+     "n": 12017,
+     "n_windows": 12110,
+     "n_excluded_low_gt_progress": 93,
+     "min_progress_m": 0.5,
+     "t0_axis_gt_self_ratio": 0.9711,
+     "definition": "along-track distance covered / the human's, both projected on the human's own final-displacement direction; dt-invariant; <1 = under-drives, >1 = over-drives; GT scores exactly 1.0 by construction",
+     "published_motivation": "arXiv 2605.00066 \u2014 Ego Progress alone rho=0.83 vs closed-loop Driving Score while traditional L2 gives rho=-0.36 (p=0.43, n=8, NO CI). Direction only; those magnitudes are NOT a target."
+    },
+    "distance_keeping": {
+     "n": 6246,
+     "n_windows": 12110,
+     "dt_s": 0.5,
+     "gap_convention": "rig-origin to lead rear face (along - size_x/2); NOT bumper-to-bumper",
+     "ttc_cap_s": 30.0,
+     "status": "OK",
+     "mean_headway_min_m": 14.3559,
+     "mean_time_gap_min_s": 4.3774,
+     "n_time_gap": 5715,
+     "mean_min_ttc_s": 10.7971,
+     "n_closing": 4955,
+     "censoring_note": "1291 of 6246 windows never close on the lead and are censored at TTC_CAP_S=30.0s. The mean is over censored data \u2014 quote n_closing beside it, never the mean alone.",
+     "admitted_by": "D-LEAD-1 discrimination control, 2026-08-03 \u2014 GT vs hold-v0 CV, PASS on all three metrics, paired episode-cluster bootstrap, 14,027 windows / 1,431 clusters"
+    }
+   },
+   "lateral": {
+    "heading_mae_deg": 6.6178,
+    "yaw_rate_mae_degps": 7.8306,
+    "curvature_mae_1pm": 0.030528,
+    "curvature_bias_1pm": -0.00095,
+    "cross_mae_m": 0.6657,
+    "cross_bias_m": -0.1944,
+    "cross_final_mae_m": 1.1248,
+    "_along_mae_m_for_context": 1.314,
+    "_projection_based_alternative": "taniteval/taniteval/lateral.py::frenet_dense decomposes pred-gt in the GT PATH's own frame (along^2 + cross^2 == ||pred-gt||^2); driving.py publishes it as headline.pathgeom_crosstrack_m.",
+    "n_steps_heading": 90115,
+    "n_steps_curvature": 78051,
+    "n_steps_yaw_rate": 78051,
+    "excluded_below_min_ds": 6765,
+    "min_ds_m": 0.25,
+    "min_ds_mps": 0.5,
+    "dt_s": 0.5,
+    "n_windows": 12110,
+    "tier": "T1"
+   },
+   "tactical": {
+    "status": "OK",
+    "source": "trajectory-derived (four_families.tactical_from_trajectory)",
+    "lateral_decision": {
+     "status": "OK",
+     "n": 12110,
+     "n_windows": 12110,
+     "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+     "tier": "T1",
+     "accuracy": 0.8279,
+     "kappa": 0.6984
+    },
+    "longitudinal_decision": {
+     "status": "OK",
+     "n": 12110,
+     "n_windows": 12110,
+     "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+     "tier": "T1",
+     "accuracy": 0.6573,
+     "kappa": 0.4874
+    },
+    "maneuver_5way_collapsed": {
+     "status": "OK",
+     "n": 12110,
+     "n_windows": 12110,
+     "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+     "tier": "T1",
+     "accuracy": 0.6736,
+     "kappa": 0.5897
+    },
+    "goal_setting": {
+     "status": "OK",
+     "n": 12110,
+     "n_windows": 12110,
+     "goal_point_error_m": 3.5083,
+     "_goal_point_error_is": "the final-displacement error (FDE) at the tactical horizon \u2014 reported for continuity, NOT offered as a new metric",
+     "goal_bearing_mae_deg": 3.7596,
+     "goal_bearing_bias_deg": -1.0276,
+     "n_bearing": 12017,
+     "n_excluded_goal_below_0.5m": 93,
+     "goal_range_ratio": 1.1616,
+     "goal_long_bias_m": 1.0198,
+     "goal_lat_bias_m": -0.2949,
+     "tier": "T1"
+    }
+   }
+  },
+  "CERT": {
+   "tier": "T1 (executed, LQR-tracked; W-TRANSP scenery, NOT harness-identical)",
+   "strategic": {
+    "status": "PAUSED",
+    "reason": "PI ruling 2026-09-19 (PI_DECISION_QUEUE item 25): the strategic layer is switched off temporarily. NOT a pass; also unavailable in NAVSIM.",
+    "tier": "T1"
+   },
+   "longitudinal": {
+    "speed_mae_mps": 0.773,
+    "speed_bias_mps": 0.335,
+    "speed_rmse_mps": 1.1211,
+    "target_speed_acc_note": "fraction of the 96880 horizon STEPS (not windows) whose |speed error| is within the band. Bands are PROPOSED reporting tolerances, not a gate.",
+    "along_mae_m": 1.0989,
+    "along_bias_m": 0.4607,
+    "along_final_bias_m": 1.1022,
+    "accel_mae_mps2": 0.493,
+    "dt_s": 0.5,
+    "rate_scaling_note": "speed ~ 1/dt, accel ~ 1/dt^2. Numbers computed with a wrong dt are off by those powers; along_* are dt-invariant.",
+    "n_windows": 12110,
+    "tier": "T1",
+    "target_speed_acc": {
+     "within_0.5_mps": 0.5136,
+     "within_1.0_mps": 0.731,
+     "within_2.0_mps": 0.9089
+    },
+    "ego_progress": {
+     "status": "OK",
+     "convention": "human_dir",
+     "progress_ratio_mean": 1.0975,
+     "progress_ratio_median": 1.0813,
+     "progress_error_mean": 0.2027,
+     "under_progress_rate": 0.3072,
+     "gt_progress_mean_m": 20.0771,
+     "n": 12017,
+     "n_windows": 12110,
+     "n_excluded_low_gt_progress": 93,
+     "min_progress_m": 0.5,
+     "t0_axis_gt_self_ratio": 0.9711,
+     "definition": "along-track distance covered / the human's, both projected on the human's own final-displacement direction; dt-invariant; <1 = under-drives, >1 = over-drives; GT scores exactly 1.0 by construction",
+     "published_motivation": "arXiv 2605.00066 \u2014 Ego Progress alone rho=0.83 vs closed-loop Driving Score while traditional L2 gives rho=-0.36 (p=0.43, n=8, NO CI). Direction only; those magnitudes are NOT a target."
+    },
+    "distance_keeping": {
+     "n": 6189,
+     "n_windows": 12110,
+     "dt_s": 0.5,
+     "gap_convention": "rig-origin to lead rear face (along - size_x/2); NOT bumper-to-bumper",
+     "ttc_cap_s": 30.0,
+     "status": "OK",
+     "mean_headway_min_m": 16.8897,
+     "mean_time_gap_min_s": 4.9986,
+     "n_time_gap": 5655,
+     "mean_min_ttc_s": 13.6364,
+     "n_closing": 4681,
+     "censoring_note": "1508 of 6189 windows never close on the lead and are censored at TTC_CAP_S=30.0s. The mean is over censored data \u2014 quote n_closing beside it, never the mean alone.",
+     "admitted_by": "D-LEAD-1 discrimination control, 2026-08-03 \u2014 GT vs hold-v0 CV, PASS on all three metrics, paired episode-cluster bootstrap, 14,027 windows / 1,431 clusters"
+    }
+   },
+   "lateral": {
+    "heading_mae_deg": 2.603,
+    "yaw_rate_mae_degps": 2.8276,
+    "curvature_mae_1pm": 0.01265,
+    "curvature_bias_1pm": 0.000636,
+    "cross_mae_m": 0.3911,
+    "cross_bias_m": -0.1088,
+    "cross_final_mae_m": 0.9721,
+    "_along_mae_m_for_context": 1.0989,
+    "_projection_based_alternative": "taniteval/taniteval/lateral.py::frenet_dense decomposes pred-gt in the GT PATH's own frame (along^2 + cross^2 == ||pred-gt||^2); driving.py publishes it as headline.pathgeom_crosstrack_m.",
+    "n_steps_heading": 89693,
+    "n_steps_curvature": 77622,
+    "n_steps_yaw_rate": 77622,
+    "excluded_below_min_ds": 7187,
+    "min_ds_m": 0.25,
+    "min_ds_mps": 0.5,
+    "dt_s": 0.5,
+    "n_windows": 12110,
+    "tier": "T1"
+   },
+   "tactical": {
+    "status": "OK",
+    "source": "trajectory-derived (four_families.tactical_from_trajectory)",
+    "lateral_decision": {
+     "status": "OK",
+     "n": 12110,
+     "n_windows": 12110,
+     "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+     "tier": "T1",
+     "accuracy": 0.9329,
+     "kappa": 0.8769
+    },
+    "longitudinal_decision": {
+     "status": "OK",
+     "n": 12110,
+     "n_windows": 12110,
+     "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+     "tier": "T1",
+     "accuracy": 0.6826,
+     "kappa": 0.525
+    },
+    "maneuver_5way_collapsed": {
+     "status": "OK",
+     "n": 12110,
+     "n_windows": 12110,
+     "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+     "tier": "T1",
+     "accuracy": 0.7993,
+     "kappa": 0.7448
+    },
+    "goal_setting": {
+     "status": "OK",
+     "n": 12110,
+     "n_windows": 12110,
+     "goal_point_error_m": 2.9666,
+     "_goal_point_error_is": "the final-displacement error (FDE) at the tactical horizon \u2014 reported for continuity, NOT offered as a new metric",
+     "goal_bearing_mae_deg": 2.4174,
+     "goal_bearing_bias_deg": -0.6267,
+     "n_bearing": 12017,
+     "n_excluded_goal_below_0.5m": 93,
+     "goal_range_ratio": 1.1006,
+     "goal_long_bias_m": 1.1022,
+     "goal_lat_bias_m": -0.1842,
+     "tier": "T1"
+    }
+   }
+  },
+  "human": {
+   "tier": "T1 (executed, LQR-tracked; W-TRANSP scenery, NOT harness-identical)",
+   "strategic": {
+    "status": "PAUSED",
+    "reason": "PI ruling 2026-09-19 (PI_DECISION_QUEUE item 25): the strategic layer is switched off temporarily. NOT a pass; also unavailable in NAVSIM.",
+    "tier": "T1"
+   },
+   "longitudinal": {
+    "speed_mae_mps": 0.1294,
+    "speed_bias_mps": 0.0387,
+    "speed_rmse_mps": 0.1692,
+    "target_speed_acc_note": "fraction of the 96880 horizon STEPS (not windows) whose |speed error| is within the band. Bands are PROPOSED reporting tolerances, not a gate.",
+    "along_mae_m": 0.2716,
+    "along_bias_m": 0.138,
+    "along_final_bias_m": 0.112,
+    "accel_mae_mps2": 0.1335,
+    "dt_s": 0.5,
+    "rate_scaling_note": "speed ~ 1/dt, accel ~ 1/dt^2. Numbers computed with a wrong dt are off by those powers; along_* are dt-invariant.",
+    "n_windows": 12110,
+    "tier": "T1",
+    "target_speed_acc": {
+     "within_0.5_mps": 0.9922,
+     "within_1.0_mps": 0.9998,
+     "within_2.0_mps": 1.0
+    },
+    "ego_progress": {
+     "status": "OK",
+     "convention": "human_dir",
+     "progress_ratio_mean": 1.0238,
+     "progress_ratio_median": 1.0058,
+     "progress_error_mean": 0.0505,
+     "under_progress_rate": 0.4169,
+     "gt_progress_mean_m": 20.0771,
+     "n": 12017,
+     "n_windows": 12110,
+     "n_excluded_low_gt_progress": 93,
+     "min_progress_m": 0.5,
+     "t0_axis_gt_self_ratio": 0.9711,
+     "definition": "along-track distance covered / the human's, both projected on the human's own final-displacement direction; dt-invariant; <1 = under-drives, >1 = over-drives; GT scores exactly 1.0 by construction",
+     "published_motivation": "arXiv 2605.00066 \u2014 Ego Progress alone rho=0.83 vs closed-loop Driving Score while traditional L2 gives rho=-0.36 (p=0.43, n=8, NO CI). Direction only; those magnitudes are NOT a target."
+    },
+    "distance_keeping": {
+     "n": 6213,
+     "n_windows": 12110,
+     "dt_s": 0.5,
+     "gap_convention": "rig-origin to lead rear face (along - size_x/2); NOT bumper-to-bumper",
+     "ttc_cap_s": 30.0,
+     "status": "OK",
+     "mean_headway_min_m": 16.7722,
+     "mean_time_gap_min_s": 5.0057,
+     "n_time_gap": 5682,
+     "mean_min_ttc_s": 13.664,
+     "n_closing": 4639,
+     "censoring_note": "1574 of 6213 windows never close on the lead and are censored at TTC_CAP_S=30.0s. The mean is over censored data \u2014 quote n_closing beside it, never the mean alone.",
+     "admitted_by": "D-LEAD-1 discrimination control, 2026-08-03 \u2014 GT vs hold-v0 CV, PASS on all three metrics, paired episode-cluster bootstrap, 14,027 windows / 1,431 clusters"
+    }
+   },
+   "lateral": {
+    "heading_mae_deg": 1.5487,
+    "yaw_rate_mae_degps": 1.971,
+    "curvature_mae_1pm": 0.010022,
+    "curvature_bias_1pm": 0.000321,
+    "cross_mae_m": 0.1472,
+    "cross_bias_m": -0.0317,
+    "cross_final_mae_m": 0.1513,
+    "_along_mae_m_for_context": 0.2716,
+    "_projection_based_alternative": "taniteval/taniteval/lateral.py::frenet_dense decomposes pred-gt in the GT PATH's own frame (along^2 + cross^2 == ||pred-gt||^2); driving.py publishes it as headline.pathgeom_crosstrack_m.",
+    "n_steps_heading": 90542,
+    "n_steps_curvature": 78455,
+    "n_steps_yaw_rate": 78455,
+    "excluded_below_min_ds": 6338,
+    "min_ds_m": 0.25,
+    "min_ds_mps": 0.5,
+    "dt_s": 0.5,
+    "n_windows": 12110,
+    "tier": "T1"
+   },
+   "tactical": {
+    "status": "OK",
+    "source": "trajectory-derived (four_families.tactical_from_trajectory)",
+    "lateral_decision": {
+     "status": "OK",
+     "n": 12110,
+     "n_windows": 12110,
+     "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+     "tier": "T1",
+     "accuracy": 0.9789,
+     "kappa": 0.961
+    },
+    "longitudinal_decision": {
+     "status": "OK",
+     "n": 12110,
+     "n_windows": 12110,
+     "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+     "tier": "T1",
+     "accuracy": 0.9527,
+     "kappa": 0.9289
+    },
+    "maneuver_5way_collapsed": {
+     "status": "OK",
+     "n": 12110,
+     "n_windows": 12110,
+     "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+     "tier": "T1",
+     "accuracy": 0.9587,
+     "kappa": 0.947
+    },
+    "goal_setting": {
+     "status": "OK",
+     "n": 12110,
+     "n_windows": 12110,
+     "goal_point_error_m": 0.5252,
+     "_goal_point_error_is": "the final-displacement error (FDE) at the tactical horizon \u2014 reported for continuity, NOT offered as a new metric",
+     "goal_bearing_mae_deg": 0.5967,
+     "goal_bearing_bias_deg": -0.009,
+     "n_bearing": 12017,
+     "n_excluded_goal_below_0.5m": 93,
+     "goal_range_ratio": 1.024,
+     "goal_long_bias_m": 0.112,
+     "goal_lat_bias_m": -0.013,
+     "tier": "T1"
+    }
+   }
+  }
+ },
+ "source": {
+  "file": "C:/Users/Admin/n1_run/a1/out/n1_a1_result.json (full, incl. per-window families; banked to HF private)",
+  "sha256": "cf438bcab47ad22d282863cbe76d3117df791b8c36a80fc7420e79a25ca4fb04"
+ }
+}

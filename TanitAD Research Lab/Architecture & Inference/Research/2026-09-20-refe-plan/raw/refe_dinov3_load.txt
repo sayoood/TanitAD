@@ -1,0 +1,17 @@
+  checkpoint: 162 tensors, 21,586,944 params
+  copied 186 target tensors
+  checkpoint tensors NOT consumed: 0
+  target tensors NOT loaded and NOT expected: 0
+
+  CONTROL 1 weights actually changed: PASS
+  CONTROL 2 every block got its 15 tensors: PASS
+  CONTROL 3 no unconsumed checkpoint tensors: PASS
+
+  EXPECTED_UNLOADED, each with its reason:
+     pos          DINOv3 ViT-S uses rotary position encoding; our trunk uses a learned table sized to the 512x960 input, so there is nothing to copy. It is frozen and non-trainable.
+     attn.q.A     LoRA adapter -- trainable by design, not part of the pretrained trunk.
+     attn.q.B     LoRA adapter -- zero-initialised so the adapter is identity at init.
+     attn.v.A     LoRA adapter -- trainable by design.
+     attn.v.B     LoRA adapter -- zero-initialised.
+
+LOAD_OK

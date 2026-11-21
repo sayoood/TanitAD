@@ -1,0 +1,264 @@
+#!/usr/bin/env python3
+"""G-SUITE REFUSES TO NEST: the regression test for the 2026-10-16 runaway (raw/2026-10-16-sft4r-readiness/READINESS.md, "The recursion").
+
+THE DEFECT.  gate_checks.check_suite set REFE_GATE_NESTED=1 on every suite script it ran, and nothing read it.  refe_sft4r has no arm table, so `launch_gate.py run --profile refe_sft4r` (unlike the
+arm-table profiles, which refuse an unnamed arm before any check) reached G-SUITE; test_sft4r_gate.py was a suite entry AND ran that command => the suite ran the test that ran the suite ...
+(~80 python processes, RAM down to 8.6 GB, killed by hand).
+
+THE INVARIANT.  A suite script can never cause a suite that contains itself to run again, and suites nest at most SUITE_NEST_MAX (2) deep.  gate_checks.check_suite enforces it where every suite is
+launched: it spawns NOTHING and returns FAIL.
+
+WHAT THIS TEST DOES (CPU only, ~1 min; prints `ZZTEST_PASS <n>`):
+  A  in-process, no spawn: the sentinel's parse (empty / list / legacy "1" / garbage fails CLOSED), the entry identity, and for EVERY real profile and EVERY entry of its suite: a process already running
+     that entry is refused re-entry into that suite, while an empty stack refuses nothing (the guard does not touch a normal launch).
+  B  real spawns on a TOY suite, through `run_bounded` -- a wall-clock timeout, a cap on live descendants (psutil), a kill BY EXPLICIT PID only, and a FUSE inside the probe itself (the 5th execution of
+     any probe stops without recursing, whatever the engine under test does), so even the mutation arms below are bounded by construction:
+       cycle   P1's suite is [P1]                -> exactly ONE execution, the inner check_suite FAIL "refuses to nest"
+       chain   P1 -> P2 -> P3 (distinct)         -> P1 and P2 run (one nested level is allowed), P3 never does (depth cap)
+       legacy  REFE_GATE_NESTED=1 (still exported by raw/*/run_suite_scripts.sh and the pod timing scripts) -> a plain suite still PASSES
+       garbage REFE_GATE_NESTED=<unreadable>     -> check_suite refuses, spawns nothing (fails closed)
+  C  MUTATION: the same judge against a temp copy of gate_checks.py with ONE line of the guard removed.  Each mutation must make the judge report failures (RED).  Four mutations: the guard branch,
+     the identity rule, the depth cap, and the sentinel's propagation (= the pre-fix state, `REFE_GATE_NESTED="1"`); plus one for the fail-open parse.  A judge that stays green on a broken engine proves nothing.
+"""
+from __future__ import annotations
+
+import json
+import os
+import shutil
+import subprocess
+import sys
+import tempfile
+import time
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+import gate_checks as C  # noqa: E402
+
+try:
+    import psutil  # noqa: E402
+except ImportError:                                  # the pod may not have it: the probe FUSE still bounds every spawn (FUSE+1 executions); the descendant cap is then UNVERIFIED
+    psutil = None
+
+N = 0
+FUSE = 4                    # a probe that finds more than FUSE ledger lines stops without recursing
+CAP = 16                    # live descendants (venv launchers count: one python = 2 processes on Windows)
+PEAK_GUARDED = 10           # the guarded engine must stay at or below this on every experiment
+TIMEOUT = 90.0
+
+
+def ok(cond, msg=""):
+    global N
+    assert cond, msg
+    N += 1
+
+
+# ----------------------------------------------------------------------------------------------------------------------------------------------- the probe
+PROBE_SRC = r'''
+import json, os, sys
+cfg = json.load(open(sys.argv[2], encoding="utf-8"))
+state, name = cfg["state"], cfg["name"]
+if sys.argv[1] == "--driver":                       # the top of an experiment: ONE check_suite call, in a process with a clean (or chosen) sentinel
+    sys.path.insert(0, cfg["engine"])
+    import gate_checks as C
+    ev = C.check_suite({"name": "toy", "suite": cfg["suite"]})
+    print("ZZDRIVER " + json.dumps({"status": ev["status"], "reasons": ev["reasons"], "nested": (ev.get("details") or {}).get("nested")}), flush=True)
+    sys.exit(0)
+led = os.path.join(state, "ledger.txt")
+with open(led, "a", encoding="utf-8") as f:
+    f.write(name + " " + os.environ.get("REFE_GATE_NESTED", "") + "\n")
+if sum(1 for _ in open(led, encoding="utf-8")) > cfg["fuse"]:      # the fuse: independent of the engine under test
+    open(os.path.join(state, "FUSE_BLOWN"), "w").write(name)
+    print("ZZPROBE_PASS fuse-" + name)
+    sys.exit(0)
+if cfg["suite"]:                                    # this probe's OWN suite (a cycle lists the probe itself)
+    sys.path.insert(0, cfg["engine"])
+    import gate_checks as C
+    ev = C.check_suite({"name": "toy-" + name, "suite": cfg["suite"]})
+    json.dump({"status": ev["status"], "reasons": ev["reasons"]}, open(os.path.join(state, name + ".inner.json"), "w", encoding="utf-8"))
+print("ZZPROBE_PASS " + name)
+'''
+
+
+# ------------------------------------------------------------------------------------------------------------------------------------- the bounded runner
+def _kill_pids(pids: list) -> None:
+    """Kill ONLY the given pids, one by one (never by image name or command-line pattern: other jobs share this box)."""
+    for pid in pids:
+        try:
+            if psutil is not None:
+                psutil.Process(pid).kill()
+            elif os.name == "nt":
+                subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"], capture_output=True)
+            else:
+                os.kill(pid, 9)
+        except Exception:                                                                      # noqa: BLE001 -- already gone
+            pass
+
+
+def run_bounded(cmd: list, env: dict, cwd=None, timeout: float = TIMEOUT, cap: int = CAP) -> dict:
+    """Run `cmd`; kill its whole tree (by explicit pids) when it outlives `timeout` or has more than `cap` live descendants.  Returns rc, out, peak (None without psutil), killed ('' | 'timeout' | 'cap')."""
+    with tempfile.TemporaryFile() as out:
+        proc = subprocess.Popen(cmd, cwd=cwd, env=env, stdout=out, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, **({} if os.name == "nt" else {"start_new_session": True}))
+        t0, peak, killed, seen = time.time(), (0 if psutil is not None else None), "", set()
+        while proc.poll() is None:
+            if psutil is not None:
+                try:
+                    kids = psutil.Process(proc.pid).children(recursive=True)
+                except psutil.Error:
+                    kids = []
+                seen.update(k.pid for k in kids)
+                peak = max(peak, len(kids))
+                if len(kids) > cap:
+                    killed = "cap"
+            if not killed and time.time() - t0 > timeout:
+                killed = "timeout"
+            if killed:
+                _kill_pids(sorted(seen, reverse=True) + [proc.pid])
+                break
+            time.sleep(0.1)
+        rc = proc.wait()
+        out.seek(0)
+        return {"rc": rc, "out": out.read().decode("utf-8", "replace"), "peak": peak, "killed": killed}
+
+
+# ----------------------------------------------------------------------------------------------------------------------------------------- experiments
+def _entry(state: Path, name: str) -> dict:
+    return {"script": str(state / "probe.py"), "args": ["--probe", str(state / f"{name}.json")], "token": "ZZPROBE_PASS"}
+
+
+def experiment(engine: Path, tmp: Path, tag: str, tops: list, nested: dict, sentinel=None) -> dict:
+    """tops = probe names in the TOP suite; nested = {probe name: [probe names in ITS suite]}.  Returns the facts of ONE bounded run."""
+    state = tmp / tag
+    state.mkdir(parents=True)
+    (state / "probe.py").write_text(PROBE_SRC, encoding="utf-8")
+    names = set(tops) | set(nested) | {n for v in nested.values() for n in v}
+    for n in names:
+        (state / f"{n}.json").write_text(json.dumps({"state": str(state), "name": n, "engine": str(engine), "fuse": FUSE, "suite": [_entry(state, m) for m in nested.get(n, [])]}), encoding="utf-8")
+    (state / "driver.json").write_text(json.dumps({"state": str(state), "name": "driver", "engine": str(engine), "fuse": FUSE, "suite": [_entry(state, m) for m in tops]}), encoding="utf-8")
+    env = {k: v for k, v in os.environ.items() if k not in (C.SUITE_NEST_ENV, C.ARM_ENV)}
+    env["PYTHONIOENCODING"] = "utf-8"
+    if sentinel is not None:
+        env[C.SUITE_NEST_ENV] = sentinel
+    r = run_bounded([sys.executable, str(state / "probe.py"), "--driver", str(state / "driver.json")], env, cwd=str(state))
+    line = next((ln for ln in r["out"].splitlines() if ln.startswith("ZZDRIVER ")), None)
+    ledger = [ln.split(" ", 1)[0] for ln in (state / "ledger.txt").read_text(encoding="utf-8").splitlines()] if (state / "ledger.txt").exists() else []
+    inner = {n: json.loads((state / f"{n}.inner.json").read_text(encoding="utf-8")) for n in names if (state / f"{n}.inner.json").exists()}
+    return {"driver": json.loads(line[len("ZZDRIVER "):]) if line else None, "ledger": ledger, "inner": inner, "fuse_blown": (state / "FUSE_BLOWN").exists(),
+            "peak": r["peak"], "killed": r["killed"], "rc": r["rc"], "tail": r["out"][-400:]}
+
+
+def judge(engine: Path, tmp: Path) -> tuple:
+    """The invariant, on a toy suite, against the gate_checks.py in `engine`.  Returns (failures, facts); failures == [] means the guard holds."""
+    f, facts = [], {}
+
+    def need(cond, msg):
+        if not cond:
+            f.append(msg)
+    # ---- cycle: P1's suite contains P1.  Exactly one execution; the inner call is REFUSED, nothing spawned.
+    c = facts["cycle"] = experiment(engine, tmp, "cycle", ["P1"], {"P1": ["P1"]})
+    need(c["ledger"] == ["P1"], f"cycle: P1 ran {len(c['ledger'])} time(s) {c['ledger']}, expected exactly once")
+    need(not c["fuse_blown"], "cycle: the probe FUSE blew -- the engine let a suite re-run its own caller")
+    need(not c["killed"], f"cycle: the watchdog had to kill the run ({c['killed']})")
+    need(c["driver"] is not None and c["driver"]["status"] == "PASS", f"cycle: the OUTER suite (P1 exits 0) did not PASS: {c['driver']}")
+    inn = c["inner"].get("P1", {})
+    need(inn.get("status") == "FAIL" and any("refuses to nest" in r and "ALREADY RUNNING" in r for r in inn.get("reasons", [])), f"cycle: the inner check_suite was not refused as a cycle: {inn}")
+    need(c["peak"] is None or c["peak"] <= PEAK_GUARDED, f"cycle: {c['peak']} live descendants > {PEAK_GUARDED}")
+    # ---- chain: P1 -> P2 -> P3.  One nested level (P2) is allowed, the next (P3) is not.
+    c = facts["chain"] = experiment(engine, tmp, "chain", ["P1"], {"P1": ["P2"], "P2": ["P3"]})
+    need(c["ledger"] == ["P1", "P2"], f"chain: ran {c['ledger']}, expected ['P1', 'P2'] (P3 is one level too deep)")
+    need(c["inner"].get("P1", {}).get("status") == "PASS", f"chain: the one allowed nested suite did not PASS: {c['inner'].get('P1')}")
+    need(c["inner"].get("P2", {}).get("status") == "FAIL" and any("level(s) deep" in r for r in c["inner"].get("P2", {}).get("reasons", [])), f"chain: P2's suite was not refused on depth: {c['inner'].get('P2')}")
+    need(not c["killed"] and (c["peak"] is None or c["peak"] <= PEAK_GUARDED), f"chain: killed={c['killed']} peak={c['peak']}")
+    # ---- legacy sentinel "1": a plain suite still runs
+    c = facts["legacy"] = experiment(engine, tmp, "legacy", ["P1"], {}, sentinel="1")
+    need(c["ledger"] == ["P1"] and c["driver"] is not None and c["driver"]["status"] == "PASS", f"legacy REFE_GATE_NESTED=1: a plain suite must still PASS: {c['driver']} {c['ledger']}")
+    # ---- garbage sentinel: fail CLOSED, nothing spawned
+    c = facts["garbage"] = experiment(engine, tmp, "garbage", ["P1"], {}, sentinel="not-json{")
+    need(c["ledger"] == [] and c["driver"] is not None and c["driver"]["status"] == "FAIL" and any("refuses to nest" in r for r in c["driver"]["reasons"]),
+         f"garbage sentinel must refuse and spawn nothing: {c['driver']} {c['ledger']}")
+    return f, facts
+
+
+# --------------------------------------------------------------------------------------------------------------------------------------------- mutations
+MUTATIONS = [
+    ("guard_branch_removed", "    refused = suite_nest_refusals(stack, entries)\n    if refused:", "    refused = suite_nest_refusals(stack, entries)\n    if False and refused:"),
+    ("identity_rule_removed", "        if suite_entry_id(e) in stack:", "        if False and suite_entry_id(e) in stack:"),
+    ("depth_cap_removed", "    if len(stack) >= SUITE_NEST_MAX:", "    if False and len(stack) >= SUITE_NEST_MAX:"),
+    ("sentinel_not_propagated__the_pre_fix_state", "**{SUITE_NEST_ENV: json.dumps(stack + [suite_entry_id(e)])}", 'REFE_GATE_NESTED="1"'),
+    ("garbage_sentinel_fails_open", '        return ["<unreadable>"] * SUITE_NEST_MAX\n    if isinstance(v, list)', "        return []\n    if isinstance(v, list)"),
+]
+
+
+def main() -> int:
+    t0 = time.time()
+    src = (HERE / "gate_checks.py").read_text(encoding="utf-8")
+    # ======================================================================== A. in-process, nothing spawned
+    saved = os.environ.get(C.SUITE_NEST_ENV)
+
+    def stack_of(v):
+        if v is None:
+            os.environ.pop(C.SUITE_NEST_ENV, None)
+        else:
+            os.environ[C.SUITE_NEST_ENV] = v
+        return C.suite_nest_stack()
+    try:
+        ok(stack_of(None) == [] and stack_of("") == [], "no sentinel = an empty stack")
+        ok(stack_of('["a:x", "b:y"]') == ["a:x", "b:y"] and stack_of("[]") == [])
+        ok(stack_of("1") == ["<legacy>"] and stack_of("2") == ["<legacy>"] * 2, "the pre-fix value '1' reads as depth 1")
+        for bad in ("garbage", "true", "[1]", '{"a": 1}', "99", "-1", "null"):
+            ok(len(stack_of(bad)) >= C.SUITE_NEST_MAX, f"an unreadable sentinel {bad!r} must fail CLOSED (read as at the limit)")
+    finally:
+        stack_of(saved)
+    e1, e2 = {"script": "test_x.py", "token": "T"}, {"script": "test_x.py", "args": ["--a"], "token": "T"}
+    r1 = {"raw": [sys.executable, "-c", "print(1)"], "token": "T"}
+    ids = [C.suite_entry_id(e) for e in (e1, e2, r1)]
+    ok(len(set(ids)) == 3 and ids[0].endswith(":test_x.py") and ids[2].endswith(":raw"), ids)
+    ok(C.suite_entry_id(e1) == C.suite_entry_id(dict(e1)) == C.suite_entry_id({"script": str(HERE / "test_x.py"), "token": "other"}), "identity = resolved path + args, not the token or the spelling")
+    ok(C.suite_nest_refusals([], [e1, e2, r1]) == [], "an empty stack refuses nothing")
+    ok(any("ALREADY RUNNING" in r for r in C.suite_nest_refusals([ids[0]], [e1, e2])) and C.suite_nest_refusals([ids[0]], [e2]) == [], "same script, other args = a different entry")
+    ok(any("level(s) deep" in r for r in C.suite_nest_refusals([ids[0]] * C.SUITE_NEST_MAX, [r1])), "the depth cap")
+    import launch_gate as L  # noqa: E402
+    n_pairs = 0
+    for pname, prof in L.PROFILES.items():
+        suite = list(prof.get("suite", ()))
+        ok(C.suite_nest_refusals([], suite) == [], (pname, "an empty stack must refuse nothing: the guard must not touch a normal launch"))
+        for e in suite:
+            rs = C.suite_nest_refusals([C.suite_entry_id(e)], suite)
+            ok(any("ALREADY RUNNING" in r for r in rs), (pname, e.get("script"), "a script of this suite must not be able to re-enter this suite"))
+            n_pairs += 1
+    ok("refe_sft4r" in L.PROFILES and n_pairs == sum(len(p.get("suite", ())) for p in L.PROFILES.values()) and n_pairs >= len(L.SFT4R_SUITE) + 20,
+       f"only {n_pairs} (profile, entry) pairs seen -- the census is not reading the real profiles")
+    # ======================================================================== B. the toy suite, real spawns, bounded
+    tmp = Path(tempfile.mkdtemp(prefix="nest_"))
+    try:
+        fails, facts = judge(HERE, tmp / "real")
+        ok(fails == [], fails)
+        # ==================================================================== C. mutations: one line of the guard removed -> the SAME judge must go RED, still bounded
+        bounded = {}
+        for name, old, new in MUTATIONS:
+            ok(src.count(old) == 1, f"mutation anchor {name!r} not found exactly once in gate_checks.py (count {src.count(old)}) -- the guard was edited; update MUTATIONS")
+            eng = tmp / f"engine_{name}"
+            eng.mkdir()
+            with open(eng / "gate_checks.py", "w", encoding="utf-8", newline="") as fh:
+                fh.write(src.replace(old, new))
+            mf, mfacts = judge(eng, tmp / f"mut_{name}")
+            ok(mf != [], f"MUTATION {name!r} stayed GREEN: the judge cannot see this part of the guard")
+            killed = [k for k, v in mfacts.items() if v["killed"]]
+            bounded[name] = {"red_reasons": len(mf), "watchdog_kills": killed, "fuse_blown": [k for k, v in mfacts.items() if v["fuse_blown"]], "peak": max([v["peak"] or 0 for v in mfacts.values()])}
+            ok(all(v["peak"] is None or v["peak"] <= CAP for v in mfacts.values()), (name, bounded[name]))
+        print("  guarded engine:", json.dumps({k: {"ledger": v["ledger"], "peak": v["peak"]} for k, v in facts.items()}))
+        for name, b in bounded.items():
+            print(f"  mutation {name:48s} RED ({b['red_reasons']} reason(s)); fuse blown in {b['fuse_blown']}; watchdog kills {b['watchdog_kills']}; peak descendants {b['peak']}")
+        print(f"  psutil descendant cap: {'ENFORCED' if psutil is not None else 'UNVERIFIED (psutil absent; the probe FUSE bounded every spawn at FUSE+1 executions)'}; {time.time() - t0:.0f} s")
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    print(f"ZZTEST_PASS {N}")
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except AssertionError as e:
+        print(f"ZZTEST_FAIL after {N} checks: {e}")
+        raise

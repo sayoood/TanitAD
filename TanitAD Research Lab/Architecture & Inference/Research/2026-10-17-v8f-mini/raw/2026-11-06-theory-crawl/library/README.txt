@@ -1,0 +1,1 @@
+Library key takehi2026weightspace, banked by tools/kb_add.py --local in the E: working tree (library.json / LIBRARY.md not landed here); source https://rikiyat.github.io/blog/weight-space-programming/ ; sha256 a326bc5b34b3152a93bf38013f412bb140c9e0a299c72491d27fb17b1b7d9cbb

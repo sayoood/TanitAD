@@ -1,0 +1,82 @@
+--- read/launch_intent_read.py	2026-10-28 13:25:26.000000000 +0100
++++ amend1/read/launch_intent_read.py	2026-10-28 15:08:34.000000000 +0100
+@@ -76,7 +76,9 @@
+ CTRL_BUILD_COMMIT, REP_BUILD_COMMIT = "aeb54468", "8c24823f"       # the commits DAG-OACC and DAG-ORC r2's REP trained at
+ BUILD_BASE_COMMIT = CTRL_BUILD_COMMIT
+ BUILD_FILES = ("stack/scripts/v8f_mini_train.py", "stack/tanitad/data/v8f_mini_data.py", "stack/tanitad/models/v8f_mini.py")
+-BYTE_IDENTICAL_FILES = ("stack/tanitad/data/v8f_mini_data.py",)      # PREREG section 9 K-BUILD: this build changes the trainer and the model only
++# PREREG Amendment 1 (A1-2026-10-28), K-BUILD: v8f_mini_data.py at the launch commit is NOT byte-identical to aeb54468 (DAG-ORC's compose hunks, e7ea20d / 8c24823f, sit between them).
++# Where a pinned file differs from the base, its launch sha256 must equal the pin: the data module of DAG-ORC r2's build 8c24823f, the commit REP trained at. Its hunks still need the general rule.
++LAUNCH_PINNED_FILES = {"stack/tanitad/data/v8f_mini_data.py": "c117e1cf5be08b9739f02e2730ce555be5a707a3183ded6481256e419f751752"}
+ N_BOOT, N_WINDOWS, N_EPISODES = 2000, 2399, 141
+ LEVER = "--launch-intent-w"
+ ROLES_NEW = ("A", "Arep", "B", "Brep")
+@@ -602,7 +604,7 @@
+ 
+ def k_build(rec):
+     """K-BUILD: the launch commit's v8f_mini_train.py, v8f_mini_data.py and v8f_mini.py are byte-identical to aeb54468's (the commit DAG-OACC trained at), or every changed hunk sits behind a default-off flag whose
+-    bit-identity test passes on the launch commit; v8f_mini_data.py must be byte-identical.  ``rec`` = {"launch_commit", "base_commit", "files": {path: {"sha256_launch", "sha256_base"}}, "changed": [{file, hunk, behind_flag, default_off, bit_identity_test}]}."""
++    bit-identity test passes on the launch commit; where v8f_mini_data.py differs, its launch sha256 is DAG-ORC r2's (PREREG Amendment 1).  ``rec`` = {"launch_commit", "base_commit", "files": {path: {"sha256_launch", "sha256_base"}}, "changed": [{file, hunk, behind_flag, default_off, bit_identity_test}]}."""
+     if not rec:
+         return False, "no K-BUILD record in the manifest (build.launch_commit, build.files, build.changed)"
+     bad = []
+@@ -617,8 +619,9 @@
+             bad.append(f"{f}: no launch / base sha256")
+             continue
+         if fr["sha256_launch"] != fr["sha256_base"]:
+-            if f in BYTE_IDENTICAL_FILES:
+-                bad.append(f"{f} differs from {BUILD_BASE_COMMIT}: this build must leave it byte-identical")
++            pin = LAUNCH_PINNED_FILES.get(f)
++            if pin and fr["sha256_launch"] != pin:
++                bad.append(f"{f} differs from {BUILD_BASE_COMMIT} and its launch sha256 is not {pin[:12]}... (DAG-ORC r2's build, PREREG Amendment 1)")
+             hunks = [h for h in (rec.get("changed") or []) if h.get("file") == f]
+             if not hunks:
+                 bad.append(f"{f} differs from {BUILD_BASE_COMMIT} and no changed hunk is listed")
+--- read/test_launch_intent_read.py	2026-10-28 13:34:04.000000000 +0100
++++ amend1/read/test_launch_intent_read.py	2026-10-28 15:08:34.000000000 +0100
+@@ -796,9 +796,15 @@
+ def test_k_build():
+     assert R.k_build(build_rec())[0] is True and R.k_build(None)[0] is False and R.k_build({})[0] is False
+     r = build_rec()
+-    r["files"]["stack/tanitad/data/v8f_mini_data.py"]["sha256_launch"] = "9" * 64                         # the data file must stay byte-identical
+-    r["changed"].append({"file": "stack/tanitad/data/v8f_mini_data.py", "hunk": "h3", "behind_flag": "--launch-intent-w", "default_off": True, "bit_identity_test": "PASS"})
++    r["files"]["stack/tanitad/data/v8f_mini_data.py"]["sha256_launch"] = "9" * 64                         # Amendment 1: a changed data file must carry DAG-ORC r2's sha256
++    r["changed"].append({"file": "stack/tanitad/data/v8f_mini_data.py", "hunk": "h3", "behind_flag": "--ego-perturb-with-dagger", "default_off": True, "bit_identity_test": "PASS"})
+     assert R.k_build(r)[0] is False
++    r["files"]["stack/tanitad/data/v8f_mini_data.py"]["sha256_launch"] = R.LAUNCH_PINNED_FILES["stack/tanitad/data/v8f_mini_data.py"]
++    assert R.k_build(r)[0] is True                                                                       # the pinned bytes with a PASSing flag-gated hunk are admitted
++    r["changed"] = [h for h in r["changed"] if h["file"] != "stack/tanitad/data/v8f_mini_data.py"]
++    assert R.k_build(r)[0] is False                                                                      # the pinned bytes still need their hunks listed
++    r["changed"].append({"file": "stack/tanitad/data/v8f_mini_data.py", "hunk": "h3", "behind_flag": "--ego-perturb-with-dagger", "default_off": True, "bit_identity_test": "UNVERIFIED: x"})
++    assert R.k_build(r)[0] is False                                                                      # and each hunk PASSing
+     assert R.k_build(build_rec(changed=[]))[0] is False                                                 # changed files, no hunk listed
+     for key, val in (("default_off", False), ("bit_identity_test", "FAIL"), ("behind_flag", "")):
+         ch = build_rec()["changed"]
+@@ -816,6 +822,7 @@
+         f["sha256_launch"] = f["sha256_base"]
+     assert R.k_build({**r, "changed": []})[0] is True                                                   # byte-identical needs no hunk
+     assert R.BUILD_FILES == ("stack/scripts/v8f_mini_train.py", "stack/tanitad/data/v8f_mini_data.py", "stack/tanitad/models/v8f_mini.py") and R.BUILD_BASE_COMMIT == "aeb54468"
++    assert R.LAUNCH_PINNED_FILES == {"stack/tanitad/data/v8f_mini_data.py": "c117e1cf5be08b9739f02e2730ce555be5a707a3183ded6481256e419f751752"}      # PREREG Amendment 1
+ 
+ 
+ def licence_inputs(seed=0, **over):
+--- read/mutation_launch_intent_reader.py	2026-10-28 13:25:26.000000000 +0100
++++ amend1/read/mutation_launch_intent_reader.py	2026-10-28 15:08:34.000000000 +0100
+@@ -197,13 +197,15 @@
+     ("build_commit_len", 'r"[0-9a-f]{40}"', 'r"[0-9a-f]{3,40}"'),
+     ("build_base_unchecked", '    if not str(rec.get("base_commit") or "").startswith(BUILD_BASE_COMMIT):', "    if False:"),
+     ("build_missing_sha_ok", '        if not fr or not fr.get("sha256_launch") or not fr.get("sha256_base"):', "        if False:"),
+-    ("build_byte_identical_data", "            if f in BYTE_IDENTICAL_FILES:", "            if False:"),
++    ("build_pin_unchecked", '            if pin and fr["sha256_launch"] != pin:', "            if False:"),
++    ("build_pin_ignores_value", '            if pin and fr["sha256_launch"] != pin:', "            if not pin:"),
+     ("build_no_hunk_ok", "            if not hunks:", "            if False:"),
+     ("build_default_off", 'if h.get("default_off") is not True or not h.get("behind_flag") or h.get("bit_identity_test") != "PASS":', 'if not h.get("behind_flag") or h.get("bit_identity_test") != "PASS":'),
+     ("build_flag_unnamed", 'if h.get("default_off") is not True or not h.get("behind_flag") or h.get("bit_identity_test") != "PASS":', 'if h.get("default_off") is not True or h.get("bit_identity_test") != "PASS":'),
+     ("build_bit_identity", 'if h.get("default_off") is not True or not h.get("behind_flag") or h.get("bit_identity_test") != "PASS":', 'if h.get("default_off") is not True or not h.get("behind_flag"):'),
+     ("build_files_set", 'BUILD_FILES = ("stack/scripts/v8f_mini_train.py", "stack/tanitad/data/v8f_mini_data.py", "stack/tanitad/models/v8f_mini.py")', 'BUILD_FILES = ("stack/scripts/v8f_mini_train.py", "stack/tanitad/models/v8f_mini.py")'),
+-    ("build_identical_files_set", 'BYTE_IDENTICAL_FILES = ("stack/tanitad/data/v8f_mini_data.py",)', "BYTE_IDENTICAL_FILES = ()"),
++    ("build_pin_set_empty", 'LAUNCH_PINNED_FILES = {"stack/tanitad/data/v8f_mini_data.py": "c117e1cf5be08b9739f02e2730ce555be5a707a3183ded6481256e419f751752"}', "LAUNCH_PINNED_FILES = {}"),
++    ("build_pin_value", 'LAUNCH_PINNED_FILES = {"stack/tanitad/data/v8f_mini_data.py": "c117e1cf5be08b9739f02e2730ce555be5a707a3183ded6481256e419f751752"}', 'LAUNCH_PINNED_FILES = {"stack/tanitad/data/v8f_mini_data.py": "c117e1cf5be08b9739f02e2730ce555be5a707a3183ded6481256e419f751750"}'),
+     # ---- K-REP-LICENCE
+     ("lic_done", '    if sm.get("done") is not True:', "    if False:"),
+     ("lic_swap_tol", "SWAP_P, SWAP_TOL = 3000, 1e-4, 100, 0.2, 0.1, 0.02", "SWAP_P, SWAP_TOL = 3000, 1e-4, 100, 0.2, 0.1, 0.03"),

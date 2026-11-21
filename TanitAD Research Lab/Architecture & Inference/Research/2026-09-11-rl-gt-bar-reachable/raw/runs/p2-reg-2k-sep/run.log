@@ -1,0 +1,41 @@
+[pilot] RESOLVED reward_weights = {"progress": 1.0}
+[pilot] ✅ CONFIG CONTRACT: case PARTIAL via sidecar C:\Users\Admin\tanitad-data\models\refc-base-30k\config.json — 38/98 config fields COMPARED and AGREEING, 0 disagreements.
+[pilot]      v0 weight-evidence: BUFFER_ABSENT -> CORROBORATED (running with anchors.v0_conditioned = False)
+[pilot] ⚠️  60 field(s) are NOT in the checkpoint's config and are therefore ASSUMED, not verified — 27 of them behaviour-affecting:
+[pilot]        ASSUMED anchors.alat_v_floor_ms = 4.0  (UNVERIFIED)
+[pilot]        ASSUMED anchors.control_units = 'kappa'  (UNVERIFIED)
+[pilot]        ASSUMED anchors.kappa_cap = 0.12  (UNVERIFIED)
+[pilot]        ASSUMED anchors.ref_speed_ms = 10.0  (UNVERIFIED)
+[pilot]        ASSUMED anchors.v0_conditioned = False  (UNVERIFIED)
+[pilot]        ASSUMED decoder.feasible_decode = False  (UNVERIFIED)
+[pilot]        ASSUMED decoder.feasible_entry = False  (UNVERIFIED)
+[pilot]        ASSUMED decoder.sampler = 'none'  (UNVERIFIED)
+[pilot]        ASSUMED decoder.sampler_groups = 1  (UNVERIFIED)
+[pilot]        ASSUMED decoder.sampler_space = 'control'  (UNVERIFIED)
+[pilot]        ASSUMED ego_valid_channel = False  (UNVERIFIED)
+[pilot]        ASSUMED factored_maneuver = False  (UNVERIFIED)
+[pilot]        ASSUMED graft_cons = False  (UNVERIFIED)
+[pilot]        ASSUMED graft_goal = False  (UNVERIFIED)
+[pilot]        ASSUMED graft_gp_point = False  (UNVERIFIED)
+[pilot]        ASSUMED graft_lan = False  (UNVERIFIED)
+[pilot]        ASSUMED graft_prior_center = True  (UNVERIFIED)
+[pilot]        ASSUMED graft_route = False  (UNVERIFIED)
+[pilot]        ASSUMED man_prior_tau = 0.0  (UNVERIFIED)
+[pilot]        ASSUMED nav_known_channel = False  (UNVERIFIED)
+[pilot]        ASSUMED no_strategic = False  (UNVERIFIED)
+[pilot]        ASSUMED route_dropout = 0.5  (UNVERIFIED)
+[pilot]        ASSUMED sel_accel_max = 2.5  (UNVERIFIED)
+[pilot]        ASSUMED sel_anchor_prefilter = False  (UNVERIFIED)
+[pilot]        ASSUMED sel_reach_clamp = False  (UNVERIFIED)
+[pilot]        ASSUMED sel_refined = False  (UNVERIFIED)
+[pilot]        ASSUMED tactical_speed_input = False  (UNVERIFIED)
+[pilot]      contract written to C:/Users/Admin/tanitad-data/rl-pilot/p2-reg-2k-sep\config_contract.json
+[pilot] ⚠️  DECLARED ALLOWANCE: 487/488 keys came from the checkpoint; DEFAULTED ['decoder.anchor_controls'] from the model's own zero buffer. anchor_controls_source = 'defaulted-zeros-v0-unconditioned', checkpoint confirmation = UNVERIFIED_BY_CKPT_CONFIG.
+[pilot] ⚠️  permitted because AnchoredDiffusionDecoder.anchor_v0_cond (the CONSTRUCTED module, not a CLI flag) is False — the tensor is not read on any code path in this process. Stamped into config.json.
+[pilot] cold start loaded: 104,191,577 params @ step 29999 (488 state-dict keys)
+[pilot] train eps 54 · val eps 15 · device cuda · reward hackable
+[pilot] BEFORE  R1 +0.6427  R2 21.335%  R3 0.654 m
+[pilot] TRAINING against proximity_safe_m=5 m · READOUT fixed at 5 m
+[pilot] ⚠️  >=GT positive mask OFF (--gt-bar not given): this is a V1-STYLE BASELINE, not a V2 arm. frac_above_bar_mean will be null.
+[pilot] AFTER   R1 +0.3007  R2 22.005%  R3 1.058 m
+[pilot] DELTA   R1 -0.3420  R2 +0.671%  R3 +61.70%  -> C:/Users/Admin/tanitad-data/rl-pilot/p2-reg-2k-sep

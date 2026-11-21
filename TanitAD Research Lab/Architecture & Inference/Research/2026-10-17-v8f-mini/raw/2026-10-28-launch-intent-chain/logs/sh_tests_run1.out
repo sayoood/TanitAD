@@ -1,0 +1,18 @@
+FAIL guard arm: a write path that climbs out of the scratch world with ..: REFUSED (rc 97, nothing ran, no stub call)  <- ('ran', 'STEP-RAN')
+FAIL harness: no module of the self-test (nor make_dry_run.py) starts bash except through the sealed runner  <- ['st_sh2.py:61: S.T("harness: the static scan flags a module that DOES start bash directly (a positive control)", bo']
+FAIL queue A_0: the training line == the pair control's (dagoacc 0) training line with the run name swapped and `--launch-intent-w 1.58926` appended (nothing else)  <- ('gger-bank "D:\\tanitad\\runs\\v8f_mini_full\\dagger_bank\\s0" --dagger-bank-sha256 197a68bb540be5a7d157942e9157e1c8e60ca60d82b1ca4fb4fcb68edccfaa8f --dagger-seed 0 --w-acc 49.6969 --launch-intent-w 1.58926', 'REFUSED: dagoacc needs P, which is fixed at 0.1 by PREREG_V8F_DAG_OACC')
+FAIL queue A_1: the training line == the pair control's (dagoacc 1) training line with the run name swapped and `--launch-intent-w 1.58926` appended (nothing else)  <- ('gger-bank "D:\\tanitad\\runs\\v8f_mini_full\\dagger_bank\\s1" --dagger-bank-sha256 197a68bb540be5a7d157942e9157e1c8e60ca60d82b1ca4fb4fcb68edccfaa8f --dagger-seed 1 --w-acc 49.6969 --launch-intent-w 1.58926', 'REFUSED: dagoacc needs P, which is fixed at 0.1 by PREREG_V8F_DAG_OACC')
+FAIL --dry-run on a queue mutated as `nocall` STOPs (expected text in the refusal)  <- e argv = training argv with --out and --selfcheck-only changed: SAME
+-- planned line == DAG-OACC_s0's banked argv.json argv + exactly --launch-intent-w 1.58926 (only --out differing): NOT-ONE-LEVER
+ZZV8FMINI-STOP the planned lines are not the one-lever LAUNCH-INTENT argv (A_0 = M2b_s0_launchintent)
+
+FAIL real run: a tip whose queue lacks :launchintentarm is REFUSED before BOX2_BUSY is taken  <- -kin dumps' settings and the reader's pins: dev box) and condition 4 (the build term: K-BUILD, the flag-off golden on the launch commit)
+REP-LICENCE s1: PASS (conditions 1 and 2) | F:/TanitAD-scratch/launch_intent_chain/selftest/shared/rep_ok/M2b_s1_dagoaccorcrep | NOT CHECKED HERE: condition 3 (the T1-kin dumps' settings and the reader's pins: dev box) and condition 4 (the build term: K-BUILD, th
+SELFTEST: 133/139 tests pass; MUTATION: 0/0 mutants killed, 0 survivors  (224 s, layer=sh)
+FAILED TESTS:
+  guard arm: a write path that climbs out of the scratch world with ..: REFUSED (rc 97, nothing ran, no stub call)
+  harness: no module of the self-test (nor make_dry_run.py) starts bash except through the sealed runner
+  queue A_0: the training line == the pair control's (dagoacc 0) training line with the run name swapped and `--launch-intent-w 1.58926` appended (nothing else)
+  queue A_1: the training line == the pair control's (dagoacc 1) training line with the run name swapped and `--launch-intent-w 1.58926` appended (nothing else)
+  --dry-run on a queue mutated as `nocall` STOPs (expected text in the refusal)
+  real run: a tip whose queue lacks :launchintentarm is REFUSED before BOX2_BUSY is taken

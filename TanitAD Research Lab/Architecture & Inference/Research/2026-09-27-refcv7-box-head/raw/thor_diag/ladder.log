@@ -1,0 +1,41 @@
+[v3] rig camera = PER-CLIP EXTRINSICS from /home/nvidia/data/refcv6_train_eval139_extrinsics.json (4508 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v2] /home/nvidia/data/refcv6-b1-416x1024-train: 4369 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 4246 distinct for 4369 clips]
+[v2] 4369 providers, 4369 distinct episode ids
+[v3] nav_from_v7: follow 11 / left 3 / right 2, missing 0 (of 16 clips; md5=b45377a1f25263b5c0f3d318c126b1ac)
+[v3] max_speed_input_v6 (4-way one-hot): 4572/4572 sidecar rows carry a ceiling, 2737/2737 windows fed (100.0 %), 86 clips ABOVE the 120 km/h top step (clamped, and on those the fed ceiling is one the ego demonstrably exceeded)
+[v3] agent join: 16/16 episodes (stable-63bit), 2737/2737 windows labelled (100.0 %), 112229 prefilter target boxes, pad 400
+[v3] SAM3 map GT: 2737/2737 windows covered (1.0000, floor 0.90, verdict PASS) over 16 clips; states {'ok': 2737, 'no_file': 0, 'frame_out_of_range': 0, 'inconclusive': 0}; layouts ['canonical']
+[diag 09:56:56] C3 PASS: [113, 77]
+[diag 09:56:56] part ladder starts
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[diag 10:03:35] ladder main: p_matched median 0.18790981287274602 max 0.19125380046261478 unmatched max 0.19351072318017642 conf 0 AP 0.009 centre 2.867 spread 20.40 assign-stab mean 0.020242914979757085 mem share 0.408->0.126 loss 16.861
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[diag 10:07:46] ladder frozen_trunk: p_matched median 0.1450013494080233 max 0.2034686679755598 unmatched max 0.23618428851204842 conf 0 AP 0.036 centre 0.637 spread 18.41 assign-stab mean 0.016194331983805668 mem share 0.408->0.223 loss 9.572
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[diag 10:14:18] ladder lr_2e-5: p_matched median 0.1771875720610447 max 0.20858327196174561 unmatched max 0.23079445398231835 conf 0 AP 0.085 centre 0.864 spread 19.59 assign-stab mean 0.012145748987854251 mem share 0.408->0.204 loss 18.208
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[diag 10:20:49] ladder bce_presence: p_matched median 0.27989984809198776 max 0.3878690793050001 unmatched max 0.4474124278413831 conf 0 AP 0.006 centre 2.561 spread 9.62 assign-stab mean 0.004048582995951417 mem share 0.408->0.174 loss 14.869
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[diag 10:27:09] ladder no_deep_sup: p_matched median 0.18448031061349837 max 0.2033112541117031 unmatched max 0.20176222447556683 conf 0 AP 0.237 centre 1.176 spread 8.07 assign-stab mean 0.012145748987854251 mem share 0.408->0.044 loss 4.753
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[diag 10:33:41] ladder q100: p_matched median 0.2441013336834042 max 0.3301596081115849 unmatched max 0.3422745504268935 conf 0 AP 0.213 centre 0.760 spread 12.88 assign-stab mean 0.06477732793522267 mem share 0.408->0.126 loss 12.247
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[diag 10:39:46] ladder refcv6_head: p_matched median 0.6278932298574305 max 0.6436476784570834 unmatched max 0.6456472296501352 conf 100 AP 0.081 centre 1.523 spread 14.67 assign-stab mean 0.05639097744360902 mem share 0.408->0.039 loss 4.129
+[diag 10:39:46] part ladder done (2570.4 s)
+[diag 10:39:46] DIAG DONE

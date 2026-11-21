@@ -1,0 +1,131 @@
+# PUBLISHED-CODE extract - NVlabs/BEV-Planner @ 01c28d6db56a178ee3a65bf017fe7996360ef026
+# path: mmdet3d/models/fbbev/planner_head/metric_stp3.py
+# git blob sha1 of the fetched file: 9e808f9c6536fbcd4dc749ffeca152838ed48ecf (8772 B); verified against the repo tree listing at the pinned commit: MATCH
+# fetched 2026-09-19T13:46:02Z from raw.githubusercontent.com (read-only source text; excerpts only, attribution retained)
+
+## lines 13-30: 0.1 m grid
+   13  ego_width, ego_length = 1.85, 4.084
+   14  
+   15  class PlanningMetric():
+   16      def __init__(self):
+   17          super().__init__()
+   18          self.X_BOUND = [-50.0, 50.0, 0.1]  # Forward
+   19          self.Y_BOUND = [-50.0, 50.0, 0.1]  # Sides
+   20          self.Z_BOUND = [-10.0, 10.0, 20.0]  # Height
+   21          dx, bx, _ = self.gen_dx_bx(self.X_BOUND, self.Y_BOUND, self.Z_BOUND)
+   22          self.dx, self.bx = dx[:2], bx[:2]
+   23  
+   24          bev_resolution, bev_start_position, bev_dimension = self.calculate_birds_eye_view_parameters(
+   25              self.X_BOUND, self.Y_BOUND, self.Z_BOUND
+   26          )
+   27          self.bev_resolution = bev_resolution.numpy()
+   28          self.bev_start_position = bev_start_position.numpy()
+   29          self.bev_dimension = bev_dimension.numpy()
+   30  
+
+## lines 69-113: LiDAR->IMU offset + estimated yaw
+   69      def evaluate_single_coll(self, traj, segmentation, input_gt, gt_traj=None, index=None):
+   70          '''
+   71          traj: torch.Tensor (n_future, 2)
+   72              自车IMU系为轨迹参考系
+   73  
+   74                  0------->
+   75                  |        x
+   76                  |
+   77                  |y
+   78                  
+   79          segmentation: torch.Tensor (n_future, 200, 200)
+   80          '''
+   81          # 0.985793 is the distance betweem the LiDAR and the IMU(ego).
+   82  
+   83          import mmcv
+   84          pts = np.array([
+   85              [-self.H / 2. + 0.5 + 0.985793, self.W / 2.],
+   86              [self.H / 2. + 0.5 + 0.985793, self.W / 2.],
+   87              [self.H / 2. + 0.5 + 0.985793, -self.W / 2.],
+   88              [-self.H / 2. + 0.5 + 0.985793, -self.W / 2.],
+   89          ])
+   90          pts = (pts - self.bx.cpu().numpy() ) / (self.dx.cpu().numpy())
+   91          pts[:, [0, 1]] = pts[:, [1, 0]]
+   92          rr, cc = polygon(pts[:,1], pts[:,0])
+   93          rc = np.concatenate([rr[:,None], cc[:,None]], axis=-1)
+   94          rc_ori = rc + (self.bx.cpu().numpy() / self.dx.cpu().numpy())
+   95  
+   96  
+   97          traj_with_ego = torch.cat([traj.new_zeros(1, 2), traj], 0)
+   98          rc_yaw = []
+   99          rotate_angle = 0
+  100          for i in range(traj.size(0)):
+  101              delta = traj_with_ego[i+1] - traj_with_ego[i]
+  102              cur_rotate_angle = torch.atan2(*delta[[1, 0]])
+  103              if delta.norm()<1: cur_rotate_angle = 0
+  104              rotate_angle = cur_rotate_angle
+  105              rotate_angle = -torch.tensor(rotate_angle)
+  106              rot_sin = torch.sin(rotate_angle)
+  107              rot_cos = torch.cos(rotate_angle)
+  108              rot_mat = torch.Tensor([[rot_cos, -rot_sin], [rot_sin, rot_cos]])
+  109              tmp = rc_ori @ rot_mat.cpu().numpy() -  (self.bx.cpu().numpy() / self.dx.cpu().numpy())
+  110              tmp = tmp.round().astype(np.int)
+  111              rc_yaw.append(tmp)
+  112             
+  113          rc_yaw = np.stack(rc_yaw)
+
+## lines 165-221: ignore_gt branch
+  165      def evaluate_coll(
+  166              self, 
+  167              trajs, 
+  168              gt_trajs, 
+  169              segmentation,
+  170              index=None,
+  171              ignore_gt=True,
+  172          ):
+  173          '''
+  174          trajs: torch.Tensor (B, n_future, 2)
+  175          自车IMU系为轨迹参考系
+  176  
+  177                  0------->
+  178                  |        x
+  179                  |
+  180                  |y
+  181          gt_trajs: torch.Tensor (B, n_future, 2)
+  182          segmentation: torch.Tensor (B, n_future, 200, 200)
+  183  
+  184          '''
+  185          B, n_future, _ = trajs.shape
+  186          # trajs = trajs * torch.tensor([-1, 1], device=trajs.device)
+  187          # gt_trajs = gt_trajs * torch.tensor([-1, 1], device=gt_trajs.device)
+  188  
+  189          obj_coll_sum = torch.zeros(n_future, device=segmentation.device)
+  190          obj_box_coll_sum = torch.zeros(n_future, device=segmentation.device)
+  191  
+  192          for i in range(B):
+  193              gt_box_coll = self.evaluate_single_coll(gt_trajs[i], segmentation[i], input_gt=True)
+  194  
+  195              xx, yy = trajs[i,:,0], trajs[i, :, 1]
+  196  
+  197              xi = ((-self.bx[0] + xx) / self.dx[0]).long()
+  198              yi = ((-self.bx[1] + yy) / self.dx[1]).long()
+  199  
+  200              m1 = torch.logical_and(
+  201                  torch.logical_and(xi >= 0, xi < self.bev_dimension[0]),
+  202                  torch.logical_and(yi >= 0, yi < self.bev_dimension[1]),
+  203              ).to(gt_box_coll.device)
+  204              m1 = torch.logical_and(m1, torch.logical_not(gt_box_coll))
+  205  
+  206              ti = torch.arange(n_future).to(segmentation.device)
+  207              # segmentation: B, T, H, W
+  208              obj_coll_sum[ti[m1]] += segmentation[i, ti[m1], yi[m1], xi[m1]].long()
+  209  
+  210              m2 = torch.logical_not(gt_box_coll)
+  211              box_coll = self.evaluate_single_coll(trajs[i],
+  212                      segmentation[i],
+  213                      gt_traj=gt_trajs[i],
+  214                      input_gt=False,
+  215                      index=index[i],
+  216                      ).to(segmentation.device)
+  217              if ignore_gt:
+  218                  obj_box_coll_sum += (gt_box_coll).long()                
+  219              else:
+  220                  obj_box_coll_sum[ti[m2]] += (box_coll[ti[m2]]).long()
+  221          return obj_coll_sum, obj_box_coll_sum
+

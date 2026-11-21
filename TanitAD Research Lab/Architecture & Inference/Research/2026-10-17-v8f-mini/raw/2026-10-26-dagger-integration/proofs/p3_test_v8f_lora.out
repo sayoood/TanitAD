@@ -1,0 +1,710 @@
+..FFsss..FF.F..Fs.FFF........FFFFF..sssF                                 [100%]
+================================== FAILURES ===================================
+________ test_b_zero_forward_is_the_frozen_forward_bit_for_bit[dtype0] ________
+
+dtype = torch.float32
+
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.bfloat16])
+    def test_b_zero_forward_is_the_frozen_forward_bit_for_bit(dtype):
+        enc = make_encoder(64, 2, dtype=dtype)
+        plain = E._PlainEncoder(copy.deepcopy(enc.backbone), enc.mean.clone(), enc.std.clone())
+        plain.backbone = copy.deepcopy(enc.merge())                                              # B = 0: merging adds exactly 0
+        fr = smooth_frames(3, TINY_HW, seed=1)
+        assert torch.equal(enc.field(fr), plain.field(fr))
+>       assert torch.equal(enc.pooled(fr), plain.pooled(fr))
+                           ^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_lora.py:228: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tanitad\models\v8f_lora_encoder.py:463: in pooled
+    p = builder_pool_field()(self.field(frames_u8), gh, gw)
+        ^^^^^^^^^^^^^^^^^^^^
+stack\tanitad\models\v8f_lora_encoder.py:101: in builder_pool_field
+    return load_builder()[0].pool_field
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and E:\Projects\TanitAD-artifacts\di\tree\stack\scripts\dinov3_fp8_encode_ship.py
+
+stack\tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+________ test_b_zero_forward_is_the_frozen_forward_bit_for_bit[dtype1] ________
+
+dtype = torch.bfloat16
+
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.bfloat16])
+    def test_b_zero_forward_is_the_frozen_forward_bit_for_bit(dtype):
+        enc = make_encoder(64, 2, dtype=dtype)
+        plain = E._PlainEncoder(copy.deepcopy(enc.backbone), enc.mean.clone(), enc.std.clone())
+        plain.backbone = copy.deepcopy(enc.merge())                                              # B = 0: merging adds exactly 0
+        fr = smooth_frames(3, TINY_HW, seed=1)
+        assert torch.equal(enc.field(fr), plain.field(fr))
+>       assert torch.equal(enc.pooled(fr), plain.pooled(fr))
+                           ^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_lora.py:228: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tanitad\models\v8f_lora_encoder.py:463: in pooled
+    p = builder_pool_field()(self.field(frames_u8), gh, gw)
+        ^^^^^^^^^^^^^^^^^^^^
+stack\tanitad\models\v8f_lora_encoder.py:101: in builder_pool_field
+    return load_builder()[0].pool_field
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and E:\Projects\TanitAD-artifacts\di\tree\stack\scripts\dinov3_fp8_encode_ship.py
+
+stack\tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+_ test_step_one_has_nonzero_B_grads_and_exactly_zero_A_grads_then_A_wakes_up_and_the_frozen_control_reads_zero _
+
+    def test_step_one_has_nonzero_B_grads_and_exactly_zero_A_grads_then_A_wakes_up_and_the_frozen_control_reads_zero():
+        enc = make_encoder(64, 2, r=4)
+        fr = smooth_frames(4, TINY_HW, seed=3)
+        opt = torch.optim.AdamW(enc.lora_parameters(), lr=1e-2)
+>       _loss_through(enc, fr).backward()
+        ^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_lora.py:302: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_lora.py:286: in _loss_through
+    f = enc.pooled(frames)
+        ^^^^^^^^^^^^^^^^^^
+stack\tanitad\models\v8f_lora_encoder.py:463: in pooled
+    p = builder_pool_field()(self.field(frames_u8), gh, gw)
+        ^^^^^^^^^^^^^^^^^^^^
+stack\tanitad\models\v8f_lora_encoder.py:101: in builder_pool_field
+    return load_builder()[0].pool_field
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and E:\Projects\TanitAD-artifacts\di\tree\stack\scripts\dinov3_fp8_encode_ship.py
+
+stack\tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+_________ test_a_detached_encoder_output_turns_the_gradient_check_red _________
+
+    def test_a_detached_encoder_output_turns_the_gradient_check_red():
+        """The instrument self-test: the same check, on an encoder whose output is detached, must FAIL (this is the in-process twin of the mutation harness)."""
+        class Detached(E.DinoV3LoRAEncoder):
+            def pooled(self, frames_u8, grid=None, quantize=None):
+                return super().pooled(frames_u8, grid, quantize).detach()
+        good = make_encoder(64, 2)
+        bad = Detached(tiny_backbone(64, 2, 2, 64), good.mean.clone(), good.std.clone(), r=4, alpha=4.0)
+        fr = smooth_frames(2, TINY_HW)
+>       _loss_through(good, fr).backward()
+        ^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_lora.py:328: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_lora.py:286: in _loss_through
+    f = enc.pooled(frames)
+        ^^^^^^^^^^^^^^^^^^
+stack\tanitad\models\v8f_lora_encoder.py:463: in pooled
+    p = builder_pool_field()(self.field(frames_u8), gh, gw)
+        ^^^^^^^^^^^^^^^^^^^^
+stack\tanitad\models\v8f_lora_encoder.py:101: in builder_pool_field
+    return load_builder()[0].pool_field
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and E:\Projects\TanitAD-artifacts\di\tree\stack\scripts\dinov3_fp8_encode_ship.py
+
+stack\tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+________________ test_checkpointing_changes_nothing_but_memory ________________
+
+    def test_checkpointing_changes_nothing_but_memory():
+        fr = smooth_frames(3, TINY_HW, seed=4)
+        a = make_encoder(64, 2, r=4)
+        b = make_encoder(64, 2, r=4)
+        for p in a.lora_parameters():
+            nn.init.normal_(p, std=0.05)                                                          # B != 0 so the LoRA branch is live
+        b.load_state_dict(a.state_dict())
+        b.set_checkpointing(True)
+        assert b.built_levers()["checkpointing"] is True and a.built_levers()["checkpointing"] is False
+>       _loss_through(a, fr).backward()
+        ^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_lora.py:377: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_lora.py:286: in _loss_through
+    f = enc.pooled(frames)
+        ^^^^^^^^^^^^^^^^^^
+stack\tanitad\models\v8f_lora_encoder.py:463: in pooled
+    p = builder_pool_field()(self.field(frames_u8), gh, gw)
+        ^^^^^^^^^^^^^^^^^^^^
+stack\tanitad\models\v8f_lora_encoder.py:101: in builder_pool_field
+    return load_builder()[0].pool_field
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and E:\Projects\TanitAD-artifacts\di\tree\stack\scripts\dinov3_fp8_encode_ship.py
+
+stack\tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+_ test_the_gradient_cache_equals_the_full_batch_gradient_and_plain_accumulation_does_not _
+
+    def test_the_gradient_cache_equals_the_full_batch_gradient_and_plain_accumulation_does_not():
+        B, F = 6, 3
+        fr_all = smooth_frames(B * F, TINY_HW, seed=7)
+        fmap = torch.arange(B * F).view(B, F)
+        w = torch.linspace(0.5, 1.5, 1024)
+    
+        def fresh():
+            e = make_encoder(64, 2, r=4)
+            g = torch.Generator().manual_seed(11)
+            for p in e.lora_parameters():
+                p.data.copy_(torch.randn(p.shape, generator=g) * 0.05)                          # the same A and B in every copy
+            return e
+        ref = fresh()
+>       feats = ref.pooled(fr_all)[fmap]                                         # the full batch, plain autograd, no chunking
+                ^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_lora.py:445: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tanitad\models\v8f_lora_encoder.py:463: in pooled
+    p = builder_pool_field()(self.field(frames_u8), gh, gw)
+        ^^^^^^^^^^^^^^^^^^^^
+stack\tanitad\models\v8f_lora_encoder.py:101: in builder_pool_field
+    return load_builder()[0].pool_field
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and E:\Projects\TanitAD-artifacts\di\tree\stack\scripts\dinov3_fp8_encode_ship.py
+
+stack\tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+_ test_collate_frames_hands_every_window_its_own_frames_and_leaves_collate_alone _
+
+lworld = {'root': WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/lw0/w'), 'names': ['syn-train-000', 'syn-train-001', 'sy...True,  True,
+        True,  True,  True,  True,  True,  True,  True,  True,  True,
+        True,  True,  True]), ...}}}
+
+    def test_collate_frames_hands_every_window_its_own_frames_and_leaves_collate_alone(lworld):
+        store, J, wins, ds_c, ds_f = _stores(lworld)
+        fs = D.FrameStore(lworld["frames"], lru=4)
+        sel = [w for w in wins if w[0] == 0][20:23] + [w for w in wins if w[0] == 3][:2]       # three ADJACENT windows of one clip share frames
+        items = [ds_f.item(ci, t, 1, 3) for ci, t, _, _ in sel]
+>       b = D.collate_frames(items, fs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_lora.py:534: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tanitad\data\v8f_mini_data.py:845: in collate_frames
+    if fstore.n_cache_frames(c) != T_of[c]:
+       ^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tanitad\data\v8f_mini_data.py:793: in n_cache_frames
+    return (int(self.get(clip)["jpeg_len"].shape[0]) + 1) // 2
+                ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <tanitad.data.v8f_mini_data.FrameStore object at 0x00000210ED2CB8C0>
+clip = 'syn-train-000'
+
+    def get(self, clip: str) -> dict:
+        if clip in self._c:
+            self._c.move_to_end(clip)
+            return self._c[clip]
+        import torch
+        o = torch.load(self.path(clip), map_location="cpu", weights_only=False)        # our own file; the builder loads it the same way
+        if o.get("clip_id") != clip:
+            raise ValueError(f"{self.path(clip)}: clip_id {o.get('clip_id')!r} != file stem (the label join key would be wrong)")
+        if str(o["codec"]) != "png" or (int(o["image_h"]), int(o["image_w"])) != tuple(FRAME_HW):
+>           raise ValueError(f"{self.path(clip)}: codec {o['codec']} / frame {(o['image_h'], o['image_w'])} is not the cache builder's png {FRAME_HW}")
+E           ValueError: E:\Projects\TanitAD-artifacts\di\bt\cur\lw0\frames\syn-train-000.v2ep.pt: codec png / frame (64, 160) is not the cache builder's png (256, 640)
+
+stack\tanitad\data\v8f_mini_data.py:786: ValueError
+_______________ test_unique_frames_and_the_frame_store_refusals _______________
+
+lworld = {'root': WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/lw0/w'), 'names': ['syn-train-000', 'syn-train-001', 'sy...True,  True,
+        True,  True,  True,  True,  True,  True,  True,  True,  True,
+        True,  True,  True]), ...}}}
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_unique_frames_and_the_fra0')
+
+    def test_unique_frames_and_the_frame_store_refusals(lworld, tmp_path):
+        keys, fm = D.unique_frames(["a", "a", "b"], np.array([[0, 0, 1], [0, 1, 2], [0, 0, 5]]))
+        assert keys == [("a", 0), ("a", 1), ("a", 2), ("b", 0), ("b", 5)] and fm.tolist() == [[0, 0, 1], [0, 1, 2], [3, 3, 4]]
+        fs = D.FrameStore(lworld["frames"])
+>       assert fs.missing(["syn-train-000", "nope"]) == ["nope"] and fs.n_cache_frames("syn-train-000") == 60
+                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_lora.py:556: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tanitad\data\v8f_mini_data.py:793: in n_cache_frames
+    return (int(self.get(clip)["jpeg_len"].shape[0]) + 1) // 2
+                ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <tanitad.data.v8f_mini_data.FrameStore object at 0x00000210ED30EC10>
+clip = 'syn-train-000'
+
+    def get(self, clip: str) -> dict:
+        if clip in self._c:
+            self._c.move_to_end(clip)
+            return self._c[clip]
+        import torch
+        o = torch.load(self.path(clip), map_location="cpu", weights_only=False)        # our own file; the builder loads it the same way
+        if o.get("clip_id") != clip:
+            raise ValueError(f"{self.path(clip)}: clip_id {o.get('clip_id')!r} != file stem (the label join key would be wrong)")
+        if str(o["codec"]) != "png" or (int(o["image_h"]), int(o["image_w"])) != tuple(FRAME_HW):
+>           raise ValueError(f"{self.path(clip)}: codec {o['codec']} / frame {(o['image_h'], o['image_w'])} is not the cache builder's png {FRAME_HW}")
+E           ValueError: E:\Projects\TanitAD-artifacts\di\bt\cur\lw0\frames\syn-train-000.v2ep.pt: codec png / frame (64, 160) is not the cache builder's png (256, 640)
+
+stack\tanitad\data\v8f_mini_data.py:786: ValueError
+_ test_end_to_end_identity_the_on_the_fly_feats_are_the_caches_feats_exactly_and_a_one_step_shift_is_caught _
+
+lworld = {'root': WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/lw0/w'), 'names': ['syn-train-000', 'syn-train-001', 'sy...True,  True,
+        True,  True,  True,  True,  True,  True,  True,  True,  True,
+        True,  True,  True]), ...}}}
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_end_to_end_identity_the_o0')
+
+    def test_end_to_end_identity_the_on_the_fly_feats_are_the_caches_feats_exactly_and_a_one_step_shift_is_caught(lworld, tmp_path):
+        """The cache is made BY THE ENCODER (tiny, fixed weights) from the same frames; the windows -> frames -> encoder -> gather path must then return the cache's
+        `feats` bit for bit, in order, with the same frame_ok. Shift the frames by one cache step and the identity probe must go non-zero."""
+        enc = make_encoder(1024, 2, r=4, seed=0, bb_seed=3)
+        names = lworld["names"]
+        root = tmp_path / "w"
+        D.make_synthetic_world(root, n_train=6, n_eval=2, T=60, seed=0)
+        for i, c in enumerate(names):                                   # overwrite the random cache tokens with the encoder's OWN pooled fp8 tokens
+            p = root / "train" / "clips" / f"{c}.pt"
+            o = torch.load(p, map_location="cpu", weights_only=True)
+            with torch.no_grad():
+>               o["pool4x10"] = enc.pooled(smooth_frames(60, TINY_HW, seed=i), quantize=True).to(torch.float8_e4m3fn)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_lora.py:580: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tanitad\models\v8f_lora_encoder.py:463: in pooled
+    p = builder_pool_field()(self.field(frames_u8), gh, gw)
+        ^^^^^^^^^^^^^^^^^^^^
+stack\tanitad\models\v8f_lora_encoder.py:101: in builder_pool_field
+    return load_builder()[0].pool_field
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and E:\Projects\TanitAD-artifacts\di\tree\stack\scripts\dinov3_fp8_encode_ship.py
+
+stack\tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+_________ test_launch_gate_refuses_every_lie_about_the_built_encoder __________
+
+tiny_trainer = <module 'v8f_mini_train' from 'E:\\Projects\\TanitAD-artifacts\\di\\tree\\stack\\scripts\\v8f_mini_train.py'>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_launch_gate_refuses_every0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000210EDBCB380>
+
+    def test_launch_gate_refuses_every_lie_about_the_built_encoder(tiny_trainer, tmp_path, monkeypatch):
+        import copy as _c
+    
+        def run(extra=(), raw=None):
+            out = tmp_path / f"o{len(list(tmp_path.glob('o*')))}"
+            if raw is not None:
+                monkeypatch.setattr(TR, "build_encoder_raw", raw)
+            return TR.main(lora_argv(tmp_path, out, ["--selfcheck-only", *extra]))
+    
+        def lie(mutate):
+            def raw(a, dev):
+                enc = _tiny_raw(a, dev)
+                mutate(enc)
+                return enc
+            return raw
+    
+        def with_args(**kw):
+            def raw(a, dev):
+                b = _c.copy(a)
+                for k, v in kw.items():
+                    setattr(b, k, v)
+                return _tiny_raw(b, dev)
+            return raw
+>       assert run() == 0                                                                           # the honest build passes
+               ^^^^^
+
+stack\tests\test_v8f_lora.py:662: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_lora.py:646: in run
+    return TR.main(lora_argv(tmp_path, out, ["--selfcheck-only", *extra]))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\scripts\v8f_mini_train.py:1504: in main
+    probe_f = D.collate_frames([ds_probe.item(*w) for w in next(sampler.epoch(0))][:LIVE_PROBE_WINDOWS_LORA], fstore)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tanitad\data\v8f_mini_data.py:845: in collate_frames
+    if fstore.n_cache_frames(c) != T_of[c]:
+       ^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tanitad\data\v8f_mini_data.py:793: in n_cache_frames
+    return (int(self.get(clip)["jpeg_len"].shape[0]) + 1) // 2
+                ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <tanitad.data.v8f_mini_data.FrameStore object at 0x00000210ED30E5D0>
+clip = 'syn-train-005'
+
+    def get(self, clip: str) -> dict:
+        if clip in self._c:
+            self._c.move_to_end(clip)
+            return self._c[clip]
+        import torch
+        o = torch.load(self.path(clip), map_location="cpu", weights_only=False)        # our own file; the builder loads it the same way
+        if o.get("clip_id") != clip:
+            raise ValueError(f"{self.path(clip)}: clip_id {o.get('clip_id')!r} != file stem (the label join key would be wrong)")
+        if str(o["codec"]) != "png" or (int(o["image_h"]), int(o["image_w"])) != tuple(FRAME_HW):
+>           raise ValueError(f"{self.path(clip)}: codec {o['codec']} / frame {(o['image_h'], o['image_w'])} is not the cache builder's png {FRAME_HW}")
+E           ValueError: E:\Projects\TanitAD-artifacts\di\bt\cur\test_launch_gate_refuses_every0\frames\syn-train-005.v2ep.pt: codec png / frame (64, 160) is not the cache builder's png (256, 640)
+
+stack\tanitad\data\v8f_mini_data.py:786: ValueError
+_________ test_the_encoder_build_never_moves_the_heads_initialisation _________
+
+tiny_trainer = <module 'v8f_mini_train' from 'E:\\Projects\\TanitAD-artifacts\\di\\tree\\stack\\scripts\\v8f_mini_train.py'>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_the_encoder_build_never_m0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000210ED52E200>
+
+    def test_the_encoder_build_never_moves_the_heads_initialisation(tiny_trainer, tmp_path, monkeypatch):
+        """B's heads and L's heads must start from the same bits and the same RNG stream: the trainer seeds, builds the heads, THEN the encoder; the encoder build (which here draws
+        from the global RNG, as HF's loader may) is wrapped in a save / restore. The control: without the restore the stream that follows is NOT B's."""
+        seen = {}
+        orig = TR.declared_vs_built
+    
+        def spy(a, cfg, model, opt, info, enc=None):
+            seen[a.encoder] = ({k: v.clone() for k, v in model.state_dict().items()}, torch.get_rng_state().clone())
+            return orig(a, cfg, model, opt, info, enc)
+        monkeypatch.setattr(TR, "declared_vs_built", spy)
+        cache_argv = ["--synthetic", "--batch", "4", "--d", "32", "--n-q", "2", "--steps", "2", "--threads", "1", "--kin-mode", "yaw", "--seed", "5", "--arm", "M1",
+                      "--selfcheck-only", "--out"]
+>       assert TR.main([*cache_argv, str(tmp_path / "c")]) == 0
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_lora.py:695: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+argv = ['--synthetic', '--batch', '4', '--d', '32', '--n-q', ...]
+
+    def main(argv=None):
+        argv = list(sys.argv[1:] if argv is None else argv)
+        a = build_parser().parse_args(argv)
+        if a.p10 is None:
+            a.p10 = os.path.join(PKG, "raw", "p10_yaw" if a.kin_mode == "yaw" else "p10", "p10_prior.pt")
+        if a.threads:
+            torch.set_num_threads(a.threads)
+        os.makedirs(a.out, exist_ok=True)
+        cfg = make_config(a)
+        ego = make_ego_perturb(a)                                        # O-RECOVER (PREREG_V8F_HACC_MC section 7): off by default; the object the loop applies, G-DVB reads back and the probes exercise
+        dev = torch.device("cuda" if (a.device == "auto" and torch.cuda.is_available()) else ("cpu" if a.device == "auto" else a.device))
+        torch.manual_seed(a.seed)
+        np.random.seed(a.seed)
+        store, J, wins, clips, info = build_data(a, cfg)
+        info["p10_units"] = None if a.synthetic else M.p10_meta(a.p10).get("units", "steer")
+        if not a.synthetic:
+            try:
+                M.check_p10_units(a.p10, a.kin_mode)                 # REFUSES a prior whose declared units are not this mode's
+            except ValueError as e:
+                raise SystemExit(f"ZZDVB-REFUSEDZZ {e}")
+        fstore = None
+        if a.encoder == "lora":
+            if not a.frames_root:
+                raise SystemExit("ZZDVB-REFUSEDZZ --encoder lora needs --frames-root")
+            fstore = D.FrameStore(a.frames_root, lru=info["lru"])
+            info["frames_missing"] = len(fstore.missing(clips))
+        if a.encoder == "lora":                                          # two NAMED constructions, so test_v8f_window_start's static guard can see both
+            ds = D.V8FMiniFrameWindows(store, J, wins, hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s,
+                                       window_start=cfg.window_start)
+        else:
+            ds = D.V8FMiniWindows(store, J, wins, hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s,
+                                  window_start=cfg.window_start)
+        info["ds_window_start"] = ds.window_start                       # the held-age clamp's origin, read back from the BUILT dataset (G-DVB compares it)
+        prior = M.load_p10(a.p10) if not a.synthetic else M.P10Prior.synthetic(a.seed)
+        mu, sd = M.cons_stats(J)
+        model = M.V8FMini(cfg, prior, mu, sd).to(dev)
+        if a.init_ckpt:                                                  # O-RECOVER's start state: the MODEL weights of an earlier checkpoint (before the optimiser, the probes and the gate); a resume of THIS run wins
+            try:
+                info["init_ckpt"] = load_init_ckpt(a.init_ckpt, model, cfg, apply=not (os.path.exists(os.path.join(a.out, "ckpt_last.pt")) and not a.no_resume))
+            except Exception as e:                                       # noqa: BLE001  a missing / foreign / mismatched checkpoint is a REFUSAL, not a crash
+                raise SystemExit(f"ZZDVB-REFUSEDZZ init-ckpt {a.init_ckpt}: {type(e).__name__}: {str(e)[:600]}")
+        dag = make_dagger(a, J, wins, clips, info)                       # PREREG_V8F_DAGGER: off by default (no bank read); with a bank: load + K-B2 + K-B3 + COVERAGE here, a refusal stops the launch before the gate
+        enc = None
+        if a.encoder == "lora":
+            enc = make_encoder(a, dev)                     # AFTER the heads: it must not move their initialisation (the global RNG is restored inside)
+            enc.set_checkpointing(a.enc_ckpt)
+        decay = [p for n, p in model.named_parameters() if p.requires_grad and p.ndim >= 2]
+        nodecay = [p for n, p in model.named_parameters() if p.requires_grad and p.ndim < 2]
+        groups = [{"params": decay, "weight_decay": a.wd}, {"params": nodecay, "weight_decay": 0.0}]
+        if enc is not None:                                # the LoRA matrices (2-D: the same weight-decay rule as the heads), their own peak lr
+            groups.append({"params": enc.lora_parameters(), "weight_decay": a.wd, "lr": lora_lr_of(a), "name": "lora", "lr_mult": lora_lr_of(a) / a.lr})
+        opt = torch.optim.AdamW(groups, lr=a.lr)
+        S = math.ceil(info["n_windows_all_clips"] / a.batch)
+        total = a.steps or S * a.steps_mult
+        sampler = D.ChunkedSampler(wins, a.batch, seed=a.seed, chunk=max(4, min(48, info["lru"] - 2)),
+                                   max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s)
+        # ---- the launch gate
+        lr_at = LRSchedule(a.lr, a.warmup, total)                        # the loop's schedule, built BEFORE the gate so that G-DVB can read --warmup back from it
+>       bad = declared_vs_built(a, cfg, model, opt, info, enc, ego, lr_at, dag)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: test_the_encoder_build_never_moves_the_heads_initialisation.<locals>.spy() takes from 5 to 6 positional arguments but 9 were given
+
+stack\scripts\v8f_mini_train.py:1493: TypeError
+____________ test_reachability_flag_to_loss_to_backward_end_to_end ____________
+
+tiny_trainer = <module 'v8f_mini_train' from 'E:\\Projects\\TanitAD-artifacts\\di\\tree\\stack\\scripts\\v8f_mini_train.py'>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_reachability_flag_to_loss0')
+
+    def test_reachability_flag_to_loss_to_backward_end_to_end(tiny_trainer, tmp_path):
+        out = tmp_path / "run"
+>       assert TR.main(lora_argv(tmp_path, out, ["--accum", "2", "--enc-ckpt"], steps="4")) == 0
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_lora.py:708: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\scripts\v8f_mini_train.py:1504: in main
+    probe_f = D.collate_frames([ds_probe.item(*w) for w in next(sampler.epoch(0))][:LIVE_PROBE_WINDOWS_LORA], fstore)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tanitad\data\v8f_mini_data.py:845: in collate_frames
+    if fstore.n_cache_frames(c) != T_of[c]:
+       ^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tanitad\data\v8f_mini_data.py:793: in n_cache_frames
+    return (int(self.get(clip)["jpeg_len"].shape[0]) + 1) // 2
+                ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <tanitad.data.v8f_mini_data.FrameStore object at 0x00000210ED40F230>
+clip = 'syn-train-005'
+
+    def get(self, clip: str) -> dict:
+        if clip in self._c:
+            self._c.move_to_end(clip)
+            return self._c[clip]
+        import torch
+        o = torch.load(self.path(clip), map_location="cpu", weights_only=False)        # our own file; the builder loads it the same way
+        if o.get("clip_id") != clip:
+            raise ValueError(f"{self.path(clip)}: clip_id {o.get('clip_id')!r} != file stem (the label join key would be wrong)")
+        if str(o["codec"]) != "png" or (int(o["image_h"]), int(o["image_w"])) != tuple(FRAME_HW):
+>           raise ValueError(f"{self.path(clip)}: codec {o['codec']} / frame {(o['image_h'], o['image_w'])} is not the cache builder's png {FRAME_HW}")
+E           ValueError: E:\Projects\TanitAD-artifacts\di\bt\cur\test_reachability_flag_to_loss0\frames\syn-train-005.v2ep.pt: codec png / frame (64, 160) is not the cache builder's png (256, 640)
+
+stack\tanitad\data\v8f_mini_data.py:786: ValueError
+_ test_gradient_accumulation_is_exact_end_to_end_including_the_wm_sigreg_term _
+
+tiny_trainer = <module 'v8f_mini_train' from 'E:\\Projects\\TanitAD-artifacts\\di\\tree\\stack\\scripts\\v8f_mini_train.py'>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_gradient_accumulation_is_0')
+
+    def test_gradient_accumulation_is_exact_end_to_end_including_the_wm_sigreg_term(tiny_trainer, tmp_path):
+        """M2b carries the WM auxiliary (SIGReg = a statistic of the whole batch) and masked-mean losses: accum 1 and accum 4 must give the same heads AND the same LoRA."""
+        res = {}
+        for k, extra in (("a1", []), ("a4", ["--accum", "4", "--enc-ckpt"])):
+            out = tmp_path / k
+>           assert TR.main(lora_argv(tmp_path, out, extra, arm="M2b", steps="2", batch="8")) == 0
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_lora.py:739: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\scripts\v8f_mini_train.py:1504: in main
+    probe_f = D.collate_frames([ds_probe.item(*w) for w in next(sampler.epoch(0))][:LIVE_PROBE_WINDOWS_LORA], fstore)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tanitad\data\v8f_mini_data.py:845: in collate_frames
+    if fstore.n_cache_frames(c) != T_of[c]:
+       ^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tanitad\data\v8f_mini_data.py:793: in n_cache_frames
+    return (int(self.get(clip)["jpeg_len"].shape[0]) + 1) // 2
+                ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <tanitad.data.v8f_mini_data.FrameStore object at 0x00000210ED40EEA0>
+clip = 'syn-train-005'
+
+    def get(self, clip: str) -> dict:
+        if clip in self._c:
+            self._c.move_to_end(clip)
+            return self._c[clip]
+        import torch
+        o = torch.load(self.path(clip), map_location="cpu", weights_only=False)        # our own file; the builder loads it the same way
+        if o.get("clip_id") != clip:
+            raise ValueError(f"{self.path(clip)}: clip_id {o.get('clip_id')!r} != file stem (the label join key would be wrong)")
+        if str(o["codec"]) != "png" or (int(o["image_h"]), int(o["image_w"])) != tuple(FRAME_HW):
+>           raise ValueError(f"{self.path(clip)}: codec {o['codec']} / frame {(o['image_h'], o['image_w'])} is not the cache builder's png {FRAME_HW}")
+E           ValueError: E:\Projects\TanitAD-artifacts\di\bt\cur\test_gradient_accumulation_is_0\frames\syn-train-005.v2ep.pt: codec png / frame (64, 160) is not the cache builder's png (256, 640)
+
+stack\tanitad\data\v8f_mini_data.py:786: ValueError
+____________________ test_lora_run_resumes_as_the_same_run ____________________
+
+tiny_trainer = <module 'v8f_mini_train' from 'E:\\Projects\\TanitAD-artifacts\\di\\tree\\stack\\scripts\\v8f_mini_train.py'>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_lora_run_resumes_as_the_s0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000210F75F9CC0>
+
+    def test_lora_run_resumes_as_the_same_run(tiny_trainer, tmp_path, monkeypatch):
+        common = ["--ckpt-every", "2"]
+        full, res = tmp_path / "full", tmp_path / "res"
+>       assert TR.main(lora_argv(tmp_path, full, common, steps="5")) == 0
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_lora.py:751: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\scripts\v8f_mini_train.py:1504: in main
+    probe_f = D.collate_frames([ds_probe.item(*w) for w in next(sampler.epoch(0))][:LIVE_PROBE_WINDOWS_LORA], fstore)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tanitad\data\v8f_mini_data.py:845: in collate_frames
+    if fstore.n_cache_frames(c) != T_of[c]:
+       ^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tanitad\data\v8f_mini_data.py:793: in n_cache_frames
+    return (int(self.get(clip)["jpeg_len"].shape[0]) + 1) // 2
+                ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <tanitad.data.v8f_mini_data.FrameStore object at 0x00000210F75AD370>
+clip = 'syn-train-005'
+
+    def get(self, clip: str) -> dict:
+        if clip in self._c:
+            self._c.move_to_end(clip)
+            return self._c[clip]
+        import torch
+        o = torch.load(self.path(clip), map_location="cpu", weights_only=False)        # our own file; the builder loads it the same way
+        if o.get("clip_id") != clip:
+            raise ValueError(f"{self.path(clip)}: clip_id {o.get('clip_id')!r} != file stem (the label join key would be wrong)")
+        if str(o["codec"]) != "png" or (int(o["image_h"]), int(o["image_w"])) != tuple(FRAME_HW):
+>           raise ValueError(f"{self.path(clip)}: codec {o['codec']} / frame {(o['image_h'], o['image_w'])} is not the cache builder's png {FRAME_HW}")
+E           ValueError: E:\Projects\TanitAD-artifacts\di\bt\cur\test_lora_run_resumes_as_the_s0\frames\syn-train-005.v2ep.pt: codec png / frame (64, 160) is not the cache builder's png (256, 640)
+
+stack\tanitad\data\v8f_mini_data.py:786: ValueError
+_ test_smoke_script_runs_the_trainer_and_reports_the_ar2_checks_and_a_projection _
+
+tiny_trainer = <module 'v8f_mini_train' from 'E:\\Projects\\TanitAD-artifacts\\di\\tree\\stack\\scripts\\v8f_mini_train.py'>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_smoke_script_runs_the_tra0')
+
+    def test_smoke_script_runs_the_trainer_and_reports_the_ar2_checks_and_a_projection(tiny_trainer, tmp_path):
+        path = PKG / "code" / "v8f_lora_smoke.py"
+        if not path.is_file():
+            pytest.skip("the smoke script is not in this checkout")
+        spec = importlib.util.spec_from_file_location("v8f_lora_smoke_t", path)
+        S = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(S)
+        assert Path(S.REPO).resolve() == REPO.resolve(), (S.REPO, REPO)               # same pin as the eval route's
+        frames = make_frames_root(tmp_path / "frames", [f"syn-train-{i:03d}" for i in range(6)])
+        targv = ["--synthetic", "--d", "32", "--n-q", "2", "--warmup", "2", "--threads", "1", "--kin-mode", "yaw", "--seed", "5", "--arm", "M2b", "--lora-r", "4",
+                 "--lora-alpha", "4", "--frames-root", str(frames), "--batch", "64"]
+        out = tmp_path / "smoke"
+>       rc = S.main(["--steps", "4", "--out", str(out), "--warmup", "1", "--census-batches", "2", "--heads-b64-steps", "1", "--", *targv])
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_lora.py:914: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-v8f-mini\code\v8f_lora_smoke.py:244: in main
+    rc = TR.main(targv)
+         ^^^^^^^^^^^^^^
+stack\scripts\v8f_mini_train.py:1504: in main
+    probe_f = D.collate_frames([ds_probe.item(*w) for w in next(sampler.epoch(0))][:LIVE_PROBE_WINDOWS_LORA], fstore)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tanitad\data\v8f_mini_data.py:845: in collate_frames
+    if fstore.n_cache_frames(c) != T_of[c]:
+       ^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tanitad\data\v8f_mini_data.py:793: in n_cache_frames
+    return (int(self.get(clip)["jpeg_len"].shape[0]) + 1) // 2
+                ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <tanitad.data.v8f_mini_data.FrameStore object at 0x00000210EDC52360>
+clip = 'syn-train-005'
+
+    def get(self, clip: str) -> dict:
+        if clip in self._c:
+            self._c.move_to_end(clip)
+            return self._c[clip]
+        import torch
+        o = torch.load(self.path(clip), map_location="cpu", weights_only=False)        # our own file; the builder loads it the same way
+        if o.get("clip_id") != clip:
+            raise ValueError(f"{self.path(clip)}: clip_id {o.get('clip_id')!r} != file stem (the label join key would be wrong)")
+        if str(o["codec"]) != "png" or (int(o["image_h"]), int(o["image_w"])) != tuple(FRAME_HW):
+>           raise ValueError(f"{self.path(clip)}: codec {o['codec']} / frame {(o['image_h'], o['image_w'])} is not the cache builder's png {FRAME_HW}")
+E           ValueError: E:\Projects\TanitAD-artifacts\di\bt\cur\test_smoke_script_runs_the_tra0\frames\syn-train-005.v2ep.pt: codec png / frame (64, 160) is not the cache builder's png (256, 640)
+
+stack\tanitad\data\v8f_mini_data.py:786: ValueError
+============================== warnings summary ===============================
+tests/test_v8f_lora.py::test_fused_qkv_adapts_only_the_q_and_v_slices
+  E:\Projects\TanitAD-artifacts\di\tree\stack\tests\test_v8f_lora.py:209: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    assert float(d[:16].abs().sum()) > 0 and float(d[32:].abs().sum()) > 0 and float(d[16:32].abs().sum()) == 0.0
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED stack\tests\test_v8f_lora.py::test_b_zero_forward_is_the_frozen_forward_bit_for_bit[dtype0]
+FAILED stack\tests\test_v8f_lora.py::test_b_zero_forward_is_the_frozen_forward_bit_for_bit[dtype1]
+FAILED stack\tests\test_v8f_lora.py::test_step_one_has_nonzero_B_grads_and_exactly_zero_A_grads_then_A_wakes_up_and_the_frozen_control_reads_zero
+FAILED stack\tests\test_v8f_lora.py::test_a_detached_encoder_output_turns_the_gradient_check_red
+FAILED stack\tests\test_v8f_lora.py::test_checkpointing_changes_nothing_but_memory
+FAILED stack\tests\test_v8f_lora.py::test_the_gradient_cache_equals_the_full_batch_gradient_and_plain_accumulation_does_not
+FAILED stack\tests\test_v8f_lora.py::test_collate_frames_hands_every_window_its_own_frames_and_leaves_collate_alone
+FAILED stack\tests\test_v8f_lora.py::test_unique_frames_and_the_frame_store_refusals
+FAILED stack\tests\test_v8f_lora.py::test_end_to_end_identity_the_on_the_fly_feats_are_the_caches_feats_exactly_and_a_one_step_shift_is_caught
+FAILED stack\tests\test_v8f_lora.py::test_launch_gate_refuses_every_lie_about_the_built_encoder
+FAILED stack\tests\test_v8f_lora.py::test_the_encoder_build_never_moves_the_heads_initialisation
+FAILED stack\tests\test_v8f_lora.py::test_reachability_flag_to_loss_to_backward_end_to_end
+FAILED stack\tests\test_v8f_lora.py::test_gradient_accumulation_is_exact_end_to_end_including_the_wm_sigreg_term
+FAILED stack\tests\test_v8f_lora.py::test_lora_run_resumes_as_the_same_run - ...
+FAILED stack\tests\test_v8f_lora.py::test_smoke_script_runs_the_trainer_and_reports_the_ar2_checks_and_a_projection
+15 failed, 18 passed, 7 skipped, 1 warning in 56.34s

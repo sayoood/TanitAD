@@ -1,0 +1,12 @@
+envscan_done
+--- restage_v2.sh.orig	2026-11-06 09:36:26.941808802 +0000
++++ restage_v2.sh	2026-11-06 09:36:34.324781608 +0000
+@@ -48,7 +48,7 @@
+   # rollback pushes go to a NEW repo by default so nothing in the original repo is overwritten (HF keeps history anyway; 'same' = push to the original + a protective tag)
+   case "${P6_RESUME_PUSH_REPO:-}" in "") PUSH_REPO="${P6REPO}-rb${EXPECT_STEP}" ;; same) PUSH_REPO="$P6REPO" ;; *) PUSH_REPO="$P6_RESUME_PUSH_REPO" ;; esac
+ else
+-  EXPECT_STEP="${P6_EXPECT_RESUME_STEP:-4321}"; PUSH_REPO="$P6REPO"
++  EXPECT_STEP="${P6_EXPECT_RESUME_STEP:-6266}"; PUSH_REPO="$P6REPO"   # L40 pod edit 2026-11-06: HF main run/ckpt_last.pt (LFS oid 11129757529a) is step 6266 (was 4321)
+ fi
+ AUTH=/root/.hf_auth_hdr
+ 

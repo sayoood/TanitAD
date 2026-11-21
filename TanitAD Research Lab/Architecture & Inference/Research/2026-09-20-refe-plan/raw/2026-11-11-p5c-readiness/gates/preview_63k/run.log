@@ -1,0 +1,10 @@
+TB-0 NOT_RUN  n=None value=None bar=[max abs diff == 0.0 on every common row; every control-ok row present and ok in the table build]
+TB-1 NOT_RUN  n=None value=None bar=[bit_identical == n == 1018, max_abs_diff == 0.0, n_errors == 0]
+TB-2 PASS     n=63495 value=None bar=[knot deviation <= 1e-09 on every row (no row failed the driver's knot control)]
+TB-3 PASS     n=150603 value=150603/150603 bar=[ident == traj bit-for-bit on 100 % of rows]
+TB-4 FAIL     n=150603 value=150603/150603 bar=[table keys == bank keys (all of them, none extra, no duplicate); n_raw_fallback <= 1.0 % of rows]
+TB-5 PASS     n=150603 value=150603/150603 bar=[every label finite; |dyaw vs traj| < pi; sim_hz == 10 on every row (100 %)]
+TB-6 PASS     n=63495 value={'rank0': [1.6813164817887105, 1.9394675246002255], 'rank1': [1.6513108937697243, 1.7291322869465213]} bar=[per rank: median per-row max|acc| and max|heading rate| of labels / same for traj <= 2x on both. Rank-0 FAIL => STOP (P5-R); rank-1 FAIL => rank-0 only]
+TB-7 PASS     n=63495 value={'0': 38573, '1': 24914} bar=[n_differs per rank recorded]
+RANK_POLICY UNDECIDED ["repair_rank0.json (per-row records) for r_0", "repair_rank1.json (per-row records) for r_1"]
+ZZTB_FAIL TB-0 TB-1 TB-4

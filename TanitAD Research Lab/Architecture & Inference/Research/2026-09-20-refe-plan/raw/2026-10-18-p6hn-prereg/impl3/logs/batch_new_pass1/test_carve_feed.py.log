@@ -1,0 +1,26 @@
+C:\Users\Admin\hn34\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\scorer_finetune.py:1482: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+  def epo_term(sx0, sxB, tg, rows, upd, lam_pg=None):
+HOP TRACE of --epo-con-feed carve (file:line of the patched trainer)
+  1 argparse declares the switch                             refe/scorer_finetune.py:1187
+  2a main cuts the carve logs out of tr_idx                  refe/scorer_finetune.py:1377
+  2b main builds the carve loader                            refe/scorer_finetune.py:1380
+  3 the carve stream                                         refe/scorer_finetune.py:1509
+  4a carve_feed_acc: no_grad scope                           refe/scorer_finetune.py:1518
+  4b carve_feed_acc: the loop's fwd                          refe/scorer_finetune.py:1524
+  4c carve_feed_acc: the loop's epo_con_term                 refe/scorer_finetune.py:1526
+  5 the loop scores the carve before o.step()                refe/scorer_finetune.py:2209
+  6 dual.step takes the carve accumulator                    refe/scorer_finetune.py:2223
+  7 EpoDual.step: g -> lambda                                refe/scorer_finetune.py:336
+  8a lambda enters the TRAINING loss                         refe/scorer_finetune.py:1503
+  8b the term joins arm B's loss                             refe/scorer_finetune.py:1504
+  8c the loop backwards it                                   refe/scorer_finetune.py:2195
+  9 G7 re-reads the disjointness + probes the feed           refe/scorer_finetune.py:1980
+Traceback (most recent call last):
+  File "C:\Users\Admin\hn34\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_carve_feed.py", line 503, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "C:\Users\Admin\hn34\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_carve_feed.py", line 466, in main
+    assert not real, f"the unmutated source FAILS its own checks: {real}"
+           ^^^^^^^^
+AssertionError: the unmutated source FAILS its own checks: ['P_the_parser_gained_exactly_four_flags_and_every_other_action_is_unchanged', 'P_exactly_the_named_functions_differ_from_the_tip_and_the_training_loss_assembly_is_untouched']

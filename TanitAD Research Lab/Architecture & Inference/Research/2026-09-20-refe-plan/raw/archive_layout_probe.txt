@@ -1,0 +1,28 @@
+nuPlan v1.1 archive internal layout -- determined WITHOUT waiting for either download to finish.
+
+method
+  test.zip : parsed the local file header at offset 0 of the PARTIALLY downloaded file on disk
+             (a zip's central directory is at the END, but every entry carries a local header, so the
+             first entry's path is readable from the first ~100 bytes).
+  val.zip  : HTTP range request, `curl -r 0-299`, 300 bytes, http 206. The download had not started.
+
+result
+  mini.zip -> data/cache/mini/   (already handled in Stage 0)
+  test.zip -> data/cache/test/
+  val.zip  -> data/cache/val/
+
+what their runner reads (run_driverl_nuplan_eval.sh:192-194)
+  val14_nr, val14_r          ${NUPLAN_DATA_ROOT}/nuplan-v1.1/splits/trainval
+  test14hard_*, test14random_*  ${NUPLAN_DATA_ROOT}/nuplan-v1.1/splits/test
+
+=> arrange_splits.py TARGET mapping is CONFIRMED correct for both:
+     "test" -> "test"        "val" -> "trainval"
+   and the watcher will not hit its "no mapping -- do not guess" branch overnight.
+
+!! REMAINING UNVERIFIABLE-UNTIL-DATA question, stated rather than assumed:
+   driverl_val14.yaml carries 1118 scenario_tokens and `log_names: null`, so it searches whatever DBs
+   sit in splits/trainval. If any val14 token lives in a TRAIN log rather than a VAL log, that token
+   is simply absent and the run reports a smaller total WITHOUT erroring.
+   => POST-CHECK, mandatory: after val14_nr, assert `total == 1118` in the RESULT line.
+      total < 1118 means tokens are missing from the split, NOT that the teacher failed them.
+      The same check for test14hard is total == 272, and test14random is total == 261.

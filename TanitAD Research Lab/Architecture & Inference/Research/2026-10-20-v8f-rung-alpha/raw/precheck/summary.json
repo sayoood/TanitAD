@@ -1,0 +1,2991 @@
+{
+ "tier": "T1 (self-action OPEN loop; the model does not control the vehicle)",
+ "estimator": "paired episode-cluster bootstrap, B 2000, seed 0 (taniteval/ci.py); episode variance only (models fixed)",
+ "arms": "os = refcv7-50,400 (banked T1 dump); P10pose = pose-only P10, S1 recipe refit on the 4,572-clip train view (per horizon); ha0_ext_pose = alpha-0's prior; P10 = S1's steer P10 (control)",
+ "paired_direct": {
+  "S2_s0": {
+   "os-P10pose": {
+    "ade": {
+     "delta": 0.0221,
+     "lo": 0.0105,
+     "hi": 0.0346,
+     "ci95": 0.0121,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "fde": {
+     "delta": 0.0144,
+     "lo": -0.0168,
+     "hi": 0.0466,
+     "ci95": 0.0317,
+     "p_delta_gt0": 0.802,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "os-ha0_ext_pose": {
+    "ade": {
+     "delta": -0.0157,
+     "lo": -0.0321,
+     "hi": 0.0021,
+     "ci95": 0.0171,
+     "p_delta_gt0": 0.0405,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "fde": {
+     "delta": -0.0477,
+     "lo": -0.0894,
+     "hi": -0.0053,
+     "ci95": 0.0421,
+     "p_delta_gt0": 0.0135,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "P10pose-ha0_ext_pose": {
+    "ade": {
+     "delta": -0.0378,
+     "lo": -0.0477,
+     "hi": -0.0281,
+     "ci95": 0.0098,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "fde": {
+     "delta": -0.0621,
+     "lo": -0.0843,
+     "hi": -0.0414,
+     "ci95": 0.0215,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "P10pose-P10": {
+    "ade": {
+     "delta": 0.0056,
+     "lo": 0.0035,
+     "hi": 0.0077,
+     "ci95": 0.0021,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "fde": {
+     "delta": 0.0113,
+     "lo": 0.007,
+     "hi": 0.0158,
+     "ci95": 0.0044,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "P10pose-kd_x_pose": {
+    "ade": {
+     "delta": -0.0875,
+     "lo": -0.1135,
+     "hi": -0.0658,
+     "ci95": 0.0238,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "fde": {
+     "delta": -0.15,
+     "lo": -0.2051,
+     "hi": -0.1063,
+     "ci95": 0.0494,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "os-P10": {
+    "ade": {
+     "delta": 0.0276,
+     "lo": 0.0163,
+     "hi": 0.0398,
+     "ci95": 0.0117,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "fde": {
+     "delta": 0.0258,
+     "lo": -0.0039,
+     "hi": 0.0569,
+     "ci95": 0.0304,
+     "p_delta_gt0": 0.952,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "os-ha0_ext": {
+    "ade": {
+     "delta": -0.0102,
+     "lo": -0.026,
+     "hi": 0.0067,
+     "ci95": 0.0164,
+     "p_delta_gt0": 0.119,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "fde": {
+     "delta": -0.036,
+     "lo": -0.0759,
+     "hi": 0.0054,
+     "ci95": 0.0407,
+     "p_delta_gt0": 0.048,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "ha0_ext_pose-ha0_ext": {
+    "ade": {
+     "delta": 0.0055,
+     "lo": 0.0036,
+     "hi": 0.0076,
+     "ci95": 0.002,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "fde": {
+     "delta": 0.0117,
+     "lo": 0.0074,
+     "hi": 0.0164,
+     "ci95": 0.0045,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "P10pose-P10pose": {
+    "ade": {
+     "delta": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "ci95": 0.0,
+     "p_delta_gt0": 0.0,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "fde": {
+     "delta": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "ci95": 0.0,
+     "p_delta_gt0": 0.0,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   }
+  },
+  "S2_s1": {
+   "os-P10pose": {
+    "ade": {
+     "delta": 0.0227,
+     "lo": 0.0106,
+     "hi": 0.035,
+     "ci95": 0.0122,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "fde": {
+     "delta": 0.0157,
+     "lo": -0.0169,
+     "hi": 0.047,
+     "ci95": 0.0319,
+     "p_delta_gt0": 0.8255,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "os-ha0_ext_pose": {
+    "ade": {
+     "delta": -0.0151,
+     "lo": -0.0312,
+     "hi": 0.0021,
+     "ci95": 0.0166,
+     "p_delta_gt0": 0.043,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "fde": {
+     "delta": -0.0464,
+     "lo": -0.089,
+     "hi": -0.0042,
+     "ci95": 0.0424,
+     "p_delta_gt0": 0.0125,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "P10pose-ha0_ext_pose": {
+    "ade": {
+     "delta": -0.0378,
+     "lo": -0.0477,
+     "hi": -0.0281,
+     "ci95": 0.0098,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "fde": {
+     "delta": -0.0621,
+     "lo": -0.0843,
+     "hi": -0.0414,
+     "ci95": 0.0215,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "P10pose-P10": {
+    "ade": {
+     "delta": 0.0056,
+     "lo": 0.0035,
+     "hi": 0.0077,
+     "ci95": 0.0021,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "fde": {
+     "delta": 0.0113,
+     "lo": 0.007,
+     "hi": 0.0158,
+     "ci95": 0.0044,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "P10pose-kd_x_pose": {
+    "ade": {
+     "delta": -0.0875,
+     "lo": -0.1135,
+     "hi": -0.0658,
+     "ci95": 0.0238,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "fde": {
+     "delta": -0.15,
+     "lo": -0.2051,
+     "hi": -0.1063,
+     "ci95": 0.0494,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "os-P10": {
+    "ade": {
+     "delta": 0.0282,
+     "lo": 0.0167,
+     "hi": 0.0401,
+     "ci95": 0.0117,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "fde": {
+     "delta": 0.027,
+     "lo": -0.0033,
+     "hi": 0.0575,
+     "ci95": 0.0304,
+     "p_delta_gt0": 0.9575,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "os-ha0_ext": {
+    "ade": {
+     "delta": -0.0096,
+     "lo": -0.0253,
+     "hi": 0.0069,
+     "ci95": 0.0161,
+     "p_delta_gt0": 0.1335,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "fde": {
+     "delta": -0.0347,
+     "lo": -0.0754,
+     "hi": 0.006,
+     "ci95": 0.0407,
+     "p_delta_gt0": 0.051,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "ha0_ext_pose-ha0_ext": {
+    "ade": {
+     "delta": 0.0055,
+     "lo": 0.0036,
+     "hi": 0.0076,
+     "ci95": 0.002,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "fde": {
+     "delta": 0.0117,
+     "lo": 0.0074,
+     "hi": 0.0164,
+     "ci95": 0.0045,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "P10pose-P10pose": {
+    "ade": {
+     "delta": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "ci95": 0.0,
+     "p_delta_gt0": 0.0,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "fde": {
+     "delta": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "ci95": 0.0,
+     "p_delta_gt0": 0.0,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   }
+  },
+  "S6_s0": {
+   "os-P10pose": {
+    "ade": {
+     "delta": -0.439,
+     "lo": -0.6359,
+     "hi": -0.2441,
+     "ci95": 0.1959,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 3668,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "fde": {
+     "delta": -1.2442,
+     "lo": -1.7666,
+     "hi": -0.7381,
+     "ci95": 0.5142,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 3668,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "os-ha0_ext_pose": {
+    "ade": {
+     "delta": -1.009,
+     "lo": -1.3277,
+     "hi": -0.7013,
+     "ci95": 0.3132,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 3668,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "fde": {
+     "delta": -2.9393,
+     "lo": -3.7961,
+     "hi": -2.0907,
+     "ci95": 0.8527,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 3668,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "P10pose-ha0_ext_pose": {
+    "ade": {
+     "delta": -0.5699,
+     "lo": -0.7719,
+     "hi": -0.3713,
+     "ci95": 0.2003,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 3668,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "fde": {
+     "delta": -1.6952,
+     "lo": -2.2611,
+     "hi": -1.1276,
+     "ci95": 0.5667,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 3668,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "P10pose-P10": {
+    "ade": {
+     "delta": 0.0329,
+     "lo": 0.0169,
+     "hi": 0.0493,
+     "ci95": 0.0162,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 3668,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "fde": {
+     "delta": 0.0711,
+     "lo": 0.0296,
+     "hi": 0.1133,
+     "ci95": 0.0418,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 3668,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "P10pose-kd_x_pose": {
+    "ade": {
+     "delta": -0.6401,
+     "lo": -0.862,
+     "hi": -0.4428,
+     "ci95": 0.2096,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 3668,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "fde": {
+     "delta": -1.6354,
+     "lo": -2.2048,
+     "hi": -1.1007,
+     "ci95": 0.552,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 3668,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "os-P10": {
+    "ade": {
+     "delta": -0.4061,
+     "lo": -0.5936,
+     "hi": -0.2161,
+     "ci95": 0.1887,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 3668,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "fde": {
+     "delta": -1.173,
+     "lo": -1.6715,
+     "hi": -0.6729,
+     "ci95": 0.4993,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 3668,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "os-ha0_ext": {
+    "ade": {
+     "delta": -0.9804,
+     "lo": -1.294,
+     "hi": -0.6815,
+     "ci95": 0.3062,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 3668,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "fde": {
+     "delta": -2.8743,
+     "lo": -3.7144,
+     "hi": -2.0515,
+     "ci95": 0.8314,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 3668,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "ha0_ext_pose-ha0_ext": {
+    "ade": {
+     "delta": 0.0286,
+     "lo": 0.0108,
+     "hi": 0.0472,
+     "ci95": 0.0182,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 3668,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "fde": {
+     "delta": 0.0651,
+     "lo": 0.0247,
+     "hi": 0.1075,
+     "ci95": 0.0414,
+     "p_delta_gt0": 0.9995,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 3668,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "P10pose-P10pose": {
+    "ade": {
+     "delta": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "ci95": 0.0,
+     "p_delta_gt0": 0.0,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 3668,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "fde": {
+     "delta": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "ci95": 0.0,
+     "p_delta_gt0": 0.0,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 3668,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   }
+  },
+  "S6_s1": {
+   "os-P10pose": {
+    "ade": {
+     "delta": -0.4383,
+     "lo": -0.6329,
+     "hi": -0.2508,
+     "ci95": 0.191,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 3668,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "fde": {
+     "delta": -1.238,
+     "lo": -1.7375,
+     "hi": -0.746,
+     "ci95": 0.4957,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 3668,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "os-ha0_ext_pose": {
+    "ade": {
+     "delta": -1.0082,
+     "lo": -1.323,
+     "hi": -0.7065,
+     "ci95": 0.3083,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 3668,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "fde": {
+     "delta": -2.9332,
+     "lo": -3.7983,
+     "hi": -2.1134,
+     "ci95": 0.8424,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 3668,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "P10pose-ha0_ext_pose": {
+    "ade": {
+     "delta": -0.5699,
+     "lo": -0.7719,
+     "hi": -0.3713,
+     "ci95": 0.2003,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 3668,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "fde": {
+     "delta": -1.6952,
+     "lo": -2.2611,
+     "hi": -1.1276,
+     "ci95": 0.5667,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 3668,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "P10pose-P10": {
+    "ade": {
+     "delta": 0.0329,
+     "lo": 0.0169,
+     "hi": 0.0493,
+     "ci95": 0.0162,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 3668,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "fde": {
+     "delta": 0.0711,
+     "lo": 0.0296,
+     "hi": 0.1133,
+     "ci95": 0.0418,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 3668,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "P10pose-kd_x_pose": {
+    "ade": {
+     "delta": -0.6401,
+     "lo": -0.862,
+     "hi": -0.4428,
+     "ci95": 0.2096,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 3668,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "fde": {
+     "delta": -1.6354,
+     "lo": -2.2048,
+     "hi": -1.1007,
+     "ci95": 0.552,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 3668,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "os-P10": {
+    "ade": {
+     "delta": -0.4054,
+     "lo": -0.5911,
+     "hi": -0.2231,
+     "ci95": 0.184,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 3668,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "fde": {
+     "delta": -1.1669,
+     "lo": -1.6516,
+     "hi": -0.6876,
+     "ci95": 0.482,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 3668,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "os-ha0_ext": {
+    "ade": {
+     "delta": -0.9796,
+     "lo": -1.2855,
+     "hi": -0.6842,
+     "ci95": 0.3006,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 3668,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "fde": {
+     "delta": -2.8681,
+     "lo": -3.7073,
+     "hi": -2.0653,
+     "ci95": 0.821,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 3668,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "ha0_ext_pose-ha0_ext": {
+    "ade": {
+     "delta": 0.0286,
+     "lo": 0.0108,
+     "hi": 0.0472,
+     "ci95": 0.0182,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 3668,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "fde": {
+     "delta": 0.0651,
+     "lo": 0.0247,
+     "hi": 0.1075,
+     "ci95": 0.0414,
+     "p_delta_gt0": 0.9995,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 3668,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "P10pose-P10pose": {
+    "ade": {
+     "delta": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "ci95": 0.0,
+     "p_delta_gt0": 0.0,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 3668,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "fde": {
+     "delta": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "ci95": 0.0,
+     "p_delta_gt0": 0.0,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 3668,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   }
+  }
+ },
+ "means": {
+  "S2": {
+   "os": {
+    "ade": 0.27842051857714833,
+    "fde": 0.5995040282753085
+   },
+   "ha0_ext": {
+    "ade": 0.28860530326569417,
+    "fde": 0.6354646669070646
+   },
+   "P10": {
+    "ade": 0.250793123168586,
+    "fde": 0.5737514472237977
+   },
+   "ha0_ext_pose": {
+    "ade": 0.2941196163841884,
+    "fde": 0.6472103183502069
+   },
+   "kd_x_pose": {
+    "ade": 0.3438416294349623,
+    "fde": 0.735050056855115
+   },
+   "P10pose": {
+    "ade": 0.25636609890405065,
+    "fde": 0.585080153566486
+   }
+  },
+  "S6": {
+   "os": {
+    "ade": 2.5674589344051446,
+    "fde": 6.332804287409251
+   },
+   "ha0_ext": {
+    "ade": 3.547857911762477,
+    "fde": 9.207066439471086
+   },
+   "P10": {
+    "ade": 2.9736049408902296,
+    "fde": 7.505816647116449
+   },
+   "ha0_ext_pose": {
+    "ade": 3.576429933161244,
+    "fde": 9.272119338384034
+   },
+   "kd_x_pose": {
+    "ade": 3.6466289218974377,
+    "fde": 9.212339551209194
+   },
+   "P10pose": {
+    "ade": 3.0065018721231525,
+    "fde": 7.576955582914664
+   }
+  }
+ },
+ "controls": {
+  "S2": {
+   "v0_pose_vs_dump_max_abs": 0.0,
+   "g_vs_dump_max_abs": 7.69911403608603e-06,
+   "ha0_ext_steer_vs_dump_arm_max_abs": 1.7390762472757615e-05,
+   "os_is_dump_arm": true
+  },
+  "S6": {
+   "v0_pose_vs_dump_max_abs": 0.0,
+   "g_vs_dump_max_abs": 2.129311863541261e-05,
+   "ha0_ext_steer_vs_dump_arm_max_abs": 0.00017517703716407595,
+   "os_is_dump_arm": true
+  }
+ },
+ "families": {
+  "S2": {
+   "paired_os_minus_P10pose": {
+    "direction": "os - P10pose",
+    "rows": [
+     {
+      "family": "ADE",
+      "metric": "ade_m",
+      "delta": 0.0221,
+      "lo": 0.0093,
+      "hi": 0.0346,
+      "separated": true,
+      "n_windows": 4754
+     },
+     {
+      "family": "ADE",
+      "metric": "fde_m",
+      "delta": 0.0144,
+      "lo": -0.0183,
+      "hi": 0.0467,
+      "separated": false,
+      "n_windows": 4754
+     },
+     {
+      "family": "longitudinal",
+      "metric": "LON_speed_mae_mps",
+      "delta": 0.0351,
+      "lo": 0.0246,
+      "hi": 0.0473,
+      "separated": true,
+      "n_windows": 4754
+     },
+     {
+      "family": "longitudinal",
+      "metric": "LON_along_mae_m",
+      "delta": 0.0265,
+      "lo": 0.0179,
+      "hi": 0.0366,
+      "separated": true,
+      "n_windows": 4754
+     },
+     {
+      "family": "longitudinal",
+      "metric": "LON_accel_mae_mps2",
+      "delta": 0.0696,
+      "lo": 0.0546,
+      "hi": 0.0863,
+      "separated": true,
+      "n_windows": 4754
+     },
+     {
+      "family": "lateral",
+      "metric": "LAT_cross_mae_m",
+      "delta": -0.0035,
+      "lo": -0.0136,
+      "hi": 0.0058,
+      "separated": false,
+      "n_windows": 4754
+     },
+     {
+      "family": "lateral",
+      "metric": "LAT_heading_mae_deg",
+      "delta": -0.1148,
+      "lo": -0.209,
+      "hi": -0.0192,
+      "separated": true,
+      "n_windows": 4510
+     },
+     {
+      "family": "lateral",
+      "metric": "LAT_yaw_rate_mae_radps",
+      "delta": -0.0063,
+      "lo": -0.0083,
+      "hi": -0.0044,
+      "separated": true,
+      "n_windows": 4480
+     },
+     {
+      "family": "tactical",
+      "metric": "TAC_traj_lat_correct",
+      "delta": 0.0263,
+      "lo": 0.0164,
+      "hi": 0.0364,
+      "separated": true,
+      "n_windows": 4754
+     },
+     {
+      "family": "tactical",
+      "metric": "TAC_traj_lon_correct",
+      "delta": -0.0278,
+      "lo": -0.0422,
+      "hi": -0.0141,
+      "separated": true,
+      "n_windows": 4754
+     }
+    ],
+    "distance_keeping": {
+     "headway_min_m": {
+      "delta": 0.0012,
+      "lo": -0.0701,
+      "hi": 0.08,
+      "separated": false,
+      "n_used": 1250
+     },
+     "time_gap_min_s": {
+      "delta": -0.0179,
+      "lo": -0.0442,
+      "hi": 0.004,
+      "separated": false,
+      "n_used": 1124
+     },
+     "min_ttc_s": {
+      "delta": -0.144,
+      "lo": -0.6968,
+      "hi": 0.3589,
+      "separated": false,
+      "n_used": 1250
+     }
+    }
+   },
+   "paired_os_minus_ha0extpose": {
+    "direction": "os - ha0_ext_pose",
+    "rows": [
+     {
+      "family": "ADE",
+      "metric": "ade_m",
+      "delta": -0.0157,
+      "lo": -0.0336,
+      "hi": 0.0011,
+      "separated": false,
+      "n_windows": 4754
+     },
+     {
+      "family": "ADE",
+      "metric": "fde_m",
+      "delta": -0.0477,
+      "lo": -0.0948,
+      "hi": -0.0059,
+      "separated": true,
+      "n_windows": 4754
+     },
+     {
+      "family": "longitudinal",
+      "metric": "LON_speed_mae_mps",
+      "delta": 0.004,
+      "lo": -0.0101,
+      "hi": 0.0184,
+      "separated": false,
+      "n_windows": 4754
+     },
+     {
+      "family": "longitudinal",
+      "metric": "LON_along_mae_m",
+      "delta": -0.0086,
+      "lo": -0.0222,
+      "hi": 0.0053,
+      "separated": false,
+      "n_windows": 4754
+     },
+     {
+      "family": "longitudinal",
+      "metric": "LON_accel_mae_mps2",
+      "delta": 0.0534,
+      "lo": 0.0339,
+      "hi": 0.0749,
+      "separated": true,
+      "n_windows": 4754
+     },
+     {
+      "family": "lateral",
+      "metric": "LAT_cross_mae_m",
+      "delta": -0.0119,
+      "lo": -0.0255,
+      "hi": 0.0,
+      "separated": false,
+      "n_windows": 4754
+     },
+     {
+      "family": "lateral",
+      "metric": "LAT_heading_mae_deg",
+      "delta": -0.1726,
+      "lo": -0.3018,
+      "hi": -0.0561,
+      "separated": true,
+      "n_windows": 4509
+     },
+     {
+      "family": "lateral",
+      "metric": "LAT_yaw_rate_mae_radps",
+      "delta": -0.006,
+      "lo": -0.0091,
+      "hi": -0.0031,
+      "separated": true,
+      "n_windows": 4473
+     },
+     {
+      "family": "tactical",
+      "metric": "TAC_traj_lat_correct",
+      "delta": 0.0244,
+      "lo": 0.0141,
+      "hi": 0.0353,
+      "separated": true,
+      "n_windows": 4754
+     },
+     {
+      "family": "tactical",
+      "metric": "TAC_traj_lon_correct",
+      "delta": -0.0133,
+      "lo": -0.0286,
+      "hi": 0.0006,
+      "separated": false,
+      "n_windows": 4754
+     }
+    ]
+   },
+   "paired_P10pose_minus_ha0extpose": {
+    "direction": "P10pose - ha0_ext_pose",
+    "rows": [
+     {
+      "family": "ADE",
+      "metric": "ade_m",
+      "delta": -0.0378,
+      "lo": -0.0483,
+      "hi": -0.0276,
+      "separated": true,
+      "n_windows": 4754
+     },
+     {
+      "family": "ADE",
+      "metric": "fde_m",
+      "delta": -0.0621,
+      "lo": -0.0846,
+      "hi": -0.0394,
+      "separated": true,
+      "n_windows": 4754
+     },
+     {
+      "family": "longitudinal",
+      "metric": "LON_speed_mae_mps",
+      "delta": -0.0311,
+      "lo": -0.0401,
+      "hi": -0.0224,
+      "separated": true,
+      "n_windows": 4754
+     },
+     {
+      "family": "longitudinal",
+      "metric": "LON_along_mae_m",
+      "delta": -0.0352,
+      "lo": -0.0454,
+      "hi": -0.0254,
+      "separated": true,
+      "n_windows": 4754
+     },
+     {
+      "family": "longitudinal",
+      "metric": "LON_accel_mae_mps2",
+      "delta": -0.0162,
+      "lo": -0.0271,
+      "hi": -0.0046,
+      "separated": true,
+      "n_windows": 4754
+     },
+     {
+      "family": "lateral",
+      "metric": "LAT_cross_mae_m",
+      "delta": -0.0084,
+      "lo": -0.0142,
+      "hi": -0.0031,
+      "separated": true,
+      "n_windows": 4754
+     },
+     {
+      "family": "lateral",
+      "metric": "LAT_heading_mae_deg",
+      "delta": -0.0615,
+      "lo": -0.1269,
+      "hi": -0.0027,
+      "separated": true,
+      "n_windows": 4508
+     },
+     {
+      "family": "lateral",
+      "metric": "LAT_yaw_rate_mae_radps",
+      "delta": 0.0,
+      "lo": -0.0018,
+      "hi": 0.0018,
+      "separated": false,
+      "n_windows": 4472
+     },
+     {
+      "family": "tactical",
+      "metric": "TAC_traj_lat_correct",
+      "delta": -0.0019,
+      "lo": -0.0099,
+      "hi": 0.0053,
+      "separated": false,
+      "n_windows": 4754
+     },
+     {
+      "family": "tactical",
+      "metric": "TAC_traj_lon_correct",
+      "delta": 0.0145,
+      "lo": 0.004,
+      "hi": 0.0242,
+      "separated": true,
+      "n_windows": 4754
+     }
+    ],
+    "distance_keeping": {
+     "headway_min_m": {
+      "delta": -0.1329,
+      "lo": -0.1852,
+      "hi": -0.0896,
+      "separated": true,
+      "n_used": 1268
+     },
+     "time_gap_min_s": {
+      "delta": -0.0175,
+      "lo": -0.0288,
+      "hi": -0.0054,
+      "separated": true,
+      "n_used": 1142
+     },
+     "min_ttc_s": {
+      "delta": -0.5043,
+      "lo": -0.7767,
+      "hi": -0.2587,
+      "separated": true,
+      "n_used": 1268
+     }
+    }
+   },
+   "paired_P10pose_minus_P10": {
+    "direction": "P10pose - P10",
+    "rows": [
+     {
+      "family": "ADE",
+      "metric": "ade_m",
+      "delta": 0.0056,
+      "lo": 0.0036,
+      "hi": 0.0076,
+      "separated": true,
+      "n_windows": 4754
+     },
+     {
+      "family": "ADE",
+      "metric": "fde_m",
+      "delta": 0.0113,
+      "lo": 0.007,
+      "hi": 0.0158,
+      "separated": true,
+      "n_windows": 4754
+     },
+     {
+      "family": "longitudinal",
+      "metric": "LON_speed_mae_mps",
+      "delta": -0.0001,
+      "lo": -0.0008,
+      "hi": 0.0007,
+      "separated": false,
+      "n_windows": 4754
+     },
+     {
+      "family": "longitudinal",
+      "metric": "LON_along_mae_m",
+      "delta": -0.0,
+      "lo": -0.0009,
+      "hi": 0.001,
+      "separated": false,
+      "n_windows": 4754
+     },
+     {
+      "family": "longitudinal",
+      "metric": "LON_accel_mae_mps2",
+      "delta": -0.0022,
+      "lo": -0.0042,
+      "hi": -0.0004,
+      "separated": true,
+      "n_windows": 4754
+     },
+     {
+      "family": "lateral",
+      "metric": "LAT_cross_mae_m",
+      "delta": 0.0078,
+      "lo": 0.0054,
+      "hi": 0.0102,
+      "separated": true,
+      "n_windows": 4754
+     },
+     {
+      "family": "lateral",
+      "metric": "LAT_heading_mae_deg",
+      "delta": 0.0636,
+      "lo": 0.043,
+      "hi": 0.0827,
+      "separated": true,
+      "n_windows": 4513
+     },
+     {
+      "family": "lateral",
+      "metric": "LAT_yaw_rate_mae_radps",
+      "delta": 0.0008,
+      "lo": 0.0003,
+      "hi": 0.0014,
+      "separated": true,
+      "n_windows": 4482
+     },
+     {
+      "family": "tactical",
+      "metric": "TAC_traj_lat_correct",
+      "delta": -0.0046,
+      "lo": -0.0084,
+      "hi": -0.0013,
+      "separated": true,
+      "n_windows": 4754
+     },
+     {
+      "family": "tactical",
+      "metric": "TAC_traj_lon_correct",
+      "delta": 0.0011,
+      "lo": -0.0017,
+      "hi": 0.0038,
+      "separated": false,
+      "n_windows": 4754
+     }
+    ]
+   },
+   "paired_os_minus_P10": {
+    "direction": "os - P10",
+    "rows": [
+     {
+      "family": "ADE",
+      "metric": "ade_m",
+      "delta": 0.0276,
+      "lo": 0.0158,
+      "hi": 0.0396,
+      "separated": true,
+      "n_windows": 4754
+     },
+     {
+      "family": "ADE",
+      "metric": "fde_m",
+      "delta": 0.0258,
+      "lo": -0.0053,
+      "hi": 0.0572,
+      "separated": false,
+      "n_windows": 4754
+     },
+     {
+      "family": "longitudinal",
+      "metric": "LON_speed_mae_mps",
+      "delta": 0.0351,
+      "lo": 0.0243,
+      "hi": 0.0471,
+      "separated": true,
+      "n_windows": 4754
+     },
+     {
+      "family": "longitudinal",
+      "metric": "LON_along_mae_m",
+      "delta": 0.0265,
+      "lo": 0.0179,
+      "hi": 0.0365,
+      "separated": true,
+      "n_windows": 4754
+     },
+     {
+      "family": "longitudinal",
+      "metric": "LON_accel_mae_mps2",
+      "delta": 0.0674,
+      "lo": 0.0527,
+      "hi": 0.0839,
+      "separated": true,
+      "n_windows": 4754
+     },
+     {
+      "family": "lateral",
+      "metric": "LAT_cross_mae_m",
+      "delta": 0.0043,
+      "lo": -0.0049,
+      "hi": 0.0131,
+      "separated": false,
+      "n_windows": 4754
+     },
+     {
+      "family": "lateral",
+      "metric": "LAT_heading_mae_deg",
+      "delta": -0.0514,
+      "lo": -0.1424,
+      "hi": 0.0397,
+      "separated": false,
+      "n_windows": 4514
+     },
+     {
+      "family": "lateral",
+      "metric": "LAT_yaw_rate_mae_radps",
+      "delta": -0.0054,
+      "lo": -0.0074,
+      "hi": -0.0035,
+      "separated": true,
+      "n_windows": 4483
+     },
+     {
+      "family": "tactical",
+      "metric": "TAC_traj_lat_correct",
+      "delta": 0.0217,
+      "lo": 0.0126,
+      "hi": 0.0309,
+      "separated": true,
+      "n_windows": 4754
+     },
+     {
+      "family": "tactical",
+      "metric": "TAC_traj_lon_correct",
+      "delta": -0.0267,
+      "lo": -0.0408,
+      "hi": -0.0132,
+      "separated": true,
+      "n_windows": 4754
+     }
+    ]
+   }
+  },
+  "S6": {
+   "paired_os_minus_P10pose": {
+    "direction": "os - P10pose",
+    "rows": [
+     {
+      "family": "ADE",
+      "metric": "ade_m",
+      "delta": -0.439,
+      "lo": -0.6285,
+      "hi": -0.2427,
+      "separated": true,
+      "n_windows": 3668
+     },
+     {
+      "family": "ADE",
+      "metric": "fde_m",
+      "delta": -1.2442,
+      "lo": -1.7398,
+      "hi": -0.7231,
+      "separated": true,
+      "n_windows": 3668
+     },
+     {
+      "family": "longitudinal",
+      "metric": "LON_speed_mae_mps",
+      "delta": -0.0255,
+      "lo": -0.0798,
+      "hi": 0.0344,
+      "separated": false,
+      "n_windows": 3668
+     },
+     {
+      "family": "longitudinal",
+      "metric": "LON_along_mae_m",
+      "delta": 0.0075,
+      "lo": -0.1183,
+      "hi": 0.1437,
+      "separated": false,
+      "n_windows": 3668
+     },
+     {
+      "family": "longitudinal",
+      "metric": "LON_accel_mae_mps2",
+      "delta": -0.0429,
+      "lo": -0.0689,
+      "hi": -0.0176,
+      "separated": true,
+      "n_windows": 3668
+     },
+     {
+      "family": "lateral",
+      "metric": "LAT_cross_mae_m",
+      "delta": -0.6309,
+      "lo": -0.8008,
+      "hi": -0.4746,
+      "separated": true,
+      "n_windows": 3668
+     },
+     {
+      "family": "lateral",
+      "metric": "LAT_heading_mae_deg",
+      "delta": -2.0612,
+      "lo": -2.5737,
+      "hi": -1.61,
+      "separated": true,
+      "n_windows": 3579
+     },
+     {
+      "family": "lateral",
+      "metric": "LAT_yaw_rate_mae_radps",
+      "delta": -0.0198,
+      "lo": -0.0241,
+      "hi": -0.0158,
+      "separated": true,
+      "n_windows": 3552
+     },
+     {
+      "family": "tactical",
+      "metric": "TAC_traj_lat_correct",
+      "delta": 0.0984,
+      "lo": 0.0788,
+      "hi": 0.1187,
+      "separated": true,
+      "n_windows": 3668
+     },
+     {
+      "family": "tactical",
+      "metric": "TAC_traj_lon_correct",
+      "delta": 0.0772,
+      "lo": 0.0403,
+      "hi": 0.113,
+      "separated": true,
+      "n_windows": 3668
+     }
+    ],
+    "distance_keeping": {
+     "headway_min_m": {
+      "delta": 0.0081,
+      "lo": -0.0927,
+      "hi": 0.1108,
+      "separated": false,
+      "n_used": 927
+     },
+     "time_gap_min_s": {
+      "delta": -0.0139,
+      "lo": -0.046,
+      "hi": 0.0102,
+      "separated": false,
+      "n_used": 876
+     },
+     "min_ttc_s": {
+      "delta": -0.2581,
+      "lo": -1.0336,
+      "hi": 0.3443,
+      "separated": false,
+      "n_used": 927
+     }
+    }
+   },
+   "paired_os_minus_ha0extpose": {
+    "direction": "os - ha0_ext_pose",
+    "rows": [
+     {
+      "family": "ADE",
+      "metric": "ade_m",
+      "delta": -1.009,
+      "lo": -1.324,
+      "hi": -0.6982,
+      "separated": true,
+      "n_windows": 3668
+     },
+     {
+      "family": "ADE",
+      "metric": "fde_m",
+      "delta": -2.9393,
+      "lo": -3.8098,
+      "hi": -2.0902,
+      "separated": true,
+      "n_windows": 3668
+     },
+     {
+      "family": "longitudinal",
+      "metric": "LON_speed_mae_mps",
+      "delta": -0.1628,
+      "lo": -0.24,
+      "hi": -0.0832,
+      "separated": true,
+      "n_windows": 3668
+     },
+     {
+      "family": "longitudinal",
+      "metric": "LON_along_mae_m",
+      "delta": -0.4579,
+      "lo": -0.6714,
+      "hi": -0.2446,
+      "separated": true,
+      "n_windows": 3668
+     },
+     {
+      "family": "longitudinal",
+      "metric": "LON_accel_mae_mps2",
+      "delta": -0.075,
+      "lo": -0.1073,
+      "hi": -0.0432,
+      "separated": true,
+      "n_windows": 3668
+     },
+     {
+      "family": "lateral",
+      "metric": "LAT_cross_mae_m",
+      "delta": -0.8579,
+      "lo": -1.1,
+      "hi": -0.6368,
+      "separated": true,
+      "n_windows": 3668
+     },
+     {
+      "family": "lateral",
+      "metric": "LAT_heading_mae_deg",
+      "delta": -2.826,
+      "lo": -3.6822,
+      "hi": -2.0626,
+      "separated": true,
+      "n_windows": 3518
+     },
+     {
+      "family": "lateral",
+      "metric": "LAT_yaw_rate_mae_radps",
+      "delta": -0.0204,
+      "lo": -0.0275,
+      "hi": -0.0138,
+      "separated": true,
+      "n_windows": 3471
+     },
+     {
+      "family": "tactical",
+      "metric": "TAC_traj_lat_correct",
+      "delta": 0.1061,
+      "lo": 0.0834,
+      "hi": 0.1299,
+      "separated": true,
+      "n_windows": 3668
+     },
+     {
+      "family": "tactical",
+      "metric": "TAC_traj_lon_correct",
+      "delta": 0.0521,
+      "lo": 0.0182,
+      "hi": 0.085,
+      "separated": true,
+      "n_windows": 3668
+     }
+    ]
+   },
+   "paired_P10pose_minus_ha0extpose": {
+    "direction": "P10pose - ha0_ext_pose",
+    "rows": [
+     {
+      "family": "ADE",
+      "metric": "ade_m",
+      "delta": -0.5699,
+      "lo": -0.7719,
+      "hi": -0.3672,
+      "separated": true,
+      "n_windows": 3668
+     },
+     {
+      "family": "ADE",
+      "metric": "fde_m",
+      "delta": -1.6952,
+      "lo": -2.2713,
+      "hi": -1.127,
+      "separated": true,
+      "n_windows": 3668
+     },
+     {
+      "family": "longitudinal",
+      "metric": "LON_speed_mae_mps",
+      "delta": -0.1373,
+      "lo": -0.1991,
+      "hi": -0.0764,
+      "separated": true,
+      "n_windows": 3668
+     },
+     {
+      "family": "longitudinal",
+      "metric": "LON_along_mae_m",
+      "delta": -0.4654,
+      "lo": -0.6384,
+      "hi": -0.2946,
+      "separated": true,
+      "n_windows": 3668
+     },
+     {
+      "family": "longitudinal",
+      "metric": "LON_accel_mae_mps2",
+      "delta": -0.0321,
+      "lo": -0.0587,
+      "hi": -0.0054,
+      "separated": true,
+      "n_windows": 3668
+     },
+     {
+      "family": "lateral",
+      "metric": "LAT_cross_mae_m",
+      "delta": -0.227,
+      "lo": -0.3338,
+      "hi": -0.1138,
+      "separated": true,
+      "n_windows": 3668
+     },
+     {
+      "family": "lateral",
+      "metric": "LAT_heading_mae_deg",
+      "delta": -0.8479,
+      "lo": -1.4127,
+      "hi": -0.3202,
+      "separated": true,
+      "n_windows": 3521
+     },
+     {
+      "family": "lateral",
+      "metric": "LAT_yaw_rate_mae_radps",
+      "delta": -0.0025,
+      "lo": -0.0069,
+      "hi": 0.0019,
+      "separated": false,
+      "n_windows": 3472
+     },
+     {
+      "family": "tactical",
+      "metric": "TAC_traj_lat_correct",
+      "delta": 0.0076,
+      "lo": -0.0076,
+      "hi": 0.0226,
+      "separated": false,
+      "n_windows": 3668
+     },
+     {
+      "family": "tactical",
+      "metric": "TAC_traj_lon_correct",
+      "delta": -0.0251,
+      "lo": -0.0616,
+      "hi": 0.0096,
+      "separated": false,
+      "n_windows": 3668
+     }
+    ],
+    "distance_keeping": {
+     "headway_min_m": {
+      "delta": -0.1286,
+      "lo": -0.2042,
+      "hi": -0.0522,
+      "separated": true,
+      "n_used": 942
+     },
+     "time_gap_min_s": {
+      "delta": -0.0122,
+      "lo": -0.0273,
+      "hi": 0.0048,
+      "separated": false,
+      "n_used": 891
+     },
+     "min_ttc_s": {
+      "delta": -0.144,
+      "lo": -0.5187,
+      "hi": 0.2687,
+      "separated": false,
+      "n_used": 942
+     }
+    }
+   },
+   "paired_P10pose_minus_P10": {
+    "direction": "P10pose - P10",
+    "rows": [
+     {
+      "family": "ADE",
+      "metric": "ade_m",
+      "delta": 0.0329,
+      "lo": 0.0172,
+      "hi": 0.0503,
+      "separated": true,
+      "n_windows": 3668
+     },
+     {
+      "family": "ADE",
+      "metric": "fde_m",
+      "delta": 0.0711,
+      "lo": 0.032,
+      "hi": 0.1165,
+      "separated": true,
+      "n_windows": 3668
+     },
+     {
+      "family": "longitudinal",
+      "metric": "LON_speed_mae_mps",
+      "delta": 0.0024,
+      "lo": -0.0027,
+      "hi": 0.0078,
+      "separated": false,
+      "n_windows": 3668
+     },
+     {
+      "family": "longitudinal",
+      "metric": "LON_along_mae_m",
+      "delta": 0.0073,
+      "lo": -0.004,
+      "hi": 0.0216,
+      "separated": false,
+      "n_windows": 3668
+     },
+     {
+      "family": "longitudinal",
+      "metric": "LON_accel_mae_mps2",
+      "delta": 0.0024,
+      "lo": -0.0014,
+      "hi": 0.0062,
+      "separated": false,
+      "n_windows": 3668
+     },
+     {
+      "family": "lateral",
+      "metric": "LAT_cross_mae_m",
+      "delta": 0.0325,
+      "lo": 0.0148,
+      "hi": 0.051,
+      "separated": true,
+      "n_windows": 3668
+     },
+     {
+      "family": "lateral",
+      "metric": "LAT_heading_mae_deg",
+      "delta": 0.0,
+      "lo": -0.2462,
+      "hi": 0.1565,
+      "separated": false,
+      "n_windows": 3615
+     },
+     {
+      "family": "lateral",
+      "metric": "LAT_yaw_rate_mae_radps",
+      "delta": 0.0002,
+      "lo": -0.0016,
+      "hi": 0.0017,
+      "separated": false,
+      "n_windows": 3580
+     },
+     {
+      "family": "tactical",
+      "metric": "TAC_traj_lat_correct",
+      "delta": -0.0082,
+      "lo": -0.0147,
+      "hi": -0.0022,
+      "separated": true,
+      "n_windows": 3668
+     },
+     {
+      "family": "tactical",
+      "metric": "TAC_traj_lon_correct",
+      "delta": -0.0022,
+      "lo": -0.0099,
+      "hi": 0.0049,
+      "separated": false,
+      "n_windows": 3668
+     }
+    ]
+   },
+   "paired_os_minus_P10": {
+    "direction": "os - P10",
+    "rows": [
+     {
+      "family": "ADE",
+      "metric": "ade_m",
+      "delta": -0.4061,
+      "lo": -0.5885,
+      "hi": -0.2181,
+      "separated": true,
+      "n_windows": 3668
+     },
+     {
+      "family": "ADE",
+      "metric": "fde_m",
+      "delta": -1.173,
+      "lo": -1.6494,
+      "hi": -0.6648,
+      "separated": true,
+      "n_windows": 3668
+     },
+     {
+      "family": "longitudinal",
+      "metric": "LON_speed_mae_mps",
+      "delta": -0.0231,
+      "lo": -0.0776,
+      "hi": 0.0374,
+      "separated": false,
+      "n_windows": 3668
+     },
+     {
+      "family": "longitudinal",
+      "metric": "LON_along_mae_m",
+      "delta": 0.0148,
+      "lo": -0.1123,
+      "hi": 0.1529,
+      "separated": false,
+      "n_windows": 3668
+     },
+     {
+      "family": "longitudinal",
+      "metric": "LON_accel_mae_mps2",
+      "delta": -0.0405,
+      "lo": -0.0648,
+      "hi": -0.0155,
+      "separated": true,
+      "n_windows": 3668
+     },
+     {
+      "family": "lateral",
+      "metric": "LAT_cross_mae_m",
+      "delta": -0.5983,
+      "lo": -0.7625,
+      "hi": -0.4537,
+      "separated": true,
+      "n_windows": 3668
+     },
+     {
+      "family": "lateral",
+      "metric": "LAT_heading_mae_deg",
+      "delta": -2.0597,
+      "lo": -2.6169,
+      "hi": -1.5637,
+      "separated": true,
+      "n_windows": 3579
+     },
+     {
+      "family": "lateral",
+      "metric": "LAT_yaw_rate_mae_radps",
+      "delta": -0.0198,
+      "lo": -0.0245,
+      "hi": -0.0156,
+      "separated": true,
+      "n_windows": 3552
+     },
+     {
+      "family": "tactical",
+      "metric": "TAC_traj_lat_correct",
+      "delta": 0.0902,
+      "lo": 0.0708,
+      "hi": 0.1111,
+      "separated": true,
+      "n_windows": 3668
+     },
+     {
+      "family": "tactical",
+      "metric": "TAC_traj_lon_correct",
+      "delta": 0.075,
+      "lo": 0.0369,
+      "hi": 0.1119,
+      "separated": true,
+      "n_windows": 3668
+     }
+    ]
+   }
+  }
+ },
+ "artifact": {
+  "what": "the shipped frozen artifact itself, scored by the same grid (eval_<H>_s<seed>_art.json / analysis_<H>_s0_art.json)",
+  "S2": {
+   "means": {
+    "os": {
+     "ade": 0.27842051857714833,
+     "fde": 0.5995040282753085
+    },
+    "ha0_ext": {
+     "ade": 0.28860530326569417,
+     "fde": 0.6354646669070646
+    },
+    "P10": {
+     "ade": 0.250793123168586,
+     "fde": 0.5737514472237977
+    },
+    "ha0_ext_pose": {
+     "ade": 0.2941196163841884,
+     "fde": 0.6472103183502069
+    },
+    "kd_x_pose": {
+     "ade": 0.3438416294349623,
+     "fde": 0.735050056855115
+    },
+    "P10pose": {
+     "ade": 0.25636609890405065,
+     "fde": 0.585080153566486
+    },
+    "P10pose_artifact": {
+     "ade": 0.2606162751142416,
+     "fde": 0.5902051685855569
+    }
+   },
+   "paired": {
+    "os-P10pose_artifact_s0": {
+     "ade": {
+      "delta": 0.0178,
+      "lo": 0.0056,
+      "hi": 0.0308,
+      "ci95": 0.0126,
+      "p_delta_gt0": 0.998,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 4754,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "fde": {
+      "delta": 0.0093,
+      "lo": -0.0232,
+      "hi": 0.0428,
+      "ci95": 0.033,
+      "p_delta_gt0": 0.7035,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 4754,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    },
+    "P10pose_artifact-ha0_ext_pose_s0": {
+     "ade": {
+      "delta": -0.0335,
+      "lo": -0.0425,
+      "hi": -0.0246,
+      "ci95": 0.0089,
+      "p_delta_gt0": 0.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 4754,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "fde": {
+      "delta": -0.057,
+      "lo": -0.0772,
+      "hi": -0.0386,
+      "ci95": 0.0193,
+      "p_delta_gt0": 0.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 4754,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    },
+    "P10pose_artifact-P10pose_s0": {
+     "ade": {
+      "delta": 0.0043,
+      "lo": 0.0024,
+      "hi": 0.0061,
+      "ci95": 0.0018,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 4754,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "fde": {
+      "delta": 0.0051,
+      "lo": 0.0007,
+      "hi": 0.0098,
+      "ci95": 0.0045,
+      "p_delta_gt0": 0.986,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 4754,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    },
+    "os-P10pose_artifact_s1": {
+     "ade": {
+      "delta": 0.0184,
+      "lo": 0.006,
+      "hi": 0.031,
+      "ci95": 0.0125,
+      "p_delta_gt0": 0.998,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 4754,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "fde": {
+      "delta": 0.0106,
+      "lo": -0.0229,
+      "hi": 0.0431,
+      "ci95": 0.033,
+      "p_delta_gt0": 0.723,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 4754,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    },
+    "P10pose_artifact-ha0_ext_pose_s1": {
+     "ade": {
+      "delta": -0.0335,
+      "lo": -0.0425,
+      "hi": -0.0246,
+      "ci95": 0.0089,
+      "p_delta_gt0": 0.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 4754,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "fde": {
+      "delta": -0.057,
+      "lo": -0.0772,
+      "hi": -0.0386,
+      "ci95": 0.0193,
+      "p_delta_gt0": 0.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 4754,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    },
+    "P10pose_artifact-P10pose_s1": {
+     "ade": {
+      "delta": 0.0043,
+      "lo": 0.0024,
+      "hi": 0.0061,
+      "ci95": 0.0018,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 4754,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "fde": {
+      "delta": 0.0051,
+      "lo": 0.0007,
+      "hi": 0.0098,
+      "ci95": 0.0045,
+      "p_delta_gt0": 0.986,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 4754,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    }
+   },
+   "families": {
+    "paired_os_minus_P10poseart": {
+     "direction": "os - P10pose_artifact",
+     "rows": [
+      {
+       "family": "ADE",
+       "metric": "ade_m",
+       "delta": 0.0178,
+       "lo": 0.005,
+       "hi": 0.0307,
+       "separated": true,
+       "n_windows": 4754
+      },
+      {
+       "family": "ADE",
+       "metric": "fde_m",
+       "delta": 0.0093,
+       "lo": -0.0239,
+       "hi": 0.0422,
+       "separated": false,
+       "n_windows": 4754
+      },
+      {
+       "family": "longitudinal",
+       "metric": "LON_speed_mae_mps",
+       "delta": 0.028,
+       "lo": 0.017,
+       "hi": 0.0405,
+       "separated": true,
+       "n_windows": 4754
+      },
+      {
+       "family": "longitudinal",
+       "metric": "LON_along_mae_m",
+       "delta": 0.0253,
+       "lo": 0.0164,
+       "hi": 0.0353,
+       "separated": true,
+       "n_windows": 4754
+      },
+      {
+       "family": "longitudinal",
+       "metric": "LON_accel_mae_mps2",
+       "delta": 0.0334,
+       "lo": 0.0169,
+       "hi": 0.0518,
+       "separated": true,
+       "n_windows": 4754
+      },
+      {
+       "family": "lateral",
+       "metric": "LAT_cross_mae_m",
+       "delta": -0.009,
+       "lo": -0.0188,
+       "hi": 0.0005,
+       "separated": false,
+       "n_windows": 4754
+      },
+      {
+       "family": "lateral",
+       "metric": "LAT_heading_mae_deg",
+       "delta": -0.3423,
+       "lo": -0.4443,
+       "hi": -0.2435,
+       "separated": true,
+       "n_windows": 4515
+      },
+      {
+       "family": "lateral",
+       "metric": "LAT_yaw_rate_mae_radps",
+       "delta": -0.0267,
+       "lo": -0.0309,
+       "hi": -0.0226,
+       "separated": true,
+       "n_windows": 4481
+      },
+      {
+       "family": "tactical",
+       "metric": "TAC_traj_lat_correct",
+       "delta": 0.033,
+       "lo": 0.0228,
+       "hi": 0.0437,
+       "separated": true,
+       "n_windows": 4754
+      },
+      {
+       "family": "tactical",
+       "metric": "TAC_traj_lon_correct",
+       "delta": -0.0246,
+       "lo": -0.0397,
+       "hi": -0.0109,
+       "separated": true,
+       "n_windows": 4754
+      }
+     ]
+    },
+    "paired_P10poseart_minus_ha0extpose": {
+     "direction": "P10pose_artifact - ha0_ext_pose",
+     "rows": [
+      {
+       "family": "ADE",
+       "metric": "ade_m",
+       "delta": -0.0335,
+       "lo": -0.0433,
+       "hi": -0.0241,
+       "separated": true,
+       "n_windows": 4754
+      },
+      {
+       "family": "ADE",
+       "metric": "fde_m",
+       "delta": -0.057,
+       "lo": -0.0774,
+       "hi": -0.0372,
+       "separated": true,
+       "n_windows": 4754
+      },
+      {
+       "family": "longitudinal",
+       "metric": "LON_speed_mae_mps",
+       "delta": -0.024,
+       "lo": -0.032,
+       "hi": -0.0164,
+       "separated": true,
+       "n_windows": 4754
+      },
+      {
+       "family": "longitudinal",
+       "metric": "LON_along_mae_m",
+       "delta": -0.0339,
+       "lo": -0.0432,
+       "hi": -0.0247,
+       "separated": true,
+       "n_windows": 4754
+      },
+      {
+       "family": "longitudinal",
+       "metric": "LON_accel_mae_mps2",
+       "delta": 0.02,
+       "lo": 0.0101,
+       "hi": 0.0299,
+       "separated": true,
+       "n_windows": 4754
+      },
+      {
+       "family": "lateral",
+       "metric": "LAT_cross_mae_m",
+       "delta": -0.0029,
+       "lo": -0.0085,
+       "hi": 0.0023,
+       "separated": false,
+       "n_windows": 4754
+      },
+      {
+       "family": "lateral",
+       "metric": "LAT_heading_mae_deg",
+       "delta": 0.1634,
+       "lo": 0.0788,
+       "hi": 0.2481,
+       "separated": true,
+       "n_windows": 4512
+      },
+      {
+       "family": "lateral",
+       "metric": "LAT_yaw_rate_mae_radps",
+       "delta": 0.0199,
+       "lo": 0.0157,
+       "hi": 0.0245,
+       "separated": true,
+       "n_windows": 4474
+      },
+      {
+       "family": "tactical",
+       "metric": "TAC_traj_lat_correct",
+       "delta": -0.0086,
+       "lo": -0.0166,
+       "hi": -0.0013,
+       "separated": true,
+       "n_windows": 4754
+      },
+      {
+       "family": "tactical",
+       "metric": "TAC_traj_lon_correct",
+       "delta": 0.0114,
+       "lo": 0.0027,
+       "hi": 0.0202,
+       "separated": true,
+       "n_windows": 4754
+      }
+     ]
+    }
+   }
+  },
+  "S6": {
+   "means": {
+    "os": {
+     "ade": 2.5674589344051446,
+     "fde": 6.332804287409251
+    },
+    "ha0_ext": {
+     "ade": 3.547857911762477,
+     "fde": 9.207066439471086
+    },
+    "P10": {
+     "ade": 2.9736049408902296,
+     "fde": 7.505816647116449
+    },
+    "ha0_ext_pose": {
+     "ade": 3.576429933161244,
+     "fde": 9.272119338384034
+    },
+    "kd_x_pose": {
+     "ade": 3.6466289218974377,
+     "fde": 9.212339551209194
+    },
+    "P10pose": {
+     "ade": 3.0065018721231525,
+     "fde": 7.576955582914664
+    },
+    "P10pose_artifact": {
+     "ade": 3.0572328017827233,
+     "fde": 7.749422534614688
+    }
+   },
+   "paired": {
+    "os-P10pose_artifact_s0": {
+     "ade": {
+      "delta": -0.4898,
+      "lo": -0.6921,
+      "hi": -0.2894,
+      "ci95": 0.2014,
+      "p_delta_gt0": 0.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "fde": {
+      "delta": -1.4166,
+      "lo": -1.9602,
+      "hi": -0.8846,
+      "ci95": 0.5378,
+      "p_delta_gt0": 0.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    },
+    "P10pose_artifact-ha0_ext_pose_s0": {
+     "ade": {
+      "delta": -0.5192,
+      "lo": -0.7093,
+      "hi": -0.3306,
+      "ci95": 0.1893,
+      "p_delta_gt0": 0.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "fde": {
+      "delta": -1.5227,
+      "lo": -2.0521,
+      "hi": -0.9928,
+      "ci95": 0.5297,
+      "p_delta_gt0": 0.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    },
+    "P10pose_artifact-P10pose_s0": {
+     "ade": {
+      "delta": 0.0507,
+      "lo": 0.0202,
+      "hi": 0.0795,
+      "ci95": 0.0297,
+      "p_delta_gt0": 0.9995,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "fde": {
+      "delta": 0.1725,
+      "lo": 0.0803,
+      "hi": 0.2589,
+      "ci95": 0.0893,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    },
+    "os-P10pose_artifact_s1": {
+     "ade": {
+      "delta": -0.489,
+      "lo": -0.6867,
+      "hi": -0.2957,
+      "ci95": 0.1955,
+      "p_delta_gt0": 0.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "fde": {
+      "delta": -1.4105,
+      "lo": -1.9382,
+      "hi": -0.8959,
+      "ci95": 0.5212,
+      "p_delta_gt0": 0.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    },
+    "P10pose_artifact-ha0_ext_pose_s1": {
+     "ade": {
+      "delta": -0.5192,
+      "lo": -0.7093,
+      "hi": -0.3306,
+      "ci95": 0.1893,
+      "p_delta_gt0": 0.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "fde": {
+      "delta": -1.5227,
+      "lo": -2.0521,
+      "hi": -0.9928,
+      "ci95": 0.5297,
+      "p_delta_gt0": 0.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    },
+    "P10pose_artifact-P10pose_s1": {
+     "ade": {
+      "delta": 0.0507,
+      "lo": 0.0202,
+      "hi": 0.0795,
+      "ci95": 0.0297,
+      "p_delta_gt0": 0.9995,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "fde": {
+      "delta": 0.1725,
+      "lo": 0.0803,
+      "hi": 0.2589,
+      "ci95": 0.0893,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    }
+   },
+   "families": {
+    "paired_os_minus_P10poseart": {
+     "direction": "os - P10pose_artifact",
+     "rows": [
+      {
+       "family": "ADE",
+       "metric": "ade_m",
+       "delta": -0.4898,
+       "lo": -0.6868,
+       "hi": -0.2903,
+       "separated": true,
+       "n_windows": 3668
+      },
+      {
+       "family": "ADE",
+       "metric": "fde_m",
+       "delta": -1.4166,
+       "lo": -1.9419,
+       "hi": -0.8913,
+       "separated": true,
+       "n_windows": 3668
+      },
+      {
+       "family": "longitudinal",
+       "metric": "LON_speed_mae_mps",
+       "delta": -0.0367,
+       "lo": -0.0931,
+       "hi": 0.0252,
+       "separated": false,
+       "n_windows": 3668
+      },
+      {
+       "family": "longitudinal",
+       "metric": "LON_along_mae_m",
+       "delta": -0.0299,
+       "lo": -0.157,
+       "hi": 0.1103,
+       "separated": false,
+       "n_windows": 3668
+      },
+      {
+       "family": "longitudinal",
+       "metric": "LON_accel_mae_mps2",
+       "delta": -0.0459,
+       "lo": -0.0742,
+       "hi": -0.0178,
+       "separated": true,
+       "n_windows": 3668
+      },
+      {
+       "family": "lateral",
+       "metric": "LAT_cross_mae_m",
+       "delta": -0.6543,
+       "lo": -0.8272,
+       "hi": -0.4927,
+       "separated": true,
+       "n_windows": 3668
+      },
+      {
+       "family": "lateral",
+       "metric": "LAT_heading_mae_deg",
+       "delta": -2.2131,
+       "lo": -2.7364,
+       "hi": -1.7497,
+       "separated": true,
+       "n_windows": 3579
+      },
+      {
+       "family": "lateral",
+       "metric": "LAT_yaw_rate_mae_radps",
+       "delta": -0.0219,
+       "lo": -0.027,
+       "hi": -0.0173,
+       "separated": true,
+       "n_windows": 3551
+      },
+      {
+       "family": "tactical",
+       "metric": "TAC_traj_lat_correct",
+       "delta": 0.0976,
+       "lo": 0.0769,
+       "hi": 0.1194,
+       "separated": true,
+       "n_windows": 3668
+      },
+      {
+       "family": "tactical",
+       "metric": "TAC_traj_lon_correct",
+       "delta": 0.081,
+       "lo": 0.0388,
+       "hi": 0.1219,
+       "separated": true,
+       "n_windows": 3668
+      }
+     ]
+    },
+    "paired_P10poseart_minus_ha0extpose": {
+     "direction": "P10pose_artifact - ha0_ext_pose",
+     "rows": [
+      {
+       "family": "ADE",
+       "metric": "ade_m",
+       "delta": -0.5192,
+       "lo": -0.7074,
+       "hi": -0.3289,
+       "separated": true,
+       "n_windows": 3668
+      },
+      {
+       "family": "ADE",
+       "metric": "fde_m",
+       "delta": -1.5227,
+       "lo": -2.0534,
+       "hi": -0.9939,
+       "separated": true,
+       "n_windows": 3668
+      },
+      {
+       "family": "longitudinal",
+       "metric": "LON_speed_mae_mps",
+       "delta": -0.1261,
+       "lo": -0.1862,
+       "hi": -0.0666,
+       "separated": true,
+       "n_windows": 3668
+      },
+      {
+       "family": "longitudinal",
+       "metric": "LON_along_mae_m",
+       "delta": -0.428,
+       "lo": -0.595,
+       "hi": -0.269,
+       "separated": true,
+       "n_windows": 3668
+      },
+      {
+       "family": "longitudinal",
+       "metric": "LON_accel_mae_mps2",
+       "delta": -0.0291,
+       "lo": -0.0568,
+       "hi": -0.0008,
+       "separated": true,
+       "n_windows": 3668
+      },
+      {
+       "family": "lateral",
+       "metric": "LAT_cross_mae_m",
+       "delta": -0.2037,
+       "lo": -0.3041,
+       "hi": -0.0923,
+       "separated": true,
+       "n_windows": 3668
+      },
+      {
+       "family": "lateral",
+       "metric": "LAT_heading_mae_deg",
+       "delta": -0.6323,
+       "lo": -1.1398,
+       "hi": -0.1483,
+       "separated": true,
+       "n_windows": 3521
+      },
+      {
+       "family": "lateral",
+       "metric": "LAT_yaw_rate_mae_radps",
+       "delta": 0.0,
+       "lo": -0.0044,
+       "hi": 0.0043,
+       "separated": false,
+       "n_windows": 3472
+      },
+      {
+       "family": "tactical",
+       "metric": "TAC_traj_lat_correct",
+       "delta": 0.0085,
+       "lo": -0.0077,
+       "hi": 0.0248,
+       "separated": false,
+       "n_windows": 3668
+      },
+      {
+       "family": "tactical",
+       "metric": "TAC_traj_lon_correct",
+       "delta": -0.0289,
+       "lo": -0.069,
+       "hi": 0.009,
+       "separated": false,
+       "n_windows": 3668
+      }
+     ]
+    }
+   }
+  }
+ },
+ "premise_S2_artifact": {
+  "statement": "os - (shipped artifact) ADE 0-2 s > 0 with the CI excluding 0 at BOTH inference seeds",
+  "s0": {
+   "delta": 0.0178,
+   "lo": 0.0056,
+   "hi": 0.0308,
+   "ci95": 0.0126,
+   "p_delta_gt0": 0.998,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 4754,
+   "n_episodes": 139,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "s1": {
+   "delta": 0.0184,
+   "lo": 0.006,
+   "hi": 0.031,
+   "ci95": 0.0125,
+   "p_delta_gt0": 0.998,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 4754,
+   "n_episodes": 139,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "holds": true
+ },
+ "strategic": "PAUSED (PI R6 ruling 2026-09-19, PI_DECISION_QUEUE ITEM 25) -- not a pass, not omitted",
+ "premise_S2": {
+  "statement": "os - P10pose ADE 0-2 s > 0 with the CI excluding 0 at BOTH inference seeds (P10-pose beats refcv7 at 2 s; S1's steer P10 premise was os - P10 = +0.0276)",
+  "s0": {
+   "delta": 0.0221,
+   "lo": 0.0105,
+   "hi": 0.0346,
+   "ci95": 0.0121,
+   "p_delta_gt0": 1.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 4754,
+   "n_episodes": 139,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "s1": {
+   "delta": 0.0227,
+   "lo": 0.0106,
+   "hi": 0.035,
+   "ci95": 0.0122,
+   "p_delta_gt0": 1.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 4754,
+   "n_episodes": 139,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "holds": true
+ }
+}

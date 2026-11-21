@@ -1,0 +1,180 @@
+# ------------------------------------------------------------------------------------------------ ROLLHIST stage B (RH / B0): argv, bank generator record, pair, selfcheck levers  [B3 gate build 2026-11-20]
+def readout_token(readout, acc_gain=None, path_exec=False) -> str:
+    """Byte-for-byte the spelling of ``tanitad.data.v8f_dagger.readout_token`` at 2bda9e1a (the ONE spelling; a test compares the two over a grid)."""
+    if readout == "pinned":
+        if acc_gain is not None or path_exec:
+            raise ValueError("readout pinned takes no gain and no path-exec")
+        return "pinned"
+    if readout != "causal_g":
+        raise ValueError(f"unknown readout {readout!r}")
+    if acc_gain is None:
+        raise ValueError("readout causal_g needs a gain")
+    return f"causal_g{float(acc_gain):g}" + ("x" if path_exec else "")
+
+
+def _norm_path(p) -> str:
+    return str(p).replace("\\", "/")
+
+
+def rh_stage_a_ckpt_problems(init: str, seed: int) -> list:
+    """K-B2: the arm's ``--init-ckpt`` is ITS OWN stage-A model ``.../runs/UE_s<seed>/A/ckpt_last.pt`` (RH and B0 of one seed start from the same UE_s<seed>.A checkpoint)."""
+    want = f"/runs/UE_s{seed}/A/ckpt_last.pt"
+    return [] if _norm_path(init).endswith(want) else [f"K-B2: --init-ckpt {init!r} is not this arm's stage A (a path ending {want})"]
+
+
+def rh_argv_problems(base_toks, tmpl_toks, toks, arm: str, token: str | None = None) -> list:
+    """C-ARGV of an RH / B0 arm. (1) the arm's ``U_s<seed>.B.tmpl.json`` is itself an accepted stage-B argv of U_s<seed> against the B_s0 stage-B template (the existing ``argv_diff_problems``);
+    (2) ``toks`` equals the template EXCEPT exactly, RH: the two declarations (added; token in RH_TOKENS, kappa 0.2), the own ``--out`` (names the arm), the own ``--init-ckpt`` (UE_s<seed>.A), the bank and
+    its sha256 (filled: no ``@`` placeholder, sha 64 hex), ``--dagger-p`` and ``--dagger-seed`` as the template; B0: ``--dagger-p 0``, no bank flag, no declaration, ``--dagger-seed`` absent or the default 0,
+    the own ``--out`` / ``--init-ckpt``. A fifth changed, added or removed flag is refused."""
+    if arm not in RH_ARMS:
+        return [f"{arm!r} is not an RH / B0 arm"]
+    kind, seed = RH_ARMS[arm]
+    bad = [f"template: {x}" for x in argv_diff_problems(base_toks, tmpl_toks, f"U_s{seed}", "B")]
+    try:
+        t, a = parse_argv(tmpl_toks), parse_argv(toks)
+    except ValueError as e:
+        return bad + [f"argv does not parse: {e}"]
+    dag_bank = {"--dagger-bank", "--dagger-bank-sha256"}
+    added, removed = set(a) - set(t), set(t) - set(a)
+    if kind == "RH":
+        exp_added, exp_removed, own = set(RH_DECL), set(), {"--out", "--init-ckpt"} | dag_bank
+    else:
+        exp_added, exp_removed, own = set(), dag_bank | {"--dagger-seed"}, {"--out", "--init-ckpt", "--dagger-p"}
+    for f in sorted(added - exp_added):
+        bad.append(f"flag {f} {a[f]} is not in the template and is not an allowed addition for {kind}")
+    for f in sorted(exp_added - added):
+        bad.append(f"{kind} argv does not name {f}")
+    for f in sorted(removed - exp_removed):
+        bad.append(f"flag {f} {t[f]} of the template is missing from the {kind} argv")
+    for f in sorted(set(a) & set(t)):
+        if a[f] != t[f] and f not in own:
+            bad.append(f"flag {f}: {a[f]} differs from the template's {t[f]} (not an allowed difference for {kind})")
+    if "--out" in a:
+        if a["--out"] == t.get("--out") or f"/{arm}/" not in _norm_path(" ".join(a["--out"]) + "/"):
+            bad.append(f"--out {a['--out']} is not the arm's own (must differ from the template's and name /{arm}/)")
+    else:
+        bad.append("no --out")
+    init = (a.get("--init-ckpt") or [""])[0]
+    if not init or init.startswith("@"):
+        bad.append(f"--init-ckpt {init!r} is not filled")
+    else:
+        bad += rh_stage_a_ckpt_problems(init, seed)
+    if kind == "RH":
+        for f in ("--dagger-bank", "--dagger-bank-sha256"):
+            v = (a.get(f) or [""])[0]
+            if not v or v.startswith("@"):
+                bad.append(f"{f} {v!r} is not filled")
+        sh = (a.get("--dagger-bank-sha256") or [""])[0]
+        if sh and not sh.startswith("@") and not (len(sh) == 64 and all(c in "0123456789abcdefABCDEF" for c in sh)):
+            bad.append(f"--dagger-bank-sha256 {sh!r} is not 64 hex digits")
+        tk = (a.get("--dagger-bank-readout") or [""])[0]
+        if tk not in RH_TOKENS:
+            bad.append(f"--dagger-bank-readout {tk!r} is not one of {RH_TOKENS}")
+        if token is not None and tk != token:
+            bad.append(f"--dagger-bank-readout {tk!r} is not the declared token {token!r}")
+        if a.get("--dagger-bank-kappa") != [RH_KAPPA]:
+            bad.append(f"--dagger-bank-kappa reads {a.get('--dagger-bank-kappa')}, expected [{RH_KAPPA!r}]")
+        if a.get("--dagger-p") != t.get("--dagger-p") or not (a.get("--dagger-p") and float(a["--dagger-p"][0]) > 0):
+            bad.append(f"--dagger-p reads {a.get('--dagger-p')}, the template's {t.get('--dagger-p')} (> 0 required)")
+    else:
+        for f in sorted((dag_bank | set(RH_DECL)) & set(a)):
+            bad.append(f"B0 names {f} {a[f]}: a bank flag / declaration at --dagger-p 0 is declared and does nothing (the trainer refuses it)")
+        if a.get("--dagger-p") != ["0"]:
+            bad.append(f"B0 --dagger-p reads {a.get('--dagger-p')}, expected ['0']")
+        if "--dagger-seed" in a and a["--dagger-seed"] != ["0"]:
+            bad.append(f"B0 --dagger-seed {a['--dagger-seed']}: a non-default seed at --dagger-p 0 is declared and does nothing (trainer refuses)")
+        if token is not None:
+            bad.append("B0 takes no readout token (a declaration at --dagger-p 0 is refused by the trainer)")
+    return bad
+
+
+def rh_bank_generator_problems(bank_dir, declared_sha: str, token: str, kappa: str = RH_KAPPA) -> list:
+    """The RH bank is the bank the argv declares: ``bank.json``'s sha256 == ``--dagger-bank-sha256``, and its ``generator`` record, read as ``DaggerSwap.built_levers`` reads it (a record that is absent reads
+    ``pinned`` / ``none``), equals the declared readout token and kappa; every shard's provenance carries the same record."""
+    bj = os.path.join(bank_dir or "", "bank.json")
+    if not os.path.isfile(bj):
+        return [f"no bank.json under {bank_dir!r}"]
+    bad = []
+    if sha_file(bj) != declared_sha:
+        bad.append(f"bank.json sha256 {sha_file(bj)[:12]} != --dagger-bank-sha256 {str(declared_sha)[:12]}")
+    b = json.load(open(bj, encoding="utf-8"))
+
+    def built(gen):
+        gen = gen or {}
+        try:
+            return readout_token(gen.get("readout", "pinned"), gen.get("acc_gain"), bool(gen.get("path_exec", False))), str(gen.get("kappa_max", "none"))
+        except ValueError as e:
+            return f"<unreadable generator record: {e}>", str(gen.get("kappa_max", "none"))
+
+    tk, kp = built(b.get("generator"))
+    if tk != token:
+        bad.append(f"the bank's generator record reads readout {tk!r}, the argv declares {token!r}")
+    if kp != kappa:
+        bad.append(f"the bank's generator record reads kappa {kp!r}, the argv declares {kappa!r}")
+    for sh in b.get("shards") or []:
+        sp = os.path.join(bank_dir, f"shard_{int(sh.get('k', 0)):03d}of{int(b.get('n_shards', 0)):03d}.provenance.json")
+        if os.path.isfile(sp) and json.load(open(sp, encoding="utf-8")).get("generator") != b.get("generator"):
+            bad.append(f"shard {sh.get('k')}: its provenance generator record differs from bank.json's")
+    return bad
+
+
+def rh_pair_problems(rh_toks, b0_toks, token: str, bank_sha: str | None, pair_check_path: str) -> list:
+    """``rollhist_pair_check.pair_problems`` (the committed stack/scripts file, loaded from ``pair_check_path``) on the pair. That file hard-codes ``causal_g1x``: for any other token this REFUSES with a message
+    and does NOT patch the committed code in process (the committed-code change, a flag, is the MM's)."""
+    if token != RH_PAIR_CHECK_HARDCODED:
+        return [f"readout {token!r}: stack/scripts/rollhist_pair_check.py hard-codes {RH_PAIR_CHECK_HARDCODED!r} (RH_READOUT / DECL), so it rejects every other declaration; this checker will not patch it in process. "
+                f"It needs a flag (a committed-code change: the MM's) before {token!r} can be minted."]
+    if not (pair_check_path and os.path.isfile(pair_check_path)):
+        return [f"no rollhist_pair_check.py at {pair_check_path!r}"]
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("_rh_pair_check_loaded", pair_check_path)
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    if m.RH_READOUT != RH_PAIR_CHECK_HARDCODED:
+        return [f"the loaded pair check declares {m.RH_READOUT!r}, expected {RH_PAIR_CHECK_HARDCODED!r}"]
+    return list(m.pair_problems(rh_toks, b0_toks, bank_sha256=bank_sha))
+
+
+def _find_key(o, key):
+    if isinstance(o, dict):
+        for k, v in o.items():
+            if k == key:
+                yield v
+            yield from _find_key(v, key)
+    elif isinstance(o, list):
+        for v in o:
+            yield from _find_key(v, key)
+
+
+def rh_levers_problems(sc: dict, kind: str, token: str | None) -> list:
+    """The trainer's BUILT levers (selfcheck ``levers``): RH carries the declared readout token and kappa; B0 reads the defaults (``pinned`` / ``None``)."""
+    ro = {str(x) for x in _find_key(sc.get("levers", {}), "dagger_bank_readout")}
+    kp = {str(x) for x in _find_key(sc.get("levers", {}), "dagger_bank_kappa")}
+    bad = []
+    if kind == "RH":
+        if token not in ro:
+            bad.append(f"the built levers do not carry dagger_bank_readout {token!r} (read {sorted(ro)})")
+        if RH_KAPPA not in kp:
+            bad.append(f"the built levers do not carry dagger_bank_kappa {RH_KAPPA!r} (read {sorted(kp)})")
+    elif ro - {"pinned", "None"}:
+        bad.append(f"B0 built levers carry a non-default dagger_bank_readout {sorted(ro)}")
+    return bad
+
+
+def b0_selfcheck_problems(sc: dict, toks) -> list:
+    """G-DAGGER-B0: the trainer's own ``--selfcheck-only`` of the B0 argv: declared_vs_built PASS, acc_probe pass with the declared w_acc and a live head_o gradient, default dagger levers, ``--dagger-p`` 0."""
+    bad = []
+    if sc.get("declared_vs_built") != "PASS":
+        bad.append(f"declared_vs_built reads {sc.get('declared_vs_built')!r}")
+    ap = sc.get("acc_probe") or {}
+    if not ap.get("pass"):
+        bad.append("acc_probe does not read pass")
+    elif not (ap.get("head_o_grad_diff", 0.0) > 0.0 and abs(float(ap.get("w_acc_declared", -1)) - 49.6969) < 1e-9):
+        bad.append(f"acc_probe: w_acc {ap.get('w_acc_declared')}, head_o_grad_diff {ap.get('head_o_grad_diff')}")
+    bad += rh_levers_problems(sc, "B0", None)
+    if parse_argv(toks).get("--dagger-p") != ["0"]:
+        bad.append("the B0 argv does not name --dagger-p 0")
+    return bad
+
+

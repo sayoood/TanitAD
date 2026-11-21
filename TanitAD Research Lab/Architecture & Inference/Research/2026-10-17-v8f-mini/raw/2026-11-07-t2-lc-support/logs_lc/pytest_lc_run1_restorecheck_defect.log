@@ -1,0 +1,86 @@
+...F
+================================== FAILURES ===================================
+________________________________ test_d_guards ________________________________
+
+    def test_d_guards():
+>       check_guards()
+
+tests_lc\test_t2v8f_lc.py:327: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+mut = None
+
+    def check_guards(mut=None):
+        """Each fault must be REFUSED by name before a rollout can use the encoder. `mut="no_guard"` disables the assertions so the same checks fail (RED)."""
+        blob, blk = blobs()["LC_s0"], block(("LC_s0",))
+        got = []
+    
+        def refused(label, want, fn):
+            try:
+                fn()
+            except (AssertionError, RuntimeError, ValueError) as e:
+                assert want in str(e), f"{label}: refused, but not by {want!r}: {str(e)[:300]}"
+                got.append(label)
+                return
+            raise AssertionError(f"{label}: NOT refused (expected {want})")
+        # 1. the fold is skipped (hook never folds): the in-hook digest check names it
+        def skip():
+            orig = LM.fold_lora
+            LM.fold_lora = lambda *a, **k: []
+            try:
+                C.lora_tokens(blob, blk, "LC_s0")
+            finally:
+                LM.fold_lora = orig
+        refused("fold_skipped", "MERGED_SHA_MISMATCH (after the fold", skip)
+        # 2. the in-hook check is bypassed AND the fold skipped: the finished-encoder check still refuses
+        def skip_both():
+            of, oa = LM.fold_lora, LM.assert_pin
+            LM.fold_lora = lambda *a, **k: []
+            LM.assert_pin = lambda m, e, arm, where: oa(m, e, arm, where) if where.startswith("on the finished") else {"merged_qv_sha256": "x"}
+            try:
+                C.lora_tokens(blob, blk, "LC_s0")
+            finally:
+                LM.fold_lora, LM.assert_pin = of, oa
+        refused("fold_skipped_hook_unchecked", "MERGED_SHA_MISMATCH (on the finished encoder)", skip_both)
+        # 3. one tensor's pinned digest is wrong: refused, and the tensor is NAMED
+        bad = json.loads(json.dumps(blk))
+        bad["merged_qv_tensor_sha256"]["LC_s0"]["layer.5.attention.v_proj.weight"] = "0" * 64
+        bad["merged_qv_sha256"]["LC_s0"] = LM.digest_of(bad["merged_qv_tensor_sha256"]["LC_s0"])
+        refused("pin_tensor_wrong", "layer.5.attention.v_proj.weight", lambda: C.lora_tokens(blob, bad, "LC_s0"))
+        # 4. the blob on disk is not the pinned file
+        other = blobs()["LC_s1"]
+        refused("wrong_blob", "HASH_MISMATCH_LORA_SOURCE", lambda: C.lora_tokens(other, blk, "LC_s0"))
+        # 5. a model that is not on CPU/bf16 cannot be folded (the fold must come BEFORE .to(device))
+        m32 = __import__("copy").deepcopy(C.base_model()).float()
+        refused("wrong_place", "FOLD_WRONG_PLACE", lambda: LM.fold_lora(m32, LM.parse_lora(LM.load_blob(blob)["lora"])))
+        # 6. the LoRA entry is malformed
+        sd = LM.load_blob(blob)["lora"]
+        short = {"meta": sd["meta"], "tensors": dict(list(sd["tensors"].items())[:-2])}
+        refused("lora_missing_tensors", "LORA_TENSOR_SET", lambda: LM.parse_lora(short))
+        wrong_r = {"meta": dict(sd["meta"], r=16), "tensors": sd["tensors"]}
+        refused("lora_meta_r", "LORA_META_MISMATCH", lambda: LM.parse_lora(wrong_r))
+        # 7. the encoder restored its class and from_pretrained afterwards
+        import transformers
+        import t2a_v8f_encoder as E
+>       assert E.InLoopEncoder.__name__ == "InLoopEncoder" and "from_pretrained" not in vars(transformers.AutoModel), "lora_fold_active did not restore"
+E       AssertionError: lora_fold_active did not restore
+E       assert ('InLoopEncoder' == 'InLoopEncoder'
+E         
+E           InLoopEncoder and 'from_pretrained' not in mappingproxy({'__module__': 'transformers.models.auto.modeling_auto', '__firstlineno__': 2173, '_model_mapping': _Lazy...D116677740>)>, 'from_pretrained': <classmethod(<function _BaseAutoModelClass.from_pretrained at 0x000001D1166779C0>)>}))
+E        +  where mappingproxy({'__module__': 'transformers.models.auto.modeling_auto', '__firstlineno__': 2173, '_model_mapping': _Lazy...D116677740>)>, 'from_pretrained': <classmethod(<function _BaseAutoModelClass.from_pretrained at 0x000001D1166779C0>)>}) = vars(<class 'transformers.models.auto.modeling_auto.AutoModel'>)
+E        +    where <class 'transformers.models.auto.modeling_auto.AutoModel'> = <module 'transformers' from 'C:\\Users\\Admin\\venvs\\tanitad\\Lib\\site-packages\\transformers\\__init__.py'>.AutoModel
+
+tests_lc\test_t2v8f_lc.py:182: AssertionError
+---------------------------- Captured stderr call -----------------------------
+\rLoading weights:   0%|          | 0/415 [00:00<?, ?it/s]\rLoading weights:  45%|\u2588\u2588\u2588\u2588\u258d     | 186/415 [00:00<00:00, 1857.15it/s]\rLoading weights:  90%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2589 | 372/415 [00:00<00:00, 1817.86it/s]\rLoading weights: 100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588| 415/415 [00:00<00:00, 1805.37it/s]\n\rLoading weights:   0%|          | 0/415 [00:00<?, ?it/s]\rLoading weights:  40%|\u2588\u2588\u2588\u2588      | 168/415 [00:00<00:00, 1679.83it/s]\rLoading weights:  81%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588  | 336/415 [00:00<00:00, 1089.68it/s]\rLoading weights: 100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588| 415/415 [00:00<00:00, 645.53it/s] \n\rLoading weights:   0%|          | 0/415 [00:00<?, ?it/s]\rLoading weights:  45%|\u2588\u2588\u2588\u2588\u258d     | 186/415 [00:00<00:00, 1736.30it/s]\rLoading weights:  87%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258b | 360/415 [00:00<00:00, 1623.21it/s]\rLoading weights: 100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588| 415/415 [00:00<00:00, 1669.43it/s]\n\rLoading weights:   0%|          | 0/415 [00:00<?, ?it/s]\rLoading weights:  28%|\u2588\u2588\u258a       | 118/415 [00:00<00:00, 1128.91it/s]\rLoading weights:  56%|\u2588\u2588\u2588\u2588\u2588\u258c    | 231/415 [00:00<00:00, 380.32it/s] \rLoading weights:  71%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588   | 293/415 [00:00<00:00, 324.39it/s]\rLoading weights:  81%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f | 338/415 [00:00<00:00, 298.37it/s]\rLoading weights:  90%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588 | 375/415 [00:01<00:00, 301.85it/s]\rLoading weights: 100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588| 415/415 [00:01<00:00, 367.15it/s]
+============================ slowest 15 durations =============================
+85.82s call     tests_lc/test_t2v8f_lc.py::test_a_identity_b0
+35.42s call     tests_lc/test_t2v8f_lc.py::test_c_merged_equals_training_side
+21.48s call     tests_lc/test_t2v8f_lc.py::test_b_lever_moves_48_tensors
+8.77s call     tests_lc/test_t2v8f_lc.py::test_d_guards
+
+(8 durations < 0.005s hidden.  Use -vv to show these durations.)
+=========================== short test summary info ===========================
+FAILED tests_lc/test_t2v8f_lc.py::test_d_guards - AssertionError: lora_fold_a...
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 3 passed in 158.52s (0:02:38)

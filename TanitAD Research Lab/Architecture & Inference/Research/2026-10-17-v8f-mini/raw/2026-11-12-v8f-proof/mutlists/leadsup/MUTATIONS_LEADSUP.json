@@ -1,0 +1,266 @@
+{
+ "lever": "leadsup",
+ "counts": {
+  "n_mutations": 14,
+  "n_red": 12,
+  "n_still_green": 2,
+  "n_other": 0,
+  "control_green": true,
+  "control_after_green": true
+ },
+ "counts_line": "n 14 | red 12 | still-green 2 | other 0 | control green yes | control after green yes",
+ "checks": [
+  "stack/tests/test_v8f_lead_sup.py"
+ ],
+ "written_utc": "2026-11-19T07:21:09Z",
+ "control": {
+  "rc": 0,
+  "n_tests": 16,
+  "failed": [],
+  "green": true,
+  "seconds": 7,
+  "err": ""
+ },
+ "control_after": {
+  "rc": 0,
+  "n_tests": 16,
+  "failed": [],
+  "green": true,
+  "seconds": 7,
+  "err": ""
+ },
+ "mutations": [
+  {
+   "id": "m1_term_not_added_to_total",
+   "file": "stack/tanitad/models/v8f_mini.py",
+   "original_line": "total = total + cfg.w_lead_sup * T[\"lead_sup\"] if cfg.lead_sup == \"on\" else total",
+   "mutated_line": "total = total + 0.0 * T[\"lead_sup\"] if cfg.lead_sup == \"on\" else total",
+   "expected_red": [
+    "test_v8f_lead_sup.py::test_the_total_gains_exactly_w_times_the_term_and_the_line_is_load_bearing"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_v8f_lead_sup.py::test_the_total_gains_exactly_w_times_the_term_and_the_line_is_load_bearing"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  },
+  {
+   "id": "m2_window_mask_any_instead_of_all",
+   "file": "stack/tanitad/models/v8f_mini.py",
+   "original_line": "okw = batch[\"frame_ok\"].unfold(1, hist, 1).all(-1)",
+   "mutated_line": "okw = batch[\"frame_ok\"].unfold(1, hist, 1).any(-1)",
+   "expected_red": [
+    "test_v8f_lead_sup.py::test_frame_alignment_labels_of_non_end_frames_change_nothing_end_frames_do"
+   ],
+   "observed": "STILL-GREEN",
+   "rc": 0,
+   "failed": [],
+   "expected_all_red": false,
+   "why": ""
+  },
+  {
+   "id": "m3_label_frames_shifted_by_one",
+   "file": "stack/tanitad/models/v8f_mini.py",
+   "original_line": "sl = slice(hist - 1, hist - 1 + fe)",
+   "mutated_line": "sl = slice(hist, hist + fe)",
+   "expected_red": [
+    "test_v8f_lead_sup.py::test_frame_alignment_labels_of_non_end_frames_change_nothing_end_frames_do"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_v8f_lead_sup.py::test_reach_term_alone_head_and_state_encoder_nonzero_everything_else_exactly_zero",
+    "test_v8f_lead_sup.py::test_detach_on_the_term_reaches_nothing_outside_the_head_exactly",
+    "test_v8f_lead_sup.py::test_all_labels_masked_reads_exactly_zero_term_parts_and_gradients",
+    "test_v8f_lead_sup.py::test_frame_alignment_labels_of_non_end_frames_change_nothing_end_frames_do",
+    "test_v8f_lead_sup.py::test_the_total_gains_exactly_w_times_the_term_and_the_line_is_load_bearing"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  },
+  {
+   "id": "m4_gap_mask_ignores_missing_gap_labels",
+   "file": "stack/tanitad/models/v8f_mini.py",
+   "original_line": "m_g = (okw & torch.isfinite(gap)).float()",
+   "mutated_line": "m_g = okw.float()",
+   "expected_red": [
+    "test_v8f_lead_sup.py::test_all_labels_masked_reads_exactly_zero_term_parts_and_gradients"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_v8f_lead_sup.py::test_all_labels_masked_reads_exactly_zero_term_parts_and_gradients"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  },
+  {
+   "id": "m5_gap_part_divided_by_presence_count",
+   "file": "stack/tanitad/models/v8f_mini.py",
+   "original_line": "t_g = (hg * m_g).sum() / m_g.sum().clamp_min(1.0)",
+   "mutated_line": "t_g = (hg * m_g).sum() / m_p.sum().clamp_min(1.0)",
+   "expected_red": [
+    "test_v8f_lead_sup.py::test_all_labels_masked_reads_exactly_zero_term_parts_and_gradients"
+   ],
+   "observed": "STILL-GREEN",
+   "rc": 0,
+   "failed": [],
+   "expected_all_red": false,
+   "why": ""
+  },
+  {
+   "id": "m6_gap_output_scale_changed",
+   "file": "stack/tanitad/models/v8f_mini.py",
+   "original_line": "LEAD_SUP_GAP_SCALE_M = 50.0",
+   "mutated_line": "LEAD_SUP_GAP_SCALE_M = 500.0",
+   "expected_red": [
+    "test_v8f_lead_sup.py::test_checkpoint_cfg_round_trip_loads_in_the_eval_builder_and_the_read_hook_runs"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_v8f_lead_sup.py::test_checkpoint_cfg_round_trip_loads_in_the_eval_builder_and_the_read_hook_runs"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  },
+  {
+   "id": "m7_head_always_reads_detached_state",
+   "file": "stack/tanitad/models/v8f_mini.py",
+   "original_line": "res[\"lead_out\"] = self.lead_head(z1.detach() if self.lead_detach else z1)",
+   "mutated_line": "res[\"lead_out\"] = self.lead_head(z1.detach())",
+   "expected_red": [
+    "test_v8f_lead_sup.py::test_reach_term_alone_head_and_state_encoder_nonzero_everything_else_exactly_zero"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_v8f_lead_sup.py::test_reach_term_alone_head_and_state_encoder_nonzero_everything_else_exactly_zero",
+    "test_v8f_lead_sup.py::test_detach_on_the_term_reaches_nothing_outside_the_head_exactly"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  },
+  {
+   "id": "m8_detach_flag_ignored",
+   "file": "stack/tanitad/models/v8f_mini.py",
+   "original_line": "self.lead_detach = cfg.lead_sup_detach == \"on\"",
+   "mutated_line": "self.lead_detach = False",
+   "expected_red": [
+    "test_v8f_lead_sup.py::test_detach_on_the_term_reaches_nothing_outside_the_head_exactly"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_v8f_lead_sup.py::test_detach_on_the_term_reaches_nothing_outside_the_head_exactly"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  },
+  {
+   "id": "m9_config_accepts_on_with_zero_weight",
+   "file": "stack/tanitad/models/v8f_mini.py",
+   "original_line": "if not self.w_lead_sup > 0.0:",
+   "mutated_line": "if False:",
+   "expected_red": [
+    "test_v8f_lead_sup.py::test_flags_have_entries_defaults_and_the_config_refuses_what_it_cannot_build"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_v8f_lead_sup.py::test_flags_have_entries_defaults_and_the_config_refuses_what_it_cannot_build"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  },
+  {
+   "id": "m10_built_weight_lies",
+   "file": "stack/tanitad/models/v8f_mini.py",
+   "original_line": "lv[\"w_lead_sup\"] = float(self.cfg.w_lead_sup) if lh is not None else 0.0",
+   "mutated_line": "lv[\"w_lead_sup\"] = 2.0 * float(self.cfg.w_lead_sup) if lh is not None else 0.0",
+   "expected_red": [
+    "test_v8f_lead_sup.py::test_declared_vs_built_goes_red_on_every_lie"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_v8f_lead_sup.py::test_declared_vs_built_goes_red_on_every_lie"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  },
+  {
+   "id": "m11_weight_flag_default_on",
+   "file": "stack/scripts/v8f_mini_train.py",
+   "original_line": "ap.add_argument(\"--w-lead-sup\", dest=\"w_lead_sup\", type=float, default=0.0,",
+   "mutated_line": "ap.add_argument(\"--w-lead-sup\", dest=\"w_lead_sup\", type=float, default=1.0,",
+   "expected_red": [
+    "test_v8f_lead_sup.py::test_flags_have_entries_defaults_and_the_config_refuses_what_it_cannot_build"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_v8f_lead_sup.py::test_flags_have_entries_defaults_and_the_config_refuses_what_it_cannot_build",
+    "test_v8f_lead_sup.py::test_default_model_has_no_head_no_key_no_term",
+    "test_v8f_lead_sup.py::test_init_of_the_head_arm_is_G_plus_the_head_only_and_the_count",
+    "test_v8f_lead_sup.py::test_declared_vs_built_goes_red_on_every_lie",
+    "test_v8f_lead_sup.py::test_checkpoint_cfg_round_trip_loads_in_the_eval_builder_and_the_read_hook_runs",
+    "test_v8f_lead_sup.py::test_the_driving_output_path_does_not_read_the_head_or_the_labels"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  },
+  {
+   "id": "m12_gate_accepts_on_with_zero_weight",
+   "file": "stack/scripts/v8f_mini_train.py",
+   "original_line": "    if not a.w_lead_sup > 0.0:",
+   "mutated_line": "    if False:",
+   "expected_red": [
+    "test_v8f_lead_sup.py::test_declared_vs_built_goes_red_on_every_lie"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_v8f_lead_sup.py::test_declared_vs_built_goes_red_on_every_lie"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  },
+  {
+   "id": "m13_gap_label_range_widened",
+   "file": "stack/tanitad/data/v8f_mini_data.py",
+   "original_line": "LEAD_SUP_GAP_MAX_M = 60.0",
+   "mutated_line": "LEAD_SUP_GAP_MAX_M = 600.0",
+   "expected_red": [
+    "test_v8f_lead_sup.py::test_the_label_file_is_not_read_from_the_lead_head_arrays_and_gap_range_is_0_to_60"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_v8f_lead_sup.py::test_label_rule_equals_the_literal_hist_run_ls_slope_rule",
+    "test_v8f_lead_sup.py::test_the_label_file_is_not_read_from_the_lead_head_arrays_and_gap_range_is_0_to_60"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  },
+  {
+   "id": "m14_closing_run_break_removed",
+   "file": "stack/tanitad/data/v8f_mini_data.py",
+   "original_line": "LEAD_SUP_STEP_MAX_M = 3.0 ",
+   "mutated_line": "LEAD_SUP_STEP_MAX_M = 3000.0 ",
+   "expected_red": [
+    "test_v8f_lead_sup.py::test_planted_series_give_the_exact_slope_and_the_run_breaks_where_it_must"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_v8f_lead_sup.py::test_label_rule_equals_the_literal_hist_run_ls_slope_rule",
+    "test_v8f_lead_sup.py::test_planted_series_give_the_exact_slope_and_the_run_breaks_where_it_must"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  }
+ ]
+}

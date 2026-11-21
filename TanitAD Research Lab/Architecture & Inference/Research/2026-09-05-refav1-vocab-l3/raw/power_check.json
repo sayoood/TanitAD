@@ -1,0 +1,126 @@
+{
+ "why": "ERRATUM-1 \u00a7E2 \u2014 THE BLOCKING POWER CHECK, before any panel GPU is spent.",
+ "kappa_threshold": 0.04,
+ "kappa_threshold_why": "the MEASURED vocabulary crossover (R 25 m); the inherited 1e-3 is R 1000 m and is the label-set error behind the retracted 20.5 % recall",
+ "v0_floor_mps": 1.0,
+ "ha0_ext_form": "INTEGRATOR (refav1_arm.hold_ext_controls), M11",
+ "panel": {
+  "dump": "C:/Users/Admin/refav1_sweep/dumps/dump_ccos_comp",
+  "n_windows": 282,
+  "n_excluded_low_v0": 16,
+  "n_turning": 10,
+  "n_straight": 256,
+  "turn_fraction_of_valid": 0.03759398496240601
+ },
+ "ade": {
+  "all_valid": {
+   "cl": {
+    "n": 266,
+    "mean": 0.7347446084022522
+   },
+   "ha": {
+    "n": 266,
+    "mean": 0.5564098358154297
+   },
+   "ha0": {
+    "n": 266,
+    "mean": 0.542762815952301
+   },
+   "ha0_ext": {
+    "n": 266,
+    "mean": 0.5369039177894592
+   },
+   "ol": {
+    "n": 266,
+    "mean": 0.43576014041900635
+   }
+  },
+  "turning": {
+   "cl": {
+    "n": 10,
+    "mean": 0.8884850740432739
+   },
+   "ha": {
+    "n": 10,
+    "mean": 0.8767070770263672
+   },
+   "ha0": {
+    "n": 10,
+    "mean": 1.0859529972076416
+   },
+   "ha0_ext": {
+    "n": 10,
+    "mean": 0.9512676000595093
+   },
+   "ol": {
+    "n": 10,
+    "mean": 1.1279791593551636
+   }
+  },
+  "straight": {
+   "cl": {
+    "n": 256,
+    "mean": 0.7287390828132629
+   },
+   "ha": {
+    "n": 256,
+    "mean": 0.5438982248306274
+   },
+   "ha0": {
+    "n": 256,
+    "mean": 0.5215444564819336
+   },
+   "ha0_ext": {
+    "n": 256,
+    "mean": 0.5207177996635437
+   },
+   "ol": {
+    "n": 256,
+    "mean": 0.40872034430503845
+   }
+  }
+ },
+ "deficit_cl_minus_ha0ext": {
+  "turning": -0.06278257071971893,
+  "straight": 0.20802129805088043,
+  "turning_ratio_cl_over_ha0ext": 0.9340012073516846,
+  "target_50pct_shrink": -0.03139128535985947
+ },
+ "CONTROL_floors_bit_identical_across_seeds": {
+  "same_grid": true,
+  "per_arm": {
+   "ha": {
+    "max_abs_diff": 0.0,
+    "bit_identical": true
+   },
+   "ha0": {
+    "max_abs_diff": 0.0,
+    "bit_identical": true
+   },
+   "ha0_ext": {
+    "max_abs_diff": 0.0,
+    "bit_identical": true
+   }
+  },
+  "passes": true,
+  "why": "ha/ha0/ha0_ext read no plan seed; if one moves the harness is not holding what it claims and nothing below counts"
+ },
+ "inference_seed_floor": {
+  "arm_a": "C:/Users/Admin/refav1_drive/abt/dump_argmax",
+  "arm_b": "C:/Users/Admin/refav1_drive/abt/dump_argmax_seed1",
+  "n_windows": 28,
+  "n_turning": 1,
+  "n_excluded_low_v0": 1,
+  "abs_delta_all_valid": 0.19070512056350708,
+  "abs_delta_turning": 0.0,
+  "paired_absmean_turning": 0.0,
+  "what_it_answers": "would ANOTHER INFERENCE RUN say this? (ERRATUM E1) \u2014 not another training run (H-ESTIM-SEED-1) and not another draw of episodes (the bootstrap)"
+ },
+ "VERDICT": {
+  "target_50pct_shrink_m": -0.03139128535985947,
+  "inference_seed_floor_m": 0.0,
+  "target_over_floor": null,
+  "runnable_as_preregistered": false,
+  "reading": "UNDERPOWERED BY CONSTRUCTION \u2014 half the deficit is inside the planner's own run-to-run noise; redesign (more windows, more inference seeds) before spending GPU"
+ }
+}

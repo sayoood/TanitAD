@@ -1,0 +1,90 @@
+{
+  "arm": "flagship-v1arch-v2bal-30k",
+  "ckpt": "/workspace/experiments/flagship-v1arch-v2bal-30k/ckpt.pt",
+  "corpus": "/workspace/pai_epcache/physicalai-oodval-6f4b94e4c7ce-q90",
+  "corpus_label": "PhysicalAI-OODval-official-q90",
+  "select": "explicit:best-12-by-ADE-CHERRY-PICKED",
+  "episodes_rendered": 12,
+  "episodes_available": 290,
+  "frames": 2059,
+  "fps": 10,
+  "duration_s": 205.9,
+  "resolution": "962x684",
+  "mean_ade_over_rendered_m": 0.1701,
+  "per_episode": [
+    {
+      "episode": 50,
+      "frames": 171,
+      "mean_ade_m": 0.1378,
+      "max_ade_m": 0.2849
+    },
+    {
+      "episode": 267,
+      "frames": 177,
+      "mean_ade_m": 0.1444,
+      "max_ade_m": 0.5642
+    },
+    {
+      "episode": 257,
+      "frames": 171,
+      "mean_ade_m": 0.139,
+      "max_ade_m": 0.3636
+    },
+    {
+      "episode": 253,
+      "frames": 170,
+      "mean_ade_m": 0.1771,
+      "max_ade_m": 0.5237
+    },
+    {
+      "episode": 95,
+      "frames": 170,
+      "mean_ade_m": 0.1614,
+      "max_ade_m": 0.368
+    },
+    {
+      "episode": 37,
+      "frames": 170,
+      "mean_ade_m": 0.1759,
+      "max_ade_m": 0.2478
+    },
+    {
+      "episode": 268,
+      "frames": 171,
+      "mean_ade_m": 0.1787,
+      "max_ade_m": 0.5527
+    },
+    {
+      "episode": 81,
+      "frames": 171,
+      "mean_ade_m": 0.1807,
+      "max_ade_m": 0.794
+    },
+    {
+      "episode": 207,
+      "frames": 170,
+      "mean_ade_m": 0.1798,
+      "max_ade_m": 0.2249
+    },
+    {
+      "episode": 233,
+      "frames": 171,
+      "mean_ade_m": 0.1899,
+      "max_ade_m": 0.705
+    },
+    {
+      "episode": 41,
+      "frames": 170,
+      "mean_ade_m": 0.1789,
+      "max_ade_m": 0.5166
+    },
+    {
+      "episode": 136,
+      "frames": 177,
+      "mean_ade_m": 0.1972,
+      "max_ade_m": 0.8339
+    }
+  ],
+  "\u26d4_what_this_is": "OPEN LOOP: the ego follows the logged trajectory, so there is no control drift. The rollout decodes the EXPERT'S TRUE FUTURE ACTIONS (rollout.collect's PC2 record: actions_source='expert_future', pc2_pass False by construction) \u2014 this is world-model FIDELITY, not autonomous driving and not a hierarchy result. The banner says so on every frame.",
+  "\u26d4_not_a_selection_claim": "episodes were chosen by 'explicit:best-12-by-ADE-CHERRY-PICKED'. 'spread' is evenly spaced across the corpus and is the only non-cherry-picked option here; the choice is burned into the banner so a clip cannot be quoted without it."
+}

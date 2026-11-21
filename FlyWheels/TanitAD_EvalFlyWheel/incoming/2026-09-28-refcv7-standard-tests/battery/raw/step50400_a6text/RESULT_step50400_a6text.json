@@ -1,0 +1,898 @@
+{
+ "tool": "result_r7.py",
+ "tag": "step50400_a6text",
+ "written": "2026-10-05T02:09:30+0200",
+ "ckpt": "D:/refcv7_eval_kit/ckpt/ckpt_50400.pt",
+ "ckpt_md5": "b418d0fc4a92a6848c246a6a7c50207b",
+ "step": 50400,
+ "spec_sha256": "2286d5f42d0858dd98550de79403c3b398114954d06bf3904f076daf80890fe7",
+ "is_milestone": true,
+ "tier": "T1 self-action OPEN LOOP (status UNRULED for an action-free model); never closed loop, never driving performance",
+ "estimator": "FULL-SET point estimate; paired episode-cluster bootstrap, n_boot 2000, seed 0",
+ "g0": {
+  "G0": "FAIL",
+  "amendment": "A6",
+  "G0_as_registered": "FAIL",
+  "G0_A2": "PASS",
+  "reasons_A2": [],
+  "n_seeds": 24,
+  "reasons_as_registered": [
+   "eval_agent_det_ap0p5_heavy_truck_0_20 [DETECTION] in-run 0.0 vs seeds mean 0.03333 (sd 0)",
+   "eval_agent_det_ap1_heavy_truck_0_20 [DETECTION] in-run 0.07143 vs seeds mean 0.03333 (sd 0)",
+   "eval_agent_det_ap1_heavy_truck_all [DETECTION] in-run 0.03571 vs seeds mean 0.01515 (sd 0)",
+   "eval_agent_det_ap2_stroller_0_20 [DETECTION] in-run 0.33333 vs seeds mean 0.25 (sd 0)",
+   "eval_agent_det_ap2_stroller_all [DETECTION] in-run 0.16667 vs seeds mean 0.125 (sd 0)",
+   "eval_agent_det_ap4_bus_0_20 [DETECTION] in-run 0.09091 vs seeds mean 0.11111 (sd 0)",
+   "eval_box3d_det_ap1_bus_20_40 [DETECTION] in-run 0.16667 vs seeds mean 0.125 (sd 0)",
+   "eval_box3d_det_ap1_bus_40_60 [DETECTION] in-run 0.16667 vs seeds mean 0.11111 (sd 0)",
+   "eval_box3d_det_ap1_bus_all [DETECTION] in-run 0.08611 vs seeds mean 0.05897 (sd 0)",
+   "eval_box3d_det_ap2_bus_40_60 [DETECTION] in-run 0.16667 vs seeds mean 0.11111 (sd 0)",
+   "eval_box3d_det_ap2_bus_all [DETECTION] in-run 0.28333 vs seeds mean 0.2119 (sd 0)",
+   "eval_box3d_det_ap4_bus_40_60 [DETECTION] in-run 0.16667 vs seeds mean 0.11111 (sd 0)",
+   "eval_box3d_det_ap4_bus_all [DETECTION] in-run 0.28333 vs seeds mean 0.2119 (sd 0)"
+  ],
+  "reasons": [
+   "eval_agent_det_ap0p5_heavy_truck_0_20 [DETECTION] in-run 0.0 vs seeds mean 0.03333 (sd 0)",
+   "eval_agent_det_ap1_heavy_truck_0_20 [DETECTION] in-run 0.07143 vs seeds mean 0.03333 (sd 0)",
+   "eval_agent_det_ap1_heavy_truck_all [DETECTION] in-run 0.03571 vs seeds mean 0.01515 (sd 0)",
+   "eval_agent_det_ap2_stroller_0_20 [DETECTION] in-run 0.33333 vs seeds mean 0.25 (sd 0)",
+   "eval_agent_det_ap2_stroller_all [DETECTION] in-run 0.16667 vs seeds mean 0.125 (sd 0)",
+   "eval_agent_det_ap4_bus_0_20 [DETECTION] in-run 0.09091 vs seeds mean 0.11111 (sd 0)",
+   "eval_box3d_det_ap1_bus_20_40 [DETECTION] in-run 0.16667 vs seeds mean 0.125 (sd 0)",
+   "eval_box3d_det_ap1_bus_40_60 [DETECTION] in-run 0.16667 vs seeds mean 0.11111 (sd 0)",
+   "eval_box3d_det_ap1_bus_all [DETECTION] in-run 0.08611 vs seeds mean 0.05897 (sd 0)",
+   "eval_box3d_det_ap2_bus_40_60 [DETECTION] in-run 0.16667 vs seeds mean 0.11111 (sd 0)",
+   "eval_box3d_det_ap2_bus_all [DETECTION] in-run 0.28333 vs seeds mean 0.2119 (sd 0)",
+   "eval_box3d_det_ap4_bus_40_60 [DETECTION] in-run 0.16667 vs seeds mean 0.11111 (sd 0)",
+   "eval_box3d_det_ap4_bus_all [DETECTION] in-run 0.28333 vs seeds mean 0.2119 (sd 0)"
+  ],
+  "by_class_counts": {
+   "DETECTION": 338,
+   "EXCLUDED": 11,
+   "MATCHED": 29,
+   "UNDEFINED": 94,
+   "DERIVED": 2,
+   "COUNT": 210,
+   "SMOOTH": 179,
+   "STOCHASTIC": 5,
+   "MAP10_COUNTS": 160,
+   "MAP10_IOU": 80,
+   "THRESHOLD_TARGET": 1
+  },
+  "medians": {
+   "SMOOTH": 0.0017463692711396526,
+   "MATCHED": 0.001966931274188506,
+   "MAP10_COUNTS": 6.264216843010992e-05,
+   "DETECTION_abs01": 0.00012999999999999915,
+   "SMOOTH_phi_rel": 0.002933830830800721,
+   "SMOOTH_bar": 0.008801492492402162
+  },
+  "mutation_detection": {
+   "m1": {
+    "detected": true,
+    "n_terms_out": 22,
+    "how": null
+   },
+   "m2": {
+    "detected": true,
+    "n_terms_out": 62,
+    "how": null
+   },
+   "m4": {
+    "detected": true,
+    "n_terms_out": 2,
+    "how": null
+   }
+  },
+  "blind_spots_named": [],
+  "wrapper_clause": "PASS",
+  "requires_grad_control": {
+   "batch": 2,
+   "ddim_eps": "zeros",
+   "n_terms": 444,
+   "n_differ": 25,
+   "differ_first20": {
+    "loss": [
+     45.55180740356445,
+     45.55181121826172
+    ],
+    "traj": [
+     0.33196166157722473,
+     0.3319616913795471
+    ],
+    "cls": [
+     0.0005634549888782203,
+     0.0005634548142552376
+    ],
+    "sel_v3": [
+     1.7232871055603027,
+     1.7232868671417236
+    ],
+    "cascade": [
+     2.198111057281494,
+     2.198112964630127
+    ],
+    "agent_presence": [
+     0.4693145751953125,
+     0.46931448578834534
+    ],
+    "agent_centre": [
+     0.9398897290229797,
+     0.9398929476737976
+    ],
+    "agent_size": [
+     0.9317961931228638,
+     0.9317964911460876
+    ],
+    "agent_layer0": [
+     5.685135841369629,
+     5.6851348876953125
+    ],
+    "agent_presence_layer0": [
+     0.44962164759635925,
+     0.44962167739868164
+    ],
+    "agent_layer1": [
+     6.005756855010986,
+     6.005756378173828
+    ],
+    "agent_presence_layer1": [
+     0.46799492835998535,
+     0.4679949879646301
+    ],
+    "agent_layer2": [
+     5.977854251861572,
+     5.977856636047363
+    ],
+    "agent_presence_layer2": [
+     0.4693145751953125,
+     0.46931448578834534
+    ],
+    "box3d": [
+     18.684463500976562,
+     18.684467315673828
+    ],
+    "box3d_presence": [
+     0.4272235333919525,
+     0.4272235929965973
+    ],
+    "box3d_centre": [
+     1.1076008081436157,
+     1.1076005697250366
+    ],
+    "box3d_size": [
+     0.7563096284866333,
+     0.7563097476959229
+    ],
+    "box3d_rates": [
+     5.500154972076416,
+     5.5001540184021
+    ],
+    "box3d_z": [
+     0.2421906441450119,
+     0.24219071865081787
+    ]
+   },
+   "max_rel_all": 3.4244983411159285e-06,
+   "differ_all_rel": {
+    "loss": 8.374414722623054e-08,
+    "traj": 8.977639841329194e-08,
+    "cls": 3.09914698045461e-07,
+    "sel_v3": 1.383510491851815e-07,
+    "cascade": 8.677216860786854e-07,
+    "agent_presence": 1.9050541340182723e-07,
+    "agent_centre": 3.4244983411159285e-06,
+    "agent_size": 3.1983734863537556e-07,
+    "agent_layer0": 1.6774872984855477e-07,
+    "agent_presence_layer0": 6.628311280610287e-08,
+    "agent_layer1": 7.93966805041848e-08,
+    "agent_presence_layer1": 1.2736173228258206e-07,
+    "agent_layer2": 3.988363868645948e-07,
+    "agent_presence_layer2": 1.9050541340182723e-07,
+    "box3d": 2.0416413162869896e-07,
+    "box3d_presence": 1.3951629560796423e-07,
+    "box3d_centre": 2.152567760411459e-07,
+    "box3d_size": 1.576196904822138e-07,
+    "box3d_rates": 1.7339044467800137e-07,
+    "box3d_z": 3.0763288248503873e-07,
+    "box3d_h": 1.954346084594652e-07,
+    "box3d_layer0": 3.3373264444240866e-07,
+    "box3d_presence_layer0": 2.465670014080825e-07,
+    "box3d_layer1": 5.175875893143599e-07,
+    "box3d_presence_layer2": 1.3951629560796423e-07
+   }
+  },
+  "json": "D:\\refcv7_eval_kit\\battery\\step50400\\g0.json",
+  "G0_A5": "PASS",
+  "reasons_A5": [],
+  "G0_A6": "FAIL",
+  "reasons_A6": [
+   "eval_agent_det_ap0p5_heavy_truck_0_20 [DETECTION] in-run 0.0 vs seeds mean 0.03333 (sd 0)",
+   "eval_agent_det_ap1_heavy_truck_0_20 [DETECTION] in-run 0.07143 vs seeds mean 0.03333 (sd 0)",
+   "eval_agent_det_ap1_heavy_truck_all [DETECTION] in-run 0.03571 vs seeds mean 0.01515 (sd 0)",
+   "eval_agent_det_ap2_stroller_0_20 [DETECTION] in-run 0.33333 vs seeds mean 0.25 (sd 0)",
+   "eval_agent_det_ap2_stroller_all [DETECTION] in-run 0.16667 vs seeds mean 0.125 (sd 0)",
+   "eval_agent_det_ap4_bus_0_20 [DETECTION] in-run 0.09091 vs seeds mean 0.11111 (sd 0)",
+   "eval_box3d_det_ap1_bus_20_40 [DETECTION] in-run 0.16667 vs seeds mean 0.125 (sd 0)",
+   "eval_box3d_det_ap1_bus_40_60 [DETECTION] in-run 0.16667 vs seeds mean 0.11111 (sd 0)",
+   "eval_box3d_det_ap1_bus_all [DETECTION] in-run 0.08611 vs seeds mean 0.05897 (sd 0)",
+   "eval_box3d_det_ap2_bus_40_60 [DETECTION] in-run 0.16667 vs seeds mean 0.11111 (sd 0)",
+   "eval_box3d_det_ap2_bus_all [DETECTION] in-run 0.28333 vs seeds mean 0.2119 (sd 0)",
+   "eval_box3d_det_ap4_bus_40_60 [DETECTION] in-run 0.16667 vs seeds mean 0.11111 (sd 0)",
+   "eval_box3d_det_ap4_bus_all [DETECTION] in-run 0.28333 vs seeds mean 0.2119 (sd 0)"
+  ],
+  "a6_registration": {
+   "registered": true,
+   "file_mtime": "2026-10-04T08:17:14",
+   "g0_started": "2026-10-04T13:20:42",
+   "text": "684a3b5c07f90329985099b6eea62a8dacfbacee65931aa168fb855fba3eaf7f  SPEC.md after AMENDMENT A6 (2026-10-04T08:17:13+02:00), registered by the Master Mind before any step-50400 G0/battery number\n"
+  },
+  "a6_rescued": [],
+  "a6_threshold_terms": {
+   "eval_tacv6_goal_conf_bce": {
+    "inrun": 0.14591,
+    "mean": 0.14494,
+    "a6_lo": 0.14224843595836026,
+    "a6_hi": 0.18356920461913012,
+    "a6_t_replay": 0.14494052702369822,
+    "a6_delta_logit_max": 0.21564994007349014,
+    "a6_n_undecidable": 16,
+    "a6_n_flipped_by_arm": 2,
+    "verdict": "OK"
+   }
+  },
+  "a6_medians": {
+   "SMOOTH": 0.0017463692711396526,
+   "MATCHED": 0.001966931274188506,
+   "MAP10_COUNTS": 6.264216843010992e-05,
+   "DETECTION_abs01": 0.00012999999999999915,
+   "SMOOTH_phi_rel": 0.002933830830800721,
+   "SMOOTH_bar": 0.008801492492402162
+  },
+  "text_override": {
+   "gate_source": "REGISTERED A6 TEXT, corrected judge (Master Mind ruling 2026-10-04)",
+   "ruling": "Master Mind ruling 2026-10-04: the REGISTERED A6 text is the record (A6 item 7 keeps A2's low-support rule; hashed 2026-10-04T08:17:13+02:00, before any step-50,400 number). The coded judge omitted A6 from the A2 low-support tuple; the corrected judge applies the same criterion. Both records carried: G0-A6 as registered (text) PASS; G0-A6 as coded FAIL.",
+   "text_verdict_file": "D:\\Projects\\TanitAD\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-28-refcv7-standard-tests\\battery\\raw\\step50400\\g0_A6_text.json",
+   "text_verdict_sha256": "f3c7de52db67e742a42b1d4610009c644c1559ee40a21ae6b409f057d00725b2",
+   "record_lines": [
+    "G0-A6 as registered (text): PASS, computed by the corrected judge after the coded verdict was read; the criterion is unchanged",
+    "G0-A6 as coded: FAIL (judge defect: the A2 low-support tuple omitted A6)"
+   ],
+   "G0_A6_text": "PASS",
+   "mutation_detection_text": {
+    "m1": 5,
+    "m2": 62,
+    "m4": 2
+   },
+   "re_verified_by_judge_in_use": true
+  }
+ },
+ "bars_planner": [
+  {
+   "id": "BAR-R7-1",
+   "surface": "S2",
+   "a": "ha0_ext",
+   "b": "os",
+   "metric": "ade_m",
+   "statement": "os - echo (ADE 0-2 s) < 0, separated, at both inference seeds",
+   "per_inference_seed": {
+    "0": {
+     "pair": "os_minus_ha0ext",
+     "delta": -0.0102,
+     "lo": -0.026,
+     "hi": 0.0067,
+     "separated": false,
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "pass_separated": false,
+     "within_2x_inference_seed_floor": false
+    },
+    "1": {
+     "pair": "os_minus_ha0ext",
+     "delta": -0.0096,
+     "lo": -0.0253,
+     "hi": 0.0069,
+     "separated": false,
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "pass_separated": false,
+     "within_2x_inference_seed_floor": false
+    }
+   },
+   "inference_seed_floor_m": 0.0006,
+   "verdict": "FAILED"
+  },
+  {
+   "id": "BAR-R7-2",
+   "surface": "S2",
+   "a": "b_refcv6_38k_s{s}",
+   "b": "os",
+   "metric": "ade_m",
+   "statement": "os - refcv6@38k < 0, separated, on the same windows (same inference seed)",
+   "per_inference_seed": {
+    "0": {
+     "status": "ABSENT",
+     "pair": "os_minus_refcv6_38k_s0"
+    },
+    "1": {
+     "status": "ABSENT",
+     "pair": "os_minus_refcv6_38k_s1"
+    }
+   },
+   "inference_seed_floor_m": 0.0006,
+   "verdict": "PENDING (the refcv6@38k S2 rolls run LAST in the milestone chain; SPEC A4)"
+  },
+  {
+   "id": "BAR-R7-3",
+   "surface": "S6",
+   "a": "ha0_ext",
+   "b": "os",
+   "metric": "ade_m",
+   "statement": "(non-regression) at 6 s, os - echo < 0, separated",
+   "per_inference_seed": {
+    "0": {
+     "pair": "os_minus_ha0ext",
+     "delta": -0.9804,
+     "lo": -1.294,
+     "hi": -0.6815,
+     "separated": true,
+     "n_windows": 3668,
+     "n_episodes": 139,
+     "pass_separated": true,
+     "within_2x_inference_seed_floor": false
+    },
+    "1": {
+     "pair": "os_minus_ha0ext",
+     "delta": -0.9796,
+     "lo": -1.2855,
+     "hi": -0.6842,
+     "separated": true,
+     "n_windows": 3668,
+     "n_episodes": 139,
+     "pass_separated": true,
+     "within_2x_inference_seed_floor": false
+    }
+   },
+   "inference_seed_floor_m": 0.0006,
+   "verdict": "PASS (single training seed; training-seed floor unmeasured)"
+  }
+ ],
+ "inference_seed_replicate": {
+  "max_abs_path_diff_m": 2.5867824321612716,
+  "ade": {
+   "delta": -0.0006,
+   "lo": -0.0031,
+   "hi": 0.0019,
+   "ci95": 0.0025,
+   "p_delta_gt0": 0.3155,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 4754,
+   "n_episodes": 139,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "n_dropped_nonfinite": 0
+  },
+  "floor_m": 0.0006
+ },
+ "baselines_missing": [
+  "b_refcv6_38k_s0",
+  "b_refcv6_38k_s1"
+ ],
+ "strategic": {
+  "status": "NOT APPLICABLE",
+  "n": 0,
+  "reason": "the strategic layer is OFF (--no-strategic); its route loss is gated off in training, so the route head is untrained"
+ },
+ "families": {
+  "0": {
+   "os_minus_ha0ext": {
+    "ADE": {
+     "ade_m": {
+      "delta": -0.0102,
+      "lo": -0.026,
+      "hi": 0.0067,
+      "ci95": 0.0164,
+      "p_delta_gt0": 0.119,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 4754,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     },
+     "fde_m": {
+      "delta": -0.036,
+      "lo": -0.0759,
+      "hi": 0.0054,
+      "ci95": 0.0407,
+      "p_delta_gt0": 0.048,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 4754,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     }
+    },
+    "longitudinal": {
+     "LON_speed_mae_mps": {
+      "delta": 0.004,
+      "lo": -0.0102,
+      "hi": 0.0198,
+      "ci95": 0.015,
+      "p_delta_gt0": 0.699,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 4754,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     },
+     "LON_along_mae_m": {
+      "delta": -0.0086,
+      "lo": -0.0225,
+      "hi": 0.0057,
+      "ci95": 0.0141,
+      "p_delta_gt0": 0.12,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 4754,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     },
+     "LON_accel_mae_mps2": {
+      "delta": 0.0534,
+      "lo": 0.0329,
+      "hi": 0.0753,
+      "ci95": 0.0212,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 4754,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     }
+    },
+    "lateral": {
+     "LAT_cross_mae_m": {
+      "delta": -0.0049,
+      "lo": -0.0158,
+      "hi": 0.0059,
+      "ci95": 0.0109,
+      "p_delta_gt0": 0.186,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 4754,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     },
+     "LAT_heading_mae_deg": {
+      "delta": -0.0961,
+      "lo": -0.2042,
+      "hi": 0.0146,
+      "ci95": 0.1094,
+      "p_delta_gt0": 0.0475,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 4509,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 245
+     },
+     "LAT_yaw_rate_mae_radps_valid": {
+      "delta": -0.0047,
+      "lo": -0.0075,
+      "hi": -0.0021,
+      "ci95": 0.0027,
+      "p_delta_gt0": 0.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 4473,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 281,
+      "amendment": "A3"
+     }
+    },
+    "tactical": {
+     "TAC_traj_lat_correct": {
+      "delta": 0.0206,
+      "lo": 0.0103,
+      "hi": 0.0306,
+      "ci95": 0.0102,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 4754,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     },
+     "TAC_traj_lon_correct": {
+      "delta": -0.0133,
+      "lo": -0.0288,
+      "hi": 0.0006,
+      "ci95": 0.0147,
+      "p_delta_gt0": 0.0305,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 4754,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     }
+    }
+   },
+   "os_minus_refcv6_38k_s0": "ABSENT",
+   "filteroff_minus_os": {
+    "ADE": {
+     "ade_m": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 4754,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     },
+     "fde_m": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 4754,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     }
+    },
+    "longitudinal": {
+     "LON_speed_mae_mps": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 4754,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     },
+     "LON_along_mae_m": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 4754,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     },
+     "LON_accel_mae_mps2": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 4754,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     }
+    },
+    "lateral": {
+     "LAT_cross_mae_m": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 4754,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     },
+     "LAT_heading_mae_deg": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 4538,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 216
+     },
+     "LAT_yaw_rate_mae_radps_valid": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 4500,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 254,
+      "amendment": "A3"
+     }
+    },
+    "tactical": {
+     "TAC_traj_lat_correct": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 4754,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     },
+     "TAC_traj_lon_correct": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 4754,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     }
+    }
+   }
+  },
+  "1": {
+   "os_minus_ha0ext": {
+    "ADE": {
+     "ade_m": {
+      "delta": -0.0096,
+      "lo": -0.0253,
+      "hi": 0.0069,
+      "ci95": 0.0161,
+      "p_delta_gt0": 0.1335,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 4754,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     },
+     "fde_m": {
+      "delta": -0.0347,
+      "lo": -0.0754,
+      "hi": 0.006,
+      "ci95": 0.0407,
+      "p_delta_gt0": 0.051,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 4754,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     }
+    },
+    "longitudinal": {
+     "LON_speed_mae_mps": {
+      "delta": 0.0048,
+      "lo": -0.0095,
+      "hi": 0.0202,
+      "ci95": 0.0148,
+      "p_delta_gt0": 0.731,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 4754,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     },
+     "LON_along_mae_m": {
+      "delta": -0.008,
+      "lo": -0.0214,
+      "hi": 0.0065,
+      "ci95": 0.0139,
+      "p_delta_gt0": 0.131,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 4754,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     },
+     "LON_accel_mae_mps2": {
+      "delta": 0.0542,
+      "lo": 0.034,
+      "hi": 0.0764,
+      "ci95": 0.0212,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 4754,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     }
+    },
+    "lateral": {
+     "LAT_cross_mae_m": {
+      "delta": -0.0049,
+      "lo": -0.0153,
+      "hi": 0.0056,
+      "ci95": 0.0105,
+      "p_delta_gt0": 0.1855,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 4754,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     },
+     "LAT_heading_mae_deg": {
+      "delta": -0.1071,
+      "lo": -0.2109,
+      "hi": -0.0042,
+      "ci95": 0.1033,
+      "p_delta_gt0": 0.0205,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 4507,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 247
+     },
+     "LAT_yaw_rate_mae_radps_valid": {
+      "delta": -0.005,
+      "lo": -0.0077,
+      "hi": -0.0024,
+      "ci95": 0.0026,
+      "p_delta_gt0": 0.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 4472,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 282,
+      "amendment": "A3"
+     }
+    },
+    "tactical": {
+     "TAC_traj_lat_correct": {
+      "delta": 0.021,
+      "lo": 0.0105,
+      "hi": 0.0317,
+      "ci95": 0.0106,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 4754,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     },
+     "TAC_traj_lon_correct": {
+      "delta": -0.008,
+      "lo": -0.0221,
+      "hi": 0.0053,
+      "ci95": 0.0137,
+      "p_delta_gt0": 0.128,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 4754,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     }
+    }
+   },
+   "os_minus_refcv6_38k_s1": "ABSENT",
+   "filteroff_minus_os": "ABSENT"
+  }
+ },
+ "bars_map": {
+  "BAR-M7-1": "FAILED",
+  "BAR-M7-2": "FAILED",
+  "BAR-M7-3": "FAILED",
+  "BAR-M7-4": "FAILED"
+ },
+ "bars_box": {
+  "BAR-B7-1": {
+   "verdict": "PASS (single training seed; no replicate floor measured for boxes)",
+   "cell": {
+    "delta": 0.1051,
+    "lo": 0.0796,
+    "hi": 0.1289,
+    "ci95": 0.0246,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "pooled_ap2m",
+    "n_windows": 4532,
+    "n_episodes": 139,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   }
+  },
+  "BAR-B7-2": {
+   "verdict": "FAILED",
+   "cell": {
+    "delta": -0.2204,
+    "lo": -0.2448,
+    "hi": -0.1885,
+    "ci95": 0.0282,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "pooled_f1",
+    "n_windows": 4532,
+    "n_episodes": 139,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   }
+  }
+ },
+ "box_conf_ratio_watch": {
+  "band": [
+   0.5,
+   1.5
+  ],
+  "refcv7": 0.008158508158508158,
+  "alarm": 1.0,
+  "note": "A10 \u00a715.3: a Watch ALARM outside [0.5, 1.5], never a bar"
+ }
+}

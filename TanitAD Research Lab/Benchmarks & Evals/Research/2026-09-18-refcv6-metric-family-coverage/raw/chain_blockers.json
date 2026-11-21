@@ -1,0 +1,112 @@
+{
+ "tool": "chain_blockers_probe.py",
+ "blocker_1_param_breakdown": {
+  "per_config": {
+   "C:/Users/Admin/tanitad-caches/refcv6-zhverify-20260918/run/config.json": {
+    "named_lines": [
+     "core",
+     "gstr_cond",
+     "nav_inject",
+     "phi_tac",
+     "scorer",
+     "str_goal_head",
+     "tac_behaviour_gate_v6",
+     "tac_decoder_v6",
+     "tac_heads",
+     "tac_latent_proj"
+    ],
+    "sum_named": 45703450,
+    "stamped_total": 50519066,
+    "delta": 4815616,
+    "refcv6_perception_branch_params_total": 4815616,
+    "has_perception_line": false,
+    "delta_equals_branch": true
+   },
+   "C:/Users/Admin/tanitad-caches/refcv6-pipeval-20260917/rate416/config.json": {
+    "named_lines": [
+     "core",
+     "gstr_cond",
+     "nav_inject",
+     "phi_tac",
+     "scorer",
+     "str_goal_head",
+     "tac_behaviour_gate_v6",
+     "tac_decoder_v6",
+     "tac_heads",
+     "tac_latent_proj"
+    ],
+    "sum_named": 45703450,
+    "stamped_total": 50519066,
+    "delta": 4815616,
+    "refcv6_perception_branch_params_total": 4815616,
+    "has_perception_line": false,
+    "delta_equals_branch": true
+   }
+  },
+  "verdict": "BLOCKS -- the rebuilt model reproduces only sum(named); the stamped total is larger by exactly the perception branch, so cross_check_config raises SystemExit before the weights are loaded",
+  "n_configs_agreeing": 2
+ },
+ "blocker_2_lead_block": {
+  "path": "C:/Users/Admin/tanitad-wt-bevtac/TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-02-b1-eval-lead-block/raw/b1_eval_lead_block.npz",
+  "keys": [
+   "clip_id",
+   "coverage_json",
+   "dt_s",
+   "eid",
+   "frame",
+   "gap0_m",
+   "gt_headway_min_m",
+   "gt_min_ttc_s",
+   "gt_n_steps_in_corridor",
+   "gt_time_gap_min_s",
+   "has_lead",
+   "headway_time_s",
+   "lead_lens",
+   "lead_track_id",
+   "leads",
+   "meta_json",
+   "rel_speed_mps",
+   "speeds",
+   "state",
+   "straight_checked_m",
+   "straight_dep_m",
+   "t0_s",
+   "ts_rel_s"
+  ],
+  "n_rows": 29556,
+  "leads_shape": [
+   29556,
+   10,
+   2
+  ],
+  "missing_required": [],
+  "has_strata_keys": [
+   "eid",
+   "state"
+  ],
+  "n_distinct_clip_id": 147,
+  "ts_rel_s": [
+   0.2,
+   0.4,
+   0.6000000000000001,
+   0.8,
+   1.0,
+   1.2000000000000002,
+   1.4000000000000001,
+   1.6,
+   1.8,
+   2.0
+  ],
+  "dt_s": [
+   0.2
+  ],
+  "states": {
+   "NOT_STRAIGHT": 10622,
+   "NO_LEAD": 6480,
+   "NO_LABEL": 4113,
+   "LEAD": 8341
+  },
+  "verdict": "AVAILABLE -- every field distance_keeping needs is present"
+ },
+ "_not_probed_here": "the strict-load refusal (refcv3_arm.py:1128-1133) and the forward raise (refc_v3.py:2002-2012) are read from source, not exercised -- exercising them would need the 578 MB ckpt loaded and a forward pass, and blocker 1 fires first in any case (:1102 precedes :1104)."
+}

@@ -1,0 +1,30 @@
+--- a/stack/tanitad/refs/refc_v3.py
++++ b/stack/tanitad/refs/refc_v3.py
+@@ -1918,7 +1918,8 @@
+                 ego_poses: Tensor | None = None,
+                 ego_n_past: int | None = None,
+                 perception_grid: Tensor | None = None,
+-                perception_valid: Tensor | None = None) -> dict:
++                perception_valid: Tensor | None = None,
++                ego_actions: Tensor | None = None) -> dict:
+         """``ego_state`` is the v4 block ``[B, 5]`` from :func:`ego_state_at_t0`
+         — (v0, a_long, yaw_rate, curvature, keep) at the LAST OBSERVED frame.
+ 
+@@ -2118,7 +2119,8 @@
+                              withheld_speed=withheld_speed,
+                              gp_point=gp_point, gp_valid=gp_valid,
+                              agent_gt=agent_gt,
+-                             ego_poses=ego_poses, ego_n_past=ego_n_past)
++                             ego_poses=ego_poses, ego_n_past=ego_n_past,
++                             ego_actions=ego_actions)
+         cache: dict = {}
+         # ⭐ refcv6 §4/§5. `_scene_hook` returns None when the behaviour decoder
+         # is not built, and `refc.py` skips every seam on a None — so an arm
+@@ -2177,6 +2179,7 @@
+                         gp_point=gp_point, gp_valid=gp_valid,
+                         agent_gt=agent_gt,
+                         ego_poses=ego_poses, ego_n_past=ego_n_past,
++                        ego_actions=ego_actions,
+                         **_core_kw)
+         # the per-row withholding draw, for diagnostics that split kept from
+         # withheld rows (the trainer's `withheld_speed_mae`); `ego_keep_frac`

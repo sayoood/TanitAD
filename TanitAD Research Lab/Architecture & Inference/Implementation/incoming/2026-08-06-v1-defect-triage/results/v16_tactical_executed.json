@@ -1,0 +1,184 @@
+{
+ "_n_windows": 6834,
+ "_grid": "stride-1, 6,834 windows, 40 OOD-val q90 episodes",
+ "_label_rule": "refb_labels.classify_maneuver over the 2 s window horizon (executed, from the trajectory; the DECLARED head is frozen and identical in both arms)",
+ "v1arch": {
+  "dist": {
+   "lane_keep": 2515,
+   "turn_left": 523,
+   "turn_right": 681,
+   "accelerate": 2668,
+   "brake_stop": 447
+  },
+  "agreement_with_gt_executed": 0.501609599063506,
+  "confusion_gt_rows_pred_cols": [
+   [
+    1522,
+    125,
+    208,
+    1641,
+    18
+   ],
+   [
+    20,
+    393,
+    0,
+    41,
+    1
+   ],
+   [
+    23,
+    5,
+    412,
+    9,
+    4
+   ],
+   [
+    261,
+    0,
+    37,
+    677,
+    0
+   ],
+   [
+    689,
+    0,
+    24,
+    300,
+    424
+   ]
+  ],
+  "toggle_rate": 0.061958867866673296,
+  "toggle_rate_ci95": [
+   0.04782359467455622,
+   0.07736253480682213
+  ],
+  "mean_dwell_windows": 26.124772678302087,
+  "mean_dwell_s": 2.612477267830209,
+  "estimator": "episode-cluster bootstrap over 40 episodes, 2000 draws"
+ },
+ "v16": {
+  "dist": {
+   "lane_keep": 4302,
+   "turn_left": 435,
+   "turn_right": 435,
+   "accelerate": 577,
+   "brake_stop": 1085
+  },
+  "agreement_with_gt_executed": 0.7693883523558677,
+  "confusion_gt_rows_pred_cols": [
+   [
+    3137,
+    8,
+    17,
+    146,
+    206
+   ],
+   [
+    30,
+    422,
+    0,
+    2,
+    1
+   ],
+   [
+    31,
+    0,
+    410,
+    11,
+    1
+   ],
+   [
+    548,
+    2,
+    1,
+    418,
+    6
+   ],
+   [
+    556,
+    3,
+    7,
+    0,
+    871
+   ]
+  ],
+  "toggle_rate": 0.030906790230885252,
+  "toggle_rate_ci95": [
+   0.024281309824225546,
+   0.03840698601925978
+  ],
+  "mean_dwell_windows": 43.8007387955182,
+  "mean_dwell_s": 4.38007387955182,
+  "estimator": "episode-cluster bootstrap over 40 episodes, 2000 draws"
+ },
+ "gt": {
+  "dist": {
+   "lane_keep": 3514,
+   "turn_left": 455,
+   "turn_right": 453,
+   "accelerate": 975,
+   "brake_stop": 1437
+  },
+  "agreement_with_gt_executed": 1.0,
+  "confusion_gt_rows_pred_cols": [
+   [
+    3514,
+    0,
+    0,
+    0,
+    0
+   ],
+   [
+    0,
+    455,
+    0,
+    0,
+    0
+   ],
+   [
+    0,
+    0,
+    453,
+    0,
+    0
+   ],
+   [
+    0,
+    0,
+    0,
+    975,
+    0
+   ],
+   [
+    0,
+    0,
+    0,
+    0,
+    1437
+   ]
+  ],
+  "toggle_rate": 0.03178827300150829,
+  "toggle_rate_ci95": [
+   0.027659313725490197,
+   0.03591116283791623
+  ],
+  "mean_dwell_windows": 35.224464285714284,
+  "mean_dwell_s": 3.5224464285714285,
+  "estimator": "episode-cluster bootstrap over 40 episodes, 2000 draws"
+ },
+ "paired_toggle_v16_minus_v1arch": {
+  "delta": -0.031052077635788038,
+  "lo": -0.046192217567500374,
+  "hi": -0.01766356513019411,
+  "separated": true,
+  "estimator": "paired episode-cluster bootstrap, 2000 draws"
+ },
+ "paired_toggle_v16_minus_gt": {
+  "delta": -0.0008814827706230424,
+  "lo": -0.0066185172293769575,
+  "hi": 0.005451618517229357,
+  "separated": false,
+  "estimator": "paired episode-cluster bootstrap, 2000 draws"
+ }
+}

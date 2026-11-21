@@ -1,0 +1,166 @@
+{
+ "what": "refcv8 S6c off-drivable rate (BASE = emitted native plan) on HOLD, inference seed 0. LOWER is better. Reported only: no bar applied.",
+ "model": "refcv8 EMA-48,852 per-frame (trace F:/refcv9_mapsel/trace_s0.npz); HOLD discipline: refcv8 only, no refcv9 arm",
+ "tier": "T1 self-action open loop on logged eval139 frames (not driving performance)",
+ "estimator": "point: S6c off_drivable rate of the emitted (native) plan, BASE arm, over the subset's S6c windows (mapsel_score.py map_compliance.S6c.arms.BASE.off_drivable); interval: episode-cluster bootstrap (taniteval ci.episode_cluster_bootstrap, B 2000, seed 0) over EPISODES = another draw of episodes only, NOT another training run, NOT another inference run (one checkpoint, one inference seed)",
+ "infer_seed": 0,
+ "evidence_class": "MEASURED (ours; artifact paths below)",
+ "git_commit": "52e3a02cdbf23e908215af556603d726ac77e780 (mirror C:/Users/Admin/tanitad-push, branch agent/arch-inf-20260803; s6c_hold.py itself is an unlanded hold)",
+ "HOLD": {
+  "subset": "hold",
+  "rate": 0.1596958174904943,
+  "n": 1578,
+  "n_episodes": 68,
+  "bootstrap": {
+   "mean": 0.159696,
+   "lo": 0.112002,
+   "hi": 0.214968,
+   "ci95": 0.051483,
+   "se": 0.026626,
+   "reducer": "mean",
+   "n_windows": 1578,
+   "n_episodes": 68,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap",
+   "display_dp": 6
+  },
+  "controls": {
+   "K_G_fields": false,
+   "K_B_emitted_equals_fan_at_sel_idx": true,
+   "K_C_sel_idx_is_argmax_over_e9_eligible": true,
+   "K_A_roll_equals_L1_BASEos": true,
+   "K_RAST_all_windows_have_a_raster": true,
+   "K_LC_JOIN": true,
+   "TAU_CAL": true,
+   "K_LIVE_own_map_beats_deranged_donor": true,
+   "K_DERANGED_donor_is_another_episode": true,
+   "K_BASE_arm_equals_emitted_pick": true,
+   "K_STAGE_BASE_staged_equals_banked_S2_pos": true,
+   "K_S6_alignment": true,
+   "K_HUMAN_off_drivable_le_2pct": true,
+   "K_SENS_blind_lateral_shift": false,
+   "K_GTLIVE_GT_T1_lowers_off_drivable": true
+  }
+ },
+ "DEV_beside": {
+  "subset": "dev",
+  "rate": 0.19801980198019803,
+  "n": 1616,
+  "n_episodes": 68,
+  "bootstrap": {
+   "mean": 0.19802,
+   "lo": 0.140412,
+   "hi": 0.264424,
+   "ci95": 0.062006,
+   "se": 0.030883,
+   "reducer": "mean",
+   "n_windows": 1616,
+   "n_episodes": 68,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap",
+   "display_dp": 6
+  },
+  "controls": {
+   "K_G_fields": false,
+   "K_B_emitted_equals_fan_at_sel_idx": true,
+   "K_C_sel_idx_is_argmax_over_e9_eligible": true,
+   "K_A_roll_equals_L1_BASEos": true,
+   "K_RAST_all_windows_have_a_raster": true,
+   "K_LC_JOIN": true,
+   "TAU_CAL": true,
+   "K_LIVE_own_map_beats_deranged_donor": true,
+   "K_DERANGED_donor_is_another_episode": true,
+   "K_BASE_arm_equals_emitted_pick": true,
+   "K_STAGE_BASE_staged_equals_banked_S2_pos": true,
+   "K_S6_alignment": true,
+   "K_HUMAN_off_drivable_le_2pct": true,
+   "K_SENS_blind_lateral_shift": false,
+   "K_GTLIVE_GT_T1_lowers_off_drivable": true
+  }
+ },
+ "split": {
+  "file": "C:/t/s6chold/split.json",
+  "sha256": "ca5af0203320aba4f89e09be81a6bf079d9d4d77708ccb8a3ca2a0ea57e8db0a",
+  "md5": "9e0e2fafbddb4dcb4be6c20b5ea09e48"
+ },
+ "real_data_control": {
+  "required": "same code restricted to ALL windows reproduces MAPSEL_RESULT.json BASE off_drivable 0.17917, n 3198 exactly",
+  "EXACT_REPRODUCTION_STATUS": "NOT ACHIEVABLE FROM THE CURRENT INPUTS -- the exact control did not run",
+  "why": "5 raster files in F:/refcv9_mapsel/rast_s0 are 0 bytes (np.load raises EOFError), mtime 2026-10-25/26 = roll time, so corrupted since banking: e010_w0082, e010_w0087, e010_w0097, e010_w0102, e042_w0139 (both episodes are in DEV). No other copy found on F:, C:/Users/Admin/refcv8_pf, qland or TanitAD-artifacts.",
+  "banked": {
+   "rate": 0.17917448405253283,
+   "n": 3198,
+   "off_count": 573,
+   "file": "C:\\t\\s6chold\\exp\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-25-refcv9-mapsel\\result\\s0\\MAPSEL_RESULT.json",
+   "sha256": "240aacef1fb87bd5a4ff4a7771dba5793ae6d67c79481a7d036237cb61dcf8c6"
+  },
+  "all_minus_5_windows": {
+   "rate": 0.17908578584846588,
+   "n": 3194,
+   "off_count": 572,
+   "n_episodes": 136,
+   "dropped": [
+    [
+     10,
+     82
+    ],
+    [
+     10,
+     87
+    ],
+    [
+     10,
+     97
+    ],
+    [
+     10,
+     102
+    ],
+    [
+     42,
+     139
+    ]
+   ],
+   "flag": "--drop-zero-byte-rasters (dev/all only; refused for hold)"
+  },
+  "gap_to_banked": {
+   "n": 4,
+   "off_count": 1,
+   "reading": "the 4 S6c-with-GT windows that sit on the 5 corrupt rasters carry 573-572 = 1 off-drivable flag; consistent with the banked value, NOT a reproduction of it (that 1 is inferred by subtraction, UNVERIFIED)"
+  },
+  "additivity_control_PASS": {
+   "HOLD_n+DEV_n": 3194,
+   "ALL_n": 3194,
+   "HOLD_off+DEV_off": 572,
+   "ALL_off": 572,
+   "per_window_vectors_of_hold_and_dev_equal_the_ALL_run_restricted_to_their_episodes": true,
+   "hold_dev_episodes_disjoint_and_union_equals_all": true
+  },
+  "admissibility": "the brief's exact-reproduction condition is NOT met; the HOLD number is therefore NOT admissible under that rule as written. MM decides whether the additivity control plus a 1-flag gap is accepted, or the 5 rasters are regenerated (needs a refcv8 roll of 3 windows on GPU).",
+  "MM_CLOSED_2026-11-08": {
+   "status": "EXACT REPRODUCTION ACHIEVED: the block above is superseded on this point. ALL windows, rate 0.17917448405253283, n 3198, abs_diff 0.0 against MAPSEL_RESULT.json (float equality).",
+   "how": "the gt of the 5 zero-byte rasters was rebuilt on CPU from the 10 cm labels into a scratch overlay (ctl5_run.py); the same rebuild on 30 other windows was byte-equal to their banked gt; own planes of the 5 are zeros, which the BASE off-drivable rate does not read",
+   "artifact": "REAL_DATA_CONTROL_CLOSED.json",
+   "note": "F:/refcv9_mapsel/rast_s0 still holds the 5 zero-byte files: not written by this control"
+  }
+ },
+ "caveats": [
+  "mapsel_score was run on the subset trace: its own composite verdict (VOID), K_G_fields (meta counts are the full-trace counts) and K_SENS read false/irrelevant on subsets and are not used; only K_BASE and K_RAST gate, both PASS.",
+  "refcv8 retime staging caveat inherited from s6c_dev (refcv8_retime_deploy_gains_pf.json for BASE).",
+  "one checkpoint, one inference seed (seed 1 trace does not exist)."
+ ],
+ "code_sha256": {
+  "s6c_hold.py": "92c98ee5124b40272a30a54fb47d02bc3c277f39b3053ce356fc1f5ecb1e65b4",
+  "test_r9e3_s6c_hold.py": "ee25efdd5e49582cd78c3c1f3c8968aff8f8797f915a1026b1fbb8f62900c3fa"
+ },
+ "raw": {
+  "dir": "E:/Projects/TanitAD-artifacts/dagland/e3/refcv8_hold/raw",
+  "files": [
+   "read_hold.json",
+   "read_dev.json",
+   "read_all.json",
+   "base_vec_*.npz"
+  ]
+ },
+ "ADMISSIBLE": "YES (MM 2026-11-08): the brief's exact real-data control passes. One checkpoint, one inference seed."
+}

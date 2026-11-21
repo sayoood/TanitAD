@@ -1,0 +1,498 @@
+# stack/scripts/train_v6_staged.py -- vs origin tip c36b6ddd (LF blobs) -- R1/R4 2026-09-27; apply from the repo root with: git apply <this file>
+--- a/stack/scripts/train_v6_staged.py
++++ b/stack/scripts/train_v6_staged.py
+@@ -485,8 +485,15 @@
+     # ⛔ F-8 (T5 temporal consistency) deliberately has NO ENTRY HERE: it holds
+     # no parameters and no buffers, so like `MpcRefiner` it changes no
+     # state_dict key and there is nothing for this allowlist to adjudicate.
++    # ⭐ 2026-09-27, R1/R4 (PI directive for v7F): S-T may also introduce the
++    # tactical-decision -> plan port (`tac_op_port.`, --tac-op-cond, planner
++    # group) and the max-speed INPUT port (`vmax_tac.`, --max-speed-input-v6,
++    # layer_tac group). Both ZERO-INIT, so the introduction is loss-continuous;
++    # both are trained by the stage that introduces them. ⚠️ CARRY RULE, as
++    # for `t2_head.`: an S-T ckpt with them needs the flags on S-S/S-J, or the
++    # keys are UNEXPECTED and `load_stage_init` is fatal (not chain-enforced).
+     "S-T": ("cand_score.", "cond_tac_dyn.", "prop_diffusion.", "fallback.",
+-            "agent_slots.", "t2_head."),
++            "agent_slots.", "t2_head.", "tac_op_port.", "vmax_tac."),
+     "S-S": (),                  # trains layer_str, which S-T already carried
+     "S-J": (),                  # joint polish introduces nothing
+ }
+@@ -4259,7 +4266,12 @@
+         # PREFLIGHT refusal, not here — a refusal is auditable and lands in
+         # config.json, a silent default is invisible. If nav_cond is on and
+         # these are absent, V6Stack.forward raises NavTokenMissing by name.
+-        nav_token=batch.get("nav_token"), nav_args=batch.get("nav_args"))
++        nav_token=batch.get("nav_token"), nav_args=batch.get("nav_args"),
++        # ⭐ R1a (PI 2026-09-27): the clip's max speed, the TACTICAL input.
++        # `.get` for the same reason as nav: MANDATORY-ness is the stack's own
++        # named refusal (SpeedMaxInputMissing) plus the preflight. ⛔ The plan
++        # CAP is deliberately NOT passed here: the training plan is uncapped.
++        v_max_ms=batch.get("v_max_ms"), v_max_valid=batch.get("v_max_valid"))
+     states = out["z_op_win"]                                   # [B, W, d_op]
+     z_true = batch["z_true_steps"]
+ 
+@@ -5307,6 +5319,13 @@
+         # F-1: the g_str->P_T port. Default False = the incumbent build,
+         # byte-identical; the chain's S-T command surface turns it on.
+         tac_goal_cond=bool(getattr(a, "tac_goal_cond", False)),
++        # ⭐ R4 / R1a / R1b (PI 2026-09-27, v7F). Defaults ("off"/False/False)
++        # = the incumbent build, byte-identical (tests/test_v7f_r1r4.py). A
++        # RECORDED-args namespace from an older run lacks the keys and so
++        # rebuilds exactly what it trained (the getattr fallbacks).
++        tac_op_cond=str(getattr(a, "tac_op_cond", "off") or "off"),
++        max_speed_input_v6=bool(getattr(a, "max_speed_input_v6", False)),
++        plan_vmax_cap=bool(getattr(a, "plan_vmax_cap", False)),
+         # F-7 / T2: the manoeuvre-contrastive projector. Default False = the
+         # incumbent build, 87,893,449 params / 405 keys (MEASURED); ON adds
+         # +164,225 params / +5 keys at the default d_tac (also MEASURED, in
+@@ -5361,6 +5380,11 @@
+     # v6.0 — that is what keeps every existing checkpoint loadable.
+     cfg.tac_vocab_version = str(getattr(a, "tac_vocab_version", "v6.0"))
+     stack = V6Stack(cfg)
++    # ⭐ R1/R4 G-DVB (2026-09-27): argv vs the BUILT stack for the levers this
++    # change adds, refused before anything else runs. (The binding launch gate
++    # has no train_v6_staged profile yet -- declared_vs_built_v6's docstring.)
++    from tanitad.train.declared_vs_built_v6 import refuse_on_mismatch as _dvb6
++    _dvb6(stack, a)
+     if str(getattr(a, "o5_target", "live")) == "ema":
+         from tanitad.models.v6 import _EmaCopy
+         # ⚠️ these deepcopy whatever the modules hold NOW (random init);
+@@ -5710,6 +5734,15 @@
+     if not cfg.shared_encoder:
+         out["own_frames_tac"] = torch.randn(b, c, h, w, generator=g)
+         out["own_frames_str"] = torch.randn(b, c, h, w, generator=g)
++    # ⭐ R1a: present ONLY when the stack built the max-speed port (the F-11
++    # rule above: a key that is always there cannot prove the refusal fires).
++    # RAW v_hi in m/s spanning every bin incl. the > 120 km/h clamp; the last
++    # row INVALID, so the dry-run exercises the all-zero one-hot too.
++    if getattr(stack, "vmax_tac", None) is not None:
++        out["v_max_ms"] = torch.rand(b, generator=g) * 35.0 + 3.0
++        out["v_max_valid"] = torch.ones(b)
++        if b >= 2:
++            out["v_max_valid"][-1] = 0.0
+     if device is not None:
+         out = {kk: ([t.to(device) for t in v] if isinstance(v, list)
+                     else v.to(device)) for kk, v in out.items()}
+@@ -5899,6 +5932,20 @@
+         print(f"[v6 dry] s2-labels OK · {s2_report['n_records']} records · "
+               f"g_str census {s2_report['token_census_records']['g_str']}",
+               flush=True)
++    # ⭐ R1: the max-speed sidecar, REALLY read when supplied (same rule as
++    # --s2-labels above); the per-window JOIN needs a corpus and is NOT
++    # exercised -- the synthetic batch carries v_max keys instead, and
++    # dry_run.json says which of the two happened.
++    r1_report: dict = {"exercised": False,
++                       "_read": "--speed-max-sidecar-v6 NOT supplied; the "
++                                "tactical input (if on) ran on synthetic "
++                                "v_max keys"}
++    if getattr(a, "speed_max_sidecar_v6", None):
++        from tanitad.refs import refcv6_max_speed as _v6ms
++        _bys, _rep = _v6ms.read_speed_max_sidecar_v6(
++            str(a.speed_max_sidecar_v6), label_md5=label_blob_md5_for_vmax(a))
++        r1_report = _rep | {"exercised": True,
++                            "join": "NOT exercised (dry-run has no corpus)"}
+     o1_k = min(a.o1_k, a.dry_k)
+     o5_k = min(a.o5_k, a.dry_k)
+     trainable = [p for p in stack.parameters() if p.requires_grad]
+@@ -6012,6 +6059,13 @@
+         print(f"[v6 dry {step}] {json.dumps(row)}", flush=True)
+     spec = spectrum_report(torch.randn(64, min(stack.cfg.d_op, 64)))
+     iso = stack.assert_isolation(batch_size=1, strict=False)
++    # ⭐ R1b: the cap exercised through the REAL eval-mode forward (the
++    # training steps above are uncapped by design); absent when the flag is.
++    if getattr(a, "plan_vmax_cap", False):
++        r1_report["vmax_cap_smoke"] = vmax_cap_smoke(
++            stack, batch=max(int(a.dry_batch), 4), seed=int(a.seed))
++        print(f"[v6 dry] R1 cap smoke · "
++              f"{json.dumps(r1_report['vmax_cap_smoke'])}", flush=True)
+     cfg_json = _run_config(a, stack, freeze, decl_audit)
+     if init_report.get("exercised"):
+         cfg_json["init"] = init_report
+@@ -6056,6 +6110,11 @@
+                              if obs_mon is not None else
+                              {"every": 0, "_read": "--obs-monitor-every 0"}),
+         "s2_labels": s2_report,
++        # ⭐ R1/R4 (PI 2026-09-27): present only when a lever is on, so the
++        # default dry_run.json is untouched.
++        **({"r1_r4": r1_report | {"config": r1r4_config_block(a, stack)}}
++           if (r1_report.get("exercised") or "vmax_cap_smoke" in r1_report
++               or r1r4_config_block(a, stack)) else {}),
+         "gate_verdict": gate["verdict"],
+         "_read": "synthetic tensors — NO corpus. This proves the launch "
+                  "assembles and steps, and (when --prev-gate/--init-from were "
+@@ -6325,9 +6384,261 @@
+     return prov
+ 
+ 
++# ============================================================================
++# ⭐ R1 / R4 (PI directive 2026-09-27, v7F) — max speed + tactical -> operative
++# ============================================================================
++# PI, verbatim: *"both of them should get the max speed, which it must not be
++# exceeded ... All our tactical labels must be used to train the tactical layer
++# to estimate and choose the right tactical behaviors and goals which MUST
++# condition the operative planning."* The model side lives in `V6Stack`
++# (`tac_op_port`, `vmax_tac`, `emit(v_max=...)`) and
++# `tanitad/models/plan_speed_cap.py`; this block is the TRAINER side: the
++# sidecar join, the batch keys, the config stamp, the dry-run cap smoke and the
++# preflight refusals. Every default is OFF and byte-identical.
++
++def label_blob_md5_for_vmax(a) -> str | None:
++    """The md5 of the label blob this run loaded (``--nav-labels``, else
++    ``--s2-labels``) — what the refcv6 sidecar's ``source_md5`` must equal.
++    ``None`` when the run loads no label blob: the reader then cannot cross-
++    check the sidecar's provenance, and the join report SAYS so."""
++    import hashlib
++    for p in (getattr(a, "nav_labels", None), getattr(a, "s2_labels", None)):
++        if p and os.path.isfile(str(p)):
++            h = hashlib.md5()
++            with open(str(p), "rb") as fh:
++                for chunk in iter(lambda: fh.read(1 << 20), b""):
++                    h.update(chunk)
++            return h.hexdigest()
++    return None
++
++
++def build_vmax_join(sidecar_path, episodes, index, *,
++                    label_md5: str | None = None) -> dict:
++    """The refcv6 max-speed sidecar -> per-EPISODE ``(raw v_hi m/s, valid)``.
++
++    ⛔ The SAME reader and join key as refcv6 (``read_speed_max_sidecar_v6``,
++    ``sid = stable_episode_id(clip_id)`` = ``episode.episode_id`` here, the key
++    the S2 join already uses): the sidecar ships the RAW ``v_hi_ms`` and the
++    ladder is applied ONCE, on the model side. REFUSES when not one of this
++    split's windows joins to a valid ceiling — a constant all-zero channel
++    would be measured as noise while config.json stamps it ON.
++    """
++    from tanitad.refs import refcv6_max_speed as v6ms
++    by_sid, report = v6ms.read_speed_max_sidecar_v6(str(sidecar_path),
++                                                     label_md5=label_md5)
++    n_ep = len(episodes)
++    v = torch.zeros(n_ep)
++    ok = torch.zeros(n_ep)
++    for e_i, ep in enumerate(episodes):
++        r = by_sid.get(int(ep.episode_id))
++        if r is not None and float(r[1]) > 0.5:
++            v[e_i], ok[e_i] = float(r[0]), 1.0
++    n_win = len(index)
++    n_fed = int(sum(int(ok[int(e_i)] > 0.5) for e_i, _t in index))
++    if n_win and n_fed == 0:
++        raise SystemExit(
++            f"[v6] ⛔ --speed-max-sidecar-v6: NOT ONE of this split's {n_win} "
++            f"windows joins to a sidecar row with a ceiling ({report['n_valid']} "
++            f"valid rows in the sidecar) — a JOIN failure, most likely a sidecar "
++            f"built over a different split. Refusing rather than feeding a "
++            f"constant all-zero channel.")
++    return {"v": v, "ok": ok, "report": {
++        **report, "label_md5": label_md5,
++        "label_md5_note": (None if label_md5 else
++                           "⚠️ no --nav-labels/--s2-labels blob: the sidecar's "
++                           "source_md5 was NOT cross-checked"),
++        "n_episodes": n_ep, "n_episodes_fed": int(ok.sum()),
++        "n_windows": n_win, "n_windows_fed": n_fed,
++        "window_ceiling_frac": round(n_fed / max(n_win, 1), 6)}}
++
++
++def vmax_batch(join: dict, idx, index, device) -> dict:
++    """The per-WINDOW batch keys: ``v_max_ms`` (RAW v_hi, 0.0 where unknown)
++    and ``v_max_valid`` — joined through ``index[i] = (episode, t)``, the same
++    route the S2 join rides. The batch dict is a WHITELIST: these are added
++    explicitly at the build site, or they stop there."""
++    e = torch.tensor([int(index[int(i)][0]) for i in idx], dtype=torch.long)
++    return {"v_max_ms": join["v"][e].to(device),
++            "v_max_valid": join["ok"][e].to(device)}
++
++
++def r1r4_config_block(a, stack: V6Stack) -> dict:
++    """What config.json records for R1/R4 — EMPTY when every lever is off, so
++    a default run's record is untouched. Each block names what the lever
++    reads, where it enters, and whether the BUILT stack carries it."""
++    out: dict = {}
++    toc = str(getattr(a, "tac_op_cond", "off") or "off")
++    side = getattr(a, "speed_max_sidecar_v6", None)
++    if toc != "off":
++        out["tac_op_cond"] = {
++            "mode": toc, "port": "tac_op_port (planner group, zero-init)",
++            "built": getattr(stack, "tac_op_port", None) is not None,
++            "reads": ("e_a_tac = [vocab_a_lat.encode(act_head_lat(z_tac_p)), "
++                      "vocab_a_lon.encode(act_head_lon(z_tac_p))] -- the LAT x "
++                      "LON behaviour posteriors"),
++            "adds_to": "e_g_tac -> V6Stack.emit (fan, anchor head, selector)",
++            "gradient": ("plan loss -> port only (behaviour heads NOT trained "
++                         "through it)" if toc == "detached" else
++                         "plan loss -> port AND behaviour heads (e2e)"),
++            "disjointness": ("computed from the vision-derived tactical latent "
++                             "z_tac_p (+ the declared max-speed input when "
++                             "--max-speed-input-v6); no situation-classifier "
++                             "output in any form (PI 2026-08-03)")}
++    if bool(getattr(a, "max_speed_input_v6", False)):
++        from tanitad.refs import refcv6_max_speed as v6ms
++        out["speed_max_derivation_v6"] = v6ms.SPEED_MAX_DERIVATION_V6
++        out["max_speed_input_v6"] = {
++            "port": "vmax_tac (layer_tac group, zero-init Linear(4 -> d_tac))",
++            "built": getattr(stack, "vmax_tac", None) is not None,
++            "adds_to": ("z_tac_p, the planner-side tactical latent every "
++                        "tactical decision head reads; the WM-side z_tac is "
++                        "untouched"),
++            "sidecar": str(side) if side else None}
++    if bool(getattr(a, "plan_vmax_cap", False)):
++        from tanitad.models.plan_speed_cap import CAP_SEMANTICS
++        out["plan_vmax_cap"] = {
++            "semantics": CAP_SEMANTICS,
++            "limit_source": ("refcv6 sidecar RAW SPEED_BAND.v_hi_ms (oracle, "
++                             "ego-future, PI-authorised 2026-09-16) -> "
++                             "plan_speed_cap.plan_limit_from_vhi"),
++            "sidecar": str(side) if side else None,
++            "applies": ("INFERENCE: every eval-mode V6Stack.emit/forward MUST "
++                        "be given plan_v_max_ms (it refuses otherwise); the "
++                        "training forward and its plan loss are UNCAPPED")}
++    return out
++
++
++def assert_r1r4_record(cfg_json: dict, a) -> None:
++    """⛔ The R1 declarations are PRECONDITIONS, not fields — refused in BOTH
++    directions, before config.json is written: the refcv6 4-way stamp via its
++    own guard (``assert_speed_max_stamp_v6``: a channel with no stamp, and a
++    control that carries one), and the cap block likewise."""
++    from tanitad.refs import refcv6_max_speed as v6ms
++    v6ms.assert_speed_max_stamp_v6(
++        cfg_json, bool(getattr(a, "max_speed_input_v6", False)))
++    cap_on = bool(getattr(a, "plan_vmax_cap", False))
++    blk = cfg_json.get("plan_vmax_cap")
++    if cap_on and not (isinstance(blk, dict) and blk.get("limit_source")
++                       and "ego-future" in str(blk.get("limit_source"))):
++        raise SystemExit(
++            "[v6] ⛔ --plan-vmax-cap is ON but config.json would not declare "
++            "the cap's limit source (an ego-future oracle). Refusing rather "
++            "than banking an arm whose record cannot say what capped it.")
++    if blk is not None and not cap_on:
++        raise SystemExit(
++            "[v6] ⛔ config.json carries a `plan_vmax_cap` block but the cap is "
++            "OFF — a control stamped as capped. Drop the block or turn the "
++            "cap on.")
++
++
++def vmax_cap_smoke(stack: V6Stack, *, batch: int = 4, seed: int = 0) -> dict:
++    """⭐ R1b through the REAL inference path: ONE eval-mode ``forward`` with a
++    per-row limit from the ladder (``plan_limit_from_vhi``), no gradient.
++    Counts, per the refav1 evaluator's split: plans over the limit where t0
++    was UNDER it (must be 0), t0 speeds already over it (an INPUT property),
++    candidates the cap bound. Synthetic tensors: nothing here is quotable."""
++    from tanitad.models.plan_speed_cap import plan_limit_from_vhi
++    was = stack.training
++    stack.eval()
++    try:
++        b = stack.synthetic_batch(batch, seed=seed)
++        # FOUR deterministic regimes, tiled over the batch, so the smoke says
++        # something whatever the (random / near-CV) weights emit:
++        #   v0 12.0 · v_hi  5.0 -> limit  8.33 m/s: t0 ABOVE the limit (brake)
++        #   v0  8.0 · v_hi  8.0 -> limit  8.33 m/s: 0.33 m/s headroom
++        #   v0 20.0 · v_hi 30.0 -> limit 33.33 m/s: generous (non-binding)
++        #   v0  5.0 · invalid   -> +inf           : no limit known
++        pat_v0 = torch.tensor([12.0, 8.0, 20.0, 5.0])
++        pat_hi = torch.tensor([5.0, 8.0, 30.0, 0.0])
++        pat_ok = torch.tensor([1.0, 1.0, 1.0, 0.0])
++        rep = (batch + 3) // 4
++        b["v0"] = pat_v0.repeat(rep)[:batch].to(b["v0"].dtype)
++        v_hi = pat_hi.repeat(rep)[:batch]
++        valid = pat_ok.repeat(rep)[:batch]
++        b["plan_v_max_ms"] = plan_limit_from_vhi(v_hi, valid)
++        if "v_max_ms" in b:
++            b["v_max_ms"], b["v_max_valid"] = v_hi, valid
++        with torch.no_grad():
++            p = stack.forward(**b)["plan"]
++        over0 = p["vmax_v0_over_limit"]
++        ex = p["vmax_plan_excess_ms"]
++        ok_rows = ~over0
++        lim = b["plan_v_max_ms"]
++        return {
++            "n_rows": int(batch), "limits_ms": [round(float(x), 4) for x in lim],
++            "n_v0_over_limit": int(over0.sum()),
++            "n_candidates": int(ex.numel()),
++            "n_candidates_binding": int(p["vmax_binding"].sum()),
++            "n_plan_over_limit": int((ex[ok_rows] > 1e-4).sum()),
++            "max_plan_excess_ms_t0_under_limit": (
++                float(ex[ok_rows].max()) if bool(ok_rows.any()) else None),
++            "max_uncapped_speed_minus_limit_ms": float(
++                (p["vmax_plan_max_speed_uncapped"]
++                 - lim[:, None]).masked_fill(~torch.isfinite(lim)[:, None],
++                                             float("-inf")).max()),
++            "_read": "synthetic smoke through the eval-mode forward; proves "
++                     "the cap reaches the emitted plan, NOT a driving number"}
++    finally:
++        stack.train(was)
++
++
++def _preflight_r1_r4(a) -> list[str]:
++    """R1/R4 refusals — milliseconds, before any corpus or GPU."""
++    probs: list[str] = []
++    toc = str(getattr(a, "tac_op_cond", "off") or "off")
++    msi = bool(getattr(a, "max_speed_input_v6", False))
++    cap = bool(getattr(a, "plan_vmax_cap", False))
++    side = getattr(a, "speed_max_sidecar_v6", None)
++    dry = bool(getattr(a, "dry_run", False))
++    ack = bool(getattr(a, "control_arm_ack", False)
++               or getattr(a, "i_know_this_is_the_control_arm", False))
++    if a.stage == "S-W":
++        for flag, on, grp in (("--tac-op-cond", toc != "off", "planner"),
++                              ("--max-speed-input-v6", msi, "layer_tac")):
++            if on:
++                probs.append(
++                    f"--stage S-W with {flag}: the {grp} group is FROZEN in "
++                    f"S-W, so the zero-init port would be untrainable dead "
++                    f"weight AND would add keys to the state_dict — which "
++                    f"breaks a strict resume of an S-W run. It is an S-T lever "
++                    f"(STAGE_MAY_INTRODUCE['S-T']).")
++        if cap:
++            probs.append(
++                "--stage S-W with --plan-vmax-cap: S-W emits no trained plan "
++                "(λ_plan ≡ 0, the emission is at its zero init), so the cap "
++                "would be advertised on an arm with nothing to cap.")
++    if (msi or cap) and not side and not dry:
++        probs.append(
++            f"{'--max-speed-input-v6' if msi else '--plan-vmax-cap'} without "
++            f"--speed-max-sidecar-v6: nothing would supply the clip's max "
++            f"speed (R1, PI 2026-09-27). Build it with "
++            f"`scripts/build_refcv6_speed_max_window.py` (the refcv6 sidecar "
++            f"over the SAME label blob as --nav-labels).")
++    if side and not (msi or cap):
++        probs.append(
++            "--speed-max-sidecar-v6 without --max-speed-input-v6 or "
++            "--plan-vmax-cap: the sidecar would be read by nothing — an "
++            "advertised-but-inert input.")
++    if side and not os.path.isfile(str(side)):
++        probs.append(f"--speed-max-sidecar-v6 {side} does not exist.")
++    if toc != "off" and "planner" in stage_trainable_groups(a.stage) \
++            and not ack:
++        lp = resolve_lambda_plan(a)
++        wa = float(getattr(a, "w_anchor", 0.0) or 0.0)
++        if not lp and not wa:
++            probs.append(
++                f"--tac-op-cond {toc} with no planner loss in force in stage "
++                f"{a.stage} (λ_plan 0, --w-anchor 0): the plan losses are the "
++                f"port's ONLY gradient source, so it would be built and never "
++                f"trained — the intent_proj dead-weight defect. If an "
++                f"inert-port control is what you want, say so with "
++                f"--i-know-this-is-the-control-arm.")
++    return probs
++
++
+ def _run_config(a, stack: V6Stack, freeze: dict,
+                 decl_audit: dict | None = None) -> dict:
+-    return {
++    cfg_json = {
+         "run": f"v6-staged-{a.stage}",
+         "stage": a.stage,
+         "trainable_groups": list(stage_trainable_groups(a.stage)),
+@@ -6383,6 +6694,12 @@
+         "provenance": run_provenance(getattr(a, "device", None)),
+         "_evidence_class": "MEASURED (ours; this run's own configuration)",
+     }
++    # ⭐ R1/R4 (PI 2026-09-27): EMPTY with every lever off (the default record
++    # is untouched); the R1 declarations are then REFUSED in both directions
++    # BEFORE any caller writes config.json (both callers write right after).
++    cfg_json |= r1r4_config_block(a, stack)
++    assert_r1r4_record(cfg_json, a)
++    return cfg_json
+ 
+ 
+ # ============================================================================
+@@ -7040,6 +7357,21 @@
+               f"allow_oracle_nav={_manifest.allow_oracle_nav} "
+               f"(PI-reviewed: Alpamayo CoT + ego)", flush=True)
+ 
++    # ---- ⭐ R1 (PI 2026-09-27): the per-clip MAX SPEED join -----------------
++    # The refcv6 sidecar (RAW SPEED_BAND.v_hi_ms per clip) joined on the stable
++    # episode id, per EPISODE, then per WINDOW at the batch-build site. Built
++    # when the tactical INPUT or the inference CAP asks for it; the training
++    # forward receives only the INPUT (the plan stays uncapped in training).
++    vmax_join = None
++    if getattr(a, "speed_max_sidecar_v6", None) and (
++            getattr(a, "max_speed_input_v6", False)
++            or getattr(a, "plan_vmax_cap", False)):
++        vmax_join = build_vmax_join(a.speed_max_sidecar_v6, ds_train.episodes,
++                                    ds_train.index,
++                                    label_md5=label_blob_md5_for_vmax(a))
++        print(f"[v6] R1 max speed · {json.dumps(vmax_join['report'])}",
++              flush=True)
++
+     # ⛔ D-V7-DINO-SEED: at the flag defaults this IS the previous one-liner
+     # (one flat group + CosineAnnealingLR); see build_trunk_optimizer().
+     opt, trunk_opt_report = build_trunk_optimizer(a, stack, trainable)
+@@ -7106,6 +7438,10 @@
+         cfg_json["s1_multi"] = reach
+     if s2_cfg is not None:
+         cfg_json["s2"] = s2_cfg
++    # ⭐ R1: the join's coverage travels with the run row (window fraction fed
++    # is the number the model actually experiences, the refcv6 precedent).
++    if vmax_join is not None:
++        cfg_json["r1_max_speed_join"] = vmax_join["report"]
+     # D-V7-TRUNK-ANCHOR: what the anchor and the monitor ACTUALLY are for this
+     # run, beside the flags that asked for them. ⚠️ The caveat rides in the
+     # RECORD, not only in a doc — a reading quoted out of this file carries the
+@@ -7412,6 +7748,11 @@
+             # the join was precomputed per episode, so this is O(batch).
+             batch |= {kk: v.to(device)
+                       for kk, v in s2_sup.batch(idx).items()}
++        # ⭐ R1a: the clip's max speed rides the SAME sampled indices (this
++        # dict is a WHITELIST -- added here or it never reaches the stack).
++        # Only when the tactical INPUT is on: the cap is an inference lever.
++        if vmax_join is not None and getattr(a, "max_speed_input_v6", False):
++            batch |= vmax_batch(vmax_join, idx, ds_train.index, device)
+         if tap is not None:
+             tap.arm()
+         with torch.autocast(dev_type,
+@@ -9447,6 +9788,45 @@
+                          "--selector. ⛔ REFUSED in S-W: layer_tac is frozen "
+                          "there and the new keys would break the live run's "
+                          "strict resume.")
++    # ---- R4 / R1 (PI directive 2026-09-27, v7F) -- ALL DEFAULT OFF --------
++    ap.add_argument("--tac-op-cond", choices=("off", "detached", "e2e"),
++                    default="off",
++                    help="⭐ R4 (PI 2026-09-27): the tactical layer's chosen "
++                         "BEHAVIOURS condition the operative plan. MEASURED at "
++                         "the tip: the tactical GOAL already reaches the "
++                         "emission, the LAT x LON behaviour posteriors do not. "
++                         "ON builds a ZERO-INIT tac_op_port (planner group) "
++                         "that projects e_a_tac and ADDS it to e_g_tac before "
++                         "V6Stack.emit. 'detached' = the plan loss trains the "
++                         "port, never the behaviour heads (F-1 rule); 'e2e' = "
++                         "it trains them too. Default off = byte-identical. "
++                         "⛔ REFUSED in S-W; S-T may INTRODUCE it.")
++    ap.add_argument("--max-speed-input-v6", action="store_true",
++                    help="⭐ R1a (PI 2026-09-27): the clip's MAX SPEED as a "
++                         "TACTICAL INPUT -- the refcv6 4-way one-hot {30, 50, "
++                         "100, 120} km/h (containing window, invalid row = "
++                         "all-zero) through a ZERO-INIT vmax_tac port (layer_tac) "
++                         "added to the tactical decision latent. ⛔ EGO-FUTURE "
++                         "derived (SPEED_BAND.v_hi_ms), stamped as "
++                         "`speed_max_derivation_v6` in config.json (refused "
++                         "without it, and the mirror). Needs "
++                         "--speed-max-sidecar-v6. ⛔ REFUSED in S-W.")
++    ap.add_argument("--speed-max-sidecar-v6", default=None,
++                    help="the refcv6 sidecar (`scripts/build_refcv6_speed_max_"
++                         "window.py`): RAW v_hi_ms per clip keyed by `sid` = "
++                         "stable_episode_id(clip_id). Its source_md5 must equal "
++                         "the md5 of --nav-labels (else --s2-labels) -- two "
++                         "quantizations of one corpus is two experiments.")
++    ap.add_argument("--plan-vmax-cap", action="store_true",
++                    help="⭐ R1b (PI 2026-09-27: the max speed \"must not be "
++                         "exceeded\"): the emitted plan is HARD-CAPPED at "
++                         "INFERENCE (refav1 _cap_speed semantics; every "
++                         "candidate, before selection). Recorded in the model "
++                         "config: an eval-mode forward REFUSES without a per-row "
++                         "limit. The TRAINING forward stays uncapped (the label "
++                         "exceeds its own bin on decelerating / >120 km/h "
++                         "clips). --dry-run exercises it through the eval-mode "
++                         "forward. Needs --speed-max-sidecar-v6 for a real run.")
+     ap.add_argument("--anchor-goal",
+                     choices=("none", "snap_lat", "snap_xy", "onehot"),
+                     default="none",
+@@ -10871,6 +11251,7 @@
+     problems += _preflight_subframe(a)
+     problems += _preflight_seam_dump(a)
+     problems += _preflight_effective_weights(a)
++    problems += _preflight_r1_r4(a)           # R1/R4, PI 2026-09-27
+     return problems
+ 
+ 

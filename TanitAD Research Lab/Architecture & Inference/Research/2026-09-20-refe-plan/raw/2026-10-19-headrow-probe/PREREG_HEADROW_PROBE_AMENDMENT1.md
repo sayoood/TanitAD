@@ -1,0 +1,16 @@
+# Amendment 1 to PREREG_HEADROW_PROBE: ADDITIVE OUTPUTS ONLY (Master Mind addendum, received 2026-10-19 ~07:28)
+
+**Parent:** `PREREG_HEADROW_PROBE.md` sha256 `1800705ef49333dffe0162ea5e51eb72fa1fe8fba57a0ea2f2869bf156762c55`. **Nothing in sections 2 to 7 of the parent changes**: the decision rule, the metrics, the controls, the arms, the data, the estimator, the vetoes and the outcome mapping are UNCHANGED.
+
+**Written 2026-10-19 07:32.** State of the run at that time (so the amendment cannot be read as acting on a result): the gate (5/5) and C-ID passed; `main` had written the OOF logit tables of NC (L, M, both seeds), DAC (L, M, both seeds), EP L (both seeds) and EP M seed 0; **no concordance, Brier, pick-level or decision value of any arm had been computed or read** (the `metrics` stage had not run). The first time any outcome of this probe is read is recorded in RESULT.md.
+
+## What is added (new file `export_oof.py`; the gate-bound `headrow_probe.py` is not edited)
+
+For the separately pre-registered census FASTNEG-CENSUS (which stratifies by speed ratio with cut points fixed from speeds alone, before any label is read), the package saves, as ONE `npz` per fraction (`raw/f10/oof_proposals_f10.npz`, sha256 in the manifest):
+1. **Per-proposal OOF predictions** for every row (NC, DAC, EP, TTC) x arm (L, M) x seed (0, 1): the OOF logit of the replaced column, `[sets, 64]` float32, the `main` stage's own tables copied byte for byte (their sha256 recorded). Keys: `token`, `log`, `step`, `rank`, `ckpt_step` (one entry per SET; a token can have several sets, so the set identity is the tuple `(token, step, rank, ckpt_step)` and `set_index` is the row index used by every table), `fold` (the OOF fold id of that set's log), `proposal_index` = 0..63 (axis 1 of every table).
+2. **Per proposal:** `labels6` `[sets, 64, 6]` (the bank's clipped labels, order `label_order`), and P2's frozen row scores `p2_logits6` `[sets, 64, 6]` (the bank's stored logits, all six columns), plus `p2_top8` and `p2_pick_index` (P2's base pick under the frozen rule `navsim_v1`, the landed `picks_np`).
+3. **Speeds, if proposal trajectories exist.** The bank units were dumped with `--lean` and carry NO trajectories (member lists of `*.sets.npz` and `*.fan.npz` checked). The SOURCE TABLE does: the per-log fit-set stores `C:/Users/Admin/srttc_s0/work/sets/<log>.npz` (`traj3 [sets,64,20,3]`: ego-frame x, y, yaw, 20 steps at 5 Hz = 4 s, `ref/model.py:94`). Saved: `mean_speed_mps [sets,64]` = (sum over the 20 segments of the Euclidean step length in x, y, starting from the ego origin at t0) / 4.0 s, and `p2_pick_mean_speed_mps [sets]` = that value for P2's base pick of the same set. The store rows are matched to the bank sets by `(token, step, rank, ckpt_step)` and the match is accepted only if `labels6` of the store row equals the bank's EXACTLY (content proof of the join).
+
+**Not done, by instruction:** no ratio, no stratum, no statistic by speed is computed or looked at by this package.
+
+Cost: CPU seconds; one extra Python process only when a slot is free. Evidence class: the exports are MEASURED copies of the run's own tables; the speed definition is a stated convention (dt = 0.2 s from the `model.py` comment is INHERITED, not re-measured; the first-point displacement of about 1.1 m at t = 0.2 s is consistent with it).

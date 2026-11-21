@@ -1,0 +1,611 @@
+--- a/stack/ops/sup_refcv7.sh
++++ b/stack/ops/sup_refcv7.sh
+@@ -17,6 +17,16 @@
+ # and exported environment (OMP_NUM_THREADS ...). OUT_DIR and STEPS are READ FROM THE GATED ARGV;
+ # a manifest that also sets them must agree with it, or the supervisor refuses.
+ #
++# The post-training ZERO-GRADIENT GATE (G5, below) is ON by default and is tuned by these optional
++# manifest variables (all read ONCE, at startup -- rule 7 applies):
++#   ZEROGRAD_GATE     on (default) | off.  `off` is LOGGED LOUDLY and recorded in the done-marker.
++#   ZEROGRAD_ALLOW    regexes (bash array, or one string with one regex per line) of parameter names that are
++#                     FROZEN BY DESIGN -- `re.fullmatch` against the gate's parameter names, e.g.
++#                     ZEROGRAD_ALLOW=('core\.encoder\..*').  Each one is logged and recorded.
++#   ZEROGRAD_CONTROL  regexes at least one TRAINED parameter must fully match (a same-breath positive control).
++#   ZEROGRAD_EXCLUDE  extra state_dict entry names that are buffers, not parameters (naming only).
++#   ZEROGRAD_CKPT     the checkpoint to gate (default ${OUT_DIR}/ckpt.pt, the trainer's resume checkpoint).
++#
+ # ⛔ G1. NO FREE-FORM LAUNCH LINE. A manifest carrying TRAIN_CMD is REFUSED: a hand-written command
+ #    line is exactly what the gate binds against, and a supervisor that runs one bypasses it. The
+ #    trainer is started ONLY as `launch_gate.py exec`, which re-verifies the token and then REPLACES
+@@ -45,6 +55,30 @@
+ # ⚠️ 6. NEVER `sed -i` THIS FILE WHILE IT IS RUNNING (bash reads it lazily by byte offset).
+ # ⚠️ 7. TO CHANGE A LIVE RUN: a new argv means a NEW GATE RUN and a new token. Kill the SUPERVISOR
+ #    first, then the trainer (explicit pid), then start a fresh supervisor on the new manifest.
++#
++# ⛔ G5. THE DONE-MARKER IS NOT WRITTEN UNTIL THE ZERO-GRADIENT GATE HAS LOOKED AT THE FINAL CHECKPOINT.
++#    CLAUDE.md "BUILT, TESTED, AND UNREACHABLE FROM ITS CALLER": a head wired into the model but not into the
++#    loss trains for days and is found only after the arm is trained (refcv5-v2: 18,472 parameters).
++#    `stack/scripts/zerograd_gate.py` reads that from the checkpoint's optimizer state. Its VERDICT is its
++#    JSON (like G3) -- a traceback also exits 1, so the exit code alone cannot tell a FAIL from a crash:
++#      PASS            -> the done-marker is written, with a `zerograd_gate` record.
++#      NOT_APPLICABLE  -> the checkpoint carries no optimizer state (error_kind no_optimizer_state): the
++#                         done-marker is written WITH that record -- never silently a pass.
++#      DISABLED        -> ZEROGRAD_GATE=off: written with that record, and a loud log line.
++#      FAIL            -> an untrained parameter, or a failed control: NO done-marker; ZEROGRAD_FAIL.json
++#                         (embedding the gate's JSON) is written; the supervisor exits 6.
++#      UNEVALUATED     -> the gate could not look (unreadable checkpoint, no gate JSON, JSON and exit code
++#                         disagree, gate script missing): treated EXACTLY like FAIL -- a gate that did not run
++#                         is not a pass.  `ZEROGRAD_GATE=off` is the explicit, logged way to opt out.
++#    ⛔ A ZEROGRAD_FAIL IS FINAL, LIKE G4, AND IT NEVER RELAUNCHES. A relaunch only follows an INCOMPLETE
++#    artifact; the gate runs only on a COMPLETE one, and the supervisor `exit`s after refusing. A later
++#    supervisor start sees ZEROGRAD_FAIL.json first and exits 6 without launching or gating again. To re-gate
++#    (e.g. after adding ZEROGRAD_ALLOW for a frozen-by-design parameter), delete that file deliberately.
++#    ⚠️ The TRAINER writes its own summary.json {"done": true} at completion, before this script can gate.
++#    That file is the trainer's artifact and is left untouched on FAIL, so a consumer that keys on
++#    summary.json alone is NOT protected: it must also require that ZEROGRAD_FAIL.json is absent.
++#    A done-marker with no `zerograd_gate` record (the trainer's, or a pre-G5 supervisor's) is therefore not
++#    "FINISHED": the supervisor runs the gate on it and finalises WITHOUT relaunching.
+ 
+ set -u  # ⛔ deliberately NOT `set -e`: a supervisor that exits on the first non-zero command is
+         # not a supervisor.
+@@ -62,6 +96,7 @@
+ # environment (MEASURED 2026-09-27 on Thor: a runner's exported STEPS=unit,... was read as the
+ # manifest's step count and the supervisor refused a valid launch).
+ unset CODE PYTHON GATE_TOKEN GATE_ARGV_FILE GATE_KEY_FILE TRAIN_CMD STEPS OUT_DIR
++unset ZEROGRAD_GATE ZEROGRAD_ALLOW ZEROGRAD_CONTROL ZEROGRAD_EXCLUDE ZEROGRAD_CKPT
+ # Sourced ONCE, on purpose (rule 7).
+ # shellcheck disable=SC1090
+ . "$MANIFEST"
+@@ -123,6 +158,22 @@
+ MAX_RELAUNCH="${MAX_RELAUNCH:-8}"
+ POLL_S="${POLL_S:-120}"
+ 
++# ⛔ G5: the post-training zero-gradient gate.
++ZG_MODE="${ZEROGRAD_GATE:-on}"
++case "$ZG_MODE" in
++  on|off) ;;
++  *) echo "[sup:${ARM}] REFUSED: ZEROGRAD_GATE=${ZG_MODE} -- must be 'on' or 'off' (a typo must not disable the gate)"
++     exit 2 ;;
++esac
++ZG_SCRIPT="${CODE}/stack/scripts/zerograd_gate.py"
++ZG_CKPT="${ZEROGRAD_CKPT:-${OUT_DIR}/ckpt.pt}"
++ZG_JSON="${OUT_DIR}/zerograd_gate.json"
++ZG_TXT="${OUT_DIR}/zerograd_gate.txt"
++ZG_SUMMARY="${OUT_DIR}/zerograd_summary.json"
++ZG_FAIL_MARKER="${OUT_DIR}/ZEROGRAD_FAIL.json"
++ZG_STATUS=""
++FINALIZE_ONLY=0
++
+ GATE_ARGS=(--token "$GATE_TOKEN" --argv-file "$GATE_ARGV_FILE" --tree "$CODE")
+ if [ -n "${COMMIT:-}" ]; then GATE_ARGS+=(--commit "$COMMIT"); fi
+ if [ -n "${GATE_KEY_FILE:-}" ]; then GATE_ARGS+=(--key-file "$GATE_KEY_FILE"); fi
+@@ -131,10 +182,25 @@
+ 
+ log() { echo "[sup:${ARM}] $(date -u +%Y-%m-%dT%H:%M:%SZ 200>&-) $*" | tee -a "$SUPLOG" 200>&-; }
+ 
++# ---- G5: a zero-gradient FAIL is final (like G4) -- never launch, never re-gate -------------- #
++if [ -f "$ZG_FAIL_MARKER" ]; then
++  log "⛔ ${ZG_FAIL_MARKER} present -- this run FAILED the post-training zero-gradient gate. NOT launching."
++  log "   Read the gate report in that file. To re-gate (e.g. after adding ZEROGRAD_ALLOW for a frozen-by-design"
++  log "   parameter) delete the file DELIBERATELY and restart; it never clears itself."
++  exit 6
++fi
++
+ # ---- rule 2: never resurrect a finished run -------------------------------------------------- #
+ if [ -f "$DONE_MARKER" ] && grep -q '"done"[[:space:]]*:[[:space:]]*true' "$DONE_MARKER" 2>/dev/null; then
+-  log "done-marker present at ${DONE_MARKER} -- run is FINISHED. Exiting without launching."
+-  exit 0
++  if [ "$ZG_MODE" = "off" ] || grep -q '"zerograd_gate"' "$DONE_MARKER" 2>/dev/null; then
++    log "done-marker present at ${DONE_MARKER} -- run is FINISHED. Exiting without launching."
++    exit 0
++  fi
++  # The trainer writes {"done": true} itself, before this script can gate (or a pre-G5 supervisor wrote it).
++  # Not "FINISHED" yet -- but ALSO never a reason to relaunch: gate it, finalise it, exit.
++  FINALIZE_ONLY=1
++  log "done-marker present at ${DONE_MARKER} but it carries no zerograd_gate record -- the run is complete;"
++  log "   it will be GATED and finalised WITHOUT relaunching."
+ fi
+ 
+ # ---- rule 1: take the lock, and close it on every child -------------------------------------- #
+@@ -200,14 +266,20 @@
+ 
+ write_done_marker() {
+   local final_step="$1"
+-  "$PYTHON" - "$DONE_MARKER" "$ARM" "$final_step" "$STEPS" "$OUT_DIR" "$GATE_TOKEN" <<'PYEOF' 200>&-
++  "$PYTHON" - "$DONE_MARKER" "$ARM" "$final_step" "$STEPS" "$OUT_DIR" "$GATE_TOKEN" "$ZG_SUMMARY" <<'PYEOF' 200>&-
+ import json, sys, time
+-path, arm, final_step, steps, out_dir, token = sys.argv[1:7]
++path, arm, final_step, steps, out_dir, token, zg_summary = sys.argv[1:8]
++try:                                   # G5: the zero-gradient gate's record rides in the marker
++    with open(zg_summary, "r", encoding="utf-8") as zfh:
++        zg = json.load(zfh)
++except Exception:
++    zg = {"status": "NOT_RUN", "reason": "no zerograd summary was written before the done-marker"}
+ with open(path, "w", encoding="utf-8") as fh:
+     json.dump({
+         "done": True, "arm": arm,
+         "final_step": int(final_step), "steps_requested": int(steps),
+         "out_dir": out_dir, "gate_token": token,
++        "zerograd_gate": zg,
+         "written_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+         "note": ("Written by sup_refcv7.sh AFTER metrics.jsonl was read and its step count "
+                  "checked. Its presence is the supervisor's OFF SWITCH."),
+@@ -215,6 +287,168 @@
+ PYEOF
+ }
+ 
++# ---- G5: the post-training zero-gradient gate ------------------------------------------------- #
++# $1 = mode, $2 = the gate's exit code, $3 = its JSON, $4 = ckpt, $5 = summary out, $6 = final step,
++# $7 = steps requested, then the flat `--allow R --control R --exclude-entry R` list the gate was given.
++# Prints ONE word (PASS | FAIL | NOT_APPLICABLE | DISABLED | UNEVALUATED) and writes the summary JSON.
++# The verdict is the gate's JSON; the exit code must AGREE with it or the answer is UNEVALUATED (G3).
++zg_decide() {
++  "$PYTHON" - "$@" <<'PYEOF' 200>&-
++import json, sys
++mode, rc, jp, ckpt, outp, final_step, steps = sys.argv[1:8]
++pats = sys.argv[8:]
++def _flags(flag):
++    return [pats[i + 1] for i in range(0, len(pats) - 1, 2) if pats[i] == flag]
++rc = int(rc)
++rep, rerr = None, None
++try:
++    with open(jp, "r", encoding="utf-8") as fh:
++        rep = json.load(fh)
++except Exception as e:
++    rerr = "%s: %s" % (type(e).__name__, str(e)[:120])
++status, reason = "UNEVALUATED", ""
++if mode == "off":
++    status, reason = "DISABLED", "ZEROGRAD_GATE=off in the manifest -- the gate did not run"
++elif not isinstance(rep, dict) or rep.get("gate") != "zerograd_gate":
++    reason = "the gate wrote no readable report (exit %d; %s)" % (rc, rerr or "not a zerograd_gate report")
++else:
++    v = rep.get("verdict")
++    if v == "PASS" and rc == 0:
++        status = "PASS"
++    elif v == "FAIL" and rc == 1:
++        status = "FAIL"
++        reason = "untrained parameter(s) or a failed positive control"
++    elif v == "ERROR" and rc == 2:
++        if rep.get("error_kind") == "no_optimizer_state":
++            status, reason = "NOT_APPLICABLE", "not applicable (no optimizer state): %s" % str(rep.get("error"))[:200]
++        else:
++            reason = "the gate could not evaluate the checkpoint (%s): %s" % (rep.get("error_kind"), str(rep.get("error"))[:300])
++    else:
++        reason = "the gate's verdict %r disagrees with its exit code %d" % (v, rc)
++opt = (rep or {}).get("optimizer") or {}
++off = []
++for r in ((rep or {}).get("offenders") or []):
++    off.append({"names": r.get("names"), "case": r.get("case"), "numel_lo": r.get("numel_lo"), "numel_hi": r.get("numel_hi")})
++ckstep = opt.get("ckpt_step")
++summary = {
++    "status": status, "reason": reason, "gate_exit_code": rc, "gate_verdict": (rep or {}).get("verdict"),
++    "gate_version": (rep or {}).get("gate_version"), "ckpt": ckpt, "ckpt_step": ckstep,
++    "final_step": int(final_step), "steps_requested": int(steps),
++    "ckpt_step_is_final": (ckstep is not None and int(ckstep) >= int(steps)),
++    "n_registered": opt.get("n_registered"), "n_trained": opt.get("n_trained"),
++    "n_untrained": len(off), "untrained": off,
++    "failed_controls": [c.get("pattern") for c in ((rep or {}).get("controls") or []) if not c.get("ok")],
++    "allow": _flags("--allow"), "unused_allow": (rep or {}).get("unused_allow") or [],
++    "control": _flags("--control"), "exclude_entry": _flags("--exclude-entry"),
++    "param_names_source": ((rep or {}).get("alignment") or {}).get("param_names_source"),
++    "gate_report": jp,
++}
++with open(outp, "w", encoding="utf-8") as fh:
++    json.dump(summary, fh, indent=2)
++sys.stdout.write(status)
++PYEOF
++}
++
++# Appends `--FLAG pattern` to ZG_ARGS for every pattern in "$@" (a bash array element, or a string holding
++# one regex per line). Empty lines are skipped.
++zg_add_patterns() {
++  local flag="$1" entry line
++  shift
++  for entry in "$@"; do
++    while IFS= read -r line; do
++      line="${line%$'\r'}"
++      [ -n "$line" ] && ZG_ARGS+=("$flag" "$line")
++    done <<< "$entry"
++  done
++}
++
++# Runs the gate on the final checkpoint. Sets ZG_STATUS and writes ${ZG_SUMMARY}; never exits.
++zerograd_check() {   # $1 = final step
++  local fs="$1" zrc=0 line i
++  ZG_STATUS=""
++  rm -f "$ZG_JSON" "$ZG_TXT" "$ZG_SUMMARY" 200>&-
++  ZG_ARGS=()
++  zg_add_patterns --allow ${ZEROGRAD_ALLOW[@]+"${ZEROGRAD_ALLOW[@]}"}
++  zg_add_patterns --control ${ZEROGRAD_CONTROL[@]+"${ZEROGRAD_CONTROL[@]}"}
++  zg_add_patterns --exclude-entry ${ZEROGRAD_EXCLUDE[@]+"${ZEROGRAD_EXCLUDE[@]}"}
++  if [ "$ZG_MODE" = "off" ]; then
++    log "⚠️ ZEROGRAD GATE DISABLED (ZEROGRAD_GATE=off in the manifest): untrained parameters would NOT be detected."
++  else
++    for ((i = 0; i < ${#ZG_ARGS[@]}; i += 2)); do
++      log "zerograd gate ${ZG_ARGS[i]#--} pattern: ${ZG_ARGS[i+1]}"
++    done
++    log "zerograd gate: ${PYTHON} ${ZG_SCRIPT} --ckpt ${ZG_CKPT} (CPU, reads the optimizer state; no GPU, no data)"
++    "$PYTHON" "$ZG_SCRIPT" --ckpt "$ZG_CKPT" --json-out "$ZG_JSON" --sha256 ${ZG_ARGS[@]+"${ZG_ARGS[@]}"} > "$ZG_TXT" 2>&1 200>&-
++    zrc=$?
++  fi
++  ZG_STATUS="$(zg_decide "$ZG_MODE" "$zrc" "$ZG_JSON" "$ZG_CKPT" "$ZG_SUMMARY" "$fs" "$STEPS" ${ZG_ARGS[@]+"${ZG_ARGS[@]}"})"
++  [ -n "$ZG_STATUS" ] || ZG_STATUS=UNEVALUATED
++  if grep -q '"ckpt_step_is_final": false' "$ZG_SUMMARY" 2>/dev/null 200>&-; then
++    log "⚠️ the gate read a checkpoint whose step is BELOW the requested ${STEPS} (or carries none): its verdict is"
++    log "   about that earlier state, not the final one -- see ckpt_step in ${ZG_SUMMARY}."
++  fi
++  if [ -s "$ZG_TXT" ]; then
++    grep -E 'UNTRAINED|WARN|control|VERDICT|ERROR' "$ZG_TXT" 200>&- | while IFS= read -r line; do log "   gate: ${line%$'\r'}"; done
++  fi
++  echo "ZZZG-${ARM}-${ZG_STATUS}ZZ" | tee -a "$SUPLOG" > /dev/null 200>&-
++}
++
++write_zerograd_fail_marker() {   # $1 = final step
++  "$PYTHON" - "$ZG_FAIL_MARKER" "$ARM" "$1" "$STEPS" "$OUT_DIR" "$ZG_SUMMARY" "$ZG_JSON" <<'PYEOF' 200>&-
++import json, sys, time
++path, arm, final_step, steps, out_dir, zg_summary, zg_json = sys.argv[1:8]
++def _load(p):
++    try:
++        with open(p, "r", encoding="utf-8") as fh:
++            return json.load(fh)
++    except Exception:
++        return None
++summary = _load(zg_summary) or {"status": "UNEVALUATED", "reason": "no zerograd summary was written"}
++with open(path, "w", encoding="utf-8") as fh:
++    json.dump({
++        "zerograd_fail": True, "status": summary.get("status"), "reason": summary.get("reason"), "arm": arm,
++        "final_step": int(final_step), "steps_requested": int(steps), "out_dir": out_dir,
++        "zerograd_summary": summary, "gate_report": _load(zg_json),
++        "written_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
++        "note": ("Written by sup_refcv7.sh INSTEAD of the done-marker. Its presence makes every later supervisor "
++                 "start exit 6 without launching or re-gating. The trainer's own summary.json is untouched: a "
++                 "consumer that keys on it alone is NOT protected -- require this file to be ABSENT."),
++    }, fh, indent=2)
++PYEOF
++}
++
++# G5: gate the final checkpoint, then write EITHER the done-marker OR ZEROGRAD_FAIL.json. Returns 0 or 6;
++# callers `exit` on it -- there is no path from here back into the relaunch loop.
++finalize_run() {   # $1 = final step
++  local fs="$1"
++  zerograd_check "$fs"   # ZG-HOOK
++  case "$ZG_STATUS" in
++    PASS|NOT_APPLICABLE|DISABLED)
++      write_done_marker "$fs"
++      log "done-marker written at ${DONE_MARKER} (zerograd gate: ${ZG_STATUS}); supervisor exiting cleanly."
++      return 0 ;;
++    *)
++      write_zerograd_fail_marker "$fs"
++      log "⛔ ZEROGRAD GATE ${ZG_STATUS}: NO done-marker written. ${ZG_FAIL_MARKER} holds the gate report."
++      log "   The supervisor exits 6 and does NOT relaunch; the trainer's own summary.json is untouched."
++      echo "ZZZGFAIL-${ARM}ZZ" | tee -a "$SUPLOG" > /dev/null 200>&-
++      return 6 ;;
++  esac
++}
++
++marker_step() {   # the step recorded in an existing done-marker (trainer-written: "step"), or -1
++  "$PYTHON" - "$DONE_MARKER" <<'PYEOF' 200>&-
++import json, sys
++try:
++    with open(sys.argv[1], "r", encoding="utf-8") as fh:
++        d = json.load(fh)
++    s = d.get("step", d.get("final_step"))
++    sys.stdout.write(str(int(s)))
++except Exception:
++    sys.stdout.write("-1")
++PYEOF
++}
++
+ final_step_from_metrics() {
+   "$PYTHON" - "${OUT_DIR}/metrics.jsonl" <<'PYEOF' 200>&-
+ import json, sys
+@@ -237,6 +471,14 @@
+ PYEOF
+ }
+ 
++# ---- G5: a complete run whose done-marker carries no zerograd record is gated, never relaunched --- #
++if [ "$FINALIZE_ONLY" = "1" ]; then
++  fs="$(final_step_from_metrics)"
++  [ "$fs" != "-1" ] || fs="$(marker_step)"
++  finalize_run "$fs"
++  exit $?
++fi
++
+ # ---- the supervise loop -------------------------------------------------------------------- #
+ launch=0
+ while [ "$launch" -lt "$MAX_RELAUNCH" ]; do
+@@ -244,10 +486,9 @@
+ 
+   if run_is_complete; then
+     fs="$(final_step_from_metrics)"
+-    log "metrics.jsonl already reaches step ${fs} >= ${STEPS} -- writing done-marker."
+-    write_done_marker "$fs"
+-    log "done-marker written; exiting cleanly."
+-    exit 0
++    log "metrics.jsonl already reaches step ${fs} >= ${STEPS} -- gating (zero-gradient), then writing done-marker."
++    finalize_run "$fs"
++    exit $?
+   fi
+ 
+   # ⛔ G2 + G3: re-measure tree, argv and data against the token BEFORE this launch; the
+@@ -312,9 +553,8 @@
+   if run_is_complete; then
+     fs="$(final_step_from_metrics)"
+     log "ARTIFACT CHECK PASSED: metrics.jsonl reaches step ${fs} >= ${STEPS}."
+-    write_done_marker "$fs"
+-    log "done-marker written at ${DONE_MARKER}; supervisor exiting cleanly."
+-    exit 0
++    finalize_run "$fs"
++    exit $?
+   fi
+ 
+   cur="$(final_step_from_metrics)"
+--- a/stack/scripts/refc_v3_train.py
++++ b/stack/scripts/refc_v3_train.py
+@@ -5239,9 +5239,27 @@
+     return out
+ 
+ 
++def _opt_param_names(model, opt) -> list:
++    """The names of the optimizer's registered parameters, in OPTIMIZER-ID order -- the ``param_names`` key of
++    ``ckpt.pt`` that ``stack/scripts/zerograd_gate.py`` reads to name an untrained parameter EXACTLY.
++
++    ``Optimizer.state_dict()`` numbers the parameters by walking ``param_groups`` in order, so this walks them the
++    same way and looks each tensor up by identity in ``model.named_parameters()``. That is NOT the same list as
++    ``[n for n, _ in model.named_parameters()]``: ``--opt dd`` puts the encoder group FIRST, and a frozen parameter
++    is registered by the ``adam`` path (``model.parameters()``) but absent from the ``dd`` path. A tensor the
++    optimizer holds that the model does not name gets ``<unnamed:i>`` (the gate then reports it as such rather
++    than guessing). Names only: no tensors, so the cost per save is a list of ~350 short strings."""
++    by_id = {id(p): n for n, p in model.named_parameters()}
++    out = []
++    for g in opt.param_groups:
++        for p in g["params"]:
++            out.append(by_id.get(id(p), "<unnamed:%d>" % len(out)))
++    return out
++
++
+ def _ckpt_payload(model, opt, step, dpos, n_windows, args, ema, b1) -> dict:
+     """The ``ckpt.pt`` dict for the B1 guard's RE-SAVE -- the same payload as the loop's own save (the tip's four keys
+-    ``model``, ``opt``, ``step``, ``data_pos`` plus ``_ema_ckpt_extra``), written a second time once the guard has
++    ``model``, ``opt``, ``step``, ``data_pos`` plus ``param_names`` and ``_ema_ckpt_extra``), written a second time once the guard has
+     decided, because the loop saves BEFORE it evals (see ``train``). The loop's own save stays inline, textually, because
+     ``tests/test_refc_v3_save_before_eval.py`` pins its position; ``tests/test_refcv8_ema_guard.py`` pins that the two
+     payloads have the same keys and ``data_pos``."""
+@@ -5252,6 +5270,7 @@
+                          "batch": int(dpos["batch"]),
+                          "n": n_windows, "seed": int(args.seed),
+                          "batch_size": int(args.batch)},
++            "param_names": _opt_param_names(model, opt),
+             **_ema_ckpt_extra(ema, b1), **_p10_ckpt_extra(model)}
+ 
+ 
+@@ -10906,6 +10925,8 @@
+                                      "batch": int(_dpos["batch"]),
+                                      "n": len(ds), "seed": int(args.seed),
+                                      "batch_size": int(args.batch)},
++                        # optimizer-id-ordered names: stack/scripts/zerograd_gate.py (post-training gate)
++                        "param_names": _opt_param_names(model, opt),
+                         **_ema_ckpt_extra(_ema, _b1), **_p10_ckpt_extra(model)}, ck)
+             # the one line that makes the order VERIFIABLE from train.log
+             print(f"[v3:{args.arm}] ckpt step {step} -> {ck.name}",
+--- a/stack/scripts/zerograd_gate.py
++++ b/stack/scripts/zerograd_gate.py
+@@ -110,7 +110,17 @@
+ 
+ 
+ class GateError(RuntimeError):
+-    """The checkpoint could not be evaluated (exit 2) -- never silently converted into a PASS."""
++    """The checkpoint could not be evaluated (exit 2) -- never silently converted into a PASS.
++
++    ``kind`` classifies WHY, so a caller (``stack/ops/sup_refcv7.sh``) can tell the one benign case -- a checkpoint
++    that carries no optimizer state at all (``no_optimizer_state``: the gate does not apply) -- from every case in
++    which the gate could not look (``unreadable``, ``no_param_state``, ``bad_param_names`` ...).  The kind is written
++    to the ``--json-out`` report as ``error_kind``; the verdict is the JSON, never the exit code.
++    """
++
++    def __init__(self, msg: str, kind: str = "other"):
++        super().__init__(msg)
++        self.kind = kind
+ 
+ 
+ # ------------------------------------------------------------------------------------------------ #
+@@ -120,7 +130,7 @@
+     """CPU load.  weights_only=True+mmap first, then the probe's weights_only=False.  Returns (ckpt, how)."""
+     import torch
+     if not os.path.isfile(path):
+-        raise GateError("checkpoint not found: %s" % path)
++        raise GateError("checkpoint not found: %s" % path, kind="unreadable")
+     errors = []
+     for weights_only, mmap in ((True, True), (False, True), (False, False)):
+         try:
+@@ -129,9 +139,9 @@
+             errors.append("weights_only=%s mmap=%s: %s: %s" % (weights_only, mmap, type(e).__name__, str(e)[:160]))
+             continue
+         if not isinstance(ck, dict):
+-            raise GateError("checkpoint is a %s, not a dict" % type(ck).__name__)
++            raise GateError("checkpoint is a %s, not a dict" % type(ck).__name__, kind="unreadable")
+         return ck, {"weights_only": weights_only, "mmap": mmap, "earlier_load_failures": errors}
+-    raise GateError("could not load %s: %s" % (path, " | ".join(errors)))
++    raise GateError("could not load %s: %s" % (path, " | ".join(errors)), kind="unreadable")
+ 
+ 
+ def _pick(ck: Dict[str, Any], keys: Sequence[str]) -> Tuple[Optional[str], Optional[dict]]:
+@@ -241,16 +251,17 @@
+         else:
+             if len(param_names) != len(ids):
+                 raise GateError("param_names has %d entries but the optimizer registers %d parameters"
+-                                % (len(param_names), len(ids)))
++                                % (len(param_names), len(ids)), kind="bad_param_names")
+             names = {i: [str(n)] for i, n in zip(ids, param_names)}
+         if len(names) != len(ids):
+-            raise GateError("param_names does not cover every optimizer id")
++            raise GateError("param_names does not cover every optimizer id", kind="bad_param_names")
+         shape_of = dict(entries)
+         for i in ids:
+             sh, nm = id_shape.get(i), names[i][0]
+             if sh is not None and nm in shape_of and tuple(shape_of[nm]) != tuple(sh):
+                 raise GateError("param_names INCONSISTENT with the checkpoint: id %s named %r has state shape %s "
+-                                "but the model entry is %s" % (i, nm, tuple(sh), tuple(shape_of[nm])))
++                                "but the model entry is %s" % (i, nm, tuple(sh), tuple(shape_of[nm])),
++                                kind="bad_param_names")
+         out.update(mode="param_names", unique=True, n_alignments=1.0, names=names)
+         return out
+     if len(ids) * len(entries) > _DP_CELL_LIMIT:
+@@ -313,17 +324,22 @@
+     ok, opt = _pick(ck, _OPT_KEYS)
+     if opt is None or "param_groups" not in opt or not isinstance(opt.get("state"), dict):
+         raise GateError("the checkpoint carries no optimizer state (keys %s) -- a weights-only file cannot be "
+-                        "gated; run the gate on the TRAINER's resume checkpoint" % sorted(map(str, ck.keys())))
++                        "gated; run the gate on the TRAINER's resume checkpoint" % sorted(map(str, ck.keys())),
++                        kind="no_optimizer_state")
++    # Exact names, in order of preference: --param-names FILE (explicit), then the checkpoint's own ``param_names``
++    # (written by refc_v3_train.py since 2026-10-18: optimizer-id order), then the shape alignment below.
++    pn_source = "file" if param_names is not None else None
+     if param_names is None and ck.get("param_names") is not None:
+-        param_names = ck["param_names"]
++        param_names, pn_source = ck["param_names"], "ckpt"
+     state = opt["state"]
+     ids_by_group = [list(g["params"]) for g in opt["param_groups"]]
+     ids = [i for g in ids_by_group for i in g]
+     if not ids:
+-        raise GateError("the optimizer registers no parameters")
++        raise GateError("the optimizer registers no parameters", kind="no_params")
+     if not any(_float_state_tensors(state.get(i)) for i in ids):
+         raise GateError("no registered parameter has a floating-point optimizer state tensor (plain SGD without "
+-                        "momentum?) -- the gate cannot tell trained from untrained and refuses to guess")
++                        "momentum?) -- the gate cannot tell trained from untrained and refuses to guess",
++                        kind="no_param_state")
+ 
+     entries: List[Tuple[str, tuple]] = []
+     n_excluded = 0
+@@ -336,11 +352,22 @@
+                 continue
+             entries.append((str(n), tuple(t.shape)))
+     elif param_names is None:
+-        raise GateError("no model state_dict in the checkpoint and no param_names: nothing to name parameters from")
++        raise GateError("no model state_dict in the checkpoint and no param_names: nothing to name parameters from",
++                        kind="no_names")
+ 
+     kind = {i: classify_state(state.get(i)) for i in ids}
+     id_shape = {i: _state_shape(state.get(i)) for i in ids}
+-    res = resolve_names(ids_by_group, id_shape, entries, param_names)
++    pn_rejected: Optional[str] = None
++    try:
++        res = resolve_names(ids_by_group, id_shape, entries, param_names)
++    except GateError as e:
++        # An EMBEDDED list that does not fit this optimizer (e.g. a checkpoint rewritten after it was saved) must
++        # not block the gate: the verdict never depends on naming.  Fall back to the shape alignment and SAY SO.
++        # An EXPLICIT --param-names file that does not fit stays an error -- the caller asked for exactness.
++        if pn_source != "ckpt" or e.kind != "bad_param_names":
++            raise
++        pn_rejected, pn_source = str(e), None
++        res = resolve_names(ids_by_group, id_shape, entries, None)
+     names: Optional[Dict[Any, List[str]]] = res["names"]
+     shape_of = dict(entries)
+ 
+@@ -400,6 +427,7 @@
+                       "n_case_b_zero_state": sum(1 for i in ids if kind[i] == ZERO_STATE),
+                       "step_max": step_max, "ckpt_step": ck.get("step") if isinstance(ck.get("step"), int) else None},
+         "alignment": {"mode": res["mode"], "unique": res["unique"], "n_alignments": res["n_alignments"],
++                      "param_names_source": pn_source, "param_names_rejected": pn_rejected,
+                       "n_model_float_entries": len(entries), "n_entries_excluded": n_excluded,
+                       "exclude_entries": list(exclude_entries), "note": res["note"],
+                       "n_ids_name_ambiguous": sum(1 for i in ids if len(named.get(i, [])) > 1),
+@@ -447,6 +475,9 @@
+          "  naming: %s  unique=%s  n_alignments=%s%s" % (
+              a["mode"], a["unique"], ("%.0f" % a["n_alignments"]) if a["n_alignments"] < 1e15 else ">1e15",
+              ("  [" + a["note"] + "]") if a["note"] else "")]
++    if a.get("param_names_rejected"):
++        L.append("  WARN the checkpoint's embedded param_names were REJECTED (%s); names come from the shape alignment"
++                 % a["param_names_rejected"][:200])
+     for r in rep["offenders"]:
+         L.append("  UNTRAINED  id %-4s %-12s %-40s %s" % (r["id"], r["case"], _fmt_names(r), _fmt_numel(r)))
+     for r in rep["allowed"]:
+@@ -495,12 +526,16 @@
+                 pn = json.load(f)
+         excl = ([] if a.no_default_excludes else list(DEFAULT_EXCLUDE_ENTRIES)) + list(a.exclude_entry)
+         rep = analyze(ck, allow=a.allow, controls=a.control, param_names=pn, exclude_entries=excl)
+-    except GateError as e:
+-        print("zerograd_gate ERROR: %s" % e, file=sys.stderr)
++    except Exception as e:  # noqa: BLE001 -- GateError AND any crash: an uncaught exception exits 1 == FAIL
++        kind = e.kind if isinstance(e, GateError) else "internal_error"
++        if not isinstance(e, GateError):
++            import traceback
++            traceback.print_exc()
++        print("zerograd_gate ERROR (%s): %s" % (kind, e), file=sys.stderr)
+         if a.json_out:
+             with open(a.json_out, "w", encoding="utf-8") as f:
+                 json.dump({"gate": "zerograd_gate", "gate_version": GATE_VERSION, "verdict": "ERROR",
+-                           "ckpt": a.ckpt, "error": str(e)}, f, indent=2)
++                           "ckpt": a.ckpt, "error": str(e), "error_kind": kind}, f, indent=2)
+         return EXIT_ERROR
+     rep["ckpt"] = a.ckpt.replace("\\", "/")
+     rep["ckpt_size_bytes"] = os.path.getsize(a.ckpt)
+--- a/stack/tests/test_refc_v3_save_before_eval.py
++++ b/stack/tests/test_refc_v3_save_before_eval.py
+@@ -199,7 +199,8 @@
+                        "milestone_exists": True, "rows": [(1, False, True)]}
+     ck = torch.load(out / "ckpt.pt", map_location="cpu", weights_only=False)
+     # ⭐ `data_pos` since 2026-09-23: the resume position (ResumableEpochSampler).
+-    assert set(ck) == {"model", "opt", "step", "data_pos"} and ck["step"] == 1
++    # ⭐ `param_names` since 2026-10-18: the optimizer-id-ordered names stack/scripts/zerograd_gate.py reads.
++    assert set(ck) == {"model", "opt", "step", "data_pos", "param_names"} and ck["step"] == 1
+     assert {k: ck["data_pos"][k] for k in ("scheme", "epoch", "batch", "seed",
+                                            "batch_size")} == {
+         "scheme": "resumable-epoch-sampler/1", "epoch": 0, "batch": 1,
+--- a/stack/tests/test_refcv8_ema_guard.py
++++ b/stack/tests/test_refcv8_ema_guard.py
+@@ -539,7 +539,7 @@
+ def test_ema_on_writes_ckpt_state_model_only_file_eval_keys_and_summary(tmp_path):
+     out = _train(tmp_path / "on", ["--ema-decay", "0.5"], steps=3)
+     ck = _ck(out)
+-    assert set(ck) == {"model", "opt", "step", "data_pos", "ema"}
++    assert set(ck) == {"model", "opt", "step", "data_pos", "param_names", "ema"}      # + param_names 2026-10-18
+     assert ck["ema"]["schema"] == "weight_ema/1" and ck["ema"]["decay"] == 0.5 and ck["ema"]["num_updates"] == 3
+     assert len(ck["ema"]["shadow"]) == 179                                 # measured on this rig: 179 tensors
+     assert sum(v.numel() for v in ck["ema"]["shadow"].values()) == 131899     # and 131,899 values = 527,596 B fp32
+@@ -565,7 +565,7 @@
+ 
+ def test_ema_off_is_the_tips_checkpoint_rows_and_summary_key_for_key(tmp_path):
+     out = _train(tmp_path / "off", [], steps=2)
+-    assert set(_ck(out)) == {"model", "opt", "step", "data_pos"}
++    assert set(_ck(out)) == {"model", "opt", "step", "data_pos", "param_names"}      # + param_names 2026-10-18
+     assert sorted(p.name for p in Path(out).iterdir()) == ["ckpt.pt", "ckpt_1.pt", "config.json", "metrics.jsonl", "summary.json"]
+     assert not any(k.startswith(("ema_", "b1_")) for r in _rows(out) for k in r)
+     assert set(json.loads((Path(out) / "summary.json").read_text())) == {"done", "step", "arm", "seed", "wallclock_s"}
+@@ -734,7 +734,9 @@
+     # the RE-SAVED checkpoint is the loop's own payload plus the decision: same keys, same data position, same step
+     plain = _ck(_train(tmp_path / "plain", ["--ema-decay", "0.5", "--opt", "dd", "--warmup", "1"], steps=2))
+     resaved = _ck(out)
+-    assert set(resaved) == set(plain) | {"b1_guard"} == {"model", "opt", "step", "data_pos", "ema", "b1_guard"}
++    assert set(resaved) == set(plain) | {"b1_guard"} == {"model", "opt", "step", "data_pos", "param_names", "ema",
++                                                         "b1_guard"}      # + param_names 2026-10-18
++    assert resaved["param_names"] == plain["param_names"]                   # the re-save carries the same names
+     assert resaved["data_pos"] == plain["data_pos"] and resaved["step"] == plain["step"] == 2
+     assert set(resaved["opt"]["param_groups"][0]) == set(plain["opt"]["param_groups"][0])
+     _guard_run(out, [0.1, 0.1], steps=4)                                   # continued: a low value must NOT cut now
+--- a/stack/tests/test_launch_gate.py
++++ b/stack/tests/test_launch_gate.py
+@@ -1021,7 +1021,10 @@
+     (runs_d / "arm1.env").write_text(
+         f'CODE="{tree.as_posix()}"\nPYTHON="{py}"\nGATE_TOKEN="{tok_path.as_posix()}"\n'
+         f'GATE_ARGV_FILE="{argv_file.as_posix()}"\nGATE_KEY_FILE="{key_file.as_posix()}"\n'
+-        f'POLL_S=1\nMAX_RELAUNCH=1\n{extra_env}', encoding="utf-8")
++        # ZEROGRAD_GATE=off: this rig's fake trainer writes no ckpt.pt and the mini tree carries no
++        # zerograd_gate.py, so the post-training gate (sup_refcv7.sh G5) cannot look; the gate has its own rig,
++        # tests/test_sup_refcv7_zerograd.py. Without this line the G5 hook would (correctly) fail these runs closed.
++        f'POLL_S=1\nMAX_RELAUNCH=1\nZEROGRAD_GATE=off\n{extra_env}', encoding="utf-8")
+     shim = tmp_path / "bin"
+     shim.mkdir()
+     (shim / "flock").write_text("#!/bin/sh\nexit 0\n", encoding="utf-8", newline="\n")
+@@ -1043,7 +1046,9 @@
+ def test_supervisor_RUNS_the_trainer_on_a_valid_token_and_writes_its_done_marker(tmp_path):
+     rc, out, run = _sup_rig(tmp_path)
+     assert rc == 0, out[-3000:]
+-    assert json.loads((run / "summary.json").read_text(encoding="utf-8"))["done"] is True
++    done = json.loads((run / "summary.json").read_text(encoding="utf-8"))
++    assert done["done"] is True
++    assert done["zerograd_gate"]["status"] == "DISABLED"      # recorded, not silent (G5; see _sup_rig)
+     v = json.loads((run / "gate_verify_1.json").read_text(encoding="utf-8"))
+     assert v["verdict"] == "MATCH"
+     assert json.loads((run / "gate_exec_1.json").read_text(encoding="utf-8"))["verdict"] == "MATCH"

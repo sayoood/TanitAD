@@ -1,0 +1,19 @@
+How much does the BACKGROUND-AGENT PROTOCOL alone move each scenario?
+Same checkpoint, same tokens, same TTS setting (none). Only log-replay vs IDM differs.
+
+scenario type                                non-react  reactive    delta |  prog nr  prog r
+changing_lane_to_left                            87.46     97.60   +10.13 |    0.613   0.926
+following_lane_with_lead                         99.96     92.96    -7.00 |    1.000   0.775
+near_multiple_vehicles                           99.92     97.27    -2.65 |    1.000   0.913
+starting_left_turn                               96.61     95.19    -1.42 |    0.956   0.890
+starting_protected_noncross_turn                 99.23     99.91    +0.68 |    1.000   1.000
+accelerating_at_traffic_light_without_lead       99.74     99.99    +0.25 |    1.000   1.000
+starting_unprotected_cross_turn                  94.61     94.76    +0.15 |    0.934   0.931
+stopping_at_stop_sign_with_lead                 100.00    100.00    +0.00 |    1.000   1.000
+
+SUITE                                            97.19     97.21    +0.02
+
+Largest single-scenario protocol effect: +10.13 points (changing_lane_to_left)
+For comparison, the ENTIRE N=1 -> N=64 TTS sweep moved the suite by -0.16 points,
+and the largest TTS per-scenario effect was -1.67 (starting_left_turn at N=64).
+=> the PROTOCOL is a far larger lever than the thing we were measuring.

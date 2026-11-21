@@ -1,0 +1,204 @@
+{
+ "intent": "C:/Users/Admin/refav1_margin/intent_stride2.npz",
+ "layernorm": "applied from lat_head.0.weight",
+ "n_windows": 4786,
+ "d": 256,
+ "n_episodes": 141,
+ "split": {
+  "episodes_train": 85,
+  "episodes_tune": 28,
+  "episodes_test": 28,
+  "windows_train": 2891,
+  "windows_tune": 949,
+  "windows_test": 946,
+  "by": "EPISODE (clip_index), never by window",
+  "seed": 0
+ },
+ "lambda_selection": {
+  "grid": [
+   0.0001,
+   0.001,
+   0.01,
+   0.1,
+   1.0,
+   10.0,
+   100.0,
+   1000.0,
+   10000.0,
+   100000.0,
+   1000000.0,
+   10000000.0,
+   100000000.0
+  ],
+  "chosen": 0.0001,
+  "chosen_on": "TUNE split (fit-internal), never TEST",
+  "tune_rmse_sorted": [
+   [
+    0.008255438419125391,
+    0.0001
+   ],
+   [
+    0.008402724523036179,
+    0.001
+   ],
+   [
+    0.008490565208244288,
+    0.01
+   ],
+   [
+    0.00857065289975821,
+    0.1
+   ]
+  ]
+ },
+ "target": "gt_kappa clipped to +/-0.2",
+ "rows": [
+  {
+   "arm": "RIDGE on intent (LEARNED)",
+   "lambda": 0.0001,
+   "n_test": 946,
+   "n_train": 2891,
+   "n_episodes_train": 85,
+   "d": 256,
+   "rmse": 0.01860311487755887,
+   "mae": 0.007046847772939145,
+   "r2": 0.11647470086030864,
+   "pearson_r": 0.3460206496106227,
+   "n_real_turns_in_test": 156,
+   "frac_real_turns_nonzero_correct_sign": 0.4935897435897436,
+   "frac_straights_nonzero": 0.6506329113924051,
+   "mean_abs_pred": 0.0035984904689756654
+  },
+  {
+   "arm": "CONSTANT-ONLY (control)",
+   "lambda": null,
+   "n_test": 946,
+   "n_train": 2891,
+   "n_episodes_train": 85,
+   "d": 0,
+   "rmse": 0.019804436555055895,
+   "mae": 0.007724023124357468,
+   "r2": -0.0013194127693310076,
+   "pearson_r": 0.0,
+   "n_real_turns_in_test": 156,
+   "frac_real_turns_nonzero_correct_sign": 0.47435897435897434,
+   "frac_straights_nonzero": 1.0,
+   "mean_abs_pred": 0.0018636422752848457
+  },
+  {
+   "arm": "ZERO (floor)",
+   "lambda": null,
+   "n_test": 946,
+   "n_train": 2891,
+   "n_episodes_train": 85,
+   "d": 0,
+   "rmse": 0.01982446309687275,
+   "mae": 0.006709410122389719,
+   "r2": -0.003345534943003381,
+   "pearson_r": 0.0,
+   "n_real_turns_in_test": 156,
+   "frac_real_turns_nonzero_correct_sign": 0.0,
+   "frac_straights_nonzero": 0.0,
+   "mean_abs_pred": 0.0
+  },
+  {
+   "arm": "SHIPPED head hard kappa (floor)",
+   "lambda": null,
+   "n_test": 946,
+   "n_train": 2891,
+   "n_episodes_train": 85,
+   "d": 0,
+   "rmse": 0.023358891387533276,
+   "mae": 0.008466865018296374,
+   "r2": -0.3930031822455389,
+   "pearson_r": 0.32516416726266595,
+   "n_real_turns_in_test": 156,
+   "frac_real_turns_nonzero_correct_sign": 0.2692307692307692,
+   "frac_straights_nonzero": 0.021518987341772152,
+   "mean_abs_pred": 0.005243128964059197
+  },
+  {
+   "arm": "SHUFFLED-TARGET (control)",
+   "lambda": 0.0001,
+   "n_test": 946,
+   "n_train": 2891,
+   "n_episodes_train": 85,
+   "d": 256,
+   "rmse": 0.019946828489278565,
+   "mae": 0.007995561470563722,
+   "r2": -0.015769950142486167,
+   "pearson_r": -0.012490611245540737,
+   "n_real_turns_in_test": 156,
+   "frac_real_turns_nonzero_correct_sign": 0.40384615384615385,
+   "frac_straights_nonzero": 0.7278481012658228,
+   "mean_abs_pred": 0.002249625836867055
+  },
+  {
+   "arm": "RIDGE on NAV-SHUFFLED intent (P3)",
+   "lambda": 0.0001,
+   "n_test": 946,
+   "n_train": 2891,
+   "n_episodes_train": 85,
+   "d": 256,
+   "rmse": 0.019728370161625857,
+   "mae": 0.007420617635784202,
+   "r2": 0.006357703682841942,
+   "pearson_r": 0.10016130069332373,
+   "n_real_turns_in_test": 156,
+   "frac_real_turns_nonzero_correct_sign": 0.4230769230769231,
+   "frac_straights_nonzero": 0.6177215189873417,
+   "mean_abs_pred": 0.0021669834809350894
+  }
+ ],
+ "controls": {
+  "constant_reads_no_information": {
+   "r2": -0.0013194127693310076,
+   "passes": true
+  },
+  "shuffled_target_collapses": {
+   "r2": -0.015769950142486167,
+   "passes": true
+  },
+  "learned_beats_zero_floor": {
+   "learned_rmse": 0.01860311487755887,
+   "zero_rmse": 0.01982446309687275,
+   "passes": true
+  },
+  "learned_beats_shipped_head": {
+   "learned_rmse": 0.01860311487755887,
+   "shipped_rmse": 0.023358891387533276,
+   "passes": true
+  },
+  "lambda_not_at_grid_edge": {
+   "lambda": 0.0001,
+   "grid": [
+    0.0001,
+    100000000.0
+   ],
+   "passes": false,
+   "note": "lambda pinned at the top of the grid is the n<<d signature: maximal shrinkage wins because there is no power, which reads as absence but is underpowering"
+  },
+  "power": {
+   "n_train_windows": 2891,
+   "n_train_EPISODES_effective_n": 85,
+   "d": 256,
+   "windows_per_dim": 11.29296875,
+   "EPISODES_per_dim": 0.33203125,
+   "note": "windows within an episode are near-duplicates, so the effective n is EPISODES. episodes/d << 1 means this fit is underpowered BY CONSTRUCTION and a null must not be read as absence"
+  },
+  "beats_constant_on_turn_sign": {
+   "learned": 0.4935897435897436,
+   "constant": 0.47435897435897434,
+   "passes": false,
+   "note": "a CONSTANT non-zero prediction already gets the sign right about half the time by chance; beating ZERO is not enough"
+  },
+  "not_a_nav_echo": {
+   "r2_true_nav": 0.11647470086030864,
+   "r2_nav_shuffled": 0.006357703682841942,
+   "frac_of_r2_surviving_nav_shuffle": 0.05458441735314618,
+   "passes": false,
+   "note": "nav on PhysicalAI is ultimately supplied from the ego's own FUTURE path. A fit whose skill vanishes when nav is permuted is reading the route, not the road."
+  }
+ },
+ "verdict": "FAILS"
+}

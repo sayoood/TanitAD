@@ -1,0 +1,2007 @@
+{
+ "what": "Q3 hooks + Q1 at the as-launched configuration",
+ "ckpt": "D:\\refcv6_eval_kit\\ckpt\\ckpt_30000.pt",
+ "evidence_class": "MEASURED (ours, dev box CPU, the live run's checkpoint)",
+ "loader": {
+  "argv_remap": {
+   "remapped": {
+    "--anchors": {
+     "thor": "/home/nvidia/data/anchors/refc_anchors_6s_v0cond_alat_117.pt",
+     "local": "D:\\refcv6_eval_kit\\data\\anchors\\refc_anchors_6s_v0cond_alat_117.pt"
+    },
+    "--eval-cache": {
+     "thor": "/home/nvidia/data/refcv6-b1-416x1024-eval139",
+     "local": "D:\\refcv6_eval_kit\\data\\refcv6-b1-416x1024-eval139"
+    },
+    "--eval-labels": {
+     "thor": "/home/nvidia/data/v8labels/labels/s2_labels_v8_eval.jsonl.gz",
+     "local": "D:\\refcv6_eval_kit\\data\\v8labels\\labels\\s2_labels_v8_eval.jsonl.gz"
+    },
+    "--speed-max-sidecar-v6-eval": {
+     "thor": "/home/nvidia/data/refcv6_speed_max_v8_eval.jsonl",
+     "local": "D:\\refcv6_eval_kit\\data\\refcv6_speed_max_v8_eval.jsonl"
+    },
+    "--agent-join": {
+     "thor": "/home/nvidia/data/joins/b1_train_plus_eval_agents.jsonl.xz",
+     "local": "D:\\refcv6_eval_kit\\data\\joins\\b1_train_plus_eval_agents.jsonl.xz"
+    },
+    "--agent-rig-extrinsics": {
+     "thor": "/home/nvidia/data/refcv6_train_eval139_extrinsics.json",
+     "local": "D:\\refcv6_eval_kit\\data\\refcv6_train_eval139_extrinsics.json"
+    },
+    "--map-gt-root": {
+     "thor": "/home/nvidia/data/sam3_corpus",
+     "local": "D:\\refcv6_eval_kit\\data\\sam3_gt_eval_thor137"
+    },
+    "--join3d": {
+     "thor": "/home/nvidia/data/join3d/b1_train_plus_eval_agents_3d.jsonl.xz",
+     "local": "D:\\refcv6_eval_kit\\data\\join3d\\b1_train_plus_eval_agents_3d.jsonl.xz"
+    }
+   },
+   "dropped": {
+    "--trunk-compile": "no Triton on Windows; torch.compile wraps the backbone CALL only -- module tree and state_dict identical (LAUNCH_READINESS_FIXES.md \u00a710b)"
+   },
+   "train_only_kept_unread": {
+    "--v2-cache": "/home/nvidia/data/refcv6-b1-416x1024-train",
+    "--v7-labels": "/home/nvidia/data/v8labels/labels/s2_labels_v8_train.jsonl.gz",
+    "--speed-max-sidecar-v6": "/home/nvidia/data/refcv6_speed_max_v8_train.jsonl",
+    "--out": "/home/nvidia/refcv6_run/runs/refcv6-r101-s0"
+   }
+  },
+  "departures": [
+   "train():6946 `assert_ground_prior_is_supervised` (a startup gradient probe) is NOT run: it measures a training property and writes nothing the forward or the loss reads"
+  ],
+  "state_dict": {
+   "strict": true,
+   "missing": [],
+   "unexpected": [],
+   "n_keys": 1101,
+   "ckpt_keys": [
+    "step"
+   ],
+   "step": 30000
+  },
+  "param_breakdown": {
+   "rebuilt": {
+    "core": 90734473,
+    "phi_tac": 2101504,
+    "str_goal_head": 771,
+    "gstr_cond": 66816,
+    "tac_heads": 14364,
+    "tac_latent_proj": 262656,
+    "scorer": 1145,
+    "nav_inject": 50176,
+    "tac_decoder_v6": 2253828,
+    "tac_behaviour_gate_v6": 2574,
+    "total": 100893747
+   },
+   "config_json": {
+    "core": 90734473,
+    "phi_tac": 2101504,
+    "str_goal_head": 771,
+    "gstr_cond": 66816,
+    "tac_heads": 14364,
+    "tac_latent_proj": 262656,
+    "scorer": 1145,
+    "nav_inject": 50176,
+    "tac_decoder_v6": 2253828,
+    "tac_behaviour_gate_v6": 2574,
+    "total": 100893747
+   },
+   "equal": true
+  },
+  "trunk_memory_levers_built": {
+   "chunk_ckpt": 8,
+   "frozen_bn": true,
+   "bn_pinned": 104,
+   "relu_out_of_place": 100,
+   "bf16": true,
+   "channels_last": true,
+   "bn_folded": 104,
+   "dedup_frames": true
+  },
+  "trunk_memory_levers_run": {
+   "chunk_ckpt": 8,
+   "frozen_bn": true,
+   "bn_pinned": 104,
+   "relu_out_of_place": 100,
+   "bf16": true,
+   "channels_last": true,
+   "bn_folded": 104,
+   "dedup_frames": true,
+   "compile_donated_buffer": false,
+   "compile": "inductor"
+  },
+  "mode": "diffusion",
+  "sampler": "ddim",
+  "decoder_steps": 2,
+  "build_s": 14.9
+ },
+ "departures": [
+  "torch.load(ckpt) with mmap=True (same bytes)",
+  "future_frames: only the LAW stack 4 is decoded (battery G0 class; the only index compute_losses_v3 reads)",
+  "--trunk-compile dropped by the loader (no Triton on Windows)",
+  "dataset restricted to ONE episode (sha12 1655838298f8) and the window taken at t=136: the full-dataset in-run eval's perm[0] (w=20658 over 23,772 windows, raw/q3_hooks_forward_retry2.log); the joins and the map GT therefore read that one clip"
+ ],
+ "dataset": {
+  "n_episodes": 1,
+  "n_windows": 171
+ },
+ "window": {
+  "perm0": 136,
+  "episode_sha12": "1655838298f8",
+  "t": 136,
+  "frames": [
+   1,
+   8,
+   9,
+   416,
+   1024
+  ],
+  "frames_dtype": "torch.uint8",
+  "future_frames": "LAW stack only"
+ },
+ "forward_s": 81.8,
+ "losses_keys": [
+  "agent_centre",
+  "agent_cls",
+  "agent_n_dropped",
+  "agent_n_labelled",
+  "agent_n_matched",
+  "agent_n_raw",
+  "agent_n_target",
+  "agent_n_truncated",
+  "agent_n_windows",
+  "agent_presence",
+  "agent_rows_no_cam",
+  "agent_rows_with_cam",
+  "agent_size",
+  "agent_yaw",
+  "anchor_acc",
+  "box3d",
+  "box3d_centre",
+  "box3d_cls",
+  "box3d_h",
+  "box3d_n_centre",
+  "box3d_n_cls",
+  "box3d_n_dropped",
+  "box3d_n_dropped_not_visible",
+  "box3d_n_h",
+  "box3d_n_labelled",
+  "box3d_n_matched",
+  "box3d_n_occ",
+  "box3d_n_rates",
+  "box3d_n_size",
+  "box3d_n_target",
+  "box3d_n_target_prefilter",
+  "box3d_n_target_visible",
+  "box3d_n_windows",
+  "box3d_n_yaw",
+  "box3d_n_z",
+  "box3d_occ",
+  "box3d_presence",
+  "box3d_rates",
+  "box3d_size",
+  "box3d_visible_filter",
+  "box3d_yaw",
+  "box3d_z",
+  "cls",
+  "ego_injected",
+  "goal2s_err_m",
+  "goal_gate",
+  "goal_score_absmean",
+  "goal_tac",
+  "lat",
+  "lat_tac",
+  "law",
+  "lon",
+  "lon_tac",
+  "loss",
+  "map",
+  "map_gt_drivable_frac",
+  "map_iou_drivable",
+  "map_n_labelled",
+  "map_n_windows",
+  "map_pred_drivable_frac",
+  "map_pred_drivable_prob_mean",
+  "n_map_cells",
+  "n_map_cells_seen",
+  "n_map_cells_unobserved",
+  "nav_injected",
+  "route",
+  "sel_v3",
+  "slot_valid_frac",
+  "tac_label_rows",
+  "tac_label_v7",
+  "tac_v6",
+  "tacv6_goal_bce",
+  "tacv6_goal_conf_bce",
+  "tacv6_lat_ce",
+  "tacv6_lon_ce",
+  "tacv6_n_scene_mean",
+  "tacv6_n_supervised_goal_cells",
+  "tacv6_n_supervised_lat",
+  "tacv6_n_supervised_lon",
+  "tacv6_total_weighted",
+  "traj"
+ ],
+ "cascade_in_losses": false,
+ "losses_scalar": {
+  "loss": 19.276233673095703,
+  "traj": 0.22116409242153168,
+  "cls": 0.0011960174888372421,
+  "law": 0.0001681189751252532,
+  "route": 1.0853586196899414,
+  "lat": 0.1692812740802765,
+  "lon": 0.3935427665710449,
+  "lat_tac": 0.0,
+  "lon_tac": 0.0,
+  "anchor_acc": 1.0,
+  "slot_valid_frac": 0.875,
+  "tac_label_v7": 1.0,
+  "tac_label_rows": 0.0,
+  "goal_tac": 3.71653413772583,
+  "goal2s_err_m": 3.241763114929199,
+  "sel_v3": 0.8848527669906616,
+  "goal_gate": 0.24064698815345764,
+  "goal_score_absmean": 6.037954807281494,
+  "nav_injected": 1.0,
+  "ego_injected": 0.0,
+  "agent_n_windows": 1.0,
+  "agent_n_labelled": 1.0,
+  "agent_n_raw": 17.0,
+  "agent_n_truncated": 0.0,
+  "agent_presence": 0.09025482088327408,
+  "agent_cls": 0.38660070300102234,
+  "agent_centre": 1.8432762622833252,
+  "agent_size": 1.3321239948272705,
+  "agent_yaw": 0.041172903031110764,
+  "agent_n_target": 7.0,
+  "agent_n_matched": 7.0,
+  "agent_n_dropped": 0.0,
+  "agent_rows_with_cam": 1.0,
+  "agent_rows_no_cam": 0.0,
+  "tac_v6": 0.0,
+  "tacv6_goal_bce": 0.0,
+  "tacv6_goal_conf_bce": 0.0,
+  "tacv6_lat_ce": 0.0,
+  "tacv6_lon_ce": 0.0,
+  "tacv6_total_weighted": 0.0,
+  "tacv6_n_supervised_goal_cells": 0.0,
+  "tacv6_n_supervised_lat": 0.0,
+  "tacv6_n_supervised_lon": 0.0,
+  "tacv6_n_scene_mean": 580.0,
+  "map_n_windows": 1.0,
+  "map_n_labelled": 1.0,
+  "map": 0.6395133137702942,
+  "n_map_cells_seen": 7680.0,
+  "n_map_cells_unobserved": 863.0,
+  "n_map_cells": 6817.0,
+  "map_iou_drivable": 0.8065973791233619,
+  "map_pred_drivable_frac": 0.30673316708229426,
+  "map_gt_drivable_frac": 0.2797418219157987,
+  "map_pred_drivable_prob_mean": 0.32326944157299764,
+  "box3d_n_windows": 1.0,
+  "box3d_n_labelled": 1.0,
+  "box3d": 8.926506042480469,
+  "box3d_presence": 0.08999878913164139,
+  "box3d_cls": 1.2982736825942993,
+  "box3d_centre": 1.6760839223861694,
+  "box3d_size": 1.3936593532562256,
+  "box3d_yaw": 0.2834380567073822,
+  "box3d_rates": 7.436583518981934,
+  "box3d_occ": 0.0,
+  "box3d_z": 0.1729593127965927,
+  "box3d_h": 0.2938012480735779,
+  "box3d_n_matched": 7.0,
+  "box3d_n_target": 7.0,
+  "box3d_n_dropped": 0.0,
+  "box3d_n_cls": 0.5054879784584045,
+  "box3d_n_centre": 7.0,
+  "box3d_n_size": 7.0,
+  "box3d_n_yaw": 7.0,
+  "box3d_n_rates": 7.0,
+  "box3d_n_occ": 7.0,
+  "box3d_n_z": 7.0,
+  "box3d_n_h": 7.0,
+  "box3d_n_target_prefilter": 17.0,
+  "box3d_n_target_visible": 7.0,
+  "box3d_n_dropped_not_visible": 10.0,
+  "box3d_visible_filter": 1.0
+ },
+ "q2_nonpersistent_buffers": [
+  [
+   "core.encoder._mean",
+   [
+    1,
+    9,
+    1,
+    1
+   ]
+  ],
+  [
+   "core.encoder._std",
+   [
+    1,
+    9,
+    1,
+    1
+   ]
+  ],
+  [
+   "core.decoder.anchor_slots",
+   [
+    8
+   ]
+  ]
+ ],
+ "q2_tactical_bev_position": {
+  "control_same_inputs_maxabs": 0.0,
+  "bev_tokens_permuted_maxabs": 1.9073486328125e-06,
+  "bev_grid_mirrored_LR_maxabs": 1.9073486328125e-06,
+  "agent_tokens_permuted_maxabs": 9.5367431640625e-07,
+  "POSITIVE_bev_tokens_zeroed_maxabs": 6.761294364929199,
+  "POSITIVE_bev_features_channel_shuffled_maxabs": 4.565611839294434,
+  "base_output_absmax": 11.213545799255371,
+  "n_bev_tokens": 480,
+  "d_bev": 96,
+  "n_agent_tokens": 100,
+  "position_probe": {
+   "what": "ridge: BEV token feature -> its (row, col) in the 30x16 grid; held-out half of cells",
+   "n_cells": 480,
+   "d": 96,
+   "n_fit": 240,
+   "R2_row_col_per_split": [
+    [
+     0.9724255306877421,
+     0.9595718066047623
+    ],
+    [
+     0.9665335528214526,
+     0.959105982752333
+    ],
+    [
+     0.9754832706704951,
+     0.9624671924427096
+    ],
+    [
+     0.9746952626278133,
+     0.9660639573471382
+    ],
+    [
+     0.9646636980978887,
+     0.9536504499518585
+    ]
+   ],
+   "R2_labels_permuted": [
+    [
+     -0.007189124185828177,
+     0.0032781508505751455
+    ],
+    [
+     -0.059696599470880685,
+     0.004006914665983685
+    ],
+    [
+     -0.006430348060597835,
+     -0.03495720533729996
+    ],
+    [
+     -0.00996183471265688,
+     -0.0003166783637551518
+    ],
+    [
+     -0.022548370229796832,
+     -0.0008813483647720499
+    ]
+   ],
+   "R2_constant_only": [
+    [
+     -0.027283589175691514,
+     -0.004306416135376745
+    ],
+    [
+     -0.004603906287994564,
+     -0.00909362402283631
+    ],
+    [
+     -0.0010234517415057542,
+     -0.0018570102135562205
+    ],
+    [
+     -0.00432309527638286,
+     -0.0006166799336753126
+    ],
+    [
+     -5.962451461960505e-05,
+     -0.0019084537466032003
+    ]
+   ]
+  }
+ },
+ "provenance_mode": "call-time weakref (nothing held; UNRESOLVED when the producer was freed)",
+ "attention_modules_total": 30,
+ "attention_modules_never_called": [],
+ "attention_calls": {
+  "_perception.box_dec.blocks.layers.0": {
+   "n_calls": 1,
+   "distinct": [
+    {
+     "kind": "TransformerDecoderLayer",
+     "tgt": [
+      1,
+      100,
+      256
+     ],
+     "memory": [
+      1,
+      2144,
+      256
+     ],
+     "kv_source_module": "UNRESOLVED (the producing output was freed before this call)",
+     "kv_source_shape": null
+    }
+   ]
+  },
+  "_perception.box_dec.blocks.layers.0.self_attn": {
+   "n_calls": 1,
+   "distinct": [
+    {
+     "kind": "MHA",
+     "q": [
+      1,
+      100,
+      256
+     ],
+     "k": [
+      1,
+      100,
+      256
+     ],
+     "v": [
+      1,
+      100,
+      256
+     ],
+     "k_is_v": true,
+     "kpm": null,
+     "kpm_true": null,
+     "attn_mask": null,
+     "kv_source_module": "_perception.box_dec.blocks.layers.0.norm1",
+     "kv_source_shape": [
+      1,
+      100,
+      256
+     ]
+    }
+   ]
+  },
+  "_perception.box_dec.blocks.layers.0.multihead_attn": {
+   "n_calls": 1,
+   "distinct": [
+    {
+     "kind": "MHA",
+     "q": [
+      1,
+      100,
+      256
+     ],
+     "k": [
+      1,
+      2144,
+      256
+     ],
+     "v": [
+      1,
+      2144,
+      256
+     ],
+     "k_is_v": true,
+     "kpm": null,
+     "kpm_true": null,
+     "attn_mask": null,
+     "kv_source_module": "UNRESOLVED (the producing output was freed before this call)",
+     "kv_source_shape": null
+    }
+   ]
+  },
+  "_perception.box_dec.blocks.layers.1": {
+   "n_calls": 1,
+   "distinct": [
+    {
+     "kind": "TransformerDecoderLayer",
+     "tgt": [
+      1,
+      100,
+      256
+     ],
+     "memory": [
+      1,
+      2144,
+      256
+     ],
+     "kv_source_module": "UNRESOLVED (the producing output was freed before this call)",
+     "kv_source_shape": null
+    }
+   ]
+  },
+  "_perception.box_dec.blocks.layers.1.self_attn": {
+   "n_calls": 1,
+   "distinct": [
+    {
+     "kind": "MHA",
+     "q": [
+      1,
+      100,
+      256
+     ],
+     "k": [
+      1,
+      100,
+      256
+     ],
+     "v": [
+      1,
+      100,
+      256
+     ],
+     "k_is_v": true,
+     "kpm": null,
+     "kpm_true": null,
+     "attn_mask": null,
+     "kv_source_module": "_perception.box_dec.blocks.layers.1.norm1",
+     "kv_source_shape": [
+      1,
+      100,
+      256
+     ]
+    }
+   ]
+  },
+  "_perception.box_dec.blocks.layers.1.multihead_attn": {
+   "n_calls": 1,
+   "distinct": [
+    {
+     "kind": "MHA",
+     "q": [
+      1,
+      100,
+      256
+     ],
+     "k": [
+      1,
+      2144,
+      256
+     ],
+     "v": [
+      1,
+      2144,
+      256
+     ],
+     "k_is_v": true,
+     "kpm": null,
+     "kpm_true": null,
+     "attn_mask": null,
+     "kv_source_module": "UNRESOLVED (the producing output was freed before this call)",
+     "kv_source_shape": null
+    }
+   ]
+  },
+  "_perception.box_dec.blocks.layers.2": {
+   "n_calls": 1,
+   "distinct": [
+    {
+     "kind": "TransformerDecoderLayer",
+     "tgt": [
+      1,
+      100,
+      256
+     ],
+     "memory": [
+      1,
+      2144,
+      256
+     ],
+     "kv_source_module": "UNRESOLVED (the producing output was freed before this call)",
+     "kv_source_shape": null
+    }
+   ]
+  },
+  "_perception.box_dec.blocks.layers.2.self_attn": {
+   "n_calls": 1,
+   "distinct": [
+    {
+     "kind": "MHA",
+     "q": [
+      1,
+      100,
+      256
+     ],
+     "k": [
+      1,
+      100,
+      256
+     ],
+     "v": [
+      1,
+      100,
+      256
+     ],
+     "k_is_v": true,
+     "kpm": null,
+     "kpm_true": null,
+     "attn_mask": null,
+     "kv_source_module": "_perception.box_dec.blocks.layers.2.norm1",
+     "kv_source_shape": [
+      1,
+      100,
+      256
+     ]
+    }
+   ]
+  },
+  "_perception.box_dec.blocks.layers.2.multihead_attn": {
+   "n_calls": 1,
+   "distinct": [
+    {
+     "kind": "MHA",
+     "q": [
+      1,
+      100,
+      256
+     ],
+     "k": [
+      1,
+      2144,
+      256
+     ],
+     "v": [
+      1,
+      2144,
+      256
+     ],
+     "k_is_v": true,
+     "kpm": null,
+     "kpm_true": null,
+     "attn_mask": null,
+     "kv_source_module": "UNRESOLVED (the producing output was freed before this call)",
+     "kv_source_shape": null
+    }
+   ]
+  },
+  "core.agent_head.blocks.layers.0": {
+   "n_calls": 1,
+   "distinct": [
+    {
+     "kind": "TransformerDecoderLayer",
+     "tgt": [
+      1,
+      100,
+      256
+     ],
+     "memory": [
+      1,
+      416,
+      256
+     ],
+     "kv_source_module": "functional (no module output owns this pointer)",
+     "kv_source_shape": null
+    }
+   ]
+  },
+  "core.agent_head.blocks.layers.0.self_attn": {
+   "n_calls": 1,
+   "distinct": [
+    {
+     "kind": "MHA",
+     "q": [
+      1,
+      100,
+      256
+     ],
+     "k": [
+      1,
+      100,
+      256
+     ],
+     "v": [
+      1,
+      100,
+      256
+     ],
+     "k_is_v": true,
+     "kpm": null,
+     "kpm_true": null,
+     "attn_mask": null,
+     "kv_source_module": "core.agent_head.blocks.layers.0.norm1",
+     "kv_source_shape": [
+      1,
+      100,
+      256
+     ]
+    }
+   ]
+  },
+  "core.agent_head.blocks.layers.0.multihead_attn": {
+   "n_calls": 1,
+   "distinct": [
+    {
+     "kind": "MHA",
+     "q": [
+      1,
+      100,
+      256
+     ],
+     "k": [
+      1,
+      416,
+      256
+     ],
+     "v": [
+      1,
+      416,
+      256
+     ],
+     "k_is_v": true,
+     "kpm": null,
+     "kpm_true": null,
+     "attn_mask": null,
+     "kv_source_module": "functional (no module output owns this pointer)",
+     "kv_source_shape": null
+    }
+   ]
+  },
+  "core.agent_head.blocks.layers.1": {
+   "n_calls": 1,
+   "distinct": [
+    {
+     "kind": "TransformerDecoderLayer",
+     "tgt": [
+      1,
+      100,
+      256
+     ],
+     "memory": [
+      1,
+      416,
+      256
+     ],
+     "kv_source_module": "functional (no module output owns this pointer)",
+     "kv_source_shape": null
+    }
+   ]
+  },
+  "core.agent_head.blocks.layers.1.self_attn": {
+   "n_calls": 1,
+   "distinct": [
+    {
+     "kind": "MHA",
+     "q": [
+      1,
+      100,
+      256
+     ],
+     "k": [
+      1,
+      100,
+      256
+     ],
+     "v": [
+      1,
+      100,
+      256
+     ],
+     "k_is_v": true,
+     "kpm": null,
+     "kpm_true": null,
+     "attn_mask": null,
+     "kv_source_module": "core.agent_head.blocks.layers.1.norm1",
+     "kv_source_shape": [
+      1,
+      100,
+      256
+     ]
+    }
+   ]
+  },
+  "core.agent_head.blocks.layers.1.multihead_attn": {
+   "n_calls": 1,
+   "distinct": [
+    {
+     "kind": "MHA",
+     "q": [
+      1,
+      100,
+      256
+     ],
+     "k": [
+      1,
+      416,
+      256
+     ],
+     "v": [
+      1,
+      416,
+      256
+     ],
+     "k_is_v": true,
+     "kpm": null,
+     "kpm_true": null,
+     "attn_mask": null,
+     "kv_source_module": "functional (no module output owns this pointer)",
+     "kv_source_shape": null
+    }
+   ]
+  },
+  "core.agent_head.blocks.layers.2": {
+   "n_calls": 1,
+   "distinct": [
+    {
+     "kind": "TransformerDecoderLayer",
+     "tgt": [
+      1,
+      100,
+      256
+     ],
+     "memory": [
+      1,
+      416,
+      256
+     ],
+     "kv_source_module": "functional (no module output owns this pointer)",
+     "kv_source_shape": null
+    }
+   ]
+  },
+  "core.agent_head.blocks.layers.2.self_attn": {
+   "n_calls": 1,
+   "distinct": [
+    {
+     "kind": "MHA",
+     "q": [
+      1,
+      100,
+      256
+     ],
+     "k": [
+      1,
+      100,
+      256
+     ],
+     "v": [
+      1,
+      100,
+      256
+     ],
+     "k_is_v": true,
+     "kpm": null,
+     "kpm_true": null,
+     "attn_mask": null,
+     "kv_source_module": "core.agent_head.blocks.layers.2.norm1",
+     "kv_source_shape": [
+      1,
+      100,
+      256
+     ]
+    }
+   ]
+  },
+  "core.agent_head.blocks.layers.2.multihead_attn": {
+   "n_calls": 1,
+   "distinct": [
+    {
+     "kind": "MHA",
+     "q": [
+      1,
+      100,
+      256
+     ],
+     "k": [
+      1,
+      416,
+      256
+     ],
+     "v": [
+      1,
+      416,
+      256
+     ],
+     "k_is_v": true,
+     "kpm": null,
+     "kpm_true": null,
+     "attn_mask": null,
+     "kv_source_module": "functional (no module output owns this pointer)",
+     "kv_source_shape": null
+    }
+   ]
+  },
+  "tac_decoder_v6.layers.0.self_attn": {
+   "n_calls": 1,
+   "distinct": [
+    {
+     "kind": "MHA",
+     "q": [
+      1,
+      38,
+      256
+     ],
+     "k": [
+      1,
+      38,
+      256
+     ],
+     "v": [
+      1,
+      38,
+      256
+     ],
+     "k_is_v": true,
+     "kpm": null,
+     "kpm_true": null,
+     "attn_mask": null,
+     "kv_source_module": "tac_decoder_v6.layers.0.n1",
+     "kv_source_shape": [
+      1,
+      38,
+      256
+     ]
+    }
+   ]
+  },
+  "tac_decoder_v6.layers.0.cross_attn": {
+   "n_calls": 1,
+   "distinct": [
+    {
+     "kind": "MHA",
+     "q": [
+      1,
+      38,
+      256
+     ],
+     "k": [
+      1,
+      580,
+      256
+     ],
+     "v": [
+      1,
+      580,
+      256
+     ],
+     "k_is_v": true,
+     "kpm": [
+      1,
+      580
+     ],
+     "kpm_true": 0,
+     "attn_mask": null,
+     "kv_source_module": "tac_decoder_v6.kv_norm",
+     "kv_source_shape": [
+      1,
+      580,
+      256
+     ]
+    }
+   ]
+  },
+  "tac_decoder_v6.layers.1.self_attn": {
+   "n_calls": 1,
+   "distinct": [
+    {
+     "kind": "MHA",
+     "q": [
+      1,
+      38,
+      256
+     ],
+     "k": [
+      1,
+      38,
+      256
+     ],
+     "v": [
+      1,
+      38,
+      256
+     ],
+     "k_is_v": true,
+     "kpm": null,
+     "kpm_true": null,
+     "attn_mask": null,
+     "kv_source_module": "tac_decoder_v6.layers.1.n1",
+     "kv_source_shape": [
+      1,
+      38,
+      256
+     ]
+    }
+   ]
+  },
+  "tac_decoder_v6.layers.1.cross_attn": {
+   "n_calls": 1,
+   "distinct": [
+    {
+     "kind": "MHA",
+     "q": [
+      1,
+      38,
+      256
+     ],
+     "k": [
+      1,
+      580,
+      256
+     ],
+     "v": [
+      1,
+      580,
+      256
+     ],
+     "k_is_v": true,
+     "kpm": [
+      1,
+      580
+     ],
+     "kpm_true": 0,
+     "attn_mask": null,
+     "kv_source_module": "tac_decoder_v6.kv_norm",
+     "kv_source_shape": [
+      1,
+      580,
+      256
+     ]
+    }
+   ]
+  },
+  "core.decoder.layers.0.cross": {
+   "n_calls": 3,
+   "distinct": [
+    {
+     "kind": "MHA",
+     "q": [
+      1,
+      117,
+      384
+     ],
+     "k": [
+      1,
+      416,
+      384
+     ],
+     "v": [
+      1,
+      416,
+      384
+     ],
+     "k_is_v": true,
+     "kpm": null,
+     "kpm_true": null,
+     "attn_mask": null,
+     "kv_source_module": "core.decoder.feat_proj",
+     "kv_source_shape": [
+      1,
+      416,
+      384
+     ]
+    }
+   ]
+  },
+  "core.decoder.layers.0.cross_agent": {
+   "n_calls": 3,
+   "distinct": [
+    {
+     "kind": "MHA",
+     "q": [
+      1,
+      117,
+      384
+     ],
+     "k": [
+      1,
+      100,
+      384
+     ],
+     "v": [
+      1,
+      100,
+      384
+     ],
+     "k_is_v": true,
+     "kpm": [
+      1,
+      100
+     ],
+     "kpm_true": 0,
+     "attn_mask": null,
+     "kv_source_module": "core.agent_embed[0]",
+     "kv_source_shape": [
+      1,
+      100,
+      384
+     ]
+    }
+   ]
+  },
+  "core.decoder.layers.1.cross": {
+   "n_calls": 3,
+   "distinct": [
+    {
+     "kind": "MHA",
+     "q": [
+      1,
+      117,
+      384
+     ],
+     "k": [
+      1,
+      416,
+      384
+     ],
+     "v": [
+      1,
+      416,
+      384
+     ],
+     "k_is_v": true,
+     "kpm": null,
+     "kpm_true": null,
+     "attn_mask": null,
+     "kv_source_module": "core.decoder.feat_proj",
+     "kv_source_shape": [
+      1,
+      416,
+      384
+     ]
+    }
+   ]
+  },
+  "core.decoder.layers.1.cross_agent": {
+   "n_calls": 3,
+   "distinct": [
+    {
+     "kind": "MHA",
+     "q": [
+      1,
+      117,
+      384
+     ],
+     "k": [
+      1,
+      100,
+      384
+     ],
+     "v": [
+      1,
+      100,
+      384
+     ],
+     "k_is_v": true,
+     "kpm": [
+      1,
+      100
+     ],
+     "kpm_true": 0,
+     "attn_mask": null,
+     "kv_source_module": "core.agent_embed[0]",
+     "kv_source_shape": [
+      1,
+      100,
+      384
+     ]
+    }
+   ]
+  },
+  "core.decoder.layers.2.cross": {
+   "n_calls": 3,
+   "distinct": [
+    {
+     "kind": "MHA",
+     "q": [
+      1,
+      117,
+      384
+     ],
+     "k": [
+      1,
+      416,
+      384
+     ],
+     "v": [
+      1,
+      416,
+      384
+     ],
+     "k_is_v": true,
+     "kpm": null,
+     "kpm_true": null,
+     "attn_mask": null,
+     "kv_source_module": "core.decoder.feat_proj",
+     "kv_source_shape": [
+      1,
+      416,
+      384
+     ]
+    }
+   ]
+  },
+  "core.decoder.layers.2.cross_agent": {
+   "n_calls": 3,
+   "distinct": [
+    {
+     "kind": "MHA",
+     "q": [
+      1,
+      117,
+      384
+     ],
+     "k": [
+      1,
+      100,
+      384
+     ],
+     "v": [
+      1,
+      100,
+      384
+     ],
+     "k_is_v": true,
+     "kpm": [
+      1,
+      100
+     ],
+     "kpm_true": 0,
+     "attn_mask": null,
+     "kv_source_module": "core.agent_embed[0]",
+     "kv_source_shape": [
+      1,
+      100,
+      384
+     ]
+    }
+   ]
+  },
+  "core.decoder.layers.3.cross": {
+   "n_calls": 3,
+   "distinct": [
+    {
+     "kind": "MHA",
+     "q": [
+      1,
+      117,
+      384
+     ],
+     "k": [
+      1,
+      416,
+      384
+     ],
+     "v": [
+      1,
+      416,
+      384
+     ],
+     "k_is_v": true,
+     "kpm": null,
+     "kpm_true": null,
+     "attn_mask": null,
+     "kv_source_module": "core.decoder.feat_proj",
+     "kv_source_shape": [
+      1,
+      416,
+      384
+     ]
+    }
+   ]
+  },
+  "core.decoder.layers.3.cross_agent": {
+   "n_calls": 3,
+   "distinct": [
+    {
+     "kind": "MHA",
+     "q": [
+      1,
+      117,
+      384
+     ],
+     "k": [
+      1,
+      100,
+      384
+     ],
+     "v": [
+      1,
+      100,
+      384
+     ],
+     "k_is_v": true,
+     "kpm": [
+      1,
+      100
+     ],
+     "kpm_true": 0,
+     "attn_mask": null,
+     "kv_source_module": "core.agent_embed[0]",
+     "kv_source_shape": [
+      1,
+      100,
+      384
+     ]
+    }
+   ]
+  }
+ },
+ "grid_sample_calls": [
+  {
+   "caller": "bev_lift.py:264 forward",
+   "input": [
+    1,
+    1024,
+    26,
+    64
+   ],
+   "grid": [
+    1,
+    480,
+    64,
+    2
+   ],
+   "input_ptr": 3011323166720,
+   "mode": "bilinear",
+   "padding_mode": "border",
+   "align_corners": false
+  },
+  {
+   "caller": "refc_bev_coupling.py:250 forward",
+   "input": [
+    1,
+    384,
+    120,
+    64
+   ],
+   "grid": [
+    1,
+    117,
+    8,
+    2
+   ],
+   "input_ptr": 3011141238784,
+   "mode": "bilinear",
+   "padding_mode": "zeros",
+   "align_corners": false
+  },
+  {
+   "caller": "refc_bev_coupling.py:250 forward",
+   "input": [
+    1,
+    384,
+    120,
+    64
+   ],
+   "grid": [
+    1,
+    117,
+    8,
+    2
+   ],
+   "input_ptr": 3011141238784,
+   "mode": "bilinear",
+   "padding_mode": "zeros",
+   "align_corners": false
+  },
+  {
+   "caller": "refc_bev_coupling.py:250 forward",
+   "input": [
+    1,
+    384,
+    120,
+    64
+   ],
+   "grid": [
+    1,
+    117,
+    8,
+    2
+   ],
+   "input_ptr": 3011141238784,
+   "mode": "bilinear",
+   "padding_mode": "zeros",
+   "align_corners": false
+  },
+  {
+   "caller": "refc_bev_coupling.py:250 forward",
+   "input": [
+    1,
+    384,
+    120,
+    64
+   ],
+   "grid": [
+    1,
+    117,
+    8,
+    2
+   ],
+   "input_ptr": 3011141238784,
+   "mode": "bilinear",
+   "padding_mode": "zeros",
+   "align_corners": false
+  },
+  {
+   "caller": "refc_bev_coupling.py:250 forward",
+   "input": [
+    1,
+    384,
+    120,
+    64
+   ],
+   "grid": [
+    1,
+    117,
+    8,
+    2
+   ],
+   "input_ptr": 3011141238784,
+   "mode": "bilinear",
+   "padding_mode": "zeros",
+   "align_corners": false
+  },
+  {
+   "caller": "refc_bev_coupling.py:250 forward",
+   "input": [
+    1,
+    384,
+    120,
+    64
+   ],
+   "grid": [
+    1,
+    117,
+    8,
+    2
+   ],
+   "input_ptr": 3011141238784,
+   "mode": "bilinear",
+   "padding_mode": "zeros",
+   "align_corners": false
+  },
+  {
+   "caller": "refc_bev_coupling.py:250 forward",
+   "input": [
+    1,
+    384,
+    120,
+    64
+   ],
+   "grid": [
+    1,
+    117,
+    8,
+    2
+   ],
+   "input_ptr": 3011141238784,
+   "mode": "bilinear",
+   "padding_mode": "zeros",
+   "align_corners": false
+  },
+  {
+   "caller": "refc_bev_coupling.py:250 forward",
+   "input": [
+    1,
+    384,
+    120,
+    64
+   ],
+   "grid": [
+    1,
+    117,
+    8,
+    2
+   ],
+   "input_ptr": 3011141238784,
+   "mode": "bilinear",
+   "padding_mode": "zeros",
+   "align_corners": false
+  },
+  {
+   "caller": "refc_bev_coupling.py:250 forward",
+   "input": [
+    1,
+    384,
+    120,
+    64
+   ],
+   "grid": [
+    1,
+    117,
+    8,
+    2
+   ],
+   "input_ptr": 3011141238784,
+   "mode": "bilinear",
+   "padding_mode": "zeros",
+   "align_corners": false
+  },
+  {
+   "caller": "refc_bev_coupling.py:250 forward",
+   "input": [
+    1,
+    384,
+    120,
+    64
+   ],
+   "grid": [
+    1,
+    117,
+    8,
+    2
+   ],
+   "input_ptr": 3011141238784,
+   "mode": "bilinear",
+   "padding_mode": "zeros",
+   "align_corners": false
+  },
+  {
+   "caller": "refc_bev_coupling.py:250 forward",
+   "input": [
+    1,
+    384,
+    120,
+    64
+   ],
+   "grid": [
+    1,
+    117,
+    8,
+    2
+   ],
+   "input_ptr": 3011141238784,
+   "mode": "bilinear",
+   "padding_mode": "zeros",
+   "align_corners": false
+  },
+  {
+   "caller": "refc_bev_coupling.py:250 forward",
+   "input": [
+    1,
+    384,
+    120,
+    64
+   ],
+   "grid": [
+    1,
+    117,
+    8,
+    2
+   ],
+   "input_ptr": 3011141238784,
+   "mode": "bilinear",
+   "padding_mode": "zeros",
+   "align_corners": false
+  }
+ ],
+ "design_literals": {
+  "tac_decoder_v6.layers.*.cross_attn": {
+   "q": [
+    1,
+    38,
+    256
+   ],
+   "kv": [
+    1,
+    580,
+    256
+   ],
+   "why": "SPEC s4: 38 behaviour queries over {100 agent slots, 30x16 BEV tokens}"
+  },
+  "tac_decoder_v6.layers.*.self_attn": {
+   "q": [
+    1,
+    38,
+    256
+   ],
+   "kv": [
+    1,
+    38,
+    256
+   ],
+   "why": "SPEC s4: query-to-query attention"
+  },
+  "core.decoder.layers.*.cross": {
+   "kv_tokens": 416,
+   "d": 384,
+   "why": "SPEC s1 (3): image tokens by content (stride-32, 13x32)"
+  },
+  "core.decoder.layers.*.cross_agent": {
+   "kv_tokens": 100,
+   "d": 384,
+   "why": "SPEC s1 (2): agent slots addressed by waypoint"
+  },
+  "core.agent_head.*": {
+   "memory_tokens": 416,
+   "d": 256,
+   "queries": 100,
+   "why": "agent head reads the stride-32 map (refc.py:4340-4341; mem_pos [1,416,256])"
+  },
+  "_perception.box_dec.*": {
+   "memory_tokens": 2144,
+   "d": 256,
+   "queries": 100,
+   "why": "SPEC s6: stride-16 tokens (1664) + BEV (480)"
+  }
+ },
+ "q1_as_launched": {
+  "stem_calls": [
+   {
+    "shape": [
+     8,
+     3,
+     416,
+     1024
+    ],
+    "dtype": "torch.float32",
+    "channels_last": true,
+    "autocast_cpu_enabled": true,
+    "autocast_dtype": "torch.bfloat16"
+   },
+   {
+    "shape": [
+     2,
+     3,
+     416,
+     1024
+    ],
+    "dtype": "torch.float32",
+    "channels_last": true,
+    "autocast_cpu_enabled": true,
+    "autocast_dtype": "torch.bfloat16"
+   },
+   {
+    "shape": [
+     3,
+     3,
+     416,
+     1024
+    ],
+    "dtype": "torch.float32",
+    "channels_last": true,
+    "autocast_cpu_enabled": true,
+    "autocast_dtype": "torch.bfloat16"
+   }
+  ],
+  "payload_found": true,
+  "codec": "png",
+  "n_frames_compared": 8,
+  "stem_vs_independent_max_abs": 1.8494733572006226,
+  "stem_vs_unnormalised_max_abs": 2.1179039478302,
+  "stem_vs_bgr_max_abs": 3.2069718837738037,
+  "stem_vs_no_equalize_max_abs": 0.0,
+  "stem_input_channel_mean": [
+   -1.1825060844421387,
+   -1.0483214855194092,
+   -0.9208695888519287
+  ],
+  "stem_input_bottom43_values_frame0": [
+   [
+    -2.1179,
+    -2.10078,
+    -2.08365,
+    -2.06653,
+    -2.0494,
+    -2.03228,
+    -2.01516,
+    -1.99803,
+    -1.98091,
+    -1.96378,
+    -1.94666,
+    -1.92953,
+    -1.91241,
+    -1.89528,
+    -1.87816,
+    -1.86103,
+    -1.84391,
+    -1.82678,
+    -1.80966,
+    -1.79253,
+    -1.77541,
+    -1.75828,
+    -1.74116,
+    -1.72403,
+    -1.70691,
+    -1.68979,
+    -1.67266,
+    -1.65554,
+    -1.63841,
+    -1.62129,
+    -1.60416,
+    -1.58704,
+    -1.56991,
+    -1.55279,
+    -1.53566,
+    -1.51854,
+    -1.50141,
+    -1.48429,
+    -1.46716,
+    -1.45004,
+    -1.43291,
+    -1.41579,
+    -1.39866,
+    -1.38154,
+    -1.36441,
+    -1.34729,
+    -1.33017,
+    -1.31304,
+    -1.29592,
+    -1.27879,
+    -1.26167,
+    -1.24454,
+    -1.22742,
+    -1.21029,
+    -1.19317,
+    -1.17604,
+    -1.15892,
+    -1.14179,
+    -1.12467,
+    -1.10754,
+    -1.09042,
+    -1.07329,
+    -1.05617,
+    -1.03904,
+    -1.02192,
+    -1.00479,
+    -0.98767,
+    -0.97055,
+    -0.95342,
+    -0.9363,
+    -0.91917,
+    -0.90205,
+    -0.88492,
+    -0.8678,
+    -0.85067,
+    -0.83355,
+    -0.81642,
+    -0.7993,
+    -0.78217,
+    -0.76505,
+    -0.74792,
+    -0.7308,
+    -0.71367,
+    -0.69655,
+    -0.67942,
+    -0.6623,
+    -0.64518,
+    -0.62805,
+    -0.61093,
+    -0.5938,
+    -0.57668,
+    -0.55955,
+    -0.54243,
+    -0.5253,
+    -0.50818,
+    -0.49105,
+    -0.47393
+   ],
+   [
+    -2.03571,
+    -2.01821,
+    -2.0007,
+    -1.98319,
+    -1.96569,
+    -1.94818,
+    -1.93067,
+    -1.91317,
+    -1.89566,
+    -1.87815,
+    -1.86064,
+    -1.84314,
+    -1.82563,
+    -1.80812,
+    -1.79062,
+    -1.77311,
+    -1.7556,
+    -1.7381,
+    -1.72059,
+    -1.70308,
+    -1.68557,
+    -1.66807,
+    -1.65056,
+    -1.63305,
+    -1.61555,
+    -1.59804,
+    -1.58053,
+    -1.56303,
+    -1.54552,
+    -1.52801,
+    -1.5105,
+    -1.493,
+    -1.47549,
+    -1.45798,
+    -1.44048,
+    -1.42297,
+    -1.40546,
+    -1.38796,
+    -1.37045,
+    -1.35294,
+    -1.33543,
+    -1.31793,
+    -1.30042,
+    -1.28291,
+    -1.26541,
+    -1.2479,
+    -1.23039,
+    -1.21289,
+    -1.19538,
+    -1.17787,
+    -1.16036,
+    -1.14286,
+    -1.12535,
+    -1.10784,
+    -1.09034,
+    -1.07283,
+    -1.05532,
+    -1.03782,
+    -1.02031,
+    -1.0028,
+    -0.98529,
+    -0.96779,
+    -0.95028,
+    -0.93277,
+    -0.91527,
+    -0.89776,
+    -0.88025,
+    -0.86274,
+    -0.84524,
+    -0.82773,
+    -0.81022,
+    -0.79272,
+    -0.77521,
+    -0.7577,
+    -0.7402,
+    -0.72269,
+    -0.70518,
+    -0.68767,
+    -0.67017,
+    -0.65266,
+    -0.63515,
+    -0.61765,
+    -0.60014,
+    -0.58263,
+    -0.56513,
+    -0.54762,
+    -0.53011,
+    -0.51261,
+    -0.4951,
+    -0.47759,
+    -0.46008,
+    -0.44258,
+    -0.42507,
+    -0.40756,
+    -0.39006,
+    -0.37255,
+    -0.35504,
+    -0.33753
+   ],
+   [
+    -1.80444,
+    -1.78702,
+    -1.76959,
+    -1.75216,
+    -1.73473,
+    -1.7173,
+    -1.69987,
+    -1.68244,
+    -1.66501,
+    -1.64758,
+    -1.63015,
+    -1.61272,
+    -1.59529,
+    -1.57786,
+    -1.56044,
+    -1.54301,
+    -1.52558,
+    -1.50815,
+    -1.49072,
+    -1.47329,
+    -1.45586,
+    -1.43843,
+    -1.421,
+    -1.40357,
+    -1.38614,
+    -1.36871,
+    -1.35129,
+    -1.33386,
+    -1.31643,
+    -1.299,
+    -1.28157,
+    -1.26414,
+    -1.24671,
+    -1.22928,
+    -1.21185,
+    -1.19442,
+    -1.17699,
+    -1.15956,
+    -1.14213,
+    -1.12471,
+    -1.10728,
+    -1.08985,
+    -1.07242,
+    -1.05499,
+    -1.03756,
+    -1.02013,
+    -1.0027,
+    -0.98527,
+    -0.96784,
+    -0.95041,
+    -0.93298,
+    -0.91556,
+    -0.89813,
+    -0.8807,
+    -0.86327,
+    -0.84584,
+    -0.82841,
+    -0.81098,
+    -0.79355,
+    -0.77612,
+    -0.75869,
+    -0.74126,
+    -0.72383,
+    -0.70641,
+    -0.68898,
+    -0.67155,
+    -0.65412,
+    -0.63669,
+    -0.61926,
+    -0.60183,
+    -0.5844,
+    -0.56697,
+    -0.54954,
+    -0.53211,
+    -0.51468,
+    -0.49725,
+    -0.47983,
+    -0.4624,
+    -0.44497,
+    -0.42754,
+    -0.41011,
+    -0.39268,
+    -0.37525,
+    -0.35782,
+    -0.34039,
+    -0.32296,
+    -0.30553,
+    -0.2881,
+    -0.27068,
+    -0.25325,
+    -0.23582,
+    -0.21839
+   ]
+  ],
+  "expected_bottom43_(0-mean)/std": [
+   -2.117904,
+   -2.035714,
+   -1.804444
+  ],
+  "raw_range": [
+   0.0,
+   1.0
+  ],
+  "fold_stem_rel_err_fp32": 1.1556966938996993e-07,
+  "bn1_running_mean_head": [
+   -0.008934,
+   -0.000526,
+   0.0,
+   0.002788
+  ],
+  "levers": {
+   "chunk_ckpt": 8,
+   "frozen_bn": true,
+   "bn_pinned": 104,
+   "relu_out_of_place": 100,
+   "bf16": true,
+   "channels_last": true,
+   "bn_folded": 104,
+   "dedup_frames": true
+  },
+  "norm_calls": 2,
+  "equalize_calls": 0
+ }
+}

@@ -1,0 +1,361 @@
+--- a/stack/scripts/v8f_mini_train.py
++++ b/stack/scripts/v8f_mini_train.py
+@@ -81,6 +81,7 @@
+     "code_mix": "lever:code_mix",             # PREREG_V8F_MIXO: argv -> make_config -> the BUILT model's levers (declared_vs_built) -> the probe of the code O actually read (code_mix_probe)
+     "o_interface": "lever:o_interface",       # PREREG_V8F_FLAT: argv -> make_config -> the BUILT model's levers (declared_vs_built) -> G-LIVE's dead-weight set (live_check) -> the probe of what O is handed (o_interface_probe)
+     "w_acc": "cfg:w_acc",                     # PREREG_V8F_OACC: argv -> make_config -> the BUILT config AND built_levers (declared_vs_built) -> acc_probe (the BUILT loss's total moves by exactly w_acc x the acc term, and O's head receives its gradient)
++    "launch_intent_w": "cfg:launch_intent_w",  # PREREG_V8F_LAUNCH_INTENT: argv -> make_config -> the BUILT config AND built_levers (declared_vs_built) -> launch_intent_probe (G-LIVE: the mask is the loop's own call `launch_stage`, the BUILT loss's total moves by exactly w_traj x W x term / 3 on launch rows, O's head receives its gradient, an all-False mask reads EXACTLY 0.0) -> `b["launch"] = lmask` in the loop
+     # PREREG_V8F_HACC_MC section 7 (O-RECOVER): the ego-state perturbation. `ego:<k>` = equals the BUILT perturber's lever (D.EgoPerturb.built_levers(), the object the training loop calls
+     # `.apply` on): argv -> make_ego_perturb -> the perturber -> declared_vs_built (bad_ego_perturb) -> G-LIVE on a perturbed batch + ego_perturb_probe (the perturbed tensors reach the loss
+     # gradient, a p = 0 control reads EXACTLY 0.0) -> `b = ego.apply(b, step)` in the loop. With --ego-perturb-p 0 (the default) none of it runs and nothing it imports is imported.
+@@ -124,6 +125,10 @@
+     ap.add_argument("--w-acc", dest="w_acc", type=float, default=0.0,
+                     help="PREREG_V8F_OACC: the weight of the acceleration-matching term on O's plan (the second difference on the 0.2 s grid, origin knot included, of O's plan minus the GT's, squared, mean over the GT-valid steps). "
+                          "0.0 (default) = the term is not in the loss = every earlier arm, bit for bit. > 0 = OACC's X: the value comes from the PREREG's rule (v8f_mini_eval_oacc.py wacc), is written into the argv and never tuned")
++    ap.add_argument("--launch-intent-w", dest="launch_intent_w", type=float, default=0.0,
++                    help="PREREG_V8F_LAUNCH_INTENT: W, the EXTRA weight on O's along-track distance over knots 1-12 (tau 0.2-2.4 s, the executed horizon at m = 10) for GT-launch TRAIN samples (the LOGGED v0 < 6 m/s and the GT chord speed over the "
++                         "last 0.2 s of the 6 s horizon >= v0 + 1 m/s; label-side, nothing of it is read at inference). The term is W x the along-axis, knots 1-12 slice of ADE's own per-knot distance, on launch samples only: on a launch sample that slice "
++                         "carries weight 1 + W; a non-launch sample's loss is unchanged. 0.0 (default) = the term is not computed and not in the loss = every earlier arm, bit for bit. > 0 = the value comes from the PREREG's dose rule, is written into the argv and never tuned")
+     # ---- PREREG_V8F_HACC_MC section 7 (O-RECOVER): an ego-state perturbation of the kinematic inputs; targets and labels are never touched. Every flag defaults to OFF (the defaults are
+     # data.EGO_PERTURB_DEFAULTS), and every flag has its G-DVB entry in FLAG_CHECKS and its clause in bad_ego_perturb.
+     ap.add_argument("--ego-perturb-p", dest="ego_perturb_p", type=float, default=D.EGO_PERTURB_DEFAULTS["p"],
+@@ -255,7 +260,7 @@
+                            consistency=lv["consistency"], wm=lv["wm"], n_tok=40 if a.grid == "pool4x10" else 160,
+                            p_gt_start=a.p_gt_start, p_gt_end=a.p_gt_end, w_ckpt=a.w_ckpt, w_tac=a.w_tac,
+                            w_cons=a.w_cons, w_traj=a.w_traj, w_pen=a.w_pen, w_pen_self=a.w_pen_self, w_wm=a.w_wm,
+-                           detach_upper=a.detach_upper, kin_mode=a.kin_mode, cons_absent=lv["cons_absent"], code_mix=a.code_mix, o_interface=a.o_interface, w_acc=a.w_acc)
++                           detach_upper=a.detach_upper, kin_mode=a.kin_mode, cons_absent=lv["cons_absent"], code_mix=a.code_mix, o_interface=a.o_interface, w_acc=a.w_acc, launch_intent_w=a.launch_intent_w)
+ 
+ 
+ def bad_encoder(a, enc, data_info) -> list:
+@@ -682,6 +687,14 @@
+         bad.append(f"w_acc {a.w_acc!r} is not a finite number >= 0")
+     if built.get("w_acc") != a.w_acc:
+         bad.append(f"lever w_acc: declared {a.w_acc} but built {built.get('w_acc')}")
++    # PREREG_V8F_LAUNCH_INTENT: the launch weight declared on the argv is the one the BUILT config and the BUILT model's levers say (argv -> make_config -> cfg -> built_levers); a NEGATIVE or non-finite weight is refused
++    # (a negative weight would REWARD a launch-sample along-track error); a weight that the position-loss scale zeroes (w_traj 0) is a lever that is declared and does nothing. launch_intent_probe then reads the BUILT loss.
++    if not (math.isfinite(a.launch_intent_w) and a.launch_intent_w >= 0.0):
++        bad.append(f"launch_intent_w {a.launch_intent_w!r} is not a finite number >= 0")
++    if built.get("launch_intent_w") != a.launch_intent_w:
++        bad.append(f"lever launch_intent_w: declared {a.launch_intent_w} but built {built.get('launch_intent_w')}")
++    if a.launch_intent_w > 0.0 and not model.cfg.w_traj > 0.0:
++        bad.append(f"launch_intent_w {a.launch_intent_w} declared but w_traj is {model.cfg.w_traj}: the term enters the total scaled by w_traj -- a lever that is declared and does nothing")
+     if not built["prior_frozen"]:
+         bad.append("the P10 prior is not frozen")
+     if model.cfg.n_tok != (40 if a.grid == "pool4x10" else 160):
+@@ -695,7 +708,7 @@
+     if built["wm"] != "off" and built["wm_ch1_scale"] != M.CH1_SCALE[a.kin_mode]:
+         bad.append(f"WM action channel 1 scale {built['wm_ch1_scale']} != {M.CH1_SCALE[a.kin_mode]} for kin_mode {a.kin_mode}")
+     for f in ("hist", "hmax", "d", "n_q", "nb", "p_gt_start", "p_gt_end", "w_ckpt", "w_tac", "w_cons", "w_traj", "w_pen",
+-              "w_pen_self", "w_wm", "detach_upper", "kin_mode", "w_acc"):
++              "w_pen_self", "w_wm", "detach_upper", "kin_mode", "w_acc", "launch_intent_w"):
+         want = {"hist": a.hist, "hmax": cfg.hmax, "d": a.d, "n_q": a.n_q, "nb": a.nb}.get(f, getattr(a, f, None))
+         got = getattr(model.cfg, f)
+         if want is not None and not (got == want or (isinstance(want, float) and abs(got - want) < 1e-12)):
+@@ -1016,6 +1029,108 @@
+     return res
+ 
+ 
++def launch_stage(batch: dict) -> torch.Tensor:
++    """PREREG_V8F_LAUNCH_INTENT: the ONE call that turns a COLLATED batch into its GT-launch mask ``[B]`` bool -- the training loop calls it, and ``launch_intent_probe`` (G-LIVE) calls the same function. It reads the LOGGED
++    ``kin3[:, 0]`` (v0) and the GT future (``gt``, ``gt_ok``) and must run BEFORE ``ego.apply`` / ``dag.apply`` / ``comp.apply``: a swapped or perturbed sample's ``kin3`` is the OWN or perturbed state, not the label."""
++    return M.launch_mask(batch["kin3"][:, 0], batch["gt"], batch["gt_ok"])
++
++
++def launch_weight_share(n_launch: int, n_eligible: int, w: float) -> float | None:
++    """PREREG_V8F_LAUNCH_INTENT K-SHARE: the realised share of the along-track weight that sits on launch samples, from the run record's counts: launch samples carry 1 + W, the other GT-valid samples 1.
++    ``(1 + W) n / ((1 + W) n + (eligible - n))``. None when no GT-valid row was seen."""
++    if n_eligible <= 0:
++        return None
++    return ((1.0 + w) * n_launch) / ((1.0 + w) * n_launch + (n_eligible - n_launch))
++
++
++def launch_intent_probe(model, batch, cfg, rtol: float = 1e-3) -> dict:
++    """G-LIVE for PREREG_V8F_LAUNCH_INTENT: the up-weighted along-track term REACHES THE LOSS THE TRAINER BACKPROPAGATES, with the declared weight, ON THE ROWS THE MASK NAMES, and O's head receives its gradient -- read from the BUILT
++    model's own ``loss`` on the real probe batch (a COPY, its own seeds). The mask is ``launch_stage(batch)`` (the loop's own call). A probe batch can hold no natural launch row (about 1 in 20 windows is one), so the wire is
++    proved on a FORCED mask (the first half of the GT-valid rows) and the natural mask is read beside it (its counts are the record's ``launch_n`` / ``launch_eligible``). With W = 0.0 declared nothing runs:
++    {"launch_intent": "off"} (the default run is the pre-change run).
++
++      term           finite and > 0 on the forced mask, and absent at W = 0.0
++      contribution   total(W) - total(0) == w_traj x W x term / 3 (to ``rtol`` and float32 rounding). DELETE the line that adds the term and this reads 0.0 -> RED
++      O's head       sum |grad(total(W)) - grad(total(0))| over ``head_o.*`` > 0
++      natural mask   when it holds >= 1 row, its contribution is > 0 too (the real labels reach the loss)
++      controls       (a) the same loss twice at W = 0.0 gives gradients that differ by EXACTLY 0.0; (b) an ALL-FALSE mask at W gives term 0.0, total difference 0.0 and gradient difference EXACTLY 0.0 (a mask that is ignored reads
++                     non-zero); (c) the frozen P10 prior's gradient difference is EXACTLY 0.0; (d) so is the world-model auxiliary's, when built
++
++    Returns the record selfcheck.json carries; any violation is an AssertionError, which the caller turns into a refusal."""
++    W = float(cfg.launch_intent_w)
++    if not W > 0.0:
++        return {"launch_intent": "off", "pass": True, "launch_n": 0, "launch_eligible": 0, "skipped": "--launch-intent-w not named: the term is not in the loss (the default run is the pre-change run)"}
++    eps32 = float(torch.finfo(torch.float32).eps)
++    nat = launch_stage(batch)
++    gok = batch["gt_ok"].bool()
++    if nat.dtype != torch.bool or tuple(nat.shape) != (int(gok.shape[0]),):
++        raise AssertionError(f"launch probe: the mask is {nat.dtype} {tuple(nat.shape)}, a bool [B] is required")
++    elig = int(gok.sum())
++    if elig < 2:
++        raise AssertionError(f"launch probe: only {elig} GT-valid rows in the probe batch; the wire cannot be seen")
++    forced = torch.zeros_like(nat)
++    forced[gok.nonzero().flatten()[: max(1, elig // 2)]] = True
++    none = torch.zeros_like(nat)
++    m = copy.deepcopy(model).cpu()
++    m.train()
++    named = [(n, p) for n, p in m.named_parameters() if p.requires_grad]
++
++    def run(w_, mask):
++        m.cfg.launch_intent_w = w_
++        for _, p in named:
++            p.grad = None
++        for p in m.prior.parameters():
++            p.grad = None
++        torch.manual_seed(20261028)
++        out = m.loss({**batch, "launch": mask}, p_gt=0.5, gen=torch.Generator().manual_seed(11))
++        T = out["terms"]
++        for k, v in T.items():
++            if not torch.isfinite(v):
++                raise AssertionError(f"launch probe: loss term {k} is not finite at launch_intent_w {w_}: {float(v)}")
++        T["total"].backward()
++        g = {n: (p.grad.detach().clone() if p.grad is not None else torch.zeros_like(p)) for n, p in named}
++        g["__prior__"] = torch.cat([(p.grad.detach().reshape(-1) if p.grad is not None else torch.zeros(p.numel())) for p in m.prior.parameters()])
++        return float(T["total"].detach()), (float(T["launch_along"].detach()) if "launch_along" in T else None), g
++
++    t_w, term_w, g_w = run(W, forced)
++    t_0, term_0, g_0 = run(0.0, forced)
++    t_0b, _, g_0b = run(0.0, forced)
++    t_n, term_n, g_n = run(W, none)
++    t_nat, term_nat, g_nat = run(W, nat)
++    dsum = lambda ga, gb, pre: float(sum((ga[n] - gb[n]).abs().sum() for n in ga if n.startswith(pre)))      # noqa: E731
++    w_traj = float(m.cfg.w_traj)
++    want = w_traj * W * (term_w or 0.0) / 3.0
++    res = {"launch_intent_w_declared": W, "launch_n": int(nat.sum()), "launch_eligible": elig, "launch_n_forced": int(forced.sum()), "term_forced": term_w, "term_at_zero_weight": term_0,
++           "total_w": t_w, "total_0": t_0, "contribution": t_w - t_0, "w_traj_x_W_x_term_over_3": want,
++           "head_o_grad_diff": dsum(g_w, g_0, "head_o."), "read_o_grad_diff": dsum(g_w, g_0, "read_o."),
++           "natural_contribution": t_nat - t_0, "natural_term": term_nat, "natural_head_o_grad_diff": dsum(g_nat, g_0, "head_o."),
++           "control_repeat_total_diff": abs(t_0b - t_0), "control_repeat_grad_diff": dsum(g_0, g_0b, ""),
++           "control_allfalse_term": term_n, "control_allfalse_total_diff": abs(t_n - t_0), "control_allfalse_grad_diff": dsum(g_n, g_0, ""),
++           "control_prior_grad_diff": float((g_w["__prior__"] - g_0["__prior__"]).abs().sum()),
++           "control_wm_grad_diff": dsum(g_w, g_0, "wm.") if m.wm is not None else None}
++    if term_w is None or not math.isfinite(term_w) or not term_w > 0.0:
++        raise AssertionError(f"launch probe: the up-weighted term reads {term_w} on the forced mask (finite and > 0 required)")
++    if term_0 is not None:
++        raise AssertionError("launch probe: the term is computed at launch_intent_w 0.0 (a declared-off lever must add no term)")
++    if res["control_repeat_total_diff"] != 0.0 or res["control_repeat_grad_diff"] != 0.0:
++        raise AssertionError(f"launch probe: the probe is not deterministic (the same loss twice differs by {res['control_repeat_total_diff']} / {res['control_repeat_grad_diff']}): its differences mean nothing")
++    if not want > 64.0 * eps32 * max(abs(t_0), 1.0):
++        raise AssertionError(f"launch probe: w_traj x W x term / 3 = {want} is below float32 visibility against the total {t_0}: the probe cannot see the term")
++    if abs(res["contribution"] - want) > rtol * want + 4.0 * eps32 * max(abs(t_w), abs(t_0)):
++        raise AssertionError(f"launch probe: the total moved by {res['contribution']} when the weight went from 0 to {W}, w_traj x W x term / 3 is {want}: the term does not reach the loss with its weight")
++    if not res["head_o_grad_diff"] > 0.0:
++        raise AssertionError("launch probe: O's head receives no gradient from the launch term (the sum of |d total / d head_o| differences is 0.0)")
++    if term_n != 0.0 or res["control_allfalse_total_diff"] != 0.0 or res["control_allfalse_grad_diff"] != 0.0:
++        raise AssertionError(f"launch probe: an ALL-FALSE mask must read exactly 0.0 (term {term_n}, total diff {res['control_allfalse_total_diff']}, grad diff {res['control_allfalse_grad_diff']}): the mask is not what selects the rows")
++    if res["control_prior_grad_diff"] != 0.0:
++        raise AssertionError(f"launch probe: the frozen P10 prior's gradient moved with the weight ({res['control_prior_grad_diff']}): the control must read exactly 0.0")
++    if res["control_wm_grad_diff"] not in (None, 0.0):
++        raise AssertionError(f"launch probe: the world-model auxiliary's gradient moved with the weight ({res['control_wm_grad_diff']}): it does not feed the plan, the control must read exactly 0.0")
++    if res["launch_n"] > 0 and not (res["natural_contribution"] > 0.0 and res["natural_head_o_grad_diff"] > 0.0):
++        raise AssertionError(f"launch probe: the natural mask names {res['launch_n']} rows but the total moved by {res['natural_contribution']} (head_o grad diff {res['natural_head_o_grad_diff']}): the real labels do not reach the loss")
++    res["pass"] = True
++    return res
++
+ def ego_perturb_probe(model, batch, cfg, ego, exclude=None) -> dict:
+     """G-LIVE for O-RECOVER (PREREG_V8F_HACC_MC section 7): the ego perturbation REACHES THE LOSS THE TRAINER BACKPROPAGATES -- read from the BUILT model's own ``loss`` on the real probe batch (a COPY, its own
+     seeds), through the SAME ``ego.apply`` the training loop calls. With the lever off (the default) there is nothing to prove and nothing runs (the pre-change model and loss).
+@@ -1695,11 +1810,15 @@
+     ident = None
+     if enc is None:
+         probe = D.collate([ds.item(*w) for w in next(sampler.epoch(0))])
++        if cfg.launch_intent_w > 0.0:                    # PREREG_V8F_LAUNCH_INTENT: every probe calls model.loss on this batch, and a lever-ON loss reads b["launch"] (the loop's own call, on the LOGGED state)
++            probe["launch"] = launch_stage(probe)
+         live = live_check(model.cpu(), probe, cfg)
+     else:
+         ds_probe = D.V8FMiniFrameWindows(store, J, wins, hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s,
+                                          window_start=cfg.window_start, keep_cached=True)
+         probe_f = D.collate_frames([ds_probe.item(*w) for w in next(sampler.epoch(0))][:LIVE_PROBE_WINDOWS_LORA], fstore)
++        if cfg.launch_intent_w > 0.0:                    # PREREG_V8F_LAUNCH_INTENT: as above (the cached tokens stay in `probe`; the mask comes from the logged kin3 and the GT)
++            probe_f["launch"] = launch_stage(probe_f)
+         probe = {k: v for k, v in probe_f.items() if k not in ("frames_u8", "frame_map")}      # the cached tokens stay in `probe` (admissibility, identity)
+         live = live_check_lora(model, enc, probe_f, cfg, a, dev, chunk)
+         ident = identity_probe(enc, probe_f, dev, chunk)
+@@ -1730,6 +1849,10 @@
+         cmpp = ego_dagger_compose_probe(model, probe, cfg, comp)      # AMEND1 section 1: G-LIVE on a COMPOSED batch; both levers reach the loss gradient, the p = 0 controls read EXACTLY 0.0, the overlap is exactly 0
+     except (AssertionError, ValueError) as e:
+         raise SystemExit(f"ZZDVB-REFUSEDZZ ego-dagger-compose: {e}")
++    try:
++        lip = launch_intent_probe(model, probe, cfg)      # PREREG_V8F_LAUNCH_INTENT: G-LIVE on the loop's own mask (launch_stage); the term reaches the loss on the rows the mask names, O's head gets its gradient, an all-False mask reads EXACTLY 0.0 (off: nothing runs)
++    except (AssertionError, ValueError) as e:
++        raise SystemExit(f"ZZDVB-REFUSEDZZ launch-intent: {e}")
+     levers = model.built_levers()
+     levers["ego_perturb"] = ego.built_levers()                        # recorded like every other lever (selfcheck.json, summary.json, the checkpoint)
+     levers["dagger"] = dag.built_levers()                             # PREREG_V8F_DAGGER: what was BUILT (the bank's path and sha256 included) ...
+@@ -1738,6 +1861,9 @@
+     levers["ego_perturb_with_dagger"] = comp.on                        # AMEND1 section 1: what was BUILT (False unless --ego-perturb-with-dagger) ...
+     levers["ego_perturb_stream"] = comp.ego.stream                     # ... and the perturbation's generator stream: 0 = the original, D.EGO_PERTURB_COMPOSED_STREAM = domain-separated from the swap's (composed arms only)
+     levers["ego_dagger_overlap_n"] = cmpp["overlap"]                   # ... and the composed probe's measured overlap on the probe batch (0 when off; the run total is summary.json's ego_dagger_overlap_n)
++    levers["launch_intent"] = {"launch_intent_w": cfg.launch_intent_w, "v0_max": M.LAUNCH_V0_MAX, "dv": M.LAUNCH_DV, "dt": M.LAUNCH_DT, "knots": [M.LAUNCH_KNOT_LO, M.LAUNCH_KNOT_HI], "axis": "along (x of the ego frame at NOW)",
++                               "mask_from": "the LOGGED kin3[:, 0] and the GT future, taken before any ego stage"}   # PREREG_V8F_LAUNCH_INTENT: what was BUILT (the definition the mask uses) ...
++    levers["launch_n"], levers["launch_eligible"] = lip["launch_n"], lip["launch_eligible"]          # ... and the probe batch's natural launch / GT-valid row counts (0 / 0 when off; the run totals are summary.json's launch_n / launch_eligible, present when the lever is on)
+     levers["init_ckpt"] = info.get("init_ckpt")
+     levers["lr_schedule"] = lr_at.built_levers()                       # the built warmup / peak / total the loop calls (G-DVB read --warmup back from it)
+     if enc is not None:
+@@ -1748,6 +1874,7 @@
+     sc["ego_perturb_probe"] = egop
+     sc["dagger_probe"] = dagp
+     sc["ego_dagger_compose_probe"] = cmpp
++    sc["launch_intent_probe"] = lip
+     if ident is not None:
+         sc["identity_probe"] = ident
+     json.dump(sc, open(os.path.join(a.out, "selfcheck.json"), "w"), indent=1, default=str)
+@@ -1765,6 +1892,9 @@
+     dag_int = {"rows": 0, "eligible": 0, "n": 0, "nav_kept": 0}   # ... and since the last log line
+     ov_tot = {"n": 0}                                             # AMEND1 section 1: samples both swapped and perturbed (exactly 0), carried in the checkpoint of a composed arm only
+     ov_int = {"n": 0}                                             # ... and since the last log line
++    launch_on = cfg.launch_intent_w > 0.0                          # PREREG_V8F_LAUNCH_INTENT: off (the default) = the loop runs no new line
++    launch_tot = {"rows": 0, "eligible": 0, "n": 0}                # ... run totals: rows seen, GT-valid rows (the along-track label exists), GT-launch rows; carried in the checkpoint of an arm that has the lever ON only
++    launch_int = {"rows": 0, "eligible": 0, "n": 0}                # ... and since the last log line
+     if os.path.exists(ck_path) and not a.no_resume:
+         ck = torch.load(ck_path, map_location="cpu", weights_only=False)
+         if ck["argv_sha"] != argv_sha(argv):
+@@ -1779,6 +1909,7 @@
+         ego_tot.update(ck.get("ego_totals") or {})
+         dag_tot.update(ck.get("dagger_totals") or {})
+         ov_tot.update(ck.get("ego_dagger_overlap") or {})
++        launch_tot.update(ck.get("launch_totals") or {})
+         print(f"[resume] step {step} epoch {ep} batch {bi}", flush=True)
+ 
+     def save(final=False):
+@@ -1790,6 +1921,8 @@
+                 "dagger": dag.built_levers(), "dagger_totals": dict(dag_tot)}          # O-RECOVER: what was BUILT, beside the config, and the counts so far
+         if comp.on:                                                     # composed arms only: a flag-off checkpoint keeps its key set
+             blob["ego_perturb_with_dagger"], blob["ego_dagger_overlap"], blob["ego_perturb_stream"] = True, dict(ov_tot), ego.stream
++        if launch_on:                                                   # lever-ON arms only: a flag-off checkpoint keeps its key set
++            blob["launch_totals"] = dict(launch_tot)
+         if enc is not None:             # `model` keeps B's layout (the unchanged v8f_mini_eval.py loads it); the LoRA matrices travel beside it
+             blob["lora"], blob["encoder_levers"] = enc.lora_state_dict(), enc.built_levers()
+         torch.save(blob, ck_path + ".tmp")
+@@ -1809,6 +1942,8 @@
+             pf = Prefetch(gen_batches, lambda idx: D.collate_frames([ds.item(*w) for w in idx], fstore), depth=2)
+         for b in pf:
+             fr = (b.pop("frames_u8"), b.pop("frame_map")) if enc is not None else None      # the frames stay on the host; the encoder moves them chunk by chunk
++            if launch_on:                                          # PREREG_V8F_LAUNCH_INTENT: the GT-launch mask from the LOGGED v0 and the GT future, taken BEFORE any ego stage rebuilds kin3 (a swapped sample's kin3 is the own state)
++                lmask = launch_stage(b)
+             if comp.on:                                            # AMEND1 section 1 (--ego-perturb-with-dagger): the swap is drawn first, the perturbation only on the samples the swap did not replace; the overlap is measured (exactly 0)
+                 b = comp.apply(b, step)
+                 for c_ in (ov_int, ov_tot):
+@@ -1826,6 +1961,12 @@
+                 c_["eligible"] += dag.last["n_eligible"]
+                 c_["n"] += dag.last["n_selected"]
+                 c_["nav_kept"] += dag.last["dagger_nav_kept"]
++            if launch_on:                                          # ... and attached AFTER the stages (they return their own batch dict): the loss reads b["launch"]
++                b["launch"] = lmask
++                for c_ in (launch_int, launch_tot):                # the control counts: rows seen, GT-valid rows (the along-track label exists), GT-launch rows
++                    c_["rows"] += int(lmask.shape[0])
++                    c_["eligible"] += int(b["gt_ok"].sum())
++                    c_["n"] += int(lmask.sum())
+             b = to_dev(b, dev)
+             for g in opt.param_groups:
+                 g["lr"] = lr_at(step) * g.get("lr_mult", 1.0)
+@@ -1865,6 +2006,9 @@
+                 if comp.on:
+                     rec["ego_dagger_overlap_n"] = ov_int["n"]               # AMEND1 section 1: per log interval (exactly 0)
+                 ov_int.update(n=0)
++                if launch_on:                                               # PREREG_V8F_LAUNCH_INTENT: per log interval (the steps since the last line)
++                    rec["launch_n"], rec["launch_eligible"], rec["launch_rows"] = launch_int["n"], launch_int["eligible"], launch_int["rows"]
++                    launch_int.update(rows=0, eligible=0, n=0)
+                 if enc is not None:
+                     rec["lora_grad_norm"] = float(gn_l)
+                 log.write(json.dumps(rec) + "\n"); log.flush()
+@@ -1888,6 +2032,10 @@
+                "dagger_n": dag_tot["n"], "dagger_eligible": dag_tot["eligible"], "dagger_rows": dag_tot["rows"], "dagger_nav_kept": dag_tot["nav_kept"]}      # PREREG_V8F_DAGGER run totals: exactly 0 swapped at p = 0; swapped == eligible at p = 1      # O-RECOVER run totals: exactly 0 perturbed at p = 0; perturbed == eligible at p = 1
+     if comp.on:                                                            # AMEND1 section 1: the composed arm's run record (a flag-off summary.json keeps its key set)
+         summary["ego_dagger_overlap_n"], summary["ego_perturb_with_dagger"] = ov_tot["n"], True
++    if launch_on:                                                          # PREREG_V8F_LAUNCH_INTENT: the lever-ON arm's run record (a flag-off summary.json keeps its key set)
++        summary["launch_n"], summary["launch_eligible"], summary["launch_rows"] = launch_tot["n"], launch_tot["eligible"], launch_tot["rows"]
++        summary["launch_intent_w"] = cfg.launch_intent_w
++        summary["launch_weight_share"] = launch_weight_share(launch_tot["n"], launch_tot["eligible"], cfg.launch_intent_w)
+     if enc is not None:
+         summary["encoder"] = "lora"
+     json.dump(summary, open(os.path.join(a.out, "summary.json"), "w"), indent=1, default=str)      # LAST, atomically meaningful
+--- a/stack/tanitad/models/v8f_mini.py
++++ b/stack/tanitad/models/v8f_mini.py
+@@ -186,6 +186,9 @@
+                                        # T's code = zeros AFTER every override, S's checkpoints = the nominal ck_nom with ok = 0). S and T are still built, trained and run
+     w_acc: float = 0.0                 # PREREG_V8F_OACC (`--w-acc`): the weight of the acceleration-matching term on O's plan (accel_term below). 0.0 = the term is NOT in the total = every earlier arm,
+                                        # bit for bit (the term is still LOGGED under T["acc"]). > 0 = OACC's X: its value is fixed by the PREREG's rule, written into the argv, never tuned
++    launch_intent_w: float = 0.0       # PREREG_V8F_LAUNCH_INTENT (`--launch-intent-w`): W, the extra weight on O's ALONG-TRACK distance over knots 1-12 (tau 0.2-2.4 s, the executed horizon at m = 10) for the samples
++                                       # `launch_mask` marks (GT-launch: v0 < 6 m/s and the GT chord speed over the last 0.2 s of the horizon >= v0 + 1 m/s). 0.0 = the term is NOT in the total and NOT computed =
++                                       # every earlier arm, bit for bit (no new tensor op, no new T key). > 0 = the batch must carry `launch` (the trainer computes it from the LOGGED state before any ego stage)
+ 
+     @property
+     def window_start_effective(self) -> int:
+@@ -205,6 +208,8 @@
+             raise ValueError(f"o_interface must be one of {O_INTERFACE_MODES}, got {self.o_interface!r}")
+         if not (math.isfinite(self.w_acc) and self.w_acc >= 0.0):
+             raise ValueError(f"w_acc must be a finite number >= 0, got {self.w_acc!r}")
++        if not (math.isfinite(self.launch_intent_w) and self.launch_intent_w >= 0.0):
++            raise ValueError(f"launch_intent_w must be a finite number >= 0, got {self.launch_intent_w!r}")
+         if self.hmax < self.hist + self.max_age_s:
+             raise ValueError("hmax must cover hist + max_age_s")
+         if self.window_start != -1 and not 0 <= self.window_start <= self.hist - 1:
+@@ -385,6 +390,34 @@
+     return (sq.mean(1) * g).sum() / g.sum().clamp_min(1.0)
+ 
+ 
++# ------------------------------------------------------------------------------------------------ PREREG_V8F_LAUNCH_INTENT: the GT-launch mask and the up-weighted along-track term
++#: The GT-launch definition, one spelling (PREREG_V8F_HACC_MC section 5, `hmc_read.py`): the logged v0 below LAUNCH_V0_MAX (m/s) AND the GT chord speed over the LAST 0.2 s of the 6 s horizon
++#: (knots 29 -> 30, i.e. 5.8 -> 6.0 s) at least v0 + LAUNCH_DV. Label-side: the GT future and the LOGGED ego speed; nothing of it is read at inference.
++LAUNCH_V0_MAX, LAUNCH_DV, LAUNCH_DT = 6.0, 1.0, 0.2
++#: The executed horizon at m = 10 (PREREG_V8F_HACC_MC section 2): knots 1-12 of the 0.2 s grid (tau 0.2 ... 2.4 s), 1-based. As slice bounds into the 30-knot plan: [LAUNCH_KNOT_LO - 1 : LAUNCH_KNOT_HI].
++LAUNCH_KNOT_LO, LAUNCH_KNOT_HI = 1, 12
++
++
++def launch_mask(v0: Tensor, gt: Tensor, gok: Tensor) -> Tensor:
++    """``[B]`` bool: the GT-launch samples. ``v0`` [B] is the LOGGED ego speed at NOW (``kin3[:, 0]``), ``gt`` [B, 30, 2] the GT waypoints in the ego frame at NOW, ``gok`` [B] the GT-valid mask. A function of the
++    logged state and the GT future ONLY (the trainer calls it BEFORE any ego stage rebuilds ``kin3``). A NaN v0 gives False. ``>=`` is the registered inequality (a chord speed exactly v0 + 1 is a launch)."""
++    v6 = torch.linalg.norm((gt[:, 29] - gt[:, 28]).to(torch.float64), dim=-1) / LAUNCH_DT
++    v0 = v0.to(torch.float64)
++    return (gok.to(torch.float64) > 0.0) & (v0 < LAUNCH_V0_MAX) & (v6 >= v0 + LAUNCH_DV)
++
++
++def launch_along_term(traj30: Tensor, gt: Tensor, gok: Tensor, launch: Tensor) -> Tensor:
++    """The up-weighted term's value at unit weight: ``sum_b gok_b launch_b (1/30) sum_{k in 1..12} |traj_x - gt_x|_k / sum_b gok_b`` -- the ALONG-axis (x of the ego frame at NOW), knots 1-12 slice of the SAME per-knot
++    distance ``traj_terms`` averages (same 1e-9 smoothing, same 1/30, same denominator), restricted to the launch samples. In the total it enters as ``w_traj * W * term / 3`` (ADE's own scale), so on a launch sample
++    the along-axis slice of O's position loss carries weight 1 + W where the cross error is 0, and a NON-launch sample's loss is the tip's, bit for bit."""
++    lo, hi = LAUNCH_KNOT_LO - 1, LAUNCH_KNOT_HI
++    dx = traj30[:, lo:hi, 0] - gt[:, lo:hi, 0]
++    d = torch.sqrt(dx ** 2 + 1e-9)
++    per = d.sum(1) / float(traj30.shape[1])
++    g = gok * launch.to(gok.dtype)
++    return (per * g).sum() / gok.sum().clamp_min(1.0)
++
++
+ # ------------------------------------------------------------------------------------------------ hard projection
+ def project_speed(traj: Tensor, cap_ms: Tensor | None, mu: float = 0.7, dt: float = 0.1, g: float = 9.81) -> Tensor:
+     """HARD inference projection of a path ``[B, N, 2]`` (dt s per step) onto speed <= cap (the R1 cap, from the
+@@ -869,6 +902,10 @@
+         gt, gok = batch["gt"], batch["gt_ok"].float()
+         T["ade"], T["fde"] = traj_terms(out["traj30"], gt, gok)      # the same two lines as before, now ONE spelling that PREREG_V8F_OACC's w_acc rule also calls
+         T["acc"] = accel_term(out["traj30"], gt, gok)                # PREREG_V8F_OACC: always LOGGED (the G-LIVE probe and the reader read it); in the total only when w_acc > 0
++        if cfg.launch_intent_w > 0.0:                                # PREREG_V8F_LAUNCH_INTENT: computed ONLY when declared (0.0 = no new tensor op, no new T key = the tip, bit for bit)
++            if "launch" not in batch:
++                raise ValueError("launch_intent_w > 0 but the batch carries no `launch` mask: the trainer computes it from the LOGGED state before any ego stage (v8f_mini_train.py launch stage)")
++            T["launch_along"] = launch_along_term(out["traj30"], gt, gok, batch["launch"])
+         # consistency penalties
+         lim = limit_ms_from_onehot(batch["limit"], batch["limit_ok"])
+         if cfg.consistency:
+@@ -886,6 +923,7 @@
+         total = (cfg.w_ckpt * T["ckpt"] + cfg.w_tac * (T["goal"] + 0.5 * (T["lat"] + T["lon"]) + cfg.w_cons * T["cons"])
+                  + cfg.w_traj * (T["ade"] / 3.0 + 0.5 * T["fde"] / 6.0))
+         total = total + cfg.w_acc * T["acc"] if cfg.w_acc > 0.0 else total          # PREREG_V8F_OACC: ONE line (a mutation deletes it); w_acc 0 adds nothing: B's total, bit for bit
++        total = total + cfg.w_traj * cfg.launch_intent_w * T["launch_along"] / 3.0 if cfg.launch_intent_w > 0.0 else total      # PREREG_V8F_LAUNCH_INTENT: ONE line (a mutation deletes it); W 0 adds nothing: the tip's total
+         if cfg.consistency:
+             total = total + cfg.w_pen * sum(T[f"pen_{r}"] for r in RULES) + cfg.w_pen_self * sum(T[f"pens_{r}"] for r in RULES)
+         if self.wm is not None:
+@@ -922,6 +960,7 @@
+                 "cons_absent": cfg.cons_absent, "code_mix": cfg.code_mix,        # PREREG_V8F_MIXO: the teacher-forcing granularity the BUILT model's _forward reads
+                 "o_interface": cfg.o_interface,                                # PREREG_V8F_FLAT: what the BUILT model's _forward hands O (full: S's checkpoints + T's code; cut: constants)
+                 "w_acc": cfg.w_acc,                                            # PREREG_V8F_OACC: the weight the BUILT loss gives the acceleration term (0.0 = not in the total)
++                "launch_intent_w": cfg.launch_intent_w,                       # PREREG_V8F_LAUNCH_INTENT: the extra along-track weight the BUILT loss gives GT-launch samples (0.0 = not in the total)
+                 "wm_idm_gamma": 0.0 if self.wm is None else float(self.wm.gamma),
+                 "kin_mode": self.cfg.kin_mode, "wm_ch1_scale": None if self.wm is None else float(self.wm.ch1_scale),
+                 "p_gt_start": cfg.p_gt_start, "p_gt_end": cfg.p_gt_end,      # PREREG_V8F_PGT: the scheduled-sampling schedule the train loop reads

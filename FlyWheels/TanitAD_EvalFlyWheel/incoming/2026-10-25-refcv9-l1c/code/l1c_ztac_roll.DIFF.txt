@@ -1,0 +1,128 @@
+1,2c1
+< """l1_ztac_roll.py -- refcv9 L1 (PREREG_L1.md): ONE inference-seed roll of refcv8 EMA-48,852 (per-frame nav feed, os-only) that BANKS
+< the shared tactical latent `z_tac` of every window, read-only, beside the battery's own record.
+---
+> """l1c_ztac_roll.py -- refcv9 L1C (PREREG_L1C.md + AMENDMENT 1): the L1 eval-mode roll with ONLY the input paths swapped.
+4,24c3,10
+< NEW file (Architecture & Inference, 2026-10-25).  It is a WRAPPER on the battery children; no shared file is edited:
+<   * --mode eval : `roll_seed_r8_pf.py` (hold_r8pf, the per-frame eval battery child) is IMPORTED and its `main()` runs with the battery
+<     child's own argv (`--os-only`, the battery's windows file) -- the r8oracle / P4 pattern.  The dev-box remap is re-pointed exactly as
+<     P4 did (the launch tree moved to the rebuilt tree_fb47a58; one path in the remap named it).
+<   * --mode train: `roll_seed_r8_train_pf.py`'s main() is REPLICATED line for line (overlay check, nav-feed overlay, `--nav-feed
+<     perframe_full`), around a SHIM COPY of `roll_seed_r8_train.py` that is asserted BYTE-IDENTICAL (sha256) to the battery's file; the shim
+<     directory carries the train remap with ONE value re-pointed (`--join-defect-masks` -> the rebuilt tree; recorded).  Window rule
+<     unchanged: A6 train139, t % 5 == 0.
+<   * `r7_roll.Refcv6Proxy` is SUBCLASSED (`ZProxy`) and re-bound on the module before the roll builds it.  ZProxy runs the battery's own
+<     `__call__` UNCHANGED; a forward PRE-hook on the model's single `lat_head_tac` module copies its input (= `z_tac`, refs/refc_v3.py:
+<     1737-1743 under --no-strategic: z_tac = z_tac_raw = phi_tac(pooled) + nav + max-speed terms) for the nav_true row.  Nothing is
+<     written back; the hook returns None.  The filter-off sensitivity forward (eval) calls the head a second time: both captures are kept
+<     and their max |difference| is counted (the filter acts downstream of z_tac, so it must read 0).
+<   * also banked per window: the OWN plan (8 slots) and sel_idx, so the analysis can assert OWN == the banked battery dump (control C1).
+< 
+<     R8_LAUNCH_TREE=<tree_fb47a58> PYTHONPATH='<tree>/stack;<tree>/taniteval' R8_NO_POSE_SYNC=1 OMP_NUM_THREADS=4 \
+<       python -X utf8 l1_ztac_roll.py --mode eval --ztac-out <dir>/ztac_eval_s0.npz --require-seal -- \
+<          --ckpt E:/refcv8_eval_kit/ckpt/ckpt_ema_48852.pt --config E:/refcv8_eval_kit/ckpt/config.json --seed 0 \
+<          --dump-dir <dir>/eval_dump_s0 --windows-json <bank>/windows_s0.json --device cuda --out-json <dir>/eval_roll_s0.json --os-only
+<       python -X utf8 l1_ztac_roll.py --mode train --ztac-out <dir>/ztac_train_s0.npz --require-seal -- \
+<          --ckpt ... --config ... --seed 0 --dump-dir <dir>/train_dump_s0 --out-json <dir>/train_roll_s0.json --device cuda
+---
+> DERIVED from refcv9_l1/code/l1_ztac_roll.py (sha256 in CODE_SHA256_AT_ROLL.txt); the diff is `l1c_ztac_roll.DIFF.txt`.  What differs, and nothing else:
+>   * the seal checked is PREREG_L1C.md (and AMENDMENT 1) instead of PREREG_L1.md;
+>   * `--kit` sets R8_EVAL_KIT (the eval kit root: eval cache / eval labels / speed-max sidecar / anchors / class weights are READ FROM IT by the battery's own
+>     constants `run_battery_r7.KIT_EVAL` / `KIT_LABELS` and the loader's PATH_REMAP_SPEC -- a kit directory of IDENTICAL layout holding the FRESH clips);
+>   * `--remap` is the eval remap JSON with exactly three values re-pointed (extrinsics union, clock sidecar, v9 release);
+>   * `--v9-md5` is written to `args.r8_v9_eval_md5` (the loader checks the v9 npz against it; argv carries eval139's md5) -- the same one-line patch the train shim makes;
+>   * train mode is removed.
+> Everything else (the battery children, roll_seed_r8_pf.py's per-frame nav feed, the lat_head_tac pre-hook, --os-only, inference seed) is the L1 code unchanged.
+40c26,27
+< PREREG, SEAL = ROOT / "PREREG_L1.md", ROOT / "PREREG_L1.sha256"
+---
+> PREREG, SEAL = ROOT / "PREREG_L1C.md", ROOT / "PREREG_L1C.sha256"
+> AMEND, AMEND_SEAL = ROOT / "PREREG_L1C_AMENDMENT1.md", ROOT / "PREREG_L1C_AMENDMENT1.sha256"
+45,46d31
+< SHIM = HERE / "train_shim"
+< EVAL_REMAP = HERE / "refcv8_eval_remap_devbox_l1.json"     # == P4's re-pointed eval remap (copied; sha256 recorded)
+63c48,51
+<     ap.add_argument("--mode", choices=("eval", "train"), required=True)
+---
+>     ap.add_argument("--mode", choices=("eval",), required=True)
+>     ap.add_argument("--kit", required=True)
+>     ap.add_argument("--remap", required=True)
+>     ap.add_argument("--v9-md5", required=True)
+74a63,64
+> os.environ["R8_EVAL_KIT"] = str(A.kit)                 # BEFORE r8_repoint is imported (it reads EVAL_KIT at import)
+> EVAL_REMAP = Path(A.remap)
+81c71,73
+<     raise SystemExit("[l1] PREREG_L1.md does not match PREREG_L1.sha256: refusing a scored roll")
+---
+>     raise SystemExit("[l1c] PREREG_L1C.md does not match PREREG_L1C.sha256: refusing a scored roll")
+> if A.require_seal and sha256_file(AMEND) != AMEND_SEAL.read_text(encoding="utf-8").split()[0].strip():
+>     raise SystemExit("[l1c] PREREG_L1C_AMENDMENT1.md does not match its sha256: refusing a scored roll")
+87c79
+<     REMAP_REC = {"devbox_file_replaced": str(r8_repoint.REMAP_OVERRIDES), "launch_tree": str(r8_repoint.LAUNCH_TREE),
+---
+>     REMAP_REC = {"kit": str(A.kit), "v9_md5_set_to": str(A.v9_md5), "devbox_file_replaced": str(r8_repoint.REMAP_OVERRIDES), "launch_tree": str(r8_repoint.LAUNCH_TREE),
+94a87,97
+>     import tanitad.eval.refcv7_loader as _LL  # noqa: E402
+>     _orig_bed = _LL.build_eval_dataset
+> 
+>     def _bed(model, cfg, args, config, **kw):             # the loader checks the v9 npz against the md5 in the ARGV (eval139's); set the fresh release's
+>         if os.path.basename(str(getattr(args, "r8_v9_labels_eval", ""))) == os.path.basename(
+>                 str(json.load(open(EVAL_REMAP, encoding="utf-8"))["--r8-v9-labels-eval"])):
+>             args.r8_v9_eval_md5 = str(A.v9_md5)
+>         return _orig_bed(model, cfg, args, config, **kw)
+>     _bed._r8_patched = True
+>     _bed._r8_orig = getattr(_orig_bed, "_r8_orig", _orig_bed)
+>     _LL.build_eval_dataset = _bed
+96,140c99
+<     src, shim = R8_CODE / "roll_seed_r8_train.py", SHIM / "roll_seed_r8_train.py"
+<     if sha256_file(src) != sha256_file(shim):
+<         raise SystemExit("[l1] the train shim is not byte-identical to the battery's roll_seed_r8_train.py: refusing")
+<     os.environ["PF_R8_CODE"] = str(SHIM)                    # roll_seed_r8_train_pf.R8_CODE -> the shim (read at import)
+<     sys.path.insert(0, str(R8_CODE))                        # r8_repoint, r8_battery_patch ... (imported by the shim)
+<     sys.path.insert(0, str(PF_CODE))
+<     import roll_seed_r8_train_pf as TPF  # noqa: E402
+<     REMAP_REC = {"shim_dir": str(SHIM), "shim_roll_sha256": sha256_file(shim), "battery_roll_sha256": sha256_file(src),
+<                  "train_remap_file": str(SHIM / "refcv8_train_remap_devbox.json"),
+<                  "train_remap_sha256": sha256_file(SHIM / "refcv8_train_remap_devbox.json"),
+<                  "battery_train_remap_sha256": sha256_file(R8_CODE / "refcv8_train_remap_devbox.json")}
+<     sys.argv = [str(shim)] + CHILD
+<     ov = TPF.check_overlay()
+<     sys.path.insert(0, str(SHIM))
+<     import roll_seed_r8_train as T  # noqa: E402  (the shim: TRAIN remap (re-pointed copy) + loader patch at import)
+<     if Path(T.__file__).resolve() != shim.resolve():
+<         raise SystemExit(f"[l1] imported {T.__file__}, not the shim")
+<     sys.path.insert(0, str(TPF.NF_OVERLAY))
+<     import navfeed_overlay as NO  # noqa: E402
+<     _R = NO.install_into_r7_roll(T.RR)
+<     _meta_nf = dict(_R.__navfeed__)
+<     _orig_main = _R.main
+< 
+<     def _main_with_feed(argv_=None):
+<         av = list(argv_ or [])
+<         if "--nav-feed" in av:
+<             raise SystemExit("[l1] the parent argv already carries --nav-feed")
+<         return _orig_main(av + ["--nav-feed", TPF.NAV_FEED])
+<     _R.main = _main_with_feed
+<     RR = T.RR
+< 
+<     def RUNNER() -> int:                                    # == roll_seed_r8_train_pf.main() after its imports (replicated)
+<         T.main()
+<         a = {sys.argv[i]: sys.argv[i + 1] for i in range(1, len(sys.argv) - 1) if sys.argv[i].startswith("--")}
+<         out_json, dump_dir = a["--out-json"], a["--dump-dir"]
+<         rec = json.load(open(out_json, encoding="utf-8"))
+<         cen = TPF.sidecar_census(dump_dir)
+<         rec["pf"] = {"nav_feed": TPF.NAV_FEED, "ok": cen["ok"], "census": cen, "overlay": ov, "patched_refcv3_arm": _meta_nf,
+<                      "parent_roll_script": str(shim), "parent_roll_script_sha256": sha256_file(shim),
+<                      "battery_roll_script_sha256": sha256_file(src), "this_script_sha256": sha256_file(__file__),
+<                      "spec": "roll_seed_r8_train_pf.main replicated by l1_ztac_roll.py (PREREG_L1.md); shim byte-identical"}
+<         rec["tool"] = "l1_ztac_roll.py --mode train (replicates roll_seed_r8_train_pf.py around the byte-identical shim)"
+<         json.dump(rec, open(out_json, "w", encoding="utf-8"), indent=1, default=str)
+<         print(f"[l1-train] pf.ok={cen['ok']} windows={cen['n_windows']} ZZL1TRAINPF{'OK' if cen['ok'] else 'BAD'}ZZ", flush=True)
+<         return 0 if cen["ok"] else 3
+---
+>     raise SystemExit("[l1c] train mode is not part of L1C")
+218c177
+<     meta = {"tool": "l1_ztac_roll.py", "mode": A.mode, "prereg_sha256": SEAL_SHA, "script_sha256": sha256_file(__file__),
+---
+>     meta = {"tool": "l1c_ztac_roll.py", "mode": A.mode, "prereg_sha256": SEAL_SHA, "script_sha256": sha256_file(__file__),

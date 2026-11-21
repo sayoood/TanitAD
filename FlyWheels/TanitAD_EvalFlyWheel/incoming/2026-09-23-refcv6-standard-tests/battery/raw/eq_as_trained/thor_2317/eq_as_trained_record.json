@@ -1,0 +1,141 @@
+{
+ "tool": "eq_as_trained_check.py compare",
+ "defect": "D-REFCV6-EQUALIZE-DROPPED / SPEC_REFCV7 FIX-3",
+ "device": "cpu, fp32 trunk, DDIM draw = 0",
+ "n_windows": 4,
+ "n_clips": 2,
+ "floors_gb": {
+  "start": 8.5,
+  "start_samples": 3,
+  "abort": 4.0
+ },
+ "arms": {
+  "R": {
+   "arm": "R",
+   "started": "2026-09-26T23:18:20",
+   "start_floor": {
+    "status": "floor held",
+    "free_gb": 91.4,
+    "waited_s": 20
+   },
+   "tree": "/home/nvidia/eqcheck_2317/tree_pre",
+   "mode": "as_trained",
+   "ckpt": "/home/nvidia/refcv6_run/runs/refcv6-r101-s0/ckpt_30000.pt",
+   "min_free_gb_during_roll": 86.84,
+   "status": "DONE",
+   "finished": "2026-09-26T23:20:05"
+  },
+  "A": {
+   "arm": "A",
+   "started": "2026-09-26T23:20:05",
+   "start_floor": {
+    "status": "floor held",
+    "free_gb": 89.35,
+    "waited_s": 20
+   },
+   "tree": "/home/nvidia/eqcheck_2317/tree_post",
+   "mode": "as_trained",
+   "ckpt": "/home/nvidia/refcv6_run/runs/refcv6-r101-s0/ckpt_30000.pt",
+   "min_free_gb_during_roll": 86.67,
+   "status": "DONE",
+   "finished": "2026-09-26T23:21:50"
+  },
+  "B": {
+   "arm": "B",
+   "started": "2026-09-26T23:21:50",
+   "start_floor": {
+    "status": "floor held",
+    "free_gb": 90.94,
+    "waited_s": 20
+   },
+   "tree": "/home/nvidia/eqcheck_2317/tree_post",
+   "mode": "skip",
+   "ckpt": "/home/nvidia/refcv6_run/runs/refcv6-r101-s0/ckpt_30000.pt",
+   "min_free_gb_during_roll": 85.64,
+   "status": "DONE",
+   "finished": "2026-09-26T23:23:35"
+  }
+ },
+ "trunk_records": {
+  "R": {
+   "status": "pre-FIX-3 tree: the trunk has no declared equalize field; the rows never reach it, so the rebuild is already as trained"
+  },
+  "A": {
+   "status": "set as trained",
+   "declared_by_pin": 43,
+   "as_trained": 0,
+   "why": "DROPPED: pre-fix record, argv --equalize-bottom-rows 43 with --image-hw (D-REFCV6-EQUALIZE-DROPPED) -- the trunk trained with 0 rows"
+  },
+  "B": {
+   "status": "SKIPPED by eq_as_trained_roll.py (regression arm: trunk as DECLARED)"
+  }
+ },
+ "strict_load": {
+  "R": {
+   "missing": [],
+   "unexpected": []
+  },
+  "A": {
+   "missing": [],
+   "unexpected": []
+  },
+  "B": {
+   "missing": [],
+   "unexpected": []
+  }
+ },
+ "A_equals_R": {
+  "os": true,
+  "oracle_sel": true,
+  "ha0_ext": true,
+  "g": true,
+  "extras.nav_true.traj": true,
+  "extras.nav_true.tacv6_lat_logits": true,
+  "extras.nav_true.tacv6_goal_logits": true,
+  "extras.nav_true.sel_idx": true
+ },
+ "B_vs_R": {
+  "os": {
+   "bit_identical": false,
+   "max_abs_diff": 0.035471439361572266
+  },
+  "oracle_sel": {
+   "bit_identical": false,
+   "max_abs_diff": 0.035471439361572266
+  },
+  "ha0_ext": {
+   "bit_identical": true,
+   "max_abs_diff": null
+  },
+  "g": {
+   "bit_identical": true,
+   "max_abs_diff": null
+  },
+  "extras.nav_true.traj": {
+   "bit_identical": false,
+   "max_abs_diff": 0.20908451080322266
+  },
+  "extras.nav_true.tacv6_lat_logits": {
+   "bit_identical": false,
+   "max_abs_diff": 0.5233290195465088
+  },
+  "extras.nav_true.tacv6_goal_logits": {
+   "bit_identical": false,
+   "max_abs_diff": 0.5068187713623047
+  },
+  "extras.nav_true.sel_idx": {
+   "bit_identical": true,
+   "max_abs_diff": null
+  }
+ },
+ "checks": {
+  "A_bit_identical_to_R_on_every_key": true,
+  "B_differs_from_R_on_traj": true,
+  "A_record_set_as_trained_43_to_0": true,
+  "R_record_pre_fix": true,
+  "B_record_skipped": true,
+  "strict_load_clean": true
+ },
+ "verdict": "PASS",
+ "finished": "2026-09-26T23:23:36"
+}

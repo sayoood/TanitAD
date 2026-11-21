@@ -1,0 +1,833 @@
+{
+ "tool": "stopdec_read.py",
+ "card": "theory/stopdec/PREREAD_V8F_STOPDEC.md",
+ "tier": "T1-kin first tick, oracle diagnostic, never driving performance; STRATEGIC: PAUSED (PI item 25)",
+ "estimator": "episode-cluster bootstrap (taniteval.ci.stat_cluster_bootstrap), B=2000, seed 0; answers 'another draw of episodes' only",
+ "definitions": {
+  "goal_stop": "sigmoid goal prob of STOP_POINT (code[:, 6]) >= 0.5",
+  "lon_stop": "argmax of the 7-way lon softmax (code[:, 27:34]) == STOP",
+  "lon_slow": "argmax lon in {HOLD, STOP, DECELERATE}",
+  "LON9": [
+   "HOLD",
+   "CREEP",
+   "STOP",
+   "FOLLOW",
+   "DECELERATE",
+   "ACCELERATE",
+   "KEEP"
+  ],
+  "primary": [
+   "STOP_POINT",
+   "goal_stop"
+  ],
+  "bars": {
+   "hit_sees": 0.6,
+   "hit_misses": 0.4,
+   "ratio_sees": 2.0,
+   "min_group_windows": 50
+  }
+ },
+ "tree": "F:/TanitAD-scratch/otband_read/tree",
+ "smoke": 64,
+ "controls": {
+  "PARITY_DAGOACC_s0": {
+   "ckpt_sha256": "67265ec1666fae3a6d51e924ee06dfb68b2cd0630afc62e42f3a46182b8bc45f",
+   "manifest_ok": null,
+   "smoke": 64,
+   "top1_vs_dump_ol_max_abs_m": null,
+   "g_vs_dump_max_abs_m": null,
+   "v0_vs_dump_max_abs_mps": null,
+   "ident_vs_top1_max_abs_m": 0.0,
+   "own_all_vs_ident_max_abs_m": 0.0,
+   "goal_prob_in_0_1": true,
+   "lon_prob_rows_sum_to_1_max_dev": 1.9646400772899142e-07,
+   "n_windows": 64,
+   "n_has": 63,
+   "n_present_speed_cells": 310,
+   "group_counts_has": {
+    "STOP_POINT": 1,
+    "REG_STOP": 3,
+    "REG_DECEL": 10
+   }
+  },
+  "PARITY_DAGOACC_s1": {
+   "ckpt_sha256": "90b01474819082a6d32a9000d63a4954e0074916140abdbbcb67b353f7ac3333",
+   "manifest_ok": null,
+   "smoke": 64,
+   "top1_vs_dump_ol_max_abs_m": null,
+   "g_vs_dump_max_abs_m": null,
+   "v0_vs_dump_max_abs_mps": null,
+   "ident_vs_top1_max_abs_m": 0.0,
+   "own_all_vs_ident_max_abs_m": 0.0,
+   "goal_prob_in_0_1": true,
+   "lon_prob_rows_sum_to_1_max_dev": 1.2043892638757825e-07,
+   "n_windows": 64,
+   "n_has": 63,
+   "n_present_speed_cells": 310,
+   "group_counts_has": {
+    "STOP_POINT": 1,
+    "REG_STOP": 3,
+    "REG_DECEL": 10
+   }
+  }
+ },
+ "arms": {
+  "PARITY_DAGOACC_s0": {
+   "n_windows_read": 62,
+   "n_episodes": 62,
+   "mean_mse_all_mps2": 6.2684900599448845,
+   "groups": {
+    "STOP_POINT": {
+     "n_windows": 1,
+     "mean_mse_in": 20.792550254943272,
+     "mean_mse_complement": 6.030390712485895,
+     "decisions": {
+      "goal_stop": {
+       "n_hit": 0,
+       "n_miss": 1,
+       "n_fp_in_complement": 0,
+       "hit": {
+        "point": 0.0,
+        "lo": 0.0,
+        "hi": 0.0
+       },
+       "fpr": {
+        "point": 0.0,
+        "lo": 0.0,
+        "hi": 0.0
+       },
+       "mse_hit": {
+        "point": NaN,
+        "lo": null,
+        "hi": null
+       },
+       "mse_miss": {
+        "point": 20.792550254943272,
+        "lo": 20.792550254943272,
+        "hi": 20.792550254943272
+       },
+       "ratio_hit_vs_comp": {
+        "point": NaN,
+        "lo": null,
+        "hi": null
+       },
+       "miss_mass_share": {
+        "point": 1.0,
+        "lo": 1.0,
+        "hi": 1.0
+       }
+      },
+      "lon_stop": {
+       "n_hit": 0,
+       "n_miss": 1,
+       "n_fp_in_complement": 1,
+       "hit": {
+        "point": 0.0,
+        "lo": 0.0,
+        "hi": 0.0
+       },
+       "fpr": {
+        "point": 0.01639344262295082,
+        "lo": 0.0,
+        "hi": 0.05
+       },
+       "mse_hit": {
+        "point": NaN,
+        "lo": null,
+        "hi": null
+       },
+       "mse_miss": {
+        "point": 20.792550254943272,
+        "lo": 20.792550254943272,
+        "hi": 20.792550254943272
+       },
+       "ratio_hit_vs_comp": {
+        "point": NaN,
+        "lo": null,
+        "hi": null
+       },
+       "miss_mass_share": {
+        "point": 1.0,
+        "lo": 1.0,
+        "hi": 1.0
+       }
+      },
+      "lon_slow": {
+       "n_hit": 1,
+       "n_miss": 0,
+       "n_fp_in_complement": 9,
+       "hit": {
+        "point": 1.0,
+        "lo": 1.0,
+        "hi": 1.0
+       },
+       "fpr": {
+        "point": 0.14754098360655737,
+        "lo": 0.06554732945531465,
+        "hi": 0.24193548387096775
+       },
+       "mse_hit": {
+        "point": 20.792550254943272,
+        "lo": 20.792550254943272,
+        "hi": 20.792550254943272
+       },
+       "mse_miss": {
+        "point": NaN,
+        "lo": null,
+        "hi": null
+       },
+       "ratio_hit_vs_comp": {
+        "point": 3.4479607120467994,
+        "lo": 2.4255221247225958,
+        "hi": 5.121675801936191
+       },
+       "miss_mass_share": {
+        "point": 0.0,
+        "lo": 0.0,
+        "hi": 0.0
+       }
+      }
+     }
+    },
+    "REG_STOP": {
+     "n_windows": 2,
+     "mean_mse_in": 5.836188535408089,
+     "mean_mse_complement": 6.282900110762777,
+     "decisions": {
+      "goal_stop": {
+       "n_hit": 0,
+       "n_miss": 2,
+       "n_fp_in_complement": 0,
+       "hit": {
+        "point": 0.0,
+        "lo": 0.0,
+        "hi": 0.0
+       },
+       "fpr": {
+        "point": 0.0,
+        "lo": 0.0,
+        "hi": 0.0
+       },
+       "mse_hit": {
+        "point": NaN,
+        "lo": null,
+        "hi": null
+       },
+       "mse_miss": {
+        "point": 5.836188535408089,
+        "lo": 4.6557170118087345,
+        "hi": 7.016660059007445
+       },
+       "ratio_hit_vs_comp": {
+        "point": NaN,
+        "lo": null,
+        "hi": null
+       },
+       "miss_mass_share": {
+        "point": 1.0,
+        "lo": 1.0,
+        "hi": 1.0
+       }
+      },
+      "lon_stop": {
+       "n_hit": 0,
+       "n_miss": 2,
+       "n_fp_in_complement": 1,
+       "hit": {
+        "point": 0.0,
+        "lo": 0.0,
+        "hi": 0.0
+       },
+       "fpr": {
+        "point": 0.016666666666666666,
+        "lo": 0.0,
+        "hi": 0.05263157894736842
+       },
+       "mse_hit": {
+        "point": NaN,
+        "lo": null,
+        "hi": null
+       },
+       "mse_miss": {
+        "point": 5.836188535408089,
+        "lo": 4.6557170118087345,
+        "hi": 7.016660059007445
+       },
+       "ratio_hit_vs_comp": {
+        "point": NaN,
+        "lo": null,
+        "hi": null
+       },
+       "miss_mass_share": {
+        "point": 1.0,
+        "lo": 1.0,
+        "hi": 1.0
+       }
+      },
+      "lon_slow": {
+       "n_hit": 0,
+       "n_miss": 2,
+       "n_fp_in_complement": 10,
+       "hit": {
+        "point": 0.0,
+        "lo": 0.0,
+        "hi": 0.0
+       },
+       "fpr": {
+        "point": 0.16666666666666666,
+        "lo": 0.08064516129032258,
+        "hi": 0.26666666666666666
+       },
+       "mse_hit": {
+        "point": NaN,
+        "lo": null,
+        "hi": null
+       },
+       "mse_miss": {
+        "point": 5.836188535408089,
+        "lo": 4.6557170118087345,
+        "hi": 7.016660059007445
+       },
+       "ratio_hit_vs_comp": {
+        "point": NaN,
+        "lo": null,
+        "hi": null
+       },
+       "miss_mass_share": {
+        "point": 1.0,
+        "lo": 1.0,
+        "hi": 1.0
+       }
+      }
+     }
+    },
+    "REG_DECEL": {
+     "n_windows": 10,
+     "mean_mse_in": 14.09985333684134,
+     "mean_mse_complement": 4.76245866054172,
+     "decisions": {
+      "goal_stop": {
+       "n_hit": 0,
+       "n_miss": 10,
+       "n_fp_in_complement": 0,
+       "hit": {
+        "point": 0.0,
+        "lo": 0.0,
+        "hi": 0.0
+       },
+       "fpr": {
+        "point": 0.0,
+        "lo": 0.0,
+        "hi": 0.0
+       },
+       "mse_hit": {
+        "point": NaN,
+        "lo": null,
+        "hi": null
+       },
+       "mse_miss": {
+        "point": 14.09985333684134,
+        "lo": 5.189477112514569,
+        "hi": 28.15997965524443
+       },
+       "ratio_hit_vs_comp": {
+        "point": NaN,
+        "lo": null,
+        "hi": null
+       },
+       "miss_mass_share": {
+        "point": 1.0,
+        "lo": 1.0,
+        "hi": 1.0
+       }
+      },
+      "lon_stop": {
+       "n_hit": 0,
+       "n_miss": 10,
+       "n_fp_in_complement": 1,
+       "hit": {
+        "point": 0.0,
+        "lo": 0.0,
+        "hi": 0.0
+       },
+       "fpr": {
+        "point": 0.019230769230769232,
+        "lo": 0.0,
+        "hi": 0.0625
+       },
+       "mse_hit": {
+        "point": NaN,
+        "lo": null,
+        "hi": null
+       },
+       "mse_miss": {
+        "point": 14.09985333684134,
+        "lo": 5.189477112514569,
+        "hi": 28.15997965524443
+       },
+       "ratio_hit_vs_comp": {
+        "point": NaN,
+        "lo": null,
+        "hi": null
+       },
+       "miss_mass_share": {
+        "point": 1.0,
+        "lo": 1.0,
+        "hi": 1.0
+       }
+      },
+      "lon_slow": {
+       "n_hit": 4,
+       "n_miss": 6,
+       "n_fp_in_complement": 6,
+       "hit": {
+        "point": 0.4,
+        "lo": 0.1,
+        "hi": 0.75
+       },
+       "fpr": {
+        "point": 0.11538461538461539,
+        "lo": 0.037020202020202016,
+        "hi": 0.21153846153846154
+       },
+       "mse_hit": {
+        "point": 9.071860021039178,
+        "lo": 1.0487310609657707,
+        "hi": 20.792550254943272
+       },
+       "mse_miss": {
+        "point": 17.45184888070945,
+        "lo": 3.594632308444156,
+        "hi": 39.522864373376024
+       },
+       "ratio_hit_vs_comp": {
+        "point": 1.9048690325024833,
+        "lo": 0.2632686139793475,
+        "hi": 4.219651977513904
+       },
+       "miss_mass_share": {
+        "point": 0.7426395919357424,
+        "lo": 0.18015156875694638,
+        "hi": 0.9876640682497022
+       }
+      }
+     }
+    }
+   },
+   "lon_argmax_census": {
+    "STOP_POINT": {
+     "HOLD": 0,
+     "CREEP": 0,
+     "STOP": 0,
+     "FOLLOW": 0,
+     "DECELERATE": 1,
+     "ACCELERATE": 0,
+     "KEEP": 0
+    },
+    "REG_STOP": {
+     "HOLD": 0,
+     "CREEP": 0,
+     "STOP": 0,
+     "FOLLOW": 0,
+     "DECELERATE": 0,
+     "ACCELERATE": 2,
+     "KEEP": 0
+    },
+    "REG_DECEL": {
+     "HOLD": 0,
+     "CREEP": 0,
+     "STOP": 0,
+     "FOLLOW": 0,
+     "DECELERATE": 4,
+     "ACCELERATE": 2,
+     "KEEP": 4
+    }
+   },
+   "goal_stop_prob_mean": {
+    "STOP_POINT": 0.46160727739334106,
+    "REG_STOP": 0.078684501349926,
+    "REG_DECEL": 0.08411888142727549
+   }
+  },
+  "PARITY_DAGOACC_s1": {
+   "n_windows_read": 62,
+   "n_episodes": 62,
+   "mean_mse_all_mps2": 6.00781964990336,
+   "groups": {
+    "STOP_POINT": {
+     "n_windows": 1,
+     "mean_mse_in": 10.101563554498558,
+     "mean_mse_complement": 5.940709094090324,
+     "decisions": {
+      "goal_stop": {
+       "n_hit": 1,
+       "n_miss": 0,
+       "n_fp_in_complement": 1,
+       "hit": {
+        "point": 1.0,
+        "lo": 1.0,
+        "hi": 1.0
+       },
+       "fpr": {
+        "point": 0.01639344262295082,
+        "lo": 0.0,
+        "hi": 0.05
+       },
+       "mse_hit": {
+        "point": 10.101563554498558,
+        "lo": 10.101563554498558,
+        "hi": 10.101563554498558
+       },
+       "mse_miss": {
+        "point": NaN,
+        "lo": null,
+        "hi": null
+       },
+       "ratio_hit_vs_comp": {
+        "point": 1.700396938228696,
+        "lo": 1.1975232710516641,
+        "hi": 2.624477288095306
+       },
+       "miss_mass_share": {
+        "point": 0.0,
+        "lo": 0.0,
+        "hi": 0.0
+       }
+      },
+      "lon_stop": {
+       "n_hit": 1,
+       "n_miss": 0,
+       "n_fp_in_complement": 1,
+       "hit": {
+        "point": 1.0,
+        "lo": 1.0,
+        "hi": 1.0
+       },
+       "fpr": {
+        "point": 0.01639344262295082,
+        "lo": 0.0,
+        "hi": 0.05
+       },
+       "mse_hit": {
+        "point": 10.101563554498558,
+        "lo": 10.101563554498558,
+        "hi": 10.101563554498558
+       },
+       "mse_miss": {
+        "point": NaN,
+        "lo": null,
+        "hi": null
+       },
+       "ratio_hit_vs_comp": {
+        "point": 1.700396938228696,
+        "lo": 1.1975232710516641,
+        "hi": 2.624477288095306
+       },
+       "miss_mass_share": {
+        "point": 0.0,
+        "lo": 0.0,
+        "hi": 0.0
+       }
+      },
+      "lon_slow": {
+       "n_hit": 1,
+       "n_miss": 0,
+       "n_fp_in_complement": 9,
+       "hit": {
+        "point": 1.0,
+        "lo": 1.0,
+        "hi": 1.0
+       },
+       "fpr": {
+        "point": 0.14754098360655737,
+        "lo": 0.06557377049180328,
+        "hi": 0.2459016393442623
+       },
+       "mse_hit": {
+        "point": 10.101563554498558,
+        "lo": 10.101563554498558,
+        "hi": 10.101563554498558
+       },
+       "mse_miss": {
+        "point": NaN,
+        "lo": null,
+        "hi": null
+       },
+       "ratio_hit_vs_comp": {
+        "point": 1.700396938228696,
+        "lo": 1.1975232710516641,
+        "hi": 2.624477288095306
+       },
+       "miss_mass_share": {
+        "point": 0.0,
+        "lo": 0.0,
+        "hi": 0.0
+       }
+      }
+     }
+    },
+    "REG_STOP": {
+     "n_windows": 2,
+     "mean_mse_in": 9.986295611297892,
+     "mean_mse_complement": 5.875203784523543,
+     "decisions": {
+      "goal_stop": {
+       "n_hit": 0,
+       "n_miss": 2,
+       "n_fp_in_complement": 2,
+       "hit": {
+        "point": 0.0,
+        "lo": 0.0,
+        "hi": 0.0
+       },
+       "fpr": {
+        "point": 0.03333333333333333,
+        "lo": 0.0,
+        "hi": 0.0847457627118644
+       },
+       "mse_hit": {
+        "point": NaN,
+        "lo": null,
+        "hi": null
+       },
+       "mse_miss": {
+        "point": 9.986295611297892,
+        "lo": 3.748310169967975,
+        "hi": 16.22428105262781
+       },
+       "ratio_hit_vs_comp": {
+        "point": NaN,
+        "lo": null,
+        "hi": null
+       },
+       "miss_mass_share": {
+        "point": 1.0,
+        "lo": 1.0,
+        "hi": 1.0
+       }
+      },
+      "lon_stop": {
+       "n_hit": 0,
+       "n_miss": 2,
+       "n_fp_in_complement": 2,
+       "hit": {
+        "point": 0.0,
+        "lo": 0.0,
+        "hi": 0.0
+       },
+       "fpr": {
+        "point": 0.03333333333333333,
+        "lo": 0.0,
+        "hi": 0.0847457627118644
+       },
+       "mse_hit": {
+        "point": NaN,
+        "lo": null,
+        "hi": null
+       },
+       "mse_miss": {
+        "point": 9.986295611297892,
+        "lo": 3.748310169967975,
+        "hi": 16.22428105262781
+       },
+       "ratio_hit_vs_comp": {
+        "point": NaN,
+        "lo": null,
+        "hi": null
+       },
+       "miss_mass_share": {
+        "point": 1.0,
+        "lo": 1.0,
+        "hi": 1.0
+       }
+      },
+      "lon_slow": {
+       "n_hit": 0,
+       "n_miss": 2,
+       "n_fp_in_complement": 10,
+       "hit": {
+        "point": 0.0,
+        "lo": 0.0,
+        "hi": 0.0
+       },
+       "fpr": {
+        "point": 0.16666666666666666,
+        "lo": 0.08064516129032258,
+        "hi": 0.26666666666666666
+       },
+       "mse_hit": {
+        "point": NaN,
+        "lo": null,
+        "hi": null
+       },
+       "mse_miss": {
+        "point": 9.986295611297892,
+        "lo": 3.748310169967975,
+        "hi": 16.22428105262781
+       },
+       "ratio_hit_vs_comp": {
+        "point": NaN,
+        "lo": null,
+        "hi": null
+       },
+       "miss_mass_share": {
+        "point": 1.0,
+        "lo": 1.0,
+        "hi": 1.0
+       }
+      }
+     }
+    },
+    "REG_DECEL": {
+     "n_windows": 10,
+     "mean_mse_in": 13.592800051679495,
+     "mean_mse_complement": 4.54916957263872,
+     "decisions": {
+      "goal_stop": {
+       "n_hit": 1,
+       "n_miss": 9,
+       "n_fp_in_complement": 1,
+       "hit": {
+        "point": 0.1,
+        "lo": 0.0,
+        "hi": 0.3333333333333333
+       },
+       "fpr": {
+        "point": 0.019230769230769232,
+        "lo": 0.0,
+        "hi": 0.0625
+       },
+       "mse_hit": {
+        "point": 10.101563554498558,
+        "lo": 10.101563554498558,
+        "hi": 10.101563554498558
+       },
+       "mse_miss": {
+        "point": 13.980715218032932,
+        "lo": 3.17662455383544,
+        "hi": 29.97075951275773
+       },
+       "ratio_hit_vs_comp": {
+        "point": 2.220529130251613,
+        "lo": 1.6565236340374392,
+        "hi": 3.0496562940485616
+       },
+       "miss_mass_share": {
+        "point": 0.9256844541515166,
+        "lo": 0.5646784009308574,
+        "hi": 1.0
+       }
+      },
+      "lon_stop": {
+       "n_hit": 1,
+       "n_miss": 9,
+       "n_fp_in_complement": 1,
+       "hit": {
+        "point": 0.1,
+        "lo": 0.0,
+        "hi": 0.3333333333333333
+       },
+       "fpr": {
+        "point": 0.019230769230769232,
+        "lo": 0.0,
+        "hi": 0.0625
+       },
+       "mse_hit": {
+        "point": 10.101563554498558,
+        "lo": 10.101563554498558,
+        "hi": 10.101563554498558
+       },
+       "mse_miss": {
+        "point": 13.980715218032932,
+        "lo": 3.17662455383544,
+        "hi": 29.97075951275773
+       },
+       "ratio_hit_vs_comp": {
+        "point": 2.220529130251613,
+        "lo": 1.6565236340374392,
+        "hi": 3.0496562940485616
+       },
+       "miss_mass_share": {
+        "point": 0.9256844541515166,
+        "lo": 0.5646784009308574,
+        "hi": 1.0
+       }
+      },
+      "lon_slow": {
+       "n_hit": 3,
+       "n_miss": 7,
+       "n_fp_in_complement": 7,
+       "hit": {
+        "point": 0.3,
+        "lo": 0.0,
+        "hi": 0.6363636363636364
+       },
+       "fpr": {
+        "point": 0.1346153846153846,
+        "lo": 0.05154214559386974,
+        "hi": 0.23407384230287842
+       },
+       "mse_hit": {
+        "point": 4.919036051149659,
+        "lo": 1.6314002666857796,
+        "hi": 10.101563554498558
+       },
+       "mse_miss": {
+        "point": 17.310127480478,
+        "lo": 3.5626689412615016,
+        "hi": 34.940285027927196
+       },
+       "ratio_hit_vs_comp": {
+        "point": 1.0813041748840329,
+        "lo": 0.322211766200877,
+        "hi": 2.4371925307568687
+       },
+       "miss_mass_share": {
+        "point": 0.8914343763069947,
+        "lo": 0.4317168776284638,
+        "hi": 1.0
+       }
+      }
+     }
+    }
+   },
+   "lon_argmax_census": {
+    "STOP_POINT": {
+     "HOLD": 0,
+     "CREEP": 0,
+     "STOP": 1,
+     "FOLLOW": 0,
+     "DECELERATE": 0,
+     "ACCELERATE": 0,
+     "KEEP": 0
+    },
+    "REG_STOP": {
+     "HOLD": 0,
+     "CREEP": 0,
+     "STOP": 0,
+     "FOLLOW": 0,
+     "DECELERATE": 0,
+     "ACCELERATE": 2,
+     "KEEP": 0
+    },
+    "REG_DECEL": {
+     "HOLD": 0,
+     "CREEP": 0,
+     "STOP": 1,
+     "FOLLOW": 1,
+     "DECELERATE": 2,
+     "ACCELERATE": 2,
+     "KEEP": 4
+    }
+   },
+   "goal_stop_prob_mean": {
+    "STOP_POINT": 0.6032736897468567,
+    "REG_STOP": 0.03965730965137482,
+    "REG_DECEL": 0.11738462749344762
+   }
+  }
+ },
+ "verdict": {
+  "status": "SMOKE: code check only, never a result"
+ }
+}

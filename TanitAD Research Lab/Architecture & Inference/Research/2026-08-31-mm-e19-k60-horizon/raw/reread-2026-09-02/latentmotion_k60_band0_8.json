@@ -1,0 +1,79 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "_tanitad_imported_from": "C:\\Users\\Admin\\tanitad-wt\\stack\\tanitad\\__init__.py",
+ "_helper_files": {
+  "panel_kfold": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\panel_kfold.py",
+  "rangeprobe_rff": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\rangeprobe_rff.py",
+  "v7tiny_g2": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\v7tiny_g2.py"
+ },
+ "_assets": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901",
+ "_corpus": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\sp2\\cache\\physicalai-val130-heldout",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "split": "HELD-OUT",
+ "k": 60,
+ "frames_per_clip": 100,
+ "device": "cuda",
+ "null_mode": false,
+ "pca_band": [
+  0,
+  8
+ ],
+ "arms": {
+  "k60clip05p30k": {
+   "step": 30000,
+   "n_clips": 80,
+   "n_rows": 3200,
+   "columns": {
+    "z_t (DRIFT / POSITIVE CONTROL)": {
+     "r": 0.6277,
+     "t": 65.63
+    },
+    "ego_state [w, a, v]": {
+     "r": -0.0046,
+     "t": -1.4
+    },
+    "z_t + ego_state": {
+     "r": 0.6272,
+     "t": 64.35
+    },
+    "constant (control)": {
+     "r": 0.0,
+     "t": 0.0
+    }
+   },
+   "drift_control_t": 65.63,
+   "ego_marginal_over_drift": {
+    "delta": -0.0006,
+    "t": -0.22
+   }
+  },
+  "postrain30k": {
+   "step": 30000,
+   "n_clips": 80,
+   "n_rows": 3200,
+   "columns": {
+    "z_t (DRIFT / POSITIVE CONTROL)": {
+     "r": 0.6625,
+     "t": 86.19
+    },
+    "ego_state [w, a, v]": {
+     "r": -0.0114,
+     "t": -0.54
+    },
+    "z_t + ego_state": {
+     "r": 0.6627,
+     "t": 87.36
+    },
+    "constant (control)": {
+     "r": 0.0,
+     "t": 0.0
+    }
+   },
+   "drift_control_t": 86.19,
+   "ego_marginal_over_drift": {
+    "delta": 0.0002,
+    "t": 0.12
+   }
+  }
+ }
+}

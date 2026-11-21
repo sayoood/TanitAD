@@ -1,0 +1,739 @@
+diff --git a/stack/scripts/v8f_mini_train.py b/stack/scripts/v8f_mini_train.py
+--- a/stack/scripts/v8f_mini_train.py
++++ b/stack/scripts/v8f_mini_train.py
+@@ -46,6 +46,7 @@
+ from tanitad.data import v8f_mini_data as D  # noqa: E402
+ from tanitad.data import v8f_recover as R  # noqa: E402      PREREG_RECOVER_FT: the recovery perturbation + its TRAIN-bank deviation table (`--recover-p 0` = nothing is built and nothing is applied)
+ from tanitad.models import v8f_mini as M  # noqa: E402
++from tanitad.data import rule_relabel as RRL  # noqa: E402      PREREG_V8F_PROOF_ADD32 RULETRAIN: the label-fed distance rule applied to the training target (`--rule-relabel off` = nothing is built and nothing is applied)
+ 
+ PKG = os.path.join(REPO, "TanitAD Research Lab", "Architecture & Inference", "Research", "2026-10-17-v8f-mini")
+ #: PREREG_V8F_DAGGER K-B3: the eval-141 clip list the own-state bank must be disjoint from (the same file the bank generator is given as --eval-grid; the trainer takes no flag for it)
+@@ -120,6 +121,7 @@
+     # PREREG_V8F_STOPPERC arm A: the vision-only stop-location auxiliary. `lever:stop_aux` = built_levers().get("stop_aux", "off") (stop_head + stop_pres_head exist iff on); `cfg:w_stop_aux` = the BUILT config's weight; `path` = the
+     # per-clip sensor_extrinsics table (its coverage of the TRAIN clips is read back from the built arrays). argv -> make_config -> the BUILT model -> declared_vs_built (bad_stop_aux) -> stop_aux_probe (G-LIVE) -> `stop_aux_stage(b, SA)` BEFORE the ego stages.
+     "stop_aux": "lever:stop_aux", "w_stop_aux": "cfg:w_stop_aux", "stop_aux_extr": "path",
++    "rule_relabel": "data:rule_relabel",      # RULETRAIN: argv -> RuleRelabel (built from the join) -> info["rule_relabel"] (bad_rule_relabel) -> rule_relabel_probe (G-LIVE: count > 0, the relabelled target reaches the loss and gradient, all-False mask reads EXACTLY 0.0) -> `b["gt"] = rr_gt` in the loop
+     "init_ckpt": "data:init_ckpt",            # O-RECOVER's start state: the MODEL weights of an earlier checkpoint, config-checked, loaded strictly and READ BACK (load_init_ckpt) -> declared_vs_built (bad_init_ckpt)
+     # PREREG_V8F_LORA: the encoder lever. `enc:<k>` = equals the BUILT encoder's lever (enc.built_levers()); with --encoder cache there is no encoder and every
+     # one of these must be at its default (a declared flag that builds nothing is REFUSED, not ignored)
+@@ -274,6 +276,10 @@
+                     help="O-RECOVER's start state: when set and --out holds no ckpt_last.pt, load the MODEL weights of this checkpoint (a v8f_mini_train ckpt, e.g. M2b's) STRICTLY into the freshly built model (its architecture "
+                          "config must match the built one, else the launch is REFUSED), at step 0 with a FRESH optimiser and schedule. An existing ckpt_last.pt in --out still resumes as ever (resume wins). The path and the file's "
+                          "sha256 are recorded in the levers. Default \"\" = off = every earlier arm, bit for bit")
++    ap.add_argument("--rule-relabel", dest="rule_relabel", choices=("off", "on"), default="off",
++                    help="RULETRAIN (PREREG_V8F_PROOF_ADD32): on = the 30-knot target of the executed plan (batch gt) of every sample whose CURRENT frame has a label lead (presence, finite gap, finite closing-speed label) is replaced by "
++                         "dist_rule.distance_rule(gt, v0, present, gap, gap, v_L, cap-only) with v_L = max(0, v_logged + closing). Samples without a label lead keep their target. Labels from the label join (--join-train); "
++                         "training only, nothing at inference. Refused with --encoder lora, --ego-perturb-p, --dagger-p, --recover-p. Default off = every earlier arm, bit for bit")
+     ap.add_argument("--cache-dir", default="C:/Users/Admin/refav1_hj_cache")
+     ap.add_argument("--out", required=True)
+     ap.add_argument("--v9-train", default="C:/Users/Admin/qland/work/refcv8_hf_v9/release/v9_labels_train.npz")
+@@ -1131,6 +1137,30 @@
+     return bad
+ 
+ 
++def bad_rule_relabel(a, data_info) -> list:
++    """RULETRAIN (G-DVB): ``--rule-relabel`` read back from the BUILT stage record ``info["rule_relabel"]``. off: no stage may exist. on: the record names the mode, the label arrays have rows with presence, gap and closing labels,
++    the rule file's sha256 is recorded, and the stages that rewrite the logged state or target (ego perturbation, DAgger swap, recovery, LoRA frames) are off (the rule is applied to the LOGGED frame's target)."""
++    rec = (data_info or {}).get("rule_relabel")
++    if a.rule_relabel == "off":
++        return ["rule_relabel off declared but a relabel stage was built"] if rec else []
++    if not rec:
++        return ["rule_relabel on declared but no relabel stage was built"]
++    bad = []
++    if rec.get("mode") != a.rule_relabel:
++        bad.append(f"rule_relabel: declared {a.rule_relabel} but built {rec.get('mode')}")
++    for k in ("n_pres", "n_gap", "n_clos"):
++        if not (isinstance(rec.get(k), int) and rec[k] > 0):
++            bad.append(f"rule_relabel labels: {k} = {rec.get(k)!r}: no label lead rows to relabel (a lever that is declared and does nothing)")
++    if not rec.get("labels_sha256") or not rec.get("dist_rule_sha256"):
++        bad.append("rule_relabel: the label arrays' or the rule file's sha256 is not recorded")
++    for flag, val, off in (("ego_perturb_p", a.ego_perturb_p, 0.0), ("dagger_p", a.dagger_p, 0.0), ("recover_p", a.recover_p, 0.0)):
++        if val != off:
++            bad.append(f"rule_relabel on with --{flag.replace('_', '-')} {val}: the rule is applied to the LOGGED frame's target, which that stage rewrites")
++    if a.encoder != "cache":
++        bad.append("rule_relabel is not built for --encoder lora (the loop's batch path differs)")
++    return bad
++
++
+ def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=None, dag=None, comp=None, rec=None) -> list:
+     """Return the list of mismatches (empty = pass). Each flag is checked against what was BUILT, by FLAG_CHECKS kind."""
+     bad = bad_encoder(a, enc, data_info)
+@@ -1138,6 +1168,7 @@
+     bad += bad_ego_perturb(a, ego) + bad_init_ckpt(a, data_info) + bad_schedule(a, sched)          # O-RECOVER (PREREG_V8F_HACC_MC section 7); bad_schedule: --warmup read back from the built schedule
+     bad += bad_wm_state(a, cfg, model)                                                           # PREREG_V8F_PROOF_ADD12: --wm-state / --wm-cell-dim / --wm-dim read back from the BUILT model
+     bad += bad_level(a, model, data_info)                                                        # PREREG_V8F_LEVEL: --level-head / --w-level read back from the BUILT model
++    bad += bad_rule_relabel(a, data_info)                                                        # RULETRAIN: --rule-relabel read back from the BUILT stage (labels, rule file sha256) and its refused combinations
+     bad += bad_lead_sup(a, cfg, model, data_info)                                                # LEADSUP: --lead-sup / --w-lead-sup / --lead-hist / --lead-sup-detach read back from the BUILT head and dataset
+     bad += bad_lead(a, model, data_info)                                                         # PREREG_LEVELHEAD_A2: --lead-head / --w-lead / --aux-cond read back from the BUILT model and the built label arrays
+     bad += bad_stop_aux(a, model, data_info)                                                     # PREREG_V8F_STOPPERC: --stop-aux / --w-stop-aux / --stop-aux-extr read back from the BUILT model and the built camera arrays
+@@ -2695,7 +2726,7 @@
+         root = os.path.join(a.out, "_synthetic")
+         w = D.make_synthetic_world(root, n_train=6, n_eval=2, T=60, seed=a.seed)
+         J = D.load_join(os.path.join(root, "join_train.npz"))
+-        if a.lead_sup == "on":                                       # LEADSUP: the synthetic join carries no lead track; this opt-in fills one (selfcheck only; a real launch never passes --synthetic)
++        if a.lead_sup == "on" or a.rule_relabel == "on":                                       # LEADSUP: the synthetic join carries no lead track; this opt-in fills one (selfcheck only; a real launch never passes --synthetic)
+             D.synthetic_lead_labels(J, a.seed)
+         cache = root
+         clips_all = w["names"]["train"]
+@@ -2778,6 +2809,54 @@
+             yield x
+ 
+ 
++def rule_relabel_probe(model, probe_logged, probe_rl, cfg, RR, info) -> dict:
++    """G-LIVE for RULETRAIN, read from the BUILT model's own ``loss`` on a COPY, on the real probe batch. off: {"rule_relabel": "off"}. on:
++      count        info["n_relabel"] > 0 (zero is a refusal: the lever would do nothing on this data)
++      reach        the same loss with the LOGGED gt and with the RELABELLED gt (same seeds): when the rule changed at least one target (n_changed > 0) the ``ade`` term and the gradient of the total differ (> 0)
++      controls     the same loss twice on the relabelled batch: term and gradient difference EXACTLY 0.0; an ALL-FALSE mask (RRL.relabel_gt, mask_override) returns the logged target itself and the loss and gradient
++                   difference read EXACTLY 0.0
++    Any violation is an AssertionError (the caller turns it into a refusal)."""
++    if not RR.on:
++        return {"rule_relabel": "off", "pass": True}
++    if info["n_relabel"] <= 0:
++        raise AssertionError("rule relabel probe: no sample of the probe batch has a label lead: the count is 0")
++    m = copy.deepcopy(model).cpu()
++    m.train()
++    named = [(n, p) for n, p in m.named_parameters() if p.requires_grad]
++
++    def run(b):
++        for _, p in named:
++            p.grad = None
++        torch.manual_seed(20261115)
++        out = m.loss(b, p_gt=0.5, gen=torch.Generator().manual_seed(11))
++        T = out["terms"]
++        for k, v in T.items():
++            if not torch.isfinite(v):
++                raise AssertionError(f"rule relabel probe: loss term {k} is not finite: {float(v)}")
++        T["total"].backward()
++        return float(T["ade"].detach()), float(T["total"].detach()), {n: (p.grad.detach().clone() if p.grad is not None else torch.zeros_like(p)) for n, p in named}
++
++    gdiff = lambda ga, gb: float(sum((ga[n] - gb[n]).abs().sum() for n in ga))      # noqa: E731
++    a_l, t_l, g_l = run(dict(probe_logged))
++    a_r, t_r, g_r = run(dict(probe_rl))
++    a_r2, t_r2, g_r2 = run(dict(probe_rl))
++    gt_none, i_none = RRL.relabel_gt(probe_logged["gt"], probe_logged["gt_ok"], probe_logged["frame_ok"][:, -1], probe_logged["p10f"][:, -1, 0], probe_logged["wm_speed"][:, -1],
++                                     *RR.label_rows(probe_logged["ci"].numpy(), probe_logged["t"].numpy()), mask_override=np.zeros(int(probe_logged["gt"].shape[0]), bool))
++    a_n, t_n, g_n = run({**probe_logged, "gt": gt_none})
++    rec = {"rule_relabel": "on", "n_relabel": info["n_relabel"], "n_changed": info["n_changed"], "n_rows": info["n_rows"], "ade_logged": a_l, "ade_relabelled": a_r, "total_logged": t_l, "total_relabelled": t_r,
++           "ade_diff": abs(a_r - a_l), "grad_diff": gdiff(g_l, g_r), "control_same_batch_ade_diff": abs(a_r - a_r2), "control_same_batch_grad_diff": gdiff(g_r, g_r2),
++           "control_all_false_target_equal": bool(torch.equal(gt_none, probe_logged["gt"])), "control_all_false_n": i_none["n_relabel"], "control_all_false_ade_diff": abs(a_n - a_l), "control_all_false_grad_diff": gdiff(g_n, g_l)}
++    if rec["control_same_batch_ade_diff"] != 0.0 or rec["control_same_batch_grad_diff"] != 0.0:
++        raise AssertionError(f"rule relabel probe: the same batch twice differs ({rec['control_same_batch_ade_diff']}, {rec['control_same_batch_grad_diff']}): the probe is not deterministic")
++    if not (rec["control_all_false_target_equal"] and i_none["n_relabel"] == 0 and rec["control_all_false_ade_diff"] == 0.0 and rec["control_all_false_grad_diff"] == 0.0):
++        raise AssertionError(f"rule relabel probe: the all-False mask control does not read exactly 0.0: {rec}")
++    if info["n_changed"] > 0 and not (rec["ade_diff"] > 0.0 and rec["grad_diff"] > 0.0):
++        raise AssertionError(f"rule relabel probe: the rule changed {info['n_changed']} targets but the loss / gradient did not move: {rec}")
++    rec["reach_visible"] = bool(info["n_changed"] > 0)
++    rec["pass"] = True
++    return rec
++
++
+ def to_dev(b, dev):
+     return {k: ({kk: vv.to(dev) for kk, vv in v.items()} if isinstance(v, dict) else v.to(dev)) for k, v in b.items()}
+ 
+@@ -2801,6 +2880,11 @@
+     torch.manual_seed(a.seed)
+     np.random.seed(a.seed)
+     store, J, wins, clips, info = build_data(a, cfg)
++    RR = RRL.RuleRelabel(a.rule_relabel, J, store)                          # RULETRAIN: off = nothing built; on = the lead label arrays of the join (the same rule as lead_sup_label_arrays)
++    if RR.on:
++        info["rule_relabel"] = {"mode": RR.mode, "labels_sha256": RR.labels["sha256"], **{k: RR.labels[k] for k in ("n_rows", "n_pres", "n_gap", "n_clos")},
++                                "dist_rule_sha256": hashlib.sha256(open(RRL.R.__file__, "rb").read()).hexdigest(), "floor_lifts": False, "m": RRL.RULE_M,
++                                "constants": {"D_M": RRL.R.D_M, "TAU_S": RRL.R.TAU_S, "B_MAX": RRL.R.B_MAX, "DT": RRL.R.DT}}
+     info["p10_units"] = None if a.synthetic else M.p10_meta(a.p10).get("units", "steer")
+     if not a.synthetic:
+         try:
+@@ -2873,6 +2957,12 @@
+             info["lead_sup_n_labelled"] = int((okw & torch.isfinite(probe["lead_gapm"][:, sl])).sum())
+             info["lead_sup_n_presence"] = int(okw.sum())
+             info["lead_sup_n_closing"] = int((okw & torch.isfinite(probe["lead_clos"][:, sl])).sum())
++        probe_logged, rr_i = dict(probe), None
++        if RR.on:                                        # RULETRAIN: every probe below calls model.loss on the batch the loop's loss receives, i.e. with the relabelled target; the logged one is kept for the reach probe
++            probe["gt"], rr_i = RR.stage(probe)
++            info["rule_relabel_n"], info["rule_relabel_changed"], info["rule_relabel_rows"] = rr_i["n_relabel"], rr_i["n_changed"], rr_i["n_rows"]
++            if rr_i["n_relabel"] == 0:
++                raise SystemExit("ZZDVB-REFUSEDZZ rule-relabel: --rule-relabel on but the G-LIVE probe batch has no sample with a label lead (count 0): a lever that is declared and does nothing")
+         live = live_check(model.cpu(), probe, cfg)
+     else:
+         ds_probe = D.V8FMiniFrameWindows(store, J, wins, hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s,
+@@ -2925,6 +3015,10 @@
+     except (AssertionError, ValueError) as e:
+         raise SystemExit(f"ZZDVB-REFUSEDZZ launch-intent: {e}")
+     try:
++        rrp = rule_relabel_probe(model, probe_logged, probe, cfg, RR, rr_i or {}) if enc is None else {"rule_relabel": "off", "pass": True}      # RULETRAIN: G-LIVE (count, reach, controls); off: nothing runs
++    except (AssertionError, ValueError) as e:
++        raise SystemExit(f"ZZDVB-REFUSEDZZ rule-relabel: {e}")
++    try:
+         lvp = level_head_probe(model, probe, cfg)         # PREREG_V8F_LEVEL: G-LIVE on the loop's own label call (level_stage); the term reaches the loss with its weight, the head gets its gradient, the detach control reads EXACTLY 0.0, the token reaches O, the head is vision-only (off: nothing runs)
+     except (AssertionError, ValueError) as e:
+         raise SystemExit(f"ZZDVB-REFUSEDZZ level-head: {e}")
+@@ -2950,6 +3044,9 @@
+                                "mask_from": "the LOGGED kin3[:, 0] and the GT future, taken before any ego stage"}   # PREREG_V8F_LAUNCH_INTENT: what was BUILT (the definition the mask uses) ...
+     levers["launch_n"], levers["launch_eligible"] = lip["launch_n"], lip["launch_eligible"]          # ... and the probe batch's natural launch / GT-valid row counts (0 / 0 when off; the run totals are summary.json's launch_n / launch_eligible, present when the lever is on)
+     levers["init_ckpt"] = info.get("init_ckpt")
++    if RR.on:                                                         # RULETRAIN: lever-ON arms only (a flag-off selfcheck.json keeps its key set); the mode is read from the BUILT stage
++        levers["rule_relabel"] = RR.mode
++        levers["rule_relabel_rule"] = {k: info["rule_relabel"][k] for k in ("dist_rule_sha256", "floor_lifts", "m", "constants")}
+     levers["lr_schedule"] = lr_at.built_levers()                       # the built warmup / peak / total the loop calls (G-DVB read --warmup back from it)
+     if enc is not None:
+         levers["encoder"] = enc.built_levers()
+@@ -2961,6 +3058,8 @@
+     sc["ego_dagger_compose_probe"] = cmpp
+     sc["recover_probe"] = recp
+     sc["launch_intent_probe"] = lip
++    if RR.on:                                                           # RULETRAIN: lever-ON arms only
++        sc["rule_relabel_probe"] = rrp
+     if cfg.level_head == "on":                                          # lever-ON arms only: a flag-off selfcheck.json keeps its key set
+         sc["level_head_probe"] = lvp
+     if cfg.lead_head == "on":                                           # PREREG_LEVELHEAD_A2: lever-ON arms only (a flag-off selfcheck.json keeps its key set)
+@@ -2994,6 +3093,8 @@
+     stop_on = cfg.stop_aux == "on"                                 # PREREG_V8F_STOPPERC arm A: off (the default) = the loop runs no new line
+     launch_tot = {"rows": 0, "eligible": 0, "n": 0}                # ... run totals: rows seen, GT-valid rows (the along-track label exists), GT-launch rows; carried in the checkpoint of an arm that has the lever ON only
+     launch_int = {"rows": 0, "eligible": 0, "n": 0}                # ... and since the last log line
++    rr_tot = {"rows": 0, "n": 0, "changed": 0}                      # RULETRAIN run totals: samples seen, relabelled (label lead), of those changed by the rule; carried in the checkpoint of a lever-ON arm only
++    rr_int = {"rows": 0, "n": 0, "changed": 0}                      # ... and since the last log line
+     if os.path.exists(ck_path) and not a.no_resume:
+         ck = torch.load(ck_path, map_location="cpu", weights_only=False)
+         if ck["argv_sha"] != argv_sha(argv):
+@@ -3010,6 +3111,7 @@
+         ov_tot.update(ck.get("ego_dagger_overlap") or {})
+         rec_tot.update(ck.get("recover_totals") or {})
+         launch_tot.update(ck.get("launch_totals") or {})
++        rr_tot.update(ck.get("rule_relabel_totals") or {})
+         print(f"[resume] step {step} epoch {ep} batch {bi}", flush=True)
+ 
+     def save(final=False):
+@@ -3023,6 +3125,8 @@
+             blob["ego_perturb_with_dagger"], blob["ego_dagger_overlap"], blob["ego_perturb_stream"] = True, dict(ov_tot), ego.stream
+         if rcv.active:                                                  # lever-ON arms only: a flag-off checkpoint keeps its key set
+             blob["recover"], blob["recover_totals"] = rcv.built_levers(), dict(rec_tot)
++        if RR.on:                                                       # RULETRAIN: lever-ON arms only: a flag-off checkpoint keeps its key set
++            blob["rule_relabel_totals"] = dict(rr_tot)
+         if launch_on:                                                   # lever-ON arms only: a flag-off checkpoint keeps its key set
+             blob["launch_totals"] = dict(launch_tot)
+         if enc is not None:             # `model` keeps B's layout (the unchanged v8f_mini_eval.py loads it); the LoRA matrices travel beside it
+@@ -3046,6 +3150,8 @@
+             fr = (b.pop("frames_u8"), b.pop("frame_map")) if enc is not None else None      # the frames stay on the host; the encoder moves them chunk by chunk
+             if launch_on:                                          # PREREG_V8F_LAUNCH_INTENT: the GT-launch mask from the LOGGED v0 and the GT future, taken BEFORE any ego stage rebuilds kin3 (a swapped sample's kin3 is the own state)
+                 lmask = launch_stage(b)
++            if RR.on:                                              # RULETRAIN: the relabelled target of the LOGGED frame (clip index, step, speed, label lead), taken BEFORE any ego stage
++                rr_gt, rr_i = RR.stage(b)
+             if level_on:                                           # PREREG_V8F_LEVEL: the label is the LOGGED speed at NOW, taken BEFORE any ego stage rebuilds kin3 (the head sees the logged frame)
+                 lvl_lab = level_stage(b)
+             if lead_on:                                            # PREREG_LEVELHEAD_A2: the lead label of the LOGGED frame (clip index and step), taken BEFORE any ego stage (a swapped sample's ci / t is the own one)
+@@ -3085,6 +3191,12 @@
+                     c_["rows"] += int(lmask.shape[0])
+                     c_["eligible"] += int(b["gt_ok"].sum())
+                     c_["n"] += int(lmask.sum())
++            if RR.on:                                              # RULETRAIN: attached AFTER the stages: the loss reads b["gt"] (ade, fde, acc, launch_along)
++                b["gt"] = rr_gt
++                for c_ in (rr_int, rr_tot):
++                    c_["rows"] += rr_i["n_rows"]
++                    c_["n"] += rr_i["n_relabel"]
++                    c_["changed"] += rr_i["n_changed"]
+             if level_on:                                           # ... and attached AFTER the stages (they return their own batch dict): the loss reads b["level_y"], b["level_ok"]
+                 b["level_y"], b["level_ok"] = lvl_lab
+             if lead_on:                                            # PREREG_LEVELHEAD_A2: attached AFTER the stages: the loss reads b["lead_y"], b["lead_has"], b["lead_near"]
+@@ -3092,6 +3204,8 @@
+             if stop_on:                                            # PREREG_V8F_STOPPERC arm A: attached AFTER the stages: the loss reads b["stop_cell"], b["stop_pos"], b["stop_has"]
+                 b["stop_cell"], b["stop_pos"], b["stop_has"] = stop_lab
+             b = to_dev(b, dev)
++            if RR.on and not torch.equal(b["gt"].cpu(), rr_gt):    # RULETRAIN: the batch the loss receives must carry the relabelled target (a deleted `b["gt"] = rr_gt` line is caught here, not 2,000 steps later)
++                raise SystemExit(f"ZZRULE-NOT-APPLIEDZZ step {step}: --rule-relabel on but the batch the loss receives does not carry the relabelled target (n_relabel {rr_i['n_relabel']}): a lever that is declared and does nothing")
+             for g in opt.param_groups:
+                 g["lr"] = lr_at(step) * g.get("lr_mult", 1.0)
+             p_gt = M.p_gt_schedule(step, total, cfg.p_gt_start, cfg.p_gt_end)
+@@ -3133,6 +3247,9 @@
+                 if rcv.active:                                              # PREREG_RECOVER_FT: per log interval (a flag-off log line keeps its key set)
+                     rec["recover_n"], rec["recover_eligible"], rec["recover_rows"], rec["recover_changed"] = rec_int["n"], rec_int["eligible"], rec_int["rows"], rec_int["changed"]
+                     rec_int.update(rows=0, eligible=0, n=0, changed=0)
++                if RR.on:                                                   # RULETRAIN: per log interval (the steps since the last line); a flag-off log line keeps its key set
++                    rec["rule_relabel_n"], rec["rule_relabel_changed"], rec["rule_relabel_rows"] = rr_int["n"], rr_int["changed"], rr_int["rows"]
++                    rr_int.update(rows=0, n=0, changed=0)
+                 if launch_on:                                               # PREREG_V8F_LAUNCH_INTENT: per log interval (the steps since the last line)
+                     rec["launch_n"], rec["launch_eligible"], rec["launch_rows"] = launch_int["n"], launch_int["eligible"], launch_int["rows"]
+                     launch_int.update(rows=0, eligible=0, n=0)
+@@ -3165,6 +3282,8 @@
+         summary["launch_n"], summary["launch_eligible"], summary["launch_rows"] = launch_tot["n"], launch_tot["eligible"], launch_tot["rows"]
+         summary["launch_intent_w"] = cfg.launch_intent_w
+         summary["launch_weight_share"] = launch_weight_share(launch_tot["n"], launch_tot["eligible"], cfg.launch_intent_w)
++    if RR.on:                                                              # RULETRAIN: the lever-ON arm's run record (a flag-off summary.json keeps its key set)
++        summary["rule_relabel"], summary["rule_relabel_n"], summary["rule_relabel_changed"], summary["rule_relabel_rows"] = "on", rr_tot["n"], rr_tot["changed"], rr_tot["rows"]
+     if level_on:                                                           # PREREG_V8F_LEVEL: the lever-ON arm's run record (a flag-off summary.json keeps its key set)
+         summary["level_head"], summary["w_level"] = "on", cfg.w_level
+     if lead_on or cfg.aux_cond == "token":                                 # PREREG_LEVELHEAD_A2: the lever-ON arm's run record (a flag-off summary.json keeps its key set)
+diff --git a/stack/tanitad/data/rule_relabel.py b/stack/tanitad/data/rule_relabel.py
+new file mode 100644
+--- /dev/null
++++ b/stack/tanitad/data/rule_relabel.py
+@@ -0,0 +1,84 @@
++"""rule_relabel.py -- RULETRAIN (card PREREG_V8F_PROOF_ADD32): the label-fed distance rule applied to the TRAINING target of the executed plan.
++
++``--rule-relabel on`` replaces, per training sample whose CURRENT frame has a label lead, the 30-knot target ``batch["gt"]`` (the logged future in the ego frame at the sample's frame; the one array the loss
++reads for ``ade`` / ``fde`` / ``acc`` / ``launch_along``) by ``dist_rule.distance_rule(gt, v0, present, gap, gap, v_L, floor_lifts=False)`` (cap-only form of card ADD32 / note N1), with
++
++  v0    = d["p10f"][t][0]                    RAW from the clip store (the batch's ``p10f[:, -1, 0]`` has NaN as 0)
++  v_log = d["v"][t]                          the cache speed row of the current frame, RAW (the wrapper's ``logged_v[j]``; the batch's ``wm_speed`` has NaN as 0)
++  A non-finite v0 or v_log excludes the row (it keeps its target and is not counted), as the wrapper's ``src_bad`` makes the tick inactive.
++  gap   = label gap [m] at the current frame, closing = label closing speed [m/s]   (``lead_sup_label_arrays`` rows ``off[ci] + t``; the wrapper's ``LabelSource.read``)
++  v_L   = max(0, v_log + closing)            g0 = gap (on a logged state a_l = a_m = 0, so the wrapper's g0 = g_src + a_l - a_m = g_src)
++
++Samples without a label lead (no presence, gap or closing label NaN), without a GT future (``gt_ok`` False) or without a real current frame (``frame_ok[:, -1]`` False) keep their target bit for bit.
++Nothing here is read at inference; the labels are privileged and used for the training target only. The module is numpy + torch only.
++"""
++from __future__ import annotations
++
++import numpy as np
++import torch
++
++from tanitad.data import dist_rule as R
++from tanitad.data import v8f_mini_data as D
++
++#: the rule's ``m`` (executed steps): it only feeds the ``n_sat_exec`` log of ``distance_rule`` and does not change a plan
++RULE_M = 10
++
++
++class RuleRelabel:
++    """The trainer's stage object. ``mode`` is ``off`` or ``on``; ``on`` computes the label arrays once from the join (``D.lead_sup_label_arrays``)."""
++
++    def __init__(self, mode: str, J: dict | None = None, store=None):
++        if mode not in ("off", "on"):
++            raise ValueError(f"rule_relabel must be off or on, got {mode!r}")
++        self.mode = mode
++        self.on = mode == "on"
++        if self.on and store is None:
++            raise ValueError("rule_relabel on needs the clip store: the logged speeds are read RAW (the batch tensors carry NaN as 0)")
++        self.store, self.J = store, J
++        self.labels = D.lead_sup_label_arrays(J) if self.on else None
++
++    def label_rows(self, ci, t):
++        """labels of the LOGGED frame (clip index ``ci``, cache step ``t``) -> (pres, gap, clos) float32 arrays."""
++        LS = self.labels
++        rows = LS["off"][np.asarray(ci, np.int64)] + np.asarray(t, np.int64)
++        return LS["pres"][rows], LS["gap"][rows], LS["clos"][rows]
++
++    def raw_speeds(self, ci, t):
++        """(v0, v_logged) RAW from the clip store: ``d["p10f"][t][0]`` and ``d["v"][t]`` (NaN stays NaN; the batch tensors have it as 0.0, which would read as a stopped ego)."""
++        v0, vl = np.full(len(ci), np.nan), np.full(len(ci), np.nan)
++        for b, (c, tt) in enumerate(zip(np.asarray(ci, np.int64), np.asarray(t, np.int64))):
++            d = self.store.get(str(self.J["clip"][int(c)]))
++            v0[b], vl[b] = float(d["p10f"][int(tt)][0]), float(d["v"][int(tt)])
++        return v0, vl
++
++    def stage(self, batch: dict) -> tuple:
++        """COLLATED batch (CPU, logged) -> (gt_new [B, 30, 2] float32 tensor, info dict). Must run BEFORE ego.apply / dag.apply / rcv.apply (a swapped sample's ci / t is the own one)."""
++        ci, t = batch["ci"].cpu().numpy(), batch["t"].cpu().numpy()
++        pres, gap, clos = self.label_rows(ci, t)
++        v0, vl = self.raw_speeds(ci, t)       # a row whose logged speed (or v0) is not finite keeps its target and is not counted (the rollout wrapper: src_bad -> inactive)
++        return relabel_gt(batch["gt"], batch["gt_ok"], batch["frame_ok"][:, -1], v0, vl, pres, gap, clos)
++
++
++def relabel_gt(gt, gt_ok, frame_ok_last, v0, v_logged, pres, gap, clos, mask_override=None) -> tuple:
++    """The relabel on explicit inputs (tensors or arrays). Returns (gt_new float32 tensor, info). ``mask_override`` (bool [B]) AND-s an extra mask (control: an all-False mask must return ``gt`` itself)."""
++    gt_t = torch.as_tensor(gt)
++    g = gt_t.detach().cpu().numpy()
++    f = lambda x: np.asarray(torch.as_tensor(x).detach().cpu().numpy() if not isinstance(x, np.ndarray) else x, np.float64)      # noqa: E731
++    v0, v_logged, pres, gap, clos = f(v0), f(v_logged), f(pres), f(gap), f(clos)
++    ok = np.asarray(torch.as_tensor(gt_ok).detach().cpu().numpy(), bool) & np.asarray(torch.as_tensor(frame_ok_last).detach().cpu().numpy(), bool)
++    with np.errstate(invalid="ignore"):
++        mask = ok & (pres == 1.0) & np.isfinite(gap) & np.isfinite(clos) & np.isfinite(v0) & np.isfinite(v_logged)
++    if mask_override is not None:
++        mask &= np.asarray(mask_override, bool)
++    info = {"n_rows": int(len(g)), "n_relabel": int(mask.sum()), "n_changed": 0, "mask": mask}
++    if not mask.any():
++        return gt_t, info
++    idx = np.nonzero(mask)[0]
++    v_L = np.maximum(0.0, v_logged[idx] + clos[idx])
++    out = R.distance_rule(g[idx], v0[idx], np.ones(len(idx), bool), gap[idx], gap[idx], v_L, m=RULE_M, floor_lifts=False)
++    new = np.array(g, copy=True)
++    new[idx] = out.plan
++    info["n_changed"] = int(out.changed.sum())
++    info["changed"] = np.zeros(len(g), bool)
++    info["changed"][idx] = out.changed
++    return torch.as_tensor(new, dtype=gt_t.dtype), info
+diff --git a/stack/tanitad/data/dist_rule.py b/stack/tanitad/data/dist_rule.py
+new file mode 100644
+--- /dev/null
++++ b/stack/tanitad/data/dist_rule.py
+@@ -0,0 +1,188 @@
++"""dist_rule.py -- the DISTRULE projection (card PREREG_V8F_PROOF_ADD26 section 2), a pure numpy function, batched over windows.
++
++A plan [B, N, 2] (N knots at 0.2 s in the ego frame of the tick, origin not in the array) is slowed along its own path so that the gap to an imagined
++constant-speed lead keeps a bound.  Definitions that the card leaves open are in DISTRULE_DEFS.md (E3: arc lengths, lag form, saturated steps).
++Tier T1-kin (kinematic rollout on the model's own actions, logged frames); a diagnostic, never driving performance.
++
++  distance_rule(plan, v0, present, g_src, g0, v_L, m=10) -> RuleOut
++    plan     [B, N, 2]  the tick plans (any float dtype)
++    v0       [B]        rolled ego speed at the tick (m/s)
++    present  [B] bool   the source says a lead is present
++    g_src    [B]        the source gap (m); the rule is inactive above 60 m
++    g0       [B]        gap of the rolled ego = g_src + a_l - a_m (m)
++    v_L      [B]        imagined lead speed = max(0, v_l + c_src) (m/s)
++  An inactive window keeps its plan bit for bit; when no window is active the SAME array object comes back.
++
++The progress geometry (`_path_frame`, `logged_arc`, `progress`) is a verbatim copy of headway/headway_read.py lines 62-111 (the pod has no headway_read.py);
++test_dist_rule.py asserts the copy equals the original.
++"""
++from __future__ import annotations
++
++from typing import NamedTuple
++
++import numpy as np
++
++DT = 0.2
++D_M = 3.0          # card section 2
++TAU_S = 1.2
++B_MAX = 6.0
++G_MAX_M = 60.0     # the rule is inactive above this source gap
++RAY = 1000.0       # headway_read.RAY
++PUSH_MPS = 0.5     # control r3: the planted advance
++
++
++# ============================================================================================ progress geometry (copy of headway_read.py:62-111)
++def _path_frame(g):
++    """g [N,30,2] -> vertices V [N,33,2] (back ray, P0..P30, forward ray), arc A [N,33], segment lengths L [N,32], unit directions U [N,32,2], non-degenerate nd [N,32]."""
++    g = np.asarray(g, np.float64)
++    n = len(g)
++    P = np.concatenate([np.zeros((n, 1, 2)), g], axis=1)
++    d = P[:, 1:] - P[:, :-1]
++    ln = np.linalg.norm(d, axis=-1)
++    nd = ln > 1e-9
++    first = np.argmax(nd, axis=1)
++    last = (d.shape[1] - 1) - np.argmax(nd[:, ::-1], axis=1)
++    anyn = nd.any(1)
++    ux = np.array([1.0, 0.0])
++    ar = np.arange(n)
++    u0 = np.where(anyn[:, None], d[ar, first] / np.maximum(ln[ar, first], 1e-300)[:, None], ux)
++    u1 = np.where(anyn[:, None], d[ar, last] / np.maximum(ln[ar, last], 1e-300)[:, None], ux)
++    V = np.concatenate([(P[:, 0] - RAY * u0)[:, None], P, (P[:, -1] + RAY * u1)[:, None]], axis=1)
++    seg = V[:, 1:] - V[:, :-1]
++    L = np.linalg.norm(seg, axis=-1)
++    Lnd = L > 1e-9
++    U = np.where(Lnd[..., None], seg / np.maximum(L, 1e-300)[..., None], 0.0)
++    A = np.concatenate([np.full((n, 1), -RAY), np.zeros((n, 1)), np.cumsum(L[:, 1:-1], axis=1)], axis=1)
++    A = np.concatenate([A, (A[:, -1] + L[:, -1])[:, None]], axis=1)
++    return V, A, L, U, Lnd
++
++
++def logged_arc(g):
++    """a_l(k), k = 1..30: arc coordinate of the logged points (cumulative length of the logged path). [N,30]"""
++    _, A, _, _, _ = _path_frame(g)
++    return A[:, 2:32].copy()
++
++
++def progress(g, pts):
++    """a(q) for pts [N,M,2]: arc coordinate of the orthogonal projection on the nearest non-degenerate segment of the extended logged path. [N,M]"""
++    V, A, L, U, nd = _path_frame(g)
++    pts = np.asarray(pts, np.float64)
++    a = V[:, None, :-1, :]
++    ab = (V[:, 1:] - V[:, :-1])[:, None]
++    q = pts[:, :, None, :]
++    l2 = (L ** 2)[:, None, :]
++    with np.errstate(invalid="ignore", divide="ignore"):
++        t = np.clip(((q - a) * ab).sum(-1) / np.where(l2 > 0, l2, 1.0), 0.0, 1.0)
++    proj = a + t[..., None] * ab
++    dist = np.linalg.norm(q - proj, axis=-1)
++    dist = np.where(nd[:, None, :], dist, np.inf)
++    j = np.argmin(dist, axis=-1)
++    jj = j[..., None]
++    arc = np.take_along_axis(np.broadcast_to(A[:, None, :-1], dist.shape), jj, -1)[..., 0]
++    tt = np.take_along_axis(t, jj, -1)[..., 0]
++    ll = np.take_along_axis(np.broadcast_to(L[:, None, :], dist.shape), jj, -1)[..., 0]
++    return arc + tt * ll
++
++
++# ============================================================================================ the plan path
++def plan_path(plan):
++    """One plan [N,2] -> (P [N+1,2] incl. the origin, a_P [N+1] cumulative arc, ext [2] unit direction of the extension ray)."""
++    P = np.vstack([np.zeros((1, 2)), np.asarray(plan, np.float64)])
++    seg = np.diff(P, axis=0)
++    sl = np.hypot(seg[:, 0], seg[:, 1])
++    L = np.concatenate([[0.0], np.cumsum(sl)])
++    nz = np.nonzero(sl > 1e-9)[0]
++    ext = seg[nz[-1]] / sl[nz[-1]] if len(nz) else np.array([1.0, 0.0])
++    return P, L, ext
++
++
++def sample_path(P, L, ext, s):
++    """Points of the plan path at arc lengths s [M] (>= 0); beyond the last knot the path goes straight along `ext`."""
++    s = np.maximum(np.asarray(s, np.float64), 0.0)
++    out = np.empty((len(s), 2))
++    for i, x in enumerate(s):
++        if x >= L[-1]:
++            out[i] = P[-1] + ext * (x - L[-1])
++        else:
++            j = min(max(int(np.searchsorted(L, x, side="right")) - 1, 0), len(L) - 2)
++            w = (x - L[j]) / max(L[j + 1] - L[j], 1e-12)
++            out[i] = P[j] + w * (P[j + 1] - P[j])
++    return out
++
++
++class RuleOut(NamedTuple):
++    plan: np.ndarray        # [B, N, 2], same dtype as the input; the input object itself when no window is active
++    active: np.ndarray      # [B] bool
++    n_sat: np.ndarray       # [B] int, saturated steps over all N steps (cap would hold below the braking floor)
++    n_sat_exec: np.ndarray  # [B] int, the same over the first m (executed) steps
++    n_lift: np.ndarray      # [B] int, steps where the floor is above the plan own wish (a_f > a_w: a plan that wants to slow faster than B_MAX is lifted)
++    changed: np.ndarray     # [B] bool, plan differs from the input
++    a_new: np.ndarray       # [B, N] the new arc lengths a'(i), i = 1..N (NaN for inactive windows)
++
++
++def distance_rule(plan, v0, present, g_src, g0, v_L, m=10, D=D_M, tau=TAU_S, b_max=B_MAX, use_cap=True, use_floor=True, push_mps=None, dt=DT, floor_lifts=True) -> RuleOut:
++    """The projection of card section 2 (forward over i, lag form, see DISTRULE_DEFS E3).  `use_cap=False, use_floor=False` is the identity probe (mode plumb);
++    `floor_lifts=False` (builder option, NOT the card: a' = min(a_w, max(a_f, a_c)), the floor limits the cap but never lifts a plan above its own wish, DISTRULE_DEFS E3b);
++    `push_mps` replaces the cap and the floor by a planted advance a'(i) = a_P(i) + push_mps * dt * i (control r3)."""
++    with np.errstate(invalid="ignore", over="ignore"):
++        return _distance_rule(plan, v0, present, g_src, g0, v_L, m, D, tau, b_max, use_cap, use_floor, push_mps, dt, floor_lifts)
++
++
++def _distance_rule(plan, v0, present, g_src, g0, v_L, m, D, tau, b_max, use_cap, use_floor, push_mps, dt, floor_lifts) -> RuleOut:
++    plan_in = plan
++    plan = np.asarray(plan)
++    B, N = plan.shape[0], plan.shape[1]
++    v0 = np.asarray(v0, np.float64)
++    g_src, g0, v_L = (np.asarray(x, np.float64) for x in (g_src, g0, v_L))
++    with np.errstate(invalid="ignore"):
++        active = (np.asarray(present, bool) & np.isfinite(g_src) & np.isfinite(g0) & np.isfinite(v_L) & np.isfinite(v0) & (g_src <= G_MAX_M))
++    zi = np.zeros(B, np.int64)
++    if not active.any():
++        return RuleOut(plan_in, active, zi.copy(), zi.copy(), zi.copy(), np.zeros(B, bool), np.full((B, N), np.nan))
++    p64 = plan.astype(np.float64)
++    aP = np.zeros((B, N + 1))
++    PP, EXT = [], []
++    for b in range(B):
++        P, L, ext = plan_path(p64[b])
++        aP[b] = L
++        PP.append(P)
++        EXT.append(ext)
++    steps = np.arange(1, N + 1)
++    lag = np.zeros(B)                                   # l(i-1) = a_P(i-1) - a'(i-1)
++    v_prev = v0.copy()                                  # v'(i-1)
++    a_new = np.zeros((B, N))
++    n_sat, n_sat_exec, n_lift = zi.copy(), zi.copy(), zi.copy()
++    a_prev = np.zeros(B)                                # a'(i-1)
++    for i in steps:
++        a_w = aP[:, i] - lag
++        if push_mps is not None:
++            a_i = aP[:, i] + push_mps * dt * i                  # the plan advanced along its own path by push_mps times the elapsed time
++            sat = lift = np.zeros(B, bool)
++        else:
++            a_c = (g0 + v_L * dt * i - np.maximum(D, tau * v_prev)) if use_cap else np.full(B, np.inf)
++            a_f = (a_prev + np.maximum(0.0, v_prev - b_max * dt) * dt) if use_floor else np.full(B, -np.inf)
++            a_i = np.maximum(a_f, np.minimum(a_w, a_c)) if floor_lifts else np.minimum(a_w, np.maximum(a_f, a_c))
++            sat = active & (a_c < a_f) & (a_c <= a_w)
++            lift = active & (a_f > a_w) & bool(floor_lifts)
++        n_sat += (sat & active).astype(np.int64)
++        n_lift += (lift & active).astype(np.int64)
++        if i <= m:
++            n_sat_exec += (sat & active).astype(np.int64)
++        lag = aP[:, i] - a_i
++        v_prev = (a_i - a_prev) / dt
++        a_prev = a_i
++        a_new[:, i - 1] = a_i
++    out = plan.copy()
++    changed = np.zeros(B, bool)
++    for b in np.nonzero(active)[0]:
++        a_b = a_new[b]
++        keep = a_b == aP[b, 1:]                         # an unchanged step is the original knot (bit for bit)
++        pts = sample_path(PP[b], aP[b], EXT[b], a_b)
++        pts[keep] = p64[b][keep]
++        new = pts.astype(plan.dtype)
++        changed[b] = bool((new != plan[b]).any())
++        out[b] = new
++    a_new = np.where(active[:, None], a_new, np.nan)
++    if not changed.any():
++        return RuleOut(plan_in, active, n_sat, n_sat_exec, n_lift, changed, a_new)
++    return RuleOut(out, active, n_sat, n_sat_exec, n_lift, changed, a_new)
+diff --git a/stack/tests/test_v8f_rule_relabel.py b/stack/tests/test_v8f_rule_relabel.py
+new file mode 100644
+--- /dev/null
++++ b/stack/tests/test_v8f_rule_relabel.py
+@@ -0,0 +1,188 @@
++"""RULETRAIN (--rule-relabel): the label-fed distance rule applied to the training target of the executed plan (card PREREG_V8F_PROOF_ADD32).
++
++Tiny models (d 32) on CPU. A test that the mechanism works is not evidence that it runs: the reach tests go from the stage to the loss and the gradient, with a control that must read exactly 0.0, and the loop line is
++pinned by a source check plus the trainer run in checks/t3_mutation.py."""
++from __future__ import annotations
++
++import hashlib
++import sys
++from pathlib import Path
++
++import numpy as np
++import pytest
++import torch
++
++REPO = Path(__file__).resolve().parents[2]
++for p in (REPO / "stack", REPO / "taniteval", REPO / "stack" / "scripts"):
++    if str(p) not in sys.path:
++        sys.path.insert(0, str(p))
++
++from tanitad.data import dist_rule as R  # noqa: E402
++from tanitad.data import rule_relabel as RRL  # noqa: E402
++from tanitad.data import v8f_mini_data as D  # noqa: E402
++from tanitad.models import v8f_mini as M  # noqa: E402
++import v8f_mini_train as TR  # noqa: E402
++
++DIST_RULE_SHA256 = "40b5dd9173aeaf8c7d7a7d4bfbb52484a8f30b9a8480d3356f8fa0aee65746dc"
++GRID = ["--wm-state", "grid", "--wm-cell-dim", "16"]
++
++
++@pytest.fixture(scope="module")
++def world(tmp_path_factory):
++    root = tmp_path_factory.mktemp("ruletrain")
++    w = D.make_synthetic_world(root, n_train=6, n_eval=2, T=60, seed=0)
++    J = D.load_join(Path(root) / "join_train.npz")
++    D.synthetic_lead_labels(J, 0)
++    store = D.ClipStore(root, "train", lru=8)
++    wins = D.train_windows(store, J, w["names"]["train"])
++    ds = D.V8FMiniWindows(store, J, wins, hmax=16)
++    RR = RRL.RuleRelabel("on", J, store)
++    return {"J": J, "ds": ds, "wins": wins, "RR": RR, "store": store}
++
++
++def _batch(world, idx):
++    return D.collate([world["ds"].item(world["wins"][i][0], world["wins"][i][1], 1, 3) for i in idx])
++
++
++def _eligible(world, idx):
++    out = []
++    for i in idx:
++        b = _batch(world, [i])
++        _, info = world["RR"].stage(b)
++        out.append(info["n_relabel"] == 1)
++    return np.array(out)
++
++
++def test_rule_file_is_the_pinned_one():
++    assert hashlib.sha256(Path(R.__file__).read_bytes()).hexdigest() == DIST_RULE_SHA256
++
++
++def test_flag_default_off_and_declared_in_the_gate_table():
++    a = TR.build_parser().parse_args(["--out", "x"])
++    assert a.rule_relabel == "off" and TR.FLAG_CHECKS["rule_relabel"] == "data:rule_relabel"
++    assert not RRL.RuleRelabel("off").on
++
++
++def test_relabel_gt_equals_distance_rule_by_hand_and_keeps_rows_without_a_lead():
++    g = np.zeros((3, 30, 2), np.float32)
++    g[:, :, 0] = np.arange(1, 31)[None, :] * 2.0                         # 10 m/s straight
++    gt = torch.as_tensor(g)
++    ok = torch.ones(3, dtype=torch.bool)
++    v0, vlog = torch.tensor([10.0, 10.0, 10.0]), torch.tensor([10.0, 10.0, 10.0])
++    pres, gap, clos = np.array([1.0, 1.0, 0.0]), np.array([8.0, 80.0 / 4, np.nan]), np.array([0.0, -1.0, np.nan])
++    new, info = RRL.relabel_gt(gt, ok, ok, v0, vlog, pres, gap, clos)
++    assert info["n_relabel"] == 2 and not info["mask"][2]
++    for r in (0, 1):
++        by_hand = R.distance_rule(g[r:r + 1], np.array([10.0]), np.array([True]), gap[r:r + 1], gap[r:r + 1], np.array([max(0.0, 10.0 + clos[r])]), m=10, floor_lifts=False)
++        assert torch.equal(new[r], torch.as_tensor(by_hand.plan[0]))
++    assert torch.equal(new[2], gt[2]) and not torch.equal(new[0], gt[0])           # the lead at 8 m slows the plan; the row without a lead is untouched
++    none, i0 = RRL.relabel_gt(gt, ok, ok, v0, vlog, pres, gap, clos, mask_override=np.zeros(3, bool))
++    assert i0["n_relabel"] == 0 and torch.equal(none, gt)
++
++
++def test_rows_without_gt_or_frame_or_closing_label_keep_their_target():
++    g = torch.zeros(4, 30, 2)
++    g[:, :, 0] = torch.arange(1, 31)[None, :] * 2.0
++    ok = torch.tensor([True, False, True, True])
++    fok = torch.tensor([True, True, False, True])
++    new, info = RRL.relabel_gt(g, ok, fok, torch.full((4,), 10.0), torch.full((4,), 10.0), np.ones(4), np.full(4, 8.0), np.array([0.0, 0.0, 0.0, np.nan]))
++    assert info["n_relabel"] == 1 and info["mask"].tolist() == [True, False, False, False]
++    assert torch.equal(new[1:], g[1:])
++
++
++def test_stage_on_a_world_batch_is_exact_against_the_rule_by_hand(world):
++    RR, ds = world["RR"], world["ds"]
++    assert not ds.lead_sup                                               # the stage reads the join itself: the dataset carries no new key
++    b = _batch(world, list(range(0, min(64, len(world["wins"])), 2)))
++    new, info = RR.stage(b)
++    assert info["n_relabel"] > 0 and info["n_changed"] > 0
++    for r in np.nonzero(info["mask"])[0]:
++        ci, t = int(b["ci"][r]), int(b["t"][r])
++        row = int(world["J"]["off"][ci]) + t
++        d = world["store"].get(str(world["J"]["clip"][ci]))
++        g, c = float(world["J"]["lead_gap"][row]), float(D.lead_sup_label_arrays(world["J"])["clos"][row])
++        out = R.distance_rule(d["gt"][t][None].astype(np.float32), np.array([float(d["p10f"][t][0])]), np.array([True]), np.array([g]), np.array([g]), np.array([max(0.0, float(d["v"][t]) + c)]), m=10, floor_lifts=False)
++        assert torch.equal(new[r], torch.as_tensor(out.plan[0]))
++    assert torch.equal(new[~torch.as_tensor(info["mask"])], b["gt"][~torch.as_tensor(info["mask"])])
++
++
++def _model(world):
++    a = TR.build_parser().parse_args(["--out", "x", "--d", "32", "--n-q", "2", "--arm", "M2b", *GRID])
++    cfg = TR.make_config(a)
++    mu, sd = M.cons_stats(world["J"])
++    torch.manual_seed(0)
++    return M.V8FMini(cfg, M.P10Prior.synthetic(0), mu, sd)
++
++
++def _run(model, b):
++    for p in model.parameters():
++        p.grad = None
++    torch.manual_seed(20261115)
++    T = model.loss(b, p_gt=0.5, gen=torch.Generator().manual_seed(11))["terms"]
++    T["total"].backward()
++    return float(T["ade"]), float(sum(float(p.grad.abs().sum()) for p in model.parameters() if p.grad is not None))
++
++
++def test_reach_loss_and_gradient_differ_with_a_lead_and_are_exactly_equal_without(world):
++    model = _model(world)
++    model.train()
++    idx = list(range(len(world["wins"])))
++    el = _eligible(world, idx)
++    with_i, without_i = [i for i in idx if el[i]][:16], [i for i in idx if not el[i]][:16]
++    assert with_i and without_i
++    bA = _batch(world, with_i)
++    gA, iA = world["RR"].stage(bA)
++    assert iA["n_changed"] > 0
++    a0, s0 = _run(model, dict(bA))
++    a1, s1 = _run(model, {**bA, "gt": gA})
++    assert a1 != a0 and s1 != s0
++    bB = _batch(world, without_i)
++    gB, iB = world["RR"].stage(bB)
++    assert iB["n_relabel"] == 0 and torch.equal(gB, bB["gt"])
++    assert _run(model, dict(bB)) == _run(model, {**bB, "gt": gB})            # the zero control: exactly equal loss term and gradient sum
++
++
++def test_selfcheck_on_passes_with_a_count_and_off_has_no_key(tmp_path):
++    for extra, on in (([], False), (["--rule-relabel", "on"], True)):
++        out = tmp_path / ("on" if on else "off")
++        rc = TR.main(["--synthetic", "--arm", "M2b", "--grid", "pool4x10", "--kin-mode", "yaw", *GRID, *extra, "--exclude", "1:3", "--threads", "1", "--selfcheck-only", "--out", str(out)])
++        assert rc == 0
++        import json
++        sc = json.loads((out / "selfcheck.json").read_text(encoding="utf-8"))
++        assert sc["declared_vs_built"] == "PASS"
++        if on:
++            assert sc["levers"]["rule_relabel"] == "on" and sc["info"]["rule_relabel_n"] > 0 and sc["rule_relabel_probe"]["pass"]
++        else:
++            assert not [k for k in list(sc["levers"]) + list(sc["info"]) + list(sc) if "rule_relabel" in k]
++
++
++@pytest.mark.parametrize("extra", [["--ego-perturb-p", "0.5"], ["--recover-p", "0.5"]])
++def test_refused_combinations(tmp_path, extra):
++    with pytest.raises(SystemExit) as e:
++        TR.main(["--synthetic", "--arm", "M2b", "--grid", "pool4x10", "--kin-mode", "yaw", *GRID, "--rule-relabel", "on", *extra, "--exclude", "1:3", "--threads", "1", "--selfcheck-only", "--out", str(tmp_path / "x")])
++    assert e.value.code not in (0, None)
++
++
++def test_the_loop_attaches_the_relabelled_target_and_guards_it():
++    src = Path(TR.__file__).read_text(encoding="utf-8")
++    line = chr(10) + " " * 16 + 'b["gt"] = rr_gt' + chr(10)
++    assert src.count(line) == 1 and src.count("ZZRULE-NOT-APPLIEDZZ") == 1
++    assert src.index("                rr_gt, rr_i = RR.stage(b)") < src.index("                b = comp.apply(b, step)" + chr(10)) < src.index(line) < src.index("            b = to_dev(b, dev)" + chr(10))
++
++
++def test_a_row_with_a_lead_and_a_nan_logged_speed_keeps_its_target_and_is_not_counted(world):
++    b = _batch(world, list(range(0, min(64, len(world["wins"])), 2)))
++    new0, i0 = world["RR"].stage(b)
++    r = int(np.nonzero(i0["mask"])[0][0])
++    ci, t = int(b["ci"][r]), int(b["t"][r])
++    d = world["store"].get(str(world["J"]["clip"][ci]))
++    for key in ("v", "p10f"):
++        saved = d[key][t].copy() if key == "p10f" else float(d[key][t])
++        d[key][t] = np.nan
++        try:
++            new, info = world["RR"].stage(b)
++        finally:
++            d[key][t] = saved
++        assert torch.equal(new[r], b["gt"][r]) and not info["mask"][r] and info["n_relabel"] == i0["n_relabel"] - 1
++    again, i1 = world["RR"].stage(b)
++    assert torch.equal(again, new0) and i1["n_relabel"] == i0["n_relabel"]

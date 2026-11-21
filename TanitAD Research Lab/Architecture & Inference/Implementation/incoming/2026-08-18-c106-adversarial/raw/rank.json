@@ -1,0 +1,75 @@
+{
+ "_evidence_class": "MEASURED (ours; effective rank of the DEPLOYED readout path on REAL banked frames)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "definition": "effective rank = exp(Shannon entropy of the normalised squared singular-value spectrum) of the COLUMN-CENTRED matrix; no threshold, comparable across arms",
+ "pool": "er10_pool_ladder.pool_tokens with POOL_ARMS['p40'] = AvgPool2d((4,10)) \u2014 the DEPLOYED operator, imported",
+ "projection": "er10_pool_ladder.make_projection (the ladder's own fixed Gaussian RP, seed base 20260818)",
+ "n_frames": 384,
+ "token_grid": [
+  16,
+  40
+ ],
+ "arms": {
+  "random_s0": {
+   "init": "RANDOM",
+   "init_seed": 0,
+   "step_in_ckpt": 11250,
+   "token_channel_eff_rank_of_768": 68.162,
+   "token_channel_top_dir_var_frac": 0.29208,
+   "pooled_feature_eff_rank_of_384": 10.023,
+   "pooled_top_dir_var_frac": 0.48897,
+   "zscored_design_matrix_eff_rank_of_384": 16.85,
+   "design_top_dir_var_frac": 0.34372,
+   "final_rmsnorm_gain_abs_max": 1.0,
+   "final_rmsnorm_gain_abs_mean": 1.0,
+   "final_rmsnorm_gain_max_over_mean": 1.0,
+   "final_rmsnorm_gain_eff_rank_proxy_top1_frac": 0.0013
+  },
+  "random_s1": {
+   "init": "RANDOM",
+   "init_seed": 1,
+   "step_in_ckpt": 11250,
+   "token_channel_eff_rank_of_768": 67.099,
+   "token_channel_top_dir_var_frac": 0.29334,
+   "pooled_feature_eff_rank_of_384": 9.898,
+   "pooled_top_dir_var_frac": 0.48828,
+   "zscored_design_matrix_eff_rank_of_384": 16.101,
+   "design_top_dir_var_frac": 0.35442,
+   "final_rmsnorm_gain_abs_max": 1.0,
+   "final_rmsnorm_gain_abs_mean": 1.0,
+   "final_rmsnorm_gain_max_over_mean": 1.0,
+   "final_rmsnorm_gain_eff_rank_proxy_top1_frac": 0.0013
+  },
+  "random_s2": {
+   "init": "RANDOM",
+   "init_seed": 2,
+   "step_in_ckpt": 11250,
+   "token_channel_eff_rank_of_768": 67.26,
+   "token_channel_top_dir_var_frac": 0.29472,
+   "pooled_feature_eff_rank_of_384": 10.161,
+   "pooled_top_dir_var_frac": 0.48495,
+   "zscored_design_matrix_eff_rank_of_384": 16.028,
+   "design_top_dir_var_frac": 0.36249,
+   "final_rmsnorm_gain_abs_max": 1.0,
+   "final_rmsnorm_gain_abs_mean": 1.0,
+   "final_rmsnorm_gain_max_over_mean": 1.0,
+   "final_rmsnorm_gain_eff_rank_proxy_top1_frac": 0.0013
+  },
+  "trained": {
+   "init": "TRAINED",
+   "init_seed": null,
+   "step_in_ckpt": 11250,
+   "token_channel_eff_rank_of_768": 1.223,
+   "token_channel_top_dir_var_frac": 0.97642,
+   "pooled_feature_eff_rank_of_384": 4.628,
+   "pooled_top_dir_var_frac": 0.5358,
+   "zscored_design_matrix_eff_rank_of_384": 6.734,
+   "design_top_dir_var_frac": 0.40945,
+   "final_rmsnorm_gain_abs_max": 0.9429,
+   "final_rmsnorm_gain_abs_mean": 0.9229,
+   "final_rmsnorm_gain_max_over_mean": 1.02,
+   "final_rmsnorm_gain_eff_rank_proxy_top1_frac": 0.00136
+  }
+ },
+ "cuda_max_mem_gb": 0.726
+}

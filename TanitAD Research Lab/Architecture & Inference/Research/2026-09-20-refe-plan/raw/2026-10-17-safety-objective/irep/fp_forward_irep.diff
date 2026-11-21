@@ -1,0 +1,110 @@
+--- a/fp_forward.py
++++ b/fp_forward_irep.py
+@@ -32,4 +32,6 @@
+ MIN_FREE_GB = 6.0
+ EXPECT_UPDATE = 1000
++IREP_VARIANT_OF = "navtestE/fp/fp_forward.py md5 82bf21514f919ee4eafab72690004e34 (irep/make_variant.py)"
++IREP_RUNS: dict = {}          # n tokens -> the record of the I-rep run that produced them; copied into meta_json as `irep` ONLY when a run used a non-default option
+ 
+ 
+@@ -146,5 +148,79 @@
+ 
+ 
++def irep_active(a) -> bool:
++    """True iff this run asks for anything but the planner's own batch 1 in sorted order"""
++    return int(getattr(a, "eval_batch", 1)) != 1 or getattr(a, "token_order_seed", None) is not None
++
++
++def run_tokens_irep(a, model, cfg, states, tokens: list, inputs: dict, calib, zc: ZipCache, log=print):
++    """THE I-REP PATH (PREREG_SAFEOBJ section 7): the model call of `run_tokens`, on `--eval-batch` tokens at a time, visiting the tokens in the order of a seeded permutation
++    (`--token-order-seed`).  Every output row goes back to the token's OWN position (`traj_o[idx] = ...`), so the returned arrays are in the order of `tokens`, exactly as
++    `run_tokens` returns them.  fp32, no autocast, and NO determinism flag is set anywhere in this file: the kernels are the library's own, and they depend on the batch shape.
++    IC2 (the replicated BASE scorer path against the model's own score) is checked PER TOKEN, as in the original."""
++    import torch
++    dev = a.device
++    taps = Taps(model)
++    n = len(tokens)
++    M, C = cfg.n_proposals, cfg.n_score_components
++    names = ["BASE"] + list(states)
++    traj_o = np.zeros((n, M, 20, 3), np.float32)
++    logits_o = {nm: np.zeros((n, M, C), np.float32) for nm in names}
++    ic2 = np.zeros(n, np.float64)
++    bs = max(1, int(a.eval_batch))
++    seed = a.token_order_seed
++    if seed is not None and not 0 <= int(seed) < 2 ** 32:
++        raise SystemExit(f"REFUSED: --token-order-seed {seed} is outside [0, 2**32)")
++    order = np.arange(n, dtype=np.int64) if seed is None else np.random.RandomState(int(seed)).permutation(n).astype(np.int64)    # RandomState: the frozen legacy stream
++    sizes: dict = {}
++    t0 = time.time()
++    done, ic2_max = 0, 0.0
++    for s in range(0, n, bs):
++        idx = [int(j) for j in order[s:s + bs]]                          # positions in `tokens` of the rows of this batch, in processing order
++        imgs, egos, goals, cals = [], [], [], []
++        for j in idx:
++            r = inputs[tokens[j]]
++            img = build_img(r["frames"], zc, cfg)
++            if a.mutate_swap_cams and j < 8:                              # D3, a DELIBERATE REGRESSION: the same first 8 tokens whatever the order
++                img = img.clone()
++                img[:, [1, 2]] = img[:, [2, 1]]
++            imgs.append(img)
++            egos.append(r["ego"])
++            goals.append(r["goal"])
++            cals.append(torch.tensor(calib[r["log"]], dtype=torch.float64))   # [1, n_cam, 16] per token
++        img_b = torch.cat(imgs, dim=0)                                    # [b, n_cam, 3, H, W]
++        ego = torch.tensor(egos, dtype=torch.float32, device=dev)
++        goal = torch.tensor(goals, dtype=torch.float32).to(dev)
++        cal = torch.cat(cals, dim=0)                                      # [b, n_cam, 16], float64, CPU: as the planner passes it
++        taps.xflat = taps.sctx = None
++        with torch.no_grad():
++            traj, score = model(img_b.to(dev), ego, goal, calib=cal)
++            if taps.xflat is None or taps.sctx is None:
++                raise RuntimeError("the scoring decoder never ran: the taps saw nothing")
++            base_mods = {m: getattr(model, m) for m in SCORER}
++            rep = score_with(base_mods, taps.xflat, taps.sctx)
++            d = (rep - score).abs().flatten(1).max(dim=1).values.double().cpu().numpy()    # IC2 per token: must be EXACTLY 0.0
++            outs = {"BASE": score}
++            for nm, mods in states.items():
++                outs[nm] = score_with(mods, taps.xflat, taps.sctx)
++        ix = np.asarray(idx, dtype=np.int64)
++        ic2[ix] = d
++        ic2_max = max(ic2_max, float(d.max()))
++        traj_o[ix] = traj.float().cpu().numpy()                           # <- the restore: each row to its token's own position
++        for nm in names:
++            logits_o[nm][ix] = outs[nm].float().cpu().numpy()
++        sizes[len(idx)] = sizes.get(len(idx), 0) + 1
++        prev, done = done, done + len(idx)
++        if done // 25 != prev // 25 or done == n:
++            log(f"  {done}/{n} tokens (I-rep batch {bs})  {(time.time() - t0) / done:.2f} s/token  ic2 max so far {ic2_max:.3g}", flush=True)
++    taps.h1.remove()
++    taps.h2.remove()
++    IREP_RUNS[n] = {"eval_batch": bs, "token_order_seed": (None if seed is None else int(seed)), "n": n, "order_sha256": hashlib.sha256(order.tobytes()).hexdigest(),
++                    "batch_size_counts": {str(k): v for k, v in sorted(sizes.items())}, "variant_of": IREP_VARIANT_OF}
++    return traj_o, logits_o, ic2, time.time() - t0
++
++
+ def run_tokens(a, model, cfg, states, tokens: list, inputs: dict, calib, zc: ZipCache, log=print):
++    if irep_active(a):
++        return run_tokens_irep(a, model, cfg, states, tokens, inputs, calib, zc, log=log)
+     import torch
+     dev = a.device
+@@ -189,4 +265,6 @@
+ def repeat_check(a, model, cfg, states, tokens, inputs, calib, zc, traj, logits, n):
+     """IC5 (forward arm): the first n tokens again, in the same process -> max |difference| per output; must be EXACTLY 0.0 on every output"""
++    if irep_active(a):          # IC5 re-runs the first n tokens, which in an I-rep run would be a DIFFERENT batch composition: it would measure the very thing this run varies
++        return {"n": 0, "skipped": "I-rep run: a repeat would re-batch the tokens", "bit_identical": None}
+     n = min(n, len(tokens))
+     t2, l2, _ic2, _s = run_tokens(a, model, cfg, states, tokens[:n], inputs, calib, zc, log=lambda *x, **k: None)
+@@ -216,4 +294,6 @@
+ def write_out(path, tokens, inputs, traj, logits, ic2, info, secs):
+     info = dict(info, seconds=round(secs, 1), n=len(tokens))
++    if len(tokens) in IREP_RUNS:
++        info = dict(info, irep=IREP_RUNS[len(tokens)])
+     np.savez(path, token=np.array(tokens), log=np.array([inputs[t]["log"] for t in tokens]), traj=traj,
+              ic2_maxabs=ic2, meta_json=np.array(json.dumps(info)), **{f"logits_{k}": v for k, v in logits.items()})
+@@ -310,4 +390,6 @@
+     ap.add_argument("--repeat-first", type=int, default=0, help="IC5: re-run the first N tokens in-process and compare bit for bit")
+     ap.add_argument("--mutate-swap-cams", action="store_true")
++    ap.add_argument("--eval-batch", type=int, default=1, help="I-rep: tokens per forward (default 1 = the planner's own batch 1)")
++    ap.add_argument("--token-order-seed", type=int, default=None, help="I-rep: visit the tokens in the order of np.random.RandomState(S).permutation(n) (default: sorted order)")
+     ap.add_argument("--no-gate", action="store_true", help="dev-box smoke only: skip the re-roll gate")
+     a = ap.parse_args()

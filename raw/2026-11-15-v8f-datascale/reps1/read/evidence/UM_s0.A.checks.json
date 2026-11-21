@@ -1,0 +1,179 @@
+{
+ "C-ARGV": {
+  "pass": true,
+  "problems": []
+ },
+ "C-ARGV-MIX": {
+  "pass": true,
+  "problems": [],
+  "regression": [
+   {
+    "arm": "G-RM0_control_unmutated",
+    "red": true,
+    "expect": "clean",
+    "problems": []
+   },
+   {
+    "arm": "G-RM1_steps_61569",
+    "red": true,
+    "expect": "refused",
+    "problems": [
+     "flag --steps reads ['61569'], the card pins ['61568'] for UM_s0",
+     "flag --steps: ['61569'] differs from UE_s0's ['61568']"
+    ]
+   },
+   {
+    "arm": "G-RM2_seed_1",
+    "red": true,
+    "expect": "refused",
+    "problems": [
+     "flag --seed reads ['1'], the card pins ['0'] for UM_s0",
+     "flag --seed: ['1'] differs from UE_s0's ['0']"
+    ]
+   },
+   {
+    "arm": "G-RM3_w_0.5",
+    "red": true,
+    "expect": "refused",
+    "problems": [
+     "flag --tac-src-w reads ['0.5'], the card pins ['0.0'] for UM_s0",
+     "--tac-src-w reads ['0.5'], the card pins ['0.0']"
+    ]
+   },
+   {
+    "arm": "G-RM4_list_one_clip_removed",
+    "red": true,
+    "expect": "refused",
+    "problems": [
+     "G-RM4: the list file hashes e458255ddb7c, declared 37f4f9ee468e",
+     "the list hashes e458255ddb7c, the card's 37f4f9ee468e"
+    ]
+   },
+   {
+    "arm": "G-RM5_w0_without_list",
+    "red": true,
+    "expect": "refused",
+    "problems": [
+     "UM_s0 argv has no --tac-src-clips",
+     "UM_s0 argv has no --tac-src-clips-sha256"
+    ]
+   },
+   {
+    "arm": "G-RM6_w1_with_list",
+    "red": true,
+    "expect": "refused",
+    "problems": [
+     "flag --tac-src-w reads ['1.0'], the card pins ['0.0'] for UM_s0",
+     "--tac-src-w reads ['1.0'], the card pins ['0.0']"
+    ]
+   },
+   {
+    "arm": "G-RM7_exclude_540_600",
+    "red": true,
+    "expect": "refused",
+    "problems": [
+     "C-EXCL / G-R3: --exclude ['540:600'] on a U-set argv (the 60 holdout clips are removed from the union files by id)",
+     "flags added to UE_s0's argv: ['--exclude', '--tac-src-clips', '--tac-src-clips-sha256', '--tac-src-w'], expected exactly ['--tac-src-clips', '--tac-src-clips-sha256', '--tac-src-w']"
+    ]
+   }
+  ],
+  "ue_argv_sha256": "03565c558216a4b9dcbeb724a93fd5a3eeec8b71b6495f919e49105901df2b5c"
+ },
+ "C-TACSRC-LIST": {
+  "pass": true,
+  "problems": [],
+  "list_sha256": "37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1",
+  "b_dry_sha256": "cd0fc647992e2654c1d2e0af938e38520d0d0a6589d11c309182347a29be4864"
+ },
+ "C-MERGE": {
+  "pass": true,
+  "problems": [],
+  "union_md5": "9881b170a889f743c5b0894f9ad13f1d",
+  "merge_record_sha256": "ba56af0c1d52245c4aa83e75962a7549472d3d1185b3a11dfc1402edeea4f62f"
+ },
+ "C-MD5": {
+  "pass": true,
+  "problems": [],
+  "accepted_roles": [
+   "corpus",
+   "tenk",
+   "union"
+  ],
+  "union_md5": "9881b170a889f743c5b0894f9ad13f1d"
+ },
+ "C-STEPS": {
+  "pass": true,
+  "problems": [],
+  "ue_dry_sha256": "537b9e5ccdb17c26dcc10de9386ebe1ab9395c06a63ffc457547f44f9030e7d2"
+ },
+ "C-NCLIPS": {
+  "pass": true,
+  "problems": []
+ },
+ "C-CHUNK": {
+  "pass": true,
+  "problems": []
+ },
+ "C-TRAIN-SHA": {
+  "pass": true,
+  "problems": [],
+  "train_sha256": "9844151fcb15504fe9e729fdc6235aebd3e31bfd363cb362994852931ada60f4"
+ },
+ "C-DISJ": {
+  "pass": true,
+  "problems": []
+ },
+ "C-HOLD": {
+  "pass": true,
+  "problems": []
+ },
+ "C-MASK": {
+  "pass": true,
+  "problems": []
+ },
+ "C-JOIN-EQ": {
+  "pass": true,
+  "problems": []
+ },
+ "G-HYG": {
+  "pass": true,
+  "problems": []
+ },
+ "G-LIVE": {
+  "pass": true,
+  "problems": []
+ },
+ "G-CLOCK": {
+  "pass": true,
+  "problems": []
+ },
+ "G-EVAL": {
+  "pass": true,
+  "problems": [],
+  "record_sha256": "fa97df2c813b315c51bc2a9981615f8102e63db0f2a790c9ed2a63b3332e18a6"
+ },
+ "G-CKPT": {
+  "pass": true,
+  "problems": [],
+  "record_sha256": "c67394602cc08bccb78ffa8ccf571e5d4db32357f88fbf41ee953d193145b708"
+ },
+ "G-SUITE": {
+  "pass": true,
+  "problems": [],
+  "record_sha256": "8d7829fe9290943831f69229399489d8bcb6b43664a2cf7591d288c05c6c7531"
+ },
+ "C-INIT": {
+  "pass": true,
+  "report": {
+   "UM_s0_buffers_equal_UE_s0": true,
+   "UM_s0_cfg_equal_UE_s0": true,
+   "UM_s0_params_equal_UE_s0": true,
+   "UM_s0_state_equals_UE_s0": true,
+   "UM_s0_state_equals_U_s0": true,
+   "reading": "card 5.5 C-INIT: UM_s0's step-0 state-dict sha256 equals UE_s0's and U_s0's (the new stage draws no random number); G-HYG: cfg equal to UE_s0's, 7,214,495 trainable",
+   "state_sha256": "5700eacd2cfae23153eef186bd6a294e991cee2a270c0f07f797692eb7a78a60",
+   "u_state_sha256": "5700eacd2cfae23153eef186bd6a294e991cee2a270c0f07f797692eb7a78a60",
+   "ue_state_sha256": "5700eacd2cfae23153eef186bd6a294e991cee2a270c0f07f797692eb7a78a60"
+  }
+ }
+}

@@ -1,5 +1,191 @@
 # TanitAD — working agreements
 
+## ⭐⭐⭐ THE REPO HAS MOVED — `D:\Projects\TanitAD` IS CANONICAL (PI, 2026-09-10)
+
+**Sayed, verbatim:** *"I want you to move the whole projetc to the following folder
+D:\Projects\TanitAD sicne we have a big problems with G mount. So move all trhe files we need,
+checkout the repo and continue the work, do this for all the TanitAD agents and the research lab
+inclduing all necessary files"*
+
+⛔ **THIS SUPERSEDES EVERY `G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD` PATH IN THIS FILE
+AND IN EVERY BRIEF.** Work in `D:\Projects\TanitAD`. ⛔ Do not start new work on G:.
+
+### Why — the diagnosis, not the frustration
+
+The section above records it in full: **G:'s `.git` mutable control files will not hydrate**.
+`HEAD`, `config`, `index`, `packed-refs` and `refs/heads/*` all return **`Invalid request code`**
+while directory listings, pack files and worktree files read perfectly. Git must read `HEAD` and
+`config` to recognise a repository at all, so every git command there reports *"fatal: not a git
+repository"* — a message about one unreadable file, dressed as a claim about the whole repo.
+⛔ **Retrying does not fix it.** That is why the PI moved the project rather than waiting.
+
+### What was moved, and how it was verified
+
+| what | where | verification |
+|---|---|---|
+| the git object store | `D:\Projects\TanitAD\.git` | `fsck --connectivity-only` **rc 0, zero output**; HEAD matches; the only 8 absent objects were **unreachable** blobs |
+| the working tree | `D:\Projects\TanitAD` | checked out from HEAD, **not** copied from G: — so no stale or half-edited file rode along |
+| model artifacts | `D:\Projects\TanitAD-artifacts\` | refcv5-v2, refcv4b, refcv3, the compare harness, the A40 rescue bundle |
+
+⛔ **The working tree was rebuilt from git, never copied from G:.** A copy would have carried
+G:'s stale `CLAUDE.md` and reverted the day's commits — the same revert hazard the git-hygiene
+section documents, arriving through a filesystem instead of an index.
+
+### ⚠️ D: is exFAT, and three of its properties matter
+
+1. ⛔ **No ownership recording** ⇒ git refuses with *"detected dubious ownership"* until
+   `git config --global --add safe.directory D:/Projects/TanitAD` is set. ⚠️ **A `git status`
+   that returns zero lines under that refusal is the REFUSAL, not a clean tree** — the same
+   "a zero is a claim about the probe" trap, in a new costume.
+2. ⚠️ **No symlinks and no hardlinks.** `git clone --local` cannot hardlink here, and any
+   mode-`120000` entry materialises as a plain file.
+3. ⚠️ **Large allocation unit**: 34,955 loose objects occupy **~38 GB allocated for 5 GB of
+   actual data**. ⭐ `git gc` packs them and reclaims most of it — worth running.
+
+⚠️ **It is an EXTERNAL drive.** Unplugging it reproduces the class of failure we just left, so
+`C:\Users\Admin\tanitad-push\.git` stays as the working mirror and **GitHub remains the durable
+copy**. Push often.
+
+### ⛔ What was deliberately NOT rewritten
+
+**233 tracked files contain a hardcoded G: path. 220 of them are historical banked artifacts** —
+run logs, raw JSON, one-off probe scripts under `Implementation/incoming/`. ⛔ **Rewriting those
+would falsify the record of where things actually ran.** A banked artifact says where it was
+produced; that is a fact, not a setting. Only **live operational** files are updated.
+
+⚠️ **And the code barely hardcodes the path at all** — it comes from the working directory. So a
+session or agent launched with the right cwd needs no edits; one launched against G: will fail
+loudly rather than silently, which is the correct behaviour.
+
+## ⭐⭐⭐ RULE ZERO — A REFUTATION IS A WAYPOINT, NOT A DELIVERABLE (Sayed, 2026-09-05, HIGHEST PRIORITY)
+
+**Sayed, verbatim:** *"I dont need refutaions, I need xcellent results … so if the results are not
+enough continue automatically, detecting refutations is just not enough for this frontier
+programme."*
+
+And earlier the same day: *"our goals in TanitAD programme is not to refute hypotheses, its about
+achieving excellent results and really driving autonmously with a reference implementation. Why im
+saying this, we have too many refutes, and I have the feeling, we are satisfied sometimes if the
+hypotheses is refuted rathern than solving the problem."*
+
+⛔ **THIS RULE OUTRANKS EVERY OTHER PROCESS RULE IN THIS FILE.** The evidence rules below tell you
+how to be *right*; this one tells you what you are *for*.
+
+### The rule
+
+1. ⛔ **"X is refuted" is NEVER a finished turn.** The complete form is: **"X is refuted — Y is the
+   next lever — here is Y's RESULT"**, or, if Y truly cannot run, *"here is exactly what blocks Y."*
+   A turn that ends at the refutation has delivered a diagnosis and called it a product.
+2. ⭐ **WHEN AN ARM FAILS ITS BAR, CONTINUE AUTOMATICALLY.** Do not stop and report. Diagnose, pick
+   the next lever, and **execute it in the same run**. An agent that stops to ask permission to keep
+   working has spent its budget on the part that was already finished.
+3. **You are done when one of two things is true**, and you must say which:
+   * the result **clears its committed bar**, or
+   * **every remaining lever is blocked** — on compute, on a corpus that does not exist, or on a PI
+     decision — and you have **named each one and what would unblock it**.
+4. ⛔ **A failed arm must leave behind the NEXT arm, not just its own verdict.** Before you write the
+   verdict, answer: *what is the cheapest experiment that could still make this work, and did I run
+   it?* If it was cheap and you did not run it, the turn is not finished.
+5. **Prefer the lever with the largest measured effect, not the most interesting one.** Attribution
+   exists to rank levers. If the arithmetic says one term dominates, go there — even when a more
+   elegant hypothesis is available.
+
+### ⛔ What this rule does NOT license — read this before it is misused
+
+⚠️ **"I need excellent results" means BUILD until it works. It does NOT mean report good news.**
+This rule makes the *stopping condition* stricter, never the *evidence bar* lower. Specifically:
+
+* ⛔ **A committed criterion is still reported as written.** An arm that misses its pre-registered
+  bar **FAILED**, and you say so — then you keep going. *(MEASURED 2026-09-05: an RL arm's formal
+  exit was FAILURE on a separated `ade_m` +0.0362, and the correct behaviour was to report that
+  plainly **and** carry the zero-training gate it produced into validation.)*
+* ⛔ **Never move a goalpost after seeing the data**, never drop a control because it is
+  inconvenient, and never promote a post-hoc finding without its own pre-registration.
+* ⛔ **A refutation that ELIMINATES a candidate is real progress and must still be logged** — four
+  eliminations in one day (head, goal, vocabulary, reward) are what localised refav1's defect to the
+  cost geometry. The rule is not *"stop refuting"*; it is **"never stop AT a refutation."**
+* ⚠️ **If continuing would need compute, spend, or an architecture change the PI has not
+  authorised, STOP AND ASK** — that is a named blocker under (3), not a violation of this rule.
+
+## ⛔⛔ BINDING — TOKEN BUDGET: SHORT, SCOPED, CHEAP AGENTS (PI, 2026-10-11)
+
+**Why (MEASURED, `Project Steering/TOKEN_BURN_ANALYSIS_2026-10-11.md`, 35,293 calls):** the weekly limit was
+exhausted in ~1.5 days (Oct 4–5) and the week before (Sep 26–27) — **two programme weeks lost**. Output is
+**4 %** of the bill. **61 %** is re-reading huge contexts (calls above 300k context = 92 % of cost), and
+**29 %** is subagent prompt caches (5-minute TTL) re-written after an agent waited 5–60 min on a Thor job.
+96 % ran on Opus.
+
+1. ⛔ **No agent waits on a long job while alive.** A job that runs longer than ~4 min ⇒ write a ≤ 2k-token
+   `HANDOFF.md` (state, artifact paths, exact next step) and END. The job's completion launches a FRESH agent
+   from the handoff. ⛔ Never `SendMessage`-resume a big agent after a gap longer than 5 min: that re-buys its
+   whole context at 1.25×.
+2. ⛔ **One agent = one scoped deliverable; hand off at ~200k context.** No agent owns a whole work package's
+   lifecycle.
+3. ⛔ **`model` on every Agent call: Sonnet by default.** Haiku for pure mechanics (staging, landing,
+   polling). Opus only for root-cause diagnosis, pre-registration design and architecture.
+4. **The Master Mind runs as ONE session, compacted at ~300k** (or restarted daily from `LOOP_STATE.md`).
+   Agent hand-backs are ≤ 300 words plus file paths; the full report stays in the package.
+5. **Polling is done by scripts, never by model turns** (Monitor / background tasks that wake on the event).
+6. **Daily budget check:** `python tools/token_meter/token_meter.py --days 2` every morning. A day above 1/6 of
+   the weekly budget ⇒ park waiting streams and move everything except diagnosis to Sonnet.
+7. "≥ 5 parallel streams" (below) counts **streams of work**, not live agents. A stream whose job is running
+   is **parked as a handoff file and costs zero tokens**.
+
+
+## ⛔ BINDING — DELETE WHAT IS NOT NEEDED, AUTOMATICALLY (PI, 2026-11-07)
+
+**PI, verbatim:** *"add in the rules for all agents and sessions that not needed data or tem or copires automaticalyy must be deleted to avoid running regularay out of disk space"*
+
+**Why (MEASURED 2026-11-07):** C: 1.6 GB, E: 0.98 GB and F: 2.1 GB free at the same time. A box-2 pull needed 2 GB, and one session's old scratch copies held 2.3 GB of C:.
+
+1. **Every agent and session deletes its own temporary data when nothing needs it any more**, at the end of the job that made it, not later. That covers scratch exports and tarballs, test `--basetemp` folders, pulled copies whose source still exists (box 2, a pod, HF, git), mid-run checkpoints of an analysis that finished, landed holds, and `.before_*` backups once the change is landed and verified.
+2. ⛔ **Never delete the ONLY copy of anything.** Before a delete, the data is either re-creatable (a git export, or a pulled copy whose source you have just checked still exists) or BANKED (landed and verified by `ls-remote`, or on HF and verified by sha256). If it is not banked, bank it first, then delete.
+3. ⛔ **Never delete what another session or agent owns or a running job uses.** Check the process list and the live chain scripts first. Never delete `Keys.txt`, git objects or refs, registers, cards, results, or the PI's own files.
+4. **Delete by literal absolute path** (or `"${VAR:?}"`), never through a bare variable. Log every deletion (path, size) in the handoff or `LOOP_STATE`.
+5. **Daily sweep:** with the morning token meter, the Master Mind checks free space on C:, E:, F: and box 2's D:. A drive below 5 GB is swept of its own temporary data under rules 1 to 4.
+* This replaces the "move aside, never delete" default for temporary data and copies. For data that is the only copy, nothing changes: it is never deleted.
+
+## ⛔ BINDING — THE THREE LEVELS ARE DEFINED BY TIME BANDS (PI, 2026-11-08)
+
+**PI, verbatim:** *"We need to implement clearly my definition of operative, tactical and strategic time horizons, those are clearly defined (op up to 2 s), (tac up to 6 sec iccl our tactical vocab), (6se to 30 sec incl. av checkpointsssss, detectedstrategic informtio nd derived goals from it) trajectory is a combo of op and tac and thus 6s . It makes no sense to consider 0.8 s as long term abstract level."* And: *"yes use multi hierarchacy world model based planning as baseline and compare it to other approaches"*
+
+| level | band | includes |
+|---|---|---|
+| operative | 0 to 2 s | trajectory knots to 2 s |
+| tactical | up to 6 s | the tactical vocabulary; trajectory to 6 s |
+| strategic | 6 to 30 s | AV checkpoints, detected strategic information (country, period of day, illumination, weather), goals derived from it |
+
+1. Every level, head, loss, label and eval row states its band. A level's trained reach must match its band.
+2. The 6 s trajectory is the combination of operative and tactical.
+3. Period of day and illumination are estimated from images and past frames only. Metadata builds or checks labels; it is never an inference input.
+4. **The multi-hierarchy world-model planner is the baseline**; the reactive planner, a flat world-model planner and the P10 floor are comparison arms.
+5. Spec: `…/raw/2026-11-08-hwm-horizon-review/SPEC_HWM.md`. STRATEGIC stays reported PAUSED until the PI lifts item 25.
+
+## ⭐⭐ PROGRAMME REDESIGN (PI, 2026-08-22) — READ THESE TWO FILES FIRST
+
+**`Project Steering/TANITAD_PROGRAMME.md` is the CONSTITUTION** — the 8 products,
+the org (Research Lab · Master Mind · 4 FlyWheels), the uniform work-package
+schema, the quality system, the TanitAD skills. It must be followed.
+**`Project Steering/GOALS_AND_CLAIMS.md` is the LIVE REGISTER** of goals, claims
+and hypotheses — ⛔ any session that asserts, supports, or refutes a claim
+updates it IN THE SAME TURN; a fresh context reads it before acting.
+
+Three binding consequences (also in auto-memory, so they survive resets):
+1. **TanitAD is a frontier RESEARCH programme until its claims are proven: all
+   open-source models/datasets licensed for research use are AVAILABLE. Never
+   refuse or hedge on licensing.** Augmented/changed datasets are published
+   PRIVATE on the PI's paid HF account; HF Pro GPU/inference/SSH-dev-box is
+   first-class compute alongside Thor and the dev box.
+2. The **Research Hub agent rotation is superseded**: ONE Research Lab agent,
+   triggered daily ~08:00 by the Master Mind (not per-slot crons — those died on
+   permission prompts). It is decoupled from production: literature research +
+   small dev-box GPU experiments (incl. reverse-engineering recent papers),
+   sequentially across Data Eng / Arch+Inference / Deploy+Opt / Opponent+Benchmarks.
+3. The main agent is the **TanitAD Master Mind**: orchestrates the FlyWheel
+   teammate agents, owns model design and the GitHub repo, maintains the
+   scientific paper AUTONOMOUSLY, reviews/overrules teammate results, and sends
+   multiple unprompted reports per day.
+
 Sub-300M hierarchical 4-brain latent world model for autonomous driving. PI: Sayed.
 
 ## Source of truth (this rule exists because prose lied to us)
@@ -33,14 +219,62 @@ never a combination in quadrature.
 
 ⚠️ **It is not only an interval problem — `overlapping_holdout_se` also BIASES THE POINT ESTIMATE**,
 because its central value is a **mean-of-split-means (`heldout`)**, not the **`full_set`** mean.
-*(Measured 2026-07-25 over 27 arms with raw per-window data: headline `ade_0_2s` shifts **−6.67 % to
-+11.69 %**, **bidirectional — 11 arms inflated, 16 deflated, none flat**; on hierarchy seams up to
+*(Measured 2026-07-25 over 27 dumps — **= 25 distinct arms, two double-banked pairs (C126,
+`taniteval/results/dump_exclusions.json`)** — with raw per-window data: headline `ade_0_2s` shifts
+**−6.67 % to +11.69 %**, **bidirectional — 11 inflated / 14 deflated over distinct arms (11/16 over
+dumps), none flat**; on hierarchy seams up to
 **×3.3**, and on paired deltas up to **×−4.15 including a SIGN FLIP**. It manufactured the program's
 one "load-bearing" hierarchy seam: `ctx→tactical` +0.0439 → true **+0.0148**.)* Interval narrowing
-is **1.107–3.100×, median 1.499×** (27 arms; the older "1.28–2.06×" came from only 10 and was
+is **1.107–3.100×, median 1.499×** (27 dumps = 25 distinct arms; the older "1.28–2.06×" came from only 10 and was
 under-sampled). **Before trusting ANY pre-2026-07-25 number, check whether it is the `heldout`
 split-mean or the `full_set` mean — `MODEL_REGISTRY.md` publishes both and they differ.** Blast
 radius + per-arm corrections: `…/incoming/2026-07-25-jack-blast-radius/JACK_BLAST_RADIUS.md`.
+
+⛔⛔ **A SEPARATED INTERVAL FROM A ONE-SEED ARM IS NECESSARY, NOT SUFFICIENT — THE PAIRED
+BOOTSTRAP IS STRUCTURALLY BLIND TO TRAINING VARIANCE.** MEASURED 2026-09-05 on the v7-tiny rig
+by an arm no SPEC asked for: **`A0b_replicate`** — A0's flags, A0's **seed**, run again, **zero
+levers moved** (verified by argv audit) — produced **"separated" differences from A0 on 4 of 42
+family cells**, a **9.5 % false-positive rate for `separated`** on that rig, about twice the nominal 5 %
+(**CORRECTED 2026-09-26**, `RETR-2026-09-26-YAWMASK`: this rule was first written as *6 of 42 =
+14.3 %*, but 2 of those 6 were yaw-rate cells from a shared metric that scored standstill jitter,
+and they vanish once the cell masks tangent-less steps —
+`…/2026-09-26-yaw-rate-mask/raw/claims/replicate_fp_rate_fixed.json`. First derived 2026-09-06 from
+`panel_report.json` by recursing `A0b_replicate.paired_vs_A0`; restricted to the seven family rows
+the panel's `VERDICT.md` tabulates at 2 s it is 2 of 14, formerly 3 of 14.
+⚠️ The earlier "3 of 18 / ~17 %" form does NOT reproduce at any scoping, and `raw/NOISE_FLOOR.md`
+cannot be its source: that artifact CRASHED mid-write on a cp1252 `UnicodeEncodeError` and carries
+no numbers at all — a TRUNCATED artifact that reads like a complete one). The mechanism is
+not a bug in `taniteval/ci.py`: the episode-cluster bootstrap resamples **EPISODES with the
+models held fixed**, so it estimates *"would another draw of episodes say this?"* and never
+*"would another training run say this?"*. Two runs differing in **nothing** cleared it.
+⇒ **For any claim that a LEVER moved a metric, a separated CI is a necessary condition and not
+a sufficient one.** The sufficient form needs a **replicate arm** (same flags, same or different
+seed) so the lever's effect is read against the rig's own run-to-run noise floor. On the tiny rig
+the cheapest next experiment is therefore **SEEDS, NOT WINDOWS** — more episodes narrow an
+interval that was already answering the wrong question.
+⚠️ **Scope it honestly, and do not blanket-void the register.** MEASURED: **8 rows** rest on a
+tiny-rig separated result. They are not equally exposed — a **structural zero** is not a noisy
+difference. `H-ECHO-4`'s deliberate-regression arm reads scene degradation **exactly +0.0000 with
+CI [0, 0]** because a constant-image arm *cannot* degrade under a scene intervention; that is an
+identity, not an estimate, and no seed changes it. The exposed claims are the ones asserting a
+**difference between two trained arms**. Each needs re-reading against a replicate before it is
+quoted as a lever effect; none is retracted by this rule alone.
+⭐ Same family as the two estimator rules above — *never quote an interval without its estimator*,
+and *`overlapping_holdout_se` biases the point estimate* — with the object swapped: here the
+estimator is correct and its **question** is narrower than the claim being hung on it. Registered
+as `H-ESTIM-SEED-1`; instrument `…/2026-09-05-withheld-bank-panel/raw/NOISE_FLOOR.md`.
+
+⛔⛔ **AND ON A STOCHASTIC PLANNER THERE IS A THIRD VARIANCE THE SAME INTERVAL IS
+BLIND TO — INFERENCE.** MEASURED 2026-09-05 on refav1: iCEM **samples**, so **the same
+checkpoint evaluated twice does not give the same answer** — no retraining involved — and
+this rig's **seed floor is ≈0.30 m ADE**, while *"the programme has been comparing
+single-seed arms"* (`D-REFAV1-SEED-GOAL-MISMATCH`). ⇒ **Three different questions ride on
+one interval:** *would another draw of EPISODES say this?* (what the bootstrap actually
+answers), *would another TRAINING RUN say this?* (`H-ESTIM-SEED-1`), and *would another
+INFERENCE RUN say this?* (this one). **Name which one your separated CI has answered.**
+⇒ For any arm whose planner samples, a replicate must vary the **inference** seed, and an
+effect smaller than that floor is not an effect. *(The refav1 A/B's +0.8927 m ADE clears it
+at 11.2× and is reported that way; a 0.2 m "win" on that rig would not have been one.)*
 
 ## Briefing a subagent — the contract
 
@@ -57,121 +291,48 @@ Every subagent brief MUST carry the preamble in
 3. **Escalate integration, don't write "please merge" into a doc.** An orthogonality instrument
    sat unmerged for **10 days** because the request lived in a README nobody re-read.
 
-## Traps preflight (each of these has cost hours more than once)
+## Traps — the catalogue lives in `Project Steering/TRAPS.md` (read the entry before acting)
 
-- **`pgrep -f <trainer>` / `pkill -f <trainer>` self-matches your own ssh command** and kills your
-  session — returns empty output and looks like nothing happened. Kill by **explicit PID**.
-- **`PYTHONPATH=/workspace/TanitAD/stack` is REQUIRED** on pods or trainers die with
-  `ModuleNotFound: tanitad`. `cd` alone is not enough.
-- **Never judge pod disk with `df`.** It reports the 965 TB cluster and hides the per-pod MooseFS
-  quota. Use a real `dd` write test. A full quota killed the flagship mid-checkpoint.
-- **`step_s` in trainer logs is ACCUMULATED over `--log-every`** (÷50), not per-step. This has
-  caused false "training is 430 s/step" alarms.
-- **Moving multi-GB files between pods: POD→POD DIRECT SSH WORKS — the long-standing "pods cannot
-  SSH each other" is RETRACTED (C56).** MEASURED 2026-07-28: **42 MB/s cross-datacenter**
-  (US-TX-1 → ca-mtl-1), 3,415,808,330 B in 77 s — **42× the ~1 MB/s dev-box relay**, and it does
-  not depend on HF (which has been 403-storage-full for days). Recipe:
-  1. `ssh-keygen -t ed25519 -N "" -f /root/.ssh/id_ed25519` **on the DESTINATION**;
-  2. append that pod's **PUBLIC** key to the SOURCE's `~/.ssh/authorized_keys`
-     (⛔ never copy a private key — that is correctly classifier-blocked, and you never need to);
-  3. connect to the source's **direct** mapping — `$RUNPOD_PUBLIC_IP:$RUNPOD_TCP_PORT_22`, read
-     from the source's own env.
-  ⚠️ **Use the DIRECT port, not the `ssh.runpod.io` proxy.** The proxy genuinely cannot move files
-  (sftp → `subsystem request failed on channel 0`; `scp -O` → exit 2); it serves an interactive
-  shell only. *That* is the true limitation the old rule had generalised into "pods cannot SSH".
-  ⚠️ **A nested `ssh` inside a piped script EATS THE REST OF THE SCRIPT'S STDIN** — the tail silently
-  never runs and looks like a hang or a truncated log. Always `ssh -n` (or `< /dev/null`) inside
-  a heredoc/pipe. This cost two debugging rounds here.
-  HF push/pull (~118 MB/s) remains the fastest path **when HF has quota**; verify md5 either way.
-- **A RunPod volume resize stops the pod and reassigns its SSH port** (`Connection refused`, not
-  `timed out`). The working key is `~/.ssh/tanitad_pod`, not the console's `id_ed25519`.
-- **`torch` spawns ~113 threads PER PROCESS, and concurrent eval arms then make NO PROGRESS —
-  it looks exactly like a hang.** MEASURED 2026-07-27: 7 concurrent arms sat at GPU `sm` **0–6 %**
-  for **50 minutes** with zero progress; `OMP_NUM_THREADS=6` and the same arm finished in **232 s**.
-  Set it before any multi-arm panel; do not diagnose the symptom as a deadlock or a dead job.
-- **`git add <exact path>` can SILENTLY NO-OP on a file in a newly created directory** — exit 0,
-  the usual CRLF warning printed, and the file **not staged**. MEASURED 2026-07-27: renaming the
-  parent dir (the previously documented un-poison) **did NOT help**; rewriting the file through a
-  **fresh inode from Bash** did. ⛔ **`git add` exit codes are not evidence. Verify with
-  `git ls-files --cached <path>`** — and note the sibling rule that `git status --short` scoped to a
-  path can also mislead, so `git ls-files --stage` is the check for what is really in the index.
-- **A pod's `stack/` checkout drifts silently and a launch from it resurrects fixed bugs.** MEASURED
-  2026-07-27: pod2 sat at `0f93b98` while the v5 gate fix was at HEAD — **a v5 launch from that pod
-  would have restored the crash the fix removed.** ⇒ **syncing the pod and verifying with a real
-  `import` is a RUNBOOK STEP before any launch**, not a nicety; `git log` on the pod is not proof.
-- ⛔ **On the Jetson Thor, THREE standard memory probes all lie — and they lie in BOTH directions.**
-  MEASURED 2026-08-03: `torch.cuda.mem_get_info()` reported **3.4 GB free while 60 GB was allocated
-  AND WRITTEN**; `free`/`tegrastats` showed **106 GB "used" on a completely idle box** and moved only
-  **+596 MB** for those same 60 GB; `/proc/self/status` `VmRSS` read **0.62 GB against 24 GB
-  allocated**. On unified memory these numbers are not merely imprecise, they are unrelated to the
-  question. ⇒ **Only in-process `torch.cuda.max_memory_allocated()` is admissible on Thor.**
-  *(This cost a wrong answer that was caught: a batch-64 OOM was read as "the ceiling is 32" while a
-  phantom 100 GB sat on the box; the true ceiling is 64.)* Same class as the `df` trap above —
-  **a probe that reports the wrong scope is worse than no probe, because it looks like an answer.**
-- ⚠️ **Thor inverts both A40 batching instincts.** Throughput is **flat at 12.3–14.1 windows/s across
-  a 6× batch range** — the 20 SMs saturate at **batch 8**, so a bigger batch buys nothing and only
-  costs memory. Each dataloader worker costs **~8.6 GB host RAM**. ⇒ **small batches, few workers.**
-- ⛔ **`memory.usage_in_bytes` (cgroup v1) COUNTS RECLAIMABLE PAGE CACHE — it is NOT memory
-  pressure.** MEASURED 2026-08-03 on `tanitad-new` **with nothing running at all**: `usage_in_bytes`
-  **37.2 GB of a 50 GB cap (74 %)**, of which `cache` **37.0 GB** and `rss` **0.1 GB**. Under load it
-  read **98–100 %** while `rss` was **4.9 GB**. ⇒ **Read `memory.stat`'s `rss`, and read
-  `memory.failcnt` / `memory.events` — a cgroup that has never hit its limit reports `failcnt 0`,
-  and that is the fact that settles it.** *(Cost: I read 98 % as an imminent OOM and restarted the
-  v5f trainer THREE times on it, losing ~40 min of training and inventing a container-OOM diagnosis
-  that `failcnt 0` refutes.)* **Exactly the `df` trap and the Thor `free`/`tegrastats` trap in a
-  third costume: a counter that aggregates something reclaimable, read as pressure.**
-- ⚠️ **`supervise_run.sh` SOURCES ITS MANIFEST ONCE, at supervisor startup — not per relaunch.**
-  Editing `runs.d/<run>.env` under a live supervisor changes nothing: it replays the `TRAIN_CMD` it
-  captured when it booted, and the relaunch looks successful while running the OLD config. ⇒ **To
-  change a supervised run: edit the manifest → kill the SUPERVISOR first → kill the trainer →
-  start a fresh supervisor.** Killing the trainer first just makes the supervisor restore the stale
-  command. **Verify by grepping the flags out of the RUNNING process**, never by reading the manifest.
-- ⚠️ **Restarting a supervisor immediately after killing the old one RACES ITS `flock`** — the new
-  one prints *"another supervisor holds …lock — exiting"* and dies, leaving **nothing running** while
-  the log looks like a normal startup. Wait until the old supervisor **and** trainer are actually
-  gone (poll `ps`), then start. If a lock is left behind with no holder (scan `/proc/*/fd`), it is
-  debris — `rm` it. Same shape as the stale `.git/index.lock` rule below.
-- **Verify before alarming.** Check the metric's definition and take multiple samples first;
-  several "outages" were measurement artifacts.
+Moved out of this file on 2026-10-11 (token budget, P6): every session and agent re-read 13k tokens of it on every call. Also available as the `tanitad-traps` skill. Index (full text, measurements and fixes in TRAPS.md):
 
-## Git hygiene — the mistake that has now happened twice
+- A POLLING MONITOR WHOSE FILTER CONTAINS THE PATTERN IT SEARCHES FOR WILL MATCH ITS OWN
+- `pgrep -f <trainer>` / `pkill -f <trainer>` self-matches your own ssh command
+- `PYTHONPATH=/workspace/TanitAD/stack` is REQUIRED
+- Never judge pod disk with `df`.
+- `step_s` in trainer logs is ACCUMULATED over `--log-every`
+- Moving multi-GB files between pods: POD→POD DIRECT SSH WORKS — the long-standing "pods cannot
+- A RunPod volume resize stops the pod and reassigns its SSH port
+- `torch` spawns ~113 threads PER PROCESS, and concurrent eval arms then make NO PROGRESS —
+- `git add <exact path>` can SILENTLY NO-OP on a file in a newly created directory
+- PODS HAVE NO GIT CREDENTIALS — `git fetch` on a pod HANGS (not fails), and the checkout's
+- A pod's `stack/` checkout drifts silently and a launch from it resurrects fixed bugs.
+- On the Jetson Thor, THREE standard memory probes all lie — and they lie in BOTH directions.
+- Thor inverts both A40 batching instincts.
+- `memory.usage_in_bytes` (cgroup v1) COUNTS RECLAIMABLE PAGE CACHE — it is NOT memory
+- `supervise_run.sh` SOURCES ITS MANIFEST ONCE, at supervisor startup — not per relaunch.
+- A supervisor whose run never wrote its DONE-MARKER will RESURRECT the finished run the
+- Restarting a supervisor immediately after killing the old one RACES ITS `flock`
+- `uv pip install <anything>` CAN SILENTLY REPLACE TORCH WITH A WHEEL THE DRIVER CANNOT RUN.
+- `CUDNN_STATUS_NOT_INITIALIZED` on a healthy pod usually means CUDA NEVER INITIALISED —
+- AN ANALYSIS-TIME IMPORT THAT FAILS AFTER THE ROLLOUT DESTROYS THE RUN'S OUTPUT WHILE THE
+- THE GOTTY PTY DROPS OUTPUT IN A SYSTEMATIC PATTERN, AND A PLAIN `base64` PULL GOES SILENTLY CORRUPT — frame every line: `awk '{printf "@%04d@%s#\n", NR, $0}'`
+- A DENSE WINDOWED TENSOR DUPLICATES EVERY FRAME `W` TIMES AND SILENTLY SWAPS — AND THE
+- AN ARTIFACT'S COST IS THE COST OF THE FILE ITS
+- A DERIVED CONSTANT SILENTLY CHANGES THE EXPERIMENT WHEN ITS INPUT CHANGES.
+- A DECODE THAT RAISES INTO A PRE-ALLOCATED MEMMAP LEAVES A FULL-SIZE FILE OF ZEROS —
+- THE PINHOLE FOV FORMULA IS WRONG ON A CYLINDRICAL PROJECTION.
+- A PROBE THAT TUNES ON THE DATA IT SCORES WILL MANUFACTURE A RESULT — AND THE ONLY
+- A NEGATIVE FROM A LINEAR PROBE IS NOT A NEGATIVE ABOUT LEARNABILITY.
+- `git ls-tree -r` SILENTLY TRUNCATES ON THE G: MOUNT — IT EXITS 0, AND IT TRUNCATES
+- A SEARCH TOOL WILL REPORT "NO MATCHES" FOR FILES IT COULD NOT OPEN — AND
+- SEARCH THE COMMA-FORMATTED FORM OF EVERY NUMBER.
+- A number carries its ARM and its ARTIFACT PATH, or it is not quotable — and
+- A CORRECT FORMULA APPLIED UNDER THE WRONG UNITS READS EXACTLY LIKE AN ANSWER — AND AN
+- Verify before alarming.
+- On the pod's `/workspace` (VAST NFS) deleted space is reclaimed LAZILY — size `dd` tests to the measured need; an empty log may be a failed write
+- RELAUNCH A CHAIN EXACTLY THE WAY ITS STARTER DID — source the same env file; a bare `bash chain.sh` silently reverts its overrides
+- **Git hygiene** — commits sweep the whole index; phantom deletions / stale index blobs; `git commit -- <pathspec>` segfaults; use the coordinated lander (`land.sh`) or `scoped_commit.py`.
 
-**`git commit` and `git commit --amend` both commit the ENTIRE INDEX, not the files you
-just `git add`ed.** When several agents stage work concurrently — the normal state here —
-a "quick commit of my thing" silently sweeps in a sibling's half-finished code under the
-wrong message. This has happened twice in one session (`60265d3` swallowed the eval
-tooling; `3d41bd0` swallowed REF-C v1.2's in-progress rescorer).
-
-**Rule: when the index contains other agents' work, commit with an explicit pathspec and
-do NOT follow it with `--amend`:**
-```
-git commit -F <msgfile> -- <path1> <path2>        # pathspec form, no amend afterwards
-```
-Check `git status --short` for foreign staged entries FIRST. If a long message is needed,
-write it to a file and pass `-F`, because the `--only ... && --amend` pattern re-opens the
-whole index and defeats the pathspec.
-
-⚠️ **`git commit -- <pathspec>` (the partial-commit path) SEGFAULTS on this repo and is NOT
-usable as the default** (measured 2026-07-25: exit 139 under MSYS git *and* `0xC0000005` under
-native Windows git — so not the shell; **not** fsmonitor, already `false`).
-
-**No mechanism is stated here on purpose.** Three of my root-cause readings were falsified in
-one session — "it's 178+ files" (a 2-file commit crashed), "it's the pathspec shape"
-(the *identical* single-file command crashed then succeeded), and "it's flaky, retry fixes it"
-(**18/18** consecutive attempts then failed against a different index state). Each fit every
-observation available at the time. **Do not re-derive a theory from a handful of runs — use the
-procedure below, which is what actually holds.**
-
-1. **Prefer a pathspec-free `git commit -F <msgfile>`.** It uses the normal (non-partial) path
-   and has never crashed. It commits the WHOLE INDEX, so it is admissible **only** after
-   listing the index (`git diff --cached --name-only`) and confirming every entry is intended
-   program work — which is the check the pathspec rule above exists to force anyway. When a
-   sibling agent's deliverables are in there, say so in the commit message rather than
-   splitting them out.
-2. **Every crash leaves a stale `.git/index.lock`**, so the next attempt dies with *"Another git
-   process seems to be running"* — that reads like contention but is debris. Confirm no git
-   process is alive, then `rm -f .git/index.lock` (the index survives intact). Clear it between
-   attempts or you will chase a phantom error.
 
 ## Operating standard — raised by Sayed 2026-07-21
 
@@ -189,17 +350,61 @@ path, a second name, and the tool that owns the fact. *(Cost this session: the V
 `/etc/vulkan/icd.d/`, not `/usr/share/` → "our pods cannot render" stood for **12 days** and blocked
 AlpaSim + CARLA. `ps -C python3` returns EMPTY for a healthy job because pods run
 `/workspace/venv/bin/python` → a near-miss "the VLM job is dead". `obstacle.offline` — 3D agent tracks
-on **97.44 %** of the corpus — was declared non-existent for days; our ingest reads **4** of 36 features.)*
-⚠️ **The "2 of 36" in this very sentence was ITSELF stale — corrected 2026-07-26 to 4.** True of
-`physicalai_r0.py` alone, but the episode build also reads `camera_intrinsics` and `sensor_extrinsics`
-(`physicalai.py:153-154`) since D-016 R1. It had propagated into **≥7 documents including this one** —
-a stale absence-claim living inside the rule that warns about stale absence-claims.
-**And the answer to what is in the other 32 is now settled, at five independent probes:** there is
+on **97.44 %** of the corpus — was declared non-existent for days, and **IS NOW READ**, so the
+programme reads **6** of 36 features.)*
+⚠️ **This count went stale FOUR TIMES in this very sentence: "2 of 36" → 4 (2026-07-26) → 5 → 6
+(both 2026-08-16).** ⛔ **It is now PINNED — do not hand-edit it. `stack/tests/test_physicalai_feature_readset.py`
+asserts the counts AND the exact feature names against source, and its failure message names the
+documents to update.** The stale count had reached **14 documents (17 sites) plus a code docstring**
+(`stack/tanitad/data/bev_raster.py:12`) — a stale absence-claim living inside the rule that warns
+about stale absence-claims, four times over.
+⇒ **ROOT CAUSE (both the rot AND why 5 was wrong): "our ingest" was never DEFINED.** There are three
+legitimate read-sets, so **always state the layer, never the bare phrase "our ingest"**:
+
+| layer | count | features |
+|---|---|---|
+| `physicalai_r0.py` (r0 clip selection) | **2** | `egomotion`, `camera_front_wide_120fov` |
+| `physicalai.py` (the **episode build**) | **5** | + `camera_intrinsics`, `sensor_extrinsics`, `vehicle_dimensions` |
+| **program-wide** (incl. the pod-side join) | **6** | + `obstacle.offline` |
+
+`obstacle.offline` is deliberately OUTSIDE the episode build — the join is a pod-side step
+(`stack/scripts/build_obstacle_join.py`), which is why `grep obstacle stack/tanitad/data/physicalai.py`
+still returns zero. ⚠️ **The fourth rot and the 2026-08-03 stale-blocker case have the SAME trigger:**
+`obstacle.offline` landing, and neither the prose count nor the "UNAVAILABLE" blocker lines being
+revisited. Sweep: `…/incoming/2026-08-16-stale-blocker-sweep/STALE_BLOCKER_SWEEP.md`.
+**And the answer to what is in the other 30 is now settled, at five independent probes** *(it read
+"the other 32" until 2026-08-16 — the complement rots in lockstep with the count, so the pinning test
+covers the denominator too)***:** there is
 **no map, lane graph, junction annotation, roundabout label, traffic-light feature or route/goal signal**
 in PhysicalAI-AV — the card says verbatim *"we do not include open maps data"*, and `obstacle.offline`'s
 enum over **87,481 cuboids is 10 classes, all dynamic agents**. Stop re-asking; the strategic-brain
 topology must come from AlpaSim or an external corpus. *(Also settled: `egomotion` carries **no
 lat/lon/GNSS** — coordinates are clip-local metres, so **OSM map-matching on our traces is impossible**.)*
+⚠️ **2026-11-16, layer = published repo FILES (MEASURED, `…/raw/2026-11-15-v8f-datascale/navprobe/NAVPROBE.md`, R-NAV-1):** the
+repo-level file `navigation/navigation.parquet` (not in `features.csv`) carries turn-by-turn route text for **305,372 of 306,151
+clips**, incl. roundabout manoeuvres ("Turn right in 249m", "Exit rotary in 214m") and **4,564/4,572** of train4572. Its countdown
+follows the ego's driven arc length (median slope −0.9993, R² 0.99997, 1,745 runs); turn side matches the ego on 804/830, 0 opposite.
+⇒ "no roundabout label / no route signal" holds for the per-clip FEATURE SET only. Map, lane graph, traffic-light feature and
+lat/lon are still absent. As a route input it is optimistic by construction (computed along the driven route).
+
+⛔⛔ **AND THAT PARAGRAPH IS A LAYER-1 FACT THAT HAS ALREADY BEEN QUOTED TO SETTLE A
+LAYER-3 QUESTION.** It is true of the **published PhysicalAI-AV feature set** and SILENT about our
+own **AUGMENTED v7.x label release**. MEASURED 2026-09-06 on
+`…/incoming/2026-09-04-v72-label-release/raw/s2_labels_v7.2_train.jsonl.gz` (schema
+`s2-geom-v7`, vocab `v7`, **4,572 records, one per clip**): **779/4,572 records carry a GT
+traffic-light tactical goal, 761 of them WITH THE COLOUR ATTACHED** (the other 18 are colourless;
+corrected 2026-10-18 on the PI's approval, the earlier text said all 779 carried a colour) — `g_tac.goals.TRAFFIC_LIGHT_REACT_RED`
+**376/4,572**, `_GREEN` **363/4,572**, `_YELLOW` **22/4,572**, colourless `TRAFFIC_LIGHT_REACT`
+**18/4,572** — each carrying `state`, `object_kind: "traffic_light"` and `provenance:
+"vlm-cot"`, extracted from the Alpamayo CoT by `stack/tanitad/data/alpamayo_semantics.py` and
+frozen into the vocabulary by `stack/tanitad/models/vocab_v7.py`. ⇒ **"PhysicalAI-AV publishes no
+traffic-light feature" is TRUE; "the programme has no traffic-light label" is FALSE.** The PI
+corrected exactly this conflation on 2026-09-06.
+⚠ **So state the LAYER here too** — published corpus / episode build / **augmented v7.x label
+release** — exactly as the feature-count table above forces for the read-set. This is the same
+rot the pinning test was built for, one table down. *(What IS true, measured the same day and far
+more damaging: that label **never reaches training** — `D-TLIGHT-1`, and
+`stack/tests/test_tactical_label_reach.py` now pins it.)*
 
 **3. Finish before you start. An artifact on one disk or in one agent's context is NOT done.**
 Definition of done = **in the repo, staged, with its provenance**. *(LAL-v2 anticipation: implemented,
@@ -346,6 +551,8 @@ compared on its marginal) and the REF-A I-JEPA leak (~80 % of val inside train).
 
 ## ⛔ BINDING — AT LEAST FIVE PARALLEL STREAMS, ALWAYS (Sayed, 2026-08-03)
 
+> ⚠️ **Amended 2026-10-11 by the TOKEN BUDGET rule above:** streams are counted as WORK, not live agents; a stream waiting on a job is parked as a handoff file.
+
 **Sayed:** *"dont idle, always have at least 5 streams in parallel, use the loop, goal and workflow
 concepts of claude."*
 
@@ -376,6 +583,44 @@ fewer than five live streams and unexhausted backlog is not finished.
 *(Root cause: the orchestrator repeatedly ran ONE agent and then reported. Sequential delegation is
 still sequential. The programme's throughput is set by how many independent questions are being
 answered at once, not by how carefully one is.)*
+
+## ⛔ BINDING — EVERY NUMBER CARRIES ITS EVAL TIER (EVAL_DOCTRINE.md, 2026-08-06)
+
+**T0** (teacher-forced / true-future-conditioned) is a **WM diagnostic — NEVER "driving
+performance"**. **T1** (action-closed loop: the model conditioned on its OWN actions) is the
+**PRIMARY tier for any capability claim**. **T2** (re-perception sim) is not provisioned.
+*Why this exists (MEASURED, §1.12): open-loop lateral skill was an ACTION ECHO — S-curve
+reproduction 97.9 % open-loop, 0.0 % hold-action, ~5 % closed-loop.* A registry row or report
+quoting a number without its tier stamp is incomplete; comparisons across tiers are invalid.
+Instrument: `taniteval/tools/t1_eval.py` (E1.2).
+
+## ⛔ BINDING — RESEARCH BANKING: BANK THE PRIMARY, OR THE DELIVERABLE IS INCOMPLETE (Sayed, 2026-08-18)
+
+**A research deliverable that cites a paper it did not bank is incomplete.** Every literature pass
+downloads its primary sources into `TanitAD Research Lab/Library/`, indexes them, and extends the
+knowledge base incrementally.
+
+```bash
+python tools/kb_add.py <arxiv-id-or-url> --tag <topic> --note "<the finding, 1 line>"     --cited-by "<repo path of your report>"
+python tools/kb_add.py --verify     # sha256 every entry against disk
+```
+
+* ⭐ **Why it binds.** The 2026-08-18 frozen-encoder review had to mark **five numeric claims
+  `PUBLISHED-SECONDARY`** — read from aggregator summaries and therefore **inadmissible for the
+  registry or the paper** — purely because the primaries were not to hand. Banking the PDF is what
+  converts SECONDARY into PRIMARY. A URL is a claim about the internet; a banked sha256 is a claim
+  about a file we hold.
+* **The seven `KNOWLEDGE_BASE.md` files stay the FINDINGS layer** (`[YYYY-MM-DD] [source] finding —
+  impact — link`). The Library is the EVIDENCE layer beneath them. A `[PUBLISHED]` entry should cite
+  the **library key**, not only a URL.
+* ⛔ **Never hand-edit `LIBRARY.md`** — it is generated from `library.json` by `--reindex`.
+* ⛔ **Verify by CONTENT, never by presence.** `--verify` re-hashes; a file that exists with changed
+  bytes is worse than a missing one.
+* ⚠️ **The tool banked garbage on its first run and reported success** — arXiv's Atom feed opens with
+  a feed-level `<title>` echoing the query, so an unscoped regex filed all 11 papers under
+  *"arXiv Query: search_query=..."*. Fixed by scoping to `<entry>`, pinned by
+  `tools/tests/test_library.py`. The lesson is the general one: **a tool reporting success is not
+  evidence that its output is right.**
 
 ## ⛔ BINDING — EVERY EVAL REPORTS FOUR METRIC FAMILIES, NOT ADE (Sayed, 2026-08-02)
 
@@ -409,3 +654,184 @@ presented as a result.**
 *(Root cause this rule exists: ADE is the cheapest number to produce and the easiest to compare, so
 it crowded out the metrics that actually decide whether the car drives well. Three separate reports
 went out with ADE-only tables after this was requested.)*
+
+## ⛔ BINDING — "G: IS DOWN" IS THE WRONG DIAGNOSIS: `.git`'S CONTROL FILES DEHYDRATE WHILE EVERYTHING ELSE READS FINE (2026-09-10)
+
+**MEASURED 2026-09-10 with interleaved same-breath controls.** The failure on this mount is
+**not uniform**, and reading it as a whole-mount outage has cost real time — including mine,
+this session, retrying `git rev-parse` five times against a repository that was perfectly
+healthy.
+
+| probe | result |
+|---|---|
+| `git rev-parse HEAD` (also `git -C`, also explicit `--git-dir`) | ⛔ `fatal: not a git repository` |
+| `cat .git/HEAD`, `.git/config`, `.git/index`, `.git/packed-refs`, `.git/refs/heads/<branch>` | ⛔ **`Invalid request code`** |
+| `ls .git/refs/heads/` , `ls .git/objects/pack/` | ✅ full listings |
+| `head -c 32 .git/objects/pack/*.idx` | ✅ **READ_OK** |
+| `wc -c < CLAUDE.md` (a worktree file) | ✅ **88,276**, matching `ls` exactly |
+
+⇒ **The small MUTABLE control files under `.git/` are the ones that fail; pack files and
+worktree files hydrate normally.** That is the entire explanation for the confusing signature
+everyone keeps re-deriving: **git must read `HEAD` and `config` to recognise a directory as a
+repository at all**, so a `.git` whose control files will not hydrate reports *"not a git
+repository"* — a message about **one unreadable file**, dressed as a claim about the whole repo.
+
+⭐ **THE THREE CONSEQUENCES, and they change what you should do:**
+
+1. ⛔ **Retrying does not help and is not evidence.** This is Google Drive cloud-only
+   dehydration, not a transient flap — the same mechanism already recorded for
+   `.claude/worktrees/` (27 identical copies, 0 readable, metadata perfect). ⚠️ It IS
+   intermittent per file: `.git/HEAD` read successfully in one probe and errored two minutes
+   later. So a single success proves nothing either.
+2. ⭐ **This is WHY `commit_cacheinfo.py` works when `git add` does not**, and the reason is
+   now mechanical rather than folklore: it stages **from blobs already in the object store**
+   and never reads the worktree — and **pack reads survive this failure mode**. Its immunity is
+   not luck; it is the one route that touches only the half of `.git` that still hydrates.
+3. ⭐ **THE WORKING ROUTE IS THE LOCAL MIRROR** at `C:/Users/Admin/tanitad-push/.git`. Its
+   `read-tree` takes **0–1 s** where G:'s takes **13 minutes** under contention, and every
+   plumbing operation succeeds. Author locally → `hash-object -w` → scratch index from the tip
+   → `update-index --cacheinfo` → `write-tree` → **revert guard** → `commit-tree` → CAS
+   `update-ref` → push. Three commits landed this way on 2026-09-10 while G: git was refusing
+   every command.
+
+⚠️ **AND THE MIRROR CAN BE BEHIND THE REMOTE — CHECK, DO NOT ASSUME.** MEASURED the same day:
+the mirror's `refs/remotes/origin/<branch>` read `ad68b3d` and its own tip read `ad68b3d`, so it
+looked fully synced; **GitHub actually held `b42ab460`**, one commit ahead, and `b42ab460` was
+**not even a valid object** in the mirror. A commit built on the stale tip was correctly
+**rejected as non-fast-forward**. ⇒ **`git ls-remote` before building**, and rebuild on the true
+tip; ⛔ a stale remote-tracking ref is a cached claim, never a measurement.
+
+⭐ **AND VERIFY THE PUSH BY THE REMOTE REF, NOT BY THE PUSH.** `git ls-remote origin <branch>`
+must equal your local tip. A push has previously logged **"Everything up-to-date"** as its last
+line **after an HTTP 500** while origin had not moved. **Assert on the artifact, not the status.**
+
+⚠️ **One filter trap caught in the same investigation, and it is the `pgrep -f` family again:**
+`ps -W | grep -ci git` read **9**, which looks exactly like heavy git contention. Every one was
+`C:\Program Files\Git\bin\bash.exe` — **the install PATH matched, not a running `git.exe`.**
+⇒ match the executable, not a substring of its directory, or you will diagnose contention that
+does not exist and start killing processes to fix it.
+
+## ⛔⛔ BINDING — "BUILT, TESTED, AND UNREACHABLE FROM ITS CALLER" IS A CLASS, NOT A SERIES OF ACCIDENTS. FOUR INSTANCES IN ONE DAY (2026-09-10/11)
+
+Every one of these passed its own unit tests. Every one was importable, rollable and correct. **Not
+one of them ran.** And three were found only *after* an arm had been trained on them.
+
+| mechanism | why it never ran | what it cost |
+|---|---|---|
+| `tac_goal_tok_head` | `--w-tac-goal` declared `default=0.0` (`refc_v3_train.py:4922`) and never passed | **11,286 params, `grad_abs_sum` exactly 0.00000 for all 40,284 steps** of refcv5-v2 |
+| the ≥GT truncation | `rl_pilot_refc21.py` exposed **no `--gt-bar` flag** — 13 flags, none reaching it | a 2,000-step "V2" arm that was a **V1 baseline**; the mask had been gradient-proven the same day |
+| DD-v2's two-scalar sampler | `--noise-mode` did not exist on that caller (`grep -c` **0**, control **4**) | the released sampler was unreachable **from this caller** — though not from the programme |
+| the posttrain spec guard | the guard existed **only inside its own test**; `grep` for its message = **2 hits, both in the test file, 0 in `posttrain.py`** | a **RED test on the tip**, while `GOALS_AND_CLAIMS.md` recorded the row **CLOSED** |
+
+⭐ **AND A FIFTH, FROM THE OTHER DIRECTION — 18,472 PARAMETERS, NOT 11,286.** A probe run while
+verifying an upload found **three** untrained heads in refcv5-v2, not one: `offset_head` (6,160),
+`tac_goal_tok_head` (11,286), and `scorer.goal_point` (1,026, **exactly zero** — zero-init plus zero
+gradient, so it **emits the constant origin**). ⇒ a single explanation covering one third of the
+evidence is how the count stayed wrong.
+
+### ⛔ THE RULE
+
+⭐ **"Rollable and trained are different claims." A test that the mechanism WORKS is not evidence
+that the mechanism RUNS.** Before any arm is launched on a new mechanism, prove **reachability from
+the actual caller**, not existence in the library:
+
+1. ⛔ **Trace the flag to the loss, or to the buffer that reaches it** — argparse → namespace →
+   model attribute → forward → the term in `loss` → `.backward()`. Name the `file:line` at each hop.
+2. ⭐ **Assert a NON-ZERO gradient on the new parameters, and a control that must read EXACTLY
+   0.0.** The zero control is what proves the probe works at all; without it, a zero reading is
+   indistinguishable from a broken probe.
+3. ⛔ **MUTATE, do not inspect.** Delete the single line that emits the value and require the check
+   to go RED. *(MEASURED: an AST census read **0 suspects on BOTH the fixed and the broken
+   trainer**.)* ⭐ The strongest form is an **analytic identity**: a bar below every achievable
+   reward must reproduce the unbarred gradient **bit-for-bit**; a bar above it must give **exactly
+   `0.0`**; and the middle must be **partial** — *a mask that only ever admits all or nothing is a
+   switch, not a truncation.*
+4. ⚠️ **Check the DEFAULT, not just the flag.** `default=0.0` and `default="off"` are how a wired,
+   tested mechanism silently does nothing. **A flag whose default disables it must be named in the
+   arm's argv, or the arm did not test it.**
+5. ⛔ **A grep for a guard's message that finds it ONLY in the test file means the guard does not
+   exist.** Pair every such probe with a same-breath control that must read non-zero in the
+   *implementation*.
+
+⚠️ **AND THE REGISTER CAN BE WRONG IN THE SAME DIRECTION.** One of these rows read **CLOSED** while
+its test was failing on the tip. ⇒ a register entry is a claim like any other; ⛔ **"the register
+says it is done" is INHERITED evidence and may not decide a GPU-day.**
+
+⭐ **Durable instrument:** `…/2026-09-10-refcv5v2-zerograd-heads/probe_zerograd3.py` reads untrained
+parameters straight out of a checkpoint's optimizer state — **Adam allocates state lazily, so a
+registered parameter with no entry never received a gradient**, and the count is exact (357
+registered against 351 with state). ⛔ **It belongs in `stack/scripts/` as a POST-TRAINING GATE.**
+This defect class has now surfaced five times, and every single time **after** an arm was trained
+and, twice, after it was published.
+
+<!-- STRATEGIC-PAUSE-2026-09-19 -->
+⏸ **TEMPORARY PAUSE OF THE STRATEGIC FAMILY (Sayed, 2026-09-19, `PI_DECISION_QUEUE.md` ITEM 25).**
+*"the strategic layer will be only switched off temporarily until we proved that both tactical and
+operative layers are driving with high quality. So the 4 layer rule is just temporarily paused and
+concerns only the strategic part."* ⇒ While the strategic layer is switched off, report the
+STRATEGIC family as **PAUSED, with this ruling** — ⛔ never as a pass, ⛔ never silently omitted,
+and ⛔ never extended to longitudinal, lateral or tactical, which keep full force. Do not "fix"
+the pause; lifting it is the PI's call (`verdict_refcv6.py --unpause-strategic` restores S1).
+⛔ **Nav is an INPUT at training AND inference** — stated by the PI many times; it is not an oracle
+that disappears at deployment.
+⭐ **2026-11-16, PI: THE PAUSE ENDS** — *"strategic is not paused anymore"*. From 2026-11-16 every eval and every card reports the
+STRATEGIC family in full (strategic decision + goal/route setting quality); PAUSED is not an admissible entry for a new read. Reads
+finished before the ruling keep their stamp as written. Route signal available for it: NVIDIA's navigation text (NAVPROBE, R-NAV-1).
+
+## ⛔ BINDING — NO TRAINING LAUNCH WITHOUT A LAUNCH-GATE PASS (PI, 2026-09-26)
+
+**PI, verbatim:** *"Assure that this is not happening again because we lost a lot of time and energy. If we are starting a training session, we are sure about the correctness of the config."*
+
+refcv6 trained with three config-vs-build defects, each found by hand, weeks late, and each costing GPU-days:
+- the per-stage loss was absent for 34,500 steps;
+- a declared image equalisation was dropped for all 38,250 steps;
+- 2 of 3 declared selection mechanisms were never built.
+
+The PI stopped it. From now on:
+
+1. **No training run starts without a PASS token** from `stack/scripts/launch_gate.py`, bound to the exact commit, argv sha256 and data-manifest sha256s.
+   - The supervisor REFUSES to start the trainer without a matching token.
+   - A token is never hand-written or hand-edited.
+2. **The gate's checks** (`Project Steering/SPEC_REFCV7.md` §2):
+   - **G-HYG:** config dataclasses refuse undeclared attributes.
+   - **G-DVB:** every argv lever equals the built model's value.
+   - **G-LIVE:** a real-data smoke in which every declared loss term appears with a finite value and every trainable group gets a gradient.
+   - **G-CLOCK:** label time.
+   - **G-EVAL:** the eval loader builds the identical model.
+   - **G-CKPT:** checkpoint round-trip.
+   - **G-SUITE:** clean-tree tests with 0 regressions.
+   - Each check has a deliberate-regression arm that must make the gate FAIL.
+3. **A new trainer flag without a G-DVB entry is refused by the gate itself.** Adding a lever means adding its check.
+4. **A config that DECLARES a lever the model does not BUILD is a launch blocker, never a footnote.**
+
+## ⛔ BINDING — THE MODEL GETS MEASURED EGO MOTION (INCL. YAW RATE), NEVER THE STEERING ANGLE (Sayed, 2026-10-17)
+
+**Sayed, verbatim:** *"the model shoul et measured ego motion and its history, instead of steering angle which represents a sort of ction, the model should get the measured yaw rate"*
+
+* ✅ **Admissible inputs, at training and inference:** measured ego motion and its HISTORY: speed, acceleration, **yaw rate**, pose track. Example: refcv8's `--ego-history` channels `(v, dv, dyaw/dt)` come from `ego_channels_from_poses`.
+* ⛔ **Not an input:** the steering angle, in any form. That covers the `actions[:, 0]` "steer" channel, any prior that reads it (`ha0_ext`, the steer-reading P10 `p10`), and any feature built from it. It is an ACTION, not a measurement.
+* ⚠️ **Know what our "steer" actually is.** In PhysicalAI it is NOT a recorded command. It is `atan(2.9 · curvature)` of the egomotion's measured path curvature (`stack/tanitad/data/physicalai.py`, D-016 R1). So it carries measured-motion information in an action's units. ⇒ Re-express it as measured yaw rate. Do not simply delete the information.
+* **Already compliant:**
+  * refcv8's ego history;
+  * α1's `p10_pose` (yaw rate from the pose track);
+  * `ha0_ext_pose`.
+* **Not compliant, and to be fixed:**
+  * RA-1 (its P10-540 reads steer; its action vector is `(a, steer, v)`);
+  * v8F-mini (its P10 reads steer).
+  * The arm α1s (`v8f_steer`) is REJECTED and never launches.
+* Same family as the vision-only and goal-input rules: **ask what an input at inference really is**, not what it is called.
+* ⚠️ **EXEMPTION — REFe (PI, 2026-10-18: *"Exempt REFe"*).** REFe (P2, SFT-4, P6, every REFe arm) is the NAVSIM-protocol
+  reproduction. Its 7-D ego input includes nuPlan's `tire_steering_angle` (`refe/model.py:185`), which is treated as a measured
+  vehicle state FOR REFe ONLY. This rule keeps full force for every other model. Register: `D-PI-YAWRATE-3`.
+
+## ⛔⛔ BINDING — LEAN BUDGET RULES (PI, 2026-11-02, "Approve plan")
+
+**Why (MEASURED, `tools/token_meter/token_meter.py`):** 10-25 to 10-29 burned **931M units** and hit the weekly limit on 10-29 ~07:00, killing three agents. **68 %** was subagents, and every large transcript ran at a **mean context of 250-320k**, so each call re-read ~300k. The Master Mind session alone used 178M at a mean of 310k. ⚠️ **Three MAIN sessions share one weekly pool** (TanitAD on E:/D:, a TanitAD session on the old G: path, TanitScenarioFlyWheel).
+
+These rules **replace** the ">= 5 parallel streams" rule above:
+
+1. **The Master Mind restarts from a short state file** (`TanitAD-artifacts/dagland/LOOP_STATE_<date>.md`, <= 3k tokens) daily or at ~150k context. It never carries ~300k. Finalisation, table reading and RESULTS rewrites go to scripts or a small agent, never to the main session.
+2. **Agents:** Sonnet, the design PINNED in the brief, a HANDOFF at <= 150k context, **at most 2 concurrent**. Run `token_meter.py --days 1` (all sessions) before any fan-out.
+3. **Throughput rule:** **one box-2 job always running + at most 2 agents.** Box 2 idling while documents are built is the failure this replaces.
+4. **Two rigour tiers.** Decision-of-record reads (that adopt or reject a recipe): full PREREG, reader known-answer, checker. Zero-training probes and documents: a one-page frozen card and a known-answer test; **no mutation suite, no numbers audit.** The scientific report is rebuilt per milestone, not per result.
+5. ⛔ **The evidence bar is unchanged:** Rule Zero, the estimator rules, the four families and the tier stamps all still bind. The rules cut the cost of being right, never the standard.

@@ -1,0 +1,25 @@
+Traceback (most recent call last):
+  File "F:\TanitAD-scratch\v8proof\ops\capmem.py", line 166, in <module>
+    main()
+    ~~~~^^
+  File "F:\TanitAD-scratch\v8proof\ops\capmem.py", line 162, in main
+    runpy.run_path(script, run_name="__main__")
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen runpy>", line 287, in run_path
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "headway_read_r2.py", line 622, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "headway_read_r2.py", line 618, in main
+    return cmd_read(a, controls_only=(a.cmd == "controls"))
+  File "headway_read_r2.py", line 450, in cmd_read
+    Wd, missing, where = load_world(roots, need, a.expect_files)
+                         ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "headway_read_r2.py", line 435, in load_world
+    W_dump[(arm, s)] = RH.load_dump(d, expect_files)
+                       ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "F:\TanitAD-scratch/v8proof/pod/stageB\hierrep_read.py", line 109, in load_dump
+    return {k: np.concatenate(v) for k, v in out.items()}
+               ~~~~~~~~~~~~~~^^^
+numpy._core._exceptions._ArrayMemoryError: Unable to allocate 1.10 MiB for an array with shape (2399, 30, 2) and data type float64

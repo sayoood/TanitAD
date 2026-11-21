@@ -1,0 +1,80 @@
+### units (-k test_j or test_k or test_l or test_m)
+_refcv3': <function _stop at 0x000001E67746A480>})
+E        +    where ['--ckpt', 'c.pt', '--episodes', 'x', '--labels', 'l', ...] = list(['--ckpt', 'c.pt', '--episodes', 'x', '--labels', 'l', ...])
+
+tests\test_refav1_units_required.py:1216: AssertionError
+______________ test_k3_refcv3_declaration_has_no_default_by_ast _______________
+
+    def test_k3_refcv3_declaration_has_no_default_by_ast():
+        decl = _declarations(_REFCV3_PATH.read_text(encoding="utf-8"))
+>       assert len(decl) == 1 and decl[0]["default"] == "<None>", decl
+E       AssertionError: [{'line': 3746, 'default': "'steer'", 'choices': "('kappa', 'steer')"}]
+E       assert (1 == 1 and "'steer'" == '<None>'
+E        +  where 1 = len([{'line': 3746, 'default': "'steer'", 'choices': "('kappa', 'steer')"}])
+E         
+E         - <None>
+E         + 'steer')
+
+tests\test_refav1_units_required.py:1232: AssertionError
+_ test_k4_refcv3_mutation_in_process_restoring_the_default_lets_a_forgetful_launch_through _
+
+refcv3 = <module '_instfix_refcv3_live' from 'C:\\Users\\Admin\\instfix\\mutA\\refcv3_default_steer\\taniteval\\tools\\refcv3_arm.py'>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001E6773532F0>
+
+    def test_k4_refcv3_mutation_in_process_restoring_the_default_lets_a_forgetful_launch_through(refcv3, monkeypatch):
+>       mutant = _load_module(_REFCV3_PATH, "_instfix_refcv3_mutant", _mutated_tool_source("refcv3"))
+                                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_refav1_units_required.py:1236: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+key = 'refcv3'
+
+    def _mutated_tool_source(key: str) -> str:
+        """The tool's source with its pre-INSTFIX ``--action-units`` default restored (the deliberate regression)."""
+        fname, needle, old_default = _CLI_MUTANTS[key]
+        src = (_TANI / "tools" / fname).read_text(encoding="utf-8")
+>       assert src.count(needle) == 1, f"{fname}: --action-units declaration moved: update this mutation"
+E       AssertionError: refcv3_arm.py: --action-units declaration moved: update this mutation
+E       assert 0 == 1
+E        +  where 0 = <built-in method count of str object at 0x000001E676F68C00>('ap.add_argument("--action-units", choices=("kappa", "steer"), default=None,')
+E        +    where <built-in method count of str object at 0x000001E676F68C00> = '#!/usr/bin/env python3\n"""refcv3_arm.py — the eval adapter for REF-C v3 (``tanitad.refs.refc_v3``).\n\n⛔⛔ READ ``tan...}) n_distinct_selected="\n       f"{asel.get(\'n_distinct_selected\')}")\n\n\nif __name__ == "__main__":\n    main()\n'.count
+
+tests\test_refav1_units_required.py:1089: AssertionError
+______ test_l_census_every_live_action_units_declaration_has_no_default _______
+
+    def test_l_census_every_live_action_units_declaration_has_no_default():
+        found, bad = _declaration_census()
+>       assert not bad, "live --action-units declaration(s) with a silent default:\n  " + "\n  ".join(bad)
+E       AssertionError: live --action-units declaration(s) with a silent default:
+E           taniteval/tools/refcv3_arm.py:3746 --action-units default='steer'
+E       assert not ["taniteval/tools/refcv3_arm.py:3746 --action-units default='steer'"]
+
+tests\test_refav1_units_required.py:1358: AssertionError
+___ test_l3_census_mutation_restoring_a_default_in_each_REAL_file_is_caught ___
+
+    def test_l3_census_mutation_restoring_a_default_in_each_REAL_file_is_caught():
+        for key in _CLI_MUTANTS:
+            rel = "taniteval/tools/" + _CLI_MUTANTS[key][0]
+            found0, bad0 = _declaration_census({rel: (_REPO / rel).read_text(encoding="utf-8")})
+>           assert rel in found0 and not bad0, (rel, found0, bad0)
+E           AssertionError: ('taniteval/tools/refcv3_arm.py', {'taniteval/tools/refcv3_arm.py': [{'line': 3746, 'default': "'steer'", 'choices': "('kappa', 'steer')"}]}, ["taniteval/tools/refcv3_arm.py:3746 --action-units default='steer'"])
+E           assert ('taniteval/tools/refcv3_arm.py' in {'taniteval/tools/refcv3_arm.py': [{'line': 3746, 'default': "'steer'", 'choices': "('kappa', 'steer')"}]} and not ["taniteval/tools/refcv3_arm.py:3746 --action-units default='steer'"])
+
+tests\test_refav1_units_required.py:1383: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_refav1_units_required.py::test_k_refcv3_rollout_without_units_is_refused_naming_both_legal_values
+FAILED tests/test_refav1_units_required.py::test_k3_refcv3_declaration_has_no_default_by_ast
+FAILED tests/test_refav1_units_required.py::test_k4_refcv3_mutation_in_process_restoring_the_default_lets_a_forgetful_launch_through
+FAILED tests/test_refav1_units_required.py::test_l_census_every_live_action_units_declaration_has_no_default
+FAILED tests/test_refav1_units_required.py::test_l3_census_mutation_restoring_a_default_in_each_REAL_file_is_caught
+5 failed, 19 passed, 2 skipped, 121 deselected in 13.88s
+
+### internal_t1 (full)
+.....s...                                                                [100%]
+8 passed, 1 skipped in 0.76s
+
+### chain_controls (full)
+..................................                                       [100%]
+34 passed in 1.13s
+

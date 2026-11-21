@@ -1,0 +1,112 @@
+# PUBLISHED-CODE extract - OpenDriveLab/UniAD @ 609ee083ea51c3521c323f1279dfc4cee0e60467
+# path: projects/mmdet3d_plugin/datasets/data_utils/trajectory_api.py
+# git blob sha1 of the fetched file: 383810663a7b62cb11d3afbd773a5a815cf5e826 (13309 B); verified against the repo tree listing at the pinned commit: MATCH
+# fetched 2026-09-19T13:46:02Z from raw.githubusercontent.com (read-only source text; excerpts only, attribution retained)
+
+## lines 149-179: pseudo SDC box at the LiDAR origin
+  149      def generate_sdc_info(self, sdc_vel, as_lidar_instance3d_box=False):
+  150          # sdc dim from https://forum.nuscenes.org/t/dimensions-of-the-ego-vehicle-used-to-gather-data/550
+  151          # NOTE: we have changed box dim and yaw to mmdet3d 1.0.0rc6 format [DONE]
+  152          psudo_sdc_bbox = np.array([0.0, 0.0, 0.0, 4.08, 1.73, 1.56, 0.5*np.pi])
+  153          if self.with_velocity:
+  154              psudo_sdc_bbox = np.concatenate([psudo_sdc_bbox, sdc_vel], axis=-1)
+  155          gt_bboxes_3d = np.array([psudo_sdc_bbox]).astype(np.float32)
+  156          gt_names_3d = ['car']
+  157          gt_labels_3d = []
+  158          for cat in gt_names_3d:
+  159              if cat in self.CLASSES:
+  160                  gt_labels_3d.append(self.CLASSES.index(cat))
+  161              else:
+  162                  gt_labels_3d.append(-1)
+  163          gt_labels_3d = np.array(gt_labels_3d)
+  164  
+  165          # the nuscenes box center is [0.5, 0.5, 0.5], we change it to be
+  166          # the same as KITTI (0.5, 0.5, 0)
+  167          gt_bboxes_3d = LiDARInstance3DBoxes(
+  168              gt_bboxes_3d,
+  169              box_dim=gt_bboxes_3d.shape[-1],
+  170              origin=(0.5, 0.5, 0.5)).convert_to(self.box_mode_3d)
+  171          
+  172          if as_lidar_instance3d_box:
+  173              # if we do not want the batch the box in to DataContrainer
+  174              return gt_bboxes_3d
+  175  
+  176          gt_labels_3d = DC(to_tensor(gt_labels_3d))
+  177          gt_bboxes_3d = DC(gt_bboxes_3d, cpu_only=True)
+  178  
+  179          return gt_bboxes_3d, gt_labels_3d
+
+## lines 211-282: GT planning label + mask + GT-derived command
+  211      def get_l2g_transform(self, sample):
+  212          sd_rec = self.nusc.get('sample_data', sample['data']['LIDAR_TOP'])
+  213          cs_record = self.nusc.get('calibrated_sensor',
+  214                               sd_rec['calibrated_sensor_token'])
+  215          pose_record = self.nusc.get('ego_pose', sd_rec['ego_pose_token'])
+  216  
+  217          l2e_r = cs_record['rotation']
+  218          l2e_t = np.array(cs_record['translation'])
+  219          e2g_r = pose_record['rotation']
+  220          e2g_t = np.array(pose_record['translation'])
+  221          l2e_r_mat = Quaternion(l2e_r).rotation_matrix
+  222          e2g_r_mat = Quaternion(e2g_r).rotation_matrix
+  223  
+  224          return l2e_r_mat, l2e_t, e2g_r_mat, e2g_t
+  225  
+  226      def get_sdc_planning_label(self, sample_token):
+  227          sd_rec = self.nusc.get('sample', sample_token)
+  228          l2e_r_mat_init, l2e_t_init, e2g_r_mat_init, e2g_t_init = self.get_l2g_transform(sd_rec)
+  229          
+  230  
+  231          planning = []
+  232          for _ in range(self.planning_steps):
+  233              next_annotation_token = sd_rec['next']
+  234              if next_annotation_token=='':
+  235                  break
+  236              sd_rec = self.nusc.get('sample', next_annotation_token)
+  237              l2e_r_mat_curr, l2e_t_curr, e2g_r_mat_curr, e2g_t_curr = self.get_l2g_transform(sd_rec)  # (lidar to global at current frame)
+  238              
+  239              # bbox of sdc under current lidar frame
+  240              next_bbox3d = self.generate_sdc_info(self.sdc_vel_info[next_annotation_token], as_lidar_instance3d_box=True)
+  241  
+  242              # to bbox under curr ego frame
+  243              next_bbox3d.rotate(l2e_r_mat_curr.T)
+  244              next_bbox3d.translate(l2e_t_curr)
+  245  
+  246              # to bbox under world frame
+  247              next_bbox3d.rotate(e2g_r_mat_curr.T)
+  248              next_bbox3d.translate(e2g_t_curr)
+  249  
+  250              # to bbox under initial ego frame, first inverse translate, then inverse rotate 
+  251              next_bbox3d.translate(- e2g_t_init)
+  252              m1 = np.linalg.inv(e2g_r_mat_init)
+  253              next_bbox3d.rotate(m1.T)
+  254  
+  255              # to bbox under curr ego frame, first inverse translate, then inverse rotate
+  256              next_bbox3d.translate(- l2e_t_init)
+  257              m2 = np.linalg.inv(l2e_r_mat_init)
+  258              next_bbox3d.rotate(m2.T)
+  259              
+  260              planning.append(next_bbox3d)
+  261  
+  262          planning_all = np.zeros((1, self.planning_steps, 3))
+  263          planning_mask_all = np.zeros((1, self.planning_steps, 2))
+  264          n_valid_timestep = len(planning)
+  265          if n_valid_timestep>0:
+  266              planning = [p.tensor.squeeze(0) for p in planning]
+  267              planning = np.stack(planning, axis=0)  # (valid_t, 9)
+  268              planning = planning[:, [0,1,6]]  # (x, y, yaw)
+  269              planning_all[:,:n_valid_timestep,:] = planning
+  270              planning_mask_all[:,:n_valid_timestep,:] = 1
+  271  
+  272          mask = planning_mask_all[0].any(axis=1)
+  273          if mask.sum() == 0:
+  274              command = 2 #'FORWARD'
+  275          elif planning_all[0, mask][-1][0] >= 2:
+  276              command = 0 #'RIGHT' 
+  277          elif planning_all[0, mask][-1][0] <= -2:
+  278              command = 1 #'LEFT'
+  279          else:
+  280              command = 2 #'FORWARD'
+  281          
+  282          return planning_all, planning_mask_all, command
+

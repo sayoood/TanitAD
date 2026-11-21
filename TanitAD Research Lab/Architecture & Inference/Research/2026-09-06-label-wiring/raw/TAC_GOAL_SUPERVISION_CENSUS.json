@@ -1,0 +1,737 @@
+{
+ "train": {
+  "manifest": {
+   "path": "v72\\s2_labels_v7.2_train.jsonl.gz",
+   "md5": "0ff902130ce76886b8a925eceed9e3a5",
+   "n_records": 4572,
+   "schema_version": "s2-geom-v7",
+   "vocab": "v7",
+   "allow_oracle_nav": true,
+   "divergences": [],
+   "_read": "md5 is the identity \u2014 six copies of this blob exist under three roots and their md5s differ."
+  },
+  "n_records": 4572,
+  "measured_geometry_tokens": [
+   "FOLLOW_LANE",
+   "SPEED_BAND",
+   "STOP_POINT",
+   "TURN_L",
+   "TURN_R",
+   "YIELD_FOR_TURN_L",
+   "YIELD_FOR_TURN_R"
+  ],
+  "census": {
+   "FOLLOW_LANE": {
+    "pos": 3629,
+    "neg": 943,
+    "ignored": 0,
+    "prevalence": 0.7937445319335084,
+    "provenance": [
+     "geometry"
+    ],
+    "supervised_negative": true,
+    "entailed_false_by": [
+     "MERGE",
+     "OVERTAKE_VEHICLE",
+     "STOP_POINT",
+     "TURN_L",
+     "TURN_R"
+    ]
+   },
+   "TURN_L": {
+    "pos": 275,
+    "neg": 4297,
+    "ignored": 0,
+    "prevalence": 0.06014873140857393,
+    "provenance": [],
+    "supervised_negative": true,
+    "entailed_false_by": [
+     "FOLLOW_LANE",
+     "LANE_CHANGE_L",
+     "TAKE_EXIT_R",
+     "TURN_R",
+     "YIELD_FOR_TURN_R"
+    ]
+   },
+   "TURN_R": {
+    "pos": 259,
+    "neg": 4313,
+    "ignored": 0,
+    "prevalence": 0.05664916885389326,
+    "provenance": [],
+    "supervised_negative": true,
+    "entailed_false_by": [
+     "FOLLOW_LANE",
+     "LANE_CHANGE_R",
+     "TAKE_EXIT_L",
+     "TURN_L",
+     "YIELD_FOR_TURN_L"
+    ]
+   },
+   "YIELD_FOR_TURN_L": {
+    "pos": 21,
+    "neg": 4551,
+    "ignored": 0,
+    "prevalence": 0.004593175853018373,
+    "provenance": [],
+    "supervised_negative": true,
+    "entailed_false_by": [
+     "TURN_R",
+     "YIELD_FOR_TURN_R"
+    ]
+   },
+   "YIELD_FOR_TURN_R": {
+    "pos": 20,
+    "neg": 4552,
+    "ignored": 0,
+    "prevalence": 0.004374453193350831,
+    "provenance": [],
+    "supervised_negative": true,
+    "entailed_false_by": [
+     "TURN_L",
+     "YIELD_FOR_TURN_L"
+    ]
+   },
+   "YIELD": {
+    "pos": 609,
+    "neg": 0,
+    "ignored": 3963,
+    "prevalence": 0.1332020997375328,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "entailed_false_by": []
+   },
+   "STOP_POINT": {
+    "pos": 327,
+    "neg": 4245,
+    "ignored": 0,
+    "prevalence": 0.07152230971128609,
+    "provenance": [],
+    "supervised_negative": true,
+    "entailed_false_by": [
+     "FOLLOW_LANE"
+    ]
+   },
+   "SPEED_BAND": {
+    "pos": 4572,
+    "neg": 0,
+    "ignored": 0,
+    "prevalence": 1.0,
+    "provenance": [],
+    "supervised_negative": true,
+    "entailed_false_by": []
+   },
+   "CORRIDOR_OFFSET": {
+    "pos": 860,
+    "neg": 0,
+    "ignored": 3712,
+    "prevalence": 0.18810148731408574,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "entailed_false_by": []
+   },
+   "EVADE_IN_CORRIDOR": {
+    "pos": 240,
+    "neg": 20,
+    "ignored": 4312,
+    "prevalence": 0.05249343832020997,
+    "provenance": [
+     "alpamayo-structured",
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "entailed_false_by": [
+     "OVERTAKE_VEHICLE"
+    ]
+   },
+   "OVERTAKE_VEHICLE": {
+    "pos": 20,
+    "neg": 3635,
+    "ignored": 917,
+    "prevalence": 0.004374453193350831,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "entailed_false_by": [
+     "EVADE_IN_CORRIDOR",
+     "FOLLOW_LANE"
+    ]
+   },
+   "MERGE": {
+    "pos": 79,
+    "neg": 3629,
+    "ignored": 864,
+    "prevalence": 0.01727909011373578,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "entailed_false_by": [
+     "FOLLOW_LANE"
+    ]
+   },
+   "GAP_TARGET": {
+    "pos": 368,
+    "neg": 0,
+    "ignored": 4204,
+    "prevalence": 0.0804899387576553,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "entailed_false_by": []
+   },
+   "REACT_ON_ONCOMING": {
+    "pos": 333,
+    "neg": 0,
+    "ignored": 4239,
+    "prevalence": 0.07283464566929133,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "entailed_false_by": []
+   },
+   "TAKE_EXIT_L": {
+    "pos": 21,
+    "neg": 369,
+    "ignored": 4182,
+    "prevalence": 0.004593175853018373,
+    "provenance": [
+     "alpamayo-structured",
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "entailed_false_by": [
+     "TAKE_EXIT_R",
+     "TURN_R"
+    ]
+   },
+   "TAKE_EXIT_R": {
+    "pos": 128,
+    "neg": 290,
+    "ignored": 4154,
+    "prevalence": 0.02799650043744532,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "entailed_false_by": [
+     "TAKE_EXIT_L",
+     "TURN_L"
+    ]
+   },
+   "TRAFFIC_LIGHT_REACT": {
+    "pos": 18,
+    "neg": 761,
+    "ignored": 3793,
+    "prevalence": 0.003937007874015748,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "entailed_false_by": [
+     "TRAFFIC_LIGHT_REACT_GREEN",
+     "TRAFFIC_LIGHT_REACT_RED",
+     "TRAFFIC_LIGHT_REACT_YELLOW"
+    ]
+   },
+   "TRAFFIC_LIGHT_REACT_RED": {
+    "pos": 376,
+    "neg": 403,
+    "ignored": 3793,
+    "prevalence": 0.08223972003499562,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "entailed_false_by": [
+     "TRAFFIC_LIGHT_REACT",
+     "TRAFFIC_LIGHT_REACT_GREEN",
+     "TRAFFIC_LIGHT_REACT_YELLOW"
+    ]
+   },
+   "TRAFFIC_LIGHT_REACT_YELLOW": {
+    "pos": 22,
+    "neg": 757,
+    "ignored": 3793,
+    "prevalence": 0.004811898512685914,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "entailed_false_by": [
+     "TRAFFIC_LIGHT_REACT",
+     "TRAFFIC_LIGHT_REACT_GREEN",
+     "TRAFFIC_LIGHT_REACT_RED"
+    ]
+   },
+   "TRAFFIC_LIGHT_REACT_GREEN": {
+    "pos": 363,
+    "neg": 416,
+    "ignored": 3793,
+    "prevalence": 0.07939632545931759,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "entailed_false_by": [
+     "TRAFFIC_LIGHT_REACT",
+     "TRAFFIC_LIGHT_REACT_RED",
+     "TRAFFIC_LIGHT_REACT_YELLOW"
+    ]
+   },
+   "LANE_CHANGE_L": {
+    "pos": 23,
+    "neg": 290,
+    "ignored": 4259,
+    "prevalence": 0.005030621172353456,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "entailed_false_by": [
+     "LANE_CHANGE_R",
+     "TURN_L"
+    ]
+   },
+   "LANE_CHANGE_R": {
+    "pos": 15,
+    "neg": 282,
+    "ignored": 4275,
+    "prevalence": 0.0032808398950131233,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "entailed_false_by": [
+     "LANE_CHANGE_L",
+     "TURN_R"
+    ]
+   }
+  },
+  "pos_weight": {
+   "FOLLOW_LANE": 0.2599,
+   "TURN_L": 15.6255,
+   "TURN_R": 16.6525,
+   "YIELD_FOR_TURN_L": 50.0,
+   "YIELD_FOR_TURN_R": 50.0,
+   "YIELD": 0.0,
+   "STOP_POINT": 12.9817,
+   "SPEED_BAND": 0.0,
+   "CORRIDOR_OFFSET": 0.0,
+   "EVADE_IN_CORRIDOR": 0.0833,
+   "OVERTAKE_VEHICLE": 50.0,
+   "MERGE": 45.9367,
+   "GAP_TARGET": 0.0,
+   "REACT_ON_ONCOMING": 0.0,
+   "TAKE_EXIT_L": 17.5714,
+   "TAKE_EXIT_R": 2.2656,
+   "TRAFFIC_LIGHT_REACT": 42.2778,
+   "TRAFFIC_LIGHT_REACT_RED": 1.0718,
+   "TRAFFIC_LIGHT_REACT_YELLOW": 34.4091,
+   "TRAFFIC_LIGHT_REACT_GREEN": 1.146,
+   "LANE_CHANGE_L": 12.6087,
+   "LANE_CHANGE_R": 18.8
+  },
+  "mask_report": {
+   "n_trainable": 17,
+   "n_total": 22,
+   "trainable": [
+    "FOLLOW_LANE",
+    "TURN_L",
+    "TURN_R",
+    "YIELD_FOR_TURN_L",
+    "YIELD_FOR_TURN_R",
+    "STOP_POINT",
+    "EVADE_IN_CORRIDOR",
+    "OVERTAKE_VEHICLE",
+    "MERGE",
+    "TAKE_EXIT_L",
+    "TAKE_EXIT_R",
+    "TRAFFIC_LIGHT_REACT",
+    "TRAFFIC_LIGHT_REACT_RED",
+    "TRAFFIC_LIGHT_REACT_YELLOW",
+    "TRAFFIC_LIGHT_REACT_GREEN",
+    "LANE_CHANGE_L",
+    "LANE_CHANGE_R"
+   ],
+   "masked_why": {
+    "YIELD": "no supervised negative \u2014 the logit could only be pushed towards 1; needs an exclusion partner or a probed negative before it is trainable",
+    "SPEED_BAND": "no supervised negative \u2014 the logit could only be pushed towards 1; needs an exclusion partner or a probed negative before it is trainable",
+    "CORRIDOR_OFFSET": "no supervised negative \u2014 the logit could only be pushed towards 1; needs an exclusion partner or a probed negative before it is trainable",
+    "GAP_TARGET": "no supervised negative \u2014 the logit could only be pushed towards 1; needs an exclusion partner or a probed negative before it is trainable",
+    "REACT_ON_ONCOMING": "no supervised negative \u2014 the logit could only be pushed towards 1; needs an exclusion partner or a probed negative before it is trainable"
+   }
+  }
+ },
+ "eval": {
+  "manifest": {
+   "path": "v72\\s2_labels_v7.2_eval.jsonl.gz",
+   "md5": "aa12c948f062181c3297265b51526ec5",
+   "n_records": 147,
+   "schema_version": "s2-geom-v7",
+   "vocab": "v7",
+   "allow_oracle_nav": true,
+   "divergences": [],
+   "_read": "md5 is the identity \u2014 six copies of this blob exist under three roots and their md5s differ."
+  },
+  "n_records": 147,
+  "measured_geometry_tokens": [
+   "FOLLOW_LANE",
+   "LANE_CHANGE_L",
+   "SPEED_BAND",
+   "STOP_POINT",
+   "TURN_L",
+   "TURN_R",
+   "YIELD_FOR_TURN_L",
+   "YIELD_FOR_TURN_R"
+  ],
+  "census": {
+   "FOLLOW_LANE": {
+    "pos": 119,
+    "neg": 28,
+    "ignored": 0,
+    "prevalence": 0.8095238095238095,
+    "provenance": [
+     "geometry"
+    ],
+    "supervised_negative": true,
+    "entailed_false_by": [
+     "MERGE",
+     "OVERTAKE_VEHICLE",
+     "STOP_POINT",
+     "TURN_L",
+     "TURN_R"
+    ]
+   },
+   "TURN_L": {
+    "pos": 5,
+    "neg": 142,
+    "ignored": 0,
+    "prevalence": 0.034013605442176874,
+    "provenance": [],
+    "supervised_negative": true,
+    "entailed_false_by": [
+     "FOLLOW_LANE",
+     "LANE_CHANGE_L",
+     "TAKE_EXIT_R",
+     "TURN_R",
+     "YIELD_FOR_TURN_R"
+    ]
+   },
+   "TURN_R": {
+    "pos": 8,
+    "neg": 139,
+    "ignored": 0,
+    "prevalence": 0.05442176870748299,
+    "provenance": [],
+    "supervised_negative": true,
+    "entailed_false_by": [
+     "FOLLOW_LANE",
+     "LANE_CHANGE_R",
+     "TAKE_EXIT_L",
+     "TURN_L",
+     "YIELD_FOR_TURN_L"
+    ]
+   },
+   "YIELD_FOR_TURN_L": {
+    "pos": 2,
+    "neg": 145,
+    "ignored": 0,
+    "prevalence": 0.013605442176870748,
+    "provenance": [],
+    "supervised_negative": true,
+    "entailed_false_by": [
+     "TURN_R",
+     "YIELD_FOR_TURN_R"
+    ]
+   },
+   "YIELD_FOR_TURN_R": {
+    "pos": 0,
+    "neg": 147,
+    "ignored": 0,
+    "prevalence": 0.0,
+    "provenance": [],
+    "supervised_negative": true,
+    "entailed_false_by": [
+     "TURN_L",
+     "YIELD_FOR_TURN_L"
+    ]
+   },
+   "YIELD": {
+    "pos": 17,
+    "neg": 0,
+    "ignored": 130,
+    "prevalence": 0.11564625850340136,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "entailed_false_by": []
+   },
+   "STOP_POINT": {
+    "pos": 9,
+    "neg": 138,
+    "ignored": 0,
+    "prevalence": 0.061224489795918366,
+    "provenance": [],
+    "supervised_negative": true,
+    "entailed_false_by": [
+     "FOLLOW_LANE"
+    ]
+   },
+   "SPEED_BAND": {
+    "pos": 147,
+    "neg": 0,
+    "ignored": 0,
+    "prevalence": 1.0,
+    "provenance": [],
+    "supervised_negative": true,
+    "entailed_false_by": []
+   },
+   "CORRIDOR_OFFSET": {
+    "pos": 25,
+    "neg": 0,
+    "ignored": 122,
+    "prevalence": 0.17006802721088435,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "entailed_false_by": []
+   },
+   "EVADE_IN_CORRIDOR": {
+    "pos": 6,
+    "neg": 1,
+    "ignored": 140,
+    "prevalence": 0.04081632653061224,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "entailed_false_by": [
+     "OVERTAKE_VEHICLE"
+    ]
+   },
+   "OVERTAKE_VEHICLE": {
+    "pos": 1,
+    "neg": 119,
+    "ignored": 27,
+    "prevalence": 0.006802721088435374,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "entailed_false_by": [
+     "EVADE_IN_CORRIDOR",
+     "FOLLOW_LANE"
+    ]
+   },
+   "MERGE": {
+    "pos": 5,
+    "neg": 119,
+    "ignored": 23,
+    "prevalence": 0.034013605442176874,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "entailed_false_by": [
+     "FOLLOW_LANE"
+    ]
+   },
+   "GAP_TARGET": {
+    "pos": 14,
+    "neg": 0,
+    "ignored": 133,
+    "prevalence": 0.09523809523809523,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "entailed_false_by": []
+   },
+   "REACT_ON_ONCOMING": {
+    "pos": 11,
+    "neg": 0,
+    "ignored": 136,
+    "prevalence": 0.07482993197278912,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "entailed_false_by": []
+   },
+   "TAKE_EXIT_L": {
+    "pos": 0,
+    "neg": 13,
+    "ignored": 134,
+    "prevalence": 0.0,
+    "provenance": [],
+    "supervised_negative": false,
+    "entailed_false_by": [
+     "TAKE_EXIT_R",
+     "TURN_R"
+    ]
+   },
+   "TAKE_EXIT_R": {
+    "pos": 5,
+    "neg": 5,
+    "ignored": 137,
+    "prevalence": 0.034013605442176874,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "entailed_false_by": [
+     "TAKE_EXIT_L",
+     "TURN_L"
+    ]
+   },
+   "TRAFFIC_LIGHT_REACT": {
+    "pos": 0,
+    "neg": 26,
+    "ignored": 121,
+    "prevalence": 0.0,
+    "provenance": [],
+    "supervised_negative": false,
+    "entailed_false_by": [
+     "TRAFFIC_LIGHT_REACT_GREEN",
+     "TRAFFIC_LIGHT_REACT_RED",
+     "TRAFFIC_LIGHT_REACT_YELLOW"
+    ]
+   },
+   "TRAFFIC_LIGHT_REACT_RED": {
+    "pos": 8,
+    "neg": 18,
+    "ignored": 121,
+    "prevalence": 0.05442176870748299,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "entailed_false_by": [
+     "TRAFFIC_LIGHT_REACT",
+     "TRAFFIC_LIGHT_REACT_GREEN",
+     "TRAFFIC_LIGHT_REACT_YELLOW"
+    ]
+   },
+   "TRAFFIC_LIGHT_REACT_YELLOW": {
+    "pos": 3,
+    "neg": 23,
+    "ignored": 121,
+    "prevalence": 0.02040816326530612,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "entailed_false_by": [
+     "TRAFFIC_LIGHT_REACT",
+     "TRAFFIC_LIGHT_REACT_GREEN",
+     "TRAFFIC_LIGHT_REACT_RED"
+    ]
+   },
+   "TRAFFIC_LIGHT_REACT_GREEN": {
+    "pos": 15,
+    "neg": 11,
+    "ignored": 121,
+    "prevalence": 0.10204081632653061,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "entailed_false_by": [
+     "TRAFFIC_LIGHT_REACT",
+     "TRAFFIC_LIGHT_REACT_RED",
+     "TRAFFIC_LIGHT_REACT_YELLOW"
+    ]
+   },
+   "LANE_CHANGE_L": {
+    "pos": 0,
+    "neg": 147,
+    "ignored": 0,
+    "prevalence": 0.0,
+    "provenance": [],
+    "supervised_negative": true,
+    "entailed_false_by": [
+     "LANE_CHANGE_R",
+     "TURN_L"
+    ]
+   },
+   "LANE_CHANGE_R": {
+    "pos": 1,
+    "neg": 8,
+    "ignored": 138,
+    "prevalence": 0.006802721088435374,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "entailed_false_by": [
+     "LANE_CHANGE_L",
+     "TURN_R"
+    ]
+   }
+  },
+  "pos_weight": {
+   "FOLLOW_LANE": 0.2353,
+   "TURN_L": 28.4,
+   "TURN_R": 17.375,
+   "YIELD_FOR_TURN_L": 50.0,
+   "YIELD_FOR_TURN_R": 0.0,
+   "YIELD": 0.0,
+   "STOP_POINT": 15.3333,
+   "SPEED_BAND": 0.0,
+   "CORRIDOR_OFFSET": 0.0,
+   "EVADE_IN_CORRIDOR": 0.1667,
+   "OVERTAKE_VEHICLE": 50.0,
+   "MERGE": 23.8,
+   "GAP_TARGET": 0.0,
+   "REACT_ON_ONCOMING": 0.0,
+   "TAKE_EXIT_L": 0.0,
+   "TAKE_EXIT_R": 1.0,
+   "TRAFFIC_LIGHT_REACT": 0.0,
+   "TRAFFIC_LIGHT_REACT_RED": 2.25,
+   "TRAFFIC_LIGHT_REACT_YELLOW": 7.6667,
+   "TRAFFIC_LIGHT_REACT_GREEN": 0.7333,
+   "LANE_CHANGE_L": 0.0,
+   "LANE_CHANGE_R": 8.0
+  },
+  "mask_report": {
+   "n_trainable": 13,
+   "n_total": 22,
+   "trainable": [
+    "FOLLOW_LANE",
+    "TURN_L",
+    "TURN_R",
+    "YIELD_FOR_TURN_L",
+    "STOP_POINT",
+    "EVADE_IN_CORRIDOR",
+    "OVERTAKE_VEHICLE",
+    "MERGE",
+    "TAKE_EXIT_R",
+    "TRAFFIC_LIGHT_REACT_RED",
+    "TRAFFIC_LIGHT_REACT_YELLOW",
+    "TRAFFIC_LIGHT_REACT_GREEN",
+    "LANE_CHANGE_R"
+   ],
+   "masked_why": {
+    "YIELD_FOR_TURN_R": "no positives in this split",
+    "YIELD": "no supervised negative \u2014 the logit could only be pushed towards 1; needs an exclusion partner or a probed negative before it is trainable",
+    "SPEED_BAND": "no supervised negative \u2014 the logit could only be pushed towards 1; needs an exclusion partner or a probed negative before it is trainable",
+    "CORRIDOR_OFFSET": "no supervised negative \u2014 the logit could only be pushed towards 1; needs an exclusion partner or a probed negative before it is trainable",
+    "GAP_TARGET": "no supervised negative \u2014 the logit could only be pushed towards 1; needs an exclusion partner or a probed negative before it is trainable",
+    "REACT_ON_ONCOMING": "no supervised negative \u2014 the logit could only be pushed towards 1; needs an exclusion partner or a probed negative before it is trainable",
+    "TAKE_EXIT_L": "no positives in this split",
+    "TRAFFIC_LIGHT_REACT": "no positives in this split",
+    "LANE_CHANGE_L": "no positives in this split"
+   }
+  }
+ }
+}

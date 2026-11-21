@@ -1,0 +1,780 @@
+{
+ "arm": "A2_vision_pure",
+ "spec": {
+  "declared": [],
+  "keep": 0,
+  "nav": null,
+  "frames": "ST",
+  "meaning": "frames ONLY: ego block keep=0 (the model zeroes its values), v0 withheld at the core (v0=None), nav withheld (nav_cmd=None)"
+ },
+ "declared_inputs": [],
+ "frames_construction": "ST",
+ "n": 20,
+ "device": "cpu",
+ "wall_s": 105.1,
+ "seam": "raw\\bridge_smoke\\seam_A2_vision_pure.npz",
+ "conversion": "``[K,2]`` ego-frame knots (origin excluded) -> ``[8,3]`` NavSim poses.\n\nMethod (declared in SPEC): a C2 cubic spline in TIME ('not-a-knot', scipy\n``CubicSpline``) per axis through the origin (t=0, (0,0)) and every knot;\nevaluated at ``out_t``. At a knot time the spline reproduces the knot to\nfloat precision (the GT round-trip control asserts < 1e-3 m); at 2.5 s and\n3.5 s it INTERPOLATES (error measured on logged human paths). Heading =\natan2(y'(t), x'(t)) of the same spline \u2014 the rear-axle path tangent, which\nis the kinematic-bicycle yaw at the rear axle (zero side-slip there);\nheld at the previous value (0 = the t0 yaw at t=0) where |p'(t)| < 1.0 m/s,\nand every new value is taken as the branch NEAREST the previous one (so a\nheld value can never be unwrapped into a multi-turn drift). The axes need\nNO permutation: both systems are x-forward / y-left / CCW-positive\n(refb_labels.ego_frame; navsim convert_absolute_to_relative_se2_array).",
+ "per_token": [
+  {
+   "token": "1542482ff0ad537e",
+   "frame_sha16": "a9fc1f5b0b040ffc",
+   "declared_values": {
+    "_arm": "A2_vision_pure",
+    "_declared": []
+   },
+   "ego_block": {
+    "ego_state": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "v0": null,
+    "formula": "withheld: ego_state=(0,0,0,0,keep=0), v0=None"
+   },
+   "nav": {
+    "fed": null
+   },
+   "diag": {
+    "sel_idx": 0,
+    "route_argmax": 1
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ]
+  },
+  {
+   "token": "15e6ef7a85b35d10",
+   "frame_sha16": "5f78544ca1443339",
+   "declared_values": {
+    "_arm": "A2_vision_pure",
+    "_declared": []
+   },
+   "ego_block": {
+    "ego_state": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "v0": null,
+    "formula": "withheld: ego_state=(0,0,0,0,keep=0), v0=None"
+   },
+   "nav": {
+    "fed": null
+   },
+   "diag": {
+    "sel_idx": 0,
+    "route_argmax": 1
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ]
+  },
+  {
+   "token": "303d452ddd2d58d1",
+   "frame_sha16": "a3d55e92a57dccca",
+   "declared_values": {
+    "_arm": "A2_vision_pure",
+    "_declared": []
+   },
+   "ego_block": {
+    "ego_state": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "v0": null,
+    "formula": "withheld: ego_state=(0,0,0,0,keep=0), v0=None"
+   },
+   "nav": {
+    "fed": null
+   },
+   "diag": {
+    "sel_idx": 0,
+    "route_argmax": 1
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ]
+  },
+  {
+   "token": "32837dd54e375ca0",
+   "frame_sha16": "c8077ca803cea44d",
+   "declared_values": {
+    "_arm": "A2_vision_pure",
+    "_declared": []
+   },
+   "ego_block": {
+    "ego_state": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "v0": null,
+    "formula": "withheld: ego_state=(0,0,0,0,keep=0), v0=None"
+   },
+   "nav": {
+    "fed": null
+   },
+   "diag": {
+    "sel_idx": 0,
+    "route_argmax": 1
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ]
+  },
+  {
+   "token": "48ef77409741520d",
+   "frame_sha16": "ea70700a2a486f73",
+   "declared_values": {
+    "_arm": "A2_vision_pure",
+    "_declared": []
+   },
+   "ego_block": {
+    "ego_state": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "v0": null,
+    "formula": "withheld: ego_state=(0,0,0,0,keep=0), v0=None"
+   },
+   "nav": {
+    "fed": null
+   },
+   "diag": {
+    "sel_idx": 0,
+    "route_argmax": 1
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ]
+  },
+  {
+   "token": "4bc122716deb519f",
+   "frame_sha16": "6b0e7ad3dceb3df6",
+   "declared_values": {
+    "_arm": "A2_vision_pure",
+    "_declared": []
+   },
+   "ego_block": {
+    "ego_state": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "v0": null,
+    "formula": "withheld: ego_state=(0,0,0,0,keep=0), v0=None"
+   },
+   "nav": {
+    "fed": null
+   },
+   "diag": {
+    "sel_idx": 0,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ]
+  },
+  {
+   "token": "557a287c11cc5960",
+   "frame_sha16": "1493470fefb29f1c",
+   "declared_values": {
+    "_arm": "A2_vision_pure",
+    "_declared": []
+   },
+   "ego_block": {
+    "ego_state": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "v0": null,
+    "formula": "withheld: ego_state=(0,0,0,0,keep=0), v0=None"
+   },
+   "nav": {
+    "fed": null
+   },
+   "diag": {
+    "sel_idx": 0,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ]
+  },
+  {
+   "token": "63d80f7499fc5784",
+   "frame_sha16": "bbf18b9c63378a20",
+   "declared_values": {
+    "_arm": "A2_vision_pure",
+    "_declared": []
+   },
+   "ego_block": {
+    "ego_state": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "v0": null,
+    "formula": "withheld: ego_state=(0,0,0,0,keep=0), v0=None"
+   },
+   "nav": {
+    "fed": null
+   },
+   "diag": {
+    "sel_idx": 0,
+    "route_argmax": 1
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ]
+  },
+  {
+   "token": "690d5fcd5dd056dc",
+   "frame_sha16": "04c4228f45f5320f",
+   "declared_values": {
+    "_arm": "A2_vision_pure",
+    "_declared": []
+   },
+   "ego_block": {
+    "ego_state": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "v0": null,
+    "formula": "withheld: ego_state=(0,0,0,0,keep=0), v0=None"
+   },
+   "nav": {
+    "fed": null
+   },
+   "diag": {
+    "sel_idx": 0,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ]
+  },
+  {
+   "token": "7b37b72faaa25b5d",
+   "frame_sha16": "ebef4be35185ba63",
+   "declared_values": {
+    "_arm": "A2_vision_pure",
+    "_declared": []
+   },
+   "ego_block": {
+    "ego_state": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "v0": null,
+    "formula": "withheld: ego_state=(0,0,0,0,keep=0), v0=None"
+   },
+   "nav": {
+    "fed": null
+   },
+   "diag": {
+    "sel_idx": 0,
+    "route_argmax": 1
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ]
+  },
+  {
+   "token": "a6b9a83019915658",
+   "frame_sha16": "d873834d26f1d68a",
+   "declared_values": {
+    "_arm": "A2_vision_pure",
+    "_declared": []
+   },
+   "ego_block": {
+    "ego_state": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "v0": null,
+    "formula": "withheld: ego_state=(0,0,0,0,keep=0), v0=None"
+   },
+   "nav": {
+    "fed": null
+   },
+   "diag": {
+    "sel_idx": 0,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ]
+  },
+  {
+   "token": "aea14d7408d255bb",
+   "frame_sha16": "395655ffb34fc4d7",
+   "declared_values": {
+    "_arm": "A2_vision_pure",
+    "_declared": []
+   },
+   "ego_block": {
+    "ego_state": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "v0": null,
+    "formula": "withheld: ego_state=(0,0,0,0,keep=0), v0=None"
+   },
+   "nav": {
+    "fed": null
+   },
+   "diag": {
+    "sel_idx": 0,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ]
+  },
+  {
+   "token": "d2c77b46ecee58f9",
+   "frame_sha16": "5c693a6cba6e45a8",
+   "declared_values": {
+    "_arm": "A2_vision_pure",
+    "_declared": []
+   },
+   "ego_block": {
+    "ego_state": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "v0": null,
+    "formula": "withheld: ego_state=(0,0,0,0,keep=0), v0=None"
+   },
+   "nav": {
+    "fed": null
+   },
+   "diag": {
+    "sel_idx": 0,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ]
+  },
+  {
+   "token": "d306c671b1ce531c",
+   "frame_sha16": "5987465867baa041",
+   "declared_values": {
+    "_arm": "A2_vision_pure",
+    "_declared": []
+   },
+   "ego_block": {
+    "ego_state": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "v0": null,
+    "formula": "withheld: ego_state=(0,0,0,0,keep=0), v0=None"
+   },
+   "nav": {
+    "fed": null
+   },
+   "diag": {
+    "sel_idx": 0,
+    "route_argmax": 1
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ]
+  },
+  {
+   "token": "df57cf24b8025365",
+   "frame_sha16": "b7be745bbf2584ce",
+   "declared_values": {
+    "_arm": "A2_vision_pure",
+    "_declared": []
+   },
+   "ego_block": {
+    "ego_state": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "v0": null,
+    "formula": "withheld: ego_state=(0,0,0,0,keep=0), v0=None"
+   },
+   "nav": {
+    "fed": null
+   },
+   "diag": {
+    "sel_idx": 0,
+    "route_argmax": 1
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ]
+  },
+  {
+   "token": "e67e31370c185b83",
+   "frame_sha16": "74908d6cd811e18d",
+   "declared_values": {
+    "_arm": "A2_vision_pure",
+    "_declared": []
+   },
+   "ego_block": {
+    "ego_state": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "v0": null,
+    "formula": "withheld: ego_state=(0,0,0,0,keep=0), v0=None"
+   },
+   "nav": {
+    "fed": null
+   },
+   "diag": {
+    "sel_idx": 0,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ]
+  },
+  {
+   "token": "ead391b66ff253c1",
+   "frame_sha16": "52b92dee23527f6c",
+   "declared_values": {
+    "_arm": "A2_vision_pure",
+    "_declared": []
+   },
+   "ego_block": {
+    "ego_state": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "v0": null,
+    "formula": "withheld: ego_state=(0,0,0,0,keep=0), v0=None"
+   },
+   "nav": {
+    "fed": null
+   },
+   "diag": {
+    "sel_idx": 0,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ]
+  },
+  {
+   "token": "edd24f4c0a295030",
+   "frame_sha16": "05e24c51c23ccadb",
+   "declared_values": {
+    "_arm": "A2_vision_pure",
+    "_declared": []
+   },
+   "ego_block": {
+    "ego_state": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "v0": null,
+    "formula": "withheld: ego_state=(0,0,0,0,keep=0), v0=None"
+   },
+   "nav": {
+    "fed": null
+   },
+   "diag": {
+    "sel_idx": 0,
+    "route_argmax": 1
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ]
+  },
+  {
+   "token": "f096ff143e815978",
+   "frame_sha16": "d538854f877d88d3",
+   "declared_values": {
+    "_arm": "A2_vision_pure",
+    "_declared": []
+   },
+   "ego_block": {
+    "ego_state": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "v0": null,
+    "formula": "withheld: ego_state=(0,0,0,0,keep=0), v0=None"
+   },
+   "nav": {
+    "fed": null
+   },
+   "diag": {
+    "sel_idx": 0,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ]
+  },
+  {
+   "token": "fcb4f430c99050b3",
+   "frame_sha16": "97ee7187d51c3a71",
+   "declared_values": {
+    "_arm": "A2_vision_pure",
+    "_declared": []
+   },
+   "ego_block": {
+    "ego_state": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "v0": null,
+    "formula": "withheld: ego_state=(0,0,0,0,keep=0), v0=None"
+   },
+   "nav": {
+    "fed": null
+   },
+   "diag": {
+    "sel_idx": 0,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ]
+  }
+ ],
+ "gpu_gap_events": null
+}

@@ -1,0 +1,108 @@
+## M26 / D-FEASDEC-T1-1 yaw headline: 13 lines
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-leaderboard-currency/raw/audit_eval_packages_since_0903.md:53  |  | DO\2026-09-05-feasible-decode\ | ARM-EVAL (zero-training decode lever) | refcv3 @40,284 `os`: base vs `proj07` (+`projoff`) | "T1 = self-action OPEN loop" | 4
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/battery/RESULT.md:229  |  | F10 | **The paired yaw-rate cell in the shared `taniteval/tools/refav1_arm.py::_components` is scored on steps with NO path tangent.** `four_families` masks y
+Project Steering/Decisions/2026-09-05-mm-decisions.md:904  |  | yaw-rate error | 0.2176 rad/s | **0.0427 rad/s** — **−80.4 %**, separated |
+Project Steering/GOALS_AND_CLAIMS.md:6307  |  | D-FEASDEC-T1-1 | ⭐⭐ **AT T1 THE DRIVEN PATH IS MEASURABLY SAFER AND THE WHOLE COST IS 1.2 MILLIMETRES.** MEASURED 2026-09-05, `taniteval/tools/paired_openloop
+TanitAD Research Lab/Deployment & Optimization/Research/2026-09-05-feasible-decode/RESULT.md:19  |  > **80.4 %** (`0.2176 → 0.0427 rad/s`, separated) from *worse than a constant-velocity straight
+TanitAD Research Lab/Deployment & Optimization/Research/2026-09-05-feasible-decode/RESULT.md:142  |  | ⭐⭐ **LATERAL** | `LAT_yaw_rate_mae_radps` | 0.2176 | **0.0427** | **−0.1749** | [−0.2563, −0.1088] | **YES (better)** |
+TanitAD Research Lab/Deployment & Optimization/Research/2026-09-05-feasible-decode/raw/paired_proj07_vs_base.md:84  |  | `LAT_yaw_rate_mae_radps` | 0.2176 | 0.0427 | 0.0476 | 0.1700* | -0.0049 | **-0.1749** | [-0.2563, -0.1088] | **YES** |
+TanitAD Research Lab/Deployment & Optimization/Research/2026-09-05-feasible-decode/raw/paired_proj07e_vs_base.md:84  |  | `LAT_yaw_rate_mae_radps` | 0.2176 | 0.0427 | 0.0476 | 0.1700* | -0.0049 | **-0.1749** | [-0.2563, -0.1088] | **YES** |
+TanitAD Research Lab/Deployment & Optimization/Research/2026-09-05-feasible-decode/raw/paired_projoff_vs_base.md:84  |  | `LAT_yaw_rate_mae_radps` | 0.2176 | 0.2176 | 0.0476 | 0.1700* | 0.1700* | **0.0000** | [0.0000, 0.0000] | no |
+TanitAD Research Lab/Deployment & Optimization/Research/2026-09-05-refc-rl-readiness/RESULT.md:524  |  | **LATERAL** | `LAT_yaw_rate_mae_radps` | rad/s | 0.2176 | **0.5013** | 0.0476 | +0.2836 [+0.2231, +0.3516] | **yes** |
+TanitAD Research Lab/Deployment & Optimization/Research/2026-09-05-refc-rl-readiness/raw/run/paired_rl_vs_base.md:84  |  | `LAT_yaw_rate_mae_radps` | 0.2176 | 0.5013 | 0.0476 | 0.1700* | 0.4536* | **0.2836** | [0.2231, 0.3516] | **YES** |
+TanitAD Research Lab/Deployment & Optimization/Research/2026-09-05-veto-only-fan-safety/raw/run/paired_s0-veto200_vs_base.md:84  |  | `LAT_yaw_rate_mae_radps` | 0.2176 | 0.2367 | 0.0476 | 0.1700* | 0.1891* | **0.0191** | [0.0060, 0.0316] | **YES** |
+TanitAD Research Lab/Deployment & Optimization/Research/2026-09-05-veto-only-fan-safety/raw/run/paired_s1-veto200_vs_base.md:84  |  | `LAT_yaw_rate_mae_radps` | 0.2176 | 0.2654 | 0.0476 | 0.1700* | 0.2178* | **0.0478** | [0.0355, 0.0612] | **YES** |
+
+## refcv3 40284 yaw paired cell (+0.1700 / +0.1849): 9 lines
+Benchmarks & Eval/LEADERBOARD.md:109  |  | LATERAL | `LAT_yaw_rate_mae_radps` | +0.1700 [+0.1006, +0.2534] → ⛔ floor WINS | +0.1849 [+0.1162, +0.2683] → ⛔ floor WINS | 4,823 |
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-leaderboard-currency/raw/LEADERBOARD.proposed.md:105  |  | LATERAL | `LAT_yaw_rate_mae_radps` | +0.1700 [+0.1006, +0.2534] → ⛔ floor WINS | +0.1849 [+0.1162, +0.2683] → ⛔ floor WINS | 4,823 |
+Project Steering/GOALS_AND_CLAIMS.md:85  |  | D-REFCV3-40284c | ⚠️ **TWO YAW-RATE NUMBERS DISAGREE IN SIGN AND BOTH ARE MEASURED.** The LEVEL (`os` 1.794 vs `ha0` 2.371 °/s — model BETTER) is over the 13,
+Project Steering/GOALS_AND_CLAIMS.md:6307  |  | D-FEASDEC-T1-1 | ⭐⭐ **AT T1 THE DRIVEN PATH IS MEASURABLY SAFER AND THE WHOLE COST IS 1.2 MILLIMETRES.** MEASURED 2026-09-05, `taniteval/tools/paired_openloop
+Project Steering/HF_CARD_tanitad-refc-v3.md:364  |  ⛔ **yaw-rate +0.1700 rad/s [+0.1006, +0.2534] — LOST.**
+Project Steering/MODEL_REGISTRY.md:2782  |  | **LATERAL** | heading MAE **1.3109°** [0.8087, 2.2671] · yaw-rate MAE 1.7940 [1.5761, 2.0309] °/s · curvature MAE 0.008815 [0.0063, 0.0121] m⁻¹ · cross-track 
+TanitAD Research Lab/Deployment & Optimization/Research/2026-09-05-feasible-decode/RESULT.md:153  |  ⭐⭐ **The yaw-rate row is the result.** Base's yaw-rate margin over the `ha0` floor is **+0.1700**
+taniteval/results/RESULT-refcv3-40284-openloop.md:315  |  | yaw-rate MAE (rad/s) | ⛔ +0.1700 [+0.1006, +0.2534] **LOST** | ⛔ +0.1957 [+0.1186, +0.2864] **LOST** | +0.1849 [+0.1162, +0.2683] **LOST** |
+taniteval/results/refcv3-40284-openloop.md:98  |  | yaw-rate MAE (rad/s) | `+0.1700  [0.1006, 0.2534]` | 4,823 | 141 | **LOST** |
+
+## replicate false-positive rate (6/42, 14.3 %, 3 of 14): 81 lines
+Benchmarks & Eval/LEADERBOARD.md:1652  |  false-positive rate of **14.3 % (6/42)**. The panel rate exceeds the replicate rate; individual
+CLAUDE.md:183  |  family cells**, a **14.3 % false-positive rate for `separated`** on that rig
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-leaderboard-currency/raw/LEADERBOARD.proposed.md:1430  |  false-positive rate of **14.3 % (6/42)**. The panel rate exceeds the replicate rate; individual
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/battery/SPEC.md:32  |  * *another TRAINING run*: **NOT MEASURED**. There is one training seed (`H-ESTIM-SEED-1`). Replicate false-positive rate for "separated" on the tiny rig: 6/42 =
+Project Steering/GOALS_AND_CLAIMS.md:169  |  | H-ESTIM-SEED-1 | ⛔ **A “separated” paired episode-cluster bootstrap CI on a SINGLE-SEED arm is NECESSARY, NOT SUFFICIENT evidence that a lever did anything.**
+Project Steering/GOALS_AND_CLAIMS.md:215  |  | E-BEV-AUX-1 | **A BEV auxiliary loss, training-only and removable with BIT-IDENTICAL planner output, makes REF-C's trunk carry TRANSFERABLE agent localisation
+Project Steering/GOALS_AND_CLAIMS.md:6237  |  | D-RL-CTRL0-SEPFLOOR-1 | ⭐⭐ **A FROZEN-WEIGHT ARM SEPARATES 4 METRICS, AND THE RIG'S SEPARATION COUNTS ARE INFLATED BY A TOOL QUIRK — THE HONEST ZERO-INFORMATI
+Project Steering/GOALS_AND_CLAIMS.md:6279  |  | H-KINGATE-1 | ⭐ **PRE-REGISTERED, both outcomes committed BEFORE any arm ran (SPEC banked at commit `dbc30f3`): the ZERO-TRAINING top-2 kinematic gate makes r
+Project Steering/GOALS_AND_CLAIMS.md:8505  |  | ⛔⛔ **THE THREE VARIANCES, NAMED** | **V1 episode draw** — priced by the paired episode-cluster bootstrap. **V2 training run** — ⛔ **NOT PRICED**, a named bloc
+Project Steering/GOALS_AND_CLAIMS.md:8668  |  | **I17** | ⛔⛔ **NAME WHICH VARIANCE YOUR INTERVAL PRICED.** A CI prices exactly one source of variation, and there are four. **V1 episode draw** — *would anoth
+Project Steering/GOALS_AND_CLAIMS.md:8689  |  | ⛔ **D-REPLICATE-FPRATE** | **THE REPLICATE FALSE-POSITIVE RATE IS `6 / 42 = 14.3 %`, NOT `3 of 18 ≈ 17 %` — AND THE ARTIFACT IT WAS ATTRIBUTED TO IS A CRASHED
+Project Steering/GOALS_AND_CLAIMS.md:9023  |  | ⭐⭐ **D-STRAT-BYPASS-1** | ⭐⭐ **PRE-REGISTERED, NOT YET TESTED — the bypassed arm vs refcv4b, ONE VARIABLE.** refcv4b's argv **byte for byte** plus `--no-strat
+Project Steering/GOALS_AND_CLAIMS.md:9326  |  ⛔ a one-seed separated CI is necessary and **not sufficient** (`H-ESTIM-SEED-1`, **6/42 = 14.3 %**
+Project Steering/GOALS_AND_CLAIMS.md:9950  |  are backed by a MEASURED replicate rather than asserted against the 14.3 % one-seed false-positive
+Project Steering/GOALS_AND_CLAIMS.md:10402  |  quoted because none of these is an estimate of a population.** The 6/42 = 14.3 % replicate
+Project Steering/GOALS_AND_CLAIMS.md:11328  |  | ⛔ **D-P1-AGENTCOND-1** | ⛔ **P1 (DiffusionDrive agent/environment conditioning, `--agents head`) FAILS its pre-registered bar on the v7-tiny rig and is OUT of
+Project Steering/GOALS_AND_CLAIMS.md:11330  |  | ⛔⛔ **D-P1-AGENTCOND-1-SEED1** | ⭐ **SEED 1 CONFIRMS THE GATE AND REFUTES MY OWN SEED-0 LATERAL FINDING.** P1 IS OUT holds on **two seeds**: `head − off` headw
+Project Steering/GOALS_AND_CLAIMS.md:11523  |  | **H-E16-1** | Feeding the quantized posted-limit ceiling as an INPUT beside `v0` and the nav token improves **longitudinal** behaviour vs an otherwise identic
+Project Steering/MODEL_REGISTRY.md:3470  |  against a pure-replicate false-positive rate of **14.3 % (6/42)**; the panel rate exceeds the
+Project Steering/PREREG_E16_MAX_SPEED_INPUT_REFCV6.md:95  |  cells, a 14.3 % false-positive rate for `separated`**. The episode-cluster bootstrap
+Project Steering/PREREG_REFCV5_V2_LANDING.md:75  |  differences on 6 of 42 cells (14.3 % false-positive rate).
+Project Steering/PREREG_REFCV6_DEVBOX_PREPARATION.md:46  |  | 11 | ⛔ **seed false-positive rate** | two runs differing in **NOTHING** read `separated` on **6 of 42 family cells = 14.3 %** | **MEASURED** · `H-ESTIM-SEED-1
+Project Steering/PREREG_REFCV6_DEVBOX_PREPARATION.md:210  |  **The rule:** `H-ESTIM-SEED-1` measured a **14.3 % false-positive rate** for `separated` between two
+Project Steering/PREREG_REFCV6_DEVBOX_PREPARATION.md:235  |  interval, and reporting it. At a **14.3 %** false-positive rate that reads as a finding roughly one
+Project Steering/PREREG_REFCV6_DEVBOX_PREPARATION.md:274  |  | ⛔ **NEVER — A7's replicate** | 36.0 h | ⛔ **deletes the plan's only admissible lever claim.** A one-seed A7 is not a cheaper A7; it is a **14.3 %-false-positi
+Project Steering/PREREG_REFCV6_DEVBOX_PREPARATION.md:547  |  for a one-seed result — a 14.3 % false-positive rate is not made acceptable by a short run.
+Project Steering/PREREG_REFCV6_V2.ERRATUM-1.md:97  |  | a **14.3 %** one-seed floor | a **14.3 %–55.6 %** replicate false-positive rate, **rig-dependent**, ⛔ **and refcv6's own rig is UNMEASURED** |
+Project Steering/PREREG_REFCV7.md:25  |  | **A0b** (replicate) | nothing at all — same flags, same seed | ⭐ the run-to-run floor (`H-ESTIM-SEED-1`: a same-seed replicate produced "separated" difference
+Project Steering/PREREG_WPB_WAYPOINT_INDEX.md:23  |  (`H-ESTIM-SEED-1`: two arms differing in **nothing** read `separated` on 6 of 42 family cells).
+Project Steering/PREREG_WPD_BEV_AUX.md:22  |  **nothing** read `separated` on 6 of 42 family cells, a 14.3 % false-positive rate). ⇒ **every bar in
+Project Steering/REFCV5_MISSING_PIECES_PLAN.md:440  |  of those three clear zero by 2e-5 and 4e-5, against a MEASURED **14.3 %** one-seed replicate
+Project Steering/REFCV5_MISSING_PIECES_PLAN.md:489  |  4e-5 — precisely what the MEASURED 6/42 = 14.3 % replicate false-positive rate exists to catch.
+Project Steering/RETRACTION_LOG.md:14502  |  **6/42 = 14.3 %** one-seed replicate false-positive rate. I hedged them as *"a direction, not an
+Project Steering/RETRACTION_LOG.md:15356  |  ⛔ **ITEM 3, added in the same audit pass (2026-09-17):** the parent file's *"measured **14.3 %** one-seed floor"* is **RIG-SPECIFIC and the mildest figure in th
+Project Steering/Reports/2026-09-15-1445-refcv6-refav1-v7-status.md:211  |  6. The 14.3 % false-positive replicate rig is credited to v7-tiny; it was the REF-C tiny rig (17.0 M).
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-withheld-bank-panel/RESULT.md:26  |  ⛔ **CORRECTED 2026-09-06 by the register-repair agent — the figure originally published here was "3 of 18" and it reproduces at NO scoping.** Recursing `arms.A0
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-withheld-bank-panel/RESULT.md:37  |  ⛔ **That is a 14.3 % false-positive rate for "separated" (6 of 42 bootstrapped cells; 3 of 14 = 21.4 % restricted to the 2 s family rows), measured on this rig 
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-withheld-bank-panel/RESULT.md:111  |  **Do not adopt `pred` for refcv5 on this evidence, and do not refuse it.** The pre-registered ADOPT criterion is not met: the withheld-row longitudinal family d
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-astar-geometry/PREREG_D-REFCV4B-ASTAR-GEOMETRY.md:144  |  **necessary, not sufficient** (`H-ESTIM-SEED-1`: 6/42 = 14.3 % false-`separated` on the
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-astar-geometry/RESULT.md:284  |  * ⚠️ **A single separated CI is necessary, not sufficient** (`H-ESTIM-SEED-1`: 6/42 = **14.3 %**
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-constraints/SPEC.md:103  |  (`H-ESTIM-SEED-1`, 6/42 = 14.3 % false-positive rate); a replicate arm is
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-nav-vs-routehead/PREREG.md:100  |  necessary and not sufficient — the measured replicate false-positive rate is **6/42 = 14.3 %**.
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-nav-vs-routehead/PROPOSED_REGISTER_ROWS.md:109  |  are backed by a MEASURED replicate rather than asserted against the 14.3 % one-seed false-positive
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-nav-vs-routehead/RESULT.md:232  |  14.3 % one-seed false-positive rate.
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-p4-p13-p14-validation/PREREG.md:88  |  (replicate false-positive rate **6/42 = 14.3 %**) and, on a sampling planner, to inference variance
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-p4-p13-p14-validation/RESULT.md:137  |  **same banked fan**, so training variance (`H-ESTIM-SEED-1`, replicate FP rate 6/42 = 14.3 %) and
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-paper-update/RESULT.md:42  |  1. ⛔ **The replicate false-positive rate is `6 / 42 = 14.3 %`, not `3 / 18 ≈ 17 %`.** Recursing the
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-perwindow-wiring/PREREG_D-PWVOCAB-1.md:102  |  replicate produced "separated" differences on **6 of 42** family cells — a
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-perwindow-wiring/PREREG_D-PWVOCAB-1.md:103  |  **14.3 % false-positive rate for `separated`**. ⇒ **A0b is mandatory and the
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-refcv5-redesign/SPEC.md:629  |  | ⛔ **replicate** — `cap_R1` (same flags, **different inference seed**) | establishes `F(ade_m)` | ⛔ **MANDATORY: this arm SAMPLES at inference.** `H-ESTIM-SEED
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-register-repair/RESULT.md:10  |  false-positive rate (`3 of 18 ≈ 17 %` → **`6 of 42 = 14.3 %`**), `os_navpred`'s CI
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-register-repair/RESULT.md:118  |  > `produced **"separated" differences from A0 on 6 of 42` / `family cells**, a **14.3 % false-positive rate for `separated`** on that rig` / `(re-derived 2026-0
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-register-repair/RESULT.md:312  |  | `raw/replicate_fp_rate.py` + `raw/replicate_fp_rate.txt` — the 6/42 re-derivation with C1/C2 | **repo, staged** |
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-steering-signal/PREREG.md:134  |  false-positive rate 6/42 = 14.3 %). The refit therefore carries a
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-two-segment-anchors/PREREG_TWO_SEGMENT_ANCHORS.md:173  |  (Rig replicate false-positive rate **6/42 = 14.3 %** does not apply: no arm is trained.)
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-two-segment-anchors/RESULT.md:51  |  rig replicate false-positive rate (**6/42 = 14.3 %**) does not apply: no arm is
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-07-p1-agent-gate/PREREG.md:162  |  produced "separated" differences on **6 of 42** cells (**14.3 %** false-positive). Two seeds are
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-07-p1-agent-gate/RESULT.md:71  |  one-seed replicate false-positive rate of **6/42 = 14.3 %**. Only **cross-track −0.1362 [−0.2110,
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-07-p1-agent-gate/RESULT.md:140  |  NOT SUFFICIENT** — the measured replicate false-positive rate is **6/42 = 14.3 %**.
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-07-p1-agent-gate/RESULT.md:360  |  and 4e-5) that the MEASURED 6/42 = 14.3 % replicate false-positive rate exists to catch. **It caught
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-07-refcv5-v2-compose/README.md:384  |  replicate false-positive rate **6/42 = 14.3 %** on a *zero-lever* replicate.
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-07-wpd-bev-aux/PANEL_RESULT.md:717  |  'LON_accel_mae_mps2']"*. ⚠️ For scale, `CLAUDE.md` records a **14.3 %** false-positive rate for
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-10-max-speed-v8-build/raw/ARM_ARGV.md:146  |  for `separated` is **14.3 %**. The **REPLICATE** arm is required, plus **WITHHOLD**
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-11-lidar-bev-gt/PREREG_BEV_CAPACITY_COMPETITION.md:18  |  | 3 | On the REF-C planner rig a **one-seed** pair reads `separated` on **5 of 9** metrics with **zero levers moved** — a **55.6 %** false-positive rate, agains
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-rl-stage-a/RESULT.md:14  |  cleared "separated" on **14.3 %** of cells on the v7-tiny rig and **55.6 %** on WP-D. The replicate
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-18-refcv6-devbox-plan/RESULT.md:110  |  `H-ESTIM-SEED-1` measured a **14.3 %** false-positive rate for `separated` between two runs
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-19-drivor-deep-analysis/RESULT.md:103  |  1. ⛔ **No variance anywhere.** Every ablation is one training run on navval, and most differences (registers 89.7–90.0, compression 89.3–90.2) sit inside what o
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md:750  |  it on 14.3 % of cells. **Every experiment below therefore carries a replicate arm**, and no lever
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-07-refcv5-v2-comparison/README.md:101  |  prints its separated fraction against the **measured 6/42 = 14.3 %** false-positive
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-07-refcv5-v2-comparison/RESULT.md:158  |  MULTIPLICITY: 4 of 9 cells separated = 44.4 % vs a pure replicate's 14.3 % (6/42)
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-07-refcv5-v2-comparison/RESULT.md:200  |  training run  : ⛔ NOT MEASURED — one seed per arm (H-ESTIM-SEED-1 OPEN; replicate FP 6/42)
+TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-09-07-bev-from-front-camera/REFCV5C_DESIGN.md:135  |  does)** · **replicate**, against the rig's measured **14.3 %** false-positive rate
+TanitAD Research Lab/Data Engineering/Research/2026-09-19-deferred-merges/raw/PREREG_REFCV6_DEVBOX_PREPARATION.tip-based.md:46  |  | 11 | ⛔ **seed false-positive rate** | two runs differing in **NOTHING** read `separated` on **6 of 42 family cells = 14.3 %** | **MEASURED** · `H-ESTIM-SEED-1
+TanitAD Research Lab/Data Engineering/Research/2026-09-19-deferred-merges/raw/PREREG_REFCV6_DEVBOX_PREPARATION.tip-based.md:210  |  **The rule:** `H-ESTIM-SEED-1` measured a **14.3 % false-positive rate** for `separated` between two
+TanitAD Research Lab/Data Engineering/Research/2026-09-19-deferred-merges/raw/PREREG_REFCV6_DEVBOX_PREPARATION.tip-based.md:235  |  interval, and reporting it. At a **14.3 %** false-positive rate that reads as a finding roughly one
+TanitAD Research Lab/Data Engineering/Research/2026-09-19-deferred-merges/raw/PREREG_REFCV6_DEVBOX_PREPARATION.tip-based.md:274  |  | ⛔ **NEVER — A7's replicate** | 36.0 h | ⛔ **deletes the plan's only admissible lever claim.** A one-seed A7 is not a cheaper A7; it is a **14.3 %-false-positi
+TanitAD Research Lab/Data Engineering/Research/2026-09-19-deferred-merges/raw/PREREG_REFCV6_DEVBOX_PREPARATION.tip-based.md:547  |  for a one-seed result — a 14.3 % false-positive rate is not made acceptable by a short run.
+TanitAD Research Lab/Data Engineering/Research/2026-09-20-sign-oracle-freeze/RESULT.md:17  |  | **F4** | ⛔⭐⭐⭐ **The gate has no recall clause, and the only published operating point for this exact task is recall-limited.** `2606.08860` (banked, **re-read
+TanitAD Research Lab/Deployment & Optimization/Research/2026-09-05-kinematic-gate/RESULT.md:132  |  sign, replicate floor **0.0444**, min &#124;Δ&#124; **0.1402 > 0.0444**. A **−19.5 % / −14.3 %**
+TanitAD Research Lab/Deployment & Optimization/Research/2026-09-05-kinematic-gate/raw/_panel.md:107  |  sign, replicate floor **0.0444**, min &#124;Δ&#124; **0.1402 > 0.0444**. A **−19.5 % / −14.3 %**
+TanitAD Research Lab/Frontier Scan/Daily/2026-09-19/RESULT.md:86  |  | CHANCES / RISKS | Upside: cheap to wire; deploy cost ≈ 0 (the branch is dropped). ⛔ Risks: **no seeds**, and 2.0–2.9 pp sits inside plausible training varianc

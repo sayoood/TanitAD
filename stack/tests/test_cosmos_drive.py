@@ -4,7 +4,7 @@
 Zero real bytes and zero `av`: video decode and pose IO are injected. `tanitad`
 must be importable (editable stack install, `pip install -e stack`).
 
-    pytest "TanitAD Research Hub/Data Engineering/Implementation/incoming/2026-07-14-cosmos-drive-dreams-loader/tests" -q
+    pytest "TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-07-14-cosmos-drive-dreams-loader/tests" -q
 """
 
 

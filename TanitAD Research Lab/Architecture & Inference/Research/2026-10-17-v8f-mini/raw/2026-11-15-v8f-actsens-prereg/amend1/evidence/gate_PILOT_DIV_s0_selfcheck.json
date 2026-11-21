@@ -1,0 +1,980 @@
+{
+ "declared_vs_built": "PASS",
+ "live": {
+  "terms": {
+   "wm": 200.27593994140625,
+   "wm/pred/L1": 0.24925854802131653,
+   "wm/sigreg/L1": 3.8497791290283203,
+   "wm/idm/L1": 0.12705504894256592,
+   "wm/rollout/L1": 0.2565438747406006,
+   "wm/rollout_valid/L1": 1400.0,
+   "wm/rollout_masked/L1": 40.0,
+   "wm/level/L1": 13.51928997039795,
+   "wm/pred/L2": 0.027235982939600945,
+   "wm/sigreg/L2": 3.3381145000457764,
+   "wm/idm/L2": 0.8900110125541687,
+   "wm/act_sigreg/L2": 8.912410736083984,
+   "wm/rollout/L2": 0.030122414231300354,
+   "wm/rollout_valid/L2": 440.0,
+   "wm/rollout_masked/L2": 40.0,
+   "wm/level/L2": 89.37007141113281,
+   "wm/pred/L3": 0.01080023031681776,
+   "wm/sigreg/L3": 3.250143051147461,
+   "wm/idm/L3": 0.9706520438194275,
+   "wm/act_sigreg/L3": 7.584714412689209,
+   "wm/rollout/L3": 0.012632239609956741,
+   "wm/rollout_valid/L3": 168.0,
+   "wm/rollout_masked/L3": 120.0,
+   "wm/level/L3": 97.3865737915039,
+   "total": 20.0275936126709
+  },
+  "missing_terms": [],
+  "wm_groups_grad": {
+   "wm.stack.act_embed": 0.11834260355681181,
+   "wm.stack.encoders.0": 305.0577254295349,
+   "wm.stack.encoders.1": 69.40047961473465,
+   "wm.stack.macro_encoders.0": 0.48638269677758217,
+   "wm.stack.macro_encoders.1": 1.3612346451263875,
+   "wm.stack.predictors.0": 107.10984654165804,
+   "wm.stack.predictors.1": 79.55375924147666,
+   "wm.stack.predictors.2": 68.64209651527926,
+   "wm.stack.idm_heads.0": 491.8981976509094,
+   "wm.stack.idm_heads.1": 1192.2616980075836,
+   "wm.stack.idm_heads.2": 717.9094560146332,
+   "wm.proj": 283.3681688308716
+  },
+  "dead_wm_groups": [],
+  "dead_params": [],
+  "declared_dead": [],
+  "unexpected_dead": [],
+  "n_wm_params": 133,
+  "control_nonwm_grad_sum": 0.0,
+  "control_adapter_grad_sum": 0.0,
+  "nonwm_with_grad": [],
+  "n_nonwm_params": 123,
+  "pass": true
+ },
+ "code_mix_probe": {
+  "skipped": "wm_only"
+ },
+ "o_interface_probe": {
+  "skipped": "wm_only"
+ },
+ "acc_probe": {
+  "skipped": "wm_only"
+ },
+ "admissibility": {
+  "allowed": [
+   "a_s",
+   "a_t",
+   "act",
+   "base",
+   "feats",
+   "frame_ok",
+   "limit",
+   "limit_ok",
+   "nav",
+   "p10f",
+   "pose",
+   "pose_now",
+   "pose_s",
+   "pose_t"
+  ],
+  "read": [
+   "a_s",
+   "a_t",
+   "base",
+   "feats",
+   "frame_ok",
+   "limit",
+   "limit_ok",
+   "nav",
+   "p10f",
+   "pose_now",
+   "pose_s",
+   "pose_t"
+  ]
+ },
+ "levers": {
+  "navonly": false,
+  "consistency": true,
+  "wm": "b",
+  "cons_absent": "mask",
+  "code_mix": "whole",
+  "o_interface": "full",
+  "w_acc": 0.0,
+  "launch_intent_w": 0.0,
+  "wm_idm_gamma": 100.0,
+  "kin_mode": "yaw",
+  "wm_ch1_scale": 0.4,
+  "p_gt_start": 1.0,
+  "p_gt_end": 0.2,
+  "hist": 4,
+  "hmax": 91,
+  "window_start": 3,
+  "prior_frozen": true,
+  "residual_zero_init": false,
+  "params": {
+   "adapter": 0,
+   "cond": 0,
+   "S": 0,
+   "T": 0,
+   "O": 0,
+   "WM": 2011970
+  },
+  "n_params_trainable": 2011970,
+  "w": {
+   "w_pen": 0.5,
+   "w_pen_self": 0.25,
+   "w_wm": 0.1,
+   "w_tac": 1.0,
+   "w_cons": 0.5
+  },
+  "wm_strides": [
+   3,
+   5
+  ],
+  "wm_rollout_k": [
+   10,
+   10,
+   6
+  ],
+  "wm_rollout_stride": [
+   5,
+   5,
+   1
+  ],
+  "wm_rollout_w": 1.0,
+  "ego_perturb": {
+   "ego_perturb_p": 0.0,
+   "ego_perturb_vscale": [
+    0.5,
+    1.0
+   ],
+   "ego_perturb_vmax": 8.0,
+   "ego_perturb_adrop": 1.5,
+   "ego_perturb_yawrate_std": 0.0,
+   "ego_perturb_seed": 0,
+   "kin_mode": "yaw",
+   "rebuilt": [
+    "p10f",
+    "base",
+    "kin3",
+    "p10_t",
+    "pose",
+    "pose_t",
+    "pose_s",
+    "nav"
+   ],
+   "kept": [
+    "feats",
+    "frame_ok",
+    "limit",
+    "limit_ok",
+    "a_t",
+    "a_s",
+    "pose_now"
+   ],
+   "record": [
+    "act"
+   ]
+  },
+  "dagger": {
+   "dagger_p": 0.0,
+   "dagger_seed": 0,
+   "dagger_bank": null,
+   "dagger_bank_sha256": null,
+   "kin_mode": "yaw",
+   "bank_hmax": null,
+   "rebuilt": [
+    "p10f",
+    "base",
+    "kin3",
+    "p10_t",
+    "pose",
+    "pose_t",
+    "pose_s",
+    "nav"
+   ],
+   "kept": [
+    "feats",
+    "frame_ok",
+    "limit",
+    "limit_ok",
+    "a_t",
+    "a_s",
+    "pose_now"
+   ],
+   "record": [
+    "act"
+   ],
+   "labels_re_expressed": [
+    "lab_s.rc"
+   ],
+   "nav_rebuild_invalid": false,
+   "constants_sha256": "8f94b3b5e35f4457be51d695842457a340d1228ab48c5862f4db1e5063f3ffaf"
+  },
+  "dagger_p": 0.0,
+  "dagger_bank_sha256": null,
+  "dagger_bank_sha256_declared": null,
+  "recover": {
+   "recover_p": 0.0,
+   "recover_dev_law": "empirical",
+   "recover_dev_shape": "constant",
+   "recover_dev_bank": null,
+   "recover_dev_bank_sha256": null,
+   "recover_target": "rejoin",
+   "recover_rejoin_steps": 10,
+   "recover_seed": 0,
+   "kin_mode": "yaw",
+   "rebuilt": [
+    "p10f",
+    "base",
+    "kin3",
+    "p10_t",
+    "pose",
+    "pose_t",
+    "pose_s",
+    "nav",
+    "pose_now"
+   ],
+   "retargeted": [
+    "gt",
+    "lab_s.rc"
+   ]
+  },
+  "recover_table": null,
+  "ego_perturb_with_dagger": false,
+  "ego_perturb_stream": 0,
+  "wm_sampler": {
+   "kind": "divrs",
+   "n_cells": 25,
+   "yaw_edges": [
+    0.02,
+    0.05,
+    0.1,
+    0.2
+   ],
+   "acc_edges": [
+    -1.0,
+    -0.3,
+    0.3,
+    1.0
+   ],
+   "cap_mult": 10.0,
+   "n_windows": 40358,
+   "cell_counts": [
+    54,
+    3226,
+    13190,
+    2154,
+    43,
+    21,
+    1087,
+    5745,
+    948,
+    10,
+    9,
+    874,
+    4994,
+    1988,
+    28,
+    0,
+    592,
+    3813,
+    1186,
+    11,
+    0,
+    15,
+    350,
+    20,
+    0
+   ],
+   "cell_weight": [
+    0.002002402883460152,
+    0.00030998140111593303,
+    7.581501137225171e-05,
+    0.00046425255338904364,
+    0.002002402883460152,
+    0.002002402883460152,
+    0.0009199632014719411,
+    0.00017406440382941688,
+    0.0010548523206751054,
+    0.002002402883460152,
+    0.002002402883460152,
+    0.0011441647597254005,
+    0.00020024028834601522,
+    0.0005030181086519115,
+    0.002002402883460152,
+    0.0,
+    0.0016891891891891893,
+    0.00026226068712300026,
+    0.0008431703204047217,
+    0.002002402883460152,
+    0.0,
+    0.002002402883460152,
+    0.002002402883460152,
+    0.002002402883460152,
+    0.0
+   ],
+   "median_weight": 0.00020024028834601522,
+   "cap": 0.002002402883460152,
+   "n_capped_cells": 10,
+   "n_empty_cells": 3,
+   "target_share": [
+    0.008239494644328481,
+    0.07620006713662303,
+    0.07620006713662303,
+    0.07620006713662303,
+    0.006561079068631939,
+    0.003204247917238854,
+    0.07620006713662303,
+    0.07620006713662303,
+    0.07620006713662301,
+    0.0015258323415423113,
+    0.0013732491073880802,
+    0.07620006713662303,
+    0.07620006713662303,
+    0.07620006713662303,
+    0.004272330556318472,
+    0.0,
+    0.07620006713662303,
+    0.07620006713662303,
+    0.07620006713662303,
+    0.0016784155756965425,
+    0.0,
+    0.002288748512313467,
+    0.0534041319539809,
+    0.0030516646830846227,
+    0.0
+   ],
+   "max_window_weight": 0.002002402883460152
+  },
+  "ego_dagger_overlap_n": 0,
+  "launch_intent": {
+   "launch_intent_w": 0.0,
+   "v0_max": 6.0,
+   "dv": 1.0,
+   "dt": 0.2,
+   "knots": [
+    1,
+    12
+   ],
+   "axis": "along (x of the ego frame at NOW)",
+   "mask_from": "the LOGGED kin3[:, 0] and the GT future, taken before any ego stage"
+  },
+  "launch_n": 0,
+  "launch_eligible": 0,
+  "init_ckpt": {
+   "path": "D:\\tanitad\\runs\\v8f_mini_full\\M2b_s0\\ckpt_last.pt",
+   "sha256": "601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8",
+   "applied": true,
+   "skipped": null,
+   "n_tensors": 276,
+   "n_mismatch_after_load": 0,
+   "source_step": 19164,
+   "source_arm": "M2b",
+   "source_seed": 0,
+   "source_argv_sha": "1225d98ff87cbe17",
+   "mode": "wm_only",
+   "hmax_ckpt": 16,
+   "hmax_built": 91,
+   "wm_strides_ckpt": [
+    2,
+    2
+   ],
+   "wm_strides_built": [
+    3,
+    5
+   ],
+   "wm_loaded_from_ckpt": 0,
+   "wm_reinit_seed": 0,
+   "wm_params_equal_to_ckpt": 0
+  },
+  "wm_strides_readback": {
+   "declared": [
+    3,
+    5
+   ],
+   "built": {
+    "stride": [
+     3,
+     5
+    ],
+    "macro_stride": [
+     3,
+     5
+    ],
+    "macro_shape_stride": [
+     3,
+     5
+    ],
+    "dilation": [
+     1,
+     1
+    ]
+   },
+   "hmax": 91,
+   "wm_k": 1,
+   "states_per_level": [
+    91,
+    31,
+    7
+   ],
+   "transitions_per_level": [
+    90,
+    30,
+    6
+   ]
+  },
+  "wm_ladder_readback": {
+   "declared": {
+    "wm_rollout_k": [
+     10,
+     10,
+     6
+    ],
+    "wm_rollout_stride": [
+     5,
+     5,
+     1
+    ],
+    "wm_ctx": [
+     3,
+     3,
+     3
+    ],
+    "wm_rollout_w": 1.0
+   },
+   "named": [
+    "wm_rollout_k",
+    "wm_rollout_stride",
+    "wm_ctx",
+    "wm_windows",
+    "wm_pooled",
+    "wm_zcache"
+   ],
+   "windows_declared": {
+    "kind": "wmonly",
+    "stride": 1,
+    "pooled": "on"
+   },
+   "built": {
+    "k": [
+     10,
+     10,
+     6
+    ],
+    "anchors": [
+     18,
+     6,
+     6
+    ],
+    "ctx_passed": [
+     3,
+     3,
+     3
+    ],
+    "ctx_built": [
+     3,
+     3,
+     3
+    ],
+    "w_in_loss": [
+     0.9999991059303284,
+     1.0000364780426025,
+     0.9999514222145081
+    ],
+    "states": [
+     91,
+     31,
+     7
+    ],
+    "cum_stride": [
+     1,
+     3,
+     15
+    ]
+   },
+   "windows_built": {
+    "kind": "wmonly",
+    "F": 91,
+    "stride": 1,
+    "n_windows": 40358,
+    "n_windows_all_clips": 49382,
+    "t_min": 90,
+    "t_max": 104,
+    "pooled": true,
+    "zcache": "D:\\tanitad\\zcache\\M2b_s0\\train",
+    "zcache_missing": 0,
+    "n_windows_before_ok": 49382,
+    "n_windows_not_ok": 9024
+   },
+   "hmax": 91
+  },
+  "wm_only": {
+   "wm_only": true,
+   "wm_k": 1,
+   "n_trainable": 2011970,
+   "n_wm": 2011970,
+   "init": {
+    "path": "D:\\tanitad\\runs\\v8f_mini_full\\M2b_s0\\ckpt_last.pt",
+    "sha256": "601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8",
+    "applied": true,
+    "skipped": null,
+    "n_tensors": 276,
+    "n_mismatch_after_load": 0,
+    "source_step": 19164,
+    "source_arm": "M2b",
+    "source_seed": 0,
+    "source_argv_sha": "1225d98ff87cbe17",
+    "mode": "wm_only",
+    "hmax_ckpt": 16,
+    "hmax_built": 91,
+    "wm_strides_ckpt": [
+     2,
+     2
+    ],
+    "wm_strides_built": [
+     3,
+     5
+    ],
+    "wm_loaded_from_ckpt": 0,
+    "wm_reinit_seed": 0,
+    "wm_params_equal_to_ckpt": 0
+   }
+  },
+  "lr_schedule": {
+   "lr": 0.0003,
+   "warmup": 200,
+   "total": 200
+  }
+ },
+ "steps_total": 200,
+ "S_steps_per_epoch_100pct": 772,
+ "info": {
+  "batch": 64,
+  "md5_overridden": false,
+  "n_clips": 4512,
+  "n_clips_expected": 4512,
+  "n_clips_all": 4512,
+  "n_excluded": 60,
+  "n_excluded_declared": 60,
+  "excluded_in_train": 0,
+  "excluded_sha256": "f6a1dee02af0b96f815416bfef9bc11a04554702525135aa75a740942d7750f9",
+  "train_sha256": "37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1",
+  "lru": 174,
+  "kin_mode": "yaw",
+  "n_windows_all_clips": 49382,
+  "n_windows": 40358,
+  "wm_windows": {
+   "kind": "wmonly",
+   "F": 91,
+   "stride": 1,
+   "n_windows": 40358,
+   "n_windows_all_clips": 49382,
+   "t_min": 90,
+   "t_max": 104,
+   "pooled": true,
+   "zcache": "D:\\tanitad\\zcache\\M2b_s0\\train",
+   "zcache_missing": 0,
+   "n_windows_before_ok": 49382,
+   "n_windows_not_ok": 9024
+  },
+  "train_window_list_sha256": "1e4fc4c4401f89dcb94d7981bfb4907ac18f87e82b77ebd1d3783e080ebf6e2c",
+  "p10_units": "pose_kappa",
+  "init_ckpt": {
+   "path": "D:\\tanitad\\runs\\v8f_mini_full\\M2b_s0\\ckpt_last.pt",
+   "sha256": "601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8",
+   "applied": true,
+   "skipped": null,
+   "n_tensors": 276,
+   "n_mismatch_after_load": 0,
+   "source_step": 19164,
+   "source_arm": "M2b",
+   "source_seed": 0,
+   "source_argv_sha": "1225d98ff87cbe17",
+   "mode": "wm_only",
+   "hmax_ckpt": 16,
+   "hmax_built": 91,
+   "wm_strides_ckpt": [
+    2,
+    2
+   ],
+   "wm_strides_built": [
+    3,
+    5
+   ],
+   "wm_loaded_from_ckpt": 0,
+   "wm_reinit_seed": 0,
+   "wm_params_equal_to_ckpt": 0
+  },
+  "wm_only": {
+   "path": "D:\\tanitad\\runs\\v8f_mini_full\\M2b_s0\\ckpt_last.pt",
+   "sha256": "601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8",
+   "applied": true,
+   "skipped": null,
+   "n_tensors": 276,
+   "n_mismatch_after_load": 0,
+   "source_step": 19164,
+   "source_arm": "M2b",
+   "source_seed": 0,
+   "source_argv_sha": "1225d98ff87cbe17",
+   "mode": "wm_only",
+   "hmax_ckpt": 16,
+   "hmax_built": 91,
+   "wm_strides_ckpt": [
+    2,
+    2
+   ],
+   "wm_strides_built": [
+    3,
+    5
+   ],
+   "wm_loaded_from_ckpt": 0,
+   "wm_reinit_seed": 0,
+   "wm_params_equal_to_ckpt": 0
+  },
+  "wm_sampler": {
+   "kind": "divrs",
+   "n_cells": 25,
+   "yaw_edges": [
+    0.02,
+    0.05,
+    0.1,
+    0.2
+   ],
+   "acc_edges": [
+    -1.0,
+    -0.3,
+    0.3,
+    1.0
+   ],
+   "cap_mult": 10.0,
+   "n_windows": 40358,
+   "cell_counts": [
+    54,
+    3226,
+    13190,
+    2154,
+    43,
+    21,
+    1087,
+    5745,
+    948,
+    10,
+    9,
+    874,
+    4994,
+    1988,
+    28,
+    0,
+    592,
+    3813,
+    1186,
+    11,
+    0,
+    15,
+    350,
+    20,
+    0
+   ],
+   "cell_weight": [
+    0.002002402883460152,
+    0.00030998140111593303,
+    7.581501137225171e-05,
+    0.00046425255338904364,
+    0.002002402883460152,
+    0.002002402883460152,
+    0.0009199632014719411,
+    0.00017406440382941688,
+    0.0010548523206751054,
+    0.002002402883460152,
+    0.002002402883460152,
+    0.0011441647597254005,
+    0.00020024028834601522,
+    0.0005030181086519115,
+    0.002002402883460152,
+    0.0,
+    0.0016891891891891893,
+    0.00026226068712300026,
+    0.0008431703204047217,
+    0.002002402883460152,
+    0.0,
+    0.002002402883460152,
+    0.002002402883460152,
+    0.002002402883460152,
+    0.0
+   ],
+   "median_weight": 0.00020024028834601522,
+   "cap": 0.002002402883460152,
+   "n_capped_cells": 10,
+   "n_empty_cells": 3,
+   "target_share": [
+    0.008239494644328481,
+    0.07620006713662303,
+    0.07620006713662303,
+    0.07620006713662303,
+    0.006561079068631939,
+    0.003204247917238854,
+    0.07620006713662303,
+    0.07620006713662303,
+    0.07620006713662301,
+    0.0015258323415423113,
+    0.0013732491073880802,
+    0.07620006713662303,
+    0.07620006713662303,
+    0.07620006713662303,
+    0.004272330556318472,
+    0.0,
+    0.07620006713662303,
+    0.07620006713662303,
+    0.07620006713662303,
+    0.0016784155756965425,
+    0.0,
+    0.002288748512313467,
+    0.0534041319539809,
+    0.0030516646830846227,
+    0.0
+   ],
+   "max_window_weight": 0.002002402883460152
+  }
+ },
+ "argv_sha": "c982fd1505c3d20e",
+ "ego_perturb_probe": {
+  "skipped": "wm_only"
+ },
+ "dagger_probe": {
+  "skipped": "wm_only"
+ },
+ "ego_dagger_compose_probe": {
+  "skipped": "wm_only",
+  "overlap": 0
+ },
+ "recover_probe": {
+  "skipped": "wm_only"
+ },
+ "t2bank_probe": {
+  "skipped": "wm_only"
+ },
+ "launch_intent_probe": {
+  "skipped": "wm_only",
+  "launch_n": 0,
+  "launch_eligible": 0
+ },
+ "wm_sampler_probe": {
+  "n_batches": 2000,
+  "n_draws": 119603,
+  "epochs_used": 3,
+  "tol": 0.2,
+  "min_expected": 225,
+  "n_resolved": 19,
+  "worst_rel_err_resolved": 0.061518718224576,
+  "draws_in_zero_target_cells": 0,
+  "unresolved": [
+   {
+    "cell": 9,
+    "expected_draws": 182.49412554548508,
+    "rel_err": -0.08490205095189918
+   },
+   {
+    "cell": 10,
+    "expected_draws": 164.24471299093656,
+    "rel_err": -0.04410926147337435
+   },
+   {
+    "cell": 19,
+    "expected_draws": 200.74353810003356,
+    "rel_err": 0.04112940310861757
+   }
+  ],
+  "pass": true,
+  "cells": [
+   {
+    "cell": 0,
+    "target_share": 0.008239494644328481,
+    "realised_share": 0.0077840856834694785,
+    "rel_err": -0.05527146754958767,
+    "expected_draws": 985.4682779456193,
+    "resolved": true
+   },
+   {
+    "cell": 1,
+    "target_share": 0.07620006713662303,
+    "realised_share": 0.07702984038861901,
+    "rel_err": 0.010889403161656652,
+    "expected_draws": 9113.756629741523,
+    "resolved": true
+   },
+   {
+    "cell": 2,
+    "target_share": 0.07620006713662303,
+    "realised_share": 0.0772305042515656,
+    "rel_err": 0.01352278486966485,
+    "expected_draws": 9113.756629741523,
+    "resolved": true
+   },
+   {
+    "cell": 3,
+    "target_share": 0.07620006713662303,
+    "realised_share": 0.07584257919951841,
+    "rel_err": -0.004691438610725407,
+    "expected_draws": 9113.756629741523,
+    "resolved": true
+   },
+   {
+    "cell": 4,
+    "target_share": 0.006561079068631939,
+    "realised_share": 0.00696470824310427,
+    "rel_err": 0.061518718224576,
+    "expected_draws": 784.7247398455858,
+    "resolved": true
+   },
+   {
+    "cell": 5,
+    "target_share": 0.003204247917238854,
+    "realised_share": 0.0030684849042248103,
+    "rel_err": -0.04236969689006853,
+    "expected_draws": 383.23766364551864,
+    "resolved": true
+   },
+   {
+    "cell": 6,
+    "target_share": 0.07620006713662303,
+    "realised_share": 0.07532419755357307,
+    "rel_err": -0.011494341356413362,
+    "expected_draws": 9113.756629741523,
+    "resolved": true
+   },
+   {
+    "cell": 7,
+    "target_share": 0.07620006713662303,
+    "realised_share": 0.0737356086385793,
+    "rel_err": -0.03234194654481182,
+    "expected_draws": 9113.756629741523,
+    "resolved": true
+   },
+   {
+    "cell": 8,
+    "target_share": 0.07620006713662301,
+    "realised_share": 0.07742280712022273,
+    "rel_err": 0.01604644233983943,
+    "expected_draws": 9113.756629741523,
+    "resolved": true
+   },
+   {
+    "cell": 9,
+    "target_share": 0.0015258323415423113,
+    "realised_share": 0.0013962860463366303,
+    "rel_err": -0.08490205095189918,
+    "expected_draws": 182.49412554548508,
+    "resolved": false
+   },
+   {
+    "cell": 10,
+    "target_share": 0.0013732491073880802,
+    "realised_share": 0.0013126761034422214,
+    "rel_err": -0.04410926147337435,
+    "expected_draws": 164.24471299093656,
+    "resolved": false
+   },
+   {
+    "cell": 11,
+    "target_share": 0.07620006713662303,
+    "realised_share": 0.0773726411544861,
+    "rel_err": 0.015388096912837268,
+    "expected_draws": 9113.756629741523,
+    "resolved": true
+   },
+   {
+    "cell": 12,
+    "target_share": 0.07620006713662303,
+    "realised_share": 0.07391118951865756,
+    "rel_err": -0.030037737550304477,
+    "expected_draws": 9113.756629741523,
+    "resolved": true
+   },
+   {
+    "cell": 13,
+    "target_share": 0.07620006713662303,
+    "realised_share": 0.07647801476551591,
+    "rel_err": 0.003647603464633997,
+    "expected_draws": 9113.756629741523,
+    "resolved": true
+   },
+   {
+    "cell": 14,
+    "target_share": 0.004272330556318472,
+    "realised_share": 0.004481492939140323,
+    "rel_err": 0.04895744373349453,
+    "expected_draws": 510.9835515273582,
+    "resolved": true
+   },
+   {
+    "cell": 16,
+    "target_share": 0.07620006713662303,
+    "realised_share": 0.0764362097940687,
+    "rel_err": 0.003098982275465456,
+    "expected_draws": 9113.756629741523,
+    "resolved": true
+   },
+   {
+    "cell": 17,
+    "target_share": 0.07620006713662303,
+    "realised_share": 0.07753150004598547,
+    "rel_err": 0.017472857431677147,
+    "expected_draws": 9113.756629741523,
+    "resolved": true
+   },
+   {
+    "cell": 18,
+    "target_share": 0.07620006713662303,
+    "realised_share": 0.07662851266272586,
+    "rel_err": 0.005622639745640257,
+    "expected_draws": 9113.756629741523,
+    "resolved": true
+   },
+   {
+    "cell": 19,
+    "target_share": 0.0016784155756965425,
+    "realised_share": 0.0017474478064931482,
+    "rel_err": 0.04112940310861757,
+    "expected_draws": 200.74353810003356,
+    "resolved": false
+   },
+   {
+    "cell": 21,
+    "target_share": 0.002288748512313467,
+    "realised_share": 0.0023327174067540113,
+    "rel_err": 0.019210889358962646,
+    "expected_draws": 273.7411883182276,
+    "resolved": true
+   },
+   {
+    "cell": 22,
+    "target_share": 0.0534041319539809,
+    "realised_share": 0.05304214777221307,
+    "rel_err": -0.006778205515628577,
+    "expected_draws": 6387.294394091978,
+    "resolved": true
+   },
+   {
+    "cell": 23,
+    "target_share": 0.0030516646830846227,
+    "realised_share": 0.0029263480013043152,
+    "rel_err": -0.041065023452589,
+    "expected_draws": 364.98825109097015,
+    "resolved": true
+   }
+  ]
+ },
+ "planner_identity_probe": {
+  "n_tensors": 12,
+  "n_equal": 12,
+  "differing": [],
+  "wm_params_moved": 133,
+  "n_wm_params": 133,
+  "steps": 3,
+  "pass": true
+ }
+}

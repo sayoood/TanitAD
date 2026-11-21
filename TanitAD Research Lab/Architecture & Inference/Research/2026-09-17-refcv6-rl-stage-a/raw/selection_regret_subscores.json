@@ -1,0 +1,68 @@
+{
+ "_what": "Which PDM sub-score discriminates the selection-regret tail, and whether a safe candidate was available when the selected plan collided.",
+ "_tier": "T0 (deployed sampler, recorded future, proxy reward)",
+ "_evidence_class": "MEASURED (ours)",
+ "_caveat": "The tail is defined by regret and regret is a function of the sub-scores, so low sub-scores IN the tail is partly definitional. What is NOT definitional is the CONCENTRATION: which sub-score's failures cluster there and which spread across the corpus. sel_comfort is imperfect on 1 of 493 windows corpus-wide, so its absence from the tail is STRUCTURAL, not a finding.",
+ "arms": {
+  "L1-NORL-s0": {
+   "tail_n": 49,
+   "n": 493,
+   "subscore_concentration": {
+    "sel_nc": {
+     "imperfect_windows": 25,
+     "of_which_in_tail": 25,
+     "share_in_tail": 1.0
+    },
+    "sel_ttc": {
+     "imperfect_windows": 45,
+     "of_which_in_tail": 43,
+     "share_in_tail": 0.9556
+    },
+    "sel_ep": {
+     "imperfect_windows": 216,
+     "of_which_in_tail": 34,
+     "share_in_tail": 0.1574
+    },
+    "sel_comfort": {
+     "imperfect_windows": 1,
+     "of_which_in_tail": 1,
+     "share_in_tail": 1.0
+    }
+   },
+   "selected_plan_collides_n": 25,
+   "of_which_fan_held_a_collision_free_candidate": 25,
+   "mean_collision_free_share_of_fan_there": 0.5528,
+   "mean_fan_pdms_best_available_there": 0.957
+  },
+  "L1-RL-s0": {
+   "tail_n": 49,
+   "n": 493,
+   "subscore_concentration": {
+    "sel_nc": {
+     "imperfect_windows": 37,
+     "of_which_in_tail": 37,
+     "share_in_tail": 1.0
+    },
+    "sel_ttc": {
+     "imperfect_windows": 78,
+     "of_which_in_tail": 47,
+     "share_in_tail": 0.6026
+    },
+    "sel_ep": {
+     "imperfect_windows": 298,
+     "of_which_in_tail": 49,
+     "share_in_tail": 0.1644
+    },
+    "sel_comfort": {
+     "imperfect_windows": 1,
+     "of_which_in_tail": 0,
+     "share_in_tail": 0.0
+    }
+   },
+   "selected_plan_collides_n": 37,
+   "of_which_fan_held_a_collision_free_candidate": 37,
+   "mean_collision_free_share_of_fan_there": 0.6061,
+   "mean_fan_pdms_best_available_there": 0.9824
+  }
+ }
+}

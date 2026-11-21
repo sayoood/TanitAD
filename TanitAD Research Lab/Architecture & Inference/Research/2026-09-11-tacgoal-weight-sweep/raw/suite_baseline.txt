@@ -1,0 +1,77 @@
+SUITE EVIDENCE for the additive --grad-probe-modules edit to refc_v3_train.py
+=============================================================================
+Rig: dev box, C:\Users\Admin\venvs\tanitad, CUDA_VISIBLE_DEVICES=-1 (CPU only --
+the RTX 4060 is carrying six RL arms and was not touched).
+
+1. THE CAUSAL SET. Only stack/scripts/refc_v3_train.py was modified (additively:
+   HEAD 5,829 lines -> 5,922, and ZERO lines present only in HEAD, so the new
+   file is a strict superset, not a revert). A test that does not import that
+   file cannot be affected by the edit.
+
+   32 test files import refc_v3_train.py (grep -l). ALL 32 were run:
+     batch 1 (13 files): 208 passed, 0 failed
+     batch 2 (20 files): 356 passed, 4 skipped, 10 FAILED
+     new guard file    :  11 passed
+   -> 575 passed, 10 failed.
+
+2. THE 10 FAILURES ARE PRE-EXISTING AT HEAD -- MEASURED, NOT ARGUED.
+   HEAD's version of refc_v3_train.py was installed in the worktree, the same
+   two files were re-run, and the trainer was restored and md5-verified:
+
+     mine     md5 3fa2f4e2e06e51d7f4944a6f3e3f6ab3
+     with HEAD's trainer: "10 failed, 11 passed in 3.19s"  <- IDENTICAL COUNT
+     restored md5 3fa2f4e2e06e51d7f4944a6f3e3f6ab3  RESTORE_VERIFIED
+
+   The failures are in tests/test_refc_v3_agent_gt_head_drop.py and
+   tests/test_refc_v3_agent_gt_reaches_forward.py, and every one reports:
+     "the mutation anchor for '<name>' matched 0 times, not 1. The
+      deliberate-regression arm is DISARMED and this test would pass without
+      proving anything. Re-anchor it against refc_v3_train.py."
+   i.e. source anchors in the AGENT-GT code drifted. Nothing in that code was
+   touched by this edit. FLAGGED AS A SEPARATE WORK ITEM -- those guards are
+   currently inert with respect to what they were built to catch.
+
+3. TWO COLLECTION ERRORS, ALSO PRE-EXISTING AND STRUCTURALLY UNRELATED.
+     tests/test_refa_v1_dk_hook.py     ImportError: DistanceKeepingSpec
+     tests/test_metric_decode_refusal.py
+   grep -c "refc_v3_train|grad_probe" on both files returns 0 -- neither can
+   see the edit.
+
+4. The full-suite run (pytest -q with those two files ignored) was started and
+   had not completed when this package was banked; it is NOT quoted as evidence
+   either way. The causal-set argument above is what stands, because it is the
+   set that CAN be affected.
+
+5. THE FULL SUITE COMPLETED AFTER THIS FILE WAS FIRST WRITTEN. Result:
+     77 failed, 7562 passed, 46 skipped, 2 xfailed, 4 errors in 1385s (23m05s)
+   (run with the two collection-error files ignored; CPU only.)
+
+   The 77 failures fall in 20 files. For each, "how many references to
+   refc_v3_train or grad_probe does this file contain?" -- a file with zero
+   CANNOT see the edit:
+
+     5  tests/test_refc_v3_agent_gt_head_drop.py        <- baselined at HEAD, identical
+     6  tests/test_refc_v3_agent_gt_reaches_forward.py  <- baselined at HEAD, identical
+     0  the other 18 files (test_loss_determinism 23, test_v6_staged 6,
+        test_mktree_commit 6, test_v6_s2_loss 5, test_trunk_anchor 4,
+        test_o1_detach_encoder 4, test_ema_tau_ramp 3, test_drift_levers 3,
+        test_v7_wiring 2, test_v6_chain 2, test_runbook_commands 2,
+        test_v6_ladder_edges 1, test_v6_anchor_loss 1,
+        test_text_encoding_is_explicit 1, test_pod_git_drift 1,
+        test_grad_reach_census 1, test_grad_budget_honesty 1,
+        test_build_parity_guard 1)
+   CONTROL: tests/test_grad_probe_tacgoal.py reads 17 on the same probe, so a
+   zero is a real zero and not a failed read.
+
+   Spot-checked reasons, and neither implicates this edit:
+     * test_text_encoding_is_explicit.py names 16 offending files -- NONE of
+       them is stack/scripts/refc_v3_train.py or the new test file.
+     * the v6/v7 cluster dies on
+       "TypeError: stage_a_losses() got an unexpected keyword argument
+        'stopgrad_factual'" -- an API drift in train_v6_staged.py's surface,
+       a file this edit did not touch.
+
+   => 67 of the 77 are structurally unable to see the change; the remaining 10
+   were MEASURED identical against HEAD's own trainer. ZERO failures are
+   attributable to this edit. The suite was NOT green before it either, and
+   that is stated rather than implied.

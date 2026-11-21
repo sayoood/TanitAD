@@ -1,0 +1,35 @@
+[v3] rig camera = PER-CLIP EXTRINSICS from /home/nvidia/data/refcv6_train_eval139_extrinsics.json (4508 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v2] /home/nvidia/data/refcv6-b1-416x1024-train: 4369 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 4246 distinct for 4369 clips]
+[v2] 4369 providers, 4369 distinct episode ids
+[v3] nav_from_v7: follow 11 / left 3 / right 2, missing 0 (of 16 clips; md5=b45377a1f25263b5c0f3d318c126b1ac)
+[v3] max_speed_input_v6 (4-way one-hot): 4572/4572 sidecar rows carry a ceiling, 2737/2737 windows fed (100.0 %), 86 clips ABOVE the 120 km/h top step (clamped, and on those the fed ceiling is one the ego demonstrably exceeded)
+[v3] agent join: 16/16 episodes (stable-63bit), 2737/2737 windows labelled (100.0 %), 112229 prefilter target boxes, pad 400
+[v3] SAM3 map GT: 2737/2737 windows covered (1.0000, floor 0.90, verdict PASS) over 16 clips; states {'ok': 2737, 'no_file': 0, 'frame_out_of_range': 0, 'inconclusive': 0}; layouts ['canonical']
+[gbo 04:24:35] C3 PASS: totals [113, 77] vs [113, 77]
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[gbo 04:41:02] main step 100: AP 0.018 P nan R 0.000 conf 0 centre 2.054 pres 0.4736
+[gbo 04:56:47] main step 200: AP 0.033 P nan R 0.000 conf 0 centre 1.402 pres 0.5128
+[gbo 05:12:25] main step 300: AP 0.022 P nan R 0.000 conf 0 centre 1.455 pres 0.4661
+[gbo 05:28:03] main step 400: AP 0.042 P nan R 0.000 conf 0 centre 1.311 pres 0.4779
+[gbo 05:38:44] main step 500: AP 0.033 P nan R 0.000 conf 0 centre 1.090 pres 0.4766
+[gbo 05:46:25] main step 600: AP 0.037 P nan R 0.000 conf 0 centre 1.068 pres 0.4535
+[gbo 05:54:06] main step 700: AP 0.060 P nan R 0.000 conf 0 centre 1.041 pres 0.4494
+[gbo 06:01:48] main step 800: AP 0.039 P nan R 0.000 conf 0 centre 1.059 pres 0.4777
+[gbo 06:09:27] main step 900: AP 0.080 P nan R 0.000 conf 0 centre 1.098 pres 0.4520
+[gbo 06:17:06] main step 1000: AP 0.085 P nan R 0.000 conf 0 centre 0.898 pres 0.4461
+[gbo 06:24:39] main step 1100: AP 0.069 P nan R 0.000 conf 0 centre 0.787 pres 0.4447
+[gbo 06:32:09] main step 1200: AP 0.068 P nan R 0.000 conf 0 centre 0.809 pres 0.4432
+[gbo 06:39:46] main step 1300: AP 0.073 P nan R 0.000 conf 0 centre 0.818 pres 0.4419
+[gbo 06:47:15] main step 1400: AP 0.057 P nan R 0.000 conf 0 centre 0.924 pres 0.4460
+[gbo 06:53:45] main step 1500: AP 0.064 P nan R 0.000 conf 0 centre 0.802 pres 0.4490
+[gbo 06:59:56] main step 1600: AP 0.093 P nan R 0.000 conf 0 centre 0.734 pres 0.4366
+[gbo 07:06:06] main step 1700: AP 0.074 P nan R 0.000 conf 0 centre 0.802 pres 0.4539
+[gbo 07:12:15] main step 1800: AP 0.068 P nan R 0.000 conf 0 centre 0.827 pres 0.4404
+[gbo 07:18:24] main step 1900: AP 0.087 P nan R 0.000 conf 0 centre 0.890 pres 0.4307
+[gbo 07:24:36] main step 2000: AP 0.102 P nan R 0.000 conf 0 centre 0.654 pres 0.4382
+[gbo 07:24:38] arm main: FAIL (10794.4 s, 5.379602869749069 s/step)
+[gbo 07:24:38] RESULT FAIL (binding=False)

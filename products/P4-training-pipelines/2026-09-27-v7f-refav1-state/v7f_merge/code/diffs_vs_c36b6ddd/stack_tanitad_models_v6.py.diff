@@ -1,0 +1,418 @@
+diff --git a/stack/tanitad/models/v6.py b/stack/tanitad/models/v6.py
+index 3d6e223..e1eff1e 100644
+--- a/stack/tanitad/models/v6.py
++++ b/stack/tanitad/models/v6.py
+@@ -57,6 +57,16 @@ layer above. There is no situation-classifier port, no ego-state port, and no
+ The shared-trunk disclosure: all layers may read one encoder (the E-ENC arm
+ ``shared_encoder=True``), and information flows trunk→heads only — no head's
+ OUTPUT re-enters another head's input path.
++⚠️ DECLARED EXCEPTIONS, each a default-OFF lever the PI directed: the nav
++command (``nav_cond``, PI 2026-08-30) enters all three layers' dynamics, and
++the clip's MAX SPEED (``max_speed_input_v6``, R1, PI 2026-09-27) enters the
++TACTICAL decision latent ``z_tac_p`` that every tactical goal/behaviour head
++reads -- an ego-future ORACLE input the PI authorised (2026-09-16) and the
++trainer refuses to run without its ``speed_max_derivation_v6`` stamp. Neither
++is a situation-classifier output. With ``tac_op_cond`` on (R4), the tactical
++BEHAVIOUR posteriors -- head outputs -- condition the operative EMISSION, as
++the goal posterior always has (goals flow DOWN; that is the hierarchy, not a
++back door).
+ 
+ ⚠️ VISION-ONLY AT INFERENCE (Sayed, 2026-08-03, binding). The layer latents come
+ from the vision encoder. ``v0`` (initial speed) enters ONLY the unicycle
+@@ -4055,6 +4065,55 @@ class V6Config:
+     #:     as the parity gate refusing without ``--exclude-parity-overlap``.
+     nav_cond: bool = False
+ 
++    #: ⭐ R6 (PI 2026-09-27): "keep the strategic layer off in the first
++    #: experiments". MEASURED 2026-09-27 (v7f_r1r4 AUDIT_R4 s5): with S-S never
++    #: trained, the tactical goal heads still read ``cond=e_g_str`` -- the
++    #: UNTRAINED strategic head's embedding of the scene, a fixed random
++    #: projection, which is not "off" -- and the plan loss reaches 13
++    #: ``layer_str`` tensors through it. ``strategic_off`` hands the tactical
++    #: goal heads a ZERO conditioning instead, so the tactical goal is
++    #: independent of the strategic layer and no gradient can reach it.
++    #: DEFAULT False = byte-identical. Refused with ``tac_goal_cond`` (the other
++    #: strategic -> tactical route, the g_str -> P_T dynamics port).
++    strategic_off: bool = False
++
++    # ---- R1 / R4 (PI directive 2026-09-27, v7F) -- ALL DEFAULT OFF ----------
++    # ⛔ Same construction rule as every gated lever here: the modules are built
++    # at the very END of V6Stack.__init__ and ONLY when asked, so the default
++    # build draws no RNG, creates no state_dict key, and its forward returns the
++    # same tensors and the same key set (pinned per tensor against the TIP
++    # module in tests/test_v7f_r1r4.py).
++    #: ⭐ R4 -- THE TACTICAL-DECISION -> OPERATIVE-PLAN PORT. PI 2026-09-27: the
++    #: tactical layer's chosen behaviours and goals "MUST condition the
++    #: operative planning". MEASURED at the tip (AUDIT_R4.md): the tactical GOAL
++    #: (``e_g_tac``) already reaches the emission, the tactical BEHAVIOURS
++    #: (``a_lat`` x ``a_lon``) do NOT -- they condition only ``predictor_tac``.
++    #: ON builds ``tac_op_port``, a ZERO-INIT ``Linear(2*d_goal_embed ->
++    #: d_goal_embed)`` whose output is ADDED to ``e_g_tac`` before ``emit`` (the
++    #: ``cond_tac_dyn`` idiom one level down: additive, no emission shape change).
++    #: Computed from ``e_a_tac`` = the behaviour posteriors of ``act_head_lat``/
++    #: ``act_head_lon`` over the VISION-derived ``z_tac_p`` -- no situation-
++    #: classifier output in any form (PI 2026-08-03).
++    #:   ``"detached"`` -- ``e_a_tac`` enters DETACHED: the plan loss trains the
++    #:                   port and the planner, never the behaviour heads (the
++    #:                   F-1 downward-port rule; the heads stay label/t1-trained).
++    #:   ``"e2e"``      -- the plan loss ALSO trains the behaviour heads.
++    tac_op_cond: str = "off"
++    #: ⭐ R1a -- the per-clip MAX SPEED as a TACTICAL INPUT: the refcv6 4-way
++    #: one-hot (``refcv6_max_speed``: containing window over {30, 50, 100, 120}
++    #: km/h, invalid row = ALL-ZERO) through a ZERO-INIT ``Linear(4 -> d_tac)``
++    #: (``vmax_tac``) ADDED to the planner-side tactical latent ``z_tac_p``, so
++    #: every tactical decision head reads it and the WM-side ``z_tac`` does not.
++    #: ⛔ EGO-FUTURE derived (``SPEED_BAND.v_hi_ms``), an oracle INPUT the PI
++    #: authorised (2026-09-16); the trainer REFUSES a run whose config.json would
++    #: not carry the ``speed_max_derivation_v6`` stamp.
++    max_speed_input_v6: bool = False
++    #: ⭐ R1b -- the HARD CAP on the emitted plan AT INFERENCE (refav1
++    #: ``_cap_speed`` semantics; ``tanitad/models/plan_speed_cap.py``). Holds NO
++    #: parameters. ON = an EVAL-mode ``emit`` REFUSES to run without a per-row
++    #: limit (mandatory, never defaulted); the training forward stays uncapped.
++    plan_vmax_cap: bool = False
++
+     # ---- PROPOSALS · MPC · FALLBACK (2026-08-16, DIAGRAM cells) ------------
+     # ⛔ ALL DEFAULT OFF, built at the very END of __init__, and the default
+     # build's state_dict is proved BYTE-IDENTICAL per tensor against a
+@@ -4230,6 +4289,11 @@ class V6Config:
+     param_budget: int = PARAM_BUDGET
+ 
+     def __post_init__(self):
++        if getattr(self, "strategic_off", False) and getattr(self, "tac_goal_cond", False):
++            raise ValueError(
++                "strategic_off with tac_goal_cond: the g_str->P_T port is the second route by "
++                "which the strategic layer reaches the tactical layer -- R6 'strategic off' cannot "
++                "keep it. Drop --tac-goal-cond for an R6 run.")
+         if self.plan_steps < 2:
+             raise ValueError(f"plan_steps must be >= 2, got {self.plan_steps}")
+         if self.dt <= 0:
+@@ -4387,6 +4451,12 @@ class V6Config:
+                     f"decoder emits, so two different cardinalities make an "
+                     f"emitted index that refers to nothing. Set them equal, or "
+                     f"turn one of the two levers off.")
++        if self.tac_op_cond not in ("off", "detached", "e2e"):
++            raise ValueError(
++                f"tac_op_cond must be off|detached|e2e, got {self.tac_op_cond!r} "
++                f"(R4, PI 2026-09-27: the tactical behaviours condition the "
++                f"operative plan; 'detached' keeps the plan loss out of the "
++                f"behaviour heads, 'e2e' lets it train them)")
+         if self.uplink not in ("stopgrad", "ema"):
+             raise ValueError(f"uplink must be stopgrad|ema, got {self.uplink!r}")
+         if not 0.0 < self.ema_decay < 1.0:
+@@ -5387,6 +5457,25 @@ class V6Stack(nn.Module):
+                 cfg.d_tac, d_proj=cfg.d_t2_proj, hidden=cfg.d_t2_hidden,
+                 tau=cfg.t2_tau)
+ 
++        # ---- R4 / R1a (PI 2026-09-27) — built LAST, only when asked ---------
++        # ⛔ Same rule as every gated lever above, same reason: the default path
++        # draws NO RNG and creates NO state_dict key. ZERO-INIT (weight AND
++        # bias) makes each port an EXACT no-op at introduction, so S-T's losses
++        # are continuous when STAGE_MAY_INTRODUCE admits the fresh keys over an
++        # S-W checkpoint; anything a port later does is LEARNED.
++        self.tac_op_port = None
++        if getattr(cfg, "tac_op_cond", "off") != "off":
++            self.tac_op_port = nn.Linear(2 * cfg.d_goal_embed,
++                                         cfg.d_goal_embed)
++            nn.init.zeros_(self.tac_op_port.weight)
++            nn.init.zeros_(self.tac_op_port.bias)
++        self.vmax_tac = None
++        if getattr(cfg, "max_speed_input_v6", False):
++            from tanitad.refs.refcv6_max_speed import N_SPEED_MAX_BINS_V6
++            self.vmax_tac = nn.Linear(N_SPEED_MAX_BINS_V6, cfg.d_tac)
++            nn.init.zeros_(self.vmax_tac.weight)
++            nn.init.zeros_(self.vmax_tac.bias)
++
+     # -- grouping ------------------------------------------------------------
+     #: prefix -> group. Longest matching prefix wins, so ``predictor_tac``
+     #: cannot be swallowed by ``predictor_op``'s entry.
+@@ -5439,6 +5528,11 @@ class V6Stack(nn.Module):
+         # declared planner_side surface would fail
+         # test_planner_surface_is_total by construction.
+         ("cond_tac_dyn.", "layer_tac"),
++        # ⭐ R1a (PI 2026-09-27): the max-speed INPUT port conditions the
++        # tactical DECISION heads (it is added to `z_tac_p`, the heads' input),
++        # so it trains exactly when they do -- `layer_tac`, the F-1 grouping
++        # argument. It must NOT be `planner`: the heads it feeds are layer_tac.
++        ("vmax_tac.", "layer_tac"),
+         ("adapter_str.", "layer_str"), ("predictor_str.", "layer_str"),
+         ("goal_head_str.", "layer_str"), ("act_head_str.", "layer_str"),
+         ("vocab_str.", "layer_str"), ("vocab_a_str.", "layer_str"),
+@@ -5463,6 +5557,12 @@ class V6Stack(nn.Module):
+         # they need no group: group_of partitions parameters, and there is
+         # nothing of theirs for a stage to train or freeze.)
+         ("prop_diffusion.", "planner"),
++        # ⭐ R4 (PI 2026-09-27): the tactical-DECISION -> plan port is the
++        # CONSUMING side of the seam, like `cond_op.` -- a PLANNER module,
++        # trained by the plan loss in S-T on the tactical outputs it reads, and
++        # REACHABLE from the declared planner surface (it feeds `emit`), which
++        # is what test_planner_surface_is_total requires of every planner param.
++        ("tac_op_port.", "planner"),
+         ("masked_cells.", "aux"), ("sigreg.", "aux"),
+         # O14 (PREREG_O14_FUTURE_OBS): future-OBSERVATION prediction. The
+         # target is raw pixels — DATA, not a perception label — so encoder
+@@ -5483,6 +5583,19 @@ class V6Stack(nn.Module):
+         # the matrix would PERMIT the edge and `assert_isolation` would report a
+         # pass over a real violation.
+         ("agent_slots.", "interp"),
++        # ⭐ R2 (PI 2026-09-27): the NAV CONDITIONER. MEASURED 2026-09-27: its 12
++        # parameters belonged to no group, so `group_of` raised on EVERY
++        # `--nav-cond` build (assert_isolation walks all parameters) -- the nav
++        # tests constructed and forwarded a nav stack but never ran that path.
++        # The SHARED embedding + arg projection train with the operative
++        # predictor (S-W, the first stage that consumes nav); each layer's own
++        # projection + ReZero gate trains with THAT layer (operative S-W,
++        # tactical S-T, strategic S-S -- frozen while R6 keeps it off).
++        ("nav.embed.", "predictor_op"), ("nav.arg_proj.", "predictor_op"),
++        ("nav.layer_proj.operative.", "predictor_op"),
++        ("nav.gate.operative", "predictor_op"),
++        ("nav.layer_proj.tactical.", "layer_tac"), ("nav.gate.tactical", "layer_tac"),
++        ("nav.layer_proj.strategic.", "layer_str"), ("nav.gate.strategic", "layer_str"),
+     )
+ 
+     def group_of(self, param_name: str) -> str:
+@@ -5735,7 +5848,8 @@ class V6Stack(nn.Module):
+ 
+     def emit(self, z_op: Tensor, g_tac_embed: Tensor, v0: Tensor, *,
+              roll_ctx: dict | None = None,
+-             generator: torch.Generator | None = None) -> dict:
++             generator: torch.Generator | None = None,
++             v_max: Tensor | None = None) -> dict:
+         """THE 6 s EMISSION (§4b). ``z_op`` [B, d_op], ``g_tac_embed``
+         [B, d_goal_embed], ``v0`` [B] ->
+ 
+@@ -5761,6 +5875,13 @@ class V6Stack(nn.Module):
+         the caller) enables the P_O rolls the MPC consistency regularizer and
+         the fallback's roll-cost-variance signal need; without it those two
+         halves are skipped and say so.
++
++        ⭐ ``v_max`` [B] m/s (R1, PI 2026-09-27; ``+inf`` = no limit for that
++        row) CAPS every candidate's speed profile BEFORE anything reads the
++        fan (anchor, selector, MPC, fallback) -- refav1's "binds EVERY
++        candidate, so the emitted plan cannot exceed the limit whichever
++        candidate wins" (``tanitad/models/plan_speed_cap.py``). ``None`` (the
++        default) is the pre-R1 emission, byte-for-byte: no cap, no new key.
+         """
+         cfg = self.cfg
+         if z_op.ndim != 2 or z_op.shape[-1] != cfg.d_op:
+@@ -5769,6 +5890,17 @@ class V6Stack(nn.Module):
+         if v0.ndim != 1 or v0.shape[0] != z_op.shape[0]:
+             raise ValueError(f"v0 must be [B={z_op.shape[0]}], got "
+                              f"{tuple(v0.shape)}")
++        if v_max is None and getattr(cfg, "plan_vmax_cap", False) \
++                and not self.training:
++            from tanitad.models.plan_speed_cap import PlanSpeedLimitMissing
++            raise PlanSpeedLimitMissing(
++                "[v6] ⛔ plan_vmax_cap=True (R1, PI 2026-09-27: the max speed "
++                "\"must not be exceeded\") but this EVAL-mode emission was "
++                "handed no per-row limit. The cap is MANDATORY at inference for "
++                "an arm built with it and is never defaulted: pass "
++                "`plan_v_max_ms` to forward (or `v_max` to emit) -- "
++                "`plan_speed_cap.plan_limit_from_vhi(v_hi, valid)`, +inf where "
++                "no limit is known.")
+         b = z_op.shape[0]
+         base = self.plan_proj(z_op)[:, None, :]                    # [B,1,F0]
+         feat = base + self.cand_queries.weight[None]               # [B,N,F0]
+@@ -5790,9 +5922,24 @@ class V6Stack(nn.Module):
+                 "prop_noise_rho_target": cfg.diffusion_noise_rho,
+                 "prop_n_denoise_steps": d["n_denoise_steps"],
+                 "qfan_a": q_a, "qfan_kappa": q_k, "qfan_waypoints": q_wp}
++        cap_diag = None
++        if v_max is not None:
++            # ⭐ R1 HARD CAP -- every candidate, BEFORE the anchor/selector/MPC/
++            # fallback read the fan, so whichever candidate wins is capped.
++            from tanitad.models.plan_speed_cap import cap_fan
++            a_ctl, wp, cap_diag = cap_fan(a_ctl, kappa, wp, v0, v_max,
++                                          dt=cfg.dt, a_max=cfg.a_max)
++            if "qfan_a" in extra_fan:        # the paired reference is capped too
++                qa, qwp, _ = cap_fan(extra_fan["qfan_a"],
++                                     extra_fan["qfan_kappa"],
++                                     extra_fan["qfan_waypoints"], v0, v_max,
++                                     dt=cfg.dt, a_max=cfg.a_max)
++                extra_fan |= {"qfan_a": qa, "qfan_waypoints": qwp}
+         out = {"a": a_ctl, "kappa": kappa,
+                "controls": torch.stack([a_ctl, kappa], dim=-1),
+                "waypoints": wp, "feat": feat} | extra_fan
++        if cap_diag is not None:
++            out |= cap_diag
+         if self.anchor_head is not None:
+             # ⭐ the STRUCTURED goal point. Emitted BEFORE selection because the
+             # selection consumes it — and computed from ``g_tac_embed`` alone,
+@@ -5840,6 +5987,17 @@ class V6Stack(nn.Module):
+             out |= {f"mpc_{k}": v for k, v in self.mpc.refine(
+                 out["a"], out["kappa"], v0, sel_score=out["sel_score"],
+                 goal_point=out["sel_goal_point"], roll_fn=roll_fn).items()}
++            if v_max is not None:
++                # ⭐ R1: the refinement descends from capped seeds but may
++                # push them back over the limit -- the REFINED top-K is an
++                # emitted plan too, so it is capped the same way.
++                from tanitad.models.plan_speed_cap import cap_fan
++                mc = out["mpc_controls"]
++                ma, mwp, _ = cap_fan(mc[..., 0], mc[..., 1],
++                                     out["mpc_waypoints"], v0, v_max,
++                                     dt=cfg.dt, a_max=cfg.a_max)
++                out["mpc_controls"] = torch.stack([ma, mc[..., 1]], dim=-1)
++                out["mpc_waypoints"] = mwp
+         if self.fallback is not None:
+             # ⭐ THE CONTEXT-BRAIN FALLBACK TRIGGER — under no_grad in FULL:
+             # the uncertainty signal is MONITORED, never optimised (a signal
+@@ -5864,7 +6022,10 @@ class V6Stack(nn.Module):
+                 own_frames_tac: Tensor | None = None,
+                 own_frames_str: Tensor | None = None,
+                 nav_token: Tensor | None = None,
+-                nav_args: Tensor | None = None) -> dict:
++                nav_args: Tensor | None = None,
++                v_max_ms: Tensor | None = None,
++                v_max_valid: Tensor | None = None,
++                plan_v_max_ms: Tensor | None = None) -> dict:
+         """One full hierarchy pass.
+ 
+         ``frames``  [B, W, C, H, W'] · ``actions`` [B, W, A] (the 3-channel
+@@ -5875,8 +6036,29 @@ class V6Stack(nn.Module):
+ 
+         Returns every layer's latents, goals, actions and the 6 s plan, plus
+         ``planner_side`` — the DECLARED surface :meth:`assert_isolation` probes.
++
++        R1 (PI 2026-09-27): ``v_max_ms`` [B] (the RAW realised-max speed, m/s;
++        0.0 on an invalid row) + ``v_max_valid`` [B] feed the TACTICAL input
++        port when ``max_speed_input_v6`` built it -- MANDATORY then, like nav;
++        the 4-bin ladder is applied HERE, once. ``plan_v_max_ms`` [B] is the
++        per-row LIMIT the emitted plan must not exceed (``+inf`` = none);
++        passed straight to :meth:`emit`. All three default ``None`` = the
++        pre-R1 forward, byte-for-byte.
+         """
+         cfg = self.cfg
++        # ---- R1a: the max-speed INPUT is MANDATORY when its port is built ----
++        # ⛔ Never defaulted, and refused BEFORE any tensor work (the nav rule):
++        # a zero-filled default would train the port on "no limit known" while
++        # config.json stamps the channel ON.
++        if self.vmax_tac is not None and (v_max_ms is None
++                                          or v_max_valid is None):
++            from tanitad.models.plan_speed_cap import SpeedMaxInputMissing
++            raise SpeedMaxInputMissing(
++                "[v6] ⛔ max_speed_input_v6=True but this batch carries no "
++                "`v_max_ms`/`v_max_valid`. The clip's max speed is a MANDATORY "
++                "tactical input for this arm (R1, PI 2026-09-27) and is never "
++                "defaulted. Thread the refcv6 sidecar join through the batch "
++                "whitelist (--speed-max-sidecar-v6).")
+         # ---- NAV: MANDATORY when the channel is built, and it RAISES ---------
+         # ⛔ Never defaults. A silent default would train an arm without the
+         # channel while its config claims otherwise, and make two arms silently
+@@ -5928,14 +6110,37 @@ class V6Stack(nn.Module):
+         z_plan = self._cut(z_op, cut)
+         z_tac_p = self._cut(z_tac, cut)
+         z_str_p = self._cut(z_str, cut)
++        # ---- R1a: the clip's MAX SPEED enters the TACTICAL DECISION latent --
++        # ⭐ Added to the planner-side VIEW (after the cut), so every tactical
++        # decision head reads it (goal / behaviour / factored heads) while the
++        # WM-side `z_tac` -- the uplink target, `predictor_tac`'s state and
++        # `uplink_str`'s input -- is untouched. The ladder is applied HERE,
++        # once (refcv6's E16 rule): `speed_max_bin_tensor` on the RAW v_hi,
++        # then the one-hot, zeroed on an invalid row (unknown != 30 km/h).
++        # With the flag off this block is skipped and `z_tac_p` is the SAME
++        # tensor object as before.
++        if self.vmax_tac is not None:
++            from tanitad.refs.refcv6_max_speed import (speed_max_bin_tensor,
++                                                       speed_max_onehot)
++            _vm = v_max_ms.reshape(-1).float()
++            _ok = v_max_valid.reshape(-1).to(torch.bool)
++            _bin, _over = speed_max_bin_tensor(
++                torch.where(_ok, _vm, torch.zeros_like(_vm)))
++            _oh = speed_max_onehot(_bin, _ok, dtype=torch.float32)
++            z_tac_p = z_tac_p + self.vmax_tac(
++                _oh.to(self.vmax_tac.weight.dtype)).to(z_tac_p.dtype)
+ 
+         # ---- down: goals S -> T -> O ---------------------------------------
+         g_str = self.goal_head_str(z_str_p)
+         a_str = self.act_head_str(z_str_p)
+         e_g_str = self.cond_tac(g_str["probs"], g_str["args"])
+         e_a_str = self.vocab_a_str.encode(a_str["probs"], a_str["args"])
++        # ⭐ R6: what the tactical goal heads are handed (V6Config.strategic_off).
++        # OFF: the same tensor object -- byte-identical to the incumbent.
++        e_g_str_down = (torch.zeros_like(e_g_str)
++                        if getattr(self.cfg, "strategic_off", False) else e_g_str)
+ 
+-        g_tac = self.goal_head_tac(z_tac_p, cond=e_g_str)
++        g_tac = self.goal_head_tac(z_tac_p, cond=e_g_str_down)
+         a_lat = self.act_head_lat(z_tac_p)
+         a_lon = self.act_head_lon(z_tac_p)
+         # ⭐ THE FACTORED g_tac PAIR. Both halves read exactly what the mixed
+@@ -5945,8 +6150,8 @@ class V6Stack(nn.Module):
+         # CONTROL, and a comparison with no control is unattributable (C6).
+         g_tac_lat = g_tac_lon = None
+         if self.goal_head_tac_lat is not None:
+-            g_tac_lat = self.goal_head_tac_lat(z_tac_p, cond=e_g_str)
+-            g_tac_lon = self.goal_head_tac_lon(z_tac_p, cond=e_g_str)
++            g_tac_lat = self.goal_head_tac_lat(z_tac_p, cond=e_g_str_down)
++            g_tac_lon = self.goal_head_tac_lon(z_tac_p, cond=e_g_str_down)
+             # the MEAN, not the sum: a factored embedding twice the mixed one's
+             # scale would change the conditioning magnitude the operative FiLM
+             # sees, and a scale change between an arm and its control is a
+@@ -6032,7 +6237,26 @@ class V6Stack(nn.Module):
+             roll_ctx = {"states": z_op_win.detach(),
+                         "actions": actions.detach(),
+                         "intent": self._cut(e_g_tac, cut).detach()}
+-        plan = self.emit(z_plan, e_g_tac, v0, roll_ctx=roll_ctx)
++        # ---- R4: the tactical BEHAVIOURS condition the operative plan -------
++        # ⭐ PI 2026-09-27: the tactical layer's chosen behaviours AND goals
++        # "MUST condition the operative planning". The goal already did
++        # (`e_g_tac` -> emit); the LAT x LON behaviour posteriors reached only
++        # `predictor_tac`. The port projects `e_a_tac` (zero-init) and ADDS it
++        # to the goal embedding the emission reads -- so the fan, the anchor
++        # head and the selector all see goal + behaviour, information-matched.
++        # Computed from `act_head_lat/lon(z_tac_p)` only: the vision-derived
++        # tactical latent (+ the declared max-speed input when R1a is on) --
++        # no situation-classifier output in any form (PI 2026-08-03).
++        # "detached": the plan loss trains the port, never the behaviour heads
++        # (the F-1 downward-port rule); "e2e": it trains them too.
++        # With the flag off `e_plan` is the SAME tensor object as `e_g_tac`.
++        e_plan = e_g_tac
++        if self.tac_op_port is not None:
++            _src = (e_a_tac.detach() if cfg.tac_op_cond == "detached"
++                    else e_a_tac)
++            e_plan = e_g_tac + self.tac_op_port(_src).to(e_g_tac.dtype)
++        plan = self.emit(z_plan, e_plan, v0, roll_ctx=roll_ctx,
++                         v_max=plan_v_max_ms)
+         # The selector is planner-side and MUST be probed by X3 like every other
+         # planner output — a head added without appending to the declaration is
+         # exactly what test_planner_surface_is_total exists to catch.
+@@ -6138,6 +6362,12 @@ class V6Stack(nn.Module):
+             out["interp_side"] = [
+                 slots["presence_logit"], slots["cls_logits"], slots["box"],
+                 slots["yaw_vec"], slots["rates"], slots["occ_logit"]]
++        # ⭐ R4: the goal+behaviour embedding the emission actually read --
++        # ONLY when the port exists (the default key set is part of the
++        # inertness contract, the F-18 lesson above), so an inference harness
++        # can re-emit the SAME conditioning (e.g. under the R1 cap).
++        if self.tac_op_port is not None:
++            out["e_plan"] = e_plan
+         return out
+ 
+     # ---------------------------------------------------------------------- #
+@@ -6196,6 +6426,26 @@ class V6Stack(nn.Module):
+         if not cfg.shared_encoder:
+             out["own_frames_tac"] = torch.randn(batch, c, h, w, generator=g)
+             out["own_frames_str"] = torch.randn(batch, c, h, w, generator=g)
++        # ⭐ R1 (PI 2026-09-27): a MANDATORY input must be in the synthetic
++        # contract too, or `assert_isolation` -- which every trainer build
++        # runs on this batch -- raises the missing-input refusal at BUILD time.
++        # Drawn AFTER every pre-existing key, and only when the channel exists,
++        # so the default batch is byte-identical.
++        if getattr(self, "vmax_tac", None) is not None:
++            out["v_max_ms"] = torch.rand(batch, generator=g) * 35.0 + 3.0
++            out["v_max_valid"] = torch.ones(batch)
++        if getattr(cfg, "plan_vmax_cap", False):
++            out["plan_v_max_ms"] = torch.full((batch,), float("inf"))
++        # ⭐ R2 (PI 2026-09-27; defect MEASURED by the R1/R4 stream): with
++        # ``nav_cond`` the nav channel is MANDATORY in ``forward``, and
++        # ``assert_isolation`` -- which every trainer build runs on THIS batch --
++        # raised NavTokenMissing at BUILD time, so no ``--nav-cond`` run could
++        # start. Drawn LAST and only when the conditioner exists, so every batch
++        # that existed before is byte-identical (same RNG stream, same keys).
++        if getattr(self, "nav", None) is not None:
++            n_tok = len(self.nav.tokens)
++            out["nav_token"] = torch.randint(0, n_tok, (batch,), generator=g)
++            out["nav_args"] = torch.rand(batch, 2, generator=g)
+         if device is not None:
+             out = {k: v.to(device) for k, v in out.items()}
+         return out

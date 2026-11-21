@@ -1,0 +1,92 @@
+
+  MM-E6 RAW-INPUT FLOOR · arm postrain30k · SCORED 80 / FIT 49 · rank 96 · device cpu
+
+    raw-pixel bank 32x80x3 ready (5s)
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] O6 rank gate CAN rule: --spectrum-accum 43 x 48 rows/call -> ceiling 2063 >= 1024
+[v6] params 19.30 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.97, 'readout': 0.01, 'predictor_op': 7.57, 'layer_tac': 4.88, 'layer_str': 3.56, 'planner': 0.69, 'aux': 1.62, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+[geometry] v6_probe_trunk: NON-DEFAULT - 256x640px, f_ref 305.58, cylindrical, HFOV 120.00deg / VFOV 45.46deg, tokens 640 (16x40 @ patch 16), state_dim 2048, cache fragment {'geom': '256x640f305.5775cyl'}
+[geometry] WARNING: this frame (120.00deg) EXCEEDS comma2k19's entire field (65.203deg). comma2k19 cannot supply it at any resolution — it must be letterboxed (geometry_mode='rectify', explicit unobserved mask), given its own frame, or dropped from the mix. That is a PI decision, not a default.
+
+    === input: DINOv3 (frozen) (4x8x1024 -> PCA rank 96) · n 7680 rows / 80 clips · d_raw 32768 · gate 1.4e-13 ===
+    target                                    r     shuf   r-shuf       t      n      d
+    -----------------------------------------------------------------------------------
+    speed  ⭐POSITIVE CONTROL            +0.1777  -0.0020  +0.1797    3.07   7680     96
+    omega (yaw rate)                    +0.1212  -0.0232  +0.1443    2.95   7680     96
+    dz_pca0  ⭐⭐DRIFT                    +0.0351  +0.0126  +0.0226    1.34   7680     96
+    dz_pca1  ⭐⭐DRIFT                    +0.0541  -0.0221  +0.0763    4.93   7680     96
+    dz_pca2  ⭐⭐DRIFT                    +0.0475  -0.0265  +0.0740    4.62   7680     96
+    dz_pca3  ⭐⭐DRIFT                    +0.0257  +0.0108  +0.0149    1.02   7680     96
+    dz_pca4  ⭐⭐DRIFT                    +0.0382  +0.0147  +0.0235    1.60   7680     96
+    dz_pca5  ⭐⭐DRIFT                    +0.0367  +0.0051  +0.0316    1.74   7680     96
+    dz_pca6  ⭐⭐DRIFT                    +0.0260  +0.0119  +0.0140    1.02   7680     96
+    dz_pca7  ⭐⭐DRIFT                    +0.0331  +0.0041  +0.0290    1.97   7680     96
+    constant (ctrl)                     +0.0000  +0.0000  +0.0000    0.00   7680     96
+    -> drift (top-8 PCA) mean r-shuf +0.0357
+
+    === input: raw pixels (FLOOR) (32x80x3 -> PCA rank 96) · n 7680 rows / 80 clips · d_raw 7680 · gate 2.7e-14 ===
+    target                                    r     shuf   r-shuf       t      n      d
+    -----------------------------------------------------------------------------------
+    speed  ⭐POSITIVE CONTROL            +0.0330  -0.0083  +0.0414    0.76   7680     96
+    omega (yaw rate)                    +0.0216  +0.0188  +0.0028    0.06   7680     96
+    dz_pca0  ⭐⭐DRIFT                    +0.0681  -0.0094  +0.0774    4.05   7680     96
+    dz_pca1  ⭐⭐DRIFT                    +0.0734  -0.0111  +0.0845    5.79   7680     96
+    dz_pca2  ⭐⭐DRIFT                    +0.0519  -0.0014  +0.0533    3.39   7680     96
+    dz_pca3  ⭐⭐DRIFT                    +0.1018  +0.0006  +0.1012    5.67   7680     96
+    dz_pca4  ⭐⭐DRIFT                    +0.0535  +0.0196  +0.0339    2.07   7680     96
+    dz_pca5  ⭐⭐DRIFT                    +0.0632  -0.0036  +0.0668    3.84   7680     96
+    dz_pca6  ⭐⭐DRIFT                    +0.0426  -0.0265  +0.0691    4.05   7680     96
+    dz_pca7  ⭐⭐DRIFT                    +0.0941  -0.0129  +0.1070    5.42   7680     96
+    constant (ctrl)                     +0.0000  +0.0000  +0.0000    0.00   7680     96
+    -> drift (top-8 PCA) mean r-shuf +0.0741
+
+    ⭐ DINOv3 +0.0357 vs RAW-PIXEL FLOOR +0.0741 (margin -0.0384) — DINOv3 DOES NOT beat the floor
+-> C:\Users\Admin\AppData\Local\Temp\claude\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\8e7cfa33-c625-47cf-88aa-711db80ac113\scratchpad\mm_e6_floor_4x8_omp8.json
+RC_4x8=0
+
+  MM-E6 RAW-INPUT FLOOR · arm postrain30k · SCORED 80 / FIT 49 · rank 96 · device cpu
+
+    raw-pixel bank 32x80x3 ready (4s)
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] O6 rank gate CAN rule: --spectrum-accum 43 x 48 rows/call -> ceiling 2063 >= 1024
+[v6] params 19.30 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.97, 'readout': 0.01, 'predictor_op': 7.57, 'layer_tac': 4.88, 'layer_str': 3.56, 'planner': 0.69, 'aux': 1.62, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+[geometry] v6_probe_trunk: NON-DEFAULT - 256x640px, f_ref 305.58, cylindrical, HFOV 120.00deg / VFOV 45.46deg, tokens 640 (16x40 @ patch 16), state_dim 2048, cache fragment {'geom': '256x640f305.5775cyl'}
+[geometry] WARNING: this frame (120.00deg) EXCEEDS comma2k19's entire field (65.203deg). comma2k19 cannot supply it at any resolution — it must be letterboxed (geometry_mode='rectify', explicit unobserved mask), given its own frame, or dropped from the mix. That is a PI decision, not a default.
+
+    === input: DINOv3 (frozen) (4x8x1024 -> PCA rank 96) · n 7680 rows / 80 clips · d_raw 655360 · gate 8.3e-14 ===
+    target                                    r     shuf   r-shuf       t      n      d
+    -----------------------------------------------------------------------------------
+    speed  ⭐POSITIVE CONTROL            +0.1692  -0.0064  +0.1756    3.32   7680     96
+    omega (yaw rate)                    +0.1402  -0.0077  +0.1479    2.91   7680     96
+    dz_pca0  ⭐⭐DRIFT                    +0.0363  +0.0208  +0.0156    0.87   7680     96
+    dz_pca1  ⭐⭐DRIFT                    +0.0473  +0.0138  +0.0335    2.23   7680     96
+    dz_pca2  ⭐⭐DRIFT                    +0.0348  +0.0045  +0.0303    1.74   7680     96
+    dz_pca3  ⭐⭐DRIFT                    +0.0311  +0.0185  +0.0126    0.85   7680     96
+    dz_pca4  ⭐⭐DRIFT                    +0.0465  +0.0178  +0.0287    1.87   7680     96
+    dz_pca5  ⭐⭐DRIFT                    +0.0389  -0.0102  +0.0491    3.55   7680     96
+    dz_pca6  ⭐⭐DRIFT                    +0.0227  -0.0060  +0.0287    2.01   7680     96
+    dz_pca7  ⭐⭐DRIFT                    +0.0433  -0.0015  +0.0448    2.63   7680     96
+    constant (ctrl)                     +0.0000  +0.0000  +0.0000    0.00   7680     96
+    -> drift (top-8 PCA) mean r-shuf +0.0304
+
+    === input: raw pixels (FLOOR) (32x80x3 -> PCA rank 96) · n 7680 rows / 80 clips · d_raw 7680 · gate 2.7e-14 ===
+    target                                    r     shuf   r-shuf       t      n      d
+    -----------------------------------------------------------------------------------
+    speed  ⭐POSITIVE CONTROL            +0.0330  -0.0083  +0.0414    0.76   7680     96
+    omega (yaw rate)                    +0.0216  +0.0188  +0.0028    0.06   7680     96
+    dz_pca0  ⭐⭐DRIFT                    +0.0681  -0.0094  +0.0774    4.05   7680     96
+    dz_pca1  ⭐⭐DRIFT                    +0.0734  -0.0111  +0.0845    5.79   7680     96
+    dz_pca2  ⭐⭐DRIFT                    +0.0519  -0.0014  +0.0533    3.39   7680     96
+    dz_pca3  ⭐⭐DRIFT                    +0.1018  +0.0006  +0.1012    5.67   7680     96
+    dz_pca4  ⭐⭐DRIFT                    +0.0535  +0.0196  +0.0339    2.07   7680     96
+    dz_pca5  ⭐⭐DRIFT                    +0.0632  -0.0036  +0.0668    3.84   7680     96
+    dz_pca6  ⭐⭐DRIFT                    +0.0426  -0.0265  +0.0691    4.05   7680     96
+    dz_pca7  ⭐⭐DRIFT                    +0.0941  -0.0129  +0.1070    5.42   7680     96
+    constant (ctrl)                     +0.0000  +0.0000  +0.0000    0.00   7680     96
+    -> drift (top-8 PCA) mean r-shuf +0.0741
+
+    ⭐ DINOv3 +0.0304 vs RAW-PIXEL FLOOR +0.0741 (margin -0.0437) — DINOv3 DOES NOT beat the floor
+-> C:\Users\Admin\AppData\Local\Temp\claude\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\8e7cfa33-c625-47cf-88aa-711db80ac113\scratchpad\mm_e6_floor_16x40_omp8.json
+RC_16x40=0

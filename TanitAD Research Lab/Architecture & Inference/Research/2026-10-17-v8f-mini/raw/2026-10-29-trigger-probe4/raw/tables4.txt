@@ -1,0 +1,73 @@
+
+=== pstop  n=12000  GO=6000  clips=849  (TRAIN, T0-class probe of representations; fold-mean AUC, episode-cluster bootstrap B=2000 seed 0) ===
+  E          fold-mean 0.626 [0.613, 0.640]   pooled 0.593 [0.570, 0.616]
+  V+E        fold-mean 0.680 [0.650, 0.710]   pooled 0.680 [0.651, 0.711]
+  V+E(mlp)   fold-mean 0.681 [0.651, 0.709]   pooled 0.681 [0.652, 0.712]
+  P3:G4+E    fold-mean 0.650 [0.618, 0.684]   pooled 0.652 [0.621, 0.687]
+  P3:G8+E    fold-mean 0.609 [0.574, 0.644]   pooled 0.591 [0.554, 0.630]
+  G8att+E    fold-mean 0.662 [0.632, 0.691]   pooled 0.662 [0.632, 0.692]  seeds [0.654, 0.6615, 0.6511] spread 0.0104
+  G4att+E    fold-mean 0.663 [0.633, 0.692]   pooled 0.665 [0.634, 0.696]  seeds [0.6662, 0.6613, 0.6398] spread 0.0264
+  G8max+E    fold-mean 0.678 [0.648, 0.706]   pooled 0.676 [0.646, 0.705]  seeds [0.6685, 0.6681, 0.6728] spread 0.0047
+  G4max+E    fold-mean 0.669 [0.640, 0.697]   pooled 0.671 [0.642, 0.702]  seeds [0.6618, 0.6606, 0.6625] spread 0.0019
+  DECISION A: dAUC(G8att+E - V+E) = -0.018 [-0.039, +0.002]   (pooled beside: -0.018 [-0.040, +0.002])
+  DECISION B: dAUC(G8att+E - G4att+E) = -0.001 [-0.016, +0.014]   (pooled beside: -0.002 [-0.018, +0.012])
+  input check (probe-3 banked G4+E / G8+E reproduce probe 3's own fold-mean AUC to 1e-9): {"checked": true, "ok": true, "arms": {"G4+E": {"mine": 0.6503095895663507, "probe3": 0.6503095895663507, "abs_diff": 0.0}, "G8+E": {"mine": 0.6086583908254236, "probe3": 0.6086583908254236, "abs_diff": 0.0}}}
+  controls: {"G8att": true, "G4att": true, "pair": true}
+    G8att C1: auc=0.5083252370280731, lo=0.4976149423532416, hi=0.5183060292041695, pass=True
+    G8att C2: auc=0.5092683574405295, lo=0.46982534974322954, hi=0.5488230852150949, pass=True, how=seed 2 CI covers 0.5
+    G4att C1: auc=0.5041375304451925, lo=0.49342455160094795, hi=0.5152067635506715, pass=True
+    G4att C2: auc=0.4813871328508378, lo=0.4377534478776846, hi=0.5249820255310039, pass=True, how=seed 2 CI covers 0.5
+    pair C1_paired_null: delta=0.00418770658288059, lo=-0.005286788566529458, hi=0.013638070294918522, pass=True
+  beside dAUC(G8att+E - E) = +0.036 [+0.005, +0.066]
+  beside dAUC(G4att+E - E) = +0.037 [+0.006, +0.067]
+  beside dAUC(G8att+E - P3:G8+E) = +0.053 [+0.029, +0.077]
+  beside dAUC(G4att+E - P3:G4+E) = +0.013 [-0.006, +0.032]
+  beside dAUC(G8att+E - V+E(mlp)) = -0.019 [-0.040, +0.003]
+  beside dAUC(G8max+E - V+E) = -0.002 [-0.024, +0.019]
+  beside dAUC(G4max+E - V+E) = -0.011 [-0.032, +0.009]
+  beside dAUC(G8max+E - G4max+E) = +0.009 [-0.006, +0.025]
+  beside dAUC(G4att+E - V+E) = -0.017 [-0.037, +0.001]
+  beside single-seed dAUC(G8att+E s - V+E): [-0.0259, -0.0184, -0.0288]   (the decision arm is the 3-seed LOGIT MEAN; this is the single-fit view)
+  beside single-seed dAUC(G8att+E s - G4att+E s): [-0.0123, 0.0001, 0.0113]
+
+=== pmove  n=12000  GO=6000  clips=2140  (TRAIN, T0-class probe of representations; fold-mean AUC, episode-cluster bootstrap B=2000 seed 0) ===
+  E          fold-mean 0.732 [0.719, 0.745]   pooled 0.731 [0.718, 0.745]
+  V+E        fold-mean 0.785 [0.771, 0.798]   pooled 0.784 [0.771, 0.798]
+  V+E(mlp)   fold-mean 0.786 [0.773, 0.799]   pooled 0.786 [0.773, 0.799]
+  P3:G4+E    fold-mean 0.771 [0.757, 0.785]   pooled 0.771 [0.757, 0.785]
+  P3:G8+E    fold-mean 0.765 [0.751, 0.779]   pooled 0.765 [0.751, 0.778]
+  G8att+E    fold-mean 0.781 [0.768, 0.795]   pooled 0.781 [0.768, 0.794]  seeds [0.7739, 0.7759, 0.7724] spread 0.0035
+  G4att+E    fold-mean 0.779 [0.766, 0.793]   pooled 0.779 [0.765, 0.792]  seeds [0.7744, 0.771, 0.7709] spread 0.0035
+  G8max+E    fold-mean 0.786 [0.773, 0.798]   pooled 0.786 [0.773, 0.799]  seeds [0.7828, 0.7785, 0.7829] spread 0.0044
+  G4max+E    fold-mean 0.779 [0.766, 0.793]   pooled 0.779 [0.766, 0.793]  seeds [0.7756, 0.7734, 0.7755] spread 0.0022
+  DECISION A: dAUC(G8att+E - V+E) = -0.004 [-0.010, +0.002]   (pooled beside: -0.003 [-0.010, +0.003])
+  DECISION B: dAUC(G8att+E - G4att+E) = +0.002 [-0.003, +0.007]   (pooled beside: +0.002 [-0.003, +0.007])
+  input check (probe-3 banked G4+E / G8+E reproduce probe 3's own fold-mean AUC to 1e-9): {"checked": true, "ok": true, "arms": {"G4+E": {"mine": 0.7708658623968734, "probe3": 0.7708658623968734, "abs_diff": 0.0}, "G8+E": {"mine": 0.7647090630206479, "probe3": 0.7647090630206479, "abs_diff": 0.0}}}
+  controls: {"G8att": true, "G4att": true, "pair": true}
+    G8att C1: auc=0.4950260209315938, lo=0.48457248609687, hi=0.5057361886239398, pass=True
+    G8att C2: auc=0.4973923191964748, lo=0.4766552015834703, hi=0.5170399260211164, pass=True, how=seed 2 CI covers 0.5
+    G4att C1: auc=0.4932253991082187, lo=0.4830867635040786, hi=0.5041402945488188, pass=True
+    G4att C2: auc=0.5058285829939371, lo=0.4850068220089573, hi=0.528172775434686, pass=True, how=seed 2 CI covers 0.5
+    pair C1_paired_null: delta=0.0018006218233750926, lo=-0.00989621526732507, hi=0.012282502460871498, pass=True
+  beside dAUC(G8att+E - E) = +0.049 [+0.038, +0.062]
+  beside dAUC(G4att+E - E) = +0.048 [+0.036, +0.059]
+  beside dAUC(G8att+E - P3:G8+E) = +0.016 [+0.009, +0.024]
+  beside dAUC(G4att+E - P3:G4+E) = +0.008 [+0.003, +0.014]
+  beside dAUC(G8att+E - V+E(mlp)) = -0.005 [-0.011, +0.001]
+  beside dAUC(G8max+E - V+E) = +0.001 [-0.005, +0.007]
+  beside dAUC(G4max+E - V+E) = -0.005 [-0.011, +0.001]
+  beside dAUC(G8max+E - G4max+E) = +0.006 [+0.002, +0.011]
+  beside dAUC(G4att+E - V+E) = -0.005 [-0.012, +0.001]
+  beside single-seed dAUC(G8att+E s - V+E): [-0.0106, -0.0086, -0.0121]   (the decision arm is the 3-seed LOGIT MEAN; this is the single-fit view)
+  beside single-seed dAUC(G8att+E s - G4att+E s): [-0.0005, 0.0049, 0.0015]
+
+=== VERDICT (committed rule, PREREG_FROZEN.md 4) ===
+DOES NOT HELP
+  pstop:A: {"status": "OK", "reason": "", "delta": -0.018054953770739846, "lo": -0.0388177976814812, "hi": 0.0019354396446459546, "seed_spread_max": 0.01043052402048561, "twice_spread": 0.02086104804097122, "helps": false, "helps_if_controls_ok": false, "below_0.01": true}
+  pstop:B: {"status": "OK", "reason": "", "delta": -0.001009806266414448, "lo": -0.016435404281057543, "hi": 0.013674240484677238, "seed_spread_max": 0.026433716324655854, "twice_spread": 0.05286743264931171, "helps": false, "helps_if_controls_ok": false, "below_0.01": true}
+  pmove:A: {"status": "OK", "reason": "", "delta": -0.0036056281369349907, "lo": -0.009979051224627139, "hi": 0.002423658841767752, "seed_spread_max": 0.0035270778865373886, "twice_spread": 0.007054155773074777, "helps": false, "helps_if_controls_ok": false, "below_0.01": true}
+  pmove:B: {"status": "OK", "reason": "", "delta": 0.0017107544954151344, "lo": -0.0034952235070241392, "hi": 0.006787173769329705, "seed_spread_max": 0.0035270778865373886, "twice_spread": 0.007054155773074777, "helps": false, "helps_if_controls_ok": false, "below_0.01": true}
+
+eval-141 pstop n=101 go=61 episodes=19: E 0.517, G8att+E 0.465, G4att+E 0.485  paired G8att+E_minus_E -0.052 [-0.193,+0.132], G4att+E_minus_E -0.032 [-0.193,+0.160], G8att+E_minus_G4att+E -0.020 [-0.102,+0.060]
+
+eval-141 pmove n=507 go=266 episodes=67: E 0.708, G8att+E 0.743, G4att+E 0.737  paired G8att+E_minus_E +0.034 [-0.034,+0.098], G4att+E_minus_E +0.029 [-0.038,+0.090], G8att+E_minus_G4att+E +0.005 [-0.021,+0.035]

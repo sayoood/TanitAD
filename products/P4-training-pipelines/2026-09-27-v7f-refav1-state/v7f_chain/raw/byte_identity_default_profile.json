@@ -1,0 +1,618 @@
+{
+ "n_cases": 22,
+ "n_identical": 22,
+ "orig_sha256": "918859e75df9c343bf42fc9c3f1ccbf65465d354e055f638db8545b4a4791cc7",
+ "new_sha256": "b1bf626b5f0b466354ebf551cad95827802f294f77d2c8486a335d772f5a434a",
+ "cases": {
+  "A_plan": {
+   "argv": [
+    "plan",
+    "--root",
+    "<SCRATCH>/bi_work/root/A"
+   ],
+   "identical": true,
+   "orig": {
+    "rc": 0,
+    "stdout_sha": "402ffb3068ad597d7d58b437b28093860272f2602275989263bfa58ba491f112",
+    "stderr_sha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_len": 7054,
+    "files": {},
+    "stderr_tail": []
+   },
+   "new": {
+    "rc": 0,
+    "stdout_sha": "402ffb3068ad597d7d58b437b28093860272f2602275989263bfa58ba491f112",
+    "stderr_sha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_len": 7054,
+    "files": {},
+    "stderr_tail": []
+   }
+  },
+  "B_plan_arms": {
+   "argv": [
+    "plan",
+    "--root",
+    "<SCRATCH>/bi_work/root/B",
+    "--st-arms",
+    "goal",
+    "mlp",
+    "--st-winner",
+    "goal"
+   ],
+   "identical": true,
+   "orig": {
+    "rc": 0,
+    "stdout_sha": "cfe1b7e03f75ee21d66c02813b240daab99d2b3b8743612911ea678672d78140",
+    "stderr_sha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_len": 8401,
+    "files": {},
+    "stderr_tail": []
+   },
+   "new": {
+    "rc": 0,
+    "stdout_sha": "cfe1b7e03f75ee21d66c02813b240daab99d2b3b8743612911ea678672d78140",
+    "stderr_sha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_len": 8401,
+    "files": {},
+    "stderr_tail": []
+   }
+  },
+  "C_plan_dry": {
+   "argv": [
+    "plan",
+    "--root",
+    "<SCRATCH>/bi_work/root/C",
+    "--dry"
+   ],
+   "identical": true,
+   "orig": {
+    "rc": 0,
+    "stdout_sha": "e0c2fcff711a48110ee79e960b20903c60acf1133a2c55ba69cb1bcac0e6bc5a",
+    "stderr_sha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_len": 7052,
+    "files": {},
+    "stderr_tail": []
+   },
+   "new": {
+    "rc": 0,
+    "stdout_sha": "e0c2fcff711a48110ee79e960b20903c60acf1133a2c55ba69cb1bcac0e6bc5a",
+    "stderr_sha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_len": 7052,
+    "files": {},
+    "stderr_tail": []
+   }
+  },
+  "D_plan_a40_notgc": {
+   "argv": [
+    "plan",
+    "--root",
+    "<SCRATCH>/bi_work/root/D",
+    "--a40",
+    "--no-tac-goal-cond",
+    "--st-steps",
+    "12000"
+   ],
+   "identical": true,
+   "orig": {
+    "rc": 0,
+    "stdout_sha": "5fab67afbf44f74667ce375aa63fe82c968765b486092615bbd4d00e1c191492",
+    "stderr_sha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_len": 7059,
+    "files": {},
+    "stderr_tail": []
+   },
+   "new": {
+    "rc": 0,
+    "stdout_sha": "5fab67afbf44f74667ce375aa63fe82c968765b486092615bbd4d00e1c191492",
+    "stderr_sha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_len": 7059,
+    "files": {},
+    "stderr_tail": []
+   }
+  },
+  "E_commands_all": {
+   "argv": [
+    "commands",
+    "--root",
+    "<SCRATCH>/bi_work/root/E",
+    "--geometry-from",
+    "<SCRATCH>/bi_work/geom/config.json"
+   ],
+   "identical": true,
+   "orig": {
+    "rc": 0,
+    "stdout_sha": "c13d9d0cfc4d86f7d4a842961c37fc06b7b9df713f8352725dccf53c00dfcb2b",
+    "stderr_sha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_len": 12406,
+    "files": {},
+    "stderr_tail": []
+   },
+   "new": {
+    "rc": 0,
+    "stdout_sha": "c13d9d0cfc4d86f7d4a842961c37fc06b7b9df713f8352725dccf53c00dfcb2b",
+    "stderr_sha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_len": 12406,
+    "files": {},
+    "stderr_tail": []
+   }
+  },
+  "F_commands_ST_override": {
+   "argv": [
+    "commands",
+    "--root",
+    "<SCRATCH>/bi_work/root/F",
+    "--step",
+    "S-T",
+    "--geometry-from",
+    "<SCRATCH>/bi_work/geom/config.json",
+    "--allow-inconclusive-gate",
+    "--gate-off-reason",
+    "PI directive: x y"
+   ],
+   "identical": true,
+   "orig": {
+    "rc": 0,
+    "stdout_sha": "4c8cce8009b9311d6a45ada03000d81e5870ada20af4b7e1adcd1af4ef9f0e48",
+    "stderr_sha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_len": 3500,
+    "files": {},
+    "stderr_tail": []
+   },
+   "new": {
+    "rc": 0,
+    "stdout_sha": "4c8cce8009b9311d6a45ada03000d81e5870ada20af4b7e1adcd1af4ef9f0e48",
+    "stderr_sha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_len": 3500,
+    "files": {},
+    "stderr_tail": []
+   }
+  },
+  "G_commands_arms": {
+   "argv": [
+    "commands",
+    "--root",
+    "<SCRATCH>/bi_work/root/G",
+    "--st-arms",
+    "goal",
+    "mlp",
+    "--st-winner",
+    "mlp",
+    "--geometry-from",
+    "<SCRATCH>/bi_work/geom/config.json"
+   ],
+   "identical": true,
+   "orig": {
+    "rc": 0,
+    "stdout_sha": "54c2a099eb9a975c90e4a9d62920d86a2d124c19258766f0cc64e1f2f4df3261",
+    "stderr_sha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_len": 15380,
+    "files": {},
+    "stderr_tail": []
+   },
+   "new": {
+    "rc": 0,
+    "stdout_sha": "54c2a099eb9a975c90e4a9d62920d86a2d124c19258766f0cc64e1f2f4df3261",
+    "stderr_sha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_len": 15380,
+    "files": {},
+    "stderr_tail": []
+   }
+  },
+  "H_commands_SS_noseam": {
+   "argv": [
+    "commands",
+    "--root",
+    "<SCRATCH>/bi_work/root/H",
+    "--no-seam-dump",
+    "--a40",
+    "--geometry-from",
+    "<SCRATCH>/bi_work/geom/config.json",
+    "--step",
+    "S-S"
+   ],
+   "identical": true,
+   "orig": {
+    "rc": 0,
+    "stdout_sha": "c32749ad1819df465324560c0f39e6aefc654b77183249aba1e138984eb86aac",
+    "stderr_sha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_len": 3085,
+    "files": {},
+    "stderr_tail": []
+   },
+   "new": {
+    "rc": 0,
+    "stdout_sha": "c32749ad1819df465324560c0f39e6aefc654b77183249aba1e138984eb86aac",
+    "stderr_sha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_len": 3085,
+    "files": {},
+    "stderr_tail": []
+   }
+  },
+  "I_admission": {
+   "argv": [
+    "admission",
+    "--root",
+    "<SCRATCH>/bi_work/root/I"
+   ],
+   "identical": true,
+   "orig": {
+    "rc": 0,
+    "stdout_sha": "cbbdc4ab4ac1b95113c966526cf65390006ad2d8e671cf90f97545af593b5258",
+    "stderr_sha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_len": 8669,
+    "files": {},
+    "stderr_tail": []
+   },
+   "new": {
+    "rc": 0,
+    "stdout_sha": "cbbdc4ab4ac1b95113c966526cf65390006ad2d8e671cf90f97545af593b5258",
+    "stderr_sha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_len": 8669,
+    "files": {},
+    "stderr_tail": []
+   }
+  },
+  "J_status": {
+   "argv": [
+    "status",
+    "--root",
+    "<SCRATCH>/bi_work/root/J"
+   ],
+   "identical": true,
+   "orig": {
+    "rc": 0,
+    "stdout_sha": "9d1e36992af9aa55b7e66ea7aa4c2a356b7abed99e8e4891f746d80253967177",
+    "stderr_sha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_len": 2386,
+    "files": {},
+    "stderr_tail": []
+   },
+   "new": {
+    "rc": 0,
+    "stdout_sha": "9d1e36992af9aa55b7e66ea7aa4c2a356b7abed99e8e4891f746d80253967177",
+    "stderr_sha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_len": 2386,
+    "files": {},
+    "stderr_tail": []
+   }
+  },
+  "K_next": {
+   "argv": [
+    "next",
+    "--root",
+    "<SCRATCH>/bi_work/root/K"
+   ],
+   "identical": true,
+   "orig": {
+    "rc": 0,
+    "stdout_sha": "812660d46287f4da85b6040e6c6e4f17809bbc8ddcbed3a3202ce8d3db40526b",
+    "stderr_sha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_len": 2967,
+    "files": {},
+    "stderr_tail": []
+   },
+   "new": {
+    "rc": 0,
+    "stdout_sha": "812660d46287f4da85b6040e6c6e4f17809bbc8ddcbed3a3202ce8d3db40526b",
+    "stderr_sha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_len": 2967,
+    "files": {},
+    "stderr_tail": []
+   }
+  },
+  "L_manifests": {
+   "argv": [
+    "manifests",
+    "--root",
+    "<SCRATCH>/bi_work/root/L",
+    "--geometry-from",
+    "<SCRATCH>/bi_work/geom/config.json",
+    "--dest",
+    "<SCRATCH>/bi_work/manifests"
+   ],
+   "identical": true,
+   "orig": {
+    "rc": 0,
+    "stdout_sha": "ae79da4b771ec2ac4976e20cb6591d186d2c03b3c7d33535a999e457283813bc",
+    "stderr_sha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_len": 716,
+    "files": {
+     "v6F-SJ-3k.env": "88a8504a727eb32775c614d6fc392d3858914ec186772325bc146d7380eb63b0",
+     "v6F-SS-8k.env": "c96ed850e4b7ced3a46c3f7482ba87c279f860919c0d9a6cc78ed3360b808111",
+     "v6F-ST-10k.env": "43e5c2be70a70c769f5ed6ab757dcd2ca61f29f6c003956bbca8b27ed2ce3f8e"
+    },
+    "stderr_tail": []
+   },
+   "new": {
+    "rc": 0,
+    "stdout_sha": "ae79da4b771ec2ac4976e20cb6591d186d2c03b3c7d33535a999e457283813bc",
+    "stderr_sha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_len": 716,
+    "files": {
+     "v6F-SJ-3k.env": "88a8504a727eb32775c614d6fc392d3858914ec186772325bc146d7380eb63b0",
+     "v6F-SS-8k.env": "c96ed850e4b7ced3a46c3f7482ba87c279f860919c0d9a6cc78ed3360b808111",
+     "v6F-ST-10k.env": "43e5c2be70a70c769f5ed6ab757dcd2ca61f29f6c003956bbca8b27ed2ce3f8e"
+    },
+    "stderr_tail": []
+   }
+  },
+  "M_verify": {
+   "argv": [
+    "verify",
+    "--root",
+    "<SCRATCH>/bi_work/root/M",
+    "--step",
+    "S-T"
+   ],
+   "identical": true,
+   "orig": {
+    "rc": 0,
+    "stdout_sha": "9cc383ddd60554558a27ac5a21a60b44c249c9b45c918b51ed85b709f7a9cc78",
+    "stderr_sha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_len": 767,
+    "files": {},
+    "stderr_tail": []
+   },
+   "new": {
+    "rc": 0,
+    "stdout_sha": "9cc383ddd60554558a27ac5a21a60b44c249c9b45c918b51ed85b709f7a9cc78",
+    "stderr_sha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_len": 767,
+    "files": {},
+    "stderr_tail": []
+   }
+  },
+  "N_commands_dry_refuses": {
+   "argv": [
+    "commands",
+    "--root",
+    "<SCRATCH>/bi_work/root/N",
+    "--dry"
+   ],
+   "identical": true,
+   "orig": {
+    "rc": 1,
+    "stdout_sha": "14d1edf6a50e73dbb2b7f45ab31e97fe23f7940ef0b5d566514a075f8d34ea43",
+    "stderr_sha": "4338b37bfa486fb546ab850b205d4d4783c345799777ade7d9df92776180c40a",
+    "stdout_len": 2029,
+    "files": {},
+    "stderr_tail": [
+     "  Emitting the launch anyway is exactly the E1 defect: with no geometry flags the stack builds at the trainer's DEFAULTS (enc 384x8, pred 768x6, d_tac 512, d_str 256) and `--init-from` dies with `size mismatch for encoder.pos: [1, 640, 768] vs [1, 640, 384]` (MEASURED 2026-08-17: 87.93 M built against a 336.54 M checkpoint).",
+     "  \u21d2 generate the command ON the pod, or pass --geometry-from <banked config.json> (a copy of the ancestor's own file)."
+    ]
+   },
+   "new": {
+    "rc": 1,
+    "stdout_sha": "14d1edf6a50e73dbb2b7f45ab31e97fe23f7940ef0b5d566514a075f8d34ea43",
+    "stderr_sha": "4338b37bfa486fb546ab850b205d4d4783c345799777ade7d9df92776180c40a",
+    "stdout_len": 2029,
+    "files": {},
+    "stderr_tail": [
+     "  Emitting the launch anyway is exactly the E1 defect: with no geometry flags the stack builds at the trainer's DEFAULTS (enc 384x8, pred 768x6, d_tac 512, d_str 256) and `--init-from` dies with `size mismatch for encoder.pos: [1, 640, 768] vs [1, 640, 384]` (MEASURED 2026-08-17: 87.93 M built against a 336.54 M checkpoint).",
+     "  \u21d2 generate the command ON the pod, or pass --geometry-from <banked config.json> (a copy of the ancestor's own file)."
+    ]
+   }
+  },
+  "O_unknown_step": {
+   "argv": [
+    "commands",
+    "--root",
+    "<SCRATCH>/bi_work/root/O",
+    "--step",
+    "S-X"
+   ],
+   "identical": true,
+   "orig": {
+    "rc": 1,
+    "stdout_sha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stderr_sha": "bd86b5c265306f3eb94ee7ffc73d4d7b23e01c742f68e146a8ef13e6bf5fc734",
+    "stdout_len": 0,
+    "files": {},
+    "stderr_tail": [
+     "[chain] \u26d4 no step 'S-X'; the ladder is ['S-W', 'S-T', 'S-S', 'S-J']"
+    ]
+   },
+   "new": {
+    "rc": 1,
+    "stdout_sha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stderr_sha": "bd86b5c265306f3eb94ee7ffc73d4d7b23e01c742f68e146a8ef13e6bf5fc734",
+    "stdout_len": 0,
+    "files": {},
+    "stderr_tail": [
+     "[chain] \u26d4 no step 'S-X'; the ladder is ['S-W', 'S-T', 'S-S', 'S-J']"
+    ]
+   }
+  },
+  "P_plan_tiny": {
+   "argv": [
+    "plan",
+    "--root",
+    "<SCRATCH>/bi_work/root/P",
+    "--tiny"
+   ],
+   "identical": true,
+   "orig": {
+    "rc": 0,
+    "stdout_sha": "32098b133f6bde41934535f7fbefff75711882f7e897295f2dbda8251cb29d49",
+    "stderr_sha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_len": 7053,
+    "files": {},
+    "stderr_tail": []
+   },
+   "new": {
+    "rc": 0,
+    "stdout_sha": "32098b133f6bde41934535f7fbefff75711882f7e897295f2dbda8251cb29d49",
+    "stderr_sha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_len": 7053,
+    "files": {},
+    "stderr_tail": []
+   }
+  },
+  "Q_tilde": {
+   "argv": [
+    "commands",
+    "--root",
+    "~/x"
+   ],
+   "identical": true,
+   "orig": {
+    "rc": 1,
+    "stdout_sha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stderr_sha": "1a217a3814226dcb9ea8a76f5889f411aa54b683ea047b8f30eb888112a3e9ec",
+    "stdout_len": 0,
+    "files": {},
+    "stderr_tail": [
+     "  Every path in an emitted launch line is shell-quoted (which it must be \u2014 `--gate-off-reason 'PI directive: \u2026'` is why), and quoting SUPPRESSES tilde expansion: `mkdir -p '~/experiments/\u2026'` creates a directory literally named `~`, and the next stage's --init-from then points at a file that does not exist.",
+     "  \u26a0\ufe0f The chain will not expand it for you: `~` on the box that GENERATES the command is not `~` on the pod that RUNS it. Paste what `echo $HOME` prints ON THE POD (e.g. /root/experiments)."
+    ]
+   },
+   "new": {
+    "rc": 1,
+    "stdout_sha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stderr_sha": "1a217a3814226dcb9ea8a76f5889f411aa54b683ea047b8f30eb888112a3e9ec",
+    "stdout_len": 0,
+    "files": {},
+    "stderr_tail": [
+     "  Every path in an emitted launch line is shell-quoted (which it must be \u2014 `--gate-off-reason 'PI directive: \u2026'` is why), and quoting SUPPRESSES tilde expansion: `mkdir -p '~/experiments/\u2026'` creates a directory literally named `~`, and the next stage's --init-from then points at a file that does not exist.",
+     "  \u26a0\ufe0f The chain will not expand it for you: `~` on the box that GENERATES the command is not `~` on the pod that RUNS it. Paste what `echo $HOME` prints ON THE POD (e.g. /root/experiments)."
+    ]
+   }
+  },
+  "R_admission_arms": {
+   "argv": [
+    "admission",
+    "--root",
+    "<SCRATCH>/bi_work/root/R",
+    "--st-arms",
+    "goal"
+   ],
+   "identical": true,
+   "orig": {
+    "rc": 0,
+    "stdout_sha": "71d5b5e1f973840b3f27bd82704743f1e42ee63f67bfb3f6b966d2d9e4ca27b7",
+    "stderr_sha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_len": 8682,
+    "files": {},
+    "stderr_tail": []
+   },
+   "new": {
+    "rc": 0,
+    "stdout_sha": "71d5b5e1f973840b3f27bd82704743f1e42ee63f67bfb3f6b966d2d9e4ca27b7",
+    "stderr_sha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_len": 8682,
+    "files": {},
+    "stderr_tail": []
+   }
+  },
+  "S_commands_SW_nogeom": {
+   "argv": [
+    "commands",
+    "--root",
+    "<SCRATCH>/bi_work/root/S",
+    "--step",
+    "S-W"
+   ],
+   "identical": true,
+   "orig": {
+    "rc": 0,
+    "stdout_sha": "fce9b98479f3ba2f49f7c656efe1cd54bcaf5fcf48419449dca91d029122a789",
+    "stderr_sha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_len": 1355,
+    "files": {},
+    "stderr_tail": []
+   },
+   "new": {
+    "rc": 0,
+    "stdout_sha": "fce9b98479f3ba2f49f7c656efe1cd54bcaf5fcf48419449dca91d029122a789",
+    "stderr_sha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_len": 1355,
+    "files": {},
+    "stderr_tail": []
+   }
+  },
+  "T_plan_outjson": {
+   "argv": [
+    "plan",
+    "--root",
+    "<SCRATCH>/bi_work/root/T",
+    "--out-json",
+    "<SCRATCH>/bi_work/plan_T.json"
+   ],
+   "identical": true,
+   "orig": {
+    "rc": 0,
+    "stdout_sha": "aaa22384b1c80f20dd91ea0ecbfe168c2ab77d0c0c3df7130527d3e0afda6e2a",
+    "stderr_sha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_len": 7054,
+    "files": {
+     "plan_T.json": "c37b736176d6a94f9e83f707a34dcf91980c659d00a8565a9fbd985c06f5075e"
+    },
+    "stderr_tail": []
+   },
+   "new": {
+    "rc": 0,
+    "stdout_sha": "aaa22384b1c80f20dd91ea0ecbfe168c2ab77d0c0c3df7130527d3e0afda6e2a",
+    "stderr_sha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_len": 7054,
+    "files": {
+     "plan_T.json": "c37b736176d6a94f9e83f707a34dcf91980c659d00a8565a9fbd985c06f5075e"
+    },
+    "stderr_tail": []
+   }
+  },
+  "U_plan_default_root": {
+   "argv": [
+    "plan"
+   ],
+   "identical": true,
+   "orig": {
+    "rc": 0,
+    "stdout_sha": "7ac60fef8463b9f8604de17be5a3682cb8eea329f770fcb879055f03b4a97cdd",
+    "stderr_sha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_len": 5248,
+    "files": {},
+    "stderr_tail": []
+   },
+   "new": {
+    "rc": 0,
+    "stdout_sha": "7ac60fef8463b9f8604de17be5a3682cb8eea329f770fcb879055f03b4a97cdd",
+    "stderr_sha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_len": 5248,
+    "files": {},
+    "stderr_tail": []
+   }
+  },
+  "V_commands_ST_geom_nodefault_python": {
+   "argv": [
+    "commands",
+    "--step",
+    "S-T",
+    "--geometry-from",
+    "<SCRATCH>/bi_work/geom/config.json",
+    "--python",
+    "/venv/bin/python",
+    "--workdir",
+    "/w/TanitAD/stack",
+    "--n-candidates",
+    "4"
+   ],
+   "identical": true,
+   "orig": {
+    "rc": 0,
+    "stdout_sha": "5903b5639f2204c4df19103a4befcfb64ad62c386353705a734e32a4e6e220d5",
+    "stderr_sha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_len": 2647,
+    "files": {},
+    "stderr_tail": []
+   },
+   "new": {
+    "rc": 0,
+    "stdout_sha": "5903b5639f2204c4df19103a4befcfb64ad62c386353705a734e32a4e6e220d5",
+    "stderr_sha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_len": 2647,
+    "files": {},
+    "stderr_tail": []
+   }
+  }
+ }
+}

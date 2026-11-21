@@ -1,0 +1,160 @@
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from D:\refcv6_eval_kit\data\refcv6_train_eval139_extrinsics.json (4508 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[v2] D:\refcv6_eval_kit\data\refcv6-b1-416x1024-eval139: 139 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 139 distinct for 139 clips]
+[v2] 139 providers, 139 distinct episode ids
+[v3] nav_from_v7: follow 88 / left 13 / right 38, missing 0 (of 139 clips; md5=eefc38d1453bd1c73802d44d45affced)
+[v3] max_speed_input_v6 (4-way one-hot): 147/147 sidecar rows carry a ceiling, 23772/23772 windows fed (100.0 %), 1 clips ABOVE the 120 km/h top step (clamped, and on those the fed ceiling is one the ego demonstrably exceeded)
+[model] D:/refcv6_eval_kit/ckpt/ckpt_5000.pt step=5000 arm=hier anchors=117 horizons=[5, 10, 15, 20, 30, 40, 50, 60] window=8 decoder=diffusion/2 config<-refcv6_loader.build_model (train() replayed; lift bank WITH equalize_bottom_rows; strict)
+[grid] 2s: dt=0.5 s K=4 instants=[0.5, 1.0, 1.5, 2.0] s <- model slots [5, 10, 15, 20] (indices [0, 1, 2, 3]); dropped [30, 40, 50, 60]
+[units] action_units=steer — the RECORDED channel 1 is a road-wheel STEER angle (physicalai.py:621). kappa = tan(steer)/2.9 is applied before integration; `ha` is NOT comparable to a kappa-unit refav1 run (`ha0` is, it is zero).
+[nav-flip] os_navflip: left<->right on 1743/4754 windows — the sharpest intervention (optional arm)
+[roll] 4754 windows / 139 episodes · arms=['os', 'ha', 'ha0', 'ha0_ext', 'os_navshuf', 'os_navzero', 'oracle_sel', 'os_navflip'] · fed conditionings=['nav_true', 'nav_shuffled', 'nav_flipped'] + a SEPARATE nav_cmd=None forward (nav_zero) · nav_shuffle changed 2452/4754
+[nav-null] os_navzero = model(..., nav_cmd=None): the E13 tactical + strategic injection is SKIPPED (refc_v3.py:437-441; nav_injected reads False), and the CORE collapses to one_hot(0)='follow' (refc.py:2021-2024). ⚠️ At the core that is a COLLAPSE ONTO THE MAJORITY TOKEN, not a removal — NAV_COMMANDS has no 'unknown' and nav_known_channel is False (refc.py:594) — so this arm is a LOWER BOUND on nav dependence. ⛔ nav_known is NOT usable as the null: refc.py:2042-2045 raises when the gate is off.
+[cost] first forward (3 fed row(s) + 1 nav-null call, 4 rows total) took 2.50 s -> ESTIMATED 3.30 h for 4754 windows (forward only; IO/analysis extra)
+  [1/139] <clip> 35 windows 55s
+  [2/139] <clip> 34 windows 98s
+  [3/139] <clip> 34 windows 148s
+  [4/139] <clip> 34 windows 187s
+  [5/139] <clip> 34 windows 234s
+  [6/139] <clip> 35 windows 273s
+  [7/139] <clip> 34 windows 319s
+  [8/139] <clip> 34 windows 375s
+  [9/139] <clip> 34 windows 434s
+  [10/139] <clip> 34 windows 480s
+  [11/139] <clip> 35 windows 517s
+  [12/139] <clip> 34 windows 554s
+  [13/139] <clip> 34 windows 590s
+  [14/139] <clip> 34 windows 626s
+  [15/139] <clip> 34 windows 669s
+  [16/139] <clip> 35 windows 709s
+  [17/139] <clip> 34 windows 752s
+  [18/139] <clip> 34 windows 810s
+  [19/139] <clip> 34 windows 871s
+  [20/139] <clip> 36 windows 925s
+  [21/139] <clip> 34 windows 994s
+  [22/139] <clip> 34 windows 1058s
+  [23/139] <clip> 34 windows 1112s
+  [24/139] <clip> 34 windows 1157s
+  [25/139] <clip> 35 windows 1210s
+  [26/139] <clip> 34 windows 1267s
+  [27/139] <clip> 34 windows 1304s
+  [28/139] <clip> 34 windows 1331s
+  [29/139] <clip> 34 windows 1359s
+  [30/139] <clip> 34 windows 1392s
+  [31/139] <clip> 34 windows 1428s
+  [32/139] <clip> 34 windows 1457s
+  [33/139] <clip> 34 windows 1487s
+  [34/139] <clip> 34 windows 1520s
+  [35/139] <clip> 35 windows 1582s
+  [36/139] <clip> 34 windows 1631s
+  [37/139] <clip> 34 windows 1684s
+  [38/139] <clip> 34 windows 1740s
+  [39/139] <clip> 34 windows 1800s
+  [40/139] <clip> 35 windows 1856s
+  [41/139] <clip> 34 windows 1915s
+  [42/139] <clip> 34 windows 1973s
+  [43/139] <clip> 34 windows 2024s
+  [44/139] <clip> 34 windows 2053s
+  [45/139] <clip> 35 windows 2089s
+  [46/139] <clip> 34 windows 2119s
+  [47/139] <clip> 34 windows 2155s
+  [48/139] <clip> 34 windows 2183s
+  [49/139] <clip> 34 windows 2205s
+  [50/139] <clip> 35 windows 2228s
+  [51/139] <clip> 34 windows 2252s
+  [52/139] <clip> 34 windows 2287s
+  [53/139] <clip> 34 windows 2314s
+  [54/139] <clip> 34 windows 2347s
+  [55/139] <clip> 35 windows 2379s
+  [56/139] <clip> 34 windows 2414s
+  [57/139] <clip> 34 windows 2440s
+  [58/139] <clip> 34 windows 2467s
+  [59/139] <clip> 34 windows 2497s
+  [60/139] <clip> 34 windows 2522s
+  [61/139] <clip> 35 windows 2558s
+  [62/139] <clip> 34 windows 2589s
+  [63/139] <clip> 34 windows 2624s
+  [64/139] <clip> 34 windows 2654s
+  [65/139] <clip> 34 windows 2682s
+  [66/139] <clip> 35 windows 2713s
+  [67/139] <clip> 34 windows 2739s
+  [68/139] <clip> 34 windows 2771s
+  [69/139] <clip> 34 windows 2796s
+  [70/139] <clip> 34 windows 2821s
+  [71/139] <clip> 35 windows 2849s
+  [72/139] <clip> 34 windows 2874s
+  [73/139] <clip> 34 windows 2899s
+  [74/139] <clip> 34 windows 2921s
+  [75/139] <clip> 34 windows 2946s
+  [76/139] <clip> 34 windows 2969s
+  [77/139] <clip> 34 windows 2990s
+  [78/139] <clip> 35 windows 3015s
+  [79/139] <clip> 34 windows 3036s
+  [80/139] <clip> 34 windows 3059s
+  [81/139] <clip> 34 windows 3081s
+  [82/139] <clip> 34 windows 3107s
+  [83/139] <clip> 34 windows 3139s
+  [84/139] <clip> 35 windows 3166s
+  [85/139] <clip> 34 windows 3197s
+  [86/139] <clip> 34 windows 3230s
+  [87/139] <clip> 34 windows 3263s
+  [88/139] <clip> 34 windows 3316s
+  [89/139] <clip> 35 windows 3386s
+  [90/139] <clip> 34 windows 3445s
+  [91/139] <clip> 34 windows 3516s
+  [92/139] <clip> 34 windows 3578s
+  [93/139] <clip> 34 windows 3627s
+  [94/139] <clip> 34 windows 3682s
+  [95/139] <clip> 34 windows 3737s
+  [96/139] <clip> 35 windows 3785s
+  [97/139] <clip> 34 windows 3823s
+  [98/139] <clip> 34 windows 3844s
+  [99/139] <clip> 34 windows 3866s
+  [100/139] <clip> 35 windows 3898s
+  [101/139] <clip> 34 windows 3922s
+  [102/139] <clip> 34 windows 3954s
+  [103/139] <clip> 34 windows 3992s
+  [104/139] <clip> 34 windows 4033s
+  [105/139] <clip> 36 windows 4074s
+  [106/139] <clip> 34 windows 4119s
+  [107/139] <clip> 34 windows 4155s
+  [108/139] <clip> 34 windows 4192s
+  [109/139] <clip> 34 windows 4229s
+  [110/139] <clip> 35 windows 4302s
+  [111/139] <clip> 34 windows 4377s
+  [112/139] <clip> 34 windows 4439s
+  [113/139] <clip> 34 windows 4506s
+  [114/139] <clip> 34 windows 4556s
+  [115/139] <clip> 34 windows 4613s
+  [116/139] <clip> 34 windows 4660s
+  [117/139] <clip> 35 windows 4712s
+  [118/139] <clip> 34 windows 4764s
+  [119/139] <clip> 34 windows 4828s
+  [120/139] <clip> 34 windows 4897s
+  [121/139] <clip> 34 windows 4953s
+  [122/139] <clip> 35 windows 4998s
+  [123/139] <clip> 34 windows 5048s
+  [124/139] <clip> 34 windows 5099s
+  [125/139] <clip> 34 windows 5153s
+  [126/139] <clip> 34 windows 5209s
+  [127/139] <clip> 35 windows 5266s
+  [128/139] <clip> 34 windows 5315s
+  [129/139] <clip> 34 windows 5359s
+  [130/139] <clip> 34 windows 5405s
+  [131/139] <clip> 35 windows 5453s
+  [132/139] <clip> 34 windows 5506s
+  [133/139] <clip> 34 windows 5555s
+  [134/139] <clip> 34 windows 5629s
+  [135/139] <clip> 34 windows 5730s
+  [136/139] <clip> 35 windows 5831s
+  [137/139] <clip> 34 windows 5914s
+  [138/139] <clip> 34 windows 5997s
+  [139/139] <clip> 34 windows 6102s
+[dump] 4754 windows over 139 episodes (0 skipped: none)
+[provenance] REAL_CHECKPOINT_ON_REAL_CORPUS - ckpt=TRAINED corpus=FULL step=5000 eps=139 windows=4754 anchors=117
+REFCV3_DUMP_DONE
+[dump-only] C:\Users\Admin\ev6_battery\raw\step5000\dump_s0; analyse later with --analyze-only
+[roll_seed] seed 0 -> C:\Users\Admin\ev6_battery\raw\step5000\roll_s0.json

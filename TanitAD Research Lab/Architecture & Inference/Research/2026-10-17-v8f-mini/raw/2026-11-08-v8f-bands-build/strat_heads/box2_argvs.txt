@@ -1,0 +1,14 @@
+# Box-2 argvs for the strategic heads (draft, 2026-11-08). Not launched. The MM registers the trainer with launch_gate and binds the token before any train line.
+# Env: CUDA_VISIBLE_DEVICES=-1 is fine (heads are tiny; measured 0.205 s/step on 2 CPU threads at batch 128); STRAT_CODE_ROOT=D:\tanitad\repo ; PYTHONPATH not needed (the trainer adds <root>\stack and <root>\taniteval).
+# Paths marked <...> are shipped by the MM: RELEASE = the context release dir holding frames\*.parquet; BANDS = stream A's strategic_geom_{train,eval}.npz.
+# 1. sidecars (act, v, nav; native track + label join), both splits, CPU, resumable
+python D:\tanitad\strat\act_extract.py --code-root D:\tanitad\repo --tracks D:\tanitad\cache_full\native_tracks.pt --join D:\tanitad\runs\v8f_mini_full\join_train.npz --zcache D:\tanitad\zcache\M2b_s0\train --out D:\tanitad\strat_side\train --cache-dir D:\tanitad\cache_full\train\clips --check-cache
+python D:\tanitad\strat\act_extract.py --code-root D:\tanitad\repo --tracks D:\tanitad\cache_full\native_tracks.pt --join D:\tanitad\runs\v8f_mini_full\join_eval141.npz --zcache D:\tanitad\zcache\M2b_s0\eval --out D:\tanitad\strat_side\eval --cache-dir D:\tanitad\cache_full\eval\clips --check-cache
+# 2. common levers (every line below carries exactly these; the token binds the argv)
+set SH=--wm-ckpt D:\tanitad\runs\v8f_ladder\R35_s0\ckpt_last.pt --zcache-train D:\tanitad\zcache\M2b_s0\train --zcache-eval D:\tanitad\zcache\M2b_s0\eval --release-train <RELEASE> --release-eval <RELEASE> --geom-train <BANDS>\strategic_geom_train.npz --geom-eval <BANDS>\strategic_geom_eval.npz --side-train D:\tanitad\strat_side\train --side-eval D:\tanitad\strat_side\eval --out D:\tanitad\runs\strat_heads\SH_s0 --seed 0 --steps 6000 --batch 128 --lr 1e-3 --wd 1e-2 --ck-act-mix 0.5 --country-w-pow 1.0 --other-w-pow 0.5 --w-ctx 1.0 --w-ck 1.0 --w-g 1.0 --n-boot 2000 --eval-stride 5
+# 3. selfcheck (writes selfcheck.json and SELFCHECK_TOKEN.json; exit 2 = refused)
+python D:\tanitad\strat\train_strat_heads.py %SH% --selfcheck-only
+# 4. train + eval (refuses without a matching token)
+python D:\tanitad\strat\train_strat_heads.py %SH% --token D:\tanitad\runs\strat_heads\SH_s0\SELFCHECK_TOKEN.json
+# 5. dump stok for streams B and D (train and eval clips), after step 4
+python D:\tanitad\strat\train_strat_heads.py %SH% --eval-only --heads D:\tanitad\runs\strat_heads\SH_s0\heads_last.pt --dump-dir D:\tanitad\strat_stok\SH_s0

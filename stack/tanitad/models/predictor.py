@@ -12,6 +12,21 @@ embeddings concatenate here later).
 
 from __future__ import annotations
 
+import os
+
+#: Multiplier applied to the DEFAULT init of the residual delta heads.
+#: Chosen so the initial delta is comparable to the latent's own movement rather
+#: than ~1000x above it, while keeping the head non-zero so gradient still
+#: reaches the predictor body (see OperativePredictor.__init__).
+RESIDUAL_HEAD_INIT_SCALE = float(
+    os.environ.get("TANITAD_RESIDUAL_INIT_SCALE", "1e-3"))
+#: The env override exists for ONE purpose: the DELIBERATE REGRESSION arm.
+#: Setting TANITAD_RESIDUAL_INIT_SCALE=1.0 restores the pre-2026-08-22 default
+#: init, so an ablation can re-introduce the defect and prove the gate detects
+#: it. A gate that cannot fail is not a gate. It is read at import time and
+#: echoed by `residual_init_scale_banner()` so a run always SAYS which regime it
+#: is in rather than leaving it to be inferred from the commit.
+
 import torch
 from torch import Tensor, nn
 
@@ -47,6 +62,52 @@ class CausalBlock(nn.Module):
         return x
 
 
+class ModernCausalBlock(nn.Module):
+    """The ViT-5-recipe counterpart of :class:`CausalBlock` (PI 2026-08-13).
+
+    RMSNorm for both norms · QK-Norm inside attention · LayerScale (1e-5) on
+    both residual branches · no bias on qkv/proj · SDPA attention · GeLU MLP
+    kept (ViT-5 measured SwiGLU HURTING compact models against LayerScale).
+    The FiLM conditioning seam is IDENTICAL to CausalBlock — same zero-init,
+    same placement before the MLP — so every conditioning property that is
+    tested (identity start, intent reachability, the g_tac seam) carries over
+    unchanged. At 12 layers deep this is where ViT-5's ablations say QK-Norm
+    and LayerScale stop being cosmetic; at the old depth 6 they were optional.
+    """
+
+    def __init__(self, d: int, n_heads: int, cond_dim: int,
+                 ls_init: float = 1e-5):
+        super().__init__()
+        from tanitad.models.encoder import RMSNorm
+        if d % n_heads:
+            raise ValueError(f"d_model {d} not divisible by n_heads {n_heads}")
+        self.n_heads, self.head_dim = n_heads, d // n_heads
+        self.norm1 = RMSNorm(d)
+        self.qkv = nn.Linear(d, 3 * d, bias=False)
+        self.proj = nn.Linear(d, d, bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.ls1 = nn.Parameter(ls_init * torch.ones(d))
+        self.film = FiLM(cond_dim, d)
+        self.norm2 = RMSNorm(d)
+        self.mlp = nn.Sequential(nn.Linear(d, 4 * d), nn.GELU(),
+                                 nn.Linear(4 * d, d))
+        self.ls2 = nn.Parameter(ls_init * torch.ones(d))
+
+    def forward(self, x: Tensor, cond: Tensor, mask: Tensor) -> Tensor:
+        B, N, D = x.shape
+        h = self.norm1(x)
+        qkv = self.qkv(h).reshape(B, N, 3, self.n_heads, self.head_dim)
+        q, k, v = qkv.permute(2, 0, 3, 1, 4)
+        q, k = self.q_norm(q), self.k_norm(k)
+        # mask convention matches nn.MultiheadAttention's float attn_mask
+        am = mask if mask is None else mask.to(q.dtype)
+        o = torch.nn.functional.scaled_dot_product_attention(
+            q, k, v, attn_mask=am)
+        x = x + self.ls1 * self.proj(o.transpose(1, 2).reshape(B, N, D))
+        return x + self.ls2 * self.mlp(self.film(self.norm2(x), cond))
+
+
 class OperativePredictor(nn.Module):
     """Predicts future compact states from a causal window of (state, action).
 
@@ -70,7 +131,8 @@ class OperativePredictor(nn.Module):
     """
 
     def __init__(self, cfg: PredictorConfig, state_dim: int,
-                 intent_dim: int | None = None, gated_intent: bool = False):
+                 intent_dim: int | None = None, gated_intent: bool = False,
+                 allow_untrained_horizons: bool = True):
         super().__init__()
         self.cfg = cfg
         self.state_dim = state_dim      # plain int; not a buffer => state_dict unchanged
@@ -80,11 +142,161 @@ class OperativePredictor(nn.Module):
         self.pos = nn.Parameter(torch.zeros(1, cfg.window, d))
         nn.init.trunc_normal_(self.pos, std=0.02)
         self.blocks = nn.ModuleList(
-            CausalBlock(d, cfg.n_heads, cond_dim=d) for _ in range(cfg.depth))
+            (ModernCausalBlock if cfg.modern else CausalBlock)(
+                d, cfg.n_heads, cond_dim=d) for _ in range(cfg.depth))
         self.norm = nn.LayerNorm(d)
+        # THE RESIDUAL DELTA HEADS ARE DOWN-SCALED, NOT ZEROED.
+        #
+        # `forward` computes `out[k] = z_t + delta`, with `delta` produced from
+        # `self.norm(...)` -- a LayerNorm, so its output is O(1) PER DIM whatever
+        # the latent's scale. v6's operative latent has mean|z| = 0.015581 and
+        # moves 0.000892 per tick (MEASURED 2026-08-22, stride-1 latents at the
+        # true dt=0.1s tick). A default-init head therefore starts emitting a
+        # delta ~1000x LARGER than the movement it must predict, and the run
+        # spends itself shrinking it. v6F-SW-30k's own o5_step1 was still
+        # 535x WORSE than predicting NO CHANGE at step 20,000, and a scalar
+        # rescale of the trained heads could not rescue it -- the error fell
+        # monotonically to alpha=0, i.e. the learned delta carried no signal.
+        #
+        # WHY DOWN-SCALED AND NOT ZERO-INIT. Zeroing the OUTPUT head sets
+        # dL/dh_last = W^T . dL/dout = 0, which stops gradient reaching the
+        # ENTIRE predictor body -- blocks, in_proj, act_emb and intent_proj all
+        # stall until the head leaves zero. `test_v6_staged.py::
+        # test_planner_surface_is_total` caught exactly that: intent_proj went
+        # invisible to the gradient probe. This is why FiLM (an INTERNAL
+        # modulation, main path untouched) is zero-init a few lines above while
+        # an output head must not be.
+        #
+        # SCOPE: initialisation only. state_dict shapes are unchanged, so every
+        # existing checkpoint loads byte-identically.
         self.heads = nn.ModuleDict(
             {str(k): nn.Linear(d, state_dim) for k in cfg.horizons})
+        # ⛔⛔ ONLY head "1" IS EVER TRAINED, AND THAT IS BY DESIGN — but the
+        # config has been free to claim otherwise, and the claim corrupted three
+        # analyses before anyone checked.
+        #
+        # `metric_dynamics.rollout_transitions` reaches long horizons by applying
+        # the **1-step head autoregressively** (`predictor(ws, wa)[1]`, k times,
+        # full-chain gradient — explicitly NOT truncated BPTT), and O5 supervises
+        # every step. So the trained horizon is `o5_k * dt`, and heads for k != 1
+        # are ALLOCATED, COMPUTED IN `forward`, AND CONSUMED BY NO LOSS.
+        #
+        # MEASURED 2026-08-31 on `o1ctrl30k`, all 8 snapshots, steps 5,000-22,500:
+        #     |W1| 3.7283 -> 7.7516      (moving)
+        #     |W2| 0.026154 CONSTANT     (delta EXACTLY 0.000e+00 at every step)
+        #     |W4| 0.026113 CONSTANT     (delta EXACTLY 0.000e+00 at every step)
+        # Bit-identical across 17,500 steps, WITH `w_o1_ctrl 1.0` in force.
+        #
+        # ⚠️ THE COST WAS NEVER TRAINING, IT WAS MEASUREMENT. Untrained heads
+        # emit initialisation noise that reads as a number: MM-E10 reported h2/h4
+        # action-divergence ratios of ~1e-5 as if they meant something, MM-E14
+        # retracted them, and on 2026-08-31 the same heads produced a false
+        # "the model only imagines 0.1 s" alarm. A silent dead parameter is a
+        # measurement hazard, not a wasted-FLOPs problem.
+        #
+        # ⛔ THE GUARD DEFAULTS TO PERMISSIVE HERE, DELIBERATELY, AND THE HARD
+        # REFUSAL LIVES IN THE TRAINER'S PREFLIGHT INSTEAD.
+        # ~30 banked checkpoints were built with horizons (1,2,4); their
+        # state_dict carries heads.2/heads.4, so a constructor that refused them
+        # would make every one of them unloadable and break `load_trunk_auto`
+        # mid-flight — including the MM-E11 read this guard was written during.
+        # LOADING OLD WORK IS NOT AUTHORING NEW WORK. A checkpoint is a record of
+        # what was done and must stay readable however wrong it was; a new arm is
+        # a decision and can be refused. Refusing at the wrong one of those two
+        # would have destroyed the evidence instead of preventing the defect.
+        # ⇒ `train_v6_staged.py` refuses `--horizons` with any entry != 1 when
+        # CONFIGURING a run. The check lives INSIDE `preflight(a)` (search the
+        # string "which NO loss consumes"), which `main()` runs before BOTH
+        # `dry_run(a)` and `train(a)`. ⚠️ There is no function named
+        # `_refuse_untrained_horizons` — an earlier version of this comment
+        # named one, and a later reader grepped for that name, found 0, and
+        # concluded the guard did not exist. It does. See the note below.
+        untrained = [k for k in cfg.horizons if int(k) != 1]
+        if untrained and not allow_untrained_horizons:
+            raise ValueError(
+                f"[predictor] ⛔ horizons {tuple(cfg.horizons)} declare "
+                f"{untrained}, which NO loss consumes: the O5 rollout applies "
+                f"head '1' autoregressively (metric_dynamics.rollout_transitions), "
+                f"so heads {untrained} would receive EXACTLY zero gradient and "
+                f"then emit initialisation noise into every probe that reads them "
+                f"(this produced two retracted findings). Use horizons=(1,) and "
+                f"set the HORIZON WITH --o5-k (o5_k * dt seconds; the binding "
+                f"target is 6.0 s = o5_k 60 per §4b). Pass "
+                f"allow_untrained_horizons=True ONLY to load a pre-2026-08-31 "
+                f"checkpoint whose state_dict already carries the dead heads.")
+        #: Which horizons actually receive gradient. Read this, never `cfg.horizons`,
+        #: when reporting what a model was trained to predict.
+        self.trained_horizons = (1,)
+        if cfg.residual:
+            for h in self.heads.values():
+                h.weight.data.mul_(RESIDUAL_HEAD_INIT_SCALE)
+                h.bias.data.mul_(RESIDUAL_HEAD_INIT_SCALE)
+        # ⛔ `trained_horizons` IS A FACT ABOUT THE v6 LADDER, NOT ABOUT THIS
+        # CLASS — AND I ALMOST SHIPPED IT AS THE LATTER.
+        # `V6Stack` is the consumer whose only loss (O5) applies head '1'
+        # autoregressively; but `refa_train.py:213` and `finetune_traj.py:248`
+        # BOTH do `for k in horizons: loss_pred += ...`, so in THOSE trainers
+        # heads 2 and 4 are reached and trained. Declaring them dead HERE would
+        # have silently frozen REF-A's multi-horizon objective — a true fact
+        # quoted outside its scope, the `df` / Thor-`free` / `step_s` family.
+        # ⇒ the declaration is made by `V6Stack.__init__`, which knows its own
+        # ladder. See `v6.py`, `declare_grad_unreachable(self.predictor_op...)`.
+        # ⛔⛔ THE THREE-PART CLAIM THAT STOOD HERE WAS A NAME-ABSENCE READ AS A
+        # BEHAVIOUR-ABSENCE, AND TWO OF ITS THREE PARTS ARE NOW REFUTED
+        # (MEASURED 2026-09-06, `…/2026-09-06-ema-teacher-forensics/`). It read:
+        # *"the `_refuse_untrained_horizons` preflight DOES NOT EXIST (grep -c =
+        # 0, with `def v6_loss_step` = 1 as the same-breath control),
+        # `trained_horizons` is read by nothing, and --horizons still defaults
+        # to [1,2,4]."* The grep was correct and the CONCLUSION was not:
+        #   1. ⛔ REFUTED — the refusal EXISTS, inside `preflight(a)`, which
+        #      `main()` runs before BOTH `dry_run(a)` and `train(a)`. VERIFIED
+        #      BY EXECUTION, not by grep: a fresh `--horizons 1 2 4` launch
+        #      exits 2 with "declares [2, 4], which NO loss consumes". It is
+        #      also present in the PRE-EDIT baseline tree (`train_v6_staged.py`
+        #      md5 `d2ade650…`), so it predates that claim rather than
+        #      post-dating it. Only the IDENTIFIER was missing.
+        #   2. ⛔ REFUTED — `trained_horizons` IS read: `v6.py` consults it to
+        #      decide which heads to declare grad-unreachable. That reader was
+        #      added by the same turn that wrote "read by nothing", so the
+        #      sentence was made false by its own author's edit.
+        #   3. ✅ STANDS — `--horizons` still defaults to `[1, 2, 4]`.
+        # ⭐ AND THE DEFAULT IS DELIBERATELY LEFT ALONE. Changing it would
+        # silently change the GEOMETRY of every new run that omits the flag,
+        # and a model built at `(1,)` cannot strict-load a banked checkpoint
+        # (MEASURED: exactly 6 unexpected keys). The refusal already makes the
+        # wrong default un-launchable for a FRESH arm — loud, actionable, with
+        # the fix in the message — while exempting RESUMES, which is
+        # load-bearing: `k60p30k` (MM-E19) runs `--horizons 1 2 4` deliberately
+        # as a matched control, and refusing its restart would make a 22 h arm
+        # unrecoverable. A guard that destroys the work it protects is worse
+        # than the defect. ⇒ pinned by
+        # `stack/tests/test_horizons_refusal_is_wired.py`, so "does this guard
+        # exist" is answered by a test instead of by a grep for a name.
         self.out_proj = nn.Linear(state_dim, d)  # reserved: feed predictions back
+        # ⛔ `out_proj` IS REFERENCED EXACTLY ONCE IN THE PROGRAMME: on this
+        # line. MEASURED 2026-09-06 over 989 readable .py files — zero uses in
+        # `forward`, zero consumers, zero loaders. `test_refa.py` already
+        # carries a hand-written exemption for it ("reserved-but-unused in
+        # OperativePredictor.forward — legitimately grad-free"), i.e. the
+        # codebase had already built a test exception AROUND the dead tensor
+        # instead of retiring it. 1,573,632 params at v7f's geometry.
+        #
+        # ⛔⛔ AND IT IS **NOT** DECLARED grad-unreachable HERE, THOUGH IT IS
+        # DEAD IN EVERY CONSUMER — BECAUSE A LIVE PI GATE READS `requires_grad`.
+        # MEASURED: declaring it in this constructor makes
+        # `train_flagship_v4.py:1636`'s not-frozen gate REFUSE EVERY LAUNCH —
+        # *"TRUNK FROZEN — Sayed's hard requirement is that the encoder AND
+        # predictor train jointly (NO frozen part)"*, `trunk_tensors_frozen: 4`.
+        # ⚠️ That gate's INTENT is satisfied (a tensor no gradient reaches was
+        # never training) but its PREDICATE is the very defect this turn is
+        # about: it reads `requires_grad` as a proxy for "trains". Fixing a PI
+        # hard requirement's predicate is not a v7f-budget deliverable, and
+        # silently tripping it is worse. ⇒ the declaration is made by
+        # `V6Stack.__init__`, which is the consumer whose budget was wrong;
+        # REF-A, flagship-v4 and finetune_traj keep byte-identical behaviour and
+        # their (2-tensor) overstatement is logged for their owners.
+        # ⭐ Same scope discipline as the horizon heads above, and it was caught
+        # the same way: by a control that had to keep reading a known value.
         # Tactical-intent conditioning (D-030). Projected into the FiLM cond
         # space and added to the action embedding. Non-zero init so a live FiLM
         # makes the intent steer the output; FiLM's own zero-init keeps the
@@ -98,7 +310,22 @@ class OperativePredictor(nn.Module):
                             if gated_intent and intent_dim is not None else None)
 
     def forward(self, states: Tensor, actions: Tensor,
-                intent: Tensor | None = None) -> dict[int, Tensor]:
+                intent: Tensor | None = None,
+                nav_cond: Tensor | None = None) -> dict[int, Tensor]:
+        """``nav_cond`` — the NAV term, added into the SAME ``cond`` the actions
+        build (PI directive 2026-08-30: nav conditions the WM "like the actions").
+
+        ⛔ ADDITIVE AND ``None``-SAFE. ``nav_cond=None`` reproduces the previous
+        behaviour EXACTLY and adds no parameters here, so every existing
+        checkpoint stays a strict subset and no arm changes by accident. The
+        gating and zero-init live in ``NavConditioner`` (the caller), not here —
+        this site only accepts a ready term, exactly as it does for ``intent``.
+
+        ⚠️ H26 applies to this sum and is why the caller gates: the UNGATED
+        ``intent_proj`` term reached norm ~31.4 against ``act_emb`` ~28.3,
+        diluting the action conditioning, and was measured net-harmful. Nav is a
+        THIRD term in the same sum.
+        """
         # `-O`-proof, named-axis contract check. Supersedes the bare `assert`,
         # which was stripped under `python -O` and let a short window run
         # SILENTLY (pos slice, causal mask and FiLM cond all re-align).
@@ -115,6 +342,11 @@ class OperativePredictor(nn.Module):
             if self.intent_gate is not None:
                 term = self.intent_gate * term
             cond = cond + term
+        if nav_cond is not None:
+            # broadcast a per-window nav term across the window axis, matching
+            # how `intent` enters; a [B, W, D] term is used as-is.
+            cond = cond + (nav_cond.unsqueeze(1) if nav_cond.dim() == 2
+                           else nav_cond)
         mask = torch.triu(torch.ones(w, w, device=states.device, dtype=torch.bool),
                           diagonal=1)
         for blk in self.blocks:
@@ -138,3 +370,11 @@ def change_weighted_mse(pred: Tensor, target: Tensor, prev: Tensor,
     w = (target - prev).abs()
     w = w / w.mean(dim=-1, keepdim=True).clamp_min(eps)
     return (w * (pred - target).pow(2)).mean()
+
+
+def residual_init_scale_banner() -> str:
+    """One line naming the init regime, for a run to print into its log."""
+    d = RESIDUAL_HEAD_INIT_SCALE
+    return (f"[predictor] RESIDUAL_HEAD_INIT_SCALE={d:g}"
+            + ("  <-- DEFECT REINTRODUCED (regression arm)" if d >= 1.0
+               else "  (identity-scale start)"))

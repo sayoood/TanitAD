@@ -1,0 +1,26 @@
+# Provenance: was u400 trained on the banked SFT-4 lane side files that S1L would use? (Amendment 2 "Labels")
+
+Date 2026-11-08. Base `d689f924`; `PK` = `TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan`.
+
+## Answer: NOT ESTABLISHED for the train side, and the train side cannot be the same file. LAUNCH BLOCKER as Amendment 2 words it.
+Two lane side-file sets exist. They differ in status.
+
+| side file | used by | status |
+|---|---|---|
+| `heldout_teacher_lane` (3,137 rows) + `heldout_lane` | SFT-4 held-out reads; SCORER1 eval | BANKED in the repo (`raw/2026-10-04-lane-discipline/*.xz`, 2,687,804 B). Never a training input. |
+| `train_teacher_lane` (the lane target of the 7th output) | SFT-4 training of u400; S1L training | u400's copy was LOST with the pod and never banked. S1L would train on a REGENERATED draw. |
+
+## Hops (all MEASURED unless marked)
+1. SFT-4 launch argv carries the lane head and the train-side file: `PK/refe/sft4_pod.sh:9` (`D=/workspace/data/refe_sft2`), `:10` (`--lane-head --lane-weight 1.0 --teacher-lane-train $D/train_teacher_lane --teacher-lane-heldout $D/heldout_teacher_lane`). So the recipe DID use a train teacher-lane directory.
+2. How many rows it held: `PK/eval/PREREG_SFT4.md` Amendment 4 (`:122-134`, line `:128`): "Lane labels: 2,109 subset sets", written 2026-10-05 05:06 before any step. PREREG_SFT4.md:37 states the registered design (15,000-set seeded subset, seed 20261004), so u400 saw 2,109, not 15,000. The row count at launch was written to `chain.log` (`sft4_chain.sh:10`); that log was NEVER banked (`PK/STOP_CONSEQUENCES_2026-10-11.md:23`, ":64" lists the lane relabel as INHERITED).
+3. The data event of the u400 run (n of `teacher_lane_train`) was never banked either (same STOP file line 23: no `sft.log`, no `chain.log`). The nearest banked event is the 24-set/1,500-row smoke `raw/2026-10-04-sft4-smoke/r2_smoke2.log:5` (`teacher_lane_train: 1500`) and a LATER pod run (S1 arm N seed 0, 2026-10-14) `raw/2026-10-16-sft4r-readiness/evidence/s1_n_s0_data_event.json` (`teacher_lane_train: 2500`). Neither is the u400 run.
+4. Loss of the train file and its source: `raw/2026-10-13-aux-s1-data-audit/S1_DATA_AUDIT.md:14` ("lost with the SFT-4 pod; the queue source of its seeded subset was never banked") and `:65` (I10 MISSING, BLOCKER); `eval/PREREG_SFT4R.md:147-152` (NAMED GAP: the `--queue` source of the subset was never written into a banked script).
+5. What exists now is a different draw: `eval/PREREG_AUX_DRIVABLE_S1.md:214` ("regenerated ... NO: a different draw of the same recipe"; `select_bank_subset.py --seed 20261004 --n 2500`, refused below 2,109); `eval/S1_POD_RUNBOOK.md:12` ("u400 itself trained on 2,109 rows"). SCORER1's chain only checks the count: `PK/refe/scorer1_chain.sh:144` (`>= 2109`), reading `$D/train_teacher_lane` from `scorer1_pod.sh:14`.
+6. Checkpoint's own record: `model_sft4_B_u400.pt` meta (read by `torch.load(mmap=True)`) has `n_score_components: 7`, `sft_intermediate {arm B, update 400, base model_final.pt}`, `step 10075` and NO label path, hash or row count. `scorer_states_u400.pt` has only `update=400` and states. Its lane row moved off the SFT-4 init (`scorer_finetune.py:907-918`: zero weight, bias 1.5): arm B row-6 weight norm 0.1124, bias 1.4932; arm A 0.0972 and 1.4951, against rows 0-5 mean norm 0.536. So a lane target was trained, lightly. This says nothing about WHICH rows.
+7. HF bank `Sayood/tanitad-refe-navtrain-banks`: local copy is `MD5SUMS.txt` only (snapshot `7de1d588`, 10 lines: five snapshots and five tarballs `onpolicy_queue`, `onpolicy_sets_logs_full`, `refe_grow_test`, `refe_heldout_v5`, `workspace_scripts_logs`). No file is named for lane labels. The contents of the tarballs were not opened (UNVERIFIED): `onpolicy_queue` is the candidate queue source (SFT4R:149), `workspace_scripts_logs` might hold an SFT-4 log (STOP file lists it as scripts and logs; a pod-side log would not be in it, as `sft.log` is declared missing).
+8. Lane-speed side evidence: `lane_truth/PREREG_LANE_SPEED.md:24` already marks the same fact INHERITED, not re-verified. G-L1 against the held-out banked label failed as written (71.8 % within 1 mm, `RESULT_LANE_SPEED.md:16`), so even the label pipeline is not bit-reproducible on this machine class.
+
+## Conclusion for the Master Mind
+- Amendment 2 condition "Labels" and Amendment 3 condition 3 ("It is established that u400 was trained on the banked SFT-4 lane labels") are NOT met and cannot be met as worded: the exact train rows u400 saw are gone, and S1L trains on a regenerated draw (>= 2,109 sets, seed 20261004 over an unbanked queue).
+- What IS established: same recipe (soft target `clip(1-(d-0.5)/1.5,0,1)`, `--lane-head`, `--lane-weight 1.0`, same teacher env, held-out files bit-banked), different sets. Any claim that S1L "starts from a comparable recipe" rests on that, not on label identity.
+- Decision needed from the PI/MM: either rule "same recipe, different draw" sufficient for condition 3, or run no S1L. The code is built either way. Cheapest check that would shrink the gap: restore `onpolicy_queue.tar.zst`, run `select_bank_subset.py --seed 20261004 --n 2109` and compare its first rows to any surviving sample; no sample of the original rows is known to survive (UNVERIFIED).

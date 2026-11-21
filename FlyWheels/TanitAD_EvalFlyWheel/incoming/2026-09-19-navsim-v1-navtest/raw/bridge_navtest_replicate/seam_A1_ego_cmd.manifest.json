@@ -1,0 +1,3048 @@
+{
+ "arm": "A1_ego_cmd",
+ "spec": {
+  "declared": [
+   "ego_velocity[t0]",
+   "ego_acceleration[t0]",
+   "driving_command[t0]"
+  ],
+  "keep": 1,
+  "nav": "cmd",
+  "frames": "ST",
+  "meaning": "frames + measured t0 ego state + NavSim driving_command -> nav"
+ },
+ "declared_inputs": [
+  "ego_velocity[t0]",
+  "ego_acceleration[t0]",
+  "driving_command[t0]"
+ ],
+ "frames_construction": "ST",
+ "n": 200,
+ "n_requested": 200,
+ "partial": false,
+ "stalled_on_ram": false,
+ "device": "cpu",
+ "devices": {
+  "cpu": 200
+ },
+ "mixed_device": false,
+ "priority": "BELOW_NORMAL",
+ "resumed_from_parts": 0,
+ "n_parts": 1,
+ "ram_floor_mb": 3000,
+ "ram_wait_min": [],
+ "ram_probe_unreadable": 0,
+ "wall_s": 574.2,
+ "seam": "raw\\bridge_navtest_replicate\\seam_A1_ego_cmd.npz",
+ "rows_jsonl": "raw\\bridge_navtest_replicate\\rows_A1_ego_cmd.jsonl",
+ "conversion": "``[K,2]`` ego-frame knots (origin excluded) -> ``[8,3]`` NavSim poses.\n\nMethod (declared in SPEC): a C2 cubic spline in TIME ('not-a-knot', scipy\n``CubicSpline``) per axis through the origin (t=0, (0,0)) and every knot;\nevaluated at ``out_t``. At a knot time the spline reproduces the knot to\nfloat precision (the GT round-trip control asserts < 1e-3 m); at 2.5 s and\n3.5 s it INTERPOLATES (error measured on logged human paths). Heading =\natan2(y'(t), x'(t)) of the same spline \u2014 the rear-axle path tangent, which\nis the kinematic-bicycle yaw at the rear axle (zero side-slip there);\nheld at the previous value (0 = the t0 yaw at t=0) where |p'(t)| < 1.0 m/s,\nand every new value is taken as the branch NEAREST the previous one (so a\nheld value can never be unwrapped into a multi-turn drift). The axes need\nNO permutation: both systems are x-forward / y-left / CCW-positive\n(refb_labels.ego_frame; navsim convert_absolute_to_relative_se2_array).",
+ "per_token": [
+  {
+   "token": "0000548db87959c2",
+   "frame_sha16": "ffd7c4bc262b0432",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     5.430568218231201,
+     -0.049493078142404556
+    ],
+    "ego_acceleration": [
+     0.15197373926639557,
+     1.2596756219863892
+    ],
+    "driving_command": [
+     0.0,
+     1.0,
+     0.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     5.430793748398738,
+     0.15197373926639557,
+     0.23195055462340156,
+     0.04271024925072727,
+     1.0
+    ],
+    "v0": 5.430793748398738,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "follow",
+    "nav_index": 0,
+    "navsim_argmax": 1
+   },
+   "diag": {
+    "sel_idx": 69,
+    "route_argmax": 1
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "00016f8b45c25a1d",
+   "frame_sha16": "ed4b935a56c92af1",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     5.56202507019043,
+     0.09391084313392639
+    ],
+    "ego_acceleration": [
+     1.1705782413482666,
+     0.4772177040576935
+    ],
+    "driving_command": [
+     1.0,
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     5.562817822640337,
+     1.1705782413482666,
+     0.08578704521213078,
+     0.015421509017063729,
+     1.0
+    ],
+    "v0": 5.562817822640337,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "left",
+    "nav_index": 1,
+    "navsim_argmax": 0
+   },
+   "diag": {
+    "sel_idx": 69,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "0004474e9e3f5470",
+   "frame_sha16": "a0940ce2f064665a",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     3.0367848873138428,
+     -0.000207375647732988
+    ],
+    "ego_acceleration": [
+     0.15583816170692444,
+     -0.605498731136322
+    ],
+    "driving_command": [
+     0.0,
+     0.0,
+     1.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     3.036784894394466,
+     0.15583816170692444,
+     -0.11492308751811242,
+     -0.037843670696020126,
+     1.0
+    ],
+    "v0": 3.036784894394466,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "right",
+    "nav_index": 2,
+    "navsim_argmax": 2
+   },
+   "diag": {
+    "sel_idx": 67,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "000926dda92d592d",
+   "frame_sha16": "57d0d3abe75ad7a9",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     7.357606410980225,
+     0.1171942725777626
+    ],
+    "ego_acceleration": [
+     -0.33645349740982056,
+     0.09615758806467056
+    ],
+    "driving_command": [
+     0.0,
+     1.0,
+     0.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     7.358539705432208,
+     -0.33645349740982056,
+     0.013067482396498489,
+     0.0017758254925025186,
+     1.0
+    ],
+    "v0": 7.358539705432208,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "follow",
+    "nav_index": 0,
+    "navsim_argmax": 1
+   },
+   "diag": {
+    "sel_idx": 58,
+    "route_argmax": 1
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "000bf168dd5159af",
+   "frame_sha16": "f07355b47af8c9d8",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     7.943298816680908,
+     0.018525419756770134
+    ],
+    "ego_acceleration": [
+     0.019111700356006622,
+     -0.3075263202190399
+    ],
+    "driving_command": [
+     0.0,
+     0.0,
+     1.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     7.943320419211445,
+     0.019111700356006622,
+     -0.03871508437142573,
+     -0.004873916992922851,
+     1.0
+    ],
+    "v0": 7.943320419211445,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "right",
+    "nav_index": 2,
+    "navsim_argmax": 2
+   },
+   "diag": {
+    "sel_idx": 57,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "000d6961709c5904",
+   "frame_sha16": "ed61002632fe319f",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     7.351394176483154,
+     0.18182270228862762
+    ],
+    "ego_acceleration": [
+     -0.1735972911119461,
+     -0.1740691065788269
+    ],
+    "driving_command": [
+     0.0,
+     1.0,
+     0.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     7.353642351454004,
+     -0.1735972911119461,
+     -0.023671141219481384,
+     -0.003218968245688613,
+     1.0
+    ],
+    "v0": 7.353642351454004,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "follow",
+    "nav_index": 0,
+    "navsim_argmax": 1
+   },
+   "diag": {
+    "sel_idx": 58,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "0012a35a78a151b5",
+   "frame_sha16": "2699b82ccaccb976",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     8.826431274414062,
+     0.20795048773288727
+    ],
+    "ego_acceleration": [
+     0.16876405477523804,
+     0.09919022768735886
+    ],
+    "driving_command": [
+     0.0,
+     1.0,
+     0.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     8.828880588574238,
+     0.16876405477523804,
+     0.011234745638730734,
+     0.0012724994438445582,
+     1.0
+    ],
+    "v0": 8.828880588574238,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "follow",
+    "nav_index": 0,
+    "navsim_argmax": 1
+   },
+   "diag": {
+    "sel_idx": 58,
+    "route_argmax": 1
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "00137a5ce92d591c",
+   "frame_sha16": "dd1127042c1d8e6c",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     7.62272310256958,
+     -0.025853894650936127
+    ],
+    "ego_acceleration": [
+     -0.8113565444946289,
+     -0.6817883849143982
+    ],
+    "driving_command": [
+     0.0,
+     1.0,
+     0.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     7.622766946609127,
+     -0.8113565444946289,
+     -0.08944106381445671,
+     -0.011733411822887124,
+     1.0
+    ],
+    "v0": 7.622766946609127,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "follow",
+    "nav_index": 0,
+    "navsim_argmax": 1
+   },
+   "diag": {
+    "sel_idx": 49,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "00185dab0ba153b9",
+   "frame_sha16": "230fca95b370e250",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     1.5584537982940674,
+     0.08029191941022873
+    ],
+    "ego_acceleration": [
+     1.4946370124816895,
+     0.08045992255210876
+    ],
+    "driving_command": [
+     0.0,
+     0.0,
+     1.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     1.560520757228107,
+     1.4946370124816895,
+     0.007847461204220725,
+     0.005028745159506798,
+     1.0
+    ],
+    "v0": 1.560520757228107,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "right",
+    "nav_index": 2,
+    "navsim_argmax": 2
+   },
+   "diag": {
+    "sel_idx": 85,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "001b34b45b2f50e4",
+   "frame_sha16": "e88abc90e155eaa7",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     2.014592170715332,
+     0.03008347377181053
+    ],
+    "ego_acceleration": [
+     -1.2493199110031128,
+     0.15555261075496674
+    ],
+    "driving_command": [
+     0.0,
+     1.0,
+     0.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     2.0148167732331626,
+     -1.2493199110031128,
+     0.019588125579332264,
+     0.009722038172185421,
+     1.0
+    ],
+    "v0": 2.0148167732331626,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "follow",
+    "nav_index": 0,
+    "navsim_argmax": 1
+   },
+   "diag": {
+    "sel_idx": 0,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "001d444661b45635",
+   "frame_sha16": "8336e2c74ac03618",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     9.224471092224121,
+     0.20537634193897247
+    ],
+    "ego_acceleration": [
+     0.5791746973991394,
+     0.7974242568016052
+    ],
+    "driving_command": [
+     1.0,
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     9.226757088658328,
+     0.5791746973991394,
+     0.08642519242018536,
+     0.009366800446759407,
+     1.0
+    ],
+    "v0": 9.226757088658328,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "left",
+    "nav_index": 1,
+    "navsim_argmax": 0
+   },
+   "diag": {
+    "sel_idx": 68,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "002672a228395a16",
+   "frame_sha16": "91fa9093703baf4b",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     4.2835588455200195,
+     -0.062178295105695724
+    ],
+    "ego_acceleration": [
+     1.3089631795883179,
+     0.5444016456604004
+    ],
+    "driving_command": [
+     1.0,
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     4.284010098425896,
+     1.3089631795883179,
+     0.12707758225416735,
+     0.029663231256354963,
+     1.0
+    ],
+    "v0": 4.284010098425896,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "left",
+    "nav_index": 1,
+    "navsim_argmax": 0
+   },
+   "diag": {
+    "sel_idx": 77,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "0027991369e05ab2",
+   "frame_sha16": "347941efce0e64b7",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     3.308229684829712,
+     -0.07496780157089233
+    ],
+    "ego_acceleration": [
+     1.2862181663513184,
+     0.4773354232311249
+    ],
+    "driving_command": [
+     1.0,
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     3.309078998582667,
+     1.2862181663513184,
+     0.09872128901835527,
+     0.029833463951945305,
+     1.0
+    ],
+    "v0": 3.309078998582667,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "left",
+    "nav_index": 1,
+    "navsim_argmax": 0
+   },
+   "diag": {
+    "sel_idx": 77,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "0027db600afe56ca",
+   "frame_sha16": "27f9fb622805f23b",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     0.15661495923995972,
+     -0.006688965950161219
+    ],
+    "ego_acceleration": [
+     1.124272346496582,
+     -0.07278391718864441
+    ],
+    "driving_command": [
+     0.0,
+     1.0,
+     0.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     0.15675773576833987,
+     1.124272346496582,
+     -0.0007130901286776407,
+     -0.004548994824290276,
+     1.0
+    ],
+    "v0": 0.15675773576833987,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "follow",
+    "nav_index": 0,
+    "navsim_argmax": 1
+   },
+   "diag": {
+    "sel_idx": 0,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "002a52b0ed5650da",
+   "frame_sha16": "3ce571da6480a5f7",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     8.35749340057373,
+     -0.16923514008522034
+    ],
+    "ego_acceleration": [
+     -0.9322909712791443,
+     0.11769725382328033
+    ],
+    "driving_command": [
+     0.0,
+     1.0,
+     0.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     8.359206689230332,
+     -0.9322909712791443,
+     0.014079954976459282,
+     0.0016843649762362418,
+     1.0
+    ],
+    "v0": 8.359206689230332,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "follow",
+    "nav_index": 0,
+    "navsim_argmax": 1
+   },
+   "diag": {
+    "sel_idx": 49,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "002e450c6cba5895",
+   "frame_sha16": "091662bfcb978f68",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     4.342099666595459,
+     0.12459632009267807
+    ],
+    "ego_acceleration": [
+     -0.35119691491127014,
+     0.1140165776014328
+    ],
+    "driving_command": [
+     0.0,
+     1.0,
+     0.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     4.3438869411656,
+     -0.35119691491127014,
+     0.026247593260527773,
+     0.0060424209046022566,
+     1.0
+    ],
+    "v0": 4.3438869411656,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "follow",
+    "nav_index": 0,
+    "navsim_argmax": 1
+   },
+   "diag": {
+    "sel_idx": 58,
+    "route_argmax": 1
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "0033fc4b187a5f1f",
+   "frame_sha16": "0d32ddaafa2d510f",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     7.253458499908447,
+     -0.1457081437110901
+    ],
+    "ego_acceleration": [
+     -1.1024291515350342,
+     0.0069571323692798615
+    ],
+    "driving_command": [
+     0.0,
+     1.0,
+     0.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     7.254921851614794,
+     -1.1024291515350342,
+     0.0009589534541617906,
+     0.0001321797083104827,
+     1.0
+    ],
+    "v0": 7.254921851614794,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "follow",
+    "nav_index": 0,
+    "navsim_argmax": 1
+   },
+   "diag": {
+    "sel_idx": 49,
+    "route_argmax": 1
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "0038810163a05e09",
+   "frame_sha16": "7cd7468726cdc18b",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     1.219334363937378,
+     -0.021658839657902718
+    ],
+    "ego_acceleration": [
+     1.4029927253723145,
+     0.12090625613927841
+    ],
+    "driving_command": [
+     0.0,
+     1.0,
+     0.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     1.2195267100042937,
+     1.4029927253723145,
+     0.009215525548029416,
+     0.007556641008704901,
+     1.0
+    ],
+    "v0": 1.2195267100042937,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "follow",
+    "nav_index": 0,
+    "navsim_argmax": 1
+   },
+   "diag": {
+    "sel_idx": 0,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "003a1fdca9505c09",
+   "frame_sha16": "a02044934659b196",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     10.629469871520996,
+     -0.04721561446785927
+    ],
+    "ego_acceleration": [
+     0.07146059721708298,
+     -0.4278787672519684
+    ],
+    "driving_command": [
+     0.0,
+     1.0,
+     0.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     10.629574735793627,
+     0.07146059721708298,
+     -0.040253611069796205,
+     -0.0037869446398685848,
+     1.0
+    ],
+    "v0": 10.629574735793627,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "follow",
+    "nav_index": 0,
+    "navsim_argmax": 1
+   },
+   "diag": {
+    "sel_idx": 58,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "003ead1914c051d7",
+   "frame_sha16": "83f9045941bf534c",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     10.23359489440918,
+     0.205039843916893
+    ],
+    "ego_acceleration": [
+     0.958031952381134,
+     0.506195068359375
+    ],
+    "driving_command": [
+     0.0,
+     1.0,
+     0.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     10.235648772817045,
+     0.958031952381134,
+     0.04945412641587354,
+     0.004831557580132053,
+     1.0
+    ],
+    "v0": 10.235648772817045,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "follow",
+    "nav_index": 0,
+    "navsim_argmax": 1
+   },
+   "diag": {
+    "sel_idx": 77,
+    "route_argmax": 1
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "0045af58281456a0",
+   "frame_sha16": "d652338bdb7e1520",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     2.52923583984375,
+     -0.007710473611950874
+    ],
+    "ego_acceleration": [
+     0.42679616808891296,
+     -0.16810265183448792
+    ],
+    "driving_command": [
+     0.0,
+     0.0,
+     1.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     2.52924759265546,
+     0.42679616808891296,
+     -0.026573326716961096,
+     -0.010506415739655495,
+     1.0
+    ],
+    "v0": 2.52924759265546,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "right",
+    "nav_index": 2,
+    "navsim_argmax": 2
+   },
+   "diag": {
+    "sel_idx": 75,
+    "route_argmax": 2
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "0057ce5b81c35a81",
+   "frame_sha16": "cd923a46815263b1",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     3.7680156230926514,
+     -0.06933970749378204
+    ],
+    "ego_acceleration": [
+     -0.02208898402750492,
+     0.6557537317276001
+    ],
+    "driving_command": [
+     1.0,
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     3.7686535700307644,
+     -0.02208898402750492,
+     0.15445679013351352,
+     0.040984608232975006,
+     1.0
+    ],
+    "v0": 3.7686535700307644,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "left",
+    "nav_index": 1,
+    "navsim_argmax": 0
+   },
+   "diag": {
+    "sel_idx": 77,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "0059b8e52a3f55e8",
+   "frame_sha16": "7239bdbd8016dfc2",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     4.623817443847656,
+     -0.10286324471235275
+    ],
+    "ego_acceleration": [
+     -0.9928808212280273,
+     -0.018734747543931007
+    ],
+    "driving_command": [
+     0.0,
+     1.0,
+     0.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     4.624961470233306,
+     -0.9928808212280273,
+     -0.004050789971875362,
+     -0.0008758537769334152,
+     1.0
+    ],
+    "v0": 4.624961470233306,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "follow",
+    "nav_index": 0,
+    "navsim_argmax": 1
+   },
+   "diag": {
+    "sel_idx": 49,
+    "route_argmax": 1
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "005f87dd980253a5",
+   "frame_sha16": "dae282cd476bdb07",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     1.2812864780426025,
+     0.08433624356985092
+    ],
+    "ego_acceleration": [
+     -0.18454699218273163,
+     0.050598856061697006
+    ],
+    "driving_command": [
+     1.0,
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     1.284059048795767,
+     -0.18454699218273163,
+     0.004060744936546037,
+     0.003162428503856063,
+     1.0
+    ],
+    "v0": 1.284059048795767,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "left",
+    "nav_index": 1,
+    "navsim_argmax": 0
+   },
+   "diag": {
+    "sel_idx": 67,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "005fcf3e9a125706",
+   "frame_sha16": "7ed9147636bf1b4b",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     7.239971160888672,
+     0.22383393347263336
+    ],
+    "ego_acceleration": [
+     -0.3014605939388275,
+     -0.48991426825523376
+    ],
+    "driving_command": [
+     0.0,
+     0.0,
+     1.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     7.243430405565687,
+     -0.3014605939388275,
+     -0.06763566995532873,
+     -0.009337519126760578,
+     1.0
+    ],
+    "v0": 7.243430405565687,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "right",
+    "nav_index": 2,
+    "navsim_argmax": 2
+   },
+   "diag": {
+    "sel_idx": 56,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "00685a5276625b57",
+   "frame_sha16": "cab9c25587e853f9",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     6.997682571411133,
+     0.13097044825553894
+    ],
+    "ego_acceleration": [
+     0.8175801634788513,
+     0.821452260017395
+    ],
+    "driving_command": [
+     1.0,
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     6.998908102593388,
+     0.8175801634788513,
+     0.11736863064583068,
+     0.01676956304117505,
+     1.0
+    ],
+    "v0": 6.998908102593388,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "left",
+    "nav_index": 1,
+    "navsim_argmax": 0
+   },
+   "diag": {
+    "sel_idx": 69,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "006d30e1af265b1e",
+   "frame_sha16": "6c3c19893eb7c0e9",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     1.0571870803833008,
+     0.010526610538363457
+    ],
+    "ego_acceleration": [
+     0.7754493355751038,
+     -0.10259449481964111
+    ],
+    "driving_command": [
+     0.0,
+     1.0,
+     0.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     1.0572394868045716,
+     0.7754493355751038,
+     -0.006779184440755728,
+     -0.00641215592622757,
+     1.0
+    ],
+    "v0": 1.0572394868045716,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "follow",
+    "nav_index": 0,
+    "navsim_argmax": 1
+   },
+   "diag": {
+    "sel_idx": 85,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "006e2728d7115fa7",
+   "frame_sha16": "170cae9eed3d5d87",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     2.581859827041626,
+     -0.05844518914818764
+    ],
+    "ego_acceleration": [
+     -1.1081379652023315,
+     -0.005309058353304863
+    ],
+    "driving_command": [
+     0.0,
+     1.0,
+     0.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     2.582521249985367,
+     -1.1081379652023315,
+     -0.0008569222509263831,
+     -0.00033181614708155394,
+     1.0
+    ],
+    "v0": 2.582521249985367,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "follow",
+    "nav_index": 0,
+    "navsim_argmax": 1
+   },
+   "diag": {
+    "sel_idx": 0,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "007845701f635565",
+   "frame_sha16": "2c3daa8013280182",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     8.0909423828125,
+     -0.2064509391784668
+    ],
+    "ego_acceleration": [
+     0.18951787054538727,
+     -0.36926570534706116
+    ],
+    "driving_command": [
+     0.0,
+     1.0,
+     0.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     8.093575886607804,
+     0.18951787054538727,
+     -0.04562454352940262,
+     -0.005637130505552704,
+     1.0
+    ],
+    "v0": 8.093575886607804,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "follow",
+    "nav_index": 0,
+    "navsim_argmax": 1
+   },
+   "diag": {
+    "sel_idx": 58,
+    "route_argmax": 1
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "008144fe47ac5f74",
+   "frame_sha16": "0c875d9e18bf6c9b",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     3.198387622833252,
+     -0.10133230686187744
+    ],
+    "ego_acceleration": [
+     -1.107257604598999,
+     -0.03710344061255455
+    ],
+    "driving_command": [
+     0.0,
+     1.0,
+     0.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     3.1999924409765237,
+     -1.107257604598999,
+     -0.007420670593399745,
+     -0.0023189650382846594,
+     1.0
+    ],
+    "v0": 3.1999924409765237,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "follow",
+    "nav_index": 0,
+    "navsim_argmax": 1
+   },
+   "diag": {
+    "sel_idx": 49,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "008844070af456e3",
+   "frame_sha16": "bcadfccab8e40bf4",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     0.4854099154472351,
+     -0.004144836682826281
+    ],
+    "ego_acceleration": [
+     0.140085369348526,
+     -0.015511415898799896
+    ],
+    "driving_command": [
+     0.0,
+     0.0,
+     1.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     0.4854276111693887,
+     0.140085369348526,
+     -0.0004706043478505819,
+     -0.0009694634936749935,
+     1.0
+    ],
+    "v0": 0.4854276111693887,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "right",
+    "nav_index": 2,
+    "navsim_argmax": 2
+   },
+   "diag": {
+    "sel_idx": 76,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "0088dd94bbb85394",
+   "frame_sha16": "e4e7d1ccf1dd6682",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     8.002676010131836,
+     -0.17871035635471344
+    ],
+    "ego_acceleration": [
+     0.185872882604599,
+     1.494559645652771
+    ],
+    "driving_command": [
+     1.0,
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     8.004671180917304,
+     0.185872882604599,
+     0.18671093563664665,
+     0.023325247398263558,
+     1.0
+    ],
+    "v0": 8.004671180917304,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "left",
+    "nav_index": 1,
+    "navsim_argmax": 0
+   },
+   "diag": {
+    "sel_idx": 70,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "008b419a63b75917",
+   "frame_sha16": "6891547c159614ae",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     8.929871559143066,
+     -0.0420725978910923
+    ],
+    "ego_acceleration": [
+     -0.382919043302536,
+     -0.037361737340688705
+    ],
+    "driving_command": [
+     0.0,
+     1.0,
+     0.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     8.929970669956623,
+     -0.382919043302536,
+     -0.004183858908561252,
+     -0.000468518773822756,
+     1.0
+    ],
+    "v0": 8.929970669956623,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "follow",
+    "nav_index": 0,
+    "navsim_argmax": 1
+   },
+   "diag": {
+    "sel_idx": 58,
+    "route_argmax": 2
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "008d66a74c275479",
+   "frame_sha16": "f842f6092040c34b",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     0.7377041578292847,
+     -0.04926684498786926
+    ],
+    "ego_acceleration": [
+     -1.094905138015747,
+     -0.060176026076078415
+    ],
+    "driving_command": [
+     0.0,
+     1.0,
+     0.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     0.7393474463969378,
+     -1.094905138015747,
+     -0.0027806869508540076,
+     -0.003761001629754901,
+     1.0
+    ],
+    "v0": 0.7393474463969378,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "follow",
+    "nav_index": 0,
+    "navsim_argmax": 1
+   },
+   "diag": {
+    "sel_idx": 0,
+    "route_argmax": 1
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "008d6e3394a65c1f",
+   "frame_sha16": "941d2602e2bd2ed9",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     1.6710518598556519,
+     -0.03959940746426582
+    ],
+    "ego_acceleration": [
+     -0.7583302855491638,
+     -0.06079795956611633
+    ],
+    "driving_command": [
+     0.0,
+     1.0,
+     0.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     1.6715209934064705,
+     -0.7583302855491638,
+     -0.006351566610690075,
+     -0.003799872472882271,
+     1.0
+    ],
+    "v0": 1.6715209934064705,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "follow",
+    "nav_index": 0,
+    "navsim_argmax": 1
+   },
+   "diag": {
+    "sel_idx": 58,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "0092e40a13ea52f4",
+   "frame_sha16": "a1176c6e391bc726",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     14.295523643493652,
+     -0.27269241213798523
+    ],
+    "ego_acceleration": [
+     0.041710034012794495,
+     0.11574924737215042
+    ],
+    "driving_command": [
+     0.0,
+     1.0,
+     0.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     14.298124261361126,
+     0.041710034012794495,
+     0.00809541484297686,
+     0.0005661871931588744,
+     1.0
+    ],
+    "v0": 14.298124261361126,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "follow",
+    "nav_index": 0,
+    "navsim_argmax": 1
+   },
+   "diag": {
+    "sel_idx": 58,
+    "route_argmax": 1
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "0093ff0188ea5b90",
+   "frame_sha16": "876cde0a373db90c",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     1.555884838104248,
+     -0.03750361129641533
+    ],
+    "ego_acceleration": [
+     0.9146786332130432,
+     0.04725288599729538
+    ],
+    "driving_command": [
+     0.0,
+     1.0,
+     0.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     1.556336772778615,
+     0.9146786332130432,
+     0.004596337756094156,
+     0.0029533053748309612,
+     1.0
+    ],
+    "v0": 1.556336772778615,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "follow",
+    "nav_index": 0,
+    "navsim_argmax": 1
+   },
+   "diag": {
+    "sel_idx": 76,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "00a757f8d4e45f8c",
+   "frame_sha16": "8e8b1ccc1a56803a",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     7.83704948425293,
+     -0.14964333176612854
+    ],
+    "ego_acceleration": [
+     -0.901786208152771,
+     -0.1383131742477417
+    ],
+    "driving_command": [
+     0.0,
+     1.0,
+     0.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     7.838478024806294,
+     -0.901786208152771,
+     -0.01764541200600734,
+     -0.0022511273170844155,
+     1.0
+    ],
+    "v0": 7.838478024806294,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "follow",
+    "nav_index": 0,
+    "navsim_argmax": 1
+   },
+   "diag": {
+    "sel_idx": 49,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "00abc794f8ce5195",
+   "frame_sha16": "89aaa715c7ab2c4f",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     7.098780155181885,
+     0.142495796084404
+    ],
+    "ego_acceleration": [
+     -0.87041836977005,
+     0.07672522962093353
+    ],
+    "driving_command": [
+     0.0,
+     1.0,
+     0.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     7.10021019009338,
+     -0.87041836977005,
+     0.010806050464250337,
+     0.00152193388293315,
+     1.0
+    ],
+    "v0": 7.10021019009338,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "follow",
+    "nav_index": 0,
+    "navsim_argmax": 1
+   },
+   "diag": {
+    "sel_idx": 49,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "00b2afbb751b59c6",
+   "frame_sha16": "e820873cefb49a73",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     4.1647748947143555,
+     -0.08375899493694305
+    ],
+    "ego_acceleration": [
+     -0.8504801392555237,
+     0.01584767922759056
+    ],
+    "driving_command": [
+     0.0,
+     1.0,
+     0.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     4.165617060277603,
+     -0.8504801392555237,
+     0.003804401364376602,
+     0.000913286389345417,
+     1.0
+    ],
+    "v0": 4.165617060277603,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "follow",
+    "nav_index": 0,
+    "navsim_argmax": 1
+   },
+   "diag": {
+    "sel_idx": 49,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "00b838c358175255",
+   "frame_sha16": "e68de5809c1a77b2",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     10.047393798828125,
+     -0.12135086953639984
+    ],
+    "ego_acceleration": [
+     -0.2225203812122345,
+     0.6774287223815918
+    ],
+    "driving_command": [
+     0.0,
+     1.0,
+     0.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     10.048126600628951,
+     -0.2225203812122345,
+     0.06741841034717744,
+     0.0067095502501886735,
+     1.0
+    ],
+    "v0": 10.048126600628951,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "follow",
+    "nav_index": 0,
+    "navsim_argmax": 1
+   },
+   "diag": {
+    "sel_idx": 58,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "00c489998dd4555c",
+   "frame_sha16": "36d7337110c6547a",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     6.498501300811768,
+     0.14234448969364166
+    ],
+    "ego_acceleration": [
+     -0.3450669050216675,
+     -1.2764220237731934
+    ],
+    "driving_command": [
+     0.0,
+     0.0,
+     1.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     6.500060085137551,
+     -0.3450669050216675,
+     -0.19637080381637462,
+     -0.03021061363192293,
+     1.0
+    ],
+    "v0": 6.500060085137551,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "right",
+    "nav_index": 2,
+    "navsim_argmax": 2
+   },
+   "diag": {
+    "sel_idx": 56,
+    "route_argmax": 2
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "00c6aecefec9576c",
+   "frame_sha16": "34e9df878462a23b",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     4.56895637512207,
+     0.1536194384098053
+    ],
+    "ego_acceleration": [
+     -1.6922087669372559,
+     0.14931435883045197
+    ],
+    "driving_command": [
+     0.0,
+     1.0,
+     0.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     4.571538175453198,
+     -1.6922087669372559,
+     0.03266173290036011,
+     0.007144582774291763,
+     1.0
+    ],
+    "v0": 4.571538175453198,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "follow",
+    "nav_index": 0,
+    "navsim_argmax": 1
+   },
+   "diag": {
+    "sel_idx": 40,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "00c893a01244562c",
+   "frame_sha16": "7755b63ab65f3d41",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     3.30006742477417,
+     -0.046587299555540085
+    ],
+    "ego_acceleration": [
+     0.07652748376131058,
+     0.07613790780305862
+    ],
+    "driving_command": [
+     1.0,
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     3.300396246594566,
+     0.07652748376131058,
+     0.015705329071048612,
+     0.004758619237691164,
+     1.0
+    ],
+    "v0": 3.300396246594566,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "left",
+    "nav_index": 1,
+    "navsim_argmax": 0
+   },
+   "diag": {
+    "sel_idx": 58,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "00ddbc829ecb563e",
+   "frame_sha16": "01e2d9b43deb5580",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     2.430691719055176,
+     0.05034694820642471
+    ],
+    "ego_acceleration": [
+     1.8676105737686157,
+     0.08003713935613632
+    ],
+    "driving_command": [
+     0.0,
+     1.0,
+     0.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     2.4312130816275865,
+     1.8676105737686157,
+     0.01216170876366805,
+     0.00500232120975852,
+     1.0
+    ],
+    "v0": 2.4312130816275865,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "follow",
+    "nav_index": 0,
+    "navsim_argmax": 1
+   },
+   "diag": {
+    "sel_idx": 85,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "00eb3a4e0f8052e9",
+   "frame_sha16": "3afb3226057630f8",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     7.486988067626953,
+     -0.15686142444610596
+    ],
+    "ego_acceleration": [
+     -0.9139374494552612,
+     0.054626889526844025
+    ],
+    "driving_command": [
+     0.0,
+     1.0,
+     0.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     7.488631105300063,
+     -0.9139374494552612,
+     0.007294642873806664,
+     0.0009740956352682263,
+     1.0
+    ],
+    "v0": 7.488631105300063,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "follow",
+    "nav_index": 0,
+    "navsim_argmax": 1
+   },
+   "diag": {
+    "sel_idx": 49,
+    "route_argmax": 1
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "00f20c2762515d09",
+   "frame_sha16": "235c688050e2d254",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     11.118595123291016,
+     -0.12468869239091873
+    ],
+    "ego_acceleration": [
+     0.2826060950756073,
+     -0.36901167035102844
+    ],
+    "driving_command": [
+     0.0,
+     1.0,
+     0.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     11.119294257536353,
+     0.2826060950756073,
+     -0.03318660895235527,
+     -0.0029845967004481686,
+     1.0
+    ],
+    "v0": 11.119294257536353,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "follow",
+    "nav_index": 0,
+    "navsim_argmax": 1
+   },
+   "diag": {
+    "sel_idx": 67,
+    "route_argmax": 1
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "00f49d71f0eb507b",
+   "frame_sha16": "7c74f4c57925bfc7",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     0.0028419194277375937,
+     0.002050715032964945
+    ],
+    "ego_acceleration": [
+     0.031059639528393745,
+     0.001983119174838066
+    ],
+    "driving_command": [
+     0.0,
+     0.0,
+     1.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     0.0035045596271401614,
+     0.031059639528393745,
+     4.343724622465623e-07,
+     0.00012394494842737913,
+     1.0
+    ],
+    "v0": 0.0035045596271401614,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "right",
+    "nav_index": 2,
+    "navsim_argmax": 2
+   },
+   "diag": {
+    "sel_idx": 0,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "00f925ab5406520f",
+   "frame_sha16": "5cc4d9053c5df5a7",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     6.5164031982421875,
+     -0.1684688925743103
+    ],
+    "ego_acceleration": [
+     -1.2427318096160889,
+     -0.2846449613571167
+    ],
+    "driving_command": [
+     0.0,
+     1.0,
+     0.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     6.518580551763261,
+     -1.2427318096160889,
+     -0.043666709200996356,
+     -0.006698806412568548,
+     1.0
+    ],
+    "v0": 6.518580551763261,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "follow",
+    "nav_index": 0,
+    "navsim_argmax": 1
+   },
+   "diag": {
+    "sel_idx": 40,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  },
+  {
+   "token": "00fcad6d092c5e8e",
+   "frame_sha16": "c2a07d2aca0db7e6",
+   "declared_values": {
+    "_arm": "A1_ego_cmd",
+    "_declared": [
+     "ego_velocity[t0]",
+     "ego_acceleration[t0]",
+     "driving_command[t0]"
+    ],
+    "ego_velocity": [
+     5.747741222381592,
+     -0.14225642383098602
+    ],
+    "ego_acceleration": [
+     2.0789635181427,
+     3.082944631576538
+    ],
+    "driving_command": [
+     1.0,
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "ego_block": {
+    "ego_state": [
+     5.749501373996341,
+     2.0789635181427,
+     0.5362107826462971,
+     0.09326213662135187,
+     1.0
+    ],
+    "v0": 5.749501373996341,
+    "formula": "v0=hypot(vx,vy); a_long=ax; kappa=clip(ay/max(v0,4.0)^2,+-0.12); yaw_rate=v0*kappa; keep=1"
+   },
+   "nav": {
+    "fed": "left",
+    "nav_index": 1,
+    "navsim_argmax": 0
+   },
+   "diag": {
+    "sel_idx": 78,
+    "route_argmax": 0
+   },
+   "slot_sources": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "device": "cpu"
+  }
+ ],
+ "device_gate": {
+  "decision": "REFUSE",
+  "training_pids": [],
+  "mem_used_mib": 1746.0,
+  "record": {
+   "requested": "auto",
+   "training_pids": [],
+   "mem_used_mib": 1746.0,
+   "limit_mib": 1024,
+   "override_flag": "--accept-training-box-load",
+   "override_used": false,
+   "override_passed_as": null,
+   "training_processes": [],
+   "training_process_definition": "taniteval.bench.gpu_gap.TRAINING_SCRIPT_RE (the ONE definition)",
+   "rule": "auto|cuda: model arms WAIT for a GPU gap; cpu: allowed only when no training process is alive, or with --accept-training-box-load (recorded)"
+  },
+  "reason": "model arms WAIT for a GPU gap on --device auto: GPU memory used 1746 MiB >= limit 1024 MiB. Queue it: code/run_bridge_navtest.py --device auto --gpu-gap  then  code/run_v1.py score --arm SEAM:<npz> --cache-name navtest --patch-loader  (W3 package). To run on CPU instead, pass --device cpu explicitly",
+  "gate_source": "taniteval.bench.gpu_gap.device_gate",
+  "allowed": false,
+  "requested": "auto",
+  "accept_training_box_load": false,
+  "accept_via": null,
+  "acquired_device": "cpu",
+  "launcher_semantics": "gpu_gap.py:230-256 \u2014 auto: ONE probe then cpu; cuda: probes to max_wait_s then cpu",
+  "cpu_regate": {
+   "decision": "CPU",
+   "reason": "explicit --device cpu and no training process is alive",
+   "training_pids": [],
+   "mem_used_mib": 1746.0,
+   "record": {
+    "requested": "cpu",
+    "training_pids": [],
+    "mem_used_mib": 1746.0,
+    "limit_mib": 1024,
+    "override_flag": "--accept-training-box-load",
+    "override_used": false,
+    "override_passed_as": null,
+    "training_processes": [],
+    "training_process_definition": "taniteval.bench.gpu_gap.TRAINING_SCRIPT_RE (the ONE definition)",
+    "rule": "auto|cuda: model arms WAIT for a GPU gap; cpu: allowed only when no training process is alive, or with --accept-training-box-load (recorded)"
+   },
+   "gate_source": "taniteval.bench.gpu_gap.device_gate",
+   "allowed": true,
+   "requested": "cpu",
+   "accept_training_box_load": false,
+   "accept_via": null
+  }
+ },
+ "gpu_gap_events": [
+  {
+   "t": 1789980615.093,
+   "event": "NO_GAP_CPU",
+   "reasons": [
+    "GPU memory used 1746 MiB >= limit 1024 MiB"
+   ]
+  }
+ ]
+}

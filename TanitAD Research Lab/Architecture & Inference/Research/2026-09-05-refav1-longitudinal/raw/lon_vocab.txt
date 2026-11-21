@@ -1,0 +1,65 @@
+# SOURCE: stack/tanitad/refs/refa_v1.py::canonical_controls
+# GOAL_REACH_S=2.00 s  GOAL_A_MAX=1.50 m/s2  GOAL_CREEP_MPS=1.50  GOAL_CURVE_VMAX_MPS=8.00
+# GOAL_LON_DV_MPS = {'CRUISE': 0.0, 'FOLLOW': -1.0, 'ACCELERATE': 1.5, 'YIELD_MERGE': -1.5, 'BRAKE_TO': -3.0}
+
+# token list HARDCODED fallback (vocab_v7 name not found)
+# tokens: ['HOLD', 'CREEP', 'ADAPT_SPEED_FOR_CURVE', 'CRUISE', 'FOLLOW', 'ACCELERATE', 'YIELD_MERGE', 'BRAKE_TO']
+
+== TABLE A. The whole longitudinal vocabulary, at three v0. ==
+#  a0      = the FIRST commanded acceleration (m/s2)
+#  a_end   = the acceleration at the END of the 2.0 s plan window
+#  dv_2s   = speed change realised over the 2.0 s PLAN horizon
+#  dv_6s   = speed change over the token's full 6.0 s manoeuvre
+#  sust    = |a| still commanded at 2.0 s / |a| at t=0  (0 => decays away)
+
+-- v0 = 3.0 m/s --
+token                            a0      a_end      dv_2s      dv_6s       sust
+HOLD                        -1.5000    -0.5811    -1.9540    -2.8728     0.3874
+CREEP                       -0.7500    -0.2906    -0.9770    -1.4364     0.3874
+ADAPT_SPEED_FOR_CURVE        0.0000     0.0000     0.0000     0.0000     0.0000
+CRUISE                       0.0000     0.0000     0.0000     0.0000     0.0000
+FOLLOW                      -0.5000    -0.1937    -0.6513    -0.9576     0.3874
+ACCELERATE                   0.7500     0.2906     0.9770     1.4364     0.3874
+YIELD_MERGE                 -0.7500    -0.2906    -0.9770    -1.4364     0.3874
+BRAKE_TO                    -1.5000    -0.5811    -1.9540    -2.8728     0.3874
+
+-- v0 = 10.0 m/s --
+token                            a0      a_end      dv_2s      dv_6s       sust
+HOLD                        -1.5000    -1.5000    -3.0000    -8.5120     1.0000
+CREEP                       -1.5000    -1.5000    -3.0000    -7.6213     1.0000
+ADAPT_SPEED_FOR_CURVE       -1.0000    -0.3874    -1.3026    -1.9152     0.3874
+CRUISE                       0.0000     0.0000     0.0000     0.0000     0.0000
+FOLLOW                      -0.5000    -0.1937    -0.6513    -0.9576     0.3874
+ACCELERATE                   0.7500     0.2906     0.9770     1.4364     0.3874
+YIELD_MERGE                 -0.7500    -0.2906    -0.9770    -1.4364     0.3874
+BRAKE_TO                    -1.5000    -0.5811    -1.9540    -2.8728     0.3874
+
+-- v0 = 20.0 m/s --
+token                            a0      a_end      dv_2s      dv_6s       sust
+HOLD                        -1.5000    -1.5000    -3.0000    -9.0000     1.0000
+CREEP                       -1.5000    -1.5000    -3.0000    -9.0000     1.0000
+ADAPT_SPEED_FOR_CURVE       -1.5000    -1.5000    -3.0000    -9.0000     1.0000
+CRUISE                       0.0000     0.0000     0.0000     0.0000     0.0000
+FOLLOW                      -0.5000    -0.1937    -0.6513    -0.9576     0.3874
+ACCELERATE                   0.7500     0.2906     0.9770     1.4364     0.3874
+YIELD_MERGE                 -0.7500    -0.2906    -0.9770    -1.4364     0.3874
+BRAKE_TO                    -1.5000    -0.5811    -1.9540    -2.8728     0.3874
+
+== TABLE B. The SUSTAINED-acceleration capability of the vocabulary ==
+# The lateral question was 'what sustained curvature?'. Here: after the
+# 2 s plan window, what acceleration is the token still commanding?
+# EVERY token converges to a==0 because a_i = (v_t - v)/REACH_S and v -> v_t.
+  HOLD                     a[0]= -1.5000 a[9]= -1.5000 a[29]= -0.8267  max|a|=1.5000
+  CREEP                    a[0]= -1.5000 a[9]= -1.5000 a[29]= -0.4881  max|a|=1.5000
+  ADAPT_SPEED_FOR_CURVE    a[0]= -1.0000 a[9]= -0.3874 a[29]= -0.0471  max|a|=1.0000
+  CRUISE                   a[0]= +0.0000 a[9]= +0.0000 a[29]= +0.0000  max|a|=0.0000
+  FOLLOW                   a[0]= -0.5000 a[9]= -0.1937 a[29]= -0.0236  max|a|=0.5000
+  ACCELERATE               a[0]= +0.7500 a[9]= +0.2906 a[29]= +0.0353  max|a|=0.7500
+  YIELD_MERGE              a[0]= -0.7500 a[9]= -0.2906 a[29]= -0.0353  max|a|=0.7500
+  BRAKE_TO                 a[0]= -1.5000 a[9]= -0.5811 a[29]= -0.0707  max|a|=1.5000
+
+== TABLE C. The REACHABLE SET of dv over the 2 s plan window ==
+# This is the longitudinal analogue of 'kappa in {0, +-0.08}'.
+  v0=  3.0  distinct dv_2s = [-1.953965, -0.976982, -0.651322, 0.0, 0.976982]   (n=5)
+  v0= 10.0  distinct dv_2s = [-3.0, -1.953965, -1.302643, -0.976982, -0.651322, 0.0, 0.976982]   (n=7)
+  v0= 20.0  distinct dv_2s = [-3.0, -1.953965, -0.976982, -0.651322, 0.0, 0.976982]   (n=6)

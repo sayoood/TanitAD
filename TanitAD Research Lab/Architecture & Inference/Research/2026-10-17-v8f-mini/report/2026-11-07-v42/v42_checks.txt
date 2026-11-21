@@ -1,0 +1,42 @@
+# report v42 checks, tip 1887e9b8a5f9c5a17bab6b3de94959f8c86c2c28
+
+PASS v41 inputs are the landed deliverables (sha256)
+PASS html = page template with the v42 md
+PASS LF only, no BOM (md and html)
+PASS removed lines from v41: exactly the 12 edited carried lines (status, evidence classes, abstract contribution paragraph, abstract next bullet, section 6 tiers, the T1-kin paragraph, 7.41.6 (b), 8.2 driving claim, 8.3 (iv), 8.4 row 6, two 'No T2 number exists' limit bullets), each key matched as listed (12 removed; unexpected []; hits [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2])
+PASS order: 7.41.7 < 7.42 < 7.42.1 to 7.42.7 < 7.43 < 7.43.1 to 7.43.8 < 7.44 < 7.44.1 to 7.44.9 < section 8, each heading once
+PASS table lines of 7.42 to 7.44: the 4 directive tables are blocks of source lines only (a bare pipe inside a cell escaped) and number as many lines as the directives expanded; the other 6 tables of the sections are hand-written; the only added table lines outside the sections are rows 1bd, 1be, 1bf (not source lines) and the appendix table (10 lines) (79 source table lines in 4 blocks = 79 expanded directive lines; 6 hand-written tables with 40 lines; 1180 source files)
+PASS every table of 7.42 to 7.44 has one cell count and a header rule (10 tables); rows 1bd, 1be and 1bf have the cell count of row 1az (10 tables)
+PASS italic quotations of 25+ characters in the added lines verbatim in a source (raw files of 2026-11-02 to 2026-11-07, register, v41) (14 quotations)
+PASS each of the four metric families named in 7.42 at least 3 times (STRATEGIC shown as PAUSED by ITEM 25) [42, 49, 21, 25]
+PASS tier T2, the paired scene-cluster bootstrap, B = 2,000, H-ESTIM-SEED-1 and the rule R-SCN stated in 7.42; the tier is never pooled with T1-kin and agents replay
+PASS evidence classes [M], [E], [H] in 7.42 to 7.44 and [P] in 7.44
+PASS the forbidden two-word T2 wording (either separator) is absent from every added line and every part file; the count of the carried text falls, never rises (v41 15 lines, v42 4)
+PASS banned-word scan: none new in the added lines (net of the 12 edited carried lines) or in the part files; per-word counts of the whole report at most the v41 counts (v41 [0, 0, 7, 0, 0, 8, 0], v42 [0, 0, 7, 0, 0, 8, 0])
+PASS math spans: 5 display equations (even $$ count), inline math matches the template pattern, no dollar sign remains outside math in 7.42 to 7.44, and the span counts of v41 are untouched (144 inline spans, 308 dollar signs in the sections)
+PASS 8.3 has Update (v42) before Update (v41) before Update (v40) to (v37), each once
+PASS 8.1 ends with item 32: the v41 items (ending at 31) are untouched and item 32 follows
+PASS section 9 ends with item 20 (v42 reads and their limits), after item 19
+PASS 8.4 has rows 1bd, 1be and 1bf once each, after row 1bc and before row 2
+PASS status line names v42 of 2026-11-07, the tip, §7.42, §7.43, §7.44 and v41 as the previous version; no date after 2026-11-07 anywhere
+PASS no stale T2 statement: the status line's 'no (two-word) (T2) number exists' and the tier line 'T2 (two-word), unprovisioned' are gone; the new status wording names 48 scenes and NOT-DOMINANT; 7.41.6 (b) carries the 7.42 pointer
+PASS added 7.42 numbers agree with the raw READ_STAGE2 and DOMINANCE_T2 JSON (X1, X2, BL with bounds; M1 crawl share and ADE6 with bounds), the outcome is NOT-DOMINANT at both seeds, and the failing_terms are quoted verbatim (10 numbers)
+PASS 7.44 reads as written: P1 FAILS as written, P2 HOLDS as written (scale-sensitive; the weight-only claims matched 2 of 4), P3 FAILS as written (all 26 dominating pairs with a CEILING dominator), P1' NOT EVALUABLE as pre-registered (24 CONFIDENT windows, floor 30), P4 not evaluable, WSP-GAIN pre-registered and not yet read; no WSP-GAIN number quoted
+PASS 7.43 states what is not known: no LoRA result exists, the batch-64 timing is not yet measured, the pod handoffs are E: files not yet landed, the base is B' and the device alone misses the bar
+PASS the shared v42 sentence occurs exactly 3 times (status line, 8.1 item 32, and 8.1's Result) and names no driving result: it says nothing in v42 is a driving result, no counted DOMINANT, no scale signal
+PASS the related-work paragraph cites Library key takehi2026weightspace, the banked page sha256 a326bc5b, the 2026-11-02 blog post as not peer-reviewed [P], and does not claim the method generalises; it sits in section 3
+PASS the appendix block 'Reads added in v42' is in section 10 before the Figures paragraph and names all 8 new raw folders
+PASS the P1' numbers of 7.44 (group sizes, median rho by group, the two differences with bounds, the probe AUCs, the refit tolerance, the spec sha prefix) each occur in the E: read P1P_RESULT.md and in 7.44 (E: file present)
+PASS the read re-pin of 7.42.6 (fourth pin 7fd65ffd, identical to the read of record on the real pulls, NOT-DOMINANT with 48 scenes and 93 starts, 80 of 80 mutations RED) occurs in the E: file HANDOFF_Q.md and in 7.42; the read of record still cites the third pin d6664718 (E: file present)
+PASS the three section files (sec_742_t2.md, sec_743_lorapod.md, sec_744_theory.md) appear in the report line for line and in order (directive lines replaced by their tables)
+PASS no pod address, port or pod id in the report or the part files (IPv4, root@, ssh -, 'port N', 'pod id', :NNNN) ([])
+PASS LF only for every .py, .md, .sh, .js and .txt file of the package (CR counted in python; the _v41copy_ originals are excluded) (16 files; with CR: [])
+PASS patch_v42.py re-run reproduces both deliverables byte for byte ', 'REPIN': '939176e7', 'DOM': 'ec80b6c2', 'TH': 'b17b5492', 'AM4': '701e5a9e'} placeholders left []
+PASS PLACEHOLDERS: no `{{` remains in out/ (md and html) (0 occurrences)
+
+RESULT: PASS (33 checks, 0 failed)
+
+== numbers audit (audit_v42.py): added lines: 311 (of which 88 are exact source table lines and are not re-audited; audited: 223); sources scanned: 1181 files (+ register, + v41 text); tokens found in a source (first match, by file): 2026-11-02-feas2-t1/HANDOFF.md 365, 2026-11-02-feas2-t1/PREREG_FEAS3_FROZEN.md 154, 2026-11-02-gapdecomp-m/RESULTS.md 98, 2026-11-02-gapdecomp/RESULTS.md 80, 2026-11-02-feas2-t1/FROZEN_SHA.txt 70, register 63, 2026-11-02-feas2-t1/RESULTS.md 62, 2026-11-02-feas2-t1/PREREG_FROZEN.md 46, 2026-11-06-theory-crawl/wsp_read/WSP_READ.md 35, 2026-11-06-t2-dominance-read/DRAFT_PREREG_T2_DOM_LORA.md 28, 2026-11-02-feas2-t1/RESULTS_FEAS3.md 27, 2026-11-06-lora-pod-amend4/AMENDMENT_V8F_LORA_4.md 21 ...; structural (integers below 100, years, ids): 0; unmatched: 0
+== offline render (the template's own pre-processing + local marked; v41 baseline: see report_v41/v41_render_check.txt):
+   {"file":"v8f_report.html","tables":270,"h3":60,"math":473,"tables_with_ragged_rows":0,"pre_blocks":0,"slots_rendered":0,"stray_placeholders":0,"unfilled_braces":0}
+   {"file":"V8F_SCIENTIFIC_REPORT.md","tables":270,"h3":60,"math":473,"tables_with_ragged_rows":0,"pre_blocks":0,"slots_rendered":0,"stray_placeholders":0,"unfilled_braces":0}

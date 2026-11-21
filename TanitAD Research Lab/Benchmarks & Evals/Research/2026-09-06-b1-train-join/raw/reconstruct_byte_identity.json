@@ -1,0 +1,29 @@
+{
+ "_evidence_class": "MEASURED (ours; this file)",
+ "date": "2026-09-06",
+ "claim": "--pose-source reconstruct reproduces the v2ep-built B1 EVAL join BYTE FOR BYTE. The pose source changed and the output did not.",
+ "why_it_matters": "read_raw_poses needs *.v2ep.pt; the B1 TRAIN epcache is ~161 GB (34 MB/episode x 4,713) and lives on Thor, not this box. The join reads exactly one [T,4] pose array (~6 KB) out of each 34 MB record. Reconstructing it from {clip}.timestamps.parquet + egomotion removes the blocker entirely.",
+ "method": "the SAME builder, the SAME 141 EVAL clips, the SAME obstacle parquets; only --pose-source changed (v2ep -> reconstruct, with --n-stack 3 supplied because a reconstructed clip carries no record to read it from). No lead block was passed: the gate used the per-clip camera-grid reference.",
+ "v2ep_built_banked": {
+  "path": "G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-06-b1-agent-join/raw/b1eval_agents.jsonl.xz",
+  "md5": "3ddb42ecbd3926066795a94587af2aed",
+  "bytes": 10012564
+ },
+ "reconstruct_built": {
+  "path": "C:\\Users\\Admin\\tanitad-caches\\b1-train-join-20260906\\CONTROL_b1eval_recon.jsonl.xz",
+  "md5": "3ddb42ecbd3926066795a94587af2aed",
+  "bytes": 10012564
+ },
+ "identical_md5": true,
+ "identical_bytes": true,
+ "reconstruct_run": {
+  "n_clips": 139,
+  "n_lines": 26394,
+  "n_agent_boxes": 905512,
+  "visible_frac": 0.4078,
+  "wall_s": 57.6,
+  "gate_true_max_err_frames": 0.10329829597826927,
+  "gate_misjoin1_min_err_frames": 0.897539257125582
+ },
+ "upstream_pose_crosscheck": ".../2026-09-02-b1-eval-lead-block/raw/grid_crosscheck.json reports max_dxy_m 0.0, max_dyaw_deg 0.0, max_dv_mps 0.0 on 20/20 clips (float32-identical), which is the per-clip pose proof this whole-artifact reproduction confirms end to end."
+}

@@ -1,0 +1,63 @@
+{
+ "n_tokens": 12146,
+ "n_logs": 136,
+ "n_proposals": 64,
+ "levels_x100": {
+  "actual": {
+   "mean": 91.19647788427798,
+   "ci95": [
+    90.41022246390116,
+    91.98351862523725
+   ]
+  },
+  "random": {
+   "mean": 67.37165006376868,
+   "ci95": [
+    65.91989940148227,
+    68.80316311365272
+   ]
+  },
+  "best_of_64": {
+   "mean": 97.90044363102973,
+   "ci95": [
+    97.45761685984162,
+    98.32507211611195
+   ]
+  }
+ },
+ "paired_differences_x100": {
+  "actual_minus_random": {
+   "mean": 23.8248278205093,
+   "ci95": [
+    22.705810110995756,
+    24.955818725583978
+   ]
+  },
+  "best_minus_actual": {
+   "mean": 6.703965746751751,
+   "ci95": [
+    6.144440438006354,
+    7.296671791165153
+   ]
+  },
+  "best_minus_random": {
+   "mean": 30.528793567261047,
+   "ci95": [
+    29.240068024833803,
+    31.872075091308627
+   ]
+  }
+ },
+ "random_control": {
+  "definition": "mean over the 64 proposals' PDMS per token (the exact expectation of a skill-free selector)",
+  "actual_beats_random": true,
+  "random_ge_actual_point": false
+ },
+ "n_pick_zero": 384,
+ "n_best_zero": 29,
+ "n_best_strictly_above_pick": 6910,
+ "estimator": "paired log-cluster bootstrap over the logs (cluster unit log_name), 10,000 resamples, 95 %, seed 20260927 (proxy_eval.boot). It answers 'another draw of LOGS' and nothing else: training variance (one seed per arm, H-ESTIM-SEED-1) is unmeasured; inference is deterministic.",
+ "tier": "T1 = NAVSIM v1.1 PDMS, an ego pseudo-simulation of an open-loop plan against logged agents (self-action open loop, not closed loop)",
+ "evidence_class": "MEASURED when built from a P6 dump and its 64 harness columns",
+ "table": "F:/TanitAD_p6read_work/tactical/table_p6final.npz"
+}

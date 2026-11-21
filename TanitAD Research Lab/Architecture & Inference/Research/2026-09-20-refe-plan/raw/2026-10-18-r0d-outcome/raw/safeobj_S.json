@@ -1,0 +1,52 @@
+{
+ "S": "FAIL",
+ "arm": "R0d",
+ "bar": {
+  "g3_pick_min": 0.894,
+  "g3_share_max": 0.55,
+  "g5_bound": 0.5,
+  "source": "PREREG_SAFEOBJ.md section 5 (bar S); rl_val_eval.py:50-52",
+  "tags": [
+   "update250",
+   "update500",
+   "update750",
+   "update1000"
+  ]
+ },
+ "breaches": [
+  "the arm was K3-killed (two consecutive g3/g5 breaches)"
+ ],
+ "checks": [
+  {
+   "present": false,
+   "tag": "update250"
+  },
+  {
+   "present": false,
+   "tag": "update500"
+  },
+  {
+   "present": false,
+   "tag": "update750"
+  },
+  {
+   "present": false,
+   "tag": "update1000"
+  }
+ ],
+ "inputs_sha256": {
+  "KILLED.json": "6183c3e76f4277a440dfafcde46e3437f0164ebfdb7f05befe14740ec3f368be",
+  "kill_checks.jsonl": "31865f51e5f8ad5030599c562b4b396c9c9b71ac3ee57907170f5d20d8abeb9c",
+  "rlval_vs_A0.json": "62a6b8f01816bf12fc78134d6e39658c69bd314a9cb4b17c21858722971172a1",
+  "scores/scores_update1000_A.npz": "e6bc8eb584b5d5d7e3bb78d5f11b3b6e3990484c762990d21ae1b0c5032bb489",
+  "scores/scores_update1000_B.npz": "557ed17226e0eb429d4647a09e48c79e13392fdd4c3407e7819cce483c9b459e"
+ },
+ "killed": "K3",
+ "notes": [],
+ "problems": [
+  "kill_replay.json is missing (the chain writes it after the run; a K3-killed arm never gets one)"
+ ],
+ "record_sha256": "8baa4d70da224ef81ee4ee6b045d87c779943627b71be004929cd49e5b50dd06",
+ "tool": "safeobj_read/1",
+ "u1000_recomputed": null
+}

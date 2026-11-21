@@ -1,0 +1,152 @@
+{
+ "tool": "navtest_E/1",
+ "generated_utc": "2026-10-17T12:43:41Z",
+ "contract_sha256": "8f5dfcc603a2559a1f05483d85d6e94491e6f6a2eba427a39dba7af09bf14365",
+ "status": "VALID",
+ "run_gates": {
+  "hard": {
+   "harness_PASS_R0d_A": true,
+   "harness_PASS_R0d_B": true,
+   "harness_PASS_R1d_A": true,
+   "harness_PASS_R1d_B": true,
+   "picks_report_present": true,
+   "IC2_replicated_scorer_path_bit_equal": true,
+   "n_tokens_12146": true,
+   "states_bound_to_expected_hashes": true,
+   "four_states_tensor_distinct": true,
+   "keys_A_B_as_named": true
+  },
+  "soft": {
+   "IC3_BASE_vs_banked_u400": true,
+   "IC5_forward_bit_identical": true
+  },
+  "status": "VALID",
+  "notes": {},
+  "fixture": true
+ },
+ "FIXTURE": "the gate inputs are stamped FIXTURE: this is NOT a read of the SAFEOBJ states",
+ "pinned_tokens": true,
+ "token_gate": {
+  "path": "E:\\Projects\\TanitAD\\data\\refe_navtest\\navtest_full_tokens.json",
+  "md5": "3a8b3653fd70891e50a230a37eb76ae8",
+  "n": 12146,
+  "n_logs": 136,
+  "all_in_export": true,
+  "unique": true,
+  "token_log_matches_export": true,
+  "pinned": {
+   "md5": "3a8b3653fd70891e50a230a37eb76ae8",
+   "n": 12146,
+   "logs": 136
+  },
+  "md5_ok": true,
+  "n_ok": true,
+  "logs_ok": true,
+  "ok": true
+ },
+ "n_boot": 10000,
+ "seed": 20260927,
+ "estimator": "paired log-cluster bootstrap, 10000 resamples, 95 %, seed 20260927",
+ "tier_text": "T1 = NAVSIM v1.1 PDMS, an ego pseudo-simulation of an open-loop plan against logged agents (self-action open loop, not closed loop)",
+ "instruments": {
+  "pinned": {
+   "stage3_full.py": "a501ef4eac66f58b9e6115f61ef48ba5",
+   "proxy_eval.py": "d177f0c9ab493390cb2b5bb8811c7cd3"
+  },
+  "got": {
+   "stage3_full.py": "a501ef4eac66f58b9e6115f61ef48ba5",
+   "proxy_eval.py": "d177f0c9ab493390cb2b5bb8811c7cd3"
+  },
+  "ok": true
+ },
+ "tables": {
+  "R0d_A": {
+   "path": "C:\\fp\\PK\\raw\\p2_r2_instrument\\baseline\\u400_navtest_full.csv",
+   "sha256": "df005c4750a186de606d79a6f7cbda0fe725047a7b98bbf036b148fce62a1051",
+   "level_x100": {
+    "pdms_mean_x100": 88.24694109622521,
+    "pdms_max": 100.0,
+    "n": 12146
+   }
+  },
+  "R0d_B": {
+   "path": "C:\\fp\\PK\\raw\\p2_readout\\p2_full\\arm\\refe_stage2_p2_full.csv",
+   "sha256": "61073a61e44a3dcf41fad6dc8c5b261ce97eb8f8d8b49c1adc077dd7c04b61e6",
+   "level_x100": {
+    "pdms_mean_x100": 88.8184088897293,
+    "pdms_max": 100.0,
+    "n": 12146
+   }
+  },
+  "R1d_A": {
+   "path": "C:\\fp\\PK\\raw\\p2_r2_instrument\\baseline\\u400_navtest_full.csv",
+   "sha256": "df005c4750a186de606d79a6f7cbda0fe725047a7b98bbf036b148fce62a1051",
+   "level_x100": {
+    "pdms_mean_x100": 88.24694109622521,
+    "pdms_max": 100.0,
+    "n": 12146
+   }
+  },
+  "R1d_B": {
+   "path": "C:\\fp\\PK\\raw\\p2_readout\\p2s1_full\\arm\\refe_stage2_p2s1_full.csv",
+   "sha256": "9883e863a31d7499fe0064fed6140443d2fb13b92d6a6199ca3499a7a4765785",
+   "level_x100": {
+    "pdms_mean_x100": 89.14933075009547,
+    "pdms_max": 100.0,
+    "n": 12146
+   }
+  }
+ },
+ "nondegenerate": {
+  "R0d": {
+   "A_equals_B": false
+  },
+  "R1d": {
+   "A_equals_B": false
+  },
+  "tables_identical_across_pairs": [
+   [
+    "R0d_A",
+    "R1d_A"
+   ]
+  ]
+ },
+ "floors_components": {
+  "navtest_seed_floor_abs_R0d_vs_R1d": 0.330921860366193,
+  "irep_abs_delta": 0.01,
+  "note": "the file carries only the I-rep: the READER derives the RL-val training-seed floor (bar L's inputs) and the navtest seed floor, and takes the max of all three"
+ },
+ "irep": {
+  "value": 0.01,
+  "source": "C:\\Users\\Admin\\AppData\\Local\\Temp\\tmp5xj32zee\\irep.json",
+  "sha256": "2968f088caf9bc36877116227cb1d92eb2a8bb583c20811926fef6b9778356c8",
+  "kind": "fixture"
+ },
+ "pairs_counts": {
+  "R0d": {
+   "better": 5449,
+   "worse": 3178,
+   "tied": 3519,
+   "n": 12146,
+   "n_logs": 136,
+   "zero_pdms_A": 529,
+   "zero_pdms_B": 509,
+   "A_level_x100": 88.24694109622521,
+   "B_level_x100": 88.8184088897293
+  },
+  "R1d": {
+   "better": 5945,
+   "worse": 2694,
+   "tied": 3507,
+   "n": 12146,
+   "n_logs": 136,
+   "zero_pdms_A": 529,
+   "zero_pdms_B": 472,
+   "A_level_x100": 88.24694109622521,
+   "B_level_x100": 89.1493307500955
+  }
+ },
+ "pooled_structure": "mean of the two pairs' per-token PDMS contrasts; one log-cluster bootstrap on that series (== one index set per draw applied to both pairs)",
+ "python": "3.11.13",
+ "numpy": "1.26.4"
+}

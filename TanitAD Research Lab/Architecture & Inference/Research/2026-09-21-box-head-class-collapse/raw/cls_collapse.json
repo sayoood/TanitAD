@@ -1,0 +1,49 @@
+{
+ "_what": "has the box head's class output collapsed, and is the cls loss unweighted?",
+ "_evidence_class": "MEASURED (ours), CPU, A8 ckpt_5000",
+ "_loss_design": {
+  "cls_weight_in_SLOT_LOSS_W": 1.0,
+  "cls_criterion": "nn.functional.cross_entropy(..., reduction='sum') at agent_slots.py:591 — NO `weight=` argument, i.e. UNWEIGHTED",
+  "presence_has_a_down_weight": "NO_OBJECT_W = 0.1 (agent_slots.py:232), introduced because 'an unweighted BCE simply learns always empty' (:230-231)"
+ },
+ "matched_pairs": {
+  "n": 1482,
+  "n_classes_in_vocab": 10,
+  "GT_distribution": {
+   "automobile": 1155,
+   "heavy_truck": 29,
+   "bus": 3,
+   "other_vehicle": 11,
+   "trailer": 32,
+   "person": 188,
+   "rider": 50,
+   "stroller": 2,
+   "animal": 2,
+   "protruding_object": 10
+  },
+  "HEAD_distribution": {
+   "automobile": 1482
+  },
+  "distinct_classes_predicted": 1,
+  "top1_accuracy": 0.77935,
+  "majority_class_baseline": 0.77935,
+  "majority_class": "automobile",
+  "accuracy_equals_majority_baseline": true,
+  "imbalance_ratio_majority_to_rarest": 577.5
+ },
+ "all_slots_not_only_matched": {
+  "windows": 20,
+  "n_slot_predictions": 2000,
+  "distinct_classes_predicted": 1,
+  "distribution": {
+   "automobile": 2000
+  },
+  "mean_top1_minus_top2_softmax_margin": 0.59198
+ },
+ "vulnerable_road_users": {
+  "GT_person_targets": 188,
+  "predicted_person": 0,
+  "note": "every GT `person` is emitted as the majority class when the head is collapsed"
+ },
+ "_VERDICT": "⛔⛔ TOTAL CLASS COLLAPSE — the head emits ONE class of 10 on every matched pair AND on every slot, its top-1 accuracy IS the majority-class baseline, and the cls loss is UNWEIGHTED on a target this imbalanced. The size defect is DOWNSTREAM of this: a median lookup on the TRUE class beats the head's own size regression 2.6x (l) and 3.2x (w)."
+}

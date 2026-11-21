@@ -1,0 +1,14 @@
+| profile (arms it gates) | suite scripts | dev-box s (BASELINE, 4-way contended) | pod G-SUITE | saved per arm (minus ~0.2 min re-measure) |
+|---|---|---|---|---|
+| refe_p2 (P2) | p2r_chain, launch_gate | 49 | 5 min ESTIMATED | 5 min ESTIMATED |
+| refe_p2rep (P2-s1) | p2r_chain, launch_gate, p2rep_chain | 219 | 22 min MEASURED | 22 min  |
+| refe_p6 (P6) | p2r_chain, launch_gate, p6_levers, p6_chain | 606 | 61 min ESTIMATED | 61 min ESTIMATED |
+| refe_field (L_field F) | p2r_chain, launch_gate, field_loss | 64 | 6 min ESTIMATED | 6 min ESTIMATED |
+| refe_field_ctrl (L_field C) | p2r_chain, launch_gate, field_loss | 64 | 6 min ESTIMATED | 6 min ESTIMATED |
+| refe_rls1 (RL-S1 C0 C1 R0 R1 R2) | rl_reward, rl_epo, launch_gate | 152 | 15 min ESTIMATED | 15 min ESTIMATED |
+| refe_rls1b (RL-S1b C1 R0b R1b) | rl_reward, rl_epo, launch_gate, rl_s1b (test_rl_s1b is RED: its 35 s is a lower bound) | 187 | 19 min ESTIMATED | 19 min ESTIMATED |
+| refe_rls1c (RL-S1c R0c) | rl_reward, rl_epo, launch_gate, rl_s1b, rl_r0c (test_rl_s1b is RED: its 35 s is a lower bound) | 391 | 39 min ESTIMATED | 39 min ESTIMATED |
+| refe_aux_s1 (aux S1: 9 arms) | rl_reward, rl_epo, aux_drivable_head, aux_s1_wiring, launch_gate | 1078 | 108 min ESTIMATED | 108 min ESTIMATED |
+| refe_aux_s1c (aux S1c: 2 arms) | rl_reward, rl_epo, aux_drivable_head, aux_s1_wiring, launch_gate, s1c | 1364 | 137 min ESTIMATED | 137 min ESTIMATED |
+
+ESTIMATED rows: pod seconds = dev-box baseline seconds x 6.03 (= 22 min / the 219 s the baseline took for refe_p2rep's three scripts); assumes one pod/dev ratio for every script; order of magnitude (+-2x). Only the refe_p2rep row is anchored to a measurement (P2-s1, 2026-10-15: GPU free 15:33Z -> TRAIN_START 16:13Z = 40 min, G-SUITE 22 min).

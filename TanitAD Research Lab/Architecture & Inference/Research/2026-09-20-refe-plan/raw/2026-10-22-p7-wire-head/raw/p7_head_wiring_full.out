@@ -1,0 +1,177 @@
+  [timing] run: tree_manifest 0.4s, data_manifest 0.0s (--targets 0.0s, --images 0.0s, --calib 0.0s, --metric-cache 0.0s)
+  G-HYG     FAIL  profile refusal: refe_p7 requires --w-aux-drv 0.1; the argv does not carry it
+  G-DVB     FAIL  profile refusal: refe_p7 requires --w-aux-drv 0.1; the argv does not carry it
+  G-LIVE    FAIL  profile refusal: refe_p7 requires --w-aux-drv 0.1; the argv does not carry it
+  G-CLOCK   FAIL  profile refusal: refe_p7 requires --w-aux-drv 0.1; the argv does not carry it
+  G-EVAL    FAIL  profile refusal: refe_p7 requires --w-aux-drv 0.1; the argv does not carry it
+  G-CKPT    FAIL  profile refusal: refe_p7 requires --w-aux-drv 0.1; the argv does not carry it
+  G-SUITE   FAIL  profile refusal: refe_p7 requires --w-aux-drv 0.1; the argv does not carry it
+  G-LIVE-LAB FAIL  profile refusal: refe_p7 requires --w-aux-drv 0.1; the argv does not carry it
+  G-LIVE-MEM FAIL  profile refusal: refe_p7 requires --w-aux-drv 0.1; the argv does not carry it
+  G-EGR     FAIL  profile refusal: refe_p7 requires --w-aux-drv 0.1; the argv does not carry it
+  G-RESERVE FAIL  profile refusal: refe_p7 requires --w-aux-drv 0.1; the argv does not carry it
+  [timing] finalize: tree_manifest 0.4s, data_manifest 0.0s (--targets 0.0s, --images 0.0s, --calib 0.0s, --metric-cache 0.0s)
+C:\Users\Admin\AppData\Local\Temp\p7head_47zo5znb\train_pre_p7.py:1778: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:821.)
+  first = first if first is not None else float(l_traj)
+  ABLATION: rig reduced to 1 camera(s) ('CAM_F0',)
+  ABLATION: the PDM loss reaches the backbone LoRA (REFe's extra detach removed)
+  trunk: loaded 186 tensors from D:/Projects/TanitAD/data/backbones\dinov3-vits16 (missing 0, unused 0)
+  WARM START (PREREG_P2): 415 tensors from C:\Users\Admin\AppData\Local\Temp\p7head_47zo5znb\init.pt (refe-full-v1, sha256 1e1d5eeaad74)
+  REFe vits16 31.93 M total / 10.34 M trainable (32.40 %)  device=cpu
+  WTA reach: at most 1 of 64 proposals updated per step (1.6 %)
+  *** SYNTHETIC IMAGES: this run validates the LOOP MECHANICS ONLY.
+  *** Its loss says nothing about driving and must not be quoted as a result.
+  SCORER: ON-POLICY (PI decision 2026-09-26, B) -- the scorer is trained on the student's own proposals scored by the teacher, from C:\Users\Admin\AppData\Local\Temp\p7head_47zo5znb\sets; the fixed candidate set is NOT used
+  PDM TARGETS (PREREG_P2): 3 sets carry NAVSIM PDM targets (0 stale, 0 superseded) <- C:\Users\Admin\AppData\Local\Temp\p7head_47zo5znb\pdm; --pdm-only dropped 3 sets without them
+  ON-POLICY scorer bank: 3 complete sets (6 set lines, 0 incomplete, 0 superseded by a newer checkpoint, 0 unparseable lines; NAVSIM drivable area on 3 sets) <- C:\Users\Admin\AppData\Local\Temp\p7head_47zo5znb\sets
+  targets: 6 rows from ['targets_rank0.jsonl', 'targets_rank1.jsonl']  per rank {0: 4, 1: 2}
+  scenes: 4 over 6 tuples  (rows per scene: 1 x 2, 2 x 2)
+  *** NO --calib: every tuple is lifted with the ONE baked rig (pre-R22 behaviour). An ABLATION -- PETR, the paper's cited embedding, uses each sample's own. ***
+  bank: 6 tuples in 4 scenes   epoch = one pass over 4 scenes   batch 1   training
+  optimiser: AdamW lr 5e-05 wd 0.01  schedule: cosine -> 0 over 4 steps
+  score-loss normaliser: 32.0000 covered candidates/sample x batch (CONSTANT, so --accum is exactly equivalent to one large batch)
+  gradient accumulation: 2 micro-batches of 1 = effective batch 2  (paper: 256)
+    step     0  traj_L1   1.8111  score  0.1790  winners 1/1  assign_d  19.01 m  scorer_cov  50.0 %  lr 4.27e-05     5.9s
+      on-policy: sets    1  pick 0.001  random 0.071  best 0.405  skill -0.212  drift 19.01 m  label lag    -1.0 steps
+    step     1  traj_L1   1.5519  score  0.1622  winners 1/1  assign_d  18.69 m  scorer_cov  50.0 %  lr 2.50e-05    13.5s
+      on-policy: sets    1  pick 0.032  random 0.068  best 0.458  skill -0.092  drift 18.69 m  label lag     0.0 steps
+    step     2  traj_L1   1.4815  score -0.0000  winners 1/1  assign_d    nan m  scorer_cov  33.3 %  lr 7.32e-06    22.7s
+      on-policy: sets    0  pick nan  random nan  best nan  skill    nan  drift   nan m  label lag     nan steps
+    step     3  traj_L1   1.2216  score  0.1449  winners 1/1  assign_d  17.59 m  scorer_cov  50.0 %  lr 0.00e+00    28.9s
+      on-policy: sets    2  pick 0.032  random 0.053  best 0.368  skill -0.064  drift 17.59 m  label lag     2.0 steps
+
+  scorer coverage: 4 of 8 samples carried PDM targets (50.0 %)
+  batches with NO scorer supervision at all: 4 (they contribute zero gradient, not a zero target)
+  assignment distance per candidate (the floor is set by the CANDIDATE SET, not by
+  model quality -- teacher/lat should converge, over-curb/stopped should not):
+      candidate       n    whole run    last 25 %   (the trailing column is the one that answers the question)
+
+  traj L1: first 1.8111 -> last 1.2216   (32.5 % reduction)
+  saved C:\Users\Admin\AppData\Local\Temp\p7head_47zo5znb\old1\model_final.pt (sha256 05528369440b) and summary.json (done=true)
+TRAIN_DONE
+  ABLATION: rig reduced to 1 camera(s) ('CAM_F0',)
+  ABLATION: the PDM loss reaches the backbone LoRA (REFe's extra detach removed)
+  trunk: loaded 186 tensors from D:/Projects/TanitAD/data/backbones\dinov3-vits16 (missing 0, unused 0)
+  WARM START (PREREG_P2): 415 tensors from C:\Users\Admin\AppData\Local\Temp\p7head_47zo5znb\init.pt (refe-full-v1, sha256 1e1d5eeaad74)
+  REFe vits16 31.93 M total / 10.34 M trainable (32.40 %)  device=cpu
+  WTA reach: at most 1 of 64 proposals updated per step (1.6 %)
+  *** SYNTHETIC IMAGES: this run validates the LOOP MECHANICS ONLY.
+  *** Its loss says nothing about driving and must not be quoted as a result.
+  SCORER: ON-POLICY (PI decision 2026-09-26, B) -- the scorer is trained on the student's own proposals scored by the teacher, from C:\Users\Admin\AppData\Local\Temp\p7head_47zo5znb\sets; the fixed candidate set is NOT used
+  PDM TARGETS (PREREG_P2): 3 sets carry NAVSIM PDM targets (0 stale, 0 superseded) <- C:\Users\Admin\AppData\Local\Temp\p7head_47zo5znb\pdm; --pdm-only dropped 3 sets without them
+  ON-POLICY scorer bank: 3 complete sets (6 set lines, 0 incomplete, 0 superseded by a newer checkpoint, 0 unparseable lines; NAVSIM drivable area on 3 sets) <- C:\Users\Admin\AppData\Local\Temp\p7head_47zo5znb\sets
+  targets: 6 rows from ['targets_rank0.jsonl', 'targets_rank1.jsonl']  per rank {0: 4, 1: 2}
+  scenes: 4 over 6 tuples  (rows per scene: 1 x 2, 2 x 2)
+  *** NO --calib: every tuple is lifted with the ONE baked rig (pre-R22 behaviour). An ABLATION -- PETR, the paper's cited embedding, uses each sample's own. ***
+  bank: 6 tuples in 4 scenes   epoch = one pass over 4 scenes   batch 1   training
+  optimiser: AdamW lr 5e-05 wd 0.01  schedule: cosine -> 0 over 4 steps
+  score-loss normaliser: 32.0000 covered candidates/sample x batch (CONSTANT, so --accum is exactly equivalent to one large batch)
+  gradient accumulation: 2 micro-batches of 1 = effective batch 2  (paper: 256)
+    step     0  traj_L1   1.8111  score  0.1790  winners 1/1  assign_d  19.01 m  scorer_cov  50.0 %  lr 4.27e-05     6.1s
+      on-policy: sets    1  pick 0.001  random 0.071  best 0.405  skill -0.212  drift 19.01 m  label lag    -1.0 steps
+    step     1  traj_L1   1.5519  score  0.1622  winners 1/1  assign_d  18.69 m  scorer_cov  50.0 %  lr 2.50e-05    13.4s
+      on-policy: sets    1  pick 0.032  random 0.068  best 0.458  skill -0.092  drift 18.69 m  label lag     0.0 steps
+    step     2  traj_L1   1.4815  score -0.0000  winners 1/1  assign_d    nan m  scorer_cov  33.3 %  lr 7.32e-06    19.8s
+      on-policy: sets    0  pick nan  random nan  best nan  skill    nan  drift   nan m  label lag     nan steps
+    step     3  traj_L1   1.2216  score  0.1449  winners 1/1  assign_d  17.59 m  scorer_cov  50.0 %  lr 0.00e+00    26.0s
+      on-policy: sets    2  pick 0.032  random 0.053  best 0.368  skill -0.064  drift 17.59 m  label lag     2.0 steps
+
+  scorer coverage: 4 of 8 samples carried PDM targets (50.0 %)
+  batches with NO scorer supervision at all: 4 (they contribute zero gradient, not a zero target)
+  assignment distance per candidate (the floor is set by the CANDIDATE SET, not by
+  model quality -- teacher/lat should converge, over-curb/stopped should not):
+      candidate       n    whole run    last 25 %   (the trailing column is the one that answers the question)
+
+  traj L1: first 1.8111 -> last 1.2216   (32.5 % reduction)
+  saved C:\Users\Admin\AppData\Local\Temp\p7head_47zo5znb\old2\model_final.pt (sha256 c91cf8fb631c) and summary.json (done=true)
+TRAIN_DONE
+  ABLATION: rig reduced to 1 camera(s) ('CAM_F0',)
+  ABLATION: the PDM loss reaches the backbone LoRA (REFe's extra detach removed)
+  trunk: loaded 186 tensors from D:/Projects/TanitAD/data/backbones\dinov3-vits16 (missing 0, unused 0)
+  WARM START (PREREG_P2): 415 tensors from C:\Users\Admin\AppData\Local\Temp\p7head_47zo5znb\init.pt (refe-full-v1, sha256 1e1d5eeaad74)
+  REFe vits16 31.93 M total / 10.34 M trainable (32.40 %)  device=cpu
+  WTA reach: at most 1 of 64 proposals updated per step (1.6 %)
+  *** SYNTHETIC IMAGES: this run validates the LOOP MECHANICS ONLY.
+  *** Its loss says nothing about driving and must not be quoted as a result.
+  SCORER: ON-POLICY (PI decision 2026-09-26, B) -- the scorer is trained on the student's own proposals scored by the teacher, from C:\Users\Admin\AppData\Local\Temp\p7head_47zo5znb\sets; the fixed candidate set is NOT used
+  PDM TARGETS (PREREG_P2): 3 sets carry NAVSIM PDM targets (0 stale, 0 superseded) <- C:\Users\Admin\AppData\Local\Temp\p7head_47zo5znb\pdm; --pdm-only dropped 3 sets without them
+  ON-POLICY scorer bank: 3 complete sets (6 set lines, 0 incomplete, 0 superseded by a newer checkpoint, 0 unparseable lines; NAVSIM drivable area on 3 sets) <- C:\Users\Admin\AppData\Local\Temp\p7head_47zo5znb\sets
+  targets: 6 rows from ['targets_rank0.jsonl', 'targets_rank1.jsonl']  per rank {0: 4, 1: 2}
+  scenes: 4 over 6 tuples  (rows per scene: 1 x 2, 2 x 2)
+  *** NO --calib: every tuple is lifted with the ONE baked rig (pre-R22 behaviour). An ABLATION -- PETR, the paper's cited embedding, uses each sample's own. ***
+  bank: 6 tuples in 4 scenes   epoch = one pass over 4 scenes   batch 1   training
+  optimiser: AdamW lr 5e-05 wd 0.01  schedule: cosine -> 0 over 4 steps
+  score-loss normaliser: 32.0000 covered candidates/sample x batch (CONSTANT, so --accum is exactly equivalent to one large batch)
+  gradient accumulation: 2 micro-batches of 1 = effective batch 2  (paper: 256)
+    step     0  traj_L1   1.8111  score  0.1790  winners 1/1  assign_d  19.01 m  scorer_cov  50.0 %  lr 4.27e-05     7.4s
+      on-policy: sets    1  pick 0.001  random 0.071  best 0.405  skill -0.212  drift 19.01 m  label lag    -1.0 steps
+    step     1  traj_L1   1.5519  score  0.1622  winners 1/1  assign_d  18.69 m  scorer_cov  50.0 %  lr 2.50e-05    15.6s
+      on-policy: sets    1  pick 0.032  random 0.068  best 0.458  skill -0.092  drift 18.69 m  label lag     0.0 steps
+    step     2  traj_L1   1.4815  score -0.0000  winners 1/1  assign_d    nan m  scorer_cov  33.3 %  lr 7.32e-06    23.2s
+      on-policy: sets    0  pick nan  random nan  best nan  skill    nan  drift   nan m  label lag     nan steps
+    step     3  traj_L1   1.2216  score  0.1449  winners 1/1  assign_d  17.59 m  scorer_cov  50.0 %  lr 0.00e+00    28.8s
+      on-policy: sets    2  pick 0.032  random 0.053  best 0.368  skill -0.064  drift 17.59 m  label lag     2.0 steps
+
+  scorer coverage: 4 of 8 samples carried PDM targets (50.0 %)
+  batches with NO scorer supervision at all: 4 (they contribute zero gradient, not a zero target)
+  assignment distance per candidate (the floor is set by the CANDIDATE SET, not by
+  model quality -- teacher/lat should converge, over-curb/stopped should not):
+      candidate       n    whole run    last 25 %   (the trailing column is the one that answers the question)
+
+  traj L1: first 1.8111 -> last 1.2216   (32.5 % reduction)
+  saved C:\Users\Admin\AppData\Local\Temp\p7head_47zo5znb\new\model_final.pt (sha256 7e579820efe0) and summary.json (done=true)
+TRAIN_DONE
+  ABLATION: rig reduced to 1 camera(s) ('CAM_F0',)
+  ABLATION: the PDM loss reaches the backbone LoRA (REFe's extra detach removed)
+  trunk: loaded 186 tensors from D:/Projects/TanitAD/data/backbones\dinov3-vits16 (missing 0, unused 0)
+  WARM START (PREREG_P2): 415 tensors from C:\Users\Admin\AppData\Local\Temp\p7head_47zo5znb\init.pt (refe-full-v1, sha256 1e1d5eeaad74)
+  P7.1 AUX DRIVABLE-AREA HEAD (training-only, H1): tap visual  depth 2  w_aux 0.1  2,440,450 parameters  (not in model_final.pt's `model`: the planner is unchanged)
+  REFe vits16 31.93 M total / 10.34 M trainable (32.40 %)  device=cpu
+  WTA reach: at most 1 of 64 proposals updated per step (1.6 %)
+  *** SYNTHETIC IMAGES: this run validates the LOOP MECHANICS ONLY.
+  *** Its loss says nothing about driving and must not be quoted as a result.
+  SCORER: ON-POLICY (PI decision 2026-09-26, B) -- the scorer is trained on the student's own proposals scored by the teacher, from C:\Users\Admin\AppData\Local\Temp\p7head_47zo5znb\sets; the fixed candidate set is NOT used
+  PDM TARGETS (PREREG_P2): 3 sets carry NAVSIM PDM targets (0 stale, 0 superseded) <- C:\Users\Admin\AppData\Local\Temp\p7head_47zo5znb\pdm; --pdm-only dropped 3 sets without them
+  ON-POLICY scorer bank: 3 complete sets (6 set lines, 0 incomplete, 0 superseded by a newer checkpoint, 0 unparseable lines; NAVSIM drivable area on 3 sets) <- C:\Users\Admin\AppData\Local\Temp\p7head_47zo5znb\sets
+  targets: 6 rows from ['targets_rank0.jsonl', 'targets_rank1.jsonl']  per rank {0: 4, 1: 2}
+  scenes: 4 over 6 tuples  (rows per scene: 1 x 2, 2 x 2)
+  P7.1 aux-head labels: 6/6 rows (100.000 %) have a stored SDF  <- C:\Users\Admin\AppData\Local\Temp\p7head_47zo5znb\aux_store  (store_sha256 10a584b797be, 1 keys)
+  *** NO --calib: every tuple is lifted with the ONE baked rig (pre-R22 behaviour). An ABLATION -- PETR, the paper's cited embedding, uses each sample's own. ***
+  bank: 6 tuples in 4 scenes   epoch = one pass over 4 scenes   batch 1   training
+  optimiser: AdamW lr 5e-05 wd 0.01  schedule: cosine -> 0 over 4 steps
+  score-loss normaliser: 32.0000 covered candidates/sample x batch (CONSTANT, so --accum is exactly equivalent to one large batch)
+  gradient accumulation: 2 micro-batches of 1 = effective batch 2  (paper: 256)
+    step     0  traj_L1   1.8111  score  0.1790  winners 1/1  assign_d  19.01 m  scorer_cov  50.0 %  lr 4.27e-05     6.4s
+      on-policy: sets    1  pick 0.001  random 0.071  best 0.405  skill -0.212  drift 19.01 m  label lag    -1.0 steps
+    step     1  traj_L1   1.5520  score  0.1623  winners 1/1  assign_d  18.69 m  scorer_cov  50.0 %  lr 2.50e-05    11.7s
+      on-policy: sets    1  pick 0.032  random 0.068  best 0.458  skill -0.092  drift 18.69 m  label lag     0.0 steps
+    step     2  traj_L1   1.4814  score -0.0000  winners 1/1  assign_d    nan m  scorer_cov  33.3 %  lr 7.32e-06    18.4s
+      on-policy: sets    0  pick nan  random nan  best nan  skill    nan  drift   nan m  label lag     nan steps
+    step     3  traj_L1   1.2215  score  0.1449  winners 1/1  assign_d  17.59 m  scorer_cov  50.0 %  lr 0.00e+00    26.1s
+      on-policy: sets    2  pick 0.032  random 0.053  best 0.368  skill -0.064  drift 17.59 m  label lag     2.0 steps
+
+  scorer coverage: 4 of 8 samples carried PDM targets (50.0 %)
+  batches with NO scorer supervision at all: 4 (they contribute zero gradient, not a zero target)
+  assignment distance per candidate (the floor is set by the CANDIDATE SET, not by
+  model quality -- teacher/lat should converge, over-curb/stopped should not):
+      candidate       n    whole run    last 25 %   (the trailing column is the one that answers the question)
+
+  traj L1: first 1.8111 -> last 1.2215   (32.6 % reduction)
+  saved C:\Users\Admin\AppData\Local\Temp\p7head_47zo5znb\head\model_final.pt (sha256 0babb8daacdf) and summary.json (done=true)
+TRAIN_DONE
+  [timing] run: tree_manifest 0.5s, data_manifest 0.1s (--init-from 0.1s, --targets 0.0s, --scorer-targets 0.0s, --onpolicy-targets 0.0s)
+  G-DVB     PASS  
+  G-LIVE    PASS  
+  G-EVAL    PASS  
+  G-CKPT    PASS  
+  [timing] run: tree_manifest 7.7s, data_manifest 0.2s (--init-from 0.2s, --targets 0.0s, --scorer-targets 0.0s, --onpolicy-targets 0.0s)
+  G-LIVE    FAIL  L_aux-only backward reads EXACTLY zero (or is absent) on 'aux_head': the term does not reach it (declared weight 0.1, tap visual); L_aux-only backward reads EXACTLY zero (or is absent) on 'backbone.lo
+  [timing] run: tree_manifest 1.0s, data_manifest 0.2s (--init-from 0.2s, --scorer-targets 0.0s, --onpolicy-targets 0.0s, --pdm-labels 0.0s)
+  G-DVB     FAIL  --w-aux-drv: declared 0.1 != built (0.05000000074505806, 0.05000000074505806) (the multiplier measured at the graph: d(loss)/d(L_aux) x accum on 4 of 4 micro-batches (a hook on the term's output; a te
+  [timing] run: tree_manifest 0.8s, data_manifest 0.1s (--init-from 0.1s, --targets 0.0s, --scorer-targets 0.0s, --onpolicy-targets 0.0s)
+  G-DVB     FAIL  --w-aux-drv: declared 0.1 != built None (the multiplier measured at the graph: d(loss)/d(L_aux) x accum on 0 of 4 micro-batches (a hook on the term's output; a term never added, or added detached, nev
+  [timing] run: tree_manifest 0.8s, data_manifest 0.2s (--init-from 0.2s, --targets 0.0s, --scorer-targets 0.0s, --onpolicy-targets 0.0s)
+  G-CKPT    FAIL  the head's weights after the resumed run != the uninterrupted run's (or the head state is absent from a checkpoint)
+ZZP7HEAD_PASS 207
+ZZP7HEAD_FULL 207

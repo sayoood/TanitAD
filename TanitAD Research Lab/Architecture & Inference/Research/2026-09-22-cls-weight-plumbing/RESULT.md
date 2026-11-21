@@ -1,0 +1,456 @@
+# 2026-09-22 — `H-BOXCLS-1` plumbing, the stamp that states the TENSOR, and the two S1 controls
+
+**Evidence class:** MEASURED (ours), CPU only, no checkpoint, no corpus, no GPU.
+**Tier:** not applicable — nothing here is a driving number. These are implementation,
+identities and controls.
+
+---
+
+## 1. What was built
+
+`--agent-cls-weight {off,train2400}` on `refc_v3_train.py`, end to end:
+
+| piece | where |
+|---|---|
+| the banked vector + its recipe | `stack/tanitad/data/agent_cls_weights_train2400.json` |
+| loader, digest, refusal | `agent_slots.load_cls_class_weight`, `agent_slots.cls_weight_digest` |
+| attach to the model | `refc_v3_train.py` beside `model._w_map` |
+| **both** loss paths | `agent_losses` (2-D `core.agent_head`) **and** `box3d_loss_row` (3-D `perception.box_dec`) |
+| the run record | `_cls_weight_stamp(args)` → `config.json["agent_cls_weight"]` |
+| the guard | `assert_seams_are_built`, bidirectional + digest-aware |
+
+⛔ **Both loss paths, not one.** The class collapse is MEASURED on BOTH heads — 2,000/2,000
+and 320/320 slots emitting one class of ten — and `perception.box_dec` is the head
+`s1_pass.py:307` actually scores. A fix wired to the 2-D seam alone would have left the
+scored head untouched while the config said `train2400`.
+
+⭐ **`off` is BIT-IDENTICAL to every arm trained before the flag**, not merely close.
+`slot_set_loss`'s denominator FOLLOWS the weight, so `weight=ones` divides by the same count
+`None` does and the two are exactly equal. Pinned as `==`, never `allclose`. That denominator
+does a second job: it fixes the term's SCALE, so re-weighting moves exactly one variable
+(relative emphasis) instead of also shifting the term against its siblings.
+
+---
+
+## 2. The stamp states the TENSOR, not the flag and not the file
+
+`config.json["agent_cls_weight"]` uses the same three-fact shape as `tac_goal_tok_head` and
+`max_speed_input`: `requested` (argv), the artifact's ten values + counts + provenance, and
+**`built` = `cls_weight_digest(model._cls_class_weight)`** — the digest of the tensor the model
+carries, filled in `train`.
+
+⛔ **`built` is read off the model, never re-read from the artifact.** A slot that re-loads its
+own source agrees with itself forever and is blind to the one defect it exists for: a flag that
+parses and reaches nothing (`305debd`, `occ_from_geometry`).
+
+The guard is bidirectional, and because `built` is a DIGEST rather than a boolean a third
+failure is reachable that a boolean cannot see. MEASURED against the real function:
+
+| state | outcome |
+|---|---|
+| `off`, nothing attached | ✅ passes |
+| `train2400` attached, digest agrees | ✅ passes |
+| record asks for it, model has nothing | ⛔ REFUSES |
+| model has it, record says `off` | ⛔ REFUSES |
+| record names a different vector | ⛔ REFUSES |
+| **record self-consistent, model carries another vector** | ⛔ REFUSES |
+
+---
+
+## 3. Evidence: 23 tests, mutation-proven 9/9
+
+`stack/tests/test_cls_weight_stamp.py`; prover `code/mutate_cls_stamp.py`; artifact
+`raw/mutation_proof_cls_stamp.json`. Both target files restored **byte-identical**, final
+clean run green.
+
+| arm | defect reintroduced | RED |
+|---|---|---|
+| S1 | `built` re-reads the artifact | ✅ |
+| S2 | the digest ignores class names | ✅ |
+| S3 | the loader skips its own digest verification | ✅ |
+| S4 | the `agent_losses` site drops the weight | ✅ |
+| S5 | the `box3d_loss_row` site drops the weight | ✅ |
+| S6 | the "record says off" branch disabled | ✅ |
+| S7 | the digest-comparison branch disabled | ✅ |
+| S8 | the "requested but not built" branch disabled | ✅ |
+| S9 | an out-of-vocabulary label relabelled to class 0 | ✅ |
+
+⚠️ **TWO ARMS ESCAPED FIRST, AND BOTH ESCAPES WERE THE TEST'S FAULT — which is the most
+useful thing in this package.**
+
+* **S6** originally mutated only a refusal MESSAGE. The test, which asserted that three
+  substrings appeared in the trainer's source, stayed **green against a guard it had never
+  exercised**. That is `A CHECK THAT SHARES THE DEFECT IT CHECKS FOR` one level up: the check
+  shared the *source file* with the thing it checked. Fixed by making the arm disable the
+  BRANCH and rewriting the test to CALL `assert_seams_are_built`.
+* **S7** was masked by a second, redundant-looking branch. Isolating it required a case that
+  did not exist until the mutation demanded it: **the record internally consistent — its stated
+  artifact digest and its `built` slot agreeing — and both describing a vector the model does
+  not carry.** Only a check that reads the LIVE TENSOR sees that.
+
+⇒ **A mutation proof is not a formality.** Both escapes produced a better test than I would
+have written unprompted, and the second produced the case that justifies `built` being a digest.
+
+⚠️ Two process traps re-paid while building the prover, both already in `CLAUDE.md` and both
+now closed in the tool itself: an anchor carrying a line terminator matches nothing in these
+CRLF files, and — new — **an anchor matched as a SUBSTRING collides across indentation levels**:
+the two loss call sites differ only by indent, so the 12-space anchor is a proper substring of
+the 20-space line and matched both. The prover now matches **whole lines by equality**, and an
+anchor that does not match exactly once ABORTS the run as INVALID rather than being skipped.
+
+---
+
+## 4. E11 / E12 — the two S1 controls, read on CPU before any GPU
+
+`code/s1_controls.py` → `raw/s1_controls.json`. The checker is
+`tanitad.rl.pdm_proxy.no_at_fault_collision`, **IMPORTED** (the prereg is explicit that
+`taniteval/tools/fan_safety.py` uses a different collision model and is not used).
+
+| arm | committed value | MEASURED |
+|---|---|---|
+| **`S1-GATE-CONST`** | recovery **exactly 0** | **0** — the gate changed the pick in **0 / 64** windows, `nc == 1.0` for every candidate |
+| **`S1-RANDOM`** | **exactly** the candidate mean | max abs difference **0.00e+00** over 256 draws |
+
+⭐ **AND THE CONTROL THAT MAKES THE ZERO MEAN SOMETHING.** "Recovery exactly 0 under empty
+tracks" is satisfied *vacuously* by a gate that never masks anything under ANY tracks — which
+would also make `S1-GATE-ORACLE` read 0 while looking like a clean control. The same code path
+was therefore run against a stopped car on the ego's line: the gate moved the pick in
+**64 / 64** windows, with `nc ∈ {0.5, 1.0}`. ⇒ the zero is a property of the **empty world**,
+not of an inert gate.
+
+⚠️ `S1-RANDOM` consumes **no RNG** and carries **no interval**: the arm is the uniform
+*expectation* over the fan, so it is exact. A sampled version would have reported a CI around a
+quantity that has none — the weaker artifact, and easy to produce by accident.
+
+⛔ **Why these ran now rather than with the rest of S1.** `S1-GATE-PRED` is NOT RUNNABLE against
+the collapsed box head. Had the controls only run alongside it, any deviation would have been
+unattributable between *"the gate is wrong"* and *"the head is collapsed"*. Establishing them
+first makes a future deviation attributable to exactly one thing.
+
+---
+
+## 4b. What the lever ACTUALLY does — exact, no GPU
+
+`code/cls_gradient_mass.py` -> `raw/cls_gradient_mass.json`. §5 below used to name the
+milder-exponent question and leave it; RULE ZERO says a turn that names the next lever and does
+not run it is unfinished, so the part that needs no GPU was run — and it is the decisive part.
+
+**The structural fact narrows the question to one variable.** For a slot with target `c`,
+`d/d(logits)[w[c] · CE] = w[c] · (softmax − onehot)`. The weight is a SCALAR on that slot's whole
+gradient, so ⛔ **weighting changes NO slot's gradient direction.** With the weight-following
+denominator fixing the total scale, the entire intervention is a redistribution of **gradient
+mass** across classes — computable exactly from the census counts, with no model at all.
+
+| | `automobile` | `animal` |
+|---|---|---|
+| unweighted share of the `cls` term's gradient mass | **76.574 %** | **0.0715 %** |
+| at full inverse frequency (α = 1) | **10.000 %** | **10.000 %** |
+| change | ÷ 7.7 | **× 139.9** |
+
+⭐ **The identity control is ANALYTIC, and it caught the one thing worth catching.** At α = 1,
+`count · w` is constant, so every class must land on exactly `1/C`. Derived from the COUNTS the
+deviation is **2.8e-17**; against the **BANKED** vector it is **5.5e-06**, because the artifact
+stores 6 dp. The mathematics is exact, the ARTIFACT is not, and the gap is the artifact's
+precision — negligible here (5.5e-06 on a 0.1 share) but *measured* rather than assumed. ⚠️ This
+is deliberately the inverse of the failure `CLAUDE.md` records where a builder rounded its ladder
+to 4 dp and then verified the shipped buckets **against that same rounded ladder**, reading
+"0 % moved" while 57.5 % of the corpus moved against an independently derived one.
+
+**And the next arm is left behind with its arithmetic already done.** `w ∝ count^(−α)` gives
+class mass share `∝ count^(1−α)`, so α is the single knob:
+
+| α | weight ratio maj:rare | `automobile` share | `animal` share | `animal` fold vs α=0 |
+|---|---|---|---|---|
+| 0.00 | 1.0 | 76.57 % | 0.07 % | ×1 |
+| 0.25 | 5.7 | 63.42 % | 0.34 % | ×4.7 |
+| 0.50 | 32.7 | 44.81 % | 1.37 % | ×19.2 |
+| 0.75 | 187.2 | 24.59 % | 4.30 % | ×60.1 |
+| 1.00 | 1071.1 | 10.00 % | 10.00 % | ×139.9 |
+
+⇒ a milder arm is no longer a hunch; it is `--agent-cls-weight` at a named α, and the table says
+what each one buys before any GPU is spent.
+
+---
+
+## 4c. Training readiness — the join is INSIDE parity, measured
+
+⛔ **Parity is sacred**: *"anything that re-selects episodes breaks cross-arm comparability and
+must be refused."* So "the train agent join exists" is not a readiness statement; "its clip set
+is a SUBSET of the parity set" is.
+
+| | |
+|---|---|
+| join episodes | **2,308** (2,308 distinct digests) |
+| banked parity digest set (`is_full_corpus: true`) | **2,400** |
+| join **inside** parity | **2,308** |
+| join **OUTSIDE** parity | ⭐ **0** |
+| parity clips absent from the join | **92** |
+
+⭐ **The gap closes on its own arithmetic** — the join's meta names `no_obstacle` **79**,
+`registration_failed` **10**, `bad_clip` **3**, and **79 + 10 + 3 = 92**, exactly the shortfall.
+⇒ the join drops clips for three stated reasons and re-selects nothing. An `--agents` arm trains
+on **96.17 %** of the parity clip set, entirely within it — a stated, attributable coverage
+reduction, not a comparability break. *(Control: a non-clip string reads NOT in parity, so the
+membership test discriminates.)*
+
+⚠️ **Three layers, and a number must say which it counts** — the `"corpus" means the CLIP SET`
+scope error one level over: parity **clip set 2,400** (MEASURED here), parity **episode build
+2,376** (⚠️ INHERITED from `CLAUDE.md`, not re-measured), agent **join 2,308** (MEASURED).
+⛔ 2,376 − 2,308 = 68 is **not** the 92, because the 92 is against the clip set. These two are
+deliberately left unreconciled: the episode-build layer was not measured here.
+
+⚠️ **Preflight is NO-GO and correctly so.** `refcv5_preflight.py` run bare reports 5 PASS /
+2 FAIL / 9 INCONCLUSIVE. The INCONCLUSIVEs are all *"no `--v2-cache` / `--agent-join` /
+`--anchors` given"* — it was run without data arguments, so they are honest unknowns, not
+findings. Of the two FAILs: `taniteval.ci` is the known **namespace-package shadow** (the inner
+package is `taniteval/taniteval/`, so the path must name that directory, not the repo root — it
+resolves immediately when it does), and `agent_w_ground` is `D-RC5-GROUND-DEAD`, already
+registered, already guarded by `assert_ground_prior_is_supervised`, and re-derived independently
+here (§4d).
+
+---
+
+## 4d. `D-RC5-GROUND-DEAD` re-derived from a live run — NOT a new finding
+
+⛔ Stated plainly because the temptation was to write it up as a discovery: the register already
+carries `D-RC5-GROUND-DEAD`, `D-RC5-GRADGATE` and `H-RC5-GROUNDFIX`, and the trainer already
+refuses the weight. I ran the preflight, saw `agent_w_ground grad=1.164e-10 DEAD`, chased it to
+`_ground_terms`, and checked the register **after** — the right order, and the register had it.
+The re-derivation agrees to the digit (**1.164e-10**).
+
+**Two increments the single banked measurement could not give.**
+
+*It is input-INDEPENDENT.* Over five distributions the residual never leaves float32 rounding
+noise (eps **1.192e-07**): preflight's own **7.465e-08**, near field **6.457e-08**, far field
+**7.352e-08**, wide lateral **8.427e-08**, and degenerate `cy = 0` **1.561e-15**. ⇒ a tautology
+by construction, not a prior that happens to be satisfied on the probe's input — and only the
+first justifies `H-RC5-GROUNDFIX`.
+
+*The signature carries the missing ingredient.* `ground_range_prior(pred_box, cam,
+z_center_m=0.75)` **declares `z_center_m` and never uses it.** Placing the foot at `z = 0` and
+intersecting the ray with `z = 0` makes the two sides one computation; a foot at a stated box
+height would have made the back-projection independent. The unused parameter is direct evidence
+about the intended design.
+
+⚠️ **Not fixed here, deliberately** — making the term real changes what an arm trains, which is
+an architecture change, and `H-RC5-GROUNDFIX` is registered as needing a prereg and a param-band
+ruling.
+
+---
+
+## 5. What this does NOT establish
+
+* ⛔ **Nothing here says the re-weighting WORKS.** `H-BOXCLS-1`'s hypothesis is that weighting
+  the `cls` term breaks the collapse; that needs a trained arm, and the arm needs the PI's GPU
+  call. This package establishes only that the lever is correctly connected and honestly
+  recorded.
+* ⛔ **No T0/T1 number is produced or implied.**
+* ⚠️ The weight vector is the TRAIN inverse frequency at imbalance **1,071.1 : 1**. §4b now
+  quantifies exactly what that does to gradient mass and parametrises the milder-exponent
+  family, but ⛔ **which α is best remains an empirical question that only a trained arm
+  answers.** No α other than 1.0 is implemented, and none is pre-registered.
+
+---
+
+## 6. Deliverable manifest
+
+| artifact | where |
+|---|---|
+| tests (23) | `stack/tests/test_cls_weight_stamp.py` |
+| weight artifact + recipe | `stack/tanitad/data/agent_cls_weights_train2400.json` |
+| loader, digest, refusal | `stack/tanitad/models/agent_slots.py` |
+| flag, attach, stamp, guard | `stack/scripts/refc_v3_train.py` |
+| 3-D loss forward | `stack/tanitad/models/refcv6_perception_branch.py` |
+| corrected prose (3 sites) | `refc_agents.py`, `refcv5_preflight.py`, `test_refc_agents.py` |
+| mutation prover | `code/mutate_cls_stamp.py` |
+| mutation proof | `raw/mutation_proof_cls_stamp.json` |
+| S1 controls probe | `code/s1_controls.py` |
+| S1 controls result | `raw/s1_controls.json` |
+| gradient-mass analysis | `code/cls_gradient_mass.py` |
+| gradient-mass result | `raw/cls_gradient_mass.json` |
+| retraction | `Project Steering/RETRACTION_LOG.md` — `RETR-2026-09-22-SELF-ATTESTING-DIGEST` |
+| correction | `Project Steering/GOALS_AND_CLAIMS.md` — `CORR-2026-09-22-VOCAB-ATTRIBUTION` |
+
+**Blocked, and it is the only thing:** the `H-BOXCLS-1` GPU call is the PI's.
+
+<!-- B1-CLS-CENSUS-AND-CORPUS-LINE-GUARD-2026-09-22 -->
+
+### ⛔⭐ 2026-09-22 — `H-BOXCLS-1` is re-based onto the corpus refcv6 ACTUALLY trains on, and the corpus line is now a guard
+
+⛔ **Read `RETR-2026-09-22-WRONG-CORPUS-FOR-REFCV6` first.** The weight vector landed in
+`d014414` was counted on the **parity** join, which overlaps refcv6's corpus by **4.09 %**, and I
+reported it as refcv6 training readiness. This row is the correction and the fix.
+
+**THE TWO JOINS, MEASURED (digests only):**
+
+| join | clips | overlap with refcv6's 4,719-clip v7/SAM3 line |
+|---|---|---|
+| `train2400_agents.jsonl.xz` (parity line) | 2,308 | **193 = 4.09 %** |
+| `b1_train_plus_eval_agents.jsonl.xz` | 4,566 | ⭐ **4,566 = 96.76 %, 0 outside** |
+
+⚠️ The right join was found by a probe on a **different assumption** — the joins directory holds
+exactly one file and invites the conclusion that it is the only one; the B1 join lives in
+`a40-rescue/`, a directory whose name says nothing about joins. Same lesson as
+`RETR-2026-09-22-TRAIN-JOIN-EXISTS`, and it held this time **only because the probe ran before the
+declaration**.
+
+**THE B1 CENSUS** — four controls reproduced the independent coverage tally before any count was
+read (**4,566** clips / **875,657** frames / **28,958,699** boxes / **0** outside v7); the census
+ABORTS otherwise, because a partial read yields a plausible vector from a partial corpus.
+
+| class | B1 count | B1 share | parity share | share ratio | B1 weight |
+|---|---|---|---|---|---|
+| automobile | 21,515,941 | 74.374 % | 76.574 % | 0.971 | 0.003190 |
+| person | 5,487,965 | 18.970 % | 15.904 % | 1.193 | 0.012505 |
+| rider | 641,740 | 2.218 % | 1.575 % | ⚠️ **1.408** | 0.106939 |
+| heavy_truck | 553,977 | 1.915 % | 2.948 % | ⚠️ **0.650** | 0.123881 |
+| trailer | 282,911 | 0.978 % | 1.360 % | 0.719 | 0.242575 |
+| bus | 205,566 | 0.711 % | 0.741 % | 0.959 | 0.333845 |
+| protruding_object | 114,855 | 0.397 % | 0.422 % | 0.941 | 0.597511 |
+| other_vehicle | 78,231 | 0.270 % | 0.293 % | 0.922 | 0.877236 |
+| stroller | 36,522 | 0.126 % | 0.110 % | 1.146 | 1.879062 |
+| animal | 11,785 | 0.041 % | 0.072 % | ⚠️ **0.570** | 5.823257 |
+
+⇒ **imbalance 1,825.7 : 1** (vs parity's 1,071.1 : 1 — **1.70× worse**), digest
+**`c3937558f59299e7`**, out-of-vocabulary `train_or_tram_car` **29,206** (0.1009 %).
+**Max weight ratio parity ÷ B1 = 1.857× on `rider`.**
+
+⛔ **BY THE PROGRAMME'S OWN STANDARD THE PARITY VECTOR IS INADMISSIBLE HERE.** `e172c65` refused a
+held-out EVAL split as a frequency proxy over disagreements of exactly this size — the gap that
+justified that refusal was **2.167×**. A vector counted on a 4 %-overlapping corpus is the same
+error with a bigger sample.
+
+⭐ **The structural gradient-mass result survives and the lever is LARGER on B1.** Weighting scales
+each slot's gradient and changes no direction; `w ∝ count^(−α)` ⇒ share `∝ count^(1−α)`. On B1,
+`automobile` **74.374 % → 10.001 %** and `animal` **0.0407 % → 10.000 %** — a **×245.5** increase
+against parity's ×139.9. Identity control **1.39e-17** (exact weights) / **1.15e-05** (banked
+6 dp). α sweep on B1: 0.25 → ×5.5, 0.50 → ×25.5, 0.75 → ×92.7, 1.00 → ×245.5.
+
+**THE GUARD — a mismatch is now INEXPRESSIBLE, not merely discouraged.**
+
+* `corpus_line` is a declared field on every weight artifact.
+* `load_cls_class_weight` **REFUSES** a vector whose declared line ≠ the arm's, **and REFUSES an
+  artifact that declares no line at all** — silence is the state that produced the retraction, so
+  it is not a permitted state. (The `anchors.pt` units rule in a frequency costume.)
+* `--agent-cls-weight {off,train2400,b1}`; `CLS_WEIGHT_CHOICES` pairs each choice with the line
+  its artifact must declare. `b1` is refcv6's; `train2400` remains correct for a parity-line arm.
+* `agent_cls_weights_b1.json` was **built by a producer script**
+  (`code/build_cls_weight_artifact.py`) — the first artifact had none, which is how an
+  unreproducible digest shipped (`RETR-2026-09-22-SELF-ATTESTING-DIGEST`).
+
+**Evidence:** `stack/tests/test_cls_weight_stamp.py` — **27 tests**, mutation-proven **12/12**,
+both target files restored byte-identical. The three new arms each re-open the door this defect
+walked through: **C1** the loader stops checking the line, **C2** the loader accepts an artifact
+declaring none, **C3** the `b1` choice points at the parity artifact. All RED.
+
+⛔ **STILL BLOCKED, AND STILL ONLY THIS:** the GPU call is the PI's — now with the correct vector.
+
+### ⛔ 2026-09-22 — THE NEXT GATING ITEM FOR refcv6, NAMED WITH ITS MEASURED COST: the 4,713-clip corpus cache does not exist
+
+⭐ **SAM3 NO LONGER BLOCKS IT.** `SPEC_REFCV6_V2.md` says *"the corpus rebuild waits on SAM3
+either way"*; SAM3 production completed **4,719/4,719** on 2026-09-22. That dependency is
+discharged, so this is now the binding constraint on a full-corpus refcv6 arm.
+
+**MEASURED — it is absent, on two probes resting on different assumptions** (a directory scan of
+every `v2ep*` tree, and a search for any `manifest.json` under a `v2ep` path). Every local cache
+is the **eval-139** line or a split of it:
+
+| cache | episodes | size |
+|---|---|---|
+| `v2ep-eval139-416x1024cyl` | **139** | 11,073 MB |
+| `v2ep-eval139-408x1024cyl` | 139 | 10,942 MB |
+| `v2ep-eval139-256x1024cyl` | 139 | 7,771 MB |
+| every other local `v2ep*` | ≤ 70 | — |
+
+⇒ **the largest cache on this box is 139 episodes.** The 4,713-clip corpus cache refcv6 trains on
+is not here.
+
+**THE COST, PRICED FROM OUR OWN CACHE RATHER THAN FROM THE SPEC'S FIGURE:**
+
+* 11,073 MB / 139 = **79.7 MB per episode** at 416 × 1024
+* × 4,713 = **375.4 GB** ⭐ *independently consistent with the SPEC's stated 386.5 GB* — two
+  derivations, one from a cache on this disk, one from the plan.
+* build wall: **~10.6 h** (SPEC, INHERITED — not re-timed here).
+
+⚠️ **AND THE DISK IS THE SHARP EDGE.** `D:` has **402.3 GB free** of 4,000.7 GB. The corpus needs
+**375.4–386.5 GB**, leaving **15.8–26.9 GB of headroom — 4 to 7 %**. ⛔ `CLAUDE.md` records a full
+quota killing a flagship mid-checkpoint, and the PNG-codec finding says the encode is 70 % of the
+build, so a failure at hour 8 costs the whole run. ⚠️ `D:` is also **exFAT** with **1 MiB
+clusters**; `.v2ep.pt` files are large (~80 MB) so cluster inflation is not the threat it is for
+many-small-files corpora, but the *free-space* figure above is the one that binds.
+
+⛔ **THIS IS A NAMED BLOCKER, NOT A TASK I AM TAKING.** A ~10.6 h build consuming ~94 % of the
+remaining space on the project disk is compute-and-storage spend the PI has not authorised.
+**What would unblock it:** his go-ahead plus a decision on where it lands — free space on `D:`,
+another volume, or build it where the compute is. *(The dev box uplink is a MEASURED 1.2 MB/s, so
+moving 375 GB off this box is not an option: that is ~87 days.)*
+
+⭐ **What does NOT wait on it:** the eval-139 line at 416 × 1024 is complete (139/139, geometry
+declared, `d8306f1`), and `SPEC_REFCV6_V2.md` §  states the pipeline is validated on exactly
+those 139 clips *"before any pod hour is spent"*. The `b1` weight vector, the plumbing, the stamp
+and the guard are all in place for that validation run.
+
+<!-- PREFLIGHT-ON-REAL-DATA-2026-09-22 -->
+
+### ⭐⭐ 2026-09-22 — the preflight RUN ON REAL DATA: the B1 join and the 416×1024 cache genuinely fit, and the join now declares itself
+
+MEASURED (`.../2026-09-22-cls-weight-plumbing/raw/preflight_real.json` and `…_real2.json`), CPU,
+read-only except for one new sidecar.
+
+⛔ **The earlier NO-GO was mostly a statement about MISSING ARGUMENTS, not about the data.** Run
+bare, `refcv5_preflight.py` reports 9 INCONCLUSIVE, every one of them *"no `--v2-cache` /
+`--agent-join` / `--anchors` given"*. Supplying the real eval-139 cache and the B1 join converts
+them into verdicts — which is what "readiness" has to mean.
+
+**WHAT THE REAL RUN PROVES — the first end-to-end evidence that these two artifacts fit:**
+
+| check | result |
+|---|---|
+| **agent join joins to the cache** | ⭐ **139/139 episodes on the STABLE id (1.0000)**; **0** joining only on the colliding 16-bit legacy key; join carries **875,657** records / **4,566** clips |
+| episode ids are collision-free | **139 distinct** stable ids for 139 files *(control: the legacy 16-bit key collides on 34/2,308 train clips)* |
+
+⇒ the B1 join and the 416 × 1024 eval cache are **joinable at 100 %**, measured through the
+trainer's own id function rather than by matching filenames.
+
+**THE GAP IT FOUND, AND IT WAS REAL.** The preflight reported, in its own words:
+
+> *no sidecar at `b1_train_plus_eval_agents.jsonl.xz.meta.json` — the digest scope is UNDECLARED,
+> and a checker inherited from the other join REFUSES a good file*
+
+The **parity** join carries a full sidecar; the join refcv6 actually trains on carried **none**.
+Same defect shape as the class-weight vector that declared no corpus line, and the same fix.
+⭐ Built with `tanitad.data.join_meta` — **not by hand**, because a hand-typed attestation is
+exactly what `RETR-2026-09-22-SELF-ATTESTING-DIGEST` cost. `md5(compressed)` =
+**`0c31a3a63d7205e9fa50e8ac4204ef46`**, `join_meta.verify → verified: True`, and the refusal
+control fires when the declaration is stripped.
+⇒ **MEASURED FLIP, verified by re-running rather than assumed:** `[INCONCLUSIVE] join digest
+declares its scope` → **`[PASS]`**; totals **7 PASS / 3 FAIL / 7 INCONCLUSIVE → 8 PASS / 3 FAIL /
+6 INCONCLUSIVE**.
+
+⚠️ **ONE DELIBERATE OMISSION.** The sidecar does **not** copy the parity sidecar's `conventions`
+block (frame, time base, occlusion-flag semantics). Those are unverified for THIS join against its
+builder, and copying them because the sibling has them is how an INHERITED fact becomes a
+MEASURED-looking one. They sit under `_NOT_ESTABLISHED` with that reason stated.
+
+**THE THREE REMAINING FAILS — none is a defect in refcv6's data or code:**
+
+| FAIL | what it actually is |
+|---|---|
+| `refcv5 modules import` — `taniteval.ci` | the known **namespace-package shadow**: the inner package is `taniteval/taniteval/`, so `PYTHONPATH` must name *that* directory, not the repo root. VERIFIED today — it imports immediately when it does. Not a missing module. |
+| `every weighted term has a gradient` — `agent_w_ground` **1.164e-10** | `D-RC5-GROUND-DEAD`, already registered, already guarded by `assert_ground_prior_is_supervised`, and re-derived independently today (input-independent across five distributions). |
+| `v2 cache … path names the parity key: False` | ⛔ **the checker's SCOPE, not the cache's.** `refcv5_preflight` is parity-scoped and judges a correctly **B1-line** cache against a parity expectation. This is `RETR-2026-09-22-WRONG-CORPUS-FOR-REFCV6` **in the checking layer** — the same error one level up from the data. |
+
+⭐ **That third row is the one worth carrying forward.** Having just fixed a corpus-line confusion
+in an artifact, the identical confusion is sitting in the guard that inspects artifacts — and it
+fires as a FAIL on a correct file, which is the mirror of a guard that passes a broken one. Both
+make the checker untrustworthy; only the second is usually noticed.
+
+**The six remaining INCONCLUSIVEs are all missing inputs**, not findings: `--clip-ids`,
+`--v7-labels`, `--anchors`, a per-clip camera bank, the camera scope, and `--smoke`. Each names
+exactly what would settle it.
+
+⛔ **VERDICT STAYS NO-GO, correctly** — and it is not the blocker. `SPEC_REFCV6_V2.md` puts the
+pipeline validation on the 139 eval clips *"before any pod hour is spent"*, and those two
+artifacts are now proven to join. What gates an actual run remains the PI's: the go-ahead (the
+2026-09-11 stop on launching stands — see `PI_DECISION_QUEUE.md`'s 2026-09-22 reconciliation) and
+the 4,713-clip corpus cache.

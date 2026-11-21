@@ -1,0 +1,178 @@
+[ego] ego_state_inject build: feeding the MEASURED ego block (v0, a_long, yaw_rate, curvature, keep=1) at t0 to every forward — refc_v3.ego_state_from_batch, the trainer's own entry
+[v3] nav_from_v7: follow 90 / left 13 / right 38, missing 0 (of 141 clips; md5=aa12c948f062181c3297265b51526ec5)
+[model] C:/Users/Admin/navcomp/ckpt/ckpt_step9500.pt step=9500 arm=hier anchors=117 horizons=[5, 10, 15, 20, 30, 40, 50, 60] window=8 decoder=diffusion/2 config<-config.json[argv] -> refc_v3_train.build_parser + _pin_trainer_cfg (the trainer's own build path)
+[grid] 6s: dt=1.0 s K=6 instants=[1.0, 2.0, 3.0, 4.0, 5.0, 6.0] s <- model slots [10, 20, 30, 40, 50, 60] (indices [1, 3, 4, 5, 6, 7]); dropped [5, 15]
+[units] action_units=steer — the RECORDED channel 1 is a road-wheel STEER angle (physicalai.py:621). kappa = tan(steer)/2.9 is applied before integration; `ha` is NOT comparable to a kappa-unit refav1 run (`ha0` is, it is zero).
+[roll] 2412 windows / 141 episodes · arms=['os', 'ha', 'ha0', 'os_navshuf', 'os_navzero'] · fed conditionings=['nav_true', 'nav_shuffled'] + a SEPARATE nav_cmd=None forward (nav_zero) · nav_shuffle changed 1244/2412
+[nav-null] os_navzero = model(..., nav_cmd=None): the E13 tactical + strategic injection is SKIPPED (refc_v3.py:437-441; nav_injected reads False), and the CORE collapses to one_hot(0)='follow' (refc.py:2021-2024). ⚠️ At the core that is a COLLAPSE ONTO THE MAJORITY TOKEN, not a removal — NAV_COMMANDS has no 'unknown' and nav_known_channel is False (refc.py:594) — so this arm is a LOWER BOUND on nav dependence. ⛔ nav_known is NOT usable as the null: refc.py:2042-2045 raises when the gate is off.
+[cost] first forward (2 fed row(s) + 1 nav-null call, 3 rows total) took 0.58 s -> ESTIMATED 0.39 h for 2412 windows (forward only; IO/analysis extra)
+  [1/141] 01be5919-6e6 14 windows 7s
+  [2/141] 060531e1-993 13 windows 11s
+  [3/141] 0fa2b231-435 13 windows 15s
+  [4/141] 10804db8-d07 13 windows 20s
+  [5/141] 11e40da1-3d9 13 windows 24s
+  [6/141] 126b3a97-087 13 windows 30s
+  [7/141] 13c95b6a-5d1 13 windows 35s
+  [8/141] 14157960-84d 13 windows 39s
+  [9/141] 142a3a72-6cd 13 windows 44s
+  [10/141] 14bc9fcf-c04 14 windows 48s
+  [11/141] 16d89725-2f3 14 windows 53s
+  [12/141] 17775e74-2d8 13 windows 57s
+  [13/141] 18b72291-84f 13 windows 62s
+  [14/141] 1bd040a8-182 13 windows 66s
+  [15/141] 1c3a2c7c-7e8 13 windows 70s
+  [16/141] 204b15b4-bd0 13 windows 75s
+  [17/141] 2172a5a3-8a1 13 windows 79s
+  [18/141] 24fee8a5-9cc 13 windows 83s
+  [19/141] 2602baaa-436 13 windows 87s
+  [20/141] 262b900f-2cf 13 windows 92s
+  [21/141] 269478eb-2da 14 windows 96s
+  [22/141] 27f44280-3e5 13 windows 101s
+  [23/141] 2cd0f4e4-dce 13 windows 105s
+  [24/141] 2e8a2df2-3f7 13 windows 109s
+  [25/141] 316f3c56-914 14 windows 114s
+  [26/141] 31d0adc4-4e8 14 windows 118s
+  [27/141] 32f9b6b2-edc 13 windows 123s
+  [28/141] 330b4626-96d 13 windows 127s
+  [29/141] 34a1e12e-95c 13 windows 131s
+  [30/141] 37e61793-36e 13 windows 136s
+  [31/141] 38fe80c1-caf 13 windows 140s
+  [32/141] 3971a8c6-0c5 13 windows 144s
+  [33/141] 39bf584e-5bb 13 windows 148s
+  [34/141] 3ef3dcc8-7fd 13 windows 153s
+  [35/141] 3ff11411-fa2 13 windows 157s
+  [36/141] 42745b48-a01 14 windows 162s
+  [37/141] 45358841-692 14 windows 166s
+  [38/141] 45a9f7ec-991 13 windows 171s
+  [39/141] 45aea78c-776 13 windows 175s
+  [40/141] 47241da8-c00 13 windows 179s
+  [41/141] 480d7910-cec 13 windows 183s
+  [42/141] 4c5264dd-911 13 windows 188s
+  [43/141] 4ee70f88-f03 13 windows 192s
+  [44/141] 50caa2df-cf8 13 windows 196s
+  [45/141] 51c01ba4-900 13 windows 201s
+  [46/141] 5271d125-613 14 windows 205s
+  [47/141] 52ddcaaf-06c 14 windows 210s
+  [48/141] 565b6ff0-c9f 13 windows 214s
+  [49/141] 5716299c-a9e 13 windows 218s
+  [50/141] 59c25a0f-d4b 13 windows 223s
+  [51/141] 5b4df66c-31a 13 windows 227s
+  [52/141] 5d39a1de-bd2 13 windows 231s
+  [53/141] 5d94cbbb-55e 13 windows 235s
+  [54/141] 5f86e111-b21 13 windows 240s
+  [55/141] 62f3222e-9aa 13 windows 244s
+  [56/141] 63434e0b-8cd 14 windows 249s
+  [57/141] 66e4d574-2b3 14 windows 253s
+  [58/141] 672d70d8-812 13 windows 257s
+  [59/141] 6908302e-14b 13 windows 262s
+  [60/141] 695081db-431 13 windows 266s
+  [61/141] 6a89cca3-64e 13 windows 270s
+  [62/141] 6b3e802e-ea8 13 windows 275s
+  [63/141] 6ed4ef7a-1a7 13 windows 279s
+  [64/141] 73e750eb-684 13 windows 283s
+  [65/141] 7526e299-040 13 windows 287s
+  [66/141] 77a247be-ad5 13 windows 292s
+  [67/141] 79e30ac2-c61 14 windows 297s
+  [68/141] 80b890fc-114 14 windows 302s
+  [69/141] 80fcd92f-7bb 13 windows 306s
+  [70/141] 826cd25c-fa4 13 windows 311s
+  [71/141] 829320e2-ba1 13 windows 315s
+  [72/141] 84952a7e-a54 13 windows 319s
+  [73/141] 85a47aa1-146 13 windows 324s
+  [74/141] 8d610d87-817 13 windows 328s
+  [75/141] 8df0cb04-8b6 13 windows 332s
+  [76/141] 8f1baf35-90f 13 windows 337s
+  [77/141] 8fe27d99-23e 13 windows 341s
+  [78/141] 91929cea-f8d 13 windows 345s
+  [79/141] 91e90a95-a12 14 windows 350s
+  [80/141] 9370d445-320 14 windows 355s
+  [81/141] 93854321-c88 13 windows 359s
+  [82/141] 998310a5-277 13 windows 364s
+  [83/141] 9b4347d2-fdc 13 windows 368s
+  [84/141] 9c50f803-c78 13 windows 372s
+  [85/141] 9d3d1cd1-ce5 13 windows 377s
+  [86/141] 9fc24b6e-3ec 13 windows 381s
+  [87/141] a0d95df6-499 13 windows 385s
+  [88/141] a459164a-0c6 13 windows 390s
+  [89/141] a6b2719b-771 13 windows 394s
+  [90/141] a7e15877-946 14 windows 399s
+  [91/141] aa00f477-540 14 windows 404s
+  [92/141] aa594aa8-bc9 13 windows 408s
+  [93/141] ac81f868-f50 13 windows 412s
+  [94/141] acf8e77f-7d5 13 windows 416s
+  [95/141] af6f5964-263 13 windows 421s
+  [96/141] afe44776-866 13 windows 427s
+  [97/141] b0252ad5-8cd 13 windows 436s
+  [98/141] b05195bf-36d 13 windows 445s
+  [99/141] b19eb35f-396 13 windows 449s
+  [100/141] b62be3fa-4fb 13 windows 453s
+  [101/141] b99058dc-680 14 windows 458s
+  [102/141] c0142275-d0c 14 windows 463s
+  [103/141] c08bebe5-c3f 13 windows 467s
+  [104/141] c1cb24d2-0af 13 windows 471s
+  [105/141] c84ea182-972 13 windows 476s
+  [106/141] c8a39711-ce0 13 windows 480s
+  [107/141] ca11a2a2-102 14 windows 485s
+  [108/141] caf90ce8-c1c 13 windows 489s
+  [109/141] d1d382aa-035 13 windows 493s
+  [110/141] d217b78a-0da 13 windows 498s
+  [111/141] d4729053-1eb 13 windows 502s
+  [112/141] d571e998-57d 13 windows 506s
+  [113/141] d85682b8-f61 13 windows 511s
+  [114/141] dbad28c2-dfc 13 windows 515s
+  [115/141] dca157a0-20a 13 windows 519s
+  [116/141] e0e6b875-eb1 13 windows 523s
+  [117/141] e319062b-376 13 windows 528s
+  [118/141] e66979e0-6f5 14 windows 532s
+  [119/141] e6cb7cd4-834 14 windows 537s
+  [120/141] e7ada9bb-f5f 13 windows 541s
+  [121/141] e8ace736-b9b 13 windows 546s
+  [122/141] ea019ab7-bd2 13 windows 550s
+  [123/141] eabb9abf-06a 13 windows 554s
+  [124/141] eb96a48b-db1 13 windows 558s
+  [125/141] ebd51f52-29f 13 windows 563s
+  [126/141] ed09262b-3ac 13 windows 567s
+  [127/141] ed87040c-cf3 13 windows 571s
+  [128/141] edd5d17b-1be 14 windows 576s
+  [129/141] f14ae2d2-7bf 14 windows 581s
+  [130/141] f19cffbf-562 13 windows 585s
+  [131/141] f1a94fee-838 13 windows 589s
+  [132/141] f1e1536b-1e2 13 windows 594s
+  [133/141] f26af403-f54 13 windows 598s
+  [134/141] f4226f59-077 13 windows 602s
+  [135/141] f4740120-50c 13 windows 606s
+  [136/141] f6e7827e-fd4 13 windows 611s
+  [137/141] f901e9e6-cc3 14 windows 615s
+  [138/141] fb8e8200-bde 14 windows 620s
+  [139/141] fe764229-15d 13 windows 624s
+  [140/141] fe83e06e-3c2 13 windows 629s
+  [141/141] ffcd075e-c25 13 windows 633s
+[dump] 1860 windows over 141 episodes (552 skipped: {'horizon_beyond_episode': 552})
+REFCV3_DUMP_DONE
+[trivial-profile] 1860 windows — arm SHAPE before any family row (straight |y|<1e-06 m, const-speed spread<0.0001 m)
+  os             n=1860 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000  identical_to: os_navshuf=912/1860
+  ha             n=1860 straight=0.0285 const_speed=0.0220 CONSTANT-VELOCITY=0.0215  identical_to: ha0=40/1860
+  ha0            n=1860 straight=1.0000 const_speed=1.0000 CONSTANT-VELOCITY=1.0000  identical_to: ha=40/1860
+  os_navshuf     n=1860 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000  identical_to: os=912/1860
+  os_navzero     n=1860 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000
+  ⚠️ CONSTANT-VELOCITY on > 50 % of windows: ['ha0'] — read their LATERAL rows as a control, never as planning skill
+  ⚠️ cross-call arms ['os_navzero']: produced by a SEPARATE forward (nav_cmd=None gates E13 for the whole call), so a float32 batching floor of ~6e-7 m sits under them — `identical_to` at 1e-09 m cannot resolve them and must not be read as nav evidence. A REAL nav difference measured ~4.7e4x that.
+[selection-profile] 1860 windows over 117 anchors — the model's OWN choice, before any family row
+  n_distinct=  35  modal=#67 (0.6022)  entropy=1.6964/4.7622 nats (ratio 0.3562)  agrees_with_oracle=0.0925
+[out] C:/Users/Admin/navcomp/bank/raw/refcv4b-9500-openloop.json
+  os           tier=T1*  ADE=3.5167 [3.1824, 3.8722]  families_unavailable=['strategic']  distance_keeping=REFUSED
+  ha           tier=T1   ADE=3.5598 [3.1696, 3.9923]  families_unavailable=['strategic']  distance_keeping=REFUSED
+  ha0          tier=T1   ADE=4.9545 [4.3688, 5.5872]  families_unavailable=['strategic']  distance_keeping=REFUSED
+  os_navshuf   tier=T1*  ADE=3.5607 [3.2319, 3.9141]  families_unavailable=['strategic']  distance_keeping=REFUSED
+  os_navzero   tier=T1*  ADE=3.5024 [3.1777, 3.8501]  families_unavailable=['strategic']  distance_keeping=REFUSED
+  * = tier stamped T1 with the ruling OPEN (does EVAL_DOCTRINE admit as T1 a model that consumes NO acti…)
+  paired_os_minus_ha0          ADE delta=-1.4378 [-1.843, -1.0774] separated=True n_win=1860 n_ep=141
+  paired_os_minus_ha           ADE delta=-0.043 [-0.2893, 0.2206] separated=False n_win=1860 n_ep=141
+  paired_os_minus_navshuf      ADE delta=-0.044 [-0.0952, 0.003] separated=False n_win=1860 n_ep=141
+  paired_os_navzero_minus_ha0  ADE delta=-1.4521 [-1.8508, -1.0795] separated=True n_win=1860 n_ep=141
+  paired_os_minus_navzero      ADE delta=0.0143 [-0.0346, 0.064] separated=False n_win=1860 n_ep=141
+  paired_ha_minus_ha0          ADE delta=-1.3948 [-1.8878, -0.9637] separated=True n_win=1860 n_ep=141
+  nav controls: os_navshuf (pairing broken, marginal preserved) AND os_navzero (signal removed; E13 tactical+strategic OFF, core collapsed to 'follow') — BACKLOG R39 binds both; the nav-zero margin over ha0 is the DEPLOYMENT-relevant number
+  ABSENT: ol — `ol` is 'the RECORDED future (a, steer) integrated from v0'. refcv3 CONSUMES NO ACTIONS (r…
+  strategic nav_valid_frac=1.0 n_labeled=1467 changed_subset_n=719
+  tactical anchor_acc=0.0941 (chance 0.008547) n_distinct_selected=35

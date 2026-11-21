@@ -1,0 +1,249 @@
+{
+ "_what": "SPEC \u00a75 decomposition ladder",
+ "_label": "RESULT",
+ "split": "navtest",
+ "arm": "R6_A1",
+ "arm_csv": "C:\\Users\\Admin\\ev6\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-23-refcv6-standard-tests\\navsim\\raw\\milestones\\step5000_navtest_diag\\scores_navtest\\r6s5000_R6_A1_sub\\r6s5000_R6_A1_sub.csv",
+ "floors": {
+  "STOP": "D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-v1-navtest/raw/STOP_navtest/STOP_navtest.csv",
+  "CV": "D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-v1-navtest/raw/CV_navtest/CV_navtest.csv",
+  "HUMAN": "D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-v1-navtest/raw/HUMAN_navtest/HUMAN_navtest.csv"
+ },
+ "n_tokens": 200,
+ "ladder": {
+  "formula": "NC * DAC * (5 EP + 5 TTC + 2 C) / 12",
+  "formula_selfcheck": {
+   "max_abs_diff_vs_devkit_score": 1.1102230246251565e-16,
+   "tol": 1e-09,
+   "pass": true
+  },
+  "n_zero_score": 87,
+  "n": 200,
+  "zero_attribution": {
+   "NC": {
+    "n_zeroed_with_this_term_0": 39,
+    "n_zeroed_where_ONLY_this_term_is_0": 29
+   },
+   "DAC": {
+    "n_zeroed_with_this_term_0": 58,
+    "n_zeroed_where_ONLY_this_term_is_0": 48
+   }
+  },
+  "single_term_ceiling": {
+   "DAC": {
+    "PDMS_x100_if_this_term_were_perfect": 61.3971,
+    "gain_x100": 12.3333,
+    "term_mean_now": 0.71
+   },
+   "TTC": {
+    "PDMS_x100_if_this_term_were_perfect": 53.1263,
+    "gain_x100": 4.0625,
+    "term_mean_now": 0.665
+   },
+   "EP": {
+    "PDMS_x100_if_this_term_were_perfect": 52.1875,
+    "gain_x100": 3.1237,
+    "term_mean_now": 0.488358
+   },
+   "NC": {
+    "PDMS_x100_if_this_term_were_perfect": 51.5566,
+    "gain_x100": 2.4928,
+    "term_mean_now": 0.8025
+   },
+   "C": {
+    "PDMS_x100_if_this_term_were_perfect": 49.0638,
+    "gain_x100": 0.0,
+    "term_mean_now": 1.0
+   }
+  },
+  "_read": "a CEILING under a single-term repair with everything else frozen; the terms trade (braking buys NC/TTC, loses EP), so they do not add up"
+ },
+ "by_command": {
+  "LEFT": {
+   "n": 34,
+   "arm_PDMS_x100": 55.1031,
+   "arm_NC0_pct": 11.76,
+   "arm_DAC0_pct": 32.35,
+   "STOP_PDMS_x100": 58.3946,
+   "minus_STOP_x100": -3.2915,
+   "wtl_vs_STOP": {
+    "win": 20,
+    "tie": 1,
+    "loss": 13,
+    "n": 34
+   },
+   "CV_PDMS_x100": 28.3221,
+   "minus_CV_x100": 26.781,
+   "wtl_vs_CV": {
+    "win": 21,
+    "tie": 10,
+    "loss": 3,
+    "n": 34
+   },
+   "HUMAN_PDMS_x100": 93.9619
+  },
+  "RIGHT": {
+   "n": 36,
+   "arm_PDMS_x100": 64.4299,
+   "arm_NC0_pct": 2.78,
+   "arm_DAC0_pct": 22.22,
+   "STOP_PDMS_x100": 65.0341,
+   "minus_STOP_x100": -0.6042,
+   "wtl_vs_STOP": {
+    "win": 23,
+    "tie": 1,
+    "loss": 12,
+    "n": 36
+   },
+   "CV_PDMS_x100": 20.856,
+   "minus_CV_x100": 43.5739,
+   "wtl_vs_CV": {
+    "win": 26,
+    "tie": 8,
+    "loss": 2,
+    "n": 36
+   },
+   "HUMAN_PDMS_x100": 92.1334
+  },
+  "STRAIGHT": {
+   "n": 130,
+   "arm_PDMS_x100": 43.229,
+   "arm_NC0_pct": 26.15,
+   "arm_DAC0_pct": 30.0,
+   "STOP_PDMS_x100": 62.9968,
+   "minus_STOP_x100": -19.7678,
+   "wtl_vs_STOP": {
+    "win": 58,
+    "tie": 2,
+    "loss": 70,
+    "n": 130
+   },
+   "CV_PDMS_x100": 20.3898,
+   "minus_CV_x100": 22.8392,
+   "wtl_vs_CV": {
+    "win": 56,
+    "tie": 65,
+    "loss": 9,
+    "n": 130
+   },
+   "HUMAN_PDMS_x100": 94.7108
+  }
+ },
+ "by_speed_band": {
+  "0-2 m/s": {
+   "n": 47,
+   "arm_PDMS_x100": 63.0101,
+   "arm_NC0_pct": 19.15,
+   "arm_DAC0_pct": 12.77,
+   "STOP_PDMS_x100": 66.8216,
+   "minus_STOP_x100": -3.8115,
+   "wtl_vs_STOP": {
+    "win": 29,
+    "tie": 1,
+    "loss": 17,
+    "n": 47
+   },
+   "CV_PDMS_x100": 49.8353,
+   "minus_CV_x100": 13.1747,
+   "wtl_vs_CV": {
+    "win": 32,
+    "tie": 6,
+    "loss": 9,
+    "n": 47
+   },
+   "HUMAN_PDMS_x100": 95.069
+  },
+  "2-5 m/s": {
+   "n": 52,
+   "arm_PDMS_x100": 39.6091,
+   "arm_NC0_pct": 28.85,
+   "arm_DAC0_pct": 32.69,
+   "STOP_PDMS_x100": 71.4218,
+   "minus_STOP_x100": -31.8126,
+   "wtl_vs_STOP": {
+    "win": 18,
+    "tie": 1,
+    "loss": 33,
+    "n": 52
+   },
+   "CV_PDMS_x100": 22.2097,
+   "minus_CV_x100": 17.3994,
+   "wtl_vs_CV": {
+    "win": 21,
+    "tie": 29,
+    "loss": 2,
+    "n": 52
+   },
+   "HUMAN_PDMS_x100": 92.5815
+  },
+  "5-8 m/s": {
+   "n": 61,
+   "arm_PDMS_x100": 55.2438,
+   "arm_NC0_pct": 14.75,
+   "arm_DAC0_pct": 24.59,
+   "STOP_PDMS_x100": 60.9417,
+   "minus_STOP_x100": -5.6979,
+   "wtl_vs_STOP": {
+    "win": 38,
+    "tie": 0,
+    "loss": 23,
+    "n": 61
+   },
+   "CV_PDMS_x100": 10.1626,
+   "minus_CV_x100": 45.0812,
+   "wtl_vs_CV": {
+    "win": 35,
+    "tie": 24,
+    "loss": 2,
+    "n": 61
+   },
+   "HUMAN_PDMS_x100": 93.6239
+  },
+  "8-12 m/s": {
+   "n": 36,
+   "arm_PDMS_x100": 33.4911,
+   "arm_NC0_pct": 13.89,
+   "arm_DAC0_pct": 55.56,
+   "STOP_PDMS_x100": 48.0767,
+   "minus_STOP_x100": -14.5856,
+   "wtl_vs_STOP": {
+    "win": 13,
+    "tie": 2,
+    "loss": 21,
+    "n": 36
+   },
+   "CV_PDMS_x100": 5.2508,
+   "minus_CV_x100": 28.2403,
+   "wtl_vs_CV": {
+    "win": 13,
+    "tie": 22,
+    "loss": 1,
+    "n": 36
+   },
+   "HUMAN_PDMS_x100": 95.3924
+  },
+  ">=12 m/s": {
+   "n": 4,
+   "arm_PDMS_x100": 54.0143,
+   "arm_NC0_pct": 25.0,
+   "arm_DAC0_pct": 0.0,
+   "STOP_PDMS_x100": 53.3704,
+   "minus_STOP_x100": 0.6439,
+   "wtl_vs_STOP": {
+    "win": 3,
+    "tie": 0,
+    "loss": 1,
+    "n": 4
+   },
+   "CV_PDMS_x100": 14.5833,
+   "minus_CV_x100": 39.431,
+   "wtl_vs_CV": {
+    "win": 2,
+    "tie": 2,
+    "loss": 0,
+    "n": 4
+   },
+   "HUMAN_PDMS_x100": 99.0606
+  }
+ }
+}

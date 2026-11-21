@@ -1,0 +1,134 @@
+FFFF....F...                                                             [100%]
+================================== FAILURES ===================================
+____ test_1_model_table_argv_table_and_gate_admissions_are_the_literal_ten ____
+
+    def test_1_model_table_argv_table_and_gate_admissions_are_the_literal_ten():
+        model_tab = {p: f for p, f, _w in v3.BYPASS_DECLARATIONS}
+        argv_tab = {p: f for p, f, _w in dvb.GRAD_UNREACHABLE_BYPASS_RULES}
+        gate_tab = {g: f for g, f, _w in LG.PROFILES["refcv7"]["live_dead_admitted"]}
+>       assert set(model_tab) == set(argv_tab) == set(gate_tab) == TEN
+E       AssertionError: assert {'core.decode...ic.proj', ...} == {'core.decode...ic.proj', ...}
+E         
+E         Extra items in the left set:
+E         'core.decoder.lat_to_anchor__MUTANT'
+E         Extra items in the right set:
+E         'core.decoder.lat_to_anchor'
+E         Use -v to get more diff
+
+tests\test_refcv7_admitted_freeze.py:121: AssertionError
+____ test_2_the_refcv7_rig_declares_the_LITERAL_thirteen_and_G_DVB_agrees _____
+
+rig = (RefCV3Model(
+  (core): RefCModel(
+    (encoder): TimmResNetTrunk(
+      (net): FeatureListNet(
+        (conv1): Conv2...d_ms': 10.0, 'kappa_cap': 0.3, 'alat_v_floor': 2.0}), ['--arm', 'hier', '--size', 'small', '--smoke', '--device', ...])
+
+    def test_2_the_refcv7_rig_declares_the_LITERAL_thirteen_and_G_DVB_agrees(rig):
+        model, args, _argv = rig
+>       assert set(gr.grad_unreachable_prefixes(model)) == BATCH3 | TEN
+E       AssertionError: assert {'core.decode...gic.gru', ...} == {'core.decode...te_head', ...}
+E         
+E         Extra items in the right set:
+E         'core.decoder.lat_to_anchor'
+E         Use -v to get more diff
+
+tests\test_refcv7_admitted_freeze.py:133: AssertionError
+---------------------------- Captured stdout setup ----------------------------
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.3, alat_v_floor=2.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from C:\Users\Admin\AppData\Local\Temp\r7freeze_ro8mu_s7\extr.json (2 clips, z 1.450-1.550 m, pitch -0.0000..+0.0040 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 2 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] ⚠️ agent cls weight: the corpus line could not be DERIVED from --agent-join 'C:\\Users\\Admin\\AppData\\Local\\Temp\\r7freeze_ro8mu_s7\\__unread__/join.jsonl.xz', so the only source is the --agent-cls-weight key. The guard is single-sourced on this arm and cannot catch an artifact/corpus mismatch.
+[v3] agent cls weight: b1 on corpus line v7-b1-physicalai-b1-w120-256x640cyl, population in_field_and_decode_box (weight-key-only (the join is not a line this table names)) (10 classes, imbalance 1298.6:1, digest c9dbc340acf7d27e)
+[v3] refcv7 map-hires: w=1, extent 60 m x +-16 m -> [600, 320] at 0.1 m, grad_ckpt True, near-lift 20 m, near-refine 1, tap {'s8_tap': True, 's8_module': 'layer2', 's8_dim': 128, 's8_hw': [16, 72], 's8_frame': 'newest', 's8_temporal_fusion': None}, params {'lift': 32896, 'encoder': 406912, 'refine': 20936, 'near': 16448, 'near_refine': 18496, 'total': 495688}, class weights sha256 6efc5957e6d2
+[v3] refcv6 perception: w_map=0 w_box3d=1 bev_source=map_hires_pool; params {'lift': 0, 'bev_encoder': 0, 'map_head': 0, 'box_memory': 91136, 'box_decoder': 3505943, 'bev_pool': 6336, 'box_qpos': 131584, 'box_refpts': 600, 'total': 3735599}
+[v3] anchors: loaded (117, 8, 2) from C:\Users\Admin\AppData\Local\Temp\r7freeze_ro8mu_s7\anchors.pt (sha256 fb1193128a15f6eb)
+[v3] anchors: v0-CONDITIONED, controls (117, 2) (accel, lateral accel), units=alat (source: file), rolled per window; withheld rows at 10.0 m/s. straight-ahead control present: True
+[parity] ⚠ NON-PARITY v2 corpus for v3 v2-cache: ['C:\\Users\\Admin\\AppData\\Local\\Temp\\r7freeze_ro8mu_s7\\__unread__/train'] reference no registered parity key. Results off it are NOT cross-arm comparable with the parity arms.
+---------------------------- Captured stderr setup ----------------------------
+W0928 05:48:51.541000 40632 Lib\site-packages\torch\utils\flop_counter.py:29] triton not found; flop counting will not work for triton kernels
+----------------------------- Captured log setup ------------------------------
+WARNING  torch.utils.flop_counter:flop_counter.py:29 triton not found; flop counting will not work for triton kernels
+_____ test_3a_RED_without_no_strategic_argv_no_longer_justifies_the_eight _____
+
+rig = (RefCV3Model(
+  (core): RefCModel(
+    (encoder): TimmResNetTrunk(
+      (net): FeatureListNet(
+        (conv1): Conv2...d_ms': 10.0, 'kappa_cap': 0.3, 'alat_v_floor': 2.0}), ['--arm', 'hier', '--size', 'small', '--smoke', '--device', ...])
+
+    def test_3a_RED_without_no_strategic_argv_no_longer_justifies_the_eight(rig):
+        import argparse
+        model, args, _argv = rig
+        off = argparse.Namespace(**{**vars(args), "no_strategic": False})
+        got = sorted((m.lever, m.declared, m.built) for m in dvb.check_grad_unreachable(model, off))
+>       assert got == sorted((f"grad_unreachable[{p}]", "not declared (argv: reached)", "declared")
+                             for p in TEN_STRATEGIC)
+E       AssertionError: assert [('grad_unrea...clared'), ...] == [('grad_unrea...clared'), ...]
+E         
+E         At index 1 diff: ('grad_unreachable[core.decoder.lat_to_anchor]', 'declared (argv: bypassed by design)', 'not declared') != ('grad_unreachable[core.route_head]', 'not declared (argv: reached)', 'declared')
+E         Left contains one more item: ('grad_unreachable[str_goal_head]', 'not declared (argv: reached)', 'declared')
+E         Use -v to get more diff
+
+tests\test_refcv7_admitted_freeze.py:148: AssertionError
+____ test_3b_RED_without_graft_tac8_prior_argv_no_longer_justifies_the_two ____
+
+rig = (RefCV3Model(
+  (core): RefCModel(
+    (encoder): TimmResNetTrunk(
+      (net): FeatureListNet(
+        (conv1): Conv2...d_ms': 10.0, 'kappa_cap': 0.3, 'alat_v_floor': 2.0}), ['--arm', 'hier', '--size', 'small', '--smoke', '--device', ...])
+
+    def test_3b_RED_without_graft_tac8_prior_argv_no_longer_justifies_the_two(rig):
+        import argparse
+        model, args, _argv = rig
+        off = argparse.Namespace(**{**vars(args), "graft_tac8_prior": False})
+        got = sorted((m.lever, m.declared, m.built) for m in dvb.check_grad_unreachable(model, off))
+>       assert got == sorted((f"grad_unreachable[{p}]", "not declared (argv: reached)", "declared")
+                             for p in TEN_TAC8)
+E       AssertionError: assert [('grad_unrea..., 'declared')] == [('grad_unrea..., 'declared')]
+E         
+E         At index 0 diff: ('grad_unreachable[core.decoder.lon_to_anchor]', 'not declared (argv: reached)', 'declared') != ('grad_unreachable[core.decoder.lat_to_anchor]', 'not declared (argv: reached)', 'declared')
+E         Right contains one more item: ('grad_unreachable[core.decoder.lon_to_anchor]', 'not declared (argv: reached)', 'declared')
+E         Use -v to get more diff
+
+tests\test_refcv7_admitted_freeze.py:157: AssertionError
+_____________ test_6_build_optimizer_excludes_EXACTLY_the_twenty ______________
+
+rig = (RefCV3Model(
+  (core): RefCModel(
+    (encoder): TimmResNetTrunk(
+      (net): FeatureListNet(
+        (conv1): Conv2...d_ms': 10.0, 'kappa_cap': 0.3, 'alat_v_floor': 2.0}), ['--arm', 'hier', '--size', 'small', '--smoke', '--device', ...])
+
+    def test_6_build_optimizer_excludes_EXACTLY_the_twenty(rig):
+        model, args, _argv = rig
+        import argparse
+        a = argparse.Namespace(**{**vars(args), "opt": "dd"})
+        opt = T.build_optimizer(model, a)
+        in_opt = {id(p) for g in opt.param_groups for p in g["params"]}
+        out = sorted(n for n, p in model.named_parameters() if id(p) not in in_opt)
+        ten_out = [n for n in out if _under(n, TEN)]
+>       assert len(ten_out) == N_TEN_TENSORS
+E       AssertionError: assert 19 == 20
+E        +  where 19 = len(['core.decoder.ctx_to_cond.bias', 'core.decoder.ctx_to_cond.weight', 'core.decoder.lon_to_anchor.weight', 'core.route_head.bias', 'core.route_head.weight', 'core.strategic.gru.bias_hh_l0', ...])
+
+tests\test_refcv7_admitted_freeze.py:205: AssertionError
+---------------------------- Captured stdout call -----------------------------
+[v3] opt=dd AdamW wd=0.0001 encoder_lr=5.000e-05 (64 tensors) head_lr=1.000e-04 (405 tensors)
+============================== warnings summary ===============================
+tests/test_refcv7_admitted_freeze.py: 14 warnings
+  C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\jit\_script.py:365: DeprecationWarning: `torch.jit.script_method` is deprecated. Please switch to `torch.compile` or `torch.export`.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_refcv7_admitted_freeze.py::test_1_model_table_argv_table_and_gate_admissions_are_the_literal_ten
+FAILED tests/test_refcv7_admitted_freeze.py::test_2_the_refcv7_rig_declares_the_LITERAL_thirteen_and_G_DVB_agrees
+FAILED tests/test_refcv7_admitted_freeze.py::test_3a_RED_without_no_strategic_argv_no_longer_justifies_the_eight
+FAILED tests/test_refcv7_admitted_freeze.py::test_3b_RED_without_graft_tac8_prior_argv_no_longer_justifies_the_two
+FAILED tests/test_refcv7_admitted_freeze.py::test_6_build_optimizer_excludes_EXACTLY_the_twenty
+5 failed, 7 passed, 14 warnings in 12.51s

@@ -1,0 +1,8 @@
+Console outputs observed 2026-11-14 (copied by hand from the runs of the scripts beside this file; one process at a time, CUDA_VISIBLE_DEVICES=-1).
+time1.py on ONE v1.1 NAVSIM cache token (smoke20 sample; scores NOT printed or stored, synthetic straight-line proposals):
+  decompress 0.016-0.043 s; unpickle 1.65-1.74 s (includes first imports); raw 1,248,868 B; fields: file_path trajectory ego_state observation centerline route_lane_ids drivable_area_map
+  observation: 51 occupancy maps at 10 Hz, 50 samples, map_radius 100 m, 215 unique objects (Agent:VEHICLE, Agent:PEDESTRIAN, StaticObject:BARRIER/CZONE_SIGN/GENERIC_OBJECT/TRAFFIC_CONE)
+  _setup 4.24 s once; score_plans over 64 proposals: 1.738 s (cold), 0.522 s, 0.727 s (warm); keys nc dac ep ttc c ddc pdms
+raster_time.py (same token): 8 time steps (0.5..4.0 s) of agent polygons -> [8,160,128] raster, 0.034 s warm; polygons in grid per step 102..115; occupied 0.5 m cells per step 739..789
+probe_db.py on E:/.../splits/trainval/2021.06.07.11.59.52_veh-35_00008_00083.db (43.6 MB, read-only immutable): lidar_pc 1,501 rows at 20.01 Hz over 75 s; lidar_box 162,546; track 625; one 8 s window query 19,910 rows in 0.0699 s
+inspect1.py on a navtest_v2 cache token: v2 MetricCache also stores current_tracked_objects (1 step) and future_tracked_objects (40 steps), 109 current objects

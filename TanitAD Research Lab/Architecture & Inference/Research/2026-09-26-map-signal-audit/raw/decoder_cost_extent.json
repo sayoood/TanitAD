@@ -1,0 +1,64 @@
+{
+ "batch": 16,
+ "area_ratio_new_over_old": 3.125,
+ "extent_60x32": {
+  "lift_grid_0.25m": [
+   240,
+   128
+  ],
+  "logit_grid_0.1m": [
+   600,
+   320
+  ],
+  "saved_elems_per_sample": {
+   "lift (proj out + sampled Z*D + out)": 11534336,
+   "encoder @0.25 m": 67829760,
+   "refine @0.1 m": 43008000,
+   "logits + log_softmax": 3072000
+  },
+  "saved_GB_b16_this_count": 7.48,
+  "logits_GB_b16": 0.092,
+  "logit_grad_GB_b16": 0.092,
+  "largest_transient_activation_grad_GB_b16": 0.366,
+  "fwd_GFLOP_per_sample": 34.0,
+  "fwd_bwd_TFLOP_per_step_b16": 1.63
+ },
+ "extent_100x60": {
+  "lift_grid_0.25m": [
+   400,
+   240
+  ],
+  "logit_grid_0.1m": [
+   1000,
+   600
+  ],
+  "saved_elems_per_sample": {
+   "lift (proj out + sampled Z*D + out)": 32423936,
+   "encoder @0.25 m": 211968000,
+   "refine @0.1 m": 134400000,
+   "logits + log_softmax": 9600000
+  },
+  "saved_GB_b16_this_count": 23.15,
+  "logits_GB_b16": 0.286,
+  "logit_grad_GB_b16": 0.286,
+  "largest_transient_activation_grad_GB_b16": 1.144,
+  "fwd_GFLOP_per_sample": 102.4,
+  "fwd_bwd_TFLOP_per_step_b16": 4.92
+ },
+ "builder_measured_saved_GB_b16": {
+  "60x32": 6.85,
+  "100x60_scaled_by_area": 21.42,
+  "60x32_grad_ckpt": 0.36,
+  "100x60_grad_ckpt_scaled": 1.14
+ },
+ "trunk_fwd_bwd_TFLOP_per_step_approx": 31.8,
+ "map_branch_share_of_trunk_flops": {
+  "60x32": 0.051,
+  "100x60": 0.155
+ },
+ "reference": {
+  "refcv6_peak_cuda_GB": 21.63,
+  "refcv6_s_per_step": 6.63,
+  "builder_estimate_refcv7_peak_60x32_GB": "30-33"
+ }
+}

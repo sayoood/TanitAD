@@ -1,0 +1,27 @@
+  63 arms in 238s: 8 accepted (positive twins / controls), 55 rejected -> live
+  mutation matrix: 26 source mutations
+    accept_tree_skipped                  RED on 4/4  ['tree_added_file', 'tree_edited_file', 'tree_removed_file', 'tree_sha_changed_resigned']
+    accept_signature_skipped             RED on 4/4  ['hmac_garbage', 'hmac_removed', 'key_other', 'tampered_one_byte']
+    accept_kind_schema_skipped           RED on 2/2  ['kind_is_token', 'schema_wrong']
+    accept_profile_skipped               RED on 1/1  ['profile_renamed_same_suite']
+    accept_commit_skipped                RED on 2/2  ['commit_changed', 'commit_none_vs_set']
+    accept_suite_entries_skipped         RED on 2/2  ['suite_args_edited', 'suite_sha_changed_resigned']
+    accept_gate_code_skipped             RED on 3/3  ['gate_checks_sha_changed', 'gate_sha_changed', 'gate_token_sha_changed']
+Traceback (most recent call last):
+  File "F:\tanitad_scratch\fieldrep\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_gate_suite_prerun.py", line 696, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "F:\tanitad_scratch\fieldrep\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_gate_suite_prerun.py", line 690, in main
+    report_matrix(matrix(td / "m"))
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "F:\tanitad_scratch\fieldrep\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_gate_suite_prerun.py", line 587, in report_matrix
+    ok(tab is not None, f"mutation {mid}: {why}")
+    ~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\tanitad_scratch\fieldrep\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_gate_suite_prerun.py", line 47, in ok
+    assert cond, msg
+           ^^^^
+AssertionError: mutation accept_environment_skipped: no table written (rc 1): py", line 100, in write_json
+    os.replace(tmp, p)
+    ~~~~~~~~~~^^^^^^^^
+PermissionError: [WinError 32] Der Prozess kann nicht auf die Datei zugreifen, da sie von einem anderen Prozess verwendet wird: 'F:\\tanitad_scratch\\fieldrep\\tmp\\rerun_test_gate_suite_prerun.py\\tmpq9892bw1\\valid.json.tmp' -> 'F:\\tanitad_scratch\\fieldrep\\tmp\\rerun_test_gate_suite_prerun.py\\tmpq9892bw1\\valid.json'
+

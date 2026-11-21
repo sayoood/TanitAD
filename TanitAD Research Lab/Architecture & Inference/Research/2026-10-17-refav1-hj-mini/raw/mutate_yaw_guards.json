@@ -1,0 +1,111 @@
+{
+ "results": [
+  {
+   "id": "BASELINE (no mutation, every guard) must be GREEN",
+   "rc": 0,
+   "tail": "12 passed, 14 deselected, 1 warning in 14.83s",
+   "ok": true
+  },
+  {
+   "id": "M1-ra1-loader-reads-steer",
+   "file": "stack/tanitad/data/ra1_pooled.py",
+   "applied": true,
+   "guard": "test_ra1_yaw_clip_is_bit_identical_under_garbage_steer_and_steer_mode_is_not or test_ra1_model_loss_is_bit_identical",
+   "rc": 1,
+   "tail": "1 failed, 24 deselected in 2.20s",
+   "went_red": true
+  },
+  {
+   "id": "M2-v8f-windows-read-steer-in-act",
+   "file": "stack/tanitad/data/v8f_mini_data.py",
+   "applied": true,
+   "guard": "test_v8f_mini_yaw_windows_ignore_the_steer_and_the_steer_mode_does_not",
+   "rc": 1,
+   "tail": "1 failed, 25 deselected in 2.34s",
+   "went_red": true
+  },
+  {
+   "id": "M3-v8f-base-integrates-the-cache-kin3",
+   "file": "stack/tanitad/data/v8f_mini_data.py",
+   "applied": true,
+   "guard": "test_v8f_mini_yaw_windows_ignore_the_steer_and_the_steer_mode_does_not",
+   "rc": 1,
+   "tail": "1 failed, 25 deselected in 2.99s",
+   "went_red": true
+  },
+  {
+   "id": "M4-p10-features-from-the-cache",
+   "file": "stack/tanitad/data/ra1_pooled.py",
+   "applied": true,
+   "guard": "test_ra1_yaw_clip_is_bit_identical_under_garbage_steer_and_steer_mode_is_not",
+   "rc": 1,
+   "tail": "1 failed, 25 deselected in 2.11s",
+   "went_red": true
+  },
+  {
+   "id": "M5-yaw-read-one-frame-late",
+   "file": "stack/tanitad/data/v8f_mini_data.py",
+   "applied": true,
+   "guard": "test_yaw_spelling_equals_ego_channels_dyaw_on_real_windows_and_a_one_frame_shift_fails or test_yaw_mode_is_causal_and_the_forward_difference_is_not or test_kappa0_kin3_equals_pose_kin3_the_p10_pose_triple",
+   "rc": 1,
+   "tail": "1 failed, 23 deselected in 2.83s",
+   "went_red": true
+  },
+  {
+   "id": "M6-window-kin-yaw-reads-actions",
+   "file": "stack/tanitad/data/v8f_mini_data.py",
+   "applied": true,
+   "guard": "test_window_kin_yaw_never_reads_actions_and_steer_mode_does",
+   "rc": 1,
+   "tail": "1 failed, 25 deselected in 2.45s",
+   "went_red": true
+  },
+  {
+   "id": "M7-sens-reads-the-steer-channel-name",
+   "file": "stack/tanitad/models/ra1_hjepa.py",
+   "applied": true,
+   "guard": "test_eval_and_verdict_end_to_end_in_the_compliant_mode_and_mixing_is_refused",
+   "rc": 1,
+   "tail": "1 failed, 25 deselected in 3.90s",
+   "went_red": true
+  },
+  {
+   "id": "M8-kappa0-lost-the-curvature-information",
+   "file": "stack/tanitad/data/v8f_mini_data.py",
+   "applied": true,
+   "guard": "test_kappa0_retains_the_recorded_curvature_information or test_kappa0_kin3_equals_pose_kin3_the_p10_pose_triple",
+   "rc": 1,
+   "tail": "1 failed, 24 deselected in 2.39s",
+   "went_red": true
+  },
+  {
+   "id": "M10-ra1-action-channel-keeps-the-NaN-of-an-undefined-step",
+   "file": "stack/tanitad/data/ra1_pooled.py",
+   "applied": true,
+   "guard": "test_train_style_tracks_with_nan_lead_rows_give_a_finite_action_vector_and_loss",
+   "rc": 1,
+   "tail": "1 failed, 25 deselected in 2.29s",
+   "went_red": true
+  },
+  {
+   "id": "M11-v8f-action-channel-keeps-the-NaN-of-an-undefined-step",
+   "file": "stack/tanitad/data/v8f_mini_data.py",
+   "applied": true,
+   "guard": "test_train_style_tracks_with_nan_lead_rows_give_a_finite_action_vector_and_loss",
+   "rc": 1,
+   "tail": "1 failed, 25 deselected in 2.16s",
+   "went_red": true
+  },
+  {
+   "id": "M9-banked-artifact-vs-loader-wrong-unit",
+   "file": "stack/tanitad/data/ra1_pooled.py",
+   "applied": true,
+   "guard": "test_banked_p10_yaw_artifact_equals_what_the_ra1_loader_computes",
+   "rc": 1,
+   "tail": "1 failed, 24 deselected in 4.36s",
+   "went_red": true
+  }
+ ],
+ "all_guards_bite": true,
+ "failures": []
+}

@@ -1,0 +1,38 @@
+I EDITED A RUNNING SCRIPT AND IT FAILED EXACTLY AS THE PROJECT'S OWN RULE PREDICTS. 2026-09-20.
+
+WHAT HAPPENED
+  16:26:22  the rank-1 teacher rollout started, executing code/run_mini_teacher.sh
+  ~16:30    I patched that same file to encode the scenario limit in the run id
+  16:37:42  the rollout finished its real work correctly --
+              RESULT task=val14_nr score=97.78 successful=10 failed=0 total=10
+              SUITE_DONE suite_id=m-nr-r1 status=0
+            and then died on:
+              run_mini_teacher.sh: line 86: ay: command not found
+            which the wrapper reported as BANK_ROLLOUT_FAIL 1.
+
+DIAGNOSIS
+  bash reads a script LAZILY BY BYTE OFFSET. Rewriting the file under a live shell shifts every
+  offset after the edit point, so the interpreter resumes mid-token and executes garbage -- here a
+  fragment that looked like a command named `ay`. The file on disk is syntactically valid
+  (`bash -n` passes); the error was transient and cannot be reproduced by running it again.
+
+  This is verbatim the rule already in the project's own trap list:
+    "never `sed -i` a supervisor script while it is running -- bash reads a script lazily by byte
+     offset, so an in-place edit can make a live shell execute garbage from the middle of a line.
+     Edit only while it is stopped; otherwise write a new file and switch to it."
+  I applied that rule correctly TWICE today -- I refused to edit pull_nuplan_splits.sh and built a
+  separate arrange_watcher.sh instead, and I patched fetch_front_camera.py only because its caller
+  re-invokes it per archive. Then I broke it on the third occasion by not checking whether
+  run_mini_teacher.sh had a live reader.
+
+WHAT WAS AND WAS NOT DAMAGED
+  NOT damaged: the rollout itself. 10 simulation logs and 2 aggregator parquets are on disk, the
+  suite reported status 0, and the score is a real measurement (97.78 at rank 1 vs 96.85 at rank 0,
+  both on 10 scenarios).
+  Damaged: only the exit status, which made a successful job look failed. The ARTIFACT was fine and
+  the STATUS lied -- the inverse of the usual failure, and a reminder that both must be checked.
+
+THE CHECK THAT WOULD HAVE CAUGHT IT
+  before editing any script, ask whether a process is currently reading it:
+      powershell "Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match '<script>' }"
+  If anything matches, write a new file and switch, or wait.

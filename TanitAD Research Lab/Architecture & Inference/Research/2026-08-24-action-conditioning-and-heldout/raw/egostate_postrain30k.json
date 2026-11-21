@@ -1,0 +1,147 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "split": "HELD-OUT",
+ "k": 4,
+ "arms": {
+  "postrain30k": {
+   "step": 30000,
+   "n_clips": 20,
+   "n_rows": 1800,
+   "targets": {
+    "IDENTITY accel_t": {
+     "z_t (ENCODED)": {
+      "r": 0.0505,
+      "shuffled": 0.0108,
+      "true_minus_shuffled": 0.0398,
+      "t": 0.54
+     },
+     "zhat_t+k (PREDICTED)": {
+      "r": -0.0189,
+      "shuffled": -0.0025,
+      "true_minus_shuffled": -0.0164,
+      "t": -0.26
+     },
+     "action_t": {
+      "r": 0.9555,
+      "shuffled": 0.0217,
+      "true_minus_shuffled": 0.9337,
+      "t": 23.74
+     },
+     "constant (control)": {
+      "r": 0.0,
+      "shuffled": 0.0,
+      "true_minus_shuffled": 0.0,
+      "t": 0.0
+     }
+    },
+    "speed_t (LEVEL)": {
+     "z_t (ENCODED)": {
+      "r": -0.0254,
+      "shuffled": 0.0265,
+      "true_minus_shuffled": -0.0519,
+      "t": -0.84
+     },
+     "zhat_t+k (PREDICTED)": {
+      "r": 0.0991,
+      "shuffled": -0.0158,
+      "true_minus_shuffled": 0.115,
+      "t": 1.59
+     },
+     "action_t": {
+      "r": 0.1354,
+      "shuffled": -0.015,
+      "true_minus_shuffled": 0.1504,
+      "t": 1.3
+     },
+     "constant (control)": {
+      "r": 0.0,
+      "shuffled": 0.0,
+      "true_minus_shuffled": 0.0,
+      "t": 0.0
+     }
+    },
+    "yawrate_t (LEVEL)": {
+     "z_t (ENCODED)": {
+      "r": 0.0444,
+      "shuffled": 0.0004,
+      "true_minus_shuffled": 0.044,
+      "t": 0.57
+     },
+     "zhat_t+k (PREDICTED)": {
+      "r": 0.0602,
+      "shuffled": 0.0029,
+      "true_minus_shuffled": 0.0574,
+      "t": 0.85
+     },
+     "action_t": {
+      "r": 0.5769,
+      "shuffled": -0.0004,
+      "true_minus_shuffled": 0.5773,
+      "t": 5.09
+     },
+     "constant (control)": {
+      "r": 0.0,
+      "shuffled": 0.0,
+      "true_minus_shuffled": 0.0,
+      "t": 0.0
+     }
+    },
+    "dv_4tick (CHANGE)": {
+     "z_t (ENCODED)": {
+      "r": -0.0279,
+      "shuffled": 0.0403,
+      "true_minus_shuffled": -0.0682,
+      "t": -1.43
+     },
+     "zhat_t+k (PREDICTED)": {
+      "r": -0.0911,
+      "shuffled": 0.055,
+      "true_minus_shuffled": -0.1461,
+      "t": -2.52
+     },
+     "action_t": {
+      "r": 0.3445,
+      "shuffled": 0.0273,
+      "true_minus_shuffled": 0.3171,
+      "t": 2.56
+     },
+     "constant (control)": {
+      "r": 0.0,
+      "shuffled": 0.0,
+      "true_minus_shuffled": 0.0,
+      "t": 0.0
+     }
+    },
+    "dyaw_4tick (CHANGE)": {
+     "z_t (ENCODED)": {
+      "r": 0.0682,
+      "shuffled": -0.0435,
+      "true_minus_shuffled": 0.1117,
+      "t": 1.49
+     },
+     "zhat_t+k (PREDICTED)": {
+      "r": 0.0735,
+      "shuffled": 0.009,
+      "true_minus_shuffled": 0.0645,
+      "t": 1.13
+     },
+     "action_t": {
+      "r": 0.549,
+      "shuffled": -0.0148,
+      "true_minus_shuffled": 0.5638,
+      "t": 4.57
+     },
+     "constant (control)": {
+      "r": 0.0,
+      "shuffled": 0.0,
+      "true_minus_shuffled": 0.0,
+      "t": 0.0
+     }
+    }
+   },
+   "identity_control_r": 0.9555,
+   "verdict": "NEITHER - the latent is a pure SCENE-APPEARANCE representation with NO ego state. Conditioning it on an action asks a variable that does not encode ego motion to move in response to an ego command. THE LATENT NEEDS AN EXPLICIT EGO COMPONENT."
+  }
+ }
+}

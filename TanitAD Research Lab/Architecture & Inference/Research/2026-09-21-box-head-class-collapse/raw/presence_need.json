@@ -1,0 +1,98 @@
+{
+ "_what": "is the tactical head's presence degenerate, or is there nothing to discriminate?",
+ "_evidence_class": "MEASURED (ours), CPU, forward hook, A8 ckpt_5000",
+ "_non_circular": "matched on CENTRE DISTANCE ONLY; match_slots' own cost includes -sigmoid(presence_logit) (agent_slots.py:475-477) and would make this circular",
+ "_visibility": "targets filtered by refc_agents.filter_targets_to_visible first",
+ "declared_queries": 16,
+ "visible_agents_per_window": {
+  "n_windows": 60,
+  "mean": 10.167,
+  "median": 9,
+  "min": 0,
+  "max": 26,
+  "windows_with_FEWER_than_n_queries": 44,
+  "share_with_slack": 0.7333
+ },
+ "raw_valid_per_window_before_visibility_filter": {
+  "mean": 24.7,
+  "max": 32
+ },
+ "threshold_sweep": [
+  {
+   "threshold_m": 2.0,
+   "n_episodes": 13,
+   "n_at_agent": 23,
+   "n_empty": 361,
+   "presence_at_agent": 0.80239,
+   "presence_empty": 0.78838,
+   "difference": 0.01401,
+   "CI95": [
+    -0.00095,
+    0.02753
+   ],
+   "separated": false,
+   "_same_set": "point estimate and CI both restricted to the bootstrap's episodes"
+  },
+  {
+   "threshold_m": 4.0,
+   "n_episodes": 16,
+   "n_at_agent": 64,
+   "n_empty": 384,
+   "presence_at_agent": 0.80662,
+   "presence_empty": 0.7787,
+   "difference": 0.02792,
+   "CI95": [
+    0.01135,
+    0.04469
+   ],
+   "separated": true,
+   "_same_set": "point estimate and CI both restricted to the bootstrap's episodes"
+  },
+  {
+   "threshold_m": 8.0,
+   "n_episodes": 26,
+   "n_at_agent": 138,
+   "n_empty": 518,
+   "presence_at_agent": 0.79618,
+   "presence_empty": 0.7662,
+   "difference": 0.02998,
+   "CI95": [
+    0.01035,
+    0.05296
+   ],
+   "separated": true,
+   "_same_set": "point estimate and CI both restricted to the bootstrap's episodes"
+  },
+  {
+   "threshold_m": 16.0,
+   "n_episodes": 26,
+   "n_at_agent": 201,
+   "n_empty": 455,
+   "presence_at_agent": 0.78994,
+   "presence_empty": 0.7648,
+   "difference": 0.02514,
+   "CI95": [
+    0.00424,
+    0.04809
+   ],
+   "separated": true,
+   "_same_set": "point estimate and CI both restricted to the bootstrap's episodes"
+  }
+ ],
+ "slack_windows_only": {
+  "threshold_m": 4.0,
+  "n_episodes": 16,
+  "n_at_agent": 64,
+  "n_empty": 384,
+  "presence_at_agent": 0.80662,
+  "presence_empty": 0.7787,
+  "difference": 0.02792,
+  "CI95": [
+   0.01135,
+   0.04469
+  ],
+  "separated": true,
+  "_same_set": "point estimate and CI both restricted to the bootstrap's episodes"
+ },
+ "_VERDICT": "⭐ PRESENCE DOES DISCRIMINATE where it has the chance — slots sitting on a real agent carry higher presence than empty ones, separated at 3 of 4 thresholds. ⇒ `731ecd7`'s 'no per-slot weighting' reading is TOO STRONG and is CORRECTED: the field is weak, not inert."
+}

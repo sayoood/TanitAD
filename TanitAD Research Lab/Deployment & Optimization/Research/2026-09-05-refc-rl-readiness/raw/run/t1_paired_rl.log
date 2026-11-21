@@ -1,0 +1,55 @@
+[corpus] train-corpus identity: UNVERIFIED — neither run publishes a CHECKED corpus key on both sides, so the TRAIN corpora cannot be shown identical from the configs. A: no parity field / checke
+[intersect] 4823 shared windows over 141 clips (A had 4823/141, B had 4823/141)
+[control] window-key proof: GT max|A-B| = 0.000e+00 m (expected 0, tol 0.0001); v0 max|A-B| = 0.000e+00 m/s
+[control] floor C1 (A): max|dx| = 2.289e-05 m, max|y| = 0.000e+00 m (expected 0.0 exactly)
+[control] floor C1 (B): max|dx| = 2.289e-05 m, max|y| = 0.000e+00 m (expected 0.0 exactly)
+[control] floor C2 bit-comparability: max|A-B| = 0.000e+00 m (expected 0.0 exactly)
+[control] floor C3 derived-vs-dumped: max|d| = 2.289e-05 m (expected 0.0)
+[trivial-profile] 4823 shared windows — arm SHAPE before any family row
+  base:os                      straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000
+  rl:os                        straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000
+  shared:ha0                   straight=1.0000 const_speed=1.0000 CONSTANT-VELOCITY=1.0000
+[selection-profile] base: n_distinct=50 modal #57 at 0.1482 entropy=2.8425 agrees_with_oracle=0.5652
+[selection-profile] rl: n_distinct=37 modal #26 at 0.3054 entropy=2.3241 agrees_with_oracle=0.1702
+
+====================================================================================================
+PAIRED OPEN-LOOP COMPARISON — base:os  vs  rl:os   (floor shared:ha0)
+  n = 4823 shared windows over 141 episodes; common instants [0.5, 1.0, 1.5, 2.0] s
+====================================================================================================
+
+--- ADE  [family verdict: base:os] ---------------------------------------------------------
+  metric                           A abs     B abs     floor   A-floor   B-floor  (B-f)-(A-f)                 95% CI sep
+  ade_m                           0.4419    0.9433    0.6723   -0.2304    0.2710       0.5014       [0.4572, 0.5464] YES
+  fde_m                           0.9288    1.3477    1.4029   -0.4741   -0.0551       0.4189       [0.3530, 0.4870] YES
+
+--- LONGITUDINAL  [family verdict: base:os] ------------------------------------------------
+  metric                           A abs     B abs     floor   A-floor   B-floor  (B-f)-(A-f)                 95% CI sep
+  LON_speed_mae_mps               0.4516    1.3160    0.4880   -0.0364    0.8280       0.8643       [0.7975, 0.9356] YES
+  LON_along_mae_m                 0.4030    0.8467    0.4705   -0.0674    0.3762       0.4436       [0.3993, 0.4906] YES
+  LON_accel_mae_mps2              0.6806    3.2793    0.4786    0.2020    2.8007       2.5987       [2.4310, 2.7768] YES
+
+--- LATERAL  [family verdict: base:os] -----------------------------------------------------
+  metric                           A abs     B abs     floor   A-floor   B-floor  (B-f)-(A-f)                 95% CI sep
+  LAT_cross_mae_m                 0.1084    0.2795    0.3132   -0.2048   -0.0337       0.1711       [0.1589, 0.1842] YES
+  LAT_heading_mae_deg             1.3591    7.6017    2.8715   -1.3741    4.2977       5.6507       [4.4727, 6.9142] YES
+  LAT_yaw_rate_mae_radps          0.2176    0.5013    0.0476    0.1700    0.4536       0.2836       [0.2231, 0.3516] YES
+
+--- TACTICAL  [family verdict: base:os] ----------------------------------------------------
+  metric                           A abs     B abs     floor   A-floor   B-floor  (B-f)-(A-f)                 95% CI sep
+  TAC_traj_lat_correct            0.9540    0.7730    0.8659    0.0881   -0.0929      -0.1810     [-0.2195, -0.1459] YES
+  TAC_traj_lon_correct            0.7477    0.3838    0.7576   -0.0100   -0.3738      -0.3639     [-0.4015, -0.3278] YES
+  TAC_declared_lat_correct        0.7105    0.7105    0.6759    0.0346    0.0346       0.0000       [0.0000, 0.0000] no
+  TAC_declared_lat_correct_navshuf    0.6863    0.6863    0.6759    0.0104    0.0104       0.0000       [0.0000, 0.0000] no
+  TAC_declared_lat_correct_navzero    0.6811    0.6811    0.6759    0.0052    0.0052       0.0000       [0.0000, 0.0000] no
+  TAC_declared_lon_correct        0.5134    0.5134    0.2982    0.2152    0.2152       0.0000       [0.0000, 0.0000] no
+  TAC_declared_lon_correct_navshuf    0.4987    0.4987    0.2982    0.2005    0.2005       0.0000       [0.0000, 0.0000] no
+  TAC_declared_lon_correct_navzero    0.4952    0.4952    0.2982    0.1971    0.1971       0.0000       [0.0000, 0.0000] no
+
+--- STRATEGIC  [family verdict: no separation] ---------------------------------------------------
+  metric                           A abs     B abs     floor   A-floor   B-floor  (B-f)-(A-f)                 95% CI sep
+  STR_route_correct               0.7667    0.7667    0.6742    0.0925    0.0925       0.0000       [0.0000, 0.0000] no
+  STR_route_correct_navshuf       0.7667    0.7667    0.6742    0.0925    0.0925       0.0000       [0.0000, 0.0000] no
+  STR_route_correct_navzero       0.7667    0.7667    0.6742    0.0925    0.0925       0.0000       [0.0000, 0.0000] no
+
+[out] C:/Users/Admin/rl_rescope/run/paired_rl_vs_base.json (112411 B)
+[out] C:/Users/Admin/rl_rescope/run/paired_rl_vs_base.md (16985 B)

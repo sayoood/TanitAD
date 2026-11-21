@@ -1,0 +1,185 @@
+========================================================================================================
+PAIRED ADE ATTRIBUTION BY DECODED GOAL TOKEN:  ccos_argmax  ->  wk15
+========================================================================================================
+  shared windows: 40  (A had 40, B had 40)
+  GRID CONTROL (ha/ha0/ha0_ext/ol/g must be bit-identical): PASSED
+  decoded goal identical on all 40 windows  [the split is well defined]
+
+  goal token           n     ADE(A)     ADE(B)  mean delta    SHARE of       ha0
+                         ccos_argma       wk15         B-A total delta     floor
+  ----------------------------------------------------------------------------------
+  LANE_KEEP           18     1.5548     0.7782     -0.7765       80.6%    0.6997
+  TURN_L               9     1.5043     1.2429     -0.2614       13.6%    1.4630
+  TURN_R              13     0.8895     0.8110     -0.0785        5.9%    0.8649
+  ----------------------------------------------------------------------------------
+  ALL                 40     1.3272     0.8934     -0.4338      100.0%    0.9251
+
+  ⛔ T0 CONTROL (never a driving number): ol (recorded future) ADE = 0.8052
+  ⛔ TRIVIAL FLOOR: ha0 (constant velocity, straight) ADE = 0.9251
+
+========================================================================================================
+  ⭐ THE ARITHMETIC BOUND ON A3
+========================================================================================================
+  A3 keeps the penalty on LANE_KEEP-goal windows and removes it on TURN-goal
+  windows, so it can retain at most the LANE_KEEP share and gives back the
+  TURN share. Contributions to the total mean delta (they sum to it):
+    LANE_KEEP contribution : -0.3494 m   (n=18)  <- A3 RETAINS
+    TURN      contribution : -0.0843 m   (n=22)  <- A3 GIVES BACK
+    other     contribution : +0.0000 m   (n=0)  <- A3 retains (shift class)
+    total                  : -0.4338 m   (n=40)
+
+  ⇒ PREDICTED A3 ADE ~ 0.9777  (= ccos_argmax's 1.3272 + the TURN give-back +0.0843)
+  ⚠️ A BOUND, NOT A FORECAST. It assumes the LANE_KEEP windows behave
+     identically under A3 (they do -- same weight) and that removing the
+     TURN penalty returns those windows EXACTLY to A's behaviour. The second
+     half is the assumption: the goal FIELD is unchanged but the search is
+     stochastic, so the give-back is approximate and can overshoot either way.
+
+========================================================================================================
+PAIRED ADE ATTRIBUTION BY DECODED GOAL TOKEN:  ccos_argmax  ->  kamm07
+========================================================================================================
+  shared windows: 40  (A had 40, B had 40)
+  GRID CONTROL (ha/ha0/ha0_ext/ol/g must be bit-identical): PASSED
+  decoded goal identical on all 40 windows  [the split is well defined]
+
+  goal token           n     ADE(A)     ADE(B)  mean delta    SHARE of       ha0
+                         ccos_argma     kamm07         B-A total delta     floor
+  ----------------------------------------------------------------------------------
+  LANE_KEEP           18     1.5548     0.8916     -0.6632       89.2%    0.6997
+  TURN_L               9     1.5043     1.3443     -0.1600       10.8%    1.4630
+  TURN_R              13     0.8895     0.8895      0.0000       -0.0%    0.8649
+  ----------------------------------------------------------------------------------
+  ALL                 40     1.3272     0.9927     -0.3344      100.0%    0.9251
+
+  ⛔ T0 CONTROL (never a driving number): ol (recorded future) ADE = 0.8052
+  ⛔ TRIVIAL FLOOR: ha0 (constant velocity, straight) ADE = 0.9251
+
+========================================================================================================
+  ⭐ THE ARITHMETIC BOUND ON A3
+========================================================================================================
+  A3 keeps the penalty on LANE_KEEP-goal windows and removes it on TURN-goal
+  windows, so it can retain at most the LANE_KEEP share and gives back the
+  TURN share. Contributions to the total mean delta (they sum to it):
+    LANE_KEEP contribution : -0.2984 m   (n=18)  <- A3 RETAINS
+    TURN      contribution : -0.0360 m   (n=22)  <- A3 GIVES BACK
+    other     contribution : +0.0000 m   (n=0)  <- A3 retains (shift class)
+    total                  : -0.3344 m   (n=40)
+
+  ⇒ PREDICTED A3 ADE ~ 1.0287  (= ccos_argmax's 1.3272 + the TURN give-back +0.0360)
+  ⚠️ A BOUND, NOT A FORECAST. It assumes the LANE_KEEP windows behave
+     identically under A3 (they do -- same weight) and that removing the
+     TURN penalty returns those windows EXACTLY to A's behaviour. The second
+     half is the assumption: the goal FIELD is unchanged but the search is
+     stochastic, so the give-back is approximate and can overshoot either way.
+
+========================================================================================================
+PAIRED ADE ATTRIBUTION BY DECODED GOAL TOKEN:  ccos_argmax  ->  wk151
+========================================================================================================
+  shared windows: 40  (A had 40, B had 40)
+  GRID CONTROL (ha/ha0/ha0_ext/ol/g must be bit-identical): PASSED
+  decoded goal identical on all 40 windows  [the split is well defined]
+
+  goal token           n     ADE(A)     ADE(B)  mean delta    SHARE of       ha0
+                         ccos_argma      wk151         B-A total delta     floor
+  ----------------------------------------------------------------------------------
+  LANE_KEEP           18     1.5548     0.7782     -0.7765       83.4%    0.6997
+  TURN_L               9     1.5043     1.1959     -0.3084       16.6%    1.4630
+  TURN_R              13     0.8895     0.8896      0.0001       -0.0%    0.8649
+  ----------------------------------------------------------------------------------
+  ALL                 40     1.3272     0.9084     -0.4188      100.0%    0.9251
+
+  ⛔ T0 CONTROL (never a driving number): ol (recorded future) ADE = 0.8052
+  ⛔ TRIVIAL FLOOR: ha0 (constant velocity, straight) ADE = 0.9251
+
+========================================================================================================
+  ⭐ THE ARITHMETIC BOUND ON A3
+========================================================================================================
+  A3 keeps the penalty on LANE_KEEP-goal windows and removes it on TURN-goal
+  windows, so it can retain at most the LANE_KEEP share and gives back the
+  TURN share. Contributions to the total mean delta (they sum to it):
+    LANE_KEEP contribution : -0.3494 m   (n=18)  <- A3 RETAINS
+    TURN      contribution : -0.0693 m   (n=22)  <- A3 GIVES BACK
+    other     contribution : +0.0000 m   (n=0)  <- A3 retains (shift class)
+    total                  : -0.4188 m   (n=40)
+
+  ⇒ PREDICTED A3 ADE ~ 0.9777  (= ccos_argmax's 1.3272 + the TURN give-back +0.0693)
+  ⚠️ A BOUND, NOT A FORECAST. It assumes the LANE_KEEP windows behave
+     identically under A3 (they do -- same weight) and that removing the
+     TURN penalty returns those windows EXACTLY to A's behaviour. The second
+     half is the assumption: the goal FIELD is unchanged but the search is
+     stochastic, so the give-back is approximate and can overshoot either way.
+
+========================================================================================================
+PAIRED ADE ATTRIBUTION BY DECODED GOAL TOKEN:  ccos_argmax  ->  combined
+========================================================================================================
+  shared windows: 40  (A had 40, B had 40)
+  GRID CONTROL (ha/ha0/ha0_ext/ol/g must be bit-identical): PASSED
+  decoded goal identical on all 40 windows  [the split is well defined]
+
+  goal token           n     ADE(A)     ADE(B)  mean delta    SHARE of       ha0
+                         ccos_argma   combined         B-A total delta     floor
+  ----------------------------------------------------------------------------------
+  LANE_KEEP           18     1.5548     1.0281     -0.5266       85.6%    0.6997
+  TURN_L               9     1.5043     1.3275     -0.1767       14.4%    1.4630
+  TURN_R              13     0.8895     0.8895      0.0000       -0.0%    0.8649
+  ----------------------------------------------------------------------------------
+  ALL                 40     1.3272     1.0504     -0.2768      100.0%    0.9251
+
+  ⛔ T0 CONTROL (never a driving number): ol (recorded future) ADE = 0.8052
+  ⛔ TRIVIAL FLOOR: ha0 (constant velocity, straight) ADE = 0.9251
+
+========================================================================================================
+  ⭐ THE ARITHMETIC BOUND ON A3
+========================================================================================================
+  A3 keeps the penalty on LANE_KEEP-goal windows and removes it on TURN-goal
+  windows, so it can retain at most the LANE_KEEP share and gives back the
+  TURN share. Contributions to the total mean delta (they sum to it):
+    LANE_KEEP contribution : -0.2370 m   (n=18)  <- A3 RETAINS
+    TURN      contribution : -0.0398 m   (n=22)  <- A3 GIVES BACK
+    other     contribution : +0.0000 m   (n=0)  <- A3 retains (shift class)
+    total                  : -0.2768 m   (n=40)
+
+  ⇒ PREDICTED A3 ADE ~ 1.0902  (= ccos_argmax's 1.3272 + the TURN give-back +0.0398)
+  ⚠️ A BOUND, NOT A FORECAST. It assumes the LANE_KEEP windows behave
+     identically under A3 (they do -- same weight) and that removing the
+     TURN penalty returns those windows EXACTLY to A's behaviour. The second
+     half is the assumption: the goal FIELD is unchanged but the search is
+     stochastic, so the give-back is approximate and can overshoot either way.
+
+========================================================================================================
+PAIRED ADE ATTRIBUTION BY DECODED GOAL TOKEN:  wk15  ->  lonshift
+========================================================================================================
+  shared windows: 40  (A had 40, B had 40)
+  GRID CONTROL (ha/ha0/ha0_ext/ol/g must be bit-identical): PASSED
+  decoded goal identical on all 40 windows  [the split is well defined]
+
+  goal token           n     ADE(A)     ADE(B)  mean delta    SHARE of       ha0
+                               wk15   lonshift         B-A total delta     floor
+  ----------------------------------------------------------------------------------
+  LANE_KEEP           18     0.7782     0.5939     -0.1843       77.8%    0.6997
+  TURN_L               9     1.2429     1.2048     -0.0380        8.0%    1.4630
+  TURN_R              13     0.8110     0.7645     -0.0465       14.2%    0.8649
+  ----------------------------------------------------------------------------------
+  ALL                 40     0.8934     0.7868     -0.1066      100.0%    0.9251
+
+  ⛔ T0 CONTROL (never a driving number): ol (recorded future) ADE = 0.8052
+  ⛔ TRIVIAL FLOOR: ha0 (constant velocity, straight) ADE = 0.9251
+
+========================================================================================================
+  ⭐ THE ARITHMETIC BOUND ON A3
+========================================================================================================
+  A3 keeps the penalty on LANE_KEEP-goal windows and removes it on TURN-goal
+  windows, so it can retain at most the LANE_KEEP share and gives back the
+  TURN share. Contributions to the total mean delta (they sum to it):
+    LANE_KEEP contribution : -0.0829 m   (n=18)  <- A3 RETAINS
+    TURN      contribution : -0.0237 m   (n=22)  <- A3 GIVES BACK
+    other     contribution : +0.0000 m   (n=0)  <- A3 retains (shift class)
+    total                  : -0.1066 m   (n=40)
+
+  ⇒ PREDICTED A3 ADE ~ 0.8105  (= wk15's 0.8934 + the TURN give-back +0.0237)
+  ⚠️ A BOUND, NOT A FORECAST. It assumes the LANE_KEEP windows behave
+     identically under A3 (they do -- same weight) and that removing the
+     TURN penalty returns those windows EXACTLY to A's behaviour. The second
+     half is the assumption: the goal FIELD is unchanged but the search is
+     stochastic, so the give-back is approximate and can overshoot either way.
+

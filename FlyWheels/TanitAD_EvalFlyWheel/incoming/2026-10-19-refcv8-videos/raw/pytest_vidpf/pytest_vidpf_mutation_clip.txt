@@ -1,0 +1,117 @@
+# 2026-10-20T08:59:10+0200 cwd=assembled package (landed 2026-10-19-refcv8-videos/code @ origin/agent/arch-inf-20260803 0ca2a920 + hold_r8vidpf/code overlay)
+# R8V_MUTATE_FEED=clip
+# python 3.13.5 tanitad C:\lgs\Lfb47a58376\stack\tanitad\__init__.py
+# sha256 a7de4318ee1b31c293c44a1a6cc8dea87946150a9b15a42fdd7caea0ee459dad *r8v_feed.py
+# sha256 7fae1e5873146fdbc86eb0acf1a7b37e539f0cd9cb21b55c8c3d421528a9a2c0 *r8v_data.py
+# sha256 8b455612dfd7daf551d44c170c780e4f1687ca3d94b1da9264fa4269a579715f *render_r8_video.py
+# sha256 13943a347c93cdf6b3d5f37ef92f94c058006abdd9204915fdd976e718ab6c95 *render_all_r8.py
+# sha256 6787cac333367e2f24f39994e2fb10ab97b41f5740e7523af4f8433f158f2abb *dump_heads_r8.py
+# sha256 d727995b9c5f059c4e0febd8a9ed609731562659e9a1a87a96e09ab8697dd294 *test_r8v_feed_parity.py
+============================= test session starts =============================
+platform win32 -- Python 3.13.5, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\Admin\venvs\tanitad\Scripts\python.exe
+rootdir: C:\Users\Admin\AppData\Local\Temp\claude\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\f0c4bd12-5464-4952-995c-062072b3b8d0\scratchpad\assembled
+plugins: anyio-4.14.1
+collecting ... collected 14 items
+
+test_r8v_feed_parity.py::test_inputs_present PASSED                      [  7%]
+test_r8v_feed_parity.py::test_a_dump_reader_returns_the_fed_token_not_the_clip_token FAILED [ 14%]
+test_r8v_feed_parity.py::test_a_renderer_bank_shows_fed_and_clip_nav_on_the_pf_tree FAILED [ 21%]
+test_r8v_feed_parity.py::test_b_video_feed_equals_pf_battery_and_independent_v9 FAILED [ 28%]
+test_r8v_feed_parity.py::test_c_install_feed_is_the_pf_battery_wiring FAILED [ 35%]
+test_r8v_feed_parity.py::test_c_clip_feed_installs_nothing PASSED        [ 42%]
+test_r8v_feed_parity.py::test_d_heads_guard_passes_a_pf_heads_artifact PASSED [ 50%]
+test_r8v_feed_parity.py::test_d_heads_guard_goes_red_on_a_clip_fed_heads_artifact PASSED [ 57%]
+test_r8v_feed_parity.py::test_d_legacy_heads_without_a_recorded_feed_is_refused PASSED [ 64%]
+test_r8v_feed_parity.py::test_d_empty_or_non_discriminating_set_is_never_pass PASSED [ 71%]
+test_r8v_feed_parity.py::test_e_rt_on_only_for_the_registered_chain PASSED [ 78%]
+test_r8v_feed_parity.py::test_e_rt_off_when_unregistered_or_clip_fed PASSED [ 85%]
+test_r8v_feed_parity.py::test_e_pf_tree_never_defaults_to_the_clip_fed_30k_file PASSED [ 92%]
+test_r8v_feed_parity.py::test_f_tree_name_and_manifest_feed_must_agree PASSED [100%]
+
+================================== FAILURES ===================================
+_________ test_a_dump_reader_returns_the_fed_token_not_the_clip_token _________
+
+    def test_a_dump_reader_returns_the_fed_token_not_the_clip_token():
+        df = F.read_dump_feed(SMOKE_DUMP)
+        assert df["mode"] == "perframe_full"
+        got = {(x["episode_index"], x["ws"]): x["nav_cmd_fed"] for x in df["rows"]}
+        clip = {(x["episode_index"], x["ws"]): x["nav_cmd_clip"] for x in df["rows"]}
+>       assert got == FED_LIT, f"fed tokens {got} != literal {FED_LIT}"
+E       AssertionError: fed tokens {(0, 7): 2, (0, 12): 2, (0, 17): 2, (1, 11): 0, (1, 16): 0, (1, 21): 0} != literal {(0, 7): 0, (0, 12): 0, (0, 17): 0, (1, 11): 0, (1, 16): 0, (1, 21): 0}
+E       assert {(0, 7): 2, (..., 11): 0, ...} == {(0, 7): 0, (..., 11): 0, ...}
+E         
+E         Omitting 3 identical items, use -vv to show
+E         Differing items:
+E         {(0, 12): 2} != {(0, 12): 0}
+E         {(0, 7): 2} != {(0, 7): 0}
+E         {(0, 17): 2} != {(0, 17): 0}
+E         ...
+E         
+E         ...Full output truncated (18 lines hidden), use '-vv' to show
+
+test_r8v_feed_parity.py:57: AssertionError
+_________ test_a_renderer_bank_shows_fed_and_clip_nav_on_the_pf_tree __________
+
+    def test_a_renderer_bank_shows_fed_and_clip_nav_on_the_pf_tree():
+        B = D.EvalBank(SMOKE_TREE, arch_root=SMOKE_ROOT, load_agents=False)
+        assert B.feed_mode == "perframe_full"
+        e = B.episode(0)
+        assert list(e["ws"]) == [7, 12, 17]
+>       assert list(e["nav_fed"]) == [0, 0, 0] and list(e["nav_cmd"]) == [0, 0, 0], "the renderer must show the FED (per-frame) token"
+E       AssertionError: the renderer must show the FED (per-frame) token
+E       assert ([np.int64(2),..., np.int64(2)] == [0, 0, 0]
+E         
+E         At index 0 diff: np.int64(2) != 0
+E         
+E         Full diff:
+E           [
+E         -     0,
+E         -     0,...
+E         
+E         ...Full output truncated (5 lines hidden), use '-vv' to show)
+
+test_r8v_feed_parity.py:68: AssertionError
+---------------------------- Captured stdout call -----------------------------
+[r8v_data] smoke40kema_pf: nav feed perframe_full; RT layer OFF: no registered per-frame table (REGISTERED_PF_TABLE.sha256 absent / not 64 hex)
+___________ test_b_video_feed_equals_pf_battery_and_independent_v9 ____________
+
+    def test_b_video_feed_equals_pf_battery_and_independent_v9():
+        B = D.EvalBank(SMOKE_TREE, arch_root=SMOKE_ROOT, load_agents=False)
+        rows = []
+        for ci in B.indices():
+            e = B.episode(ci)
+            for j, w in enumerate(e["ws"]):
+                rows.append({"sha12": B.sha12(ci), "episode_index": ci, "ws": int(w), "nav_cmd_fed": int(e["nav_fed"][j]), "nav_cmd_clip": int(e["nav_clip"][j]),
+                             "r8_nav_known": bool(e["r8_nav_known"][j]), "r8_nav": e["r8_nav_fed"][j]})
+        r = F.check_feed_parity(rows, SMOKE_DUMP, V9, F.V9_EVAL_MD5, "renderer path vs smoke pf battery")
+>       assert r["status"] == "PASS", json.dumps(r, default=str)[:1500]
+E       AssertionError: {"tool": "r8v_feed.check_feed_parity", "label": "renderer path vs smoke pf battery", "status": "FAIL", "pf_dump": "C:\\Users\\Admin\\refcv8_pf\\smoke_batt\\smoke40kema_pf\\dump_s0", "v9": "E:\\refcv8_eval_kit\\data\\refcv8_v9labels\\release\\v9_labels_eval139.npz", "mutated": true, "checks": {"PF_video_feed_equals_pf_battery_sidecar": false, "V9_video_feed_equals_independent_v9_lookup": false}, "counts": {"n_windows": 6, "n_discriminating_windows": 3, "n_fail": {"PF": 3, "V9": 3}, "raw_offset_from_manifest": 2}, "first_failures": {"PF": [{"episode_index": 0, "ws": 7, "video": [2, 2, true], "pf": [0, 2, true], "r8_nav_max_abs": 0.0}, {"episode_index": 0, "ws": 12, "video": [2, 2, true], "pf": [0, 2, true], "r8_nav_max_abs": 0.0}, {"episode_index": 0, "ws": 17, "video": [2, 2, true], "pf": [0, 2, true], "r8_nav_max_abs": 0.0}], "V9": [{"episode_index": 0, "ws": 7, "fed": 2, "v9_token": 0, "known": true, "v9_known": true, "max_abs_vs_independent": 8.615658186883479e-08}, {"episode_index": 0, "ws": 12, "fed": 2, "v9_token": 0, "known": true, "v9_known": true, "max_abs_vs_independent": 8.615658186883479e-08}, {"episode_index": 0, "ws": 17, "fed": 2, "v9_token": 0, "known": true, "v9_known": true, "max_abs_vs_independent": 8.615658186883479e-08}]}}
+E       assert 'FAIL' == 'PASS'
+E         
+E         - PASS
+E         + FAIL
+
+test_r8v_feed_parity.py:85: AssertionError
+---------------------------- Captured stdout call -----------------------------
+[r8v_data] smoke40kema_pf: nav feed perframe_full; RT layer OFF: no registered per-frame table (REGISTERED_PF_TABLE.sha256 absent / not 64 hex)
+________________ test_c_install_feed_is_the_pf_battery_wiring _________________
+
+    def test_c_install_feed_is_the_pf_battery_wiring():
+        import tanitad
+        assert "Lfb47a58376" in str(Path(tanitad.__file__).resolve()), f"tanitad imported from {tanitad.__file__}, not the launch tree"
+        RR = types.SimpleNamespace(_RA3=None)
+        rec = F.install_feed(RR, "perframe_full")
+>       assert rec["nav_feed"] == "perframe_full" and rec["mutated"] is False
+E       AssertionError: assert ('clip' == 'perframe_full'
+E         
+E         - perframe_full
+E         + clip)
+
+test_r8v_feed_parity.py:95: AssertionError
+=========================== short test summary info ===========================
+FAILED test_r8v_feed_parity.py::test_a_dump_reader_returns_the_fed_token_not_the_clip_token
+FAILED test_r8v_feed_parity.py::test_a_renderer_bank_shows_fed_and_clip_nav_on_the_pf_tree
+FAILED test_r8v_feed_parity.py::test_b_video_feed_equals_pf_battery_and_independent_v9
+FAILED test_r8v_feed_parity.py::test_c_install_feed_is_the_pf_battery_wiring
+======================== 4 failed, 10 passed in 0.77s =========================
+PYTEST_EXIT=1

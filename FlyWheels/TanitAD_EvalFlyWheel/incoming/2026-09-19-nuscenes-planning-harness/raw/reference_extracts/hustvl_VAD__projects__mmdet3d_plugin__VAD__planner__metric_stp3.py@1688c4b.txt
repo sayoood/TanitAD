@@ -1,0 +1,343 @@
+# PUBLISHED-CODE extract - hustvl/VAD @ 1688c4b1c3a9e2e7873ca9700ff8058170c0e3c8
+# path: projects/mmdet3d_plugin/VAD/planner/metric_stp3.py
+# git blob sha1 of the fetched file: 08fcb9e73124d18ba12de0065aef245a175eb7cc (13393 B); verified against the repo tree listing at the pinned commit: MATCH
+# fetched 2026-09-19T13:46:02Z from raw.githubusercontent.com (read-only source text; excerpts only, attribution retained)
+
+## lines 1-336: whole PlanningMetric
+    1  '''
+    2  calculate planner metric same as stp3
+    3  '''
+    4  import numpy as np
+    5  import torch
+    6  import cv2
+    7  import copy
+    8  import matplotlib.pyplot as plt
+    9  from projects.mmdet3d_plugin.core.evaluation.metric_motion import get_ade, get_fde
+   10  from skimage.draw import polygon
+   11  from nuscenes.utils.data_classes import Box
+   12  from scipy.spatial.transform import Rotation as R
+   13  
+   14  ego_width, ego_length = 1.85, 4.084
+   15  
+   16  class PlanningMetric():
+   17      def __init__(self):
+   18          super().__init__()
+   19          self.X_BOUND = [-50.0, 50.0, 0.5]  # Forward
+   20          self.Y_BOUND = [-50.0, 50.0, 0.5]  # Sides
+   21          self.Z_BOUND = [-10.0, 10.0, 20.0]  # Height
+   22          dx, bx, _ = self.gen_dx_bx(self.X_BOUND, self.Y_BOUND, self.Z_BOUND)
+   23          self.dx, self.bx = dx[:2], bx[:2]
+   24  
+   25          bev_resolution, bev_start_position, bev_dimension = self.calculate_birds_eye_view_parameters(
+   26              self.X_BOUND, self.Y_BOUND, self.Z_BOUND
+   27          )
+   28          self.bev_resolution = bev_resolution.numpy()
+   29          self.bev_start_position = bev_start_position.numpy()
+   30          self.bev_dimension = bev_dimension.numpy()
+   31  
+   32          self.W = ego_width
+   33          self.H = ego_length
+   34  
+   35          self.category_index = {
+   36              'human':[2,3,4,5,6,7,8],
+   37              'vehicle':[14,15,16,17,18,19,20,21,22,23]
+   38          }
+   39  
+   40          # self.n_future = n_future
+   41  
+   42          # self.add_state("obj_col", default=torch.zeros(self.n_future), dist_reduce_fx="sum")
+   43          # self.add_state("obj_box_col", default=torch.zeros(self.n_future), dist_reduce_fx="sum")
+   44          # self.add_state("L2", default=torch.zeros(self.n_future),dist_reduce_fx="sum")
+   45          # self.add_state("total", default=torch.tensor(0), dist_reduce_fx="sum")
+   46  
+   47      def gen_dx_bx(self, xbound, ybound, zbound):
+   48          dx = torch.Tensor([row[2] for row in [xbound, ybound, zbound]])
+   49          bx = torch.Tensor([row[0] + row[2]/2.0 for row in [xbound, ybound, zbound]])
+   50          nx = torch.LongTensor([(row[1] - row[0]) / row[2] for row in [xbound, ybound, zbound]])
+   51  
+   52          return dx, bx, nx
+   53      
+   54      def calculate_birds_eye_view_parameters(self, x_bounds, y_bounds, z_bounds):
+   55          """
+   56          Parameters
+   57          ----------
+   58              x_bounds: Forward direction in the ego-car.
+   59              y_bounds: Sides
+   60              z_bounds: Height
+   61  
+   62          Returns
+   63          -------
+   64              bev_resolution: Bird's-eye view bev_resolution
+   65              bev_start_position Bird's-eye view first element
+   66              bev_dimension Bird's-eye view tensor spatial dimension
+   67          """
+   68          bev_resolution = torch.tensor([row[2] for row in [x_bounds, y_bounds, z_bounds]])
+   69          bev_start_position = torch.tensor([row[0] + row[2] / 2.0 for row in [x_bounds, y_bounds, z_bounds]])
+   70          bev_dimension = torch.tensor([(row[1] - row[0]) / row[2] for row in [x_bounds, y_bounds, z_bounds]],
+   71                                      dtype=torch.long)
+   72  
+   73          return bev_resolution, bev_start_position, bev_dimension
+   74      
+   75      def get_label(
+   76              self,
+   77              gt_agent_boxes,
+   78              gt_agent_feats
+   79          ):
+   80          segmentation_np, pedestrian_np = self.get_birds_eye_view_label(gt_agent_boxes,gt_agent_feats)
+   81          segmentation = torch.from_numpy(segmentation_np).long().unsqueeze(0)
+   82          pedestrian = torch.from_numpy(pedestrian_np).long().unsqueeze(0)
+   83  
+   84          return segmentation, pedestrian
+   85      
+   86      def get_birds_eye_view_label(
+   87              self,
+   88              gt_agent_boxes,
+   89              gt_agent_feats
+   90          ):
+   91          '''
+   92          gt_agent_boxes (LiDARInstance3DBoxes): list of GT Bboxs.
+   93              dim 9 = (x,y,z)+(w,l,h)+yaw+(vx,vy)
+   94          gt_agent_feats: (B, A, 34)
+   95              dim 34 = fut_traj(6*2) + fut_mask(6) + goal(1) + lcf_feat(9) + fut_yaw(6)
+   96              lcf_feat (x, y, yaw, vx, vy, width, length, height, type)
+   97          ego_lcf_feats: (B, 9) 
+   98              dim 8 = (vx, vy, ax, ay, w, length, width, vel, steer)
+   99          '''
+  100          T = 6
+  101          segmentation = np.zeros((T,self.bev_dimension[0], self.bev_dimension[1]))
+  102          pedestrian = np.zeros((T,self.bev_dimension[0], self.bev_dimension[1]))
+  103          agent_num = gt_agent_feats.shape[1]
+  104  
+  105          gt_agent_boxes = gt_agent_boxes.tensor.cpu().numpy()  #(N, 9)
+  106          gt_agent_feats = gt_agent_feats.cpu().numpy()
+  107  
+  108          gt_agent_fut_trajs = gt_agent_feats[..., :T*2].reshape(-1, 6, 2)
+  109          gt_agent_fut_mask = gt_agent_feats[..., T*2:T*3].reshape(-1, 6)
+  110          # gt_agent_lcf_feat = gt_agent_feats[..., T*3+1:T*3+10].reshape(-1, 9)
+  111          gt_agent_fut_yaw = gt_agent_feats[..., T*3+10:T*4+10].reshape(-1, 6, 1)
+  112          gt_agent_fut_trajs = np.cumsum(gt_agent_fut_trajs, axis=1)
+  113          gt_agent_fut_yaw = np.cumsum(gt_agent_fut_yaw, axis=1)
+  114  
+  115          gt_agent_boxes[:,6:7] = -1*(gt_agent_boxes[:,6:7] + np.pi/2) # NOTE: convert yaw to lidar frame
+  116          gt_agent_fut_trajs = gt_agent_fut_trajs + gt_agent_boxes[:, np.newaxis, 0:2]
+  117          gt_agent_fut_yaw = gt_agent_fut_yaw + gt_agent_boxes[:, np.newaxis, 6:7]
+  118          
+  119          for t in range(T):
+  120              for i in range(agent_num):
+  121                  if gt_agent_fut_mask[i][t] == 1:
+  122                      # Filter out all non vehicle instances
+  123                      category_index = int(gt_agent_feats[0,i][27])
+  124                      agent_length, agent_width = gt_agent_boxes[i][4], gt_agent_boxes[i][3]
+  125                      x_a = gt_agent_fut_trajs[i, t, 0]
+  126                      y_a = gt_agent_fut_trajs[i, t, 1]
+  127                      yaw_a = gt_agent_fut_yaw[i, t, 0]
+  128                      param = [x_a,y_a,yaw_a,agent_length, agent_width]
+  129                      if (category_index in self.category_index['vehicle']):
+  130                          poly_region = self._get_poly_region_in_image(param)
+  131                          cv2.fillPoly(segmentation[t], [poly_region], 1.0)
+  132                      if (category_index in self.category_index['human']):
+  133                          poly_region = self._get_poly_region_in_image(param)
+  134                          cv2.fillPoly(pedestrian[t], [poly_region], 1.0)
+  135          
+  136          # vis for debug
+  137          # plt.figure('debug')
+  138          # for i in range(T):
+  139          #     plt.subplot(2,T,i+1)
+  140          #     plt.imshow(segmentation[i])
+  141          #     plt.subplot(2,T,i+1+T)
+  142          #     plt.imshow(pedestrian[i])
+  143          # plt.savefig('/home/users/qing01.xu/bevformer/debug_figs/car_ped_occ.jpg')
+  144          # plt.close()
+  145  
+  146          return segmentation, pedestrian
+  147      
+  148      def _get_poly_region_in_image(self,param):
+  149          lidar2cv_rot = np.array([[1,0], [0,-1]])
+  150          x_a,y_a,yaw_a,agent_length, agent_width = param
+  151          trans_a = np.array([[x_a,y_a]]).T
+  152          rot_mat_a = np.array([[np.cos(yaw_a), -np.sin(yaw_a)],
+  153                                  [np.sin(yaw_a), np.cos(yaw_a)]])
+  154          agent_corner = np.array([
+  155              [agent_length/2, -agent_length/2, -agent_length/2, agent_length/2],
+  156              [agent_width/2, agent_width/2, -agent_width/2, -agent_width/2]]) #(2,4)
+  157          agent_corner_lidar = np.matmul(rot_mat_a, agent_corner) + trans_a #(2,4)
+  158          # convert to cv frame
+  159          agent_corner_cv2 = (np.matmul(lidar2cv_rot, agent_corner_lidar) \
+  160              - self.bev_start_position[:2,None] + self.bev_resolution[:2,None] / 2.0).T / self.bev_resolution[:2] #(4,2)
+  161          agent_corner_cv2 = np.round(agent_corner_cv2).astype(np.int32)
+  162  
+  163          return agent_corner_cv2
+  164  
+  165  
+  166      def evaluate_single_coll(self, traj, segmentation, input_gt):
+  167          '''
+  168          traj: torch.Tensor (n_future, 2)
+  169              自车lidar系为轨迹参考系
+  170                  ^ y
+  171                  |
+  172                  | 
+  173                  0------->
+  174                          x
+  175          segmentation: torch.Tensor (n_future, 200, 200)
+  176          '''
+  177          pts = np.array([
+  178              [-self.H / 2. + 0.5, self.W / 2.],
+  179              [self.H / 2. + 0.5, self.W / 2.],
+  180              [self.H / 2. + 0.5, -self.W / 2.],
+  181              [-self.H / 2. + 0.5, -self.W / 2.],
+  182          ])
+  183          pts = (pts - self.bx.cpu().numpy()) / (self.dx.cpu().numpy())
+  184          pts[:, [0, 1]] = pts[:, [1, 0]]
+  185          rr, cc = polygon(pts[:,1], pts[:,0])
+  186          rc = np.concatenate([rr[:,None], cc[:,None]], axis=-1)
+  187  
+  188          n_future, _ = traj.shape
+  189          trajs = traj.view(n_future, 1, 2)
+  190          # 轨迹坐标系转换为:
+  191          #  ^ x
+  192          #  |
+  193          #  | 
+  194          #  0-------> y
+  195          trajs_ = copy.deepcopy(trajs)
+  196          trajs_[:,:,[0,1]] = trajs_[:,:,[1,0]] # can also change original tensor
+  197          trajs_ = trajs_ / self.dx.to(trajs.device)
+  198          trajs_ = trajs_.cpu().numpy() + rc # (n_future, 32, 2)
+  199  
+  200          r = (self.bev_dimension[0] - trajs_[:,:,0]).astype(np.int32)
+  201          r = np.clip(r, 0, self.bev_dimension[0] - 1)
+  202  
+  203          c = trajs_[:,:,1].astype(np.int32)
+  204          c = np.clip(c, 0, self.bev_dimension[1] - 1)
+  205  
+  206          collision = np.full(n_future, False)
+  207          for t in range(n_future):
+  208              rr = r[t]
+  209              cc = c[t]
+  210              I = np.logical_and(
+  211                  np.logical_and(rr >= 0, rr < self.bev_dimension[0]),
+  212                  np.logical_and(cc >= 0, cc < self.bev_dimension[1]),
+  213              )
+  214              collision[t] = np.any(segmentation[t, rr[I], cc[I]].cpu().numpy())
+  215          
+  216          # vis for debug
+  217          # obs_occ = copy.deepcopy(segmentation)
+  218          # ego_occ = torch.zeros_like(obs_occ)
+  219          # for t in range(n_future):
+  220          #     rr = r[t]
+  221          #     cc = c[t]
+  222          #     I = np.logical_and(
+  223          #         np.logical_and(rr >= 0, rr < self.bev_dimension[0]),
+  224          #         np.logical_and(cc >= 0, cc < self.bev_dimension[1]),
+  225          #     )
+  226          #     ego_occ[t, rr[I], cc[I]]=1
+  227          
+  228          # plt.figure()
+  229          # for i in range(6):
+  230          #     plt.subplot(2,6,i+1)
+  231          #     plt.imshow(obs_occ[i])
+  232          #     plt.subplot(2,6,i+7)
+  233          #     plt.imshow(ego_occ[i])
+  234          # if input_gt:
+  235          #     plt.savefig('/home/users/qing01.xu/bevformer/debug_figs/occ_metric_stp3_gt.jpg')
+  236          # else:
+  237          #     plt.savefig('/home/users/qing01.xu/bevformer/debug_figs/occ_metric_stp3_pred.jpg')
+  238          # plt.close()
+  239  
+  240          return torch.from_numpy(collision).to(device=traj.device)
+  241  
+  242      def evaluate_coll(
+  243              self, 
+  244              trajs, 
+  245              gt_trajs, 
+  246              segmentation
+  247          ):
+  248          '''
+  249          trajs: torch.Tensor (B, n_future, 2)
+  250              自车lidar系为轨迹参考系
+  251              ^ y
+  252              |
+  253              | 
+  254              0------->
+  255                      x
+  256          gt_trajs: torch.Tensor (B, n_future, 2)
+  257          segmentation: torch.Tensor (B, n_future, 200, 200)
+  258  
+  259          '''
+  260          B, n_future, _ = trajs.shape
+  261          # trajs = trajs * torch.tensor([-1, 1], device=trajs.device)
+  262          # gt_trajs = gt_trajs * torch.tensor([-1, 1], device=gt_trajs.device)
+  263  
+  264          obj_coll_sum = torch.zeros(n_future, device=segmentation.device)
+  265          obj_box_coll_sum = torch.zeros(n_future, device=segmentation.device)
+  266  
+  267          for i in range(B):
+  268              gt_box_coll = self.evaluate_single_coll(gt_trajs[i], segmentation[i], input_gt=True)
+  269  
+  270              xx, yy = trajs[i,:,0], trajs[i, :, 1]
+  271              # lidar系下的轨迹转换到图片坐标系下
+  272              xi = ((-self.bx[0]/2 - yy) / self.dx[0]).long()
+  273              yi = ((-self.bx[1]/2 + xx) / self.dx[1]).long()
+  274  
+  275              m1 = torch.logical_and(
+  276                  torch.logical_and(xi >= 0, xi < self.bev_dimension[0]),
+  277                  torch.logical_and(yi >= 0, yi < self.bev_dimension[1]),
+  278              ).to(gt_box_coll.device)
+  279              m1 = torch.logical_and(m1, torch.logical_not(gt_box_coll))
+  280  
+  281              ti = torch.arange(n_future)
+  282              obj_coll_sum[ti[m1]] += segmentation[i, ti[m1], xi[m1], yi[m1]].long()
+  283  
+  284              m2 = torch.logical_not(gt_box_coll)
+  285              box_coll = self.evaluate_single_coll(trajs[i], segmentation[i], input_gt=False).to(ti.device)
+  286              obj_box_coll_sum[ti[m2]] += (box_coll[ti[m2]]).long()
+  287  
+  288          return obj_coll_sum, obj_box_coll_sum
+  289  
+  290      def compute_L2(self, trajs, gt_trajs):
+  291          '''
+  292          trajs: torch.Tensor (n_future, 2)
+  293          gt_trajs: torch.Tensor (n_future, 2)
+  294          '''
+  295          # return torch.sqrt(((trajs[:, :, :2] - gt_trajs[:, :, :2]) ** 2).sum(dim=-1))
+  296          pred_len = trajs.shape[0]
+  297          ade = float(
+  298              sum(
+  299                  torch.sqrt(
+  300                      (trajs[i, 0] - gt_trajs[i, 0]) ** 2
+  301                      + (trajs[i, 1] - gt_trajs[i, 1]) ** 2
+  302                  )
+  303                  for i in range(pred_len)
+  304              )
+  305              / pred_len
+  306          )
+  307          
+  308          return ade
+  309  
+  310      # def update(self, trajs, gt_trajs, segmentation):
+  311      #     '''
+  312      #     trajs: torch.Tensor (B, n_future, 3)
+  313      #     gt_trajs: torch.Tensor (B, n_future, 3)
+  314      #     segmentation: torch.Tensor (B, n_future, 200, 200)
+  315      #     '''
+  316      #     assert trajs.shape == gt_trajs.shape
+  317      #     L2 = self.compute_L2(trajs, gt_trajs)
+  318      #     obj_coll_sum, obj_box_coll_sum = self.evaluate_coll(trajs[:,:,:2], gt_trajs[:,:,:2], segmentation)
+  319  
+  320      #     if torch.isnan(L2).max().item():
+  321      #         debug = 1
+  322      #     else:
+  323      #         self.obj_col += obj_coll_sum
+  324      #         self.obj_box_col += obj_box_coll_sum
+  325      #         self.L2 += L2.sum(dim=0)
+  326      #         if torch.isnan(self.L2).max().item():
+  327      #             debug=1
+  328      #         self.total +=len(trajs)
+  329  
+  330  
+  331      # def compute(self):
+  332      #     return {
+  333      #         'obj_col': self.obj_col / self.total,
+  334      #         'obj_box_col': self.obj_box_col / self.total,
+  335      #         'L2' : self.L2 / self.total
+  336      #     }
+

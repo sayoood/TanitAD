@@ -1,0 +1,81 @@
+{
+ "schema": "s2_labels_v7.2",
+ "based_on": {
+  "v7.1_md5": "3bd19c5ab9aee5e166e0c0d37f2f7854"
+ },
+ "layout": "TRAIN AND EVAL SHIPPED AS SEPARATE FILES \u2014 the split is the data layout, not a manifest a trainer must apply",
+ "files": {
+  "train": {
+   "name": "s2_labels_v7.2_train.jsonl.gz",
+   "n": 4572,
+   "md5": "0ff902130ce76886b8a925eceed9e3a5",
+   "sha256": "1f557d1cc4c061ef747cac6171a689447047ec368b52b90af26cb81debdd489e"
+  },
+  "eval": {
+   "name": "s2_labels_v7.2_eval.jsonl.gz",
+   "n": 147,
+   "md5": "aa12c948f062181c3297265b51526ec5",
+   "sha256": "78d908f0104b1468528bbb4f0b395ded0d3efc6ff6b57883636086abbba4695b"
+  }
+ },
+ "eval_pct_of_corpus": 3.12,
+ "changes_from_v7.1": [
+  "corpus split into train/eval FILES",
+  "the 6 deployed-val40 clips ADDED to eval (they already carried full v7.1 labels; they were held out of training and previously unused)",
+  "every clip now assigned \u2014 nothing discarded"
+ ],
+ "deployed_val40_overlap": {
+  "n": 6,
+  "clip_ids": [
+   "01acc9de-8bb9-465e-a664-3098ecd92276",
+   "026ef99a-2283-4c08-83e3-c0c3b4bae865",
+   "030011f7-dfb9-40cf-817f-cb7e8a87b0db",
+   "07f7b41f-b007-48d1-905e-b3385e8e897f",
+   "09759d8c-b66c-4672-bad2-c05c54ea9ded",
+   "0c99c815-3a3d-4189-9530-2626219454c6"
+  ],
+  "pct_of_val40": 15.0,
+  "pct_of_our_eval": 4.1,
+  "consequence": "\u26d4 NOT a leak \u2014 neither set is trained on, and the TRAIN cache is asserted val40-clean by digest (0 of 4,713). But the overlap is now REAL: our eval and val40 share 6 clips (15% of val40, 4% of our eval). \u26a0\ufe0f AND THOSE 6 ARE val40's ONLY LABELLED CLIPS (34 of its 40 carry no v7 labels), so ANY LABEL-BASED comparison between our eval and val40 would share its ENTIRE support. State it whenever the two are compared.",
+  "status": "LIVE (was LATENT until 2026-08-30)",
+  "became_live_when": "the 6 clips gained epcache episodes. Until then they carried labels but NO pixels, contributed nothing to a val round, and the overlap was nominal \u2014 our eval curve and THE published val40 statistic were still effectively independent.",
+  "episode_cache": {
+   "eval6_cache": "physicalai-b1-EVAL6-w120-256x640cyl (6 episodes, 208 MB)",
+   "why_separate": "two directories is a STRUCTURAL guarantee that the train cache is val40-clean; one directory with a filter is only a promise. Verified after the build: train cache byte-identical (4,713 episodes, 177,998,547,213 bytes, same _geometry.json hash), caches disjoint, train val40 members = 0."
+  }
+ },
+ "composition": {
+  "eval": {
+   "road_class": {
+    "urban": 64.6,
+    "intersection": 18.4,
+    "highway": 17.0
+   },
+   "daynight_clock": {
+    "day": 55.8,
+    "night": 44.2
+   }
+  },
+  "train": {
+   "road_class": {
+    "urban": 64.9,
+    "intersection": 18.8,
+    "highway": 16.3
+   },
+   "daynight_clock": {
+    "day": 53.6,
+    "night": 46.4
+   }
+  }
+ },
+ "interpretation": {
+  "admissible_use": "aggregate val curve at any cadence; checkpoint selection.",
+  "inadmissible_use": "\u26d4 PER-COMPETENCE numbers \u2014 at n=147 the eval side holds only ~13 stop-launch and ~24 highway clips. Also not a substitute for the deployed val40, which it now partially overlaps."
+ },
+ "assertions_passed": [
+  "train \u2229 eval = empty",
+  "train \u222a eval = the whole corpus",
+  "train contains NO deployed-val40 clip",
+  "re-verified by reading the written files back"
+ ]
+}

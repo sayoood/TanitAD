@@ -1,0 +1,340 @@
+{
+ "registry_version": "2.9.0",
+ "unreadable": [],
+ "artifacts": {
+  "artifact_A4_blind_ego_cmd.json": {
+   "scope": "IN_SCOPE",
+   "scope_why": "matched key_present='four_families'",
+   "tier": "T1",
+   "tier_raw": "T1",
+   "tier_is_driving_performance": true,
+   "families": {
+    "LONGITUDINAL": [
+     {
+      "id": "long.target_speed",
+      "label": "target-speed accuracy",
+      "required": true,
+      "state": "REFUSED",
+      "detail": "four_families.longitudinal.speed_mae_mps: no warmup scene carries BOTH the model's camera input and a logged future: the 204 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), the 16 stage-1 scenes have a fu (n=0)"
+     },
+     {
+      "id": "long.along_track_error",
+      "label": "along-track displacement error",
+      "required": true,
+      "state": "REFUSED",
+      "detail": "four_families.longitudinal.along_mae_m: no warmup scene carries BOTH the model's camera input and a logged future: the 204 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), the 16 stage-1 scenes have a fu (n=0)"
+     },
+     {
+      "id": "long.progress",
+      "label": "ego progress",
+      "required": true,
+      "state": "REFUSED",
+      "detail": "four_families.longitudinal.ego_progress: no warmup scene carries BOTH the model's camera input and a logged future: the 204 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), the 16 stage-1 scenes have a fu (n=0)"
+     },
+     {
+      "id": "long.distance_keeping",
+      "label": "distance-keeping (headway / time-gap / TTC to the lead agent)",
+      "required": true,
+      "state": "REFUSED",
+      "detail": "longitudinal.distance_keeping: no warmup scene carries BOTH the model's camera input and a logged future: the 204 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), the 16 stage-1 scenes have a fu (n=0)"
+     }
+    ],
+    "LATERAL": [
+     {
+      "id": "lat.cross_track",
+      "label": "cross-track error",
+      "required": true,
+      "state": "REFUSED",
+      "detail": "four_families.lateral.cross_mae_m: no warmup scene carries BOTH the model's camera input and a logged future: the 204 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), the 16 stage-1 scenes have a fu (n=0)"
+     },
+     {
+      "id": "lat.heading",
+      "label": "heading error",
+      "required": true,
+      "state": "REFUSED",
+      "detail": "four_families.lateral.heading_mae_deg: no warmup scene carries BOTH the model's camera input and a logged future: the 204 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), the 16 stage-1 scenes have a fu (n=0)"
+     },
+     {
+      "id": "lat.curvature",
+      "label": "curvature error",
+      "required": true,
+      "state": "REFUSED",
+      "detail": "four_families.lateral.curvature_mae_1pm: no warmup scene carries BOTH the model's camera input and a logged future: the 204 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), the 16 stage-1 scenes have a fu (n=0)"
+     },
+     {
+      "id": "lat.yaw_rate",
+      "label": "yaw-rate error",
+      "required": true,
+      "state": "REFUSED",
+      "detail": "four_families.lateral.yaw_rate_mae_degps: no warmup scene carries BOTH the model's camera input and a logged future: the 204 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), the 16 stage-1 scenes have a fu (n=0)"
+     }
+    ],
+    "TACTICAL": [
+     {
+      "id": "tac.manoeuvre_decision",
+      "label": "manoeuvre-decision quality (selected vs executed)",
+      "required": true,
+      "state": "REFUSED",
+      "detail": "four_families.tactical.lateral_decision: no warmup scene carries BOTH the model's camera input and a logged future: the 204 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), the 16 stage-1 scenes have a fu (n=0)"
+     },
+     {
+      "id": "tac.confusion",
+      "label": "confusion over the manoeuvre classes",
+      "required": true,
+      "state": "REFUSED",
+      "detail": "four_families.tactical.lateral_decision.confusion_gt_rows_pred_cols: no warmup scene carries BOTH the model's camera input and a logged future: the 204 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), the 16 stage-1 scenes have a fu (n=0)"
+     },
+     {
+      "id": "tac.goal_selection",
+      "label": "tactical goal / anchor selection quality",
+      "required": true,
+      "state": "REFUSED",
+      "detail": "four_families.tactical.goal_setting: no warmup scene carries BOTH the model's camera input and a logged future: the 204 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), the 16 stage-1 scenes have a fu (n=0)"
+     }
+    ],
+    "STRATEGIC": [
+     {
+      "id": "strat.decision",
+      "label": "strategic decision quality",
+      "required": true,
+      "state": "REFUSED",
+      "detail": "four_families.strategic: no human/expert future trajectory supplied, so no geometry family can be computed at all. NavSim's Scene object carries it but is TRAINING-ONLY for the agent (NAVSIM_PROTOCOL.md:470-474) — it must be  (n=220)"
+     },
+     {
+      "id": "strat.route_goal",
+      "label": "strategic route / goal-setting quality",
+      "required": true,
+      "state": "REFUSED",
+      "detail": "four_families.strategic: no human/expert future trajectory supplied, so no geometry family can be computed at all. NavSim's Scene object carries it but is TRAINING-ONLY for the agent (NAVSIM_PROTOCOL.md:470-474) — it must be  (n=220)"
+     },
+     {
+      "id": "strat.nav_compliance",
+      "label": "nav-COMPLIANCE — the emitted BEHAVIOUR follows the route command (imminent windows)",
+      "required": true,
+      "state": "REFUSED",
+      "detail": "four_families.strategic.nav_compliance.readouts.plan.conditionings.nav_true.compliance_with_TRUE_command: no nav-withheld partner arm with the SAME frames construction was run (n=0)"
+     },
+     {
+      "id": "strat.nav_compliance_ctrl_shuffle",
+      "label": "nav-compliance CONTROL: paired drop under nav-SHUFFLE (token permuted across windows)",
+      "required": true,
+      "state": "REFUSED",
+      "detail": "four_families.strategic.nav_compliance.readouts.plan.paired_true_minus_shuffled: nav-shuffle arm not run in this stream (budget); nav-zero is the paired control reported (n=0)"
+     },
+     {
+      "id": "strat.nav_compliance_ctrl_zero",
+      "label": "nav-compliance CONTROL: paired drop under nav-ZERO (nav withheld, E13 skipped)",
+      "required": true,
+      "state": "REFUSED",
+      "detail": "four_families.strategic.nav_compliance.readouts.plan.paired_true_minus_zero: no nav-withheld partner arm with the SAME frames construction was run (n=0)"
+     }
+    ]
+   },
+   "hygiene": [
+    {
+     "id": "hyg.tier_stamp",
+     "label": "tier stamp present",
+     "required": true,
+     "state": "PRESENT",
+     "detail": "T1 (T1)"
+    },
+    {
+     "id": "hyg.estimator_named",
+     "label": "estimator named",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "estimator.interval: cluster unit unsettled — NavSim's resampling unit is a SCENE TOKEN, not an episode. taniteval.ci.episode_cluster_bootstrap resamples EPISODES, and the two are not interchangeable here: docs/splits.md  (n=220)"
+    },
+    {
+     "id": "hyg.n_reported",
+     "label": "n printed (windows and episodes)",
+     "required": true,
+     "state": "PRESENT",
+     "detail": "n_windows"
+    },
+    {
+     "id": "hyg.no_forbidden_estimator",
+     "label": "overlapping_holdout_se not used as a decision-grade interval",
+     "required": true,
+     "state": "PRESENT",
+     "detail": "named only to disavow or deprecate it (estimator.interval._forbidden)"
+    },
+    {
+     "id": "hyg.parity",
+     "label": "corpus identity recorded (parity key + skip-hash)",
+     "required": true,
+     "state": "PRESENT",
+     "detail": "corpus"
+    },
+    {
+     "id": "ctrl.floor_comparison",
+     "label": "headline metrics reported against their trivial control(s)",
+     "required": true,
+     "state": "PRESENT",
+     "detail": "controls"
+    },
+    {
+     "id": "hyg.inference_seed",
+     "label": "stochastic planner: inference-seed replicate + the seed floor",
+     "required": false,
+     "state": "PRESENT",
+     "detail": "inference_seeds"
+    }
+   ],
+   "leak_guards": [
+    {
+     "id": "vision_only_inference",
+     "label": "Inference uses VISION ONLY. Labels may use ego/privileged data (PI, 2026-08-03, binding).",
+     "required": true,
+     "state": "PRESENT",
+     "detail": "protocol.inference_inputs"
+    },
+    {
+     "id": "goal_situation_disjoint",
+     "label": "The goal path and the situation path stay information-disjoint at inference; a goal input must not carry the situation classifier's output in any form (PI, 2026-08-03, binding).",
+     "required": true,
+     "state": "PRESENT",
+     "detail": "protocol.goal_source"
+    },
+    {
+     "id": "route_head_echo",
+     "label": "A route/goal head scoring near 1.0 must publish its echo test against its own input.",
+     "required": false,
+     "state": "REFUSED",
+     "detail": "strategic.echo_test: no route/goal head is SCORED in this NavSim eval (refcv4b's route_logits are not read); the only route-conditioned readout is the plan's nav-compliance, reported with its nav-zero pair (n=0)"
+    }
+   ],
+   "n_violations": 0,
+   "n_work_items": 18,
+   "violations": [],
+   "work_items": [
+    {
+     "id": "long.target_speed",
+     "label": "target-speed accuracy",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "four_families.longitudinal.speed_mae_mps: no warmup scene carries BOTH the model's camera input and a logged future: the 204 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), the 16 stage-1 scenes have a fu (n=0)"
+    },
+    {
+     "id": "long.along_track_error",
+     "label": "along-track displacement error",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "four_families.longitudinal.along_mae_m: no warmup scene carries BOTH the model's camera input and a logged future: the 204 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), the 16 stage-1 scenes have a fu (n=0)"
+    },
+    {
+     "id": "long.progress",
+     "label": "ego progress",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "four_families.longitudinal.ego_progress: no warmup scene carries BOTH the model's camera input and a logged future: the 204 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), the 16 stage-1 scenes have a fu (n=0)"
+    },
+    {
+     "id": "long.distance_keeping",
+     "label": "distance-keeping (headway / time-gap / TTC to the lead agent)",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "longitudinal.distance_keeping: no warmup scene carries BOTH the model's camera input and a logged future: the 204 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), the 16 stage-1 scenes have a fu (n=0)"
+    },
+    {
+     "id": "lat.cross_track",
+     "label": "cross-track error",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "four_families.lateral.cross_mae_m: no warmup scene carries BOTH the model's camera input and a logged future: the 204 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), the 16 stage-1 scenes have a fu (n=0)"
+    },
+    {
+     "id": "lat.heading",
+     "label": "heading error",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "four_families.lateral.heading_mae_deg: no warmup scene carries BOTH the model's camera input and a logged future: the 204 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), the 16 stage-1 scenes have a fu (n=0)"
+    },
+    {
+     "id": "lat.curvature",
+     "label": "curvature error",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "four_families.lateral.curvature_mae_1pm: no warmup scene carries BOTH the model's camera input and a logged future: the 204 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), the 16 stage-1 scenes have a fu (n=0)"
+    },
+    {
+     "id": "lat.yaw_rate",
+     "label": "yaw-rate error",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "four_families.lateral.yaw_rate_mae_degps: no warmup scene carries BOTH the model's camera input and a logged future: the 204 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), the 16 stage-1 scenes have a fu (n=0)"
+    },
+    {
+     "id": "tac.manoeuvre_decision",
+     "label": "manoeuvre-decision quality (selected vs executed)",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "four_families.tactical.lateral_decision: no warmup scene carries BOTH the model's camera input and a logged future: the 204 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), the 16 stage-1 scenes have a fu (n=0)"
+    },
+    {
+     "id": "tac.confusion",
+     "label": "confusion over the manoeuvre classes",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "four_families.tactical.lateral_decision.confusion_gt_rows_pred_cols: no warmup scene carries BOTH the model's camera input and a logged future: the 204 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), the 16 stage-1 scenes have a fu (n=0)"
+    },
+    {
+     "id": "tac.goal_selection",
+     "label": "tactical goal / anchor selection quality",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "four_families.tactical.goal_setting: no warmup scene carries BOTH the model's camera input and a logged future: the 204 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), the 16 stage-1 scenes have a fu (n=0)"
+    },
+    {
+     "id": "strat.decision",
+     "label": "strategic decision quality",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "four_families.strategic: no human/expert future trajectory supplied, so no geometry family can be computed at all. NavSim's Scene object carries it but is TRAINING-ONLY for the agent (NAVSIM_PROTOCOL.md:470-474) — it must be  (n=220)"
+    },
+    {
+     "id": "strat.route_goal",
+     "label": "strategic route / goal-setting quality",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "four_families.strategic: no human/expert future trajectory supplied, so no geometry family can be computed at all. NavSim's Scene object carries it but is TRAINING-ONLY for the agent (NAVSIM_PROTOCOL.md:470-474) — it must be  (n=220)"
+    },
+    {
+     "id": "strat.nav_compliance",
+     "label": "nav-COMPLIANCE — the emitted BEHAVIOUR follows the route command (imminent windows)",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "four_families.strategic.nav_compliance.readouts.plan.conditionings.nav_true.compliance_with_TRUE_command: no nav-withheld partner arm with the SAME frames construction was run (n=0)"
+    },
+    {
+     "id": "strat.nav_compliance_ctrl_shuffle",
+     "label": "nav-compliance CONTROL: paired drop under nav-SHUFFLE (token permuted across windows)",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "four_families.strategic.nav_compliance.readouts.plan.paired_true_minus_shuffled: nav-shuffle arm not run in this stream (budget); nav-zero is the paired control reported (n=0)"
+    },
+    {
+     "id": "strat.nav_compliance_ctrl_zero",
+     "label": "nav-compliance CONTROL: paired drop under nav-ZERO (nav withheld, E13 skipped)",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "four_families.strategic.nav_compliance.readouts.plan.paired_true_minus_zero: no nav-withheld partner arm with the SAME frames construction was run (n=0)"
+    },
+    {
+     "id": "hyg.estimator_named",
+     "label": "estimator named",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "estimator.interval: cluster unit unsettled — NavSim's resampling unit is a SCENE TOKEN, not an episode. taniteval.ci.episode_cluster_bootstrap resamples EPISODES, and the two are not interchangeable here: docs/splits.md  (n=220)"
+    },
+    {
+     "id": "route_head_echo",
+     "label": "A route/goal head scoring near 1.0 must publish its echo test against its own input.",
+     "required": false,
+     "state": "REFUSED",
+     "detail": "strategic.echo_test: no route/goal head is SCORED in this NavSim eval (refcv4b's route_logits are not read); the only route-conditioned readout is the plan's nav-compliance, reported with its nav-zero pair (n=0)"
+    }
+   ]
+  }
+ }
+}

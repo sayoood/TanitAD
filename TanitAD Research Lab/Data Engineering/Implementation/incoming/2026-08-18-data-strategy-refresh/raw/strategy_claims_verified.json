@@ -1,0 +1,75 @@
+{
+ "_evidence_class": "MEASURED (ours; this script, re-derived from primary artifacts)",
+ "_what": "independent re-derivation of the DATA_STRATEGY.md v4.0 parity numbers",
+ "_no_pod": true,
+ "_no_gpu": true,
+ "set_identity": {
+  "_claim": "the aug120 perception cohort IS the parity-train exclusion list, byte-identical as a SET -- not a coincidence of count (C113 vs C112)",
+  "n": {
+   "v2_index": 201,
+   "v3_index": 201,
+   "exclusion_list": 201
+  },
+  "sorted_id_sha256": {
+   "fused_aug120_v2_index": "80632f17292eb5fc484956338a0aad7b40f91ff66502faa11a5cad49f9a0439e",
+   "fused_aug120_v3_index": "80632f17292eb5fc484956338a0aad7b40f91ff66502faa11a5cad49f9a0439e",
+   "alpamayo_IN_parity_train_EXCLUDE_FROM_EVAL": "80632f17292eb5fc484956338a0aad7b40f91ff66502faa11a5cad49f9a0439e"
+  },
+  "all_three_identical": true,
+  "set_equality": true,
+  "matches_claimed_prefix": true,
+  "serialization": "parity.uid_digest -- sha256 over the newline-joined SORTED ids"
+ },
+ "contamination": {
+  "n_alpamayo_records": 4729,
+  "parity_train_digest_set": 2400,
+  "deployed_val_digest_set": 40,
+  "catalogue_rate": {
+   "n_in_parity_train": 201,
+   "denominator": 4729,
+   "frac": 0.042504,
+   "_why_it_flatters": "counts clips that do not exist as video"
+  },
+  "buildable_rate_today": {
+   "n_in_parity_train": 201,
+   "denominator": 257,
+   "frac": 0.782101,
+   "_why_it_is_the_one_to_quote": "a split can only contain clips that EXIST"
+  },
+  "deployed_val_swallowed": {
+   "n_in_alpamayo_records": 6,
+   "denominator": 40,
+   "frac": 0.15,
+   "_direction": "a TRAIN corpus about to swallow the deployed val -- the worse direction, blast radius zero TODAY"
+  },
+  "aug120_cohort_in_parity_train": "201/201",
+  "aug120_cohort_in_deployed_val": "0/201"
+ },
+ "feature_readset": {
+  "_rule": "state the LAYER; the bare phrase 'our ingest' is what let this rot four times",
+  "physicalai_r0.py (r0 clip selection)": 2,
+  "physicalai.py (the episode build)": 5,
+  "program-wide (incl. the side-car join)": 6,
+  "denominator": 36,
+  "program_wide_names": [
+   "camera_front_wide_120fov",
+   "camera_intrinsics",
+   "egomotion",
+   "obstacle.offline",
+   "sensor_extrinsics",
+   "vehicle_dimensions"
+  ],
+  "pinned_by": "stack/tests/test_physicalai_feature_readset.py"
+ },
+ "oracle_shape": {
+  "_claim": "membership exact, enumeration impossible",
+  "digest_of_one_id_is_deterministic": true,
+  "digest_len_hex": 64,
+  "committed_files": [
+   "stack/tanitad/data/parity_train_clip_digests.json",
+   "stack/tanitad/data/deployed_val40_clip_digests.json"
+  ],
+  "_note": "the sets hold sha256(clip_id) only; an id can be TESTED but the set cannot be run backwards into ids"
+ },
+ "ALL_CLAIMS_REPRODUCED": true
+}

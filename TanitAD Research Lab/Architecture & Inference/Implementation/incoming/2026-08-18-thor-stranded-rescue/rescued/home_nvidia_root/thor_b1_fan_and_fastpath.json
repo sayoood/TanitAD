@@ -1,0 +1,133 @@
+{
+ "device": "NVIDIA Thor",
+ "torch": "2.13.0+cu130",
+ "plan_ref": "THOR_OPTIMISATION_PLAN.md Tier B / B1 (F1 + F4)",
+ "thor_repo_sha": "4954544",
+ "provenance": "imported surface (tanitad/models, config.py, resolve_v2_frames) verified IDENTICAL to repo HEAD -- the pod-drift check, done before the launch",
+ "trt_version": "10.13.3.9",
+ "shapes": {
+  "window": 8,
+  "state_dim": 2048,
+  "action_dim": 3,
+  "H": 176,
+  "W": 624,
+  "K_roll": 20,
+  "M_fan": 9
+ },
+ "encoder_bf16": {
+  "p50_ms": 30.242,
+  "p99_ms": 31.099
+ },
+ "eager_fan_step": {
+  "step_B1": {
+   "p50_ms": 4.214,
+   "p99_ms": 4.866
+  },
+  "step_B1_per_candidate_ms": 4.214,
+  "step_B3": {
+   "p50_ms": 6.478,
+   "p99_ms": 7.284
+  },
+  "step_B3_per_candidate_ms": 2.1593,
+  "step_B5": {
+   "p50_ms": 10.352,
+   "p99_ms": 11.374
+  },
+  "step_B5_per_candidate_ms": 2.0704,
+  "step_B9": {
+   "p50_ms": 11.117,
+   "p99_ms": 11.874
+  },
+  "step_B9_per_candidate_ms": 1.2352
+ },
+ "FAN_AMORTISATION": {
+  "batch9_vs_batch1_x": 2.638,
+  "per_candidate_speedup_x": 3.41,
+  "prior_4060": "batch-9 imagine = 0.93x of batch-1 (latency_cnce_baseline.py)",
+  "FALSIFIER_fires": true,
+  "verdict": "FAN DOES NOT AMORTISE -- the 9-candidate deployed tick is ~222 ms of roll"
+ },
+ "eager_roll_M9_batched": {
+  "p50_ms": 208.012,
+  "p99_ms": 208.682
+ },
+ "eager_roll_M9_serialised": {
+  "p50_ms": 728.774,
+  "p99_ms": 730.943
+ },
+ "eager_roll_M1": {
+  "p50_ms": 81.719,
+  "p99_ms": 82.161
+ },
+ "trt": {
+  "fpON_b1": {
+   "fastpath": true,
+   "batch": 1,
+   "ok": true,
+   "MB": 303.2,
+   "has_native_mha": false,
+   "n_nodes": 1223,
+   "ort_parity": {
+    "rel_err_vs_eager": 3.6e-07
+   },
+   "engine": {
+    "ok": true,
+    "build_s": 35.9,
+    "MB": 173.9,
+    "median_ms": 1.15424
+   }
+  },
+  "fpOFF_b1": {
+   "fastpath": false,
+   "batch": 1,
+   "ok": true,
+   "MB": 303.2,
+   "has_native_mha": false,
+   "n_nodes": 1223,
+   "ort_parity": {
+    "rel_err_vs_eager": 3.7e-07
+   },
+   "engine": {
+    "ok": true,
+    "build_s": 35.5,
+    "MB": 174.0,
+    "median_ms": 1.18665
+   }
+  },
+  "fpOFF_b9": {
+   "fastpath": false,
+   "batch": 9,
+   "ok": true,
+   "MB": 303.2,
+   "has_native_mha": false,
+   "n_nodes": 1223,
+   "ort_parity": {
+    "rel_err_vs_eager": 4.3e-07
+   },
+   "engine": {
+    "ok": true,
+    "build_s": 37.0,
+    "MB": 173.8,
+    "median_ms": 1.29443
+   }
+  }
+ },
+ "Q2_VERDICT": {
+  "published_ms_from_fastpathON_graph": 1.168,
+  "reproduced_fastpathON_ms": 1.15424,
+  "CORRECT_graph_fastpathOFF_ms": 1.18665,
+  "correct_vs_published_x": 1.016,
+  "falsifier_fires": false,
+  "reading": "\u2705 the correction is latency-neutral (1.187 vs 1.168 ms) -- the published speedup survives, but it was measured on a wrong graph and this run is what makes it admissible"
+ },
+ "TICK_RECONSTRUCTION_ms": {
+  "encoder_bf16": 30.24,
+  "published_1candidate_tick": 53.98,
+  "deployed_M9_SERIALISED_tick": 243.84,
+  "deployed_M9_BATCHED_tick": 56.13,
+  "budget_ms": 100.0,
+  "serialised_pct_of_budget": 243.8,
+  "batched_pct_of_budget": 56.1,
+  "note": "encoder + imagination fan only. It EXCLUDES step_readout decode, scoring and the tactical/strategic head decode -- still a partial tick, but now covering the candidate dimension the published number omitted."
+ }
+}

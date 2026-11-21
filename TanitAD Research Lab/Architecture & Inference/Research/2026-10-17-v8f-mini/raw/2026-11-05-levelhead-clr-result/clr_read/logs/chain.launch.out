@@ -1,0 +1,44 @@
+2026-11-05T17:46:28 ZZCLR-GATE0 pins, tests, known answers ok (tool 0417c838, model a3634276, trainer 9ffdf1b4)
+PRECHECK PASS
+2026-11-05T17:46:35 ZZCLR-GATE1 CLR checkpoints present, sha256 == SHA256SUMS.txt == box-2 marker, argv = RAPR-P01's + the two level tokens, recovery lever = RAPR-P01's, cfg level_head on
+2026-11-05T17:46:36 ZZCLR-GATE2 reused arrays (14), the CL card's rules and the A2 card match their pins
+2026-11-05T17:46:49 ZZCLR-PREFLIGHT-OK PRE_CLR_s0_ri_kbox
+2026-11-05T17:46:58 ZZCLR-PREFLIGHT-OK PRE_CLR_s1_hold
+2026-11-05T17:47:07 ZZCLR-PREFLIGHT-OK PRE_RAPRP01_s1_ri
+2026-11-05T17:47:07 ZZCLR-START tool 0417c838 threads reindexed=12 logged=16
+2026-11-05T17:47:07 ZZCLR-RUN RICLR_s0 flags=--smooth sg72 --scene reindexed threads=12 ckpt=M2b_s0_recft_CLR
+2026-11-05T17:51:13 ZZCLR-RUN-DONE RICLR_s0 wall=246s
+2026-11-05T17:51:13 ZZCLR-RUN RICLR_s1 flags=--smooth sg72 --scene reindexed threads=12 ckpt=M2b_s1_recft_CLR
+2026-11-05T17:55:25 ZZCLR-RUN-DONE RICLR_s1 wall=252s
+2026-11-05T17:55:25 ZZCLR-RUN RICLRC_s0 flags=--smooth sg72 --scene reindexed --feasible kbox threads=12 ckpt=M2b_s0_recft_CLR
+2026-11-05T17:59:36 ZZCLR-RUN-DONE RICLRC_s0 wall=251s
+2026-11-05T17:59:36 ZZCLR-RUN RICLRC_s1 flags=--smooth sg72 --scene reindexed --feasible kbox threads=12 ckpt=M2b_s1_recft_CLR
+2026-11-05T18:03:45 ZZCLR-RUN-DONE RICLRC_s1 wall=249s
+2026-11-05T18:03:45 ZZCLR-RUN RIRAPRP01_s0 flags=--smooth sg72 --scene reindexed threads=12 ckpt=M2b_s0_recft_RAPRP01
+2026-11-05T18:08:07 ZZCLR-RUN-DONE RIRAPRP01_s0 wall=262s
+2026-11-05T18:08:08 ZZCLR-RUN RIRAPRP01_s1 flags=--smooth sg72 --scene reindexed threads=12 ckpt=M2b_s1_recft_RAPRP01
+2026-11-05T18:11:38 ZZCLR-RUN-DONE RIRAPRP01_s1 wall=211s
+2026-11-05T18:11:38 ZZCLR-RUN CLR_s0 flags=--smooth sg72 --scene logged threads=16 ckpt=M2b_s0_recft_CLR
+2026-11-05T18:16:12 ZZCLR-RUN-DONE CLR_s0 wall=274s
+2026-11-05T18:16:12 ZZCLR-RUN CLR_s1 flags=--smooth sg72 --scene logged threads=16 ckpt=M2b_s1_recft_CLR
+2026-11-05T18:19:08 ZZCLR-RUN-DONE CLR_s1 wall=176s
+2026-11-05T18:19:08 ZZCLR-RUN CLRC_s0 flags=--smooth sg72 --scene logged --feasible kbox threads=16 ckpt=M2b_s0_recft_CLR
+2026-11-05T18:22:52 ZZCLR-RUN-DONE CLRC_s0 wall=223s
+2026-11-05T18:22:52 ZZCLR-RUN CLRC_s1 flags=--smooth sg72 --scene logged --feasible kbox threads=16 ckpt=M2b_s1_recft_CLR
+2026-11-05T18:26:28 ZZCLR-RUN-DONE CLRC_s1 wall=216s
+2026-11-05T18:26:28 ZZCLR-RUN FZCLR_s0 flags=--smooth sg72 --scene hold_now threads=16 ckpt=M2b_s0_recft_CLR
+2026-11-05T18:32:24 ZZCLR-RUN-DONE FZCLR_s0 wall=356s
+2026-11-05T18:32:24 ZZCLR-RUN FZCLR_s1 flags=--smooth sg72 --scene hold_now threads=16 ckpt=M2b_s1_recft_CLR
+2026-11-05T18:38:11 ZZCLR-RUN-DONE FZCLR_s1 wall=347s
+2026-11-05T18:38:11 ZZCLR-ROLLOUTS-DONE nfail=0
+2026-11-05T18:38:11 ZZCLR-CLRRO-DONE
+2026-11-05T18:38:11 ZZCLR-READ start
+2026-11-05T18:41:57 ZZCLR-READ rc=0
+s0 M1 RICLR-RIC0 -0.0124 [-0.0173, -0.0076] sep True | RIC0-P10 +0.0533 | share 0.2330162111786043 | logged share 0.22879238979130936 | ADE6 RICLR-RIC0 +0.0323 | RICLRC read A DOMINANT False
+s1 M1 RICLR-RIC0 -0.0077 [-0.0132, -0.0028] sep True | RIC0-P10 +0.0596 | share 0.12976570319079503 | logged share 0.12708313402017063 | ADE6 RICLR-RIC0 +0.0585 | RICLRC read A DOMINANT False
+OUTCOME P-FAILS-ATTR-NOT-SEPARATED-BETTER | the level adds nothing even when needed (CLR - RAPRP01 on M1 not separated-better): LLR (the lead-aware head) is the next arm, wiring per the O-sensitivity of CLR (readout/ and WIRING.md)
+2026-11-05T18:41:57 ZZCLR-READ-DONE
+2026-11-05T18:42:36 ZZCLR-READOUT s0 rc=0
+2026-11-05T18:43:09 ZZCLR-READOUT s1 rc=0
+WIRING O-INSENSITIVE | BOTH heads' outputs ([sigmoid(logit), gap_hat] and the level) as one separate conditioning token of O (--aux-cond token, non-zero init)
+2026-11-05T18:43:09 ZZCLR-CHAIN-DONE

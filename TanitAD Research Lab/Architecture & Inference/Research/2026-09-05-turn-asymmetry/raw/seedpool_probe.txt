@@ -1,0 +1,37 @@
+model step=21109  cfg.proposal_k=1  plan_steps=10  a_dim=2  score_head=False
+[refav1-labels] v7.2 join: labels 8/8 eps (0 missing), 168/535 windows in-band +-[2.0]s, md5=aa12c948f062181c3297265b51526ec5 | nav 8/8 eps (0 missing -> nav_cmd=0+nav_valid=False), md5=aa12c948f062181c3297265b51526ec5, allow_oracle_nav=True
+panel: 75 windows  sha256 c765fd4f9b0722b1
+
+================================================================================================
+1. THE SEED POOL  (modes[1:], the iteration-0 injection)
+================================================================================================
+  windows n=75   cfg.proposal_k = 1   pool size per window = 0 modes
+
+  ********************************************************************************
+  HYPOTHESIS 3.14 IS REFUTED, BY THE CHEAPEST POSSIBLE FACT: THIS CHECKPOINT HAS
+  cfg.proposal_k = 1, SO `modes[1:]` IS EMPTY AND NO SEED POOL IS EVER INJECTED.
+
+  `refa_v1.py:2485` reads `seed_pool = modes[1:] if modes.shape[0] > 1 else None`.
+  The guard fires, iCEM receives `seed_pool=None`, and `refa_v1_plan.py:291` skips
+  the injection entirely. A LEARNED, POSSIBLY-BIASED CANDIDATE SET CANNOT EXPLAIN
+  AN ASYMMETRY IT NEVER CONTRIBUTES.
+
+  CONTROL that this is a real read and not a dead probe: section 3's mode-0
+  statistics come from the SAME `modes` tensor and are non-degenerate, and the
+  banner above prints `proposal_k` from the loaded config, not from this file.
+  ********************************************************************************
+
+  Sections 2 and 3's pool statistics are VACUOUS at pool size 0 and are SKIPPED
+  rather than printed as zeros.
+
+
+================================================================================================
+3. MODE 0 -- the named `proposal` BASELINE (it competes, but it is NOT the pool)
+================================================================================================
+  peak curvature: n(+ LEFT) 47, n(- RIGHT) 28 of 75   median |kappa| 0.32691
+  ⚠️ kappa_max is 0.2, so a median |kappa| of 0.32691 means `_clip` CLAMPS the proposal on most windows.
+    on GT turn_left   mean signed peak kappa +0.07040 [-0.17710, +0.31790] (n=30)
+    on GT turn_right  mean signed peak kappa +0.11740 [-0.09510, +0.27690] (n=30)
+    on GT lane_keep   mean signed peak kappa +0.12640 [-0.04790, +0.28400] (n=15)
+  ⇒ the proposal baseline leans LEFT (+) overall, and it leans the SAME way on GT-right windows as on GT-left ones (+0.11740 vs +0.07040) -- i.e. it does NOT track the GT direction.
+  CONTROL, the accel channel of mode 0: mean -0.20249 (no directional meaning; printed so the curvature number is not read in isolation)

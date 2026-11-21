@@ -1,0 +1,107 @@
+{
+ "rule": "tol = 2 x floor_max rounded up to a multiple of 0.125; accept iff all null arms 0 beyond AND every decision arm max delta >= 10 x tol AND >= max(5, 10 %) sets beyond",
+ "floor_max_over_null_arms": 0.25,
+ "floor_arms": {
+  "N_full": 0.25,
+  "N_b1": 0.25,
+  "N_b2": 0.25,
+  "N_b4": 0.25,
+  "N_b4shift": 0.25,
+  "N_b4w2": 0.25,
+  "N0_b4": 0.25,
+  "N1_b1": 0.25,
+  "N2_b2": 0.25
+ },
+ "tol_candidate_used_in_cli_runs": 0.5,
+ "tol_by_rule": 0.5,
+ "decision_arms": {
+  "A1_calib_other_vehicle": {
+   "max_abs_delta": 0.25,
+   "ratio_to_tol": 0.5,
+   "beyond_at_tol": 0,
+   "need_beyond": 5,
+   "separates": false
+  },
+  "A2_calib_half_scale": {
+   "max_abs_delta": 4.125,
+   "ratio_to_tol": 8.25,
+   "beyond_at_tol": 40,
+   "need_beyond": 5,
+   "separates": false
+  },
+  "B1_img_hflip": {
+   "max_abs_delta": 7.76563,
+   "ratio_to_tol": 15.53126,
+   "beyond_at_tol": 45,
+   "need_beyond": 5,
+   "separates": true
+  },
+  "B2_img_bgr_rgb": {
+   "max_abs_delta": 1.875,
+   "ratio_to_tol": 3.75,
+   "beyond_at_tol": 10,
+   "need_beyond": 5,
+   "separates": false
+  },
+  "C1_head_noise10": {
+   "max_abs_delta": 1.625,
+   "ratio_to_tol": 3.25,
+   "beyond_at_tol": 29,
+   "need_beyond": 5,
+   "separates": false
+  },
+  "C2_snap_epoch021": {
+   "max_abs_delta": 4.4375,
+   "ratio_to_tol": 8.875,
+   "beyond_at_tol": 47,
+   "need_beyond": 5,
+   "separates": false
+  }
+ },
+ "informational_arms": {
+  "N3_jpeg": {
+   "max_abs_delta": 0.375,
+   "ratio_to_tol": 0.75,
+   "beyond_at_tol": 0,
+   "caught_at_tol": false
+  },
+  "S_focal105": {
+   "max_abs_delta": 0.25,
+   "ratio_to_tol": 0.5,
+   "beyond_at_tol": 0,
+   "caught_at_tol": false
+  },
+  "S_yaw3": {
+   "max_abs_delta": 0.375,
+   "ratio_to_tol": 0.75,
+   "beyond_at_tol": 0,
+   "caught_at_tol": false
+  },
+  "S_head_noise1": {
+   "max_abs_delta": 0.25,
+   "ratio_to_tol": 0.5,
+   "beyond_at_tol": 0,
+   "caught_at_tol": false
+  },
+  "S_snap027": {
+   "max_abs_delta": 0.3281200000000002,
+   "ratio_to_tol": 0.6562400000000004,
+   "beyond_at_tol": 0,
+   "caught_at_tol": false
+  },
+  "S_cam_reversed": {
+   "max_abs_delta": 7.6875,
+   "ratio_to_tol": 15.375,
+   "beyond_at_tol": 48,
+   "caught_at_tol": true
+  }
+ },
+ "failures": [
+  "decision arm A1_calib_other_vehicle does NOT separate at tol 0.5: max delta 0.25 (0.50x tol; need 10x), 0 sets beyond (need >= 5); the largest tol at which it would still separate on max delta is 0.025",
+  "decision arm A2_calib_half_scale does NOT separate at tol 0.5: max delta 4.125 (8.25x tol; need 10x), 40 sets beyond (need >= 5); the largest tol at which it would still separate on max delta is 0.4125",
+  "decision arm B2_img_bgr_rgb does NOT separate at tol 0.5: max delta 1.875 (3.75x tol; need 10x), 10 sets beyond (need >= 5); the largest tol at which it would still separate on max delta is 0.1875",
+  "decision arm C1_head_noise10 does NOT separate at tol 0.5: max delta 1.625 (3.25x tol; need 10x), 29 sets beyond (need >= 5); the largest tol at which it would still separate on max delta is 0.1625",
+  "decision arm C2_snap_epoch021 does NOT separate at tol 0.5: max delta 4.438 (8.88x tol; need 10x), 47 sets beyond (need >= 5); the largest tol at which it would still separate on max delta is 0.4437"
+ ],
+ "CHOSEN_ATOL": null
+}

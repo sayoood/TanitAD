@@ -1,0 +1,240 @@
+[
+ {
+  "id": "MR1",
+  "what": "delete the make_config line that applies --wm-rsp-w",
+  "result": "RED",
+  "rc": 1,
+  "must_fail": [
+   "test_gate_passes_reads_the_built_weight_back_and_g_live_carries_the_term"
+  ],
+  "expected_not_failed": [],
+  "controls_checked": [
+   "test_off_no_key_no_op_same_key_set_as_the_ladder_build",
+   "test_gate_flag_absent_keeps_the_key_set",
+   "test_p1_term_gradient_reaches_predictor_and_act_embed_and_exact_zero_elsewhere"
+  ],
+  "controls_that_went_red": [],
+  "failed_all": [
+   "test_gate_passes_reads_the_built_weight_back_and_g_live_carries_the_term"
+  ],
+  "summary": [
+   "1 failed, 24 passed, 1 warning in 153.73s (0:02:33)"
+  ]
+ },
+ {
+  "id": "MR2",
+  "what": "argparse default 0.0 -> 1.0",
+  "result": "RED",
+  "rc": 1,
+  "must_fail": [
+   "test_off_default_argparse_value_is_zero",
+   "test_off_no_key_no_op_same_key_set_as_the_ladder_build",
+   "test_gate_flag_absent_keeps_the_key_set"
+  ],
+  "expected_not_failed": [],
+  "controls_checked": [
+   "test_p3_dose_identity_level_difference_is_lambda_times_the_term",
+   "test_p1_term_gradient_reaches_predictor_and_act_embed_and_exact_zero_elsewhere"
+  ],
+  "controls_that_went_red": [],
+  "failed_all": [
+   "test_gate_flag_absent_keeps_the_key_set",
+   "test_gate_passes_reads_the_built_weight_back_and_g_live_carries_the_term",
+   "test_gate_refuses_a_builder_that_does_not_pass_the_weight_to_level_1",
+   "test_gate_refuses_a_term_that_is_computed_but_not_added",
+   "test_gate_refuses_the_flag_without_wm_only_wm_a_or_yaw",
+   "test_gate_refuses_when_the_declared_weight_is_not_built_config_line_deleted",
+   "test_off_default_argparse_value_is_zero",
+   "test_off_no_key_no_op_same_key_set_as_the_ladder_build"
+  ],
+  "summary": [
+   "2 failed, 17 passed, 1 warning, 6 errors in 11.70s"
+  ]
+ },
+ {
+  "id": "MR3",
+  "what": "term computed, not added to the level loss",
+  "result": "RED",
+  "rc": 1,
+  "must_fail": [
+   "test_p3_dose_identity_level_difference_is_lambda_times_the_term",
+   "test_gate_passes_reads_the_built_weight_back_and_g_live_carries_the_term"
+  ],
+  "expected_not_failed": [],
+  "controls_checked": [
+   "test_off_no_key_no_op_same_key_set_as_the_ladder_build",
+   "test_p1_term_gradient_reaches_predictor_and_act_embed_and_exact_zero_elsewhere"
+  ],
+  "controls_that_went_red": [],
+  "failed_all": [
+   "test_gate_passes_reads_the_built_weight_back_and_g_live_carries_the_term",
+   "test_ladder_reader_is_not_confused_by_the_term",
+   "test_p3_dose_identity_level_difference_is_lambda_times_the_term",
+   "test_p4_geometry_nine_anchors_ten_steps_four_contrasts_at_91_frames"
+  ],
+  "summary": [
+   "5 failed, 20 passed, 1 warning in 80.94s (0:01:20)"
+  ]
+ },
+ {
+  "id": "MR4",
+  "what": "readout parameters not detached",
+  "result": "RED",
+  "rc": 1,
+  "must_fail": [
+   "test_p1_term_gradient_reaches_predictor_and_act_embed_and_exact_zero_elsewhere"
+  ],
+  "expected_not_failed": [],
+  "controls_checked": [
+   "test_off_no_key_no_op_same_key_set_as_the_ladder_build",
+   "test_p3_dose_identity_level_difference_is_lambda_times_the_term"
+  ],
+  "controls_that_went_red": [],
+  "failed_all": [
+   "test_p1_term_gradient_reaches_predictor_and_act_embed_and_exact_zero_elsewhere"
+  ],
+  "summary": [
+   "1 failed, 24 passed, 1 warning in 49.96s"
+  ]
+ },
+ {
+  "id": "MR5",
+  "what": "anchor state z0 not detached",
+  "result": "RED",
+  "rc": 1,
+  "must_fail": [
+   "test_p1_term_gradient_reaches_predictor_and_act_embed_and_exact_zero_elsewhere"
+  ],
+  "expected_not_failed": [],
+  "controls_checked": [
+   "test_off_no_key_no_op_same_key_set_as_the_ladder_build",
+   "test_p3_dose_identity_level_difference_is_lambda_times_the_term"
+  ],
+  "controls_that_went_red": [],
+  "failed_all": [
+   "test_p1_term_gradient_reaches_predictor_and_act_embed_and_exact_zero_elsewhere"
+  ],
+  "summary": [
+   "1 failed, 24 passed, 1 warning in 44.29s"
+  ]
+ },
+ {
+  "id": "MR6",
+  "what": "latm contrast sign flipped",
+  "result": "RED",
+  "rc": 1,
+  "must_fail": [
+   "test_p4_matched_response_gives_loss_and_gradient_zero_and_B_zero_gives_exactly_one_half",
+   "test_p4_general_linear_case_matches_the_recursion_to_1e10"
+  ],
+  "expected_not_failed": [],
+  "controls_checked": [
+   "test_off_no_key_no_op_same_key_set_as_the_ladder_build",
+   "test_p4_slope_floor_zero_slope_readout_is_used_at_exactly_one_tenth"
+  ],
+  "controls_that_went_red": [],
+  "failed_all": [
+   "test_p4_delta_scales_out_and_a_flipped_contrast_is_detected",
+   "test_p4_general_linear_case_matches_the_recursion_to_1e10",
+   "test_p4_matched_response_gives_loss_and_gradient_zero_and_B_zero_gives_exactly_one_half"
+  ],
+  "summary": [
+   "3 failed, 22 passed, 1 warning in 51.87s"
+  ]
+ },
+ {
+  "id": "MR7",
+  "what": "one random draw inside the term",
+  "result": "RED",
+  "rc": 1,
+  "must_fail": [
+   "test_p5_the_term_draws_no_random_number",
+   "test_p5_global_stream_after_the_full_loss_is_the_same_on_and_off"
+  ],
+  "expected_not_failed": [],
+  "controls_checked": [
+   "test_off_no_key_no_op_same_key_set_as_the_ladder_build",
+   "test_p3_dose_identity_level_difference_is_lambda_times_the_term"
+  ],
+  "controls_that_went_red": [],
+  "failed_all": [
+   "test_gate_passes_reads_the_built_weight_back_and_g_live_carries_the_term",
+   "test_p5_global_stream_after_the_full_loss_is_the_same_on_and_off",
+   "test_p5_the_term_draws_no_random_number"
+  ],
+  "summary": [
+   "3 failed, 22 passed, 1 warning in 21.49s"
+  ]
+ },
+ {
+  "id": "MR8",
+  "what": "rsp_w not passed to level 1's LevelConfig",
+  "result": "RED",
+  "rc": 1,
+  "must_fail": [
+   "test_gate_passes_reads_the_built_weight_back_and_g_live_carries_the_term"
+  ],
+  "expected_not_failed": [],
+  "controls_checked": [
+   "test_off_no_key_no_op_same_key_set_as_the_ladder_build",
+   "test_gate_flag_absent_keeps_the_key_set"
+  ],
+  "controls_that_went_red": [],
+  "failed_all": [
+   "test_gate_passes_reads_the_built_weight_back_and_g_live_carries_the_term",
+   "test_p1_term_gradient_reaches_predictor_and_act_embed_and_exact_zero_elsewhere",
+   "test_p1_the_term_is_logged_with_its_six_detached_diagnostics",
+   "test_p3_dose_identity_level_difference_is_lambda_times_the_term",
+   "test_p4_geometry_nine_anchors_ten_steps_four_contrasts_at_91_frames"
+  ],
+  "summary": [
+   "6 failed, 19 passed, 1 warning in 23.36s"
+  ]
+ },
+ {
+  "id": "MR9",
+  "what": "built_rollout's `other` without the response term (the ladder reader misreads the lever)",
+  "result": "RED",
+  "rc": 1,
+  "must_fail": [
+   "test_ladder_reader_is_not_confused_by_the_term",
+   "test_gate_passes_reads_the_built_weight_back_and_g_live_carries_the_term"
+  ],
+  "expected_not_failed": [],
+  "controls_checked": [
+   "test_off_no_key_no_op_same_key_set_as_the_ladder_build",
+   "test_gate_flag_absent_keeps_the_key_set"
+  ],
+  "controls_that_went_red": [],
+  "failed_all": [
+   "test_gate_passes_reads_the_built_weight_back_and_g_live_carries_the_term",
+   "test_ladder_reader_is_not_confused_by_the_term"
+  ],
+  "summary": [
+   "2 failed, 23 passed, 1 warning in 23.74s"
+  ]
+ },
+ {
+  "id": "MR10",
+  "what": "built_rollout counts the term's rollout call as a ladder free run (third hazard, found in the build)",
+  "result": "RED",
+  "rc": 1,
+  "must_fail": [
+   "test_ladder_reader_is_not_confused_by_the_term",
+   "test_gate_passes_reads_the_built_weight_back_and_g_live_carries_the_term"
+  ],
+  "expected_not_failed": [],
+  "controls_checked": [
+   "test_off_no_key_no_op_same_key_set_as_the_ladder_build",
+   "test_gate_flag_absent_keeps_the_key_set"
+  ],
+  "controls_that_went_red": [],
+  "failed_all": [
+   "test_gate_passes_reads_the_built_weight_back_and_g_live_carries_the_term",
+   "test_ladder_reader_is_not_confused_by_the_term"
+  ],
+  "summary": [
+   "2 failed, 23 passed, 1 warning in 22.95s"
+  ]
+ }
+]

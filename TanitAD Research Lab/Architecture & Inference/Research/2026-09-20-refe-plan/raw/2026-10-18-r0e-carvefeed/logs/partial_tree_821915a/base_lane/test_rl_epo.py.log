@@ -1,0 +1,46 @@
+C:\Users\Admin\b8carve\base_tree\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe/test_rl_epo.py:618: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+  return float(v) == 0.0 and int(torch.count_nonzero(sx.grad)) == 0
+mutation                               grp  caught-by (failing checks)
+cfg_without_checkpoint_sizing          p1   p1/u400_cfg_sized_from_checkpoint, p1/cfg_nav_mode_from_meta, smoke/main_epo_preflight_G11_then_train_native7_lane_head
+lane_skip_removed                      p1   p1/lane_head_untouched_when_native7, smoke/main_epo_preflight_G11_then_train_native7_lane_head
+lane_row6_bias_changed                 p1   p1/lane_extension_identical_to_baseline
+lam_default_changed                    p1   p1/parser_baseline_flags_unchanged
+expreward_perturbed                    p1   p1/closures_verbatim, p1/off_bit_identical[expreward,6col], p1/off_bit_identical[expreward,lane]
+lane_weight_dropped                    p1   p1/closures_verbatim, p1/off_bit_identical[listnet,lane], p1/off_bit_identical[compw,lane]
+extend_not_called                      p1   p1/main_calls_extend_lane_head_under_flag
+native7_refusal_removed                p1   p1/main_refuses_7row_head_without_lane_flag
+epo_line_deleted                       p2   p2/on_adds_exactly_the_epo_term_to_B_and_not_to_A_6col, p2/on_adds_exactly_the_epo_term_to_B_and_not_to_A_lane, p2/K1_lam0_equals_arm_A_and_live_EPO_moves_only_B
+epo_default_flipped_on                 p2   p2/refusal_off_and_nothing_named_is_clean, p2/refusal_levers_named_without_epo, p2/parser_epo_flags_default_off
+policy_logits_detached                 p2   p2/gradient_hand, p2/lam_zero_value_and_grad_exactly_zero, p2/reward_and_reference_receive_no_gradient
+kl_anchor_dropped                      p2   p2/kl_anchor_forward_hand
+pdm_aggregate_instead_of_sel_score     p2   p2/term_equals_independent_reference_6col, p2/term_equals_independent_reference_lane, p2/hop_train_losses_calls_epo_term_with_sel_score
+ramp_ignored                           p2   p2/ramp_hand, p2/ramp_and_final_weight_scale_the_term
+objective_sign_flipped                 p2   p2/J_hand_T1, p2/J_hand_T05, p2/kl_anchor_forward_hand
+reward_not_detached                    p2   p2/reward_and_reference_receive_no_gradient
+d_term_ignored                         p2   p2/epo_reward_hand, p2/epo_reward_batch_equals_per_set_reward_with_K_and_L, p2/term_equals_independent_reference_6col
+row_key_wrong                          p2   p2/term_equals_independent_reference_6col, p2/term_equals_independent_reference_lane
+epo_leaks_into_arm_A                   p2   p2/on_adds_exactly_the_epo_term_to_B_and_not_to_A_6col, p2/on_adds_exactly_the_epo_term_to_B_and_not_to_A_lane, p2/hop_train_losses_calls_epo_term_with_sel_score
+terms_refusal_removed                  p2   p2/refusal_no_terms_without_lam_d_zero, smoke/main_refuses_epo_without_terms_before_touching_disk
+epo_lam_ignored                        p2   p2/ramp_and_final_weight_scale_the_term, p2/K1_lam0_equals_arm_A_and_live_EPO_moves_only_B, p2/real_loop_body_flag_to_backward
+loop_bypasses_train_losses             p2   p2/real_loop_body_flag_to_backward, p2/hop_loop_split_rows_fwd_train_losses_backward, smoke/main_epo_preflight_G11_then_train_6col
+dataloader_without_rows                p2   p2/hop_dataloader_built_by_make_train_set, smoke/main_epo_preflight_G11_then_train_6col, smoke/main_epo_preflight_G11_then_train_native7_lane_head
+getitems_override_removed              p2   p2/rows_ride_the_dataloader_only_with_epo, p2/epo_on_off_see_the_same_sample_order, smoke/main_epo_preflight_G11_then_train_6col
+g11_never_backwards                    p2   p2/g11_green_on_a_live_term, p2/g11_red_when_one_module_gets_no_gradient, smoke/main_epo_preflight_G11_then_train_6col
+detach_regression_switch_removed       p2   p2/g11_red_under_the_detach_regression
+named_levers_without_epo_allowed       p2   p2/refusal_levers_named_without_epo
+split_rows_wrong_slot                  p2   p2/rows_ride_the_dataloader_only_with_epo, p2/real_loop_body_flag_to_backward, smoke/main_epo_preflight_G11_then_train_6col
+stale_terms_accepted                   p2   p2/terms_loader_stale_superseded_incomplete_duplicates
+temperature_ignored                    p2   p2/J_hand_T05
+kl_direction_reversed                  p2   p2/kl_anchor_forward_hand, p2/parts_J_and_kl
+loop_rows_not_split                    p2   p2/real_loop_body_flag_to_backward, p2/hop_loop_split_rows_fwd_train_losses_backward, smoke/main_epo_preflight_G11_then_train_6col
+g11_kl_check_bypassed                  p2   p2/g11_red_when_the_kl_anchor_is_not_at_zero_at_step0
+g11_controls_bypassed                  p2   p2/g11_red_when_a_control_reads_nonzero
+g11_liveness_bypassed                  p2   p2/g11_red_under_the_detach_regression, p2/g11_red_when_one_module_gets_no_gradient
+train_index_not_restricted             p2   p2/hop_train_index_restricted_to_sets_with_terms
+g4_liveness_demanded_at_lam0           p3   smoke/main_epo_preflight_G11_then_train_6col, smoke/main_epo_preflight_G11_then_train_native7_lane_head, smoke/main_off_path_has_no_epo_footprint_and_passes_preflight_at_lam0
+g11_not_in_gates                       p3   p2/hop_g11_wired_in_preflight, smoke/main_epo_preflight_G11_then_train_6col, smoke/main_epo_preflight_G11_then_train_native7_lane_head
+terms_not_loaded                       p3   p2/hop_terms_loaded_for_train_and_heldout, smoke/main_epo_preflight_G11_then_train_6col, smoke/main_epo_preflight_G11_then_train_native7_lane_head
+epo_log_fields_dropped                 p3   smoke/main_epo_preflight_G11_then_train_6col, smoke/main_epo_preflight_G11_then_train_native7_lane_head, smoke/main_K1_lam0_equals_arm_A_and_EPO_never_touches_A
+refusal_after_makedirs                 p3   smoke/main_refuses_epo_without_terms_before_touching_disk
+ZZTEST_PASS 42  (1 unmutated suite + 41 RED mutations)

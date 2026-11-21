@@ -1,0 +1,260 @@
+{
+ "_label": "R8-WISEFT-MOD theta_PLAN minus EMA-48,852, navtrain s1 (beside)",
+ "direction": "WPLAN_s1 - EMA48852_s1",
+ "n_tokens": 2089,
+ "n_log_clusters": 30,
+ "tier": "NavSim v1 open loop, single query per scene (the families' T1 stamp is the harness tier of a model-own plan)",
+ "dt_s": 0.5,
+ "seam_a": "C:\\Users\\Admin\\refcv8_pf\\navsim_ckpt\\families_navtrain\\seams\\ema48852\\bridge\\seam_R8_LEGAL_s1.npz",
+ "seam_b": "C:\\Users\\Admin\\refcv8_pf\\navsim_ckpt\\families_navtrain\\seams\\wiseft\\wmod_PLAN\\bridge\\seam_R8_LEGAL_s1.npz",
+ "means": {
+  "EMA48852_s1": {
+   "ade_m": 1.83718,
+   "fde_m": 4.454748,
+   "LON_speed_mae_mps": 1.077722,
+   "LON_along_mae_m": 1.676984,
+   "LON_accel_mae_mps2": 0.679168,
+   "LAT_cross_mae_m": 0.47194,
+   "LAT_heading_mae_deg": 4.129918,
+   "LAT_yaw_rate_mae_radps": 0.457605,
+   "TAC_traj_lat_correct": 0.774055,
+   "TAC_traj_lon_correct": 0.614648,
+   "LAT_curvature_mae_1pm": 0.024897,
+   "LAT_yaw_rate_mae_masked_radps": 0.063003
+  },
+  "WPLAN_s1": {
+   "ade_m": 1.177388,
+   "fde_m": 2.949799,
+   "LON_speed_mae_mps": 0.717287,
+   "LON_along_mae_m": 1.059887,
+   "LON_accel_mae_mps2": 0.482449,
+   "LAT_cross_mae_m": 0.266245,
+   "LAT_heading_mae_deg": 2.078257,
+   "LAT_yaw_rate_mae_radps": 0.370867,
+   "TAC_traj_lat_correct": 0.927717,
+   "TAC_traj_lon_correct": 0.653423,
+   "LAT_curvature_mae_1pm": 0.013178,
+   "LAT_yaw_rate_mae_masked_radps": 0.034656
+  }
+ },
+ "paired": {
+  "direction": "WPLAN_s1 - EMA48852_s1",
+  "tier": "T1 minus T1",
+  "estimator": "paired_episode_cluster_bootstrap",
+  "families": {
+   "ADE": {
+    "ade_m": {
+     "delta": -0.6598,
+     "lo": -0.7642,
+     "hi": -0.5735,
+     "ci95": 0.0954,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 2089,
+     "n_episodes": 30,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    },
+    "fde_m": {
+     "delta": -1.5049,
+     "lo": -1.7413,
+     "hi": -1.3006,
+     "ci95": 0.2203,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 2089,
+     "n_episodes": 30,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    }
+   },
+   "longitudinal": {
+    "LON_speed_mae_mps": {
+     "delta": -0.3604,
+     "lo": -0.415,
+     "hi": -0.3121,
+     "ci95": 0.0514,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 2089,
+     "n_episodes": 30,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    },
+    "LON_along_mae_m": {
+     "delta": -0.6171,
+     "lo": -0.7156,
+     "hi": -0.5342,
+     "ci95": 0.0907,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 2089,
+     "n_episodes": 30,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    },
+    "LON_accel_mae_mps2": {
+     "delta": -0.1967,
+     "lo": -0.2247,
+     "hi": -0.1718,
+     "ci95": 0.0264,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 2089,
+     "n_episodes": 30,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    }
+   },
+   "lateral": {
+    "LAT_cross_mae_m": {
+     "delta": -0.2057,
+     "lo": -0.2493,
+     "hi": -0.1681,
+     "ci95": 0.0406,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 2089,
+     "n_episodes": 30,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    },
+    "LAT_heading_mae_deg": {
+     "delta": -2.1133,
+     "lo": -2.5636,
+     "hi": -1.7294,
+     "ci95": 0.4171,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 1987,
+     "n_episodes": 30,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 102
+    },
+    "LAT_yaw_rate_mae_radps": {
+     "delta": -0.0867,
+     "lo": -0.1591,
+     "hi": -0.0177,
+     "ci95": 0.0707,
+     "p_delta_gt0": 0.0065,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 2089,
+     "n_episodes": 30,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    },
+    "LAT_curvature_mae_1pm": {
+     "delta": -0.0109,
+     "lo": -0.0143,
+     "hi": -0.0083,
+     "ci95": 0.003,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 1889,
+     "n_episodes": 30,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 200
+    },
+    "LAT_yaw_rate_mae_masked_radps": {
+     "delta": -0.0289,
+     "lo": -0.0364,
+     "hi": -0.023,
+     "ci95": 0.0067,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 1889,
+     "n_episodes": 30,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 200
+    }
+   },
+   "tactical": {
+    "TAC_traj_lat_correct": {
+     "delta": 0.1537,
+     "lo": 0.1188,
+     "hi": 0.1907,
+     "ci95": 0.0359,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 2089,
+     "n_episodes": 30,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    },
+    "TAC_traj_lon_correct": {
+     "delta": 0.0388,
+     "lo": 0.0194,
+     "hi": 0.0561,
+     "ci95": 0.0183,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 2089,
+     "n_episodes": 30,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    }
+   }
+  }
+ },
+ "unavailable": {
+  "strategic": {
+   "status": "UNAVAILABLE",
+   "n": 2089,
+   "reason": "NavSim scores no strategic decision and the refcv8 NavSim bridge exports no strategic output; the PhysicalAI battery carries the strategic family"
+  },
+  "longitudinal.distance_keeping": {
+   "status": "UNAVAILABLE",
+   "n": 2089,
+   "reason": "no lead-agent track on the NavSim bridge (taniteval/adapters/navsim.py lead_block); a WORK ITEM, not a pass"
+  }
+ },
+ "controls": {
+  "P1_self_pair_zero": true,
+  "P2_human_analytic": {
+   "errors": {
+    "ade_m": 0.0,
+    "fde_m": 0.0,
+    "LON_speed_mae_mps": 0.0,
+    "LON_along_mae_m": 0.0,
+    "LON_accel_mae_mps2": 0.0,
+    "LAT_cross_mae_m": 0.0,
+    "LAT_heading_mae_deg": 0.0,
+    "LAT_yaw_rate_mae_radps": 0.0,
+    "LAT_curvature_mae_1pm": 0.0,
+    "LAT_yaw_rate_mae_masked_radps": 0.0
+   },
+   "agreements": {
+    "TAC_traj_lat_correct": 1.0,
+    "TAC_traj_lon_correct": 1.0
+   },
+   "pass": true
+  },
+  "P3_same_gt": true,
+  "all_pass": true
+ },
+ "status": "OK"
+}

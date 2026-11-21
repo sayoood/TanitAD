@@ -1,0 +1,696 @@
+{
+ "prereg": "PREREG_V8F_SMOOTH",
+ "prereg_sha256": "a2f19e4885e440fbd5308e6dd29905f038b50bf08af0c74c1e501b8117cdd822",
+ "operator": "P10 + savgol(pred - P10, 7, 2, mode=interp)",
+ "tier": "T0 open loop, the model's own outputs, eval-141",
+ "estimator": "paired episode-cluster bootstrap (another draw of EPISODES)",
+ "ground_truth": {
+  "source": "v8f_mini_data.eval_context(kin_mode='yaw') over the repo's eval inputs",
+  "files": {
+   "eval_grid_windows.json": "659c3b65e364ea5de87a4e17d076eba5645df95cdcf39d8abc08caab1b2d594c",
+   "eval141_kin.npz": "be57e283c3f037abd60d49814e84b05124a9667586894dfc6d1c3ecd191ba203",
+   "join_eval141.npz": "f0ea722f59c1a4d8ba81ce7f9b204dd3a28950fc1c16778f63c2962786e5206a"
+  }
+ },
+ "p10_sha256": "9657c0fdce187ecbc33174759fcc337b034e59b80bbc9057bd547b10f7d7a336",
+ "n_windows": 2399,
+ "n_episodes": 141,
+ "control_C": {
+  "ade6_SG_of_human_vs_human_m": 0.007558380118978009,
+  "bar_m": 0.05,
+  "ok": true
+ },
+ "roughness_human": {
+  "accel_mean_mps2": 0.7509366411168805,
+  "jerk_mean_mps3": 0.8026827475483966,
+  "speed_step_change_mps": 0.10044281338920243
+ },
+ "arms": {
+  "M1": {
+   "per_seed": {
+    "seed0": {
+     "residual_t0_median_m": 0.01981402377740332,
+     "S": {
+      "families_S_minus_arm": {
+       "status": "OK",
+       "estimator": "paired_episode_cluster_bootstrap",
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "n_boot": 2000,
+       "seed": 0,
+       "longitudinal": {
+        "speed_mae_mps": {
+         "delta": 0.0057,
+         "lo": 0.0044,
+         "hi": 0.0072,
+         "ci95": 0.0014,
+         "p_delta_gt0": 1.0,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141,
+         "n_boot": 2000,
+         "estimator": "paired_episode_cluster_bootstrap",
+         "arm": 1.1287384568036174,
+         "p10": 1.1230138907548337,
+         "delta_exact": 0.005724566048783686,
+         "unit": "m/s",
+         "reduction": "mean of per-window means (equals the flat mean: every window has the same horizon)"
+        },
+        "along_mae_m": {
+         "delta": 0.0004,
+         "lo": 0.0001,
+         "hi": 0.0007,
+         "ci95": 0.0003,
+         "p_delta_gt0": 0.9995,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141,
+         "n_boot": 2000,
+         "estimator": "paired_episode_cluster_bootstrap",
+         "arm": 1.8879328904539137,
+         "p10": 1.8875392411570342,
+         "delta_exact": 0.0003936492968794614,
+         "unit": "m",
+         "reduction": "mean of per-window means (equals the flat mean: every window has the same horizon)"
+        },
+        "accel_mae_mps2": {
+         "delta": -0.0493,
+         "lo": -0.0611,
+         "hi": -0.0369,
+         "ci95": 0.0121,
+         "p_delta_gt0": 0.0,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141,
+         "n_boot": 2000,
+         "estimator": "paired_episode_cluster_bootstrap",
+         "arm": 1.1974673739332813,
+         "p10": 1.2468118817235292,
+         "delta_exact": -0.049344507790247905,
+         "unit": "m/s^2",
+         "reduction": "mean of per-window means (equals the flat mean: every window has the same horizon)"
+        }
+       },
+       "lateral": {
+        "heading_mae_deg": {
+         "delta": -0.0898,
+         "lo": -0.1287,
+         "hi": -0.0565,
+         "ci95": 0.0361,
+         "p_delta_gt0": 0.0,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141,
+         "n_boot": 2000,
+         "estimator": "paired_episode_cluster_bootstrap",
+         "arm": 3.9235839153435634,
+         "p10": 4.013348220847908,
+         "delta_exact": -0.08976430550434422,
+         "unit": "deg",
+         "reduction": "MICRO mean = sum(per-window error sums) / sum(per-window valid steps), per arm (the masked mean taniteval prints)",
+         "n_steps_arm": 66806,
+         "n_steps_p10": 66835
+        },
+        "yaw_rate_mae_degps": {
+         "delta": -1.5306,
+         "lo": -1.9084,
+         "hi": -1.2183,
+         "ci95": 0.345,
+         "p_delta_gt0": 0.0,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141,
+         "n_boot": 2000,
+         "estimator": "paired_episode_cluster_bootstrap",
+         "arm": 5.298594960500866,
+         "p10": 6.829171235862636,
+         "delta_exact": -1.5305762753617698,
+         "unit": "deg/s",
+         "reduction": "MICRO mean = sum(per-window error sums) / sum(per-window valid steps), per arm (the masked mean taniteval prints)",
+         "n_steps_arm": 64381,
+         "n_steps_p10": 64231
+        },
+        "curvature_mae_1pm": {
+         "delta": -0.0144338,
+         "lo": -0.019776099999999998,
+         "hi": -0.0101433,
+         "ci95": 0.0048164,
+         "p_delta_gt0": 0.0,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141,
+         "n_boot": 2000,
+         "estimator": "paired_episode_cluster_bootstrap",
+         "arm": 0.040303101756127786,
+         "p10": 0.05473687285637572,
+         "delta_exact": -0.014433771100247933,
+         "unit": "1/m",
+         "reduction": "MICRO mean = sum(per-window error sums) / sum(per-window valid steps), per arm (the masked mean taniteval prints)",
+         "n_steps_arm": 64381,
+         "n_steps_p10": 64231,
+         "ci_internal_scale": 1000.0
+        },
+        "cross_mae_m": {
+         "delta": -0.0003,
+         "lo": -0.0003,
+         "hi": -0.0002,
+         "ci95": 0.0001,
+         "p_delta_gt0": 0.0,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141,
+         "n_boot": 2000,
+         "estimator": "paired_episode_cluster_bootstrap",
+         "arm": 0.7584350979644316,
+         "p10": 0.7587038547067704,
+         "delta_exact": -0.00026875674233872715,
+         "unit": "m",
+         "reduction": "mean of per-window means (equals the flat mean: every window has the same horizon)"
+        }
+       }
+      },
+      "ade6_S_minus_arm": {
+       "delta": 0.0002,
+       "lo": -0.0001,
+       "hi": 0.0005,
+       "separated": false
+      },
+      "roughness": {
+       "accel_mean_mps2": 1.4164589387084285,
+       "jerk_mean_mps3": 5.952932212096624,
+       "speed_step_change_mps": 0.22047874772468595
+      },
+      "D": {
+       "accel_mae_mps2": {
+        "delta": -0.0493,
+        "lo": -0.0611,
+        "hi": -0.0369,
+        "separated": true,
+        "ok": true
+       },
+       "yaw_rate_mae_degps": {
+        "delta": -1.5306,
+        "lo": -1.9084,
+        "hi": -1.2183,
+        "separated": true,
+        "ok": true
+       }
+      },
+      "D_ok": true,
+      "P_ok": true
+     },
+     "dose_w11": {
+      "families_S_minus_arm": {
+       "status": "OK",
+       "estimator": "paired_episode_cluster_bootstrap",
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "n_boot": 2000,
+       "seed": 0,
+       "longitudinal": {
+        "speed_mae_mps": {
+         "delta": -0.0305,
+         "lo": -0.0366,
+         "hi": -0.0247,
+         "ci95": 0.0059,
+         "p_delta_gt0": 0.0,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141,
+         "n_boot": 2000,
+         "estimator": "paired_episode_cluster_bootstrap",
+         "arm": 1.0925432968513575,
+         "p10": 1.1230138907548337,
+         "delta_exact": -0.030470593903476173,
+         "unit": "m/s",
+         "reduction": "mean of per-window means (equals the flat mean: every window has the same horizon)"
+        },
+        "along_mae_m": {
+         "delta": -0.0002,
+         "lo": -0.001,
+         "hi": 0.0006,
+         "ci95": 0.0008,
+         "p_delta_gt0": 0.3095,
+         "separated": false,
+         "n_windows": 2399,
+         "n_episodes": 141,
+         "n_boot": 2000,
+         "estimator": "paired_episode_cluster_bootstrap",
+         "arm": 1.8873393271598233,
+         "p10": 1.8875392411570342,
+         "delta_exact": -0.00019991399721086545,
+         "unit": "m",
+         "reduction": "mean of per-window means (equals the flat mean: every window has the same horizon)"
+        },
+        "accel_mae_mps2": {
+         "delta": -0.3042,
+         "lo": -0.3504,
+         "hi": -0.2601,
+         "ci95": 0.0451,
+         "p_delta_gt0": 0.0,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141,
+         "n_boot": 2000,
+         "estimator": "paired_episode_cluster_bootstrap",
+         "arm": 0.9426590846901935,
+         "p10": 1.2468118817235292,
+         "delta_exact": -0.30415279703333564,
+         "unit": "m/s^2",
+         "reduction": "mean of per-window means (equals the flat mean: every window has the same horizon)"
+        }
+       },
+       "lateral": {
+        "heading_mae_deg": {
+         "delta": -0.106,
+         "lo": -0.1551,
+         "hi": -0.0663,
+         "ci95": 0.0444,
+         "p_delta_gt0": 0.0,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141,
+         "n_boot": 2000,
+         "estimator": "paired_episode_cluster_bootstrap",
+         "arm": 3.907358434517645,
+         "p10": 4.013348220847908,
+         "delta_exact": -0.10598978633026279,
+         "unit": "deg",
+         "reduction": "MICRO mean = sum(per-window error sums) / sum(per-window valid steps), per arm (the masked mean taniteval prints)",
+         "n_steps_arm": 66880,
+         "n_steps_p10": 66835
+        },
+        "yaw_rate_mae_degps": {
+         "delta": -1.7814,
+         "lo": -2.2186,
+         "hi": -1.4203,
+         "ci95": 0.3992,
+         "p_delta_gt0": 0.0,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141,
+         "n_boot": 2000,
+         "estimator": "paired_episode_cluster_bootstrap",
+         "arm": 5.047787694769555,
+         "p10": 6.829171235862636,
+         "delta_exact": -1.7813835410930805,
+         "unit": "deg/s",
+         "reduction": "MICRO mean = sum(per-window error sums) / sum(per-window valid steps), per arm (the masked mean taniteval prints)",
+         "n_steps_arm": 64464,
+         "n_steps_p10": 64231
+        },
+        "curvature_mae_1pm": {
+         "delta": -0.0168221,
+         "lo": -0.0231635,
+         "hi": -0.0117883,
+         "ci95": 0.0056876,
+         "p_delta_gt0": 0.0,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141,
+         "n_boot": 2000,
+         "estimator": "paired_episode_cluster_bootstrap",
+         "arm": 0.037914775854279305,
+         "p10": 0.05473687285637572,
+         "delta_exact": -0.016822097002096414,
+         "unit": "1/m",
+         "reduction": "MICRO mean = sum(per-window error sums) / sum(per-window valid steps), per arm (the masked mean taniteval prints)",
+         "n_steps_arm": 64464,
+         "n_steps_p10": 64231,
+         "ci_internal_scale": 1000.0
+        },
+        "cross_mae_m": {
+         "delta": 0.0001,
+         "lo": -0.0001,
+         "hi": 0.0002,
+         "ci95": 0.0001,
+         "p_delta_gt0": 0.7605,
+         "separated": false,
+         "n_windows": 2399,
+         "n_episodes": 141,
+         "n_boot": 2000,
+         "estimator": "paired_episode_cluster_bootstrap",
+         "arm": 0.7587584819700592,
+         "p10": 0.7587038547067704,
+         "delta_exact": 5.462726328886447e-05,
+         "unit": "m",
+         "reduction": "mean of per-window means (equals the flat mean: every window has the same horizon)"
+        }
+       }
+      },
+      "ade6_S_minus_arm": {
+       "delta": -0.0002,
+       "lo": -0.0009,
+       "hi": 0.0006,
+       "separated": false
+      },
+      "roughness": {
+       "accel_mean_mps2": 1.202654722179563,
+       "jerk_mean_mps3": 5.0785451427133514,
+       "speed_step_change_mps": 0.17514929294865494
+      }
+     },
+     "roughness_arm": {
+      "accel_mean_mps2": 1.5471496376866904,
+      "jerk_mean_mps3": 6.971619376400423,
+      "speed_step_change_mps": 0.23172661678283288
+     }
+    }
+   },
+   "verdict": "INTERIM (one seed read; the bars decide only at both)"
+  },
+  "M2b": {
+   "per_seed": {
+    "seed0": {
+     "residual_t0_median_m": 0.019206876799868867,
+     "S": {
+      "families_S_minus_arm": {
+       "status": "OK",
+       "estimator": "paired_episode_cluster_bootstrap",
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "n_boot": 2000,
+       "seed": 0,
+       "longitudinal": {
+        "speed_mae_mps": {
+         "delta": 0.0037,
+         "lo": 0.0023,
+         "hi": 0.0053,
+         "ci95": 0.0015,
+         "p_delta_gt0": 1.0,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141,
+         "n_boot": 2000,
+         "estimator": "paired_episode_cluster_bootstrap",
+         "arm": 1.071161567239326,
+         "p10": 1.0674174481047074,
+         "delta_exact": 0.0037441191346185843,
+         "unit": "m/s",
+         "reduction": "mean of per-window means (equals the flat mean: every window has the same horizon)"
+        },
+        "along_mae_m": {
+         "delta": 0.0004,
+         "lo": 0.0001,
+         "hi": 0.0007,
+         "ci95": 0.0003,
+         "p_delta_gt0": 0.9985,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141,
+         "n_boot": 2000,
+         "estimator": "paired_episode_cluster_bootstrap",
+         "arm": 1.8101257219011522,
+         "p10": 1.8097387269758878,
+         "delta_exact": 0.0003869949252643945,
+         "unit": "m",
+         "reduction": "mean of per-window means (equals the flat mean: every window has the same horizon)"
+        },
+        "accel_mae_mps2": {
+         "delta": -0.0474,
+         "lo": -0.0609,
+         "hi": -0.0341,
+         "ci95": 0.0134,
+         "p_delta_gt0": 0.0,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141,
+         "n_boot": 2000,
+         "estimator": "paired_episode_cluster_bootstrap",
+         "arm": 1.15843150127103,
+         "p10": 1.2058080453060727,
+         "delta_exact": -0.047376544035042656,
+         "unit": "m/s^2",
+         "reduction": "mean of per-window means (equals the flat mean: every window has the same horizon)"
+        }
+       },
+       "lateral": {
+        "heading_mae_deg": {
+         "delta": -0.0925,
+         "lo": -0.1335,
+         "hi": -0.058,
+         "ci95": 0.0377,
+         "p_delta_gt0": 0.0,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141,
+         "n_boot": 2000,
+         "estimator": "paired_episode_cluster_bootstrap",
+         "arm": 3.8847717117659277,
+         "p10": 3.977315774209737,
+         "delta_exact": -0.09254406244380942,
+         "unit": "deg",
+         "reduction": "MICRO mean = sum(per-window error sums) / sum(per-window valid steps), per arm (the masked mean taniteval prints)",
+         "n_steps_arm": 66937,
+         "n_steps_p10": 66956
+        },
+        "yaw_rate_mae_degps": {
+         "delta": -1.1817,
+         "lo": -1.4548,
+         "hi": -0.9383,
+         "ci95": 0.2582,
+         "p_delta_gt0": 0.0,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141,
+         "n_boot": 2000,
+         "estimator": "paired_episode_cluster_bootstrap",
+         "arm": 4.978838494751454,
+         "p10": 6.160513948864774,
+         "delta_exact": -1.1816754541133205,
+         "unit": "deg/s",
+         "reduction": "MICRO mean = sum(per-window error sums) / sum(per-window valid steps), per arm (the masked mean taniteval prints)",
+         "n_steps_arm": 64513,
+         "n_steps_p10": 64435
+        },
+        "curvature_mae_1pm": {
+         "delta": -0.0100097,
+         "lo": -0.013820299999999999,
+         "hi": -0.0066653,
+         "ci95": 0.0035775,
+         "p_delta_gt0": 0.0,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141,
+         "n_boot": 2000,
+         "estimator": "paired_episode_cluster_bootstrap",
+         "arm": 0.03434671376531311,
+         "p10": 0.04435636672906996,
+         "delta_exact": -0.010009652963756846,
+         "unit": "1/m",
+         "reduction": "MICRO mean = sum(per-window error sums) / sum(per-window valid steps), per arm (the masked mean taniteval prints)",
+         "n_steps_arm": 64513,
+         "n_steps_p10": 64435,
+         "ci_internal_scale": 1000.0
+        },
+        "cross_mae_m": {
+         "delta": -0.0002,
+         "lo": -0.0003,
+         "hi": -0.0002,
+         "ci95": 0.0001,
+         "p_delta_gt0": 0.0,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141,
+         "n_boot": 2000,
+         "estimator": "paired_episode_cluster_bootstrap",
+         "arm": 0.765944441368166,
+         "p10": 0.7661605246253265,
+         "delta_exact": -0.00021608325716049315,
+         "unit": "m",
+         "reduction": "mean of per-window means (equals the flat mean: every window has the same horizon)"
+        }
+       }
+      },
+      "ade6_S_minus_arm": {
+       "delta": 0.0002,
+       "lo": -0.0,
+       "hi": 0.0005,
+       "separated": false
+      },
+      "roughness": {
+       "accel_mean_mps2": 1.3651859093863805,
+       "jerk_mean_mps3": 5.796432521820241,
+       "speed_step_change_mps": 0.21088901585170503
+      },
+      "D": {
+       "accel_mae_mps2": {
+        "delta": -0.0474,
+        "lo": -0.0609,
+        "hi": -0.0341,
+        "separated": true,
+        "ok": true
+       },
+       "yaw_rate_mae_degps": {
+        "delta": -1.1817,
+        "lo": -1.4548,
+        "hi": -0.9383,
+        "separated": true,
+        "ok": true
+       }
+      },
+      "D_ok": true,
+      "P_ok": true
+     },
+     "dose_w11": {
+      "families_S_minus_arm": {
+       "status": "OK",
+       "estimator": "paired_episode_cluster_bootstrap",
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "n_boot": 2000,
+       "seed": 0,
+       "longitudinal": {
+        "speed_mae_mps": {
+         "delta": -0.0328,
+         "lo": -0.0393,
+         "hi": -0.0267,
+         "ci95": 0.0063,
+         "p_delta_gt0": 0.0,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141,
+         "n_boot": 2000,
+         "estimator": "paired_episode_cluster_bootstrap",
+         "arm": 1.0346477709977688,
+         "p10": 1.0674174481047074,
+         "delta_exact": -0.032769677106938566,
+         "unit": "m/s",
+         "reduction": "mean of per-window means (equals the flat mean: every window has the same horizon)"
+        },
+        "along_mae_m": {
+         "delta": -0.0003,
+         "lo": -0.0011,
+         "hi": 0.0006,
+         "ci95": 0.0008,
+         "p_delta_gt0": 0.235,
+         "separated": false,
+         "n_windows": 2399,
+         "n_episodes": 141,
+         "n_boot": 2000,
+         "estimator": "paired_episode_cluster_bootstrap",
+         "arm": 1.8094444387833455,
+         "p10": 1.8097387269758878,
+         "delta_exact": -0.0002942881925422913,
+         "unit": "m",
+         "reduction": "mean of per-window means (equals the flat mean: every window has the same horizon)"
+        },
+        "accel_mae_mps2": {
+         "delta": -0.2995,
+         "lo": -0.3497,
+         "hi": -0.2508,
+         "ci95": 0.0494,
+         "p_delta_gt0": 0.0,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141,
+         "n_boot": 2000,
+         "estimator": "paired_episode_cluster_bootstrap",
+         "arm": 0.9063195561700536,
+         "p10": 1.2058080453060727,
+         "delta_exact": -0.2994884891360191,
+         "unit": "m/s^2",
+         "reduction": "mean of per-window means (equals the flat mean: every window has the same horizon)"
+        }
+       },
+       "lateral": {
+        "heading_mae_deg": {
+         "delta": -0.1359,
+         "lo": -0.1882,
+         "hi": -0.0894,
+         "ci95": 0.0494,
+         "p_delta_gt0": 0.0,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141,
+         "n_boot": 2000,
+         "estimator": "paired_episode_cluster_bootstrap",
+         "arm": 3.8414247543456717,
+         "p10": 3.977315774209737,
+         "delta_exact": -0.1358910198640655,
+         "unit": "deg",
+         "reduction": "MICRO mean = sum(per-window error sums) / sum(per-window valid steps), per arm (the masked mean taniteval prints)",
+         "n_steps_arm": 66954,
+         "n_steps_p10": 66956
+        },
+        "yaw_rate_mae_degps": {
+         "delta": -1.4237,
+         "lo": -1.7641,
+         "hi": -1.1403,
+         "ci95": 0.3119,
+         "p_delta_gt0": 0.0,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141,
+         "n_boot": 2000,
+         "estimator": "paired_episode_cluster_bootstrap",
+         "arm": 4.7368515355501355,
+         "p10": 6.160513948864774,
+         "delta_exact": -1.4236624133146387,
+         "unit": "deg/s",
+         "reduction": "MICRO mean = sum(per-window error sums) / sum(per-window valid steps), per arm (the masked mean taniteval prints)",
+         "n_steps_arm": 64547,
+         "n_steps_p10": 64435
+        },
+        "curvature_mae_1pm": {
+         "delta": -0.0128825,
+         "lo": -0.0175794,
+         "hi": -0.0089543,
+         "ci95": 0.0043125,
+         "p_delta_gt0": 0.0,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141,
+         "n_boot": 2000,
+         "estimator": "paired_episode_cluster_bootstrap",
+         "arm": 0.03147387107424765,
+         "p10": 0.04435636672906996,
+         "delta_exact": -0.012882495654822308,
+         "unit": "1/m",
+         "reduction": "MICRO mean = sum(per-window error sums) / sum(per-window valid steps), per arm (the masked mean taniteval prints)",
+         "n_steps_arm": 64547,
+         "n_steps_p10": 64435,
+         "ci_internal_scale": 1000.0
+        },
+        "cross_mae_m": {
+         "delta": -0.0,
+         "lo": -0.0002,
+         "hi": 0.0001,
+         "ci95": 0.0001,
+         "p_delta_gt0": 0.21,
+         "separated": false,
+         "n_windows": 2399,
+         "n_episodes": 141,
+         "n_boot": 2000,
+         "estimator": "paired_episode_cluster_bootstrap",
+         "arm": 0.7661143774574327,
+         "p10": 0.7661605246253265,
+         "delta_exact": -4.614716789375084e-05,
+         "unit": "m",
+         "reduction": "mean of per-window means (equals the flat mean: every window has the same horizon)"
+        }
+       }
+      },
+      "ade6_S_minus_arm": {
+       "delta": -0.0003,
+       "lo": -0.001,
+       "hi": 0.0005,
+       "separated": false
+      },
+      "roughness": {
+       "accel_mean_mps2": 1.155697177040883,
+       "jerk_mean_mps3": 5.002770136485152,
+       "speed_step_change_mps": 0.16625730798708283
+      }
+     },
+     "roughness_arm": {
+      "accel_mean_mps2": 1.4879808250253164,
+      "jerk_mean_mps3": 6.785970564527675,
+      "speed_step_change_mps": 0.22154891477044608
+     }
+    }
+   },
+   "verdict": "INTERIM (one seed read; the bars decide only at both)"
+  }
+ }
+}

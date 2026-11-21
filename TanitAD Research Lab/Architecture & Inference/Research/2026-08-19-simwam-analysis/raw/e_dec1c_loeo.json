@@ -1,0 +1,87 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "arm": "champ30k",
+ "step": 30000,
+ "n_episodes": 12,
+ "estimator": "leave-one-episode-out PAIRED differences",
+ "used_probe_fit_score": false,
+ "targets": {
+  "speed": {
+   "enc-z_op": {
+    "mean_delta": 0.2117,
+    "se": 0.0269,
+    "t": 7.86,
+    "n_favouring_first": 12,
+    "n": 12
+   },
+   "enc-pix": {
+    "mean_delta": 0.2535,
+    "se": 0.0689,
+    "t": 3.68,
+    "n_favouring_first": 12,
+    "n": 12
+   },
+   "z_op-pix": {
+    "mean_delta": 0.0418,
+    "se": 0.0593,
+    "t": 0.71,
+    "n_favouring_first": 7,
+    "n": 12
+   },
+   "enc-dino": {
+    "mean_delta": -0.0555,
+    "se": 0.0166,
+    "t": -3.35,
+    "n_favouring_first": 1,
+    "n": 12
+   },
+   "enc-enc": {
+    "mean_delta": 0.0,
+    "se": 0.0,
+    "t": 0.0,
+    "n_favouring_first": 0,
+    "n": 12
+   }
+  },
+  "d_ego": {
+   "enc-z_op": {
+    "mean_delta": 0.1691,
+    "se": 0.0137,
+    "t": 12.38,
+    "n_favouring_first": 12,
+    "n": 12
+   },
+   "enc-pix": {
+    "mean_delta": 0.3603,
+    "se": 0.0856,
+    "t": 4.21,
+    "n_favouring_first": 11,
+    "n": 12
+   },
+   "z_op-pix": {
+    "mean_delta": 0.1912,
+    "se": 0.08,
+    "t": 2.39,
+    "n_favouring_first": 11,
+    "n": 12
+   },
+   "enc-dino": {
+    "mean_delta": -0.1282,
+    "se": 0.0722,
+    "t": -1.78,
+    "n_favouring_first": 6,
+    "n": 12
+   },
+   "enc-enc": {
+    "mean_delta": 0.0,
+    "se": 0.0,
+    "t": 0.0,
+    "n_favouring_first": 0,
+    "n": 12
+   }
+  }
+ },
+ "pairing_control_violations": [],
+ "verdict": "readout destroys signal on ['speed', 'd_ego']; encoder beats raw pixels on ['speed', 'd_ego']. \u2b50 FIX THE READOUT \u2014 the trunk HAS content the 4x4 pooling throws away."
+}

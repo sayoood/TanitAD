@@ -1,0 +1,35 @@
+{
+ "_what": "is `occluded` supervised on this corpus, and does the head beat its base rate?",
+ "_evidence_class": "MEASURED (ours), CPU, A8 ckpt_5000",
+ "_semantics": "occ IS bev_raster.fov_mask's predicate (agent_slots.py:82-87) -> OUT OF THE FRONT CAMERA'S FIELD, never object-object occlusion",
+ "_mask_site": "agent_slots.py:602 `om = ot >= 0.0`; sentinel -1.0 set at :730",
+ "windows_used": 60,
+ "coverage": {
+  "valid_targets": 1482,
+  "with_occ_flag": 1482,
+  "fraction": 1.0,
+  "positives": 872,
+  "base_rate": 0.588394
+ },
+ "head_emission": {
+  "n_matched_slots": 1482,
+  "p_mean": 0.5704,
+  "p_sd": 0.3317,
+  "p_min": 4e-05,
+  "p_max": 0.99988
+ },
+ "skill": {
+  "fit_side_base_rate_control": 0.55047,
+  "n_scored_pairs": 848,
+  "n_scored_episodes": 18,
+  "logloss_head": 0.28818,
+  "logloss_base_rate_control": 0.67462,
+  "gain": 0.38644,
+  "CI95": [
+   0.35163,
+   0.43148
+  ],
+  "head_beats_base_rate": true
+ },
+ "_VERDICT": "⭐ the head BEATS its base rate on `occluded` ⇒ alignment 0.284 does NOT mark a dead field, and this is evidence on P4 (agents outside the camera's field)"
+}

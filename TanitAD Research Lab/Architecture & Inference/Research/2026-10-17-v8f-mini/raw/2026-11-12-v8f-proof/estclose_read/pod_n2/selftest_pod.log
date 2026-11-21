@@ -1,0 +1,33 @@
+   h1 planted name rule (LOWER, HIGHER, opposite seeds, no effect) through the stand-in engine: [('lower', 'LOWER'), ('higher', 'HIGHER'), ('opposite_seeds', 'NOT-SEPARATED'), ('no_effect', 'NOT-SEPARATED')] True
+   run text accepted: form RRe, cycle 10, rule every 5, readout, bound, pre-roll, wrapper, return code 0                True
+   run text not accepted with the rule every 10, another form, a return code 1 or another readout                       True
+   r1 passes at AGE and (pre-roll 0) FRESH and fails on a missing dump file or a pre-roll mismatch                      True
+   est looks line parsed (scored 900 / 50, pre-roll 300 / 200, 64 hex) and a text without it gives None                 True
+   x1 passes: RRe feeds a closing and 0.0 without a full history in both logs, RR feeds 0                               True
+   x1 fails when RRe feeds 0 everywhere, feeds a non-zero closing without a full history, names another form, or RR was fed a closing; or a log is missing True
+   m1 passes on equal later-look row counts and fails on a different count or an empty log                              True
+   i1 holds on a triple that adds up and fails when off by 1e-6                                                         True
+   e2 passes when c_est equals the table at (ci, j) on the est_ok rows (both logs, first-tick rows included)            True
+   e2 fails on a planted difference of 0.01 m/s and passes one of 0.0005                                                True
+   e2 fails when c_est is not NaN where est_ok is False, when the table has no entry, and when a log or table is missing True
+   e2 fails when no compared row is a first-tick row (k == 0)                                                           True
+   e3 reports the shares and the gate is True at 0.95 / 0.947 (scored 900 of 950 by the text)                           True
+   e3 gate is False for the estimator below 0.90 in the logs (L25 at 0.50) and still True for the other                 True
+   e3 gate is False when the run text scored share is below 0.90 although the logs hold 0.95                            True
+   e3 fails when a run text has no est looks line or a log is missing                                                   True
+   verdict: N10 SUPPORTED (AGE C LOWER, FRESH C not HIGHER, MIXED is not WORSE), L25 NOT-SUPPORTED, and the single SUPPORTED is marked one of two True
+   verdict: NOT-SUPPORTED when AGE C is not LOWER, FRESH C HIGHER, AGE U HIGHER, FRESH U HIGHER, a family WORSE at AGE or FRESH True
+   verdict: both SUPPORTED names both and no one-of-two mark; L25 alone SUPPORTED is marked for L25                     True
+   verdict: an estimator below the AGE coverage bar has no verdict and says why, the other one is still read            True
+   verdict: an unqualified setting writes no name that needs its C or U; a failing family condition still decides       True
+   names: pattern ESTCLOSE10K-<PAIR>-<SETTING>-C-<word>, U and the four families per pair and setting (8 pairs x 2 settings) True
+   names: AGE names of an estimator below the coverage bar are not written, its FRESH names are                         True
+   names: with no qualified setting no C or U name is written and the output says why                                   True
+   share of gap: removed 0.02 of a gap of 0.08 is 0.25; no share when the label closing does not lower contact          True
+   a failed control leaves no name                                                                                      True
+   a failed control prints no name and no value                                                                         True
+   a1: equal levels pass, 1e-6 off fails, a run missing fails, an unqualified banked setting fails, an unadmitted bank fails True
+   qualification by the instrument's own bar (200 windows with a lead, 20 episodes)                                     True
+   register_runs enters the RRe runs with form RRe, readout K, rule every 5, pre-roll of the setting                    True
+   text of the tool holds none of the banned words                                                                      True
+ZZ SELFTEST-ESTCLOSE10K ok: True (32 of 32)

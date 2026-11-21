@@ -1,0 +1,136 @@
+{
+ "cases": [
+  {
+   "name": "R5 s0: DAG ckpt_last.pt hashes to SHA256SUMS.txt's value",
+   "ok": true,
+   "detail": "d186fd0bcfa7ee9f"
+  },
+  {
+   "name": "R5 s0: DAG argv.json hashes to SHA256SUMS.txt's value",
+   "ok": true,
+   "detail": "50e9d01d3dee8813"
+  },
+  {
+   "name": "R1 s0: v8f_dagger_bank.load_ckpt accepts DAG's checkpoint (cfg gate kin_mode=yaw, strict load_state_dict)",
+   "ok": true,
+   "detail": "276 tensors"
+  },
+  {
+   "name": "R1 s0: the generator's readable-rows guard passes on DAG's cfg",
+   "ok": true,
+   "detail": "{'j_min': 13, 'first_row_read': 4}"
+  },
+  {
+   "name": "R4 s0: DAG's cfg equals M2b's on EVERY architecture key (INIT_CKPT_MATCH); the keys that differ are training levers only",
+   "ok": true,
+   "detail": "arch diffs {}; lever diffs {'code_mix': (None, 'whole'), 'cons_absent': (None, 'mask'), 'o_interface': (None, 'full'), 'p_gt_start': (1.0, 0.2), 'w_acc': (None, 0.0), 'window_start': (None, -1)}"
+  },
+  {
+   "name": "R4 s0: DAG's state dict has exactly M2b's keys and shapes",
+   "ok": true,
+   "detail": "276 vs 276 tensors"
+  },
+  {
+   "name": "R4 s0: the checkpoint's own record (arm / seed / step / argv_sha) is readable",
+   "ok": true,
+   "detail": "{'step': ('int', 3000), 'epoch': ('int', 0), 'batch_in_epoch': ('int', 3000), 'argv_sha': ('str', 'bf47d07701bde74a'), 'p10_path': ('str', 'D:\\\\tanitad\\\\runs\\\\v8f_mini_full\\\\p10\\\\p10_prior.pt'), 'grid': ('str', 'pool4x10'), 'arm': ('str', 'M2b'), 'seed': ('int', 0), 'cons_mu': ('ndarray', None), 'cons_sd': ('ndarray', None), 'cfg_tuple_fields': ('dict', None), 'ego_perturb': ('dict', None), 'init_ckpt': ('dict', None), 'ego_totals': ('dict', None), 'dagger': ('dict', None), 'dagger_totals': ('di"
+  },
+  {
+   "name": "R3 s0: the trainer's parser ACCEPTS DAG's argv.json['argv'] and it differs from M2b's only in out / init / steps / lr / warmup / p_gt / ego-perturb / dagger flags (NO data flag moves)",
+   "ok": true,
+   "detail": "moved ['dagger_bank', 'dagger_bank_sha256', 'dagger_p', 'init_ckpt', 'lr', 'out', 'p_gt_start', 'steps', 'warmup']"
+  },
+  {
+   "name": "R3 s0: every data-selecting flag is equal, so build_data(ns) rebuilds M2b's TRAIN list (4,512 clips)",
+   "ok": true,
+   "detail": "{'exclude': '540:600', 'data_frac': 1.0, 'max_clips': 0, 'grid': 'pool4x10'}"
+  },
+  {
+   "name": "R3 s0: DAG's argv is not a --synthetic run (the generator's guard)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "R2 s0: v8f_mini_train.load_init_ckpt accepts DAG's checkpoint as --init-ckpt: sha256 recorded, applied, 0 tensors differ after the load",
+   "ok": true,
+   "detail": "{'sha256': 'd186fd0bcfa7ee9fbfe5c9de543fe85edda7c3e6b9c56c898958f027ae2b8cb1', 'applied': True, 'n_tensors': 276, 'n_mismatch_after_load': 0, 'source_arm': 'M2b', 'source_seed': 0, 'source_step': 3000}"
+  },
+  {
+   "name": "CONTROL s0: a DAG checkpoint with d doubled is REFUSED by load_init_ckpt (the probe can fail)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "CONTROL s0: a DAG checkpoint with one tensor removed is REFUSED by the generator's strict load (the probe can fail)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "R5 s1: DAG ckpt_last.pt hashes to SHA256SUMS.txt's value",
+   "ok": true,
+   "detail": "1d12ec2eb825990d"
+  },
+  {
+   "name": "R5 s1: DAG argv.json hashes to SHA256SUMS.txt's value",
+   "ok": true,
+   "detail": "38a591e3e5a05c6f"
+  },
+  {
+   "name": "R1 s1: v8f_dagger_bank.load_ckpt accepts DAG's checkpoint (cfg gate kin_mode=yaw, strict load_state_dict)",
+   "ok": true,
+   "detail": "276 tensors"
+  },
+  {
+   "name": "R1 s1: the generator's readable-rows guard passes on DAG's cfg",
+   "ok": true,
+   "detail": "{'j_min': 13, 'first_row_read': 4}"
+  },
+  {
+   "name": "R4 s1: DAG's cfg equals M2b's on EVERY architecture key (INIT_CKPT_MATCH); the keys that differ are training levers only",
+   "ok": true,
+   "detail": "arch diffs {}; lever diffs {'code_mix': (None, 'whole'), 'cons_absent': (None, 'mask'), 'o_interface': (None, 'full'), 'p_gt_start': (1.0, 0.2), 'w_acc': (None, 0.0), 'window_start': (None, -1)}"
+  },
+  {
+   "name": "R4 s1: DAG's state dict has exactly M2b's keys and shapes",
+   "ok": true,
+   "detail": "276 vs 276 tensors"
+  },
+  {
+   "name": "R4 s1: the checkpoint's own record (arm / seed / step / argv_sha) is readable",
+   "ok": true,
+   "detail": "{'step': ('int', 3000), 'epoch': ('int', 0), 'batch_in_epoch': ('int', 3000), 'argv_sha': ('str', '34258e0b454a3726'), 'p10_path': ('str', 'D:\\\\tanitad\\\\runs\\\\v8f_mini_full\\\\p10\\\\p10_prior.pt'), 'grid': ('str', 'pool4x10'), 'arm': ('str', 'M2b'), 'seed': ('int', 1), 'cons_mu': ('ndarray', None), 'cons_sd': ('ndarray', None), 'cfg_tuple_fields': ('dict', None), 'ego_perturb': ('dict', None), 'init_ckpt': ('dict', None), 'ego_totals': ('dict', None), 'dagger': ('dict', None), 'dagger_totals': ('di"
+  },
+  {
+   "name": "R3 s1: the trainer's parser ACCEPTS DAG's argv.json['argv'] and it differs from M2b's only in out / init / steps / lr / warmup / p_gt / ego-perturb / dagger flags (NO data flag moves)",
+   "ok": true,
+   "detail": "moved ['dagger_bank', 'dagger_bank_sha256', 'dagger_p', 'dagger_seed', 'init_ckpt', 'lr', 'out', 'p_gt_start', 'steps', 'warmup']"
+  },
+  {
+   "name": "R3 s1: every data-selecting flag is equal, so build_data(ns) rebuilds M2b's TRAIN list (4,512 clips)",
+   "ok": true,
+   "detail": "{'exclude': '540:600', 'data_frac': 1.0, 'max_clips': 0, 'grid': 'pool4x10'}"
+  },
+  {
+   "name": "R3 s1: DAG's argv is not a --synthetic run (the generator's guard)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "R2 s1: v8f_mini_train.load_init_ckpt accepts DAG's checkpoint as --init-ckpt: sha256 recorded, applied, 0 tensors differ after the load",
+   "ok": true,
+   "detail": "{'sha256': '1d12ec2eb825990d57dcc45dda50b5178d1d733961b47ab0e3d50e6155fa39ef', 'applied': True, 'n_tensors': 276, 'n_mismatch_after_load': 0, 'source_arm': 'M2b', 'source_seed': 1, 'source_step': 3000}"
+  },
+  {
+   "name": "CONTROL s1: a DAG checkpoint with d doubled is REFUSED by load_init_ckpt (the probe can fail)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "CONTROL s1: a DAG checkpoint with one tensor removed is REFUSED by the generator's strict load (the probe can fail)",
+   "ok": true,
+   "detail": ""
+  }
+ ],
+ "n_pass": 26,
+ "n_cases": 26
+}

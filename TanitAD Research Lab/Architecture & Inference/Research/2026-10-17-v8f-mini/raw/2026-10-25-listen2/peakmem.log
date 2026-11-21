@@ -1,0 +1,14 @@
+PEAKMEM argv=means --seed s0 peak_private_commit_MB=2432 peak_working_set_MB=1681
+PEAKMEM argv=means --seed s1 peak_private_commit_MB=2431 peak_working_set_MB=1680
+PEAKMEM argv=collect --seed s0 --mode donor --identity --out runs/s0_id.npz peak_private_commit_MB=2544 peak_working_set_MB=1759
+PEAKMEM argv=collect --seed s0 --mode own --out runs/s0_own.npz peak_private_commit_MB=2177 peak_working_set_MB=1416
+PEAKMEM argv=collect --seed s0 --mode donor --donor-seed 0 --out runs/s0_d0.npz peak_private_commit_MB=2542 peak_working_set_MB=1762
+PEAKMEM argv=analyze --controls-only peak_private_commit_MB=1126 peak_working_set_MB=526
+PEAKMEM argv=collect --seed s1 --mode donor --donor-seed 0 --out runs/s1_d0.npz peak_private_commit_MB=2543 peak_working_set_MB=1763
+PEAKMEM argv=collect --seed s0 --mode donor --donor-seed 1 --out runs/s0_d1.npz peak_private_commit_MB=2538 peak_working_set_MB=1758
+PEAKMEM argv=collect --seed s1 --mode donor --identity --out runs/s1_id.npz peak_private_commit_MB=2546 peak_working_set_MB=1760
+PEAKMEM argv=collect --seed s1 --mode own --out runs/s1_own.npz peak_private_commit_MB=2178 peak_working_set_MB=1417
+PEAKMEM argv=collect --seed s0 --mode mean --out runs/s0_mean.npz peak_private_commit_MB=2180 peak_working_set_MB=1418
+PEAKMEM argv=collect --seed s1 --mode mean --out runs/s1_mean.npz peak_private_commit_MB=2183 peak_working_set_MB=1418
+PEAKMEM argv=analyze --controls-only peak_private_commit_MB=1142 peak_working_set_MB=542
+PEAKMEM argv=analyze peak_private_commit_MB=1142 peak_working_set_MB=542

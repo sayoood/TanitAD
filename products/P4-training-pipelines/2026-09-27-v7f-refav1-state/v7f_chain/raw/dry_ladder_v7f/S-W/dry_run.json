@@ -1,0 +1,321 @@
+{
+ "mode": "dry-run",
+ "device": "cpu",
+ "steps": [
+  {
+   "stage": "S-W",
+   "o1_detach_encoder": false,
+   "o1_stopgrad_factual": false,
+   "o1_ctrl": 0.21464183926582336,
+   "o1_fact": 1.9998674392700195,
+   "o1_scene": 1.4403538703918457,
+   "o1_factual_ade": 2.8993210792541504,
+   "o1_basis_dims": 8,
+   "o1_arms": [
+    "left",
+    "right",
+    "brake",
+    "throttle",
+    "random"
+   ],
+   "o5_loss": 0.938169002532959,
+   "o5_k": 12,
+   "o5_form": "l1",
+   "o5_step1": 0.920622706413269,
+   "o5_stepK": 0.8544862866401672,
+   "o5_growth": 0.9281612038612366,
+   "o5_mode": "uniform",
+   "o2_loss": 0.9907021522521973,
+   "o2_w_min": 0.14552262425422668,
+   "o2_w_max": 2.4681448936462402,
+   "o2_unweighted": 0.9595206379890442,
+   "o2_tau_s": 2.0,
+   "o2_at_step": 10,
+   "o3_loss": 0.9066425561904907,
+   "o3_mask_rate": 0.3125,
+   "o3_n_masked": 10,
+   "o3_visible_err": 0.8197280764579773,
+   "o3_mode": "action",
+   "o6_rows": 8,
+   "o6_row_renorm": 1.0,
+   "o6_sigreg": 0.7628410458564758,
+   "loss": 5.558413028717041,
+   "terms": [
+    "o1",
+    "o2",
+    "o3",
+    "o5",
+    "o6"
+   ],
+   "step": 1,
+   "gnorm": 34.5235
+  },
+  {
+   "stage": "S-W",
+   "o1_detach_encoder": false,
+   "o1_stopgrad_factual": false,
+   "o1_ctrl": 0.5685877203941345,
+   "o1_fact": 1.4865366220474243,
+   "o1_scene": 1.4064326286315918,
+   "o1_factual_ade": 2.322038173675537,
+   "o1_basis_dims": 8,
+   "o1_arms": [
+    "left",
+    "right",
+    "brake",
+    "throttle",
+    "random"
+   ],
+   "o5_loss": 0.9633870124816895,
+   "o5_k": 12,
+   "o5_form": "l1",
+   "o5_step1": 1.0141966342926025,
+   "o5_stepK": 0.9735268950462341,
+   "o5_growth": 0.9598995447158813,
+   "o5_mode": "uniform",
+   "o2_loss": 0.9833285808563232,
+   "o2_w_min": 0.13903561234474182,
+   "o2_w_max": 1.6884146928787231,
+   "o2_unweighted": 0.9710566401481628,
+   "o2_tau_s": 2.0,
+   "o2_at_step": 10,
+   "o3_loss": 0.8306142687797546,
+   "o3_mask_rate": 0.3125,
+   "o3_n_masked": 10,
+   "o3_visible_err": 0.8166244626045227,
+   "o3_mode": "action",
+   "o6_rows": 8,
+   "o6_row_renorm": 1.0,
+   "o6_sigreg": 0.42431002855300903,
+   "loss": 5.296814918518066,
+   "terms": [
+    "o1",
+    "o2",
+    "o3",
+    "o5",
+    "o6"
+   ],
+   "step": 2,
+   "gnorm": 33.4989
+  }
+ ],
+ "elapsed_s": 0.53,
+ "freeze": {
+  "stage": "S-W",
+  "trainable_groups": [
+   "aux",
+   "encoder",
+   "predictor_op",
+   "readout"
+  ],
+  "per_group": {
+   "encoder": {
+    "trainable": 37504,
+    "frozen": 0
+   },
+   "readout": {
+    "trainable": 264,
+    "frozen": 0
+   },
+   "predictor_op": {
+    "trainable": 159428,
+    "frozen": 4128
+   },
+   "layer_tac": {
+    "trainable": 0,
+    "frozen": 3453295
+   },
+   "layer_str": {
+    "trainable": 0,
+    "frozen": 3329504
+   },
+   "planner": {
+    "trainable": 0,
+    "frozen": 134808
+   },
+   "aux": {
+    "trainable": 1588232,
+    "frozen": 0
+   },
+   "interp": {
+    "trainable": 0,
+    "frozen": 0
+   }
+  },
+  "n_trainable": 1785428,
+  "n_frozen": 6921735,
+  "shared_goal_tables": {
+   "vocab_tac": {
+    "table": "vocab_tac.table.weight",
+    "emitted_by": "goal_head_tac (layer_tac)",
+    "consumed_by": "cond_op (planner)",
+    "group": "layer_tac"
+   },
+   "vocab_str": {
+    "table": "vocab_str.table.weight",
+    "emitted_by": "goal_head_str (layer_str)",
+    "consumed_by": "cond_tac (layer_tac)",
+    "group": "layer_str"
+   }
+  },
+  "grad_unreachable": {
+   "predictor_op.out_proj": "reserved: feed predictions back -- never referenced in forward() or anywhere else in the programme (989 files scanned), so no v6 loss reaches it. Retiring the tensor is a PI decision because every banked checkpoint carries it; withholding the false trainable claim is not."
+  },
+  "n_grad_unreachable": 4128,
+  "n_trainable_by_group_map_alone": 1789556,
+  "_note": "a shared goal table moves whenever EITHER of its two views is trainable (HIERARCHY_VOCABULARY \u00a75)",
+  "_grad_unreachable_note": "subtrees NO ladder loss reaches (models/_gradreach.py). They are frozen here even when their GROUP is trainable, so n_trainable is what can actually receive a gradient. The tensors stay in state_dict, so strict loads are unaffected."
+ },
+ "declared_freeze_preflight": {
+  "frozen_external": {
+   "stage": "S-W",
+   "declared_subtrees": {},
+   "n_declared_subtrees": 0,
+   "n_trainable": 1785428,
+   "n_external_params": 0,
+   "native_trainable_per_group": {
+    "encoder": 37504,
+    "readout": 264,
+    "predictor_op": 159428,
+    "layer_tac": 0,
+    "layer_str": 0,
+    "planner": 0,
+    "aux": 1588232,
+    "interp": 0
+   },
+   "external_per_group": {},
+   "expect_n_trainable": null,
+   "directions_checked": [
+    "A: no parameter inside a declared frozen-external subtree is trainable",
+    "B: every group in stage_trainable_groups() still has a trainable NATIVE parameter"
+   ]
+  },
+  "grad_unreachable_subtrees": {
+   "predictor_op.out_proj": "reserved: feed predictions back -- never referenced in forward() or anywhere else in the programme (989 files scanned), so no v6 loss reaches it. Retiring the tensor is a PI decision because every banked checkpoint carries it; withholding the false trainable claim is not."
+  },
+  "n_grad_unreachable_subtrees": 1,
+  "n_leaked_grad_unreachable": 0,
+  "directions_checked": [
+   "A: no parameter inside a declared frozen-external subtree is trainable",
+   "B: every group in stage_trainable_groups() still has a trainable NATIVE parameter",
+   "A': no parameter inside a declared GRAD-UNREACHABLE subtree is trainable after the stage freeze"
+  ]
+ },
+ "isolation": {
+  "matrix": {
+   "predictor_op": [
+    "encoder",
+    "readout",
+    "predictor_op"
+   ],
+   "aux": [
+    "encoder",
+    "readout",
+    "aux"
+   ],
+   "layer_tac": [
+    "layer_tac"
+   ],
+   "layer_str": [
+    "layer_str"
+   ],
+   "planner": [
+    "planner"
+   ],
+   "interp": [
+    "interp"
+   ]
+  },
+  "config": {
+   "isolate_planner_from_encoder": true,
+   "isolate_uplink": true,
+   "uplink": "stopgrad",
+   "shared_encoder": true,
+   "isolate_interp_from_encoder": true,
+   "agent_slots": false,
+   "slot_src": "cells"
+  },
+  "violations": {},
+  "n_violations": {
+   "planner_to_encoder": 0,
+   "tactical_to_below": 0,
+   "strategic_to_below": 0
+  },
+  "n_probed": {
+   "planner_to_encoder": 19,
+   "tactical_to_below": 58,
+   "strategic_to_below": 128
+  },
+  "pass": true,
+  "_evidence_class": "MEASURED (ours; autograd probe on this graph)"
+ },
+ "spectrum_smoke": {
+  "n": 64,
+  "d": 64,
+  "top_k": 8,
+  "participation_ratio": 32.007608452433885,
+  "effective_rank": 51.30279614998646,
+  "top_k_share": 0.3776406592211111,
+  "rank_ceiling": 63,
+  "effective_rank_frac": 0.8143300976188328,
+  "rank_admissible": false,
+  "ceiling_note": "a centred covariance from n=64 rows has rank <= 63; effective_rank is bounded by that, NOT by d=64"
+ },
+ "param_report": {
+  "total": 8707163,
+  "budget": 300000000,
+  "within_budget": true,
+  "headroom": 291292837,
+  "per_group": {
+   "encoder": 37504,
+   "readout": 264,
+   "predictor_op": 163556,
+   "layer_tac": 3453295,
+   "layer_str": 3329504,
+   "planner": 134808,
+   "aux": 1588232,
+   "interp": 0
+  },
+  "trainable": 1785428,
+  "arm": "shared-encoder+adapters",
+  "d_op": 128,
+  "d_tac": 32,
+  "d_str": 16,
+  "_note": "E-ENC decides at MATCHED TOTAL PARAMS \u2014 compare arms on this number, not on per-layer widths",
+  "_evidence_class": "MEASURED (ours; count at instantiation)"
+ },
+ "n_trainable_tensors": 86,
+ "precondition": {
+  "exercised": false,
+  "_read": "--prev-gate was NOT supplied, so the X5 precondition was NOT exercised by this dry-run."
+ },
+ "init": {
+  "exercised": false,
+  "_read": "--init-from was NOT supplied, so this dry-run stepped RANDOM weights. It proves the launch assembles; it proves nothing about the lineage."
+ },
+ "encoder_seed": {
+  "init_encoder_from": null,
+  "_read": "--init-encoder-from was NOT supplied; the trunk is at its own init (or at whatever --init-from loaded)."
+ },
+ "trunk_optimizer": {
+  "trunk_lr_split": false,
+  "n_groups": 1,
+  "n_params": 86,
+  "_read": "defaults: ONE flat AdamW group, byte-identical to every arm trained before D-V7-DINO-SEED"
+ },
+ "trunk_anchor": {
+  "w_trunk_anchor": 0.0,
+  "_read": "--w-trunk-anchor 0 \u2014 nothing constructed, no hook registered, byte-identical to every pre-D-V7-TRUNK-ANCHOR arm"
+ },
+ "observer_monitor": {
+  "every": 0,
+  "_read": "--obs-monitor-every 0"
+ },
+ "s2_labels": {
+  "exercised": false,
+  "_read": "--s2-labels was NOT supplied; the S2 loss path runs on synthetic keys when w_s2_goal is in force, and the loader was NOT exercised."
+ },
+ "gate_verdict": "INCONCLUSIVE",
+ "_read": "synthetic tensors \u2014 NO corpus. This proves the launch assembles and steps, and (when --prev-gate/--init-from were supplied) that the ladder seams adjudicate and load; it proves NOTHING about driving. No number here is quotable.",
+ "_evidence_class": "MEASURED (ours; synthetic smoke)"
+}

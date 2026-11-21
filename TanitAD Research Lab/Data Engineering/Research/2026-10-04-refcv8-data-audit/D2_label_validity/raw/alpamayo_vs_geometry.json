@@ -1,0 +1,932 @@
+{
+ "n_rows_with_alpamayo_side": 4243,
+ "n_ok_window": 4243,
+ "lateral": {
+  "n_scored": 4243,
+  "flag_agree_rate": {
+   "n": 4243,
+   "k": 2724,
+   "rate": 0.642,
+   "ci95": [
+    0.6275,
+    0.6563
+   ]
+  },
+  "flag_false": 1519,
+  "flag_reproduced_from_labels": {
+   "n": 4243,
+   "k": 4243,
+   "rate": 1.0,
+   "ci95": [
+    0.9991,
+    1.0
+   ]
+  },
+  "alpamayo_side_distribution": {
+   "right": 1097,
+   "left": 728,
+   "straight": 2418
+  },
+  "our_side_distribution": {
+   "left": 696,
+   "straight": 2754,
+   "right": 793
+  },
+  "alpamayo_side_matches_geometry_in_ALPA_window": {
+   "n": 4243,
+   "k": 2952,
+   "rate": 0.6957,
+   "ci95": [
+    0.6817,
+    0.7094
+   ]
+  },
+  "alpamayo_side_matches_geometry_in_OUR_window": {
+   "n": 4243,
+   "k": 2856,
+   "rate": 0.6731,
+   "ci95": [
+    0.6588,
+    0.6871
+   ]
+  },
+  "our_label_matches_geometry_in_OUR_window": {
+   "n": 4243,
+   "k": 3074,
+   "rate": 0.7245,
+   "ci95": [
+    0.7108,
+    0.7377
+   ]
+  },
+  "our_label_matches_geometry_in_ALPA_window": {
+   "n": 4243,
+   "k": 2638,
+   "rate": 0.6217,
+   "ci95": [
+    0.607,
+    0.6362
+   ]
+  },
+  "geometry_straight_share_OUR_window": {
+   "n": 4243,
+   "k": 2457,
+   "rate": 0.5791,
+   "ci95": [
+    0.5642,
+    0.5938
+   ]
+  },
+  "geometry_straight_share_ALPA_window": {
+   "n": 4243,
+   "k": 2508,
+   "rate": 0.5911,
+   "ci95": [
+    0.5762,
+    0.6058
+   ]
+  },
+  "conflicts": {
+   "n": 1519,
+   "alpamayo_right_in_its_window": {
+    "n": 1519,
+    "k": 776,
+    "rate": 0.5109,
+    "ci95": [
+     0.4857,
+     0.5359
+    ]
+   },
+   "ours_right_in_our_window": {
+    "n": 1519,
+    "k": 775,
+    "rate": 0.5102,
+    "ci95": [
+     0.4851,
+     0.5353
+    ]
+   },
+   "alpamayo_right_in_OUR_window": {
+    "n": 1519,
+    "k": 557,
+    "rate": 0.3667,
+    "ci95": [
+     0.3428,
+     0.3912
+    ]
+   },
+   "ours_right_in_ALPA_window": {
+    "n": 1519,
+    "k": 462,
+    "rate": 0.3041,
+    "ci95": [
+     0.2815,
+     0.3278
+    ]
+   }
+  },
+  "conflict_quadrants_each_on_own_window": {
+   "VLM_wrong/ours_wrong": 199,
+   "VLM_right/ours_right": 231,
+   "VLM_wrong/ours_right": 544,
+   "VLM_right/ours_wrong": 545
+  },
+  "conflict_quadrants_both_on_OUR_window": {
+   "VLM_wrong/ours_wrong": 187,
+   "VLM_wrong/ours_right": 775,
+   "VLM_right/ours_wrong": 557
+  },
+  "conflicts_by_pair(alp_side,our_side)": {
+   "right|left": 155,
+   "right|straight": 486,
+   "left|right": 50,
+   "left|straight": 339,
+   "straight|right": 287,
+   "straight|left": 202
+  },
+  "by_our_lat_class": {
+   "LANE_KEEP": {
+    "n": 2754,
+    "conflict_rate": 0.2996,
+    "alp_right_in_own_window_among_conflicts": 0.4933,
+    "ours_right_in_own_window_among_conflicts": 0.4715,
+    "n_conflicts": 825
+   },
+   "NUDGE_L": {
+    "n": 463,
+    "conflict_rate": 0.4492,
+    "alp_right_in_own_window_among_conflicts": 0.5817,
+    "ours_right_in_own_window_among_conflicts": 0.351,
+    "n_conflicts": 208
+   },
+   "NUDGE_R": {
+    "n": 569,
+    "conflict_rate": 0.4077,
+    "alp_right_in_own_window_among_conflicts": 0.5733,
+    "ours_right_in_own_window_among_conflicts": 0.3448,
+    "n_conflicts": 232
+   },
+   "TURN_L": {
+    "n": 233,
+    "conflict_rate": 0.6395,
+    "alp_right_in_own_window_among_conflicts": 0.4899,
+    "ours_right_in_own_window_among_conflicts": 0.8993,
+    "n_conflicts": 149
+   },
+   "TURN_R": {
+    "n": 224,
+    "conflict_rate": 0.4688,
+    "alp_right_in_own_window_among_conflicts": 0.4,
+    "ours_right_in_own_window_among_conflicts": 0.9429,
+    "n_conflicts": 105
+   }
+  },
+  "by_road_class": {
+   "highway": {
+    "n": 712,
+    "conflict_rate": 0.2654,
+    "alp_right_in_own_window_among_conflicts": 0.6296,
+    "ours_right_in_own_window_among_conflicts": 0.1958,
+    "n_conflicts": 189
+   },
+   "intersection": {
+    "n": 641,
+    "conflict_rate": 0.3947,
+    "alp_right_in_own_window_among_conflicts": 0.4387,
+    "ours_right_in_own_window_among_conflicts": 0.751,
+    "n_conflicts": 253
+   },
+   "urban": {
+    "n": 2890,
+    "conflict_rate": 0.3727,
+    "alp_right_in_own_window_among_conflicts": 0.507,
+    "ours_right_in_own_window_among_conflicts": 0.5088,
+    "n_conflicts": 1077
+   }
+  },
+  "by_daynight": {
+   "day": {
+    "n": 2294,
+    "conflict_rate": 0.3544,
+    "alp_right_in_own_window_among_conflicts": 0.5105,
+    "ours_right_in_own_window_among_conflicts": 0.5215,
+    "n_conflicts": 813
+   },
+   "night": {
+    "n": 1949,
+    "conflict_rate": 0.3622,
+    "alp_right_in_own_window_among_conflicts": 0.5113,
+    "ours_right_in_own_window_among_conflicts": 0.4972,
+    "n_conflicts": 706
+   }
+  },
+  "by_alpamayo_side": {
+   "left": {
+    "n": 728,
+    "conflict_rate": 0.5343,
+    "alp_right_in_own_window_among_conflicts": 0.5656,
+    "ours_right_in_own_window_among_conflicts": 0.4704,
+    "n_conflicts": 389
+   },
+   "right": {
+    "n": 1097,
+    "conflict_rate": 0.5843,
+    "alp_right_in_own_window_among_conflicts": 0.493,
+    "ours_right_in_own_window_among_conflicts": 0.5429,
+    "n_conflicts": 641
+   },
+   "straight": {
+    "n": 2418,
+    "conflict_rate": 0.2022,
+    "alp_right_in_own_window_among_conflicts": 0.4908,
+    "ours_right_in_own_window_among_conflicts": 0.499,
+    "n_conflicts": 489
+   }
+  },
+  "by_concordance": {
+   "concordant": {
+    "n": 1548,
+    "conflict_rate": 0.2558,
+    "alp_right_in_own_window_among_conflicts": 0.6515,
+    "ours_right_in_own_window_among_conflicts": 0.3687,
+    "n_conflicts": 396
+   },
+   "self_contradictory": {
+    "n": 870,
+    "conflict_rate": 0.5172,
+    "alp_right_in_own_window_among_conflicts": 0.5222,
+    "ours_right_in_own_window_among_conflicts": 0.4844,
+    "n_conflicts": 450
+   },
+   "single_channel": {
+    "n": 1825,
+    "conflict_rate": 0.3688,
+    "alp_right_in_own_window_among_conflicts": 0.4205,
+    "ours_right_in_own_window_among_conflicts": 0.6107,
+    "n_conflicts": 673
+   }
+  },
+  "timing_test_alpamayo_side_vs_geometry_by_window_start": {
+   "start=2.1": {
+    "n": 4243,
+    "k": 2658,
+    "rate": 0.6264,
+    "ci95": [
+     0.6118,
+     0.6409
+    ]
+   },
+   "start=3.1": {
+    "n": 4243,
+    "k": 2789,
+    "rate": 0.6573,
+    "ci95": [
+     0.6429,
+     0.6715
+    ]
+   },
+   "start=4.1": {
+    "n": 4243,
+    "k": 2848,
+    "rate": 0.6712,
+    "ci95": [
+     0.6569,
+     0.6852
+    ]
+   },
+   "start=5.1": {
+    "n": 4243,
+    "k": 2952,
+    "rate": 0.6957,
+    "ci95": [
+     0.6817,
+     0.7094
+    ]
+   },
+   "start=6.1": {
+    "n": 4243,
+    "k": 2973,
+    "rate": 0.7007,
+    "ci95": [
+     0.6867,
+     0.7143
+    ]
+   },
+   "start=7.1": {
+    "n": 4243,
+    "k": 2957,
+    "rate": 0.6969,
+    "ci95": [
+     0.6829,
+     0.7106
+    ]
+   },
+   "start=8.1": {
+    "n": 4243,
+    "k": 2853,
+    "rate": 0.6724,
+    "ci95": [
+     0.6581,
+     0.6864
+    ]
+   },
+   "start=9.1": {
+    "n": 4243,
+    "k": 2671,
+    "rate": 0.6295,
+    "ci95": [
+     0.6149,
+     0.6439
+    ]
+   },
+   "start=10.1": {
+    "n": 4243,
+    "k": 2541,
+    "rate": 0.5989,
+    "ci95": [
+     0.584,
+     0.6135
+    ]
+   },
+   "start=11.1": {
+    "n": 4243,
+    "k": 2421,
+    "rate": 0.5706,
+    "ci95": [
+     0.5556,
+     0.5854
+    ]
+   }
+  },
+  "timing_test_OUR_side_vs_geometry_by_window_start": {
+   "start=2.1": {
+    "n": 4243,
+    "k": 2309,
+    "rate": 0.5442,
+    "ci95": [
+     0.5292,
+     0.5591
+    ]
+   },
+   "start=3.1": {
+    "n": 4243,
+    "k": 2397,
+    "rate": 0.5649,
+    "ci95": [
+     0.55,
+     0.5798
+    ]
+   },
+   "start=4.1": {
+    "n": 4243,
+    "k": 2484,
+    "rate": 0.5854,
+    "ci95": [
+     0.5705,
+     0.6002
+    ]
+   },
+   "start=5.1": {
+    "n": 4243,
+    "k": 2638,
+    "rate": 0.6217,
+    "ci95": [
+     0.607,
+     0.6362
+    ]
+   },
+   "start=6.1": {
+    "n": 4243,
+    "k": 2752,
+    "rate": 0.6486,
+    "ci95": [
+     0.6341,
+     0.6628
+    ]
+   },
+   "start=7.1": {
+    "n": 4243,
+    "k": 2959,
+    "rate": 0.6974,
+    "ci95": [
+     0.6834,
+     0.711
+    ]
+   },
+   "start=8.1": {
+    "n": 4243,
+    "k": 3096,
+    "rate": 0.7297,
+    "ci95": [
+     0.7161,
+     0.7428
+    ]
+   },
+   "start=9.1": {
+    "n": 4243,
+    "k": 3072,
+    "rate": 0.724,
+    "ci95": [
+     0.7104,
+     0.7373
+    ]
+   },
+   "start=10.1": {
+    "n": 4243,
+    "k": 3020,
+    "rate": 0.7118,
+    "ci95": [
+     0.6979,
+     0.7252
+    ]
+   },
+   "start=11.1": {
+    "n": 4243,
+    "k": 2954,
+    "rate": 0.6962,
+    "ci95": [
+     0.6822,
+     0.7099
+    ]
+   }
+  },
+  "conflict_sample_24": [
+   {
+    "split": "train",
+    "sha12": "09b79e1be797",
+    "our_lat": "LANE_KEEP",
+    "alp_side": "left",
+    "geomO_cls": "TURN_L",
+    "geomA_cls": "BEND_L",
+    "road": "urban",
+    "dn": "day",
+    "concordance": "self_contradictory"
+   },
+   {
+    "split": "train",
+    "sha12": "fb43e831edfc",
+    "our_lat": "NUDGE_L",
+    "alp_side": "straight",
+    "geomO_cls": "LANE_KEEP",
+    "geomA_cls": "SHIFT_R",
+    "road": "highway",
+    "dn": "day",
+    "concordance": "concordant"
+   },
+   {
+    "split": "train",
+    "sha12": "1deb4b4e541c",
+    "our_lat": "NUDGE_L",
+    "alp_side": "right",
+    "geomO_cls": "TURN_L",
+    "geomA_cls": "SHIFT_R",
+    "road": "urban",
+    "dn": "night",
+    "concordance": "single_channel"
+   },
+   {
+    "split": "train",
+    "sha12": "706be92444d1",
+    "our_lat": "TURN_R",
+    "alp_side": "left",
+    "geomO_cls": "TURN_R",
+    "geomA_cls": "TURN_L",
+    "road": "urban",
+    "dn": "night",
+    "concordance": "self_contradictory"
+   },
+   {
+    "split": "train",
+    "sha12": "a289db0949b2",
+    "our_lat": "LANE_KEEP",
+    "alp_side": "right",
+    "geomO_cls": "TURN_R",
+    "geomA_cls": "TURN_R",
+    "road": "urban",
+    "dn": "day",
+    "concordance": "concordant"
+   },
+   {
+    "split": "train",
+    "sha12": "cdd1ddf1fca2",
+    "our_lat": "NUDGE_R",
+    "alp_side": "straight",
+    "geomO_cls": "LANE_KEEP",
+    "geomA_cls": "LANE_KEEP",
+    "road": "urban",
+    "dn": "night",
+    "concordance": "concordant"
+   },
+   {
+    "split": "train",
+    "sha12": "d17fa68b4230",
+    "our_lat": "LANE_KEEP",
+    "alp_side": "right",
+    "geomO_cls": "LANE_KEEP",
+    "geomA_cls": "LANE_KEEP",
+    "road": "urban",
+    "dn": "day",
+    "concordance": "self_contradictory"
+   },
+   {
+    "split": "train",
+    "sha12": "50f6f8615996",
+    "our_lat": "LANE_KEEP",
+    "alp_side": "right",
+    "geomO_cls": "TURN_R",
+    "geomA_cls": "TURN_R",
+    "road": "urban",
+    "dn": "night",
+    "concordance": "self_contradictory"
+   },
+   {
+    "split": "train",
+    "sha12": "d5736185b29f",
+    "our_lat": "TURN_R",
+    "alp_side": "straight",
+    "geomO_cls": "TURN_R",
+    "geomA_cls": "TURN_R",
+    "road": "urban",
+    "dn": "night",
+    "concordance": "single_channel"
+   },
+   {
+    "split": "train",
+    "sha12": "e134a501a124",
+    "our_lat": "TURN_R",
+    "alp_side": "straight",
+    "geomO_cls": "TURN_R",
+    "geomA_cls": "SHIFT_L",
+    "road": "intersection",
+    "dn": "day",
+    "concordance": "self_contradictory"
+   },
+   {
+    "split": "train",
+    "sha12": "d3ee6e5ec53e",
+    "our_lat": "LANE_KEEP",
+    "alp_side": "left",
+    "geomO_cls": "TURN_L",
+    "geomA_cls": "TURN_L",
+    "road": "urban",
+    "dn": "day",
+    "concordance": "self_contradictory"
+   },
+   {
+    "split": "train",
+    "sha12": "efbe8651cf8d",
+    "our_lat": "NUDGE_R",
+    "alp_side": "straight",
+    "geomO_cls": "BEND_R",
+    "geomA_cls": "LANE_KEEP",
+    "road": "highway",
+    "dn": "day",
+    "concordance": "single_channel"
+   },
+   {
+    "split": "train",
+    "sha12": "c15881913fde",
+    "our_lat": "NUDGE_R",
+    "alp_side": "straight",
+    "geomO_cls": "SHIFT_L",
+    "geomA_cls": "SHIFT_L",
+    "road": "intersection",
+    "dn": "night",
+    "concordance": "single_channel"
+   },
+   {
+    "split": "train",
+    "sha12": "d6dba787b4e3",
+    "our_lat": "LANE_KEEP",
+    "alp_side": "right",
+    "geomO_cls": "LANE_KEEP",
+    "geomA_cls": "LANE_KEEP",
+    "road": "urban",
+    "dn": "night",
+    "concordance": "single_channel"
+   },
+   {
+    "split": "train",
+    "sha12": "f0d8ae327e4f",
+    "our_lat": "LANE_KEEP",
+    "alp_side": "right",
+    "geomO_cls": "BEND_L",
+    "geomA_cls": "TURN_R",
+    "road": "urban",
+    "dn": "day",
+    "concordance": "self_contradictory"
+   },
+   {
+    "split": "train",
+    "sha12": "80853f695a55",
+    "our_lat": "LANE_KEEP",
+    "alp_side": "left",
+    "geomO_cls": "BEND_L",
+    "geomA_cls": "TURN_L",
+    "road": "urban",
+    "dn": "night",
+    "concordance": "single_channel"
+   },
+   {
+    "split": "train",
+    "sha12": "ad3a79a11c78",
+    "our_lat": "LANE_KEEP",
+    "alp_side": "left",
+    "geomO_cls": "LANE_KEEP",
+    "geomA_cls": "LANE_KEEP",
+    "road": "urban",
+    "dn": "day",
+    "concordance": "self_contradictory"
+   },
+   {
+    "split": "train",
+    "sha12": "9765ae69993d",
+    "our_lat": "TURN_R",
+    "alp_side": "left",
+    "geomO_cls": "TURN_R",
+    "geomA_cls": "SHIFT_L",
+    "road": "urban",
+    "dn": "day",
+    "concordance": "single_channel"
+   },
+   {
+    "split": "train",
+    "sha12": "f44e314d5b36",
+    "our_lat": "NUDGE_L",
+    "alp_side": "straight",
+    "geomO_cls": "SHIFT_R",
+    "geomA_cls": "LANE_KEEP",
+    "road": "highway",
+    "dn": "day",
+    "concordance": "concordant"
+   },
+   {
+    "split": "train",
+    "sha12": "ed4ff479727c",
+    "our_lat": "LANE_KEEP",
+    "alp_side": "right",
+    "geomO_cls": "SHIFT_R",
+    "geomA_cls": "SHIFT_R",
+    "road": "urban",
+    "dn": "day",
+    "concordance": "self_contradictory"
+   },
+   {
+    "split": "train",
+    "sha12": "672acdee39b8",
+    "our_lat": "LANE_KEEP",
+    "alp_side": "right",
+    "geomO_cls": "TURN_L",
+    "geomA_cls": "SHIFT_R",
+    "road": "urban",
+    "dn": "night",
+    "concordance": "self_contradictory"
+   },
+   {
+    "split": "train",
+    "sha12": "0ac2d2c5e20b",
+    "our_lat": "LANE_KEEP",
+    "alp_side": "left",
+    "geomO_cls": "LANE_KEEP",
+    "geomA_cls": "LANE_KEEP",
+    "road": "urban",
+    "dn": "day",
+    "concordance": "self_contradictory"
+   },
+   {
+    "split": "train",
+    "sha12": "fdcd3d52aba3",
+    "our_lat": "TURN_R",
+    "alp_side": "straight",
+    "geomO_cls": "TURN_R",
+    "geomA_cls": "TURN_R",
+    "road": "urban",
+    "dn": "night",
+    "concordance": "self_contradictory"
+   },
+   {
+    "split": "train",
+    "sha12": "704b77d51a47",
+    "our_lat": "LANE_KEEP",
+    "alp_side": "left",
+    "geomO_cls": "LANE_KEEP",
+    "geomA_cls": "LANE_KEEP",
+    "road": "intersection",
+    "dn": "day",
+    "concordance": "single_channel"
+   }
+  ]
+ },
+ "longitudinal": {
+  "n": 4243,
+  "scored_on_counts": {
+   "alpamayo 5.1-11.1s": 4243
+  },
+  "stored_dv_vs_independent_dv_in_ALPA_window": {
+   "n": 4243,
+   "median_abs_err": 0.0048,
+   "p95_abs_err": 0.024,
+   "frac_within_0.3": 0.9993
+  },
+  "flag_agree_rate": {
+   "n": 4241,
+   "k": 2694,
+   "rate": 0.6352,
+   "ci95": [
+    0.6206,
+    0.6496
+   ]
+  },
+  "phrase_dv_sign_agrees_with_independent_dv_ALPA_window": {
+   "n": 4241,
+   "k": 2689,
+   "rate": 0.634,
+   "ci95": [
+    0.6194,
+    0.6484
+   ]
+  },
+  "phrase_dv_sign_agrees_with_independent_dv_OUR_window": {
+   "n": 4241,
+   "k": 2301,
+   "rate": 0.5426,
+   "ci95": [
+    0.5275,
+    0.5575
+   ]
+  },
+  "by_phrase": {
+   "Gentle Acceleration": {
+    "n": 1106,
+    "agree": 0.6546,
+    "mean_dv_alpaW": 2.076
+   },
+   "Gentle Deceleration": {
+    "n": 1525,
+    "agree": 0.5652,
+    "mean_dv_alpaW": -1.766
+   },
+   "Maintain Speed": {
+    "n": 1166,
+    "agree": 0.6132,
+    "mean_dv_alpaW": -0.041
+   },
+   "Strong Acceleration": {
+    "n": 179,
+    "agree": 0.9553,
+    "mean_dv_alpaW": 5.714
+   },
+   "Strong Deceleration": {
+    "n": 265,
+    "agree": 0.8377,
+    "mean_dv_alpaW": -5.503
+   }
+  },
+  "by_our_lon_class": {
+   "ACCELERATE": {
+    "n": 905,
+    "conflict_rate": 0.3878
+   },
+   "ADAPT_SPEED_FOR_CURVE": {
+    "n": 890,
+    "conflict_rate": 0.3337
+   },
+   "BRAKE_TO": {
+    "n": 884,
+    "conflict_rate": 0.3382
+   },
+   "CREEP": {
+    "n": 103,
+    "conflict_rate": 0.1942
+   },
+   "CRUISE": {
+    "n": 1238,
+    "conflict_rate": 0.4087
+   },
+   "FOLLOW": {
+    "n": 166,
+    "conflict_rate": 0.4217
+   },
+   "HOLD": {
+    "n": 55,
+    "conflict_rate": 0.0727
+   }
+  },
+  "by_road_class": {
+   "highway": {
+    "n": 712,
+    "conflict_rate": 0.3933
+   },
+   "intersection": {
+    "n": 639,
+    "conflict_rate": 0.2066
+   },
+   "urban": {
+    "n": 2890,
+    "conflict_rate": 0.3927
+   }
+  },
+  "by_daynight": {
+   "day": {
+    "n": 2292,
+    "conflict_rate": 0.3713
+   },
+   "night": {
+    "n": 1949,
+    "conflict_rate": 0.3571
+   }
+  },
+  "timing_test_phrase_vs_dv_by_window_start": {
+   "start=2.1": {
+    "n": 4241,
+    "k": 2412,
+    "rate": 0.5687,
+    "ci95": [
+     0.5538,
+     0.5836
+    ]
+   },
+   "start=3.1": {
+    "n": 4241,
+    "k": 2568,
+    "rate": 0.6055,
+    "ci95": [
+     0.5907,
+     0.6201
+    ]
+   },
+   "start=4.1": {
+    "n": 4241,
+    "k": 2696,
+    "rate": 0.6357,
+    "ci95": [
+     0.6211,
+     0.6501
+    ]
+   },
+   "start=5.1": {
+    "n": 4241,
+    "k": 2689,
+    "rate": 0.634,
+    "ci95": [
+     0.6194,
+     0.6484
+    ]
+   },
+   "start=6.1": {
+    "n": 4241,
+    "k": 2657,
+    "rate": 0.6265,
+    "ci95": [
+     0.6118,
+     0.6409
+    ]
+   },
+   "start=7.1": {
+    "n": 4241,
+    "k": 2505,
+    "rate": 0.5907,
+    "ci95": [
+     0.5758,
+     0.6054
+    ]
+   },
+   "start=8.1": {
+    "n": 4241,
+    "k": 2292,
+    "rate": 0.5404,
+    "ci95": [
+     0.5254,
+     0.5554
+    ]
+   },
+   "start=9.1": {
+    "n": 4241,
+    "k": 2090,
+    "rate": 0.4928,
+    "ci95": [
+     0.4778,
+     0.5079
+    ]
+   },
+   "start=10.1": {
+    "n": 4241,
+    "k": 1941,
+    "rate": 0.4577,
+    "ci95": [
+     0.4427,
+     0.4727
+    ]
+   },
+   "start=11.1": {
+    "n": 4241,
+    "k": 1820,
+    "rate": 0.4291,
+    "ci95": [
+     0.4143,
+     0.4441
+    ]
+   }
+  }
+ }
+}

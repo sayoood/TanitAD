@@ -1,0 +1,121 @@
+{
+ "checks": [
+  {
+   "name": "1 refcv7_bridge.py: diff vs base is INSERT-only",
+   "ok": true,
+   "detail": "[('insert', 0, 64), ('insert', 0, 2)]"
+  },
+  {
+   "name": "1 run_bridge7.py: diff vs base is INSERT-only",
+   "ok": true,
+   "detail": "[('insert', 0, 1), ('insert', 0, 4), ('insert', 0, 9), ('insert', 0, 2), ('insert', 0, 2), ('insert', 0, 16)]"
+  },
+  {
+   "name": "1 boot7.py: byte-identical to base",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "1 gpu_lock.py: byte-identical to base",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "2 refcv7_bridge.py.base == live package file",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "2 run_bridge7.py.base == live package file",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "2 boot7.py.base == live package file",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "2 gpu_lock.py.base == live package file",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "3a run_model7: every res['fan'] use is inside `if EXPORT_FAN[...]`",
+   "ok": true,
+   "detail": "uses at [490]"
+  },
+  {
+   "name": "3b run_bridge7: every new flag use is gated by an `if` on that flag (or is an argparse declaration)",
+   "ok": true,
+   "detail": "ungated: []"
+  },
+  {
+   "name": "4a ARMS7 = base + {R7_NAVFOLLOW, R7_NAVFLIP}",
+   "ok": true,
+   "detail": "['R7_NAVFLIP', 'R7_NAVFOLLOW']"
+  },
+  {
+   "name": "4b every base arm entry unchanged",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "4c EXPORT_FAN defaults off",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "4d _template accepts the new arms",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "4e flip: left<->right, follow unchanged",
+   "ok": true,
+   "detail": "{'follow': 'follow', 'left': 'right', 'right': 'left'}"
+  },
+  {
+   "name": "4f follow: everything -> follow",
+   "ok": true,
+   "detail": "{'follow': 'follow', 'left': 'follow', 'right': 'follow'}"
+  },
+  {
+   "name": "4g NAV_COMMANDS index map is the one the base rows use (left=1)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "6 knots_to_navsim(banked knots) reproduces the banked seam poses (20 rows)",
+   "ok": true,
+   "detail": "max abs 0"
+  },
+  {
+   "name": "7a export: cands_poses[sel_idx] == the banked emitted poses (synthetic out around a real row)",
+   "ok": true,
+   "detail": "max abs 0"
+  },
+  {
+   "name": "7b export: shapes [181,8,2] / [181,8,3], n_fan 117, WTA flag",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "7c as-launched model (NO r7 heads): universe = anchor_traj FAN117, r7 fields None, cands_poses[sel_idx] == banked poses",
+   "ok": true,
+   "detail": "max abs 0"
+  },
+  {
+   "name": "7d export REFUSES an `out` with neither r7_candidates nor anchor_traj",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "5 MUTATION (one base line deleted) is REJECTED by the insert-only check",
+   "ok": true,
+   "detail": "[('insert', 0, 1), ('insert', 0, 4), ('insert', 0, 9), ('delete', 1, 0), ('insert', 0, 2), ('insert', 0, 2), ('insert', 0, 16)]"
+  }
+ ],
+ "n_ok": 23,
+ "n": 23
+}

@@ -72,16 +72,47 @@ def test_legacy_block_is_emitted_under_a_self_labelling_key(res):
     assert "1.28-2.06x" in lg["estimator_note"]
 
 
-def test_heldout_alias_survives_because_the_gate_keys_on_that_name(res):
-    """``run_gate._deprecated_present`` searches ``("heldout", "model")`` to
-    decide fail-loud-vs-fallback. Renaming the key would silently DISARM the
-    gate's own refusal of the deprecated estimator — the opposite of the intent
-    — so the alias is deliberate and pinned here."""
-    assert res["heldout"]["model"] is res[bench.LEGACY_BLOCK]["model"]
+def test_heldout_key_survives_as_a_TOMBSTONE_not_as_the_numbers(res):
+    """⭐ SUPERSEDED 2026-08-28 (PI ruling, ``ESTIMATOR_CLOSEOUT.md``).
+
+    The old assertion here was ``res["heldout"]["model"] is
+    res[LEGACY_BLOCK]["model"]`` — the alias was the SAME dict, so a
+    decision-grade-looking ``{"mean", "ci95"}`` sat under a bare key that
+    ``gate_guard`` cannot see (it carries no verdict word). Five consumers read
+    it as the arm's headline: the dashboard ORDERED on it,
+    ``runner.regression`` fell back to it, and ``refc_rerank`` /
+    ``efficiency`` / ``generalization`` published it.
+
+    Both halves of the requirement are pinned here, because they pull opposite
+    ways and dropping either one is a silent regression:
+
+    * the KEY must survive — ``run_gate._deprecated_present`` searches
+      ``("heldout", "model")`` and deleting it disarms the gate's own refusal;
+    * the NUMBERS must not — nothing may be quotable out of it.
+    """
+    ho = res["heldout"]["model"]
+    assert ho is not res[bench.LEGACY_BLOCK]["model"], \
+        "the alias must no longer BE the legacy dict"
+    assert set(ho) == set(res[bench.LEGACY_BLOCK]["model"]), \
+        "same metric keys, so every presence check keeps working"
     for m in ("ade_0_2s", "fde@2s", "miss_rate@2m"):
-        node = res["heldout"]["model"][m]
+        node = ho[m]
+        # armed: this is the branch `_deprecated_present` fires on
         assert node["estimator"] == bench.DEPRECATED_ESTIMATOR
-        assert node["deprecated"] is True
+        assert node["deprecated"] is True and node["withdrawn"] is True
+        # withdrawn: nothing to quote
+        assert not {"mean", "ci95", "std"} & set(node), \
+            f"a number is still quotable out of the bare heldout key: {node}"
+        assert node["_moved_to"] == f"{bench.LEGACY_BLOCK}.model.{m}"
+
+
+def test_the_withdrawn_number_is_still_reproducible_one_key_over(res):
+    """History is closed, not deleted: the value lives under the self-labelling
+    key, bit-identical, so every published figure stays traceable."""
+    lg = res[bench.LEGACY_BLOCK]["model"]
+    for m in ("ade_0_2s", "fde@2s", "miss_rate@2m"):
+        assert isinstance(lg[m]["mean"], float)
+        assert lg[m]["estimator"] == bench.DEPRECATED_ESTIMATOR
 
 
 def test_legacy_numbers_are_bit_identical_to_the_pre_migration_block(res):
@@ -93,7 +124,7 @@ def test_legacy_numbers_are_bit_identical_to_the_pre_migration_block(res):
     w = _win()
     splits = [split_by_episode(w["eid"], 0.2, s) for s in range(0, 8)]
     expect = _agg([_suite(w["pred"][va], w["gt"][va]) for _t, va in splits])
-    got = res["heldout"]["model"]
+    got = res[bench.LEGACY_BLOCK]["model"]      # the bare alias is a tombstone
     for m in expect:
         assert np.isclose(got[m]["mean"], expect[m]["mean"], atol=1e-12)
         assert np.isclose(got[m]["ci95"], expect[m]["ci95"], atol=1e-12)
@@ -115,7 +146,8 @@ def test_the_point_estimate_shift_is_reported_not_just_the_width(res):
     s = res[bench.LEGACY_BLOCK]["point_estimate_shift_primary_minus_legacy"]
     a = s["ade_0_2s"]
     assert a["primary_mean"] == res["cluster_bootstrap"]["model"]["ade_0_2s"]["mean"]
-    assert a["legacy_mean"] == res["heldout"]["model"]["ade_0_2s"]["mean"]
+    assert a["legacy_mean"] == \
+        res[bench.LEGACY_BLOCK]["model"]["ade_0_2s"]["mean"]
     assert a["delta"] == pytest.approx(a["primary_mean"] - a["legacy_mean"],
                                        abs=1e-9)
 
@@ -125,8 +157,8 @@ def test_the_primary_point_estimate_is_the_full_set_metric(res):
     exercising the difference and this suite stops proving anything."""
     prim = res["cluster_bootstrap"]["model"]["ade_0_2s"]["mean"]
     assert prim == pytest.approx(res["full_set"]["model"]["ade_0_2s"], abs=1e-4)
-    assert prim != pytest.approx(res["heldout"]["model"]["ade_0_2s"]["mean"],
-                                 abs=1e-6)
+    assert prim != pytest.approx(
+        res[bench.LEGACY_BLOCK]["model"]["ade_0_2s"]["mean"], abs=1e-6)
 
 
 # --------------------------------------------------------------------------- #

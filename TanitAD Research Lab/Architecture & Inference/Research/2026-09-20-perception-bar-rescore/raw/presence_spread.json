@@ -1,0 +1,116 @@
+{
+ "_what": "can any threshold rescue presence? within-window spread + full sweep",
+ "_evidence_class": "MEASURED (ours), CPU, A8 ckpt_5000, matcher-free",
+ "n_windows": 40,
+ "n_queries": 100,
+ "mean_true": 25.15,
+ "within_window_std_mean": 0.04909,
+ "within_window_IQR_mean": 0.05379,
+ "within_window_range_mean": 0.24658,
+ "within_window_range_max": 0.46122,
+ "MAE_constant_control": 8.498,
+ "best_threshold": {
+  "thr": 0.85,
+  "mean_pred": 0.3,
+  "MAE": 24.85
+ },
+ "sweep": [
+  {
+   "thr": 0.05,
+   "mean_pred": 100,
+   "MAE": 74.85
+  },
+  {
+   "thr": 0.1,
+   "mean_pred": 100,
+   "MAE": 74.85
+  },
+  {
+   "thr": 0.15,
+   "mean_pred": 100,
+   "MAE": 74.85
+  },
+  {
+   "thr": 0.2,
+   "mean_pred": 99.95,
+   "MAE": 74.8
+  },
+  {
+   "thr": 0.25,
+   "mean_pred": 99.78,
+   "MAE": 74.625
+  },
+  {
+   "thr": 0.3,
+   "mean_pred": 99.5,
+   "MAE": 74.35
+  },
+  {
+   "thr": 0.35,
+   "mean_pred": 99.08,
+   "MAE": 73.925
+  },
+  {
+   "thr": 0.4,
+   "mean_pred": 98.45,
+   "MAE": 73.3
+  },
+  {
+   "thr": 0.45,
+   "mean_pred": 97.72,
+   "MAE": 72.575
+  },
+  {
+   "thr": 0.5,
+   "mean_pred": 96.55,
+   "MAE": 71.4
+  },
+  {
+   "thr": 0.55,
+   "mean_pred": 94.8,
+   "MAE": 69.7
+  },
+  {
+   "thr": 0.6,
+   "mean_pred": 92.53,
+   "MAE": 67.675
+  },
+  {
+   "thr": 0.65,
+   "mean_pred": 88.95,
+   "MAE": 64.35
+  },
+  {
+   "thr": 0.7,
+   "mean_pred": 82.45,
+   "MAE": 57.85
+  },
+  {
+   "thr": 0.75,
+   "mean_pred": 67.72,
+   "MAE": 46.425
+  },
+  {
+   "thr": 0.8,
+   "mean_pred": 37.33,
+   "MAE": 25.525
+  },
+  {
+   "thr": 0.85,
+   "mean_pred": 0.3,
+   "MAE": 24.85
+  },
+  {
+   "thr": 0.9,
+   "mean_pred": 0,
+   "MAE": 25.15
+  },
+  {
+   "thr": 0.95,
+   "mean_pred": 0,
+   "MAE": 25.15
+  }
+ ],
+ "beats_constant_at_best_threshold": false,
+ "_VERDICT": "\u26d4 NO threshold beats the constant control: the head emits near-constant presence and the information is not there to extract"
+}

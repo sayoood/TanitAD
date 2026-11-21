@@ -1,0 +1,860 @@
+{
+ "question": "is there ANY configuration in which resnet101 trains at 416x1024 on this 8 GB card?",
+ "answer": "YES -- frozen-BN + leading-batch gradient checkpointing (chunk 1): 2.887 GB alloc / 3.73 GB reserved, 4.9 s/step, 2.28 d for 40,284 steps",
+ "host": "dev box, RTX 4060 8188 MiB total (WDDM: allocations past VRAM SPILL to host RAM instead of raising), ~1.0 GB held by other tenants",
+ "fit_rule": "peak_reserved_gb <= 7.1 (8188 MiB minus the ~1.0 GB co-tenants); 'did not raise' is NOT a fit on this box",
+ "full_arm_steps": 40284,
+ "rig": "qland/cover139d.sh command line, --batch as stated, no eval pass",
+ "arms": [
+  {
+   "arm": "r101_b1_base",
+   "trunk": "resnet101.a1_in1k",
+   "batch": 1,
+   "steps": 3,
+   "levers": {},
+   "status": "OOM",
+   "peak_alloc_gb": 22.342,
+   "peak_reserved_gb": 22.424,
+   "median_s_per_step": null,
+   "step_deltas_s": [],
+   "bn_eval": null,
+   "bn_training_on_first_forward": null,
+   "trunk_input_shape": null,
+   "heads_live": [],
+   "heads_dark": [],
+   "ga": {},
+   "loss_last": null,
+   "fits_8gb": false
+  },
+  {
+   "arm": "r101_b1_ck1",
+   "trunk": "resnet101.a1_in1k",
+   "batch": 1,
+   "steps": 3,
+   "levers": {
+    "chunk_ckpt": "1"
+   },
+   "status": "OK",
+   "peak_alloc_gb": 2.888,
+   "peak_reserved_gb": 3.609,
+   "median_s_per_step": 4.6,
+   "step_deltas_s": [
+    4.9,
+    4.3
+   ],
+   "bn_eval": null,
+   "bn_training_on_first_forward": null,
+   "trunk_input_shape": null,
+   "heads_live": [
+    "bev_encoder",
+    "box_decoder",
+    "box_memory",
+    "lift",
+    "map_head",
+    "planner",
+    "trunk"
+   ],
+   "heads_dark": [
+    "tac_decoder"
+   ],
+   "ga": {
+    "ga_trunk": 1644798.0687385648,
+    "ga_trunk_n": 58231872,
+    "ga_planner": 94541.8540565616,
+    "ga_planner_n": 12091797,
+    "ga_tac_decoder": 0.0,
+    "ga_tac_decoder_n": 2253828,
+    "ga_lift": 64234.9806381464,
+    "ga_lift_n": 524544,
+    "ga_bev_encoder": 91581.36530256271,
+    "ga_bev_encoder_n": 785280,
+    "ga_map_head": 82.61693525314331,
+    "ga_map_head_n": 873,
+    "ga_box_memory": 467137.0528564453,
+    "ga_box_memory_n": 287744,
+    "ga_box_decoder": 1166769.7046089172,
+    "ga_box_decoder_n": 3806999
+   },
+   "loss_last": 301.28778,
+   "full_arm_days": 2.14,
+   "full_arm_hours": 51.5,
+   "fits_8gb": true
+  },
+  {
+   "arm": "r101_b1_fbn_ck1",
+   "trunk": "resnet101.a1_in1k",
+   "batch": 1,
+   "steps": 3,
+   "levers": {
+    "frozen_bn": true,
+    "chunk_ckpt": "1"
+   },
+   "status": "OK",
+   "peak_alloc_gb": 2.887,
+   "peak_reserved_gb": 3.607,
+   "median_s_per_step": 4.6,
+   "step_deltas_s": [
+    4.9,
+    4.3
+   ],
+   "bn_eval": 104,
+   "bn_training_on_first_forward": 0,
+   "trunk_input_shape": [
+    8,
+    9,
+    416,
+    1024
+   ],
+   "heads_live": [
+    "bev_encoder",
+    "box_decoder",
+    "box_memory",
+    "lift",
+    "map_head",
+    "planner",
+    "trunk"
+   ],
+   "heads_dark": [
+    "tac_decoder"
+   ],
+   "ga": {
+    "ga_trunk": 1668712.152923718,
+    "ga_trunk_n": 58231872,
+    "ga_planner": 93791.31416167307,
+    "ga_planner_n": 12091797,
+    "ga_tac_decoder": 0.0,
+    "ga_tac_decoder_n": 2253828,
+    "ga_lift": 79493.45268011093,
+    "ga_lift_n": 524544,
+    "ga_bev_encoder": 96827.13380336761,
+    "ga_bev_encoder_n": 785280,
+    "ga_map_head": 82.25322306156158,
+    "ga_map_head_n": 873,
+    "ga_box_memory": 434598.09129333496,
+    "ga_box_memory_n": 287744,
+    "ga_box_decoder": 1154600.535150528,
+    "ga_box_decoder_n": 3806999
+   },
+   "loss_last": 308.43152,
+   "full_arm_days": 2.14,
+   "full_arm_hours": 51.5,
+   "fits_8gb": true
+  },
+  {
+   "arm": "r101_b1_fbn_ck1_bf16",
+   "trunk": "resnet101.a1_in1k",
+   "batch": 1,
+   "steps": 3,
+   "levers": {
+    "frozen_bn": true,
+    "chunk_ckpt": "1",
+    "bf16_trunk": true
+   },
+   "status": "OK",
+   "peak_alloc_gb": 2.724,
+   "peak_reserved_gb": 2.889,
+   "median_s_per_step": 4.35,
+   "step_deltas_s": [
+    4.9,
+    3.8
+   ],
+   "bn_eval": 104,
+   "bn_training_on_first_forward": 0,
+   "trunk_input_shape": [
+    8,
+    9,
+    416,
+    1024
+   ],
+   "heads_live": [
+    "bev_encoder",
+    "box_decoder",
+    "box_memory",
+    "lift",
+    "map_head",
+    "planner",
+    "trunk"
+   ],
+   "heads_dark": [
+    "tac_decoder"
+   ],
+   "ga": {
+    "ga_trunk": 1666858.9686308205,
+    "ga_trunk_n": 58231872,
+    "ga_planner": 93791.62967896726,
+    "ga_planner_n": 12091797,
+    "ga_tac_decoder": 0.0,
+    "ga_tac_decoder_n": 2253828,
+    "ga_lift": 79040.4127882123,
+    "ga_lift_n": 524544,
+    "ga_bev_encoder": 96702.11958885193,
+    "ga_bev_encoder_n": 785280,
+    "ga_map_head": 82.2627888917923,
+    "ga_map_head_n": 873,
+    "ga_box_memory": 434058.01972961426,
+    "ga_box_memory_n": 287744,
+    "ga_box_decoder": 1153463.3346252441,
+    "ga_box_decoder_n": 3806999
+   },
+   "loss_last": 308.65573,
+   "full_arm_days": 2.03,
+   "full_arm_hours": 48.7,
+   "fits_8gb": true
+  },
+  {
+   "arm": "r101_b1_fbn_ck1_s10",
+   "trunk": "resnet101.a1_in1k",
+   "batch": 1,
+   "steps": 10,
+   "levers": {
+    "frozen_bn": true,
+    "chunk_ckpt": "1"
+   },
+   "status": "OK",
+   "peak_alloc_gb": 2.887,
+   "peak_reserved_gb": 3.727,
+   "median_s_per_step": 4.9,
+   "step_deltas_s": [
+    2.9,
+    2.9,
+    4.8,
+    5.0,
+    5.0,
+    4.7,
+    3.0,
+    5.1,
+    5.1
+   ],
+   "bn_eval": 104,
+   "bn_training_on_first_forward": 0,
+   "trunk_input_shape": [
+    8,
+    9,
+    416,
+    1024
+   ],
+   "heads_live": [
+    "bev_encoder",
+    "box_decoder",
+    "box_memory",
+    "lift",
+    "map_head",
+    "planner",
+    "tac_decoder",
+    "trunk"
+   ],
+   "heads_dark": [],
+   "ga": {
+    "ga_trunk": 782215.4369455725,
+    "ga_trunk_n": 58231872,
+    "ga_planner": 72110.00367248473,
+    "ga_planner_n": 12091797,
+    "ga_tac_decoder": 236.6132885091938,
+    "ga_tac_decoder_n": 2253828,
+    "ga_lift": 22755.14446735382,
+    "ga_lift_n": 524544,
+    "ga_bev_encoder": 35907.46252012253,
+    "ga_bev_encoder_n": 785280,
+    "ga_map_head": 78.25678443908691,
+    "ga_map_head_n": 873,
+    "ga_box_memory": 207527.71473312378,
+    "ga_box_memory_n": 287744,
+    "ga_box_decoder": 524206.91900253296,
+    "ga_box_decoder_n": 3806999
+   },
+   "loss_last": 181.86153,
+   "full_arm_days": 2.28,
+   "full_arm_hours": 54.8,
+   "fits_8gb": true
+  },
+  {
+   "arm": "r101_b1_fbn_ck3",
+   "trunk": "resnet101.a1_in1k",
+   "batch": 1,
+   "steps": 3,
+   "levers": {
+    "frozen_bn": true,
+    "chunk_ckpt": "3"
+   },
+   "status": "OK",
+   "peak_alloc_gb": 4.907,
+   "peak_reserved_gb": 5.166,
+   "median_s_per_step": 3.9,
+   "step_deltas_s": [
+    4.8,
+    3.0
+   ],
+   "bn_eval": 104,
+   "bn_training_on_first_forward": 0,
+   "trunk_input_shape": [
+    8,
+    9,
+    416,
+    1024
+   ],
+   "heads_live": [
+    "bev_encoder",
+    "box_decoder",
+    "box_memory",
+    "lift",
+    "map_head",
+    "planner",
+    "trunk"
+   ],
+   "heads_dark": [
+    "tac_decoder"
+   ],
+   "ga": {
+    "ga_trunk": 1668797.216591671,
+    "ga_trunk_n": 58231872,
+    "ga_planner": 93790.9444784496,
+    "ga_planner_n": 12091797,
+    "ga_tac_decoder": 0.0,
+    "ga_tac_decoder_n": 2253828,
+    "ga_lift": 79501.54727226496,
+    "ga_lift_n": 524544,
+    "ga_bev_encoder": 96872.21750020981,
+    "ga_bev_encoder_n": 785280,
+    "ga_map_head": 82.26269388198853,
+    "ga_map_head_n": 873,
+    "ga_box_memory": 434604.1783294678,
+    "ga_box_memory_n": 287744,
+    "ga_box_decoder": 1154642.2195663452,
+    "ga_box_decoder_n": 3806999
+   },
+   "loss_last": 308.43539,
+   "full_arm_days": 1.82,
+   "full_arm_hours": 43.6,
+   "fits_8gb": true
+  },
+  {
+   "arm": "r101_b2_fbn_ck1",
+   "trunk": "resnet101.a1_in1k",
+   "batch": 2,
+   "steps": 3,
+   "levers": {
+    "frozen_bn": true,
+    "chunk_ckpt": "1"
+   },
+   "status": "OK",
+   "peak_alloc_gb": 3.89,
+   "peak_reserved_gb": 4.822,
+   "median_s_per_step": 8.55,
+   "step_deltas_s": [
+    7.7,
+    9.4
+   ],
+   "bn_eval": 104,
+   "bn_training_on_first_forward": 0,
+   "trunk_input_shape": [
+    16,
+    9,
+    416,
+    1024
+   ],
+   "heads_live": [
+    "bev_encoder",
+    "box_decoder",
+    "box_memory",
+    "lift",
+    "map_head",
+    "planner",
+    "trunk"
+   ],
+   "heads_dark": [
+    "tac_decoder"
+   ],
+   "ga": {
+    "ga_trunk": 2048310.067782402,
+    "ga_trunk_n": 58231872,
+    "ga_planner": 72308.28291780844,
+    "ga_planner_n": 12091797,
+    "ga_tac_decoder": 0.0,
+    "ga_tac_decoder_n": 2253828,
+    "ga_lift": 51881.70380920172,
+    "ga_lift_n": 524544,
+    "ga_bev_encoder": 67858.57381343842,
+    "ga_bev_encoder_n": 785280,
+    "ga_map_head": 70.54628050327301,
+    "ga_map_head_n": 873,
+    "ga_box_memory": 400894.8684082031,
+    "ga_box_memory_n": 287744,
+    "ga_box_decoder": 972737.5323753357,
+    "ga_box_decoder_n": 3806999
+   },
+   "loss_last": 253.09752,
+   "full_arm_days": 3.99,
+   "full_arm_hours": 95.7,
+   "fits_8gb": true
+  },
+  {
+   "arm": "r101_b4_fbn_ck1",
+   "trunk": "resnet101.a1_in1k",
+   "batch": 4,
+   "steps": 3,
+   "levers": {
+    "frozen_bn": true,
+    "chunk_ckpt": "1"
+   },
+   "status": "OK",
+   "peak_alloc_gb": 6.227,
+   "peak_reserved_gb": 7.822,
+   "median_s_per_step": 32.75,
+   "step_deltas_s": [
+    15.4,
+    50.1
+   ],
+   "bn_eval": 104,
+   "bn_training_on_first_forward": 0,
+   "trunk_input_shape": [
+    32,
+    9,
+    416,
+    1024
+   ],
+   "heads_live": [
+    "bev_encoder",
+    "box_decoder",
+    "box_memory",
+    "lift",
+    "map_head",
+    "planner",
+    "tac_decoder",
+    "trunk"
+   ],
+   "heads_dark": [],
+   "ga": {
+    "ga_trunk": 1899793.4405446053,
+    "ga_trunk_n": 58231872,
+    "ga_planner": 65028.07686727734,
+    "ga_planner_n": 12091797,
+    "ga_tac_decoder": 242.2466037729755,
+    "ga_tac_decoder_n": 2253828,
+    "ga_lift": 42422.01072373986,
+    "ga_lift_n": 524544,
+    "ga_bev_encoder": 59467.129900455475,
+    "ga_bev_encoder_n": 785280,
+    "ga_map_head": 72.14199209213257,
+    "ga_map_head_n": 873,
+    "ga_box_memory": 370882.8809738159,
+    "ga_box_memory_n": 287744,
+    "ga_box_decoder": 896953.0843057632,
+    "ga_box_decoder_n": 3806999
+   },
+   "loss_last": 190.49582,
+   "full_arm_days": 15.27,
+   "full_arm_hours": 366.5,
+   "fits_8gb": false
+  },
+  {
+   "arm": "r34_b1_ck1",
+   "trunk": "resnet34.a1_in1k",
+   "batch": 1,
+   "steps": 3,
+   "levers": {
+    "chunk_ckpt": "1"
+   },
+   "status": "OK",
+   "peak_alloc_gb": 1.66,
+   "peak_reserved_gb": 1.797,
+   "median_s_per_step": 4.0,
+   "step_deltas_s": [
+    4.0,
+    4.0
+   ],
+   "bn_eval": null,
+   "bn_training_on_first_forward": null,
+   "trunk_input_shape": null,
+   "heads_live": [
+    "bev_encoder",
+    "box_decoder",
+    "box_memory",
+    "lift",
+    "map_head",
+    "planner",
+    "trunk"
+   ],
+   "heads_dark": [
+    "tac_decoder"
+   ],
+   "ga": {
+    "ga_trunk": 724635.256111145,
+    "ga_trunk_n": 22268480,
+    "ga_planner": 101837.7327899652,
+    "ga_planner_n": 11501973,
+    "ga_tac_decoder": 0.0,
+    "ga_tac_decoder_n": 2253828,
+    "ga_lift": 7152.950611412525,
+    "ga_lift_n": 131328,
+    "ga_bev_encoder": 30361.989847421646,
+    "ga_bev_encoder_n": 785280,
+    "ga_map_head": 76.78967022895813,
+    "ga_map_head_n": 873,
+    "ga_box_memory": 70016.63916397095,
+    "ga_box_memory_n": 91136,
+    "ga_box_decoder": 486190.44467520714,
+    "ga_box_decoder_n": 3806999
+   },
+   "loss_last": 182.97775,
+   "full_arm_days": 1.86,
+   "full_arm_hours": 44.8,
+   "fits_8gb": true
+  },
+  {
+   "arm": "r34_b1_fbn",
+   "trunk": "resnet34.a1_in1k",
+   "batch": 1,
+   "steps": 3,
+   "levers": {
+    "frozen_bn": true
+   },
+   "status": "OK",
+   "peak_alloc_gb": 7.708,
+   "peak_reserved_gb": 9.354,
+   "median_s_per_step": 9.65,
+   "step_deltas_s": [
+    9.2,
+    10.1
+   ],
+   "bn_eval": 36,
+   "bn_training_on_first_forward": 0,
+   "trunk_input_shape": [
+    8,
+    9,
+    416,
+    1024
+   ],
+   "heads_live": [
+    "bev_encoder",
+    "box_decoder",
+    "box_memory",
+    "lift",
+    "map_head",
+    "planner",
+    "trunk"
+   ],
+   "heads_dark": [
+    "tac_decoder"
+   ],
+   "ga": {
+    "ga_trunk": 695257.5511817932,
+    "ga_trunk_n": 22268480,
+    "ga_planner": 100391.86750014588,
+    "ga_planner_n": 11501973,
+    "ga_tac_decoder": 0.0,
+    "ga_tac_decoder_n": 2253828,
+    "ga_lift": 8419.542938143015,
+    "ga_lift_n": 131328,
+    "ga_bev_encoder": 37424.39915513992,
+    "ga_bev_encoder_n": 785280,
+    "ga_map_head": 75.82029640674591,
+    "ga_map_head_n": 873,
+    "ga_box_memory": 63947.819831848145,
+    "ga_box_memory_n": 91136,
+    "ga_box_decoder": 517003.074211359,
+    "ga_box_decoder_n": 3806999
+   },
+   "loss_last": 188.8302,
+   "full_arm_days": 4.5,
+   "full_arm_hours": 108.0,
+   "fits_8gb": false
+  },
+  {
+   "arm": "r34_b1_fbn_ck1",
+   "trunk": "resnet34.a1_in1k",
+   "batch": 1,
+   "steps": 3,
+   "levers": {
+    "frozen_bn": true,
+    "chunk_ckpt": "1"
+   },
+   "status": "OK",
+   "peak_alloc_gb": 1.66,
+   "peak_reserved_gb": 1.799,
+   "median_s_per_step": 1.65,
+   "step_deltas_s": [
+    1.6,
+    1.7
+   ],
+   "bn_eval": 36,
+   "bn_training_on_first_forward": 0,
+   "trunk_input_shape": [
+    8,
+    9,
+    416,
+    1024
+   ],
+   "heads_live": [
+    "bev_encoder",
+    "box_decoder",
+    "box_memory",
+    "lift",
+    "map_head",
+    "planner",
+    "trunk"
+   ],
+   "heads_dark": [
+    "tac_decoder"
+   ],
+   "ga": {
+    "ga_trunk": 694074.6997909546,
+    "ga_trunk_n": 22268480,
+    "ga_planner": 100392.01455436196,
+    "ga_planner_n": 11501973,
+    "ga_tac_decoder": 0.0,
+    "ga_tac_decoder_n": 2253828,
+    "ga_lift": 8421.65669721365,
+    "ga_lift_n": 131328,
+    "ga_bev_encoder": 37424.26511883736,
+    "ga_bev_encoder_n": 785280,
+    "ga_map_head": 75.81858837604523,
+    "ga_map_head_n": 873,
+    "ga_box_memory": 63967.16728210449,
+    "ga_box_memory_n": 91136,
+    "ga_box_decoder": 517039.6497592926,
+    "ga_box_decoder_n": 3806999
+   },
+   "loss_last": 188.78395,
+   "full_arm_days": 0.77,
+   "full_arm_hours": 18.5,
+   "fits_8gb": true
+  },
+  {
+   "arm": "r34_b1_ref",
+   "trunk": "resnet34.a1_in1k",
+   "batch": 1,
+   "steps": 3,
+   "levers": {},
+   "status": "OK",
+   "peak_alloc_gb": 7.708,
+   "peak_reserved_gb": 9.354,
+   "median_s_per_step": 8.2,
+   "step_deltas_s": [
+    7.4,
+    9.0
+   ],
+   "bn_eval": null,
+   "bn_training_on_first_forward": null,
+   "trunk_input_shape": null,
+   "heads_live": [
+    "bev_encoder",
+    "box_decoder",
+    "box_memory",
+    "lift",
+    "map_head",
+    "planner",
+    "trunk"
+   ],
+   "heads_dark": [
+    "tac_decoder"
+   ],
+   "ga": {
+    "ga_trunk": 1213951.347770691,
+    "ga_trunk_n": 22268480,
+    "ga_planner": 101609.47973828005,
+    "ga_planner_n": 11501973,
+    "ga_tac_decoder": 0.0,
+    "ga_tac_decoder_n": 2253828,
+    "ga_lift": 6790.14473696053,
+    "ga_lift_n": 131328,
+    "ga_bev_encoder": 30492.82291841507,
+    "ga_bev_encoder_n": 785280,
+    "ga_map_head": 78.29124343395233,
+    "ga_map_head_n": 873,
+    "ga_box_memory": 70444.96480941772,
+    "ga_box_memory_n": 91136,
+    "ga_box_decoder": 495357.1437175274,
+    "ga_box_decoder_n": 3806999
+   },
+   "loss_last": 186.14899,
+   "full_arm_days": 3.82,
+   "full_arm_hours": 91.8,
+   "fits_8gb": false
+  },
+  {
+   "arm": "r34_b1_ref_s10",
+   "trunk": "resnet34.a1_in1k",
+   "batch": 1,
+   "steps": 10,
+   "levers": {},
+   "status": "OK",
+   "peak_alloc_gb": 7.712,
+   "peak_reserved_gb": 9.354,
+   "median_s_per_step": 10.75,
+   "step_deltas_s": [
+    9.4,
+    10.4,
+    13.0,
+    12.4,
+    12.3,
+    11.0,
+    10.5,
+    9.2,
+    10.3
+   ],
+   "bn_eval": null,
+   "bn_training_on_first_forward": 36,
+   "trunk_input_shape": [
+    8,
+    9,
+    416,
+    1024
+   ],
+   "heads_live": [
+    "bev_encoder",
+    "box_decoder",
+    "box_memory",
+    "lift",
+    "planner",
+    "trunk"
+   ],
+   "heads_dark": [
+    "map_head",
+    "tac_decoder"
+   ],
+   "ga": {
+    "ga_trunk": 838102.5752468109,
+    "ga_trunk_n": 22268480,
+    "ga_planner": 106922.98815544811,
+    "ga_planner_n": 11501973,
+    "ga_tac_decoder": 0.0,
+    "ga_tac_decoder_n": 2253828,
+    "ga_lift": 6294.415609955788,
+    "ga_lift_n": 131328,
+    "ga_bev_encoder": 30441.788173675537,
+    "ga_bev_encoder_n": 785280,
+    "ga_map_head": 0.0,
+    "ga_map_head_n": 0,
+    "ga_box_memory": 81471.78935623169,
+    "ga_box_memory_n": 91136,
+    "ga_box_decoder": 588530.5459170341,
+    "ga_box_decoder_n": 3806999
+   },
+   "loss_last": 128.70203,
+   "full_arm_days": 5.01,
+   "full_arm_hours": 120.3,
+   "fits_8gb": false
+  },
+  {
+   "arm": "r34_b2_fbn_ck1",
+   "trunk": "resnet34.a1_in1k",
+   "batch": 2,
+   "steps": 5,
+   "levers": {
+    "frozen_bn": true,
+    "chunk_ckpt": "1"
+   },
+   "status": "OK",
+   "peak_alloc_gb": 2.512,
+   "peak_reserved_gb": 2.754,
+   "median_s_per_step": 2.8,
+   "step_deltas_s": [
+    7.5,
+    6.4,
+    2.8,
+    2.6
+   ],
+   "bn_eval": 36,
+   "bn_training_on_first_forward": 0,
+   "trunk_input_shape": [
+    16,
+    9,
+    416,
+    1024
+   ],
+   "heads_live": [
+    "bev_encoder",
+    "box_decoder",
+    "box_memory",
+    "lift",
+    "map_head",
+    "planner",
+    "trunk"
+   ],
+   "heads_dark": [
+    "tac_decoder"
+   ],
+   "ga": {
+    "ga_trunk": 583926.9971122742,
+    "ga_trunk_n": 22268480,
+    "ga_planner": 96781.11703374397,
+    "ga_planner_n": 11501973,
+    "ga_tac_decoder": 0.0,
+    "ga_tac_decoder_n": 2253828,
+    "ga_lift": 17519.64243966341,
+    "ga_lift_n": 131328,
+    "ga_bev_encoder": 81550.41936397552,
+    "ga_bev_encoder_n": 785280,
+    "ga_map_head": 81.17718982696533,
+    "ga_map_head_n": 873,
+    "ga_box_memory": 146293.32835388184,
+    "ga_box_memory_n": 91136,
+    "ga_box_decoder": 1161487.1015577316,
+    "ga_box_decoder_n": 3806999
+   },
+   "loss_last": 153.95554,
+   "full_arm_days": 1.31,
+   "full_arm_hours": 31.3,
+   "fits_8gb": true
+  },
+  {
+   "arm": "r34_b2_ref",
+   "trunk": "resnet34.a1_in1k",
+   "batch": 2,
+   "steps": 5,
+   "levers": {},
+   "status": "OK",
+   "peak_alloc_gb": 14.629,
+   "peak_reserved_gb": 18.268,
+   "median_s_per_step": 29.1,
+   "step_deltas_s": [
+    32.6,
+    28.7,
+    31.3,
+    29.1
+   ],
+   "bn_eval": null,
+   "bn_training_on_first_forward": 36,
+   "trunk_input_shape": [
+    16,
+    9,
+    416,
+    1024
+   ],
+   "heads_live": [
+    "bev_encoder",
+    "box_decoder",
+    "box_memory",
+    "lift",
+    "map_head",
+    "planner",
+    "trunk"
+   ],
+   "heads_dark": [
+    "tac_decoder"
+   ],
+   "ga": {
+    "ga_trunk": 1209470.399734497,
+    "ga_trunk_n": 22268480,
+    "ga_planner": 97880.60609782921,
+    "ga_planner_n": 11501973,
+    "ga_tac_decoder": 0.0,
+    "ga_tac_decoder_n": 2253828,
+    "ga_lift": 6684.117844581604,
+    "ga_lift_n": 131328,
+    "ga_bev_encoder": 33566.550407886505,
+    "ga_bev_encoder_n": 785280,
+    "ga_map_head": 82.49290609359741,
+    "ga_map_head_n": 873,
+    "ga_box_memory": 83441.76489257812,
+    "ga_box_memory_n": 91136,
+    "ga_box_decoder": 603645.4063696861,
+    "ga_box_decoder_n": 3806999
+   },
+   "loss_last": 165.66106,
+   "full_arm_days": 13.57,
+   "full_arm_hours": 325.6,
+   "fits_8gb": false
+  }
+ ]
+}

@@ -1,0 +1,188 @@
+{
+ "schema": "ra1-verdict-v1",
+ "kin_mode": "yaw",
+ "ctl_channel": "yaw_rate",
+ "deciding": true,
+ "representation_note": "MEASURED YAW RATE (PI ruling D-PI-YAWRATE-1): deciding",
+ "runs": {
+  "R0:@0": "D:\\tanitad\\runs\\ra1_yaw\\R0_s0\\eval",
+  "A0:b0.04@0": "D:\\tanitad\\runs\\ra1_yaw\\A0_b0.04_s0\\eval",
+  "A0:b0.08@0": "D:\\tanitad\\runs\\ra1_yaw\\A0_b0.08_s0\\eval",
+  "A1:b0.04g50@0": "D:\\tanitad\\runs\\ra1_yaw\\A1_b0.04g50_s0\\eval",
+  "A1:b0.04g100@0": "D:\\tanitad\\runs\\ra1_yaw\\A1_b0.04g100_s0\\eval",
+  "A1:b0.08g50@0": "D:\\tanitad\\runs\\ra1_yaw\\A1_b0.08g50_s0\\eval",
+  "A1:b0.08g100@0": "D:\\tanitad\\runs\\ra1_yaw\\A1_b0.08g100_s0\\eval"
+ },
+ "estimator": "paired episode-cluster bootstrap (episodes) + the 2-seed floor |A1_s0 - A1_s1| (training seed)",
+ "n_windows": 2399,
+ "instrument_ok_all": true,
+ "selection_basis": "the withheld TRAIN holdout (PREREG_HJ_STAGE0 Amendment 1); eval-141 scores K once, for the chosen cell",
+ "A1_best_cell": "b0.08g50",
+ "A1_cells_seed0_holdout_ade6": {
+  "b0.04g100": 3.9970974268227857,
+  "b0.04g50": 4.004516802662888,
+  "b0.08g100": 3.9452124379837366,
+  "b0.08g50": 3.912928391060451
+ },
+ "A1_cells_seed0_eval141_ade6_NON_DECIDING": {
+  "b0.04g100": {
+   "ade6": 3.4660281009142824,
+   "arm_minus_p10": 0.9032851971456114
+  },
+  "b0.04g50": {
+   "ade6": 3.455284929564026,
+   "arm_minus_p10": 0.8925420257953549
+  },
+  "b0.08g100": {
+   "ade6": 3.4351746820903752,
+   "arm_minus_p10": 0.8724317783217045
+  },
+  "b0.08g50": {
+   "ade6": 3.5103311020962322,
+   "arm_minus_p10": 0.9475881983275618
+  }
+ },
+ "holdout": {
+  "clips_sha256": "f6a1dee02af0b96f815416bfef9bc11a04554702525135aa75a740942d7750f9",
+  "n_clips": 60,
+  "n_windows": 4076,
+  "pool": 600,
+  "n_runs_scored": 7,
+  "ade6_mean_by_run": {
+   "A0:b0.04@0": 3.5839422451671687,
+   "A0:b0.08@0": 3.575392066844745,
+   "A1:b0.04g100@0": 3.9970974268227857,
+   "A1:b0.04g50@0": 4.004516802662888,
+   "A1:b0.08g100@0": 3.9452124379837366,
+   "A1:b0.08g50@0": 3.912928391060451,
+   "R0:@0": 3.4215421972742597
+  }
+ },
+ "A1_best_rule": "lowest seed-0 mean ADE@6s on the withheld TRAIN holdout (60 clips = the last 60 of the first 600 in sha12 order, 4076 windows, clip-list sha256 f6a1dee02af0...), withheld from training for EVERY arm -- PREREG_HJ_STAGE0 Amendment 1. NOT selected on eval-141: eval-141 scores K once, for this cell; every cell's eval-141 ADE@6s is listed under A1_cells_seed0_eval141_ade6_NON_DECIDING and decides nothing.",
+ "A1x_control": {
+  "verdict": "NOT RUN -- the instrument gate is open; no other verdict below is admissible"
+ },
+ "SENS": {
+  "bar": "A1 level-1 yaw_rate-sensitivity (k=10) >= 0.1 AND separated above A0, at BOTH seeds",
+  "per_seed": {
+   "seed0": {
+    "A1_yaw_rate_k10": 0.37973421812057495,
+    "A0_yaw_rate_k10": 0.17526493966579437,
+    "A0_cell": "b0.08",
+    "A1_minus_A0": {
+     "delta": 0.2045,
+     "lo": 0.168,
+     "hi": 0.2416,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "passes_level": true,
+    "separated_above_A0": true,
+    "speed_k10_A1": 0.9288195371627808
+   },
+   "seed1": "NOT EVALUABLE: missing run"
+  },
+  "ctl_channel": "yaw_rate",
+  "PASS": false
+ },
+ "training_seed_floor_A1": null,
+ "K": {
+  "bar": "best(R0, A1, A2) - P10 ADE@6s < 0, separated at both seeds, |delta| > 2x the training-seed floor",
+  "candidates": {
+   "R0": {
+    "seed0": {
+     "ade6": 3.0930682344544462,
+     "p10_ade6": 2.562742903768671,
+     "arm_minus_p10": {
+      "delta": 0.5303,
+      "lo": 0.3684,
+      "hi": 0.691,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "below_p10": false,
+     "separated": true,
+     "beats_2x_floor": false
+    },
+    "seed1": "missing",
+    "mean_ade6": 3.0930682344544462,
+    "PASS": false
+   },
+   "A1": {
+    "seed0": {
+     "ade6": 3.5103311020962322,
+     "p10_ade6": 2.562742903768671,
+     "arm_minus_p10": {
+      "delta": 0.9476,
+      "lo": 0.719,
+      "hi": 1.1856,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "below_p10": false,
+     "separated": true,
+     "beats_2x_floor": false
+    },
+    "seed1": "missing",
+    "mean_ade6": 3.5103311020962322,
+    "PASS": false
+   },
+   "A2": {
+    "seed0": "missing",
+    "seed1": "missing",
+    "mean_ade6": null,
+    "PASS": false
+   }
+  },
+  "best_arm": "R0",
+  "PASS": false
+ },
+ "COST": {
+  "bar": "-Spearman(level-2 distance to the +6 s latent, time) > the level-1 value, paired over episodes",
+  "per_run": {
+   "A0:b0.04@0": {
+    "L2_minus_L1_native": {
+     "delta": -0.1383,
+     "lo": -0.1493,
+     "hi": -0.1277,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "PASS": false
+   },
+   "A0:b0.08@0": {
+    "L2_minus_L1_native": {
+     "delta": -0.1425,
+     "lo": -0.1538,
+     "hi": -0.1307,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "PASS": false
+   },
+   "A1:b0.08g50@0": {
+    "L2_minus_L1_native": {
+     "delta": -0.1909,
+     "lo": -0.2067,
+     "hi": -0.1765,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "PASS": false
+   }
+  }
+ },
+ "branch": "A1x GATE: NOT RUN -- the instrument gate is open; no other verdict below is admissible"
+}

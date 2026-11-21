@@ -1,0 +1,73 @@
+2026-10-16T07:42:47Z start: repo Sayood/tanitad-refe-s1aux arm H1-s0 dry_run=True device=cpu poll 0.05 s, pkg C:\Users\Admin\AppData\Local\Temp\s1cr\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan
+2026-10-16T07:42:47Z prereg guards: PREREG_S1C body and PREREG_AUXVETO body + amendment A1 are the registered texts
+2026-10-16T07:42:47Z preflight ok   driverl-eval python
+2026-10-16T07:42:47Z preflight ok   tanitad python
+2026-10-16T07:42:47Z preflight ok   ctx cache (c3_full_ctx)
+2026-10-16T07:42:47Z preflight ok   floor heads
+2026-10-16T07:42:47Z preflight ok   held-out logs file
+2026-10-16T07:42:47Z preflight ok   S1 cache arms
+2026-10-16T07:42:47Z preflight ok   instrument scripts
+2026-10-16T07:42:47Z preflight ok   banked S1 read json
+2026-10-16T07:42:47Z preflight ok   work dir free >= 6.0 GiB
+2026-10-16T07:42:49Z poll 1: arms/H1-s0/ is COMPLETE (11 files; token arms/H1-s0/PASS_d257647b7858.json)
+2026-10-16T07:42:49Z fetch: 11 files, 107027270 B, all verified (0 cached)
+2026-10-16T07:42:49Z evidence: OK; C1 step0 IoU 0.1586791569036157 holds
+2026-10-16T07:55:11Z [forward_cpu] exit 0 after 738.9 s ::  "gpu": {} | } | ZZAUXFWD_OK 1058
+2026-10-16T07:55:12Z RUN [perception_navtest_cpu] C:/Users/Admin/venvs/driverl-eval/Scripts/python.exe "C:\Users\Admin\AppData\Local\Temp\s1cr\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\eval\aux_s1_readout.py" perception --labels-set navtest --dac-csv "C:\Users\Admin\AppData\Local\Temp\s1cr\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\raw/p2_r2_instrument/baseline/u400_navtest_full.csv" --c3-table "C:\Users\Admin\AppData\Local\Temp\s1cr\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\raw/2026-10-11-c3-selection-headroom/table.npz" --c3-tokens "C:\Users\Admin\AppData\Local\Temp\s1cr\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\raw/2026-10-11-c3-selection-headroom/tokens.json" --n-boot 10000 --pred "H1-s0=C:\Users\Admin\AppData\Local\Temp\s1cr\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\raw\2026-10-16-s1c-read\out\dryrun\forward_cpu\head_pred_H1-s0.npz" --pred-init H1-s0=D:/Projects/TanitAD-artifacts/aux_navtest_forward/p3_floor_full/heads\head_pred_H2-s0.npz --out "C:\Users\Admin\AppData\Local\Temp\s1cr\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\raw\2026-10-16-s1c-read\out\dryrun\perception_navtest_cpu.json"
+2026-10-16T07:55:25Z [perception_navtest_cpu] exit 0 after 13.4 s :: ZZAUXS1_PERCEPTION_OK arms ['H1-s0'] floor_read ['H1-s0'] floor_unread []
+2026-10-16T07:55:25Z RUN [nat_p1_cpu] C:/Users/Admin/venvs/driverl-eval/Scripts/python.exe -I "C:\Users\Admin\AppData\Local\Temp\s1cr\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\raw\2026-10-16-s1c-read\nat_p1.py" --pred "H1-s0=C:\Users\Admin\AppData\Local\Temp\s1cr\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\raw\2026-10-16-s1c-read\out\dryrun\forward_cpu\head_pred_H1-s0.npz" "H1-s1=C:\Users\Admin\AppData\Local\Temp\s1cr\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\raw\2026-10-16-s1c-read\out\dryrun\forward_cpu\head_pred_H1-s1.npz" "H1-s2=C:\Users\Admin\AppData\Local\Temp\s1cr\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\raw\2026-10-16-s1c-read\out\dryrun\forward_cpu\head_pred_H1-s2.npz" --contrast H1-s0:H1-s0 H1-s1:H1-s0 --out "C:\Users\Admin\AppData\Local\Temp\s1cr\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\raw\2026-10-16-s1c-read\out\dryrun\nat_p1_cpu.json"
+2026-10-16T07:55:39Z [nat_p1_cpu] exit 0 after 13.6 s :: ZZNATP1_OK arms ['H1-s0', 'H1-s1', 'H1-s2'] contrasts ['H1-s0-minus-H1-s0', 'H1-s1-minus-H1-s0'] ess 575.3679 identity ['H1-s0', 'H1-s1', 'H1-s2']
+2026-10-16T07:55:39Z comparator identity on cpu: OK {"ok": true, "device": "cpu", "tol": 1e-09, "harness_block_vs_banked": {"ok": true, "n_numeric_leaves": 286, "max_abs_diff": 0.0, "at": null, "tol": 1e-09, "structural_or_string_mismatches": []}, "natural_read": {"abs_diff_c3": 0.0, "abs_diff_ess": 1.1368683772161603e-13, "abs_diff_natural": 2.22044
+2026-10-16T07:55:39Z RUN [perception_heldout_update400] C:/Users/Admin/venvs/driverl-eval/Scripts/python.exe "C:\Users\Admin\AppData\Local\Temp\s1cr\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\eval\aux_s1_readout.py" perception --labels-set train --heldout-logs D:/Projects/TanitAD-artifacts/_tlane_work/ho/refe_heldout/heldout_logs.txt --n-boot 10000 --pred "H1-s0=C:\Users\Admin\AppData\Local\Temp\s1cr\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\raw\2026-10-16-s1c-read\out\dryrun\work\cache\arms\H1-s0\dump\head_pred_update400.npz" --pred-init "H1-s0=C:\Users\Admin\AppData\Local\Temp\s1cr\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\raw\2026-10-16-s1c-read\out\dryrun\work\cache\arms\H1-s0\dump\head_pred_step0.npz" --out "C:\Users\Admin\AppData\Local\Temp\s1cr\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\raw\2026-10-16-s1c-read\out\dryrun\perception_heldout_update400.json"
+2026-10-16T07:55:46Z [perception_heldout_update400] exit 0 after 7.4 s :: ZZAUXS1_PERCEPTION_OK arms ['H1-s0'] floor_read ['H1-s0'] floor_unread []
+2026-10-16T07:55:46Z RUN [veto] C:/Users/Admin/venvs/tanitad/Scripts/python.exe -I "C:\Users\Admin\AppData\Local\Temp\s1cr\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\raw\2026-10-16-s1c-read\s1c_veto.py" --head-pred "H1-s0=C:\Users\Admin\AppData\Local\Temp\s1cr\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\raw\2026-10-16-s1c-read\out\dryrun\forward_cpu\head_pred_H1-s0.npz" --label V-DRYRUN-H1S0 --expect-iou 0.4957035913034702 --out "C:\Users\Admin\AppData\Local\Temp\s1cr\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\raw\2026-10-16-s1c-read\out\dryrun\veto.json" --with-vpred
+2026-10-16T07:56:37Z [veto] exit 0 after 50.5 s :: s1c_veto: V-DRYRUN-H1S0 dPDMS -0.8756 [-1.5017, -0.3061]  V-GT +0.3670  row AV-HARM  valid True  instrument True  34 s | ZZS1CVETO_OK V-DRYRUN-H1S0 row AV-HARM valid True
+2026-10-16T07:56:38Z RUN [desc_selection] C:/Users/Admin/venvs/driverl-eval/Scripts/python.exe -I "C:\Users\Admin\AppData\Local\Temp\s1cr\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\raw\2026-10-16-s1c-read\s1c_desc_selection.py" --scores "H1-s0=C:\Users\Admin\AppData\Local\Temp\s1cr\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\raw\2026-10-16-s1c-read\out\dryrun\work\cache\arms\H1-s0\dump\scores_update400_B.npz" N-s0=D:\Projects\TanitAD-artifacts\s1_read_cache\arms\N-s0\dump\scores_update400_B.npz N-s1=D:\Projects\TanitAD-artifacts\s1_read_cache\arms\N-s1\dump\scores_update400_B.npz N-s2=D:\Projects\TanitAD-artifacts\s1_read_cache\arms\N-s2\dump\scores_update400_B.npz --pdm D:\Projects\TanitAD-artifacts\s1_read_cache\labels\x\heldout_pdm --out "C:\Users\Admin\AppData\Local\Temp\s1cr\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\raw\2026-10-16-s1c-read\out\dryrun\desc_selection.json"
+2026-10-16T07:56:48Z [desc_selection] exit 0 after 10.3 s :: ZZS1CDESC_OK arms ['H1-s0', 'N-s0', 'N-s1', 'N-s2'] sets 3137
+2026-10-16T07:56:48Z ZZS1CREAD_DRYRUN_OK {"s1c_row": "O3", "veto_row": "AV-HARM"}
+2026-10-16T08:08:08Z start: repo Sayood/tanitad-refe-s1aux arm H1-s0 dry_run=True device=cpu poll 0.05 s, pkg C:\Users\Admin\AppData\Local\Temp\s1cr\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan
+2026-10-16T08:08:08Z prereg guards: PREREG_S1C body and PREREG_AUXVETO body + amendment A1 are the registered texts
+2026-10-16T08:08:08Z preflight ok   driverl-eval python
+2026-10-16T08:08:08Z preflight ok   tanitad python
+2026-10-16T08:08:08Z preflight ok   ctx cache (c3_full_ctx)
+2026-10-16T08:08:08Z preflight ok   floor heads
+2026-10-16T08:08:08Z preflight ok   held-out logs file
+2026-10-16T08:08:08Z preflight ok   S1 cache arms
+2026-10-16T08:08:08Z preflight ok   instrument scripts
+2026-10-16T08:08:08Z preflight ok   banked S1 read json
+2026-10-16T08:08:08Z preflight ok   work dir free >= 6.0 GiB
+2026-10-16T08:08:11Z poll 1: arms/H1-s0/ is COMPLETE (11 files; token arms/H1-s0/PASS_d257647b7858.json)
+2026-10-16T08:08:11Z fetch: 11 files, 107027270 B, all verified (11 cached)
+2026-10-16T08:08:11Z evidence: OK; C1 step0 IoU 0.1586791569036157 holds
+2026-10-16T08:08:13Z stage forward_cpu: cached (2026-10-16T07:55:11Z)
+2026-10-16T08:08:13Z stage perception_navtest_cpu: cached (2026-10-16T07:55:25Z)
+2026-10-16T08:08:13Z stage nat_cpu: cached (2026-10-16T07:55:39Z)
+2026-10-16T08:08:13Z comparator identity on cpu: OK {"ok": true, "device": "cpu", "tol": 1e-09, "harness_block_vs_banked": {"ok": true, "n_numeric_leaves": 286, "max_abs_diff": 0.0, "at": null, "tol": 1e-09, "structural_or_string_mismatches": []}, "natural_read": {"abs_diff_c3": 0.0, "abs_diff_ess": 1.1368683772161603e-13, "abs_diff_natural": 2.22044
+2026-10-16T08:08:13Z stage perception_heldout: cached (2026-10-16T07:55:46Z)
+2026-10-16T08:08:13Z stage veto: cached (2026-10-16T07:56:37Z)
+2026-10-16T08:08:13Z stage desc_selection: cached (2026-10-16T07:56:48Z)
+2026-10-16T08:08:13Z ZZS1CREAD_DRYRUN_OK {"s1c_row": "O3", "veto_row": "AV-HARM"}
+2026-10-16T08:08:15Z LIVE read-only listing of Sayood/tanitad-refe-s1aux: 2359 files; arms present: ['H1-s0', 'H1-s1', 'H1-s2', 'H2-s0', 'H2-s1', 'H2-s2', 'N-s0', 'N-s1', 'N-s2']; arms/H1u10k-s0/ ready=False (0 files; missing 13)
+2026-10-16T08:33:52Z start: repo Sayood/tanitad-refe-s1aux arm H1-s0 dry_run=True device=cpu poll 0.05 s, pkg C:\Users\Admin\AppData\Local\Temp\s1cr\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan
+2026-10-16T08:33:52Z prereg guards: PREREG_S1C body and PREREG_AUXVETO body + amendment A1 are the registered texts
+2026-10-16T08:33:52Z preflight ok   driverl-eval python
+2026-10-16T08:33:52Z preflight ok   tanitad python
+2026-10-16T08:33:52Z preflight ok   ctx cache (c3_full_ctx)
+2026-10-16T08:33:52Z preflight ok   floor heads
+2026-10-16T08:33:52Z preflight ok   held-out logs file
+2026-10-16T08:33:52Z preflight ok   S1 cache arms
+2026-10-16T08:33:52Z preflight ok   instrument scripts
+2026-10-16T08:33:52Z preflight ok   banked S1 read json
+2026-10-16T08:33:52Z preflight ok   work dir free >= 6.0 GiB
+2026-10-16T08:33:55Z poll 1: arms/H1-s0/ is COMPLETE (11 files; token arms/H1-s0/PASS_d257647b7858.json)
+2026-10-16T08:33:55Z fetch: 11 files, 107027270 B, all verified (11 cached)
+2026-10-16T08:33:55Z evidence: OK; C1 step0 IoU 0.1586791569036157 holds
+2026-10-16T08:33:57Z stage forward_cpu: cached (2026-10-16T07:55:11Z)
+2026-10-16T08:33:57Z stage perception_navtest_cpu: cached (2026-10-16T07:55:25Z)
+2026-10-16T08:33:57Z stage nat_cpu: cached (2026-10-16T07:55:39Z)
+2026-10-16T08:33:57Z comparator identity on cpu: OK {"ok": true, "device": "cpu", "tol": 1e-09, "harness_block_vs_banked": {"ok": true, "n_numeric_leaves": 286, "max_abs_diff": 0.0, "at": null, "tol": 1e-09, "structural_or_string_mismatches": []}, "natural_read": {"abs_diff_c3": 0.0, "abs_diff_ess": 1.1368683772161603e-13, "abs_diff_natural": 2.22044
+2026-10-16T08:33:57Z stage perception_heldout: cached (2026-10-16T07:55:46Z)
+2026-10-16T08:33:57Z stage veto: cached (2026-10-16T07:56:37Z)
+2026-10-16T08:33:57Z stage desc_selection: cached (2026-10-16T07:56:48Z)
+2026-10-16T08:33:57Z ZZS1CREAD_DRYRUN_OK {"s1c_row": "O3", "veto_row": "AV-HARM"}
+2026-10-16T08:33:59Z LIVE read-only listing of Sayood/tanitad-refe-s1aux: 2359 files; arms present: ['H1-s0', 'H1-s1', 'H1-s2', 'H2-s0', 'H2-s1', 'H2-s2', 'N-s0', 'N-s1', 'N-s2']; arms/H1u10k-s0/ ready=False (0 files; missing 13)

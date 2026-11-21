@@ -1,0 +1,99 @@
+{
+ "seed": 20261027,
+ "speed_min_mps": 5.0,
+ "n_windows": 2399,
+ "n_candidates_draw": 1908,
+ "draw_positions_in_candidates": [
+  1390,
+  1882,
+  415
+ ],
+ "rule_text": "delta_w = ADE6(DAG, seed 0) - ADE6(DAG-0, seed 0) of window w, T1-kin, causal, m = 10 (negative: DAG closer to the human's path), over the 2,399 windows in the dump order.\n1. For each GT stratum (JUNCTION, CURVE, NO-TURN; window_strata_eval141.npz, defined from the human's labels) sort the stratum's windows by (|delta_w|, grid row) ascending and take position (n - 1) // 2: the lower median of |delta|, the typical size of change in that stratum.\n2. WORST: the window with the largest delta_w over all 2,399 windows (ties: lowest grid row).\n3. Three DRAWS: numpy.random.default_rng(20261027).choice(n_cand, 3, replace=False) over the windows (dump order) with GT mean speed >= 5 m/s that are not already chosen by 1 or 2.\nNo window is swapped or dropped for how it looks; a window where DAG is worse stays in.",
+ "rule_sha256": "ee759319dfafa149f8ed96da2d1893944569f9cdf5675399ebda9aac76d000c5",
+ "script_sha256": "d3063aaeef21f352d8ed13eb6380f744e6e169f5f02cfde9d3598b09d3f189f3",
+ "strata_file_sha256": "55d12d16ac04f843c1ed97dcecad7a02584a3dee33b2020b468a32aadeb04c51",
+ "strata_counts": {
+  "JUNCTION": 298,
+  "CURVE": 140,
+  "NO-TURN": 1961
+ },
+ "scenes": [
+  {
+   "tag": "JUNCTION",
+   "source": "median abs(delta) of stratum JUNCTION (n = 298)",
+   "grid_row": 496,
+   "stratum": "JUNCTION",
+   "clip_index": 29,
+   "clip": "37e61793-36e9-426a-b257-23e684ba18b6",
+   "ws": 11,
+   "gt_mean_speed": 5.564310928215533,
+   "delta_s0_m": 0.6526261169992944
+  },
+  {
+   "tag": "CURVE",
+   "source": "median abs(delta) of stratum CURVE (n = 140)",
+   "grid_row": 944,
+   "stratum": "CURVE",
+   "clip_index": 55,
+   "clip": "63434e0b-8cd2-4e1f-9526-8a06bd7f4b0d",
+   "ws": 35,
+   "gt_mean_speed": 14.060861138070143,
+   "delta_s0_m": -0.3068931098466001
+  },
+  {
+   "tag": "NO-TURN",
+   "source": "median abs(delta) of stratum NO-TURN (n = 1961)",
+   "grid_row": 59,
+   "stratum": "NO-TURN",
+   "clip_index": 3,
+   "clip": "10804db8-d070-444e-a1f1-89c1871588d5",
+   "ws": 35,
+   "gt_mean_speed": 4.6034549396107876,
+   "delta_s0_m": 0.46640887737156056
+  },
+  {
+   "tag": "WORST",
+   "source": "largest delta over all windows",
+   "grid_row": 1795,
+   "stratum": "NO-TURN",
+   "clip_index": 105,
+   "clip": "c8a39711-ce08-421f-b675-6533f89ad8a3",
+   "ws": 39,
+   "gt_mean_speed": 6.486484609092084,
+   "delta_s0_m": 8.863315369077501
+  },
+  {
+   "tag": "DRAW1",
+   "source": "default_rng(20261027).choice",
+   "grid_row": 1715,
+   "stratum": "NO-TURN",
+   "clip_index": 100,
+   "clip": "b99058dc-6802-4f77-af28-a363b5701ab3",
+   "ws": 59,
+   "gt_mean_speed": 9.603871198383658,
+   "delta_s0_m": -0.6531374373038412
+  },
+  {
+   "tag": "DRAW2",
+   "source": "default_rng(20261027).choice",
+   "grid_row": 2344,
+   "stratum": "NO-TURN",
+   "clip_index": 137,
+   "clip": "fb8e8200-bde1-4caa-9265-12535e1506c2",
+   "ws": 55,
+   "gt_mean_speed": 22.468224586081828,
+   "delta_s0_m": -2.6122638453356264
+  },
+  {
+   "tag": "DRAW3",
+   "source": "default_rng(20261027).choice",
+   "grid_row": 526,
+   "stratum": "NO-TURN",
+   "clip_index": 30,
+   "clip": "38fe80c1-caf1-45ea-810b-2681ea488c6d",
+   "ws": 63,
+   "gt_mean_speed": 14.152571082116838,
+   "delta_s0_m": 0.3003869511402708
+  }
+ ]
+}

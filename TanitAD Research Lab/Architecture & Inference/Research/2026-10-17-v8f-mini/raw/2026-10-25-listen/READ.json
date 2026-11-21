@@ -1,0 +1,1853 @@
+{
+ "prereg": "PREREG_V8F_LISTEN",
+ "tip": "3fdb1b61",
+ "executed": "2026-10-25",
+ "tier": "T1-class open loop, DIAGNOSTIC (donor inputs are interventions, not driving)",
+ "estimator": "paired episode-cluster bootstrap, B=2000, seed 0, 141 episodes (taniteval/taniteval/ci.py); answers 'another draw of EPISODES', not 'another training run' (two seeds side by side) and not 'another inference run' (deterministic)",
+ "evidence_class": "MEASURED (ours); artifacts in this directory (runs/*.npz)",
+ "controls": {
+  "identity": {
+   "s0": {
+    "n_cells": 23,
+    "max_abs_diff_vs_clean": 0.0,
+    "cells_not_identical": [],
+    "pass": true
+   },
+   "s1": {
+    "n_cells": 23,
+    "max_abs_diff_vs_clean": 0.0,
+    "cells_not_identical": [],
+    "pass": true
+   }
+  },
+  "reproduction": {
+   "s0": {
+    "banked_box2": {
+     "max_abs_diff": {
+      "traj30": 5.340576171875e-05,
+      "ckpt_tick_frame": 8.26120376586914e-05,
+      "goal_prob": 1.4901161193847656e-06,
+      "lat_logits": 1.33514404296875e-05,
+      "lon_logits": 1.049041748046875e-05,
+      "cons_pred": 0.000171661376953125,
+      "ck_pos_err_m": 7.2479248046875e-05,
+      "ade6": 1.1070822713676876e-05
+     },
+     "argmax_lat_flips": 0,
+     "argmax_lon_flips": 0,
+     "metrics_mine_vs_banked": {
+      "S_pos_err_50m": {
+       "mine": 8.01224136352539,
+       "banked": 8.0122,
+       "abs_diff": 4.136352539063637e-05
+      },
+      "ADE6": {
+       "mine": 2.1753060638040864,
+       "banked": 2.1753,
+       "abs_diff": 6.0638040864091636e-06
+      },
+      "T_lat_macro_F1": {
+       "mine": 0.8156957183062286,
+       "banked": 0.8156957183062286,
+       "abs_diff": 0.0
+      },
+      "T_lon_macro_F1": {
+       "mine": 0.49915533884637825,
+       "banked": 0.49915533884637825,
+       "abs_diff": 0.0
+      }
+     },
+     "max_metric_diff": 4.136352539063637e-05,
+     "pass_1e-3": true
+    },
+    "cpu_rerun_sfresh": {
+     "max_abs_diff": {
+      "traj30": 0.0,
+      "ckpt_tick_frame": 0.0,
+      "goal_prob": 0.0,
+      "lat_logits": 0.0,
+      "lon_logits": 0.0,
+      "cons_pred": 0.0,
+      "ck_pos_err_m": 0.0,
+      "ade6": 0.0
+     },
+     "argmax_lat_flips": 0,
+     "argmax_lon_flips": 0,
+     "metrics_mine_vs_banked": {
+      "S_pos_err_50m": {
+       "mine": 8.01224136352539,
+       "banked": 8.0122,
+       "abs_diff": 4.136352539063637e-05
+      },
+      "ADE6": {
+       "mine": 2.1753060638040864,
+       "banked": 2.1753,
+       "abs_diff": 6.0638040864091636e-06
+      },
+      "T_lat_macro_F1": {
+       "mine": 0.8156957183062286,
+       "banked": 0.8156957183062286,
+       "abs_diff": 0.0
+      },
+      "T_lon_macro_F1": {
+       "mine": 0.49915533884637825,
+       "banked": 0.49915533884637825,
+       "abs_diff": 0.0
+      }
+     },
+     "max_metric_diff": 4.136352539063637e-05,
+     "pass_1e-3": true
+    },
+    "pass": true
+   },
+   "s1": {
+    "banked_box2": {
+     "max_abs_diff": {
+      "traj30": 9.918212890625e-05,
+      "ckpt_tick_frame": 0.000141143798828125,
+      "goal_prob": 1.996755599975586e-06,
+      "lat_logits": 1.52587890625e-05,
+      "lon_logits": 9.5367431640625e-06,
+      "cons_pred": 0.00035858154296875,
+      "ck_pos_err_m": 9.5367431640625e-05,
+      "ade6": 2.7408853709998127e-05
+     },
+     "argmax_lat_flips": 0,
+     "argmax_lon_flips": 0,
+     "metrics_mine_vs_banked": {
+      "S_pos_err_50m": {
+       "mine": 7.938449382781982,
+       "banked": 7.9384,
+       "abs_diff": 4.938278198274304e-05
+      },
+      "ADE6": {
+       "mine": 2.054566010448041,
+       "banked": 2.0546,
+       "abs_diff": 3.3989551959212605e-05
+      },
+      "T_lat_macro_F1": {
+       "mine": 0.8292251400240062,
+       "banked": 0.8292251400240062,
+       "abs_diff": 0.0
+      },
+      "T_lon_macro_F1": {
+       "mine": 0.509529097663864,
+       "banked": 0.509529097663864,
+       "abs_diff": 0.0
+      }
+     },
+     "max_metric_diff": 4.938278198274304e-05,
+     "pass_1e-3": true
+    },
+    "cpu_rerun_sfresh": {
+     "max_abs_diff": {
+      "traj30": 0.0,
+      "ckpt_tick_frame": 0.0,
+      "goal_prob": 0.0,
+      "lat_logits": 0.0,
+      "lon_logits": 0.0,
+      "cons_pred": 0.0,
+      "ck_pos_err_m": 0.0,
+      "ade6": 0.0
+     },
+     "argmax_lat_flips": 0,
+     "argmax_lon_flips": 0,
+     "metrics_mine_vs_banked": {
+      "S_pos_err_50m": {
+       "mine": 7.938449382781982,
+       "banked": 7.9384,
+       "abs_diff": 4.938278198274304e-05
+      },
+      "ADE6": {
+       "mine": 2.054566010448041,
+       "banked": 2.0546,
+       "abs_diff": 3.3989551959212605e-05
+      },
+      "T_lat_macro_F1": {
+       "mine": 0.8292251400240062,
+       "banked": 0.8292251400240062,
+       "abs_diff": 0.0
+      },
+      "T_lon_macro_F1": {
+       "mine": 0.509529097663864,
+       "banked": 0.509529097663864,
+       "abs_diff": 0.0
+      }
+     },
+     "max_metric_diff": 4.938278198274304e-05,
+     "pass_1e-3": true
+    },
+    "pass": true
+   }
+  },
+  "structural_zero": {
+   "s0/nav_const": {
+    "kind": "nav_const",
+    "probed": {
+     "S/nav": 0.0,
+     "T/nav": 0.0,
+     "O/nav": 0.0
+    },
+    "alive": {
+     "O/ego": 32.28236852917695,
+     "T/ego": 5.0
+    },
+    "pass": true
+   },
+   "s0/tscene_off": {
+    "kind": "tscene_off",
+    "probed": {
+     "T/scene": 0.0
+    },
+    "alive": {
+     "T/ego": 6.0,
+     "O/scene": 6.889191170843272
+    },
+    "pass": true
+   },
+   "s1/nav_const": {
+    "kind": "nav_const",
+    "probed": {
+     "S/nav": 0.0,
+     "T/nav": 0.0,
+     "O/nav": 0.0
+    },
+    "alive": {
+     "O/ego": 29.881818529116252,
+     "T/ego": 6.0
+    },
+    "pass": true
+   },
+   "s1/tscene_off": {
+    "kind": "tscene_off",
+    "probed": {
+     "T/scene": 0.0
+    },
+    "alive": {
+     "T/ego": 6.0,
+     "O/scene": 2.1340197832171297
+    },
+    "pass": true
+   }
+  },
+  "banked_shuffle_consistency": {
+   "seed": "s0",
+   "max_abs_diff_per_window_ade6_vs_banked_tacshuf": 1.3716054974466374e-05,
+   "mine_O_x_code_ade6_mean": 7.711779370313446,
+   "banked_tacshuf_ade6_mean": 7.711779500364543,
+   "banked_tacpred_ade6_mean": 2.175306138079546,
+   "banked_delta_m": 5.536473362284997,
+   "mine_delta_m": 5.536473306509359
+  },
+  "banked_shuffle_consistency_descriptive": {
+   "s0": {
+    "mine_O_x_code_delta_m_donor0": 5.395215711028398
+   },
+   "s1": {
+    "mine_O_x_code_delta_m_donor0": 4.131994484806979
+   }
+  },
+  "all_pass": true
+ },
+ "analysis": {
+  "floor_donor_seed": {
+   "S": {
+    "scene": 0.16634750366210938,
+    "ego": 0.008654594421386719,
+    "nav": 0.3691253662109375,
+    "limit": 0.0489501953125,
+    "ck": null,
+    "code": null,
+    "age": null,
+    "all": 0.9077644348144531
+   },
+   "T-lat": {
+    "scene": 0.0133863875536272,
+    "ego": 0.0357860213601946,
+    "nav": 0.03278465450638979,
+    "limit": 0.006569695630362693,
+    "ck": 0.03752235676524829,
+    "code": null,
+    "age": null,
+    "all": 0.027231202664946108
+   },
+   "T-lon": {
+    "scene": 0.027492628262285768,
+    "ego": 0.021169431187864962,
+    "nav": 0.01672474203315888,
+    "limit": 0.018199620727840815,
+    "ck": 0.01385681689163809,
+    "code": null,
+    "age": null,
+    "all": 0.009342764773493606
+   },
+   "O": {
+    "scene": 0.013054226920472534,
+    "ego": 0.3097063614407718,
+    "nav": 0.001909784943690429,
+    "limit": 0.15027580213895897,
+    "ck": 0.1559340002977403,
+    "code": 0.14125759548096095,
+    "age": 0.0036596246113917985,
+    "all": 0.017032369659549573
+   }
+  },
+  "seed_flags": {
+   "s0": {
+    "S": {
+     "scene": true,
+     "ego": true,
+     "nav": true,
+     "limit": false,
+     "ck": null,
+     "code": null,
+     "age": null
+    },
+    "T-lat": {
+     "scene": false,
+     "ego": true,
+     "nav": true,
+     "limit": false,
+     "ck": true,
+     "code": null,
+     "age": null
+    },
+    "T-lon": {
+     "scene": true,
+     "ego": true,
+     "nav": true,
+     "limit": true,
+     "ck": true,
+     "code": null,
+     "age": null
+    },
+    "O": {
+     "scene": true,
+     "ego": true,
+     "nav": true,
+     "limit": true,
+     "ck": true,
+     "code": true,
+     "age": true
+    }
+   },
+   "s1": {
+    "S": {
+     "scene": true,
+     "ego": true,
+     "nav": true,
+     "limit": true,
+     "ck": null,
+     "code": null,
+     "age": null
+    },
+    "T-lat": {
+     "scene": false,
+     "ego": true,
+     "nav": true,
+     "limit": false,
+     "ck": true,
+     "code": null,
+     "age": null
+    },
+    "T-lon": {
+     "scene": true,
+     "ego": true,
+     "nav": false,
+     "limit": true,
+     "ck": false,
+     "code": null,
+     "age": null
+    },
+    "O": {
+     "scene": false,
+     "ego": true,
+     "nav": false,
+     "limit": true,
+     "ck": true,
+     "code": true,
+     "age": true
+    }
+   }
+  },
+  "listens": {
+   "S": {
+    "scene": true,
+    "ego": true,
+    "nav": true,
+    "limit": false,
+    "ck": null,
+    "code": null,
+    "age": null
+   },
+   "T-lat": {
+    "scene": false,
+    "ego": true,
+    "nav": true,
+    "limit": false,
+    "ck": true,
+    "code": null,
+    "age": null
+   },
+   "T-lon": {
+    "scene": true,
+    "ego": true,
+    "nav": false,
+    "limit": true,
+    "ck": false,
+    "code": null,
+    "age": null
+   },
+   "O": {
+    "scene": false,
+    "ego": true,
+    "nav": false,
+    "limit": true,
+    "ck": true,
+    "code": true,
+    "age": true
+   }
+  },
+  "hypotheses": {
+   "P-UPPER": {
+    "s0": {
+     "holds": false,
+     "rows": {
+      "S": {
+       "argmax": "nav",
+       "in_set": true,
+       "listens_at_seed": true,
+       "holds": true
+      },
+      "T-lat": {
+       "argmax": "ck",
+       "in_set": false,
+       "listens_at_seed": true,
+       "holds": false
+      }
+     }
+    },
+    "s1": {
+     "holds": false,
+     "rows": {
+      "S": {
+       "argmax": "nav",
+       "in_set": true,
+       "listens_at_seed": true,
+       "holds": true
+      },
+      "T-lat": {
+       "argmax": "ck",
+       "in_set": false,
+       "listens_at_seed": true,
+       "holds": false
+      }
+     }
+    }
+   },
+   "P-LOWER": {
+    "s0": {
+     "holds": false,
+     "rows": {
+      "O": {
+       "argmax": "ego",
+       "in_set": false,
+       "listens_at_seed": true,
+       "holds": false
+      }
+     }
+    },
+    "s1": {
+     "holds": false,
+     "rows": {
+      "O": {
+       "argmax": "ego",
+       "in_set": false,
+       "listens_at_seed": true,
+       "holds": false
+      }
+     }
+    }
+   }
+  },
+  "outcome": {
+   "headline": "NOT SHOWN",
+   "holds_at_both_seeds": {
+    "P-UPPER": false,
+    "P-LOWER": false
+   },
+   "holds_at_exactly_one_seed": {
+    "P-UPPER": false,
+    "P-LOWER": false
+   },
+   "seeds_disagree_on": []
+  },
+  "qnav": {
+   "headline": "THROUGH T",
+   "D": {
+    "s0": {
+     "delta": 0.46114357558301977,
+     "lo": 0.2539,
+     "hi": 0.6869,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141
+    },
+    "s1": {
+     "delta": 0.5096694270877582,
+     "lo": 0.2732,
+     "hi": 0.7933,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141
+    }
+   }
+  },
+  "next_committed": "the report states that the levels' input dependence does not differ as the attention suggested, and the abstraction claim rests on the oracle and donor reads alone",
+  "qnav_next_committed": "the answer to the PI's question is yes: the trajectory follows nav mainly through T's decision"
+ },
+ "grid": {
+  "s0": {
+   "rows": {
+    "S": {
+     "unit": "m",
+     "clean_level": 8.01224136352539,
+     "cells": {
+      "scene": {
+       "delta": 3.2140026092529297,
+       "lo": 2.5479,
+       "hi": 3.9713,
+       "separated": true,
+       "n_windows": 2319,
+       "n_episodes": 137,
+       "n": 0.39892353856807194,
+       "n_clipped": 0.39892353856807194
+      },
+      "ego": {
+       "delta": 1.347416877746582,
+       "lo": 0.8881,
+       "hi": 1.8894,
+       "separated": true,
+       "n_windows": 2319,
+       "n_episodes": 137,
+       "n": 0.16724202626641652,
+       "n_clipped": 0.16724202626641652
+      },
+      "nav": {
+       "delta": 4.196533203125,
+       "lo": 2.9873,
+       "hi": 5.5222,
+       "separated": true,
+       "n_windows": 2319,
+       "n_episodes": 137,
+       "n": 0.5208757050443593,
+       "n_clipped": 0.5208757050443593
+      },
+      "limit": {
+       "delta": 0.07286453247070312,
+       "lo": -0.0136,
+       "hi": 0.2244,
+       "separated": false,
+       "n_windows": 2319,
+       "n_episodes": 137,
+       "n": 0.009043980563562006,
+       "n_clipped": 0.009043980563562006
+      },
+      "ck": null,
+      "code": null,
+      "age": null,
+      "all": {
+       "delta": 8.05668830871582,
+       "lo": 6.548,
+       "hi": 9.7498,
+       "separated": true,
+       "n_windows": 2319,
+       "n_episodes": 137
+      }
+     },
+     "all_defined": true
+    },
+    "T-lat": {
+     "unit": "F1",
+     "clean_level": 0.8156957183062286,
+     "cells": {
+      "scene": {
+       "delta": -0.003055227786050718,
+       "lo": -0.0591,
+       "hi": 0.0481,
+       "separated": false,
+       "n_windows": 2107,
+       "n_episodes": 139,
+       "n": -0.005947631971486292,
+       "n_clipped": 0.0
+      },
+      "ego": {
+       "delta": 0.08240663982925389,
+       "lo": 0.0255,
+       "hi": 0.1458,
+       "separated": true,
+       "n_windows": 2107,
+       "n_episodes": 139,
+       "n": 0.16042154629156996,
+       "n_clipped": 0.16042154629156996
+      },
+      "nav": {
+       "delta": 0.1729255892309346,
+       "lo": 0.0946,
+       "hi": 0.2562,
+       "separated": true,
+       "n_windows": 2107,
+       "n_episodes": 139,
+       "n": 0.33663537883945477,
+       "n_clipped": 0.33663537883945477
+      },
+      "limit": {
+       "delta": -0.02521217677963372,
+       "lo": -0.0574,
+       "hi": 0.0003,
+       "separated": false,
+       "n_windows": 2107,
+       "n_episodes": 139,
+       "n": -0.04908070991300697,
+       "n_clipped": 0.0
+      },
+      "ck": {
+       "delta": 0.3909776941085077,
+       "lo": 0.3033,
+       "hi": 0.467,
+       "separated": true,
+       "n_windows": 2107,
+       "n_episodes": 139,
+       "n": 0.7611188416899091,
+       "n_clipped": 0.7611188416899091
+      },
+      "code": null,
+      "age": null,
+      "all": {
+       "delta": 0.5136881032145013,
+       "lo": 0.4347,
+       "hi": 0.5727,
+       "separated": true,
+       "n_windows": 2107,
+       "n_episodes": 139
+      }
+     },
+     "all_defined": true
+    },
+    "T-lon": {
+     "unit": "F1",
+     "clean_level": 0.49915533884637825,
+     "cells": {
+      "scene": {
+       "delta": 0.18452365310894592,
+       "lo": 0.1131,
+       "hi": 0.2559,
+       "separated": true,
+       "n_windows": 2240,
+       "n_episodes": 136,
+       "n": 0.5021881341451002,
+       "n_clipped": 0.5021881341451002
+      },
+      "ego": {
+       "delta": 0.2465788388349346,
+       "lo": 0.1882,
+       "hi": 0.3054,
+       "separated": true,
+       "n_windows": 2240,
+       "n_episodes": 136,
+       "n": 0.6710736802997849,
+       "n_clipped": 0.6710736802997849
+      },
+      "nav": {
+       "delta": 0.05204025438140103,
+       "lo": 0.019,
+       "hi": 0.0837,
+       "separated": true,
+       "n_windows": 2240,
+       "n_episodes": 136,
+       "n": 0.1416295299161577,
+       "n_clipped": 0.1416295299161577
+      },
+      "limit": {
+       "delta": 0.09242730106197933,
+       "lo": 0.0266,
+       "hi": 0.1518,
+       "separated": true,
+       "n_windows": 2240,
+       "n_episodes": 136,
+       "n": 0.25154441223303825,
+       "n_clipped": 0.25154441223303825
+      },
+      "ck": {
+       "delta": 0.041283184859416344,
+       "lo": 0.0032,
+       "hi": 0.0704,
+       "separated": true,
+       "n_windows": 2240,
+       "n_episodes": 136,
+       "n": 0.11235375642534598,
+       "n_clipped": 0.11235375642534598
+      },
+      "code": null,
+      "age": null,
+      "all": {
+       "delta": 0.36743929329009273,
+       "lo": 0.2925,
+       "hi": 0.4342,
+       "separated": true,
+       "n_windows": 2240,
+       "n_episodes": 136
+      }
+     },
+     "all_defined": true
+    },
+    "O": {
+     "unit": "m",
+     "clean_level": 2.1753060638040864,
+     "cells": {
+      "scene": {
+       "delta": 0.307292659036583,
+       "lo": 0.2137,
+       "hi": 0.3999,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "n": 0.22043767273383333,
+       "n_clipped": 0.22043767273383333
+      },
+      "ego": {
+       "delta": 5.697374332328372,
+       "lo": 4.4888,
+       "hi": 6.9789,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "n": 4.08703527916828,
+       "n_clipped": 1.0
+      },
+      "nav": {
+       "delta": 0.01484673886903165,
+       "lo": 0.0013,
+       "hi": 0.0296,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "n": 0.010650370152795156,
+       "n_clipped": 0.010650370152795156
+      },
+      "limit": {
+       "delta": 0.590234307634403,
+       "lo": 0.3859,
+       "hi": 0.8196,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "n": 0.42340704639840987,
+       "n_clipped": 0.42340704639840987
+      },
+      "ck": {
+       "delta": 0.8725292503855697,
+       "lo": 0.5962,
+       "hi": 1.1933,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "n": 0.6259125029221522,
+       "n_clipped": 0.6259125029221522
+      },
+      "code": {
+       "delta": 5.395215711028398,
+       "lo": 4.2098,
+       "hi": 6.6291,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "n": 3.870280529853229,
+       "n_clipped": 1.0
+      },
+      "age": {
+       "delta": 0.007840557789869695,
+       "lo": 0.0016,
+       "hi": 0.0139,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "n": 0.005624456885994937,
+       "n_clipped": 0.005624456885994937
+      },
+      "all": {
+       "delta": 1.3940115372548973,
+       "lo": 1.165,
+       "hi": 1.6228,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      }
+     },
+     "all_defined": true
+    }
+   },
+   "beside": {
+    "O-ade2": {
+     "unit": "m",
+     "clean_level": 0.3155395497477228,
+     "cells": {
+      "scene": {
+       "delta": 0.00897479597365547,
+       "lo": 0.003,
+       "hi": 0.0149,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "ego": {
+       "delta": 0.43257192018281554,
+       "lo": 0.3007,
+       "hi": 0.5734,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "nav": {
+       "delta": -0.0009973338782969243,
+       "lo": -0.0032,
+       "hi": 0.001,
+       "separated": false,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "limit": {
+       "delta": 0.3915620316168913,
+       "lo": 0.2754,
+       "hi": 0.5226,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "ck": {
+       "delta": 0.041450013350047166,
+       "lo": 0.0227,
+       "hi": 0.061,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "code": {
+       "delta": 0.4637574734930444,
+       "lo": 0.3408,
+       "hi": 0.5996,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "age": {
+       "delta": 0.0005846127075695984,
+       "lo": 3e-05,
+       "hi": 0.00112,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "all": {
+       "delta": 0.05097003321513738,
+       "lo": 0.0024,
+       "hi": 0.1021,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      }
+     }
+    }
+   },
+   "qnav": {
+    "nav@S": {
+     "delta": 0.7263808753695908,
+     "lo": 0.4259,
+     "hi": 1.0812,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141
+    },
+    "nav@T": {
+     "delta": 0.4759903144520514,
+     "lo": 0.2611,
+     "hi": 0.7025,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141
+    },
+    "nav@O": {
+     "delta": 0.01484673886903165,
+     "lo": 0.0013,
+     "hi": 0.0296,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141
+    },
+    "nav@STO": {
+     "delta": 1.1737112088080917,
+     "lo": 0.7588,
+     "hi": 1.6336,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141
+    },
+    "D_T_minus_O": {
+     "delta": 0.46114357558301977,
+     "lo": 0.2539,
+     "hi": 0.6869,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141
+    }
+   }
+  },
+  "s1": {
+   "rows": {
+    "S": {
+     "unit": "m",
+     "clean_level": 7.938449382781982,
+     "cells": {
+      "scene": {
+       "delta": 3.631640911102295,
+       "lo": 2.8743,
+       "hi": 4.3999,
+       "separated": true,
+       "n_windows": 2319,
+       "n_episodes": 137,
+       "n": 0.43360664529634246,
+       "n_clipped": 0.43360664529634246
+      },
+      "ego": {
+       "delta": 1.0620064735412598,
+       "lo": 0.6185,
+       "hi": 1.5861,
+       "separated": true,
+       "n_windows": 2319,
+       "n_episodes": 137,
+       "n": 0.1268002744620071,
+       "n_clipped": 0.1268002744620071
+      },
+      "nav": {
+       "delta": 3.9850497245788574,
+       "lo": 2.8064,
+       "hi": 5.1818,
+       "separated": true,
+       "n_windows": 2319,
+       "n_episodes": 137,
+       "n": 0.4758025599753686,
+       "n_clipped": 0.4758025599753686
+      },
+      "limit": {
+       "delta": 0.09267759323120117,
+       "lo": 0.0096,
+       "hi": 0.2171,
+       "separated": true,
+       "n_windows": 2319,
+       "n_episodes": 137,
+       "n": 0.011065416785087047,
+       "n_clipped": 0.011065416785087047
+      },
+      "ck": null,
+      "code": null,
+      "age": null,
+      "all": {
+       "delta": 8.37542724609375,
+       "lo": 6.6922,
+       "hi": 10.1536,
+       "separated": true,
+       "n_windows": 2319,
+       "n_episodes": 137
+      }
+     },
+     "all_defined": true
+    },
+    "T-lat": {
+     "unit": "F1",
+     "clean_level": 0.8292251400240062,
+     "cells": {
+      "scene": {
+       "delta": 0.010360150914092259,
+       "lo": -0.033,
+       "hi": 0.0507,
+       "separated": false,
+       "n_windows": 2107,
+       "n_episodes": 139,
+       "n": 0.019597628622826064,
+       "n_clipped": 0.019597628622826064
+      },
+      "ego": {
+       "delta": 0.07599532549605725,
+       "lo": 0.0237,
+       "hi": 0.1343,
+       "separated": true,
+       "n_windows": 2107,
+       "n_episodes": 139,
+       "n": 0.1437554509091828,
+       "n_clipped": 0.1437554509091828
+      },
+      "nav": {
+       "delta": 0.21634529162622662,
+       "lo": 0.1268,
+       "hi": 0.3194,
+       "separated": true,
+       "n_windows": 2107,
+       "n_episodes": 139,
+       "n": 0.4092464207080791,
+       "n_clipped": 0.4092464207080791
+      },
+      "limit": {
+       "delta": -0.02158563883299114,
+       "lo": -0.0564,
+       "hi": 0.0042,
+       "separated": false,
+       "n_windows": 2107,
+       "n_episodes": 139,
+       "n": -0.04083215939065092,
+       "n_clipped": 0.0
+      },
+      "ck": {
+       "delta": 0.4064343711276091,
+       "lo": 0.3368,
+       "hi": 0.4635,
+       "separated": true,
+       "n_windows": 2107,
+       "n_episodes": 139,
+       "n": 0.7688256600660376,
+       "n_clipped": 0.7688256600660376
+      },
+      "code": null,
+      "age": null,
+      "all": {
+       "delta": 0.5286430880736978,
+       "lo": 0.4591,
+       "hi": 0.5804,
+       "separated": true,
+       "n_windows": 2107,
+       "n_episodes": 139
+      }
+     },
+     "all_defined": true
+    },
+    "T-lon": {
+     "unit": "F1",
+     "clean_level": 0.509529097663864,
+     "cells": {
+      "scene": {
+       "delta": 0.18688741794541885,
+       "lo": 0.1177,
+       "hi": 0.2589,
+       "separated": true,
+       "n_windows": 2240,
+       "n_episodes": 136,
+       "n": 0.48978978054890493,
+       "n_clipped": 0.48978978054890493
+      },
+      "ego": {
+       "delta": 0.2610400985140763,
+       "lo": 0.1709,
+       "hi": 0.3277,
+       "separated": true,
+       "n_windows": 2240,
+       "n_episodes": 136,
+       "n": 0.6841272353766179,
+       "n_clipped": 0.6841272353766179
+      },
+      "nav": {
+       "delta": 0.05170423494635962,
+       "lo": -0.0006,
+       "hi": 0.1199,
+       "separated": false,
+       "n_windows": 2240,
+       "n_episodes": 136,
+       "n": 0.13550514082880916,
+       "n_clipped": 0.13550514082880916
+      },
+      "limit": {
+       "delta": 0.14054096454873993,
+       "lo": 0.0491,
+       "hi": 0.2004,
+       "separated": true,
+       "n_windows": 2240,
+       "n_episodes": 136,
+       "n": 0.3683261770172373,
+       "n_clipped": 0.3683261770172373
+      },
+      "ck": {
+       "delta": 0.013020153872913831,
+       "lo": -0.0565,
+       "hi": 0.0812,
+       "separated": false,
+       "n_windows": 2240,
+       "n_episodes": 136,
+       "n": 0.03412288734167169,
+       "n_clipped": 0.03412288734167169
+      },
+      "code": null,
+      "age": null,
+      "all": {
+       "delta": 0.3815665931942783,
+       "lo": 0.2818,
+       "hi": 0.4491,
+       "separated": true,
+       "n_windows": 2240,
+       "n_episodes": 136
+      }
+     },
+     "all_defined": true
+    },
+    "O": {
+     "unit": "m",
+     "clean_level": 2.054566010448041,
+     "cells": {
+      "scene": {
+       "delta": 0.008079202705511435,
+       "lo": -0.0153,
+       "hi": 0.0314,
+       "separated": false,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "n": 0.006141623595986942,
+       "n_clipped": 0.006141623595986942
+      },
+      "ego": {
+       "delta": 4.715933523402271,
+       "lo": 3.7223,
+       "hi": 5.8059,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "n": 3.5849439183739054,
+       "n_clipped": 1.0
+      },
+      "nav": {
+       "delta": 0.011045648855615209,
+       "lo": -0.0017,
+       "hi": 0.0243,
+       "separated": false,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "n": 0.00839664755513003,
+       "n_clipped": 0.00839664755513003
+      },
+      "limit": {
+       "delta": 0.3653203597670758,
+       "lo": 0.2397,
+       "hi": 0.5,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "n": 0.27770811346388685,
+       "n_clipped": 0.27770811346388685
+      },
+      "ck": {
+       "delta": 1.8940964354891654,
+       "lo": 1.4319,
+       "hi": 2.3974,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "n": 1.4398484337247022,
+       "n_clipped": 1.0
+      },
+      "code": {
+       "delta": 4.131994484806979,
+       "lo": 3.1383,
+       "hi": 5.1348,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "n": 3.141046926458074,
+       "n_clipped": 1.0
+      },
+      "age": {
+       "delta": 0.012003912662434946,
+       "lo": 0.0045,
+       "hi": 0.0206,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "n": 0.009125097604183703,
+       "n_clipped": 0.009125097604183703
+      },
+      "all": {
+       "delta": 1.3154832072077074,
+       "lo": 1.1216,
+       "hi": 1.5007,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      }
+     },
+     "all_defined": true
+    }
+   },
+   "beside": {
+    "O-ade2": {
+     "unit": "m",
+     "clean_level": 0.2914259643491624,
+     "cells": {
+      "scene": {
+       "delta": 9.875178718865563e-05,
+       "lo": -0.0035,
+       "hi": 0.0035,
+       "separated": false,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "ego": {
+       "delta": 0.30371333679847506,
+       "lo": 0.2132,
+       "hi": 0.4012,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "nav": {
+       "delta": 0.002202460814736573,
+       "lo": -0.0006,
+       "hi": 0.0049,
+       "separated": false,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "limit": {
+       "delta": 0.2094900721075979,
+       "lo": 0.1375,
+       "hi": 0.294,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "ck": {
+       "delta": 0.1068550766998782,
+       "lo": 0.0788,
+       "hi": 0.1382,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "code": {
+       "delta": 0.2863102259797912,
+       "lo": 0.2061,
+       "hi": 0.3667,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "age": {
+       "delta": 0.0008326227792340157,
+       "lo": -0.0,
+       "hi": 0.0017,
+       "separated": false,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "all": {
+       "delta": 0.05267102778182586,
+       "lo": 0.0032,
+       "hi": 0.1022,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      }
+     }
+    }
+   },
+   "qnav": {
+    "nav@S": {
+     "delta": 0.8214430128419163,
+     "lo": 0.5087,
+     "hi": 1.1724,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141
+    },
+    "nav@T": {
+     "delta": 0.5207150759433734,
+     "lo": 0.282,
+     "hi": 0.8117,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141
+    },
+    "nav@O": {
+     "delta": 0.011045648855615209,
+     "lo": -0.0017,
+     "hi": 0.0243,
+     "separated": false,
+     "n_windows": 2399,
+     "n_episodes": 141
+    },
+    "nav@STO": {
+     "delta": 1.1803068261849354,
+     "lo": 0.7691,
+     "hi": 1.6193,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141
+    },
+    "D_T_minus_O": {
+     "delta": 0.5096694270877582,
+     "lo": 0.2732,
+     "hi": 0.7933,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141
+    }
+   }
+  },
+  "s0_d1": {
+   "rows": {
+    "S": {
+     "unit": "m",
+     "clean_level": 8.01224136352539,
+     "cells": {
+      "scene": {
+       "delta": 3.0476551055908203,
+       "lo": 2.3496,
+       "hi": 3.8332,
+       "separated": true,
+       "n_windows": 2319,
+       "n_episodes": 137,
+       "n": 0.4263096319597022,
+       "n_clipped": 0.4263096319597022
+      },
+      "ego": {
+       "delta": 1.3560714721679688,
+       "lo": 0.9235,
+       "hi": 1.8527,
+       "separated": true,
+       "n_windows": 2319,
+       "n_episodes": 137,
+       "n": 0.18968889529214175,
+       "n_clipped": 0.18968889529214175
+      },
+      "nav": {
+       "delta": 3.8274078369140625,
+       "lo": 2.6348,
+       "hi": 5.1123,
+       "separated": true,
+       "n_windows": 2319,
+       "n_episodes": 137,
+       "n": 0.535382374246117,
+       "n_clipped": 0.535382374246117
+      },
+      "limit": {
+       "delta": 0.023914337158203125,
+       "lo": -0.0249,
+       "hi": 0.0882,
+       "separated": false,
+       "n_windows": 2319,
+       "n_episodes": 137,
+       "n": 0.0033451660110002546,
+       "n_clipped": 0.0033451660110002546
+      },
+      "ck": null,
+      "code": null,
+      "age": null,
+      "all": {
+       "delta": 7.148923873901367,
+       "lo": 5.736,
+       "hi": 8.696,
+       "separated": true,
+       "n_windows": 2319,
+       "n_episodes": 137
+      }
+     },
+     "all_defined": true
+    },
+    "T-lat": {
+     "unit": "F1",
+     "clean_level": 0.8156957183062286,
+     "cells": {
+      "scene": {
+       "delta": 0.010331159767576481,
+       "lo": -0.0348,
+       "hi": 0.0556,
+       "separated": false,
+       "n_windows": 2107,
+       "n_episodes": 139,
+       "n": 0.021237564429459767,
+       "n_clipped": 0.021237564429459767
+      },
+      "ego": {
+       "delta": 0.046620618469059294,
+       "lo": -0.0329,
+       "hi": 0.1147,
+       "separated": false,
+       "n_windows": 2107,
+       "n_episodes": 139,
+       "n": 0.0958370996821949,
+       "n_clipped": 0.0958370996821949
+      },
+      "nav": {
+       "delta": 0.20571024373732438,
+       "lo": 0.1232,
+       "hi": 0.2922,
+       "separated": true,
+       "n_windows": 2107,
+       "n_episodes": 139,
+       "n": 0.4228745516919001,
+       "n_clipped": 0.4228745516919001
+      },
+      "limit": {
+       "delta": -0.01864248114927103,
+       "lo": -0.0778,
+       "hi": 0.0207,
+       "separated": false,
+       "n_windows": 2107,
+       "n_episodes": 139,
+       "n": -0.03832298632871778,
+       "n_clipped": 0.0
+      },
+      "ck": {
+       "delta": 0.3534553373432594,
+       "lo": 0.2501,
+       "hi": 0.4712,
+       "separated": true,
+       "n_windows": 2107,
+       "n_episodes": 139,
+       "n": 0.7265912703550045,
+       "n_clipped": 0.7265912703550045
+      },
+      "code": null,
+      "age": null,
+      "all": {
+       "delta": 0.4864569005495552,
+       "lo": 0.4077,
+       "hi": 0.5471,
+       "separated": true,
+       "n_windows": 2107,
+       "n_episodes": 139
+      }
+     },
+     "all_defined": true
+    },
+    "T-lon": {
+     "unit": "F1",
+     "clean_level": 0.49915533884637825,
+     "cells": {
+      "scene": {
+       "delta": 0.21201628137123169,
+       "lo": 0.1403,
+       "hi": 0.2816,
+       "separated": true,
+       "n_windows": 2240,
+       "n_episodes": 136,
+       "n": 0.56270269996628,
+       "n_clipped": 0.56270269996628
+      },
+      "ego": {
+       "delta": 0.26774827002279955,
+       "lo": 0.2051,
+       "hi": 0.3205,
+       "separated": true,
+       "n_windows": 2240,
+       "n_episodes": 136,
+       "n": 0.7106184179757676,
+       "n_clipped": 0.7106184179757676
+      },
+      "nav": {
+       "delta": 0.03531551234824215,
+       "lo": 0.0073,
+       "hi": 0.0654,
+       "separated": true,
+       "n_windows": 2240,
+       "n_episodes": 136,
+       "n": 0.09372928352730174,
+       "n_clipped": 0.09372928352730174
+      },
+      "limit": {
+       "delta": 0.11062692178982014,
+       "lo": 0.054,
+       "hi": 0.1591,
+       "separated": true,
+       "n_windows": 2240,
+       "n_episodes": 136,
+       "n": 0.293609845326421,
+       "n_clipped": 0.293609845326421
+      },
+      "ck": {
+       "delta": 0.027426367967778253,
+       "lo": 0.0026,
+       "hi": 0.0619,
+       "separated": true,
+       "n_windows": 2240,
+       "n_episodes": 136,
+       "n": 0.07279106682715167,
+       "n_clipped": 0.07279106682715167
+      },
+      "code": null,
+      "age": null,
+      "all": {
+       "delta": 0.37678205806358633,
+       "lo": 0.3029,
+       "hi": 0.4414,
+       "separated": true,
+       "n_windows": 2240,
+       "n_episodes": 136
+      }
+     },
+     "all_defined": true
+    },
+    "O": {
+     "unit": "m",
+     "clean_level": 2.1753060638040864,
+     "cells": {
+      "scene": {
+       "delta": 0.29423843211611045,
+       "lo": 0.2166,
+       "hi": 0.3793,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "n": 0.21368401137828844,
+       "n_clipped": 0.21368401137828844
+      },
+      "ego": {
+       "delta": 6.007080693769144,
+       "lo": 4.781,
+       "hi": 7.3609,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "n": 4.362506590611283,
+       "n_clipped": 1.0
+      },
+      "nav": {
+       "delta": 0.012936953925341221,
+       "lo": 0.0006,
+       "hi": 0.026,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "n": 0.009395170406196732,
+       "n_clipped": 0.009395170406196732
+      },
+      "limit": {
+       "delta": 0.740510109773362,
+       "lo": 0.5121,
+       "hi": 0.9902,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "n": 0.537778731298116,
+       "n_clipped": 0.537778731298116
+      },
+      "ck": {
+       "delta": 0.7165952500878294,
+       "lo": 0.4789,
+       "hi": 0.9832,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "n": 0.5204111049401257,
+       "n_clipped": 0.5204111049401257
+      },
+      "code": {
+       "delta": 5.536473306509359,
+       "lo": 4.3396,
+       "hi": 6.8563,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "n": 4.0207386115926775,
+       "n_clipped": 1.0
+      },
+      "age": {
+       "delta": 0.004180933178477897,
+       "lo": -0.0022,
+       "hi": 0.0107,
+       "separated": false,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "n": 0.0030363082295421814,
+       "n_clipped": 0.0030363082295421814
+      },
+      "all": {
+       "delta": 1.3769791675953478,
+       "lo": 1.1468,
+       "hi": 1.6046,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      }
+     },
+     "all_defined": true
+    }
+   },
+   "beside": {
+    "O-ade2": {
+     "unit": "m",
+     "clean_level": 0.3155395497477228,
+     "cells": {
+      "scene": {
+       "delta": 0.010437213042255644,
+       "lo": 0.0049,
+       "hi": 0.0157,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "ego": {
+       "delta": 0.4469462032324921,
+       "lo": 0.3195,
+       "hi": 0.5859,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "nav": {
+       "delta": 0.0006452608163347584,
+       "lo": -0.0017,
+       "hi": 0.0036,
+       "separated": false,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "limit": {
+       "delta": 0.4428034166443492,
+       "lo": 0.303,
+       "hi": 0.5931,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "ck": {
+       "delta": 0.040380194158669724,
+       "lo": 0.026,
+       "hi": 0.055,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "code": {
+       "delta": 0.4882240455136362,
+       "lo": 0.3564,
+       "hi": 0.6349,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "age": {
+       "delta": 0.00014252102134626465,
+       "lo": -0.0004,
+       "hi": 0.0008,
+       "separated": false,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "all": {
+       "delta": 0.05021408526736926,
+       "lo": 0.0018,
+       "hi": 0.103,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      }
+     }
+    }
+   },
+   "qnav": {
+    "nav@S": {
+     "delta": 0.5556550999854992,
+     "lo": 0.3659,
+     "hi": 0.7741,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141
+    },
+    "nav@T": {
+     "delta": 0.5378039961130843,
+     "lo": 0.298,
+     "hi": 0.818,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141
+    },
+    "nav@O": {
+     "delta": 0.012936953925341221,
+     "lo": 0.0006,
+     "hi": 0.026,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141
+    },
+    "nav@STO": {
+     "delta": 1.1226071018010657,
+     "lo": 0.7522,
+     "hi": 1.5573,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141
+    },
+    "D_T_minus_O": {
+     "delta": 0.524867042187743,
+     "lo": 0.2863,
+     "hi": 0.8083,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141
+    }
+   }
+  }
+ },
+ "run_meta": {
+  "s0": {
+   "prereg": "PREREG_V8F_LISTEN",
+   "tip": "3fdb1b61",
+   "seed": "s0",
+   "donor_seed": 0,
+   "identity": false,
+   "regress": null,
+   "cells": null,
+   "ages": "cycle",
+   "n_windows": 2399,
+   "ckpt": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\sfresh\\inputs\\M2b_s0\\ckpt_last.pt",
+   "ckpt_sha256": "601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8",
+   "threads": 8,
+   "device": "cpu",
+   "seconds": 124.3,
+   "perm_sha256": "116c17f563630559ffb13f5c9c36d0a2cf32e612eedee48f5c8a4157373f6503"
+  },
+  "s1": {
+   "prereg": "PREREG_V8F_LISTEN",
+   "tip": "3fdb1b61",
+   "seed": "s1",
+   "donor_seed": 0,
+   "identity": false,
+   "regress": null,
+   "cells": null,
+   "ages": "cycle",
+   "n_windows": 2399,
+   "ckpt": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\sfresh\\inputs\\M2b_s1\\ckpt_last.pt",
+   "ckpt_sha256": "6104fb15dc21d524b6ed53be632b8d53ec5413526ac587734c22684c7e50c2e6",
+   "threads": 8,
+   "device": "cpu",
+   "seconds": 100.6,
+   "perm_sha256": "116c17f563630559ffb13f5c9c36d0a2cf32e612eedee48f5c8a4157373f6503"
+  },
+  "s0_d1": {
+   "prereg": "PREREG_V8F_LISTEN",
+   "tip": "3fdb1b61",
+   "seed": "s0",
+   "donor_seed": 1,
+   "identity": false,
+   "regress": null,
+   "cells": null,
+   "ages": "cycle",
+   "n_windows": 2399,
+   "ckpt": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\sfresh\\inputs\\M2b_s0\\ckpt_last.pt",
+   "ckpt_sha256": "601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8",
+   "threads": 8,
+   "device": "cpu",
+   "seconds": 92.6,
+   "perm_sha256": "c712deb43c403e08a109e8e0e23538b3773456c0882f67e6286f395024f39cac"
+  },
+  "s0_id": {
+   "prereg": "PREREG_V8F_LISTEN",
+   "tip": "3fdb1b61",
+   "seed": "s0",
+   "donor_seed": null,
+   "identity": true,
+   "regress": null,
+   "cells": null,
+   "ages": "cycle",
+   "n_windows": 2399,
+   "ckpt": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\sfresh\\inputs\\M2b_s0\\ckpt_last.pt",
+   "ckpt_sha256": "601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8",
+   "threads": 8,
+   "device": "cpu",
+   "seconds": 76.7,
+   "perm_sha256": "792496bca39d08a97024759c08eab2b36ad9ca88408d71dcd990e193120c905c"
+  },
+  "s1_id": {
+   "prereg": "PREREG_V8F_LISTEN",
+   "tip": "3fdb1b61",
+   "seed": "s1",
+   "donor_seed": null,
+   "identity": true,
+   "regress": null,
+   "cells": null,
+   "ages": "cycle",
+   "n_windows": 2399,
+   "ckpt": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\sfresh\\inputs\\M2b_s1\\ckpt_last.pt",
+   "ckpt_sha256": "6104fb15dc21d524b6ed53be632b8d53ec5413526ac587734c22684c7e50c2e6",
+   "threads": 8,
+   "device": "cpu",
+   "seconds": 99.7,
+   "perm_sha256": "792496bca39d08a97024759c08eab2b36ad9ca88408d71dcd990e193120c905c"
+  },
+  "s0_navc": {
+   "prereg": "PREREG_V8F_LISTEN",
+   "tip": "3fdb1b61",
+   "seed": "s0",
+   "donor_seed": 0,
+   "identity": false,
+   "regress": "nav_const",
+   "cells": "S/nav,T/nav,O/nav,O/ego,T/ego",
+   "ages": "cycle",
+   "n_windows": 2399,
+   "ckpt": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\sfresh\\inputs\\M2b_s0\\ckpt_last.pt",
+   "ckpt_sha256": "601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8",
+   "threads": 8,
+   "device": "cpu",
+   "seconds": 59.9,
+   "perm_sha256": "116c17f563630559ffb13f5c9c36d0a2cf32e612eedee48f5c8a4157373f6503"
+  },
+  "s0_tsoff": {
+   "prereg": "PREREG_V8F_LISTEN",
+   "tip": "3fdb1b61",
+   "seed": "s0",
+   "donor_seed": 0,
+   "identity": false,
+   "regress": "tscene_off",
+   "cells": "T/scene,T/ego,O/scene",
+   "ages": "cycle",
+   "n_windows": 2399,
+   "ckpt": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\sfresh\\inputs\\M2b_s0\\ckpt_last.pt",
+   "ckpt_sha256": "601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8",
+   "threads": 8,
+   "device": "cpu",
+   "seconds": 38.1,
+   "perm_sha256": "116c17f563630559ffb13f5c9c36d0a2cf32e612eedee48f5c8a4157373f6503"
+  },
+  "s1_navc": {
+   "prereg": "PREREG_V8F_LISTEN",
+   "tip": "3fdb1b61",
+   "seed": "s1",
+   "donor_seed": 0,
+   "identity": false,
+   "regress": "nav_const",
+   "cells": "S/nav,T/nav,O/nav,O/ego,T/ego",
+   "ages": "cycle",
+   "n_windows": 2399,
+   "ckpt": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\sfresh\\inputs\\M2b_s1\\ckpt_last.pt",
+   "ckpt_sha256": "6104fb15dc21d524b6ed53be632b8d53ec5413526ac587734c22684c7e50c2e6",
+   "threads": 6,
+   "device": "cpu",
+   "seconds": 45.0,
+   "perm_sha256": "116c17f563630559ffb13f5c9c36d0a2cf32e612eedee48f5c8a4157373f6503"
+  },
+  "s1_tsoff": {
+   "prereg": "PREREG_V8F_LISTEN",
+   "tip": "3fdb1b61",
+   "seed": "s1",
+   "donor_seed": 0,
+   "identity": false,
+   "regress": "tscene_off",
+   "cells": "T/scene,T/ego,O/scene",
+   "ages": "cycle",
+   "n_windows": 2399,
+   "ckpt": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\sfresh\\inputs\\M2b_s1\\ckpt_last.pt",
+   "ckpt_sha256": "6104fb15dc21d524b6ed53be632b8d53ec5413526ac587734c22684c7e50c2e6",
+   "threads": 6,
+   "device": "cpu",
+   "seconds": 33.6,
+   "perm_sha256": "116c17f563630559ffb13f5c9c36d0a2cf32e612eedee48f5c8a4157373f6503"
+  }
+ },
+ "readings_fixed_before_data": "THAT THE TEXT LEAVES OPEN (all fixed here, in code, BEFORE any LISTEN number was computed):\n  R1  \"largest n\": argmax over the row's INPUT columns of the UNCLIPPED n = delta(L,X) / delta(L,all) (clipping to [0,1] is for colour only).\n      n is defined only where delta(L,all) > 0 and separated; where it is not, n is NA and the row cannot support a hypothesis at that seed.\n  R2  a hypothesis HOLDS at a seed iff the largest-n cell of EVERY named row lies in the named set AND that cell \"listens\" at that seed\n      (delta > 0, separated, |delta| above the donor-seed difference). A cell LISTENS iff that holds at BOTH seeds (the PREREG definition).\n  R3  control 4 (the donor-seed floor) exists only for s0 (donor seeds 0 and 1). It is applied to BOTH seeds as the cell's floor:\n      |delta| must exceed |delta(s0, donor 0) - delta(s0, donor 1)| of the SAME cell.\n  R4  headline precedence of the outcome table: SHOWN if P-UPPER and P-LOWER both hold at both seeds; else PARTIAL if exactly one holds at\n      both seeds; else NOT SHOWN if neither holds at any seed; else SEEDS DISAGREE (a hypothesis holds at one seed only and none at both).\n      A hypothesis that holds at exactly one seed is ALWAYS also reported as SEEDS DISAGREE for that hypothesis, whatever the headline.\n  R5  Q-NAV: D = ADE6(nav at T only) - ADE6(nav at O only), paired. THROUGH T iff D > 0 and separated at both seeds; AROUND T iff D < 0 and\n      separated at both seeds; else BOTH / NOT ESTABLISHED. \"Nav at X only\" injects the donor's nav token at X and lets the change flow\n      downstream (S only: S -> T -> O; T only: T -> O; O only: the O x nav cell).",
+ "seconds_analysis": 59.8
+}

@@ -1,0 +1,50 @@
+{
+ "mutations": [
+  {
+   "id": "m2_window_mask_any_instead_of_all",
+   "file": "stack/tanitad/models/v8f_mini.py",
+   "old": "okw = batch[\"frame_ok\"].unfold(1, hist, 1).all(-1)",
+   "new": "okw = batch[\"frame_ok\"].unfold(1, hist, 1).any(-1)",
+   "expect": [
+    "test_m2"
+   ],
+   "rc": 0,
+   "n_tests": 2,
+   "failed": [
+    "test_lead_sup_gaps.py::test_m2_a_window_counts_only_when_all_its_history_frames_are_real"
+   ],
+   "observed": "RED",
+   "expected_all_red": true,
+   "seconds": 2,
+   "err": ""
+  },
+  {
+   "id": "m5_gap_part_divided_by_presence_count",
+   "file": "stack/tanitad/models/v8f_mini.py",
+   "old": "t_g = (hg * m_g).sum() / m_g.sum().clamp_min(1.0)",
+   "new": "t_g = (hg * m_g).sum() / m_p.sum().clamp_min(1.0)",
+   "expect": [
+    "test_m5"
+   ],
+   "rc": 0,
+   "n_tests": 2,
+   "failed": [
+    "test_lead_sup_gaps.py::test_m5_gap_and_closing_parts_are_means_over_their_own_masks"
+   ],
+   "observed": "RED",
+   "expected_all_red": true,
+   "seconds": 3,
+   "err": ""
+  }
+ ],
+ "written_utc": "2026-11-19T07:41:25Z",
+ "control": {
+  "rc": 0,
+  "n_tests": 2,
+  "failed": [],
+  "ignored_environment_failures": [],
+  "green": true,
+  "seconds": 2,
+  "err": ""
+ }
+}

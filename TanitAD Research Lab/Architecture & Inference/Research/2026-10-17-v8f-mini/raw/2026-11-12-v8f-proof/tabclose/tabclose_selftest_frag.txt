@@ -1,0 +1,261 @@
+def selftest():
+    res = []
+
+    def chk(name, ok):
+        res.append(bool(ok))
+        print("   %-120s %s" % (name, bool(ok)))
+    configure("ALL")
+    set_active("AGE")
+    h = ctl_h1(AD.MiniRH, 300)
+    chk("h1 planted name rule (LOWER, HIGHER, opposite seeds, no effect) through the stand-in engine: %s" % [(k, v["got"]) for k, v in h.items() if k != "PASS"], h["PASS"])
+    # ---- run tables, pairs, parts
+    sa, sb, sl = settings("A"), settings("B"), settings("ALL")
+    chk("settings: part A has AGE (TK, STK) and FRESH (TK); part B has AGE only (six arms); ALL has AGE with eight new runs and FRESH with TK",
+        sorted(f for f in sa["AGE"]["runs"] if f in NEW_FORMS) == ["RRe_STK", "RRe_TK"] and sorted(f for f in sa["FRESH"]["runs"] if f in NEW_FORMS) == ["RRe_TK"] and "FRESH" not in sb
+        and len([f for f in sb["AGE"]["runs"] if f in NEW_FORMS]) == 6 and len([f for f in sl["AGE"]["runs"] if f in NEW_FORMS]) == 8 and sl["AGE"]["runs"]["RRe_L100"] == "RQ50eL100KF5P30Hb20"
+        and sl["FRESH"]["runs"]["RRe_TK"] == "RQ50eTKKF5Hb20" and sl["AGE"]["runs"]["RRe_STK"] == "RQ50eSTKKF5P30Hb20" and sl["AGE"]["runs"]["RRe_L25"] == "RQ50eL25KF5P30Hb20")
+    pa, ta = pairs_of(NEW_FORMS, "AGE")
+    pf_, tf_ = pairs_of(("RRe_TK",), "FRESH")
+    chk("pairs: AGE 28 (7 of part A, 21 of part B), FRESH the five TOK pairs; directions A minus B", len(pa) == 28 and len(pf_) == 5 and sorted(pf_) == sorted(["TOK-VS-RR", "TOK-VS-EST-L25", "TOK-VS-EST-N10", "TOK-VS-LABEL-CLOSING", "TOK-VS-NO-RULE"])
+        and pa["TOK-VS-SHUF"] == ("RRe_TK", "RRe_STK") and pa["SHUF-VS-RR"] == ("RRe_STK", "RR") and pa["W00-VS-RR"] == ("RRe_W00", "RR") and pa["L100-VS-LABEL-CLOSING"] == ("RRe_L100", "RRc")
+        and pa["S70-VS-W70"] == ("RRe_S70", "RRe_W70") and pa["W50-VS-TOK"] == ("RRe_W50", "RRe_TK") and pa["W50-VS-EST-L25"] == ("RRe_W50", "RRe_L25") and pa["X-VS-NO-RULE".replace("X", "W90")] == ("RRe_W90", "R0K")
+        and sum(1 for v in ta.values() if v == "A") == 7)
+    pb, _ = pairs_of(tuple("RRe_" + x for x in B_ARMS), "AGE")
+    chk("pairs of a part-B-only read have no TOK pair and no W50-VS-TOK", not [k for k in pb if k.startswith("TOK") or k.endswith("-TOK") or k.startswith("SHUF")])
+    # ---- r1, x1, m1, u2 on planted logs
+    WR = "aaaabbbbccccdddd"
+    tsha = {(x, s): ("%02x" % (10 * s + len(x))) * 32 for x in NEW_ARMS for s in SEEDS}
+    t = ("arm I10RQ50eTKKF5P30Hb20_s0 form RRe replan steps 10 rule every 5 readout causal_g kappa 0.2 preroll 30 exec plan nav deadreckon grid grid_p30.json model seed 0 reader seed 0 ckpt sha256 ab "
+         "wrapper sha256 " + WR + "0123456789abcdef0123456789abcdef started 2026-11-21T12:00:00Z\nest looks scored full 900 short 50 preroll full 300 short 200 file %s\nrc 0 finished 2026-11-21T12:04:00Z\n")
+    texts = {(f, s): t % tsha[(f[len("RRe_"):], s)] for f in NEWS for s in SEEDS}
+    nf = {(f, s): 141 for f in NEWS for s in SEEDS}
+    chk("r1 passes with the table hash in the est line; fails on another hash, a missing dump file, a pre-roll mismatch or another wrapper",
+        ctl_r1s(texts, nf, 141, 30, WR, tsha)["PASS"] and not ctl_r1s(texts, nf, 141, 30, WR, {**tsha, ("W70", 0): "00" * 32})["PASS"] and not ctl_r1s(texts, {**nf, ("RRe_S70", 1): 140}, 141, 30, WR, tsha)["PASS"]
+        and not ctl_r1s(texts, nf, 141, 0, WR, tsha)["PASS"] and not ctl_r1s(texts, nf, 141, 30, "0" * 16, tsha)["PASS"])
+
+    def zl(form, cs, ce=None, eo=None, pres=(True, True, False, True)):
+        z = {"present": np.array(pres), "c_src": np.asarray(cs, np.float64), "form": np.asarray(form)}
+        if eo is not None:
+            z["est_ok"] = np.asarray(eo, bool)
+            z["c_est"] = np.asarray(ce, np.float64)
+        return EC.log_fed(z)
+    zr, nz2, eo, ceo = [0.0] * 4, [0.0, -1.5, 0.0, 0.0], [True, True, True, False], [0.0, -1.5, 0.0, np.nan]
+    rule = {(f, s): (zl("RR", zr) if f == "RR" else zl("RRe", nz2, ceo, eo)) for f in NEWS + ("RR",) for s in SEEDS}
+    chk("x1 passes (every new form feeds a closing, 0.0 without a full history, RR feeds 0)", ctl_x1s(rule, dict(rule))["PASS"])
+    chk("x1 fails when a new form feeds 0 everywhere, feeds a closing without a full history, names another form, RR was fed, or a log is missing",
+        not ctl_x1s({**rule, ("RRe_W50", 0): zl("RRe", zr, ceo, eo)}, rule)["PASS"] and not ctl_x1s({**rule, ("RRe_TK", 1): zl("RRe", [0.0, -1.5, 0.0, 0.2], ceo, eo)}, rule)["PASS"]
+        and not ctl_x1s({**rule, ("RRe_L100", 0): zl("RRh", nz2, ceo, eo)}, rule)["PASS"] and not ctl_x1s({**rule, ("RR", 0): zl("RR", [0.0, 0.0, 0.0, 0.1])}, rule)["PASS"]
+        and not ctl_x1s(rule, {**rule, ("RRe_S70", 0): None})["PASS"])
+    rw = {(f, s): 900 for f in NEWS + ("RR",) for s in SEEDS}
+    chk("m1 passes on equal row counts and fails on a different count or a missing log", ctl_m1s(rw)["PASS"] and not ctl_m1s({**rw, ("RRe_W90", 0): 899})["PASS"] and not ctl_m1s({**rw, ("RR", 1): None})["PASS"])
+    ci, jj = np.repeat(np.arange(5), 6), np.tile(np.arange(30, 36), 5)
+    tabs = {(x, s): {"clip_index": ci, "frame": jj, "est": np.where(np.arange(30) % 7 == 0, np.nan, np.sin(np.arange(30) + 3 * s) * 2.0)} for x in ("TK", "STK") for s in SEEDS}
+
+    def mklog(x, s, shift=0.0, tick=0, nan_to=None, drop=False, firstless=False):
+        tv = tabs[(x, s)]["est"]
+        eo_ = np.isfinite(tv)
+        if drop:
+            eo_ = eo_.copy()
+            eo_[3] = False
+        c = np.where(eo_, tv + shift, np.nan if nan_to is None else nan_to)
+        return {"ci": ci, "j": jj, "k": (np.full(30, 5) if firstless else np.where(jj % 5 == 0, tick, tick + 5)), "c_est": c, "est_ok": eo_}
+    lg = {("RRe_" + x, s): {"rule": mklog(x, s), "mid": mklog(x, s, tick=2)} for x in ("TK", "STK") for s in SEEDS}
+    arms = ["TK", "STK"]
+    chk("a2 passes: c_est equals the table at (ci, j) on est_ok rows, est_ok follows the table, the first look of the mid-look log is its smallest tick", ctl_u2(tabs, lg, arms)["PASS"])
+    chk("a2 fails on a planted difference of 1e-6 (and names the arm), passes one of 1e-10",
+        not ctl_u2(tabs, {**lg, ("RRe_STK", 1): {"rule": mklog("STK", 1, shift=1e-6), "mid": lg[("RRe_STK", 1)]["mid"]}}, arms)["PASS"]
+        and failed_sets({"a2_AGE": ctl_u2(tabs, {**lg, ("RRe_STK", 1): {"rule": mklog("STK", 1, shift=1e-6), "mid": lg[("RRe_STK", 1)]["mid"]}}, arms)})["a2"] == {"AGE": ["STK"]}
+        and ctl_u2(tabs, {**lg, ("RRe_STK", 1): {"rule": mklog("STK", 1, shift=1e-10), "mid": lg[("RRe_STK", 1)]["mid"]}}, arms)["PASS"])
+    chk("a2 fails when est_ok is False where the table has a value, when c_est is not NaN where est_ok is False, when a table or a log is missing, when the table has no such row, or no compared row is a first look",
+        not ctl_u2(tabs, {**lg, ("RRe_TK", 0): {"rule": mklog("TK", 0, drop=True), "mid": lg[("RRe_TK", 0)]["mid"]}}, arms)["PASS"]
+        and not ctl_u2(tabs, {**lg, ("RRe_TK", 0): {"rule": lg[("RRe_TK", 0)]["rule"], "mid": mklog("TK", 0, nan_to=0.0, tick=2)}}, arms)["PASS"]
+        and not ctl_u2({**tabs, ("TK", 0): None}, lg, arms)["PASS"] and not ctl_u2(tabs, {**lg, ("RRe_TK", 0): {"rule": None, "mid": None}}, arms)["PASS"]
+        and not ctl_u2({**tabs, ("TK", 0): dict(tabs[("TK", 0)], frame=tabs[("TK", 0)]["frame"] + 1000)}, lg, arms)["PASS"]
+        and not ctl_u2(tabs, {**lg, ("RRe_TK", 0): {"rule": mklog("TK", 0, firstless=True), "mid": lg[("RRe_TK", 0)]["mid"]}}, arms)["PASS"])
+    # ---- a4_u3
+    rg = np.random.default_rng(5)
+
+    def st_of(sd, mean, share, n=400):
+        v = rg.normal(mean, sd, n)
+        okp = rg.uniform(size=n) < share
+        return (v, okp, n + 50, int(okp.sum()) + 20)
+    good = {(f, s): st_of(1.3, 0.02, 0.97) for f in ("RRe_STK", "RRe_TK") for s in SEEDS}
+    u3 = ctl_a4_u3(good, "AGE")
+    chk("a4_u3 passes: sd ratio about 1, mean near 0, share 0.97; the report holds the numbers", u3["PASS"] and abs(u3["sd_ratio"] - 1) < 0.2 and u3["judged"] is True)
+    chk("a4_u3 fails at sd ratio 1.5, at sd ratio 0.6, at |mean| 0.2 (STK), at share 0.85, when TK has no spread, when a run is missing; passes the mean of TK at 0.4",
+        not ctl_a4_u3({**good, **{("RRe_STK", s): st_of(1.3 * 1.5, 0.0, 0.97) for s in SEEDS}}, "AGE")["PASS"] and not ctl_a4_u3({**good, **{("RRe_STK", s): st_of(1.3 * 0.6, 0.0, 0.97) for s in SEEDS}}, "AGE")["PASS"]
+        and not ctl_a4_u3({**good, **{("RRe_STK", s): st_of(1.3, 0.4, 0.97) for s in SEEDS}}, "AGE")["PASS"] and not ctl_a4_u3({**good, **{("RRe_STK", s): st_of(1.3, 0.0, 0.85) for s in SEEDS}}, "AGE")["PASS"]
+        and not ctl_a4_u3({**good, **{("RRe_TK", s): (np.zeros(50), np.ones(50, bool), 50, 50) for s in SEEDS}}, "AGE")["PASS"] and not ctl_a4_u3({**good, ("RRe_STK", 0): None}, "AGE")["PASS"]
+        and ctl_a4_u3({**good, **{("RRe_TK", s): st_of(1.3, 0.4, 0.97) for s in SEEDS}}, "AGE")["PASS"])
+    # ---- record controls and a3
+    shas = {"tab_%s_s%d.npz" % (x, s): ("%02x" % (7 * s + len(x))) * 32 for x in NEW_ARMS for s in SEEDS}
+    rec = {"pass": True, "tables": dict(shas), **{k: {"PASS": True} for k in ("a0", "a1", "a4_u1", "a4_u4")}}
+    wb = [n for n in shas if n.split("_")[1] in B_ARMS]
+    chk("record control passes when the record says PASS and every table hash equals the record's entry", all(ctl_rec(rec, shas, k, wb)["PASS"] for k in ("a0", "a1", "a4_u1", "a4_u4")))
+    chk("record control fails on a record control that says fail, a missing control, a differing hash, a table not read, a missing record, a record with no hashes, no table expected",
+        not ctl_rec({**rec, "a0": {"PASS": False}}, shas, "a0", wb)["PASS"] and not ctl_rec({k: v for k, v in rec.items() if k != "a1"}, shas, "a1", wb)["PASS"]
+        and not ctl_rec(rec, {**shas, "tab_W70_s0.npz": "00" * 32}, "a0", wb)["PASS"] and not ctl_rec(rec, {k: v for k, v in shas.items() if k != "tab_W70_s1.npz"}, "a0", wb)["PASS"]
+        and not ctl_rec(None, shas, "a0", wb)["PASS"] and not ctl_rec({k: v for k, v in rec.items() if k != "tables"}, shas, "a0", wb)["PASS"] and not ctl_rec(rec, shas, "a0", [])["PASS"]
+        and ctl_rec({**rec, "pass": False}, shas, "a0", wb)["PASS"])
+    lvr = {k: [0.10, 0.20] for k in ("C", "U", "F")}
+    chk("a3: L100 levels equal those of RRc within 1/325 per seed pass; 1/325 + 1e-6 on C, U or F fails", ctl_a3(dict(lvr, C=[0.10 + 1 / 325, 0.20]), lvr)["PASS"] and not ctl_a3(dict(lvr, C=[0.10 + 1 / 325 + 1e-6, 0.20]), lvr)["PASS"]
+        and not ctl_a3(dict(lvr, U=[0.10, 0.20 - 1 / 325 - 1e-6]), lvr)["PASS"] and not ctl_a3(dict(lvr, F=[0.10, 0.20 + 0.01]), lvr)["PASS"] and not ctl_a3({}, lvr)["PASS"])
+    # ---- table and shares
+    runs = {f: "run_" + f for f in TABLE_ORDER}
+    lv = {"run_R0K": 0.30, "run_RR": 0.20, "run_RRc": 0.10, "run_RLc": 0.05}
+    for i, f in enumerate(TABLE_ORDER):
+        lv.setdefault("run_" + f, 0.20 - 0.01 * i)
+    levels = {r: {"C": [v, v + 0.02], "U": [v / 2, v / 2], "F": [0.01, 0.02]} for r, v in lv.items()}
+    tb = arm_table(levels, runs)
+    byf = {r["form"]: r for r in tb}
+    chk("table: one row per arm in the order of the card; share = (C_RR - C_X) / (C_RR - C_RRc) per seed and pooled; RR 0, RRc 1; no name",
+        [r["form"] for r in tb] == list(TABLE_ORDER) and abs(byf["RRe_W50"]["share_of_gap_RR_to_RRc"]["per_seed"][0] - (0.20 - lv["run_RRe_W50"]) / 0.10) < 1e-12
+        and abs(byf["RRe_W50"]["share_of_gap_RR_to_RRc"]["pooled"] - (0.21 - (lv["run_RRe_W50"] + 0.01)) / 0.10) < 1e-12 and byf["RR"]["share_of_gap_RR_to_RRc"]["pooled"] == 0.0
+        and abs(byf["RRc"]["share_of_gap_RR_to_RRc"]["pooled"] - 1.0) < 1e-12 and abs(byf["RRe_TK"]["C"]["pooled"] - (lv["run_RRe_TK"] + 0.01)) < 1e-12 and byf["RRe_TK"]["U"]["per_seed"] == [lv["run_RRe_TK"] / 2] * 2)
+    lz = dict(levels, run_RRc=dict(levels["run_RR"]))
+    tz = arm_table(lz, runs)
+    chk("table: a zero gap between RR and RRc gives share None per seed and pooled", all(r["share_of_gap_RR_to_RRc"]["pooled"] is None and r["share_of_gap_RR_to_RRc"]["per_seed"] == [None, None] for r in tz) and shares_of(tz)["W50"] is None)
+
+    # ---- verdicts
+    def wd(c="NOT-SEPARATED", u="NOT-SEPARATED", f="NOT-SEPARATED", fam=None):
+        return {"C": c, "U": u, "F": f, "fam": dict({x: "NOT-SEPARATED" for x in FAMS}, **(fam or {}))}
+
+    def mk(over=None):
+        w = {"AGE": {nm: wd() for nm in pa}, "FRESH": {nm: wd() for nm in pf_}}
+        for (st, nm), v in (over or {}).items():
+            w[st][nm] = v
+        return w
+    ex = {"A": True, "B": True}
+    sh0 = {"W50": 0.1, "W70": 0.1, "W90": 0.1}
+
+    def vn(over=None, sh=None, e=None):
+        return verdict_names(mk(over), e or ex, sh if sh is not None else sh0)
+    good_a = {("AGE", "TOK-VS-RR"): wd("LOWER", "LOWER"), ("FRESH", "TOK-VS-RR"): wd("NOT-SEPARATED", "NOT-SEPARATED", "LOWER")}
+    n1, y1 = vn(good_a)
+    chk("TK verdict: AGE C LOWER, U not HIGHER, no family WORSE and FRESH C, U not HIGHER reads TK-SUPPORTED with the F names (AGE, FRESH) beside",
+        n1["VERDICT_TK"] == "TABCLOSE10K-TK-SUPPORTED" and n1["VERDICT_TK_BESIDE_F_AGE"] == "TABCLOSE10K-TOK-VS-RR-AGE-F-NOT-SEPARATED" and n1["VERDICT_TK_BESIDE_F_FRESH"] == "TABCLOSE10K-TOK-VS-RR-FRESH-F-LOWER")
+    flips = [{("AGE", "TOK-VS-RR"): wd("NOT-SEPARATED", "LOWER")}, {("AGE", "TOK-VS-RR"): wd("HIGHER", "LOWER")}, {("AGE", "TOK-VS-RR"): wd("LOWER", "HIGHER")}, {("AGE", "TOK-VS-RR"): wd("LOWER", "LOWER", fam={"TACTICAL": "WORSE"})},
+             {("FRESH", "TOK-VS-RR"): wd("HIGHER", "NOT-SEPARATED")}, {("FRESH", "TOK-VS-RR"): wd("LOWER", "HIGHER")}, {("FRESH", "TOK-VS-RR"): wd("LOWER", "LOWER", fam={"LONGITUDINAL": "WORSE"})}]
+    chk("TK verdict: each of the six conditions reads TK-NOT-SUPPORTED when it fails (AGE C not LOWER, AGE C HIGHER, AGE U HIGHER, AGE family WORSE, FRESH C HIGHER, FRESH U HIGHER, FRESH family WORSE)",
+        all(vn({**good_a, **fl})[0]["VERDICT_TK"] == "TABCLOSE10K-TK-NOT-SUPPORTED" for fl in flips))
+    chk("TK verdict: FRESH C LOWER and NOT-SEPARATED both count as not HIGHER", vn({**good_a, ("FRESH", "TOK-VS-RR"): wd("LOWER", "LOWER")})[0]["VERDICT_TK"].endswith("-TK-SUPPORTED")
+        and vn({**good_a, ("FRESH", "TOK-VS-RR"): wd("NOT-SEPARATED", "NOT-SEPARATED")})[0]["VERDICT_TK"].endswith("-TK-SUPPORTED"))
+    n2, y2 = vn({**good_a, ("FRESH", "TOK-VS-RR"): wd(None, None, None)})
+    n3, y3 = vn({("AGE", "TOK-VS-RR"): wd("NOT-SEPARATED", "LOWER"), ("FRESH", "TOK-VS-RR"): wd(None, None, None)})
+    chk("TK verdict: not written when a needed word is not available (FRESH not qualified), says why; a failing AGE condition still decides NOT-SUPPORTED; the F name of an unavailable word is not written",
+        "VERDICT_TK" not in n2 and "VERDICT_TK" in y2 and n3["VERDICT_TK"].endswith("-TK-NOT-SUPPORTED") and "VERDICT_TK_BESIDE_F_FRESH" not in n3 and "VERDICT_TK_BESIDE_F_AGE" in n3)
+    chk("TK-BEYOND-L25 only when TOK-VS-EST-L25 at AGE reads C LOWER; NOT-BEYOND when NOT-SEPARATED or HIGHER; not written when unavailable",
+        vn({("AGE", "TOK-VS-EST-L25"): wd("LOWER")})[0]["VERDICT_TK_BEYOND_L25"] == "TABCLOSE10K-TK-BEYOND-L25" and vn({("AGE", "TOK-VS-EST-L25"): wd("NOT-SEPARATED")})[0]["VERDICT_TK_BEYOND_L25"].endswith("-TK-NOT-BEYOND-L25")
+        and vn({("AGE", "TOK-VS-EST-L25"): wd("HIGHER")})[0]["VERDICT_TK_BEYOND_L25"].endswith("-NOT-BEYOND-L25") and "VERDICT_TK_BEYOND_L25" not in vn({("AGE", "TOK-VS-EST-L25"): wd(None)})[0])
+    g1 = vn({("AGE", "TOK-VS-SHUF"): wd("LOWER", "LOWER"), ("AGE", "SHUF-VS-RR"): wd("LOWER")})[0]
+    g2 = [vn({("AGE", "TOK-VS-SHUF"): w_})[0] for w_ in (wd("LOWER", "NOT-SEPARATED"), wd("NOT-SEPARATED", "LOWER"), wd("LOWER", "HIGHER"), wd("HIGHER", "LOWER"))]
+    chk("TK gain: C LOWER and U not HIGHER reads GAIN-FROM-THE-SCENE with the SHUF-VS-RR name beside; C not LOWER or U HIGHER reads GAIN-NOT-SHOWN",
+        g1["VERDICT_TK_GAIN"] == "TABCLOSE10K-TK-GAIN-FROM-THE-SCENE" and g1["VERDICT_TK_GAIN_BESIDE_SHUF_VS_RR"] == "TABCLOSE10K-SHUF-VS-RR-AGE-C-LOWER" and g2[0]["VERDICT_TK_GAIN"].endswith("-GAIN-FROM-THE-SCENE")
+        and all(x["VERDICT_TK_GAIN"] == "TABCLOSE10K-TK-GAIN-NOT-SHOWN-FROM-THE-SCENE" for x in g2[1:]))
+    g3 = vn({("AGE", "TOK-VS-SHUF"): wd("LOWER", "LOWER"), ("AGE", "SHUF-VS-RR"): wd(None)})
+    chk("TK gain: with SHUF-VS-RR not available the verdict is written and the beside name is not; with C or U unavailable (and the other not failing) it is not written",
+        "VERDICT_TK_GAIN" in g3[0] and "VERDICT_TK_GAIN_BESIDE_SHUF_VS_RR" not in g3[0] and "VERDICT_TK_GAIN_BESIDE_SHUF_VS_RR" in g3[1] and "VERDICT_TK_GAIN" not in vn({("AGE", "TOK-VS-SHUF"): wd("LOWER", None)})[0]
+        and vn({("AGE", "TOK-VS-SHUF"): wd("NOT-SEPARATED", None)})[0]["VERDICT_TK_GAIN"].endswith("-NOT-SHOWN-FROM-THE-SCENE"))
+    # part B
+    ovr = {}
+    for x in XARMS:
+        ovr[("AGE", x + "-VS-RR")] = wd("LOWER", "NOT-SEPARATED")
+        ovr[("AGE", x + "-VS-LABEL-CLOSING")] = wd("NOT-SEPARATED")
+    b1 = vn(ovr, {"W50": 0.7, "W70": 0.9, "W90": 0.95})[0]
+    chk("per arm: X-VS-RR C LOWER with U not HIGHER reads X-REMOVES-CONTACT; X-VS-LABEL-CLOSING C not HIGHER reads X-AT-LABEL-LEVEL (all six arms)",
+        all(b1["ARM_%s_REMOVES" % x] == "TABCLOSE10K-%s-REMOVES-CONTACT" % x and b1["ARM_%s_LABEL_LEVEL" % x] == "TABCLOSE10K-%s-AT-LABEL-LEVEL" % x for x in XARMS))
+    b2 = vn({("AGE", "W70-VS-RR"): wd("NOT-SEPARATED"), ("AGE", "W50-VS-RR"): wd("LOWER", "HIGHER"), ("AGE", "W90-VS-LABEL-CLOSING"): wd("HIGHER"), ("AGE", "L100-VS-RR"): wd("HIGHER", "LOWER"), ("AGE", "W00-VS-RR"): wd("LOWER", "LOWER")})[0]
+    chk("per arm: C not LOWER or U HIGHER reads X-NOT-SHOWN; C HIGHER against the label reads X-ABOVE-LABEL-LEVEL",
+        b2["ARM_W70_REMOVES"].endswith("-W70-NOT-SHOWN") and b2["ARM_W50_REMOVES"].endswith("-W50-NOT-SHOWN") and b2["ARM_W90_LABEL_LEVEL"].endswith("-W90-ABOVE-LABEL-LEVEL") and b2["ARM_L100_REMOVES"].endswith("-L100-NOT-SHOWN")
+        and b2["ARM_W00_REMOVES"].endswith("-W00-REMOVES-CONTACT"))
+    rm = {("AGE", x + "-VS-RR"): wd("LOWER", "LOWER") for x in ("W50", "W70", "W90")}
+    chk("requirement: the lowest of 50, 70, 90 whose arm removes contact with a pooled share of at least 0.5 (R50, R70, R90); exactly 0.5 counts",
+        vn(rm, {"W50": 0.6, "W70": 0.9, "W90": 1.0})[0]["VERDICT_REQUIREMENT"] == "TABCLOSE10K-REQUIREMENT-R50" and vn(rm, {"W50": 0.49, "W70": 0.5, "W90": 1.0})[0]["VERDICT_REQUIREMENT"] == "TABCLOSE10K-REQUIREMENT-R70"
+        and vn(rm, {"W50": 0.2, "W70": 0.3, "W90": 0.5})[0]["VERDICT_REQUIREMENT"] == "TABCLOSE10K-REQUIREMENT-R90")
+    rm2 = {**rm, ("AGE", "W50-VS-RR"): wd("NOT-SEPARATED", "LOWER")}
+    chk("requirement: an arm that does not remove contact is skipped even with a share of 0.9; when no arm qualifies the name is NO-TESTED-LEVEL-REACHES-HALF (also with all shares below 0.5)",
+        vn(rm2, {"W50": 0.9, "W70": 0.6, "W90": 1.0})[0]["VERDICT_REQUIREMENT"].endswith("-R70") and vn(rm, {"W50": 0.4, "W70": 0.3, "W90": 0.2})[0]["VERDICT_REQUIREMENT"] == "TABCLOSE10K-NO-TESTED-LEVEL-REACHES-HALF"
+        and vn({}, {"W50": 0.9, "W70": 0.9, "W90": 0.9})[0]["VERDICT_REQUIREMENT"] == "TABCLOSE10K-NO-TESTED-LEVEL-REACHES-HALF")
+    chk("requirement: a zero gap (share None) does not reach half; an unavailable lower arm blocks the name; an unavailable higher arm does not when a lower one qualified",
+        vn(rm, {"W50": None, "W70": None, "W90": None})[0]["VERDICT_REQUIREMENT"].endswith("-NO-TESTED-LEVEL-REACHES-HALF") and "VERDICT_REQUIREMENT" not in vn({**rm, ("AGE", "W50-VS-RR"): wd(None, None)}, {"W50": 0.9, "W70": 0.9, "W90": 0.9})[0]
+        and "VERDICT_REQUIREMENT" in vn({**rm, ("AGE", "W50-VS-RR"): wd("NOT-SEPARATED", "NOT-SEPARATED"), ("AGE", "W70-VS-RR"): wd(None, None)}, {"W50": 0.9, "W70": 0.9, "W90": 0.9})[1]
+        and vn({**rm, ("AGE", "W90-VS-RR"): None}, {"W50": 0.9, "W70": 0.9, "W90": 0.9})[0]["VERDICT_REQUIREMENT"].endswith("-R50"))
+    chk("spread alone: W00-VS-RR C LOWER reads SPREAD-ALONE-REMOVES-CONTACT; NOT-SEPARATED or HIGHER reads SPREAD-ALONE-NOT-SHOWN",
+        vn({("AGE", "W00-VS-RR"): wd("LOWER")})[0]["VERDICT_SPREAD_ALONE"] == "TABCLOSE10K-SPREAD-ALONE-REMOVES-CONTACT" and vn({("AGE", "W00-VS-RR"): wd("NOT-SEPARATED")})[0]["VERDICT_SPREAD_ALONE"].endswith("-SPREAD-ALONE-NOT-SHOWN")
+        and vn({("AGE", "W00-VS-RR"): wd("HIGHER")})[0]["VERDICT_SPREAD_ALONE"].endswith("-SPREAD-ALONE-NOT-SHOWN"))
+    s_same = vn({("AGE", "W70-VS-RR"): wd("LOWER", "LOWER"), ("AGE", "S70-VS-RR"): wd("LOWER", "LOWER")})[0]
+    s_diff = vn({("AGE", "W70-VS-RR"): wd("LOWER", "LOWER"), ("AGE", "S70-VS-RR"): wd("NOT-SEPARATED", "LOWER")})[0]
+    s_lab = vn({("AGE", "W70-VS-LABEL-CLOSING"): wd("NOT-SEPARATED"), ("AGE", "S70-VS-LABEL-CLOSING"): wd("HIGHER")})[0]
+    s_na = vn({("AGE", "S70-VS-RR"): None})
+    chk("S70 beside W70: equal names carry no mark; a different REMOVES name or a different LABEL-LEVEL name marks the requirement as depending on the time course; an unavailable name is not decided",
+        "VERDICT_REQUIREMENT_MARK" not in s_same and "S70_BESIDE_W70" in s_same and s_diff["VERDICT_REQUIREMENT_MARK"] == MARK_TIME and s_lab["VERDICT_REQUIREMENT_MARK"] == MARK_TIME
+        and "VERDICT_REQUIREMENT_MARK" not in s_na[0] and "VERDICT_REQUIREMENT_MARK" in s_na[1] and "S70_BESIDE_W70" not in s_na[0])
+    chk("a part that was not run writes no verdict of that part and no why entry for it", not [k for k in vn(None, None, {"A": True, "B": False})[0] if k.startswith(("ARM_", "VERDICT_REQ", "VERDICT_SPREAD"))]
+        and not [k for k in verdict_names(mk(), {"A": False, "B": True}, sh0)[0] if k.startswith("VERDICT_TK")] and "VERDICT_TK" not in verdict_names(mk(), {"A": False, "B": True}, sh0)[1])
+    # ---- names and withholding
+    pfm = {"AGE": pa, "FRESH": pf_}
+    ppt = {"AGE": ta, "FRESH": tf_}
+    qual = {"AGE": True, "FRESH": True}
+    full = mk({**good_a, ("AGE", "TOK-VS-SHUF"): wd("LOWER", "LOWER"), ("AGE", "SHUF-VS-RR"): wd("LOWER"), **ovr})
+    nm0, wy0 = all_names(full, qual, pfm, ppt, failed_sets({}), ex, {"W50": 0.7, "W70": 0.9, "W90": 0.95})
+    chk("names: pattern TABCLOSE10K-<PAIR>-<SETTING>-<C|U|F|family>-<word>; C, U, F and four families per pair and setting (28 + 5 pairs)",
+        nm0["TOK-VS-RR_AGE_C"] == "TABCLOSE10K-TOK-VS-RR-AGE-C-LOWER" and nm0["W50-VS-TOK_AGE_F"] == "TABCLOSE10K-W50-VS-TOK-AGE-F-NOT-SEPARATED" and nm0["TOK-VS-NO-RULE_FRESH_STRATEGIC"].endswith("-FRESH-STRATEGIC-NOT-SEPARATED")
+        and len([k for k in nm0 if k.endswith("_U")]) == 33 and len([k for k in nm0 if k.endswith("_F")]) == 33 and len([k for k in nm0 if k.endswith("_TACTICAL")]) == 33 and "VERDICT_REQUIREMENT" in nm0 and "VERDICT_TK" in nm0)
+
+    def ctl_f(*keys):
+        return failed_sets({k: {"PASS": False} for k in keys})
+
+    def gone(nm, prefixes):
+        return not [k for k in nm if k.startswith(prefixes)]
+    bnames = tuple(x + "-VS" for x in XARMS) + ("W50-VS-TOK", "W50-VS-EST", "S70-VS-W70", "ARM_", "VERDICT_REQ", "VERDICT_SPREAD", "S70_BESIDE")
+    for key in ("a0_tables", "a1_tables", "a3_AGE"):
+        nmx, wyx = all_names(full, qual, pfm, ppt, ctl_f(key), ex, {"W50": 0.7, "W70": 0.9, "W90": 0.95})
+        chk("withholding: %s failed -> no part B pair name and no part B verdict; part A names and verdicts stay" % key, gone(nmx, bnames) and "TOK-VS-RR_AGE_C" in nmx and "VERDICT_TK" in nmx and "VERDICT_TK_GAIN" in nmx and "VERDICT_REQUIREMENT" in wyx)
+    for key in ("a4_u1", "a4_u4", "a4_u3_AGE"):
+        nmx, wyx = all_names(full, qual, pfm, ppt, ctl_f(key), ex, {"W50": 0.7, "W70": 0.9, "W90": 0.95})
+        chk("withholding: %s failed -> no TOK-VS-SHUF or SHUF-VS-RR name and no GAIN verdict; TOK-VS-RR, the TK verdict and part B stay" % key,
+            gone(nmx, ("TOK-VS-SHUF", "SHUF-VS-RR", "VERDICT_TK_GAIN")) and "TOK-VS-RR_AGE_C" in nmx and "VERDICT_TK" in nmx and "VERDICT_REQUIREMENT" in nmx and "VERDICT_TK_GAIN" in wyx)
+    fa = failed_sets({"a2_AGE": {"PASS": False, "runs": {"W70:seed0:rule_log": {"ok": False}, "W70:seed0:mid_log": {"ok": False}, "TK:seed0:rule_log": {"ok": True}}}})
+    nmx, wyx = all_names(full, qual, pfm, ppt, fa, ex, {"W50": 0.0, "W70": 0.9, "W90": 0.95})
+    chk("withholding: a2 failed for W70 at AGE -> every pair that uses W70 is withheld (W70-VS-*, S70-VS-W70), the pairs of the other runs stay, and a requirement that needs W70 is not written",
+        gone(nmx, ("W70-VS", "S70-VS-W70", "ARM_W70")) and "W50-VS-RR_AGE_C" in nmx and "TOK-VS-RR_AGE_C" in nmx and "VERDICT_REQUIREMENT" not in nmx and "VERDICT_REQUIREMENT" in wyx and "W70-VS-RR_AGE" in wyx)
+    fa2 = failed_sets({"a2_AGE": {"PASS": False, "runs": {"TK:seed1:mid_log": {"ok": False}}}})
+    nmx, wyx = all_names(full, qual, pfm, ppt, fa2, ex, {"W50": 0.7, "W70": 0.9, "W90": 0.95})
+    chk("withholding: a2 failed for TK at AGE -> AGE pairs with TK (TOK-VS-*, W50-VS-TOK, TOK-VS-SHUF) withheld, FRESH TOK names stay, the TK verdict is not written",
+        gone(nmx, ("TOK-VS-RR_AGE", "TOK-VS-SHUF_AGE", "W50-VS-TOK_AGE")) and "TOK-VS-RR_FRESH_C" in nmx and "VERDICT_TK" not in nmx and "W50-VS-RR_AGE_C" in nmx)
+    fa3 = failed_sets({"a2_AGE": {"PASS": False}})
+    chk("withholding: a failed a2 without a run list withholds every arm; classification: a1_AGE (bank), g_, k3_, s_, r1_, x1_, m1_, i1_, h1 and setting_ran are inherited (no name, no value); a2, a3, a4, a0_tables, a1_tables are card controls",
+        fa3["a2"]["AGE"] == list(NEW_ARMS) and all(ctl_f(k)["glob"] == [k] for k in ("a1_AGE", "g_AGE", "k3_FRESH", "s_AGE", "r1_AGE", "x1_AGE", "m1_AGE", "i1_AGE", "h1_planted_name_rule", "setting_ran_AGE"))
+        and all(not ctl_f(k)["glob"] for k in ("a2_AGE", "a3_AGE", "a4_u3_AGE", "a4_u1", "a4_u4", "a0_tables", "a1_tables")))
+    wy_u = all_names(mk({("AGE", "TOK-VS-RR"): wd(None, None, None)}), {"AGE": False, "FRESH": True}, pfm, ppt, failed_sets({}), ex, sh0)
+    chk("names: an unqualified setting has no C, U or F name and says why", not [k for k in wy_u[0] if k.startswith("TOK-VS-RR_AGE") and k.endswith(("_C", "_U", "_F"))] and "HEADWAY_AGE" in wy_u[1])
+    fs_card = {"x": {"PASS": True}, "a4_u1": {"PASS": False}}
+    a_ok = assemble(fs_card, {"names": {"k": "v"}})
+    a_gl = assemble({"x": {"PASS": True}, "g_AGE": {"PASS": False}, "a4_u1": {"PASS": False}}, {"names": {"k": "v"}})
+    chk("assemble: a card control that failed keeps the payload (it withholds inside all_names) and controls_all_pass False; an inherited control that failed leaves no name and prints none; all pass gives True",
+        a_ok["names"] == {"k": "v"} and a_ok["controls_all_pass"] is False and a_gl["names"] is None and "TABCLOSE10K-" not in "\n".join(EC.render(a_gl)) and "== names" not in "\n".join(EC.render(a_gl))
+        and assemble({"x": {"PASS": True}}, {"names": {"k": "v"}})["controls_all_pass"] is True and assemble({"x": {"PASS": True}}, None)["controls_all_pass"] is False)
+    # ---- e json, a1/k3 and registry
+    jl = lambda p: {"card": PARENT_CARD, "controls_all_pass": True} if p == "ok" else ({"card": "X", "controls_all_pass": True} if p == "other" else ({"card": PARENT_CARD, "controls_all_pass": False} if p == "bad" else None))   # noqa: E731
+    chk("the read of card ADD79 is required: admitted only when present, of that card and passed", read_e_json("ok", jl)[0] and not read_e_json("", jl)[0] and not read_e_json("nope", jl)[0]
+        and not read_e_json("other", jl)[0] and not read_e_json("bad", jl)[0])
+    lvb = {"RQ": {c: [0.1, 0.2] for c in ("U", "C", "F")}}
+    bank = {"controls_all_pass": True, "settings": {"AGE": {"levels": {r: {c: list(v) for c, v in d.items()} for r, d in lvb.items()}}}}
+    chk("a1 / k3 (levels of banked runs and of the runs of card ADD79): equal passes, 1e-6 off fails, a bank that is not admitted fails", EC.ctl_a1(lvb, bank, "AGE")["PASS"] and not EC.ctl_a1({"RQ": dict(lvb["RQ"], C=[0.1 + 1e-6, 0.2])}, bank, "AGE")["PASS"]
+        and not EC.ctl_a1(lvb, dict(bank, controls_all_pass=False), "AGE")["PASS"])
+    reg = dict(R.ALL_RUNS)
+    register_runs(SET["AGE"])
+    register_runs(SET["FRESH"])
+    chk("register_runs enters the new runs with form RRe, readout K, rule every 5 and the pre-roll of the setting", R.ALL_RUNS["RQ50eW50KF5P30Hb20"][:3] == ("RRe", "K", 30) and R.ALL_RUNS["RQ50eTKKF5Hb20"][2] == 0
+        and R.ALL_RUNS["RQ50eS70KF5P30Hb20"][6] == 5 and R.ALL_RUNS["RQ50eRRe"[:0] + "RQ50eL100KF5P30Hb20"][0] == "RRe")
+    R.ALL_RUNS.clear()
+    R.ALL_RUNS.update(reg)
+    set_active("FRESH")
+    chk("set_active rebinds the forms and pairs of the setting (FRESH: TK only, five pairs)", NEWS == ("RRe_TK",) and len(PAIRS) == 5 and FORMS == ("RRe_TK",) + EEST + BANKED)
+    set_active("AGE")
+    src = io.open(os.path.abspath(__file__), encoding="utf-8").read().lower()
+    bad = ["vo" + "id", "super" + "seded", "re" + "tracted", "for" + "merly", "cor" + "rection", "with" + "drawn", "no lo" + "nger", "clo" + "sed loop", "driving " + "performance"]
+    chk("text of the tool holds none of the banned words", not [x for x in bad if x in src])
+    ok = all(res)
+    print("ZZ SELFTEST-TABCLOSE10K ok: %s (%d of %d)" % (ok, sum(res), len(res)))
+    return 0 if ok else 1

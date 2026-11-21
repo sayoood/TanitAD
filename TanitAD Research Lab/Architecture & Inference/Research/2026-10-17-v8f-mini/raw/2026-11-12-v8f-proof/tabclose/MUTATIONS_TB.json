@@ -1,0 +1,1219 @@
+{
+ "mutations": {
+  "r01_a4u3_sd_upper": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (49 of 50)"
+   ],
+   "what": "a4_u3 sd ratio may reach 2.0",
+   "old": "SD_LO, SD_HI, MEAN_MAX, SHARE_MIN = 0.80, 1.25, 0.15, 0.90",
+   "new": "SD_LO, SD_HI, MEAN_MAX, SHARE_MIN = 0.80, 2.0, 0.15, 0.90",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "r02_a4u3_sd_lower": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (49 of 50)"
+   ],
+   "what": "a4_u3 sd ratio may go down to 0.5",
+   "old": "SD_LO, SD_HI, MEAN_MAX, SHARE_MIN = 0.80, 1.25, 0.15, 0.90",
+   "new": "SD_LO, SD_HI, MEAN_MAX, SHARE_MIN = 0.50, 1.25, 0.15, 0.90",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "r03_a4u3_mean": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (49 of 50)"
+   ],
+   "what": "a4_u3 mean may reach 0.5",
+   "old": "SD_LO, SD_HI, MEAN_MAX, SHARE_MIN = 0.80, 1.25, 0.15, 0.90",
+   "new": "SD_LO, SD_HI, MEAN_MAX, SHARE_MIN = 0.80, 1.25, 0.50, 0.90",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "r04_a4u3_share": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (49 of 50)"
+   ],
+   "what": "a4_u3 share of full looks may be 0.5",
+   "old": "SD_LO, SD_HI, MEAN_MAX, SHARE_MIN = 0.80, 1.25, 0.15, 0.90",
+   "new": "SD_LO, SD_HI, MEAN_MAX, SHARE_MIN = 0.80, 1.25, 0.15, 0.50",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "r05_a4u3_share_not_judged": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (49 of 50)"
+   ],
+   "what": "a4_u3 does not judge the share",
+   "old": "\"PASS\": bool(c1 and c2 and c3), \"complete\": True",
+   "new": "\"PASS\": bool(c1 and c2), \"complete\": True",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "r06_a3_tolerance": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (49 of 50)"
+   ],
+   "what": "a3 allows two windows",
+   "old": "A3_TOL = 1.0 / 325.0",
+   "new": "A3_TOL = 2.0 / 325.0",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "r07_half_is_strict": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (49 of 50)"
+   ],
+   "what": "a share of exactly 0.5 does not reach half",
+   "old": "if sh_ is not None and sh_ >= HALF:",
+   "new": "if sh_ is not None and sh_ > HALF:",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "r08_half_value": {
+   "rc": 1,
+   "seconds": 0.5,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (48 of 50)"
+   ],
+   "what": "half is 0.4",
+   "old": "HALF = 0.5",
+   "new": "HALF = 0.4",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "r09_u2_tolerance": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (49 of 50)"
+   ],
+   "what": "a2 tolerance 1e-5",
+   "old": "TOL_U2 = 1e-9",
+   "new": "TOL_U2 = 1e-5",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "r10_rec_hash_not_judged": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (49 of 50)"
+   ],
+   "what": "record control does not compare the table hash",
+   "old": "bad = sorted(n for n in want if shas.get(n) is None or tabs.get(n) != shas.get(n))",
+   "new": "bad = sorted(n for n in want if shas.get(n) is None)",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "r11_rec_pass_not_judged": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (49 of 50)"
+   ],
+   "what": "record control ignores the record's PASS",
+   "old": "if not isinstance(d, dict) or d.get(\"PASS\") is not True:",
+   "new": "if not isinstance(d, dict):",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "r12_rec_no_table_expected": {
+   "rc": 1,
+   "seconds": 0.3,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (49 of 50)"
+   ],
+   "what": "record control passes with no table expected",
+   "old": "if not isinstance(tabs, dict) or not want:",
+   "new": "if not isinstance(tabs, dict):",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "r13_a3_cutoff": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (49 of 50)"
+   ],
+   "what": "a3 judges 2 tolerances",
+   "old": "\"PASS\": bool(mx <= tol)",
+   "new": "\"PASS\": bool(mx <= 2 * tol)",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "r14_r1_hash_not_judged": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (49 of 50)"
+   ],
+   "what": "r1 does not compare the est line's file hash",
+   "old": "sha_ok = bool(pe is not None and pe[\"file_sha256\"]",
+   "new": "sha_ok = True or bool(pe is not None and pe[\"file_sha256\"]",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "r15_x1_nonzero_not_judged": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (49 of 50)"
+   ],
+   "what": "x1 accepts a closing that is 0 everywhere",
+   "old": "g1 = r[\"present\"] > 0 and r[\"present_nonzero\"] > 0 and",
+   "new": "g1 = r[\"present\"] > 0 and",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "r16_m1_rows_not_compared": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (49 of 50)"
+   ],
+   "what": "m1 does not compare the row count with RR",
+   "old": "good = bool(n and base and n == base)",
+   "new": "good = bool(n and base)",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "v01_tk_agec_not_judged": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "                                                      ~~^^^^^^^^^^^^^^",
+    "KeyError: 'VERDICT_TK'"
+   ],
+   "what": "TK-SUPPORTED ignores AGE C",
+   "old": "sup = decide([c_lower(r_a), c_nh(r_a, \"U\")",
+   "new": "sup = decide([True, c_nh(r_a, \"U\")",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "v02_tk_ageu_not_judged": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (49 of 50)"
+   ],
+   "what": "TK-SUPPORTED ignores AGE U",
+   "old": "c_lower(r_a), c_nh(r_a, \"U\"), no_worse(r_a)",
+   "new": "c_lower(r_a), True, no_worse(r_a)",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "v03_tk_agefam_not_judged": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (49 of 50)"
+   ],
+   "what": "TK-SUPPORTED ignores the AGE families",
+   "old": "c_nh(r_a, \"U\"), no_worse(r_a), c_nh(r_f, \"C\")",
+   "new": "c_nh(r_a, \"U\"), True, c_nh(r_f, \"C\")",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "v04_tk_freshc_not_judged": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (49 of 50)"
+   ],
+   "what": "TK-SUPPORTED ignores FRESH C",
+   "old": "no_worse(r_a), c_nh(r_f, \"C\"), c_nh(r_f, \"U\")",
+   "new": "no_worse(r_a), True, c_nh(r_f, \"U\")",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "v05_tk_freshu_not_judged": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (49 of 50)"
+   ],
+   "what": "TK-SUPPORTED ignores FRESH U",
+   "old": "c_nh(r_f, \"C\"), c_nh(r_f, \"U\"), no_worse(r_f)",
+   "new": "c_nh(r_f, \"C\"), True, no_worse(r_f)",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "v06_tk_freshfam_not_judged": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (49 of 50)"
+   ],
+   "what": "TK-SUPPORTED ignores the FRESH families",
+   "old": "c_nh(r_f, \"U\"), no_worse(r_f)])",
+   "new": "c_nh(r_f, \"U\"), True])",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "v07_tk_freshc_needs_lower": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (47 of 50)"
+   ],
+   "what": "FRESH C has to be LOWER",
+   "old": "c_nh(r_f, \"C\"), c_nh(r_f, \"U\")",
+   "new": "c_lower(r_f), c_nh(r_f, \"U\")",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "v08_tk_beyond_wrong_pair": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (49 of 50)"
+   ],
+   "what": "TK-BEYOND-L25 reads TOK-VS-RR",
+   "old": "decide([c_lower(wd_get(words, \"AGE\", \"TOK-VS-EST-L25\"))])",
+   "new": "decide([c_lower(wd_get(words, \"AGE\", \"TOK-VS-RR\"))])",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "v09_gain_u_not_judged": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (48 of 50)"
+   ],
+   "what": "GAIN ignores U",
+   "old": "decide([c_lower(sh), c_nh(sh, \"U\")])",
+   "new": "decide([c_lower(sh)])",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "v10_gain_u_needs_lower": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (48 of 50)"
+   ],
+   "what": "GAIN needs U LOWER",
+   "old": "decide([c_lower(sh), c_nh(sh, \"U\")])",
+   "new": "decide([c_lower(sh), c_lower(sh)])",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "v11_gain_beside_name": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (49 of 50)"
+   ],
+   "what": "the name beside GAIN is the U name",
+   "old": "cname(\"SHUF-VS-RR\", \"AGE\", \"C\", sr[\"C\"])",
+   "new": "cname(\"SHUF-VS-RR\", \"AGE\", \"U\", sr[\"U\"])",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "v12_f_beside_name": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (49 of 50)"
+   ],
+   "what": "the F name beside TK-SUPPORTED is the C name",
+   "old": "cname(\"TOK-VS-RR\", st, \"F\", r[\"F\"])",
+   "new": "cname(\"TOK-VS-RR\", st, \"C\", r[\"C\"])",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "v13_removes_u_not_judged": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (49 of 50)"
+   ],
+   "what": "REMOVES-CONTACT ignores U",
+   "old": "rem[x] = decide([c_lower(rr), c_nh(rr, \"U\")])",
+   "new": "rem[x] = decide([c_lower(rr)])",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "v14_removes_c_not_lower": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "                                                                                ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+    "KeyError: 'VERDICT_REQUIREMENT_MARK'"
+   ],
+   "what": "REMOVES-CONTACT needs only C not HIGHER",
+   "old": "rem[x] = decide([c_lower(rr), c_nh(rr, \"U\")])",
+   "new": "rem[x] = decide([c_nh(rr, \"C\"), c_nh(rr, \"U\")])",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "v15_label_level_needs_lower": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "                                                                                                                                    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+    "KeyError: 'VERDICT_REQUIREMENT_MARK'"
+   ],
+   "what": "AT-LABEL-LEVEL needs C LOWER",
+   "old": "at[x] = decide([c_nh(lc, \"C\")])",
+   "new": "at[x] = decide([c_lower(lc)])",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "v16_requirement_arm_not_skipped": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (48 of 50)"
+   ],
+   "what": "an arm that does not remove contact can set the requirement",
+   "old": "        if rem[x] is False:\n            continue\n",
+   "new": "",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "v17_requirement_order": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (46 of 50)"
+   ],
+   "what": "the requirement is searched from 90 down",
+   "old": "((50, \"W50\"), (70, \"W70\"), (90, \"W90\"))",
+   "new": "((90, \"W90\"), (70, \"W70\"), (50, \"W50\"))",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "v18_requirement_unresolved": {
+   "rc": 1,
+   "seconds": 0.5,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (45 of 50)"
+   ],
+   "what": "an unavailable lower arm does not block the requirement",
+   "old": "        if rem[x] is None:\n            unresolved = x\n            break\n",
+   "new": "",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "v19_no_tested_name": {
+   "rc": 1,
+   "seconds": 0.3,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (48 of 50)"
+   ],
+   "what": "the none name is another",
+   "old": "PRE + \"-NO-TESTED-LEVEL-REACHES-HALF\"",
+   "new": "PRE + \"-NO-LEVEL-REACHES-HALF\"",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "v20_spread_wrong_pair": {
+   "rc": 1,
+   "seconds": 0.5,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (49 of 50)"
+   ],
+   "what": "SPREAD-ALONE reads W50-VS-RR",
+   "old": "decide([c_lower(wd_get(words, \"AGE\", \"W00-VS-RR\"))])",
+   "new": "decide([c_lower(wd_get(words, \"AGE\", \"W50-VS-RR\"))])",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "v21_mark_all": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "                                                                                ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+    "KeyError: 'VERDICT_REQUIREMENT_MARK'"
+   ],
+   "what": "the mark is written only when all names differ",
+   "old": "if any(a_ != b_ for a_, b_ in pair_):",
+   "new": "if all(a_ != b_ for a_, b_ in pair_):",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "v22_mark_label_not_compared": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "                                                                                                                                    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+    "KeyError: 'VERDICT_REQUIREMENT_MARK'"
+   ],
+   "what": "the mark ignores the label-level names",
+   "old": "pair_ = [(rem[\"W70\"], rem[\"S70\"]), (at[\"W70\"], at[\"S70\"])]",
+   "new": "pair_ = [(rem[\"W70\"], rem[\"S70\"])]",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "v23_put_inverted": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (40 of 50)"
+   ],
+   "what": "a name reads the opposite",
+   "old": "names[key] = PRE + \"-\" + (yes if cond else no)",
+   "new": "names[key] = PRE + \"-\" + (no if cond else yes)",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "v24_decide_none_first": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "                                                      ~~^^^^^^^^^^^^^^",
+    "KeyError: 'VERDICT_TK'"
+   ],
+   "what": "an unavailable word decides before a failing one",
+   "old": "    if any(c is False for c in conds):\n        return False\n    if any(c is None for c in conds):\n        return None\n",
+   "new": "    if any(c is None for c in conds):\n        return None\n    if any(c is False for c in conds):\n        return False\n",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "v25_worse_word": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (49 of 50)"
+   ],
+   "what": "no_worse looks for another word",
+   "old": "w[\"fam\"][f] != \"WORSE\"",
+   "new": "w[\"fam\"][f] != \"HIGHER\"",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "w01_b_not_withheld": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (47 of 50)"
+   ],
+   "what": "a failed part B control withholds nothing",
+   "old": "if part == \"B\" and failed[\"B\"]:",
+   "new": "if False:",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "w02_shuf_pair_not_withheld": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (47 of 50)"
+   ],
+   "what": "SHUF-VS-RR is not withheld by a failed a4",
+   "old": "if pair in (\"TOK-VS-SHUF\", \"SHUF-VS-RR\") and failed[\"SHUF\"]:",
+   "new": "if pair in (\"TOK-VS-SHUF\",) and failed[\"SHUF\"]:",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "w03_a2_not_withheld": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (48 of 50)"
+   ],
+   "what": "a failed a2 withholds nothing",
+   "old": "bad = failed[\"a2\"].get(st) or []",
+   "new": "bad = []",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "w04_a2_first_form_only": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (48 of 50)"
+   ],
+   "what": "a failed a2 looks only at the first form of a pair",
+   "old": "used = [f[len(\"RRe_\"):] for f in forms if f in NEW_FORMS]",
+   "new": "used = [f[len(\"RRe_\"):] for f in forms[:1] if f in NEW_FORMS]",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "w05_a3_is_inherited": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (48 of 50)"
+   ],
+   "what": "a failed a3 is treated as inherited",
+   "old": "if k in (\"a0_tables\", \"a1_tables\") or k.startswith(\"a3_\"):",
+   "new": "if k in (\"a0_tables\", \"a1_tables\"):",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "w06_a4u4_is_inherited": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (48 of 50)"
+   ],
+   "what": "a failed a4_u4 is treated as inherited",
+   "old": "if k in (\"a4_u1\", \"a4_u4\") or k.startswith(\"a4_u3_\"):",
+   "new": "if k in (\"a4_u1\",) or k.startswith(\"a4_u3_\"):",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "w07_a2_without_runs": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (49 of 50)"
+   ],
+   "what": "a failed a2 without a run list withholds nothing",
+   "old": "f[\"a2\"][k[3:]] = bad or list(NEW_ARMS)",
+   "new": "f[\"a2\"][k[3:]] = bad",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "w08_inherited_keeps_payload": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (49 of 50)"
+   ],
+   "what": "an inherited failure keeps the names",
+   "old": "if payload and not fs[\"glob\"]:",
+   "new": "if payload:",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "w09_blocked_pair_words_used": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (42 of 50)"
+   ],
+   "what": "a withheld pair still feeds a verdict",
+   "old": "                w2[st][pair] = None\n                continue\n",
+   "new": "                w2[st][pair] = w\n                continue\n",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "p01_shuf_pair_swapped": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (49 of 50)"
+   ],
+   "what": "TOK-VS-SHUF is STK minus TK",
+   "old": "add(\"TOK-VS-SHUF\", \"RRe_TK\", \"RRe_STK\", \"A\")",
+   "new": "add(\"TOK-VS-SHUF\", \"RRe_STK\", \"RRe_TK\", \"A\")",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "p02_shuf_vs_rr_swapped": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (49 of 50)"
+   ],
+   "what": "SHUF-VS-RR is RR minus STK",
+   "old": "add(\"SHUF-VS-RR\", \"RRe_STK\", \"RR\", \"A\")",
+   "new": "add(\"SHUF-VS-RR\", \"RR\", \"RRe_STK\", \"A\")",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "p03_s70_w70_swapped": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (49 of 50)"
+   ],
+   "what": "S70-VS-W70 is W70 minus S70",
+   "old": "add(\"S70-VS-W70\", \"RRe_S70\", \"RRe_W70\", \"B\")",
+   "new": "add(\"S70-VS-W70\", \"RRe_W70\", \"RRe_S70\", \"B\")",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "p04_label_pair_vs_rr": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (49 of 50)"
+   ],
+   "what": "X-VS-LABEL-CLOSING compares with RR",
+   "old": "add(x + \"-VS-LABEL-CLOSING\", \"RRe_\" + x, \"RRc\", \"B\")",
+   "new": "add(x + \"-VS-LABEL-CLOSING\", \"RRe_\" + x, \"RR\", \"B\")",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "p05_fresh_has_stk": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (48 of 50)"
+   ],
+   "what": "FRESH runs STK as well",
+   "old": "arms = [x for x in arms_of(part) if st == \"AGE\" or x == \"TK\"]",
+   "new": "arms = [x for x in arms_of(part) if st == \"AGE\" or x in (\"TK\", \"STK\")]",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "p06_run_name": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "                                                                                                                    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^",
+    "KeyError: 'RQ50eW50KF5P30Hb20'"
+   ],
+   "what": "the run names use another stem",
+   "old": "\"RRe_\" + x: \"RQ50e%sKF5%s\" % (x, suf)",
+   "new": "\"RRe_\" + x: \"RQ50c%sKF5%s\" % (x, suf)",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "p07_name_pattern": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (47 of 50)"
+   ],
+   "what": "the setting and the pair swap places in a name",
+   "old": "return \"%s-%s-%s-%s-%s\" % (PRE, pair, setting, kind, word)",
+   "new": "return \"%s-%s-%s-%s-%s\" % (PRE, setting, pair, kind, word)",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "p08_share_sign": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (49 of 50)"
+   ],
+   "what": "the share has the opposite sign",
+   "old": "else (c_rr - c_x) / gap",
+   "new": "else (c_x - c_rr) / gap",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "p09_share_gap": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (49 of 50)"
+   ],
+   "what": "the gap is RRc minus RR",
+   "old": "gap = c_rr - c_rc",
+   "new": "gap = c_rc - c_rr",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "p10_share_zero_gap": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: False (49 of 50)"
+   ],
+   "what": "a zero gap gives a share of 0",
+   "old": "return None if gap == 0.0 else",
+   "new": "return 0.0 if gap == 0.0 else",
+   "file": "read_tabclose10k.py",
+   "red": true
+  },
+  "q01_part_suffix": {
+   "rc": 1,
+   "seconds": 1.3,
+   "tail": [
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 4 passed in 0.75s"
+   ],
+   "what": "the part suffix of the markers is empty",
+   "old": "PS=\"\"; [ \"$PART\" = ALL ] || PS=\"_$PART\"",
+   "new": "PS=\"\"",
+   "file": "pod_tabclose10k_queue.sh",
+   "red": true
+  },
+  "q02_want_always": {
+   "rc": 1,
+   "seconds": 1.1,
+   "tail": [
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 2 passed in 0.50s"
+   ],
+   "what": "a part switch runs everything",
+   "old": "want() { [ \"$PART\" = ALL ] || [ \"$PART\" = \"$1\" ]; }",
+   "new": "want() { true; }",
+   "file": "pod_tabclose10k_queue.sh",
+   "red": true
+  },
+  "q03_stk_every": {
+   "rc": 1,
+   "seconds": 1.3,
+   "tail": [
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 3 passed in 0.77s"
+   ],
+   "what": "STK rule every 10",
+   "old": "KAPPA=0.2 EVERY=5 QMAP_FILE=\"$Q\" TAB=\"$TABLES/tab_STK_s${k}.npz\"",
+   "new": "KAPPA=0.2 EVERY=10 QMAP_FILE=\"$Q\" TAB=\"$TABLES/tab_STK_s${k}.npz\"",
+   "file": "pod_tabclose10k_queue.sh",
+   "red": true
+  },
+  "q04_w00_no_pathexec": {
+   "rc": 1,
+   "seconds": 1.4,
+   "tail": [
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 3 passed in 0.78s"
+   ],
+   "what": "W00 without the path executor",
+   "old": "PATHEXEC=1 KAPPA=0.2 EVERY=5 QMAP_FILE=\"$Q\" TAB=\"$TABLES/tab_W00_s${k}.npz\"",
+   "new": "PATHEXEC=0 KAPPA=0.2 EVERY=5 QMAP_FILE=\"$Q\" TAB=\"$TABLES/tab_W00_s${k}.npz\"",
+   "file": "pod_tabclose10k_queue.sh",
+   "red": true
+  },
+  "q05_w90_table": {
+   "rc": 1,
+   "seconds": 1.3,
+   "tail": [
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 3 passed in 0.70s"
+   ],
+   "what": "W90 reads the W50 table",
+   "old": "TAB=\"$TABLES/tab_W90_s${k}.npz\"",
+   "new": "TAB=\"$TABLES/tab_W50_s${k}.npz\"",
+   "file": "pod_tabclose10k_queue.sh",
+   "red": true
+  },
+  "q06_s70_fresh": {
+   "rc": 1,
+   "seconds": 1.4,
+   "tail": [
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 3 passed in 0.76s"
+   ],
+   "what": "S70 runs on the fresh grid",
+   "old": "RGRID=$G30 PREROLL=30 READOUT=causal_g ACCGAIN=0 PATHEXEC=1 KAPPA=0.2 EVERY=5 QMAP_FILE=\"$Q\" TAB=\"$TABLES/tab_S70_s${k}.npz\"",
+   "new": "READOUT=causal_g ACCGAIN=0 PATHEXEC=1 KAPPA=0.2 EVERY=5 QMAP_FILE=\"$Q\" TAB=\"$TABLES/tab_S70_s${k}.npz\"",
+   "file": "pod_tabclose10k_queue.sh",
+   "red": true
+  },
+  "q07_tk_fresh_aged": {
+   "rc": 1,
+   "seconds": 1.4,
+   "tail": [
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 3 passed in 0.83s"
+   ],
+   "what": "TK FRESH runs with a pre-roll",
+   "old": "    READOUT=causal_g ACCGAIN=0 PATHEXEC=1 KAPPA=0.2 EVERY=5 QMAP_FILE=\"$Q\" TAB=\"$TABLES/tab_TK_s${k}.npz\" rollout I10RQ50eTKKF5Hb20",
+   "new": "    RGRID=$G30 PREROLL=30 READOUT=causal_g ACCGAIN=0 PATHEXEC=1 KAPPA=0.2 EVERY=5 QMAP_FILE=\"$Q\" TAB=\"$TABLES/tab_TK_s${k}.npz\" rollout I10RQ50eTKKF5Hb20",
+   "file": "pod_tabclose10k_queue.sh",
+   "red": true
+  },
+  "q08_tables_folder": {
+   "rc": 1,
+   "seconds": 1.5,
+   "tail": [
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 3 passed in 0.80s"
+   ],
+   "what": "the table folder is est_shuf",
+   "old": "TABLES=${I10_TABLES:-$V/closeread/est_tab}",
+   "new": "TABLES=${I10_TABLES:-$V/closeread/est_shuf}",
+   "file": "pod_tabclose10k_queue.sh",
+   "red": true
+  },
+  "q09_done_marker": {
+   "rc": 1,
+   "seconds": 1.5,
+   "tail": [
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 4 passed in 0.82s"
+   ],
+   "what": "the DONE marker has no part suffix",
+   "old": "echo \"$(ts) all steps done (part $PART)\" > \"$W/TABCLOSE10K_DONE$PS.txt\"",
+   "new": "echo \"$(ts) all steps done (part $PART)\" > \"$W/TABCLOSE10K_DONE.txt\"",
+   "file": "pod_tabclose10k_queue.sh",
+   "red": true
+  },
+  "q10_admit_pass_not_judged": {
+   "rc": 1,
+   "seconds": 2.3,
+   "tail": [
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 6 passed in 1.66s"
+   ],
+   "what": "the admission ignores the record's pass for ALL",
+   "old": "if part == \"ALL\" and rec.get(\"pass\") is not True:",
+   "new": "if False:",
+   "file": "pod_tabclose10k_queue.sh",
+   "red": true
+  },
+  "q10b_admit_pass_for_parts": {
+   "rc": 1,
+   "seconds": 2.6,
+   "tail": [
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 6 passed in 1.90s"
+   ],
+   "what": "the admission needs the record's pass for a part too",
+   "old": "if part == \"ALL\" and rec.get(\"pass\") is not True:",
+   "new": "if rec.get(\"pass\") is not True:",
+   "file": "pod_tabclose10k_queue.sh",
+   "red": true
+  },
+  "q11_admit_a4_not_needed": {
+   "rc": 1,
+   "seconds": 3.7,
+   "tail": [
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 6 passed in 3.08s"
+   ],
+   "what": "part A is admitted without a4",
+   "old": "need += [\"a4_u1\", \"a4_u4\"]",
+   "new": "need += []",
+   "file": "pod_tabclose10k_queue.sh",
+   "red": true
+  },
+  "q12_admit_a1_not_needed": {
+   "rc": 1,
+   "seconds": 2.9,
+   "tail": [
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 6 passed in 2.27s"
+   ],
+   "what": "part B is admitted without a1",
+   "old": "need += [\"a0\", \"a1\"]",
+   "new": "need += [\"a0\"]",
+   "file": "pod_tabclose10k_queue.sh",
+   "red": true
+  },
+  "q13_admit_hash_not_judged": {
+   "rc": 1,
+   "seconds": 3.7,
+   "tail": [
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 6 passed in 2.98s"
+   ],
+   "what": "the admission ignores a table hash",
+   "old": "if h != tabs[fn]:",
+   "new": "if False:",
+   "file": "pod_tabclose10k_queue.sh",
+   "red": true
+  },
+  "q14_admit_not_in_record": {
+   "rc": 1,
+   "seconds": 4.2,
+   "tail": [
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 6 passed in 3.59s"
+   ],
+   "what": "the admission ignores a table that is not in the record",
+   "old": "if fn not in tabs:",
+   "new": "if False:",
+   "file": "pod_tabclose10k_queue.sh",
+   "red": true
+  },
+  "q15_admit_missing_file": {
+   "rc": 1,
+   "seconds": 3.7,
+   "tail": [
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 6 passed in 3.15s"
+   ],
+   "what": "the admission ignores a missing table",
+   "old": "if not os.path.isfile(p):",
+   "new": "if False:",
+   "file": "pod_tabclose10k_queue.sh",
+   "red": true
+  },
+  "q16_admit_control_value": {
+   "rc": 1,
+   "seconds": 2.7,
+   "tail": [
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 6 passed in 2.02s"
+   ],
+   "what": "the admission ignores a control that says fail",
+   "old": "if not isinstance(d, dict) or d.get(\"PASS\") is not True:",
+   "new": "if not isinstance(d, dict):",
+   "file": "pod_tabclose10k_queue.sh",
+   "red": true
+  },
+  "q17_tab_check_removed": {
+   "rc": 1,
+   "seconds": 1.4,
+   "tail": [
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 5 passed in 0.81s"
+   ],
+   "what": "the admission is not run",
+   "old": "  adm=$(admit \"$TABLES/TAB_TABLES_RECORD.json\" \"$TABLES\" \"$PART\" \"$ARMLIST\") || stop \"TABLE-ADMISSION $adm\"\n",
+   "new": "  adm=skipped\n",
+   "file": "pod_tabclose10k_queue.sh",
+   "red": true
+  },
+  "q18_wrapper_check_removed": {
+   "rc": 1,
+   "seconds": 1.4,
+   "tail": [
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 5 passed in 0.80s"
+   ],
+   "what": "the pod check of the wrapper is not required",
+   "old": "|| stop \"NO-PASS-OF-THE-WRAPPER-CHECK\"",
+   "new": "|| true",
+   "file": "pod_tabclose10k_queue.sh",
+   "red": true
+  },
+  "q19_tag_fixed": {
+   "rc": 1,
+   "seconds": 1.4,
+   "tail": [
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 5 passed in 0.70s"
+   ],
+   "what": "the tag of the pod check cannot be changed",
+   "old": "TAG=${SC_TAG:-sk1}",
+   "new": "TAG=sk1",
+   "file": "pod_tabclose10k_queue.sh",
+   "red": true
+  },
+  "q20_banked_rr_not_needed": {
+   "rc": 1,
+   "seconds": 1.4,
+   "tail": [
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 5 passed in 0.77s"
+   ],
+   "what": "the banked RR run at age is not required",
+   "old": "for nm in I10RQ50KF5P30Hb20 I10RLcKF5P30Hb20",
+   "new": "for nm in I10RLcKF5P30Hb20",
+   "file": "pod_tabclose10k_queue.sh",
+   "red": true
+  },
+  "d01_podread_arms_a": {
+   "rc": 1,
+   "seconds": 5.1,
+   "tail": [
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 7 passed in 4.31s"
+   ],
+   "what": "part A does not need the STK table",
+   "old": "ARMS_N=\"TK STK\"",
+   "new": "ARMS_N=\"TK\"",
+   "file": "podread_tabclose10k.sh",
+   "red": true
+  },
+  "d02_podread_part_option": {
+   "rc": 1,
+   "seconds": 4.2,
+   "tail": [
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 7 passed in 3.59s"
+   ],
+   "what": "the part is not handed to the reader",
+   "old": "--tab-dir \"$TABDIR\" --part \"$PART\"",
+   "new": "--tab-dir \"$TABDIR\"",
+   "file": "podread_tabclose10k.sh",
+   "red": true
+  },
+  "d03_podread_done_marker": {
+   "rc": 1,
+   "seconds": 4.0,
+   "tail": [
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 7 passed in 3.42s"
+   ],
+   "what": "the read ignores the part marker",
+   "old": "[ -f \"$W/TABCLOSE10K_DONE$PS.txt\" ] || stop \"QUEUE-NOT-DONE\"",
+   "new": "[ -f \"$W/TABCLOSE10K_DONE.txt\" ] || stop \"QUEUE-NOT-DONE\"",
+   "file": "podread_tabclose10k.sh",
+   "red": true
+  },
+  "d04_chain_links": {
+   "rc": 1,
+   "seconds": 4.2,
+   "tail": [
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 7 passed in 3.59s"
+   ],
+   "what": "the chain does not link the S70 runs",
+   "old": "I10RQ50e{TK,STK,L100,W00,W50,W70,W90,S70}*_s[01]",
+   "new": "I10RQ50e{TK,STK,L100,W00,W50,W70,W90}*_s[01]",
+   "file": "chain_read_tabclose10k.sh",
+   "red": true
+  },
+  "d05_chain_done_marker": {
+   "rc": 1,
+   "seconds": 4.0,
+   "tail": [
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 7 passed in 3.35s"
+   ],
+   "what": "the chain waits for the full marker with a part switch",
+   "old": "[ -f \"$W/TABCLOSE10K_DONE$PS.txt\" ] && [ -f \"$W/GO_READ_TABCLOSE10K.txt\" ] && break",
+   "new": "[ -f \"$W/TABCLOSE10K_DONE.txt\" ] && [ -f \"$W/GO_READ_TABCLOSE10K.txt\" ] && break",
+   "file": "chain_read_tabclose10k.sh",
+   "red": true
+  },
+  "d06_chain_go_file": {
+   "rc": 1,
+   "seconds": 4.2,
+   "tail": [
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 7 passed in 3.64s"
+   ],
+   "what": "the chain does not wait for the go file",
+   "old": "[ -f \"$W/TABCLOSE10K_DONE$PS.txt\" ] && [ -f \"$W/GO_READ_TABCLOSE10K.txt\" ] && break",
+   "new": "[ -f \"$W/TABCLOSE10K_DONE$PS.txt\" ] && break",
+   "file": "chain_read_tabclose10k.sh",
+   "red": true
+  },
+  "d07_chain_out_folder": {
+   "rc": 1,
+   "seconds": 3.9,
+   "tail": [
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 7 passed in 3.29s"
+   ],
+   "what": "the part folder is not used",
+   "old": "OUT=$P/out/read_tabclose10k$PS\n",
+   "new": "OUT=$P/out/read_tabclose10k\n",
+   "file": "chain_read_tabclose10k.sh",
+   "red": true
+  }
+ },
+ "controls_before": {
+  "chain_read_tabclose10k.sh": {
+   "rc": 0,
+   "seconds": 4.8,
+   "tail": [
+    "..............                                                           [100%]",
+    "14 passed in 4.08s"
+   ]
+  },
+  "pod_tabclose10k_queue.sh": {
+   "rc": 0,
+   "seconds": 4.7,
+   "tail": [
+    "..............                                                           [100%]",
+    "14 passed in 4.12s"
+   ]
+  },
+  "podread_tabclose10k.sh": {
+   "rc": 0,
+   "seconds": 4.8,
+   "tail": [
+    "..............                                                           [100%]",
+    "14 passed in 4.20s"
+   ]
+  },
+  "read_tabclose10k.py": {
+   "rc": 0,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: True (50 of 50)"
+   ]
+  }
+ },
+ "controls_after": {
+  "chain_read_tabclose10k.sh": {
+   "rc": 0,
+   "seconds": 4.9,
+   "tail": [
+    "..............                                                           [100%]",
+    "14 passed in 4.32s"
+   ]
+  },
+  "pod_tabclose10k_queue.sh": {
+   "rc": 0,
+   "seconds": 4.5,
+   "tail": [
+    "..............                                                           [100%]",
+    "14 passed in 3.97s"
+   ]
+  },
+  "podread_tabclose10k.sh": {
+   "rc": 0,
+   "seconds": 23.4,
+   "tail": [
+    "..............                                                           [100%]",
+    "14 passed in 22.71s"
+   ]
+  },
+  "read_tabclose10k.py": {
+   "rc": 0,
+   "seconds": 0.5,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                          True",
+    "ZZ SELFTEST-TABCLOSE10K ok: True (50 of 50)"
+   ]
+  }
+ },
+ "red": 88,
+ "total": 88,
+ "all_red_and_controls_green": true
+}

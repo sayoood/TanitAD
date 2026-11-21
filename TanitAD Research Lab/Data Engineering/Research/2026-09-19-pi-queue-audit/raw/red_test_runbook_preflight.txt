@@ -1,0 +1,16 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+E   AssertionError: the runbook tells an operator to run a command the trainer's own preflight REFUSES:
+        --stage S-W --out /root/experiments/v6F-SW-30k --steps 30000 --batch 8 --lr 0.0001 --n-candidates 8 --a-max 4.0 --adapter-hidden 512 --d-goal-embed 128 --d-str 512 --d-tac 768 --dt 0.1 --ema-decay 0.996 --enc-depth 12 --enc-dim 768 --enc-grad-checkpoint auto --enc-heads 12 --f-blocks 6 --f-hidden-str 1024 --f-hidden-tac 1024 --frame-h 256 --frame-w 640 --horizons 1 2 4 --in-channels 9 --kappa-max 0.2 --n-registers 4 --param-budget 350000000 --patch 16 --plan-steps 60 --pred-depth 12 --pred-dim 1024 --pred-heads 16 --pred-modern --readout-dim 128 --readout-grid 4 --sigreg-free-dims 0 --sigreg-slices 512 --uplink stopgrad --vit5-encoder --window 6 --v2-cache /root/data/physicalai-train-e438721ae894-w120-256x640cyl --v2-val-cache /root/data/physicalai-val-0c5f7dac3b11-w120-256x640cyl --v2-lru 6 --save-every 250 --frame-hfov 120 --projection cylindrical --require-parity
+        --nav-cond is REQUIRED (PI directive 2026-08-30): the nav command token is a mandatory input to the operative, tactical and strategic layers for every arm trained from now on. Pass --nav-cond.
+           ⚠️ An arm without it is ARCHITECTURALLY DIFFERENT from every arm after it and cannot be compared with them.
+           If you are deliberately reproducing a PRE-DIRECTIVE arm, pass --i-know-this-arm-predates-nav to record that choice in the run config rather than leaving it unrecorded.
+        --horizons (1, 2, 4) declares [2, 4], which NO loss consumes. The O5 rollout applies head '1' autoregressively (metric_dynamics.rollout_transitions), so heads [2, 4] would take EXACTLY zero gradient and then feed initialisation noise to every probe that reads them — this has already produced two retracted findings. ⇒ pass --horizons 1 and set the HORIZON with --o5-k: it is o5_k x dt seconds, and the BINDING target is 6.0 s = --o5-k 60 (§4b, 'every planned trajectory spans up to 6 s'; v6.py PLAN_STEPS = 60, HORIZON_S = 6.0). Current --o5-k 20 = 2.0 s. ⚠️ Loading an OLD checkpoint built with (1,2,4) is unaffected — this refuses CONFIGURING a new arm, never reading a banked one.
+    assert ['--nav-cond ... banked one.'] == []
+      
+      Left contains 2 more items, first extra item: '--nav-cond is REQUIRED (PI directive 2026-08-30): the nav command token is a mandatory input to the operative, tactic...VE arm, pass --i-know-this-arm-predates-nav to record that choice in the run config rather than leaving it unrecorded.'
+      Use -v to get more diff
+D:\Projects\TanitAD\stack\tests\test_runbook_commands.py:259: AssertionError: the runbook tells an operator to run a command the trainer's own preflight REFUSES:
+=========================== short test summary info ===========================
+FAILED stack\tests\test_runbook_commands.py::test_every_runbook_launch_line_passes_the_trainers_own_preflight
+1 failed in 18.87s

@@ -1,0 +1,134 @@
+[22:21:10] START build_tables.py s0 s1  (free RAM 3.64 GB, waited 36 s)
+free RAM before: 3.56 GB
+tracks: 4713 clips
+[s0] shard shard_000of004.npz  free RAM 2.89 GB
+[s0] shard shard_001of004.npz  free RAM 3.02 GB
+[s0] shard shard_002of004.npz  free RAM 3.03 GB
+[s0] shard shard_003of004.npz  free RAM 3.04 GB
+{
+ "seed": "s0",
+ "n_records": 613132,
+ "manifest_n_records": 613132,
+ "bank_sha256": "197a68bb540be5a7d157942e9157e1c8e60ca60d82b1ca4fb4fcb68edccfaa8f",
+ "reasons_by_tick": {
+  "1": {
+   "ok": 242357,
+   "off_lat": 560,
+   "off_head": 21002,
+   "end_edge": 42647,
+   "nonfinite": 0
+  },
+  "2": {
+   "ok": 165093,
+   "off_lat": 37652,
+   "off_head": 36716,
+   "end_edge": 67105,
+   "nonfinite": 0
+  }
+ },
+ "reasons_by_tick_equal_manifest": true,
+ "n_windows": 306566,
+ "all_windows_have_two_records": true,
+ "j_equals_t0_plus_10_tick": true,
+ "p10f_vs_kin3_speed": {
+  "n_finite": 613132,
+  "n_nonfinite_v_own": 0,
+  "n_nonfinite_kin3_v": 0,
+  "max_abs_diff": 1.907157070490939e-06,
+  "n_diff_gt_1e-6": 3899
+ },
+ "n_bank_clips": 4512,
+ "bank_clips_missing_from_tracks": 0,
+ "seconds": 20.8
+}
+[s1] shard shard_000of004.npz  free RAM 2.50 GB
+[s1] shard shard_001of004.npz  free RAM 3.37 GB
+[s1] shard shard_002of004.npz  free RAM 3.26 GB
+[s1] shard shard_003of004.npz  free RAM 3.04 GB
+{
+ "seed": "s1",
+ "n_records": 613132,
+ "manifest_n_records": 613132,
+ "bank_sha256": "36c7aea964dafe9423253aa479c2fc6cdfc93848395b593315cba812f5f04d4d",
+ "reasons_by_tick": {
+  "1": {
+   "ok": 247102,
+   "off_lat": 446,
+   "off_head": 15096,
+   "end_edge": 43922,
+   "nonfinite": 0
+  },
+  "2": {
+   "ok": 167663,
+   "off_lat": 44358,
+   "off_head": 24073,
+   "end_edge": 70472,
+   "nonfinite": 0
+  }
+ },
+ "reasons_by_tick_equal_manifest": true,
+ "n_windows": 306566,
+ "all_windows_have_two_records": true,
+ "j_equals_t0_plus_10_tick": true,
+ "p10f_vs_kin3_speed": {
+  "n_finite": 613132,
+  "n_nonfinite_v_own": 0,
+  "n_nonfinite_kin3_v": 0,
+  "max_abs_diff": 1.907339331808089e-06,
+  "n_diff_gt_1e-6": 4447
+ },
+ "n_bank_clips": 4512,
+ "bank_clips_missing_from_tracks": 0,
+ "seconds": 28.1
+}
+[22:22:06] END   build_tables.py s0 s1  rc=0
+[22:22:07] START build_logged_cache.py  (free RAM 4.29 GB, waited 1 s)
+free RAM: 4.26 GB
+clips 4512 rows 455462 finite v 450950
+[22:22:10] END   build_logged_cache.py  rc=0
+[22:22:10] START regret_prestep.py  (free RAM 3.74 GB, waited 1 s)
+{
+ "verdict": {
+  "verdict": "MIDDLE BAND (report the multiplier; card neither dies nor is confirmed)",
+  "reason": "shares / multipliers fall between the card's branches or the seeds split",
+  "ci_straddles_threshold": false,
+  "pooled_share_points": [
+   0.05751625966376243,
+   0.026082239340349353
+  ],
+  "M_def_points": [
+   2.6816843942780713,
+   3.07749376596565
+  ],
+  "low_branch_share_ok": false,
+  "low_branch_mult_ok": false,
+  "dies_branch": false
+ },
+ "share_pooled": {
+  "s0": {
+   "point": 0.05751625966376243,
+   "lo": 0.05439249986775004,
+   "hi": 0.0606237150708131,
+   "se": 0.0016256731159214612,
+   "n_clusters": 4512,
+   "n_boot": 2000,
+   "seed": 0,
+   "n_nan_boot": 0,
+   "n_usable": 407450,
+   "n_crawl": 23435
+  },
+  "s1": {
+   "point": 0.026082239340349353,
+   "lo": 0.024431771653959055,
+   "hi": 0.02781591046141194,
+   "se": 0.0008801180865822992,
+   "n_clusters": 4512,
+   "n_boot": 2000,
+   "seed": 0,
+   "n_nan_boot": 0,
+   "n_usable": 414765,
+   "n_crawl": 10818
+  }
+ }
+}
+[22:22:12] END   regret_prestep.py  rc=0

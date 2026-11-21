@@ -1,0 +1,53 @@
+--- a/stage2_sft.py
++++ b/stage2_sft.py
+@@ -63,6 +63,7 @@
+ TOKENS = D / "a5_confirm_tokens.json"
+ BASE_SEAM = D / "seams" / "refe_navtest_final_routefix.npz"
+ BASE_CSV = D / "score" / "refe_navtest_final_routefix" / "refe_navtest_final_routefix.csv"
++NAVTEST_YAW_SHA_PREFIX = "f5ebe24f"                 # SPEC_P7 Amendment YAW: the navtest yaw table, 12,146 / 12,146 tokens
+ PY_T = "C:/Users/Admin/venvs/tanitad/Scripts/python.exe"
+ PY_D = "C:/Users/Admin/venvs/driverl-eval/Scripts/python.exe"
+ LOCK = "C:/Users/Admin/qland/work/refcv7/devbox_gpu.lock"
+@@ -123,7 +124,24 @@
+     ap.add_argument("--dump-proposals", action="store_true",
+                     help="G2: the seam also writes every proposal + the scorer's raw logits to seams/stage2_<name>.proposals.npz (REPORT ONLY; "
+                          "the seam's poses are unchanged); the input of eval/selection_quality.py")
++    ap.add_argument("--ego-yaw-table", default=None,
++                    help="P7 (SPEC_P7 Amendment YAW): the navtest yaw table (sha256 f5ebe24f...). Default None = the seam command is EXACTLY the old one (P6 and every earlier read bit-identical). "
++                         "With it the seam runs under refe/ego_yaw.py's launcher, which feeds a yaw-trained checkpoint the token's table yaw. A yaw-trained checkpoint WITHOUT it is REFUSED before the lock.")
+     a = ap.parse_args()
++    # P7-READ-YAW: a yaw-trained checkpoint read without its table would score a train/eval mismatch (ego[4] = 0.0) and say nothing; refuse before the GPU lock and the hours-long seam
++    yaw_pin = None
++    if a.ego_yaw_table or os.path.isfile(a.ckpt):      # (a path that is not a file is the wiring tests' stub; the real read always has the file)
++        sys.path.insert(0, str(PKG / "refe"))
++        import ego_yaw as EY
++        meta = EY.checkpoint_meta(a.ckpt) if os.path.isfile(a.ckpt) else {}
++        if EY.wants_yaw(meta) and not a.ego_yaw_table:
++            raise SystemExit(f"REFUSING: {a.ckpt} was trained with ego_yaw={meta.get('ego_yaw')!r}; pass --ego-yaw-table <navtest table> (a yaw of 0.0 is a train/eval mismatch, not the model)")
++        if a.ego_yaw_table:
++            import hashlib
++            yaw_sha = hashlib.sha256(open(a.ego_yaw_table, "rb").read()).hexdigest()
++            if not yaw_sha.startswith(NAVTEST_YAW_SHA_PREFIX):
++                raise SystemExit(f"REFUSING: --ego-yaw-table sha256 {yaw_sha[:12]} is not the registered navtest table {NAVTEST_YAW_SHA_PREFIX}...")
++            yaw_pin = {"table": a.ego_yaw_table, "sha256": yaw_sha, "checkpoint_wants_yaw": bool(EY.wants_yaw(meta))}
+     # G3: refuse to start (no lock, no 4.8 h seam) unless the banked harness is the pinned one
+     hp = HP.require(HARNESS, caller=PKG / "eval" / "score_navtest_refe.py")        # the caller score_e.py loads (same PKG)
+     out_dir = PKG / "raw" / "2026-10-05-sft-stage2" / a.name
+@@ -142,6 +160,8 @@
+            "harness_pins": {"n_files": hp["n_files"], "pins_file_sha256": hp["pins_file_sha256"], "caller": hp["caller"]}}
+     if a.dump_proposals:
+         res["proposal_dump"] = {"requested": True, "path": str(dump)}
++    if yaw_pin:
++        res["ego_yaw"] = yaw_pin
+     if not seam.exists():
+         me = json.dumps({"job": f"refe-stage2-{a.name}", "pid": os.getpid(), "host": socket.gethostname(),
+                          "acquired": time.strftime("%Y-%m-%dT%H:%M:%S%z")})
+@@ -153,6 +173,8 @@
+                    "--tokens", str(TOK), "--out", str(seam), "--arm", f"REFe_{a.name}", "--rule", a.rule]
+             if a.dump_proposals:
+                 cmd += ["--dump-proposals", str(dump)]
++            if a.ego_yaw_table:      # P7-READ-YAW: the launcher patches REFePlanner in-process, then runs the SAME seam script with the SAME arguments
++                cmd = [cmd[0], str(PKG / "refe" / "ego_yaw.py"), "--table", a.ego_yaw_table, "--", *cmd[1:]]
+             t0 = time.time()
+             rc = subprocess.call(cmd, cwd=str(PKG / "eval"), env=env, stdout=open(out_dir / "seam.log", "w"),
+                                  stderr=subprocess.STDOUT)

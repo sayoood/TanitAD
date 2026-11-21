@@ -1,0 +1,42 @@
+--- a/refe/test_rl_epo.py
++++ b/refe/test_rl_epo.py
+@@ -359,8 +359,11 @@
+                 torch.full((8,), 5), torch.zeros(0))
+ 
+ 
+-def smoke(src: str, td: str, *, epo: bool, epo_lam: float = 1.0, native7: bool = False, preflight_first: bool = True, terms=True, tag: str = "x") -> dict:
+-    """run the real main() (preflight, then train) on CPU; returns {exit codes, log rows, saved scorer tensors}"""
++def smoke(src: str, td: str, *, epo: bool, epo_lam: float = 1.0, native7: bool = False, preflight_first: bool = True, terms=True, tag: str = "x",
++          extra: tuple = (), hook=None) -> dict:
++    """run the real main() (preflight, then train) on CPU; returns {exit codes, log rows, saved scorer tensors}.
++    `extra` = more argv tokens appended after the arm's own (R0c: --epo-ref armA); `hook(sm)` is called with the loaded trainer module before main() runs (it may wrap
++    module-level functions to record what main() really passes them).  Both default to nothing: every existing caller is unchanged."""
+     import ckpt_io as real_ckpt_io
+     csrc = src.replace('dev = "cuda"', 'dev = "cpu"').replace("pin_memory=True", "pin_memory=False").replace("num_workers=2", "num_workers=0").replace("n=10000, seed=20260927", "n=40, seed=20260927")
+     csrc = csrc.replace('torch.autocast("cuda", dtype=torch.bfloat16)', 'torch.autocast("cpu", enabled=False)')
+@@ -386,6 +389,8 @@
+         def atomic_save(obj, path):
+             torch.save(obj, path)
+     sm.REFe, sm.REFeConfig, sm.ckpt_io, sm.T = StubREFe, StubCfgFactory, StubCkptIO, types.SimpleNamespace(OnPolicyBank=StubBank, TargetBank=StubTargets)
++    if hook is not None:
++        hook(sm)
+     cfg7 = types.SimpleNamespace(n_score_components=7 if native7 else 6)
+     torch.manual_seed(0)
+     ck = os.path.join(td, "ck.pt")
+@@ -411,6 +416,7 @@
+             args += ["--epo-terms-train", os.path.join(tdir, "train")]
+         elif terms is False:
+             args += ["--epo-lam-d", "0"]                     # D named off: runs without side files
++    args += list(extra)
+     saved_argv, saved_cuda = sys.argv, (torch.cuda.synchronize, torch.cuda.max_memory_allocated)
+     torch.cuda.synchronize, torch.cuda.max_memory_allocated = (lambda *a, **k: None), (lambda *a, **k: 0)
+     res: dict = {}
+@@ -738,7 +744,7 @@
+     ROWS = torch.tensor([3, 1, 0, 2])
+ 
+     def mk(lane=False, **kw):
+-        base = dict(lam=0.0, epo=True, epo_lam=1.0, epo_ramp=2, epo_temp=0.1, epo_beta=0.1, accum=2)
++        base = dict(lam=0.0, epo=True, epo_lam=1.0, epo_ramp=2, epo_temp=0.1, epo_beta=0.1, accum=2, epo_ref="base")
+         base.update(kw)
+         an = a_ns("listnet", lane, **base)
+         return an, C.ns(CL + ["epo_probe"], a=an, compw=torch.tensor(COMPW), rcfg=RW.RewardCfg(), terms_train=TERMS, ds=DS, epo_last={}, fwd=None)

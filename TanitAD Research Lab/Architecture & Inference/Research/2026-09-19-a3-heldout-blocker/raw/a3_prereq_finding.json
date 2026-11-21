@@ -1,0 +1,24 @@
+{
+ "_what": "A3 CANNOT be run as pre-registered: the existing 2,000-step map-head checkpoint has NO held-out half.",
+ "_evidence_class": "MEASURED (ours; set intersection on the actual cache directories)",
+ "the_prereg_said": "A3: 'score the EXISTING 2,000-step map-head checkpoint on 1,000 HELD-OUT windows of the other half', ~1.8 h, EVAL ONLY",
+ "what_is_true": {
+  "checkpoint": "C:/Users/Admin/tanitad-caches/refcv6-maphead-20260918/maphead1k/ckpt.pt",
+  "trained_on": "D:/Projects/TanitAD-artifacts/v2ep-eval139-416x1024cyl (the FULL 139 clips)",
+  "halfA_clips_inside_that_train_cache": "62 of 62",
+  "halfB_clips_inside_that_train_cache": "62 of 62",
+  "clips_outside": 0
+ },
+ "consequence": "scoring it on EITHER half would be a TRAIN-side read wearing a 'held-out' label -- precisely the error PREREG_S1 \u00a78's blocking dependency exists to avoid, and precisely the caveat already attached to tonight's 1.43x.",
+ "the_deviation_taken": {
+  "what": "TRAIN a map head on halfA ONLY (2,000 steps), then score halfB",
+  "cost": "2,000 x 4.55 s = 2.53 h + ~1.8 h eval = ~4.3 h, against the prereg's 1.8 h eval-only",
+  "levers": "--trunk-chunk-ckpt 1 --trunk-frozen-bn are ON: without them this configuration allocates 14.6 GB on an 8 GiB card and PAGES (29 s/step -> 16 h instead of 2.5 h)",
+  "declared_consequence": "frozen BN CHANGES the arm, so this checkpoint is NOT bit-comparable with the banked maphead1k. A3 is an INSTRUMENT READING of ONE configuration, which is admissible provided the configuration is stated -- it is, here and in the run stamp."
+ },
+ "_not_a_capability_claim": "2,000 steps x batch 2 = 4,000 windows of a 5,302-step epoch over 62 clips = 0.38 of ONE epoch",
+ "_floor_to_compare_against": {
+  "halfB": 0.3388,
+  "note": "use the floor of the half the WINDOWS come from (A1), not the corpus 0.3412"
+ }
+}

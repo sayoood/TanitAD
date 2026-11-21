@@ -1,0 +1,42 @@
+### units (-k test_j or test_k or test_l or test_m)
+.......s....s.............                                               [100%]
+24 passed, 2 skipped, 121 deselected in 14.13s
+
+### internal_t1 (full)
+.....s...                                                                [100%]
+8 passed, 1 skipped in 0.68s
+
+### chain_controls (full)
+atch, tmp_path):
+        v2 = _load_v2(monkeypatch)
+        try:
+            _stage_externals(v2, tmp_path)
+            good = v2.build_plan()
+            mutated = v2.CC.ChainPlan(stages=tuple(s for s in good.stages if s.name not in ("d3_smoke", "d3_link")),
+                                      external=good.external, arriving=good.arriving)
+            monkeypatch.setattr(v2, "build_plan", lambda w=None: mutated)
+            monkeypatch.setattr(sys, "argv", ["fp_chain_v2.py", "--work", str(tmp_path), "--check-only"])
+>           assert v2.main() == 2
+E           AssertionError: assert 0 == 2
+E            +  where 0 = <function main at 0x000002331A4D4180>()
+E            +    where <function main at 0x000002331A4D4180> = <module 'fp_chain_v2_under_test' from 'C:\\Users\\Admin\\instfix\\mutB\\cc_no_producer_check_deleted\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-18-instfix\\code\\fp_chain_v2.py'>.main
+
+tests\test_chain_controls.py:528: AssertionError
+---------------------------- Captured stdout call -----------------------------
+ZZCHAIN_PLAN_OK {"out/chunk_000.npz": "arriving: fp_ship.py pull (the pod stage, while this chain waits)", "inputs_full.json": "external: fp_capture.py merge (stage A, dev box, before the chain)", "D3.json": "?", "IC1.json": "ic1", "ic5_forward.json": "ic5_prelude", "picks_report.json": "picks", "points.npz": "picks", "seam_*.npz": "picks", "score_logs/*.status.json": "score", "IC3_IC4.json": "checks", "IC5.json": "checks", "IC6.json": "checks", "D1_D3.json": "checks"}
+=========================== short test summary info ===========================
+FAILED tests/test_chain_controls.py::test_a2_no_producer_is_refused_naming_stage_and_control
+FAILED tests/test_chain_controls.py::test_a3_a_producer_AFTER_its_consumer_is_no_producer
+FAILED tests/test_chain_controls.py::test_a3b_a_stage_cannot_be_its_own_producer
+FAILED tests/test_chain_controls.py::test_a4_globs_cover_names_and_a_glob_gate_needs_a_matching_declaration
+FAILED tests/test_chain_controls.py::test_a9_require_producers_raises_with_every_problem_and_returns_the_ledger
+FAILED tests/test_chain_controls.py::test_b2_the_ORIGINAL_chain_is_refused_at_startup_for_exactly_one_reason_D3
+FAILED tests/test_chain_controls.py::test_d1_mutation_removing_the_producer_stage_turns_the_fixed_plan_RED
+FAILED tests/test_chain_controls.py::test_d2_mutation_removing_only_the_produces_declaration_turns_it_RED
+FAILED tests/test_chain_controls.py::test_d3_mutation_moving_the_producer_after_its_consumer_turns_it_RED
+FAILED tests/test_chain_controls.py::test_c2_with_the_gate_a_missing_producer_is_refused_before_ANY_stage_runs
+FAILED tests/test_chain_controls.py::test_c4_mutation_removing_the_producer_declaration_from_the_working_chain_turns_it_RED
+FAILED tests/test_chain_controls.py::test_f1_cli_exit_codes_refused_2_ok_0 - ...
+FAILED tests/test_chain_controls.py::test_b6_mutation_dropping_the_d3_stages_from_the_improved_chain_makes_main_refuse_at_startup
+13 failed, 21 passed in 1.10s
+

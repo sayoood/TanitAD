@@ -1,0 +1,179 @@
+"""R6 (PI 2026-09-27): the strategic layer OFF, the tactical layer + operative layer + nav KEPT.
+
+THE DEFECT: `--no-hierarchy` drops the tactical brain with the strategic one (a "matched set"),
+and `nav_to_ctx` is sized from `strategic_cfg` -- so "strategic off" used to break nav.
+`strategic_off=True` builds (and DROPS) the strategic modules, keeps `strategic_cfg` as the
+nav/ctx DIMENSION holder, and conditions the tactical policy on nav (+ max speed) alone.
+
+Every claim carries a control that must read the other way; the deliberate-regression arm is
+the old spelling of "strategic off" (`--no-hierarchy`), under which nav reaches NO layer.
+"""
+import importlib.util
+import json
+import sys
+from pathlib import Path
+
+import pytest
+import torch
+
+from tanitad.config import StrategicPolicyConfig, TacticalPolicyConfig
+from tanitad.refs.refa_v1 import RefAV1, RefAV1Config
+
+_TRAIN = Path(__file__).resolve().parents[1] / "scripts" / "refa_v1_train.py"
+_OFF = dict(strategic_off=True, w_feat_str=0.0, w_feat_str_ext=0.0, w_str_label=0.0)
+
+
+def _cfg(**kw) -> RefAV1Config:
+    base = dict(d_enc=16, d_state=16, n_tokens=8, op_layers=1, op_heads=2, op_window=2,
+                tac_queries=4, tac_layers=1, str_dim=8, str_layers=1,
+                strategic_cfg=StrategicPolicyConfig(d_model=16, depth=1, n_heads=2, d_ctx=8,
+                                                    d_cmd=8),
+                tactical_cfg=TacticalPolicyConfig(d_model=16, depth=1, n_heads=2, d_intent=8))
+    base.update(kw)
+    return RefAV1Config(**base)
+
+
+def _model(seed=0, **kw):
+    torch.manual_seed(seed)
+    m = RefAV1(_cfg(**kw))
+    with torch.no_grad():
+        m.std.fit(torch.randn(32, 16, generator=torch.Generator().manual_seed(9)))
+    return m
+
+
+def _data(c, nav=(0, 2)):
+    g = torch.Generator().manual_seed(4)
+    return (torch.randn(2, c.op_window, c.n_tokens, c.d_enc, generator=g),
+            torch.randn(2, c.op_steps, c.a_dim, generator=g) * 0.1,
+            torch.randn(2, c.op_steps, c.n_tokens, c.d_enc, generator=g),
+            torch.tensor(list(nav)))
+
+
+def test_a_the_strategic_layer_is_gone_and_tactical_plus_nav_are_kept():
+    m = _model(**_OFF)
+    assert m.strategic_policy is None and m.strategic is None
+    assert m.tactical_policy is not None
+    assert m.nav_inj_emb is not None and m.nav_to_ctx is not None and m.nav_to_intent is not None
+    assert not any(k.startswith(("strategic.", "strategic_policy.")) for k in m.state_dict())
+    # control: the default model has both
+    d = _model()
+    assert d.strategic_policy is not None and d.strategic is not None
+
+
+def test_b_every_shared_module_starts_bit_identical_to_the_strategic_on_arm():
+    on, off = _model(seed=3), _model(seed=3, **_OFF)
+    so, sf = on.state_dict(), off.state_dict()
+    shared = [k for k in sf]
+    assert shared and all(torch.equal(sf[k], so[k]) for k in shared)
+    assert set(so) - set(sf) and all(k.startswith(("strategic.", "strategic_policy."))
+                                     for k in set(so) - set(sf))
+
+
+def test_c_nav_still_reaches_the_tactical_decision_and_both_field_predictors():
+    m = _model(**_OFF).eval()
+    with torch.no_grad():                   # make the down-scaled injection visible (routing)
+        for lin in (m.nav_to_ctx, m.nav_to_intent):
+            lin.weight.data.normal_(0, 0.5)
+    f, a, _, _ = _data(m.cfg)
+    with torch.no_grad():
+        o0 = m(f, a, nav_cmd=torch.tensor([0, 0]))
+        o1 = m(f, a, nav_cmd=torch.tensor([1, 1]))
+    for k in ("lat_logits", "lon_logits", "op_pred", "tac_pred"):
+        assert not torch.equal(o0[k], o1[k]), k
+    # ⛔ DELIBERATE-REGRESSION ARM: the old "strategic off" (--no-hierarchy): nav reaches NOTHING
+    r = _model(strategic_cfg=None, tactical_cfg=None).eval()
+    with torch.no_grad():
+        r0 = r(f, a, nav_cmd=torch.tensor([0, 0]))
+        r1 = r(f, a, nav_cmd=torch.tensor([1, 1]))
+    assert torch.equal(r0["op_pred"], r1["op_pred"]) and "lat_logits" not in r0
+
+
+def test_d_the_loss_is_the_two_remaining_feature_terms_exactly():
+    m = _model(**_OFF)
+    f, a, fut, nav = _data(m.cfg)
+    out = m(f, a, future_feats=fut, nav_cmd=nav, v0=torch.tensor([5.0, 9.0]),
+            lat_label=torch.tensor([1, 2]), lon_label=torch.tensor([0, -100]))
+    assert "loss_feat_str" not in out and "str_pred" not in out and "tgt_std_str" not in out
+    assert out["str_target_idx"] == []
+    c = m.cfg
+    feat = c.w_feat_op * out["loss_feat_op"] + c.w_feat_tac * out["loss_feat_tac"]
+    lab = c.w_tac_label * torch.stack([out["loss_lat_label"], out["loss_lon_label"]]).mean()
+    assert torch.allclose(out["loss"], feat + lab, rtol=0, atol=1e-7)
+    out["loss"].backward()
+    assert m.tactical_policy.in_proj.weight.grad.abs().sum() > 0
+    assert m.nav_to_intent.weight.grad.abs().sum() > 0          # nav -> intent -> decision
+    # nav -> FiLM cond: the tactical FiLM (`predictor.FiLM`) is ZERO-initialised, so at step 0
+    # no gradient reaches ITS cond (a known value: exactly 0) -- after one step it does
+    assert float(m.nav_to_ctx.weight.grad.abs().sum()) == 0.0
+    torch.optim.SGD(m.parameters(), lr=0.1).step()
+    m.zero_grad(set_to_none=True)
+    out = m(f, a, future_feats=fut, nav_cmd=nav, v0=torch.tensor([5.0, 9.0]),
+            lat_label=torch.tensor([1, 2]), lon_label=torch.tensor([0, -100]))
+    out["loss"].backward()
+    assert m.nav_to_ctx.weight.grad.abs().sum() > 0
+
+
+def test_e_strategic_inputs_are_refused_never_ignored():
+    m = _model(**_OFF)
+    f, a, fut, nav = _data(m.cfg)
+    with pytest.raises(ValueError, match="route_logits"):
+        m(f, a, future_feats=fut, nav_cmd=nav, route_label=torch.tensor([0, 1]))
+    with pytest.raises(ValueError, match="strategic layer is OFF"):
+        m(f, a, future_feats=fut, nav_cmd=nav,
+          str_ext_targets=torch.randn(2, 2, 8, 16), str_ext_actions=torch.randn(2, 2, 2))
+
+
+@pytest.mark.parametrize("kw,msg", [
+    (dict(strategic_cfg=None, tactical_cfg=None), "keeps the TACTICAL"),
+    (dict(nav_inject=False), "NO layer would receive"),
+    (dict(w_feat_str=0.25, w_feat_str_ext=0.0, w_str_label=0.0), "advertised"),
+    (dict(w_feat_str=0.0, w_feat_str_ext=0.0, w_str_label=0.1), "advertised")])
+def test_f_sanity_refuses_every_half_off_combination(kw, msg):
+    base = dict(strategic_off=True, w_feat_str=0.0, w_feat_str_ext=0.0, w_str_label=0.0)
+    base.update(kw)
+    with pytest.raises(ValueError, match=msg):
+        RefAV1(_cfg(**base))
+
+
+def test_g_ema_teacher_and_plan_run_with_the_strategic_layer_off():
+    from tanitad.refs.refa_v1_plan import PlanConfig
+    m = _model(ema_targets=True, **_OFF)
+    assert m.ema.str_read is None
+    f, a, fut, nav = _data(m.cfg)
+    out = m(f, a, future_feats=fut, nav_cmd=nav)
+    out["loss"].backward()
+    before = m.ema.tac_queries.detach().clone()
+    with torch.no_grad():
+        m.tac_queries.add_(1.0)
+    m.ema_update(1, 10)
+    assert not torch.equal(before, m.ema.tac_queries)
+    m.eval()
+    res = m.plan(f[:1], v0=6.0, nav_cmd=torch.tensor([1]),
+                 plan_cfg=PlanConfig(horizon=m.cfg.plan_steps, dt=0.2, n_samples=8,
+                                     n_iters=2, n_elites=2, min_samples=4))
+    assert res.goal_source == "tactical_imagined" and res.controls.shape[-1] == 2
+
+
+def _trainer():
+    spec = importlib.util.spec_from_file_location("_refa_v1_train_r6", _TRAIN)
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_h_trainer_smoke_strategic_off_and_the_no_hierarchy_refusal(tmp_path):
+    T = _trainer()
+    with pytest.raises(SystemExit, match="--no-hierarchy"):
+        T.main(["--smoke", "--steps", "1", "--device", "cpu", "--out", str(tmp_path / "x"),
+                "--strategic-off", "--no-hierarchy"])
+    out = tmp_path / "r6"
+    assert T.main(["--smoke", "--steps", "2", "--log-every", "1", "--bs", "2", "--device",
+                   "cpu", "--out", str(out), "--strategic-off"]) == 0
+    rows = [json.loads(x) for x in (out / "train_log.jsonl").read_text("utf-8").splitlines()]
+    assert rows[0]["loss_feat_str"] is None and rows[0]["tgt_std_str"] is None
+    assert rows[0]["str_target_s"] == [] and rows[0]["loss"] > 0
+    cfg = json.loads((out / "config.json").read_text("utf-8"))
+    assert cfg["cfg"]["strategic_off"] is True and cfg["cfg"]["w_feat_str"] == 0.0
+    assert cfg["strategic_off"]["built"] == {"strategic_policy": False,
+                                             "strategic_subspace": False}

@@ -1,0 +1,195 @@
+{
+ "tool": "ccos_scale_factor.py",
+ "shipped_weights": [
+  0.02,
+  0.05,
+  0.1
+ ],
+ "icem_iter0": {
+  "n": 300,
+  "jerk_raw_min": 4.710708141326904,
+  "jerk_raw_median": 18.006519317626953,
+  "penalty_shipped_median": 0.36196404695510864,
+  "penalty_shipped_max": 1.3442996740341187
+ },
+ "sources": {
+  "forms_json": "C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/8e7cfa33-c625-47cf-88aa-711db80ac113/scratchpad/cost_forms_devbox.json",
+  "probe_json": null
+ },
+ "devbox40": {
+  "n_windows": 40,
+  "n_box": 21,
+  "box_names": [
+   "cv",
+   "decel_1.5",
+   "kap+0.2",
+   "kap-0.2",
+   "kap+0.1",
+   "kap-0.1",
+   "kap+0.05",
+   "kap-0.05",
+   "kap+0.02",
+   "kap-0.02",
+   "kap+0.01",
+   "kap-0.01",
+   "acc+4.0",
+   "acc-4.0",
+   "acc+2.0",
+   "acc-2.0",
+   "acc+1.5",
+   "acc-1.5",
+   "acc+0.5",
+   "acc-0.5",
+   "seed0"
+  ],
+  "tag": "cost_forms_devbox.json n=40 windows / 20 clips, float64 re-implementation on captured fields",
+  "forms": {
+   "cos": {
+    "median_over_cells": 1.458132736370521e-05,
+    "goal_cv": {
+     "median": 1.1102230246251565e-15,
+     "p90": 1.859895545464063e-05,
+     "max": 4.2143930467197777e-05,
+     "min": 5.551115123125783e-16,
+     "n_exactly_1": 0
+    },
+    "spread_over_box_median": 0.002221590339964663,
+    "spread_over_kappa_subbox_median": 1.2414238437230551e-06,
+    "LR_gap_median": 4.4981549596201376e-09,
+    "LR_gap_rel_to_term_median_pct": 1.3691591379718322
+   },
+   "chord": {
+    "median_over_cells": 0.0054002453960782775,
+    "goal_cv": {
+     "median": 4.441201970910454e-08,
+     "p90": 0.006098807752510563,
+     "max": 0.00918084206018361,
+     "min": 3.539567290931107e-08,
+     "n_exactly_1": 0
+    },
+    "spread_over_box_median": 0.06519337246684172,
+    "spread_over_kappa_subbox_median": 0.001572426101428777,
+    "LR_gap_median": 4.891270868181052e-06,
+    "LR_gap_rel_to_term_median_pct": 0.684587581977765,
+    "leverage_vs_cos": {
+     "value_median_ratio_over_cells": 370.3535958697086,
+     "value_ratio_p10_p90": [
+      43.32118740581993,
+      26272.271617660863
+     ],
+     "n_cells": 840,
+     "decision_median_ratio_of_box_spread": 30.012189392229015,
+     "decision_ratio_p10_p90": [
+      22.07550800814917,
+      40.453840656166044
+     ],
+     "decision_median_ratio_of_kappa_subbox_spread": 1254.281287762842,
+     "LR_gap_median_ratio": 1299.004733766115,
+     "n_windows": 40
+    }
+   },
+   "ccos": {
+    "median_over_cells": 1.0,
+    "goal_cv": {
+     "median": 1.0,
+     "p90": 1.0,
+     "max": 1.0,
+     "min": 1.0,
+     "n_exactly_1": 40
+    },
+    "spread_over_box_median": 0.4540341107170461,
+    "spread_over_kappa_subbox_median": 0.4134853476255713,
+    "LR_gap_median": 0.41281132210450894,
+    "LR_gap_rel_to_term_median_pct": 41.28904753859438,
+    "leverage_vs_cos": {
+     "value_median_ratio_over_cells": 33715.32684680578,
+     "value_ratio_p10_p90": [
+      461.0618087173867,
+      302112358.2046267
+     ],
+     "n_cells": 840,
+     "decision_median_ratio_of_box_spread": 214.45956959102523,
+     "decision_ratio_p10_p90": [
+      30.085945754898532,
+      722.1774392493791
+     ],
+     "decision_median_ratio_of_kappa_subbox_spread": 147819.8406676334,
+     "LR_gap_median_ratio": 12491976.486011757,
+     "n_windows": 40
+    }
+   }
+  }
+ },
+ "factors": {
+  "value_leverage": 33715.32684680578,
+  "decision_leverage": 214.45956959102523,
+  "compensated_triple_decision_scale": [
+   4.289191391820505,
+   10.722978479551262,
+   21.445956959102524
+  ],
+  "compensated_triple_value_scale": [
+   674.3065369361155,
+   1685.7663423402892,
+   3371.5326846805783
+  ],
+  "rule": "compensated = shipped x F; F_decision preserves the goal:penalty balance at the scale that trades against the penalties (ranking); F_value preserves it at the term-magnitude scale (the chord's 5,792.6x convention)"
+ },
+ "exclusion_iter0_devbox40": [
+  {
+   "setting": "S0 cos shipped",
+   "form": "cos",
+   "W_JERK": 0.02,
+   "W_KAPPA": 0.05,
+   "goal_cv_median": 1.1102230246251565e-15,
+   "goal_cv_max": 4.2143930467197777e-05,
+   "excluded_at_median_window_pct": 100.0,
+   "excluded_at_max_window_pct": 100.0,
+   "n_population": 300
+  },
+  {
+   "setting": "chord shipped (deliberate regression)",
+   "form": "chord",
+   "W_JERK": 0.02,
+   "W_KAPPA": 0.05,
+   "goal_cv_median": 4.441201970910454e-08,
+   "goal_cv_max": 0.00918084206018361,
+   "excluded_at_median_window_pct": 100.0,
+   "excluded_at_max_window_pct": 100.0,
+   "n_population": 300
+  },
+  {
+   "setting": "ccos NAIVE flip @ shipped",
+   "form": "ccos",
+   "W_JERK": 0.02,
+   "W_KAPPA": 0.05,
+   "goal_cv_median": 1.0,
+   "goal_cv_max": 1.0,
+   "excluded_at_median_window_pct": 1.6666666666666667,
+   "excluded_at_max_window_pct": 1.6666666666666667,
+   "n_population": 300
+  },
+  {
+   "setting": "ccos COMPENSATED decision-scale",
+   "form": "ccos",
+   "W_JERK": 4.289191391820505,
+   "W_KAPPA": 10.722978479551262,
+   "goal_cv_median": 1.0,
+   "goal_cv_max": 1.0,
+   "excluded_at_median_window_pct": 100.0,
+   "excluded_at_max_window_pct": 100.0,
+   "n_population": 300
+  },
+  {
+   "setting": "ccos COMPENSATED value-scale",
+   "form": "ccos",
+   "W_JERK": 674.3065369361155,
+   "W_KAPPA": 1685.7663423402892,
+   "goal_cv_median": 1.0,
+   "goal_cv_max": 1.0,
+   "excluded_at_median_window_pct": 100.0,
+   "excluded_at_max_window_pct": 100.0,
+   "n_population": 300
+  }
+ ]
+}

@@ -1,0 +1,197 @@
+{
+ "meta": {
+  "utc": "2026-08-31T07:16:53Z",
+  "gpu": "NVIDIA GeForce RTX 4060",
+  "torch": "2.11.0+cu128",
+  "python": "3.13.5",
+  "dtype": "float16",
+  "batch": 1,
+  "reps": 60,
+  "warmup": 15,
+  "what_this_is": "a PROXY predictor, not TanitAD's. Measures latency-vs-sequential-depth structure."
+ },
+ "arms": {
+  "tiny_d4_dim384": {
+   "config": {
+    "dim": 384,
+    "depth": 4,
+    "heads": 6,
+    "tokens": 16
+   },
+   "params_M": 7.098,
+   "by_K": {
+    "1": {
+     "p50_ms": 1.0784,
+     "p95_ms": 1.9483,
+     "min_ms": 0.9892,
+     "n": 60,
+     "ms_per_step": 1.0784
+    },
+    "2": {
+     "p50_ms": 2.1582,
+     "p95_ms": 2.7216,
+     "min_ms": 1.9888,
+     "n": 60,
+     "ms_per_step": 1.0791
+    },
+    "4": {
+     "p50_ms": 4.3732,
+     "p95_ms": 5.0662,
+     "min_ms": 4.0254,
+     "n": 60,
+     "ms_per_step": 1.0933
+    },
+    "8": {
+     "p50_ms": 8.7628,
+     "p95_ms": 10.0302,
+     "min_ms": 8.0095,
+     "n": 60,
+     "ms_per_step": 1.0954
+    },
+    "16": {
+     "p50_ms": 17.4873,
+     "p95_ms": 18.8103,
+     "min_ms": 16.4045,
+     "n": 60,
+     "ms_per_step": 1.093
+    },
+    "30": {
+     "p50_ms": 32.9407,
+     "p95_ms": 37.5917,
+     "min_ms": 31.1483,
+     "n": 60,
+     "ms_per_step": 1.098
+    },
+    "60": {
+     "p50_ms": 70.1012,
+     "p95_ms": 85.2388,
+     "min_ms": 63.6743,
+     "n": 60,
+     "ms_per_step": 1.1684
+    },
+    "120": {
+     "p50_ms": 136.53,
+     "p95_ms": 158.1863,
+     "min_ms": 123.6535,
+     "n": 60,
+     "ms_per_step": 1.1378
+    }
+   },
+   "C1_linearity": {
+    "ms_per_step_min": 1.0784,
+    "ms_per_step_max": 1.1684,
+    "ratio_max_over_min": 1.083,
+    "verdict_note": "device-bound chain => ratio near 1. A ratio far BELOW 1 at high K would mean the timer never synchronised."
+   },
+   "C2_identity_K60": {
+    "run_a_p50_ms": 68.9576,
+    "run_b_p50_ms": 69.2794,
+    "rel_spread": 0.0047
+   }
+  },
+  "mid_d12_dim512": {
+   "config": {
+    "dim": 512,
+    "depth": 12,
+    "heads": 8,
+    "tokens": 16
+   },
+   "params_M": 37.829,
+   "by_K": {
+    "1": {
+     "p50_ms": 3.3344,
+     "p95_ms": 4.1341,
+     "min_ms": 2.8568,
+     "n": 60,
+     "ms_per_step": 3.3344
+    },
+    "2": {
+     "p50_ms": 6.3108,
+     "p95_ms": 8.4675,
+     "min_ms": 5.8422,
+     "n": 60,
+     "ms_per_step": 3.1554
+    },
+    "4": {
+     "p50_ms": 13.2164,
+     "p95_ms": 17.9077,
+     "min_ms": 11.7311,
+     "n": 60,
+     "ms_per_step": 3.3041
+    },
+    "8": {
+     "p50_ms": 26.4012,
+     "p95_ms": 36.3805,
+     "min_ms": 23.5683,
+     "n": 60,
+     "ms_per_step": 3.3001
+    },
+    "16": {
+     "p50_ms": 54.1606,
+     "p95_ms": 64.3296,
+     "min_ms": 46.9258,
+     "n": 60,
+     "ms_per_step": 3.385
+    },
+    "30": {
+     "p50_ms": 89.5551,
+     "p95_ms": 102.8617,
+     "min_ms": 84.9328,
+     "n": 60,
+     "ms_per_step": 2.9852
+    },
+    "60": {
+     "p50_ms": 203.0737,
+     "p95_ms": 256.1145,
+     "min_ms": 174.4885,
+     "n": 60,
+     "ms_per_step": 3.3846
+    },
+    "120": {
+     "p50_ms": 362.2665,
+     "p95_ms": 514.5513,
+     "min_ms": 351.4356,
+     "n": 60,
+     "ms_per_step": 3.0189
+    }
+   },
+   "C1_linearity": {
+    "ms_per_step_min": 2.9852,
+    "ms_per_step_max": 3.385,
+    "ratio_max_over_min": 1.134,
+    "verdict_note": "device-bound chain => ratio near 1. A ratio far BELOW 1 at high K would mean the timer never synchronised."
+   },
+   "C2_identity_K60": {
+    "run_a_p50_ms": 183.4408,
+    "run_b_p50_ms": 197.4539,
+    "rel_spread": 0.0764
+   }
+  }
+ },
+ "controls": {
+  "C0_nowork_K1": {
+   "p50_ms": 0.0029,
+   "p95_ms": 0.0035,
+   "min_ms": 0.0027,
+   "n": 60
+  },
+  "C0_nowork_K60": {
+   "p50_ms": 0.0033,
+   "p95_ms": 0.0034,
+   "min_ms": 0.0032,
+   "n": 60
+  },
+  "C0b_add1_K1": {
+   "p50_ms": 0.0227,
+   "p95_ms": 0.0247,
+   "min_ms": 0.0213,
+   "n": 60
+  },
+  "C0b_add1_K60": {
+   "p50_ms": 0.5157,
+   "p95_ms": 0.958,
+   "min_ms": 0.4388,
+   "n": 60
+  }
+ }
+}

@@ -380,9 +380,19 @@ def _score_row(d, idx, J, tag, extra=None):
     de_all = torch.linalg.norm(fan - gt[:, None], dim=-1).mean(-1)  # [B,N]
     de_or = de_all.min(1).values
     res = bench.run(_wins(d, pred))
+    # ⛔ CLOSED 2026-08-28 (PI ruling, products/P7-TanitEval/ESTIMATOR_CLOSEOUT.md).
+    # These two fields were `res["heldout"]["model"]["ade_0_2s"]` — the
+    # mean-of-split-means under `overlapping_holdout_se`, published as this
+    # arm's ADE and its ±CI. Both now come from the episode-cluster bootstrap:
+    # `ade2s_primary` IS the full-set point estimate, and the interval is a
+    # percentile [lo, hi] rather than a symmetric ± that was 1.11-3.10x too
+    # narrow. The old key names are gone on purpose — a renamed number cannot
+    # be pasted into a table beside an old one without someone noticing.
+    _cb = res["cluster_bootstrap"]["model"]["ade_0_2s"]
     row = dict(tag=tag,
-               ade2s_heldout=res["heldout"]["model"]["ade_0_2s"]["mean"],
-               ci95=res["heldout"]["model"]["ade_0_2s"]["ci95"],
+               ade2s_primary=_cb["mean"],
+               ci95=_cb["ci95"], ci_lo=_cb["lo"], ci_hi=_cb["hi"],
+               estimator=_cb["estimator"],
                ade2s_full=round(float(de_sel.mean()), 4),
                fde2s_full=round(res["full_set"]["model"]["fde@2s"], 4),
                miss2m_full=round(res["full_set"]["model"]["miss_rate@2m"], 4),
@@ -496,9 +506,10 @@ def analyze(dump_path=DUMP, out=None):
             ade2s_full_best_rerank=round(best["ade2s_full"], 4),
             ade2s_full_pure_cost=round(rows[-1]["ade2s_full"], 4),
             ade2s_full_best_topk=round(best_tk["ade2s_full"], 4),
-            ade2s_heldout_baseline=base["ade2s_heldout"],
-            ade2s_heldout_best_rerank=best["ade2s_heldout"],
-            ade2s_heldout_oracle=None,
+            ade2s_primary_baseline=base["ade2s_primary"],
+            ade2s_primary_best_rerank=best["ade2s_primary"],
+            ade2s_primary_oracle=None,
+            primary_estimator="episode_cluster_bootstrap",
             gap_recovered_pct_best=rec(best["ade2s_full"]),
             gap_recovered_pct_pure_cost=rec(rows[-1]["ade2s_full"]),
             gap_recovered_pct_best_topk=rec(best_tk["ade2s_full"]),
@@ -520,22 +531,27 @@ def analyze(dump_path=DUMP, out=None):
         bench_best=best["_bench"],
         protocol=dict(val=VAL, window=WINDOW, stride=STRIDE,
                       wp_steps=list(WP_STEPS), n_splits=8, val_frac=0.2,
-                      statistic="overlapping_holdout_se, 8 random 20% holdouts "
-                                "(DEPRECATED, not a jackknife) (heldout) "
-                                "+ plain mean over all windows (full_set)",
+                      statistic="episode_cluster_bootstrap over the val "
+                                "EPISODES (ade2s_primary, ci_lo/ci_hi) + plain "
+                                "mean over all windows (full_set). The "
+                                "pre-2026-08-28 `heldout` / "
+                                "overlapping_holdout_se statistic is WITHDRAWN "
+                                "— it biased the point estimate, not just the "
+                                "width.",
                       claim_strength="open-loop / weak (arXiv:2605.00066)"))
-    # heldout oracle, for the honest ceiling statement
-    res["headline"]["ade2s_heldout_oracle"] = bench.run(
-        _wins(d, _pick(fan, de_all.argmin(1))))["heldout"]["model"]["ade_0_2s"]["mean"]
+    # oracle-in-fan under the PRIMARY estimator, for the honest ceiling statement
+    res["headline"]["ade2s_primary_oracle"] = bench.run(
+        _wins(d, _pick(fan, de_all.argmin(1))))[
+            "cluster_bootstrap"]["model"]["ade_0_2s"]["mean"]
 
     out = out or (RES / f"{KEY}.json")
     Path(out).write_text(json.dumps(res, indent=2, default=str))
     h = res["headline"]
     print(f"\n[{KEY}] {NAME}\n"
           f"  baseline (argmax-conf)  ADE@2s full {h['ade2s_full_baseline']:.4f} "
-          f"| heldout {h['ade2s_heldout_baseline']:.4f}\n"
+          f"| bootstrap {h['ade2s_primary_baseline']:.4f}\n"
           f"  oracle-in-fan           ADE@2s full {h['ade2s_full_oracle_in_fan']:.4f} "
-          f"| heldout {h['ade2s_heldout_oracle']:.4f}\n"
+          f"| bootstrap {h['ade2s_primary_oracle']:.4f}\n"
           f"  best blend  lam={h['best_lam']:<8} ADE@2s full "
           f"{h['ade2s_full_best_rerank']:.4f}  -> {h['gap_recovered_pct_best']}% "
           f"of the gap\n"

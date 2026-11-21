@@ -1,0 +1,64 @@
+{
+ "item": "ckptproc",
+ "pass": true,
+ "problems": [],
+ "record": {
+  "B": {
+   "ckpt": "/root/dscale10k/pilot/pB/ckpt_last.pt",
+   "n_tensors": 276,
+   "step": 600,
+   "keys": [
+    "argv_sha",
+    "arm",
+    "batch_in_epoch",
+    "cfg",
+    "cfg_tuple_fields",
+    "cons_mu",
+    "cons_sd",
+    "dagger",
+    "dagger_totals",
+    "ego_perturb",
+    "ego_totals",
+    "epoch"
+   ],
+   "problems": []
+  },
+  "U": {
+   "ckpt": "/root/dscale10k/pilot/pU/ckpt_last.pt",
+   "n_tensors": 276,
+   "step": 600,
+   "keys": [
+    "argv_sha",
+    "arm",
+    "batch_in_epoch",
+    "cfg",
+    "cfg_tuple_fields",
+    "cons_mu",
+    "cons_sd",
+    "dagger",
+    "dagger_totals",
+    "ego_perturb",
+    "ego_totals",
+    "epoch"
+   ],
+   "problems": []
+  }
+ },
+ "regression": [
+  {
+   "arm": "one_element_changed_after_load",
+   "red": true,
+   "problems": [
+    "tensor pos differs after save/load"
+   ]
+  },
+  {
+   "arm": "cfg_changed_after_load",
+   "red": true,
+   "problems": [
+    "cfg differs after save/load"
+   ]
+  }
+ ],
+ "at": "2026-11-16T22:14:21Z"
+}

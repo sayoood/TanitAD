@@ -1,0 +1,76 @@
+{
+ "schema": "v8f-dagger-bank-v1",
+ "kind": "bank",
+ "created_unix": 1793063581.3825424,
+ "shard_provenance": [
+  "shard_000of004.provenance.json",
+  "shard_001of004.provenance.json",
+  "shard_002of004.provenance.json",
+  "shard_003of004.provenance.json"
+ ],
+ "n_records": 613132,
+ "coverage": {
+  "n_windows": 306566,
+  "n_eligible": 231650,
+  "fraction": 0.7556284780438797,
+  "min": 0.5,
+  "blocked": false
+ },
+ "reasons_by_tick": {
+  "1": {
+   "ok": 242357,
+   "off_lat": 560,
+   "off_head": 21002,
+   "end_edge": 42647,
+   "nonfinite": 0
+  },
+  "2": {
+   "ok": 165093,
+   "off_lat": 37652,
+   "off_head": 36716,
+   "end_edge": 67105,
+   "nonfinite": 0
+  }
+ },
+ "partial": false,
+ "controls": {
+  "K-B4": {
+   "PASS": true,
+   "cases": {
+    "straight": true,
+    "stationary_tie": true,
+    "lateral_cut": true,
+    "heading_cut": true,
+    "end_edge": true,
+    "loop": true
+   },
+   "run_at": "generation (every shard) and at the merge",
+   "n_shards_checked": 4
+  },
+  "K-B5": {
+   "PASS": true,
+   "max_pose_now_err_m": 0.0,
+   "max_pose_now_yaw_err_rad": 0.0,
+   "max_reanchor_vs_pose_now_m": 0.0,
+   "max_rel_transform_err_m": 6.067085222288225e-05,
+   "max_rel_transform_yaw_err_rad": 9.51226772905045e-07,
+   "max_rel_transform_err_float64_m": 2.2886110608463075e-13,
+   "tol_m": 0.0001,
+   "n_records": 613132,
+   "n_skipped_nonfinite": 0,
+   "n_pairs": 156551200,
+   "sample": "all records with a finite own pose and a logged row at r' (reason != nonfinite); no sampling, no seed",
+   "n_shards": 4,
+   "measured_on": "the float32 tensors the swap emits (reanchor_rows, cast to float32), against the logged float64 poses",
+   "log_pose_sha256_by_shard": [
+    "94ba6afb27717fa457735eead2231e75ffecc67299d1b936465ddb405b31876a",
+    "6b9d65f2ecfcd680ee294545b8212751a9f044b9e281ee1823bb2cd3b3f58fa2",
+    "ba00b76d1f37dede5ee54b672e159ff69c15ba12f15a1b1d86275c326522d112",
+    "e022749e2ee3135dc8fc6f8d69c1b3abc5f81dd2ed2430bb3bbb37bd048b273e"
+   ]
+  }
+ },
+ "warnings": [],
+ "bank_sha256": "197a68bb540be5a7d157942e9157e1c8e60ca60d82b1ca4fb4fcb68edccfaa8f",
+ "manifest": "bank.json"
+}

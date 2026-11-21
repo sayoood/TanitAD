@@ -1,0 +1,4 @@
+{"what": "thor_pool.term_tree regression found and fixed 2026-10-05", "evidence_class": "MEASURED on Thor",
+ "defect": "descendants() read /proc/<p>/task/<t>/children, absent on Thor's kernel (CONFIG_PROC_CHILDREN off) -> returned [] -> the watchdog SIGTERMed only the driver and ORPHANED the devkit wrapper holding RAM; two orphans then appended to a rerun's call log (seam calls 5420/5336 != 3037), which the count guard refused",
+ "fix": "killpg(pgid==recorded pid; every job runs under setsid) + PPID walk over /proc/*/stat",
+ "test": "dummy job nice->ionice->setsid->sh with 2 children: descendants found [2 pids], killpg + walk -> 0 alive (verdict OK); the old reader returns [] on this kernel"}

@@ -1,0 +1,298 @@
+{
+ "train": {
+  "split": "train",
+  "n_windows": 781635,
+  "n_clips": 4572,
+  "P_v0_exactly_0": 0.04453101511575096,
+  "chance_CE_3class": 1.0986122886681098,
+  "lat": {
+   "classes": [
+    "lane_keep",
+    "turn_left",
+    "turn_right"
+   ],
+   "marginal": {
+    "probs": [
+     0.836763962719172,
+     0.07899083331734122,
+     0.0842452039634868
+    ],
+    "counts": [
+     654044,
+     61742,
+     65849
+    ],
+    "entropy_nats": 0.5580592380542879
+   },
+   "given_v0_exactly_0": {
+    "probs": [
+     0.9977878013043353,
+     0.0010342747148562072,
+     0.001177923980808458
+    ],
+    "counts": [
+     34730,
+     36,
+     41
+    ],
+    "n": 34807,
+    "entropy_nats": 0.01726333246672279
+   },
+   "given_v0_nonzero": {
+    "probs": [
+     0.8292592136341969,
+     0.08262411157589164,
+     0.08811667478991146
+    ]
+   },
+   "train_at_input0": {
+    "probs": [
+     0.8436288187035944,
+     0.07566734685378754,
+     0.08070383444261808
+    ],
+    "share_withheld": 0.9573674553734374
+   },
+   "eval_at_input0": {
+    "probs": [
+     0.9977878013043353,
+     0.0010342747148562072,
+     0.001177923980808458
+    ],
+    "share_withheld": 0.0
+   },
+   "shift_train_vs_eval_at_input0": {
+    "total_variation": 0.15415898260074093,
+    "kl_eval_from_train_nats": 0.158037852720367
+   },
+   "shift_stationary_vs_marginal": {
+    "total_variation": 0.16102383858516334,
+    "kl_nats": 0.1660953155718058
+   }
+  },
+  "lon": {
+   "classes": [
+    "brake_stop",
+    "steady",
+    "accelerate"
+   ],
+   "marginal": {
+    "probs": [
+     0.16713043812009443,
+     0.6466637241167552,
+     0.1862058377631503
+    ],
+    "counts": [
+     130635,
+     505455,
+     145545
+    ],
+    "entropy_nats": 0.8938863827399339
+   },
+   "given_v0_exactly_0": {
+    "probs": [
+     0.0,
+     0.9084092280288447,
+     0.09159077197115523
+    ],
+    "counts": [
+     0,
+     31619,
+     3188
+    ],
+    "n": 34807,
+    "entropy_nats": 0.30620292093248824
+   },
+   "given_v0_nonzero": {
+    "probs": [
+     0.17491979411591424,
+     0.6344646960210383,
+     0.19061550986304746
+    ]
+   },
+   "train_at_input0": {
+    "probs": [
+     0.16000524225848253,
+     0.6578226009930894,
+     0.1821721567484279
+    ],
+    "share_withheld": 0.9573674553734374
+   },
+   "eval_at_input0": {
+    "probs": [
+     0.0,
+     0.9084092280288447,
+     0.09159077197115523
+    ],
+    "share_withheld": 0.0
+   },
+   "shift_train_vs_eval_at_input0": {
+    "total_variation": 0.2505866270357553,
+    "kl_eval_from_train_nats": 0.23021807300086547
+   },
+   "shift_stationary_vs_marginal": {
+    "total_variation": 0.2617455039120895,
+    "kl_nats": 0.2437540469592938
+   }
+  },
+  "stop_branch": {
+   "rule": "brake_stop <= dv < -1.0 OR (v1 < 0.3 AND v0 >= 1.0)",
+   "MOVING_V_MS": 1.0,
+   "STOP_V_MS": 0.3,
+   "DV_BRAKE_MS": -1.0,
+   "DV_ACCEL_MS": 1.0,
+   "note": "a window with v0 == 0 can NEVER take the stop branch (it needs v0 >= 1.0), and dv = v1 - 0 >= 0 so it can never take the dv branch either => brake_stop is UNREACHABLE at v0 == 0, while it has full support in the withheld mixture.",
+   "brake_count_at_v0_zero": 0
+  },
+  "lateral_label_reads_v0": false,
+  "longitudinal_label_reads_v0": true
+ },
+ "eval": {
+  "split": "eval",
+  "n_windows": 24114,
+  "n_clips": 141,
+  "P_v0_exactly_0": 0.030687567388239197,
+  "chance_CE_3class": 1.0986122886681098,
+  "lat": {
+   "classes": [
+    "lane_keep",
+    "turn_left",
+    "turn_right"
+   ],
+   "marginal": {
+    "probs": [
+     0.8508750103674214,
+     0.05523762129883056,
+     0.09388736833374803
+    ],
+    "counts": [
+     20518,
+     1332,
+     2264
+    ],
+    "entropy_nats": 0.5194876563086847
+   },
+   "given_v0_exactly_0": {
+    "probs": [
+     0.9878378378378379,
+     0.004054054054054054,
+     0.008108108108108109
+    ],
+    "counts": [
+     731,
+     3,
+     6
+    ],
+    "n": 740,
+    "entropy_nats": 0.07345743922732254
+   },
+   "given_v0_nonzero": {
+    "probs": [
+     0.8465388893642509,
+     0.05685804740309746,
+     0.09660306323265166
+    ]
+   },
+   "train_at_input0": {
+    "probs": [
+     0.8549529250824817,
+     0.05371368793755533,
+     0.09133338697996299
+    ],
+    "share_withheld": 0.9702261205439768
+   },
+   "eval_at_input0": {
+    "probs": [
+     0.9878378378378379,
+     0.004054054054054054,
+     0.008108108108108109
+    ],
+    "share_withheld": 0.0
+   },
+   "shift_train_vs_eval_at_input0": {
+    "total_variation": 0.1328849127553562,
+    "kl_eval_from_train_nats": 0.11260455997964171
+   },
+   "shift_stationary_vs_marginal": {
+    "total_variation": 0.13696282747041644,
+    "kl_nats": 0.11699054075982887
+   }
+  },
+  "lon": {
+   "classes": [
+    "brake_stop",
+    "steady",
+    "accelerate"
+   ],
+   "marginal": {
+    "probs": [
+     0.16044621381769927,
+     0.6840839346437754,
+     0.15546985153852533
+    ],
+    "counts": [
+     3869,
+     16496,
+     3749
+    ],
+    "entropy_nats": 0.8426898260190319
+   },
+   "given_v0_exactly_0": {
+    "probs": [
+     0.0,
+     0.8932432432432432,
+     0.10675675675675676
+    ],
+    "counts": [
+     0,
+     661,
+     79
+    ],
+    "n": 740,
+    "entropy_nats": 0.3396803639186758
+   },
+   "given_v0_nonzero": {
+    "probs": [
+     0.1655257978950971,
+     0.6774621374176435,
+     0.15701206468725934
+    ]
+   },
+   "train_at_input0": {
+    "probs": [
+     0.15566910758831579,
+     0.6903114186851211,
+     0.1540194737265631
+    ],
+    "share_withheld": 0.9702261205439768
+   },
+   "eval_at_input0": {
+    "probs": [
+     0.0,
+     0.8932432432432432,
+     0.10675675675675676
+    ],
+    "share_withheld": 0.0
+   },
+   "shift_train_vs_eval_at_input0": {
+    "total_variation": 0.2029318245581221,
+    "kl_eval_from_train_nats": 0.19107403194604877
+   },
+   "shift_stationary_vs_marginal": {
+    "total_variation": 0.20915930859946785,
+    "kl_nats": 0.19816817778852222
+   }
+  },
+  "stop_branch": {
+   "rule": "brake_stop <= dv < -1.0 OR (v1 < 0.3 AND v0 >= 1.0)",
+   "MOVING_V_MS": 1.0,
+   "STOP_V_MS": 0.3,
+   "DV_BRAKE_MS": -1.0,
+   "DV_ACCEL_MS": 1.0,
+   "note": "a window with v0 == 0 can NEVER take the stop branch (it needs v0 >= 1.0), and dv = v1 - 0 >= 0 so it can never take the dv branch either => brake_stop is UNREACHABLE at v0 == 0, while it has full support in the withheld mixture.",
+   "brake_count_at_v0_zero": 0
+  },
+  "lateral_label_reads_v0": false,
+  "longitudinal_label_reads_v0": true
+ }
+}

@@ -1,0 +1,55 @@
+MANIFEST - LAUNCH-INTENT box-2 chain, four-run redesign (2026-10-28). sha256 of every file as it stands; paths relative to E:/Projects/TanitAD-artifacts/dagland/launch_intent_chain/.
+Nothing here is committed, pushed, installed or launched. Locations: INSTALL = copy to C:/Users/Admin/box2_ship/ (LAUNCH.txt 1); LAND = goes into the repo (LAUNCH.txt 2); PACKAGE-ONLY = lives ONLY in this directory on E: (single location: not in git, not on another disk).
+The shipped chain's own line changes when the two placeholder pins are filled (LAUNCH.txt 3): re-run sha256sum then.
+
+== INSTALL -> C:/Users/Admin/box2_ship/ (7 files)
+565ff4978e5cef404a19ac55c191c7615e4c7e40b9be99c99fe0f8ca17e40714  box2_ship/chain_v8f_launchintent.sh  -> C:/Users/Admin/box2_ship/chain_v8f_launchintent.sh
+ba4c13a6243ca323f2dbb05a783dfeb882453eb60569306d03fe7424ff0d55fb  box2_ship/gate_launchintent_assert.py  -> C:/Users/Admin/box2_ship/gate_launchintent_assert.py
+3abaa8d61f0e32852a3400a2f167c6282f36af23d1ac2fe42d8d742796317063  box2_ship/oaf_launchintent_lib.sh  -> C:/Users/Admin/box2_ship/oaf_launchintent_lib.sh
+07d6cd91985423cf84ef752e3de5918bdf49e48fdb8c3e07be2edfe516ea4e24  box2_ship/run_chain_v8f_launchintent.cmd  -> C:/Users/Admin/box2_ship/run_chain_v8f_launchintent.cmd
+44038d5e49bb3044b4bddaab9369a232c55e4d8f888b73156bcac665f2c65e3f  box2_ship/v8f_guard_launchintent.sh  -> C:/Users/Admin/box2_ship/v8f_guard_launchintent.sh
+01173809378bd1b0563040b2aeac1c5e2cea77a3e8c7bf28edde278f9dc771a6  box2_ship/v8f_launchintent_chain_checks.py  -> C:/Users/Admin/box2_ship/v8f_launchintent_chain_checks.py
+fcc2507a96534ec7d59a1571d85ded18699ebfa8281211ade515b78cd0237aa6  box2_ship/wake_v8flaunchintent.sh  -> C:/Users/Admin/box2_ship/wake_v8flaunchintent.sh
+
+== LAND -> repo (the Master Mind lands; base = the landed commit's blob a45dedf2)
+195db471625359f344f6e4a02406a46b07925205c06ac3da725854b1084e0d9e  queue_stage/v8f_mini_box2_queue.cmd  -> TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_mini_box2_queue.cmd
+
+== REFERENCE (compare / review, not installed)
+a2464fbf5d5b2693f62e927bef350614de4f8fcfd6f0292338f5755b5b9444e3  queue_stage/queue.diff  (PACKAGE-ONLY)
+d8aa4f839afad6df65956fc5a6bd36017d582563ec45f29fffff5e67d21569bd  queue_stage/queue_tip_b09ac89f.cmd  (PACKAGE-ONLY)
+
+== DOCUMENTS (PACKAGE-ONLY)
+73866057560573ed291ed42dd74f8b0f407c506a4a81c6655c935e430f14d055  LAUNCH.txt
+ebc4aefe4b1b58f137c677940ab5863295b597f910636e0c512fbc7d61c032d3  NOTES.md
+11a58da5e520e336e37d4d7eac30a267b9f10411c53492746407bd72bf728d3a  HANDOFF.md
+6f3590564f770e1471c23567a889a402bdd7d9ea896f76ab8d70cfbdda5ad568  DRY_RUN.out
+cb4da1a6f3332d9354f0bc282c13dbc8fe3078c7fad1e417c2f35a02be4e1ab2  logs/SUPERSEDED.txt
+
+== PROOF (PACKAGE-ONLY)
+4397e5ec2f492a8a8a3bc82d316d2c8641da5da45a31b0b2ea3e503e2490eb09  logs/selftest_chain.out
+84c781c7cd8186eb03a45a301c48a8c059d2b341f65ef6d923645b76b5b2fd17  logs/selftest_chain_result.json
+a816dd7f24e0a1fe8b6a90532910a8de0ab7024a621f12f697e5a4108b60d4db  logs/sh_tests_run2.out
+dbf8c1537ac0cbdd0cee7fb116fde5061d7456ccb08ddd744e9db5cfcea5eb1d  logs/sh_mutants_run4.out
+fd0fcee19a68d7c68fc0fb675ddf13db3426fe24a4af618861a09f20d7924cd6  logs/selftest_chain_result_py_t.json
+cd87e36c2946e992d7173e884ce8aeeaecb297bb88ba3bf92366c738c9151fb2  logs/selftest_chain_result_py_m.json
+0ed60ab4b89fb43ddfb7edf6dc9e17e55c0e5b2364b97fa0d237007c51d62b53  logs/make_dry_run.console
+
+== GENERATORS AND HARNESS (PACKAGE-ONLY; every shipped file above is regenerated from these, never hand-edited)
+194ca1f59d5938ff05fe59dd8d51b0f90e70a38ac9624cedb7488db42b5b1058  gen/build_li_asserter.py
+dca8d443dcf8155a39277f435de878c40c5f0b447a0b2219b2d49ab8950e2b78  gen/build_li_checks.py
+83ce609bdf810b59ca46e4db0a4a4504c526ef302ed76b968bf7f184d1a23936  gen/build_li_lib.py
+f32fa93cf5bdf6f6cc2a5bb588c6c87941cd4f7ebb4bc0ab5008930f0b2a2e38  gen/build_li_small.py
+c34d1921106cedeec9cfa1e5a0f283fd6ee6937b90c3c23de138c932354241c6  gen/common.py
+42af930f568651eb92f7922705465d27da8ae267c96f6744708a1ce1cb5fe2bf  gen/make_chain_li.py
+215f627888a34924b7547f6cb9567280d2f8d6d4e793cf95f888921f2f77539c  gen/make_dry_run.py
+752c4758a436f68da8a346cefd5b806a99625a40c78de9fa5718602e74fa3c02  gen/make_queue_stage.py
+9cd83363fcc14dff73bf28099d6e852be3aad6ee7e3428bbe025c6c899af2421  gen/sealed.py
+6595d104d8ced622bf8c43123dbbacee55aff4dcfb47e9780793b7f979a76418  gen/selftest_chain.py
+ea7f441bbee256981bd7c65d23dce7316abf478fc1b09742c7cbdff7479811cd  gen/st_common.py
+94dfd9add67e30bc4a3873a1873e28c3ec821345d83059e7fda1e051aa4de82b  gen/st_py.py
+31350799cfa2b3ec3bae49cc7755376f95e08d606f39ca5a9bd318852adb3dcf  gen/st_sh.py
+90a44c555760af853d8d63633112fae313867488aae0fa1fe7bc4604791146a1  gen/st_sh2.py
+b3818a9feeb75579246d9c0f38194aec678862989a9d153b5324c6ede74b267a  gen/chain_launchintent.sh.in
+
+== STAGED BY THE LANDED COMMIT, NOT BY THIS PACKAGE: b09ac89fc9d6e81baf3977954ae638919b979e71 carries stack/scripts/v8f_mini_train.py (sha256 0d708b3cb841bc1f1832b09fe61e3d8421a4d3f59769f4435c0b22bb77e268ce), stack/tanitad/models/v8f_mini.py (sha256 b337ccecd3abfa4250a77e233502d9d3464a280dbafdc86b1e94ecbeef682721), stack/tests/test_v8f_launch_intent.py and launch_intent_golden.json (INHERITED from the coordinator; the two shas re-measured by gen/make_chain_li.py).
+== SINGLE-LOCATION WARNING: this whole directory exists only on E: (TanitAD-artifacts). The generators and the proof should be banked in the repo (suggested: Implementation/incoming/2026-10-28-launch-intent-chain/) by the Master Mind; I staged nothing in git.

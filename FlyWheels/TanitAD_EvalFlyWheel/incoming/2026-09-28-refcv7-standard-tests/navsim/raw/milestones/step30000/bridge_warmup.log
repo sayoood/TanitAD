@@ -1,0 +1,74 @@
+CMD: C:/Users/Admin/venvs/tanitad/Scripts/python.exe D:\Projects\TanitAD\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-28-refcv7-standard-tests\navsim\code\run_bridge7.py --split warmup_two_stage --arms R7_A1,R7_A1_s1,R7_FILTOFF,R7_BLIND,R7_VMAXOFF,R7_A1NT,R7_NAVOFF --inputs C:/Users/Admin/ev7nav/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-refcv4b-bridge/raw/navsim_agent_inputs.json --speed C:/Users/Admin/ev7nav/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/raw/inputs/speed_limits_warmup_two_stage.json --road-plane C:/Users/Admin/ev7nav/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/raw/inputs/road_plane_navhard_warmup_logs.json --ckpt D:/refcv7_eval_kit/ckpt\ckpt_30000.pt --config D:/refcv7_eval_kit/ckpt/config.json --ckpt-md5 ac4e4fab87e35b20de24d8d94910d910 --device cpu --precision auto --threads 6 --label RESULT --out D:\Projects\TanitAD\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-28-refcv7-standard-tests\navsim\raw\milestones\step30000\bridge_warmup --exact-dedup --derived --bank2 C:/Users/Admin/tanitad-caches/refcv6-navsim-20260923/warmup_two_stage
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from D:\refcv6_eval_kit\data\refcv6_train_eval139_extrinsics.json (4508 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[bridge7] step=30000 steps=2 precision=fp32 device=cpu load 4.8s md5=ac4e4fab87e35b20de24d8d94910d910 label=RESULT
+  [R7_A1] 25/220 (25 new) 1.92 s/scene
+  [R7_A1] 50/220 (50 new) 1.58 s/scene
+  [R7_A1] 75/220 (75 new) 1.48 s/scene
+  [R7_A1] 100/220 (100 new) 1.43 s/scene
+  [R7_A1] 125/220 (125 new) 1.40 s/scene
+  [R7_A1] 150/220 (150 new) 1.38 s/scene
+  [R7_A1] 175/220 (175 new) 1.36 s/scene
+  [R7_A1] 200/220 (200 new) 1.35 s/scene
+[bridge7] R7_A1: 204 refcv7 rows, 16 stand-ins, missing 0, KPR PASS max 0.0
+  [R7_A1_s1] 25/220 (25 new) 1.27 s/scene
+  [R7_A1_s1] 50/220 (50 new) 1.26 s/scene
+  [R7_A1_s1] 75/220 (75 new) 1.26 s/scene
+  [R7_A1_s1] 100/220 (100 new) 1.27 s/scene
+  [R7_A1_s1] 125/220 (125 new) 1.27 s/scene
+  [R7_A1_s1] 150/220 (150 new) 1.27 s/scene
+  [R7_A1_s1] 175/220 (175 new) 1.27 s/scene
+  [R7_A1_s1] 200/220 (200 new) 1.27 s/scene
+[bridge7] R7_A1_s1: 204 refcv7 rows, 16 stand-ins, missing 0, KPR PASS max 0.0
+  [R7_FILTOFF] 25/220 (25 new) 1.26 s/scene
+  [R7_FILTOFF] 50/220 (50 new) 1.26 s/scene
+  [R7_FILTOFF] 75/220 (75 new) 1.28 s/scene
+  [R7_FILTOFF] 100/220 (100 new) 1.36 s/scene
+  [R7_FILTOFF] 125/220 (125 new) 1.36 s/scene
+  [R7_FILTOFF] 150/220 (150 new) 1.35 s/scene
+  [R7_FILTOFF] 175/220 (175 new) 1.34 s/scene
+  [R7_FILTOFF] 200/220 (200 new) 1.33 s/scene
+[bridge7] R7_FILTOFF: 204 refcv7 rows, 16 stand-ins, missing 0, KPR PASS max 0.0
+  [R7_BLIND] 25/220 (25 new) 1.27 s/scene
+  [R7_BLIND] 50/220 (50 new) 1.27 s/scene
+  [R7_BLIND] 75/220 (75 new) 1.27 s/scene
+  [R7_BLIND] 100/220 (100 new) 1.36 s/scene
+  [R7_BLIND] 125/220 (125 new) 1.34 s/scene
+  [R7_BLIND] 150/220 (150 new) 1.32 s/scene
+  [R7_BLIND] 175/220 (175 new) 1.31 s/scene
+  [R7_BLIND] 200/220 (200 new) 1.31 s/scene
+[bridge7] R7_BLIND: 220 refcv7 rows, 0 stand-ins, missing 0, KPR PASS max 0.0
+  [R7_VMAXOFF] 25/220 (25 new) 1.33 s/scene
+  [R7_VMAXOFF] 50/220 (50 new) 1.31 s/scene
+  [R7_VMAXOFF] 75/220 (75 new) 1.30 s/scene
+  [R7_VMAXOFF] 100/220 (100 new) 1.29 s/scene
+  [R7_VMAXOFF] 125/220 (125 new) 1.28 s/scene
+  [R7_VMAXOFF] 150/220 (150 new) 1.28 s/scene
+  [R7_VMAXOFF] 175/220 (175 new) 1.27 s/scene
+  [R7_VMAXOFF] 200/220 (200 new) 1.27 s/scene
+[bridge7] R7_VMAXOFF: 204 refcv7 rows, 16 stand-ins, missing 0, KPR PASS max 0.0
+  [R7_A1NT] 25/220 (25 new) 1.76 s/scene
+  [R7_A1NT] 50/220 (50 new) 1.76 s/scene
+  [R7_A1NT] 75/220 (75 new) 1.76 s/scene
+  [R7_A1NT] 100/220 (100 new) 1.76 s/scene
+  [R7_A1NT] 125/220 (125 new) 1.76 s/scene
+  [R7_A1NT] 150/220 (150 new) 1.75 s/scene
+  [R7_A1NT] 175/220 (175 new) 1.75 s/scene
+  [R7_A1NT] 200/220 (200 new) 1.76 s/scene
+[bridge7] R7_A1NT: 204 refcv7 rows, 16 stand-ins, missing 0, KPR PASS max 0.0
+  [R7_NAVOFF] 25/220 (25 new) 1.25 s/scene
+  [R7_NAVOFF] 50/220 (50 new) 1.25 s/scene
+  [R7_NAVOFF] 75/220 (75 new) 1.25 s/scene
+  [R7_NAVOFF] 100/220 (100 new) 1.25 s/scene
+  [R7_NAVOFF] 125/220 (125 new) 1.25 s/scene
+  [R7_NAVOFF] 150/220 (150 new) 1.25 s/scene
+  [R7_NAVOFF] 175/220 (175 new) 1.25 s/scene
+  [R7_NAVOFF] 200/220 (200 new) 1.25 s/scene
+[bridge7] R7_NAVOFF: 204 refcv7 rows, 16 stand-ins, missing 0, KPR PASS max 0.0
+[bridge7] R7_CEILDECL_d: 204 rows, replication failures 0, ceiling binds 90, emitted plan over the ceiling 0, declared ceiling changes the pick 0
+[bridge7] PRIOR_ha0p: 220 rows

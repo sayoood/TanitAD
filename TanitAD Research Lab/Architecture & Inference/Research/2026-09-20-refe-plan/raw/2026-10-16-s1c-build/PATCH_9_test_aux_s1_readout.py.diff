@@ -1,0 +1,45 @@
+--- a/eval/test_aux_s1_readout.py
++++ b/eval/test_aux_s1_readout.py
+@@ -491,6 +491,15 @@
+             continue
+         raise AssertionError(f"{bad!r} must not parse")
+     assert m.parse_arm("H2-s12") == ("H2", 12)
++    # S1c head arms parse, and are NEVER paired with an N arm (a different budget: 10,000 / 2,000 updates against the N arms' 400)
++    assert m.parse_arm("H1u10k-s0") == ("H1u10k", 0) and m.parse_arm("H1u2k-s0") == ("H1u2k", 0)
++    assert m.pair_with_n(["N-s0", "H1u10k-s0", "H1u2k-s0", "H1-s0"]) == {"H1-s0": "N-s0", "H1u10k-s0": None, "H1u2k-s0": None}
++    for bad in ("H1u3k-s0", "H1u10k-0", "H1u10k"):
++        try:
++            m.parse_arm(bad)
++        except ValueError:
++            continue
++        raise AssertionError(f"{bad!r} must not parse")
+ 
+ 
+ def chk_leak_key_and_log(m):
+@@ -704,6 +713,14 @@
+         assert r["arms"]["H1-s0"]["p1"]["all"]["0-40"]["est"] < 0.9 and r["arms"]["H1-s0"]["p3"]["status"] == "NOT_COMPUTED"
+         pr = r["head_fit_pairs"]["H2-s0-minus-H1-s0"]
+         assert pr["iou_0-40"]["est"] > 0.1 and pr["near_boundary_mae_m"]["est"] < 0.0
++        # S1c: a longer-budget head arm is contrasted with the SAME seed's 400-update H1 head (the budget contrast), and is not an H2 arm
++        buf = io.StringIO()
++        with contextlib.redirect_stdout(buf):
++            rc = mod.main(["perception", "--pred", f"H1u10k-s0={d}/h2.npz", f"H1-s0={d}/h1.npz", "--labels-set", "navtest", "--n-boot", "200", "--out", f"{d}/o_s1c.json"])
++        assert rc == 0, buf.getvalue()
++        rs = json.load(open(f"{d}/o_s1c.json", encoding="utf-8"))
++        assert sorted(rs["head_fit_pairs"]) == ["H1u10k-s0-minus-H1-s0"] and rs["head_fit_pairs"]["H1u10k-s0-minus-H1-s0"]["iou_0-40"]["est"] > 0.1
++        assert rs["arms"]["H1u10k-s0"]["p1"]["all"]["0-40"]["est"] == 1.0 and rs["arms"]["H1u10k-s0"]["k2"]["decision"] == "K2_CLEARED"
+         assert r["labels"]["store_sha256"] == mod.LABEL_PINS["navtest"][0]
+         tk = AUX.AuxLabelSource(trn, pinned_sha256=mod.LABEL_PINS["train"][0], pinned_keys=103139).all_keys()[:3]
+         np.savez(f"{d}/leak.npz", log=np.array([k[0] for k in tk]), token=np.array([k[1] for k in tk]), logit=np.zeros((3, 40, 32), np.float32), sdf_m=np.zeros((3, 40, 32), np.float32))
+@@ -751,8 +768,9 @@
+     ("leak_key_guard_off", "leak", "    if key_ov or log_ov:", "    if False:", ["chk_leak_key_and_log"]),
+     ("leak_heldout_guard_off", "leak", "        if outside:", "        if False:", ["chk_leak_heldout"]),
+     ("leak_train_keys_not_filtered", "leak", "    return [k for k in keys if k[0] not in set(heldout_logs)]", "    return keys", ["chk_train_keys_for"]),
+-    ("pair_seed_ignored", "pair", 'return {n: n_by_seed.get(s) for n, (c, s) in sorted(parsed.items()) if c != "N"}',
+-     'return {n: next(iter(n_by_seed.values()), None) for n, (c, s) in sorted(parsed.items()) if c != "N"}', ["chk_pair_with_n", "chk_selection_exact"]),
++    ("pair_seed_ignored", "pair", '(n_by_seed.get(s) if c in ("H1", "H2") else None)',
++     '(next(iter(n_by_seed.values()), None) if c in ("H1", "H2") else None)', ["chk_pair_with_n", "chk_selection_exact"]),
++    ("s1c_arm_paired_with_a_400_update_N", "pair", 'if c in ("H1", "H2") else None)', 'if True else None)', ["chk_pair_with_n"]),
+     ("later_step_rows_kept", "io", "keep = step == 0", "keep = step >= 0", ["chk_load_head_pred"]),
+     ("dup_bound_dropped", "io", "if d_lg > DUP_LOGIT_ATOL or d_sd > DUP_SDF_ATOL_M:", "if False:", ["chk_load_head_pred"]),
+     ("dup_sdf_bound_dropped", "io", "if d_lg > DUP_LOGIT_ATOL or d_sd > DUP_SDF_ATOL_M:", "if d_lg > DUP_LOGIT_ATOL:", ["chk_load_head_pred"]),

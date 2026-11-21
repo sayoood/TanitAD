@@ -1,0 +1,32 @@
+{
+ "schema": "ra1-full-ctl-dev-v1",
+ "prereg": "PREREG_RA1_FULL.md C0",
+ "measured": "2026-10-18 dev box",
+ "what": "the dev box rebuilt 2 of the 600 S4b clips from the FULL 4,572 stage; both byte-identical to its own S4b build",
+ "stage": "C:/Users/Admin/tanitad-data/refav1-train4572-256_stage",
+ "builder": "stack/scripts/pod_build_b1_epcache.py",
+ "builder_sha256": "d28006f1c82376a433ac2c5d0261a41f32510c22c7f0a24db431bceb5a875510",
+ "argv": "pod_build_b1_epcache.py --out <_ctl_dev/out> --root <refav1-train4572-256_stage> --workers 2 --clips ctl_clips.txt",
+ "env": "CUDA_VISIBLE_DEVICES=-1 OMP/MKL/V2_TORCH/PAI_DECODE threads 1",
+ "libs": {
+  "torch": "2.11.0+cu128",
+  "torchvision": "0.26.0+cu128",
+  "av": "18.0.0",
+  "numpy": "2.5.1",
+  "box2": "identical versions (probed 2026-10-18)"
+ },
+ "clips": {
+  "8f387977-4086-466d-bba4-b04f8cdc0743": {
+   "banked_s4b_sha256": "4d229504a8abe80ca8559a17bb68006a717927b9775021f208ecb328ac168d3c",
+   "rebuild_sha256": "4d229504a8abe80ca8559a17bb68006a717927b9775021f208ecb328ac168d3c",
+   "bytes": 37831183,
+   "identical": true
+  },
+  "bf5ec76e-e8b5-4f0d-a9cc-4fe1687d3d3a": {
+   "banked_s4b_sha256": "28ca420fab214d56f3d8a45cfe13a9e81d9291a0779d7124050b7cf66588b57d",
+   "rebuild_sha256": "28ca420fab214d56f3d8a45cfe13a9e81d9291a0779d7124050b7cf66588b57d",
+   "bytes": 28570447,
+   "identical": true
+  }
+ }
+}

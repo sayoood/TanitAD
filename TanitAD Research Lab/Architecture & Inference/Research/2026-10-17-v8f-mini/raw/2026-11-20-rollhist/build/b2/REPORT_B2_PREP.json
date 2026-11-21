@@ -1,0 +1,39 @@
+{
+ "phase": "ROLLHIST B2 prep (staged, NOT launched; nothing heavy on the pod; no commit, no push)",
+ "code_of_record": "2bda9e1a382986cfdce3bb455822678b42a816e2 (branch agent/v8f-rollhist-20261120)",
+ "pod_tree": {
+  "path": "/root/rollhist/tree",
+  "built_by": "git -c core.autocrlf=false archive 2bda9e1a stack taniteval (dev box), tar.gz pushed, extracted",
+  "files": 3458, "blobs_listed": 3458, "bad": 0,
+  "check": "/root/rollhist/blobcheck.py vs all_blobs.txt (git blob sha1 of every file); no extra file (find count = 3458)",
+  "evidence_class": "MEASURED on the pod (blobcheck output: checked 3458 of 3458 bad 0)"
+ },
+ "inputs": {
+  "UE_s0.A_ckpt": {"where": "/root/dscale10k/runs/UE_s0/A/ckpt_last.pt", "sha256": "2fd4b747532f55b24523c578948cb713fb80fa0e698586c329dd23ba6e6df914", "matches_brief_prefix": true},
+  "UE_s1.A_ckpt": {"where": "/root/dscale10k/runs/UE_s1/A/ckpt_last.pt", "sha256": "f13df8ce026eed31e0d9d1df72de3e7b7977fefa6da3def2b411b7d74dbd4ebc", "matches_brief_prefix": true},
+  "stage_B_templates": ["/root/dscale10k/argv/U_s0.B.tmpl.json", "/root/dscale10k/argv/U_s1.B.tmpl.json"],
+  "stage_A_argv_for_the_bank": ["/root/dscale10k/argv/UE_s0.A.json", "/root/dscale10k/argv/UE_s1.A.json"],
+  "bank_window_counts": "/root/dscale10k/dry/UE_s{0,1}.A.dry.json (n_clips 14512, n_windows 985048)",
+  "union_data": "/root/dscale10k/merged/{v9_labels_union.npz, lead_union.npz, speed_union.jsonl, join_union.npz, native_tracks_union.pt}; /root/data/cache_union_dscale/train; /root/strat1/inputs/p10/p10_prior.pt; /root/strat1/eval_grid_windows.json",
+  "g_suite_base": "/root/strat1/junit/base (cdbff971 run on /root/strat1/base; the DSCALE10K tree is identity to it per gate/suite.json)",
+  "tools_used_read_only": ["/root/dscale10k/chainlib.py", "/root/strat1/shards_like_base.py", "/root/strat1/overlay_strat1_check.py", "/root/strat1/n1dc/kclip.py", "/root/dscale10k/tree (unpatched generator for pilot check (a); v8f_dagger_bank.py and v8f_dagger.py byte-identical to base 7b26a8ac)"],
+  "hf_fallback": "not needed (HF path Sayood/tanitad-v8f-dscale10k-runs UE_s{0,1}/A/ckpt_last.pt unused)"
+ },
+ "disk": {"root_free_gb": 102, "stage_b_gate_gb": 60, "ok": true, "note": "a union bank size is unknown (Q4): the chain re-checks >= 60 GB before each bank and FAILS (deletes nothing banked) if below"},
+ "readout_parameter": {
+  "name": "RH_READOUT", "values": ["causal_g1x", "causal_g1"], "default": "none (refused if unset)",
+  "bank_flags": {"causal_g1x": "--readout causal_g --acc-gain 1 --path-exec --kappa-max 0.2", "causal_g1": "--readout causal_g --acc-gain 1 --kappa-max 0.2"},
+  "trainer_flags": {"causal_g1x": "--dagger-bank-readout causal_g1x --dagger-bank-kappa 0.2", "causal_g1": "--dagger-bank-readout causal_g1 --dagger-bank-kappa 0.2"},
+  "renders_proven": "dev box, CPU, the committed 2bda9e1a files: proof/render_report_*.json, proof/RH_s*.tmpl.*.json, proof/B0_*.argv.json, proof/bank_generator_records.txt",
+  "pair_check": {
+   "causal_g1x": "rollhist_pair_check.pair_problems = [] for s0 and s1 (stock checker)",
+   "causal_g1": "the STOCK checker REJECTS it: rollhist_pair_check.py hard-codes RH_READOUT = readout_token(causal_g, 1.0, True) = causal_g1x (message: RH argv names --dagger-bank-readout causal_g1, the RH bank is causal_g1x). Committed code NOT edited: render_argv_rh.py re-runs the same functions with DECL patched in process and requires that to pass (problems = [] for s0 and s1); the stock rejection is recorded in render_report.json"
+  },
+  "bank_generator_records": "generator_record() gives {causal_g, 1.0, path_exec true|false, 0.2} for the two settings and readout_token() returns causal_g1x / causal_g1 (proof/bank_generator_records.txt)",
+  "check_b_note": "R4 identity (stored last-knot acceleration = 1.0 x executed, <= 1e-6) reads the stored pose, which is the executed knots only under --path-exec; for causal_g1 rh_pilot_check reports the value and does not assert it"
+ },
+ "scripts_on_pod": "/root/rollhist/{rh_env.sh, rh_bank.sh, rh_pilot.sh, rh_pilot_check.py, rh_gsuite.sh, render_argv_rh.py, rh_selfcheck.py, rh_gate_record.py, rh_arm.sh, rh_chain.sh, rh_marker_watch.sh, blobcheck.py, all_blobs.txt} (bash -n and ast.parse clean on the pod; none started)",
+ "not_run_here": ["pilot", "G-SUITE", "any pytest, model load or GPU job on the pod (another session trains there)", "pod-side python of render / pilot_check / gate_record (proved or compiled locally against the same committed files; render proven end to end, pilot_check and gate_record only compiled and argparse-checked)"],
+ "gate_record_caveat": "the committed chain checker (study/dscale10k_check.py) knows the DSCALE10K arm names only, so rh_gate_record.py mints a CHAIN-LOCAL record (not a dscale10k_check / launch_gate token); the MM decides if a study-side RH kind is wanted first",
+ "temp_deleted": "see DELETIONS.log (local tars, local tree export) and /root/rollhist/deletions.log (pod tarball)"
+}

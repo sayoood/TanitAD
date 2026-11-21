@@ -1,0 +1,400 @@
+{
+ "task": "B1 TRAIN obstacle.offline -> agent join (WP-6 agent conditioning)",
+ "_evidence_class": "MEASURED (ours; artifact = the jsonl + this meta)",
+ "builder": "stack/scripts/build_b1_agent_join.py",
+ "corpus": {
+  "name": "B1 v7.2 TRAIN split",
+  "n_clips_offered": 6,
+  "pose_source": "reconstruct",
+  "pose_source_note": "poses rebuilt from {clip}.timestamps.parquet + egomotion (episode_grid -> episode_poses). MEASURED float32-IDENTICAL to the banked v2ep poses on 20/20 clips (max_dxy_m 0.0, max_dyaw_deg 0.0, max_dv_mps 0.0; .../2026-09-02-b1-eval-lead-block/raw/grid_crosscheck.json), so the ~161 GB B1 TRAIN epcache on Thor is not needed.",
+  "eps_dir": null,
+  "ts_dir": "C:\\Users\\Admin\\tanitad-data\\physicalai\\camera\\camera_front_wide_120fov",
+  "n_stack": 3,
+  "n_stack_source": "OPERATOR (--n-stack); a reconstructed clip carries no record to read it from",
+  "note": "B1 = the 4,719-clip v7 corpus (4,713 built after the parity gate drops 6 val40 clips); the v7.2 release splits it 4,572 TRAIN / 147 EVAL; 141 of the 147 have pixels in the built B1 epcache and are what refav1 scores on. TRAIN is r0_selection (4,719) minus those 147 = exactly 4,572."
+ },
+ "key": {
+  "fields": [
+   "clip_id",
+   "frame"
+  ],
+  "frame_index_space": "RAW v2ep index i in [0, n_target) -- NO n_stack trim; identical to b1_eval_lead_block.npz's `frame`, and DIFFERENT from build_obstacle_join's post-trim `frame_idx` (i - (n_stack - 1))",
+  "why_renamed": "the key is `frame`, not `frame_idx`, so the two index spaces cannot be silently confused"
+ },
+ "args": {
+  "pose_source": "reconstruct",
+  "eps_dir": null,
+  "ts_dir": "C:\\Users\\Admin\\tanitad-data\\physicalai\\camera\\camera_front_wide_120fov",
+  "n_stack": 3,
+  "clips": "C:/Users/Admin/refcv6-join/eval6_clips.json",
+  "ego_dir": "C:\\Users\\Admin\\tanitad-data\\physicalai\\labels\\egomotion_alpamayo",
+  "obstacle_dir": "C:\\Users\\Admin\\tanitad-data\\physicalai\\labels\\obstacle_offline_b1eval",
+  "lead_block": null,
+  "out": "C:\\Users\\Admin\\refcv6-join\\eval6_agents.jsonl.xz",
+  "tol_s": 0.06,
+  "hfov_deg": 120.0,
+  "argv": [
+   "--pose-source",
+   "reconstruct",
+   "--ts-dir",
+   "C:/Users/Admin/tanitad-data/physicalai/camera/camera_front_wide_120fov",
+   "--n-stack",
+   "3",
+   "--clips",
+   "C:/Users/Admin/refcv6-join/eval6_clips.json",
+   "--ego-dir",
+   "C:/Users/Admin/tanitad-data/physicalai/labels/egomotion_alpamayo",
+   "--obstacle-dir",
+   "C:/Users/Admin/tanitad-data/physicalai/labels/obstacle_offline_b1eval",
+   "--out",
+   "C:/Users/Admin/refcv6-join/eval6_agents.jsonl.xz"
+  ]
+ },
+ "summary": {
+  "n_clips_joined": 6,
+  "n_clips_offered": 6,
+  "n_lines": 1118,
+  "wall_s": 2.3,
+  "md5": "c864274fffe66cccf86c0560c53dccb9",
+  "digest_scope": "compressed",
+  "skipped": {
+   "no_obstacle": [],
+   "no_egomotion": [],
+   "error": [],
+   "alignment_failed": []
+  }
+ },
+ "content_assertion": {
+  "n_lines": 1118,
+  "n_clips": 6,
+  "n_agent_boxes": 29074,
+  "n_visible_boxes": 13035,
+  "visible_frac": 0.4483,
+  "mean_abs_cx_m": 61.6177,
+  "mean_abs_cy_m": 14.9469,
+  "unique_keys": 1118
+ },
+ "alignment_proof": {
+  "n_clips_probed": 6,
+  "gate": {
+   "statistic": "max |t_s[i] - t_grid[i]| / dt_grid  -- the frame-index error IN FRAMES, at the SAME (clip_id, frame)",
+   "why": "a frame index is an INTEGER, so the decision boundary is 0.5 frames. The two sides come from two different time bases: register_poses_to_time recovers time from POSITION, the reference from the CAMERA TIMESTAMP GRID.",
+   "reference_source": "per-clip camera timestamp grid (episode_grid -> episode_poses), the SAME construction as b1_eval_lead_block.npz's t0_s/speeds -- recomputed rather than read from a banked npz, because B1 TRAIN has no lead block",
+   "why_not_the_eval_speed_gate": "the EVAL gate needs TWO independently produced speed arrays indexed by the same frame (v2ep poses[:,3] and the block's speeds). Neither exists on B1 TRAIN: the poses are BUILT on the grid, so poses[:,3] IS the reference's own speeds. Re-sampling one side at the registered times to manufacture a difference was TRIED and MEASURED on the 141 EVAL clips: true 1.191e-01 m/s vs mis-join(+1) 2.134e-02 m/s -- the CONTROL READ SMALLER THAN THE TRUE VALUE. It had become a registration-PRECISION statistic, the same confusion the EVAL package diagnosed for its 5e-3 s time gate.",
+   "true_max_err_frames": 0.016442339162911587,
+   "misjoin1_min_err_frames": 0.9835576608370884,
+   "max_true_allowed_frames": 0.25,
+   "min_misjoin_required_frames": 0.75,
+   "control_expected_value_frames": 1.0,
+   "applied": "PER CLIP -- a failing clip is EXCLUDED and NAMED in skipped.alignment_failed, never written. The values here are the worst among the clips that were KEPT.",
+   "n_clips_excluded_by_the_gate": 0,
+   "n_clips_probed_total": 6,
+   "excluded_frac": 0.0,
+   "max_excluded_frac_allowed": 0.005,
+   "why_a_corpus_bound": "a systematic one-frame defect would hit many clips at once; the bound stops 'exclude the failures' from absorbing it as 'a few bad ones'",
+   "separation_x": 59.8,
+   "grid_dt_s_median": 0.10066683249999975,
+   "speed_reported_only": {
+    "true_max_dv_mps": 0.0022203922271728516,
+    "misjoin1_min_dv_mps": 0.034211158752441406,
+    "note": "REPORTED, NOT GATED in reconstruct mode -- see why_not_the_eval_speed_gate"
+   },
+   "passed": true
+  },
+  "reported_only": {
+   "statistic": "max |recovered t_s - block t0_s|",
+   "true_max_dt_s": 0.001654881847425571,
+   "misjoin1_max_dt_s": 0.10158335824645959,
+   "worst_clip_dt_s": 0.001654881847425571,
+   "n_clips_noncircular": 6,
+   "n_clips_circular_excluded": 0,
+   "instrument_documented_worst_s": 0.0259,
+   "note": "registration PRECISION, not key correctness -- a clip with few registration probes carries a smooth time bias while its frame index is exactly right"
+  },
+  "key": "(clip_id, frame) with frame = RAW v2ep index",
+  "control": "mis-join(+1): frame i+1 read against block frame i, on the SAME statistic as the gate",
+  "passed": true
+ },
+ "conventions": {
+  "frame": "per-frame EGO frame, +x fwd +y LEFT (refb_labels.ego_frame via bev_raster.ego_frame_agents)",
+  "composition": "rig@sample -> world at the sample's OWN timestamp -> ego@frame",
+  "time": "recovered per clip by lead_source.register_poses_to_time over the RAW pose array (grid ~0.1007 s, not 0.1)",
+  "NO_LABEL": "absent (clip, frame) line -- outside the obstacle span; an EMPTY agents list IS a label (labelled clear)",
+  "occ": "0 = agent centre inside the 120 deg front-camera field, 1 = outside while the track continues; IS bev_raster.fov_mask at agent-centre granularity (P4_PREDICATE_IDENTITY), not an independent occlusion label",
+  "sizes": "l = size_x, w = size_y"
+ },
+ "per_clip": [
+  {
+   "clip_id": "01acc9de-8bb9-465e-a664-3098ecd92276",
+   "n_frames": 201,
+   "n_labelled": 199,
+   "n_agent_boxes": 1997,
+   "n_visible_boxes": 802,
+   "visible_frac": 0.4016,
+   "n_tracks": 38,
+   "label_span_s": [
+    0.021,
+    19.973
+   ],
+   "cls_hist": {
+    "person": 174,
+    "automobile": 1732,
+    "rider": 20,
+    "protruding_object": 11,
+    "other_vehicle": 14,
+    "bus": 46
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.096191,
+    "b": 0.100664,
+    "residual_m": {
+     "median": 0.00158,
+     "p95": 0.00371,
+     "max": 0.00406
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0002975704176613192,
+    "misjoin1_max_dt_s": 0.10087778087927253,
+    "grid_dt_s": 0.1006670500000002,
+    "true_max_err_frames": 0.0029559862701978314,
+    "misjoin1_min_err_frames": 0.9970440137298198,
+    "speed_max_dv_mps": 0.00023174285888671875,
+    "speed_misjoin1_max_dv_mps": 0.0443115234375,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "026ef99a-2283-4c08-83e3-c0c3b4bae865",
+   "n_frames": 207,
+   "n_labelled": 200,
+   "n_agent_boxes": 2542,
+   "n_visible_boxes": 1508,
+   "visible_frac": 0.5932,
+   "n_tracks": 87,
+   "label_span_s": [
+    0.014,
+    19.999
+   ],
+   "cls_hist": {
+    "automobile": 2033,
+    "heavy_truck": 199,
+    "rider": 273,
+    "person": 33,
+    "protruding_object": 4
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.280057,
+    "b": 0.100635,
+    "residual_m": {
+     "median": 0.00719,
+     "p95": 0.01335,
+     "max": 0.01369
+    },
+    "n_inlier": 85,
+    "n_probe": 85
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 207,
+    "true_max_dt_s": 0.001654881847425571,
+    "misjoin1_max_dt_s": 0.10158335824645959,
+    "grid_dt_s": 0.10064759223300968,
+    "true_max_err_frames": 0.016442339162911587,
+    "misjoin1_min_err_frames": 0.9835576608370884,
+    "speed_max_dv_mps": 0.0022203922271728516,
+    "speed_misjoin1_max_dv_mps": 0.2766444683074951,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "030011f7-dfb9-40cf-817f-cb7e8a87b0db",
+   "n_frames": 201,
+   "n_labelled": 199,
+   "n_agent_boxes": 7261,
+   "n_visible_boxes": 3377,
+   "visible_frac": 0.4651,
+   "n_tracks": 161,
+   "label_span_s": [
+    0.004,
+    19.973
+   ],
+   "cls_hist": {
+    "automobile": 5685,
+    "bus": 288,
+    "person": 792,
+    "trailer": 248,
+    "protruding_object": 29,
+    "other_vehicle": 35,
+    "rider": 80,
+    "heavy_truck": 104
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.080181,
+    "b": 0.100669,
+    "residual_m": {
+     "median": 0.00185,
+     "p95": 0.00434,
+     "max": 0.00474
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0003484835761291549,
+    "misjoin1_max_dt_s": 0.1010151285761296,
+    "grid_dt_s": 0.100666645,
+    "true_max_err_frames": 0.0034617581238468305,
+    "misjoin1_min_err_frames": 0.9979608039737582,
+    "speed_max_dv_mps": 0.00017070770263671875,
+    "speed_misjoin1_max_dv_mps": 0.034211158752441406,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "07f7b41f-b007-48d1-905e-b3385e8e897f",
+   "n_frames": 201,
+   "n_labelled": 199,
+   "n_agent_boxes": 940,
+   "n_visible_boxes": 239,
+   "visible_frac": 0.2543,
+   "n_tracks": 24,
+   "label_span_s": [
+    0.011,
+    19.999
+   ],
+   "cls_hist": {
+    "automobile": 515,
+    "heavy_truck": 211,
+    "trailer": 214
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.149454,
+    "b": 0.100658,
+    "residual_m": {
+     "median": 0.00103,
+     "p95": 0.00287,
+     "max": 0.00324
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00018556473309416788,
+    "misjoin1_max_dt_s": 0.10068265700469596,
+    "grid_dt_s": 0.10065904500000045,
+    "true_max_err_frames": 0.0018434978505326278,
+    "misjoin1_min_err_frames": 0.9981565021495027,
+    "speed_max_dv_mps": 0.000240325927734375,
+    "speed_misjoin1_max_dv_mps": 0.12883949279785156,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "09759d8c-b66c-4672-bad2-c05c54ea9ded",
+   "n_frames": 201,
+   "n_labelled": 121,
+   "n_agent_boxes": 237,
+   "n_visible_boxes": 18,
+   "visible_frac": 0.0759,
+   "n_tracks": 12,
+   "label_span_s": [
+    0.037,
+    12.187
+   ],
+   "cls_hist": {
+    "automobile": 186,
+    "person": 19,
+    "animal": 32
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.12395,
+    "b": 0.100666,
+    "residual_m": {
+     "median": 0.0056,
+     "p95": 0.00898,
+     "max": 0.00925
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0003945081780812737,
+    "misjoin1_max_dt_s": 0.10106053771391633,
+    "grid_dt_s": 0.1006670199999995,
+    "true_max_err_frames": 0.00391894165617772,
+    "misjoin1_min_err_frames": 1.0019511389638254,
+    "speed_max_dv_mps": 0.00083160400390625,
+    "speed_misjoin1_max_dv_mps": 0.19745826721191406,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "0c99c815-3a3d-4189-9530-2626219454c6",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 16097,
+   "n_visible_boxes": 7091,
+   "visible_frac": 0.4405,
+   "n_tracks": 238,
+   "label_span_s": [
+    0.001,
+    19.997
+   ],
+   "cls_hist": {
+    "automobile": 14535,
+    "heavy_truck": 1286,
+    "rider": 233,
+    "trailer": 43
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.035618,
+    "b": 0.100667,
+    "residual_m": {
+     "median": 0.00209,
+     "p95": 0.00245,
+     "max": 0.00247
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0003837173206626687,
+    "misjoin1_max_dt_s": 0.10032259151230022,
+    "grid_dt_s": 0.10066748499999978,
+    "true_max_err_frames": 0.0038117304774492934,
+    "misjoin1_min_err_frames": 0.9961882695225419,
+    "speed_max_dv_mps": 0.0014138221740722656,
+    "speed_misjoin1_max_dv_mps": 0.32655906677246094,
+    "time_circular": false
+   }
+  }
+ ],
+ "digest_scope": {
+  "algo": "md5",
+  "digest": "c864274fffe66cccf86c0560c53dccb9",
+  "scope": "compressed",
+  "filename": "eval6_agents.jsonl.xz",
+  "declared_by": "build_b1_agent_join",
+  "note": "digest taken over the artifact as written",
+  "schema": "tanitad.join_digest_scope/1"
+ }
+}

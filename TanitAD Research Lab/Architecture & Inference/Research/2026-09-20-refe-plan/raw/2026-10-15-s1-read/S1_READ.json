@@ -1,0 +1,1988 @@
+{
+ "ambiguities": [
+  {
+   "alt": "at least 2 of 3 seeds in {EVALUATED, PROVISIONAL}",
+   "id": "AMB-1",
+   "ruled": "A7.1: all three H2 seeds (used); 2 of 3 is supplementary",
+   "sensitivity": true,
+   "text": "'the P3 decision on C3 is H2_EVALUATED or H2_PROVISIONAL' - there are three H2 runs, each with its own P3 decision; the text has one decision",
+   "used": "all three H2 seeds must read EVALUATED or PROVISIONAL; the regime is PROVISIONAL (3 of 3 pairs) if ANY seed is PROVISIONAL",
+   "where": "S1 prereg 4.3 cond 1 (l.111) and cond 2 (l.112)"
+  },
+  {
+   "alt": "H1-s0 only (the S1_POD_RUNBOOK S1-D3 drop rule reads H1-s0)",
+   "id": "AMB-2",
+   "ruled": "A7.2: all three H1 seeds (used); A3.3 says the S1-D3 drop rule is not exercised, so 'H1-s0 only' does not arise",
+   "sensitivity": true,
+   "text": "'K2 does not fire on H1's head' / 'K6 did not fire' - there are three H1 runs",
+   "used": "no K2 / K6 on ANY of the three H1 seeds (the phrase 'any H2 run' in cond 4 is the model)",
+   "where": "S1 prereg 4.3 H1 paragraph (l.120-122)"
+  },
+  {
+   "alt": "the update-25 row; or ln 2 as the step-0 value",
+   "id": "AMB-3",
+   "ruled": "A7.3: G12 bce_declared vs the first train row with update >= 40 (used); update-25 row and ln 2 are supplementary",
+   "sensitivity": true,
+   "text": "'aux_bce >= 0.9 x its step-0 value after 10 % of the arm's steps' - which logged number is the step-0 value and which row is 'after 10 %'",
+   "used": "step-0 value = G12 bce_declared (the head's BCE on a real batch before any update); the row = the first 'train' event with update >= ceil(0.10 x 400) = 40, i.e. update 50 (a 25-update mean)",
+   "where": "draft K6"
+  },
+  {
+   "alt": "N = the mean of the three N seeds; micro-batch 4 timing (not measured at S1)",
+   "id": "AMB-4",
+   "ruled": "A7.4: read at batch 8 (stricter for memory); time limb = run-mean OR median-window, either > +3 % fires",
+   "sensitivity": false,
+   "text": "'step time rises > 3 % or peak memory > 1 GB at micro-batch 4' - the S1 argv uses --batch 8; the comparison arm and the memory quantity are not named",
+   "used": "memory: G12 head_retained_gb > 1.0 OR preflight gpu_mem_gb(H) - gpu_mem_gb(N same seed) > 1.0; time: run-mean s_per_update at update 400 AND the median per-window s/update (A7.4), each H vs the same-seed N, > +3 %; any limb fires K3",
+   "where": "draft K3"
+  },
+  {
+   "alt": "treat a K5 failure as a fifth promotion condition",
+   "id": "AMB-5",
+   "sensitivity": false,
+   "text": "'the zero-weight / detached exact controls are not bit-identical to the comparator' is a check on an exact test, not on a banked number",
+   "used": "read from the arm's PREFLIGHT_PASS.json G12 raw fields (a head arm cannot have trained without them); a missing or false field REFUSES the arm (an evidence-integrity failure, not an outcome); the shuffle limb is NOT_APPLICABLE",
+   "where": "draft K5"
+  },
+  {
+   "alt": "navsim_v1_lane",
+   "id": "AMB-6",
+   "sensitivity": false,
+   "text": "the held-out selection rule is not named in the S1 prereg",
+   "used": "navsim_v1 (the draft's rule; the harness docstring's invocation; selection_pair passes L=None, which navsim_v1_lane cannot use)",
+   "where": "S1 prereg 4.3 (pick PDMS / pick DAC)"
+  },
+  {
+   "alt": "withhold the H2 outcome as well",
+   "id": "AMB-7",
+   "sensitivity": false,
+   "text": "'investigated before any read' - blocks which reads",
+   "used": "an H1 identity defect makes the H1 outcome H1_IDENTITY_DEFECT (no promotion label) and is stamped on the H2 outcome; the H2 conditions are still computed",
+   "where": "S1 prereg 4.3 l.124"
+  },
+  {
+   "alt": "decide P3 on H1 too",
+   "id": "AMB-8",
+   "sensitivity": false,
+   "text": "the P3 decision names are H2_*; an H1 arm also gets a P3 number from the harness",
+   "used": "the P3 DECISION is taken for H2 arms only; an H1 arm's P3 is reported, undecided (H1's promotion rule does not use P3)",
+   "where": "S1 prereg 3 R3 / A2.1"
+  },
+  {
+   "alt": "-",
+   "id": "AMB-9",
+   "sensitivity": false,
+   "text": "'separated and above the seed floor': floor = largest |delta| between two N seeds of the paired MEAN delta; the test is the pair's CI lower bound > floor",
+   "used": "the harness's classify() (re-derived here and compared); the capped label 'separated, single seed, not yet a lever claim' counts as NOT above the floor",
+   "where": "S1 prereg 4.3 cond 2 + the harness classify()"
+  }
+ ],
+ "arms": {
+  "evidence_problems": {},
+  "partial_on_hf": {},
+  "present": [
+   "H1-s0",
+   "H1-s1",
+   "H1-s2",
+   "H2-s0",
+   "H2-s1",
+   "H2-s2",
+   "N-s0",
+   "N-s1",
+   "N-s2"
+  ],
+  "registered": [
+   "N-s0",
+   "N-s1",
+   "N-s2",
+   "H1-s0",
+   "H1-s1",
+   "H1-s2",
+   "H2-s0",
+   "H2-s1",
+   "H2-s2"
+  ],
+  "requested": [
+   "N-s0",
+   "N-s1",
+   "N-s2",
+   "H1-s0",
+   "H1-s1",
+   "H1-s2",
+   "H2-s0",
+   "H2-s1",
+   "H2-s2"
+  ]
+ },
+ "components": {},
+ "estimator": "paired log-cluster bootstrap, 10000 resamples, 95 %, seed 20260927 (aux_s1_readout / proxy_eval.boot's draw scheme)",
+ "families": {
+  "LATERAL": {
+   "measured_at_S1": "DAC sub-score of the PICK on the held-out sets (paired)",
+   "not_computed": "heading / cross-track / curvature / yaw-rate MAE (navtest families instrument; same reason)"
+  },
+  "LONGITUDINAL": {
+   "measured_at_S1": "EP and TTC sub-scores of the PICK on the 3,137 held-out sets (paired H - N, same seed)",
+   "not_computed": "speed MAE/bias, along-track MAE/bias, headway/time-gap (navtest families instrument; the planner seam does not apply H2's feed, S1 prereg 4.2)"
+  },
+  "STRATEGIC": {
+   "ruling": "PI 2026-09-19, PI_DECISION_QUEUE.md item 25: switched off temporarily until tactical and operative drive with high quality; reported as PAUSED, not a pass, not omitted, not extended to the other three",
+   "status": "PAUSED"
+  },
+  "TACTICAL": {
+   "measured_at_S1": "selection quality as pick / random / best-of-64 on the held-out sets, per arm (the random control is the arm's own fan mean)",
+   "not_computed": "lateral/longitudinal/5-way decision accuracy and kappa, command adherence (navtest families instrument); the paired CI of (actual - random) is not produced by the harness"
+  },
+  "components_by_pair": {
+   "H1-s0-minus-N-s0": {
+    "LATERAL": {
+     "DAC": {
+      "adverse": false,
+      "arm_mean_x100": 97.54542556582723,
+      "base_mean_x100": 97.6091807459356,
+      "better": 0,
+      "ci95": [
+       -0.15610853258955318,
+       0.0
+      ],
+      "mean": -0.06375518010838381,
+      "n": 3137,
+      "n_logs": 24,
+      "tied": 3135,
+      "worse": 2
+     }
+    },
+    "LONGITUDINAL": {
+     "EP": {
+      "adverse": false,
+      "arm_mean_x100": 84.6657580490915,
+      "base_mean_x100": 84.70786420146636,
+      "better": 81,
+      "ci95": [
+       -0.12317069787597383,
+       0.008540457269433066
+      ],
+      "mean": -0.04210615237488047,
+      "n": 3137,
+      "n_logs": 24,
+      "tied": 2974,
+      "worse": 82
+     },
+     "TTC": {
+      "adverse": false,
+      "arm_mean_x100": 96.78036340452661,
+      "base_mean_x100": 96.78036340452661,
+      "better": 1,
+      "ci95": [
+       -0.10166347199336405,
+       0.07849370608078331
+      ],
+      "mean": 0.0,
+      "n": 3137,
+      "n_logs": 24,
+      "tied": 3135,
+      "worse": 1
+     }
+    },
+    "TACTICAL": {
+     "head_arm": {
+      "PDMS_x100": 90.7085435926044,
+      "fan_best_x100": 98.7751214004888,
+      "fan_random_x100": 75.53882803679704,
+      "skill": 0.6528457580721996
+     },
+     "n_arm": {
+      "PDMS_x100": 90.76327834449049,
+      "fan_best_x100": 98.7751214004888,
+      "fan_random_x100": 75.53882803679704,
+      "skill": 0.6552013296355891
+     }
+    },
+    "n_logs": 24,
+    "n_sets": 3137
+   },
+   "H1-s1-minus-N-s1": {
+    "LATERAL": {
+     "DAC": {
+      "adverse": false,
+      "arm_mean_x100": 97.29040484539368,
+      "base_mean_x100": 97.35416002550207,
+      "better": 0,
+      "ci95": [
+       -0.16841255082735201,
+       0.0
+      ],
+      "mean": -0.06375518010838381,
+      "n": 3137,
+      "n_logs": 24,
+      "tied": 3135,
+      "worse": 2
+     }
+    },
+    "LONGITUDINAL": {
+     "EP": {
+      "adverse": false,
+      "arm_mean_x100": 84.23751291042397,
+      "base_mean_x100": 84.29456678355118,
+      "better": 75,
+      "ci95": [
+       -0.20831363897072652,
+       0.09678703481038443
+      ],
+      "mean": -0.05705387312719162,
+      "n": 3137,
+      "n_logs": 24,
+      "tied": 2968,
+      "worse": 94
+     },
+     "TTC": {
+      "adverse": false,
+      "arm_mean_x100": 97.00350653490595,
+      "base_mean_x100": 97.00350653490595,
+      "better": 2,
+      "ci95": [
+       -0.12962225479487638,
+       0.12480752540119089
+      ],
+      "mean": 0.0,
+      "n": 3137,
+      "n_logs": 24,
+      "tied": 3133,
+      "worse": 2
+     }
+    },
+    "TACTICAL": {
+     "head_arm": {
+      "PDMS_x100": 90.49424582934864,
+      "fan_best_x100": 98.7751214004888,
+      "fan_random_x100": 75.53882803679704,
+      "skill": 0.6436232129828601
+     },
+     "n_arm": {
+      "PDMS_x100": 90.54059823610669,
+      "fan_best_x100": 98.7751214004888,
+      "fan_random_x100": 75.53882803679704,
+      "skill": 0.6456180409028107
+     }
+    },
+    "n_logs": 24,
+    "n_sets": 3137
+   },
+   "H1-s2-minus-N-s2": {
+    "LATERAL": {
+     "DAC": {
+      "adverse": false,
+      "arm_mean_x100": 97.51354797577304,
+      "base_mean_x100": 97.51354797577304,
+      "better": 0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "mean": 0.0,
+      "n": 3137,
+      "n_logs": 24,
+      "tied": 3137,
+      "worse": 0
+     }
+    },
+    "LONGITUDINAL": {
+     "EP": {
+      "adverse": false,
+      "arm_mean_x100": 84.86634300286899,
+      "base_mean_x100": 84.84078642014663,
+      "better": 80,
+      "ci95": [
+       -0.04712155953601387,
+       0.12772480592678362
+      ],
+      "mean": 0.025556582722346226,
+      "n": 3137,
+      "n_logs": 24,
+      "tied": 2977,
+      "worse": 80
+     },
+     "TTC": {
+      "adverse": false,
+      "arm_mean_x100": 96.97162894485177,
+      "base_mean_x100": 97.00350653490595,
+      "better": 1,
+      "ci95": [
+       -0.1592957218505163,
+       0.07260034588894641
+      ],
+      "mean": -0.031877590054191905,
+      "n": 3137,
+      "n_logs": 24,
+      "tied": 3134,
+      "worse": 2
+     }
+    },
+    "TACTICAL": {
+     "head_arm": {
+      "PDMS_x100": 90.89572282435448,
+      "fan_best_x100": 98.7751214004888,
+      "fan_random_x100": 75.53882803679704,
+      "skill": 0.6609012266798803
+     },
+     "n_arm": {
+      "PDMS_x100": 90.89304364573373,
+      "fan_best_x100": 98.7751214004888,
+      "fan_random_x100": 75.53882803679704,
+      "skill": 0.6607859252168276
+     }
+    },
+    "n_logs": 24,
+    "n_sets": 3137
+   },
+   "H2-s0-minus-N-s0": {
+    "LATERAL": {
+     "DAC": {
+      "adverse": false,
+      "arm_mean_x100": 97.57730315588141,
+      "base_mean_x100": 97.6091807459356,
+      "better": 1,
+      "ci95": [
+       -0.12092081306129854,
+       0.0
+      ],
+      "mean": -0.031877590054191905,
+      "n": 3137,
+      "n_logs": 24,
+      "tied": 3134,
+      "worse": 2
+     }
+    },
+    "LONGITUDINAL": {
+     "EP": {
+      "adverse": false,
+      "arm_mean_x100": 84.63788396557219,
+      "base_mean_x100": 84.70786420146636,
+      "better": 96,
+      "ci95": [
+       -0.20235269877243064,
+       0.026733751262936152
+      ],
+      "mean": -0.0699802358941664,
+      "n": 3137,
+      "n_logs": 24,
+      "tied": 2932,
+      "worse": 109
+     },
+     "TTC": {
+      "adverse": false,
+      "arm_mean_x100": 96.71660822441824,
+      "base_mean_x100": 96.78036340452661,
+      "better": 0,
+      "ci95": [
+       -0.1577311960296976,
+       0.0
+      ],
+      "mean": -0.06375518010838381,
+      "n": 3137,
+      "n_logs": 24,
+      "tied": 3135,
+      "worse": 2
+     }
+    },
+    "TACTICAL": {
+     "head_arm": {
+      "PDMS_x100": 90.68364706194879,
+      "fan_best_x100": 98.7751214004888,
+      "fan_random_x100": 75.53882803679704,
+      "skill": 0.6517743078944136
+     },
+     "n_arm": {
+      "PDMS_x100": 90.76327834449049,
+      "fan_best_x100": 98.7751214004888,
+      "fan_random_x100": 75.53882803679704,
+      "skill": 0.6552013296355891
+     }
+    },
+    "n_logs": 24,
+    "n_sets": 3137
+   },
+   "H2-s1-minus-N-s1": {
+    "LATERAL": {
+     "DAC": {
+      "adverse": false,
+      "arm_mean_x100": 97.35416002550207,
+      "base_mean_x100": 97.35416002550207,
+      "better": 1,
+      "ci95": [
+       -0.08436772162034878,
+       0.10534171007441887
+      ],
+      "mean": 0.0,
+      "n": 3137,
+      "n_logs": 24,
+      "tied": 3135,
+      "worse": 1
+     }
+    },
+    "LONGITUDINAL": {
+     "EP": {
+      "adverse": false,
+      "arm_mean_x100": 84.40061332483265,
+      "base_mean_x100": 84.29456678355118,
+      "better": 114,
+      "ci95": [
+       -0.07511649313765788,
+       0.3145004547200057
+      ],
+      "mean": 0.10604654128147913,
+      "n": 3137,
+      "n_logs": 24,
+      "tied": 2929,
+      "worse": 94
+     },
+     "TTC": {
+      "adverse": false,
+      "arm_mean_x100": 97.03538412496016,
+      "base_mean_x100": 97.00350653490595,
+      "better": 2,
+      "ci95": [
+       -0.07374835438737476,
+       0.1453076529267452
+      ],
+      "mean": 0.031877590054191905,
+      "n": 3137,
+      "n_logs": 24,
+      "tied": 3134,
+      "worse": 1
+     }
+    },
+    "TACTICAL": {
+     "head_arm": {
+      "PDMS_x100": 90.6086924875146,
+      "fan_best_x100": 98.7751214004888,
+      "fan_random_x100": 75.53882803679704,
+      "skill": 0.6485485535427619
+     },
+     "n_arm": {
+      "PDMS_x100": 90.54059823610669,
+      "fan_best_x100": 98.7751214004888,
+      "fan_random_x100": 75.53882803679704,
+      "skill": 0.6456180409028107
+     }
+    },
+    "n_logs": 24,
+    "n_sets": 3137
+   },
+   "H2-s2-minus-N-s2": {
+    "LATERAL": {
+     "DAC": {
+      "adverse": false,
+      "arm_mean_x100": 97.51354797577304,
+      "base_mean_x100": 97.51354797577304,
+      "better": 0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "mean": 0.0,
+      "n": 3137,
+      "n_logs": 24,
+      "tied": 3137,
+      "worse": 0
+     }
+    },
+    "LONGITUDINAL": {
+     "EP": {
+      "adverse": false,
+      "arm_mean_x100": 84.88439783232387,
+      "base_mean_x100": 84.84078642014663,
+      "better": 87,
+      "ci95": [
+       -0.05482542137829209,
+       0.12463062935238838
+      ],
+      "mean": 0.043611412177239406,
+      "n": 3137,
+      "n_logs": 24,
+      "tied": 2958,
+      "worse": 92
+     },
+     "TTC": {
+      "adverse": false,
+      "arm_mean_x100": 97.03538412496016,
+      "base_mean_x100": 97.00350653490595,
+      "better": 3,
+      "ci95": [
+       -0.07054798230230634,
+       0.15802906192931623
+      ],
+      "mean": 0.031877590054191905,
+      "n": 3137,
+      "n_logs": 24,
+      "tied": 3132,
+      "worse": 2
+     }
+    },
+    "TACTICAL": {
+     "head_arm": {
+      "PDMS_x100": 90.93512326001488,
+      "fan_best_x100": 98.7751214004888,
+      "fan_random_x100": 75.53882803679704,
+      "skill": 0.6625968687103753
+     },
+     "n_arm": {
+      "PDMS_x100": 90.89304364573373,
+      "fan_best_x100": 98.7751214004888,
+      "fan_random_x100": 75.53882803679704,
+      "skill": 0.6607859252168276
+     }
+    },
+    "n_logs": 24,
+    "n_sets": 3137
+   }
+  },
+  "estimator": "paired log-cluster bootstrap, 10000 resamples, 95 %, seed 20260927 (aux_s1_readout / proxy_eval.boot's draw scheme)",
+  "tier": "T0-like: held-out selection and perception on teacher-forced banked sets (S1_POD_RUNBOOK l.5); never driving performance"
+ },
+ "fetch": {
+  "all_verified": true,
+  "bytes": 686844379,
+  "manifest": "fetch_manifest.json",
+  "n_files": 93,
+  "not_fetched": {
+   "dump/scores_update400_A.npz / _base.npz / step0_*": "the prereg reads arm B (the arm the harness docstring names); step0_B is compared by LISTING sha256 only",
+   "model_sft_B.pt": "1.29 GB per arm; no read needs it: selection reads the banked score dumps, perception reads aux_drv.pt on the cached u400 ctx (the trunk is frozen, S1 prereg 4.1), and A2.3 fixes the ctx of record to the planner's fp32 ctx",
+   "scorer_states_last.pt": "34 MB optimiser/scorer states; no read needs it"
+  },
+  "repo": "Sayood/tanitad-refe-s1aux",
+  "warnings": []
+ },
+ "instrument_failures": {},
+ "instrument_steps": {
+  "forward": {
+   "log": "forward.log",
+   "rc": 0,
+   "seconds": 552.11,
+   "tail": [
+    " \"gpu\": {}",
+    "}",
+    "ZZAUXFWD_OK 1058"
+   ]
+  },
+  "perception_heldout": {
+   "log": "perception_heldout.log",
+   "rc": 0,
+   "seconds": 8.96,
+   "tail": [
+    "ZZAUXS1_PERCEPTION_OK arms ['H1-s0', 'H1-s1', 'H1-s2', 'H2-s0', 'H2-s1', 'H2-s2'] floor_read ['H1-s0', 'H1-s1', 'H1-s2', 'H2-s0', 'H2-s1', 'H2-s2'] floor_unread []"
+   ]
+  },
+  "perception_navtest": {
+   "log": "perception_navtest.log",
+   "rc": 0,
+   "seconds": 20.49,
+   "tail": [
+    "ZZAUXS1_PERCEPTION_OK arms ['H1-s0', 'H1-s1', 'H1-s2', 'H2-s0', 'H2-s1', 'H2-s2'] floor_read ['H1-s0', 'H1-s1', 'H1-s2', 'H2-s0', 'H2-s1', 'H2-s2'] floor_unread []"
+   ]
+  },
+  "selection": {
+   "log": "selection.log",
+   "rc": 0,
+   "seconds": 49.24,
+   "tail": [
+    "ZZAUXS1_SELECTION_OK pairs ['H1-s0-minus-N-s0', 'H1-s1-minus-N-s1', 'H1-s2-minus-N-s2', 'H2-s0-minus-N-s0', 'H2-s1-minus-N-s1', 'H2-s2-minus-N-s2'] unpaired []"
+   ]
+  }
+ },
+ "not_computed": [
+  "E1 / E2 / E3 on the full navtest (PDMS, DAC-zero share, zeroed share): the planner seam does not apply H2's feed (S1 prereg 4.2); H2's verdict is a HELD-OUT SELECTION verdict, never an ADOPT",
+  "inference variance: REFe scoring is deterministic, ASSERTED by a second pass of the same checkpoint, not measured here",
+  "C-shuffle: not an S1 arm (Master Mind ruling 2026-10-13) => every H2 gain carries 'capacity not excluded'; K5's shuffle limb cannot fire",
+  "navtest PDMS for the H arms; the speed / along-track / heading / cross-track / curvature / yaw-rate / headway / decision-accuracy components of the four families (they need the navtest planner seam)"
+ ],
+ "outcome": {
+  "H1": {
+   "note": "H1's scorer must be bit-identical to N by construction; investigate BEFORE any H1 read (S1 prereg l.124). No promotion label is emitted.",
+   "outcome": "H1_IDENTITY_DEFECT",
+   "sensitivity_AMB-2": {
+    "differs": false,
+    "outcome_under_alt_H1_s0_only": "H1_IDENTITY_DEFECT"
+   }
+  },
+  "H2": {
+   "conditions": {
+    "1_p3": {
+     "mode": "all",
+     "ok": false,
+     "per_seed": {
+      "0": "H2_KILLED",
+      "1": "H2_KILLED",
+      "2": "H2_KILLED"
+     }
+    },
+    "2_pdms_pairs": {
+     "floor_measured": true,
+     "n_above_floor": 0,
+     "needed": 2,
+     "ok": false,
+     "per_seed": {
+      "0": "adverse",
+      "1": "not_separated",
+      "2": "not_separated"
+     }
+    },
+    "3_no_adverse": {
+     "adverse": [
+      "0:PDMS"
+     ],
+     "ok": false
+    },
+    "4_no_k2_k3_k6": {
+     "not_cleared": [
+      "0:K2",
+      "0:K6",
+      "1:K2",
+      "2:K2"
+     ],
+     "ok": false
+    }
+   },
+   "h1_identity_defect_open": true,
+   "if_promoted": "the first amendment is C-shuffle (derangement seed 20261011) before any S2 spend (S1 prereg 4.3 l.118)",
+   "outcome": "H2_NOT_PROMOTED",
+   "regime": null,
+   "sensitivity_AMB-1": {
+    "differs": false,
+    "outcome_under_alt_majority": "H2_NOT_PROMOTED"
+   },
+   "stamps": [
+    "capacity not excluded (no C-shuffle arm at S1)",
+    "a HELD-OUT SELECTION verdict (T0-like); never an ADOPT of the draft's rule (S1 prereg 4.2)"
+   ]
+  },
+  "classification": {
+   "H1-s0": {
+    "DAC": "not_separated",
+    "PDMS": "not_separated"
+   },
+   "H1-s1": {
+    "DAC": "not_separated",
+    "PDMS": "not_separated"
+   },
+   "H1-s2": {
+    "DAC": "not_separated",
+    "PDMS": "not_separated"
+   },
+   "H2-s0": {
+    "DAC": "not_separated",
+    "PDMS": "adverse"
+   },
+   "H2-s1": {
+    "DAC": "not_separated",
+    "PDMS": "not_separated"
+   },
+   "H2-s2": {
+    "DAC": "not_separated",
+    "PDMS": "not_separated"
+   }
+  },
+  "families": {
+   "LATERAL": {
+    "measured_at_S1": "DAC sub-score of the PICK on the held-out sets (paired)",
+    "not_computed": "heading / cross-track / curvature / yaw-rate MAE (navtest families instrument; same reason)"
+   },
+   "LONGITUDINAL": {
+    "measured_at_S1": "EP and TTC sub-scores of the PICK on the 3,137 held-out sets (paired H - N, same seed)",
+    "not_computed": "speed MAE/bias, along-track MAE/bias, headway/time-gap (navtest families instrument; the planner seam does not apply H2's feed, S1 prereg 4.2)"
+   },
+   "STRATEGIC": {
+    "ruling": "PI 2026-09-19, PI_DECISION_QUEUE.md item 25: switched off temporarily until tactical and operative drive with high quality; reported as PAUSED, not a pass, not omitted, not extended to the other three",
+    "status": "PAUSED"
+   },
+   "TACTICAL": {
+    "measured_at_S1": "selection quality as pick / random / best-of-64 on the held-out sets, per arm (the random control is the arm's own fan mean)",
+    "not_computed": "lateral/longitudinal/5-way decision accuracy and kappa, command adherence (navtest families instrument); the paired CI of (actual - random) is not produced by the harness"
+   },
+   "components_by_pair": {
+    "H1-s0-minus-N-s0": {
+     "LATERAL": {
+      "DAC": {
+       "adverse": false,
+       "arm_mean_x100": 97.54542556582723,
+       "base_mean_x100": 97.6091807459356,
+       "better": 0,
+       "ci95": [
+        -0.15610853258955318,
+        0.0
+       ],
+       "mean": -0.06375518010838381,
+       "n": 3137,
+       "n_logs": 24,
+       "tied": 3135,
+       "worse": 2
+      }
+     },
+     "LONGITUDINAL": {
+      "EP": {
+       "adverse": false,
+       "arm_mean_x100": 84.6657580490915,
+       "base_mean_x100": 84.70786420146636,
+       "better": 81,
+       "ci95": [
+        -0.12317069787597383,
+        0.008540457269433066
+       ],
+       "mean": -0.04210615237488047,
+       "n": 3137,
+       "n_logs": 24,
+       "tied": 2974,
+       "worse": 82
+      },
+      "TTC": {
+       "adverse": false,
+       "arm_mean_x100": 96.78036340452661,
+       "base_mean_x100": 96.78036340452661,
+       "better": 1,
+       "ci95": [
+        -0.10166347199336405,
+        0.07849370608078331
+       ],
+       "mean": 0.0,
+       "n": 3137,
+       "n_logs": 24,
+       "tied": 3135,
+       "worse": 1
+      }
+     },
+     "TACTICAL": {
+      "head_arm": {
+       "PDMS_x100": 90.7085435926044,
+       "fan_best_x100": 98.7751214004888,
+       "fan_random_x100": 75.53882803679704,
+       "skill": 0.6528457580721996
+      },
+      "n_arm": {
+       "PDMS_x100": 90.76327834449049,
+       "fan_best_x100": 98.7751214004888,
+       "fan_random_x100": 75.53882803679704,
+       "skill": 0.6552013296355891
+      }
+     },
+     "n_logs": 24,
+     "n_sets": 3137
+    },
+    "H1-s1-minus-N-s1": {
+     "LATERAL": {
+      "DAC": {
+       "adverse": false,
+       "arm_mean_x100": 97.29040484539368,
+       "base_mean_x100": 97.35416002550207,
+       "better": 0,
+       "ci95": [
+        -0.16841255082735201,
+        0.0
+       ],
+       "mean": -0.06375518010838381,
+       "n": 3137,
+       "n_logs": 24,
+       "tied": 3135,
+       "worse": 2
+      }
+     },
+     "LONGITUDINAL": {
+      "EP": {
+       "adverse": false,
+       "arm_mean_x100": 84.23751291042397,
+       "base_mean_x100": 84.29456678355118,
+       "better": 75,
+       "ci95": [
+        -0.20831363897072652,
+        0.09678703481038443
+       ],
+       "mean": -0.05705387312719162,
+       "n": 3137,
+       "n_logs": 24,
+       "tied": 2968,
+       "worse": 94
+      },
+      "TTC": {
+       "adverse": false,
+       "arm_mean_x100": 97.00350653490595,
+       "base_mean_x100": 97.00350653490595,
+       "better": 2,
+       "ci95": [
+        -0.12962225479487638,
+        0.12480752540119089
+       ],
+       "mean": 0.0,
+       "n": 3137,
+       "n_logs": 24,
+       "tied": 3133,
+       "worse": 2
+      }
+     },
+     "TACTICAL": {
+      "head_arm": {
+       "PDMS_x100": 90.49424582934864,
+       "fan_best_x100": 98.7751214004888,
+       "fan_random_x100": 75.53882803679704,
+       "skill": 0.6436232129828601
+      },
+      "n_arm": {
+       "PDMS_x100": 90.54059823610669,
+       "fan_best_x100": 98.7751214004888,
+       "fan_random_x100": 75.53882803679704,
+       "skill": 0.6456180409028107
+      }
+     },
+     "n_logs": 24,
+     "n_sets": 3137
+    },
+    "H1-s2-minus-N-s2": {
+     "LATERAL": {
+      "DAC": {
+       "adverse": false,
+       "arm_mean_x100": 97.51354797577304,
+       "base_mean_x100": 97.51354797577304,
+       "better": 0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "mean": 0.0,
+       "n": 3137,
+       "n_logs": 24,
+       "tied": 3137,
+       "worse": 0
+      }
+     },
+     "LONGITUDINAL": {
+      "EP": {
+       "adverse": false,
+       "arm_mean_x100": 84.86634300286899,
+       "base_mean_x100": 84.84078642014663,
+       "better": 80,
+       "ci95": [
+        -0.04712155953601387,
+        0.12772480592678362
+       ],
+       "mean": 0.025556582722346226,
+       "n": 3137,
+       "n_logs": 24,
+       "tied": 2977,
+       "worse": 80
+      },
+      "TTC": {
+       "adverse": false,
+       "arm_mean_x100": 96.97162894485177,
+       "base_mean_x100": 97.00350653490595,
+       "better": 1,
+       "ci95": [
+        -0.1592957218505163,
+        0.07260034588894641
+       ],
+       "mean": -0.031877590054191905,
+       "n": 3137,
+       "n_logs": 24,
+       "tied": 3134,
+       "worse": 2
+      }
+     },
+     "TACTICAL": {
+      "head_arm": {
+       "PDMS_x100": 90.89572282435448,
+       "fan_best_x100": 98.7751214004888,
+       "fan_random_x100": 75.53882803679704,
+       "skill": 0.6609012266798803
+      },
+      "n_arm": {
+       "PDMS_x100": 90.89304364573373,
+       "fan_best_x100": 98.7751214004888,
+       "fan_random_x100": 75.53882803679704,
+       "skill": 0.6607859252168276
+      }
+     },
+     "n_logs": 24,
+     "n_sets": 3137
+    },
+    "H2-s0-minus-N-s0": {
+     "LATERAL": {
+      "DAC": {
+       "adverse": false,
+       "arm_mean_x100": 97.57730315588141,
+       "base_mean_x100": 97.6091807459356,
+       "better": 1,
+       "ci95": [
+        -0.12092081306129854,
+        0.0
+       ],
+       "mean": -0.031877590054191905,
+       "n": 3137,
+       "n_logs": 24,
+       "tied": 3134,
+       "worse": 2
+      }
+     },
+     "LONGITUDINAL": {
+      "EP": {
+       "adverse": false,
+       "arm_mean_x100": 84.63788396557219,
+       "base_mean_x100": 84.70786420146636,
+       "better": 96,
+       "ci95": [
+        -0.20235269877243064,
+        0.026733751262936152
+       ],
+       "mean": -0.0699802358941664,
+       "n": 3137,
+       "n_logs": 24,
+       "tied": 2932,
+       "worse": 109
+      },
+      "TTC": {
+       "adverse": false,
+       "arm_mean_x100": 96.71660822441824,
+       "base_mean_x100": 96.78036340452661,
+       "better": 0,
+       "ci95": [
+        -0.1577311960296976,
+        0.0
+       ],
+       "mean": -0.06375518010838381,
+       "n": 3137,
+       "n_logs": 24,
+       "tied": 3135,
+       "worse": 2
+      }
+     },
+     "TACTICAL": {
+      "head_arm": {
+       "PDMS_x100": 90.68364706194879,
+       "fan_best_x100": 98.7751214004888,
+       "fan_random_x100": 75.53882803679704,
+       "skill": 0.6517743078944136
+      },
+      "n_arm": {
+       "PDMS_x100": 90.76327834449049,
+       "fan_best_x100": 98.7751214004888,
+       "fan_random_x100": 75.53882803679704,
+       "skill": 0.6552013296355891
+      }
+     },
+     "n_logs": 24,
+     "n_sets": 3137
+    },
+    "H2-s1-minus-N-s1": {
+     "LATERAL": {
+      "DAC": {
+       "adverse": false,
+       "arm_mean_x100": 97.35416002550207,
+       "base_mean_x100": 97.35416002550207,
+       "better": 1,
+       "ci95": [
+        -0.08436772162034878,
+        0.10534171007441887
+       ],
+       "mean": 0.0,
+       "n": 3137,
+       "n_logs": 24,
+       "tied": 3135,
+       "worse": 1
+      }
+     },
+     "LONGITUDINAL": {
+      "EP": {
+       "adverse": false,
+       "arm_mean_x100": 84.40061332483265,
+       "base_mean_x100": 84.29456678355118,
+       "better": 114,
+       "ci95": [
+        -0.07511649313765788,
+        0.3145004547200057
+       ],
+       "mean": 0.10604654128147913,
+       "n": 3137,
+       "n_logs": 24,
+       "tied": 2929,
+       "worse": 94
+      },
+      "TTC": {
+       "adverse": false,
+       "arm_mean_x100": 97.03538412496016,
+       "base_mean_x100": 97.00350653490595,
+       "better": 2,
+       "ci95": [
+        -0.07374835438737476,
+        0.1453076529267452
+       ],
+       "mean": 0.031877590054191905,
+       "n": 3137,
+       "n_logs": 24,
+       "tied": 3134,
+       "worse": 1
+      }
+     },
+     "TACTICAL": {
+      "head_arm": {
+       "PDMS_x100": 90.6086924875146,
+       "fan_best_x100": 98.7751214004888,
+       "fan_random_x100": 75.53882803679704,
+       "skill": 0.6485485535427619
+      },
+      "n_arm": {
+       "PDMS_x100": 90.54059823610669,
+       "fan_best_x100": 98.7751214004888,
+       "fan_random_x100": 75.53882803679704,
+       "skill": 0.6456180409028107
+      }
+     },
+     "n_logs": 24,
+     "n_sets": 3137
+    },
+    "H2-s2-minus-N-s2": {
+     "LATERAL": {
+      "DAC": {
+       "adverse": false,
+       "arm_mean_x100": 97.51354797577304,
+       "base_mean_x100": 97.51354797577304,
+       "better": 0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "mean": 0.0,
+       "n": 3137,
+       "n_logs": 24,
+       "tied": 3137,
+       "worse": 0
+      }
+     },
+     "LONGITUDINAL": {
+      "EP": {
+       "adverse": false,
+       "arm_mean_x100": 84.88439783232387,
+       "base_mean_x100": 84.84078642014663,
+       "better": 87,
+       "ci95": [
+        -0.05482542137829209,
+        0.12463062935238838
+       ],
+       "mean": 0.043611412177239406,
+       "n": 3137,
+       "n_logs": 24,
+       "tied": 2958,
+       "worse": 92
+      },
+      "TTC": {
+       "adverse": false,
+       "arm_mean_x100": 97.03538412496016,
+       "base_mean_x100": 97.00350653490595,
+       "better": 3,
+       "ci95": [
+        -0.07054798230230634,
+        0.15802906192931623
+       ],
+       "mean": 0.031877590054191905,
+       "n": 3137,
+       "n_logs": 24,
+       "tied": 3132,
+       "worse": 2
+      }
+     },
+     "TACTICAL": {
+      "head_arm": {
+       "PDMS_x100": 90.93512326001488,
+       "fan_best_x100": 98.7751214004888,
+       "fan_random_x100": 75.53882803679704,
+       "skill": 0.6625968687103753
+      },
+      "n_arm": {
+       "PDMS_x100": 90.89304364573373,
+       "fan_best_x100": 98.7751214004888,
+       "fan_random_x100": 75.53882803679704,
+       "skill": 0.6607859252168276
+      }
+     },
+     "n_logs": 24,
+     "n_sets": 3137
+    }
+   },
+   "estimator": "paired log-cluster bootstrap, 10000 resamples, 95 %, seed 20260927 (aux_s1_readout / proxy_eval.boot's draw scheme)",
+   "tier": "T0-like: held-out selection and perception on teacher-forced banked sets (S1_POD_RUNBOOK l.5); never driving performance"
+  },
+  "h1_identity": {
+   "0": {
+    "ambiguity": "AMB-7",
+    "defect": true,
+    "scores_arrays_bit_identical": false,
+    "scores_file_sha_equal": false,
+    "selection_identical": false,
+    "warning": null
+   },
+   "1": {
+    "ambiguity": "AMB-7",
+    "defect": true,
+    "scores_arrays_bit_identical": false,
+    "scores_file_sha_equal": false,
+    "selection_identical": false,
+    "warning": null
+   },
+   "2": {
+    "ambiguity": "AMB-7",
+    "defect": true,
+    "scores_arrays_bit_identical": false,
+    "scores_file_sha_equal": false,
+    "selection_identical": false,
+    "warning": null
+   }
+  },
+  "missing_arms": [],
+  "per_arm": {
+   "k2": {
+    "H1-s0": {
+     "decision": "K2_FIRES",
+     "iou_0_40": 0.4957035913034702,
+     "navtest_and_ho_agree": true,
+     "p1_ho": {
+      "decision": "K2_FIRES",
+      "iou_0_40": 0.6306652905987806
+     },
+     "source": "navtest P1 (governs)"
+    },
+    "H1-s1": {
+     "decision": "K2_FIRES",
+     "iou_0_40": 0.5210982139151368,
+     "navtest_and_ho_agree": true,
+     "p1_ho": {
+      "decision": "K2_FIRES",
+      "iou_0_40": 0.6432848895383303
+     },
+     "source": "navtest P1 (governs)"
+    },
+    "H1-s2": {
+     "decision": "K2_FIRES",
+     "iou_0_40": 0.4863984780737079,
+     "navtest_and_ho_agree": true,
+     "p1_ho": {
+      "decision": "K2_FIRES",
+      "iou_0_40": 0.6211404749835443
+     },
+     "source": "navtest P1 (governs)"
+    },
+    "H2-s0": {
+     "decision": "K2_FIRES",
+     "iou_0_40": 0.4957910085223813,
+     "navtest_and_ho_agree": true,
+     "p1_ho": {
+      "decision": "K2_FIRES",
+      "iou_0_40": 0.6307617920967487
+     },
+     "source": "navtest P1 (governs)"
+    },
+    "H2-s1": {
+     "decision": "K2_FIRES",
+     "iou_0_40": 0.5211195031193371,
+     "navtest_and_ho_agree": true,
+     "p1_ho": {
+      "decision": "K2_FIRES",
+      "iou_0_40": 0.6433249570012857
+     },
+     "source": "navtest P1 (governs)"
+    },
+    "H2-s2": {
+     "decision": "K2_FIRES",
+     "iou_0_40": 0.4862583758636253,
+     "navtest_and_ho_agree": true,
+     "p1_ho": {
+      "decision": "K2_FIRES",
+      "iou_0_40": 0.6211387003790372
+     },
+     "source": "navtest P1 (governs)"
+    }
+   },
+   "k3": {
+    "H1-s0": {
+     "ambiguity": "AMB-4",
+     "decision": "K3_CLEARED",
+     "gpu_mem_gb_delta_vs_N": 0.5199999999999996,
+     "head_retained_gb": 0.463,
+     "limb_gpu_delta_gt_1gb": false,
+     "limb_head_retained_gt_1gb": false,
+     "limb_time_gt_3pct": false,
+     "limb_time_median_window_gt_3pct": false,
+     "n_windows": [
+      16,
+      16
+     ],
+     "ruling": "A7.4",
+     "step_time_rise_vs_N": 0.02095448693656632,
+     "step_time_rise_vs_N_median_window": 0.020803743257844287,
+     "update_rows": [
+      400,
+      400
+     ]
+    },
+    "H1-s1": {
+     "ambiguity": "AMB-4",
+     "decision": "K3_CLEARED",
+     "gpu_mem_gb_delta_vs_N": 0.5199999999999996,
+     "head_retained_gb": 0.463,
+     "limb_gpu_delta_gt_1gb": false,
+     "limb_head_retained_gt_1gb": false,
+     "limb_time_gt_3pct": false,
+     "limb_time_median_window_gt_3pct": false,
+     "n_windows": [
+      16,
+      16
+     ],
+     "ruling": "A7.4",
+     "step_time_rise_vs_N": 0.021801129536664687,
+     "step_time_rise_vs_N_median_window": 0.021153098113965374,
+     "update_rows": [
+      400,
+      400
+     ]
+    },
+    "H1-s2": {
+     "ambiguity": "AMB-4",
+     "decision": "K3_CLEARED",
+     "gpu_mem_gb_delta_vs_N": 0.5199999999999996,
+     "head_retained_gb": 0.463,
+     "limb_gpu_delta_gt_1gb": false,
+     "limb_head_retained_gt_1gb": false,
+     "limb_time_gt_3pct": false,
+     "limb_time_median_window_gt_3pct": false,
+     "n_windows": [
+      16,
+      16
+     ],
+     "ruling": "A7.4",
+     "step_time_rise_vs_N": 0.022167294955528716,
+     "step_time_rise_vs_N_median_window": 0.02145306745496045,
+     "update_rows": [
+      400,
+      400
+     ]
+    },
+    "H2-s0": {
+     "ambiguity": "AMB-4",
+     "decision": "K3_CLEARED",
+     "gpu_mem_gb_delta_vs_N": 0.5099999999999998,
+     "head_retained_gb": 0.462,
+     "limb_gpu_delta_gt_1gb": false,
+     "limb_head_retained_gt_1gb": false,
+     "limb_time_gt_3pct": false,
+     "limb_time_median_window_gt_3pct": false,
+     "n_windows": [
+      16,
+      16
+     ],
+     "ruling": "A7.4",
+     "step_time_rise_vs_N": 0.023772631867092553,
+     "step_time_rise_vs_N_median_window": 0.02305237582194941,
+     "update_rows": [
+      400,
+      400
+     ]
+    },
+    "H2-s1": {
+     "ambiguity": "AMB-4",
+     "decision": "K3_CLEARED",
+     "gpu_mem_gb_delta_vs_N": 0.5099999999999998,
+     "head_retained_gb": 0.462,
+     "limb_gpu_delta_gt_1gb": false,
+     "limb_head_retained_gt_1gb": false,
+     "limb_time_gt_3pct": false,
+     "limb_time_median_window_gt_3pct": false,
+     "n_windows": [
+      16,
+      16
+     ],
+     "ruling": "A7.4",
+     "step_time_rise_vs_N": 0.022152511379700313,
+     "step_time_rise_vs_N_median_window": 0.02144242656433848,
+     "update_rows": [
+      400,
+      400
+     ]
+    },
+    "H2-s2": {
+     "ambiguity": "AMB-4",
+     "decision": "K3_CLEARED",
+     "gpu_mem_gb_delta_vs_N": 0.5099999999999998,
+     "head_retained_gb": 0.462,
+     "limb_gpu_delta_gt_1gb": false,
+     "limb_head_retained_gt_1gb": false,
+     "limb_time_gt_3pct": false,
+     "limb_time_median_window_gt_3pct": false,
+     "n_windows": [
+      16,
+      16
+     ],
+     "ruling": "A7.4",
+     "step_time_rise_vs_N": 0.022387104476063957,
+     "step_time_rise_vs_N_median_window": 0.021423725853080944,
+     "update_rows": [
+      400,
+      400
+     ]
+    }
+   },
+   "k6": {
+    "H1-s0": {
+     "alt_fires": {
+      "row_update25_vs_bce_declared": true,
+      "row_used_vs_ln2": false
+     },
+     "ambiguity": "AMB-3",
+     "aux_bce_at_row": 0.5687134112417698,
+     "bar": 0.5399647235870362,
+     "bce_step0": 0.5999608039855957,
+     "decision": "K6_FIRES",
+     "row_update": 50,
+     "sensitive_to_ambiguity": true
+    },
+    "H1-s1": {
+     "alt_fires": {
+      "row_update25_vs_bce_declared": false,
+      "row_used_vs_ln2": false
+     },
+     "ambiguity": "AMB-3",
+     "aux_bce_at_row": 0.5749338820576668,
+     "bar": 0.6700349628925324,
+     "bce_step0": 0.7444832921028137,
+     "decision": "K6_CLEARED",
+     "row_update": 50,
+     "sensitive_to_ambiguity": false
+    },
+    "H1-s2": {
+     "alt_fires": {
+      "row_update25_vs_bce_declared": true,
+      "row_used_vs_ln2": false
+     },
+     "ambiguity": "AMB-3",
+     "aux_bce_at_row": 0.58279744759202,
+     "bar": 0.666437691450119,
+     "bce_step0": 0.7404863238334656,
+     "decision": "K6_CLEARED",
+     "row_update": 50,
+     "sensitive_to_ambiguity": true
+    },
+    "H2-s0": {
+     "alt_fires": {
+      "row_update25_vs_bce_declared": true,
+      "row_used_vs_ln2": false
+     },
+     "ambiguity": "AMB-3",
+     "aux_bce_at_row": 0.5687134404480457,
+     "bar": 0.5399647235870362,
+     "bce_step0": 0.5999608039855957,
+     "decision": "K6_FIRES",
+     "row_update": 50,
+     "sensitive_to_ambiguity": true
+    },
+    "H2-s1": {
+     "alt_fires": {
+      "row_update25_vs_bce_declared": false,
+      "row_used_vs_ln2": false
+     },
+     "ambiguity": "AMB-3",
+     "aux_bce_at_row": 0.5749325309693814,
+     "bar": 0.6700349628925324,
+     "bce_step0": 0.7444832921028137,
+     "decision": "K6_CLEARED",
+     "row_update": 50,
+     "sensitive_to_ambiguity": false
+    },
+    "H2-s2": {
+     "alt_fires": {
+      "row_update25_vs_bce_declared": true,
+      "row_used_vs_ln2": false
+     },
+     "ambiguity": "AMB-3",
+     "aux_bce_at_row": 0.5827917917072774,
+     "bar": 0.666437691450119,
+     "bce_step0": 0.7404863238334656,
+     "decision": "K6_CLEARED",
+     "row_update": 50,
+     "sensitive_to_ambiguity": true
+    }
+   },
+   "p3": {
+    "H1-s0": {
+     "ambiguity": "AMB-8",
+     "auc_head": 0.7718339433603795,
+     "auc_scorer": 0.7873892277602128,
+     "decision": "NOT_DECIDED_FOR_H1",
+     "evaluate_threshold": 0.9,
+     "floor_lower_bound": 0.06488195451033314,
+     "reported_label": "H2_KILLED"
+    },
+    "H1-s1": {
+     "ambiguity": "AMB-8",
+     "auc_head": 0.7651051054826781,
+     "auc_scorer": 0.7873892277602128,
+     "decision": "NOT_DECIDED_FOR_H1",
+     "evaluate_threshold": 0.9,
+     "floor_lower_bound": 0.14977892682863703,
+     "reported_label": "H2_KILLED"
+    },
+    "H1-s2": {
+     "ambiguity": "AMB-8",
+     "auc_head": 0.7805395632457321,
+     "auc_scorer": 0.7873892277602128,
+     "decision": "NOT_DECIDED_FOR_H1",
+     "evaluate_threshold": 0.9,
+     "floor_lower_bound": 0.04130452055846881,
+     "reported_label": "H2_KILLED"
+    },
+    "H2-s0": {
+     "ambiguity": "AMB-8",
+     "auc_head": 0.7718048987654994,
+     "auc_scorer": 0.7873892277602128,
+     "decision": "H2_KILLED",
+     "evaluate_threshold": 0.9,
+     "floor_lower_bound": 0.06484495923935023,
+     "reported_label": "H2_KILLED"
+    },
+    "H2-s1": {
+     "ambiguity": "AMB-8",
+     "auc_head": 0.7650819168553069,
+     "auc_scorer": 0.7873892277602128,
+     "decision": "H2_KILLED",
+     "evaluate_threshold": 0.9,
+     "floor_lower_bound": 0.1497233611347599,
+     "reported_label": "H2_KILLED"
+    },
+    "H2-s2": {
+     "ambiguity": "AMB-8",
+     "auc_head": 0.7805549071700111,
+     "auc_scorer": 0.7873892277602128,
+     "decision": "H2_KILLED",
+     "evaluate_threshold": 0.9,
+     "floor_lower_bound": 0.041333904434641904,
+     "reported_label": "H2_KILLED"
+    }
+   }
+  },
+  "reads": [
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "N-s0",
+     "N-s1",
+     "N-s2"
+    ],
+    "clause": "S1 prereg 4.3 l.108 + draft 'Replicates': floor = largest |delta| between two N seeds, measured only with all three N runs; l.126: fewer than three N => capped",
+    "id": "SEED_FLOOR",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "H1-s0",
+     "N-s0",
+     "N-s1",
+     "N-s2"
+    ],
+    "clause": "S1 prereg 4.3 l.108: each seed pair Hx-sK minus N-sK on held-out pick PDMS and pick DAC; comparator of record = the SAME-seed N (section 2 l.48)",
+    "id": "SEL_H1_s0",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "H2-s0",
+     "N-s0",
+     "N-s1",
+     "N-s2"
+    ],
+    "clause": "S1 prereg 4.3 l.108: each seed pair Hx-sK minus N-sK on held-out pick PDMS and pick DAC; comparator of record = the SAME-seed N (section 2 l.48)",
+    "id": "SEL_H2_s0",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "H1-s1",
+     "N-s0",
+     "N-s1",
+     "N-s2"
+    ],
+    "clause": "S1 prereg 4.3 l.108: each seed pair Hx-sK minus N-sK on held-out pick PDMS and pick DAC; comparator of record = the SAME-seed N (section 2 l.48)",
+    "id": "SEL_H1_s1",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "H2-s1",
+     "N-s0",
+     "N-s1",
+     "N-s2"
+    ],
+    "clause": "S1 prereg 4.3 l.108: each seed pair Hx-sK minus N-sK on held-out pick PDMS and pick DAC; comparator of record = the SAME-seed N (section 2 l.48)",
+    "id": "SEL_H2_s1",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "H1-s2",
+     "N-s0",
+     "N-s1",
+     "N-s2"
+    ],
+    "clause": "S1 prereg 4.3 l.108: each seed pair Hx-sK minus N-sK on held-out pick PDMS and pick DAC; comparator of record = the SAME-seed N (section 2 l.48)",
+    "id": "SEL_H1_s2",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "H2-s2",
+     "N-s0",
+     "N-s1",
+     "N-s2"
+    ],
+    "clause": "S1 prereg 4.3 l.108: each seed pair Hx-sK minus N-sK on held-out pick PDMS and pick DAC; comparator of record = the SAME-seed N (section 2 l.48)",
+    "id": "SEL_H2_s2",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "H1-s0"
+    ],
+    "clause": "draft K2 + P1; S1 prereg 4.1 table l.91-96 (P1 row l.93: navtest P1 on the 1,058 C3 tokens; P1-HO is the fallback) and l.98 (navtest governs)",
+    "id": "K2_H1_s0",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "H1-s0"
+    ],
+    "clause": "S1 prereg 3 R2 (pooled AUC), R3 (H2_PROVISIONAL), A2.1 l.154-156 (paired floor), A2.3 (fp32 planner ctx)",
+    "id": "P3_H1_s0",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "H1-s0"
+    ],
+    "clause": "draft K6: aux_bce >= 0.9 x its step-0 value after 10 % of the arm's steps => stop",
+    "id": "K6_H1_s0",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "H1-s0",
+     "N-s0"
+    ],
+    "clause": "draft K3: measured step time rises > 3 % or peak memory > 1 GB; proposal 2 / S1_POD_RUNBOOK S1-D6 (read afterwards from the arm evidence)",
+    "id": "K3_H1_s0",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "H1-s0"
+    ],
+    "clause": "draft K5: the zero-weight / detached exact controls must be bit-identical (the G12 preflight fields); the shuffle limb cannot fire (no C-shuffle arm, S1 prereg 1 l.39)",
+    "id": "K5_H1_s0",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "H2-s0"
+    ],
+    "clause": "draft K2 + P1; S1 prereg 4.1 table l.91-96 (P1 row l.93: navtest P1 on the 1,058 C3 tokens; P1-HO is the fallback) and l.98 (navtest governs)",
+    "id": "K2_H2_s0",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "H2-s0"
+    ],
+    "clause": "S1 prereg 3 R2 (pooled AUC), R3 (H2_PROVISIONAL), A2.1 l.154-156 (paired floor), A2.3 (fp32 planner ctx)",
+    "id": "P3_H2_s0",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "H2-s0"
+    ],
+    "clause": "draft K6: aux_bce >= 0.9 x its step-0 value after 10 % of the arm's steps => stop",
+    "id": "K6_H2_s0",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "H2-s0",
+     "N-s0"
+    ],
+    "clause": "draft K3: measured step time rises > 3 % or peak memory > 1 GB; proposal 2 / S1_POD_RUNBOOK S1-D6 (read afterwards from the arm evidence)",
+    "id": "K3_H2_s0",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "H2-s0"
+    ],
+    "clause": "draft K5: the zero-weight / detached exact controls must be bit-identical (the G12 preflight fields); the shuffle limb cannot fire (no C-shuffle arm, S1 prereg 1 l.39)",
+    "id": "K5_H2_s0",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "H1-s1"
+    ],
+    "clause": "draft K2 + P1; S1 prereg 4.1 table l.91-96 (P1 row l.93: navtest P1 on the 1,058 C3 tokens; P1-HO is the fallback) and l.98 (navtest governs)",
+    "id": "K2_H1_s1",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "H1-s1"
+    ],
+    "clause": "S1 prereg 3 R2 (pooled AUC), R3 (H2_PROVISIONAL), A2.1 l.154-156 (paired floor), A2.3 (fp32 planner ctx)",
+    "id": "P3_H1_s1",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "H1-s1"
+    ],
+    "clause": "draft K6: aux_bce >= 0.9 x its step-0 value after 10 % of the arm's steps => stop",
+    "id": "K6_H1_s1",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "H1-s1",
+     "N-s1"
+    ],
+    "clause": "draft K3: measured step time rises > 3 % or peak memory > 1 GB; proposal 2 / S1_POD_RUNBOOK S1-D6 (read afterwards from the arm evidence)",
+    "id": "K3_H1_s1",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "H1-s1"
+    ],
+    "clause": "draft K5: the zero-weight / detached exact controls must be bit-identical (the G12 preflight fields); the shuffle limb cannot fire (no C-shuffle arm, S1 prereg 1 l.39)",
+    "id": "K5_H1_s1",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "H2-s1"
+    ],
+    "clause": "draft K2 + P1; S1 prereg 4.1 table l.91-96 (P1 row l.93: navtest P1 on the 1,058 C3 tokens; P1-HO is the fallback) and l.98 (navtest governs)",
+    "id": "K2_H2_s1",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "H2-s1"
+    ],
+    "clause": "S1 prereg 3 R2 (pooled AUC), R3 (H2_PROVISIONAL), A2.1 l.154-156 (paired floor), A2.3 (fp32 planner ctx)",
+    "id": "P3_H2_s1",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "H2-s1"
+    ],
+    "clause": "draft K6: aux_bce >= 0.9 x its step-0 value after 10 % of the arm's steps => stop",
+    "id": "K6_H2_s1",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "H2-s1",
+     "N-s1"
+    ],
+    "clause": "draft K3: measured step time rises > 3 % or peak memory > 1 GB; proposal 2 / S1_POD_RUNBOOK S1-D6 (read afterwards from the arm evidence)",
+    "id": "K3_H2_s1",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "H2-s1"
+    ],
+    "clause": "draft K5: the zero-weight / detached exact controls must be bit-identical (the G12 preflight fields); the shuffle limb cannot fire (no C-shuffle arm, S1 prereg 1 l.39)",
+    "id": "K5_H2_s1",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "H1-s2"
+    ],
+    "clause": "draft K2 + P1; S1 prereg 4.1 table l.91-96 (P1 row l.93: navtest P1 on the 1,058 C3 tokens; P1-HO is the fallback) and l.98 (navtest governs)",
+    "id": "K2_H1_s2",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "H1-s2"
+    ],
+    "clause": "S1 prereg 3 R2 (pooled AUC), R3 (H2_PROVISIONAL), A2.1 l.154-156 (paired floor), A2.3 (fp32 planner ctx)",
+    "id": "P3_H1_s2",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "H1-s2"
+    ],
+    "clause": "draft K6: aux_bce >= 0.9 x its step-0 value after 10 % of the arm's steps => stop",
+    "id": "K6_H1_s2",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "H1-s2",
+     "N-s2"
+    ],
+    "clause": "draft K3: measured step time rises > 3 % or peak memory > 1 GB; proposal 2 / S1_POD_RUNBOOK S1-D6 (read afterwards from the arm evidence)",
+    "id": "K3_H1_s2",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "H1-s2"
+    ],
+    "clause": "draft K5: the zero-weight / detached exact controls must be bit-identical (the G12 preflight fields); the shuffle limb cannot fire (no C-shuffle arm, S1 prereg 1 l.39)",
+    "id": "K5_H1_s2",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "H2-s2"
+    ],
+    "clause": "draft K2 + P1; S1 prereg 4.1 table l.91-96 (P1 row l.93: navtest P1 on the 1,058 C3 tokens; P1-HO is the fallback) and l.98 (navtest governs)",
+    "id": "K2_H2_s2",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "H2-s2"
+    ],
+    "clause": "S1 prereg 3 R2 (pooled AUC), R3 (H2_PROVISIONAL), A2.1 l.154-156 (paired floor), A2.3 (fp32 planner ctx)",
+    "id": "P3_H2_s2",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "H2-s2"
+    ],
+    "clause": "draft K6: aux_bce >= 0.9 x its step-0 value after 10 % of the arm's steps => stop",
+    "id": "K6_H2_s2",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "H2-s2",
+     "N-s2"
+    ],
+    "clause": "draft K3: measured step time rises > 3 % or peak memory > 1 GB; proposal 2 / S1_POD_RUNBOOK S1-D6 (read afterwards from the arm evidence)",
+    "id": "K3_H2_s2",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "H2-s2"
+    ],
+    "clause": "draft K5: the zero-weight / detached exact controls must be bit-identical (the G12 preflight fields); the shuffle limb cannot fire (no C-shuffle arm, S1 prereg 1 l.39)",
+    "id": "K5_H2_s2",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "H1-s0",
+     "N-s0"
+    ],
+    "clause": "S1 prereg 4.3 l.124: H1's scorer is bit-identical to N by construction; any H1-vs-N difference in selection is a defect, investigated before any read",
+    "id": "H1_IDENTITY_s0",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "H1-s1",
+     "N-s1"
+    ],
+    "clause": "S1 prereg 4.3 l.124: H1's scorer is bit-identical to N by construction; any H1-vs-N difference in selection is a defect, investigated before any read",
+    "id": "H1_IDENTITY_s1",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "H1-s2",
+     "N-s2"
+    ],
+    "clause": "S1 prereg 4.3 l.124: H1's scorer is bit-identical to N by construction; any H1-vs-N difference in selection is a defect, investigated before any read",
+    "id": "H1_IDENTITY_s2",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "H2-s0",
+     "H2-s1",
+     "H2-s2",
+     "N-s0",
+     "N-s1",
+     "N-s2"
+    ],
+    "clause": "S1 prereg 4.3 l.110-118: conditions 1-4 (l.111-114), otherwise-not-promoted (l.116), C-shuffle amendment (l.118)",
+    "id": "PROMOTE_H2",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "H1-s0",
+     "H1-s1",
+     "H1-s2",
+     "N-s0",
+     "N-s1",
+     "N-s2"
+    ],
+    "clause": "S1 prereg 4.3 l.120-122",
+    "id": "PROMOTE_H1",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "N-s0",
+     "N-s1",
+     "N-s2",
+     "H1-s0",
+     "H1-s1",
+     "H1-s2",
+     "H2-s0",
+     "H2-s1",
+     "H2-s2"
+    ],
+    "clause": "draft 'Four families' + S1 prereg 4.2 l.100-104 (navtest families not computed at S1; STRATEGIC PAUSED, PI 2026-09-19 item 25)",
+    "id": "FAMILIES",
+    "status": "READ"
+   },
+   {
+    "arms_missing": [],
+    "arms_needed": [
+     "N-s0",
+     "N-s1",
+     "N-s2",
+     "H1-s0",
+     "H1-s1",
+     "H1-s2",
+     "H2-s0",
+     "H2-s1",
+     "H2-s2"
+    ],
+    "clause": "S1 prereg A5 l.298: 'The first S1 read happens after all registered arms exist'; A3.3 l.233-237: all nine registered arms run, both H1 replicates are reported",
+    "id": "S1_OVERALL",
+    "status": "READ"
+   }
+  ],
+  "seed_floor": {
+   "floor": {
+    "DAC": 0.25502072043353524,
+    "EP": 0.5462196365954735,
+    "NC": 0.22314313037934333,
+    "PDMS": 0.3524454096270321,
+    "TTC": 0.22314313037934333
+   },
+   "measured": true,
+   "n_n_seeds": 3,
+   "n_vs_n_deltas": {
+    "N-s1-minus-N-s0": {
+     "DAC": -0.25502072043353524,
+     "EP": -0.41329741791520563,
+     "NC": 0.031877590054191905,
+     "PDMS": -0.2226801083838063,
+     "TTC": 0.22314313037934333
+    },
+    "N-s2-minus-N-s0": {
+     "DAC": -0.09563277016257571,
+     "EP": 0.13292221868026777,
+     "NC": 0.22314313037934333,
+     "PDMS": 0.12976530124322594,
+     "TTC": 0.22314313037934333
+    },
+    "N-s2-minus-N-s1": {
+     "DAC": 0.1593879502709595,
+     "EP": 0.5462196365954735,
+     "NC": 0.19126554032515142,
+     "PDMS": 0.3524454096270321,
+     "TTC": 0.0
+    }
+   }
+  },
+  "status": "READ"
+ },
+ "pins": {
+  "k2_iou_min": 0.8,
+  "k3": [
+   0.03,
+   1.0
+  ],
+  "k6": [
+   0.9,
+   0.1
+  ],
+  "n_boot": 10000,
+  "p3_floor": 0.9,
+  "p3_margin": 0.05,
+  "rule": "navsim_v1",
+  "seed": 20260927
+ },
+ "plumbing": {},
+ "prereg": {
+  "amendments": "A1-A6",
+  "file": "eval/PREREG_AUX_DRIVABLE_S1.md",
+  "harness": "aux_s1_readout/1 @ 20fa3548"
+ },
+ "question_answered": "answers 'would another draw of LOGS say this?' ONLY; training-run variance is the N-vs-N seed floor (H-ESTIM-SEED-1); inference variance: REFe scoring is deterministic, ASSERTED not measured",
+ "tier": "T0-like: held-out selection and perception on teacher-forced banked sets (S1_POD_RUNBOOK l.5); never driving performance",
+ "timings_s": {
+  "fetch": 0.8,
+  "forward": 552.11,
+  "listing": 0.68,
+  "perception_heldout": 8.96,
+  "perception_navtest": 20.49,
+  "selection": 49.24,
+  "total": 633.89,
+  "untar_pdm": 0.0
+ },
+ "tool": "s1_read/1"
+}

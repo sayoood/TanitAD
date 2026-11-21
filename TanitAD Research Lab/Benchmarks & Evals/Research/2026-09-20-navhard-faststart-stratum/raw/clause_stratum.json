@@ -1,0 +1,84 @@
+{
+ "_class": "EXPLORATORY on warmup (scores already known) -- NOT a confirmatory test",
+ "n": 204,
+ "n_fired": 37,
+ "n_not_fired": 167,
+ "Q1_stop_vs_cv_by_clause": {
+  "clause_FIRED": {
+   "n_scenes": 37,
+   "n_CLUSTERS": 12,
+   "STOP_mean": 0.326,
+   "CV_mean": 0.1081,
+   "mean_STOP_minus_CV": 0.2179,
+   "CI95_cluster_bootstrap": [
+    0.0813,
+    0.3887
+   ],
+   "separated_from_zero": true,
+   "STOP_wins_on": 15,
+   "CV_wins_on": 0,
+   "ties": 22
+  },
+  "clause_NOT_fired": {
+   "n_scenes": 167,
+   "n_CLUSTERS": 16,
+   "STOP_mean": 0.5463,
+   "CV_mean": 0.4348,
+   "mean_STOP_minus_CV": 0.1114,
+   "CI95_cluster_bootstrap": [
+    0.0292,
+    0.1821
+   ],
+   "separated_from_zero": true,
+   "STOP_wins_on": 68,
+   "CV_wins_on": 83,
+   "ties": 16
+  },
+  "ALL": {
+   "n_scenes": 204,
+   "n_CLUSTERS": 16,
+   "STOP_mean": 0.5063,
+   "CV_mean": 0.3756,
+   "mean_STOP_minus_CV": 0.1307,
+   "CI95_cluster_bootstrap": [
+    0.0582,
+    0.1929
+   ],
+   "separated_from_zero": true,
+   "STOP_wins_on": 83,
+   "CV_wins_on": 83,
+   "ties": 38
+  }
+ },
+ "_estimator": "paired bootstrap over ORIGINAL-SCENE clusters (B=10,000, seed 20260920). \u26d4 NOT over scenes: 204 synthetic scenes come from 16 originals, so a per-scene interval is pseudo-replication.",
+ "Q2_multiplier_compliance_by_speed": {
+  "FAST_ge5": {
+   "n": 83,
+   "clause_fires": 0.3253,
+   "CV.no_at_fault_collisions": 0.3855,
+   "CV.drivable_area_compliance": 0.5663,
+   "CV.driving_direction_compliance": 0.5964,
+   "CV.traffic_light_compliance": 0.9036,
+   "A1.no_at_fault_collisions": 0.5663,
+   "A1.drivable_area_compliance": 0.6024,
+   "A1.driving_direction_compliance": 0.7108,
+   "A1.traffic_light_compliance": 0.9157
+  },
+  "SLOW_lt5": {
+   "n": 121,
+   "clause_fires": 0.0826,
+   "CV.no_at_fault_collisions": 0.8843,
+   "CV.drivable_area_compliance": 0.8182,
+   "CV.driving_direction_compliance": 0.9587,
+   "CV.traffic_light_compliance": 0.9752,
+   "A1.no_at_fault_collisions": 0.9587,
+   "A1.drivable_area_compliance": 0.8843,
+   "A1.driving_direction_compliance": 0.9587,
+   "A1.traffic_light_compliance": 0.9917
+  }
+ },
+ "Q3_separation": {
+  "speed_split_|gap_fast - gap_slow|": 0.0729,
+  "clause_split_|gap_fired - gap_notfired|": 0.1065
+ }
+}

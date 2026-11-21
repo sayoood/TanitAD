@@ -1,0 +1,218 @@
+{
+  "params": {
+    "wp_index_params": 840,
+    "bev_coupling_params": 3210
+  },
+  "sampler_bev_passed": {
+    "layer0.cross[IMAGE]": {
+      "calls": 3,
+      "kind": "cross",
+      "ctx_shapes": [
+        "(2, 16, 32)"
+      ],
+      "q_shapes": [
+        "(2, 6, 32)"
+      ],
+      "n_distinct_ctx_ptrs": 1,
+      "bev_none_calls": 0
+    },
+    "layer0.cross_agent[AGENT]": {
+      "calls": 3,
+      "kind": "cross_agent",
+      "ctx_shapes": [
+        "(2, 5, 32)"
+      ],
+      "q_shapes": [
+        "(2, 6, 32)"
+      ],
+      "n_distinct_ctx_ptrs": 1,
+      "bev_none_calls": 0
+    },
+    "layer1.cross[IMAGE]": {
+      "calls": 3,
+      "kind": "cross",
+      "ctx_shapes": [
+        "(2, 16, 32)"
+      ],
+      "q_shapes": [
+        "(2, 6, 32)"
+      ],
+      "n_distinct_ctx_ptrs": 1,
+      "bev_none_calls": 0
+    },
+    "layer1.cross_agent[AGENT]": {
+      "calls": 3,
+      "kind": "cross_agent",
+      "ctx_shapes": [
+        "(2, 5, 32)"
+      ],
+      "q_shapes": [
+        "(2, 6, 32)"
+      ],
+      "n_distinct_ctx_ptrs": 1,
+      "bev_none_calls": 0
+    }
+  },
+  "classifier_bev_passed": {
+    "layer0.cross[IMAGE]": {
+      "calls": 3,
+      "kind": "cross",
+      "ctx_shapes": [
+        "(2, 16, 32)"
+      ],
+      "q_shapes": [
+        "(2, 6, 32)"
+      ],
+      "n_distinct_ctx_ptrs": 1,
+      "bev_none_calls": 0
+    },
+    "layer0.cross_agent[AGENT]": {
+      "calls": 3,
+      "kind": "cross_agent",
+      "ctx_shapes": [
+        "(2, 5, 32)"
+      ],
+      "q_shapes": [
+        "(2, 6, 32)"
+      ],
+      "n_distinct_ctx_ptrs": 1,
+      "bev_none_calls": 0
+    },
+    "layer1.cross[IMAGE]": {
+      "calls": 3,
+      "kind": "cross",
+      "ctx_shapes": [
+        "(2, 16, 32)"
+      ],
+      "q_shapes": [
+        "(2, 6, 32)"
+      ],
+      "n_distinct_ctx_ptrs": 1,
+      "bev_none_calls": 0
+    },
+    "layer1.cross_agent[AGENT]": {
+      "calls": 3,
+      "kind": "cross_agent",
+      "ctx_shapes": [
+        "(2, 5, 32)"
+      ],
+      "q_shapes": [
+        "(2, 6, 32)"
+      ],
+      "n_distinct_ctx_ptrs": 1,
+      "bev_none_calls": 0
+    }
+  },
+  "sampler_bev_absent": {
+    "layer0.cross[IMAGE]": {
+      "calls": 3,
+      "kind": "cross",
+      "ctx_shapes": [
+        "(2, 16, 32)"
+      ],
+      "q_shapes": [
+        "(2, 6, 32)"
+      ],
+      "n_distinct_ctx_ptrs": 1,
+      "bev_none_calls": 0
+    },
+    "layer0.cross_agent[AGENT]": {
+      "calls": 3,
+      "kind": "cross_agent",
+      "ctx_shapes": [
+        "(2, 5, 32)"
+      ],
+      "q_shapes": [
+        "(2, 6, 32)"
+      ],
+      "n_distinct_ctx_ptrs": 1,
+      "bev_none_calls": 0
+    },
+    "layer1.cross[IMAGE]": {
+      "calls": 3,
+      "kind": "cross",
+      "ctx_shapes": [
+        "(2, 16, 32)"
+      ],
+      "q_shapes": [
+        "(2, 6, 32)"
+      ],
+      "n_distinct_ctx_ptrs": 1,
+      "bev_none_calls": 0
+    },
+    "layer1.cross_agent[AGENT]": {
+      "calls": 3,
+      "kind": "cross_agent",
+      "ctx_shapes": [
+        "(2, 5, 32)"
+      ],
+      "q_shapes": [
+        "(2, 6, 32)"
+      ],
+      "n_distinct_ctx_ptrs": 1,
+      "bev_none_calls": 0
+    }
+  },
+  "context_ptrs_by_kind": {
+    "cross": [
+      "5636742995968"
+    ],
+    "cross_agent": [
+      "5636744020480"
+    ]
+  },
+  "ptr_disjoint_image_vs_agent": true,
+  "ptr_disjoint_image_vs_bev": true,
+  "out_keys": [
+    "anchor_bank",
+    "anchor_logits",
+    "anchor_traj",
+    "layer_logits",
+    "layer_u0_hat",
+    "offset",
+    "refined_logits",
+    "sel_idx",
+    "sel_score",
+    "sel_tele",
+    "traj",
+    "u0_hat"
+  ],
+  "sampler_tele": {
+    "sampler": "ddim",
+    "sampler_space": "control",
+    "sampler_ladder": [
+      10,
+      0
+    ],
+    "sampler_infer_t": 8,
+    "sampler_ranks_the_fan": false,
+    "refcv6": {
+      "f1_random_t": true,
+      "f1_t_max": 50,
+      "f2_dd_step": true,
+      "f3_per_layer": true,
+      "f4_adaln": true,
+      "f4_zero_init": false,
+      "f5_emitting_conf": true,
+      "f5_focal": true,
+      "f6_w_u0_zero": true,
+      "f7_samples_per_anchor": 1,
+      "f7_ack_eval_join": false,
+      "f8_flat_waypoint_noise": false,
+      "f9_assert_vocab": false,
+      "any_on": true
+    },
+    "refcv6_pairs": [
+      [
+        10,
+        9
+      ],
+      [
+        0,
+        -1
+      ]
+    ],
+    "refcv6_train_t": null,
+    "refcv6_cascade_stages": 4
+  }
+}

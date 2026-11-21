@@ -1,0 +1,23 @@
+--- a/stack/tanitad/refs/refc_v3.py (batch 2)
++++ b/stack/tanitad/refs/refc_v3.py (batch 3)
+@@ -1305,6 +1305,20 @@
+         self.scorer = GoalDistanceScorer(d_goal_embed=cfg.d_tac,
+                                          n_candidates=cfg.core.anchors.n_anchors,
+                                          tau_m=cfg.scorer_tau_m)
++        # ⛔⛔ BATCH 3 (a), 2026-09-27: E9 ALWAYS hands the scorer the STRUCTURED goal
++        # (`goal_point=g2` in `forward`), so its FREE decode `goal_point` (zero-init,
++        # `v6.GoalDistanceScorer`) is bypassed BY CONSTRUCTION: it is returned only as
++        # `goal_point_free` (the E-AG2 control) and read by no loss -- the launch gate's G-LIVE
++        # MEASURED it at zero gradient on the refcv7 argv. Declared, not deleted
++        # (`tanitad/models/_gradreach.py`): it stays built (strict checkpoint loads), leaves the
++        # optimizer, and G-DVB holds the declaration against argv.
++        # ⚠️ E-AG2's free-vs-structured comparison therefore compares against an UNFITTED (zero)
++        # decode on this model; fitting it would need its own loss -- a design decision.
++        from tanitad.models._gradreach import declare_grad_unreachable
++        declare_grad_unreachable(
++            self.scorer.goal_point,
++            "E9 always passes goal_point=g2 (the structured goal); the free decode is returned "
++            "only as out['goal_point_free'] and read by no training loss")
+         self.goal_gate = nn.Parameter(torch.zeros(()))   # zero-init: bit-inert
+         self._seam = sl.SeamState()                      # not a buffer (no ckpt key)
+         # ⭐ refcv7 — built LAST, so an OFF build draws exactly the same RNG

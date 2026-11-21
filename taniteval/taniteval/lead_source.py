@@ -28,7 +28,7 @@ egomotion track and returns the clip time of every pose index, with the fit resi
 bad registration is loud rather than plausible. It is exact to the interpolation the cache was built
 with, needs no camera clock, and works for the raw epcache, the v2 cache and any future format.
 
-⛔ THREE WINDOW STATES, NEVER TWO. A window is ``LEAD`` (a causal in-corridor vehicle ahead),
+⛔ FOUR WINDOW STATES, NEVER TWO. A window is ``LEAD`` (a causal in-corridor vehicle ahead),
 ``NO_LEAD`` (labels present, road genuinely clear) or ``NO_LABEL`` (no `obstacle.offline` for this
 clip, or ``t0`` outside the ~20 s labelled span). ⚠️ Collapsing the third into the second is exactly
 the bias this instrument exists to avoid: 2.44 % of the corpus has no `obstacle.offline` at all, and
@@ -69,6 +69,11 @@ VEHICLE_CLASSES = ("automobile", "heavy_truck", "bus", "other_vehicle", "trailer
 #: window states. Exhaustive and mutually exclusive — see the module docstring.
 LEAD = "LEAD"
 NO_LEAD = "NO_LEAD"
+#: the ego is turning or in a curve, so a STRAIGHT corridor is not a valid proxy for
+#: "my lane ahead" (Sayed, 2026-08-26). ⛔ Its own state, NEVER folded into NO_LEAD:
+#: a bend hides the real lead outside the band, and calling that "clear road" would
+#: MANUFACTURE FREE FLOW exactly as an absorbed NO_LABEL would.
+NOT_STRAIGHT = "NOT_STRAIGHT"
 NO_LABEL = "NO_LABEL"
 
 #: registration is rejected above this median residual (metres). The episode poses ARE the
@@ -78,7 +83,8 @@ MAX_REGISTRATION_RESIDUAL_M = 0.25
 
 __all__ = [
     "WINDOW", "K_MAX", "STRIDE", "LEAD_LAT_M", "LEAD_MAX_GAP_M", "MAX_STALE_S",
-    "VEHICLE_CLASSES", "LEAD", "NO_LEAD", "NO_LABEL",
+    "VEHICLE_CLASSES", "LEAD", "NO_LEAD", "NO_LABEL", "NOT_STRAIGHT",
+    "ego_lateral_departure",
     "MAX_REGISTRATION_RESIDUAL_M", "RegistrationError",
     "window_last_indices", "register_poses_to_time", "select_lead_causal",
     "lead_track_in_window", "lead_block",
@@ -326,6 +332,49 @@ def lead_track_in_window(obs_t, obs_track, obs_x, obs_y, track, t0: float,
 # --------------------------------------------------------------------------- #
 # 4. the block four_families consumes                                          #
 # --------------------------------------------------------------------------- #
+def ego_lateral_departure(t0, ego_t, ego_x, ego_y, ego_yaw, along_m):
+    """Max |lateral| of the EGO'S OWN future path, in the ``t0`` frame, over ``along_m`` of path.
+
+    The straight-driving gate (Sayed, 2026-08-26). ⭐ It reuses the corridor's OWN half-width
+    rather than introducing a curvature threshold: the question is not "is the road curved"
+    in the abstract, but "does a straight band still describe my lane over the distance I am
+    about to make a claim about". That makes the gate self-consistent with the selection rule
+    and adds no tunable constant.
+
+    ⚠️ Deliberately NON-CAUSAL — it reads the ego's future path. That is admissible because
+    this is LABEL derivation (Sayed, 2026-08-03: labels may use ego; only inference is
+    vision-only), and because the block is already non-causal in the metric half (the lead's
+    future track). Only :func:`select_lead_causal` is strictly causal, and it stays that way.
+
+    Returns:
+        ``(max_abs_lat_m, checked_m)``. ``checked_m`` is how far the track ACTUALLY reached;
+        a short check is weaker evidence and is reported per window, never absorbed.
+    """
+    et = np.asarray(ego_t, float)
+    ex = np.asarray(ego_x, float)
+    ey = np.asarray(ego_y, float)
+    if et.size == 0 or not np.isfinite(along_m) or along_m <= 0:
+        return float("nan"), 0.0
+    fut = et >= t0
+    if not fut.any():
+        return float("nan"), 0.0
+    x0 = float(np.interp(t0, et, ex))
+    y0 = float(np.interp(t0, et, ey))
+    yaw0 = float(np.interp(t0, et, np.asarray(ego_yaw, float)))
+    c0, s0 = np.cos(yaw0), np.sin(yaw0)
+    x, y = ex[fut], ey[fut]
+    dx, dy = x - x0, y - y0
+    fwd = c0 * dx + s0 * dy
+    lat = -s0 * dx + c0 * dy
+    arc = np.cumsum(np.hypot(np.diff(x, prepend=x0), np.diff(y, prepend=y0)))
+    # only the stretch that is BOTH within the range of interest and actually ahead:
+    # a reversing or stationary sample is not lane geometry.
+    keep = (arc <= along_m) & (fwd >= 0.0) & np.isfinite(lat)
+    if not keep.any():
+        return float("nan"), 0.0
+    return float(np.abs(lat[keep]).max()), float(arc[keep].max())
+
+
 def lead_block(t0s, ts_rel, obs, ego, *, lat_m: float = LEAD_LAT_M,
                max_gap_m: float = LEAD_MAX_GAP_M,
                max_stale_s: float = MAX_STALE_S) -> dict:
@@ -354,6 +403,8 @@ def lead_block(t0s, ts_rel, obs, ego, *, lat_m: float = LEAD_LAT_M,
     speeds = np.full(w, np.nan)
     state = np.array([NO_LABEL] * w, dtype=object)
     gap0 = np.full(w, np.nan)
+    straight_dep = np.full(w, np.nan)
+    straight_checked = np.full(w, np.nan)
 
     et = np.asarray(ego["t"], float)
     speeds[:] = np.interp(t0s, et, np.asarray(ego["v"], float))
@@ -373,6 +424,19 @@ def lead_block(t0s, ts_rel, obs, ego, *, lat_m: float = LEAD_LAT_M,
                 ot, obs["track"], obs["center_x"], obs["center_y"], obs["size_x"],
                 obs["is_vehicle"], float(t0), lat_m=lat_m, max_gap_m=max_gap_m,
                 max_stale_s=max_stale_s)
+            # ⭐ THE STRAIGHT-DRIVING GATE, over the range this window makes a claim
+            # about — ASYMMETRIC ON PURPOSE. With a lead at gap g only the path out to
+            # g must be straight for the corridor to describe the lane. With NO lead we
+            # are about to assert "clear out to max_gap_m", so the WHOLE range must be
+            # straight or we cannot tell a clear road from one that curved away.
+            along = float(g0) if (trk is not None and np.isfinite(g0)) else max_gap_m
+            dep, checked = ego_lateral_departure(
+                float(t0), et, ego["x"], ego["y"], ego["yaw"], along)
+            straight_dep[i] = dep
+            straight_checked[i] = checked
+            if np.isfinite(dep) and dep > lat_m:
+                state[i] = NOT_STRAIGHT
+                continue
             if trk is None:
                 state[i] = NO_LEAD
                 continue
@@ -393,16 +457,23 @@ def lead_block(t0s, ts_rel, obs, ego, *, lat_m: float = LEAD_LAT_M,
     return {
         "leads": leads, "lead_lens": lead_lens, "speeds": speeds,
         "has_lead": has_lead, "state": state, "gap0_m": gap0,
+        "straight_dep_m": straight_dep, "straight_checked_m": straight_checked,
         "ts_rel_s": ts_rel,
         "label_span_s": span,
         "counts": {LEAD: int((state == LEAD).sum()),
                    NO_LEAD: int((state == NO_LEAD).sum()),
-                   NO_LABEL: int((state == NO_LABEL).sum())},
+                   NO_LABEL: int((state == NO_LABEL).sum()),
+                   NOT_STRAIGHT: int((state == NOT_STRAIGHT).sum())},
         "conventions": {
             "frame": "window-origin ego frame at t0; x forward, y left, metres, clip-local",
             "gap": "along - size_x/2 (rig origin to lead REAR face); NOT bumper-to-bumper",
             "selection": f"strictly causal, <= t0, staleness <= {max_stale_s}s, "
                          f"|lat| < {lat_m} m, gap <= {max_gap_m} m, classes {VEHICLE_CLASSES}",
+            "NOT_STRAIGHT": f"the ego's own future path leaves the same |lat| < {lat_m} m "
+                            "corridor within the range claimed (the lead gap when there is a "
+                            "lead, else max_gap_m). A straight band cannot describe the lane "
+                            "through a bend, and scoring it as NO_LEAD would manufacture "
+                            "free flow. Non-causal by design: label derivation may use ego.",
             "NO_LABEL": "no obstacle.offline for the clip, or the window leaves the labelled "
                         "span. NEVER counted as free flow — that would manufacture empty road.",
         },

@@ -217,7 +217,20 @@ class ArmOutput:
     action_seq: np.ndarray | None = None              # [K, 2] (REF-B 0.5 s)
     maneuver_probs: np.ndarray | None = None          # [M] softmax (REF-B)
     maneuver_gt: int | None = None                    # pseudo-label (REF-B)
-    nav_cmd: int | None = None                        # strategic input (REF-B)
+    # ------------------------------------------------------------------
+    # STRATEGIC: an INPUT and a PREDICTION, kept apart on purpose.
+    # ``nav_cmd`` is the navigator command DERIVED FROM THE EPISODE'S OWN
+    # FUTURE POSES (``arms.py`` RefBArm.run_batch -> refb_labels.nav_command)
+    # and FED TO the model. It is a GIVEN INPUT. Rendering it where a viewer
+    # reads a model decision is the nav-echo defect (flagship v1's route head
+    # was an exact bijection of the nav we fed it, 369/369, and scored 1.0000).
+    # ``route_pred`` is the model's OWN route decision (route_logits.argmax);
+    # ``None`` means the arm has no route head -- a structural fact that the
+    # viz standard renders as "unavailable + reason", never as the input.
+    # ------------------------------------------------------------------
+    nav_cmd: int | None = None       # GIVEN INPUT (GT-derived), NOT a prediction
+    route_pred: int | None = None    # model route decision, index into
+                                     #   tanitad.refs.refb.ROUTE_CLASSES
     conf: float | None = None                         # predicted own error
     ood: float | None = None                          # feature-OOD score
     sigma: float | None = None                        # H15 mean belief sigma

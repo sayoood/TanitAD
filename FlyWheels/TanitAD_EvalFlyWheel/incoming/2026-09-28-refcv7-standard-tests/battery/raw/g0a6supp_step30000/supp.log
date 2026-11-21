@@ -1,0 +1,63 @@
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from D:\refcv6_eval_kit\data\refcv6_train_eval139_extrinsics.json (4508 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[g0] model built in 6.3 s; strict missing=0 unexpected=0 step=30000; param_breakdown equal=True
+[v2] D:\refcv6_eval_kit\data\refcv6-b1-416x1024-eval139: 139 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 139 distinct for 139 clips]
+[v2] 139 providers, 139 distinct episode ids
+[v3] nav_from_v7: follow 88 / left 13 / right 38, missing 0 (of 139 clips; md5=eefc38d1453bd1c73802d44d45affced)
+[v3] max_speed_input_v6 (4-way one-hot): 147/147 sidecar rows carry a ceiling, 23772/23772 windows fed (100.0 %), 1 clips ABOVE the 120 km/h top step (clamped, and on those the fed ceiling is one the ego demonstrably exceeded)
+[v3] agent join: 139/139 episodes (stable-63bit), 22663/23772 windows labelled (95.3 %), 776801 prefilter target boxes, pad 397
+[v3] SAM3 map GT at 10 cm (100 m x +-30 m): frac_ok 0.9856 of 23772 windows over 139 clips (verdict PASS)
+[g0] eval dataset: 139 episodes -> 23772 windows (180s); subset 128; batches 8
+[g0] collated 8 batches in 337.1 s (disk cache C:\Users\Admin\g0cache\supp_30000)
+[g0] requires_grad control: 23 of 444 terms differ between trained and loader flags (dev box)
+[g0] seed 0: eval_loss 49.28568 eval_traj 0.54495 (97s, peak 5.85 GiB, buffers unchanged True)
+[g0] A6 arm fp32_s0: ran (146 s)
+{
+ "G0_as_registered": "FAIL",
+ "reasons_as_registered": [
+  "eval_agent_det_ap2_bus_40_60 [DETECTION] in-run 0.1 vs seeds mean 0.125 (sd 0)",
+  "eval_box3d_det_ap2_bus_20_40 [DETECTION] in-run 0.25 vs seeds mean 0.33333 (sd 0)",
+  "eval_box3d_det_ap2_stroller_0_20 [DETECTION] in-run 0.16667 vs seeds mean 0.14286 (sd 0)",
+  "eval_box3d_det_ap4_bus_20_40 [DETECTION] in-run 0.25 vs seeds mean 0.33333 (sd 0)",
+  "eval_box3d_det_ap4_bus_all [DETECTION] in-run 0.08687 vs seeds mean 0.10714 (sd 0)",
+  "eval_box3d_det_ap4_stroller_0_20 [DETECTION] in-run 0.33333 vs seeds mean 0.5 (sd 0)",
+  "eval_box3d_det_ap4_stroller_all [DETECTION] in-run 0.16667 vs seeds mean 0.25 (sd 0)",
+  "eval_box3d_det_map4_0_20 [DETECTION] in-run 0.12879 vs seeds mean 0.14886 (sd 0)",
+  "eval_sel_v3 [SMOOTH] in-run 1.7864 vs seeds mean 1.82346 (sd 0)",
+  "eval_tacv6_goal_conf_bce [SMOOTH] in-run 0.15189 vs seeds mean 0.1542 (sd 0)"
+ ],
+ "G0": "FAIL",
+ "amendment": "A2",
+ "reasons": [
+  "eval_sel_v3 [SMOOTH] in-run 1.7864 vs seeds mean 1.82346 (sd 0)",
+  "eval_tacv6_goal_conf_bce [SMOOTH] in-run 0.15189 vs seeds mean 0.1542 (sd 0)",
+  "wrapper control not run",
+  "M1 not run"
+ ],
+ "n_terms": 1109,
+ "by_class_counts": {
+  "DETECTION": 100,
+  "EXCLUDED": 11,
+  "MATCHED": 29,
+  "UNDEFINED": 94,
+  "DERIVED": 2,
+  "DETECTION_LOWSUPPORT": 238,
+  "COUNT": 210,
+  "SMOOTH": 185,
+  "MAP10_COUNTS": 160,
+  "MAP10_IOU": 80
+ },
+ "medians": {
+  "SMOOTH": 0.0018655688645043036,
+  "MATCHED": 0.0019028455195642744,
+  "MAP10_COUNTS": 5.456571137517449e-05,
+  "DETECTION_abs01": 0.0006299999999999977
+ },
+ "mutation_detection": {}
+}
+[g0] wrote D:/refcv7_eval_kit/battery/g0a6supp_step30000/g0_supp.json (783.5 s)

@@ -1,0 +1,61 @@
+...................................................F.................... [ 85%]
+............                                                             [100%]
+================================== FAILURES ===================================
+___________________ test_p3_any_other_dose_is_refused[abc] ____________________
+
+rig = <test_dscale10k_check_rhp3.Rig object at 0x000001DF8F213650>, p = 'abc'
+
+    @pytest.mark.parametrize("p", ["0.5", "0.1", "0.25", "1.0", "0.30", "0", "0.0", "-0.3", "abc"])
+    def test_p3_any_other_dose_is_refused(rig, p):                      # mutation arm: p = 0.5 (and every other value) is refused; the dose is the literal 0.3
+>       pr, _ = mint_p3(rig, p3_toks(rig, p))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhp3.py:580: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhp3.py:548: in mint_p3
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+dscale10k_check_rhp3.py:1236: in mint
+    put("G-DAGGER", (dagger_problems(sc, toks) + (rh_levers_problems(sc, "RH", rtok) if kind in RH_LIKE else [])) if sc else no_sc,
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+sc = {'acc_probe': {'head_o_grad_diff': 1.0, 'pass': True, 'w_acc_declared': 49.6969}, 'dagger_probe': {'control_p0_grad_di...f': 0.0, ...}, 'declared_vs_built': 'PASS', 'info': {'dagger': {'coverage': {'blocked': False, 'fraction': 0.9}}}, ...}
+toks = ['--arm', 'M2b', '--seed', '0', '--grid', 'pool4x10', ...]
+
+    def dagger_problems(sc: dict, toks) -> list:
+        """G-DAGGER: the trainer's own ``--selfcheck-only`` record of the STAGE-B argv: declared_vs_built PASS; ``acc_probe`` PASS with the declared w_acc and a non-zero head_o gradient; ``dagger_probe`` active
+        and PASS with a non-zero loss / gradient difference and every control EXACTLY 0.0 (the p = 0 identity, the repeat, the frozen prior, the world-model auxiliary); the bank controls it read (K-B2 / K-B3 /
+        coverage) present and not blocked. Deliberate regression: a swap whose ``apply`` is a no-op makes the trainer's probe raise (the selfcheck then holds no passing record) -> RED here."""
+        bad = []
+        if sc.get("declared_vs_built") != "PASS":
+            bad.append(f"declared_vs_built reads {sc.get('declared_vs_built')!r}")
+        ap, dp = sc.get("acc_probe") or {}, sc.get("dagger_probe") or {}
+        if not ap.get("pass"):
+            bad.append("acc_probe does not read pass")
+        elif not (ap.get("head_o_grad_diff", 0.0) > 0.0 and abs(float(ap.get("w_acc_declared", -1)) - 49.6969) < 1e-9):
+            bad.append(f"acc_probe: w_acc {ap.get('w_acc_declared')}, head_o_grad_diff {ap.get('head_o_grad_diff')}")
+        if dp.get("dagger") == "off" or not dp.get("pass") or "skipped" in dp:
+            bad.append(f"dagger_probe is not active and passing: {str(dp)[:200]}")
+        else:
+            if not (dp.get("loss_diff", 0.0) != 0.0 and dp.get("grad_diff_all", 0.0) > 0.0):
+                bad.append(f"dagger_probe: loss_diff {dp.get('loss_diff')}, grad_diff_all {dp.get('grad_diff_all')}: the swap does not reach the loss")
+            for k in ("control_repeat_loss_diff", "control_repeat_grad_diff", "control_p0_loss_diff", "control_p0_grad_diff", "control_prior_grad_diff"):
+                if dp.get(k) != 0.0:
+                    bad.append(f"dagger_probe control {k} reads {dp.get(k)}, expected exactly 0.0")
+            if dp.get("control_wm_grad_diff") not in (0.0, None):
+                bad.append(f"dagger_probe control control_wm_grad_diff reads {dp.get('control_wm_grad_diff')}")
+            if dp.get("control_p0_same_object") is not True:
+                bad.append("dagger_probe: p = 0 did not return the same batch object")
+        ctl = (sc.get("info") or {}).get("dagger") or {}
+        if not ctl or (ctl.get("coverage") or {}).get("blocked") or not (ctl.get("coverage") or {}).get("fraction", 0) >= 0.5:
+            bad.append("the selfcheck carries no bank controls, or the bank coverage is blocked")
+        pa = parse_argv(toks).get("--dagger-p")
+>       if not pa or not float(pa[0]) > 0:
+                         ^^^^^^^^^^^^
+E       ValueError: could not convert string to float: 'abc'
+
+dscale10k_check_rhp3.py:800: ValueError
+=========================== short test summary info ===========================
+FAILED test_dscale10k_check_rhp3.py::test_p3_any_other_dose_is_refused[abc]
+1 failed, 83 passed in 178.75s (0:02:58)

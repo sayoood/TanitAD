@@ -1,0 +1,36 @@
+# TURN-ASYMMETRY DEMAND PROBE - REFUSED BY ITS OWN CONTROLS, TWICE. NOT A RESULT.
+# Banked so the turn-asymmetry stream inherits the two traps rather than re-finding them.
+
+## The question it tried to answer
+W_KAPPA penalises k^2, which is SIGN-SYMMETRIC, yet MEASURED suppression under a
+decoded turn is -98.0% left vs -27.9% right (3.5x in suppressed fraction). A
+sign-symmetric cost cannot do that alone. Cheapest candidate: the corpus's left turns
+DEMAND more curvature, so a quadratic penalty pulls them proportionally further.
+
+## Refusal 1 - the low-speed curvature singularity
+kappa = yawrate / speed blows up as speed -> 0. Run over all 40 windows the GT control
+read max|k|GT = 1315.36 against KAPPA_MAX 0.200, with a left-bin p90 of 394.74.
+The medians looked entirely plausible (left 0.12572, right 0.08415, ratio 1.494) and
+would have been quotable had the control not been printed beside them.
+=> Any curvature statistic on this corpus needs the v0 >= 2 m/s cut feas_audit.py
+   already applies, PLUS a per-step speed floor in the denominator.
+
+## Refusal 2 - a different labeller is a different experiment
+Version 1 binned turns by the sign of the net GT yaw and got left 8 / right 10,
+against the record's own per-class n_true of 11 / 8. Version 2 switched to the dump's
+lat_label and got lane_keep 2 / turn_left 0 / turn_right 0.
+REASON, measured:
+  lat_label value counts over 40 windows: {-100: 32, 7: 2, 6: 2, 0: 2, 5: 1, 4: 1}
+  -> -100 on 32 of 40 windows (a MASKED/ignore sentinel), and the non-masked
+     values (0,4,5,6,7) are a DIFFERENT vocabulary from the 3-class
+     lane_keep/turn_left/turn_right the four-family table reports.
+=> lat_label is NOT the tactical true class. The class the record reports is derived
+   inside refav1_arm.py from the GT TRAJECTORY and is not stored per window in the
+   dump, so binning GT curvature by it requires reading that labeller from source.
+
+## Status
+STOPPED. The asymmetry remains FLAGGED AND NOT CLAIMED (raw/decode_vs_execute.md 3),
+which is where it was before this probe. Two plausible-looking numbers were produced
+and BOTH were refused by a control that had to read a known value - which is the only
+reason neither shipped. The next attempt should read the labeller from
+refav1_arm.py's four_families code rather than guessing a dump key.

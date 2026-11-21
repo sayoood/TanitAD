@@ -187,6 +187,17 @@ button.primary { background: linear-gradient(180deg, #f5b301, #d99a00); color: #
 .cam-hud .hud-v { font-size: 13px; font-weight: 700; letter-spacing: .3px; color: var(--ink); }
 .cam-hud .hud-gt { font-size: 9.5px; color: var(--gt); opacity: .8; font-style: italic; }
 .cam-hud .hud-ok { font-size: 11px; color: #4fe08a; font-weight: 700; }
+/* viz-standard: an element that could not be computed states its reason */
+.cam-hud .hud-na {
+  font-size: 10px; color: var(--ink-faint); font-style: italic;
+  max-width: 210px; line-height: 1.25;
+}
+/* viz-standard: a ground-truth-derived INPUT never looks like a prediction */
+.cam-hud .hud-given {
+  font-size: 8.5px; font-weight: 700; letter-spacing: .6px;
+  text-transform: uppercase; color: #f2b45a;
+  border: 1px solid #f2b45a66; border-radius: 4px; padding: 0 3px;
+}
 .cam-hud .hud-metrics {
   font-size: 10.5px; font-family: var(--mono); color: var(--ink-dim); margin-top: 1px;
 }
@@ -210,6 +221,11 @@ button.primary { background: linear-gradient(180deg, #f5b301, #d99a00); color: #
 .heads .man .hrow .hk { font-weight: 500; text-transform: none; }
 .heads .man .gtmark { color: var(--gt); font-weight: 700; }
 .heads .none { font-size: 11px; color: var(--ink-faint); font-style: italic; }
+/* strategic pair: model prediction vs logged (ground-truth-derived) input */
+.heads .hnote { font-size: 10.5px; color: var(--ink-dim); line-height: 1.35; }
+.heads .hnote.given {
+  color: #f2b45a; border-left: 2px solid #f2b45a66; padding-left: 5px;
+}
 
 /* ---------- formal gates (D1-D3 + Phase-0 GO verdict) ---------- */
 .go-banner {

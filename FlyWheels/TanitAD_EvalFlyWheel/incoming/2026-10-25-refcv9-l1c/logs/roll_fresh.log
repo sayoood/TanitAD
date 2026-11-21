@@ -1,0 +1,374 @@
+[l1] mode=eval prereg sealed 74b8ba88ed042042 child=--ckpt E:/refcv8_eval_kit/ckpt/ckpt_ema_48852.pt --config E:/refcv8_eval_kit/ckpt/config.json --seed 0 --dump-dir F:/l1c/tree/step48852ema_fresh/dump_s0 --windows-json F:/l1c/kit_fresh/windows_s0.json --device cuda --out-json F:/l1c/bank/roll_fresh.json --os-only ZZL1ROLLSTARTZZ
+[roll_pf] nav_feed=perframe_full overlay=98293dd741127016 patched_refcv3_arm=64e6ffbb1d0434d1 pose_sync=OFF (R8_NO_POSE_SYNC)
+[lead] no lead block (banked default absent: C:\Users\Admin\refcv8_pf\gtmap_oracle\tree_fb47a58\TanitAD Research Lab\Benchmarks & Evals\Research\2026-09-02-b1-eval-lead-block\raw\b1_eval_lead_block.npz); distance-keeping will be REFUSED with its reason — a WORK ITEM, not a pass
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from F:/l1c/kit_fresh/data/extrinsics_union.json (5011 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[v2] F:\l1c\kit_fresh\data\refcv6-b1-416x1024-eval139: 300 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 299 distinct for 300 clips]
+[v2] 300 providers, 300 distinct episode ids
+[v3] nav_from_v7: follow 202 / left 46 / right 52, missing 0 (of 300 clips; md5=0e12c7b49dc5d699e3794f9fb4e27359)
+[v3] refcv8 label speed input (road-type sidecar refcv6_speed_max_v8_eval.jsonl): 51250/51250 windows fed, per-step windows {'30': 16399, '50': 14871, '100': 16233, '120': 3747}, per-clip rows {'30': 96, '50': 87, '100': 95, '120': 22}
+[model] E:/refcv8_eval_kit/ckpt/ckpt_ema_48852.pt step=48852 arm=hier anchors=117 horizons=[5, 10, 15, 20, 30, 40, 50, 60] window=8 decoder=diffusion/2 config<-refcv7_loader.build_model (train() replayed; strict; G-EVAL-passed)
+[grid] 2s: dt=0.5 s K=4 instants=[0.5, 1.0, 1.5, 2.0] s <- model slots [5, 10, 15, 20] (indices [0, 1, 2, 3]); dropped [30, 40, 50, 60]
+[units] action_units=steer — the RECORDED channel 1 is a road-wheel STEER angle (physicalai.py:621). kappa = tan(steer)/2.9 is applied before integration; `ha` is NOT comparable to a kappa-unit refav1 run (`ha0` is, it is zero).
+[nav-feed] perframe_full: nav_true = the v9 PER-FRAME token on 10456 windows; it differs from the clip token on 1957; r8_nav args known on 5571 (FED)
+[nav] ⚠️ --no-navshuf: the record is NOT admissible for any nav-conditioned (STRATEGIC) claim
+[nav] ⚠️ --no-navzero: BACKLOG R39 binds every nav-conditioned claim to carry the nav-ZERO arm BESIDE the nav-shuffle one; this record carries only the shuffle
+[roll] 10456 windows / 300 episodes · arms=['os', 'ha', 'ha0', 'ha0_ext', 'oracle_sel'] · fed conditionings=['nav_true'] · nav_shuffle changed 3689/10456
+ZZL1PROGZZ 1 el=27s d=512
+[cost] first forward (1 fed row(s), 1 rows total) took 2.52 s -> ESTIMATED 7.31 h for 10456 windows (forward only; IO/analysis extra)
+ZZL1PROGZZ 2 el=28s d=512
+  [1/300] <clip-redacted> 35 windows 47s
+  [2/300] <clip-redacted> 34 windows 67s
+  [3/300] <clip-redacted> 35 windows 90s
+  [4/300] <clip-redacted> 35 windows 117s
+  [5/300] <clip-redacted> 35 windows 145s
+  [6/300] <clip-redacted> 35 windows 172s
+  [7/300] <clip-redacted> 35 windows 198s
+ZZL1PROGZZ 250 el=203s d=512
+  [8/300] <clip-redacted> 35 windows 223s
+  [9/300] <clip-redacted> 35 windows 251s
+  [10/300] <clip-redacted> 35 windows 276s
+  [11/300] <clip-redacted> 34 windows 299s
+  [12/300] <clip-redacted> 34 windows 325s
+  [13/300] <clip-redacted> 35 windows 349s
+  [14/300] <clip-redacted> 34 windows 370s
+ZZL1PROGZZ 500 el=379s d=512
+  [15/300] <clip-redacted> 35 windows 390s
+  [16/300] <clip-redacted> 35 windows 410s
+  [17/300] <clip-redacted> 35 windows 428s
+  [18/300] <clip-redacted> 35 windows 444s
+  [19/300] <clip-redacted> 35 windows 459s
+  [20/300] <clip-redacted> 35 windows 474s
+  [21/300] <clip-redacted> 35 windows 489s
+ZZL1PROGZZ 750 el=500s d=512
+  [22/300] <clip-redacted> 35 windows 508s
+  [23/300] <clip-redacted> 35 windows 529s
+  [24/300] <clip-redacted> 35 windows 550s
+  [25/300] <clip-redacted> 35 windows 573s
+  [26/300] <clip-redacted> 35 windows 594s
+  [27/300] <clip-redacted> 35 windows 615s
+  [28/300] <clip-redacted> 35 windows 635s
+ZZL1PROGZZ 1000 el=651s d=512
+  [29/300] <clip-redacted> 35 windows 657s
+  [30/300] <clip-redacted> 35 windows 681s
+  [31/300] <clip-redacted> 35 windows 704s
+  [32/300] <clip-redacted> 35 windows 729s
+  [33/300] <clip-redacted> 34 windows 750s
+  [34/300] <clip-redacted> 35 windows 770s
+  [35/300] <clip-redacted> 35 windows 792s
+ZZL1PROGZZ 1250 el=808s d=512
+  [36/300] <clip-redacted> 35 windows 809s
+  [37/300] <clip-redacted> 35 windows 828s
+  [38/300] <clip-redacted> 35 windows 845s
+  [39/300] <clip-redacted> 35 windows 864s
+  [40/300] <clip-redacted> 35 windows 884s
+  [41/300] <clip-redacted> 34 windows 904s
+  [42/300] <clip-redacted> 35 windows 924s
+  [43/300] <clip-redacted> 35 windows 944s
+ZZL1PROGZZ 1500 el=947s d=512
+  [44/300] <clip-redacted> 35 windows 963s
+  [45/300] <clip-redacted> 33 windows 983s
+  [46/300] <clip-redacted> 34 windows 1001s
+  [47/300] <clip-redacted> 35 windows 1020s
+  [48/300] <clip-redacted> 35 windows 1041s
+  [49/300] <clip-redacted> 35 windows 1060s
+  [50/300] <clip-redacted> 35 windows 1080s
+ZZL1PROGZZ 1750 el=1086s d=512
+  [51/300] <clip-redacted> 34 windows 1098s
+  [52/300] <clip-redacted> 34 windows 1118s
+  [53/300] <clip-redacted> 35 windows 1135s
+  [54/300] <clip-redacted> 35 windows 1150s
+  [55/300] <clip-redacted> 36 windows 1165s
+  [56/300] <clip-redacted> 35 windows 1180s
+  [57/300] <clip-redacted> 35 windows 1202s
+ZZL1PROGZZ 2000 el=1214s d=512
+  [58/300] <clip-redacted> 35 windows 1223s
+  [59/300] <clip-redacted> 35 windows 1242s
+  [60/300] <clip-redacted> 35 windows 1261s
+  [61/300] <clip-redacted> 35 windows 1285s
+  [62/300] <clip-redacted> 35 windows 1310s
+  [63/300] <clip-redacted> 35 windows 1335s
+  [64/300] <clip-redacted> 35 windows 1359s
+ZZL1PROGZZ 2250 el=1375s d=512
+  [65/300] <clip-redacted> 35 windows 1383s
+  [66/300] <clip-redacted> 35 windows 1408s
+  [67/300] <clip-redacted> 35 windows 1431s
+  [68/300] <clip-redacted> 35 windows 1455s
+  [69/300] <clip-redacted> 35 windows 1479s
+  [70/300] <clip-redacted> 34 windows 1502s
+  [71/300] <clip-redacted> 35 windows 1526s
+ZZL1PROGZZ 2500 el=1545s d=512
+  [72/300] <clip-redacted> 35 windows 1550s
+  [73/300] <clip-redacted> 35 windows 1574s
+  [74/300] <clip-redacted> 35 windows 1594s
+  [75/300] <clip-redacted> 35 windows 1615s
+  [76/300] <clip-redacted> 34 windows 1632s
+  [77/300] <clip-redacted> 35 windows 1647s
+  [78/300] <clip-redacted> 35 windows 1664s
+ZZL1PROGZZ 2750 el=1681s d=512
+  [79/300] <clip-redacted> 35 windows 1681s
+  [80/300] <clip-redacted> 35 windows 1695s
+  [81/300] <clip-redacted> 35 windows 1709s
+  [82/300] <clip-redacted> 35 windows 1723s
+  [83/300] <clip-redacted> 34 windows 1737s
+  [84/300] <clip-redacted> 35 windows 1751s
+  [85/300] <clip-redacted> 35 windows 1765s
+  [86/300] <clip-redacted> 35 windows 1780s
+ZZL1PROGZZ 3000 el=1783s d=512
+  [87/300] <clip-redacted> 35 windows 1795s
+  [88/300] <clip-redacted> 35 windows 1809s
+  [89/300] <clip-redacted> 34 windows 1823s
+  [90/300] <clip-redacted> 34 windows 1837s
+  [91/300] <clip-redacted> 35 windows 1852s
+  [92/300] <clip-redacted> 35 windows 1866s
+  [93/300] <clip-redacted> 35 windows 1880s
+ZZL1PROGZZ 3250 el=1886s d=512
+  [94/300] <clip-redacted> 35 windows 1895s
+  [95/300] <clip-redacted> 35 windows 1910s
+  [96/300] <clip-redacted> 35 windows 1925s
+  [97/300] <clip-redacted> 34 windows 1939s
+  [98/300] <clip-redacted> 35 windows 1953s
+  [99/300] <clip-redacted> 35 windows 1968s
+  [100/300] <clip-redacted> 35 windows 1983s
+ZZL1PROGZZ 3500 el=1993s d=512
+  [101/300] <clip-redacted> 35 windows 2001s
+  [102/300] <clip-redacted> 35 windows 2016s
+  [103/300] <clip-redacted> 35 windows 2031s
+  [104/300] <clip-redacted> 35 windows 2045s
+  [105/300] <clip-redacted> 35 windows 2060s
+  [106/300] <clip-redacted> 35 windows 2075s
+  [107/300] <clip-redacted> 35 windows 2090s
+ZZL1PROGZZ 3750 el=2100s d=512
+  [108/300] <clip-redacted> 35 windows 2105s
+  [109/300] <clip-redacted> 35 windows 2121s
+  [110/300] <clip-redacted> 34 windows 2139s
+  [111/300] <clip-redacted> 35 windows 2155s
+  [112/300] <clip-redacted> 35 windows 2170s
+  [113/300] <clip-redacted> 35 windows 2185s
+  [114/300] <clip-redacted> 35 windows 2199s
+ZZL1PROGZZ 4000 el=2212s d=512
+  [115/300] <clip-redacted> 35 windows 2214s
+  [116/300] <clip-redacted> 35 windows 2229s
+  [117/300] <clip-redacted> 35 windows 2243s
+  [118/300] <clip-redacted> 35 windows 2257s
+  [119/300] <clip-redacted> 35 windows 2271s
+  [120/300] <clip-redacted> 35 windows 2285s
+  [121/300] <clip-redacted> 34 windows 2299s
+ZZL1PROGZZ 4250 el=2314s d=512
+  [122/300] <clip-redacted> 35 windows 2314s
+  [123/300] <clip-redacted> 35 windows 2329s
+  [124/300] <clip-redacted> 35 windows 2344s
+  [125/300] <clip-redacted> 35 windows 2358s
+  [126/300] <clip-redacted> 34 windows 2373s
+  [127/300] <clip-redacted> 35 windows 2387s
+  [128/300] <clip-redacted> 35 windows 2402s
+  [129/300] <clip-redacted> 35 windows 2417s
+ZZL1PROGZZ 4500 el=2421s d=512
+  [130/300] <clip-redacted> 35 windows 2432s
+  [131/300] <clip-redacted> 34 windows 2446s
+  [132/300] <clip-redacted> 35 windows 2461s
+  [133/300] <clip-redacted> 35 windows 2475s
+  [134/300] <clip-redacted> 35 windows 2494s
+  [135/300] <clip-redacted> 35 windows 2517s
+  [136/300] <clip-redacted> 35 windows 2543s
+ZZL1PROGZZ 4750 el=2552s d=512
+  [137/300] <clip-redacted> 35 windows 2565s
+  [138/300] <clip-redacted> 35 windows 2586s
+  [139/300] <clip-redacted> 35 windows 2601s
+  [140/300] <clip-redacted> 35 windows 2618s
+  [141/300] <clip-redacted> 35 windows 2633s
+  [142/300] <clip-redacted> 34 windows 2649s
+  [143/300] <clip-redacted> 35 windows 2670s
+ZZL1PROGZZ 5000 el=2682s d=512
+  [144/300] <clip-redacted> 35 windows 2691s
+  [145/300] <clip-redacted> 35 windows 2711s
+  [146/300] <clip-redacted> 35 windows 2731s
+  [147/300] <clip-redacted> 35 windows 2754s
+  [148/300] <clip-redacted> 35 windows 2772s
+  [149/300] <clip-redacted> 35 windows 2792s
+  [150/300] <clip-redacted> 35 windows 2811s
+ZZL1PROGZZ 5250 el=2825s d=512
+  [151/300] <clip-redacted> 34 windows 2830s
+  [152/300] <clip-redacted> 35 windows 2850s
+  [153/300] <clip-redacted> 35 windows 2868s
+  [154/300] <clip-redacted> 35 windows 2886s
+  [155/300] <clip-redacted> 35 windows 2906s
+  [156/300] <clip-redacted> 35 windows 2925s
+  [157/300] <clip-redacted> 35 windows 2944s
+ZZL1PROGZZ 5500 el=2959s d=512
+  [158/300] <clip-redacted> 35 windows 2960s
+  [159/300] <clip-redacted> 34 windows 2976s
+  [160/300] <clip-redacted> 35 windows 2991s
+  [161/300] <clip-redacted> 35 windows 3013s
+  [162/300] <clip-redacted> 34 windows 3037s
+  [163/300] <clip-redacted> 35 windows 3065s
+  [164/300] <clip-redacted> 35 windows 3091s
+ZZL1PROGZZ 5750 el=3116s d=512
+  [165/300] <clip-redacted> 35 windows 3115s
+  [166/300] <clip-redacted> 34 windows 3136s
+  [167/300] <clip-redacted> 35 windows 3159s
+  [168/300] <clip-redacted> 35 windows 3182s
+  [169/300] <clip-redacted> 34 windows 3199s
+  [170/300] <clip-redacted> 35 windows 3216s
+  [171/300] <clip-redacted> 35 windows 3237s
+  [172/300] <clip-redacted> 35 windows 3261s
+ZZL1PROGZZ 6000 el=3268s d=512
+  [173/300] <clip-redacted> 35 windows 3287s
+  [174/300] <clip-redacted> 35 windows 3312s
+  [175/300] <clip-redacted> 35 windows 3336s
+  [176/300] <clip-redacted> 35 windows 3358s
+  [177/300] <clip-redacted> 35 windows 3379s
+  [178/300] <clip-redacted> 35 windows 3396s
+  [179/300] <clip-redacted> 35 windows 3416s
+ZZL1PROGZZ 6250 el=3424s d=512
+  [180/300] <clip-redacted> 35 windows 3434s
+  [181/300] <clip-redacted> 35 windows 3451s
+  [182/300] <clip-redacted> 35 windows 3467s
+  [183/300] <clip-redacted> 35 windows 3483s
+  [184/300] <clip-redacted> 35 windows 3501s
+  [185/300] <clip-redacted> 35 windows 3519s
+  [186/300] <clip-redacted> 35 windows 3536s
+ZZL1PROGZZ 6500 el=3545s d=512
+  [187/300] <clip-redacted> 35 windows 3553s
+  [188/300] <clip-redacted> 34 windows 3584s
+  [189/300] <clip-redacted> 35 windows 3599s
+  [190/300] <clip-redacted> 35 windows 3616s
+  [191/300] <clip-redacted> 35 windows 3633s
+  [192/300] <clip-redacted> 35 windows 3649s
+  [193/300] <clip-redacted> 34 windows 3664s
+ZZL1PROGZZ 6750 el=3675s d=512
+  [194/300] <clip-redacted> 35 windows 3679s
+  [195/300] <clip-redacted> 34 windows 3693s
+  [196/300] <clip-redacted> 35 windows 3712s
+  [197/300] <clip-redacted> 35 windows 3727s
+  [198/300] <clip-redacted> 35 windows 3742s
+  [199/300] <clip-redacted> 35 windows 3758s
+  [200/300] <clip-redacted> 35 windows 3774s
+ZZL1PROGZZ 7000 el=3789s d=512
+  [201/300] <clip-redacted> 35 windows 3790s
+  [202/300] <clip-redacted> 35 windows 3806s
+  [203/300] <clip-redacted> 35 windows 3823s
+  [204/300] <clip-redacted> 34 windows 3838s
+  [205/300] <clip-redacted> 35 windows 3855s
+  [206/300] <clip-redacted> 34 windows 3870s
+  [207/300] <clip-redacted> 34 windows 3885s
+  [208/300] <clip-redacted> 34 windows 3902s
+ZZL1PROGZZ 7250 el=3905s d=512
+  [209/300] <clip-redacted> 35 windows 3919s
+  [210/300] <clip-redacted> 35 windows 3935s
+  [211/300] <clip-redacted> 35 windows 3951s
+  [212/300] <clip-redacted> 35 windows 3967s
+  [213/300] <clip-redacted> 35 windows 3983s
+  [214/300] <clip-redacted> 35 windows 4000s
+  [215/300] <clip-redacted> 35 windows 4016s
+ZZL1PROGZZ 7500 el=4023s d=512
+  [216/300] <clip-redacted> 35 windows 4034s
+  [217/300] <clip-redacted> 34 windows 4048s
+  [218/300] <clip-redacted> 35 windows 4063s
+  [219/300] <clip-redacted> 35 windows 4081s
+  [220/300] <clip-redacted> 35 windows 4104s
+  [221/300] <clip-redacted> 35 windows 4126s
+  [222/300] <clip-redacted> 35 windows 4145s
+ZZL1PROGZZ 7750 el=4155s d=512
+  [223/300] <clip-redacted> 35 windows 4165s
+  [224/300] <clip-redacted> 35 windows 4185s
+  [225/300] <clip-redacted> 34 windows 4203s
+  [226/300] <clip-redacted> 35 windows 4222s
+  [227/300] <clip-redacted> 35 windows 4239s
+  [228/300] <clip-redacted> 35 windows 4258s
+  [229/300] <clip-redacted> 35 windows 4279s
+ZZL1PROGZZ 8000 el=4293s d=512
+  [230/300] <clip-redacted> 35 windows 4299s
+  [231/300] <clip-redacted> 35 windows 4320s
+  [232/300] <clip-redacted> 35 windows 4342s
+  [233/300] <clip-redacted> 35 windows 4362s
+  [234/300] <clip-redacted> 35 windows 4382s
+  [235/300] <clip-redacted> 35 windows 4400s
+  [236/300] <clip-redacted> 35 windows 4420s
+ZZL1PROGZZ 8250 el=4433s d=512
+  [237/300] <clip-redacted> 35 windows 4438s
+  [238/300] <clip-redacted> 35 windows 4457s
+  [239/300] <clip-redacted> 35 windows 4476s
+  [240/300] <clip-redacted> 35 windows 4498s
+  [241/300] <clip-redacted> 35 windows 4522s
+  [242/300] <clip-redacted> 35 windows 4546s
+  [243/300] <clip-redacted> 35 windows 4566s
+ZZL1PROGZZ 8500 el=4587s d=512
+  [244/300] <clip-redacted> 35 windows 4588s
+  [245/300] <clip-redacted> 35 windows 4608s
+  [246/300] <clip-redacted> 35 windows 4627s
+  [247/300] <clip-redacted> 34 windows 4646s
+  [248/300] <clip-redacted> 35 windows 4664s
+  [249/300] <clip-redacted> 35 windows 4685s
+  [250/300] <clip-redacted> 35 windows 4707s
+  [251/300] <clip-redacted> 35 windows 4728s
+ZZL1PROGZZ 8750 el=4731s d=512
+  [252/300] <clip-redacted> 35 windows 4749s
+  [253/300] <clip-redacted> 35 windows 4769s
+  [254/300] <clip-redacted> 35 windows 4789s
+  [255/300] <clip-redacted> 35 windows 4812s
+  [256/300] <clip-redacted> 35 windows 4835s
+  [257/300] <clip-redacted> 35 windows 4858s
+  [258/300] <clip-redacted> 35 windows 4880s
+ZZL1PROGZZ 9000 el=4887s d=512
+  [259/300] <clip-redacted> 35 windows 4905s
+  [260/300] <clip-redacted> 35 windows 4928s
+  [261/300] <clip-redacted> 35 windows 4950s
+  [262/300] <clip-redacted> 35 windows 4973s
+  [263/300] <clip-redacted> 34 windows 4995s
+  [264/300] <clip-redacted> 34 windows 5016s
+  [265/300] <clip-redacted> 35 windows 5039s
+ZZL1PROGZZ 9250 el=5048s d=512
+  [266/300] <clip-redacted> 34 windows 5060s
+  [267/300] <clip-redacted> 34 windows 5081s
+  [268/300] <clip-redacted> 35 windows 5102s
+  [269/300] <clip-redacted> 35 windows 5124s
+  [270/300] <clip-redacted> 35 windows 5144s
+  [271/300] <clip-redacted> 35 windows 5165s
+  [272/300] <clip-redacted> 35 windows 5187s
+ZZL1PROGZZ 9500 el=5202s d=512
+  [273/300] <clip-redacted> 35 windows 5210s
+  [274/300] <clip-redacted> 35 windows 5235s
+  [275/300] <clip-redacted> 35 windows 5256s
+  [276/300] <clip-redacted> 35 windows 5278s
+  [277/300] <clip-redacted> 35 windows 5300s
+  [278/300] <clip-redacted> 35 windows 5321s
+  [279/300] <clip-redacted> 34 windows 5342s
+ZZL1PROGZZ 9750 el=5360s d=512
+  [280/300] <clip-redacted> 35 windows 5364s
+  [281/300] <clip-redacted> 34 windows 5384s
+  [282/300] <clip-redacted> 35 windows 5405s
+  [283/300] <clip-redacted> 34 windows 5425s
+  [284/300] <clip-redacted> 34 windows 5444s
+  [285/300] <clip-redacted> 35 windows 5466s
+  [286/300] <clip-redacted> 35 windows 5486s
+ZZL1PROGZZ 10000 el=5510s d=512
+  [287/300] <clip-redacted> 35 windows 5509s
+  [288/300] <clip-redacted> 35 windows 5526s
+  [289/300] <clip-redacted> 35 windows 5547s
+  [290/300] <clip-redacted> 35 windows 5567s
+  [291/300] <clip-redacted> 35 windows 5589s
+  [292/300] <clip-redacted> 35 windows 5609s
+  [293/300] <clip-redacted> 35 windows 5631s
+  [294/300] <clip-redacted> 35 windows 5652s
+ZZL1PROGZZ 10250 el=5655s d=512
+  [295/300] <clip-redacted> 35 windows 5672s
+  [296/300] <clip-redacted> 35 windows 5689s
+  [297/300] <clip-redacted> 35 windows 5708s
+  [298/300] <clip-redacted> 35 windows 5728s
+  [299/300] <clip-redacted> 35 windows 5748s
+  [300/300] <clip-redacted> 35 windows 5768s
+[dump] 10456 windows over 300 episodes (0 skipped: none)
+[provenance] REAL_CHECKPOINT_ON_REAL_CORPUS - ckpt=TRAINED corpus=FULL step=48852 eps=300 windows=10456 anchors=117
+REFCV3_DUMP_DONE
+[dump-only] F:/l1c/tree/step48852ema_fresh/dump_s0; analyse later with --analyze-only
+[roll_seed] seed 0 -> F:/l1c/bank/roll_fresh.json
+[roll_pf] pf.ok=True windows=10456 args_known=5571 token_differs_from_clip=1957 ZZROLLPFOKZZ
+[l1] banked 10456 windows d_tac=512 counters={"own_calls": 10456, "navnull_calls": 0, "caps_per_call_hist": {"1": 10456}, "filteroff_cap_maxdiff": 0.0, "batch_gt1": 0, "hook_calls_unarmed": 0} ZZL1BANKEDZZ
+
+# LANDED_NOTE: clip-id prefixes redacted in the landed copy; the original stays at C:/Users/Admin/refcv8_pf/refcv9_l1c/logs/roll_fresh.log on the dev box.

@@ -1,0 +1,34 @@
+{
+ "why": "power analysis that redesigned the plan-level A/B BEFORE spending GPU",
+ "grid": "stride 40, 2.00 windows/episode, 282 windows over 141 episodes",
+ "sec_per_window_measured": 40.0,
+ "settings": {
+  "prior tau=0.5": {
+   "changed_windows": 18,
+   "of": 282,
+   "frac": 0.0638,
+   "episodes_touched": 14,
+   "full_panel_2arm_GPU_h": 6.3,
+   "targeted_windows": 28,
+   "targeted_2arm_GPU_h": 0.6,
+   "changed_frac_within_targeted": 0.64
+  },
+  "prior tau=0.75": {
+   "changed_windows": 63,
+   "of": 282,
+   "frac": 0.2234,
+   "episodes_touched": 53,
+   "full_panel_2arm_GPU_h": 6.3,
+   "targeted_windows": 106,
+   "targeted_2arm_GPU_h": 2.4,
+   "changed_frac_within_targeted": 0.59
+  }
+ },
+ "ABANDONED_DESIGN": {
+  "what": "first 30 episodes, 60 windows",
+  "changed_windows": 3,
+  "verdict": "UNDERPOWERED BY CONSTRUCTION - 95 percent of windows are bit-identical ties; CLAUDE.md probe-failure #4 (n<<d reads as absence, not lack of power)",
+  "cost_paid_before_kill_GPU_h": 0.4
+ },
+ "factorisation": "icem_plan is SEEDED, so an unchanged decode gives bit-identical arms and contributes EXACTLY 0 to a paired delta => marginal = (18/282) x conditional. The 10 unchanged windows inside the targeted run are the BUILT-IN CONTROL that must read exactly 0, or the factorisation is void."
+}

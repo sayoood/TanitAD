@@ -1,0 +1,1360 @@
+<title>REFe Training Run</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root {
+  --page: #f6f6f3; --surface: #fcfcfb; --surface-2: #f0efec;
+  --ink: #0b0b0b; --ink-2: #52514e; --muted: #7a7872; --grid: #e6e5df; --axis: #c3c2b7;
+  --ring: rgba(11,11,11,0.10);
+  --s1: #2a78d6; --s1-wash: rgba(42,120,214,0.10); --s2: #eb6834; --s3: #1baf7a; --deemph: #b4b2aa;
+  --good: #0ca30c; --good-ink: #006300; --warn: #fab219; --serious: #ec835a; --critical: #d03b3b;
+  --band: rgba(42,120,214,0.06);
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --surface-2: #232321;
+    --ink: #ffffff; --ink-2: #c3c2b7; --muted: #95938c; --grid: #2c2c2a; --axis: #45453f;
+    --ring: rgba(255,255,255,0.10);
+    --s1: #3987e5; --s1-wash: rgba(57,135,229,0.14); --s2: #d95926; --s3: #199e70; --deemph: #5c5b55;
+    --good-ink: #0ca30c; --band: rgba(57,135,229,0.09);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19; --surface-2: #232321;
+  --ink: #ffffff; --ink-2: #c3c2b7; --muted: #95938c; --grid: #2c2c2a; --axis: #45453f;
+  --ring: rgba(255,255,255,0.10);
+  --s1: #3987e5; --s1-wash: rgba(57,135,229,0.14); --s2: #d95926; --s3: #199e70; --deemph: #5c5b55;
+  --good-ink: #0ca30c; --band: rgba(57,135,229,0.09);
+}
+* { box-sizing: border-box; }
+body { background: var(--page); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1160px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 64px; }
+@media (max-width: 560px) { .wrap { padding-inline: 16px; } }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+h1 { font-size: 30px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.2; }
+h2 { font-size: 21px; font-weight: 600; letter-spacing: -0.005em; }
+h3 { font-size: 15px; font-weight: 600; }
+p { margin: 0; }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.mono { font-family: var(--mono); }
+.num { font-variant-numeric: tabular-nums; }
+.lead { color: var(--ink-2); max-width: 70ch; }
+header.top { display: grid; gap: 10px; padding-bottom: 22px; border-bottom: 1px solid var(--grid); }
+.runline { font-family: var(--mono); font-size: 13px; color: var(--ink-2); display: flex; flex-wrap: wrap; gap: 6px 18px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.chip { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; padding: 4px 10px 4px 8px; border-radius: 999px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--ring); color: var(--ink); }
+.chip i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex: none; }
+.chip .ic { font-style: normal; font-weight: 600; font-size: 12px; width: 14px; text-align: center; }
+.s-good i { background: var(--good); } .s-warn i { background: var(--warn); } .s-serious i { background: var(--serious); } .s-critical i { background: var(--critical); } .s-info i { background: var(--s1); }
+section { padding-top: 34px; display: grid; gap: 16px; }
+.sec-head { display: grid; gap: 6px; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.tile { background: var(--surface); border-radius: 10px; box-shadow: inset 0 0 0 1px var(--ring); padding: 14px 16px 13px; display: grid; gap: 3px; align-content: start; }
+.tile .lab { font-size: 13px; color: var(--ink-2); }
+.tile .val { font-size: 26px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.2; }
+.tile .sub { font-size: 12.5px; color: var(--muted); }
+.progress { background: var(--surface); border-radius: 10px; box-shadow: inset 0 0 0 1px var(--ring); padding: 16px 18px; display: grid; gap: 10px; }
+.meter { position: relative; height: 12px; background: var(--s1-wash); border-radius: 6px; }
+.meter .fill { position: absolute; inset: 0 auto 0 0; background: var(--s1); border-radius: 6px; }
+.meter .tick { position: absolute; top: -3px; bottom: -3px; width: 1px; background: var(--axis); }
+.meter-legend { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--ink-2); }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 860px) { .grid2 { grid-template-columns: minmax(0, 1fr); } }
+figure { margin: 0; background: var(--surface); border-radius: 10px; box-shadow: inset 0 0 0 1px var(--ring); padding: 16px 16px 12px; display: grid; gap: 8px; min-width: 0; }
+figure .fh { display: grid; gap: 3px; }
+figure .fh h3 + p { font-size: 13.5px; color: var(--ink-2); }
+.chart { position: relative; width: 100%; min-width: 0; }
+.chart svg { display: block; width: 100%; overflow: visible; }
+.chart text { font-family: var(--sans); font-size: 11.5px; fill: var(--muted); }
+.chart .lbl { fill: var(--ink-2); font-size: 12px; }
+.chart .lbl-strong { fill: var(--ink); font-size: 12px; font-weight: 600; }
+.axis path, .axis line { stroke: var(--axis); }
+.gridline { stroke: var(--grid); stroke-width: 1; }
+.tip { position: absolute; pointer-events: none; background: var(--surface); color: var(--ink); box-shadow: 0 4px 16px rgba(0,0,0,0.12), inset 0 0 0 1px var(--ring); border-radius: 8px; padding: 8px 10px; font-size: 12.5px; line-height: 1.45; min-width: 150px; z-index: 5; }
+.tip .t-h { font-size: 12px; color: var(--muted); margin-bottom: 3px; font-family: var(--mono); }
+.tip .t-r { display: grid; grid-template-columns: 14px auto 1fr; align-items: center; column-gap: 7px; }
+.tip .t-r b { font-weight: 600; font-variant-numeric: tabular-nums; }
+.tip .t-r span { color: var(--ink-2); }
+.tip .key { width: 12px; height: 2px; border-radius: 1px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend .lk { width: 14px; height: 2px; border-radius: 1px; display: inline-block; }
+.legend .sw { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.legend .sw.ring { border-radius: 50%; background: var(--surface); box-shadow: inset 0 0 0 2px var(--s1); }
+details.tv { font-size: 13px; }
+details.tv summary { cursor: pointer; color: var(--ink-2); width: max-content; padding: 2px 0; }
+details.tv summary:focus-visible { outline: 2px solid var(--s1); outline-offset: 2px; border-radius: 3px; }
+.tbl { overflow-x: auto; margin-top: 8px; }
+table { border-collapse: collapse; font-size: 12.5px; width: 100%; }
+th, td { text-align: right; padding: 5px 8px; border-bottom: 1px solid var(--grid); white-space: nowrap; font-variant-numeric: tabular-nums; }
+th:first-child, td:first-child { text-align: left; }
+th { font-weight: 600; color: var(--ink-2); }
+.findings { display: grid; gap: 10px; }
+.finding { background: var(--surface); border-radius: 10px; box-shadow: inset 0 0 0 1px var(--ring); padding: 14px 16px; display: grid; grid-template-columns: 118px minmax(0, 1fr); gap: 4px 16px; align-items: start; }
+@media (max-width: 620px) { .finding { grid-template-columns: minmax(0, 1fr); } }
+.finding h3 { margin-bottom: 3px; }
+.finding p { color: var(--ink-2); font-size: 14px; max-width: 78ch; }
+.finding .next { margin-top: 6px; font-size: 13.5px; color: var(--ink); }
+.caveats { display: grid; gap: 8px; font-size: 13.5px; color: var(--ink-2); max-width: 90ch; }
+.caveats li { margin-bottom: 4px; }
+.next-t th, .next-t td { text-align: left; vertical-align: top; }
+.next-t td:nth-child(4) { white-space: normal; min-width: 32ch; }
+.next-t th:nth-child(2), .next-t td:nth-child(2) { text-align: right; }
+.pending { color: var(--muted); font-style: italic; }
+a { color: var(--s1); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="eyebrow">TanitAD Research Lab · REFe · DriveZero reproduction on NAVSIM navtrain</div>
+    <h1>REFe training run</h1>
+    <div class="runline"><span id="r-name"></span><span>A40 pod · ViT-L/16 DINOv3 + LoRA · 4 cameras · 64 proposals + PDM scorer</span><span id="r-asof"></span></div>
+    <div class="chips" id="chips"></div>
+  </header>
+
+  <section id="now">
+    <div class="sec-head"><h2>Where the run stands</h2>
+      <p class="lead" id="now-lead"></p></div>
+    <div class="kpis" id="kpis"></div>
+    <div class="progress">
+      <div class="meter" id="meter"><div class="fill" id="meter-fill"></div></div>
+      <div class="meter-legend" id="meter-legend"></div>
+    </div>
+    <figure>
+      <div class="fh"><h3>Coming up</h3><p id="cap-next"></p></div>
+      <div class="tbl next-t" id="next-t"></div>
+    </figure>
+    <figure>
+      <div class="fh"><h3>What ran when</h3><p>Data preparation on the pod and the dev box, beside the training run. Times are Europe/Berlin.</p></div>
+      <div class="legend" id="tl-legend"></div>
+      <div class="chart" id="timeline"></div>
+      <details class="tv"><summary>Table view</summary><div class="tbl" id="timeline-t"></div></details>
+    </figure>
+  </section>
+
+  <section id="signals">
+    <div class="sec-head"><h2>Learning signals</h2>
+      <p class="lead">These are training-time signals, logged from the last 4-sample micro-batch of every 256-sample optimiser step. They show whether training is working. They are not driving results; those come from the NAVSIM evaluation further down.</p></div>
+    <figure>
+      <div class="fh"><h3>Trajectory loss (winner-takes-all L1, log scale)</h3><p id="cap-l1"></p></div>
+      <div class="legend"><span><i class="lk" style="background:var(--s1)"></i>median of 51 steps</span><span><i class="lk" style="background:var(--s1);opacity:.3"></i>each step</span><span><i class="sw" style="background:var(--band)"></i>bank still growing</span></div>
+      <div class="chart" id="c-l1"></div>
+      <details class="tv"><summary>Table view (per epoch)</summary><div class="tbl" id="t-epochs"></div></details>
+    </figure>
+    <div class="grid2">
+      <figure>
+        <div class="fh"><h3>Scorer loss</h3><p id="cap-score"></p></div>
+        <div class="chart" id="c-score"></div>
+      </figure>
+      <figure>
+        <div class="fh"><h3>Share of samples with scorer targets</h3><p id="cap-cov"></p></div>
+        <div class="legend"><span><i class="lk" style="background:var(--s1)"></i>last 50 steps</span><span><i class="lk" style="background:var(--deemph)"></i>since step 0 (what the log prints)</span></div>
+        <div class="chart" id="c-cov"></div>
+      </figure>
+      <figure>
+        <div class="fh"><h3>Distinct winning proposals per micro-batch</h3><p id="cap-win"></p></div>
+        <div class="chart" id="c-win"></div>
+      </figure>
+      <figure>
+        <div class="fh"><h3>Scorer candidates to nearest proposal</h3><p id="cap-ad"></p></div>
+        <div class="legend"><span><i class="lk" style="background:var(--s1)"></i>fixed candidate → nearest proposal</span><span><i class="lk" style="background:var(--s2)"></i>labelled on-policy trajectory → nearest proposal now</span></div>
+        <div class="chart" id="c-ad"></div>
+      </figure>
+    </div>
+    <div class="grid2">
+      <figure>
+        <div class="fh"><h3>The scorer on its own proposals: pick, random, best</h3><p id="cap-oppick"></p></div>
+        <div class="legend"><span><i class="lk" style="background:var(--s1)"></i>planner's pick</span><span><i class="lk" style="background:var(--s2)"></i>random proposal</span><span><i class="lk" style="background:var(--s3)"></i>best of 64</span></div>
+        <div class="chart" id="c-oppick"></div>
+      </figure>
+      <figure>
+        <div class="fh"><h3>Selection skill on its own proposals (training side)</h3><p id="cap-opskill"></p></div>
+        <div class="chart" id="c-opskill"></div>
+      </figure>
+    </div>
+    <figure>
+      <div class="fh"><h3>Learning rate (cosine to zero at step 10,075)</h3><p id="cap-lr"></p></div>
+      <div class="legend"><span><i class="lk" style="background:var(--s1)"></i>applied</span><span><i class="lk" style="background:var(--deemph)"></i>still ahead</span></div>
+      <div class="chart" id="c-lr"></div>
+    </figure>
+  </section>
+
+  <section id="bank">
+    <div class="sec-head"><h2>The training bank grew while training ran</h2>
+      <p class="lead" id="bank-lead"></p></div>
+    <div class="grid2">
+      <figure>
+        <div class="fh"><h3>Training tuples read at each epoch</h3><p>Rank-0 targets (one per scene) and goal-augmented twins.</p></div>
+        <div class="legend"><span><i class="sw" style="background:var(--s1)"></i>rank-0 scenes</span><span><i class="sw" style="background:var(--s2)"></i>augmented twins</span></div>
+        <div class="chart" id="c-bank"></div>
+      </figure>
+      <figure>
+        <div class="fh"><h3>Scorer frames read at each epoch</h3><p id="cap-scf"></p></div>
+        <div class="chart" id="c-scf"></div>
+      </figure>
+    </div>
+    <details class="tv"><summary>Table view (bank per epoch)</summary><div class="tbl" id="t-bank"></div></details>
+  </section>
+
+  <section id="speed">
+    <div class="sec-head"><h2>Speed</h2><p class="lead" id="speed-lead"></p></div>
+    <figure>
+      <div class="fh"><h3>Seconds per optimiser step (256 samples)</h3><p>Steps slower than 66 s sit above the plotted range and are marked on the top edge. Most are epoch boundaries, which re-read the bank and save a snapshot; the first is compilation warm-up. The two reference lines are the pace before the on-policy pipeline and the pace of the last 50 steps.</p></div>
+      <div class="chart" id="c-speed"></div>
+    </figure>
+  </section>
+
+  <section id="navtest-full" hidden>
+    <div class="sec-head"><h2>The final model on the full NAVSIM navtest</h2>
+      <p class="lead" id="nt-lead"></p></div>
+    <div class="grid2">
+      <figure>
+        <div class="fh"><h3>Against the reference arms, same 12,146 tokens</h3><p>Paired log-cluster bootstrap over 136 logs; PDMS × 100.</p></div>
+        <div class="tbl" id="t-nt-pairs"></div>
+      </figure>
+      <figure>
+        <div class="fh"><h3>Where the points go</h3><p>Slices of the same per-token scores, each with its own log-cluster interval.</p></div>
+        <div class="tbl" id="t-nt-slices"></div>
+      </figure>
+    </div>
+  </section>
+
+  <section id="sft1" hidden>
+    <div class="sec-head"><h2>Scorer fine-tune (SFT-1): teaching the scorer to rank</h2>
+      <p class="lead" id="sft-lead"></p></div>
+    <figure>
+      <div class="fh"><h3>Held-out reads (3,137 sets from 24 logs the fine-tune never sees)</h3><p>Pick = true navsim_v1 score of the selected hypothesis × 100. "vs base" is the paired difference against the frozen original scorer, log-cluster bootstrap over the 24 logs (10,000 resamples). Arm A continues the original per-component loss; arm B adds a ranking loss over each set of 64. The 64 proposals are identical in all three; only the choice moves.</p></div>
+      <div class="tbl" id="t-sft-evals"></div>
+    </figure>
+    <figure>
+      <div class="fh"><h3>Training progress</h3><p>Mean losses over the last 25 updates (8 × 8 sets each).</p></div>
+      <div class="tbl" id="t-sft-train"></div>
+    </figure>
+  </section>
+
+  <section id="sftn" hidden>
+    <div class="sec-head"><h2>Scorer fine-tunes after SFT-1: SFT-3 and SFT-4</h2>
+      <p class="lead" id="sftn-lead"></p></div>
+    <figure>
+      <div class="fh"><h3>Held-out reads (3,137 sets from 24 logs the fine-tunes never see)</h3><p>Pick = true navsim_v1 score of the selected hypothesis × 100 under each run's own truth labels. "vs base" is the paired difference against the frozen original scorer, log-cluster bootstrap over the 24 logs (10,000 resamples). SFT-3: arm A = the training loss (BCE), arm B = BCE + the expected-score objective, both on the teacher's labels. SFT-4: the paper's NAVSIM PDM targets plus a 7th lane output; its read uses the lane rule (navsim_v1 × p(lane)).</p></div>
+      <div class="tbl" id="t-sftn-evals"></div>
+    </figure>
+  </section>
+
+  <section id="lane1" hidden>
+    <div class="sec-head"><h2>Lane discipline: what the video shows, measured</h2>
+      <p class="lead" id="lane-lead"></p></div>
+    <figure>
+      <div class="fh"><h3>The drive from the video, on the map (plans #20 to #25)</h3><p>Lanes blue = on the route, red = oncoming (left-hand traffic, Singapore). Black = the human's future, green = the selected plan, the fan coloured by predicted score. The map is drawn for inspection only; it is never a model input.</p></div>
+      <img id="lane-scene" alt="Map view of six consecutive plans: the fan and the selected plan cut the inside of a right-hand bend toward the oncoming lane while the human holds the lane." style="width:100%;height:auto;border-radius:6px">
+    </figure>
+    <div class="grid2">
+      <figure>
+        <div class="fh"><h3>How often each trajectory violates</h3><p>Share of tokens; human and PDM-Closed are the floors (legal lane changes and turns trip these measures too). Tokens the route fix leaves unchanged, so the table is the adopted model exactly.</p></div>
+        <div class="tbl" id="t-lane-rates"></div>
+      </figure>
+      <figure>
+        <div class="fh"><h3>Fan or selection?</h3><p>On tokens where the human is clean. Fan effect: at least half of the 64 hypotheses violate. Selection effect: the pick violates although a clean hypothesis with at least the same true PDMS existed.</p></div>
+        <div class="tbl" id="t-lane-effects"></div>
+      </figure>
+    </div>
+    <figure>
+      <div class="fh"><h3>Selection rules on the same proposals</h3><p>PDMS reproduced exactly as the harness scores a submission (checked against the harness CSV on every token). L1 is pre-registered; L2 is reported only; ORACLE rows use the map and are upper bounds, not deployable.</p></div>
+      <div class="tbl" id="t-lane-rules"></div>
+    </figure>
+    <figure>
+      <div class="fh"><h3>What the teacher and the benchmark can see</h3><p>Which lane-related signals exist in the scorer's training labels, the selection rule and NAVSIM v1.1's PDMS.</p></div>
+      <div class="tbl" id="t-lane-teacher"></div>
+    </figure>
+    <figure id="lane-trajteacher-wrap" hidden>
+      <div class="fh"><h3>The trajectory teacher itself (its rollouts are the targets the proposal head learns)</h3><p>3,137 held-out navtrain samples (24 logs): the DriveRL teacher's rollout, the human's logged future and the model's 64 proposals, each judged by the same NAVSIM-faithful rules on NAVSIM's own simulation. Log-cluster bootstrap. 96 of the teacher's 156 drivable-area failures come from a single log.</p></div>
+      <div class="tbl" id="t-lane-trajteacher"></div>
+    </figure>
+  </section>
+
+  <section id="eval">
+    <div class="sec-head"><h2>NAVSIM evaluation: the learning curve</h2>
+      <p class="lead" id="eval-lead"></p></div>
+    <div class="grid2">
+      <figure>
+        <div class="fh"><h3>PDMS per snapshot, with 95% intervals</h3><p>200 navtest tokens over 93 logs, log-cluster bootstrap. Reference arms are scored on the same tokens.</p></div>
+        <div class="legend"><span><i class="sw" style="background:var(--s1);border-radius:50%"></i>REFe, as picked</span><span><i class="sw ring"></i>same proposals re-selected with NAVSIM v1 (exploratory)</span><span><i class="lk" style="background:none;border-top:2px dashed var(--s1);height:0;width:20px"></i>NAVSIM v1 throughout</span><span><i class="sw" style="background:var(--surface);box-shadow:inset 0 0 0 2px var(--s1)"></i>with the heading repair</span><span><i class="lk" style="background:var(--deemph)"></i>reference arms</span></div>
+        <div class="chart" id="c-pdms"></div>
+      </figure>
+      <figure>
+        <div class="fh"><h3>Do the 64 proposals differ?</h3><p>Open-loop ADE against the human future: the planner's pick, a random pick, and the best of 64.</p></div>
+        <div class="legend"><span><i class="lk" style="background:var(--s1)"></i>selected</span><span><i class="lk" style="background:var(--s2)"></i>random (mean of 64)</span><span><i class="lk" style="background:var(--s3)"></i>oracle (best of 64)</span></div>
+        <div class="chart" id="c-ade"></div>
+      </figure>
+    </div>
+    <figure>
+      <div class="fh"><h3>Scores and the four metric families per snapshot</h3><p id="cap-fam"></p></div>
+      <div class="tbl" id="t-eval"></div>
+    </figure>
+  </section>
+
+  <section id="selection">
+    <div class="sec-head"><h2>Choosing among the 64 proposals</h2>
+      <p class="lead" id="sel-lead"></p></div>
+    <div class="grid2">
+      <figure>
+        <div class="fh"><h3>PDMS if the plan had been chosen differently</h3><p id="cap-selpdms"></p></div>
+        <div class="chart" id="c-selpdms"></div>
+      </figure>
+      <figure>
+        <div class="fh"><h3>Does the scorer know which proposals pass?</h3><p id="cap-selauc"></p></div>
+        <div class="legend"><span><i class="sw" style="background:var(--s1);border-radius:50%"></i>within a scene (what choosing needs)</span><span><i class="sw ring"></i>pooled over all scenes (the pre-registered bar)</span></div>
+        <div class="chart" id="c-selauc"></div>
+      </figure>
+    </div>
+    <div class="grid2">
+      <figure>
+        <div class="fh"><h3>Where the pick loses its points</h3><p>Mean sub-score ×100 at the planner's pick, at a random proposal, and at the proposal with the best PDMS.</p></div>
+        <div class="tbl" id="t-selcomp"></div>
+      </figure>
+      <figure>
+        <div class="fh"><h3>The scorer's skill at ranking</h3><p>Within one scene, over the 64 proposals; 95% log-cluster intervals.</p></div>
+        <div class="tbl" id="t-selskill"></div>
+      </figure>
+    </div>
+    <figure>
+      <div class="fh"><h3>Selection by snapshot</h3><p id="cap-seltrend"></p></div>
+      <div class="tbl" id="t-seltrend"></div>
+    </figure>
+  </section>
+
+  <section id="reading">
+    <div class="sec-head"><h2>Interpretation</h2><p class="lead">What the data says, what is at risk, and what is being done about it.</p></div>
+    <div class="findings" id="findings"></div>
+  </section>
+
+  <section id="sources">
+    <div class="sec-head"><h2>Sources and caveats</h2></div>
+    <ul class="caveats" id="caveats"></ul>
+  </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script id="data" type="application/json">/*__DATA__*/</script>
+<script>
+(function () {
+  "use strict";
+  const D = JSON.parse(document.getElementById("data").textContent);
+  const P = D.progress, S = D.series;
+  const fmt = (v, d = 2) => (v == null || !isFinite(v)) ? "–" : Number(v).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+  const int = v => (v == null) ? "–" : Math.round(v).toLocaleString("en-US");
+  const pct = (v, d = 1) => (v == null || !isFinite(v)) ? "–" : (100 * v).toFixed(d) + " %";
+  const el = (tag, attrs = {}, text) => { const e = document.createElement(tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; return e; };
+  const $ = id => document.getElementById(id);
+
+  // a point's name on axes and in prose: "e12" / "after epoch 12", or "final" / "the final model" (build_data.py)
+  const labOf = v => v.label || ("e" + v.epoch), longOf = v => v.long || ("after epoch " + v.epoch);
+  const capFirst = t => t.charAt(0).toUpperCase() + t.slice(1);
+  // ---------- header, chips, KPIs ----------
+  $("r-name").textContent = D.run.name;
+  $("r-asof").textContent = "data as of " + D.generated_local + " (Berlin)";
+  const doneFrac = (P.last_step + 1) / P.total_steps;
+  // the finish is projected from the pace NOW against the wall-clock 7-day line (build_data.py)
+  const etaDate = new Date(P.eta_utc), budgetDate = new Date(P.budget_utc);
+  const berlin = d => d.toLocaleString("en-GB", { timeZone: "Europe/Berlin", weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  const totalDays = P.days_total;
+  const hm = h => { const m = Math.round(Math.abs(h) * 60); return m < 60 ? m + " min" : (m / 60).toFixed(1) + " h"; };
+  const budgetTxt = P.inside_budget ? hm(P.margin_h) + " inside the 7-day line (" + berlin(budgetDate) + ")"
+                                    : hm(P.margin_h) + " PAST the 7-day line (" + berlin(budgetDate) + ")";
+  const dumpCost = P.pace_dump_paused ? P.pace_now - P.pace_dump_paused : null;
+  // the PI accepted the ~1 h overrun on Sep 26 (PI_DECISION_QUEUE.md); flag again only beyond that envelope
+  const accepted = !P.inside_budget && P.within_accepted, acceptedDate = new Date(P.accepted_finish_utc);
+  const A = D.assembler, lastB = D.bank_events[D.bank_events.length - 1];
+  const readNow = Math.max(...D.bank_events.map(b => b.scorer_frames));   // the most any epoch read
+  const onp = lastB.scorer_mode === "onpolicy";                           // the fixed bank is retired
+  const bankFixed = A.scorer_frames > readNow;
+  const chips = [
+    ...(D.navtest_full ? [["s-good", "✓", "Full navtest: PDMS " + fmt(D.navtest_full.all.PDMS, 2) + " [" + fmt(D.navtest_full.all.ci95_log_cluster[0], 2) + ", " + fmt(D.navtest_full.all.ci95_log_cluster[1], 2) + "] on " + int(D.navtest_full.all.n) + " tokens"]] : []),
+    P.finished ? ["s-good", "✓", "Training finished " + P.finished_local + " (Berlin): " + int(P.final_steps) + " steps"]
+      : ["s-good", "✓", "Training healthy, " + fmt(P.pace_now, 1) + " s/step now"],
+    P.inside_budget ? ["s-good", "✓", "Finish " + berlin(etaDate) + ", " + hm(P.margin_h) + " inside the 7-day line"]
+      : accepted ? ["s-good", "✓", "Finish " + berlin(etaDate) + ", " + hm(P.margin_h) + " past the 7-day line: extension accepted by you on Sep 26"]
+      : ["s-serious", "!", "Finish " + berlin(etaDate) + " is " + hm(P.past_accepted_h) + " beyond the extension you accepted (" + berlin(acceptedDate) + "): decision needed"],
+    ["s-good", "✓", "Data preparation finished on both machines"],
+    onp ? ["s-good", "✓", "Scorer trains on its own proposals: " + int(lastB.onpolicy_sets) + " labelled sets read at epoch " + lastB.epoch]
+        : bankFixed ? ["s-good", "✓", "Scorer bank restored to " + int(A.scorer_frames) + " frames; read from the next epoch"]
+                    : ["s-serious", "!", "Scorer bank incomplete"],
+    ["s-good", "✓", "Eval environment rebuilt, reproduces a banked result bit for bit"],
+  ].concat((() => {
+    // SPEC_NAVTEST Amendment 2, read at the snapshot after epoch 8: collapsed iff spread < 0.5 m AND oracle within 0.2 m of random
+    const e8 = D.evals.find(v => v.epoch === 8);
+    if (!e8) return [["s-warn", "?", "Proposal diversity: pre-registered check at epoch 8 pending"]];
+    const col = e8.proposals.endpoint_spread_m < 0.5 && (e8.proposals.ade_random_m - e8.proposals.ade_oracle_m) < 0.2;
+    return [col ? ["s-critical", "!", "Proposal head collapsed at epoch 8: decision needed"] : ["s-good", "✓", "Proposals diverse: pre-registered check passed at epoch 8"]];
+  })()).concat((() => {
+    // SPEC_NAVTEST E-6 (Amendments 3 + 3a): every proposal scored
+    const s = (D.selection || [])[(D.selection || []).length - 1];
+    if (!s) return [];
+    return [s.verdict.outcome === "SELECTION_BOUND" ? ["s-serious", "!", "Selection is the bottleneck: best proposal " + fmt(s.a_pdms.oracle.mean, 1) + " PDMS, pick " + fmt(s.a_pdms.actual.mean, 1) + " (random " + fmt(s.a_pdms.random.mean, 1) + ")" + (D.onpolicy && D.onpolicy.switched ? "; on-policy scorer training since step " + D.onpolicy.switch_step : ": decision needed")]
+      : s.verdict.outcome === "UNDETERMINED" ? ["s-warn", "?", "Selection skill " + fmt(s.a_pdms.selection_skill.value, 2) + " [" + fmt(s.a_pdms.selection_skill.ci95[0], 2) + ", " + fmt(s.a_pdms.selection_skill.ci95[1], 2) + "]: undecided against the 0.25 bar at 200 tokens (pick " + fmt(s.a_pdms.actual.mean, 1) + ", best " + fmt(s.a_pdms.oracle.mean, 1) + ", random " + fmt(s.a_pdms.random.mean, 1) + ")"] : ["s-good", "✓", "Selection is not the bottleneck"]];
+  })()).concat((() => {
+    // SPEC_NAVTEST Amendment 4: the on-policy scorer's pre-registered test, its PRIMARY read (rank 1) and any later one
+    const A4 = (D.selection || []).filter(x => x.a4).map(x => x.a4);
+    if (!A4.length) return [];
+    // the DECIDING read (rank 1, or the first after UNDETERMINED ones); later reads are reported, not gating
+    const a = A4.find(x => x.primary.decides) || A4[0], o = a.primary.outcome, sk = fmt(a.primary.skill, 3) + " [" + fmt(a.primary.ci95[0], 3) + ", " + fmt(a.primary.ci95[1], 3) + "]";
+    return [o === "SUCCESS" ? ["s-good", "✓", "Pre-registered on-policy test: SUCCESS, skill " + sk]
+      : o === "FAILURE" ? ["s-serious", "!", "Pre-registered on-policy test: FAILURE, skill " + sk + " against the 0.25 bar" + (D.a4_response ? "; your response (options 2 and 3) is in place" : ": with you")]
+      : ["s-warn", "?", "Pre-registered on-policy test: undetermined, skill " + sk + "; the next snapshot decides"]];
+  })()).concat((() => {
+    // SPEC Amendment 5: the selection rule matched to the benchmark (PI option 3)
+    if (!D.a5) return [];
+    const v = D.a5.arms.v1;
+    return [D.a5.verdict === "REFUTED" ? ["s-serious", "!", "NAVSIM v1 selection rule refuted on fresh tokens: kept the old rule"]
+      : ["s-good", "✓", "Selection rule = NAVSIM v1 since Sep 26 (Amendment 5: " + (v.delta >= 0 ? "+" : "") + fmt(v.delta, 2) + " [" + fmt(v.delta_ci95[0], 2) + ", " + fmt(v.delta_ci95[1], 2) + "] PDMS on " + int(D.a5.N) + " fresh tokens)"]];
+  })()).concat((() => {
+    // SPEC Amendment 7: the executed plan's last-pose heading repair (build_data.py A7)
+    if (!D.a7) return [];
+    const a = D.a7, sg = x => (x >= 0 ? "+" : "") + fmt(x, 2);
+    return [a.decision === "ADOPT" ? ["s-good", "✓", "Heading repair adopted (Amendment 7): " + sg(a.delta) + " [" + sg(a.ci95[0]) + ", " + sg(a.ci95[1]) + "] PDMS on " + int(a.N) + " fresh tokens"]
+      : ["s-warn", "?", "Heading repair " + a.decision.toLowerCase() + " (Amendment 7)"]];
+  })()).concat((() => {
+    // label version 3 (PI option 2): the comfort target is NAVSIM's own check (op_status.py, build_data.py)
+    const O = D.onpolicy;
+    if (!O || !O.v3) return [];
+    const n = (O.v3 === O.sets ? "all " : "") + int(O.v3) + " labelled sets";
+    return [O.v3_read ? ["s-good", "✓", "Comfort label = NAVSIM's own check on " + n + ", in training since epoch " + O.v3_epoch]
+      : ["s-good", "✓", "Comfort label = NAVSIM's own check on " + n + "; training reads it from step ~" + int(O.v3_step)]];
+  })());
+  chips.forEach(([cls, ic, txt]) => { const c = el("span", { class: "chip " + cls }); c.append(el("i"), el("b", { class: "ic", "aria-hidden": "true" }, ic), document.createTextNode(txt)); $("chips").append(c); });
+  $("now-lead").textContent = "Step " + int(P.last_step + 1) + " of " + int(P.total_steps) + " (" + (100 * doneFrac).toFixed(1) +
+    " %), epoch " + P.epoch_now + " of 0–" + P.epoch_last + " (the last one partial). At the pace of the last 50 steps (" + fmt(P.pace_now, 1) + " s/step) the run finishes " + berlin(etaDate) +
+    ", " + totalDays.toFixed(2) + " days after launch: " + budgetTxt + (accepted ? "; you accepted this extension on Sep 26" : "") + ".";
+  const kpis = [
+    ["Optimiser steps", int(P.last_step + 1), "of " + int(P.total_steps) + " planned"],
+    ["Finish (estimate)", berlin(etaDate), P.eta_h_now.toFixed(0) + " h to go · " + totalDays.toFixed(2) + " d in total · line " + berlin(budgetDate)],
+    ["Pace now", fmt(P.pace_now, 1) + " s/step", "last 50 steps · " + fmt(P.pace_pre_pipeline, 1) + " s before the on-policy dump · " + fmt(P.pace_now / 256, 3) + " s/sample"],
+    ["Trajectory loss", fmt(P.traj_L1_med_now, 3), "from " + fmt(P.traj_L1_first, 1) + " at step 1 (median of 51 steps)"],
+    ["Training bank", int(189888) + " tuples", "103,037 scenes + 86,851 augmented twins"],
+    onp ? ["On-policy sets read", int(lastB.onpolicy_sets), "at the epoch-" + lastB.epoch + " boundary · " + (D.onpolicy ? int(D.onpolicy.sets) + " labelled by now, ~" + int(D.onpolicy.rate_per_h) + "/h" : "")]
+        : ["Scorer frames in bank", int(A.scorer_frames), bankFixed ? "restored " + A.last_local + " · training has read " + int(readNow) + " so far" : "of ~189,888"],
+  ];
+  kpis.forEach(([l, v, s]) => { const t = el("div", { class: "tile" }); t.append(el("div", { class: "lab" }, l), el("div", { class: "val" }, v), el("div", { class: "sub" }, s)); $("kpis").append(t); });
+  $("meter-fill").style.width = (100 * doneFrac).toFixed(2) + "%";
+  D.epoch_events.forEach(e => { const t = el("div", { class: "tick", title: "epoch " + e.epoch + " begins at step " + e.step }); t.style.left = (100 * e.step / P.total_steps) + "%"; $("meter").append(t); });
+  [["Launched " + D.run.start_local], [int(P.last_step + 1) + " steps done · " + fmt(P.elapsed_h, 1) + " h"], ["Ticks mark the " + D.epoch_events.length + " epoch starts so far"], ["Planned end: step " + int(P.total_steps)]]
+    .forEach(([t]) => $("meter-legend").append(el("span", {}, t)));
+  // ---------- coming up: the next snapshots and the end of training, at the pace now (build_data.py) ----------
+  (() => {
+    const M = D.milestones || [], O = D.onpolicy || {}, snaps = M.filter(m => m.kind === "snapshot"), fin = M.find(m => m.kind === "final");
+    const cSel = (D.selection || []).filter(x => x.c_components && x.c_components.C).slice(-1)[0];
+    const cAuc = cSel ? cSel.c_components.C.within_token_auc.mean : null;
+    const pad = e => String(e).padStart(3, "0");
+    const rows = snaps.slice(0, 3).map(m => {
+      const what = ["Learning-curve point (PDMS on the 200 tokens), the selection table over all 64 proposals, and the Amendment 4 read (reported, not gating)."];
+      if (m.first_v1) { const b = (D.selection || []).filter(s => s.v1).slice(-1)[0];
+        what.push("The first point selected with NAVSIM v1's own formula (Amendment 5)" + (b ? ": read it against " + fmt(b.v1.pdms, 1) + ", snapshot " + pad(b.epoch) + " re-selected with v1, not the " + fmt(b.a_pdms.actual.mean, 1) + " it scored under the old rule." : ".")); }
+      if (m.v3_starts) what.push("Its scorer was still trained on the teacher's comfort label; from this boundary training reads NAVSIM's (" + int(O.v3) + " sets labelled so far, about " + int(O.rate_per_h) + " more per hour).");
+      if (m.first_v3_trained) { const ca = cSel ? cSel.c_components.C.within_token_auc : null, side = !ca || !ca.ci95 ? "" : ca.ci95[1] < 0.5 ? "backwards" : ca.ci95[0] > 0.5 ? "above chance" : "at chance";
+        what.push("The first snapshot whose scorer trained on NAVSIM's comfort label: does its comfort output rank proposals better than chance" + (ca ? " (within-scene AUC " + fmt(ca.mean, 2) + (ca.ci95 ? " [" + fmt(ca.ci95[0], 2) + ", " + fmt(ca.ci95[1], 2) + "]" : "") + ", " + side + ", " + longOf(cSel) + ")" : "") + "?"); }
+      return [berlin(new Date(m.at_utc)), int(m.step), "Snapshot " + pad(m.epoch) + " (" + longOf({ epoch: m.epoch }) + ")", what.join(" ")];
+    });
+    if (snaps.length > 3) {
+      const a = snaps[3], b = snaps[snaps.length - 1];
+      rows.push([berlin(new Date(a.at_utc)) + " to " + berlin(new Date(b.at_utc)), int(a.step) + "–" + int(b.step), "Snapshots " + pad(a.epoch) + "–" + pad(b.epoch),
+        "One every " + fmt((P.steps_per_epoch_mean || P.steps_per_epoch) * P.pace_now / 3600, 1) + " h, each evaluated the same way. Labels written after the last boundary (step " + int(b.step) + ") are never read by training and stay banked."]);
+    }
+    if (fin) rows.push([berlin(new Date(fin.at_utc)), int(fin.step), "End of training: the final model",
+      "Its 200-token point, then the full navtest (12,146 tokens, 5–12 h on the dev box), then the run is backed up before the pod is stopped: the pod has no persistent volume."]);
+    $("cap-next").textContent = rows.length ? "Projected at the pace now (" + fmt(P.pace_now, 1) + " s/step) plus " + fmt(P.boundary_overhead_s, 0) + " s per epoch boundary; Berlin time. The dev box evaluates each snapshot as soon as the file appears; the PDMS point, the selection table over all 64 proposals and the tests have taken 30 min (snapshot 013) to 77 min (snapshot 014), depending on what else the dev box runs."
+      : "Nothing scheduled: training has ended.";
+    if (rows.length) table("next-t", ["When (Berlin)", "Step", "What", "What it tells us"], rows);
+  })();
+
+  // ---------- shared chart machinery ----------
+  const charts = [];
+  function mount(id, draw) { const host = $(id); const c = { host, draw }; charts.push(c); return c; }
+  function tipFor(host) { let t = host.querySelector(".tip"); if (!t) { t = el("div", { class: "tip", role: "status" }); t.hidden = true; host.append(t); } return t; }
+  function showTip(host, tip, x, y, head, rows) {
+    tip.replaceChildren(el("div", { class: "t-h" }, head));
+    rows.forEach(r => { const row = el("div", { class: "t-r" }); const k = el("i", { class: "key" }); k.style.background = r.color; row.append(k, el("b", {}, r.value), el("span", {}, r.label)); tip.append(row); });
+    tip.hidden = false;
+    const hw = host.clientWidth, tw = tip.offsetWidth;
+    let left = x + 14; if (left + tw > hw) left = x - tw - 14; if (left < 0) left = 0;
+    tip.style.left = left + "px"; tip.style.top = Math.max(0, y - 10) + "px";
+  }
+
+  function lineChart(id, o) {
+    return mount(id, host => {
+      host.replaceChildren();
+      const W = Math.max(280, host.clientWidth), H = o.height || 240;
+      const m = { t: o.epochLabels ? 22 : 12, r: o.rightPad || 64, b: 30, l: 50 };
+      const svg = d3.select(host).append("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("height", H)
+        .attr("role", "img").attr("aria-label", o.aria || "");
+      const X = o.x, xs = d3.scaleLinear().domain(o.xDomain || d3.extent(X)).range([m.l, W - m.r]);
+      const ys = (o.ylog ? d3.scaleLog() : d3.scaleLinear()).domain(o.yDomain).range([H - m.b, m.t]);
+      if (o.clamp) ys.clamp(true);
+      if (o.bands) o.bands.forEach(b => svg.append("rect").attr("x", xs(b[0])).attr("y", m.t).attr("width", Math.max(0, xs(b[1]) - xs(b[0])))
+        .attr("height", H - m.b - m.t).style("fill", "var(--band)"));
+      const yt = o.yTicks ? ys.ticks(o.yTicks) : (o.ylog ? o.yLogTicks : ys.ticks(5));
+      svg.append("g").selectAll("line").data(yt).join("line").attr("class", "gridline")
+        .attr("x1", m.l).attr("x2", W - m.r).attr("y1", d => ys(d)).attr("y2", d => ys(d));
+      svg.append("g").selectAll("text").data(yt).join("text").attr("x", m.l - 8).attr("y", d => ys(d)).attr("dy", "0.32em")
+        .attr("text-anchor", "end").attr("class", "num").text(o.yFmt || (d => d));
+      const xt = xs.ticks(Math.max(3, Math.floor((W - m.l - m.r) / 90)));
+      svg.append("line").attr("x1", m.l).attr("x2", W - m.r).attr("y1", H - m.b).attr("y2", H - m.b).style("stroke", "var(--axis)");
+      svg.append("g").selectAll("text").data(xt).join("text").attr("x", d => xs(d)).attr("y", H - m.b + 17)
+        .attr("text-anchor", "middle").attr("class", "num").text(d => d3.format(",")(d));
+      if (o.xLabel) svg.append("text").attr("x", W - m.r).attr("y", H - 2).attr("text-anchor", "end").text(o.xLabel);
+      if (o.epochLabels) {
+        const every = W < 520 ? 3 : 1;
+        D.epoch_events.forEach((e, i) => {
+          if (e.step < xs.domain()[0] || e.step > xs.domain()[1]) return;
+          svg.append("line").attr("x1", xs(e.step)).attr("x2", xs(e.step)).attr("y1", m.t).attr("y2", H - m.b).style("stroke", "var(--grid)");
+          if ((i + 1) % every === 0) svg.append("text").attr("x", xs(e.step)).attr("y", m.t - 7).attr("text-anchor", "middle").text("e" + e.epoch);
+        });
+      }
+      (o.refs || []).forEach(r => {
+        svg.append("line").attr("x1", m.l).attr("x2", W - m.r).attr("y1", ys(r.y)).attr("y2", ys(r.y)).style("stroke", r.color || "var(--deemph)").style("stroke-width", 1.5);
+        svg.append("text").attr("x", W - m.r + 6).attr("y", ys(r.y)).attr("dy", "0.32em").attr("class", "lbl").text(r.label);
+      });
+      o.series.forEach(s => {
+        const pts = X.map((x, i) => [x, s.y[i]]).filter(p => p[1] != null && isFinite(p[1]) && (!o.ylog || p[1] > 0) && p[0] >= xs.domain()[0] && p[0] <= xs.domain()[1]);
+        const line = d3.line().x(p => xs(p[0])).y(p => ys(p[1])).curve(s.step ? d3.curveStepAfter : d3.curveLinear);
+        svg.append("path").attr("d", line(pts)).style("fill", "none").style("stroke", s.color)
+          .style("stroke-width", s.w || 2).style("opacity", s.opacity == null ? 1 : s.opacity)
+          .style("stroke-linejoin", "round").style("stroke-linecap", "round");
+        if (s.end && pts.length) {
+          const p = pts[pts.length - 1];
+          svg.append("circle").attr("cx", xs(p[0])).attr("cy", ys(p[1])).attr("r", 4).style("fill", s.color).style("stroke", "var(--surface)").style("stroke-width", 2);
+          svg.append("text").attr("x", xs(p[0]) + 8).attr("y", ys(p[1])).attr("dy", "0.32em").attr("class", "lbl-strong num").text((s.endFmt || (v => v))(p[1]));
+        }
+      });
+      (o.marks || []).forEach(mk => {
+        svg.append("path").attr("d", d3.symbol(d3.symbolTriangle, 36)()).attr("transform", `translate(${xs(mk.x)},${m.t + 5}) rotate(0)`).style("fill", "var(--ink-2)");
+      });
+      // hover: crosshair snaps to the nearest logged step
+      const tip = tipFor(host), cross = svg.append("line").style("stroke", "var(--axis)").style("opacity", 0).attr("y1", m.t).attr("y2", H - m.b);
+      const dots = o.series.filter(s => s.hover !== false).map(s => svg.append("circle").attr("r", 4).style("fill", s.color).style("stroke", "var(--surface)").style("stroke-width", 2).style("opacity", 0));
+      const bis = d3.bisector(d => d).center;
+      const hit = svg.append("rect").attr("x", m.l).attr("y", m.t).attr("width", W - m.l - m.r).attr("height", H - m.t - m.b).style("fill", "transparent").attr("tabindex", 0);
+      function at(px) {
+        const xv = xs.invert(px); let i = bis(X, xv); i = Math.max(0, Math.min(X.length - 1, i));
+        cross.attr("x1", xs(X[i])).attr("x2", xs(X[i])).style("opacity", 1);
+        const rows = [];
+        o.series.filter(s => s.hover !== false).forEach((s, k) => {
+          const v = s.y[i];
+          if (v != null && isFinite(v) && (!o.ylog || v > 0)) { dots[k].attr("cx", xs(X[i])).attr("cy", ys(v)).style("opacity", 1); rows.push({ color: s.color, value: (s.fmt || (z => z))(v), label: s.label }); }
+          else dots[k].style("opacity", 0);
+        });
+        showTip(host, tip, xs(X[i]) / W * host.clientWidth, 8, (o.headFmt || (x => "step " + d3.format(",")(x)))(X[i], i), rows);
+      }
+      hit.on("pointermove", ev => at(d3.pointer(ev)[0])).on("pointerleave blur", () => { tip.hidden = true; cross.style("opacity", 0); dots.forEach(d => d.style("opacity", 0)); })
+        .on("focus", () => at(W - m.r - 1));
+    });
+  }
+
+  function barChart(id, o) {
+    return mount(id, host => {
+      host.replaceChildren();
+      const W = Math.max(280, host.clientWidth), H = o.height || 230, m = { t: 14, r: o.rightPad || 16, b: 30, l: 58 };
+      const svg = d3.select(host).append("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("height", H).attr("role", "img").attr("aria-label", o.aria || "");
+      const cats = o.rows.map(r => r.cat);
+      const xs = d3.scaleBand().domain(cats).range([m.l, W - m.r]).paddingInner(0.3).paddingOuter(0.15);
+      const ys = d3.scaleLinear().domain([0, o.yMax]).nice().range([H - m.b, m.t]);
+      const bw = Math.min(24, xs.bandwidth()), off = (xs.bandwidth() - bw) / 2;
+      svg.append("g").selectAll("line").data(ys.ticks(4)).join("line").attr("class", "gridline").attr("x1", m.l).attr("x2", W - m.r).attr("y1", d => ys(d)).attr("y2", d => ys(d));
+      svg.append("g").selectAll("text").data(ys.ticks(4)).join("text").attr("x", m.l - 8).attr("y", d => ys(d)).attr("dy", "0.32em").attr("text-anchor", "end").attr("class", "num").text(d => d3.format("~s")(d));
+      svg.append("g").selectAll("text").data(cats).join("text").attr("x", d => xs(d) + xs.bandwidth() / 2).attr("y", H - m.b + 17).attr("text-anchor", "middle").attr("class", "num").text(d => d);
+      if (o.xLabel) svg.append("text").attr("x", m.l).attr("y", H - 2).text(o.xLabel);
+      const tip = tipFor(host);
+      o.rows.forEach(r => {
+        let base = 0; const g = svg.append("g");
+        o.keys.forEach((k, ki) => {
+          const v = r[k.key] || 0; if (v <= 0) return;
+          const y0 = ys(base), y1 = ys(base + v), top = ki === o.keys.length - 1 || o.keys.slice(ki + 1).every(kk => !(r[kk.key] > 0));
+          const h = Math.max(0, y0 - y1 - (base > 0 ? 2 : 0));
+          const x = xs(r.cat) + off, y = y1, rad = top ? Math.min(4, h) : 0;
+          const d = top ? `M${x},${y + h} V${y + rad} Q${x},${y} ${x + rad},${y} H${x + bw - rad} Q${x + bw},${y} ${x + bw},${y + rad} V${y + h} Z` : `M${x},${y} h${bw} v${h} h${-bw} Z`;
+          g.append("path").attr("d", d).style("fill", k.color);
+          base += v;
+        });
+        const hit = svg.append("rect").attr("x", xs(r.cat)).attr("y", m.t).attr("width", xs.bandwidth()).attr("height", H - m.t - m.b).style("fill", "transparent").attr("tabindex", 0);
+        const show = () => showTip(host, tip, (xs(r.cat) + xs.bandwidth()) / W * host.clientWidth, 10, o.headFmt(r),
+          o.keys.map(k => ({ color: k.color, value: int(r[k.key] || 0), label: k.label })).concat(o.extraRows ? o.extraRows(r) : []));
+        hit.on("pointermove focus", show).on("pointerleave blur", () => { tip.hidden = true; });
+      });
+      (o.refs || []).forEach(rf => {
+        svg.append("line").attr("x1", m.l).attr("x2", W - m.r).attr("y1", ys(rf.y)).attr("y2", ys(rf.y)).style("stroke", "var(--deemph)").style("stroke-width", 1.5);
+        svg.append("text").attr("x", W - m.r).attr("y", ys(rf.y) - 6).attr("text-anchor", "end").attr("class", "lbl").text(rf.label);
+      });
+      if (o.labelTop) o.rows.forEach(r => {
+        const tot = o.keys.reduce((a, k) => a + (r[k.key] || 0), 0);
+        if (o.labelTop(r)) svg.append("text").attr("x", xs(r.cat) + xs.bandwidth() / 2).attr("y", ys(tot) - 6).attr("text-anchor", "middle").attr("class", "lbl num").text(o.labelTop(r));
+      });
+    });
+  }
+
+  // end labels that would collide are pushed apart vertically and tied back with a short leader tick
+  function dodge(items, gap) {
+    items.sort((a, b) => a.y - b.y);
+    for (let i = 1; i < items.length; i++) if (items[i].ly - items[i - 1].ly < gap) items[i].ly = items[i - 1].ly + gap;
+    return items;
+  }
+  function endLabels(svg, items, x0, cls) {
+    items.forEach(it => { it.ly = it.y; });
+    dodge(items, 14).forEach(it => {
+      if (Math.abs(it.ly - it.y) > 1) svg.append("line").attr("x1", x0).attr("x2", x0 + 5).attr("y1", it.y).attr("y2", it.ly).style("stroke", "var(--axis)");
+      svg.append("text").attr("x", x0 + 7).attr("y", it.ly).attr("dy", "0.32em").attr("class", cls || "lbl num").text(it.text);
+    });
+  }
+
+  function table(id, head, rows) {
+    const t = el("table"), thead = el("thead"), tr = el("tr");
+    head.forEach(h => tr.append(el("th", { scope: "col" }, h))); thead.append(tr); t.append(thead);
+    const tb = el("tbody"); rows.forEach(r => { const row = el("tr"); r.forEach(c => row.append(el("td", {}, c))); tb.append(row); }); t.append(tb);
+    $(id).replaceChildren(t);
+  }
+
+  // ---------- the full navtest of the final model ----------
+  if (D.navtest_full) {
+    const N = D.navtest_full, a = N.all, iv = x => "[" + fmt(x[0], 2) + ", " + fmt(x[1], 2) + "]";
+    $("navtest-full").hidden = false;
+    $("nt-lead").textContent = "The final model scores PDMS " + fmt(a.PDMS, 2) + " " + iv(a.ci95_log_cluster) + " on all " + int(a.n) +
+      " navtest tokens (" + int(a.n_logs) + " logs; NAVSIM v1.1, open loop; heading repair on, goal sanitisation off; scored " + N.scored + "). " +
+      "Sub-scores: NC " + fmt(a.NC, 1) + ", DAC " + fmt(a.DAC, 1) + ", EP " + fmt(a.EP, 1) + ", TTC " + fmt(a.TTC, 1) + ", C " + fmt(a.C, 1) + ". " +
+      int(N.zero.n) + " picks (" + (100 * N.zero.share).toFixed(1) + " %) score exactly 0, mostly by leaving the drivable area (" + int(N.zero.by_failing_term.DAC || 0) +
+      "); they are the largest lever. The 475 tokens whose scenario route skips the ego's road score " + fmt(N.off_route.PDMS, 1) + " and cost the mean " + fmt(N.off_cost, 2) + " points." +
+      (N.a9 && N.a9.pdm_route ? " Pre-registered fix (SPEC Amendment 9): repairing the route the way NAVSIM's own reference planner does adds " +
+        (N.a9.pdm_route.d >= 0 ? "+" : "") + fmt(N.a9.pdm_route.d, 2) + " [" + fmt(N.a9.pdm_route.ci[0], 2) + ", " + fmt(N.a9.pdm_route.ci[1], 2) + "] on the " +
+        int(N.a9.pdm_route.n) + " tokens it changes (" + N.a9.pdm_route.verdict + "; about +" + fmt(N.a9.pdm_route.full, 2) + " on the full mean); DEPLOYED on your ruling of 2026-10-04." +
+        (N.a9.navgoal_straight ? " The map-free fallback reads " + (N.a9.navgoal_straight.d >= 0 ? "+" : "") + fmt(N.a9.navgoal_straight.d, 2) + " [" + fmt(N.a9.navgoal_straight.ci[0], 2) + ", " + fmt(N.a9.navgoal_straight.ci[1], 2) + "] (" + N.a9.navgoal_straight.verdict + ")." : "") : "");
+    if (N.routefix) {
+      const F = N.routefix;
+      $("nt-lead").textContent += " ⭐ With the adopted route fix, measured exactly on all " + int(a.n) + " tokens: PDMS " + fmt(F.PDMS, 2) +
+        " [" + fmt(F.lo, 2) + ", " + fmt(F.hi, 2) + "], " + (F.d >= 0 ? "+" : "") + fmt(F.d, 2) + " [" + fmt(F.d_lo, 2) + ", " + fmt(F.d_hi, 2) +
+        "] over the unfixed model on the same tokens (" + int(F.wtl[0]) + " better / " + int(F.wtl[1]) + " tied / " + int(F.wtl[2]) +
+        " worse); picks scoring 0 fall to " + int(F.zero) + ". The longitudinal, lateral and tactical families all improve. The matched paper row (DINOv3 ViT-L) reads 94.55.";
+    }
+    const nm = { STOP: "standing still", CV: "constant velocity", HUMAN: "the human (log replay)", refcv4b_A1: "refcv4b (earlier programme model)" };
+    table("t-nt-pairs", ["REFe minus", "their PDMS", "difference [95% CI]", "wins / ties / losses"],
+      ["STOP", "CV", "refcv4b_A1", "HUMAN"].map(k => { const p = N.pairs[k];
+        return [nm[k], fmt(N.floors[k], 2), (p.d >= 0 ? "+" : "") + fmt(p.d, 2) + " [" + fmt(p.lo, 2) + ", " + fmt(p.hi, 2) + "]", p.wtl.map(int).join(" / ")]; }));
+    const sl = [["all tokens", a], ["frame-control clean", N.clean], ["on-route", N.on_route], ["off-route (route skips the ego's road)", N.off_route],
+                ...Object.entries(N.by_command).map(([k, v]) => ["command " + k, v])];
+    table("t-nt-slices", ["slice", "tokens", "PDMS [95% CI]", "picks scoring 0"],
+      sl.map(([n, v]) => [n, int(v.n), fmt(v.PDMS, 2) + " " + iv(v.ci95_log_cluster), int(v.n_pdms_zero)]));
+  }
+
+  // ---------- SFT-1: the scorer-only fine-tune ----------
+  if (D.sft1 && D.sft1.evals && D.sft1.evals.length) {
+    const S = D.sft1, tr = S.train, last = tr.length ? tr[tr.length - 1] : null, ev = S.evals, le = ev[ev.length - 1];
+    const sgn = v => (v >= 0 ? "+" : "") + fmt(v, 2);
+    const dci = a => a && a.pick_minus_base ? sgn(a.pick_minus_base.mean) + " [" + sgn(a.pick_minus_base.ci95[0]) + ", " + sgn(a.pick_minus_base.ci95[1]) + "]" : "–";
+    $("sft1").hidden = false;
+    const done = S.meta.done;
+    const left = last ? (last.of - last.update) * last.s_per_update / 3600 : null;
+    const V = S.verdict;
+    $("sft-lead").textContent = V ? ("Verdict: " + V.verdict + ". Neither arm's lower bound clears zero at the last held-out read (" + V.last_read + "): arm A " + dci(le.A) + ", arm B " + dci(le.B) + " against the original scorer's " + fmt(le.base.pick, 2) +
+      ". The run was killed by an out-of-memory event at update " + int(V.killed_at_update) + " of " + int(V.of) + ", so the registered final read does not exist; the updates after the last read carry " + fmt(100 * V.lr_mass_after_last_read, 2) + " % of the learning-rate mass. Cause: " + V.cause + ". Next: " + V.next + ".") : ((done ? "Finished: " + int(done.updates) + " updates in " + fmt(done.hours, 1) + " h. " :
+      "Running on the A40: update " + int(last ? last.update : 0) + " of " + int(last ? last.of : 0) + " (" + fmt(last ? last.s_per_update : null, 1) + " s each, about " + fmt(left, 1) + " h left). ") +
+      "Latest held-out read (" + le.tag + "): original scorer " + fmt(le.base.pick, 2) + "; arm A " + dci(le.A) + "; arm B " + dci(le.B) +
+      ". Picks scoring 0: base " + int(le.base.zero_picks) + ", A " + int(le.A.zero_picks) + ", B " + int(le.B.zero_picks) + " of " + int(le.n) +
+      ". A variant goes to navtest only if its lower bound clears zero at the final update (pre-registered, eval/PREREG_SFT1.md).");
+    const rows = [];
+    ev.forEach(e => ["base", "A", "B"].forEach(k => { const a = e[k]; rows.push([e.tag, k === "base" ? "original" : "arm " + k, fmt(a.pick, 2), k === "base" ? "–" : dci(a),
+      int(a.zero_picks), fmt(a.auc_nc, 3), fmt(a.auc_dac, 3), fmt(a.skill, 3)]); }));
+    table("t-sft-evals", ["read", "scorer", "pick", "vs base [95% CI]", "picks = 0", "AUC NC", "AUC DAC", "skill"], rows);
+    const keep = tr.filter((r, i) => i === tr.length - 1 || r.update % 250 === 0 || i === 0);
+    table("t-sft-train", ["update", "arm A loss (BCE)", "arm B loss (BCE + 0.3 ListNet)", "ListNet", "s / update"],
+      keep.map(r => [int(r.update), fmt(r.bceA, 4), fmt(r.lossB, 4), fmt(r.listnet, 3), fmt(r.s_per_update, 2)]));
+  }
+
+  // ---------- SFT-3 / SFT-4: the follow-on scorer fine-tunes ----------
+  {
+    const runs = [["SFT-3", D.sft3, "eval/PREREG_SFT3.md"], ["SFT-4", D.sft4, "eval/PREREG_SFT4.md"]].filter(r => r[1] && r[1].meta && (r[1].meta.start || r[1].evals.length));
+    if (runs.length) {
+      $("sftn").hidden = false;
+      const sgn = v => (v >= 0 ? "+" : "") + fmt(v, 2);
+      const ci = d => d ? sgn(d.mean) + " [" + sgn(d.ci95[0]) + ", " + sgn(d.ci95[1]) + "]" : "–";
+      const lead = [], rows = [];
+      runs.forEach(([nm, S, pre]) => {
+        const tr = S.train, last = tr.length ? tr[tr.length - 1] : null, ev = S.evals, le = ev.length ? ev[ev.length - 1] : null;
+        const done = S.meta.done;
+        const left = last ? (last.of - last.update) * last.s_per_update / 3600 : null;
+        const pickOf = a => a.x_lane ? a.x_lane : a;
+        const dOf = a => a.x_lane ? a.x_lane.pick_minus_base_v1 : a.pick_minus_base;
+        if (S.verdict) { lead.push(nm + ": " + S.verdict.summary); }
+        else lead.push(nm + ": " + (done ? "finished, " + int(done.updates) + " updates in " + fmt(done.hours, 1) + " h" :
+          (last ? "update " + int(last.update) + " of " + int(last.of) + " (" + fmt(last.s_per_update, 1) + " s each, about " + fmt(left, 1) + " h left)" : (ev.length ? "training started" : "started, held-out read at step 0 pending"))) +
+          (le ? "; latest read (" + le.tag + "): arm A " + ci(dOf(le.A)) + ", arm B " + ci(dOf(le.B)) + " vs the original scorer's " + fmt(le.base.pick, 2) : "") +
+          ". An arm passes only if its lower bound clears zero at the final update (" + pre + ").");
+        if (S.peek) lead.push("EXPLORATORY navtest look (arm B at update 400, " + int(S.peek.n) + " tokens / " + int(S.peek.logs) + " logs not in the registered set): PDMS " + fmt(S.peek.dep, 2) + " -> " + fmt(S.peek.arm, 2) + ", " + sgn(S.peek.d) + " [" + sgn(S.peek.ci[0]) + ", " + sgn(S.peek.ci[1]) + "]; it decides nothing -- the registered stage 2 reads the final checkpoint on the 923 confirmation tokens.");
+        ev.forEach(e => ["base", "A", "B"].forEach(k => { const a = e[k]; if (!a) return;
+          const p = k === "base" ? a : pickOf(a);
+          rows.push([nm, e.tag, k === "base" ? "original" : "arm " + k, fmt(p.pick, 2), k === "base" ? "–" : ci(dOf(a)),
+            int(p.zero_picks), fmt(a.auc_nc, 3), fmt(a.auc_dac, 3)]); }));
+      });
+      $("sftn-lead").textContent = lead.join(" ");
+      table("t-sftn-evals", ["run", "read", "scorer", "pick", "vs base [95% CI]", "picks = 0", "AUC NC", "AUC DAC"], rows);
+    }
+  }
+
+  // ---------- LANE-1: lane discipline ----------
+  if (D.lane1 && D.lane1.unchanged_by_routefix) {
+    const L1 = D.lane1, P = L1.unchanged_by_routefix, L2 = L1.lane2 ? L1.lane2.unchanged_by_routefix : null;
+    const ci = b => b ? pct(b.est) + " [" + pct(b.lo) + ", " + pct(b.hi) + "]" : "–";
+    const cx = b => b ? (b.est >= 0 ? "+" : "") + fmt(b.est, 2) + " [" + fmt(b.lo, 2) + ", " + fmt(b.hi, 2) + "]" : "–";
+    const cpp = b => b ? (b.est >= 0 ? "+" : "") + (100 * b.est).toFixed(2) + " pp [" + (100 * b.lo).toFixed(2) + ", " + (100 * b.hi).toFixed(2) + "]" : "–";
+    $("lane1").hidden = false;
+    if (D.lane_scene) $("lane-scene").src = D.lane_scene; else $("lane-scene").hidden = true;
+    const on = P.violation_rates.onc, eo = P.effects_human_clean.onc, l1 = P.selection_rules.L1_x_pddc;
+    const lk = L2 ? L2.violation_rates.lk10 : null, ek = L2 ? L2.effects_human_clean.lk10 : null;
+    $("lane-lead").textContent = (L1.partial ? "PARTIAL read (" + int(L1.rows) + " of 12,146 tokens). " : "") +
+      "NAVSIM v1.1 gives driving direction a weight of 0 and counts the oncoming carriageway as drivable, and our scorer's labels contain no lane-keeping signal, so nothing in training or in the benchmark penalised these effects. " +
+      "Entering an oncoming or off-route lane (≥ 2 m within 1 s): human " + pct(on.human.est) + ", selected plan " + pct(on.pick.est) + "; when the pick does it, a clean hypothesis with at least the same PDMS existed in " + pct(eo.of_violating_picks_share_with_free_clean_alt.est) + " of cases, so this is mostly a SELECTION failure. " +
+      (lk ? "Off the lane centre by > 1 m for ≥ 1 s: human " + pct(lk.human.est) + ", PDM-Closed " + pct(lk.pdm_closed.est) + ", selected plan " + pct(lk.pick.est) + ". " : "") +
+      "Pre-registered L1 (multiply in the scorer's own direction head): PDMS " + cx(l1.paired_delta_x100) + ", oncoming picks " + cpp(l1.onc_rate_delta) + ": " + (P.L1_verdict.ADOPT ? "ADOPT." : "not adopted by its registered rule.");
+    const rr = (nm, b) => [nm, ci(b.human), ci(b.pdm_closed), ci(b.fan_mean), ci(b.pick)];
+    const rateRows = [rr("enters an oncoming / off-route lane (NAVSIM DDC < 1)", on), rr("leaves the drivable area (DAC)", P.violation_rates.dac)];
+    if (lk) { rateRows.push(rr("off the lane centre > 1 m for ≥ 1 s", lk)); rateRows.push(rr("off the lane centre > 1.5 m for ≥ 1 s", L2.violation_rates.lk15)); }
+    table("t-lane-rates", ["violation", "human", "PDM-Closed", "fan (mean of 64)", "selected plan"], rateRows);
+    const er = (nm, e) => [nm, int(e.human_clean_tokens), ci(e.FAN_effect), ci(e.SELECTION_effect_free_clean_alt), ci(e.of_violating_picks_share_with_free_clean_alt)];
+    const effRows = [er("oncoming / off-route lane", eo)];
+    if (ek) effRows.push(er("off the lane centre > 1 m, ≥ 1 s", ek));
+    table("t-lane-effects", ["violation", "tokens (human clean)", "fan effect", "selection effect", "violating picks with a free clean alternative"], effRows);
+    const names = { navsim_v1: "current rule (navsim_v1)", L1_x_pddc: "L1: × direction head (registered)", "L2_gate_pddc_0.5": "L2: gate direction head ≥ 0.5",
+      ORACLE_mask_onc: "ORACLE: drop oncoming hypotheses", ORACLE_mask_lane: "ORACLE: drop lane-straddling hypotheses", ORACLE_best_pdms: "ORACLE: best true PDMS" };
+    table("t-lane-rules", ["rule", "PDMS", "vs current [95% CI]", "picks changed", "oncoming", "drivable area fail"],
+      Object.entries(P.selection_rules).map(([k, v]) => [names[k] || k, fmt(v.pdms_x100.est, 2), k === "navsim_v1" ? "–" : cx(v.paired_delta_x100), int(v.changed_picks), pct(v.onc_rate.est, 2), pct(v.dac_rate.est, 2)]));
+    const TD = L1.teacher_ddc, DV = L1.ddc_valid;
+    table("t-lane-teacher", ["signal", "scorer training labels", "selection rule", "NAVSIM v1.1 PDMS"], [
+      ["drivable area", "yes: NAVSIM-faithful, 100.00 % agreement on 25,600 proposals", "yes (multiplies)", "yes (multiplies)"],
+      ["driving direction (oncoming)", TD ? "DriveRL's wrong-way flag: catches " + pct(TD.recall_teacher_of_navsim) + " of NAVSIM's violations; " + pct(TD.precision_teacher_vs_navsim) + " of its flags are real (" + int(TD.proposals) + " held-out proposals)" : "DriveRL's wrong-way definition", "no: the head is trained, never used", "computed, weight 0"],
+      ["solid-line crossing", "category exists, fires 0 times in 200,768 proposals", "no", "no"],
+      ["lane keeping (centre / lane change)", "absent", "no", "no"],
+      ["fix in progress (SFT-2)", DV ? "NAVSIM-faithful direction label: " + fmt(DV.agree_pct_cache_lanes, 2) + " % agreement on " + int(DV.trajectories) + " navtest trajectories" : "NAVSIM-faithful direction label", "L1: × direction head", "–"]]);
+    const TC = L1.teacher_check;
+    if (TC) {
+      const r3 = (nm, k) => [nm, ci3(TC.teacher[k]), ci3(TC.human[k]), ci3(TC.model_64_mean[k]), cd3(TC.teacher_minus_human[k])];
+      table("t-lane-trajteacher", ["NAVSIM-faithful check", "trajectory teacher", "human (log)", "model, mean of 64", "teacher − human"], [
+        r3("leaves the drivable area", "DAC_fail"), r3("enters an oncoming lane (DDC < 1)", "DDC_lt1_oncoming"), r3("off the lane centre > 1 m for ≥ 1 s", "lane_keep_lk10")]);
+      $("lane-trajteacher-wrap").hidden = false;
+    }
+  }
+  function ci3(a) { return a ? (100 * a[0]).toFixed(2) + " % [" + (100 * a[1]).toFixed(2) + ", " + (100 * a[2]).toFixed(2) + "]" : "–"; }
+  function cd3(a) { return a ? (a[0] >= 0 ? "+" : "") + (100 * a[0]).toFixed(2) + " pp [" + (100 * a[1]).toFixed(2) + ", " + (100 * a[2]).toFixed(2) + "]" : "–"; }
+
+  // ---------- timeline ----------
+  const TL = [
+    { row: "Training (A40)", a: "2026-09-24 01:17", b: D.generated_local, kind: "run", note: "running" },
+    { row: "Training (A40)", a: D.generated_local, b: null, kind: "plan", note: "still to run" },
+    { row: "Pod data prep", a: "2026-09-24 00:37", b: "2026-09-24 06:43", kind: "s1", note: "rank-0 targets, 10 Hz" },
+    { row: "Pod data prep", a: "2026-09-24 06:44", b: "2026-09-25 01:07", kind: "s2", note: "goal augmentation" },
+    { row: "Pod data prep", a: "2026-09-25 01:07", b: "2026-09-25 16:16", kind: "s3", note: "PDM scorer targets" },
+    { row: "Dev box data prep", a: "2026-09-24 00:35", b: "2026-09-24 06:08", kind: "s1", note: "rank-0 targets, 10 Hz" },
+    { row: "Dev box data prep", a: "2026-09-24 06:08", b: "2026-09-24 14:33", kind: "s2", note: "goal augmentation" },
+    { row: "Dev box data prep", a: "2026-09-24 14:33", b: "2026-09-24 19:47", kind: "s3", note: "PDM scorer targets" },
+  ];
+  const EV = [
+    { t: "2026-09-24 03:36", row: "Pod data prep", label: "faster map features switched on" },
+    { t: "2026-09-24 19:02", row: "Dev box data prep", label: "uploads to the pod stopped (124,619 scorer rows left behind)" },
+    { t: "2026-09-25 10:06", row: "Pod data prep", label: "bank assembler stopped (later scorer frames not added)" },
+  ];
+  const pt = s => new Date(s.replace(" ", "T") + ":00+02:00");
+  const etaEnd = etaDate;
+  TL.forEach(d => { d.A = pt(d.a); d.B = d.b ? pt(d.b) : etaEnd; });
+  const kindColor = { run: "var(--s1)", plan: "var(--s1-wash)", s1: "var(--s1)", s2: "var(--s2)", s3: "var(--s3)" };
+  [["var(--s1)", "rank-0 targets / training"], ["var(--s2)", "goal augmentation"], ["var(--s3)", "PDM scorer targets"], ["var(--s1-wash)", "training still to run"]]
+    .forEach(([c, l]) => { const s = el("span"); const i = el("i", { class: "sw" }); i.style.background = c; s.append(i, document.createTextNode(l)); $("tl-legend").append(s); });
+  mount("timeline", host => {
+    host.replaceChildren();
+    const W = Math.max(300, host.clientWidth), rows = ["Training (A40)", "Pod data prep", "Dev box data prep"];
+    const narrow = W < 560, m = { t: 22, r: 12, b: 26, l: narrow ? 12 : 136 }, rh = narrow ? 44 : 34, H = m.t + rows.length * rh + m.b;
+    const svg = d3.select(host).append("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("height", H).attr("role", "img").attr("aria-label", "Timeline of data preparation and training");
+    const xs = d3.scaleTime().domain([pt("2026-09-23 23:30"), d3.timeHour.offset(etaEnd, 6)]).range([m.l, W - m.r]);
+    const days = d3.timeDay.range(d3.timeDay.ceil(xs.domain()[0]), xs.domain()[1]);
+    svg.append("g").selectAll("line").data(days).join("line").attr("class", "gridline").attr("x1", d => xs(d)).attr("x2", d => xs(d)).attr("y1", m.t - 6).attr("y2", H - m.b);
+    svg.append("g").selectAll("text").data(days).join("text").attr("x", d => xs(d) + 4).attr("y", H - m.b + 16)
+      .text(d => d.toLocaleDateString("en-GB", { timeZone: "Europe/Berlin", weekday: narrow ? undefined : "short", day: "numeric", month: narrow ? undefined : "short" }));
+    const yr = r => m.t + rows.indexOf(r) * rh + (narrow ? 16 : 6);
+    rows.forEach(r => svg.append("text").attr("x", narrow ? m.l : m.l - 10).attr("y", narrow ? yr(r) - 5 : yr(r) + 9).attr("text-anchor", narrow ? "start" : "end").attr("class", "lbl").text(r));
+    const tip = tipFor(host);
+    TL.forEach(d => {
+      const x0 = xs(d.A), x1 = Math.max(x0 + 2, xs(d.B)), y = yr(d.row), h = 18;
+      const r = svg.append("rect").attr("x", x0).attr("y", y).attr("width", Math.max(1, x1 - x0 - 2)).attr("height", h).attr("rx", 3).style("fill", kindColor[d.kind]).attr("tabindex", 0);
+      if (d.kind === "plan") r.style("stroke", "var(--s1)").style("stroke-width", 1).style("stroke-opacity", 0.35);
+      const hours = ((d.B - d.A) / 3600e3).toFixed(1);
+      const show = () => showTip(host, tip, x1 / W * host.clientWidth, y, d.row, [{ color: kindColor[d.kind], value: hours + " h", label: d.note + " · " + d.a + " → " + (d.b || berlin(etaEnd)) }]);
+      r.on("pointermove focus", show).on("pointerleave blur", () => { tip.hidden = true; });
+    });
+    const now = pt(D.generated_local);
+    svg.append("line").attr("x1", xs(now)).attr("x2", xs(now)).attr("y1", m.t - 12).attr("y2", H - m.b).style("stroke", "var(--ink)").style("stroke-width", 1.5);
+    svg.append("text").attr("x", xs(now) + 4).attr("y", m.t - 10).attr("class", "lbl-strong").text("now");
+    EV.forEach(e => {
+      const x = xs(pt(e.t)), y = yr(e.row) + 9;
+      const g = svg.append("g").attr("tabindex", 0);
+      g.append("path").attr("d", d3.symbol(d3.symbolDiamond, 64)()).attr("transform", `translate(${x},${y})`).style("fill", "var(--ink)").style("stroke", "var(--surface)").style("stroke-width", 2);
+      g.append("rect").attr("x", x - 12).attr("y", y - 12).attr("width", 24).attr("height", 24).style("fill", "transparent");
+      const show = () => showTip(host, tip, x / W * host.clientWidth, y, e.t, [{ color: "var(--ink)", value: "◆", label: e.label }]);
+      g.on("pointermove focus", show).on("pointerleave blur", () => { tip.hidden = true; });
+    });
+  });
+  table("timeline-t", ["Machine", "Stage", "Start", "End", "Hours"], TL.map(d => [d.row, d.note, d.a, d.b || berlin(etaEnd) + " (estimate)", ((d.B - d.A) / 3600e3).toFixed(1)])
+    .concat(EV.map(e => [e.row, "event: " + e.label, e.t, "", ""])));
+
+  // ---------- learning signals ----------
+  const X = S.step.map(s => s + 1), firstScore = D.epoch_events.find(e => e.epoch === 5).step;
+  const pe = D.per_epoch;
+  $("cap-l1").textContent = "Median per epoch " + pe.map(e => fmt(e.traj_L1_median, 2)).join(" → ") + " (epochs 0–" + pe[pe.length - 1].epoch +
+    "). Still falling, with the learning rate at " + (100 * S.lr[S.lr.length - 1] / 2e-4).toFixed(0) + " % of its peak. The loss is the distance of the BEST of 64 proposals to the teacher's rollout, so it flatters the model by construction.";
+  lineChart("c-l1", {
+    x: X, ylog: true, yDomain: [0.08, 25], yLogTicks: [0.1, 0.3, 1, 3, 10], yFmt: d => d, epochLabels: true, height: 290,
+    bands: [[0, D.epoch_events.find(e => e.epoch === 8).step]],
+    series: [
+      { y: S.traj_L1, color: "var(--s1)", w: 1, opacity: 0.28, label: "this step", fmt: v => fmt(v, 3) },
+      { y: S.traj_L1_med, color: "var(--s1)", w: 2, label: "median of 51 steps", fmt: v => fmt(v, 3), end: true, endFmt: v => fmt(v, 3) },
+    ], aria: "Trajectory loss on a log scale falling from 19.5 to about 0.22 over 3,500 steps",
+  });
+  table("t-epochs", ["Epoch", "Steps", "Loss median", "Scorer taught on", "Scorer loss median (fixed)", "Cand→proposal (m, fixed)", "On-policy sets · training skill", "Winners (of 4)", "Scorer coverage", "s/step", "Bank tuples", "Scorer frames"],
+    pe.map(e => [e.epoch, int(e.steps), fmt(e.traj_L1_median, 3), { fixed: "fixed candidates", switched: "fixed → on-policy", onpolicy: "its own proposals" }[e.scorer_mode] || "–",
+      e.score_median == null ? "–" : fmt(e.score_median, 4), e.assign_d_median == null ? "–" : fmt(e.assign_d_median, 2),
+      e.op ? int(e.op.sets) + " · " + fmt(e.op.skill, 3) : "–", fmt(e.winners_mean, 2),
+      pct(e.scorer_cov_window), fmt(e.s_per_step_median, 2), int(e.bank_tuples), int(e.bank_scorer_frames)]));
+
+  const e5 = pe.find(e => e.epoch === 5), eN = pe[pe.length - 1];
+  // ⭐ the scorer's supervision changed at a declared step: `score` and `assign_d` MEAN something else after it
+  // (build_data.py), so the fixed-candidate curves stop at the switch and the on-policy signal gets its own charts
+  const OPT = D.onpolicy_train || {}, SW = OPT.switch_step, lbk = D.bank_events[D.bank_events.length - 1];
+  const lastFix = pe.filter(e => e.score_median != null).slice(-1)[0];
+  $("cap-score").textContent = (SW != null ? "Fixed-candidate supervision: b" : "B") + "inary cross-entropy on the six PDM components, scaled by 0.1. Targets first arrived in epoch 5 (median " + fmt(e5.score_median, 3) +
+    "); epoch " + lastFix.epoch + " median " + fmt(lastFix.score_median, 3) + ", about " + fmt(10 * lastFix.score_median, 2) + " mean BCE per candidate." +
+    (SW != null ? " From the switch at step " + int(SW) + " (shaded) the scorer learns on-policy and the trainer logs only the loss of each step's last micro-batch, which rarely holds a labelled set, so no loss curve is drawn there; the two on-policy charts below show what the scorer learns instead." : "");
+  lineChart("c-score", {
+    x: X, xDomain: [firstScore, X[X.length - 1]], yDomain: [0, 0.3], clamp: true, epochLabels: true, height: 220, rightPad: 56,
+    bands: SW != null ? [[SW, X[X.length - 1]]] : undefined,
+    series: [
+      { y: S.score_fixed, color: "var(--s1)", w: 1, opacity: 0.25, label: "this step", fmt: v => fmt(v, 4) },
+      { y: S.score_fixed_med, color: "var(--s1)", w: 2, label: "median of 51 steps", fmt: v => fmt(v, 4), end: true, endFmt: v => fmt(v, 3) },
+    ], aria: "Scorer loss under fixed-candidate supervision, epoch 5 to the on-policy switch",
+  });
+  const covFixE = pe.filter(e => e.scorer_mode === "fixed" && e.epoch >= 8).slice(-1)[0], covNow = S.scorer_cov_win[S.scorer_cov_win.length - 1];
+  $("cap-cov").textContent = (SW != null && covFixE
+      ? "Fixed candidates: about " + pct(covFixE.scorer_cov_window, 0) + " of samples carried scorer targets in epoch " + covFixE.epoch + ", some 8.5 candidates each. On-policy since step " + int(SW) + ": " +
+        pct(covNow, 1) + " of samples over the last 50 steps carry a labelled set, but a set is all 64 of the model's own proposals, and the share grows at every epoch boundary (" +
+        int(lbk.onpolicy_sets) + " sets read at epoch " + lbk.epoch + (D.onpolicy ? ", " + int(D.onpolicy.sets) + " labelled by now" : "") + ")."
+      : "Since epoch 8 about " + pct(eN.scorer_cov_window, 0) + " of samples carry PDM targets.") +
+    " The trainer prints the since-start ratio (" + pct(P.scorer_cov_cum_now) + "), which the scorer-less early epochs dilute.";
+  lineChart("c-cov", {
+    x: X, yDomain: [0, 1], yTicks: 5, yFmt: d => (100 * d).toFixed(0) + "%", epochLabels: true, height: 220, rightPad: 52,
+    series: [
+      { y: S.scorer_cov_win, color: "var(--s1)", w: 2, label: "last 50 steps", fmt: v => pct(v), end: true, endFmt: v => pct(v, 0) },
+      { y: S.scorer_cov_cum, color: "var(--deemph)", w: 2, label: "since step 0", fmt: v => pct(v), end: true, endFmt: v => pct(v, 0) },
+    ], aria: "Share of samples with scorer targets",
+  });
+  $("cap-win").textContent = "How many of the 4 samples in a micro-batch picked different proposals as their winner. It dipped to " +
+    fmt(pe.find(e => e.epoch === 2).winners_mean, 2) + " in epoch 2 and has held near " + fmt(eN.winners_mean, 1) + " since epoch 4: proposals are being used, not abandoned.";
+  lineChart("c-win", {
+    x: X, yDomain: [1, 4], yTicks: 3, epochLabels: true, height: 220, rightPad: 44,
+    series: [{ y: S.winners_mean, color: "var(--s1)", w: 2, label: "mean of 51 steps", fmt: v => fmt(v, 2), end: true, endFmt: v => fmt(v, 2) }],
+    aria: "Distinct winning proposals per micro-batch",
+  });
+  const adFixE = pe.filter(e => e.assign_d_median != null).slice(-1)[0], opE = pe.filter(e => e.op_drift_median != null).slice(-1)[0];
+  $("cap-ad").textContent = (SW != null ? "Fixed candidates (until step " + int(SW) + "): the" : "The") + " distance from each banked scorer candidate to the model's nearest proposal, a median of " +
+    fmt(adFixE.assign_d_median, 1) + " m in epoch " + adFixE.epoch + ": the scorer was taught on trajectories metres away from what the model proposes." +
+    (SW != null ? " On-policy since then, the same field reports how far each labelled trajectory (one of the model's own proposals when it was dumped, about " +
+      fmt(OPT.total ? OPT.total.lag_steps : null, 0) + " steps earlier on average) lies from its nearest proposal now: " + (opE ? fmt(opE.op_drift_median, 2) + " m in epoch " + opE.epoch : "–") +
+      ". It is logged only on the steps whose last micro-batch held a set." : "");
+  lineChart("c-ad", {
+    x: X, xDomain: [firstScore, X[X.length - 1]], yDomain: [0, 8], clamp: true, epochLabels: true, height: 220, rightPad: 50,
+    series: [
+      { y: S.assign_d_fixed, color: "var(--s1)", w: 1, opacity: 0.25, label: "fixed, this step", fmt: v => fmt(v, 2) + " m" },
+      { y: S.assign_d_fixed_med, color: "var(--s1)", w: 2, label: "fixed, median of 51 steps", fmt: v => fmt(v, 2) + " m", end: SW == null, endFmt: v => fmt(v, 1) + " m" },
+      { y: S.op_drift, color: "var(--s2)", w: 1.5, opacity: 0.6, label: "on-policy drift, this step", fmt: v => fmt(v, 2) + " m" },
+      { y: S.op_drift_med, color: "var(--s2)", w: 2, label: "on-policy drift, median", fmt: v => fmt(v, 2) + " m", end: SW != null, endFmt: v => fmt(v, 2) + " m" },
+    ], aria: "Distance from scorer candidates, then from labelled on-policy trajectories, to the nearest proposal",
+  });
+  // the scorer on its own proposals, as the trainer meets the labelled sets (SPEC Amendment 4's secondary readout)
+  const OB = (OPT.bins || []).filter(b => b.complete);      // the bin still filling is left out of the charts
+  if (OB.length) {
+    const BX = OB.map(b => (b.step_lo + b.step_hi) / 2 + 1), xd = [SW, Math.max(BX[BX.length - 1] + 12, SW + 150)], T = OPT.total;
+    const opFromE = (D.bank_events.find(b => b.scorer_mode === "onpolicy" && b.onpolicy_sets > 0) || {}).epoch;
+    const baseSel = (D.selection || []).filter(s => opFromE == null || s.epoch <= opFromE).slice(-1)[0];
+    const O3 = D.onpolicy || {}, v3Mark = O3.v3_read ? [{ x: O3.v3_step }] : [];
+    const v3Note = !O3.v3 ? "" : O3.v3_read ? " ▲ marks step " + int(O3.v3_step) + ", where training began reading NAVSIM's comfort labels (label version 3): the target's comfort term changes there, so the levels can move without the model changing."
+      : " From the epoch-" + O3.v3_epoch + " boundary (step ~" + int(O3.v3_step) + ") the target's comfort term becomes NAVSIM's own check (label version 3), so these levels can move there without the model changing.";
+    $("cap-oppick").textContent = "Teacher-labelled PDM score (0 to 1, with NAVSIM's own drivable-area check) of the proposal the scorer picks, of a random proposal and of the best of the 64, on the labelled sets as training meets them, pooled over " +
+      OPT.bin + "-step bins (complete bins only, about " + fmt(OB.reduce((a, b) => a + b.sets, 0) / OB.length, 0) + " sets each). Since the switch, every set so far: pick " + fmt(T.pick, 3) + ", random " + fmt(T.random, 3) + ", best " + fmt(T.best, 3) + " over " + int(T.sets) + " sets." + v3Note;
+    lineChart("c-oppick", {
+      x: BX, xDomain: xd, yDomain: [0, 1], yTicks: 5, epochLabels: true, height: 220, rightPad: 56, marks: v3Mark,
+      series: [
+        { y: OB.map(b => b.best), color: "var(--s3)", w: 2, label: "best of 64", fmt: v => fmt(v, 3), end: true, endFmt: v => fmt(v, 2) },
+        { y: OB.map(b => b.pick), color: "var(--s1)", w: 2, label: "planner's pick", fmt: v => fmt(v, 3), end: true, endFmt: v => fmt(v, 2) },
+        { y: OB.map(b => b.random), color: "var(--s2)", w: 2, label: "random proposal", fmt: v => fmt(v, 3) },
+      ], aria: "Pick, random and best teacher-labelled score on the on-policy sets",
+    });
+    $("cap-opskill").textContent = "(pick − random) / (best − random) per bin: 0 is a random pick, 1 the best proposal every time. Pooled since the switch: " + fmt(T.skill, 3) +
+      ". Within the first on-policy epoch every set is met for the first time, so this reads held-out skill; later epochs bring earlier sets back and mix fit with generalisation. No interval: the trainer logs window means, not per-set values." +
+      (baseSel ? " The pre-registered test is on navtest (E-6, SPEC Amendment 4): the last fixed-candidate snapshot, after epoch " + baseSel.epoch + ", reads " + fmt(baseSel.a_pdms.selection_skill.value, 3) +
+        " [" + fmt(baseSel.a_pdms.selection_skill.ci95[0], 3) + ", " + fmt(baseSel.a_pdms.selection_skill.ci95[1], 3) + "]." : "");
+    lineChart("c-opskill", {
+      x: BX, xDomain: xd, yDomain: [-0.5, 1], yTicks: 6, clamp: true, epochLabels: true, height: 220, rightPad: 56, marks: v3Mark,
+      refs: [{ y: 0, label: "random", color: "var(--deemph)" }],
+      series: [{ y: OB.map(b => b.skill), color: "var(--s1)", w: 2, label: "skill, " + OPT.bin + "-step bin", fmt: v => fmt(v, 3), end: true, endFmt: v => fmt(v, 2) }],
+      aria: "Training-side selection skill on the scorer's own proposals",
+    });
+  } else {
+    $("cap-oppick").textContent = "No on-policy set has reached training yet.";
+    $("cap-opskill").textContent = "No on-policy set has reached training yet.";
+  }
+  const lrPlanX = d3.range(X[X.length - 1], P.total_steps + 1, 25), lrPlan = lrPlanX.map(s => 1e-4 * (1 + Math.cos(Math.PI * s / P.total_steps)));
+  $("cap-lr").textContent = "Now " + S.lr[S.lr.length - 1].toExponential(2) + " of a 2e-4 peak. Most of the decay, where losses usually drop further, is still ahead.";
+  lineChart("c-lr", {
+    x: X.concat(lrPlanX), xDomain: [0, P.total_steps], yDomain: [0, 2.1e-4], yTicks: 4, yFmt: d => d === 0 ? "0" : d.toExponential(0), height: 180, rightPad: 64,
+    series: [
+      { y: S.lr.concat(lrPlanX.map(() => null)), color: "var(--s1)", w: 2, label: "applied", fmt: v => v.toExponential(2), end: true, endFmt: v => "now" },
+      { y: S.lr.map(() => null).concat(lrPlan), color: "var(--deemph)", w: 2, label: "still ahead", fmt: v => v.toExponential(2) },
+    ], aria: "Cosine learning-rate schedule", headFmt: x => "step " + d3.format(",")(Math.round(x)),
+  });
+
+  // ---------- bank ----------
+  const BE = D.bank_events;
+  $("bank-lead").textContent = "Training started on the first 7,536 rank-0 targets while data preparation kept running. Every epoch re-read a byte snapshot of the bank: all 103,037 scenes by epoch 4, all 86,851 augmented twins by epoch 7. Scorer frames stopped growing at 120,264 after epoch 8, because the bank assembler on the pod stopped and the dev box's last uploads never ran." +
+    (bankFixed ? " Both were repaired on " + A.last_local + ": the bank now holds " + int(A.scorer_frames) + " scorer frames" + (onp ? "." : ", and training reads them from its next epoch boundary.") : "") +
+    (onp ? " Then, before the repaired bank was read, the scorer switched to on-policy supervision (your decision B, restart at " + (D.onpolicy && D.onpolicy.switch_at ? D.onpolicy.switch_at : "the switch") + "): the fixed scorer bank is retired, and each boundary reads the model's own labelled proposal sets instead, " + int(lastB.onpolicy_sets) + " at epoch " + lastB.epoch + "." : "");
+  barChart("c-bank", {
+    rows: BE.map(b => ({ cat: b.epoch, r0: b.rank0, r1: b.rank1, at: b.at_local })), yMax: 200000, height: 230, xLabel: "epoch",
+    keys: [{ key: "r0", color: "var(--s1)", label: "rank-0 scenes" }, { key: "r1", color: "var(--s2)", label: "augmented twins" }],
+    headFmt: r => "epoch " + r.cat + " · read " + r.at, labelTop: r => (r.cat === 0 || r.cat === 4 || r.cat === BE.length - 1) ? d3.format("~s")(r.r0 + r.r1) : null,
+    aria: "Training tuples per epoch",
+  });
+  $("cap-scf").textContent = "Frames with PDM targets that training read at each epoch. The line is what the bank holds now. The flat run from epoch 8 is the gap that was repaired" + (bankFixed ? " on " + A.last_local + "." : ".") +
+    (onp ? " Epochs from " + lastB.epoch + " read none by design: the scorer is supervised on-policy (the table lists the sets read)." : "");
+  barChart("c-scf", {
+    rows: BE.map(b => ({ cat: b.epoch, sf: b.scorer_frames, at: b.at_local })), yMax: 200000, height: 230, xLabel: "epoch",
+    keys: [{ key: "sf", color: "var(--s3)", label: "scorer frames" }], refs: [{ y: A.scorer_frames, label: "in the bank now: " + int(A.scorer_frames) }],
+    headFmt: r => "epoch " + r.cat + " · read " + r.at, labelTop: r => r.sf > 0 && (r.cat === 5 || r.cat === 8 || r.cat === BE.length - 1) ? d3.format("~s")(r.sf) : null,
+    aria: "Scorer frames per epoch",
+  });
+  table("t-bank", ["Epoch", "Read at (Berlin)", "Scenes", "Rank-0", "Augmented", "Tuples", "Scorer frames", "On-policy sets", "Candidates / sample"],
+    BE.map(b => [b.epoch, b.at_local + (b.restarted_at_local ? " (restart " + b.restarted_at_local.slice(11) + ", " + b.mode_end + ")" : ""), int(b.scenes), int(b.rank0), int(b.rank1), int(b.tuples), int(b.scorer_frames),
+                 b.scorer_mode === "onpolicy" ? int(b.onpolicy_sets) : "–", fmt(b.cov_norm, 2)]));
+
+  // ---------- speed ----------
+  const bnd = new Set(D.epoch_events.map(e => e.step));
+  $("speed-lead").textContent = "Steady at a median " + fmt(P.steady_s_per_step_median, 2) + " s per 256-sample step (10th–90th percentile " +
+    fmt(P.steady_p10_p90[0], 2) + "–" + fmt(P.steady_p10_p90[1], 2) + " s), with data preparation running beside it on the same pod for the first 39 hours. Epoch boundaries now add about " + fmt(P.boundary_overhead_s, 0) + " s once each. Peak GPU memory " + fmt(P.mem_gb_max, 1) + " GB of 46 GB; " + P.n_ckpts + " resume checkpoints written so far." +
+    (dumpCost != null ? " Since the on-policy pipeline started (Sep 26, 11:20) its proposal dump shares the GPU: the last 50 steps average " + fmt(P.pace_now, 1) + " s against " + fmt(P.pace_pre_pipeline, 1) + " s before. Pausing only the dump for six minutes (steps 3,736–3,741) brought the steps back to " + fmt(P.pace_dump_paused, 1) + " s while the CPU labellers kept working, so the dump costs about " + fmt(dumpCost, 1) + " s per step. The backbone is frozen, so each dumped sample costs about as much as one training sample." : "");
+  lineChart("c-speed", {
+    x: X, yDomain: [55, 66], clamp: true, height: 200, rightPad: 60, epochLabels: false,
+    refs: [{ y: P.pace_pre_pipeline, label: fmt(P.pace_pre_pipeline, 1) + " s before", color: "var(--deemph)" },
+           { y: P.pace_now, label: fmt(P.pace_now, 1) + " s now", color: "var(--deemph)" }],
+    marks: S.step.filter((s, i) => S.s_per_step[i] > 66).map(s => ({ x: s + 1 })),
+    series: [{ y: S.s_per_step, color: "var(--s1)", w: 1, opacity: 0.8, label: "s this step", fmt: v => fmt(v, 1) + " s" }],
+    aria: "Seconds per optimiser step",
+  });
+
+  // ---------- evaluation ----------
+  const EVs = D.evals, pending = [5, 8, 11].filter(e => !EVs.some(v => v.epoch === e));
+  const fl = EVs[0].floors;
+  $("eval-lead").textContent = "NAVSIM v1 PDMS is an open-loop plan scored by pseudo-simulation against the logged agents (W3's harness, reproduced exactly). The snapshots after epochs 1 to 5 predate the scorer's first targets, so their choice among the 64 proposals was untrained. " +
+    (pending.length ? "Snapshots " + pending.join(", ") + " are being evaluated now." : "The snapshot after epoch 5 had the first augmented twins but no scorer training yet; the snapshots after epochs " + EVs.filter(v => v.epoch >= 8 && v.label !== "final").map(v => v.epoch).join(", ") + (EVs.some(v => v.label === "final") ? " and the final model" : "") + " had both.") +
+    (EVs.some(v => v.epoch === 12) ? " The snapshot after epoch 12 is the last whose scorer learned from the fixed candidates: the on-policy switch came 18 steps before its boundary, and the model's own labelled proposals are read from epoch 12 on." : "") +
+    (() => { const r = EVs.filter(v => v.repair); if (!D.a7 || !r.length) return "";
+      return " From " + longOf(r[0]) + " on, the executed plan carries the last-pose heading repair (SPEC Amendment 7, drawn as open squares): on its own it was worth " +
+        (D.a7.delta >= 0 ? "+" : "") + fmt(D.a7.delta, 1) + " PDMS after epoch 15 on 923 fresh tokens, so the step at the first repaired point is " + (D.lfl
+          ? "the repair, not training: re-scored like for like on the same 200 tokens, the repair alone is " + (D.lfl.repair.delta >= 0 ? "+" : "") + fmt(D.lfl.repair.delta, 1) +
+            " and one epoch of training (after 15 to after 16, both repaired) is " + (D.lfl.train.delta >= 0 ? "+" : "") + fmt(D.lfl.train.delta, 1) +
+            " [" + fmt(D.lfl.train.ci95[0], 1) + ", " + fmt(D.lfl.train.ci95[1], 1) + "], " + (D.lfl.train.separated ? "separated." : "not separated.")
+          : "mostly the repair, not training."); })() +
+    (() => { const rp = (D.pairs || []).filter(q => q.repair_last_heading && q.repair_last_heading.a && q.repair_last_heading.b && q.rules && q.rules.navsim_v1);
+      if (!rp.length) return "";
+      const sg = x => (x >= 0 ? "+" : "") + fmt(x, 1), ep = s => String(+s.slice(-3));
+      return " Since then, with the repair on both sides: " + rp.map(q => { const r = q.rules.navsim_v1;
+        return "after " + ep(q.a) + " to after " + ep(q.b) + " " + sg(r.b_minus_a) + " [" + sg(r.ci95[0]) + ", " + sg(r.ci95[1]) + "], " + (r.separated ? "separated" : "not separated"); }).join("; ") +
+        ". These intervals resample the 93 logs, so they answer whether another draw of scenes would agree; with one training run per snapshot they cannot say whether another run would."; })() +
+    (() => { const s5 = (D.selection || []).find(x => x.epoch === 5); if (!D.a5) return "";
+      return " Every point up to epoch 13 was picked with NAVSIM v2's EPDMS shape; from SPEC Amendment 5 (Sep 26) REFe picks with NAVSIM v1's own formula, the rule the harness scores." +
+        (s5 && s5.v1 ? " Re-selected with it, the epoch-5 peak falls from " + fmt(s5.a_pdms.actual.mean, 1) + " to " + fmt(s5.v1.pdms, 1) + " PDMS: it belonged to the old rule on an untrained head, not to better driving." : ""); })();
+  mount("c-pdms", host => {
+    host.replaceChildren();
+    const W = Math.max(280, host.clientWidth), H = 260, m = { t: 12, r: 112, b: 30, l: 40 };
+    const svg = d3.select(host).append("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("height", H).attr("role", "img").attr("aria-label", "PDMS per snapshot with reference arms");
+    const xsVals = [...new Set(EVs.map(v => v.epoch).concat(pending))].sort((a, b) => a - b), xs = d3.scalePoint().domain(xsVals).range([m.l + 10, W - m.r - 10]), ys = d3.scaleLinear().domain([0, 100]).range([H - m.b, m.t]);
+    svg.append("g").selectAll("line").data([0, 25, 50, 75, 100]).join("line").attr("class", "gridline").attr("x1", m.l).attr("x2", W - m.r).attr("y1", d => ys(d)).attr("y2", d => ys(d));
+    svg.append("g").selectAll("text").data([0, 25, 50, 75, 100]).join("text").attr("x", m.l - 8).attr("y", d => ys(d)).attr("dy", "0.32em").attr("text-anchor", "end").attr("class", "num").text(d => d);
+    svg.append("g").selectAll("text").data(xsVals).join("text").attr("x", d => xs(d)).attr("y", H - m.b + 17).attr("text-anchor", "middle").attr("class", "num").text(d => labOf(EVs.find(x => x.epoch === d) || { epoch: d }));
+    const refLabels = [];
+    [["HUMAN", "human"], ["STOP", "stand still"], ["refcv4b_A1", "refcv4b"], ["CV", "const. velocity"]].forEach(([k, lab]) => {
+      const f = fl[k]; if (!f) return;
+      svg.append("rect").attr("x", m.l).attr("width", W - m.r - m.l).attr("y", ys(f.ci[1])).attr("height", Math.max(1, ys(f.ci[0]) - ys(f.ci[1]))).style("fill", "var(--surface-2)");
+      svg.append("line").attr("x1", m.l).attr("x2", W - m.r).attr("y1", ys(f.pdms)).attr("y2", ys(f.pdms)).style("stroke", "var(--deemph)").style("stroke-width", 1.5);
+      refLabels.push({ y: ys(f.pdms), text: lab + " " + fmt(f.pdms, 1) });
+    });
+    endLabels(svg, refLabels, W - m.r, "lbl");
+    // ⭐ LIKE FOR LIKE: from Amendment 5 the pick uses NAVSIM v1's formula; the earlier points used the v2 shape. Their E-6
+    // tables re-selected with v1 (EXPLORATORY, eval/rule_mismatch_diag.py) are the rings, drawn left of the pick, and the
+    // dashed line joins every snapshot under v1 -- the curve a v1 pick after epoch 13 is read against
+    const selBy = {}; (D.selection || []).forEach(s => { selBy[s.epoch] = s; });
+    const v1pts = EVs.map(v => v.rule === "navsim_v1" ? { e: v.epoch, y: v.pdms, re: false }
+      : (selBy[v.epoch] && selBy[v.epoch].v1 ? { e: v.epoch, y: selBy[v.epoch].v1.pdms, re: true } : null)).filter(Boolean);
+    if (v1pts.length > 1) svg.append("path").attr("d", d3.line().x(p => xs(p.e) - (p.re ? 8 : 0)).y(p => ys(p.y))(v1pts))
+      .style("fill", "none").style("stroke", "var(--s1)").style("stroke-width", 1.5).style("stroke-dasharray", "4 3").style("opacity", 0.75);
+    v1pts.filter(p => p.re).forEach(p => svg.append("circle").attr("cx", xs(p.e) - 8).attr("cy", ys(p.y)).attr("r", 4.5)
+      .style("fill", "var(--surface)").style("stroke", "var(--s1)").style("stroke-width", 2));
+    const tip = tipFor(host);
+    EVs.forEach(v => {
+      const x = xs(v.epoch), rs = v.rule !== "navsim_v1" && selBy[v.epoch] && selBy[v.epoch].v1 ? selBy[v.epoch].v1 : null;
+      svg.append("line").attr("x1", x).attr("x2", x).attr("y1", ys(v.pdms_ci[0])).attr("y2", ys(v.pdms_ci[1])).style("stroke", "var(--s1)").style("stroke-width", 2);
+      if (v.repair) svg.append("rect").attr("x", x - 5).attr("y", ys(v.pdms) - 5).attr("width", 10).attr("height", 10).style("fill", "var(--surface)").style("stroke", "var(--s1)").style("stroke-width", 2.5);
+      else svg.append("circle").attr("cx", x).attr("cy", ys(v.pdms)).attr("r", 5).style("fill", "var(--s1)").style("stroke", "var(--surface)").style("stroke-width", 2);
+      svg.append("text").attr("x", x + 9).attr("y", ys(v.pdms)).attr("dy", "0.32em").attr("class", "lbl-strong num").text(fmt(v.pdms, 1));
+      const hit = svg.append("rect").attr("x", x - 14).attr("y", m.t).attr("width", 28).attr("height", H - m.t - m.b).style("fill", "transparent").attr("tabindex", 0);
+      const show = () => showTip(host, tip, x / W * host.clientWidth, 8, "snapshot " + longOf(v), [
+        { color: "var(--s1)", value: fmt(v.pdms, 2) + " [" + fmt(v.pdms_ci[0], 1) + ", " + fmt(v.pdms_ci[1], 1) + "]", label: "REFe PDMS" },
+        { color: "var(--deemph)", value: fmt(v.vs_stop.delta, 1), label: "vs stand still" }, { color: "var(--deemph)", value: fmt(v.vs_cv.delta, 1), label: "vs constant velocity" }]
+        .concat([{ color: "var(--ink-2)", value: v.rule === "navsim_v1" ? "NAVSIM v1" : "v2 EPDMS shape", label: "picked with" }])
+        .concat([{ color: "var(--ink-2)", value: v.repair ? "on" : "off", label: "heading repair (Amendment 7)" }])
+        .concat(rs ? [{ color: "var(--s1)", value: fmt(rs.pdms, 2) + (rs.pdms_ci95 ? " [" + fmt(rs.pdms_ci95[0], 1) + ", " + fmt(rs.pdms_ci95[1], 1) + "]" : ""), label: "re-selected with NAVSIM v1 (exploratory)" }] : []));
+      hit.on("pointermove focus", show).on("pointerleave blur", () => { tip.hidden = true; });
+    });
+    pending.forEach(e => {
+      const x = xs(e);
+      svg.append("circle").attr("cx", x).attr("cy", ys(8)).attr("r", 5).style("fill", "var(--surface)").style("stroke", "var(--deemph)").style("stroke-width", 1.5);
+      svg.append("text").attr("x", x).attr("y", ys(8) - 11).attr("text-anchor", "middle").text("pending");
+    });
+  });
+  mount("c-ade", host => {
+    host.replaceChildren();
+    const W = Math.max(280, host.clientWidth), H = 260, m = { t: 12, r: 86, b: 30, l: 40 };
+    const svg = d3.select(host).append("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("height", H).attr("role", "img").attr("aria-label", "ADE of selected, random and oracle proposals");
+    const xsVals = [...new Set(EVs.map(v => v.epoch).concat(pending))].sort((a, b) => a - b), xs = d3.scalePoint().domain(xsVals).range([m.l + 10, W - m.r - 10]), ys = d3.scaleLinear().domain([0, 5]).range([H - m.b, m.t]);
+    svg.append("g").selectAll("line").data(ys.ticks(5)).join("line").attr("class", "gridline").attr("x1", m.l).attr("x2", W - m.r).attr("y1", d => ys(d)).attr("y2", d => ys(d));
+    svg.append("g").selectAll("text").data(ys.ticks(5)).join("text").attr("x", m.l - 8).attr("y", d => ys(d)).attr("dy", "0.32em").attr("text-anchor", "end").attr("class", "num").text(d => d + " m");
+    svg.append("g").selectAll("text").data(xsVals).join("text").attr("x", d => xs(d)).attr("y", H - m.b + 17).attr("text-anchor", "middle").attr("class", "num").text(d => labOf(EVs.find(x => x.epoch === d) || { epoch: d }));
+    const ser = [["ade_selected_m", "var(--s1)", "selected"], ["ade_random_m", "var(--s2)", "random"], ["ade_oracle_m", "var(--s3)", "oracle"]];
+    const adeLabels = []; let lastX = 0;
+    ser.forEach(([k, c, lab]) => {
+      const pts = EVs.map(v => [v.epoch, v.proposals[k]]).filter(p => p[1] != null);
+      svg.append("path").attr("d", d3.line().x(p => xs(p[0])).y(p => ys(p[1]))(pts)).style("fill", "none").style("stroke", c).style("stroke-width", 2);
+      pts.forEach(p => svg.append("circle").attr("cx", xs(p[0])).attr("cy", ys(p[1])).attr("r", 4).style("fill", c).style("stroke", "var(--surface)").style("stroke-width", 2));
+      const lp = pts[pts.length - 1];
+      if (lp) { adeLabels.push({ y: ys(lp[1]), text: lab + " " + fmt(lp[1], 2) }); lastX = xs(lp[0]); }
+    });
+    endLabels(svg, adeLabels, lastX + 4);
+    const tip = tipFor(host);
+    EVs.forEach(v => {
+      const x = xs(v.epoch), hit = svg.append("rect").attr("x", x - 14).attr("y", m.t).attr("width", 28).attr("height", H - m.t - m.b).style("fill", "transparent").attr("tabindex", 0);
+      const show = () => showTip(host, tip, x / W * host.clientWidth, 8, "snapshot " + longOf(v), ser.map(([k, c, lab]) => ({ color: c, value: fmt(v.proposals[k], 3) + " m", label: lab }))
+        .concat([{ color: "var(--ink-2)", value: fmt(v.proposals.endpoint_spread_m, 3) + " m", label: "endpoint spread" }, { color: "var(--ink-2)", value: String(v.proposals.oracle_index_distinct), label: "proposals ever best" }]));
+      hit.on("pointermove focus", show).on("pointerleave blur", () => { tip.hidden = true; });
+    });
+    pending.forEach(e => svg.append("text").attr("x", xs(e)).attr("y", ys(0.3)).attr("text-anchor", "middle").text("pending"));
+  });
+  $("cap-fam").textContent = "Tier: " + (EVs[0].families.tier || "") + ". Distance keeping needs a lead-agent track the export does not carry; the strategic family is not scored by NAVSIM (route choice is an input there), so both are unavailable with that reason, not missing.";
+  const colH = ["Metric"].concat(EVs.map(v => longOf(v))).concat(pending.map(e => "after epoch " + e));
+  const rowsF = [
+    ["PDMS (95% interval)", v => fmt(v.pdms, 2) + " [" + fmt(v.pdms_ci[0], 1) + ", " + fmt(v.pdms_ci[1], 1) + "]"],
+    ["Picked with", v => v.rule === "navsim_v1" ? "NAVSIM v1" : "v2 EPDMS shape"],
+    ["Heading repair (Amendment 7)", v => v.repair ? "on" : "off"],
+    ["PDMS re-selected with NAVSIM v1 (exploratory)", v => { if (v.rule === "navsim_v1") return "(the pick)"; const s = (D.selection || []).find(x => x.epoch === v.epoch);
+      return s && s.v1 ? fmt(s.v1.pdms, 2) + (s.v1.pdms_ci95 ? " [" + fmt(s.v1.pdms_ci95[0], 1) + ", " + fmt(s.v1.pdms_ci95[1], 1) + "]" : "") : "– (no E-6 table)"; }],
+    ["vs stand still (PDMS points)", v => fmt(v.vs_stop.delta, 1) + (v.vs_stop.separated ? " · separated" : "")],
+    ["vs constant velocity", v => fmt(v.vs_cv.delta, 1) + (v.vs_cv.separated ? " · separated" : " · not separated")],
+    ["No collision (NC)", v => fmt(v.subscores.NC, 1)], ["Drivable area (DAC)", v => fmt(v.subscores.DAC, 1)], ["Ego progress (EP)", v => fmt(v.subscores.EP, 1)],
+    ["Time to collision (TTC)", v => fmt(v.subscores.TTC, 1)], ["Comfort (C)", v => fmt(v.subscores.C, 1)], ["Driving direction (DDC)", v => fmt(v.subscores.DDC, 1)],
+    ["Tokens zeroed by NC or DAC", v => v.zeroed + " of " + v.n_tokens],
+    ["Longitudinal · speed error (m/s)", v => fmt(v.families.speed_mae_mps, 2) + " (bias " + fmt(v.families.speed_bias_mps, 2) + ")"],
+    ["Longitudinal · progress vs human (median)", v => fmt(v.families.progress_ratio_median, 2)],
+    ["Longitudinal · distance keeping", v => v.families.distance_keeping.toLowerCase()],
+    ["Lateral · heading error (°)", v => fmt(v.families.heading_mae_deg, 1)], ["Lateral · curvature error (1/m)", v => fmt(v.families.curvature_mae_1pm, 3)],
+    ["Lateral · cross-track offset (m)", v => fmt(v.families.cross_mae_m, 2)], ["Tactical · goal-point error (m)", v => fmt(v.families.goal_point_error_m, 2)],
+    ["Strategic", v => v.families.strategic.toLowerCase()],
+    ["Proposals · endpoint spread (m)", v => fmt(v.proposals.endpoint_spread_m, 3)], ["Proposals · ever best (of 64)", v => String(v.proposals.oracle_index_distinct)],
+  ];
+  table("t-eval", colH, rowsF.map(([lab, f]) => [lab].concat(EVs.map(f)).concat(pending.map(() => "pending"))));
+
+  // ---------- selection diagnosis (SPEC E-6 / Amendment 3): every proposal scored ----------
+  const SELs = D.selection || [], SL = SELs[SELs.length - 1];
+  if (!SL) {
+    $("selection").hidden = true;
+  } else {
+    const SA = SL.a_pdms, SEv = EVs.find(v => v.epoch === SL.epoch) || EVs[EVs.length - 1], sfl = SEv.floors || {};
+    const civ = v => "[" + fmt(v.ci95[0], 1) + ", " + fmt(v.ci95[1], 1) + "]";
+    const g = SL.gates || {};
+    $("sel-lead").textContent = "Each of the 64 proposals of every one of the 200 tokens was scored as its own submission by the same NAVSIM harness, " +
+      int(SL.N * SL.M) + " plans from the snapshot " + longOf(SL) + ". The planner's own pick re-scores to the identical number on all " + (g.G2 ? g.G2.tokens_compared : SL.N) + " tokens, so the table is the harness's verdict, not a re-implementation. " +
+      "Choosing the best proposal would score " + fmt(SA.oracle.mean, 1) + " PDMS; the planner's pick scores " + fmt(SA.actual.mean, 1) + " and a random proposal " + fmt(SA.random.mean, 1) + ". " +
+      (SL.desc ? "It is not one lucky proposal: a typical scene has " + fmt(SL.desc.good_median, 1) + " of 64 proposals scoring 80 or more (mean " + fmt(SL.desc.good_mean, 1) + "). The pick scores zero on " + pct(SL.desc.pick_zero, 0) + " of tokens, while on " + pct(1 - SL.desc.all_zero, 0) + " of tokens at least one proposal scores above zero, and it leaves the drivable area on " + pct(SL.desc.pick_dac_fail, 0) + " of tokens where " + pct(SL.desc.dac_any, 0) + " have a proposal that stays on it. " : "") +
+      "The pick realises " + pct(SA.selection_skill.value, 0) + " of the gain a perfect chooser would have over a random one (95% interval " + pct(SA.selection_skill.ci95[0], 0) + " to " + pct(SA.selection_skill.ci95[1], 0) + "). " +
+      ({ SELECTION_BOUND: "By the rule written before the table was read (SPEC Amendments 3 and 3a), the run is selection-bound: good plans are among the proposals and the scorer does not find them.",
+         NOT_SELECTION_BOUND: "By the rule written before the table was read (SPEC Amendments 3 and 3a), the run is not selection-bound.",
+         UNDETERMINED: "By the rule written before the table was read (SPEC Amendments 3 and 3a), 200 tokens cannot decide; the table is being extended to more tokens." })[SL.verdict.outcome];
+    const XR = SL.EXPLORATORY_rules;
+    const selRows = [
+      { lab: "Best of 64 (oracle)", v: SA.oracle, c: "var(--s3)" },
+      { lab: "Planner's pick", v: SA.actual, c: "var(--s1)", strong: true },
+      { lab: "Random proposal", v: SA.random, c: "var(--s2)" },
+      { lab: "Medoid, no scorer", v: SL.confirmatory_medoid.pdms, c: "var(--ink-2)", what: "pre-registered comparison" },
+      { lab: "Sum of logits · exploratory", v: XR.logitsum.pdms, c: "var(--deemph)", what: "exploratory" },
+      { lab: "Violation terms only · expl.", v: XR.violation_only.pdms, c: "var(--deemph)", what: "exploratory" },
+      { lab: "Without progress · expl.", v: XR.aggregate_without_EP.pdms, c: "var(--deemph)", what: "exploratory" },
+    ];
+    $("cap-selpdms").textContent = "Same 200 tokens; 95% log-cluster intervals. Dashed lines: standing still (" + fmt(sfl.STOP && sfl.STOP.pdms, 1) + ") and the human driver (" +
+      fmt(sfl.HUMAN && sfl.HUMAN.pdms, 1) + "). The medoid (the proposal closest to all the others) was the one alternative named in advance; the grey rules are exploratory and are not claims until they hold on other tokens.";
+    mount("c-selpdms", host => {
+      host.replaceChildren();
+      const W = Math.max(300, host.clientWidth), rowH = 30, m = { t: 24, r: 52, b: 28, l: Math.min(196, Math.round(W * 0.42)) };
+      const H = m.t + m.b + rowH * selRows.length;
+      const svg = d3.select(host).append("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("height", H).attr("role", "img").attr("aria-label", "PDMS under different ways of choosing among the 64 proposals");
+      const xs = d3.scaleLinear().domain([0, 100]).range([m.l, W - m.r]);
+      svg.append("g").selectAll("line").data([0, 25, 50, 75, 100]).join("line").attr("class", "gridline").attr("x1", d => xs(d)).attr("x2", d => xs(d)).attr("y1", m.t).attr("y2", H - m.b);
+      svg.append("g").selectAll("text").data([0, 25, 50, 75, 100]).join("text").attr("x", d => xs(d)).attr("y", H - m.b + 17).attr("text-anchor", "middle").attr("class", "num").text(d => d);
+      const refs = [["STOP", "stand still"], ["HUMAN", "human"]].filter(([k]) => sfl[k]).map(([k, lab]) => ({ x: xs(sfl[k].pdms), lab }));
+      refs.forEach((r, i) => {
+        svg.append("line").attr("x1", r.x).attr("x2", r.x).attr("y1", m.t - 6).attr("y2", H - m.b).style("stroke", "var(--deemph)").style("stroke-width", 1.5).style("stroke-dasharray", "4 3");
+        svg.append("text").attr("x", r.x).attr("y", m.t - 10).attr("text-anchor", i === refs.length - 1 && r.x > W - 60 ? "end" : "middle").attr("class", "lbl").text(r.lab);
+      });
+      const tip = tipFor(host);
+      selRows.forEach((r, i) => {
+        const y = m.t + rowH * i + rowH / 2;
+        svg.append("text").attr("x", m.l - 10).attr("y", y).attr("dy", "0.32em").attr("text-anchor", "end").attr("class", r.strong ? "lbl-strong" : "lbl").text(r.lab);
+        svg.append("line").attr("x1", xs(r.v.ci95[0])).attr("x2", xs(r.v.ci95[1])).attr("y1", y).attr("y2", y).style("stroke", r.c).style("stroke-width", 2);
+        svg.append("circle").attr("cx", xs(r.v.mean)).attr("cy", y).attr("r", 5).style("fill", r.c).style("stroke", "var(--surface)").style("stroke-width", 2);
+        svg.append("text").attr("x", W - 4).attr("y", y).attr("dy", "0.32em").attr("text-anchor", "end").attr("class", (r.strong ? "lbl-strong" : "lbl") + " num").text(fmt(r.v.mean, 1));
+        const hit = svg.append("rect").attr("x", 0).attr("y", y - rowH / 2).attr("width", W).attr("height", rowH).style("fill", "transparent").attr("tabindex", 0);
+        const show = () => showTip(host, tip, xs(r.v.mean) / W * host.clientWidth, (y / H) * host.clientHeight, r.lab.replace(" · exploratory", "").replace(" · expl.", ""), [
+          { color: r.c, value: fmt(r.v.mean, 2) + " " + civ(r.v), label: "PDMS, 95% interval" },
+          { color: "var(--deemph)", value: String(r.v.n), label: "tokens" }].concat(r.what ? [{ color: "var(--deemph)", value: "", label: r.what }] : []));
+        hit.on("pointermove focus", show).on("pointerleave blur", () => { tip.hidden = true; });
+      });
+    });
+
+    const CC = SL.c_components, names = { NC: "No collision (NC)", DAC: "Drivable area (DAC)", DDC: "Driving direction (DDC)", TTC: "Time to collision (TTC)", C: "Comfort (C)" };
+    const compKeys = ["NC", "DAC", "DDC", "TTC", "C"];
+    $("cap-selauc").textContent = "Area under the ROC curve of each predicted component against the harness's own pass/fail on the same proposals: 0.5 is a coin flip, 1.0 is perfect. A component is marked failing when its pooled AUC is below 0.60 while it actually varies within the scene on at least 20% of tokens (both written in advance). Progress is continuous: its rank correlation with the truth is " +
+      fmt(CC.EP.within_token_spearman ? CC.EP.within_token_spearman.mean : null, 2) + " within a scene and " + fmt(CC.EP.pooled_spearman, 2) + " pooled.";
+    mount("c-selauc", host => {
+      host.replaceChildren();
+      const W = Math.max(300, host.clientWidth), rowH = 40, m = { t: 22, r: 62, b: 28, l: Math.min(186, Math.round(W * 0.40)) };
+      const H = m.t + m.b + rowH * compKeys.length;
+      const svg = d3.select(host).append("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("height", H).attr("role", "img").attr("aria-label", "How well the scorer separates passing from failing proposals, per component");
+      const xs = d3.scaleLinear().domain([0.3, 1]).range([m.l, W - m.r]);
+      const ticks = [0.3, 0.5, 0.6, 0.7, 0.8, 0.9, 1];
+      svg.append("g").selectAll("line").data(ticks).join("line").attr("class", "gridline").attr("x1", d => xs(d)).attr("x2", d => xs(d)).attr("y1", m.t).attr("y2", H - m.b);
+      svg.append("g").selectAll("text").data(ticks).join("text").attr("x", d => xs(d)).attr("y", H - m.b + 17).attr("text-anchor", "middle").attr("class", "num").text(d => d.toFixed(1));
+      svg.append("line").attr("x1", xs(0.5)).attr("x2", xs(0.5)).attr("y1", m.t - 6).attr("y2", H - m.b).style("stroke", "var(--ink-2)").style("stroke-width", 1.5);
+      svg.append("text").attr("x", xs(0.5)).attr("y", m.t - 10).attr("text-anchor", "middle").attr("class", "lbl").text("chance");
+      svg.append("line").attr("x1", xs(0.6)).attr("x2", xs(0.6)).attr("y1", m.t - 6).attr("y2", H - m.b).style("stroke", "var(--critical)").style("stroke-width", 1.5).style("stroke-dasharray", "4 3");
+      svg.append("text").attr("x", xs(0.6) + 4).attr("y", m.t - 10).attr("text-anchor", "start").attr("class", "lbl").text("bar 0.60");
+      const tip = tipFor(host);
+      compKeys.forEach((k, i) => {
+        const c = CC[k], y = m.t + rowH * i + rowH / 2 - 4, wt = c.within_token_auc;
+        svg.append("text").attr("x", m.l - 10).attr("y", y).attr("dy", "0.32em").attr("text-anchor", "end").attr("class", "lbl-strong").text(names[k]);
+        svg.append("text").attr("x", m.l - 10).attr("y", y + 14).attr("dy", "0.32em").attr("text-anchor", "end").attr("class", "lbl").text("varies in " + Math.round(100 * c.share_tokens_varying) + "% of scenes");
+        const clampX = v => xs(Math.max(0.3, Math.min(1, v)));
+        if (wt) {
+          svg.append("line").attr("x1", clampX(wt.ci95[0])).attr("x2", clampX(wt.ci95[1])).attr("y1", y).attr("y2", y).style("stroke", "var(--s1)").style("stroke-width", 2);
+          svg.append("circle").attr("cx", clampX(wt.mean)).attr("cy", y).attr("r", 5).style("fill", "var(--s1)").style("stroke", "var(--surface)").style("stroke-width", 2);
+        }
+        svg.append("circle").attr("cx", clampX(c.pooled_auc)).attr("cy", y).attr("r", 4.5).style("fill", "var(--surface)").style("stroke", "var(--s1)").style("stroke-width", 2);
+        svg.append("text").attr("x", W - 4).attr("y", y).attr("dy", "0.32em").attr("text-anchor", "end").attr("class", "lbl-strong num").text(fmt(wt ? wt.mean : c.pooled_auc, 2));
+        svg.append("text").attr("x", W - 4).attr("y", y + 14).attr("dy", "0.32em").attr("text-anchor", "end").attr("class", "lbl num").text("pooled " + fmt(c.pooled_auc, 2));
+        if (c.FAILING) svg.append("text").attr("x", m.l - 10).attr("y", y + 28).attr("dy", "0.32em").attr("text-anchor", "end").attr("class", "lbl").style("fill", "var(--critical)").text("● fails the bar");
+        const hit = svg.append("rect").attr("x", 0).attr("y", y - rowH / 2 + 4).attr("width", W).attr("height", rowH).style("fill", "transparent").attr("tabindex", 0);
+        const show = () => showTip(host, tip, clampX(c.pooled_auc) / W * host.clientWidth, (y / H) * host.clientHeight, names[k], [
+          { color: "var(--s1)", value: wt ? fmt(wt.mean, 3) + " [" + fmt(wt.ci95[0], 2) + ", " + fmt(wt.ci95[1], 2) + "]" : "–", label: "AUC within a scene (" + (wt ? wt.n : 0) + " scenes)" },
+          { color: "var(--s1)", value: fmt(c.pooled_auc, 3), label: "AUC pooled" },
+          { color: "var(--deemph)", value: pct(c.true_rate, 0), label: "proposals that pass" },
+          { color: "var(--deemph)", value: pct(c.mean_pred_prob, 0), label: "mean predicted pass" }]);
+        hit.on("pointermove focus", show).on("pointerleave blur", () => { tip.hidden = true; });
+      });
+    });
+
+    const CA = SL.a_components_at;
+    table("t-selcomp", ["Component", "Planner's pick", "Random proposal", "Best proposal"],
+      [["PDMS", fmt(SA.actual.mean, 1), fmt(SA.random.mean, 1), fmt(SA.oracle.mean, 1)]].concat(
+        ["NC", "DAC", "DDC", "EP", "TTC", "C"].map(k => [({ EP: "Ego progress (EP)" })[k] || names[k], fmt(100 * CA[k].pick, 1), fmt(100 * CA[k].random, 1), fmt(100 * CA[k].oracle_pick, 1)])));
+    const B = SL.b_ranking, DL = SL.d_path_length, s2 = v => v ? fmt(v.mean, 2) + " [" + fmt(v.ci95[0], 2) + ", " + fmt(v.ci95[1], 2) + "]" : "–";
+    table("t-selskill", ["Measure", "Value"], [
+      ["Rank correlation, scorer vs truth (0 = no skill; " + B.tokens_true_pdms_varies + " scenes)", s2(B.within_token_spearman_agg_vs_pdms)],
+      ["Pick is a best proposal (random: " + pct(B.top1_hit_random_expectation.mean, 0) + ")", pct(B.top1_hit.mean, 0)],
+      ["Pick's path length ÷ mean of 64", s2(DL.pick_over_mean)],
+      ["Scorer favours longer paths (rank corr.)", s2(DL.within_token_spearman_agg_vs_length)],
+      ["Truth favours longer paths (rank corr.)", s2(DL.within_token_spearman_truePDMS_vs_length)],
+      ["Medoid minus pick, PDMS points (pre-registered)", s2(SL.confirmatory_medoid.medoid_minus_actual)],
+    ]);
+    // what the scorer had learned from by each snapshot, read from the trainer's own bank lines: a snapshot N is
+    // written at the boundary INTO epoch N, so it has trained on what epochs < N read
+    const fixFrom = (D.bank_events.find(b => b.scorer_frames > 0) || {}).epoch;
+    const opFrom = (D.bank_events.find(b => b.scorer_mode === "onpolicy" && b.onpolicy_sets > 0) || {}).epoch;
+    const supOf = e => (opFrom != null && e > opFrom) ? "its own proposals (on-policy)" : (fixFrom != null && e > fixFrom) ? "fixed candidates" : "nothing yet";
+    $("cap-seltrend").textContent = "Every proposal scored at each snapshot, same 200 tokens. The snapshot after epoch " + fixFrom + " predates any scorer training (its head was still at initialisation, and its progress output ranked shorter paths higher); the snapshots up to epoch " + (opFrom != null ? opFrom : "now") + " learned from the fixed candidates" +
+      (opFrom != null ? ", and from epoch " + (opFrom + 1) + " on the scorer learns from its own proposals as labelled by the teacher (the switch came 18 steps before the epoch-" + opFrom + " boundary, so that snapshot is the last fixed-candidate one and the baseline for the pre-registered test)." : ".");
+    table("t-seltrend", ["Snapshot", "Scorer learned from", "Best of 64", "Planner's pick", "Pick with NAVSIM v1 rule", "Random", "Share of gain realised", "Verdict"],
+      SELs.map(s => [capFirst(longOf(s)), supOf(s.epoch), fmt(s.a_pdms.oracle.mean, 1), fmt(s.a_pdms.actual.mean, 1),
+        s.v1 ? fmt(s.v1.pdms, 1) + " (" + (s.v1.minus_shipped_pick >= 0 ? "+" : "") + fmt(s.v1.minus_shipped_pick, 1) + ")" : (s.rule === "navsim_v1" ? "(this is the pick)" : "–"),
+        fmt(s.a_pdms.random.mean, 1),
+        pct(s.a_pdms.selection_skill.value, 0) + " [" + pct(s.a_pdms.selection_skill.ci95[0], 0) + ", " + pct(s.a_pdms.selection_skill.ci95[1], 0) + "]",
+        s.verdict.outcome.replace(/_/g, " ").toLowerCase()]));
+  }
+
+  // ---------- findings ----------
+  // ---- findings computed from the learning-curve points ----
+  const SEvF = SL ? (EVs.find(v => v.epoch === SL.epoch) || EVs[EVs.length - 1]) : null;
+  const lastE = EVs[EVs.length - 1], e8 = EVs.find(v => v.epoch === 8), gapOf = v => v.proposals.ade_random_m - v.proposals.ade_oracle_m;
+  const spreadList = EVs.map(v => labOf(v) + " " + fmt(v.proposals.endpoint_spread_m, 2)).join(", ");
+  let divFinding;
+  if (e8) {
+    const col = e8.proposals.endpoint_spread_m < 0.5 && gapOf(e8) < 0.2;
+    divFinding = [col ? "s-critical" : "s-good", col ? "Decision needed" : "Closed", col ? "The proposal head has collapsed" : "The 64 proposals are not collapsed",
+      "Pre-registered rule (SPEC Amendment 2), read at the snapshot after epoch 8, the first after a full epoch with every augmented twin: collapsed if the endpoint spread is under 0.5 m and the best proposal is within 0.2 m of a random one. After epoch 8: spread " + fmt(e8.proposals.endpoint_spread_m, 2) + " m, best " + fmt(e8.proposals.ade_oracle_m, 2) + " m vs random " + fmt(e8.proposals.ade_random_m, 2) + " m, " + e8.proposals.oracle_index_distinct + " of 64 proposals best somewhere. Spread by snapshot: " + spreadList + " m.",
+      col ? "The query-scale question goes to you as a recipe decision." : "The watch is closed; diversity stays on this page as a trend."];
+  } else {
+    divFinding = ["s-warn", "Watch", "Proposal diversity", "Endpoint spread by snapshot: " + spreadList + " m. The pre-registered decision reads the snapshot after epoch 8.", "Apply SPEC Amendment 2 when that point lands."];
+  }
+  // within-scene AUC per scorer output, sorted by what its 95% interval says: above chance, at chance, or backwards
+  const aucRead = sel => {
+    const cc = sel.c_components, nm = { NC: "no-collision", DAC: "drivable-area", DDC: "driving-direction", TTC: "time-to-collision", C: "comfort" };
+    const side = k => { const a = cc[k] && cc[k].within_token_auc; return !a || !a.ci95 ? null : a.ci95[0] > 0.5 ? "above" : a.ci95[1] < 0.5 ? "below" : "chance"; };
+    const grp = t => Object.keys(nm).filter(k => side(k) === t).map(k => nm[k] + " " + fmt(cc[k].within_token_auc.mean, 2));
+    return [grp("above").length ? "its " + grp("above").join(", ") + " outputs rank proposals better than chance" : "",
+            grp("chance").length ? grp("chance").join(", ") + " at chance" : "",
+            grp("below").length ? grp("below").join(", ") + " backwards" : ""].filter(Boolean).join("; ") + " (within-scene AUC; the 95% interval decides which)";
+  };
+  const selBad = lastE.proposals.ade_selected_m > lastE.proposals.ade_random_m;
+  const selFinding = SL ? (() => {
+    const o = SL.verdict.outcome, fails = SL.verdict.failing_scorer_outputs, sk = SL.a_pdms.selection_skill, rho = SL.b_ranking.within_token_spearman_agg_vs_pdms;
+    const cls = o === "SELECTION_BOUND" ? "s-serious" : o === "UNDETERMINED" ? "s-warn" : "s-good";
+    return [cls, o === "SELECTION_BOUND" ? "Bottleneck" : o === "UNDETERMINED" ? "Undecided" : "Not the bottleneck",
+      o === "SELECTION_BOUND" ? "The scorer, not the proposals, is losing the points" : o === "UNDETERMINED" ? "Whether the scorer is the bottleneck is not yet decided" : "Choosing among the proposals is not the main loss",
+      "Every proposal was scored by the harness, " + longOf(SL) + ": the best proposal scores " + fmt(SL.a_pdms.oracle.mean, 1) + " PDMS, the planner's pick " + fmt(SL.a_pdms.actual.mean, 1) + ", a random proposal " + fmt(SL.a_pdms.random.mean, 1) +
+      ". The pick realises " + pct(sk.value, 0) + " of the gain available over a random pick (95% interval " + pct(sk.ci95[0], 0) + " to " + pct(sk.ci95[1], 0) + "), and within a scene the scorer's ranking correlates " + fmt(rho.mean, 2) + " with the truth. " +
+      (fails.length ? "Scorer outputs that fail the pre-registered bar: " + fails.join(", ") + "." : "No scorer output fails the pre-registered bar on its own.") +
+      " Within a scene, " + aucRead(SL) + ", and it believes " + pct(SL.c_components.DAC.mean_pred_prob, 0) + " of proposals stay on the road where " + pct(SL.c_components.DAC.true_rate, 0) + " do." +
+      (D.onpolicy && D.onpolicy.switched
+        ? " Until step " + int(D.onpolicy.switch_step) + " the scorer was taught by 8–9 fixed candidates per scene, each attached to its nearest proposal about " + fmt((pe.filter(e => e.assign_d_median != null).slice(-1)[0] || {}).assign_d_median, 1) + " m away, so most of the 64 proposals it ranked were never supervised directly; since then it learns on all 64 of its own proposals in every labelled scene."
+        : " The scorer is taught by 8–9 fixed candidates per scene, each attached to its nearest proposal about " + fmt(eN.assign_d_median, 1) + " m away, so most of the 64 proposals it ranks are never supervised directly."),
+      o === "SELECTION_BOUND" ? (D.onpolicy && D.onpolicy.switched
+        ? "Decided and done: the scorer now trains on the model's own proposals (next finding). The table is re-taken at every snapshot; " + ((D.selection || []).some(x => x.a4)
+            ? "the pre-registered test (SPEC Amendment 4) has read the first snapshot trained with those labels: " + ((D.selection || []).filter(x => x.a4 && x.a4.primary.decides)[0] || (D.selection || []).filter(x => x.a4)[0]).a4.primary.outcome + " (next finding)."
+            : "the pre-registered test (SPEC Amendment 4) reads the first snapshot trained with the new labels.")
+        : "How the scorer is supervised is a recipe decision, set out in the PI report. The table is re-taken at every snapshot to see whether the complete bank, read from epoch 12, moves it.") : o === "UNDETERMINED" ? "Extend the table to more tokens before any claim." : "Look for the loss in the proposals themselves."];
+  })() : [selBad ? "s-serious" : "s-warn", selBad ? "Bottleneck" : "Watch", "Choosing among the proposals is now the bottleneck",
+    capFirst(longOf(lastE)) + " the best of 64 proposals lands " + fmt(lastE.proposals.ade_oracle_m, 2) + " m from the human's future, a random proposal " + fmt(lastE.proposals.ade_random_m, 2) + " m, and the planner's pick " + fmt(lastE.proposals.ade_selected_m, 2) + " m" + (selBad ? ", worse than picking at random" : "") + ". Picks by snapshot: " + EVs.map(v => labOf(v) + " " + fmt(v.proposals.ade_selected_m, 2)).join(", ") + " m. The snapshot after epoch 5 had no scorer training yet; later snapshots have.",
+    "Watch the pick close in on the best proposal as the scorer trains on the complete bank from epoch 12."];
+  const aboveStop = lastE.vs_stop && lastE.vs_stop.delta > 0 && lastE.vs_stop.separated;
+  const levelStop = !aboveStop && lastE.vs_stop && !lastE.vs_stop.separated;   // the interval straddles zero
+  const pairLast = (D.pairs || []).filter(q => q.b === "sub200_ep" + String(lastE.epoch).padStart(3, "0")).slice(-1)[0];
+  const pairTxt = pairLast ? (() => { const r1 = pairLast.rules.navsim_v1, r2 = pairLast.rules.v2_shape, sg = x => (x >= 0 ? "+" : "") + fmt(x, 2);
+    return " Like for like (both snapshots re-selected from their E-6 tables with one rule, the same 200 tokens, EXPLORATORY): snapshot " + pairLast.b.slice(-3) + " minus snapshot " + pairLast.a.slice(-3) + " is " +
+      sg(r1.b_minus_a) + " [" + sg(r1.ci95[0]) + ", " + sg(r1.ci95[1]) + "] under NAVSIM v1 and " + sg(r2.b_minus_a) + " [" + sg(r2.ci95[0]) + ", " + sg(r2.ci95[1]) + "] under the old v2 shape" +
+      (r1.separated && r2.separated ? ": the gain is the model's, not the rule's." : "."); })() : "";
+  const pdmsFinding = [aboveStop ? "s-good" : levelStop ? "s-warn" : "s-serious", aboveStop ? "Above standing still" : levelStop ? "Level with standing still" : "Not yet driving",
+    aboveStop ? "NAVSIM PDMS beats standing still" : levelStop ? "NAVSIM PDMS is level with standing still" + (EVs.length > 1 && EVs[EVs.length - 2].vs_stop && EVs[EVs.length - 2].vs_stop.separated && EVs[EVs.length - 2].vs_stop.delta < 0 ? " for the first time" : "") : "NAVSIM PDMS is below standing still",
+    "PDMS by snapshot: " + EVs.map(v => labOf(v) + " " + fmt(v.pdms, 1)).join(", ") + ", against " + fmt(fl.STOP.pdms, 1) + " for standing still and " + fmt(fl.CV.pdms, 1) + " for constant velocity." +
+      (lastE.vs_stop ? " Latest minus standing still: " + (lastE.vs_stop.delta >= 0 ? "+" : "") + fmt(lastE.vs_stop.delta, 2) + (lastE.vs_stop.lo != null ? " [" + fmt(lastE.vs_stop.lo, 2) + ", " + fmt(lastE.vs_stop.hi, 2) + "]" : "") + " (REFe better on " + lastE.vs_stop.wins + " tokens, worse on " + lastE.vs_stop.losses + ", tied on " + lastE.vs_stop.ties + ")" + (lastE.vs_stop.separated ? ", separated." : ", not separated.") : "") + pairTxt + " Latest: no collision " + fmt(lastE.subscores.NC, 1) + ", drivable area " + fmt(lastE.subscores.DAC, 1) + ", progress " + fmt(lastE.subscores.EP, 1) + ", " + lastE.zeroed + " of 200 tokens zeroed. " +
+      (lastE.families.progress_ratio_median > 1.05 || lastE.families.speed_bias_mps > 0.5
+        ? "The picked plans are now fast: they cover " + fmt(lastE.families.progress_ratio_median, 2) + "× the human's distance with a speed bias of +" + fmt(lastE.families.speed_bias_mps, 2) + " m/s, and fast plans leave the road and close gaps more often. The peak after epoch 5 came from cautious picks (" + fmt(EVs.find(v => v.epoch === 5) ? EVs.find(v => v.epoch === 5).families.progress_ratio_median : null, 2) + "× the human's distance), which NAVSIM rewards: standing still scores " + fmt(fl.STOP.pdms, 1) + "."
+        : lastE.families.progress_ratio_median >= 0.95 && lastE.families.speed_bias_mps >= -0.5
+          ? "The picked plans now keep the human's pace: they cover " + fmt(lastE.families.progress_ratio_median, 2) + "× the human's distance with a speed bias of " + (lastE.families.speed_bias_mps >= 0 ? "+" : "") + fmt(lastE.families.speed_bias_mps, 2) +
+            " m/s. Of the " + fmt(100 - lastE.pdms, 1) + " points below a perfect score, " + fmt(100 * lastE.zeroed / 200, 1) + " come from the " + lastE.zeroed + " of 200 tokens that a collision or leaving the drivable area zeroes."
+        : "The picked plans are cautious: they cover " + fmt(lastE.families.progress_ratio_median, 2) + " of the human's distance with a speed bias of " + fmt(lastE.families.speed_bias_mps, 2) + " m/s. Slow plans rarely collide or leave the road, and NAVSIM scores that well (standing still scores " + fmt(fl.STOP.pdms, 1) + "), so part of the gain is caution rather than driving."),
+    "Better selection should raise progress without giving back safety; the full 12,146-token navtest run is for the final checkpoint."];
+  const A4sel = (D.selection || []).filter(x => x.a4 && x.a4.primary.decides)[0] || (D.selection || []).filter(x => x.a4)[0], A4p = A4sel ? A4sel.a4 : null;
+  const F = [
+    [P.within_accepted ? "s-good" : "s-serious", P.within_accepted ? "On track" : "Decision needed", "Pace and finish date",
+      "The A40 held " + fmt(P.pace_pre_pipeline, 1) + " s per step until the on-policy pipeline started, including the 39 hours when data preparation shared the pod's CPUs. " +
+      (dumpCost != null ? "Since then the proposal dump shares the GPU and the last 50 steps average " + fmt(P.pace_now, 1) + " s. Pausing only the dump for six minutes brought the steps back to " + fmt(P.pace_dump_paused, 1) + " s while the four CPU labellers kept working, so the dump costs about " + fmt(dumpCost, 1) + " s per step (" + fmt(100 * dumpCost / P.pace_dump_paused, 1) + " %) and the labellers nothing measurable. " : "") +
+      "At the pace now the run ends " + berlin(etaDate) + ", " + totalDays.toFixed(2) + " days after launch: " + budgetTxt + ". The estimate is only as steady as the pace: each 0.1 s/step moves the finish by about " +
+      fmt((P.total_steps - 1 - P.last_step) * 0.1 / 60, 0) + " min, and the 50-step mean has moved by several tenths within a day." +
+      (P.eta_dump_free_local && dumpCost != null ? " Without the dump's GPU cost it would end " + berlin(new Date(P.eta_dump_free_local.replace(" ", "T") + ":00+02:00")) + ", " + hm(P.margin_dump_free_h) + " inside the line." : ""),
+      P.within_accepted ? "Nothing to change: on Sep 26 you accepted a finish up to " + berlin(acceptedDate) + ", so the dump keeps its full label rate. This card flags again if the projection moves more than " + hm(P.reflag_h) + " beyond " + berlin(acceptedDate) + ". You also decided to keep the label pipeline running to the end: the sets labelled after the last epoch boundary (" + (() => { const s = (D.milestones || []).filter(m => m.kind === "snapshot").slice(-1)[0]; return s ? "step ~" + int(s.step) : "the last one"; })() + ") are never read by training and stay banked, the only on-policy labels no training step has seen."
+        : "Your call (PI report): the projection is now " + hm(P.past_accepted_h) + " beyond the finish you accepted (" + berlin(acceptedDate) + "). Options: let the trainer write out the 64 proposals it already computes for the samples the labellers need, and stop the separate dump. The labels stay the same, it needs one more controlled restart, and it recovers the time. Alternatives: halve the dump rate, or accept the overrun."],
+    ["s-good", "On track", "The proposals are learning", "Loss medians fell every epoch (" + fmt(pe[0].traj_L1_median, 1) + " → " + fmt(eN.traj_L1_median, 2) + "). On NAVSIM the best of the 64 proposals now lands " + fmt(lastE.proposals.ade_oracle_m, 2) + " m from the human's future on average (open-loop ADE), down from " + fmt(EVs[0].proposals.ade_oracle_m, 2) + " m after epoch 1 (" + EVs.map(v => fmt(v.proposals.ade_oracle_m, 2)).join(" → ") + " m).", (SL ? "Scored by the harness, the best of the 64 averages " + fmt(SL.a_pdms.oracle.mean, 1) + " PDMS " + longOf(SL) + ", near the human driver's " + fmt((SEvF.floors.HUMAN || {}).pdms, 1) + ". The loss is in the choice (next findings)." : "The proposals are good enough to drive well; whether the planner picks the right one is the next finding.")],
+    [onp || bankFixed ? "s-good" : "s-serious", onp ? "Superseded" : bankFixed ? "Fixed" : "Fixing now", "A third of the scorer's targets reached training late",
+      "Training has read 120,264 scorer frames since epoch 8, about 63 % of what data preparation produced. Two causes: the pod's bank assembler stopped on Sep 25 at 10:06 with no error logged and no OOM kill recorded, and the dev box's uploader died on Sep 24 at 19:02, leaving 124,619 scorer rows behind. " +
+      (bankFixed ? "On " + A.last_local + " the rows were re-uploaded and one catch-up pass brought the bank to " + int(A.scorer_frames) + " frames (" + int(A.sc0) + " rank-0, " + int(A.sc1) + " augmented)." : ""),
+      onp ? "Nothing to do. The repaired bank was never read: from the epoch-" + lastB.epoch + " boundary the scorer learns from its own labelled proposals, so the trainer's bank line reads 0 fixed frames by design. The bank stays as the record of the fixed-candidate labels."
+          : bankFixed ? "From the next epoch boundary training reads the complete scorer bank; the trainer's next bank line must show " + int(A.scorer_frames) + " frames." : "Re-upload the rows, then run one catch-up assembler pass."],
+    divFinding,
+    selFinding,
+    ...(D.onpolicy ? [[A4p && A4p.primary.outcome === "FAILURE" ? "s-serious" : D.onpolicy.switched ? "s-good" : "s-warn",
+      A4p ? { SUCCESS: "Test passed", FAILURE: "Test failed", UNDETERMINED: "Undetermined" }[A4p.primary.outcome] : D.onpolicy.switched ? "Switched" : "In progress",
+      "The scorer now learns from the model's own proposals",
+      "Your decision (option B, the paper's version): on the pod, one process dumps the live checkpoint's 64 proposals per training sample and four low-priority workers score every one with the teacher's scorer, plus NAVSIM's own drivable-area check (its simulator vendored; 100% agreement with NAVSIM on 25,600 test proposals). " +
+      int(D.onpolicy.sets) + " training samples labelled so far (" + (D.onpolicy.v3 != null ? int(D.onpolicy.v3) + " with NAVSIM's drivable-area and comfort checks" : int(D.onpolicy.v2) + " with the NAVSIM drivable area") + "), about " + int(D.onpolicy.rate_per_h) + " per hour. On them NAVSIM's check fails " + pct(D.onpolicy.navsim_dac_viol, 1) + " of the proposals, the teacher's curb-crossing label " + pct(D.onpolicy.teacher_dac_viol, 1) + ": the violation the old scorer never saw.",
+      A4p ? "The pre-registered test (SPEC Amendment 4) read " + longOf(A4sel) + ", the first snapshot trained on these labels: " + A4p.primary.outcome + ", selection skill " + fmt(A4p.primary.skill, 3) +
+        " [" + fmt(A4p.primary.ci95[0], 3) + ", " + fmt(A4p.primary.ci95[1], 3) + "] against the 0.25 bar. What moved: the drivable-area output now ranks proposals within a scene at AUC " + fmt(A4p.secondary.dac_within_scene_auc.mean, 2) +
+        " (0.53 before), so the NAVSIM label is being learned. What did not: the aggregate still ranks at chance" + (A4sel.c_components && A4sel.c_components.C ? ", and the comfort output now ranks BACKWARDS (AUC " + fmt(A4sel.c_components.C.within_token_auc.mean, 2) + ")" : "") + "." +
+        (A4p.primary.outcome === "FAILURE" ? (D.a4_response ? " Your response (" + D.a4_response.decided_local + " Berlin, \"" + D.a4_response.quote + "\"): " + D.a4_response.levers.join(" and ") + ", both in place (the next finding and the selection-rule chip). The test's outcome stands; later snapshots are reported, not gating." : " The table is with you; nothing in the recipe changes without your decision.") : "")
+      : D.onpolicy.switched ? "The trainer switched to on-policy supervision at step " + D.onpolicy.switch_step + " (" + D.onpolicy.switch_at + " Berlin); each epoch boundary adds the new labels. The pre-registered test (SPEC Amendment 4) reads the first snapshot trained with them."
+                          : "Next: the trainer switch at a checkpoint, after its tests and a read-only preflight."]] : []),
+    ...(D.onpolicy && D.onpolicy.v3 ? [(() => {
+      // label version 3 (PI option 2, Sep 26): the comfort target is NAVSIM's own check (op_status.py, build_data.py)
+      // snapshot N has trained N epochs, so the first one trained on the version-3 labels is v3_epoch + 1
+      const O = D.onpolicy, CS = (D.selection || []).filter(x => x.c_components && x.c_components.C), nxt = (D.milestones || []).find(m => m.first_v3_trained);
+      const pre = CS.filter(x => x.epoch <= O.v3_epoch).slice(-1)[0], post = CS.find(x => x.epoch > O.v3_epoch), aucOf = x => x.c_components.C.within_token_auc;
+      const preAuc = pre ? aucOf(pre).mean : null, pad3 = e => String(e).padStart(3, "0"), s3 = pad3(O.v3_epoch + 1);
+      const sideOf = a => !a.ci95 ? "at" : a.ci95[1] < 0.5 ? "backwards" : a.ci95[0] > 0.5 ? "better than chance" : "at chance";
+      const pa = post ? aucOf(post) : null;
+      return [pa ? (pa.ci95 && pa.ci95[1] < 0.5 ? "s-serious" : pa.ci95 && pa.ci95[0] > 0.5 ? "s-good" : "s-warn") : O.v3_read ? "s-good" : "s-warn",
+        pa ? "First read" : O.v3_read ? "In training" : "Deployed", "The comfort label was the teacher's near-constant; it is now NAVSIM's own check",
+        (pre ? capFirst(longOf(pre)) + " the scorer's comfort output ranked proposals " + sideOf(aucOf(pre)) + " within a scene (AUC " + fmt(preAuc, 2) + "). " : "") +
+        (pa && pa.ci95 && pa.ci95[0] > 0.5 ? "The label was the cause, as snapshot " + s3 + " shows: on the model's own proposals" : "The label is the likely cause: on the model's own proposals") + " the teacher's comfort reward is nearly constant (mean " + fmt(O.teacher_comfort_mean, 3) + " over " + int(O.proposals_v3) + " proposals, where its smallest value is " + fmt((O.teacher_comfort_values || [])[0], 3) +
+        "), while NAVSIM's check (ego_is_comfortable: six nuPlan comfort limits on the trajectory its LQR controller actually drives) passes " + pct(O.navsim_comfortable, 1) + " of them; the two agree on " + pct(O.comfort_agree, 1) +
+        ". Your decision (option 2): every labelled set now carries NAVSIM's check (label version 3, which agrees with NAVSIM on 100 % of 25,600 test proposals): " + int(O.v3_backfilled) + " sets relabelled from their stored proposals, the rest labelled live since " + O.v3_first_live + " Berlin.",
+        pa ? "Snapshot " + s3 + ", the first trained on them, ranks proposals by comfort " + sideOf(pa) + " within a scene: AUC " + fmt(pa.mean, 2) + (pa.ci95 ? " [" + fmt(pa.ci95[0], 2) + ", " + fmt(pa.ci95[1], 2) + "]" : "") + ", against " + fmt(preAuc, 2) + " " + longOf(pre) + " (reported, not a pre-registered gate)."
+          : O.v3_read ? "Training has read these labels since the epoch-" + O.v3_epoch + " boundary (step " + int(O.v3_step) + "), so snapshot " + s3 + (nxt ? " (" + berlin(new Date(nxt.at_utc)) + ")" : "") + " is the first trained on them: read whether its comfort AUC rises from " + fmt(preAuc, 2) + " (reported, not a pre-registered gate)."
+          : "Training reads them from the epoch-" + O.v3_epoch + " boundary (step ~" + int(O.v3_step) + "), where snapshot " + pad3(O.v3_epoch) + " is written, so snapshot " + s3 + (nxt ? " (" + berlin(new Date(nxt.at_utc)) + ")" : "") + " is the first trained on them: read whether its comfort output's within-scene AUC rises from " + fmt(preAuc, 2) +
+            " (reported, not a pre-registered gate). The on-policy training charts may shift at that boundary: the target changes there, not the model."];
+    })()] : []),
+    ...(SL ? [] : [["s-warn", "Watch", "The scorer learns on trajectories the model does not propose", "The scorer is supervised on a fixed candidate set around the teacher's path (lateral ±2/±4 m, speed ×0.5/×1.5, stop, reverse, over-curb), assigned to the nearest proposal. That nearest proposal is about " + fmt(eN.assign_d_median, 1) + " m away and has not come closer since epoch 5. This is a declared departure from DriveZero, which scores the student's own proposals online, and the most likely reason the selection lags.", "If the pick stays far from the best proposal once the scorer has trained on the complete bank, this departure is the first thing to revisit."]]),
+    ...(D.a7 ? [(() => {
+      const a = D.a7, sd = a.sub_delta, sg = x => (x >= 0 ? "+" : "") + fmt(x, 1);
+      return [a.decision === "ADOPT" ? "s-good" : "s-warn", a.decision === "ADOPT" ? "Fixed at test time" : "Open",
+        "Every plan's last heading was corrupted; the executed plan is now repaired",
+        "REFe's own heading at the last planned pose (t = 4.0 s) is off the path by a median of about 1.1 rad in every evaluated snapshot, while the other 19 poses are within ~0.05 rad and the training targets are clean. NAVSIM's simulated car follows that heading and swerves in the last half second. Replacing only that heading by the one 0.2 s earlier (positions and speed untouched) was pre-registered (SPEC Amendment 7) and confirmed on " + int(a.N) + " tokens from " + a.n_logs + " logs never used to choose anything: " +
+        fmt(a.shipped, 1) + " -> " + fmt(a.repaired, 1) + " PDMS, " + sg(a.delta) + " [" + sg(a.ci95[0]) + ", " + sg(a.ci95[1]) + "] (better on " + a.helped + " tokens, worse on " + a.hurt + "); comfort " + sg(sd.C) + ", progress " + sg(sd.EP) + ", drivable area " + sg(sd.DAC) + ", time to collision " + sg(sd.TTC) + ". The four metric families read positions only and are identical by construction.",
+        "The cause in training is found: the heading loss wraps angles, so an output stuck on the wrong 2*pi branch early in training is never corrected. A plain heading loss fixes it in a small replica; it is a training change and runs its pre-registered proxy test before any live use (PREREG_M6_YAWLOSS)."];
+    })()] : []),
+    ...(D.lfl ? [(() => {
+      const t = D.lfl.train, b = D.lfl.best64, sg = x => (x >= 0 ? "+" : "") + fmt(x, 1), sb = D.lfl.sub || {};
+      const subs = ["EP", "NC", "TTC", "DAC"].filter(k => k in sb).map(k => k + " " + sg(sb[k])).join(", ");
+      return [t.separated ? (t.delta > 0 ? "s-good" : "s-serious") : "s-warn", "Flat",
+        "Epoch 16 did not move PDMS (like for like with epoch 15)",
+        "Scored like for like -- epoch 15's own plans re-scored with the heading repair on the same 200 tokens -- epoch 16 reads " + sg(t.delta) +
+        " [" + sg(t.ci95[0]) + ", " + sg(t.ci95[1]) + "] PDMS, " + (t.separated ? "separated" : "not separated") + " (better on " + t.better + " tokens, worse on " + t.worse + ", tied on " + t.tied +
+        "). The published step to 76.5 is the repair. The best of the 64 proposals: " + fmt(b.a, 1) + " -> " + fmt(b.b, 1) + " (" + sg(b.b_minus_a) + " [" + sg(b.ci95[0]) + ", " + sg(b.ci95[1]) + "])." +
+        (subs ? " Sub-scores x100: " + subs + " -- the plans gave up ego progress for slightly fewer collisions and time-to-collision failures." : ""),
+        "One epoch on one training run is not a trend: the interval answers another draw of episodes only, never another training run. The next point is read the same way: after epoch 17 the like-for-like step is +6.1 PDMS under NAVSIM v1 (see the eval table), again from one training run."];
+    })()] : []),
+    pdmsFinding,
+    ["s-good", "Fixed", "The evaluation environment was damaged and has been rebuilt", "The eval venv lived under the Windows temp folder, and a cleanup removed part of its packages on Sep 24 around 17:46, so torch could no longer import and the learning curve stopped after epoch 3. It was rebuilt offline from the local package cache into a permanent location and reproduces a banked evaluation bit for bit: the same poses and the same PDMS, 19.6473.", "No further action; long-lived environments no longer live under the temp folder."],
+  ];
+  F.forEach(([cls, state, h, p, next]) => {
+    const f = el("article", { class: "finding" });
+    const c = el("span", { class: "chip " + cls }); c.append(el("i"), document.createTextNode(state));
+    const b = el("div"); b.append(el("h3", {}, h), el("p", {}, p), el("p", { class: "next" }, "Next: " + next));
+    f.append(el("div", {}, ""), b); f.firstChild.append(c); $("findings").append(f);
+  });
+
+  // ---------- caveats ----------
+  [
+    "Training metrics come from the trainer's own log (metrics.jsonl, one record per optimiser step; " + int(S.step.length) + " steps). traj_L1, scorer loss, winners and candidate distance describe the last 4-sample micro-batch of each 256-sample step, so single steps are noisy; medians over 51 steps are drawn on top.",
+    "From step " + (SW != null ? int(SW) : "–") + " (the declared on-policy switch) the trainer's scorer loss and candidate-distance fields mean something else, so those charts stop or split there. The on-policy charts pool the trainer's own per-step windows of labelled sets, weighted by set count; they carry no interval because the trainer logs window means, not per-set values, and they are a training-side read, not the pre-registered navtest test (E-6, SPEC Amendment 4).",
+    "The trajectory loss is winner-takes-all: it is the error of the best of 64 proposals, which is optimistic by construction. No number on this page from the trainer is a driving result or carries an evaluation tier.",
+    "NAVSIM numbers: PDMS v1 on W3's fixed 200-token navtest subset (93 logs), scored through W3's harness (reproduced exactly on the human seam before any REFe score). Intervals are log-cluster bootstrap 95%; paired deltas use the paired version. Open-loop pseudo-simulation, not closed loop.",
+    "Declared departures from DriveZero (MODEL_REGISTRY §14): bf16 autocast, a bank that grows during training, 10 Hz teacher rollouts (a decision, not a paper fact), gradient accumulation 4 × 64, a scorer supervised on a fixed candidate set until step " + (SW != null ? int(SW) : "–") + " (the student's own proposals, as in the paper, from then on), NAVSIM's own drivable-area check in place of the teacher's in the on-policy labels, and, from label version 3 (" + (D.onpolicy && D.onpolicy.v3_first_live ? D.onpolicy.v3_first_live + " Berlin" : "Sep 26") + "), NAVSIM's own comfort check in place of the teacher's comfort reward.",
+    "Timeline times are Europe/Berlin, read from the pod's and dev box's own logs. The finish estimate is counted on the wall clock from the time this page was generated: the mean of the last 50 regular steps (" + fmt(P.pace_now, 2) + " s/step; the six steps of the dump-pause test are left out) for each remaining step, plus " + fmt(P.boundary_overhead_s, 0) + " s for each of the " + P.boundaries_left + " epoch boundaries still to come. The 7-day line is launch plus 7 days (" + berlin(budgetDate) + "). The lifetime average, " + fmt(P.avg_s_per_step_all, 2) + " s/step, would hide the pace change.",
+    "Evidence: run directory vitl16_navtrain10_grow_tau0.3 on the A40 pod; learning-curve points in D:/Projects/TanitAD/data/refe_navtest/points/ (banked with md5s in the package's eval/raw/points/); the selection tables and readouts in …/refe_navtest/proptable/ and eval/RESULT_E6_*.md; the on-policy switch and its tests in raw/2026-09-26-onpolicy-switch/, the NAVSIM drivable-area validation in raw/2026-09-26-navsim-dac/, the NAVSIM comfort validation and the teacher-vs-NAVSIM comfort comparison in raw/2026-09-26-navsim-comfort/; package READINESS.md C21–C23 and I11; SPEC_NAVTEST.md Amendments 2, 3, 3a, 4 and 5.",
+  ].forEach(t => $("caveats").append(el("li", {}, t)));
+
+  // ---------- render + keep in step with the container ----------
+  function renderAll() { charts.forEach(c => { try { c.draw(c.host); } catch (e) { c.host.replaceChildren(el("p", { class: "pending" }, "This chart could not be drawn: " + e.message)); } }); }
+  renderAll();
+  let raf = 0; const ro = new ResizeObserver(() => { cancelAnimationFrame(raf); raf = requestAnimationFrame(renderAll); });
+  ro.observe(document.querySelector(".wrap"));
+})();
+</script>

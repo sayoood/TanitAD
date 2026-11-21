@@ -1,0 +1,317 @@
+{
+ "what": "S1 identity check of unseen_token_rule on the navtrain logs that sit in the val split (trainval DBs)",
+ "evidence": "MEASURED (read-only DB + token table; no label)",
+ "n_logs": 214,
+ "n_known_tokens": 18122,
+ "frozen_rule": {
+  "params": {},
+  "n_candidates_total": 93034,
+  "n_known_total": 18122,
+  "hits_total": 18122,
+  "recall_micro": 1.0,
+  "precision_micro": 0.19478900187028397,
+  "recall_per_log": {
+   "n": 214,
+   "min": 1.0,
+   "p5": 1.0,
+   "p25": 1.0,
+   "median": 1.0,
+   "p75": 1.0,
+   "p95": 1.0,
+   "max": 1.0,
+   "mean": 1.0,
+   "n_eq_1": 214,
+   "n_eq_0": 0
+  },
+  "precision_per_log": {
+   "n": 214,
+   "min": 0.020710059171597635,
+   "p5": 0.055707228719544664,
+   "p25": 0.13109948826008427,
+   "median": 0.1890166376053473,
+   "p75": 0.246330832045906,
+   "p95": 0.42284090909090905,
+   "max": 0.5740740740740741,
+   "mean": 0.20501617683688725,
+   "n_eq_1": 0,
+   "n_eq_0": 0
+  },
+  "n_cand_per_log": {
+   "n": 214,
+   "min": 66.0,
+   "p5": 121.3,
+   "p25": 224.25,
+   "median": 341.0,
+   "p75": 542.5,
+   "p95": 1008.0999999999999,
+   "max": 1940.0,
+   "mean": 434.7383177570093,
+   "n_eq_1": 214,
+   "n_eq_0": 0
+  },
+  "miss_reasons": {},
+  "n_logs_with_a_miss": 0,
+  "known_by_position_in_UNDROPPED_grid_(0..7)": {
+   "0": 0,
+   "1": 0,
+   "2": 0,
+   "3": 0,
+   "4": 37,
+   "5": 55,
+   "6": 47,
+   "7": 55
+  },
+  "edges_of_known_tokens": {
+   "k_min_known": 3,
+   "k_max_gap_known": 10,
+   "n_known_at_k3": 37,
+   "n_known_at_kM11": 37
+  },
+  "known_by_position_from_start_(k=3..9)": {
+   "3": 37,
+   "4": 55,
+   "5": 47,
+   "6": 55,
+   "7": 52,
+   "8": 49,
+   "9": 50
+  },
+  "known_by_gap_from_end_(10..16)": {
+   "10": 37,
+   "11": 39,
+   "12": 39,
+   "13": 41,
+   "14": 48,
+   "15": 45,
+   "16": 44
+  },
+  "phase_offset_mod10_of_first_frame": {
+   "0": 45,
+   "1": 118,
+   "2": 51
+  },
+  "frames_per_log_M": {
+   "n": 214,
+   "min": 121.0,
+   "p5": 142.3,
+   "p25": 244.0,
+   "median": 354.0,
+   "p75": 555.5,
+   "p95": 1021.0999999999999,
+   "max": 1953.0,
+   "mean": 450.6355140186916,
+   "n_eq_1": 214,
+   "n_eq_0": 0
+  },
+  "route_dropped_windows_total": 620,
+  "navtrain_share_of_candidates_per_log": {
+   "n": 214,
+   "min": 0.020710059171597635,
+   "p5": 0.055707228719544664,
+   "p25": 0.13109948826008427,
+   "median": 0.1890166376053473,
+   "p75": 0.246330832045906,
+   "p95": 0.42284090909090905,
+   "max": 0.5740740740740741,
+   "mean": 0.20501617683688725,
+   "n_eq_1": 0,
+   "n_eq_0": 0
+  }
+ },
+ "red_arms": {
+  "cadence_phase_plus1": {
+   "recall_micro": 0.0,
+   "precision_micro": 0.0,
+   "n_candidates_total": 93030,
+   "recall_per_log_median": 0.0,
+   "recall_per_log_max": 0.0,
+   "n_logs_recall_ge_0.5": 0
+  },
+  "cadence_phase_minus1": {
+   "recall_micro": 0.0,
+   "precision_micro": 0.0,
+   "n_candidates_total": 93023,
+   "recall_per_log_median": 0.0,
+   "recall_per_log_max": 0.0,
+   "n_logs_recall_ge_0.5": 0
+  },
+  "cadence_phase_plus5_(half_a_frame)": {
+   "recall_micro": 0.0,
+   "precision_micro": 0.0,
+   "n_candidates_total": 93019,
+   "recall_per_log_median": 0.0,
+   "recall_per_log_max": 0.0,
+   "n_logs_recall_ge_0.5": 0
+  },
+  "cadence_phase_fixed0_(ignore_camera_pairing)": {
+   "recall_micro": 0.20682043924511642,
+   "precision_micro": 0.040285480889118194,
+   "n_candidates_total": 93036,
+   "recall_per_log_median": 0.0,
+   "recall_per_log_max": 1.0,
+   "n_logs_recall_ge_0.5": 45
+  },
+  "cadence_stride_9": {
+   "recall_micro": 0.10925946363536033,
+   "precision_micro": 0.019086544949777323,
+   "n_candidates_total": 103738,
+   "recall_per_log_median": 0.10880327163151098,
+   "recall_per_log_max": 0.25,
+   "n_logs_recall_ge_0.5": 0
+  },
+  "cadence_stride_11": {
+   "recall_micro": 0.09016664827281758,
+   "precision_micro": 0.019364548891338096,
+   "n_candidates_total": 84381,
+   "recall_per_log_median": 0.08870363431997003,
+   "recall_per_log_max": 0.16666666666666666,
+   "n_logs_recall_ge_0.5": 0
+  },
+  "cadence_stride_20": {
+   "recall_micro": 0.4838318066438583,
+   "precision_micro": 0.19445553337768906,
+   "n_candidates_total": 45090,
+   "recall_per_log_median": 0.4831635540464063,
+   "recall_per_log_max": 0.5862068965517241,
+   "n_logs_recall_ge_0.5": 72
+  },
+  "cadence_stride_5": {
+   "recall_micro": 1.0,
+   "precision_micro": 0.09593130975194011,
+   "n_candidates_total": 188906,
+   "recall_per_log_median": 1.0,
+   "recall_per_log_max": 1.0,
+   "n_logs_recall_ge_0.5": 214
+  },
+  "phase_from_CAM_F0_only(the first version)": {
+   "recall_micro": 0.9875841518596181,
+   "precision_micro": 0.19237053120364597,
+   "n_candidates_total": 93034,
+   "recall_per_log_median": 1.0,
+   "recall_per_log_max": 1.0,
+   "n_logs_recall_ge_0.5": 208
+  },
+  "phase_from_CAM_L0_only": {
+   "recall_micro": 0.9931023065886767,
+   "precision_micro": 0.1934454070554851,
+   "n_candidates_total": 93034,
+   "recall_per_log_median": 1.0,
+   "recall_per_log_max": 1.0,
+   "n_logs_recall_ge_0.5": 213
+  },
+  "first_grid_frame_NOT_dropped(drop_first=0)": {
+   "recall_micro": 1.0,
+   "precision_micro": 0.19434196980096088,
+   "n_candidates_total": 93248,
+   "recall_per_log_median": 1.0,
+   "recall_per_log_max": 1.0,
+   "n_logs_recall_ge_0.5": 214
+  },
+  "pairing_tolerance_40ms(every_lidar_pc_pairs)": {
+   "recall_micro": 0.22221609093918993,
+   "precision_micro": 0.04328525055356106,
+   "n_candidates_total": 93034,
+   "recall_per_log_median": 0.0,
+   "recall_per_log_max": 1.0,
+   "n_logs_recall_ge_0.5": 48
+  },
+  "pairing_tolerance_5ms(no_lidar_pc_pairs)": {
+   "recall_micro": 0.00402825295221278,
+   "precision_micro": 0.010037123607864705,
+   "n_candidates_total": 7273,
+   "recall_per_log_median": 0.0,
+   "recall_per_log_max": 1.0,
+   "n_logs_recall_ge_0.5": 1
+  },
+  "window_history_3": {
+   "recall_micro": 1.0,
+   "precision_micro": 0.19434196980096088,
+   "n_candidates_total": 93248,
+   "recall_per_log_median": 1.0,
+   "recall_per_log_max": 1.0,
+   "n_logs_recall_ge_0.5": 214,
+   "shift_vs_frozen": 214,
+   "shift_per_log": 1.0
+  },
+  "window_history_5": {
+   "recall_micro": 0.9979582827502483,
+   "precision_micro": 0.19483947425123896,
+   "n_candidates_total": 92820,
+   "recall_per_log_median": 1.0,
+   "recall_per_log_max": 1.0,
+   "n_logs_recall_ge_0.5": 214,
+   "shift_vs_frozen": -214,
+   "shift_per_log": -1.0
+  },
+  "window_history_6": {
+   "recall_micro": 0.9949232976492661,
+   "precision_micro": 0.1946958080469948,
+   "n_candidates_total": 92606,
+   "recall_per_log_median": 1.0,
+   "recall_per_log_max": 1.0,
+   "n_logs_recall_ge_0.5": 214,
+   "shift_vs_frozen": -428,
+   "shift_per_log": -2.0
+  },
+  "window_future_9": {
+   "recall_micro": 1.0,
+   "precision_micro": 0.1943711521547933,
+   "n_candidates_total": 93234,
+   "recall_per_log_median": 1.0,
+   "recall_per_log_max": 1.0,
+   "n_logs_recall_ge_0.5": 214,
+   "shift_vs_frozen": 200,
+   "shift_per_log": 0.9345794392523364
+  },
+  "window_future_11": {
+   "recall_micro": 0.9979582827502483,
+   "precision_micro": 0.19481218963084249,
+   "n_candidates_total": 92833,
+   "recall_per_log_median": 1.0,
+   "recall_per_log_max": 1.0,
+   "n_logs_recall_ge_0.5": 214,
+   "shift_vs_frozen": -201,
+   "shift_per_log": -0.9392523364485982
+  },
+  "window_future_8": {
+   "recall_micro": 1.0,
+   "precision_micro": 0.19395509129438962,
+   "n_candidates_total": 93434,
+   "recall_per_log_median": 1.0,
+   "recall_per_log_max": 1.0,
+   "n_logs_recall_ge_0.5": 214,
+   "shift_vs_frozen": 400,
+   "shift_per_log": 1.8691588785046729
+  },
+  "window_brief_2s_history_4s_future(5,8)": {
+   "recall_micro": 0.9979582827502483,
+   "precision_micro": 0.19400343273975543,
+   "n_candidates_total": 93220,
+   "recall_per_log_median": 1.0,
+   "recall_per_log_max": 1.0,
+   "n_logs_recall_ge_0.5": 214,
+   "shift_vs_frozen": 186,
+   "shift_per_log": 0.8691588785046729
+  },
+  "window_history_8(4s)_future_10": {
+   "recall_micro": 0.9892947798256263,
+   "precision_micro": 0.19449326303456357,
+   "n_candidates_total": 92178,
+   "recall_per_log_median": 1.0,
+   "recall_per_log_max": 1.0,
+   "n_logs_recall_ge_0.5": 214,
+   "shift_vs_frozen": -856,
+   "shift_per_log": -4.0
+  },
+  "route_filter_off": {
+   "recall_micro": 1.0,
+   "precision_micro": 0.19349947679757404,
+   "n_candidates_total": 93654,
+   "recall_per_log_median": 1.0,
+   "recall_per_log_max": 1.0,
+   "n_logs_recall_ge_0.5": 214,
+   "shift_vs_frozen": 620
+  }
+ },
+ "wall_s": 15.2
+}

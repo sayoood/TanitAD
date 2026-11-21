@@ -1,0 +1,44 @@
+### units (-k test_a_ or test_a2_ or test_g_omitted or test_g2_unit or test_h_cli)
+..........F....F.                                                        [100%]
+================================== FAILURES ===================================
+_ test_g_omitted_units_raises_TypeError[cost_surface_probe.WindowContext.score] _
+
+new_live = {'refa_v1_plan.unicycle_paths': (<function _new_surfaces.<locals>.<lambda> at 0x0000022A301ABBA0>, <function unicycle_...urfaces.<locals>.<lambda> at 0x0000022A301ABD80>, <function RefAV1._imagine_tactical_goal at 0x0000022A300CD6C0>), ...}
+name = 'cost_surface_probe.WindowContext.score'
+
+    @pytest.mark.parametrize("name", _NEW_NAMES)
+    def test_g_omitted_units_raises_TypeError(new_live, name):
+        call, _ = new_live[name]
+>       assert _omission_rejected_for(call, _NEW_PARAM[name]), (
+            name + ": a call without " + _NEW_PARAM[name] + " must raise TypeError")
+E       AssertionError: cost_surface_probe.WindowContext.score: a call without units must raise TypeError
+E       assert False
+E        +  where False = _omission_rejected_for(<function _new_surfaces.<locals>.<lambda> at 0x0000022A301ABE20>, 'units')
+
+tests\test_refav1_units_required.py:686: AssertionError
+_ test_g2_unit_parameter_is_keyword_only_with_no_default[cost_surface_probe.WindowContext.score] _
+
+new_live = {'refa_v1_plan.unicycle_paths': (<function _new_surfaces.<locals>.<lambda> at 0x0000022A301ABBA0>, <function unicycle_...urfaces.<locals>.<lambda> at 0x0000022A301ABD80>, <function RefAV1._imagine_tactical_goal at 0x0000022A300CD6C0>), ...}
+name = 'cost_surface_probe.WindowContext.score'
+
+    @pytest.mark.parametrize("name", _NEW_NAMES)
+    def test_g2_unit_parameter_is_keyword_only_with_no_default(new_live, name):
+        _, fn = new_live[name]
+        prm = inspect.signature(fn).parameters[_NEW_PARAM[name]]
+>       assert prm.default is inspect.Parameter.empty, (name, prm.default)
+E       AssertionError: ('cost_surface_probe.WindowContext.score', 'kappa')
+E       assert 'kappa' is <class 'inspect._empty'>
+E        +  where 'kappa' = <Parameter "units: 'str' = 'kappa'">.default
+E        +  and   <class 'inspect._empty'> = <class 'inspect.Parameter'>.empty
+E        +    where <class 'inspect.Parameter'> = inspect.Parameter
+
+tests\test_refav1_units_required.py:694: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_refav1_units_required.py::test_g_omitted_units_raises_TypeError[cost_surface_probe.WindowContext.score]
+FAILED tests/test_refav1_units_required.py::test_g2_unit_parameter_is_keyword_only_with_no_default[cost_surface_probe.WindowContext.score]
+2 failed, 15 passed, 104 deselected in 5.83s
+
+### pinned files (full)
+......................................                                   [100%]
+38 passed in 10.10s
+

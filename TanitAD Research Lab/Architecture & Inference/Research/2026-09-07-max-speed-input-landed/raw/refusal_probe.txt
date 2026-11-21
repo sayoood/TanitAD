@@ -1,0 +1,67 @@
+==============================================================================
+1. THE DEAD-FLAG REFUSALS (trainer, before any GPU work)
+==============================================================================
+  PASS  --max-speed-input without --v7-labels
+         -> [v3] ⛔ --max-speed-input needs --v7-labels: the ceiling is read from the label record's `speed_max_input` block (v8 schema `speed_max_input/1`), and without the labels the flag would be a de
+  PASS  CONTROL --max-speed-input WITH --v7-labels: allowed
+  PASS  CONTROL no flag at all: allowed
+  PASS  in-training eval without --eval-labels
+         -> [v3] ⛔ --max-speed-input with an in-training eval needs --eval-labels: the eval dataset must be fed the SAME ceiling channel as training, or every eval row scores a max-speed-conditioned mod
+
+==============================================================================
+2. THE INERT-MODE REFUSAL (a knob that selects nothing)
+==============================================================================
+  PASS  --max-speed-mode raw WITHOUT --max-speed-input
+         -> [v3] ⛔ --max-speed-mode 'raw' WITHOUT --max-speed-input is INERT: no ceiling is fed, so the mode selects the encoding of a channel that does not exist, and config.json would stamp a mode the
+  PASS  CONTROL --max-speed-mode raw WITH --max-speed-input: allowed
+
+==============================================================================
+3. THE FLAT-ARM REFUSAL (a seam with nowhere to inject)
+==============================================================================
+  PASS  --max-speed-input on --arm flat (trainer)
+         -> [v3] ⛔ --max-speed-input on a FLAT arm: the ceiling's two injection sites (z_tac, ctx) exist only in the hierarchy, so the conditioner would be built and never read. Pass --arm hier, or drop
+  PASS  max_speed_input=True on a flat RefCV3Config (model)
+         -> max_speed_input=True on a FLAT build: the ceiling's two injection sites (z_tac, ctx) exist only in the hierarchy, so the channel would be built and never read. Use --arm hier, or turn the fl
+
+==============================================================================
+4. THE UNITS REFUSAL -- and the TRAINER's error NAMES THE FIELD
+==============================================================================
+  PASS  read_max_speed_field on an undeclared payload
+         -> speed_max_input payload carries a max speed and declares no `units`. Refusing to guess. Pass units_override=... only for a genuine legacy artifact, and the choice is recorded. MEASURED 2026-
+  PASS  CONTROL read_max_speed_field on a DECLARED payload: allowed
+  PASS  enable_max_speed on a record whose units are UNDECLARED
+         -> [v3] ⛔ --max-speed-input: clip 'clip-A''s `speed_max_input` block carries a max speed and its UNITS cannot be established. Refusing to guess — m/s vs km/h vs mph is a 1.61x spread. speed_max
+[v3] max_speed_input (quantized): 1/1 clips carry a ceiling, 1/1 windows fed, 0 over the 130 km/h top step (md5=deadbeef)
+  PASS  CONTROL enable_max_speed on a DECLARED record: allowed
+
+==============================================================================
+5. THE SHIPPED-VALUE CROSS-CHECKS (ladder and bucket)
+==============================================================================
+  PASS  a record shipping a DIFFERENT ladder
+         -> [v3] ⛔ clip 'clip-B': the record's `speed_max_input.bucket_steps_kmh` is [30, 50, 70, 100] but this build pins [20, 30, 50, 70, 80, 100, 120, 130]. Two ladders is two experiments; refusing r
+  PASS  a record whose SHIPPED bucket disagrees with the snap
+         -> [v3] ⛔ clip 'clip-C': this build snaps v_max_ms=11.19 to 50 km/h but the record shipped 70 km/h. The channel is scored against the SHIPPED value; a disagreement is a re-derivation, which is 
+
+==============================================================================
+6. THE EMPTY-CHANNEL REFUSAL (the field is a v8 addition)
+==============================================================================
+  PASS  enable_max_speed where NO clip carries the block
+         -> [v3] ⛔ --max-speed-input: NOT ONE of this split's 2 windows receives a `speed_max_input` value. The field is a v8 addition — the v7.2 release carries it on 0/4,572 records — so this is almos
+
+==============================================================================
+7. THE MODEL'S TWO-WAY SILENT-DROP REFUSAL
+==============================================================================
+  PASS  v_max_ms supplied to a build with no seam
+         -> v_max_ms was supplied but this build has no E16 seam (`cfg.max_speed_input` is False) - it would be SILENTLY DROPPED and the arm would report as +max-speed-input while running without a ceil
+  PASS  seam built but nothing fed
+         -> this build is --max-speed-input but no v_max_ms reached the forward while a nav token did. Refusing rather than defaulting: a silent 0.0 in the value channel reads as 'the limit here is 0 m/
+  PASS  CONTROL seam built AND fed: allowed
+
+==============================================================================
+8. THE ORACLE GATE (the record declares oracle:true / ego-future)
+==============================================================================
+  PASS  oracle_max_speed without allow_oracle_nav
+         -> [v7_labels] ⛔ speed_max_input is an ORACLE — provenance 'ego-future', computed from the ego's own future speed. Pass allow_oracle_nav=True to load_v7_labels if this is a deliberate max-speed
+  PASS  CONTROL oracle_max_speed WITH allow_oracle_nav: allowed
+==============================================================================
+REFUSAL PROBE: 20 probes, ALL PASS

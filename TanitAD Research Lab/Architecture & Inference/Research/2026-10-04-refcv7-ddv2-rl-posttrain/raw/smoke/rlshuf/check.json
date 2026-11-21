@@ -1,0 +1,36 @@
+{
+ "n_steps": 2,
+ "I0_enough_steps": true,
+ "I1_finite": true,
+ "I1_params_moved": true,
+ "I2_rl_coef_positive": true,
+ "I3_positive_adv_on_90pct_steps": true,
+ "I4_human_nc1_frac": 1.0,
+ "I4_human_dac1_frac": 1.0,
+ "I4_pass": true,
+ "I5_dac_live_frac_steps": 1.0,
+ "I5_dac_dead_windows": 0,
+ "I5_pass": true,
+ "I9_derangement_every_step": true,
+ "I10_spread_first_last_m": [
+  36.65317153930664,
+  34.006866455078125
+ ],
+ "I10_canary_retained_ge_60pct": true,
+ "failed": [],
+ "verdict": "PASS",
+ "arm": {
+  "kind": "rlshuf",
+  "rl_weight": 1.0,
+  "groups": 4,
+  "il_form": "matched_anchor",
+  "grad_clip": 100.0,
+  "clip_sample": false
+ },
+ "selftest_each_check_fires": {
+  "I1_nonfinite": true,
+  "I3_no_positive": true,
+  "I4_dac_human": true,
+  "I5_dead_dac": true
+ }
+}

@@ -1,0 +1,74 @@
+{
+ "_what": "has the presence PROJECTION collapsed? weight inspection, no forward pass",
+ "_evidence_class": "MEASURED (ours), read-only, no GPU",
+ "_control": "the OTHER slot fields' rows in the SAME linear layer",
+ "head_key": "core.agent_head.head.weight",
+ "per_field": {
+  "presence": {
+   "rows": 1,
+   "mean_row_L2": 0.728062,
+   "max_abs": 0.094412
+  },
+  "cls": {
+   "rows": 10,
+   "mean_row_L2": 0.627251,
+   "max_abs": 0.102521
+  },
+  "cx": {
+   "rows": 1,
+   "mean_row_L2": 0.501678,
+   "max_abs": 0.0597
+  },
+  "cy": {
+   "rows": 1,
+   "mean_row_L2": 0.536635,
+   "max_abs": 0.06084
+  },
+  "l": {
+   "rows": 1,
+   "mean_row_L2": 0.628517,
+   "max_abs": 0.077813
+  },
+  "w": {
+   "rows": 1,
+   "mean_row_L2": 0.604818,
+   "max_abs": 0.070411
+  },
+  "yaw_sin": {
+   "rows": 1,
+   "mean_row_L2": 0.567068,
+   "max_abs": 0.064905
+  },
+  "yaw_cos": {
+   "rows": 1,
+   "mean_row_L2": 0.617248,
+   "max_abs": 0.08613
+  },
+  "v_rel_x": {
+   "rows": 1,
+   "mean_row_L2": 0.916764,
+   "max_abs": 0.129834
+  },
+  "v_rel_y": {
+   "rows": 1,
+   "mean_row_L2": 0.582184,
+   "max_abs": 0.062322
+  },
+  "yaw_rate_rel": {
+   "rows": 1,
+   "mean_row_L2": 0.564364,
+   "max_abs": 0.060708
+  },
+  "occluded": {
+   "rows": 1,
+   "mean_row_L2": 0.779826,
+   "max_abs": 0.107401
+  }
+ },
+ "presence_mean_row_L2": 0.728062,
+ "median_other_field_row_L2": 0.604818,
+ "ratio_presence_to_median_other": 1.2038,
+ "presence_bias_mean": -2.928712,
+ "init_bias_logit_0p05": -2.944439,
+ "_VERDICT": "the presence projection is COMPARABLE to its siblings \u21d2 the weights are NOT the cause and the explanation lies in the loss/optimisation, not the layer"
+}

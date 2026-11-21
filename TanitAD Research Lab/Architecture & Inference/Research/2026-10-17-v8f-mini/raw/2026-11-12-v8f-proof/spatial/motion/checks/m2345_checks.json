@@ -1,0 +1,204 @@
+{
+ "tanitad_file": "C:\\Users\\Admin\\v8proof_c\\motion\\tree_patch\\stack\\tanitad\\__init__.py",
+ "m2": {
+  "flat": {
+   "max_abs_diff_output_minus_input_L1_L2_L3": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "control_plain_predictor_max_abs_diff": [
+    3.795433282852173,
+    4.1944193840026855,
+    4.413816928863525
+   ],
+   "wrapper": "ResidualPredictor",
+   "inner": "CausalPredictor",
+   "last_layer_abs_sum": 0.0,
+   "PASS": true
+  },
+  "cell": {
+   "max_abs_diff_output_minus_input_L1_L2_L3": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "control_plain_predictor_max_abs_diff": [
+    3.885164499282837,
+    4.243673324584961,
+    4.285148620605469
+   ],
+   "wrapper": "ResidualPredictor",
+   "inner": "CellCausalPredictor",
+   "last_layer_abs_sum": 0.0,
+   "PASS": true
+  }
+ },
+ "m3": {
+  "flat": {
+   "predictor_group_grad_abs_sums": {
+    "in_proj": 73.87828987836838,
+    "blocks": 251.2360560297966,
+    "final_ln": 0.22377175092697144,
+    "out": 67.22876912355423,
+    "pos": 0.9840050935745239
+   },
+   "all_groups_nonzero": true,
+   "state_path_grad_per_frame_abs_sum": [
+    0.048931486904621124,
+    0.0,
+    0.06448698043823242,
+    0.0,
+    0.05095939710736275,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "starts": [
+    0,
+    2,
+    4
+   ],
+   "last_frame_grad_exact": 0.0,
+   "non_start_frames_all_zero": true,
+   "start_frames_all_nonzero": true,
+   "control_one_step_loss_last_frame_grad": 0.10829424858093262,
+   "state_projection_grad_abs_sum_roll_alone": 0.5034089600667357,
+   "PASS": true
+  },
+  "cell": {
+   "predictor_group_grad_abs_sums": {
+    "in_proj": 2.059427320957184,
+    "act_tok": 0.11904369480907917,
+    "spatial": 154.07110397145152,
+    "temporal": 131.57551669329405,
+    "final_ln": 0.28001459687948227,
+    "out": 29.023628994822502,
+    "cell_pos": 0.6996781826019287,
+    "time_pos": 0.8354048132896423
+   },
+   "all_groups_nonzero": true,
+   "state_path_grad_per_frame_abs_sum": [
+    0.01344996690750122,
+    0.0,
+    0.013649564236402512,
+    0.0,
+    0.01292235404253006,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "starts": [
+    0,
+    2,
+    4
+   ],
+   "last_frame_grad_exact": 0.0,
+   "non_start_frames_all_zero": true,
+   "start_frames_all_nonzero": true,
+   "control_one_step_loss_last_frame_grad": 0.10845751315355301,
+   "state_projection_grad_abs_sum_roll_alone": 0.12386088981293142,
+   "PASS": true
+  }
+ },
+ "m4": {
+  "flat_residual_off": {
+   "max_abs_diff_vs_stack_rollout": 0.0,
+   "context": 3,
+   "K": 10,
+   "starts": [
+    0,
+    2,
+    4
+   ],
+   "control_rollout_minus_target": 4.422337055206299,
+   "PASS": true
+  },
+  "flat_residual_on": {
+   "max_abs_diff_vs_stack_rollout": 0.0,
+   "context": 3,
+   "K": 10,
+   "starts": [
+    0,
+    2,
+    4
+   ],
+   "control_rollout_minus_target": 40.6798095703125,
+   "PASS": true
+  },
+  "cell_residual_off": {
+   "max_abs_diff_vs_stack_rollout": 0.0,
+   "context": 3,
+   "K": 10,
+   "starts": [
+    0,
+    2,
+    4
+   ],
+   "control_rollout_minus_target": 4.326584339141846,
+   "PASS": true
+  },
+  "cell_residual_on": {
+   "max_abs_diff_vs_stack_rollout": 0.0,
+   "context": 3,
+   "K": 10,
+   "starts": [
+    0,
+    2,
+    4
+   ],
+   "control_rollout_minus_target": 21.518795013427734,
+   "PASS": true
+  }
+ },
+ "m5": {
+  "marker_line_no": 869,
+  "flat": {
+   "real": {
+    "total_W_minus_total_0": 0.734529656682696,
+    "W_times_roll": 0.7345296566826777,
+    "roll_L1": 1.0493280809752539,
+    "abs_err": 1.8318679906315083e-14
+   },
+   "mutant_line_deleted": {
+    "total_W_minus_total_0": 0.0,
+    "W_times_roll": 0.7345296566826777,
+    "roll_L1": 1.0493280809752539,
+    "abs_err": 0.7345296566826777
+   },
+   "PASS": true
+  },
+  "cell": {
+   "real": {
+    "total_W_minus_total_0": 0.7274930992360282,
+    "W_times_roll": 0.7274930992360044,
+    "roll_L1": 1.0392758560514348,
+    "abs_err": 2.3869795029440866e-14
+   },
+   "mutant_line_deleted": {
+    "total_W_minus_total_0": 0.0,
+    "W_times_roll": 0.7274930992360044,
+    "roll_L1": 1.0392758560514348,
+    "abs_err": 0.7274930992360044
+   },
+   "PASS": true
+  }
+ },
+ "PASS": true
+}

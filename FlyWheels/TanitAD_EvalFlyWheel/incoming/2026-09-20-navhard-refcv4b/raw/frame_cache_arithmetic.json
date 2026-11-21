@@ -1,0 +1,27 @@
+{
+ "navhard_two_stage": {
+  "stage2_tokens": 5462,
+  "distinct_scene_tokens": 5462,
+  "max_tokens_per_scene": 1,
+  "consecutive_repeats_in_loop_order": 0,
+  "bytes_per_cache_entry": 2129920,
+  "unbounded_cache_gb": 10.835,
+  "hit_rate_within_one_arm": 0.0
+ },
+ "host": {
+  "ram_available_gb": 7.72,
+  "ram_total_gb": 31.84,
+  "measured_utc": "2026-09-20T14:15:01Z"
+ },
+ "warmup_reference": {
+  "stage2_tokens": 204,
+  "unbounded_cache_gb": 0.405,
+  "why_it_survived_E2": "0.41 GB on warmup is invisible; the defect scales with the SPLIT, not the code"
+ },
+ "fix": {
+  "file": "taniteval/taniteval/bench/navsim/model_arms.py",
+  "constant": "FRAME_CACHE_MAX = 64",
+  "bounded_cache_gb": 0.127,
+  "inertness_control": "raw/smoke_cache_control.json (bound 64 vs 2: poses bit-identical, 10 evictions)"
+ }
+}

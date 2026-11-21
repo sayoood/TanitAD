@@ -1,0 +1,269 @@
+{
+ "what": "refcv6 SAM3 map head, drivable IoU under the TRAINER'S rule (refc_v3_train.py:4506-4521 @ 82c2331) on EVERY eval window of each rendered clip",
+ "caveat": "perception diagnostic, open loop \u2014 not driving performance; one clip = one episode: windows are correlated, no interval quoted",
+ "run": "refcv6-r101-s0",
+ "step": 38000,
+ "hybrid_note": "hybrid: F3 + true label clock from step 34,500",
+ "ckpt_md5": "5a2e7222a9f5f8c7aa7bf38ef4698d8a",
+ "config": {
+  "path": "D:/refcv6_eval_kit/ckpt_final/config.json",
+  "md5": "a3193a4685ce0d07a6ae6b89fdc994a8"
+ },
+ "inrun_eval_map_iou_drivable": {
+  "value": 0.67629,
+  "step": 38000,
+  "windows": 128,
+  "batches": 8,
+  "note": "a DIFFERENT window set -- a sanity range, not an identity"
+ },
+ "estimators": {
+  "iou_mean": "mean over windows of the per-window IoU",
+  "iou_pooled": "sum of intersections / sum of unions over the clip's windows",
+  "interval": "none -- windows of one episode are not independent"
+ },
+ "clips": [
+  {
+   "clip_rank": 1,
+   "clip_sha12": "0191487845ef",
+   "nav": "right",
+   "nav_token": "NAV_TURN_R",
+   "n_windows_rendered": 2,
+   "n_windows_clip": 171,
+   "n_labelled": 2,
+   "iou_mean": 0.6293992203180485,
+   "iou_pooled": 0.6294204322200393,
+   "iou_min": 0.6186023622047244,
+   "iou_median": 0.6293992203180485,
+   "iou_max": 0.6401960784313725,
+   "n_union_zero": 0,
+   "t_label_s_range": [
+    0.9855,
+    1.0862
+   ],
+   "v0_ms_range": [
+    0.1606,
+    0.1944
+   ],
+   "pred_drivable_frac_mean": 0.20941949999999998,
+   "gt_drivable_frac_mean": 0.2796695,
+   "map_acc_argmax_mean": 0.632242,
+   "map_soft_ce_mean": 0.8409230000000001,
+   "camera": {
+    "frame": {
+     "height": 416,
+     "width": 1024,
+     "f_ref": 488.92398517830253,
+     "projection": "cylindrical"
+    },
+    "codec": "png",
+    "extrinsics_found": true,
+    "label": "416x1024 cylindrical f_ref 488.924 \u00b7 cam h 1.348 m, fwd 2.003 m, pitch-down +1.70\u00b0 (MEASURED per-clip)",
+    "R_vs_pai_extrinsics_table_max_abs": 0.0
+   },
+   "controls": {
+    "n": 2,
+    "consistent_iou_eq_1": 2,
+    "consistent_union0": 0,
+    "consistent_min_iou": 1.0,
+    "onehot_iou_min": 0.9870197300103842,
+    "onehot_iou_sum": 1.9760479431765283,
+    "n_mixed_total": 46,
+    "n_impossible_total": 0,
+    "panel_equal": 2,
+    "panel_checked": 2,
+    "consistent_panel_equal": 2,
+    "mut_flip_iou_max": 0.5788156797331109,
+    "mut_flip_red": 2,
+    "mut_chan_red": 2,
+    "cellcount_agree": 2,
+    "onehot_iou_mean": 0.9880239715882642,
+    "pixel_check_on_this_clip": true
+   },
+   "draw_independence": {
+    "seeds": [
+     0,
+     1
+    ],
+    "map_logits_max_abs_diff": 0.0,
+    "drivable_mask_identical": true,
+    "argmax_identical": true,
+    "iou_seed_a": 0.6186023622047244,
+    "iou_seed_b": 0.6186023622047244,
+    "traj_max_abs_diff_m": 8.256826400756836
+   },
+   "wall_s": 6.1,
+   "selection": {
+    "n_boxes_30m_in_field": 7021,
+    "n_boxes_30m_any_direction": 18281,
+    "n_windows_agent_labelled": 171,
+    "turn_max_deg": 12.4,
+    "n_windows_turn_gt_30deg": 0
+   },
+   "projector_cross_check": {
+    "n_points": 12,
+    "max_px": 0.0
+   },
+   "detections": {
+    "box3d": {
+     "n_windows": 2,
+     "n_windows_no_agent_label": 0,
+     "n_targets": 169,
+     "n_gt_in_range": 175,
+     "n_pred_conf_in_range": 200,
+     "n_matched_hungarian": 169,
+     "n_matched_hungarian_conf": 169,
+     "centre_err_l2_mean_m": 3.8016878975742667,
+     "centre_err_l2_median_m": 2.848963975906372,
+     "centre_err_l1_mean_m": 4.514103222880843,
+     "greedy2m_bev_tp_at_gate": 71,
+     "n_conf_all": 200,
+     "recall_at_gate_bev": 0.42011834319526625,
+     "precision_at_gate_bev": 0.355,
+     "ap_2m_bev": 0.19126149584866559,
+     "ap_2m_3d": 0.19126149584866559
+    },
+    "agent": {
+     "n_windows": 2,
+     "n_windows_no_agent_label": 0,
+     "n_targets": 169,
+     "n_gt_in_range": 175,
+     "n_pred_conf_in_range": 200,
+     "n_matched_hungarian": 169,
+     "n_matched_hungarian_conf": 169,
+     "centre_err_l2_mean_m": 4.652803079969079,
+     "centre_err_l2_median_m": 3.8000473976135254,
+     "centre_err_l1_mean_m": 5.569174694591726,
+     "greedy2m_bev_tp_at_gate": 72,
+     "n_conf_all": 200,
+     "recall_at_gate_bev": 0.4260355029585799,
+     "precision_at_gate_bev": 0.36,
+     "ap_2m_bev": 0.16439749207417226,
+     "ap_2m_3d": null
+    }
+   },
+   "box_control": {
+    "n_windows": 2,
+    "n_targets": 169,
+    "n_self_matched": 169,
+    "max_centre_err_m": 0.0,
+    "greedy_tp": 169,
+    "max_corner_diff_m": 0.0,
+    "trainer_centre_term_max_abs_diff": 4.76837158203125e-07,
+    "n_trainer_term_checked": 2,
+    "pass": true
+   }
+  }
+ ],
+ "selection": [
+  {
+   "sha12": "0191487845ef",
+   "episode_index": 116,
+   "nav": "right",
+   "n_windows": 171,
+   "n_ok": 171,
+   "n_no_file": 0,
+   "n_out_of_range": 0,
+   "n_inconclusive": 0,
+   "n_windows_agent_labelled": 171,
+   "n_boxes_30m_in_field": 7021,
+   "n_boxes_30m_any_direction": 18281,
+   "turn_max_deg": 12.4,
+   "n_windows_turn_gt_30deg": 0
+  },
+  {
+   "sha12": "9f8bedcfb9de",
+   "episode_index": 66,
+   "nav": "right",
+   "n_windows": 171,
+   "n_ok": 171,
+   "n_no_file": 0,
+   "n_out_of_range": 0,
+   "n_inconclusive": 0,
+   "n_windows_agent_labelled": 171,
+   "n_boxes_30m_in_field": 2779,
+   "n_boxes_30m_any_direction": 6461,
+   "turn_max_deg": 1.5,
+   "n_windows_turn_gt_30deg": 0
+  },
+  {
+   "sha12": "34765c024267",
+   "episode_index": 28,
+   "nav": "right",
+   "n_windows": 171,
+   "n_ok": 171,
+   "n_no_file": 0,
+   "n_out_of_range": 0,
+   "n_inconclusive": 0,
+   "n_windows_agent_labelled": 171,
+   "n_boxes_30m_in_field": 1963,
+   "n_boxes_30m_any_direction": 4705,
+   "turn_max_deg": 75.37,
+   "n_windows_turn_gt_30deg": 69
+  }
+ ],
+ "device": "cuda",
+ "seed": 0,
+ "equalize_bottom_rows": {
+  "argv": 43,
+  "trunk_built": 0,
+  "lift_bank": 43,
+  "n_trunks": 1
+ },
+ "detections_rule": {
+  "gate": 0.5,
+  "gate_source": "config.json seams.agents.presence_gate == AgentSeamConfig.presence_gate (refc_agents.py:197-199), a threshold on sigmoid(presence_logit)",
+  "heads": {
+   "box3d": "out['perception']['box_slots'] (Box3DSlotDecoder, box3d_head.py:227-284)",
+   "agent": "out['agent_slots'] (core AgentSlotDecoder, the planner's agent tokens; agent_slots.py:546-684)"
+  },
+  "target_set": "refc_agents.visible_target_filter (refc_agents.py:410-433)",
+  "matcher": "agent_slots.match_slots (agent_slots.py:788-823)",
+  "greedy": "box3d_head.box3d_match_rows at 2.0 m (box3d_head.py:482-536)"
+ },
+ "inrun_eval_detection_terms": {
+  "row": {
+   "eval_agent_n_windows": 16.0,
+   "eval_agent_n_labelled": 15.125,
+   "eval_agent_n_raw": 442.125,
+   "eval_agent_n_truncated": 0.0,
+   "eval_agent_presence": 0.06175,
+   "eval_agent_cls": 1.39875,
+   "eval_agent_centre": 1.70172,
+   "eval_agent_size": 0.8029,
+   "eval_agent_yaw": 0.44199,
+   "eval_agent_n_target": 63.625,
+   "eval_agent_n_matched": 63.625,
+   "eval_agent_n_dropped": 0.0,
+   "eval_agent_rows_with_cam": 15.125,
+   "eval_agent_rows_no_cam": 0.0,
+   "eval_box3d_n_windows": 16.0,
+   "eval_box3d_n_labelled": 15.125,
+   "eval_box3d": 6.20126,
+   "eval_box3d_presence": 0.06254,
+   "eval_box3d_cls": 1.30037,
+   "eval_box3d_centre": 1.53527,
+   "eval_box3d_size": 0.8155,
+   "eval_box3d_yaw": 0.44646,
+   "eval_box3d_rates": 3.46815,
+   "eval_box3d_occ": 0.0,
+   "eval_box3d_z": 0.17027,
+   "eval_box3d_h": 0.13678,
+   "eval_box3d_n_matched": 63.625,
+   "eval_box3d_n_target": 63.625,
+   "eval_box3d_n_dropped": 0.0,
+   "eval_box3d_n_cls": 1.96915,
+   "eval_box3d_n_centre": 63.625,
+   "eval_box3d_n_size": 63.625,
+   "eval_box3d_n_yaw": 63.625,
+   "eval_box3d_n_rates": 63.625,
+   "eval_box3d_n_occ": 63.625,
+   "eval_box3d_n_z": 63.625,
+   "eval_box3d_n_h": 63.625,
+   "eval_box3d_n_target_prefilter": 442.125,
+   "eval_box3d_n_target_visible": 63.625,
+   "eval_box3d_n_dropped_not_visible": 378.5,
+   "eval_box3d_visible_filter": 1.0
+  },
+  "note": "per-batch means over 8 x 16 OTHER windows; *_centre is the L1 centre term |dx|+|dy| over Hungarian pairs (agent_slots.py:885) -- a sanity range for centre_err_l1_mean_m, not an identity"
+ }
+}

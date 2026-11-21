@@ -1,0 +1,20 @@
+FLAT-DAG dev-box T1-kin read -- LAUNCH (the Master Mind launches; nothing here has been run on a new arm)
+
+WHEN: after the last box-2 pull lands, i.e. M2b_s1_flatdag0 shows COMPLETE and box 2 has written ZZV8FMINI-DONE. The chain itself waits for both, so it may also be launched earlier; it then rolls out each arm as its own pull completes.
+
+LAUNCH (detached, survives the shell; PowerShell):
+  ([wmiclass]"Win32_Process").Create('cmd /c E:\Projects\TanitAD-artifacts\flatdag_t1\flatdag_t1_chain.cmd') | Select-Object ReturnValue, ProcessId
+DRY RUN (prints the plan, writes/launches nothing, ends ZZFLATDAGT1-DRY-OK):
+  bash /e/Projects/TanitAD-artifacts/flatdag_t1/flatdag_t1_chain.sh --dry-run < /dev/null
+
+WHAT IT DOES: 4 rollouts (FLAT-DAG s0/s1, FLAT-DAG-0 s0/s1) at the PREREG's decisive settings (--limit causal --dump-heads --dump-ticks, m=10, deadreckon, logged scene, periodic, CPU), 2 lanes (one per seed), each rollout after its own pull is COMPLETE; then the box-2 ZZV8FMINI-DONE gate, a re-verify of every pull, the bank gate, the manifest, then flatdag_read.py.
+GATES: C: >= 2048 MB free and E: >= 1500 MB free before the start and before every rollout (STOP, never a delete). Output only under E:/Projects/TanitAD-artifacts/v8f-flatdag-t1/ ; nothing in the repo.
+
+MARKERS (E:/Projects/TanitAD-artifacts/v8f-flatdag-t1/logs/chain.out ; launcher stdout in E:/Projects/TanitAD-artifacts/flatdag_t1/logs/flatdag_t1_chain.launch.out):
+  ZZFLATDAGT1-DONE <n>/4 rollouts, reader rc <rc>     success marker (rc 0 outcome written | 2 REFUSED | 3 UNPLACED | 4 BLOCKED)
+  ZZFLATDAGT1-STOP <why>                               refused; fix the named cause and re-run the same command (a finished rollout is skipped by its done record)
+RESUME = run the same command again. RESULT: v8f-flatdag-t1/read/FLATDAG_READ.json (outcome, four families, controls, tier + estimator stamp).
+
+OPTIONAL ENV (put it in the .cmd; a WMI process does not inherit the caller's shell): FDT1_TREE, FDT1_B2_OUT (default C:/Users/Admin/box2_ship/logs/chain_v8f_flatdag.out; "off" skips the box-2 gate), FDT1_MAX_WAIT_H, FDT1_C_MIN_MB, FDT1_E_MIN_MB.
+
+TIME: ~11-15 min for the 4 rollouts with 2 lanes (ESTIMATED from the DAGGER chain's rollouts, not measured on these arms), plus the reader (the preflight read took minutes on CPU).

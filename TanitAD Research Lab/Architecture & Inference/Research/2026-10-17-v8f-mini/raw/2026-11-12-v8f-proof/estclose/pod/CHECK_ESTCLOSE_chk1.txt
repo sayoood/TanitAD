@@ -1,0 +1,20 @@
+wrapper /workspace/v8proof/integ10k/build/v8f_t1_eval_reader_rule_rzgfhqe.py a747abeb51ef041f
+PASS A1 the flag --closing-est exists and is refused outside form RRe
+PASS A2 form RRe is a form, takes the q map, the reader and the later looks
+PASS A3 the closing of RRe is the head value of the mix (the estimate)
+PASS A4 the rule log carries c_est and est_ok, the run line is written after the pre-roll files
+PASS A5 the estimate has the fallback 0.0 without a full history
+PASS A6 the new header text and this check have none of the banned words -- []
+RUN e_rr form=RR est=None rc=0
+RUN e_zero form=RRe est=zero rc=0
+RUN e_rc form=RRe est=rc rc=0
+RUN e_c2 form=RRe est=c2 rc=0
+PASS Z1 e_zero equals e_rr: dump, tick, rule-log, side, mid-look and first-plan arrays, largest difference 0 (9 files); c_src is 0 on all 153 + 153 rows; c_est / est_ok row for row (NaN exactly where est_ok is False); new keys {"rule log": ["c_est", "est_ok"], "rule log side file": ["c_est", "est_ok"], "mid-look log": ["c_est", "est_ok"]} -- []
+PASS Z2 e_zero against the banked RR run I10RQ50KF5Hb20_s0 on the subset rows: replan log {"rows_subset": 153, "rows_common": 153, "rows_not_in_banked": 0, "columns": 21, "rows_mismatch": 0, "largest_numeric_diff": 2.8848648071289062e-05, "bad_columns": {}}; mid-look log {"rows_subset": 153, "rows_common": 153, "rows_not_in_banked": 0, "columns": 24, "rows_mismatch": 0, "largest_numeric_diff": 2.4847387674498123e-05, "bad_columns": {}}; first plans 51 common, largest difference 7.63e-06 (bar 1e-03)
+PASS R1 e_rc against the banked RRh run I10RQ50hKF5Hb20_s0 on present rows with a full history: {"replan": {"present_full_compared": 46, "largest_diff": 2.384185791015625e-06, "not_zero": 46, "present_short_history": 2, "short_c_src_zero": true, "present_full_not_in_banked": 0}, "mid": {"present_full_compared": 50, "largest_diff": 3.337860107421875e-06, "not_zero": 50, "present_short_history": 2, "short_c_src_zero": true, "present_full_not_in_banked": 0}} (bar 1e-04 m/s)
+PASS R2 e_rc: c_est equals the c_read of the same run on the est_ok rows: tick log 144 rows largest difference 3.34e-06, mid-look log 147 rows 3.34e-06 (bar 1e-04)
+PASS C1 e_c2: {"replan": {"present_full": 46, "present_short": 2, "c_src_2": true, "c_src_0": true, "v_L": true, "c_est": true}, "mid": {"present_full": 50, "present_short": 2, "c_src_2": true, "c_src_0": true, "v_L": true, "c_est": true}}
+PASS L1 run line counts equal the counts recomputed from the logs, file sha256 equals the estimator file: {"e_zero": {"lines": 1, "full": 291, "short": 15, "line_ok": true}, "e_rc": {"lines": 1, "full": 291, "short": 15, "line_ok": true}, "e_c2": {"lines": 1, "full": 291, "short": 15, "line_ok": true}, "e_rr_has_no_line": true}
+PASS F1 refusals: RRe without --closing-est (rc 1) and RR with --closing-est (rc 1) stop with REFUSED naming --closing-est -- REFUSED: form RRe needs --closing-est NPZ (an estimator file of closest.py) | REFUSED: --closing-est belongs to form RRe only
+counts {"r1": {"mid": {"largest_diff": 3.337860107421875e-06, "not_zero": 50, "present_full_compared": 50, "present_full_not_in_banked": 0, "present_short_history": 2, "short_c_src_zero": true}, "replan": {"largest_diff": 2.384185791015625e-06, "not_zero": 46, "present_full_compared": 46, "present_full_not_in_banked": 0, "present_short_history": 2, "short_c_src_zero": true}}, "z2_mid_common": 153, "z2_plan_common": 51, "z2_replan_common": 153, "zero_files": 9, "zero_mid_rows": 153, "zero_tick_rows": 153}
+ZZ CHECK-ESTCLOSE PASS checks-failed 0 tick-rows 153 mid-rows 153

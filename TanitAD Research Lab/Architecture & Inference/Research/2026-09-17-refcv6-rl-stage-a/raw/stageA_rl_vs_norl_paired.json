@@ -1,0 +1,107 @@
+{
+ "_what": "L1-RL-s0 minus L1-NORL-s0, paired on the SAME windows",
+ "_tier": "T0 (deployed sampler, recorded future, proxy reward)",
+ "_evidence_class": "MEASURED (ours)",
+ "_estimator": "taniteval.ci.paired_episode_cluster_bootstrap, n_boot 2000, seed 0",
+ "_n_windows": 493,
+ "_n_episode_clusters": 40,
+ "_CAVEAT": "ONE SEED PER ARM. A separated interval here is NECESSARY, NOT SUFFICIENT: the replicate L1-RL-s1 has NOT completed (CUDA OOM twice under host-RAM contention), so the run-to-run floor on this rig is UNMEASURED for these metrics. No lever claim is admissible until it is.",
+ "deltas": {
+  "sel_pdms": {
+   "rl": 0.871201,
+   "norl": 0.916096,
+   "delta": -0.0449,
+   "lo": -0.0712,
+   "hi": -0.0228,
+   "separated": true
+  },
+  "sel_ade_m": {
+   "rl": 2.539911,
+   "norl": 2.260118,
+   "delta": 0.2798,
+   "lo": 0.1129,
+   "hi": 0.4634,
+   "separated": true
+  },
+  "sel_fde_m": {
+   "rl": 7.560772,
+   "norl": 7.123339,
+   "delta": 0.4374,
+   "lo": -0.1667,
+   "hi": 1.0849,
+   "separated": false
+  },
+  "fan_endpoint_spread_m": {
+   "rl": 28.532658,
+   "norl": 35.361551,
+   "delta": -6.8289,
+   "lo": -7.5891,
+   "hi": -6.0245,
+   "separated": true
+  },
+  "sel_ttc": {
+   "rl": 0.841785,
+   "norl": 0.908722,
+   "delta": -0.0669,
+   "lo": -0.1041,
+   "hi": -0.0331,
+   "separated": true
+  },
+  "sel_nc": {
+   "rl": 0.925963,
+   "norl": 0.94929,
+   "delta": -0.0233,
+   "lo": -0.045,
+   "hi": -0.0064,
+   "separated": true
+  },
+  "sel_ep": {
+   "rl": 0.884169,
+   "norl": 0.914249,
+   "delta": -0.0301,
+   "lo": -0.0509,
+   "hi": -0.0134,
+   "separated": true
+  },
+  "sel_comfort": {
+   "rl": 0.997972,
+   "norl": 0.997972,
+   "delta": 0.0,
+   "lo": -0.006,
+   "hi": 0.0059,
+   "separated": false
+  },
+  "fan_minade_m": {
+   "rl": 0.817482,
+   "norl": 0.905142,
+   "delta": -0.0877,
+   "lo": -0.1414,
+   "hi": -0.0336,
+   "separated": true
+  },
+  "fan_pdms_best": {
+   "rl": 0.994863,
+   "norl": 0.993801,
+   "delta": 0.0011,
+   "lo": -0.0005,
+   "hi": 0.0034,
+   "separated": false
+  },
+  "fan_pdms_mean": {
+   "rl": 0.699189,
+   "norl": 0.662915,
+   "delta": 0.0363,
+   "lo": 0.0243,
+   "hi": 0.0475,
+   "separated": true
+  },
+  "fan_nc_fail_frac": {
+   "rl": 0.122085,
+   "norl": 0.150587,
+   "delta": -0.0285,
+   "lo": -0.0408,
+   "hi": -0.0159,
+   "separated": true
+  }
+ }
+}

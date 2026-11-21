@@ -1,0 +1,21 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+_ test_c5_default_is_the_checkers_129_and_the_old_141_is_refused_on_the_real_bank _
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/actrsp/optb/readchain/tmp_c5/bt2/test_c5_default_is_the_checker0')
+
+    @pytest.mark.skipif(not os.path.isfile(os.path.join(REAL_FTRSP, "BANK.done")), reason="the real FTRSP_s0 bank is not pulled here")
+    def test_c5_default_is_the_checkers_129_and_the_old_141_is_refused_on_the_real_bank(tmp_path):
+        """MM ruling 2026-11-18 (MM_RULINGS_POSTCHECK.md): C5 counts the 133 wm.* PARAMETERS minus 4 wm.proj = 129. The default must pass the real
+        FTRSP_s0 bank; the pre-ruling constant 141 must refuse it (rc 4) and name 141, so the check is not a pass-through."""
+        r = run("evidence", "--tag", "FTRSP_s0", "--bank", REAL_FTRSP, "--out", str(tmp_path / "ev.json"))
+        ev = json.load(open(tmp_path / "ev.json"))
+>       assert r.returncode == 0 and ev["c5_hold"] is True and ev["c5"]["adam"]["n_with_state"] == 129, (ev.get("problems"), r.stderr[-300:])
+E       AssertionError: (['C5/identity: C5: 129 of 129 optimiser tensors have Adam state, wanted 141'], '')
+E       assert (4 == 0)
+E        +  where 4 = CompletedProcess(args=['C:\\Users\\Admin\\venvs\\tanitad\\Scripts\\python.exe', 'F:\\TanitAD-scratch\\actrsp\\optb\\re...hold": false, "problems": ["C5/identity: C5: 129 of 129 optimiser tensors have Adam state, wanted 141"]}\n', stderr='').returncode
+
+test_tools.py:103: AssertionError
+=========================== short test summary info ===========================
+FAILED test_tools.py::test_c5_default_is_the_checkers_129_and_the_old_141_is_refused_on_the_real_bank
+1 failed, 5 deselected in 2.19s

@@ -1,0 +1,60 @@
+{
+ "_what": "DIAGNOSTIC paired interval on S2-EPDMS-u (stage-2 group-uniform mean) \u2014 NOT the settled estimator, whose AGGREGATIONS has no key for this statistic",
+ "name": "s2_group_uniform_paired_log_bootstrap_DIAGNOSTIC",
+ "machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean) \u2014 the draw generator navsim_ci.paired_log_cluster_bootstrap itself calls",
+ "unit": "stage-2 GROUP (2 per mapping key)",
+ "n_units": 450,
+ "cluster_unit": "log_name",
+ "n_clusters": 76,
+ "min_clusters": 8,
+ "n_boot": 2000,
+ "seed": 0,
+ "alpha": 0.05,
+ "question_answered": "would another draw of LOGS say this? \u2014 evaluation-set variance only; BLIND to training variance; inference variance closed by construction for refcv4b (deterministic decoder at inference)",
+ "point_reproduces_suite": {
+  "A1": {
+   "recomputed": 0.3841356231421308,
+   "suite_summary_json": 0.3841356231421308,
+   "abs_diff": 0.0
+  },
+  "STOP": {
+   "recomputed": 0.4828269144777932,
+   "suite_summary_json": 0.4828269144777932,
+   "abs_diff": 0.0
+  },
+  "CV": {
+   "recomputed": 0.3389137264888157,
+   "suite_summary_json": 0.3389137264888157,
+   "abs_diff": 0.0
+  },
+  "ECHO": {
+   "recomputed": 0.3412802138302167,
+   "suite_summary_json": 0.3412802138302167,
+   "abs_diff": 0.0
+  }
+ },
+ "pairs": {
+  "A1-STOP": {
+   "point_delta": -0.098691,
+   "lo": -0.111,
+   "hi": -0.0856,
+   "separated": true,
+   "n_clusters": 76
+  },
+  "A1-CV": {
+   "point_delta": 0.045222,
+   "lo": 0.0279,
+   "hi": 0.0628,
+   "separated": true,
+   "n_clusters": 76
+  },
+  "A1-ECHO": {
+   "point_delta": 0.042855,
+   "lo": 0.0315,
+   "hi": 0.055,
+   "separated": true,
+   "n_clusters": 76
+  }
+ },
+ "status": "OK_DIAGNOSTIC"
+}

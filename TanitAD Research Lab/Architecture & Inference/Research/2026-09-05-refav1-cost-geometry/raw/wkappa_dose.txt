@@ -1,0 +1,20 @@
+# THE W_KAPPA DOSE-RESPONSE, MEASURED 2026-09-05, T1, n = 40 windows / 8 episodes, ckpt 21,109.
+# Rungs are f * (median goal decision) / (median mean(kappa^2)) = f * 151.1245 for f = 10 %, 100 %,
+# fixed by raw/cost_scale.txt BEFORE any arm ran. The trivial-profile rows are the ARM TOOL'S OWN
+# probe (refav1_arm.py [trivial-profile]), not a re-implementation.
+
+arm (metric, W_KAPPA)      ADE       curvMAE   headMAE   lat_kappa turnL_rec turnR_rec
+cos_argmax (cos, 0)        1.8944    0.080478  29.5086   -0.1249   0.0       0.25     
+cos_wk (cos, 0.05)         0.9251    0.040083  20.1374   0.0000    0.0       0.0      
+ccos_argmax (ccos, 0)      1.3272    0.055369  23.4578   0.3795    0.3636    0.75     
+ccosh_w000 (ccosh, 0)      1.3272    0.055369  23.4578   0.3795    0.3636    0.75     
+wk15 (ccos, 15.1125)       0.8934    0.030982  15.2704   0.2611    0.0       0.5      
+wk151 (ccos, 151.125)      0.9084    0.038019  15.3785   0.0000    0.0       0.0      
+
+# the arm tool's own trivial-profile probe (straight |y|<1e-06 m, const-speed spread<0.0001 m):
+cos_argmax     n=  40 straight=0.0750 const_speed=0.1500 CONSTANT-VELOCITY=0.0750  identical_to: ha0=3/40
+cos_wk         n=  40 straight=1.0000 const_speed=1.0000 CONSTANT-VELOCITY=1.0000  identical_to: ha=1/40, ha0=40/40, ha0_ext=1/40
+ccos_argmax    n=  40 straight=0.2750 const_speed=0.7750 CONSTANT-VELOCITY=0.2750  identical_to: ha=1/40, ha0=11/40, ha0_ext=1/40
+ccosh_w000     n=  40 straight=0.2750 const_speed=0.7750 CONSTANT-VELOCITY=0.2750  identical_to: ha=1/40, ha0=11/40, ha0_ext=1/40
+wk15           n=  40 straight=0.4750 const_speed=0.4750 CONSTANT-VELOCITY=0.2500  identical_to: ha0=10/40
+wk151          n=  40 straight=0.6500 const_speed=0.4500 CONSTANT-VELOCITY=0.4250  identical_to: ha=1/40, ha0=17/40, ha0_ext=1/40

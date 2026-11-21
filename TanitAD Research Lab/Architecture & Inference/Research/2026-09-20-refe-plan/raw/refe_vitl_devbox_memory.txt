@@ -1,0 +1,30 @@
+# REFe ViT-L device memory on the dev box -- REGENERATED 2026-09-21
+
+⛔ THIS FILE WAS 0 BYTES from 2026-09-20 15:26 until 2026-09-21. A truncated artifact that reads
+like a complete one, in a package whose memory numbers had already been wrong twice. It is
+regenerated here from the camera-scaling probe rather than deleted, because an empty file in a
+raw/ directory is indistinguishable from a measurement that came out empty.
+
+Source: raw/2026-09-21-camera-scaling/cam_scaling.txt  (same run, same process)
+Device: NVIDIA GeForce RTX 4060, 8.00 GiB
+Config: 512 x 960, batch 1, FP32, forward + backward + optimiser step
+Probe : torch.cuda.max_memory_allocated() -- the only admissible device-memory reading
+
+  backbone   cams   peak GiB   s/step   resident?
+  vits16        1       0.66    0.127   yes
+  vits16        2       1.06    0.243   yes
+  vits16        4       1.93    0.492   yes
+  vitb16        1       1.33    0.279   yes
+  vitb16        2       2.16    0.554   yes
+  vitb16        4       3.69    1.139   yes
+  vitl16        1       3.44    0.788   yes
+  vitl16        2       5.52    1.630   yes
+  vitl16        4       9.49   27.074   NO -- 9.49 GiB requested on an 8.00 GiB card
+
+⛔ THE LAST ROW IS NOT A TIMING. 27.074 s against the 2-camera 1.630 s is a 34x outlier and it is
+the PCIe bus, not the GPU. The probe flags it "TOO CLOSE TO THE CARD -- not quotable" and the
+cost table uses the MEASURED camera-scaling law (x3.874 ViT-S, x4.087 ViT-B, analytic x4.00)
+to price ViT-L x 4 instead: 0.788 x (3.874..4.087) = 3.05-3.26 s/sample.
+
+⇒ The shipping config (ViT-L x 4 cameras) DOES NOT FIT this card at any batch size.
+  Full validation and all training are A40 work. See TRAINING_TIME.md.

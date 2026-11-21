@@ -81,7 +81,7 @@ def measure_latency(world, device) -> dict:
         try:
             p = subprocess.run(
                 ["nvidia-smi", "--query-gpu=power.draw,name",
-                 "--format=csv,noheader"], capture_output=True, text=True,
+                 "--format=csv,noheader"], capture_output=True, text=True, encoding="utf-8",
                 timeout=10)
             out["gpu_power_sample"] = p.stdout.strip()
         except Exception:

@@ -1,0 +1,100 @@
+{
+ "_evidence_class": "MEASURED (ours; this file + raw/p5_cls_weight_guard.json)",
+ "guard": "agent_slots.load_cls_class_weight:339-343",
+ "table": "refc_v3_train.CLS_WEIGHT_CHOICES:4966-4970",
+ "arms": {
+  "A_b1_with_b1_expectation": {
+   "outcome": "LOADED",
+   "corpus_line": "v7-b1-physicalai-b1-w120-256x640cyl",
+   "digest": "c3937558f59299e7",
+   "imbalance": 1825.7,
+   "weights": {
+    "automobile": 0.00319,
+    "heavy_truck": 0.123881,
+    "bus": 0.333845,
+    "other_vehicle": 0.877236,
+    "trailer": 0.242575,
+    "person": 0.012505,
+    "rider": 0.106939,
+    "stroller": 1.879062,
+    "animal": 5.823257,
+    "protruding_object": 0.597511
+   },
+   "counts": {
+    "automobile": 21515941,
+    "heavy_truck": 553977,
+    "bus": 205566,
+    "other_vehicle": 78231,
+    "trailer": 282911,
+    "person": 5487965,
+    "rider": 641740,
+    "stroller": 36522,
+    "animal": 11785,
+    "protruding_object": 114855
+   },
+   "out_of_vocabulary": {
+    "train_or_tram_car": 29206,
+    "_handling": "targets_from_join maps these to -1 and slot_set_loss masks ok = ct >= 0, so they are EXCLUDED from the cls term, never relabelled"
+   }
+  },
+  "B_train2400_with_its_own_expectation_THE_OPERATOR_ERROR": {
+   "outcome": "LOADED",
+   "corpus_line": "parity-physicalai-train-e438721ae894",
+   "digest": "bde3aa19dfd0e59a",
+   "imbalance": 1071.1,
+   "weights": {
+    "automobile": 0.004084,
+    "heavy_truck": 0.106093,
+    "bus": 0.421918,
+    "other_vehicle": 1.065757,
+    "trailer": 0.230012,
+    "person": 0.019664,
+    "rider": 0.198541,
+    "stroller": 2.838319,
+    "animal": 4.374664,
+    "protruding_object": 0.740948
+   },
+   "counts": {
+    "automobile": 9274706,
+    "heavy_truck": 357048,
+    "bus": 89781,
+    "other_vehicle": 35543,
+    "trailer": 164688,
+    "person": 1926364,
+    "rider": 190793,
+    "stroller": 13346,
+    "animal": 8659,
+    "protruding_object": 51124
+   },
+   "out_of_vocabulary": {
+    "train_or_tram_car": 10077,
+    "_handling": "targets_from_join maps it to -1 and slot_set_loss masks ok = ct >= 0, so it is EXCLUDED from the cls term, never relabelled (VERIFIED by round-trip)"
+   }
+  },
+  "C_MUTATION_b1_artifact_parity_expectation": {
+   "outcome": "REFUSED",
+   "message": "[agent-slots] ? agent_cls_weights_b1.json was counted on corpus line 'v7-b1-physicalai-b1-w120-256x640cyl' but this arm trains on 'parity-physicalai-train-e438721ae894'. MEASURED 2026-09-22: the parity and v7-B1 lines share only 4.09 % of their clips, so the vectors are not interchangeable."
+  }
+ },
+ "vector_ratio_train2400_over_b1": {
+  "automobile": 1.2803,
+  "heavy_truck": 0.8564,
+  "bus": 1.2638,
+  "other_vehicle": 1.2149,
+  "trailer": 0.9482,
+  "person": 1.5725,
+  "rider": 1.8566,
+  "stroller": 1.5105,
+  "animal": 0.7512,
+  "protruding_object": 1.2401
+ },
+ "max_abs_log_ratio_class": [
+  "rider",
+  1.8566
+ ],
+ "verdict": {
+  "guard_can_go_red": true,
+  "guard_blocks_the_operator_error": false,
+  "reading": "arm C REFUSED and arm B LOADED means the guard is live but CANNOT see the error it names: the expectation is selected by the same flag value that selects the file, so a B1 arm launched with --agent-cls-weight train2400 trains on the PARITY vector with no refusal. The arm's own corpus is never an input to this check."
+ }
+}

@@ -1,0 +1,33 @@
+ZZADH_READ ctl_deployed turn-active acc 0.8673 [0.8422, 0.8932] n=4076 kappa 0.7532 ok
+ZZADH_INCOMPLETE ["random-proposal floor NOT computed: no --dump-proposals dump given. The floor is a required row of the definition (E3 Q5); a read without it is incomplete, never a pass"]
+ZZADH_READ ctl_p2 turn-active acc 0.8827 [0.8609, 0.9048] n=4076 kappa 0.7786 ok
+ZZADH_FLOOR turn-active floor 0.8920 [0.8722, 0.9096] floor>=actual
+ZZADH_READ sub turn-active acc 0.8143 [0.7178, 0.9074] n=70 kappa 0.6829 INVALID
+ZZADH_INVALID ["command class counts differ from the ruling's 2,501 / 8,070 / 1,575 / 0 (4,076 turn-active) on 12,146 tokens / 136 logs"]
+ZZADH_READ sub turn-active acc 0.8143 [0.7178, 0.9074] n=70 kappa 0.6829 ok
+ZZADH_INCOMPLETE ["random-proposal floor NOT computed: no --dump-proposals dump given. The floor is a required row of the definition (E3 Q5); a read without it is incomplete, never a pass"]
+PASS A1 commands: the 12,146 navtest tokens read LEFT 2,501 / STRAIGHT 8,070 / RIGHT 1,575 / UNKNOWN 0 (turn-active 4,076, 136 logs): the ruling's numbers
+PASS A1 RED: a LEFT<->RIGHT index swap in the one-hot decode breaks the pinned counts, and the read's G_COUNTS gate says INVALID
+PASS A1 the gate itself: a mini export carrying the TRUE commands passes G_COUNTS (so the RED above is the swap, not the harness)
+PASS A2 commands: a non-one-hot driving_command is REFUSED (two ones, all zeros, NaN, wrong length), never defaulted
+PASS B1 the labeller port reproduces the BANKED families block's lateral confusion + heading-held/never-moved counts for P2 AND u400, exactly (no new thresholds)
+PASS B1 RED (mutation of the class mapping): a rotated LAT_TO_CMD, and a LEFT<->RIGHT swapped one, each turn the banked-confusion control RED
+PASS B2 reachability: the CANONICAL threshold is what the instrument reads (patching refc_tactical.YAW_TURN_RAD to 5 rad removes every turn; restored after)
+PASS B3 no new thresholds: command_adherence.py assigns none of the labeller's threshold constants, and names the canonical function
+PASS B4 live: the labeller's lateral confusion equals what four_families.tactical_from_trajectory itself returns on the same plan/human arrays
+PASS B5 A7: the executed and the raw plan class are IDENTICAL by construction (heading column never read): zeroing it changes 0 classes, perturbing xy changes many
+PASS B6 plan format: anything but [N, 8, >=2] finite is a STOP (PlanFormatError), never a silent re-parametrisation
+PASS C1 accuracy / kappa / confusion on a hand-checkable toy confusion equal an independent exact (Fraction) reference, on all tokens AND the turn-active subset
+PASS C2 kappa: equals the programme's own four_families._kappa_k and _class_report on random label vectors (1e-12); an undefined kappa is None/NaN, NEVER 1.0
+PASS C3 bootstrap: accuracy level and paired-difference intervals are BIT-EQUAL to proxy_eval.boot on the same tokens/logs (synthetic); a wrong seed or token-level resampling is NOT
+PASS C4 bootstrap on REAL data: the control read's G_PE_BOOT_EQUAL gate is True on 6 intervals (P2 and u400 levels x2 subsets, P2-u400 paired x2), kappa undefined in 0 resamples
+PASS D1 the control read is VALID (no INVALID) and the banked confusions are pinned: P2 and u400 3x3 (command rows x plan cols) equal this instrument's measured pins
+PASS D1 RED (mutation): with the class mapping broken the control read's pins fail (a rotated LAT_TO_CMD changes P2's confusion)
+PASS D2 RED arm: LEFT<->RIGHT swapped commands drop P2's turn-active accuracy from > 0.8 to < 0.05 and make kappa strongly negative
+PASS D3 zero arm: a constant-STRAIGHT plan gives kappa = 0.0 EXACTLY (all tokens and turn-active), accuracy 8,070/12,146 and 0 on the turn-active subset; a perfect plan gives 1.0 (RED)
+PASS D4 floor: P2's banked 64-proposal table gives a floor equal to the brute-force mean over the 64 columns (1e-12), and proposals[pick] equals the seam bit for bit after the token join
+PASS D4 RED: a dump whose `pick` is shuffled (or whose token set differs) is INVALID in the read, never a floor
+PASS D5 paired: C2 - C1 equals acc(P2) - acc(u400) exactly; C1 - C2 mirrors it (points negated, interval mirrored to 1e-12); an UNPAIRED interval is wider (RED: paired == unpaired must fail)
+PASS D6 identical tokens: a comparator whose token set differs is INVALID (pairing needs identical tokens); the CLI is INCOMPLETE (exit 2) without a dump, VALID (exit 0) with one, INVALID (exit 1) on a subset without --subset-ok, and a name collision is refused
+PASS D7 no P6 output: the control read touches no path containing 'p6' (a P6 checkpoint's navtest output does not exist and must not be produced)
+ZZADH PASS 24/24

@@ -1,0 +1,14 @@
+D-VT1 test record — 2026-08-04
+
+stack/  (PYTHONPATH=<repo>/stack, OMP_NUM_THREADS=2)
+  2105 passed, 12 skipped, 2 xfailed, 10 warnings in 804.23s (0:13:24)
+  Baseline BEFORE this stream's changes, same box, same day: 2088 passed, 12 skipped, 2 xfailed.
+  Delta +17 = 5 new tests in tests/test_flagship_v15.py (the guarded mint)
+             + 12 new tests in tests/test_goal_admissibility.py (the goal-leak instrument).
+  (The brief quoted 2043; the repo advanced between that count and this run. The
+   number that matters is the +17 against the same-box baseline measured today.)
+
+taniteval/  (PYTHONPATH=<repo>/stack;<repo>/taniteval, OMP_NUM_THREADS=1)
+  939 passed, 1 warning in 263.98s (0:04:23)
+  Unchanged by this stream — run because vt_leak_audit.py / vt_four_families.py
+  import taniteval.ci and taniteval.lead_source.

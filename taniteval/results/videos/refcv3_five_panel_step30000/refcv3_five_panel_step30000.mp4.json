@@ -1,0 +1,271 @@
+{
+  "renderer": "taniteval/tools/render_refcv3_video.py",
+  "model": {
+    "ckpt": "C:/Users/Admin/run_refcv3_ol/ckpt/ckpt_30000.pt",
+    "step": 30000,
+    "arm": "hier",
+    "n_anchors": 128,
+    "horizons": [
+      5,
+      10,
+      15,
+      20,
+      30,
+      40,
+      50,
+      60
+    ],
+    "window": 8,
+    "decoder": "diffusion",
+    "decoder_steps": 2,
+    "tac_vocab_version": "v7.0",
+    "state_dict_load": {
+      "missing_keys": [],
+      "unexpected_keys": []
+    }
+  },
+  "grid": {
+    "name": "2s",
+    "dt_s": 0.5,
+    "k": 4,
+    "horizons_steps": [
+      5,
+      10,
+      15,
+      20
+    ],
+    "slots": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "instants_s": [
+      0.5,
+      1.0,
+      1.5,
+      2.0
+    ],
+    "dropped_model_slots": [
+      30,
+      40,
+      50,
+      60
+    ],
+    "n_frames": 20
+  },
+  "nav": {
+    "source": "v72",
+    "stats": {
+      "n_clips": 3,
+      "follow": 1,
+      "left": 1,
+      "right": 1,
+      "missing": 0,
+      "derivation": "v7.2 nav_command token (oracle, provenance ego-future; allow_oracle_nav=True)",
+      "unlabeled_default": "nav_cmd=0 ('follow') + nav_valid=False (refav1_loader convention)",
+      "label_md5": "aa12c948f062181c3297265b51526ec5",
+      "allow_oracle_nav": true
+    },
+    "trained_on": "v7.2 nav_command token (oracle, provenance ego-future; allow_oracle_nav=True)",
+    "rule": "v72: the clip's v7.2 nav_command token -> refb.NAV_COMMANDS index (V3Dataset.enable_nav_from_v7, refc_v3_train.py:246-306, position-pinned); a clip without a record feeds index 0 + nav_valid=False. none: nav_cmd=0 on every window (the published REF-C convention) and NO shuffle arm — the v1 derivation reads 15-25 s of FUTURE poses and is not an inference input."
+  },
+  "labels": {
+    "path": "C:/Users/Admin/run_refcv3_viz/data/s2_labels_v7.2_eval.jsonl.gz",
+    "md5": "aa12c948f062181c3297265b51526ec5",
+    "n_records": 147,
+    "n_episodes": 3,
+    "n_joined": 3,
+    "n_missing": 0,
+    "join_key": "stable_episode_id(clip_id) (the trainer's key)",
+    "schema_version": "s2-geom-v7",
+    "vocab": "v7",
+    "allow_oracle_nav": true,
+    "divergences": []
+  },
+  "fps": 10,
+  "frames": 519,
+  "resolution": "1920x1122",
+  "duration_s": 51.9,
+  "with_oracle": true,
+  "clip_selection": "explicit --clips, in this order: d85682b8-f612-4aa3-90a2-ee2bb86151e6,ca11a2a2-1021-475c-9907-e6dbe658ad12,6ed4ef7a-1a70-48c5-8dc1-3c6a48ec3ecc",
+  "window_stride": 1,
+  "max_frames_per_ep": "all",
+  "per_clip": [
+    {
+      "clip_id": "d85682b8-f612-4aa3-90a2-ee2bb86151e6",
+      "episode_index": 2,
+      "frames": 171,
+      "mean_ade_sel_m": 0.5437,
+      "max_ade_sel_m": 2.0085,
+      "camera_overlay": true,
+      "frame": {
+        "height": 256,
+        "width": 640,
+        "f_ref": 305.5774907364391,
+        "projection": "cylindrical"
+      },
+      "extrinsics": {
+        "qx": 0.5046319078166642,
+        "qy": -0.5000661210092555,
+        "qz": 0.4978822491501181,
+        "qw": -0.4973869501839488,
+        "x": 2.1286449432373047,
+        "y": -0.02760353498160839,
+        "z": 1.575823426246643,
+        "chunk": 141,
+        "sensor": "camera_front_wide_120fov",
+        "source": "sensor_extrinsics.chunk_0141.parquet (PhysicalAI-AV sensor_extrinsics)",
+        "_read": {
+          "camera_height_m": 1.5758,
+          "camera_forward_offset_m": 2.1286,
+          "pitch_down_deg": 0.5408,
+          "convention": "t = camera position in the VEHICLE frame; R = camera->vehicle. Camera axes +x right, +y DOWN, +z boresight (calib.ftheta_project_ray). A ground point p_veh maps to p_cam = R^T (p_veh - t)."
+        }
+      }
+    },
+    {
+      "clip_id": "ca11a2a2-1021-475c-9907-e6dbe658ad12",
+      "episode_index": 1,
+      "frames": 177,
+      "mean_ade_sel_m": 0.6468,
+      "max_ade_sel_m": 2.6944,
+      "camera_overlay": true,
+      "frame": {
+        "height": 256,
+        "width": 640,
+        "f_ref": 305.5774907364391,
+        "projection": "cylindrical"
+      },
+      "extrinsics": {
+        "qx": -0.4950537810225835,
+        "qy": 0.5005944140937533,
+        "qz": -0.5012295706851077,
+        "qw": 0.5030863782137199,
+        "x": 1.9963752031326294,
+        "y": -0.0052909464575350285,
+        "z": 1.296807885169983,
+        "chunk": 180,
+        "sensor": "camera_front_wide_120fov",
+        "source": "sensor_extrinsics.chunk_0180.parquet (PhysicalAI-AV sensor_extrinsics)",
+        "_read": {
+          "camera_height_m": 1.2968,
+          "camera_forward_offset_m": 1.9964,
+          "pitch_down_deg": -0.4958,
+          "convention": "t = camera position in the VEHICLE frame; R = camera->vehicle. Camera axes +x right, +y DOWN, +z boresight (calib.ftheta_project_ray). A ground point p_veh maps to p_cam = R^T (p_veh - t)."
+        }
+      }
+    },
+    {
+      "clip_id": "6ed4ef7a-1a70-48c5-8dc1-3c6a48ec3ecc",
+      "episode_index": 0,
+      "frames": 171,
+      "mean_ade_sel_m": 0.5611,
+      "max_ade_sel_m": 1.2291,
+      "camera_overlay": true,
+      "frame": {
+        "height": 256,
+        "width": 640,
+        "f_ref": 305.5774907364391,
+        "projection": "cylindrical"
+      },
+      "extrinsics": {
+        "qx": -0.5046292082912891,
+        "qy": 0.5065287522508706,
+        "qz": -0.4979041719124624,
+        "qw": 0.4907844953486693,
+        "x": 2.0102603435516357,
+        "y": 0.0010222510900348425,
+        "z": 1.2922037839889526,
+        "chunk": 171,
+        "sensor": "camera_front_wide_120fov",
+        "source": "sensor_extrinsics.chunk_0171.parquet (PhysicalAI-AV sensor_extrinsics)",
+        "_read": {
+          "camera_height_m": 1.2922,
+          "camera_forward_offset_m": 2.0103,
+          "pitch_down_deg": 1.2861,
+          "convention": "t = camera position in the VEHICLE frame; R = camera->vehicle. Camera axes +x right, +y DOWN, +z boresight (calib.ftheta_project_ray). A ground point p_veh maps to p_cam = R^T (p_veh - t)."
+        }
+      }
+    }
+  ],
+  "viz_standard_elements": [
+    {
+      "element": "camera",
+      "state": "present",
+      "value": "GT + selected trajectory",
+      "source": "CylProjector(v2ep['frame'], per-clip sensor_extrinsics) on item['frames'][-1][-3:]",
+      "kind": "derived",
+      "reason": null,
+      "n": null,
+      "conditioned_on": []
+    },
+    {
+      "element": "bev",
+      "state": "present",
+      "value": "fan 128×8 + selection (anchor #44)",
+      "source": "out['anchor_traj'], out['sel_score_v3'], out['traj']",
+      "kind": "model_output",
+      "reason": null,
+      "n": null,
+      "conditioned_on": []
+    },
+    {
+      "element": "tactical",
+      "state": "present",
+      "value": "lat=LANE_KEEP lon=BRAKE_TO",
+      "source": "softmax(out['lat_logits_tac']) / softmax(out['lon_logits_tac'])",
+      "kind": "model_output",
+      "reason": null,
+      "n": null,
+      "conditioned_on": [
+        "nav_cmd"
+      ]
+    },
+    {
+      "element": "strategic",
+      "state": "present",
+      "value": "route_straight",
+      "source": "out['route_logits'].argmax(-1)",
+      "kind": "model_output",
+      "reason": null,
+      "n": null,
+      "conditioned_on": [
+        "nav_cmd"
+      ]
+    },
+    {
+      "element": "ade",
+      "state": "present",
+      "value": "0.669 m",
+      "source": "mean L2 of out['traj'] vs refb_labels.waypoint_targets on the 2 s grid",
+      "kind": "derived",
+      "reason": null,
+      "n": null,
+      "conditioned_on": []
+    },
+    {
+      "element": "strategic_input",
+      "state": "present",
+      "value": "right",
+      "source": "V3Dataset.enable_nav_from_v7 (v7.2 nav_command, provenance ego-future)",
+      "kind": "given_input",
+      "reason": null,
+      "n": null,
+      "conditioned_on": []
+    },
+    {
+      "element": "tactical_gt",
+      "state": "unavailable",
+      "value": null,
+      "source": null,
+      "kind": null,
+      "reason": "window outside the v7.2 record's ±2.0 s band; v7_labels.tactical_class_ids returns IGNORE_ID and is NEVER clamped to a neutral class",
+      "n": null,
+      "conditioned_on": []
+    }
+  ],
+  "what_is_drawn": "The path is out['traj'] — refcv3's OWN sel_score_v3-ranked choice among its 128 anchors (refc_v3.py:509-527). It is NOT a_star, the GT-nearest anchor, which appears only under --with-oracle and is labelled ORACLE wherever it is drawn.",
+  "what_this_is_not": "NOT a rollout and NOT closed-loop driving: refcv3 consumes no actions and has no loop to close (REFCV3_ARM.md §2.4). One forward pass emits the whole 6 s path. The ADE shown is the deployed selection's, on the arm's own grid, recomputed from the path — never converted from the trainer's mean-L1 eval_traj.",
+  "nav_is_an_oracle": "The nav token is the clip's v7.2 nav_command, provenance ego-future. It will not exist at deployment; the tactical and route heads are conditioned on it (E13, refc_v3.py:437-441)."
+}

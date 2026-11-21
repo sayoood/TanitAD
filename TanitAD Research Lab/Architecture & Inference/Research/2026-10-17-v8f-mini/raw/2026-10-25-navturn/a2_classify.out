@@ -1,0 +1,98 @@
+A (turn label, nav FOLLOW) = 210   B (nav TURN, no turn label) = 129
+
+A: turn label present, nav FOLLOW (the 210)  (n = 210)
+  cause             n  share  evidence (REPRO/TRACK/JOIN/UNVERIFIED)   sub-reasons
+  CURVE           156  74.3% eps= 15   156/   0/   0/   0       {'vmin>8': 156}
+  SUPPRESSED       21  10.0% eps=  2    21/   0/   0/   0       {'A7 clip-level suppression': 21}
+  UNRESOLVED       17   8.1% eps=  4     0/   0/   0/  17       {'vmin_inside>8 on a truncated segment': 15, 'segment entirely beyond the pose track': 2}
+  HORIZON          16   7.6% eps=  9    16/   0/   0/   0       {'d_next>d_ann': 16}
+
+B: nav TURN, no turn label (the 129)  (n = 129)
+  cause             n  share  evidence (REPRO/TRACK/JOIN/UNVERIFIED)   sub-reasons
+  HORIZON          50  38.8% eps=  9     6/  44/   0/   0       {'announced turn starts beyond the pose-track end, which is >= 8 s ahead': 44, 'announced turn starts after NOW+8 s': 6}
+  BAND_START       40  31.0% eps= 19    40/   0/   0/   0       {'announced turn ends before NOW+2 s': 40}
+  UNRESOLVED       17  13.2% eps=  8     0/   0/   0/  17       {'announced turn beyond the reconstructed track': 17}
+  LABEL_MASKED     13  10.1% eps=  2     0/   0/  13/   0       {'reversing': 13}
+  BAND_EDGE         4   3.1% eps=  4     4/   0/   0/   0       {'announced turn grazes the label band [NOW+2, NOW+8]': 4}
+  TIMING            4   3.1% eps=  4     0/   0/   4/   0       {'token at the T-tick row': 4}
+  SIGN_THETA        1   0.8% eps=  1     1/   0/   0/   0       {'overlaps band >=0.5 s, dominant-segment rule rejects it': 1}
+
+==== EXAMPLES ====
+
+[A] HORIZON (n=16)
+   ep 01be5919 t= 15 aT=0 | nav tok=0 d_next=57.9m d_ann=49.3m v=8.21m/s | label t_start=7.4s t_end=11.6s d_start=57.9m dyaw=-64.9 R=21.1 vmin=5.34 is_turn=True | theta=-10.2 dpsi6=0.3 lat_cls=none | d_next>d_ann d_next=57.8m d_ann=49.3m ratio=1.17 t_start=7.4s
+   ep 18b72291 t= 15 aT=0 | nav tok=0 d_next=57.8m d_ann=42.8m v=7.14m/s | label t_start=7.3s t_end=12.4s d_start=57.8m dyaw=-97.1 R=16.6 vmin=5.01 is_turn=True | theta=-8.3 dpsi6=3.3 lat_cls=none | d_next>d_ann d_next=57.8m d_ann=42.8m ratio=1.35 t_start=7.3s
+   ep 77a247be t= 27 aT=2 | nav tok=0 d_next=55.5m d_ann=51.0m v=8.5m/s | label t_start=7.5s t_end=9.9s d_start=58.9m dyaw=-22.8 R=19.9 vmin=2.23 is_turn=True | theta=-16.4 dpsi6=-9.4 lat_cls=LANE_KEEP | d_next>d_ann d_next=55.5m d_ann=51.0m ratio=1.09 t_start=7.5s
+   ep 79e30ac2 t= 11 aT=0 | nav tok=0 d_next=64.2m d_ann=60.6m v=10.1m/s | label t_start=6.7s t_end=11.3s d_start=64.2m dyaw=-89.5 R=20.2 vmin=6.64 is_turn=True | theta=-16.3 dpsi6=2.3 lat_cls=LANE_KEEP | d_next>d_ann d_next=64.2m d_ann=60.6m ratio=1.06 t_start=6.7s
+
+[A] CURVE (n=156)
+   ep 262b900f t= 47 aT=1 | nav tok=0 d_next=170.4m d_ann=98.0m v=16.34m/s | label t_start=5.8s t_end=9.1s d_start=94.1m dyaw=-21.6 R=124.7 vmin=12.41 is_turn=False | theta=-13.2 dpsi6=10.6 lat_cls=none | vmin>8
+   ep 316f3c56 t= 39 aT=1 | nav tok=0 d_next=243.7m d_ann=30.0m v=3.56m/s | label t_start=7.2s t_end=13.0s d_start=45.7m dyaw=50.2 R=62.8 vmin=8.41 is_turn=False | theta=7.1 dpsi6=-10.6 lat_cls=none | vmin>8
+   ep 32f9b6b2 t= 23 aT=1 | nav tok=0 d_next=524.8m d_ann=116.3m v=19.39m/s | label t_start=6.7s t_end=10.6s d_start=122.6m dyaw=30.8 R=115.8 vmin=15.72 is_turn=False | theta=7.0 dpsi6=-9.1 lat_cls=none | vmin>8
+   ep 3971a8c6 t=  3 aT=0 | nav tok=0 d_next=166.3m d_ann=73.5m v=12.25m/s | label t_start=-0.5s t_end=11.7s d_start=0.0m dyaw=91.6 R=92.4 vmin=11.80 is_turn=False | theta=43.1 dpsi6=44.5 lat_cls=LANE_KEEP | vmin>8
+
+[A] UNRESOLVED (n=17)
+   ep 6b3e802e t= 63 aT=0 | nav tok=0 d_next=61.8m d_ann=49.3m v=8.22m/s | label t_start=7.5s t_end=9.7s d_start=61.8m dyaw=-26.5 R=29.1 vmin=nan is_turn= | theta=-11.6 dpsi6=-4.8 lat_cls=none | segment entirely beyond the pose track
+   ep a459164a t= 67 aT=2 | nav tok=0 d_next=nanm d_ann=58.6m v=9.77m/s | label t_start=6.0s t_end=9.7s d_start=73.3m dyaw=-29.9 R=102.4 vmin=14.34 is_turn= | theta=-41.2 dpsi6=-57.6 lat_cls=LANE_KEEP | vmin_inside>8 on a truncated segment
+   ep d217b78a t= 43 aT=2 | nav tok=0 d_next=nanm d_ann=76.6m v=12.77m/s | label t_start=6.4s t_end=14.2s d_start=89.8m dyaw=97.9 R=62.8 vmin=13.43 is_turn= | theta=11.4 dpsi6=-33.7 lat_cls=none | vmin_inside>8 on a truncated segment
+   ep f6e7827e t= 43 aT=0 | nav tok=0 d_next=nanm d_ann=30.6m v=5.1m/s | label t_start=4.6s t_end=15.2s d_start=43.8m dyaw=89.3 R=90.0 vmin=12.35 is_turn= | theta=27.8 dpsi6=-6.9 lat_cls=LANE_KEEP | vmin_inside>8 on a truncated segment
+
+[A] SUPPRESSED (n=21)
+   ep dbad28c2 t= 23 aT=2 | nav tok=0 d_next=452.8m d_ann=87.9m v=14.65m/s | label t_start=7.3s t_end=12.2s d_start=92.6m dyaw=-90.1 R=19.6 vmin=5.75 is_turn=True | theta=-9.4 dpsi6=6.8 lat_cls=none | A7 clip-level suppression (t0=11.8s in [8,43])
+   ep eb96a48b t= 27 aT=2 | nav tok=0 d_next=180.0m d_ann=51.7m v=8.61m/s | label t_start=6.7s t_end=8.7s d_start=48.3m dyaw=-23.6 R=26.4 vmin=5.68 is_turn=True | theta=-19.8 dpsi6=-1.5 lat_cls=LANE_KEEP | A7 clip-level suppression (t0=11.9s in [8,43])
+
+[B] BAND_START (n=40)
+   ep 01be5919 t= 63 aT=0 | nav tok=2 d_next=0.0m d_ann=32.1m v=5.35m/s | label t_start=-2.3s t_end=1.9s d_start=nanm dyaw=-64.9 R=21.1 vmin=5.34 is_turn=True | theta=-8.0 dpsi6=-32.7 lat_cls=LANE_KEEP | announced turn ends before NOW+2 s (label band is [NOW+2, NOW+8]) t0=-2.3s t1=1.9s
+   ep 18b72291 t=  3 aT=0 | nav tok=1 d_next=0.0m d_ann=33.9m v=5.65m/s | label t_start=-0.7s t_end=2.0s d_start=nanm dyaw=38.5 R=23.4 vmin=5.32 is_turn=True | theta=4.9 dpsi6=30.3 lat_cls=LANE_KEEP | announced turn ends before NOW+2 s (label band is [NOW+2, NOW+8]) t0=-0.7s t1=2.0s
+   ep 1bd040a8 t= 19 aT=0 | nav tok=1 d_next=0.0m d_ann=35.7m v=5.95m/s | label t_start=-3.3s t_end=0.8s d_start=nanm dyaw=84.2 R=14.2 vmin=4.57 is_turn=True | theta=-4.4 dpsi6=7.4 lat_cls=LANE_KEEP | announced turn ends before NOW+2 s (label band is [NOW+2, NOW+8]) t0=-3.3s t1=0.8s
+   ep 24fee8a5 t= 59 aT=0 | nav tok=1 d_next=0.0m d_ann=44.2m v=7.37m/s | label t_start=-3.0s t_end=1.2s d_start=nanm dyaw=83.4 R=16.8 vmin=1.82 is_turn=True | theta=2.1 dpsi6=18.7 lat_cls=LANE_KEEP | announced turn ends before NOW+2 s (label band is [NOW+2, NOW+8]) t0=-3.0s t1=1.2s
+
+[B] HORIZON (n=50)
+   ep 24fee8a5 t=  3 aT=0 | nav tok=1 d_next=29.6m d_ann=64.2m v=10.71m/s | label t_start=8.2s t_end=12.4s d_start=nanm dyaw=83.4 R=16.8 vmin=1.82 is_turn=True | theta=0.9 dpsi6=-2.9 lat_cls=LANE_KEEP | announced turn starts after NOW+8 s t0=8.2s d=29.6m d_ann=64.2m v=10.7
+   ep 2cd0f4e4 t= 15 aT=0 | nav tok=2 d_next=34.1m d_ann=34.3m v=5.71m/s | label t_start=8.8s t_end=10.8s d_start=nanm dyaw=-22.1 R=30.8 vmin=6.03 is_turn=True | theta=-3.2 dpsi6=-3.3 lat_cls=LANE_KEEP | announced turn starts after NOW+8 s t0=8.8s d=34.1m d_ann=34.3m v=5.7
+   ep c08bebe5 t=  3 aT=0 | nav tok=1 d_next=13.5m d_ann=30.0m v=0.0m/s | label t_start=9.4s t_end=12.6s d_start=nanm dyaw=56.9 R=22.2 vmin=5.75 is_turn=True | theta=-3.2 dpsi6=0.0 lat_cls=LANE_KEEP | announced turn starts after NOW+8 s t0=9.4s d=13.5m d_ann=30.0m v=0.0
+   ep fe83e06e t= 35 aT=0 | nav tok=2 d_next=23.9m d_ann=42.1m v=7.02m/s | label t_start=8.1s t_end=13.0s d_start=nanm dyaw=-81.9 R=9.2 vmin=0.84 is_turn=True | theta=-16.9 dpsi6=-13.4 lat_cls=LANE_KEEP | announced turn starts after NOW+8 s t0=8.1s d=23.9m d_ann=42.1m v=7.0
+
+[B] UNRESOLVED (n=17)
+   ep 13c95b6a t= 63 aT=0 | nav tok=2 d_next=4.9m d_ann=30.0m v=0.0m/s | label t_start=nans t_end=nans d_start=nanm dyaw=nan R=nan vmin=nan is_turn= | theta=-0.0 dpsi6=-0.0 lat_cls=none | announced turn beyond the reconstructed track
+   ep 2e8a2df2 t= 43 aT=0 | nav tok=2 d_next=55.7m d_ann=60.5m v=10.08m/s | label t_start=nans t_end=nans d_start=nanm dyaw=nan R=nan vmin=nan is_turn= | theta=1.5 dpsi6=1.4 lat_cls=LANE_KEEP | announced turn beyond the reconstructed track
+   ep 4c5264dd t= 63 aT=2 | nav tok=2 d_next=12.8m d_ann=30.0m v=2.4m/s | label t_start=nans t_end=nans d_start=nanm dyaw=nan R=nan vmin=nan is_turn= | theta=0.0 dpsi6=-0.1 lat_cls=none | announced turn beyond the reconstructed track
+   ep 6908302e t= 63 aT=0 | nav tok=2 d_next=36.4m d_ann=39.6m v=6.6m/s | label t_start=nans t_end=nans d_start=nanm dyaw=nan R=nan vmin=nan is_turn= | theta=-1.8 dpsi6=-1.3 lat_cls=LANE_KEEP | announced turn beyond the reconstructed track
+
+[B] BAND_EDGE (n=4)
+   ep 1bd040a8 t= 15 aT=2 | nav tok=1 d_next=0.0m d_ann=32.0m v=5.33m/s | label t_start=-2.1s t_end=2.0s d_start=nanm dyaw=84.2 R=14.2 vmin=4.57 is_turn=True | theta=-4.2 dpsi6=40.8 lat_cls=LANE_KEEP | announced turn grazes the label band [NOW+2, NOW+8] (overlap 0.04 s) t0=-2.1s t1=2.0s theta=-4.2 seg_dyaw=84.2
+   ep 5d39a1de t= 47 aT=0 | nav tok=2 d_next=27.6m d_ann=30.0m v=4.51m/s | label t_start=7.6s t_end=10.7s d_start=nanm dyaw=-63.2 R=8.3 vmin=2.34 is_turn=True | theta=5.8 dpsi6=9.5 lat_cls=LANE_KEEP | announced turn grazes the label band [NOW+2, NOW+8] (overlap 0.44 s) t0=7.6s t1=10.7s theta=5.8 seg_dyaw=-63.2
+   ep c08bebe5 t= 11 aT=0 | nav tok=1 d_next=13.5m d_ann=30.0m v=0.0m/s | label t_start=7.8s t_end=11.0s d_start=nanm dyaw=56.9 R=22.2 vmin=5.75 is_turn=True | theta=-4.8 dpsi6=-2.0 lat_cls=LANE_KEEP | announced turn grazes the label band [NOW+2, NOW+8] (overlap 0.19 s) t0=7.8s t1=11.0s theta=-4.8 seg_dyaw=56.9
+   ep ebd51f52 t= 63 aT=1 | nav tok=2 d_next=0.0m d_ann=30.0m v=4.67m/s | label t_start=-2.8s t_end=2.2s d_start=nanm dyaw=-87.8 R=15.9 vmin=4.56 is_turn=True | theta=2.4 dpsi6=-30.3 lat_cls=LANE_KEEP | announced turn grazes the label band [NOW+2, NOW+8] (overlap 0.17 s) t0=-2.8s t1=2.2s theta=2.4 seg_dyaw=-87.8
+
+[B] TIMING (n=4)
+   ep 5d94cbbb t= 43 aT=1 | nav tok=2 d_next=88.7m d_ann=90.2m v=15.03m/s | label t_start=nans t_end=nans d_start=nanm dyaw=nan R=nan vmin=nan is_turn= | theta=-4.6 dpsi6=2.0 lat_cls=none | token at the T-tick row (what T reads) is FOLLOW: banked rowN pairing artefact
+   ep 84952a7e t= 39 aT=2 | nav tok=2 d_next=42.1m d_ann=42.7m v=7.12m/s | label t_start=nans t_end=nans d_start=nanm dyaw=nan R=nan vmin=nan is_turn= | theta=2.0 dpsi6=0.9 lat_cls=LANE_KEEP | token at the T-tick row (what T reads) is FOLLOW: banked rowN pairing artefact
+   ep 9d3d1cd1 t= 27 aT=1 | nav tok=2 d_next=77.7m d_ann=77.9m v=12.98m/s | label t_start=nans t_end=nans d_start=nanm dyaw=nan R=nan vmin=nan is_turn= | theta=-9.6 dpsi6=-10.8 lat_cls=LANE_KEEP | token at the T-tick row (what T reads) is FOLLOW: banked rowN pairing artefact
+   ep b19eb35f t= 15 aT=2 | nav tok=1 d_next=48.9m d_ann=49.4m v=8.23m/s | label t_start=nans t_end=nans d_start=nanm dyaw=nan R=nan vmin=nan is_turn= | theta=5.1 dpsi6=2.6 lat_cls=LANE_KEEP | token at the T-tick row (what T reads) is FOLLOW: banked rowN pairing artefact
+
+[B] LABEL_MASKED (n=13)
+   ep af6f5964 t=  3 aT=0 | nav tok=2 d_next=3.6m d_ann=30.0m v=0.55m/s | label t_start=nans t_end=nans d_start=nanm dyaw=nan R=nan vmin=nan is_turn= | theta=nan dpsi6=-18.7 lat_cls=none | reversing
+   ep fe764229 t=  3 aT=0 | nav tok=1 d_next=10.1m d_ann=30.0m v=0.2m/s | label t_start=nans t_end=nans d_start=nanm dyaw=nan R=nan vmin=nan is_turn= | theta=nan dpsi6=-0.4 lat_cls=none | reversing
+
+[B] SIGN_THETA (n=1)
+   ep c08bebe5 t= 55 aT=2 | nav tok=1 d_next=0.0m d_ann=36.5m v=6.08m/s | label t_start=-0.6s t_end=2.6s d_start=nanm dyaw=56.9 R=22.2 vmin=5.75 is_turn=True | theta=-12.6 dpsi6=35.1 lat_cls=none | overlaps band >=0.5 s, dominant-segment rule rejects it t0=-0.6s t1=2.6s overlap=0.56s theta=-12.6 seg_dyaw=56.9
+
+==== HORIZON detail (A) ====
+n 16; d_next/d_ann median 1.13 (p10 1.05, p90 1.37); within 1.25x of d_ann: 12; would be announced by an 8 s x v_now lookahead: 13
+label t_start median 7.2s; v_now median 8.1 m/s
+(B) HORIZON n 50: v_now median 8.1 m/s, nav d_next median 30.4 m, d_ann median 48.8 m
+
+==== CURVE detail (A) ====
+n 156; lat_cls: {none: 23, LANE_KEEP: 133, TURN_L: 0, TURN_R: 0}
+|dyaw| median 91.6 deg; R_arc median 63 m; vmin median 11.2 m/s
+R>140: 0  vmin>8: 156  both: 0
+|theta|>=30 (the 'big' flag of the class rule): 108
+episodes involved: 15
+
+==== T-tick pairing variant (what T reads: nav and label both at rowT) ====
+A_tick 214  B_tick 127  total 341  (banked 210 + 129 = 339; overlap A 210, B 125)
+agreeing windows (turn label & nav TURN at rowT): 262; nav distance equals the label's d_start (|diff|<=1.5 m, i.e. SAME event): 245 (93.5%); different event 17
+side check on agreeing windows: nav side != sign(label dyaw) in 4 of 262
+
+wrote navturn_windows.csv (339 rows)

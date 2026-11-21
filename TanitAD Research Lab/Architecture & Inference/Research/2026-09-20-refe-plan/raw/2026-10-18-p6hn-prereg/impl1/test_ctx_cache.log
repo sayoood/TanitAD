@@ -1,0 +1,16 @@
+mutation                                                                 caught-by (failing checks)
+the tap takes scene_proj's FIRST output                                  suite setup raised CaptureError: the scoring decoder's context is not scene_proj's second output (a copy, or scen
+the tap's storage check dropped                                          C_tap_takes_scene_proj_second_output_refuses_copy_or_single_call
+bf16 not asserted                                                        C_non_bf16_forward_refused
+the fingerprint includes the scorer                                      S_fingerprint_ignores_scorer_changes_with_trunk_and_matches_checkpoint
+the reader skips the trunk check                                         S_reader_refuses_a_cache_of_another_trunk
+a stale sidecar is not refused                                           S_resume_into_another_trunks_units_is_refused
+resume trusts presence, not content                                      R_corrupted_unit_rebuilt_by_content_and_torn_unit_rebuilt
+finalise without checking the units                                      R_partial_cache_is_not_finalised
+verify() skips the scene list                                            R_manifest_binds_trunk_scene_list_calib_and_verify_rehashes
+the GPU lock is not taken                                                L_lock_taken_once_per_unit_built_none_for_done_and_cuda_without_lock_refused
+a cuda device without the lock is allowed                                L_lock_taken_once_per_unit_built_none_for_done_and_cuda_without_lock_refused
+the fan check ignores the mean bound                                     F_fan_check_through_landed_comparator_both_bounds_and_missing_reference
+the fan check ignores a missing reference                                F_fan_check_through_landed_comparator_both_bounds_and_missing_reference
+a shuffled-row check cannot see a swap (rows read from the first scene)  C_cache_equals_live_bit_for_bit
+ZZTEST_PASS 15  (1 unmutated suite + 14 RED mutations)

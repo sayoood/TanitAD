@@ -1,0 +1,16 @@
+{
+  "counts": {
+    "LEAD": 419,
+    "NO_LEAD": 329,
+    "NO_LABEL": 132
+  },
+  "episodes_scored": 40,
+  "episodes_requested": 40,
+  "episodes_dropped_no_egomotion": 0,
+  "episodes_dropped_registration": 1,
+  "episodes_without_obstacle_offline": 5,
+  "_frame_skew_check": "obstacle.offline cuboids are expressed in the ego frame at their own\n            timestamp; the rig->world->t0 chain depends on that. This is the\n            MEASURED max |reference_frame_timestamp_us - timestamp_us|, so the\n            assumption is checked rather than asserted in prose.",
+  "_denominator_note": "NO_LABEL is NOT free flow. A clip with no obstacle.offline, or a window whose horizon leaves the labelled span, is excluded \u2014 counting it as an empty road would manufacture a safe headway out of missing data. Every drop above is reported, never absorbed.",
+  "_grid": "window origins from lead_source.window_last_indices, which reproduces rollout.collect's grid exactly, so this block attaches row-for-row to an already-scored dump.",
+  "_registration": "affine pose-index -> clip-time fit (Theil-Sen + inlier refit). The realised episode spacing is ~0.1007 s, not 0.1; assuming 0.1 drifts ~0.13 s over 200 steps, about 1.8 m of lead displacement at 13.6 m/s."
+}

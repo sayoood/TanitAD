@@ -1,0 +1,84 @@
+{
+ "arm": "RR_s3",
+ "tier": "T0 (a world-model diagnostic on logged frames, never driving performance)",
+ "families": "LONGITUDINAL, LATERAL, TACTICAL: not measured by this read; STRATEGIC: PAUSED (PI item 25)",
+ "card": "PREREG_V8F_PROOF_ADD17",
+ "start_frame": 4,
+ "steps": 10,
+ "context": 3,
+ "model": {
+  "ckpt_sha256": "b3b63e0cdde2733ded7a5b0b2e893c33b59b6da8664b8d2cae0ea2a13f1c2589",
+  "step": 19164,
+  "tanitad_file": "C:/Users/Admin/v8proof_c/latvis_m/tree/stack/tanitad/__init__.py",
+  "wm_state": "grid",
+  "l1_width": 640,
+  "l1_pred_kind": "flat",
+  "l1_pred_class": "ResidualPredictor",
+  "l1_pred_context": 3,
+  "l1_action_dim": 2,
+  "wm_speed_scale": 0.0
+ },
+ "controls": {
+  "x1_reproduce_banked_rollout": {
+   "available": false,
+   "pass": true,
+   "note": "the pixel job of this arm has not written its latents file; compared when it has"
+  },
+  "x2_mapping": {
+   "mode": "mapped from a reference arm",
+   "windows": 1948,
+   "unmatched": 0,
+   "match_tol": 0.004,
+   "match_gap": 0.1,
+   "worst_match_diff": 0.0019526481628417969,
+   "windows_with_several_rows": 0,
+   "max_diff_between_those_rows": 0.0,
+   "frame10_vs_banked_true_2s_max_abs_diff": null,
+   "frame0_vs_banked_z0_max_abs_diff": null,
+   "tol": 0.004,
+   "pass": true
+  },
+  "x3_seeded_loop_context_1_equals_R1": {
+   "max_abs_diff": 1.0728836059570312e-06,
+   "tol": 1e-05,
+   "pass": true
+  },
+  "x4_overlap": {
+   "pairs": 1809,
+   "internal_state_max_abs_diff": 0.0,
+   "internal_rollout_max_abs_diff": 1.7881393432617188e-06,
+   "internal_tol": 0.0001,
+   "pass": true
+  }
+ },
+ "controls_pass": true,
+ "one_step_mse": {
+  "copy": 0.08524184674024582,
+  "context_1": 0.07423470169305801,
+  "context_3": 0.0745171457529068,
+  "ratio_context_1_over_copy": 0.8708715792991973,
+  "ratio_context_3_over_copy": 0.8741850229967449
+ },
+ "latent_mse_at_2s": {
+  "copy": 0.436813086271286,
+  "R1": 0.3047831356525421,
+  "R3h": 0.3025364875793457,
+  "R3g": 0.30215680599212646,
+  "skill_over_copy": {
+   "R1": 0.30225731501264075,
+   "R3h": 0.3074005859992638,
+   "R3g": 0.30826979436126656
+  },
+  "frame0": {
+   "copy": 0.435097336769104,
+   "R1": 0.30410829186439514
+  }
+ },
+ "inputs": {
+  "latents": "",
+  "states_pt": "C:/Users/Admin/v8proof_c/latvis_m/latents/RR_s3.pt",
+  "ckpt": "C:/Users/Admin/v8proof_c/ckpt/RR_s3/ckpt_last.pt",
+  "map_latents": "C:/Users/Admin/v8proof_c/latvis_gw/LATENTS_GW_G_s0.npz",
+  "map_states_pt": "C:/Users/Admin/v8proof_c/latvis_gw/latents/G_s0.pt"
+ }
+}

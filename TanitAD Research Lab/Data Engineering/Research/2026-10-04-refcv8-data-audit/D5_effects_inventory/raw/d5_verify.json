@@ -1,0 +1,903 @@
+{
+ "n_checks": 109,
+ "n_ok": 109,
+ "n_fail": 0,
+ "unreadable_files": [],
+ "C_UNREAD_zero": true,
+ "label_facts": {
+  "n": 4572,
+  "md5": "b45377a1f25263b5c0f3d318c126b1ac",
+  "ceiling_le30_share": 0.38079615048118987,
+  "goal_tokens_under_200_positive_records": [
+   "LANE_CHANGE_L",
+   "LANE_CHANGE_R",
+   "MERGE",
+   "OVERTAKE_VEHICLE",
+   "TAKE_EXIT_L",
+   "TAKE_EXIT_R",
+   "TRAFFIC_LIGHT_REACT",
+   "TRAFFIC_LIGHT_REACT_YELLOW",
+   "YIELD_FOR_TURN_L",
+   "YIELD_FOR_TURN_R"
+  ],
+  "n_goal_tokens_under_200": 10
+ },
+ "rows": [
+  {
+   "name": "C-MUT comparison rejects a wrong expectation",
+   "got": true,
+   "claimed": true,
+   "tol": 0,
+   "ok": true,
+   "source": "self-test"
+  },
+  {
+   "name": "route: T tactical side-correct on GT-turn",
+   "got": 0.3925,
+   "claimed": 0.3925,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/route_analysis.json"
+  },
+  {
+   "name": "route: C fan contains correct",
+   "got": 1.0,
+   "claimed": 1.0,
+   "tol": 1e-09,
+   "ok": true,
+   "source": "route-following/raw/route_analysis.json"
+  },
+  {
+   "name": "route: K decoder pick direction-correct",
+   "got": 0.8411,
+   "claimed": 0.8411,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/route_analysis.json"
+  },
+  {
+   "name": "route: E E9 pick direction-correct",
+   "got": 0.8411,
+   "claimed": 0.8411,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/route_analysis.json"
+  },
+  {
+   "name": "route: N nav side == GT",
+   "got": 0.4393,
+   "claimed": 0.4393,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/route_analysis.json"
+  },
+  {
+   "name": "route: D_core",
+   "got": 0.1589,
+   "claimed": 0.1589,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/route_analysis.json"
+  },
+  {
+   "name": "route: D_core CI lo",
+   "got": 0.08033234126984132,
+   "claimed": 0.0803,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/route_analysis.json"
+  },
+  {
+   "name": "route: D_core CI hi",
+   "got": 0.25774027269704014,
+   "claimed": 0.2577,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/route_analysis.json"
+  },
+  {
+   "name": "route: D_core seed1",
+   "got": 0.1495,
+   "claimed": 0.15,
+   "tol": 0.002,
+   "ok": true,
+   "source": "route-following/raw/route_analysis.json"
+  },
+  {
+   "name": "route: B3 all-window dADE",
+   "got": -0.6061,
+   "claimed": -0.6061,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/route_analysis.json"
+  },
+  {
+   "name": "route: B3 all CI lo",
+   "got": -0.7275600121599277,
+   "claimed": -0.7276,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/route_analysis.json"
+  },
+  {
+   "name": "route: B3 all CI hi",
+   "got": -0.49322313997799655,
+   "claimed": -0.4932,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/route_analysis.json"
+  },
+  {
+   "name": "route: B3 turn dADE",
+   "got": -0.8917,
+   "claimed": -0.8917,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/route_analysis.json"
+  },
+  {
+   "name": "route: B1t turn dADE",
+   "got": -0.5658,
+   "claimed": -0.5658,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/route_analysis.json"
+  },
+  {
+   "name": "route: B1t all dADE",
+   "got": -0.0757,
+   "claimed": -0.0757,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/route_analysis.json"
+  },
+  {
+   "name": "route: B2 turn dADE CI hi (includes 0)",
+   "got": 0.02798200159570252,
+   "claimed": 0.028,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/route_analysis.json"
+  },
+  {
+   "name": "route: ORACLE all dADE",
+   "got": -1.1748,
+   "claimed": -1.1748,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/route_analysis.json"
+  },
+  {
+   "name": "route: V0 all-window ADE (800 classified)",
+   "got": 2.0044,
+   "claimed": 2.0044,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/route_analysis.json"
+  },
+  {
+   "name": "route: V0 turn ADE",
+   "got": 3.1861,
+   "claimed": 3.1861,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/route_analysis.json"
+  },
+  {
+   "name": "route: ORACLE turn ADE",
+   "got": 1.1907,
+   "claimed": 1.1907,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/route_analysis.json"
+  },
+  {
+   "name": "route: W3 (E9 graft off) all-window dADE",
+   "got": -0.0715,
+   "claimed": -0.0715,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/route_analysis.json"
+  },
+  {
+   "name": "route: W3 CI hi",
+   "got": -0.0153636842822977,
+   "claimed": -0.0154,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/route_analysis.json"
+  },
+  {
+   "name": "route: V3 (navc x10) turn dir-correct delta",
+   "got": 0.0467,
+   "claimed": 0.0467,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/route_analysis.json"
+  },
+  {
+   "name": "route: V0c (ceiling fix emulated) all-window dADE",
+   "got": 0.0863,
+   "claimed": 0.0863,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/route_analysis.json"
+  },
+  {
+   "name": "route: V0c CI lo",
+   "got": 0.01792509384067612,
+   "claimed": 0.0179,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/route_analysis.json"
+  },
+  {
+   "name": "route: seed floor E9 pick same frac",
+   "got": 0.911,
+   "claimed": 0.911,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/route_analysis.json"
+  },
+  {
+   "name": "route: seed floor median traj diff m",
+   "got": 0.6388,
+   "claimed": 0.6388,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/route_analysis.json"
+  },
+  {
+   "name": "route: ADE seed0",
+   "got": 1.7229,
+   "claimed": 1.7229,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/route_analysis.json"
+  },
+  {
+   "name": "route: ADE seed1",
+   "got": 1.6947,
+   "claimed": 1.6947,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/route_analysis.json"
+  },
+  {
+   "name": "route: navc gate",
+   "got": 0.16251657903194427,
+   "claimed": 0.1625,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/route_analysis.json"
+  },
+  {
+   "name": "route: wrong-dir picks n",
+   "got": 17,
+   "claimed": 17,
+   "tol": 0.5,
+   "ok": true,
+   "source": "route-following/raw/route_analysis.json"
+  },
+  {
+   "name": "route: wrong-dir picks with prior's direction",
+   "got": 0.8235,
+   "claimed": 0.8235,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/route_analysis.json"
+  },
+  {
+   "name": "route: prior direction-correct on turns",
+   "got": 0.5701,
+   "claimed": 0.5701,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/route_analysis.json"
+  },
+  {
+   "name": "route: Spearman(E9, -ADE)",
+   "got": 0.7527,
+   "claimed": 0.7527,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/route_analysis.json"
+  },
+  {
+   "name": "route: Spearman(random)",
+   "got": -0.0047,
+   "claimed": -0.0047,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/route_analysis.json"
+  },
+  {
+   "name": "route: top-8 holds L and R (all classified)",
+   "got": 0.27,
+   "claimed": 0.27,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/route_analysis.json"
+  },
+  {
+   "name": "route: V0 turn speed MAE 0-2s",
+   "got": 0.3124,
+   "claimed": 0.312,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/route_analysis.json"
+  },
+  {
+   "name": "route: V0 turn along-signed 6s",
+   "got": 3.2723,
+   "claimed": 3.272,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/route_analysis.json"
+  },
+  {
+   "name": "route: V0 turn terminal heading err deg",
+   "got": 22.3694,
+   "claimed": 22.369,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/route_analysis.json"
+  },
+  {
+   "name": "route: tactical lon accuracy",
+   "got": 0.8273,
+   "claimed": 0.8273,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/route_analysis.json"
+  },
+  {
+   "name": "route: tactical lon kappa",
+   "got": 0.5395,
+   "claimed": 0.5395,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/route_analysis.json"
+  },
+  {
+   "name": "route: tactical lat kappa",
+   "got": 0.8229,
+   "claimed": 0.8229,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/route_analysis.json"
+  },
+  {
+   "name": "box: AP@2m no NMS",
+   "got": 0.2483,
+   "claimed": 0.2483,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/box_nms.json"
+  },
+  {
+   "name": "box: AP@2m centre NMS 2.5",
+   "got": 0.3494,
+   "claimed": 0.3494,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/box_nms.json"
+  },
+  {
+   "name": "box: mean boxes/obj @0.2589 no NMS",
+   "got": 2.1198,
+   "claimed": 2.1198,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/box_nms.json"
+  },
+  {
+   "name": "box: mean boxes/obj @0.2589 after NMS (the RESULT's 1.07)",
+   "got": 1.0673,
+   "claimed": 1.0673,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/box_nms.json"
+  },
+  {
+   "name": "box: mean boxes/obj at the RE-FITTED gate 0.2145 after NMS",
+   "got": 1.1052,
+   "claimed": 1.1052,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/box_nms.json"
+  },
+  {
+   "name": "box: frac >=2 at the RE-FITTED gate after NMS",
+   "got": 0.1038,
+   "claimed": 0.1038,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/box_nms.json"
+  },
+  {
+   "name": "box: F1 at re-fitted gate after NMS",
+   "got": 0.3922,
+   "claimed": 0.3922,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/box_nms.json"
+  },
+  {
+   "name": "box: F1 no NMS at its gate",
+   "got": 0.3034,
+   "claimed": 0.3034,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/box_nms.json"
+  },
+  {
+   "name": "agent: AP@2m no NMS",
+   "got": 0.1314,
+   "claimed": 0.1314,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "route-following/raw/box_nms.json"
+  },
+  {
+   "name": "agent: AP@2m centre NMS 3.0",
+   "got": 0.2996,
+   "claimed": 0.3,
+   "tol": 0.0015,
+   "ok": true,
+   "source": "route-following/raw/box_nms.json"
+  },
+  {
+   "name": "map: lane IoU declared rule (all bands)",
+   "got": 0.06760326931874065,
+   "claimed": 0.068,
+   "tol": 0.001,
+   "ok": true,
+   "source": "map-box/raw/M_c.json"
+  },
+  {
+   "name": "map: lane IoU TRAIN-fitted thresholds",
+   "got": 0.16432064998458887,
+   "claimed": 0.164,
+   "tol": 0.001,
+   "ok": true,
+   "source": "map-box/raw/M_c.json"
+  },
+  {
+   "name": "map: crosswalk IoU declared rule (all bands)",
+   "got": 0.04755106052663414,
+   "claimed": 0.048,
+   "tol": 0.001,
+   "ok": true,
+   "source": "map-box/raw/M_c.json"
+  },
+  {
+   "name": "map: crosswalk IoU TRAIN-fitted thresholds",
+   "got": 0.10516317809232557,
+   "claimed": 0.105,
+   "tol": 0.001,
+   "ok": true,
+   "source": "map-box/raw/M_c.json"
+  },
+  {
+   "name": "map: arrow IoU declared rule (all bands)",
+   "got": 0.02698051913242058,
+   "claimed": 0.027,
+   "tol": 0.001,
+   "ok": true,
+   "source": "map-box/raw/M_c.json"
+  },
+  {
+   "name": "map: arrow IoU TRAIN-fitted thresholds",
+   "got": 0.05884204698824389,
+   "claimed": 0.059,
+   "tol": 0.001,
+   "ok": true,
+   "source": "map-box/raw/M_c.json"
+  },
+  {
+   "name": "map: edge IoU declared rule (all bands)",
+   "got": 0.00022452786617673833,
+   "claimed": 0.0,
+   "tol": 0.001,
+   "ok": true,
+   "source": "map-box/raw/M_c.json"
+  },
+  {
+   "name": "map: edge IoU TRAIN-fitted thresholds",
+   "got": 0.04206482200701016,
+   "claimed": 0.042,
+   "tol": 0.001,
+   "ok": true,
+   "source": "map-box/raw/M_c.json"
+  },
+  {
+   "name": "map: hatched IoU declared rule (all bands)",
+   "got": 0.0,
+   "claimed": 0.0,
+   "tol": 0.001,
+   "ok": true,
+   "source": "map-box/raw/M_c.json"
+  },
+  {
+   "name": "map: hatched IoU TRAIN-fitted thresholds",
+   "got": 0.06156788614604242,
+   "claimed": 0.062,
+   "tol": 0.001,
+   "ok": true,
+   "source": "map-box/raw/M_c.json"
+  },
+  {
+   "name": "map: drivable IoU declared rule (all bands)",
+   "got": 0.5736735483679964,
+   "claimed": 0.574,
+   "tol": 0.001,
+   "ok": true,
+   "source": "map-box/raw/M_c.json"
+  },
+  {
+   "name": "map: drivable IoU TRAIN-fitted thresholds",
+   "got": 0.576439690209785,
+   "claimed": 0.576,
+   "tol": 0.001,
+   "ok": true,
+   "source": "map-box/raw/M_c.json"
+  },
+  {
+   "name": "map: lane paired thr-pc lo",
+   "got": 0.08623722312297706,
+   "claimed": 0.086,
+   "tol": 0.001,
+   "ok": true,
+   "source": "map-box/raw/M_c.json"
+  },
+  {
+   "name": "map: M_b.json keys (not asserted)",
+   "got": [
+    "definition",
+    "eval",
+    "train"
+   ],
+   "claimed": null,
+   "tol": null,
+   "ok": true,
+   "source": "map-box/raw/M_b.json"
+  },
+  {
+   "name": "box: T3 conf_ratio (box3d)",
+   "got": 0.9731563421828908,
+   "claimed": 0.973,
+   "tol": 0.001,
+   "ok": true,
+   "source": "map-box/raw/B_box.json"
+  },
+  {
+   "name": "box: T0 conf_ratio at the declared 0.5 gate (box3d)",
+   "got": 0.008259587020648967,
+   "claimed": 0.008,
+   "tol": 0.001,
+   "ok": true,
+   "source": "map-box/raw/B_box.json"
+  },
+  {
+   "name": "navtest 5k: R7_A1 PDMS x100",
+   "got": 65.5976,
+   "claimed": 65.5976,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "navsim/raw/milestones/step5000/summary_navtest.json"
+  },
+  {
+   "name": "navtest 5k: STOP PDMS x100",
+   "got": 61.8202,
+   "claimed": 61.8202,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "navsim/raw/milestones/step5000/summary_navtest.json"
+  },
+  {
+   "name": "navtest 5k: R7_A1 DAC",
+   "got": 84.5546,
+   "claimed": 84.5546,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "navsim/raw/milestones/step5000/summary_navtest.json"
+  },
+  {
+   "name": "navtest 5k: R7_A1 NC",
+   "got": 88.0948,
+   "claimed": 88.0948,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "navsim/raw/milestones/step5000/summary_navtest.json"
+  },
+  {
+   "name": "navtest 5k: A1-STOP",
+   "got": 3.7774,
+   "claimed": 3.7774,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "navsim/raw/milestones/step5000/summary_navtest.json"
+  },
+  {
+   "name": "navtest 5k: DAC single-term ceiling gain",
+   "got": 7.296,
+   "claimed": 7.296,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "navsim/raw/milestones/step5000/decomposition_navtest.json"
+  },
+  {
+   "name": "navtest 5k: TTC gain",
+   "got": 4.3241,
+   "claimed": 4.3241,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "navsim/raw/milestones/step5000/decomposition_navtest.json"
+  },
+  {
+   "name": "navtest 5k: EP gain",
+   "got": 4.1616,
+   "claimed": 4.1616,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "navsim/raw/milestones/step5000/decomposition_navtest.json"
+  },
+  {
+   "name": "navtest 5k: NC gain",
+   "got": 1.9299,
+   "claimed": 1.9299,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "navsim/raw/milestones/step5000/decomposition_navtest.json"
+  },
+  {
+   "name": "navtest 5k: speed band 2-5 m/s minus STOP",
+   "got": -11.5657,
+   "claimed": -11.5657,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "navsim/raw/milestones/step5000/decomposition_navtest.json"
+  },
+  {
+   "name": "navtest 5k: RIGHT minus STOP",
+   "got": -3.7318,
+   "claimed": -3.7318,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "navsim/raw/milestones/step5000/decomposition_navtest.json"
+  },
+  {
+   "name": "navhard 5000: R7_A1 official two-stage EPDMS",
+   "got": 0.1624300794296194,
+   "claimed": 0.1624,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "navsim/raw/milestones/step5000/summary_navhard.json"
+  },
+  {
+   "name": "navhard 5000: R7_A1 S2 DAC-zero rate",
+   "got": 0.35481508604906625,
+   "claimed": 0.3547,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "navsim/raw/milestones/step5000/summary_navhard.json"
+  },
+  {
+   "name": "navhard 5000: R7_A1 S2 NC-zero rate",
+   "got": 0.16074697912852434,
+   "claimed": 0.1607,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "navsim/raw/milestones/step5000/summary_navhard.json"
+  },
+  {
+   "name": "navhard 5000: STOP official EPDMS",
+   "got": 0.2985321254269824,
+   "claimed": 0.2985,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "navsim/raw/milestones/step5000/summary_navhard.json"
+  },
+  {
+   "name": "navhard 30000: R7_A1 official two-stage EPDMS",
+   "got": 0.2269259218512275,
+   "claimed": 0.2269,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "navsim/raw/milestones/step30000/summary_navhard.json"
+  },
+  {
+   "name": "navhard 30000: R7_A1 S2 DAC-zero rate",
+   "got": 0.2596118637861589,
+   "claimed": 0.2596,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "navsim/raw/milestones/step30000/summary_navhard.json"
+  },
+  {
+   "name": "navhard 30000: R7_A1 S2 NC-zero rate",
+   "got": 0.1563529842548517,
+   "claimed": 0.1564,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "navsim/raw/milestones/step30000/summary_navhard.json"
+  },
+  {
+   "name": "navhard 30000: STOP official EPDMS",
+   "got": 0.2985321254269824,
+   "claimed": 0.2985,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "navsim/raw/milestones/step30000/summary_navhard.json"
+  },
+  {
+   "name": "navtest 30k: R7_A1 PDMS (scorer's own summary, no interval yet)",
+   "got": 71.88488716864708,
+   "claimed": 71.8849,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "navsim/raw/milestones/step30000/scores_navtest/r7s30000_R7_A1/r7s30000_R7_A1.counts.json"
+  },
+  {
+   "name": "navtest 30k: DAC",
+   "got": 87.97958175531039,
+   "claimed": 87.9796,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "navsim/raw/milestones/step30000/scores_navtest/r7s30000_R7_A1/r7s30000_R7_A1.counts.json"
+  },
+  {
+   "name": "navtest 30k: NC",
+   "got": 91.2810801910094,
+   "claimed": 91.2811,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "navsim/raw/milestones/step30000/scores_navtest/r7s30000_R7_A1/r7s30000_R7_A1.counts.json"
+  },
+  {
+   "name": "navtest 30k: EP",
+   "got": 69.53617799335593,
+   "claimed": 69.5362,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "navsim/raw/milestones/step30000/scores_navtest/r7s30000_R7_A1/r7s30000_R7_A1.counts.json"
+  },
+  {
+   "name": "navtest 30k: TTC",
+   "got": 80.84142927712827,
+   "claimed": 80.8414,
+   "tol": 0.0005,
+   "ok": true,
+   "source": "navsim/raw/milestones/step30000/scores_navtest/r7s30000_R7_A1/r7s30000_R7_A1.counts.json"
+  },
+  {
+   "name": "navtest 30k: tokens scored",
+   "got": 12146,
+   "claimed": 12146,
+   "tol": 0.5,
+   "ok": true,
+   "source": "navsim/raw/milestones/step30000/scores_navtest/r7s30000_R7_A1/r7s30000_R7_A1.counts.json"
+  },
+  {
+   "name": "C-MD5 label md5 == launch config v7_labels.md5",
+   "got": "b45377a1f25263b5c0f3d318c126b1ac",
+   "claimed": "b45377a1f25263b5c0f3d318c126b1ac",
+   "tol": 0,
+   "ok": true,
+   "source": "config.json vs label file"
+  },
+  {
+   "name": "C-N label file record count",
+   "got": 4572,
+   "claimed": 4572,
+   "tol": 0.5,
+   "ok": true,
+   "source": "label file"
+  },
+  {
+   "name": "labels: records with t0_s == 8.0",
+   "got": 4572,
+   "claimed": 4572,
+   "tol": 0.5,
+   "ok": true,
+   "source": "label file"
+  },
+  {
+   "name": "labels: records with tactical band [2,6]",
+   "got": 4572,
+   "claimed": 4572,
+   "tol": 0.5,
+   "ok": true,
+   "source": "label file"
+  },
+  {
+   "name": "labels: L/R nav records",
+   "got": 1675,
+   "claimed": 1675,
+   "tol": 0.5,
+   "ok": true,
+   "source": "label file"
+  },
+  {
+   "name": "labels: L/R median turn start s after anchor",
+   "got": 7.3,
+   "claimed": 7.3,
+   "tol": 0.06,
+   "ok": true,
+   "source": "label file"
+  },
+  {
+   "name": "labels: L/R share turn starts >6 s",
+   "got": 0.5271641791044777,
+   "claimed": 0.527,
+   "tol": 0.001,
+   "ok": true,
+   "source": "label file"
+  },
+  {
+   "name": "labels: L/R share turn starts >10 s",
+   "got": 0.42029850746268654,
+   "claimed": 0.42,
+   "tol": 0.001,
+   "ok": true,
+   "source": "label file"
+  },
+  {
+   "name": "labels: L/R p90 turn start s",
+   "got": 26.2,
+   "claimed": 26.2,
+   "tol": 0.06,
+   "ok": true,
+   "source": "label file"
+  },
+  {
+   "name": "labels: VLM-vs-geometry lateral disagree",
+   "got": 1537,
+   "claimed": 1537,
+   "tol": 0.5,
+   "ok": true,
+   "source": "label file"
+  },
+  {
+   "name": "labels: VLM-vs-geometry longitudinal disagree",
+   "got": 1655,
+   "claimed": 1655,
+   "tol": 0.5,
+   "ok": true,
+   "source": "label file"
+  },
+  {
+   "name": "labels: lat_peak_m median",
+   "got": 19.670499999999997,
+   "claimed": 19.67,
+   "tol": 0.01,
+   "ok": true,
+   "source": "label file"
+  },
+  {
+   "name": "labels: lat_peak_m share > 5 m",
+   "got": 0.7016622922134733,
+   "claimed": 0.702,
+   "tol": 0.001,
+   "ok": true,
+   "source": "label file"
+  },
+  {
+   "name": "labels: clips fed a <=30 km/h ceiling",
+   "got": 1741,
+   "claimed": 1741,
+   "tol": 0.5,
+   "ok": true,
+   "source": "label file"
+  },
+  {
+   "name": "config: tokens under the 200-positive scoreability floor",
+   "got": 10,
+   "claimed": 10,
+   "tol": 0.5,
+   "ok": true,
+   "source": "config.json tac_goal_stats"
+  }
+ ]
+}

@@ -1,0 +1,69 @@
+20:22:20 chain start (PID 37628); window ends 23:10; marker D:\Projects\TanitAD\data\refe_m5\M5_GPU_DONE
+20:22:20 WAIT for 'ALL GPU STAGES DONE' in D:\Projects\TanitAD\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\raw\2026-09-27-m6-proxy\chain.log
+20:58:36 chain start (PID 35660); limit 04:30; VRAM total <= 7300 MiB; marker D:\Projects\TanitAD\data\refe_m5\M5_GPU_DONE
+20:58:36 WAIT for 'ALL GPU STAGES DONE' in D:\Projects\TanitAD\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\raw\2026-09-27-m6-proxy\chain.log
+23:56:29 M6 reports its GPU stages done -- the M5 window opens
+23:56:29 G1_timing: START (est 4.0 min -> ends ~00:00; GPU free 5845 MiB, used 2113 MiB, need 2600 + reserve 888; allocator cap 4737 MiB)
+23:56:29 G1_timing: PID 40532, log D:\Projects\TanitAD\data\refe_m5\logs\fwd_timing.log
+23:57:35 G1_timing: EXIT rc 0 after 1.1 min; peak total VRAM used 5423 MiB
+23:57:35 G1_timing: MEASURED 0.527 s/sample (includes warm-up), torch peak 2.29 GB -> need 3146 MiB; model load ~0.9 min
+23:57:35 G2_navtrain_train: START (est 16.0 min -> ends ~00:13; GPU free 5845 MiB, used 2113 MiB, need 3146 + reserve 888; allocator cap 4737 MiB)
+23:57:35 G2_navtrain_train: PID 38056, log D:\Projects\TanitAD\data\refe_m5\logs\fwd_navtrain_train.log
+00:22:25 G2_navtrain_train: EXIT rc 0 after 24.8 min; peak total VRAM used 5637 MiB
+00:22:25 G2: MEASURED median shard rate 0.510 s/sample over 25 shards
+00:22:26 G3_navtest: START (est 18.5 min -> ends ~00:40; GPU free 5659 MiB, used 2299 MiB, need 3146 + reserve 888; allocator cap 4551 MiB)
+00:22:26 G3_navtest: PID 38560, log D:\Projects\TanitAD\data\refe_m5\logs\fwd_navtest.log
+00:34:56 G3_navtest: EXIT rc 0 after 12.5 min; peak total VRAM used 4341 MiB
+00:34:57 G4_navtrain_val: START (est 4.5 min -> ends ~00:39; GPU free 5663 MiB, used 2295 MiB, need 3146 + reserve 888; allocator cap 4555 MiB)
+00:34:57 G4_navtrain_val: PID 41392, log D:\Projects\TanitAD\data\refe_m5\logs\fwd_navtrain_val.log
+00:41:51 G4_navtrain_val: EXIT rc 0 after 6.9 min; peak total VRAM used 5606 MiB
+00:41:51 G5: waiting for the labels (GPU idle): 89/119 chunks
+00:46:51 G5: waiting for the labels (GPU idle): 97/119 chunks
+00:51:51 G5: waiting for the labels (GPU idle): 107/119 chunks, 1.83/min -> ~00:58
+00:56:52 G5: waiting for the labels (GPU idle): 118/119 chunks, 1.83/min -> ~00:57
+00:57:52 G5: labels complete: {
+ "driver": "eval/m5_label.py (16 workers) then eval/m5_label_finish.py (kept m5w0,m5w1,m5w2,m5w3,m5w4,m5w5,m5w6,m5w7,m5w8,m5w9)",
+ "retired": [
+  "m5w10",
+  "m5w11",
+  "m5w12",
+  "m5w13",
+  "m5w14",
+  "m5w15"
+ ],
+ "seconds_finisher": 1030.0,
+ "failed": 0,
+ "selfcheck_failed": 0,
+ "skipped_ndiff": 0,
+ "status_note": "status files count per worker PROCESS lifetime (a restarted worker restarts its counters); coverage below is from the files themselves",
+ "keys_in_chunks": 1900,
+ "keys_labelled": 1900,
+ "set_lines": 1983,
+ "keys_unlabelled": 0
+}
+00:57:52 C_data_cpu: PID 38436, log D:\Projects\TanitAD\data\refe_m5\logs\ft_data.log
+00:58:22 C_data_cpu: EXIT rc 0 after 0.5 min; peak total VRAM used 5862 MiB
+00:58:22 G5_finetune: waiting for GPU memory (free 2099 MiB, used 5859 MiB; need 1500 + reserve 888)
+01:02:22 G5_finetune: START (est 15.0 min -> ends ~01:17; GPU free 5340 MiB, used 2618 MiB, need 1500 + reserve 888; allocator cap 4232 MiB)
+01:02:22 G5_finetune: PID 28800, log D:\Projects\TanitAD\data\refe_m5\logs\ft_train_gpu.log
+01:08:38 G5_finetune: VRAM total 7367 MiB > 7300 for 20 s (spill risk) -- killing PID 28800 (tree)
+01:08:38 G5_finetune: EXIT rc 1 after 6.3 min; peak total VRAM used 7370 MiB (VRAM total 7367 MiB > 7300 for 20 s (spill risk))
+01:08:38 G5_finetune: did not complete -- the eval is not run
+01:08:38 MARKER created: D:\Projects\TanitAD\data\refe_m5\M5_GPU_DONE (after the last GPU stage)
+01:11:32 chain start (PID 33828); from G5; limit 04:30; VRAM total <= 7300 MiB; marker D:\Projects\TanitAD\data\refe_m5\M5_GPU_DONE_2
+01:11:32 G5_finetune: waiting for GPU memory (free 1274 MiB, used 6684 MiB; need 1800 + reserve 888)
+01:13:32 G5_finetune: START (est 15.0 min -> ends ~01:28; GPU free 5401 MiB, used 2557 MiB, need 1800 + reserve 888; allocator cap 4293 MiB)
+01:13:33 G5_finetune: PID 27176, log D:\Projects\TanitAD\data\refe_m5\logs\ft_train_gpu.log
+01:14:50 G5_finetune (attempt 2): STOPPED BY HAND during its CPU preload (no training step taken, no output written) -- M6b's Wt2 arm (need 2500) + decode_T0 (800) passed their gates at 01:12:54-55 while still ramping, 38 s before this gate saw 2557 MiB used; the projected total (~7.6-7.9 GB) would breach 7,300 once the steps began. Chain2 PIDs 35848/33828 and the trainer 27176/7432 killed by explicit PID; M5_GPU_DONE_2 deliberately NOT written (M5's GPU work is not over).
+01:18:37 chain start (PID 24740); from G5; limit 04:30; VRAM total <= 7300 MiB; marker D:\Projects\TanitAD\data\refe_m5\M5_GPU_DONE_2
+01:18:37 SEQUENCED WAIT for 'ZZ_M6B_GPU_DONE_ZZ' in D:\Projects\TanitAD\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\raw\2026-09-27-m6-proxy\chain.log, no M6b GPU process, used + 1800 <= 7300; give up at 02:30
+01:18:38 SEQUENCED WAIT: token False, M6b GPU procs -2, used 4998 MiB
+01:23:38 SEQUENCED WAIT: token False, M6b GPU procs -2, used 2229 MiB
+01:27:39 SEQUENCED WAIT over: token seen, 0 M6b GPU processes, used 1946 MiB
+01:27:39 G5_finetune: START (est 15.0 min -> ends ~01:42; GPU free 6012 MiB, used 1946 MiB, need 1800 + reserve 888; allocator cap 4904 MiB)
+01:27:39 G5_finetune: PID 39276, log D:\Projects\TanitAD\data\refe_m5\logs\ft_train_gpu.log
+01:45:48 G5_finetune: EXIT rc 0 after 18.1 min; peak total VRAM used 4117 MiB
+01:45:48 G6_eval: START (est 6.0 min -> ends ~01:51; GPU free 6014 MiB, used 1944 MiB, need 1200 + reserve 888; allocator cap 4906 MiB)
+01:45:48 G6_eval: PID 26448, log D:\Projects\TanitAD\data\refe_m5\logs\ft_eval_gpu.log
+01:47:48 G6_eval: EXIT rc 0 after 2.0 min; peak total VRAM used 3429 MiB
+01:47:48 MARKER created: D:\Projects\TanitAD\data\refe_m5\M5_GPU_DONE_2 (after the last GPU stage)

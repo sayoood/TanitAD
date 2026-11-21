@@ -1,0 +1,44 @@
+{
+ "kind": "launch-gate-token",
+ "verdict": "PASS",
+ "prereg": "PREREG_V8F_DAGGER",
+ "run": "M2b_s1_dag",
+ "binding": {
+  "commit": "b43c7a9a1cf6d6d8f739fcf7b1740b366c241050",
+  "argv_sha256": "911683300588385af4a5413ef11fc52e9783818f325c521d3b07440633182cf4",
+  "data_sha256": "37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1"
+ },
+ "binding_note": "argv_sha256 = launch_gate.argv_sha256 of the TRAINING argv as PINNED BY BOX 2 at gate time (the file traindag executes), which equals the queue's planned training line (asserted); argv.json will record it",
+ "gate": {
+  "kind": "v8f_mini_train.py --selfcheck-only (in-process: G-DVB FLAG_CHECKS + bad_dagger + G-LIVE + dagger_probe)",
+  "argv_sha256": "2d7b890d2b563071605e350bf457f135ab0206bf70f04250c7bd8aab183b6cc5",
+  "argv_sha16": "e788e881e88652f5",
+  "selfcheck_sha256": "a35a38508b9fd2cb1079f8d3b1e6fad30c852cb6a964958212bde8c6bad4be3c"
+ },
+ "queue_sha256": "ac7eaf5981be002da9efd6e9bbf28ef278814c1ff238213f94cd803288d922e0",
+ "key_files_sha256": {
+  "stack/scripts/v8f_mini_train.py": "38e0a15773986c202cc64c1f101238462371a107ef06751667216774b17bf1bd",
+  "stack/scripts/v8f_mini_eval.py": "50c70ae868262f2a480b8172e477f27b140d40f5164e5cbabe38228343957e6d",
+  "stack/scripts/v8f_dagger_bank.py": "893dd6547b361c34fd2307f9efaf0b9bf822a1476506d3aa65498d7dbba53da3",
+  "stack/scripts/v8f_dagger_queue_tool.py": "a2b70d425c7b2a8b3cbcd5474b5d1eb63c05d330cb130caa0a4eb9d783874ddd",
+  "stack/scripts/v8f_t1_eval.py": "61e140edb9da01acbbba4eef81e74bbb68b57e2ff31842e05958759446d97397",
+  "stack/tanitad/models/v8f_mini.py": "8ec5e19037b681242a13f3642818b2a82e84395b0b5436bc5ff17f39822c5b3a",
+  "stack/tanitad/data/v8f_mini_data.py": "0e4a8cea438532424addb14d3c28a8f0b34f6c1ca33562384c3e389141f49588",
+  "stack/tanitad/data/v8f_dagger.py": "b20cc058b17e1029ddb138dc84f434333bf6b0b2746c5b76e996cef17c176bd3",
+  "stack/tanitad/models/hjepa.py": "368a01f205c70bbf34a37e50c6b39dd0e0ab5e9a54a64c17a6ff6a4e35b561f1",
+  "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_mini_box2_queue.cmd": "1519260af238ea0da601fcd5bca10d30fc974786d748f03d3bc3eeb73fd1d67e",
+  "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/eval_grid_windows.json": "659c3b65e364ea5de87a4e17d076eba5645df95cdcf39d8abc08caab1b2d594c",
+  "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-refav1-hj-mini/raw/p10_yaw4512/p10_prior.pt": "14a062a91078266a1b3226af91bf52b23b5238d84fe7e633323d0b0bea2703bf",
+  "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-refav1-hj-mini/raw/p10_yaw4512/p10_eval_pred6.npy": "9657c0fdce187ecbc33174759fcc337b034e59b80bbc9057bd547b10f7d7a336"
+ },
+ "excluded_sha256": "f6a1dee02af0b96f815416bfef9bc11a04554702525135aa75a740942d7750f9",
+ "init_ckpt_sha256": "6104fb15dc21d524b6ed53be632b8d53ec5413526ac587734c22684c7e50c2e6",
+ "bank_sha256": "36c7aea964dafe9423253aa479c2fc6cdfc93848395b593315cba812f5f04d4d",
+ "orc_read_sha256": "a50dbba9fee93828b17b8b1b71335b2db73e249fd7ab9e78c9b4ea4e3577afd6",
+ "dagger_p": 0.1,
+ "v9_md5": {
+  "v9_labels_train.npz": "83e30bd3791f0767707eade5f4671759",
+  "v9_labels_eval139.npz": "6b5c7f207cffc3b7eb3cd527fd433599"
+ },
+ "hmac": "none: written by the box-2 chain, not by launch_gate.py (its key lives on the launch host); the reader checks the binding and does not verify an HMAC"
+}

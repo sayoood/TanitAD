@@ -1,0 +1,203 @@
+PREREG_V8F_HIST: mutation proof of the instruments (mutate_hist.py). Every mutant must turn stack/tests/test_v8f_hist.py RED; every mutated file is restored byte-identical (asserted).
+
+======================================================================================================================================================
+ROUND 1 (the tree before the round-2 test fixes; script of that time: 128 mutants incl. one redundant guard, not the Refusal mutant). Six runs in parallel, each in its own byte-identical copy of the export, `python mutate_hist.py <copy> <python> --set <group> [--part k/n]`:
+======================================================================================================================================================
+----- reach (15): m3_reach.out
+anchors OK: 15 mutants, every anchor occurs exactly once
+BASELINE rc=0 108 passed, 1 warning in 70.80s (0:01:10)
+RED   v8f_mini_train.py: make_config ignores --hist (always 4 frames) -> [-k group] 1 failed, 91 deselected in 5.64s  [test_hist_flag_reaches_the_config_the_gate_and_the_built_time_table]
+RED   v8f_mini_train.py: make_config builds hist 8 whatever --hist says -> [-k group] 1 failed, 91 deselected in 2.27s  [test_hist_flag_reaches_the_config_the_gate_and_the_built_time_table]
+RED   v8f_mini_train.py: SILENT: make_config ignores --hist AND the G-DVB gate compares the built hist with itself -> [-k group] 1 failed, 91 deselected in 2.18s  [test_hist_flag_reaches_the_config_the_gate_and_the_built_time_table]
+RED   v8f_mini_train.py: the G-DVB gate does not compare hist at all -> [-k group] 1 failed, 91 deselected in 3.39s  [test_hist_flag_reaches_the_config_the_gate_and_the_built_time_table]
+RED   v8f_mini_train.py: the step budget S is sized on B's 4-frame window set -> [-k group] 1 failed, 10 passed, 91 deselected, 1 warning in 13.24s  [test_FINDING_hist_10_drops_the_first_six_training_windows_of_every_clip_and_shortens_the_run]
+RED   v8f_mini_train.py: the trained windows are B's 4-frame window set -> [-k group] 1 failed, 10 passed, 91 deselected, 1 warning in 13.82s  [test_FINDING_hist_10_drops_the_first_six_training_windows_of_every_clip_and_shortens_the_run]
+GREEN v8f_mini_train.py: the dataset clamps held ages for 4 frames, not 10 -> [whole file] 108 passed, 1 warning in 71.72s (0:01:11)
+RED   v8f_mini_data.py: train_windows starts at t = 3 whatever the history -> [-k group] 1 failed, 10 passed, 91 deselected, 1 warning in 13.73s  [test_FINDING_hist_10_drops_the_first_six_training_windows_of_every_clip_and_shortens_the_run]
+RED   v8f_mini_data.py: the held-age clamp ignores the history -> [-k group] 1 failed, 11 passed, 91 deselected, 1 warning in 14.10s  [test_eval_of_a_hist_10_checkpoint_builds_hist_10_and_gathers_ten_frames]
+RED   v8f_mini.py: SILENT: the model gathers only 4 frames at hist 10 (time rows 4-9 never train) -> [-k group] 1 failed, 3 passed, 91 deselected in 4.30s  [test_the_readers_scene_tokens_are_exactly_the_last_hist_frames_of_the_batch[10-ages0]]
+RED   v8f_mini.py: the per-frame time table has 4 rows at hist 10 -> [-k group] 1 failed, 91 deselected in 3.48s  [test_hist_flag_reaches_the_config_the_gate_and_the_built_time_table]
+RED   v8f_mini.py: the per-frame time table is in no optimiser group -> [-k group] 1 failed, 2 passed, 91 deselected in 4.23s  [test_hist_changes_exactly_the_time_table_at_the_real_size]
+RED   v8f_mini.py: SILENT: the time table is added in reverse frame order -> [-k group] 1 failed, 3 passed, 91 deselected in 4.15s  [test_the_readers_scene_tokens_are_exactly_the_last_hist_frames_of_the_batch[10-ages0]]
+RED   v8f_mini.py: SILENT: the gather reads frames a step older than its `last` -> [-k group] 1 failed, 3 passed, 91 deselected in 3.99s  [test_the_readers_scene_tokens_are_exactly_the_last_hist_frames_of_the_batch[10-ages0]]
+RED   v8f_mini_eval.py: the eval rebuilds the dataset at 4 frames whatever the checkpoint says -> [-k group] 1 failed, 11 passed, 91 deselected, 1 warning in 13.94s  [test_eval_of_a_hist_10_checkpoint_builds_hist_10_and_gathers_ten_frames]
+AFTER rc=0 108 passed, 1 warning in 64.26s (0:01:04)
+14 / 15 mutations RED; SURVIVORS: ['the dataset clamps held ages for 4 frames, not 10']
+
+----- reader part 1/2 (21): m1_reader1.out
+anchors OK: 21 mutants, every anchor occurs exactly once
+BASELINE rc=0 108 passed, 1 warning in 69.48s (0:01:09)
+RED   v8f_hist_read.py: load_h_runs: the --hist 10 flag is not checked -> [-k group] 1 failed, 24 passed, 30 deselected, 1 warning in 39.71s  [test_reader_refuses_rc2_with_the_reason[h argv still says hist 4]]
+RED   v8f_hist_read.py: check_b_side: a B that is not a 4-frame run is accepted -> [-k group] 1 failed, 75 passed, 30 deselected, 1 warning in 52.76s  [test_check_inputs_refuses_a_b_that_is_a_hist_10_run]
+RED   v8f_hist_read.py: load_h_runs: argv may differ from B's besides --hist and --out -> [-k group] 1 failed, 27 passed, 30 deselected, 1 warning in 41.63s  [test_reader_refuses_rc2_with_the_reason[h argv has a second lever]]
+RED   v8f_hist_read.py: load_h_runs: H may train on another clip list -> [-k group] 1 failed, 17 passed, 30 deselected, 1 warning in 37.07s  [test_reader_refuses_rc2_with_the_reason[h trained on another clip list]]
+RED   v8f_hist_read.py: load_h_runs: the launch gate's declared_vs_built may be anything -> [-k group] 1 failed, 20 passed, 30 deselected, 1 warning in 38.41s  [test_reader_refuses_rc2_with_the_reason[h launch gate not PASS]]
+RED   v8f_hist_read.py: load_h_runs: the built p_gt schedule is not compared -> [-k group] 1 failed, 33 passed, 30 deselected, 1 warning in 37.87s  [test_reader_refuses_rc2_with_the_reason[h built another p_gt]]
+RED   v8f_hist_read.py: param delta: the total is not compared -> [-k group] 1 failed, 40 passed, 30 deselected, 1 warning in 39.50s  [test_reader_refuses_rc2_with_the_reason[h has one parameter too many]]
+RED   v8f_hist_read.py: param delta: the expected delta is (10 - 4) x 128 -> [-k group] 1 failed, 2 passed, 30 deselected, 1 warning in 6.78s  [test_reader_decision_table_final_stage]
+RED   v8f_hist_read.py: checkpoint: the built hist is not checked -> [-k group] 1 failed, 45 passed, 30 deselected, 1 warning in 41.25s  [test_reader_refuses_rc2_with_the_reason[h checkpoint was built at hist 4]]
+RED   v8f_hist_read.py: checkpoint: the time table's width is not checked -> [-k group] 1 failed, 49 passed, 30 deselected, 1 warning in 41.32s  [test_reader_refuses_rc2_with_the_reason[h checkpoint time table is the wrong width]]
+RED   v8f_hist_read.py: checkpoint: grid / n_tok / pos rows are not checked -> [-k group] 1 failed, 52 passed, 30 deselected, 1 warning in 41.09s  [test_reader_refuses_rc2_with_the_reason[h checkpoint is an 8x20 checkpoint]]
+RED   v8f_hist_read.py: checkpoint: the step is not compared -> [-k group] 1 failed, 55 passed, 30 deselected, 1 warning in 41.54s  [test_reader_refuses_rc2_with_the_reason[h checkpoint at another step]]
+GREEN v8f_hist_read.py: evals: H and B may sit on different eval grids -> [whole file] 108 passed, 1 warning in 58.75s
+RED   v8f_hist_read.py: w_diff: the B-side weights are not compared at all -> [-k group] 1 failed, 35 passed, 30 deselected, 1 warning in 33.91s  [test_reader_refuses_rc2_with_the_reason[h built another weight]]
+RED   v8f_hist_read.py: the t >= 11 subset starts at t >= 7 -> [-k group] 1 failed, 10 passed, 30 deselected, 1 warning in 27.99s  [test_reader_reports_the_primary_on_the_t_ge_11_subset_and_its_padded_complement]
+RED   v8f_hist_read.py: the committed t = 3 count is 140 -> [-k group] 1 failed, 11 passed, 30 deselected, 1 warning in 27.30s  [test_window_counts_are_asserted_on_the_committed_grid_and_the_real_grid_has_them]
+RED   v8f_hist_read.py: an empty t >= 11 subset is read -> [-k group] 1 failed, 11 passed, 30 deselected, 1 warning in 27.70s  [test_window_counts_are_asserted_on_the_committed_grid_and_the_real_grid_has_them]
+RED   v8f_hist_read.py: the timing slot set loses lc_t_cross_s -> [-k group] 1 failed, 72 passed, 30 deselected, 1 warning in 40.13s  [test_reader_constants_match_the_model_the_trainer_and_the_eval]
+RED   v8f_hist_read.py: check_inputs: B's hist / hmax are not checked -> [-k group] 1 failed, 75 passed, 30 deselected, 1 warning in 43.92s  [test_check_inputs_refuses_a_b_that_is_a_hist_10_run]
+GREEN v8f_hist_read.py: the identity control is not run in the real read -> [whole file] 108 passed, 1 warning in 54.72s
+RED   v8f_hist_read.py: the FAIL-MECHANISM-OK next step names another lever -> [-k group] 1 failed, 3 passed, 30 deselected, 1 warning in 13.07s  [test_the_committed_next_steps_are_verbatim_the_preregs]
+AFTER rc=0 108 passed, 1 warning in 56.62s
+19 / 21 mutations RED; SURVIVORS: ['evals: H and B may sit on different eval grids', 'the identity control is not run in the real read']
+
+----- reader part 2/2 (21): m2_reader2.out
+anchors OK: 21 mutants, every anchor occurs exactly once
+BASELINE rc=0 108 passed, 1 warning in 72.82s (0:01:12)
+RED   v8f_hist_read.py: load_h_runs: a B that is not a 4-frame run is accepted -> [-k group] 1 failed, 32 passed, 30 deselected, 1 warning in 42.21s  [test_reader_refuses_rc2_with_the_reason[b argv is a hist-10 run]]
+GREEN v8f_hist_read.py: check_b_side: B's two seeds may disagree about hmax -> [whole file] 108 passed, 1 warning in 68.32s (0:01:08)
+RED   v8f_hist_read.py: load_h_runs: H may train for another number of steps -> [-k group] 1 failed, 18 passed, 30 deselected, 1 warning in 35.34s  [test_reader_refuses_rc2_with_the_reason[h trained fewer steps]]
+RED   v8f_hist_read.py: load_h_runs: a run that is not done is read -> [-k group] 1 failed, 14 passed, 30 deselected, 1 warning in 33.83s  [test_reader_refuses_rc2_with_the_reason[h not done]]
+RED   v8f_hist_read.py: load_h_runs: the launch gate's G-LIVE may fail -> [-k group] 1 failed, 21 passed, 30 deselected, 1 warning in 36.68s  [test_reader_refuses_rc2_with_the_reason[h G-LIVE not pass]]
+RED   v8f_hist_read.py: load_h_runs: a built lever other than hist may differ from B's -> [-k group] 1 failed, 35 passed, 30 deselected, 1 warning in 37.75s  [test_reader_refuses_rc2_with_the_reason[h built another weight]]
+RED   v8f_hist_read.py: param delta: a second lever in another group is not caught -> [-k group] 1 failed, 41 passed, 30 deselected, 1 warning in 40.78s  [test_reader_refuses_rc2_with_the_reason[h adapter delta is not the table]]
+RED   v8f_hist_read.py: param delta: the check is not run -> [-k group] 1 failed, 40 passed, 30 deselected, 1 warning in 39.31s  [test_reader_refuses_rc2_with_the_reason[h has one parameter too many]]
+RED   v8f_hist_read.py: checkpoint: the time table's rows are not checked -> [-k group] 1 failed, 47 passed, 30 deselected, 1 warning in 39.57s  [test_reader_refuses_rc2_with_the_reason[h checkpoint time table has 4 rows]]
+RED   v8f_hist_read.py: checkpoint: hmax may differ from B's -> [-k group] 1 failed, 50 passed, 30 deselected, 1 warning in 42.24s  [test_reader_refuses_rc2_with_the_reason[h checkpoint built another hmax]]
+RED   v8f_hist_read.py: checkpoint: the argv hash is not compared -> [-k group] 1 failed, 54 passed, 30 deselected, 1 warning in 43.55s  [test_reader_refuses_rc2_with_the_reason[h checkpoint from another argv]]
+RED   v8f_hist_read.py: evals: an eval of another checkpoint is accepted -> [-k group] 1 failed, 58 passed, 30 deselected, 1 warning in 43.17s  [test_reader_refuses_rc2_with_the_reason[h eval scored B's checkpoint]]
+RED   v8f_hist_read.py: w_diff: B's unrecorded w_tac / w_cons are not filled (key-by-key only) -> [-k group] 1 failed, 2 passed, 30 deselected, 1 warning in 6.35s  [test_reader_decision_table_final_stage]
+RED   v8f_hist_read.py: stage s0 reads both seeds -> [-k group] 1 failed, 6 passed, 30 deselected, 1 warning in 20.74s  [test_reader_stage_s0_continues_or_stops_on_seed_0_alone]
+RED   v8f_hist_read.py: the t >= 11 subset read is the padded complement -> [-k group] 1 failed, 10 passed, 30 deselected, 1 warning in 27.82s  [test_reader_reports_the_primary_on_the_t_ge_11_subset_and_its_padded_complement]
+RED   v8f_hist_read.py: the window counts are not asserted against the PREREG -> [-k group] 1 failed, 11 passed, 30 deselected, 1 warning in 28.45s  [test_window_counts_are_asserted_on_the_committed_grid_and_the_real_grid_has_them]
+GREEN v8f_hist_read.py: an odd frame is read as a cache step -> [whole file] 108 passed, 1 warning in 57.11s
+GREEN v8f_hist_read.py: a slot is present when the window has a row, whatever its GT value -> [whole file] 108 passed, 1 warning in 57.45s
+RED   v8f_hist_read.py: F is half the seed gap -> [-k group] 1 failed, 2 passed, 30 deselected, 1 warning in 6.97s  [test_reader_decision_table_final_stage]
+RED   v8f_hist_read.py: the SUCCESS next step names another lever -> [-k group] 1 failed, 3 passed, 30 deselected, 1 warning in 13.33s  [test_the_committed_next_steps_are_verbatim_the_preregs]
+RED   v8f_hist_read.py: the FAIL-NO-MECHANISM next step names another lever -> [-k group] 1 failed, 3 passed, 30 deselected, 1 warning in 12.19s  [test_the_committed_next_steps_are_verbatim_the_preregs]
+AFTER rc=0 108 passed, 1 warning in 56.49s
+18 / 21 mutations RED; SURVIVORS: ["check_b_side: B's two seeds may disagree about hmax", 'an odd frame is read as a cache step', 'a slot is present when the window has a row, whatever its GT value']
+
+----- queue (28): m1_queue.out
+anchors OK: 28 mutants, every anchor occurs exactly once
+BASELINE rc=0 108 passed, 1 warning in 60.94s (0:01:00)
+RED   v8f_mini_box2_queue.cmd: trainhist drops --hist 10 -> [-k group] 1 failed, 1 passed, 101 deselected in 1.89s  [test_queue_hist_runs_the_command_it_prints_static]
+RED   v8f_mini_box2_queue.cmd: trainhist trains at --hist 8 -> [-k group] 1 failed, 1 passed, 101 deselected in 1.89s  [test_queue_hist_runs_the_command_it_prints_static]
+RED   v8f_mini_box2_queue.cmd: trainhist adds a second lever (--hmax 14) -> [-k group] 1 failed, 101 deselected in 1.96s  [test_queue_hist_the_queue_is_crlf_and_the_stages_are_dispatched]
+RED   v8f_mini_box2_queue.cmd: trainhist drops the grid -> [-k group] 1 failed, 1 passed, 101 deselected in 1.91s  [test_queue_hist_runs_the_command_it_prints_static]
+RED   v8f_mini_box2_queue.cmd: trainhist takes its seed from the stage name -> [-k group] 1 failed, 1 passed, 101 deselected in 1.92s  [test_queue_hist_runs_the_command_it_prints_static]
+RED   v8f_mini_box2_queue.cmd: gatehist drops --hist 10 -> [-k group] 1 failed, 1 passed, 101 deselected in 1.92s  [test_queue_hist_runs_the_command_it_prints_static]
+RED   v8f_mini_box2_queue.cmd: gatehist is not a selfcheck-only run -> [-k group] 1 failed, 2 passed, 101 deselected in 1.91s  [test_queue_hist_stages_dry_one_lever]
+RED   v8f_mini_box2_queue.cmd: the dry run prints a line the run does not execute (the run drops --hist) -> [-k group] 1 failed, 1 passed, 101 deselected in 1.89s  [test_queue_hist_runs_the_command_it_prints_static]
+RED   v8f_mini_box2_queue.cmd: the gate runs another line than it prints -> [-k group] 1 failed, 1 passed, 101 deselected in 1.89s  [test_queue_hist_runs_the_command_it_prints_static]
+RED   v8f_mini_box2_queue.cmd: trainhist shares B's run dir -> [-k group] 1 failed, 2 passed, 101 deselected in 1.99s  [test_queue_hist_stages_dry_one_lever]
+RED   v8f_mini_box2_queue.cmd: evalhist reads B's checkpoint -> [-k group] 1 failed, 2 passed, 101 deselected in 2.23s  [test_queue_hist_stages_dry_one_lever]
+RED   v8f_mini_box2_queue.cmd: evalhist's tag collides with B's -> [-k group] 1 failed, 2 passed, 101 deselected in 2.11s  [test_queue_hist_stages_dry_one_lever]
+RED   v8f_mini_box2_queue.cmd: E0 loses --families -> [-k group] 1 failed, 1 passed, 101 deselected in 1.98s  [test_queue_hist_runs_the_command_it_prints_static]
+RED   v8f_mini_box2_queue.cmd: E1 is an oracle, not an absmask eval -> [-k group] 1 failed, 1 passed, 101 deselected in 1.86s  [test_queue_hist_runs_the_command_it_prints_static]
+RED   v8f_mini_box2_queue.cmd: E2 is an absmask eval, not the GT-code oracle -> [-k group] 1 failed, 1 passed, 101 deselected in 1.84s  [test_queue_hist_runs_the_command_it_prints_static]
+RED   v8f_mini_box2_queue.cmd: E3 oracle-fills the goal group, not latcons -> [-k group] 1 failed, 1 passed, 101 deselected in 1.87s  [test_queue_hist_runs_the_command_it_prints_static]
+RED   v8f_mini_box2_queue.cmd: evalhist runs before the training finished -> [-k group] 1 failed, 6 passed, 101 deselected in 4.20s  [test_queue_hist_real_stages_notice_failures_and_skip_exactly_what_is_finished]
+RED   v8f_mini_box2_queue.cmd: evalhist skips on a log file, not the npz -> [-k group] 1 failed, 6 passed, 101 deselected in 5.22s  [test_queue_hist_real_stages_notice_failures_and_skip_exactly_what_is_finished]
+RED   v8f_mini_box2_queue.cmd: evalhist never skips a finished E2 -> [-k group] 1 failed, 5 passed, 101 deselected in 3.31s  [test_queue_hist_real_lines_execute_exactly_the_printed_commands]
+RED   v8f_mini_box2_queue.cmd: trainhist retrains a finished run -> [-k group] 1 failed, 5 passed, 101 deselected in 4.00s  [test_queue_hist_real_lines_execute_exactly_the_printed_commands]
+RED   v8f_mini_box2_queue.cmd: trainhist does not notice a failed training -> [-k group] 1 failed, 1 passed, 101 deselected in 1.84s  [test_queue_hist_runs_the_command_it_prints_static]
+RED   v8f_mini_box2_queue.cmd: trainhist accepts an exit 0 without a summary -> [-k group] 1 failed, 6 passed, 101 deselected in 3.63s  [test_queue_hist_real_stages_notice_failures_and_skip_exactly_what_is_finished]
+RED   v8f_mini_box2_queue.cmd: evalhist does not notice a failed E3 -> [-k group] 1 failed, 1 passed, 101 deselected in 1.93s  [test_queue_hist_runs_the_command_it_prints_static]
+RED   v8f_mini_box2_queue.cmd: trainhist needs no seed -> [-k group] 1 failed, 3 passed, 101 deselected in 2.10s  [test_queue_hist_refuses_missing_arguments]
+RED   v8f_mini_box2_queue.cmd: evalhist needs no seed -> [-k group] 1 failed, 3 passed, 101 deselected in 2.17s  [test_queue_hist_refuses_missing_arguments]
+RED   v8f_mini_box2_queue.cmd: trainhist is not dispatched -> [-k group] 1 failed, 101 deselected in 1.87s  [test_queue_hist_the_queue_is_crlf_and_the_stages_are_dispatched]
+RED   v8f_mini_box2_queue.cmd: evalhist is not dispatched -> [-k group] 1 failed, 101 deselected in 1.91s  [test_queue_hist_the_queue_is_crlf_and_the_stages_are_dispatched]
+RED   v8f_mini_box2_queue.cmd: gatehist is not dispatched -> [-k group] 1 failed, 101 deselected in 1.82s  [test_queue_hist_the_queue_is_crlf_and_the_stages_are_dispatched]
+AFTER rc=0 108 passed, 1 warning in 61.57s (0:01:01)
+28 / 28 mutations RED
+
+----- chain part 1/2 (22): m2_chain1.out
+anchors OK: 22 mutants, every anchor occurs exactly once
+BASELINE rc=0 108 passed, 1 warning in 59.46s
+RED   chain_v8f_hist.sh: the dry run omits evalhist 1 -> [-k group] 1 failed, 1 passed, 103 deselected in 3.30s  [test_chain_hist_syntax_and_dry_run_prints_the_queue_lines]
+RED   chain_v8f_hist.sh: the dry run omits the gate -> [-k group] 1 failed, 1 passed, 103 deselected in 3.75s  [test_chain_hist_syntax_and_dry_run_prints_the_queue_lines]
+RED   chain_v8f_hist.sh: the DONE marker is renamed -> [-k group] 1 failed, 4 passed, 103 deselected in 5.93s  [test_chain_hist_load_bearing_lines_are_present]
+RED   chain_v8f_hist.sh: the training wait is 5 h (a guarded 10 h run outlasts it) -> [-k group] 1 failed, 103 deselected in 1.87s  [test_chain_hist_static_ordering_the_wait_and_no_base_decision]
+RED   chain_v8f_hist.sh: the wait for the predecessor is skipped -> [-k group] 1 failed, 4 passed, 103 deselected in 5.89s  [test_chain_hist_load_bearing_lines_are_present]
+RED   chain_v8f_hist.sh: check-inputs failure is ignored -> [-k group] 1 failed, 4 passed, 103 deselected in 6.18s  [test_chain_hist_load_bearing_lines_are_present]
+RED   chain_v8f_hist.sh: the eval job is not evalhist -> [-k group] 1 failed, 103 deselected in 1.91s  [test_chain_hist_static_ordering_the_wait_and_no_base_decision]
+RED   chain_v8f_hist.sh: a seed-0 STOP is not a committed end -> [-k group] 1 failed, 103 deselected in 1.87s  [test_chain_hist_static_ordering_the_wait_and_no_base_decision]
+RED   chain_v8f_hist.sh: the final stage reads seed 0 only -> [-k group] 1 failed, 103 deselected in 1.93s  [test_chain_hist_static_ordering_the_wait_and_no_base_decision]
+RED   chain_v8f_hist.sh: the all-latcons eval is not pulled -> [-k group] 1 failed, 103 deselected in 1.88s  [test_chain_hist_static_ordering_the_wait_and_no_base_decision]
+GREEN chain_v8f_hist.sh: the busy marker is left behind -> [whole file] 108 passed, 1 warning in 59.08s
+RED   chain_v8f_hist.sh: gate assertion off: the parameter total -> [-k group] 1 failed, 2 passed, 103 deselected in 6.17s  [test_chain_hist_gate_assertions_pass_the_h_gate_and_refuse_every_way_it_can_be_wrong]
+RED   chain_v8f_hist.sh: gate assertion: the time table row is 128 wide -> [-k group] 1 failed, 2 passed, 103 deselected in 2.81s  [test_chain_hist_gate_assertions_pass_the_h_gate_and_refuse_every_way_it_can_be_wrong]
+RED   chain_v8f_hist.sh: gate assertion off: no --hmax in the printed line -> [-k group] 1 failed, 2 passed, 103 deselected in 5.77s  [test_chain_hist_gate_assertions_pass_the_h_gate_and_refuse_every_way_it_can_be_wrong]
+RED   chain_v8f_hist.sh: gate assertion off: the window set is B's -> [-k group] 1 failed, 2 passed, 103 deselected in 5.06s  [test_chain_hist_gate_assertions_pass_the_h_gate_and_refuse_every_way_it_can_be_wrong]
+RED   chain_v8f_hist.sh: gate assertion off: B's clip list -> [-k group] 1 failed, 2 passed, 103 deselected in 3.40s  [test_chain_hist_gate_assertions_pass_the_h_gate_and_refuse_every_way_it_can_be_wrong]
+RED   chain_v8f_hist.sh: gate assertion off: the clip counts -> [-k group] 1 failed, 2 passed, 103 deselected in 3.90s  [test_chain_hist_gate_assertions_pass_the_h_gate_and_refuse_every_way_it_can_be_wrong]
+RED   chain_v8f_hist.sh: gate assertion off: the levers -> [-k group] 1 failed, 2 passed, 103 deselected in 4.53s  [test_chain_hist_gate_assertions_pass_the_h_gate_and_refuse_every_way_it_can_be_wrong]
+RED   chain_v8f_hist.sh: gate assertion off: the weights besides w_tac / w_cons -> [-k group] 1 failed, 2 passed, 103 deselected in 5.73s  [test_chain_hist_gate_assertions_pass_the_h_gate_and_refuse_every_way_it_can_be_wrong]
+RED   chain_v8f_hist.sh: gate assertion off: wm equals B's -> [-k group] 1 failed, 2 passed, 103 deselected in 5.55s  [test_chain_hist_gate_assertions_pass_the_h_gate_and_refuse_every_way_it_can_be_wrong]
+RED   chain_v8f_hist.sh: gate assertion off: declared_vs_built -> [-k group] 1 failed, 2 passed, 103 deselected in 2.93s  [test_chain_hist_gate_assertions_pass_the_h_gate_and_refuse_every_way_it_can_be_wrong]
+RED   chain_v8f_hist.sh: the gate assertion's exit code is lost -> [-k group] 1 failed, 2 passed, 103 deselected in 3.13s  [test_chain_hist_gate_assertions_pass_the_h_gate_and_refuse_every_way_it_can_be_wrong]
+AFTER rc=0 108 passed, 1 warning in 53.88s
+21 / 22 mutations RED; SURVIVORS: ['the busy marker is left behind']
+
+----- chain part 2/2 (21): m3_chain2.out
+anchors OK: 21 mutants, every anchor occurs exactly once
+BASELINE rc=0 108 passed, 1 warning in 64.28s (0:01:04)
+RED   chain_v8f_hist.sh: the dry run omits trainhist 1 -> [-k group] 1 failed, 1 passed, 103 deselected in 3.90s  [test_chain_hist_syntax_and_dry_run_prints_the_queue_lines]
+RED   chain_v8f_hist.sh: the STOP marker is renamed -> [-k group] 1 failed, 4 passed, 103 deselected in 6.57s  [test_chain_hist_load_bearing_lines_are_present]
+RED   chain_v8f_hist.sh: the busy marker is not honoured -> [-k group] 1 failed, 4 passed, 103 deselected in 6.11s  [test_chain_hist_load_bearing_lines_are_present]
+RED   chain_v8f_hist.sh: the predecessor is the wrong chain -> [-k group] 1 failed, 103 deselected in 1.92s  [test_chain_hist_static_ordering_the_wait_and_no_base_decision]
+RED   chain_v8f_hist.sh: a stopped predecessor is waited for forever -> [-k group] 1 failed, 4 passed, 103 deselected in 6.69s  [test_chain_hist_load_bearing_lines_are_present]
+RED   chain_v8f_hist.sh: the train job is not trainhist -> [-k group] 1 failed, 103 deselected in 1.93s  [test_chain_hist_static_ordering_the_wait_and_no_base_decision]
+RED   chain_v8f_hist.sh: the gate job is not gatehist -> [-k group] 1 failed, 103 deselected in 1.88s  [test_chain_hist_static_ordering_the_wait_and_no_base_decision]
+RED   chain_v8f_hist.sh: seed 1 is never trained -> [-k group] 1 failed, 103 deselected in 1.88s  [test_chain_hist_static_ordering_the_wait_and_no_base_decision]
+RED   chain_v8f_hist.sh: the checkpoint is not pulled -> [-k group] 1 failed, 103 deselected in 1.86s  [test_chain_hist_static_ordering_the_wait_and_no_base_decision]
+RED   chain_v8f_hist.sh: the P10 reproduction guard file is not staged -> [-k group] 1 failed, 4 passed, 103 deselected in 6.16s  [test_chain_hist_load_bearing_lines_are_present]
+RED   chain_v8f_hist.sh: the guard's markers are not verified -> [-k group] 1 failed, 103 deselected in 1.93s  [test_chain_hist_static_ordering_the_wait_and_no_base_decision]
+RED   chain_v8f_hist.sh: gate assertion off: the per-group delta -> [-k group] 1 failed, 2 passed, 103 deselected in 6.14s  [test_chain_hist_gate_assertions_pass_the_h_gate_and_refuse_every_way_it_can_be_wrong]
+RED   chain_v8f_hist.sh: gate assertion off: --hist 10 exactly once in the printed line -> [-k group] 1 failed, 2 passed, 103 deselected in 5.72s  [test_chain_hist_gate_assertions_pass_the_h_gate_and_refuse_every_way_it_can_be_wrong]
+GREEN chain_v8f_hist.sh: gate assertion off: the built time table has 10 rows -> [whole file] 108 passed, 1 warning in 63.11s (0:01:03)
+RED   chain_v8f_hist.sh: gate assertion off: the step count -> [-k group] 1 failed, 2 passed, 103 deselected in 7.66s  [test_chain_hist_gate_assertions_pass_the_h_gate_and_refuse_every_way_it_can_be_wrong]
+RED   chain_v8f_hist.sh: gate assertion off: the holdout -> [-k group] 1 failed, 2 passed, 103 deselected in 3.72s  [test_chain_hist_gate_assertions_pass_the_h_gate_and_refuse_every_way_it_can_be_wrong]
+RED   chain_v8f_hist.sh: gate assertion off: kin_mode -> [-k group] 1 failed, 2 passed, 103 deselected in 4.33s  [test_chain_hist_gate_assertions_pass_the_h_gate_and_refuse_every_way_it_can_be_wrong]
+RED   chain_v8f_hist.sh: gate assertion off: B's p_gt schedule -> [-k group] 1 failed, 2 passed, 103 deselected in 4.35s  [test_chain_hist_gate_assertions_pass_the_h_gate_and_refuse_every_way_it_can_be_wrong]
+RED   chain_v8f_hist.sh: gate assertion off: w_tac / w_cons -> [-k group] 1 failed, 2 passed, 103 deselected in 4.74s  [test_chain_hist_gate_assertions_pass_the_h_gate_and_refuse_every_way_it_can_be_wrong]
+RED   chain_v8f_hist.sh: gate assertion off: the live check -> [-k group] 1 failed, 2 passed, 103 deselected in 3.95s  [test_chain_hist_gate_assertions_pass_the_h_gate_and_refuse_every_way_it_can_be_wrong]
+RED   chain_v8f_hist.sh: gate assertion off: the recorded pipeline sizing -> [-k group] 1 failed, 2 passed, 103 deselected in 3.69s  [test_chain_hist_gate_assertions_pass_the_h_gate_and_refuse_every_way_it_can_be_wrong]
+AFTER rc=0 108 passed, 1 warning in 63.58s (0:01:03)
+20 / 21 mutations RED; SURVIVORS: ['gate assertion off: the built time table has 10 rows']
+
+======================================================================================================================================================
+ROUND 2 (the FINAL tree: the 8 survivors' fixes landed - 5 test strengthenings, 1 new test file section, the reader's `Refusal -> rc 2` clause - re-run with `--only`; the 10-rows gate line is a REDUNDANT guard and is not run):
+======================================================================================================================================================
+----- reader survivors + the new Refusal mutant (6): r2_reader.out
+anchors OK: 6 mutants, every anchor occurs exactly once; 1 redundant guard(s) not run: ['gate assertion off: the built time table has 10 rows (redundant with the per-group delta)']
+BASELINE rc=0 113 passed, 1 warning in 63.73s (0:01:03)
+RED   v8f_hist_read.py: check_b_side: B's two seeds may disagree about hmax -> [-k group] 1 failed, 78 passed, 32 deselected, 1 warning in 41.85s  [test_check_inputs_refuses_b_seeds_that_disagree_about_hmax]
+RED   v8f_hist_read.py: evals: H and B may sit on different eval grids -> [-k group] 1 failed, 61 passed, 32 deselected, 1 warning in 40.24s  [test_reader_refuses_rc2_with_the_reason[h evals (both seeds) are on another eval grid than B's]]
+RED   v8f_hist_read.py: an odd frame is read as a cache step -> [whole file] 1 failed, 94 passed, 1 warning in 50.62s  [test_window_t_is_the_cache_step_and_refuses_an_odd_frame]
+RED   v8f_hist_read.py: a slot is present when the window has a row, whatever its GT value -> [-k group] 1 failed, 80 passed, 32 deselected, 1 warning in 42.56s  [test_reader_reports_parameters_pipeline_windows_groups_slots_and_the_oracle_beside_the_verdict]
+RED   v8f_hist_read.py: an inherited Refusal (the lead-block join) escapes as a traceback, not rc 2 -> [-k group] 1 failed, 77 passed, 32 deselected, 1 warning in 38.34s  [test_reader_turns_an_inherited_refusal_into_rc2_not_a_traceback]
+RED   v8f_hist_read.py: the identity control is not run in the real read -> [-k group] 1 failed, 80 passed, 32 deselected, 1 warning in 36.53s  [test_reader_reports_parameters_pipeline_windows_groups_slots_and_the_oracle_beside_the_verdict]
+AFTER rc=0 113 passed, 1 warning in 55.12s
+6 / 6 mutations RED
+
+----- reach survivor (1): r2_reach.out
+anchors OK: 1 mutants, every anchor occurs exactly once; 1 redundant guard(s) not run: ['gate assertion off: the built time table has 10 rows (redundant with the per-group delta)']
+BASELINE rc=0 113 passed, 1 warning in 62.48s (0:01:02)
+RED   v8f_mini_train.py: the dataset clamps held ages for 4 frames, not 10 -> [whole file] 1 failed, 9 passed, 1 warning in 11.08s  [test_trainer_argv_hist_is_the_number_of_frames_every_reader_receives[10]]
+AFTER rc=0 113 passed, 1 warning in 57.88s
+1 / 1 mutations RED
+
+----- chain survivor (1): r2_chain.out
+anchors OK: 1 mutants, every anchor occurs exactly once; 1 redundant guard(s) not run: ['gate assertion off: the built time table has 10 rows (redundant with the per-group delta)']
+BASELINE rc=0 113 passed, 1 warning in 59.23s
+RED   chain_v8f_hist.sh: the busy marker is left behind -> [-k group] 1 failed, 4 passed, 107 deselected in 6.66s  [test_chain_hist_finish_releases_the_box_before_it_announces_done]
+AFTER rc=0 113 passed, 1 warning in 58.81s
+1 / 1 mutations RED
+
+======================================================================================================================================================
+TALLY: round 1 = 120 / 128 RED (survivors: dataset clamp [trainer], B's two seeds may disagree about hmax, H/B eval grids, identity control not run in the real read, an odd frame as a cache step,
+       a slot is present whenever the window has a row, the busy marker left behind, the gate's 10-rows line). Round 2 = 7 / 7 RED after the fixes + the new Refusal mutant RED (8 / 8);
+       the gate's `4 + delta // 256 == 10` line is a REDUNDANT guard (implied by the per-group delta assertion above it) and is listed in EQUIVALENT, not run, not counted.
+FINAL: 128 / 128 mutants RED on the final tree (127 from round 1 incl. the 7 re-run + 1 new), 1 redundant guard not run. Baseline and AFTER runs green at 108 (round 1) / 113 (round 2) tests.

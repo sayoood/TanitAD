@@ -1,0 +1,30 @@
+A40 READ-ONLY CHECKPOINT PULL -- HARM PROOF
+===========================================
+pod   : tanitad-a40 (= tanitad-refcv3), 69.30.85.211:22001, NVIDIA A40
+run   : refcv5-ddim-b1-v72-40k, TRAINING (D-REFCV5-LAUNCH-1, ETA ~2026-09-08 06:20 UTC)
+file  : /workspace/experiments/refcv4b-b1-v72-40k/ckpt_40284_FINAL.pt
+
+md5, BOTH ENDS
+  pod   99b573e8277d94a5e3bfbf630cb4d751   1285301425 B
+  local 99b573e8277d94a5e3bfbf630cb4d751   1285301425 B   -> MATCH
+  registry MODEL_REGISTRY.md 4.6 publishes 99b573e8277d94a5e3bfbf630cb4d751 -> MATCH
+  config.json md5 58ad809aaf241729c1695bec2ab30d8e, byte-identical to the one the
+  step-9,500 bank used.
+
+transfer window: 2026-09-06 12:05:51Z -> 12:07:36Z (105 s, ~12.2 MB/s), scp over the
+DIRECT port. Read-only: nothing written to any pod path, no process killed, no git fetch,
+every command ssh -n.
+
+STEP RATE (this trainer logs no step_s; elapsed_s is CUMULATIVE -> difference two rows.
+The eval at every 500th step is charged into the window AFTER the boundary, so windows
+starting at a multiple of 500 are EXCLUDED: 500->550 reads 5.1960, 1000->1050 5.0240,
+1500->1550 5.1820. Including them gives 4.2495 s/step and a 7.9 % regression that never
+happened.)
+
+  PRE     steps   50 -> 1650   n=29   mean 3.9375   min 3.9240   max 3.9560
+  DURING  steps 1650 -> 1700   n= 1        3.9220   (the window containing the copy)
+  POST    steps 1700 -> 2250   n=10   mean 3.9450   min 3.9300   max 3.9580
+
+=> the DURING window is the FASTEST of the entire run: 0.0155 s/step BELOW the pre-copy
+   mean and below its minimum. POST sits inside the PRE range (+0.19 % on the mean).
+   NO MEASURABLE DEGRADATION.

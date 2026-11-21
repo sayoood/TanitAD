@@ -1,0 +1,68 @@
+# feas_audit.py re-run 2026-09-06 by the register-repair agent, ZERO GPU.
+# Tool: the 2026-09-05 package's own raw/feas_audit.py (UNMODIFIED), FEAS_VMIN=2.
+# Dumps: C:/Users/Admin/refav1_margin/p4out/dump_{best,best_seed1,combined,combined_seed1,bestlad,cos_wk,wk15}
+#
+# KNOWN-VALUE CONTROLS, both halves printed in EVERY block, never one:
+#   'g' (the recorded human path) MUST read kamm_over 0.0000 -- a real vehicle's motion is
+#      feasible by construction; if it is not, the dt/origin handling is wrong and nothing
+#      below is about the planner.
+#   'ha0_ext' / 'ha' / 'ol' MUST read NON-ZERO.
+# INSTRUMENT CHECK: the 'best' block must reproduce the banked raw/panel_best.txt digit for
+#   digit (kamm_over 0.0000, max|a| 1.500, max|kappa| 0.0800, peak_g 0.082/0.332). It does.
+# WHY bestlad AND cos_wk ARE HERE: the VACUITY comparison and the zero must live in ONE
+#   generation of ONE table -- D-REFAV1-CG-ZEROVIOL-SCOPE's root cause was a claim built
+#   from two generations of a regenerated artifact.
+
+constants: A_MAX 4.000  KAPPA_MAX 0.200  MU_KAMM 0.700  dt used 0.20 s
+
+==== best   (v0 >= 2.0 m/s)
+   g        n=27 envelope_rate 0.0000  kamm_over 0.0000  max|a| 3.016  max|kappa| 0.1701  peak_g mean 0.178 max 0.373 <- CONTROL, must be ~0
+   cl       n=27 envelope_rate 0.0000  kamm_over 0.0000  max|a| 1.500  max|kappa| 0.0800  peak_g mean 0.082 max 0.332
+   ha0_ext  n=27 envelope_rate 0.1852  kamm_over 0.1852  max|a| 2.310  max|kappa| 0.7672  peak_g mean 0.316 max 1.436
+   ha       n=27 envelope_rate 0.1481  kamm_over 0.1481  max|a| 2.310  max|kappa| 0.6211  peak_g mean 0.316 max 1.595
+   ol       n=27 envelope_rate 0.2963  kamm_over 0.1111  max|a| 2.973  max|kappa| 0.4400  peak_g mean 0.343 max 1.016
+
+==== best_seed1   (v0 >= 2.0 m/s)
+   g        n=27 envelope_rate 0.0000  kamm_over 0.0000  max|a| 3.016  max|kappa| 0.1701  peak_g mean 0.178 max 0.373 <- CONTROL, must be ~0
+   cl       n=27 envelope_rate 0.0000  kamm_over 0.0000  max|a| 1.500  max|kappa| 0.0800  peak_g mean 0.081 max 0.332
+   ha0_ext  n=27 envelope_rate 0.1852  kamm_over 0.1852  max|a| 2.310  max|kappa| 0.7672  peak_g mean 0.316 max 1.436
+   ha       n=27 envelope_rate 0.1481  kamm_over 0.1481  max|a| 2.310  max|kappa| 0.6211  peak_g mean 0.316 max 1.595
+   ol       n=27 envelope_rate 0.2963  kamm_over 0.1111  max|a| 2.973  max|kappa| 0.4400  peak_g mean 0.343 max 1.016
+
+==== combined   (v0 >= 2.0 m/s)
+   g        n=27 envelope_rate 0.0000  kamm_over 0.0000  max|a| 3.016  max|kappa| 0.1701  peak_g mean 0.178 max 0.373 <- CONTROL, must be ~0
+   cl       n=27 envelope_rate 0.0000  kamm_over 0.0000  max|a| 1.165  max|kappa| 0.1505  peak_g mean 0.224 max 0.618
+   ha0_ext  n=27 envelope_rate 0.1852  kamm_over 0.1852  max|a| 2.310  max|kappa| 0.7672  peak_g mean 0.316 max 1.436
+   ha       n=27 envelope_rate 0.1481  kamm_over 0.1481  max|a| 2.310  max|kappa| 0.6211  peak_g mean 0.316 max 1.595
+   ol       n=27 envelope_rate 0.2963  kamm_over 0.1111  max|a| 2.973  max|kappa| 0.4400  peak_g mean 0.343 max 1.016
+
+==== combined_seed1   (v0 >= 2.0 m/s)
+   g        n=27 envelope_rate 0.0000  kamm_over 0.0000  max|a| 3.016  max|kappa| 0.1701  peak_g mean 0.178 max 0.373 <- CONTROL, must be ~0
+   cl       n=27 envelope_rate 0.0000  kamm_over 0.0741  max|a| 1.072  max|kappa| 0.1672  peak_g mean 0.271 max 0.702
+   ha0_ext  n=27 envelope_rate 0.1852  kamm_over 0.1852  max|a| 2.310  max|kappa| 0.7672  peak_g mean 0.316 max 1.436
+   ha       n=27 envelope_rate 0.1481  kamm_over 0.1481  max|a| 2.310  max|kappa| 0.6211  peak_g mean 0.316 max 1.595
+   ol       n=27 envelope_rate 0.2963  kamm_over 0.1111  max|a| 2.973  max|kappa| 0.4400  peak_g mean 0.343 max 1.016
+
+==== bestlad   (v0 >= 2.0 m/s)
+   g        n=27 envelope_rate 0.0000  kamm_over 0.0000  max|a| 3.016  max|kappa| 0.1701  peak_g mean 0.178 max 0.373 <- CONTROL, must be ~0
+   cl       n=27 envelope_rate 0.0000  kamm_over 0.0000  max|a| 1.500  max|kappa| 0.0049  peak_g mean 0.036 max 0.153
+   ha0_ext  n=27 envelope_rate 0.1852  kamm_over 0.1852  max|a| 2.310  max|kappa| 0.7672  peak_g mean 0.316 max 1.436
+   ha       n=27 envelope_rate 0.1481  kamm_over 0.1481  max|a| 2.310  max|kappa| 0.6211  peak_g mean 0.316 max 1.595
+   ol       n=27 envelope_rate 0.2963  kamm_over 0.1111  max|a| 2.973  max|kappa| 0.4400  peak_g mean 0.343 max 1.016
+
+==== cos_wk   (v0 >= 2.0 m/s)
+   g        n=27 envelope_rate 0.0000  kamm_over 0.0000  max|a| 3.016  max|kappa| 0.1701  peak_g mean 0.178 max 0.373 <- CONTROL, must be ~0
+   cl       n=27 envelope_rate 0.0000  kamm_over 0.0000  max|a| 0.000  max|kappa| 0.0000  peak_g mean 0.000 max 0.000
+   ha0_ext  n=27 envelope_rate 0.1852  kamm_over 0.1852  max|a| 2.310  max|kappa| 0.7672  peak_g mean 0.316 max 1.436
+   ha       n=27 envelope_rate 0.1481  kamm_over 0.1481  max|a| 2.310  max|kappa| 0.6211  peak_g mean 0.316 max 1.595
+   ol       n=27 envelope_rate 0.2963  kamm_over 0.1111  max|a| 2.973  max|kappa| 0.4400  peak_g mean 0.343 max 1.016
+
+==== wk15   (v0 >= 2.0 m/s)
+   g        n=27 envelope_rate 0.0000  kamm_over 0.0000  max|a| 3.016  max|kappa| 0.1701  peak_g mean 0.178 max 0.373 <- CONTROL, must be ~0
+   cl       n=27 envelope_rate 0.0000  kamm_over 0.0000  max|a| 1.500  max|kappa| 0.0800  peak_g mean 0.084 max 0.332
+   ha0_ext  n=27 envelope_rate 0.1852  kamm_over 0.1852  max|a| 2.310  max|kappa| 0.7672  peak_g mean 0.316 max 1.436
+   ha       n=27 envelope_rate 0.1481  kamm_over 0.1481  max|a| 2.310  max|kappa| 0.6211  peak_g mean 0.316 max 1.595
+   ol       n=27 envelope_rate 0.2963  kamm_over 0.1111  max|a| 2.973  max|kappa| 0.4400  peak_g mean 0.343 max 1.016
+
+
+<!-- ARTIFACT-COMPLETE: FEAS_AUDIT_BEST_SEEDS -->

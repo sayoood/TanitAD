@@ -1,0 +1,75 @@
+# PUBLISHED-CODE extract - E2E-AD/AD-MLP @ 4b93ba085ee47474152f282177865796ea577fc0
+# path: deps/stp3/evaluate_for_mlp.py
+# git blob sha1 of the fetched file: d06e20a62f23fcddc6c115c1c26b4b247038a874 (5312 B); verified against the repo tree listing at the pinned commit: MATCH
+# fetched 2026-09-19T13:46:02Z from raw.githubusercontent.com (read-only source text; excerpts only, attribution retained)
+
+## lines 53-120: ST-P3 reduction on filter_token.pkl
+   53  def evaluate(final_traj_path=None, checkpoint_path=None, dataroot=None, online=False):
+   54      future_second = 3
+   55      n_present = 3
+   56      #'/ssd2/djh/env/mask_for_occupancy/stp3_val/stp3_traj.pkl'
+   57      pre_traj = open(final_traj_path,'rb')
+   58      final_traj = pickle.load(pre_traj)
+   59      device = torch.device('cuda:1' if online else 'cpu')
+   60      metric_planning_val = []
+   61      for i in range(future_second):
+   62          metric_planning_val.append(PlanningMetric(2*(i+1)).to(device))
+   63  
+   64      if online == True:
+   65          trainer = TrainingModule.load_from_checkpoint(checkpoint_path, strict=True)
+   66          trainer.eval()
+   67          trainer.to(device)
+   68          model = trainer.model
+   69          cfg = model.cfg
+   70          cfg.GPUS = "[1]"
+   71          cfg.BATCHSIZE = 1
+   72          cfg.LIFT.GT_DEPTH = False
+   73          cfg.DATASET.DATAROOT = dataroot
+   74          cfg.DATASET.MAP_FOLDER = dataroot
+   75          dataroot = cfg.DATASET.DATAROOT
+   76  
+   77          nworkers = cfg.N_WORKERS
+   78          nusc = NuScenes(version='v1.0-{}'.format(cfg.DATASET.VERSION), dataroot=dataroot, verbose=False)
+   79          valdata = FuturePredictionDataset(nusc, 1, cfg)
+   80  
+   81          valloader = torch.utils.data.DataLoader(
+   82              valdata, batch_size=cfg.BATCHSIZE, shuffle=False, num_workers=nworkers, pin_memory=True, drop_last=False
+   83          )
+   84          for index, batch in enumerate(tqdm(valloader)):
+   85              preprocess_batch(batch, device)
+   86              labels = prepare_future_plan_labels(batch)
+   87              occupancy = torch.logical_or(labels['segmentation'][:, n_present:].squeeze(2),
+   88                                           labels['pedestrian'][:, n_present:].squeeze(2))
+   89              for i in range(future_second):
+   90                  cur_time = (i+1)*2
+   91                  final = torch.from_numpy(final_traj[batch["token"][0]])
+   92                  metric_planning_val[i](final[:,:cur_time].to(device), labels['gt_trajectory'][:,1:cur_time+1].to(device), occupancy[:,:cur_time].to(device))
+   93  
+   94      else:
+   95          # 'stp3_val/segmentation_pedestrian_.pkl
+   96          gt_traj = open('stp3_val/stp3_traj_gt.pkl','rb')
+   97          gt_traj_traj = pickle.load(gt_traj)
+   98  
+   99          gt_occup = open('stp3_val/stp3_occupancy.pkl','rb')
+  100          gt_traj_occup = pickle.load(gt_occup)
+  101  
+  102          token = open('stp3_val/filter_token.pkl','rb')
+  103          token_filter = pickle.load(token)
+  104          
+  105          for token in tqdm(token_filter):
+  106              final = torch.from_numpy(final_traj[token])
+  107              gt_trajectory =  torch.tensor(gt_traj_traj[token]['gt_trajectory']).unsqueeze(0)
+  108              occupancy = gt_traj_occup[token]
+  109              for i in range(future_second):
+  110                  cur_time = (i+1)*2
+  111                  metric_planning_val[i](final[:,:cur_time], gt_trajectory[:,1:cur_time+1], occupancy[:,:cur_time])
+  112  
+  113      
+  114      results = {}
+  115      for i in range(future_second):
+  116          scores = metric_planning_val[i].compute()
+  117          for key, value in scores.items():
+  118              results['plan_'+key+'_{}s'.format(i+1)]=value.mean()
+  119      for key, value in results.items():
+  120          print(f'{key} : {value.item()}')
+

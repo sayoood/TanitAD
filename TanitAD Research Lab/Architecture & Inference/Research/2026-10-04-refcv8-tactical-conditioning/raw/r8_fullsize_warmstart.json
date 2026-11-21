@@ -1,0 +1,121 @@
+{
+ "what": "refcv8 full-size warm start, zero GPU (dev box CPU), MEASURED",
+ "ckpt": "D:\\refcv7_eval_kit\\ckpt\\ckpt_50400.pt",
+ "variants": {
+  "A_seams_no_alloc": {
+   "missing_from_loader": 28,
+   "unexpected_from_loader": 0,
+   "all_missing_are_refcv8_seams": true,
+   "warm_start_from": {
+    "path": "D:\\refcv7_eval_kit\\ckpt\\ckpt_50400.pt",
+    "md5": "b418d0fc4a92a6848c246a6a7c50207b",
+    "source_step": 50400,
+    "n_loaded": 1131,
+    "n_new_refcv8_keys": 28,
+    "optimizer": "fresh (not loaded)"
+   },
+   "dvb_mismatches": [],
+   "r8_n_params": 122513,
+   "eval_v9_join": {
+    "n_windows": 23772,
+    "n_joined": 23772,
+    "n_clips": 139,
+    "n_tactical_excluded_clips": 3,
+    "key": "(sid, k = t + w - 1 + raw_offset), now_s checked to 1e-6 s"
+   },
+   "windows": [
+    {
+     "window": 0,
+     "traj_equal": true,
+     "sel_idx_equal": true,
+     "base_fan_equal": true,
+     "base_score_max_abs_diff": 0.0
+    },
+    {
+     "window": 7924,
+     "traj_equal": true,
+     "sel_idx_equal": true,
+     "base_fan_equal": true,
+     "base_score_max_abs_diff": 0.0
+    },
+    {
+     "window": 15847,
+     "traj_equal": true,
+     "sel_idx_equal": true,
+     "base_fan_equal": true,
+     "base_score_max_abs_diff": 0.0
+    },
+    {
+     "window": 23771,
+     "traj_equal": true,
+     "sel_idx_equal": true,
+     "base_fan_equal": true,
+     "base_score_max_abs_diff": 0.0
+    }
+   ],
+   "identity_PASS": true,
+   "criterion": "bit-identical",
+   "wall_s": 968.3
+  },
+  "B_alloc32_emit_off": {
+   "missing_from_loader": 28,
+   "unexpected_from_loader": 0,
+   "all_missing_are_refcv8_seams": true,
+   "warm_start_from": {
+    "path": "D:\\refcv7_eval_kit\\ckpt\\ckpt_50400.pt",
+    "md5": "b418d0fc4a92a6848c246a6a7c50207b",
+    "source_step": 50400,
+    "n_loaded": 1131,
+    "n_new_refcv8_keys": 28,
+    "optimizer": "fresh (not loaded)"
+   },
+   "dvb_mismatches": [],
+   "r8_n_params": 122513,
+   "eval_v9_join": {
+    "n_windows": 23772,
+    "n_joined": 23772,
+    "n_clips": 139,
+    "n_tactical_excluded_clips": 3,
+    "key": "(sid, k = t + w - 1 + raw_offset), now_s checked to 1e-6 s"
+   },
+   "windows": [
+    {
+     "window": 0,
+     "traj_equal": false,
+     "sel_idx_equal": true,
+     "base_fan_equal": false,
+     "base_score_max_abs_diff": 4.76837158203125e-06
+    },
+    {
+     "window": 7924,
+     "traj_equal": false,
+     "sel_idx_equal": true,
+     "base_fan_equal": false,
+     "base_score_max_abs_diff": 5.7220458984375e-06
+    },
+    {
+     "window": 15847,
+     "traj_equal": false,
+     "sel_idx_equal": true,
+     "base_fan_equal": false,
+     "base_score_max_abs_diff": 2.86102294921875e-06
+    },
+    {
+     "window": 23771,
+     "traj_equal": false,
+     "sel_idx_equal": true,
+     "base_fan_equal": false,
+     "base_score_max_abs_diff": 3.814697265625e-06
+    }
+   ],
+   "identity_PASS": false,
+   "criterion": "plan + base fan bit-identical, base scores <= 1e-5",
+   "wall_s": 983.5
+  }
+ },
+ "refcv7": {
+  "step": 50400,
+  "dvb": []
+ },
+ "wall_s": 1967.4
+}

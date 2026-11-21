@@ -1,0 +1,33 @@
+# PUBLISHED-CODE extract - nutonomy/nuscenes-devkit @ b40adc467b919192899405d9b77871afee8efa07
+# path: python-sdk/nuscenes/can_bus/can_bus_api.py
+# git blob sha1 of the fetched file: 8b13e5a9b2d79423fa59569a2b565631d816b860 (11573 B); verified against the GitHub contents API: MATCH
+# fetched 2026-09-19T13:46:02Z from raw.githubusercontent.com (read-only source text; excerpts only, attribution retained)
+
+## lines 28-53: CAN dir required; blacklists hard-coded
+   28          :param max_misalignment: Maximum distance in m that any pose is allowed to be away from the route.
+   29          """
+   30          # Check that folder exists.
+   31          self.can_dir = os.path.join(dataroot, 'can_bus')
+   32          if not os.path.isdir(self.can_dir):
+   33              raise Exception('Error: CAN bus directory not found: %s. Please download it from '
+   34                              'https://www.nuscenes.org/download' % self.can_dir)
+   35  
+   36          # Define blacklist for scenes where route and ego pose are not aligned.
+   37          if max_misalignment == 5.0:
+   38              # Default settings are hard-coded for performance reasons.
+   39              self.route_blacklist = [
+   40                  71, 73, 74, 75, 76, 85, 100, 101, 106, 107, 108, 109, 110, 112, 113, 114, 115, 116, 117, 118, 119,
+   41                  261, 262, 263, 264, 276, 302, 303, 304, 305, 306, 334, 388, 389, 390, 436, 499, 500, 501, 502, 504,
+   42                  505, 506, 507, 508, 509, 510, 511, 512, 513, 514, 515, 517, 518, 547, 548, 549, 550, 551, 556, 557,
+   43                  558, 559, 560, 561, 562, 563, 564, 565, 730, 731, 733, 734, 735, 736, 737, 738, 778, 780, 781, 782,
+   44                  783, 784, 904, 905, 1073, 1074
+   45              ]
+   46          else:
+   47              misaligned = self.list_misaligned_routes()
+   48              self.route_blacklist = [int(s[-4:]) for s in misaligned]
+   49  
+   50          # Define blacklist for scenes without CAN bus data.
+   51          self.can_blacklist = [
+   52              161, 162, 163, 164, 165, 166, 167, 168, 170, 171, 172, 173, 174, 175, 176, 309, 310, 311, 312, 313, 314
+   53          ]
+

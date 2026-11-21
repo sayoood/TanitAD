@@ -1,0 +1,332 @@
+{
+ "what": "label-free covariates of navtrain tokens vs all candidates of the frozen rule, on navtrain logs",
+ "n_logs": 214,
+ "n_candidates": 93034,
+ "n_navtrain": 18122,
+ "evidence": "MEASURED (read-only DB: ego_pose, scenario_tag; no PDM score)",
+ "quantiles": {
+  "speed_mps": {
+   "navtrain": {
+    "p5": 0.311,
+    "p25": 2.927,
+    "p50": 5.419,
+    "p75": 7.826,
+    "p95": 10.571,
+    "mean": 5.409
+   },
+   "all_candidates": {
+    "p5": 0.0,
+    "p25": 0.004,
+    "p50": 4.525,
+    "p75": 8.147,
+    "p95": 11.596,
+    "mean": 4.677
+   },
+   "non_navtrain_candidates": {
+    "p5": 0.0,
+    "p25": 0.002,
+    "p50": 4.038,
+    "p75": 8.272,
+    "p95": 11.739,
+    "mean": 4.5
+   }
+  },
+  "disp_4s_m": {
+   "navtrain": {
+    "p5": 4.419,
+    "p25": 12.439,
+    "p50": 20.034,
+    "p75": 29.739,
+    "p95": 40.623,
+    "mean": 21.277
+   },
+   "all_candidates": {
+    "p5": 0.0,
+    "p25": 0.115,
+    "p50": 17.126,
+    "p75": 31.349,
+    "p95": 45.162,
+    "mean": 18.12
+   },
+   "non_navtrain_candidates": {
+    "p5": 0.0,
+    "p25": 0.005,
+    "p50": 15.24,
+    "p75": 31.942,
+    "p95": 45.758,
+    "mean": 17.356
+   }
+  },
+  "abs_dyaw_4s_deg": {
+   "navtrain": {
+    "p5": 0.107,
+    "p25": 1.445,
+    "p50": 7.888,
+    "p75": 27.285,
+    "p95": 64.147,
+    "mean": 17.498
+   },
+   "all_candidates": {
+    "p5": 0.001,
+    "p25": 0.011,
+    "p50": 0.564,
+    "p75": 4.33,
+    "p95": 45.711,
+    "mean": 7.045
+   },
+   "non_navtrain_candidates": {
+    "p5": 0.001,
+    "p25": 0.004,
+    "p50": 0.329,
+    "p75": 1.89,
+    "p95": 30.624,
+    "mean": 4.516
+   }
+  },
+  "abs_acc_x": {
+   "navtrain": {
+    "p5": 0.037,
+    "p25": 0.189,
+    "p50": 0.418,
+    "p75": 0.835,
+    "p95": 1.466,
+    "mean": 0.553
+   },
+   "all_candidates": {
+    "p5": 0.002,
+    "p25": 0.022,
+    "p50": 0.198,
+    "p75": 0.55,
+    "p95": 1.318,
+    "mean": 0.365
+   },
+   "non_navtrain_candidates": {
+    "p5": 0.002,
+    "p25": 0.014,
+    "p50": 0.148,
+    "p75": 0.457,
+    "p95": 1.252,
+    "mean": 0.32
+   }
+  }
+ },
+ "shares": {
+  "stationary_speed_lt_0.5": {
+   "navtrain": 0.06345877938417394,
+   "all_candidates": 0.308371133134123,
+   "non_navtrain": 0.3676180051260145
+  },
+  "slow_speed_lt_2": {
+   "navtrain": 0.1817128352278998,
+   "all_candidates": 0.37048820861190535,
+   "non_navtrain": 0.41615495514737294
+  },
+  "progress_4s_lt_2m": {
+   "navtrain": 0.02306588676746496,
+   "all_candidates": 0.2932153836231915,
+   "non_navtrain": 0.3585673857325929
+  },
+  "turning_dyaw_gt_15deg": {
+   "navtrain": 0.3629842180774749,
+   "all_candidates": 0.13890620633316852,
+   "non_navtrain": 0.08469938060657839
+  }
+ },
+ "scenario_tag_share_at_token": {
+  "stationary": {
+   "navtrain": 0.043869330096015895,
+   "all_candidates": 0.28236988627813486
+  },
+  "on_intersection": {
+   "navtrain": 0.2081447963800905,
+   "all_candidates": 0.16018874819958295
+  },
+  "traversing_intersection": {
+   "navtrain": 0.16184747820328882,
+   "all_candidates": 0.117236709160092
+  },
+  "medium_magnitude_speed": {
+   "navtrain": 0.09132546076591988,
+   "all_candidates": 0.1013822903454651
+  },
+  "high_magnitude_speed": {
+   "navtrain": 0.04442114556892175,
+   "all_candidates": 0.09630887632478449
+  },
+  "on_traffic_light_intersection": {
+   "navtrain": 0.0880697494757753,
+   "all_candidates": 0.07978803448201732
+  },
+  "on_stopline_traffic_light": {
+   "navtrain": 0.023121068314755546,
+   "all_candidates": 0.07604746651761722
+  },
+  "traversing_traffic_light_intersection": {
+   "navtrain": 0.09987860059596071,
+   "all_candidates": 0.07589698389835974
+  },
+  "on_pickup_dropoff": {
+   "navtrain": 0.07438472574770996,
+   "all_candidates": 0.06385837435776168
+  },
+  "stationary_at_traffic_light_without_lead": {
+   "navtrain": 0.002152080344332855,
+   "all_candidates": 0.059515875916331666
+  },
+  "stationary_in_traffic": {
+   "navtrain": 0.0033108928374351618,
+   "all_candidates": 0.04773523658017499
+  },
+  "traversing_pickup_dropoff": {
+   "navtrain": 0.06312769010043041,
+   "all_candidates": 0.032525743276651545
+  },
+  "traversing_crosswalk": {
+   "navtrain": 0.042158702130007726,
+   "all_candidates": 0.02300234322935701
+  },
+  "on_stopline_stop_sign": {
+   "navtrain": 0.05247765147334731,
+   "all_candidates": 0.022120945030848937
+  },
+  "near_long_vehicle": {
+   "navtrain": 0.012526211234963029,
+   "all_candidates": 0.02136853193456156
+  },
+  "near_pedestrian_on_crosswalk": {
+   "navtrain": 0.010650038627083103,
+   "all_candidates": 0.019842208224950017
+  },
+  "following_lane_without_lead": {
+   "navtrain": 0.02626641651031895,
+   "all_candidates": 0.019251026506438507
+  },
+  "stationary_at_traffic_light_with_lead": {
+   "navtrain": 0.0011036309458117206,
+   "all_candidates": 0.014467828965754456
+  },
+  "on_stopline_crosswalk": {
+   "navtrain": 0.025217967111797815,
+   "all_candidates": 0.011576412924307243
+  },
+  "low_magnitude_speed": {
+   "navtrain": 0.015174925504911157,
+   "all_candidates": 0.011253950168755508
+  },
+  "near_multiple_vehicles": {
+   "navtrain": 0.00320052974285399,
+   "all_candidates": 0.009394414945073844
+  },
+  "near_trafficcone_on_driveable": {
+   "navtrain": 0.008442776735459663,
+   "all_candidates": 0.00812606143990369
+  },
+  "on_carpark": {
+   "navtrain": 0.00375234521575985,
+   "all_candidates": 0.007502633445837006
+  },
+  "on_all_way_stop_intersection": {
+   "navtrain": 0.010043041606886656,
+   "all_candidates": 0.006545993937700195
+  },
+  "near_pedestrian_at_pickup_dropoff": {
+   "navtrain": 0.0060699702019644634,
+   "all_candidates": 0.004525227336242664
+  }
+ },
+ "no_tag_share": {
+  "navtrain": 0.4494537026818232,
+  "all_candidates": 0.3034482017326999
+ },
+ "navtrain_density_per_log": {
+  "p5": 0.055707228719544664,
+  "median": 0.1890166376053473,
+  "p95": 0.42284090909090905,
+  "min": 0.020710059171597635,
+  "max": 0.5740740740740741
+ },
+ "auc_navtrain_vs_other_candidates_(5-fold_by_log)": {
+  "speed_only": 0.7331715793781489,
+  "disp_4s_only": 0.7671175926433592,
+  "dyaw_4s_only": 0.8031070637872757,
+  "speed+disp+dyaw+acc": 0.8785145239582675,
+  "all_plus_scenario_tags": 0.882809770829337
+ },
+ "screens": {
+  "none(uniform over candidates)": {
+   "share_of_candidates_kept": 1.0,
+   "navtrain_recall": 1.0,
+   "navtrain_share_of_kept": 0.19478900187028397,
+   "stationary_share_of_kept": 0.308371133134123,
+   "speed_quantiles_kept": {
+    "p5": 0.0,
+    "p25": 0.004,
+    "p50": 4.525,
+    "p75": 8.147,
+    "p95": 11.596,
+    "mean": 4.677
+   },
+   "turning_share_kept": 0.13890620633316852
+  },
+  "speed>=1": {
+   "share_of_candidates_kept": 0.6709052604424189,
+   "navtrain_recall": 0.8978589559651252,
+   "navtrain_share_of_kept": 0.2606821859429322,
+   "stationary_share_of_kept": 0.0,
+   "speed_quantiles_kept": {
+    "p5": 1.811,
+    "p25": 4.471,
+    "p50": 6.987,
+    "p75": 9.302,
+    "p95": 12.079,
+    "mean": 6.937
+   },
+   "turning_share_kept": 0.19215918740086835
+  },
+  "speed>=2": {
+   "share_of_candidates_kept": 0.6295117913880947,
+   "navtrain_recall": 0.8182871647721002,
+   "navtrain_share_of_kept": 0.25320151623809034,
+   "stationary_share_of_kept": 0.0,
+   "speed_quantiles_kept": {
+    "p5": 2.714,
+    "p25": 4.971,
+    "p50": 7.275,
+    "p75": 9.45,
+    "p95": 12.157,
+    "mean": 7.294
+   },
+   "turning_share_kept": 0.18713929583717515
+  },
+  "progress_4s>=5m": {
+   "share_of_candidates_kept": 0.6666057570350624,
+   "navtrain_recall": 0.9407901997572012,
+   "navtrain_share_of_kept": 0.27490849283261043,
+   "stationary_share_of_kept": 0.029814405727461826,
+   "speed_quantiles_kept": {
+    "p5": 1.223,
+    "p25": 4.524,
+    "p50": 7.02,
+    "p75": 9.319,
+    "p95": 12.089,
+    "mean": 6.891
+   },
+   "turning_share_kept": 0.20391183062708612
+  },
+  "speed>=1 & progress_4s>=5m": {
+   "share_of_candidates_kept": 0.6377560891717007,
+   "navtrain_recall": 0.8515616377883236,
+   "navtrain_share_of_kept": 0.2600913488278024,
+   "stationary_share_of_kept": 0.0,
+   "speed_quantiles_kept": {
+    "p5": 2.247,
+    "p25": 4.875,
+    "p50": 7.216,
+    "p75": 9.42,
+    "p95": 12.14,
+    "mean": 7.188
+   },
+   "turning_share_kept": 0.20037753021084387
+  }
+ }
+}

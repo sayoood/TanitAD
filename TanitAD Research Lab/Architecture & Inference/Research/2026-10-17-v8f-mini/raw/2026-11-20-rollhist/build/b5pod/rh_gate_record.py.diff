@@ -1,0 +1,20 @@
+--- ../b2/rh_gate_record.py	2026-11-20 18:46:03.705915500 +0100
++++ rh_gate_record.py	2026-11-21 01:00:21.068436700 +0100
+@@ -8,7 +8,7 @@
+   mint   --tag RH_s0 --readout TOKEN         writes $R/runs/<tag>/gate/RH_GATE_RECORD.json ONLY if every check below passes; exit 0/1
+   verify --tag RH_s0                         re-hashes what the record binds (argv, bank.json, selfcheck, G-SUITE result, pilot report, tree marker); exit 0/1
+ 
+-Checks at mint: (1) tree blob check done-marker + commit; (2) G-SUITE result: 0 regressions, 0 new-test failures, 0 missing, new commit == 2bda9e1a; (3) PILOT_RH.json pass and the same readout;
++Checks at mint: (1) tree blob check done-marker + commit; (2) G-SUITE result: 0 regressions, 0 new-test failures, 0 missing, new commit == 43319227; (3) PILOT_RH.json pass and the same readout;
+ (4) RH only: the full-bank check json passes (b,c,d,e) for this readout and the bank.json sha equals the argv's --dagger-bank-sha256; (5) the pair check printed PASS (pair_<tag>.log) ;
+ (6) the trainer's own --selfcheck-only record of THIS argv: declared_vs_built PASS, acc_probe pass, and for RH dagger_probe pass, and the declaration token appears in the built levers; for B0 the dagger levers read default;
+ (7) the argv names what the arm is: RH names --dagger-bank-readout <token> and --dagger-bank-kappa 0.2 and --dagger-p > 0; B0 names --dagger-p 0 and no bank flag."""
+@@ -19,7 +19,7 @@
+ import sys
+ 
+ R = os.environ.get("RH_ROOT", "/root/rollhist")
+-COMMIT = "2bda9e1a382986cfdce3bb455822678b42a816e2"
++COMMIT = "433192275ba50f11c67bfc5df2e110d9cf465df2"
+ 
+ 
+ def sha(p):

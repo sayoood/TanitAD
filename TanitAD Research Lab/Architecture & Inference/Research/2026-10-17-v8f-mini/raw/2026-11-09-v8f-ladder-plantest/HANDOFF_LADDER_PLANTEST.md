@@ -1,0 +1,19 @@
+# HANDOFF_LADDER_PLANTEST (agent, 2026-11-09 17:35; nothing staged, committed or pushed; tier T0)
+Cards `../PREREG_V8F_PLANTEST.md`, `../PREREG_V8F_PLANTEST2.md` untouched. Spec `IMPL_CHOICES_LADDER_PLANTEST.md` (sha256 `e50982a6...1529`, hashed before any arm statistic). Evidence the runner is right: `CONTROLS_LADDER_PLANTEST.md` / `.json`, 11 checks PASS, every regression RED (M2b reproduction bit-identical on both gate paths; reachability non-zero in both channels at c1 and c3 on all 6 arms, planted zero control exactly 0.0; repeated-latent history regression RED; wrong-stride regressions RED).
+
+## State
+* Detached full run launched 17:32 via WMI (`job_run.cmd` -> `run_lp.py 2`, 2 single-thread workers, then `report_lp.py --pack`). Log `run_lp.log` (one line per unit), status `run_lp.status.json`, units (resumable, skipped if present) in `F:/TanitAD-scratch/ladder_plantest/runs/`. **`LADDER_PLANTEST_RUN.done` is written LAST** (content `rc=...`); until it exists the run is not finished. An `ERR` line in the log = a failed unit (traceback tail).
+* Wave order (card form c1 first, then the labelled beside form c3): w1 FLAT1 c1 on R35+C0, w2 FLAT1 c3 on R35+C0, w4 TD3 c1 on C0, w3 R35H (c1 and c3), w5 TD3 c3 on C0. Per wave: PLANTEST units + TUNE grid, lambda choice on TUNE only (`choice_*.json`), then SCORE units.
+* **Projected time (measured 64-window timings, `smoke_time.json`): ~30 h at 2 workers in total; w1 ~3 h, w2 ~9 h (context 3 costs ~3x), w4 ~3.5 h, w3 ~6 h, w5 ~12 h.** Over the 6 h line, so R35 and C0 run first (w1, w2). A label needs both seeds; the report prints INCOMPLETE until both are present.
+* TD3 is NOT COMPUTABLE on R35 / R35H (built cumulative strides (1, 3, 15): level-3 step 3.0 s, the card's 2.4 s goal is not a level-3 horizon; n = 1,976 windows c1, 1,835 c3). HIER-ADDS on C0 only. c3 drops 141 windows (g < 2); c3 = real latents at t-2, t-1 plus their logged actions, level 1 only.
+* Not run (cost, none decides a label): G-STAY, the last-2-state FLAT, planner-seed replicates, untrained stacks. Disclosed in the IMPL file and the report.
+
+## Exact next steps
+1. Do not poll. When `LADDER_PLANTEST_RUN.done` exists (or to read a partial: after w1 finishes) run `report_lp.py` (env as `env_lp.cmd`, or `pyrun.sh report_lp.py --pack`): writes `RESULT_LADDER_PLANTEST.json` / `.md` (+ `_plans.npz`, all plans in one file). It tolerates missing units (rows read INCOMPLETE). The Master Mind writes the verdict.
+2. If the job dies (reboot, Windows Update): rerun `powershell -NoProfile -ExecutionPolicy Bypass -File launch_wmi.ps1`; finished units are skipped. Check free RAM >= 6 GB (workers wait on the guard).
+3. After the final report: bank `RESULT_LADDER_PLANTEST_plans.npz` (the plans live only on F: until it is packed), then delete `F:/TanitAD-scratch/ladder_plantest/runs` by literal path. Keep `F:/TanitAD-scratch/ladder_read`, `plantest_tree`, `decn_scratch`.
+4. The banned-vocabulary check is clean on the IMPL, CONTROLS and report template; rerun it on the final md.
+
+## Manifest (all `E:/Projects/TanitAD-artifacts/dagland/motion_c/theory/ladder_plantest/`, one place only, unstaged)
+`lp_lib.py` (loader, `rollout_h`, `plan_topdown3`, `td3_defined`), `controls_lp.py`, `run_lp.py`, `report_lp.py`, `env_lp.cmd`, `job_run.cmd`, `launch_wmi.ps1`, `pyrun.sh`, `IMPL_CHOICES_LADDER_PLANTEST.md/.sha256`, `CONTROLS_LADDER_PLANTEST.md/.json`, `smoke_time.json`, `run_lp.log`, this file. Pending: `F:/TanitAD-scratch/ladder_plantest/runs/*.npz` (F: only), `RESULT_LADDER_PLANTEST.*`, `LADDER_PLANTEST_RUN.done`.
+Deleted (mine): `F:/TanitAD-scratch/ladder_plantest/smoke` (168,414 B), `smoke_report.json/.md/_plans.npz` (216,221 B), a placeholder RESULT_LADDER_PLANTEST.* (11,019 B, empty-run artefact), `controls_run2.log`, partial control JSONs (merged), `smoke_time.py`, `smoke_run.py`.

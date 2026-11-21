@@ -1,0 +1,370 @@
+.......F..FF...FFFFFFFFF..F.FF........                                   [100%]
+================================== FAILURES ===================================
+________________ test_pinned_against_diffusers_where_available ________________
+
+    def test_pinned_against_diffusers_where_available():
+        """CONTROL against an INDEPENDENT implementation. The scheduler is
+        re-implemented so pods need no new dependency (`uv pip install` has TWICE
+        silently replaced torch with a wheel the driver cannot run); a
+        re-implementation that is never checked is an unverified copy."""
+        s = rs.DDIMSchedule()
+>       if not rs.assert_matches_diffusers(s):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_refc_sampler.py:115: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+sched = <tanitad.refs.refc_sampler.DDIMSchedule object at 0x00000217C20CE9C0>
+atol = 1e-10
+
+    def assert_matches_diffusers(sched: DDIMSchedule, atol: float = 1e-10) -> bool:
+        """Pin this re-implementation against the real ``diffusers`` object.
+    
+        ⭐ **Why this exists.** The scheduler is re-implemented so pods need no new
+        dependency, and a re-implementation that is never checked is just an
+        unverified copy. Where ``diffusers`` IS importable the alpha table must
+        agree to ``atol``; where it is not, the caller SKIPS rather than passing —
+        returns ``False`` so a test can mark itself skipped instead of green.
+        """
+        try:
+            from diffusers import DDIMScheduler          # noqa: PLC0415
+        except Exception:
+            return False
+        ref = DDIMScheduler(num_train_timesteps=sched.num_train_timesteps,
+                            beta_start=BETA_START, beta_end=BETA_END,
+                            beta_schedule="scaled_linear",
+                            prediction_type="sample",
+                            steps_offset=sched.steps_offset)
+        a = sched.alphas_cumprod.cpu().to(torch.float64)
+        b = ref.alphas_cumprod.cpu().to(torch.float64)
+        if a.shape != b.shape:
+            raise AssertionError(f"alpha table shape {a.shape} != {b.shape}")
+        err = float((a - b).abs().max())
+        if err > atol:
+>           raise AssertionError(f"alphas_cumprod differs from diffusers by {err:.3e}")
+E           AssertionError: alphas_cumprod differs from diffusers by 1.689e-07
+
+stack\tanitad\refs\refc_sampler.py:202: AssertionError
+_______ test_constant_control_roll_is_BIT_IDENTICAL_to_roll_bank[alat] ________
+
+units = 'alat'
+
+    @pytest.mark.parametrize("units", ["alat", "kappa"])
+    def test_constant_control_roll_is_BIT_IDENTICAL_to_roll_bank(units):
+        """⛔⛔ THE LOAD-BEARING IDENTITY. The anchor vocabulary holds ONE
+        (a_lon, a_lat) pair per anchor and `roll_bank` integrates it at the native
+        tick. The sampler's state is a per-slot SEQUENCE; at sigma -> 0 that
+        sequence IS the constant pair, so the two must produce the SAME geometry.
+    
+        If this ever fails, every anchored-Gaussian claim is measured against a fan
+        the vocabulary never emitted — and nothing else in the suite would notice.
+        """
+        horizons = (5, 10, 15, 20)
+>       dec = _v0_decoder(units=units, horizons=horizons)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_refc_sampler.py:171: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+units = 'alat', n = 5, horizons = (5, 10, 15, 20), seed = 0, sampler = 'none'
+
+    def _v0_decoder(units="alat", n=5, horizons=(5, 10, 15, 20), seed=0,
+                    sampler="none"):
+        torch.manual_seed(seed)
+>       cfg = refc.DecoderConfig(d=32, n_heads=4, layers=2, ff_mult=2,
+                                 sampler=sampler)
+E       TypeError: DecoderConfig.__init__() got an unexpected keyword argument 'sampler'
+
+stack\tests\test_refc_sampler.py:125: TypeError
+_______ test_constant_control_roll_is_BIT_IDENTICAL_to_roll_bank[kappa] _______
+
+units = 'kappa'
+
+    @pytest.mark.parametrize("units", ["alat", "kappa"])
+    def test_constant_control_roll_is_BIT_IDENTICAL_to_roll_bank(units):
+        """⛔⛔ THE LOAD-BEARING IDENTITY. The anchor vocabulary holds ONE
+        (a_lon, a_lat) pair per anchor and `roll_bank` integrates it at the native
+        tick. The sampler's state is a per-slot SEQUENCE; at sigma -> 0 that
+        sequence IS the constant pair, so the two must produce the SAME geometry.
+    
+        If this ever fails, every anchored-Gaussian claim is measured against a fan
+        the vocabulary never emitted — and nothing else in the suite would notice.
+        """
+        horizons = (5, 10, 15, 20)
+>       dec = _v0_decoder(units=units, horizons=horizons)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_refc_sampler.py:171: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+units = 'kappa', n = 5, horizons = (5, 10, 15, 20), seed = 0, sampler = 'none'
+
+    def _v0_decoder(units="alat", n=5, horizons=(5, 10, 15, 20), seed=0,
+                    sampler="none"):
+        torch.manual_seed(seed)
+>       cfg = refc.DecoderConfig(d=32, n_heads=4, layers=2, ff_mult=2,
+                                 sampler=sampler)
+E       TypeError: DecoderConfig.__init__() got an unexpected keyword argument 'sampler'
+
+stack\tests\test_refc_sampler.py:125: TypeError
+_______________ test_sampler_none_constructs_no_sampler_modules _______________
+
+    def test_sampler_none_constructs_no_sampler_modules():
+        """⛔ CONTROL. `sampler='none'` must construct nothing, or RNG draw order
+        changes and every pre-v5 checkpoint stops loading strictly."""
+>       dec = _v0_decoder(sampler="none")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_refc_sampler.py:242: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+units = 'alat', n = 5, horizons = (5, 10, 15, 20), seed = 0, sampler = 'none'
+
+    def _v0_decoder(units="alat", n=5, horizons=(5, 10, 15, 20), seed=0,
+                    sampler="none"):
+        torch.manual_seed(seed)
+>       cfg = refc.DecoderConfig(d=32, n_heads=4, layers=2, ff_mult=2,
+                                 sampler=sampler)
+E       TypeError: DecoderConfig.__init__() got an unexpected keyword argument 'sampler'
+
+stack\tests\test_refc_sampler.py:125: TypeError
+________________ test_sampler_none_is_BYTE_IDENTICAL_to_pre_v5 ________________
+
+    def test_sampler_none_is_BYTE_IDENTICAL_to_pre_v5():
+        """⛔ CONTROL THAT MUST READ A KNOWN VALUE."""
+>       a = _v0_decoder(sampler="none", seed=11)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_refc_sampler.py:250: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+units = 'alat', n = 5, horizons = (5, 10, 15, 20), seed = 11, sampler = 'none'
+
+    def _v0_decoder(units="alat", n=5, horizons=(5, 10, 15, 20), seed=0,
+                    sampler="none"):
+        torch.manual_seed(seed)
+>       cfg = refc.DecoderConfig(d=32, n_heads=4, layers=2, ff_mult=2,
+                                 sampler=sampler)
+E       TypeError: DecoderConfig.__init__() got an unexpected keyword argument 'sampler'
+
+stack\tests\test_refc_sampler.py:125: TypeError
+______________ test_ddim_build_adds_exactly_the_expected_modules ______________
+
+    def test_ddim_build_adds_exactly_the_expected_modules():
+        """FAILS WITHOUT THE FEATURE."""
+>       dec = _v0_decoder(sampler="ddim")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_refc_sampler.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+units = 'alat', n = 5, horizons = (5, 10, 15, 20), seed = 0, sampler = 'ddim'
+
+    def _v0_decoder(units="alat", n=5, horizons=(5, 10, 15, 20), seed=0,
+                    sampler="none"):
+        torch.manual_seed(seed)
+>       cfg = refc.DecoderConfig(d=32, n_heads=4, layers=2, ff_mult=2,
+                                 sampler=sampler)
+E       TypeError: DecoderConfig.__init__() got an unexpected keyword argument 'sampler'
+
+stack\tests\test_refc_sampler.py:125: TypeError
+_________________ test_ddim_forward_emits_a_ROLLED_fan_and_u0 _________________
+
+    def test_ddim_forward_emits_a_ROLLED_fan_and_u0():
+        """FAILS WITHOUT THE FEATURE. Under the sampler the emitted fan comes from
+        the integrator, and the predicted clean CONTROL leaves the decoder — it is
+        the only tensor the x0 loss can be computed on."""
+>       dec = _v0_decoder(sampler="ddim").eval()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_refc_sampler.py:273: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+units = 'alat', n = 5, horizons = (5, 10, 15, 20), seed = 0, sampler = 'ddim'
+
+    def _v0_decoder(units="alat", n=5, horizons=(5, 10, 15, 20), seed=0,
+                    sampler="none"):
+        torch.manual_seed(seed)
+>       cfg = refc.DecoderConfig(d=32, n_heads=4, layers=2, ff_mult=2,
+                                 sampler=sampler)
+E       TypeError: DecoderConfig.__init__() got an unexpected keyword argument 'sampler'
+
+stack\tests\test_refc_sampler.py:125: TypeError
+_____ test_zero_init_control_head_starts_the_fan_AT_THE_ANCHORED_GAUSSIAN _____
+
+    def test_zero_init_control_head_starts_the_fan_AT_THE_ANCHORED_GAUSSIAN():
+        """⛔ CONTROL THAT MUST READ A KNOWN VALUE. With `control_head` at its zero
+        init, `u0_hat` must equal the NOISED anchor exactly — i.e. the sampler adds
+        the anchored Gaussian and nothing else. That is what makes 'the vocabulary
+        is the prior' true at step 0 rather than merely intended."""
+>       dec = _v0_decoder(sampler="ddim").eval()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_refc_sampler.py:291: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+units = 'alat', n = 5, horizons = (5, 10, 15, 20), seed = 0, sampler = 'ddim'
+
+    def _v0_decoder(units="alat", n=5, horizons=(5, 10, 15, 20), seed=0,
+                    sampler="none"):
+        torch.manual_seed(seed)
+>       cfg = refc.DecoderConfig(d=32, n_heads=4, layers=2, ff_mult=2,
+                                 sampler=sampler)
+E       TypeError: DecoderConfig.__init__() got an unexpected keyword argument 'sampler'
+
+stack\tests\test_refc_sampler.py:125: TypeError
+__________________ test_ddim_refuses_a_FIXED_path_vocabulary __________________
+
+    def test_ddim_refuses_a_FIXED_path_vocabulary():
+        """⛔ CONTROL. The sampler's state IS the control sequence. A fixed-path
+        bank carries `anchor_controls` of all zeros, so the anchored Gaussian would
+        be centred on 'do nothing' — a silent, plausible-looking wrong experiment.
+        It must REFUSE, loudly."""
+        torch.manual_seed(0)
+>       cfg = refc.DecoderConfig(d=32, n_heads=4, layers=2, ff_mult=2,
+                                 sampler="ddim")
+E       TypeError: DecoderConfig.__init__() got an unexpected keyword argument 'sampler'
+
+stack\tests\test_refc_sampler.py:314: TypeError
+_________ test_sampler_groups_gt_one_REFUSES_rather_than_mis_indexing _________
+
+    def test_sampler_groups_gt_one_REFUSES_rather_than_mis_indexing():
+        """⛔ CONTROL. G > 1 emits a [B, G*N, ...] fan while `loss_cls`'s a_star,
+        the [B, N] priors and every `sel_idx` dump still assume N. Silently
+        widening the fan would MIS-INDEX the anchor target. Refuse, and name the
+        three call sites in the message."""
+        torch.manual_seed(0)
+>       cfg = refc.DecoderConfig(d=32, n_heads=4, layers=2, ff_mult=2,
+                                 sampler="ddim", sampler_groups=4)
+E       TypeError: DecoderConfig.__init__() got an unexpected keyword argument 'sampler'
+
+stack\tests\test_refc_sampler.py:332: TypeError
+________________________ test_ddim_backward_is_finite _________________________
+
+    def test_ddim_backward_is_finite():
+        """FAILS WITHOUT THE FEATURE: the sampler must be trainable. ~60 sequential
+        integration steps in the graph is exactly where a NaN would appear."""
+>       dec = _v0_decoder(sampler="ddim").train()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_refc_sampler.py:348: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+units = 'alat', n = 5, horizons = (5, 10, 15, 20), seed = 0, sampler = 'ddim'
+
+    def _v0_decoder(units="alat", n=5, horizons=(5, 10, 15, 20), seed=0,
+                    sampler="none"):
+        torch.manual_seed(seed)
+>       cfg = refc.DecoderConfig(d=32, n_heads=4, layers=2, ff_mult=2,
+                                 sampler=sampler)
+E       TypeError: DecoderConfig.__init__() got an unexpected keyword argument 'sampler'
+
+stack\tests\test_refc_sampler.py:125: TypeError
+______________________ test_metre_space_arm_is_REACHABLE ______________________
+
+    def test_metre_space_arm_is_REACHABLE():
+        """⛔ THE DELIBERATE REGRESSION, as a RUNNABLE code path and not a
+        description. `sampler_space='metre'` is the DD-literal arm, pre-registered
+        to FAIL the flyability gate. An arm that cannot be run cannot fail, and a
+        regression that is only described has never been tested."""
+        torch.manual_seed(0)
+>       cfg = refc.DecoderConfig(d=32, n_heads=4, layers=2, ff_mult=2,
+                                 sampler="ddim", sampler_space="metre")
+E       TypeError: DecoderConfig.__init__() got an unexpected keyword argument 'sampler'
+
+stack\tests\test_refc_sampler.py:368: TypeError
+____ test_hfov_style_sanity_the_sampler_does_not_touch_the_classifier_pass ____
+
+    def test_hfov_style_sanity_the_sampler_does_not_touch_the_classifier_pass():
+        """⛔ CONTROL. `anchor_logits` is the t = 0 classifier surface and is what
+        `loss_cls` supervises. The sampler must not change it — otherwise the
+        anchor target and the classifier drift apart."""
+>       dec_a = _v0_decoder(sampler="none", seed=21).eval()
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_refc_sampler.py:404: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+units = 'alat', n = 5, horizons = (5, 10, 15, 20), seed = 21, sampler = 'none'
+
+    def _v0_decoder(units="alat", n=5, horizons=(5, 10, 15, 20), seed=0,
+                    sampler="none"):
+        torch.manual_seed(seed)
+>       cfg = refc.DecoderConfig(d=32, n_heads=4, layers=2, ff_mult=2,
+                                 sampler=sampler)
+E       TypeError: DecoderConfig.__init__() got an unexpected keyword argument 'sampler'
+
+stack\tests\test_refc_sampler.py:125: TypeError
+_____________________ test_default_pin_constructs_NOTHING _____________________
+
+    def test_default_pin_constructs_NOTHING():
+        """⛔ CONTROL. OFF means NOT CONSTRUCTED, not 'constructed and gated' —
+        otherwise RNG draw order shifts and pre-v5 checkpoints stop loading."""
+        cfg = _cfg()
+        t._pin_refcv5_seams(cfg, _args())
+        assert cfg.core.decoder.sampler == "none"
+        assert getattr(cfg.core, "agents", None) is None
+>       assert cfg.core.decoder.cross_agent is False
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'DecoderConfig' object has no attribute 'cross_agent'
+
+stack\tests\test_refc_v3_refcv5_wiring.py:64: AttributeError
+__________________ test_default_model_has_no_refcv5_modules ___________________
+
+    def test_default_model_has_no_refcv5_modules():
+        """⛔ CONTROL, one level down: build the real model and look."""
+        cfg = _cfg()
+        t._pin_refcv5_seams(cfg, _args())
+        m = v3.RefCV3Model(cfg)
+>       assert m.core.agent_head is None
+               ^^^^^^^^^^^^^^^^^
+
+stack\tests\test_refc_v3_refcv5_wiring.py:72: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = RefCModel(
+  (encoder): ResNetEncoder(
+    (stem): Sequential(
+      (0): Conv2d(9, 32, kernel_size=(7, 7), stride=(2,...tures=2048, bias=True)
+    (1): ReLU(inplace=True)
+    (2): Linear(in_features=2048, out_features=256, bias=True)
+  )
+)
+name = 'agent_head'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'RefCModel' object has no attribute 'agent_head'
+
+..\venvs\tanitad\Lib\site-packages\torch\nn\modules\module.py:1968: AttributeError
+=========================== short test summary info ===========================
+FAILED stack\tests\test_refc_sampler.py::test_pinned_against_diffusers_where_available
+FAILED stack\tests\test_refc_sampler.py::test_constant_control_roll_is_BIT_IDENTICAL_to_roll_bank[alat]
+FAILED stack\tests\test_refc_sampler.py::test_constant_control_roll_is_BIT_IDENTICAL_to_roll_bank[kappa]
+FAILED stack\tests\test_refc_sampler.py::test_sampler_none_constructs_no_sampler_modules
+FAILED stack\tests\test_refc_sampler.py::test_sampler_none_is_BYTE_IDENTICAL_to_pre_v5
+FAILED stack\tests\test_refc_sampler.py::test_ddim_build_adds_exactly_the_expected_modules
+FAILED stack\tests\test_refc_sampler.py::test_ddim_forward_emits_a_ROLLED_fan_and_u0
+FAILED stack\tests\test_refc_sampler.py::test_zero_init_control_head_starts_the_fan_AT_THE_ANCHORED_GAUSSIAN
+FAILED stack\tests\test_refc_sampler.py::test_ddim_refuses_a_FIXED_path_vocabulary
+FAILED stack\tests\test_refc_sampler.py::test_sampler_groups_gt_one_REFUSES_rather_than_mis_indexing
+FAILED stack\tests\test_refc_sampler.py::test_ddim_backward_is_finite - TypeE...
+FAILED stack\tests\test_refc_sampler.py::test_metre_space_arm_is_REACHABLE - ...
+FAILED stack\tests\test_refc_sampler.py::test_hfov_style_sanity_the_sampler_does_not_touch_the_classifier_pass
+FAILED stack\tests\test_refc_v3_refcv5_wiring.py::test_default_pin_constructs_NOTHING
+FAILED stack\tests\test_refc_v3_refcv5_wiring.py::test_default_model_has_no_refcv5_modules
+15 failed, 23 passed in 5.39s

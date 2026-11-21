@@ -1,0 +1,31 @@
+## 2026-09-27 the refcv7 TRAINING WATCH builder (SPEC_REFCV7 sec. 6-15 + the Master Mind's rulings of 2026-09-27) -- full files at their REPO paths under code/fix/, based on tip 03e6ed9a2982339cb03114e7857995e5eab6c54b
+# land these at their repo paths. Full files, NEW at the base tip (absent at 03e6ed9, asserted with git cat-file -e).
+# new blob = git hash-object --no-filters of the package file (40-char asserted); both files are LF.
+# Tested as the combination: a clean git archive of 03e6ed9 + these two files -> 62 passed (with test_training_watch_refcv6.py),
+# mutation proof 17/17 CAUGHT, smoke PASS incl. launch_gate.map_watch_reasons. If the tip moves, re-check both paths are still absent.
+# taniteval/tools/training_watch/build_watch_refcv7.py: base NEW | new 86e47b331c5019356038ec2e7c41a57bc8fbd174 | LF
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-training-watch/code/fix/taniteval/tools/training_watch/build_watch_refcv7.py  ->  taniteval/tools/training_watch/build_watch_refcv7.py
+# taniteval/tests/test_build_watch_refcv7.py: base NEW | new b30411891eab5116580e8d0435852823744e5358 | LF
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-training-watch/code/fix/taniteval/tests/test_build_watch_refcv7.py  ->  taniteval/tests/test_build_watch_refcv7.py
+# INTEGRATION (not a file of this package; routed by the Master Mind to the gate agent): the launch gate's G-MAP item 4
+#    stays a named FAIL until stack/scripts/launch_gate.py (gate package) sets PROFILES["refcv7"]["map_hires"]["watch_builder"] =
+#    ["{python}", "{tree}/taniteval/tools/training_watch/build_watch_refcv7.py", "--metrics", "{metrics}", "--out", "{out}"]
+#    -- tested exactly as the gate formats and runs it (raw/smoke/smoke_record.json, "gate_form").
+# package files (not repo files):
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-training-watch/BUILD.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-training-watch/LANDING_READY.txt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-training-watch/code/mutation_proof.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-training-watch/code/smoke_render.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-training-watch/raw/mutation_proof_training_watch_refcv7.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-training-watch/raw/mutation_proof.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-training-watch/raw/pytest_03e6ed9_final.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-training-watch/raw/smoke/smoke_record.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-training-watch/raw/smoke/smoke_render.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-training-watch/raw/smoke/FIXTURE_synthetic_healthy.html
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-training-watch/raw/smoke/FIXTURE_synthetic_healthy.summary.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-training-watch/raw/smoke/FIXTURE_synthetic_alarms_on.html
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-training-watch/raw/smoke/FIXTURE_synthetic_alarms_on.summary.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-training-watch/raw/smoke/FIXTURE_gate_form_watch_refcv7.html
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-training-watch/raw/smoke/FIXTURE_gate_form_watch_refcv7.summary.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-training-watch/raw/smoke/BACKCOMPAT_refcv6-r101-s0_log_by_the_refcv7_builder.html
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-training-watch/raw/smoke/BACKCOMPAT_refcv6-r101-s0_log_by_the_refcv7_builder.summary.json

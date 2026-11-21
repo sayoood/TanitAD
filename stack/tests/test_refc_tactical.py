@@ -2,7 +2,7 @@
 the ``factored_maneuver`` seam in tanitad/refs/refc.py + scripts/refc_train.py).
 
 What the defect is, and therefore what these tests must pin (MEASURED source:
-``TanitAD Research Hub/Architecture & Inference/Implementation/incoming/
+``TanitAD Research Lab/Architecture & Inference/Implementation/incoming/
 2026-08-03-lan-refc-e0/LAN_E0_RESULTS.md`` section 5, REF-C-base 30k, n = 859):
 ``accelerate`` 0/93 predicted, ``brake_stop`` 7/78, while the turns are emitted
 at very nearly their true rate (106 vs 110, 71 vs 68). The longitudinal mass

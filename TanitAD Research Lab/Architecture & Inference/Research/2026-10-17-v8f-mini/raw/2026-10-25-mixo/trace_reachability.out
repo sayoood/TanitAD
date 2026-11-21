@@ -1,0 +1,47 @@
+C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\mixo\stack\scripts\v8f_mini_train.py:851: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+  "sec": time.time() - t0, **{k: float(v) for k, v in T.items()}}
+PART 1 (static): every hop of argv -> config -> _forward -> the code O reads
+  1  argv        --code-mix declared (parser; default whole)                                           stack/scripts/v8f_mini_train.py:98
+  2  argv->cfg   make_config passes it into the config                                                 stack/scripts/v8f_mini_train.py:195
+  3  G-DVB       FLAG_CHECKS has an entry (a flag without one is refused)                              stack/scripts/v8f_mini_train.py:78
+  4  cfg         V8FMiniConfig.code_mix (default whole) + the value check                              stack/tanitad/models/v8f_mini.py:175
+  4b cfg         __post_init__ refuses any other value                                                 stack/tanitad/models/v8f_mini.py:190
+  5  built       built_levers() records the BUILT code_mix                                             stack/tanitad/models/v8f_mini.py:781
+  6  G-DVB       declared == built (declared_vs_built)                                                 stack/scripts/v8f_mini_train.py:268
+  6b G-DVB       kind on a constant p_gt is refused (declared and does nothing)                        stack/scripts/v8f_mini_train.py:270
+  7  G-LIVE      the probe reads the code O receives (called in main, before training)                 stack/scripts/v8f_mini_train.py:762
+  7b token       selfcheck.json carries code_mix_probe                                                 stack/scripts/v8f_mini_train.py:771
+  8  _forward    the branch on the BUILT config                                                        stack/tanitad/models/v8f_mini.py:662
+  9  _forward    the MIXING LINE: where(mask, GT code, T's own code)                                   stack/tanitad/models/v8f_mini.py:663
+  10 mask        one Bernoulli(p_gt) draw per sample AND per unit                                      stack/tanitad/models/v8f_mini.py:633
+  11 mask        broadcast through CODE_UNIT_OF; has gates                                             stack/tanitad/models/v8f_mini.py:635
+  12 _forward    `code` is what O reads                                                                stack/tanitad/models/v8f_mini.py:675
+
+PART 2 (dynamic): TR.main --code-mix kind on the synthetic world; runtime call sites from the live frames
+[1/4] ade 5.987 total 84.497 p_gt 1.00
+[2/4] ade 6.449 total 85.612 p_gt 0.80
+[3/4] ade 8.063 total 90.879 p_gt 0.60
+[4/4] ade 9.601 total 98.072 p_gt 0.40
+DONE {"steps": 4, "arm": "M2b", "seed": 5, "seconds": 0.4383869171142578}
+  the mixing line was called 9 times: 3 G-LIVE forwards (p_gt 0.5) + 4 training steps; no_grad calls (the probe): 2
+  call site of the mix (from the frame):    ['v8f_mini.py:663']
+  call site of run_o (from the frame):      ['v8f_mini.py:675']
+  train step 0: p_gt 1.000  run_o's code == where(mask, GT, own): True  samples with a PARTLY-GT code: 0/8
+  train step 1: p_gt 0.800  run_o's code == where(mask, GT, own): True  samples with a PARTLY-GT code: 6/8
+  train step 2: p_gt 0.600  run_o's code == where(mask, GT, own): True  samples with a PARTLY-GT code: 7/8
+  train step 3: p_gt 0.400  run_o's code == where(mask, GT, own): True  samples with a PARTLY-GT code: 8/8
+  selfcheck.json: declared_vs_built PASS; levers.code_mix kind; code_mix_probe pass True n_partial 16 of 16
+  checkpoint cfg.code_mix: kind
+[1/4] ade 5.987 total 84.497 p_gt 1.00
+[2/4] ade 6.449 total 85.620 p_gt 0.80
+[3/4] ade 8.063 total 90.900 p_gt 0.60
+[4/4] ade 9.601 total 98.097 p_gt 0.40
+DONE {"steps": 4, "arm": "M2b", "seed": 5, "seconds": 0.43212127685546875}
+  CONTROL, default run (no --code-mix): the mixing line was called 0 times in training (must be 0); probe n_partial 0 (must be 0)
+
+PART 3 (the control): the mixing function deleted (an all-False mask = O always reads T's own code), --code-mix kind declared
+  trainer result: SystemExit: ZZDVB-REFUSEDZZ declared-vs-built: code_mix probe: code_mix kind is declared but NO labelled sample read a partly-GT code in 32 draws ({'code_mix': 'kind', 'p_gt': 0.5, 'n_labelled': 8, 'n_draws_samples': 32, 'n_partial': 0, 'n_all_gt': 0, 'n_all_own': 32, 'unit_gt_rate': {'decisions': 0.0, 'speed': 0.0, 'angle': 0.0, 'tte': 0.0, 'timegap': 0.0, 'geom': 0.0, 'leadgap': 0.0}}): the per-unit mix did not reach the code O reads
+  => RED: the in-process gate refused to train (the check turns RED when the mixing line is gone)
+
+TRACE OK

@@ -1,0 +1,39 @@
+trial rc 0
+container free 41 GB
+== 1. tests and mutations of the evaluation view
+test_dscale_evalview rc 0 :: 11 passed, 0 failed, 0 skipped in 0.1 s (stand-in runner, not pytest)
+skipped lines: 0
+mutation runner rc 0
+before evalview GREEN 11 passed, 0 failed, 0 skipped in 0.1 s (stand-in runner, not pytest)
+evalview_keeps_the_source_order RED
+evalview_does_not_compare_the_id_sets RED
+evalview_accepts_a_changed_existing_view RED
+evalview_overwrites_a_real_entry RED
+after evalview GREEN 11 passed, 0 failed, 0 skipped in 0.1 s (stand-in runner, not pytest)
+ZZ MUTATIONS-U DONE 4 of 4 red; suites before {'evalview': {'green': True, 'last_line': '11 passed, 0 failed, 0 skipped in 0.1 s (stand-in runner, not pytest)'}} after {'evalview': {'green': True, 'last_line': '11 passed
+== 2. the kit on a reversed evaluation manifest
+manifest clips 4572 half 2286
+the landed check on the reversed source: rc 2 (must be 2) ::    d2e {"pass": false, "n_here": 141, "n_study": 141, "same_ids_same_order": false, "same_id_set": true, "sha256_ids_here": "391ad759a6c3950d5ebfe0a64bf8df57403c4c4891555e78dc915f84b8329f95", "sha256_
+stage precheck rc 0
+[2026-11-19T20:08:42Z] dscale_lead: pins ok: 10 files
+[2026-11-19T20:08:42Z] dscale_lead: evaluation view rc=0: evalview: rc 0 pass True source in study order False, positions that differ 140, written now True -> /workspace/v8proof/dscale_lead_n3/trial_200841/out/eval_view/EVALVIEW.precheck.json
+[2026-11-19T20:08:54Z] dscale_lead: evaluation-set check rc=0
+[2026-11-19T20:08:54Z] dscale_lead: planted evaluation-set check rc=2 (must be 2)
+stage cpucheck rc 0
+[2026-11-19T20:08:54Z] dscale_lead: pins ok: 10 files
+[2026-11-19T20:08:55Z] dscale_lead: evaluation view rc=0: evalview: rc 0 pass True source in study order False, positions that differ 140, written now False -> /workspace/v8proof/dscale_lead_n3/trial_200841/out/eval_view/EVALVIEW.cpucheck.json
+the view manifest equals this pod's study manifest byte for byte
+the reversed source differs from it (as built)
+total 92
+drwxr-xr-x 2 root root    74 Nov 19 20:08 .
+drwxr-xr-x 3 root root   160 Nov 19 20:08 ..
+lrwxrwxrwx 1 root root    66 Nov 19 20:08 clips -> /workspace/v8proof/dscale_lead_n3/trial_200841/revcache/eval/clips
+-rw-r--r-- 1 root root 94035 Nov 19 20:08 manifest.jsonl
+lrwxrwxrwx 1 root root    70 Nov 19 20:08 meta.json -> /workspace/v8proof/dscale_lead_n3/trial_200841/revcache/eval/meta.json
+precheck {'pass': True, 'source_in_study_order': False, 'positions_that_differ': 140, 'manifest_written_by_this_call': True, 'view_in_study_order': True, 'lines_unchanged': True, 'links': ['clips', 'meta.json']}
+cpucheck {'pass': True, 'source_in_study_order': False, 'positions_that_differ': 140, 'manifest_written_by_this_call': False, 'view_in_study_order': True, 'lines_unchanged': True, 'links': ['clips', 'meta.json']}
+d2e on the view: True planted swap: False d3t eval same md5: 141
+extract under DRY=1 reads the evaluation set from:
+     11 --cache /workspace/v8proof/dscale_lead_n3/trial_200841/out/eval_view
+cpucheck.done precheck.done 
+ZZ N3TRIAL DONE /workspace/v8proof/dscale_lead_n3/trial_200841

@@ -79,14 +79,42 @@ def _legacy_cache_key(sources: list, params: dict) -> str:
 
 def build_episodes_cached(sources: list, build_one: Callable[[object], ToyEpisode],
                           cache_root: str | Path, tag: str,
-                          params: dict) -> list[ToyEpisode]:
+                          params: dict, corpus_role: str = "",
+                          sanctioned_audit: str | None = None) -> list[ToyEpisode]:
     """Build (or load) episodes for `sources`, cached under cache_root.
 
     Layout: ``<cache_root>/<tag>-<key>/ep_00000.pt ...``. Resume is per-source-file:
     a killed build restarts exactly where it stopped (existing ``ep_%05d.pt`` ->
     load; ``skip_%05d`` -> a previously-corrupt item, not retried). ``DONE`` is an
     informational summary written last; it is NOT read on resume.
+
+    ``corpus_role`` / ``sanctioned_audit`` feed the parity ingest gate below.
     """
+    # ----------------------------------------------------------------------- #
+    # ⛔ THE PARITY INGEST GATE (parity.py §10c, RETRACTION_LOG C112/C113)
+    # ----------------------------------------------------------------------- #
+    # This is the ep_%05d.pt corpus writer, so gating HERE covers every caller
+    # rather than every caller remembering — including `scripts/build_pai_cache.py`,
+    # which is not touched by this change and is nonetheless now gated.
+    # (`scripts/rebuild_pai_rolling.py` calls ``save_episode`` DIRECTLY and is
+    #  therefore NOT covered here; it carries its own gate. That asymmetry is why
+    #  tests/test_build_parity_guard.py DERIVES the door set instead of trusting
+    #  "the builder" to be one place.)
+    #
+    # ⚠️ SCOPE, stated so the gate is not over-read: it fires ONLY for
+    # PhysicalAI-style clip sources — dicts carrying ``clip_id``. comma2k19
+    # segments, nuScenes scenes, lake shards and the toy corpora key on paths and
+    # integers, live in a DIFFERENT uid space, and cannot contain a PhysicalAI
+    # val episode. Answering "not applicable" there is correct; pretending to
+    # check would be the `df`-reports-the-cluster trap in a guard costume.
+    _clip_ids = [str(s["clip_id"]) for s in sources
+                 if isinstance(s, dict) and s.get("clip_id") is not None]
+    if _clip_ids:
+        from tanitad.data import parity                       # noqa: PLC0415
+        parity.require_ingest_gate("epcache.build_episodes_cached")
+        parity.guard_corpus_build(
+            _clip_ids, label=f"build_episodes_cached tag={tag}",
+            role=corpus_role, sanctioned_audit=sanctioned_audit)
     key = cache_key(sources, params)
     d = Path(cache_root) / f"{tag}-{key}"
     if not any(d.glob("ep_*.pt")):

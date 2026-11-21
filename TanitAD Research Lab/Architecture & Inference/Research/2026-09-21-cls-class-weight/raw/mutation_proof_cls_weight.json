@@ -1,0 +1,71 @@
+{
+ "_what": "mutation proof that test_cls_class_weight.py can actually FAIL",
+ "_evidence_class": "MEASURED (ours), CPU",
+ "targets": {
+  "stack\\tanitad\\models\\agent_slots.py": "696fe25936dcacc97943eb64c0fb82f2",
+  "stack\\tanitad\\models\\box3d_head.py": "c5d7d929f3e0f3467b4624d2cefc734f",
+  "stack\\tanitad\\refs\\refc_agents.py": "0f210e631168e6dbf53d0d8a063178ac"
+ },
+ "arms": [
+  {
+   "arm": "W1_denominator_stops_following_the_weights",
+   "file": "stack\\tanitad\\models\\agent_slots.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_a_CONSTANT_weight_changes_nothing_at_any_scale[0.1]",
+    "test_a_CONSTANT_weight_changes_nothing_at_any_scale[3.7]",
+    "test_a_CONSTANT_weight_changes_nothing_at_any_scale[100.0]",
+    "test_a_NON_uniform_weight_moves_the_loss_to_a_LITERAL[0-0.1-2.025816]",
+    "test_a_NON_uniform_weight_moves_the_loss_to_a_LITERAL[5-20.0-2.227341]"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "W2_weight_dropped_from_cross_entropy",
+   "file": "stack\\tanitad\\models\\agent_slots.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_a_CONSTANT_weight_changes_nothing_at_any_scale[0.1]",
+    "test_a_CONSTANT_weight_changes_nothing_at_any_scale[3.7]",
+    "test_a_CONSTANT_weight_changes_nothing_at_any_scale[100.0]",
+    "test_a_NON_uniform_weight_moves_the_loss_to_a_LITERAL[0-0.1-2.025816]",
+    "test_a_NON_uniform_weight_moves_the_loss_to_a_LITERAL[5-20.0-2.227341]"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "W3_box3d_stops_forwarding",
+   "file": "stack\\tanitad\\models\\box3d_head.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_box3d_set_loss_FORWARDS_it"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "W4_agent_losses_stops_forwarding",
+   "file": "stack\\tanitad\\refs\\refc_agents.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_agent_losses_FORWARDS_it"
+   ],
+   "tail": null
+  }
+ ],
+ "baseline": {
+  "rc": 0,
+  "failed": []
+ },
+ "restored_ok": true,
+ "final_clean_run": {
+  "rc": 0,
+  "failed": []
+ },
+ "arms_caught": 4,
+ "arms_total": 4,
+ "_VERDICT": "⭐ MUTATION-PROVEN — all 4/4 arms RED, including both declared-but-not-plumbed forwards, all three files restored byte-identical."
+}

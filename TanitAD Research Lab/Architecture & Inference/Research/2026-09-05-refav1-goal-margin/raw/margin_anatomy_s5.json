@@ -1,0 +1,917 @@
+{
+ "panel": {
+  "logits": "C:/Users/Admin/refav1_drive/logits_stride5.npz",
+  "gt_kappa": "C:/Users/Admin/refav1_drive/gt_kappa_282.npz",
+  "n_windows_with_gt": 282,
+  "n_gt_turn": 132,
+  "n_gt_straight": 150,
+  "n_windows_total_in_npz": 1974,
+  "n_episodes": 141,
+  "kappa_turn_threshold": 0.001,
+  "score": "max(TURN_/NUDGE_/LANE_CHANGE_ logits) - LANE_KEEP logit"
+ },
+ "margin_distribution": {
+  "note": "s > 0 means the head decodes a curvature-carrying token. The two class-conditional distributions below are what any threshold rule must separate.",
+  "gt_turn": {
+   "n": 132,
+   "mean": -0.7791281362685064,
+   "sd": 1.1044215526979064,
+   "p1": -1.8198882431536914,
+   "p5": -1.687774309888482,
+   "p10": -1.6373935267329216,
+   "p25": -1.4733519461005926,
+   "p50": -1.2126302421092987,
+   "p75": -0.7244756817817688,
+   "p90": 0.8561381757259374,
+   "p95": 1.9648496627807586,
+   "p99": 2.302931113243103
+  },
+  "gt_straight": {
+   "n": 150,
+   "mean": -1.311916782297194,
+   "sd": 0.6773519073972755,
+   "p1": -2.0079379668831825,
+   "p5": -1.8681457840837539,
+   "p10": -1.7578528232872486,
+   "p25": -1.6530277729034424,
+   "p50": -1.5237177014350891,
+   "p75": -1.241332769393921,
+   "p90": -0.8385800138115889,
+   "p95": 0.40845344960689495,
+   "p99": 1.3861576485633844
+  },
+  "separation_scalefree": {
+   "auc": 0.712020202020202,
+   "cohen_d": 0.590234782434552,
+   "pooled_sd_logits": 0.9026723972977071,
+   "overlap_coefficient": 0.5845454545454546,
+   "mean_gap_logits": 0.5327886460286876,
+   "median_gap_logits": 0.3110874593257904
+  },
+  "by_outcome_lane_keep_won_by": {
+   "missed_turns": {
+    "n": 105,
+    "p1": 0.1254664707183838,
+    "p5": 0.6959643006324768,
+    "p10": 1.063181710243225,
+    "p25": 1.1546933501958847,
+    "p50": 1.251526117324829,
+    "p75": 1.5008405447006226,
+    "p90": 1.6522774219512941,
+    "p95": 1.7299313083291052,
+    "p99": 1.8209678671509026
+   },
+   "correctly_held": {
+    "n": 139,
+    "p1": 0.3552627086639405,
+    "p5": 1.0646614491939546,
+    "p10": 1.117104697227478,
+    "p25": 1.2835003435611725,
+    "p50": 1.5488380193710327,
+    "p75": 1.6590290665626526,
+    "p90": 1.7597341258078814,
+    "p95": 1.884889407455921,
+    "p99": 2.0079775419831276
+   },
+   "median_gap_logits": 0.2973119020462036,
+   "REPRODUCES_banked_0p297": true
+  },
+  "by_outcome_curv_won_by": {
+   "correct_turns": {
+    "n": 27,
+    "p1": 0.04439976572990417,
+    "p5": 0.08801945447921754,
+    "p10": 0.20367577075958254,
+    "p25": 0.5737734436988831,
+    "p50": 0.8656378984451294,
+    "p75": 1.9791171848773956,
+    "p90": 2.241596335172653,
+    "p95": 2.3036711275577546,
+    "p99": 2.546479380726814
+   },
+   "false_turns": {
+    "n": 11,
+    "p1": 0.0927867829799652,
+    "p5": 0.21356675028800964,
+    "p10": 0.3645417094230652,
+    "p25": 0.4070083200931549,
+    "p50": 0.7397067546844482,
+    "p75": 1.1686732172966003,
+    "p90": 1.4171229600906372,
+    "p95": 1.5296153724193573,
+    "p99": 1.6196093022823335
+   }
+  },
+  "where_0p297_sits": {
+   "gap_logits": 0.2973119020462036,
+   "iqr_of_pooled_lane_keep_margins": 0.42636626958847046,
+   "gap_as_frac_of_that_iqr": 0.6973157194943438,
+   "gap_as_frac_of_pooled_sd": 0.32936855379233254,
+   "interpretation": "a gap far SMALLER than the spread it must separate means the two populations are interleaved, not offset"
+  }
+ },
+ "controls": {
+  "CONTROL_2_shuffled_label_auc": {
+   "mean": 0.5055361111111111,
+   "sd": 0.03355664054427061,
+   "expect": 0.5,
+   "n_shuffles": 200,
+   "passes": true
+  },
+  "CONTROL_1_argmax_reproduces_banked": {
+   "turn_recall": 0.20454545454545456,
+   "expect": 0.20454545,
+   "false_turn_on_straight": 0.07333333333333333,
+   "expect_false": 0.07333333,
+   "passes": true
+  },
+  "CONTROL_3_logit_scale_voids_raw_margin_objective": {
+   "scale_c": 3.0,
+   "decode_bit_identical": true,
+   "auc_unchanged": true,
+   "auc_scaled": 0.712020202020202,
+   "raw_median_gap_logits_scaled": 0.8919357061386108,
+   "raw_median_gap_logits_base": 0.2973119020462036,
+   "ratio_should_equal_c": 3.0,
+   "cohen_d_unchanged": true,
+   "VERDICT": "a raw-logit margin gap is NOT a property of the decision; scaling the head's Linear by c multiplies it by c while every decode, AUC and Cohen's d is unchanged. An objective phrased as 'widen the margin gap in logits' is therefore GAMEABLE BY WEIGHT NORM and inadmissible as stated."
+  }
+ },
+ "calibration_vs_separability": {
+  "bal_acc_at_argmax_threshold": 0.5656060606060606,
+  "bal_acc_at_best_threshold": 0.6853030303030303,
+  "best_threshold_on_s": -1.2621241211891174,
+  "gain_from_rethresholding": 0.11969696969696975,
+  "chance_bal_acc": 0.5,
+  "auc": 0.712020202020202,
+  "cohen_d": 0.590234782434552,
+  "overlap_coefficient": 0.5845454545454546,
+  "recall_cost_per_true_turn": 1.1901941618519374,
+  "RULE": "CALIBRATION if bal_acc_at_best_threshold >= 0.80 (the score separates; only the threshold is wrong). SEPARABILITY if bal_acc_at_best_threshold < 0.80 (no threshold on this score operates acceptably; the score itself must be re-fit). The 0.80 bar and this rule are committed in SPEC.md before the numbers were read.",
+  "VERDICT": "SEPARABILITY"
+ },
+ "operating_curve_commit_b": {
+  "note": "`commit b` = lat_logit_bias with a single entry -b on LANE_KEEP. This is the DECODE curve (gate 1) at zero GPU; the EXECUTED-turn rate additionally passes gate 2 and is measured on the GPU in P4.",
+  "grid": [
+   {
+    "commit_b": 0.0,
+    "turn_recall_decode": 0.20454545454545456,
+    "false_turn_on_straight_decode": 0.07333333333333333,
+    "balanced_acc": 0.5656060606060606,
+    "youden_j": 0.13121212121212122,
+    "frac_curvature_carrying": 0.1347517730496454,
+    "n_curv_windows": 38
+   },
+   {
+    "commit_b": 0.05,
+    "turn_recall_decode": 0.20454545454545456,
+    "false_turn_on_straight_decode": 0.07333333333333333,
+    "balanced_acc": 0.5656060606060606,
+    "youden_j": 0.13121212121212122,
+    "frac_curvature_carrying": 0.1347517730496454,
+    "n_curv_windows": 38
+   },
+   {
+    "commit_b": 0.1,
+    "turn_recall_decode": 0.20454545454545456,
+    "false_turn_on_straight_decode": 0.07333333333333333,
+    "balanced_acc": 0.5656060606060606,
+    "youden_j": 0.13121212121212122,
+    "frac_curvature_carrying": 0.1347517730496454,
+    "n_curv_windows": 38
+   },
+   {
+    "commit_b": 0.15,
+    "turn_recall_decode": 0.2196969696969697,
+    "false_turn_on_straight_decode": 0.07333333333333333,
+    "balanced_acc": 0.5731818181818181,
+    "youden_j": 0.14636363636363636,
+    "frac_curvature_carrying": 0.14184397163120568,
+    "n_curv_windows": 40
+   },
+   {
+    "commit_b": 0.2,
+    "turn_recall_decode": 0.2196969696969697,
+    "false_turn_on_straight_decode": 0.07333333333333333,
+    "balanced_acc": 0.5731818181818181,
+    "youden_j": 0.14636363636363636,
+    "frac_curvature_carrying": 0.14184397163120568,
+    "n_curv_windows": 40
+   },
+   {
+    "commit_b": 0.25,
+    "turn_recall_decode": 0.2196969696969697,
+    "false_turn_on_straight_decode": 0.08666666666666667,
+    "balanced_acc": 0.5665151515151515,
+    "youden_j": 0.13303030303030303,
+    "frac_curvature_carrying": 0.14893617021276595,
+    "n_curv_windows": 42
+   },
+   {
+    "commit_b": 0.3,
+    "turn_recall_decode": 0.2196969696969697,
+    "false_turn_on_straight_decode": 0.08666666666666667,
+    "balanced_acc": 0.5665151515151515,
+    "youden_j": 0.13303030303030303,
+    "frac_curvature_carrying": 0.14893617021276595,
+    "n_curv_windows": 42
+   },
+   {
+    "commit_b": 0.35,
+    "turn_recall_decode": 0.2196969696969697,
+    "false_turn_on_straight_decode": 0.08666666666666667,
+    "balanced_acc": 0.5665151515151515,
+    "youden_j": 0.13303030303030303,
+    "frac_curvature_carrying": 0.14893617021276595,
+    "n_curv_windows": 42
+   },
+   {
+    "commit_b": 0.4,
+    "turn_recall_decode": 0.2196969696969697,
+    "false_turn_on_straight_decode": 0.08666666666666667,
+    "balanced_acc": 0.5665151515151515,
+    "youden_j": 0.13303030303030303,
+    "frac_curvature_carrying": 0.14893617021276595,
+    "n_curv_windows": 42
+   },
+   {
+    "commit_b": 0.45,
+    "turn_recall_decode": 0.2196969696969697,
+    "false_turn_on_straight_decode": 0.08666666666666667,
+    "balanced_acc": 0.5665151515151515,
+    "youden_j": 0.13303030303030303,
+    "frac_curvature_carrying": 0.14893617021276595,
+    "n_curv_windows": 42
+   },
+   {
+    "commit_b": 0.5,
+    "turn_recall_decode": 0.22727272727272727,
+    "false_turn_on_straight_decode": 0.08666666666666667,
+    "balanced_acc": 0.5703030303030303,
+    "youden_j": 0.1406060606060606,
+    "frac_curvature_carrying": 0.1524822695035461,
+    "n_curv_windows": 43
+   },
+   {
+    "commit_b": 0.55,
+    "turn_recall_decode": 0.23484848484848486,
+    "false_turn_on_straight_decode": 0.08666666666666667,
+    "balanced_acc": 0.5740909090909091,
+    "youden_j": 0.1481818181818182,
+    "frac_curvature_carrying": 0.15602836879432624,
+    "n_curv_windows": 44
+   },
+   {
+    "commit_b": 0.6,
+    "turn_recall_decode": 0.24242424242424243,
+    "false_turn_on_straight_decode": 0.09333333333333334,
+    "balanced_acc": 0.5745454545454545,
+    "youden_j": 0.1490909090909091,
+    "frac_curvature_carrying": 0.16312056737588654,
+    "n_curv_windows": 46
+   },
+   {
+    "commit_b": 0.65,
+    "turn_recall_decode": 0.24242424242424243,
+    "false_turn_on_straight_decode": 0.09333333333333334,
+    "balanced_acc": 0.5745454545454545,
+    "youden_j": 0.1490909090909091,
+    "frac_curvature_carrying": 0.16312056737588654,
+    "n_curv_windows": 46
+   },
+   {
+    "commit_b": 0.7,
+    "turn_recall_decode": 0.25,
+    "false_turn_on_straight_decode": 0.09333333333333334,
+    "balanced_acc": 0.5783333333333334,
+    "youden_j": 0.15666666666666668,
+    "frac_curvature_carrying": 0.16666666666666666,
+    "n_curv_windows": 47
+   },
+   {
+    "commit_b": 0.75,
+    "turn_recall_decode": 0.25757575757575757,
+    "false_turn_on_straight_decode": 0.1,
+    "balanced_acc": 0.5787878787878789,
+    "youden_j": 0.15757575757575756,
+    "frac_curvature_carrying": 0.17375886524822695,
+    "n_curv_windows": 49
+   },
+   {
+    "commit_b": 0.8,
+    "turn_recall_decode": 0.25757575757575757,
+    "false_turn_on_straight_decode": 0.1,
+    "balanced_acc": 0.5787878787878789,
+    "youden_j": 0.15757575757575756,
+    "frac_curvature_carrying": 0.17375886524822695,
+    "n_curv_windows": 49
+   },
+   {
+    "commit_b": 0.85,
+    "turn_recall_decode": 0.26515151515151514,
+    "false_turn_on_straight_decode": 0.10666666666666667,
+    "balanced_acc": 0.5792424242424242,
+    "youden_j": 0.15848484848484845,
+    "frac_curvature_carrying": 0.18085106382978725,
+    "n_curv_windows": 51
+   },
+   {
+    "commit_b": 0.9,
+    "turn_recall_decode": 0.26515151515151514,
+    "false_turn_on_straight_decode": 0.10666666666666667,
+    "balanced_acc": 0.5792424242424242,
+    "youden_j": 0.15848484848484845,
+    "frac_curvature_carrying": 0.18085106382978725,
+    "n_curv_windows": 51
+   },
+   {
+    "commit_b": 0.95,
+    "turn_recall_decode": 0.26515151515151514,
+    "false_turn_on_straight_decode": 0.10666666666666667,
+    "balanced_acc": 0.5792424242424242,
+    "youden_j": 0.15848484848484845,
+    "frac_curvature_carrying": 0.18085106382978725,
+    "n_curv_windows": 51
+   },
+   {
+    "commit_b": 1.0,
+    "turn_recall_decode": 0.26515151515151514,
+    "false_turn_on_straight_decode": 0.10666666666666667,
+    "balanced_acc": 0.5792424242424242,
+    "youden_j": 0.15848484848484845,
+    "frac_curvature_carrying": 0.18085106382978725,
+    "n_curv_windows": 51
+   },
+   {
+    "commit_b": 1.05,
+    "turn_recall_decode": 0.2727272727272727,
+    "false_turn_on_straight_decode": 0.10666666666666667,
+    "balanced_acc": 0.583030303030303,
+    "youden_j": 0.16606060606060602,
+    "frac_curvature_carrying": 0.18439716312056736,
+    "n_curv_windows": 52
+   },
+   {
+    "commit_b": 1.1,
+    "turn_recall_decode": 0.3560606060606061,
+    "false_turn_on_straight_decode": 0.16,
+    "balanced_acc": 0.598030303030303,
+    "youden_j": 0.19606060606060607,
+    "frac_curvature_carrying": 0.25177304964539005,
+    "n_curv_windows": 71
+   },
+   {
+    "commit_b": 1.15,
+    "turn_recall_decode": 0.3939393939393939,
+    "false_turn_on_straight_decode": 0.17333333333333334,
+    "balanced_acc": 0.6103030303030303,
+    "youden_j": 0.22060606060606058,
+    "frac_curvature_carrying": 0.2765957446808511,
+    "n_curv_windows": 78
+   },
+   {
+    "commit_b": 1.2,
+    "turn_recall_decode": 0.4621212121212121,
+    "false_turn_on_straight_decode": 0.2,
+    "balanced_acc": 0.6310606060606061,
+    "youden_j": 0.2621212121212121,
+    "frac_curvature_carrying": 0.32269503546099293,
+    "n_curv_windows": 91
+   },
+   {
+    "commit_b": 1.25,
+    "turn_recall_decode": 0.5909090909090909,
+    "false_turn_on_straight_decode": 0.26,
+    "balanced_acc": 0.6654545454545455,
+    "youden_j": 0.33090909090909093,
+    "frac_curvature_carrying": 0.4148936170212766,
+    "n_curv_windows": 117
+   },
+   {
+    "commit_b": 1.3,
+    "turn_recall_decode": 0.6666666666666666,
+    "false_turn_on_straight_decode": 0.3333333333333333,
+    "balanced_acc": 0.6666666666666667,
+    "youden_j": 0.3333333333333333,
+    "frac_curvature_carrying": 0.48936170212765956,
+    "n_curv_windows": 138
+   },
+   {
+    "commit_b": 1.35,
+    "turn_recall_decode": 0.6742424242424242,
+    "false_turn_on_straight_decode": 0.35333333333333333,
+    "balanced_acc": 0.6604545454545454,
+    "youden_j": 0.32090909090909087,
+    "frac_curvature_carrying": 0.5035460992907801,
+    "n_curv_windows": 142
+   },
+   {
+    "commit_b": 1.4,
+    "turn_recall_decode": 0.696969696969697,
+    "false_turn_on_straight_decode": 0.38,
+    "balanced_acc": 0.6584848484848485,
+    "youden_j": 0.316969696969697,
+    "frac_curvature_carrying": 0.5283687943262412,
+    "n_curv_windows": 149
+   },
+   {
+    "commit_b": 1.45,
+    "turn_recall_decode": 0.7348484848484849,
+    "false_turn_on_straight_decode": 0.41333333333333333,
+    "balanced_acc": 0.6607575757575758,
+    "youden_j": 0.32151515151515153,
+    "frac_curvature_carrying": 0.5638297872340425,
+    "n_curv_windows": 159
+   },
+   {
+    "commit_b": 1.5,
+    "turn_recall_decode": 0.7954545454545454,
+    "false_turn_on_straight_decode": 0.46,
+    "balanced_acc": 0.6677272727272727,
+    "youden_j": 0.3354545454545454,
+    "frac_curvature_carrying": 0.6170212765957447,
+    "n_curv_windows": 174
+   },
+   {
+    "commit_b": 1.55,
+    "turn_recall_decode": 0.8560606060606061,
+    "false_turn_on_straight_decode": 0.54,
+    "balanced_acc": 0.658030303030303,
+    "youden_j": 0.31606060606060604,
+    "frac_curvature_carrying": 0.6879432624113475,
+    "n_curv_windows": 194
+   },
+   {
+    "commit_b": 1.6,
+    "turn_recall_decode": 0.8787878787878788,
+    "false_turn_on_straight_decode": 0.6066666666666667,
+    "balanced_acc": 0.636060606060606,
+    "youden_j": 0.2721212121212121,
+    "frac_curvature_carrying": 0.7340425531914894,
+    "n_curv_windows": 207
+   },
+   {
+    "commit_b": 1.65,
+    "turn_recall_decode": 0.9166666666666666,
+    "false_turn_on_straight_decode": 0.74,
+    "balanced_acc": 0.5883333333333334,
+    "youden_j": 0.17666666666666664,
+    "frac_curvature_carrying": 0.8226950354609929,
+    "n_curv_windows": 232
+   },
+   {
+    "commit_b": 1.7,
+    "turn_recall_decode": 0.946969696969697,
+    "false_turn_on_straight_decode": 0.82,
+    "balanced_acc": 0.5634848484848485,
+    "youden_j": 0.12696969696969707,
+    "frac_curvature_carrying": 0.8794326241134752,
+    "n_curv_windows": 248
+   },
+   {
+    "commit_b": 1.75,
+    "turn_recall_decode": 0.9696969696969697,
+    "false_turn_on_straight_decode": 0.8866666666666667,
+    "balanced_acc": 0.5415151515151515,
+    "youden_j": 0.08303030303030301,
+    "frac_curvature_carrying": 0.925531914893617,
+    "n_curv_windows": 261
+   },
+   {
+    "commit_b": 1.8,
+    "turn_recall_decode": 0.9772727272727273,
+    "false_turn_on_straight_decode": 0.92,
+    "balanced_acc": 0.5286363636363636,
+    "youden_j": 0.05727272727272725,
+    "frac_curvature_carrying": 0.9468085106382979,
+    "n_curv_windows": 267
+   },
+   {
+    "commit_b": 1.85,
+    "turn_recall_decode": 0.9924242424242424,
+    "false_turn_on_straight_decode": 0.9466666666666667,
+    "balanced_acc": 0.5228787878787879,
+    "youden_j": 0.045757575757575775,
+    "frac_curvature_carrying": 0.9680851063829787,
+    "n_curv_windows": 273
+   },
+   {
+    "commit_b": 1.9,
+    "turn_recall_decode": 0.9924242424242424,
+    "false_turn_on_straight_decode": 0.96,
+    "balanced_acc": 0.5162121212121212,
+    "youden_j": 0.032424242424242466,
+    "frac_curvature_carrying": 0.975177304964539,
+    "n_curv_windows": 275
+   },
+   {
+    "commit_b": 1.95,
+    "turn_recall_decode": 1.0,
+    "false_turn_on_straight_decode": 0.9733333333333334,
+    "balanced_acc": 0.5133333333333333,
+    "youden_j": 0.026666666666666616,
+    "frac_curvature_carrying": 0.9858156028368794,
+    "n_curv_windows": 278
+   },
+   {
+    "commit_b": 2.0,
+    "turn_recall_decode": 1.0,
+    "false_turn_on_straight_decode": 0.9733333333333334,
+    "balanced_acc": 0.5133333333333333,
+    "youden_j": 0.026666666666666616,
+    "frac_curvature_carrying": 0.9858156028368794,
+    "n_curv_windows": 278
+   },
+   {
+    "commit_b": 2.05,
+    "turn_recall_decode": 1.0,
+    "false_turn_on_straight_decode": 0.9933333333333333,
+    "balanced_acc": 0.5033333333333334,
+    "youden_j": 0.00666666666666671,
+    "frac_curvature_carrying": 0.9964539007092199,
+    "n_curv_windows": 281
+   },
+   {
+    "commit_b": 2.1,
+    "turn_recall_decode": 1.0,
+    "false_turn_on_straight_decode": 1.0,
+    "balanced_acc": 0.5,
+    "youden_j": 0.0,
+    "frac_curvature_carrying": 1.0,
+    "n_curv_windows": 282
+   },
+   {
+    "commit_b": 2.15,
+    "turn_recall_decode": 1.0,
+    "false_turn_on_straight_decode": 1.0,
+    "balanced_acc": 0.5,
+    "youden_j": 0.0,
+    "frac_curvature_carrying": 1.0,
+    "n_curv_windows": 282
+   },
+   {
+    "commit_b": 2.2,
+    "turn_recall_decode": 1.0,
+    "false_turn_on_straight_decode": 1.0,
+    "balanced_acc": 0.5,
+    "youden_j": 0.0,
+    "frac_curvature_carrying": 1.0,
+    "n_curv_windows": 282
+   },
+   {
+    "commit_b": 2.25,
+    "turn_recall_decode": 1.0,
+    "false_turn_on_straight_decode": 1.0,
+    "balanced_acc": 0.5,
+    "youden_j": 0.0,
+    "frac_curvature_carrying": 1.0,
+    "n_curv_windows": 282
+   },
+   {
+    "commit_b": 2.3,
+    "turn_recall_decode": 1.0,
+    "false_turn_on_straight_decode": 1.0,
+    "balanced_acc": 0.5,
+    "youden_j": 0.0,
+    "frac_curvature_carrying": 1.0,
+    "n_curv_windows": 282
+   },
+   {
+    "commit_b": 2.35,
+    "turn_recall_decode": 1.0,
+    "false_turn_on_straight_decode": 1.0,
+    "balanced_acc": 0.5,
+    "youden_j": 0.0,
+    "frac_curvature_carrying": 1.0,
+    "n_curv_windows": 282
+   },
+   {
+    "commit_b": 2.4,
+    "turn_recall_decode": 1.0,
+    "false_turn_on_straight_decode": 1.0,
+    "balanced_acc": 0.5,
+    "youden_j": 0.0,
+    "frac_curvature_carrying": 1.0,
+    "n_curv_windows": 282
+   },
+   {
+    "commit_b": 2.45,
+    "turn_recall_decode": 1.0,
+    "false_turn_on_straight_decode": 1.0,
+    "balanced_acc": 0.5,
+    "youden_j": 0.0,
+    "frac_curvature_carrying": 1.0,
+    "n_curv_windows": 282
+   },
+   {
+    "commit_b": 2.5,
+    "turn_recall_decode": 1.0,
+    "false_turn_on_straight_decode": 1.0,
+    "balanced_acc": 0.5,
+    "youden_j": 0.0,
+    "frac_curvature_carrying": 1.0,
+    "n_curv_windows": 282
+   },
+   {
+    "commit_b": 2.55,
+    "turn_recall_decode": 1.0,
+    "false_turn_on_straight_decode": 1.0,
+    "balanced_acc": 0.5,
+    "youden_j": 0.0,
+    "frac_curvature_carrying": 1.0,
+    "n_curv_windows": 282
+   },
+   {
+    "commit_b": 2.6,
+    "turn_recall_decode": 1.0,
+    "false_turn_on_straight_decode": 1.0,
+    "balanced_acc": 0.5,
+    "youden_j": 0.0,
+    "frac_curvature_carrying": 1.0,
+    "n_curv_windows": 282
+   },
+   {
+    "commit_b": 2.65,
+    "turn_recall_decode": 1.0,
+    "false_turn_on_straight_decode": 1.0,
+    "balanced_acc": 0.5,
+    "youden_j": 0.0,
+    "frac_curvature_carrying": 1.0,
+    "n_curv_windows": 282
+   },
+   {
+    "commit_b": 2.7,
+    "turn_recall_decode": 1.0,
+    "false_turn_on_straight_decode": 1.0,
+    "balanced_acc": 0.5,
+    "youden_j": 0.0,
+    "frac_curvature_carrying": 1.0,
+    "n_curv_windows": 282
+   },
+   {
+    "commit_b": 2.75,
+    "turn_recall_decode": 1.0,
+    "false_turn_on_straight_decode": 1.0,
+    "balanced_acc": 0.5,
+    "youden_j": 0.0,
+    "frac_curvature_carrying": 1.0,
+    "n_curv_windows": 282
+   },
+   {
+    "commit_b": 2.8,
+    "turn_recall_decode": 1.0,
+    "false_turn_on_straight_decode": 1.0,
+    "balanced_acc": 0.5,
+    "youden_j": 0.0,
+    "frac_curvature_carrying": 1.0,
+    "n_curv_windows": 282
+   },
+   {
+    "commit_b": 2.85,
+    "turn_recall_decode": 1.0,
+    "false_turn_on_straight_decode": 1.0,
+    "balanced_acc": 0.5,
+    "youden_j": 0.0,
+    "frac_curvature_carrying": 1.0,
+    "n_curv_windows": 282
+   },
+   {
+    "commit_b": 2.9,
+    "turn_recall_decode": 1.0,
+    "false_turn_on_straight_decode": 1.0,
+    "balanced_acc": 0.5,
+    "youden_j": 0.0,
+    "frac_curvature_carrying": 1.0,
+    "n_curv_windows": 282
+   },
+   {
+    "commit_b": 2.95,
+    "turn_recall_decode": 1.0,
+    "false_turn_on_straight_decode": 1.0,
+    "balanced_acc": 0.5,
+    "youden_j": 0.0,
+    "frac_curvature_carrying": 1.0,
+    "n_curv_windows": 282
+   },
+   {
+    "commit_b": 3.0,
+    "turn_recall_decode": 1.0,
+    "false_turn_on_straight_decode": 1.0,
+    "balanced_acc": 0.5,
+    "youden_j": 0.0,
+    "frac_curvature_carrying": 1.0,
+    "n_curv_windows": 282
+   },
+   {
+    "commit_b": 3.05,
+    "turn_recall_decode": 1.0,
+    "false_turn_on_straight_decode": 1.0,
+    "balanced_acc": 0.5,
+    "youden_j": 0.0,
+    "frac_curvature_carrying": 1.0,
+    "n_curv_windows": 282
+   },
+   {
+    "commit_b": 3.1,
+    "turn_recall_decode": 1.0,
+    "false_turn_on_straight_decode": 1.0,
+    "balanced_acc": 0.5,
+    "youden_j": 0.0,
+    "frac_curvature_carrying": 1.0,
+    "n_curv_windows": 282
+   },
+   {
+    "commit_b": 3.15,
+    "turn_recall_decode": 1.0,
+    "false_turn_on_straight_decode": 1.0,
+    "balanced_acc": 0.5,
+    "youden_j": 0.0,
+    "frac_curvature_carrying": 1.0,
+    "n_curv_windows": 282
+   },
+   {
+    "commit_b": 3.2,
+    "turn_recall_decode": 1.0,
+    "false_turn_on_straight_decode": 1.0,
+    "balanced_acc": 0.5,
+    "youden_j": 0.0,
+    "frac_curvature_carrying": 1.0,
+    "n_curv_windows": 282
+   },
+   {
+    "commit_b": 3.25,
+    "turn_recall_decode": 1.0,
+    "false_turn_on_straight_decode": 1.0,
+    "balanced_acc": 0.5,
+    "youden_j": 0.0,
+    "frac_curvature_carrying": 1.0,
+    "n_curv_windows": 282
+   },
+   {
+    "commit_b": 3.3,
+    "turn_recall_decode": 1.0,
+    "false_turn_on_straight_decode": 1.0,
+    "balanced_acc": 0.5,
+    "youden_j": 0.0,
+    "frac_curvature_carrying": 1.0,
+    "n_curv_windows": 282
+   },
+   {
+    "commit_b": 3.35,
+    "turn_recall_decode": 1.0,
+    "false_turn_on_straight_decode": 1.0,
+    "balanced_acc": 0.5,
+    "youden_j": 0.0,
+    "frac_curvature_carrying": 1.0,
+    "n_curv_windows": 282
+   },
+   {
+    "commit_b": 3.4,
+    "turn_recall_decode": 1.0,
+    "false_turn_on_straight_decode": 1.0,
+    "balanced_acc": 0.5,
+    "youden_j": 0.0,
+    "frac_curvature_carrying": 1.0,
+    "n_curv_windows": 282
+   },
+   {
+    "commit_b": 3.45,
+    "turn_recall_decode": 1.0,
+    "false_turn_on_straight_decode": 1.0,
+    "balanced_acc": 0.5,
+    "youden_j": 0.0,
+    "frac_curvature_carrying": 1.0,
+    "n_curv_windows": 282
+   },
+   {
+    "commit_b": 3.5,
+    "turn_recall_decode": 1.0,
+    "false_turn_on_straight_decode": 1.0,
+    "balanced_acc": 0.5,
+    "youden_j": 0.0,
+    "frac_curvature_carrying": 1.0,
+    "n_curv_windows": 282
+   },
+   {
+    "commit_b": 3.55,
+    "turn_recall_decode": 1.0,
+    "false_turn_on_straight_decode": 1.0,
+    "balanced_acc": 0.5,
+    "youden_j": 0.0,
+    "frac_curvature_carrying": 1.0,
+    "n_curv_windows": 282
+   },
+   {
+    "commit_b": 3.6,
+    "turn_recall_decode": 1.0,
+    "false_turn_on_straight_decode": 1.0,
+    "balanced_acc": 0.5,
+    "youden_j": 0.0,
+    "frac_curvature_carrying": 1.0,
+    "n_curv_windows": 282
+   },
+   {
+    "commit_b": 3.65,
+    "turn_recall_decode": 1.0,
+    "false_turn_on_straight_decode": 1.0,
+    "balanced_acc": 0.5,
+    "youden_j": 0.0,
+    "frac_curvature_carrying": 1.0,
+    "n_curv_windows": 282
+   },
+   {
+    "commit_b": 3.7,
+    "turn_recall_decode": 1.0,
+    "false_turn_on_straight_decode": 1.0,
+    "balanced_acc": 0.5,
+    "youden_j": 0.0,
+    "frac_curvature_carrying": 1.0,
+    "n_curv_windows": 282
+   },
+   {
+    "commit_b": 3.75,
+    "turn_recall_decode": 1.0,
+    "false_turn_on_straight_decode": 1.0,
+    "balanced_acc": 0.5,
+    "youden_j": 0.0,
+    "frac_curvature_carrying": 1.0,
+    "n_curv_windows": 282
+   },
+   {
+    "commit_b": 3.8,
+    "turn_recall_decode": 1.0,
+    "false_turn_on_straight_decode": 1.0,
+    "balanced_acc": 0.5,
+    "youden_j": 0.0,
+    "frac_curvature_carrying": 1.0,
+    "n_curv_windows": 282
+   },
+   {
+    "commit_b": 3.85,
+    "turn_recall_decode": 1.0,
+    "false_turn_on_straight_decode": 1.0,
+    "balanced_acc": 0.5,
+    "youden_j": 0.0,
+    "frac_curvature_carrying": 1.0,
+    "n_curv_windows": 282
+   },
+   {
+    "commit_b": 3.9,
+    "turn_recall_decode": 1.0,
+    "false_turn_on_straight_decode": 1.0,
+    "balanced_acc": 0.5,
+    "youden_j": 0.0,
+    "frac_curvature_carrying": 1.0,
+    "n_curv_windows": 282
+   },
+   {
+    "commit_b": 3.95,
+    "turn_recall_decode": 1.0,
+    "false_turn_on_straight_decode": 1.0,
+    "balanced_acc": 0.5,
+    "youden_j": 0.0,
+    "frac_curvature_carrying": 1.0,
+    "n_curv_windows": 282
+   },
+   {
+    "commit_b": 4.0,
+    "turn_recall_decode": 1.0,
+    "false_turn_on_straight_decode": 1.0,
+    "balanced_acc": 0.5,
+    "youden_j": 0.0,
+    "frac_curvature_carrying": 1.0,
+    "n_curv_windows": 282
+   }
+  ]
+ },
+ "committed_operating_points": {
+  "PRIMARY_max_youden_j": {
+   "commit_b": 1.5,
+   "turn_recall_decode": 0.7954545454545454,
+   "false_turn_on_straight_decode": 0.46,
+   "balanced_acc": 0.6677272727272727,
+   "youden_j": 0.3354545454545454,
+   "frac_curvature_carrying": 0.6170212765957447,
+   "n_curv_windows": 174
+  },
+  "SECONDARY_max_recall_false_turn_le_0p10": {
+   "commit_b": 0.75,
+   "turn_recall_decode": 0.25757575757575757,
+   "false_turn_on_straight_decode": 0.1,
+   "balanced_acc": 0.5787878787878789,
+   "youden_j": 0.15757575757575756,
+   "frac_curvature_carrying": 0.17375886524822695,
+   "n_curv_windows": 49
+  },
+  "CONTROL_argmax_b0": {
+   "commit_b": 0.0,
+   "turn_recall_decode": 0.20454545454545456,
+   "false_turn_on_straight_decode": 0.07333333333333333,
+   "balanced_acc": 0.5656060606060606,
+   "youden_j": 0.13121212121212122,
+   "frac_curvature_carrying": 0.1347517730496454,
+   "n_curv_windows": 38
+  },
+  "criterion_committed_in": "SPEC.md (this package), before numbers read"
+ }
+}

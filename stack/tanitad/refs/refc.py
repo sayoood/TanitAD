@@ -7,9 +7,26 @@ TRUNCATED-DIFFUSION trajectory decoder in the DiffusionDrive spirit (arXiv
 the conv feature map, emitting a per-anchor confidence + a per-anchor offset, and
 (optionally) refining the winning modes with a few truncated denoising steps. The
 rest of the TCP-C stack is KEPT verbatim: the torchvision-free ResNet-34-style
-encoder, the measurement encoder with per-sample ego-dropout, the LAW latent-
-world-model aux, the strategic-ctx hierarchy graft, and the REF-C.1 target-speed
-class head.
+encoder, the measurement encoder (TCP's FC-128 x 2, bit-for-bit), the LAW
+latent-world-model aux, the strategic-ctx hierarchy graft, and the REF-C.1
+target-speed class head.
+
+⚠⚠ CORRECTION 2026-09-04 -- THIS DOCSTRING USED TO SAY "the measurement encoder
+with per-sample ego-dropout" INSIDE THE "kept verbatim" LIST, AND THAT LAUNDERED
+AN UNSWEPT HYPER-PARAMETER AS INHERITED, VALIDATED PRACTICE. The ENCODER is
+TCP's. The **ego-dropout is not**: the string "dropout" occurs ZERO times in
+arXiv 2206.08129 (two probes -- a full-text search for dropout/drop out/mask,
+and TCP's own layer table, which lists the measurement encoder with no
+regulariser). ``ego_dropout = 0.5`` is a TanitAD invention that nobody, upstream
+or here, has ever swept; the two published planners that DID sweep it landed on
+**0.5** (DRAMA, NAVSIM PDMS 0.835 -> 0.848) and **0.75** (PlanTF, nuPlan
+closed-loop, at a measured cost of -1.48 OLS). Same root-cause class as the
+registry's un-refined-anchor correction: a true statement about one component
+extended over a neighbour it never covered.
+⛔ AND IT IS NOT A FREE KNOB: with ``ego_valid_channel = False`` a withheld
+speed is byte-identical to a genuine standstill -- MEASURED 22.5 : 1 withheld
+vs genuine at train against 100 % genuine at eval (X15; see
+``ego_valid_channel`` below and REF-C v4's PREREG section 4.2).
 
 Why anchors + FPS (not k-means): comma2k19 is ~74 % straight, so k-means
 collapses almost every centroid onto the straight mode and starves the turns.
@@ -128,8 +145,54 @@ import torch
 import torch.nn.functional as F
 from torch import Tensor, nn
 
+from tanitad.models.kinematic import rollout_unicycle
+from tanitad.models import refcv6_diffusion as _rv6
+from tanitad.models import _gradreach as _gr  # batch 3 (a): the declaration
+from tanitad.refs import feasible_decode as _feas
+# ⭐ S7 / E15 — the param-free metric-goal-point compatibility. Imported, NEVER
+# re-derived beside the thing it scores: a guard/score re-implemented next to
+# its own consumer is the exact defect the navpred RESULT retracted two
+# published numbers for. `goal_point` imports `tanitad.data.lan` and (lazily,
+# inside one function) `refc_v3` — so there is no module-level cycle with this
+# file, which `refc_v3` imports.
+from tanitad.refs import goal_point as gpm
+# refcv5 WP-4. Cheap and cycle-free: `refc_sampler` imports only
+# `tanitad.models.kinematic`, which this module already imports. WP-6's
+# `refc_agents` is imported LAZILY inside `RefCModel.__init__` instead --
+# it pulls the corpus-side raster/projection modules, and an OFF seam must
+# not pay for them.
+from tanitad.refs import refc_sampler as rs
+# refcv7 NEW-1: the causal kinematic prior and THE ONE function that turns a
+# residual into the plan (`kinematic_prior.roll_plan`).
+from tanitad.models import kinematic_prior as _kp
+# refcv5 WP-B (`E-WP-INDEX-1`) — DiffusionDrive coupling (2) [C5]. Cycle-free by
+# construction: `refc_wp_index` imports NOTHING from tanitad, only torch. It is
+# a top-level import (unlike WP-6's `refc_agents`) precisely because it costs
+# nothing to an OFF build — no module it pulls touches the corpus.
+from tanitad.refs import refc_wp_index as wpi
+# refcv6 coupling (1): BEV features at the candidate's own waypoints.
+# Same import discipline as `wpi` above -- a leaf module whose only
+# tanitad import is `data.bev_raster`, so it cannot cycle back into refc.
+from tanitad.models import refc_bev_coupling as bevc
+from tanitad.models.plan_wires_r9 import gated_mix as _pw_gated_mix, n_box as _pw_n_box, set_n_box as _pw_set_n_box  # refcv9 C8 W-BOX
+
+
+def _feas_with_origin(x: Tensor) -> Tensor:
+    """[..., S, 2] -> [..., S+1, 2] with the ego origin prepended. Same shape
+    contract as ``fan_safety.with_origin``; duplicated here only because
+    ``taniteval`` is a SIBLING of ``stack/`` and a hard import would make this
+    module un-importable on a pod."""
+    z = torch.zeros(*x.shape[:-2], 1, 2, dtype=x.dtype, device=x.device)
+    return torch.cat([z, x], dim=-2)
 from tanitad.refs import refc_select as sl
+# refcv8 WP-B: the tactical-conditioning seams (pure module; no circular import -- it imports torch only)
+from tanitad.refs import refcv8_conditioning as r8c
 from tanitad.refs import refc_tactical as tac
+# ⛔⛔ G-HYG (SPEC_REFCV7 §2, 2026-09-26): every config dataclass below REFUSES an undeclared
+# attribute at assignment. D-REFCV6-EQUALIZE-DROPPED was the THIRD time an ad-hoc attribute on
+# `CNNEncoderConfig` was dropped by a rebuild while argv and config.json still stated it; each
+# earlier fix declared one field and left the class open. See `tanitad/train/config_hygiene.py`.
+from tanitad.train.config_hygiene import strict_fields
 
 # Strategic vocabulary — order pinned against scripts/refb_labels.py indices
 # by tests/test_refc.py (same 4-wide interface as tanitad.refs.refb).
@@ -214,6 +277,24 @@ def furthest_point_sample(pool: Tensor, n: int, seed: int = 0) -> Tensor:
     return pool[torch.tensor(chosen, device=pool.device)]
 
 
+#: ⭐ H-EGO-LIT-4 (2026-09-05): the admissible SOURCES of the speed a WITHHELD
+#: row's anchor bank is rolled at. `AnchorDecoder.anchor_withheld_bank` holds
+#: one of these; the trainer's `--withheld-bank` flag sets it and STAMPS it.
+#:   fixed  — `anchor_ref_speed` (the shipped 10 m/s roll; the pre-flag
+#:            arithmetic, bit-identical)
+#:   pred   — the model's OWN detached, vision-only `g_tac` 2 s speed
+#:            (SparseDrive's pattern), clamped to [0, anchor_withheld_speed_max]
+#:   random — a draw from `anchor_random_speed_pool` (the training marginal of
+#:            v0): the right distribution and ZERO information — the blindness
+#:            CONTROL that must NOT gain if `pred` gains for the right reason
+#:   none   — EVERY row (kept, withheld, eval) at `anchor_ref_speed`: the
+#:            field's speed-blind fixed vocabulary
+#: ⛔ The measured v0 of a withheld row reaches NONE of them: a speed bucketed on
+#: it would put log2(k) bits of the withheld channel into the candidate
+#: geometry (D-EGOLIT-WITHHELD1, refused as designed).
+WITHHELD_BANK_MODES: tuple[str, ...] = ("fixed", "pred", "random", "none")
+
+
 def default_anchors(horizons: tuple[int, ...], n_anchors: int,
                     pool_size: int = 4096, seed: int = 0,
                     device: str = "cpu") -> Tensor:
@@ -231,6 +312,7 @@ def default_anchors(horizons: tuple[int, ...], n_anchors: int,
 # Configs
 # ============================================================================
 
+@strict_fields
 @dataclass
 class CNNEncoderConfig:
     """ResNet-34-style trunk (torchvision-free): stem /4, four stages /2 each
@@ -250,10 +332,81 @@ class CNNEncoderConfig:
     image_width: int | None = None   # non-square input; None == square (default)
     base_width: int = 88          # V2-99-class width (90.5 M trunk); XL -> 124
     blocks: tuple[int, ...] = (3, 6, 16, 6)    # deep-34 (8x8xF map preserved)
+    # ⭐ refcv6 §2: which trunk to BUILD. "refc" (DEFAULT) is the in-repo
+    # torchvision-free ResNet above — every pre-refcv6 config keeps it and is
+    # bit-identical. "timm" builds `timm` `resnet34.a1_in1k` with ImageNet
+    # weights (`tanitad.models.timm_trunk`), which is DiffusionDrive's trunk
+    # and DiffusionDrive's initialisation. ⛔ The two differ in `feat_dim`
+    # (512 vs base_width*8) and in `in_channels` semantics (the timm default
+    # is DD's SINGLE 3-channel frame), so switching is a new arm, never a
+    # drop-in for an existing checkpoint.
+    trunk: str = "refc"           # "refc" | "timm"
+    # ⭐ PI 2026-09-16: the trunk SIZE is under review, so the backbone is a
+    # NAME resolved through timm and every channel count is read from
+    # `feature_info`. Swapping resnet34 -> resnet50 -> convnext must not need a
+    # model-code change.
+    # ⭐ PI 2026-09-16: PRIMARY `resnet101.a1_in1k` (1024 @ stride-16 /
+    # 2048 @ stride-32), with `resnet34.a1_in1k` (256 / 512) as the second
+    # comparison run. ⚠️ Inert unless `trunk == "timm"`, so this default
+    # changes nothing for any pre-refcv6 arm.
+    trunk_name: str = "resnet101.a1_in1k"
+    # ⭐⭐ PI 2026-09-16: FRAME HISTORY IS REQUIRED. "shared" runs the SAME
+    # weights over each of the K = in_channels // 3 frames (3 channels each,
+    # ImageNet-normalised, so the prior stays exact) and fuses AFTER the trunk
+    # at both strides. "inflate" is the cheaper alternative arm: one pass with
+    # a 3K-channel stem whose ImageNet weights are repeated and divided by K.
+    trunk_mode: str = "shared"        # "shared" (K passes) | "inflate" (1)
+    trunk_fuse: str = "concat1x1"     # "concat1x1" | "attn" | "last"
+    trunk_fuse_identity: bool = True  # history as a REMOVABLE graft
+    trunk_pretrained: bool = True     # timm only; False is the knockout arm
+    trunk_imagenet_norm: bool = True  # timm only; E-SEED-2 says never off
+    #: ⛔ MEMORY LEVERS — REAL FIELDS, not attributes set from outside. MEASURED
+    #: 2026-09-19: setting them as ad-hoc attributes LOOKED fine (`setattr` succeeds on
+    #: this dataclass) and the trunk still OOM'd at 22.34 GB, because a non-field does
+    #: not survive the config's own round-trip. A lever that can be silently dropped
+    #: between the CLI and the model is worse than no lever: the run reports the flag
+    #: and trains the other arm.
+    trunk_chunk_ckpt: int = 0        # 0 = off; N = leading-batch chunk size
+    trunk_frozen_bn: bool = False    # required by trunk_chunk_ckpt; CHANGES THE ARM
+    #: ⛔ SPEED LEVERS (timm trunk only), real fields for the same reason as above.
+    trunk_bf16: bool = False         # the BACKBONE under bf16 autocast; outputs back to fp32
+    trunk_channels_last: bool = False  # the BACKBONE in NHWC
+    trunk_fold_bn: bool = False      # fold each FROZEN BN into its conv; needs trunk_frozen_bn
+    trunk_dedup_frames: bool = False  # each distinct frame of overlapping stacks ONCE; needs trunk_frozen_bn
+    trunk_compile: bool = False       # the backbone through torch.compile (Inductor); timm only
+    #: ⛔⛔ C26 -- zero the bottom N rows of EVERY frame before normalisation (timm trunk; 0 = off,
+    #: bit-identical). A REAL FIELD since 2026-09-26 (FIX-3, D-REFCV6-EQUALIZE-DROPPED): the
+    #: trainer set it as an AD-HOC attribute, the `--image-hw` `dataclasses.replace` rebuild
+    #: carried only declared fields, and refcv6-r101-s0 trained with `--equalize-bottom-rows 43`
+    #: in its argv and an un-equalised trunk (`build_encoder` read `getattr(cfg, ..., 0)`).
+    trunk_equalize_bottom_rows: int = 0
 
     @property
     def feat_dim(self) -> int:
+        if str(self.trunk) == "timm":
+            # ⛔⛔ READ FROM timm's `feature_info`, NEVER WRITTEN DOWN. resnet34
+            # emits 512 at stride 32 and resnet101 emits 2048 (MEASURED
+            # 2026-09-16); a hard-coded 512 would build `feat_proj` 1536
+            # channels too narrow on the PI's PRIMARY trunk, and it would fail
+            # somewhere far from this line. It is NOT `base_width * 8` either.
+            from tanitad.models.timm_trunk import trunk_feature_channels
+            return int(trunk_feature_channels(str(self.trunk_name))[1])
         return self.base_width * 8
+
+    @property
+    def s16_dim(self) -> int:
+        """Stride-16 channel count — the PERCEPTION map's width.
+
+        Only the timm trunk exposes a stride-16 map; the in-repo ResNet returns
+        stride 32 alone, so asking it here is a caller error rather than a
+        number to invent.
+        """
+        if str(self.trunk) != "timm":
+            raise ValueError(
+                "the in-repo REF-C trunk emits only a stride-32 map; the "
+                "stride-16 perception map exists on `trunk='timm'`.")
+        from tanitad.models.timm_trunk import trunk_feature_channels
+        return int(trunk_feature_channels(str(self.trunk_name))[0])
 
     @property
     def grid(self) -> int:
@@ -277,12 +430,14 @@ class CNNEncoderConfig:
         return (h // 32, w // 32)
 
 
+@strict_fields
 @dataclass
 class MeasurementConfig:
     hidden: int = 128
     d_out: int = 128
 
 
+@strict_fields
 @dataclass
 class TrajectoryConfig:
     # 2 s @ 10 Hz in 0.5 s strides (the REF-B tactical horizons) — time-indexed
@@ -292,13 +447,56 @@ class TrajectoryConfig:
     horizons: tuple[int, ...] = (5, 10, 15, 20)
 
 
+@strict_fields
 @dataclass
 class AnchorConfig:
     n_anchors: int = 128          # FPS vocabulary size (base 128; XL 256; 20 smoke)
     pool_size: int = 4096         # synthetic pool the default anchors FPS over
     seed: int = 0
+    # ⭐⭐ refcv4-b — THE v0-CONDITIONED VOCABULARY (2026-09-04).
+    #
+    # A FIXED bank of paths in absolute metres must spend its budget on the
+    # SPEED axis before it can spend any of it on shape: over 6 s the corpus
+    # covers ~0-216 m of along-track displacement, so most of 128 anchors go to
+    # "how fast", not "which way". `ha` (hold-action) is v0-conditioned by
+    # construction, which is why a fixed bank cannot reach it. MEASURED on the
+    # banked 4,823-window surface: the shipped fixed-path set reads 0.3773 m
+    # oracle-in-vocabulary (+0.0777 [+0.0528, +0.1044] SEPARATED WORSE than
+    # ha = 0.2996), while a v0-conditioned constant-(accel, curvature) family of
+    # 117 candidates reads 0.2610 (-0.0387 [-0.0652, -0.0104] BEATS ha).
+    #
+    # With this ON, `anchor_controls` [N, 2] = (accel m/s^2, curvature 1/m) is
+    # the vocabulary and the emitted bank is rolled per window through
+    # `rollout_unicycle` from the window's own v0. `anchors` [N, S, 2] still
+    # holds the bank rolled at `ref_speed_ms` -- it is the checkpoint-visible
+    # artifact and the surface `_lan_anchor_prior` / `_goal_along_prior` fall
+    # back to, so a content check against the built file still works.
+    #
+    # ⛔ ego-dropout is NOT weakened by this. `v_ms` is the PRE-dropout speed;
+    # rolling the bank from it on a window whose speed was WITHHELD would feed
+    # the channel back in through the candidate GEOMETRY -- a more direct leak
+    # than the ranking one S2 guards. Withheld rows are rolled at
+    # `ref_speed_ms` instead, so the dropout regime stays genuinely speed-blind.
+    v0_conditioned: bool = False
+    ref_speed_ms: float = 10.0
+    # ⭐ WHAT CHANNEL 1 OF `anchor_controls` MEANS.
+    #   "kappa" — curvature 1/m, integrated as supplied (the literal control).
+    #   "alat"  — LATERAL ACCELERATION m/s^2; curvature is DERIVED per window as
+    #             `a_lat / max(v0, alat_v_floor_ms)^2`, clamped to `kappa_cap`.
+    # MEASURED: a constant-CURVATURE family is unflyable at speed (a_lat =
+    # v^2 * kappa, so kappa 0.06 at 27 m/s is 4.5 g and 104 of 117 anchors break
+    # a mu = 0.7 circle). Under "alat" the control space IS the Kamm-circle
+    # space, so a bound on the grid is a bound on the friction circle: the same
+    # 117-anchor budget reads 0.1987 m oracle-in-vocabulary (-0.1009 [-0.1213,
+    # -0.0813] vs ha) with 0/117 over mu = 0.7 and a 0.68 g peak.
+    # `a_lat = 0` <=> `kappa = 0` exactly, so the pinned straight-ahead control
+    # survives the reparameterisation.
+    control_units: str = "kappa"
+    alat_v_floor_ms: float = 4.0     # below this the clamp would explode
+    kappa_cap: float = 0.12          # ~8.3 m turn radius; a parking-lot bound
 
 
+@strict_fields
 @dataclass
 class DecoderConfig:
     d: int = 384                  # decoder width (anchor queries + cross-attn)
@@ -308,19 +506,139 @@ class DecoderConfig:
     aux_hidden: int = 384         # maneuver-head hidden
     diffusion_steps: int = 2      # truncated-denoise steps (0 == classifier)
     noise_std: float = 0.1        # train-time truncated-diffusion noise (metres)
+    # ---- THE FEASIBILITY-AWARE DECODE (default OFF, byte-identical when off) --
+    # MEASURED 2026-09-05: this decode emits a fan whose mean friction load is
+    # 4.18 g while the frozen vocabulary it started from is drivable at 0.48 g --
+    # an 8.6x blow-up manufactured DOWNSTREAM of the vocabulary, with 88.8 % of
+    # candidates outside the (a, kappa) envelope. A feasibility REWARD moves the
+    # ranking by 0.001 and a post-train VETO closed ~2.7 % of the gap while
+    # regressing T1 ade_m +0.0362 m. Both are soft: they penalise a path the
+    # decode can still emit. With this ON, an envelope- or Kamm-violating path is
+    # UNREPRESENTABLE, and the projection is applied at EVERY pass that moves a
+    # waypoint -- a penalty on `out["offset"]` reaches one of three.
+    feasible_decode: bool = False
+    feasible_mu: float = 0.7      # friction circle; None-like <= 0 disables it
+    feasible_entry: bool = False  # also bind the first step's speed to v0 +- a*dt
+    feasible_a_max: float = 4.0   # == rewards.A_MAX_MPS2 (the scorer's own)
+    feasible_kappa_max: float = 0.2
+    feasible_prefix_slots: int = 4  # the UNIFORM 2 s prefix the scorer differentiates
+    # ---- refcv5 WP-4: THE CONTROL-SPACE DIFFUSION SAMPLER (default OFF) -----
+    #
+    # ⭐ THESE ARE REAL FIELDS, AND THAT IS THE POINT. Until 2026-09-06 the
+    # trainer's `_pin_refcv5_seams` wrote `core.decoder.sampler = "ddim"` onto
+    # an UNFROZEN dataclass that had no such field. Python accepted it, the
+    # trainer's own guards read it back and passed, and `_seam_stamp` copied it
+    # into `config.json` -- for a model that contained NO DENOISER. The run
+    # record claimed a sampler the weights did not have: FALSE PROVENANCE, the
+    # `--v2` conflation failure in a new costume. A declared field plus the
+    # build below plus `assert_seams_are_built` (refc_v3_train) closes it at
+    # all three levels: the config can hold it, the model must build it, and
+    # the stamp is checked against the MODEL rather than against the config
+    # that produced it.
+    #
+    # `"none"` constructs NOTHING -- not "constructs and gates" -- so RNG draw
+    # order is unchanged and every pre-v5 checkpoint keeps loading strictly.
+    sampler: str = "none"              # "none" | "ddim"
+    # ⛔ "metre" is the DD-LITERAL DELIBERATE REGRESSION, pre-registered to FAIL
+    # the flyability gate: it noises the WAYPOINTS, so a 0.73 m lateral
+    # excursion over a 0.5 s slot implies ~5.8 m/s^2 (0.6 g) of lateral
+    # acceleration and the fan fills with paths no car can drive. An arm that
+    # cannot be RUN cannot fail, so it is a code path, not a paragraph.
+    sampler_space: str = "control"     # "control" | "metre"
+    sampler_train_t_max: int = 50      # DD's train draw, t ~ U[0, t_max)
+    sampler_infer_t: int = 8           # DD's truncation point (sigma = 0.0316)
+    sampler_steps: int = 2             # DDIM steps at inference -> ladder [10, 0]
+    # ⛔ > 1 is REFUSED at forward time, not silently honoured: a [B, G*N, ...]
+    # fan mis-indexes `loss_cls`'s a_star, the [B, N] priors and every `sel_idx`
+    # dump, all of which still assume N.
+    sampler_groups: int = 1
+    # ⭐ refcv6 §2b: the width of the ego-history vector the model will hand
+    # `forward` as `ego_hist`. 0 (DEFAULT) builds no `ego_to_cond` at all.
+    ego_hist_dim: int = 0
+    # ---- refcv6 §3: F1..F9 --------------------------------------------------
+    # ⭐ ``tanitad.models.refcv6_diffusion.DiffusionFlags | None``. A DECLARED
+    # field for the same reason ``sampler`` and ``wp_index`` are declared: the
+    # refcv5 false-provenance defect (a trainer writing a knob onto a dataclass
+    # that had no such field, which Python accepted, the guards read back and
+    # ``config.json`` recorded, for a model that contained no denoiser).
+    # ⛔ ``None`` CONSTRUCTS NOTHING -- not "constructs and gates" -- so RNG
+    # draw order, parameter count and every emitted tensor are bit-identical to
+    # the pre-refcv6 file. Loosely annotated to keep this module import-free of
+    # ``tanitad.models`` on the default path.
+    refcv6: object | None = None
+    # (a_lon, a_lat) m/s^2 -- the normaliser the anchored Gaussian and the x0
+    # loss both divide by, so "sigma at t=8" means the same thing in both.
+    control_norm: tuple[float, float] = (4.0, 3.0)
+    # ⛔ DD's PUBLISHED PER-WAYPOINT SIGMA **AT THE TRUNCATION POINT**, in
+    # METRES -- a TARGET, not a divisor, and the distinction is the whole
+    # regression. Used as a divisor directly it delivers `sigma(8) * 0.90 =
+    # 0.028 m` of noise: **31.7x too gentle**, and the DD-literal arm that is
+    # pre-registered to FAIL the flyability gate would quietly PASS it. An arm
+    # that cannot fail proves nothing, which is the defect this whole seam is
+    # instrumented against. The normaliser is therefore DERIVED in `_sample` as
+    # `metre_sigma_m / sqrt(1 - abar(sampler_infer_t))` (= 28.49 / 23.11), so
+    # the emitted noise IS the published 0.90 m / 0.73 m.
+    metre_sigma_m: tuple[float, float] = (0.90, 0.73)
+    # ---- refcv5 WP-6: the agent seam on the decoder's cross-attention -------
+    cross_agent: bool = False
+    # ---- refcv5 WP-B: the WAYPOINT INDEX on that agent cross-attention ------
+    # ⭐ `refc_wp_index.WaypointIndexConfig | None`. A DECLARED field, and
+    # loosely annotated for the same reason `RefCConfig.agents` is: the trainer
+    # assigns `core.decoder.wp_index = wcfg`, and on a dataclass without the
+    # field that assignment would create an AD-HOC ATTRIBUTE which every guard
+    # reads back happily while the model contains no index at all — the WP-4
+    # `sampler` false-provenance defect, one seam over. `None` (and
+    # `enable=False`) construct NOTHING, so RNG draw order is unchanged and
+    # every pre-WP-B checkpoint keeps loading strictly.
+    # ⛔ It is INERT without `cross_agent`: with no agent tokens there is
+    # nothing to address, and an arm that ran it that way would read as "the
+    # waypoint index does not help" while never having had an index. `RefCModel`
+    # refuses that combination rather than honouring it.
+    wp_index: "object | None" = None
+    #: refcv6 coupling (1) -- `refc_bev_coupling.BEVCouplingConfig | None`, a
+    #: DECLARED field for the same reason `wp_index` is one: the trainer assigns
+    #: `core.decoder.bev_coupling = bcfg`, and on a dataclass without the field
+    #: that assignment would be a silent no-op on a frozen instance.
+    bev_coupling: "object | None" = None
+    #: width of the BEV feature map coupling (1) reads -- the BEV encoder's
+    #: `d_out`. ⛔ NOT a backbone constant: it is downstream of the stride-16
+    #: map, whose own width is 1024 on resnet101 and 256 on resnet34 and is read
+    #: from `feature_info` (`CNNEncoderConfig.s16_dim`), never written down.
+    bev_coupling_d_bev: int = 96
+    # ---- refcv7 NEW-1: THE PLAN IS A RESIDUAL ON A CAUSAL KINEMATIC PRIOR --
+    # A DECLARED field (the refcv5 false-provenance rule; after the config-
+    # hygiene fix an undeclared attribute is REFUSED at assignment). "off"
+    # (the DEFAULT) reaches no new code, so refcv6 builds and runs bit for
+    # bit. Any other value (`kinematic_prior.RESIDUAL_PRIOR_MODES`) makes the
+    # sampler's state and the anchor vocabulary RESIDUALS on the prior P, and
+    # `kinematic_prior.roll_plan` the one function that turns a residual into
+    # a path. SPEC_REFCV7 section 1, NEW-1.
+    residual_prior: str = "off"
+    # ---- v8F rung alpha, arm alpha-1: THE FROZEN P10 PRIOR (residual_prior == "p10") -------------------------
+    # DECLARED fields (strict_fields: an undeclared attribute is refused at assignment). `p10_prior_path` is the
+    # artifact FILE the trainer's `--p10-prior` names; `p10_prior_sha256` its expected bytes' sha256 ("" = do not
+    # pin, which the LAUNCH GATE refuses -- an unpinned P10 is not an identity). Both are "" on every other mode,
+    # and a non-empty value with another mode is REFUSED at build (a P10 the build does not read is false
+    # provenance). The weights are NOT in the state_dict (non-persistent buffers): the file + its sha256 are the
+    # identity, stamped in config.json and re-checked at eval and at resume.
+    p10_prior_path: str = ""
+    p10_prior_sha256: str = ""
 
 
+@strict_fields
 @dataclass
 class LawConfig:
     hidden: int = 2048            # latent-world-model aux MLP width
 
 
+@strict_fields
 @dataclass
 class StrategicCtxConfig:
     hidden: int = 512             # ctx GRU width
     d_ctx: int = 64               # strategic token -> decoder condition seam
 
 
+@strict_fields
 @dataclass
 class ImaginationConfig:
     """H15 belief field over the conv-map tokens (graft_imagination). Sized on
@@ -332,6 +650,7 @@ class ImaginationConfig:
     head_hidden: int = 1024       # flow / log-variance head hidden width
 
 
+@strict_fields
 @dataclass
 class LanConfig:
     """LAN — Lane-Anchored Navigation route conditioning (graft_lan, default
@@ -355,6 +674,7 @@ class LanConfig:
         return self.k * self.feats
 
 
+@strict_fields
 @dataclass
 class SelectionConfig:
     """D-SEL — the selection-surface policy the decoder carries.
@@ -379,11 +699,50 @@ class SelectionConfig:
     #                                   table already carries every index).
     reach_clamp: bool = False         # S2 bounded-acceleration candidate band
     accel_max: float = 2.5            # m/s^2 for that band
+    # S2b: THE SAME BAND, MOVED BEFORE THE DECODE. S2 filters `anchors+offset`,
+    # so by the time it runs all N decodes are paid and it can only narrow an
+    # argmax. `v0` is known PRE-decode, so the band applies to the ANCHORS and
+    # only survivors need decoding. INFERENCE-ONLY and no retrain: it changes
+    # which candidates are computed, never any weight.
+    # MEASURED (be2da04, re-measured 2026-08-04 on the 881 canonical val
+    # speeds): 3.46x on the 256 vocabulary, 3.70x on 64, ZERO empty windows,
+    # and the SELECTION INDEX identical on 881/881.
+    # ⛔ EXACTNESS RESTS ON ONE STRUCTURAL FACT, verified in source rather than
+    # assumed: `CrossAttnLayer` cross-attends q->kv with NO self-attention over
+    # the candidate axis, and its MLP/LayerNorm are per-token. Candidates are
+    # therefore INDEPENDENT and decoding a subset is bit-identical for that
+    # subset. If a candidate-axis interaction is ever added to the decoder this
+    # flag becomes UNSOUND and must be retired with it.
+    anchor_prefilter: bool = False    # S2b decode only reachable anchors
+    anchor_prefilter_guard: bool = True   # verify the winner survived
     graft_cons: bool = False          # S3 consequence score reaches the ranking
     cons_detach: bool = True          # ...with law_head under no_grad
     graft_route: bool = False         # S5 route readout reaches the ranking
     graft_goal: bool = False          # S6 predicted GEOMETRIC goal (bearing +
     #                                   along-track), two independent gates
+    # ⭐⭐ S7 / E15 (GP-1, 2026-09-06): the PREDICTED METRIC GOAL POINT reaches
+    # the ranked score through a PARAM-FREE geometric compatibility at a fixed
+    # TIME slot (`goal_point.anchor_goal_prior_at_time`), behind ONE zero-init
+    # gate. Registered in `…/Research/2026-09-06-goal-point/PREREG.md` §8.
+    #
+    # ⛔ WHY IT IS A SEPARATE SEAM FROM S6 AND NOT A THIRD S6 GATE. S6's two
+    # terms are a BEARING (`_lan_anchor_prior`, terminal-direction cosine) and
+    # an ALONG-TRACK PREFERENCE (`_goal_along_prior`, z-scored terminal reach).
+    # MEASURED (PREREG §0): on the lateral axis a point and a bearing TIE TO
+    # FOUR DECIMALS — an identity, because anchors compared at the same ARC all
+    # sit at ~the same range — while at a fixed TIME the candidates differ in
+    # RANGE, and the range half is separated WORSE by +2.3632 m when stripped.
+    # A metric point at a fixed time is therefore a DIFFERENT quantity from
+    # either S6 term, and mixing it into their gates would make the pre-
+    # registered ablation ("set THIS gate to 0") unreadable.
+    graft_gp_point: bool = False      # S7 the E15 metric goal point ranks
+    gp_slot: int = -1                 # ...bank slot whose time == t_goal_s;
+    #                                   DERIVED by goal_point.goal_slot_index,
+    #                                   never typed (a wrong slot compares the
+    #                                   goal at one time to the anchor at
+    #                                   another and still trains)
+    gp_scale_m: float = 40.0          # ...GoalPointConfig.range_norm_m, so the
+    #                                   score is metres/metres = scale-free
     seam_clamp: float = 0.0           # S4 norm cap on the total graft (<=0 off)
     seam_fail: float = 1.5
     seam_fail_frac: float = 0.75
@@ -394,9 +753,11 @@ class SelectionConfig:
     def any_on(self) -> bool:
         return bool(self.refined or self.score_emitted or self.reach_clamp
                     or self.graft_cons or self.graft_route or self.graft_goal
+                    or self.graft_gp_point
                     or self.seam_clamp > 0.0)
 
 
+@strict_fields
 @dataclass
 class RefCConfig:
     encoder: CNNEncoderConfig = field(default_factory=CNNEncoderConfig)
@@ -405,6 +766,32 @@ class RefCConfig:
     trajectory: TrajectoryConfig = field(default_factory=TrajectoryConfig)
     anchors: AnchorConfig = field(default_factory=AnchorConfig)
     decoder: DecoderConfig = field(default_factory=DecoderConfig)
+    # ⭐ refcv5 WP-6 -- `refc_agents.AgentSeamConfig | None`. A DECLARED field,
+    # for the same reason `decoder.sampler` is one: the trainer assigns
+    # `core.agents = acfg`, and on a dataclass without the field that assignment
+    # is an ad-hoc attribute the stamp would happily serialise for a model that
+    # built no head. `None` (not a disabled config) is the OFF state, so
+    # `_seam_stamp` can distinguish "off" from "absent".
+    # ⚠️ Annotated loosely on purpose: `from __future__ import annotations` is
+    # in force, so this is never evaluated, and naming the real type here would
+    # force a module-level import of the corpus-side raster/projection stack.
+    agents: "object | None" = None
+    # ⭐ WP-D -- `refc_bev_aux.BEVAuxConfig | None`, the TRAINING-ONLY BEV
+    # auxiliary head. Declared for the same reason `agents` is: the trainer
+    # assigns `core.bev_aux = bcfg`, and on a dataclass without the field that
+    # assignment is an ad-hoc attribute the stamp would serialise for a model
+    # that built no head. `None` (not a disabled config) is the OFF state.
+    #
+    # ⛔⛔ WHEN IT IS SET, THE HEAD IS CONSTRUCTED **LAST** IN `__init__` AND
+    # CALLED **LAST** IN `forward`, AND BOTH ARE LOAD-BEARING. Module
+    # construction draws from the global RNG, so a head inserted anywhere
+    # earlier silently changes every subsequent module's initial weights and the
+    # "aux on vs aux off" A/B would differ in the SEED as well as in the lever --
+    # a one-variable violation invisible in every log. Pinned by
+    # `stack/tests/test_bev_aux.py::test_shared_params_bit_identical` and
+    # `::test_planner_output_bit_identical`.
+    # ⚠️ Annotated loosely on purpose, exactly like `agents` above.
+    bev_aux: "object | None" = None
     law: LawConfig = field(default_factory=LawConfig)
     strategic: StrategicCtxConfig = field(default_factory=StrategicCtxConfig)
     imagination: ImaginationConfig = field(default_factory=ImaginationConfig)
@@ -413,6 +800,43 @@ class RefCConfig:
     ego_dropout: float = 0.5      # per-sample Bernoulli zero of v0 (training)
     route_dropout: float = 0.5    # per-sample Bernoulli mask of the LAN route
     hierarchy: bool = True        # strategic ctx -> decoder condition (graft)
+    # ⭐⭐ STRATEGIC BYPASS (`--no-strategic`, PI 2026-09-06, BINDING):
+    #   *"remove the strategic layer in the next experiments, feed the nav
+    #   command to tactical and operative planning, solve the driving task,
+    #   then add the strategic layer. Include a flag to ignore the strategic
+    #   layer in the next iterations."*
+    #
+    # ⛔ IT BYPASSES, IT NEVER DELETES. `hierarchy` stays True, so
+    # `StrategicCtx`, `ctx_to_cond` and every strategic parameter are STILL
+    # CONSTRUCTED and STILL IN `state_dict`. An ON build and an OFF build have
+    # BIT-IDENTICAL state_dict KEYS AND SHAPES, so every banked checkpoint
+    # loads strictly into both and no arm is stranded. That is the documented
+    # precedent: a dead 1.57 M-param tensor was declared and kept in
+    # `state_dict` because deleting it broke strict loads on 11/11 banked
+    # checkpoints with exactly 6 unexpected keys. Setting `hierarchy=False`
+    # would REMOVE keys and reintroduce exactly that failure -- it is NOT the
+    # bypass and must never be used as one.
+    #
+    # ⛔ IT ADDS NO PARAMETER EITHER. The flag is a pure FORWARD gate: it
+    # can only remove a term from a sum, never introduce one. That is what
+    # makes "OFF is byte-identical to today" provable rather than asserted.
+    #
+    # The two seams it closes IN THIS FILE (the third is E4 in `refc_v3.py`):
+    #   S-BYPASS-1  OPERATIVE: `ctx` is not handed to the decoder, so
+    #               `cond = cond_proj(m)` alone. The nav command STILL reaches
+    #               the operative planner -- it is INSIDE `m` (`meas_in`
+    #               carries the nav one-hot), which is the whole point of the
+    #               PI's staging: the route reaches the planner DIRECTLY
+    #               instead of through a strategic goal.
+    #   S-BYPASS-3  SELECTION: `route_prior` (S5 `graft_route`) is forced to
+    #               None, so the strategic route READOUT cannot re-rank the fan.
+    #
+    # ⚠ WHAT IT DOES NOT TOUCH: `route_head` keeps running and
+    # `route_logits` keeps being emitted, because that is the STRATEGIC family
+    # metric every eval must report (route acc / kappa). With `graft_route`
+    # False it is a pure READOUT with no path into the emitted plan -- which
+    # the mutation proof ASSERTS rather than assumes.
+    no_strategic: bool = False    # bypass the strategic layer (never delete it)
     graft_maneuver: bool = True   # maneuver logits reweight anchor priors (H19)
     # --- D-TAC1: the factorised tactical head (three INDEPENDENT ablations) ---
     factored_maneuver: bool = False   # F2 STRUCTURE: lat(3) x lon(3) heads +
@@ -443,6 +867,29 @@ class RefCConfig:
     grounded_selector: bool = False     # progress/collision proxy vs top-1 conf
     graft_imagination: bool = False     # H15 belief field over conv-map tokens
     graft_lan: bool = False             # LAN lane-anchored route conditioning
+    # --- refcv6 §4/§5 (PI 2026-09-16). Three SEPARATE levers, because the
+    # arm's questions separate the same way: does the tactical POSTERIOR make
+    # a better anchor prior than the image-only lat3/lon3; does the
+    # BEHAVIOUR SET help SELECTION; does following nav cost or buy ADE. All
+    # default OFF and all are zero-init or param-free, so an all-off build is
+    # byte-identical to REF-C today.
+    graft_tac8_prior: bool = False      # the 8x8 tactical posterior REPLACES
+    #                                   lat3/lon3 as the anchor prior, through
+    #                                   NEW zero-init 8 -> n_anchors grafts
+    graft_behaviour_sel: bool = False   # the valid-behaviour term (computed in
+    #                                   refc_v3, already masked) reaches the
+    #                                   RANKED score
+    graft_nav_compliance: bool = False  # the PARAM-FREE nav-compliance
+    #                                   predicate reaches the RANKED score
+    #                                   behind ONE zero-init gate
+    # ⚠️ NO DEFAULT THAT MEANS ANYTHING. The tolerance is derived per corpus
+    # by `nav_compliance.derive_tolerance(pos, neg)` and the arm must STATE
+    # the value it used; 0.0 is the 'not set' sentinel and the constructor
+    # REFUSES it when the graft is on. An invented tolerance is a number with
+    # no evidence class deciding what 'compliant' means.
+    nav_compliance_tau_rad: float = 0.0
+    speed_ceiling_filter: bool = False  # the fed set-speed filters the ARGMAX
+    #                                   (the S2 pattern), never the score
     # --- D-SEL: the SELECTION surface (see tanitad/refs/refc_select.py) ------
     # Every lever below acts on WHICH candidate is emitted, never on which are
     # proposed. All are zero-init or param-free; all default OFF, so the
@@ -532,6 +979,12 @@ class RefCConfig:
     #                                   score stays unmasked so no -inf reaches
     #                                   a cross-entropy)
     sel_accel_max: float = 2.5        # m/s^2 for that band (flagship v1.5's)
+    # S2b: the SAME band moved BEFORE the decode, so only reachable anchors are
+    # decoded. INFERENCE-ONLY and OUTPUT-EXACT (candidates are independent —
+    # `CrossAttnLayer` has no self-attention over the candidate axis), so it
+    # needs NO retrain and changes no weight. See `SelectionConfig`.
+    sel_anchor_prefilter: bool = False
+    sel_anchor_prefilter_guard: bool = True
     graft_cons: bool = False          # S3 candidate-conditioned CONSEQUENCE
     #                                   scoring through law_head — the only
     #                                   form of cond_imagination REF-C's world
@@ -553,6 +1006,16 @@ class RefCConfig:
     #                                   supplied, and it must not carry the
     #                                   situation classifier's output in any
     #                                   form. See RefCModel.goal_provenance().
+    # ⭐⭐ S7 / E15 (GP-1): the PREDICTED METRIC GOAL POINT reaches the ranked
+    # score. The VALUE arrives from the REF-C v3 hierarchy hook
+    # (`hook_out["goal_point"]`, emitted by `refc_v3.py`) or from an explicit
+    # `gp_point=` argument to `forward` — which is what the pre-registered
+    # eval-time interventions (mirror / range x0.5 / straight / shuffle /
+    # withheld) use, so the whole §2 panel rolls in ONE process on ONE surface.
+    # `gp_slot` / `gp_scale_m` are set by the trainer from `GoalPointConfig`.
+    graft_gp_point: bool = False
+    gp_slot: int = -1
+    gp_scale_m: float = 40.0
     seam_clamp: float = 0.0           # S4 in-graph norm cap on the TOTAL graft
     #                                   per surface, as a multiple of the base
     #                                   score norm. <=0 disables; below the cap
@@ -587,6 +1050,16 @@ class RefCConfig:
     #                                   ⛔ DEFAULT OFF. Turning it on changes what
     #                                   every arm is fed and is a PI decision.
     #                                   Feed it from `refb_labels.nav_input_v22`.
+    # ⭐⭐ refcv6 §2b — EGO HISTORY AS AN INPUT (PI 2026-09-16). Today only
+    # `v0` at t0 reaches the model; the rest of the OBSERVED window's ego state
+    # is discarded. `tanitad.models.ego_history.EgoHistoryConfig | None`.
+    # ⛔ `None` (the DEFAULT) constructs NOTHING, so the parameter count, the
+    # RNG draw order and every emitted tensor are bit-identical to pre-refcv6.
+    # ⛔ ADMISSIBILITY: PAST ego only. The binding PI ruling of 2026-09-02
+    # makes measured v0 at t0 legal, and past ego is the same class; ego
+    # FUTURE is not, and `EgoHistoryEncoder.forward` slices before it computes
+    # so the boundary is MUTATION-testable rather than described.
+    ego_history: object | None = None
     tactical_latent_dim: int = 512      # external target_latent width (S)
     refc1: bool = False           # fixed-distance path + target-speed class
     path_dists: tuple[float, ...] = (2.0, 5.0, 10.0, 20.0)   # metres (refc1)
@@ -601,9 +1074,14 @@ class RefCConfig:
             refined=self.sel_refined, score_emitted=self.sel_score_emitted,
             score_emitted_t=self.sel_score_emitted_t,
             reach_clamp=self.sel_reach_clamp,
-            accel_max=self.sel_accel_max, graft_cons=self.graft_cons,
+            accel_max=self.sel_accel_max,
+            anchor_prefilter=self.sel_anchor_prefilter,
+            anchor_prefilter_guard=self.sel_anchor_prefilter_guard,
+            graft_cons=self.graft_cons,
             cons_detach=self.cons_detach, graft_route=self.graft_route,
             graft_goal=self.graft_goal,
+            graft_gp_point=self.graft_gp_point,
+            gp_slot=self.gp_slot, gp_scale_m=self.gp_scale_m,
             seam_clamp=self.seam_clamp, seam_fail=self.seam_fail,
             seam_fail_frac=self.seam_fail_frac,
             seam_fail_patience=self.seam_fail_patience,
@@ -946,13 +1424,97 @@ class ResNetEncoder(nn.Module):
             c_in = c_out
         self.stages = nn.ModuleList(stages)
         self.feat_dim = cfg.feat_dim
-        self.grid = cfg.grid
+        self.grid_shape = cfg.grid_shape      # (rows, cols) — non-square-safe
+
+    @property
+    def grid(self) -> int:
+        """Square feature-map side — raises on a non-square build ON PURPOSE
+        (mirrors :attr:`CNNEncoderConfig.grid`; :attr:`grid_shape` is the
+        general accessor). Until 2026-09-01 this was an EAGER ``__init__`` read
+        (``self.grid = cfg.grid``), which made ANY non-square construction
+        crash at build time even though every in-repo consumer of the map is
+        shape-agnostic (``flatten(2)`` / ``grid_shape``) — MEASURED as the one
+        blocker for the B1 256x640cyl corpus. Moving the raise to READ time
+        keeps the square contract for scalar callers and unblocks non-square
+        builds without touching any consumer."""
+        gh, gw = self.grid_shape
+        if gh != gw:
+            raise ValueError(
+                f"REF-C feature map is {gh}x{gw} (non-square) — this caller "
+                f"still reads the scalar `grid`. Use `grid_shape`.")
+        return gh
 
     def forward(self, x: Tensor) -> tuple[Tensor, Tensor]:
         x = self.stem(x)
         for stage in self.stages:
             x = stage(x)
         return x, x.mean(dim=(2, 3))                # fmap [B,F,g,g], pooled
+
+
+def _refcv6_flags(cfg) -> "_rv6.DiffusionFlags":
+    """``cfg.refcv6`` -> a :class:`DiffusionFlags`, with ``None`` == all off.
+
+    ⛔ The ``None`` case returns the DEFAULT block, whose ``any_on`` is False,
+    so every branch guarded by it is dead on a default build. It does NOT
+    write the object back onto the config: a config that grew a flag block as
+    a side effect of being read is how ``config_delta`` (which compares two
+    configs built through the same helper) would start reporting a difference
+    that no operator asked for.
+    """
+    flags = getattr(cfg, "refcv6", None)
+    if flags is None:
+        return _rv6.DiffusionFlags()
+    if not isinstance(flags, _rv6.DiffusionFlags):
+        raise TypeError(
+            f"DecoderConfig.refcv6 must be a DiffusionFlags (or None), got "
+            f"{type(flags).__name__}. A dict or a Namespace here would read "
+            f"back as 'no flags' through every `getattr` and the arm would "
+            f"silently be the baseline.")
+    return flags
+
+
+def build_encoder(cfg: CNNEncoderConfig) -> nn.Module:
+    """refcv6 §2 trunk factory. -> a module honouring ``(fmap, pooled)``.
+
+    ⛔ ``cfg.trunk == "refc"`` returns exactly ``ResNetEncoder(cfg)`` — the
+    same object the pre-refcv6 code built, constructed the same way — so every
+    existing config is bit-identical through this seam. Only the explicit
+    ``"timm"`` value reaches the new trunk, and that trunk FAILS LOUD if the
+    ImageNet weights are not really there.
+    """
+    kind = str(getattr(cfg, "trunk", "refc"))
+    if kind == "refc":
+        return ResNetEncoder(cfg)
+    if kind == "timm":
+        from tanitad.models.timm_trunk import build_timm_trunk
+        # ⭐ K is DERIVED from the corpus's stack width (`in_channels = 3K`),
+        # never configured twice: a trunk built for a different K than the data
+        # carries must fail at build time, not at the first forward.
+        return build_timm_trunk(
+            in_channels=int(cfg.in_channels),
+            image_hw=cfg.image_hw(),
+            model_name=str(getattr(cfg, "trunk_name", "resnet34.a1_in1k")),
+            mode=str(getattr(cfg, "trunk_mode", "shared")),
+            fuse=str(getattr(cfg, "trunk_fuse", "concat1x1")),
+            fuse_identity_init=bool(getattr(cfg, "trunk_fuse_identity", True)),
+            pretrained=bool(getattr(cfg, "trunk_pretrained", True)),
+            imagenet_norm=bool(getattr(cfg, "trunk_imagenet_norm", True)),
+            equalize_bottom_rows=int(
+                getattr(cfg, "trunk_equalize_bottom_rows", 0) or 0),
+            # ⛔ The memory levers travel with the config so they reach
+            # `config.json`. A lever applied by a wrapper is a lever the run
+            # cannot prove it used.
+            chunk_ckpt=int(getattr(cfg, "trunk_chunk_ckpt", 0) or 0),
+            frozen_bn=bool(getattr(cfg, "trunk_frozen_bn", False)),
+            bf16=bool(getattr(cfg, "trunk_bf16", False)),
+            channels_last=bool(getattr(cfg, "trunk_channels_last", False)),
+            fold_bn=bool(getattr(cfg, "trunk_fold_bn", False)),
+            dedup_frames=bool(getattr(cfg, "trunk_dedup_frames", False)),
+            compile_backbone=bool(getattr(cfg, "trunk_compile", False)))
+    raise ValueError(
+        f"CNNEncoderConfig.trunk {kind!r} not in ('refc', 'timm'). A typo here "
+        f"would otherwise fall through to the legacy trunk and the run would "
+        f"claim an ImageNet prior it never loaded.")
 
 
 class StrategicCtx(nn.Module):
@@ -995,7 +1557,8 @@ class CrossAttnLayer(nn.Module):
     """Anchor-query cross-attention block: cross-attend the conv map, then a
     FiLM(condition)-modulated MLP (pre-norm, residual)."""
 
-    def __init__(self, d: int, n_heads: int, cond_dim: int, ff_mult: int):
+    def __init__(self, d: int, n_heads: int, cond_dim: int, ff_mult: int,
+                 cross_agent: bool = False):
         super().__init__()
         self.norm_q = nn.LayerNorm(d)
         self.cross = nn.MultiheadAttention(d, n_heads, batch_first=True)
@@ -1003,12 +1566,139 @@ class CrossAttnLayer(nn.Module):
         self.film = FiLM(cond_dim, d, zero_init=False)   # live core conditioning
         self.mlp = nn.Sequential(nn.Linear(d, ff_mult * d), nn.GELU(),
                                  nn.Linear(ff_mult * d, d))
+        # ⭐ refcv5 WP-6: the AGENT seam. Constructed ONLY when asked, and
+        # AFTER every pre-v5 submodule above, so an off build draws exactly the
+        # RNG it drew before this seam existed.
+        # `agent_gate` is ZERO-INIT (the `ctx_to_cond` discipline): the agent
+        # branch contributes exactly nothing at step 0, so a fresh +agents run
+        # starts bit-identical to the agent-free one and every subsequent
+        # change is attributable to the seam -- while the gradient
+        # (agent_out * dL/dq) is non-zero, so it is GATED, not dead.
+        self.cross_agent: nn.MultiheadAttention | None = None
+        self.norm_a: nn.LayerNorm | None = None
+        self.agent_gate: nn.Parameter | None = None
+        if cross_agent:
+            self.norm_a = nn.LayerNorm(d)
+            self.cross_agent = nn.MultiheadAttention(d, n_heads,
+                                                     batch_first=True)
+            self.agent_gate = nn.Parameter(torch.zeros(1))
+        # ⭐⭐ refcv5 WP-B: THE WAYPOINT INDEX IS **NOT CONSTRUCTED HERE**.
+        # Module construction draws from the global RNG, so a head built
+        # anywhere but LAST would silently change every subsequent module's
+        # initial weights — and the "index on vs index off" A/B would then
+        # differ in the SEED as well as in the lever, invisibly, in every log.
+        # The bias heads are therefore attached by
+        # `AnchoredDiffusionDecoder.attach_wp_index`, which `RefCModel.__init__`
+        # calls as its VERY LAST statement (the WP-D discipline). ⛔ There is
+        # exactly ONE construction path on purpose: a second, eager one would
+        # be a way for the two to drift apart, which is the `advect` precedent.
+        self.wp_index: nn.Module | None = None
+        # refcv6 coupling (1). None until `attach_bev_coupling`; while it is
+        # None `forward` never enters the branch, so the emitted tensors are
+        # bitwise those of a build that never had this seam -- the
+        # `_agent_bias` rule, that the OFF path must not reach a different
+        # kernel either.
+        self.bev_wp: nn.Module | None = None
+        #: refcv9 C8 W-BOX: the zero-init gate of the box-token mix (None = no parameter; plan_wires_r9.gated_mix)
+        self.box_gate: nn.Parameter | None = None
 
-    def forward(self, q: Tensor, kv: Tensor, cond: Tensor) -> Tensor:
+    def forward(self, q: Tensor, kv: Tensor, cond: Tensor,
+                agent_tokens: Tensor | None = None,
+                agent_pad: Tensor | None = None,
+                agent_index: tuple | None = None,
+                bev: Tensor | None = None,
+                waypoints: Tensor | None = None) -> Tensor:
+        """``agent_index`` (WP-B) is ``(relation [B, N, M, F], d_min [B, N, M])``
+        computed ONCE per decoder pass by :meth:`AnchoredDiffusionDecoder.
+        _agent_index` and shared by every layer — the ADDRESS is a function of
+        geometry alone, so recomputing it per layer would only be a way for two
+        copies to drift apart. Each layer keeps its OWN bias head."""
         h = self.norm_q(q)
         q = q + self.cross(h, kv, kv, need_weights=False)[0]
+        if self.cross_agent is not None and agent_tokens is not None:
+            if self.box_gate is not None and _pw_n_box() > 0:              # refcv9 C8 W-BOX: agents + box tokens behind a zero-init gate
+                q = q + self.agent_gate * _pw_gated_mix(lambda t, p: self._attend_agents(q, t, p, None), agent_tokens, agent_pad,
+                                                        _pw_n_box(), self.box_gate)
+            else:
+                q = q + self.agent_gate * self._attend_agents(
+                    q, agent_tokens, agent_pad, agent_index)
+        # ⭐ refcv6 coupling (1) -- the BEV read at the candidate's OWN
+        # waypoints, recomputed on every pass because the address MOVES as the
+        # trajectory is denoised. The sampler owns its zero-init gate, so this
+        # line is bitwise inert at step 0 and on any build with `bev_wp is None`.
+        if self.bev_wp is not None and bev is not None and waypoints is not None:
+            q = self.bev_wp(q, waypoints, bev)
         q = q + self.mlp(self.film(self.norm_f(q), cond.unsqueeze(1)))
         return q
+
+    def _agent_bias(self, agent_index: tuple | None, pad: Tensor | None):
+        """WP-B: ``(rel, d_min)`` -> the additive attention-logit bias, or
+        ``None``.
+
+        ⛔ Returns ``None`` — rather than a zero tensor — when the index is off.
+        Passing an all-zero ``attn_mask`` is mathematically a no-op but is NOT
+        guaranteed to be one in ``nn.MultiheadAttention``: a supplied mask can
+        change which scaled-dot-product BACKEND torch dispatches to, and two
+        backends need not agree bit-for-bit. The removability proof asserts
+        bitwise equality, so the OFF path must not enter the masked branch.
+
+        ``pad`` is forwarded to the radius gate because a query whose every
+        LIVE neighbour is out of range still looks non-empty to a radius-only
+        test — see :func:`refc_wp_index.apply_radius_gate`.
+        """
+        if self.wp_index is None or agent_index is None:
+            return None
+        rel, d_min = agent_index
+        bias = self.wp_index(rel)
+        return wpi.apply_radius_gate(bias, d_min,
+                                     float(self.wp_index.cfg.radius_m),
+                                     self.wp_index.n_heads, pad)
+
+    def _attend_agents(self, q: Tensor, tok: Tensor,
+                       pad: Tensor | None,
+                       agent_index: tuple | None = None) -> Tensor:
+        """Cross-attend the agent tokens. ``pad[b, n] == True`` means slot ``n``
+        is PADDING (torch's convention, and `AgentTokenEmbed`'s).
+
+        ⛔⛔ A FULLY-PADDED ROW MAKES `MultiheadAttention` RETURN NaN, NOT
+        ZERO -- softmax over an all-`-inf` row is undefined. A frame with no
+        detected agent is not an edge case here, it is the *common* case on an
+        empty road, so an unguarded mask would poison the whole batch through
+        the residual and read as an exploding planner rather than as an empty
+        scene. The row is therefore UN-masked (so the attention is well-defined)
+        and its contribution is zeroed afterwards, which is the same answer the
+        maths would give if softmax-over-nothing were defined as 0.
+        """
+        empty = None
+        if pad is not None:
+            empty = pad.all(dim=1)                          # [B]
+            if bool(empty.any()):
+                pad = pad & ~empty[:, None]
+        bias = self._agent_bias(agent_index, pad)
+        if bias is None:
+            out = self.cross_agent(self.norm_a(q), tok, tok,
+                                   key_padding_mask=pad,
+                                   need_weights=False)[0]
+        else:
+            # ⭐ WP-B: the trajectory's geometry enters HERE and ONLY here —
+            # as an additive per-head logit bias, i.e. as an ADDRESS on the key
+            # axis. `q` itself never reaches `wpi.build_relation`, which is
+            # what makes this an index rather than a fusion of two latents.
+            # ⚠️ The key-padding mask is converted to the SAME dtype as the
+            # bias: torch deprecates a bool `key_padding_mask` beside a float
+            # `attn_mask` ("mismatched ... is deprecated"), and it canonicalises
+            # the bool to exactly this `-inf` fill anyway, so this is the same
+            # arithmetic with a future that does not warn.
+            kpm = pad
+            if kpm is not None and kpm.dtype == torch.bool:
+                kpm = torch.zeros_like(kpm, dtype=bias.dtype).masked_fill(
+                    pad, float("-inf"))
+            out = self.cross_agent(self.norm_a(q), tok, tok,
+                                   key_padding_mask=kpm, attn_mask=bias,
+                                   need_weights=False)[0]
+        if empty is not None:
+            out = out.masked_fill(empty[:, None, None], 0.0)
+        return out
 
 
 class AnchoredDiffusionDecoder(nn.Module):
@@ -1020,6 +1710,16 @@ class AnchoredDiffusionDecoder(nn.Module):
     [B, N, S, 2], traj [B, S, 2] (selected), sel_idx [B]}.
     """
 
+    #: ⛔⛔ PI RULING 2026-09-26 (SPEC_REFCV7 §7 / A2, D-REFCV7-E1): the speed-ceiling argmax
+    #: filter is INFERENCE-ONLY. It has no parameters, but in TRAINING it changed WHICH candidate
+    #: is selected, and the selected `traj` feeds `law_pred = law_head(cat(pooled, traj))`, whose
+    #: MSE is a training loss -- so a filter meant for the emitted plan was also shaping the LAW
+    #: head's input (and its gradient into the fan) from an EGO-FUTURE channel. False keeps the
+    #: training-time selection unmasked. ⚠️ True restores the pre-ruling behaviour and exists ONLY
+    #: for the deliberate-regression test (`test_speed_ceiling_inference_only.py`); G-DVB refuses
+    #: a built decoder that carries it.
+    speed_ceiling_in_training: bool = False
+
     def __init__(self, feat_dim: int, n_steps: int, d_meas: int, d_ctx: int,
                  tac_latent_dim: int, anchors: Tensor, cfg: DecoderConfig,
                  hierarchy: bool, graft_maneuver: bool,
@@ -1027,7 +1727,18 @@ class AnchoredDiffusionDecoder(nn.Module):
                  n_maneuvers: int = N_MANEUVERS,
                  graft_lan: bool = False, d_lan: int = 0,
                  factored_maneuver: bool = False,
-                 sel: "SelectionConfig | None" = None):
+                 sel: "SelectionConfig | None" = None,
+                 horizons: tuple[int, ...] = (),
+                 v0_conditioned: bool = False,
+                 ref_speed_ms: float = 10.0,
+                 control_units: str = "kappa",
+                 alat_v_floor_ms: float = 4.0,
+                 kappa_cap: float = 0.12,
+                 graft_tac8_prior: bool = False,
+                 graft_behaviour_sel: bool = False,
+                 graft_nav_compliance: bool = False,
+                 nav_compliance_tau_rad: float = 0.0,
+                 speed_ceiling_filter: bool = False):
         super().__init__()
         self.cfg = cfg
         self.n_steps = n_steps
@@ -1042,13 +1753,57 @@ class AnchoredDiffusionDecoder(nn.Module):
         self._seam_rank = sl.SeamState()
         # Anchor vocabulary — a persistent buffer (travels with the checkpoint).
         self.register_buffer("anchors", anchors)              # [N, S, 2]
+        # ⭐ refcv4-b: the v0-CONDITIONED vocabulary. `anchor_controls` [N, 2]
+        # = (accel m/s^2, curvature 1/m) held constant over the horizon; the
+        # emitted bank is rolled per window from that window's own v0. `anchors`
+        # keeps holding the SAME family rolled at `ref_speed_ms`, so it stays
+        # the checkpoint-visible artifact a content check can compare, and it is
+        # the surface the two param-free geometric priors fall back to.
+        self.anchor_v0_cond = bool(v0_conditioned)
+        self.anchor_ref_speed = float(ref_speed_ms)
+        self.anchor_dt = 0.1
+        if control_units not in ("kappa", "alat"):
+            raise ValueError(f"control_units {control_units!r} not in "
+                             f"('kappa', 'alat')")
+        self.anchor_control_units = control_units
+        self.anchor_alat_v_floor = float(alat_v_floor_ms)
+        self.anchor_kappa_cap = float(kappa_cap)
+        self.register_buffer("anchor_controls",
+                             torch.zeros(anchors.shape[0], 2), persistent=True)
+        # slot index of each horizon inside a dt-tick rollout. `rollout_unicycle`
+        # returns the state AFTER each step, so horizon k lands at index k - 1.
+        _h = tuple(horizons) or tuple(range(1, n_steps + 1))
+        if len(_h) != n_steps:
+            raise ValueError(f"horizons {_h} does not match n_steps {n_steps}")
+        self.register_buffer("anchor_slots",
+                             torch.tensor([k - 1 for k in _h],
+                                          dtype=torch.long), persistent=False)
+        self.anchor_roll_steps = int(max(_h))
+        # The horizons themselves, in TICKS, as a plain attribute: the WP-4
+        # sampler rolls a per-slot control SEQUENCE and needs the slot spans,
+        # which `anchor_slots` (k - 1) does not carry unambiguously.
+        self.anchor_horizons: tuple[int, ...] = tuple(int(k) for k in _h)
+        # ⭐ H-EGO-LIT-4: what speed a WITHHELD row's bank is rolled at. Plain
+        # attributes, never buffers (no state_dict change, so every checkpoint
+        # before and after this flag loads strictly). See WITHHELD_BANK_MODES.
+        # Kept rows are untouched by every mode but "none"; at eval nothing
+        # is withheld, so "fixed"/"pred"/"random" leave eval byte-identical.
+        self.anchor_withheld_bank: str = "fixed"
+        self.anchor_withheld_speed_max: float = 35.0
+        self.anchor_random_speed_pool: Tensor | None = None
         d = cfg.d
         self.feat_proj = nn.Linear(feat_dim, d)               # conv map -> KV
         self.traj_proj = nn.Linear(n_steps * 2, d)            # traj estimate -> Q
         self.cond_proj = nn.Linear(d_meas, d)                 # measurement -> cond
         self.time_embed = nn.Embedding(cfg.diffusion_steps + 1, d)  # 0..steps
+        # ⛔ WP-B is OFF until `attach_wp_index` is called. The ADDRESS is
+        # computed once per pass by `_agent_index` and shared by every layer;
+        # the layers own only their bias heads. A layer that re-derived the
+        # address would be the `advect` precedent — two geometries drifting.
+        self.wp_index_cfg = None
         self.layers = nn.ModuleList(
-            CrossAttnLayer(d, cfg.n_heads, d, cfg.ff_mult)
+            CrossAttnLayer(d, cfg.n_heads, d, cfg.ff_mult,
+                           cross_agent=bool(getattr(cfg, "cross_agent", False)))
             for _ in range(cfg.layers))
         self.conf_head = nn.Linear(d, 1)                      # per-anchor conf
         self.offset_head = nn.Linear(d, n_steps * 2)          # per-anchor offset
@@ -1086,6 +1841,45 @@ class AnchoredDiffusionDecoder(nn.Module):
         elif graft_maneuver:
             self.maneuver_to_anchor = nn.Linear(n_maneuvers, anchors.shape[0],
                                                 bias=False)
+        # ⭐⭐ refcv6 §4 — THE TACTICAL 8x8 POSTERIOR REPLACES lat3/lon3 AS THE
+        # ANCHOR PRIOR. NEW layers, not a widening of `lat_to_anchor`: the
+        # 3-wide graft is LIVE in every banked checkpoint and resizing it would
+        # make refcv4b/refcv5 unrollable (D-ROLL-1, paid for once already).
+        # BOTH are ZERO-INIT, so the ranked/confidence surface is bit-identical
+        # at step 0 and every later change is attributable to this seam.
+        # ⛔ When they are on, the 3-wide pair is NOT also fed: two priors on
+        # one surface is a confound, and `forward` refuses the pair.
+        self.tac8_lat_to_anchor: nn.Linear | None = None
+        self.tac8_lon_to_anchor: nn.Linear | None = None
+        if graft_tac8_prior:
+            from tanitad.refs.refcv6_tactical import (N_LAT_ACTIONS,
+                                                      N_LON_ACTIONS)
+            self.tac8_lat_to_anchor = nn.Linear(N_LAT_ACTIONS,
+                                                anchors.shape[0], bias=False)
+            self.tac8_lon_to_anchor = nn.Linear(N_LON_ACTIONS,
+                                                anchors.shape[0], bias=False)
+            nn.init.zeros_(self.tac8_lat_to_anchor.weight)
+            nn.init.zeros_(self.tac8_lon_to_anchor.weight)
+        # ⭐ refcv6 §5 — THE NAV-COMPLIANCE TERM, param-free, one zero-init
+        # scalar. Same shape and same argument as `lan_gate`: selection among
+        # the fan is where a route can act at all, and a GEOMETRIC predicate
+        # cannot become a route-shaped shortcut the way a learned
+        # `nav -> n_anchors` matrix could. Initialised to 0, so the ranked
+        # score is bit-unchanged at step 0 while the gradient
+        # (compliance * dL/dscore) is non-zero — gated, not dead.
+        self.navc_gate: nn.Parameter | None = None
+        self.navc_tau_rad = float(nav_compliance_tau_rad)
+        if graft_nav_compliance:
+            if not (self.navc_tau_rad > 0.0):
+                raise ValueError(
+                    'graft_nav_compliance needs nav_compliance_tau_rad > 0. '
+                    'The tolerance is DERIVED per corpus by '
+                    '`taniteval.nav_compliance.derive_tolerance(pos, neg)` and '
+                    'the arm must state the value it used; defaulting it here '
+                    'would invent the definition of `compliant`.')
+            self.navc_gate = nn.Parameter(torch.zeros(1))
+        self.graft_behaviour_sel = bool(graft_behaviour_sel)
+        self.speed_ceiling_filter = bool(speed_ceiling_filter)
         # Graft: FiLM the condition on a tactical goal latent (zero-init).
         self.tgt_proj: nn.Linear | None = None
         self.tgt_film: FiLM | None = None
@@ -1151,29 +1945,1283 @@ class AnchoredDiffusionDecoder(nn.Module):
         if self.sel.graft_goal:
             self.goal_gate = nn.Parameter(torch.zeros(1))
             self.goal_dist_gate = nn.Parameter(torch.zeros(1))
+        # ⭐⭐ S7 / E15 (GP-1, 2026-09-06) — THE METRIC GOAL POINT ON THE RANKED
+        # SCORE. ONE zero-init scalar, so the ranked score is BIT-IDENTICAL to
+        # the goal-free baseline at step 0 and the exact ablation is "set the
+        # gate to 0". The score it multiplies costs ZERO parameters
+        # (`goal_point.anchor_goal_prior_at_time` is param-free), so the whole
+        # seam is +1 parameter — the same discipline as `cons_gate`.
+        #
+        # ⛔ THE SLOT IS REFUSED AT BUILD, NOT CLAMPED AT RUN. Comparing the
+        # goal at t = 4 s against the anchor at some other slot is a
+        # plausible-looking WRONG experiment that trains and converges — the
+        # derived-constant trap (`HORIZON = round(6.0*10/STRIDE)`) in geometry
+        # costume. `goal_slot_index` derives the slot from the model horizons;
+        # this asserts the decoder it landed on actually HAS that slot.
+        self.gp_point_gate: nn.Parameter | None = None
+        self.gp_slot = int(self.sel.gp_slot)
+        self.gp_scale_m = float(self.sel.gp_scale_m)
+        if self.sel.graft_gp_point:
+            if not (0 <= self.gp_slot < self.n_steps):
+                raise ValueError(
+                    f"S7/E15: gp_slot {self.gp_slot} is not a slot of this "
+                    f"decoder's {self.n_steps}-step bank. The goal point and "
+                    f"the anchor must be compared AT THE SAME TIME; a slot "
+                    f"outside the bank means the seam would either crash or "
+                    f"(clamped) silently score a different horizon. Derive it "
+                    f"with goal_point.goal_slot_index(t_goal_s, horizons).")
+            if self.gp_scale_m <= 0.0:
+                raise ValueError(
+                    f"S7/E15: gp_scale_m must be positive, got "
+                    f"{self.gp_scale_m} — it is GoalPointConfig.range_norm_m "
+                    f"and it is what makes the score scale-free.")
+            self.gp_point_gate = nn.Parameter(torch.zeros(1))
+        # ---- refcv5 WP-4: THE DENOISER ------------------------------------ #
+        #
+        # ⭐ THE MECHANISM, WHICH IS WHAT refcv3 DID NOT HAVE. refcv3 carried
+        # the truncated-diffusion SKELETON -- a `noise_std` perturbation and a
+        # "ranking" that read the t = 0 confidence -- and MEASURED, that
+        # ranking was UNCHANGED ON 201/201 WINDOWS. A loop that cannot move its
+        # own output is not a sampler. What is added here is the four things
+        # that were missing and nothing else: a NOISE SCHEDULE, an ANCHORED
+        # GAUSSIAN over the vocabulary, DDIM SAMPLING, and a real DENOISING
+        # LOOP whose prediction leaves the decoder as `u0_hat` so a loss can
+        # reach it.
+        #
+        # ⛔ CONSTRUCTED LAST, AND ONLY WHEN ASKED. `sampler == "none"` builds
+        # nothing at all, so the RNG draw order is byte-identical to refcv4b
+        # and every pre-v5 checkpoint keeps loading strictly.
+        #
+        # Only TWO new modules exist, because the sampler reuses the decoder it
+        # is wired into: `traj_proj` -> `layers` -> `conf_head` are the same
+        # weights the classifier pass uses, so the sampler cannot drift into a
+        # second, differently-conditioned decoder.
+        #   * `control_head` -- d -> S*2, the predicted CLEAN control x0.
+        #     ZERO-INIT, so the first refinement pass is exactly the identity
+        #     and the emitted fan starts AT the anchored Gaussian. That is what
+        #     makes "the vocabulary is the prior" true rather than intended.
+        #   * `time_mlp` -- DD's sinusoidal embedding of the CONTINUOUS t. The
+        #     pre-v5 `time_embed` is a 3-row `nn.Embedding` and CANNOT represent
+        #     t ~ U[0, 50); using it would quietly collapse the training
+        #     timestep to one of three rows.
+        self.control_head: nn.Linear | None = None
+        self.time_mlp: nn.Module | None = None
+        self.sched: "rs.DDIMSchedule | None" = None
+        sampler = str(getattr(cfg, "sampler", "none"))
+        if sampler not in ("none", "ddim"):
+            raise ValueError(f"cfg.sampler {sampler!r} not in ('none', 'ddim')")
+        space = str(getattr(cfg, "sampler_space", "control"))
+        if space not in ("control", "metre"):
+            raise ValueError(f"cfg.sampler_space {space!r} not in "
+                             f"('control', 'metre')")
+        if sampler == "ddim":
+            self.control_head = nn.Linear(d, n_steps * 2)
+            nn.init.zeros_(self.control_head.weight)
+            nn.init.zeros_(self.control_head.bias)
+            self.time_mlp = rs.build_time_mlp(d)
+            # A PLAIN attribute, never a buffer or a module: the alpha table is
+            # a constant of the published schedule, not a learned tensor, and
+            # putting it in `state_dict` would change checkpoint compatibility
+            # for a quantity no run can alter.
+            self.sched = rs.DDIMSchedule()
+        # ---- refcv7 NEW-1: the residual prior, validated at BUILD --------- #
+        # Refused rather than half-built: each mechanism the prior needs is
+        # named, and a build lacking one would stamp NEW-1 on a decoder that
+        # cannot compose it. `off` constructs nothing and draws no RNG.
+        self.residual_prior = _kp.check_mode(
+            str(getattr(cfg, "residual_prior", _kp.RESIDUAL_PRIOR_OFF)))
+        if self.residual_prior != _kp.RESIDUAL_PRIOR_OFF:
+            if self.control_head is None:
+                raise ValueError(
+                    f"refcv7 NEW-1: residual_prior={self.residual_prior!r} "
+                    "needs the control-space DDIM sampler (sampler='ddim'): "
+                    "the residual IS the sampler's state. A classifier "
+                    "build has no state to compose on.")
+            if space != "control":
+                raise ValueError(
+                    "refcv7 NEW-1: the residual prior composes CONTROLS; the "
+                    "metre-space sampler (the DD-literal regression arm) has "
+                    "no control state, so P + Delta would be undefined.")
+            if not self.anchor_v0_cond:
+                raise ValueError(
+                    "refcv7 NEW-1: the prior is rolled per window from the "
+                    "measured v0 and the residual vocabulary with it; a "
+                    "FIXED-path bank carries no controls to compose on. "
+                    "Build with --anchor-v0-conditioned.")
+        # ---- v8F alpha-1: the frozen P10, loaded and sha-checked AT BUILD -------------------------------- #
+        # `None` on every other mode: nothing is constructed, no RNG is drawn, the state_dict is unchanged.
+        self.p10 = None
+        _p10_path = str(getattr(cfg, "p10_prior_path", "") or "")
+        _p10_sha = str(getattr(cfg, "p10_prior_sha256", "") or "")
+        if self.residual_prior in _kp.P10_MODES:
+            if not _p10_path:
+                raise ValueError(
+                    f"v8F alpha-1: residual_prior={self.residual_prior!r} but cfg.p10_prior_path is empty -- a P10 mode "
+                    f"with no P10 would silently be ANOTHER prior. Pass --p10-prior <file>.")
+            if max(int(h) for h in self.anchor_horizons) > _kp.P10_TICKS:
+                raise ValueError(
+                    f"v8F alpha-1: P10 reaches {_kp.P10_TICKS} ticks (6 s) but the decoder's horizon is "
+                    f"{max(int(h) for h in self.anchor_horizons)}; the prior beyond 6 s does not exist.")
+            from tanitad.models.p10_prior import load_frozen_p10
+            # the artifact DECLARES the input channel it was fit on (`steer` | `pose_kappa`); a mode that reads the
+            # other one is refused here, at build, by name
+            self.p10 = load_frozen_p10(_p10_path, expect_file_sha256=_p10_sha or None,
+                                       variant=("pose" if self.residual_prior == _kp.P10_POSE_MODE else "steer"))
+        elif _p10_path or _p10_sha:
+            raise ValueError(
+                f"v8F alpha-1: cfg.p10_prior_path/sha256 are set ({_p10_path!r}, {_p10_sha[:12]!r}) but "
+                f"residual_prior={self.residual_prior!r} does not read a P10 -- the record would name a prior "
+                f"that never ran.")
+        # ---- refcv6 §3: F1..F9 -------------------------------------------- #
+        # ⛔ CONSTRUCTED LAST, AND ONLY WHEN ASKED -- the same discipline the
+        # sampler above follows, for the same reason: with `cfg.refcv6` None
+        # (the default) NOTHING here allocates a parameter, so the RNG draw
+        # order and the state_dict are byte-identical to the pre-refcv6 file.
+        # Only F3 and F4 add weights; the other seven are a different USE of
+        # the same weights and stay checkpoint-compatible.
+        # ---- refcv6 §2b: the EGO-HISTORY vector joins the CONDITION -------- #
+        # ⭐ Same seam and same zero-init discipline as `lan_to_cond` /
+        # `ctx_to_cond`: the vector reaches the condition (and therefore every
+        # decoder layer and every denoising pass), the projection starts at
+        # ZERO, so ego history is a REMOVABLE GRAFT and the first step is
+        # bit-identical to the baseline. `ego_hist_dim` is set by the model
+        # that owns the encoder; None constructs nothing.
+        self.ego_to_cond: nn.Linear | None = None
+        _eh_dim = int(getattr(cfg, "ego_hist_dim", 0) or 0)
+        if _eh_dim > 0:
+            self.ego_to_cond = nn.Linear(_eh_dim, d)
+            nn.init.zeros_(self.ego_to_cond.weight)
+            nn.init.zeros_(self.ego_to_cond.bias)
+        self.rv6 = _refcv6_flags(cfg)
+        self.cascade: nn.Module | None = None
+        self.adaln: nn.ModuleList | None = None
+        # Plain attributes, never buffers: they hold LIVE tensors of the last
+        # forward (F3's per-stage predictions) and must not enter `state_dict`.
+        self._last_layer_conf: list[Tensor] = []
+        self._last_layer_du: list[Tensor] = []
+        self._rv6_layer_u0: list[Tensor] = []
+        self._rv6_layer_conf: list[Tensor] = []
+        # ⭐ refcv8 WP-B (DESIGN.md sec. 3): the tactical-conditioning seams. NOTHING is built here --
+        # `attach_refcv8` builds them LAST (RNG order) -- and while `r8_cfg` is None every refcv8 branch below is
+        # dead code, so a refcv7 build is bit-identical. `_r8_phi` / `_r8_last_q` are PLAIN attributes holding the
+        # current forward's per-candidate features (never state_dict entries).
+        self.r8_cfg = None
+        self.r8_mod: nn.Module | None = None
+        self.r8_sel: nn.Module | None = None
+        self.r8_sub: nn.Module | None = None
+        self.r8_rc_to_cond: nn.Linear | None = None
+        self.r8_rc_gate: nn.Parameter | None = None
+        self.r8_gen = None
+        self._r8_phi: Tensor | None = None
+        self._r8_last_q: Tensor | None = None
+        #: refcv8: the base-candidate count while an EXTENDED fan is decoded (None = not extended). The decoder then
+        #: decodes the base slice and the appended extras in SEPARATE passes (`_r8_split`), so every GEMM over the base
+        #: candidates has refcv7's exact shape -- bit-identical on every device. MEASURED 2026-10-04 (SPEC_WPB I-W on
+        #: Thor GPU, and at full size on the dev-box CPU): ONE pass over 117 + extras moved the base fan's low bits on
+        #: every window (sel_idx unchanged), because the GEMM shape picks other kernels.
+        self._r8_split_nb: int | None = None
+        if self.rv6.any_on and self.control_head is None:
+            raise ValueError(
+                "refcv6 §3: F1..F9 describe the DIFFUSION decoder, and this "
+                "build has no sampler (`cfg.sampler == 'none'`), so none of "
+                "them could ever run. A flag that reaches no mechanism is the "
+                "refcv5 false-provenance defect -- refusing rather than "
+                "stamping an arm that does not exist.")
+        if self.rv6.f3_per_layer:
+            self.cascade = _rv6.CascadeHeads(len(self.layers), d, n_steps)
+        if self.rv6.f4_adaln:
+            self.adaln = nn.ModuleList([
+                _rv6.AdaLNModulation(d, d, zero_init=self.rv6.f4_zero_init)
+                for _ in self.layers])
+        if self.rv6.f8_flat_waypoint_noise and space != "metre":
+            raise ValueError(
+                "refcv6 F8 is DD's WAYPOINT-space noise, so it requires "
+                "`sampler_space='metre'`. Left on the control-space sampler it "
+                "would normalise (a_lon, a_lat) by DD's METRE spans (56.9 / "
+                "46) -- a plausible-looking number for a quantity that is not "
+                "a distance, which is exactly the `metre_sigma_m` divisor trap "
+                "one field up.")
+        # ---- ⛔⛔ BATCH 3 (a), 2026-09-27: BUILT, BYPASSED BY DESIGN -> FROZEN + DECLARED ----- #
+        # MEASURED by the refcv7 launch gate's G-LIVE smoke (and by NEW-1, its F-2): these heads
+        # receive ZERO gradient on the refcv7 argv. Neither is a wiring defect; each is bypassed
+        # BY CONSTRUCTION:
+        #  * `offset_head` on a SAMPLER build: the classifier pass writes `x = bank + offset`
+        #    (`forward`) and `_sample` then REPLACES `x` -- "the sampler REPLACES this loop, it
+        #    does not wrap it"; `out["offset"]` is read by no loss of `compute_losses_v3`.
+        #  * `control_head` under F3: `_decode_ctrl` returns the CASCADE's last stage whenever
+        #    `self.cascade` is set and calls `control_head(q)` only when it is None; the
+        #    cascade's per-layer heads GENERALISE it (`refcv6_diffusion.CascadeHeads`, DD).
+        # ⭐ DECLARED, NOT DELETED (`tanitad/models/_gradreach.py`): both stay BUILT, so every
+        # banked checkpoint (refcv6@38k, BAR-R7-2's reference) loads STRICTLY -- `requires_grad`
+        # is not serialised. They leave the optimizer and carry their reason, so G-LIVE's "every
+        # declared-trainable group gets a non-zero gradient" holds for the RIGHT reason, and
+        # G-DVB holds the declared set against ARGV (`declared_vs_built.check_grad_unreachable`)
+        # and can MEASURE it (`probe_grad_unreachable`), so a freeze cannot hide a live head.
+        # ⚠️ The CLASSIFIER RL adapters read `out["offset"]` as their policy mean
+        # (`tanitad/rl/refc_adapter.py`, `refcv3_adapter.py`); they are for classifier builds,
+        # where nothing is frozen. The sampler's RL chain binds to `_decode_ctrl`.
+        if self.control_head is not None:
+            _gr.declare_grad_unreachable(
+                self.offset_head,
+                "sampler build: `_sample` REPLACES the classifier-pass fan `bank + offset`; "
+                "out['offset'] is read by no training loss")
+            if self.cascade is not None:
+                _gr.declare_grad_unreachable(
+                    self.control_head,
+                    "F3: `_decode_ctrl` emits the CASCADE's last stage (DD's per-layer heads); "
+                    "control_head(q) runs only when self.cascade is None")
 
-    def load_anchors(self, anchors: Tensor) -> None:
+    def anchor_control_seq(self, batch: int, dtype: torch.dtype) -> Tensor:
+        """``[B, N, S, 2]`` — the anchor vocabulary as a per-slot control
+        SEQUENCE, which is the state the sampler denoises.
+
+        ⭐ The vocabulary holds ONE ``(a_lon, a_lat)`` pair per anchor; the
+        sampler's state is a sequence of ``S``. This expansion is the bridge,
+        and it is the reason a CONSTANT sequence must roll to exactly
+        :meth:`roll_bank`'s bank (pinned in ``test_refc_sampler.py``): at
+        ``sigma -> 0`` the sequence IS the constant pair, so if the two
+        integrators disagreed, every anchored-Gaussian claim would be measured
+        against a fan the vocabulary never emitted.
+        """
+        n = self.anchors.shape[0]
+        return (self.anchor_controls.to(dtype)[None, :, None, :]
+                .expand(batch, n, self.n_steps, 2))
+
+    def load_anchors(self, anchors: Tensor,
+                     controls: Tensor | None = None) -> None:
         """Install an externally-built anchor vocabulary (build_refc_anchors.py).
-        Shape must match [N, n_steps, 2] of the constructed decoder."""
+        Shape must match [N, n_steps, 2] of the constructed decoder.
+
+        ``controls`` [N, 2] = the (accel, curvature) the paths were rolled from.
+        Required when the decoder is ``v0_conditioned`` — without it the bank
+        cannot be re-rolled at the window's speed, and a silent fallback to the
+        fixed paths would be exactly the defect this vocabulary exists to fix,
+        so it RAISES instead.
+        """
         if tuple(anchors.shape) != tuple(self.anchors.shape):
             raise ValueError(f"anchor shape {tuple(anchors.shape)} != decoder "
                              f"{tuple(self.anchors.shape)}")
         self.anchors.copy_(anchors.to(self.anchors.dtype))
+        if controls is not None:
+            if tuple(controls.shape) != tuple(self.anchor_controls.shape):
+                raise ValueError(
+                    f"anchor controls {tuple(controls.shape)} != decoder "
+                    f"{tuple(self.anchor_controls.shape)}")
+            self.anchor_controls.copy_(controls.to(self.anchor_controls.dtype))
+        elif self.anchor_v0_cond:
+            raise ValueError(
+                "v0_conditioned decoder loaded an anchor file with no "
+                "`controls` [N, 2]. The bank is rolled per window from those "
+                "controls; falling back to the fixed paths would silently "
+                "restore the un-conditioned vocabulary this build exists to "
+                "replace.")
+
+    def _withheld_ref_speed(self, v: Tensor,
+                            withheld_speed: Tensor | None) -> Tensor:
+        """[B] the speed a WITHHELD row is rolled at, per ``anchor_withheld_bank``.
+
+        Under ``"fixed"`` this is exactly the pre-flag expression
+        ``torch.full_like(v, self.anchor_ref_speed)`` (pinned bit-identical by
+        ``tests/test_withheld_bank.py``). ``"pred"`` without a supplied speed
+        (warm-up, or a caller that has no goal head) falls back to the fixed
+        roll — the trainer logs which one was live on every step.
+        ``"random"`` without a pool is REFUSED: a silent fall-back would turn
+        the blindness control into a second copy of the fixed arm.
+        """
+        mode = self.anchor_withheld_bank
+        if mode not in WITHHELD_BANK_MODES:
+            raise ValueError(f"anchor_withheld_bank {mode!r} not in "
+                             f"{WITHHELD_BANK_MODES}")
+        if mode == "pred" and withheld_speed is not None:
+            # ⛔ DETACHED: the bank is geometry the anchor target is measured
+            # against; a gradient from the target into the speed head would
+            # let selection train the goal toward the fan (the SEL-1 refusal).
+            return withheld_speed.detach().reshape(-1).to(v.dtype).clamp(
+                0.0, self.anchor_withheld_speed_max)
+        if mode == "random":
+            pool = self.anchor_random_speed_pool
+            if pool is None or pool.numel() == 0:
+                raise ValueError(
+                    "anchor_withheld_bank='random' needs a non-empty "
+                    "anchor_random_speed_pool (the training marginal of v0); "
+                    "refusing to fall back to the fixed roll silently")
+            idx = torch.randint(pool.numel(), (v.shape[0],),
+                                device=pool.device)
+            return pool.reshape(-1)[idx].to(device=v.device, dtype=v.dtype)
+        return torch.full_like(v, self.anchor_ref_speed)
+
+    def roll_bank(self, v_ms: Tensor | None, ego_keep: Tensor | None,
+                  batch: int, dtype: torch.dtype,
+                  withheld_speed: Tensor | None = None,
+                  prior: "tuple | None" = None) -> Tensor:
+        """[B, N, S, 2] — the anchor bank THIS forward decodes.
+
+        ``withheld_speed`` [B] (optional) is the model's OWN predicted speed,
+        read only under ``anchor_withheld_bank == "pred"`` and only on rows
+        whose ego channel was withheld (H-EGO-LIT-4).
+
+        Fixed builds expand the stored paths, which is byte-identical to the
+        pre-2026-09-04 ``anchors[None].expand(...)``. v0-conditioned builds roll
+        ``anchor_controls`` through the programme's OWN integrator
+        (:func:`tanitad.models.kinematic.rollout_unicycle`, the one
+        ``refa_v1_plan.unicycle_paths`` calls with ``action_units="kappa"``)
+        from each window's measured speed.
+
+        ⛔ ``ego_keep`` binds here for the same reason it binds on the S2 band,
+        only harder: ``v_ms`` is the PRE-dropout speed, and rolling the bank
+        from it on a withheld row would put the withheld channel into the
+        candidate GEOMETRY. Withheld rows are rolled at ``ref_speed_ms``, so the
+        dropout regime is genuinely speed-blind.
+
+        ``prior`` (refcv7 NEW-1) = ``(a0 [B], kappa0 [B], v [B])`` from
+        :meth:`_residual_prior`: the vocabulary's controls are RESIDUALS on
+        it and the bank is ``kinematic_prior.roll_plan`` of them, so the
+        anchor ``(0, 0)`` rolls to ``P`` exactly. REQUIRED on a residual
+        build and REFUSED on an off build (:meth:`_roll_residual_bank`).
+        """
+        n = self.anchors.shape[0]
+        if self.residual_prior != _kp.RESIDUAL_PRIOR_OFF or prior is not None:
+            return self._roll_residual_bank(prior, batch, dtype)
+        if not self.anchor_v0_cond:
+            return self.anchors.to(dtype)[None].expand(
+                batch, n, self.n_steps, 2)
+        if self.anchor_withheld_bank not in WITHHELD_BANK_MODES:
+            raise ValueError(f"anchor_withheld_bank "
+                             f"{self.anchor_withheld_bank!r} not in "
+                             f"{WITHHELD_BANK_MODES}")
+        if v_ms is None or self.anchor_withheld_bank == "none":
+            # "none": the speed-blind vocabulary — every row, kept or withheld,
+            # train or eval, at the reference speed (the field's design).
+            v = self.anchors.new_full((batch,), self.anchor_ref_speed)
+        else:
+            v = v_ms.reshape(-1).to(torch.float32)
+            if ego_keep is not None:
+                v = torch.where(ego_keep.reshape(-1),
+                                v, self._withheld_ref_speed(v, withheld_speed))
+        # ⚠️ rolled in float32 regardless of the AMP dtype: 60 sequential
+        # integration steps in fp16 accumulate visible drift, and the bank is
+        # the geometry every anchor target is measured against.
+        h = self.anchor_roll_steps
+        ctrl = self.anchor_controls.to(torch.float32)
+        if self.anchor_control_units == "alat":
+            # kappa = a_lat / v^2, clamped. The floor keeps a standing-start
+            # window from asking for an infinite curvature, and the cap is a
+            # geometric bound (~8.3 m radius) that no road manoeuvre needs.
+            vv = v.clamp_min(self.anchor_alat_v_floor) ** 2          # [B]
+            kap = (ctrl[None, :, 1] / vv[:, None]).clamp(
+                -self.anchor_kappa_cap, self.anchor_kappa_cap)       # [B, N]
+            ctrl = torch.stack(
+                [ctrl[None, :, 0].expand(batch, n), kap], dim=-1)    # [B, N, 2]
+            ctrl = ctrl[:, :, None, :].expand(batch, n, h, 2).reshape(-1, h, 2)
+        else:
+            ctrl = ctrl[None, :, None, :].expand(batch, n, h, 2).reshape(-1, h, 2)
+        state0 = torch.zeros(batch * n, 4, device=ctrl.device,
+                             dtype=torch.float32)
+        state0[:, 3] = v[:, None].expand(batch, n).reshape(-1)
+        path = rollout_unicycle(state0, ctrl, dt=self.anchor_dt)[..., :2]
+        return path[:, self.anchor_slots].reshape(
+            batch, n, self.n_steps, 2).to(dtype)
+
+    # ---- refcv7 NEW-1: the residual prior's four decoder-side seams ------ #
+    def _prior_speed(self, v_ms: Tensor, ego_keep: Tensor | None,
+                     withheld_speed: Tensor | None) -> Tensor:
+        """[B] the ONE speed this forward rolls every row from.
+
+        (( !! )) The expression is :meth:`roll_bank`'s own (kept rows at
+        ``v_ms``, withheld rows at :meth:`_withheld_ref_speed`), computed
+        ONCE per forward and handed to the bank, the prior AND the sampled
+        fan. The refcv6 sampler rolls its fan from the RAW ``v_ms`` while
+        the bank uses the withheld speed (``refc.py`` ``_sample``), so on a
+        withheld training row the two differ; a residual composed on a
+        prior rolled at one speed into a fan rolled at another is not
+        ``P + Delta``. Pinned bit-equal to the legacy bank by
+        ``test_residual_prior.py`` (a ZERO prior reproduces it).
+        """
+        v = v_ms.reshape(-1).to(torch.float32)
+        if ego_keep is not None:
+            v = torch.where(ego_keep.reshape(-1),
+                            v, self._withheld_ref_speed(v, withheld_speed))
+        return v
+
+    def _residual_prior(self, residual_prior, v_ms: Tensor | None,
+                        ego_keep: Tensor | None, batch: int,
+                        withheld_speed: Tensor | None) -> "tuple | None":
+        """``(a0, kappa0)`` from the model -> ``(a0, kappa0, v)`` as this
+        forward composes it, or ``None`` on an off build.
+
+        Withheld rows get the no-information prior (zero controls at the
+        bank's withheld speed, ``kinematic_prior.withhold``); a forward whose
+        ``v0`` was not supplied at all (``v_ms is None``) is withheld on
+        every row. Both directions of the input REFUSE.
+        """
+        if self.residual_prior == _kp.RESIDUAL_PRIOR_OFF:
+            if residual_prior is not None:
+                raise ValueError(
+                    "refcv7 NEW-1: a residual prior was handed to a decoder "
+                    "built with residual_prior='off'; it would be silently "
+                    "ignored and the record would not say so.")
+            return None
+        if residual_prior is None:
+            raise ValueError(
+                f"refcv7 NEW-1: this decoder was built with residual_prior="
+                f"{self.residual_prior!r} but no prior reached the forward. "
+                f"Its vocabulary and its sampler state are RESIDUALS, so "
+                f"without P every emitted path would be Delta presented as "
+                f"the plan. Refusing.")
+        if self.anchor_withheld_bank == "none":
+            raise ValueError(
+                "refcv7 NEW-1: anchor_withheld_bank='none' rolls EVERY row at "
+                "the reference speed (a speed-blind vocabulary); a prior "
+                "built from the measured state contradicts it. Refusing.")
+        a0, k0 = residual_prior
+        if self.residual_prior in _kp.TICK_MODES:
+            # a PER-TICK prior [B, T]: the rows axis is kept, never flattened
+            if a0.dim() != 2 or k0.dim() != 2:
+                raise ValueError(f"v8F alpha-1: residual_prior={self.residual_prior!r} needs a per-tick prior "
+                                 f"[B, T], got {tuple(a0.shape)} / {tuple(k0.shape)}")
+            a0, k0 = a0.to(torch.float32), k0.to(torch.float32)
+        else:
+            if a0.dim() != 1 or k0.dim() != 1:
+                raise ValueError(f"v8F alpha-1: residual_prior={self.residual_prior!r} is a CONSTANT prior [B] but "
+                                 f"got {tuple(a0.shape)} / {tuple(k0.shape)} -- a per-tick prior on a mode that "
+                                 f"does not declare one")
+            a0 = a0.reshape(-1).to(torch.float32)
+            k0 = k0.reshape(-1).to(torch.float32)
+        if a0.shape[0] != batch or k0.shape[0] != batch:
+            raise ValueError(f"refcv7 NEW-1: prior rows {a0.shape[0]}/"
+                             f"{k0.shape[0]} != batch {batch}")
+        if v_ms is None:
+            v = a0.new_full((batch,), self.anchor_ref_speed)
+            return torch.zeros_like(a0), torch.zeros_like(k0), v
+        v = self._prior_speed(v_ms, ego_keep, withheld_speed)
+        a0, k0 = _kp.withhold(a0, k0, ego_keep)
+        # ⭐ refcv8 X2a (DESIGN sec. 3.4): LATERAL prior dropout -- in TRAINING, kappa0 -> 0 on a row with
+        # probability p (a0 and v kept), so 'the smallest lateral residual' is not a free winner. Drawn from the
+        # DEDICATED generator (the refcv7 stream is untouched); never at eval.
+        if (self.r8_cfg is not None and self.training
+                and float(self.r8_cfg.lat_prior_dropout) > 0.0):
+            # ONE draw per ROW ([B]), whatever the prior's shape: a per-tick prior keeps the generator stream the
+            # constant prior consumes (same shape -> same draws), and the decision is the row's, not the tick's.
+            _drop = self.r8_gen.rand((k0.shape[0],), k0.device) < float(self.r8_cfg.lat_prior_dropout)
+            if k0.dim() == 2:
+                _drop = _drop[:, None]
+            k0 = torch.where(_drop, torch.zeros_like(k0), k0)
+        return a0, k0, v
+
+    def _roll_residual_bank(self, prior, batch: int,
+                            dtype: torch.dtype) -> Tensor:
+        """[B, N, S, 2] -- the vocabulary as RESIDUALS on ``P``."""
+        if self.residual_prior == _kp.RESIDUAL_PRIOR_OFF:
+            raise ValueError(
+                "refcv7 NEW-1: roll_bank got a prior on a decoder built "
+                "with residual_prior='off' -- refusing to compose silently.")
+        if prior is None:
+            raise ValueError(
+                "refcv7 NEW-1: roll_bank on a residual build needs the "
+                "forward's prior; without it the bank would be Delta.")
+        a0, k0, v = prior
+        seq = self.anchor_control_seq(batch, torch.float32)
+        return _kp.roll_plan(
+            seq, a0, k0, v, self.anchor_horizons,
+            control_units=self.anchor_control_units, tick=self.anchor_dt,
+            alat_v_floor=self.anchor_alat_v_floor,
+            kappa_cap=self.anchor_kappa_cap).to(dtype)
+
+    def _roll_state(self, z: Tensor, v: Tensor, metre: bool,
+                    prior) -> Tensor:
+        """The sampler's OWN state -> the fan. Off: the legacy
+        :meth:`_state_to_path`, same call. Residual: ``z`` is Delta and the
+        fan is ``kinematic_prior.roll_plan(Delta, P)``."""
+        if prior is None:
+            return self._state_to_path(z, v, metre)
+        a0, k0, pv = prior
+        return _kp.roll_plan(
+            z, a0, k0, pv, self.anchor_horizons,
+            control_units=self.anchor_control_units, tick=self.anchor_dt,
+            alat_v_floor=self.anchor_alat_v_floor,
+            kappa_cap=self.anchor_kappa_cap)
+
+    def _export_controls(self, z: Tensor, prior) -> Tensor:
+        """What leaves the decoder as ``u0_hat`` / ``layer_u0_hat``. Off:
+        ``z`` itself (the SAME object). Residual: the ABSOLUTE controls
+        (``kinematic_prior.absolute_controls``) -- the residual state never
+        leaves this class, so no consumer can mistake Delta for the plan."""
+        if prior is None:
+            return z
+        a0, k0, pv = prior
+        return _kp.absolute_controls(
+            z, a0, k0, pv, control_units=self.anchor_control_units,
+            alat_v_floor=self.anchor_alat_v_floor, horizons=self.anchor_horizons)
+
+    def _feasible(self, x: Tensor, v_ms: Tensor | None) -> Tensor:
+        """Project the emitted fan onto the friction-feasible set. No-op when
+        ``cfg.feasible_decode`` is False, and then it returns the SAME OBJECT.
+
+        ⛔ **The prefix dt is DERIVED from ``anchor_slots``, never assumed.** The
+        scorer differentiates the 2 s prefix on a uniform 0.5 s grid; our horizons
+        are ``[5, 10, 15, 20, 30, 40, 50, 60]`` ticks, i.e. uniform 0.5 s for the
+        first four and 1.0 s after. A projection run at the wrong dt is
+        *approximately* feasible and reports a residual that looks like noise --
+        the `df` / `step_s` family in a geometry costume. If the prefix is not
+        uniform this refuses rather than guessing.
+
+        ⚠️ **SCOPE, STATED: only the uniform prefix is projected.** The 2-6 s tail
+        is rigidly TRANSLATED so the path stays C0-continuous at the seam and the
+        tail's own kinematics are unchanged. Velocity continuity across the seam
+        is NOT enforced, and projecting the tail on its own 1 s grid is a named
+        work item, not a silent omission.
+        """
+        cfg = self.cfg
+        if not bool(getattr(cfg, "feasible_decode", False)):
+            return x
+        sl = self.anchor_slots.tolist()
+        k = int(getattr(cfg, "feasible_prefix_slots", 4))
+        k = min(k, len(sl))
+        steps = [sl[0] + 1] + [sl[i] - sl[i - 1] for i in range(1, k)]
+        if len(set(steps)) != 1:
+            raise ValueError(
+                f"feasible_decode needs a UNIFORM prefix grid; anchor_slots "
+                f"{sl[:k]} give tick spacings {steps}. Refusing rather than "
+                f"projecting at a dt the scorer does not use.")
+        dt = float(steps[0]) * float(self.anchor_dt)
+        pre = _feas.project_feasible(
+            _feas_with_origin(x[..., :k, :].float()),
+            None if v_ms is None else v_ms.float(),
+            dt=dt, a_max=float(cfg.feasible_a_max),
+            kappa_max=float(cfg.feasible_kappa_max),
+            mu=(float(cfg.feasible_mu) if float(cfg.feasible_mu) > 0 else None),
+            clamp_entry=bool(cfg.feasible_entry) and v_ms is not None,
+        )[..., 1:, :].to(x.dtype)
+        if x.shape[-2] == k:
+            return pre
+        shift = (pre[..., k - 1, :] - x[..., k - 1, :]).unsqueeze(-2)
+        return torch.cat([pre, x[..., k:, :] + shift], dim=-2)
+
+    # ---- refcv5 WP-B: the waypoint index (DD coupling (2), C5) ------------- #
+    def attach_refcv8(self, r8cfg, d_rc: int = 4) -> int:
+        """Build the refcv8 WP-B seams (DESIGN.md sec. 3). Called LAST by `RefCV3Model.__init__`, so every refcv7
+        parameter's init is unchanged. Every new tensor is ZERO-INIT or reaches the plan only through a zero-init
+        gate: a warm start from refcv7 reproduces its emitted plan at step 0 (`test_refcv8_warm_start.py`).
+        Returns the parameter count."""
+        if self.control_head is None:
+            raise ValueError('[refcv8] the tactical conditioning acts on the DDIM sampler; this build has none')
+        if (int(getattr(self.cfg, 'sampler_groups', 1)) > 1 or int(self.rv6.f7_samples_per_anchor) > 1):
+            raise ValueError('[refcv8] refcv8 extends the candidate set itself (allocation / prior-free group); '
+                             'combining it with F7 groups would make two index maps -- refused')
+        if bool(self.sel.anchor_prefilter):
+            raise ValueError('[refcv8] the S2b pre-decode prefilter decodes a SUBSET; per-candidate features would '
+                             'not line up -- refused')
+        if float(self.sel.seam_clamp) > 0.0:
+            raise ValueError('[refcv8] the decoder seam clamp normalises over the WHOLE candidate row; appending '
+                             'candidates would move the base scores -- refused (E9 handles its own clamp on the base)')
+        r8c.assert_no_situation_feed()
+        d = self.cfg.d
+        self.r8_cfg = r8cfg
+        self.r8_mod = r8c.PerCandidateModulation(len(self.layers), d)
+        self.r8_sel = r8c.FactorizedSelection()
+        self.r8_rc_to_cond = nn.Linear(int(d_rc), d)
+        nn.init.zeros_(self.r8_rc_to_cond.weight)
+        nn.init.zeros_(self.r8_rc_to_cond.bias)
+        self.r8_rc_gate = nn.Parameter(torch.zeros(()))
+        if float(r8cfg.w_subscore) > 0.0:
+            self.r8_sub = r8c.SubScoreHeads(d, hidden=int(r8cfg.subscore_hidden))
+        self.r8_gen = r8c.R8Generator(int(r8cfg.seed))
+        #: MM ruling Q1: the per-step emission switch for the EXTRA candidates (set by
+        #: `refcv8_train.apply_emit_schedule` from `emit_start`; True = the config's emit flags apply as written)
+        #: ⛔ BORN AT REFCV8 STEP 0 (2026-10-12): the switch starts at the schedule's value for step 0, i.e.
+        #: `refcv8_train.emit_live(0, emit_start)`. It was `True` whatever `emit_start` said, so a build that was never
+        #: scheduled -- the launch gate's G-EVAL trainer model, captured before step 0 -- EMITTED the extras at step 0
+        #: while the eval loader (scheduled at the checkpoint's step 0, `refcv7_loader.py:517-519`) did not:
+        #: trainer-vs-loader differed on `out.r8_emit_keep` (pre-gate d6/d7). `train()` re-applies the schedule at
+        #: EVERY step before the forward (`refc_v3_train.py:10572`), so training is unchanged.
+        self.r8_emit_live = int(getattr(r8cfg, 'emit_start', 0) or 0) <= 0
+        mods = [self.r8_mod, self.r8_sel, self.r8_rc_to_cond] + ([self.r8_sub] if self.r8_sub is not None else [])
+        return int(sum(p.numel() for m in mods for p in m.parameters())) + 1
+
+    def _r8_extend(self, bank: Tensor, v_ms: Tensor | None, r8: dict, prior, dtype) -> dict:
+        """refcv8 WP-B: tag the base fan, append the ALLOCATED candidates (top-k hypotheses, proportional to p)
+        and the X2b PRIOR-FREE group, and build phi. Returns the extended bank and every per-candidate tensor.
+        Candidates are ordered [base N | allocated M | prior-free N]; `src` maps each to its source anchor."""
+        cfg = self.r8_cfg
+        b, nb, s = bank.shape[0], bank.shape[1], bank.shape[2]
+        dev = bank.device
+        v_tag = (v_ms.reshape(-1).to(torch.float32) if v_ms is not None
+                 else torch.full((b,), self.anchor_ref_speed, device=dev))
+        if prior is not None:
+            v_tag = prior[2].reshape(-1).to(torch.float32)
+        slot_t = [float(h) * self.anchor_dt for h in self.anchor_horizons]
+        lp_l = r8['logp_lat3'].to(torch.float32)
+        lp_o = r8['logp_lon6'].to(torch.float32)
+        c8l, c8o = r8['cons_lat8'], r8['cons_lon8']
+        lat_b, lon_b = r8c.tag_paths(bank, v_tag, slot_t)
+        ar = torch.arange(nb, device=dev)[None].expand(b, nb)
+        cons_b = r8c.candidate_constraints(c8l, c8o, lat_b, lon_b)
+        srcs, kinds, lats, lons, banks, offs, allocs = [ar], [torch.zeros(nb, dtype=torch.long, device=dev)], \
+            [lat_b], [lon_b], [bank], [None], [torch.zeros(b, nb, dtype=torch.bool, device=dev)]
+        cons_sel = [cons_b]
+        cons_phi = [cons_b if cfg.base_constraints else None]
+        hyp = None
+        if int(cfg.n_alloc) > 0:
+            m = int(cfg.n_alloc)
+            joint = (lp_l[:, :, None] + lp_o[:, None, :]).reshape(b, -1)
+            force = r8.get('force_hyp')
+            # refcv9 --r9-alloc-force-schedule (H-R9-ALLOC-ORACLE-1): a window whose pool coin is False is allocated
+            # from the PREDICTED posterior alone, as at inference. The GT id `force` still keys the constraint
+            # teacher-forcing below, which touches only an allocated candidate that IS the GT hypothesis -- so an
+            # un-forced GT the posterior did not allocate is simply absent. No coin (every refcv8 run): unchanged.
+            fpool = r8.get('force_pool')
+            force_a = force if (force is None or fpool is None) else torch.where(
+                fpool.to(device=force.device, dtype=torch.bool), force, torch.full_like(force, -1))
+            hyp = r8c.allocate(joint, m, int(cfg.alloc_top_k), int(cfg.alloc_min_each), force=force_a,
+                               force_min=int(r8.get('force_min', 4)))
+            # ⛔ eval: the source-anchor choice is a function of the inference seed (R8Generator.rand_eval, 2026-10-12)
+            src_a, lvl = r8c.select_source_anchors(lat_b, lon_b, hyp, self.r8_gen, training=self.training)
+            hl, ho = r8c.split_joint(hyp)
+            cons_a = r8c.candidate_constraints(c8l, c8o, hl, ho)
+            cons_ag = cons_a
+            fc = r8.get('force_cons')
+            if fc is not None and force is not None:
+                use = (hyp == force[:, None]) & r8['force_tf'].to(torch.bool)[:, None]
+                cons_ag = torch.where(use[..., None], fc.to(cons_a.dtype)[:, None, :], cons_a)
+            srcs.append(src_a)
+            kinds.append(torch.ones(m, dtype=torch.long, device=dev))
+            lats.append(hl)
+            lons.append(ho)
+            banks.append(bank.gather(1, src_a[:, :, None, None].expand(b, m, s, 2)))
+            offs.append(None)
+            allocs.append(torch.ones(b, m, dtype=torch.bool, device=dev))
+            cons_sel.append(cons_a)
+            cons_phi.append(cons_ag)
+            self._r8_alloc_lvl = lvl
+        if bool(cfg.prior_free_group):
+            if prior is None:
+                raise ValueError('[refcv8] the X2b prior-free group cancels the RESIDUAL prior; this build has none')
+            if prior[0].dim() == 2:
+                raise ValueError('[v8F] the X2b prior-free group cancels a CONSTANT lateral prior kappa0; a per-tick '
+                                 '(p10) prior has no single kappa0 to cancel -- refused, not approximated')
+            norm = bank.new_tensor(tuple(self.cfg.control_norm)).to(torch.float32)
+            off = r8c.prior_free_lateral_offset(prior[1], prior[2], nb, s, float(norm[1]),
+                                                self.anchor_alat_v_floor)
+            x0n = self.anchor_control_seq(b, torch.float32) / norm + off
+            bank_p = self._roll_state(x0n * norm, prior[2], False, prior).to(bank.dtype)
+            lat_p, lon_p = r8c.tag_paths(bank_p, v_tag, slot_t)
+            cons_p = r8c.candidate_constraints(c8l, c8o, lat_p, lon_p)
+            srcs.append(ar)
+            kinds.append(torch.full((nb,), 2, dtype=torch.long, device=dev))
+            lats.append(lat_p)
+            lons.append(lon_p)
+            banks.append(bank_p)
+            offs.append(off)
+            allocs.append(torch.zeros(b, nb, dtype=torch.bool, device=dev))
+            cons_sel.append(cons_p)
+            cons_phi.append(cons_p if cfg.base_constraints else None)
+        src = torch.cat(srcs, 1)
+        kind = torch.cat(kinds, 0)
+        lat3, lon6 = torch.cat(lats, 1), torch.cat(lons, 1)
+        bank_x = torch.cat(banks, 1)
+        n = bank_x.shape[1]
+        x0_off = None
+        if any(o is not None for o in offs):
+            x0_off = torch.cat([o if o is not None else bank_x.new_zeros(b, sr.shape[1], s, 2).float()
+                                for o, sr in zip(offs, srcs)], 1)
+        alloc = torch.cat(allocs, 1)
+        cs = torch.cat(cons_sel, 1)
+        cp_list, cv_list = [], []
+        for c, sr in zip(cons_phi, srcs):
+            if c is None:
+                cp_list.append(cs.new_zeros(b, sr.shape[1], cs.shape[-1]))
+                cv_list.append(cs.new_zeros(b, sr.shape[1]))
+            else:
+                cp_list.append(c.to(cs.dtype))
+                cv_list.append(cs.new_ones(b, sr.shape[1]))
+        phi = r8c.build_phi(lat3, lon6, lp_l, lp_o, torch.cat(cp_list, 1), torch.cat(cv_list, 1), alloc)
+        if not bool(cfg.modulate_base):
+            phi = phi * alloc.to(phi.dtype)[..., None]
+        if self.training and float(cfg.cond_dropout) > 0.0:
+            keep = (self.r8_gen.rand((b,), dev) >= float(cfg.cond_dropout)).to(phi.dtype)
+            phi = phi * keep[:, None, None]
+        emit = (kind == 0)
+        _live = bool(getattr(self, 'r8_emit_live', True))
+        if bool(cfg.alloc_emit) and _live:
+            emit = emit | (kind == 1)
+        if bool(cfg.prior_free_emit) and _live:
+            emit = emit | (kind == 2)
+        return {'bank': bank_x, 'n': n, 'n_base': nb, 'src': src, 'kind': kind, 'lat3': lat3, 'lon6': lon6,
+                'x0_offset': x0_off, 'alloc': alloc, 'phi': phi, 'hyp': hyp,
+                'cons_raw': r8c.denorm_cons(cs), 'cons_valid': cs.new_ones(b, n),
+                'emit': emit[None].expand(b, n)}
+
+    def attach_wp_index(self, cfg) -> int:
+        """Build WP-B's per-layer bias heads. Returns the parameter count.
+
+        ⛔⛔ **CALL THIS LAST, AFTER EVERY OTHER MODULE IN THE MODEL.** These
+        heads draw from the global RNG; attached anywhere earlier they shift
+        the initial weights of everything constructed after them, and the
+        "index on vs index off" A/B would then differ in the SEED as well as in
+        the lever — invisibly, in every log. ``RefCModel.__init__`` calls this
+        as its final statement for exactly that reason, and
+        ``test_wp_index.py::test_shared_params_bit_identical`` pins it.
+
+        ⛔ **REFUSES without the agent seam.** WP-B addresses the SPARSE agent
+        tokens; with ``cross_agent`` off there are no tokens to address, so the
+        heads would be built, stamped into ``config.json`` and never called —
+        and the arm would read as *"the waypoint index does not help"* while
+        never having had an index. That is a refutation manufactured by a
+        missing seam, so it refuses before the GPU rather than at the first
+        batch.
+        """
+        if not bool(getattr(cfg, "enable", False)):
+            return 0
+        dead = [i for i, ly in enumerate(self.layers)
+                if ly.cross_agent is None]
+        if dead:
+            raise ValueError(
+                f"refcv5 WP-B: `wp_index.enable` is set but decoder layers "
+                f"{dead} have no agent cross-attention (`decoder.cross_agent` "
+                f"is False). The waypoint index addresses the SPARSE AGENT "
+                f"TOKENS; with no tokens the bias heads would be built, "
+                f"stamped and NEVER CALLED, and the arm would read as 'the "
+                f"waypoint index does not help' while never having had an "
+                f"index. Set `--agents head|oracle` too, or neither.")
+        self.wp_index_cfg = cfg
+        n = 0
+        for ly in self.layers:
+            ly.wp_index = wpi.WaypointIndexBias(cfg, self.cfg.n_heads)
+            n += ly.wp_index.n_params()
+        return n
+
+    def attach_bev_coupling(self, cfg, d_bev: int) -> int:
+        """Build refcv6 coupling (1): one BEV waypoint sampler per decoder
+        layer. Returns the parameter count.
+
+        ⛔⛔ **ATTACH THIS AFTER `attach_wp_index`, AS THE LAST STATEMENT OF
+        `RefCModel.__init__`.** The RNG-ordering argument in
+        `attach_wp_index`'s docstring applies to this seam too, and the ORDER
+        between the two matters: with the BEV sampler drawn LAST, a
+        `bev-coupling on` build's WP-B heads are bit-identical to a
+        `bev-coupling off` build's at the same seed, so the 2x2 ablation
+        (WP-B on/off) x (BEV on/off) differs in the levers and in nothing else.
+        Attached the other way round, turning the BEV coupling on would silently
+        re-draw every WP-B head.
+
+        `d_bev` is the width of the BEV FEATURE MAP the sampler reads -- the BEV
+        encoder's `d_out`, which is downstream of the trunk's stride-16 map and
+        so is NOT a backbone constant. ⛔ It is a required argument rather than a
+        default for the same reason `Box3DMemory.image_hw` is: the stride-16
+        width is 1024 on `resnet101` and 256 on `resnet34` (read from
+        `feature_info` via `CNNEncoderConfig.s16_dim`), and a default here would
+        pin one backbone silently.
+
+        `n_points` is taken from `self.n_steps`: the sampler weights the
+        candidate's OWN waypoints, and there are exactly `n_steps` of them.
+        """
+        if cfg is None or not bool(getattr(cfg, "enable", False)):
+            return 0
+        if int(d_bev) < 1:
+            raise ValueError(
+                f"d_bev must be the BEV encoder's output width, got {d_bev}. "
+                f"Take it from the perception branch you built, never a "
+                f"literal (PI 2026-09-16).")
+        self.bev_coupling_cfg = cfg
+        n = 0
+        for ly in self.layers:
+            ly.bev_wp = bevc.BEVWaypointSampler(
+                bevc.BEVCouplingConfig(
+                    enable=True, d_model=int(self.cfg.d), d_bev=int(d_bev),
+                    n_points=int(self.n_steps),
+                    learned_offsets=bool(getattr(cfg, "learned_offsets", False)),
+                    offset_max_m=float(getattr(cfg, "offset_max_m", 2.0))))
+            n += ly.bev_wp.n_params
+        return n
+
+    def bev_coupling_params(self) -> int:
+        """Trainable parameters coupling (1) added -- carved out of the
+        `decoder` line in :func:`param_breakdown` for the reason
+        :meth:`wp_index_params` is: a lever whose cost is buried inside a 40 M
+        row is a lever nobody can audit."""
+        return sum(ly.bev_wp.n_params for ly in self.layers
+                   if getattr(ly, "bev_wp", None) is not None)
+
+    def bev_coupling_provenance(self) -> dict:
+        """⚠️ What a trainer stamps into `config.json`: whether this build is
+        the RELEASED DiffusionDrive coupling or OUR extension. The released code
+        samples AT the waypoints with NO learned offsets
+        (`.../2026-09-05-diffusiondrive-v2-analysis/raw/ddv2_src/blocks.py`
+        :80-108); an arm with offsets on that reports itself as
+        "DiffusionDrive's coupling" is a mislabelled arm, not a better one."""
+        ly = next((l for l in self.layers
+                   if getattr(l, "bev_wp", None) is not None), None)
+        return {"enabled": ly is not None,
+                **({} if ly is None else ly.bev_wp.cfg.as_dict())}
+
+    def wp_index_params(self) -> int:
+        """Trainable parameters WP-B added — carved out of the ``decoder`` line
+        in :func:`param_breakdown` for the same reason ``selection`` is: a lever
+        whose cost is buried inside a 40 M-parameter row is a lever nobody can
+        audit."""
+        return sum(ly.wp_index.n_params() for ly in self.layers
+                   if getattr(ly, "wp_index", None) is not None)
+
+    def _agent_index(self, x_est: Tensor, agent_pos: Tensor | None):
+        """⭐⭐ **THE ADDRESS.** ``x_est`` ``[B, N, S, 2]`` is the current
+        trajectory estimate **in metres, ego frame** and ``agent_pos``
+        ``[B, M, 2]`` is each agent slot's decoded centre **in the same metres
+        and the same frame**. The relation between them IS the address, and it
+        is recomputed on every pass because the address MOVES as the trajectory
+        is denoised — that is the coupling, not an optimisation gap.
+
+        Returns ``(relation, d_min)`` or ``None`` when WP-B is off, in which
+        case ``_attend_agents`` never enters its masked branch and the emitted
+        tensors are bitwise those of a build that never had this seam.
+        """
+        cfg = self.wp_index_cfg
+        if cfg is None or not bool(cfg.enable) or agent_pos is None:
+            return None
+        if self.layers and self.layers[0].wp_index is None:
+            return None
+        return wpi.build_relation(x_est, agent_pos, cfg)
+
+    def _r8_split(self, fn, ctrl: bool, kv: Tensor, cond: Tensor, x: Tensor, *rest):
+        """refcv8: decode the BASE candidates ``x[:, :nb]`` and the appended EXTRAS ``x[:, nb:]`` in two passes and
+        concatenate. The decoder has NO candidate-candidate interaction (every candidate query cross-attends the
+        scene / agents / BEV and runs its own MLP), so this is the same function -- and the base pass runs refcv7's
+        exact shapes, so its outputs are bit-identical to refcv7's. Per-candidate state follows the slices: ``phi``
+        is sliced, and ``_r8_last_q`` / the F3 cascade's per-layer lists are concatenated back."""
+        nb, phi = int(self._r8_split_nb), self._r8_phi
+        parts = []
+        self._r8_split_nb = None
+        try:
+            for sl in (slice(0, nb), slice(nb, None)):
+                self._r8_phi = None if phi is None else phi[:, sl]
+                # ⛔ CONTIGUOUS, not just same-shaped. `x[:, sl]` is a STRIDED view of the [B, N+M+N, S, 2] fan,
+                # so `_decode`'s reshape reached `traj_proj` with batch stride (N+M+N)*S*2 instead of refcv7's
+                # N*S*2. MEASURED 2026-10-14 on the Thor launch-gate suite (aarch64 CPU): that layout takes a
+                # different GEMM path and moved the base scores by 1.9e-6 -- plan, indices and fan stayed
+                # identical, the BIT-identity claim did not (test_refcv8_warm_start / _emit_schedule RED there,
+                # GREEN on x86). With the copy both files pass 20/20 on Thor; without it the same 2 fail.
+                c, o = fn(kv, cond, x[:, sl].contiguous(), *rest)
+                parts.append((c, o, self._r8_last_q if ctrl else None,
+                              (self._last_layer_conf, self._last_layer_du)
+                              if ctrl and self.cascade is not None else None))
+        finally:
+            self._r8_phi, self._r8_split_nb = phi, nb
+        (c0, o0, q0, l0), (c1, o1, q1, l1) = parts
+        if ctrl and q0 is not None and q1 is not None:
+            self._r8_last_q = torch.cat([q0, q1], 1)
+        if l0 is not None and l1 is not None:
+            self._last_layer_conf = [torch.cat([a, b], 1) for a, b in zip(l0[0], l1[0])]
+            self._last_layer_du = [torch.cat([a, b], 1) for a, b in zip(l0[1], l1[1])]
+        return torch.cat([c0, c1], 1), torch.cat([o0, o1], 1)
 
     def _decode(self, kv: Tensor, cond: Tensor, x_est: Tensor,
-                t_idx: int) -> tuple[Tensor, Tensor]:
+                t_idx: int, agents: Tensor | None = None,
+                agent_pad: Tensor | None = None,
+                agent_pos: Tensor | None = None,
+                bev: Tensor | None = None) -> tuple[Tensor, Tensor]:
         """One decoder pass: current trajectory estimate + timestep -> queries;
-        cross-attend the map; emit (conf [B, N], offset [B, N, S, 2])."""
+        cross-attend the map; emit (conf [B, N], offset [B, N, S, 2]).
+
+        ``agents`` / ``agent_pad`` (refcv5 WP-6) are forwarded to every
+        layer. They are inert unless the layer was BUILT with ``cross_agent``,
+        so passing them on an agent-free build is a no-op rather than a branch.
+        ``agent_pos`` (WP-B) is the metric address source and is inert in the
+        same way — see :meth:`_agent_index`.
+        """
+        if self._r8_split_nb is not None and 0 < self._r8_split_nb < x_est.shape[1]:
+            return self._r8_split(self._decode, False, kv, cond, x_est, t_idx, agents, agent_pad, agent_pos, bev)
         b, n = x_est.shape[:2]
         q = self.traj_proj(x_est.reshape(b, n, -1))           # [B, N, d]
         q = q + self.time_embed.weight[t_idx][None, None]     # timestep bias
-        for layer in self.layers:
-            q = layer(q, kv, cond)
+        index = self._agent_index(x_est, agent_pos)
+        for _li, layer in enumerate(self.layers):
+            # `x_est` IS the metric fan this pass is refining, so it is the
+            # address for BOTH couplings -- the agent slots (WP-B / coupling
+            # (2), through `index`) and the BEV map (coupling (1), through
+            # `waypoints`).
+            q = layer(q, kv, cond, agents, agent_pad, index, bev, x_est)
+            if self._r8_phi is not None:          # refcv8 WP-B: zero-init per-candidate modulation
+                q = self.r8_mod(_li, q, self._r8_phi)
         conf = self.conf_head(q).squeeze(-1)                  # [B, N]
         offset = self.offset_head(q).reshape(b, n, self.n_steps, 2)
         return conf, offset
 
-    def _lan_anchor_prior(self, lan_dir: Tensor) -> Tensor:
+    # ---- refcv5 WP-4: the sampler's own pass and its denoising loop -------- #
+    def _decode_ctrl(self, kv: Tensor, cond: Tensor, x_path: Tensor,
+                     t: Tensor, agents: Tensor | None,
+                     agent_pad: Tensor | None,
+                     agent_pos: Tensor | None = None,
+                     bev: Tensor | None = None
+                     ) -> tuple[Tensor, Tensor]:
+        """One SAMPLER pass -> (conf [B, N], du [B, N, S, 2]).
+
+        ⭐ It reuses ``traj_proj`` -> ``layers`` -> ``conf_head``, the SAME
+        weights the classifier pass uses. A second, separately-conditioned
+        decoder is how the sampler and the ranker would silently come to
+        disagree about what they are looking at; the only new parameters in the
+        whole seam are ``control_head`` and ``time_mlp``.
+
+        ⛔ The timestep enters through ``time_mlp`` (DD's sinusoidal embedding
+        of the CONTINUOUS ``t``), NOT through ``time_embed``. ``time_embed`` is
+        an ``nn.Embedding`` with ``diffusion_steps + 1 == 3`` rows and cannot
+        represent ``t ~ U[0, 50)`` -- it would quietly collapse the training
+        timestep onto one of three rows, and the schedule would stop meaning
+        anything.
+        """
+        if self._r8_split_nb is not None and 0 < self._r8_split_nb < x_path.shape[1]:
+            return self._r8_split(self._decode_ctrl, True, kv, cond, x_path, t, agents, agent_pad, agent_pos, bev)
+        b, n = x_path.shape[:2]
+        q = self.traj_proj(x_path.reshape(b, n, -1))          # [B, N, d]
+        te = self.time_mlp(t.reshape(-1).to(torch.float32)).to(q.dtype)
+        q = q + te.reshape(-1, 1, q.shape[-1])                # per-sample t
+        # ⭐ WP-B on the SAMPLER path: `x_path` is already the metric fan
+        # (`_state_to_path` integrated the controls), so the address moves with
+        # every DDIM step — which is exactly DiffusionDrive's coupling (1).
+        index = self._agent_index(x_path, agent_pos)
+        # ---- refcv6 F3/F4 -------------------------------------------------- #
+        # ⛔ With both flags off this loop is the ONE LINE it always was — no
+        # extra module call, no extra tensor, no branch inside the layer.
+        if self.cascade is None and self.adaln is None:
+            for _li, layer in enumerate(self.layers):
+                q = layer(q, kv, cond, agents, agent_pad, index, bev, x_path)
+                if self._r8_phi is not None:      # refcv8 WP-B
+                    q = self.r8_mod(_li, q, self._r8_phi)
+            if self.r8_cfg is not None:
+                self._r8_last_q = q
+            conf = self.conf_head(q).squeeze(-1)              # [B, N]
+            du = self.control_head(q).reshape(b, n, self.n_steps, 2)
+            return conf, du
+        te3 = te.reshape(-1, 1, q.shape[-1])
+        confs: list[Tensor] = []
+        dus: list[Tensor] = []
+        for i, layer in enumerate(self.layers):
+            q = layer(q, kv, cond, agents, agent_pad, index, bev, x_path)
+            if self._r8_phi is not None:          # refcv8 WP-B: before F4's time AdaLN (DESIGN sec. 3.1)
+                q = self.r8_mod(i, q, self._r8_phi)
+            # F4 — DD modulates AFTER the layer's FFN (`:335-337`), never
+            # before the attention. Order matters: the scale/shift is applied
+            # to the layer's OUTPUT, which is what makes it a per-stage
+            # re-parameterisation of the feature rather than a second
+            # conditioning of the input.
+            if self.adaln is not None:
+                q = self.adaln[i](q, te3)
+            if self.r8_cfg is not None and i == len(self.layers) - 1:
+                self._r8_last_q = q                # refcv8 X1h: the emitting pass's per-candidate query
+            if self.cascade is not None:
+                c_i, du_i = self.cascade.emit(i, q)
+                confs.append(c_i)
+                dus.append(du_i)
+                # F3 — DD detaches the trajectory handed to the next stage
+                # (`:379`), so stage i+1 cannot backprop into stage i's
+                # geometry. We carry the same cut on the QUERY, which is our
+                # equivalent hand-off. ⚠️ The cut is real: without it the
+                # per-layer losses are just extra gradient paths into one
+                # chain, which is NOT the cascade DD ablates in Tab. 5.
+                q = q.detach()
+        if self.cascade is not None:
+            self._last_layer_conf = confs
+            self._last_layer_du = dus
+            return confs[-1], dus[-1]
+        conf = self.conf_head(q).squeeze(-1)
+        du = self.control_head(q).reshape(b, n, self.n_steps, 2)
+        return conf, du
+
+    def _state_to_path(self, state: Tensor, v: Tensor,
+                       metre: bool, prior=None) -> Tensor:
+        """The sampler's state -> the emitted fan ``[B, N, S, 2]`` in metres.
+
+        (( !! )) refcv7 NEW-1: on a RESIDUAL build ``state`` is an EXPORTED
+        control tensor (``u0_hat`` / ``layer_u0_hat``, ABSOLUTE) and ``prior``
+        is REQUIRED -- rolling exported controls without it would hand the
+        caller a path the model never emitted. ``v`` must then be the
+        prior's own roll speed (``out['residual_prior_v']``). The trainer's F3
+        cascade is the one production caller. The sampler's INTERNAL rolls
+        go through :meth:`_roll_state`, never through here.
+
+        In CONTROL space the state is ``(a_lon, a_lat|kappa)`` per slot and the
+        path is INTEGRATED, so every sample is flyable by construction. In the
+        ``metre`` regression the state already IS the path -- which is exactly
+        why that arm is pre-registered to fail the flyability gate.
+        """
+        if self.residual_prior != _kp.RESIDUAL_PRIOR_OFF:
+            if prior is None:
+                raise ValueError(
+                    "refcv7 NEW-1: _state_to_path on a residual build needs "
+                    "`prior=` (kinematic_prior.prior_from_out(out)); the "
+                    "exported controls rolled without it are not the plan.")
+            a0, k0, pv = prior
+            if not torch.equal(v.reshape(-1).to(torch.float32),
+                               pv.reshape(-1).to(torch.float32)):
+                raise ValueError(
+                    "refcv7 NEW-1: _state_to_path was handed a speed that is "
+                    "not the prior's roll speed (on a withheld training row "
+                    "the raw v0 differs from the bank's). Pass "
+                    "out['residual_prior_v'].")
+            delta = _kp.residual_controls(
+                state, a0, k0, pv, control_units=self.anchor_control_units,
+                alat_v_floor=self.anchor_alat_v_floor, horizons=self.anchor_horizons)
+            return self._roll_state(delta, pv, metre, prior)
+        if prior is not None:
+            raise ValueError(
+                "refcv7 NEW-1: _state_to_path got a prior on a decoder built "
+                "with residual_prior='off' -- refusing to compose silently.")
+        if metre:
+            return state
+        return rs.roll_controls(
+            state, v, self.anchor_horizons,
+            control_units=self.anchor_control_units, tick=self.anchor_dt,
+            alat_v_floor=self.anchor_alat_v_floor,
+            kappa_cap=self.anchor_kappa_cap)
+
+    def _sample(self, kv: Tensor, cond: Tensor, bank: Tensor,
+                v_ms: Tensor | None, steps: int,
+                agents: Tensor | None = None,
+                agent_pad: Tensor | None = None,
+                agent_pos: Tensor | None = None,
+                bev: Tensor | None = None,
+                prior: "tuple | None" = None,
+                cand_src: Tensor | None = None,
+                x0_offset: Tensor | None = None
+                ) -> tuple[Tensor, Tensor, Tensor, dict]:
+        """The truncated-diffusion sampler. -> (fan, u0_hat, conf, telemetry).
+
+        ⭐⭐ THIS IS THE MECHANISM refcv3 DID NOT HAVE, and the four pieces are
+        each here on purpose:
+
+        1. **the anchored Gaussian** -- the state starts at the VOCABULARY's own
+           control sequence, noised once at ``t = sampler_infer_t``. The prior
+           is the anchor set, not a standard normal, so a sample is a
+           perturbation of something the vocabulary can already express;
+        2. **the noise schedule** -- DD's ``scaled_linear`` table, so
+           ``sigma(8) = 0.0316`` means here what it means in the paper;
+        3. **DDIM sampling** -- deterministic (``eta = 0``) steps down the
+           published ``[10, 0]`` ladder;
+        4. **a real denoising loop** -- each pass PREDICTS THE CLEAN CONTROL and
+           the state moves toward it. refcv3's loop read the ``t = 0``
+           confidence and was MEASURED UNCHANGED ON 201/201 WINDOWS; a loop
+           whose output cannot move is not a sampler, and this one's output is
+           ``u0_hat``, the tensor the x0 loss is computed on.
+        """
+        cfg = self.cfg
+        rv6 = self.rv6
+        b, n = bank.shape[:2]
+        dev, dtype = bank.device, bank.dtype
+        metre = str(cfg.sampler_space) == "metre"
+        # ⭐ refcv6 F8 uses DD's AFFINE box (`norm_odo`, `:432-441`) instead of
+        # the pure divisor, so `denorm` is the inverse map rather than a
+        # multiply. With F8 off `denorm(z) is z * norm`, bit for bit.
+        norm = None
+        if metre and rv6.f8_flat_waypoint_noise:
+            x0_n = _rv6.dd_norm_waypoints(bank)
+
+            def denorm(z: Tensor) -> Tensor:
+                return _rv6.dd_denorm_waypoints(z)
+        elif metre:
+            # DERIVED, never the raw sigma -- see `metre_sigma_m`. Dividing by
+            # the sigma itself would make the DD-literal arm 31.7x too gentle
+            # and it would PASS the gate it exists to fail.
+            _s = float(self.sched.sqrt_one_minus_abar(int(cfg.sampler_infer_t)))
+            norm = bank.new_tensor(tuple(cfg.metre_sigma_m)) / max(_s, 1e-12)
+            x0_n = bank / norm
+
+            def denorm(z: Tensor) -> Tensor:
+                return z * norm
+        else:
+            norm = bank.new_tensor(tuple(cfg.control_norm))
+            x0_n = self.anchor_control_seq(b, dtype) / norm
+            # ---- refcv8 WP-B: the extended candidate set (allocated + prior-free) --------------------- #
+            # Each candidate's anchored-Gaussian centre is its SOURCE anchor's control sequence (+ the X2b
+            # offset, normalised units). Done BEFORE the F7 shape check, which then sees matching widths.
+            if cand_src is not None:
+                x0_n = x0_n.gather(1, cand_src[:, :, None, None].expand(b, cand_src.shape[1],
+                                                                       x0_n.shape[2], 2))
+                if x0_offset is not None:
+                    x0_n = x0_n + x0_offset.to(x0_n.dtype)
+            # ---- refcv6 F7: the CONTROL state must be tiled with the bank -- #
+            # `roll_bank`'s output was widened to [B, G*N, S, 2] in `forward`;
+            # `anchor_control_seq` still emits [B, N, S, 2]. Tiling here, in
+            # the SAME group-major layout, is what keeps candidate `g*N + a`
+            # the anchor `a` it is claimed to be. A shape mismatch would crash
+            # loudly -- but an INTERLEAVED tile would not, which is why the
+            # layout is asserted rather than assumed.
+            if x0_n.shape[1] != n:
+                g, rem = divmod(n, x0_n.shape[1])
+                if rem:
+                    raise AssertionError(
+                        f"F7: bank has {n} candidates, which is not a whole "
+                        f"multiple of the {x0_n.shape[1]}-anchor control "
+                        f"sequence")
+                x0_n = x0_n.repeat(1, g, 1, 1)
+
+            def denorm(z: Tensor) -> Tensor:
+                return z * norm
+        # The speed the fan is rolled from. `roll_bank` has already applied the
+        # ego-dropout policy to produce `bank`; a sampler with no speed at all
+        # falls back to the SAME reference speed `roll_bank` uses, so the two
+        # never integrate from different initial states.
+        v = (bank.new_full((b,), self.anchor_ref_speed)
+             if v_ms is None else v_ms.reshape(-1).to(torch.float32))
+        if prior is not None:
+            # refcv7 NEW-1: the fan is rolled from the PRIOR's speed -- the
+            # one `roll_bank` rolled the bank from (`_prior_speed`).
+            v = prior[2]
+        t0 = int(cfg.sampler_infer_t)
+        k = int(steps) if int(steps) > 0 else int(cfg.sampler_steps)
+        k = max(k, 1)
+        ladder = self.sched.infer_timesteps(t0, k)
+        # ⭐ THE ANCHORED GAUSSIAN: ONE fresh eps at the truncation point.
+        #
+        # ⛔⛔ THIS IS STOCHASTIC AT EVAL, BY DESIGN AND NOT BY OVERSIGHT, and
+        # any arm that runs it inherits an obligation. The pre-v5 refinement
+        # loop zeroes its noise outside training so a decode is reproducible;
+        # a SAMPLER cannot, because sampling is the mechanism. MEASURED on
+        # refav1 (`D-REFAV1-SEED-GOAL-MISMATCH`): on a planner that samples,
+        # the same checkpoint evaluated twice does not give the same answer,
+        # and that rig's inference-seed floor was ~0.30 m ADE. ⇒ A refcv5
+        # sampler arm must be replicated over INFERENCE seeds, and an effect
+        # smaller than that floor is not an effect. The episode-cluster
+        # bootstrap answers "would another draw of EPISODES say this?" and is
+        # structurally blind to this variance.
+        self.sched.to(dev)          # the alpha table must live where x0 does
+        # ---- refcv6 F1: DD's TRAINING draw replaces the inference chain ---- #
+        # ⛔ `t ~ U[0, 50)` PER SAMPLE and ONE decoder call
+        # (`transfuser_model_v2.py:463-476`). Today the network only ever sees
+        # the two labels {10, 0} and backprops through both, so it has never
+        # been asked what a t = 37 state looks like. Only in TRAINING: at eval
+        # the published truncated ladder is what the paper measures.
+        train_t = None
+        if rv6.f1_random_t and self.training:
+            train_t = rs.draw_train_timesteps(b, int(rv6.f1_t_max), dev)
+        if cand_src is None:
+            eps = torch.randn_like(x0_n)
+        else:
+            # ⛔ refcv8: the BASE candidates draw from the global stream exactly as refcv7 did (same count, same
+            # order); the EXTRA candidates draw from the dedicated generator -- so appending candidates never
+            # shifts a base candidate's noise.
+            _nb = int(self.anchors.shape[0])
+            eps_b = torch.randn((b, _nb) + tuple(x0_n.shape[2:]), device=dev, dtype=x0_n.dtype)
+            # ⛔ at EVAL the extras' values come from a generator seeded off the GLOBAL state (read, not consumed):
+            # the persistent r8_gen is not restored by a seed / fork_rng, so drawing its values at eval made the same
+            # checkpoint + batch + inference seed answer differently on every call (G-EVAL control, 2026-10-12).
+            _shape_x = (b, x0_n.shape[1] - _nb) + tuple(x0_n.shape[2:])
+            eps_x = (self.r8_gen.randn(_shape_x, dev, x0_n.dtype) if self.training
+                     else self.r8_gen.randn_eval(_shape_x, dev, r8c.EVAL_SITE_EXTRA_EPS, x0_n.dtype))
+            eps = torch.cat([eps_b, eps_x], 1)
+        t_noise = (train_t if train_t is not None
+                   else torch.tensor(t0, device=dev))
+        x_n = self.sched.add_noise(x0_n, eps, t_noise)
+        # ---- refcv6 F8: DD CLAMPS the normalised sample to [-1, 1] --------- #
+        # `transfuser_model_v2.py:474` (train) and `:519` (test). On DD's
+        # waypoint box that clamp is a real operation -- it is what keeps a
+        # noised anchor inside the 56.9 x 46 m window. It is applied ONLY on
+        # the F8 arm, because on our control normalisation the same clamp would
+        # bound (a_lon, a_lat) at +-4 / +-3 m/s^2, a different physical claim.
+        # ⭐ This one matches DD's TRAINING clamp (`:474`), which fires once
+        # after `add_noise` and before the single decoder call. The EVAL clamp
+        # is a different statement and lives at the top of the ladder below.
+        if rv6.f8_flat_waypoint_noise:
+            x_n = x_n.clamp(-1.0, 1.0)
+        # ---- refcv6 F2: DD's step semantics -------------------------------- #
+        pairs = _rv6.dd_step_pairs([int(x) for x in ladder],
+                                   bool(rv6.f2_dd_step))
+        if train_t is not None:
+            # ONE call, at the drawn t. The ladder is not walked in training.
+            pairs = [(None, None)]
+        x0_hat_n, conf = x_n, None
+        layer_u0: list[Tensor] = []
+        layer_conf: list[Tensor] = []
+        for i, (t, t_prev) in enumerate(pairs):
+            # ---- refcv6 F8: DD CLAMPS INSIDE THE LADDER -------------------- #
+            # ⛔⛔ THE CLAMP USED TO SIT ONLY ABOVE THIS LOOP. DD's test path
+            # re-clamps at the TOP OF EVERY ITERATION —
+            # `x_boxes = torch.clamp(img, min=-1, max=1)`
+            # (`transfuser_model_v2.py:519`) — and then denormalises the CLAMPED
+            # state. Ours denormalised whatever `sched.step` produced: MEASURED
+            # 2026-09-22 `|x_n|` reached 15.04 after one step, 15x outside DD's
+            # box, and pass 2 then fed an out-of-box sample to `dd_denorm_
+            # waypoints`. `clamp` is IDEMPOTENT, so iteration 0 is bit-identical
+            # to the pre-loop clamp and only iterations >= 1 change. F8 has
+            # never been run on any arm (`…/2026-09-22-refcv6-review` §1.1), so
+            # nothing banked is affected; the stamp records which semantics ran.
+            if rv6.f8_flat_waypoint_noise:
+                x_n = x_n.clamp(-1.0, 1.0)
+            x_path = self._roll_state(denorm(x_n), v, metre, prior)
+            tt = (train_t.to(torch.float32) if t is None else
+                  torch.full((b,), float(t), device=dev, dtype=torch.float32))
+            conf, du = self._decode_ctrl(kv, cond, x_path, tt,
+                                         agents, agent_pad, agent_pos, bev)
+            # x0-parameterised ("sample"), and `control_head` is ZERO-INIT, so
+            # the first pass predicts exactly the current state: the fan starts
+            # AT the anchored Gaussian and every later movement is learned.
+            x0_hat_n = x_n + du
+            # ---- refcv6 F3: every cascade stage is supervised -------------- #
+            # DD sums the loss over `poses_reg_list` (`:494-497`). The stages'
+            # x0 predictions are exported here, in the SAME units as `u0_hat`,
+            # so the trainer's per-layer term needs no second de-normalisation
+            # to get wrong.
+            if self.cascade is not None:
+                for du_i, c_i in zip(self._last_layer_du, self._last_layer_conf):
+                    layer_u0.append(self._export_controls(
+                        denorm(x_n + du_i), prior))
+                    layer_conf.append(c_i)
+            if t is None:
+                break
+            x_n = self.sched.step(x0_hat_n, x_n,
+                                  torch.tensor(t, device=dev),
+                                  torch.tensor(t_prev, device=dev))
+        u0_hat = denorm(x0_hat_n)
+        fan = self._roll_state(u0_hat, v, metre, prior)
+        # refcv7 NEW-1: the residual never leaves the decoder -- `u0_hat` is
+        # exported ABSOLUTE (the same object when the prior is off).
+        u0_hat = self._export_controls(u0_hat, prior)
+        # ⛔ Exported on `self`, not through `tele`: `tele` is JSON-serialised
+        # into `config.json` and every log row, and a live tensor with its
+        # graph attached in that dict is a memory leak dressed as telemetry.
+        self._rv6_layer_u0 = layer_u0
+        self._rv6_layer_conf = layer_conf
+        tele = {"sampler": "ddim", "sampler_space": cfg.sampler_space,
+                "sampler_ladder": [int(x) for x in ladder],
+                "sampler_infer_t": t0,
+                # ⚠ MEASURED 2026-09-06 and it is a CONFIG decision, not a
+                # bug: `SelectionConfig.refined` defaults to FALSE, so the
+                # ranked score is the CLASSIFIER surface -- which the sampler
+                # deliberately does not touch (pinned by
+                # `test_hfov_style_sanity...`). With this False the fan is
+                # SAMPLED but RANKED by a head that never saw the sample, which
+                # is the S1 defect one level up (MEASURED there as a 45.4 %
+                # -of-windows ranking failure). It is stamped rather than
+                # refused because "improve the geometry, keep the ranking" is a
+                # legitimate arm -- but an arm that wants the sampler to reach
+                # SELECTION must run `--sel-refined`, and this key is how a
+                # reader tells which one they are looking at.
+                # ⛔⛔ THIS KEY USED TO READ `bool(self.sel.refined)` ALONE AND
+                # WAS THEREFORE FALSE ON AN F5 ARM THAT DOES RANK THE FAN. The
+                # ranked surface is chosen by
+                # `base = refined if (sel.refined or rv6.f5_emitting_conf)
+                #         else conf`
+                # (one method down), so a stamp that omits the F5 term contradicts
+                # the line it claims to describe. MEASURED 2026-09-22: with
+                # `--f5-emitting-conf` the sampler perturbation moved `sel_score`
+                # by 0.609841 and `sel_idx` [0,0] -> [1,4] while this key still
+                # said `false`. Off F5 the value is unchanged, so every banked
+                # arm's telemetry is bit-identical.
+                "sampler_ranks_the_fan": bool(self.sel.refined
+                                              or rv6.f5_emitting_conf)}
+        # ⛔ STAMPED ONLY WHEN AN F-FLAG IS ON. `tele` reaches `config.json`
+        # and the `sel_tele` dump, and a key that appears on every run is a key
+        # a reader stops reading. With all nine off the dict is the pre-refcv6
+        # dict, key for key.
+        if rv6.any_on:
+            tele["refcv6"] = _rv6.flag_stamp(rv6)
+            tele["refcv6_pairs"] = [[None if a is None else int(a),
+                                     None if c is None else int(c)]
+                                    for a, c in pairs]
+            tele["refcv6_train_t"] = (None if train_t is None
+                                      else [int(x) for x in train_t[:8].cpu()])
+            tele["refcv6_cascade_stages"] = len(layer_u0)
+        return fan, u0_hat, conf, tele
+
+    def _lan_anchor_prior(self, lan_dir: Tensor,
+                          bank: Tensor | None = None) -> Tensor:
         """Param-free geometric route compatibility of every anchor. [B, N].
 
         ``lan_dir`` [B, 3] = (cos, sin, valid) of the route's bearing at its
@@ -1184,12 +3232,18 @@ class AnchoredDiffusionDecoder(nn.Module):
         GOAL_INPUT.md measured at +83.7 % and which a route input must never
         supply). Invalid routes score 0 for every anchor.
         """
-        a = self.anchors.to(lan_dir.dtype)                    # [N, S, 2]
-        end = a[:, -1]                                        # [N, 2]
+        if bank is None:                    # fixed vocabulary — legacy path,
+            a = self.anchors.to(lan_dir.dtype)  # bit-identical to pre-refcv4-b
+            end = a[:, -1]                                    # [N, 2]
+            r = torch.linalg.vector_norm(end, dim=-1).clamp_min(1e-6)
+            cos_a, sin_a = end[:, 0] / r, end[:, 1] / r       # [N]
+            compat = (cos_a[None] * lan_dir[:, 0:1]
+                      + sin_a[None] * lan_dir[:, 1:2])        # [B, N]
+            return compat * lan_dir[:, 2:3]
+        end = bank.to(lan_dir.dtype)[:, :, -1]                # [B, N, 2]
         r = torch.linalg.vector_norm(end, dim=-1).clamp_min(1e-6)
-        cos_a, sin_a = end[:, 0] / r, end[:, 1] / r           # [N]
-        compat = (cos_a[None] * lan_dir[:, 0:1]
-                  + sin_a[None] * lan_dir[:, 1:2])            # [B, N]
+        cos_a, sin_a = end[..., 0] / r, end[..., 1] / r       # [B, N]
+        compat = cos_a * lan_dir[:, 0:1] + sin_a * lan_dir[:, 1:2]
         return compat * lan_dir[:, 2:3]
 
     def _apply_grafts(self, base: Tensor, terms: list[Tensor],
@@ -1217,7 +3271,8 @@ class AnchoredDiffusionDecoder(nn.Module):
             fail_frac=self.sel.seam_fail_frac, patience=patience,
             state=state, surface=surface)
 
-    def _goal_along_prior(self, dist_pref: Tensor) -> Tensor:
+    def _goal_along_prior(self, dist_pref: Tensor,
+                          bank: Tensor | None = None) -> Tensor:
         """Along-track compatibility of every anchor with a PREDICTED goal
         distance. ``dist_pref`` [B] in [-1, 1] -> [B, N].
 
@@ -1236,9 +3291,14 @@ class AnchoredDiffusionDecoder(nn.Module):
         label is used only to train the head, which is the sanctioned direction
         ("LABELS MAY USE EGO; INFERENCE IS VISION-ONLY").
         """
-        end_x = self.anchors.to(dist_pref.dtype)[:, -1, 0]           # [N]
-        z = (end_x - end_x.mean()) / end_x.std().clamp_min(1e-6)     # [N]
-        return z[None] * dist_pref.reshape(-1, 1)                   # [B, N]
+        if bank is None:              # fixed vocabulary — legacy path, exact
+            end_x = self.anchors.to(dist_pref.dtype)[:, -1, 0]       # [N]
+            z = (end_x - end_x.mean()) / end_x.std().clamp_min(1e-6)  # [N]
+            return z[None] * dist_pref.reshape(-1, 1)               # [B, N]
+        end_x = bank.to(dist_pref.dtype)[:, :, -1, 0]                # [B, N]
+        z = ((end_x - end_x.mean(dim=1, keepdim=True))
+             / end_x.std(dim=1, keepdim=True).clamp_min(1e-6))       # [B, N]
+        return z * dist_pref.reshape(-1, 1)                          # [B, N]
 
     @staticmethod
     def _grounded_score(x: Tensor) -> Tensor:
@@ -1259,7 +3319,22 @@ class AnchoredDiffusionDecoder(nn.Module):
                 v_ms: Tensor | None = None,
                 ego_keep: Tensor | None = None,
                 goal_dir: Tensor | None = None,
-                goal_dist_pref: Tensor | None = None) -> dict:
+                goal_dist_pref: Tensor | None = None,
+                gp_point: Tensor | None = None,
+                gp_valid: Tensor | None = None,
+                withheld_speed: Tensor | None = None,
+                agent_tokens: Tensor | None = None,
+                agent_pad: Tensor | None = None,
+                agent_pos: Tensor | None = None,
+                ego_hist: Tensor | None = None,
+                bev: Tensor | None = None,
+                tac_lat_prior: Tensor | None = None,
+                tac_lon_prior: Tensor | None = None,
+                behaviour_term: Tensor | None = None,
+                nav_cmd_sel: Tensor | None = None,
+                v_limit_ms: Tensor | None = None,
+                residual_prior: "tuple | None" = None,
+                r8: dict | None = None) -> dict:
         """D-SEL adds five OPTIONAL ranking inputs; with all flags off the
         emitted ``traj`` / ``sel_idx`` are bit-identical to pre-D-SEL REF-C.
 
@@ -1279,37 +3354,276 @@ class AnchoredDiffusionDecoder(nn.Module):
         """
         b = fmap.shape[0]
         sel = self.sel
+        # ---- refcv5 WP-4 PREFLIGHT -- refuse before the compute, not after -- #
+        # Both of these describe a run that would TRAIN, CONVERGE and MEAN
+        # NOTHING, which is worse than a crash because a crash gets fixed.
+        if self.control_head is not None:
+            if not self.anchor_v0_cond:
+                raise ValueError(
+                    "refcv5 WP-4: the sampler needs a v0-CONDITIONED anchor "
+                    "vocabulary. The sampler's state IS the control sequence, "
+                    "and a fixed-path bank carries `anchor_controls` of all "
+                    "zeros -- so the anchored Gaussian would be centred on 'do "
+                    "nothing' and the arm would be a plausible-looking WRONG "
+                    "experiment. Build the anchors with controls "
+                    "(`--anchor-file` from build_refc_anchors), or run "
+                    "`sampler='none'`.")
+            # ⛔⛔ AND THE SAME REFUSAL, READ OFF THE TENSOR INSTEAD OF THE
+            # FLAG. The message above names `anchor_controls` of all zeros as
+            # the failure — and until 2026-09-23 NOTHING READ THAT TENSOR.
+            # MEASURED 2026-09-22 (`…/2026-09-22-refcv6-review` §6.1) with
+            # `anchor_v0_cond=True` and the buffer left at its registered
+            # zeros: the forward did NOT raise, F9 PASSED, and the rolled bank
+            # was exactly degenerate — `bank_max_spread_across_anchors_m
+            # 0.000000000`, every one of the N candidates the same straight
+            # line (control, with real controls: 7.106836 m). It is reachable
+            # from argv as `--sampler ddim --anchor-v0-conditioned` WITHOUT
+            # `--anchors`, where the trainer prints a warning and does not
+            # refuse. The literal `0.0` is the whole discriminator: a
+            # v0-conditioned bank whose controls sum to exactly zero cannot
+            # express anything but "do nothing".
+            # ⚠️ LATCHED, not re-read: `anchor_controls` is a BUFFER and is not
+            # trained, so one host sync per model settles it forever. A test
+            # that mutates the buffer afterwards must clear
+            # `_v0_controls_nonzero`.
+            if (not getattr(self, "_v0_controls_nonzero", False)
+                    and getattr(self, "anchor_controls", None) is not None):
+                if float(self.anchor_controls.abs().sum()) == 0.0:
+                    raise ValueError(
+                        "refcv5 WP-4 / refcv6 F9: the anchor vocabulary "
+                        "DECLARES `v0_conditioned=True` but `anchor_controls` "
+                        "is all zeros, so every one of the "
+                        f"{int(self.anchors.shape[0])} candidates rolls to the "
+                        "SAME straight line and the anchored Gaussian is "
+                        "centred on 'do nothing'. MEASURED spread across "
+                        "anchors: 0.000000000 m. This is the exact state the "
+                        "declaration-only refusal above was written for and "
+                        "could not see. Load a controls-carrying bank "
+                        "(`--anchors <anchor_artifact>.pt`) or run "
+                        "`sampler='none'`.")
+                self._v0_controls_nonzero = True
+            # ---- refcv6 F5 / D-SEL: is the RANKED surface the EMITTED fan? -- #
+            # ⛔ Opt-in, default OFF, so every banked arm is untouched. On a
+            # sampler build with neither `--sel-refined` nor `--f5-emitting-
+            # conf`, `base = conf` — the CLASSIFIER pass over the raw anchor
+            # bank. MEASURED 2026-09-22: perturbing ONLY the sampler moved
+            # `traj` 12.20 m and `sel_score` by EXACTLY 0.0, `sel_idx`
+            # unchanged. That is REFe's class-C defect — judging the proposal,
+            # not the path. It is a legitimate arm ("improve the geometry, keep
+            # the ranking"), which is why this refuses only when the operator
+            # asks it to.
+            if (self.rv6.f5_refuse_blind_rank
+                    and not (self.sel.refined
+                             or self.rv6.f5_emitting_conf)):
+                raise ValueError(
+                    "refcv6 F5 guard: `f5_refuse_blind_rank` is set and this "
+                    "sampler build would rank the fan with the CLASSIFIER "
+                    "surface, which never saw the sample. MEASURED: a "
+                    "sampler-only perturbation moves `traj` 12.20 m and "
+                    "`sel_score` exactly 0.000000. Pass `--f5-emitting-conf` "
+                    "(DD-faithful: `transfuser_model_v2.py:554-557` gathers "
+                    "`poses_reg` by the argmax of the SAME pass's "
+                    "`poses_cls`), or `--sel-refined`, or drop this guard and "
+                    "document the arm as anchor-bank-ranked.")
+            # ---- refcv6 F7: the refusal, RETAINED but now conditional ----- #
+            # ⭐ Two of the three named sites ARE widened (see
+            # `refcv6_diffusion.F7_UNWIDENED_SITES`): the matched-anchor target
+            # reads `candidate_to_anchor_id`, and every [B, N] prior is tiled
+            # by `tile_anchor_prior` in the SAME group-major layout the bank is
+            # tiled in. ⛔ THE THIRD IS NOT OURS TO WIDEN: `taniteval`'s window
+            # dumps join on `sel_idx` AS AN ANCHOR ID, and that file belongs to
+            # another agent. With G > 1 the forward therefore ALSO emits
+            # `sel_anchor_id`, and `f7_ack_eval_join` is the operator saying
+            # the consumer reads it. Without that acknowledgement the refusal
+            # stands, because a silently mis-joined eval is worse than a crash.
+            _g = max(int(getattr(self.cfg, "sampler_groups", 1)),
+                     int(self.rv6.f7_samples_per_anchor))
+            if _g > 1 and not self.rv6.f7_ack_eval_join:
+                raise NotImplementedError(
+                    "refcv5 WP-4 / refcv6 F7: `sampler_groups > 1` emits a "
+                    "[B, G*N, ...] fan while THREE call sites assumed N: (1) "
+                    "`loss_cls`'s `a_star` anchor target, which indexes the "
+                    "fan by anchor id; (2) the [B, N] anchor priors "
+                    "(`maneuver_to_anchor` / `lat_to_anchor` / "
+                    "`lon_to_anchor` / `route_to_anchor`); and (3) every "
+                    "`sel_idx` dump the eval harness joins on. refcv6 F7 "
+                    "WIDENS (1) via `candidate_to_anchor_id` and (2) via "
+                    "`tile_anchor_prior`. ⛔ (3) IS NOT OURS TO WIDEN -- "
+                    "`taniteval`'s dumps read `sel_idx` AS AN ANCHOR ID and "
+                    "that file belongs to another agent. The forward emits "
+                    "`sel_anchor_id` for it; set "
+                    "`DiffusionFlags.f7_ack_eval_join=True` to state that the "
+                    "consumer reads it. Refusing rather than mis-indexing.")
+        # ---- refcv6 F9: the vocabulary is a NO-CHANGE item, so assert it -- #
+        if self.rv6.f9_assert_vocab:
+            # ⭐ THE TENSOR, NOT JUST THE DECLARATION. `assert_f9_vocabulary`
+            # had no tensor parameter at all until 2026-09-23, so it passed on
+            # the exactly-degenerate bank of §6.1. It is handed the controls
+            # ONLY on a sampler build, because "the anchored Gaussian would be
+            # centred on 'do nothing'" is a statement about the sampler; a
+            # classifier build with F9 on is unchanged, bit for bit.
+            _rv6.assert_f9_vocabulary(int(self.anchors.shape[0]),
+                                      bool(self.anchor_v0_cond),
+                                      int(self.rv6.f9_n_anchors),
+                                      anchor_controls=(
+                                          self.anchor_controls
+                                          if self.control_head is not None
+                                          else None))
         kv = self.feat_proj(fmap.flatten(2).transpose(1, 2))  # [B, P, d]
         cond = self.cond_proj(m)                              # [B, d]
         if self.ctx_to_cond is not None and ctx is not None:
             cond = cond + self.ctx_to_cond(ctx)
         if self.lan_to_cond is not None and lan_emb is not None:
             cond = cond + self.lan_to_cond(lan_emb)           # LAN (zero-init)
+        # ⭐ refcv6 §2b: PAST ego state reaches the condition, and therefore
+        # every decoder layer and every denoising pass — the same route nav and
+        # max-speed take. Zero-init, so it is a removable graft.
+        if self.ego_to_cond is not None and ego_hist is not None:
+            cond = cond + self.ego_to_cond(ego_hist.to(cond.dtype))
         if self.tgt_film is not None and target_latent is not None:
             cond = self.tgt_film(cond, self.tgt_proj(target_latent))
+        # ⭐ refcv8 WP-B R8-3: the route checkpoint reaches the operative condition (zero-init, additive).
+        if r8 is not None and self.r8_cfg is None:
+            raise ValueError('[refcv8] r8 inputs reached a decoder built without the refcv8 seams -- they would be '
+                             'SILENTLY DROPPED (the WP-6 rule). Build with refcv8.enable or stop passing them.')
+        if self.r8_rc_to_cond is not None and r8 is not None and r8.get('rc') is not None:
+            cond = cond + self.r8_rc_to_cond(r8['rc'].to(cond.dtype))
 
         anchors = self.anchors.to(fmap.dtype)                 # [N, S, 2]
         n = anchors.shape[0]
-        x0 = anchors[None].expand(b, n, self.n_steps, 2)
-        conf0, offset = self._decode(kv, cond, x0, 0)         # classifier pass
-        x = anchors[None] + offset                            # [B, N, S, 2]
+        # ⭐ refcv4-b: [B, N, S, 2]. For a fixed vocabulary this is exactly the
+        # old `anchors[None].expand(...)`; for a v0-conditioned one it is the
+        # per-window roll. `bank` — not `anchors` — is the geometry every
+        # consumer below must read, including the anchor target in the trainer,
+        # which is why it is also returned.
+        # refcv7 NEW-1: the prior, ONCE per forward -- `(a0, kappa0)` withheld
+        # on dropped rows, and the ONE speed the bank, the prior and the
+        # sampled fan share. `None` on an off build: nothing below changes.
+        _rp = self._residual_prior(residual_prior, v_ms, ego_keep, b,
+                                   withheld_speed)
+        bank = self.roll_bank(v_ms, ego_keep, b, fmap.dtype,
+                              withheld_speed=withheld_speed, prior=_rp)
+        # ---- refcv6 F7: G independent noise draws per anchor -------------- #
+        # ⛔ GROUP-MAJOR, and `tile_anchor_prior` documents why: candidate
+        # `g*N + a` must be anchor `a`. `repeat_interleave` would type-check
+        # and attach every prior to the wrong candidate.
+        _groups = (max(int(getattr(self.cfg, "sampler_groups", 1)),
+                       int(self.rv6.f7_samples_per_anchor))
+                   if self.control_head is not None else 1)
+        if _groups > 1:
+            bank = bank.repeat(1, _groups, 1, 1)               # [B, G*N, S, 2]
+            n = n * _groups
+        # ---- refcv8 WP-B: tags, allocation, the prior-free group, phi (DESIGN sec. 3.1) ---------------- #
+        _r8x = None
+        if self.r8_cfg is not None and r8 is not None:
+            _r8x = self._r8_extend(bank, v_ms, r8, _rp, fmap.dtype)
+            bank = _r8x['bank']
+            n = int(_r8x['n'])
+            self._r8_phi = _r8x['phi']
+            self._r8_split_nb = (int(_r8x['n_base']) if n > int(_r8x['n_base']) else None)
+        x0 = bank
+        prior_bank = bank if self.anchor_v0_cond else None
+
+        # ---- S2b: PRE-DECODE anchor band (opt-in, inference-only) ---------- #
+        # Gather the survivors into a dense [B, K, S, 2], decode ONLY those, and
+        # scatter back. Pruned rows come back with conf = -inf so they can never
+        # win, and with offset 0 so the emitted fan still HAS N entries and every
+        # downstream consumer keeps its shape.
+        pre_keep = None
+        pre_tele: dict = {}          # merged into `tele` once it exists (l.~1373)
+        if sel.anchor_prefilter and v_ms is not None:
+            pre_keep = sl.anchor_reachability_mask(
+                bank, v_ms.to(bank.dtype), accel_max=sel.accel_max,
+                horizon_s=sel.horizon_s)
+            if ego_keep is not None:
+                # ⚠️ STRONGER than the S2 version of this guard. `v_ms` is the
+                # PRE-dropout speed; at S2 it could only bias a ranking, but
+                # here it decides which candidates are COMPUTED AT ALL. A row
+                # whose speed was withheld keeps its whole fan.
+                pre_keep = pre_keep | (~ego_keep)[:, None]
+            dead = ~pre_keep.any(dim=1)          # unreachable-everywhere window
+            pre_keep = pre_keep | dead[:, None]  # ...keeps its whole fan
+            k = int(pre_keep.sum(dim=1).max())
+            if k < n:
+                # dense top-k gather: `keep` sorts survivors first, and the
+                # per-row pad re-uses a survivor index so the gather is valid;
+                # padded slots are re-masked to -inf below.
+                order = pre_keep.to(torch.int8).argsort(dim=1, descending=True,
+                                                        stable=True)
+                sub = order[:, :k]                            # [B, K]
+                took = pre_keep.gather(1, sub)                # [B, K] bool
+                xs = x0.gather(
+                    1, sub[:, :, None, None].expand(b, k, self.n_steps, 2))
+                c_s, o_s = self._decode(kv, cond, xs, 0,
+                                        agent_tokens, agent_pad, agent_pos,
+                                        bev)
+                conf0 = x0.new_full((b, n), float("-inf"))
+                conf0.scatter_(1, sub, c_s.masked_fill(~took, float("-inf")))
+                offset = x0.new_zeros(b, n, self.n_steps, 2)
+                offset.scatter_(
+                    1, sub[:, :, None, None].expand(b, k, self.n_steps, 2),
+                    o_s * took[:, :, None, None].to(o_s.dtype))
+                pre_tele["prefilter_k"] = int(k)
+                pre_tele["prefilter_speedup"] = round(float(n) / max(k, 1), 3)
+            else:                                 # nothing to save this batch
+                conf0, offset = self._decode(kv, cond, x0, 0,
+                                             agent_tokens, agent_pad,
+                                             agent_pos, bev)
+                pre_tele["prefilter_k"] = int(n)
+                pre_tele["prefilter_speedup"] = 1.0
+        else:
+            # ⛔ `bev` (coupling (1)) was omitted here too — this is the DEFAULT
+            # classifier pass, so on every non-prefilter build the BEV read was
+            # dead. See the note at the `_sample` call below.
+            conf0, offset = self._decode(kv, cond, x0, 0,
+                                         agent_tokens, agent_pad,
+                                         agent_pos, bev)   # classifier
+        x = self._feasible(bank + offset, v_ms)               # [B, N, S, 2]
 
         # ---- priors on the CLASSIFIER surface (unchanged semantics) ---------
+        # ⭐ refcv6 F7: every [B, N_ANCHOR] prior below is produced by a Linear
+        # whose OUT features are the ANCHOR count, so on a widened fan it must
+        # be tiled to [B, G*N] in the group-major layout `bank` was tiled in.
+        # `_tile` is the identity when G == 1, which is what keeps this seam
+        # bit-identical off the F7 arm.
+        _tile = ((lambda z: _rv6.tile_anchor_prior(z, _groups))
+                 if _groups > 1 else (lambda z: z))
+        if _r8x is not None:              # refcv8: every [B, N_anchor] prior follows the candidate's SOURCE anchor
+            _src = _r8x['src']
+            _tile = (lambda z: z.gather(1, _src))
         terms: list[Tensor] = []
         # H19: maneuver prior reweights the anchor confidences (log-space).
         if self.maneuver_to_anchor is not None and maneuver_logits is not None:
-            terms.append(self.maneuver_to_anchor(
-                torch.log_softmax(maneuver_logits, dim=-1)))
+            terms.append(_tile(self.maneuver_to_anchor(
+                torch.log_softmax(maneuver_logits, dim=-1))))
         # D-TAC1: the factorised pair, summed. ``lat_prior`` / ``lon_prior`` are
         # already log-probabilities (optionally prior-centered) prepared by the
         # model, so the decoder keeps no policy of its own.
+        # ⭐⭐ refcv6 §4: the TACTICAL posterior REPLACES the image-only pair.
+        # ⛔ REPLACES, never adds. Two priors over the same axis on one
+        # surface is a confound that no ablation can separate afterwards, and
+        # the spec's word is 'replaces'. The refusal below is the mechanism.
+        _tac8 = (self.tac8_lat_to_anchor is not None
+                 and tac_lat_prior is not None)
+        if _tac8:
+            if lat_prior is not None and self.lat_to_anchor is not None:
+                raise ValueError(
+                    'refcv6: BOTH the image-only lat3/lon3 prior and the '
+                    'tactical 8x8 posterior reached the decoder. The 8-wide '
+                    'pair REPLACES the 3-wide one; feeding both puts two '
+                    'priors on one surface and makes neither attributable. '
+                    'Pass lat_prior=None on a --graft-tac8-prior arm.')
+            terms.append(_tile(self.tac8_lat_to_anchor(tac_lat_prior)))
+            if self.tac8_lon_to_anchor is not None and tac_lon_prior is not None:
+                terms.append(_tile(self.tac8_lon_to_anchor(tac_lon_prior)))
         if self.lat_to_anchor is not None and lat_prior is not None:
-            terms.append(self.lat_to_anchor(lat_prior))
+            terms.append(_tile(self.lat_to_anchor(lat_prior)))
         if self.lon_to_anchor is not None and lon_prior is not None:
-            terms.append(self.lon_to_anchor(lon_prior))
+            terms.append(_tile(self.lon_to_anchor(lon_prior)))
         # LAN: the route reweights the SAME anchor priors, geometrically.
         if self.lan_gate is not None and lan_dir is not None:
-            terms.append(self.lan_gate * self._lan_anchor_prior(lan_dir))
+            terms.append(self.lan_gate
+                         * self._lan_anchor_prior(lan_dir, prior_bank))
         conf, tele = self._apply_grafts(conf0, terms, self._seam_conf, "conf",
                                         sel.seam_fail_patience)
 
@@ -1321,19 +3635,97 @@ class AnchoredDiffusionDecoder(nn.Module):
         # failure. ``steps == 0`` leaves ``refined is conf`` by construction, so
         # ``--mode classifier`` is provably unaffected by S1.
         refined = conf
-        for i in range(steps):
+        # ⭐ refcv5 WP-4: the sampler REPLACES this loop, it does not wrap it.
+        # The loop below perturbs the fan in METRES by a fixed `noise_std` and
+        # re-reads a confidence -- the SKELETON of truncated diffusion with none
+        # of the mechanism, and MEASURED on refcv3 its ranking was UNCHANGED ON
+        # 201/201 WINDOWS. Running both would put two different perturbations on
+        # one fan and make the arm non-attributable, which is the `--v2`
+        # conflation failure. Exactly one of them refines the fan.
+        u0_hat = None
+        smp_tele: dict = {}
+        _loop_steps = 0 if self.control_head is not None else steps
+        for i in range(_loop_steps):
             t_idx = min(i + 1, self.cfg.diffusion_steps)
             noise = (torch.randn_like(x) * self.cfg.noise_std
                      if self.training else torch.zeros_like(x))
             x_in = x + noise
-            r_conf, off = self._decode(kv, cond, x_in, t_idx)
-            x = x_in + off
+            # ⚠️ AGENT-FREE AT HEAD, AND LEFT THAT WAY ON PURPOSE. This
+            # pass passes NO `agent_tokens`, so WP-6's seam — and therefore
+            # WP-B's index — does not reach the `diffusion_steps` refinement
+            # loop at all. That asymmetry is PRE-EXISTING (see
+            # `.../Research/2026-09-08-wpb-waypoint-index/RESULT.md` §7.1);
+            # adding the tokens here
+            # would change the agents-on arm at HEAD and break WP-B's
+            # removability proof, so it is REPORTED rather than silently fixed.
+            # ⚠️ Inert for refcv5-v2 (`--sampler ddim` sets `_loop_steps = 0`),
+            # LIVE for any classifier/refine arm.
+            # ⚠️ `bev=` ONLY. The agent asymmetry above is preserved exactly as
+            # documented; coupling (1) is a different seam and its address —
+            # `x_in` — moves on every pass of THIS loop too, which is the whole
+            # claim. Bitwise inert at HEAD: no shipped arm builds `bev_wp`, and
+            # the sampler's gate is zero-init even when one does.
+            r_conf, off = self._decode(kv, cond, x_in, t_idx, bev=bev)
+            # EVERY pass that moves a waypoint, not just the classifier pass.
+            x = self._feasible(x_in + off, v_ms)
             # The refined readout carries the SAME priors as the classifier
             # surface: switching the ranking to `refined` without them would
             # silently DELETE the H19 coupling from selection, which is a
             # regression dressed as a fix. Patience 0 — the saturation counter is
             # advanced once per forward, on the classifier surface above.
             refined, _ = self._apply_grafts(r_conf, terms, self._seam_refined,
+                                            "refined", 0)
+
+        if self.control_head is not None:
+            # The emitted fan comes out of the INTEGRATOR, and the predicted
+            # clean CONTROL leaves the decoder as `u0_hat` -- it is the only
+            # tensor the x0 loss can be computed DIRECTLY on.
+            # ⛔⛔ THIS COMMENT USED TO SAY `control_head` "stays at its zero init
+            # forever" without that loss. MEASURED 2026-09-10 -- IT DOES NOT.
+            # `control_head` reaches `out["anchor_traj"]`, which is exactly what
+            # the trainer's matched-anchor L1 gathers
+            # (`refc_v3_train.py:2245-2247`), so one backward through
+            # `anchor_traj` ALONE puts grad_abs_sum 9.39e4 on the head -- against
+            # 1.07e5 through `u0_hat`, and against EXACTLY 0.0 for three outputs
+            # of the same forward that cannot reach it (`anchor_logits`,
+            # `offset`, `sel_score`). Pinned by
+            # `tests/test_u0_control_head_reachability.py`.
+            # ⚠️ WHAT IS REFUTED IS THE REASON, NOT THE DECISION. A sampler
+            # supervised only through the integrator is still weaker than one
+            # supervised on its own x0 prediction, so the trainer's refusal of
+            # `--sampler ddim --w-u0 0` STANDS until the PI rules on refcv6 arm
+            # D. It simply must be argued on that basis rather than on a
+            # gradient claim that measurement contradicts.
+            # ⛔⛔ `bev` IS THE NINTH ARGUMENT AND IT USED TO BE OMITTED. The
+            # call passed EIGHT positionals ending at `agent_pos`, so coupling
+            # (1) defaulted to None on the WHOLE diffusion path and
+            # `_decode_ctrl`'s correct-looking `bev` forward at `:2563` always
+            # forwarded None. MEASURED 2026-09-22 with a forward hook on
+            # `BEVWaypointSampler.forward`: 0 fires in the sampler and 0 in the
+            # classifier, with `bev` handed straight to `forward`. Pinned by
+            # `test_refcv6_diffusion.py::test_coupling1_REACHES_the_sampler…`,
+            # which counts module calls through the FORWARD rather than
+            # constructing the sampler standalone — the existing coupling-(1)
+            # tests all call `s(q, wp, bev)` directly and were green throughout.
+            # refcv7 NEW-1: `prior=` travels ONLY on a residual build, so an
+            # off build calls `_sample` exactly as refcv6 did -- a wrapper of
+            # `_sample` written against the refcv6 signature (the DDv2 chain's
+            # capture hook, `tanitad/rl/ddv2_refc_chain.py`) is untouched by
+            # NEW-1 on every refcv6 build, and a wrapper that cannot carry the
+            # prior fails LOUDLY (TypeError) on a residual build.
+            _smp_kw = {} if _rp is None else {"prior": _rp}
+            if _r8x is not None:
+                _smp_kw.update(cand_src=_r8x['src'], x0_offset=_r8x['x0_offset'])
+            x, u0_hat, s_conf, smp_tele = self._sample(
+                kv, cond, bank, v_ms, steps, agent_tokens, agent_pad,
+                agent_pos, bev, **_smp_kw)
+            # Stage 0 applies to EVERY pass that moves a waypoint; a no-op
+            # returning the same object when `feasible_decode` is off.
+            x = self._feasible(x, v_ms)
+            # The refined readout carries the SAME priors as the classifier
+            # surface -- dropping them here would silently DELETE the H19
+            # coupling from selection, a regression dressed as a fix.
+            refined, _ = self._apply_grafts(s_conf, terms, self._seam_refined,
                                             "refined", 0)
 
         # S1b: THE READOUT ABOVE SCORES THE WRONG OBJECT, AND IT IS ONE LINE
@@ -1354,37 +3746,172 @@ class AnchoredDiffusionDecoder(nn.Module):
         # `t_idx` continues the loop's own schedule (pass i used `i + 1`),
         # clamped to the embedding table exactly as the loop clamps it.
         prefinal = None
+        # ---- refcv6 F5: the EMITTING pass's own confidence ----------------- #
+        # ⭐ DD's emitted trajectory and its score come out of the SAME pass:
+        # `poses_reg` and `poses_cls` are both returned by the last decoder
+        # layer (`transfuser_model_v2.py:544-552`), and `best_reg` gathers the
+        # former by the argmax of the latter. Our sampler already returns that
+        # pair -- `conf, du = self._decode_ctrl(...)` with `u0_hat = x_n + du`
+        # -- but `SelectionConfig.refined` defaults FALSE, so the CLASSIFIER
+        # surface (a head that never saw the sample) does the ranking.
+        # ⛔ F5 therefore does NOT add a pass; it REMOVES one. It makes the
+        # sampler's own confidence the ranked surface, which is what
+        # `--sel-refined --sel-score-emitted` buys today at the cost of a
+        # FOURTH decoder call. Refused together, because running both would put
+        # two different scores on one fan and make the arm unattributable.
+        if self.rv6.f5_emitting_conf:
+            if sel.score_emitted:
+                raise ValueError(
+                    "refcv6 F5 and `--sel-score-emitted` are two different "
+                    "answers to the same question (which head scores the "
+                    "emitted fan). F5 uses the sampler's OWN last pass and "
+                    "costs nothing; `--sel-score-emitted` spends a fourth "
+                    "decoder call. Running both makes the arm "
+                    "unattributable -- pick one.")
+            if self.control_head is None:
+                raise ValueError(
+                    "refcv6 F5 needs the sampler: on a classifier build there "
+                    "is no 'emitting pass' whose confidence could be read.")
         if sel.score_emitted and steps > 0:
             t_e = (min(steps + 1, self.cfg.diffusion_steps)
                    if sel.score_emitted_t < 0
                    else min(sel.score_emitted_t, self.cfg.diffusion_steps))
-            e_conf, _ = self._decode(kv, cond, x, t_e)
+            e_conf, _ = self._decode(kv, cond, x, t_e,
+                                     agent_tokens, agent_pad, agent_pos, bev)
             prefinal = refined
             refined, _ = self._apply_grafts(e_conf, terms, self._seam_refined,
                                             "refined", 0)
 
         # ---- the RANKED score ------------------------------------------------
-        base = refined if sel.refined else conf
+        # F5 forces the sampler surface even when `sel.refined` is False —
+        # `refined` here IS `_apply_grafts(s_conf, …)`, the emitting pass's own
+        # confidence carrying the same priors the classifier surface carries.
+        base = refined if (sel.refined or self.rv6.f5_emitting_conf) else conf
+        # ⛔ DEFERRED IMPORT, AND IT IS FORCED, NOT STYLISTIC. A module-
+        # level `from tanitad.refs import refcv6_selection` here is a
+        # CIRCULAR import and fails at collection:
+        #   refc -> refcv6_selection -> refc_selector_targets -> refc
+        #           (`refc_selector_targets.py:94` imports NAV_COMMANDS)
+        # MEASURED, not guessed: the module-level form raised
+        # `ImportError: cannot import name 'NAV_COMMANDS' from partially
+        # initialized module 'tanitad.refs.refc'`. Importing inside the
+        # forward is the smallest change that breaks the cycle without
+        # moving `NAV_COMMANDS` out from under its existing readers.
+        from tanitad.refs import refcv6_selection as v6sel
         r_terms: list[Tensor] = []
         cons_s = None
         if self.route_to_anchor is not None and route_prior is not None:
-            r_terms.append(self.route_to_anchor(route_prior))
+            r_terms.append(_tile(self.route_to_anchor(route_prior)))
         # S6: the PREDICTED goal reaches SELECTION through the SAME param-free
         # geometric compatibility the SUPPLIED LAN route uses — identical
         # mechanism, different provenance — and through a separately-gated
         # along-track term. Two gates, so bearing and distance are individually
         # ablatable and the K7 prediction is readable off the learned values.
         if self.goal_gate is not None and goal_dir is not None:
-            r_terms.append(self.goal_gate * self._lan_anchor_prior(goal_dir))
+            r_terms.append(self.goal_gate
+                           * self._lan_anchor_prior(goal_dir, prior_bank))
         if self.goal_dist_gate is not None and goal_dist_pref is not None:
             r_terms.append(self.goal_dist_gate
-                           * self._goal_along_prior(goal_dist_pref))
+                           * self._goal_along_prior(goal_dist_pref,
+                                                    prior_bank))
+        # ⭐⭐ S7 / E15 (GP-1) — THE METRIC GOAL POINT REACHES SELECTION.
+        #
+        # `-||bank[:, :, slot] - goal|| / scale_m`, param-free, times ONE
+        # zero-init gate. Moving the goal moves the ranking BY CONSTRUCTION:
+        # there is no between-row variance that can shrink to zero while a
+        # useful mean survives, which is precisely the degree of freedom E13's
+        # `Embedding(4) -> Linear -> add` collapsed into (content 2.3 %,
+        # presence 97.7 %). ⛔ The GATE is still free to go to zero — that is
+        # why value-sensitivity is a pre-registered GATE (PREREG §4, V1-V3)
+        # with a committed minimum degradation under a corrupted goal, and not
+        # an architectural promise.
+        #
+        # ⛔⛔ UNITS. The head emits a NORMALISED point (x/scale, y/scale) —
+        # that is what the loss supervises — while `anchor_goal_prior_at_time`
+        # compares against `bank`, which is in METRES.
+        # `anchor_goal_prior_at_time_from_norm` is the ONE place the conversion
+        # lives, and it is named for it. MEASURED 2026-09-06: without it a
+        # 24 m goal enters as a 2.5 m one, the term stays finite and the seam
+        # trains, and a MIRRORED goal moved the ranked score by 7.7e-4 and
+        # flipped 0 of 4 picks on a rig whose anchors span ±66–82 m laterally
+        # — i.e. the PREREG §4 value-sensitivity gate would have failed for a
+        # UNITS reason and read as "the geometric prior ignores the goal".
+        #
+        # ⚠️ DEVIATION FROM PREREG §8's DRAFT, STATED RATHER THAN SILENT: the
+        # draft passed `prior_bank`, which is `None` on a FIXED (non-v0-
+        # conditioned) vocabulary — there it is the legacy bit-exactness path
+        # for the two S6 terms, and `anchor_goal_prior_at_time` would raise on
+        # it. `bank` is [B, N, S, 2] on BOTH paths and is EXACTLY `prior_bank`
+        # in the registered arm (`--anchor-v0-conditioned`), so this is
+        # identical where the arm is defined and functional where the draft
+        # would have crashed. There is no pre-S7 checkpoint to stay bit-exact
+        # against, so the legacy fallback has nothing to preserve here.
+        if self.gp_point_gate is not None and gp_point is not None:
+            gv = (torch.ones(gp_point.shape[0], device=gp_point.device,
+                             dtype=gp_point.dtype)
+                  if gp_valid is None else gp_valid)
+            r_terms.append(self.gp_point_gate
+                           * gpm.anchor_goal_prior_at_time_from_norm(
+                               gp_point.to(bank.dtype), gv, bank,
+                               self.gp_slot, self.gp_scale_m))
         if (self.cons_gate is not None and cons_head is not None
                 and cons_ctx is not None):
             cons_s = sl.consequence_scores(x, cons_ctx, cons_head,
                                            self.feat_proj, self.conf_head,
                                            detach=sel.cons_detach)
             r_terms.append(self.cons_gate * cons_s)
+        # ⭐⭐ refcv6 §4: THE VALID-BEHAVIOUR SET REACHES SELECTION.
+        # The term arrives ALREADY PROJECTED and ALREADY MASKED from
+        # `RefCV3Model.tac_behaviour_gate_v6` (a zero-init 22 -> N graft whose
+        # five SITUATION columns are structurally dead and proven so by
+        # mutation at build time — PI 2026-08-03). It is passed as a TENSOR so
+        # this file owns no copy of the admissibility mask: one mask, one
+        # owner, no drift.
+        if _r8x is not None and behaviour_term is not None:
+            behaviour_term = behaviour_term.gather(1, _r8x['src'])
+        if self.graft_behaviour_sel and behaviour_term is not None:
+            if behaviour_term.shape != base.shape:
+                raise ValueError(
+                    f'refcv6 behaviour_term must be [B, N] = '
+                    f'{tuple(base.shape)}, got {tuple(behaviour_term.shape)}')
+            r_terms.append(behaviour_term.to(base.dtype))
+        # ⭐⭐ refcv6 §5: THE NAV-COMPLIANCE TERM, finally on the forward path.
+        # `refc_selector_targets.compliance_target` has existed since the
+        # selector work and was MEASURED to be unreachable: 'the rule-based
+        # nav-compliance scorer exists but is not on the forward path'
+        # (REFCV6_CLARIFICATION §3.1). This is the one line that changes that.
+        # ⛔ The predicate is UNDEFINED on `follow`/`straight`, and
+        # `compliance_target` returns its own mask — the product is
+        # identically zero there, so the term cannot push the score around on
+        # the ~75-79 %% of windows that carry no commanded side.
+        if self.navc_gate is not None and nav_cmd_sel is not None:
+            _nc, _ = v6sel.nav_compliance_prior(
+                x, nav_cmd_sel, tau_rad=self.navc_tau_rad)
+            r_terms.append(self.navc_gate * _nc.to(base.dtype))
+            tele['navc_gate'] = round(float(self.navc_gate.detach()), 6)
+            tele['navc_frac_complying'] = round(
+                float(_nc.detach().mean()), 4)
+        # ⭐⭐ refcv8 WP-B (DESIGN sec. 3.2): the factorised tactical selection term -- beta * log p(h_k) of the
+        # candidate's OWN hypothesis + gamma * constraint satisfaction -- the route-checkpoint bearing term, and the
+        # X1h sub-score critics. Every scalar is ZERO-INIT: the ranked score is unchanged at a warm start.
+        _r8_sub_logits = None
+        if _r8x is not None:
+            _r8t = self.r8_sel(_r8x['lat3'], _r8x['lon6'], r8['logp_lat3'].to(x.dtype),
+                               r8['logp_lon6'].to(x.dtype), x, _r8x['cons_raw'], _r8x['cons_valid'])
+            if r8.get('rc') is not None:
+                _rc = r8['rc'].to(x.dtype)
+                _ang = torch.atan2(_rc[:, 1], _rc[:, 0])
+                _rcd = torch.stack([torch.cos(_ang), torch.sin(_ang), _rc[:, 3]], -1)
+                _r8t = _r8t + self.r8_rc_gate * self._lan_anchor_prior(_rcd, x)
+            if self.r8_sub is not None and self._r8_last_q is not None:
+                _r8_sub_logits, _comb = self.r8_sub(self._r8_last_q, _r8x['phi'], x)
+                _r8t = _r8t + _comb.to(_r8t.dtype)
+            r_terms.append(_r8t.to(base.dtype))
+            tele['r8_beta_lat'] = round(float(self.r8_sel.beta_lat.detach()), 6)
+            tele['r8_beta_lon'] = round(float(self.r8_sel.beta_lon.detach()), 6)
+            tele['r8_gamma_prog'] = round(float(self.r8_sel.gamma_prog.detach()), 6)
+            tele['r8_gamma_head'] = round(float(self.r8_sel.gamma_head.detach()), 6)
+            tele['r8_rc_gate'] = round(float(self.r8_rc_gate.detach()), 6)
         score, r_tele = self._apply_grafts(base, r_terms, self._seam_rank,
                                            "rank", sel.seam_fail_patience)
         if self.grounded:
@@ -1398,6 +3925,7 @@ class AnchoredDiffusionDecoder(nn.Module):
         # nothing.
         rank = score
         reach_keep = None
+        ceil_keep = None      # SPEC_REFCV7 A2: exported so E9 applies the same ceiling
         if sel.reach_clamp and v_ms is not None:
             keep = sl.reachability_mask(x, v_ms.to(x.dtype),
                                         accel_max=sel.accel_max,
@@ -1412,11 +3940,124 @@ class AnchoredDiffusionDecoder(nn.Module):
                 float(1.0 - keep.to(score.dtype).mean().detach()), 4)
             tele["reach_frac_windows_empty"] = round(
                 float(dead.to(score.dtype).mean().detach()), 4)
+        # ⭐⭐ refcv6 §5 — THE SET-SPEED CEILING FILTERS THE ARGMAX. Exactly
+        # the S2 shape above, for exactly the S2 reason: `score` is returned
+        # UNMASKED so no `-inf` can reach a cross-entropy, and a row whose
+        # survivor set is EMPTY keeps its whole fan. ⚠️ Those empty rows are
+        # the ONLY structural reason the obedience rate can fall below 1.0, so
+        # they are counted into the telemetry and the acceptance test reports
+        # the count beside the rate.
+        # ⛔ THE dt IS DERIVED FROM `anchor_horizons`, NEVER TYPED. The
+        # waypoint grid is (5, 10, 15, 20) TICKS at 0.1 s, i.e. 0.5 s apart;
+        # a typed 0.1 would report every planned speed 5x too high and the
+        # obedience test would fail an obedient model. Same derivation, same
+        # reason, as `_feasible`'s prefix dt four hundred lines above.
+        if (self.speed_ceiling_filter and v_limit_ms is not None
+                and (not self.training or self.speed_ceiling_in_training)):   # PI 2026-09-26 A2
+            _keep, _st = v6sel.SpeedCeilingFilter(
+                horizons=self.anchor_horizons,
+                tick_s=self.anchor_dt)(x, v_limit_ms)
+            rank = rank.masked_fill(~_keep, float('-inf'))
+            ceil_keep = _keep
+            tele.update(_st)
+        if _r8x is not None:
+            # refcv8: a candidate that may not be EMITTED (an allocated or prior-free one before its emission
+            # flag) stays in `score` -- the selection loss trains it -- but never wins the argmax. A row whose
+            # emittable survivors are all masked falls back to the emittable set alone.
+            _ek = _r8x['emit']
+            _r2 = rank.masked_fill(~_ek, float('-inf'))
+            _dead = ~torch.isfinite(_r2).any(dim=1)
+            rank = torch.where(_dead[:, None], score.masked_fill(~_ek, float('-inf')), _r2)
         idx = rank.argmax(dim=1)                              # [B] (detached)
+        # S2b telemetry + THE RUNTIME GUARD. `be2da04` keeps two claims apart:
+        # the VARIABLE-width policy is structurally exact, while a FIXED budget
+        # is an EMPIRICAL CALIBRATION (XL's worst window had 102 survivors
+        # against a budget of 92, and held only because the winner's rank never
+        # exceeded 92 ON THAT CORPUS). So equivalence is ASSERTED PER BATCH and
+        # never assumed: `winner_survives_frac < 1.0` means the prefilter would
+        # have changed the emitted trajectory, which is a CORRECTNESS failure,
+        # not a speed regression.
+        if pre_tele:
+            tele.update(pre_tele)
+        if pre_keep is not None and sel.anchor_prefilter_guard:
+            # ⛔ WHAT THIS CAN AND CANNOT CHECK. `idx` is ALREADY the restricted
+            # argmax, so asking whether it survived the band is TAUTOLOGICAL —
+            # it is a survivor by construction and would report 1.0000 forever,
+            # whether or not the prefilter changed the emitted trajectory. That
+            # is worse than no check, because it reads as a verified invariant.
+            # Winner-survival is only answerable by ALSO decoding the full fan,
+            # which is the cost this flag exists to avoid, so it is an OFFLINE
+            # CALIBRATION (feed `anchor_prefilter_report` the FULL-fan idx from
+            # a banked fan) and NOT a runtime guarantee. What IS honest at
+            # runtime is the budget and the empty-row count.
+            surv = pre_keep.sum(dim=1)
+            tele["prefilter_survivors_mean"] = round(
+                float(surv.to(torch.float32).mean()), 3)
+            tele["prefilter_survivors_max"] = int(surv.max())
+            tele["prefilter_rows_full_fan"] = int((surv == pre_keep.shape[1])
+                                                  .sum())
+        # refcv5 WP-4: stamped ONLY when the sampler ran, so a reader can
+        # never mistake "the key is absent" for "the sampler was off" -- the
+        # off/absent distinction lives in `config.json`'s seam stamp, which is
+        # written unconditionally.
+        tele.update(smp_tele)
         traj = x[torch.arange(b, device=x.device), idx]       # [B, S, 2]
         out = {"anchor_logits": conf, "refined_logits": refined,
-               "anchor_traj": x, "offset": offset, "sel_score": score,
+               "anchor_traj": x, "anchor_bank": bank,
+               "offset": offset, "sel_score": score,
                "traj": traj, "sel_idx": idx, "sel_tele": tele}
+        if _rp is not None:
+            # refcv7 NEW-1: the prior this forward composed on, EMITTED so a
+            # consumer can verify the plan is P + Delta and the launch gate's
+            # G-LIVE can read 'the prior is non-zero where v0 > 0'. Constants
+            # of the window (no parameter), so DETACHED.
+            out["residual_prior_ctrl"] = torch.stack(
+                [_rp[0], _rp[1]], dim=-1).detach()
+            out["residual_prior_v"] = _rp[2].detach()
+            out["residual_prior_path"] = _kp.prior_path(
+                _rp[0], _rp[1], _rp[2], self.anchor_horizons,
+                tick=self.anchor_dt).to(x.dtype).detach()
+            tele["residual_prior"] = self.residual_prior
+        # ---- refcv6 F7: the index the eval join must read ------------------ #
+        # ⛔ `sel_idx` indexes a CANDIDATE. With G > 1 that is NOT an anchor
+        # id, and every consumer that treats it as one silently mis-joins. The
+        # anchor id is emitted alongside it so the join has a correct column to
+        # move to; the refusal in the preflight is what makes moving mandatory.
+        if _groups > 1:
+            out["sel_anchor_id"] = _rv6.candidate_to_anchor_id(
+                idx, int(self.anchors.shape[0]), _groups)
+            out["sampler_groups"] = _groups
+        # ---- refcv6 F3: the per-stage predictions the cascade loss needs --- #
+        if self.cascade is not None and self._rv6_layer_u0:
+            out["layer_u0_hat"] = self._rv6_layer_u0
+            out["layer_logits"] = self._rv6_layer_conf
+        if _r8x is not None:
+            # ⭐ refcv8: the anchor-ID-indexed outputs stay BASE-ONLY, so every refcv7 loss term (focal anchor CE vs
+            # `a_star` on the bank, the cascade CE, `anchor_acc`) is computed exactly as refcv7 computed it; the
+            # extended fan travels in `anchor_traj` / `sel_score` / `refined_logits` / `reach_keep` and the r8 keys.
+            _nb = int(_r8x['n_base'])
+            out['anchor_logits'] = conf[:, :_nb]
+            out['anchor_bank'] = bank[:, :_nb]
+            if 'layer_logits' in out:
+                out['layer_logits'] = [c[:, :_nb] for c in out['layer_logits']]
+            out.update(r8_cand_src=_r8x['src'], r8_kind=_r8x['kind'], r8_lat3=_r8x['lat3'],
+                       r8_lon6=_r8x['lon6'], r8_alloc=_r8x['alloc'], r8_emit_keep=_r8x['emit'],
+                       r8_cons_raw=_r8x['cons_raw'], r8_cons_valid=_r8x['cons_valid'],
+                       r8_n_base=_nb, r8_phi=_r8x['phi'])
+            if _r8x['hyp'] is not None:
+                out['r8_hyp_alloc'] = _r8x['hyp']
+            if _r8_sub_logits is not None:
+                out['r8_sub_logits'] = _r8_sub_logits
+        self._r8_phi = None
+        self._r8_last_q = None
+        self._r8_split_nb = None
+        if u0_hat is not None:
+            # [B, N, S, 2] in the VOCABULARY's control units -- `alat` (m/s^2)
+            # or `kappa` (1/m) per `anchor_control_units`. ⛔ The x0 loss MUST
+            # convert its target into these units before comparing: the inverse
+            # map returns CURVATURE, and at 36 m/s the two differ by ~1300x
+            # while BOTH tables look plausible.
+            out["u0_hat"] = u0_hat
         if cons_s is not None:
             out["cons_score"] = cons_s
         if prefinal is not None:
@@ -1431,6 +4072,13 @@ class AnchoredDiffusionDecoder(nn.Module):
             # ENTROPY normalise over the same support instead of over a fan that
             # is 72-74 % unpickable.
             out["reach_keep"] = reach_keep
+        if ceil_keep is not None:
+            # ⛔ SPEC_REFCV7 A2 / PI R1: the set speed is a HARD cap on the EMITTED plan. The
+            # argmax above is not the emitted plan on a v3 build: RefCV3Model's E9 goal
+            # selection re-ranks the fan from `score`, which is returned UNMASKED. Without
+            # this export the ceiling never reached `out["traj"]` (MEASURED 2026-09-28:
+            # filter ON == OFF on 204/204 NavSim warmup scenes at refcv7 step 1,500).
+            out["ceil_keep"] = ceil_keep
         return out
 
 
@@ -1517,11 +4165,81 @@ class RefCModel(nn.Module):
     """Anchored-Diffusion-C: ResNet encoder + anchored-diffusion trajectory
     decoder + LAW aux + maneuver/route aux heads + hierarchical conditioning."""
 
-    def __init__(self, cfg: RefCConfig):
+    #: ⛔⛔ The decoder outputs `forward` copies into its result VERBATIM. ONE tuple, read by the
+    #: forward below AND by the G-DVB guard (`tanitad/train/declared_vs_built.py`), so the
+    #: guard checks the list the forward actually uses. D-REFCV6-F3-WHITELIST: an inline tuple
+    #: that omitted `layer_u0_hat` / `layer_logits` skipped refcv6's F3 cascade loss for 34,500
+    #: steps while config.json stamped F3.
+    #: ⭐ refcv7 NEW-2: `fmap_s8`, the trunk's stride-8 map for the 10 cm map head, is
+    #: routed through THIS tuple too (it is not a decoder output -- the forward takes it
+    #: from the trunk-side dict below), so the one declaration G-DVB reads covers it:
+    #: removing it here removes it from the output, the D-REFCV6-F3-WHITELIST shape exactly.
+    DECODER_PASSTHROUGH: tuple[str, ...] = (
+        "prefinal_logits", "reach_keep", "layer_u0_hat", "layer_logits",
+        # SPEC_REFCV7 A2 / PI R1: the ceiling mask the decoder's argmax used, so E9 can apply
+        # it to the EMITTED plan. Present only when the filter ran (inference).
+        "ceil_keep",
+        # refcv7 NEW-1: the prior this forward composed on. The F3 cascade re-roll READS
+        # `residual_prior_ctrl` / `residual_prior_v` (`kinematic_prior.prior_from_out`) and
+        # the launch gate's G-LIVE reads `residual_prior_path`. Absent from `dec` on an off
+        # build, so the loop below copies nothing there (bit-identity).
+        "residual_prior_ctrl", "residual_prior_v", "residual_prior_path",
+        # refcv7 NEW-2: the trunk's stride-8 map (the trunk-side dict below; None when
+        # the tap is off).
+        "fmap_s8")
+
+    def __init__(self, cfg: RefCConfig, perc_rig: bool = False):
         super().__init__()
         self.cfg = cfg
-        self.encoder = ResNetEncoder(cfg.encoder)
+        # refcv9 C7 (E1 perception rig): a plain bool (never a buffer / config field), False on every other build.
+        self._perc_rig = bool(perc_rig)
+        self.encoder = build_encoder(cfg.encoder)
         feat = self.encoder.feat_dim
+        if self._perc_rig:
+            # refcv9 C7: trunk + the learned agent head ONLY. The planner (`decoder`), the tactical / route / law
+            # heads, the strategic ctx, the measurement encoder, the agent-token embed and every other module are NOT
+            # BUILT (`tanitad/refs/refcv9_perc_rig.py: RIG_SKIPPED_MODULES` names them); a path that reaches one
+            # raises AttributeError instead of running on a random-init copy.
+            self._build_perc_rig(cfg, feat)
+            return
+        # ---- refcv6 §2b: the EGO-HISTORY encoder (PI 2026-09-16) ---------- #
+        # ⛔ CONSTRUCTED ONLY WHEN ASKED. `cfg.ego_history is None` (the
+        # default) builds nothing, so the RNG draw order and the state_dict are
+        # bit-identical to pre-refcv6 and every banked checkpoint still loads
+        # strictly. The decoder's `ego_to_cond` is sized from THIS module's
+        # output, never from a second copy of the number.
+        self.ego_hist: nn.Module | None = None
+        self._ego_window: tuple | None = None
+        # refcv7 NEW-1: the observed window's RECORDED actions, popped WITH
+        # `_ego_window` (a separate attribute, so the 2-tuple every existing
+        # reader indexes is unchanged).
+        self._ego_actions: Tensor | None = None
+        _ehc = getattr(cfg, "ego_history", None)
+        if _ehc is not None and bool(getattr(_ehc, "enable", False)):
+            import dataclasses as _dc
+
+            from tanitad.models.ego_history import EgoHistoryEncoder
+            # ⛔⛔ ONE ZERO-INIT GATE, NEVER TWO — MEASURED 2026-09-17, the graft
+            # was a DEAD PRODUCT and 3,072 parameters could never leave zero.
+            # `EgoHistoryConfig.zero_init_out` and the decoder's `ego_to_cond`
+            # were BOTH zero-initialised, by two authors, for the SAME correct
+            # reason ("the condition is UNCHANGED at step 0"). Stacked, they
+            # multiply: `cond += ego_to_cond(ego_hist)` makes
+            # d/d(ego_to_cond.W) proportional to `ego_hist` (= 0) and
+            # d/d(out.W) proportional to `ego_to_cond.W` (= 0), so NEITHER can
+            # ever move and only `ego_to_cond.bias` learns — a constant that
+            # carries no ego information at all. The PI asked for ego history
+            # BY NAME; it was wired, stamped, and reaching nothing.
+            # ⭐ The decoder's gate ALONE gives bit-identity at step 0 (it is
+            # the outermost factor), so the encoder's own zero-init is
+            # redundant AND fatal. It is turned off here, and written BACK onto
+            # the config so `config.json` records what the model actually did
+            # rather than what was asked for.
+            if bool(getattr(_ehc, "zero_init_out", False)):
+                _ehc = _dc.replace(_ehc, zero_init_out=False)
+                cfg.ego_history = _ehc
+            self.ego_hist = EgoHistoryEncoder(_ehc)
+            cfg.decoder.ego_hist_dim = int(_ehc.out_dim)
         n_steps = len(cfg.trajectory.horizons)
         if cfg.refc1 and len(cfg.path_dists) != n_steps:
             raise ValueError(f"refc1 needs len(path_dists) == "
@@ -1569,7 +4287,66 @@ class RefCModel(nn.Module):
             grounded_selector=cfg.grounded_selector,
             graft_lan=cfg.graft_lan, d_lan=cfg.lan.d_out,
             factored_maneuver=cfg.factored_maneuver,
-            sel=cfg.selection())
+            sel=cfg.selection(),
+            horizons=cfg.trajectory.horizons,
+            v0_conditioned=cfg.anchors.v0_conditioned,
+            ref_speed_ms=cfg.anchors.ref_speed_ms,
+            control_units=cfg.anchors.control_units,
+            alat_v_floor_ms=cfg.anchors.alat_v_floor_ms,
+            kappa_cap=cfg.anchors.kappa_cap,
+            graft_tac8_prior=cfg.graft_tac8_prior,
+            graft_behaviour_sel=cfg.graft_behaviour_sel,
+            graft_nav_compliance=cfg.graft_nav_compliance,
+            nav_compliance_tau_rad=cfg.nav_compliance_tau_rad,
+            speed_ceiling_filter=cfg.speed_ceiling_filter)
+        # ---- refcv7 NEW-1: what the residual prior READS must be built ----- #
+        # The prior is computed from the OBSERVED ego window, which reaches the
+        # model only through the ego-history channel, and it is rolled from
+        # `v_ms`, which the decoder receives only under `sel_reach_clamp`. A
+        # residual build without either has no prior to compose on.
+        if self.decoder.residual_prior != _kp.RESIDUAL_PRIOR_OFF:
+            if self.ego_hist is None:
+                raise ValueError(
+                    "refcv7 NEW-1: residual_prior needs the ego-history "
+                    "channel (--ego-history): the prior reads the observed "
+                    "pose window, and that window reaches the model only "
+                    "through it.")
+            if not bool(getattr(cfg, "sel_reach_clamp", False)):
+                raise ValueError(
+                    "refcv7 NEW-1: residual_prior needs sel_reach_clamp: the "
+                    "decoder receives the measured speed (`v_ms`) the prior "
+                    "is rolled from only under it.")
+        # ---- refcv5 WP-6: THE AGENT SEAM (default OFF, builds NOTHING) ----
+        #
+        # ⭐ `agent_head` produces SLOTS, `agent_embed` turns slots into the
+        # tokens the planner decoder cross-attends. The oracle and the learned
+        # detector emit the SAME dict shape, so `agent_embed` consumes either
+        # without a branch and the two arms differ in exactly one object.
+        #
+        # ⛔ THE ORACLE IS NOT A CAPABILITY CLAIM. It reads a privileged label
+        # at inference, which the vision-only rule forbids for any deployable
+        # arm. Its ONLY job is to price the ceiling -- "if the detector were
+        # perfect, would the planner move at all?" -- before a detector
+        # GPU-day is spent. `AgentSeamConfig.oracle` is stamped into
+        # config.json so no reader can mistake one arm for the other.
+        self.agent_head: nn.Module | None = None
+        self.agent_embed: nn.Module | None = None
+        _ag = getattr(cfg, "agents", None)
+        if _ag is not None and bool(getattr(_ag, "enable", False)):
+            from tanitad.refs import refc_agents as _ra    # lazy; see imports
+            if not cfg.decoder.cross_agent:
+                raise ValueError(
+                    "refcv5 WP-6: `agents.enable` is set but "
+                    "`decoder.cross_agent` is False, so the head would be "
+                    "BUILT, SUPERVISED and STAMPED while its tokens reached "
+                    "no decoder layer -- a detector trained into a dead end, "
+                    "and an arm that would read as 'agent tokens do not "
+                    "help'. Set both, or neither.")
+            _gh, _gw = cfg.encoder.grid_shape
+            self.agent_head = (
+                _ra.OracleAgentEmbed(_ag) if bool(_ag.oracle)
+                else _ra.build_agent_head(_ag, feat, int(_gh) * int(_gw)))
+            self.agent_embed = _ra.AgentTokenEmbed(cfg.decoder.d, _ag)
         # LAN route encoder (gated): [B, K*4] corridor features -> [B, d_out].
         # Lives at model level next to ``measurement`` because it is an INPUT
         # encoder, not part of the decoder; param_breakdown reports it as `lan`.
@@ -1664,6 +4441,54 @@ class RefCModel(nn.Module):
                 nn.Linear(feat + cfg.measurement.d_out, cfg.speed_hidden),
                 nn.ReLU(inplace=True),
                 nn.Linear(cfg.speed_hidden, cfg.speed_bins))
+        # ====================================================================
+        # ⛔⛔ WP-D BEV AUXILIARY HEAD -- THIS BLOCK MUST STAY LAST IN __init__
+        # ====================================================================
+        # Everything above draws from the global RNG at construction. Building
+        # this head here and NOWHERE ELSE is what makes an `aux on` model and an
+        # `aux off` model share BIT-IDENTICAL initial weights for every
+        # parameter they have in common -- i.e. what makes the A/B a
+        # one-variable comparison at step 0 rather than a lever-plus-seed
+        # change. ⛔ Do not insert a module after this one; add it above.
+        # Pinned by `stack/tests/test_bev_aux.py::test_shared_params_bit_identical`.
+        #
+        # ⛔ TRAINING-ONLY. Its output reaches no planner tensor; removing it is
+        # bit-identical at the planner's output
+        # (`::test_planner_output_bit_identical`). The published precedent is
+        # PhyLatent's Physical State Grounding, "used only during training and
+        # not required by the planner" (LIT-2, banked 2608.05720).
+        self.bev_aux_head: nn.Module | None = None
+        _bv = getattr(cfg, "bev_aux", None)
+        if _bv is not None and bool(getattr(_bv, "enable", False)):
+            from tanitad.refs import refc_bev_aux as _rb   # lazy; see imports
+            self.bev_aux_head = _rb.BEVAuxHead(
+                feat, cfg.encoder.grid_shape, _bv)
+        # ⭐⭐ refcv5 WP-B (`E-WP-INDEX-1`) — DiffusionDrive coupling (2).
+        # ⚠️ CORRECTION C5 (2026-09-16): these comments said "coupling (1)".
+        # `SPEC_REFCV6_V2.md` §1 numbers them (1) BEV sampled at the
+        # candidate's own waypoints, (2) agent slots addressed by waypoint
+        # (this), (3) image tokens by content. A reader who trusted the old
+        # wording concluded the BEV seam already existed; it did not.
+        # ⛔⛔ **THIS IS THE LAST STATEMENT OF `__init__`, AND THAT IS THE
+        # WHOLE REMOVABILITY PROOF.** Every module above draws from the global
+        # RNG in a fixed order; attaching the index heads here means an
+        # ``index on`` build's shared parameters are BIT-IDENTICAL to an
+        # ``index off`` build's at the same seed, so the A/B differs in the
+        # lever and in nothing else. Anything added below this line breaks
+        # that, and `test_wp_index.py::test_shared_params_bit_identical` will
+        # say so. (Same discipline as WP-D's `bev_aux_head`, which is why that
+        # head sits immediately above.)
+        _wp = getattr(cfg.decoder, "wp_index", None)
+        if _wp is not None:
+            self.decoder.attach_wp_index(_wp)
+        # ⭐⭐ refcv6 coupling (1) -- attached AFTER WP-B and LAST of all, so
+        # that turning the BEV coupling on leaves every WP-B head bit-identical
+        # (see `attach_bev_coupling`'s docstring). Anything added below this line
+        # breaks BOTH removability proofs.
+        _bevc = getattr(cfg.decoder, "bev_coupling", None)
+        if _bevc is not None:
+            self.decoder.attach_bev_coupling(
+                _bevc, int(getattr(cfg.decoder, "bev_coupling_d_bev", 96)))
 
     # --- S6 goal provenance (the PI's admissibility check, in code) ----------
     @staticmethod
@@ -1738,6 +4563,58 @@ class RefCModel(nn.Module):
         }
 
     # --- encode surface -----------------------------------------------------
+    def set_ego_window(self, poses: Tensor, n_past: int,
+                       actions: Tensor | None = None) -> None:
+        """Hand the NEXT forward this batch's observed ego track. ONE SHOT.
+
+        ``poses`` ``[B, T, 4]`` = (x, y, yaw, v); ``n_past`` is how many
+        leading steps are PAST. :meth:`forward` consumes and clears it, so a
+        forward that is not preceded by a fresh call raises rather than
+        re-encoding a previous batch's window — the failure mode a plain
+        attribute would have made invisible.
+
+        ⛔ Needed only because ``refc_v3.RefCV3Model.forward`` does not forward
+        unknown keyword arguments to the core. A caller that can reach
+        :meth:`forward` directly should pass ``ego_poses=`` instead.
+        """
+        if self.ego_hist is None:
+            raise ValueError(
+                "set_ego_window on a build with no ego-history encoder: the "
+                "window would be silently discarded while the caller believes "
+                "it was consumed. Build with `cfg.ego_history`.")
+        if poses.ndim != 3 or poses.shape[-1] < 4:
+            raise ValueError(f"ego window must be [B, T, >=4], got "
+                             f"{tuple(poses.shape)}")
+        self._ego_window = (poses, int(n_past))
+        # refcv7 NEW-1 (`ha0_ext` only): the observed window's actions, popped
+        # with the window by the next forward.
+        self._ego_actions = actions
+
+    def _residual_prior_inputs(self, ego_poses: Tensor, n_past: int,
+                               ego_actions: Tensor | None,
+                               v0: Tensor | None) -> tuple:
+        """refcv7 NEW-1: ``(a0 [B], kappa0 [B])`` of this window's prior.
+
+        (( !! )) Consistency, asserted: the pose window must END at the
+        ``v0`` the plan is rolled from. A window shifted by one frame still
+        yields a plausible prior -- and a wrong one on every row.
+        """
+        mode = self.decoder.residual_prior
+        acts = ego_actions if _kp.needs_actions(mode) else None
+        a0, k0 = _kp.prior_controls(mode, ego_poses, n_past, acts,
+                                    dt=float(self.ego_hist.cfg.dt),
+                                    p10=(self.decoder.p10 if mode in _kp.P10_MODES else None))
+        if v0 is not None:
+            vw = ego_poses[:, int(n_past) - 1, 3].to(torch.float32)
+            dv = float((vw - v0.reshape(-1).to(torch.float32)).abs().max())
+            if dv > _kp.V0_WINDOW_TOL:
+                raise ValueError(
+                    f"refcv7 NEW-1: the pose window's last speed differs "
+                    f"from v0 by up to {dv:.6f} m/s (> {_kp.V0_WINDOW_TOL}). "
+                    f"The window does not end at the frame the plan starts "
+                    f"from; the prior would be built at the wrong t0.")
+        return a0, k0
+
     def encode_pooled(self, frames: Tensor) -> Tensor:
         """frames [B, C, H, W] -> pooled latent [B, F] (LAW target path)."""
         return self.encoder(frames)[1]
@@ -1831,12 +4708,56 @@ class RefCModel(nn.Module):
         dist_pref = first.to(lan.dtype) / span * 2.0 - 1.0
         return bearing, dist_pref, any_valid
 
+    def _build_perc_rig(self, cfg: RefCConfig, feat: int) -> None:
+        self.agent_head = None
+        _ag = getattr(cfg, "agents", None)
+        if _ag is not None and bool(getattr(_ag, "enable", False)):
+            if bool(_ag.oracle):
+                raise ValueError("refcv9 C7: the perception rig trains the LEARNED agent head; --agents oracle reads "
+                                 "ground truth at inference and is refused.")
+            from tanitad.refs import refc_agents as _ra
+            _gh, _gw = cfg.encoder.grid_shape
+            self.agent_head = _ra.build_agent_head(_ag, feat, int(_gh) * int(_gw))
+
+    def forward_perc_rig(self, frames: Tensor, bev_hook=None) -> dict:
+        """refcv9 C7: the NEWEST window row only (K = 3 stacked frames), through the trunk, the learned agent head and the
+        perception hook. Emits exactly the keys the perception losses read: fmap_s16, fmap_s8, perception, agent_slots."""
+        b = frames.shape[0]
+        fmap_s8 = None
+        if bool(getattr(self.encoder, "s8_tap", False)):
+            fmap_s8, fmap_s16, fmap, pooled = self.encoder.forward_features_s8(
+                frames[:, -1], torch.arange(b, device=frames.device))
+        else:
+            fmap_s16, fmap, pooled = self.encoder.forward_features(frames[:, -1])
+        perception_out = None
+        if bev_hook is not None:
+            perception_out = (bev_hook(fmap_s16) if fmap_s8 is None else bev_hook(fmap_s16, fmap_s8=fmap_s8))
+        agent_slots = (self.agent_head(fmap.flatten(2).transpose(1, 2)) if self.agent_head is not None else None)
+        out = {"fmap_s16": fmap_s16, "fmap_s8": fmap_s8, "perception": perception_out}
+        if agent_slots is not None:
+            out["agent_slots"] = agent_slots
+        return out
+
     def forward(self, frames: Tensor, nav_cmd: Tensor | None = None,
                 v0: Tensor | None = None,
                 maneuver_logits: Tensor | None = None,
                 target_latent: Tensor | None = None, steps: int = 0,
                 lan: Tensor | None = None,
-                nav_known: Tensor | None = None) -> dict:
+                nav_known: Tensor | None = None,
+                hierarchy_hook=None,
+                ego_keep: Tensor | None = None,
+                withheld_speed: Tensor | None = None,
+                gp_point: Tensor | None = None,
+                gp_valid: Tensor | None = None,
+                agent_gt: dict | None = None,
+                ego_poses: Tensor | None = None,
+                ego_n_past: int | None = None,
+                bev: Tensor | None = None,
+                scene_hook=None,
+                bev_hook=None,
+                bev_tokens: Tensor | None = None,
+                bev_pad: Tensor | None = None,
+                ego_actions: Tensor | None = None) -> dict:
         """frames [B, W, C, H, W'], nav_cmd [B] long (None -> `follow`), v0 [B]
         current ego speed (None -> zeros; scaled /10 inside). ``maneuver_logits``
         / ``target_latent`` are OPTIONAL external tactical-brain seams (else the
@@ -1845,6 +4766,19 @@ class RefCModel(nn.Module):
         (``graft_lan``; None -> the seam is skipped entirely, so an unrouted
         window costs nothing). ``steps`` selects the decoder mode: 0 =
         classifier (default), >0 = truncated diffusion.
+
+        ``hierarchy_hook`` (REF-C v3, default ``None`` == byte-identical to the
+        pre-hook forward): an IN-FORWARD supplier for the two external-tactical-
+        brain ports above, so a hierarchy built OUTSIDE this class can read the
+        window it is conditioning on without encoding the frames a second time
+        (the encoder is ~90 % of the tick — a second encode would be the cost,
+        and a cached one would be a stale-latent hazard). Called as
+        ``hook(pooled_seq [B, W, F], ctx [B, d_ctx]) -> dict`` and its
+        ``"maneuver_logits"`` / ``"target_latent"`` entries fill the ports ONLY
+        where the caller passed ``None`` — an explicitly supplied port always
+        wins, so the hook can never silently override an experiment's input.
+        Requires ``cfg.hierarchy`` (``pooled_seq`` exists only on that path).
+        The supplier lives in ``tanitad/refs/refc_v3.py``.
 
         Returns dict: pooled [B, F], traj / wp_seq [B, n_steps, 2], waypoints
         {key: [B, 2]}, anchor_logits [B, N], anchor_traj [B, N, n_steps, 2],
@@ -1857,16 +4791,180 @@ class RefCModel(nn.Module):
         every existing reader keeps its field and its semantics).
         """
         b, w = frames.shape[:2]
+        # ⭐⭐ refcv6 PERCEPTION SEAM. `fmap_s16` is the stride-16 map the
+        # trunk ALREADY produced, exposed for the BEV lift -> map head + 3-D box
+        # branch. `None` only on the in-repo REF-C trunk, which emits stride 32
+        # alone (`CNNEncoderConfig.s16_dim` RAISES rather than inventing a
+        # width). ⛔ Its channel count is `cfg.encoder.s16_dim`, read from
+        # timm's `feature_info` (1024 on resnet101, 256 on resnet34) and never
+        # written down.
+        # ⚠️ BOTH branches are wired. An earlier cut left the hierarchy path
+        # `None` and called that "reported rather than half-wired" -- but
+        # `refc_smoke_config()` and every hierarchy arm set `hierarchy = True`,
+        # so the seam would have been dead on the path actually taken. Here it
+        # is the SAME last-frame reshape `fmap` already gets, one axis wider.
+        fmap_s16 = None
+        # ⭐⭐ refcv7 NEW-2 (SPEC_REFCV7 §6.2) -- THE STRIDE-8 PASS-THROUGH. `None`
+        # unless the trunk's tap is ON (`TimmResNetTrunk.enable_s8_tap`, which the
+        # trainer calls behind --map-hires on). With the tap off the branches below
+        # run the tip's exact calls, so a default build is byte-identical.
+        # ⛔ The F3-whitelist class (D-REFCV6-F3-WHITELIST): an output this forward
+        # does not pass through is skipped silently by a consumer that reads
+        # `out.get(...)`. The key is ALWAYS emitted (None when off) and the
+        # trainer REFUSES `--map-hires on` when it arrives None.
+        fmap_s8 = None
+        _s16 = hasattr(self.encoder, "forward_features")
+        _s8 = _s16 and bool(getattr(self.encoder, "s8_tap", False))
         if self.cfg.hierarchy:
-            fmap_all, pooled_all = self.encoder(
-                frames.reshape(b * w, *frames.shape[2:]))
+            if _s8:
+                # the CURRENT frame of the LAST window row of each sample: row
+                # `i * w + (w - 1)` of the flattened b*w batch -- the same instant
+                # `fmap_s16` below is sliced at, and the map label is read at.
+                fmap_s8, s16_all, fmap_all, pooled_all = \
+                    self.encoder.forward_features_s8(
+                        frames.reshape(b * w, *frames.shape[2:]),
+                        torch.arange(b, device=frames.device) * w + (w - 1))
+                fmap_s16 = s16_all.reshape(b, w, *s16_all.shape[1:])[:, -1]
+            elif _s16:
+                s16_all, fmap_all, pooled_all = self.encoder.forward_features(
+                    frames.reshape(b * w, *frames.shape[2:]))
+                fmap_s16 = s16_all.reshape(b, w, *s16_all.shape[1:])[:, -1]
+            else:
+                fmap_all, pooled_all = self.encoder(
+                    frames.reshape(b * w, *frames.shape[2:]))
             pooled_seq = pooled_all.reshape(b, w, -1)
             pooled = pooled_seq[:, -1]
             fmap = fmap_all.reshape(b, w, *fmap_all.shape[1:])[:, -1]
             ctx = self.strategic(pooled_seq)
         else:                                    # last frame only (same values)
-            fmap, pooled = self.encoder(frames[:, -1])
+            if _s8:
+                fmap_s8, fmap_s16, fmap, pooled = self.encoder.forward_features_s8(
+                    frames[:, -1], torch.arange(b, device=frames.device))
+            elif _s16:
+                # ONE trunk pass, three outputs. `fmap`/`pooled` are the SAME
+                # tensors `self.encoder(...)` returns -- its `forward` is
+                # literally `forward_features(...)[1:]` -- so this branch is
+                # bit-identical to the line it replaces.
+                fmap_s16, fmap, pooled = self.encoder.forward_features(
+                    frames[:, -1])
+            else:
+                fmap, pooled = self.encoder(frames[:, -1])
             ctx = None
+
+        # ⭐⭐⭐ refcv6 §4 — THE BEV HOOK. PI RULING 2026-09-17 R2/R3.
+        #
+        # ⛔ WHY IT IS HERE AND NOT IN THE TRAINER. Until tonight the BEV
+        # encoder lived on the trainer's wrapper (`model._perception`) and ran
+        # AFTER this forward returned, on `out["fmap_s16"]`. That ordering made
+        # §4's map half STRUCTURALLY UNREACHABLE: `scene_hook` fires ~250 lines
+        # below, so at the instant the behaviour decoder asked for its keys and
+        # values there was no BEV token in existence, `--tac-decoder-d-bev > 0`
+        # REFUSED, and every arm stamped `sources: ["agent"]`. The PI's ruling
+        # is to move the encoder INTO the forward; this is that move, and it is
+        # three lines because `fmap_s16` was already built right above.
+        #
+        # ⛔ WITH `bev_hook=None` THIS BLOCK IS UNTOUCHED DEAD CODE and the
+        # forward is byte-identical to the pre-ruling file — the same
+        # construction `hierarchy_hook` and `scene_hook` use, and the condition
+        # the bit-identity proof rests on. A build that does not attach a
+        # perception branch never supplies the hook.
+        #
+        # ⚠️ THE GRAPH IS NOT CUT. R3 authorises the tactical loss to shape the
+        # shared trunk, so `bev_tokens` reach the decoder ATTACHED. That is a
+        # ruling, not a default: a `.detach()` here would refuse it silently,
+        # and the flag that expresses the alternative lives in the TRAINER
+        # (`--tac-decoder-bev-detach`), where it is stamped into config.json.
+        perception_out = None
+        if bev_hook is not None:
+            if bev_tokens is not None:
+                raise ValueError(
+                    "refcv6: BOTH `bev_hook` and `bev_tokens` were supplied. "
+                    "Two suppliers for one tensor is how a caller silently "
+                    "trains on the one it did not mean; the hook's tokens "
+                    "carry the trunk's graph and an explicit tensor usually "
+                    "does not. Pass exactly one.")
+            if fmap_s16 is None:
+                raise ValueError(
+                    "refcv6: a `bev_hook` was supplied but this build's trunk "
+                    "exposes NO stride-16 map (`fmap_s16` is None — the "
+                    "in-repo REF-C ResNetEncoder emits stride 32 alone). The "
+                    "BEV lift would have nothing to sample and the arm would "
+                    "read as 'the map adds nothing to behaviours' while never "
+                    "having had a map. Build with --trunk timm.")
+            # ⭐ refcv7 A6 (SPEC_REFCV7 §11.1): with the stride-8 tap ON, the hook also
+            # receives `fmap_s8` -- the ONE lift (0.25 m, stride 8) runs inside it and
+            # feeds both the 10 cm map and every BEV consumer. Tap off: the tip's call.
+            perception_out = (bev_hook(fmap_s16) if fmap_s8 is None
+                              else bev_hook(fmap_s16, fmap_s8=fmap_s8))
+            if not isinstance(perception_out, dict):
+                raise ValueError(
+                    "refcv6: `bev_hook` must return a dict; got "
+                    f"{type(perception_out).__name__}")
+            bev_tokens = perception_out.get("bev_tokens")
+            if bev_pad is None:
+                bev_pad = perception_out.get("bev_pad")
+            # ---- refcv6 coupling (1): BREAK B, closed here ---------------- #
+            # ⛔⛔ THE SECOND OF THE THREE BREAKS the 2026-09-22 review named:
+            # `RefCModel.forward` DECLARED `bev` and forwarded it, and NO
+            # CALLER EVER SUPPLIED IT — `refc_v3.py`'s two `self.core(...)`
+            # calls pass `scene_hook` / `bev_hook` / `bev_tokens` and never
+            # `bev`. So even with the arity fixed, coupling (1) had no map.
+            # ⚠️ `bev_tokens` is NOT that map. It is the §4 TACTICAL seam, a
+            # `[B, T, d]` SEQUENCE (`refcv6_perception_branch.py:450`);
+            # coupling (1) reads a DENSE `[B, d_bev, X, Y]` grid at the
+            # candidate's own waypoints, which is `bev_feats`
+            # (`bev_encoder.py:263`). One branch, two tensors, two consumers.
+            # ⛔ SCOPED TO BUILDS THAT CARRY THE COUPLING, so a §4 tactical arm
+            # — which supplies the hook and has no `bev_wp` — is untouched, and
+            # `bev` stays `None` there exactly as before.
+            if int(getattr(self.decoder, "bev_coupling_params",
+                           lambda: 0)()) > 0:
+                if bev is not None and "bev_feats" in perception_out:
+                    raise ValueError(
+                        "refcv6 coupling (1): BOTH an explicit `bev=` and a "
+                        "`bev_hook` producing `bev_feats` reached this "
+                        "forward. Two suppliers for one tensor is how a "
+                        "caller silently trains on the one it did not mean — "
+                        "the hook's map carries the trunk's graph and an "
+                        "explicit tensor usually does not. Pass exactly one.")
+                if bev is None:
+                    bev = perception_out.get("bev_feats")
+
+        # REF-C v3 hierarchy hook (gated by the ARGUMENT, not by a config flag:
+        # with hook=None this block is untouched dead code and the forward is
+        # byte-identical to the pre-hook file — pinned by tests/test_refc_v3.py).
+        if hierarchy_hook is not None:
+            if not self.cfg.hierarchy:
+                raise ValueError(
+                    "hierarchy_hook requires cfg.hierarchy=True — pooled_seq "
+                    "is only computed on that path, and running the hook on a "
+                    "last-frame-only build would hand it a window that does "
+                    "not exist (the C115 defect, manufactured).")
+            hk = hierarchy_hook(pooled_seq, ctx)
+            if maneuver_logits is None:
+                maneuver_logits = hk.get("maneuver_logits")
+            if target_latent is None:
+                target_latent = hk.get("target_latent")
+            # ⭐ H-EGO-LIT-4: the hook's OWN 2 s speed (detached) feeds the
+            # decoder's `pred` withheld-bank mode. An explicitly supplied
+            # `withheld_speed` wins (the eval-time SHUFFLE control passes a
+            # permuted copy), exactly like the two ports above.
+            if withheld_speed is None:
+                withheld_speed = hk.get("bank_speed_pred")
+            # ⭐⭐ S7 / E15 (GP-1): the PREDICTED METRIC GOAL POINT, emitted by
+            # `refc_v3.py`'s hook. NO SECOND FORWARD — the value already exists
+            # in that graph and the whole point of shipping it through the hook
+            # was that this patch needs no extra encode.
+            #
+            # ⛔ AN EXPLICITLY SUPPLIED `gp_point` WINS, exactly like the two
+            # ports above and `withheld_speed`. That is not symmetry for its own
+            # sake: it is what makes PREREG §2's five eval-time interventions
+            # (mirror / range x0.5 / straight / shuffle / withheld) run as ONE
+            # process on ONE surface, which is the discipline a recent
+            # cross-hardware reproduction violated and paid two argmax
+            # tie-breaks and two missed controls for.
+            if gp_point is None:
+                gp_point = hk.get("goal_point")
 
         # H15 belief field refines the conv-map tokens before the decoder (gated).
         imag_logvar = None
@@ -1885,7 +4983,25 @@ class RefCModel(nn.Module):
         keep = torch.ones(b, 1, dtype=v.dtype, device=v.device) \
             if v0 is not None else torch.zeros(b, 1, dtype=v.dtype,
                                                device=v.device)
-        if self.training and self.cfg.ego_dropout > 0:
+        # ⭐ REF-C v4 SEAM (2026-09-03): a CALLER-SUPPLIED withholding draw
+        # overrides the internal one. Additive and gated — with `ego_keep=None`
+        # (every pre-v4 caller) this branch is dead and the forward is
+        # byte-identical to the pre-seam file.
+        #
+        # ⛔ WHY IT HAD TO EXIST RATHER THAN v4 DRAWING ITS OWN. v4 feeds the
+        # measured ego state to the GOAL path as well as to the measurement
+        # encoder, and the two must be withheld TOGETHER: this file's own
+        # comment 30 lines down warns that a second, unsynchronised dropout is
+        # the wrong fix ("`ego_dropout` is the knob to sweep — not a second
+        # dropout here"), and it is right. The alternative — pre-multiplying
+        # `v0` outside — is WORSE THAN WRONG: `keep` is derived from
+        # `v0 is not None`, so a pre-zeroed v0 would arrive with keep = 1 and
+        # assert "this really is a stationary car", which is EXACTLY the X15
+        # zero-collision this seam exists to remove. One draw, one owner.
+        if ego_keep is not None:
+            keep = keep * ego_keep.to(v.dtype).reshape(b, 1)
+            v = v * keep
+        elif self.training and self.cfg.ego_dropout > 0:
             keep = keep * (torch.rand(b, 1, device=v.device)
                            >= self.cfg.ego_dropout).to(v.dtype)
             v = v * keep                         # per-sample Bernoulli zero
@@ -1981,7 +5097,8 @@ class RefCModel(nn.Module):
         #       IS the consequence predictor; `pooled` is its context.
         #   S2  the RAW speed and the ego-dropout keep-mask.
         route_prior = torch.log_softmax(route_logits, dim=-1) \
-            if self.cfg.graft_route else None
+            if (self.cfg.graft_route and not self.cfg.no_strategic) \
+            else None
         cons_head = self.law_head if self.cfg.graft_cons else None
         cons_ctx = pooled if self.cfg.graft_cons else None
         v_ms = (v0.to(pooled.dtype) if (self.cfg.sel_reach_clamp
@@ -2003,14 +5120,180 @@ class RefCModel(nn.Module):
             out_goal = {"goal_bearing": bearing, "goal_dist_pref": goal_dist_pref}
         else:
             out_goal = {}
-        dec = self.decoder(fmap, m, ctx=ctx, maneuver_logits=reweight,
+        # ---- refcv5 WP-6: slots -> tokens ---------------------------------
+        # ⛔ THE VISION-ONLY RULE IS ENFORCED BY WHERE THE TENSOR IS READ, not
+        # by a comment. The LEARNED head takes `fmap` and nothing else --
+        # `AgentSlotDecoder.forward` accepts exactly one argument, which is the
+        # audit in signature form. `agent_gt` is read ONLY on the oracle path,
+        # which is declared inadmissible as a capability claim and stamped as
+        # such. The detection LABELS never enter here at all; they enter the
+        # LOSS, in the trainer, from `batch["agent_box"]`.
+        agent_slots = agent_tokens = agent_pad = None
+        _pw_set_n_box(0)                                   # refcv9 C8 W-BOX: no stale box-token count from a previous forward
+        if self.agent_head is not None:
+            if self.cfg.agents.oracle:
+                if agent_gt is None:
+                    raise ValueError(
+                        "refcv5 WP-6: `agents.oracle` is set but no "
+                        "`agent_gt` reached the forward. The oracle's tokens "
+                        "ARE the ground-truth boxes; with none, the seam would "
+                        "silently emit nothing and the arm would read as "
+                        "'agent tokens do not help' while never having had "
+                        "any. Wire --agent-join, or run --agents head.")
+                agent_slots = self.agent_head(
+                    agent_gt["box"], agent_gt["yaw"], agent_gt["cls"],
+                    agent_gt["valid"], agent_gt.get("rates"))
+            else:
+                agent_slots = self.agent_head(
+                    fmap.flatten(2).transpose(1, 2))          # [B, M, F]
+            agent_tokens, agent_pad = self.agent_embed(agent_slots)
+            if getattr(self, "box_tok_r9", None) is not None:          # refcv9 C8 W-BOX (`--r9-plan-box-tokens`); OFF: never entered
+                _bs = (perception_out or {}).get("box_slots")
+                if _bs is None:
+                    raise ValueError("[refcv9] --r9-plan-box-tokens but the perception branch emitted no `box_slots`: the tokens would be "
+                                     "built from nothing (the agent head's slots are NOT a substitute)")
+                _bt, _bp = self.box_tok_r9(_bs)
+                agent_tokens, agent_pad = torch.cat([agent_tokens, _bt], 1), torch.cat([agent_pad, _bp], 1)
+                _pw_set_n_box(int(_bt.shape[1]))
+        # ⭐⭐ refcv5 WP-B: the ADDRESS SOURCE. `box[..., :2]` is (cx, cy) in
+        # METRES, ego frame, x forward / y left — the SAME frame and the SAME
+        # units the decoder's trajectory estimate is in, which is why the
+        # address is a subtraction and not a projection. ⛔ It is passed RAW:
+        # `refc_wp_index.build_relation` owns the `detach` control, and
+        # detaching here instead would make the control unfalsifiable (both
+        # arms would read "no gradient").
+        agent_pos = (agent_slots["box"][..., :2]
+                     if agent_slots is not None else None)
+        # ⭐⭐ refcv6 §4 — THE SCENE HOOK. A SECOND in-forward supplier, and it
+        # has to be here and nowhere else: `hierarchy_hook` fires ~200 lines
+        # ABOVE, at the pooled/ctx stage, where `agent_tokens` do not exist
+        # yet. The behaviour decoder's keys and values ARE those tokens (plus
+        # the BEV tokens), so this is the only point in the forward at which
+        # the scene is built and the operative decoder has not yet run.
+        # Supplier: `RefCV3Model._scene_hook`.
+        # ⛔ With `scene_hook=None` this block is untouched dead code and the
+        # forward is byte-identical to the pre-refcv6 file.
+        tac_lat_prior = tac_lon_prior = behaviour_term = v_limit_ms = None
+        r8_in = None                      # refcv8 WP-B: the tactical-conditioning feeds (scene hook)
+        if scene_hook is not None:
+            if agent_tokens is None and bev_tokens is None:
+                raise ValueError(
+                    'refcv6: a scene_hook was supplied but this forward built '
+                    'NEITHER agent tokens NOR BEV tokens. The behaviour '
+                    'decoder would attend to nothing and the arm would read '
+                    'as "behaviours cannot be learned from the scene" — a '
+                    'refutation manufactured by a wiring gap. Turn the agent '
+                    'seam on, or pass bev_tokens, or drop the hook.')
+            sk = scene_hook(agent_tokens, agent_pad, bev_tokens, bev_pad)
+            tac_lat_prior = sk.get('lat_prior')
+            tac_lon_prior = sk.get('lon_prior')
+            behaviour_term = sk.get('behaviour_term')
+            v_limit_ms = sk.get('v_limit_ms')
+            r8_in = sk.get('r8')
+        # ⛔ THE 8-WIDE PRIOR REPLACES THE 3-WIDE ONE, AT THE CALL SITE TOO.
+        # The decoder refuses the pair; suppressing them here is what makes
+        # that refusal reachable rather than a permanent exception.
+        if tac_lat_prior is not None and self.cfg.graft_tac8_prior:
+            lat_prior = lon_prior = None
+        # ⭐⭐ S-BYPASS-1 -- THE OPERATIVE SEAM. `ctx_to_cond` is skipped by
+        # the decoder itself when `ctx is None` (its `cond` block reads
+        # `ctx is not None`), so the bypass needs NO branch inside the decoder
+        # and adds NO parameter.
+        # ⛔ `ctx` ITSELF IS STILL COMPUTED AND STILL EMITTED in `out` -- the
+        # strategic token stays a READABLE DIAGNOSTIC, it simply stops being an
+        # INPUT to the plan. With the flag OFF `ctx_dec is ctx` exactly, so this
+        # line cannot perturb a today-arm.
+        ctx_dec = None if self.cfg.no_strategic else ctx
+        # ---- refcv6 §2b: PAST ego -> a condition vector -------------------- #
+        # ⛔ THE ADMISSIBILITY BOUNDARY IS ENFORCED HERE AND IN THE ENCODER,
+        # not documented. `ego_poses` may be the whole window; `ego_n_past`
+        # says how much of it is PAST, the channel builder slices at that
+        # index, and the encoder slices again. A test mutates
+        # `ego_poses[:, n_past:]` and asserts the output is bit-identical, so a
+        # future read goes RED rather than unnoticed.
+        ego_vec = None
+        _rp_in = None                       # refcv7 NEW-1 (None when off)
+        if self.ego_hist is not None:
+            # ⛔⛔ THE ONE-SHOT CHANNEL, AND WHY IT EXISTS. The v3 wrapper
+            # (`refc_v3.py::RefCV3Model.forward`) does not forward `**kwargs`
+            # to `self.core(...)`, and that file belongs to ANOTHER AGENT. So a
+            # caller that cannot reach this signature uses
+            # :meth:`set_ego_window`, and this POPS it: a second forward
+            # without a fresh `set_ego_window` finds nothing and raises, so a
+            # STALE window can never be silently re-encoded into a different
+            # batch's condition. ⭐ The permanent fix is one line in
+            # `refc_v3.py` — add `ego_poses` to its signature and pass it to
+            # both `self.core(...)` calls — and is named in the handover.
+            _win_acts, self._ego_actions = self._ego_actions, None
+            if ego_poses is None and self._ego_window is not None:
+                ego_poses, _n = self._ego_window
+                self._ego_window = None
+                ego_n_past = _n if ego_n_past is None else ego_n_past
+                if ego_actions is None:
+                    ego_actions = _win_acts
+            if ego_poses is None:
+                raise ValueError(
+                    "refcv6 §2b: the ego-history encoder was BUILT but no "
+                    "`ego_poses` reached the forward. The condition would "
+                    "silently lose the channel while config.json stamps it -- "
+                    "the refcv5 false-provenance defect, one seam over.")
+            from tanitad.models.ego_history import ego_channels_from_poses
+            n_past = int(self.cfg.window if ego_n_past is None else ego_n_past)
+            ch = ego_channels_from_poses(ego_poses, n_past,
+                                         dt=float(self.ego_hist.cfg.dt))
+            ego_vec = self.ego_hist(ch)
+            # refcv7 NEW-1: the prior reads THIS window through the SAME
+            # channel builder (`kinematic_prior.prior_controls` calls
+            # `ego_channels_from_poses`), so the prior and the history encoder
+            # cannot disagree about what t0 was.
+            if self.decoder.residual_prior != _kp.RESIDUAL_PRIOR_OFF:
+                _rp_in = self._residual_prior_inputs(ego_poses, n_past,
+                                                     ego_actions, v0)
+        if (ego_actions is not None and not (
+                self.decoder.residual_prior != _kp.RESIDUAL_PRIOR_OFF
+                and _kp.needs_actions(self.decoder.residual_prior))):
+            raise ValueError(
+                "refcv7 NEW-1: `ego_actions` reached a build whose residual "
+                f"prior ({self.decoder.residual_prior!r}) does not read them "
+                "-- they would be SILENTLY DROPPED.")
+        # ⛔⛔ THE GUARD THAT MAKES THE WHOLE FIX SELF-ENFORCING: a coupling
+        # that is BUILT, counted in `param_breakdown`, stamped into
+        # `config.json` by `bev_coupling_provenance()` and then handed NO MAP
+        # is precisely the state the 2026-09-22 review MEASURED (0 forward-hook
+        # fires) — and it is indistinguishable, from the outside, from a
+        # coupling that helps nothing. Refuse it here, before the compute,
+        # rather than let another arm report "the BEV coupling does not help"
+        # while never having had a BEV map.
+        if bev is None and int(getattr(self.decoder, "bev_coupling_params",
+                                       lambda: 0)()) > 0:
+            raise ValueError(
+                "refcv6 coupling (1): the BEV waypoint sampler is BUILT "
+                f"({int(self.decoder.bev_coupling_params())} params over "
+                f"{len(self.decoder.layers)} layers) but no BEV map reached "
+                "this forward — `bev=` is None and no `bev_hook` supplied "
+                "`bev_feats`. Every candidate would be scored without the map "
+                "the arm claims to read, and the result would read as 'the "
+                "coupling does not help'. Pass `bev=` a [B, d_bev, X, Y] map, "
+                "or build without `decoder.bev_coupling`.")
+        dec = self.decoder(fmap, m, ctx=ctx_dec, maneuver_logits=reweight,
                            target_latent=target_latent, steps=steps,
                            lan_emb=lan_emb, lan_dir=lan_dir,
                            lat_prior=lat_prior, lon_prior=lon_prior,
                            route_prior=route_prior, cons_head=cons_head,
                            cons_ctx=cons_ctx, v_ms=v_ms,
                            ego_keep=keep.squeeze(-1) > 0.5,
-                           goal_dir=goal_dir, goal_dist_pref=goal_dist_pref)
+                           goal_dir=goal_dir, goal_dist_pref=goal_dist_pref,
+                           gp_point=gp_point, gp_valid=gp_valid,
+                           withheld_speed=withheld_speed,
+                           agent_tokens=agent_tokens, agent_pad=agent_pad,
+                           agent_pos=agent_pos, ego_hist=ego_vec, bev=bev,
+                           tac_lat_prior=tac_lat_prior,
+                           tac_lon_prior=tac_lon_prior,
+                           behaviour_term=behaviour_term,
+                           nav_cmd_sel=(nav_cmd if nav_cmd_given else None),
+                           v_limit_ms=v_limit_ms,
+                           residual_prior=_rp_in,
+                           **({} if r8_in is None else {"r8": r8_in}))
         traj = dec["traj"]
         law_pred = self.law_head(torch.cat([pooled, traj.reshape(b, -1)],
                                            dim=-1))
@@ -2018,17 +5301,79 @@ class RefCModel(nn.Module):
         keys = self.cfg.path_dists if self.cfg.refc1 \
             else self.cfg.trajectory.horizons
         out = {"pooled": pooled, "traj": traj, "wp_seq": traj,
+               # refcv6: the perception branch's input, emitted beside the
+               # plan. A READ of what the trunk already built -- adding a key
+               # cannot change any existing one, and the bit-identity proof
+               # covers every tensor that was there before. `None` on the
+               # in-repo REF-C trunk and on the hierarchy path.
+               "fmap_s16": fmap_s16,
+               # ⭐ refcv7 NEW-2: `fmap_s8` is NOT written here -- it passes through
+               # DECODER_PASSTHROUGH below, so the tuple G-DVB reads is the only route.
+               # ⭐⭐ refcv6 PI RULING 2026-09-17 R2. The perception branch's
+               # OWN outputs (`map_logits`, `box_slots`, `bev_feats`,
+               # `bev_tokens`), produced INSIDE this forward and emitted with
+               # the trunk's graph attached, so the map/box losses the trainer
+               # computes reach the trunk through the SAME forward the
+               # behaviour decoder read its map from. ⛔ `None` — not an absent
+               # key — when no hook ran: an absent key reads as "this build
+               # cannot do perception", a `None` reads as "it can and did not",
+               # and only the second is true of a weightless arm.
+               # ⚠️ A NAMESPACED key, deliberately. Merging the branch's dict
+               # into `out` would let a future head's key silently shadow a
+               # planner key, which is the collision class this file already
+               # pays for elsewhere.
+               "perception": perception_out,
                "waypoints": {k: traj[:, i] for i, k in enumerate(keys)},
                "anchor_logits": dec["anchor_logits"],
                "refined_logits": dec["refined_logits"],
                "sel_score": dec["sel_score"], "sel_tele": dec["sel_tele"],
-               "anchor_traj": dec["anchor_traj"], "offset": dec["offset"],
+               "anchor_traj": dec["anchor_traj"],
+               "anchor_bank": dec["anchor_bank"], "offset": dec["offset"],
                "sel_idx": dec["sel_idx"], "maneuver_logits": man_logits,
                "route_logits": route_logits, "law_pred": law_pred,
                "measurement": m, **out_goal}
+        # ⭐ S7 / E15 CAVEAT-B INSTRUMENTATION. The gate is zero-init and must
+        # LEARN to open; a 0.0000 reading at 40 k must be a LOGGED fact, not a
+        # conclusion inferred from an eval three days later — that inference is
+        # what produced Caveat-B. The gate ALONE cannot distinguish "has not
+        # opened YET" from "will never open", so the score scale it multiplies
+        # is emitted beside it. Both are detached diagnostics.
+        if self.decoder.gp_point_gate is not None:
+            out["gp_point_gate_value"] = self.decoder.gp_point_gate.detach()
+            out["gp_point_injected"] = gp_point is not None
+            if gp_point is not None:
+                with torch.no_grad():
+                    out["gp_point_score_absmean"] = (
+                        gpm.anchor_goal_prior_at_time_from_norm(
+                            gp_point.to(dec["anchor_bank"].dtype),
+                            (torch.ones(gp_point.shape[0],
+                                        device=gp_point.device,
+                                        dtype=dec["anchor_bank"].dtype)
+                             if gp_valid is None
+                             else gp_valid.to(dec["anchor_bank"].dtype)),
+                            dec["anchor_bank"], self.decoder.gp_slot,
+                            self.decoder.gp_scale_m).abs().mean())
+        if agent_slots is not None:
+            # ⛔ The detection loss is guarded on `"agent_slots" in out`. With
+            # the seam built but this key absent, `--w-agent 1.0` would parse,
+            # be STAMPED into config.json, and supervise NOTHING -- the M18
+            # defect the trainer's own `--agents off` guard names.
+            out["agent_slots"] = agent_slots
+        if "u0_hat" in dec:
+            out["u0_hat"] = dec["u0_hat"]        # refcv5 WP-4's x0 loss target
         if "cons_score" in dec:
             out["cons_score"] = dec["cons_score"]
-        for _k in ("prefinal_logits", "reach_keep"):
+        for _k in dec:                    # refcv8 WP-B: every `r8_*` decoder output, verbatim
+            if _k.startswith("r8_"):
+                out[_k] = dec[_k]
+        # ⭐ refcv7 NEW-2: trunk-side keys that ride the same pass-through declaration.
+        _trunk_passthrough = {"fmap_s8": fmap_s8}
+        # ⛔⛔ A16 2026-09-26: refcv6 F3's per-stage outputs MUST pass through. The trainer's
+        # per-stage loss reads `layer_u0_hat` / `layer_logits` from THIS dict; the whitelist that
+        # omitted them skipped F3's loss for the whole of refcv6-r101-s0 (0 of 668 training rows
+        # carried `cascade`; stage-0..2 heads bit-identical across 29,000 steps). Pinned by
+        # tests/test_refcv6_f3_cascade_reaches_loss.py on the REAL train().
+        for _k in type(self).DECODER_PASSTHROUGH:     # G-DVB reads the SAME tuple
             # S1b's in-forward control and S1c's CE support, passed through
             # VERBATIM: `compute_losses` reads `reach_keep` and the probes read
             # both. Re-deriving either outside the decoder is how two
@@ -2036,6 +5381,10 @@ class RefCModel(nn.Module):
             # `refc_select.reachability_mask` is a re-export and not a copy.
             if _k in dec:
                 out[_k] = dec[_k]
+            elif _k in _trunk_passthrough:
+                # refcv7 NEW-2: the trunk-side keys (`fmap_s8`; None when the tap is
+                # off, so the key is ALWAYS present on a build whose tuple names it)
+                out[_k] = _trunk_passthrough[_k]
         if ctx is not None:
             out["ctx"] = ctx
         if lat_logits is not None:
@@ -2064,6 +5413,15 @@ class RefCModel(nn.Module):
             centers = self._speed_bin_centers(logits.device, logits.dtype)
             out["speed_logits"] = logits
             out["target_speed"] = F.softmax(logits, dim=-1) @ centers
+        # ⛔⛔ WP-D -- THIS BLOCK MUST STAY LAST IN forward, for the same reason
+        # its constructor is last in __init__: it must not perturb any draw the
+        # decoder makes. It consumes NO RNG (no dropout, no sampling) and writes
+        # to no tensor the planner reads, so `out` minus this key is
+        # bit-identical to an `aux off` build's `out`. TRAINING-ONLY: nothing
+        # downstream of the planner may read `bev_logits`, and an eval path that
+        # did would be reading a head that does not exist at deployment.
+        if self.bev_aux_head is not None:
+            out["bev_logits"] = self.bev_aux_head(fmap)   # [B, n_rng, n_az]
         return out
 
 
@@ -2094,7 +5452,19 @@ def param_breakdown(model: RefCModel) -> dict[str, int]:
     n_sel = ((cnt(dec.route_to_anchor) if dec.route_to_anchor is not None else 0)
              + (dec.cons_gate.numel() if dec.cons_gate is not None else 0)
              + (dec.goal_gate.numel() + dec.goal_dist_gate.numel()
-                if dec.goal_gate is not None else 0))
+                if dec.goal_gate is not None else 0)
+             # S7/E15: +1 parameter. The score it multiplies is param-free
+             # (`goal_point.anchor_goal_prior_at_time`), so the entire metric-
+             # goal-point selection seam costs ONE scalar — carved out of
+             # `decoder` here for the same reason every other D-SEL gate is:
+             # the breakdown must keep summing to `total` exactly.
+             + (dec.gp_point_gate.numel()
+                if getattr(dec, "gp_point_gate", None) is not None else 0))
+    # ⭐ WP-B: carved out of `decoder` for the same reason `selection` is — the
+    # index is a LEVER and its cost must be readable without unpicking a 40 M
+    # -parameter row. It is 552 params per layer at hidden=32 / n_heads=8.
+    n_wpi = (dec.wp_index_params()
+             if hasattr(dec, "wp_index_params") else 0)
     # S6's head is a MODEL-level input head (like `lan_enc`), reported on its own
     # line: the goal is the lever under the PI's admissibility ruling and its
     # cost must be readable without unpicking a 40 M-parameter decoder row.
@@ -2103,7 +5473,7 @@ def param_breakdown(model: RefCModel) -> dict[str, int]:
         "encoder": cnt(model.encoder),
         "measurement": cnt(model.measurement),
         "strategic": cnt(model.strategic) if model.cfg.hierarchy else 0,
-        "decoder": cnt(model.decoder) - n_sel,
+        "decoder": cnt(model.decoder) - n_sel - n_wpi,
         "imagination": cnt(model.imagination) if model.cfg.graft_imagination
         else 0,
         "lan": cnt(model.lan_enc) if model.cfg.graft_lan else 0,
@@ -2114,5 +5484,13 @@ def param_breakdown(model: RefCModel) -> dict[str, int]:
         "speed": cnt(model.speed_cls) if model.cfg.refc1 else 0,
         "selection": n_sel,
         "goal": n_goal,
+        # ⭐ WP-D: reported on its own line and NEVER folded into `encoder`, for
+        # the same reason `selection` is carved out of `decoder` — this head is
+        # a TRAINING-ONLY term whose cost a reader must be able to subtract when
+        # comparing a deployed parameter count against an `aux on` run's.
+        "bev_aux": (cnt(model.bev_aux_head)
+                    if getattr(model, "bev_aux_head", None) is not None else 0),
+        # ⭐ WP-B: the waypoint index's own line. 0 unless the seam is attached.
+        "wp_index": n_wpi,
         "total": cnt(model),
     }

@@ -1,0 +1,103 @@
+{
+ "done": true,
+ "run": "p-rc21-hackable-dsafe5",
+ "method": "grpo",
+ "steps": 300,
+ "counters": {
+  "steps": 300,
+  "windows_scored": 600,
+  "samples_scored": 307200,
+  "reward_evals": 300,
+  "advantage_evals": 300,
+  "optimizer_steps": 300,
+  "components_fired": {
+   "progress": 300
+  }
+ },
+ "freeze_report": {
+  "total_params": 104191577,
+  "trainable_params": 8634120,
+  "frozen_params": 95557457,
+  "trainable_fraction": 0.08286773507612809,
+  "n_trainable_tensors": 68,
+  "trainable_names_head": [
+   "decoder.feat_proj.weight",
+   "decoder.feat_proj.bias",
+   "decoder.traj_proj.weight",
+   "decoder.traj_proj.bias",
+   "decoder.cond_proj.weight",
+   "decoder.cond_proj.bias",
+   "decoder.time_embed.weight",
+   "decoder.layers.0.norm_q.weight",
+   "decoder.layers.0.norm_q.bias",
+   "decoder.layers.0.cross.in_proj_weight",
+   "decoder.layers.0.cross.in_proj_bias",
+   "decoder.layers.0.cross.out_proj.weight"
+  ],
+  "trainable_prefixes": [
+   "decoder"
+  ],
+  "forbidden_prefixes": [
+   "decoder.conf_head",
+   "scorer"
+  ],
+  "exclude_prefixes": [
+   "decoder.conf_head"
+  ],
+  "excluded_names": [
+   "decoder.conf_head.weight",
+   "decoder.conf_head.bias"
+  ],
+  "freeze_trunk": true
+ },
+ "train_mode_forward": false,
+ "reward_audit": {
+  "verdict": "FLAGGED",
+  "flagged": true,
+  "inconclusive": false,
+  "dead_components": [],
+  "tied_at_max": [
+   "bullet_straight",
+   "shaky",
+   "teleport"
+  ],
+  "reason": "NOT SEPARABLE: 3 degenerate policies tie at the panel maximum +1.500000 \u2014 ['bullet_straight', 'shaky', 'teleport']. The reward assigns them the identical score, so it cannot rank them and a policy is free to occupy any of them. Component LIVENESS is not gameability: every weighted term varied, and the ranking still collapsed (typically a clamped term SATURATED at its `hi` bound). This is a hackability finding, not an underpowered panel. (winners over the reference: none)",
+  "reference": 1.5,
+  "scores": {
+   "bullet_straight": 1.5,
+   "frozen": 0.0,
+   "teleport": 1.5,
+   "spinner": -0.010409737005829811,
+   "shaky": 1.5
+  },
+  "_ctx": "EMPTY \u2014 collision/headway cannot fire here"
+ },
+ "reward_audit_exercising": {
+  "verdict": "FLAGGED",
+  "flagged": true,
+  "inconclusive": false,
+  "dead_components": [],
+  "tied_at_max": [
+   "bullet_straight",
+   "shaky",
+   "teleport"
+  ],
+  "reason": "NOT SEPARABLE: 3 degenerate policies tie at the panel maximum +1.000000 \u2014 ['bullet_straight', 'shaky', 'teleport']. The reward assigns them the identical score, so it cannot rank them and a policy is free to occupy any of them. Component LIVENESS is not gameability: every weighted term varied, and the ranking still collapsed (typically a clamped term SATURATED at its `hi` bound). This is a hackability finding, not an underpowered panel. (winners over the reference: none)",
+  "reference": 1.0,
+  "scores": {
+   "bullet_straight": 1.0,
+   "frozen": 0.0,
+   "teleport": 1.0,
+   "spinner": -0.010409737005829811,
+   "shaky": 1.0
+  },
+  "_ctx": "audit.exercising_ctx(dt=spec.dt) \u2014 obstacle at the midpoint between the reference's reach and bullet_straight's; lead at the headway standoff"
+ },
+ "final_loss": 0.16859053075313568,
+ "veto_rate_mean": 0.14142578125,
+ "frac_above_bar_mean": null,
+ "use_gt_bar": false,
+ "noise_mode": "multiplicative",
+ "_tier": "T0 training-side; capability claims are T1 only",
+ "_evidence_class": "MEASURED (ours)"
+}

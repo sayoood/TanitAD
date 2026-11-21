@@ -1,0 +1,24 @@
+E:\Projects\TanitAD-artifacts\dagland\motion_c\cl_read\code\smoke_level_on.py:71: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+  assert float(model.e_level.weight.abs().sum()) == 0.0 and float(model.e_level.bias.abs().sum()) == 0.0
+SMOKELVL ckpts: {"ZERO": {"path": "F:/TanitAD-scratch/motion_c/cl_read/smoke/lvl/ck_ZERO/ckpt_last.pt", "fresh_keys": ["e_level.bias", "e_level.weight", "lvl_head.0.bias", "lvl_head.0.weight", "lvl_head.2.bias", "lvl_head.2.weight"], "n_lever_params": 66561, "n_tensors_loaded_equal": 276, "e_level_abs_sum": 0.0}, "NZ": {"path": "F:/TanitAD-scratch/motion_c/cl_read/smoke/lvl/ck_NZ/ckpt_last.pt", "fresh_keys": ["e_level.bias", "e_level.weight", "lvl_head.0.bias", "lvl_head.0.weight", "lvl_head.2.bias", "lvl_head.2.weight"], "n_lever_params": 66561, "n_tensors_loaded_equal": 276, "e_level_abs_sum": 147.38693237304688}}
+SMOKELVL run C0_logged: 9 s, 18 tick rows, level-head calls 0
+SMOKELVL run ZERO_logged: 10 s, 18 tick rows, level-head calls 6
+SMOKELVL run NZ_logged: 9 s, 18 tick rows, level-head calls 6
+SMOKELVL run NZ_logged_kbox: 10 s, 18 tick rows, level-head calls 6
+SMOKELVL run NZ_hold_now: 13 s, 18 tick rows, level-head calls 6
+SMOKELVL run NZ_reindexed: 10 s, 18 tick rows, level-head calls 6
+SMOKELVL run NZ_reindexed_kbox: 10 s, 18 tick rows, level-head calls 6
+SMOKELVL gate OK  C0 level-off: 0 head calls
+SMOKELVL gate OK  ZERO: head called inside the tool's rollout (calls > 0)
+SMOKELVL gate OK  ZERO: v_hat finite and varies across windows (vision-dependent)
+SMOKELVL gate OK  ZERO == C0 bit for bit (ticks plan/plan_raw/tau/P)
+SMOKELVL gate OK  ZERO == C0 bit for bit (dumps cl/ol/fl)
+SMOKELVL gate OK  NZ != C0: the head's output reaches O at inference (max |plan diff| > 1e-3 m)
+SMOKELVL gate OK  every run exits 0 with finite plans and executed paths
+SMOKELVL gate RED NZ hold_now: v_hat range differs from NZ logged (the head reads the scene mode's frame)
+SMOKELVL gate OK  NZ reindexed: v_hat range differs from NZ logged
+SMOKELVL gate OK  NZ kbox: the projection runs on a level-on checkpoint and moves the plan
+SMOKELVL ZERO vs C0 max |diff|: ticks {'plan': 0.0, 'plan_raw': 0.0, 'tau': 0.0, 'P': 0.0} dumps {'cl': 0.0, 'ol': 0.0, 'fl': 0.0}
+SMOKELVL NZ vs C0 max |diff|: ticks {'plan': 4.690279006958008, 'plan_raw': 4.677000045776367, 'tau': 4.677000045776367, 'P': 3.2044830322265625} dumps {'cl': 1.2168746763912992, 'ol': 1.2088356018066406, 'fl': 0.0}; NZ hold_now vs logged plan 3.543 m, reindexed vs logged 1.469 m
+SMOKELVL FAIL

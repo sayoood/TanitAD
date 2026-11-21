@@ -1,0 +1,32 @@
+Per-test-id comparison, 88 test files touching train_v6_staged / declared_vs_built / v7_labels /
+tac_goal_head (raw/test_files_touching.txt); baseline = untouched c36b6ddd copy, modified = v7f_r3 FINAL code.
+
+baseline c36b6ddd: {'error': 10, 'failure': 8, 'passed': 1950, 'skipped': 47} total 2015
+modified v7f_r3  : {'error': 10, 'failure': 8, 'passed': 1989, 'skipped': 47} total 2054
+
+tests only in modified: 39 | outside the new R3 file: []
+new tests outcomes: {'passed': 39}
+tests only in baseline: []
+outcome CHANGED on the 2015 common tests: 0
+
+failures/errors identical set in both trees: True (18)
+    error tests.test_eval_contamination::test_a_clean_eval_split_passes
+    error tests.test_eval_contamination::test_a_sanctioned_audit_passes_but_is_stamped_not_decision_grade
+    error tests.test_eval_contamination::test_a_tampered_digest_set_is_refused
+    error tests.test_eval_contamination::test_a_train_corpus_with_no_val_clips_passes
+    error tests.test_eval_contamination::test_filter_removes_exactly_the_contaminated_clips
+    failure tests.test_eval_contamination::test_loading_the_labels_as_an_EVAL_set_is_refused
+    error tests.test_eval_contamination::test_one_contaminated_clip_refuses_the_whole_eval_split
+    failure tests.test_eval_contamination::test_s2_labels_report_discloses_contamination_into_every_run_config
+    error tests.test_eval_contamination::test_the_201_are_derived_from_ids_not_read_from_the_banked_list
+    error tests.test_eval_contamination::test_the_alpamayo_corpus_swallows_6_of_the_40_deployed_val_episodes
+    failure tests.test_eval_contamination::test_the_aug120_label_leg_is_entirely_inside_the_parity_train_split
+    failure tests.test_eval_contamination::test_the_deployed_val_digest_set_is_cross_checked_by_a_second_source
+    failure tests.test_eval_contamination::test_the_digest_set_reproduces_the_committed_manifest_clip_membership
+    error tests.test_eval_contamination::test_the_mint_refuses_a_clip_set_that_is_not_the_parity_split
+    error tests.test_eval_contamination::test_the_refusal_never_prints_a_clip_id
+    failure tests.test_launch_closure_audit::test_launch_sources_exist_or_the_whole_audit_silently_narrows
+    failure tests.test_launch_gate::test_G_SUITE_the_pinned_env_list_is_content_bound_by_the_profile
+    failure tests.test_v6_st_launch_fixes::test_E4_the_resolution_is_banked_with_its_reasons
+
+test_runbook_commands in modified: {'passed': 16} | static-closure test: passed

@@ -1,0 +1,34 @@
+[  42.3s] logs=1 frames=24 errs=0
+[  85.7s] logs=2 frames=48 errs=0
+[ 178.9s] logs=3 frames=72 errs=0
+[ 218.3s] logs=4 frames=96 errs=0
+[ 258.8s] logs=5 frames=120 errs=0
+[ 283.5s] logs=6 frames=144 errs=0
+[ 287.6s] logs=7 frames=168 errs=0
+[ 315.0s] logs=8 frames=192 errs=0
+[ 347.6s] logs=9 frames=216 errs=0
+[ 386.0s] logs=10 frames=240 errs=0
+[ 455.8s] logs=11 frames=264 errs=0
+[ 519.1s] logs=12 frames=288 errs=0
+[ 597.4s] logs=13 frames=312 errs=0
+[ 602.2s] logs=14 frames=336 errs=0
+{
+ "p_human_lane_change": 0.0268,
+ "n_human_lane_change": 9,
+ "p_slow_lead": 0.0417,
+ "n_slow_lead": 14,
+ "p_lc_given_slow_lead": 0.0,
+ "p_slow_lead_given_lc": 0.0,
+ "p_adjacent_exists": 0.4107,
+ "p_adjacent_free": 0.2679,
+ "p_slow_lead_and_adjacent_free": 0.0089,
+ "p_in_connector_within_4s": 0.5982,
+ "p_lat_dev_over_0p5m": 0.3423,
+ "p_lane0_is_lane": 0.631,
+ "median_v_ego": 4.169223917267763,
+ "errors": {},
+ "n_frames": 336,
+ "n_logs": 14,
+ "seed": 20261011,
+ "definitions": " (REGISTERED HERE before reading any rate; the numbers come out of the run, not out of tuning):\n  human_lane_change   the human's next 4 s (8 poses @ 0.5 s) map-match to two DIFFERENT LANE objects of\n                      the SAME roadblock (a lane connector, i.e. an intersection, never counts), AND the\n                      final pose lies > 2.0 m laterally from the START lane's baseline path.\n  slow_lead           nearest tracked VEHICLE ahead (ego-frame x in [2, 40] m, |y| < 1.6 m) with\n                      speed < 0.7 * ego speed, ego speed > 4 m/s.\n  adjacent_free       the adjacent LANE (left or right, from Lane.adjacent_edges) exists, and no tracked\n                      VEHICLE centre lies inside its polygon with ego-frame x in [-12, +35] m.\n"
+}

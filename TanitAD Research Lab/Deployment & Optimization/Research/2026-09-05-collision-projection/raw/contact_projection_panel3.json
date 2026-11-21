@@ -1,0 +1,81 @@
+{
+ "_what": "H-PROJ-CONTACT-1 part 3: the first-segment hole in the contact predicate, and the clearability theorem",
+ "_evidence_class": "MEASURED (ours; rule-based, 0 GPU)",
+ "bank": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\TanitAD Research Lab\\Deployment & Optimization\\Research\\2026-09-05-veto-only-fan-safety\\raw\\fan_bank_base_240w.npz",
+ "first_segment_hole": {
+  "_control_predicate_agreement": {
+   "known_value": "min_rel_distance(skip_first=True) < r must equal rewards._collision exactly",
+   "disagreements": 0,
+   "PASS": true
+  },
+  "n_flagged_by_scorer": 1053,
+  "n_flagged_full_sweep": 1055,
+  "n_in_contact_at_t0": 0,
+  "n_in_the_hole": 2,
+  "hole_rate_all": 6.510416666666667e-05,
+  "hole_rate_lead_pop": 0.0002403846153846154,
+  "hole_windows": [
+   154
+  ],
+  "n_hole_windows": 1,
+  "sel_in_the_hole": 0,
+  "top32_hole_rate_lead": 0.0,
+  "relative_increase_pct": 0.1899335232668566,
+  "_what_it_is": "candidates the CURRENT predicate calls clear, that a full sweep including the t=0 -> t=0.5 s relative segment calls contact, EXCLUDING the ones already inside the disc at t=0 (an initial condition, not a plan defect)",
+  "_first_step_len_m": {
+   "mean": 6.78465746902116,
+   "p95": 12.929688344162702,
+   "max": 16.278354469523176
+  }
+ },
+ "strict_predicate_arm": {
+  "predicate": "every relative segment swept, INCLUDING t=0 -> t=0.5 s",
+  "fan_contact_scorer_predicate": 0.0,
+  "fan_contact_full_sweep": 0.0,
+  "fan_contact_full_sweep_count": 0,
+  "taxonomy": {
+   "no_agent": 22400,
+   "clear": 7261,
+   "longitudinal": 1059,
+   "lateral": 0,
+   "unavoidable": 0
+  },
+  "n_unavoidable": 0,
+  "n_unavoidable_that_are_already_in_contact_at_t0": 0,
+  "n_unavoidable_not_explained_by_t0": 0,
+  "n_moved": 1059,
+  "n_moved_windows": 19,
+  "oracle_in_fan_ade_m": 0.2305512113011511,
+  "d_oracle_ade_m": 0.0,
+  "sel_ade_m": 0.48709513480597155,
+  "d_sel_ade_m": 0.0,
+  "fan_off_reach": 0.09899088541666666,
+  "fan_peak_g_mean": 3.962280511856079,
+  "sigma_mean_moved": 0.5709801404627006
+ },
+ "clearability_theorem": {
+  "_statement": "if the agent track stays outside the ego's disc for the whole window while the ego does not move, then sigma -> 0 is a collision-free member and the search must find one",
+  "n_windows_rest_clear_scorer_predicate": 65,
+  "n_windows_rest_clear_full_sweep": 65,
+  "n_lead_windows": 65,
+  "violations_scorer_predicate": 0,
+  "violations_full_sweep": 0,
+  "PASS": true,
+  "_corollary": "the ONLY unclearable contacts are those in which the AGENT's own motion enters a stationary ego's disc -- an agent driving into a parked car. No candidate set can be constrained out of that, and no planner can avoid it; it is a perception / prediction problem, not a generation one.",
+  "min_rest_distance_over_lead_windows_m": 4.0646751711289815,
+  "windows_not_rest_clear": []
+ },
+ "off_reach_trade": {
+  "fan_off_reach_base": 0.10774739583333333,
+  "fan_off_reach_proj": 0.09905598958333334,
+  "base_above_band": 2151,
+  "base_below_band": 1159,
+  "proj_above_band": 1884,
+  "proj_below_band": 1159,
+  "off_reach_on_moved_base": 0.4474929044465468,
+  "off_reach_on_moved_proj": 0.19489120151371808,
+  "n_newly_off_reach": 10,
+  "n_newly_in_reach": 277,
+  "_reading": "a NEGATIVE net is the opposite of the trade feasible_decode's scoping document warned about; it must be reported with its mechanism (which side of the S2 band the base fan sat on) and never as a free win"
+ }
+}

@@ -1,0 +1,78 @@
+--- build_metric_cache.orig.py	2026-10-16 02:51:03.900871900 +0200
++++ build_metric_cache.py	2026-10-16 02:51:04.025039500 +0200
+@@ -133,10 +133,14 @@
+ 
+ 
+ def exactness(cache, db_root, map_root, items, n_sets=4, seed=0) -> dict:
+-    """D9 acceptance. items: [(log, token)]. Returns {n_tokens, n_sets, n_equal, n_regression_equal} -- the regression arm perturbs one cached field and must NOT match."""
++    """D9 acceptance. items: [(log, token)]. Returns {n_tokens, n_sets, n_equal, regression_sets, regression_equal, ...} -- the regression arm perturbs one cached field
++    (the ego rear axle, +5 m in x) and must NOT match on every set that CAN move (see d9_accept).  A set is SATURATED when every proposal's fresh PDMS is exactly 0: no ego
++    perturbation can be required to move it (MEASURED 2026-10-16 on the pod's 24-token sample: 22 of 96 random sets were saturated AND undetected, 0 non-saturated set was
++    undetected, raw/2026-10-16-p6-d9-regression-arm/), so the old rule `regression_equal == 0` refused a bit-identical cache."""
+     import navsim_pdm_targets as PT
+     rng = np.random.default_rng(seed)
+-    res = {"n_tokens": 0, "n_sets": 0, "n_equal": 0, "regression_sets": 0, "regression_equal": 0}
++    res = {"n_tokens": 0, "n_sets": 0, "n_equal": 0, "regression_sets": 0, "regression_equal": 0,
++           "regression_saturated_sets": 0, "regression_saturated_undetected": 0, "regression_nonsaturated_undetected": 0, "tokens_with_a_detected_set": 0}
+     for log, tok in items:
+         sc = _scenarios(db_root, map_root, log, {tok}).get(tok)
+         if sc is None:
+@@ -144,6 +148,7 @@
+         fresh = PT.metric_cache_parts(sc)
+         cached = OL.load_parts(OL.parts_path(cache, log, tok))
+         res["n_tokens"] += 1
++        tok_detected = False
+         for _ in range(n_sets):
+             props = np.stack([np.stack([np.linspace(0.5, 30.0, 20) * (0.8 + 0.4 * rng.random()), rng.normal(0, 1.0, 20).cumsum() * 0.1, np.zeros(20)], -1)
+                               for _ in range(8)])
+@@ -157,21 +162,45 @@
+             ego = copy.deepcopy(bad[1])
+             ego.rear_axle.x += 5.0
+             bad[1] = ego
++            saturated = bool(np.all(np.asarray(a["pdms"]) == 0))
+             try:
+                 c = PT.score_plans(tuple(bad), plans8)
+-                res["regression_sets"] += 1
+-                res["regression_equal"] += int(all(np.array_equal(a[k], c[k]) for k in a))
++                undetected = all(np.array_equal(a[k], c[k]) for k in a)
+             except Exception:                                                # noqa: BLE001 -- a perturbed cache that cannot even score is also 'not equal'
+-                res["regression_sets"] += 1
++                undetected = False
++            res["regression_sets"] += 1
++            res["regression_equal"] += int(undetected)
++            res["regression_saturated_sets"] += int(saturated)
++            res["regression_saturated_undetected"] += int(saturated and undetected)
++            res["regression_nonsaturated_undetected"] += int(undetected and not saturated)
++            tok_detected = tok_detected or not undetected
++        res["tokens_with_a_detected_set"] += int(tok_detected)
+     return res
+ 
+ 
++def d9_accept(r) -> tuple:
++    """-> (ok, why).  (1) IDENTITY: cached == fresh on every set.  (2) SENSITIVITY: the regression arm moved EVERY set that can move (a non-saturated set the
++    perturbation leaves equal means the comparator is blind there -> FAIL).  (3) NON-VACUITY: it moved at least half of all sets, so a comparator that is blind
++    everywhere (or a sample that is saturated everywhere) cannot pass on saturation alone."""
++    why = []
++    if not r.get("n_sets"):
++        why.append("no set was scored")
++    if r.get("n_equal") != r.get("n_sets"):
++        why.append(f"IDENTITY: cached != fresh on {r.get('n_sets', 0) - r.get('n_equal', 0)} of {r.get('n_sets')} sets")
++    if r.get("regression_nonsaturated_undetected", 0) != 0:
++        why.append(f"SENSITIVITY: the regression arm left {r['regression_nonsaturated_undetected']} NON-saturated set(s) equal")
++    det = r.get("regression_sets", 0) - r.get("regression_equal", 0)
++    if not (r.get("regression_sets", 0) > 0 and 2 * det >= r["regression_sets"]):
++        why.append(f"NON-VACUITY: the regression arm moved {det} of {r.get('regression_sets', 0)} sets (< half)")
++    return (not why), "; ".join(why) or "ok"
++
++
+ def cmd_verify(a) -> int:
+     items = [tuple(t.split(":", 1)) for t in a.tokens.split(",")]
+     r = exactness(a.cache, a.db_root, a.map_root, items, a.n_sets)
+     print(json.dumps(r))
+-    ok = r["n_sets"] > 0 and r["n_equal"] == r["n_sets"] and r["regression_equal"] == 0
+-    print("ZZD9_PASS" if ok else "ZZD9_FAIL", flush=True)
++    ok, why = d9_accept(r)
++    print("ZZD9_PASS" if ok else f"ZZD9_FAIL {why}", flush=True)
+     return 0 if ok else 1
+ 
+ 

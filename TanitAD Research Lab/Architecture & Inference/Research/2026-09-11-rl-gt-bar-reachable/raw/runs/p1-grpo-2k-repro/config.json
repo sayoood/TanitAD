@@ -1,0 +1,137 @@
+{
+ "cold_start_load": {
+  "_what": "the declared allowance for a pre-2026-09-04 REF-C cold start (PI DECISION QUEUE item 8, option (c)). Records what this load was permitted to default, and on what grounds.",
+  "_evidence_class": "MEASURED (ours; this run's own load)",
+  "keys_built": 488,
+  "keys_in_checkpoint": 487,
+  "missing_from_checkpoint": [
+   "decoder.anchor_controls"
+  ],
+  "unexpected_in_checkpoint": [],
+  "allowed_absent_keys": [
+   "decoder.anchor_controls"
+  ],
+  "strict": true,
+  "anchor_controls_source": "defaulted-zeros-v0-unconditioned",
+  "defaulted_keys": [
+   "decoder.anchor_controls"
+  ],
+  "run_v0_conditioned": false,
+  "run_v0_source": "AnchoredDiffusionDecoder.anchor_v0_cond (the CONSTRUCTED module, not a CLI flag)",
+  "ckpt_v0_conditioned": null,
+  "ckpt_v0_source": "ABSENT",
+  "ckpt_confirmation": "UNVERIFIED_BY_CKPT_CONFIG",
+  "_why_permitted": "`decoder.anchor_controls` is read ONLY when the decoder is v0-conditioned (refc.py:1727 via the WP-4 sampler, which refc.py:2270 refuses un-conditioned; and refc.py:1836/roll_bank, which returns the stored `anchors` unchanged when the flag is False). This decoder's flag is False, so the defaulted tensor is UNREACHABLE on every code path in this process.",
+  "_caveat": "the tensor below was NOT read from the checkpoint. It is the model's own zero-initialised buffer (refc.py:1496). Any future change that makes `anchor_controls` readable with `anchor_v0_cond = False` INVALIDATES this allowance and must update `tanitad.refs.cold_start`, not work around it.",
+  "defaulted_detail": {
+   "decoder.anchor_controls": {
+    "shape": [
+     128,
+     2
+    ],
+    "dtype": "torch.float32",
+    "nonzero_entries": 0,
+    "source": "model's own initialised buffer (refc.py:1496 registers it as torch.zeros)"
+   }
+  },
+  "keys_after_load": 488
+ },
+ "method": "grpo",
+ "group_size": 4,
+ "normalize": "none",
+ "w_intra": 1.0,
+ "w_inter": 1.0,
+ "kl_coef": 0.0,
+ "awr_beta": 1.0,
+ "noise_mode": "multiplicative",
+ "noise_scale": 0.1,
+ "sample_space": "metre",
+ "ttc_min_s": 1.5,
+ "veto_value": -1.0,
+ "veto_enabled": true,
+ "veto_collision": true,
+ "veto_ttc": true,
+ "use_gt_bar": false,
+ "w_anchor": 0.0,
+ "anchor_form": "l2",
+ "train_mode_forward": false,
+ "reward_weights": {
+  "progress": 0.3,
+  "collision": 1.0,
+  "headway": 0.3,
+  "feasibility": 0.5,
+  "comfort": 0.2
+ },
+ "dt": 0.5,
+ "lr": 1e-05,
+ "steps": 2000,
+ "batch": 2,
+ "grad_clip": 1.0,
+ "seed": 0,
+ "w_imitation": 0.0,
+ "freeze_trunk": true,
+ "trainable_prefixes": [
+  "decoder"
+ ],
+ "forbidden_prefixes": [
+  "decoder.conf_head",
+  "scorer"
+ ],
+ "exclude_prefixes": [
+  "decoder.conf_head"
+ ],
+ "decoder_steps": 2,
+ "out_dir": "C:/Users/Admin/tanitad-data/rl-pilot/p1-grpo-2k-repro",
+ "run_name": "p-rc21-default-dsafe5",
+ "save_every": 250,
+ "_requirements": {
+  "needs": "a scalar reward per sampled trajectory + >=2 samples per group",
+  "have": true,
+  "why": "rule-based rewards (collision / feasibility / headway / comfort) are computable from geometry + GT scene facts, and the diffusion decoder can be sampled G times per anchor under exploration noise"
+ },
+ "_evidence_class": "MEASURED (ours; this run's own configuration)",
+ "_tier": "training-side config; capability claims are T1 only (EVAL_DOCTRINE.md)",
+ "freeze_report": {
+  "total_params": 104191577,
+  "trainable_params": 8634120,
+  "frozen_params": 95557457,
+  "trainable_fraction": 0.08286773507612809,
+  "n_trainable_tensors": 68,
+  "trainable_names_head": [
+   "decoder.feat_proj.weight",
+   "decoder.feat_proj.bias",
+   "decoder.traj_proj.weight",
+   "decoder.traj_proj.bias",
+   "decoder.cond_proj.weight",
+   "decoder.cond_proj.bias",
+   "decoder.time_embed.weight",
+   "decoder.layers.0.norm_q.weight",
+   "decoder.layers.0.norm_q.bias",
+   "decoder.layers.0.cross.in_proj_weight",
+   "decoder.layers.0.cross.in_proj_bias",
+   "decoder.layers.0.cross.out_proj.weight"
+  ],
+  "trainable_prefixes": [
+   "decoder"
+  ],
+  "forbidden_prefixes": [
+   "decoder.conf_head",
+   "scorer"
+  ],
+  "exclude_prefixes": [
+   "decoder.conf_head"
+  ],
+  "excluded_names": [
+   "decoder.conf_head.weight",
+   "decoder.conf_head.bias"
+  ],
+  "freeze_trunk": true
+ },
+ "reward_weights_in_force": {
+  "progress": 0.3,
+  "collision": 1.0,
+  "headway": 0.3,
+  "feasibility": 0.5,
+  "comfort": 0.2
+ }
+}

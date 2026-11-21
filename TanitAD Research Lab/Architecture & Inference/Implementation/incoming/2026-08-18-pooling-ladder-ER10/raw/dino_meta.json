@@ -1,0 +1,82 @@
+{
+ "run_stamp": "facebook/dinov2-base@frozen (windows: v6F-SW-30k@11250)",
+ "run": "v6F-SW-30k",
+ "step": 11250,
+ "step_source": "ckpt['_meta']['step']",
+ "ckpt_provenance": {
+  "layout": "fp16_weights_only_snapshot",
+  "precision": "fp16->fp32 (lossy)",
+  "args_source": "ckpt['_meta']['config']['args']",
+  "step_source": "ckpt['_meta']['step']"
+ },
+ "ckpt_path": "C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/8fc25020-a1d5-4e1b-a9e2-aeccf845c5a2/scratchpad/sp2/ck/v6F_sw_step011250.fp16.pt",
+ "_evidence_class": "MEASURED (ours; FROZEN EXTERNAL encoder forward on the SAME banked windows)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "n_frames": 2809,
+ "n_episodes": 130,
+ "n_nolabel_skipped": 0,
+ "stride": 8,
+ "d_readout": 128,
+ "n_cells": 16,
+ "d_op": 2048,
+ "window": 6,
+ "token_grid": [
+  16,
+  40
+ ],
+ "tokens_banked": true,
+ "d_model_tokens": 2304,
+ "n_tokens": 640,
+ "max_in_grid_agents_seen": 88,
+ "grid": {
+  "x_fwd_m": 60.0,
+  "y_half_m": 16.0
+ },
+ "frame": {
+  "h": 256,
+  "w": 640,
+  "hfov_deg": 120.0,
+  "projection": "cylindrical"
+ },
+ "cuda_max_mem_gb": 0.918523904,
+ "wall_s": 295.4,
+ "join_file": "C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/8fc25020-a1d5-4e1b-a9e2-aeccf845c5a2/scratchpad/sp2/lead130_agents.jsonl",
+ "parity": {
+  "train_parity": "{'parity': False, 'cache_dirs': ['C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/8fc25020-a1d5-4e1b-a9e2-aeccf845c5a2/scratchpad/sp2/cache/slotprobe-lead130-w120-256x640cyl'], 'corpus_key': None, 'label': '--v2-cache', 'uid_kind': 'v2ep_clipid', 'checked': False, 'clips_present': 130}",
+  "geometry_binding": "{'label': '--v2-cache', 'checked_shape': True, 'checked_declaration': False, 'frame': {'height': 256, 'width': 640, 'f_ref': 305.5774907364391, 'projection': 'cylindrical'}, 'pixels_are_not_hashed': 'membership proves WHICH CLIPS, shape proves the RASTER SIZE on disk, the manifest proves what the BUILDER RECORDED. None of the three proves the resampler produced that field.', 'cache_frame_shapes': "
+ },
+ "trunk_frozen_assert": "no parameter has requires_grad",
+ "external_encoder": "facebook/dinov2-base",
+ "external_encoder_patch": 14,
+ "external_encoder_hidden": 768,
+ "external_encoder_n_prefix_tokens": 1,
+ "external_input_hw": [
+  224,
+  560
+ ],
+ "source_frame_hw": [
+  256,
+  640
+ ],
+ "aspect_ratio_src_dst": [
+  0.4,
+  0.4
+ ],
+ "resize": "bilinear+antialias, ISOTROPIC (aspect asserted equal)",
+ "normalisation": "ImageNet mean/std (the encoder's own)",
+ "sub_frames_concatenated": 3,
+ "cells_present": false,
+ "window_identity": {
+  "copied_from": "C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/8fc25020-a1d5-4e1b-a9e2-aeccf845c5a2/scratchpad/sp2/cache_tok11250/latents.pt",
+  "n_rows": 2809,
+  "first": [
+   "0045da77-dcdd-46ad-8f97-e94f32c3711c",
+   5
+  ],
+  "last": [
+   "ff15596b-1616-4046-976d-2e577ce61c8f",
+   173
+  ],
+  "note": "rows are the banked v6 cache's rows with ONLY `tokens` replaced; `cells` is deliberately ABSENT so an accidental --arms cells raises instead of reading v6 numbers"
+ }
+}

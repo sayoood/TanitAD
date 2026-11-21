@@ -1,0 +1,49 @@
+THE SCORER GAP, SCOPED FROM THEIR SOURCE. 2026-09-20.
+
+I previously wrote that per-proposal PDM targets "need a rollout per proposal". THAT WAS WRONG and
+the work is smaller than I said. Scoring a proposal needs the CALCULATORS, which take a STATE
+SNAPSHOT plus a candidate trajectory. No simulation per proposal is required.
+
+WHAT IS RELEASED -- six reward calculators, one per component REFe's scorer must predict:
+    src/driverl/env/engine/reward_calculator/
+      off_road.py                 OffRoad          -> drivable-area compliance
+      collision/nuplan_collision.py NuPlanCollision-> no at-fault collisions
+      nuplan_ttc.py               NuPlanTTC        -> time-to-collision within bound
+      comfort.py                  Comfort          -> ego is comfortable
+      goal_reaching.py            GoalReaching     -> progress
+      center_line.py              CenterLine       -> lane keeping / direction
+  all deriving from BaseRewardCalculator (base_reward_calculator.py:263) with the signature
+      forward(scenario_data: ScenarioData, log_scenario_data: ScenarioData, rewards_and_infos: dict)
+
+WHAT THE WORK ACTUALLY IS: build a `ScenarioData` for a nuPlan frame. It is ~20 tensor fields
+(scenario_data.py:220-244): npc_id_array, lanes_points(+mask), lanes_centers_points(+mask),
+route_points_array(+mask), occupancy_grid, agent_positions/velocity/size/orientation/type_all,
+npc_mask_all, plus optional lane-graph fields.
+
+!! CORRECTION TO MY OWN SCOPING, same session. I first wrote that 'their nuPlan feature builder
+   ALREADY produces most of these arrays', on the strength of a NAME GREP that reported 14/14.
+   A name appearing in a file is not an array being produced. Running _empty_map_arrays for real
+   shows it emits 18 MAP arrays, of which only THREE match a required ScenarioData field
+   (lanes_points, lanes_centers_points, lanes_centers_mask). The other ELEVEN -- npc_id_array,
+   route_points_array(+mask), occupancy_grid, agent_positions/velocity/size/orientation/type_all,
+   npc_mask_all, lanes_points_mask -- are agent/ego tensors assembled elsewhere.
+   => '3 of 14 from the map builder', not 'most'. Same grep-strength error as the 0-hits family:
+      the probe answered a question about my REGEX, not about the code.
+
+WHAT IS STILL TRUE, at the corrected strength:
+   the 11 remaining fields are agent/ego state that nuPlan hands the planner at EVERY step via
+   DetectionsTracks -- positions, velocities, sizes, orientations, types. No new perception and no
+   new geometry is required; it is an ASSEMBLY over two existing sources. Bounded, but larger than
+   I implied: budget it as a real piece of work, not a wiring job.
+
+WHY IT IS BOUNDED RATHER THAN OPEN-ENDED: their own nuPlan feature builder ALREADY produces most of
+these arrays from a nuPlan scene -- `driverl_runtime_map_features._build_map_arrays` emits the lane
+and route arrays, and `_sample_route_points_from_map` the route polyline (which Stage 1 already
+calls). So this is an ADAPTATION of their existing nuPlan -> arrays path, not a from-scratch
+geometry job. REFE_PLAN.md already named it: the Stage-2 "ScenarioData builder".
+
+CONSEQUENCE FOR THE POD, unchanged in direction but better scoped:
+  until this exists, REFe's scorer trains against a placeholder and PROPOSAL SELECTION AT INFERENCE
+  IS ARBITRARY. Any closed-loop number from arm A or B is a TRAJECTORY result, not a SELECTION
+  result, and must be reported that way. The planner exposes `--select best|first|mean` so the
+  choice is visible rather than implicit.

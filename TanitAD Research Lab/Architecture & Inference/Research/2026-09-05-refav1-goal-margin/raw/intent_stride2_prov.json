@@ -1,0 +1,71 @@
+{
+ "ckpt": "C:/Users/Admin/refav1_eval_slice/ckpt_ep3/ckpt.pt",
+ "step": 21109,
+ "cache": "C:/Users/Admin/refav1_eval_full/fp8",
+ "episodes": "C:/Users/Admin/refav1_eval_full/eps",
+ "window_stride": 2,
+ "n_windows": 4786,
+ "n_episodes": 141,
+ "device": "cpu",
+ "d_intent": 256,
+ "lat_names": [
+  "LANE_KEEP",
+  "LANE_CHANGE_L",
+  "LANE_CHANGE_R",
+  "ABORT_LC",
+  "NUDGE_L",
+  "NUDGE_R",
+  "TURN_L",
+  "TURN_R"
+ ],
+ "lon_names": [
+  "FOLLOW",
+  "CRUISE",
+  "YIELD_MERGE",
+  "BRAKE_TO",
+  "CREEP",
+  "HOLD",
+  "ADAPT_SPEED_FOR_CURVE",
+  "ACCELERATE"
+ ],
+ "brains_call": "model._run_brains(pooled, nav) with ego=None -- exactly plan() at refa_v1.py:2156",
+ "nav_shuffle_seed": 0,
+ "nav_shuffle_stats": {
+  "seed": 0,
+  "n_windows": 4786,
+  "n_valid": 4786,
+  "n_changed": 2455,
+  "changed_frac": 0.513,
+  "rule": "permutation among nav_valid windows; invalid rows keep nav_cmd=0 / nav_valid=False and are EXCLUDED from route accuracy"
+ },
+ "controls": {
+  "C3_intent_nondegenerate": {
+   "frac_columns_with_nonzero_var": 1.0,
+   "row_norm_min": 91.32376861572266,
+   "row_norm_max": 138.254638671875,
+   "row_norm_is_constant": false,
+   "abs_mean": 3.5941669940948486,
+   "passes": true
+  },
+  "C4_nav_shuffle_changed_rows": {
+   "n_changed": 2455,
+   "n": 4786,
+   "frac": 0.5129544504805683,
+   "intent_differs": true,
+   "passes": true
+  },
+  "C1_reproduces_banked_lat_logits": {
+   "n_overlap": 282,
+   "max_abs_diff": 2.86102294921875e-06,
+   "argmax_agreement": "282/282",
+   "passes": true
+  },
+  "C2_reproduces_banked_gt_kappa": {
+   "n_overlap": 282,
+   "max_abs_diff": 2.384185791015625e-07,
+   "turn_label_agreement": "282/282",
+   "passes": true
+  }
+ },
+ "wallclock_s": 560.7474431991577
+}

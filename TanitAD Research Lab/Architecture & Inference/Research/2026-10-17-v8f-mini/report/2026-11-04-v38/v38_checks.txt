@@ -1,0 +1,31 @@
+# report v38 checks, tip ff09d2c1dcc4a2a3e76b4a2f6a10270f4baf0c6d
+
+PASS v37 inputs are the landed deliverables (sha256)
+PASS html = page template with the v38 md
+PASS LF only, no BOM (md and html)
+PASS removed lines from v37: exactly the 13 edited lines, each key matched once (status, abstract recovery bullet and next bullet, 7.36 title, 7.36 status bullet, the 7.36.4 Committed-next bullet, the old 7.36.5 heading, Establishes, Cannot, 7.36.6 Next, 7.36.7 Provenance, 8.1 item 24, row 1as) (13 removed; unexpected []; hits [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1])
+PASS order: 7.35.4 < 7.36 < 7.36.4 < 7.36.4a < 7.36.5 < 7.36.6 < 7.36.7 < section 8, each heading once
+PASS every table line added in 7.36.4a is a line of the RAPR-P01 RESULTS file; the only other added table lines are rows 1at and 1as (the pointer) (54 added table lines, 52 from RESULTS, 3 tables)
+PASS italic quotations of 25+ characters in the added lines verbatim in a source (RESULTS, addendum 3, decision item, register, v37) (3 quotations)
+PASS each of the four metric families named in 7.36.4a to 7.36.7 at least 3 times (STRATEGIC active for v8F) [58, 28, 13, 19]
+PASS T1-kin and the estimator stated in 7.36.4a, and T1-kin in 7.36.6
+PASS evidence classes on the new claims: [M] in 7.36.4a, [E] and [H] in 7.36.5 to 7.36.6
+PASS closure need labelled post hoc and not a registered rule; (b1) recommendation and the PI decision named
+PASS no 'closed loop' / driving wording in the new section 7.36.4a to 7.36.7, and none added anywhere (counts against v37) (v37 22, v38 22)
+PASS no banned word in the added lines; per-word counts of the report unchanged against v37 (v37 [0, 0, 7, 0, 0, 8, 0], v38 [0, 0, 7, 0, 0, 8, 0])
+PASS no dollar sign added; math span counts as in v37 (688 dollar signs)
+PASS 8.3 has Update (v38) before Update (v37) before Update (v36)
+PASS 8.1 ends with item 25, and item 24 points to it
+PASS section 9 ends with item 16 (v38 reads and their limits)
+PASS 8.4 has row 1at once, after row 1as and before row 2; row 1as points to it
+PASS status line names v38 of 2026-11-04, the tip, 7.36 and RAPR-P01; no date after 2026-11-04 anywhere
+PASS no stale pointer about RAPR-P01 (not run / committed next arm) or four recovery arms in 7.36.5
+PASS added numbers in the new section agree with the raw JSON of the read and of the closure fit (share closed, frame-freeze, ADE6, floor, slope, r, closure need, extrapolation)
+PASS patch_v38.py re-run reproduces both deliverables byte for byte 70f4baf0c6d 7.36.4a to 7.36.7 chars 20778 tables 3 table lines 52 quotations 2 landed {'PR': '05f9dea', 'DR': 'ff09d2c'}
+
+RESULT: PASS (22 checks, 0 failed)
+
+== numbers audit (audit_v38.py): added non-table lines: 40; tokens found in a source (first match) A3 card 11, DR decision 96, FT card 2, LP RESULTS 1, LP2 RESULTS 3, PR RESULTS 361, PR raw json 3, RF RESULTS 4, RT RESULTS 3, register 16, v37 text 13; structural (integers below 100, years, ids): 0; unmatched: 0
+== offline render (the template's own pre-processing + local marked; v37 baseline: see report_v37/v37_render_check.txt):
+   {"file":"v8f_report.html","tables":204,"h3":52,"math":323,"tables_with_ragged_rows":0,"pre_blocks":0,"slots_rendered":0,"stray_placeholders":0}
+   {"file":"V8F_SCIENTIFIC_REPORT.md","tables":204,"h3":52,"math":323,"tables_with_ragged_rows":0,"pre_blocks":0,"slots_rendered":0,"stray_placeholders":0}

@@ -1,0 +1,28 @@
+CLI flag-OFF dry-run (the real main(): preflight + dry_run), untouched c36b6ddd tree
+(C:/Users/Admin/v7f_r3_base = byte copy of the snapshot, raw/tree_identity_base_vs_snapshot.txt) vs the
+modified tree (FINAL code), both via code/proof/seeded_main.py (global torch/random seeded to 0 OUTSIDE
+the trainer). PRE-EXISTING, not this change: without that external seed two runs of the SAME untouched
+tree differ, because dry_run() never seeds the global RNG before build_stack_from_args (train() does).
+
+control: untouched tree vs itself (seeded), S-S steps identical = True
+
+== S-W: dry_run.json steps IDENTICAL=True (3 rows; per-step loss [4.713376522064209, 4.609328269958496, 4.392116546630859]; terms ['o1', 'o2', 'o3', 'o5', 'o6'])
+   dry_run.json top-level keys differing (excl. elapsed_s): []
+   config.json keys ADDED  : ['args.cot_negative_sidecar', 'args.tac_goal_negatives', 'args.w_tac_label_all', 'loss_weights.w_tac_label_all', 'loss_weights_in_force.w_tac_label_all']
+   config.json keys REMOVED: []
+   config.json values CHANGED: ['effective_weights.n_terms', 'effective_weights.terms']
+== S-T: dry_run.json steps IDENTICAL=True (3 rows; per-step loss [46.67498016357422, 38.31135940551758, 34.50460433959961]; terms ['plan', 'seam', 't1'])
+   dry_run.json top-level keys differing (excl. elapsed_s): []
+   config.json keys ADDED  : ['args.cot_negative_sidecar', 'args.tac_goal_negatives', 'args.w_tac_label_all', 'loss_weights.w_tac_label_all', 'loss_weights_in_force.w_tac_label_all']
+   config.json keys REMOVED: []
+   config.json values CHANGED: ['effective_weights.n_terms', 'effective_weights.terms']
+== S-S: dry_run.json steps IDENTICAL=True (3 rows; per-step loss [0.8136492371559143, 0.8988801836967468, 0.8765653371810913]; terms ['s1'])
+   dry_run.json top-level keys differing (excl. elapsed_s): []
+   config.json keys ADDED  : ['args.cot_negative_sidecar', 'args.tac_goal_negatives', 'args.w_tac_label_all', 'loss_weights.w_tac_label_all', 'loss_weights_in_force.w_tac_label_all']
+   config.json keys REMOVED: []
+   config.json values CHANGED: ['effective_weights.n_terms', 'effective_weights.terms']
+== S-J: dry_run.json steps IDENTICAL=True (3 rows; per-step loss [52.202003479003906, 43.81909942626953, 39.78023910522461]; terms ['o1', 'o2', 'o3', 'o5', 'o6', 'plan', 's1', 'seam', 't1'])
+   dry_run.json top-level keys differing (excl. elapsed_s): []
+   config.json keys ADDED  : ['args.cot_negative_sidecar', 'args.tac_goal_negatives', 'args.w_tac_label_all', 'loss_weights.w_tac_label_all', 'loss_weights_in_force.w_tac_label_all']
+   config.json keys REMOVED: []
+   config.json values CHANGED: ['effective_weights.n_terms', 'effective_weights.terms']

@@ -1,0 +1,112 @@
+{
+ "_what": "census of g_tac.goals.SPEED_BAND on the banked v7.2 label blob -- is the envelope a CONSTRAINT or a DESCRIPTION?",
+ "_evidence_class": "MEASURED (ours; artifact = this json + the blob md5)",
+ "_no_model_was_run": true,
+ "blob": "TanitAD Research Lab\\Data Engineering\\Implementation\\incoming\\2026-09-04-v72-label-release\\raw\\s2_labels_v7.2_train.jsonl.gz",
+ "blob_md5": "0ff902130ce76886b8a925eceed9e3a5",
+ "n_records": 4572,
+ "controls": {
+  "speed_band_present": "4572/4572",
+  "band_width_is_single_valued": false,
+  "n_distinct_band_widths": 729,
+  "inverted_bands_v_hi_lt_v_lo": 0,
+  "_reads": "a single-valued width would mean the mint is a STUB; a stub reads exactly like a real envelope in a mean"
+ },
+ "band_s": {
+  "distinct_lo": [
+   2.0
+  ],
+  "distinct_hi": [
+   6.0
+  ]
+ },
+ "v_lo_ms": {
+  "n": 4572,
+  "mean": 9.5264,
+  "p05": 0.0,
+  "p50": 7.69,
+  "p95": 26.44,
+  "min": 0.0,
+  "max": 37.31,
+  "n_exactly_zero": 262
+ },
+ "v_hi_ms": {
+  "n": 4572,
+  "mean": 11.5715,
+  "p05": 2.02,
+  "p50": 9.99,
+  "p95": 27.67,
+  "min": 0.0,
+  "max": 37.8
+ },
+ "band_width_ms": {
+  "n": 4572,
+  "mean": 2.0451,
+  "p05": 0.11,
+  "p50": 1.44,
+  "p95": 5.79,
+  "min": 0.0,
+  "max": 13.48
+ },
+ "grounded": {
+  "false": 4572
+ },
+ "grounding_reason": {
+  "no box class defined for this token": 4572
+ },
+ "held": {
+  "false": 2547,
+  "true": 2025
+ },
+ "a_tac_lon_tokens": {
+  "CRUISE": 1243,
+  "ACCELERATE": 998,
+  "ADAPT_SPEED_FOR_CURVE": 995,
+  "BRAKE_TO": 905,
+  "FOLLOW": 165,
+  "CREEP": 135,
+  "HOLD": 131
+ },
+ "v_target_ms": {
+  "n": 4572,
+  "mean": 9.0327,
+  "p05": 0.0,
+  "p50": 7.19,
+  "p95": 26.22
+ },
+ "v_target_vs_SPEED_BAND": {
+  "below_lo": 2089,
+  "inside": 2483
+ },
+ "v_target_vs_band_by_lon_token": {
+  "ACCELERATE": {
+   "below_lo": 933,
+   "inside": 65
+  },
+  "ADAPT_SPEED_FOR_CURVE": {
+   "below_lo": 572,
+   "inside": 423
+  },
+  "BRAKE_TO": {
+   "inside": 900,
+   "below_lo": 5
+  },
+  "CREEP": {
+   "inside": 95,
+   "below_lo": 40
+  },
+  "CRUISE": {
+   "below_lo": 532,
+   "inside": 711
+  },
+  "FOLLOW": {
+   "inside": 159,
+   "below_lo": 6
+  },
+  "HOLD": {
+   "inside": 130,
+   "below_lo": 1
+  }
+ },
+ "_reads": "v_target_ms is round(m.v_min,2) -- the MINIMUM speed over the plan window (s2_geom_emit_v7.tactical_actions), NOT a desired speed. If it lands INSIDE [v_lo, v_hi] on most records, the two are the same ego-geometry statistic in two costumes, and neither is a road constraint."
+}

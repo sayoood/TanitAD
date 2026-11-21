@@ -1,0 +1,14 @@
+# E-only lines of taniteval/taniteval/map_hires_metrics.py  (E lines absent from the tip blob; CR-normalised; E line numbers)
+# tip blob last changed in cef9709; E mtime 2026-09-27 02:29; verdict: NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)
+43: Pure numpy (+ ``scipy.ndimage`` for the distance transform). No torch.
+53: from scipy import ndimage
+182: def _dist_m(mask: np.ndarray) -> np.ndarray:
+183:     """Euclidean distance (m, cell centre to cell centre) from every cell to the
+184:     nearest True cell of ``mask``; +inf everywhere when ``mask`` is empty."""
+185:     if not mask.any():
+186:         return np.full(mask.shape, np.inf)
+187:     return ndimage.distance_transform_edt(~mask, sampling=FINE_CELL_M)
+203:     ``tol_classes`` only (zero elsewhere; the distance transform is the expensive
+204:     part)."""
+227:             out["tp_pred"][k] = _band_sum(pk & (_dist_m(gk) < tol))
+228:             out["tp_gt"][k] = _band_sum(gk & (_dist_m(pk) < tol))

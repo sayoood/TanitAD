@@ -1,0 +1,28 @@
+A (banked 210) by what the nav FEATURES at the T-tick row say (token is FOLLOW in all):
+  args_valid = 0 (no announced turn ahead in the whole recording): 102
+  args_valid = 1, d_next == label d_start (|diff| <= 1.5 m, SAME event, the token just has not fired): 16
+  args_valid = 1, d_next != label d_start (a DIFFERENT, later announced turn): 92
+
+M2b_s0: turn-cell RMSE (SD units) [95% ep-boot], windows, by nav-feature state
+  valid, SAME event        n   16 (episodes   9)  RMSE 0.555 [0.419, 0.685]
+  valid, different event   n   92 (episodes  10)  RMSE 0.954 [0.730, 1.151]
+  invalid                  n  102 (episodes   8)  RMSE 1.010 [0.887, 1.156]
+  all 210                  n  210 (episodes  27)  RMSE 0.958 [0.843, 1.061]
+  by cause (of the 210): share of the 210's turn-cell SSE, nav state counts (same/diff/invalid)
+    CURVE       SSE share  75.8%   nav: same   0  diff  69  invalid  87
+    SUPPRESSED  SSE share   5.5%   nav: same   0  diff  21  invalid   0
+    HORIZON     SSE share   2.6%   nav: same  14  diff   2  invalid   0
+    UNRESOLVED  SSE share  16.0%   nav: same   2  diff   0  invalid  15
+
+M2b_s1: turn-cell RMSE (SD units) [95% ep-boot], windows, by nav-feature state
+  valid, SAME event        n   16 (episodes   9)  RMSE 0.643 [0.562, 0.717]
+  valid, different event   n   92 (episodes  10)  RMSE 0.899 [0.706, 1.048]
+  invalid                  n  102 (episodes   8)  RMSE 1.020 [0.856, 1.188]
+  all 210                  n  210 (episodes  27)  RMSE 0.944 [0.832, 1.039]
+  by cause (of the 210): share of the 210's turn-cell SSE, nav state counts (same/diff/invalid)
+    CURVE       SSE share  71.7%   nav: same   0  diff  69  invalid  87
+    SUPPRESSED  SSE share   7.9%   nav: same   0  diff  21  invalid   0
+    HORIZON     SSE share   3.5%   nav: same  14  diff   2  invalid   0
+    UNRESOLVED  SSE share  16.9%   nav: same   2  diff   0  invalid  15
+
+ALL FOLLOW windows at rowT: 1976; args_valid=1 in 1024 (51.8%); join-wide (all rows with a v9 row): 5729 of 11462

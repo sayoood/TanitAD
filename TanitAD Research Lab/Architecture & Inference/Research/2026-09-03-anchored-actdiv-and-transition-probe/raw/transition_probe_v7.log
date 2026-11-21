@@ -1,0 +1,70 @@
+  [stack] tanitad imported from: C:\Users\Admin\tanitad-wt\stack\tanitad\__init__.py
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] O6 rank gate CAN rule: --spectrum-accum 43 x 48 rows/call -> ceiling 2063 >= 1024
+[v6] params 19.30 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.97, 'readout': 0.01, 'predictor_op': 7.57, 'layer_tac': 4.88, 'layer_str': 3.56, 'planner': 0.69, 'aux': 1.62, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+[geometry] v6_probe_trunk: NON-DEFAULT - 256x640px, f_ref 305.58, cylindrical, HFOV 120.00deg / VFOV 45.46deg, tokens 640 (16x40 @ patch 16), state_dim 2048, cache fragment {'geom': '256x640f305.5775cyl'}
+[geometry] WARNING: this frame (120.00deg) EXCEEDS comma2k19's entire field (65.203deg). comma2k19 cannot supply it at any resolution — it must be letterboxed (geometry_mode='rectify', explicit unobserved mask), given its own frame, or dropped from the mix. That is a PI decision, not a default.
+[postrain30k] step 30000  W=6  S=2048  cond_param=steer_accel_v
+    encoded 10/129 clips, 920 rows
+    encoded 20/129 clips, 1840 rows
+    encoded 30/129 clips, 2760 rows
+    encoded 40/129 clips, 3680 rows
+    encoded 50/129 clips, 4600 rows
+    encoded 60/129 clips, 5520 rows
+    encoded 70/129 clips, 6440 rows
+    encoded 80/129 clips, 7360 rows
+    encoded 90/129 clips, 8280 rows
+    encoded 100/129 clips, 9200 rows
+    encoded 110/129 clips, 10120 rows
+    encoded 120/129 clips, 11040 rows
+    encoded 129/129 clips, 11868 rows
+    const            d=1     n_score=11868  skill dx_fwd:+0.0000 dy_left:+0.0000 dyaw:+0.0000 dv:+0.0000  | within-shuf +0.000 +0.000 +0.000 +0.000  | global-shuf +0.000 +0.000 +0.000 +0.000
+    pixdelta         d=160   n_score=11868  skill dx_fwd:-0.0000 dy_left:+0.0000 dyaw:-0.0000 dv:-0.0000  | within-shuf -0.000 +0.000 +0.000 -0.000  | global-shuf -0.000 +0.000 +0.000 -0.000
+    act2             d=2     n_score=11868  skill dx_fwd:-0.0025 dy_left:+0.0839 dyaw:+0.3785 dv:+0.5856  | within-shuf +0.000 +0.024 +0.079 +0.060  | global-shuf -0.000 -0.000 +0.000 -0.000
+    z_t              d=2048  n_score=11868  skill dx_fwd:-0.0226 dy_left:-0.0243 dyaw:+0.0025 dv:-0.0148  | within-shuf -0.037 -0.022 -0.001 -0.017  | global-shuf -0.001 +0.001 -0.001 -0.000
+    dz_enc           d=2048  n_score=11868  skill dx_fwd:-0.0000 dy_left:+0.0000 dyaw:-0.0003 dv:+0.0005  | within-shuf -0.000 -0.001 -0.000 -0.000  | global-shuf -0.001 -0.000 -0.001 -0.001
+    dzhat_true       d=2048  n_score=11868  skill dx_fwd:+0.5703 dy_left:-0.0458 dyaw:-0.0265 dv:+0.0087  | within-shuf +0.471 -0.035 -0.041 -0.020  | global-shuf -0.025 -0.019 -0.025 -0.017
+    dzhat_zero       d=2048  n_score=11868  skill dx_fwd:+0.5779 dy_left:-0.0447 dyaw:-0.0333 dv:-0.0346  | within-shuf +0.479 -0.035 -0.038 -0.025  | global-shuf -0.025 -0.019 -0.025 -0.017
+    dzhat_anch       d=2048  n_score=11868  skill dx_fwd:+0.0897 dy_left:+0.0154 dyaw:+0.2240 dv:+0.4826  | within-shuf +0.073 -0.004 +0.020 +0.033  | global-shuf -0.013 -0.015 -0.011 -0.015
+    z_t+dz_enc       d=4096  n_score=11868  skill dx_fwd:-0.0308 dy_left:-0.0276 dyaw:+0.0012 dv:-0.0210  | within-shuf -0.045 -0.030 -0.004 -0.021  | global-shuf -0.002 -0.000 -0.003 -0.002
+    z_t+dzhat_true   d=4096  n_score=11868  skill dx_fwd:+0.0522 dy_left:-0.0308 dyaw:-0.0201 dv:-0.0159  | within-shuf +0.017 -0.028 -0.031 -0.022  | global-shuf -0.003 -0.001 -0.003 -0.002
+    RFF dz_enc       d=1024  skill dx_fwd:+0.0451 dy_left:-0.0028 dyaw:+0.0001 dv:-0.0015  | global-shuf -0.002 -0.001 -0.003 -0.003
+    RFF dzhat_true   d=1024  skill dx_fwd:+0.1657 dy_left:-0.0040 dyaw:-0.0055 dv:-0.0088  | global-shuf -0.007 -0.003 -0.007 -0.005
+    RFF dzhat_zero   d=1024  skill dx_fwd:+0.1657 dy_left:-0.0035 dyaw:-0.0056 dv:-0.0084  | global-shuf -0.007 -0.003 -0.007 -0.005
+    RFF pixdelta     d=1024  skill dx_fwd:+0.0625 dy_left:-0.0041 dyaw:+0.0233 dv:-0.0002  | global-shuf -0.000 +0.001 -0.001 +0.001
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] O6 rank gate CAN rule: --spectrum-accum 43 x 48 rows/call -> ceiling 2063 >= 1024
+[v6] params 19.31 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.97, 'readout': 0.01, 'predictor_op': 7.57, 'layer_tac': 4.89, 'layer_str': 3.56, 'planner': 0.69, 'aux': 1.62, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+[geometry] v6_probe_trunk: NON-DEFAULT - 256x640px, f_ref 305.58, cylindrical, HFOV 120.00deg / VFOV 45.46deg, tokens 640 (16x40 @ patch 16), state_dim 2048, cache fragment {'geom': '256x640f305.5775cyl'}
+[geometry] WARNING: this frame (120.00deg) EXCEEDS comma2k19's entire field (65.203deg). comma2k19 cannot supply it at any resolution — it must be letterboxed (geometry_mode='rectify', explicit unobserved mask), given its own frame, or dropped from the mix. That is a PI decision, not a default.
+[k8clip05p30k] step 30000  W=6  S=2048  cond_param=steer_accel_v
+    encoded 10/129 clips, 920 rows
+    encoded 20/129 clips, 1840 rows
+    encoded 30/129 clips, 2760 rows
+    encoded 40/129 clips, 3680 rows
+    encoded 50/129 clips, 4600 rows
+    encoded 60/129 clips, 5520 rows
+    encoded 70/129 clips, 6440 rows
+    encoded 80/129 clips, 7360 rows
+    encoded 90/129 clips, 8280 rows
+    encoded 100/129 clips, 9200 rows
+    encoded 110/129 clips, 10120 rows
+    encoded 120/129 clips, 11040 rows
+    encoded 129/129 clips, 11868 rows
+    const            d=1     n_score=11868  skill dx_fwd:+0.0000 dy_left:+0.0000 dyaw:+0.0000 dv:+0.0000  | within-shuf +0.000 +0.000 +0.000 +0.000  | global-shuf +0.000 +0.000 +0.000 +0.000
+    pixdelta         d=160   n_score=11868  skill dx_fwd:-0.0000 dy_left:+0.0000 dyaw:-0.0000 dv:-0.0000  | within-shuf -0.000 +0.000 +0.000 -0.000  | global-shuf -0.000 +0.000 +0.000 -0.000
+    act2             d=2     n_score=11868  skill dx_fwd:-0.0025 dy_left:+0.0839 dyaw:+0.3785 dv:+0.5856  | within-shuf +0.000 +0.024 +0.079 +0.060  | global-shuf -0.000 -0.000 +0.000 -0.000
+    z_t              d=2048  n_score=11868  skill dx_fwd:+0.0400 dy_left:-0.0082 dyaw:+0.0574 dv:-0.0314  | within-shuf +0.013 -0.007 +0.010 -0.029  | global-shuf -0.000 -0.001 -0.001 -0.000
+    dz_enc           d=2048  n_score=11868  skill dx_fwd:-0.0000 dy_left:-0.0001 dyaw:-0.0002 dv:+0.0003  | within-shuf +0.000 +0.000 -0.000 -0.001  | global-shuf +0.000 -0.000 -0.001 -0.001
+    dzhat_true       d=2048  n_score=11868  skill dx_fwd:+0.3973 dy_left:-0.0476 dyaw:-0.0293 dv:+0.0628  | within-shuf +0.319 -0.050 -0.033 -0.030  | global-shuf -0.026 -0.022 -0.025 -0.029
+    dzhat_zero       d=2048  n_score=11868  skill dx_fwd:+0.4488 dy_left:-0.0411 dyaw:-0.0227 dv:-0.0491  | within-shuf +0.369 -0.043 -0.027 -0.042  | global-shuf -0.025 -0.021 -0.023 -0.028
+    dzhat_anch       d=2048  n_score=11868  skill dx_fwd:+0.0713 dy_left:+0.0262 dyaw:+0.1309 dv:+0.5305  | within-shuf +0.055 -0.003 +0.010 +0.041  | global-shuf -0.014 -0.009 -0.009 -0.006
+    z_t+dz_enc       d=4096  n_score=11868  skill dx_fwd:+0.0424 dy_left:-0.0073 dyaw:+0.0616 dv:-0.0316  | within-shuf +0.015 -0.008 +0.011 -0.032  | global-shuf -0.001 -0.002 -0.002 -0.001
+    z_t+dzhat_true   d=4096  n_score=11868  skill dx_fwd:+0.1151 dy_left:-0.0103 dyaw:+0.0752 dv:-0.0322  | within-shuf +0.078 -0.011 +0.014 -0.035  | global-shuf -0.002 -0.002 -0.003 -0.003
+    RFF dz_enc       d=1024  skill dx_fwd:+0.0159 dy_left:-0.0012 dyaw:+0.0023 dv:+0.0003  | global-shuf -0.001 -0.001 -0.000 -0.001
+    RFF dzhat_true   d=1024  skill dx_fwd:+0.0433 dy_left:+0.0008 dyaw:+0.0092 dv:+0.0006  | global-shuf -0.002 -0.000 -0.002 -0.003
+    RFF dzhat_zero   d=1024  skill dx_fwd:+0.0455 dy_left:+0.0008 dyaw:+0.0092 dv:+0.0017  | global-shuf -0.002 -0.000 -0.002 -0.003
+    RFF pixdelta     d=1024  skill dx_fwd:+0.0625 dy_left:-0.0041 dyaw:+0.0233 dv:-0.0002  | global-shuf -0.000 +0.001 -0.001 +0.001
+WROTE C:\Users\Admin\tanitad-wt\_gs89_pkg\raw\transition_probe_v7.json

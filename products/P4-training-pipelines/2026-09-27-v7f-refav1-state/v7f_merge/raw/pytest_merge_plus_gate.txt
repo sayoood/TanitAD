@@ -1,0 +1,488 @@
+.........................FF.F.FF....FFFFF............................... [ 30%]
+........................................................................ [ 61%]
+........................................................................ [ 92%]
+.................                                                        [100%]
+================================== FAILURES ===================================
+_________ test_dvb_v6_the_nav_reader_reads_the_BUILT_stack_both_ways __________
+
+    def test_dvb_v6_the_nav_reader_reads_the_BUILT_stack_both_ways():
+        D6, _T, ap, a, st = _tiny_stack(ST_ARGV)
+        nav = [str(m) for m in D6.check_all(st, a, parser=ap) if m.lever == "--nav-cond"]
+        # MEASURED at the tip AND on the merge: declared, not built (the cfg field and the module)
+>       assert len(nav) == 2 and all("declared True but BUILT False" in m for m in nav)
+E       assert (0 == 2)
+E        +  where 0 = len([])
+
+tests\test_launch_gate_v7f.py:227: AssertionError
+---------------------------- Captured stdout call -----------------------------
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] ⛔ O6 RANK GATE CANNOT RULE AT THESE SETTINGS — it will report INCONCLUSIVE no matter what the representation does.
+[v6]    --spectrum-accum 1 x 6 rows/call -> rank_ceiling 5, but the criterion needs 1024.
+[v6]    USE --spectrum-accum 171 (cost: ~1 MB of CPU ring buffer).
+[v6]    MEASURED 2026-08-22: v6F@20k effective rank 5.86 vs an absolute_floor of 64 — a COLLAPSED representation that this gate would have failed, had it been able to see.
+[v6] params 2.36 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.04, 'readout': 0.0, 'predictor_op': 0.16, 'layer_tac': 0.27, 'layer_str': 0.17, 'planner': 0.14, 'aux': 1.59, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+____ test_dvb_v6_the_TRAINER_side_checks_are_unchanged_by_the_gate_entries ____
+
+    def test_dvb_v6_the_TRAINER_side_checks_are_unchanged_by_the_gate_entries():
+        """The gate-time entries never run inside the trainer: its build-time `check` and its R3-path
+        `check_v6` see exactly the merge's seven levers -- so the merged trainer stays bit-identical."""
+        D6, T, ap, a, st = _tiny_stack(ST_ARGV)
+        w = T._weights_from_args(a).for_stage("S-T")
+        assert D6.check(st, a) == []                                 # nav is NOT read at build time
+        assert D6.check_v6(st, a, weights_in_force=w, parser=ap) == []
+>       assert any(m.lever == "--nav-cond" for m in D6.check_all(st, a, weights_in_force=w, parser=ap))
+E       assert False
+E        +  where False = any(<generator object test_dvb_v6_the_TRAINER_side_checks_are_unchanged_by_the_gate_entries.<locals>.<genexpr> at 0x0000018F5ACFFAC0>)
+
+tests\test_launch_gate_v7f.py:239: AssertionError
+---------------------------- Captured stdout call -----------------------------
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] ⛔ O6 RANK GATE CANNOT RULE AT THESE SETTINGS — it will report INCONCLUSIVE no matter what the representation does.
+[v6]    --spectrum-accum 1 x 6 rows/call -> rank_ceiling 5, but the criterion needs 1024.
+[v6]    USE --spectrum-accum 171 (cost: ~1 MB of CPU ring buffer).
+[v6]    MEASURED 2026-08-22: v6F@20k effective rank 5.86 vs an absolute_floor of 64 — a COLLAPSED representation that this gate would have failed, had it been able to see.
+[v6] params 2.36 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.04, 'readout': 0.0, 'predictor_op': 0.16, 'layer_tac': 0.27, 'layer_str': 0.17, 'planner': 0.14, 'aux': 1.59, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+____________ test_positive_G_EVAL_passes_and_its_controls_are_live ____________
+
+st_positive = (Ctx(profile='v7f', tree='C:\\Users\\Admin\\v7f_merge', commit='7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f', argv=['--st... ...}, 'G-DVB': {'schema': 'tanitad.launch_gate/1', 'kind': 'evidence', 'check': 'G-DVB', 'status': 'FAIL', ...}, ...})
+
+    def test_positive_G_EVAL_passes_and_its_controls_are_live(st_positive):
+        _ctx_, evs = st_positive
+        ev = evs["G-EVAL"]
+>       assert ev["status"] == "PASS", _reasons(ev)
+E       AssertionError: the trainer REFUSED this argv while building: [v6] ⛔ --init-from C:\Users\Admin\AppData\Local\Temp\pytest-of-Admin\pytest-4083\v7f_st_pos0\rehearsal_predecessor\8e835941d4ed\ckpt.pt is not a valid predecessor for stage 'S-T'.
+E           missing (NOT introducible at this stage): ['nav.arg_proj.bias', 'nav.arg_proj.weight', 'nav.embed.weight', 'nav.gate.operative', 'nav.gate.strategic', 'nav.gate.tactical', 'nav.layer_proj.operative.bias', 'nav.layer_proj.operative.weight']
+E           unexpected (the ckpt has keys this stack does not): []
+E           A stage may introduce only ('cand_score.', 'cond_tac_dyn.', 'prop_diffusion.', 'fallback.', 'agent_slots.', 't2_head.', 'tac_op_port.', 'vmax_tac.') — anything else missing means the two stages were built with DIFFERENT geometry, and loading anyway is how a stage ends up training on a randomly-initialised trunk while its log looks healthy.
+E       assert 'FAIL' == 'PASS'
+E         
+E         - PASS
+E         + FAIL
+
+tests\test_launch_gate_v7f.py:263: AssertionError
+____ test_positive_G_DVB_names_nav_declared_but_not_built_and_nothing_else ____
+
+st_positive = (Ctx(profile='v7f', tree='C:\\Users\\Admin\\v7f_merge', commit='7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f', argv=['--st... ...}, 'G-DVB': {'schema': 'tanitad.launch_gate/1', 'kind': 'evidence', 'check': 'G-DVB', 'status': 'FAIL', ...}, ...})
+
+    def test_positive_G_DVB_names_nav_declared_but_not_built_and_nothing_else(st_positive):
+        _ctx_, evs = st_positive
+        ev = evs["G-DVB"]
+        r = _reasons(ev)
+>       assert ev["status"] == "FAIL" and "--nav-cond: declared True but BUILT False" in r
+E       AssertionError: assert ('FAIL' == 'FAIL'
+E         
+E           FAIL and '--nav-cond: declared True but BUILT False' in 'the trainer REFUSED this argv while building: [v6] ⛔ --init-from C:\\Users\\Admin\\AppData\\Local\\Temp\\pytest-of-Ad...metry, and loading anyway is how a stage ends up training on a randomly-initialised trunk while its log looks healthy.')
+
+tests\test_launch_gate_v7f.py:285: AssertionError
+_____ test_positive_G_HYG_names_the_open_config_classes_and_nothing_else ______
+
+st_positive = (Ctx(profile='v7f', tree='C:\\Users\\Admin\\v7f_merge', commit='7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f', argv=['--st... ...}, 'G-DVB': {'schema': 'tanitad.launch_gate/1', 'kind': 'evidence', 'check': 'G-DVB', 'status': 'FAIL', ...}, ...})
+
+    def test_positive_G_HYG_names_the_open_config_classes_and_nothing_else(st_positive):
+        _ctx_, evs = st_positive
+        ev = evs["G-HYG"]
+        assert ev["status"] == "FAIL"
+>       assert sorted(ev["details"]["not_strict"]) == [
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            "tanitad.config.EncoderConfig", "tanitad.config.PredictorConfig",
+            "tanitad.config.ReadoutConfig", "tanitad.models.v6.V6Config"]
+E       KeyError: 'not_strict'
+
+tests\test_launch_gate_v7f.py:300: KeyError
+____________ test_ARM_v6_undeclared_attribute_FAILS_G_HYG_by_name _____________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4083/test_ARM_v6_undeclared_attribu0')
+
+    def test_ARM_v6_undeclared_attribute_FAILS_G_HYG_by_name(tmp_path):
+        ctx = _ctx(tmp_path, ST_ARGV, arm="v6_undeclared_attribute")
+        ev = LG.job_model_v6(ctx, ["G-HYG"])["G-HYG"]
+        assert ev["status"] == "FAIL"
+        assert any("gate_arm_undeclared_lever" in ".".join(x) for x in
+>                  ev["details"]["undeclared_attributes"])
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'undeclared_attributes'
+
+tests\test_launch_gate_v7f.py:351: KeyError
+---------------------------- Captured stdout call -----------------------------
+[v6] autocast: fp32 (autocast=False) — AMP disabled by --no-amp
+[v6] precondition OK: {"stage": "S-W", "precondition": null, "ok": true, "reason": "S-W starts the ladder"}
+[v6] launch mode: {"mode": "fresh", "from": null}
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] ⛔ O6 RANK GATE CANNOT RULE AT THESE SETTINGS — it will report INCONCLUSIVE no matter what the representation does.
+[v6]    --spectrum-accum 1 x 6 rows/call -> rank_ceiling 5, but the criterion needs 1024.
+[v6]    USE --spectrum-accum 171 (cost: ~1 MB of CPU ring buffer).
+[v6]    MEASURED 2026-08-22: v6F@20k effective rank 5.86 vs an absolute_floor of 64 — a COLLAPSED representation that this gate would have failed, had it been able to see.
+[v6] params 2.35 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.04, 'readout': 0.0, 'predictor_op': 0.16, 'layer_tac': 0.27, 'layer_str': 0.16, 'planner': 0.13, 'aux': 1.59, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+[v6] declared-freeze preflight OK (train): 0 frozen-external + 1 grad-unreachable subtree(s); directions A/A'/B checked
+[v6] stage S-W: trainable 1.79 M / frozen 0.57 M · groups ['aux', 'encoder', 'predictor_op', 'readout']
+[geometry] train_v6_staged: NON-DEFAULT - 64x128px, f_ref 61.12, cylindrical, HFOV 120.00deg / VFOV 55.27deg, tokens 32 (4x8 @ patch 16), state_dim 2048, cache fragment {'geom': '64x128f61.1155cyl'}
+[geometry] WARNING: this frame (120.00deg) EXCEEDS comma2k19's entire field (65.203deg). comma2k19 cannot supply it at any resolution — it must be letterboxed (geometry_mode='rectify', explicit unobserved mask), given its own frame, or dropped from the mix. That is a PI decision, not a default.
+[v6] windowing: window 3 + max_horizon 20 (v4's plan says 20; v6 sets its own). ⚠️ a LONGER horizon yields FEWER windows per episode — episode selection (parity) is untouched, the window count is not.
+[v6] eval-exclusion clean: cache 0 clips · v7.2 EVAL 147 label records · overlap 0 · REMOVED 0 · 3 training episodes remain [--exclude-eval-clips auto · source C:\Users\Admin\v7f_merge\stack\tanitad\data\v72_eval_clip_digests.json]
+[v6] train 3 eps / 192 windows
+[v6] O4: scoring 192 windows by ego-kinematic saliency (label-free, ACTIONS ONLY) ...
+[v6] O4 {"o4_n": 192, "o4_alpha": 1.0, "o4_floor": 0.25, "o4_saliency_quantiles": [0.02726, 0.1422, 0.279, 0.29689, 0.29716], "o4_weight_max_over_min": 1.973490834236145, "o4_span_steps": 23}
+[v6] EFFECTIVE WEIGHTS (--stage S-W) -- default -> layer -> effective -> builds a graph?
+[v6] term             flag                          default  asked  effective  src   graph  status          layer/mask/missing                                                                                                                                                                                                                     
+[v6] ---------------  ----------------------------  -------  -----  ---------  ----  -----  --------------  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[v6] o1_ctrl          --w-o1-ctrl                   1        1      1          dflt  yes    TRAINS                                                                                                                                                                                                                                                 
+[v6] o1_fact          --w-o1-fact                   1        1      1          dflt  yes    TRAINS                                                                                                                                                                                                                                                 
+[v6] o1_scene         --w-o1-scene                  0.3      0.3    0.3        dflt  yes    TRAINS                                                                                                                                                                                                                                                 
+[v6] o2_nearfield     --w-o2                        1        1      1          dflt  yes    TRAINS                                                                                                                                                                                                                                                 
+[v6] o3_masked        --w-o3                        1        1      1          dflt  yes    TRAINS                                                                                                                                                                                                                                                 
+[v6] o5_rollout       --w-o5                        1        1      1          dflt  yes    TRAINS                                                                                                                                                                                                                                                 
+[v6] o6_sigreg        --w-o6                        0.1      0.1    0.1        dflt  yes    TRAINS                                                                                                                                                                                                                                                 
+[v6] o11_cf           --w-o11-cf                    0        0      0          dflt  no     OFF_BY_DEFAULT                                                                                                                                                                                                                                         
+[v6] o13_ego          --w-o13-ego                   0        0      0          dflt  no     OFF_BY_DEFAULT                                                                                                                                                                                                                                         
+[v6] o14_fut          --w-o14                       0        0      0          dflt  no     OFF_BY_DEFAULT                                                                                                                                                                                                                                         
+[v6] t1_latent        --w-t1                        1        1      0          dflt  no     OFF_BY_LAYER    layer=for_stage('S-W')                                                                                                                                                                                                                 
+[v6] s1_latent        --w-s1                        1        1      0          dflt  no     OFF_BY_LAYER    layer=for_stage('S-W')                                                                                                                                                                                                                 
+[v6] lambda_plan      --lambda-plan                 0        0      0          dflt  no     OFF_BY_DEFAULT  layer=for_stage('S-W')                                                                                                                                                                                                                 
+[v6] seam_op          (no flag: dataclass default)  1        1      0          dflt  no     OFF_BY_LAYER    layer=for_stage('S-W')                                                                                                                                                                                                                 
+[v6] w_select         --w-select                    0        0      0          dflt  no     OFF_BY_DEFAULT  layer=for_stage('S-W'); missing=--selector none: there is no scorer to train                                                                                                                                                           
+[v6] w_anchor         --w-anchor                    0        0      0          dflt  no     OFF_BY_DEFAULT  layer=for_stage('S-W'); missing=--anchor-goal none: there is no anchor objective                                                                                                                                                       
+[v6] w_s2_goal        --w-s2-goal                   0        0      0          dflt  no     OFF_BY_DEFAULT  layer=for_stage('S-W'); mask=s2_valid (+ g_str_valid/a_str_valid; v7.2 arg L1 is ALL-ZERO masked by V72_ARGS_SUPERVISED=False); missing=no --s2-labels: the CE/L1 has no target                                                        
+[v6] w_t2_contrast    --w-t2-contrast               0        0      0          dflt  no     OFF_BY_DEFAULT  layer=for_stage('S-W'); missing=no --t2-contrastive: the projector is never built                                                                                                                                                      
+[v6] w_t5_consist     --w-t5-consist                0        0      0          dflt  no     OFF_BY_DEFAULT  layer=for_stage('S-W'); missing=no --t5-pairs: windows are drawn INDEPENDENTLY, so the consistency term would compare unrelated episodes                                                                                               
+[v6] w_s1_multi       --w-s1-multi                  0        0      0          dflt  no     OFF_BY_DEFAULT  layer=for_stage('S-W')                                                                                                                                                                                                                 
+[v6] w_tac_label_all  --w-tac-label-all             0        0      0          dflt  no     OFF_BY_DEFAULT  layer=for_stage('S-W'); mask=tac_valid (the record's tactical band) + per-cell tac_goal_w (negatives policy x class mask) + tac_goal_arg_mask (SPEED_BAND v_lo/v_hi only); missing=no --s2-labels: the tactical CE/BCE/L1 has no target
+[v6] o10_psg          --w-o10-psg                   0        0      0          dflt  no     OFF_BY_DEFAULT  mask=psg_valid (per-clip: 1.0 only for clips in the train join); missing=no --psg-labels: the physical-state head has no target                                                                                                        
+[v6] 7/22 terms build a graph. A term with graph=no contributes EXACTLY zero gradient; 'p.grad is None' is the sound check, never the weight value.
+[gradreach] all 80 optimizer tensors received a gradient (1.79 M params, 100.0 % of the declared trainable budget)
+[v6] stage gate INCONCLUSIVE -> C:\Users\Admin\AppData\Local\Temp\pytest-of-Admin\pytest-4083\test_ARM_v6_undeclared_attribu0\rehearsal_predecessor\49a0dfe1aef8\stage_gate.json
+[v6] DONE · {"done": true, "run": "v6-staged-S-W", "stage": "S-W", "steps": 1, "resumed_from_step": 0, "out": "C:\\Users\\Admin\\AppData\\Local\\Temp\\pytest-of-Admin\\pytest-4083\\test_ARM_v6_undeclared_attribu0\\rehearsal_predecessor\\49a0dfe1aef8", "gate_verdict": "INCONCLUSIVE", "gate": "stage_gate.json", "elapsed_s": 1.4, "param_report": {"total": 2353832, "budget": 300000000, "within_budget": true, "headroom": 297646168, "per_group": {"encoder": 38400, "readout": 264, "predictor_op": 162275, "layer_tac": 265038, "layer_str": 164815, "planner": 134808, "aux": 1588232, "interp": 0}, "trainable": 1785043, "arm": "shared-encoder+adapters", "d_op": 128, "d_tac": 32, "d_str": 16, "_note": "E-ENC decides at MATCHED TOTAL PARAMS \u2014 compare arms on this number, not on per-layer widths", "_evidence_class": "MEASURED (ours; count at instantiation)"}, "residual_head_init_scale": 0.001, "provenance": {"trainer_file": "C:\\Users\\Admin\\v7f_merge\\stack\\scripts\\train_v6_staged.py", "trainer_md5": "725ba4be08ca452fe234f1da52e31259", "git_sha": "unavailable: empty", "git_dirty": false, "git_branch": "", "hostname": "FREEDOM2035", "platform": "Windows 11", "python": "3.13.5", "torch": "2.11.0+cu128", "cuda_runtime": "12.8", "cudnn": "91900", "gpu_name": "no CUDA device", "gpu_capability": "n/a", "device_resolved": "cpu", "omp_num_threads": "6", "torch_num_threads": 6, "bf16_supported": null, "started_at": "2026-09-27T16:44:38.352351+02:00", "started_at_utc": "2026-09-27T14:44:38.352381+00:00", "_read": "trainer_md5 is the identity on a file-shipped machine; git_sha may be stale there (pods have no git credentials).", "_evidence_class": "MEASURED (ours; this process)"}, "next": "NEXT STAGE BLOCKED \u2014 see stage_gate.json", "_evidence_class": "MEASURED (ours)"}
+[v6] autocast: fp32 (autocast=False) — AMP disabled by --no-amp
+[v6] precondition OK: {"stage": "S-T", "precondition": "S-W", "ok": true, "prev_verdict": "INCONCLUSIVE", "override": "allow-inconclusive-gate", "off_reason": "launch-gate REHEARSAL: synthetic tiny S-W predecessor", "prev_gate": "C:\\Users\\Admin\\AppData\\Local\\Temp\\pytest-of-Admin\\pytest-4083\\test_ARM_v6_undeclared_attribu0\\rehearsal_predecessor\\49a0dfe1aef8\\stage_gate.json", "prev_not_applicable": []}
+========================================================================
+[v6] ⚠️  GATE OVERRIDE IN FORCE — previous stage verdict INCONCLUSIVE; reason: launch-gate REHEARSAL: synthetic tiny S-W predecessor
+========================================================================
+[v6] launch mode: {"mode": "fresh", "from": null}
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] ⛔ O6 RANK GATE CANNOT RULE AT THESE SETTINGS — it will report INCONCLUSIVE no matter what the representation does.
+[v6]    --spectrum-accum 1 x 6 rows/call -> rank_ceiling 5, but the criterion needs 1024.
+[v6]    USE --spectrum-accum 171 (cost: ~1 MB of CPU ring buffer).
+[v6]    MEASURED 2026-08-22: v6F@20k effective rank 5.86 vs an absolute_floor of 64 — a COLLAPSED representation that this gate would have failed, had it been able to see.
+[v6] params 2.36 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.04, 'readout': 0.0, 'predictor_op': 0.16, 'layer_tac': 0.27, 'layer_str': 0.17, 'planner': 0.14, 'aux': 1.59, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+_ test_ARM_G_DVB_each_FAILS_naming_its_defect[v6_candidates_not_built-needles0] _
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4083/test_ARM_G_DVB_each_FAILS_nami0')
+arm = 'v6_candidates_not_built'
+needles = ('--n-candidates: declared 1 but BUILT 8', 'synthetic_batch RAISED')
+
+    @pytest.mark.parametrize("arm,needles", [
+        # the registry reads the BUILT width; the gate's own probe sees the forward break (MEASURED:
+        # the goal embedding is expanded to the declared 1 while the fan holds 8 -> a size mismatch)
+        ("v6_candidates_not_built", ("--n-candidates: declared 1 but BUILT 8",
+                                     "synthetic_batch RAISED")),
+        ("missing_dvb_v6_module", ("declared_vs_built_v6 is not importable",)),
+        ("v6_uncovered_flag", ("--zz-gate-arm-unregistered-lever",)),
+    ])
+    def test_ARM_G_DVB_each_FAILS_naming_its_defect(tmp_path, arm, needles):
+        ctx = _ctx(tmp_path, ST_ARGV, arm=arm)
+        ev = LG.job_model_v6(ctx, ["G-DVB"])["G-DVB"]
+        assert ev["status"] == "FAIL"
+>       assert all(n in _reasons(ev) for n in needles), _reasons(ev)[:800]
+E       AssertionError: the trainer REFUSED this argv while building: [v6] ⛔ --init-from C:\Users\Admin\AppData\Local\Temp\pytest-of-Admin\pytest-4083\test_ARM_G_DVB_each_FAILS_nami0\rehearsal_predecessor\0d4ac54b20f3\ckpt.pt is not a valid predecessor for stage 'S-T'.
+E           missing (NOT introducible at this stage): ['nav.arg_proj.bias', 'nav.arg_proj.weight', 'nav.embed.weight', 'nav.gate.operative', 'nav.gate.strategic', 'nav.gate.tactical', 'nav.layer_proj.operative.bias', 'nav.layer_proj.operative.weight']
+E           unexpected (the ckpt has keys this stack does not): []
+E           A stage may introduce only ('cand_score.', 'cond_tac_dyn.', 'prop_diffusion.', 'fallback.', 'agent_slots.', 't2_head.', 'tac_op_port.', 'vmax_tac.') — anything else missing means the two stages were built with DIFFERENT geometry, and loading anyway is h
+E       assert False
+E        +  where False = all(<generator object test_ARM_G_DVB_each_FAILS_naming_its_defect.<locals>.<genexpr> at 0x0000018F5A521A80>)
+
+tests\test_launch_gate_v7f.py:367: AssertionError
+---------------------------- Captured stdout call -----------------------------
+[v6] autocast: fp32 (autocast=False) — AMP disabled by --no-amp
+[v6] precondition OK: {"stage": "S-W", "precondition": null, "ok": true, "reason": "S-W starts the ladder"}
+[v6] launch mode: {"mode": "fresh", "from": null}
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] ⛔ O6 RANK GATE CANNOT RULE AT THESE SETTINGS — it will report INCONCLUSIVE no matter what the representation does.
+[v6]    --spectrum-accum 1 x 6 rows/call -> rank_ceiling 5, but the criterion needs 1024.
+[v6]    USE --spectrum-accum 171 (cost: ~1 MB of CPU ring buffer).
+[v6]    MEASURED 2026-08-22: v6F@20k effective rank 5.86 vs an absolute_floor of 64 — a COLLAPSED representation that this gate would have failed, had it been able to see.
+[v6] params 2.35 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.04, 'readout': 0.0, 'predictor_op': 0.16, 'layer_tac': 0.27, 'layer_str': 0.16, 'planner': 0.13, 'aux': 1.59, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+[v6] declared-freeze preflight OK (train): 0 frozen-external + 1 grad-unreachable subtree(s); directions A/A'/B checked
+[v6] stage S-W: trainable 1.79 M / frozen 0.57 M · groups ['aux', 'encoder', 'predictor_op', 'readout']
+[geometry] train_v6_staged: NON-DEFAULT - 64x128px, f_ref 61.12, cylindrical, HFOV 120.00deg / VFOV 55.27deg, tokens 32 (4x8 @ patch 16), state_dim 2048, cache fragment {'geom': '64x128f61.1155cyl'}
+[geometry] WARNING: this frame (120.00deg) EXCEEDS comma2k19's entire field (65.203deg). comma2k19 cannot supply it at any resolution — it must be letterboxed (geometry_mode='rectify', explicit unobserved mask), given its own frame, or dropped from the mix. That is a PI decision, not a default.
+[v6] windowing: window 3 + max_horizon 20 (v4's plan says 20; v6 sets its own). ⚠️ a LONGER horizon yields FEWER windows per episode — episode selection (parity) is untouched, the window count is not.
+[v6] eval-exclusion clean: cache 0 clips · v7.2 EVAL 147 label records · overlap 0 · REMOVED 0 · 3 training episodes remain [--exclude-eval-clips auto · source C:\Users\Admin\v7f_merge\stack\tanitad\data\v72_eval_clip_digests.json]
+[v6] train 3 eps / 192 windows
+[v6] O4: scoring 192 windows by ego-kinematic saliency (label-free, ACTIONS ONLY) ...
+[v6] O4 {"o4_n": 192, "o4_alpha": 1.0, "o4_floor": 0.25, "o4_saliency_quantiles": [0.02726, 0.1422, 0.279, 0.29689, 0.29716], "o4_weight_max_over_min": 1.973490834236145, "o4_span_steps": 23}
+[v6] EFFECTIVE WEIGHTS (--stage S-W) -- default -> layer -> effective -> builds a graph?
+[v6] term             flag                          default  asked  effective  src   graph  status          layer/mask/missing                                                                                                                                                                                                                     
+[v6] ---------------  ----------------------------  -------  -----  ---------  ----  -----  --------------  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[v6] o1_ctrl          --w-o1-ctrl                   1        1      1          dflt  yes    TRAINS                                                                                                                                                                                                                                                 
+[v6] o1_fact          --w-o1-fact                   1        1      1          dflt  yes    TRAINS                                                                                                                                                                                                                                                 
+[v6] o1_scene         --w-o1-scene                  0.3      0.3    0.3        dflt  yes    TRAINS                                                                                                                                                                                                                                                 
+[v6] o2_nearfield     --w-o2                        1        1      1          dflt  yes    TRAINS                                                                                                                                                                                                                                                 
+[v6] o3_masked        --w-o3                        1        1      1          dflt  yes    TRAINS                                                                                                                                                                                                                                                 
+[v6] o5_rollout       --w-o5                        1        1      1          dflt  yes    TRAINS                                                                                                                                                                                                                                                 
+[v6] o6_sigreg        --w-o6                        0.1      0.1    0.1        dflt  yes    TRAINS                                                                                                                                                                                                                                                 
+[v6] o11_cf           --w-o11-cf                    0        0      0          dflt  no     OFF_BY_DEFAULT                                                                                                                                                                                                                                         
+[v6] o13_ego          --w-o13-ego                   0        0      0          dflt  no     OFF_BY_DEFAULT                                                                                                                                                                                                                                         
+[v6] o14_fut          --w-o14                       0        0      0          dflt  no     OFF_BY_DEFAULT                                                                                                                                                                                                                                         
+[v6] t1_latent        --w-t1                        1        1      0          dflt  no     OFF_BY_LAYER    layer=for_stage('S-W')                                                                                                                                                                                                                 
+[v6] s1_latent        --w-s1                        1        1      0          dflt  no     OFF_BY_LAYER    layer=for_stage('S-W')                                                                                                                                                                                                                 
+[v6] lambda_plan      --lambda-plan                 0        0      0          dflt  no     OFF_BY_DEFAULT  layer=for_stage('S-W')                                                                                                                                                                                                                 
+[v6] seam_op          (no flag: dataclass default)  1        1      0          dflt  no     OFF_BY_LAYER    layer=for_stage('S-W')                                                                                                                                                                                                                 
+[v6] w_select         --w-select                    0        0      0          dflt  no     OFF_BY_DEFAULT  layer=for_stage('S-W'); missing=--selector none: there is no scorer to train                                                                                                                                                           
+[v6] w_anchor         --w-anchor                    0        0      0          dflt  no     OFF_BY_DEFAULT  layer=for_stage('S-W'); missing=--anchor-goal none: there is no anchor objective                                                                                                                                                       
+[v6] w_s2_goal        --w-s2-goal                   0        0      0          dflt  no     OFF_BY_DEFAULT  layer=for_stage('S-W'); mask=s2_valid (+ g_str_valid/a_str_valid; v7.2 arg L1 is ALL-ZERO masked by V72_ARGS_SUPERVISED=False); missing=no --s2-labels: the CE/L1 has no target                                                        
+[v6] w_t2_contrast    --w-t2-contrast               0        0      0          dflt  no     OFF_BY_DEFAULT  layer=for_stage('S-W'); missing=no --t2-contrastive: the projector is never built                                                                                                                                                      
+[v6] w_t5_consist     --w-t5-consist                0        0      0          dflt  no     OFF_BY_DEFAULT  layer=for_stage('S-W'); missing=no --t5-pairs: windows are drawn INDEPENDENTLY, so the consistency term would compare unrelated episodes                                                                                               
+[v6] w_s1_multi       --w-s1-multi                  0        0      0          dflt  no     OFF_BY_DEFAULT  layer=for_stage('S-W')                                                                                                                                                                                                                 
+[v6] w_tac_label_all  --w-tac-label-all             0        0      0          dflt  no     OFF_BY_DEFAULT  layer=for_stage('S-W'); mask=tac_valid (the record's tactical band) + per-cell tac_goal_w (negatives policy x class mask) + tac_goal_arg_mask (SPEED_BAND v_lo/v_hi only); missing=no --s2-labels: the tactical CE/BCE/L1 has no target
+[v6] o10_psg          --w-o10-psg                   0        0      0          dflt  no     OFF_BY_DEFAULT  mask=psg_valid (per-clip: 1.0 only for clips in the train join); missing=no --psg-labels: the physical-state head has no target                                                                                                        
+[v6] 7/22 terms build a graph. A term with graph=no contributes EXACTLY zero gradient; 'p.grad is None' is the sound check, never the weight value.
+[gradreach] all 80 optimizer tensors received a gradient (1.79 M params, 100.0 % of the declared trainable budget)
+[v6] stage gate INCONCLUSIVE -> C:\Users\Admin\AppData\Local\Temp\pytest-of-Admin\pytest-4083\test_ARM_G_DVB_each_FAILS_nami0\rehearsal_predecessor\0d4ac54b20f3\stage_gate.json
+[v6] DONE · {"done": true, "run": "v6-staged-S-W", "stage": "S-W", "steps": 1, "resumed_from_step": 0, "out": "C:\\Users\\Admin\\AppData\\Local\\Temp\\pytest-of-Admin\\pytest-4083\\test_ARM_G_DVB_each_FAILS_nami0\\rehearsal_predecessor\\0d4ac54b20f3", "gate_verdict": "INCONCLUSIVE", "gate": "stage_gate.json", "elapsed_s": 0.3, "param_report": {"total": 2353832, "budget": 300000000, "within_budget": true, "headroom": 297646168, "per_group": {"encoder": 38400, "readout": 264, "predictor_op": 162275, "layer_tac": 265038, "layer_str": 164815, "planner": 134808, "aux": 1588232, "interp": 0}, "trainable": 1785043, "arm": "shared-encoder+adapters", "d_op": 128, "d_tac": 32, "d_str": 16, "_note": "E-ENC decides at MATCHED TOTAL PARAMS \u2014 compare arms on this number, not on per-layer widths", "_evidence_class": "MEASURED (ours; count at instantiation)"}, "residual_head_init_scale": 0.001, "provenance": {"trainer_file": "C:\\Users\\Admin\\v7f_merge\\stack\\scripts\\train_v6_staged.py", "trainer_md5": "725ba4be08ca452fe234f1da52e31259", "git_sha": "unavailable: empty", "git_dirty": false, "git_branch": "", "hostname": "FREEDOM2035", "platform": "Windows 11", "python": "3.13.5", "torch": "2.11.0+cu128", "cuda_runtime": "12.8", "cudnn": "91900", "gpu_name": "no CUDA device", "gpu_capability": "n/a", "device_resolved": "cpu", "omp_num_threads": "6", "torch_num_threads": 6, "bf16_supported": null, "started_at": "2026-09-27T16:44:38.966966+02:00", "started_at_utc": "2026-09-27T14:44:38.967005+00:00", "_read": "trainer_md5 is the identity on a file-shipped machine; git_sha may be stale there (pods have no git credentials).", "_evidence_class": "MEASURED (ours; this process)"}, "next": "NEXT STAGE BLOCKED \u2014 see stage_gate.json", "_evidence_class": "MEASURED (ours)"}
+[v6] autocast: fp32 (autocast=False) — AMP disabled by --no-amp
+[v6] precondition OK: {"stage": "S-T", "precondition": "S-W", "ok": true, "prev_verdict": "INCONCLUSIVE", "override": "allow-inconclusive-gate", "off_reason": "launch-gate REHEARSAL: synthetic tiny S-W predecessor", "prev_gate": "C:\\Users\\Admin\\AppData\\Local\\Temp\\pytest-of-Admin\\pytest-4083\\test_ARM_G_DVB_each_FAILS_nami0\\rehearsal_predecessor\\0d4ac54b20f3\\stage_gate.json", "prev_not_applicable": []}
+========================================================================
+[v6] ⚠️  GATE OVERRIDE IN FORCE — previous stage verdict INCONCLUSIVE; reason: launch-gate REHEARSAL: synthetic tiny S-W predecessor
+========================================================================
+[v6] launch mode: {"mode": "fresh", "from": null}
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] ⛔ O6 RANK GATE CANNOT RULE AT THESE SETTINGS — it will report INCONCLUSIVE no matter what the representation does.
+[v6]    --spectrum-accum 1 x 6 rows/call -> rank_ceiling 5, but the criterion needs 1024.
+[v6]    USE --spectrum-accum 171 (cost: ~1 MB of CPU ring buffer).
+[v6]    MEASURED 2026-08-22: v6F@20k effective rank 5.86 vs an absolute_floor of 64 — a COLLAPSED representation that this gate would have failed, had it been able to see.
+[v6] params 2.36 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.04, 'readout': 0.0, 'predictor_op': 0.16, 'layer_tac': 0.27, 'layer_str': 0.17, 'planner': 0.14, 'aux': 1.59, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+_ test_ARM_G_DVB_each_FAILS_naming_its_defect[missing_dvb_v6_module-needles1] _
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4083/test_ARM_G_DVB_each_FAILS_nami1')
+arm = 'missing_dvb_v6_module'
+needles = ('declared_vs_built_v6 is not importable',)
+
+    @pytest.mark.parametrize("arm,needles", [
+        # the registry reads the BUILT width; the gate's own probe sees the forward break (MEASURED:
+        # the goal embedding is expanded to the declared 1 while the fan holds 8 -> a size mismatch)
+        ("v6_candidates_not_built", ("--n-candidates: declared 1 but BUILT 8",
+                                     "synthetic_batch RAISED")),
+        ("missing_dvb_v6_module", ("declared_vs_built_v6 is not importable",)),
+        ("v6_uncovered_flag", ("--zz-gate-arm-unregistered-lever",)),
+    ])
+    def test_ARM_G_DVB_each_FAILS_naming_its_defect(tmp_path, arm, needles):
+        ctx = _ctx(tmp_path, ST_ARGV, arm=arm)
+        ev = LG.job_model_v6(ctx, ["G-DVB"])["G-DVB"]
+        assert ev["status"] == "FAIL"
+>       assert all(n in _reasons(ev) for n in needles), _reasons(ev)[:800]
+E       AssertionError: the trainer REFUSED this argv while building: [v6] ⛔ --init-from C:\Users\Admin\AppData\Local\Temp\pytest-of-Admin\pytest-4083\test_ARM_G_DVB_each_FAILS_nami1\rehearsal_predecessor\fc196a13b13a\ckpt.pt is not a valid predecessor for stage 'S-T'.
+E           missing (NOT introducible at this stage): ['nav.arg_proj.bias', 'nav.arg_proj.weight', 'nav.embed.weight', 'nav.gate.operative', 'nav.gate.strategic', 'nav.gate.tactical', 'nav.layer_proj.operative.bias', 'nav.layer_proj.operative.weight']
+E           unexpected (the ckpt has keys this stack does not): []
+E           A stage may introduce only ('cand_score.', 'cond_tac_dyn.', 'prop_diffusion.', 'fallback.', 'agent_slots.', 't2_head.', 'tac_op_port.', 'vmax_tac.') — anything else missing means the two stages were built with DIFFERENT geometry, and loading anyway is h
+E       assert False
+E        +  where False = all(<generator object test_ARM_G_DVB_each_FAILS_naming_its_defect.<locals>.<genexpr> at 0x0000018F3D55F220>)
+
+tests\test_launch_gate_v7f.py:367: AssertionError
+---------------------------- Captured stdout call -----------------------------
+[v6] autocast: fp32 (autocast=False) — AMP disabled by --no-amp
+[v6] precondition OK: {"stage": "S-W", "precondition": null, "ok": true, "reason": "S-W starts the ladder"}
+[v6] launch mode: {"mode": "fresh", "from": null}
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] ⛔ O6 RANK GATE CANNOT RULE AT THESE SETTINGS — it will report INCONCLUSIVE no matter what the representation does.
+[v6]    --spectrum-accum 1 x 6 rows/call -> rank_ceiling 5, but the criterion needs 1024.
+[v6]    USE --spectrum-accum 171 (cost: ~1 MB of CPU ring buffer).
+[v6]    MEASURED 2026-08-22: v6F@20k effective rank 5.86 vs an absolute_floor of 64 — a COLLAPSED representation that this gate would have failed, had it been able to see.
+[v6] params 2.35 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.04, 'readout': 0.0, 'predictor_op': 0.16, 'layer_tac': 0.27, 'layer_str': 0.16, 'planner': 0.13, 'aux': 1.59, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+[v6] declared-freeze preflight OK (train): 0 frozen-external + 1 grad-unreachable subtree(s); directions A/A'/B checked
+[v6] stage S-W: trainable 1.79 M / frozen 0.57 M · groups ['aux', 'encoder', 'predictor_op', 'readout']
+[geometry] train_v6_staged: NON-DEFAULT - 64x128px, f_ref 61.12, cylindrical, HFOV 120.00deg / VFOV 55.27deg, tokens 32 (4x8 @ patch 16), state_dim 2048, cache fragment {'geom': '64x128f61.1155cyl'}
+[geometry] WARNING: this frame (120.00deg) EXCEEDS comma2k19's entire field (65.203deg). comma2k19 cannot supply it at any resolution — it must be letterboxed (geometry_mode='rectify', explicit unobserved mask), given its own frame, or dropped from the mix. That is a PI decision, not a default.
+[v6] windowing: window 3 + max_horizon 20 (v4's plan says 20; v6 sets its own). ⚠️ a LONGER horizon yields FEWER windows per episode — episode selection (parity) is untouched, the window count is not.
+[v6] eval-exclusion clean: cache 0 clips · v7.2 EVAL 147 label records · overlap 0 · REMOVED 0 · 3 training episodes remain [--exclude-eval-clips auto · source C:\Users\Admin\v7f_merge\stack\tanitad\data\v72_eval_clip_digests.json]
+[v6] train 3 eps / 192 windows
+[v6] O4: scoring 192 windows by ego-kinematic saliency (label-free, ACTIONS ONLY) ...
+[v6] O4 {"o4_n": 192, "o4_alpha": 1.0, "o4_floor": 0.25, "o4_saliency_quantiles": [0.02726, 0.1422, 0.279, 0.29689, 0.29716], "o4_weight_max_over_min": 1.973490834236145, "o4_span_steps": 23}
+[v6] EFFECTIVE WEIGHTS (--stage S-W) -- default -> layer -> effective -> builds a graph?
+[v6] term             flag                          default  asked  effective  src   graph  status          layer/mask/missing                                                                                                                                                                                                                     
+[v6] ---------------  ----------------------------  -------  -----  ---------  ----  -----  --------------  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[v6] o1_ctrl          --w-o1-ctrl                   1        1      1          dflt  yes    TRAINS                                                                                                                                                                                                                                                 
+[v6] o1_fact          --w-o1-fact                   1        1      1          dflt  yes    TRAINS                                                                                                                                                                                                                                                 
+[v6] o1_scene         --w-o1-scene                  0.3      0.3    0.3        dflt  yes    TRAINS                                                                                                                                                                                                                                                 
+[v6] o2_nearfield     --w-o2                        1        1      1          dflt  yes    TRAINS                                                                                                                                                                                                                                                 
+[v6] o3_masked        --w-o3                        1        1      1          dflt  yes    TRAINS                                                                                                                                                                                                                                                 
+[v6] o5_rollout       --w-o5                        1        1      1          dflt  yes    TRAINS                                                                                                                                                                                                                                                 
+[v6] o6_sigreg        --w-o6                        0.1      0.1    0.1        dflt  yes    TRAINS                                                                                                                                                                                                                                                 
+[v6] o11_cf           --w-o11-cf                    0        0      0          dflt  no     OFF_BY_DEFAULT                                                                                                                                                                                                                                         
+[v6] o13_ego          --w-o13-ego                   0        0      0          dflt  no     OFF_BY_DEFAULT                                                                                                                                                                                                                                         
+[v6] o14_fut          --w-o14                       0        0      0          dflt  no     OFF_BY_DEFAULT                                                                                                                                                                                                                                         
+[v6] t1_latent        --w-t1                        1        1      0          dflt  no     OFF_BY_LAYER    layer=for_stage('S-W')                                                                                                                                                                                                                 
+[v6] s1_latent        --w-s1                        1        1      0          dflt  no     OFF_BY_LAYER    layer=for_stage('S-W')                                                                                                                                                                                                                 
+[v6] lambda_plan      --lambda-plan                 0        0      0          dflt  no     OFF_BY_DEFAULT  layer=for_stage('S-W')                                                                                                                                                                                                                 
+[v6] seam_op          (no flag: dataclass default)  1        1      0          dflt  no     OFF_BY_LAYER    layer=for_stage('S-W')                                                                                                                                                                                                                 
+[v6] w_select         --w-select                    0        0      0          dflt  no     OFF_BY_DEFAULT  layer=for_stage('S-W'); missing=--selector none: there is no scorer to train                                                                                                                                                           
+[v6] w_anchor         --w-anchor                    0        0      0          dflt  no     OFF_BY_DEFAULT  layer=for_stage('S-W'); missing=--anchor-goal none: there is no anchor objective                                                                                                                                                       
+[v6] w_s2_goal        --w-s2-goal                   0        0      0          dflt  no     OFF_BY_DEFAULT  layer=for_stage('S-W'); mask=s2_valid (+ g_str_valid/a_str_valid; v7.2 arg L1 is ALL-ZERO masked by V72_ARGS_SUPERVISED=False); missing=no --s2-labels: the CE/L1 has no target                                                        
+[v6] w_t2_contrast    --w-t2-contrast               0        0      0          dflt  no     OFF_BY_DEFAULT  layer=for_stage('S-W'); missing=no --t2-contrastive: the projector is never built                                                                                                                                                      
+[v6] w_t5_consist     --w-t5-consist                0        0      0          dflt  no     OFF_BY_DEFAULT  layer=for_stage('S-W'); missing=no --t5-pairs: windows are drawn INDEPENDENTLY, so the consistency term would compare unrelated episodes                                                                                               
+[v6] w_s1_multi       --w-s1-multi                  0        0      0          dflt  no     OFF_BY_DEFAULT  layer=for_stage('S-W')                                                                                                                                                                                                                 
+[v6] w_tac_label_all  --w-tac-label-all             0        0      0          dflt  no     OFF_BY_DEFAULT  layer=for_stage('S-W'); mask=tac_valid (the record's tactical band) + per-cell tac_goal_w (negatives policy x class mask) + tac_goal_arg_mask (SPEED_BAND v_lo/v_hi only); missing=no --s2-labels: the tactical CE/BCE/L1 has no target
+[v6] o10_psg          --w-o10-psg                   0        0      0          dflt  no     OFF_BY_DEFAULT  mask=psg_valid (per-clip: 1.0 only for clips in the train join); missing=no --psg-labels: the physical-state head has no target                                                                                                        
+[v6] 7/22 terms build a graph. A term with graph=no contributes EXACTLY zero gradient; 'p.grad is None' is the sound check, never the weight value.
+[gradreach] all 80 optimizer tensors received a gradient (1.79 M params, 100.0 % of the declared trainable budget)
+[v6] stage gate INCONCLUSIVE -> C:\Users\Admin\AppData\Local\Temp\pytest-of-Admin\pytest-4083\test_ARM_G_DVB_each_FAILS_nami1\rehearsal_predecessor\fc196a13b13a\stage_gate.json
+[v6] DONE · {"done": true, "run": "v6-staged-S-W", "stage": "S-W", "steps": 1, "resumed_from_step": 0, "out": "C:\\Users\\Admin\\AppData\\Local\\Temp\\pytest-of-Admin\\pytest-4083\\test_ARM_G_DVB_each_FAILS_nami1\\rehearsal_predecessor\\fc196a13b13a", "gate_verdict": "INCONCLUSIVE", "gate": "stage_gate.json", "elapsed_s": 0.3, "param_report": {"total": 2353832, "budget": 300000000, "within_budget": true, "headroom": 297646168, "per_group": {"encoder": 38400, "readout": 264, "predictor_op": 162275, "layer_tac": 265038, "layer_str": 164815, "planner": 134808, "aux": 1588232, "interp": 0}, "trainable": 1785043, "arm": "shared-encoder+adapters", "d_op": 128, "d_tac": 32, "d_str": 16, "_note": "E-ENC decides at MATCHED TOTAL PARAMS \u2014 compare arms on this number, not on per-layer widths", "_evidence_class": "MEASURED (ours; count at instantiation)"}, "residual_head_init_scale": 0.001, "provenance": {"trainer_file": "C:\\Users\\Admin\\v7f_merge\\stack\\scripts\\train_v6_staged.py", "trainer_md5": "725ba4be08ca452fe234f1da52e31259", "git_sha": "unavailable: empty", "git_dirty": false, "git_branch": "", "hostname": "FREEDOM2035", "platform": "Windows 11", "python": "3.13.5", "torch": "2.11.0+cu128", "cuda_runtime": "12.8", "cudnn": "91900", "gpu_name": "no CUDA device", "gpu_capability": "n/a", "device_resolved": "cpu", "omp_num_threads": "6", "torch_num_threads": 6, "bf16_supported": null, "started_at": "2026-09-27T16:44:39.650072+02:00", "started_at_utc": "2026-09-27T14:44:39.650092+00:00", "_read": "trainer_md5 is the identity on a file-shipped machine; git_sha may be stale there (pods have no git credentials).", "_evidence_class": "MEASURED (ours; this process)"}, "next": "NEXT STAGE BLOCKED \u2014 see stage_gate.json", "_evidence_class": "MEASURED (ours)"}
+[v6] autocast: fp32 (autocast=False) — AMP disabled by --no-amp
+[v6] precondition OK: {"stage": "S-T", "precondition": "S-W", "ok": true, "prev_verdict": "INCONCLUSIVE", "override": "allow-inconclusive-gate", "off_reason": "launch-gate REHEARSAL: synthetic tiny S-W predecessor", "prev_gate": "C:\\Users\\Admin\\AppData\\Local\\Temp\\pytest-of-Admin\\pytest-4083\\test_ARM_G_DVB_each_FAILS_nami1\\rehearsal_predecessor\\fc196a13b13a\\stage_gate.json", "prev_not_applicable": []}
+========================================================================
+[v6] ⚠️  GATE OVERRIDE IN FORCE — previous stage verdict INCONCLUSIVE; reason: launch-gate REHEARSAL: synthetic tiny S-W predecessor
+========================================================================
+[v6] launch mode: {"mode": "fresh", "from": null}
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] ⛔ O6 RANK GATE CANNOT RULE AT THESE SETTINGS — it will report INCONCLUSIVE no matter what the representation does.
+[v6]    --spectrum-accum 1 x 6 rows/call -> rank_ceiling 5, but the criterion needs 1024.
+[v6]    USE --spectrum-accum 171 (cost: ~1 MB of CPU ring buffer).
+[v6]    MEASURED 2026-08-22: v6F@20k effective rank 5.86 vs an absolute_floor of 64 — a COLLAPSED representation that this gate would have failed, had it been able to see.
+[v6] params 2.36 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.04, 'readout': 0.0, 'predictor_op': 0.16, 'layer_tac': 0.27, 'layer_str': 0.17, 'planner': 0.14, 'aux': 1.59, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+___ test_ARM_G_DVB_each_FAILS_naming_its_defect[v6_uncovered_flag-needles2] ___
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4083/test_ARM_G_DVB_each_FAILS_nami2')
+arm = 'v6_uncovered_flag', needles = ('--zz-gate-arm-unregistered-lever',)
+
+    @pytest.mark.parametrize("arm,needles", [
+        # the registry reads the BUILT width; the gate's own probe sees the forward break (MEASURED:
+        # the goal embedding is expanded to the declared 1 while the fan holds 8 -> a size mismatch)
+        ("v6_candidates_not_built", ("--n-candidates: declared 1 but BUILT 8",
+                                     "synthetic_batch RAISED")),
+        ("missing_dvb_v6_module", ("declared_vs_built_v6 is not importable",)),
+        ("v6_uncovered_flag", ("--zz-gate-arm-unregistered-lever",)),
+    ])
+    def test_ARM_G_DVB_each_FAILS_naming_its_defect(tmp_path, arm, needles):
+        ctx = _ctx(tmp_path, ST_ARGV, arm=arm)
+        ev = LG.job_model_v6(ctx, ["G-DVB"])["G-DVB"]
+        assert ev["status"] == "FAIL"
+>       assert all(n in _reasons(ev) for n in needles), _reasons(ev)[:800]
+E       AssertionError: the trainer REFUSED this argv while building: [v6] ⛔ --init-from C:\Users\Admin\AppData\Local\Temp\pytest-of-Admin\pytest-4083\test_ARM_G_DVB_each_FAILS_nami2\rehearsal_predecessor\268fae4e701b\ckpt.pt is not a valid predecessor for stage 'S-T'.
+E           missing (NOT introducible at this stage): ['nav.arg_proj.bias', 'nav.arg_proj.weight', 'nav.embed.weight', 'nav.gate.operative', 'nav.gate.strategic', 'nav.gate.tactical', 'nav.layer_proj.operative.bias', 'nav.layer_proj.operative.weight']
+E           unexpected (the ckpt has keys this stack does not): []
+E           A stage may introduce only ('cand_score.', 'cond_tac_dyn.', 'prop_diffusion.', 'fallback.', 'agent_slots.', 't2_head.', 'tac_op_port.', 'vmax_tac.') — anything else missing means the two stages were built with DIFFERENT geometry, and loading anyway is h
+E       assert False
+E        +  where False = all(<generator object test_ARM_G_DVB_each_FAILS_naming_its_defect.<locals>.<genexpr> at 0x0000018F3D55F220>)
+
+tests\test_launch_gate_v7f.py:367: AssertionError
+---------------------------- Captured stdout call -----------------------------
+[v6] autocast: fp32 (autocast=False) — AMP disabled by --no-amp
+[v6] precondition OK: {"stage": "S-W", "precondition": null, "ok": true, "reason": "S-W starts the ladder"}
+[v6] launch mode: {"mode": "fresh", "from": null}
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] ⛔ O6 RANK GATE CANNOT RULE AT THESE SETTINGS — it will report INCONCLUSIVE no matter what the representation does.
+[v6]    --spectrum-accum 1 x 6 rows/call -> rank_ceiling 5, but the criterion needs 1024.
+[v6]    USE --spectrum-accum 171 (cost: ~1 MB of CPU ring buffer).
+[v6]    MEASURED 2026-08-22: v6F@20k effective rank 5.86 vs an absolute_floor of 64 — a COLLAPSED representation that this gate would have failed, had it been able to see.
+[v6] params 2.35 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.04, 'readout': 0.0, 'predictor_op': 0.16, 'layer_tac': 0.27, 'layer_str': 0.16, 'planner': 0.13, 'aux': 1.59, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+[v6] declared-freeze preflight OK (train): 0 frozen-external + 1 grad-unreachable subtree(s); directions A/A'/B checked
+[v6] stage S-W: trainable 1.79 M / frozen 0.57 M · groups ['aux', 'encoder', 'predictor_op', 'readout']
+[geometry] train_v6_staged: NON-DEFAULT - 64x128px, f_ref 61.12, cylindrical, HFOV 120.00deg / VFOV 55.27deg, tokens 32 (4x8 @ patch 16), state_dim 2048, cache fragment {'geom': '64x128f61.1155cyl'}
+[geometry] WARNING: this frame (120.00deg) EXCEEDS comma2k19's entire field (65.203deg). comma2k19 cannot supply it at any resolution — it must be letterboxed (geometry_mode='rectify', explicit unobserved mask), given its own frame, or dropped from the mix. That is a PI decision, not a default.
+[v6] windowing: window 3 + max_horizon 20 (v4's plan says 20; v6 sets its own). ⚠️ a LONGER horizon yields FEWER windows per episode — episode selection (parity) is untouched, the window count is not.
+[v6] eval-exclusion clean: cache 0 clips · v7.2 EVAL 147 label records · overlap 0 · REMOVED 0 · 3 training episodes remain [--exclude-eval-clips auto · source C:\Users\Admin\v7f_merge\stack\tanitad\data\v72_eval_clip_digests.json]
+[v6] train 3 eps / 192 windows
+[v6] O4: scoring 192 windows by ego-kinematic saliency (label-free, ACTIONS ONLY) ...
+[v6] O4 {"o4_n": 192, "o4_alpha": 1.0, "o4_floor": 0.25, "o4_saliency_quantiles": [0.02726, 0.1422, 0.279, 0.29689, 0.29716], "o4_weight_max_over_min": 1.973490834236145, "o4_span_steps": 23}
+[v6] EFFECTIVE WEIGHTS (--stage S-W) -- default -> layer -> effective -> builds a graph?
+[v6] term             flag                          default  asked  effective  src   graph  status          layer/mask/missing                                                                                                                                                                                                                     
+[v6] ---------------  ----------------------------  -------  -----  ---------  ----  -----  --------------  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[v6] o1_ctrl          --w-o1-ctrl                   1        1      1          dflt  yes    TRAINS                                                                                                                                                                                                                                                 
+[v6] o1_fact          --w-o1-fact                   1        1      1          dflt  yes    TRAINS                                                                                                                                                                                                                                                 
+[v6] o1_scene         --w-o1-scene                  0.3      0.3    0.3        dflt  yes    TRAINS                                                                                                                                                                                                                                                 
+[v6] o2_nearfield     --w-o2                        1        1      1          dflt  yes    TRAINS                                                                                                                                                                                                                                                 
+[v6] o3_masked        --w-o3                        1        1      1          dflt  yes    TRAINS                                                                                                                                                                                                                                                 
+[v6] o5_rollout       --w-o5                        1        1      1          dflt  yes    TRAINS                                                                                                                                                                                                                                                 
+[v6] o6_sigreg        --w-o6                        0.1      0.1    0.1        dflt  yes    TRAINS                                                                                                                                                                                                                                                 
+[v6] o11_cf           --w-o11-cf                    0        0      0          dflt  no     OFF_BY_DEFAULT                                                                                                                                                                                                                                         
+[v6] o13_ego          --w-o13-ego                   0        0      0          dflt  no     OFF_BY_DEFAULT                                                                                                                                                                                                                                         
+[v6] o14_fut          --w-o14                       0        0      0          dflt  no     OFF_BY_DEFAULT                                                                                                                                                                                                                                         
+[v6] t1_latent        --w-t1                        1        1      0          dflt  no     OFF_BY_LAYER    layer=for_stage('S-W')                                                                                                                                                                                                                 
+[v6] s1_latent        --w-s1                        1        1      0          dflt  no     OFF_BY_LAYER    layer=for_stage('S-W')                                                                                                                                                                                                                 
+[v6] lambda_plan      --lambda-plan                 0        0      0          dflt  no     OFF_BY_DEFAULT  layer=for_stage('S-W')                                                                                                                                                                                                                 
+[v6] seam_op          (no flag: dataclass default)  1        1      0          dflt  no     OFF_BY_LAYER    layer=for_stage('S-W')                                                                                                                                                                                                                 
+[v6] w_select         --w-select                    0        0      0          dflt  no     OFF_BY_DEFAULT  layer=for_stage('S-W'); missing=--selector none: there is no scorer to train                                                                                                                                                           
+[v6] w_anchor         --w-anchor                    0        0      0          dflt  no     OFF_BY_DEFAULT  layer=for_stage('S-W'); missing=--anchor-goal none: there is no anchor objective                                                                                                                                                       
+[v6] w_s2_goal        --w-s2-goal                   0        0      0          dflt  no     OFF_BY_DEFAULT  layer=for_stage('S-W'); mask=s2_valid (+ g_str_valid/a_str_valid; v7.2 arg L1 is ALL-ZERO masked by V72_ARGS_SUPERVISED=False); missing=no --s2-labels: the CE/L1 has no target                                                        
+[v6] w_t2_contrast    --w-t2-contrast               0        0      0          dflt  no     OFF_BY_DEFAULT  layer=for_stage('S-W'); missing=no --t2-contrastive: the projector is never built                                                                                                                                                      
+[v6] w_t5_consist     --w-t5-consist                0        0      0          dflt  no     OFF_BY_DEFAULT  layer=for_stage('S-W'); missing=no --t5-pairs: windows are drawn INDEPENDENTLY, so the consistency term would compare unrelated episodes                                                                                               
+[v6] w_s1_multi       --w-s1-multi                  0        0      0          dflt  no     OFF_BY_DEFAULT  layer=for_stage('S-W')                                                                                                                                                                                                                 
+[v6] w_tac_label_all  --w-tac-label-all             0        0      0          dflt  no     OFF_BY_DEFAULT  layer=for_stage('S-W'); mask=tac_valid (the record's tactical band) + per-cell tac_goal_w (negatives policy x class mask) + tac_goal_arg_mask (SPEED_BAND v_lo/v_hi only); missing=no --s2-labels: the tactical CE/BCE/L1 has no target
+[v6] o10_psg          --w-o10-psg                   0        0      0          dflt  no     OFF_BY_DEFAULT  mask=psg_valid (per-clip: 1.0 only for clips in the train join); missing=no --psg-labels: the physical-state head has no target                                                                                                        
+[v6] 7/22 terms build a graph. A term with graph=no contributes EXACTLY zero gradient; 'p.grad is None' is the sound check, never the weight value.
+[gradreach] all 80 optimizer tensors received a gradient (1.79 M params, 100.0 % of the declared trainable budget)
+[v6] stage gate INCONCLUSIVE -> C:\Users\Admin\AppData\Local\Temp\pytest-of-Admin\pytest-4083\test_ARM_G_DVB_each_FAILS_nami2\rehearsal_predecessor\268fae4e701b\stage_gate.json
+[v6] DONE · {"done": true, "run": "v6-staged-S-W", "stage": "S-W", "steps": 1, "resumed_from_step": 0, "out": "C:\\Users\\Admin\\AppData\\Local\\Temp\\pytest-of-Admin\\pytest-4083\\test_ARM_G_DVB_each_FAILS_nami2\\rehearsal_predecessor\\268fae4e701b", "gate_verdict": "INCONCLUSIVE", "gate": "stage_gate.json", "elapsed_s": 0.3, "param_report": {"total": 2353832, "budget": 300000000, "within_budget": true, "headroom": 297646168, "per_group": {"encoder": 38400, "readout": 264, "predictor_op": 162275, "layer_tac": 265038, "layer_str": 164815, "planner": 134808, "aux": 1588232, "interp": 0}, "trainable": 1785043, "arm": "shared-encoder+adapters", "d_op": 128, "d_tac": 32, "d_str": 16, "_note": "E-ENC decides at MATCHED TOTAL PARAMS \u2014 compare arms on this number, not on per-layer widths", "_evidence_class": "MEASURED (ours; count at instantiation)"}, "residual_head_init_scale": 0.001, "provenance": {"trainer_file": "C:\\Users\\Admin\\v7f_merge\\stack\\scripts\\train_v6_staged.py", "trainer_md5": "725ba4be08ca452fe234f1da52e31259", "git_sha": "unavailable: empty", "git_dirty": false, "git_branch": "", "hostname": "FREEDOM2035", "platform": "Windows 11", "python": "3.13.5", "torch": "2.11.0+cu128", "cuda_runtime": "12.8", "cudnn": "91900", "gpu_name": "no CUDA device", "gpu_capability": "n/a", "device_resolved": "cpu", "omp_num_threads": "6", "torch_num_threads": 6, "bf16_supported": null, "started_at": "2026-09-27T16:44:40.225881+02:00", "started_at_utc": "2026-09-27T14:44:40.225909+00:00", "_read": "trainer_md5 is the identity on a file-shipped machine; git_sha may be stale there (pods have no git credentials).", "_evidence_class": "MEASURED (ours; this process)"}, "next": "NEXT STAGE BLOCKED \u2014 see stage_gate.json", "_evidence_class": "MEASURED (ours)"}
+[v6] autocast: fp32 (autocast=False) — AMP disabled by --no-amp
+[v6] precondition OK: {"stage": "S-T", "precondition": "S-W", "ok": true, "prev_verdict": "INCONCLUSIVE", "override": "allow-inconclusive-gate", "off_reason": "launch-gate REHEARSAL: synthetic tiny S-W predecessor", "prev_gate": "C:\\Users\\Admin\\AppData\\Local\\Temp\\pytest-of-Admin\\pytest-4083\\test_ARM_G_DVB_each_FAILS_nami2\\rehearsal_predecessor\\268fae4e701b\\stage_gate.json", "prev_not_applicable": []}
+========================================================================
+[v6] ⚠️  GATE OVERRIDE IN FORCE — previous stage verdict INCONCLUSIVE; reason: launch-gate REHEARSAL: synthetic tiny S-W predecessor
+========================================================================
+[v6] launch mode: {"mode": "fresh", "from": null}
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] ⛔ O6 RANK GATE CANNOT RULE AT THESE SETTINGS — it will report INCONCLUSIVE no matter what the representation does.
+[v6]    --spectrum-accum 1 x 6 rows/call -> rank_ceiling 5, but the criterion needs 1024.
+[v6]    USE --spectrum-accum 171 (cost: ~1 MB of CPU ring buffer).
+[v6]    MEASURED 2026-08-22: v6F@20k effective rank 5.86 vs an absolute_floor of 64 — a COLLAPSED representation that this gate would have failed, had it been able to see.
+[v6] params 2.36 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.04, 'readout': 0.0, 'predictor_op': 0.16, 'layer_tac': 0.27, 'layer_str': 0.17, 'planner': 0.14, 'aux': 1.59, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+_____________ test_ARM_v6_loader_drops_vocab_version_FAILS_G_EVAL _____________
+
+st_positive = (Ctx(profile='v7f', tree='C:\\Users\\Admin\\v7f_merge', commit='7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f', argv=['--st... ...}, 'G-DVB': {'schema': 'tanitad.launch_gate/1', 'kind': 'evidence', 'check': 'G-DVB', 'status': 'FAIL', ...}, ...})
+
+    def test_ARM_v6_loader_drops_vocab_version_FAILS_G_EVAL(st_positive):
+        ctx0, _evs = st_positive
+        ctx = _ctx(Path(ctx0.out_dir), ST_ARGV, arm="v6_loader_drops_vocab_version")
+        ev = LG.job_model_v6(ctx, ["G-EVAL"])["G-EVAL"]
+>       assert ev["status"] == "FAIL" and "eval loader FAILED to rebuild" in _reasons(ev)
+E       AssertionError: assert ('FAIL' == 'FAIL'
+E         
+E           FAIL and 'eval loader FAILED to rebuild' in 'the trainer REFUSED this argv while building: [v6] ⛔ --init-from C:\\Users\\Admin\\AppData\\Local\\Temp\\pytest-of-Ad...metry, and loading anyway is how a stage ends up training on a randomly-initialised trunk while its log looks healthy.')
+E        +  where 'the trainer REFUSED this argv while building: [v6] ⛔ --init-from C:\\Users\\Admin\\AppData\\Local\\Temp\\pytest-of-Ad...metry, and loading anyway is how a stage ends up training on a randomly-initialised trunk while its log looks healthy.' = _reasons({'schema': 'tanitad.launch_gate/1', 'kind': 'evidence', 'check': 'G-EVAL', 'status': 'FAIL', ...})
+
+tests\test_launch_gate_v7f.py:374: AssertionError
+---------------------------- Captured stdout call -----------------------------
+[v6] autocast: fp32 (autocast=False) — AMP disabled by --no-amp
+[v6] precondition OK: {"stage": "S-T", "precondition": "S-W", "ok": true, "prev_verdict": "INCONCLUSIVE", "override": "allow-inconclusive-gate", "off_reason": "launch-gate REHEARSAL: synthetic tiny S-W predecessor", "prev_gate": "C:\\Users\\Admin\\AppData\\Local\\Temp\\pytest-of-Admin\\pytest-4083\\v7f_st_pos0\\rehearsal_predecessor\\8e835941d4ed\\stage_gate.json", "prev_not_applicable": []}
+========================================================================
+[v6] ⚠️  GATE OVERRIDE IN FORCE — previous stage verdict INCONCLUSIVE; reason: launch-gate REHEARSAL: synthetic tiny S-W predecessor
+========================================================================
+[v6] launch mode: {"mode": "fresh", "from": null}
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] ⛔ O6 RANK GATE CANNOT RULE AT THESE SETTINGS — it will report INCONCLUSIVE no matter what the representation does.
+[v6]    --spectrum-accum 1 x 6 rows/call -> rank_ceiling 5, but the criterion needs 1024.
+[v6]    USE --spectrum-accum 171 (cost: ~1 MB of CPU ring buffer).
+[v6]    MEASURED 2026-08-22: v6F@20k effective rank 5.86 vs an absolute_floor of 64 — a COLLAPSED representation that this gate would have failed, had it been able to see.
+[v6] params 2.36 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.04, 'readout': 0.0, 'predictor_op': 0.16, 'layer_tac': 0.27, 'layer_str': 0.17, 'planner': 0.14, 'aux': 1.59, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+============================== warnings summary ===============================
+tests/test_launch_gate_v7f.py::test_positive_G_LIVE_passes_with_R6_bit_identity_on_every_layer_str_tensor
+tests/test_launch_gate_v7f.py::test_ARM_v6_resume_drops_opt_FAILS_G_CKPT_on_the_optimizer
+  C:\Users\Admin\v7f_merge\stack\scripts\train_v6_staged.py:7947: UserWarning: Detected call of `lr_scheduler.step()` before `optimizer.step()`. In PyTorch 1.1.0 and later, you should call them in the opposite order: `optimizer.step()` before `lr_scheduler.step()`.  Failure to do this will result in PyTorch skipping the first value of the learning rate schedule. See more details at https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
+    sched.step()                       # replay the LR schedule
+
+tests/test_v7f_r1r4.py::test_R4_port_is_zero_init_planner_grouped_and_introduced_at_S_T
+  C:\Users\Admin\v7f_merge\stack\tests\test_v7f_r1r4.py:271: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    assert float(p.weight.abs().sum()) == 0.0 and float(p.bias.abs().sum()) == 0.0
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_launch_gate_v7f.py::test_dvb_v6_the_nav_reader_reads_the_BUILT_stack_both_ways
+FAILED tests/test_launch_gate_v7f.py::test_dvb_v6_the_TRAINER_side_checks_are_unchanged_by_the_gate_entries
+FAILED tests/test_launch_gate_v7f.py::test_positive_G_EVAL_passes_and_its_controls_are_live
+FAILED tests/test_launch_gate_v7f.py::test_positive_G_DVB_names_nav_declared_but_not_built_and_nothing_else
+FAILED tests/test_launch_gate_v7f.py::test_positive_G_HYG_names_the_open_config_classes_and_nothing_else
+FAILED tests/test_launch_gate_v7f.py::test_ARM_v6_undeclared_attribute_FAILS_G_HYG_by_name
+FAILED tests/test_launch_gate_v7f.py::test_ARM_G_DVB_each_FAILS_naming_its_defect[v6_candidates_not_built-needles0]
+FAILED tests/test_launch_gate_v7f.py::test_ARM_G_DVB_each_FAILS_naming_its_defect[missing_dvb_v6_module-needles1]
+FAILED tests/test_launch_gate_v7f.py::test_ARM_G_DVB_each_FAILS_naming_its_defect[v6_uncovered_flag-needles2]
+FAILED tests/test_launch_gate_v7f.py::test_ARM_v6_loader_drops_vocab_version_FAILS_G_EVAL
+10 failed, 223 passed, 3 warnings in 67.66s (0:01:07)

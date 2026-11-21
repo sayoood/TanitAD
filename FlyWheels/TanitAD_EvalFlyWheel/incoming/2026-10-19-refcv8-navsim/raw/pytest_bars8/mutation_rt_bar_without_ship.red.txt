@@ -1,0 +1,14 @@
+.........................................F...............                [100%]
+================================== FAILURES ===================================
+________________ test_rt_carries_no_bar_unless_ship_r8_passed _________________
+
+    def test_rt_carries_no_bar_unless_ship_r8_passed():
+        r = ev({"R8_LEGAL": 0.6, "R8_LEGAL_s1": 0.6, "STOP": 0.5, B.R7_ARM: 0.55, "R8_RT": 0.7}, meta={**ELIGIBLE, "rt_table_sha256": GOOD_SHA})
+>       assert r["bars"]["R8_RT"]["verdict"].startswith("NO_BAR")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'verdict'
+
+tests\test_navsim_bars8.py:266: KeyError
+=========================== short test summary info ===========================
+FAILED tests/test_navsim_bars8.py::test_rt_carries_no_bar_unless_ship_r8_passed
+1 failed, 56 passed, 2 deselected in 32.18s

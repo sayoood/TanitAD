@@ -1,0 +1,10 @@
+@echo off
+rem TF-N6 chain launch (DRAFT). Fill <CARD_SHA256>; PINS_SHA256 = 69bc1d735af902cc35df4b803cc38a7676a50eee46fa6d8d6775483977248b0f, the template pins as built 2026-11-13 (re-pin if any pinned file changed).
+rem Launch detached through Win32_Process Create (CreateFlags 0x08000200); never from an agent shell.
+rem The frozen card goes to C:\Users\Admin\n6nt\run\n6\PREREG_TF_N6.md; the ledger (banked ledger + the TF-N6 n = 49 entry) to C:\Users\Admin\n6nt\run\inputs\ledger_K.json.
+rem Run tree on C: (NTFS, ~6.5 GB free at build time) hence --min-free-gb 5; with a copy on F: (>= 21 GB free) use F: paths and drop --min-free-gb.
+set "CUDA_VISIBLE_DEVICES=-1"
+set "PYTHONIOENCODING=utf-8"
+set "PYTHONDONTWRITEBYTECODE=1"
+cd /d C:\Users\Admin\n6nt\run
+C:\Users\Admin\navsim-crun\venv\Scripts\python.exe C:/Users/Admin/n6nt/run/n6/n6_nt_chain.py --run-dir C:/Users/Admin/n6nt/run --card C:/Users/Admin/n6nt/run/n6/PREREG_TF_N6.md --card-sha256 <CARD_SHA256> --pins-sha256 69bc1d735af902cc35df4b803cc38a7676a50eee46fa6d8d6775483977248b0f --ledger C:/Users/Admin/n6nt/run/inputs/ledger_K.json --k 49 --procs 2 --min-free-gb 5 >> C:\Users\Admin\n6nt\run\n6run\chain.log 2>&1 < NUL

@@ -1,0 +1,290 @@
+{
+ "tree": "/home/nvidia/bx_1600/tree_tip",
+ "has_A17": false,
+ "const_lr": false,
+ "steps": 1200,
+ "platform": {
+  "machine": "aarch64",
+  "torch": "2.13.0+cu130",
+  "threads": 1,
+  "blas": [
+   "- Build settings: BLAS_INFO=nvpl, BUILD_TYPE=Release, COMMIT_SHA=cf30153c4c131c8164ee7798e5022d810682e2cb, CUDA_FLAGS= -DLIBCUDACXX_ENABLE_SIMPLIFIED_COMPLEX_OPERATIONS -Xfatbin -compress-all -DONNX_NAMESPACE=onnx_torch -gencode arch=compute_80,code=sm_80 -gencode arch=compute_90,code=sm_90 -gencode arch=compute_100,code=sm_100 -gencode arch=compute_110,code=sm_110 -gencode arch=compute_120,code=sm_120 -Xcudafe --diag_suppress=cc_clobber_ignored,--diag_suppress=field_without_dll_interface,--diag_suppress=base_class_has_different_dll_interface,--diag_suppress=dll_interface_conflict_none_assumed,--diag_suppress=dll_interface_conflict_dllexport_assumed,--diag_suppress=bad_friend_decl --expt-relaxed-constexpr --expt-extended-lambda -Xfatbin -compress-all --threads 2 -compress-mode=size -Wno-deprecated-gpu-targets --expt-extended-lambda -DCUB_WRAPPED_NAMESPACE=at_cuda_detail -DDISABLE_CUSPARSE_DEPRECATED -DCUDA_HAS_FP16=1 -D__CUDA_NO_HALF_OPERATORS__ -D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_HALF2_OPERATORS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ -DC10_NODEPRECATED, CUDA_VERSION=13.0, CUDNN_VERSION=9.20.0, CXX_COMPILER=/opt/rh/gcc-toolset-13/root/usr/bin/c++, CXX_FLAGS= -ffunction-sections -fdata-sections -fvisibility-inlines-hidden -DUSE_PTHREADPOOL -DNDEBUG -DUSE_KINETO -DHAS_CUPTI -DUSE_FBGEMM -DUSE_MSLK -DUSE_PYTORCH_QNNPACK -DAT_BUILD_ARM_VEC256_WITH_SLEEF -DSYMBOLICATE_MOBILE_DEBUG_HANDLE -O2 -fPIC -DC10_NODEPRECATED -Wall -Wextra -Werror=return-type -Werror=non-virtual-dtor -Werror=range-loop-construct -Werror=bool-operation -Wnarrowing -Wno-missing-field-initializers -Wno-unknown-pragmas -Wno-unused-parameter -Wno-strict-overflow -Wno-strict-aliasing -Wno-stringop-overflow -Wsuggest-override -Wno-psabi -Wno-error=old-style-cast -faligned-new -Wno-maybe-uninitialized -fno-omit-frame-pointer -fno-math-errno -fno-trapping-math -Werror=format -Wno-dangling-reference -Wno-error=dangling-reference -Wno-stringop-overflow, LAPACK_INFO=nvpl, TORCH_VERSION=2.13.0, USE_CUDA=1, USE_CUDNN=ON, USE_CUSPARSELT=1, USE_GFLAGS=OFF, USE_GLOG=OFF, USE_GLOO=ON, USE_MKLDNN=1, USE_MPI=OFF, USE_NCCL=ON, USE_NNPACK=ON, USE_OPENMP=ON, USE_ROCM=OFF, USE_ROCM_KERNEL_ASSERT=OFF, USE_XCCL=OFF, USE_XPU=OFF,"
+  ]
+ },
+ "runs": [
+  {
+   "seed": 0,
+   "arm": "main",
+   "verdict": "FAIL",
+   "rows": [
+    {
+     "step": 0,
+     "ap2m": 0.0,
+     "prec": NaN,
+     "rec": 0.0,
+     "n_conf": 0.0,
+     "centre_p50_m": 23.962855339050293,
+     "presence": 1.3737150430679321
+    },
+    {
+     "step": 100,
+     "ap2m": 0.006652336860670194,
+     "prec": 0.07692307692307693,
+     "rec": 0.0625,
+     "n_conf": 39.0,
+     "centre_p50_m": 6.98660683631897,
+     "presence": 0.037404950708150864,
+     "loss_mean_since_last": 54.35660085678101
+    },
+    {
+     "step": 200,
+     "ap2m": 0.024190972508661937,
+     "prec": 0.14583333333333334,
+     "rec": 0.14583333333333334,
+     "n_conf": 48.0,
+     "centre_p50_m": 6.089618444442749,
+     "presence": 0.0038806654047220945,
+     "loss_mean_since_last": 20.161434965133665
+    },
+    {
+     "step": 300,
+     "ap2m": 0.022572051217884553,
+     "prec": 0.14583333333333334,
+     "rec": 0.14583333333333334,
+     "n_conf": 48.0,
+     "centre_p50_m": 4.7581517696380615,
+     "presence": 0.0017950491746887565,
+     "loss_mean_since_last": 13.423212943077088
+    },
+    {
+     "step": 400,
+     "ap2m": 0.08675185076087018,
+     "prec": 0.2708333333333333,
+     "rec": 0.2708333333333333,
+     "n_conf": 48.0,
+     "centre_p50_m": 2.6564486026763916,
+     "presence": 0.0011374074965715408,
+     "loss_mean_since_last": 10.41615339756012
+    },
+    {
+     "step": 500,
+     "ap2m": 0.22929494806863077,
+     "prec": 0.4791666666666667,
+     "rec": 0.4791666666666667,
+     "n_conf": 48.0,
+     "centre_p50_m": 2.197898268699646,
+     "presence": 0.0008209638181142509,
+     "loss_mean_since_last": 8.345374202728271
+    },
+    {
+     "step": 600,
+     "ap2m": 0.7263340587615797,
+     "prec": 0.7916666666666666,
+     "rec": 0.7916666666666666,
+     "n_conf": 48.0,
+     "centre_p50_m": 1.3914541006088257,
+     "presence": 0.0005838435026817024,
+     "loss_mean_since_last": 6.335535938739777
+    },
+    {
+     "step": 700,
+     "ap2m": 0.6021152305106887,
+     "prec": 0.7291666666666666,
+     "rec": 0.7291666666666666,
+     "n_conf": 48.0,
+     "centre_p50_m": 1.5138626098632812,
+     "presence": 0.0004976796335540712,
+     "loss_mean_since_last": 6.438012533187866
+    },
+    {
+     "step": 800,
+     "ap2m": 1.0,
+     "prec": 1.0,
+     "rec": 1.0,
+     "n_conf": 48.0,
+     "centre_p50_m": 0.49800553917884827,
+     "presence": 0.0003926848585251719,
+     "loss_mean_since_last": 4.672415721416473
+    },
+    {
+     "step": 900,
+     "ap2m": 0.6375142787966539,
+     "prec": 0.75,
+     "rec": 0.75,
+     "n_conf": 48.0,
+     "centre_p50_m": 1.2069918513298035,
+     "presence": 0.00032355249277316034,
+     "loss_mean_since_last": 4.301564908027649
+    },
+    {
+     "step": 1000,
+     "ap2m": 0.6060541821843335,
+     "prec": 0.7708333333333334,
+     "rec": 0.7708333333333334,
+     "n_conf": 48.0,
+     "centre_p50_m": 1.1029061079025269,
+     "presence": 0.0003004648315254599,
+     "loss_mean_since_last": 4.950385503768921
+    },
+    {
+     "step": 1100,
+     "ap2m": 0.11843595247418162,
+     "prec": 0.3541666666666667,
+     "rec": 0.3541666666666667,
+     "n_conf": 48.0,
+     "centre_p50_m": 2.7987513542175293,
+     "presence": 0.00028433281113393605,
+     "loss_mean_since_last": 6.535346148014068
+    },
+    {
+     "step": 1200,
+     "ap2m": 0.14504446323251147,
+     "prec": 0.2708333333333333,
+     "rec": 0.2708333333333333,
+     "n_conf": 48.0,
+     "centre_p50_m": 2.6337541341781616,
+     "presence": 0.0002467590384185314,
+     "loss_mean_since_last": 4.788045177459717
+    }
+   ],
+   "wall_s": 30.3
+  },
+  {
+   "seed": 0,
+   "arm": "memory_zeros",
+   "verdict": "failed as required",
+   "rows": [
+    {
+     "step": 0,
+     "ap2m": 0.0,
+     "prec": NaN,
+     "rec": 0.0,
+     "n_conf": 0.0,
+     "centre_p50_m": 21.414362907409668,
+     "presence": 1.4054255485534668
+    },
+    {
+     "step": 100,
+     "ap2m": 0.0,
+     "prec": 0.0,
+     "rec": 0.0,
+     "n_conf": 48.0,
+     "centre_p50_m": 8.29311466217041,
+     "presence": 0.031323716044425964,
+     "loss_mean_since_last": 63.35681224822998
+    },
+    {
+     "step": 200,
+     "ap2m": 0.005208333333333333,
+     "prec": 0.020833333333333332,
+     "rec": 0.020833333333333332,
+     "n_conf": 48.0,
+     "centre_p50_m": 7.875112771987915,
+     "presence": 0.004227411467581987,
+     "loss_mean_since_last": 43.03515174865723
+    },
+    {
+     "step": 300,
+     "ap2m": 0.0032996894409937885,
+     "prec": 0.041666666666666664,
+     "rec": 0.041666666666666664,
+     "n_conf": 48.0,
+     "centre_p50_m": 7.502127647399902,
+     "presence": 0.0017773662693798542,
+     "loss_mean_since_last": 40.3478737449646
+    },
+    {
+     "step": 400,
+     "ap2m": 0.014194921083742635,
+     "prec": 0.125,
+     "rec": 0.125,
+     "n_conf": 48.0,
+     "centre_p50_m": 7.23645544052124,
+     "presence": 0.0012744506821036339,
+     "loss_mean_since_last": 41.45899225234985
+    },
+    {
+     "step": 500,
+     "ap2m": 0.006810897435897436,
+     "prec": 0.041666666666666664,
+     "rec": 0.041666666666666664,
+     "n_conf": 48.0,
+     "centre_p50_m": 7.372387409210205,
+     "presence": 0.0008567049517296255,
+     "loss_mean_since_last": 40.4495876121521
+    },
+    {
+     "step": 600,
+     "ap2m": 0.007011798697370385,
+     "prec": 0.08333333333333333,
+     "rec": 0.08333333333333333,
+     "n_conf": 48.0,
+     "centre_p50_m": 7.901734828948975,
+     "presence": 0.0006068114307709038,
+     "loss_mean_since_last": 39.9742889213562
+    },
+    {
+     "step": 700,
+     "ap2m": 0.006094248044045205,
+     "prec": 0.0625,
+     "rec": 0.0625,
+     "n_conf": 48.0,
+     "centre_p50_m": 7.060368537902832,
+     "presence": 0.0004886954557150602,
+     "loss_mean_since_last": 39.90487651824951
+    },
+    {
+     "step": 800,
+     "ap2m": 0.0098144861392833,
+     "prec": 0.0625,
+     "rec": 0.0625,
+     "n_conf": 48.0,
+     "centre_p50_m": 8.09261679649353,
+     "presence": 0.0003901490999851376,
+     "loss_mean_since_last": 39.29087081909179
+    },
+    {
+     "step": 900,
+     "ap2m": 0.01136072863947317,
+     "prec": 0.10416666666666667,
+     "rec": 0.10416666666666667,
+     "n_conf": 48.0,
+     "centre_p50_m": 8.681025981903076,
+     "presence": 0.0003479437145870179,
+     "loss_mean_since_last": 39.99643033981323
+    },
+    {
+     "step": 1000,
+     "ap2m": 0.0007183908045977011,
+     "prec": 0.020833333333333332,
+     "rec": 0.020833333333333332,
+     "n_conf": 48.0,
+     "centre_p50_m": 6.669066429138184,
+     "presence": 0.0003278670192230493,
+     "loss_mean_since_last": 39.79411952972412
+    },
+    {
+     "step": 1100,
+     "ap2m": 0.02635327635327635,
+     "prec": 0.0625,
+     "rec": 0.0625,
+     "n_conf": 48.0,
+     "centre_p50_m": 7.145762205123901,
+     "presence": 0.0003231876471545547,
+     "loss_mean_since_last": 40.06114889144897
+    },
+    {
+     "step": 1200,
+     "ap2m": 0.012532678679457263,
+     "prec": 0.08333333333333333,
+     "rec": 0.08333333333333333,
+     "n_conf": 48.0,
+     "centre_p50_m": 7.490671634674072,
+     "presence": 0.00029648453346453607,
+     "loss_mean_since_last": 39.548903732299806
+    }
+   ],
+   "wall_s": 27.6
+  }
+ ]
+}

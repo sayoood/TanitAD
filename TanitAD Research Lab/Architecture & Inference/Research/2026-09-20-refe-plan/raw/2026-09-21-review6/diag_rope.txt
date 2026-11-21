@@ -1,0 +1,27 @@
+checkpoint loaded: 186 target tensors, 0 unconsumed, 0 target tensors missing
+grid 8x16 = 128 patches, head dim 64
+
+ANGLE SPAN (highest-frequency channel, before wrapping):
+  reference  y in [-5.498, +5.498]  x in [-5.890, +5.890]   (span 10.996 / 11.781)
+  REFe       y in [-2.356, +2.356]  x in [-2.749, +2.749]   (span 4.712 / 5.498)
+  cos table  mean |ref - ours| = 0.0000  (a table of cosines lives in [-1,1])
+  ANGLE LAYOUT: reference first half == second half? True    REFe channel 2j == 2j+1? False
+
+PATCH-TOKEN FEATURES of the FROZEN PRETRAINED TRUNK, vs the reference encoding:
+  SELF   (control, must be 0)        rel L2  0.00000   cos  1.00000
+  JITTER (control, must be small)    rel L2  0.00005   cos  1.00000
+  NONE   (no rope at all)            rel L2  0.62108   cos  0.81344
+  OURS   (REFe build_axial_rope)     rel L2  0.00000   cos  1.00000
+
+AND THE SAME QUESTION ON THE ATTENTION LOGITS OF BLOCK 0 (where the encoding enters):
+  ours                               rel L2  0.00000   cos  1.00000
+  none                               rel L2  0.15038   cos  0.99371
+
+  [PASS] OURS matches the reference on patch features
+  [PASS] OURS matches the reference on block-0 attention logits
+  [PASS] CONTROL the SELF comparison is exactly 0
+  [PASS] CONTROL removing rope DOES move the features (the probe is sensitive)
+  [PASS] CONTROL our rotation table equals the reference's
+
+ROPE_MATCHES_REFERENCE
+EXIT=0

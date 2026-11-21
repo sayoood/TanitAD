@@ -1,0 +1,219 @@
+{
+ "seed": 1,
+ "dump_dir": "D:\\refcv7_eval_kit\\battery\\smoke_step1500\\dump_s1",
+ "wall_s": 32.8,
+ "n_windows": 8,
+ "n_episodes": 2,
+ "skipped": 0,
+ "extras": {
+  "n_windows": 8,
+  "keys": [
+   "clip_index",
+   "filter_off.lat_logits_tac",
+   "filter_off.lon_logits_tac",
+   "filter_off.sel_idx",
+   "filter_off.tacv6_goal_conf",
+   "filter_off.tacv6_goal_logits",
+   "filter_off.tacv6_lat_logits",
+   "filter_off.tacv6_lon_logits",
+   "filter_off.traj",
+   "gt_max_speed_6s",
+   "lat_v7",
+   "lon_v7",
+   "nav_flipped.lat_logits_tac",
+   "nav_flipped.lon_logits_tac",
+   "nav_flipped.sel_idx",
+   "nav_flipped.tacv6_goal_conf",
+   "nav_flipped.tacv6_goal_logits",
+   "nav_flipped.tacv6_lat_logits",
+   "nav_flipped.tacv6_lon_logits",
+   "nav_flipped.traj",
+   "nav_shuffled.lat_logits_tac",
+   "nav_shuffled.lon_logits_tac",
+   "nav_shuffled.sel_idx",
+   "nav_shuffled.tacv6_goal_conf",
+   "nav_shuffled.tacv6_goal_logits",
+   "nav_shuffled.tacv6_lat_logits",
+   "nav_shuffled.tacv6_lon_logits",
+   "nav_shuffled.traj",
+   "nav_true.lat_logits_tac",
+   "nav_true.lon_logits_tac",
+   "nav_true.sel_idx",
+   "nav_true.tacv6_goal_conf",
+   "nav_true.tacv6_goal_logits",
+   "nav_true.tacv6_lat_logits",
+   "nav_true.tacv6_lon_logits",
+   "nav_true.traj",
+   "nav_zero.lat_logits_tac",
+   "nav_zero.lon_logits_tac",
+   "nav_zero.sel_idx",
+   "nav_zero.tacv6_goal_conf",
+   "nav_zero.tacv6_goal_logits",
+   "nav_zero.tacv6_lat_logits",
+   "nav_zero.tacv6_lon_logits",
+   "nav_zero.traj",
+   "obey30.n_fan_compliant",
+   "obey30.planned_max_ms",
+   "tac_goal_w",
+   "tac_goal_y",
+   "v0",
+   "v_max_ms",
+   "v_max_valid",
+   "vmax_zero.lat_logits_tac",
+   "vmax_zero.lon_logits_tac",
+   "vmax_zero.sel_idx",
+   "vmax_zero.tacv6_goal_conf",
+   "vmax_zero.tacv6_goal_logits",
+   "vmax_zero.tacv6_lat_logits",
+   "vmax_zero.tacv6_lon_logits",
+   "vmax_zero.traj",
+   "ws"
+  ],
+  "clip_sha12_by_index": {
+   "0": "0dfe63214bc2",
+   "1": "c64f0103aece"
+  },
+  "proxy_calls": 16,
+  "filteroff_calls": 8,
+  "filter_modules": [
+   "AnchoredDiffusionDecoder"
+  ]
+ },
+ "cuda_max_memory_allocated_gib": 3.035,
+ "model_record": {
+  "state_dict": {
+   "strict": true,
+   "missing": [],
+   "unexpected": [],
+   "n_keys": 1131,
+   "n_map_hires_keys": 54,
+   "ckpt_keys": [
+    "data_pos",
+    "opt",
+    "step"
+   ],
+   "step": 1500
+  },
+  "param_breakdown": {
+   "rebuilt": {
+    "core": 90787546,
+    "phi_tac": 2101504,
+    "str_goal_head": 771,
+    "gstr_cond": 66816,
+    "tac_heads": 14364,
+    "tac_latent_proj": 262656,
+    "scorer": 1145,
+    "nav_inject": 50176,
+    "tac_decoder_v6": 2253828,
+    "tac_behaviour_gate_v6": 2574,
+    "total": 100468987
+   },
+   "config_json": {
+    "core": 90787546,
+    "phi_tac": 2101504,
+    "str_goal_head": 771,
+    "gstr_cond": 66816,
+    "tac_heads": 14364,
+    "tac_latent_proj": 262656,
+    "scorer": 1145,
+    "nav_inject": 50176,
+    "tac_decoder_v6": 2253828,
+    "tac_behaviour_gate_v6": 2574,
+    "total": 100468987
+   },
+   "equal": true
+  },
+  "anchor_file_vs_ckpt_buffers": {
+   "core.decoder.anchors": {
+    "shape": [
+     117,
+     8,
+     2
+    ],
+    "max_abs_diff": 0.0
+   },
+   "core.decoder.anchor_controls": {
+    "shape": [
+     117,
+     2
+    ],
+    "max_abs_diff": 0.0
+   }
+  },
+  "trunk_memory_levers_built": {
+   "chunk_ckpt": 8,
+   "frozen_bn": true,
+   "bn_pinned": 104,
+   "relu_out_of_place": 100,
+   "bf16": true,
+   "channels_last": true,
+   "bn_folded": 104,
+   "dedup_frames": true
+  },
+  "departures": [
+   "argv --trunk-compile REMOVED: no Triton on Windows; torch.compile wraps the backbone CALL only -- module tree and state_dict identical (LAUNCH_READINESS_FIXES.md sec. 10b)",
+   "Thor data paths REMAPPED to the eval kit D:\\refcv6_eval_kit for ['--agent-join', '--agent-rig-extrinsics', '--anchors', '--clip-clock-sidecar', '--eval-cache', '--eval-labels', '--join3d', '--map-gt-root', '--map-hires-class-weights', '--nav-compliance-tau-file', '--speed-max-sidecar-v6-eval', '--vis1-sidecar'] (per flag, basename-checked; recorded in argv_remap)",
+   "tactical-goal pos_weight / class mask from config.json tac_goal_stats (the TRAIN split's own constants; train():8483-8497 derives them from the loaded split)"
+  ],
+  "declared_vs_built": {
+   "mismatches": [],
+   "registry_entries": 221
+  }
+ },
+ "window_restriction": {
+  "n_requested": 8,
+  "n_index_before": 23772,
+  "n_index_after": 8,
+  "source": "banked baseline grid (clip, ws), kit clips"
+ },
+ "label_clock": {
+  "rule": "t_now = grid_start_s + (t + w - 1 + n_stack - 1) * dt_s (tanitad/data/clip_clock.py; A16 2026-09-26)",
+  "sidecar": "D:\\refcv6_eval_kit\\data\\refcv6_clip_clock_sidecar.jsonl",
+  "sidecar_rows": 4483,
+  "n_clips": 139,
+  "n_from_sidecar": 136,
+  "n_pose_dt_grid_start_0": 0,
+  "n_nominal_dt_grid_start_0": 3,
+  "raw_offsets": [
+   2
+  ],
+  "dt_s_median": 0.10066662995966351,
+  "dt_s_min": 0.1,
+  "dt_s_max": 0.10100496421012953,
+  "g3": {
+   "g3": "PASS",
+   "split": "eval",
+   "tol_s": 0.05,
+   "n_clips": 139,
+   "n_reads_checked": 408,
+   "worst_abs_err_s": 0.0,
+   "n_unverified_clips": 3,
+   "tactical_scored_on_clips": 136,
+   "tactical_excluded_clips": 3,
+   "tactical_excluded_sids": [
+    1131054092343061790,
+    6479814750558219472,
+    8549884407071846968
+   ],
+   "tactical_excluded_reason": "no MEASURED label clock (absent from the clip-clock sidecar): their tactical targets cannot be shown within tol_s of the truth",
+   "families_on_all_clips": [
+    "longitudinal",
+    "lateral",
+    "strategic"
+   ],
+   "mode": "per-family: TACTICAL on verified clips only (E2(b))",
+   "rule": "t_true = grid_start_s + (t + w - 1 + n_stack - 1) * dt_s (sidecar)",
+   "tactical_excluded_sha12": [
+    "081b986f8888",
+    "2aa810802777",
+    "3db625a5f941"
+   ]
+  }
+ },
+ "requires_grad_state": "loader (all False) -- see G0's requires_grad control",
+ "frame_memo": {
+  "hits": 560,
+  "misses": 80
+ },
+ "device": "cuda"
+}

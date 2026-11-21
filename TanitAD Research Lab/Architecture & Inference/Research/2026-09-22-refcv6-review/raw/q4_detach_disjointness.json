@@ -1,0 +1,153 @@
+{
+ "D1_planner_loss": {
+  "tac_decoder_v6": {
+   "n": 58,
+   "nonzero": 0,
+   "sum_abs": 0.0
+  },
+  "CONTROL_trunk_must_be_nonzero": {
+   "n": 60,
+   "nonzero": 28,
+   "sum_abs": 6582.5180242062
+  },
+  "CONTROL_opdecoder_must_be_nonzero": {
+   "n": 42,
+   "nonzero": 30,
+   "sum_abs": 3786.0342790252
+  },
+  "tac_behaviour_gate_v6": {
+   "n": 1,
+   "nonzero": 0,
+   "sum_abs": 0.0
+  }
+ },
+ "D1_tactical_loss": {
+  "tac_decoder_v6_must_be_nonzero": {
+   "n": 58,
+   "nonzero": 56,
+   "sum_abs": 5173.5757682025
+  },
+  "trunk_R3_backprop_into_trunk": {
+   "n": 60,
+   "nonzero": 28,
+   "sum_abs": 524.3023216948
+  },
+  "perception_branch": {
+   "n": 1,
+   "nonzero": 1,
+   "sum_abs": 0.0061675012
+  }
+ },
+ "D2_grafts": {
+  "decoder_anchor_prior_grafts": {
+   "tac8_lat_to_anchor": {
+    "shape": [
+     20,
+     8
+    ],
+    "weight_all_zero": true,
+    "bias": null
+   },
+   "tac8_lon_to_anchor": {
+    "shape": [
+     20,
+     8
+    ],
+    "weight_all_zero": true,
+    "bias": null
+   },
+   "lat_to_anchor": {
+    "shape": [
+     20,
+     3
+    ],
+    "weight_all_zero": false,
+    "bias": null
+   },
+   "lon_to_anchor": {
+    "shape": [
+     20,
+     3
+    ],
+    "weight_all_zero": true,
+    "bias": null
+   },
+   "route_to_anchor": null,
+   "maneuver_to_anchor": null
+  },
+  "tac_behaviour_gate_v6": {
+   "type": "BehaviourSelectionGate",
+   "params": {
+    "proj.weight": {
+     "shape": [
+      20,
+      22
+     ],
+     "all_zero": true
+    }
+   }
+  },
+  "planner_feeds_keys": [
+   "lat_logprob",
+   "lon_logprob",
+   "valid_behaviour",
+   "valid_conf",
+   "valid_mask"
+  ],
+  "planner_feeds_all_detached": true
+ },
+ "D3_disjointness": {
+  "situation_tokens_in_vocab": [
+   "TRAFFIC_LIGHT_REACT",
+   "TRAFFIC_LIGHT_REACT_GREEN",
+   "TRAFFIC_LIGHT_REACT_RED",
+   "TRAFFIC_LIGHT_REACT_YELLOW",
+   "YIELD"
+  ],
+  "situation_indices": [
+   16,
+   19,
+   17,
+   18,
+   5
+  ],
+  "n_non_situation": 17,
+  "SITUATION_OUTPUT_TOKENS_declared": [
+   "TRAFFIC_LIGHT_REACT",
+   "TRAFFIC_LIGHT_REACT_GREEN",
+   "TRAFFIC_LIGHT_REACT_RED",
+   "TRAFFIC_LIGHT_REACT_YELLOW",
+   "YIELD",
+   "tac_SIT"
+  ],
+  "delta_from_SITUATION_columns": 0.0,
+  "delta_from_ONE_NONSITUATION_column_CONTROL": 0.08534055948257446,
+  "verdict": "SITUATION columns STRUCTURALLY DEAD (0.0) and a non-situation column moves the term"
+ },
+ "D4_provenance_roles": {
+  "goal": [
+   "g_str",
+   "g_tac",
+   "goal_point_tac"
+  ],
+  "inference_inputs_of_goals": [
+   "frames (via pooled_seq/ctx)",
+   "ego_state @ t0 = (v0, a_long, yaw_rate, curvature, keep) \u2014 MEASURED at the last OBSERVED frame (E11')"
+  ],
+  "selection_inputs": [
+   "anchor confidence (the decoder's own)",
+   "tactical lat/lon posterior -> anchor prior (DETACHED, zero-init 8 -> n_anchors)",
+   "valid-behaviour set over the 17 ADMISSIBLE tokens (DETACHED, zero-init; the 5 situation columns are structurally dead)",
+   "nav compliance (PARAMETER-FREE geometric predicate, one zero-init gate)",
+   "max-speed ceiling (ARGMAX FILTER, no parameters)"
+  ],
+  "situation_output": [
+   "TRAFFIC_LIGHT_REACT",
+   "TRAFFIC_LIGHT_REACT_GREEN",
+   "TRAFFIC_LIGHT_REACT_RED",
+   "TRAFFIC_LIGHT_REACT_YELLOW",
+   "YIELD",
+   "tac_SIT"
+  ]
+ }
+}

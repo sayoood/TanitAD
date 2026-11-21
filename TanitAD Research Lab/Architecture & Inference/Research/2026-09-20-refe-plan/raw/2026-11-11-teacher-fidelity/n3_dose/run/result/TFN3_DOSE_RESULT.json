@@ -1,0 +1,834 @@
+{
+ "n_tokens": 469,
+ "n_logs": 13,
+ "dropped_not_in_all_arms": {
+  "R0": 0,
+  "RJ5": 0,
+  "RJ3": 0,
+  "RJ8": 0
+ },
+ "estimator": "paired log-cluster bootstrap, B=10000, seed 20260927, 95% percentile (tfn2_analyze.boot); 'another draw of LOGS' only",
+ "evidence_class": "MEASURED (ours), navtrain held-out, EXPLORATORY; tier T1 NAVSIM v1.1 PDMS non-reactive LQR-tracked; harness cache not used (nuPlan-DB rebuild), contrasts internally consistent",
+ "strategic": "PAUSED (PI 2026-09-19)",
+ "bar": {
+  "A": "CI lower of dPDMS(RJx.R-RJ5.R) > 0",
+  "B": "DAC,NC,C: point delta >= 0 and worse<=better flips",
+  "C": "speed-bias diff <= +0.25 and speed-MAE diff <= +0.15 m/s vs RJ5.R (point values)"
+ },
+ "knob_reach": {
+  "RJ3": {
+   "jerk_values_in_rows": [
+    3.0
+   ],
+   "requested": 3.0,
+   "OK": true
+  },
+  "RJ8": {
+   "jerk_values_in_rows": [
+    8.0
+   ],
+   "requested": 8.0,
+   "OK": true
+  }
+ },
+ "levels": {
+  "R0.C": {
+   "nc": 100.0,
+   "dac": 98.72068230277186,
+   "ep": 90.59132331151221,
+   "ttc": 96.58848614072495,
+   "c": 99.7867803837953,
+   "pdms": 93.87644867901494,
+   "pdms_ci": [
+    93.87644867901494,
+    92.33891087600463,
+    95.38998096517675
+   ]
+  },
+  "R0.R": {
+   "nc": 100.0,
+   "dac": 99.14712153518124,
+   "ep": 90.87810241885073,
+   "ttc": 97.01492537313433,
+   "c": 99.7867803837953,
+   "pdms": 94.42237920614872,
+   "pdms_ci": [
+    94.42237920614872,
+    92.92829191956851,
+    95.95014691674328
+   ]
+  },
+  "RJ5.C": {
+   "nc": 99.7867803837953,
+   "dac": 98.50746268656717,
+   "ep": 92.96650942318523,
+   "ttc": 95.94882729211088,
+   "c": 99.7867803837953,
+   "pdms": 94.43967032646931,
+   "pdms_ci": [
+    94.43967032646931,
+    92.96647327206558,
+    95.96409019892396
+   ]
+  },
+  "RJ5.R": {
+   "nc": 99.7867803837953,
+   "dac": 98.93390191897655,
+   "ep": 93.36648751671902,
+   "ttc": 96.37526652452026,
+   "c": 99.57356076759062,
+   "pdms": 94.99723049515033,
+   "pdms_ci": [
+    94.99723049515033,
+    93.56498434046217,
+    96.57384859075923
+   ]
+  },
+  "RJ3.C": {
+   "nc": 99.7867803837953,
+   "dac": 98.93390191897655,
+   "ep": 93.14536311813374,
+   "ttc": 95.94882729211088,
+   "c": 99.7867803837953,
+   "pdms": 94.76294891827001,
+   "pdms_ci": [
+    94.76294891827001,
+    93.27619325862194,
+    96.07457197841366
+   ]
+  },
+  "RJ3.R": {
+   "nc": 99.7867803837953,
+   "dac": 99.14712153518124,
+   "ep": 93.31935759703298,
+   "ttc": 96.37526652452026,
+   "c": 99.57356076759062,
+   "pdms": 95.10197113806723,
+   "pdms_ci": [
+    95.10197113806723,
+    93.62778884809899,
+    96.5853547356121
+   ]
+  },
+  "RJ8.C": {
+   "nc": 99.7867803837953,
+   "dac": 98.50746268656717,
+   "ep": 92.96650942318523,
+   "ttc": 95.94882729211088,
+   "c": 99.7867803837953,
+   "pdms": 94.43967032646931,
+   "pdms_ci": [
+    94.43967032646931,
+    92.96647327206558,
+    95.96409019892396
+   ]
+  },
+  "RJ8.R": {
+   "nc": 99.7867803837953,
+   "dac": 98.93390191897655,
+   "ep": 93.36648751671902,
+   "ttc": 96.37526652452026,
+   "c": 99.57356076759062,
+   "pdms": 94.99723049515033,
+   "pdms_ci": [
+    94.99723049515033,
+    93.56498434046217,
+    96.57384859075923
+   ]
+  }
+ },
+ "paired": {
+  "RJ3.R_vs_RJ5.R": {
+   "nc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "dac": [
+    0.21321961620469082,
+    0.0,
+    0.5805937766059701
+   ],
+   "ep": [
+    -0.047129919686036435,
+    -0.24124785346470806,
+    0.12802525412475127
+   ],
+   "ttc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "c": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pdms": [
+    0.10474064291688759,
+    -0.10051993894362883,
+    0.38771113543603464
+   ]
+  },
+  "RJ3.R_vs_R0.R": {
+   "nc": [
+    -0.21321961620469082,
+    -0.8,
+    0.0
+   ],
+   "dac": [
+    0.0,
+    -0.6329113924050633,
+    0.5254344249623312
+   ],
+   "ep": [
+    2.4412551781822454,
+    0.9095577057410881,
+    4.038055395548037
+   ],
+   "ttc": [
+    -0.6396588486140725,
+    -1.5717246790475834,
+    0.0
+   ],
+   "c": [
+    -0.21321961620469082,
+    -0.6451612903225806,
+    0.0
+   ],
+   "pdms": [
+    0.6795919319185081,
+    -0.303942089858895,
+    1.7661420870493667
+   ]
+  },
+  "RJ3.C_vs_RJ5.C": {
+   "nc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "dac": [
+    0.42643923240938164,
+    0.0,
+    1.1611875532119402
+   ],
+   "ep": [
+    0.17885369494852352,
+    -0.2314968243999945,
+    0.7189699153752603
+   ],
+   "ttc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "c": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pdms": [
+    0.3232785918006906,
+    -0.09645701016666469,
+    0.9771874244217384
+   ]
+  },
+  "RJ8.R_vs_RJ5.R": {
+   "nc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "dac": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "ep": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "ttc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "c": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pdms": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  "RJ8.R_vs_R0.R": {
+   "nc": [
+    -0.21321961620469082,
+    -0.8,
+    0.0
+   ],
+   "dac": [
+    -0.21321961620469082,
+    -0.6772009029345373,
+    0.0
+   ],
+   "ep": [
+    2.4883850978682815,
+    1.0394345082353682,
+    3.972863340858359
+   ],
+   "ttc": [
+    -0.6396588486140725,
+    -1.5717246790475834,
+    0.0
+   ],
+   "c": [
+    -0.21321961620469082,
+    -0.6451612903225806,
+    0.0
+   ],
+   "pdms": [
+    0.5748512890016206,
+    -0.245272534135686,
+    1.4112508748046975
+   ]
+  },
+  "RJ8.C_vs_RJ5.C": {
+   "nc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "dac": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "ep": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "ttc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "c": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pdms": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  }
+ },
+ "token_flips_vs_RJ5.R_tracked": {
+  "RJ3": {
+   "nc": {
+    "worse": 0,
+    "better": 0,
+    "worse_tokens": [],
+    "worse_mean_drop": 0.0
+   },
+   "dac": {
+    "worse": 0,
+    "better": 1,
+    "worse_tokens": [],
+    "worse_mean_drop": 0.0
+   },
+   "c": {
+    "worse": 0,
+    "better": 0,
+    "worse_tokens": [],
+    "worse_mean_drop": 0.0
+   }
+  },
+  "RJ8": {
+   "nc": {
+    "worse": 0,
+    "better": 0,
+    "worse_tokens": [],
+    "worse_mean_drop": 0.0
+   },
+   "dac": {
+    "worse": 0,
+    "better": 0,
+    "worse_tokens": [],
+    "worse_mean_drop": 0.0
+   },
+   "c": {
+    "worse": 0,
+    "better": 0,
+    "worse_tokens": [],
+    "worse_mean_drop": 0.0
+   }
+  }
+ },
+ "fam_paired_vs_RJ5.R": {
+  "RJ3": {
+   "speed_bias": {
+    "key": "speed_bias_mps",
+    "A": {
+     "point": 0.6405901469901871,
+     "lo": 0.3697645316002488,
+     "hi": 0.9164424462526743
+    },
+    "B": {
+     "point": 0.600052175360289,
+     "lo": 0.342853707212453,
+     "hi": 0.859227538369982
+    },
+    "diff_B_minus_A": {
+     "point": -0.04053797162989814,
+     "lo": -0.05904038946782347,
+     "hi": -0.024915196741329415
+    },
+    "n_tokens": 469,
+    "n_logs": 13,
+    "separated_from_0": true
+   },
+   "speed_mae": {
+    "key": "speed_mae_mps",
+    "A": {
+     "point": 0.8756322084364098,
+     "lo": 0.6740324409719125,
+     "hi": 1.1142515159724364
+    },
+    "B": {
+     "point": 0.8400259049875396,
+     "lo": 0.6522199786832459,
+     "hi": 1.0620442899791942
+    },
+    "diff_B_minus_A": {
+     "point": -0.03560630344887017,
+     "lo": -0.05316144432708534,
+     "hi": -0.020105769248448
+    },
+    "n_tokens": 469,
+    "n_logs": 13,
+    "separated_from_0": true
+   },
+   "accel_mae": {
+    "key": "accel_mae_mps2",
+    "A": {
+     "point": 0.5196900018401491,
+     "lo": 0.4428391502865139,
+     "hi": 0.6077475608716914
+    },
+    "B": {
+     "point": 0.5100024177003771,
+     "lo": 0.4354888587613664,
+     "hi": 0.5956782634679111
+    },
+    "diff_B_minus_A": {
+     "point": -0.009687584139771999,
+     "lo": -0.014195233318922834,
+     "hi": -0.0042255924501528154
+    },
+    "n_tokens": 469,
+    "n_logs": 13,
+    "separated_from_0": true
+   },
+   "progress": {
+    "key": "ego_progress.progress_ratio_mean",
+    "A": {
+     "point": 1.1848299021508653,
+     "lo": 1.1214016979816634,
+     "hi": 1.247739450163787
+    },
+    "B": {
+     "point": 1.1745104453956021,
+     "lo": 1.1124868918142516,
+     "hi": 1.2368382164674803
+    },
+    "diff_B_minus_A": {
+     "point": -0.010319456755263134,
+     "lo": -0.01300987842641686,
+     "hi": -0.0072066546886194295
+    },
+    "n_tokens": 465,
+    "n_logs": 13,
+    "separated_from_0": true
+   }
+  },
+  "RJ8": {
+   "speed_bias": {
+    "key": "speed_bias_mps",
+    "A": {
+     "point": 0.6405901469901871,
+     "lo": 0.3697645316002488,
+     "hi": 0.9164424462526743
+    },
+    "B": {
+     "point": 0.6405901469901871,
+     "lo": 0.3697645316002488,
+     "hi": 0.9164424462526743
+    },
+    "diff_B_minus_A": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0
+    },
+    "n_tokens": 469,
+    "n_logs": 13,
+    "separated_from_0": false
+   },
+   "speed_mae": {
+    "key": "speed_mae_mps",
+    "A": {
+     "point": 0.8756322084364098,
+     "lo": 0.6740324409719125,
+     "hi": 1.1142515159724364
+    },
+    "B": {
+     "point": 0.8756322084364098,
+     "lo": 0.6740324409719125,
+     "hi": 1.1142515159724364
+    },
+    "diff_B_minus_A": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0
+    },
+    "n_tokens": 469,
+    "n_logs": 13,
+    "separated_from_0": false
+   },
+   "accel_mae": {
+    "key": "accel_mae_mps2",
+    "A": {
+     "point": 0.5196900018401491,
+     "lo": 0.4428391502865139,
+     "hi": 0.6077475608716914
+    },
+    "B": {
+     "point": 0.5196900018401491,
+     "lo": 0.4428391502865139,
+     "hi": 0.6077475608716914
+    },
+    "diff_B_minus_A": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0
+    },
+    "n_tokens": 469,
+    "n_logs": 13,
+    "separated_from_0": false
+   },
+   "progress": {
+    "key": "ego_progress.progress_ratio_mean",
+    "A": {
+     "point": 1.1848299021508653,
+     "lo": 1.1214016979816634,
+     "hi": 1.247739450163787
+    },
+    "B": {
+     "point": 1.1848299021508653,
+     "lo": 1.1214016979816634,
+     "hi": 1.247739450163787
+    },
+    "diff_B_minus_A": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0
+    },
+    "n_tokens": 465,
+    "n_logs": 13,
+    "separated_from_0": false
+   }
+  }
+ },
+ "mechanism_longitudinal_minus_RJ5.R": {
+  "RJ3": {
+   "speed_bias_mps": -0.04049999999999998,
+   "speed_mae_mps": -0.035600000000000076,
+   "accel_mae_mps2": -0.009700000000000042
+  },
+  "RJ8": {
+   "speed_bias_mps": 0.0,
+   "speed_mae_mps": 0.0,
+   "accel_mae_mps2": 0.0
+  }
+ },
+ "families_executed_tracked_R": {
+  "R0": {
+   "n": 469,
+   "n_logs": 13,
+   "strategic": "PAUSED (PI 2026-09-19)",
+   "longitudinal": {
+    "speed_mae_mps": 0.6956,
+    "speed_bias_mps": 0.3503,
+    "speed_rmse_mps": 1.0053,
+    "along_mae_m": 1.0338,
+    "along_bias_m": 0.4911,
+    "along_final_bias_m": 1.2478,
+    "accel_mae_mps2": 0.4435,
+    "dt_s": 0.5,
+    "n_windows": 469
+   },
+   "lateral": {
+    "heading_mae_deg": 2.5151,
+    "yaw_rate_mae_degps": 2.7497,
+    "curvature_mae_1pm": 0.014923,
+    "curvature_bias_1pm": 0.002859,
+    "cross_mae_m": 0.2987,
+    "cross_bias_m": -0.0643,
+    "cross_final_mae_m": 0.7003,
+    "_along_mae_m_for_context": 1.0338,
+    "n_steps_heading": 3510,
+    "n_steps_curvature": 3041,
+    "n_steps_yaw_rate": 3041,
+    "excluded_below_min_ds": 242,
+    "min_ds_m": 0.25,
+    "min_ds_mps": 0.5,
+    "dt_s": 0.5,
+    "n_windows": 469
+   },
+   "tactical": {
+    "n": 469,
+    "n_windows": 469
+   }
+  },
+  "RJ3": {
+   "n": 469,
+   "n_logs": 13,
+   "strategic": "PAUSED (PI 2026-09-19)",
+   "longitudinal": {
+    "speed_mae_mps": 0.84,
+    "speed_bias_mps": 0.6001,
+    "speed_rmse_mps": 1.2318,
+    "along_mae_m": 1.2352,
+    "along_bias_m": 0.8655,
+    "along_final_bias_m": 2.1309,
+    "accel_mae_mps2": 0.51,
+    "dt_s": 0.5,
+    "n_windows": 469
+   },
+   "lateral": {
+    "heading_mae_deg": 2.6545,
+    "yaw_rate_mae_degps": 2.8688,
+    "curvature_mae_1pm": 0.014654,
+    "curvature_bias_1pm": 0.002437,
+    "cross_mae_m": 0.3514,
+    "cross_bias_m": -0.0558,
+    "cross_final_mae_m": 0.8796,
+    "_along_mae_m_for_context": 1.2352,
+    "n_steps_heading": 3522,
+    "n_steps_curvature": 3053,
+    "n_steps_yaw_rate": 3053,
+    "excluded_below_min_ds": 230,
+    "min_ds_m": 0.25,
+    "min_ds_mps": 0.5,
+    "dt_s": 0.5,
+    "n_windows": 469
+   },
+   "tactical": {
+    "n": 469,
+    "n_windows": 469
+   }
+  },
+  "RJ5": {
+   "n": 469,
+   "n_logs": 13,
+   "strategic": "PAUSED (PI 2026-09-19)",
+   "longitudinal": {
+    "speed_mae_mps": 0.8756,
+    "speed_bias_mps": 0.6406,
+    "speed_rmse_mps": 1.2764,
+    "along_mae_m": 1.2973,
+    "along_bias_m": 0.9384,
+    "along_final_bias_m": 2.2675,
+    "accel_mae_mps2": 0.5197,
+    "dt_s": 0.5,
+    "n_windows": 469
+   },
+   "lateral": {
+    "heading_mae_deg": 2.6924,
+    "yaw_rate_mae_degps": 2.8988,
+    "curvature_mae_1pm": 0.01461,
+    "curvature_bias_1pm": 0.002415,
+    "cross_mae_m": 0.3676,
+    "cross_bias_m": -0.056,
+    "cross_final_mae_m": 0.9269,
+    "_along_mae_m_for_context": 1.2973,
+    "n_steps_heading": 3522,
+    "n_steps_curvature": 3053,
+    "n_steps_yaw_rate": 3053,
+    "excluded_below_min_ds": 230,
+    "min_ds_m": 0.25,
+    "min_ds_mps": 0.5,
+    "dt_s": 0.5,
+    "n_windows": 469
+   },
+   "tactical": {
+    "n": 469,
+    "n_windows": 469
+   }
+  },
+  "RJ8": {
+   "n": 469,
+   "n_logs": 13,
+   "strategic": "PAUSED (PI 2026-09-19)",
+   "longitudinal": {
+    "speed_mae_mps": 0.8756,
+    "speed_bias_mps": 0.6406,
+    "speed_rmse_mps": 1.2764,
+    "along_mae_m": 1.2973,
+    "along_bias_m": 0.9384,
+    "along_final_bias_m": 2.2675,
+    "accel_mae_mps2": 0.5197,
+    "dt_s": 0.5,
+    "n_windows": 469
+   },
+   "lateral": {
+    "heading_mae_deg": 2.6924,
+    "yaw_rate_mae_degps": 2.8988,
+    "curvature_mae_1pm": 0.01461,
+    "curvature_bias_1pm": 0.002415,
+    "cross_mae_m": 0.3676,
+    "cross_bias_m": -0.056,
+    "cross_final_mae_m": 0.9269,
+    "_along_mae_m_for_context": 1.2973,
+    "n_steps_heading": 3522,
+    "n_steps_curvature": 3053,
+    "n_steps_yaw_rate": 3053,
+    "excluded_below_min_ds": 230,
+    "min_ds_m": 0.25,
+    "min_ds_mps": 0.5,
+    "dt_s": 0.5,
+    "n_windows": 469
+   },
+   "tactical": {
+    "n": 469,
+    "n_windows": 469
+   }
+  }
+ },
+ "BAR": {
+  "RJ3": {
+   "A_dPDMS_ci_lower_gt_0": false,
+   "dPDMS_RJx_minus_RJ5_R": [
+    0.10474064291688759,
+    -0.10051993894362883,
+    0.38771113543603464
+   ],
+   "B_no_drop_DAC_NC_C": {
+    "dac": true,
+    "nc": true,
+    "c": true
+   },
+   "B_detail_point_dsub": {
+    "dac": [
+     0.21321961620469082,
+     0.0,
+     0.5805937766059701
+    ],
+    "nc": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "c": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "C_longitudinal_guard": true,
+   "C_detail": {
+    "speed_bias_mps": -0.04049999999999998,
+    "speed_mae_mps": -0.035600000000000076,
+    "accel_mae_mps2": -0.009700000000000042
+   },
+   "knob_reached": true,
+   "BEATS_RJ5": false
+  },
+  "RJ8": {
+   "A_dPDMS_ci_lower_gt_0": false,
+   "dPDMS_RJx_minus_RJ5_R": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "B_no_drop_DAC_NC_C": {
+    "dac": true,
+    "nc": true,
+    "c": true
+   },
+   "B_detail_point_dsub": {
+    "dac": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "nc": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "c": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "C_longitudinal_guard": true,
+   "C_detail": {
+    "speed_bias_mps": 0.0,
+    "speed_mae_mps": 0.0,
+    "accel_mae_mps2": 0.0
+   },
+   "knob_reached": true,
+   "BEATS_RJ5": false
+  }
+ },
+ "BEST": [],
+ "DECISION": "5.0 stays",
+ "monotone_picture_R_descriptive_only": {
+  "R0": {
+   "jerk": 1.0,
+   "EP": 90.87810241885073,
+   "DAC": 99.14712153518124,
+   "TTC": 97.01492537313433,
+   "PDMS": 94.42237920614872,
+   "speed_bias_mps": 0.3503,
+   "speed_mae_mps": 0.6956
+  },
+  "RJ3": {
+   "jerk": 3.0,
+   "EP": 93.31935759703298,
+   "DAC": 99.14712153518124,
+   "TTC": 96.37526652452026,
+   "PDMS": 95.10197113806723,
+   "speed_bias_mps": 0.6001,
+   "speed_mae_mps": 0.84
+  },
+  "RJ5": {
+   "jerk": 5.0,
+   "EP": 93.36648751671902,
+   "DAC": 98.93390191897655,
+   "TTC": 96.37526652452026,
+   "PDMS": 94.99723049515033,
+   "speed_bias_mps": 0.6406,
+   "speed_mae_mps": 0.8756
+  },
+  "RJ8": {
+   "jerk": 8.0,
+   "EP": 93.36648751671902,
+   "DAC": 98.93390191897655,
+   "TTC": 96.37526652452026,
+   "PDMS": 94.99723049515033,
+   "speed_bias_mps": 0.6406,
+   "speed_mae_mps": 0.8756
+  }
+ }
+}

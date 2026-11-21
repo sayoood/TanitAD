@@ -1,0 +1,13 @@
+--- a/stack/scripts/v8f_dagger_bank.py
++++ b/stack/scripts/v8f_dagger_bank.py
+@@ -261,8 +261,8 @@
+         return 0
+     os.makedirs(a.out_dir, exist_ok=True)
+     ds_proxy = T1._OneClipStore()
+-    kw = dict(hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s, window_start=cfg.window_start)
+-    ds_own, ds_log = D.V8FMiniWindows(ds_proxy, J, [], **kw), D.V8FMiniWindows(store, J, [], **kw)
++    kw = dict(hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s)
++    ds_own, ds_log = D.V8FMiniWindows(ds_proxy, J, [], window_start=cfg.window_start, **kw), D.V8FMiniWindows(store, J, [], window_start=cfg.window_start, **kw)     # spelled out: test_v8f_window_start's static guard rejects window_start hidden in **kw
+     tracks = D.load_native_tracks(ns.tracks)
+     ckpt_sha = G.sha256_file(a.ckpt)
+     t_roll = time.time()

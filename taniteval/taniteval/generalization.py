@@ -918,14 +918,20 @@ def run_and_save(key, device="cuda", episodes=40, n_bins=4, occ_eps=12,
         _sfx = "" if corpus == "physicalai" else f"_{corpus}"
         (Path(out_dir) / f"gen_{key}{_sfx}.json").write_text(
             json.dumps(res, indent=2, default=str))
-        hm = res["heldout"]["model"]
+        # ⛔ CLOSED 2026-08-28 (ESTIMATOR_CLOSEOUT.md): this line printed
+        # `res["heldout"]["model"]` — `overlapping_holdout_se`. An OOD
+        # generalisation read is a CROSS-CORPUS comparison, and that estimator
+        # moves the point estimate bidirectionally, so the in-vs-out gap it
+        # printed was partly estimator, not corpus.
+        hm = res["cluster_bootstrap"]["model"]
         print(f"[gen] {key} step={L['step']} corpus={corpus} "
               f"n={res['n_windows']}: "
               f"ade@2s={hm['ade_0_2s']['mean']:.3f}"
-              f"+/-{hm['ade_0_2s']['ci95']:.3f} "
+              f" [{hm['ade_0_2s']['lo']:.3f}, {hm['ade_0_2s']['hi']:.3f}] "
               f"fde={hm['fde@2s']['mean']:.3f} "
               f"miss@2m={hm['miss_rate@2m']['mean']:.3f} "
-              f"(planner direct) -> gen_{key}{_sfx}.json", flush=True)
+              f"(planner direct, {hm['ade_0_2s']['estimator']}) "
+              f"-> gen_{key}{_sfx}.json", flush=True)
         return res
     files = data.list_val_episodes(val_root, episodes)
     assert files, f"no episodes under {val_root} (corpus {corpus})"

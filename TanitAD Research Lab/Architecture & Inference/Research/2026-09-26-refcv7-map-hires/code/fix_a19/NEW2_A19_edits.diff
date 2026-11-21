@@ -1,0 +1,521 @@
+diff --git a/stack/scripts/launch_gate.py b/stack/scripts/launch_gate.py
+index ea55acc..e6d217f 100644
+--- a/stack/scripts/launch_gate.py
++++ b/stack/scripts/launch_gate.py
+@@ -308,6 +308,10 @@ _REFC = {
+     #: OPEN ITEMS: undecided parts of a profile's launch flag set (refcv7 declares its own; see
+     #: `_REFCV7_OPEN_ITEMS`). Empty = the flag set is decided.
+     "open_items": (),
++    #: ⛔ SPEC_REFCV7 24 (A19): MAIN-only BINDING overfit records. None = every must-fail arm must
++    #: RUN and fail as registered (the pre-A19 rule). A profile adopting A19 names the policy, its
++    #: SPEC source and the must-fail evidence it INHERITS (see PROFILES['refcv7']).
++    "overfit_main_only": None,
+     #: G-MAP-OVERFIT: the pre-registered protocol's LITERALS
+     #: (`…/2026-09-26-map-signal-audit/raw/PREREG_G_MAP_OVERFIT.md` + `gmo_spec.json`; SPEC 9
+     #: item 2). The gate checks the record against these, never against the bars it carries.
+@@ -317,6 +321,9 @@ _REFC = {
+         "harness": "stack/scripts/map_hires_overfit.py",
+         "band": "0_20",
+         "min_cells": 1000,
++        #: prereg sec. 6.4: each class's CE at the end <= this x its step-0 CE (re-judged from the
++        #: record's own numbers under A19)
++        "ce_ratio_max": 0.5,
+         "iou_bars": {"nocls": 0.85, "drivable": 0.85, "sidewalk": 0.85, "lane": 0.5,
+                      "crosswalk": 0.5, "arrow": 0.5, "edge": 0.5, "hatched": 0.5},
+         #: ``near_block_zeros`` (edge): SPEC_REFCV7 20 (A15), kept by 23 (A18) -- zeros into the
+@@ -430,6 +437,46 @@ PROFILES: dict[str, dict] = {
+     #: at 10 cm, one lift, 100 m x +-30 m) + A9/A10 (the refined box head)
+     "refcv7": dict(
+         _REFC, name="refcv7",
++        #: G-EVAL's loader: refcv7's OWN (`stack/tanitad/eval/refcv7_loader.py`). The refcv6 battery
++        #: loader cannot build NEW-2's 10 cm branch -- MEASURED 2026-09-27: its strict load fails on
++        #: `_map_hires.lift.unobserved`. On Thor pass `--eval-kit /home/nvidia` (the kit layout).
++        eval_loader="stack/tanitad/eval/refcv7_loader.py",
++        #: ⛔ SPEC_REFCV7 24 (A19, the PI 2026-09-27 17:46 / 17:51 Berlin: "Binding = MAIN only,
++        #: both" / "Keep MAIN-only for both"): a BINDING overfit record whose must-fail arms were NOT
++        #: RUN is accepted -- MAIN is re-judged from its OWN registered literals, never from the
++        #: harness's overall verdict (which reads FAIL without the arms). A must-fail arm that RAN
++        #: and PASSED is still a VOID (A19 excuses absence, never a VOID). The must-fail evidence is
++        #: INHERITED -- stated exactly below and carried in the gate's PASS text, so the token says
++        #: what it does not cover.
++        overfit_main_only={
++            "policy": "A19_MAIN_ONLY_BINDING",
++            "source": "SPEC_REFCV7 24 (A19, landed 36cc332)",
++            "map": {
++                #: the A18 spec with its must-fail rows REMOVED -- the registered harness refuses
++                #: `--arms healthy` on a spec that names must-fail arms (main(): "the gated arm ...
++                #: is not in --arms"); every other literal is A18's. `…/raw/gmo_spec_A19_MAP_MAIN.json`
++                "spec_sha256": "56dea067fdef45e9b905f5741b562e59ad037396067cdbe43278c37f62be4f2a",
++                "inherited": ("the map must-fail arms are INHERITED from A17.1 (the launch map config "
++                              "+ the decay, 1,000 steps): s8_zeros read 0 on every thin class, "
++                              "near_block_zeros read edge 0.199, lane_w0 read lane 0 (A12 and A15 "
++                              "held them too)"),
++                "evidence": ("TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/raw/gmo_early/"
++                             "g_map_overfit_A171.EARLY_NONBINDING.json",),
++            },
++            "box": {
++                "inherited": ("presence_w0 is robust by construction (zero presence-loss weight gives "
++                              "the presence head no gradient); memory_zeros was NOT measured at full "
++                              "scale on the launch head -- it held in the TOY test on the A17 code "
++                              "(18/18 cells, ap2m 0.0022-0.0171) and on the pre-A14 head, and "
++                              "learned_ref also reads BEV tokens pooled from the map branch, so a leak "
++                              "around the blinded memory would not be seen before launch; the PI "
++                              "accepted this knowingly (A19 Q2)"),
++                "evidence": ("TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/raw/toy/",
++                             "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/raw/thor_gbo/gbo_early_nonbinding.json",
++                             "stack/tests/test_g_box_overfit.py::"
++                             "test_TOY_the_loop_memorises_and_the_memory_zeros_arm_cannot"),
++            },
++        },
+         required_checks=BASE_CHECKS + ("G-SUITE-PINNED", "G-MAP-OVERFIT", "G-BOX-OVERFIT"),
+         #: EVERYTHING that needs the data or the launch venv runs on Thor; the dev box runs only
+         #: G-SUITE-PINNED (a full-commit archive with the HF cache) -- its evidence is imported
+@@ -3585,7 +3632,11 @@ def judge_map_overfit(prof: dict, record: str | None, commit: str, *, argv_sha:
+     * ⛔ SPEC_REFCV7 23 (A18): the record RAN the registered protocol -- the A18 spec (sha256),
+       the optimiser's steps / lr / batch / seed / lr_decay, and the map path (near lift, near
+       refine blocks) -- each against `map_overfit`'s literals. A record of the superseded
+-      1,000-step protocol is REFUSED (the trap the box judge fell into with the prereg's lr)."""
++      1,000-step protocol is REFUSED (the trap the box judge fell into with the prereg's lr);
++    * ⛔ SPEC_REFCV7 24 (A19): under the profile's `overfit_main_only` policy a must-fail arm that
++      did NOT RUN is excused and MAIN is re-judged from the record's own numbers (the harness's
++      overall verdict reads FAIL without the arms and is NOT read); an arm that RAN is judged from
++      its results and a pass is still a VOID. Without the policy every arm must run (pre-A19)."""
+     mo = prof.get("map_overfit") or {}
+     tag = "G-MAP-OVERFIT"
+     if not record or not Path(record).is_file():
+@@ -3597,7 +3648,26 @@ def judge_map_overfit(prof: dict, record: str | None, commit: str, *, argv_sha:
+                            "launch_commit": rec.get("launch_commit"),
+                            "launch_argv_sha256": rec.get("launch_argv_sha256")}
+     reasons: list[str] = []
+-    if v.get("G_MAP_OVERFIT") != "PASS":
++    # ⛔ SPEC_REFCV7 24 (A19): which of the GATE'S must-fail arms ran (a result, or a regression
++    # row that says so); an ABSENT arm is excused only under the profile's A19 policy
++    a19 = prof.get("overfit_main_only") or {}
++    a19m = a19.get("map") if isinstance(a19.get("map"), dict) else {}
++    results = rec.get("results") if isinstance(rec.get("results"), dict) else {}
++    reg = v.get("regression_arms") if isinstance(v.get("regression_arms"), dict) else {}
++    gate_mf = [(a_, tuple(c_), False) for a_, c_ in (mo.get("must_fail_any") or {}).items()]
++    gate_mf += [(a_, tuple(c_), True) for a_, c_ in (mo.get("must_fail_all") or {}).items()]
++    ran = {a_: isinstance(results.get(a_), dict) or bool((reg.get(a_) or {}).get("ran"))
++           for a_, _c, _n in gate_mf}
++    absent = [a_ for a_, r_ in ran.items() if not r_]
++    main_only = bool(a19m) and bool(absent)
++    det["a19"] = {"policy": a19.get("policy"), "source": a19.get("source"), "applied": main_only,
++                  "absent_must_fail_arms": absent,
++                  "harness_verdict_not_read": v.get("G_MAP_OVERFIT") if main_only else None}
++    if main_only:
++        det["a19"]["statement"] = (
++            f"MAIN-ONLY binding under {a19.get('source')}: the must-fail arm(s) {absent} were NOT "
++            f"RUN -- {a19m.get('inherited')} (evidence: {'; '.join(a19m.get('evidence') or ())})")
++    elif v.get("G_MAP_OVERFIT") != "PASS":
+         reasons.append(f"{tag}: the record's verdict is {v.get('G_MAP_OVERFIT')!r}, not PASS")
+     reasons += _overfit_binding_reasons(tag, rec, commit, argv_sha, mo)
+     cw = rec.get("class_weights") if isinstance(rec.get("class_weights"), dict) else {}
+@@ -3622,9 +3692,12 @@ def judge_map_overfit(prof: dict, record: str | None, commit: str, *, argv_sha:
+             reasons.append(f"{tag}: the record ran at extent {k}={ext.get(k)}, not the launch "
+                            f"{want} (SPEC_REFCV7 12)")
+     # ⛔ SPEC_REFCV7 23 (A18): the PROTOCOL the record ran
+-    if mo.get("spec_sha256") and rec.get("spec_sha256") != mo["spec_sha256"]:
++    ok_specs = [x for x in (mo.get("spec_sha256"), a19m.get("spec_sha256")) if x]
++    if ok_specs and rec.get("spec_sha256") not in ok_specs:
+         reasons.append(f"{tag}: the record ran spec {str(rec.get('spec_sha256'))[:16]}..., not the "
+-                       f"registered A18 spec {mo['spec_sha256'][:16]}... (SPEC_REFCV7 23)")
++                       f"registered A18 spec {mo['spec_sha256'][:16]}... (SPEC_REFCV7 23)"
++                       + (f" or the A19 MAIN-only spec {a19m['spec_sha256'][:16]}... (SPEC_REFCV7 24)"
++                          if a19m.get("spec_sha256") else ""))
+     opt = rec.get("optimiser") if isinstance(rec.get("optimiser"), dict) else {}
+     det["optimiser"] = opt
+     for k, want in (mo.get("protocol") or {}).items():
+@@ -3659,26 +3732,52 @@ def judge_map_overfit(prof: dict, record: str | None, commit: str, *, argv_sha:
+                            f"INCONCLUSIVE => FAIL (prereg sec. 6.1)")
+         if not (_finite_num(ic) and float(ic) >= float(bar)):
+             reasons.append(f"{tag}: class {c!r} IoU {ic} < the registered bar {bar}")
+-    ce_ok = main.get("ce_ratio_ok") if isinstance(main.get("ce_ratio_ok"), dict) else {}
+-    bad_ce = sorted(c for c in (mo.get("iou_bars") or {}) if ce_ok.get(c) is not True)
++    if main_only:
++        # A19: the CE ratio and the finite loss from the record's OWN numbers (MAIN's step-0 and
++        # final per-class CE, its finite flag) -- never from the harness's verdict object
++        h_ = results.get("healthy") if isinstance(results.get("healthy"), dict) else {}
++        ce0 = (h_.get("step0") or {}).get("ce_mean") or {}
++        ce1 = (h_.get("final") or {}).get("ce_mean") or {}
++        lim = float(mo.get("ce_ratio_max", 0.5))
++        bad_ce = sorted(c for c in (mo.get("iou_bars") or {})
++                        if not (_finite_num(ce0.get(c)) and _finite_num(ce1.get(c))
++                                and float(ce0[c]) > 0.0 and float(ce1[c]) <= lim * float(ce0[c])))
++        finite_ok = h_.get("loss_finite_every_step") is True
++    else:
++        ce_ok = main.get("ce_ratio_ok") if isinstance(main.get("ce_ratio_ok"), dict) else {}
++        bad_ce = sorted(c for c in (mo.get("iou_bars") or {}) if ce_ok.get(c) is not True)
++        finite_ok = main.get("loss_finite_every_step") is True
+     if bad_ce:
+         reasons.append(f"{tag}: the per-class CE did not fall to <= 0.5x its step-0 value for "
+                        f"{bad_ce} (prereg sec. 6.4)")
+-    if main.get("loss_finite_every_step") is not True:
++    if not finite_ok:
+         reasons.append(f"{tag}: the MAIN loss is not recorded finite at every step (sec. 6.5)")
+-    reg = v.get("regression_arms") if isinstance(v.get("regression_arms"), dict) else {}
+     det["regression_arms"] = reg
+-    for arm, classes in (mo.get("must_fail_any") or {}).items():
+-        a_ = reg.get(arm) or {}
+-        if not (a_.get("ran") and set(classes) & set(a_.get("failed") or [])):
+-            reasons.append(f"{tag}: must-fail arm {arm!r} did not FAIL {list(classes)} "
+-                           f"({a_ or 'not run'})")
+-    for arm, classes in (mo.get("must_fail_all") or {}).items():
++    det["must_fail"] = {}
++    for arm, classes, need_all in gate_mf:
+         a_ = reg.get(arm) or {}
+-        if not (a_.get("ran") and set(classes) <= set(a_.get("failed") or [])):
++        if not ran[arm] and main_only:           # ⛔ A19 excuses ABSENCE -- never a VOID
++            det["must_fail"][arm] = f"NOT RUN -- excused under {a19.get('source')}; inherited"
++            continue
++        fin_ = (results.get(arm) or {}).get("final") if isinstance(results.get(arm), dict) else None
++        if isinstance(fin_, dict) and isinstance(fin_.get("iou"), dict):
++            # judged from the arm's OWN result against the gate's literal bars
++            failed = [c for c, bar in (mo.get("iou_bars") or {}).items()
++                      if not (_finite_num(fin_["iou"].get(c)) and float(fin_["iou"][c]) >= float(bar))]
++            shown = a_ or {"ran": True, "failed": failed, "from": "results"}
++        else:
++            failed = list(a_.get("failed") or []) if ran[arm] else []
++            shown = a_ or "not run"
++        det["must_fail"][arm] = {"ran": ran[arm], "failed": failed}
++        ok = ran[arm] and (set(classes) <= set(failed) if need_all else bool(set(classes) & set(failed)))
++        void = " -- VOID: A19 excuses absence, never a VOID" if (a19m and ran[arm]) else ""
++        if not ok and need_all:
+             reasons.append(f"{tag}: must-fail arm {arm!r} must FAIL ALL of {list(classes)} "
+-                           f"({a_ or 'not run'}) -- a thin class passing without image "
+-                           f"information means the harness scores something else")
++                           f"({shown}) -- a thin class passing without image "
++                           f"information means the harness scores something else" + void)
++        elif not ok:
++            reasons.append(f"{tag}: must-fail arm {arm!r} did not FAIL {list(classes)} "
++                           f"({shown})" + void)
+     ctl = v.get("controls") if isinstance(v.get("controls"), dict) else {}
+     det["controls_reproduced"] = v.get("controls_reproduced")
+     for c in mo.get("controls", ()):
+@@ -3724,9 +3823,28 @@ def judge_box_overfit(prof: dict, record: str | None, commit: str, *, argv_sha:
+                            "result": rec.get("RESULT"),
+                            "harness_binding_informative": [rec.get("binding"), rec.get("commit")]}
+     reasons: list[str] = []
++    # ⛔ SPEC_REFCV7 24 (A19): a must-fail arm the record does not hold is excused only under the
++    # profile's A19 policy; the harness then writes RESULT FAIL (its must-fail arms are absent), so
++    # RESULT is NOT read -- main is re-judged below from its rows, as always
++    a19 = prof.get("overfit_main_only") or {}
++    a19b = a19.get("box") if isinstance(a19.get("box"), dict) else {}
++    arms_a19 = rec.get("arms") if isinstance(rec.get("arms"), dict) else {}
++    absent = [a_ for a_ in (bo.get("must_fail") or {}) if not isinstance(arms_a19.get(a_), dict)]
++    main_only = bool(a19b) and bool(absent)
++    det["a19"] = {"policy": a19.get("policy"), "source": a19.get("source"), "applied": main_only,
++                  "absent_must_fail_arms": absent,
++                  "harness_result_not_read": rec.get("RESULT") if main_only else None}
++    if main_only:
++        det["a19"]["statement"] = (
++            f"MAIN-ONLY binding under {a19.get('source')}: the must-fail arm(s) {absent} were NOT "
++            f"RUN -- {a19b.get('inherited')} (evidence: {'; '.join(a19b.get('evidence') or ())})")
+     if rec.get("tool") != bo.get("tool"):
+         reasons.append(f"{tag}: the record's tool is {rec.get('tool')!r}, not {bo.get('tool')!r}")
+-    if rec.get("RESULT") != "PASS":
++    if main_only:
++        if rec.get("RESULT") == "VOID":
++            reasons.append(f"{tag}: the record's RESULT is 'VOID' -- a must-fail arm passed "
++                           f"(A19 excuses absence, never a VOID)")
++    elif rec.get("RESULT") != "PASS":
+         reasons.append(f"{tag}: the record's RESULT is {rec.get('RESULT')!r}, not PASS")
+     # the launch argv: the gate's definition (ordered compact JSON), or the harness's own
+     # `sha256(json.dumps(argv))` -- both are pure functions of the SAME list
+@@ -3825,6 +3943,9 @@ def judge_box_overfit(prof: dict, record: str | None, commit: str, *, argv_sha:
+                            f"{(arms.get('main') or {}).get('verdict')!r}")
+     det["must_fail"] = {}
+     for arm, crits in (bo.get("must_fail") or {}).items():
++        if main_only and arm in absent:          # ⛔ A19 excuses ABSENCE -- never a VOID
++            det["must_fail"][arm] = f"NOT RUN -- excused under {a19.get('source')}; inherited"
++            continue
+         res, why = judged(arm)
+         det["must_fail"][arm] = res.get("criteria") if res else why
+         if why:
+@@ -5486,8 +5607,10 @@ def _job_box_overfit(ctx: Ctx) -> dict[str, dict]:
+         if f and Path(f).is_file():
+             ev["inputs_read"][k] = fingerprint(f)
+     ev["details"].update(det)
+-    finish_evidence(ev, "FAIL" if reasons else "PASS",
+-                    reasons or [f"G-BOX-OVERFIT PASS {OVERFIT_SCOPE}"])
++    ok_text = f"G-BOX-OVERFIT PASS {OVERFIT_SCOPE}"
++    if (det.get("a19") or {}).get("applied"):
++        ok_text += f"; {det['a19']['statement']}"         # SPEC_REFCV7 24: what it does NOT cover
++    finish_evidence(ev, "FAIL" if reasons else "PASS", reasons or [ok_text])
+     return {"G-BOX-OVERFIT": ev}
+ 
+ 
+@@ -5518,8 +5641,10 @@ def _job_map_overfit(ctx: Ctx) -> dict[str, dict]:
+         if f and Path(f).is_file():
+             ev["inputs_read"][k] = fingerprint(f)
+     ev["details"].update(det)
+-    finish_evidence(ev, "FAIL" if reasons else "PASS",
+-                    reasons or [f"G-MAP-OVERFIT PASS {OVERFIT_SCOPE}"])
++    ok_text = f"G-MAP-OVERFIT PASS {OVERFIT_SCOPE}"
++    if (det.get("a19") or {}).get("applied"):
++        ok_text += f"; {det['a19']['statement']}"         # SPEC_REFCV7 24: what it does NOT cover
++    finish_evidence(ev, "FAIL" if reasons else "PASS", reasons or [ok_text])
+     return {"G-MAP-OVERFIT": ev}
+ 
+ 
+diff --git a/stack/tests/test_launch_gate.py b/stack/tests/test_launch_gate.py
+index 675cea5..6a2687e 100644
+--- a/stack/tests/test_launch_gate.py
++++ b/stack/tests/test_launch_gate.py
+@@ -1177,7 +1177,10 @@ def _gmo_record(commit, argv_sha, cw_sha, **over):
+                          "lr_decay": {"kind": "cosine_to_zero", "start_step": 2700}},
+            "near_lift_m": 20.0, "near_refine_blocks": 1,
+            "results": {"healthy": {"final": {"n": {c: 5000 for c in _GMO_BARS},
+-                                             "iou": {c: b + 0.05 for c, b in _GMO_BARS.items()}}}},
++                                             "iou": {c: b + 0.05 for c, b in _GMO_BARS.items()},
++                                             "ce_mean": {c: 0.2 for c in _GMO_BARS}},
++                                   "step0": {"ce_mean": {c: 2.0 for c in _GMO_BARS}},
++                                   "loss_finite_every_step": True}},
+            "verdict": {"band": "0_20", "decision_rule": "prior_corrected",
+                        "MAIN": {"presence_short": {}, "inconclusive": False,
+                                 "bars": {c: True for c in _GMO_BARS},
+@@ -2423,7 +2426,8 @@ def test_G_MAP_OVERFIT_refuses_a_record_that_did_not_run_the_A18_protocol(tmp_pa
+         f"{T_} steps is True, not the registered 3000 (SPEC_REFCV7 23, A18)"]
+     a171 = _gmo_record(commit, argv_sha, cw_sha, spec_sha256="5c" * 32)
+     assert judge(a171) == ["G-MAP-OVERFIT: the record ran spec 5c5c5c5c5c5c5c5c..., not the "
+-                           "registered A18 spec 5cb4f6fc4a8c1566... (SPEC_REFCV7 23)"]
++                           "registered A18 spec 5cb4f6fc4a8c1566... (SPEC_REFCV7 23) or the A19 "
++                           "MAIN-only spec 56dea067fdef45e9... (SPEC_REFCV7 24)"]
+     nb = _gmo_record(commit, argv_sha, cw_sha, near_refine_blocks=2)
+     assert judge(nb) == ["G-MAP-OVERFIT: the record ran near_refine_blocks=2, not the launch "
+                          "map path's 1 (SPEC_REFCV7 17 / 20)"]
+@@ -2431,8 +2435,12 @@ def test_G_MAP_OVERFIT_refuses_a_record_that_did_not_run_the_A18_protocol(tmp_pa
+     del nl["near_lift_m"]
+     assert judge(nl) == ["G-MAP-OVERFIT: the record ran near_lift_m=None, not the launch map "
+                          "path's 20.0 (SPEC_REFCV7 17 / 20)"]
++    # an ABSENT must-fail arm: excused under the profile's A19 policy (SPEC_REFCV7 24) ...
+     nbz = _gmo_record(commit, argv_sha, cw_sha)
+     del nbz["verdict"]["regression_arms"]["near_block_zeros"]
++    assert judge(nbz) == []
++    # ... and, without the policy, the pre-A19 FAIL (every arm must run)
++    p = dict(p, overfit_main_only=None)
+     assert judge(nbz) == ["G-MAP-OVERFIT: must-fail arm 'near_block_zeros' did not FAIL "
+                           "['edge'] (not run)"]
+ 
+@@ -2488,3 +2496,221 @@ def test_the_static_eager_closure_follows_a_BOM_package_instead_of_skipping_it(t
+     tree, _ = _bom_tree(tmp_path)
+     assert LG.static_eager_own_files(tree, "stack/scripts/train.py") == [
+         "stack/bompkg/__init__.py", "stack/bompkg/sub.py", "stack/scripts/train.py"]
++
++
++
++# ------------------------------------------------------------------------------------------ #
++# SPEC_REFCV7 24 (A19, the PI 2026-09-27): the BINDING overfit runs are MAIN-only -- an ABSENT #
++# must-fail arm is excused, MAIN is re-judged from its OWN literals, a VOID is still a FAIL    #
++# ------------------------------------------------------------------------------------------ #
++_A19_MAP_SPEC_SHA256 = "56dea067fdef45e9b905f5741b562e59ad037396067cdbe43278c37f62be4f2a"
++_A19_MAP_SPEC = (ROOT.parent / "TanitAD Research Lab" / "Architecture & Inference" / "Research"
++                 / "2026-09-26-refcv7-map-hires" / "raw" / "gmo_spec_A19_MAP_MAIN.json")
++
++
++def _gmo_main_only(commit, argv_sha, cw_sha, *, harness_verdict="FAIL"):
++    """What the harness writes for the A19 MAIN-only binding: `--arms healthy` on the A19 spec -- no
++    must-fail result, no regression row; `harness_verdict` is whatever the harness says (it is NOT
++    read under A19)."""
++    r_ = _gmo_record(commit, argv_sha, cw_sha, spec_sha256=_A19_MAP_SPEC_SHA256)
++    r_["verdict"]["regression_arms"] = {}
++    r_["verdict"]["G_MAP_OVERFIT"] = harness_verdict
++    return r_
++
++
++def _judge_map(tmp_path, p=None):
++    commit, argv_sha, cw_sha = "ab" * 20, "cd" * 32, "ef" * 32
++    rec = tmp_path / "g_map_overfit.json"
++
++    def judge(r_, prof=None, full=False):
++        rec.write_text(json.dumps(r_), encoding="utf-8")
++        out = LG.judge_map_overfit(prof or p or LG.PROFILES["refcv7"], str(rec), commit,
++                                   argv_sha=argv_sha, class_weights_sha256=cw_sha)
++        return out if full else out[0]
++    return judge, (commit, argv_sha, cw_sha)
++
++
++def test_A19_the_refcv7_profile_names_the_policy_its_source_and_the_inherited_evidence():
++    a = LG.PROFILES["refcv7"]["overfit_main_only"]
++    assert a["policy"] == "A19_MAIN_ONLY_BINDING" and a["source"] == "SPEC_REFCV7 24 (A19, landed 36cc332)"
++    assert a["map"]["spec_sha256"] == _A19_MAP_SPEC_SHA256
++    assert "near_block_zeros read edge 0.199" in a["map"]["inherited"]
++    assert a["map"]["evidence"][0].endswith("raw/gmo_early/g_map_overfit_A171.EARLY_NONBINDING.json")
++    assert "memory_zeros was NOT measured at full scale on the launch head" in a["box"]["inherited"]
++    assert "the PI accepted this knowingly (A19 Q2)" in a["box"]["inherited"]
++    assert LG.PROFILES["refcv6"]["overfit_main_only"] is None                  # pre-A19 elsewhere
++
++
++def test_A19_map_a_MAIN_only_record_PASSES_and_the_harness_verdict_does_not_decide(tmp_path):
++    judge, k = _judge_map(tmp_path)
++    for hv in ("FAIL", "PASS"):                  # what the harness says is NOT read under A19
++        r, d = judge(_gmo_main_only(*k, harness_verdict=hv), full=True)
++        assert r == [], r
++        assert d["a19"]["applied"] is True
++        assert d["a19"]["absent_must_fail_arms"] == ["lane_w0", "near_block_zeros", "s8_zeros"]
++        assert d["must_fail"]["lane_w0"] == ("NOT RUN -- excused under SPEC_REFCV7 24 (A19, "
++                                             "landed 36cc332); inherited")
++        assert d["a19"]["statement"].startswith(
++            "MAIN-ONLY binding under SPEC_REFCV7 24 (A19, landed 36cc332): the must-fail arm(s) "
++            "['lane_w0', 'near_block_zeros', 's8_zeros'] were NOT RUN -- the map must-fail arms "
++            "are INHERITED from A17.1")
++
++
++def test_A19_map_MAIN_is_re_judged_from_its_OWN_numbers(tmp_path):
++    """The harness says PASS everywhere; the record's own numbers miss -- each is a named FAIL (a
++    judge that trusted the verdict would pass all of them)."""
++    judge, k = _judge_map(tmp_path)
++    edge = _gmo_main_only(*k, harness_verdict="PASS")
++    edge["results"]["healthy"]["final"]["iou"]["edge"] = 0.49
++    assert judge(edge) == ["G-MAP-OVERFIT: class 'edge' IoU 0.49 < the registered bar 0.5"]
++    few = _gmo_main_only(*k, harness_verdict="PASS")
++    few["results"]["healthy"]["final"]["n"]["arrow"] = 999
++    assert judge(few) == ["G-MAP-OVERFIT: class 'arrow' has 999 scored cells < 1000 -- "
++                          "INCONCLUSIVE => FAIL (prereg sec. 6.1)"]
++    ce = _gmo_main_only(*k, harness_verdict="PASS")          # 1.2 > 0.5 x 2.0; the flag says ok
++    ce["results"]["healthy"]["final"]["ce_mean"]["hatched"] = 1.2
++    assert judge(ce) == ["G-MAP-OVERFIT: the per-class CE did not fall to <= 0.5x its step-0 "
++                         "value for ['hatched'] (prereg sec. 6.4)"]
++    nan = _gmo_main_only(*k, harness_verdict="PASS")
++    nan["results"]["healthy"]["loss_finite_every_step"] = False
++    assert judge(nan) == ["G-MAP-OVERFIT: the MAIN loss is not recorded finite at every step "
++                          "(sec. 6.5)"]
++    c2 = _gmo_main_only(*k, harness_verdict="PASS")
++    c2["verdict"]["controls"]["C2_gt_as_logits"]["reproduced"] = False
++    assert judge(c2) == ["G-MAP-OVERFIT: control C2 is not recorded as reproduced "
++                         "({'reproduced': False})"]
++    tg = _gmo_main_only(*k, harness_verdict="PASS")
++    tg["verdict"]["time_guard"] = {"kinds": ["pose_5cm"], "time_1ms_on_every_clip": False}
++    assert len(judge(tg)) == 1 and "1 ms label-time guard" in judge(tg)[0]
++    a18 = _gmo_main_only(*k)                                  # MAIN-only needs a registered spec
++    a18["spec_sha256"] = "5c" * 32
++    assert "or the A19 MAIN-only spec 56dea067fdef45e9... (SPEC_REFCV7 24)" in judge(a18)[0]
++
++
++def test_A19_map_a_must_fail_arm_that_RAN_and_PASSED_is_still_a_FAIL(tmp_path):
++    """A19 excuses ABSENCE, never a VOID: an arm that ran is judged from its own result against the
++    gate's literal bars (the harness's regression row cannot vouch for it)."""
++    judge, k = _judge_map(tmp_path)
++    lw = _gmo_main_only(*k)
++    lw["results"]["lane_w0"] = {"final": {"iou": {c: b + 0.05 for c, b in _GMO_BARS.items()}}}
++    assert judge(lw) == [
++        "G-MAP-OVERFIT: must-fail arm 'lane_w0' did not FAIL ['lane'] ({'ran': True, 'failed': "
++        "[], 'from': 'results'}) -- VOID: A19 excuses absence, never a VOID"]
++    s8 = _gmo_main_only(*k)
++    s8_iou = {c: 0.0 for c in _GMO_BARS}
++    s8_iou["hatched"] = 0.6                                   # one thin class passes
++    s8["results"]["s8_zeros"] = {"final": {"iou": s8_iou}}
++    r = judge(s8)
++    assert len(r) == 1 and r[0].startswith("G-MAP-OVERFIT: must-fail arm 's8_zeros' must FAIL ALL "
++                                           "of ['lane', 'crosswalk', 'arrow', 'edge', 'hatched']")
++    assert r[0].endswith("-- VOID: A19 excuses absence, never a VOID")
++    ok = _gmo_main_only(*k)                                   # an arm that RAN and FAILED: fine
++    ok["results"]["near_block_zeros"] = {"final": {"iou": dict({c: 0.9 for c in _GMO_BARS},
++                                                                edge=0.2)}}
++    assert judge(ok) == []
++
++
++def test_A19_removed_from_the_profile_a_MAIN_only_record_FAILS_as_before(tmp_path):
++    p = dict(LG.PROFILES["refcv7"], overfit_main_only=None)
++    judge, k = _judge_map(tmp_path, p)
++    assert judge(_gmo_main_only(*k)) == [
++        "G-MAP-OVERFIT: the record's verdict is 'FAIL', not PASS",
++        "G-MAP-OVERFIT: the record ran spec 56dea067fdef45e9..., not the registered A18 spec "
++        "5cb4f6fc4a8c1566... (SPEC_REFCV7 23)",
++        "G-MAP-OVERFIT: must-fail arm 'lane_w0' did not FAIL ['lane'] (not run)",
++        "G-MAP-OVERFIT: must-fail arm 'near_block_zeros' did not FAIL ['edge'] (not run)",
++        "G-MAP-OVERFIT: must-fail arm 's8_zeros' must FAIL ALL of ['lane', 'crosswalk', 'arrow', "
++        "'edge', 'hatched'] (not run) -- a thin class passing without image information means "
++        "the harness scores something else"]
++
++
++@pytest.mark.skipif(not _A19_MAP_SPEC.is_file(), reason="the A19 map spec is not in this checkout")
++def test_A19_the_map_spec_is_the_A18_spec_minus_its_must_fail_rows():
++    import hashlib
++    b = _A19_MAP_SPEC.read_bytes()
++    assert hashlib.sha256(b).hexdigest() == _A19_MAP_SPEC_SHA256
++    a19 = json.loads(b.decode("utf-8"))
++    a18p = _A19_MAP_SPEC.with_name("gmo_spec_A18.json")
++    assert "must_fail" not in a19 and "must_fail_all" not in a19
++    assert a19["steps"] == 3000 and a19["lr_decay"] == {"kind": "cosine_to_zero", "start_step": 2700}
++    if a18p.is_file():
++        a18 = json.loads(a18p.read_text(encoding="utf-8"))
++        diff = sorted(k for k in set(a18) | set(a19) if a18.get(k) != a19.get(k))
++        assert diff == ["a19_inherited_must_fail_record", "amends", "must_fail", "must_fail_all",
++                        "registered"], diff
++
++
++def _box_main_only(argv_sha):
++    """The box harness for `--arms main` (g_box_overfit main()): no must-fail arm, RESULT FAIL."""
++    r_ = _gbo_record(argv_sha, RESULT="FAIL")
++    del r_["arms"]["memory_zeros"], r_["arms"]["presence_w0"]
++    return r_
++
++
++def test_A19_box_a_MAIN_only_record_PASSES_is_re_judged_and_a_VOID_is_still_a_FAIL(tmp_path):
++    p = LG.PROFILES["refcv7"]
++    commit, argv = "ab" * 20, ["--arm", "hier", "--out", "/o"]
++    argv_sha = LG.argv_sha256(argv)
++    f = tmp_path / "g_box_overfit.json"
++
++    def judge(rec, prof=p, full=False):
++        f.write_text(json.dumps(rec), encoding="utf-8")
++        out = LG.judge_box_overfit(prof, str(f), commit, argv_sha=argv_sha, argv=argv)
++        return out if full else out[0]
++    r, d = judge(_box_main_only(argv_sha), full=True)
++    assert r == [] and d["a19"]["applied"] is True
++    assert d["a19"]["absent_must_fail_arms"] == ["memory_zeros", "presence_w0"]
++    assert "memory_zeros was NOT measured at full scale on the launch head" in d["a19"]["statement"]
++    good = _box_main_only(argv_sha)
++    good["RESULT"] = "PASS"                                    # RESULT is not read either way
++    assert judge(good) == []
++    low = _box_main_only(argv_sha)                             # main's rows decide, not its flags
++    low["RESULT"] = "PASS"
++    low["arms"]["main"]["rows"][-1]["ap2m"] = 0.85
++    assert judge(low) == ["G-BOX-OVERFIT: main fails prereg criterion 1 ['ap2m'] at step 2000: "
++                          "{'ap2m': 0.85}"]
++    sched = _box_main_only(argv_sha)
++    sched["literals"]["lr_schedule"] = {"rule": "A13", "decay": "none"}
++    assert judge(sched)[0].startswith("G-BOX-OVERFIT: literal lr_schedule = {'rule': 'A13'")
++    ign = _box_main_only(argv_sha)
++    ign["literals"]["n_ign"] = 28
++    assert judge(ign) == ["G-BOX-OVERFIT: literal n_ign = 28, the prereg (with A10's "
++                          "reconciliation) fixes 77"]
++    void = _box_main_only(argv_sha)                            # an arm that RAN and passed
++    void["arms"]["memory_zeros"] = _gbo_arm(dict(_GBO_MAIN, ap2m=0.93), verdict="VOID")
++    assert judge(void) == ["G-BOX-OVERFIT: must-fail arm 'memory_zeros' must FAIL prereg "
++                           "criteria ['1'] and passes ['1'] -- the result is VOID (prereg sec. 7)"]
++    vres = _box_main_only(argv_sha)
++    vres["RESULT"] = "VOID"
++    assert judge(vres) == ["G-BOX-OVERFIT: the record's RESULT is 'VOID' -- a must-fail arm passed "
++                           "(A19 excuses absence, never a VOID)"]
++    # the profile's A19 field removed: the pre-A19 FAIL
++    assert judge(_box_main_only(argv_sha), prof=dict(p, overfit_main_only=None)) == [
++        "G-BOX-OVERFIT: the record's RESULT is 'FAIL', not PASS",
++        "G-BOX-OVERFIT: must-fail arm 'memory_zeros' did not run (no rows)",
++        "G-BOX-OVERFIT: must-fail arm 'presence_w0' did not run (no rows)"]
++
++
++def test_A19_the_PASS_text_says_what_the_token_does_not_cover(tmp_path, monkeypatch):
++    """The evidence's PASS reason carries A19's statement when (and only when) A19 applied."""
++    monkeypatch.setattr(LG, "judge_closure", lambda *a, **k: ([], {}))
++    ctx, _ = _refcv7_argv_ctx(tmp_path)
++    for job, check, jfn in ((LG._job_map_overfit, "G-MAP-OVERFIT", "judge_map_overfit"),
++                            (LG._job_box_overfit, "G-BOX-OVERFIT", "judge_box_overfit")):
++        monkeypatch.setattr(LG, jfn, lambda *a, **k: ([], {"a19": {"applied": True,
++                                                                   "statement": "S19"}}))
++        ev = job(ctx)[check]
++        assert ev["status"] == "PASS" and ev["reasons"] == [f"{check} PASS {LG.OVERFIT_SCOPE}; S19"]
++        monkeypatch.setattr(LG, jfn, lambda *a, **k: ([], {"a19": {"applied": False}}))
++        assert job(ctx)[check]["reasons"] == [f"{check} PASS {LG.OVERFIT_SCOPE}"]
++
++
++#: the refcv7 eval loader (package `…/2026-09-27-refcv7-eval-loader/`, the loader agent's
++#: integration diff): G-EVAL's DEFAULT for refcv7; refcv6 keeps its battery loader
++def test_the_refcv7_profile_evaluates_with_its_OWN_loader_by_default():
++    assert LG.PROFILES["refcv7"]["eval_loader"] == "stack/tanitad/eval/refcv7_loader.py"
++    assert LG.PROFILES["refcv6"]["eval_loader"] == LG._EVAL_LOADER_REL        # red arm: refcv6's
++    assert LG.PROFILES["refcv6"]["eval_loader"] != LG.PROFILES["refcv7"]["eval_loader"]
++    loader = ROOT / "tanitad" / "eval" / "refcv7_loader.py"
++    if loader.is_file():                        # it lands in the same gate: resolves in the tree
++        assert LG._resolve_repo_rel(ROOT.parent, LG.PROFILES["refcv7"]["eval_loader"]) == loader

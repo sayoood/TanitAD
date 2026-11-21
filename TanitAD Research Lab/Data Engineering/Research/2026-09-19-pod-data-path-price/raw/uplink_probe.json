@@ -1,0 +1,103 @@
+{
+ "endpoint": "https://speed.cloudflare.com/__up",
+ "payload": "os.urandom",
+ "started_local": "2026-09-19T13:49:30",
+ "trials": {
+  "latency_1kB": [
+   {
+    "bytes": 1000,
+    "s": 0.404,
+    "status": 200,
+    "MBps": 0.002
+   },
+   {
+    "bytes": 1000,
+    "s": 0.025,
+    "status": 200,
+    "MBps": 0.041
+   },
+   {
+    "bytes": 1000,
+    "s": 0.019,
+    "status": 200,
+    "MBps": 0.053
+   }
+  ],
+  "single_10MB": [
+   {
+    "bytes": 10000000,
+    "s": 7.706,
+    "status": 200,
+    "MBps": 1.298
+   },
+   {
+    "bytes": 10000000,
+    "s": 8.041,
+    "status": 200,
+    "MBps": 1.244
+   }
+  ],
+  "single_25MB": [
+   {
+    "bytes": 25000000,
+    "s": 21.856,
+    "status": 200,
+    "MBps": 1.144
+   },
+   {
+    "bytes": 25000000,
+    "s": 21.069,
+    "status": 200,
+    "MBps": 1.187
+   },
+   {
+    "bytes": 25000000,
+    "s": 20.213,
+    "status": 200,
+    "MBps": 1.237
+   }
+  ],
+  "parallel_4x25MB": {
+   "streams": [
+    {
+     "bytes": 25000000,
+     "s": 73.759,
+     "status": 200,
+     "MBps": 0.339
+    },
+    {
+     "bytes": 25000000,
+     "s": 77.501,
+     "status": 200,
+     "MBps": 0.323
+    },
+    {
+     "bytes": 25000000,
+     "s": 81.238,
+     "status": 200,
+     "MBps": 0.308
+    },
+    {
+     "bytes": 25000000,
+     "s": 62.062,
+     "status": 200,
+     "MBps": 0.403
+    }
+   ],
+   "wall_s": 81.286,
+   "aggregate_MBps": 1.23
+  }
+ },
+ "summary": {
+  "single_stream_25MB_MBps_median": 1.187,
+  "single_stream_25MB_MBps_range": [
+   1.144,
+   1.237
+  ],
+  "parallel_4_streams_aggregate_MBps": 1.23,
+  "latency_1kB_s_median": 0.025,
+  "total_bytes_sent": 195003000,
+  "all_status_200": true
+ },
+ "finished_local": "2026-09-19T13:52:10"
+}

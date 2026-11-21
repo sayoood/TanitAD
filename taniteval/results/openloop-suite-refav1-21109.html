@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Open-Loop KPI Suite — refav1-21109-openloop</title>
+<style>
+:root{--bg:#fbfaf8;--fg:#16150f;--mut:#5f5b50;--line:#e0dbd0;--card:#fff;
+--won:#0f7a4a;--lost:#b3261e;--tied:#8a6d12;--acc:#1f4f8f;--code:#f4f2ec;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+font:16px/1.62 "Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;}
+.wrap{max-width:1080px;margin:0 auto;padding:56px 28px 96px}
+h1{font-size:2.35rem;line-height:1.14;letter-spacing:-.018em;margin:0 0 .3em;
+font-weight:600}
+h2{font-size:1.42rem;letter-spacing:-.01em;margin:2.6em 0 .55em;font-weight:600;
+padding-bottom:.32em;border-bottom:2px solid var(--line)}
+h3{font-size:1.08rem;margin:2em 0 .5em;font-weight:600;letter-spacing:.005em}
+h4{font-size:.94rem;margin:1.5em 0 .4em;font-weight:600;color:var(--mut);
+text-transform:uppercase;letter-spacing:.07em}
+p{margin:.75em 0}
+.sub{color:var(--mut);font-size:.9rem;margin:.2em 0 0;
+font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+.regime{display:inline-block;margin:1.4em 0 .2em;padding:.42em .9em;
+border:1.5px solid var(--acc);color:var(--acc);border-radius:2px;
+font-family:ui-sans-serif,system-ui,sans-serif;font-size:.8rem;font-weight:700;
+letter-spacing:.13em;text-transform:uppercase}
+.rule{color:var(--mut);font-size:.9rem;border-left:3px solid var(--line);
+padding:.15em 0 .15em 1em;margin:1.1em 0;
+font-family:ui-sans-serif,system-ui,sans-serif}
+.warn{border-left-color:var(--lost);color:var(--lost);font-weight:600}
+.star{border-left-color:var(--tied)}
+.tblwrap{overflow-x:auto;margin:1.1em 0;border:1px solid var(--line);
+border-radius:3px;background:var(--card)}
+table{border-collapse:collapse;width:100%;font-size:.845rem;
+font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+th{text-align:left;padding:.62em .8em;background:#f2efe8;font-weight:600;
+border-bottom:1.5px solid var(--line);white-space:nowrap;font-size:.78rem;
+letter-spacing:.04em;text-transform:uppercase;color:var(--mut)}
+td{padding:.58em .8em;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:none}
+code,.mono{font-family:ui-monospace,"SF Mono","Cascadia Mono",Consolas,monospace;
+font-size:.86em;background:var(--code);padding:.1em .34em;border-radius:2px}
+td .ci{white-space:nowrap;font-family:ui-monospace,Consolas,monospace;
+font-size:.84rem;background:none;padding:0}
+.pt{font-weight:700}
+.iv{color:var(--mut)}
+.v{font-weight:700;font-size:.78rem;letter-spacing:.06em;
+padding:.16em .5em;border-radius:2px;font-family:ui-sans-serif,system-ui,sans-serif}
+.v-WON{color:var(--won);background:#e8f4ed}
+.v-LOST{color:var(--lost);background:#fbeae9}
+.v-TIED{color:var(--tied);background:#faf3dd}
+.v-UNREADABLE{color:var(--mut);background:#eeece6}
+.v-PASS{color:var(--won);background:#e8f4ed}
+.v-FAIL{color:var(--lost);background:#fbeae9}
+.v-PRESENT{color:var(--won);background:#e8f4ed}
+.v-REFUSED{color:var(--tied);background:#faf3dd}
+.v-PARTIAL{color:var(--tied);background:#faf3dd}
+.v-ABSENT{color:var(--lost);background:#fbeae9}
+.fam{border:1px solid var(--line);border-left:4px solid var(--acc);
+background:var(--card);border-radius:3px;padding:1.1em 1.3em;margin:1.4em 0}
+.fam h3{margin-top:0}
+.fam .verdict{font-family:ui-sans-serif,system-ui,sans-serif;font-size:.9rem;
+font-weight:600;margin:.2em 0 .8em}
+.kpi{display:flex;gap:14px;flex-wrap:wrap;margin:1.2em 0}
+.kpi>div{flex:1 1 190px;border:1px solid var(--line);background:var(--card);
+border-radius:3px;padding:.85em 1em}
+.kpi .l{font-family:ui-sans-serif,system-ui,sans-serif;font-size:.7rem;
+letter-spacing:.09em;text-transform:uppercase;color:var(--mut);margin-bottom:.3em}
+.kpi .n{font-size:1.5rem;font-weight:600;letter-spacing:-.01em}
+pre{background:var(--code);border:1px solid var(--line);border-radius:3px;
+padding:1em;overflow-x:auto;font-size:.8rem;line-height:1.5;
+font-family:ui-monospace,Consolas,monospace}
+footer{margin-top:4em;padding-top:1.4em;border-top:1px solid var(--line);
+color:var(--mut);font-size:.82rem;
+font-family:ui-sans-serif,system-ui,sans-serif}
+@media (prefers-color-scheme:dark){
+:root{--bg:#14140f;--fg:#eceadf;--mut:#9d988a;--line:#2f2d26;
+--card:#1b1a14;--code:#22211a;--won:#5fca92;--lost:#f2857c;--tied:#e0b64a;
+--acc:#7fb0e8}
+th{background:#232219}
+.v-WON,.v-PASS,.v-PRESENT{background:#173026}
+.v-LOST,.v-FAIL,.v-ABSENT{background:#331c1a}
+.v-TIED,.v-REFUSED,.v-PARTIAL{background:#332c14}
+.v-UNREADABLE{background:#26251d}
+}
+</style>
+</head><body>
+<div class="wrap">
+<h1>Open-loop binding-KPI suite<br><span style='font-size:.62em;color:var(--mut);font-weight:400'>refav1-21109-openloop</span></h1>
+<p class="sub">taniteval/tools/openloop_suite.py · generated 2026-09-04T07:04:26Z · schema <code>taniteval.openloop_suite/1</code></p>
+<div class="regime">OPEN LOOP</div>
+<p class="rule">PI, 2026-09-02: a predictor consuming the planner&#x27;s own output is STILL open loop, because the model&#x27;s trajectory does not affect the ego data it is next fed. The other regime means the trajectory controls a vehicle in a simulator (AlpaSim) or a real test vehicle.<br><em>Applies to every arm in this suite, without exception.</em></p>
+<div class="kpi">
+<div><div class="l">windows scored</div><div class="n">282</div></div>
+<div><div class="l">episodes</div><div class="n">141</div></div>
+<div><div class="l">bootstrap draws</div><div class="n">2,000</div></div>
+<div><div class="l">criteria violations</div><div class="n">0</div></div>
+<div><div class="l">criteria work items</div><div class="n">3</div></div>
+</div>
+<h2>1. Headline — does the model beat its trivial control?</h2>
+<p>The question is <strong>does `cl` beat the trivial control `ha0`, per family, on the same windows, paired?</strong> — not <em>what is the ADE</em>.</p>
+<p class="rule warn">⛔ A paired interval that excludes zero while favouring the FLOOR means the trivial baseline WON. Render that as LOST, never as a tie.</p>
+<div class="tblwrap"><table><thead><tr><th>family</th><th>vs ha0 — oracle nav</th><th>vs ha0 — deployment (nav withheld)</th></tr></thead><tbody><tr><td><strong>STRATEGIC</strong></td><td>REFUSED</td><td>covered in-family by the `nav_zero` conditioning row, when present</td></tr></tbody></table></div>
+<p><code>ha0</code> is constant velocity at the measured <code>v0</code>: the strongest trivial baseline and the only arm that is bit-comparable across models. The admissible cross-model statistic is the <em>margin over this floor</em>, never a level.</p>
+<h3>1.1 ⭐ The two margins carry equal billing</h3>
+<p>The right-hand column above is not a footnote. The nav/route token this model consumes is an <strong>ORACLE</strong> (provenance <code>ego-future</code>) and <strong>will not exist at deployment</strong>.</p>
+<div class="tblwrap"><table><thead><tr><th>margin</th><th>what it is</th><th>when to quote it</th></tr></thead><tbody><tr><td><code>os − ha0</code></td><td>the oracle-nav margin</td><td>the fair like-for-like against another arm that is also fed nav</td></tr><tr><td><code>os_navzero − ha0</code></td><td>the <strong>deployment</strong> margin, nav withheld</td><td>the one that answers <em>does this drive</em></td></tr></tbody></table></div>
+<p class="rule warn">⛔ Quoting only the oracle-nav margin OVERSTATES the system. Both are computed, both are admissible, and both are printed side by side throughout this report.</p>
+<p class="rule warn">⛔ <strong>NON-PARITY — read before any cross-arm comparison.</strong> ⛔ THIS RUN IS NON-PARITY unless `parity_status` says otherwise. refcv3&#x27;s own config.json carries `v2_parity.parity false`, `checked false` and `corpus_key null`, and the trainer prints a non-parity warning on line 2 of its train.log. ⇒ refcv3 is NOT cross-arm comparable with refc-base or refc-xl, and a reader must not assume the programme&#x27;s usual parity. The ONLY admissible cross-model statistic here is each arm&#x27;s MARGIN over the shared `ha0` floor, which is bit-identically defined everywhere — never a level against another model&#x27;s level.</p>
+<h2>2. Void gates — what shape is the arm, before any family row</h2>
+<p class="rule warn">⛔ If either profile is degenerate the read is VOID, not negative. Void means the instrument saw the baseline (or one constant anchor), not the model.</p>
+<div class="tblwrap"><table><thead><tr><th>arm</th><th>n</th><th>straight</th><th>const-speed</th><th>trivial (CV plan)</th></tr></thead><tbody></tbody></table></div>
+<p class="rule">Trivial profile: no arm besides the floor is degenerate (<code>ha0</code> is expected here — it <em>is</em> the constant-velocity plan).</p>
+<p class="rule">Selection profile: not available</p>
+<h2>3. The four families — reported separately, never pooled</h2>
+<p class="rule warn">Sayed 2026-08-02, binding: LONGITUDINAL + LATERAL + TACTICAL + STRATEGIC in ADDITION to ADE, per family, NEVER pooled. This suite emits no composite score and refuses to invent one. A family reported REFUSED/UNAVAILABLE is a WORK ITEM, not a pass.</p>
+<div class="tblwrap"><table><thead><tr><th>point estimate</th><th>interval</th><th>paired form</th><th>cluster unit</th><th>n_boot</th><th>seed</th></tr></thead><tbody><tr><td>full_set pooled mean over windows</td><td>episode_cluster_bootstrap (taniteval/ci.py)</td><td>paired_episode_cluster_bootstrap — two arms on the SAME windows, resampled together so the shared per-window difficulty cancels inside each draw</td><td>the episode (windows inside one clip are dependent)</td><td>2,000</td><td>0</td></tr></tbody></table></div>
+<p class="rule">overlapping_holdout_se is NOT used anywhere in this suite. It is not a jackknife, it is anti-conservative, and it BIASES THE POINT ESTIMATE bidirectionally — measured up to a sign flip on a paired delta. Named here only to disavow it.</p>
+<div class="fam">
+<h3>ADE</h3>
+<p class="verdict">No paired block for this family.</p>
+</div>
+<div class="fam">
+<h3>LONGITUDINAL</h3>
+<p class="verdict">No paired block for this family.</p>
+</div>
+<div class="fam">
+<h3>LATERAL</h3>
+<p class="verdict">No paired block for this family.</p>
+</div>
+<div class="fam">
+<h3>TACTICAL</h3>
+<p class="verdict">No paired block for this family.</p>
+</div>
+<div class="fam">
+<h3>STRATEGIC</h3>
+<p class="verdict">REFUSED <span class="iv">· contrast <code>accuracy vs the MAJORITY-CLASS rate (the no-information value for a classifier), plus the nav controls</code></span></p>
+<div class="tblwrap"><table><thead><tr><th>metric</th><th>Δ (arm − floor) with 95 % CI</th><th>n windows</th><th>n eps</th><th>verdict</th></tr></thead><tbody></tbody></table></div>
+</div>
+<h3>Per-family absolute readings — headline arm</h3>
+<h4>longitudinal · n 282 · tier <code>T1</code></h4>
+<div class="tblwrap"><table><thead><tr><th>component</th><th>value</th><th>95 % CI (episode-cluster bootstrap)</th></tr></thead><tbody><tr><td><code>speed_mae_mps</code></td><td><span class="pt">0.5412</span></td><td><span class="ci iv">[0.4741, 0.6105]</span></td></tr><tr><td><code>speed_bias_mps</code></td><td><span class="pt">-0.114</span></td><td><span class="ci iv">[-0.1955, -0.0257]</span></td></tr><tr><td><code>speed_rmse_mps</code></td><td><span class="pt">0.8888</span></td><td><span class="ci iv">[0.7774, 0.9963]</span></td></tr><tr><td><code>along_mae_m</code></td><td><span class="pt">0.4241</span></td><td><span class="ci iv">[0.3741, 0.4744]</span></td></tr><tr><td><code>along_bias_m</code></td><td><span class="pt">-0.0881</span></td><td><span class="ci iv">[-0.155, -0.0189]</span></td></tr><tr><td><code>along_final_bias_m</code></td><td><span class="pt">-0.1513</span></td><td><span class="ci iv">[-0.3221, 0.0252]</span></td></tr><tr><td><code>accel_mae_mps2</code></td><td><span class="pt">0.5499</span></td><td><span class="ci iv">[0.4805, 0.6165]</span></td></tr><tr><td><code>ego_progress</code></td><td><span class="pt">OK</span></td><td><span class="ci iv">see the JSON record for this sub-block</span></td></tr><tr><td><code>distance_keeping</code></td><td><span class="pt">OK</span></td><td><span class="ci iv">see the JSON record for this sub-block</span></td></tr><tr><td><code>anti_echo</code></td><td><span class="pt">OK</span></td><td><span class="ci iv">see the JSON record for this sub-block</span></td></tr><tr><td><code>target_speed_acc.within_0.5_mps</code></td><td><span class="pt">0.6713</span></td><td><span class="ci iv">[0.6305, 0.7135]</span></td></tr><tr><td><code>target_speed_acc.within_1.0_mps</code></td><td><span class="pt">0.8298</span></td><td><span class="ci iv">[0.7975, 0.8631]</span></td></tr><tr><td><code>target_speed_acc.within_2.0_mps</code></td><td><span class="pt">0.9475</span></td><td><span class="ci iv">[0.9309, 0.9628]</span></td></tr><tr><td><code>ego_progress.progress_ratio_mean</code></td><td><span class="pt">0.9713</span></td><td><span class="ci iv">[0.9443, 0.9953]</span></td></tr><tr><td><code>ego_progress.progress_ratio_median</code></td><td><span class="pt">0.9912</span></td><td><span class="ci iv">[0.987, 0.9938]</span></td></tr><tr><td><code>ego_progress.progress_error_mean</code></td><td><span class="pt">0.1029</span></td><td><span class="ci iv">[0.0789, 0.132]</span></td></tr><tr><td><code>ego_progress.under_progress_rate</code></td><td><span class="pt">0.6314</span></td><td><span class="ci iv">[0.573, 0.6884]</span></td></tr><tr><td><code>ego_progress.gt_progress_mean_m</code></td><td><span class="pt">23.7972</span></td><td><span class="ci iv">[21.4135, 26.287]</span></td></tr><tr><td><code>ego_progress.t0_axis_gt_self_ratio</code></td><td><span class="pt">0.9822</span></td><td><span class="ci iv">[0.9595, 0.9975]</span></td></tr><tr><td><code>distance_keeping.mean_headway_min_m</code></td><td><span class="pt">26.2149</span></td><td><span class="ci iv">[22.2808, 30.6606]</span></td></tr><tr><td><code>distance_keeping.mean_min_ttc_s</code></td><td><span class="pt">22.9028</span></td><td><span class="ci iv">[20.7193, 24.9668]</span></td></tr><tr><td><code>distance_keeping.mean_time_gap_min_s</code></td><td><span class="pt">4.6913</span></td><td><span class="ci iv">[3.2815, 6.67]</span></td></tr></tbody></table></div>
+<h4>lateral · n 282 · tier <code>T1</code></h4>
+<div class="tblwrap"><table><thead><tr><th>component</th><th>value</th><th>95 % CI (episode-cluster bootstrap)</th></tr></thead><tbody><tr><td><code>heading_mae_deg</code></td><td><span class="pt">2.462</span></td><td><span class="ci iv">[1.6256, 3.5707]</span></td></tr><tr><td><code>yaw_rate_mae_degps</code></td><td><span class="pt">2.1993</span></td><td><span class="ci iv">[1.7042, 2.6873]</span></td></tr><tr><td><code>curvature_mae_1pm</code></td><td><span class="pt">0.007205</span></td><td><span class="ci iv">[0.004627, 0.010071]</span></td></tr><tr><td><code>curvature_bias_1pm</code></td><td><span class="pt">0.001327</span></td><td><span class="ci iv">[-0.001331, 0.004412]</span></td></tr><tr><td><code>cross_mae_m</code></td><td><span class="pt">0.2257</span></td><td><span class="ci iv">[0.1772, 0.2788]</span></td></tr><tr><td><code>cross_bias_m</code></td><td><span class="pt">0.0629</span></td><td><span class="ci iv">[0.0071, 0.1221]</span></td></tr><tr><td><code>cross_final_mae_m</code></td><td><span class="pt">0.5888</span></td><td><span class="ci iv">[0.459, 0.732]</span></td></tr><tr><td><code>n_steps_heading</code></td><td><span class="pt">2699</span></td><td><span class="ci iv">no interval emitted for this component</span></td></tr><tr><td><code>n_steps_curvature</code></td><td><span class="pt">2427</span></td><td><span class="ci iv">no interval emitted for this component</span></td></tr><tr><td><code>n_steps_yaw_rate</code></td><td><span class="pt">2427</span></td><td><span class="ci iv">no interval emitted for this component</span></td></tr><tr><td><code>excluded_below_min_ds</code></td><td><span class="pt">121</span></td><td><span class="ci iv">no interval emitted for this component</span></td></tr><tr><td><code>min_ds_m</code></td><td><span class="pt">0.1</span></td><td><span class="ci iv">no interval emitted for this component</span></td></tr><tr><td><code>min_ds_mps</code></td><td><span class="pt">0.5</span></td><td><span class="ci iv">no interval emitted for this component</span></td></tr></tbody></table></div>
+<h2>4. Controls — including the one that must read a known value</h2>
+<p class="rule warn">⛔ A model number without its control is unreadable. MEASURED 2026-08-23: a T1 arm read 9.3697 m while its own hold-action control read 0.4246 m on the SAME windows — the trivial baseline beat the model 22x, and an artifact reporting only the model&#x27;s value looked like a result.</p>
+<h3><code>const0</code> — the constant-only control · <span class="v v-PASS">PASS</span></h3>
+<p>a predictor that emits the SAME output for every input: identically zero ego-frame displacement at every slot. Evidence class <code>MEASURED (ours; dump C:\Users\Admin\refav1_eval_slice\thor\full)</code> · n 282 windows / 141 episodes.</p>
+<div class="tblwrap"><table><thead><tr><th>check</th><th>expected (known value)</th><th>measured</th><th>tolerance</th><th>result</th></tr></thead><tbody><tr><td>const0 paired against ITSELF, episode-cluster bootstrap</td><td><span class="ci">delta <span class="pt">0.0</span> <span class="iv">[0.0, 0.0]</span>, separated False</span></td><td><span class="ci">delta <span class="pt">0.0</span> <span class="iv">[0.0, 0.0]</span>, separated False</span></td><td><strong>NONE — this one is bit-exact</strong></td><td><span class="v v-PASS">PASS</span></td></tr><tr><td><code>ade_m</code> — mean over (window, slot) of ‖GT‖, float64 numpy</td><td><span class="pt">12.732511</span></td><td><span class="pt">12.732511</span></td><td>rel 0.0001 <span class="iv">(|Δ| 4.99e-07)</span></td><td><span class="v v-PASS">PASS</span></td></tr><tr><td><code>LON_speed_mae_mps</code> — mean over (window, slot) of the GT speed — a zero path has speed 0 everywhere, so its MAE IS the GT speed</td><td><span class="pt">11.569022</span></td><td><span class="pt">11.569022</span></td><td>rel 0.0001 <span class="iv">(|Δ| 0)</span></td><td><span class="v v-PASS">PASS</span></td></tr></tbody></table></div>
+<p class="rule warn">a control that must read a KNOWN value is the only thing that catches a metric pipeline which is confidently wrong. If this block does not pass, THE HARNESS IS WRONG, NOT THE MODEL.</p>
+<p class="rule">the production geometry path runs in float32 torch; the independent reference is float64 numpy, so the two agree to float32 resolution</p>
+<h3>The trivial and nav controls</h3>
+<div class="tblwrap"><table><thead><tr><th>control</th><th>definition</th><th>tier</th><th>why it is here</th></tr></thead><tbody><tr><td><code>ha0</code></td><td>constant velocity at the MEASURED v0 — a = 0, kappa = 0, integrated on the corpus&#x27;s native 0.1 s tick and index-selected onto the scoring grid</td><td><code>T1</code></td><td>the strongest trivial baseline, and the ONLY arm that is bit-comparable across models — identically defined, identical windows, identical integrator, and exactly zero in either action unit</td></tr><tr><td><code>ha</code></td><td>hold the last OBSERVED (a, steer)</td><td><code>T1</code></td><td>⭐ the reason ha0 exists: holding a NOISY observed steer drifts, so an arm that does nothing can beat `ha` and read as lateral skill. A win over `ha` alone is not skill.</td></tr><tr><td><code>os_navshuf</code></td><td>withholds the PAIRING between a window and its nav token; the nav MARGINAL is preserved exactly</td><td><code>T1</code></td><td>is the model using <em>this</em> window’s nav?</td></tr><tr><td><code>os_navzero</code></td><td>withholds the SIGNAL — nav_cmd=None, the model&#x27;s own documented no-nav path. This is the DEPLOYMENT condition, because the nav token is an ORACLE (provenance ego-future) that will not exist there.</td><td><code>T1</code></td><td>what the model is worth WITHOUT the oracle nav — i.e. at deployment</td></tr></tbody></table></div>
+<p class="rule warn">⛔ a shuffle cannot stand in for a zero. MEASURED elsewhere: a tactical head ranked turns at AUC 0.873 under true nav and collapsed to 0.520 (chance) under nav_zero.</p>
+<h2>5. Arms — tier and evidence class, every one</h2>
+<div class="tblwrap"><table><thead><tr><th>arm</th><th>tier</th><th>regime</th><th>tier status</th><th>evidence class</th><th>meaning</th></tr></thead><tbody><tr><td><code>cl</code></td><td><code>T1</code></td><td>OPEN LOOP</td><td>stamped</td><td>MEASURED (ours; the banked dump + this record)</td><td>—</td></tr><tr><td><code>ha</code></td><td><code>T1</code></td><td>OPEN LOOP</td><td>stamped</td><td>MEASURED (ours; the banked dump + this record)</td><td>—</td></tr><tr><td><code>ha0</code></td><td><code>T1</code></td><td>OPEN LOOP</td><td>stamped</td><td>MEASURED (ours; the banked dump + this record)</td><td>—</td></tr><tr><td><code>ol</code></td><td><code>T0</code></td><td>OPEN LOOP</td><td>stamped</td><td>MEASURED (ours; the banked dump + this record)</td><td>—</td></tr><tr><td><code>const0</code></td><td><code>T1</code></td><td>OPEN LOOP</td><td>VACUOUS — consumes no input at all</td><td>MEASURED (ours; dump C:\Users\Admin\refav1_eval_slice\thor\full)</td><td>a predictor that emits the SAME output for every input: identically zero ego-frame displacement at every slot</td></tr></tbody></table></div>
+<h2>6. Protocol, parity and the leak guards</h2>
+<div class="tblwrap"><table><thead><tr><th>field</th><th>value</th></tr></thead><tbody><tr><td><code>tier</code></td><td>T1</td></tr><tr><td><code>loop_class</code></td><td>OPEN LOOP</td></tr><tr><td><code>inference_inputs</code></td><td>vision (the OBSERVED window only), the clip&#x27;s nav/route token, and the measured v0 at t0. ⛔ Nothing after the window origin reaches the forward pass; future poses are read ONLY to build targets.</td></tr><tr><td><code>vision_only</code></td><td>PARTIAL BY DESIGN, and stated rather than claimed: the forward pass also consumes a route token and the measured v0. v0 at its own cycle time is admissible (PI ruling 2026-09-02); the route token is admissible as a goal input (PI 2026-08-03) but is an ORACLE here, which is why the nav-zero arm is reported beside it as the deployment condition.</td></tr><tr><td><code>goal_source</code></td><td>the clip&#x27;s v7.2 nav_command token (provenance: ego-future, oracle=True). ⛔ It is NOT computed from any situation classifier&#x27;s output, in any form — the goal path and the situation path are information-disjoint at inference (PI 2026-08-03, binding).</td></tr><tr><td><code>goal_situation_disjoint</code></td><td>True</td></tr><tr><td><code>labels_may_use_ego</code></td><td>yes — label derivation may use ego and privileged channels (PI 2026-08-03). The restriction is on INFERENCE only.</td></tr></tbody></table></div>
+<div class="tblwrap"><table><thead><tr><th>parity field</th><th>value</th></tr></thead><tbody><tr><td><code>parity_status</code></td><td>NON-PARITY (assume non-parity unless the run&#x27;s config.json v2_parity says otherwise)</td></tr><tr><td><code>parity_key</code></td><td>None</td></tr><tr><td><code>corpus</code></td><td>UNDECLARED — pass --corpus</td></tr><tr><td><code>n_episodes_scored</code></td><td>141</td></tr><tr><td><code>n_windows_scored</code></td><td>282</td></tr><tr><td><code>window_stride</code></td><td>1</td></tr><tr><td><code>grid</code></td><td>2s</td></tr><tr><td><code>labels_md5</code></td><td>None</td></tr><tr><td><code>train_eval_disjoint</code></td><td>UNVERIFIED BY THIS TOOL</td></tr></tbody></table></div>
+<p class="rule warn">⛔ THIS RUN IS NON-PARITY unless `parity_status` says otherwise. refcv3&#x27;s own config.json carries `v2_parity.parity false`, `checked false` and `corpus_key null`, and the trainer prints a non-parity warning on line 2 of its train.log. ⇒ refcv3 is NOT cross-arm comparable with refc-base or refc-xl, and a reader must not assume the programme&#x27;s usual parity. The ONLY admissible cross-model statistic here is each arm&#x27;s MARGIN over the shared `ha0` floor, which is bit-identically defined everywhere — never a level against another model&#x27;s level.</p>
+<p class="rule warn">⛔ train ∩ eval = ∅ is a property of the RUN, not of this tool, and this tool cannot check it. Assert it before quoting anything (GATE 3).</p>
+<h2>7. Honest gaps — KPIs this run could not measure</h2>
+<p class="rule">a KPI that could not be measured is NAMED with its reason and its n. An eval that silently omits one reads at a glance exactly like an eval that has no gap.</p>
+<div class="tblwrap"><table><thead><tr><th>criterion</th><th>family</th><th>state</th><th>reason</th><th>work item</th></tr></thead><tbody><tr><td><code>strat.decision / strat.route_goal</code></td><td>STRATEGIC</td><td><span class="v v-REFUSED">REFUSED</span></td><td>strategic decisions not present in the scored pass (missing [&#x27;route_pred&#x27;, &#x27;route_gt&#x27;]). A world-model FIDELITY pass does not traverse the hierarchy — run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.</td><td>the route head&#x27;s sidecar block, or an external corpus — PhysicalAI-AV carries no map, lane graph, junction label or route signal</td></tr></tbody></table></div>
+<h2>8. Criteria-completeness check</h2>
+<p>Registry <code>products/P7-TanitEval/CRITERIA_REGISTRY.json</code> v2.5.0 · scope <strong>IN_SCOPE</strong> <span class='iv'>(matched key_present=&#x27;four_families&#x27;)</span></p>
+<div class="kpi">
+<div><div class="l">violations (silent omissions)</div><div class="n">0</div></div>
+<div><div class="l">work items (refused w/ reason)</div><div class="n">3</div></div>
+<div><div class="l">tier stamp</div><div class="n">T1</div></div>
+</div>
+<h4>LONGITUDINAL — 4/4 present</h4>
+<div class="tblwrap"><table><thead><tr><th>criterion</th><th>state</th><th>detail</th></tr></thead><tbody><tr><td>target-speed accuracy</td><td><span class="v v-PRESENT">PRESENT</span></td><td>four_families.longitudinal.speed_mae_mps</td></tr><tr><td>along-track displacement error</td><td><span class="v v-PRESENT">PRESENT</span></td><td>four_families.longitudinal.along_mae_m</td></tr><tr><td>ego progress</td><td><span class="v v-PRESENT">PRESENT</span></td><td>four_families.longitudinal.ego_progress: status=OK</td></tr><tr><td>distance-keeping (headway / time-gap / TTC to the lead agent)</td><td><span class="v v-PRESENT">PRESENT</span></td><td>four_families.longitudinal.distance_keeping: status=OK</td></tr></tbody></table></div>
+<h4>LATERAL — 4/4 present</h4>
+<div class="tblwrap"><table><thead><tr><th>criterion</th><th>state</th><th>detail</th></tr></thead><tbody><tr><td>cross-track error</td><td><span class="v v-PRESENT">PRESENT</span></td><td>four_families.lateral.cross_mae_m</td></tr><tr><td>heading error</td><td><span class="v v-PRESENT">PRESENT</span></td><td>four_families.lateral.heading_mae_deg</td></tr><tr><td>curvature error</td><td><span class="v v-PRESENT">PRESENT</span></td><td>four_families.lateral.curvature_mae_1pm</td></tr><tr><td>yaw-rate error</td><td><span class="v v-PRESENT">PRESENT</span></td><td>four_families.lateral.yaw_rate_mae_degps</td></tr></tbody></table></div>
+<h4>TACTICAL — 3/3 present</h4>
+<div class="tblwrap"><table><thead><tr><th>criterion</th><th>state</th><th>detail</th></tr></thead><tbody><tr><td>manoeuvre-decision quality (selected vs executed)</td><td><span class="v v-PRESENT">PRESENT</span></td><td>four_families.tactical.lateral_decision: status=OK</td></tr><tr><td>confusion over the manoeuvre classes</td><td><span class="v v-PRESENT">PRESENT</span></td><td>four_families.tactical.lateral_decision.confusion_gt_rows_pred_cols</td></tr><tr><td>tactical goal / anchor selection quality</td><td><span class="v v-PRESENT">PRESENT</span></td><td>four_families.tactical.goal_setting: status=OK</td></tr></tbody></table></div>
+<h4>STRATEGIC — 0/2 present</h4>
+<div class="tblwrap"><table><thead><tr><th>criterion</th><th>state</th><th>detail</th></tr></thead><tbody><tr><td>strategic decision quality</td><td><span class="v v-REFUSED">REFUSED</span></td><td>four_families.strategic: strategic decisions not present in the scored pass (missing [&#x27;route_pred&#x27;, &#x27;route_gt&#x27;]). A world-model FIDELITY pass does not traverse the hierarchy — run_one prints this explicitly. Producing this fa (n=0)</td></tr><tr><td>strategic route / goal-setting quality</td><td><span class="v v-REFUSED">REFUSED</span></td><td>four_families.strategic: strategic decisions not present in the scored pass (missing [&#x27;route_pred&#x27;, &#x27;route_gt&#x27;]). A world-model FIDELITY pass does not traverse the hierarchy — run_one prints this explicitly. Producing this fa (n=0)</td></tr></tbody></table></div>
+<h4>Artifact hygiene</h4>
+<div class="tblwrap"><table><thead><tr><th>criterion</th><th>state</th><th>detail</th></tr></thead><tbody><tr><td>tier stamp present</td><td><span class="v v-PRESENT">PRESENT</span></td><td>T1 (T1)</td></tr><tr><td>estimator named</td><td><span class="v v-PRESENT">PRESENT</span></td><td>estimator.interval</td></tr><tr><td>n printed (windows and episodes)</td><td><span class="v v-PRESENT">PRESENT</span></td><td>n_windows</td></tr><tr><td>overlapping_holdout_se not used as a decision-grade interval</td><td><span class="v v-PRESENT">PRESENT</span></td><td>named only to disavow or deprecate it (estimator.forbidden_estimator)</td></tr><tr><td>corpus identity recorded (parity key + skip-hash)</td><td><span class="v v-PRESENT">PRESENT</span></td><td>parity</td></tr><tr><td>headline metrics reported against their trivial control(s)</td><td><span class="v v-PRESENT">PRESENT</span></td><td>floors</td></tr></tbody></table></div>
+<h4>Leak guards</h4>
+<div class="tblwrap"><table><thead><tr><th>criterion</th><th>state</th><th>detail</th></tr></thead><tbody><tr><td>Inference uses VISION ONLY. Labels may use ego/privileged data (PI, 2026-08-03, binding).</td><td><span class="v v-PRESENT">PRESENT</span></td><td>protocol.inference_inputs</td></tr><tr><td>The goal path and the situation path stay information-disjoint at inference; a goal input must not carry the situation classifier&#x27;s output in any form (PI, 2026-08-03, binding).</td><td><span class="v v-PRESENT">PRESENT</span></td><td>protocol.goal_source</td></tr><tr><td>A route/goal head scoring near 1.0 must publish its echo test against its own input.</td><td><span class="v v-REFUSED">REFUSED</span></td><td>strategic.echo_test: the arm record carries no route-head conditionings, so no echo index against the fed nav token can be formed. ⛔ A route/goal score is INADMISSIBLE without it — WORK ITEM, not a pass. (n=0)</td></tr></tbody></table></div>
+<h2>9. Vocabulary — the regime label, and where the repo is still stale</h2>
+<p>T1 is the doctrine&#x27;s machine-readable stamp and the criteria registry keys on it. The LETTER is kept; the doctrine&#x27;s PROSE for that row is superseded by the ruling above and is reported, not edited, in stale_loop_labels.</p>
+<div class="tblwrap"><table><thead><tr><th>location</th><th>symbol</th><th>what it still says</th><th>action</th></tr></thead><tbody><tr><td><code>taniteval/tools/t1_eval.py</code></td><td><code>_TIER_NOTE / _tier_doctrine</code></td><td>describes T1 with the superseded regime phrase</td><td>REPORTED, not edited — separate stream (PI ruling 2026-09-02)</td></tr><tr><td><code>products/P7-TanitEval/CRITERIA_REGISTRY.json</code></td><td><code>tiers.values.T1.note</code></td><td>describes T1 with the superseded regime phrase, as the PRIMARY driving tier</td><td>REPORTED, not edited — the registry is the EvalFlyWheel&#x27;s</td></tr><tr><td><code>Project Steering/EVAL_DOCTRINE.md</code></td><td><code>the T1 row</code></td><td>defines T1 with the superseded regime phrase</td><td>REPORTED, not edited — doctrine change is a PI/Master-Mind call</td></tr></tbody></table></div>
+<h3>9.1 A second, different mismatch — checker wording vs emitter wording</h3>
+<div class="tblwrap"><table><thead><tr><th>emitter · field</th><th>the problem</th><th>consequence</th><th>action</th></tr></thead><tbody><tr><td><code>taniteval/four_families.py</code><br><code>longitudinal.anti_echo.holdv0_baseline.estimator</code></td><td>the checker&#x27;s exoneration list carries &#x27;not used&#x27; / &#x27;never used&#x27; / &#x27;is not&#x27; / &#x27;must not&#x27; / &#x27;deprecated&#x27; / &#x27;forbidden&#x27; / &#x27;banned&#x27;, and none of them matches the emitter&#x27;s own &#x27;NOT &lt;estimator&gt;&#x27; phrasing — so a correct, explicit disavowal is scored as a USE</td><td>hyg.no_forbidden_estimator reads MISSING on an artifact whose estimator discipline is exemplary</td><td>REPORTED, not edited. This suite republishes the string with the programme&#x27;s canonical disavowal clause appended (recorded in four_families._disavowal_annotations) rather than touching either the emitter or the checker.</td></tr></tbody></table></div>
+<p class="rule">Sites annotated on republication: <strong>2</strong>. these strings already disavowed the forbidden estimator in the EMITTER&#x27;s wording; the criteria checker&#x27;s exoneration list does not carry that phrasing, so a correct disavowal scored as a use. The clause is appended on republication, the sites are listed here, and the mismatch is reported as a finding — neither the emitter nor the checker was edited.</p>
+<h2>10. Provenance</h2>
+<pre>{
+ &quot;source&quot;: &quot;BANKED RECORD (another stream)&quot;,
+ &quot;path&quot;: &quot;C:\\Users\\Admin\\refav1_eval_slice\\thor\\refav1_t1_full_21109.json&quot;,
+ &quot;sha256&quot;: &quot;4b23ef0d69992bd5bf1956405a7ab4cb209e11e3965fcf86d97b38d3738d7b4a&quot;,
+ &quot;gpu_used&quot;: &quot;none — the record was read, not recomputed&quot;,
+ &quot;stack_pin&quot;: null,
+ &quot;resolved_trees&quot;: {
+  &quot;tanitad&quot;: &quot;C:\\Users\\Admin\\tanitad-wt\\stack\\tanitad\\__init__.py&quot;,
+  &quot;tanitad_version&quot;: &quot;0.0.1&quot;,
+  &quot;taniteval&quot;: &quot;C:\\Users\\Admin\\tanitad-wt\\taniteval\\taniteval\\__init__.py&quot;,
+  &quot;taniteval_version&quot;: &quot;0.1.0&quot;,
+  &quot;torch&quot;: &quot;C:\\Users\\Admin\\venvs\\tanitad\\Lib\\site-packages\\torch\\__init__.py&quot;,
+  &quot;torch_version&quot;: &quot;2.11.0+cu128&quot;,
+  &quot;numpy&quot;: &quot;C:\\Users\\Admin\\venvs\\tanitad\\Lib\\site-packages\\numpy\\__init__.py&quot;,
+  &quot;numpy_version&quot;: &quot;2.5.1&quot;
+ }
+}</pre>
+<footer>Every number is <strong>MEASURED (ours)</strong> through <code>refcv3_arm.py</code> → <code>t1_eval.py::analyze</code> → <code>four_families.py</code> / <code>ci.py</code>. This tool computes no geometry of its own; it assembles, checks and renders.</footer>
+</div>
+</body></html>

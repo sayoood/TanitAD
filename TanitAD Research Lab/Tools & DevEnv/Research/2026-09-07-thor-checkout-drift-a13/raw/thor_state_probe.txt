@@ -1,0 +1,76 @@
+### A13 probe log -- Thor live-state evidence (all read-only)
+### captured 2026-09-07T20:19:29Z UTC from the dev box
+
+$ ssh -n tanitad-thor-wifi ...
+== date ==
+Mon Sep  7 08:19:30 PM UTC 2026
+Mon Sep  7 10:19:30 PM CEST 2026
+== uptime / load ==
+ 22:19:30 up 23 days,  1:08,  2 users,  load average: 0.20, 0.18, 0.18
+== PROBE 1: ps -eo args | grep -ci python (self-match excluded by the bracket trick) ==
+1
+== PROBE 2: pidof ==
+PIDOF_EMPTY
+== PROBE 3: /proc/*/exe scan ==
+PROC_SCAN_END
+== GPU ==
+utilization.gpu [%]
+0 %
+== cron ==
+*/30 * * * * /usr/bin/python3 /home/nvidia/refav1_drift_check_v3.py >> /home/nvidia/refav1_drift_check.cron.log 2>&1
+== last 3 cron drift-check rows for the ep3-speed run (trainer=/sup= are process counts) ==
+2026-09-07T19:00:01Z step=21100 trainer=0 sup=0 alarm=0 tac_share=- tgt_std_tac=0.357 
+2026-09-07T19:30:01Z step=21100 trainer=0 sup=0 alarm=0 tac_share=- tgt_std_tac=0.357 
+2026-09-07T20:00:01Z step=21100 trainer=0 sup=0 alarm=0 tac_share=- tgt_std_tac=0.357 
+== done-marker ==
+{
+  "done": true,
+  "run": "refav1-b1-v72-ep3-speed",
+  "final_step": 21109,
+  "target_steps": 21109,
+  "epoch": "complete",
+  "checkpoint": "ckpt.pt",
+  "checkpoint_bytes": 2122997633,
+  "tensors": 407,
+  "params": 182459701,
+  "drift_alarms_in_training_signal": 0,
+  "note": "Written by the Master Mind 2026-09-04. The run FINISHED at 21109; train_log.jsonl last ROW reads 21100 only because --log-every 50 and 21109 is not a multiple of 50. The supervisor relaunched 80 times over 2.7h because this done-marker was missing; each relaunch resumed, printed done: 21109 steps, and exited cleanly. The DRIFT_ALARM file is a FALSE POSITIVE of the same cause (log stale while a briefly-alive relaunch did nothing)."
+}== run dir mtimes ==
+total 2073884
+drwxrwxr-x  2 nvidia nvidia       4096 2026-09-04 06:00 .
+drwxrwxr-x 12 nvidia nvidia       4096 2026-09-03 06:21 ..
+-rw-rw-r--  1 nvidia nvidia 2122997633 2026-09-04 02:55 ckpt.pt
+-rw-rw-r--  1 nvidia nvidia       2883 2026-09-04 05:32 config.json
+-rw-rw-r--  1 nvidia nvidia      20024 2026-09-07 22:00 drift_check.log
+-rw-rw-r--  1 nvidia nvidia        714 2026-09-04 05:45 summary.json
+-rw-rw-r--  1 nvidia nvidia       5889 2026-09-04 05:34 supervisor.log
+-rw-rw-r--  1 nvidia nvidia     331465 2026-09-04 05:34 train.log
+-rw-rw-r--  1 nvidia nvidia     265629 2026-09-04 02:54 train_log.jsonl
+-rw-rw-r--  1 nvidia nvidia          0 2026-09-03 06:21 train.stderr.log
+== launch command (sup_refav1_v5.sh) ==
+print(s)
+' 2>/dev/null | tail -n 1
+}
+trainer_pid() { ps -eo pid=,args= | grep 'refa[_]v1[_]train' | grep -v ' grep ' | awk '{print $1}' | head -1; }
+launch() {
+  cd "$OUT" || return 1
+  PYTHONPATH="$STACK" PYTHONIOENCODING=utf-8 OMP_NUM_THREADS=6 \
+  nohup /home/nvidia/venvs/tanitad-train/bin/python "$STACK/scripts/refa_v1_train.py" \
+    --cache /home/nvidia/data/refav1-fp8-train \
+    --episodes /home/nvidia/data/physicalai-b1-w120-256x640cyl \
+    --labels /home/nvidia/data/v72/labels/s2_labels_v7.2_train.jsonl.gz \
+    --nav /home/nvidia/data/v72/labels/s2_labels_v7.2_train.jsonl.gz \
+    --steps "$TARGET" --bs 8 --lru 64 --seed 0 \
+    --target-space frozen --detach-aux-targets --bptt-truncate 15 \
+    --ema-targets --precision bf16 --tf32 --skip-nonfinite \
+    --speed-channel \
+    --min-participation 0 \
+    --resume \
+    --log-every 50 --save-every 1000 \
+    --out "$OUT" >> "$OUT/train.log" 2>> "$OUT/train.stderr.log" 200>&- &
+  echo $!
+== checkout git state ==
+30d6d601cb0589b1cbf2f6f3f99241da8c548af5
+agent/arch-inf-20260803
+30d6d601cb0589b1cbf2f6f3f99241da8c548af5 2026-08-15 23:06:46 +0200 tanh RESOLVED: the answer is neither tanh nor softsign — it is _squash, and v6 now uses it
+core.autocrlf unset

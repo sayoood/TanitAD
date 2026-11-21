@@ -1,0 +1,36 @@
+[02:45:48] BPEVAL start (DRY=1)
+sha list entries 142 local files 142 bad/missing 0 []
+[02:45:55] tip a9da6e8fa7d439934855dc4eceee1f71a63c4d9a
+[02:45:55] box claimed
+[02:45:56] free C: 100 GiB (floor 8)
+[02:46:33] shipped files; shipping the pod eval cache (2.8 GB)
+[02:46:43] small files + checkpoints sha256 verified
+[02:47:04] code tree = tip a9da6e8fa7d439934855dc4eceee1f71a63c4d9a (4 key files sha-checked)
+[02:48:23] pod eval cache: 142 files sha256-equal on both sides
+[02:48:23] TRACKS-POD-NOT-SUPPLIED: box 2's native_tracks.pt is read for all three evals (the pod's copy is UNVERIFIED equal)
+[02:48:30] evals launched (identity, B' s0, B' s1)
+[02:48:40] pulled and sha256-verified: 3 evals (json, npz, log)
+identity: PASS (8 checks, tolerances window 1e-04 / mean 1e-05 / json 1.5e-04)
+F  (banked M2b)  = 0.12074 m (reads 0.1207)   2F  = 0.2415 m
+F' (B' s0, s1)   = 0.12074 m (reads 0.1207)   2F' = 0.2415 m
+row                          family                        M2b_s0     Bp_s0    M2b_s1     Bp_s1
+ADE6 m                       TRAJ                          2.1753    2.1753    2.0546    2.0546
+FDE6 m                       TRAJ                          6.2810    6.2810    5.8582    5.8582
+ADE2 m                       TRAJ                          0.3155    0.3155    0.2914    0.2914
+speed MAE m/s                LONGITUDINAL                  1.0674    1.0674    0.9112    0.9112
+accel MAE m/s2               LONGITUDINAL                  1.2058    1.2058    0.9313    0.9313
+along-track MAE m            LONGITUDINAL                  1.8097    1.8097    1.6081    1.6081
+progress ratio mean          LONGITUDINAL                  0.9275    0.9275    1.0079    1.0079
+heading MAE deg              LATERAL                       3.9773    3.9773    3.7148    3.7148
+yaw-rate MAE deg/s           LATERAL                       6.1605    6.1605    5.3573    5.3573
+curvature MAE 1/m            LATERAL                       0.0444    0.0444    0.0322    0.0322
+cross-track MAE m            LATERAL                       0.7662    0.7662    0.8644    0.8644
+lateral decision kappa       TACTICAL                      0.6652    0.6652    0.6324    0.6324
+longitudinal decision kappa  TACTICAL                      0.3566    0.3566    0.3698    0.3698
+goal point error m           TACTICAL                      6.2810    6.2810    5.8582    5.8582
+T lat macro-F1               TACTICAL                      0.8157    0.8157    0.8292    0.8292
+T lon macro-F1               TACTICAL                      0.4992    0.4992    0.5095    0.5095
+S pos err @30 m              STRATEGIC (PAUSED, PI ITEM    7.0231    7.0231    6.9802    6.9802
+S pos err @80 m              STRATEGIC (PAUSED, PI ITEM   11.2059   11.2059   11.2141   11.2141
+written E:/Projects/TanitAD-artifacts/dagland/motion_c/lora_pod/bpeval/dry/run1/out\FPRIME.json
+[02:48:42] ZZ BPEVAL DONE ZZ compute_fprime rc=0 (0 = F' written to /e/Projects/TanitAD-artifacts/dagland/motion_c/lora_pod/bpeval/dry/run1/out/FPRIME.json; 3 = the identity eval missed or an input is wrong: F' not computed)

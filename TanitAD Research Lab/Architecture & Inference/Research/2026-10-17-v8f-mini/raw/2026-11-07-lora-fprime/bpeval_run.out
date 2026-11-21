@@ -1,0 +1,27 @@
+[04:10:32] BPEVAL start (DRY=0)
+sha list entries 146 local files 146 bad/missing 0 []
+[04:12:20] tip 181c7a3b86d46657961e180241322cf829feb2e1
+[04:12:22] box claimed
+[04:12:32] free C: 16.46 GiB (floor 8)
+sftp> put -r "E:/Projects/TanitAD-artifacts/lorapod_eval/bprime/M2b_s0/ckpt_last.pt" "/C:/lorapod_eval/ckpt/M2bp_s0/ckpt_last.pt"
+sftp> put -r "E:/Projects/TanitAD-artifacts/lorapod_eval/native_tracks.pt" "/C:/lorapod_eval/cache_pod/native_tracks.pt"
+sftp> put -r "E:/Projects/TanitAD-artifacts/lorapod_eval/bprime/M2b_s1/ckpt_last.pt" "/C:/lorapod_eval/ckpt/M2bp_s1/ckpt_last.pt"
+sftp> put -r "E:/Projects/TanitAD-artifacts/lorapod_eval/work/env_bp.cmd" "/C:/lorapod_eval/env_bp.cmd"
+sftp> put -r "E:/Projects/TanitAD-artifacts/lorapod_eval/work/bp_code.tar" "/C:/lorapod_eval/bp_code.tar"
+sftp> put -r "E:/Projects/TanitAD-artifacts/lorapod_eval/work/bp_evals.cmd" "/C:/lorapod_eval/bp_evals.cmd"
+sftp> put -r "E:/Projects/TanitAD-artifacts/lorapod_eval/work/bp_hash.cmd" "/C:/lorapod_eval/jobs/bp_hash.cmd"
+sftp> put -r "E:/Projects/TanitAD-artifacts/lorapod_eval/work/bp_job.cmd" "/C:/lorapod_eval/jobs/bp_job.cmd"
+[04:13:56] shipped files; shipping the pod eval cache (2.8 GB)
+Entering E:/Projects/TanitAD-artifacts/lorapod_eval/eval/clips
+Entering E:/Projects/TanitAD-artifacts/lorapod_eval/eval/.tmp
+[04:17:41] small files + checkpoints sha256 verified
+[04:17:45] code tree = tip 181c7a3b86d46657961e180241322cf829feb2e1 (4 key files sha-checked)
+[04:17:47] launched: launched pid=24844 rc=0 log=C:\lorapod_eval\logs\bp_hash.log
+sftp> get "/C:/lorapod_eval/logs/cache_hash.txt" "E:/Projects/TanitAD-artifacts/lorapod_eval/work/cache_remote.sha"
+[04:18:19] pod eval cache: 146 files sha256-equal on both sides
+[04:18:21] TRACKS-SAME pod copy == box-2 cache_full copy
+[04:18:22] launched: launched pid=7136 rc=0 log=C:\lorapod_eval\logs\bp_job.log
+[04:18:22] evals launched (identity, B' s0, B' s1)
+sftp> get -r "/C:/lorapod_eval/out" "E:/Projects/TanitAD-artifacts/lorapod_eval/work/pull_042100"
+Retrieving /C:/lorapod_eval/out/
+[04:21:05] ZZ BPEVAL PULL-FAILED ZZ E:/Projects/TanitAD-artifacts/lorapod_eval/work/pull_042100/out

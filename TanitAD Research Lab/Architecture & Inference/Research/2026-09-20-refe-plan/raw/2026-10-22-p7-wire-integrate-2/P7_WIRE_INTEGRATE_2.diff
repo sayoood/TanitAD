@@ -1,0 +1,1253 @@
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/SPEC_P7.md
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/SPEC_P7.md
+@@ -57,4 +57,5 @@
+ > | the draw's own suite `ZZRESERVE_PASS 17` in G-SUITE | `test_session_reserve.py` (`ZZSESSRES_PASS 43`) + `test_p7_integration.py` (`ZZP7INT_PASS`) are in `refe_p7`'s G-SUITE | BUILT |
+ > | a `P6_BANK_TUPLES` successor entry and the P7 store's sha256 + key count "registered before step 0" | `launch_gate.P7_BANK_TUPLES` and `P7_AUX_STORE_PINS`: UNREGISTERED on purpose (the profile REFUSES); produced by `raw/2026-10-22-p7-wire-integrate/PROCEDURE_P7_PINS.md` (`p7_pins.py` reads them off the filter's and the re-finalise's outputs) | PENDING the rebuilt 3-C bank |
++> | (added 2026-10-22, P7-WIRE-INTEGRATE-2) the bank's CONTENT is pinned beside its count | `launch_gate.P7_TARGETS_SHA256` (the trainer's own `targets_sha256` of the filtered bank, keyed by directory name): UNREGISTERED on purpose; `p7_refusals` and G-CLOCK refuse a bank whose bytes differ at the same row count; `p7_pins.py --check-run <run dir>` compares the trainer's RECORDED identity with it after the first start | PENDING the rebuilt 3-C bank; mechanism BUILT + tested |
+ > | `refe/p7_pod.sh` | **NOT built.** It must be a COPY of `p6_pod.sh` with its own `$P6` / `$RUN` / `$REPO`, `P7_RESERVE` + `P7_LABEL_STORE` set, and the gate called as `launch_gate.py run|verify --profile refe_p7 --gate-reserve-json "$P7_RESERVE"` (the dormant block 5a stops at the reserve stage; `p6_pod.sh` itself names `refe_p6`) | OPEN |
+ >
+--- /dev/null
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-22-p7-wire-integrate-2/RESULT.md
+@@ -0,0 +1,154 @@
++# P7-WIRE-INTEGRATE-2 -- the surviving mutant M2 is a REAL untested behaviour (now tested), and `refe_p7` gets a CONTENT pin for its bank
++
++Agent P7-WIRE-INTEGRATE-2, 2026-10-22. 0 GPU, no network, no pod, no git tree touched, **nothing staged / committed / pushed** (local override: the Master Mind lands this together with `p7int/`).
++Base: mirror tip `a8f2c89af000a7497187ff52177603901733353a`; `PK` = `TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan`. Package `C:/Users/Admin/par18/p7int2/`: `code/` = the COMPLETE integrated set at repo paths
++(p7int's files + this package's edits) + `P7_WIRE_INTEGRATE_2.diff` (vs p7int) + `P7_WIRE_INTEGRATE_vs_tip.diff` (vs the tip, what the lander applies) + `MANIFEST.txt`; `raw/` = probes, runs, verbatim outputs.
++Evidence classes: MEASURED (ours, artifact named) / INHERITED / PENDING.
++
++## HEADLINE -- read before landing
++
++1. **LAND `p7int/` AND THIS PACKAGE AS ONE UNIT: `code/` here supersedes `p7int/code/` file for file** (it contains all of p7int's files; the 8 that differ are listed in section 6). Same lander rules as before (LF, `base=<blob>` per file, regenerate `SHIP_MANIFEST.json` after). `train.py`, `model.py`, `session_reserve.py`, `p6_pod.sh`, `p6_prep.py` are NOT touched (sha256 in `raw/probes/probe_p6_identity_*.out`).
++2. **GAP 1 closed, option (a): M2 is NOT equivalent.** It removes the early `return` after an omitted audit input. The verdict is FAIL either way (the omission reason is appended BEFORE the return), which is why every verdict-only arm let it live. MEASURED
++   (`raw/probes/probe_m2_original.out` vs `probe_m2_mutated_M2.out`): without the return the REAL audit RUNS on the partial input set (0x -> 1x; at the real scale it walks the 92,896-scene bank, the metric cache and a 413,184-file image listing), the verdict
++   carries a SECOND reason (the partial audit's by-product) and the evidence records an `audit` block for an audit that proved less than SPEC_P7 2 asks. 23 assertions pin those three observables with controls that must read the known value. **M2 is now RED (15 failing).**
++3. **GAP 2 closed, with one finding you must read: P6 does not pin a bank's CONTENT at a fresh start; its `8775e73e...` is the trainer's RESUME identity.** (section 2). So "exactly as P6" cannot be copied; what P7 gets instead is STRONGER than P6's launch check:
++   `P7_TARGETS_SHA256` registered per bank, refused by `p7_refusals` before any check, FAILED by G-CLOCK (the last data check before the PASS token) when the bank's bytes differ, printed by `p7_pins.py`, and re-compared with the trainer's OWN recorded identity after the first start by `p7_pins.py --check-run`.
++   **The trainer itself still does not refuse a wrong bank at a fresh start** (that needs a `train.py` edit + G-DVB entry + bit-identity proof; not done, as instructed). The residual window: the PASS token fingerprints a directory by its LISTING, so a same-size in-place edit between G-CLOCK and the trainer's start is invisible to `verify`; `--check-run` detects it afterwards from the trainer's own number.
++4. **DECISION for the MM: wire `p7_pins.py --check-run <run dir>` into the P7 chain (`p7_pod.sh`, still OPEN) right after the first checkpoint.** It is the only part of Gap 2 that needs the chain; without that call the window above is open.
++5. **`refe_p7` STILL REFUSES, by design.** Three pins are PENDING the rebuilt 3-C bank (`P7_BANK_TUPLES`, `P7_TARGETS_SHA256`, `P7_AUX_STORE_PINS`); `PROCEDURE_P7_PINS.md` is updated (three lines pasted instead of two, Step G added) and its literal commands were re-run on the synthetic tree (`raw/rehearsal/rehearse.out`).
++6. **The head owner's `test_p7_head_wiring.py` is edited again** (S2: `registered()` carries a digest, the unknown-pins clause and the `UN` copy include it, "nothing else is refused" 2 -> 3, one new red arm): static `ZZP7HEAD_PASS` 181 -> 182. Merge on the tip, not over it.
++
++## 1. Gap 1 -- M2
++
++`MUTATIONS[1]` replaces `if missing:\n        return verdict("G-RESERVE", reasons, det, ...)` by `if False:` in `gate_checks.check_reserve`. Probe (`raw/probes/probe_m2.py`, driver `run_m2_probe.py`; five omissions + a control):
++
++| argv | status | reasons | audit runs | evidence `audit` block |
++|---|---|---|---|---|
++| all five named (control) | PASS | 0 | 1x | yes |
++| any ONE omitted, original | FAIL | **1** (the omission) | **0x** | **no** |
++| any ONE omitted, M2-mutated | FAIL | **2** (omission + "audit_inputs raised ReserveError" / "the audit examined [...]") | **1x** | **yes** |
++
++So the verdict is identical and the behaviour is not: **(a) real and untested**, not an equivalent mutant (the branch is reachable: every omitted-input arm takes it). New arms (`test_p7_integration.py` section I, 23 assertions): a recording audit is called 0x for each of the five omissions and exactly 1x on the full argv;
++the omission is the ONLY reason; the evidence carries no `audit` / `audit_counts`; and the same with the REAL `audit_inputs` wrapped in a counting shim (control: counts 1 on the full argv). M2 goes RED with 15 failing.
++Side change: `main()` now runs each section inside a try/except that records the raise as a named failure (a section that crashes no longer hides the others; M20 below used to go RED only through a traceback).
++
++## 2. Gap 2 -- how P6 gets and enforces `targets_sha256 8775e73e...` (quoted, tip a8f2c89) and what P7 does instead
++
++| fact | where (MEASURED by grep/read) |
++|---|---|
++| the digest is the trainer's `_digest_files(sorted(Path(a.targets).glob("targets_rank*.jsonl")))`, recorded in the run IDENTITY | `refe/train.py:1067-1074` (`_digest_files`), `:1077-1100` (`run_identity`, `:1088` `"targets_sha256": None if grow else _digest_files(tfiles)`) |
++| it is ENFORCED only on `--resume`: `_identity_diff` compares it with the checkpoint's recorded identity; a mismatch is "REFUSING TO RESUME", rc 4 | `train.py:1102-1125` (compared keys `:1117`), call `:1525`, `return 4` `:1531` |
++| it is RECORDED at the first start | `config.json` `"identity": ident` `train.py:1575-1588`; `ckpt_last.pt` `:1651` |
++| `8775e73e...` appears in NO code path | only `eval/PREREG_P6.md:191` ("The trainer's own preflight then requires `targets_sha256 8775e73e...`", the resume from the HF checkpoint, whose recorded identity is the pin) and the fixture `test_p6_chain.py:719,745` |
++| the chain's guard for the same fact | `refe/p6_prep.py:260-290` (`resume-bank` -> `ZZRESUME_BANK_SAME|MISMATCH`), `p6_pod.sh:254` |
++| P6's gate pins the COUNT only | `launch_gate.py:252-259` (`P6_BANK_TUPLES`), `gate_checks.py:2144-2153` (G-CLOCK compares the count of the trainer's own `TargetBank`, captured at `:192`) |
++
++**Consequence:** there is nothing at P6's fresh start to copy, and P7's first start is fresh. The mechanism that exists is (i) the gate's registered per-bank count and (ii) the trainer's resume identity. P7 now has both for content:
++
++* **Registration shape -- separate dict `P7_TARGETS_SHA256` (profile `expect_schedule["targets_sha256_by_bank"]`), not `P7_BANK_TUPLES` widened to `{dir: {"tuples", "targets_sha256"}}`.** Why: (1) `n_tuples_by_bank` values are ints in `refe_p6` and in `clock_bank_tuples`; widening them changes shared code on P6's default path and breaks the anchor of `test_p6_levers.py:634`
++  (a mutant of `return reg[name], ...`); a separate key is additive and P6 takes no new line (proof: section 4); (2) a wrong count and wrong bytes are different failures and get different refusal strings and mutants; (3) keyed by the same directory name, with a refusal if the two dicts name different banks, so skew is impossible.
++* **Refusals** (`launch_gate.p7_refusals`, before any check): bank has no registered digest; digest malformed (not 64 lowercase hex); count and digest register different banks; **the profile has no `targets_sha256_by_bank` key at all** (a key that can be absent is a default that disables the check).
++* **G-CLOCK** (`gate_checks.check_clock` + `clock_bank_sha256` + `bank_targets_sha256`): recomputes the digest of the `--targets` files with the trainer's own definition and FAILS on any other bank, an unregistered bank, no rank file, or (for a `p7_rules` profile) a missing key; `refe_p6` / `refe_p2` have no key, so they never read the bank.
++  The digest function is the trainer's text: its AST equals `train._digest_files` (test), and MEASURED under the torch venv the gate's value equals `train.run_identity(...)["targets_sha256"]` and `train._digest_files(...)` and the reserve module's (`raw/probes/probe_digest_vs_trainer.out`, ALL EQUAL; a same-size edit changes all of them and the trainer's own `_identity_diff` reports it).
++* **`p7_pins.py`** prints `P7_TARGETS_SHA256: dict = {...}` beside the other two lines and `targets_sha256=<16>` in `ZZP7PINS_OK`; it refuses unless the GATE's definition and the reserve module's agree on that bank (two copies of one definition, compared where a drift costs nothing).
++* **`p7_pins.py --check-run <run dir>`** (after the first start): `config.json`'s `identity.targets_sha256` and `identity.n_tuples` -- the trainer's own numbers on the bank it loaded -- must equal the registration of the bank named in `args.targets`; null digest (`--grow`; forbidden in `refe_p7`), unregistered bank, missing config, wrong digest, wrong count all rc 1 `ZZP7RUN_REFUSED`. With no argument the tool still exits 2.
++
++**Reachability from the real caller** (the class this repo paid for four times): `raw/probes/probe_real_build_clock.out` runs the REAL trainer's BUILD (`instrumented_run`, tiny rehearsal fixture, torch venv, CPU) through `launch_gate.run_checks(only={"G-CLOCK"})`: registered bank PASS; two rows of the bank SWAPPED (same row count, same size, the trainer still loads it) -> **FAIL for the content**;
++the count-only profile PASSes the same tampered bank (so the defect was real). The suite runs the same through `run_checks` with a fake build capture, because the real build needs torch.
++
++## 3. Tests
++
++`test_p7_integration.py` 139 -> **220** assertions (~30 s). New: section 0 (digest definition: independent recompute == reserve == gate == trainer by AST), section I (+23, Gap 1), section III (3 pins: nothing / count only / digest only / key missing / 6 malformed digests / different banks), section V (the content pin, ~50 assertions):
++registered bank PASS; a SAME-COUNT, DIFFERENT-BYTES bank (one byte flipped in place; two rows swapped) FAILS G-CLOCK directly and through `run_checks` for the content and for nothing else, while the count-only gate PASSes it (red arm); unregistered bank, no rank file, key-less `p7_rules` profile FAIL; a P6-like profile never reads the bank
++(a booby-trapped digest function is not called); `p7_pins` refuses on a definition drift; `--check-run` on the registered identity and on each defect, in-process and as a subprocess.
++`--mutations`: **25 mutants** (p7int's M1-M15 + M16-M25: content comparison removed, unregistered bank accepted, malformed digest accepted, missing key skipped, digest definition drifted, wrong digest registered, definition cross-check removed, `--check-run` digest / count comparison removed, count and digest allowed to name different banks); M2 RED. Verdict in section 4.
++
++## 4. VERIFICATION (generated by `finalize2.py` from the raw outputs; do not hand-edit between the markers)
++
++<!-- VERIFICATION:BEGIN -->
++**Verification verdict (generated by finalize2.py): GREEN: every suite rc 0 before and after, the four refe_p6 suites' tokens IDENTICAL, the integration test green, 25 mutants RED with the control PASS (ZZP7INT_MUTATIONS_OK), train.py / model.py / session_reserve.py / p6_pod.sh / p6_prep.py untouched**
++
++### the suite set of P7-WIRE-INTEGRATE, CPU (`CUDA_VISIBLE_DEVICES=-1`), BEFORE = pristine tip export, AFTER = the integrated overlay of BOTH packages
++
++| suite | BEFORE (tip a8f2c89) rc | BEFORE token | AFTER (overlay) rc | AFTER token | secs before/after | same |
++|---|---|---|---|---|---|---|
++| test_launch_gate | 0 | ZZLG_STATIC_PASS 1168 | 0 | ZZLG_STATIC_PASS 1168 | 48/47 | yes (identical token) |
++| test_p7_head_wiring_full | 0 | ZZP7HEAD_PASS 207 | 0 | ZZP7HEAD_PASS 210 | 408/409 | rc equal, count differs (see note) |
++| test_session_reserve | 0 | ZZSESSRES_PASS 43  (optional checks run: ['aux_label_store.finalize', 'filter over the real rank-0 shape', 'sandbox chai | 0 | ZZSESSRES_PASS 43  (optional checks run: ['aux_label_store.finalize', 'filter over the real rank-0 shape', 'sandbox chai | 109/108 | yes (identical token) |
++| test_p6_chain | 0 | ZZP6CHAIN_PASS 432 | 0 | ZZP6CHAIN_PASS 432 | 735/734 | yes (identical token) |
++| test_p6_levers | 0 | ZZP6_PASS 165 | 0 | ZZP6_PASS 165 | 189/189 | yes (identical token) |
++| test_p7_integration | - | - | 0 | ZZP7INT_PASS 220 | -/7 | NEW (p7int) , grown here |
++
++The head test's `--full` count differs by construction: the tip's 207, P7-WIRE-INTEGRATE's 209 (+2 assertions in its S2 / S4 blocks) and this package's +1 (S2: the unregistered bank CONTENT refuses). Every refe_p6 suite (`test_launch_gate`, `test_p6_levers`, `test_p6_chain`, `test_session_reserve`) has an identical token before and after.
++
++### every file that differs from the tip (tree comparison of the two run trees, not a hand list)
++
++| file (under `PK`) | vs tip |
++|---|---|
++| `.gitattributes` | MODIFIED |
++| `raw/2026-10-22-p7-wire-integrate/PROCEDURE_P7_PINS.md` | NEW |
++| `raw/2026-10-22-p7-wire-integrate/rehearsal/build_synth.py` | NEW |
++| `raw/2026-10-22-p7-wire-integrate/rehearsal/rehearse.out` | NEW |
++| `raw/2026-10-22-p7-wire-integrate/rehearsal/rehearse.sh` | NEW |
++| `raw/2026-10-22-p7-wire-integrate/RESULT.md` | NEW |
++| `refe/gate_checks.py` | MODIFIED |
++| `refe/launch_gate.py` | MODIFIED |
++| `refe/p7_pins.py` | NEW |
++| `refe/test_p7_head_wiring.py` | MODIFIED |
++| `refe/test_p7_integration.py` | NEW |
++| `SPEC_P6_PAPER_FAITHFUL.md` | MODIFIED |
++| `SPEC_P7.md` | MODIFIED |
++
++### `test_p7_integration.py --mutations` (verbatim)
++
++```
++CONTROL (unmutated copy): PASS ZZP7INT_PASS 220
++  RED    M1 REVERT THE FIX: hand the audit the parsed JSON again: 40 failing; first: I a CLEAN tree PASSes G-RESERVE (real load_reserve + real audit_inputs): ["audit_inputs raised ReserveError: 'attempt_accepted' is not a s
++  RED    M2 an input the argv does not name is no longer refused: 15 failing; first: I the argv omits --targets: the audit does NOT RUN on the partial input set (a recording audit, called 1x): [['calib_rows', 'image_index',
++  RED    M3 an audit with ok False no longer fails: 34 failing; first: I FAIL: a planted LEAKED RANK-1 TWIN: []
++  RED    M4 the result-side 'examined all five' check is gone: 1 failing; first: I FAIL: an audit that did not examine the calibration table, whatever its ok: expected a reason containing 'not all of'; got ''
++  RED    M5 the gate stops requiring the registered reserve sha256: 1 failing; first: I FAIL (closed): a CRLF checkout of the same draw fails the gate's sha pin, and ONLY that: []
++  RED    M6 the gate audits another glob than the trainer loads: 8 failing; first: I ... bank_files is a list of existing rank files, the other four are path strings: {'bank_files': ['C:\\Users\\Admin\\AppData\\Local\\Tem
++  RED    M7 unregistered store pins no longer refuse: 2 failing; first: III nothing registered REFUSES: the label store's pins: expected a reason containing "label store's pins"; got "refe_p7: P7_AUX_STORE_PINS
++  RED    M8 an unregistered bank no longer refuses: 5 failing; first: II ... and the bank's tuple count: expected a reason containing 'no registered tuple count'; got "profile refusal: refe_p7: the P7 label s
++  RED    M9 a malformed store registration is accepted: 5 failing; first: III a MALFORMED store registration is refused: a short sha: expected a reason containing 'not a registration'; got ''
++  RED    M10 a malformed bank registration is accepted: 5 failing; first: III a MALFORMED bank registration is refused: 0: expected a reason containing 'not a positive int'; got ''
++  RED    M11 the reserve's own suite is dropped from refe_p7's G-SUITE: 1 failing; first: IV refe_p7's suite = P6's + the head's static block + the reserve's own suite + this test: [{'script': 'test_p7_head_wiring.py', 'args': [
++  RED    M12 p7_pins no longer checks the filter report's digest: 1 failing; first: III p7_pins REFUSES a bank edited after the filter (same row count, different bytes -> digest): expected 'targets_sha256'; got 'the bank h
++  RED    M13 p7_pins no longer audits the bank + store: 2 failing; first: III p7_pins REFUSES a LEAKED twin whose report was patched to match (the audit still sees it): it printed a registration
++  RED    M14 p7_pins reads the key count from the manifest instead of the shard headers: 1 failing; first: III p7_pins REFUSES a manifest whose stored_keys is not the shard headers' key count: it printed a registration
++  RED    M15 p7_pins pins the wrong store field (the first shard's sha, not the store's): 2 failing; first: III p7_pins' store pins == an independent recompute (shard bytes -> files map -> sha256; header entries -> keys): 59b9552c2f73925a 6 vs 34
++  RED    M16 G-CLOCK stops comparing the bank's content digest with the registered one: 8 failing; first: V [ONE BYTE changed in place (same size, same row count)] G-CLOCK REFUSES the bank at the point where training would start: []
++  RED    M17 an unregistered bank no longer refuses for its content digest: 4 failing; first: III ... and its content digest too: expected a reason containing 'no registered targets_sha256'; got "refe_p7: --targets '/w/train_grow_cm
++  RED    M18 a malformed content digest is accepted: 6 failing; first: III a MALFORMED content digest is refused: a short digest: expected a reason containing 'not a sha256'; got ''
++  RED    M19 a refe_p7 profile without the content key is skipped instead of failing G-CLOCK: 1 failing; first: V a refe_p7 profile WITHOUT the key FAILS G-CLOCK (never a skip): expected a reason containing 'registers no targets_sha256_by_bank'; got 
++  RED    M20 the gate's digest drifts from the trainer's (hashes the full path, not the basename): 3 failing; first: 0 the gate's bank_targets_sha256 == an independent recompute == the reserve module's digest == the gate's _digest_files: effe3b76390fa486e
++  RED    M21 p7_pins registers a digest that is not the bank's: 5 failing; first: III CLI: the OK line carries the content digest's prefix: grow_cmd_3c_p7": "c66bc98e6a46f720b377c84b8737acb763ab487212ce9caa167e1264f71663
++  RED    M22 p7_pins stops cross-checking the gate's digest definition: 1 failing; first: V p7_pins REFUSES when the gate's digest definition disagrees with the reserve module's: it printed a registration
++  RED    M23 check_run stops comparing the trainer's recorded digest: 2 failing; first: V check_run REFUSES a recorded digest that is not the registered one (the trainer trained on another bank): expected a reason containing '
++  RED    M24 check_run stops comparing the trainer's recorded tuple count: 1 failing; first: V check_run REFUSES a recorded tuple count that is not the registered one: expected a reason containing 'the trainer built 10 tuples'; got
++  RED    M25 the count and the digest may name different banks: 1 failing; first: III the two registrations naming DIFFERENT banks are refused: expected a reason containing 'register DIFFERENT banks'; got ''
++ZZP7INT_MUTATIONS_OK
++```
++<!-- VERIFICATION:END -->
++
++**P6's default path is byte-identical (MEASURED, `raw/probes/probe_p6_identity_{tip,overlay}.out`, diff empty):** `refe_p6` profile sha256 `80fa4d7ec757...` and its `expect_schedule` sha256 before == after; `check_clock` on the P6 profile (clean / wrong count / unregistered bank) gives the same JSON sha256 and the same evidence keys before and after
++(no `bank_content` block); `train.py`, `model.py`, `session_reserve.py`, `p6_pod.sh`, `p6_prep.py` have equal sha256. `train.py` was not touched, so the head package's determinism control (which proves a trainer EDIT bit-identical) does not apply.
++
++## 5. Not covered / caveats (plainly)
++
++* **No real data.** The three pins are PENDING the rebuilt 3-C bank; every number here is from a synthetic tree. The digest of the real bank is whatever `p7_pins.py` prints on it.
++* **The trainer does not itself refuse a wrong bank at a fresh start**; the gate does (G-CLOCK), and the trainer's identity machinery guards every resume. `--check-run` is UNWIRED until `p7_pod.sh` exists. The PASS token's directory fingerprint (listing) is unchanged: making it content-based (`content_flags` + a sealed `content_manifest.json` on the bank) is the alternative that closes the window preventively and was NOT built (it re-hashes the whole bank on every `verify` and adds a file to the bank directory).
++* G-CLOCK now reads the whole bank once more at launch (the trainer already reads it twice: rows + identity digest). Cost not measured on the real ~1-2 GB bank (UNVERIFIED).
++* `test_p7_integration.py` still imports `test_p7_head_wiring` and `test_session_reserve` (their fixtures). Timing numbers were measured with other agents' jobs sharing the 24-core box.
++* Single seed / intervals: not applicable (no training, no estimate is quoted).
++
++## 6. Deliverable manifest
++
++| artifact | where | single location? |
++|---|---|---|
++| the complete integrated set at repo paths (p7int's files + edits): `refe/gate_checks.py`, `refe/launch_gate.py`, `refe/p7_pins.py`, `refe/test_p7_integration.py`, `refe/test_p7_head_wiring.py`, `SPEC_P7.md`, `raw/2026-10-22-p7-wire-integrate/{PROCEDURE_P7_PINS.md, RESULT.md (addendum), rehearsal/{rehearse.sh, rehearse.out}}` edited here; `SPEC_P6_PAPER_FAITHFUL.md`, `.gitattributes`, `rehearsal/build_synth.py` carried from p7int unchanged | `C:/Users/Admin/par18/p7int2/code/<PK path>` (sha256 + CR bytes in `code/MANIFEST.txt`) | **YES: only here** (not in any repo) |
++| `raw/2026-10-22-p7-wire-integrate-2/{RESULT.md, VERIFICATION.md, mutations.out, probes/*}` | `C:/Users/Admin/par18/p7int2/code/<PK path>/raw/2026-10-22-p7-wire-integrate-2/` (also under `p7int2/raw/`) | **YES** |
++| `P7_WIRE_INTEGRATE_2.diff` (vs p7int), `P7_WIRE_INTEGRATE_vs_tip.diff` (vs the tip) | `C:/Users/Admin/par18/p7int2/code/` | **YES** |
++| before / after suite outputs, `raw/mutations.out`, `raw/mutations_try1.out` (the trial run), `raw/probes/*`, `raw/rehearsal/rehearse.out` | `C:/Users/Admin/par18/p7int2/raw/` | **YES** |
++| scratch, reproducible: `work/` (edit tree), `base_full/`, `before_full/`, `after_full/`, `code_p7int/`, `patch_*.py`, `run_suites2.py`, `make_jobs.py`, `finalize2.py`, `stage_code2.py` | `C:/Users/Admin/par18/p7int2/` | scratch |
+--- /dev/null
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-22-p7-wire-integrate-2/VERIFICATION.md
+@@ -0,0 +1,64 @@
++**Verification verdict (generated by finalize2.py): GREEN: every suite rc 0 before and after, the four refe_p6 suites' tokens IDENTICAL, the integration test green, 25 mutants RED with the control PASS (ZZP7INT_MUTATIONS_OK), train.py / model.py / session_reserve.py / p6_pod.sh / p6_prep.py untouched**
++
++### the suite set of P7-WIRE-INTEGRATE, CPU (`CUDA_VISIBLE_DEVICES=-1`), BEFORE = pristine tip export, AFTER = the integrated overlay of BOTH packages
++
++| suite | BEFORE (tip a8f2c89) rc | BEFORE token | AFTER (overlay) rc | AFTER token | secs before/after | same |
++|---|---|---|---|---|---|---|
++| test_launch_gate | 0 | ZZLG_STATIC_PASS 1168 | 0 | ZZLG_STATIC_PASS 1168 | 48/47 | yes (identical token) |
++| test_p7_head_wiring_full | 0 | ZZP7HEAD_PASS 207 | 0 | ZZP7HEAD_PASS 210 | 408/409 | rc equal, count differs (see note) |
++| test_session_reserve | 0 | ZZSESSRES_PASS 43  (optional checks run: ['aux_label_store.finalize', 'filter over the real rank-0 shape', 'sandbox chai | 0 | ZZSESSRES_PASS 43  (optional checks run: ['aux_label_store.finalize', 'filter over the real rank-0 shape', 'sandbox chai | 109/108 | yes (identical token) |
++| test_p6_chain | 0 | ZZP6CHAIN_PASS 432 | 0 | ZZP6CHAIN_PASS 432 | 735/734 | yes (identical token) |
++| test_p6_levers | 0 | ZZP6_PASS 165 | 0 | ZZP6_PASS 165 | 189/189 | yes (identical token) |
++| test_p7_integration | - | - | 0 | ZZP7INT_PASS 220 | -/7 | NEW (p7int) , grown here |
++
++The head test's `--full` count differs by construction: the tip's 207, P7-WIRE-INTEGRATE's 209 (+2 assertions in its S2 / S4 blocks) and this package's +1 (S2: the unregistered bank CONTENT refuses). Every refe_p6 suite (`test_launch_gate`, `test_p6_levers`, `test_p6_chain`, `test_session_reserve`) has an identical token before and after.
++
++### every file that differs from the tip (tree comparison of the two run trees, not a hand list)
++
++| file (under `PK`) | vs tip |
++|---|---|
++| `.gitattributes` | MODIFIED |
++| `raw/2026-10-22-p7-wire-integrate/PROCEDURE_P7_PINS.md` | NEW |
++| `raw/2026-10-22-p7-wire-integrate/rehearsal/build_synth.py` | NEW |
++| `raw/2026-10-22-p7-wire-integrate/rehearsal/rehearse.out` | NEW |
++| `raw/2026-10-22-p7-wire-integrate/rehearsal/rehearse.sh` | NEW |
++| `raw/2026-10-22-p7-wire-integrate/RESULT.md` | NEW |
++| `refe/gate_checks.py` | MODIFIED |
++| `refe/launch_gate.py` | MODIFIED |
++| `refe/p7_pins.py` | NEW |
++| `refe/test_p7_head_wiring.py` | MODIFIED |
++| `refe/test_p7_integration.py` | NEW |
++| `SPEC_P6_PAPER_FAITHFUL.md` | MODIFIED |
++| `SPEC_P7.md` | MODIFIED |
++
++### `test_p7_integration.py --mutations` (verbatim)
++
++```
++CONTROL (unmutated copy): PASS ZZP7INT_PASS 220
++  RED    M1 REVERT THE FIX: hand the audit the parsed JSON again: 40 failing; first: I a CLEAN tree PASSes G-RESERVE (real load_reserve + real audit_inputs): ["audit_inputs raised ReserveError: 'attempt_accepted' is not a s
++  RED    M2 an input the argv does not name is no longer refused: 15 failing; first: I the argv omits --targets: the audit does NOT RUN on the partial input set (a recording audit, called 1x): [['calib_rows', 'image_index',
++  RED    M3 an audit with ok False no longer fails: 34 failing; first: I FAIL: a planted LEAKED RANK-1 TWIN: []
++  RED    M4 the result-side 'examined all five' check is gone: 1 failing; first: I FAIL: an audit that did not examine the calibration table, whatever its ok: expected a reason containing 'not all of'; got ''
++  RED    M5 the gate stops requiring the registered reserve sha256: 1 failing; first: I FAIL (closed): a CRLF checkout of the same draw fails the gate's sha pin, and ONLY that: []
++  RED    M6 the gate audits another glob than the trainer loads: 8 failing; first: I ... bank_files is a list of existing rank files, the other four are path strings: {'bank_files': ['C:\\Users\\Admin\\AppData\\Local\\Tem
++  RED    M7 unregistered store pins no longer refuse: 2 failing; first: III nothing registered REFUSES: the label store's pins: expected a reason containing "label store's pins"; got "refe_p7: P7_AUX_STORE_PINS
++  RED    M8 an unregistered bank no longer refuses: 5 failing; first: II ... and the bank's tuple count: expected a reason containing 'no registered tuple count'; got "profile refusal: refe_p7: the P7 label s
++  RED    M9 a malformed store registration is accepted: 5 failing; first: III a MALFORMED store registration is refused: a short sha: expected a reason containing 'not a registration'; got ''
++  RED    M10 a malformed bank registration is accepted: 5 failing; first: III a MALFORMED bank registration is refused: 0: expected a reason containing 'not a positive int'; got ''
++  RED    M11 the reserve's own suite is dropped from refe_p7's G-SUITE: 1 failing; first: IV refe_p7's suite = P6's + the head's static block + the reserve's own suite + this test: [{'script': 'test_p7_head_wiring.py', 'args': [
++  RED    M12 p7_pins no longer checks the filter report's digest: 1 failing; first: III p7_pins REFUSES a bank edited after the filter (same row count, different bytes -> digest): expected 'targets_sha256'; got 'the bank h
++  RED    M13 p7_pins no longer audits the bank + store: 2 failing; first: III p7_pins REFUSES a LEAKED twin whose report was patched to match (the audit still sees it): it printed a registration
++  RED    M14 p7_pins reads the key count from the manifest instead of the shard headers: 1 failing; first: III p7_pins REFUSES a manifest whose stored_keys is not the shard headers' key count: it printed a registration
++  RED    M15 p7_pins pins the wrong store field (the first shard's sha, not the store's): 2 failing; first: III p7_pins' store pins == an independent recompute (shard bytes -> files map -> sha256; header entries -> keys): 59b9552c2f73925a 6 vs 34
++  RED    M16 G-CLOCK stops comparing the bank's content digest with the registered one: 8 failing; first: V [ONE BYTE changed in place (same size, same row count)] G-CLOCK REFUSES the bank at the point where training would start: []
++  RED    M17 an unregistered bank no longer refuses for its content digest: 4 failing; first: III ... and its content digest too: expected a reason containing 'no registered targets_sha256'; got "refe_p7: --targets '/w/train_grow_cm
++  RED    M18 a malformed content digest is accepted: 6 failing; first: III a MALFORMED content digest is refused: a short digest: expected a reason containing 'not a sha256'; got ''
++  RED    M19 a refe_p7 profile without the content key is skipped instead of failing G-CLOCK: 1 failing; first: V a refe_p7 profile WITHOUT the key FAILS G-CLOCK (never a skip): expected a reason containing 'registers no targets_sha256_by_bank'; got 
++  RED    M20 the gate's digest drifts from the trainer's (hashes the full path, not the basename): 3 failing; first: 0 the gate's bank_targets_sha256 == an independent recompute == the reserve module's digest == the gate's _digest_files: effe3b76390fa486e
++  RED    M21 p7_pins registers a digest that is not the bank's: 5 failing; first: III CLI: the OK line carries the content digest's prefix: grow_cmd_3c_p7": "c66bc98e6a46f720b377c84b8737acb763ab487212ce9caa167e1264f71663
++  RED    M22 p7_pins stops cross-checking the gate's digest definition: 1 failing; first: V p7_pins REFUSES when the gate's digest definition disagrees with the reserve module's: it printed a registration
++  RED    M23 check_run stops comparing the trainer's recorded digest: 2 failing; first: V check_run REFUSES a recorded digest that is not the registered one (the trainer trained on another bank): expected a reason containing '
++  RED    M24 check_run stops comparing the trainer's recorded tuple count: 1 failing; first: V check_run REFUSES a recorded tuple count that is not the registered one: expected a reason containing 'the trainer built 10 tuples'; got
++  RED    M25 the count and the digest may name different banks: 1 failing; first: III the two registrations naming DIFFERENT banks are refused: expected a reason containing 'register DIFFERENT banks'; got ''
++ZZP7INT_MUTATIONS_OK
++```
+--- /dev/null
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-22-p7-wire-integrate-2/mutations.out
+@@ -0,0 +1,27 @@
++CONTROL (unmutated copy): PASS ZZP7INT_PASS 220
++  RED    M1 REVERT THE FIX: hand the audit the parsed JSON again: 40 failing; first: I a CLEAN tree PASSes G-RESERVE (real load_reserve + real audit_inputs): ["audit_inputs raised ReserveError: 'attempt_accepted' is not a s
++  RED    M2 an input the argv does not name is no longer refused: 15 failing; first: I the argv omits --targets: the audit does NOT RUN on the partial input set (a recording audit, called 1x): [['calib_rows', 'image_index',
++  RED    M3 an audit with ok False no longer fails: 34 failing; first: I FAIL: a planted LEAKED RANK-1 TWIN: []
++  RED    M4 the result-side 'examined all five' check is gone: 1 failing; first: I FAIL: an audit that did not examine the calibration table, whatever its ok: expected a reason containing 'not all of'; got ''
++  RED    M5 the gate stops requiring the registered reserve sha256: 1 failing; first: I FAIL (closed): a CRLF checkout of the same draw fails the gate's sha pin, and ONLY that: []
++  RED    M6 the gate audits another glob than the trainer loads: 8 failing; first: I ... bank_files is a list of existing rank files, the other four are path strings: {'bank_files': ['C:\\Users\\Admin\\AppData\\Local\\Tem
++  RED    M7 unregistered store pins no longer refuse: 2 failing; first: III nothing registered REFUSES: the label store's pins: expected a reason containing "label store's pins"; got "refe_p7: P7_AUX_STORE_PINS
++  RED    M8 an unregistered bank no longer refuses: 5 failing; first: II ... and the bank's tuple count: expected a reason containing 'no registered tuple count'; got "profile refusal: refe_p7: the P7 label s
++  RED    M9 a malformed store registration is accepted: 5 failing; first: III a MALFORMED store registration is refused: a short sha: expected a reason containing 'not a registration'; got ''
++  RED    M10 a malformed bank registration is accepted: 5 failing; first: III a MALFORMED bank registration is refused: 0: expected a reason containing 'not a positive int'; got ''
++  RED    M11 the reserve's own suite is dropped from refe_p7's G-SUITE: 1 failing; first: IV refe_p7's suite = P6's + the head's static block + the reserve's own suite + this test: [{'script': 'test_p7_head_wiring.py', 'args': [
++  RED    M12 p7_pins no longer checks the filter report's digest: 1 failing; first: III p7_pins REFUSES a bank edited after the filter (same row count, different bytes -> digest): expected 'targets_sha256'; got 'the bank h
++  RED    M13 p7_pins no longer audits the bank + store: 2 failing; first: III p7_pins REFUSES a LEAKED twin whose report was patched to match (the audit still sees it): it printed a registration
++  RED    M14 p7_pins reads the key count from the manifest instead of the shard headers: 1 failing; first: III p7_pins REFUSES a manifest whose stored_keys is not the shard headers' key count: it printed a registration
++  RED    M15 p7_pins pins the wrong store field (the first shard's sha, not the store's): 2 failing; first: III p7_pins' store pins == an independent recompute (shard bytes -> files map -> sha256; header entries -> keys): 59b9552c2f73925a 6 vs 34
++  RED    M16 G-CLOCK stops comparing the bank's content digest with the registered one: 8 failing; first: V [ONE BYTE changed in place (same size, same row count)] G-CLOCK REFUSES the bank at the point where training would start: []
++  RED    M17 an unregistered bank no longer refuses for its content digest: 4 failing; first: III ... and its content digest too: expected a reason containing 'no registered targets_sha256'; got "refe_p7: --targets '/w/train_grow_cm
++  RED    M18 a malformed content digest is accepted: 6 failing; first: III a MALFORMED content digest is refused: a short digest: expected a reason containing 'not a sha256'; got ''
++  RED    M19 a refe_p7 profile without the content key is skipped instead of failing G-CLOCK: 1 failing; first: V a refe_p7 profile WITHOUT the key FAILS G-CLOCK (never a skip): expected a reason containing 'registers no targets_sha256_by_bank'; got 
++  RED    M20 the gate's digest drifts from the trainer's (hashes the full path, not the basename): 3 failing; first: 0 the gate's bank_targets_sha256 == an independent recompute == the reserve module's digest == the gate's _digest_files: effe3b76390fa486e
++  RED    M21 p7_pins registers a digest that is not the bank's: 5 failing; first: III CLI: the OK line carries the content digest's prefix: grow_cmd_3c_p7": "c66bc98e6a46f720b377c84b8737acb763ab487212ce9caa167e1264f71663
++  RED    M22 p7_pins stops cross-checking the gate's digest definition: 1 failing; first: V p7_pins REFUSES when the gate's digest definition disagrees with the reserve module's: it printed a registration
++  RED    M23 check_run stops comparing the trainer's recorded digest: 2 failing; first: V check_run REFUSES a recorded digest that is not the registered one (the trainer trained on another bank): expected a reason containing '
++  RED    M24 check_run stops comparing the trainer's recorded tuple count: 1 failing; first: V check_run REFUSES a recorded tuple count that is not the registered one: expected a reason containing 'the trainer built 10 tuples'; got
++  RED    M25 the count and the digest may name different banks: 1 failing; first: III the two registrations naming DIFFERENT banks are refused: expected a reason containing 'register DIFFERENT banks'; got ''
++ZZP7INT_MUTATIONS_OK
+--- /dev/null
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-22-p7-wire-integrate-2/probes/probe_digest_vs_trainer.out
+@@ -0,0 +1,10 @@
++train.run_identity()['targets_sha256']         c360e913cc3aec4797d0822c7cf951b284dae26537c663ddf4912da7196ece94
++train._digest_files(sorted(glob))              c360e913cc3aec4797d0822c7cf951b284dae26537c663ddf4912da7196ece94
++gate_checks.bank_targets_sha256(dir)           c360e913cc3aec4797d0822c7cf951b284dae26537c663ddf4912da7196ece94
++gate_checks._digest_files(files)               c360e913cc3aec4797d0822c7cf951b284dae26537c663ddf4912da7196ece94
++session_reserve._digest_files(files)           c360e913cc3aec4797d0822c7cf951b284dae26537c663ddf4912da7196ece94
++ALL EQUAL: True
++identity n_tuples / n_scenes: 6 5
++grow identity targets_sha256: None
++after a same-size edit: trainer 90efaa919299b618 gate 90efaa919299b618 changed: True
++trainer _identity_diff on the edited bank: ["targets_sha256: 'c360e913cc3a' -> '90efaa919299'"]
+--- /dev/null
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-22-p7-wire-integrate-2/probes/probe_digest_vs_trainer.py
+@@ -0,0 +1,57 @@
++"""P7-WIRE-INTEGRATE-2 / Gap 2 probe (needs torch: run with the world-modeling venv).
++Is the digest the GATE computes (gate_checks.bank_targets_sha256) the SAME value the TRAINER records in its identity (train.run_identity(...)["targets_sha256"]) and compares on every --resume
++(train._identity_diff)?  Calls the real trainer functions, not a copy.
++usage: python probe_digest_vs_trainer.py <refe dir>"""
++import json
++import sys
++import tempfile
++from pathlib import Path
++from types import SimpleNamespace
++
++REFE = Path(sys.argv[1]).resolve()
++sys.path.insert(0, str(REFE))
++import gate_checks as C  # noqa: E402
++import session_reserve as SR  # noqa: E402
++import train as T  # noqa: E402
++
++
++class DS:
++    def __init__(self, rows):
++        self.rows, self.scene_groups = rows, {(r["log_name"], r["token"], r["step"]): [r] for r in rows}
++
++    def __len__(self):
++        return len(self.rows)
++
++
++with tempfile.TemporaryDirectory() as td:
++    bank = Path(td) / "train_grow_cmd_3c_p7"
++    bank.mkdir()
++    rows0 = [{"log_name": f"L{i}", "token": f"t{i}", "step": 0, "rank": 0} for i in range(5)]
++    rows1 = [{"log_name": "L1", "token": "t1", "step": 0, "rank": 1}]
++    (bank / "targets_rank0.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows0), encoding="utf-8", newline="\n")
++    (bank / "targets_rank1.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows1), encoding="utf-8", newline="\n")
++    (bank / "reserve_filter_report.json").write_text("{}", encoding="utf-8")                     # a non-rank file: neither definition may hash it
++    a = SimpleNamespace(targets=str(bank), grow=False, calib=None, field_labels=None, aux_drv_labels=None)
++    ds = DS(rows0 + rows1)
++    ident = T.run_identity(a, ds, SimpleNamespace(files=[]), "frozen")
++    files = sorted(bank.glob("targets_rank*.jsonl"))
++    vals = {"train.run_identity()['targets_sha256']": ident["targets_sha256"], "train._digest_files(sorted(glob))": T._digest_files(files),
++            "gate_checks.bank_targets_sha256(dir)": C.bank_targets_sha256(bank), "gate_checks._digest_files(files)": C._digest_files(files), "session_reserve._digest_files(files)": SR._digest_files(files)}
++    for k, v in vals.items():
++        print(f"{k:46s} {v}")
++    print("ALL EQUAL:", len(set(vals.values())) == 1)
++    print("identity n_tuples / n_scenes:", ident["n_tuples"], ident["n_scenes"])
++    # the same call under --grow records None (so a --grow launch could not be pinned: it is FORBIDDEN in refe_p7)
++    a.grow = True
++    print("grow identity targets_sha256:", T.run_identity(a, ds, SimpleNamespace(files=[]), "frozen")["targets_sha256"])
++    # a one-byte change at the same size changes both
++    p = bank / "targets_rank0.jsonl"
++    b = p.read_bytes()
++    p.write_bytes(b.replace(b'"L1"', b'"L9"', 1))
++    a.grow = False
++    print("after a same-size edit: trainer", T.run_identity(a, ds, SimpleNamespace(files=[]), "frozen")["targets_sha256"][:16], "gate", C.bank_targets_sha256(bank)[:16], "changed:", C.bank_targets_sha256(bank) != vals["gate_checks.bank_targets_sha256(dir)"])
++    # and the trainer's own resume check refuses it
++    old = T.run_identity(SimpleNamespace(targets=str(bank), grow=False, calib=None, field_labels=None, aux_drv_labels=None), ds, SimpleNamespace(files=[]), "frozen")
++    old["targets_sha256"] = vals["train.run_identity()['targets_sha256']"]
++    new = T.run_identity(SimpleNamespace(targets=str(bank), grow=False, calib=None, field_labels=None, aux_drv_labels=None), ds, SimpleNamespace(files=[]), "frozen")
++    print("trainer _identity_diff on the edited bank:", [d for d in T._identity_diff(old, new) if "targets_sha256" in d])
+--- /dev/null
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-22-p7-wire-integrate-2/probes/probe_m2.py
+@@ -0,0 +1,38 @@
++"""P7-WIRE-INTEGRATE-2 / Gap 1 probe: is mutant M2 EQUIVALENT?
++
++M2 replaces the early return of gate_checks.check_reserve (`if missing: return verdict(...)`) with `if False:`.  The question is whether the program's OBSERVABLE behaviour differs.
++For every argv that omits one of the five audited inputs, this prints, for the tree under test:
++    status | number of reasons | how many times the audit RAN | whether the evidence carries an `audit` block | the reasons' first words
++usage: python probe_m2.py <refe dir>        (run it once on the unmutated tree and once on the M2-mutated copy; diff the two outputs)
++"""
++import sys
++import tempfile
++from pathlib import Path
++
++REFE = Path(sys.argv[1]).resolve()
++sys.path.insert(0, str(REFE))
++import test_p7_integration as T  # noqa: E402  (its fixtures: mk_tree, gate_argv, reserve_file)
++import gate_checks as C  # noqa: E402
++import session_reserve as SR  # noqa: E402
++
++FLAGS = ("--targets", "--metric-cache", "--aux-drv-labels", "--images", "--calib")
++calls = []
++real = SR.audit_inputs
++
++
++def counting(reserve, **kw):
++    calls.append(sorted(k for k, v in kw.items() if v))
++    return real(reserve, **kw)
++
++
++SR.audit_inputs = counting
++with tempfile.TemporaryDirectory() as td:
++    td = Path(td)
++    rj = T.reserve_file(td)
++    root = T.mk_tree(td / "t")
++    base = T.gate_argv(root)
++    for flag in (None,) + FLAGS:
++        argv = base if flag is None else T.HW.without(base, flag)
++        calls.clear()
++        e = C.check_reserve(argv, T.P7, rj)
++        print(f"{'(none omitted)' if flag is None else flag:18s} | {e['status']:4s} | reasons={len(e['reasons'])} | audit_ran={len(calls)}x | audit_block={'audit' in e['details']} | {'; '.join(r[:46] for r in e['reasons'])[:150]}")
+--- /dev/null
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-22-p7-wire-integrate-2/probes/probe_m2_mutated_M2.out
+@@ -0,0 +1,6 @@
++(none omitted)     | PASS | reasons=0 | audit_ran=1x | audit_block=True | 
++--targets          | FAIL | reasons=2 | audit_ran=1x | audit_block=False | the launch argv gives the audit no --targets i; audit_inputs raised ReserveError: audit_inputs
++--metric-cache     | FAIL | reasons=2 | audit_ran=1x | audit_block=True | the launch argv gives the audit no --metric-ca; the audit examined ['bank', 'calibration', 'im
++--aux-drv-labels   | FAIL | reasons=2 | audit_ran=1x | audit_block=True | the launch argv gives the audit no --aux-drv-l; the audit examined ['bank', 'calibration', 'im
++--images           | FAIL | reasons=2 | audit_ran=1x | audit_block=True | the launch argv gives the audit no --images in; the audit examined ['bank', 'calibration', 'la
++--calib            | FAIL | reasons=2 | audit_ran=1x | audit_block=True | the launch argv gives the audit no --calib inp; the audit examined ['bank', 'images', 'label_s
+--- /dev/null
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-22-p7-wire-integrate-2/probes/probe_m2_original.out
+@@ -0,0 +1,6 @@
++(none omitted)     | PASS | reasons=0 | audit_ran=1x | audit_block=True | 
++--targets          | FAIL | reasons=1 | audit_ran=0x | audit_block=False | the launch argv gives the audit no --targets i
++--metric-cache     | FAIL | reasons=1 | audit_ran=0x | audit_block=False | the launch argv gives the audit no --metric-ca
++--aux-drv-labels   | FAIL | reasons=1 | audit_ran=0x | audit_block=False | the launch argv gives the audit no --aux-drv-l
++--images           | FAIL | reasons=1 | audit_ran=0x | audit_block=False | the launch argv gives the audit no --images in
++--calib            | FAIL | reasons=1 | audit_ran=0x | audit_block=False | the launch argv gives the audit no --calib inp
+--- /dev/null
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-22-p7-wire-integrate-2/probes/probe_p6_identity.py
+@@ -0,0 +1,31 @@
++"""P7-WIRE-INTEGRATE-2: is the refe_p6 DEFAULT path byte-identical?  Run once per tree (tip, overlay); the printed lines must be equal.
++  * sha256 of refe_p6's profile (the head package's anchor, test_p7_head_wiring.py P6_PROFILE_SHA256) and of the P6 `expect_schedule`
++  * sha256 of the JSON of `gate_checks.check_clock` on the P6 profile, for a clean build capture, a wrong-count capture and an unregistered-bank argv (the evidence a P6 launch would write, minus nothing)
++  * the files P6 resumes from: train.py, model.py, session_reserve.py, p6_pod.sh, p6_prep.py (sha256)
++usage: python probe_p6_identity.py <refe dir>"""
++import hashlib
++import json
++import sys
++from pathlib import Path
++from types import SimpleNamespace
++
++REFE = Path(sys.argv[1]).resolve()
++sys.path.insert(0, str(REFE))
++import gate_checks as C  # noqa: E402
++import launch_gate as L  # noqa: E402
++
++P6 = L.PROFILES["refe_p6"]
++print("refe_p6 profile sha256        ", hashlib.sha256(repr(sorted(P6.items())).encode()).hexdigest())
++print("refe_p6 expect_schedule sha256", hashlib.sha256(repr(sorted(P6["expect_schedule"].items())).encode()).hexdigest(), "| keys", sorted(P6["expect_schedule"]))
++
++
++def fake_b(n):
++    return SimpleNamespace(rc="STOPPED_AT_BUILD", args=SimpleNamespace(epochs=25), steps=10075, samplers=[{"n": 103037}], bank_len={"TargetBank": {"n_tuples": n, "n_scenes": 103037}})
++
++
++for label, argv, n in (("clean 3-C bank", ["--targets", "/w/data/refe_navtrain/train_grow_cmd_3c"], 167300), ("wrong count", ["--targets", "/w/data/refe_navtrain/train_grow_cmd_3c"], 167301),
++                       ("unregistered bank", ["--targets", "/w/data/refe_navtrain/other_bank"], 167300)):
++    ev = C.check_clock(argv, fake_b(n), P6)
++    print(f"check_clock(refe_p6, {label:18s}) {ev['status']:4s} sha256 {hashlib.sha256(json.dumps(ev, sort_keys=True, default=str).encode()).hexdigest()[:32]} keys {sorted(ev['details'])}")
++for f in ("train.py", "model.py", "session_reserve.py", "p6_pod.sh", "p6_prep.py"):
++    print(f"{f:20s} sha256", hashlib.sha256((REFE / f).read_bytes()).hexdigest())
+--- /dev/null
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-22-p7-wire-integrate-2/probes/probe_p6_identity_overlay.out
+@@ -0,0 +1,10 @@
++refe_p6 profile sha256         80fa4d7ec757ad4658df04b1ecfd453ae98653e729e2ee24458769d851cdf9c3
++refe_p6 expect_schedule sha256 c82ab620f7d52d1f1732f21dba6d3e4f40ffc175b7ffd3415be8c2206032a21a | keys ['epoch_len', 'epochs', 'n_tuples_by_bank', 'steps']
++check_clock(refe_p6, clean 3-C bank    ) PASS sha256 ed11f753887d383b2cf7e6e31354d7e5 keys ['bank', 'bank_registration', 'epochs_flag', 'sampler_n', 'steps']
++check_clock(refe_p6, wrong count       ) FAIL sha256 e808148d6cff25a24bfe6d435340c1ec keys ['bank', 'bank_registration', 'epochs_flag', 'sampler_n', 'steps']
++check_clock(refe_p6, unregistered bank ) FAIL sha256 08602da93dfdb992f588270c3ab94f70 keys ['bank', 'bank_registration', 'epochs_flag', 'sampler_n', 'steps']
++train.py             sha256 ad865dab0ec33884c62b63c55cfef4600962b929f95b0238a23fa8d855438106
++model.py             sha256 e6011cd83c846dfbd9756301ae731f4b84541b7b8e07a139a2c2c2b663a8a46d
++session_reserve.py   sha256 80564894ce19f241e53a70a9d51767609cb89699aef897800162e92138b3c68c
++p6_pod.sh            sha256 9aa375dfc2a71be7b0eb9732b2f9a05f43819b72dc581a0e1ae8c33d0a237435
++p6_prep.py           sha256 85bad26fbd342a383089a86d02a3844d748d1ab10b05fad630ebac2290f6b504
+--- /dev/null
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-22-p7-wire-integrate-2/probes/probe_p6_identity_tip.out
+@@ -0,0 +1,10 @@
++refe_p6 profile sha256         80fa4d7ec757ad4658df04b1ecfd453ae98653e729e2ee24458769d851cdf9c3
++refe_p6 expect_schedule sha256 c82ab620f7d52d1f1732f21dba6d3e4f40ffc175b7ffd3415be8c2206032a21a | keys ['epoch_len', 'epochs', 'n_tuples_by_bank', 'steps']
++check_clock(refe_p6, clean 3-C bank    ) PASS sha256 ed11f753887d383b2cf7e6e31354d7e5 keys ['bank', 'bank_registration', 'epochs_flag', 'sampler_n', 'steps']
++check_clock(refe_p6, wrong count       ) FAIL sha256 e808148d6cff25a24bfe6d435340c1ec keys ['bank', 'bank_registration', 'epochs_flag', 'sampler_n', 'steps']
++check_clock(refe_p6, unregistered bank ) FAIL sha256 08602da93dfdb992f588270c3ab94f70 keys ['bank', 'bank_registration', 'epochs_flag', 'sampler_n', 'steps']
++train.py             sha256 ad865dab0ec33884c62b63c55cfef4600962b929f95b0238a23fa8d855438106
++model.py             sha256 e6011cd83c846dfbd9756301ae731f4b84541b7b8e07a139a2c2c2b663a8a46d
++session_reserve.py   sha256 80564894ce19f241e53a70a9d51767609cb89699aef897800162e92138b3c68c
++p6_pod.sh            sha256 9aa375dfc2a71be7b0eb9732b2f9a05f43819b72dc581a0e1ae8c33d0a237435
++p6_prep.py           sha256 85bad26fbd342a383089a86d02a3844d748d1ab10b05fad630ebac2290f6b504
+--- /dev/null
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-22-p7-wire-integrate-2/probes/probe_real_build_clock.out
+@@ -0,0 +1,6 @@
++bank bank rank files ['targets_rank0.jsonl', 'targets_rank1.jsonl'] digest e8957e80797ef400
++1. registered bank          -> {'G-CLOCK': 'PASS'} | bank_content: {'registered': 'e8957e80797ef400', 'registration': "bank 'bank' per ", 'targets_sha256': 'e8957e80797ef400'} | reasons: []
++   swapped two rows of targets_rank0.jsonl - digest now 0c90f1638783858f
++2. same-count tampered bank -> {'G-CLOCK': 'FAIL'} | reasons: ["the bank's CONTENT is not the registered one: targets_sha256 0c90f1638783858f... != registered e8957e80797ef400... (bank 'bank' per targets_sha256_by_"] | trainer's built count: None
++3. count-only profile, same tampered bank -> {'G-CLOCK': 'PASS'}
++RESULT: REACHABLE
+--- /dev/null
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-22-p7-wire-integrate-2/probes/probe_real_build_clock.py
+@@ -0,0 +1,53 @@
++"""P7-WIRE-INTEGRATE-2 / Gap 2 probe: is the G-CLOCK content check REACHABLE from the real BUILD flow (not only from a fake capture)?
++Same scenario as test_launch_gate.py F3 (the tiny rehearsal fixture, the REAL trainer built by `gate_checks.instrumented_run`, `launch_gate.run_checks(only={"G-CLOCK"})`), with `targets_sha256_by_bank` registered.
++  1. registered digest == the bank's            -> G-CLOCK PASS, evidence carries `bank_content`
++  2. two rows of the bank SWAPPED (same row count, same size, trainer still loads it)  -> G-CLOCK FAIL, for the CONTENT
++  3. the count-only profile (no key) on the swapped bank                               -> PASS (the defect the content pin closes)
++usage (torch venv, CPU): python probe_real_build_clock.py <refe dir>"""
++import json
++import os
++import shutil
++import sys
++import tempfile
++from pathlib import Path
++
++os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
++REFE = Path(sys.argv[1]).resolve()
++sys.path.insert(0, str(REFE))
++import gate_checks as C  # noqa: E402
++import gate_fixture as F  # noqa: E402
++import gate_token as GT  # noqa: E402
++import launch_gate as L  # noqa: E402
++
++root = Path(tempfile.mkdtemp(prefix="p7int2_clock_"))
++try:
++    fx = F.tiny_p2_fixture(str(root))
++    argv = F.rehearsal_argv(fx, str(root / "launch_out"))
++    prof = L.PROFILES["refe_rehearsal"]
++    cl_argv = C._set(C._drop(list(argv), "--steps", 1), "--epochs", "1")
++    bank = Path(GT.flag_values(cl_argv, "--targets")[0])
++    dig = C.bank_targets_sha256(bank)
++    print("bank", bank.name, "rank files", [p.name for p in sorted(bank.glob("targets_rank*.jsonl"))], "digest", dig[:16])
++    sched = {"epochs": 1, "steps": 2, "epoch_len": 4}
++    pinned = {**prof, "expect_schedule": {**sched, "targets_sha256_by_bank": {bank.name: dig}}}
++    countonly = {**prof, "expect_schedule": dict(sched)}
++    out = root / "o1"
++    st = L.run_checks(pinned, cl_argv, L.PKG if hasattr(L, "PKG") else REFE.parent, out, only={"G-CLOCK"})
++    ev = GT.read_json(out / "evidence_G-CLOCK.json")
++    print("1. registered bank          ->", st, "| bank_content:", {k: (str(v)[:16] if v else v) for k, v in ev["details"].get("bank_content", {}).items()}, "| reasons:", ev["reasons"])
++    # swap the first two rows of the first rank file: same count, same size, still a valid bank
++    rk = sorted(bank.glob("targets_rank*.jsonl"))[0]
++    lines = rk.read_bytes().splitlines(keepends=True)
++    assert len(lines) >= 2 and lines[0] != lines[1], len(lines)
++    rk.write_bytes(b"".join([lines[1], lines[0]] + lines[2:]))
++    print("   swapped two rows of", rk.name, "- digest now", C.bank_targets_sha256(bank)[:16])
++    out2 = root / "o2"
++    st2 = L.run_checks(pinned, cl_argv, REFE.parent, out2, only={"G-CLOCK"})
++    ev2 = GT.read_json(out2 / "evidence_G-CLOCK.json")
++    print("2. same-count tampered bank ->", st2, "| reasons:", [r[:150] for r in ev2["reasons"]], "| trainer's built count:", ev2["details"].get("bank"))
++    out3 = root / "o3"
++    st3 = L.run_checks(countonly, cl_argv, REFE.parent, out3, only={"G-CLOCK"})
++    print("3. count-only profile, same tampered bank ->", st3)
++    print("RESULT:", "REACHABLE" if (st == {"G-CLOCK": "PASS"} and st2 == {"G-CLOCK": "FAIL"} and st3 == {"G-CLOCK": "PASS"}) else "NOT AS EXPECTED")
++finally:
++    shutil.rmtree(root, ignore_errors=True)
+--- /dev/null
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-22-p7-wire-integrate-2/probes/run_m2_probe.py
+@@ -0,0 +1,26 @@
++"""Driver for probe_m2.py: build the M2-mutated copy of the tree under test, run the probe on both, write the two outputs.
++usage: python run_m2_probe.py <refe dir> <out dir>"""
++import shutil
++import subprocess
++import sys
++import tempfile
++from pathlib import Path
++
++refe, out = Path(sys.argv[1]).resolve(), Path(sys.argv[2]).resolve()
++here = Path(__file__).resolve().parent
++out.mkdir(parents=True, exist_ok=True)
++OLD = '    if missing:\n        return verdict("G-RESERVE", reasons, det, arm=arm, rehearsal=rehearsal)\n'
++NEW = '    if False:\n        return verdict("G-RESERVE", reasons, det, arm=arm, rehearsal=rehearsal)\n'
++with tempfile.TemporaryDirectory() as td:
++    mut = Path(td) / "refe"
++    shutil.copytree(refe, mut, ignore=shutil.ignore_patterns("__pycache__"))
++    f = mut / "gate_checks.py"
++    s = f.read_text(encoding="utf-8")
++    assert s.count(OLD) == 1, s.count(OLD)
++    f.write_text(s.replace(OLD, NEW), encoding="utf-8", newline="")
++    for name, d in (("original", refe), ("mutated_M2", mut)):
++        r = subprocess.run([sys.executable, str(here / "probe_m2.py"), str(d)], capture_output=True, text=True, encoding="utf-8")
++        lines = [ln for ln in r.stdout.splitlines() if " | " in ln]
++        (out / f"probe_m2_{name}.out").write_text("\n".join(lines) + "\n" + (r.stderr[-400:] if r.returncode else ""), encoding="utf-8", newline="\n")
++        print(f"--- {name} (rc {r.returncode})")
++        print("\n".join(lines))
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-22-p7-wire-integrate/PROCEDURE_P7_PINS.md
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-22-p7-wire-integrate/PROCEDURE_P7_PINS.md
+@@ -1,5 +1,5 @@
+-# PROCEDURE_P7_PINS -- how `P7_BANK_TUPLES` and `P7_AUX_STORE_PINS` are produced (nothing is typed from an estimate)
++# PROCEDURE_P7_PINS -- how `P7_BANK_TUPLES`, `P7_TARGETS_SHA256` and `P7_AUX_STORE_PINS` are produced (nothing is typed from an estimate)
+ 
+-Written 2026-10-22 by P7-WIRE-INTEGRATE. `refe_p7` REFUSES today on purpose; this is the exact way it stops refusing. 0 GPU, CPU only, ~minutes.
++Written 2026-10-22 by P7-WIRE-INTEGRATE; THIRD PIN (the bank's content digest) and Step G added 2026-10-22 by P7-WIRE-INTEGRATE-2. `refe_p7` REFUSES today on purpose; this is the exact way it stops refusing. 0 GPU, CPU only, ~minutes.
+ Evidence classes below: MEASURED (this package, artifact named) / INHERITED (another doc, not re-verified) / PENDING (cannot be run yet).
+ 
+@@ -9,8 +9,9 @@
+ |---|---|---|
+ | `P7_BANK_TUPLES = {}` | the tuple count (= rows of `targets_rank*.jsonl`) of the bank directory `train_grow_cmd_3c_p7`, keyed by the DIRECTORY NAME the launch argv's `--targets` names | `p7_refusals` (before any check) and, independently, G-CLOCK (`clock_bank_tuples` -> "has no registered tuple count") |
++| `P7_TARGETS_SHA256 = {}` | the bank's CONTENT: the trainer's own `targets_sha256` (sha256 over basename + bytes of each `targets_rank*.jsonl`, sorted) of that SAME directory, keyed by the same directory name. A count cannot tell two same-size banks apart; this can. It is the value `train.run_identity` records in `config.json` / `ckpt_last.pt` and `train._identity_diff` enforces on every `--resume` (train.py:1077-1125, 1525) | `p7_refusals` (before any check; also refuses a profile that LACKS the key, a malformed digest, and a count and a digest naming different banks) and, independently, G-CLOCK (`clock_bank_sha256`: the gate hashes the `--targets` files at launch and FAILS on any other bank; `refe_p7` without the key FAILS too, never a skip) |
+ | `P7_AUX_STORE_PINS = {"sha256": None, "keys": None}` | the manifest `store_sha256` and `counts.stored_keys` of the TRAINING label store AFTER the reserve's shards were moved out and the store was re-finalised | `p7_refusals` and, independently, G-DVB's `aux_drv_labels` rows (the trainer's `aux` event is compared with the registered pins; there is no fallback to the full store, which holds the reserve's keys) |
+ 
+ `P7_RESERVE_SHA256` is already registered (`53f3bcd4...`, == `session_reserve.RESERVE_FILE_SHA256`; `test_p7_integration.py` pins the equality).
+-A pin is also refused if it is **malformed** (sha256 not 64 lowercase hex, keys / tuple count not a positive `int`): a typed value that is not the tool's output is refused, but a well-formed WRONG number is only
++A pin is also refused if it is **malformed** (sha256 / digest not 64 lowercase hex, keys / tuple count not a positive `int`): a typed value that is not the tool's output is refused, but a well-formed WRONG number is only
+ caught by the consumers (G-CLOCK compares it with the bank the trainer actually built; G-DVB with the store the trainer actually opened). So: **paste what `p7_pins.py` printed, never a number from a document.**
+ `~150,834` (RESULT of P7-WIRE-RESERVE) is ESTIMATED (rank-1 twins assumed to fall uniformly over scenes); it must never be registered.
+@@ -53,16 +54,17 @@
+ ```
+ 
+-## 5. Step D -- READ the two pins off the outputs
++## 5. Step D -- READ the three pins off the outputs
+ 
+ ```
+ python refe/p7_pins.py --reserve refe/fixtures/p7_reserve_sessions.json --bank $W/train_grow_cmd_3c_p7 --store <scratch>/label_store_p7 --calib <scratch>/calib_p7.json
+ ```
+-It prints a JSON report and two paste-ready lines, then `ZZP7PINS_OK tuples=<n> scenes=<s> store_keys=<k> store_sha256=<16>`:
++It prints a JSON report and three paste-ready lines, then `ZZP7PINS_OK tuples=<n> scenes=<s> store_keys=<k> store_sha256=<16> targets_sha256=<16>`:
+ ```
+ P7_BANK_TUPLES: dict = {"train_grow_cmd_3c_p7": <n>}
++P7_TARGETS_SHA256: dict = {"train_grow_cmd_3c_p7": "<64 hex>"}
+ P7_AUX_STORE_PINS = {"sha256": "<64 hex>", "keys": <k>}
+ ```
+ It exits **1 and prints no registration** (`ZZP7PINS_REFUSED <why>`) unless: the reserve loads; the bank holds `targets_rank*.jsonl` and no stray `targets_*.jsonl`; `reserve_filter_report.json` is present with `n_out` == the rows
+-counted here and `targets_sha256` == the digest recomputed here; no scene holds a rank twice; **`session_reserve.audit_inputs` finds no reserve key and no unresolved log in the bank and the store**; the bank holds
++counted here and `targets_sha256` == the digest recomputed here **and equal to the GATE's own definition (`gate_checks.bank_targets_sha256`: two copies of one definition are compared, so a drift is a refusal now rather than a G-CLOCK FAIL on the pod)**; no scene holds a rank twice; **`session_reserve.audit_inputs` finds no reserve key and no unresolved log in the bank and the store**; the bank holds
+ exactly `launch_gate.P7_SCENES` = 92,896 scenes (`--expect-scenes` overrides ONLY for a synthetic tree); the store opens with the trainer's own reader (`AuxLabelSource`, pinned to its manifest), every shard re-hashes, and the shard
+ headers' distinct key count equals `counts.stored_keys`; every bank log has a calibration row (the trainer DROPS a tuple without one, and then its count differs from the file's).
+@@ -72,5 +74,5 @@
+ ## 6. Step E -- register
+ 
+-Paste the two lines into `refe/launch_gate.py` (replacing `P7_BANK_TUPLES: dict = {}` and the `P7_AUX_STORE_PINS` line), write the same numbers into the P7 pre-registration (SPEC_P7 2: "registered before step 0"),
++Paste the three lines into `refe/launch_gate.py` (replacing `P7_BANK_TUPLES: dict = {}`, `P7_TARGETS_SHA256: dict = {}` and the `P7_AUX_STORE_PINS` line), write the same numbers into the P7 pre-registration (SPEC_P7 2: "registered before step 0"),
+ land with the scoped lander, and regenerate `SHIP_MANIFEST.json` (`launch_gate.py ship-manifest`). The static tests that guard these pins (`test_p7_head_wiring.py` S2, `test_p7_integration.py` IV) accept
+ "unregistered OR well-formed", so registering does not turn the G-SUITE red. Nothing else needs editing.
+@@ -78,6 +80,16 @@
+ ## 7. Step F -- the pod must reproduce the dev-box numbers
+ 
+-The chain's block 5a (`P7_RESERVE` + `P7_LABEL_STORE`, `P6_STOP_AFTER=reserve` for a dry run) produces `$CBANK` (`..._p7`) and the re-finalised store on the pod. Run `p7_pins.py` on THOSE and `diff` its two lines against step D's:
+-identical, or STOP (the filter is deterministic and the store pin depends only on shard bytes: a difference means different inputs). The gate then re-checks both numbers against what the trainer actually built (G-CLOCK, G-DVB).
++The chain's block 5a (`P7_RESERVE` + `P7_LABEL_STORE`, `P6_STOP_AFTER=reserve` for a dry run) produces `$CBANK` (`..._p7`) and the re-finalised store on the pod. Run `p7_pins.py` on THOSE and `diff` its three lines against step D's:
++identical, or STOP (the filter is deterministic, the bank digest is a hash of the filtered files' bytes and the store pin depends only on shard bytes: a difference means different inputs). The gate then re-checks the numbers against what the trainer actually built (G-CLOCK: count AND content, G-DVB).
++
++## 7b. Step G -- AFTER the first start: the trainer's OWN recorded identity must be the registration
++
++```
++python refe/p7_pins.py --check-run <the run's --out directory>        # rc 0 ZZP7RUN_OK | rc 1 ZZP7RUN_REFUSED <why>
++```
++The trainer writes `config.json` (with `identity.targets_sha256` and `identity.n_tuples`, computed by `train.run_identity` on the bank it actually loaded) before step 0, and enforces the same identity on every `--resume`
++(P6's content pin `8775e73e...` is exactly this resume identity, `eval/PREREG_P6.md:191`; a FRESH start has nothing recorded to compare with, which is why the profile registers the digest and G-CLOCK refuses at launch).
++The PASS token fingerprints a directory by its LISTING (relpath + size), so a same-size in-place edit of the bank between G-CLOCK and the trainer's start is not visible to `verify`; this step closes that window with the
++trainer's own number. It belongs in the P7 chain right after the first checkpoint's identity exists (`p7_pod.sh`, OPEN). A failure means STOP: the run trained on a bank the profile never vouched for.
+ 
+ ## 8. Proof that this procedure and its refusals work (MEASURED, this package)
+@@ -85,4 +97,6 @@
+ * `raw/rehearsal/rehearse.sh` runs steps A-D's LITERAL commands (the filter, `reserve-labelstore`, both `finalize`, `reserve-calib`, `p7_pins.py`) on a synthetic tree with the real reserve file: `raw/rehearsal/rehearse.out`.
+   The same script then shows three refusals (unfiltered bank, the FULL store, a scene count the schedule is not sized on), each rc 1.
++* `refe/test_p7_integration.py` section V (P7-WIRE-INTEGRATE-2): a SAME-COUNT, DIFFERENT-BYTES bank (one byte flipped in place; two rows swapped) is refused by G-CLOCK, directly and through `run_checks`, while the count-only gate
++  PASSes it (the red arm); the gate's digest function has the AST of the trainer's `_digest_files`; `--check-run` is exercised on the registered identity and on each defect.
+ * `refe/test_p7_integration.py` section III: the gate REFUSES with nothing / only one pin / a malformed pin registered; with the pins set to a synthetic tree's `p7_pins.py` output the profile is clean,
+   G-CLOCK's registered count equals an independent recount of the rank files, G-DVB's store rows are all ok on the `aux` event the trainer's own reader reports, and G-RESERVE PASSes through `run_checks`;
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-22-p7-wire-integrate/RESULT.md
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-22-p7-wire-integrate/RESULT.md
+@@ -1,2 +1,6 @@
++> **ADDENDUM 2026-10-22 (P7-WIRE-INTEGRATE-2) -- read first.** The verification block of section 7 below was generated while mutant M2 SURVIVED (`NOT RED M2`, `ZZP7INT_MUTATIONS_NOT_OK 1`).  M2 is NOT equivalent: it guards a real behaviour
++> (the audit must not run on a partial input set), now tested; the mutation run of the integrated set is in `raw/2026-10-22-p7-wire-integrate-2/RESULT.md` (verdict there).  This package also gained a THIRD pin, `P7_TARGETS_SHA256`
++> (the bank's content digest): wherever this document says "the two pins" read "the three pins" (`PROCEDURE_P7_PINS.md` is updated).  Everything else below is as written by P7-WIRE-INTEGRATE.
++
+ # P7-WIRE-INTEGRATE -- the two landed halves of P7's wiring connected: `refe_p7`'s G-RESERVE now runs the REAL session reserve
+ 
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-22-p7-wire-integrate/rehearsal/rehearse.out
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-22-p7-wire-integrate/rehearsal/rehearse.out
+@@ -1,3 +1,3 @@
+-built C:\Users\Admin\par18\p7int\rehearsal_work reserved logs 2021.06.07.17.46.49_veh-35_026 2021.10.11.02.57.41_veh-50_024
++built C:\Users\Admin\par18\p7int2\rehearsal_work reserved logs 2021.06.07.17.46.49_veh-35_026 2021.10.11.02.57.41_veh-50_024
+ == A. the filter on the bank (this is what measure_rank1_3c.sh runs after its download; --token-table is added there)
+ {"by_rank_excluded": {"0": 4, "1": 2}, "by_rank_in": {"0": 10, "1": 5}, "by_rank_out": {"0": 6, "1": 3}, "n_excluded": 6, "n_in": 15, "n_out": 9, "n_unresolved": 0, "targets_sha256": "2936617f4621e761aac9ec212784ba367bca7378b48c773b027f64a6e89cb66c"}
+@@ -8,5 +8,5 @@
+ == C. the calibration table without the reserve's logs (optional cross-check)
+ ZZRESERVE_CALIB_OK logs_in=5 logs_out=3 excluded=2
+-== D. READ the two pins off the outputs (scenes: the synthetic bank has 6, the real one 92,896 = launch_gate.P7_SCENES)
++== D. READ the three pins off the outputs (P7_BANK_TUPLES, P7_TARGETS_SHA256, P7_AUX_STORE_PINS) (scenes: the synthetic bank has 6, the real one 92,896 = launch_gate.P7_SCENES)
+ {
+  "audit_counts": {
+@@ -64,4 +64,7 @@
+   "P7_BANK_TUPLES": {
+    "train_grow_cmd_3c_p7": 9
++  },
++  "P7_TARGETS_SHA256": {
++   "train_grow_cmd_3c_p7": "2936617f4621e761aac9ec212784ba367bca7378b48c773b027f64a6e89cb66c"
+   }
+  },
+@@ -78,5 +81,5 @@
+   "sha256": "34a4c1a5f2c66d50ec3ef5e981380628e581cb006731012c32f5b7b093286c08",
+   "shards_verified": 3,
+-  "store": "C:\\Users\\Admin\\par18\\p7int\\rehearsal_work\\label_store_p7"
++  "store": "C:\\Users\\Admin\\par18\\p7int2\\rehearsal_work\\label_store_p7"
+  }
+ }
+@@ -84,8 +87,9 @@
+ # paste into refe/launch_gate.py (P7 section), then regenerate SHIP_MANIFEST; the pod's own reserve stage must reproduce these byte for byte (diff p7_pins.py's output on the pod):
+ P7_BANK_TUPLES: dict = {"train_grow_cmd_3c_p7": 9}
++P7_TARGETS_SHA256: dict = {"train_grow_cmd_3c_p7": "2936617f4621e761aac9ec212784ba367bca7378b48c773b027f64a6e89cb66c"}
+ P7_AUX_STORE_PINS = {"sha256": "34a4c1a5f2c66d50ec3ef5e981380628e581cb006731012c32f5b7b093286c08", "keys": 6}
+-ZZP7PINS_OK tuples=9 scenes=6 store_keys=6 store_sha256=34a4c1a5f2c66d50
++ZZP7PINS_OK tuples=9 scenes=6 store_keys=6 store_sha256=34a4c1a5f2c66d50 targets_sha256=2936617f4621e761
+ == E. the REFUSALS (each must exit 1 and print no registration)
+-ZZP7PINS_REFUSED Refused: C:\Users\Admin\par18\p7int\rehearsal_work\train_grow_cmd_3c\reserve_filter_report.json is missing: a bank that no `session_reserve filter` run produced is not a P7 bank
++ZZP7PINS_REFUSED Refused: C:\Users\Admin\par18\p7int2\rehearsal_work\train_grow_cmd_3c\reserve_filter_report.json is missing: a bank that no `session_reserve filter` run produced is not a P7 bank
+ unfiltered bank: rc=1
+ ZZP7PINS_REFUSED Refused: the reserve audit of the bank + store did not pass: leaks {'bank': 0, 'label_store': 6}, unresolved {'bank': 0, 'label_store': 0}, empty inputs []
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-22-p7-wire-integrate/rehearsal/rehearse.sh
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-22-p7-wire-integrate/rehearsal/rehearse.sh
+@@ -17,5 +17,5 @@
+ echo "== C. the calibration table without the reserve's logs (optional cross-check)"
+ "$PY" "$REFE/p6_prep.py" reserve-calib --reserve "$RES" --calib "$W/calib_table.json" --out "$W/calib_p7.json"
+-echo "== D. READ the two pins off the outputs (scenes: the synthetic bank has 6, the real one 92,896 = launch_gate.P7_SCENES)"
++echo "== D. READ the three pins off the outputs (P7_BANK_TUPLES, P7_TARGETS_SHA256, P7_AUX_STORE_PINS) (scenes: the synthetic bank has 6, the real one 92,896 = launch_gate.P7_SCENES)"
+ "$PY" "$REFE/p7_pins.py" --reserve "$RES" --bank "$W/train_grow_cmd_3c_p7" --store "$W/label_store_p7" --calib "$W/calib_p7.json" --expect-scenes 6 | tee "$W/pins.out"
+ echo "== E. the REFUSALS (each must exit 1 and print no registration)"
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/gate_checks.py
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/gate_checks.py
+@@ -2153,5 +2153,52 @@
+             if bl.get("n_scenes") != exp["epoch_len"]:
+                 reasons.append(f"step-0 bank has {bl.get('n_scenes')} scenes != registered {exp['epoch_len']}")
++        # P7-WIRE-INTEGRATE-2: the bank's CONTENT.  A tuple count cannot tell two same-size banks apart; the trainer's own `targets_sha256` of the SAME files the build just loaded can.  Only a profile that
++        # registers `targets_sha256_by_bank` (refe_p7) is asked; refe_p6 has no such key and takes none of these lines (its G-CLOCK evidence is byte-for-byte what it was).
++        want_sha, how_sha = clock_bank_sha256(argv, exp, required=bool(profile.get("p7_rules")))
++        if how_sha is not None:
++            import gate_token as GT_
++            tg = (GT_.flag_values(argv, "--targets") or [None])[0]
++            got_sha = bank_targets_sha256(tg) if tg else None
++            det["bank_content"] = {"targets_sha256": got_sha, "registered": want_sha, "registration": how_sha}
++            if want_sha is None:
++                reasons.append(f"step-0 bank content: {how_sha}")
++            elif got_sha is None:
++                reasons.append(f"--targets {tg!r} holds no targets_rank*.jsonl: the bank's content cannot be pinned")
++            elif got_sha != want_sha:
++                reasons.append(f"the bank's CONTENT is not the registered one: targets_sha256 {got_sha[:16]}... != registered {want_sha[:16]}... ({how_sha}); the same tuple count is not the same bank")
+     return verdict("G-CLOCK", reasons, det, arm=arm, rehearsal=rehearsal)
++
++
++def _digest_files(paths) -> str:
++    h = hashlib.sha256()
++    for q in paths:
++        h.update(os.path.basename(str(q)).encode("utf-8"))
++        with open(q, "rb") as f:
++            for b in iter(lambda: f.read(1 << 22), b""):
++                h.update(b)
++    return h.hexdigest()
++
++
++def bank_targets_sha256(target_dir):
++    """The trainer's `targets_sha256` of a bank directory: `train._digest_files(sorted(Path(a.targets).glob("targets_rank*.jsonl")))` -- sha256 over (basename, bytes) of each rank file, sorted.  It is the value
++    `train.run_identity` records in config.json / ckpt_last.pt and that `train._identity_diff` compares on every `--resume` (train.py:1077-1125, 1525); `_digest_files` above is that function's text
++    (test_p7_integration.py compares their ASTs).  None when the directory holds no rank file."""
++    files = sorted(Path(str(target_dir)).glob("targets_rank*.jsonl"))
++    return _digest_files(files) if files else None
++
++
++def clock_bank_sha256(argv: list, exp: dict, required: bool = False):
++    """-> (registered content digest of the argv's `--targets` bank or None, how it was resolved) for G-CLOCK; (None, None) when the profile registers none and `required` is False (refe_p6, refe_p2).
++    `targets_sha256_by_bank` is keyed by the DIRECTORY NAME of `--targets`, exactly like `n_tuples_by_bank`.  `required` (refe_p7): a profile WITHOUT the key, or a bank WITHOUT an entry, is a FAIL --
++    never a skip, because a check that is silently absent reads as clean."""
++    if "targets_sha256_by_bank" not in exp:
++        return (None, "the profile registers no targets_sha256_by_bank: a bank's content is not pinned") if required else (None, None)
++    import gate_token as GT_
++    tg = (GT_.flag_values(argv, "--targets") or [None])[0]
++    name = Path(str(tg).rstrip("/\\")).name if tg else None
++    reg = exp["targets_sha256_by_bank"]
++    if name not in reg:
++        return None, f"--targets {tg!r} names bank {name!r}, which has no registered targets_sha256 (registered: {sorted(reg)})"
++    return reg[name], f"bank {name!r} per targets_sha256_by_bank"
+ 
+ 
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/launch_gate.py
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/launch_gate.py
+@@ -342,8 +342,10 @@
+ #   * G-RESERVE (SPEC_P7 2): the reserve file's sha256 is the registered draw's AND `session_reserve.audit_inputs` finds it disjoint from all five training inputs;
+ #   * the schedule: 25 epochs x ceil(92,896 / 256) = 9,075 steps (P6: 10,075), a step-0 bank registered PER BANK.
+-# ⛔ TWO PINS ARE NOT KNOWN YET AND ARE LEFT UNREGISTERED ON PURPOSE -- each makes the gate REFUSE (`p7_refusals`, then G-DVB / G-CLOCK), never default to something else:
++# ⛔ THREE PINS ARE NOT KNOWN YET AND ARE LEFT UNREGISTERED ON PURPOSE -- each makes the gate REFUSE (`p7_refusals`, then G-DVB / G-CLOCK), never default to something else:
+ #   P7_AUX_STORE_PINS  the P7 TRAINING store's manifest `store_sha256` + `counts.stored_keys`: they exist only after the chain's block 5a (`p6_pod.sh`, `P7_RESERVE` + `P7_LABEL_STORE`) has moved the reserve's shards
+ #                      out and RE-FINALISED the store (`aux_label_store.py finalize`) -- SPEC_P7 2, "registered before step 0"
+ #   P7_BANK_TUPLES     the `train_grow_cmd_3c_p7` bank's tuple count: 92,896 rank-0 rows + the filter's rank-1 count (SPEC_P7 2: ~150.8k ESTIMATED -- a number never to be registered from an estimate)
++#   P7_TARGETS_SHA256  the bank's CONTENT: the trainer's own `targets_sha256` (sha256 over basename + bytes of each `targets_rank*.jsonl`, sorted) of that same bank directory.  A tuple count cannot tell two same-size banks
++#                      apart; this can.  Keyed by the bank's directory name like the count; G-CLOCK recomputes it from the `--targets` files at launch and FAILS on any other bank (P7-WIRE-INTEGRATE-2)
+ #   P7_RESERVE_SHA256  filled below (R-A, MEASURED: the sha256 of raw/2026-10-22-p7-session-reserve/raw/reserve_sessions.json, re-measured 2026-10-22; SESSION_RESERVE.md header table) == session_reserve.RESERVE_FILE_SHA256
+ # ⭐ HOW THE TWO PINS ARE PRODUCED, exactly: `raw/2026-10-22-p7-wire-integrate/PROCEDURE_P7_PINS.md` -- `measure_rank1_3c.sh` (the filter on the rebuilt 3-C bank) then `p7_pins.py` (reads both numbers off the
+@@ -358,4 +360,5 @@
+ P7_BANK_TUPLES: dict = {}                                               # UNREGISTERED: a --targets bank with no entry FAILS G-CLOCK (clock_bank_tuples), and `p7_refusals` refuses before any check runs
+ P7_AUX_STORE_PINS = {"sha256": None, "keys": None}                      # UNREGISTERED: `aux_dvb_rows` FAILS the store row, and `p7_refusals` refuses
++P7_TARGETS_SHA256: dict = {}                                            # UNREGISTERED: a --targets bank with no entry FAILS G-CLOCK (clock_bank_sha256), and `p7_refusals` refuses; paste what p7_pins.py printed
+ P7_RESERVE_SHA256 = "53f3bcd4684513f0ee765fbcfbaf583b587f58c97e9c8915f4e4df3ae3e32f29"
+ P7_AUX_REQUIRED = {"--aux-drv": None, "--w-aux-drv": "0.1", "--aux-drv-tap": "visual", "--aux-drv-depth": "2", "--aux-drv-feed": "off", "--aux-drv-labels": None, "--w-field": "0.0"}
+@@ -372,5 +375,6 @@
+                        "forbidden_flags": PROFILES["refe_p6"]["forbidden_flags"] + ("--aux-drv-shuffle-seed",),
+                        "required_flags": {**PROFILES["refe_p6"]["required_flags"], **P7_AUX_REQUIRED},
+-                       "expect_schedule": {"epochs": P7_EPOCHS, "steps": P7_STEPS, "epoch_len": P7_SCENES, "n_tuples_by_bank": P7_BANK_TUPLES},
++                       "expect_schedule": {"epochs": P7_EPOCHS, "steps": P7_STEPS, "epoch_len": P7_SCENES, "n_tuples_by_bank": P7_BANK_TUPLES,
++                                           "targets_sha256_by_bank": P7_TARGETS_SHA256},
+                        "aux_store_pins": P7_AUX_STORE_PINS, "reserve_sha256": P7_RESERVE_SHA256}
+ 
+@@ -395,4 +399,18 @@
+         if type(n_t) is not int or n_t <= 0:
+             out.append(f"{prof['name']}: the registered tuple count of bank {bank_name!r} is {n_t!r}, not a positive int (P7_BANK_TUPLES): paste what p7_pins.py printed")
++    # P7-WIRE-INTEGRATE-2: the bank's CONTENT.  A count cannot tell two same-size banks apart, so the digest is registered beside it, per bank, and a profile WITHOUT the key is itself a refusal
++    # (G-CLOCK only checks the digest when the key exists: a key that can be absent is a default that disables the check).
++    dig = exp.get("targets_sha256_by_bank")
++    if not isinstance(dig, dict):
++        out.append(f"{prof['name']}: the profile carries no targets_sha256_by_bank (P7_TARGETS_SHA256 in expect_schedule): a bank's tuple count cannot tell two same-size banks apart, so its CONTENT digest must be registered")
++    else:
++        if name not in dig:
++            out.append(f"{prof['name']}: --targets {tg!r} names bank {name!r}, which has no registered targets_sha256 (P7_TARGETS_SHA256 holds {sorted(dig)}): paste what p7_pins.py printed, "
++                       f"never a typed value -- the digest exists only once the reserve filter has produced the bank")
++        for bank_name, h in sorted(dig.items()):
++            if not (isinstance(h, str) and re.fullmatch(r"[0-9a-f]{64}", h)):
++                out.append(f"{prof['name']}: the registered targets_sha256 of bank {bank_name!r} is {h!r}, not a sha256 (64 lowercase hex digits; P7_TARGETS_SHA256): paste what p7_pins.py printed")
++        if reg and dig and set(reg) != set(dig):
++            out.append(f"{prof['name']}: P7_BANK_TUPLES {sorted(reg)} and P7_TARGETS_SHA256 {sorted(dig)} register DIFFERENT banks: a bank is pinned by its count AND its content, or not at all")
+     if not prof.get("reserve_sha256"):
+         out.append(f"{prof['name']}: no reserve sha256 is registered (P7_RESERVE_SHA256)")
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/p7_pins.py
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/p7_pins.py
+@@ -2,7 +2,7 @@
+ """P7-WIRE-INTEGRATE -- READ (never choose) the two P7 launch-gate pins off the artifacts the reserve stage produced.
+ 
+-`refe_p7` REFUSES until two registrations exist (`launch_gate.P7_BANK_TUPLES`, `launch_gate.P7_AUX_STORE_PINS`) and each is a number that exists only AFTER the reserve filter has run: the bank's tuple count is
++`refe_p7` REFUSES until three registrations exist (`launch_gate.P7_BANK_TUPLES`, `launch_gate.P7_TARGETS_SHA256`, `launch_gate.P7_AUX_STORE_PINS`) and each is a value that exists only AFTER the reserve filter has run: the bank's tuple count is
+ 92,896 rank-0 rows + however many twins survive the filter (ESTIMATED ~150.8k, never to be registered from an estimate), and the training label store's manifest sha256 / key count are those of the store
+-AFTER its reserve shards were moved out and it was re-finalised.  This tool reads both numbers off the OUTPUTS, with the same definitions the gate consumes, and prints the two registrations.
++AFTER its reserve shards were moved out and it was re-finalised.  The bank's CONTENT digest (`P7_TARGETS_SHA256`: the trainer's own `targets_sha256`) is the third: a tuple count cannot tell two same-size banks apart.  This tool reads all three off the OUTPUTS, with the same definitions the gate consumes, and prints the three registrations.
+ 
+   python refe/p7_pins.py --reserve refe/fixtures/p7_reserve_sessions.json --bank <.../train_grow_cmd_3c_p7> --store <re-finalised training store> [--calib <filtered calib_table.json>]
+@@ -18,5 +18,13 @@
+     count equals the manifest's `counts.stored_keys`,
+   * (with --calib) every bank row's log has a calibration row (a row without one is DROPPED by the trainer, and then the tuple count it reports is no longer the file's).
+-Nothing here is a default: a value is printed only when it was measured from the artifact.  The bank pin is keyed by the DIRECTORY NAME of the bank (the gate keys `n_tuples_by_bank` by `--targets`'s basename).
++Nothing here is a default: a value is printed only when it was measured from the artifact.  The bank pins are keyed by the DIRECTORY NAME of the bank (the gate keys `n_tuples_by_bank` and
++`targets_sha256_by_bank` by `--targets`'s basename).
++  * the bank digest is cross-checked against the GATE's own definition (`gate_checks.bank_targets_sha256`): two copies of one definition are compared here, so a drift is a refusal now and not a
++    G-CLOCK FAIL on the pod.
++
++  python refe/p7_pins.py --check-run <run dir>     AFTER the first start: the trainer's OWN recorded identity (config.json: `identity.targets_sha256`, `identity.n_tuples`, written by train.py before
++                                                    step 0 and enforced by the trainer on every --resume) must equal the registered pins of that bank.  rc 0 `ZZP7RUN_OK`, rc 1 `ZZP7RUN_REFUSED <why>`.
++                                                    This closes the one window the PASS token leaves (it fingerprints a directory by its LISTING): a same-size edit of the bank between G-CLOCK and the
++                                                    trainer's start.
+ """
+ from __future__ import annotations
+@@ -67,4 +75,8 @@
+     rep = json.loads(rep_path.read_text(encoding="utf-8"))
+     digest = SR._digest_files(files)
++    import gate_checks as GC
++    gate_digest = GC.bank_targets_sha256(bank)
++    if gate_digest != digest:                                                                         # two copies of one definition (the reserve module's, the gate's): they must agree on THIS bank
++        raise Refused(f"the gate's digest of {bank} ({str(gate_digest)[:16]}...) is not the reserve module's ({digest[:16]}...): the two definitions of the trainer's targets_sha256 drifted, and the gate would FAIL this bank on the pod")
+     if rep.get("n_out") != n:
+         raise Refused(f"the filter report says n_out {rep.get('n_out')}, the files hold {n} rows")
+@@ -120,15 +132,57 @@
+                                   "note": "G-DVB requires >= AUX_MIN_COVERAGE of the trainer's own count; reported, not enforced here"}
+     return {"bank": b, "store": s, "reserve_sessions": len(reserve), "audit_counts": {k: a["counts"][k] for k in ("examined", "leak_totals", "inputs_audited")},
+-            "registration": {"P7_BANK_TUPLES": {b["dir_name"]: b["n_tuples"]}, "P7_AUX_STORE_PINS": {"sha256": s["sha256"], "keys": s["keys"]}}}
++            "registration": {"P7_BANK_TUPLES": {b["dir_name"]: b["n_tuples"]}, "P7_TARGETS_SHA256": {b["dir_name"]: b["targets_sha256"]}, "P7_AUX_STORE_PINS": {"sha256": s["sha256"], "keys": s["keys"]}}}
++
++
++def check_run(run_dir, prof=None) -> dict:
++    """AFTER the first start: the identity the TRAINER recorded (config.json, written by train.py before step 0; the same dict ckpt_last.pt carries and `_identity_diff` enforces on every resume) must equal the
++    registered pins of the bank it trained on.  -> {"ok", "reasons", "bank", "identity"}.  An unregistered bank, a missing identity key and a mismatch are all refusals."""
++    if prof is None:
++        import launch_gate as L
++        prof = L.PROFILES["refe_p7"]
++    cp = Path(run_dir) / "config.json"
++    if not cp.is_file():
++        return {"ok": False, "reasons": [f"{cp} is missing: the trainer has not started this run (it writes config.json before step 0)"], "bank": None, "identity": {}}
++    cfg = json.loads(cp.read_text(encoding="utf-8"))
++    ident, tg = cfg.get("identity") or {}, (cfg.get("args") or {}).get("targets")
++    name = Path(str(tg).rstrip("/\\")).name if tg else None
++    exp = prof.get("expect_schedule") or {}
++    want_sha, want_n = (exp.get("targets_sha256_by_bank") or {}).get(name), (exp.get("n_tuples_by_bank") or {}).get(name)
++    reasons: list = []
++    if not name:
++        reasons.append("config.json carries no args.targets: the bank this run trained on is unknown")
++    if want_sha is None or want_n is None:
++        reasons.append(f"bank {name!r} is not registered (targets_sha256 {want_sha!r}, tuple count {want_n!r}): the run trained on a bank the profile never vouched for")
++    if ident.get("targets_sha256") is None:
++        reasons.append("the trainer recorded no targets_sha256 (identity.targets_sha256 is null: a --grow run does not hash its still-growing bank)")
++    elif want_sha is not None and ident["targets_sha256"] != want_sha:
++        reasons.append(f"the trainer's own targets_sha256 {str(ident['targets_sha256'])[:16]}... is not the registered {want_sha[:16]}...: it trained on another bank")
++    if want_n is not None and ident.get("n_tuples") != want_n:
++        reasons.append(f"the trainer built {ident.get('n_tuples')} tuples, the registration says {want_n}")
++    return {"ok": not reasons, "reasons": reasons, "bank": name, "identity": {k: ident.get(k) for k in ("targets_sha256", "n_tuples", "n_scenes")}}
+ 
+ 
+ def main(argv=None) -> int:
+     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+-    ap.add_argument("--reserve", required=True)
+-    ap.add_argument("--bank", required=True, help="the reserve-free bank directory (its name is the key the gate registers the tuple count under)")
+-    ap.add_argument("--store", required=True, help="the RE-FINALISED training label store")
++    ap.add_argument("--check-run", default=None, metavar="RUN_DIR", help="AFTER the first start: compare the trainer's own recorded identity (RUN_DIR/config.json) with the registered pins; needs no other argument")
++    ap.add_argument("--reserve")
++    ap.add_argument("--bank", help="the reserve-free bank directory (its name is the key the gate registers the tuple count and the content digest under)")
++    ap.add_argument("--store", help="the RE-FINALISED training label store")
+     ap.add_argument("--calib", default=None, help="the filtered calib_table.json (optional cross-check)")
+     ap.add_argument("--expect-scenes", type=int, default=None, help="default: launch_gate.P7_SCENES")
+     a = ap.parse_args(argv)
++    if a.check_run:
++        try:
++            r = check_run(a.check_run)
++        except (OSError, ValueError) as e:
++            print(f"ZZP7RUN_REFUSED {type(e).__name__}: {e}", file=sys.stderr)
++            return 1
++        if not r["ok"]:
++            print("ZZP7RUN_REFUSED " + " | ".join(r["reasons"]), file=sys.stderr)
++            return 1
++        print(f"ZZP7RUN_OK bank={r['bank']} tuples={r['identity']['n_tuples']} targets_sha256={r['identity']['targets_sha256'][:16]}")
++        return 0
++    if not (a.reserve and a.bank and a.store):
++        ap.error("--reserve, --bank and --store are required (or --check-run <run dir>)")
+     try:
+         exp = a.expect_scenes
+@@ -144,6 +198,7 @@
+     print("\n# paste into refe/launch_gate.py (P7 section), then regenerate SHIP_MANIFEST; the pod's own reserve stage must reproduce these byte for byte (diff p7_pins.py's output on the pod):")
+     print(f"P7_BANK_TUPLES: dict = {json.dumps(reg['P7_BANK_TUPLES'])}")
++    print(f"P7_TARGETS_SHA256: dict = {json.dumps(reg['P7_TARGETS_SHA256'])}")
+     print(f"P7_AUX_STORE_PINS = {json.dumps(reg['P7_AUX_STORE_PINS'])}")
+-    print(f"ZZP7PINS_OK tuples={r['bank']['n_tuples']} scenes={r['bank']['scenes']} store_keys={r['store']['keys']} store_sha256={r['store']['sha256'][:16]}")
++    print(f"ZZP7PINS_OK tuples={r['bank']['n_tuples']} scenes={r['bank']['scenes']} store_keys={r['store']['keys']} store_sha256={r['store']['sha256'][:16]} targets_sha256={r['bank']['targets_sha256'][:16]}")
+     return 0
+ 
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_p7_head_wiring.py
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_p7_head_wiring.py
+@@ -67,4 +67,5 @@
+ AUX_DESTS = ("aux_drv", "w_aux_drv", "aux_drv_tap", "aux_drv_depth", "aux_drv_feed", "aux_drv_labels", "aux_drv_shuffle_seed")
+ SHA_T = "ab" * 32                                                                                 # a TEST registration of a label store's sha256 (never a real pin)
++SHA_B = "cd" * 32                                                                                 # a TEST registration of a bank's content digest (P7-WIRE-INTEGRATE-2; never a real pin)
+ 
+ P6_ARGS = ("--backbone vitl16 --targets /w/train_grow --images /w/pix --calib /w/calib.json --metric-cache /w/mc --scorer-sees-trunk --yaw-wrap off --nav-mode command "
+@@ -85,5 +86,5 @@
+ def registered(prof: dict) -> dict:
+     """TEST-ONLY copy of a P7 profile with its three unknown pins REGISTERED (the real ones come from filter_reserve's report, SPEC_P7 2).  Never written back to PROFILES."""
+-    exp = {**prof["expect_schedule"], "n_tuples_by_bank": {"train_grow_cmd_3c_p7": 150800}}
++    exp = {**prof["expect_schedule"], "n_tuples_by_bank": {"train_grow_cmd_3c_p7": 150800}, "targets_sha256_by_bank": {"train_grow_cmd_3c_p7": SHA_B}}
+     return {**prof, "aux_store_pins": {"sha256": SHA_T, "keys": 5}, "expect_schedule": exp}
+ 
+@@ -119,9 +120,10 @@
+     # P7-WIRE-INTEGRATE: these two assertions used to read the LIVE profile and pin it UNREGISTERED -- which would have turned the G-SUITE (this static block runs in it) RED the day the real pins are registered
+     # from the filter's outputs (PROCEDURE_P7_PINS.md).  The live profile must be unregistered OR registered with WELL-FORMED values (never partial); the refusal arms run on an explicitly unregistered copy.
+-    _pins, _tup = P7["aux_store_pins"], P7["expect_schedule"]["n_tuples_by_bank"]
++    _pins, _tup, _dig = P7["aux_store_pins"], P7["expect_schedule"]["n_tuples_by_bank"], P7["expect_schedule"]["targets_sha256_by_bank"]
+     ck("S2 the unknown pins are UNREGISTERED in the profile (never defaulted) or registered with well-formed measured values (never partial)",
+-       (_pins == {"sha256": None, "keys": None} and _tup == {})
+-       or bool(re.fullmatch(r"[0-9a-f]{64}", str(_pins["sha256"])) and type(_pins["keys"]) is int and _pins["keys"] > 0 and _tup and all(type(v) is int and v > 0 for v in _tup.values())), str((_pins, _tup)))
+-    UN = {**P7, "aux_store_pins": {"sha256": None, "keys": None}, "expect_schedule": {**P7["expect_schedule"], "n_tuples_by_bank": {}}}            # TEST-ONLY: what the shipped profile is until the pin procedure has run
++       (_pins == {"sha256": None, "keys": None} and _tup == {} and _dig == {})
++       or bool(re.fullmatch(r"[0-9a-f]{64}", str(_pins["sha256"])) and type(_pins["keys"]) is int and _pins["keys"] > 0 and _tup and all(type(v) is int and v > 0 for v in _tup.values())
++               and set(_dig) == set(_tup) and all(re.fullmatch(r"[0-9a-f]{64}", str(v)) for v in _dig.values())), str((_pins, _tup, _dig)))
++    UN = {**P7, "aux_store_pins": {"sha256": None, "keys": None}, "expect_schedule": {**P7["expect_schedule"], "n_tuples_by_bank": {}, "targets_sha256_by_bank": {}}}            # TEST-ONLY: what the shipped profile is until the pin procedure has run
+     ck("S2 P7 is not a rehearsal and can mint", P7.get("mintable", True) and not P7.get("rehearsal"))
+     # the pins' refusal reasons on the real (unregistered) profile
+@@ -129,5 +131,6 @@
+     red("S2 unregistered store pins REFUSE", rs, "label store's pins")
+     red("S2 unregistered bank REFUSES", rs, "has no registered tuple count")
+-    ck("S2 ... and nothing else is refused on the clean P7 argv", len(rs) == 2, str(rs))
++    red("S2 unregistered bank CONTENT REFUSES (P7-WIRE-INTEGRATE-2: a count cannot tell two same-size banks apart)", rs, "has no registered targets_sha256")
++    ck("S2 ... and nothing else is refused on the clean P7 argv", len(rs) == 3, str(rs))
+     # G-CLOCK independently FAILS an unregistered bank (the refusal above is not the only defence)
+     want, how = C.clock_bank_tuples(argv_of(P7_ARGS), UN["expect_schedule"])
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_p7_integration.py
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_p7_integration.py
+@@ -12,4 +12,6 @@
+   III  the pins that refuse today (`P7_AUX_STORE_PINS`, `P7_BANK_TUPLES`): the gate REFUSES until they are set (nothing / half / malformed), and PASSES on a synthetic tree once they are set to the values
+        `p7_pins.py` READS off that tree's chain outputs (the reserve stage is replayed with the module's own functions: filter bank, filter calibration, move cache + images, split + re-finalise the store)
++  V    the bank's CONTENT pin (P7_TARGETS_SHA256): a SAME-COUNT, DIFFERENT-BYTES bank is refused by G-CLOCK (the last gate before the PASS token), the trainer's own identity digest is the registered one, and
++       `p7_pins.py --check-run` compares the trainer's RECORDED identity with the pins after the first start
+   IV   design pins: refe_p7's G-SUITE carries the reserve's own suite and this one; the P6 profile is unchanged; no trainer-side `--reserve-manifest` exists; the shipped pins are unregistered or well-formed
+   --mutations   (minutes) one-line mutations of the gate / profile / pin tool in a COPY of this tree: this test must go RED on each
+@@ -21,5 +23,7 @@
+ 
+ import ast
++import contextlib
+ import hashlib
++import io
+ import inspect
+ import json
+@@ -31,4 +35,5 @@
+ import tempfile
+ from pathlib import Path
++from types import SimpleNamespace
+ from unittest import mock
+ 
+@@ -100,4 +105,28 @@
+ def g_reserve(argv, rj, prof=None, **kw) -> dict:
+     return C.check_reserve(argv, prof or P7, rj, **kw)
++
++
++# ======================================================================================================== 0: the digest definition (P7-WIRE-INTEGRATE-2)
++def s_digest_definition() -> None:
++    """Three copies of ONE definition -- the trainer's `_digest_files` (train.py), the reserve module's, the gate's -- must give the same value on the same files, and the gate's must BE the trainer's (AST)."""
++    with tempfile.TemporaryDirectory() as td:
++        d = Path(td) / "bank"
++        d.mkdir()
++        (d / "targets_rank0.jsonl").write_bytes(b'{"a": 1}\n{"a": 2}\n')
++        (d / "targets_rank1.jsonl").write_bytes(b'{"a": 3}\n')
++        (d / "reserve_filter_report.json").write_bytes(b"{}")                         # not a rank file: no definition may hash it
++        files = sorted(d.glob("targets_rank*.jsonl"))
++        h = hashlib.sha256()
++        for q in files:
++            h.update(q.name.encode("utf-8"))
++            h.update(q.read_bytes())
++        ck("0 the gate's bank_targets_sha256 == an independent recompute == the reserve module's digest == the gate's _digest_files",
++           C.bank_targets_sha256(d) == h.hexdigest() == SR._digest_files(files) == C._digest_files(files), f"{C.bank_targets_sha256(d)} vs {h.hexdigest()}")
++        ck("0 a directory with no rank file has no digest (None, never the digest of nothing)", C.bank_targets_sha256(Path(td) / "empty") is None and C.bank_targets_sha256(d.parent) is None)
++
++    def fn(src, name):
++        return next(n for n in ast.parse(src).body if isinstance(n, ast.FunctionDef) and n.name == name)
++    ck("0 the gate's _digest_files has the SAME AST as the trainer's train._digest_files (train.py:1067-1074)",
++       ast.dump(fn((HERE / "gate_checks.py").read_text(encoding="utf-8"), "_digest_files")) == ast.dump(fn((HERE / "train.py").read_text(encoding="utf-8"), "_digest_files")))
+ 
+ 
+@@ -182,4 +211,35 @@
+             ck(f"I FAIL: the argv omits {flag}", e["status"] == "FAIL", str(e["reasons"]))
+             red(f"I FAIL: the argv omits {flag} -- says which input was not audited", e["reasons"], f"no {flag} input")
++        # ---- P7-WIRE-INTEGRATE-2, Gap 1: the EARLY RETURN is behaviour of its own.  Mutant M2 (the return removed) SURVIVED the verdict-only arms above, because the verdict is FAIL with or without it (the
++        # omission reason is appended BEFORE the return).  MEASURED (raw/probes/probe_m2_*.out): without the return the audit RUNS on the partial input set (1x instead of 0x -- at the real scale it walks the
++        # 92,896-scene bank, the metric cache and a 413,184-file image listing), the verdict carries a SECOND reason (the partial audit's by-product, not the cause), and the evidence records an `audit` block
++        # for an audit that proved less than the spec asks.  So the arms below pin the three observables, each against a CONTROL that must read the known value (all five named -> the audit runs once).
++        seen: list = []
++
++        def recording(reserve, **k):
++            seen.append(sorted(n for n, v in k.items() if v))
++            return {"ok": True, "leaks": {}, "unresolved": {}, "counts": {"inputs_audited": list(C.RESERVE_AUDITED), "examined": {}, "leak_totals": {}}}
++        ctrl = g_reserve(base, rj, audit=recording)
++        ck("I control: with all five inputs named the recording audit runs EXACTLY once and the check PASSes", len(seen) == 1 and len(seen[0]) == 5 and ctrl["status"] == "PASS", str((seen, ctrl["reasons"])))
++        ck("I control: ... and the evidence carries the audit block", "audit" in ctrl["details"] and "audit_counts" in ctrl["details"], str(sorted(ctrl["details"])))
++        for flag in ("--targets", "--metric-cache", "--aux-drv-labels", "--images", "--calib"):
++            seen.clear()
++            e = g_reserve(HW.without(base, flag), rj, audit=recording)
++            ck(f"I the argv omits {flag}: the audit does NOT RUN on the partial input set (a recording audit, called {len(seen)}x)", seen == [], str(seen))
++            ck(f"I ... {flag}: the omission is the ONLY reason (the cause, not a partial audit's by-product)", len(e["reasons"]) == 1 and f"no {flag} input" in e["reasons"][0], str(e["reasons"]))
++            ck(f"I ... {flag}: the evidence carries NO audit block (a partial audit is not recorded as if it were the audit)", "audit" not in e["details"] and "audit_counts" not in e["details"], str(sorted(e["details"])))
++        calls: list = []
++        real_audit = SR.audit_inputs
++
++        def counting(reserve, **k):
++            calls.append(1)
++            return real_audit(reserve, **k)
++        with mock.patch.object(SR, "audit_inputs", counting):
++            for flag in ("--targets", "--metric-cache", "--aux-drv-labels", "--images", "--calib"):
++                calls.clear()
++                e = g_reserve(HW.without(base, flag), rj)
++                ck(f"I the REAL audit is not invoked either when the argv omits {flag}", calls == [] and len(e["reasons"]) == 1, str((calls, e["reasons"])))
++            calls.clear()
++            ck("I control: the same wrapper counts 1 on the full argv (the probe works)", g_reserve(base, rj)["status"] == "PASS" and calls == [1], str(calls))
+         (root / "empty_bank").mkdir()
+         red("I FAIL: --targets names a directory with no targets_rank*.jsonl", g_reserve(C._set(list(base), "--targets", str(root / "empty_bank")), rj)["reasons"], "no targets_rank*.jsonl")
+@@ -247,6 +307,6 @@
+ 
+ def unregistered(prof: dict) -> dict:
+-    """A TEST copy of a P7 profile with the two unknown pins UNREGISTERED -- what the shipped profile is until the pin procedure has run."""
+-    return {**prof, "aux_store_pins": {"sha256": None, "keys": None}, "expect_schedule": {**prof["expect_schedule"], "n_tuples_by_bank": {}}}
++    """A TEST copy of a P7 profile with the three unknown pins UNREGISTERED -- what the shipped profile is until the pin procedure has run."""
++    return {**prof, "aux_store_pins": {"sha256": None, "keys": None}, "expect_schedule": {**prof["expect_schedule"], "n_tuples_by_bank": {}, "targets_sha256_by_bank": {}}}
+ 
+ 
+@@ -280,5 +340,6 @@
+ 
+ def pinned(prof: dict, R: dict) -> dict:
+-    return {**prof, "aux_store_pins": dict(R["registration"]["P7_AUX_STORE_PINS"]), "expect_schedule": {**prof["expect_schedule"], "n_tuples_by_bank": dict(R["registration"]["P7_BANK_TUPLES"])}}
++    return {**prof, "aux_store_pins": dict(R["registration"]["P7_AUX_STORE_PINS"]),
++            "expect_schedule": {**prof["expect_schedule"], "n_tuples_by_bank": dict(R["registration"]["P7_BANK_TUPLES"]), "targets_sha256_by_bank": dict(R["registration"]["P7_TARGETS_SHA256"])}}
+ 
+ 
+@@ -295,16 +356,29 @@
+     red("III G-DVB independently FAILS the store row of an unregistered store", [f"{r['flag']}: {r['how']}" for r in C.aux_dvb_rows(a_, b_, s_, p_) if not r["ok"]], "registers NO pins")
+     sha_ok = "ab" * 32
+-    half_store = {**un, "expect_schedule": {**un["expect_schedule"], "n_tuples_by_bank": {BANK_NAME: 7}}}
++    dig_ok = "cd" * 32
++    half_store = {**un, "expect_schedule": {**un["expect_schedule"], "n_tuples_by_bank": {BANK_NAME: 7}, "targets_sha256_by_bank": {BANK_NAME: dig_ok}}}
+     red("III only the BANK registered: the store pins still refuse", L.p7_refusals(half_store, argv0), "label store's pins")
+     ck("III ... and nothing else does", len(L.p7_refusals(half_store, argv0)) == 1, str(L.p7_refusals(half_store, argv0)))
+     half_bank = {**un, "aux_store_pins": {"sha256": sha_ok, "keys": 5}}
+-    red("III only the STORE registered: the bank still refuses", L.p7_refusals(half_bank, argv0), "no registered tuple count")
+-    ck("III ... and nothing else does", len(L.p7_refusals(half_bank, argv0)) == 1, str(L.p7_refusals(half_bank, argv0)))
++    red("III only the STORE registered: the bank's count still refuses", L.p7_refusals(half_bank, argv0), "no registered tuple count")
++    red("III ... and its content digest too", L.p7_refusals(half_bank, argv0), "no registered targets_sha256")
++    ck("III ... and nothing else does", len(L.p7_refusals(half_bank, argv0)) == 2, str(L.p7_refusals(half_bank, argv0)))
++    only_count = {**half_bank, "expect_schedule": {**un["expect_schedule"], "n_tuples_by_bank": {BANK_NAME: 7}}}
++    red("III the COUNT registered without the CONTENT digest: the digest still refuses (a count cannot tell two same-size banks apart)", L.p7_refusals(only_count, argv0), "no registered targets_sha256")
++    ck("III ... and nothing else does", len(L.p7_refusals(only_count, argv0)) == 1, str(L.p7_refusals(only_count, argv0)))
++    only_dig = {**half_bank, "expect_schedule": {**un["expect_schedule"], "targets_sha256_by_bank": {BANK_NAME: dig_ok}}}
++    red("III the DIGEST registered without the count: the count still refuses", L.p7_refusals(only_dig, argv0), "no registered tuple count")
++    keyless = {**half_bank, "expect_schedule": {k: v for k, v in un["expect_schedule"].items() if k != "targets_sha256_by_bank"}}
++    red("III a profile WITHOUT the targets_sha256_by_bank key is itself a refusal (a key that can be absent is a default that disables the check)", L.p7_refusals(keyless, argv0), "carries no targets_sha256_by_bank")
++    other = {**half_bank, "expect_schedule": {**un["expect_schedule"], "n_tuples_by_bank": {BANK_NAME: 7}, "targets_sha256_by_bank": {BANK_NAME: dig_ok, "another_bank": dig_ok}}}
++    red("III the two registrations naming DIFFERENT banks are refused", L.p7_refusals(other, argv0), "register DIFFERENT banks")
++    for label, h in (("a short digest", "abc"), ("uppercase", dig_ok.upper()), ("not hex", "zz" * 32), ("an int", 12345), ("None", None), ("63 digits", dig_ok[:-1])):
++        red(f"III a MALFORMED content digest is refused: {label}", L.p7_refusals({**half_bank, "expect_schedule": {**un["expect_schedule"], "n_tuples_by_bank": {BANK_NAME: 7}, "targets_sha256_by_bank": {BANK_NAME: h}}}, argv0), "not a sha256")
+     for label, pins, frag in (("a short sha", {"sha256": "abc", "keys": 5}, "not a registration"), ("an uppercase sha", {"sha256": sha_ok.upper(), "keys": 5}, "not a registration"),
+                               ("keys 0", {"sha256": sha_ok, "keys": 0}, "not a registration"), ("keys as a string", {"sha256": sha_ok, "keys": "103139"}, "not a registration"),
+                               ("keys as a bool", {"sha256": sha_ok, "keys": True}, "not a registration")):
+-        red(f"III a MALFORMED store registration is refused: {label}", L.p7_refusals({**half_bank, "aux_store_pins": pins, "expect_schedule": {**un["expect_schedule"], "n_tuples_by_bank": {BANK_NAME: 7}}}, argv0), frag)
++        red(f"III a MALFORMED store registration is refused: {label}", L.p7_refusals({**half_bank, "aux_store_pins": pins, "expect_schedule": {**un["expect_schedule"], "n_tuples_by_bank": {BANK_NAME: 7}, "targets_sha256_by_bank": {BANK_NAME: dig_ok}}}, argv0), frag)
+     for label, n_t in (("0", 0), ("a string", "150834"), ("a float", 150834.0), ("a bool", True), ("negative", -5)):
+-        red(f"III a MALFORMED bank registration is refused: {label}", L.p7_refusals({**half_bank, "expect_schedule": {**un["expect_schedule"], "n_tuples_by_bank": {BANK_NAME: n_t}}}, argv0), "not a positive int")
++        red(f"III a MALFORMED bank registration is refused: {label}", L.p7_refusals({**half_bank, "expect_schedule": {**un["expect_schedule"], "n_tuples_by_bank": {BANK_NAME: n_t}, "targets_sha256_by_bank": {BANK_NAME: dig_ok}}}, argv0), "not a positive int")
+     with tempfile.TemporaryDirectory() as td:
+         td = Path(td)
+@@ -417,9 +491,12 @@
+         r = subprocess.run(cli, capture_output=True, text=True, encoding="utf-8", cwd=str(td))
+         ck("III CLI: rc 0 and ZZP7PINS_OK", r.returncode == 0 and "ZZP7PINS_OK tuples=9 scenes=6 store_keys=6" in r.stdout, f"rc {r.returncode}: {r.stdout[-300:]} {r.stderr[-300:]}")
+-        lines = {ln.split(" =", 1)[0].split(":", 1)[0]: ln.split("=", 1)[1].strip() for ln in r.stdout.splitlines() if ln.startswith(("P7_BANK_TUPLES", "P7_AUX_STORE_PINS"))}
++        lines = {ln.split(" =", 1)[0].split(":", 1)[0]: ln.split("=", 1)[1].strip() for ln in r.stdout.splitlines() if ln.startswith(("P7_BANK_TUPLES", "P7_TARGETS_SHA256", "P7_AUX_STORE_PINS"))}
+         ck("III CLI: the printed lines parse back to the registration", ast.literal_eval(lines.get("P7_BANK_TUPLES", "None")) == R["registration"]["P7_BANK_TUPLES"]
+-           and ast.literal_eval(lines.get("P7_AUX_STORE_PINS", "None")) == R["registration"]["P7_AUX_STORE_PINS"], str(lines))
++           and ast.literal_eval(lines.get("P7_AUX_STORE_PINS", "None")) == R["registration"]["P7_AUX_STORE_PINS"]
++           and ast.literal_eval(lines.get("P7_TARGETS_SHA256", "None")) == R["registration"]["P7_TARGETS_SHA256"], str(lines))
++        ck("III CLI: the OK line carries the content digest's prefix", f"targets_sha256={R['registration']['P7_TARGETS_SHA256'][BANK_NAME][:16]}" in r.stdout, r.stdout[-300:])
+         r = subprocess.run(cli[:-2] + ["--expect-scenes", "5"], capture_output=True, text=True, encoding="utf-8", cwd=str(td))
+         ck("III CLI: a refusal exits 1, prints ZZP7PINS_REFUSED and NO registration", r.returncode == 1 and "ZZP7PINS_REFUSED" in r.stderr and "P7_BANK_TUPLES" not in r.stdout, f"rc {r.returncode}: {r.stdout[-200:]} {r.stderr[-200:]}")
++        s_content(td, rj, C_, R, P, argv)
+         # ---- the pod's own chain output must reproduce the dev-box numbers: a second replay from the same inputs gives the SAME pins (the filter and the re-finalise are deterministic)
+         td2 = td / "again"
+@@ -428,4 +505,124 @@
+         R2 = PINS.measure(rj, C2["bank"], C2["store"], calib=C2["calib"], expect_scenes=6)
+         ck("III a second replay of the reserve stage reproduces the SAME registration (the pins do not depend on the box or the path)", R2["registration"] == R["registration"], f"{R2['registration']} vs {R['registration']}")
++
++
++# ======================================================================================================== V: the bank's CONTENT pin (P7-WIRE-INTEGRATE-2, Gap 2)
++def s_content(td: Path, rj: Path, C_: dict, R: dict, P: dict, argv: list) -> None:
++    """A tuple count cannot tell two same-size banks apart.  P6's content pin (`targets_sha256 8775e73e...`, PREREG_P6.md:191) is the trainer's RESUME identity: `train.run_identity` records
++    `_digest_files(sorted(Path(a.targets).glob("targets_rank*.jsonl")))` (train.py:1077-1100) and `_identity_diff` refuses a resume whose digest differs (train.py:1102-1125, called at 1525).  A FRESH start has no
++    recorded identity to compare with, so the profile registers the digest (`P7_TARGETS_SHA256`) and the gate refuses at G-CLOCK, the last data check before the PASS token."""
++    bank = C_["bank"]
++    files = sorted(bank.glob("targets_rank*.jsonl"))
++    dig = R["registration"]["P7_TARGETS_SHA256"][BANK_NAME]
++    h = hashlib.sha256()
++    for q in files:
++        h.update(q.name.encode("utf-8"))
++        h.update(q.read_bytes())
++    ck("V p7_pins' digest is keyed by the bank DIRECTORY name and is a sha256", list(R["registration"]["P7_TARGETS_SHA256"]) == [BANK_NAME] and re.fullmatch(r"[0-9a-f]{64}", dig) is not None, str(R["registration"]))
++    ck("V ... == an INDEPENDENT recompute (sha256 over basename + bytes of each rank file, sorted)", dig == h.hexdigest(), f"{dig[:16]} vs {h.hexdigest()[:16]}")
++    ck("V ... == the reserve module's digest == the filter report's == the gate's definition (two copies of one definition agree)",
++       dig == SR._digest_files(files) == C_["report"]["targets_sha256"] == C.bank_targets_sha256(bank) == C._digest_files(files), f"{dig[:16]} {C.bank_targets_sha256(bank)}")
++    # ---- the gate's digest IS the trainer's: the function by AST, the call site and the comparison by source (train.py is not importable here: no torch)
++    ttxt = (HERE / "train.py").read_text(encoding="utf-8")
++
++    def fn(src, name):
++        return next(n for n in ast.parse(src).body if isinstance(n, ast.FunctionDef) and n.name == name)
++    ck("V the gate's _digest_files has the SAME AST as the trainer's _digest_files", ast.dump(fn((HERE / "gate_checks.py").read_text(encoding="utf-8"), "_digest_files")) == ast.dump(fn(ttxt, "_digest_files")))
++    ck("V the trainer hashes sorted(Path(a.targets).glob('targets_rank*.jsonl')) into identity.targets_sha256 (unless --grow)", 'tfiles = sorted(Path(a.targets).glob("targets_rank*.jsonl"))' in ttxt
++       and '"targets_sha256": None if grow else _digest_files(tfiles)' in ttxt)
++    ck("V ... and a resume compares it (train._identity_diff) and the first start records it in config.json", 'for k in ("n_tuples", "n_scenes", "per_rank", "targets_sha256", "scorer_sha256",' in ttxt
++       and '"identity": ident, "meta": meta, "warm_start": warm,' in ttxt)
++    ck("V --grow (which leaves the digest null) is FORBIDDEN in a refe_p7 launch, and G-CLOCK cannot be NA", "--grow" in P7["forbidden_flags"] and "G-CLOCK" in P7["checks"] and "G-CLOCK" not in P7.get("na_ok", ()))
++    ck("V the gate's G-CLOCK reads the SAME files the trainer hashes (same glob)", 'sorted(Path(str(target_dir)).glob("targets_rank*.jsonl"))' in (HERE / "gate_checks.py").read_text(encoding="utf-8"))
++
++    # ---- G-CLOCK on a fake BUILD capture that reports the registered count and schedule: only the CONTENT can differ
++    def fake_b(n=9):
++        return SimpleNamespace(rc="STOPPED_AT_BUILD", args=SimpleNamespace(epochs=25), steps=9075, samplers=[{"n": 92896}], bank_len={"TargetBank": {"n_tuples": n, "n_scenes": 92896}})
++
++    def clock(prof, argv_, b=None):
++        return C.check_clock(argv_, b or fake_b(), prof)
++    ev = clock(P, argv)
++    ck("V CONTROL: the registered bank passes G-CLOCK, and the evidence carries the digest it compared", ev["status"] == "PASS" and ev["details"].get("bank_content", {}).get("targets_sha256") == dig, str(ev["reasons"]))
++
++    def variant(name, edit):
++        d = td / ("v_" + name) / BANK_NAME
++        shutil.copytree(bank, d)
++        edit(d)
++        return d, C._set(list(argv), "--targets", str(d))
++    r0 = (bank / "targets_rank0.jsonl").read_bytes()
++    lines = r0.splitlines(keepends=True)
++    swapped = b"".join([lines[1], lines[0]] + lines[2:])
++    flipped = r0.replace(b'"a1"', b'"a9"', 1)
++    for label, new in (("ONE BYTE changed in place (same size, same row count)", flipped), ("two rows SWAPPED (same size, same row count, same multiset)", swapped)):
++        ck(f"V [{label}] the tampered file really has the same size and a different content", len(new) == len(r0) and new != r0, f"{len(new)} vs {len(r0)}")
++        d, av = variant(re.sub(r"\W+", "_", label[:12]), lambda d_, new=new: (d_ / "targets_rank0.jsonl").write_bytes(new))
++        ck(f"V [{label}] the row count is unchanged (a count-only gate cannot see it)", count_rows(d) == count_rows(bank) == 9)
++        evx = clock(P, av)
++        ck(f"V [{label}] G-CLOCK REFUSES the bank at the point where training would start", evx["status"] == "FAIL", str(evx["reasons"]))
++        red(f"V [{label}] ... for its CONTENT, naming both digests", evx["reasons"], "CONTENT is not the registered one")
++        ck(f"V [{label}] ... and for nothing else (the count and the schedule passed: only the content caught it)", len(evx["reasons"]) == 1, str(evx["reasons"]))
++        ck(f"V [{label}] ... the evidence records the digest it read", evx["details"]["bank_content"]["targets_sha256"] not in (None, dig) and evx["details"]["bank_content"]["registered"] == dig)
++        # the deliberate-regression arm: the COUNT-ONLY gate (the profile as it was before this package) passes the very same bank
++        old = {**P, "p7_rules": False, "expect_schedule": {k: v for k, v in P["expect_schedule"].items() if k != "targets_sha256_by_bank"}}
++        ck(f"V [{label}] RED ARM: the count-only gate (no content pin) PASSes the tampered bank -- the defect was real", clock(old, av)["status"] == "PASS")
++    d, av = variant("unreg", lambda d_: None)
++    d2 = d.parent / "some_other_bank"
++    d.rename(d2)
++    red("V an UNREGISTERED bank name FAILS G-CLOCK for its content", clock(P, C._set(list(argv), "--targets", str(d2)))["reasons"], "no registered targets_sha256")
++    d, av = variant("norank", lambda d_: [p.unlink() for p in d_.glob("targets_rank*.jsonl")])
++    red("V a --targets directory with no rank file FAILS G-CLOCK for its content", clock(P, av)["reasons"], "holds no targets_rank")
++    keyless = {**P, "expect_schedule": {k: v for k, v in P["expect_schedule"].items() if k != "targets_sha256_by_bank"}}
++    red("V a refe_p7 profile WITHOUT the key FAILS G-CLOCK (never a skip)", clock(keyless, argv)["reasons"], "registers no targets_sha256_by_bank")
++    # refe_p6 / refe_p2 take none of these lines: no key, no p7_rules -> the content is never read, the evidence is exactly the count-only evidence
++    p6like = {**P, "p7_rules": False, "expect_schedule": {k: v for k, v in P["expect_schedule"].items() if k != "targets_sha256_by_bank"}}
++
++    def boom(_d):
++        raise AssertionError("a profile with no content registration must not read the bank")
++    with mock.patch.object(C, "bank_targets_sha256", boom):
++        ev6 = clock(p6like, argv)
++    ck("V a profile with no targets_sha256_by_bank (refe_p6, refe_p2) NEVER reads the bank's bytes and its G-CLOCK evidence has no bank_content block", ev6["status"] == "PASS" and "bank_content" not in ev6["details"], str(ev6))
++    ck("V ... and the P6 key (n_tuples_by_bank only) is unchanged: refe_p6 has no content key", "targets_sha256_by_bank" not in L.PROFILES["refe_p6"]["expect_schedule"] and "targets_sha256_by_bank" in P7["expect_schedule"])
++    # ---- through the gate machinery: run_checks(only G-CLOCK) with the BUILD capture replaced by the fake
++    with mock.patch.object(C, "instrumented_run", lambda *a_, **k_: fake_b()):
++        out = td / "out_clock_ok"
++        st = L.run_checks(P, argv, PKG, out, only=("G-CLOCK",), reserve_json=str(rj))
++        ck("V run_checks(only G-CLOCK) on the registered bank -> PASS", st == {"G-CLOCK": "PASS"}, str(st))
++        d, av = variant("mach", lambda d_: (d_ / "targets_rank0.jsonl").write_bytes(flipped))
++        out2 = td / "out_clock_bad"
++        st2 = L.run_checks(P, av, PKG, out2, only=("G-CLOCK",), reserve_json=str(rj))
++        ck("V run_checks(only G-CLOCK) on the SAME-COUNT, DIFFERENT-BYTES bank -> FAIL (so no PASS token can be minted)", st2 == {"G-CLOCK": "FAIL"}, str(st2))
++        red("V ... and the evidence file says why", GT.read_json(out2 / "evidence_G-CLOCK.json")["reasons"], "CONTENT is not the registered one")
++    # ---- p7_pins: the two definitions must agree on THIS bank, or it refuses (the gate would FAIL it on the pod)
++    with mock.patch.object(C, "bank_targets_sha256", lambda d: "0" * 64):
++        try:
++            PINS.measure(rj, bank, C_["store"], calib=C_["calib"], expect_scenes=6)
++            ck("V p7_pins REFUSES when the gate's digest definition disagrees with the reserve module's", False, "it printed a registration")
++        except PINS.Refused as ex:
++            ck("V p7_pins REFUSES when the gate's digest definition disagrees with the reserve module's", "drifted" in str(ex), str(ex)[:200])
++    # ---- AFTER the first start: the trainer's OWN recorded identity (config.json) against the registered pins
++    def mk_run(name, ident, targets=bank, cfg=True):
++        d = td / name
++        d.mkdir(parents=True, exist_ok=True)
++        if cfg:
++            (d / "config.json").write_text(json.dumps({"argv": ["train.py"], "args": {"targets": str(targets)}, "identity": ident}), encoding="utf-8")
++        return d
++    good = {"targets_sha256": dig, "n_tuples": 9, "n_scenes": 6}
++    r_ok = PINS.check_run(mk_run("run_ok", good), P)
++    ck("V check_run: the trainer's recorded identity == the registration -> ok", r_ok["ok"] and r_ok["reasons"] == [] and r_ok["bank"] == BANK_NAME, str(r_ok))
++    red("V check_run REFUSES a recorded digest that is not the registered one (the trainer trained on another bank)", PINS.check_run(mk_run("run_bad", {**good, "targets_sha256": "0" * 64}), P)["reasons"], "trained on another bank")
++    red("V check_run REFUSES a recorded tuple count that is not the registered one", PINS.check_run(mk_run("run_n", {**good, "n_tuples": 10}), P)["reasons"], "the trainer built 10 tuples")
++    red("V check_run REFUSES a null digest (a --grow run)", PINS.check_run(mk_run("run_null", {**good, "targets_sha256": None}), P)["reasons"], "recorded no targets_sha256")
++    red("V check_run REFUSES a bank the profile never vouched for", PINS.check_run(mk_run("run_unreg", good, targets=td / "elsewhere" / "some_other_bank"), P)["reasons"], "is not registered")
++    red("V check_run REFUSES a run that has no config.json yet", PINS.check_run(mk_run("run_none", good, cfg=False), P)["reasons"], "is missing")
++    red("V check_run on the LIVE profile (pins unregistered) refuses everything", PINS.check_run(mk_run("run_live", good))["reasons"], "is not registered")
++    buf_o, buf_e = io.StringIO(), io.StringIO()
++    with mock.patch.object(L, "PROFILES", {**L.PROFILES, "refe_p7": P}), contextlib.redirect_stdout(buf_o), contextlib.redirect_stderr(buf_e):
++        rc_ok = PINS.main(["--check-run", str(td / "run_ok")])
++        rc_bad = PINS.main(["--check-run", str(td / "run_bad")])
++    ck("V CLI --check-run: rc 0 + ZZP7RUN_OK on the registered identity, rc 1 + ZZP7RUN_REFUSED on another bank", rc_ok == 0 and "ZZP7RUN_OK" in buf_o.getvalue() and rc_bad == 1 and "ZZP7RUN_REFUSED" in buf_e.getvalue(), f"{rc_ok} {rc_bad} {buf_o.getvalue()[:100]} {buf_e.getvalue()[:100]}")
++    r = subprocess.run([sys.executable, str(HERE / "p7_pins.py"), "--check-run", str(td / "run_ok")], capture_output=True, text=True, encoding="utf-8", cwd=str(td))
++    ck("V CLI --check-run as a subprocess on the shipped (unregistered) profile: rc 1, ZZP7RUN_REFUSED, nothing printed to stdout", r.returncode == 1 and "ZZP7RUN_REFUSED" in r.stderr and r.stdout.strip() == "", f"{r.returncode} {r.stdout[:100]} {r.stderr[:200]}")
++    r = subprocess.run([sys.executable, str(HERE / "p7_pins.py")], capture_output=True, text=True, encoding="utf-8", cwd=str(td))
++    ck("V the pin tool with no arguments still exits 2 (argparse), as it did when --reserve / --bank / --store were required", r.returncode == 2 and "--check-run" in r.stderr, f"{r.returncode} {r.stderr[-200:]}")
+ 
+ 
+@@ -443,8 +640,9 @@
+         ck(f"IV {e['script']} exists and its source prints its own token {e['token']} (a renamed token would fail G-SUITE on the pod, not here)", p.is_file() and e["token"] in p.read_text(encoding="utf-8"))
+     ck("IV the reserve suite's token is the REAL one (ZZSESSRES_PASS, not the head's ZZRESERVE_PASS 17)", all(e["token"] != "ZZRESERVE_PASS" for e in suite))
+-    pins, tup = P7["aux_store_pins"], P7["expect_schedule"]["n_tuples_by_bank"]
++    pins, tup, dg = P7["aux_store_pins"], P7["expect_schedule"]["n_tuples_by_bank"], P7["expect_schedule"]["targets_sha256_by_bank"]
+     ck("IV the shipped refe_p7 pins are UNREGISTERED or WELL-FORMED, never partial or typed-in garbage (this survives the day the real pins are registered)",
+-       (pins == {"sha256": None, "keys": None} and tup == {})
+-       or bool(re.fullmatch(r"[0-9a-f]{64}", str(pins["sha256"])) and type(pins["keys"]) is int and pins["keys"] > 0 and tup and all(type(v) is int and v > 0 for v in tup.values())), str((pins, tup)))
++       (pins == {"sha256": None, "keys": None} and tup == {} and dg == {})
++       or bool(re.fullmatch(r"[0-9a-f]{64}", str(pins["sha256"])) and type(pins["keys"]) is int and pins["keys"] > 0 and tup and all(type(v) is int and v > 0 for v in tup.values())
++               and set(dg) == set(tup) and all(re.fullmatch(r"[0-9a-f]{64}", str(v)) for v in dg.values())), str((pins, tup, dg)))
+     tsrc = (HERE / "train.py").read_text(encoding="utf-8")
+     ck("IV DESIGN (a): the trainer has NO --reserve-manifest flag, and refe_p7 neither requires nor fingerprints one (adding it later is a deliberate change: a G-DVB entry, P6 bit-identity, REQUIRED in argv)",
+@@ -456,8 +654,10 @@
+     if "--mutations" in sys.argv:
+         return mutations()
+-    s_real_module()
+-    s_machinery()
+-    s_pins()
+-    s_design()
++    for section in (s_digest_definition, s_real_module, s_machinery, s_pins, s_design):
++        try:
++            section()
++        except Exception as e:                                                          # noqa: BLE001 -- a section that RAISES is a failure with a name, not a traceback that hides the other sections
++            import traceback
++            FAILS.append(f"{section.__name__} RAISED {type(e).__name__}: {str(e)[:300]} @ {traceback.extract_tb(e.__traceback__)[-1].lineno}")
+     if FAILS:
+         for f in FAILS:
+@@ -489,4 +689,15 @@
+     ("M14 p7_pins reads the key count from the manifest instead of the shard headers", "p7_pins.py", "    if len(set(all_keys)) != keys or len(all_keys) != keys:\n", "    if False:\n"),
+     ("M15 p7_pins pins the wrong store field (the first shard's sha, not the store's)", "p7_pins.py", "\"sha256\": sha, \"keys\": keys, \"logs\"", "\"sha256\": next(iter(man['files'].values()))['sha256'], \"keys\": keys, \"logs\""),
++    # ---- P7-WIRE-INTEGRATE-2, Gap 2: the bank's CONTENT pin
++    ("M16 G-CLOCK stops comparing the bank's content digest with the registered one", "gate_checks.py", "            elif got_sha != want_sha:\n", "            elif False:\n"),
++    ("M17 an unregistered bank no longer refuses for its content digest", "launch_gate.py", "        if name not in dig:\n", "        if False:\n"),
++    ("M18 a malformed content digest is accepted", "launch_gate.py", "            if not (isinstance(h, str) and re.fullmatch(r\"[0-9a-f]{64}\", h)):\n", "            if False:\n"),
++    ("M19 a refe_p7 profile without the content key is skipped instead of failing G-CLOCK", "gate_checks.py", ") if required else (None, None)\n", ") if False else (None, None)\n"),
++    ("M20 the gate's digest drifts from the trainer's (hashes the full path, not the basename)", "gate_checks.py", "        h.update(os.path.basename(str(q)).encode(\"utf-8\"))\n", "        h.update(str(q).encode(\"utf-8\"))\n"),
++    ("M21 p7_pins registers a digest that is not the bank's", "p7_pins.py", "\"P7_TARGETS_SHA256\": {b[\"dir_name\"]: b[\"targets_sha256\"]}", "\"P7_TARGETS_SHA256\": {b[\"dir_name\"]: b[\"targets_sha256\"][::-1]}"),
++    ("M22 p7_pins stops cross-checking the gate's digest definition", "p7_pins.py", "    if gate_digest != digest:", "    if False:"),
++    ("M23 check_run stops comparing the trainer's recorded digest", "p7_pins.py", "    elif want_sha is not None and ident[\"targets_sha256\"] != want_sha:\n", "    elif False:\n"),
++    ("M24 check_run stops comparing the trainer's recorded tuple count", "p7_pins.py", "    if want_n is not None and ident.get(\"n_tuples\") != want_n:\n", "    if False:\n"),
++    ("M25 the count and the digest may name different banks", "launch_gate.py", "        if reg and dig and set(reg) != set(dig):\n", "        if False:\n"),
+ ]
+ 

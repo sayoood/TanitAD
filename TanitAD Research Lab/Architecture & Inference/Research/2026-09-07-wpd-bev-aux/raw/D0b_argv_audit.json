@@ -1,0 +1,69 @@
+{
+ "_evidence_class": "MEASURED (ours) -- ARTIFACT vs ARTIFACT: both sides are the trainer's own config.json['argv'], written by the run itself, not the launch command I intended.",
+ "question": "does the D0b replicate differ from D0 in ANYTHING? A replicate that accidentally moved a flag measures nothing.",
+ "argv_len": {
+  "D0": 59,
+  "D1": 65,
+  "D2": 66,
+  "D0b": 59
+ },
+ "D0b_vs_D0": {
+  "n_token_diffs": 1,
+  "diffs": [
+   {
+    "i": 58,
+    "D0": "/home/nvidia/experiments/wpd-D0-4k",
+    "D0b": "/home/nvidia/experiments/wpd-D0b-4k"
+   }
+  ]
+ },
+ "D1_vs_D0": {
+  "length_mismatch": [
+   59,
+   65
+  ]
+ },
+ "D2_vs_D0": {
+  "length_mismatch": [
+   59,
+   66
+  ]
+ },
+ "config_json_keys_that_differ_from_D0": {
+  "D1": [
+   "argv",
+   "effective_weights",
+   "param_breakdown",
+   "seams"
+  ],
+  "D2": [
+   "argv",
+   "effective_weights",
+   "param_breakdown",
+   "seams"
+  ],
+  "D0b": [
+   "argv"
+  ]
+ },
+ "verdict": "D0b differs from D0 in EXACTLY ONE TOKEN -- the --out path -- and `argv` is the ONLY key in the whole config.json that differs. ZERO levers moved. Same seed 0, the A0b_replicate design (CLAUDE.md H-ESTIM-SEED-1).",
+ "why_same_seed_and_what_it_does_NOT_measure": "The brief specifies A0b_replicate: same flags, SAME SEED, run again. That measures the rig's run-to-run NONDETERMINISM floor (cuDNN algorithm choice, atomics, dataloader ordering) and is STRICTLY SMALLER than a different-seed floor, because it excludes init/shuffle variance. A smaller floor makes A3's `>= 3x floor` bar EASIER, i.e. anti-conservative. PREREG section 4's own D0b row specifies `--seed 1`. Both are therefore run: D0b (seed 0) and D0c (seed 1), chained, and A3's denominator is the LARGER of the two once both land.",
+ "the_replicate_is_not_degenerate": "MEASURED at step 50 from the two runs' own metrics.jsonl: D0 loss 51.63894 / traj 2.30219 vs D0b loss 51.65258 / traj 2.30269. Two runs differing in NOTHING have already diverged, so the floor this arm measures is real and non-zero -- it is not an identity.",
+ "code_on_thor_unchanged_since_D0": {
+  "scripts/refc_v3_train.py": "aee5cb37d72ca35f0afbf31cd6ce9e21  2026-09-07 23:28:48 +0200",
+  "tanitad/refs/refc.py": "c580745a9aa1a85279fdc4748c346f6d  2026-09-07 23:06:06 +0200",
+  "tanitad/refs/refc_bev_aux.py": "eab5d9cf8a83174e92df92f0b2944dbc  2026-09-07 23:06:06 +0200",
+  "tanitad/data/bev_aux.py": "954c7e6e2f98ee4ee225f2f3cf12ec20  2026-09-07 23:06:06 +0200",
+  "tanitad/data/v2_dataset.py": "73da15e65194106d30d08b331e780dd1  2026-08-23 13:56:53 +0200",
+  "note": "D0 launched 2026-09-07 23:48:16 CEST. Every file above predates it, so D0b runs the SAME code. Nothing was shipped to Thor but a launch."
+ },
+ "supervisor": {
+  "script": "/home/nvidia/sup_wpd_rep.sh",
+  "md5": "e43e642aa4ab3c27fc02a382ceed955b",
+  "bytes": 3991,
+  "pid": 3451579,
+  "trainer_pid": 3451592,
+  "lock": "/home/nvidia/.sup_wpd_rep.lock",
+  "assertion": "asserted ALIVE by a /proc/*/fd scan whose own text is NOT on any scanned cmdline -- an earlier `ps -eo args | grep -c sup[_]wpd_rep` counted 2 BEFORE launch because it self-matched the ssh session's own arguments (the CLAUDE.md monitor trap). The lock has exactly ONE holder, the supervisor itself: no `sleep` child inherited fd 200."
+ }
+}

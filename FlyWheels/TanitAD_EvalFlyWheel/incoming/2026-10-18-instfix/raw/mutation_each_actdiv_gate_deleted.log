@@ -1,0 +1,43 @@
+### units (-k test_j or test_k or test_l or test_m)
+F.....Fs....s.............                                               [100%]
+================================== FAILURES ===================================
+___ test_j_actdiv_refav1_without_units_is_refused_naming_both_legal_values ____
+
+actdiv = <module '_instfix_actdiv_live' from 'C:\\Users\\Admin\\instfix\\mutA\\actdiv_gate_deleted\\taniteval\\tools\\actdiv_anchored.py'>
+capsys = <_pytest.capture.CaptureFixture object at 0x000001CA67C00C20>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001CA67C5E190>
+
+    def test_j_actdiv_refav1_without_units_is_refused_naming_both_legal_values(actdiv, capsys, monkeypatch):
+>       assert _gate(actdiv, list(_ADIV_REFAV1), monkeypatch, _ADIV_SENT) == 2
+E       AssertionError: assert 'REACHED' == 2
+E        +  where 'REACHED' = _gate(<module '_instfix_actdiv_live' from 'C:\\Users\\Admin\\instfix\\mutA\\actdiv_gate_deleted\\taniteval\\tools\\actdiv_anchored.py'>, ['--family', 'refav1', '--arm', 'a=x.pt', '--out', 'o.json'], <_pytest.monkeypatch.MonkeyPatch object at 0x000001CA67C5E190>, {'refav1_main': <function _stop at 0x000001CA67C2E160>, 'resolve_stack': <function _stop at 0x000001CA67C2E160>})
+E        +    where ['--family', 'refav1', '--arm', 'a=x.pt', '--out', 'o.json'] = list(['--family', 'refav1', '--arm', 'a=x.pt', '--out', 'o.json'])
+
+tests\test_refav1_units_required.py:1130: AssertionError
+_ test_j7_actdiv_mutation_in_process_restoring_the_default_lets_a_forgetful_launch_through _
+
+actdiv = <module '_instfix_actdiv_live' from 'C:\\Users\\Admin\\instfix\\mutA\\actdiv_gate_deleted\\taniteval\\tools\\actdiv_anchored.py'>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001CA67A82F10>
+
+    def test_j7_actdiv_mutation_in_process_restoring_the_default_lets_a_forgetful_launch_through(actdiv, monkeypatch):
+        mutant = _load_module(_ACTDIV_PATH, "_instfix_actdiv_mutant", _mutated_tool_source("actdiv"))
+        try:
+>           assert _gate(actdiv, list(_ADIV_REFAV1), monkeypatch, _ADIV_SENT) == 2
+E           AssertionError: assert 'REACHED' == 2
+E            +  where 'REACHED' = _gate(<module '_instfix_actdiv_live' from 'C:\\Users\\Admin\\instfix\\mutA\\actdiv_gate_deleted\\taniteval\\tools\\actdiv_anchored.py'>, ['--family', 'refav1', '--arm', 'a=x.pt', '--out', 'o.json'], <_pytest.monkeypatch.MonkeyPatch object at 0x000001CA67A82F10>, {'refav1_main': <function _stop at 0x000001CA67C2E160>, 'resolve_stack': <function _stop at 0x000001CA67C2E160>})
+E            +    where ['--family', 'refav1', '--arm', 'a=x.pt', '--out', 'o.json'] = list(['--family', 'refav1', '--arm', 'a=x.pt', '--out', 'o.json'])
+
+tests\test_refav1_units_required.py:1177: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_refav1_units_required.py::test_j_actdiv_refav1_without_units_is_refused_naming_both_legal_values
+FAILED tests/test_refav1_units_required.py::test_j7_actdiv_mutation_in_process_restoring_the_default_lets_a_forgetful_launch_through
+2 failed, 22 passed, 2 skipped, 121 deselected in 14.77s
+
+### internal_t1 (full)
+.....s...                                                                [100%]
+8 passed, 1 skipped in 0.75s
+
+### chain_controls (full)
+..................................                                       [100%]
+34 passed in 2.06s
+

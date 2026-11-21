@@ -1,0 +1,23 @@
+[seam] rendered f0
+[seam] rendered f54
+[seam] rendered f109
+[seam] rendered f163
+[seam] rendered f217
+[seam] rendered f272
+[seam] rendered f326
+[seam] rendered f381
+[seam] rendered f435
+[seam] rendered f489
+[seam] rendered f544
+[seam] rendered f598
+[seam] n=2   seams=1   dropped=   6 rows | FULL 0.3266 vs 0.3241 (+0.0025) | MASKED 0.3265 vs 0.3239 (+0.0026)
+[seam] n=4   seams=3   dropped=  18 rows | FULL 0.3289 vs 0.3241 (+0.0048) | MASKED 0.3322 vs 0.3269 (+0.0053)
+[seam] n=8   seams=7   dropped=  42 rows | FULL 0.3269 vs 0.3241 (+0.0028) | MASKED 0.3334 vs 0.3291 (+0.0043)
+[seam] n=16  seams=15  dropped=  90 rows | FULL 0.3246 vs 0.3241 (+0.0004) | MASKED 0.3342 vs 0.3311 (+0.0031)
+[seam] n=32  seams=31  dropped= 186 rows | FULL 0.3218 vs 0.3241 (-0.0023) | MASKED 0.3411 vs 0.3380 (+0.0031)
+[seam] n=64  seams=63  dropped= 378 rows | FULL 0.3146 vs 0.3241 (-0.0095) | MASKED 0.3532 vs 0.3524 (+0.0008)
+
+wrote /home/nvidia/rq_out/rs_seam_control.json
+
+VERDICT INPUT: if masked_delta stays negative as n grows, the pose sweep itself does not help.
+If masked_delta rises to ~0 while full_delta falls, the decline was the seams, not the geometry.

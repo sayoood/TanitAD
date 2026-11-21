@@ -1,0 +1,27 @@
+Traceback (most recent call last):
+  File "F:\TanitAD-scratch\v8proof\ops\capmem.py", line 167, in <module>
+    main()
+    ~~~~^^
+  File "F:\TanitAD-scratch\v8proof\ops\capmem.py", line 163, in main
+    runpy.run_path(script, run_name="__main__")
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen runpy>", line 287, in run_path
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "smoothreq/run_mutations_sr.py", line 108, in <module>
+    main()
+    ~~~~^^
+  File "smoothreq/run_mutations_sr.py", line 97, in main
+    r = run_one(i, f, label, old, new)
+  File "smoothreq/run_mutations_sr.py", line 85, in run_one
+    r = subprocess.run(cmd, env=env, capture_output=True, text=True, encoding="utf-8", timeout=1500)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 556, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1222, in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1646, in _communicate
+    raise TimeoutExpired(self.args, orig_timeout)
+subprocess.TimeoutExpired: Command '['C:/Users/Admin/venvs/tanitad/Scripts/python.exe', 'F:\\TanitAD-scratch\\v8proof\\ops\\capmem.py', '3000', 'F:\\TanitAD-scratch\\v8proof\\smoothreq\\tmp_mut_sr\\m000\\make_smooth_tables.py', '--selftest']' timed out after 1500 seconds
+mut rc 1

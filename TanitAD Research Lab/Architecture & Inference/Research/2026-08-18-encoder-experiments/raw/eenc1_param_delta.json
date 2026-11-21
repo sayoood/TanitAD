@@ -1,0 +1,158 @@
+{
+ "_evidence_class": "MEASURED (ours; counts + shapes AT INSTANTIATION)",
+ "eval_tier": "N/A — a build measurement, not an eval",
+ "torch": "2.11.0+cu128",
+ "cuda_available": true,
+ "ckpt": {
+  "path": "C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/8fc25020-a1d5-4e1b-a9e2-aeccf845c5a2/scratchpad/sp2/ck/v6F_sw_step011250.fp16.pt",
+  "step": 11250,
+  "stage": "S-W",
+  "run": "v6-staged-S-W",
+  "recorded_param_report_total": 336542025,
+  "recorded_per_group": {
+   "encoder": 87284736,
+   "readout": 98432,
+   "predictor_op": 189960707,
+   "layer_tac": 29317165,
+   "layer_str": 27442849,
+   "planner": 788344,
+   "aux": 1649792
+  },
+  "state_dict_numel": 336559305,
+  "state_dict_n_tensors": 573
+ },
+ "incumbent": {
+  "total": 336542025,
+  "per_group": {
+   "encoder": 87284736,
+   "readout": 98432,
+   "predictor_op": 189960707,
+   "layer_tac": 29317165,
+   "layer_str": 27442849,
+   "planner": 788344,
+   "aux": 1649792,
+   "interp": 0
+  },
+  "encoder_class": "ViT5Encoder",
+  "n_tokens": 640,
+  "grid_shape": [
+   16,
+   40
+  ],
+  "d_model": 768,
+  "d_op": 2048,
+  "readout_out_dim": 2048,
+  "matches_recorded": true
+ },
+ "swap": {
+  "external_repo": "facebook/dinov2-base",
+  "external_hidden": 768,
+  "external_patch": 14,
+  "external_input_hw": [
+   224,
+   560
+  ],
+  "external_grid": [
+   16,
+   40
+  ],
+  "sub_frames_concatenated": 3,
+  "backbone_params": 86580480,
+  "backbone_params_frozen": 86580480,
+  "backbone_fully_frozen": true,
+  "adapter_params": 1770240,
+  "adapter_shape": [
+   2304,
+   768
+  ],
+  "encoder_group_after_swap": 88350720,
+  "total": 337608009,
+  "per_group": {
+   "encoder": 88350720,
+   "readout": 98432,
+   "predictor_op": 189960707,
+   "layer_tac": 29317165,
+   "layer_str": 27442849,
+   "planner": 788344,
+   "aux": 1649792,
+   "interp": 0
+  }
+ },
+ "delta": {
+  "incumbent_encoder_params": 87284736,
+  "swap_encoder_params": 88350720,
+  "encoder_group_delta": 1065984,
+  "total_delta": 1065984,
+  "total_incumbent": 336542025,
+  "total_swap": 337608009,
+  "swap_TRAINABLE_encoder_params": 1770240,
+  "trainable_delta_if_backbone_frozen": -85514496,
+  "budget": 350000000,
+  "swap_within_budget": true,
+  "capacity_note": "the external backbone is FROZEN, so the arm's TRAINABLE capacity FALLS by the encoder minus the adapter — this arm cannot win on trainable capacity, which is the C6 confound running the favourable way for once"
+ },
+ "s_w_freeze": {
+  "incumbent_n_trainable": 278993667,
+  "swap_n_trainable_before_backbone_refreeze": 280059651,
+  "swap_n_trainable_after_backbone_refreeze": 193479171,
+  "⛔ WARNING": "apply_stage_freeze sets requires_grad from the GROUP MAP, so it UN-FREEZES the external backbone (group 'encoder'). MEASURED here. A real E-ENC-1 run MUST re-assert the backbone freeze after apply_stage_freeze, or the 'frozen external encoder' arm trains 86 M foreign params and is not the arm it claims to be."
+ },
+ "groups_after_swap": {
+  "encoder": {
+   "total": 88350720,
+   "trainable": 1770240,
+   "frozen": 86580480
+  },
+  "readout": {
+   "total": 98432,
+   "trainable": 98432,
+   "frozen": 0
+  },
+  "layer_str": {
+   "total": 27442849,
+   "trainable": 0,
+   "frozen": 27442849
+  },
+  "layer_tac": {
+   "total": 29317165,
+   "trainable": 0,
+   "frozen": 29317165
+  },
+  "predictor_op": {
+   "total": 189960707,
+   "trainable": 189960707,
+   "frozen": 0
+  },
+  "planner": {
+   "total": 788344,
+   "trainable": 0,
+   "frozen": 788344
+  },
+  "aux": {
+   "total": 1649792,
+   "trainable": 1649792,
+   "frozen": 0
+  }
+ },
+ "forward_check": {
+  "device": "cuda",
+  "in_shape": [
+   1,
+   9,
+   256,
+   640
+  ],
+  "token_shape": [
+   1,
+   640,
+   768
+  ],
+  "z_op_shape": [
+   1,
+   2048
+  ],
+  "z_op_matches_d_op": true,
+  "cuda_max_mem_gb": 0.405216256,
+  "_note": "⛔ only torch.cuda.max_memory_allocated() is admissible"
+ }
+}

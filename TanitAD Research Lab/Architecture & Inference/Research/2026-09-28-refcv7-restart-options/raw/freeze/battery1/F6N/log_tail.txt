@@ -1,0 +1,27 @@
+Traceback (most recent call last):
+  File "D:\Projects\TanitAD\TanitAD Research Lab\Architecture & Inference\Research\2026-09-28-refcv7-restart-options\code\freeze\numerics_ab.py", line 142, in main
+    T.main(spec["argv"])
+    ~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\Admin\rc7frozen\stack\scripts\refc_v3_train.py", line 11368, in main
+    train(args)
+    ~~~~~^^^^^^
+  File "C:\Users\Admin\rc7frozen\stack\scripts\refc_v3_train.py", line 8982, in train
+    opt.load_state_dict(state["opt"])
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\_compile.py", line 54, in inner
+    return disable_fn(*args, **kwargs)
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\_dynamo\eval_frame.py", line 1263, in _fn
+    return fn(*args, **kwargs)
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\optim\optimizer.py", line 954, in load_state_dict
+    raise ValueError(
+    ...<2 lines>...
+    )
+ValueError: loaded state dict contains a parameter group that doesn't match the size of optimizer's group
+{
+ "error": "ValueError: loaded state dict contains a parameter group that doesn't match the size of optimizer's group",
+ "wall_s": 158.8,
+ "n_opt_steps": 0,
+ "n_params": 610,
+ "n_in_opt": 584,
+ "ten_grad_states": []
+}

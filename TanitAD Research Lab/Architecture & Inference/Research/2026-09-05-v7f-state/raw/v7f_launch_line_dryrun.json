@@ -1,0 +1,37 @@
+{
+  "claim": "PREREG_V7F sec 9's launch line has exactly TWO real defects; every other flag it names is accepted by the real argparse",
+  "evidence_class": "MEASURED (ours) -- executed through the real trainer argparse, 0 GPU",
+  "measured_at": "2026-09-05",
+  "how": "stack/scripts/train_v6_staged.py invoked with PREREG_V7F sec 9's flags, venv C:/Users/Admin/venvs/tanitad (torch 2.11.0+cu128), PYTHONPATH=<mirror>/stack, OMP_NUM_THREADS=6, PYTHONIOENCODING=utf-8. Ran off-Drive from C:/Users/Admin/tanitad-wt; verified the imported package with tanitad.__file__.",
+  "defects": [
+    {
+      "id": "LDAD-ABSENT",
+      "severity": "blocking",
+      "finding": "argparse: 'unrecognized arguments: --w-ldad 1.0 --ldad-target a_kappa --ldad-form delta_z'",
+      "corroboration": "grep -ril 'ldad' stack/ -> 0 files, same-breath control 'trunk_anchor' -> 8 files. TWO INDEPENDENT MECHANISMS AGREE (text search + real argparse).",
+      "note": "These are the ONLY unrecognized flags in the entire launch line."
+    },
+    {
+      "id": "HORIZONS-UNSET",
+      "severity": "blocking, and NOT on any prior blocker list",
+      "finding": "PREREG_V7F contains ZERO occurrences of '--horizons', so it defaults to (1,2,4); the trainer REFUSES: '--horizons (1, 2, 4) declares [2, 4], which NO loss consumes ... would take EXACTLY zero gradient and then feed initialisation noise to every probe that reads them -- this has already produced two retracted findings.'",
+      "fix": "the launch line must pass '--horizons 1' and set the horizon via --o5-k (already 60 = 6.0 s)."
+    }
+  ],
+  "refuted_blocker": {
+    "id": "ENC-INIT-FROM-SPELLING",
+    "alleged": "'--enc-init-from is not the implemented spelling; it is --init-encoder-from'",
+    "verdict": "FALSE -- refuted twice, by source and by execution",
+    "source": "train_v6_staged.py:8759 -- ap.add_argument('--init-encoder-from', '--enc-init-from', ...) is a REGISTERED ALIAS, added per :8767 so PREREG_V7F sec 9's spelling works verbatim",
+    "execution": "argparse accepted the launch line's flags with only the LDAD triple unrecognized",
+    "root_cause": "the docstring at :7927 calls --enc-init-from 'the pre-registration's draft spelling'; reading stopped there, 832 lines before the alias. Absence-found-at-one-location, as a FALSE BLOCKER on a launch line."
+  },
+  "scope_correction": {
+    "note": "An earlier run of this probe ALSO refused on --nav-cond and --v2-cache. Those were artifacts of a TRUNCATED reconstruction of the launch line, not defects: PREREG_V7F sec 9 does contain --v2-cache, --require-parity, --v2-lru, --s2-labels, --w-s2-goal, --nav-labels and --nav-cond (verified by grep: --nav-cond 2 hits, --v2-cache 2 hits). Reported so the count is not over-stated.",
+    "argparse_ordering_trap": "argparse reports MISSING-REQUIRED before UNRECOGNIZED, so omitting --stage/--out masks the unrecognized list entirely and reads as 'all flags exist'. Supply required args first."
+  },
+  "incidental_defect": {
+    "id": "REFUSAL-PRINTER-CP1252",
+    "finding": "train_v6_staged.py:10371 prints refusals as f'[v6] \u26d4 {p}'. On a cp1252 console this raises UnicodeEncodeError, so the trainer CRASHES INSTEAD OF PRINTING THE REFUSAL -- hiding exactly the diagnostic a launch needs. Workaround: PYTHONIOENCODING=utf-8. Durable fix: ASCII refusal text or an explicit UTF-8 stream."
+  }
+}

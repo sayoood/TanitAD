@@ -1,0 +1,87 @@
+{
+ "what": "END-TO-END CONTROL (A-R8-NS1 AMENDMENT 3): parse8's summaries of refcv7-50,400's banked step-30000 navhard / warmup rows (R7 arms read as R8 names) through the AMENDED navsim_bars8.navhard_bar / warmup_bar. NOT a refcv8 result; the meta is set eligible only to exercise the verdict arithmetic.",
+ "expected_from_SPEC_REFCV8_6.2": {
+  "N2_step30000": "0.2269 vs STOP 0.2985, delta -0.0716 [-0.1112, -0.0346], FAILED",
+  "N3_step30000": "0.5224 vs STOP 0.5212, NOT PROVEN"
+ },
+ "inputs": [
+  "raw/pytest_parse8/control\\summary_navhard_CONTROL_refcv7_step30000_R7asR8.json",
+  "raw/pytest_parse8/control\\summary_warmup_CONTROL_refcv7_step30000_R7asR8.json"
+ ],
+ "N2": {
+  "bar": "BAR-R8-N2",
+  "statement": "official two-stage EPDMS(R8_LEGAL) > max(STOP, CV, ECHO); paired interval vs STOP excludes 0 (log_name AND nuplan_drive); margin > 2x the seed floor; at both inference seeds (A-R8-NS1 AMENDMENT 3)",
+  "values": {
+   "R8_LEGAL": 0.2269259218512275,
+   "CV_official": 0.11481608441648,
+   "STOP_zero": 0.2985321254269824,
+   "ECHO_ha0_ext": 0.1429384814411483
+  },
+  "margin": -0.07160620357575487,
+  "paired_vs_STOP": {
+   "status": "OK",
+   "delta": -0.0716,
+   "lo": -0.1112,
+   "hi": -0.0346,
+   "n_clusters": 76,
+   "separated_log_name": true,
+   "drive_level": {
+    "status": "OK",
+    "n_clusters": 34,
+    "lo": -0.1247,
+    "hi": -0.035
+   },
+   "positive": false,
+   "negative": true,
+   "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+  },
+  "paired_vs_STOP_s1": {
+   "status": "OK",
+   "delta": -0.0752,
+   "lo": -0.1159,
+   "hi": -0.0347,
+   "n_clusters": 76,
+   "separated_log_name": true,
+   "drive_level": {
+    "status": "OK",
+    "n_clusters": 34,
+    "lo": -0.132,
+    "hi": -0.035
+   },
+   "positive": false,
+   "negative": true,
+   "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+  },
+  "per_arm_verdict": {
+   "R8_LEGAL": "FAILED",
+   "R8_LEGAL_s1": "FAILED"
+  },
+  "seed_floor": 0.0036297192601510153,
+  "verdict": "FAILED",
+  "verdict_if_eligible_ARITHMETIC_ONLY": null,
+  "note": "units as the summary (EPDMS fraction); the interval is the summary's own paired log-cluster record, read through compact_pair (log_name AND nuplan_drive)"
+ },
+ "N3": {
+  "bar": "BAR-R8-N3",
+  "statement": "warmup S2-EPDMS-u(R8_LEGAL) > max(CV, STOP, ECHO), margin > 2x the seed floor; R8_BLIND must FAIL it (else the panel is VOID)",
+  "values": {
+   "R8_LEGAL": 0.5223666823715276,
+   "R8_LEGAL_s1": 0.5292943037372295,
+   "R8_BLIND": 0.21932603572915813,
+   "CV_official": 0.39713167136274696,
+   "STOP_zero": 0.5212469877807624,
+   "ECHO_ha0_ext": 0.4287471809626652
+  },
+  "per_arm_verdict": {
+   "R8_LEGAL": "NOT PROVEN (margin inside 2x the inference-seed floor)",
+   "R8_LEGAL_s1": "NOT PROVEN (margin inside 2x the inference-seed floor)"
+  },
+  "margin": 0.001119694590765219,
+  "seed_floor": 0.006927621365701908,
+  "blind_control_verdict": "FAILED",
+  "panel": "OK (R8_BLIND fails N3 as it must)",
+  "interval": "UNAVAILABLE (warmup has 7 logs < 8: it never carries an interval)",
+  "verdict": "NOT PROVEN (margin inside 2x the inference-seed floor)",
+  "verdict_if_eligible_ARITHMETIC_ONLY": null
+ }
+}

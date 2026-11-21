@@ -1,0 +1,95 @@
+C:\Users\Admin\AppData\Local\Temp\tipsweep\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_aux_drivable_head.py:405: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+  ok = (bool(t.known[0].all()) and not bool(t.known[1].any()) and float(l_a) == float(l_b)
+== unmutated module ==
+  [PASS] A1 parameter count == the prototype's 2,440,450 (parsed from head_proto_selftest.out) 2,440,450 vs prototype 2,440,450
+  [PASS] A2 output [B, 40, 32] for visual_ctx [B, 7680, 256] and scene_ctx [B, 64, 256]; SDF bounded by 6 m (2, 40, 32) |sdf|<=4.98
+  [PASS] A3 the head's forward takes exactly ONE tensor (admissibility: no ego / goal / nav / map input) 
+  [PASS] A4 the head's / label's geometry constants equal aux_label_store.raster_spec() and field_loss's 
+  [PASS] A5 the head builds from its OWN stream: global RNG state unchanged, bit-equal for the same seed whatever the global seed global RNG untouched=True same-seed bit-equal=True other-seed differs=True
+  [PASS] A6 config hygiene (G-HYG): frozen, typos and invalid values RAISE; w_aux defaults to 0.0 and feed to off refusals [True, True, True, True, True, True, True] defaults w_aux=0.0 feed=off
+  [PASS] A7 the six flags default OFF; inconsistent command lines are refused; IDENTITY dests exist defaults all off=True identity dests declared=True refusals(silent weight, no labels, shuffle+feed)=True,True,True
+  [PASS] A8 built_facts() (what G-DVB compares to the declared config): depth, cell, x0/y0, w_aux, scorer width 60 vs 63 H1 width 60, H2 width 63
+  [PASS] A10 bf16 autocast (the trainers' mode): head forward, fp32 loss, feed scalars and head gradients are finite under bf16 autocast: head outputs torch.bfloat16, loss torch.float32 finite, feed torch.float32 finite, 43 finite head grads
+  [PASS] A11 tap_is (G-DVB): True only for the very tensor (same storage and shape), False for a clone or a slice same storage and shape only
+  [PASS] A9 import hygiene (SPEC 6.1): importing the head pulls in no label-store / map module; grep 'map_api|nuplan|origin_world' == 0 modules pulled in by `import aux_drivable_head`: ['MODS=']; forbidden strings in the file: 0
+  [PASS] B1 all +40 (4.0 m): mask fraction 1 everywhere, block SDF 4.0 m exactly (0.1 m unit) sdf 4.000000
+  [PASS] B2 x half-plane (ix < 80 inside): rows 0..19 -> fraction 1 / +3.0 m, rows 20..39 -> 0 / -3.0 m (x forward is axis 0) x < 0 m drivable: coarse rows 0..19 inside, 20..39 outside, constant along y
+  [PASS] B3 y half-plane (iy >= 64 inside, y left): columns 16..31 -> inside, 0..15 -> outside, constant along x (y left is axis 1) y > 0 (left) drivable: coarse columns 16..31 inside
+  [PASS] B4 a partial block: 4 of 16 fine cells at +1.0 m, 12 at -1.0 m -> fraction 0.25, block mean -0.5 m fraction 0.25, block SDF -0.500000 (want 0.25, -0.5)
+  [PASS] B5 the SDF is clipped to +-6 m BEFORE the block mean (4 x +12.7 m, 12 x -1.0 m -> 0.75, not 2.425); a saturated block reads 6.0 clip-then-mean 0.7500 (want 0.75; mean-then-clip would give 2.425), saturated block 6.0
+  [PASS] B6 sign and unit at the LSB: -1 -> -0.1 m (outside), +25 -> +2.5 m (inside) -1 LSB -> -0.1 m / fraction 0; +25 LSB -> +2.5 m
+  [PASS] B7 a float label, a transposed [128,160] label and an unbatched label are REFUSED 3/3 malformed labels refused
+  [PASS] B8 extent/validity mask: an unlabelled frame has no known cell, contributes EXACTLY 0 loss and 0.0 gradient whatever its label bytes, and does not dilute the mean known: labelled True / unlabelled False; unlabelled-frame grad max 0.0
+  [PASS] B9 loss identities: all-inside at logit 0 -> BCE == ln 2; SDF at +clip -> Huber == 0.0; no label -> loss and grads exactly 0.0; BCE pushes the logit UP BCE 0.6931473 (ln2 0.6931472); Huber at the clip 0.0; no-label loss 0.0
+  [PASS] B10 head_metrics (the S1 perception-proof read): a perfect prediction reads IoU 1.0 / MAE 0, an inverted one IoU 0.0 {'iou': 1.0, 'acc': 1.0, 'sdf_mae_m': 0.0, 'n_cells': 1280} / 0.0
+  [PASS] B11 the H2 sampler: exact at cell centres, bilinear between them, x is axis 0 / y is axis 1, the outer half cell replicates, outside [X0,X1)x[Y0,Y1) -> +6 m and flag False cell-centre 0.7090, x-midpoint 0.7590, y-midpoint 0.7095, extent flags [1, 1, 1, 1, 0, 1, 1, 0, 0, 0]
+  [PASS] B12 the three H2 scalars (min corner SDF, mean centre SDF, share < 0) equal an INDEPENDENT numpy chain (navsim_dac poses + corners + numpy bilinear) max |torch - independent numpy chain| = 3.54e-07 over 6 trajectories incl. one leaving the extent (oob share 0.30)
+  [PASS] B13 H2 semantics: all-inside -> (+3, +3, 0); all-outside -> (-3, -3, 1); a footprint straddling the boundary -> min < 0 and a share strictly between inside (min, centre, share) = [2.999999761581421, 3.0, 0.0], outside = [-3.000000238418579, -3.0, 1.0], straddling share 0.50
+  [PASS] C1 baseline determinism: the no-head run twice gives bit-identical trunk gradients (otherwise the next control proves nothing) no-head run twice
+  [PASS] C2 w_aux = 0: EVERY head gradient is exactly 0.0, and the trunk's gradients (all REFe tensors + the tapped features) equal the no-head run's head grads exactly 0.0 on 43/43 tensors=True; trunk grads equal to the no-head run on 415 tensors=True (bit-level differences: 0); tapped-feature grad BIT-equal=True; control non-vacuous=True
+  [PASS] C3 w_aux = 0.1: EVERY head parameter tensor gets a NON-ZERO gradient and the trunk's LoRA / scene_proj / pos3d_mlp gradients move (the C2 equality is not vacuous) head tensors with non-zero grad 43/43 (min |g|_1 = 2.49e-03); trunk groups changed vs no-head: {'lora': True, 'scene_proj': True, 'pos3d_mlp': True}
+  [PASS] C4 aux-only gradient (tap visual_ctx): NON-ZERO on LoRA / scene_proj / pos3d_mlp and EXACTLY 0.0 on reg_compress and traj_head aux-only |g|_1: lora 6.14e-01 scene_proj 9.63e+01 pos3d_mlp 1.21e+01; CONTROLS reg_compress 0.0 traj_head 0.0
+  [PASS] C5 the registered scene tap: aux-only gradient reaches reg_compress and the LoRA, and is still EXACTLY 0.0 on traj_head aux-only (tap scene_ctx): reg_compress 2.27e+02 (non-zero), traj_head 0.0
+  [PASS] C6 the probe works: a head fed ctx.detach() learns but the trunk groups read EXACTLY 0.0 (this is the arm C4's non-zero reading rules out) head fed ctx.detach(): head still learns; trunk groups read exactly 0.0
+  [PASS] D1 H1: the scorer's output is BIT-IDENTICAL to the model's own score_trajectories with the head, with a different head, and without one; H1 builds no feed H1 == net.score_trajectories bit for bit with head A, with a DIFFERENT head B, and with no prediction; heads differ=True; no feed module=True
+  [PASS] D2 H1: NO autograd path from the score to any head parameter (G-DVB: torch.autograd.grad(..., allow_unused=True) all None) 43/43 head tensors have no autograd path from the score
+  [PASS] D3 H2: the scorer's output is NOT the base scorer's, and it DEPENDS on the predicted SDF (a different prediction gives a different score) H2 vs base max|d|=1.038e-01; vs a constant field 6.113e-01; vs a different prediction 4.319e-01; same seed reproducible=True
+  [PASS] D4 H2: the feed is DETACHED (no autograd path score -> head) while the scorer's own feed projection does receive gradient head tensors with a path from the score: 0/43 (must be 0); feed.proj grad |g|_1 1.42e+04
+  [PASS] D5 H2 with feed_init='zero' starts as the base scorer's EXACT function (so the u400 fine-tune begins unchanged) and moves once the projection moves zero-init H2 == base scorer bit for bit (True); after perturbing the projection max|d|=1.84e-01
+  [PASS] D6 the additive feed projection IS a 63-wide first layer whose last three columns are proj.weight (SPEC 2.4's 60 -> 63), to 1e-5 additive projection vs an explicit 63-wide first layer [W60 | proj]: max|d| = 9.54e-07
+  [PASS] D7 checkpoint compatibility: the head/feed state lives under its own keys and the base score_q_mlp.0.weight stays [256, 60] (u400 loads strictly) 44 new keys, none colliding with the base checkpoint's 415; score_q_mlp.0.weight stays [256, 60]
+  [PASS] E1 the label source accepts the pinned store and REFUSES one whose store_sha256 is not the pinned value (even a self-consistent one) pinned store accepted; wrong pin refused=True; a self-consistent store that is NOT the pinned one refused=True
+  [PASS] E2 the manifest must be internally consistent: files map hashes to store_sha256, stored_keys == 103,139, no navtest leak, raster spec intact refused: files-map altered under the pinned sha=True, stored_keys changed=True, navtest leak reported=True, raster spec missing=True
+  [PASS] E3 shard bytes are verified against the manifest on load (content, not presence): one flipped byte is REFUSED a flipped byte in a shard is refused=True; the untouched copy reads the same label=True
+  [PASS] E4 one shard read per log (cached), not per token; max_logs bounds the cache 12 reads from one log -> 1 shard read; 96 more reads over 12 logs -> 12 shard reads in total; bounded cache holds 2 logs
+  [PASS] E5 a key with no label (unknown token, unknown log) reads zeros with valid False and is counted, never raised valid=[True, False, False] stats={'shard_reads': 1, 'labels': 1, 'missing_key': 1, 'missing_log': 1}
+  [PASS] E6 >= 32 REAL stored keys: the source's labels round-trip the store exactly and the targets equal an independent numpy block statistic 48 real keys / 12 logs / 4 maps: labels equal aux_label_store.read_label byte for byte=True; targets equal an independent numpy block-statistic, max |d| = 9.5e-07
+  [PASS] E7 the block-statistic mask agrees with sign(SDF) down-sampled three ways on the real keys (bars fixed before the run: 0.97 / 0.95 / 0.97; measured values reported) mask(fraction >= 0.5) vs sign(block-mean clipped SDF) 0.9844 | vs sign(SDF) at the block's stride-4 fine cell 0.9847 | vs sign(avg-pooled SDF) 0.9860 | pure blocks (fraction 0 or 1) 0.8930 | inside share 0.404
+  [PASS] E8 the shard parser (parses the very bytes that were hashed) equals aux_label_store.read_shard 89 blobs identical to aux_label_store.read_shard
+  [PASS] E9 the label-shuffled control's key map is a DERANGEMENT: 0 fixed points, identical multiset, reproducible per seed 0 fixed points, same multiset, deterministic per seed
+  [PASS] E10 WHOLE STORE by content: every shard file re-hashes to the manifest, 103,139 unique keys, key set ∩ navtest tokens = ∅ (G-LIVE no-leakage) 1192 shard files re-hashed, 0 mismatch; 103,139 unique keys; keys ∩ 12,146 navtest tokens = 0
+  [PASS] E11 the shuffle arm on the REAL key set: 0 fixed points over 103,139 keys, a permutation of the same keys, and labels follow the map 103,139 keys, 0 fixed points, values are a permutation of the keys; the shuffled source returns the label of the mapped key
+  [PASS] E12 the source is picklable and works after a round trip (DataLoader workers) picklable (DataLoader workers)
+
+== 19 RED mutations of the shipped source (each must fail at least one check) ==
+  RED  x/y swapped in the target builder               7 failing: B2, B3, B4, B5, B10, E6
+  RED  sign flipped (mask)                             8 failing: B1, B2, B3, B4, B6, B9
+  RED  sign flipped (SDF)                              9 failing: B1, B2, B3, B4, B5, B6
+  RED  int8 unit forgotten                             7 failing: B1, B2, B3, B4, B5, B6
+  RED  block size 2 instead of 4                      15 failing: A10, B1, B2, B3, B4, B5
+  RED  store sha pin ignored                           1 failing: E1
+  RED  H1 leaking the prediction into the scorer       3 failing: A8, D1, D5
+  RED  mean-then-clip instead of clip-then-mean        2 failing: B5, E6
+  RED  manifest self-consistency not checked           1 failing: E2
+  RED  shard bytes not hashed                          1 failing: E3
+  RED  H2 feed not detached from the head              1 failing: D4
+  RED  out-of-extent corner keeps its raw value        2 failing: B11, B12
+  RED  sampler reads the SDF with x/y swapped          3 failing: B11, B12, B13
+  RED  unlabelled frames counted (valid ignored)       2 failing: B8, B9
+  RED  loss weight ignored                             1 failing: C2
+  RED  head fed ctx.detach() (trunk gets nothing)      3 failing: C3, C4, C5
+  RED  head built from the global RNG stream           1 failing: A5
+  RED  feed share counts the wrong sign                2 failing: B12, B13
+  RED  derangement with fixed points                   1 failing: E9
+
+== measured ==
+  params                     2440450
+  proto_params               2440450
+  n_real_keys                48
+  n_real_logs                12
+  real_target_err            9.5367431640625e-07
+  agree_blockmean            0.9843912720680237
+  agree_stride               0.984667956829071
+  agree_pool                 0.9859700798988342
+  pure_share                 0.8929850459098816
+  inside_share               0.4038686156272888
+  feed_ref_err               3.537968029654337e-07
+  w0_bit_mismatch_tensors    0
+  store_files                1192
+  store_mismatch             0
+  store_keys                 103139
+  navtest_tokens             12146
+  navtest_intersection       0
+
+ZZTEST_PASS 68  (49 checks green on the unmutated module + 19 RED mutations, the 7 required classes among them)

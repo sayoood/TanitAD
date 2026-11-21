@@ -1,0 +1,577 @@
+{
+ "lever": "distrule",
+ "counts": {
+  "n_mutations": 32,
+  "n_red": 24,
+  "n_still_green": 8,
+  "n_other": 0,
+  "control_green": true,
+  "control_after_green": true
+ },
+ "counts_line": "n 32 | red 24 | still-green 8 | other 0 | control green yes | control after green yes",
+ "checks": [
+  "src/test_dist_rule.py",
+  "src/test_margin_qcal.py"
+ ],
+ "written_utc": "2026-11-19T07:35:20Z",
+ "control": {
+  "rc": 0,
+  "n_tests": 35,
+  "failed": [],
+  "ignored_environment_failures": [
+   "test_dist_rule.py::test_geometry_copy_equals_headway_read",
+   "test_dist_rule.py::test_pod_script_refusals_layout_and_one_rollout"
+  ],
+  "green": true,
+  "seconds": 28,
+  "err": ""
+ },
+ "control_after": {
+  "rc": 0,
+  "n_tests": 35,
+  "failed": [],
+  "ignored_environment_failures": [
+   "test_dist_rule.py::test_geometry_copy_equals_headway_read",
+   "test_dist_rule.py::test_pod_script_refusals_layout_and_one_rollout"
+  ],
+  "green": true,
+  "seconds": 26,
+  "err": ""
+ },
+ "mutations": [
+  {
+   "id": "d1_cap_ignores_the_lead_motion",
+   "file": "src/dist_rule.py",
+   "original_line": "a_c = (g0 + v_L * dt * i - np.maximum(D, tau * v_prev)) if use_cap",
+   "mutated_line": "a_c = (g0 - np.maximum(D, tau * v_prev)) if use_cap",
+   "expected_red": [
+    "test_dist_rule.py::test_r5_stopped_lead_10m_gives_the_braking_limited_profile_and_counts_saturated_steps"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_dist_rule.py::test_r5_a_faster_lead_leaves_the_plan_unchanged_bit_for_bit",
+    "test_dist_rule.py::test_r5_progress_never_decreases_the_floor_holds_and_the_lag_form_equals_the_card_recursion",
+    "test_dist_rule.py::test_r5_cap_binds_only_where_it_should_a_lead_far_enough_ahead_changes_nothing",
+    "test_dist_rule.py::test_never_constants_as_written_still_bind_on_contact_and_the_floor_lifts_hard_braking_plans_the_finding_of_DEFS_E5",
+    "test_dist_rule.py::test_e2e_a_lead_at_the_ego_speed_leaves_every_mode_unchanged_while_active"
+   ],
+   "expected_all_red": false,
+   "why": ""
+  },
+  {
+   "id": "d2_margin_takes_the_smaller_of_D_and_tau_v",
+   "file": "src/dist_rule.py",
+   "original_line": "np.maximum(D, tau * v_prev)) if use_cap",
+   "mutated_line": "np.minimum(D, tau * v_prev)) if use_cap",
+   "expected_red": [
+    "test_dist_rule.py::test_r5_progress_never_decreases_the_floor_holds_and_the_lag_form_equals_the_card_recursion"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_dist_rule.py::test_r5_stopped_lead_10m_gives_the_braking_limited_profile_and_counts_saturated_steps",
+    "test_dist_rule.py::test_r5_progress_never_decreases_the_floor_holds_and_the_lag_form_equals_the_card_recursion",
+    "test_dist_rule.py::test_never_constants_as_written_still_bind_on_contact_and_the_floor_lifts_hard_braking_plans_the_finding_of_DEFS_E5",
+    "test_dist_rule.py::test_e2e_label_with_a_stopped_lead_reduces_progress_push_increases_it_plumb_and_a_far_lead_change_nothing"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  },
+  {
+   "id": "d3_braking_floor_sign_flipped",
+   "file": "src/dist_rule.py",
+   "original_line": "np.maximum(0.0, v_prev - b_max * dt) * dt) if use_floor",
+   "mutated_line": "np.maximum(0.0, v_prev + b_max * dt) * dt) if use_floor",
+   "expected_red": [
+    "test_dist_rule.py::test_r5_progress_never_decreases_the_floor_holds_and_the_lag_form_equals_the_card_recursion"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_dist_rule.py::test_r5_stopped_lead_10m_gives_the_braking_limited_profile_and_counts_saturated_steps",
+    "test_dist_rule.py::test_r5_a_faster_lead_leaves_the_plan_unchanged_bit_for_bit",
+    "test_dist_rule.py::test_r5_the_lateral_geometry_is_kept_on_a_curved_plan",
+    "test_dist_rule.py::test_r5_progress_never_decreases_the_floor_holds_and_the_lag_form_equals_the_card_recursion",
+    "test_dist_rule.py::test_r5_cap_binds_only_where_it_should_a_lead_far_enough_ahead_changes_nothing",
+    "test_dist_rule.py::test_never_constants_as_written_still_bind_on_contact_and_the_floor_lifts_hard_braking_plans_the_finding_of_DEFS_E5",
+    "test_dist_rule.py::test_floor_cap_only_option_never_lifts_a_plan_and_equals_the_card_form_where_the_floor_does_not_lift",
+    "test_dist_rule.py::test_e2e_label_with_a_stopped_lead_reduces_progress_push_increases_it_plumb_and_a_far_lead_change_nothing",
+    "test_dist_rule.py::test_e2e_a_lead_at_the_ego_speed_leaves_every_mode_unchanged_while_active",
+    "test_dist_rule.py::test_mutation_the_line_that_applies_the_rule_removed_turns_the_reduction_check_red"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  },
+  {
+   "id": "d4_floor_takes_the_minimum",
+   "file": "src/dist_rule.py",
+   "original_line": "a_i = np.maximum(a_f, np.minimum(a_w, a_c)) if floor_lifts",
+   "mutated_line": "a_i = np.minimum(a_f, np.minimum(a_w, a_c)) if floor_lifts",
+   "expected_red": [
+    "test_dist_rule.py::test_r5_progress_never_decreases_the_floor_holds_and_the_lag_form_equals_the_card_recursion"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_dist_rule.py::test_r5_stopped_lead_10m_gives_the_braking_limited_profile_and_counts_saturated_steps",
+    "test_dist_rule.py::test_r5_a_faster_lead_leaves_the_plan_unchanged_bit_for_bit",
+    "test_dist_rule.py::test_r5_progress_never_decreases_the_floor_holds_and_the_lag_form_equals_the_card_recursion",
+    "test_dist_rule.py::test_r5_cap_binds_only_where_it_should_a_lead_far_enough_ahead_changes_nothing",
+    "test_dist_rule.py::test_never_constants_as_written_still_bind_on_contact_and_the_floor_lifts_hard_braking_plans_the_finding_of_DEFS_E5",
+    "test_dist_rule.py::test_floor_cap_only_option_never_lifts_a_plan_and_equals_the_card_form_where_the_floor_does_not_lift",
+    "test_dist_rule.py::test_e2e_label_with_a_stopped_lead_reduces_progress_push_increases_it_plumb_and_a_far_lead_change_nothing",
+    "test_dist_rule.py::test_e2e_a_lead_at_the_ego_speed_leaves_every_mode_unchanged_while_active"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  },
+  {
+   "id": "d5_activation_gap_threshold_60_to_600",
+   "file": "src/dist_rule.py",
+   "original_line": "G_MAX_M = 60.0 ",
+   "mutated_line": "G_MAX_M = 600.0 ",
+   "expected_red": [
+    "test_dist_rule.py::test_r5_cap_binds_only_where_it_should_a_lead_far_enough_ahead_changes_nothing"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_dist_rule.py::test_r5_inactive_windows_keep_their_plan_bit_for_bit_and_all_inactive_returns_the_same_object"
+   ],
+   "expected_all_red": false,
+   "why": ""
+  },
+  {
+   "id": "d6_lag_not_carried",
+   "file": "src/dist_rule.py",
+   "original_line": "lag = aP[:, i] - a_i",
+   "mutated_line": "lag = np.zeros(B)",
+   "expected_red": [
+    "test_dist_rule.py::test_r5_progress_never_decreases_the_floor_holds_and_the_lag_form_equals_the_card_recursion"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_dist_rule.py::test_r5_progress_never_decreases_the_floor_holds_and_the_lag_form_equals_the_card_recursion"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  },
+  {
+   "id": "d7_speed_not_updated_from_the_new_arc",
+   "file": "src/dist_rule.py",
+   "original_line": "v_prev = (a_i - a_prev) / dt",
+   "mutated_line": "v_prev = v0.copy()",
+   "expected_red": [
+    "test_dist_rule.py::test_r5_progress_never_decreases_the_floor_holds_and_the_lag_form_equals_the_card_recursion"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_dist_rule.py::test_r5_stopped_lead_10m_gives_the_braking_limited_profile_and_counts_saturated_steps",
+    "test_dist_rule.py::test_r5_the_lateral_geometry_is_kept_on_a_curved_plan",
+    "test_dist_rule.py::test_r5_progress_never_decreases_the_floor_holds_and_the_lag_form_equals_the_card_recursion",
+    "test_dist_rule.py::test_never_constants_as_written_still_bind_on_contact_and_the_floor_lifts_hard_braking_plans_the_finding_of_DEFS_E5"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  },
+  {
+   "id": "d8_unchanged_steps_not_kept_bit_for_bit",
+   "file": "src/dist_rule.py",
+   "original_line": "pts[keep] = p64[b][keep]",
+   "mutated_line": "pts[keep] = pts[keep]",
+   "expected_red": [
+    "test_dist_rule.py::test_r5_a_faster_lead_leaves_the_plan_unchanged_bit_for_bit"
+   ],
+   "observed": "STILL-GREEN",
+   "rc": 0,
+   "failed": [],
+   "expected_all_red": false,
+   "why": ""
+  },
+  {
+   "id": "d9_tau_constant_zero",
+   "file": "src/dist_rule.py",
+   "original_line": "TAU_S = 1.2\n",
+   "mutated_line": "TAU_S = 0.0\n",
+   "expected_red": [
+    "test_dist_rule.py::test_r5_progress_never_decreases_the_floor_holds_and_the_lag_form_equals_the_card_recursion"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_dist_rule.py::test_r5_stopped_lead_10m_gives_the_braking_limited_profile_and_counts_saturated_steps",
+    "test_dist_rule.py::test_r5_progress_never_decreases_the_floor_holds_and_the_lag_form_equals_the_card_recursion"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  },
+  {
+   "id": "w1_progress_offset_dropped_from_the_source_gap",
+   "file": "src/v8f_t1_eval_rule.py",
+   "original_line": "g0 = g_src + a_l - a_m",
+   "mutated_line": "g0 = g_src",
+   "expected_red": [
+    "test_dist_rule.py::test_e2e_label_with_a_stopped_lead_reduces_progress_push_increases_it_plumb_and_a_far_lead_change_nothing"
+   ],
+   "observed": "STILL-GREEN",
+   "rc": 0,
+   "failed": [],
+   "expected_all_red": false,
+   "why": ""
+  },
+  {
+   "id": "w2_closing_speed_dropped_from_the_lead_speed",
+   "file": "src/v8f_t1_eval_rule.py",
+   "original_line": "v_L = np.maximum(0.0, v_l + c_src)",
+   "mutated_line": "v_L = np.maximum(0.0, v_l)",
+   "expected_red": [
+    "test_dist_rule.py::test_e2e_label_with_a_stopped_lead_reduces_progress_push_increases_it_plumb_and_a_far_lead_change_nothing"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_dist_rule.py::test_e2e_label_with_a_stopped_lead_reduces_progress_push_increases_it_plumb_and_a_far_lead_change_nothing"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  },
+  {
+   "id": "w3_rule_computed_but_plan_not_returned",
+   "file": "src/v8f_t1_eval_rule.py",
+   "original_line": "        return out.plan",
+   "mutated_line": "        return plan",
+   "expected_red": [
+    "test_dist_rule.py::test_e2e_label_with_a_stopped_lead_reduces_progress_push_increases_it_plumb_and_a_far_lead_change_nothing",
+    "test_dist_rule.py::test_mutation_the_line_that_applies_the_rule_removed_turns_the_reduction_check_red"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_dist_rule.py::test_e2e_label_with_a_stopped_lead_reduces_progress_push_increases_it_plumb_and_a_far_lead_change_nothing",
+    "test_dist_rule.py::test_mutation_the_line_that_applies_the_rule_removed_turns_the_reduction_check_red",
+    "test_dist_rule.py::test_cli_label_and_head_are_reachable_from_argparse_to_the_plan_and_a_mutation_turns_it_red"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  },
+  {
+   "id": "w4_rule_never_active",
+   "file": "src/v8f_t1_eval_rule.py",
+   "original_line": "out = R.distance_rule(plan, v0, present, g_src, g0, v_L, m=self.m, **self.kw)",
+   "mutated_line": "out = R.distance_rule(plan, v0, np.zeros_like(present), g_src, g0, v_L, m=self.m, **self.kw)",
+   "expected_red": [
+    "test_dist_rule.py::test_e2e_label_with_a_stopped_lead_reduces_progress_push_increases_it_plumb_and_a_far_lead_change_nothing"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_dist_rule.py::test_e2e_label_with_a_stopped_lead_reduces_progress_push_increases_it_plumb_and_a_far_lead_change_nothing",
+    "test_dist_rule.py::test_e2e_a_lead_at_the_ego_speed_leaves_every_mode_unchanged_while_active",
+    "test_dist_rule.py::test_mutation_the_line_that_applies_the_rule_removed_turns_the_reduction_check_red",
+    "test_dist_rule.py::test_r6_head_source_equals_lead_dump_on_the_same_frames_and_r4_no_token_after_the_tick",
+    "test_dist_rule.py::test_cli_label_and_head_are_reachable_from_argparse_to_the_plan_and_a_mutation_turns_it_red"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  },
+  {
+   "id": "w5_head_presence_threshold_0_5_to_0_0",
+   "file": "src/v8f_t1_eval_rule.py",
+   "original_line": "present = (p >= HEAD_P_MIN) & ok",
+   "mutated_line": "present = (p >= 0.0) & ok",
+   "expected_red": [
+    "test_dist_rule.py::test_r6_head_source_equals_lead_dump_on_the_same_frames_and_r4_no_token_after_the_tick"
+   ],
+   "observed": "STILL-GREEN",
+   "rc": 0,
+   "failed": [],
+   "expected_all_red": false,
+   "why": ""
+  },
+  {
+   "id": "w6_label_gap_upper_bound_removed",
+   "file": "src/v8f_t1_eval_rule.py",
+   "original_line": "return bool(self.valid[r] == 1 and np.isfinite(g) and 0.0 <= g <= GAP_MAX_M)",
+   "mutated_line": "return bool(self.valid[r] == 1 and np.isfinite(g) and 0.0 <= g)",
+   "expected_red": [
+    "test_dist_rule.py::test_label_source_equals_the_training_label_arrays_row_for_row"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_dist_rule.py::test_label_source_equals_the_training_label_arrays_row_for_row"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  },
+  {
+   "id": "w7_closing_run_step_break_removed",
+   "file": "src/v8f_t1_eval_rule.py",
+   "original_line": "abs(self.gap[f + 1] - self.gap[f]) <= STEP_MAX_M:",
+   "mutated_line": "abs(self.gap[f + 1] - self.gap[f]) <= 1e9:",
+   "expected_red": [
+    "test_dist_rule.py::test_label_source_equals_the_training_label_arrays_row_for_row"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_dist_rule.py::test_label_source_equals_the_training_label_arrays_row_for_row"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  },
+  {
+   "id": "w8_source_bad_ticks_stay_present",
+   "file": "src/v8f_t1_eval_rule.py",
+   "original_line": "present = present & ~src_bad",
+   "mutated_line": "present = present",
+   "expected_red": [
+    "test_dist_rule.py::test_e2e_inactive_wrapper_equals_the_unwrapped_rollout_exactly_for_every_mode"
+   ],
+   "observed": "STILL-GREEN",
+   "rc": 0,
+   "failed": [],
+   "expected_all_red": false,
+   "why": ""
+  },
+  {
+   "id": "w9_rule_flag_accepted_for_a_non_run_mode",
+   "file": "src/v8f_t1_eval_rule.py",
+   "original_line": "if mine.dist_rule != \"off\":",
+   "mutated_line": "if False:",
+   "expected_red": [
+    "test_dist_rule.py::test_cli_refusals"
+   ],
+   "observed": "STILL-GREEN",
+   "rc": 0,
+   "failed": [],
+   "expected_all_red": false,
+   "why": ""
+  },
+  {
+   "id": "q1_map_above_last_knot_not_shifted",
+   "file": "src/qcal_map.py",
+   "original_line": "q[hi] = gg[hi] - (xs[-1] - ys[-1])",
+   "mutated_line": "q[hi] = gg[hi]",
+   "expected_red": [
+    "test_margin_qcal.py::test_qmap_below_between_above_and_min_with_the_head_gap"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_margin_qcal.py::test_qmap_below_between_above_and_min_with_the_head_gap",
+    "test_margin_qcal.py::test_qcal_wrapper_applies_the_map_to_finite_head_gaps_only"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  },
+  {
+   "id": "q2_map_not_capped_at_the_head_gap",
+   "file": "src/qcal_map.py",
+   "original_line": "out[fin] = np.minimum(gg, q)",
+   "mutated_line": "out[fin] = q",
+   "expected_red": [
+    "test_margin_qcal.py::test_qmap_below_between_above_and_min_with_the_head_gap"
+   ],
+   "observed": "STILL-GREEN",
+   "rc": 0,
+   "failed": [],
+   "expected_all_red": false,
+   "why": ""
+  },
+  {
+   "id": "q3_map_below_first_knot_constant",
+   "file": "src/qcal_map.py",
+   "original_line": "q[lo] = ys[0] * gg[lo] / xs[0]",
+   "mutated_line": "q[lo] = ys[0]",
+   "expected_red": [
+    "test_margin_qcal.py::test_qmap_below_between_above_and_min_with_the_head_gap"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_margin_qcal.py::test_qmap_below_between_above_and_min_with_the_head_gap",
+    "test_margin_qcal.py::test_qcal_wrapper_applies_the_map_to_finite_head_gaps_only"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  },
+  {
+   "id": "q4_fit_level_20_to_50",
+   "file": "src/qcal_fit.py",
+   "original_line": "Q_LEVEL = 20.0",
+   "mutated_line": "Q_LEVEL = 50.0",
+   "expected_red": [
+    "test_margin_qcal.py::test_fit_arm_gives_the_20th_percentile_map_monotone_below_the_diagonal"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_margin_qcal.py::test_fit_arm_gives_the_20th_percentile_map_monotone_below_the_diagonal"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  },
+  {
+   "id": "q5_fit_pav_removed",
+   "file": "src/qcal_fit.py",
+   "original_line": "ys = np.minimum(pav(q, n), xs)",
+   "mutated_line": "ys = np.minimum(q, xs)",
+   "expected_red": [
+    "test_margin_qcal.py::test_fit_arm_gives_the_20th_percentile_map_monotone_below_the_diagonal"
+   ],
+   "observed": "STILL-GREEN",
+   "rc": 0,
+   "failed": [],
+   "expected_all_red": false,
+   "why": ""
+  },
+  {
+   "id": "q6_fit_eval_file_refusal_removed",
+   "file": "src/qcal_fit.py",
+   "original_line": "if \"_eval\" in os.path.basename(p):",
+   "mutated_line": "if False:",
+   "expected_red": [
+    "test_margin_qcal.py::test_fit_arm_refuses_an_evaluation_file"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_margin_qcal.py::test_fit_arm_refuses_an_evaluation_file"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  },
+  {
+   "id": "q7_calib_round_up_becomes_round_down",
+   "file": "src/margin_calib.py",
+   "original_line": "return float(math.ceil(max(0.0, float(x)) * 2.0 - 1e-9) / 2.0)",
+   "mutated_line": "return float(math.floor(max(0.0, float(x)) * 2.0 - 1e-9) / 2.0)",
+   "expected_red": [
+    "test_margin_qcal.py::test_up_half_rounds_up_to_half_metres_and_not_below_zero"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_margin_qcal.py::test_up_half_rounds_up_to_half_metres_and_not_below_zero",
+    "test_margin_qcal.py::test_calib_arm_over_read_percentiles_and_recall_on_the_near_rows"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  },
+  {
+   "id": "q8_calib_percentile_95_to_90",
+   "file": "src/margin_calib.py",
+   "original_line": "(50, 80, 95))",
+   "mutated_line": "(50, 80, 90))",
+   "expected_red": [
+    "test_margin_qcal.py::test_calib_arm_over_read_percentiles_and_recall_on_the_near_rows"
+   ],
+   "observed": "STILL-GREEN",
+   "rc": 0,
+   "failed": [],
+   "expected_all_red": false,
+   "why": ""
+  },
+  {
+   "id": "q9_calib_near_range_40_to_400",
+   "file": "src/margin_calib.py",
+   "original_line": "NEAR_M = 40.0",
+   "mutated_line": "NEAR_M = 400.0",
+   "expected_red": [
+    "test_margin_qcal.py::test_calib_arm_over_read_percentiles_and_recall_on_the_near_rows"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_margin_qcal.py::test_calib_arm_over_read_percentiles_and_recall_on_the_near_rows",
+    "test_margin_qcal.py::test_calib_arm_recall_counts_only_near_rows_and_picks_the_lowest_p_that_meets_the_bar"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  },
+  {
+   "id": "q10_margin_added_instead_of_subtracted",
+   "file": "src/v8f_t1_eval_rule_margin.py",
+   "original_line": "np.maximum(g - m, 0.0)",
+   "mutated_line": "np.maximum(g + m, 0.0)",
+   "expected_red": [
+    "test_margin_qcal.py::test_margin_lowers_only_finite_head_gaps_never_below_zero_and_zero_margin_is_identity"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_margin_qcal.py::test_margin_lowers_only_finite_head_gaps_never_below_zero_and_zero_margin_is_identity"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  },
+  {
+   "id": "q11_margin_range_refusal_removed",
+   "file": "src/v8f_t1_eval_rule_margin.py",
+   "original_line": "if not (0.0 <= mine.gap_margin_m <= 30.0):",
+   "mutated_line": "if False:",
+   "expected_red": [
+    "test_margin_qcal.py::test_margin_main_refusals_and_it_installs_the_constants_and_the_head_read"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_margin_qcal.py::test_margin_main_refusals_and_it_installs_the_constants_and_the_head_read"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  },
+  {
+   "id": "q12_margin_head_read_not_installed",
+   "file": "src/v8f_t1_eval_rule_margin.py",
+   "original_line": "W.head_values = head_values_margin ",
+   "mutated_line": "W.head_values = W.head_values ",
+   "expected_red": [
+    "test_margin_qcal.py::test_margin_main_refusals_and_it_installs_the_constants_and_the_head_read"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_margin_qcal.py::test_margin_main_refusals_and_it_installs_the_constants_and_the_head_read"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  },
+  {
+   "id": "q13_qcal_map_not_applied",
+   "file": "src/v8f_t1_eval_rule_qcal.py",
+   "original_line": "return p, QM.apply_map(g, MAP[\"xs\"], MAP[\"ys\"]).astype(g.dtype), c, ok",
+   "mutated_line": "return p, g, c, ok",
+   "expected_red": [
+    "test_margin_qcal.py::test_qcal_wrapper_applies_the_map_to_finite_head_gaps_only"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_margin_qcal.py::test_qcal_wrapper_applies_the_map_to_finite_head_gaps_only"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  },
+  {
+   "id": "q14_qcal_head_read_not_installed",
+   "file": "src/v8f_t1_eval_rule_qcal.py",
+   "original_line": "W.head_values = head_values_qcal ",
+   "mutated_line": "W.head_values = W.head_values ",
+   "expected_red": [
+    "test_margin_qcal.py::test_qcal_main_refuses_bad_p_min_and_a_map_that_fails_and_installs_the_map_and_the_head_read"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_margin_qcal.py::test_qcal_main_refuses_bad_p_min_and_a_map_that_fails_and_installs_the_map_and_the_head_read"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  }
+ ]
+}

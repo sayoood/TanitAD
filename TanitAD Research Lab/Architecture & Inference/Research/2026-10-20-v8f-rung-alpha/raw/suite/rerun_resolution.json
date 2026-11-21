@@ -1,0 +1,11 @@
+{
+ "what": "the 3 NEW failures of the sharded final-tree run (raw_compare.json) are environment artifacts of the SHARD HARNESS, not of the hold; each passes when re-run serially",
+ "rerun": "C:/Users/Admin/v8fa1/suite_snapshot2/stack: pytest -q tests/test_amp_and_threads.py tests/test_p10_pose_prior.py (serial, default env, package dir present) -> 33 passed in 11.5 s",
+ "resolutions": {
+  "tests.test_amp_and_threads::test_the_reordering_ACTUALLY_changes_the_thread_pool": "the test itself says the env must be scrubbed of OMP_NUM_THREADS; the shard harness sets OMP_NUM_THREADS=2 (to stop 12 processes oversubscribing 24 cores). Passes serially. Not touched by the hold.",
+  "tests.test_p10_pose_prior::test_a_fit_clips_are_TRAIN_clips_only_and_disjoint_from_eval139_and_eval141": "reads the banked fit record in the package dir raw/p10_pose/; the run-1 snapshot held stack/ + taniteval/ only. Passes with the package dir present (the repo always has it).",
+  "tests.test_p10_pose_prior::test_a_the_package_copy_and_the_shipped_copy_are_the_same_bytes_and_the_fit_record_says_what_it_fit": "same cause"
+ },
+ "net": "mine 118 failed/errored vs base 115; the 115 are IDENTICAL ids in both runs; after the rerun 0 of the 3 remain => 0 NEW failures",
+ "scope_note": "the base is the serial run of the pristine commit c415f1b2; the hold's run is sharded (a different order and process layout). Both fail the same 115 ids; no test passes on one and fails on the other apart from the 3 above."
+}

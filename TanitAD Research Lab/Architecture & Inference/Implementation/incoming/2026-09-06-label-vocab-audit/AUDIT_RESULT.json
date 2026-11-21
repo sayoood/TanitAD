@@ -1,0 +1,125 @@
+{
+ "audit": "TanitAD label-and-vocabulary audit",
+ "date": "2026-09-06",
+ "tier": "no model metric produced; this is a SUPERVISION/EXTRACTION census",
+ "vocab_sizes": {
+  "kin3_lat": 3,
+  "kin3_lon": 3,
+  "kin3_lat_classes": [
+   "lane_keep",
+   "turn_left",
+   "turn_right"
+  ],
+  "kin3_lon_classes": [
+   "brake_stop",
+   "steady",
+   "accelerate"
+  ],
+  "v7_tactical_goal_set": 22,
+  "v7_tactical_lat_actions": 8,
+  "v7_tactical_lon_actions": 8,
+  "v7_strategic_goal": 8,
+  "v7_strategic_action": 7,
+  "v7_nav_input": 3,
+  "v7_all_frozen_tokens": 52,
+  "v3_frozen_goal_vocab_slots": 18,
+  "v3_frozen_goal_vocab_tokens": 114
+ },
+ "supervised_heads_declared": {
+  "tac_lat": 8,
+  "tac_lon": 8,
+  "str_action": 7,
+  "str_goal": 8
+ },
+ "not_yet_extractable": {
+  "ABORT_LC": "needs a lane change BEGUN and then abandoned \u2014 a two-phase lateral signature we do not yet detect, and rare enough that no calibration reference exists in the corpus.",
+  "YIELD_MERGE": "needs MERGE (a perception claim) to coincide with a measured deceleration. MERGE itself now stands at 82 clips after the hazard guard, so the joint event is too rare to calibrate.",
+  "EXIT_LEFT_FOLLOW_ROUTE": "the CoT states exits WITHOUT a time, so an exit cannot be placed in the 8-30 s strategic band; and geometry cannot separate an exit from a bend, which is why the PI directed that exits come from TERMS. Needs a timed exit signal.",
+  "EXIT_RIGHT_FOLLOW_ROUTE": "the CoT states exits WITHOUT a time, so an exit cannot be placed in the 8-30 s strategic band; and geometry cannot separate an exit from a bend, which is why the PI directed that exits come from TERMS. Needs a timed exit signal.",
+  "PREPARE_EXIT_FOLLOW_ROUTE": "the CoT states exits WITHOUT a time, so an exit cannot be placed in the 8-30 s strategic band; and geometry cannot separate an exit from a bend, which is why the PI directed that exits come from TERMS. Needs a timed exit signal.",
+  "LANE_CHANGE_L_FOLLOW_ROUTE": "same timing problem as the exits: a lane change is stated without a time, and MEASURED, the median claimed lane change does not displace a full lane width inside any window we observe (+1.02 m over the control at -3..+8 s, against a ~3.5 m lane). It cannot be placed in the strategic band on present evidence.",
+  "LANE_CHANGE_R_FOLLOW_ROUTE": "same timing problem as the exits: a lane change is stated without a time, and MEASURED, the median claimed lane change does not displace a full lane width inside any window we observe (+1.02 m over the control at -3..+8 s, against a ~3.5 m lane). It cannot be placed in the strategic band on present evidence.",
+  "PREPARE_LANE_CHANGE_FOLLOW_ROUTE": "same timing problem as the exits: a lane change is stated without a time, and MEASURED, the median claimed lane change does not displace a full lane width inside any window we observe (+1.02 m over the control at -3..+8 s, against a ~3.5 m lane). It cannot be placed in the strategic band on present evidence."
+ },
+ "loss_weights_resolved": {
+  "TRAJ_WEIGHT": 1.0,
+  "ANCHOR_CLS_WEIGHT": 1.0,
+  "SEL_V3_WEIGHT": 1.0,
+  "LAW_WEIGHT": 0.5,
+  "GOAL_TAC_WEIGHT": 0.5,
+  "ROUTE_WEIGHT": 0.1,
+  "GOAL_STR_WEIGHT": 0.1,
+  "LAT_WEIGHT": 0.05,
+  "LON_WEIGHT": 0.05,
+  "AGENT_WEIGHT_DEFAULT": 0.0,
+  "GOAL_POINT_WEIGHT_DEFAULT": 0.0,
+  "U0_WEIGHT_DEFAULT": 0.0
+ },
+ "v72_band_coverage": {
+  "corpus": "s2_labels_v7.2_eval.jsonl.gz (v7.2 EVAL split)",
+  "records": 147,
+  "unique_clip_ids": 147,
+  "records_per_clip": 1,
+  "t0_s_values": [
+   8.0
+  ],
+  "band_tolerance_s": 2.0,
+  "frames_with_tactical_gt": 6027,
+  "usable_frames_at_10hz": 50243,
+  "coverage_fraction": 0.12
+ },
+ "gradient_census": {
+  "method": "real backward through refc_v3_train.compute_losses_v3 on a synthetic batch; p.grad is None per module",
+  "kin3_no_gradient_modules": [
+   "core.route_head",
+   "scorer.goal_point"
+  ],
+  "v7.0_no_gradient_modules": [
+   "core.route_head",
+   "scorer.goal_point"
+  ],
+  "control_traj_decoder_has_gradient": true,
+  "route_head_is_mask_artifact_not_dead": {
+   "route_valid_as_built": false,
+   "route_loss_as_built": 0.0,
+   "route_valid_forced_true": true,
+   "route_loss_forced": 0.68703,
+   "grad_none_forced": false
+  }
+ },
+ "echo_test_route_vs_nav_SYNTHETIC": {
+  "scope": "SYNTHETIC unicycle corpus - functional coupling of the two labelers, NOT the real corpus distribution",
+  "nav_commands": [
+   "follow",
+   "left",
+   "right",
+   "straight"
+  ],
+  "route_classes": [
+   "route_left",
+   "route_straight",
+   "route_right"
+  ],
+  "n_windows": 1630,
+  "purity_best_route_per_nav": 0.7626,
+  "uniform_prior": 0.3333,
+  "per_token": {
+   "follow->route_straight": [
+    253,
+    253,
+    1.0
+   ],
+   "left->route_left": [
+    529,
+    553,
+    0.957
+   ],
+   "right->route_right": [
+    461,
+    824,
+    0.559
+   ],
+   "straight": "absent"
+  }
+ }
+}

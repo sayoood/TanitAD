@@ -1,0 +1,198 @@
+{
+ "binding": {
+  "argv": [
+   "--backbone",
+   "vitl16",
+   "--targets",
+   "/workspace/data/refe_navtrain/train_grow_cmd_3c",
+   "--images",
+   "/workspace/data/navtrain_pixels",
+   "--calib",
+   "/workspace/data/refe_navtrain/train_grow/calib_table.json",
+   "--metric-cache",
+   "/workspace/data/refe_navtrain/metric_cache",
+   "--scorer-sees-trunk",
+   "--yaw-wrap",
+   "off",
+   "--nav-mode",
+   "command",
+   "--labeller",
+   "online",
+   "--label-workers",
+   "4",
+   "--epochs",
+   "25",
+   "--epoch-unit",
+   "scenes",
+   "--batch",
+   "4",
+   "--accum",
+   "64",
+   "--lr",
+   "2e-4",
+   "--weight-decay",
+   "0.01",
+   "--amp",
+   "bf16",
+   "--score-w",
+   "0.1",
+   "--tf32",
+   "--compile",
+   "--workers",
+   "2",
+   "--log-every",
+   "1",
+   "--ckpt-every-min",
+   "20",
+   "--out",
+   "/workspace/data/refe_runs/p6_paper_faithful",
+   "--resume"
+  ],
+  "argv_sha256": "e35d2898c9776b86188f3013252c642e9543c576b73a2ae1277e05f5c675bbb9",
+  "commit": "a5a4ee8b7309379c5288be81f3011d36581add9e",
+  "data": {
+   "--calib": {
+    "bytes": 2336659,
+    "kind": "file",
+    "method": "sha256-v1",
+    "path": "/workspace/data/refe_navtrain/train_grow/calib_table.json",
+    "sha256": "772c00abfd5070f7f6ecb648e45e7d422a3aeb3c5112ab12c43bbe5eb4a8ab6f"
+   },
+   "--images": {
+    "bytes": 85872932604,
+    "kind": "dir",
+    "listing_sha256": "95155321fc232cbd371cafc9be0f868654fa6baf90b3cf0fc93989b55a85182b",
+    "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; _v2manifest.pt excluded -- a cache rewrites it on first use)",
+    "n_files": 413184,
+    "path": "/workspace/data/navtrain_pixels"
+   },
+   "--metric-cache": {
+    "bytes": 45254695096,
+    "kind": "dir",
+    "listing_sha256": "e700ac63f3aa2cd9db58fbd78af591a9b6ead3f52ca222c3483c664ead30cbd0",
+    "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; _v2manifest.pt excluded -- a cache rewrites it on first use)",
+    "n_files": 124858,
+    "path": "/workspace/data/refe_navtrain/metric_cache"
+   },
+   "--targets": {
+    "bytes": 597079091,
+    "kind": "dir",
+    "listing_sha256": "d19d78cf2f3e95c5bb95e1fbc8f06816e50b8a1a310473c3eef8a732c05f071c",
+    "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; _v2manifest.pt excluded -- a cache rewrites it on first use)",
+    "n_files": 4,
+    "path": "/workspace/data/refe_navtrain/train_grow_cmd_3c"
+   },
+   "gate:egr_json": {
+    "bytes": 729,
+    "kind": "file",
+    "method": "sha256-v1",
+    "path": "/workspace/data/refe_p6/egr/g_egr_result.json",
+    "sha256": "db9a0d79280550d68a5d1d03f36d08d95b4e3e48e0405c7aab64639458af5a6e"
+   },
+   "gate:lab_json": {
+    "bytes": 354,
+    "kind": "file",
+    "method": "sha256-v1",
+    "path": "/workspace/data/refe_p6/lab.json",
+    "sha256": "d6d61923684b4b408e611073cd601cdee966dff92eba943061fa9c8ba2b71680"
+   },
+   "gate:mem_metrics": {
+    "bytes": 4564,
+    "kind": "file",
+    "method": "sha256-v1",
+    "path": "/workspace/data/refe_p6/mem_metrics.jsonl",
+    "sha256": "77257ec56e4790a077d668145698bcce9c779ee8505ac91f4a18c61e3c3af0ff"
+   }
+  },
+  "data_sha256": "292f13e981364021b9814e70cb5b1ae6103cee8db7eefb1abf48cefa4946d79d",
+  "gate_inputs": {
+   "gate:egr_json": "/workspace/data/refe_p6/egr/g_egr_result.json",
+   "gate:lab_json": "/workspace/data/refe_p6/lab.json",
+   "gate:mem_metrics": "/workspace/data/refe_p6/mem_metrics.jsonl"
+  },
+  "profile": "refe_p6",
+  "trainer": "refe/train.py",
+  "tree_sha256": "0f1e7d6b1be3ebf522c7f6221fc82903105cf8845f1de630ab4b4391324dffc1"
+ },
+ "checks": {
+  "G-CKPT": {
+   "evidence_sha256": "03698a655cf5c1c6fd6636e9098f9cd26a1bc9f4efbed49ffc8337d47dcc2869",
+   "finished_utc": "2026-10-18T06:19:17Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-CLOCK": {
+   "evidence_sha256": "b3c17b6931a664053770addfb15b5aa14d71d86e7db38ae216cac425e050c356",
+   "finished_utc": "2026-10-18T06:20:59Z",
+   "reasons": [
+    "step-0 bank has 167300 tuples != registered 189888"
+   ],
+   "status": "FAIL"
+  },
+  "G-DVB": {
+   "evidence_sha256": "07c033d3c2bdd9cd2e445c11e4a6f41403ea025d94e06b358ab2fdf906b799de",
+   "finished_utc": "2026-10-18T06:20:46Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-EGR": {
+   "evidence_sha256": "0f5c31d2845dbd98d84fd9f8084538db135af98632a48200e5d645195a3a56ea",
+   "finished_utc": "2026-10-18T06:24:58Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-EVAL": {
+   "evidence_sha256": "4e8e73e6deb1d588951ae957b89765d055e5a45af6e62e39b343d33038694895",
+   "finished_utc": "2026-10-18T06:21:12Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-HYG": {
+   "evidence_sha256": "a51cac1b4b6687d47d78c88c38967d19c97a233dd5d9d87f8dc2c6001ac6a2b5",
+   "finished_utc": "2026-10-18T06:20:46Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-LIVE": {
+   "evidence_sha256": "96ac7efe3f716c63314b119e7bed3ccadfa8a81444584fd3991561d25bfc7334",
+   "finished_utc": "2026-10-18T06:20:59Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-LIVE-LAB": {
+   "evidence_sha256": "48d387d9755cecc519cedd46280135ab0ca3626e4df7f210f06f098b09e82cff",
+   "finished_utc": "2026-10-18T06:24:57Z",
+   "reasons": [
+    "GPU stall 10.3 % of a window > 5 % (launch accum 64, max over windows after the first)"
+   ],
+   "status": "FAIL"
+  },
+  "G-LIVE-MEM": {
+   "evidence_sha256": "ecf28df5a4ad18ca24f3a47ce1702407ab6a9fced3de87bc361c47d8929daecc",
+   "finished_utc": "2026-10-18T06:24:58Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-SUITE": {
+   "evidence_sha256": "874c8a74dc24145737cc8a8f72279b5f6d824a6b64c9b3eabc5842f4fb9b6da0",
+   "finished_utc": "2026-10-18T06:24:57Z",
+   "reasons": [
+    "test_p6_chain.py: rc 1, 'ZZP6CHAIN_PASS' NOT seen"
+   ],
+   "status": "FAIL"
+  }
+ },
+ "created_utc": "2026-10-18T06:26:12Z",
+ "gate_sha256": "a44d8552b1085ba112ddc75c664d7295e304f450665f04f10858f733d76ea637",
+ "hmac_sha256": "3d8639717b51dc4f08a2d71c59474764cd49a658c07472a7f2ee19dee3178f14",
+ "key_id": "2bb54d5b741c0d79",
+ "kind": "launch-gate-token",
+ "reasons": [
+  "G-CLOCK FAIL: step-0 bank has 167300 tuples != registered 189888",
+  "G-SUITE FAIL: test_p6_chain.py: rc 1, 'ZZP6CHAIN_PASS' NOT seen",
+  "G-LIVE-LAB FAIL: GPU stall 10.3 % of a window > 5 % (launch accum 64, max over windows after the first)",
+  "checks not PASS: ['G-CLOCK', 'G-SUITE', 'G-LIVE-LAB']"
+ ],
+ "schema": "tanitad.launch_gate/1",
+ "verdict": "FAIL"
+}

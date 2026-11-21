@@ -1,0 +1,4921 @@
+{
+ "tool": "n1dh_ho_read.py",
+ "card": "PREREG_V8F_N1DH.md sha256 f1df05bc (FROZEN 2026-11-20)",
+ "evidence_class": "MEASURED (ours; T1-kin dumps, zero training)",
+ "estimator": "taniteval.ci.paired_episode_cluster_bootstrap B=2000 seed 0 (F:/TanitAD-scratch/n1dc/read_n1dh/tree/taniteval/taniteval/ci.py); answers 'another draw of EPISODES' only; training variance = the two seeds; the executor is deterministic",
+ "executor_of_record": "T1-kin/hb0.2 (v8f_t1_eval_hb.py --kappa-max 0.2, bcf267ce; PI ruling D16-D); T1-kin/old reported beside",
+ "tier": "T1-kin (m=10 causal) cells; T0 block = tick-0 plan",
+ "limit": "optimistic by construction: route supplied along the driven path",
+ "grid_sha256": "ca289d0f40a8f71043796fe626b26ecaa141853f843acdb1eecbf5648b9ab148",
+ "replay_n1dc": false,
+ "mutant": false,
+ "problems": [],
+ "notes": [],
+ "executors": {
+  "hb": {
+   "dump_dirs": {
+    "N1R_s0": "F:/TanitAD-scratch/n1dc/read/in/n1dw/hb/out/hb0.2/n1r/t1/dump_NAVRBD-HO-N1R_s0_m10_causal_heads",
+    "N1R_s1": "F:/TanitAD-scratch/n1dc/read/in/n1dw/hb/out/hb0.2/n1r/t1/dump_NAVRBD-HO-N1R_s1_m10_causal_heads",
+    "N1D_s0": "F:/TanitAD-scratch/n1dc/read/in/n1dw/hb/out/hb0.2/n1d/t1/dump_NAVRBD-HO-N1D_s0_m10_causal_heads",
+    "N1D_s1": "F:/TanitAD-scratch/n1dc/read/in/n1dw/hb/out/hb0.2/n1d/t1/dump_NAVRBD-HO-N1D_s1_m10_causal_heads",
+    "N1D_s0Z": "F:/TanitAD-scratch/n1dc/read/in/n1dw/hb/out/hb0.2/n1d/t1_zero/dump_NAVRBD-HO-N1D_s0_zero_m10_causal_heads",
+    "N1D_s1Z": "F:/TanitAD-scratch/n1dc/read/in/n1dw/hb/out/hb0.2/n1d/t1_zero/dump_NAVRBD-HO-N1D_s1_zero_m10_causal_heads",
+    "N1DH_s0": "F:/TanitAD-scratch/n1dc/read_n1dh/in/n1dh/hb0.2/t1/dump_N1DH-HO-N1DH_s0_m10_causal_heads",
+    "N1DH_s0Z": "F:/TanitAD-scratch/n1dc/read_n1dh/in/n1dh/hb0.2/t1_zero/dump_N1DH-HO-N1DH_s0_zero_m10_causal_heads",
+    "N1DH_s0U": "F:/TanitAD-scratch/n1dc/read_n1dh/in/n1dh/hb0.2/t1/dump_N1DH-HO-N1DH_s0_zuse_m10_causal_heads",
+    "N1DH_s1": "F:/TanitAD-scratch/n1dc/read_n1dh/in/n1dh/hb0.2/t1/dump_N1DH-HO-N1DH_s1_m10_causal_heads",
+    "N1DH_s1Z": "F:/TanitAD-scratch/n1dc/read_n1dh/in/n1dh/hb0.2/t1_zero/dump_N1DH-HO-N1DH_s1_zero_m10_causal_heads",
+    "N1DH_s1U": "F:/TanitAD-scratch/n1dc/read_n1dh/in/n1dh/hb0.2/t1/dump_N1DH-HO-N1DH_s1_zuse_m10_causal_heads",
+    "N1DC_s0": "F:/TanitAD-scratch/n1dc/read_n1dh/in/n1dc/hb0.2/t1/dump_N1DC-HO-N1DC_s0_m10_causal_heads",
+    "N1DC_s1": "F:/TanitAD-scratch/n1dc/read_n1dh/in/n1dc/hb0.2/t1/dump_N1DC-HO-N1DC_s1_m10_causal_heads"
+   },
+   "missing": [],
+   "K-RE": {
+    "acc": {
+     "N1R_s0": {
+      "live": 0.6101813110181311,
+      "banked": 0.6101813110181311,
+      "equal": true
+     },
+     "N1R_s1": {
+      "live": 0.6347629009762901,
+      "banked": 0.6347629009762901,
+      "equal": true
+     },
+     "N1D_s0": {
+      "live": 0.6345885634588564,
+      "banked": 0.6345885634588564,
+      "equal": true
+     },
+     "N1D_s1": {
+      "live": 0.6514993026499303,
+      "banked": 0.6514993026499303,
+      "equal": true
+     },
+     "N1D_s0Z": {
+      "live": 0.596931659693166,
+      "banked": 0.596931659693166,
+      "equal": true
+     },
+     "N1D_s1Z": {
+      "live": 0.6324965132496513,
+      "banked": 0.6324965132496513,
+      "equal": true
+     }
+    },
+    "pass": true,
+    "banked_source": "RESULT_N1DW_D1HO_HB.json D1_HO_each_acc"
+   },
+   "K1_self_pair_N1R_s0": {
+    "delta": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "pass": true
+   },
+   "K-CONST": {
+    "majority_class": "turn_right",
+    "majority_share": 0.3382147838214784,
+    "constant_accuracy": 0.3382147838214784,
+    "must_read": 0.338215,
+    "pass": true
+   },
+   "T0_level": {
+    "N1R_s0": {
+     "point": 0.6101813110181311,
+     "lo": 0.5885,
+     "hi": 0.6308
+    },
+    "N1R_s1": {
+     "point": 0.6194211994421199,
+     "lo": 0.5984,
+     "hi": 0.6393
+    },
+    "N1D_s0": {
+     "point": 0.6265690376569037,
+     "lo": 0.6055,
+     "hi": 0.6468
+    },
+    "N1D_s1": {
+     "point": 0.6349372384937239,
+     "lo": 0.6141,
+     "hi": 0.6544
+    },
+    "N1DH_s0": {
+     "point": 0.6176778242677824,
+     "lo": 0.5967,
+     "hi": 0.6381
+    },
+    "N1DH_s1": {
+     "point": 0.6440027894002789,
+     "lo": 0.6239,
+     "hi": 0.6631
+    },
+    "N1DC_s0": {
+     "point": 0.6223849372384938,
+     "lo": 0.6017,
+     "hi": 0.6426
+    },
+    "N1DC_s1": {
+     "point": 0.6379009762900977,
+     "lo": 0.6169,
+     "hi": 0.6581
+    }
+   },
+   "K-T0_N1D_rederived": {
+    "cells": {
+     "N1D_s0": {
+      "recomputed": 0.6265690376569037,
+      "banked_PREREG_N1D_T0T1": 0.6265690376569037,
+      "abs_diff": 0.0,
+      "pass": true
+     },
+     "N1D_s1": {
+      "recomputed": 0.6349372384937239,
+      "banked_PREREG_N1D_T0T1": 0.6349372384937239,
+      "abs_diff": 0.0,
+      "pass": true
+     }
+    },
+    "pass": true,
+    "note": "N1D T0 = TAC-LAT of the tick-0 plan `ol` of the same dumps (as n1dwt0t1_read.py); tick 0 does not depend on the rollout executor"
+   },
+   "floor": {
+    "F_HO_card": 0.042364016736401666,
+    "F_HO_live": 0.024581589958158956,
+    "F_HO_used": 0.042364016736401666,
+    "seed_draw_N1D": 0.016910739191073887,
+    "seed_draw_N1DH": 0.034867503486750384,
+    "bar": 0.042364016736401666,
+    "bar_rule": "max(0.0383, F_HO, |N1D_s1-N1D_s0|, |N1DH_s1-N1DH_s0|)"
+   },
+   "accuracy": {
+    "N1R_s0": 0.6101813110181311,
+    "N1R_s1": 0.6347629009762901,
+    "N1D_s0": 0.6345885634588564,
+    "N1D_s1": 0.6514993026499303,
+    "N1D_s0Z": 0.596931659693166,
+    "N1D_s1Z": 0.6324965132496513,
+    "N1DH_s0": 0.6316248256624826,
+    "N1DH_s0Z": 0.5930962343096234,
+    "N1DH_s0U": 0.6314504881450488,
+    "N1DH_s1": 0.666492329149233,
+    "N1DH_s1Z": 0.6370292887029289,
+    "N1DH_s1U": 0.6666666666666666,
+    "N1DC_s0": 0.6391213389121339,
+    "N1DC_s1": 0.6582984658298466
+   },
+   "gt_class_share": {
+    "lane_keep": 0.33716875871687585,
+    "turn_left": 0.32461645746164575,
+    "turn_right": 0.3382147838214784
+   },
+   "D1_HO_deciding_N1DH-N1D": {
+    "N1DH_s0": {
+     "status": "OK",
+     "delta": -0.002963737796373822,
+     "lo": -0.0121,
+     "hi": 0.0061,
+     "separated": false,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "bar": 0.042364016736401666,
+     "gain": false,
+     "cost": false,
+     "acc_arm": 0.6316248256624826,
+     "acc_ref": 0.6345885634588564
+    },
+    "N1DH_s1": {
+     "status": "OK",
+     "delta": 0.014993026499302675,
+     "lo": 0.004,
+     "hi": 0.0253,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "bar": 0.042364016736401666,
+     "gain": false,
+     "cost": false,
+     "acc_arm": 0.666492329149233,
+     "acc_ref": 0.6514993026499303
+    }
+   },
+   "D1_HO_beside_N1DH-N1R": {
+    "N1DH_s0": {
+     "status": "OK",
+     "delta": 0.021443514644351458,
+     "lo": 0.0069,
+     "hi": 0.0349,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "bar": 0.042364016736401666,
+     "gain": false,
+     "cost": false,
+     "acc_arm": 0.6316248256624826,
+     "acc_ref": 0.6101813110181311
+    },
+    "N1DH_s1": {
+     "status": "OK",
+     "delta": 0.031729428172942886,
+     "lo": 0.0184,
+     "hi": 0.0451,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "bar": 0.042364016736401666,
+     "gain": false,
+     "cost": false,
+     "acc_arm": 0.666492329149233,
+     "acc_ref": 0.6347629009762901
+    }
+   },
+   "D1_HO_beside_N1DH-N1DC": {
+    "N1DH_s0": {
+     "status": "OK",
+     "delta": -0.007496513249651282,
+     "lo": -0.017,
+     "hi": 0.0014,
+     "separated": false,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "bar": 0.042364016736401666,
+     "gain": false,
+     "cost": false,
+     "acc_arm": 0.6316248256624826,
+     "acc_ref": 0.6391213389121339
+    },
+    "N1DH_s1": {
+     "status": "OK",
+     "delta": 0.008193863319386319,
+     "lo": -0.0007,
+     "hi": 0.0171,
+     "separated": false,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "bar": 0.042364016736401666,
+     "gain": false,
+     "cost": false,
+     "acc_arm": 0.666492329149233,
+     "acc_ref": 0.6582984658298466
+    }
+   },
+   "R1_LON_LAT_HO_beside_no_bar_N1DH-N1DC": {
+    "N1DH_s0": {
+     "operative_0_2s:ade_m": {
+      "status": "OK",
+      "delta": -0.0006434291451850593,
+      "lo": -0.0025,
+      "hi": 0.0014,
+      "separated": false,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "PRIMARY",
+      "higher_is_better": false
+     },
+     "operative_0_2s:fde_m": {
+      "status": "OK",
+      "delta": 0.0006362551113340276,
+      "lo": -0.0048,
+      "hi": 0.0064,
+      "separated": false,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "PRIMARY",
+      "higher_is_better": false
+     },
+     "operative_0_2s:speed_mae_mps": {
+      "status": "OK",
+      "delta": -0.0034527837845411136,
+      "lo": -0.0048,
+      "hi": -0.0021,
+      "separated": true,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "LONGITUDINAL",
+      "higher_is_better": false
+     },
+     "operative_0_2s:along_mae_m": {
+      "status": "OK",
+      "delta": -0.0021324069025222825,
+      "lo": -0.0032,
+      "hi": -0.001,
+      "separated": true,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "LONGITUDINAL",
+      "higher_is_better": false
+     },
+     "operative_0_2s:accel_mae_mps2": {
+      "status": "OK",
+      "delta": -0.005637440016834083,
+      "lo": -0.0078,
+      "hi": -0.0036,
+      "separated": true,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "LONGITUDINAL",
+      "higher_is_better": false
+     },
+     "operative_0_2s:cross_mae_m": {
+      "status": "OK",
+      "delta": 0.0010229228850940353,
+      "lo": -0.0007,
+      "hi": 0.0029,
+      "separated": false,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "LATERAL",
+      "higher_is_better": false
+     },
+     "operative_0_2s:heading_mae_deg": {
+      "status": "OK",
+      "delta": 0.002904955584591029,
+      "lo": -0.0189,
+      "hi": 0.0261,
+      "separated": false,
+      "n_windows": 5536,
+      "n_episodes": 497,
+      "family": "LATERAL",
+      "higher_is_better": false
+     },
+     "operative_0_2s:yaw_rate_mae_degps": {
+      "status": "OK",
+      "delta": -0.013868811555896698,
+      "lo": -0.0671,
+      "hi": 0.0363,
+      "separated": false,
+      "n_windows": 5523,
+      "n_episodes": 497,
+      "family": "LATERAL",
+      "higher_is_better": false
+     },
+     "operative_0_2s:curvature_mae_1pm": {
+      "status": "OK",
+      "delta": -0.0012296729850086868,
+      "lo": -0.0029,
+      "hi": 0.0002,
+      "separated": false,
+      "n_windows": 5523,
+      "n_episodes": 497,
+      "family": "LATERAL",
+      "higher_is_better": false
+     },
+     "operative_0_2s:dk_hw_abs_err_m": {
+      "status": "NOT-COMPUTABLE",
+      "n_windows": 0,
+      "n_episodes": 0,
+      "reason": "no lead block exists for held-out clips; n = 0",
+      "family": "LONGITUDINAL",
+      "higher_is_better": false
+     },
+     "operative_0_2s:dk_tg_abs_err_s": {
+      "status": "NOT-COMPUTABLE",
+      "n_windows": 0,
+      "n_episodes": 0,
+      "reason": "no lead block exists for held-out clips; n = 0",
+      "family": "LONGITUDINAL",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:ade_m": {
+      "status": "OK",
+      "delta": 0.017432079747871754,
+      "lo": -0.0228,
+      "hi": 0.0564,
+      "separated": false,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "PRIMARY",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:fde_m": {
+      "status": "OK",
+      "delta": 0.02769306392452009,
+      "lo": -0.071,
+      "hi": 0.1261,
+      "separated": false,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "PRIMARY",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:speed_mae_mps": {
+      "status": "OK",
+      "delta": -0.039601251053857034,
+      "lo": -0.0604,
+      "hi": -0.0173,
+      "separated": true,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "LONGITUDINAL",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:along_mae_m": {
+      "status": "OK",
+      "delta": -0.03357531697311389,
+      "lo": -0.0601,
+      "hi": -0.0072,
+      "separated": true,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "LONGITUDINAL",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:accel_mae_mps2": {
+      "status": "OK",
+      "delta": -0.12622601362347385,
+      "lo": -0.1945,
+      "hi": -0.0624,
+      "separated": true,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "LONGITUDINAL",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:cross_mae_m": {
+      "status": "OK",
+      "delta": 0.059726117286859726,
+      "lo": 0.0235,
+      "hi": 0.0962,
+      "separated": true,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "LATERAL",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:heading_mae_deg": {
+      "status": "OK",
+      "delta": -0.01484109037729553,
+      "lo": -0.2304,
+      "hi": 0.2058,
+      "separated": false,
+      "n_windows": 5582,
+      "n_episodes": 497,
+      "family": "LATERAL",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:yaw_rate_mae_degps": {
+      "status": "OK",
+      "delta": -2.6417515620850196,
+      "lo": -3.3577,
+      "hi": -1.9653,
+      "separated": true,
+      "n_windows": 5563,
+      "n_episodes": 497,
+      "family": "LATERAL",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:curvature_mae_1pm": {
+      "status": "OK",
+      "delta": -0.019632174396790297,
+      "lo": -0.0271,
+      "hi": -0.0121,
+      "separated": true,
+      "n_windows": 5563,
+      "n_episodes": 497,
+      "family": "LATERAL",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:dk_hw_abs_err_m": {
+      "status": "NOT-COMPUTABLE",
+      "n_windows": 0,
+      "n_episodes": 0,
+      "reason": "no lead block exists for held-out clips; n = 0",
+      "family": "LONGITUDINAL",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:dk_tg_abs_err_s": {
+      "status": "NOT-COMPUTABLE",
+      "n_windows": 0,
+      "n_episodes": 0,
+      "reason": "no lead block exists for held-out clips; n = 0",
+      "family": "LONGITUDINAL",
+      "higher_is_better": false
+     },
+     "TAC-LAT": {
+      "status": "OK",
+      "delta": -0.007496513249651282,
+      "lo": -0.017,
+      "hi": 0.0014,
+      "separated": false,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "TACTICAL",
+      "higher_is_better": true
+     },
+     "TAC-LON": {
+      "status": "OK",
+      "delta": 0.010285913528591428,
+      "lo": 0.0018,
+      "hi": 0.0181,
+      "separated": true,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "TACTICAL",
+      "higher_is_better": true
+     }
+    },
+    "N1DH_s1": {
+     "operative_0_2s:ade_m": {
+      "status": "OK",
+      "delta": 0.006477200518308912,
+      "lo": 0.004,
+      "hi": 0.009,
+      "separated": true,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "PRIMARY",
+      "higher_is_better": false
+     },
+     "operative_0_2s:fde_m": {
+      "status": "OK",
+      "delta": 0.014677427858061587,
+      "lo": 0.0073,
+      "hi": 0.022,
+      "separated": true,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "PRIMARY",
+      "higher_is_better": false
+     },
+     "operative_0_2s:speed_mae_mps": {
+      "status": "OK",
+      "delta": 0.015297925770770493,
+      "lo": 0.0126,
+      "hi": 0.018,
+      "separated": true,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "LONGITUDINAL",
+      "higher_is_better": false
+     },
+     "operative_0_2s:along_mae_m": {
+      "status": "OK",
+      "delta": 0.011852000693716114,
+      "lo": 0.0099,
+      "hi": 0.014,
+      "separated": true,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "LONGITUDINAL",
+      "higher_is_better": false
+     },
+     "operative_0_2s:accel_mae_mps2": {
+      "status": "OK",
+      "delta": 0.012482487725696267,
+      "lo": 0.0088,
+      "hi": 0.0163,
+      "separated": true,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "LONGITUDINAL",
+      "higher_is_better": false
+     },
+     "operative_0_2s:cross_mae_m": {
+      "status": "OK",
+      "delta": -0.004181353844067676,
+      "lo": -0.0062,
+      "hi": -0.0021,
+      "separated": true,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "LATERAL",
+      "higher_is_better": false
+     },
+     "operative_0_2s:heading_mae_deg": {
+      "status": "OK",
+      "delta": -0.03847826937154286,
+      "lo": -0.0669,
+      "hi": -0.0106,
+      "separated": true,
+      "n_windows": 5530,
+      "n_episodes": 497,
+      "family": "LATERAL",
+      "higher_is_better": false
+     },
+     "operative_0_2s:yaw_rate_mae_degps": {
+      "status": "OK",
+      "delta": -0.14074076543164082,
+      "lo": -0.2274,
+      "hi": -0.0679,
+      "separated": true,
+      "n_windows": 5515,
+      "n_episodes": 497,
+      "family": "LATERAL",
+      "higher_is_better": false
+     },
+     "operative_0_2s:curvature_mae_1pm": {
+      "status": "OK",
+      "delta": -0.0028503469615320798,
+      "lo": -0.0054,
+      "hi": -0.0008,
+      "separated": true,
+      "n_windows": 5515,
+      "n_episodes": 497,
+      "family": "LATERAL",
+      "higher_is_better": false
+     },
+     "operative_0_2s:dk_hw_abs_err_m": {
+      "status": "NOT-COMPUTABLE",
+      "n_windows": 0,
+      "n_episodes": 0,
+      "reason": "no lead block exists for held-out clips; n = 0",
+      "family": "LONGITUDINAL",
+      "higher_is_better": false
+     },
+     "operative_0_2s:dk_tg_abs_err_s": {
+      "status": "NOT-COMPUTABLE",
+      "n_windows": 0,
+      "n_episodes": 0,
+      "reason": "no lead block exists for held-out clips; n = 0",
+      "family": "LONGITUDINAL",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:ade_m": {
+      "status": "OK",
+      "delta": 0.0356044872865402,
+      "lo": -0.0035,
+      "hi": 0.0783,
+      "separated": false,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "PRIMARY",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:fde_m": {
+      "status": "OK",
+      "delta": 0.04757644920479187,
+      "lo": -0.0468,
+      "hi": 0.1532,
+      "separated": false,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "PRIMARY",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:speed_mae_mps": {
+      "status": "OK",
+      "delta": 0.027474564408597635,
+      "lo": 0.0041,
+      "hi": 0.0507,
+      "separated": true,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "LONGITUDINAL",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:along_mae_m": {
+      "status": "OK",
+      "delta": 0.07970991414982809,
+      "lo": 0.0459,
+      "hi": 0.1147,
+      "separated": true,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "LONGITUDINAL",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:accel_mae_mps2": {
+      "status": "OK",
+      "delta": 0.08694178943647923,
+      "lo": 0.0256,
+      "hi": 0.1515,
+      "separated": true,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "LONGITUDINAL",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:cross_mae_m": {
+      "status": "OK",
+      "delta": -0.030391040443963124,
+      "lo": -0.067,
+      "hi": 0.0069,
+      "separated": false,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "LATERAL",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:heading_mae_deg": {
+      "status": "OK",
+      "delta": -0.202485702775121,
+      "lo": -0.4391,
+      "hi": 0.0393,
+      "separated": false,
+      "n_windows": 5559,
+      "n_episodes": 497,
+      "family": "LATERAL",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:yaw_rate_mae_degps": {
+      "status": "OK",
+      "delta": 0.2517814573677484,
+      "lo": -0.7451,
+      "hi": 1.3368,
+      "separated": false,
+      "n_windows": 5536,
+      "n_episodes": 497,
+      "family": "LATERAL",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:curvature_mae_1pm": {
+      "status": "OK",
+      "delta": -0.015031071524724882,
+      "lo": -0.0294,
+      "hi": 0.0001,
+      "separated": false,
+      "n_windows": 5536,
+      "n_episodes": 497,
+      "family": "LATERAL",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:dk_hw_abs_err_m": {
+      "status": "NOT-COMPUTABLE",
+      "n_windows": 0,
+      "n_episodes": 0,
+      "reason": "no lead block exists for held-out clips; n = 0",
+      "family": "LONGITUDINAL",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:dk_tg_abs_err_s": {
+      "status": "NOT-COMPUTABLE",
+      "n_windows": 0,
+      "n_episodes": 0,
+      "reason": "no lead block exists for held-out clips; n = 0",
+      "family": "LONGITUDINAL",
+      "higher_is_better": false
+     },
+     "TAC-LAT": {
+      "status": "OK",
+      "delta": 0.008193863319386319,
+      "lo": -0.0007,
+      "hi": 0.0171,
+      "separated": false,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "TACTICAL",
+      "higher_is_better": true
+     },
+     "TAC-LON": {
+      "status": "OK",
+      "delta": 0.003661087866108803,
+      "lo": -0.0061,
+      "hi": 0.0134,
+      "separated": false,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "TACTICAL",
+      "higher_is_better": true
+     }
+    }
+   },
+   "T0_N1DH_minus_N1DC": {
+    "s0": {
+     "status": "OK",
+     "delta": -0.004707112970711358,
+     "lo": -0.0101,
+     "hi": 0.0007,
+     "separated": false,
+     "n_windows": 5736,
+     "n_episodes": 497
+    },
+    "s1": {
+     "status": "OK",
+     "delta": 0.006101813110181209,
+     "lo": -0.0012,
+     "hi": 0.0135,
+     "separated": false,
+     "n_windows": 5736,
+     "n_episodes": 497
+    }
+   },
+   "Z-POST": {
+    "status": "PENDING-ZPOST (run n1dh_zpost.py on the N1DH checkpoints, pass --zpost)",
+    "weak": {
+     "s0": null,
+     "s1": null
+    }
+   },
+   "R1_LON_LAT_HO_beside_no_bar": {
+    "N1DH_s0": {
+     "N1DH-N1R": {
+      "operative_0_2s:ade_m": {
+       "status": "OK",
+       "delta": -0.007114099169138133,
+       "lo": -0.0099,
+       "hi": -0.0042,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "operative_0_2s:fde_m": {
+       "status": "OK",
+       "delta": -0.030292862881911242,
+       "lo": -0.0387,
+       "hi": -0.0211,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "operative_0_2s:speed_mae_mps": {
+       "status": "OK",
+       "delta": -0.002392853891540425,
+       "lo": -0.0048,
+       "hi": 0.0002,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:along_mae_m": {
+       "status": "OK",
+       "delta": -0.0007877764111410557,
+       "lo": -0.0027,
+       "hi": 0.0012,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:accel_mae_mps2": {
+       "status": "OK",
+       "delta": -0.005063423715417126,
+       "lo": -0.0089,
+       "hi": -0.0011,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:cross_mae_m": {
+       "status": "OK",
+       "delta": -0.008505709859710914,
+       "lo": -0.0112,
+       "hi": -0.0058,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:heading_mae_deg": {
+       "status": "OK",
+       "delta": -0.1749784063882509,
+       "lo": -0.2147,
+       "hi": -0.1348,
+       "separated": true,
+       "n_windows": 5533,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:yaw_rate_mae_degps": {
+       "status": "OK",
+       "delta": -0.3454564134036513,
+       "lo": -0.429,
+       "hi": -0.268,
+       "separated": true,
+       "n_windows": 5517,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:curvature_mae_1pm": {
+       "status": "OK",
+       "delta": -0.006889840432238031,
+       "lo": -0.0099,
+       "hi": -0.0044,
+       "separated": true,
+       "n_windows": 5517,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:dk_hw_abs_err_m": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:dk_tg_abs_err_s": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:ade_m": {
+       "status": "OK",
+       "delta": -0.40745545343925915,
+       "lo": -0.4765,
+       "hi": -0.3306,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:fde_m": {
+       "status": "OK",
+       "delta": -0.9744852565346029,
+       "lo": -1.1355,
+       "hi": -0.7886,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:speed_mae_mps": {
+       "status": "OK",
+       "delta": -0.08831692043756889,
+       "lo": -0.1168,
+       "hi": -0.0569,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:along_mae_m": {
+       "status": "OK",
+       "delta": -0.21513991642065688,
+       "lo": -0.2592,
+       "hi": -0.167,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:accel_mae_mps2": {
+       "status": "OK",
+       "delta": -0.1528378647776134,
+       "lo": -0.2112,
+       "hi": -0.0938,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:cross_mae_m": {
+       "status": "OK",
+       "delta": -0.27253823033645386,
+       "lo": -0.3413,
+       "hi": -0.2016,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:heading_mae_deg": {
+       "status": "OK",
+       "delta": -2.5357312656675113,
+       "lo": -2.9795,
+       "hi": -2.057,
+       "separated": true,
+       "n_windows": 5552,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:yaw_rate_mae_degps": {
+       "status": "OK",
+       "delta": -5.398963963912632,
+       "lo": -6.405,
+       "hi": -4.3569,
+       "separated": true,
+       "n_windows": 5538,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:curvature_mae_1pm": {
+       "status": "OK",
+       "delta": -0.057118271113965835,
+       "lo": -0.0707,
+       "hi": -0.043,
+       "separated": true,
+       "n_windows": 5538,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:dk_hw_abs_err_m": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:dk_tg_abs_err_s": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "TAC-LAT": {
+       "status": "OK",
+       "delta": 0.021443514644351458,
+       "lo": 0.0069,
+       "hi": 0.0349,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "TACTICAL",
+       "higher_is_better": true
+      },
+      "TAC-LON": {
+       "status": "OK",
+       "delta": 0.022140864714086494,
+       "lo": 0.0107,
+       "hi": 0.0329,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "TACTICAL",
+       "higher_is_better": true
+      }
+     },
+     "N1DH-N1D": {
+      "operative_0_2s:ade_m": {
+       "status": "OK",
+       "delta": 0.0024366544946038404,
+       "lo": 0.0007,
+       "hi": 0.0043,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "operative_0_2s:fde_m": {
+       "status": "OK",
+       "delta": 0.007312190203593638,
+       "lo": 0.0019,
+       "hi": 0.0128,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "operative_0_2s:speed_mae_mps": {
+       "status": "OK",
+       "delta": -0.0012090190187523109,
+       "lo": -0.0027,
+       "hi": 0.0004,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:along_mae_m": {
+       "status": "OK",
+       "delta": 0.000820890457164436,
+       "lo": -0.0003,
+       "hi": 0.0019,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:accel_mae_mps2": {
+       "status": "OK",
+       "delta": -0.007278046679938921,
+       "lo": -0.0096,
+       "hi": -0.0049,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:cross_mae_m": {
+       "status": "OK",
+       "delta": 0.0018377301421119985,
+       "lo": 0.0001,
+       "hi": 0.0036,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:heading_mae_deg": {
+       "status": "OK",
+       "delta": 0.009737063293876691,
+       "lo": -0.0164,
+       "hi": 0.0349,
+       "separated": false,
+       "n_windows": 5535,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:yaw_rate_mae_degps": {
+       "status": "OK",
+       "delta": -0.028553144133876884,
+       "lo": -0.0717,
+       "hi": 0.0112,
+       "separated": false,
+       "n_windows": 5521,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:curvature_mae_1pm": {
+       "status": "OK",
+       "delta": -0.0019195387242847972,
+       "lo": -0.0035,
+       "hi": -0.0005,
+       "separated": true,
+       "n_windows": 5521,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:dk_hw_abs_err_m": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:dk_tg_abs_err_s": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:ade_m": {
+       "status": "OK",
+       "delta": 0.019684768819545617,
+       "lo": -0.0182,
+       "hi": 0.0579,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:fde_m": {
+       "status": "OK",
+       "delta": -0.013813468748965718,
+       "lo": -0.1075,
+       "hi": 0.0789,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:speed_mae_mps": {
+       "status": "OK",
+       "delta": -0.053211701170064574,
+       "lo": -0.0715,
+       "hi": -0.0331,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:along_mae_m": {
+       "status": "OK",
+       "delta": -0.01982206121471064,
+       "lo": -0.0465,
+       "hi": 0.0069,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:accel_mae_mps2": {
+       "status": "OK",
+       "delta": -0.17997823462253182,
+       "lo": -0.2382,
+       "hi": -0.1241,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:cross_mae_m": {
+       "status": "OK",
+       "delta": 0.03327670507110092,
+       "lo": -0.0028,
+       "hi": 0.0704,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:heading_mae_deg": {
+       "status": "OK",
+       "delta": -0.06702381937413904,
+       "lo": -0.2811,
+       "hi": 0.1467,
+       "separated": false,
+       "n_windows": 5575,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:yaw_rate_mae_degps": {
+       "status": "OK",
+       "delta": -3.2855059865337104,
+       "lo": -4.0445,
+       "hi": -2.6081,
+       "separated": true,
+       "n_windows": 5560,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:curvature_mae_1pm": {
+       "status": "OK",
+       "delta": -0.0176476884964247,
+       "lo": -0.0265,
+       "hi": -0.0091,
+       "separated": true,
+       "n_windows": 5560,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:dk_hw_abs_err_m": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:dk_tg_abs_err_s": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "TAC-LAT": {
+       "status": "OK",
+       "delta": -0.002963737796373822,
+       "lo": -0.0121,
+       "hi": 0.0061,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "TACTICAL",
+       "higher_is_better": true
+      },
+      "TAC-LON": {
+       "status": "OK",
+       "delta": 0.011506276150627603,
+       "lo": 0.003,
+       "hi": 0.0198,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "TACTICAL",
+       "higher_is_better": true
+      }
+     }
+    },
+    "N1DH_s1": {
+     "N1DH-N1R": {
+      "operative_0_2s:ade_m": {
+       "status": "OK",
+       "delta": 0.004789234331774694,
+       "lo": 0.0008,
+       "hi": 0.0087,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "operative_0_2s:fde_m": {
+       "status": "OK",
+       "delta": -0.0010927414769027477,
+       "lo": -0.0128,
+       "hi": 0.0104,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "operative_0_2s:speed_mae_mps": {
+       "status": "OK",
+       "delta": 0.015843128940332463,
+       "lo": 0.0123,
+       "hi": 0.0197,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:along_mae_m": {
+       "status": "OK",
+       "delta": 0.013139223021544744,
+       "lo": 0.0104,
+       "hi": 0.0161,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:accel_mae_mps2": {
+       "status": "OK",
+       "delta": 0.016640073639036412,
+       "lo": 0.0117,
+       "hi": 0.0218,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:cross_mae_m": {
+       "status": "OK",
+       "delta": -0.00563228876318822,
+       "lo": -0.0091,
+       "hi": -0.0022,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:heading_mae_deg": {
+       "status": "OK",
+       "delta": -0.09562951351281068,
+       "lo": -0.1456,
+       "hi": -0.046,
+       "separated": true,
+       "n_windows": 5528,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:yaw_rate_mae_degps": {
+       "status": "OK",
+       "delta": -0.2366916228154814,
+       "lo": -0.3151,
+       "hi": -0.16,
+       "separated": true,
+       "n_windows": 5512,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:curvature_mae_1pm": {
+       "status": "OK",
+       "delta": -0.003517260078206033,
+       "lo": -0.0054,
+       "hi": -0.0019,
+       "separated": true,
+       "n_windows": 5512,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:dk_hw_abs_err_m": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:dk_tg_abs_err_s": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:ade_m": {
+       "status": "OK",
+       "delta": -0.30927947915090304,
+       "lo": -0.3877,
+       "hi": -0.2324,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:fde_m": {
+       "status": "OK",
+       "delta": -0.8010838868002814,
+       "lo": -0.978,
+       "hi": -0.6204,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:speed_mae_mps": {
+       "status": "OK",
+       "delta": -0.07382036648013734,
+       "lo": -0.1052,
+       "hi": -0.042,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:along_mae_m": {
+       "status": "OK",
+       "delta": -0.11573933763181676,
+       "lo": -0.1697,
+       "hi": -0.0628,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:accel_mae_mps2": {
+       "status": "OK",
+       "delta": -0.11947289493588498,
+       "lo": -0.2046,
+       "hi": -0.0386,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:cross_mae_m": {
+       "status": "OK",
+       "delta": -0.2523710389536391,
+       "lo": -0.3205,
+       "hi": -0.183,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:heading_mae_deg": {
+       "status": "OK",
+       "delta": -2.146365864957499,
+       "lo": -2.6255,
+       "hi": -1.6889,
+       "separated": true,
+       "n_windows": 5538,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:yaw_rate_mae_degps": {
+       "status": "OK",
+       "delta": -4.299657393965752,
+       "lo": -5.6416,
+       "hi": -2.9333,
+       "separated": true,
+       "n_windows": 5512,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:curvature_mae_1pm": {
+       "status": "OK",
+       "delta": -0.04756148402886684,
+       "lo": -0.0645,
+       "hi": -0.0301,
+       "separated": true,
+       "n_windows": 5512,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:dk_hw_abs_err_m": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:dk_tg_abs_err_s": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "TAC-LAT": {
+       "status": "OK",
+       "delta": 0.031729428172942886,
+       "lo": 0.0184,
+       "hi": 0.0451,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "TACTICAL",
+       "higher_is_better": true
+      },
+      "TAC-LON": {
+       "status": "OK",
+       "delta": 0.016213389121338906,
+       "lo": 0.0049,
+       "hi": 0.0273,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "TACTICAL",
+       "higher_is_better": true
+      }
+     },
+     "N1DH-N1D": {
+      "operative_0_2s:ade_m": {
+       "status": "OK",
+       "delta": 0.011879864077634028,
+       "lo": 0.0088,
+       "hi": 0.015,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "operative_0_2s:fde_m": {
+       "status": "OK",
+       "delta": 0.0249501695501817,
+       "lo": 0.0159,
+       "hi": 0.0344,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "operative_0_2s:speed_mae_mps": {
+       "status": "OK",
+       "delta": 0.01448064436638452,
+       "lo": 0.0116,
+       "hi": 0.0174,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:along_mae_m": {
+       "status": "OK",
+       "delta": 0.015467586987706283,
+       "lo": 0.013,
+       "hi": 0.018,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:accel_mae_mps2": {
+       "status": "OK",
+       "delta": 0.00209658636015686,
+       "lo": -0.0017,
+       "hi": 0.0062,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:cross_mae_m": {
+       "status": "OK",
+       "delta": 5.473179061424305e-05,
+       "lo": -0.0025,
+       "hi": 0.0027,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:heading_mae_deg": {
+       "status": "OK",
+       "delta": -0.00911799984217243,
+       "lo": -0.0428,
+       "hi": 0.0258,
+       "separated": false,
+       "n_windows": 5529,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:yaw_rate_mae_degps": {
+       "status": "OK",
+       "delta": -0.13941339275084275,
+       "lo": -0.2193,
+       "hi": -0.0616,
+       "separated": true,
+       "n_windows": 5513,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:curvature_mae_1pm": {
+       "status": "OK",
+       "delta": -0.003295314217754336,
+       "lo": -0.0056,
+       "hi": -0.0012,
+       "separated": true,
+       "n_windows": 5513,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:dk_hw_abs_err_m": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:dk_tg_abs_err_s": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:ade_m": {
+       "status": "OK",
+       "delta": -0.04518884270457768,
+       "lo": -0.0939,
+       "hi": 0.007,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:fde_m": {
+       "status": "OK",
+       "delta": -0.21861550776631233,
+       "lo": -0.3341,
+       "hi": -0.1011,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:speed_mae_mps": {
+       "status": "OK",
+       "delta": -0.007532600874775142,
+       "lo": -0.0324,
+       "hi": 0.0185,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:along_mae_m": {
+       "status": "OK",
+       "delta": -0.00013895355883475347,
+       "lo": -0.0381,
+       "hi": 0.0398,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:accel_mae_mps2": {
+       "status": "OK",
+       "delta": -0.01974960773826151,
+       "lo": -0.0877,
+       "hi": 0.0516,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:cross_mae_m": {
+       "status": "OK",
+       "delta": -0.05875740740351443,
+       "lo": -0.1073,
+       "hi": -0.014,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:heading_mae_deg": {
+       "status": "OK",
+       "delta": -0.7340452121890451,
+       "lo": -0.9969,
+       "hi": -0.4738,
+       "separated": true,
+       "n_windows": 5554,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:yaw_rate_mae_degps": {
+       "status": "OK",
+       "delta": -1.747442394943377,
+       "lo": -2.8335,
+       "hi": -0.686,
+       "separated": true,
+       "n_windows": 5532,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:curvature_mae_1pm": {
+       "status": "OK",
+       "delta": -0.026868496679971987,
+       "lo": -0.0437,
+       "hi": -0.0113,
+       "separated": true,
+       "n_windows": 5532,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:dk_hw_abs_err_m": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:dk_tg_abs_err_s": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "TAC-LAT": {
+       "status": "OK",
+       "delta": 0.014993026499302675,
+       "lo": 0.004,
+       "hi": 0.0253,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "TACTICAL",
+       "higher_is_better": true
+      },
+      "TAC-LON": {
+       "status": "OK",
+       "delta": -0.0005230125523012497,
+       "lo": -0.0106,
+       "hi": 0.0091,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "TACTICAL",
+       "higher_is_better": true
+      }
+     }
+    }
+   },
+   "T0_N1DH_minus_N1D": {
+    "s0": {
+     "status": "OK",
+     "delta": -0.008891213389121355,
+     "lo": -0.0154,
+     "hi": -0.0032,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497
+    },
+    "s1": {
+     "status": "OK",
+     "delta": 0.009065550906555031,
+     "lo": 0.0009,
+     "hi": 0.017,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497
+    }
+   },
+   "T0_vs_T1_N1DH": {
+    "s0": {
+     "T0": 0.6176778242677824,
+     "T1": 0.6316248256624826,
+     "T0_minus_T1": {
+      "status": "OK",
+      "delta": -0.013947001394700176,
+      "lo": -0.033,
+      "hi": 0.0053,
+      "separated": false,
+      "n_windows": 5736,
+      "n_episodes": 497
+     }
+    },
+    "s1": {
+     "T0": 0.6440027894002789,
+     "T1": 0.666492329149233,
+     "T0_minus_T1": {
+      "status": "OK",
+      "delta": -0.02248953974895407,
+      "lo": -0.041,
+      "hi": -0.0048,
+      "separated": true,
+      "n_windows": 5736,
+      "n_episodes": 497
+     }
+    }
+   },
+   "T0_target_note": "card section 0: target 0.73 (CEIL-AT-PLAN) against N1D decoded 0.6266 / 0.6349",
+   "Z_USE_skip_zeroed_real_minus_zuse": {
+    "N1DH_s0": {
+     "TAC-LAT": {
+      "status": "OK",
+      "delta": 0.0001743375174337869,
+      "lo": -0.0013,
+      "hi": 0.0016,
+      "separated": false,
+      "n_windows": 5736,
+      "n_episodes": 497
+     },
+     "cells": {
+      "operative_0_2s:ade_m": {
+       "status": "OK",
+       "delta": -0.00012457625829825902,
+       "lo": -0.0002,
+       "hi": -0.0001,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "operative_0_2s:fde_m": {
+       "status": "OK",
+       "delta": -0.00011863751379781462,
+       "lo": -0.0002,
+       "hi": -0.0001,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "operative_0_2s:speed_mae_mps": {
+       "status": "OK",
+       "delta": -9.837676886609303e-05,
+       "lo": -0.0001,
+       "hi": -0.0001,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:along_mae_m": {
+       "status": "OK",
+       "delta": -0.00014801317666146563,
+       "lo": -0.0002,
+       "hi": -0.0001,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:accel_mae_mps2": {
+       "status": "OK",
+       "delta": -0.0006482090451054301,
+       "lo": -0.0007,
+       "hi": -0.0006,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:cross_mae_m": {
+       "status": "OK",
+       "delta": -8.258673781236237e-07,
+       "lo": -0.0,
+       "hi": 0.0,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:heading_mae_deg": {
+       "status": "OK",
+       "delta": 0.00028811026941522044,
+       "lo": 1e-06,
+       "hi": 0.000581,
+       "separated": true,
+       "n_windows": 5537,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:yaw_rate_mae_degps": {
+       "status": "OK",
+       "delta": 0.0028045326620134148,
+       "lo": 0.0021,
+       "hi": 0.0036,
+       "separated": true,
+       "n_windows": 5524,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:curvature_mae_1pm": {
+       "status": "OK",
+       "delta": 6.220712454481359e-05,
+       "lo": 4e-05,
+       "hi": 9e-05,
+       "separated": true,
+       "n_windows": 5524,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:dk_hw_abs_err_m": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:dk_tg_abs_err_s": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:ade_m": {
+       "status": "OK",
+       "delta": -0.0012889880851467694,
+       "lo": -0.0022,
+       "hi": -0.0003,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:fde_m": {
+       "status": "OK",
+       "delta": -0.0018494693241777327,
+       "lo": -0.0068,
+       "hi": 0.0031,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:speed_mae_mps": {
+       "status": "OK",
+       "delta": -0.0022906619314175813,
+       "lo": -0.0038,
+       "hi": -0.0009,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:along_mae_m": {
+       "status": "OK",
+       "delta": -0.001643028272500846,
+       "lo": -0.0025,
+       "hi": -0.0007,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:accel_mae_mps2": {
+       "status": "OK",
+       "delta": -0.010180834834780939,
+       "lo": -0.0156,
+       "hi": -0.0056,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:cross_mae_m": {
+       "status": "OK",
+       "delta": 0.0001743816167647516,
+       "lo": -0.0007,
+       "hi": 0.0012,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:heading_mae_deg": {
+       "status": "OK",
+       "delta": -0.02368396948337903,
+       "lo": -0.0353,
+       "hi": -0.0131,
+       "separated": true,
+       "n_windows": 5599,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:yaw_rate_mae_degps": {
+       "status": "OK",
+       "delta": -0.1323657852866127,
+       "lo": -0.1908,
+       "hi": -0.0767,
+       "separated": true,
+       "n_windows": 5578,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:curvature_mae_1pm": {
+       "status": "OK",
+       "delta": -0.00030601690500095535,
+       "lo": -0.0014,
+       "hi": 0.001,
+       "separated": false,
+       "n_windows": 5578,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:dk_hw_abs_err_m": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:dk_tg_abs_err_s": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "TAC-LAT": {
+       "status": "OK",
+       "delta": 0.0001743375174337869,
+       "lo": -0.0013,
+       "hi": 0.0016,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "TACTICAL",
+       "higher_is_better": true
+      },
+      "TAC-LON": {
+       "status": "OK",
+       "delta": 0.0017433751743375359,
+       "lo": -0.0002,
+       "hi": 0.0036,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "TACTICAL",
+       "higher_is_better": true
+      }
+     }
+    },
+    "N1DH_s1": {
+     "TAC-LAT": {
+      "status": "OK",
+      "delta": -0.00017433751743367587,
+      "lo": -0.0018,
+      "hi": 0.0014,
+      "separated": false,
+      "n_windows": 5736,
+      "n_episodes": 497
+     },
+     "cells": {
+      "operative_0_2s:ade_m": {
+       "status": "OK",
+       "delta": -0.0005963627853371456,
+       "lo": -0.0007,
+       "hi": -0.0005,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "operative_0_2s:fde_m": {
+       "status": "OK",
+       "delta": -0.0010002112177253109,
+       "lo": -0.0012,
+       "hi": -0.0008,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "operative_0_2s:speed_mae_mps": {
+       "status": "OK",
+       "delta": -0.0003042445201505428,
+       "lo": -0.0004,
+       "hi": -0.0002,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:along_mae_m": {
+       "status": "OK",
+       "delta": -0.00043363039144508897,
+       "lo": -0.0005,
+       "hi": -0.0004,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:accel_mae_mps2": {
+       "status": "OK",
+       "delta": -0.001010789456398764,
+       "lo": -0.0011,
+       "hi": -0.0009,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:cross_mae_m": {
+       "status": "OK",
+       "delta": -0.00041432472721142366,
+       "lo": -0.0005,
+       "hi": -0.0004,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:heading_mae_deg": {
+       "status": "OK",
+       "delta": -0.0006027612773626956,
+       "lo": -0.0045,
+       "hi": 0.0058,
+       "separated": false,
+       "n_windows": 5531,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:yaw_rate_mae_degps": {
+       "status": "OK",
+       "delta": 0.012025651494729672,
+       "lo": -0.0044,
+       "hi": 0.0402,
+       "separated": false,
+       "n_windows": 5516,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:curvature_mae_1pm": {
+       "status": "OK",
+       "delta": 0.00039974516776418445,
+       "lo": -0.0001,
+       "hi": 0.0013,
+       "separated": false,
+       "n_windows": 5516,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:dk_hw_abs_err_m": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:dk_tg_abs_err_s": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:ade_m": {
+       "status": "OK",
+       "delta": -0.002674339119733915,
+       "lo": -0.0054,
+       "hi": -0.0004,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:fde_m": {
+       "status": "OK",
+       "delta": -0.004837421562957189,
+       "lo": -0.0162,
+       "hi": 0.0041,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:speed_mae_mps": {
+       "status": "OK",
+       "delta": -0.001837411038435599,
+       "lo": -0.0057,
+       "hi": 0.0012,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:along_mae_m": {
+       "status": "OK",
+       "delta": -0.001619315351394146,
+       "lo": -0.0027,
+       "hi": -0.0004,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:accel_mae_mps2": {
+       "status": "OK",
+       "delta": -0.007722362027088758,
+       "lo": -0.0161,
+       "hi": -0.0005,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:cross_mae_m": {
+       "status": "OK",
+       "delta": -0.0015943206774520213,
+       "lo": -0.0042,
+       "hi": 0.0004,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:heading_mae_deg": {
+       "status": "OK",
+       "delta": -0.012404936790861854,
+       "lo": -0.0266,
+       "hi": 0.0011,
+       "separated": false,
+       "n_windows": 5571,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:yaw_rate_mae_degps": {
+       "status": "OK",
+       "delta": -0.10691420072529212,
+       "lo": -0.1722,
+       "hi": -0.0363,
+       "separated": true,
+       "n_windows": 5548,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:curvature_mae_1pm": {
+       "status": "OK",
+       "delta": -0.0002197982341785587,
+       "lo": -0.0016,
+       "hi": 0.0012,
+       "separated": false,
+       "n_windows": 5548,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:dk_hw_abs_err_m": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:dk_tg_abs_err_s": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "TAC-LAT": {
+       "status": "OK",
+       "delta": -0.00017433751743367587,
+       "lo": -0.0018,
+       "hi": 0.0014,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "TACTICAL",
+       "higher_is_better": true
+      },
+      "TAC-LON": {
+       "status": "OK",
+       "delta": 0.0005230125523012497,
+       "lo": -0.0012,
+       "hi": 0.0021,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "TACTICAL",
+       "higher_is_better": true
+      }
+     }
+    }
+   },
+   "Z_CHANNEL_D_zero_twin_real_minus_zero": {
+    "N1DH_s0": {
+     "TAC-LAT": {
+      "status": "OK",
+      "delta": 0.03852859135285913,
+      "lo": 0.0249,
+      "hi": 0.0518,
+      "separated": true,
+      "n_windows": 5736,
+      "n_episodes": 497
+     },
+     "cells": {
+      "operative_0_2s:ade_m": {
+       "status": "OK",
+       "delta": -0.017847391647376254,
+       "lo": -0.0211,
+       "hi": -0.0146,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "operative_0_2s:fde_m": {
+       "status": "OK",
+       "delta": -0.06616668039546325,
+       "lo": -0.0764,
+       "hi": -0.0557,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "operative_0_2s:speed_mae_mps": {
+       "status": "OK",
+       "delta": -0.011452991559843029,
+       "lo": -0.0153,
+       "hi": -0.0076,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:along_mae_m": {
+       "status": "OK",
+       "delta": -0.011066655274939718,
+       "lo": -0.0138,
+       "hi": -0.0085,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:accel_mae_mps2": {
+       "status": "OK",
+       "delta": -0.0020460643423493297,
+       "lo": -0.007,
+       "hi": 0.0029,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:cross_mae_m": {
+       "status": "OK",
+       "delta": -0.00872367767578644,
+       "lo": -0.0114,
+       "hi": -0.0061,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:heading_mae_deg": {
+       "status": "OK",
+       "delta": -0.17070115340098235,
+       "lo": -0.212,
+       "hi": -0.1323,
+       "separated": true,
+       "n_windows": 5528,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:yaw_rate_mae_degps": {
+       "status": "OK",
+       "delta": -0.5030264826845467,
+       "lo": -0.6293,
+       "hi": -0.3879,
+       "separated": true,
+       "n_windows": 5513,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:curvature_mae_1pm": {
+       "status": "OK",
+       "delta": -0.011155441332107344,
+       "lo": -0.0155,
+       "hi": -0.0074,
+       "separated": true,
+       "n_windows": 5513,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:dk_hw_abs_err_m": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:dk_tg_abs_err_s": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:ade_m": {
+       "status": "OK",
+       "delta": -0.6961443303204868,
+       "lo": -0.7834,
+       "hi": -0.6139,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:fde_m": {
+       "status": "OK",
+       "delta": -1.6076900901603164,
+       "lo": -1.8038,
+       "hi": -1.4086,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:speed_mae_mps": {
+       "status": "OK",
+       "delta": -0.14473395797792277,
+       "lo": -0.1778,
+       "hi": -0.1096,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:along_mae_m": {
+       "status": "OK",
+       "delta": -0.4034578753332547,
+       "lo": -0.4631,
+       "hi": -0.3445,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:accel_mae_mps2": {
+       "status": "OK",
+       "delta": -0.1061815831817523,
+       "lo": -0.1557,
+       "hi": -0.0527,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:cross_mae_m": {
+       "status": "OK",
+       "delta": -0.40927332359113633,
+       "lo": -0.4844,
+       "hi": -0.3367,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:heading_mae_deg": {
+       "status": "OK",
+       "delta": -3.3478555987313037,
+       "lo": -3.8296,
+       "hi": -2.8308,
+       "separated": true,
+       "n_windows": 5524,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:yaw_rate_mae_degps": {
+       "status": "OK",
+       "delta": -6.787240427821523,
+       "lo": -7.9821,
+       "hi": -5.608,
+       "separated": true,
+       "n_windows": 5505,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:curvature_mae_1pm": {
+       "status": "OK",
+       "delta": -0.10190351115428567,
+       "lo": -0.1229,
+       "hi": -0.0829,
+       "separated": true,
+       "n_windows": 5505,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:dk_hw_abs_err_m": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:dk_tg_abs_err_s": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "TAC-LAT": {
+       "status": "OK",
+       "delta": 0.03852859135285913,
+       "lo": 0.0249,
+       "hi": 0.0518,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "TACTICAL",
+       "higher_is_better": true
+      },
+      "TAC-LON": {
+       "status": "OK",
+       "delta": 0.0247559274755928,
+       "lo": 0.0058,
+       "hi": 0.0425,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "TACTICAL",
+       "higher_is_better": true
+      }
+     }
+    },
+    "N1DH_s1": {
+     "TAC-LAT": {
+      "status": "OK",
+      "delta": 0.0294630404463041,
+      "lo": 0.0163,
+      "hi": 0.0424,
+      "separated": true,
+      "n_windows": 5736,
+      "n_episodes": 497
+     },
+     "cells": {
+      "operative_0_2s:ade_m": {
+       "status": "OK",
+       "delta": -0.00459880330220136,
+       "lo": -0.0084,
+       "hi": -0.0008,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "operative_0_2s:fde_m": {
+       "status": "OK",
+       "delta": -0.026641570730030928,
+       "lo": -0.0385,
+       "hi": -0.0152,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "operative_0_2s:speed_mae_mps": {
+       "status": "OK",
+       "delta": 0.0015912131130886853,
+       "lo": -0.0024,
+       "hi": 0.0053,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:along_mae_m": {
+       "status": "OK",
+       "delta": -0.0024312358970342007,
+       "lo": -0.0054,
+       "hi": 0.0003,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:accel_mae_mps2": {
+       "status": "OK",
+       "delta": 0.021922136700930128,
+       "lo": 0.0168,
+       "hi": 0.0276,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:cross_mae_m": {
+       "status": "OK",
+       "delta": -0.0007914501206446045,
+       "lo": -0.0041,
+       "hi": 0.0027,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:heading_mae_deg": {
+       "status": "OK",
+       "delta": -0.06628354107055623,
+       "lo": -0.1165,
+       "hi": -0.0189,
+       "separated": true,
+       "n_windows": 5525,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:yaw_rate_mae_degps": {
+       "status": "OK",
+       "delta": -0.22815392423265735,
+       "lo": -0.2977,
+       "hi": -0.1647,
+       "separated": true,
+       "n_windows": 5510,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:curvature_mae_1pm": {
+       "status": "OK",
+       "delta": -0.004269113247835021,
+       "lo": -0.0061,
+       "hi": -0.0027,
+       "separated": true,
+       "n_windows": 5510,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:dk_hw_abs_err_m": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:dk_tg_abs_err_s": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:ade_m": {
+       "status": "OK",
+       "delta": -0.5237944214864889,
+       "lo": -0.6091,
+       "hi": -0.4365,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:fde_m": {
+       "status": "OK",
+       "delta": -1.287694420587151,
+       "lo": -1.488,
+       "hi": -1.0822,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:speed_mae_mps": {
+       "status": "OK",
+       "delta": -0.13766031405659307,
+       "lo": -0.1757,
+       "hi": -0.0999,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:along_mae_m": {
+       "status": "OK",
+       "delta": -0.2948564519075245,
+       "lo": -0.362,
+       "hi": -0.2313,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:accel_mae_mps2": {
+       "status": "OK",
+       "delta": -0.10433914477859063,
+       "lo": -0.1635,
+       "hi": -0.0499,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:cross_mae_m": {
+       "status": "OK",
+       "delta": -0.3347999109038806,
+       "lo": -0.4038,
+       "hi": -0.2618,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:heading_mae_deg": {
+       "status": "OK",
+       "delta": -2.471357697849708,
+       "lo": -2.9259,
+       "hi": -1.9995,
+       "separated": true,
+       "n_windows": 5525,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:yaw_rate_mae_degps": {
+       "status": "OK",
+       "delta": -3.536529141285456,
+       "lo": -4.7094,
+       "hi": -2.3057,
+       "separated": true,
+       "n_windows": 5496,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:curvature_mae_1pm": {
+       "status": "OK",
+       "delta": -0.05146015346084609,
+       "lo": -0.0683,
+       "hi": -0.0348,
+       "separated": true,
+       "n_windows": 5496,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:dk_hw_abs_err_m": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:dk_tg_abs_err_s": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "TAC-LAT": {
+       "status": "OK",
+       "delta": 0.0294630404463041,
+       "lo": 0.0163,
+       "hi": 0.0424,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "TACTICAL",
+       "higher_is_better": true
+      },
+      "TAC-LON": {
+       "status": "OK",
+       "delta": 0.029986052998605295,
+       "lo": 0.0134,
+       "hi": 0.0462,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "TACTICAL",
+       "higher_is_better": true
+      }
+     }
+    },
+    "N1D_s0": {
+     "TAC-LAT": {
+      "status": "OK",
+      "delta": 0.03765690376569042,
+      "lo": 0.0239,
+      "hi": 0.0508,
+      "separated": true,
+      "n_windows": 5736,
+      "n_episodes": 497
+     }
+    },
+    "N1D_s1": {
+     "TAC-LAT": {
+      "status": "OK",
+      "delta": 0.019002789400278997,
+      "lo": 0.0054,
+      "hi": 0.0316,
+      "separated": true,
+      "n_windows": 5736,
+      "n_episodes": 497
+     }
+    }
+   },
+   "Z-EVAL_HO": "NOT-YET (needs the all-zero-channel-history mask of the held-out grid, --ho-zero-hist-mask; the eval-141 Z-EVAL belongs to the guard read)"
+  },
+  "old": {
+   "dump_dirs": {
+    "N1R_s0": "F:/TanitAD-scratch/n1dc/read/in/navrbd_step0/out/t1/dump_NAVRBD-HO-N1R_s0_m10_causal_heads",
+    "N1R_s1": "F:/TanitAD-scratch/n1dc/read/in/navrbd_step0/out/t1/dump_NAVRBD-HO-N1R_s1_m10_causal_heads",
+    "N1D_s0": "F:/TanitAD-scratch/n1dc/read/in/navrbd/out/t1/dump_NAVRBD-HO-N1D_s0_m10_causal_heads",
+    "N1D_s1": "F:/TanitAD-scratch/n1dc/read/in/navrbd/out/t1/dump_NAVRBD-HO-N1D_s1_m10_causal_heads",
+    "N1D_s0Z": "F:/TanitAD-scratch/n1dc/read/in/navrbd/out/t1_zero/dump_NAVRBD-HO-N1D_s0_zero_m10_causal_heads",
+    "N1D_s1Z": "F:/TanitAD-scratch/n1dc/read/in/navrbd/out/t1_zero/dump_NAVRBD-HO-N1D_s1_zero_m10_causal_heads",
+    "N1DH_s0": "F:/TanitAD-scratch/n1dc/read_n1dh/in/n1dh/hbnone/t1/dump_N1DH-HO-N1DH_s0_m10_causal_heads",
+    "N1DH_s1": "F:/TanitAD-scratch/n1dc/read_n1dh/in/n1dh/hbnone/t1/dump_N1DH-HO-N1DH_s1_m10_causal_heads",
+    "N1DC_s0": "F:/TanitAD-scratch/n1dc/read_n1dh/in/n1dc/hbnone/t1/dump_N1DC-HO-N1DC_s0_m10_causal_heads",
+    "N1DC_s1": "F:/TanitAD-scratch/n1dc/read_n1dh/in/n1dc/hbnone/t1/dump_N1DC-HO-N1DC_s1_m10_causal_heads"
+   },
+   "missing": [
+    "N1DH_s0Z",
+    "N1DH_s0U",
+    "N1DH_s1Z",
+    "N1DH_s1U"
+   ],
+   "K-RE": {
+    "acc": {
+     "N1R_s0": {
+      "live": 0.5904811715481172,
+      "banked": 0.5904811715481172,
+      "equal": true
+     },
+     "N1R_s1": {
+      "live": 0.6328451882845189,
+      "banked": 0.6328451882845189,
+      "equal": true
+     },
+     "N1D_s0": {
+      "live": 0.6195955369595537,
+      "banked": 0.6195955369595537,
+      "equal": true
+     },
+     "N1D_s1": {
+      "live": 0.6499302649930265,
+      "banked": 0.6499302649930265,
+      "equal": true
+     },
+     "N1D_s0Z": {
+      "live": 0.5732217573221757,
+      "banked": 0.5732217573221757,
+      "equal": true
+     },
+     "N1D_s1Z": {
+      "live": 0.6297071129707112,
+      "banked": 0.6297071129707112,
+      "equal": true
+     }
+    },
+    "pass": true,
+    "banked_source": "RESULT_NAVRBD.json D1_HO_each_acc (+ N1D-N1R deltas)",
+    "delta": {
+     "N1D_s0-N1R_s0": {
+      "live": [
+       0.029114365411436527,
+       0.0174,
+       0.0409
+      ],
+      "banked": [
+       0.029114365411436527,
+       0.0174,
+       0.0409
+      ],
+      "equal": true
+     },
+     "N1D_s1-N1R_s1": {
+      "live": [
+       0.017085076708507674,
+       0.0044,
+       0.03
+      ],
+      "banked": [
+       0.017085076708507674,
+       0.0044,
+       0.03
+      ],
+      "equal": true
+     }
+    }
+   },
+   "K1_self_pair_N1R_s0": {
+    "delta": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "pass": true
+   },
+   "K-CONST": {
+    "majority_class": "turn_right",
+    "majority_share": 0.3382147838214784,
+    "constant_accuracy": 0.3382147838214784,
+    "must_read": 0.338215,
+    "pass": true
+   },
+   "T0_level": {
+    "N1R_s0": {
+     "point": 0.6101813110181311,
+     "lo": 0.5885,
+     "hi": 0.6308
+    },
+    "N1R_s1": {
+     "point": 0.6194211994421199,
+     "lo": 0.5984,
+     "hi": 0.6393
+    },
+    "N1D_s0": {
+     "point": 0.6265690376569037,
+     "lo": 0.6055,
+     "hi": 0.6468
+    },
+    "N1D_s1": {
+     "point": 0.6349372384937239,
+     "lo": 0.6141,
+     "hi": 0.6544
+    },
+    "N1DH_s0": {
+     "point": 0.6176778242677824,
+     "lo": 0.5967,
+     "hi": 0.6381
+    },
+    "N1DH_s1": {
+     "point": 0.6440027894002789,
+     "lo": 0.6239,
+     "hi": 0.6631
+    },
+    "N1DC_s0": {
+     "point": 0.6223849372384938,
+     "lo": 0.6017,
+     "hi": 0.6426
+    },
+    "N1DC_s1": {
+     "point": 0.6379009762900977,
+     "lo": 0.6169,
+     "hi": 0.6581
+    }
+   },
+   "K-T0_N1D_rederived": {
+    "cells": {
+     "N1D_s0": {
+      "recomputed": 0.6265690376569037,
+      "banked_PREREG_N1D_T0T1": 0.6265690376569037,
+      "abs_diff": 0.0,
+      "pass": true
+     },
+     "N1D_s1": {
+      "recomputed": 0.6349372384937239,
+      "banked_PREREG_N1D_T0T1": 0.6349372384937239,
+      "abs_diff": 0.0,
+      "pass": true
+     }
+    },
+    "pass": true,
+    "note": "N1D T0 = TAC-LAT of the tick-0 plan `ol` of the same dumps (as n1dwt0t1_read.py); tick 0 does not depend on the rollout executor"
+   },
+   "floor": {
+    "F_HO_card": 0.042364016736401666,
+    "F_HO_live": 0.042364016736401666,
+    "F_HO_used": 0.042364016736401666,
+    "seed_draw_N1D": 0.030334728033472813,
+    "seed_draw_N1DH": 0.04689679218967924,
+    "bar": 0.04689679218967924,
+    "bar_rule": "max(0.0383, F_HO, |N1D_s1-N1D_s0|, |N1DH_s1-N1DH_s0|)"
+   },
+   "accuracy": {
+    "N1R_s0": 0.5904811715481172,
+    "N1R_s1": 0.6328451882845189,
+    "N1D_s0": 0.6195955369595537,
+    "N1D_s1": 0.6499302649930265,
+    "N1D_s0Z": 0.5732217573221757,
+    "N1D_s1Z": 0.6297071129707112,
+    "N1DH_s0": 0.6110529986052998,
+    "N1DH_s1": 0.6579497907949791,
+    "N1DC_s0": 0.6225592747559274,
+    "N1DC_s1": 0.6501046025104602
+   },
+   "gt_class_share": {
+    "lane_keep": 0.33716875871687585,
+    "turn_left": 0.32461645746164575,
+    "turn_right": 0.3382147838214784
+   },
+   "D1_HO_deciding_N1DH-N1D": {
+    "N1DH_s0": {
+     "status": "OK",
+     "delta": -0.008542538354253892,
+     "lo": -0.0186,
+     "hi": 0.001,
+     "separated": false,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "bar": 0.04689679218967924,
+     "gain": false,
+     "cost": false,
+     "acc_arm": 0.6110529986052998,
+     "acc_ref": 0.6195955369595537
+    },
+    "N1DH_s1": {
+     "status": "OK",
+     "delta": 0.008019525801952532,
+     "lo": -0.0022,
+     "hi": 0.0174,
+     "separated": false,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "bar": 0.04689679218967924,
+     "gain": false,
+     "cost": false,
+     "acc_arm": 0.6579497907949791,
+     "acc_ref": 0.6499302649930265
+    }
+   },
+   "D1_HO_beside_N1DH-N1R": {
+    "N1DH_s0": {
+     "status": "OK",
+     "delta": 0.020571827057182634,
+     "lo": 0.0074,
+     "hi": 0.0338,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "bar": 0.04689679218967924,
+     "gain": false,
+     "cost": false,
+     "acc_arm": 0.6110529986052998,
+     "acc_ref": 0.5904811715481172
+    },
+    "N1DH_s1": {
+     "status": "OK",
+     "delta": 0.025104602510460206,
+     "lo": 0.0124,
+     "hi": 0.0381,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "bar": 0.04689679218967924,
+     "gain": false,
+     "cost": false,
+     "acc_arm": 0.6579497907949791,
+     "acc_ref": 0.6328451882845189
+    }
+   },
+   "D1_HO_beside_N1DH-N1DC": {
+    "N1DH_s0": {
+     "status": "OK",
+     "delta": -0.011506276150627603,
+     "lo": -0.0209,
+     "hi": -0.0023,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "bar": 0.04689679218967924,
+     "gain": false,
+     "cost": false,
+     "acc_arm": 0.6110529986052998,
+     "acc_ref": 0.6225592747559274
+    },
+    "N1DH_s1": {
+     "status": "OK",
+     "delta": 0.007845188284518856,
+     "lo": -0.0019,
+     "hi": 0.0174,
+     "separated": false,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "bar": 0.04689679218967924,
+     "gain": false,
+     "cost": false,
+     "acc_arm": 0.6579497907949791,
+     "acc_ref": 0.6501046025104602
+    }
+   },
+   "R1_LON_LAT_HO_beside_no_bar_N1DH-N1DC": {
+    "N1DH_s0": {
+     "operative_0_2s:ade_m": {
+      "status": "OK",
+      "delta": -0.0006434291451850593,
+      "lo": -0.0025,
+      "hi": 0.0014,
+      "separated": false,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "PRIMARY",
+      "higher_is_better": false
+     },
+     "operative_0_2s:fde_m": {
+      "status": "OK",
+      "delta": 0.0006362551113340276,
+      "lo": -0.0048,
+      "hi": 0.0064,
+      "separated": false,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "PRIMARY",
+      "higher_is_better": false
+     },
+     "operative_0_2s:speed_mae_mps": {
+      "status": "OK",
+      "delta": -0.0034527837845411136,
+      "lo": -0.0048,
+      "hi": -0.0021,
+      "separated": true,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "LONGITUDINAL",
+      "higher_is_better": false
+     },
+     "operative_0_2s:along_mae_m": {
+      "status": "OK",
+      "delta": -0.0021324069025222825,
+      "lo": -0.0032,
+      "hi": -0.001,
+      "separated": true,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "LONGITUDINAL",
+      "higher_is_better": false
+     },
+     "operative_0_2s:accel_mae_mps2": {
+      "status": "OK",
+      "delta": -0.005637440016834083,
+      "lo": -0.0078,
+      "hi": -0.0036,
+      "separated": true,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "LONGITUDINAL",
+      "higher_is_better": false
+     },
+     "operative_0_2s:cross_mae_m": {
+      "status": "OK",
+      "delta": 0.0010229228850940353,
+      "lo": -0.0007,
+      "hi": 0.0029,
+      "separated": false,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "LATERAL",
+      "higher_is_better": false
+     },
+     "operative_0_2s:heading_mae_deg": {
+      "status": "OK",
+      "delta": 0.002904955584591029,
+      "lo": -0.0189,
+      "hi": 0.0261,
+      "separated": false,
+      "n_windows": 5536,
+      "n_episodes": 497,
+      "family": "LATERAL",
+      "higher_is_better": false
+     },
+     "operative_0_2s:yaw_rate_mae_degps": {
+      "status": "OK",
+      "delta": -0.013868811555896698,
+      "lo": -0.0671,
+      "hi": 0.0363,
+      "separated": false,
+      "n_windows": 5523,
+      "n_episodes": 497,
+      "family": "LATERAL",
+      "higher_is_better": false
+     },
+     "operative_0_2s:curvature_mae_1pm": {
+      "status": "OK",
+      "delta": -0.0012296729850086868,
+      "lo": -0.0029,
+      "hi": 0.0002,
+      "separated": false,
+      "n_windows": 5523,
+      "n_episodes": 497,
+      "family": "LATERAL",
+      "higher_is_better": false
+     },
+     "operative_0_2s:dk_hw_abs_err_m": {
+      "status": "NOT-COMPUTABLE",
+      "n_windows": 0,
+      "n_episodes": 0,
+      "reason": "no lead block exists for held-out clips; n = 0",
+      "family": "LONGITUDINAL",
+      "higher_is_better": false
+     },
+     "operative_0_2s:dk_tg_abs_err_s": {
+      "status": "NOT-COMPUTABLE",
+      "n_windows": 0,
+      "n_episodes": 0,
+      "reason": "no lead block exists for held-out clips; n = 0",
+      "family": "LONGITUDINAL",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:ade_m": {
+      "status": "OK",
+      "delta": 0.0058031342039246425,
+      "lo": -0.0363,
+      "hi": 0.0458,
+      "separated": false,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "PRIMARY",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:fde_m": {
+      "status": "OK",
+      "delta": 0.03529001633948603,
+      "lo": -0.0729,
+      "hi": 0.1462,
+      "separated": false,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "PRIMARY",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:speed_mae_mps": {
+      "status": "OK",
+      "delta": -0.02271778049725537,
+      "lo": -0.0487,
+      "hi": 0.0037,
+      "separated": false,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "LONGITUDINAL",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:along_mae_m": {
+      "status": "OK",
+      "delta": -0.020791992525141634,
+      "lo": -0.0512,
+      "hi": 0.0091,
+      "separated": false,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "LONGITUDINAL",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:accel_mae_mps2": {
+      "status": "OK",
+      "delta": -0.16978076869980985,
+      "lo": -0.251,
+      "hi": -0.0933,
+      "separated": true,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "LONGITUDINAL",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:cross_mae_m": {
+      "status": "OK",
+      "delta": 0.024870806369169163,
+      "lo": -0.0125,
+      "hi": 0.0643,
+      "separated": false,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "LATERAL",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:heading_mae_deg": {
+      "status": "OK",
+      "delta": -0.3172637428309564,
+      "lo": -0.5735,
+      "hi": -0.0566,
+      "separated": true,
+      "n_windows": 5667,
+      "n_episodes": 497,
+      "family": "LATERAL",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:yaw_rate_mae_degps": {
+      "status": "OK",
+      "delta": -3.017897775136184,
+      "lo": -3.9922,
+      "hi": -2.0225,
+      "separated": true,
+      "n_windows": 5660,
+      "n_episodes": 497,
+      "family": "LATERAL",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:curvature_mae_1pm": {
+      "status": "OK",
+      "delta": -0.01657854847934967,
+      "lo": -0.0254,
+      "hi": -0.0078,
+      "separated": true,
+      "n_windows": 5660,
+      "n_episodes": 497,
+      "family": "LATERAL",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:dk_hw_abs_err_m": {
+      "status": "NOT-COMPUTABLE",
+      "n_windows": 0,
+      "n_episodes": 0,
+      "reason": "no lead block exists for held-out clips; n = 0",
+      "family": "LONGITUDINAL",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:dk_tg_abs_err_s": {
+      "status": "NOT-COMPUTABLE",
+      "n_windows": 0,
+      "n_episodes": 0,
+      "reason": "no lead block exists for held-out clips; n = 0",
+      "family": "LONGITUDINAL",
+      "higher_is_better": false
+     },
+     "TAC-LAT": {
+      "status": "OK",
+      "delta": -0.011506276150627603,
+      "lo": -0.0209,
+      "hi": -0.0023,
+      "separated": true,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "TACTICAL",
+      "higher_is_better": true
+     },
+     "TAC-LON": {
+      "status": "OK",
+      "delta": 0.009937238493723854,
+      "lo": 0.0008,
+      "hi": 0.0185,
+      "separated": true,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "TACTICAL",
+      "higher_is_better": true
+     }
+    },
+    "N1DH_s1": {
+     "operative_0_2s:ade_m": {
+      "status": "OK",
+      "delta": 0.006477200518308912,
+      "lo": 0.004,
+      "hi": 0.009,
+      "separated": true,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "PRIMARY",
+      "higher_is_better": false
+     },
+     "operative_0_2s:fde_m": {
+      "status": "OK",
+      "delta": 0.014677427858061587,
+      "lo": 0.0073,
+      "hi": 0.022,
+      "separated": true,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "PRIMARY",
+      "higher_is_better": false
+     },
+     "operative_0_2s:speed_mae_mps": {
+      "status": "OK",
+      "delta": 0.015297925770770493,
+      "lo": 0.0126,
+      "hi": 0.018,
+      "separated": true,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "LONGITUDINAL",
+      "higher_is_better": false
+     },
+     "operative_0_2s:along_mae_m": {
+      "status": "OK",
+      "delta": 0.011852000693716114,
+      "lo": 0.0099,
+      "hi": 0.014,
+      "separated": true,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "LONGITUDINAL",
+      "higher_is_better": false
+     },
+     "operative_0_2s:accel_mae_mps2": {
+      "status": "OK",
+      "delta": 0.012482487725696267,
+      "lo": 0.0088,
+      "hi": 0.0163,
+      "separated": true,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "LONGITUDINAL",
+      "higher_is_better": false
+     },
+     "operative_0_2s:cross_mae_m": {
+      "status": "OK",
+      "delta": -0.004181353844067676,
+      "lo": -0.0062,
+      "hi": -0.0021,
+      "separated": true,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "LATERAL",
+      "higher_is_better": false
+     },
+     "operative_0_2s:heading_mae_deg": {
+      "status": "OK",
+      "delta": -0.03847826937154286,
+      "lo": -0.0669,
+      "hi": -0.0106,
+      "separated": true,
+      "n_windows": 5530,
+      "n_episodes": 497,
+      "family": "LATERAL",
+      "higher_is_better": false
+     },
+     "operative_0_2s:yaw_rate_mae_degps": {
+      "status": "OK",
+      "delta": -0.14074076543164082,
+      "lo": -0.2274,
+      "hi": -0.0679,
+      "separated": true,
+      "n_windows": 5515,
+      "n_episodes": 497,
+      "family": "LATERAL",
+      "higher_is_better": false
+     },
+     "operative_0_2s:curvature_mae_1pm": {
+      "status": "OK",
+      "delta": -0.0028503469615320798,
+      "lo": -0.0054,
+      "hi": -0.0008,
+      "separated": true,
+      "n_windows": 5515,
+      "n_episodes": 497,
+      "family": "LATERAL",
+      "higher_is_better": false
+     },
+     "operative_0_2s:dk_hw_abs_err_m": {
+      "status": "NOT-COMPUTABLE",
+      "n_windows": 0,
+      "n_episodes": 0,
+      "reason": "no lead block exists for held-out clips; n = 0",
+      "family": "LONGITUDINAL",
+      "higher_is_better": false
+     },
+     "operative_0_2s:dk_tg_abs_err_s": {
+      "status": "NOT-COMPUTABLE",
+      "n_windows": 0,
+      "n_episodes": 0,
+      "reason": "no lead block exists for held-out clips; n = 0",
+      "family": "LONGITUDINAL",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:ade_m": {
+      "status": "OK",
+      "delta": 0.03458228163354793,
+      "lo": -0.0078,
+      "hi": 0.0776,
+      "separated": false,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "PRIMARY",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:fde_m": {
+      "status": "OK",
+      "delta": 0.005357070229429439,
+      "lo": -0.1059,
+      "hi": 0.1233,
+      "separated": false,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "PRIMARY",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:speed_mae_mps": {
+      "status": "OK",
+      "delta": 0.03088361184755639,
+      "lo": 0.0004,
+      "hi": 0.0621,
+      "separated": true,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "LONGITUDINAL",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:along_mae_m": {
+      "status": "OK",
+      "delta": 0.07741992456221425,
+      "lo": 0.0423,
+      "hi": 0.1138,
+      "separated": true,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "LONGITUDINAL",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:accel_mae_mps2": {
+      "status": "OK",
+      "delta": 0.0430546869963111,
+      "lo": -0.0638,
+      "hi": 0.1528,
+      "separated": false,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "LONGITUDINAL",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:cross_mae_m": {
+      "status": "OK",
+      "delta": -0.027416239256385033,
+      "lo": -0.0649,
+      "hi": 0.011,
+      "separated": false,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "LATERAL",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:heading_mae_deg": {
+      "status": "OK",
+      "delta": -0.3282805680991707,
+      "lo": -0.6093,
+      "hi": -0.0292,
+      "separated": true,
+      "n_windows": 5667,
+      "n_episodes": 497,
+      "family": "LATERAL",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:yaw_rate_mae_degps": {
+      "status": "OK",
+      "delta": 1.228584667340165,
+      "lo": 0.112,
+      "hi": 2.4594,
+      "separated": true,
+      "n_windows": 5658,
+      "n_episodes": 497,
+      "family": "LATERAL",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:curvature_mae_1pm": {
+      "status": "OK",
+      "delta": -0.0008302754060315887,
+      "lo": -0.0169,
+      "hi": 0.0161,
+      "separated": false,
+      "n_windows": 5658,
+      "n_episodes": 497,
+      "family": "LATERAL",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:dk_hw_abs_err_m": {
+      "status": "NOT-COMPUTABLE",
+      "n_windows": 0,
+      "n_episodes": 0,
+      "reason": "no lead block exists for held-out clips; n = 0",
+      "family": "LONGITUDINAL",
+      "higher_is_better": false
+     },
+     "tactical_2_6s:dk_tg_abs_err_s": {
+      "status": "NOT-COMPUTABLE",
+      "n_windows": 0,
+      "n_episodes": 0,
+      "reason": "no lead block exists for held-out clips; n = 0",
+      "family": "LONGITUDINAL",
+      "higher_is_better": false
+     },
+     "TAC-LAT": {
+      "status": "OK",
+      "delta": 0.007845188284518856,
+      "lo": -0.0019,
+      "hi": 0.0174,
+      "separated": false,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "TACTICAL",
+      "higher_is_better": true
+     },
+     "TAC-LON": {
+      "status": "OK",
+      "delta": 0.004881450488145034,
+      "lo": -0.0059,
+      "hi": 0.0148,
+      "separated": false,
+      "n_windows": 5736,
+      "n_episodes": 497,
+      "family": "TACTICAL",
+      "higher_is_better": true
+     }
+    }
+   },
+   "T0_N1DH_minus_N1DC": {
+    "s0": {
+     "status": "OK",
+     "delta": -0.004707112970711358,
+     "lo": -0.0101,
+     "hi": 0.0007,
+     "separated": false,
+     "n_windows": 5736,
+     "n_episodes": 497
+    },
+    "s1": {
+     "status": "OK",
+     "delta": 0.006101813110181209,
+     "lo": -0.0012,
+     "hi": 0.0135,
+     "separated": false,
+     "n_windows": 5736,
+     "n_episodes": 497
+    }
+   },
+   "Z-POST": {
+    "status": "PENDING-ZPOST (run n1dh_zpost.py on the N1DH checkpoints, pass --zpost)",
+    "weak": {
+     "s0": null,
+     "s1": null
+    }
+   },
+   "R1_LON_LAT_HO_beside_no_bar": {
+    "N1DH_s0": {
+     "N1DH-N1R": {
+      "operative_0_2s:ade_m": {
+       "status": "OK",
+       "delta": -0.007114099169138133,
+       "lo": -0.0099,
+       "hi": -0.0042,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "operative_0_2s:fde_m": {
+       "status": "OK",
+       "delta": -0.030292862881911242,
+       "lo": -0.0387,
+       "hi": -0.0211,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "operative_0_2s:speed_mae_mps": {
+       "status": "OK",
+       "delta": -0.002392853891540425,
+       "lo": -0.0048,
+       "hi": 0.0002,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:along_mae_m": {
+       "status": "OK",
+       "delta": -0.0007877764111410557,
+       "lo": -0.0027,
+       "hi": 0.0012,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:accel_mae_mps2": {
+       "status": "OK",
+       "delta": -0.005063423715417126,
+       "lo": -0.0089,
+       "hi": -0.0011,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:cross_mae_m": {
+       "status": "OK",
+       "delta": -0.008505709859710914,
+       "lo": -0.0112,
+       "hi": -0.0058,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:heading_mae_deg": {
+       "status": "OK",
+       "delta": -0.1749784063882509,
+       "lo": -0.2147,
+       "hi": -0.1348,
+       "separated": true,
+       "n_windows": 5533,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:yaw_rate_mae_degps": {
+       "status": "OK",
+       "delta": -0.3454564134036513,
+       "lo": -0.429,
+       "hi": -0.268,
+       "separated": true,
+       "n_windows": 5517,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:curvature_mae_1pm": {
+       "status": "OK",
+       "delta": -0.006889840432238031,
+       "lo": -0.0099,
+       "hi": -0.0044,
+       "separated": true,
+       "n_windows": 5517,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:dk_hw_abs_err_m": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:dk_tg_abs_err_s": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:ade_m": {
+       "status": "OK",
+       "delta": -0.4523167213657686,
+       "lo": -0.5219,
+       "hi": -0.3752,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:fde_m": {
+       "status": "OK",
+       "delta": -1.126677246485162,
+       "lo": -1.3069,
+       "hi": -0.936,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:speed_mae_mps": {
+       "status": "OK",
+       "delta": -0.135603450979785,
+       "lo": -0.1701,
+       "hi": -0.1022,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:along_mae_m": {
+       "status": "OK",
+       "delta": -0.2131330373261049,
+       "lo": -0.2603,
+       "hi": -0.1633,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:accel_mae_mps2": {
+       "status": "OK",
+       "delta": -0.46059311988429874,
+       "lo": -0.5831,
+       "hi": -0.3408,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:cross_mae_m": {
+       "status": "OK",
+       "delta": -0.3489790674180222,
+       "lo": -0.4187,
+       "hi": -0.277,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:heading_mae_deg": {
+       "status": "OK",
+       "delta": -3.1682565735954533,
+       "lo": -3.6462,
+       "hi": -2.6577,
+       "separated": true,
+       "n_windows": 5668,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:yaw_rate_mae_degps": {
+       "status": "OK",
+       "delta": -7.283852979208866,
+       "lo": -8.73,
+       "hi": -5.8387,
+       "separated": true,
+       "n_windows": 5659,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:curvature_mae_1pm": {
+       "status": "OK",
+       "delta": -0.03512682505311843,
+       "lo": -0.0464,
+       "hi": -0.0243,
+       "separated": true,
+       "n_windows": 5659,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:dk_hw_abs_err_m": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:dk_tg_abs_err_s": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "TAC-LAT": {
+       "status": "OK",
+       "delta": 0.020571827057182634,
+       "lo": 0.0074,
+       "hi": 0.0338,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "TACTICAL",
+       "higher_is_better": true
+      },
+      "TAC-LON": {
+       "status": "OK",
+       "delta": 0.019700139470013922,
+       "lo": 0.0085,
+       "hi": 0.0306,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "TACTICAL",
+       "higher_is_better": true
+      }
+     },
+     "N1DH-N1D": {
+      "operative_0_2s:ade_m": {
+       "status": "OK",
+       "delta": 0.0024366544946038404,
+       "lo": 0.0007,
+       "hi": 0.0043,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "operative_0_2s:fde_m": {
+       "status": "OK",
+       "delta": 0.007312190203593638,
+       "lo": 0.0019,
+       "hi": 0.0128,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "operative_0_2s:speed_mae_mps": {
+       "status": "OK",
+       "delta": -0.0012090190187523109,
+       "lo": -0.0027,
+       "hi": 0.0004,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:along_mae_m": {
+       "status": "OK",
+       "delta": 0.000820890457164436,
+       "lo": -0.0003,
+       "hi": 0.0019,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:accel_mae_mps2": {
+       "status": "OK",
+       "delta": -0.007278046679938921,
+       "lo": -0.0096,
+       "hi": -0.0049,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:cross_mae_m": {
+       "status": "OK",
+       "delta": 0.0018377301421119985,
+       "lo": 0.0001,
+       "hi": 0.0036,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:heading_mae_deg": {
+       "status": "OK",
+       "delta": 0.009737063293876691,
+       "lo": -0.0164,
+       "hi": 0.0349,
+       "separated": false,
+       "n_windows": 5535,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:yaw_rate_mae_degps": {
+       "status": "OK",
+       "delta": -0.028553144133876884,
+       "lo": -0.0717,
+       "hi": 0.0112,
+       "separated": false,
+       "n_windows": 5521,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:curvature_mae_1pm": {
+       "status": "OK",
+       "delta": -0.0019195387242847972,
+       "lo": -0.0035,
+       "hi": -0.0005,
+       "separated": true,
+       "n_windows": 5521,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:dk_hw_abs_err_m": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:dk_tg_abs_err_s": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:ade_m": {
+       "status": "OK",
+       "delta": 0.0033492844016009826,
+       "lo": -0.0363,
+       "hi": 0.0431,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:fde_m": {
+       "status": "OK",
+       "delta": -0.04287207793369241,
+       "lo": -0.1477,
+       "hi": 0.0648,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:speed_mae_mps": {
+       "status": "OK",
+       "delta": -0.04397658697626938,
+       "lo": -0.0685,
+       "hi": -0.0198,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:along_mae_m": {
+       "status": "OK",
+       "delta": -0.012860648680217412,
+       "lo": -0.0407,
+       "hi": 0.0151,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:accel_mae_mps2": {
+       "status": "OK",
+       "delta": -0.2826961979826499,
+       "lo": -0.3667,
+       "hi": -0.2037,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:cross_mae_m": {
+       "status": "OK",
+       "delta": -0.0028372751047878175,
+       "lo": -0.041,
+       "hi": 0.0359,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:heading_mae_deg": {
+       "status": "OK",
+       "delta": -0.40816667736187284,
+       "lo": -0.6853,
+       "hi": -0.1273,
+       "separated": true,
+       "n_windows": 5668,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:yaw_rate_mae_degps": {
+       "status": "OK",
+       "delta": -4.3827245075331405,
+       "lo": -5.4757,
+       "hi": -3.3092,
+       "separated": true,
+       "n_windows": 5660,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:curvature_mae_1pm": {
+       "status": "OK",
+       "delta": -0.01805197143425022,
+       "lo": -0.0272,
+       "hi": -0.0093,
+       "separated": true,
+       "n_windows": 5660,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:dk_hw_abs_err_m": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:dk_tg_abs_err_s": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "TAC-LAT": {
+       "status": "OK",
+       "delta": -0.008542538354253892,
+       "lo": -0.0186,
+       "hi": 0.001,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "TACTICAL",
+       "higher_is_better": true
+      },
+      "TAC-LON": {
+       "status": "OK",
+       "delta": 0.012029288702928853,
+       "lo": 0.0025,
+       "hi": 0.0213,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "TACTICAL",
+       "higher_is_better": true
+      }
+     }
+    },
+    "N1DH_s1": {
+     "N1DH-N1R": {
+      "operative_0_2s:ade_m": {
+       "status": "OK",
+       "delta": 0.004789234331774694,
+       "lo": 0.0008,
+       "hi": 0.0087,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "operative_0_2s:fde_m": {
+       "status": "OK",
+       "delta": -0.0010927414769027477,
+       "lo": -0.0128,
+       "hi": 0.0104,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "operative_0_2s:speed_mae_mps": {
+       "status": "OK",
+       "delta": 0.015843128940332463,
+       "lo": 0.0123,
+       "hi": 0.0197,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:along_mae_m": {
+       "status": "OK",
+       "delta": 0.013139223021544744,
+       "lo": 0.0104,
+       "hi": 0.0161,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:accel_mae_mps2": {
+       "status": "OK",
+       "delta": 0.016640073639036412,
+       "lo": 0.0117,
+       "hi": 0.0218,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:cross_mae_m": {
+       "status": "OK",
+       "delta": -0.00563228876318822,
+       "lo": -0.0091,
+       "hi": -0.0022,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:heading_mae_deg": {
+       "status": "OK",
+       "delta": -0.09562951351281068,
+       "lo": -0.1456,
+       "hi": -0.046,
+       "separated": true,
+       "n_windows": 5528,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:yaw_rate_mae_degps": {
+       "status": "OK",
+       "delta": -0.2366916228154814,
+       "lo": -0.3151,
+       "hi": -0.16,
+       "separated": true,
+       "n_windows": 5512,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:curvature_mae_1pm": {
+       "status": "OK",
+       "delta": -0.003517260078206033,
+       "lo": -0.0054,
+       "hi": -0.0019,
+       "separated": true,
+       "n_windows": 5512,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:dk_hw_abs_err_m": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:dk_tg_abs_err_s": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:ade_m": {
+       "status": "OK",
+       "delta": -0.31188443033555124,
+       "lo": -0.3928,
+       "hi": -0.2335,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:fde_m": {
+       "status": "OK",
+       "delta": -0.8455410251083357,
+       "lo": -1.0398,
+       "hi": -0.6523,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:speed_mae_mps": {
+       "status": "OK",
+       "delta": -0.11189300105235178,
+       "lo": -0.1528,
+       "hi": -0.0715,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:along_mae_m": {
+       "status": "OK",
+       "delta": -0.10108063381120047,
+       "lo": -0.1558,
+       "hi": -0.0438,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:accel_mae_mps2": {
+       "status": "OK",
+       "delta": -0.320688082411285,
+       "lo": -0.4681,
+       "hi": -0.1789,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:cross_mae_m": {
+       "status": "OK",
+       "delta": -0.27398116033774533,
+       "lo": -0.3431,
+       "hi": -0.2041,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:heading_mae_deg": {
+       "status": "OK",
+       "delta": -2.2309225738485203,
+       "lo": -2.7262,
+       "hi": -1.7595,
+       "separated": true,
+       "n_windows": 5667,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:yaw_rate_mae_degps": {
+       "status": "OK",
+       "delta": -4.510691319482959,
+       "lo": -6.2449,
+       "hi": -2.8228,
+       "separated": true,
+       "n_windows": 5657,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:curvature_mae_1pm": {
+       "status": "OK",
+       "delta": -0.011925149212239583,
+       "lo": -0.0316,
+       "hi": 0.008,
+       "separated": false,
+       "n_windows": 5657,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:dk_hw_abs_err_m": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:dk_tg_abs_err_s": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "TAC-LAT": {
+       "status": "OK",
+       "delta": 0.025104602510460206,
+       "lo": 0.0124,
+       "hi": 0.0381,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "TACTICAL",
+       "higher_is_better": true
+      },
+      "TAC-LON": {
+       "status": "OK",
+       "delta": 0.016213389121338906,
+       "lo": 0.0042,
+       "hi": 0.0277,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "TACTICAL",
+       "higher_is_better": true
+      }
+     },
+     "N1DH-N1D": {
+      "operative_0_2s:ade_m": {
+       "status": "OK",
+       "delta": 0.011879864077634028,
+       "lo": 0.0088,
+       "hi": 0.015,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "operative_0_2s:fde_m": {
+       "status": "OK",
+       "delta": 0.0249501695501817,
+       "lo": 0.0159,
+       "hi": 0.0344,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "operative_0_2s:speed_mae_mps": {
+       "status": "OK",
+       "delta": 0.01448064436638452,
+       "lo": 0.0116,
+       "hi": 0.0174,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:along_mae_m": {
+       "status": "OK",
+       "delta": 0.015467586987706283,
+       "lo": 0.013,
+       "hi": 0.018,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:accel_mae_mps2": {
+       "status": "OK",
+       "delta": 0.00209658636015686,
+       "lo": -0.0017,
+       "hi": 0.0062,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:cross_mae_m": {
+       "status": "OK",
+       "delta": 5.473179061424305e-05,
+       "lo": -0.0025,
+       "hi": 0.0027,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:heading_mae_deg": {
+       "status": "OK",
+       "delta": -0.00911799984217243,
+       "lo": -0.0428,
+       "hi": 0.0258,
+       "separated": false,
+       "n_windows": 5529,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:yaw_rate_mae_degps": {
+       "status": "OK",
+       "delta": -0.13941339275084275,
+       "lo": -0.2193,
+       "hi": -0.0616,
+       "separated": true,
+       "n_windows": 5513,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:curvature_mae_1pm": {
+       "status": "OK",
+       "delta": -0.003295314217754336,
+       "lo": -0.0056,
+       "hi": -0.0012,
+       "separated": true,
+       "n_windows": 5513,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:dk_hw_abs_err_m": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "operative_0_2s:dk_tg_abs_err_s": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:ade_m": {
+       "status": "OK",
+       "delta": -0.050605360110372644,
+       "lo": -0.1016,
+       "hi": 0.0042,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:fde_m": {
+       "status": "OK",
+       "delta": -0.2211652908471855,
+       "lo": -0.3525,
+       "hi": -0.0852,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "PRIMARY",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:speed_mae_mps": {
+       "status": "OK",
+       "delta": -0.019992084489499184,
+       "lo": -0.0525,
+       "hi": 0.0134,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:along_mae_m": {
+       "status": "OK",
+       "delta": 0.008450773763466923,
+       "lo": -0.0313,
+       "hi": 0.0498,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:accel_mae_mps2": {
+       "status": "OK",
+       "delta": -0.15261725535975224,
+       "lo": -0.2612,
+       "hi": -0.0364,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:cross_mae_m": {
+       "status": "OK",
+       "delta": -0.0748939831251958,
+       "lo": -0.1218,
+       "hi": -0.0287,
+       "separated": true,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:heading_mae_deg": {
+       "status": "OK",
+       "delta": -0.5673088153281398,
+       "lo": -0.8537,
+       "hi": -0.2718,
+       "separated": true,
+       "n_windows": 5668,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:yaw_rate_mae_degps": {
+       "status": "OK",
+       "delta": -0.6317315077053891,
+       "lo": -1.9208,
+       "hi": 0.7184,
+       "separated": false,
+       "n_windows": 5658,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:curvature_mae_1pm": {
+       "status": "OK",
+       "delta": 0.021822182183448946,
+       "lo": 0.0051,
+       "hi": 0.0389,
+       "separated": true,
+       "n_windows": 5658,
+       "n_episodes": 497,
+       "family": "LATERAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:dk_hw_abs_err_m": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "tactical_2_6s:dk_tg_abs_err_s": {
+       "status": "NOT-COMPUTABLE",
+       "n_windows": 0,
+       "n_episodes": 0,
+       "reason": "no lead block exists for held-out clips; n = 0",
+       "family": "LONGITUDINAL",
+       "higher_is_better": false
+      },
+      "TAC-LAT": {
+       "status": "OK",
+       "delta": 0.008019525801952532,
+       "lo": -0.0022,
+       "hi": 0.0174,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "TACTICAL",
+       "higher_is_better": true
+      },
+      "TAC-LON": {
+       "status": "OK",
+       "delta": -0.0001743375174337869,
+       "lo": -0.0098,
+       "hi": 0.0097,
+       "separated": false,
+       "n_windows": 5736,
+       "n_episodes": 497,
+       "family": "TACTICAL",
+       "higher_is_better": true
+      }
+     }
+    }
+   },
+   "T0_N1DH_minus_N1D": {
+    "s0": {
+     "status": "OK",
+     "delta": -0.008891213389121355,
+     "lo": -0.0154,
+     "hi": -0.0032,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497
+    },
+    "s1": {
+     "status": "OK",
+     "delta": 0.009065550906555031,
+     "lo": 0.0009,
+     "hi": 0.017,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497
+    }
+   },
+   "T0_vs_T1_N1DH": {
+    "s0": {
+     "T0": 0.6176778242677824,
+     "T1": 0.6110529986052998,
+     "T0_minus_T1": {
+      "status": "OK",
+      "delta": 0.00662482566248257,
+      "lo": -0.0145,
+      "hi": 0.026,
+      "separated": false,
+      "n_windows": 5736,
+      "n_episodes": 497
+     }
+    },
+    "s1": {
+     "T0": 0.6440027894002789,
+     "T1": 0.6579497907949791,
+     "T0_minus_T1": {
+      "status": "OK",
+      "delta": -0.013947001394700176,
+      "lo": -0.0343,
+      "hi": 0.0056,
+      "separated": false,
+      "n_windows": 5736,
+      "n_episodes": 497
+     }
+    }
+   },
+   "T0_target_note": "card section 0: target 0.73 (CEIL-AT-PLAN) against N1D decoded 0.6266 / 0.6349",
+   "Z_USE_skip_zeroed_real_minus_zuse": {
+    "N1DH_s0": {
+     "status": "NOT-YET (no zuse dump)"
+    },
+    "N1DH_s1": {
+     "status": "NOT-YET (no zuse dump)"
+    }
+   },
+   "Z_CHANNEL_D_zero_twin_real_minus_zero": {
+    "N1D_s0": {
+     "TAC-LAT": {
+      "status": "OK",
+      "delta": 0.04637377963737799,
+      "lo": 0.0334,
+      "hi": 0.0592,
+      "separated": true,
+      "n_windows": 5736,
+      "n_episodes": 497
+     }
+    },
+    "N1D_s1": {
+     "TAC-LAT": {
+      "status": "OK",
+      "delta": 0.020223152022315283,
+      "lo": 0.0064,
+      "hi": 0.0331,
+      "separated": true,
+      "n_windows": 5736,
+      "n_episodes": 497
+     }
+    }
+   },
+   "Z-EVAL_HO": "NOT-YET (needs the all-zero-channel-history mask of the held-out grid, --ho-zero-hist-mask; the eval-141 Z-EVAL belongs to the guard read)"
+  }
+ },
+ "outcome_D1HO_alone_hb0.2": {
+  "labels": {
+   "N1DH-GAIN (D1-HO gain above the bar at BOTH seeds, guard holds at both)": "not fired",
+   "N1DH-ONE-SEED (gain at one seed, guard holds at both)": "not fired",
+   "N1DH-GAIN-COST (gain at one or both seeds, guard cost at one seed)": "not fired",
+   "N1DH-COST (guard cost at both seeds, or D1-HO a cost at both)": "PENDING-GUARD (D1-HO shows no cost at both seeds; the guard part needs eval-141)",
+   "N1DH-POST-WEAK (no gain AND route-head T0 accuracy below 0.685 at a seed)": "PENDING-ZPOST (no gain at either seed; Z-POST not joined)",
+   "N1DH-NO-GAIN (otherwise: head >= 0.685, decoder still about 0.63)": "PENDING-GUARD + PENDING-ZPOST"
+  },
+  "gain_by_seed": {
+   "s0": false,
+   "s1": false
+  },
+  "cost_by_seed": {
+   "s0": false,
+   "s1": false
+  },
+  "z_post_weak_by_seed": {
+   "s0": null,
+   "s1": null
+  },
+  "guard": "PENDING-GUARD"
+ },
+ "outcome_D1HO_alone_old_beside": {
+  "labels": {
+   "N1DH-GAIN (D1-HO gain above the bar at BOTH seeds, guard holds at both)": "not fired",
+   "N1DH-ONE-SEED (gain at one seed, guard holds at both)": "not fired",
+   "N1DH-GAIN-COST (gain at one or both seeds, guard cost at one seed)": "not fired",
+   "N1DH-COST (guard cost at both seeds, or D1-HO a cost at both)": "PENDING-GUARD (D1-HO shows no cost at both seeds; the guard part needs eval-141)",
+   "N1DH-POST-WEAK (no gain AND route-head T0 accuracy below 0.685 at a seed)": "PENDING-ZPOST (no gain at either seed; Z-POST not joined)",
+   "N1DH-NO-GAIN (otherwise: head >= 0.685, decoder still about 0.63)": "PENDING-GUARD + PENDING-ZPOST"
+  },
+  "gain_by_seed": {
+   "s0": false,
+   "s1": false
+  },
+  "cost_by_seed": {
+   "s0": false,
+   "s1": false
+  },
+  "z_post_weak_by_seed": {
+   "s0": null,
+   "s1": null
+  },
+  "guard": "PENDING-GUARD"
+ },
+ "status": "VALID",
+ "wall_s": 740.9
+}

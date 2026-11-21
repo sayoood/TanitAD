@@ -1,0 +1,900 @@
+{
+ "_evidence_class": "MEASURED (ours)",
+ "blob_md5": "fa89ea55dfce68403eb30300e57852ab",
+ "window_s": [
+  10.0,
+  14.0
+ ],
+ "n_clips": 4572,
+ "n_with_ego": 4572,
+ "n_with_join": 4318,
+ "pipeline_control": {
+  "STOP_POINT": {
+   "rule": "p_stop th=0.5",
+   "n_pos": 327,
+   "fire_pos": 327,
+   "S": 1.0,
+   "S_ci": [
+    0.9883884009749682,
+    1.0
+   ],
+   "known_negative_via": "FOLLOW_LANE",
+   "n_neg": 3629,
+   "fire_neg": 32,
+   "f0": 0.008817856158721412,
+   "f0_ci": [
+    0.0062530897647611675,
+    0.01242143763549763
+   ]
+  },
+  "TURN_L": {
+   "rule": "<lambda> th=20.0",
+   "n_pos": 275,
+   "fire_pos": 257,
+   "S": 0.9345454545454546,
+   "S_ci": [
+    0.8989178170483269,
+    0.9581996288420999
+   ],
+   "known_negative_via": "TURN_R",
+   "n_neg": 259,
+   "fire_neg": 9,
+   "f0": 0.03474903474903475,
+   "f0_ci": [
+    0.018387145093751157,
+    0.06471081200284237
+   ]
+  },
+  "TURN_R": {
+   "rule": "<lambda> th=20.0",
+   "n_pos": 259,
+   "fire_pos": 249,
+   "S": 0.9613899613899614,
+   "S_ci": [
+    0.930397786939795,
+    0.9788951103793506
+   ],
+   "known_negative_via": "TURN_L",
+   "n_neg": 275,
+   "fire_neg": 17,
+   "f0": 0.06181818181818182,
+   "f0_ci": [
+    0.03895062404354385,
+    0.09675939913807613
+   ]
+  }
+ },
+ "tokens": {
+  "YIELD": {
+   "rule": "decelerated by >= TH m/s in [t0, t0+6] or v_min <= 2.0 m/s (ego kinematics only)",
+   "excluded_by": [],
+   "known_negative_source": "empty-scene",
+   "sweep": [
+    {
+     "threshold": 1.0,
+     "n_pos": 609,
+     "fire_pos": 283,
+     "S": 0.46469622331691296,
+     "S_ci": [
+      0.4254287650793432,
+      0.5044062852827731
+     ],
+     "n_unlabelled": 3963,
+     "fire_unlabelled": 1740,
+     "F": 0.4390613171839515,
+     "F_ci": [
+      0.42367642781764114,
+      0.4545642359890507
+     ],
+     "known_negative_source": "empty-scene",
+     "n_known_neg": 566,
+     "fire_known_neg": 207,
+     "f0": 0.3657243816254417,
+     "f0_ci": [
+      0.3270739365361428,
+      0.4061852709348456
+     ],
+     "upper_bound_fn_rate": 0.9448351313251819,
+     "raw_fire_rate_unlabelled": 0.4390613171839515,
+     "point_estimate": 0.7409878840804629,
+     "control_passed": false,
+     "n_unknown_pos": 0,
+     "n_unknown_unlabelled": 0
+    },
+    {
+     "threshold": 1.5,
+     "n_pos": 609,
+     "fire_pos": 251,
+     "S": 0.4121510673234811,
+     "S_ci": [
+      0.37372672504116217,
+      0.4516767723715461
+     ],
+     "n_unlabelled": 3963,
+     "fire_unlabelled": 1447,
+     "F": 0.3651274287156195,
+     "F_ci": [
+      0.3502744608684868,
+      0.38024162527924343
+     ],
+     "known_negative_source": "empty-scene",
+     "n_known_neg": 566,
+     "fire_known_neg": 171,
+     "f0": 0.30212014134275617,
+     "f0_ci": [
+      0.26572901254556613,
+      0.3411792932011536
+     ],
+     "upper_bound_fn_rate": 0.8859067891944712,
+     "raw_fire_rate_unlabelled": 0.3651274287156195,
+     "point_estimate": 0.572632528639274,
+     "control_passed": false,
+     "n_unknown_pos": 0,
+     "n_unknown_unlabelled": 0
+    },
+    {
+     "threshold": 2.0,
+     "n_pos": 609,
+     "fire_pos": 231,
+     "S": 0.3793103448275862,
+     "S_ci": [
+      0.3416430499028887,
+      0.41849072691643946
+     ],
+     "n_unlabelled": 3963,
+     "fire_unlabelled": 1257,
+     "F": 0.31718395155185464,
+     "F_ci": [
+      0.3028774947115897,
+      0.3318444967084861
+     ],
+     "known_negative_source": "empty-scene",
+     "n_known_neg": 566,
+     "fire_known_neg": 148,
+     "f0": 0.26148409893992935,
+     "f0_ci": [
+      0.22697499862738812,
+      0.2992091199066045
+     ],
+     "upper_bound_fn_rate": 0.8362122359094349,
+     "raw_fire_rate_unlabelled": 0.31718395155185464,
+     "point_estimate": 0.47272873876532673,
+     "control_passed": false,
+     "n_unknown_pos": 0,
+     "n_unknown_unlabelled": 0
+    },
+    {
+     "threshold": 3.0,
+     "n_pos": 609,
+     "fire_pos": 214,
+     "S": 0.35139573070607555,
+     "S_ci": [
+      0.314517669413915,
+      0.39013684490104017
+     ],
+     "n_unlabelled": 3963,
+     "fire_unlabelled": 1006,
+     "F": 0.25384809487761795,
+     "F_ci": [
+      0.24054077432145343,
+      0.2676321761689316
+     ],
+     "known_negative_source": "empty-scene",
+     "n_known_neg": 566,
+     "fire_known_neg": 113,
+     "f0": 0.19964664310954064,
+     "f0_ci": [
+      0.16878815127944913,
+      0.23455481280039342
+     ],
+     "upper_bound_fn_rate": 0.7223994849554641,
+     "raw_fire_rate_unlabelled": 0.25384809487761795,
+     "point_estimate": 0.3571781064818406,
+     "control_passed": false,
+     "n_unknown_pos": 0,
+     "n_unknown_unlabelled": 0
+    }
+   ]
+  },
+  "YIELD@conflict": {
+   "rule": "the kinematic test AND a crossing / oncoming / VRU agent in the scene",
+   "excluded_by": [],
+   "known_negative_source": "empty-scene",
+   "sweep": [
+    {
+     "threshold": 1.5,
+     "n_pos": 601,
+     "fire_pos": 195,
+     "S": 0.324459234608985,
+     "S_ci": [
+      0.2882461511122804,
+      0.3629021826002155
+     ],
+     "n_unlabelled": 3717,
+     "fire_unlabelled": 792,
+     "F": 0.21307506053268765,
+     "F_ci": [
+      0.20021061251222794,
+      0.22653198249638512
+     ],
+     "known_negative_source": "empty-scene",
+     "n_known_neg": 566,
+     "fire_known_neg": 0,
+     "f0": 0.0,
+     "f0_ci": [
+      0.0,
+      0.0067415225564437554
+     ],
+     "upper_bound_fn_rate": 0.6567082634879245,
+     "raw_fire_rate_unlabelled": 0.21307506053268765,
+     "point_estimate": 0.6567082634879245,
+     "control_passed": false,
+     "n_unknown_pos": 8,
+     "n_unknown_unlabelled": 246
+    }
+   ]
+  },
+  "GAP_TARGET": {
+   "rule": "a vehicle in the +-1.8 m corridor ahead for >= TH of the window",
+   "excluded_by": [],
+   "known_negative_source": "empty-scene",
+   "sweep": [
+    {
+     "threshold": 0.05,
+     "n_pos": 363,
+     "fire_pos": 295,
+     "S": 0.8126721763085399,
+     "S_ci": [
+      0.7693359886338248,
+      0.8494596986600916
+     ],
+     "n_unlabelled": 3955,
+     "fire_unlabelled": 2199,
+     "F": 0.5560050568900127,
+     "F_ci": [
+      0.5404731300312698,
+      0.5714282908288121
+     ],
+     "known_negative_source": "empty-scene",
+     "n_known_neg": 619,
+     "fire_known_neg": 0,
+     "f0": 0.0,
+     "f0_ci": [
+      0.0,
+      0.006167860335597365
+     ],
+     "upper_bound_fn_rate": 0.6841689344104224,
+     "raw_fire_rate_unlabelled": 0.5560050568900127,
+     "point_estimate": 0.6841689344104224,
+     "control_passed": false,
+     "n_unknown_pos": 5,
+     "n_unknown_unlabelled": 249
+    },
+    {
+     "threshold": 0.25,
+     "n_pos": 363,
+     "fire_pos": 284,
+     "S": 0.7823691460055097,
+     "S_ci": [
+      0.7370824560012046,
+      0.8217418430968257
+     ],
+     "n_unlabelled": 3955,
+     "fire_unlabelled": 1883,
+     "F": 0.4761061946902655,
+     "F_ci": [
+      0.4605716577342477,
+      0.49168710402070614
+     ],
+     "known_negative_source": "empty-scene",
+     "n_known_neg": 619,
+     "fire_known_neg": 0,
+     "f0": 0.0,
+     "f0_ci": [
+      0.0,
+      0.006167860335597365
+     ],
+     "upper_bound_fn_rate": 0.608544185466783,
+     "raw_fire_rate_unlabelled": 0.4761061946902655,
+     "point_estimate": 0.608544185466783,
+     "control_passed": false,
+     "n_unknown_pos": 5,
+     "n_unknown_unlabelled": 249
+    },
+    {
+     "threshold": 0.5,
+     "n_pos": 363,
+     "fire_pos": 250,
+     "S": 0.6887052341597796,
+     "S_ci": [
+      0.6393052505663669,
+      0.7341529395625607
+     ],
+     "n_unlabelled": 3955,
+     "fire_unlabelled": 1558,
+     "F": 0.39393173198482934,
+     "F_ci": [
+      0.37881330827044607,
+      0.40925600978461324
+     ],
+     "known_negative_source": "empty-scene",
+     "n_known_neg": 619,
+     "fire_known_neg": 0,
+     "f0": 0.0,
+     "f0_ci": [
+      0.0,
+      0.006167860335597365
+     ],
+     "upper_bound_fn_rate": 0.5719888748419723,
+     "raw_fire_rate_unlabelled": 0.39393173198482934,
+     "point_estimate": 0.5719888748419723,
+     "control_passed": false,
+     "n_unknown_pos": 5,
+     "n_unknown_unlabelled": 249
+    },
+    {
+     "threshold": 0.75,
+     "n_pos": 363,
+     "fire_pos": 216,
+     "S": 0.5950413223140496,
+     "S_ci": [
+      0.5438024202325251,
+      0.6442896609272997
+     ],
+     "n_unlabelled": 3955,
+     "fire_unlabelled": 1297,
+     "F": 0.32793931731984827,
+     "F_ci": [
+      0.31348109969954946,
+      0.34273146510728686
+     ],
+     "known_negative_source": "empty-scene",
+     "n_known_neg": 619,
+     "fire_known_neg": 0,
+     "f0": 0.0,
+     "f0_ci": [
+      0.0,
+      0.006167860335597365
+     ],
+     "upper_bound_fn_rate": 0.5511202416069673,
+     "raw_fire_rate_unlabelled": 0.32793931731984827,
+     "point_estimate": 0.5511202416069673,
+     "control_passed": false,
+     "n_unknown_pos": 5,
+     "n_unknown_unlabelled": 249
+    }
+   ]
+  },
+  "REACT_ON_ONCOMING": {
+   "rule": "a vehicle with opposed heading (>135 deg) ahead within TH m and |cy| <= 6 m",
+   "excluded_by": [],
+   "known_negative_source": "empty-scene",
+   "sweep": [
+    {
+     "threshold": 30.0,
+     "n_pos": 318,
+     "fire_pos": 164,
+     "S": 0.5157232704402516,
+     "S_ci": [
+      0.4609355839328785,
+      0.5701356013955564
+     ],
+     "n_unlabelled": 4000,
+     "fire_unlabelled": 1050,
+     "F": 0.2625,
+     "F_ci": [
+      0.24909699313685138,
+      0.276358759158644
+     ],
+     "known_negative_source": "empty-scene",
+     "n_known_neg": 564,
+     "fire_known_neg": 0,
+     "f0": 0.0,
+     "f0_ci": [
+      0.0,
+      0.006765266933595566
+     ],
+     "upper_bound_fn_rate": 0.5089939024390244,
+     "raw_fire_rate_unlabelled": 0.2625,
+     "point_estimate": 0.5089939024390244,
+     "control_passed": false,
+     "n_unknown_pos": 15,
+     "n_unknown_unlabelled": 239
+    },
+    {
+     "threshold": 50.0,
+     "n_pos": 318,
+     "fire_pos": 173,
+     "S": 0.5440251572327044,
+     "S_ci": [
+      0.4890825880136621,
+      0.5979167309059555
+     ],
+     "n_unlabelled": 4000,
+     "fire_unlabelled": 1265,
+     "F": 0.31625,
+     "F_ci": [
+      0.3020212765911922,
+      0.33083133176374363
+     ],
+     "known_negative_source": "empty-scene",
+     "n_known_neg": 564,
+     "fire_known_neg": 0,
+     "f0": 0.0,
+     "f0_ci": [
+      0.0,
+      0.006765266933595566
+     ],
+     "upper_bound_fn_rate": 0.581315028901734,
+     "raw_fire_rate_unlabelled": 0.31625,
+     "point_estimate": 0.581315028901734,
+     "control_passed": false,
+     "n_unknown_pos": 15,
+     "n_unknown_unlabelled": 239
+    },
+    {
+     "threshold": 80.0,
+     "n_pos": 318,
+     "fire_pos": 183,
+     "S": 0.5754716981132075,
+     "S_ci": [
+      0.5205625190831263,
+      0.6285791704933609
+     ],
+     "n_unlabelled": 4000,
+     "fire_unlabelled": 1492,
+     "F": 0.373,
+     "F_ci": [
+      0.3581415651044664,
+      0.3881021424388089
+     ],
+     "known_negative_source": "empty-scene",
+     "n_known_neg": 564,
+     "fire_known_neg": 0,
+     "f0": 0.0,
+     "f0_ci": [
+      0.0,
+      0.006765266933595566
+     ],
+     "upper_bound_fn_rate": 0.6481639344262295,
+     "raw_fire_rate_unlabelled": 0.373,
+     "point_estimate": 0.6481639344262295,
+     "control_passed": false,
+     "n_unknown_pos": 15,
+     "n_unknown_unlabelled": 239
+    }
+   ]
+  },
+  "CORRIDOR_OFFSET": {
+   "rule": "curvature-detrended lateral residual >= TH m",
+   "excluded_by": [],
+   "known_negative_source": null,
+   "sweep": [
+    {
+     "threshold": 0.05,
+     "n_pos": 860,
+     "fire_pos": 644,
+     "S": 0.7488372093023256,
+     "S_ci": [
+      0.7187886343043708,
+      0.7766725706202358
+     ],
+     "n_unlabelled": 3712,
+     "fire_unlabelled": 2557,
+     "F": 0.6888469827586207,
+     "F_ci": [
+      0.6737645379114162,
+      0.703538951020943
+     ],
+     "known_negative_source": null,
+     "n_known_neg": 0,
+     "fire_known_neg": 0,
+     "f0": null,
+     "f0_ci": null,
+     "upper_bound_fn_rate": 0.9198888279074748,
+     "raw_fire_rate_unlabelled": 0.6888469827586207,
+     "point_estimate": null,
+     "control_passed": false,
+     "n_unknown_pos": 0,
+     "n_unknown_unlabelled": 0
+    },
+    {
+     "threshold": 0.1,
+     "n_pos": 860,
+     "fire_pos": 499,
+     "S": 0.5802325581395349,
+     "S_ci": [
+      0.5469625664601574,
+      0.612788943538898
+     ],
+     "n_unlabelled": 3712,
+     "fire_unlabelled": 2017,
+     "F": 0.5433728448275862,
+     "F_ci": [
+      0.5273118215339317,
+      0.5593441866231436
+     ],
+     "known_negative_source": null,
+     "n_known_neg": 0,
+     "fire_known_neg": 0,
+     "f0": null,
+     "f0_ci": null,
+     "upper_bound_fn_rate": 0.9364742415866215,
+     "raw_fire_rate_unlabelled": 0.5433728448275862,
+     "point_estimate": null,
+     "control_passed": false,
+     "n_unknown_pos": 0,
+     "n_unknown_unlabelled": 0
+    },
+    {
+     "threshold": 0.2,
+     "n_pos": 860,
+     "fire_pos": 333,
+     "S": 0.3872093023255814,
+     "S_ci": [
+      0.35522313604678507,
+      0.4201986542443979
+     ],
+     "n_unlabelled": 3712,
+     "fire_unlabelled": 1520,
+     "F": 0.40948275862068967,
+     "F_ci": [
+      0.3937649809106967,
+      0.4253876977180157
+     ],
+     "known_negative_source": null,
+     "n_known_neg": 0,
+     "fire_known_neg": 0,
+     "f0": null,
+     "f0_ci": null,
+     "upper_bound_fn_rate": 1.0,
+     "raw_fire_rate_unlabelled": 0.40948275862068967,
+     "point_estimate": null,
+     "control_passed": false,
+     "n_unknown_pos": 0,
+     "n_unknown_unlabelled": 0
+    },
+    {
+     "threshold": 0.4,
+     "n_pos": 860,
+     "fire_pos": 193,
+     "S": 0.22441860465116278,
+     "S_ci": [
+      0.19779556436633403,
+      0.25349272737604095
+     ],
+     "n_unlabelled": 3712,
+     "fire_unlabelled": 1038,
+     "F": 0.2796336206896552,
+     "F_ci": [
+      0.2654285651763245,
+      0.2942943250566715
+     ],
+     "known_negative_source": null,
+     "n_known_neg": 0,
+     "fire_known_neg": 0,
+     "f0": null,
+     "f0_ci": null,
+     "upper_bound_fn_rate": 1.0,
+     "raw_fire_rate_unlabelled": 0.2796336206896552,
+     "point_estimate": null,
+     "control_passed": false,
+     "n_unknown_pos": 0,
+     "n_unknown_unlabelled": 0
+    },
+    {
+     "threshold": 1.0,
+     "n_pos": 860,
+     "fire_pos": 58,
+     "S": 0.06744186046511629,
+     "S_ci": [
+      0.0525311671657276,
+      0.08619982240458253
+     ],
+     "n_unlabelled": 3712,
+     "fire_unlabelled": 457,
+     "F": 0.12311422413793104,
+     "F_ci": [
+      0.11293208118703525,
+      0.13407564917477566
+     ],
+     "known_negative_source": null,
+     "n_known_neg": 0,
+     "fire_known_neg": 0,
+     "f0": null,
+     "f0_ci": null,
+     "upper_bound_fn_rate": 1.0,
+     "raw_fire_rate_unlabelled": 0.12311422413793104,
+     "point_estimate": null,
+     "control_passed": false,
+     "n_unknown_pos": 0,
+     "n_unknown_unlabelled": 0
+    }
+   ]
+  },
+  "EVADE_IN_CORRIDOR": {
+   "rule": "a STATIC vehicle or a VRU in the corridor AND lateral residual >= TH m",
+   "excluded_by": [
+    "OVERTAKE_VEHICLE"
+   ],
+   "known_negative_source": "exclusion-table",
+   "sweep": [
+    {
+     "threshold": 0.05,
+     "n_pos": 232,
+     "fire_pos": 134,
+     "S": 0.5775862068965517,
+     "S_ci": [
+      0.5132687140818734,
+      0.639376111936946
+     ],
+     "n_unlabelled": 4086,
+     "fire_unlabelled": 925,
+     "F": 0.22638277043563387,
+     "F_ci": [
+      0.21381131310597626,
+      0.23946824666963948
+     ],
+     "known_negative_source": "exclusion-table",
+     "n_known_neg": 19,
+     "fire_known_neg": 4,
+     "f0": 0.21052631578947367,
+     "f0_ci": [
+      0.08507538491591576,
+      0.43334714240266087
+     ],
+     "upper_bound_fn_rate": 0.3919462891124407,
+     "raw_fire_rate_unlabelled": 0.22638277043563387,
+     "point_estimate": 0.043198548875323955,
+     "control_passed": false,
+     "n_unknown_pos": 8,
+     "n_unknown_unlabelled": 246
+    },
+    {
+     "threshold": 0.1,
+     "n_pos": 232,
+     "fire_pos": 121,
+     "S": 0.521551724137931,
+     "S_ci": [
+      0.4574450260567367,
+      0.5849563145040466
+     ],
+     "n_unlabelled": 4086,
+     "fire_unlabelled": 740,
+     "F": 0.1811062163485071,
+     "F_ci": [
+      0.16959920156804503,
+      0.19321230682875934
+     ],
+     "known_negative_source": "exclusion-table",
+     "n_known_neg": 19,
+     "fire_known_neg": 4,
+     "f0": 0.21052631578947367,
+     "f0_ci": [
+      0.08507538491591576,
+      0.43334714240266087
+     ],
+     "upper_bound_fn_rate": 0.34724497680044336,
+     "raw_fire_rate_unlabelled": 0.1811062163485071,
+     "point_estimate": 0.0,
+     "control_passed": false,
+     "n_unknown_pos": 8,
+     "n_unknown_unlabelled": 246
+    },
+    {
+     "threshold": 0.2,
+     "n_pos": 232,
+     "fire_pos": 99,
+     "S": 0.4267241379310345,
+     "S_ci": [
+      0.36478145130919926,
+      0.49105399078413803
+     ],
+     "n_unlabelled": 4086,
+     "fire_unlabelled": 571,
+     "F": 0.13974547234459128,
+     "F_ci": [
+      0.12945209785776038,
+      0.150715623063265
+     ],
+     "known_negative_source": "exclusion-table",
+     "n_known_neg": 19,
+     "fire_known_neg": 4,
+     "f0": 0.21052631578947367,
+     "f0_ci": [
+      0.08507538491591576,
+      0.43334714240266087
+     ],
+     "upper_bound_fn_rate": 0.32748433923176945,
+     "raw_fire_rate_unlabelled": 0.13974547234459128,
+     "point_estimate": 0.0,
+     "control_passed": false,
+     "n_unknown_pos": 8,
+     "n_unknown_unlabelled": 246
+    }
+   ]
+  },
+  "OVERTAKE_VEHICLE": {
+   "rule": "a MOVING vehicle ahead in the corridor the ego is closing on / has passed, AND lateral residual >= TH m",
+   "excluded_by": [
+    "EVADE_IN_CORRIDOR",
+    "FOLLOW_LANE"
+   ],
+   "known_negative_source": "exclusion-table",
+   "sweep": [
+    {
+     "threshold": 0.05,
+     "n_pos": 19,
+     "fire_pos": 3,
+     "S": 0.15789473684210525,
+     "S_ci": [
+      0.055203710399278266,
+      0.3756592764317668
+     ],
+     "n_unlabelled": 4299,
+     "fire_unlabelled": 652,
+     "F": 0.15166317748313562,
+     "F_ci": [
+      0.14125193788488183,
+      0.16269641103876897
+     ],
+     "known_negative_source": "exclusion-table",
+     "n_known_neg": 3407,
+     "fire_known_neg": 521,
+     "f0": 0.15292045788083358,
+     "f0_ci": [
+      0.14122634658455363,
+      0.16539639426626745
+     ],
+     "upper_bound_fn_rate": 0.9605334573931923,
+     "raw_fire_rate_unlabelled": 0.15166317748313562,
+     "point_estimate": 0.0,
+     "control_passed": false,
+     "n_unknown_pos": 1,
+     "n_unknown_unlabelled": 253
+    },
+    {
+     "threshold": 0.1,
+     "n_pos": 19,
+     "fire_pos": 2,
+     "S": 0.10526315789473684,
+     "S_ci": [
+      0.029357941395096593,
+      0.313945504948417
+     ],
+     "n_unlabelled": 4299,
+     "fire_unlabelled": 529,
+     "F": 0.123051872528495,
+     "F_ci": [
+      0.11356721315102697,
+      0.1332096145156015
+     ],
+     "known_negative_source": "exclusion-table",
+     "n_known_neg": 3407,
+     "fire_known_neg": 408,
+     "f0": 0.11975344878191958,
+     "f0_ci": [
+      0.10927719385885265,
+      0.13108624019800888
+     ],
+     "upper_bound_fn_rate": 1.0,
+     "raw_fire_rate_unlabelled": 0.123051872528495,
+     "point_estimate": null,
+     "control_passed": false,
+     "n_unknown_pos": 1,
+     "n_unknown_unlabelled": 253
+    },
+    {
+     "threshold": 0.2,
+     "n_pos": 19,
+     "fire_pos": 2,
+     "S": 0.10526315789473684,
+     "S_ci": [
+      0.029357941395096593,
+      0.313945504948417
+     ],
+     "n_unlabelled": 4299,
+     "fire_unlabelled": 408,
+     "F": 0.09490579204466155,
+     "F_ci": [
+      0.08650266860776565,
+      0.10403225603366201
+     ],
+     "known_negative_source": "exclusion-table",
+     "n_known_neg": 3407,
+     "fire_known_neg": 292,
+     "f0": 0.08570589961843264,
+     "f0_ci": [
+      0.07676643551392963,
+      0.09557859510842469
+     ],
+     "upper_bound_fn_rate": 0.9016050244242848,
+     "raw_fire_rate_unlabelled": 0.09490579204466155,
+     "point_estimate": 0.4704080856454001,
+     "control_passed": false,
+     "n_unknown_pos": 1,
+     "n_unknown_unlabelled": 253
+    }
+   ]
+  }
+ },
+ "unverified": {
+  "LANE_CHANGE_L": {
+   "reason": "needs a LANE reference. v7_labels.effective_mask records the measured consequence (D-NUDGE-ABSORB): with no lane detector a lane change is absorbed into NUDGE or LANE_KEEP depending on yaw, so lateral offset alone cannot separate a lane change from a nudge.",
+   "weak_proxy_NOT_A_PROBE": {
+    "rule": "signed lat_peak_m >= 2.5 m (lane-width scale) -- MEASURED to fire on plain road curvature, so it is reported for scale only and NOT as a bound",
+    "S": 0.34782608695652173,
+    "n_pos": 23,
+    "fire_pos": 8,
+    "F": 0.20773796438777753,
+    "n_unlabelled": 4549,
+    "fire_unlabelled": 945
+   }
+  },
+  "LANE_CHANGE_R": {
+   "reason": "needs a LANE reference: see LANE_CHANGE_L.",
+   "weak_proxy_NOT_A_PROBE": {
+    "rule": "signed lat_peak_m >= 2.5 m (lane-width scale) -- MEASURED to fire on plain road curvature, so it is reported for scale only and NOT as a bound",
+    "S": 0.6,
+    "n_pos": 15,
+    "fire_pos": 9,
+    "F": 0.23612025455343427,
+    "n_unlabelled": 4557,
+    "fire_unlabelled": 1076
+   }
+  },
+  "MERGE": {
+   "reason": "needs a road-topology reference (a merge is defined by the lane structure, not by the ego path). No map on this box for these clips: map.xodr exists only for the NuRec scenes."
+  },
+  "TAKE_EXIT_L": {
+   "reason": "needs a map: an exit is a road-topology event and is geometrically a bend. No map for these clips."
+  },
+  "TAKE_EXIT_R": {
+   "reason": "needs a map: see TAKE_EXIT_L."
+  },
+  "TRAFFIC_LIGHT_REACT": {
+   "reason": "no non-caption signal for the COLOURLESS case."
+  },
+  "TRAFFIC_LIGHT_REACT_RED": {
+   "reason": "the Alpamayo grounding-box channel is the only non-caption signal and it is semi-independent and scoped to the clips that were asked the traffic-light question -- see traffic_light_box_channel"
+  },
+  "TRAFFIC_LIGHT_REACT_YELLOW": {
+   "reason": "the Alpamayo grounding-box channel is the only non-caption signal and it is semi-independent and scoped to the clips that were asked the traffic-light question -- see traffic_light_box_channel"
+  },
+  "TRAFFIC_LIGHT_REACT_GREEN": {
+   "reason": "the Alpamayo grounding-box channel is the only non-caption signal and it is semi-independent and scoped to the clips that were asked the traffic-light question -- see traffic_light_box_channel"
+  }
+ },
+ "empty_scene_known_negative": {
+  "rule": "no agent of any class with 0 < cx <= 80 m and |cy| <= 15 m in ANY frame of the window (obstacle.offline 3D boxes)",
+  "n": 626,
+  "control_positives_inside": {
+   "YIELD": 60,
+   "GAP_TARGET": 7,
+   "REACT_ON_ONCOMING": 62,
+   "EVADE_IN_CORRIDOR": 20
+  }
+ },
+ "traffic_light_box_channel": {
+  "_independence": "SEMI-INDEPENDENT -- the Alpamayo grounding-box answer is a different question from the chain-of-thought caption, but the same annotator model. It is a NECESSARY condition (no visible light => no light to react to) and therefore an upper bound.",
+  "n_clips": 4572,
+  "n_asked_tl_question": 998,
+  "n_asked_and_visible": 867,
+  "n_any_tl_token": 779,
+  "n_visible_and_no_tl_token": 692,
+  "control_S_tl_visible_on_positives": {
+   "n_positives_asked": 194,
+   "n_visible": 175,
+   "S": 0.9020618556701031
+  },
+  "fn_rate_among_asked_and_visible": {
+   "k": 692,
+   "n": 867,
+   "rate": 0.798154555940023,
+   "ci": [
+    0.7701481309182545,
+    0.8235304439224513
+   ]
+  }
+ }
+}

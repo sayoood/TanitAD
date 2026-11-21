@@ -1,0 +1,88 @@
+SMOKERI (a) checkpoint E:/Projects/TanitAD-artifacts/v8f-recover/M2b_s0_recft_C0/ckpt_last.pt sha256 bc3f926b7d5bc034ebb7043e5ef186a9dcad29ef404341fcd0493c7a22ca9fdf == SHA256SUMS.txt line
+SMOKERI tool sha256 0417c838355a51f6f7084c17b5acada96c5b6cbd9eef54cc2602d377bf3c61e7; threads 8
+SMOKERI run A_logged [v8f_t1_eval_ri.py]: 34 s, 96 tick rows
+SMOKERI run B_reindexed [v8f_t1_eval_ri.py]: 18 s, 96 tick rows
+SMOKERI (b) receipt B (--scene reindexed, 32 windows, 10-step replans):
+{
+ "scene": "reindexed",
+ "items": 96,
+ "rows": 1536,
+ "rows_logged": 704,
+ "rows_reindexed": 110,
+ "rows_on_time": 633,
+ "rows_clamped": 89,
+ "rows_monotone_raised": 0,
+ "future_frame_rows": 0,
+ "lag_cache_steps_all_rows_after_t0": {
+  "n": 832,
+  "mean": 0.2247596153846154,
+  "p50": 0.0,
+  "p90": 1.0,
+  "max": 6.0
+ },
+ "lag_cache_steps_reindexed_rows": {
+  "n": 110,
+  "mean": 1.7,
+  "p50": 1.0,
+  "p90": 3.0,
+  "max": 6.0
+ },
+ "lateral_offset_m_rows_after_t0": {
+  "n": 832,
+  "mean": 0.36507299029766327,
+  "p50": 0.0831055384856978,
+  "p90": 0.91238340754822,
+  "max": 9.242925942329267
+ },
+ "floor": {
+  "items": 96,
+  "rows": 1536,
+  "rows_logged": 704,
+  "rows_reindexed": 65,
+  "rows_on_time": 645,
+  "rows_clamped": 122,
+  "rows_monotone_raised": 1,
+  "future_frame_rows": 0,
+  "lag_cache_steps_all_rows_after_t0": {
+   "n": 832,
+   "mean": 0.1658653846153846,
+   "p50": 0.0,
+   "p90": 0.0,
+   "max": 6.0
+  },
+  "lag_cache_steps_reindexed_rows": {
+   "n": 65,
+   "mean": 2.123076923076923,
+   "p50": 2.0,
+   "p90": 4.0,
+   "max": 6.0
+  },
+  "lateral_offset_m_rows_after_t0": {
+   "n": 832,
+   "mean": 0.5063616977322327,
+   "p50": 0.08629716030709264,
+   "p90": 1.406970880425211,
+   "max": 10.38909954048793
+  }
+ },
+ "past_rows_checked": 1408,
+ "past_rows_changed": 0,
+ "past_rows_bit_identical": true,
+ "dwell_m": 0.05
+}
+SMOKERI (c) plan: max abs difference A vs B at tick 0 0.000e+00 m (must be 0.0: tick 0 has only past rows); ticks >= 1 132.204 m; median over ticks >= 1 0.000 m; share of ticks >= 1 rows with a difference over 1e-3 m 0.250; per tick {0: 0.0, 1: 1.468536376953125, 2: 132.2038230895996}
+SMOKERI (c) plan_raw: max abs difference A vs B at tick 0 0.000e+00 m (must be 0.0: tick 0 has only past rows); ticks >= 1 132.065 m; median over ticks >= 1 0.000 m; share of ticks >= 1 rows with a difference over 1e-3 m 0.250; per tick {0: 0.0, 1: 1.464818000793457, 2: 132.06459999084473}
+SMOKERI (c) largest plan difference: 132.204 m at window 12 tick 2 (clip index 54, t0 39)
+SMOKERI (c) executed path: max abs cl difference A vs B 14.621 m; ol (tick-0 plan) difference 0.000e+00 m
+SMOKERI (d) windows, ground truth, v0 and the P10 floor of A and B are equal
+SMOKERI run src_logged [v8f_t1_eval_framefreeze.py]: 13 s, 18 tick rows
+SMOKERI run ri_logged [v8f_t1_eval_ri.py]: 14 s, 18 tick rows
+SMOKERI (e) KRI4 real rig, 6 windows: --scene logged: dumps, ticks and header byte-identical, source tool vs RI tool
+SMOKERI run src_frozen [v8f_t1_eval_framefreeze.py]: 13 s, 18 tick rows
+SMOKERI run ri_frozen [v8f_t1_eval_ri.py]: 12 s, 18 tick rows
+SMOKERI (e) KRI4 real rig, 6 windows: --scene frozen: dumps, ticks and header byte-identical, source tool vs RI tool
+SMOKERI run src_hold_now [v8f_t1_eval_framefreeze.py]: 12 s, 18 tick rows
+SMOKERI run ri_hold_now [v8f_t1_eval_ri.py]: 14 s, 18 tick rows
+SMOKERI (e) KRI4 real rig, 6 windows: --scene hold_now: dumps, ticks and header byte-identical, source tool vs RI tool
+SMOKERI OK
+rc=0

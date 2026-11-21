@@ -1,0 +1,69 @@
+2026-09-19 12:01:03,793 INFO {C:\Users\Admin\navsim-crun\devkit\navsim\planning\script\builders\worker_pool_builder.py:19}  Building WorkerPool...
+2026-09-19 12:01:04,048 INFO {C:\Users\Admin\navsim-crun\nuplan-devkit\nuplan\planning\utils\multithreading\worker_pool.py:101}  Worker: Sequential
+2026-09-19 12:01:04,049 INFO {C:\Users\Admin\navsim-crun\nuplan-devkit\nuplan\planning\utils\multithreading\worker_pool.py:102}  Number of nodes: 1
+Number of CPUs per node: 1
+Number of GPUs per node: 0
+Number of threads across all nodes: 1
+2026-09-19 12:01:04,051 INFO {C:\Users\Admin\navsim-crun\devkit\navsim\planning\script\builders\worker_pool_builder.py:27}  Building WorkerPool...DONE!
+2026-09-19 12:01:04,052 INFO {C:\Users\Admin\navsim-crun\devkit\navsim\planning\script\run_metric_caching.py:29}  Starting Metric Caching...
+Loading logs:   0%|          | 0/7 [00:00<?, ?it/s]Loading logs:  29%|██▊       | 2/7 [00:00<00:00, 14.21it/s]Loading logs:  71%|███████▏  | 5/7 [00:00<00:00, 13.07it/s]Loading logs: 100%|██████████| 7/7 [00:00<00:00, 16.67it/s]
+Loading synthetic scenes:   0%|          | 0/204 [00:00<?, ?it/s]Loading synthetic scenes:   0%|          | 0/204 [00:00<?, ?it/s]
+Error executing job with overrides: ['train_test_split=warmup_two_stage', 'metric_cache_path=C:/Users/Admin/navsim/exp/metric_cache_warmup_two_stage', 'synthetic_scenes_path=C:/Users/Admin/navsim-crun/data/openscene/warmup_two_stage/synthetic_scene_pickles', 'worker=sequential']
+An error occurred during Hydra's exception formatting:
+AssertionError()
+Traceback (most recent call last):
+  File "D:\Projects\TanitAD\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-19-navsim-warmup-reference-epdms\code\navsim_win.py", line 299, in main
+    mod.main()
+  File "C:\Users\Admin\navsim-crun\venv\lib\site-packages\hydra\main.py", line 90, in decorated_main
+    _run_hydra(
+  File "C:\Users\Admin\navsim-crun\venv\lib\site-packages\hydra\_internal\utils.py", line 389, in _run_hydra
+    _run_app(
+  File "C:\Users\Admin\navsim-crun\venv\lib\site-packages\hydra\_internal\utils.py", line 452, in _run_app
+    run_and_report(
+  File "C:\Users\Admin\navsim-crun\venv\lib\site-packages\hydra\_internal\utils.py", line 296, in run_and_report
+    raise ex
+  File "C:\Users\Admin\navsim-crun\venv\lib\site-packages\hydra\_internal\utils.py", line 213, in run_and_report
+    return func()
+  File "C:\Users\Admin\navsim-crun\venv\lib\site-packages\hydra\_internal\utils.py", line 453, in <lambda>
+    lambda: hydra.run(
+  File "C:\Users\Admin\navsim-crun\venv\lib\site-packages\hydra\_internal\hydra.py", line 132, in run
+    _ = ret.return_value
+  File "C:\Users\Admin\navsim-crun\venv\lib\site-packages\hydra\core\utils.py", line 260, in return_value
+    raise self._return_value
+  File "C:\Users\Admin\navsim-crun\venv\lib\site-packages\hydra\core\utils.py", line 186, in run_job
+    ret.return_value = task_function(task_cfg)
+  File "C:\Users\Admin\navsim-crun\devkit\navsim\planning\script\run_metric_caching.py", line 32, in main
+    cache_data(cfg=cfg, worker=worker)
+  File "C:\Users\Admin\navsim-crun\devkit\navsim\planning\metric_caching\caching.py", line 149, in cache_data
+    scene_loader = SceneLoader(
+  File "C:\Users\Admin\navsim-crun\devkit\navsim\common\dataloader.py", line 141, in __init__
+    self.synthetic_scenes = filter_synthetic_scenes(
+  File "C:\Users\Admin\navsim-crun\devkit\navsim\common\dataloader.py", line 87, in filter_synthetic_scenes
+    synthetic_scene = Scene.load_from_disk(scene_path, None, None)
+  File "C:\Users\Admin\navsim-crun\devkit\navsim\common\dataclasses.py", line 716, in load_from_disk
+    map_api = cls._build_map_api(scene_metadata.map_name)
+  File "C:\Users\Admin\navsim-crun\devkit\navsim\common\dataclasses.py", line 442, in _build_map_api
+    return get_maps_api(NUPLAN_MAPS_ROOT, "nuplan-maps-v1.0", map_name)
+  File "C:\Users\Admin\navsim-crun\nuplan-devkit\nuplan\common\maps\nuplan_map\map_factory.py", line 60, in get_maps_api
+    maps_db = get_maps_db(map_root, map_version)
+  File "C:\Users\Admin\navsim-crun\nuplan-devkit\nuplan\common\maps\nuplan_map\map_factory.py", line 48, in get_maps_db
+    return GPKGMapsDB(map_root=map_root, map_version=map_version)
+  File "C:\Users\Admin\navsim-crun\nuplan-devkit\nuplan\database\maps_db\gpkg_mapsdb.py", line 87, in __init__
+    self._load_map_data()
+  File "C:\Users\Admin\navsim-crun\nuplan-devkit\nuplan\database\maps_db\gpkg_mapsdb.py", line 101, in _load_map_data
+    self.load_vector_layer(location, DUMMY_LOAD_LAYER)
+  File "C:\Users\Admin\navsim-crun\nuplan-devkit\nuplan\database\maps_db\gpkg_mapsdb.py", line 259, in load_vector_layer
+    map_meta = gpd.read_file(path_on_disk, layer="meta", engine="pyogrio")
+  File "C:\Users\Admin\navsim-crun\venv\lib\site-packages\geopandas\io\file.py", line 294, in _read_file
+    return _read_file_pyogrio(
+  File "C:\Users\Admin\navsim-crun\venv\lib\site-packages\geopandas\io\file.py", line 547, in _read_file_pyogrio
+    return pyogrio.read_dataframe(path_or_bytes, bbox=bbox, **kwargs)
+  File "C:\Users\Admin\navsim-crun\venv\lib\site-packages\pyogrio\geopandas.py", line 275, in read_dataframe
+    result = read_func(
+  File "C:\Users\Admin\navsim-crun\venv\lib\site-packages\pyogrio\raw.py", line 198, in read
+    return ogr_read(
+  File "pyogrio/_io.pyx", line 1313, in pyogrio._io.ogr_read
+  File "pyogrio/_io.pyx", line 232, in pyogrio._io.ogr_open
+pyogrio.errors.DataSourceError: C:/Users/Admin/navsim-crun/data/maps\us-nv-las-vegas-strip/9.15.1915/map.gpkg: No such file or directory
+E1_WRAPPER_DONE label=cache status=EXCEPTION DataSourceError: C:/Users/Admin/navsim-crun/data/maps\us-nv-las-vegas-strip/9.15.1915/map.gpkg: No such file or directory wall_s=26.29 peak_rss_mb=268.7 min_avail_mb=3739.0 pdm_calls=0 cache_scenes=0
+EXITED_AT 12:01:08

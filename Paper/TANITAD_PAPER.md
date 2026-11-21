@@ -1,11 +1,40 @@
 # TanitAD: A Data-Efficient, Hierarchically-Imagining, Self-Supervised Driving Stack with Built-In Self-Knowledge
 
-**Status:** living paper, v0.6 (2026-07-25). Maintained per D-020: every gate evaluation appends
+**Status:** living paper, **v1.8 (2026-11-10)**. Maintained per D-020: every gate evaluation appends
 results; every accepted decision that changes the method updates §3–§5. Source of truth is this
 Markdown; LaTeX export is a release step. Honesty rule (P8): no number appears here without its
 instrument rows in the referenced experiment record. *(Version note: the status line was left at
-v0.4 while the §9 design round was already logged as v0.5 in the changelog; this results round is
-therefore v0.6, and the numbering is not silently reused.)*
+v0.4 while the §9 design round was already logged as v0.5 in the changelog; that results round was
+therefore v0.6. The same drift then recurred: the status line sat at v0.6 while the changelog
+already carried v0.7 (2026-08-02) and v0.8 (2026-08-03). This round was requested as "v0.7" but
+that number is taken — it is therefore v0.9, and the numbering is again not silently reused.
+**v1.0 (2026-08-12)** lands the four verdicts of the night of 08-11/08-12 — W7-FULL, H-COTRAIN,
+P8 attempt-2 and I4a — with their mathematics (§3.10–§3.13), the tier and four-family doctrines
+promoted to named methodological sections (§5.4–§5.5), and the v6 future-work ladder with its
+open, costed decisions (§10). It is v1.0 rather than v0.10 because it is the first version in
+which a hypothesis this paper itself carried is **retracted by our own measurement** in the
+paper's own voice, §7.17. **v1.1 (2026-08-18)** adds §7.19 — a round of four negatives and one
+contamination, all zero-training — with the five instrument rules they earned (§5.8), a re-audit of
+every gate bar this paper carries (§9.4), and a roadmap re-ordered by the evidence rather than by
+preference (§10). It is v1.1 rather than v1.0.1 because the *direction of the programme's next
+experiments changes*: the pooling account of the missing lead variable is refuted, the encoder is
+indicted in its place, and a pre-registered future-work item — LF0 — is retired as **already
+executed and negative**. **v1.2 (2026-08-29)** adds §14 — the **self-prediction drift attractor**
+as a named phenomenon with its mathematics, the measured chain that established it (E-DEC-61 →
+E-DEC-69), the EMA-teacher result MM-E1 with its pre-registered transient prediction confirmed,
+the T1 consequence, and the open attack list — plus Figure 4. It also records that **§12 and §13
+had entered the paper without changelog entries** while the status line sat at v1.1: the same
+status-line drift this note has already documented twice, now a third time; both sections are
+hereby owned by the changelog rather than silently absorbed. **v1.3 (2026-08-29, the same evening)** adds §15 — the first cell of the PI-ranked attack ladder to report, which cut drift by a record 25.0 % and destroyed prediction in the same arm; the mathematics of why an objective aimed at the read's own residual must do exactly that; the standing consequence the programme adopted (**drift alone is never a valid objective**); the **coupling hypothesis** MM-E5 raises from n = 2, stated as a hypothesis, with a competing account and two registered discriminating tests; a **provenance note** establishing by source the mode in which this paper's numbers were produced; and Figure 5. It is v1.3 rather than v1.2.1 because it changes what the programme may optimise for — or at minimum registers the test that would — and because it adds a methods section this paper did not previously carry. The status line and the changelog move in the SAME edit: this note has documented that drift three times without the practice being stated, so it is stated here. **v1.4 (2026-10-17)** adds §7.20 — the programme's first comparison against a published row (REFe, a reproduction attempt of DriveZero's camera planner, on NAVSIM v1.1: **88.25 PDMS against 94.55, the bar not cleared**), the diagnosis of the zero tail that carries two thirds of that gap, and a correction of our own (R47) stated in the section's own voice — and it corrects §12.4, whose *"zero `import navsim`"* was true when written and is not now. The paper had gone unedited from 2026-09-05 while this line of work ran; that gap is recorded here rather than absorbed. Status line, this note and the changelog move in the same edit.
+**v1.5 (2026-10-18)** adds §7.21 — what four packages that landed in the three days after §7.20 add to
+it: the oracle − pick headroom inside P2's own 64-proposal fan (9.41 PDMS points, 62 % of it ranking
+among non-zero proposals, which the lever ranking of §7.20(g) left out), the navtest anatomy of the RL
+lever (it buys progress and pays in NC and TTC, so no free point is deployable-safe), why the safety
+constraint built to remove that payment failed (it held on an expectation under the training policy
+while its acceptance test reads the argmax), and a selection rule that is inert because the
+drivable-area failures are confident. It is v1.5 rather than v1.4.1 because it changes the lever ranking
+the programme works from and states one new method (a constraint must bind the statistic its acceptance
+test reads). The abstract is unchanged: no number in it moves.)*
 
 **Authors:** Sayed Bouzouraa; TanitAD autonomous research system.
 
@@ -87,6 +116,95 @@ describe the architecture, its mathematical grounding, an
 instrument doctrine for honest measurement that caught three silent measurement hazards in its first
 week and has since been extended by three more failure classes it learned the hard way, and the
 falsifiable gate program by which every claimed edge will stand or fall.
+*Fifth-round update (v0.9, 2026-08-11):* the round is dominated by two methodology corrections now
+binding on every number — an **eval-tier doctrine** (T0 teacher-forced = WM diagnostic only, T1
+action-closed loop = the primary capability tier), forced by the measured **action echo**: the
+open-loop lateral "skill" of the best decoder heads is 97.9 % S-curve reproduction under the true
+action transcript and **~5 % closed-loop / 0.0 % hold-action** (`MODEL_REGISTRY §1.12`, T1) — and the
+completed retirement of the historical `overlapping_holdout_se` estimator, which biased *point
+estimates* (−6.67 % to +11.69 %, sign-flips on paired deltas) and not only intervals (§5). On the
+science: the co-trained **v5f** flagship (from-scratch joint WM+planner, conditional imagination,
+120° cylindrical) completed 30 k with T0 selected ADE@2s 0.4011 m over a fan whose oracle is
+0.1975 m (`MODEL_REGISTRY §1.8`); a physics-proof battery (§7.14) then located **one root defect
+under four separate failures** — the trunk responds to counterfactual actions with the right sign
+(99.5 % lateral) inside a 3-dimensional action subspace but at **~¼ the physical gain** (0.27,
+`w3_gate.json`, T1-diagnostic) — and a predictor-only **stage-A post-training** with a
+control-response loss repaired it (gain 0.27 → 0.97, longitudinal sign 0.74–0.79 → 1.0,
+subspace preserved, `stage_a_gate.json`), after which the world-model-roll selection cost became
+the programme's best-calibrated selection signal (Spearman ρ 0.716 [0.585, 0.770] vs ≤ 0.26 for
+every learned scorer; `w7_gate_repaired_k32.json`, `p7_regrade.json`). Three learned fast-selector
+surfaces failed one after another by pre-registration and were retired — the selection information
+is in rolled consequences, not in light readouts of the trunk — which is the programme's own thesis
+arriving by elimination. A P1 probe battery also measured the latent's sharpest absence: **no
+readable lead-vehicle distance at any probe capacity** (`p1_lead_transforms.json`), answered by a
+label-free lever program rather than label injection, per the PI's standing rule that labels into
+the trunk would break the self-supervised thesis.
+*Sixth-round update (v1.0, 2026-08-12):* four measured verdicts, two of them negative and both
+reported as results. **(1) The selector-free planner fails, and the mechanism is the winner's
+curse.** With every stale component removed — repaired trunk, head refit on it, and **no
+shortlist at all** (256 of 256 candidates, so the true best is always available) — selection by
+argmin of a world-model roll-consistency cost plus a kinematic cost scores **3.3348 m against a
+0.4505 m gate over a fan whose oracle is 0.1273 m** (`w7_full_gate.json`, T0). The cost's
+*within-window* rank correlation is 0.445/0.497 and its across-window calibration ρ 0.3185
+[0.2064, 0.4086] — yet **the argmin's error-rank is 132 of 256, the median**, and the mean error
+inside its top-m set is flat at the fan's own mean for every m. Rank correlation is a bulk
+statistic; argmin is an extreme one, and the quantity that governs selection is lower-tail
+dependence, which is zero here (§3.12). A self-consistency cost has a **degenerate minimiser** —
+a near-stationary candidate — so deepening the fan makes a minimiser monotonically worse while
+the oracle improves; the published loops we copied (V-JEPA 2-AC, DINO-WM) minimise distance to a
+*goal*, which inaction cannot minimise, and we had dropped that term. **(2) The standing
+hypothesis that planner co-training erodes physical representation is REJECTED within the
+measured range and retracted in this paper's own voice**: across the λ_plan ramp every probed
+physical variable became *more* decodable (curvature 0.213 → 0.551 encoded, yaw-rate
+0.583 → 0.869), the latent's participation ratio *expanded* 53 % (4.53 → 6.94 of 2048) and the
+P1 battery went FAIL → PASS — which also **validates SIGReg** under a full planner gradient
+(retention 1.53× against a ≥ 0.8× gate), with three scope bounds stated rather than buried
+(§7.17). **(3) The predicted latent retains the environment**: a frozen-latent BEV occupancy
+readout gives **retention 0.932 at k = 10** (gate ≥ 0.80, τ\* chosen on the encoded arm so the
+gate can only harden), and occluded-agent recall is **not worse** than visible — the latent
+carries agents the camera cannot see (§7.18; absolute IoU ≈ 0.02, so the ratio is the quotable
+claim). **(4) Imagination is load-bearing**: zeroing it collapses selected ADE 0.4011 → 7.6493 m
+and shuffling it — which preserves marginals and destroys only correspondence — gives 1.2492 m,
+so the planner reads imagination as content, not as a bias term. Together with the measured
+**consumer-invalidation** result (repairing a trunk moves the frozen selector 0.7933 → 4.4159 m,
+which is why the shipped assembly is the frozen-trunk one at 0.4815 m [0.3928, 0.5771]), these
+define the programme's next generation as a **staged** ladder in which every consumer is trained
+on the trunk it consumes (§10).
+*Seventh-round update (v1.1, 2026-08-18):* a round of **four negative results and one contamination**,
+produced with **zero training** by re-reading banked artifacts, and reported here because each is a
+sharpened negative with the controls that make it admissible — not because the programme collapsed.
+**(1) The 40:1 pooling bottleneck, this paper's standing architectural explanation for the missing
+lead-distance variable, is REFUTED.** Running the identical linear readout at four pooling ratios that
+differ in nothing but the kernel, removing the pool entirely moves r² by **|Δ| ≤ 0.0002 with the CI
+containing zero on all five seeds** on the four rungs the hypothesis was built to explain. Through the
+**same** deployed pool on the **same** frames, a frozen `facebook/dinov2-base` — **86 M parameters
+against our encoder's 87.3 M, so not a capacity gap** — reads `lead_gap` at r² **0.44997** where ours
+reads **0.00496**. ⇒ **the information is in our images and survives the pool; the encoder and its
+objective are the constraint**, which relocates the next experiments from routing to representation
+(§7.19a). **(2) Our trained encoder reads ego speed worse than its own random initialisation**
+(paired episode-cluster bootstrap Δr²c **+0.150 [+0.055, +0.226]**, positive in 27/27 seed cells), but
+the same adversarial re-read kills the companion claim on `lead_gap` (**0/27 cells separated**, sign
+flipping in 9/27) and **withdraws the ratio** that had been quoted for both: our trained arm is **not
+CI-separated from its own matched-random null**, and a ratio whose denominator is not separated from
+noise is not interpretable. The admissible claim is **signal vs no-signal on one rung** (§7.19b).
+**(3) At the primary tier the CEM planner is 35.8 % WORSE than constant velocity** — paired
+**+0.2585 m [+0.0869, +0.4309]**, CI-separated, T1 — **and it loses on LONGITUDINAL, the family its
+cost function is aimed at** (along-track RMSE@2 s 1.9062 vs 1.6705 m; speed bias +0.2737 vs
+−0.0995 m/s), while the operative rollout under *true* actions **beats** CV by −0.3151 m ⇒ **the loss
+is in the action search, not in the world model** (§7.19c). **(4)** Re-run at three seeds with a
+repaired ridge and a degeneracy guard, the frozen-latent readout ladder's **substantive count is zero
+on both repair routes**, and the mechanism is generalisable: the repair itself **unfroze** the α sweep,
+so a stability claim measured under a defect does not transfer to the repaired instrument (§7.19d).
+**(5)** **201 of the 4,729 Alpamayo augmentation clips are already inside the parity training corpus**,
+making any evaluation split buildable on it **78.21 % contaminated** (201 of the 257 clips that have a w120 cache; 4.3 % = 201 / 4,729 is the catalogue rate, which no buildable split sees; registry §12.4, C113; corrected in v1.5.1) — the REF-A I-JEPA leak class (~80 %) at the same scale, and found the same way it should have been prevented: by computing ids
+rather than assuming disjointness from provenance (§7.19e). Two of these corrections reach into our
+**own controls** — a positive control that was inert at the deployed operating point, and a
+trivial-proxy control that silently covered only 80 % of its rows — and they are stated as method in
+§5.8 alongside the rules they earned.
+
+*Reference-arm update (v1.4, §7.20):* REFe, a reproduction attempt of DriveZero's camera planner, scores **88.25 PDMS [87.05, 89.36]** on the full NAVSIM v1.1 navtest (T1 non-reactive pseudo-simulation, 12,146 tokens, 136 logs, one training seed; paired log-cluster bootstrap, which answers another draw of logs only) against a published matched row of 94.55 — the bar is **not** cleared. **65.9 % of the 6.30-point gap is a tail of 529 zero-scored tokens**, and that tail is a *selection* failure rather than a proposal failure (a non-zero proposal existed on 86.0 % [80.1, 91.7] of them), made mostly of sub-half-metre near-twin boundary grazes that the scorer's drivable-area head cannot rank (within-token AUC 0.46 against 0.92 on random tokens). The execution-side fixes we tried for the tail failed their pre-registered bar, and that measurement forced the correction of a gross "reach" figure (1.07 PDMS) that we had quoted as a lever; the next lever, a trunk-level drivable-area gradient (P6), has not yet trained.
+
+*Scope note (v1.6, 2026-11-08):* the rounds above report the generation each was measured on, and no number in them moves. For the v8F redesign the definition in force is §3.14. The operative level covers 0 to 2 s, the tactical level up to 6 s with the tactical vocabulary, and the strategic level 6 to 30 s with route checkpoints, detected context and derived goals; the trajectory is the 6 s combination of operative and tactical. The tactical layer emits goals and constraints that are the operative layer's action, and all three layers read the current measured ego state. The parameter figures above (263.4 M measured, 261 M design budget) describe the v1 flagship; for v8F the PI lifted the budget to at most 800 M on 2026-10-17 (`Project Steering/PLAN_V8F_REFAV1_HJEPA_2026-10-17.md` §13.1), and its image encoder is a frozen DINOv3 with an adapter, unlike the from-scratch encoder of the first paragraph. The PI's vision-only rule of 2026-08-03 concerns the scenario classifier and the label pipeline; the planner layers read measured ego state. The first read of the redesign is §7.22 (tier T0, oracle goal, not a driving result).
 
 ---
 
@@ -115,7 +233,8 @@ Contributions (each tied to a falsifiable gate, §6):
 
 1. **The 4B architecture** — a from-scratch self-supervised hierarchical latent world model with
    operative/tactical/strategic/fallback decomposition, trained end-to-end with a single
-   anti-collapse mechanism and no teacher-student heuristics (§3).
+   anti-collapse mechanism and no teacher-student heuristics (§3). *(Scope, v1.6: the bands are operative up to 2 s, tactical up
+   to 6 s and strategic 6 to 30 s, §3.14. The ≈ 261 M envelope is the v1 generation's; v8F is budgeted at most 800 M since 2026-10-17.)*
 2. **Imagine-and-select with calibrated frozen decoding** — planning as argmin over a discrete
    maneuver vocabulary in latent space, with metric readout through probes fitted on the
    predictor's *own imagined latents*; and a cheaper forward-dynamics readout (P4) that operates in
@@ -150,6 +269,29 @@ data, ~10⁸ parameters, zero labels, hierarchical latent planning, calibrated f
 OOD self-monitoring.
 
 ## 3. The 4B architecture
+
+> **Figure 1 — `Paper/figures/v6_architecture.svg`** (also rendered as `.png`; both
+> emitted by `Paper/figures/make_v6_architecture.py`): the v6
+> instantiation of the 4B architecture — the four layers with their own predictors and
+> action spaces, goals conditioning downward, latents flowing upward through tested
+> gradient-isolation barriers, the single 6 s trajectory spanning the operative and
+> tactical bands, the frozen-latent interpretation heads, and the staged S-W → S-T →
+> S-S → (optional) S-J training protocol with its per-stage gates. §3.9 gives the
+> formal objects; §10 gives the staging rationale and its evidence.
+>
+> **The NAV COMMAND channel (added 2026-08-30)** is drawn as a single green bus with one
+> tap per layer, because that is what it is: **one shared embedding conditioning all three
+> layers** — an *input*, not a head and not a loss, conditioning the world model "like the
+> actions" (additive into the same `cond` the actions build). It is shared precisely so the
+> layers cannot drift apart in how they read the route. ⛔ **On this corpus the channel is an
+> ORACLE**: every `nav_command` in B1 carries `provenance: "ego-future"` (4,719/4,719),
+> computed from the ego's own future path — and flagship v1's route head, an exact bijection
+> of the nav it was fed (369/369, 81/81), **scored 1.0000**, an echo read as skill. Its
+> controls therefore ship with it — `real · hold · shuffled · none` — and **no capability
+> claim from a nav arm is admissible without `shuffled` reported beside it**, `shuffled`
+> being the decisive one: no degradation means the channel is INERT. A missing token
+> **raises**; it never defaults, so an arm cannot train without the channel while its config
+> claims otherwise.
 
 ### 3.1 Overview and notation
 
@@ -203,11 +345,15 @@ transition graph whose nodes are VQ place-situation codes and whose edges carry 
 (topological memory of the driven network — routing and re-routing without HD maps; +58 % over
 greedy on topology tasks in the toy program, A6); the fallback brain monitors continuously and owns
 the minimal-risk manoeuvre. Two theoretical arguments support the decomposition: (i) planning
-regret grows linearly with horizon T (Cui et al. Thm 4.2), so factorizing one long horizon into
-per-level short horizons pays a strictly smaller bound at each level; (ii) hierarchical
+regret grows linearly with horizon T (Cui et al. Thm 4.2), so each per-level short horizon carries a smaller bound than the one
+long horizon; but if the bound is linear in T the per-level bounds add back to the undivided one at equal constants, so on its own
+the factorisation buys no bound, and any gain has to come from a smaller constant at a coarser level or from (ii) (the theorem was
+not re-read against its primary in this revision); (ii) hierarchical
 recombination of maneuvers and places converts sample complexity from the product to the sum of
-level cardinalities. Inference-rate layering also converts the hierarchy into an efficiency device:
-the 207 M operative path is the only component at full rate.
+level cardinalities when the level components combine independently (with interaction terms the sum is a lower bound on what is needed). Inference-rate layering also converts the hierarchy into an efficiency device:
+the 207 M operative path is the only component at full rate. *(Scope, v1.6: the horizons and rates in this
+paragraph record the generation it was written for. The definition in force is §3.14: operative up to 2 s,
+tactical up to 6 s, strategic 6 to 30 s, and a level whose horizon is 0.8 s is not a long-term abstract level.)*
 
 **Making the top-down seams load-bearing (H26).** A hierarchy only earns its parameters if the
 upper level's decision measurably steers the lower one. We instrument every seam with a
@@ -408,6 +554,431 @@ conflation: v1 **mislabels 24.5 % of road curves as route-turns**. The v2 deriva
 **0.0 %** on the known-semantics corpus and explicitly flags ambiguous junctions/forks rather than
 forcing a binary — a prerequisite for any honest maneuver-accuracy or route claim.
 
+### 3.9 The v5f generation: the objective family stated, hierarchy as per-layer predictors, and control-response post-training (added v0.9)
+
+**The JEPA objective, general form.** The family this architecture instantiates is: an encoder
+f_θ, a predictor P_φ, and a (possibly EMA) target encoder f_θ̄, trained on
+
+L_JEPA = ‖ P_φ( f_θ(x_t), a_t ) − sg[ f_θ̄(x_{t+k}) ] ‖ ,
+
+where sg[·] is a stop-gradient and the EMA/stop-gradient pair is the usual anti-collapse
+mechanism (V-JEPA 2, arXiv 2506.09985; I-JEPA lineage). **Our instantiation removes both**: no
+EMA, no stop-gradient, no teacher network (A1, §3.2) — collapse is prevented *provably* by
+SIGReg alone, driving every 1-D projection of both encoder outputs and predictions toward N(0,1)
+(Cramér–Wold ⇒ joint isotropic Gaussian, the LeJEPA-optimal embedding law). The deployed v4/v5
+trainer uses the **`full_relaxed` SIGReg variant** — the sliced Epps–Pulley statistic of §3.2
+applied to the full state with a configured number of *free dimensions* exempted from the
+normality pressure (`train_flagship_v4.py:101`, `sigreg_variant="full_relaxed"`), so a small
+subspace may carry non-Gaussian task structure while the bulk is regularised. The residual
+multi-horizon form ẑ_{t+k} = z_t + Δ_k(z_{t−W+1:t}, a_{t−W+1:t}) of §3.2 is the concrete P_φ.
+
+**The hierarchical 4B formulation as per-layer predictors (design of record 2026-08-07,
+`incoming/2026-08-07-hierarchical-wm-redesign/HIERARCHICAL_WM_REDESIGN.md`).** Each level ℓ ∈
+{op, tac, str} owns a state space, a clock, and its **own predictor in its own space**, with
+temporal down-sampling as the abstraction mechanism (slow features; dimensionality decreases
+upward by design so the level is *forced* to abstract):
+
+| level | state | clock | horizon | "action" |
+|---|---|---|---|---|
+| operative | z_op ∈ ℝ^2048 | 10 Hz | 0–2 s dense | continuous (a, κ) controls |
+| tactical | z_tac ∈ ℝ^{d_t}, d_t ≈ 512 = φ_tac(z_op(t−3..t)) | 1 Hz | 2–6 s | the tactical **goal** g_tac |
+| strategic | z_str ∈ ℝ^{d_s}, d_s ≈ 256 = φ_str(z_tac window) | 0.2 Hz | 6–15 s | the strategic goal g_str |
+
+Level dynamics: ẑ_ℓ(t+τ_ℓ) = f_ℓ(z_ℓ(t), g_ℓ) — **the upper levels' action *is* the goal**, and
+each level proposes a fan of N candidate goals, rolls *its own* predictor (cheap: small state,
+slow clock — a 15 s strategic roll is 3 steps of a 256-d model), and scores with a selector.
+Goals condition downward: the operative decode consumes the selected g\*_tac as an input token,
+the tactical consumes g\*_str. g_tac is a predicted ego-frame goal point + heading + target speed
+at τ ∈ [2, 6] s plus a manoeuvre class on **three independent axes with severity** (the measured
+5-way lat/lon-mixing defect is the reason for the factorisation); g_str is a goal point +
+corridor at route scale. ⛔ Neither goal may carry the situation classifier's output (the
+2026-08-03 admissibility rule), and both are geometric, predicted from vision. `sel_gap` —
+oracle-vs-selected error at each level — is a first-class metric of the hierarchy, which §7.13
+shows was prescient: at both levels measured so far, the fans are adequate and the *selectors*
+are the defect. *(Scope, v1.6: this table and the 6 to 15 s strategic horizon record the design of 2026-08-07. The strategic band
+is 6 to 30 s and the downward interface is the tactical action u_t, both stated in §3.14.)*
+
+**Control-response post-training (stage A), the mathematics.** Logged data supplies triples
+(o_t, a^human_t, o_{t+1}) only on the human action manifold; under a counterfactual action ã
+there is no logged future, so any loss ‖f(z, ã) − z'_logged‖ teaches the predictor that the
+world ignores actions. What *is* supervisable off-policy is the ego-motion component, which is
+fully determined by the commanded actions. Stage A therefore trains **the predictor only**
+(encoder, readout and heads frozen, md5-proved) on three losses (`train_stage_a.py`,
+`stage_a_gate.json`): for a counterfactual perturbation δa of the logged actions a (channels:
+δκ = ±0.02 m⁻¹ through the steer encoding, δa = ±2 m/s²; plus random draws within an
+a_max = 4 m/s², κ_max = 0.2 m⁻¹ envelope), define the decoded **response**
+
+Δ_probe = decode(roll(z₀, a+δa)) − decode(roll(z₀, a)),  Δ_analytic = U(a+δa, v₀) − U(a, v₀),
+
+with U(·, v₀) the unicycle integral of the action sequence from the observed speed v₀ and
+decode(·) the *frozen* step-readout (so the gradient cannot cheat by re-learning the decode).
+Then, in **response form** (`ctrl_form: "response"`):
+
+L = L_ctrl + L_factual + 0.3·L_scene,  L_ctrl = ‖Δ_probe − Δ_analytic‖₁,
+
+whose gated summary statistic is the **response gain g = ‖Δ_probe‖ / ‖Δ_analytic‖ at 1 s**,
+required in [0.5, 2.0] per channel with sign-correctness ≥ 0.95; L_factual is the ordinary
+teacher-forced roll on the human actions (the catastrophic-forgetting anchor, gated at ≤ +10 %
+ADE); and L_scene penalises latent change in the subspace **orthogonal** to the measured
+action-response subspace (batch-local top-8 uncentered PCA approximating W3's corpus-level
+3-dim subspace) — actions must move the ego *through* the world, not repaint the world. The
+measured result of this loss is §7.13's repair. Its theoretical significance: it is a
+*self-supervised* grounding of the action interface — the analytic target is geometry, not a
+label — so it composes with the label-free thesis.
+
+**The H-COTRAIN hypothesis and its curriculum-based test (pre-registered 2026-08-11,
+`PREREG_H_COTRAIN.md`).** PI hypothesis: joint WM+planner training forces the trunk toward an
+ego-action/trajectory feature extractor rather than a physical-world model. It is testable at
+~0 marginal cost because v5f's planner coupling followed a measured **λ_plan curriculum — 0
+until step 2,000, linear ramp to 8,000, then 1.0 to 29,999** (`--lambda-plan sched
+--phase-a-steps 2000 --phase-b-steps 8000`, `MODEL_REGISTRY §1.5/§1.8`) — and milestone
+checkpoints (5 k/10 k/15 k/20 k/30 k) sample the trunk along the ramp. The frozen probe battery
+runs per milestone; outcomes bound in advance: a scene variable readable at 5 k (R²(enc) > 0.15)
+that declines ≥ 0.15 absolute by 30 k while ego-dynamics probes hold ⇒ CONFIRMED (consequence:
+gradient isolation / λ ceiling becomes a named v6 lever); lead-gap unreadable at *every*
+milestone including 5 k ⇒ REJECTED for that variable (it never formed — joint training cannot
+have destroyed it; the cause reverts to objective/data pressure and the label-free levers keep
+priority). An independent SIGReg verdict rides the same runs: effective rank of z_enc at 30 k
+≥ 0.8× its 5 k value validates the anti-collapse mechanism under a full planner gradient.
+Evidence already in hand cuts both ways and is stated with the prereg: FOR — the predicted
+latent decodes ego state *better* than the encoded one (speed R² 0.99 vs 0.74, §7.14) and
+the action interface is 3-dimensional; AGAINST sufficiency — PUBLISHED, pure-SSL video models
+without any planner also fail to form dense spatial features reliably (V-JEPA 2.1,
+arXiv 2603.14482), so a missing lead variable does not *require* a planner-gradient explanation.
+
+⚠️ **OUTCOME (2026-08-11): H-COTRAIN is REJECTED within the measured range, and the SIGReg
+verdict is VALIDATED.** Neither CONFIRM condition fired: every probed physical variable became
+*more* decodable along the ramp (curvature 0.213 → 0.551 encoded; yaw-rate 0.583 → 0.869) and
+the latent's participation ratio *expanded* 4.53 → 6.94 of 2048 (+53 %, retention 1.53× against
+a ≥ 0.8× gate). §7.17 carries the full curve, the three scope bounds that limit the claim (the
+lowest available λ is 0.5, not 0; the spectrum series ends at 20 k, not 30 k; a real transient
+dips the predicted-latent readouts at 10 k before they recover and overshoot), and the retraction
+of the erosion premise this paper previously carried. **The staged v6 recipe below is unaffected,
+because it never rested on erosion** — it rests on the field's convergent staging evidence and on
+the measured consumer-invalidation result (§7.16).
+
+**The staged-training evidence (PUBLISHED + our own gates).** The frontier systems separate
+representation learning from planning: V-JEPA 2 → 2-AC pretrains on ~10⁶ h then post-trains an
+action-conditioned predictor on 62 h of *unlabeled* robot video for zero-shot latent MPC
+(arXiv 2506.09985); DINO-WM learns dynamics over frozen DINOv2 **patch** features — never a
+pooled global vector — and plans by MPC with a latent goal cost (arXiv 2411.04983); Drive-JEPA
+V-JEPA-pretrains a driving encoder and post-trains a proposal-centric planner over the frozen
+predictive features, reaching NAVSIM v1 93.7 PDMS / v2 87.8 EPDMS / Bench2Drive 64.52
+(arXiv 2601.22032); AD-L-JEPA shows occupancy forecasting *emerging* from self-supervised BEV
+latent prediction, read out by light decoders (arXiv 2501.04969) — the P8 pattern; and
+V-JEPA 2.1 treats missing dense spatial features with **loss shaping, not labels**
+(arXiv 2603.14482) — the LF-program pattern. Our own gate history is consistent: every *staged*
+component passed its gates (W4 head retrofit, stage-A repair, W4r refit), while the co-trained
+path produced the muffled action interface, three selector failures and the missing lead
+variable (§7.13–§7.14). **Nobody at the frontier co-trains the planning gradient into the
+encoder from step 0** — the v6 staged recipe (§10) is the programme's response, with H-COTRAIN
+as its cheapest discriminating measurement *(and it has since returned: erosion is rejected in
+range, §7.17 — the staging argument stands on the field evidence and on consumer invalidation,
+§7.16, not on erosion)*.
+
+### 3.10 The label-free commitment, stated as an admissibility algebra (added v1.0)
+
+The programme's binding design commitment is not "we use few labels" but a statement about
+*where in the computational graph a label may appear*. Making it formal removes the recurring
+argument about whether a given lever is admissible.
+
+Let 𝒮 = {x (frames), a (CAN/ego actions), p (odometry poses)} be the **self-supervised** signal
+set — every element is a sensor reading generated for free on every driven metre — and let
+ℒ = {obstacle cuboids, VLM fields, SAM masks, scenario tags, hindsight route geometry} be the
+**label** set, produced offline by an external annotator, engine, or privileged hindsight. Write
+θ_trunk for the parameters of the encoder f_θ, the readout r and every level predictor P_ℓ, and
+θ_read for the parameters of any frozen-latent readout, probe, or goal head. The commitment is:
+
+> **(L1) No element of ℒ may enter any loss whose gradient reaches θ_trunk.**
+> **(L2) No element of ℒ may be an input at inference, at any level.**
+> **(L3) Elements of ℒ *are* admissible as (a) targets of readouts trained with
+> ∂/∂θ_trunk ≡ 0 (frozen probes, the P1/P4/P8 battery), (b) evaluation strata, and
+> (c) supervision of the strategic *goal head*, which is a planner-side output and never a
+> trunk loss.**
+
+Three consequences we have had to enforce in practice. **(i)** The auxiliary lead-readout loss
+proposed when P1 found no lead-distance variable was inadmissible under (L1) and was retracted
+the day it was proposed; the replacement is the label-free lever program LF0–LF4, which shapes
+the *objective* (masking, sampling, near-field weighting) rather than adding a target (§7.14,
+`JEPA_PHYSICS_SURVEY.md`). ⚠️ **Status 2026-08-18: LF0, the locate-first diagnostic, has been
+executed and returned negative — the defect is not routing (§7.19a) — so the remaining levers are
+tests of the objective, which is exactly where the admissibility algebra always confined them.** **(ii)** The P8 occupancy decoder trains on label rasters and is
+admissible **only** because the trunk's md5 is proved identical before and after (§7.18) — the
+freeze is the admissibility certificate, not a courtesy. **(iii)** Under (L2), the deployable
+scenario classifier is the image-only arm, even though the ego-conditioned arm scores better —
+because the situation labels are themselves derived from ego dynamics, so an ego input at
+inference is partly reading the label's own source. That is the general test this algebra
+encodes and which we now run on every head: **does an input at inference contain something the
+label was derived from?** It is the same test that caught the nav-echo (a route head scoring
+1.0000 as an exact bijection of its own input) and the ~80 % train/val leak in the REF-A I-JEPA
+arm.
+
+### 3.11 The 4-brain hierarchy, formally: per-layer predictors, goal conditioning, and the gradient-isolation matrix (added v1.0)
+
+Let ℓ ∈ {O, T, S} index the operative, tactical and strategic levels (the fallback brain C is
+out-of-gradient monitoring logic and carries no predictor). Each level owns a state space, a
+clock, a horizon, an action space, and **its own predictor in its own space**:
+
+| ℓ | state | adapter | clock | horizon | action a^ℓ |
+|---|---|---|---|---|---|
+| O | z_O ∈ ℝ^{2048} = r(f_θ(x)) | — | 10 Hz | 0–2 s | continuous controls (a, κ) |
+| T | z_T ∈ ℝ^{d_T}, d_T ≈ 512 | z_T = φ_T(sg[z_O(t−3..t)]) | ≈ 1–2 Hz | 2–6 s | tactical goal token g_tac |
+| S | z_S ∈ ℝ^{d_S}, d_S ≈ 256 | z_S = φ_S(sg[z_T window]) | ≈ 0.2–0.5 Hz | 6–30 s | strategic goal token g_str |
+
+with dynamics, **goals conditioning strictly downward**:
+
+  ẑ_S(t+K) = P_S( z_S(t), a_S(t) )
+  ẑ_T(t+k) = P_T( z_T(t), a_T(t) │ g_str )
+  ẑ_O(t+j) = P_O( z_O(t), (a, κ)_t │ g_tac )
+
+*Scope (v1.6).* These equations, the table above and the dimensions in it are the v6 design. The v8F stack as built differs in four
+ways, stated in §3.14: (i) the world-model predictors are goal-free at every level, so the downward conditioning lives in the
+planner cost and in the reader cascade and not inside P_ℓ; (ii) the tactical layer emits goals **and** constraints, that is the
+vocabulary code u_t over the horizon up to 6 s, and u_t is the action of the operative layer; (iii) every layer reads the current
+measured ego state, and no layer reads a state planned by another; (iv) the world model has the same small width at every level
+(dim 128, predictor width 128, depth 2, `v8f_mini.py:650-653`, MEASURED by reading, not 2048 / 512 / 256), with world-model steps of 0.2, 0.6 and
+3.0 s in the band design (0.2, 0.4 and 0.8 s in the M2b generation) and readers run as sample-and-hold at about 10, 2 and 1 Hz
+(not 10, 1 to 2 and 0.2 to 0.5 Hz).
+
+Two structural properties are asserted by construction and then *checked*, not assumed.
+
+**(1) Abstraction by temporal down-sampling under a shrinking state.** d_S < d_T < d_O and
+τ_S > τ_T > τ_O, so an upper level cannot represent the lower level's detail even if the
+objective would reward it: the level is *forced* to abstract. At the 0.2 Hz end of its clock range a strategic roll over 15 s is
+three steps of a 256-dimensional model (at 0.5 Hz it is about seven, and a 30 s roll is six steps at 0.2 Hz) — the hierarchy is an efficiency device as much as a
+semantic one, since only the operative path runs at full rate.
+
+**(2) The gradient-isolation matrix G.** Let 𝒫 be the set of planner/goal-head parameters and
+ℰ the set of encoder parameters. Define G[u, v] = 1 iff a gradient path from module u to module
+v is *permitted*. The v6 contract is
+
+  G[𝒫, ℰ] = 0  (no planner or goal head may backpropagate into any encoder)
+  G[ℓ', ℓ] = 0 for ℓ' above ℓ  (upward latents pass through sg[·] or an EMA-slow copy)
+  G[ℓ, ℓ] = 1  (each level trains its own predictor)
+
+Uplinks are `sg[·]` or an EMA target with decay 0.996 (the V-JEPA teacher pattern) — a choice,
+not a default, and it is an arm. The contract is enforced by an **autograd probe** rather than a
+comment: `V6Stack.assert_isolation()` backprops the module's declared planner-side surface and
+reads which parameters actually received gradient via `torch.autograd.grad(..., allow_unused=True)`
+(it never touches `.grad`, so it is safe mid-training), probing the three edges planner→encoder,
+tactical→below, strategic→below. Two traps the check itself must avoid, both of which we hit in
+design: a **frozen** parameter records no autograd edge, so a check run mid-stage would report
+"isolated" vacuously — the probe therefore makes every parameter temporarily differentiable,
+because isolation is an *architecture* property, not a training-state property; and a zero-init
+head produces a zero gradient that also looks like isolation, which a dedicated test pins.
+
+*Scope of the isolation claim (v1.6).* G as written blocks the **upper** level's loss from the lower level's parameters (the
+upward links are `sg[·]`). It says nothing about the converse edge, the **lower** level's loss reaching the upper level's
+parameters, which is the edge the PI's rule needs at 0.0 (`∂L_O/∂θ_T = 0`, `∂L_T/∂θ_S = 0`). In the v8F stack that edge is the
+switch `detach_upper`, and its default is **off** (`v8f_mini.py:215`): a run that does not name the flag trains the upper layer
+through the lower layer's loss, and M2b ran that way (§3.14). So the matrix describes the v6 contract, not a property every
+v8F run has; each band arm names the flag and carries a control that removes the detach and must go red.
+
+**Why goals, not latents, are the downward interface.** A goal token is a *finite discrete type
+with typed continuous slots* — `(TYPE, args)` in physical units — so the seam is inspectable,
+loggable, and testable for the disjointness rule (§3.10, (L2)): no goal token may be derivable
+from the situation classifier's output, and every supervised instance carries its derivation
+source (`path | signage | vlm-fused`). A latent seam would be none of those things. The
+vocabulary itself (strategic `KEEP_CORRIDOR`/`LANE_TARGET`/`EXIT_*`/`TURN_*`/`ROUTE_TO`/`STOP_AT`
+with `FOLLOW_MAIN_ROAD` as the no-route default; tactical `ANCHOR_GOAL`/`CORRIDOR_OFFSET`/
+`GAP_TARGET`/`SPEED_BAND`/`YIELD_AT`/`STOP_POINT`/`WAIT_FOR_ONCOMING`/`EVADE_IN_CORRIDOR`/
+`TRAFFIC_LIGHT_REACT`, each with optional `within_m`/`by_time_s`/`at_arc_m`/`hold_for_s`
+constraint slots) is specified in `HIERARCHY_VOCABULARY.md` and is a v6 deliverable, not a claim
+of this paper.
+
+**The horizon spec, and why it is one trajectory and not two.** A plan is a **single 60-step
+(a, κ) control sequence at 10 Hz integrated through one unicycle rollout, 0 → 6 s**. The 0–2 s
+band carries operative control authority and the 2–6 s band is shaped by g_tac conditioning, but
+they share one integrator, so the 2 s seam is **discontinuity-free by construction** and the seam
+metrics verify rather than repair it. *(As built, one decoder of the operative layer outputs all 30 knots at 0.2 s, conditioned
+on the tactical action u_t; the band split is in the loss and the metrics, §3.14.)* Stitching two trajectories would introduce exactly the
+artefact the hierarchy is supposed to avoid. The eval consequence is binding: four families and
+oracle/selected are reported at **both** 0–2 s and 0–6 s.
+
+### 3.12 Selection under a surrogate cost: the winner's curse, formally (added v1.0)
+
+Imagine-and-select is `argmin` over a candidate set. §7.16 measures that this fails badly at
+N = 256 candidates even when the true best candidate is guaranteed present. The mathematics
+below is what makes that a *result* rather than a disappointment, and it discriminates between
+two hypotheses using our own numbers.
+
+**Setup.** Fix a window. Let candidates i = 1…N have realised errors e_i (the quantity we would
+minimise if we could see the future) and surrogate costs c_i (the quantity we can compute).
+Write e_{(1)} = min_i e_i for the **oracle**, and i\* = argmin_i c_i for the **realised choice**.
+The object of interest is E[e_{i\*}] as a function of N and of the dependence between e and c.
+
+**Model A — the honest-but-noisy cost (Gaussian copula).** Suppose, after marginal
+standardisation, (e_i, c_i) are i.i.d. across i with
+
+  c_i = ρ·e_i + √(1 − ρ²)·ξ_i,  e_i, ξ_i ~ 𝒩(0, 1) independent.
+
+Each c_i is standard normal, (e_i, c_i) is bivariate normal with correlation ρ, and i\* is a
+function of c alone — so E[e_{i\*}] = E[ E[e_{i\*} │ c] ] = ρ·E[min_i c_i], giving the **exact**
+identities
+
+  E[e_{i\*}] = −ρ · a_N,  E[e_{(1)}] = −a_N,  E[e_{random}] = 0,
+  with a_N = E[max of N i.i.d. 𝒩(0,1)] ≍ √(2 ln N).
+
+Two readings. First, since (random − selected)/(random − oracle) = ρ exactly,
+**the fraction of the oracle's advantage a minimiser captures is exactly ρ**
+— a cost with ρ = 0.45 buys 45 % of the available gain, no matter how good the fan is; this alone
+is a strong argument against argmin as an architecture. Second, and decisively for us,
+E[e_{i\*}] under Model A **improves** with N like −ρ√(2 ln N): a noisy-but-honest cost gets
+*better* on a deeper fan. **Our measurement therefore refutes Model A at the tail.** The fan-depth series is *not* the evidence: the
+frozen-trunk K-sweep reads 0.5772/0.5173/0.5319 m at K = 8/32/64 (one seed, no interval; `w7_gate_k{8,32,64}.json`, `w7_selected_ade`),
+which improves from K = 8 to 32, worsens from 32 to 64, and ends 0.0453 m *better* at 64 than at 8, so it neither confirms nor
+refutes the model; and the repaired trunk at N = 256 (3.3348) is a different trunk and not a point on that curve (§7.16). The evidence
+is at fixed N = 256: the argmin's mean error-rank is 132.3 of 256 against 128.5 expected under *independence* — that is not a ρ = 0.45
+signal in the tail, it is no signal at all in the tail — and the flat low-cost stratum below. (Model A's ρ is the correlation of the
+normal scores; a Spearman 0.45 corresponds to ρ = 2 sin(0.45π/6) = 0.467, so "45 % of the gain" reads 46.7 % on that mapping.)
+
+**The reconciliation, and the statistic that matters.** Spearman's ρ is a **bulk** functional: it
+constrains average pairwise concordance and places no constraint on the joint law in the lower
+tail of c. The quantity selection actually depends on is the **lower-tail dependence
+coefficient**
+
+  λ_L = lim_{u↓0} P( F_e(e) < u │ F_c(c) < u ),
+
+i.e. "given the cost is in its lowest quantile, how likely is the error to be too". A cost can
+have ρ = 0.45 and λ_L = 0. Our measurement estimates the **finite-m analogue** of λ_L — the
+empirical low-cost stratum at m/N between 0.008 and 0.125 — and finds it indistinguishable from
+zero across that whole range: conditioning on the m lowest-cost candidates leaves the mean error
+at the fan's own mean (5.408/5.327/5.313/5.321/5.321/5.321 for m = 2…32 against a fan mean
+≈ 5.32), i.e. **the low-cost stratum is distributed like a random m-subset**. The falling
+best-in-top-m *ceiling* (3.380 → 0.356 m over the same m) is consistent with the same reading —
+it is what the minimum of a *random* subset does — but the flat conditional mean is the direct
+evidence, and the ceiling on its own would not distinguish the two models. **ρ is not a
+sufficient statistic for a selection rule; report λ_L (or its finite-m analogue, or the argmin's
+error-rank), or do not claim a cost selects.**
+
+**Model B — the degenerate minimiser, which the data supports.** Let the cost decompose as
+c(u) = c_roll(u) + λ c_kin(u) over control sequences u. Both terms are *self-consistency /
+smoothness* functionals: c_roll(u) = ‖waypoints(u) − decode(roll(z₀, u))‖ measures agreement
+between a candidate and the world model's imagination *of that same candidate*, and c_kin
+penalises |a| and |jerk|. Let 𝒟_δ = {u : ‖displacement(u)‖ < δ} be the near-stationary set. Both
+terms → 0 on 𝒟_δ as δ → 0 (nothing moves, so nothing can disagree and nothing accelerates),
+while the realised error is bounded **away** from zero there, because the ego does move:
+E[e │ u ∈ 𝒟_δ] → ‖true displacement‖ > 0. Hence if fan candidates are drawn i.i.d. from a law
+with positive mass near 𝒟_δ **and the cost on 𝒟_δ lies below its infimum off 𝒟_δ** (an assumption, not a derived fact: a
+candidate the world model reproduces well can also be self-consistent away from 𝒟_δ, and then only the weaker statement that the
+argmin is *drawn toward* 𝒟_δ holds),
+
+  P( i\* ∈ 𝒟_δ ) → 1 as N → ∞,   so  E[e_{i\*}] → E[e │ 𝒟_δ] ≫ E[e_{(1)}] → 0.
+
+**The minimiser converges to the degenerate set while the oracle converges to zero.** This is the
+predicted divergence in N; what we have observed is its fixed-N face (the flat low-cost stratum above), and a single-trunk sweep over N
+that would show the divergence directly has not been run (the frozen-trunk K-sweep is non-monotone). It also predicts the deployed
+decomposition exactly: argmin on c_roll **alone** scores 5.2898 m ≈ the fan mean (pure
+degeneracy), and the whole of W7-FULL's 3.3348 m comes from the λ = 0.2 kinematic term partially
+opposing it.
+
+**The remedy the formalism prescribes.** A selection cost must contain a term that **inaction
+cannot minimise**. V-JEPA 2-AC minimises latent distance to a *goal* state and DINO-WM minimises
+a latent goal cost — standing still leaves you far from the goal, so 𝒟_δ is not a minimiser
+there. We copied the planning loop and dropped the goal term; W7's own anti-degeneracy progress
+term (minus arc length) has been at weight 0.0 in every run to date. Beyond adding it, the
+formalism points at two structural alternatives, both pre-registrable: **top-m aggregation**
+(average or median over a low-cost set rather than its argmin — an M-estimator instead of an
+extremum, which is exactly the classical remedy for a winner's curse) and **sharpening**
+(learning a monotone recalibration of c against realised error on held-out windows, which raises
+λ_L directly and is measurable as such). Both must be pre-registered before use; neither may be
+selected on the same windows that measured the failure.
+
+**Why this generalises past our stack.** Every "generate a fan, score it, take the best" planner
+— anchored-diffusion decoders, MPC over learned dynamics, best-of-N sampling from a generative
+policy — is an argmin over a surrogate. The scaling instinct in that family is to *widen the
+fan*, and under the degenerate-minimiser model (Model B) widening is exactly what makes a degenerate or tail-uninformative cost worse while the
+reported oracle improves; under Model A it helps, and which holds is an empirical question per cost. **Publishing a fan's oracle alongside its argmin is therefore not a
+courtesy; it is the diagnostic**, and the gap between them is the quantity a selection paper owes
+its reader.
+
+### 3.13 SIGReg, effective rank, and what "retention" measures (added v1.0)
+
+The anti-collapse mechanism (§3.2) is a distributional constraint, so the honest way to audit it
+is a spectral statistic of the representation, tracked as a **series**. Let Z ∈ ℝ^{n×D} be a
+batch of encoder states (D = 2048) and Σ = Cov(Z) with eigenvalues λ₁ ≥ … ≥ λ_D ≥ 0. Define
+
+  **participation ratio**  PR(Σ) = (Σ_i λ_i)² / Σ_i λ_i² ∈ [1, D],
+  **effective rank**  erank(Σ) = exp( −Σ_i p_i ln p_i ),  p_i = λ_i / Σ_j λ_j,
+  **top-k share**  s_k = Σ_{i≤k} λ_i / Σ_i λ_i.
+
+PR = 1 for a rank-one (fully collapsed) representation and D for an isotropic one — which is the
+distribution LeJEPA proves optimal and which SIGReg drives toward by forcing every 1-D projection
+to 𝒩(0,1) (Cramér–Wold). **"Retention" is a ratio, never a level**: retention(t₁ : t₀) =
+PR(Σ_{t₁}) / PR(Σ_{t₀}), gated at ≥ 0.8 across any curriculum phase. Stating it as a ratio is
+deliberate — PR's absolute value depends on batch size, centring convention and the free-dimension
+count of the `full_relaxed` variant, so a level is not comparable across arms while a
+within-arm ratio is. Measured on v5f's own λ_plan ramp: PR 4.53 → 6.94 of 2048 with s₈ falling
+0.9903 → 0.9232, retention **1.532** over 5 k → 20 k — expansion, not collapse (§7.17). ⚠️ Two
+disciplines travel with it: the ratio's **endpoints must be named** (this one is 20 k over 5 k,
+not the 30 k the pre-registration wrote), and the same code must compute the training-time
+monitor and the offline instrument, or the monitor and the audit will drift apart — in v6 both
+call `tanitad/eval/spectral.py`.
+
+### 3.14 The three bands and the top-down cascade, formally (added v1.6, PI rulings of 2026-11-08)
+
+This section states the v8F design against the PI's definition (`REQ_HORIZONS.md`, D-HWM-BANDS-1). Where the earlier design sections (§3.3, §3.11, §11.4) give other horizons or rates, they describe the generation they were written for, and this section is the definition in force. Each object carries its state: **[TRAINED]** a checkpoint exists, **[BUILT]** code and tests exist and nothing is trained on it, **[DESIGN]** specified only. Nothing in this section is a driving result.
+
+**Time.** Let Δ = 0.2 s be the cache step and t be NOW. The bands are
+
+  B_O = (0, 2] s,  B_T = (2, 6] s,  B_S = (6, 30] s.
+
+The output of the stack is a plan on the knots j = 1, …, 30 of the Δ grid,
+
+  X_t = (x_{t+jΔ})_{j=1..30} ∈ ℝ^{30×2},
+
+or M such plans. Knots 1–10 lie in B_O and knots 11–30 in B_T. A level's horizon has to match its band: a step or a trained reach of 0.8 s is not a long-term abstract level (R-ABS).
+
+**The cascade (inference).** Let e_t be the **current measured ego state** (ego dynamics, including yaw rate), n_t the navigation command, ℓ_t the speed limit and V_t the vision tokens of the current and past frames. Every layer reads e_t. No layer reads a state planned by another layer (R-EGO). With ages a_S, a_T ≥ 0 for the sample-and-hold outputs (S about 1 Hz, T about 2 Hz, O 10 Hz by design, read on the 0.2 s cache grid),
+
+  s_t = f_S(e_t, n_t, ℓ_t, V_t),
+  u_t = f_T(e_t, n_t, ℓ_t, V_t, ŝ_{t−a_S}),
+  X_t = f_O(e_t, n_t, ℓ_t, V_t, ŝ_{t−a_S}, û_{t−a_T}),
+
+where a hat marks a held output re-expressed in the current ego frame by measured odometry. The output of T is a **tactical action**
+
+  u_t = (g_t, lat_t, lon_t, c_t),
+
+goal probabilities over the 22 tactical goal tokens, the lateral and longitudinal classes, and the 26 constraint values, all over the horizon up to 6 s (R-T2O). T has no trajectory head. u_t conditions O as its action: O is a function of the plan's context **given** u_t. A single decoder produces all 30 knots, so the plan is continuous at knot 10 by construction, and the two bands differ only in the loss and the metrics:
+
+  L_O = w_op · ℓ(X^{1:10}, X*^{1:10}) + w_tac · ℓ(X^{11:30}, X*^{11:30}).
+
+For M hypotheses, X_t^{(m)} = f_O(· | û^{(m)}), m = 1, …, M, with û^{(m)} the M best tactical actions. M = 1 is the arm of record. [The cascade is TRAINED on M2b as written, with knots weighted equally and T's labels on 2–8 s. The band losses and the 2–6 s labels are BUILT.]
+
+The strategic output s_t today is three route checkpoints at the arcs 30, 50 and 80 m, whose median arrival is 3, 5 and 8 s (MEASURED, eval-141, 2,399 windows). They do not cover B_S in seconds. The strategic extension [BUILT] is
+
+  σ_t = (C_t, p_t, γ_t),
+
+with C_t the checkpoints at τ ∈ {6, 9, …, 30} s, p_t the posteriors of the detected context (country, illumination, weather, road surface, visibility), read from V_t and past frames only (R-VIS), and γ_t the derived goals, which read the strategic world-model state, n_t and the detached p_t. σ_t enters f_T as a further detached input, so the strategic goals reach O through u_t. No situation-classifier output enters any goal path (§3.10).
+
+**Gradients.** Downward conditioning is an inference statement. The training statement is separate: with `detach_upper` set, ∂L_O/∂θ_T = 0 and ∂L_T/∂θ_S = 0 through the conditioning inputs. Its default is off, so a run that does not name the flag trains the upper layer through the lower layer's loss when the lower layer reads the upper layer's own prediction, and M2b ran that way. The band arms name the flag.
+
+**The world model, level by level.** The levels l = 1, 2, 3 have cumulative strides S_1 = 1, S_2 = 3, S_3 = 15 and steps τ_l = S_l Δ = 0.2, 0.6, 3.0 s. With window 1 (the same form as H-JEPA Eq. 1),
+
+  z^1_i = π(V̄_i),  z^l_i = E^l(z^{l−1}_{i·s_l}),  a^l_i = A^l(a^{l−1}_{i·s_l : (i+1)·s_l}),  s_2 = 3, s_3 = 5,
+
+with V̄_i the mean token of frame i. Predictors are action-conditioned and goal-free at every level. The objective of a level adds a k-step free-run term to the H-JEPA objective:
+
+  𝓛^l = L^l_pred + β · SIGReg(Z^l) + γ · L^l_idm + w_r · L^l_k,
+
+  L^l_k = (1/|𝒱_l|) Σ_{(i,h)∈𝒱_l} (1/D) ‖ ẑ^l_{i,h} − z^l_{i+h+1} ‖²,
+
+where ẑ^l_{i,h} is the (h+1)-step rollout from the single state z^l_i under the logged actions and 𝒱_l = {(i,h): i an anchor, 0 ≤ h < k_l, i+h+1 ≤ T_l − 1}, so a step whose target frame does not exist contributes exactly zero. The trained reach is R_l = k_l τ_l. With k = (10, 10, 6) it is 2, 6 and 18 s, and a window needs
+
+  F = 1 + max_l k_l S_l = 1 + max(10, 30, 90) = 91 frames.
+
+The term is absent at k = 1, where the loss equals the earlier loss bit for bit. Before this change the loss was one-step, so the trained reach was 0.2, 0.4 and 0.8 s at strides (2, 2). Camera frames end at about 20.17 s per clip, so latent targets cannot pass 20 s; 18 to 30 s is carried by C_t, decoded from rolled level-3 states and supervised by egomotion, which runs a median of about 140 s. [Ladder runs at (3, 5) are TRAINING as world-model-only runs, with the adapter, readers and planner frozen. No band read exists yet.]
+
+**The world-model planner, top-down.** Following H-JEPA Eqs. 4–6, with z^l_0 the encoded current state at each level, g the goal latent and T_3 the level-3 horizon:
+
+  a^{3,*} = argmin_{a^3} ‖ ẑ^3_{T_3} − g ‖²,
+
+  a^{l,*} = argmin_{a^l} ‖ z̃^{l+1}_{K} − ẑ^{l+1,*}_{K} ‖² + λ Σ_{i<K} ‖ z̃^{l+1}_{i} − ẑ^{l+1,*}_{i} ‖²,  l = 2, 1,
+
+with z̃^{l+1}_i = E^{l+1}(ẑ^l_{i·s_{l+1}}) the rollout lifted to the level above, and horizon H_l = K_{l+1} s_{l+1}. Each level plans from its own encoded current state, and the only downward signal is the predicted state of the level above. T_3 = 4 places the goal at 12 s, the band end the ladder is read at; T_3 = 2 (6 s) is the control. The tactical vocabulary seeds level-2 candidates, and u_t's constraints enter the level-2 and level-1 costs through differentiable kinematics. g is the output of a goal head on the current latents, nav and p_t, never a true-future latent at inference; the true-future goal is a T0 ceiling. The output is the 6 s plan: knots 1–10 from level 1, knots 11–30 from level 2's macro-actions, or all 30 from level 1 as a compared arm. [BUILT. Read on the earlier (2, 2) models: §7.22.]
+
+**Where this follows H-JEPA and where it does not.** Followed: a latent, encoder, macro-action encoder and predictor per level; SIGReg and inverse dynamics at every level; end-to-end gradients within the world model; Eqs. 4–6 with λ = 0.5 and the App. E solver. Not followed: the image encoder is frozen DINOv3 plus an adapter (PI, 2026-10-17; the LoRA arm is the lever); the k-step term (required by the bands; arm S35 is the one-step control); the planner rolls out from one state while the k-step term feeds back up to three states, so both planning contexts are read; a single 6 s plan per window is scored, not a committed-prefix replanning schedule.
+
 ## 4. Why less data suffices: theoretical grounding
 
 Three independent arguments, one measured corroboration.
@@ -416,12 +987,15 @@ Three independent arguments, one measured corroboration.
    a spectral-contrastive objective, pretraining risk equals a rank-k factorization error of the
    action-conditioned co-occurrence operator; downstream planning regret is bounded by
    O(T·√(Σ_{i>k} σ_i² + C(k)/√n)) with approximation error falling and estimation error rising in
-   the latent dimension k. Latent models win precisely when moderate k captures task dynamics while
-   pixels carry nuisance — the driving regime by construction. Pixel-level prediction is the
-   degenerate k = n endpoint paying maximal sample complexity.
+   the latent dimension k. The bound favours latent models when moderate k captures task dynamics while
+   pixels carry nuisance, which is the driving regime we argue for (an argument about the bound's trade-off, not a measurement that
+   it holds here). Pixel-level prediction can be read as the k = n endpoint of the same trade-off, with the largest estimation term;
+   the cited theory is stated for the rank-k factorisation, not for a pixel decoder, so that reading is an analogy.
 2. **Consequence dominance concentrates gradient.** In egocentric video every action moves every
-   pixel; the action's consequence is a dominant, predictable fraction of frame change (measured
-   0.05–0.11 per step on our corpora). The toy program demonstrated a 0.19 → 0.69/0.76 control jump
+   pixel; the action's consequence is taken to be the dominant, predictable part of frame change. What was measured
+   is the per-step frame-change fraction, 0.05 to 0.11 on our corpora (A8, §3.2): most of each frame is static, which is what makes a
+   change-weighted loss concentrate gradient. That the changing part is the action's consequence is the premise, and the causal
+   panel of §7.3 is the evidence for it, not this number. The toy program demonstrated a 0.19 → 0.69/0.76 control jump
    from the observation model alone (A11) — driving's default observation model is the one in which
    action-conditioned dynamics are cheap to learn.
 3. **Hierarchy recombines instead of memorizing.** Maneuvers learned once recombine across routes
@@ -433,6 +1007,11 @@ rank ≈ 35). Task-relevant driving dynamics are low-rank in situ; the observati
 dimensional. The gap between those two numbers is the sample-efficiency budget this program spends.
 
 ## 5. The instrument doctrine
+
+*(Structured into named subsections at v1.0; the content of §5.1–§5.2 and §5.6–§5.7 is unchanged
+from v0.9, §5.3–§5.4 were added at v0.9, and §5.5 is new.)*
+
+### 5.1 Instrument rows (I1–I7)
 
 Every result in this paper ships with instrument rows assembled *before* the claim, and a gate whose
 instruments fail is BLOCKED — reported as unmeasurable, never as a model failure. The rows: I1
@@ -447,6 +1026,8 @@ mechanically — camera intrinsics canonicalized to a common effective focal len
 §6.1). In the program's first week the doctrine caught three silent hazards (numerics, collapse
 masked by a falling loss, a data-selection bug that chose parked cars) — each invisible in the
 happy-path training curves.
+
+### 5.2 The estimator correction, and its measured blast radius
 
 **The estimator correction (2026-07-20), and what it does and does not invalidate.** Every `± CI95`
 in §7.1–§7.5 above — and in v0.1–v0.4 of this paper — was produced by a block historically labelled
@@ -463,14 +1044,14 @@ onward carry the corrected estimator, named inline.
 > qualitative verdict in §7.1–§7.5 stand; the *widths* quoted there are the deprecated statistic." That
 > assurance is WITHDRAWN: it was wrong, and it was load-bearing.** The deprecated block does not only
 > mis-state widths — **its central value is a mean-of-split-means, so it moves the POINT ESTIMATE too.**
-> Measured 2026-07-25 by recomputing **27 arms** from the raw per-window dumps (`windows_*.pt`, 881
+> Measured 2026-07-25 by recomputing **27 dumps (= 25 distinct arms; two double-banked pairs, C126)** from the raw per-window dumps (`windows_*.pt`, 881
 > windows / 40 episodes; pipeline validated bit-for-bit against `CI_RECOMPUTE_2026-07-20.json`, 10/10
 > arms exact): headline `ade_0_2s` shifts **−6.67 % to +11.69 %**, and the shift is **bidirectional — 11
 > arms inflated, 16 deflated, none unchanged** — so no legacy point estimate may be assumed conservative.
 > On paired deltas the distortion reaches **×−4.15, including a sign flip**, and on hierarchy seams
-> **×3.3**. Widths are **1.107–3.100× too narrow (median 1.499×)** over 27 arms; the "1.28–2.06×" above
+> **×3.3**. Widths are **1.107–3.100× too narrow (median 1.499×)** over 27 dumps (25 distinct arms); the "1.28–2.06×" above
 > came from only ten and was under-sampled. **Under the corrected estimator the cross-arm ranking changes
-> in 10 of 27 positions.** Note the internal tension this correction resolves: the sentence immediately
+> in 10 of 27 positions** (dump-level; 27 dumps = 25 distinct arms, C126). Note the internal tension this correction resolves: the sentence immediately
 > following already conceded that the split-*mean* compresses between-arm gaps — that concession was
 > right, and it was incompatible with "the point estimates stand."
 > **Consequently every `± CI95` *and every central value* in §7.1–§7.5 is provisional pending
@@ -482,6 +1063,125 @@ onward carry the corrected estimator, named inline.
 A second consequence, which the correction above generalises: the split-*mean* compresses between-arm
 gaps (a two-arm difference read 0.006 m under the split-mean and 0.044 m on the full set), so ranking
 claims must come from the paired test, not from comparing two split-means.
+
+### 5.3 The decision-grade estimator, stated mathematically
+
+**The decision-grade estimator, stated mathematically (added v0.9).** Windows are not independent —
+they are strided samples of episodes, and the correlation lives at the episode level. Let the
+validation set be episodes E = {e₁…e_M} (M = 40 on the canonical split), episode e contributing
+windows W_e, and let T({w}) be the statistic of interest (a mean error, a paired delta, a rank
+correlation). The **episode-cluster bootstrap** draws, for b = 1…B (B = 2000),
+M episodes *with replacement* from E, recomputes T on the union of the drawn episodes' windows
+(an episode drawn twice contributes its windows twice), and reports the percentile interval
+[T*₍.025₎, T*₍.975₎] of {T^(b)}. The point estimate is always the **full-set** T over all windows,
+never a mean of split-means. For two arms scored on the same windows the statistic is the
+**paired** per-window difference resampled by the same episode draws — never two marginal
+intervals combined in quadrature (quadrature assumes independence the pairing exists to exploit).
+Implementation: `taniteval/ci.py`; every artifact JSON cited in §7.13–§7.15 stamps
+`estimator: episode_cluster_bootstrap` or states explicitly that it is a corpus-grid point
+estimate pending the pod-side rescore. The deprecated block is not merely a wrong width: because
+its central value is a mean of overlapping split-means, **it moves the point estimate too** —
+the correction box above carries the measured blast radius.
+
+**Why the deprecated block biases the *point estimate*, algebraically (added v1.0).** Let the
+statistic be a mean error over windows and let split s ∈ {1…8} hold out a random 20 % subset
+H_s ⊂ W of the same window pool, with |H_s| = h. The deprecated block reports
+
+  T_heldout = (1/8) Σ_s ( (1/h) Σ_{w ∈ H_s} e_w )   versus   T_full = (1/|W|) Σ_{w ∈ W} e_w.
+
+If every window were drawn into the same number of splits, the two would coincide; they do not,
+because the eight holdouts are drawn **independently and therefore overlap unevenly**. Write
+m_w = #{s : w ∈ H_s} for the multiplicity of window w. Then
+
+  T_heldout = Σ_w (m_w / 8h) · e_w = Σ_w ω_w e_w  with  Σ_w ω_w = 1, ω_w ∝ m_w,
+
+i.e. **T_heldout is a *randomly re-weighted* mean whose weights are the sampling multiplicities**,
+and it equals T_full only if m_w is constant. Its bias is therefore Cov_w(ω_w, e_w)·|W|, which is
+zero in expectation over draws but **not** for the single realised draw a published number comes
+from — and the realised draw is fixed, so the error does not average away over arms, it varies
+per arm. That is exactly the measured signature: headline `ade_0_2s` shifts **−6.67 % to
++11.69 %** across 27 dumps = 25 distinct arms (C126), **bidirectional** (11 inflated / 14 deflated
+over distinct arms; 11/16 over dumps, none unchanged), up to
+**×3.3** on hierarchy seams and **×−4.15 including a sign flip** on paired deltas, with widths
+1.107–3.100× too narrow (median 1.499×). Two rules follow and are enforced: the point estimate is
+**always** the full-set mean, and any pre-2026-07-25 number must be checked for which of the two
+it is (`MODEL_REGISTRY` publishes both, and they differ).
+
+### 5.4 The eval-tier doctrine (T0 / T1 / T2)
+
+**The eval-tier doctrine (BINDING 2026-08-09; `Project Steering/EVAL_DOCTRINE.md`).** The PI's
+critique — *"if the model is consuming at eval the future gt data, then it's not really an eval"* —
+was measured before it was adopted, and the measurement re-frames every open-loop number in this
+paper. Three tiers:
+
+| tier | condition | may be quoted as |
+|---|---|---|
+| **T0** | teacher-forced: the predictor consumes the *recorded future actions* | "prediction quality" / WM diagnostic — ⛔ **never "driving performance"** |
+| **T1** | action-closed loop: the predictor consumes the decoder/planner's **own** actions; perception context fixed at t₀ | "closed-loop (imagination) driving" — **the primary capability tier** |
+| **T2** | perception-closed loop (re-render what the ego would now see) | "closed-loop driving" — **not provisioned** |
+
+The measured basis (`MODEL_REGISTRY §1.12`, T1, 6,834-window grid): removing the recorded future
+actions degrades the v1.6/v1.7 unicycle readouts from ADE 0.340/0.285 to 0.471/0.462 (still under
+the 0.535 CV floor), net-yaw error ×6.7 — and **S-curve reproduction collapses 0.9785 → 0.0538
+(v1.6) / 0.0430 (v1.7), with the hold-action control at 0.0 %**. The open-loop counter-steer was an
+**action echo**: the eval fed the model the answer's own action transcript and scored it on
+reproducing the answer. Consequences, binding: every registry results block and every number in
+this paper from §7.13 on carries its tier stamp; pre-doctrine blocks are stamped retroactively
+(§1.10/§1.11 = T0, §1.12 = T1); a capability claim requires T1 or better; T0 keeps its role as the
+attribution instrument (it is how the decel-ramp defect was assigned to the readout rather than
+the roll). Cross-tier comparisons are invalid. The four-metric-families rule (§5.5) applies at
+every tier.
+
+### 5.5 The four metric families: the evaluation contract (added v1.0)
+
+**ADE is one row of four, and an evaluation that reports it alone is incomplete.** This is a
+binding contract in this programme (PI, 2026-08-02, after three reports went out with ADE-only
+tables), and it is stated here as method because the reason is structural rather than
+stylistic: **ADE is the cheapest number to produce and the easiest to compare, so it crowds out
+the metrics that decide whether the car drives well.** An arm can win ADE while setting the
+wrong speed, and a scalar path error cannot see a decision error at all.
+
+| family | what must be reported | why it is not optional, measured |
+|---|---|---|
+| **LONGITUDINAL** | target-speed accuracy **and distance-keeping** (headway / time-gap / TTC to the lead agent) | **88.7 % of our oracle gap is longitudinal**; and the state variable longitudinal control most needs — lead distance — is the one the latent provably does not carry (§7.14) |
+| **LATERAL** | heading error, **curvature error, yaw-rate error**, cross-track | "lateral is fine" has been asserted from cross-track alone; curvature and yaw are where a smooth-but-wrong path shows up — and where the action echo hid (§5.4) |
+| **TACTICAL** | manoeuvre-decision quality **and tactical goal-setting** (selected vs executed manoeuvre, class confusion, goal/anchor selection) | the 5-way softmax that **mixes lateral and longitudinal** is our largest known head defect; and selection, not generation, is where both measured hierarchy levels fail (§7.13, §7.16) |
+| **STRATEGIC** | strategic decision + goal/route setting quality | the hierarchy is this programme's thesis; if the strategic level is never measured, it cannot be claimed to work |
+
+**Five rules travel with the families.** (1) **Per-family, never pooled** — a single composite
+hides exactly the trade-off the decomposition exists to expose; v5.8f's headline trade (+0.08 m
+selected ADE for a 16× kinematic improvement, §7.13) is invisible in any pooled score.
+(2) Each family carries its **estimator** (paired episode-cluster bootstrap, §5.3) and its CI, on
+the *same* windows as the ADE it accompanies. (3) **A missing metric is a work item, not an
+excuse** — if a family has no instrument, the instrument is built. (4) A horizon sweep of ADE is
+never "the result". (5) Where a family genuinely cannot be computed, it is reported **per family
+with its reason and its n**, never silently dropped.
+
+**Where we stand against our own contract, stated honestly.** LONGITUDINAL and LATERAL are
+computed on every arm from §7.11 onward. TACTICAL is computed where a fan and a selector exist
+(shortlist coverage, winner-hit fraction, selected-rank percentile — e.g. W7-FULL's
+winner-hit 3.2 % at sel-rank 34.6 %, §7.16). **STRATEGIC is currently uncomputable on our corpus,
+and the reason is a property of the dataset, not of the model**: PhysicalAI-AV contains **no map,
+no lane graph, no junction annotation, no traffic-light feature and no route or goal signal** —
+its card says verbatim *"we do not include open maps data"* — and its `obstacle.offline` enum
+over 87,481 cuboids is 10 classes, **all dynamic agents**; the `egomotion` stream carries no
+lat/lon/GNSS (coordinates are clip-local metres), so external map-matching on our traces is not
+possible either. This was established at five independent probes and is settled. Every artifact
+therefore stamps `STRATEGIC: n/a — no route/goal label exists on PhysicalAI-AV`, with the
+`n` it would have had.
+
+**What would close it**, in the order it is planned (§10): a strategic goal-label stream produced
+offline by the two-engine labeling pipeline — Engine A (deterministic hindsight geometry over
+integrated ego trajectories: corridor continuation, lane-displacement events, junction turns),
+Engine B (a VLM reading past+future clips for scenario/domain/signage fields under a strict
+schema with OCR evidence required for any `route_to`), and Engine C (SAM-family video
+segmentation supplying drivable-surface and instance masks — the closest admissible substitute
+for the missing map), fused adversarially with disagreements banked as `disputed`. Under §3.10
+those labels supervise the **strategic goal head only**, and are never inputs at inference and
+never trunk losses. Until that stream exists, "the hierarchy works" remains an unmeasured claim
+at its top level, and we say so rather than substituting a proxy.
+
+### 5.6 Three failure classes added by measurement
 
 **Three failure classes added by measurement, 2026-07-21 → 07-24.** Each is a rule we now run
 *before* a claim, and each was earned by a wrong claim that a cheap check would have caught. They are
@@ -509,6 +1209,8 @@ reported here as method, not as errata, because each generalizes beyond the expe
   ls-files` over a listing, a real write test over a filesystem report, the process table's owner over a
   name match.
 
+### 5.7 Two instrument definitions pinned down
+
 **Two instrument definitions this round pinned down, because both had already produced a wrong number.**
 (i) **A latency figure without its definition, hardware, checkpoint and corpus is not a figure.** Two
 "ticks" coexist in this system — a *decision tick* (encode one frame + a batched K = 9 imagine-and-select)
@@ -524,6 +1226,71 @@ the band metric alongside the departure rate. **A third, data-side:** the valida
 set**; the evaluation harness now **refuses it in code** rather than documenting the hazard, and points
 the caller at the clean 40-episode split. Instrument rule I7 (task-identity fingerprints) is thereby
 extended from *corpus identity* to *train/eval disjointness*, enforced mechanically.
+
+### 5.8 Instrument rules the failures added: I11–I16 (I11–I15 added v1.1; I16 added v1.3)
+
+**Each was earned by one of our own claims failing, and each generalizes past the experiment that
+produced it.** They are stated as method because four of the five would have changed a published
+number had they been running earlier — and because, taken together, they are what makes §7.19's
+negatives admissible rather than merely convenient.
+
+- **I11 — an architectural bottleneck claim is not established until the bottleneck is REMOVED and
+  the metric moves. Ablate the mechanism; do not narrate it.** *"40 tokens averaged per cell, 64 × 160
+  px per cell, a 37.8 px median vehicle"* is a compelling story built from an architectural diagram
+  and an arithmetic coincidence, and it is **wrong** (§7.19a). ⚠️ **Two independent methods appearing
+  to agree did not save it:** a rung profile *consistent with* the mechanism was cited as
+  confirmation, but consistency is not evidence when the same profile is equally consistent with a
+  weak encoder. The ablation costs a kernel change; the narrative cost a design programme.
+- **I12 — whenever an arm is compared to a foreign model, also compare it to ITSELF AT
+  INITIALISATION.** The DINOv2 comparison differed from ours in pretraining, architecture, input
+  format and token width; the missing control was the cheapest one in the building. It costs one
+  forward pass, it is width- and format-matched **by construction**, and it is the **only** control
+  that can detect a training objective making a representation *worse* — because an external model
+  being better is equally consistent with ours merely being weaker (§7.19b).
+- **I13 — label every bracket with its estimator, and never quote a ratio whose denominator is not
+  separated from its null.** Two distinct errors, one rule. A **seed-to-seed spread** — a min–max
+  range over three initialisation seeds, each itself already a mean over three projection seeds — was
+  published in bracket notation where an episode-cluster bootstrap was implied. **A dispersion is not
+  a confidence interval**: one describes how the *instrument* wobbles, the other how the *estimate*
+  would move on resampled episodes, and the decision-grade one had simply never been computed. *(It
+  was computable, and computing it strengthened the surviving half rather than weakening it — which is
+  the usual outcome and the reason this is cheap discipline rather than a tax.)* And a **ratio** of a near-constant predictor (`pred_sd/gt_sd`
+  0.014) to a live one (0.89) is not the same quantity measured twice; when the denominator is
+  statistically indistinguishable from noise the ratio has no interpretation, however stable it looks
+  across seeds. The admissible replacement is a **signal / no-signal** statement against a matched
+  null (§7.19b).
+- **I14 — a control must be able to FIRE AT THE DEPLOYED OPERATING POINT, and must be enumerated PER
+  ARM.** `PC-2OBJ` plants two *opposing* signals inside one deployed cell, so at the deployed 40:1
+  ratio they cancel and it reproduces the un-planted arm to 5e-05: a positive control that **could not
+  have failed** where it was cited (§7.19a). Separately, "we ran the trivial-proxy control" was true
+  and covered only 80 % of the rows, because the control sat on one cache and 33 of 165 rows had no
+  such column at all — and **nothing reported the gap; the column simply was not there** (§7.19d).
+  A study-level control statement is not an arm-level one.
+- **I15 — a stability claim measured under a defect is not inherited by the repaired instrument.**
+  *"Seed spread is exactly zero on 8 of 11 rungs, so three seeds add no uncertainty here"* was
+  measured **under** a ridge defect that had frozen the α sweep; repairing the defect dropped
+  same-α-across-seeds from 132/165 rows to 42/165 (§7.19d). A repair changes an estimator's
+  **sensitivity**, not only its bias, so every variance, stability or convergence claim taken before a
+  repair must be re-measured after it. ⚠️ Its sibling, from the same round: **when you loosen a gate,
+  test the direction you were not trying to fix** — every correction to a criterion is a candidate
+  bias in the opposite direction, and a floor repair that stops no-signal arms failing by construction
+  can just as easily let noise pass by construction.
+- **I16 — an OBJECTIVE may not be a function of the read's own RESIDUAL** (added v1.3). The
+  probe-side rule above it — *fit every hyper-parameter on the fit split; the scored split is
+  scored, never tuned on* — does not reach a **training term**, and the gap is not one of degree.
+  MM-E4's L1 constrained the dynamics innovations \(\Delta z - g(z_t)\) to be isotropic-Gaussian
+  while the primary read was the predictability of \(\Delta z\) from \(z_t\) — *the same
+  regression's residual*. It cut drift by the largest margin this programme has measured **and**
+  left the latent at the mean predictor (nrmse 1.0162 > 1.0), because a minimiser can satisfy such
+  a term by making the transition structureless, at which point the statistic reads its
+  no-information value **by construction** (§15.2). ⚠️ **Every probe-side safeguard was in place
+  and none of them could help**: the ridge was cross-fitted both ways, the constant control read
+  exactly 0.0000, and λ was fixed in advance and made *relative* precisely so it could not track
+  the quantity under study. The defect is not in how the term is **fitted** but in what it is a
+  function **of**, so the check is structural and runs at design time: *name the primary read,
+  write down its residual, and confirm no training term is a function of it.* Its corollary is
+  binding on reporting as well as on design: **a drift number quoted without its paired
+  prediction reads is inadmissible** (§15.3).
 
 ## 6. Experimental program
 
@@ -1179,7 +1946,7 @@ increasing order of what they license:
    > ⭐ **Stated against interest:** comma-only, MAE falls **42.5 %** but **medAE moves only −1.1 % and
    > nMedAE gets 8.0 % WORSE** (Spearman ρ flat, +0.001). **The repair fixes the tail and the summary
    > statistic, not typical accuracy.** The three-measurement argument of this paragraph is unchanged —
-   > it never rested on the yaw channel. Inventory: `TanitAD Research Hub/Benchmarks & Eval/
+   > it never rested on the yaw channel. Inventory: `TanitAD Research Lab/Benchmarks & Evals/
    > Implementation/incoming/2026-07-27-comma-yaw-reissue/COMMA_YAW_REISSUE.md`.
    > 🔴 **AMENDED 2026-07-27 (`anchor-settlement`, class C43): `+0.3308` is WITHDRAWN.** *(Block
    > above keeps its text and date.)* Settled BY CONTENT — sha256 of the raw `poses` float32 bytes
@@ -1241,7 +2008,7 @@ simulator needed for rendered occlusion and signal geometry was confirmed absent
 > 🔧 **CONDITIONS, ADDED 2026-07-26 — and a correction to what was measured.** This paragraph previously
 > attributed these numbers to *"the deployed 262.8 M architecture."* **Neither half was right.** Traced
 > to its artifact,
-> `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-24-traffic-light-scenario-metric/real_tms_cnce.json`
+> `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-24-traffic-light-scenario-metric/real_tms_cnce.json`
 > (`exp: sc14-P2-real-tms-cnce-log-replay`; generator `real_telemetry_tms_cnce.py:109`), the measurement
 > is on a **`base250cam` WorldModel, `params_billions` 0.2628 → 262.8 M**, instantiated fresh — **not the
 > deployed flagship v1**, which measures **263,442,838 (263.4 M)**. Latency and the CNCE parameter term
@@ -1331,9 +2098,43 @@ fail in **opposite directions** — v1's signed speed bias is **+1.465 m/s** (ru
 human), v2corpus's is **−1.260 m/s** (lags). An absolute-distance scalar cannot represent a sign
 flip. Lateral: v2corpus is uniformly ≈2× worse (heading 0.529° → 1.072°; curvature 0.00168 →
 0.00313 m⁻¹; yaw-rate 4.99 → 7.88 °/s; cross-track 0.114 → 0.197 m). Tactical: the
-manoeuvre-vs-trajectory agreement collapses from κ = **0.253** (v1, weak) to κ = **0.0072**
-(v2corpus) — the declared manoeuvre is unrelated to the driven path; the `--v2` pack's tactical
-machinery is **decorative**. Strategic: under nav-dropout 0.5 the arm *learned the dropout* —
+manoeuvre-vs-trajectory agreement collapses from κ = **0.253** (v1) to κ = **0.0072**
+(v2corpus), both at the published direction gate `DIR_YAW_RAD = 0.15` — the declared manoeuvre is
+unrelated to the driven path; the `--v2` pack's tactical machinery is **decorative**.
+
+> ⚠️ **ANNOTATION (2026-08-17, PI-directed) — THIS COMPARISON IS CONFOUNDED WITH A LABEL-DEFINITION
+> CHANGE, AND THE TWO CAUSES ARE NOT SEPARABLE FROM BANKED DATA.**
+> `DIR_YAW_RAD` is **not an eval constant**: `hierarchy.py:169` aliases `refb_labels.YAW_TURN_RAD`
+> — the **training-label** threshold, same horizon, same wrap, same number. And for `--v2` arms **no
+> gate value applies at all**, because `classify_maneuver_v2` gates **CURVATURE (1/m)** where v1
+> gates **NET YAW**; the registry (§1.7/§1.6) confirms `--v2` implies `--labels-v2`. ⇒ *"both at the
+> published direction gate 0.15"* describes **two different quantities**, not one quantity measured
+> twice.
+>
+> ⚠️ **The claim is NOT withdrawn**, and the distinction matters: v2corpus's manoeuvre head **is**
+> genuinely degenerate (**404/418 windows one class**, 96.7 %), and that degeneracy is **gate-free**
+> — it survives every re-read below. **What cannot be attributed is the MAGNITUDE of the drop**: how
+> much of 0.253 → 0.0072 is the corpus and how much is the label definition is unrecoverable
+> without a re-score, and `man_pred` is on disk **nowhere** (four independent probes: 1,929 JSONs →
+> 0 hits; all 60 window dumps carry no manoeuvre key). A GPU pass is the only path.
+>
+> ⇒ **Admissible reading:** *"v2corpus's tactical head is degenerate and its manoeuvre declaration
+> is unrelated to the driven path."* ⛔ **Inadmissible:** *"the v2 corpus caused a κ collapse of this
+> size."* A separate, unrelated scoring defect was also found and fixed on this path
+> (`hierarchy.py:592` hardcoded **v1** labels for every `--v2` arm — see `…/incoming/
+> 2026-08-17-maneuver-label-mismatch/`, landed in `c98aadb`); it does **not** clear this confound,
+> which runs through `man_pred` vs `traj_dir` and never touches `man_tgt`. **Keep the two
+> retractions separate.**
+> Provenance: `…/incoming/2026-08-17-diryaw-reread/DIRYAW_REREAD.md`. ⚠️ Re-read at a
+**0.10** gate (0 GPU; exact envelope over the banked marginals, which reproduce both published κ to
+4 dp): the word **decorative holds unconditionally** — v2corpus's κ stays within [−0.040, +0.057]
+for *any* crossing rate up to 33 % of windows and never reaches the 0.1 line, because the manoeuvre
+head is degenerate (404/418 windows one class) and that degeneracy is **gate-free**. The **collapse
+itself also holds**: it could only fail at a 14.6 % crossing rate, ~3× the largest band mass ever
+measured here (3.97 % canonical val, 5.34 % OOD-val). ⛔ What does *not* survive is v1's own verdict
+word: at 0.10 a crossing rate of just 0.96 % already admits **SUBSTANTIAL**, so v1 is quoted here
+without one — it is bounded away from DECORATIVE (which needs 7.4 %), and nothing more is
+established. Strategic: under nav-dropout 0.5 the arm *learned the dropout* —
 route-following under a given command fell 1.0 → **0.5351**. And a correction to our own instrument,
 logged before any number shipped: `route_acc_nav` feeds the model the command, so its 1.0 for v1
 measures **copying, not route skill**; the honest test is vision-only route accuracy against the
@@ -1391,7 +2192,9 @@ measured. Goal-dropout 0.5 was therefore *kept* (the v2corpus collapse was the `
 dropout per se). Measured relaunch cost of imagination: **≈1.01×** step time (12.10–12.16 s/step vs
 12.0 baseline) — the no-grad rolls hide inside data loading; the 1.2–1.5× estimate is retired.
 `flagship-v5f` trains from scratch on the parity corpus with this configuration; the v2bal corpus
-is deferred until a leak-free v2-line validation split exists (C64, option B).
+is deferred until a leak-free v2-line validation split exists (C64, option B). *(Status update
+v0.9: v5f completed its 30 k on 2026-08-09 — its final numbers, the wedge ladder built on it,
+and the stage-A repair arc are §7.13.)*
 
 **Retraction discipline, this round (C61–C67, by root-cause class):** C61 — a mechanism claimed
 where only a magnitude was measured (resolved by the teacher-forced control). C62 — fleet state
@@ -1401,7 +2204,7 @@ C64 — a missing constraint in a build spec (validation exclusion not inherited
 stale tree force-loaded past `PYTHONPATH` by a hard-derived `sys.path` insert, and a fix "verified"
 along a path the failing code never took. C67 — a running job killed before its replacement was
 verified, compounded by a scheduler that silently failed to re-arm. Every number in this section is
-MEASURED, with raw artifacts under `TanitAD Research Hub/Evaluation/Implementation/incoming/`
+MEASURED, with raw artifacts under `TanitAD Research Lab/Evaluation/Implementation/incoming/`
 (2026-08-02 directories) and estimators named inline.
 
 ### 7.12 Closed-loop on a neural reconstruction, on the edge device: REF-C beats the flagship and the whole separation is LATERAL (2026-08-03)
@@ -1449,7 +2252,7 @@ Current panel: `stack/experiments/alpasim-gsplat/results/closedloop-hq-render/`.
 > `7c72937c` n=12 **+4.4 % — NOT SEPARATED** [−0.0097, +0.0521]. Absolutes move too:
 > BEFORE 0.2774 → **0.4228**, AFTER 0.3424 → **0.4800**. The render is still better; the
 > magnitude quoted here is not. Corrected table + estimator:
-> `TanitAD Research Hub/Evaluation/Implementation/incoming/2026-08-03-render-rebaseline/`;
+> `TanitAD Research Lab/Evaluation/Implementation/incoming/2026-08-03-render-rebaseline/`;
 > `RETRACTION_LOG.md` R-2026-08-03-align. ⚠️ No closed-loop conclusion moves — `cl_metrics.py`
 > never opens the reference video.
 
@@ -1505,6 +2308,1499 @@ shipped reference video (0.3664 correct vs 0.2052 best-wrong over the wire, argm
 plain NCC are **inadmissible on this clip** — a *wrong* reference frame outranks the correct one
 under both, because every frame is a dark night street. **On low-dynamic-range corpora the negative
 control must choose the metric before the metric is quoted.**
+
+### 7.12b The v1arch/v1.6/v1.7 line: the first complete four-family block, a latents-only unicycle readout, and the action-echo measurement that forced the tier doctrine (2026-08-05 → 08-06)
+
+**v1arch — the data axis, isolated for once (`MODEL_REGISTRY §1.9`).** `flagship-v1arch-v2bal-30k`
+trains the *v1 architecture unchanged* (every `v2_*` lever measured `false` in its own
+`config.json`) on the 9,000-clip balanced corpus — so, unlike the falsified §7.11(a) arm, the
+data axis is attributable. Its corpus breaks canonical-val disjointness (21/40 episodes inside
+the training pool — canonical-val numbers inadmissible for it), so evaluation moved to
+PhysicalAI-AV's **own official eval split** (`physicalai-oodval-6f4b94e4c7ce-q90`: 290 clips,
+zero overlap, 6,382 windows / 290 episode clusters). There it produced **the programme's first
+complete four-family block** (`_complete: true`; T0, retroactively stamped; episode-cluster
+bootstrap): ADE(4wp) 0.5752 [0.5370, 0.6142]; LONGITUDINAL — a systematic **over-speed prior,
+not a tail** (speed bias +0.484 m/s; 71.95 % of windows ahead at 2 s, 75.51 % faster than the
+human); LATERAL tight (cross-track MAE 0.0552 m [0.0500, 0.0611]) — not where effort belongs;
+TACTICAL — κ 0.6033 (substantial; the manoeuvre label is honest) but **`seams_beneficial` = 0 of
+3, the hierarchy seam falsified at this checkpoint**; STRATEGIC — `route_acc_follow` 0.8031 ==
+the majority-straight rate with a follow-prediction distribution of {left 0, straight 1737,
+right 0}: **a constant predictor, confirmed off-leak**, and `route_acc_nav` 1.0000 is an echo of
+its own input. Two harnesses disagree by 0.8 % on this corpus (0.5705 vs 0.5752) — recorded, not
+smoothed over, unresolved.
+
+**v1.6 — the unicycle step-readout: what a control parameterisation alone buys
+(`MODEL_REGISTRY §1.10`, T0, paired episode-cluster bootstrap over 40 episodes, 6,834 windows).**
+A **2.11 M** trainable `UnicycleStepReadout` on the *entirely frozen* v1arch trunk (md5-proved)
+maps latent transitions to per-step (accel, yaw-rate), integrated non-holonomically — and,
+crucially, **latents-only**: the v₀/feedback shortcut surface was removed after run 4 failed the
+WM-reliance gate at 0.0891. Against the trunk's own displacement readout on identical latent
+rolls (a decoder-only contrast by construction): ADE parity (0.3398 vs 0.3584, not separated) —
+but **speed bias +0.3793 → −0.0265 m/s, accel RMS 2.9465 → 0.7172 m/s² (human ≈ 0.91), jerk RMS
+36.17 → 1.13 m/s³ (human ≈ 1.71), net-yaw error −65 %, cross-track −28 %, all CI-separated**, and
+replan accel-jump 11× lower. WM-reliance 0.6233 (gate ≥ 0.5 PASS; the frozen-latents control
+collapses to the CV floor — what the decoder consumes is the predictor's rolled prediction).
+Against real traffic (paired lead-block join): v1arch is CI-separated *more aggressive* on all
+three distance-keeping metrics (min-TTC 2.8 s lower), while **v1.6 is statistically
+indistinguishable from ground truth on every distance-keeping metric** at this n; its
+executed-manoeuvre agreement with GT rises 0.5016 → 0.7694 and its toggle rate matches GT
+(0.0309 vs 0.0318, Δ not separated). A physically-parameterised emission surface, at 0.8 % of
+the trunk's size, removed most of the longitudinal-defect *expression* — the lesson W4 (§7.13)
+carries into v5.8f. **v1.7** (run 6, one change: a speed-profile L1) is the discipline example:
+its pre-registered decel-lag hypothesis was **refuted — outcome B binds** (P1 response ratio
+0.1547 vs ≥ 0.40, P2 lag +0.173 s vs ≤ +0.15; `MODEL_REGISTRY §1.11`), even though the arm is
+CI-better on ADE (0.2849 vs 0.3398, −16 %) with every non-regression gate green — registered as
+the best open-loop head in the lineage, **not** as the lag fix.
+
+**§1.12 — the measurement that re-framed every open-loop number in this paper
+(`MODEL_REGISTRY §1.12`, T1).** Rolling the predictor on the *decoder's own* actions (no recorded
+future anywhere; perception context fixed — imagination-closed loop): v1.6 ADE 0.3398 → 0.4714
+(+0.132 [0.112, 0.152]), v1.7 0.2849 → 0.4616 — both still under the 0.5352 CV floor, retaining
+~33 % of the open-loop advantage — but net-yaw error ×6.7 and **S-curve reproduction 0.9785 →
+0.0538/0.0430, with the hold-action arm at 0.0 %**. The open-loop counter-steer came from the
+true-action conditioning, not from vision: **open-loop lateral "skill" was an action echo.** The
+consequence is the binding tier doctrine of §5; the numbers are repeated here because this is
+the experiment that produced it.
+
+### 7.13 The v5f flagship and the repair arc: one measured defect under four failures, and its predictor-scale repair (2026-08-09 → 08-11)
+
+
+> **Figure 2 — `Paper/figures/v58f_results.svg`** (generated by
+> `Paper/figures/make_v58f_results.py` directly from the registry literals, so the plot
+> cannot drift from the source of truth): the repair arc in five measured panels —
+> action-response gain against its pre-registered band, fan oracle ADE, selected-trajectory
+> acceleration MAE, selector calibration against the P7 gate, and the imagination ablation.
+> The figure's footer carries the open item: selection over a frozen-selector shortlist
+> still fails its gate.
+
+This is the round in which the programme's diagnostic machinery earned its cost: a ladder of
+pre-registered wedges converged four independent failures onto **one measured root defect in the
+action interface**, a predictor-only post-training repaired it, and a chain of eliminations then
+isolated the last stale component of the selection pipeline. Every number carries its tier; unless
+an interval is printed, values are corpus-grid point estimates over the fixed 881-window /
+40-episode held-out grid with the episode-cluster bootstrap named as the decision-grade rescore in
+the artifact itself.
+
+**The arm.** `flagship-v5f-w120-30k` (`MODEL_REGISTRY §1.8`) is the §7.11(f) relaunch completed:
+from-scratch **joint WM+planner co-training** (v1's own co-evolution recipe, §7.6) under the
+measured λ_plan curriculum (0 → ramp(2 k..8 k) → 1.0, §3.9), with conditional imagination live
+(the §3.4 mechanism, restored in §7.11(f)), on the 120° cylindrical wide-FOV geometry (256×640,
+f_ref 305.5775, subframe 176×624) over the w120 sibling of the parity corpus (2,400 clips,
+sha-verified against the committed manifest, skip-hash lineage `f09e44db`). Completed at step
+30,000 on 2026-08-09. Final eval **[T0 — teacher-forced WM diagnostic, never driving
+performance]** on the full 600-episode w120 val corpus, 881 windows (`MODEL_REGISTRY §1.8`):
+**selected ADE@2s 0.4011 m** against a 256-candidate fan whose **oracle (best-in-fan) is
+0.1975 m** — a selection gap of 0.2036 m, i.e. *the arm would be ~2× better if it merely chose
+correctly among candidates it already generates*; miss@2 m 0.1487. ⚠️ w120 geometry ⇒ **not
+comparable to any 256²-pinhole number** in §7.1–§7.8 (cross-frame). The four families
+(`v5f_four_families_30k.json`, T0, episode-cluster bootstrap): LONGITUDINAL speed MAE 0.7024 m/s
+[0.6311, 0.7829], bias +0.1009 — and **accel MAE 8.1075 m/s²**, the number that names the
+disease; LATERAL heading MAE 4.08°, yaw-rate MAE 49.7 °/s, cross-track MAE 0.1819 m
+[0.1274, 0.2471]; TACTICAL and STRATEGIC honestly UNAVAILABLE with reasons stamped (a WM-fidelity
+pass does not traverse the hierarchy — recorded as a work item per the binding rule, not a pass).
+
+**The wedge ladder, and what each rung eliminated (`MODEL_REGISTRY §1.13`).** **W1** — the
+pre-registered hypothesis that a kinematic-cost re-rank of the selector's top-8 closes ≥ 30 % of
+the selection gap — was **refuted**: re-ranking *worsens* selection by −16.7 % (0.4011 → 0.4351;
+`x0_lite_f32.json`, T0). **W2**, the fan-feasibility census, explains why: **97.6 % of all
+256×20×881 fan steps violate |a| ≤ 4 m/s² ∨ |yaw-rate| ≤ 0.33·v+0.05, 100 % of candidates are
+infeasible including the oracle**, and mean |accel| over all candidates is 252.1 m/s² — any
+waypoint-space kinematic cost ranks jitter, not manoeuvre quality. **W2b** (exploratory): a free
+3-tap smoother improves *both* selected and oracle ADE (0.4011→0.3975, 0.1975→0.1879) while
+cutting selected accel MAE 8.10→3.09 — the signature of truncated-denoise **noise around signal**,
+not signal content. The waypoint jitter was hiding coverage, not providing it.
+
+**W4 — the unicycle emission head: feasibility by construction.** Instead of emitting waypoints,
+a 109,096-parameter `UnicycleEmission` MLP off the (frozen) offset-head query emits per-step
+controls squashed into the physical envelope — **a = a_max·tanh(·), κ = κ_max·tanh(·)** (a_max =
+4 m/s², κ_max = 0.2 m⁻¹) — integrated non-holonomically to waypoints; trunk and every other head
+frozen (md5-identical before/after). Result (`w4_gate.json`, T0, same grid): both pre-registered
+gates **pass** — selected-candidate accel MAE **9.297 → 0.774 m/s²** (winner candidate 0.261;
+census-violation fraction 0.0) *and* the fan oracle nearly halves, **0.1991 → 0.1077 m** — the
+jitter was masking coverage. The one regression is diagnostic gold: the **frozen selector**,
+trained against the old fan's geometry, is near-uninformed on the new fan (selected 0.7933 ≈
+CV-floor territory) — a selector-calibration defect, not a fan defect.
+
+**The fast-selector elimination chain (three surfaces, one failure mode, retired by
+pre-registration).** **W4b-feat** (rescorer off the offset-head query): held-out selected ADE
+**0.5600** vs gate ≤ 0.45, with the train monitor at 0.21–0.33 — the scorer **memorises
+train-window selection** rather than generalising it (`w4b_gate_feat.json`). **W4b-kin** (adds
+the candidates' own (a, κ) to the input): **0.5637** — a < 0.004 move; the failure is not the
+input surface (`w4b_gate_kin.json`). **W4c** (spatial cross-attention scoring, the REF-C conf
+mechanism): **0.6609**, near-uniform entropy 5.37, the same train-vs-held-out memorisation gap
+0.139 (`w4c_gate.json`). Per the bound G-null, **fast per-candidate scoring on this trunk is
+retired** — no fourth attempt without new evidence; a fast selector may return only as a
+distillation of the roll-based mechanism. The same pattern reproduces **one hierarchy level up**:
+the first trained tactical stage-0 layer (E4.4, 6.39 M on the frozen trunk) fails its goal-FDE
+gate **by selection, not generation** — selected goal FDE@4s 12.86 m vs CV 6.09, while the
+8-candidate goal fan's *oracle* is 5.28 m and beats CV at both 4 s and 6 s (9.92 vs 12.46)
+(`e44_gate.json`, T0). **Fans generate adequate hypotheses at both measured levels; learned
+pooled-feature selectors fail to find them.**
+
+**W7 — selection by rolled consequence, and the convergence.** The world-model-roll re-rank
+(roll the top-K candidates through the WM, score by explicit costs — structurally the V-JEPA-2-AC
+planning loop) failed its gate at every K on the frozen trunk, but the K-sweep is the finding
+(`w7_gate_k{8,32,64}.json`, T0): at K = 8 the roll-cost is the programme's **first calibrated
+selection signal** (Spearman ρ 0.399 against realised error, vs 0.05–0.26 for every learned
+scorer), yet at K = 32/64 the shortlist oracle improves hugely (0.182/0.142) while selection
+stalls and the calibration **collapses** (ρ 0.106/0.047) — with many similar good candidates the
+muffled rolls barely differ, and the cost drowns. **Why muffled: W3.** The counterfactual
+action-response probe pack (`w3_gate.json`, T1-diagnostic — hypothetical actions probe
+controllability, never driving performance) had measured, on the same grid: lateral
+sign-correctness **99.5 %/99.2 %** (left/right, gate ≥ 0.95 ✓) but **median response gain
+0.271/0.233 against the unicycle-analytic reference at 1 s** — the WM turns the right way at
+**~¼ the physical magnitude**; longitudinal sign only 74.5 %/78.7 % ✗; and (P6) the
+action-induced latent change lives in a **3-dimensional subspace** of the 2048-d state (gate
+≤ 32) carrying 0.91–0.94 of the lateral energy. One defect — a correctly-signed, low-rank,
+**muffled** action interface — now explains four separately-observed failures: the §1.12 action
+echo (closed-loop near-straight driving), the W4b/W4c scoring failures (features cannot separate
+candidates whose rolled consequences barely differ), and W7's dense-K collapse.
+
+**Stage-A post-training: the repair (`stage_a_gate.json`, T1-diagnostic, all gates pre-registered
+with both outcomes bound).** Predictor-only training under the §3.9 control-response loss
+(3,000 steps, lr 1e-5, 91.36 M trainable predictor, 185.6 M frozen; ~4 h): **lateral gain
+0.271/0.233 → 0.971/0.966** (gate [0.5, 2.0] ✓✓), lateral sign stays 1.0, **longitudinal sign
+0.745/0.787 → 1.0/1.0** (gate ≥ 0.95 ✓✓, gains 0.972 reported), **the action subspace stays
+exactly 3-dimensional** (factorisation preserved), and the no-harm gate passes with the factual
+roll *improving* (ADE 0.176 → 0.119 vs a ≤ +10 % cap). The single root defect is closed at
+head-scale cost — without touching the encoder and without a label anywhere.
+
+**The elimination chain closes on one stale part.** W7 on the repaired trunk first returned a
+gate FAIL that is an **instrument-composition failure, not a repair verdict**
+(`w7_gate_repaired_k32.json`, T0): stage-A necessarily moved the trunk's feature distribution,
+and the W4 emission head + frozen selector — both trained on frozen-trunk features — no longer
+compose with it (in-run frozen selector 3.448 vs its banked 0.7933; fan oracle degraded to
+0.289). The repair's signal survives inside the same artifact: across-window roll-cost
+calibration **ρ 0.7164 [0.5847, 0.7696]** (episode-cluster bootstrap, n = 881; P7 gate PASS —
+~1.8× the frozen trunk's 0.399, **the strongest calibration measured in the programme**), and
+W7's pick beats or ties the frozen pick on 71.1 % of windows. **W4r** — the cheap refit of the
+unicycle head on the repaired trunk — then **passes** (`w4r_gate.json`, T0): fan oracle
+**0.1273 m** (cap 0.2173 ✓), winner accel MAE **0.276 m/s²**, violations 0.0 — the fan on the
+repaired trunk is healthy — while the same fan through the still-frozen selector reads 4.416,
+and W7-w4r (K = 32) fails at 3.614 **because the shortlist pruner is the frozen selector**
+(`w7-repaired-w4r-k32/w7_gate.json`). Chain of eliminations complete: trunk repaired, head refit
+PASS, roll-cost calibrated — **the frozen selector is the last stale component, and it sits in
+W7's pruner, not its cost**. W7-FULL (top-K = 256, selector-free: roll-cost + kinematic cost over
+the whole healthy fan — the first selection read with no stale part anywhere) **has since run:
+it fails at 3.3348 m against a 0.4505 m gate over a fan whose oracle is 0.1273 m, and the failure
+is diagnosed rather than merely recorded — the argmin's error-rank is the median of the fan. That
+is §7.16, and it closes the selection question with a mechanism (the winner's curse) rather than
+another confound.**
+
+**v5.8f assembled — first T0 numbers, honestly not yet a release row (`MODEL_REGISTRY §1.14`).**
+The assembly (frozen v5f-30k trunk + W4 fan + gate-decided selector), two arms on the same 881
+windows, episode-cluster bootstrap (`v58f_rescore_ci.json`, T0): **rescorer-top8-kincost 0.4815 m
+[0.3928, 0.5771]** vs frozen-argmax control 0.7933 [0.6414, 0.9757] (CI-separated), selected
+accel MAE **0.515 vs the v5f baseline's 8.10 m/s² (16×)**, oracle 0.1077 (1.8× better than
+v5f's 0.1975). The honest reading: v5.8f currently trades **+0.08 m selected ADE for a 16×
+kinematic improvement and a fan whose oracle nearly halves**; the whole deficit is selection
+(sel_gap 0.374 [0.3014, 0.4489], `p7_regrade.json`) — and unlike v5f's, this gap sits over a
+*feasible* fan with 0.37 m of recoverable headroom. Notably, on the clean fan the W1-refuted
+kinematic cost becomes *useful* as a tie-breaker (top8+kincost 0.4815 beats the trained
+rescorer's argmax 0.560) — exactly as the fusion design predicted. **Missing before any release
+row or capability claim: the four families + cluster CIs on the banked windows, and the T1
+(action-closed-loop) rows** — T0 supports none of the above as driving performance.
+
+**What §7.13 establishes, stated precisely.** (i) The failure of imagine-and-select in this
+generation was never the imagination: fans are adequate at both hierarchy levels (oracle 0.108 m
+operative, 5.28 m tactical goals) and the fan's uncertainty is calibrated (§7.14 P7). (ii) Three
+learned per-candidate scoring surfaces fail identically by memorisation, and selection by
+**rolled consequence** is the only mechanism whose score correlates with realised error — the
+programme's central thesis (plan by imagining consequences) arriving **by elimination**.
+(iii) The action interface of a jointly co-trained trunk was correctly signed, low-rank, and
+muffled at ~¼ gain — and this is *post-trainable at predictor scale* with a self-supervised
+geometric loss, without labels and without touching the encoder. (iv) A repair that moves a
+trunk's feature distribution silently invalidates every consumer trained on the old features —
+instrument-composition is a failure class of its own, distinct from model failure, and the gate
+that "failed" is the instrument saying so.
+
+### 7.14 The WM-physics proof battery: P1–P9 + I4 (2026-08-10 → 08-11)
+
+The PI's question — *"how can [we] prove that the WM, encoder and predictor, is learning
+correctly the physical world and predicting the right relevant part of it?"* — was answered with
+a battery of pre-registered probes rather than a narrative
+(`incoming/2026-08-07-hierarchical-wm-redesign/WM_PHYSICS_PROOF.md`). It decomposes the question
+into three falsifiable properties: **(A) physical correctness** (predicted futures obey the
+physics that generated the data), **(B) relevance** (the latent carries the variables driving
+needs and *not* nuisance detail — the information-bottleneck signature: driving-state
+decodability up, clip-identity decodability down with horizon), and **(C) causal grounding**
+(the prediction responds to actions the way the physical system would — the property T0 evals
+are structurally blind to, and §1.12 measured how expensive that blindness is). Nine probes plus
+an imagination-validation triplet, each with its gate fixed before running; every probe stamps
+its tier (P1/P2/P4/P6/P7 are T0-diagnostic by design — they interrogate representations; P3/P5
+are T1), and a probe that cannot run reports its reason per-probe rather than being dropped. The
+battery is offered as a methods contribution: it is cheap (largely 0-GPU off banked dumps), it
+runs on existing corpora, and in its first two days it changed the programme's direction twice.
+
+- **P1 — decodability curves (A).** Linear probes on the *predicted* latent ẑ_{t+k} vs the same
+  probe on the *encoded* true frame z_{t+k}. Result (`p12_gate_clsfilter.json`, T0-diagnostic,
+  episode-disjoint out-of-fold): gate **PASS on all three computable driving targets** — at
+  k = 10, speed R² **0.9934 (pred) vs 0.7441 (enc)**, curvature **0.7595 vs 0.5512**, yaw-rate
+  similar, no cliffs. The predicted latent decodes driving state *better* than the encoded one —
+  the rollout carries the action-implied state strongly (caveat stamped in-artifact: partly the
+  action conditioning itself; the T1 lens applies).
+- **P1 lead-gap — the battery's sharpest negative, and an instrument-first resolution.** The
+  lead-vehicle gap probe first failed uninterpretably (R²(enc) ≤ 0 — "fix the probe before
+  gating the predictor", stamped in-artifact). The class-agnostic label join was a real defect;
+  fixing it (vehicle-only lead candidates, n = 266 lead windows per horizon) **did not dissolve
+  the failure**. The pre-registered follow-up then excluded parameterization and probe capacity:
+  linear probes on log1p-gap, inverse-gap and a TTC proxy all fail (R² −5.7 to −154, overfit
+  symptoms at this n, direction unambiguous), and the **2-layer-MLP capability ceiling reads
+  R² −0.334** on the encoded latent (`p1_lead_transforms.json`; small-n caveat stamped). Verdict,
+  model-class: **v5f's latent does not carry a readable lead-distance variable, in any
+  parameterization, at any probe capacity tested** — load-bearing because 88.7 % of the oracle
+  gap is longitudinal, and this is the missing longitudinal state variable. The label-free
+  interpretation (§3.9, PUBLISHED anchors): JEPA risk behaves like a low-rank factorization of
+  the action-conditioned co-occurrence operator, and **rare-event variables are exactly what a
+  fixed-rank latent sacrifices first** — a free-flow-dominated corpus makes lead distance a
+  rare-event variable, so the objective *can* be minimised while ignoring it. ⚠️ The aux
+  lead-readout loss originally proposed as the fix was **retracted the same day by the PI**
+  (labels into the trunk break the self-supervised thesis); the response is the pre-registered
+  **label-free lever program** (`JEPA_PHYSICS_SURVEY.md`): LF0 *locate first* — probe the
+  pre-pool spatial tokens and the P8 decoded-BEV read-off (pooling is where geometry goes to
+  die, the DINO-WM lesson; probe-only, admissible) ⛔ — **LF0 HAS SINCE BEEN EXECUTED AND RETURNED
+  NEGATIVE: the pre-pool probe moves r² by |Δ| ≤ 0.0002 with the CI containing zero on all five
+  seeds, so the defect is LEARNING, not ROUTING, and the DINO-WM pooling rationale does not hold
+  on our stack (§7.19a, §10 item 10)** — then LF1 interaction-weighted sampling
+  (ego-kinematic saliency, from actions alone), LF2 masked-latent prediction over the readout
+  grid (I-JEPA pattern), LF3 dense distance-weighted near-field loss (V-JEPA 2.1 pattern), LF4
+  longer-horizon rollout targets — each gated on the *same frozen* P1 lead battery.
+  Headway/TTC remain GT-join instruments, never latent probes.
+- **P3/P6 — counterfactual sign/gain maps and ego/scene factorisation (C).** Reported in §7.13
+  (they are the W3 pack): sign right, gain ~¼, subspace 3-dim; P6 gate PASS decisively, P3 FAIL
+  with the load-bearing structure that stage-A then repaired. A WM failing P3 does not model the
+  world — it replays it.
+- **P7 — uncertainty calibration of the fan (B).** On the v5f fan+selector pairing: endpoint
+  dispersion **Spearman ρ 0.4915**, selector entropy 0.3954 (gate ≥ 0.3; permutation p ≈ 0,
+  n = 881; `p7_calibration.json`) — where the fan spreads, it errs; the model knows what it
+  cannot predict. The registry-grade eid-clustered rerun on the v5.8f arms **fails both**:
+  frozen-argmax 0.2622 [0.0909, 0.4098] (miscalibrated by the re-parameterisation, not dead),
+  the W4b rescorer **0.0542 [−0.1395, 0.2387]** at near-uniform entropy 5.41 — no uncertainty
+  information at all, consistent with the memorisation verdict (`p7_regrade.json`). Calibration
+  is restored by W7's roll-cost on the repaired trunk (ρ 0.716, §7.13).
+- **P5 — compounding-error boundedness (A, T1).** The T1 instrument itself was validated by a
+  byte-close control: the E1.4 pipeline reproduces the banked §1.12 dump byte-exactly
+  (max |Δ| = 0.0; `e14_t1_v16_bytecheck.json`). The v5.8f T1 rows ride it next.
+- **P8 — BEV occupancy readout, attempt 1: an instrument lesson worth keeping (B).** A ~1 M-param
+  frozen-latent decoder z → ego-frame BEV occupancy (60×32 m, agents rasterised from the
+  `obstacle.offline` join — 26,084 records / 137 clips, occlusion flags) was trained with plain
+  BCE and **collapsed to the all-empty prediction**: occupancy rasters are overwhelmingly empty,
+  so unweighted BCE *rewards* the collapse, and measuring IoU only at sigmoid 0.5 on a collapsed
+  readout produced 0.0003 vs 0.0001 — "a ratio of noise" (gate ratio 0.412 vs ≥ 0.8, recorded as
+  FAIL; `p8_gate_attempt1.json`, T0-diagnostic). The attempt-2 fix is in code and pre-registered
+  (`stack/scripts/train_p8_occupancy.py`): **auto pos-weight** (neg/pos ratio measured on a
+  sample of training rasters, capped at 200), a **soft-Dice term** (an all-empty prediction
+  scores ~1.0 loss there regardless of class rarity — exactly the collapse BCE rewarded), and a
+  **τ\* operating-point sweep chosen on the encoded arm** — which makes the pred/enc retention
+  gate strictly *harder*, never easier. P8 matters beyond itself: its decoded-BEV lead read-off
+  is the convergent test for the P1 lead absence (if the occupancy decode shows the lead
+  vehicle, the information enters the latent and dies in the pooled readout — localising the
+  defect to routing, LF0's RC1). **Attempt 2 has since run and PASSES its gate (retention 0.932
+  at k = 10, a 74× lift over attempt 1) — reported in full, with its limitations, in §7.18.**
+  The instrument lesson is kept here rather than deleted: the fix was entirely in the *readout's*
+  loss, and attempt 1 would have been reportable as "the predicted latent has lost the scene" by
+  anyone who did not check whether the instrument could see a scene at all.
+- **P4 (occlusion permanence)** — **measured on the attempt-2 run: occluded-agent recall ≥
+  visible at every k** (§7.18), reported as *consistent with* permanence pending a diffuseness
+  control. **I4a (imagination attribution)** — **measured: the channel is load-bearing, zeroing
+  it collapses selected ADE 19× and shuffling it 3.1×** (§7.18). **P2 (nuisance non-retention)**
+  — **FAILS at every milestone of the H-COTRAIN curve** (§7.17) and is a standing open defect.
+  **P9 (probe-gradient saliency)** and **I4b–c** (the occluded-split stratification and the
+  occlusion-stress windows) remain built and pre-registered with bound outcomes (P4's obstacle
+  join: 39/40 episodes, 195,805 boxes); no claim is made for them here.
+
+### 7.15 Data and instruments shipped this round (2026-08-10 → 08-11)
+
+- **Alpamayo-2-Super augmentation dataset** — completed: **4,729 clips · 23,644 rows across 5
+  tasks** (`trajectory` / `meta_action` / `auto_labeling` / `vqa` 4,729 each, `grounding_via_vqa`
+  4,728), published as an HF public gated dataset with a road-class-coverage and provenance card.
+  **Counts MEASURED and registry-anchored** — `Project Steering/MODEL_REGISTRY.md` §11.1, derived
+  by direct aggregation over `records.parquet` (sha256-matched to the published artifact) and
+  independently re-verified 2026-08-16. ⛔ **The earlier "4,800/4,800 clips, 23,999 rows" was
+  INHERITED from `MORNING_REPORT_2026-08-11.md`, which repeated the dataset card; both are wrong.**
+  The card understates the completeness hole by **356×** — it reports "one" missing row of 24,000,
+  where **356 are missing (1.48 %)**: 81 selected clips produced zero rows (−405), 10 delivered
+  clips were never in the manifest (+50), and one clip is missing its `grounding_via_vqa` row (−1).
+  ⭐ The **stratification survives intact** — urban 1,884 / intersection-rich 1,241 / highway 384 /
+  unstructured 83 are delivered 100 % complete, and the entire hole falls in the unstratified
+  remainder. Its meta-actions (3-axis, with severity) and reasoning traces are exactly
+  tactical-level auxiliary supervision — a second, independent teacher for the hierarchy's stage 0,
+  with the contamination caveat carried. 🟥 **Public use of this dataset is an OPEN PI DECISION**
+  (two in-repo documents disagree on whether a PhysicalAI-AV derivative may leave the firewall —
+  recorded in registry §11.1, deliberately unresolved).
+- **PH1-fused hierarchy label layer over the aug120 slice** — **201/201 clips fused**, Alpamayo
+  layer on 201/201, ⛔ **but the SAM3 perception leg covers only 86/201 (42.8 %)**: 115 clips carry
+  a named `AUG120_SAM3_STAGE_GAP` marker rather than a silent empty layer. The gap was first
+  recorded as "8 clips" and is **14.4× larger** than that; root cause is a `--n` flag omitted for
+  the SAM3 stage (default 4), so every batch got SAM3 on its first 4 clips **while printing
+  `SAM3_RC=0`**. MEASURED, registry §11.2. *(Root-cause class C18: a listing probe sees a MISSING
+  file, never a SHORT one.)*
+- **The `obstacle.offline` join** — 3D agent tracks (97.44 % of the corpus) joined to the eval
+  grid: 26,084 records over 137 clips **with occlusion flags** (`p8_gate_attempt1.json`
+  `raster_source`; MEASURED), feeding P4/P8, the lead-gap battery, and the distance-keeping
+  family. Labels from it are admissible as frozen probe targets and eval strata only — never
+  trunk losses, never inputs (§3.9 standing rule).
+- **VLM strategic labeling — design + PH0 pre-registration (future work, 0-GPU so far).** The
+  strategic layer's missing goal supervision (g_str) is designed as a two-engine, adversarially
+  fused pipeline (`VLM_STRATEGIC_LABELING.md`): Engine A, a deterministic geometric analysis of
+  long-horizon integrated ego trajectories (hindsight); Engine B, a VLM fed past+future clips
+  that extracts scenario/domain/sign (incl. OCR of navigation signage) and proposed strategic
+  goals/actions under a strict schema with a two-pass extract-then-self-verify protocol; a
+  deterministic fusion gate emits a strategic action only when the VLM's claim is consistent
+  with the hindsight geometry, banking disagreements as `disputed`. The PH0 pilot
+  (`PREREG_PH0_VLM.md`) binds three arms (Qwen3.5-9B bf16; Qwen3.5-27B-FP8;
+  Gemma-4-31B QAT-w4a16) on the same 50 stratified clips with gates fixed in advance —
+  **G1 sign-OCR precision ≥ 0.9** on a human-checked sample (fail ⇒ that arm's signage text and
+  every signage-derived `route_to` goal is excluded; all-fail ⇒ the strategic goal degrades
+  honestly to hindsight-geometry corridor intent), G2 schema compliance ≥ 0.9, G3 geometric
+  consistency reported with CI as a baseline. The admissibility rules travel into the schema:
+  **labels may use ego/future** (offline hindsight is the design), **inference stays
+  vision-only for this pipeline** (nothing from it is ever an inference-time input; the planner layers separately read measured ego state, §3.14), and **goal/
+  situation disjointness** is enforced at label time — every strategic field carries its
+  derivation source (`path|signage|vlm-fused`), and any field derivable only from the scenario
+  classification is inadmissible as goal supervision. **Sequencing (revised by the PI
+  2026-08-11, `HIERARCHY_VOCABULARY.md` preamble): the VLM/algorithmic labeling pipeline moves
+  *ahead of* v6 training rather than behind the v5.8f release row** — it is the supervision
+  source for v6's strategic goal head and for the hierarchy vocabulary (§10), so it must
+  produce labels before the stage that consumes them, and it costs no flagship GPU (a separate
+  pod). *(This paragraph previously read "PH0 runs only after the v5.8f release row, T1 rows and
+  P8/P9 close"; that ordering is superseded.)*
+
+### 7.16 Selection settled: a selector-free planner over a healthy fan fails, and the mechanism is the winner's curse (2026-08-12)
+
+> **Figure 3 — `Paper/figures/winners_curse.svg`** (also rendered as `.png`; generated by
+> `Paper/figures/make_winners_curse.py`, which **reads the gate JSONs at generation time and
+> exits if one is missing** — the figure has no hand-typed fallback by design, and a
+> cross-artifact tripwire refuses to draw if the fan oracle disagrees between `w4r_gate.json`
+> and `w7_selection_rules.json`): the mechanism in three panels — the realised error inside the
+> cost's own top-m (flat at the fan's mean while the top-m *ceiling* falls, i.e. the low-cost
+> stratum is a random subset), the rank ruler showing the argmin landing at 132.3 of 256 against
+> a chance rank of 128, and what each selection rule scores on the same fan.
+
+This is the round's headline negative result, and it is reported as a result rather than as a
+setback because its mechanism is general: **a plan chosen as the argmin of a noisily-correlated
+surrogate cost over a large candidate set is not a good plan, and gets worse as the candidate set
+grows — while the oracle over the same set gets better.** We measured this in a configuration
+built specifically to have no alibi left.
+
+**The run, and why it has no confound (`MODEL_REGISTRY §1.14`, artifact `w7_full_gate.json`,
+[T0 — WM diagnostic, 881-window / 40-episode held-out grid, MEASURED]).** Every previously
+implicated stale component was removed at once: the **repaired stage-A trunk** (§7.13; the
+action-response gain in band, `frozen_proof.identical: true`, md5 `06019658…`), the **W4r
+unicycle emission head refit on that trunk** (`w4r_gate.json`, gate PASS: fan oracle 0.1273 m
+against a 0.2173 m cap, winner accel MAE 0.276 m/s², census violations 0.0), and **no shortlist
+at all** — `topk = 256`, so `winner_in_shortlist_frac = 1.0` and the true best candidate is
+available in *every* window by construction. Selection is `argmin_i [ 1.0·c_roll(i) +
+0.2·c_kin(i) ]` with `c_roll` = ADE between the candidate's own unicycle waypoints and the
+world-model's imagination-closed roll of that candidate decoded to waypoints (k = 10, 1.0 s),
+and `c_kin` = mean|a| + 0.5·mean|jerk| from the controls. W7 trains nothing: it is a re-rank
+instrument over frozen artifacts (`n_trainable: 0`).
+
+| quantity | value | note |
+|---|---|---|
+| fan **oracle** ADE | **0.1273 m** | healthy fan; the answer is always in the set |
+| **W7-FULL selected** ADE | **3.3348 m** | pre-registered gate ≤ **0.4505 m** (= 50 % of the frozen-argmax sel_gap) — **FAIL**, `frac_selgap_closed` −3.71 |
+| frozen selector on the *same* fan (in-run) | 4.4159 m | W7's pick beats **or ties** it on **67.5 %** of windows (`w7_pick_le_frozen_pick_frac`) and still fails absolutely |
+| sel_gap | 3.2075 m | 26× the oracle |
+| within-window rank corr. (cost vs realised error, over the 256 candidates) | ρ_mean **0.4453** / ρ_median **0.4969** | the cost ranks *broadly* correctly |
+| across-window calibration (P7 analogue) | ρ **0.3185** [0.2064, 0.4086] | **episode-cluster bootstrap**, n = 881 windows / 40 episodes, B = 2000 |
+| **error-rank of the argmin** | **132.3 of 256** | the median rank is 128 — *the winner is a coin flip* |
+
+**The four families, per the §5.5 contract** (same run, same windows; the artifact's own
+`mini_eval.families` block):
+
+| family | measured | note |
+|---|---|---|
+| **LONGITUDINAL** | speed MAE **0.4739 m/s**, accel MAE **0.5105 m/s²** | headway / time-gap / TTC **not computable in this instrument** — it has no lead-agent channel; they remain GT-join instruments on the pod-side harness (stated rather than dropped) |
+| **LATERAL** | heading MAE **0.2908 rad**, yaw-rate MAE **0.3677 rad/s**, curvature MAE 6.06 (artifact field `curvature_mae_1pm`) | waypoint-derived adjuncts — finite-difference `atan2`, noisy near standstill; stamped as such in-artifact |
+| **TACTICAL** | winner-hit **3.2 %**, selected-rank percentile **34.6 %**, winner-in-shortlist **100 %** | for a re-rank instrument, decision quality *is* the tactical family: the true winner is always available and is found 3 % of the time |
+| **STRATEGIC** | **n/a** | no route/goal label exists on PhysicalAI-AV (§5.5; settled at five probes). Stated per family with its reason, never silently dropped |
+
+Note that the LONGITUDINAL and LATERAL numbers look *reasonable* while the arm's selected ADE is
+3.33 m — a direct demonstration of why the families are reported per-family and never pooled: the
+chosen trajectory is smooth and plausibly-paced, and it is the wrong one.
+
+**The diagnostic that names the mechanism (0-GPU follow-up sweep over the banked scoring
+windows, `w7_selection_rules.json`, EXPLORATORY class — a winning rule must be re-measured on a
+fresh grid).** Two facts, taken together, are the whole finding:
+
+1. **Inside the cost's own top-m set, the mean realised error is *flat at the fan's own mean*.**
+   `top_m_mean_error_ade` = 5.408 / 5.327 / 5.313 / 5.321 / 5.321 / 5.321 for m = 2/3/5/8/16/32,
+   against a fan-wide mean of ≈ 5.32 m. Conditioning on "the cost likes this candidate" changes
+   the error distribution by nothing measurable. Equivalently: **the top-m set is statistically
+   indistinguishable from a random m-subset of the fan.**
+2. **The top-m *ceilings* do fall**: the best-in-top-m error is 3.380 / 2.384 / 1.561 / 1.067 /
+   0.598 / 0.356 m for the same m — which is exactly what random m-subsets of a fan whose full
+   oracle is 0.127 m would give. So *headroom* exists inside a shortlist; it is not the argmin
+   that will find it.
+
+And the decomposition of the deployed number: **argmin on the roll-consistency term alone scores
+5.2898 m** — the fan's mean, i.e. *nothing* — so the entire difference between 5.29 and the
+deployed 3.3348 comes from the **kinematic term at weight 0.2**, not from world-model roll
+consistency. A rank-blend of the two terms scores 5.4615 m, no better.
+
+**Why a deeper fan does not help to minimise over, and the model this refutes.** §3.12
+gives the formalism; the empirical shape is: on the frozen trunk the K-sweep read 0.5772 /
+0.5173 / 0.5319 m at K = 8/32/64 (`w7_gate_k{8,32,64}.json`, T0) and W7-FULL reads 3.3348 at
+K = 256 on the **repaired** trunk. ⚠️ Those are two different trunks and therefore **not one
+curve** — the frozen-trunk series is non-monotone and ends better at K = 64 than at K = 8, so the two do not even agree in direction, and we do not draw them as one. What the
+numbers *do* settle is a model comparison stated in §3.12: under a homoscedastic Gaussian-copula
+model of a noisy-but-honest cost, deepening the fan would make the argmin *better*
+(E[error | argmin] scales with −ρ·√(2 ln N)); the measured tail behaviour at fixed N (mean error-rank 132.3 of 256, flat low-cost stratum) therefore **refutes that
+model** (the K-sweep itself is non-monotone, 0.5772 / 0.5173 / 0.5319, net better at K = 64 than at K = 8, and does not carry the argument; v1.6) and requires the alternative — a cost with a **degenerate minimiser**. The
+roll-consistency term is a *self-consistency* functional: it is minimised by a candidate the
+world model can trivially reproduce, and a near-stationary candidate is exactly that. As the fan
+deepens, the probability that it contains such a candidate goes to one, so the argmin converges
+onto the degenerate set while the oracle keeps improving. The artifact names the untried
+antidote itself: W7's anti-degeneracy **progress term** (`--w-prog`, minus candidate arc length)
+has been at **weight 0.0 in every W7 run to date**.
+
+**The published contrast this exposes, and it is the reusable lesson.** V-JEPA 2-AC plans by
+minimising **latent distance to a goal state** (arXiv 2506.09985); DINO-WM likewise uses a latent
+*goal* cost (arXiv 2411.04983). A goal-distance cost is not minimised by inaction — standing
+still leaves you far from the goal. Our roll cost measured **agreement between a candidate and
+the world model's own imagination of it**, which is minimised by inaction. Structurally we
+copied the planning *loop* and dropped the term that makes it a proper score. **A selection cost
+for MPC over a learned world model must contain a term that inaction cannot minimise.**
+
+**The second load-bearing consequence: repairing a trunk invalidates every frozen consumer.**
+The same artifact measures it directly: the frozen selector reads **0.7933 m** on the frozen
+trunk's W4 fan and **4.4159 m** on the repaired trunk's W4r fan — a 5.6× degradation from
+changing *nothing but the features it scores*, with `winner_in_shortlist` for the earlier
+shortlisted variant at 19.6 % (`w7_gate_repaired_k32.json`). The head refit (W4r) recovered the
+fan; the selector was never refit, and it cannot be, because it was trained against a feature
+distribution that no longer exists. **You cannot repair a trunk and keep its planner.** Two
+things follow, and both are decisions rather than observations:
+
+- **v5.8f ships the FROZEN-trunk assembly** — `rescorer-top8-kincost`, selected ADE **0.4815 m
+  [0.3928, 0.5771]** (episode-cluster bootstrap, `v58f_rescore_ci.json`, T0), selected accel MAE
+  0.515 m/s², oracle 0.1077 m (`MODEL_REGISTRY §1.14`). The stage-A trunk has demonstrably
+  better physics (§7.13) and the assembly built on it is worse, because its consumers are stale.
+  This is instrument composition deciding a release, and we state it that way.
+- **That sentence *is* the staged-training argument for v6** (§10), and it is stronger than the
+  argument from the literature because it is ours and it is measured: consumers must be trained
+  **on the trunk they consume**, which is what a staged ladder (S-W → S-T → S-S) enforces and
+  what co-training cannot guarantee across a repair.
+
+**Honest scope.** (i) T0 throughout: none of these numbers is driving performance, and the T1
+confirmation of the shipped assembly is still open (§10 item 7). (ii) The gate threshold
+0.4505 m is a *pre-registered function of the frozen-argmax reference*, not the deployed arm's
+score; the deployed v5.8f interim arm is 0.4815 m and the deployed flagship v1 is 0.452 m
+(`MODEL_REGISTRY §1.2`) on a different, non-comparable geometry — cross-frame, never compared.
+(iii) The point estimates are corpus-grid means over the fixed 881-window grid; only the two
+correlations carry the episode-cluster bootstrap, as their artifact states. (iv) The selection-
+rule sweep re-uses the W7 scoring windows and is stamped EXPLORATORY by its own artifact: any
+rule chosen from it must be re-measured on a fresh grid before it is quoted.
+
+### 7.17 Does the planner gradient erode the world model? H-COTRAIN measured, the hypothesis rejected within range, and SIGReg validated (2026-08-11)
+
+**A standing hypothesis of this programme — carried in §3.9 of the previous version of this
+paper — is now measured false in the range we can measure, and we retract it in our own voice.**
+
+**The hypothesis (PI, pre-registered before any number was seen, `PREREG_H_COTRAIN.md`).** Joint
+world-model + planner training forces the trunk to become an ego-action/trajectory feature
+extractor rather than a model of the physical world. It was cheap to test because v5f's coupling
+followed a *measured curriculum* — λ_plan = 0 until step 2,000, linear ramp to 8,000, then 1.0 to
+29,999 — and restored milestone checkpoints (5 k/10 k/15 k/20 k, plus the banked 30 k row) sample
+the trunk at increasing planner-gradient exposure. The same frozen probe battery runs at every
+milestone: a **within-run dose–response curve** with the instrument held fixed.
+
+**Bound outcomes, fixed in advance.** CONFIRM required either (a) a scene variable reading
+R²(enc) > 0.15 at 5 k that **declines by ≥ 0.15 absolute** by 30 k while ego-dynamics probes
+hold, or (b) the latent spectrum's effective rank shrinking **> 20 %** across the ramp while ego
+probes hold. REJECT-for-the-lead-variable required lead-gap to be unreadable at *every*
+milestone including 5 k. A separate, independent SIGReg verdict rode the same runs: participation
+ratio retention ≥ 0.8× validates the anti-collapse mechanism under a full planner gradient.
+
+**Result: neither CONFIRM condition fired, in the opposite direction
+(`h_cotrain_curve.json`, MEASURED, [T0-diagnostic — representation interrogation], pooled
+out-of-fold R² per milestone, episode-disjoint folds).** Every probed physical variable became
+**more** decodable as planner exposure increased:
+
+| probe (R² at k = 10) | 5 k | 10 k | 15 k | 20 k | 30 k |
+|---|---|---|---|---|---|
+| speed — **encoded** latent | 0.649 | 0.654 | 0.688 | 0.717 | **0.744** |
+| yaw-rate — encoded | 0.583 | 0.670 | 0.734 | **0.869** | — |
+| curvature — encoded | 0.213 | 0.173 | 0.371 | 0.513 | **0.551** |
+| speed — **predicted** latent | 0.993 | 0.994 | 0.995 | 0.995 | — |
+| yaw-rate — predicted | 0.370 | **0.177** | 0.572 | 0.758 | — |
+| curvature — predicted | 0.225 | **0.050** | 0.485 | 0.704 | — |
+| P1 battery gate | FAIL | FAIL | FAIL | **PASS** | — |
+
+and the latent spectrum **expanded**: participation ratio of z_enc 4.53 → 4.96 → 5.96 → **6.94**
+(of 2048 dimensions), a **+53 %** increase, with the top-8 eigenvalue share *falling* 0.9903 →
+0.9232 — energy spreading out of the leading directions, which is the opposite of collapse.
+
+**Three things must be said plainly about scope, because they bound the claim.**
+
+1. **The lowest available reference is λ = 0.5, not 0.** All four milestones sit **at or past**
+   the ramp (λ ≈ 0.5 already at 5 k, 1.0 from 8 k). The measurement therefore rejects **erosion
+   *under* joint training within 0.5 ≤ λ ≤ 1.0**; it does *not* establish that joint training is
+   optimal, and it cannot, because the clean λ = 0 control was never run. That control is not
+   hypothetical — it is **v6's S-W stage** (§10), and it is the confirmatory arm the
+   pre-registration already named (mode-0 vs scheduled at matched steps, both probed with the
+   same frozen battery).
+2. **The SIGReg retention gate is evaluated at 20 k, not 30 k.** The pre-registration wrote the
+   gate as "participation ratio at 30 k ≥ 0.8× its 5 k value"; the spectrum series in the
+   artifact stops at 20 k, so the **measured retention 1.532** is 6.94/4.53 = 20 k over 5 k.
+   The verdict — **SIGReg VALIDATED, no progressive collapse under a full planner gradient,
+   effective rank expands 53 %** — is stated on that window and on no other. Closing the 30 k
+   spectrum row is a ~0-GPU item.
+3. **There is a real transient, and it is not noise.** Predicted-latent yaw-rate and curvature
+   **dip sharply at 10 k** (0.370 → 0.177 and 0.225 → 0.050) — immediately after λ reaches 1.0 at
+   step 8,000 — then recover and *overshoot* by 20 k. The planner gradient visibly **disturbs**
+   the predictive readout when it arrives; the system re-organises rather than degrading. A run
+   stopped at 10 k would have produced the CONFIRM verdict. That is a methodological point about
+   dose–response curves in general: **a single post-intervention checkpoint cannot distinguish
+   damage from transient re-organisation.**
+
+**What we retract, and what replaces it.** The previous version of this paper carried the
+erosion hypothesis as a live explanation for the muffled action interface and the missing lead
+variable, and §10 listed gradient isolation as a lever motivated by it. **The erosion premise is
+withdrawn within the measured range** (root-cause class: *a mechanism inferred from a coincidence
+of symptoms, never dose-tested*). The staged v6 recipe **does not lose its justification** — it
+never rested on erosion. It rests on (i) the field's convergent recipe (V-JEPA 2 → 2-AC,
+DINO-WM, Drive-JEPA all post-train consumers on a representation trained without them; §3.9),
+and (ii) the **consumer-invalidation** result of §7.16, which is ours and is measured: a repaired
+trunk breaks every consumer trained on the old features. Gradient isolation survives as a
+**preventive design property** with an autograd-level check (§3.11), not as a treatment for a
+disease we have now failed to find. One defect *does* survive the milestone curve untouched:
+**P2 (nuisance non-retention) fails at every milestone** and remains a standing open item.
+
+### 7.18 The environment survives prediction: occupancy retention, occlusion permanence, and a load-bearing imagination channel (2026-08-11 → 08-12)
+
+Three probes of the physics battery (§7.14) closed this round, and together they answer the half
+of the PI's question that the ego-dynamics probes cannot reach: **does the predicted latent still
+contain the *world*, or only the ego?**
+
+**P8 — BEV occupancy retention: GATE PASS (`p8_gate_attempt2.json`, MEASURED,
+[T0-diagnostic — a representation probe, never a driving number], 881-window grid).** A
+984,817-parameter readout `z → ego-frame BEV occupancy` (120×64 grid, agents rasterised from the
+`obstacle.offline` join: 26,084 records / 137 clips with occlusion flags) is trained **on encoded
+latents only**, with the trunk md5-frozen before and after; the predicted-latent path is
+**eval-only by design**, so the readout never sees the arm it is used to grade. Attempt 1's
+all-empty collapse was diagnosed as an instrument failure — unweighted BCE on rasters that are
+98.76 % empty *rewards* the collapse (§7.14). Attempt 2 fixes the instrument and nothing else:
+measured `pos_weight` **79.7** (from **1.239 %** positive cells), a soft-Dice term (an all-empty
+prediction scores ≈ 1.0 loss there regardless of class rarity), and a **9-point threshold sweep
+whose τ\* is chosen on the ENCODED arm** — the conservative side, since the gate is a
+predicted-over-encoded ratio and optimising the denominator can only make it harder.
+
+| k = 10, τ\* = 0.7 | value |
+|---|---|
+| IoU, decode(**encoded** z_{t+10}) | 0.02005 (n = 797) |
+| IoU, decode(**predicted** ẑ_{t+10}) | 0.01869 (n = 823) |
+| **retention ratio** | **0.932** — gate ≥ 0.80 **PASS** |
+| lift vs attempt 1 | **74×** (attempt 1: IoU 2.7 × 10⁻⁴) |
+| τ\* sweep (encoded, pooled over k) | 0.0149 → 0.0191 → 0.0180 across τ = 0.05 → 0.7 → 0.8 — an interior maximum, not an edge artifact |
+
+⇒ **rolling the predictor a full second forward loses only ≈ 7 % of the scene content the encoder
+itself exposes.** That is the property P8 exists to test, and it is the first direct evidence in
+this programme that the predicted latent is a model of the *world* and not merely an ego
+integrator — which matters precisely because the ego-state probes (P1: speed R² 0.993 predicted
+vs 0.744 encoded) are the ones that could be read as an ego-only story.
+
+⚠️ **The limitation travels with the number, in the same breath.** The **absolute** IoU is low
+(≈ 0.02) — a 1 M-parameter readout on frozen latents against sparse rasters — so the admissible
+claim is the **retention ratio** (one instrument, two inputs, everything else held fixed), never
+the absolute occupancy quality. Anyone quoting 0.02 as "the model's occupancy accuracy" would be
+quoting the readout's capacity, not the latent's content.
+
+**P4 — object permanence, now visualised on the same run.** Occluded-agent cell recall is **not
+worse** than visible-agent recall at k = 10: **encoded 0.2178 occluded vs 0.1881 visible**
+(n = 194 / 548), **predicted 0.1743 vs 0.1717**. For the **encoded** arm the ordering holds at
+k = 5/15/20 as well; ⚠️ **for the predicted arm it does NOT** — corrected 2026-08-16 by re-reading
+the banked artifact, the predicted gap reverses at k = 5 / 15 / 20 (−0.0035 / −0.0034 / −0.0057)
+and is positive at k = 10 alone. k = 10 is the pre-registered gate k, so the quotation is
+principled rather than selected after the fact, but the predicted half of this result is
+k-specific and must not be stated as holding across k. The latent carries agents the camera
+cannot see, which is the sharpest available test that the model predicts the world rather than
+the image. ⚠️ **This needs a diffuseness control before it stands alone**: a decoder that paints
+broad blobs would score occluded and visible cells alike, so occluded ≥ visible is consistent
+with permanence *and* with an uninformative readout. That control is the next cheap probe and is
+named as such; until it runs, P4 is reported as *consistent with* permanence, not as proof of it.
+
+⛔⭐ **And the reason that control is not optional — the P4 label and the camera-field mask are
+the SAME PREDICATE (MEASURED 2026-08-16).** The join's `occ` flag and `bev_raster.fov_mask`
+select identical cell sets (0 / 7 680 disagreeing at every half-angle tested; bit-identical
+defaults), differing only in granularity. So (a) the diffuseness control has a *concrete* form:
+the occluded arm is scored entirely inside a 590-cell near wedge (7.68 % of the grid, all at
+x < 9.24 m) while the visible arm ranges over the other 92 %, so the two arms differ in
+**position** as well as in visibility, and the discriminating comparison is against
+**same-region, same-visibility** agents (`--p4-region-control`: `occluded_over_visible_near`
+≈ 1.0 ⇒ regional, > 1.0 ⇒ survives). And (b) the "obvious" correctness fix applied to every
+other consumer of this raster — masking to the camera field — **would delete this result rather
+than harden it**, because the occluded population *is* the masked-out set; measured, a masked
+occluded arm keeps 0–27 % of its cells with the survival fraction rising with vehicle length.
+That asymmetry is itself a methodological point: a visibility mask is a correction for a metric
+scored *over the field* and a deletion for one scored *about its complement*.
+
+**I4a — the imagination channel is load-bearing, not decorative (`MODEL_REGISTRY §1.14`;
+artifacts `i4a/flagship-v5f-w120-30k-i4a-{none,zero,shuffle}.json`, MEASURED, T0, same 881
+grid, same checkpoint, only the imagination input changed).**
+
+| arm | selected ADE | fan oracle | miss@2 m |
+|---|---|---|---|
+| intact | **0.4011 m** (byte-matches the banked v5f baseline — an in-run instrument-parity proof) | 0.1975 | 0.149 |
+| **shuffled** across windows | **1.2492 m** (3.1×) | 0.426 | — |
+| **zeroed** | **7.6493 m** (19×) | 1.457 | 0.805 |
+
+*Four-family status for this triplet, per §5.5 rule 5:* the banked I4a artifacts and the
+registry row carry selected/oracle ADE and miss@2 m; the **per-family stratification of the
+ablation is not yet computed** — it is a rescore off the same banked runs (~0 GPU) and is a work
+item, not an omission. It is named here rather than left implicit.
+
+The **ordering** is the result, not the magnitudes: shuffling preserves the imagination input's
+marginal statistics and destroys only the window↔consequence correspondence, so
+`zero ≫ shuffle ≫ intact` shows the planner reads imagination as **content**, not as a bias term
+or a magnitude cue. (A channel used as a bias would be indifferent to shuffling; a dead channel
+would be indifferent to both.) ⚠️ Caveat stamped in the artifact and repeated here: the head was
+**trained with imagination present**, so this measures the dependence of *this* architecture, not
+the value of retraining without it. I4b — the same triplet stratified on the P4/P8 occluded
+split, where imagination should matter most — is the next refinement and costs no extra GPU.
+
+**Taken together with §7.16**, these three results locate the generation's failure precisely: the
+world model carries the scene (P8 0.932 retention), carries hidden agents (P4), responds to
+actions correctly after repair (§7.13), and supplies a fan containing 0.127 m answers — and the
+programme still cannot *choose*. Every remaining metre is in selection.
+
+### 7.19 A negative round with strong controls: the pooling bottleneck refuted, the encoder indicted, the planner beaten by constant velocity, and a 4.3 % contamination found (2026-08-18; the buildable-set rate is 78.21 %, corrected in v1.5.1)
+
+Five results, four of them negative, all produced with **zero training** by re-reading banked
+artifacts and frozen checkpoints. Each carries its tier stamp, its estimator and its `n`; the two
+corrections that reach back into our *own* controls are reported in the same breath as the findings
+they qualify, because that is the only order in which either is honest.
+
+**(a) The 40:1 pooling bottleneck is REFUTED — E-R1-0.** *(MEASURED,
+`…/incoming/2026-08-18-pooling-ladder-ER10/raw/er10_main.json`; **T0-DIAGNOSTIC**.)* On the frozen
+`v6F-SW-30k@11250` trunk, over a **130-clip lead-enriched probe pool** — 1,302 probe-train /
+**1,507 eval windows in 70 episode clusters**, clip-disjoint — the identical linear readout was run at
+**four spatial-averaging ratios that differ in nothing but the pooling kernel** over the same 16 × 40
+token grid: **40:1** (the deployed `AvgPool2d((4,10))`), **10:1**, **4:1** and **1:1** (no pooling at
+all). Every arm is forced to exactly 2,048 features by a fixed Gaussian random projection, over
+**5 projection seeds**, with `intercept_col = −1` on every fit; the interval is the **paired
+episode-cluster bootstrap** over the 70 clusters, 2,000 draws.
+
+| rung | 40:1 (deployed) r² | 1:1 (no pool) r² | Δr²(1:1 − 40:1), 5-seed mean | seeds whose CI excludes 0 |
+|---|---:|---:|---:|---:|
+| `lead_closing` | 0.00000 | 0.00002 | **+0.00000** (seed 0: +0.00001 [−0.00597, +0.00504]) | **0 / 5** |
+| `lead_inv_ttc` | 0.00122 | 0.00134 | **+0.00010** | **0 / 5** |
+| `ego_yawrate` | 0.00028 | 0.00014 | **−0.00014** | **0 / 5** |
+| `ego_curv` | 0.00000 | 0.00000 | **+0.00001** | **0 / 5** |
+| `lead_gap` | 0.00496 | 0.07504 | +0.07008 | 0 / 5 |
+| `ego_v0` | 0.05240 | 0.12398 | +0.07157 | 2 / 5 |
+
+⛔ **On the four rungs that read 0.0000 at the deployed ratio — the rungs on which the pooling
+hypothesis makes its sharpest prediction — removing the pool entirely moves r² by |Δ| ≤ 0.0002 with
+the CI containing zero on all five seeds.** The pre-registered `R1 IS DROPPED` branch fires verbatim.
+The two rungs that *do* rise are not a rescue: `lead_gap`'s 15× is C92's **ego-speed proxy** — with
+`v₀` partialled out it collapses to 0.0060 → 0.0087, i.e. 1.4× — and `ego_v0` separates on 2 seeds of 5.
+
+**And the discriminator returned the larger result.** A frozen `facebook/dinov2-base`, which has never
+seen a driving scene, run over the **same 1,507 windows** and pushed through the **same deployed
+`AvgPool2d((4,10))`** (224 × 560 input, patch 14, tiling to an identical 16 × 40 grid at an identical
+0.4000 aspect, asserted at runtime):
+
+| rung, through the SAME deployed pool | DINOv2-B/14 (**86 M**) | **ours** (**87.3 M**) |
+|---|---:|---:|
+| `lead_gap` r² | **0.44997** (partial-`v₀` r² 0.120) | 0.00496 |
+| `ego_v0` r² | **0.71733** | 0.05240 |
+| `lead_closing` r² | **0.01713** (partial-`v₀` r +0.129) | 0.00000 |
+
+⛔ **It is not a capacity gap.** ⇒ **the information is linearly present in our own images, it
+survives the deployed mean, and neither the pool nor corpus narrowness is the binding constraint —
+what is left is the encoder and the objective that trained it.** The arithmetic the hypothesis rested
+on was also quantitatively too strong: a mean attenuates a *localised* linear code's SNR as
+`√(k/K) = √(4/40) ≈ 0.32` — roughly **3×, not 40×** — and what a mean genuinely cannot do is separate
+two objects inside one cell, which is the case the real latent gives no evidence of needing.
+
+⚠️ **A correction that travels with this, and it is about our own control.** The positive control this
+result originally headlined — **`PC-2OBJ`, two *opposing* plants inside one deployed cell — is INERT
+AT THE DEPLOYED RATIO BY CONSTRUCTION**: the opposing plants cancel under the cell mean, and run at
+40:1 it reproduced the un-planted arm to **5e-05**. The controls that actually fire at the deployed
+ratio are **`PC-LOCAL` / `PC-DIST`** — our own trained tokens through the deployed pool, r²
+**0.0596 → 1.0000, K1 9/9** — and they are what establishes that the ladder had the power to see a
+pooling-destroyed signal. **The verdict is not overturned; the headline control was the wrong one.**
+That is the same shape as the D1 withdrawal (an instrument validated by a control that could not have
+failed), which is why it is stated as method in §5.8 rather than as an erratum here.
+
+**(b) Our trained encoder reads ego speed WORSE than its own random initialisation — and the
+admissible form of that claim is signal-vs-no-signal, not a ratio.** *(MEASURED,
+`…/Research/2026-08-18-encoder-experiments/raw/falsifier_summary.json` and
+`…/incoming/2026-08-18-c106-adversarial/raw/delta_randenc_s*_*.json`; **T0-DIAGNOSTIC**, the same
+frozen checkpoint and the same deployed `AvgPool2d((4,10))` as (a), **zero training**, n = 1,120
+probe-train / **1,362 eval windows in 70 episode clusters** — a subset of (a)'s rows, since every arm
+here must be buildable on all four encoders, and the paired deltas assert eval-window identity rather
+than assuming it.)*
+
+| arm | width | raw feat | `ego_v0` r² | `lead_gap` r² | K1 PASS |
+|---|---:|---:|---:|---:|---:|
+| **ours — trained S-W @11,250** | 768 | 12,288 | 0.05207 | 0.00490 | **0/3** |
+| `dino1f` — DINOv2 **pretrained**, ONE sub-frame | 768 | 12,288 | 0.70593 | 0.42743 | **3/3** |
+| `dinorand` — DINOv2 architecture, **untrained** | 2,304 | 36,864 | 0.02660 | 0.01843 | 0/3 |
+| **`randenc` — OUR architecture, RANDOM INIT** (3 seeds) | 768 | 12,288 | 0.1894 | 0.0176 | 0/9 |
+
+Three variables are removed one at a time. **(1)** At *identical* width and feature count, one
+sub-frame recovers **98.4 %** of the three-frame `ego_v0` and **95.0 %** of `lead_gap` ⇒ the input
+format and the 3× token width explain essentially **none** of the DINOv2 gap, which strengthens (a).
+**(2)** Removing only the pretrained weights collapses the teacher — `ego_v0` 0.70593 → 0.02660,
+`lead_gap` 0.42743 → 0.01843, `lead_closing` 0.01707 → 0.00037, i.e. **26× / 23× / 46×** ⇒
+pretraining does the work, not architecture. **(3)** Our trained encoder ranks below its own random
+initialisation. The mechanism is verified **from the weights**, not only from source: `ViT5Encoder`
+uses LayerScale at `ls_init = 1e-5`, and at initialisation the residual fraction is **0.0002** with
+cos(full path, linear path) **1.0000** — the random-init encoder *is* a fixed random **linear** map of
+raw patch pixels — while the trained arm has genuinely moved (LayerScale **70× init**, residual
+**0.38**). *(This also explains `dinorand`: a vanilla ViT has no LayerScale, so an untrained one is a
+genuinely deep random net, and deep random nets destroy linear readability. Near-linear random map
+0.19, deep random net 0.027, pretrained 0.71 — the ordering is coherent.)*
+
+⛔ **What a five-way adversarial re-read, run with refutation as the default posture, then did to it —
+reported with equal weight:**
+
+* ✅ **The `ego_v0` half survives and gains a real estimator.** Paired episode-cluster bootstrap on
+  Δr²c: **+0.150 [+0.055, +0.226], p(Δ>0) = 1.000**, and **positive in 27/27 cells** across 3 init ×
+  3 projection × 3 ridge seeds.
+* ⛔ **The `lead_gap` half dies.** **0 of 27 cells CI-separated**, p(Δ>0) only 0.71–0.76, and the
+  **sign flips in 9/27**.
+* ⛔ **The "3.6×" ratio is withdrawn outright.** It compares a **near-constant** predictor
+  (`pred_sd/gt_sd` 0.014) with a **live** one (0.89), and re-drawing the ridge **inner split** — the
+  seed that had been held fixed, and worth ~10× more variance than the projection seed that was
+  varied — moves it to **2.8× / 2.0×**.
+* ⛔ **The finding that reframes both.** **Our trained arm is not CI-separated from its own
+  matched-random null** — `lead_gap` **0/9**, `ego_v0` **3/9** and *not* in the headline cell
+  (Δ +0.052 [−0.0007, +0.206]) — while the random arm **is** (`ego_v0` **9/9**, Δ +0.164
+  [+0.074, +0.367]). ⇒ the admissible statement is **signal vs no-signal on one rung**. **A ratio
+  whose denominator is not separated from noise is not interpretable**, however many seeds it holds
+  up across.
+* ⭐ **An attack that failed, reported because it failed:** widening the ridge α to **1e13** changed
+  these rows by ≤ 0.0008.
+* ⭐ **New, and monitorable from step 0: the trained token field is RANK-COLLAPSED.** **97.6 % of
+  token-channel variance sits in ONE direction**, effective rank **1.223** against **67.1–68.2** at
+  random init (entropy-based, no threshold, comparable across arms, on 384 real banked frames through
+  the deployed operator); the z-scored design matrix reads **6.73** against **16.0–16.9**. PCA-whitening lifts *both* arms and closes
+  nothing ⇒ **a co-symptom, not the explanation** — but unlike "the objective subtracts geometry" it
+  is observable from step 0, and the existing `z_op` spectrum monitor demonstrably does not cover it.
+* ⚠️ **The trajectory is UNAVAILABLE, not merely unretrieved:** no checkpoint before ≈ step 9,100
+  exists anywhere on the training box. What the programme's own `z_op` ladder does supply is a
+  **step-2,000** point, re-read from raw JSON: `ego_v0` **0.1346 → 0.0801** and `lead_gap`
+  **0.0123 → 0.0059** by step 9,000, **then flat**, while `nearest_any` stays flat throughout. So the
+  decline over 2,000 → 9,000 is real — **on `ego_v0`, over that window, and not as a ratio**. ⛔ No
+  exponent was fit and none would be admissible on a window this short.
+
+**(c) The CEM planner is 35.8 % WORSE than constant velocity at T1 — and it loses on the family it is
+designed for.** *(MEASURED, `MODEL_REGISTRY.md` **§5** and
+`…/incoming/2026-08-18-planner-beats-cv-redrive/raw/planner_beats_cv_banked_analysis.json` — the two
+agree to every digit; **T1 — the primary capability tier**; n = 221 windows / 20 episodes; **paired
+episode-cluster bootstrap**, 2,000 draws.)* This comparison had **never been made**: the published G4 compared the planner against
+the supervised *head*, never against CV. A reproduction gate ran first — the model-free `cv` and the
+deterministic true-action arm reproduce their published values **bit-exactly**, and the closed-loop
+planner arm drifts **0.0193 %**, the documented unseeded-CEM residual.
+
+| arm [T1] | ADE@2s (m), episode-cluster bootstrap |
+|---|---|
+| CEM planner, closed loop | **0.9799** [0.7456, 1.2312] |
+| constant velocity | **0.7214** [0.4680, 1.0360] |
+| operative rollout under **true** actions | **0.4063** [0.3293, 0.4907] |
+
+> **paired planner − CV = +0.2585 m [+0.0869, +0.4309], p(Δ>0) = 0.9975 — CI-SEPARATED.**
+> ⇒ **the planner is 35.8 % worse than constant velocity, closed-loop.**
+> ⭐⭐ **paired operative − CV = −0.3151 m [−0.6277, −0.0602], p(Δ>0) = 0.008 — CI-SEPARATED.**
+> ⇒ **THE LOSS IS IN THE ACTION SEARCH, NOT IN THE WORLD MODEL.** The world model rolls out well
+> when handed true actions; the CEM cannot find actions that exploit it.
+
+The four families, per family and never pooled, on the same windows [T1, n = 221 / 20 episodes]:
+
+| family | CEM planner | constant velocity | reading |
+|---|---:|---:|---|
+| **LONGITUDINAL** — along-track RMSE @2 s | **1.9062 m** | 1.6705 m | ⛔ **the planner loses on the family its cost function is aimed at** |
+| **LONGITUDINAL** — speed error @2 s | **0.9431 m/s** | 0.7607 m/s | |
+| **LONGITUDINAL** — speed bias @2 s | **+0.2737 m/s** | −0.0995 m/s | the planner over-speeds; CV is nearly unbiased |
+| **LONGITUDINAL** — distance-keeping (headway / time-gap / TTC) | **n/a, n = 221** | **n/a, n = 221** | no lead-agent track in this dump; the P2 cost itself omits the gap term for the same reason. `obstacle.offline` is a pod-side join and was not part of this eval |
+| **LATERAL** — cross-track RMSE @2 s | 1.9637 m | 1.7115 m | the loss its own scope note predicts — the cost has no lateral term |
+| **LATERAL** — heading error @2 s | 7.68° | 6.73° | |
+| **LATERAL** — curvature error, mean (moving-only, n = 205, 16 excluded) | 0.0134 1/m | 0.0123 1/m | |
+| **LATERAL** — yaw-rate error, mean (moving-only) | 4.56 °/s | 3.61 °/s | |
+| **TACTICAL** | **n/a, n = 221** | **n/a, n = 221** | the CEM **emits no manoeuvre class** — it searches a continuous action sequence, so there is no discrete decision to score. Scoring it needs a manoeuvre labeller applied to the planned *and* the GT path: a **work item**, not an omission |
+| **STRATEGIC** | **n/a, n = 221** | **n/a, n = 221** | the P2 cost carries **no route or goal term at all**, so there is no strategic output to score — a genuine N/A |
+
+*This is exactly why an ADE-only table is inadmissible in this programme (§5.5): a scalar would have
+shown "worse" without showing that it is worse **where its cost function is aimed**.*
+
+⚠️ **A real data defect caught in passing, and handled by masking rather than clamping.** Curvature
+divides heading change by arc length and is undefined for a stopped ego; unmasked, the GT `|κ|`
+**mean** is 34.82 1/m against a **median** of 0.0008 1/m. The curvature and yaw rows above are
+computed on moving-only windows with the excluded `n` published — a clamp would have kept fabricated
+geometry silently inside the mean.
+
+⚠️ **Scope, stated rather than buried.** The **open-loop** `planner_beats_cv` verdict remains
+**undecided**: the open-loop CEM arm is not banked per window (absence confirmed at three probes,
+including an exhaustive walk of every `.pt` in the repo), and flipping it would require the planner to
+fall **6.589 %** against a local estimator envelope of −6.909 %…+5.877 %. That is one ~400 s GPU job,
+blocked only on retrieving the 40-episode validation cache.
+
+**(d) At three seeds the linear-readout ladder's substantive count is ZERO, on both repair routes.**
+*(MEASURED, `…/incoming/2026-08-18-ladder-3seed/`; **T0-DIAGNOSTIC**.)* Of the 87 banked
+separated-FAIL verdicts: **58 dead on all three seeds**, **11 flip to PASS** (the positive controls,
+unanimous), **9 survive all three** — all `ego_yawrate` at |K1B|/gt_sd ≤ 0.013, one of them on a
+random-latent null — and **9 survive on some seeds and not others**. ⭐ **Substantive: 0.** The two
+routes return the same inventory, and a reproduction gate passed at **3,465/3,465 identical fields**,
+so this extends the earlier run rather than replacing it.
+
+The mechanism generalises, and it is uncomfortable: **repairing the ridge intercept UNFROZE the alpha
+sweep.** The defective instrument picked the same α on all three seeds for **132 of 165** rows; the
+repaired one for **42** — a **3.1× drop in seed-stability *caused by a repair***. ⇒ **a stability
+claim measured under a defect is not inherited by the repaired instrument**; *"this quantity does not
+vary, so one seed is enough"* is a property of the instrument as it was, not of the question.
+⚠️ The counter-column is published too: the maximum K1 seed spread is *larger* on the **incumbent**
+(4.239 vs 2.812), so the honest claim is *"the repair unfroze the majority"*, not *"the incumbent had
+no variance"*.
+
+⛔ **And a missing control whose absence was invisible.** The trivial-proxy control sat on one cache,
+so **33 of 165 rows — every tokens-window arm — had no trivial-proxy column at all**. Nothing
+reported a gap; the column simply was not there. Added, on **154 paired rows the single ego-speed
+scalar matches or beats the 2,048-dimension latent on 120**, and on the signal-bearing rungs on
+**13–14 of 14**.
+
+**(e) 201 of the 4,729 Alpamayo augmentation clips are ALREADY in the parity train corpus.**
+*(MEASURED, `…/incoming/2026-08-17-thor-concurrency-pilot/`; exclusion list banked as
+`alpamayo_IN_parity_train_EXCLUDE_FROM_EVAL.txt`.)* The overlap was computed from clip ids against the
+live trainer's own `--v2-cache` path — read from `/proc/<pid>/cmdline`, not from a document — and
+mtimes prove the 201 are genuine members of the parity **selection**, not later contamination of the
+directory. ⇒ ⛔ **any evaluation split buildable on the Alpamayo augmentation is 78.21 % train-contaminated** (201 of the 257 clips with a w120 cache; the 4.3 % first printed here is the catalogue rate, 201 / 4,729; registry §12.4, C113; corrected in v1.5.1)
+— the REF-A I-JEPA leak class (§7.2) at the same scale, and disqualifying for the same reason. The
+exclusion list must be applied **wherever an Alpamayo eval split is defined**, not once. The root
+cause is the one thing parity exists to prevent: **a non-overlap assumed from provenance ("different
+source ⇒ disjoint") rather than computed from ids.**
+
+**What this round changes, stated without inflation.** Four negatives and a contamination do **not**
+overturn §7.14–§7.18: the predicted latent still retains occupancy (P8 retention 0.932), imagination
+is still load-bearing (I4a), and the world model still rolls out **better than CV** when handed true
+actions (§7.19c). What they do is move the indictment one component to the left. The programme's
+standing account of the missing lead variable was **architectural** — a 40:1 pool destroying
+individuation — and that account is now measured false; the account that survives is that **the
+encoder and its objective do not put the information into linearly readable form**, because a frozen
+general-purpose encoder reads it *through our own pool, from our own frames*, and our trained encoder
+does not read it *with no pool at all*. That relocates the next experiments from **routing** to
+**representation**, which is why §10's ladder is re-ordered.
+
+⚠️ **The honest limit on all of §7.19a–b, repeated because it is easy to drop when a number travels.**
+Every figure in (a), (b) and (d) is **T0-DIAGNOSTIC** — a frozen-latent linear readout, a world-model
+diagnostic and **never driving performance** — measured on a **130-clip lead-enriched probe pool**
+(⚠️ *not* the 40-episode validation split, and `parity: False` in the cache meta, inherited unchanged;
+no episode is selected, added, removed or re-hashed by any of this work) at an **early read of step
+11,250 of 30,000 (37.5 %)**. Step 30,000 remains the primary read. **Four families for (a), (b) and
+(d):** LONGITUDINAL and LATERAL *are* the rungs and are tabulated above; **TACTICAL n/a, n = 0** — the
+ladder is regression-only and no manoeuvre label is banked in these caches, which is a work item, not
+an excuse; **STRATEGIC n/a, n = 0** — no route or goal label exists on this corpus at all (§5.5).
+
+### 7.20 REFe on NAVSIM: a published-row comparison at last, a gap that is a zero tail, a zero tail that is a selection problem, and one correction of our own (2026-09-24 → 10-17)
+
+Until this round the paper held no number comparable to a published one: §12.4 records that the programme
+contained no NAVSIM implementation, and names the order that follows — benchmark, then reward, then RL. This
+section is the benchmark step. **REFe** is a reference arm in the sense of §3.8: a reproduction attempt of
+DriveZero's camera planner (arXiv:2609.06055, banked as library key `2609.06055`) on its own data and its own
+benchmark, built to calibrate our instrument and to say *where* the gap to the published state of the art sits. It
+is not the 4B architecture and nothing here is a claim about it. **In one sentence: the best REFe checkpoint
+scores 88.25 PDMS against a committed bar of 94.55 — the bar is NOT cleared; 65.9 % of the gap is a tail of
+zero-scored tokens; that tail is a *selection* failure whose mechanism is now located; an execution-side lever
+aimed at it was closed by our own measurement, and the next (P6) has not yet trained.** Notation: `RP` = `TanitAD
+Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan`; `REG` = `Project
+Steering/MODEL_REGISTRY.md`; `GAC` = `Project Steering/GOALS_AND_CLAIMS.md`. Every number below is **T1** unless
+it says otherwise.
+
+**(a) The instrument.** *(MEASURED unless marked; `REG` §14.1–14.2, `RP/REFE_MODEL.md`.)* REFe is a frozen DINOv3
+ViT-L/16 with LoRA adapters, four cameras at 512 × 960 (H × W), 64 trajectory proposals (winner-takes-all) and a
+six-component PDM scorer: **322,070,854 parameters, 18,991,426 trainable** (the paper's: 338.46 M / 18.58 M,
+PUBLISHED, Table A12 — the DriveVFM ViT-L configuration). It trains on navtrain (103,288 tokens, 1,192 logs) under
+a DriveRL teacher for 10,075 optimiser steps. Its inputs are the benchmark's — cameras, seven ego-kinematic
+scalars and a route-derived goal — and **no HD-map geometry is an input to the planner** (PI, 2026-09-28:
+navigation commands are admissible, map geometry for planning is not; maps appear as training labels, PI,
+2026-10-11); the one place a map graph touches an input is A9 below. The ego-status shortcut of §7.2 therefore
+applies to this interface, and the anti-echo controls are in (f). It departs from the paper in seven declared ways
+(bf16 autocast, a growing data bank, 10 Hz teacher rollouts, 4 × 64 gradient accumulation, a scorer supervised on
+a fixed candidate set until step 3,707 and on its own proposals after, and NAVSIM's own drivable-area and comfort
+labels), so it is a *reproduction attempt*, not a replication. **Scoring** *(PUBLISHED, arXiv:2406.15349 Eq. 1,
+library key `2406.15349`)*: PDMS = NC × DAC × (5·EP + 5·TTC + 2·C)/12 per token — the plan is queried once,
+executed by an LQR controller and a kinematic bicycle for 4 s against logged agents that do not react, and a
+collision (NC) or a drivable-area violation (DAC) zeroes the token. **Tier T1** in the sense of §5.4 (the
+planner's own plan is executed, perception is fixed at t₀, agents are replayed) and ⛔ *not* closed-loop driving;
+T2 is not provisioned, and §12.4's warning stands — PDMS buys comparability, not truth.
+
+**Estimator, and the variance it answers.** Paired log-cluster bootstrap over the 136 navtest logs, 10,000
+resamples, seed 20260927 (`RP/raw/2026-10-17-zero-tail-mechanism/code/zero_tail.py`, class `Boot`) — the NAVSIM
+analogue of §5.3's episode-cluster bootstrap. Three different questions ride on any interval in this programme:
+*would another draw of logs say this? would another training run say this? would another inference run say this?*
+(H-ESTIM-SEED-1 in `GAC`; §5 does not yet state it and this round owes it). This interval answers **only the
+first**. Inference is deterministic (P2's re-derived picks are pose-bit-identical and PDMS-exact on 509/509
+tokens, `RP/raw/2026-10-15-p2-zero-tail/p2_own_table/P2_MEASURED.json` `same_pick_proof`), so the third is zero by
+construction. The second is unmeasured for every arm but one pair: P2 seed 1 minus P2 seed 0 reads **+0.33 [+0.04,
++0.64] PDMS** (`RP/eval/RESULT_P2REP.md`, table RR2) — one draw of a seed difference, never a variance, and the
+only floor measured at this tier. Every separated interval below is therefore necessary and not sufficient for a
+lever claim. **Harness controls.** Our harness reproduces the published constant-velocity baseline (20.65 vs 20.6,
+PUBLISHED, NAVSIM Table 1) and scores the logged human at 94.55 [93.78, 95.23] against a published 94.8
+(`RP/eval/SPEC_NAVTEST.md` line 12; `RP/eval/RESULT_P4_TEACHER_NAVTEST.md` table C2). The do-nothing floor is
+**61.82** — EP is 1 by rule when compliant progress is under 5 m — so standing still beats constant velocity by 41
+points and the scale is compressed from below; the earlier programme model refcv4b A1 reads 58.97, *below* it
+(`RP/eval/RESULT_NAVTEST_FINAL.md` headline table). **Three declared test-time changes ride on every REFe row
+below** (`REG` §14.1): **A7** executes the chosen plan with its t = 4.0 s heading replaced by its t = 3.8 s
+heading (60.76 → 76.96, +16.20 [+12.83, +19.52], on 923 tokens / 43 logs disjoint from the earlier 200-token
+subset, at the epoch-15 snapshot; registered before its confirmation data existed); **A9** repairs the benchmark's
+own route with NAVSIM's roadblock graph — only the navigation goal moves (+1.22 [+0.59, +2.07] on the full
+navtest; adopted on the PI's ruling, 2026-10-04; the lane-graph goal sanitisation A8 is a new map use and is
+**not** deployed); and NAVSIM v1's own selection formula (for u400, multiplied by a learned lane output p(lane) —
+a scorer output trained on map-derived labels, not a map read at inference).
+
+**(b) The ladder, and the gap to the published row.** *(full navtest, 12,146 tokens, 136 logs; PDMS × 100.)*
+
+| row | PDMS [95 % CI] | evidence · artifact |
+|---|---:|---|
+| constant velocity | 20.65 | MEASURED · `RP/eval/RESULT_NAVTEST_FINAL.md` (published 20.6) |
+| do-nothing (STOP) | 61.82 | MEASURED · same file; no interval banked |
+| REFe `model_final` | 83.24 [81.77, 84.63] | MEASURED · `REG` §14.1 Status row; recomputed identically here |
+| + A9 route fix | 84.46 [83.18, 85.77] | MEASURED · `REG` §14.1 (recompute here [83.16, 85.69]; endpoints differ ≤ 0.08) |
+| **SFT-4 B u400** (scorer-only fine-tune; best REFe checkpoint) | **88.25 [87.05, 89.36]** | MEASURED · `REG` §14.2; interval recomputed for this section¹ |
+| P2, seed 0 (joint PDM fine-tune) | 88.82 [87.86, 89.77] | MEASURED · `GAC` D-REFE-P2-R2; interval recomputed¹ |
+| P2, seed 1 | 89.15 (interval not computed) | MEASURED · `RP/eval/RESULT_P2REP.md` |
+| teacher (DriveRL `checkpoint_2400`, privileged) | 89.79 [88.55, 90.97] | MEASURED · `REG` §14.2 (point); interval `RP/eval/RESULT_P4_TEACHER_NAVTEST.md` line 58, recomputed identically¹ |
+| human (logged future) | 94.55 [93.78, 95.23] | MEASURED · `REG` §14.2 (point); interval `RP/eval/RESULT_P4_TEACHER_NAVTEST.md` table C2, recomputed identically¹ |
+| **matched published row** (DriveZero, DINOv3 ViT-L, navtrain only, no SimScale) | **94.55** | PUBLISHED · arXiv:2609.06055 Table A13, verified in the banked PDF |
+
+¹ Same estimator, rerun from the harness CSVs; the controls `model_final`, teacher and human reproduce
+their banked values to two decimals (`RP/raw/2026-10-17-paper-s720-recompute/marginal_ci.json`).
+⚠️ **Two different quantities carry the value 94.55** — the published *student* row and our harness's
+*human* row (the published human is 94.8). Neither is a typo; the equality is a coincidence of two separate measurements.
+
+*Paired steps:* SFT-4 over `model_final` + route fix **+3.79 [+3.05, +4.54]** (`REG` §14.2; 0 of 21
+longitudinal/lateral family components adverse); P2-s0 over u400 **+0.57 [+0.02, +1.18]** (the GO of `GAC`
+D-REFE-P2-R2); P2-s1 over u400 +0.90 [+0.36, +1.59] **but TTC −0.49 [−0.97, −0.07], adverse**, so the committed
+rule reads **NOT REPLICATED** (`RP/eval/RESULT_P2REP.md`) — the size of the PDMS gain replicated, the safety
+clause did not, and P2's +0.57 is of the order of one seed difference (+0.33).
+
+**The gap decomposes as a zero tail first.** *(MEASURED, exact and sequential — gate first, then EP, TTC, C;
+paired log-cluster bootstrap, same draws for every term; intervals recomputed for this section, control =
+`RP/raw/2026-10-11-ep-gap-decomposition/ep_lowtail.out` reproduced to two decimals.)*
+
+| human − u400 = **6.30 [5.39, 7.23]** | PDMS points [95 % CI] | share |
+|---|---:|---:|
+| tokens zeroed by NC × DAC (529 of 12,146 = 4.36 %; human 0) | **4.15 [3.31, 5.07]** | 65.9 % |
+| TTC (TTC = 0 on 4.37 % of u400 tokens; human 0 %) | 1.31 [1.09, 1.53] | 20.7 % |
+| EP, on the tokens that are not zeroed | 0.86 [0.41, 1.28] | 13.6 % |
+| comfort | −0.01 [−0.03, +0.00] | −0.2 % |
+
+(`RP/raw/2026-10-17-paper-s720-recompute/gap_decomp_ci.json`; registry statement: `REG` §14.2 "Gap
+decomposition", `GAC` D-REFE-GAP-1b.) The split is order-dependent — gate first is a choice, not a law — and it is
+a decomposition, not a lever claim. Against the published *student* profile (PUBLISHED, Table A13) the picture is
+the same from the other side: NC 98.94 vs 98.80 and TTC 95.63 vs 95.74 already match; **DAC 96.58 vs 99.25 and EP
+81.20 vs 92.72** do not. The published planner reaches 94.55 by being *faster* than the human (EP 92.72 against
+the human's 87.5); the human reaches it by never being zeroed. This corrects an earlier internal reading that "EP
+is the largest gap", which was true of the published profile and not of the bar's decomposition (`GAC`
+D-REFE-GAP-1b).
+
+**(c) The zero tail is selection, not proposal.** *(MEASURED; pre-registered before any count; **T1**; estimator
+as above — answers another draw of logs only; both arms are one training seed.)* A zero-PDMS token is **SEL** if
+some proposal among the 64 scores above zero (a non-zero alternative existed and the scorer did not pick it) and
+**PROP** if all 64 score zero. On u400's own 64-proposal table: of its 529 zeros, **455 are SEL and 74 PROP — SEL
+share 86.0 % [80.1, 91.7]**, and handing every SEL zero its best proposal would add **+3.62 [+2.85, +4.55]** PDMS
+(`RP/raw/2026-10-15-p2-zero-tail/RESULT.json`, `Q1a_u400_own`). On P2's own table
+(`…/p2_own_table/P2_MEASURED.json`; an earlier bridged estimate of 439/70 was INFERRED and is replaced): of 509
+zeros, **445 SEL and 64 PROP, 87.4 % [81.0, 93.2], ceiling +3.54 [+2.90, +4.23]**. ⚠️ Both ceilings are *ceilings*
+— the gain of a perfect selector — and not the expected gain of any scorer (this distinction is the subject of
+(e)). P2's zeros split **DAC-only 376 (73.9 % [66.7, 80.3]), NC-only 129, both 4**; NC-type zeros are 130/133 SEL,
+and the DAC-only SEL tokens alone carry +2.50 [+1.88, +3.20] of the 3.54. The PROP share is mostly off-road fans
+(59 of 64 have all 64 proposals leaving the drivable area), capped at ≈ 0.49 PDMS (ESTIMATED). The SEL fan is not
+a needle in a haystack (median 19 non-zero proposals of 64, POST-HOC). Turning is over-represented: among u400's
+DAC-only SEL zeros, the enrichment over a command's share of navtest tokens is ×1.59 [1.12, 2.18] for left turns
+and ×1.89 [1.30, 2.70] for right turns, against ×0.65 [0.47, 0.81] for straight
+(`RP/raw/2026-10-17-zero-tail-mechanism/RESULT.json`, `arms.A.Q2`). The TTC term has the same shape: of P2's 394
+non-zeroed tokens with TTC = 0, 96.7 % have a TTC-ok proposal in the fan (INFERRED through the bridge; ceiling
++1.44 [+1.17, +1.72]).
+
+**(d) The DAC zero tail is near-twin grazes the scorer cannot see.** *(MEASURED,
+`RP/raw/2026-10-17-zero-tail-mechanism/`, `PREREG_ZT3.md` hashed before any number, two amendments before any
+target value; **T1**; gates: DAC re-simulated on 2,996/2,996 trajectories, simulated corners equal to the banked
+tracked dump (max 0.0 m), the human scores DAC = 1 on 1,224/1,224.)* The target set is u400's **343 DAC-only SEL
+zeros**. **60.1 % [51.4, 68.0] are ON_PATH near-twin grazes** — the pick matches the best-ranked non-zero proposal
+to a median 0.29 m lateral offset, a length ratio of 1.01 and a heading difference of 0.04°; the route differs on
+only 1.7 % [0.3, 3.6] and the manoeuvre class equals the human's on 95.3 % — carrying **1.55 [1.06, 2.15] of the
+2.55 [1.83, 3.41] PDMS at stake** (P2 replicates: top class equal, 63.2 %). They are shallow, late and far: 74.1 %
+[66.8, 80.5] leave the drivable area by under 0.5 m (median 0.23 m), at a median 3.1 s and 17.9 m out (38.5 %
+[28.2, 48.6] inside 15 m). **The scorer's DAC head is blind exactly there:** it rates the pick at least as
+drivable as the alternative on 72.0 % [63.9, 78.5], with a within-token AUC of 0.46 [0.36, 0.57] against 0.92
+[0.90, 0.94] on random tokens (near-twin pair accuracy 0.39 [0.27, 0.57] against 0.96 [0.94, 0.98],
+`ZT4_BASELINE.json`; both POST-HOC and conditioned on failure, so not a causal scene effect). Of the five
+pre-committed readings, R1 read GEOMETRY (not route), R2 EXECUTION_ARM, R3 HEAD_WRONG, R5 NEAR_BLIND — and **R4
+read FAR** (61.5 % beyond 15 m), whose committed meaning is an *anticipation* problem rather than a near-field
+one. Finally **42.0 % [33.9, 49.4] (144 of 343) exist only in NAVSIM's simulated tracking**: the plan's own
+footprint stays on the road, the tracked car leaves it. The lever ranking printed with this package listed *reach*
+as 58.0 % / 1.48 [1.04, 1.95] PDMS for the P6 trunk DAC gradient, 42.0 % / 1.07 [0.71, 1.55] for an execution-side
+fix, 25.7 % / 0.65 [0.43, 0.89] for map supervision (P7.1) and 2.9 % / 0.06 [0.01, 0.13] for lane-rank twins.
+**Those numbers are gross. See (e).**
+
+**(e) The execution side — and a correction of our own (R47).** *(MEASURED,
+`RP/raw/2026-10-17-tracking-execution/`, `PREREG_ZT5.md` hashed before any number, three amendments before their
+data; **T1**.)* The mechanism is real and it is the **heading channel**: on the 144 tracker-made navtest picks (44
+logs; 529 post-stratified random controls; gates 673/673), replacing the plan's heading with its own path tangent
+rescues **56.9 % [45.1, 66.0]** of them, actuator lag 47.2 % [38.5, 57.3], steering 18.1 % [12.0, 26.3], speed 7.6
+% [3.3, 13.2]; the heading edit breaks 1.7 % [0.2, 3.8] of controls. The tracked car under-turns and runs wide
+late. **The fix is not found.** On a development set of 2,466 held-out navtrain sets (13 navtest-disjoint logs;
+baseline PDMS 89.28 [85.53, 91.61]) no admissible fix clears the pre-registered bar (lower 95 % bound > 0 with a
+point ≥ +0.05, positive on two further scorer seeds, no sub-score adverse): a heading-consistent plan (F_c; it
+generalises A7 to every knot) **−0.30 [−0.72, +0.04]** (19 zeros rescued, 32 broken), track-consistent selection
+among near-ties (F_b) −0.03 [−0.15, +0.07], the two combined (F_bc) −0.19 [−0.68, +0.27], a fan-consensus margin
+selection added by amendment 3 (F_m) +0.00 [−0.06, +0.05], and even the *inadmissible* pre-compensation ceiling
+(F_a) −0.19 [−0.76, +0.63]. No navtest confirmation was run (`PREREG_ZT5` §6). One development set failed its
+strict gate (EP only, 0.0286; weight 1/2,466).
+
+⚠️ **The correction.** The package of (d) overstated what it had found. `GAC` D-REFE-ZEROTAIL-3 and our report to
+the PI the same day quoted the tracking-made 42 % as an execution-side *reach* of **1.07 PDMS** — the
+second-largest lever. **1.07 is the gross reach: the PDMS carried by zeros that exist only in simulated tracking.
+It is not what a fix returns,** because at the pick the tracker also *saves* plans whose own footprint fails DAC
+and whose simulated execution passes. Measured post-hoc, on the development set the tracker saves 27 picks and
+makes 20 (difference +0.28 pp [−0.88, +1.24]); on navtest the saved count is ESTIMATED at ≈ 132 [44, 237] against
+144 made. The interval spans zero, so the claim is not "equal" but "not separable" — which is why the closure
+rests on the pre-registered fixes failing, not on this count. The net reach of the fixes tried is **about 0**
+(`RETRACTION_LOG.md` R47; `GAC` D-REFE-ZEROTAIL-4). It was caught only because ZT5's fixes kept breaking as many
+zeros as they rescued, which made the reverse flow visible. **The class, stated as method:** *a reach computed
+from one side of a two-sided flow is a ceiling, not a lever* — the same family as quoting an oracle-on-SEL gain
+(c) as an expected gain — so **before quoting any lever's reach, count both directions at the decision point.**
+The P6 figure of 1.48 is gross for the same reason and is labelled so until (g) nets it. The honest scope of the
+closure: 13 development logs, wide intervals, and the specific fixes tried — it closes *those* fixes, not every
+conceivable execution-side one.
+
+**(f) The four metric families, as they apply to NAVSIM** *(§5.5; u400 on the full navtest, 12,146 tokens / 136
+logs; MEASURED, `RP/eval/RESULT_SFT4.md` "Four families"; point estimates, intervals in the JSON named there;
+tactical rows carry none and are reported, not tested)*:
+
+| family | measured | not measured, and why |
+|---|---|---|
+| **LONGITUDINAL** | EP 81.20, TTC 95.63; speed MAE 0.740 m/s, along-track MAE 1.035 m, acceleration MAE 0.519 m/s², progress ratio 1.003 | distance-keeping (headway / TTC *to the lead agent*): **UNAVAILABLE**, no lead-agent track in the seam — a work item, not an excuse; the benchmark's TTC is the nearest proxy, not the instrument |
+| **LATERAL** | DAC 96.58 (DDC 97.66 is reported; weight 0 in v1.1); heading MAE 2.532°, cross-track MAE 0.378 m, curvature MAE 0.0199 1/m, yaw-rate MAE 2.983 °/s | — |
+| **TACTICAL** | lateral decision accuracy / κ 0.925 / 0.863; longitudinal 0.679 / 0.516; 5-way 0.783 / 0.718 | intervals; and the zero tail is *invisible* here — the manoeuvre is right on 95.3 % of near-twin picks (d) |
+| **STRATEGIC** | — | **PAUSED** (PI ruling, 2026-09-19, `PI_DECISION_QUEUE` item 25: the strategic layer is switched off until tactical and operative drive well) and independently UNAVAILABLE in NAVSIM (no strategic decision is scored). Reported as PAUSED — not a pass, not omitted |
+
+NC (98.94) and C (99.97) are joint gates and reported beside the families, not assigned to one. Two further
+controls guard the ego-status interface: u400 beats the hold-v0 control and the copy detector is clean (echo index
+0.0013 against the logged human's 0.0338). **The ADE-only failure of §5.5 has a NAVSIM form:** PDMS is one scalar,
+and the family table shows what it hides — SFT-4's PDMS gain comes with every MAE improving, whereas P2-s0 over
+u400 carries 3 of 21 longitudinal components adverse (all speed tracking, `GAC` D-REFE-P2-R2) and P2-s1 over u400
+none (`RP/eval/RESULT_P2REP.md`): a family-level verdict that differs between two seeds of one recipe.
+
+**(g) What is next, and why.** The remaining levers are ranked by measured effect, not by interest. **P6** — the
+paper-faithful full REFe run (`RP/SPEC_P6_PAPER_FAITHFUL.md` §0 and design table: un-detached scorer context, PDM
+targets online on the model's own proposals, ≈ 7 A40-days, ESTIMATED) — is the only lever with a non-zero share on
+the near-twin class (d), because it puts the DAC gradient into the trunk. The frozen-feature version of the idea
+(S1, nine arms) was not promoted: head DAC AUC 0.772 / 0.765 / 0.781 against the scorer's 0.787, and navtest P1
+IoU on [0, 40) m 0.496 / 0.521 / 0.486 against a 0.80 bar (`RP/raw/2026-10-15-s1-read/S1_READ.json`, `GAC`
+D-REFE-S1-READ) — which is why P6 un-detaches the trunk instead. Its gross reach is 58 % / 1.48; **ZT4 measures
+its net reach**: the package of (d), unchanged, run on P6's own 64-proposal fan, comparing P6's DAC-only SEL zero
+count with u400's 343 on paired per-token indicators (so zeros removed and zeros created net out). Both outcomes
+are committed in advance (`RESULT.json` `next_experiment_ZT4`): **TRUNK-REACHES** iff zeros ≤ 240 (−30 %) with a
+paired CI excluding 0 *and* near-twin accuracy ≥ 0.70 (control 0.39) → map supervision (P7.1) goes on top of P6;
+**TRUNK-MISSES** iff the reduction is < 15 % or its CI includes 0, or accuracy ≤ 0.50 → the camera trunk does not
+learn sub-0.5 m late boundaries from PDM labels (anything between is PARTIAL, reported per class), and the next
+arm targets the tracker-made 42 % by training-side margin targets (P5-C), which needs the PI's GPU go. Cost ≤ 1
+dev-box GPU-hour. **Blocked on one thing: P6's checkpoint**, which waits on its commit-filtered twin bank (3-C, PI
+2026-10-17); the control arm is already measured. A P6 PDMS claim additionally needs a replicate, with the P2
+pair's +0.33 as the floor it must clear.
+
+*(Update v1.5, 2026-10-18: the ranking above priced only the zero tail. §7.21(a) measures the whole oracle − pick
+headroom inside P2's own fan, 9.41 PDMS points, of which the zero tail is 3.54 and ranking among non-zero proposals
+5.875, and §7.21(b)–(d) report the three levers tried at the scorer since: an RL point that buys progress and pays in
+NC and TTC, a safety constraint that held on the wrong quantity, and a selection rule that is inert. P6 is unchanged:
+it is still the only lever with a non-zero share on the near-twin class (d), and it has still not trained.)*
+
+**What §7.20 does not establish.** (i) The bar is not cleared: 88.25 [87.05, 89.36] against 94.55, one training
+seed per arm except the P2 pair. (ii) Nothing here is closed-loop driving. (iii) The zero-tail mechanism is
+measured on u400 and P2, two members of one lineage; it is not shown for the published model. (iv) The
+scorer-blindness statistics are conditioned on failure. (v) The execution-side closure is bounded by 13
+development logs and by the fixes tried; the gross-versus-net count is post-hoc. (vi) The oracle-on-SEL ceilings
+and every "reach" are ceilings. (vii) STRATEGIC is paused, not passed, and distance-keeping is unmeasured. (viii)
+The recomputed intervals (footnote ¹ and the decomposition) are this section's own (`RP/raw/2026-10-17-paper-s720-recompute/`, reproduced
+byte-identical on an independent rerun) and are not yet in the registry.
+
+### 7.21 REFe's selection headroom and the first levers aimed at it: a ceiling the scorer holds, a free RL point that buys progress and pays in safety, a safety constraint that held on the wrong quantity, and a selection rule that is inert (2026-10-16 → 10-18)
+
+§7.20 located the zero tail as a *selection* failure and ranked the levers by gross reach; the one it ranked first, P6
+(a trunk-level drivable-area gradient), has still not trained. This section reports what four packages added in the
+three days after it: a full-table build, a zero-training navtest read of banked scorer states, a killed constrained-RL
+arm with its CPU post-mortem, and a CPU confirm of a selection rule. **In one sentence: inside P2's own 64-proposal
+fan the oracle − pick headroom is 9.41 PDMS points and 62 % of it is ranking among non-zero proposals, not the zero
+tail that §7.20 priced; the one RL lever that reaches that ranking buys progress (EP +1.81) and pays in NC and TTC;
+the constraint built to remove that payment held on a quantity that is not the one its acceptance test reads; and a
+selection rule that re-weights the scorer's own safety heads is inert because the drivable-area failures are
+confident.** Nothing here clears the 94.55 bar, and nothing here is a lever-effect claim: every state is one training
+seed. Notation as in §7.20 (`RP`, `REG`, `GAC`); the packages are under `RP/raw/`: `2026-10-16-p2-full-table` (a),
+`2026-10-17-free-point-navtest` (b), `2026-10-18-r0d-outcome` and `2026-10-18-so-carve` (c), `2026-10-16-selrule-dac`
+(d). Every number below was re-read from the package's raw files (JSON; a log line where marked post hoc) and not from
+its RESULT.md; the claim → file → key table is `RP/raw/2026-10-18-paper-v15/SOURCES.md`, and where prose and JSON
+disagree this section follows the JSON and says so.
+
+**Tiers and estimators.** (a), (b) and (d) are **T1** (NAVSIM v1.1 PDMS, non-reactive pseudo-simulation, the full
+navtest of 12,146 tokens / 136 logs; ⛔ not closed-loop driving). Their intervals are the paired log-cluster bootstrap,
+10,000 resamples, seed 20260927, which answers *another draw of logs* only. Selection is deterministic in all three,
+so the third variance of §7.20 is zero by construction; the second (another training run) is unmeasured for every
+state below, and the only T1 seed floor we hold remains P2 seed 1 minus seed 0, +0.33 [+0.04, +0.64] (§7.20). Every
+separated interval is therefore necessary and not sufficient for a lever claim. (c) is **not T1**. It lives on the
+**RL-val selection tier**: the true NAVSIM v1.1 sub-scores of the scorer's argmax pick, looked up on 3,000 held-out
+RL-validation sets from 75 navtrain-held-out logs, an open-loop lookup that its own instrument text restricts to
+hyper-parameter selection and early stopping, "never an endpoint" (`RP/eval/rl_val_eval.py`, line 24). Same bootstrap,
+same single question. The one set of intervals that is not that bootstrap is flagged where it appears (b).
+
+**(a) The headroom is the scorer's, and most of it is not the zero tail.** *(MEASURED; T1; P2 seed 0 on its own 64
+proposals over all 12,146 tokens; `RP/raw/2026-10-16-p2-full-table/anatomy.json`; descriptive, nothing fitted.)* The
+table is built by the pipeline of §7.20(c) over the full navtest and is **proven to be P2's**: its pick reproduces the
+banked P2 pick on all 12,146 tokens (pose bit-identical, maximum absolute difference 0.0 m; PDMS at the pick exactly
+equal to the banked value on 12,146; `same_pick_proof.json`). The job ran across two interruptions (low memory, a full
+disk) and a resume; finished chunks were never recomputed, and its 509 zero-token rows are bit-identical to the
+509-token table of §7.20(c) (`crosscheck_509.json`).
+
+| quantity | PDMS × 100 [95 % CI] |
+|---|---:|
+| P2's pick (seed 0) | 88.82 [87.86, 89.77] |
+| random selector (mean over the 64) | 73.00 [71.49, 74.57] |
+| best-of-64 oracle | 98.23 [97.82, 98.62] |
+| **oracle − pick** | **9.41 [8.68, 10.18]** |
+| … from tokens whose pick is non-zero (11,637 tokens) | 5.875 [5.535, 6.213] |
+| … from DAC-zero picks (376 tokens) | 2.502 [1.881, 3.195] |
+| … from NC-zero picks (129 tokens) | 1.012 [0.769, 1.263] |
+| … from both-zero picks (4 tokens) | 0.024 [0.000, 0.066] |
+
+The four terms are exact and add to the gap (9.413). The three zero-pick terms add to 3.538, which is §7.20(c)'s
+oracle-on-SEL ceiling reproduced key for key from the full table (3.54 [2.90, 4.23]; SEL 445, PROP 64). The fan is not
+the constraint: only 64 of 12,146 tokens have no non-zero proposal, the median token holds 58 non-zero proposals of 64
+(mean 51.3; all tokens, whereas the "19" of §7.20(c) is the median over the SEL zero tokens, a different population),
+and the oracle beats the pick on 8,292 tokens. **Of the 9.41 points, 62.4 % is picking a weaker non-zero proposal
+(ranking on EP, TTC and comfort) and 37.6 % is the zero tail** (ESTIMATED reading: arithmetic on the decomposition,
+not an arm). That pool is what §7.20(g)'s ranking left out: every lever there aims at the zero tail (ceiling 3.54),
+and none targets ranking among non-zero proposals.
+
+⚠️ **Two cautions.** The oracle is a **ceiling, not an expected gain**: it selects per token with the benchmark's own
+score on the realised simulation, so it can sit above the logged human's 94.55 without being a driving result; it
+describes the proposal set, not a policy that could be driven. And the climb it permits is large against the bar: from
+P2's pick to the matched published row (94.55, PUBLISHED, `2609.06055`) is 5.73 points, 60.9 % of the oracle − pick
+gap (point arithmetic, no interval), so a scorer would have to capture three fifths of a ceiling that needs foresight
+of the simulator's outcome. *Published context* (`2605.15120`, CLOVER, Table 5, read in the banked PDF whose sha256
+equals `library.json`): on the same 12,146 navtest scenes with 64 proposals each and true evaluator scores, its DrivoR
+baseline shows Oracle@64 0.9933 against a selected PDMS of 0.9369 (gap 5.64 points), and 0.9976 against 0.9413 (5.63)
+after its first training stage; its final stage prints a gap of 4.95. Our 9.41 is 1.7 to 1.9 times those, but the arms
+differ in generator, backbone, data and scorer and the published rows carry no interval, so the comparison is
+descriptive and decides nothing. (`TanitAD Research Lab/2026-10-18-LAB-RUN-019.md` surveys how the published NAVSIM
+methods avoid NC/DAC zeros; none of its other rows was re-read for this section and none is used here.)
+
+**(b) The RL lever on navtest buys progress and pays in the safety terms (row FP-NONE).** *(MEASURED; T1;
+`RP/raw/2026-10-17-free-point-navtest/raw/result/freepoint_result.json`; one training seed per state; pre-registered,
+`PREREG_FREEPOINT.md` landed before any navtest number.)* RL-S1 is a scorer-only policy-gradient step ("EPO") on the
+frozen 64-proposal fan: the exact expected reward over all 64 proposals under the policy π = softmax(log A / T), T =
+0.1, KL-anchored, with the BCE on the six sub-scores unchanged (`RP/eval/PREREG_RL_S1.md` §1). A *free point* is a
+scorer state an earlier arm already trained, read on navtest at no new training. **BASE** is the deployed scorer
+(§7.20's u400, re-picked here); **C0A** is arm A of the separate SFT-continued control run C0 (update 1000; BCE only;
+the SFT-continued control of `RP/eval/PREREG_RL_S1.md` §3, registered with sets, order and steps identical to R0's);
+**R0B** is arm B of run R0 at update 1000 (BCE plus EPO), so C0A and R0B come from two runs, not one pass (`PLAN.md`
+§4 of the free-point package: C0A is `rls1-c0` key A, R0B is `rls1-r0` key B); **M25** is the logit mixture C0A + 0.25
+(R0B − C0A). The registered rule: a point is DEPLOYABLE-SAFE iff, against BASE, its PDMS lower bound is above 0 *and*
+its NC, DAC and TTC upper bounds are each ≥ 0; if no point qualifies the row is FP-NONE and the safety-objective arm
+of (c) proceeds as registered.
+
+*Gates (all pass).* Inputs identical on 3,410 compared tokens (0 mismatches). The re-picked BASE reproduces the banked
+u400: pose equal on 12,132 of 12,146 tokens (0.9988 against a 0.97 bar; the 14 differences are near-ties, largest
+margin 0.000012) and PDMS −0.0082 [−0.0249, +0.0005] (88.2388 against 88.2469, which is why BASE reads 88.24 here and
+u400 88.25 in §7.20, and 530 zero-PDMS picks against 529). The forward pass is bit-identical on a rerun. Shuffled
+picks agree on 0.013 of tokens, and swapping two camera slots on 8 tokens drives pose agreement to 0.0 against a
+must-fail bar of 0.5, so both checks have teeth. The chain's first verdict was INVALID, not failed: the swap control
+was gated on and no stage had ever written its file, so it read as missing only at the final read; addendum 2
+committed both outcomes before the control was run.
+
+| state | PDMS | Δ PDMS | Δ NC | Δ TTC | Δ EP | zero-PDMS picks |
+|---|---:|---:|---:|---:|---:|---:|
+| BASE | 88.24 | — | — | — | — | 530 |
+| C0A | 87.36 | −0.88 [−1.47, −0.14] | +0.04 [−0.18, +0.24] | +0.02 [−0.44, +0.45] | −1.84 [−2.58, −1.04] | 549 |
+| **R0B** | **88.79** | **+0.55 [+0.24, +0.84]** | **−0.25 [−0.45, −0.06]** | **−0.40 [−0.71, −0.09]** | +1.81 [+1.50, +2.13] | 566 |
+| M25 | 87.77 | −0.47 [−1.03, +0.24] | −0.03 [−0.22, +0.15] | −0.15 [−0.58, +0.26] | −0.80 [−1.47, −0.05] | 545 |
+
+Deltas are against BASE, paired, ×100. R0B's other sub-scores: DAC −0.04 [−0.26, +0.15], C +0.02 [+0.00, +0.05], and
+DDC −0.12 [−0.21, −0.03], which has weight 0 in v1.1 and so does not enter PDMS but which the instrument flags
+adverse; R0B's PDMS is better on 4,308 tokens, worse on 951, tied on 6,887. **R0B is not deployable-safe** (PDMS
+separated above 0, NC and TTC separated below 0) and M25 is not (PDMS not separated), so the row is **FP-NONE**. On
+navtest the EPO lever has the anatomy it had on RL-val: it buys progress (EP +1.81) and pays in the two safety terms
+(36 more zero-PDMS picks, 530 to 566). The lever view (R0B − C0A; no row) reads PDMS +1.43 [+0.63, +2.05], EP +3.64
+[+2.81, +4.40], NC −0.29 [−0.53, −0.06] adverse and TTC −0.41 [−0.86, +0.03]. The paired differences add: the deployed
+comparison is that lever (+1.43) plus the control's own cost (−0.88), so continuing the scorer on BCE alone *lowers*
+PDMS against what is deployed. The size of R0B's +0.55 is of the order of the one seed difference we hold at this tier
+(+0.33), so it is not a lever-effect claim.
+
+*Four families, R0B against BASE.* Single-arm intervals from the instrument's family block (log-cluster bootstrap,
+**2,000** resamples, not the 10,000 of the sub-score rows); the TACTICAL intervals are present in the JSON although
+the package prose says tactical rows carry none, and are reported, not tested.
+
+| family | metric | BASE | R0B |
+|---|---|---:|---:|
+| LONGITUDINAL | speed MAE (m/s) | 0.7397 [0.7112, 0.7713] | 0.7307 [0.7001, 0.7617] |
+| | speed bias (m/s) | −0.2303 [−0.3258, −0.1369] | −0.0638 [−0.1561, 0.0282] |
+| | along-track MAE (m) | 1.0345 [0.9879, 1.0826] | 1.0365 [0.9902, 1.0836] |
+| | along-track final bias (m) | −0.8263 [−1.1897, −0.4778] | −0.1950 [−0.5492, 0.1529] |
+| | acceleration MAE (m/s²) | 0.5193 [0.5032, 0.5385] | 0.5080 [0.4913, 0.5269] |
+| LATERAL | heading MAE (°) | 2.532 [2.314, 2.729] | 2.480 [2.272, 2.670] |
+| | yaw-rate MAE (°/s) | 2.983 [2.800, 3.165] | 2.925 [2.739, 3.107] |
+| | curvature MAE (1/m) | 0.01987 [0.01834, 0.02138] | 0.01891 [0.01741, 0.02035] |
+| | cross-track MAE (m) | 0.3779 [0.3513, 0.4045] | 0.3739 [0.3469, 0.3998] |
+| TACTICAL | lateral decision, accuracy | 0.9252 [0.9145, 0.9359] | 0.9266 [0.9158, 0.9374] |
+| | lateral decision, κ | 0.8628 [0.8448, 0.8790] | 0.8654 [0.8478, 0.8821] |
+| | longitudinal decision, accuracy | 0.6789 [0.6483, 0.7088] | 0.6872 [0.6538, 0.7195] |
+| | longitudinal decision, κ | 0.5157 [0.4752, 0.5552] | 0.5292 [0.4849, 0.5726] |
+| | 5-way manoeuvre, accuracy | 0.7831 [0.7615, 0.8031] | 0.7877 [0.7668, 0.8079] |
+| | 5-way manoeuvre, κ | 0.7182 [0.6905, 0.7437] | 0.7256 [0.6989, 0.7504] |
+| STRATEGIC | — | **PAUSED** (PI, 2026-09-19, `PI_DECISION_QUEUE` item 25) and unavailable in NAVSIM | same |
+
+The instrument's screen (unpaired non-overlap of single-arm intervals over 21 longitudinal and lateral components)
+flags **0 of 21 for R0B**, 5 for C0A and 0 for M25. It has low power: it flags nothing on R0B while the paired
+sub-score rows above flag NC and TTC, and it is not a substitute for them. What R0B moves is the deployed scorer's
+slow bias: final along-track bias −0.8263 [−1.1897, −0.4778] (separated from 0) against −0.1950 [−0.5492, +0.1529]
+(not), speed bias −0.2303 against −0.0638 (those intervals overlap too). We do **not** call that a separated change.
+The two intervals overlap on [−0.5492, −0.4778]; the package's RESULT.md and its register row call them disjoint and
+the JSON endpoints say otherwise; and no paired interval was computed for the family metrics. It is a point-estimate
+movement toward zero in the direction EP also moved. Distance-keeping (headway, time-gap, TTC to the lead agent) is
+UNAVAILABLE here as in §7.20(f). **Rule Zero:** FP-NONE eliminates "deploy a free point"; the pre-committed next lever
+was the safety-objective arm, and it ran.
+
+**(c) Why the safety constraint failed: it held on the wrong quantity.** *(RL-val selection tier, not T1; MEASURED
+unless marked ESTIMATED; one seed, no replicate arm, so nothing here is a lever-effect claim.)* **SAFEOBJ**
+(`RP/raw/2026-10-17-safety-objective/SPEC_SAFEOBJ.md` §1) adds to the EPO arm a dual-ascent constraint against its own
+control branch A: for TTC and NC, g = c_A − c_B, where c_X = E_π[y] is the expected sub-score under the same softmax
+policy at T = 0.1, with ε = 0, dual step 4.0 and λ capped at 10. Bar S (`g5`): TTC and NC may not fall by more than
+0.5 points against A at any check; the pre-registered kill K3 fires on two consecutive breaches. **R0d** is that arm,
+seed 0.
+
+| R0d, B − A | PDMS | TTC (bound ≥ −0.5) | NC (bound ≥ −0.5) | g5 TTC |
+|---|---:|---:|---:|---|
+| u250 | +0.683 [+0.212, +1.153] | −1.167 [−1.724, −0.568] | −0.183 [−0.460, +0.082] | breach |
+| u500 | +0.984 [+0.473, +1.509] | −0.500 [−1.189, +0.168] | −0.183 [−0.466, +0.101] | held, exactly at the bound |
+| u750 | +1.402 [+0.843, +1.987] | −0.767 [−1.514, −0.063] | −0.200 [−0.509, +0.068] | breach |
+| u1000 | +1.232 [+0.644, +1.822] | −0.767 [−1.487, −0.065] | −0.233 [−0.532, +0.033] | breach, **K3 kills** |
+
+The path-length ratio held its bound at every check (0.982 to 0.986 against ≥ 0.894; shortest-bin share 0.301 to 0.318
+against ≤ 0.55), so the dual did not buy TTC with short plans. At u1000 EP is +3.412 [+2.681, +4.184] and DDC −0.917
+[−1.455, −0.484] (flagged adverse; not a g5 term). Pre-registered outcome **O4, "breached, dual held in-sample"**: bar
+S FAIL, bar G NOT_READ by the tool (killed arm), the lever claim L and the endpoint E unreachable (Stage 2 does not
+run). The dual held on the quantity it saw: the signed window mean of g over updates 651 to 750 (four 25-update means)
+is −0.000343 for TTC and −0.000287 for NC against a bar of ≤ 0.001, λ was positive on 528 of 550 post-ramp updates,
+and it peaked at 0.5927 (TTC) and 0.2448 (NC) against a cap of 10: active, never strained. The registered reading of
+O4 was a *generalisation gap*, the constraint holding on training data and not on RL-val, and its registered next step
+a dual fed from a log-disjoint carve of RL-train.
+
+*The carve does not exist (SO-CARVE, ESTIMATED harness read on banked R0 states, 302 train sets / 30 logs and 62 val
+sets / 13 logs; not T1).* Read from the trainer source (not from a log): each epoch draws a fresh permutation of all
+16,000 RL-train sets (R0d's own `data` event records 16,000 train sets and none in a held-out log), and 1,000 updates
+of 64 sets are exactly four epochs, so every set is consumed once by u250 and four times by u1000; any carve cut from
+that data is in-sample (flag F1). The pre-registered label is CARVE-TRACKS-TRAIN [F1, F2]: at R0 u1000 the dual's
+quantity loses +1.012 on the train pool, +1.043 on a 13-of-30-log carve and +1.356 on the val pool, and the
+train-to-val gap is G = +0.344 [−3.302, +4.503], unresolved. The label was pre-registered to mean no more than that:
+an in-sample carve reads like train, which says nothing about a held-out one.
+
+*What mattered came from a pre-registered addendum (A1, written after that read and before its numbers; the val side
+MEASURED, the train side ESTIMATED).* The harness's 62-set val pool was not representative (one 5-set log contributes
+1.467 of the pool's 1.356 points while the other 57 sets read −0.121; post-hoc arithmetic), so A1 re-reads the same
+quantity on the **full** RL-val at the unconstrained R0 states, beside the quantity bar S actually reads. Losses are
+against arm A, ×100; a loss above 0.5 is a breach.
+
+| R0, B − A, full RL-val | loss of E_π[TTC], T = 0.1 (the dual's quantity) | loss of the pick's TTC (bar S's quantity) | train-to-val gap G of the dual's quantity |
+|---|---:|---:|---:|
+| u250 | +0.851 [+0.564, +1.151] | +1.233 [+0.625, +1.832] | −0.893 [−2.288, +0.220] |
+| u500 | +0.230 [−0.103, +0.585] | +0.633 [−0.064, +1.346] | −0.989 [−2.259, +0.070] |
+| u1000 | +0.223 [−0.145, +0.620] | +1.000 [+0.300, +1.735] | −0.789 [−2.171, +0.341] |
+
+At u1000 the dual's quantity sits below the bar while the pick's loss is twice the bar (1.000 against 0.5), so a dual
+that reads the first sees no breach of the second. The register states the gap as a ratio ("1.4 to 4.5 times"); we do
+not, because the denominators' intervals span 0 at u500 and u1000 and a ratio with such a denominator is not
+interpretable (the rule that withdrew a ratio in §7.19b). The paired difference is the admissible form, and it is
+separated at one state of three: quantity − pick is −0.777 [−1.320, −0.251] at u1000, with the same sign and an
+interval spanning 0 at u250 (−0.383 [−0.848, +0.104]) and u500 (−0.404 [−0.961, +0.139]). There is **no train-to-val
+excess** on the dual's own quantity: G is negative at all three states (wrong sign for a generalisation-gap story) and
+unresolved, the 30-log train pool being the limiting interval. So the generalisation-gap account is *not demonstrated*
+— not refuted — and the quantity mismatch is the better-supported account of the breach. The same wedge is visible in
+R0d's own training log (RZ-1, registered window), in loss terms (positive = B below A): the dual's quantity reads
+−0.034 (×100, held) while the pick's TTC reads +0.297; post hoc, over the 21 post-ramp 25-update rows, −0.066 (se
+0.032) against +0.265 (se 0.089). Last, the constraint did not visibly shorten the pick's loss: R0d's is +0.767
+[+0.065, +1.487] and the unconstrained R0's +1.000 [+0.300, +1.735], overlapping intervals from two runs without a
+replicate, which is neither an effect nor a null. ⚠️ R0d's own E_π[TTC] on RL-val was not computed (its score dumps
+were not on the dev box), so the wedge is measured at the unconstrained R0 states and in-sample on R0d, not on R0d's
+val side.
+
+*A candidate mechanism, and its provisional test (A2, MEASURED val side; PROVISIONAL).* The policy the constraint
+averages over is a softmax at T = 0.1; the deployed selection is its argmax (T → 0). An expectation over a soft policy
+is a bulk statistic and the pick is an extreme one, the same bulk-versus-extreme gap §3.12 formalises for selection
+under a surrogate cost. A2 sweeps the constraint's temperature and asks which one tracks the pick, as quantity − pick
+(±0.25 is the pre-registered criterion at all three states):
+
+| T | u250 | u500 | u1000 |
+|---|---:|---:|---:|
+| 0.1 (the trainer's) | −0.383 [−0.848, +0.104] | −0.404 [−0.961, +0.139] | −0.777 [−1.320, −0.251] |
+| 0.05 | −0.189 [−0.591, +0.233] | −0.196 [−0.685, +0.276] | −0.488 [−0.958, −0.017] |
+| **0.02** | −0.052 [−0.377, +0.279] | +0.022 [−0.356, +0.383] | −0.225 [−0.614, +0.174] |
+| 0.01 | −0.034 [−0.308, +0.246] | +0.131 [−0.174, +0.428] | −0.120 [−0.441, +0.203] |
+
+T = 0.02 meets the criterion at all three states and T = 0.1 and 0.05 do not at u1000. **It is PROVISIONAL, and by the
+registered rule invalid as written:** control 3 (T = 10⁻⁴ must reproduce the pick to 10⁻⁶) failed — the differences
+read −0.015, +0.026 and −0.017 although 0 picks differ from the argmax — and the JSON's own `outcome` field reads
+INVALID. A post-hoc diagnosis at the u1000 state puts it on near-tie mass (the tolerance, not the machinery: the
+difference is exactly 0.0 at T = 10⁻⁶ and 10⁻¹⁰). The rule was not relaxed after the fact. Every T = 0.02 interval
+spans 0, and the u1000 margin to the 0.25 criterion is thin. **The class, stated as method:** *a constrained arm is
+accepted on one statistic and constrained on another, and the constraint binds the second.* Before an A40 is spent on
+a constrained arm, evaluate the constrained quantity and the accepted quantity on the same banked states of the
+unconstrained arm and require them to agree within the bar; that is exactly what A1 did on CPU, after the arm was
+killed. **Rule Zero:** the refutation here is a waypoint. The next lever is a pick-aligned constraint (the constraint
+term's own temperature near 0.02, fed from a held-out carve because an in-sample feed is blind by construction), which
+needs one trainer flag with a launch-gate entry (0 GPU) and the PI's A40 decision (BACKLOG `SO-PICKCON`).
+
+**(d) A selection rule that re-weights the scorer's own safety heads is inert.** *(MEASURED; T1; P2's full table;
+`RP/raw/2026-10-16-selrule-dac/confirm_out_a8/CONFIRM.json`; one confirm read, rule frozen before the table existed.)*
+SELRULE-DAC asked the cheapest question about the zero tail: let the scorer weigh its own drivable-area head harder
+*at selection*, with no new information and no training. The registered rule V(τ) takes the argmax of the registered
+aggregate over proposals whose own p̂_DAC ≥ τ (falling back to the unmodified rule if none qualifies); τ was fit on
+RL-val with the u400 scorer on the pre-P2 fan, and the confirm is therefore a transfer read (Amendment 1). The fit was
+null: V(0.8) +0.021 [−0.001, +0.067], and the diagnostic shows why: the failures are **confident**: of the 68 picks
+with true DAC = 0 in 3,000 sets, the median p̂_DAC is 0.932 (quartiles 0.891 and 0.977), only 5 sit below 0.8 and 19
+below 0.9, and a veto can move only a pick whose own p̂_DAC is below τ. The confirm (RL-val and navtest logs disjoint,
+intersection 0):
+
+| V(0.8) − B on P2's full table | value |
+|---|---:|
+| PDMS × 100 | +0.0235 [+0.0002, +0.0546] |
+| EP | +0.0103 [−0.0106, +0.0366] |
+| DAC | +0.0329 [+0.0076, +0.0698] |
+| TTC | +0.0000 |
+| picks changed | 11 (PDMS better on 4, worse on 6) |
+| zero-PDMS tokens | 509 → 505 |
+| DAC = 0 picks | 380 → 376 (4 rescued, 0 created) |
+| adverse sub-scores / family components | none / 0 of 21 |
+
+The pre-registered row reads **ADOPT** (lower bound above 0, no adverse sub-score, no adverse family component) and it
+is reported as written. Its magnitude is what it is worth: the oracle O-DAC — the scorer's DAC probability replaced by
+the true DAC bit, the other heads unchanged — gains +3.184 [+2.498, +3.955] (it moves 4,852 picks, so it is not a pure
+zero-tail repair), and +0.0235 is **0.7 %** of that reach; the lower bound sits 0.0002 above zero; τ is borrowed from
+u400 by assumption; and with 11 changed picks a training replicate could easily move it. O-NC gains +0.989 [+0.776,
++1.203] and O-both +4.043 [+3.336, +4.812]. Adopting costs nothing and buys nothing measurable, and whether to deploy
+it is the PI's call. This is the outcome the confident-error finding predicts, and it keeps the zero-tail lever where
+§7.20(g) put it: in the trunk's representation (P6, then P7.1), not in the weighting of heads that are already sure.
+What a better DAC head can add to this rule is bounded above by that O-DAC reach.
+
+**(e) The four families across these reads.** (b) carries all four (above). (d) ran the family instrument on both
+executed-pick seams (0 of 21 longitudinal and lateral components adverse); its TACTICAL row is selection quality,
+random 73.00, actual 88.82 → 88.84, best-of-64 98.23. (c) reads LONGITUDINAL through TTC and EP, TACTICAL as counts
+only (38 lane changes in 3,000 sets against a label base rate of 0.0213; precision 0.842, recall 0.500; no K5 breach;
+no interval), and LATERAL only through the NAVSIM sub-scores DAC and DDC (heading, curvature, yaw-rate and cross-track
+NOT COMPUTED: that tier has no lateral instrument). Distance-keeping is UNAVAILABLE throughout (no lead-agent track in
+the seam). STRATEGIC is **PAUSED** (PI, 2026-09-19, `PI_DECISION_QUEUE` item 25) and independently unavailable in
+NAVSIM: not a pass, not omitted.
+
+**(f) What is next, and what §7.21 does not establish.** The levers, ranked by measured size, not by interest. **(1)
+The ranking pool**, 5.875 of the 9.41 (BACKLOG `SEL-RANK`): no lever in flight targets it. Its 0-GPU first step is to
+attribute the non-zero gap on the full table by sub-score (which of EP, TTC and comfort the oracle's pick wins on) and
+by scorer-head calibration, then pre-register the cheapest arm; ⛔ it must be fit on navtrain held-out sets, never on
+this table, which is the confirmation set of (d). **(2) P6** is unchanged: still the only lever with a non-zero share
+on the near-twin class of §7.20(d), and still untrained, blocked on its twin bank and the A40. **(3) The pick-aligned
+constraint** of (c), blocked on one PI decision (A40 spend) and a 0-GPU trainer flag. R0B is not deployable-safe by
+the registered rule; whether to deploy anything is the PI's call. **What §7.21 does not establish.** (i) The bar is
+not cleared: P2 88.82 and R0B 88.79 against 94.55. (ii) There is no lever-effect claim anywhere: one training seed per
+state and no replicate arm, and the only T1 seed floor is +0.33. (iii) The oracle is a ceiling, and the 62.4 / 37.6
+split is an arithmetic reading of it. (iv) The family screen has low power and its single-arm intervals use a
+different resample count. (v) The proxy wedge is measured at the unconstrained R0 states and in-sample, separated at
+one of three states, and R0d's own val-side E_π[TTC] was never computed. (vi) The temperature result is PROVISIONAL.
+(vii) SELRULE-DAC's τ is a transfer from u400, on 11 changed picks. (viii) The RL-val tier is a selection tier, never
+an endpoint, and no (c) number is T1. (ix) Of the literature, only the CLOVER row of (a) was re-read; the rest of
+LAB-RUN-019 is inadmissible here until each row is. (x) STRATEGIC is paused and distance-keeping unmeasured.
+
+### 7.22 The redesign's first planning read (2026-11-08)
+
+**Tier T0, oracle goal, zero training. This is a world-model diagnostic and never a driving result.** It asks whether the hierarchical latent space of the earlier generation, the (2, 2)-stride M2b models, can be planned in at all: the top-down planner `plan_topdown` (TD3, three levels, §3.14) and a level-1-only planner with a last-state cost (FLAT1) are given the encoded true-future frame as the goal (the oracle named in the pre-registration `PREREG_V8F_PLANTEST.md`) and asked to recover the 12 logged actions of the next 2.4 s. Evidence class MEASURED: `theory/plantest/RESULT_PLANTEST_body.md` and `RESULT_PLANTEST.json` under the dev-box artifact folder (one place only). Estimator on every interval: paired episode-cluster bootstrap over 141 episodes, B = 2,000, seed 0, 95 % percentile; windows n = 1,976. Both training seeds (M2b_s0, M2b_s1) are required by the card. The interval answers "another draw of episodes"; it is blind to training-seed and planner-seed variance, so the planner-seed floor is printed beside. The four controls (planted dynamics recovered at MAE 0.0036 for TD3 and 0.0070 for FLAT1, goal plumbing, bit-repeat, no-leak) pass for both planners, each with a mutation that goes red. The planner with the last-two-state cost failed the first control on the planted world and is reported beside, without a verdict.
+
+**The verdict, as the card committed it.** NO-GAIN for both planners, both training seeds and both families (LONGITUDINAL, LATERAL): the true goal beats a random goal (separated better) and the plan still does not beat holding the first action. HIER-ADDS (TD3 against FLAT1 under the true goal, separated better at both seeds) is NO in both families. TACTICAL was not computed (n = 0: this read has no decision output). STRATEGIC is PAUSED (PI item 25).
+
+| quantity (T0, oracle goal, MAE against the 12 logged actions) | M2b_s0 | M2b_s1 |
+|---|---|---|
+| LONGITUDINAL acceleration, TD3 true goal, m/s^2 | 1.4228 [1.3800, 1.4647] | 1.3355 [1.2882, 1.3823] |
+| LONGITUDINAL acceleration, HOLD (same windows, both rows) | 0.3296 [0.2973, 0.3623] | 0.3296 [0.2973, 0.3623] |
+| TD3 true minus HOLD (separated worse) | +1.0932 [1.0337, 1.1532] | +1.0059 [0.9476, 1.0628] |
+| TD3 true minus random goal (separated better) | -0.2270 [-0.2933, -0.1624] | -0.2056 [-0.2768, -0.1353] |
+| LATERAL yaw rate, TD3 true goal, rad/s | 0.1338 [0.1272, 0.1406] | 0.1422 [0.1361, 0.1483] |
+| LATERAL yaw rate, HOLD | 0.0224 [0.0185, 0.0263] | 0.0224 [0.0185, 0.0263] |
+| HIER-ADDS, LONGITUDINAL, TD3 minus FLAT1 (positive = TD3 worse) | +0.0302 [0.0029, 0.0559] | +0.0371 [0.0091, 0.0636] |
+| HIER-ADDS, LATERAL, TD3 minus FLAT1 | -0.0006 [-0.0048, 0.0036] | +0.0049 [0.0009, 0.0087] |
+
+Read plainly: at both seeds the TD3 acceleration error is about four times the HOLD error (M2b_s0: 1.4228 against 0.3296), and the planner's pull toward the goal is real but small (the true-minus-random gap is 0.2 m/s^2 against a 1.1 m/s^2 shortfall to HOLD). The hierarchy does not help: the three-level planner is not better than the level-1-only planner at any cell, and is separated worse in three of four. The planner-seed floor is small beside these gaps (for example M2b_s0 TD3 longitudinal 0.0066 [0.0010, 0.0126]), so the gaps are not inference noise. Beside the verdict, with no bar: two untrained stacks (seeds 5000 + r) planning on M2b_s0's latents are GOAL-BLIND under the card's rule (TD3 longitudinal, true minus random 0.0001 [-0.0008, 0.0010] and 0.0010 [-0.0015, 0.0044]), which is consistent with the small goal sensitivity above coming from the trained dynamics and not from the solver. The cost-monotonicity statistic of H-JEPA's Table 10 is high at levels 2 and 3 (0.92 and 0.90 at M2b_s0) and low at level 1 (0.26), where the plan is scored.
+
+**The next lever, as the card committed it.** NO-GAIN names the planner's cost and solver first (the cost space, the prior and the action bounds), then the world model. The levers the design adds for that are in §3.14: the goal at 12 s (`T3 = 4`) against 6 s, the tactical vocabulary as level-2 seeds, constraints in the cost through differentiable kinematics, and the level-1-only stitch as a compared arm. Every outcome of this read makes it a gate of the new ladder, run on the (3, 5)-stride models. **What this read does not establish.** (i) It is T0 with the true-future goal; a predicted goal can only do worse. (ii) It reads the earlier (2, 2)-stride models, not the band-trained ones; no band read exists. (iii) TACTICAL and STRATEGIC are not measured. (iv) The 12 logged actions are the reference, so a plan that differs from them but drives well is scored as an error; the beside rows (speed error 2.0832 [1.9482, 2.2206] m/s at 2.4 s for TD3 on M2b_s0 against 0.6796 for HOLD) say the same direction. (v) It is not a claim that hierarchical planning cannot work; it is a claim that this planner on these latents does not beat holding the action.
+
+### 7.23 Planner gates, the readout ceiling and the band-trained ladder (2026-11-09)
+
+**Tier T0 throughout. These are world-model and planner diagnostics, never driving results.** Evidence class MEASURED; records under `raw/2026-11-09-v8f-plantest3/` and `raw/2026-11-09-v8f-ladder-read/`, with register rows H-V8F-PLANTEST2, -DECN, -FULLN, -PT3N, -PT3M, -PT3F and -LADDER. TACTICAL has n = 0 (no decision output in these reads); STRATEGIC is PAUSED (PI item 25).
+
+**The planner on the M2b latents.** Each gate gives the planner the encoded true future as its goal and scores the 12 logged actions of the next 2.4 s. Estimator: paired episode-cluster bootstrap over 71 SCORE episodes (994 windows), B = 2,000; both training seeds. HOLD (the first logged action held) reads 0.3348 m/s^2 and 0.0256 rad/s.
+
+| gate | what changed | outcome, both seeds | numbers (G-TRUE, s0 / s1) |
+|---|---|---|---|
+| PLANTEST2 | solver seeded at HOLD, penalty on leaving it | NO-GAIN | FLAT1 acceleration MAE 1.0430 / 1.0033 m/s^2 |
+| PT3N | decoded end-point cost, reader fitted on 1,053 episodes | NO-GAIN | 0.3308 to 0.3396 m/s^2 |
+| PT3M | nonlinear four-frame reader in the cost | NO-GAIN | G-TRUE minus HOLD +0.0065 to +0.0287 m/s^2 |
+
+The true goal beats a random goal on every row of PT3N and PT3M, so the goal does reach the plan. The plan still does not beat HOLD.
+
+**Why: the ceiling experiment.** ORACLE-END builds the 2.4 s plan from the true end speed and yaw rate alone (constant acceleration, yaw ramp). It beats HOLD: 0.2161 against 0.3348 m/s^2, difference -0.1187 [-0.1364, -0.1014], and 0.0142 against 0.0256 rad/s, -0.0114 [-0.0151, -0.0082], ADE at 2.4 s 0.2066 m against 0.2284 m. So an end-point goal holds enough information, about 35 % of the longitudinal and 45 % of the lateral error. READ-END takes the same two values from the encoded true future with readers fitted on all 4,565 trained clips, and it does not beat HOLD: longitudinal 1.005 / 1.099 m/s^2, +0.6701 [+0.5138, +0.8426] and +0.7640 [+0.6121, +0.9311] worse; lateral 0.0228 / 0.0228 rad/s, -0.0028 [-0.0061, +0.0002] and -0.0028 [-0.0058, +0.0001], not separated. The mean speed read error at 2.4 s is 2.30 / 2.57 m/s. The latent carries speed at held-out R^2 up to 0.778 / 0.702 (best of four readers, optimistic), and that is not enough: the planning cost needs a far smaller absolute error than an R^2 bar suggests.
+
+**The band-trained ladder.** Nine world-model runs, adapter and planner frozen at M2b. C0 keeps strides (2, 2) and one-step training; S35 moves to strides (3, 5), so levels step 0.2, 0.6 and 3.0 s; R35 adds k-step training (k = 10, 10, 6); R35H adds multi-rate history at each level's own step; R35b repeats R35 at seed 0. The quantity is skill against copying the present latent at each level's band end, `1 - sum|pred - target|^2 / sum|copy - target|^2`, on 141 eval clips, by a two-part rule (episode-cluster bootstrap lower bound above 0, B = 2,000, and point above the 97.5th percentile of 199 within-clip derangements), seeds 0 / 1.
+
+| arm | L1 at 2 s | L2 at 6 s | L3 at 12 s |
+|---|---|---|---|
+| C0 | 0.064 / 0.080 | 0.278 / 0.267 | 0.359 / 0.401 |
+| S35 | 0.069 / 0.096 | 0.294 / 0.339 | 0.472 / 0.480 |
+| R35 | 0.178 / 0.190 | 0.419 / 0.430 | 0.535 / 0.541 |
+| R35H | 0.259 / 0.267 | 0.546 / 0.555 | 0.672 / 0.687 |
+
+Every arm reads BAND-MET under the card. Copy-Last is a lenient bar: a predictor that only shrinks toward the mean scores 0.05 to 0.08 at L1, 0.14 to 0.20 at L2 and 0.18 to 0.26 at L3 with no knowledge of the future. R35 and R35H beat that no-action baseline and a ridge baseline at every level at both seeds; C0 and S35 at L1 do not clearly do so (a post-hoc read, decides nothing).
+
+**A replicate that measured determinism.** R35b reproduced R35_s0 bit for bit: 276 of 276 model tensors and 399 of 399 optimizer tensors are identical, while R35_s0 and R35_s1 differ on 252 of 276. Training on cached latents at a fixed seed is deterministic on this machine, so the same-seed floor is exactly 0, and the card's lever rule passes every difference. This agrees with what the paired bootstrap cannot see (§7, `H-ESTIM-SEED-1`): only a changed seed can estimate training variance. Against the largest seed-to-seed spread over the four arms (0.027, 0.045 and 0.042 at L1, L2 and L3; two seeds, so a rough floor, and post-hoc), k-step training adds +0.091 to +0.125 at L1 and L2 and +0.061 to +0.063 at L3, multi-rate history adds +0.077 to +0.146, both above the spread at every level; the step change alone is inside it at L1.
+
+**What this section does not establish.** (i) Nothing here is driving performance. (ii) L1 gains need three context states: with one state, the form every planner gate above used, no arm beats Copy-Last at 2 s (-0.059 to -0.012). (iii) The lateral response of the level-1 prediction to actions stays near zero on every arm (gain -0.074 to -0.010, 1.0 being correct), so the operative level is the open defect. (iv) No planner has yet been read on these models; those gates are running. (v) The prediction gain is in latent space, and whether it reaches planning is exactly what is untested.
+
+### 7.24 The band loss on the 6 s plan, and the levers behind the adopted base (2026-11-10)
+
+**Tier T1-kin throughout** (self-action open loop: m = 10, causal bucket, dead-reckoned nav, logged scene; the lead follows its logged future). **Never a closed-scene driving result.** Evidence class MEASURED; records under `raw/2026-11-09-v8f-otband/read/` (`RESULT_FULL.md`, `out/READ_FULL.json`, `out/FLOOR_TABLE.json`, `out/TOPK_FULL.json`, `out/HEADS_FULL.json`, `out/DAG_FLOOR.json`), register row H-V8F-OTBAND-1, card `PREREG_V8F_OTBAND.md` (frozen, prefix sha256 `fd81c66e`). Estimator: paired episode-cluster bootstrap over 141 episodes (2,399 windows), B = 2,000; it answers "would another draw of episodes say this?" only. Training-run variance is read from a replicate: the same flags and init at training seed 2, whose difference from the arm gives each row's floor (read at seed 0, applied to both seeds). The planner is deterministic (repeated inference differs by 0.0 m), so inference variance does not arise. STRATEGIC is PAUSED (PI item 25).
+
+**The question.** §3.14 states the cascade: the operative layer's loss puts no gradient on the tactical layer (`--detach-upper`), and the band loss weights the operative knots (0.2-2.0 s) and the tactical knots (2.2-6.0 s) separately (`--w-op 1/3 --w-tac-traj 2/3`). Five runs on box 2 from M2b, with S, the adapter and the conditioning embeddings frozen, 9,582 steps on logged rows only: OB-CTL (the 30-knot term) and OB-BAND at seeds 0 and 1, and the replicate OB-BAND_rep.
+
+**Finding 1: the band loss improves the short-horizon plan, and the gain reproduces.** OB-BAND minus OB-CTL, operative band, paired:
+
+| row | seed 0 | seed 1 | replicate floor |
+|---|---|---|---|
+| ADE (m) | -0.0168 [-0.0275, -0.0098] | -0.0149 [-0.0202, -0.0105] | 0.0074 |
+| FDE at 2 s (m) | -0.0393 [-0.0678, -0.0214] | -0.0267 [-0.0420, -0.0140] | 0.0008 |
+| along-track MAE (m) | -0.0173 [-0.0283, -0.0102] | -0.0157 [-0.0210, -0.0112] | 0.0088 |
+| speed MAE (m/s) | -0.0184 [-0.0362, -0.0056] | -0.0258 [-0.0335, -0.0184] | 0.0390 |
+| heading MAE (deg) | +0.0311 [+0.0059, +0.0620] | +0.0313 [+0.0003, +0.0681] | 0.0176 |
+| TAC-LAT accuracy, 0-6 s plan | +0.0229 [+0.0017, +0.0455] | +0.0371 [+0.0141, +0.0630] | not computed |
+
+ADE, FDE and along-track are separated at both seeds and exceed the replicate floor at both; speed is separated at both seeds and within its floor; the price is 0.03 deg of operative heading. OB-CTL's operative ADE is 0.2571 / 0.2573 m, so the gain is about 6 %. On the tactical band no row moves at both seeds (ADE -0.0235 [-0.1147, +0.0672] / -0.0600 [-0.1539, +0.0306]), and the reason is visible in the replicate: two runs of the same recipe differ on tactical ADE by -0.2869 [-0.4073, -0.1665] m, five to twelve times the band loss's tactical effect (0.287 against 0.060 and 0.024). T's own decisions do not separate between the arms either, while the replicate pair itself differs by +0.0866 [+0.0413, +0.1255] in lateral macro-F1. Under the card as written the outcome is BAND-COST at both seeds: its tactical bars ask for upper bounds at or below zero, and none reached zero; no tactical row was separated on the worse side.
+
+**Finding 2: which part of the adopted base does which work.** DAG-OACC, the adopted v8F base (register rows H-V8F-DAGGER-1 and H-V8F-DAG-OACC-1: M2b fine-tuned on a mix of logged rows and rows from the model's own rollouts, with an acceleration-matching term added), differs from M2b in three ways at once. The banked ladder separates them, all four arms from M2b and re-dumped here in one environment: DAG0 (the fine-tune schedule alone: 3,000 steps, lr 1e-4, p_gt 0.2, the whole model trainable, logged rows), DAG (plus DAgger rows at p = 0.1) and DAG-OACC (plus the acceleration-matching term, weight 49.6969). Each step is paired, seed 0 / seed 1; bold means separated at both seeds and above the band recipe's replicate floor at both:
+
+| row | schedule (DAG0 - M2b) | DAgger rows (DAG - DAG0) | acceleration term (DAG-OACC - DAG) |
+|---|---|---|---|
+| tactical ADE (m) | -0.187 / +0.032 | **-0.819 / -0.615** | -0.022 / -0.165 |
+| tactical heading MAE (deg) | -0.49 / +0.31 | **-4.63 / -2.57** | +0.97 / -0.74 |
+| tactical cross-track MAE (m) | -0.02 / -0.11 | **-0.44 / -0.46** | +0.03 / -0.07 |
+| TAC-LAT accuracy, 0-6 s plan | +0.011 / -0.045 | +0.100 / +0.192 (separated at both) | -0.002 / +0.012 |
+| operative ADE (m) | -0.022 / +0.006 | +0.007 / +0.016 | **-0.062 / -0.079** |
+| operative acceleration MAE (m/s^2) | -0.37 / +0.19 | +0.01 / +0.09 | **-0.97 / -1.14** |
+| tactical acceleration MAE (m/s^2) | -0.17 / -0.05 | -0.05 / +0.64 | **-2.01 / -2.56** |
+
+The DAgger rows carry the tactical band: position, heading, cross-track and the lateral manoeuvre the plan executes. The acceleration term carries the operative band and the acceleration rows of both bands. The band loss's operative ADE gain of Finding 1 is a fifth to a little over a quarter of the acceleration term's. One interaction is visible in distance keeping: of 743 windows with a lead, the tactical band breaks the human's minimum headway or time gap in 20 / 10 for DAG0, 43 / 28 for DAG and 23 / 22 for DAG-OACC, so the DAgger rows raise those violations and the acceleration term lowers them again.
+
+DAG-OACC's own run-to-run spread bounds this attribution. The DAG-ORC card's replicate (DAG-OACC's argv at training seed 10 / 11, trained with a later trainer file whose added levers read back off, so seed plus trainer version) differs from DAG-OACC by tactical ADE +0.6021 [+0.4134, +0.7978] m and tactical yaw-rate MAE +24.45 deg/s at init s0, and by +0.0215 [-0.0756, +0.1188] m at init s1. The DAgger step exceeds that pair at both inits (0.819 against 0.602; 0.615 against 0.022). The pair also says that at init s0 a second training run of the adopted recipe can plan the 2-6 s band much worse laterally.
+
+**Trajectories, plural (R-OUT, §3.14).** Decoding O once per top-K tactical manoeuvre code (K = 3, the one-shot plan of each window's first tick): the best of the three plans beats the top-1 plan on tactical ADE by 0.35 to 0.39 m in all five runs (OB-CTL s0 -0.3645 [-0.3983, -0.3326]), and the logged manoeuvre pair is among T's top three in 0.895 to 0.901 of 2,026 labelled windows against 0.572 to 0.585 for its first choice. The best-of-3 is an oracle pick and no deployable plan; it is the measured headroom of a trained selection over T's codes, and it fired the card's committed top-K trigger.
+
+**Controls.** The commit tree reproduces the baseline's own tool tree bit for bit at the same CPU thread count (all 141 episode dumps and the tick file); against the banked DAG-OACC dump, made at an unrecorded thread count, the rolled track differs by at most 3.9 mm, so every compared pair is dumped in one environment. Window identity and model-free arrays are asserted per load, checkpoint sha256 is checked against each bank manifest, and the T-head identity control reads 0 [0, 0].
+
+**What this section does not establish.** (i) Nothing here is closed-scene driving. (ii) Each floor is one replicate pair, one draw of training variance; the DAG-ORC pair also carries a trainer change. (iii) The ladder attribution is post-hoc, beside the card, from one run per seed and step. (iv) Best-of-3 is an oracle bound. (v) The band loss has not been read on the DAgger base: that is the next card (DAG-OACC's recipe with `--detach-upper`, with and without the band loss, against a same-commit seed-only replicate). **Stated as method:** on this rig the tactical band's run-to-run spread (0.29 m on the band recipe, up to 0.60 m on DAG-OACC's) is larger than most lever effects, so a separated paired interval from one run per arm is necessary and not sufficient (H-ESTIM-SEED-1), and a lever is read as an effect only above a same-recipe replicate.
 
 ## 8. Discussion: self-supervision, the two-stage question, and what the honest results demand
 
@@ -1564,7 +3860,31 @@ of two escapes — the other is never to converge the stages separately in the f
 two wins on out-of-distribution transfer is the open question, and the OOD panel of §7.4 is its
 pre-registered arbiter.
 
+**Where the two-stage question stands after v1.0's measurements, and what actually decided it.**
+Three results this round move the argument, and the honest accounting is that **the one we
+expected to decide it did not**. (a) **The erosion account is dead in range.** We had a standing
+hypothesis that the planner gradient was overwriting physical state — the natural mechanistic
+story for why a jointly-trained trunk has a muffled action interface and no lead variable. The
+dose–response curve says the opposite: physical decodability *rises* monotonically with planner
+exposure and the latent's effective rank *expands* (§7.17). Anyone building a staged pipeline
+because "co-training erodes the representation" is, on this evidence, building it for a reason
+that is not there — within 0.5 ≤ λ_plan ≤ 1.0, which is the range we can speak about. (b) **What
+does decide it is composition, not erosion.** Repairing the trunk improved its physics and
+simultaneously destroyed every consumer trained on the old features (frozen selector
+0.7933 → 4.4159 m, §7.16). That is a *compositional* property of any pipeline whose stages are
+trained against each other's outputs, and it is precisely what a staged ladder makes explicit and
+gateable: each consumer is trained on the trunk it consumes, and the frozen battery says whether
+the trunk moved. It also reframes LP-FT: the literature's "fine-tuning distorts features" is a
+statement about the *representation*; ours is a statement about the *consumers*, and the second
+bites even when the first does not. (c) **A transient is not damage.** The predicted-latent
+readouts dip hard at 10 k and recover by 20 k (§7.17). A programme that had probed once, shortly
+after coupling, would have concluded erosion and restarted. That is a general hazard for anyone
+evaluating an intervention at a single post-intervention checkpoint, and it is an argument for
+dose–response curves as a standard instrument rather than a luxury.
+
 ## 9. v3 design: hierarchical goal-vocabulary planning over the world model
+
+*Scope, v1.6: this section records the v3 design of 2026-07-19 and its gates. The bands in force are operative up to 2 s, tactical up to 6 s and strategic 6 to 30 s (§3.14); where a table below reads a strategic ADE over 8 to 30 s or a 0.8 s tactical reach, it records the design as it stood.*
 
 *Status: design contribution (2026-07-19), measurement-motivated; implementation staged (P0–P5), first
 evidence gate = the training-free planner-over-v1 experiment (§9.4). **Updated 2026-07-25:** the design
@@ -1626,13 +3946,59 @@ confounded the frozen encoder with supervised-regression heads).
 G1 counterfactual plan-ranking: the chosen plan must beat non-chosen options on realized outcome,
 CI-separated (the direct test of "evaluating alternatives" — replaces head-consistency as the H26
 instrument). G2 goal-causality: swapping a goal token must change the conditioned output (kills echo
-pathologies). G3 |v̂−VTARGET| tracking. G4 closed-loop drift below the 1.69 m head baseline. G5
-open-loop non-regression vs 0.452 m. The staging de-risks the thesis cheaply: the planner (cost+CEM)
+pathologies). G3 |v̂−VTARGET| tracking. G4 closed-loop drift below the **1.7318 m** head baseline. G5
+open-loop non-regression vs **0.4271 m**. The staging de-risks the thesis cheaply: the planner (cost+CEM)
 runs over the **already-trained v1 world model** with offline-minted VTARGET labels — if planning over
-frozen v1 already beats the 3.38 m tactical head and the 1.69 m closed-loop drift, the architecture is
-validated before any v3 training.
+frozen v1 already beats the **3.3839 m** tactical head and the **1.7318 m** closed-loop drift, the
+architecture is validated before any v3 training.
+
+> ⛔ **GATE BARS CORRECTED 2026-08-17 — these were pre-registered against BANNED-ESTIMATOR numbers.**
+> G4's bar read **1.69 m** and G5's **0.452 m**; both were legacy `heldout` split-means
+> (`overlapping_holdout_se`), and the 3.38 m head figure likewise. Decision-grade `full_set` values with
+> episode-cluster bootstrap intervals: head baseline **1.7318** [1.5707, 1.9070], open-loop
+> **0.4271** [0.3675, 0.4871], tactical head **3.3839** [2.8336, 3.9722]. ⚠️ **This matters more for a
+> gate than for a result: the old G4 bar was 2.69 % LOWER than the honest one, i.e. it held every future
+> arm to a bar that is HARDER than the measurement justifies** — a pre-registered gate inheriting a
+> defective statistic. *(Superseded, kept visible: 1.69 · 0.452 · 3.38.)* MEASURED —
+> `…/incoming/2026-07-26-closedloop-artifact-rerun/closedloop_flagship-30k.CORRECTED.json` and
+> `…/incoming/2026-08-16-jack-in-gates/raw/g1_g4_both_estimators.json`; see `MODEL_REGISTRY.md` §5.
+
+> ⭐ **RE-AUDITED 2026-08-18 — every gate bar this paper carries was re-checked against the banned
+> estimator, and the result is reported in both directions.** *(MEASURED,
+> `…/incoming/2026-08-18-planner-beats-cv-redrive/raw/planner_beats_cv_banked_analysis.json`;
+> instrument `taniteval/tests/test_no_jack_in_gates.py`, an AST walk rather than a regex — a regex
+> raised ≥ 176 false positives, every one on documentation *declaring* the estimator banned.)*
+>
+> * ✅ **G4 1.7318 · G5 0.4271 · tactical head 3.3839 independently reproduce** from the banked
+>   per-window dumps in a run that had no other contact with the 08-16 audit, matching it to 4 dp;
+>   the reproduction gate for that run had the model-free `cv` arm bit-exact first.
+> * ✅ **The three trivial open-loop floors are `full_set` means by construction** (`bench.py:511`,
+>   `:558`) and were never touched by the correction — best-of-3 0.5005, CTRV 0.523, ego-status
+>   0.5735 (§7.2).
+> * ✅ **Deciding call sites on the banned estimator: 0** across an unbounded repo walk (4,696 files;
+>   37 call sites remain, all REPORTS-only).
+> * ⭐ **One more inherited bar found, and the audit is only sharp because the derivation was written
+>   down.** §7.6's two v4 bars are pre-registered in `V4_FLAGSHIP_DESIGN.md` §17 **with their
+>   derivations stated rather than hidden**, and the two come out differently:
+>   * **`ade_0_2s ≤ 0.60` is CLEAN.** It is anchored *"strictly below hold-v0 0.7876 and CV 0.8377 …
+>     and above v1's 30 k **full-set 0.4271**"* — the honest statistic, not the split-mean.
+>   * ⚠️ **`wm_canary_ade_2s ≤ 0.55` INHERITS THE DEFECT.** Its derivation is *"anchored on MEASURED
+>     values: v1's canary **0.452** … 0.55 is +0.10 on the baseline"* — and **0.452 is the legacy
+>     `heldout` split-mean of exactly the quantity whose `full_set` value is 0.4271.** Applying the
+>     bar's own stated rule to the honest baseline gives **0.53**, so the shipped bar is ~3.8 %
+>     **looser** than its derivation intends. ⛔ **No verdict moves:** v4.1's 0.4599 passes against
+>     either bar, and v4.2's 0.7222, v4.2b's 0.697 and the v4 30 k gate's 1.1409 fail by ≥ 1.3–2.2×.
+>
+>   ⇒ **The transferable point is that this was auditable at all.** The 0.60 bar and the 0.55 bar are
+>   adjacent lines in the same pre-registration; one is clean and one is not, and the *only* reason
+>   either can be checked is that both recorded what they were computed from. A threshold whose
+>   provenance is unwritten cannot be audited for a defect it may have inherited — so every gate bar
+>   minted from here carries its source artifact **and** its estimator, and the §7.6 numbers are left
+>   standing with this note beside them rather than silently restated.
 
 ## 10. Roadmap
+
+*Scope, v1.6: the roadmap below is the v1.5 ordering. The v8F redesign adds the work of §3.14 (band-split world model, band labels and HF release, strategic heads, the top-down planner with its controls); its first read is §7.22. The ≤ 300 M envelope quoted in item 11 below is the v1 invariant; v8F is budgeted at most 800 M (PI, 2026-10-17).*
 
 The standing programme is unchanged: the full gate ladder; closed-loop evaluation for D4–D6 including
 opponent-derived weak-spot scenarios (a scenario database built from documented competitor failures,
@@ -1667,17 +4033,2423 @@ the targeted longitudinal fix (§7.5). The v0.6 round re-orders what comes first
 6. **Retire the deprecated interval estimator from the historical tables** and re-publish §7.1–§7.5's
    widths under the episode-cluster bootstrap (§5), so the paper carries one estimator throughout.
 
+**The v0.9 round re-orders again; the near-term ladder is now (in priority order):**
+
+7. **Close the v5.8f repair arc and mint its first quotable rows.** ~~W7-FULL~~ **done — it
+   failed, with a mechanism (§7.16), and the release arm is consequently the FROZEN-trunk
+   assembly at 0.4815 m [0.3928, 0.5771].** What remains for a release row: the **four families
+   + episode-cluster CIs on the banked windows and the T1 (action-closed-loop) rows** — the row
+   exists only when both do, and no capability claim is made from T0 (§5.4). Add to it the two
+   selection rules the winner's-curse formalism prescribes (§3.12), **pre-registered before use
+   and measured on a fresh grid**: enabling W7's dormant anti-degeneracy progress term
+   (`--w-prog`, at weight 0.0 in every run to date), and replacing argmin with a **top-m
+   aggregate** or a **monotone cost recalibration** whose success criterion is a rise in
+   lower-tail dependence λ_L (or equivalently a fall in the argmin's error-rank from 132/256),
+   not a fall in ADE alone.
+8. **The v6 staged-training direction, decided by measurement, not fashion.** The staged ladder
+   is now the programme's main line, and its justification is explicitly *not* the erosion
+   hypothesis (rejected in range, §7.17) but (a) the field's convergent recipe and (b) the
+   measured **consumer-invalidation** result: a repaired trunk breaks every consumer trained on
+   its old features (§7.16), so consumers must be trained **on the trunk they consume**.
+
+   | stage | what trains | what is frozen | gate before the next stage begins |
+   |---|---|---|---|
+   | **S-W** (world) | encoder + operative predictor, WM-only, λ_plan ≡ 0, planner absent | — | **P1** retention ≥ 0.85× R²(z) at k = 10 per target · **P3** sign ≥ 0.95 both channels **and** gain median ∈ [0.5, 2.0] **without post-training** · **P6** action subspace ≤ 32 dims (reported: P2, P5, P8, O6 spectrum) |
+   | **S-T** (tactical) | tactical layer + goal head + selector, on the frozen S-W trunk | trunk | TACTICAL family · `sel_gap` ≤ 0.5× the fan oracle **at T1** · confusion improves on the E4.1 strata (reported: P7 per stratum, LATERAL, X2 seam) |
+   | **S-S** (strategic) | strategic layer + g_str goal head | trunk + tactical | **STRATEGIC family computable at all** (measured vs today's `n/a`) · ADE(8–30 s) beats CV/corridor at T1 |
+   | **S-J** (optional) | brief joint polish, **isolation still on** | nothing | zero live forbidden edges (X3 autograd probe) · the frozen battery **FLAT** across the joint phase |
+
+   The stage-0 measures are the already-gated parts promoted from retrofit to design: **O1** =
+   stage-A's response-form `L_ctrl` **from step 0** rather than as a post-hoc repair (§3.9);
+   **O2** a near-field distance-weighted latent loss, *time*-scaled not metre-scaled (a fixed
+   40 m band cannot cover 6 s — 180 m at 30 m/s); **O3** contiguous masked spatial-latent
+   prediction (scattered per-cell dropout is trivially inpainted and teaches nothing about
+   permanence); **O4** interaction-weighted sampling from **actions only** (|jerk|, |decel|,
+   steering reversals — label-free, and it *reweights the draw, never removes a window*, so
+   parity holds and α = 0 reproduces uniform exactly); **O5** rollout consistency at **every**
+   step, not endpoint-only; **O6** per-layer SIGReg with the spectrum monitor of §3.13 as a
+   standing training-time gate. The emission head is W4's unicycle parameterisation, feasible by
+   construction, scaled k = 20 → **60** for the 6 s horizon.
+9. **The vocabulary and labeling pipeline, which is now a PRECURSOR to v6 rather than a
+   successor to the release row.** v6's strategic stage cannot be gated at all until the
+   STRATEGIC family is computable (§5.5), and that requires the label stream to exist *before*
+   S-S trains: **PH0** (three VLM arms — Qwen3.5-9B / 27B-FP8 / Gemma-4-31B-QAT — on 50
+   stratified clips, gates G1 sign-OCR ≥ 0.9 and G2 schema ≥ 0.9 bound in advance, plus an
+   optional Engine-C/SAM column decided on measured mask-vs-join agreement), then **PH1** (the
+   full **4,729**-clip run — the delivered A2 population, MEASURED, `MODEL_REGISTRY.md` §11.1, not
+   the card's 4,800 — spend decided from PH0's measured s/clip), then **PH2** (the g_str
+   supervision stream, the nuisance/domain strata for P2, and domain-stratified four-family
+   evals). Every semantic claim any engine emits must carry its **image-space grounding**
+   (bounding box, and a mask/contour reference where available, with a frame index); ungrounded
+   claims are `disputed` by default. The Alpamayo-2-Super meta-action distribution (**4,729
+   clips** — MEASURED, `MODEL_REGISTRY.md` §11.1, **not** the card's 4,800) supplies the empirical
+   phrase distribution the token set must cover, and **vocabulary coverage is measured**, with
+   unmappable phrases logged rather than silently dropped. ⛔ **Added 2026-08-18: 201 of those 4,729
+   clips are already inside the parity TRAIN corpus** (§7.19e), so this pipeline's output is fine as a
+   *label* stream and **disqualifying as an evaluation split** unless the banked 201-id exclusion list
+   is applied where the split is defined.
+10. ⛔ **The label-free lever program LF0–LF4 — RE-ORDERED 2026-08-18, because LF0 HAS BEEN EXECUTED
+   AND RETURNED NEGATIVE.** LF0 was *"locate first: probe the pre-pool spatial tokens, ~0.5 GPU-h,
+   decides whether the defect is routing or learning"*, and its rationale was the PUBLISHED DINO-WM
+   line that pooling is where geometry goes to die. ⭐ **E-R1-0's 1:1 arm *is* that pre-pool probe**,
+   and it returned **|Δr²| ≤ 0.0002 with the CI containing zero on all five seeds** (§7.19a). ⇒ **the
+   defect is LEARNING, not ROUTING; the survey's RC1 (pooling bottleneck) is measured FALSE on our
+   stack; and LF0 as a diagnostic is SPENT — it need not be run.** ⭐ **That is a saving, not a
+   loss:** its budget moves to item 13, the component the evidence actually indicts. ⚠️ **Do not read
+   "RC1 is dead" as "the RC list is dead"** — the other three root-cause hypotheses are **untouched**
+   by this measurement and stay open: **RC2** (the objective never needs it — lead distance is a
+   rare-event variable in a free-flow-dominated corpus, so the risk can be minimised while ignoring
+   it), **RC3** (no spatial masking pressure), **RC4** (at a 2 s horizon lead distance barely changes
+   in free flow). LF1–LF4 therefore stand in cost order — LF1 interaction-weighted sampling, LF2
+   masked-latent prediction, LF3 dense near-field weighting, LF4 longer-horizon targets — each still
+   gated on the *same frozen* P1 lead battery, and each now understood as a test of RC2/RC3/RC4 rather
+   than of RC1. Labels stay probes and strata, never trunk losses (§3.10).
+11. **The scaling ladder S1–S4** (`PREREG_SCALING_LADDER.md`): S1 data volume ({1×, 3×, 10×} the
+   13 h canonical corpus — the programme currently consumes < 1 % of PhysicalAI-AV's ~1,701 h;
+   the "build the 30× corpus" decision binds to the measured 1×→10× T1 slope, with the
+   learning-curve window/R² rules applying to data curves too, and additive supersets only so
+   parity is never re-selected); S2 distribution at matched hours (tail metrics per family, not
+   means); S3 resolution/context; S4 encoder capacity within the binding **sub-300 M envelope**
+   — "dominance of 4-brain TanitAD" is defined as beating bigger published baselines at ≤ 300 M
+   total, and needs curves, not points. S1 runs only after the v5.8f release row exists as the
+   fixed yardstick. ⛔ **Constraint added 2026-08-18: any S1/S2 arm that draws on the Alpamayo
+   augmentation must apply the 201-clip exclusion list at the point the eval split is DEFINED** —
+   201 of its clips are already inside the parity training selection, i.e. 78.21 % of the 257 buildable clips (4.3 % of the 4,729-record catalogue; §7.19e, corrected in v1.5.1). The additive-superset
+   rule protects *training* parity; it does not protect an evaluation split, and this is the one that
+   was assumed rather than computed.
+12. **Complete the physics battery.** P8 attempt-2, P4 permanence and I4a **have landed**
+   (§7.18); what remains is the **P4 diffuseness control** (without which occluded ≥ visible is
+   consistent with permanence but does not prove it), **P2 nuisance non-retention** — which
+   *fails at every milestone* of the H-COTRAIN curve (§7.17) and is the battery's one
+   unaddressed standing defect — **P9** probe-gradient saliency, **I4b/I4c** (the occluded-split
+   stratification and occlusion-stress windows, both ~0 extra GPU off the banked runs), and the
+   **30 k spectrum row** that would let the SIGReg retention gate be quoted at its
+   pre-registered endpoint rather than at 20 k (§3.13).
+13. ⭐ **ENCODER experiments now outrank both the pooling ladder and the target-placement ladder, on
+   evidence rather than on preference** (§7.19a–b). E-R1-1 is dropped — the 2 × 2's *placement* axis is
+   measured inert — and the *target* axis is what survives of that line; ahead of both sit two arms
+   aimed at the component the evidence indicts: **(i)** a **frozen-external-encoder readout arm**, the
+   cheap and fully specified control, since a frozen general-purpose encoder already reads `lead_gap`
+   at r² 0.45 through *our own deployed pool* on *our own frames*; and **(ii)** a **token-distillation
+   auxiliary loss** from that encoder. Both are cheaper than the pooling ladder they replace.
+   ⚠️ **A mechanistic caveat that must be pre-registered before either runs:** if linear readability is
+   already lost by step 9,250 (§7.19b), a distillation term **warm-started late repairs after the fact
+   instead of preventing** — so a failure of a short warm-started arm is **not** evidence against
+   distillation from step 0, and the pre-registration must bind that in advance rather than after the
+   result. ⏳ **A human must accept the DINOv3 licence** for the stronger teacher (gated `manual`; our
+   token gets 403 at three probes) — no mirror was used and none should be. ⭐ **And one monitor is
+   free and should ship first: token-channel effective rank**, logged per step beside the existing
+   `z_op` spectrum, because the trained token field is rank-1 (97.6 % of variance in one direction)
+   and the current monitor demonstrably does not see it.
+14. ⛔ **Re-measure the whole §7.19a–b block at step 30,000.** Every number in it is an **early read at
+   37.5 %** of the S-W run, on a 130-clip probe pool rather than the validation split. The direction is
+   supported by an independent step-2,000 → 9,000 decline, but the primary read is the endpoint and no
+   claim here is final until it exists.
+
+### 10.1 Open decisions this paper cannot close (they are the PI's, and they are costed)
+
+These are stated with their measured or estimated inputs so the decision is made against
+numbers, not against a narrative. None of them is an experiment we can run around.
+
+1. **S-W's cost is the ladder's decision.** **ESTIMATED 175–290 A40-hours** for 30 k steps
+   (7–12 A40-days), against a full ladder of **≈ 220–370 A40-hours** (S-T 17–28, S-S 11–20,
+   S-J 18–29). The estimate is anchored on two MEASURED baselines — flagship v1
+   `flagship4b-speedjerk-30k` at **6.374 s/step** (`wallclock_s` 191,206.2 for 30 k,
+   `MODEL_REGISTRY §1.2`) and **`flagship-v4-fromscratch`** at **7.085 s/step** (`wallclock_s`
+   212,544.6 = 59.04 h, `MODEL_REGISTRY §1.5.5`) — inflated because S-W encodes 26 frames per
+   sample (window 6 + 20 futures, in one batched pass) and rolls the 60.3 M predictor ~80 times
+   per sample. ⚠️ *Attribution corrected at v1.0: this 59.04 h basis was carried in the design
+   note as "v4.2". The registry says it belongs to `flagship-v4-fromscratch` (§1.5.5);
+   `flagship-v4.2-30k` (§1.5.3) is a different arm, killed at ~step 5 k, and has no 30 k cost.
+   The registry wins; the estimate itself is unaffected because the s/step basis is the same two
+   measured runs.* It is an **ESTIMATE and must not be spent as if it were measured** — and this
+   programme has the receipt: the same §1.5.5 row's superseded estimate of "~53 h" was **~11 %
+   low**, understating the real spend by **≈ 2.5 GPU-days**. The honest move is to launch, read
+   the trainer's own already-divided `step_s` at step 500 (the divisor is named in
+   `step_s_note` precisely so nobody re-derives the false "430 s/step" alarm from an accumulated
+   counter), and re-cost before committing the ladder.
+2. **The 6 s horizon costs ≈ 43 % of the training windows.** MEASURED: the horizon plan every
+   existing flagship trainer inherits returns `max_horizon = 20` (2 s of future per window), so
+   a v6 trainer that inherited it would make the 6 s spec **structurally untrainable** while
+   failing in a way that looks like a corpus limitation. `max_horizon` is a *windowing*
+   parameter, not a property of the cache, so v6 derives its own — but a 120-frame episode then
+   yields `120 − 6 − 60 = 54` windows instead of `120 − 6 − 20 = 94`. **Parity is untouched**
+   (parity is *episode* selection: `physicalai-train-e438721ae894`, 2,376 episodes, skip-hash
+   `f09e44db`), but the window distribution genuinely changes versus v5f and that belongs in the
+   run row. The decision: accept the change, or rebuild the cache with longer episodes.
+3. **E-ENC — one encoder or one per layer — decided at MATCHED TOTAL PARAMS.** MEASURED at
+   instantiation: shared encoder + per-layer adapters **87.89 M**; per-layer encoders
+   **120.74 M**; the matched-parameter counterpart of the latter is the shared arm at
+   `--pred-dim 960` = **118.11 M**, a **2.2 % residual gap** that is quoted rather than rounded
+   away. Both sit inside the sub-300 M invariant, which the builder refuses to violate before
+   any GPU time is spent. Deciding at matched *per-layer widths* instead would let an arm win on
+   capacity and be read as winning on architecture — the same confound class as comparing a
+   decoder on its marginal. Prior from the field: every frontier system (V-JEPA 2, DINO-WM,
+   Drive-JEPA) uses **one** encoder with downstream consumers, so separate encoders must earn
+   their parameters and a tie goes to the shared arm.
+4. **W5/E-H1 is a REQUIRED precursor, not a queued nicety**: v5.8f must be baselined at 6 s
+   (gate ADE(6 s) ≤ 3× ADE(2 s)) *before* v6 trains against it, or the thing v6 changes has no
+   yardstick.
+5. **S2 (`g_str` supervision) is not wired and must not be improvised.** It comes from
+   PH0 → PH1 → PH2 (item 9). Until it exists, the STRATEGIC family stays `n/a` **with its reason
+   and its n** (§5.5) — an honest absence, never a proxy.
+6. ⛔ **The live successor run is 336.5 M parameters — 12.2 % over this programme's own "sub-300 M"
+   headline, and the paper cannot resolve that itself.** MEASURED at **336,542,025** from two
+   independent sources (the checkpoint's own `_meta.config.param_report.total`, and a fresh model
+   instantiated from that same checkpoint's config; a widely repeated 336,559,305 is wrong by 17,280).
+   ⚠️ **This is not a silent breach** — the run was launched with `param_budget: 350000000`, so its
+   assert passed by design — but it **contradicts the invariant every scaling claim is stated against**
+   (§10 item 11: *"beating bigger published baselines at ≤ 300 M total"*), and this paper's own
+   headline count of 263.4 M describes the v1 flagship, not the arm now training. ⏳ **The PI's call:
+   restate the envelope, or rescope the model.** Whichever is chosen must be applied to §10 item 11's
+   definition of dominance in the same change, or the ladder is measured against a bar the programme
+   no longer holds. *(Scope, v1.6: for v8F the PI set the envelope at most 800 M on 2026-10-17, `Project Steering/PLAN_V8F_REFAV1_HJEPA_2026-10-17.md` §13.1; the 336.5 M run measured here sits inside it, and the sub-300 M sentence above stays as the record of the earlier envelope.)* *(A related scope error is worth recording beside it: the widely quoted "68.5 % of
+   the stack sits downstream of the pool" was computed from library **defaults**, not from the live
+   checkpoint, where the operative predictor is **55.9 %** and the encoder **25.9 %** — the same class
+   as reading a cluster-wide disk figure for a per-pod quota.)*
+7. ⏳ **Accepting the DINOv3 licence is a human action and was correctly not automated.** The stronger
+   external-teacher arm (§10 item 13) wants a `/16` DINOv3 checkpoint, which reproduces our 16 × 40
+   token grid exactly; the repositories are gated `manual` and our token receives 403 at three probes,
+   with metadata public and weights not. The substitute actually used — `facebook/dinov2-base` at
+   224 × 560 — is ungated and already decisive for the *negative* result (§7.19a), so nothing is
+   blocked today; the licence only buys a better teacher for the *positive* arm. ⛔ **No mirror or
+   re-upload is an acceptable route around it.**
+
+---
+
+## 11. The frozen-encoder question, resolved into a design: REF-A v1
+
+*Added 2026-08-18. This section supersedes nothing; it records the iteration in which the
+encoder question stopped being an opinion and became a measured configuration argument, and
+derives the resulting architecture. Every number carries its class:* `MEASURED` *(ours),*
+`PUBLISHED` *(a banked primary in* `Library/`*),* `HYPOTHESIS`.
+
+### 11.1 The question, and why the obvious answer was wrong
+
+REF-A — a frozen DINOv2-B/14 encoder feeding a trainable adapter and a supervised
+trajectory head — plateaued at ADE@2s **2.1675 m** (T0). The programme's default reading
+attributed this to the frozen encoder. Two independent lines of work landed on 2026-08-18 and
+jointly refuted that attribution.
+
+**(a) The information is not lost.** A five-stage readout ladder measured lead-gap decodability
+at every point of REF-A's pipeline (`MEASURED`, verdict `P2-PRESERVED`, pre-registered before
+any readout ran):
+
+| stage | lead-gap readout |
+|---|---|
+| raw frozen features | 0.5285 |
+| trained adapter | 0.4751 |
+| predictor latent ẑ(t+0.1 s) | 0.4762 |
+| predictor latent ẑ(t+0.4 s) | 0.4863 |
+
+The trained adapter did **not** collapse — per-dim standard deviation **0.8011** against
+**0.220** at random initialisation, zero dead dimensions, i.e. training *expanded* the
+representation's variance by 3.6×. The predictor step costs **+0.0011 [−0.0044, +0.0065]**:
+nothing. The signal arrives intact at precisely the latent the evaluation decoded — the latent
+that produced the programme's worst driving number.
+
+**(b) Readability does not discriminate driving.** A separate pre-registered test found REF-A's
+readout advantage buys nothing where it should matter most: on lead-present windows the contrast
+is **−0.0146 [−0.5988, +0.5551]**, not separated. And REF-C — whose encoder is trained from
+scratch and is nearly agent-blind — drives best of all arms.
+
+Let ρ denote a linear-probe readout score and D a driving metric. The programme had been
+reasoning as though ρ were a sufficient statistic for D. Five measured stages across two
+independent streams show no such relation. The operative conclusion is a *prohibition*: **no
+readout number is admissible as a reason to swap, freeze, or distil an encoder** until an
+experiment establishes the ρ→D link on our own arms.
+
+### 11.2 The configuration argument
+
+Eleven primary sources were banked (`Library/`) and read for one question: under what conditions
+do frozen encoders succeed? They succeed in exactly two configurations, and REF-A occupied
+neither.
+
+**Configuration A — large frozen encoder, wide interface, supervised head.** `PUBLISHED`
+[`2601.03460`, FROST-Drive], Waymo Open E2E, 5 cameras at 448²:
+
+| arm | RFS ↑ | ADE@3s ↓ |
+|---|---|---|
+| frozen VLM 78 B | 8.24 | 0.95 m |
+| frozen VLM 14 B | 8.17 | 1.04 m |
+| **the same 14 B, fine-tuned** | 8.13 | **1.47 m** |
+| ViT (ImageNet), fully fine-tuned | 7.79 | 1.20 m |
+| **ViT (ImageNet), frozen** | **7.39** | **2.28 m** |
+
+Read the last two rows against the middle one. Freezing *beats* fine-tuning for a strong
+encoder, and *loses* to it for a weak one. Freezing is therefore not an independent good but a
+**multiplier on pre-training quality**:
+
+&nbsp;&nbsp;&nbsp;&nbsp;frozen+strong ≻ tuned+strong ≻ tuned+weak ≻ **frozen+weak**
+
+The same work isolates the *interface width* as its own lever: the identical frozen encoder
+scores RFS 8.17 at a 5120-d output and 7.68 at 256-d.
+
+**Configuration B — moderate frozen encoder, feature prediction, test-time planning.**
+`PUBLISHED` [`2411.04983`, DINO-WM]: frozen DINOv2 **patch** features; only a causal transition
+model and an action MLP train; the loss is a plain latent L2 with *"no auxiliary reconstruction,
+reward, or terminal losses"*; there is **no policy head at all**; behaviour comes from CEM inside
+an MPC loop. Its decisive ablation: replacing patch embeddings with global R3M, ResNet-18, or the
+DINOv2 **CLS** token *"significantly degrades"* performance. The pattern replicates in robotics
+[`2506.09985`, V-JEPA 2-AC: <62 h of robot data] and in driving [`2605.10564`, DeepSight: frozen
+encoder plus an MSE world-state loss against DINOv3 future BEV features, Bench2Drive DS 86.23;
+`2406.08481`, LAW].
+
+**And fine-tuning is not the escape.** `PUBLISHED` [`2509.11417`]: full fine-tuning measurably
+degrades pretrained structure (OpenVLA 36.7 % → 12.1 % under paraphrased instructions). The
+winning form is partial adaptation — a **dual encoder**, frozen anchor concatenated with a
+trainable branch: 35.03 → 55.55, and 78.46 with tokenizer and co-training. `PUBLISHED`
+[`2303.18240`, CortexBench] agrees from the other side: no frozen representation dominates 17
+tasks, but task-specific *adaptation* beats the best known result on every benchmark.
+
+⇒ **REF-A held configuration A's consumer (a supervised head) over configuration B's encoder
+class (86 M, image-only SSL), through a narrow 256-token / 51.39° monocular interface.** That
+combination appears nowhere in the successful literature. The failure was never "frozen"; it was
+this specific *pairing*.
+
+### 11.3 Why the objective matters more than the encoder — a derivation
+
+Let z ∈ ℝ^{N×d} be the frozen feature field (N patch tokens, width d), a_t the action, and let
+g_θ be the trainable module downstream of the frozen encoder.
+
+**Supervised-head recipe (REF-A).** g_θ must learn a map
+
+&nbsp;&nbsp;&nbsp;&nbsp;g_θ : z_{t−W:t} × a_{t:t+K} ↦ y_{t:t+K} ∈ ℝ^{K×2}
+
+from a d·N-dimensional field to a 2K-dimensional trajectory. This is a *contraction* of roughly
+d·N·W → 2K — at v1's geometry, 640·1024·4 ≈ 2.6 × 10⁶ inputs to 40 outputs. Everything not
+needed for the trajectory is free to be discarded, and gradient descent will discard it, because
+nothing in the objective pays for keeping it. The information-theoretic consequence: the
+objective supplies at most 2K real numbers of supervision per window, and the adapter is asked to
+*re-encode* a world into a control manifold using that budget.
+
+The empirical signature of exactly this is in our own logs: the only quantity REF-A's training
+separably improved was ego speed — precisely the target its auxiliary losses named. Supervision
+moved what it pointed at, and nothing else.
+
+**Feature-prediction recipe (v1).** g_θ must instead learn
+
+&nbsp;&nbsp;&nbsp;&nbsp;f_θ : z_t × a_t ↦ ẑ_{t+1},&nbsp;&nbsp; ℒ = 𝔼 ‖ f_θ(z_t, a_t) − z_{t+1} ‖²
+
+The target lives in the *same space as the input*. The supervision budget per window is now
+N·d·K real numbers — at v1's geometry ≈ 1.97 × 10⁷ per 6 s rollout, five orders of magnitude
+richer than 2K — and, critically, the map is close to the identity: writing f_θ(z,a) = z + δ_θ(z,a),
+the module learns only the *action-conditioned change*. Two consequences follow directly:
+
+1. **The demand on the adapter is weaker.** It must *preserve and propagate* a representation,
+   not compress it into a different one. Preservation is exactly what our ladder measured the
+   REF-A adapter already doing (§11.1a) — so this objective asks it for something it demonstrably
+   can do.
+2. **Nothing licenses discarding.** Any dimension of z that the objective drops incurs L2 cost at
+   the next step. The collapse mode that a supervised head permits is penalised here by
+   construction.
+
+This is why v1 changes the objective before it changes the encoder.
+
+### 11.4 The three-rate hierarchy, and why 6 s needs it
+
+The PI's requirement is a predictive horizon of 6 s at the operative and tactical levels, with the
+strategic level predicting on its own subspace. A single-rate rollout cannot serve all three. *(Scope, v1.6: this is the
+REF-A v1 requirement as it stood. The PI's definition in force is operative up to 2 s, tactical up to 6 s and strategic 6 to 30 s,
+with the trajectory the 6 s combination of operative and tactical (§3.14). The table below records REF-A v1 as built: only its
+tactical row is a band, and its operative and strategic rows reaching 6.0 s do not meet R-OP and R-STR.)*
+
+Let ε be the per-step latent error of the residual predictor and suppose errors compound
+approximately geometrically with rate λ ≥ 1 over a rollout of K steps:
+
+&nbsp;&nbsp;&nbsp;&nbsp;E(K) ≈ ε · (λ^K − 1)/(λ − 1)&nbsp;&nbsp; (equal to K·ε in the limit λ → 1)
+
+For a fixed horizon T, K = T/Δt, so a *finer* Δt buys resolution and pays compounding. The design
+resolves the tension by giving each level the Δt its decisions actually need:
+
+| level | Δt | K | horizon | tokens | what it must resolve |
+|---|---|---|---|---|---|
+| operative | 0.2 s | 30 | 6.0 s | 640 | vehicle-scale geometry |
+| tactical | 0.6 s | 10 | 6.0 s | 64 | manoeuvre-scale decisions |
+| strategic | 1.5 s | 4 | 6.0 s | 256-d | route-scale hypotheses |
+
+All three reach 6.0 s exactly (pinned by test), but the strategic level pays only K = 4 of
+compounding to get there rather than K = 30 (if the per-step error ε did not grow with Δt; a coarser step carries a larger ε, so
+this is an upper bound on the saving, not a measured one). The token counts fall with Δt for the same reason: a
+route hypothesis at 1.5 s cadence has no use for lane-level texture, and carrying it would import
+the operative level's error into a decision that outlives it.
+
+**Conditioning.** The chain is strategic ctx —FiLM→ tactical intent —FiLM→ operative predictor,
+so the operative dynamics are conditioned by the tactical decision rather than merely coexisting
+with it. Formally the operative step becomes f_θ(z, a, i) with the intent i entering additively in
+the action-conditioning channel: a-embedding + W_i·i. A test asserts that varying i changes the
+prediction — a wired-but-ignored intent would satisfy every shape check while deleting the
+hierarchy.
+
+**The tactical action vocabulary is factored, not mixed.** v1 decodes two independent softmaxes
+over the v6 vocabulary — lateral {LANE_KEEP, LANE_CHANGE_L, LANE_CHANGE_R, ABORT_LC, NUDGE_L,
+NUDGE_R} and longitudinal {FOLLOW, CRUISE, YIELD_MERGE, BRAKE_TO, CREEP, HOLD} — imported from
+`v6.py` so exactly one vocabulary exists. The retired 5-way mixed head placed lateral and
+longitudinal classes in one logit space, where a longitudinal decision can be outvoted by a
+lateral one; `MEASURED` (D-TAC1, 2026-08-03): 0.7581 accuracy / 0.5313 macro-recall with
+`accelerate` **never predicted**, against 0.9348 / 0.8290 factored, and the mixed *label* destroys
+9.68 % (132/1364) of longitudinal decisions outright.
+
+### 11.5 Behaviour by search, and the floor theorem
+
+Configuration B produces behaviour by optimising actions at test time against the learned
+dynamics. Our own history makes this the risky half of the recipe: `MEASURED` (C101), the CEM
+planner was **35.8 % worse than constant velocity** at T1 — the loss was in the action *search*,
+not the world model. Adopting the recipe without repairing the search would place our
+worst-measured component on the critical path. Three mechanisms and one theorem.
+
+**(i) Kinematic parameterisation.** The search runs over (a, κ) at 10 Hz through a unicycle,
+rather than over free waypoints. Every sample is dynamically feasible by construction, so the
+optimiser spends no budget discovering that vehicles have a turning circle, and jerk becomes a
+property of the parameterisation rather than a penalty term to be tuned.
+
+**(ii) Coloured noise.** Vanilla CEM samples i.i.d. Gaussian perturbations *per timestep*; the
+resulting control sequence is white noise, whose expected step-to-step change is maximal. iCEM
+instead samples with power spectrum S(f) ∝ f^{−β}. `MEASURED` at β = 2.5 against β = 0: lag-1
+autocorrelation **> 0.60** vs **< 0.15**, and mean |Δu| between consecutive steps **< 0.5×**.
+Since a trajectory is the double integral of the control, white-noise samples concentrate in a
+region of trajectory space no vehicle occupies — the most plausible mechanical cause of C101.
+
+**(iii) Baseline injection, and the theorem.** Let 𝒞 be the CEM's evaluated candidate set at
+termination and ℬ = {constant-velocity, hold-v₀, decel-1.5, imitation proposal} the injected
+baselines, with J the cost. The planner returns
+
+&nbsp;&nbsp;&nbsp;&nbsp;u\* = argmin_{u ∈ 𝒞 ∪ ℬ} J(u)
+
+Then trivially **J(u\*) ≤ min_{b ∈ ℬ} J(b)**. The failure mode C101 measured — the planner losing
+to constant velocity — is therefore *structurally impossible in modelled cost*. This is proven in
+the test suite with an adversarial J that makes the CEM optimum arbitrarily bad, and the guard is
+switchable so its contribution remains a measurable ablation rather than an always-on comfort.
+
+**(iv) ⛔ And the theorem's limit, stated because it is the whole risk.** The bound is on
+*modelled* cost J. If J is miscalibrated with respect to the realised metric D, a planner that
+provably wins on J can still lose on D — which is exactly how C101 happened, and mechanism (iii)
+alone would not have caught it. A separate admission gate therefore measures Spearman ρ(J, D) over
+banked windows and refuses to quote any planner number below ρ ≥ 0.5 on n ≥ 200. **A floor without
+a fidelity check is a false comfort.**
+
+### 11.6 Coarse-to-fine, forced by a measurement
+
+`MEASURED` on an RTX 4060 at the real geometry: one 10-step rollout of the 640 × 1024 operative
+field costs **160 ms per candidate**, scaling linearly (2553 / 5129 / 10519 ms at n = 16 / 32 /
+64 — the GPU is saturated at n = 16). DINO-WM's published configuration (300 samples × 30
+iterations = 9,000 candidate rollouts, which is 1,440 s at 160 ms each) would therefore cost on the order of a thousand seconds per MPC tick (the **325 s** first printed here does not reproduce from the stated factors, and its derivation is UNVERIFIED). That is a batch job, not a planner.
+
+The hierarchy already contained the remedy. Searching against the **64-query tactical field**
+costs ≈ 1/10 as much; the winner and the baselines are then re-scored on the full 640-token
+operative field. Formally, the coarse cost J̃ is a surrogate for J, and the fine re-scoring both
+restores the correct objective for the *reported* number and exposes surrogate error as a
+reported rank flip (`coarse_fine_agree = False`) rather than absorbing it silently. `MEASURED`:
+DINO-WM's full published configuration now runs in **21.5 s per tick** on the 4060 (≈ 3.5 s on an
+A40-class card), peak CUDA **0.95 GB**, with the fine re-score agreeing (plan 1.0922 < CV 1.1009).
+
+A second measurement shaped the implementation: the naive rollout stored every intermediate
+field — 300 × 10 × 1.31 MB = **3.93 GB** — for a cost function that reads only the terminal
+field. Terminal-only evaluation with chunked population brings peak memory to the 0.95 GB above.
+
+### 11.7 The resulting architecture, and what it costs
+
+Frozen **DINOv3 ViT-L/16** (303,129,600 parameters, 1.21 GB of weights, patch 16, width 1024, 24
+layers) encodes 256 × 640 crops at 120° into **640 patch tokens × 1024** — 2.5× REF-A's token
+count at 2.33× its field of view, with the CLS token discarded per §11.2. Features are cached
+offline; no encoder parameter enters the graph.
+
+| component | parameters | share |
+|---|---|---|
+| operative field predictor | 80,043,008 | 45.99 % |
+| tactical field predictor | 54,850,560 | 31.52 % |
+| tactical policy brain | 21,684,493 | 12.46 % |
+| strategic policy brain | 7,990,275 | 4.59 % |
+| wide adapter (640×1024 → 640×1024) | 2,762,752 | 1.59 % |
+| strategic subspace predictor | 1,911,040 | 1.10 % |
+| proposal head (auxiliary) | 537,108 | 0.31 % |
+| **total trainable** | **174,043,172** | |
+
+**77.5 % of trainable capacity is the two field predictors** — the world model itself, not heads.
+In REF-A the comparable share sat behind a compact-state adapter feeding a supervised head. This
+is the parameter-level expression of §11.3.
+
+The interface rule `d_state ≥ d_enc` is enforced as a constructor error rather than a convention,
+because FROST-Drive measured 8.17 → 7.68 RFS on exactly that axis. The stage-1 cache is the
+design's largest logistics cost: 1.31 MB per latent field, 262 MB per episode, **≈ 0.62 TB** for
+the 2,376-episode corpus at fp16 — 3.3× REF-A's 0.19 TB, the direct price of the wider interface.
+
+### 11.8 What this section does not claim
+
+v1 changes nine things simultaneously. It is therefore a **recipe test, not an attribution test**:
+a favourable result will not identify which change earned it. Five one-flag ablations are
+pre-registered for that purpose (no-hierarchy; floor off; β = 0; operative-level planning;
+bottlenecked d_state), and the frozen-vs-trainable attribution experiment (E-RECON-2 — freeze the
+flagship's *own* encoder and retrain, holding representation fixed and varying only trainability)
+remains necessary and is **not** replaced by this arm.
+
+Every number in §11.7 is a property of the *built* model, verified by construction and test.
+Nothing here is a driving result: no v1 checkpoint exists. The gates that will decide the arm —
+planner admissibility, floor realisation, the paired comparison against REF-A's banked 5 k
+milestone, coarse/fine agreement, and non-collapse — were written before the first training step.
+
+---
+
+## 12. World-Action Models: what SimWAM settles, what it leaves open, and REF-D
+
+### 12.1 The result that matters, and why we had already half-found it
+
+SimWAM [Zhao et al., 2608.07468] reaches **91.5 PDMS** on NAVSIM with a 6 B model
+by *removing* future imagination from the inference loop. Its mechanism is a
+single **isolated attention mask**: current-observation latents, future-frame
+latents and action tokens share one attention stream, but the future tokens and
+the action tokens are **mutually invisible**. Future-video prediction becomes a
+training-time supervision signal, and the video expert is deleted at inference.
+
+Their ablation is the load-bearing evidence (Tab. 3, PDMS): bidirectional
+**90.2**, action→video **90.1**, isolated **90.3**. Exposing the action branch to
+imagined futures buys nothing while costing the whole synthesis latency.
+
+We had reached the same conclusion from the opposite direction and had not
+stated it as a result. Flagship v1 measured open-loop ADE **0.45 m** against
+closed-loop **1.69 m** with imagination in the loop, and `v6.py` refuses an
+imagination-led refinement in its own words — *"the REFUTED roll-cost selection
+rule wearing MPC's name"* — with `mpc_w_consist` defaulting to `0.0`. Two
+programmes, 6 B against 300 M, pixel space against feature space, same answer.
+
+⚠️ **But the discipline is narrower than "no imagination at inference", and the
+narrowing is ours.** F-17 uses roll-cost **variance** as an *uncertainty signal*,
+P7-calibrated at **ρ 0.7164 [0.5847, 0.7696]**, permutation-invariant over
+candidates by construction so it cannot rank them even in principle. Two
+questions must be kept apart:
+
+| question | answer |
+|---|---|
+| may imagined futures *condition the action*? | ⛔ no — SimWAM Tab. 3, and our roll-cost refutation |
+| may *disagreement among* imagined futures signal uncertainty? | ✅ yes — P7 ρ 0.7164 |
+
+**Imagination may never choose; it may warn.**
+
+### 12.2 Action conditioning: a measured result at three orders of magnitude below publication
+
+SimWAM places action tokens in the *same self-attention stream* as the vision
+tokens. Both of our arms instead **condition**: v6 feeds actions into `P_O` as a
+vector, and REF-A v1's `TokenFieldPredictor` broadcasts the action over tokens
+and concatenates-then-projects — DINO-WM's exact scheme. The joint stream had
+never been tested here.
+
+**E-ACTSTREAM-1** tested it on banked v6 cell fields, parameter-matched to
+**576 params (0.04 %)**, three seeds, episode-disjoint split, paired
+episode-cluster bootstrap. A third arm (`add`: broadcast-and-add, no transform on
+the field path) was added specifically to break the confound between
+*tokenisation* and the *projection* that `concat` bundles with it.
+
+| arm | MSE | vs C-PERSIST |
+|---|---|---|
+| *C-PERSIST* (copy last field) | 0.00000728 | — |
+| **token** (joint stream) | **0.00000785** | 1.078× |
+| *C-MEAN* | 0.000017 | 2.3× |
+| concat (broadcast + project) | 0.000046 | 6.3× |
+| add (broadcast + add) | 0.000078 | 10.7× |
+
+`concat` **beats** `add`, so the projection *helps* and is not the source of the
+gap; `token` beats both broadcast forms by **5.9–9.9×**, separated at every width
+(d=32/48/192), both target formulations, both horizons (2.4 s and 6.0 s), both
+data scales (3,277 and 13,108 windows) and all three seeds.
+
+⛔ **And the honest limit travels with it.** Paired `token − C-PERSIST` is
+**+0.00000057 [+0.00000036, +0.00000084]** — token **loses to persistence,
+separated**. So the licensed claim was about the *conditioning scheme*, **not**
+that either arm models the dynamics.
+
+### 12.2b ⛔ The transfer test INVERTS it — and this is the more important result
+
+E-ACTSTREAM-1 ran on **16-token** cell fields. REF-A v1's real field is
+**640 × 1024**. **E-ACTSTREAM-2** re-ran the identical protocol on frozen DINOv3
+ViT-L/16 patch fields over the same clips, stride and split:
+
+| arm | MSE (3 seeds) | vs C-PERSIST |
+|---|---|---|
+| `add` (broadcast + add) | **0.037732** | ✅ beats it |
+| `concat` (broadcast + project) | 0.037956 | ✅ beats it |
+| `token` (joint stream) | 0.038141 | ✅ beats it |
+| *C-PERSIST* | 0.039709 | — |
+
+`token − concat` **+0.000186 [+0.000152, +0.000222]** and `token − add`
+**+0.000409 [+0.000357, +0.000464]**, both separated: **tokenisation is now the
+worst of the three.**
+
+⭐ **The mechanism was predicted before the test, which is why it was run.** Two
+action tokens are **11 %** of a 16-token stream and **0.3 %** of a 640-token one.
+Broadcast reaches every token by construction; tokenisation must win attention
+against 640 competitors, and does not. A 5.9–9.9× advantage measured at 11 % says
+nothing about 0.3 %.
+
+⭐⭐ **And the result that matters most is not the ordering: all three arms beat
+persistence here, which nothing did on cell fields.** The DINOv3 field carries
+dynamics the v6 readout does not — consistent with that readout's **4.5×
+between/within-episode variance ratio**, i.e. a scene fingerprint rather than a
+state. This is the first evidence in the programme that the *representation*,
+not the predictor, was the binding constraint on every readout result.
+
+⚠️ A variance decomposition run alongside it may matter more than the headline:
+**between-episode variance 0.000013 against within-episode 0.000003, a ratio of
+4.5×**. The cell field is dominated by *which episode* rather than *when in the
+episode* — a scene fingerprint more than a dynamics state, which bears directly
+on why linear readouts of that field separate nothing.
+
+### 12.3 REF-D: the economics, not the scale
+
+The isolated mask has a consequence for us that is worth more than the PDMS
+number: **the prior is deleted at inference, so its size is a training cost, not
+a deployment cost.** A sub-300 M *deployment* constraint forbids **shipping** a
+large prior; it does not forbid **using** one.
+
+REF-D spends that on the hierarchy instead of on parameters:
+
+* **frozen Cosmos3-Edge (4 B)**, pre-extracted, training-time only, never shipped;
+* **adapter → three-rate goal-conditioned hierarchy**, ~**173 M**, with action conditioning by **broadcast** (§12.2b: tokenisation loses at this geometry; the token arm remains declared),
+  which is what ships — **35× smaller than SimWAM's 6 B**;
+* **multi-horizon isolated supervision**, one target per layer. This is the
+  extension SimWAM cannot express: it has one action group and one horizon, and
+  its own Tab. 8 shows *coverage beats density* (4 s/1 Hz **90.2** ≈ 4 s/2 Hz
+  **90.3** ≫ 2 s/2 Hz **89.9**). A hierarchy is a machine for covering several
+  horizons at once.
+
+⭐ **The policy is a generator, not a fan.** v6 diffuses candidates and a selector
+ranks them; `assert_selector_admissible` refuses every selector launch while
+SEL-1 stands refused (E-WC2: σ/ADE **9.9915 [7.4492, 13.5119]** against the 3.0
+line). SimWAM has no selector because its flow model *is* the policy. REF-D
+adopts that — one control sequence, sampled and integrated. This does not repair
+the selector; it removes the need for one.
+
+The parameterisation stays ours: **controls, never waypoints** (a per-waypoint
+head amplified ε **25×** in acceleration; the v5f dense fan measured **97.6 %
+infeasible steps / 100 % infeasible candidates**), with every sample squashed and
+integrated so feasibility holds by construction.
+
+⚠️ **One tension is declared rather than resolved.** Rectified flow assumes an
+isotropic Gaussian base; our OU-correlated noise is not isotropic. Plain flow
+matching tolerates that, but Flow-GRPO's tractable transition likelihoods — the
+machinery SimWAM's RL rests on — do not. Both arms are built and the correlation
+property is measured, not asserted.
+
+### 12.4 What blocks the last +1.2, and it is not compute
+
+SimWAM's reinforcement stage is worth **+1.2 PDMS** (90.3 → 91.5), and its reward
+is the **NAVSIM PDM score**. This programme contains **zero `import navsim`**:
+the benchmark named in Phase 1 was never implemented, so no number we have ever
+produced is comparable to a published one.
+*(Update v1.4, 2026-10-17: true when written, no longer true. The benchmark step now exists — §7.20 reports
+REFe on NAVSIM v1.1, 88.25 PDMS against a published 94.55 — so the order below has reached its second rung.)*
+
+⇒ The order is forced: **benchmark → reward → RL.** Building a reward out of our
+own four metric families instead would mean optimising the quantity we also
+report — the "scoring a loop" failure our own goal/situation-disjointness rule
+exists to prevent.
+
+⚠️ And PDMS is a non-reactive score. Our tier doctrine exists because open-loop
+and closed-loop diverged **25×** on one checkpoint and one window set. NAVSIM
+buys *comparability*, not truth, and should be adopted saying so.
+
+## 13. What the representation actually learns: a measurement campaign and four instrument corrections (2026-08-23)
+
+**Tier: T0-DIAGNOSTIC throughout.** Nothing in this section is a driving claim.
+Every arm here is a world-model diagnostic with no planner, no scorer and no
+closed loop.
+
+This section reports a campaign that set out to raise the participation ratio and
+instead established that the objective could not learn the scene at all, that
+four of our own instruments were reporting artefacts, and that the two levers
+which do work are architectural and configural rather than objective-level.
+
+> ⛔⛔ **SUPERSEDED TARGET — READ BEFORE ANY `lead_gap_m` NUMBER BELOW.** Every
+> `lead_gap_m` value in this section was computed against a **defective target**.
+> MEASURED over all 25,790 labelled frames: **4.8 %** have no lead and took an
+> **80.0 m default**, and that 4.8 % carried **59.9 % of the total variance** — so
+> the quantity mostly measured *"is there a lead at all"*, not range. And 80.0 is
+> **not** a sentinel outside the data: real leads reach **180.84 m**, so a no-lead
+> frame was numerically indistinguishable from a genuine lead at 80 m.
+>
+> Split into `lead_present` (binary, all frames) and `lead_range_m` (lead-present
+> frames only, no sentinel), **the repair flips verdicts**: two arms that "beat the
+> raw-pixel floor" on the defective target (t 4.23 and **t 10.28**) do not on the
+> sound one. On the honest range target **every arm of ours is worse than a
+> constant, as are raw pixels**; only a frozen DINOv3 carries range (+0.0336).
+>
+> ⭐ And the cause is now known (§13.12): the readout's **128→64 projection**, not
+> its pooling — at the identical grid the *unprojected* tokens read **+0.0719**
+> where the readout reads **−0.1611**. The information is in our encoder.
+>
+> The `lead_gap_m` cells are **kept as the historical record** and are labelled;
+> they may **not** be quoted as range decodability. `n_agents` is unaffected — it
+> is a count with no sentinel.
+
+### 13.1 The degeneracy: why a non-collapsed latent can still encode nothing
+
+Let \(E_\theta\) be the encoder, \(P_\phi\) the action-conditioned predictor, and
+\(z_t = E_\theta(o_t)\). Our objective was
+
+$$\mathcal{L}=\underbrace{\big\|P_\phi(z_{t-W:t},a)-z_{t+1}\big\|}_{\text{O5: next-latent}}
++\lambda\underbrace{\mathrm{SIGReg}(z)}_{\text{O6: isotropy}}
+\;(+\;\text{O1 anti-echo},\;\text{O3 masked cells}).$$
+
+**Every term's target is produced by the network being optimised.** O5's target
+is \(z_{t+1}=E_\theta(o_{t+1})\); O3's target is the model's own readout cells;
+O6 constrains only the *shape* of the marginal \(p(z)\); O1 constrains only that
+different actions give different outputs. The minimiser is therefore not unique
+in any way that forces content. Write \(z=(u,\,\eta)\) with \(u\) a
+low-dimensional ego-motion code and \(\eta\) isotropic noise independent of the
+scene. Then:
+
+* O5 is small, because \(u_{t+1}\) is nearly a deterministic smooth function of
+  \(u_{t-W:t}\) and \(a\) (vehicle kinematics), and \(\eta\) contributes a
+  constant irreducible term;
+* O6 is satisfied *exactly*, because \(\eta\) is isotropic by construction;
+* the participation ratio is high, because \(\eta\) occupies the remaining
+  dimensions.
+
+**So \((u,\eta)\) — ego motion plus noise — is a non-collapsed solution that satisfies every
+term and carries no scene information.** It is not shown to be the global minimiser: a predictable, scene-encoding \(\eta\) would
+lower the O5 term by removing its irreducible noise cost, so the argument establishes that the objective does not *force* content
+and that optimisation can settle here, which the measurements say it did. This is not a hypothetical: it reproduces every
+measurement we had (healthy rank, decodable ego, absent environment, a predictor
+that works one tick out).
+
+⭐ **Independently corroborated.** PhyLatent (ICLR 2025) states the same
+conclusion from a different direction: *"preventing global latent collapse does
+not ensure that a representation preserves physical states and action
+consequences"*, and reports three named failure modes with an MPC success
+improvement of 81.0 → 98.0 % on TwoRooms once they are addressed. Our result is
+corroboration, not novelty; its value is that it was forced on us by measurement.
+
+**Consequence.** An objective whose targets are all self-generated cannot be
+repaired by adding more self-generated terms. Measured, twice: adding O1 drives
+the predictor's directional accuracy to noise while *maximising* its action
+response; adding O3 drives both ego decodability and the environment below a
+constant predictor.
+
+### 13.2 Estimators, and four corrections that changed conclusions
+
+Four instruments in this programme were reporting artefacts. Each is stated
+because each changed a published conclusion.
+
+**(a) A ratio whose denominator is not held fixed (C137).** Action sensitivity
+was measured as \(\|\hat z(a')-\hat z(a)\|^2/\|z_{t+1}-z_t\|^2\). The denominator
+is a property of the *arm's latent scale*, which spans **0.088 to 41.3** across
+our arms — a factor of **468**. Two predictors with identical action sensitivity
+therefore score up to 468× apart. The scale-free statistic normalises by the
+predictor's own displacement,
+\(\mathrm{rel}=\|\hat z(a')-\hat z(a)\|/\|\hat z(a)-z_t\|\), and gives
+0.54–1.16 for every arm: **none was ever action-blind.**
+
+**(b) Comparing two independent estimates instead of pairing them (C138).** A
+table of deltas against a common baseline licenses statements about each arm
+versus *that baseline* and nothing else. Reading two rows side by side produced a
+claim that our encoder beat frozen DINOv3; the paired test gives
+\(\Delta = -0.1251,\ t=-2.72\) — **we lose.**
+
+**(c) Measuring a component that was never trained (C139).** The rollout is built
+from the \(h{=}1\) head applied autoregressively; with `o5_k = 1` the \(h\ge 2\)
+heads receive no gradient. Their weight norms are **0.02612 / 0.02614 in every
+arm at 2k steps and at 30k** — identical to five significant figures, the
+untouched \(10^{-3}\) initialisation. The reported "identity map beyond one tick"
+was an untrained head. Standing rule: *before concluding a component cannot do
+something, check that it was trained.*
+
+**(d) A scope-bound constant written into code as portable (C135).** The
+participation ratio \(\mathrm{PR}(z)=\big(\sum_i\lambda_i\big)^2/\sum_i\lambda_i^2\)
+is **corpus-dependent**: the *same* frozen DINOv3, the *same* instrument, the
+*same* \(n=1440\) and \(d=1024\), reads **5.756** on 12 val clips and
+**20.228 ± 0.327** on a 130-clip corpus — a **3.51×** spread from episode
+diversity alone. Sample size is *not* the confound (the estimator reads
+0.974–1.002× of closed-form truth at \(n=1440\) for concentrated spectra).
+⇒ a participation value is comparable only at matched **corpus**, **episode
+count** and **ambient dimension**.
+
+**The admissible estimators used below.** For decodability, a *leave-one-episode-
+out paired* design: fit the ridge on \(n-1\) episodes, score the held-out one,
+and pair the two feature columns **on the same episode**, so episode-level
+variance — the dominant term — cancels. The episode *bootstrap* is unusable here:
+at 12 clusters it returns a ±1.6 interval around a 0.2 effect because each
+resample refits \(\lambda\) and the PCA basis. For prediction, mean-centred
+cosine against a ≥100-draw **permutation null**, reported as \(z\). Every panel
+carries a constant control that must read exactly 0.0000 and a raw-pixel floor.
+
+### 13.3 Proven result 1 — the readout, not the encoder, was the ego bottleneck
+
+`z_op` is the operative latent *after* pooling 16×40 patch tokens to a 4×4 grid:
+four azimuth bins over a 120° **cylindrical** field of view, i.e. 30°/bin. (The
+column axis is linear in azimuth under this projection; the pinhole formula does
+not apply.) Giving our own encoder tokens exactly the treatment DINOv3's column
+receives, LOEO-paired, self-pairing control exactly 0.0000:
+
+| target | `enc − z_op` | t | episodes | `enc − pixels` | t |
+|---|---|---|---|---|---|
+| speed | **+0.2117** | 7.86 | **12/12** | +0.2535 | 3.68 |
+| `d_ego` | **+0.1691** | 12.38 | **12/12** | +0.3603 | 4.21 |
+
+**The encoder beats the raw-pixel floor decisively; `z_op` after the pooling does
+not** (`z_op − pixels`, t = 0.71, not separable). Training *with* a wider azimuth
+axis at **identical latent dimension** (4×8×64 = 2048, the incumbent's size)
+recovers it: speed **+0.0374 → +0.2830** (t 5.17, 12/12), `d_ego`
+**+0.1532 → +0.3601** (t 6.12, 12/12).
+
+⚠️ Two negative results that bound the claim. A frozen-encoder re-pooling curve
+put the optimum at 20 azimuth bins; **trained**, 20 bins is worse than 8 — the
+curve was a pointer, not a design. And the widening **reverses on environment
+targets**: it helps agent-count but *hurts* lead-gap and bearing, because a
+scalar that depends on one region ahead is diluted by more bins.
+
+### 13.4 Proven result 2 — an external target is what creates scene content
+
+An encoder of identical architecture trained on **nothing but** distillation into
+frozen DINOv3 cells, LOEO-paired against the two-term arm:
+
+| target | two-term | distilled | Δ | t | episodes |
+|---|---|---|---|---|---|
+| `n_agents` | −1.0407 | **+0.3274** | +1.3681 | **12.63** | **24/24** |
+| `lead_gap_m` | −0.3290 | −0.0330 | +0.2960 | 6.42 | 20/24 |
+| speed (held-out) | +0.2830 | **+0.3940** | +0.1110 | 3.07 | 11/12 |
+
+`n_agents` clears **zero and the raw-pixel floor for the first time in the
+programme** — every prior arm sat *below a constant predictor* — and ego rises at
+the same time. ⚠️ We do **not** claim to beat the teacher (C138): "level with" is
+what the data supports.
+
+⛔ **Externality alone is insufficient — content matters.** The teacher-free
+counterpart, targeting raw pixels, *regresses* ego hard (speed +0.2830 → +0.0560,
+t −4.00, 1/12). Its target is low-pass: pooling averages 8×8 pixel blocks, so
+structure finer than ≈8 px — roughly a distant vehicle — is destroyed.
+
+### 13.5 Proven result 3 — two-stage training preserves what one stage cannot create
+
+Initialising from the distilled encoder and continuing with **O5+O6 only, no
+teacher**:
+
+| target | two-term | **distill → self-supervised** | Δ | t |
+|---|---|---|---|---|
+| `n_agents` | −1.0407 | **+0.1327** | +1.1734 | **12.29** |
+| `lead_gap_m` | −0.3290 | −0.0714 | +0.2576 | 6.30 |
+| `d_ego` | +0.3601 | +0.3122 | −0.0479 | −1.15 (n.s.) |
+
+**The degeneracy erodes the acquired content but does not destroy it**
+(+0.3274 → +0.1327 over 2k steps), and rank is unharmed. ⇒ the external target is
+needed **once, at initialisation**; the subsequent stage is teacher-free.
+
+### 13.6 Proven result 4 — multi-step prediction is a training-depth lever
+
+Rolling the \(h{=}1\) head autoregressively — the quantity O5 actually trains —
+and scoring each rolled step against a permutation null:
+
+| rolled step | k_roll = 1 | k_roll = 4 | k_roll = 8 |
+|---|---|---|---|
+| j=1 | 0.0428 (z 3.5) | 0.1140 (z 7.3) | **0.1198 (z 6.1)** |
+| j=4 | 0.0693 (z 5.6) | 0.1778 (z 10.3) | **0.2051 (z 11.6)** |
+| j=6 | 0.0686 (z 5.7) | 0.1987 (z 10.7) | **0.2468 (z 11.8)** |
+
+Monotone in rollout depth, and **the advantage grows with horizon** (2.80× at
+j=1, **3.60×** at j=6). ⚠️ The absolute level remains low: cos 0.25 is ≈6 % of
+variance explained. *Predicts* is not *predicts well*.
+
+### 13.7 Proven result 5 — rank and prediction scale; decodability does not
+
+A 4× encoder (256×6) at 30k steps on the parity corpus against the 0.97M screen:
+participation **3.80 → 8.54**, predictor cos **0.0541 (z 3.99) → 0.6090 (z
+15.65)**. But ego decodability **falls** (speed +0.2830 → +0.0381). The large arm
+uses the 4×4 readout and reads +0.0381 against the tiny 4×4 arm's +0.0374 —
+**4× encoder, 15× steps, 18× data, no change.**
+
+⇒ **the readout caps decodability irrespective of scale**, and tiny-arm screening
+is valid for *architecture* decisions and invalid for *capability levels*.
+⚠️ Confounded (size, steps and corpus all differ); the matched-readout contrast is
+the clean part, and a parity-scale disambiguating run is in progress.
+
+### 13.8 Proven result 6 — freezing is necessary but not sufficient, and ego decodability is free
+
+The strongest arm **of the small-scale screen** is a **split encoder**: a frozen
+distilled encoder with a trainable readout and predictor, optimised by the
+two-term objective alone. *(Everything in this subsection is measured at 2 000
+steps over 130 clips. §13.11 repeats the design at full scale and the conclusions
+below do not all survive it — read them together.)* It reaches `n_agents` **+0.4035** (paired LOEO, t 13.45, 24/24)
+— above pure distillation (+0.3274) and above a frozen DINOv3 that never saw our
+data (+0.2754) — with the best in-objective predictor measured here
+(cos h=1 **0.1872**, z 7.99 against a 200-draw permutation null). That the
+encoder was in fact frozen is established by **content, not by a flag**: its 41
+`encoder.*` tensors are byte-identical to the initialisation (sha256 match,
+max|Δ| = 0), while every trainable arm moved 0.08–0.33.
+
+Two explanations survive that observation, and they prescribe opposite research
+programmes. Either the **teacher's content** is what the frozen field carries, or
+**immovability alone** suffices, because a frozen field cannot be eroded by the
+degeneracy of §13.1 — in which case the result is teacher-free by construction.
+The discriminating experiment is a single control: freeze a **randomly
+initialised** encoder and change nothing else.
+
+| metric | two-term baseline | frozen **distilled** | frozen **random** | raw-pixel floor | constant |
+|---|---|---|---|---|---|
+| participation (val / held-out) | 3.48 / 4.87 | 2.28 / 2.17 | 2.46 / 3.49 | — | — |
+| predictor cos h=1 (z) | 0.1234 (6.61) | **0.1872 (7.99)** | **0.0016 (0.51)** | — | — |
+| speed | +0.3062 | +0.2465 | **+0.3552** | +0.1156 | 0.0000 |
+| `d_ego` | +0.2157 | +0.2878 | +0.2024 | −0.0781 | 0.0000 |
+| `lead_gap_m` | −0.3495 | −0.0172 | +0.0064 | +0.0064 | 0.0000 |
+| `n_agents` | −0.4434 | **+0.4035** | **−1.1027** | −0.2156 | 0.0000 |
+
+**The predictor settles it.** On a frozen *random* encoder the predictor is
+statistically indistinguishable from noise (z 0.51); on the frozen *distilled*
+encoder it is the best measured *by that statistic* (z 7.99) — ⚠️ **and §13.10
+shows the statistic was the wrong one: neither arm's predictor beats a constant,
+so this contrast is between two non-predictors and only its `n_agents` half
+survives.** `n_agents` differs by **1.5062**
+between arms that are identical in every respect but the origin of the frozen
+weights, and the random arm falls below both the constant control and the
+raw-pixel floor. **Freezing is necessary but not sufficient.** This is the
+result of §13.4 recovered from the opposite side: there, *externality* was
+necessary but not sufficient, because a slow copy of a weak encoder is a weak
+target; here, *immovability* is necessary but not sufficient, because a frozen
+empty field is an empty field. What a teacher supplies is **content**.
+
+**A second result follows at no extra cost, and it is a constraint on how every
+number in this section may be read.** The frozen random encoder has the **best
+speed of the three arms** (+0.3552) and healthy `d_ego` (+0.2024) — from weights
+that were never trained on anything. Ego state is therefore recoverable from an
+essentially arbitrary feature field, which is exactly what §13.1's `z = (u, η)`
+predicts and what made every collapsed arm still read ego well.
+
+> **Ego decodability is not evidence that an objective learned anything.** A
+> representation claim must rest on scene content or on prediction, never on the
+> ego columns.
+
+Finally, the random arm's `lead_gap_m` is **+0.0064 — equal to the raw-pixel
+floor to four decimals** *(on the defective target; see the banner at the head of
+this section — the observation about agreeing columns stands, the quantity does
+not)*. Under the panel's standing rule, columns that agree to
+several decimals are read as a degeneracy signal rather than a result, and this
+one has an interpretation: to a linear probe, a frozen random transformer is a
+random linear map of the image and spans essentially the pixel subspace. The two
+columns are demonstrably not the same array — they differ on speed (+0.3552 vs
++0.1156) and on `n_agents` (−1.1027 vs −0.2156) — so the agreement is a property
+of the arm, not a plumbing error. It is precisely what the raw-input floor is in
+the panel to catch.
+
+### 13.9 Proven result 7 — scale, not an auxiliary objective, produces both the predictor and the scene content
+
+Every result in §13.3–§13.8 was measured on a 2 000-step screen over 130 clips.
+That regime was chosen because it makes architecture comparisons cheap, and
+§13.7 already warned that it is valid for *architecture* and invalid for
+*capability levels*. This section is what happens when the same architecture and
+the same two-term objective are given the full corpus and 30 000 steps.
+
+**The arm.** Identical encoder, readout, predictor and objective (O5 rollout +
+O6 SIGReg) as the tiny screen — **no teacher, no external target, no auxiliary
+term of any kind.** Only the corpus (130 clips → the 2 376-episode parity
+corpus), the step budget (2k → 30k) and the batch (4 → 8) differ.
+
+| metric | tiny screen (2k, 130 clips) | **parity (30k)** | vs tiny | vs raw-pixel floor (paired) |
+|---|---|---|---|---|
+| participation (val / held-out) | 3.80 / 3.62 | **25.58 / 26.96** | — | — |
+| predictor cos h=1 (z) | 0.0541 (3.99) | **0.6224 (30.55)** | — | — |
+| speed | +0.2830 | +0.1482 | t −3.71 | +0.0326 (t 0.64) |
+| `d_ego` | +0.3601 | +0.0963 | t −6.29 | +0.1744 (t 2.77) |
+| `lead_gap_m` | −0.3290 | **+0.0063** | t 6.67, 22/24 | −0.0001 (t −0.01) |
+| `n_agents` | −1.0407 | **−0.0180** | t 10.06, 24/24 | **+0.1976 (t 10.21, 24/24)** |
+
+Participation rises roughly sevenfold; the predictor's mean-centred cosine rises
+**11.5×**; ⚠️ the comparison to other arms is superseded by §13.10, which shows
+this is one of only three arms whose predictor beats a constant at all; and `n_agents` becomes **the first trained representation of ours to
+beat the raw-pixel floor** on scene content — with nothing supervising it but the
+model's own next-latent.
+
+**The bounds are not small, and they are the reason this is not a solution.**
+`n_agents` remains marginally *below* a constant predictor (−0.0180) and well
+below frozen DINOv3 (+0.2754). On this clip set the raw-pixel floor (−0.2156) is
+itself below the constant control, so clearing the floor is the *weaker* of the
+two bars and must not be quoted as the stronger. Ego decodability *degrades* —
+which §13.8 makes the least informative axis, since a frozen random encoder reads
+the best speed of any arm. And the comparison moves three variables at once
+(corpus, steps, batch), so its direction is unambiguous while its cause is not;
+the factorial decomposition is pre-registered and running.
+
+**Validity was checked rather than assumed.** Of the 130 clips carrying the
+environment labels, **130 are inside the parity training corpus and 0 are in the
+validation cache.** The environment rows are therefore *in-sample for both arms*
+— a valid contrast, but not a generalisation claim — while the ego rows are held
+out for both.
+
+#### The counterpart negative: an external, label-derived target does not substitute
+
+The opposite hypothesis was tested in the same week and at the same tiny scale:
+**physical-state grounding (PSG)** — one shared state head applied to the encoded
+*and* the predicted latent, supervised by our own 3-D cuboid labels. It is
+external and immovable like a distillation teacher while requiring no pretrained
+model, and it is training-time only, so inference of the latent stays image-driven. (Scope, v1.6: the planner layers of v8F also read measured ego state, §3.14; the PI's vision-only rule of 2026-08-03 concerns the scenario classifier and the labels.)
+
+| weight | predictor cos h=1 (z) | speed | `lead_gap_m` vs pixel floor | `n_agents` vs pixel floor |
+|---|---|---|---|---|
+| **0** | **0.1234 (6.61)** | **+0.3062** | −0.6812 (t −14.36) | −0.7367 (t −20.45) |
+| 0.1 | −0.0029 (−0.84) | +0.2026 | **+0.0418 (t 0.93)** | −0.0843 (t −29.63) |
+| 1 | 0.0021 (0.41) | +0.1407 | −0.1031 (t −2.18) | **−0.0092 (t −1.67)** |
+| 3 | 0.0098 (1.00) | +0.0037 | −0.3067 (t −5.22) | −0.4034 (t −4.71) |
+
+PSG moves environment decodability enormously — it takes the objective from far
+below raw pixels (t −20.45) to indistinguishable from them — but **it never
+exceeds the floor at any weight, and it destroys the predictor at every weight
+including a tenfold reduction**, with no recovery as the weight falls. The
+loss-magnitude explanation (the term outweighed the objective by 10–30×) is
+therefore not the mechanism: the damage is structural to the shared head.
+
+Read together, the two results point the same way. At tiny scale every auxiliary
+objective we constructed — counterfactual separation, masked-cell prediction,
+pixel reconstruction, EMA-target masked latents, and label-derived state
+grounding — either failed the raw-input floor, destroyed the predictor, or both.
+At parity scale the plain two-term objective did neither. **The evidence
+available to us says the deficit was one of data and optimisation budget, not of
+objective design** — and it says so most sharply about the conclusions we
+ourselves drew inside the small-data regime, which are re-opened rather than
+confirmed by it.
+
+⚠️ Estimator note: every contrast above is a paired leave-one-episode-out
+statistic on the same clips, and the arm-versus-floor column is paired
+explicitly. Comparing two arms' point estimates against a shared third column is
+not a test of one against the other; doing so is a documented error of ours.
+
+### 13.10 Proven result 8 — the missing floor, and a census of every predictor this programme has trained
+
+Every predictor number in §13.3–§13.9 was a **mean-centred cosine against a
+200-draw permutation null**. That null answers *is the correlation non-zero*. It
+does not answer *is the prediction better than predicting the average motion* —
+and those are different questions. The panels already carried a constant control
+on the ego and environment blocks, where it reads exactly 0.0000 by construction;
+the predictor block never had one.
+
+Adding it changes what the campaign's numbers mean. Define
+`nrmse = ‖d̂ − t‖ / ‖t‖` over one-step latent deltas, against a predictor that
+emits the **dataset-mean delta** for every window. A no-motion predictor scores
+1.0 by construction, and the mean-delta control scores ≈0.998 here.
+
+| arm | cos (z) | `nrmse` | mean-delta control | verdict |
+|---|---|---|---|---|
+| two-term, 2k | 0.1072 (7.58) | 0.9988 | 0.9981 | does not beat a constant |
+| frozen-distilled, 2k | 0.1706 (9.18) | 0.9902 | 0.9982 | does not beat a constant |
+| frozen-distilled, 10k *(130 clips)* | 0.0012 (0.84) | **4.8321** | 0.9982 | **worse than a constant** — ⚠️ §13.11: the same design at full scale reads **0.8416 and beats it** |
+| **parity, 30k** | 0.6307 (**44.45**) | **0.7845** | 0.9978 | **beats it (~38 % of delta energy)** |
+
+Extended to **every finished arm the programme has trained** — thirty of them,
+spanning six auxiliary-objective families and three scales — the picture is
+unusually clean:
+
+| verdict | n | representative values |
+|---|---|---|
+| **beats a constant** | **3** | 0.7845 · 0.8200 · 0.9348 |
+| indistinguishable from a constant | 16 | every healthy 2 000-step arm (0.990–0.999) |
+| **worse than a constant** | 11 | all counterfactual-separation arms (up to 22.7); all state-grounding arms (up to 32.4) |
+
+**Every arm that beats the floor is 30 000 steps on the full corpus; every such
+arm beats it; no shorter arm ever does.** Two of the three do so at batch 4, so
+batch size is not the operative variable for prediction. The separation was
+checked programmatically rather than by inspection.
+
+Two consequences follow, and they cut in opposite directions.
+
+**The negative one.** The rollout-depth ranking of §13.6 — cosines 0.0541 →
+0.1234 → 0.1328 → 0.1327 across `k` = 1, 4, 8, 16 — lies **entirely inside this
+floor** (nrmse 0.9988 / 0.9984 / 0.9984 against controls 0.9981 / 0.9975 /
+0.9985), and its ordering does not even reproduce the cosine ordering it was
+drawn from. That ranking may not be quoted as evidence that prediction improves
+with depth. The same applies to any claim that one small-scale arm predicts
+better than another: those arms were being ranked within the noise band of a
+constant.
+
+**The positive one.** The result of §13.9 is the *only* predictor claim in the
+campaign that survives its own floor, and the census places it in context rather
+than merely restating it: across thirty arms and six objective families, working
+prediction appears exactly three times, and what those three share is scale.
+
+A third observation is practical. The fraction of a predictor's output explained
+by a fixed offset orders the three classes almost perfectly — 0.07–0.18 for the
+arms that beat the floor, 0.34–0.82 for those at it, 0.73–0.87 for those below —
+so **a predictor whose output is mostly a constant is the failure mode**, and
+that fraction is a one-number screen requiring no baseline arm.
+
+⚠️ The census cannot separate *steps* from *data*: all three successful arms are
+long-run **and** full-corpus, always together. That comparison is pre-registered
+and running.
+
+### 13.11 Proven result 9 — at full scale one arm carries the scene *and* predicts, and a fourth small-scale conclusion dissolves
+
+§13.8 ended with two arms that each won one axis: a frozen distilled encoder that
+carried scene content but whose predictor was worse than a constant, and a
+full-corpus arm that predicted but carried little content. Both were measured in
+the regime §13.10 has since shown to be uninformative about prediction.
+
+Running the frozen-distilled design at full scale — same objective, same freeze,
+30 000 steps on the full corpus — resolves it:
+
+| | full-corpus, no init | **full-corpus, frozen distilled init** | frozen distilled, 130 clips | frozen DINOv3 |
+|---|---|---|---|---|
+| predictor `nrmse` vs constant floor | **0.7903** | **0.8416** | 4.1757 | — |
+| participation (val / held-out) | **25.58 / 26.96** | 6.38 / 7.63 | 2.68 / 2.47 | — |
+| `n_agents` | −0.0180 | **+0.3881** (t 28.21, 24/24) | +0.4156 | +0.2754 |
+| `n_agents` vs raw-pixel floor (paired) | +0.1976 (t 10.21) | **+0.6037 (t 30.86)** | +0.6313 (t 36.67) | +0.4911 |
+| `lead_gap_m` | **+0.0063** | −0.0940 (t −6.22) | −0.0123 | +0.0294 |
+
+**This is the first representation in the programme to clear the constant-predictor
+floor and carry scene content at the same time.** Its `n_agents` exceeds a frozen
+DINOv3 that never saw our data, and sits 30.86σ above raw pixels — a gain of
++0.4061 over the same architecture without the initialisation, on 24 of 24 clips.
+
+**And the collapse §13.8 attributed to the frozen field was, once again, the small
+corpus.** The identical frozen encoder reads `nrmse` **4.1757 on 130 clips** and
+**0.8416 on the full corpus**. Freezing does not destroy the predictor. This is
+the fourth conclusion of this section — after the degeneracy's practical severity,
+the necessity of a frozen part, and the insufficiency of freezing alone — that did
+not survive contact with the full corpus.
+
+**What it costs, stated rather than netted against the gain.** Its predictor is
+*worse* than the un-initialised arm's (0.8416 against 0.7903), so the
+initialisation trades prediction for content rather than adding both.
+`lead_gap_m` moves the wrong way, from +0.0063 to −0.0940, below the raw-pixel
+floor. ⚠️ That quantity is since **superseded** (banner above): on the repaired
+target this arm reads `lead_range_m` **−0.1611**, the worst of any arm, so the
+direction of the finding survives and its magnitude is larger. **The two
+environment targets dissociate, and `n_agents` alone may not be called
+"environment"** — which §13.12 traces to the readout's projection. Participation falls fourfold and the pre-registered
+kill-gate rejects the arm on rank; we weigh that against the evidence that rank
+does not track capability, but we do not discard it. Ego degrades below the
+constant control, which §13.8 makes the least informative axis.
+
+⛔ **And it is teacher-dependent at initialisation.** The frozen field is distilled
+from a pretrained model, so this result buys capability, not independence. **The
+question of whether a teacher-free source of scene content exists is exactly where
+it was**, and none of the six auxiliary-objective families in §13.10 answered it.
+
+### 13.12 Proven result 10 — the readout's projection, not its pooling, is what discards object range
+
+§13.11 left an asymmetry inside "environment": the best representation counts
+agents far better than a frozen DINOv3 and localises the lead vehicle worse than a
+constant predictor. Counting is a global statistic; range is a per-object
+geometric one, so the natural suspicion was spatial resolution — the readout pools
+16×40 encoder tokens to 4×8, keeping only four elevation bins, and in a
+cylindrical projection range is carried by vertical position and apparent size.
+
+That suspicion is testable without training anything. If the readout *discards*
+range the encoder already holds, then pooling the **same** tokens differently will
+show it. Training a fresh arm would confound readout capacity with re-learning,
+and would do so in the small-scale regime §13.10 has shown to be uninformative.
+Holding columns fixed at 8, varying only rows, and reducing every column to the
+same 128 principal components:
+
+| column | `lead_range_m` | `lead_present` | `n_agents` |
+|---|---|---|---|
+| **readout 4×8** — the model's actual output | **−0.1611** | −0.0439 | **+0.3881** |
+| **tokens 4×8** — same grid, *unprojected* | **+0.0719** (t 13.68, 24/24) | −0.0684 | +0.3274 |
+| tokens 8×8 | +0.0291 | −0.1115 | +0.3812 |
+| tokens 16×8 | −0.0205 | −0.1284 | +0.3535 |
+| raw-pixel floor | −0.0800 | **+0.0018** | −0.2357 |
+| constant control | +0.0000 | 0.0000 | 0.0000 |
+
+**The decisive comparison is the first two rows: identical grid, identical
+pooling, differing only in the readout's 128 → 64 linear projection.** Range goes
+from −0.1611 to **+0.0719**. The projection is what removes it. And the
+unprojected tokens exceed the frozen DINOv3 reference (+0.0336), so **the range
+information is present in our own encoder** — the model discards it on the way
+out.
+
+**The resolution hypothesis is not supported, and the ladder that tests it is
+itself confounded.** Range falls as rows increase, but so does the signal-to-noise
+of a fixed 128-component basis: dimensionality grows from 4 096 to 16 384 across
+those rows, and coarser pooling averages more tokens per cell. We therefore make
+no claim about elevation resolution in either direction; only the matched-grid
+comparison is clean.
+
+**The projection is a trade, not a defect.** On `n_agents` the projected readout
+is the *best* column of the six, above every unprojected alternative. A learned
+compression that improves a global count and destroys a per-object geometric
+quantity is behaving exactly as a bottleneck should when its objective never asked
+for the latter.
+
+⚠️ This is a probe result. It establishes that the information survives to the
+token grid, not that a readout trained at width 128 would retain it — the
+projection is learned, and widening it changes the latent dimension every arm in
+this section shares.
+
+**A follow-up settles what the projection is actually doing, and it is not what
+the preceding paragraphs imply.** The map is [64, 128] of full rank, so its null
+space is 64-dimensional by construction and half of *any* direction is discarded.
+Splitting fitted directions into kept and discarded subspaces gives a null-space
+share of **0.5313** for range, **0.5440** for agent count, against a random-
+direction band of **0.5473, 95 % [0.5146, 0.5840]**. Range lies inside that band:
+**the projection is not oriented away from it.**
+
+The agent-count control is what makes this readable. That direction loses the same
+proportion of its energy, and the readout *keeps* it — indeed improves it, from
++0.3274 unprojected to +0.3881 projected — while range collapses. A lossy map that
+improves one target is not compressing but **selecting**. The two signals differ
+enormously in strength before the projection ever acts (+0.3274 against +0.0719),
+and the objective rewards one of them.
+
+⇒ **The projection discards range because nothing in the objective asks for it,
+not because of where it points.** Widening the projection removes a forced loss
+but supplies no incentive; if a width-128 readout still fails to carry range, the
+finding will be about the objective, not the readout.
+
+### 13.13 What this section does not establish
+
+No claim is made about driving. No arm here has a planner or a closed loop, and
+the tier doctrine forbids reading T0 diagnostics as capability. The environment
+result inside the full objective remains **below a constant predictor**; only the
+isolated and two-stage forms clear it. Whether a teacher-free target of sufficient
+*content* exists is the campaign's open question, and one candidate is now
+**closed**: masked latent prediction against a slow (EMA) copy of our own
+encoder fails in both its naive and its neighbour-aggregated form — `n_agents`
+−4.3623 and −2.9681 respectively, with ego below the constant control in both.
+Physical-state grounding, the strongest remaining candidate, is now closed too
+(§13.9): it never exceeds the raw-input floor and destroys the predictor at every
+weight tested.
+
+Nor does §13.9 establish that scale *solves* the problem. The parity arm remains
+marginally below a constant predictor on `n_agents` and well below a frozen
+DINOv3 that never saw our data; it clears only the weaker of the two floors; and
+its gain is confounded across corpus, steps and batch, so we cannot yet say which
+of the three is the lever, or whether the curve has flattened. Its environment
+rows are in-sample.
+
+What §13.9 does establish is narrower and mainly cautionary: **conclusions drawn
+from 2 000-step screens over 130 clips did not survive contact with the full
+corpus.** Five of this section's own findings — the degeneracy's practical
+severity, the necessity of a frozen part, the insufficiency of freezing alone,
+and both PSG results — were measured in that regime. The derivation in §13.1
+stands as mathematics regardless. The empirical claims built on top of it are
+re-opened by §13.9, not confirmed by it, and each requires a parity-scale
+re-test before it may inform a design decision. **The first such re-test has now
+run** (§13.11), and it overturned a fourth: the predictor collapse on a frozen
+field was the small corpus, not the freeze.
+
+Nor does §13.11 establish that the problem is solved. On the repaired targets its
+`lead_range_m` sits **below a constant predictor** (−0.1611, the worst of any arm)
+while its `n_agents` sits far above the raw-pixel floor, so the representation is
+not uniformly better — it is better at one environment target and worse at the
+other. Its predictor is worse than the arm without the initialisation. Its
+environment rows are in-sample. Its rank fails the gate we pre-registered. And it
+is **teacher-dependent**: the frozen field is distilled from a pretrained model,
+so the result is about what a distilled prior buys, not about learning scene
+content from our data alone. That question — the one the six auxiliary-objective
+families of §13.10 were built to answer — remains open, and nothing in §13.11
+touches it.
+
+§13.10 adds a second caution of the same kind, aimed at this section's own
+method. A missing baseline survived in the predictor block for the whole campaign
+while the identical baseline was present, and read exactly zero, in the two
+blocks either side of it. It survived because the block without it produced the
+largest and most persuasive test statistics, so nothing about the output invited
+the question. We record it here because the correction is more transferable than
+the result: **a statistical null and a performance floor are different objects,
+and a metric that carries only the first can rank a field of models none of which
+work.** Nothing in §13.10 relies on the reader accepting that framing — the
+`nrmse` column and its control are reported for every arm, and the arithmetic is
+the argument.
+
+### 13.14 Proven result 11 — the transition is the latent's own drift, and that one fact explains every action-conditioning failure in this programme
+
+Sections 13.1–13.13 record ten results and a lengthening list of closed
+candidates: an EMA target, physical-state grounding, an external label-derived
+target. Each was closed on its own terms, and the list read as bad luck. It was
+not. A single measurement accounts for all of them.
+
+**The measurement.** Decompose the latent transition Δz = z_{t+k} − z_t and ask
+what predicts it, on held-out lead-matched clips, with a nonlinear probe (random
+Fourier features + ridge — convex, closed form), λ selected on a *clip-disjoint*
+inner split, a time-shuffled control on every cell, and a constant control that
+reads exactly zero.
+
+| what predicts Δz (`rdw8p30k`, top-8 PCA directions) | r | shuffled | true − shuf | t |
+|---|---|---|---|---|
+| **z_t — the latent's own position** | **+0.6570** | +0.0154 | **+0.6416** | **65.64** |
+| the ego's action `[steer, accel, v0]` | +0.0105 | −0.0086 | +0.0190 | 1.88 |
+| the scene's change | −0.0043 | +0.0192 | −0.0235 | −2.04 |
+| all three together | +0.6591 | −0.0056 | +0.6647 | 66.99 |
+| constant (control) | **+0.0000** | +0.0000 | +0.0000 | 0.00 |
+
+Δz is **64 % predictable from where the latent already is**, and only 25 of 2048
+directions carry 90 % of its variance. Adding the action *and* the scene change
+contributes **+0.0021**.
+
+**The transition is the latent drifting along its own low-dimensional manifold.
+It is not the world changing, and it is not the ego acting.**
+
+Four consequences follow immediately, and each was previously recorded as a
+separate failure:
+
+1. **The predictor is action-independent** — across *all 32 arms this programme
+   has trained*, replacing every action with noise changes `nrmse` by at most
+   0.0919 % (median 0.0097 %; 0 of 32 exceed 0.1 %). That is not a failure to
+   solve the objective. Predicting drift from z_t **is** the correct solution to a
+   next-latent objective, and every arm found it.
+2. **The action is not recoverable from the transition** at any horizon from
+   0.2 s to 3.0 s (k = 2, 4, 8, 16, 30; 0 of 10 cells reach |t| > 2, and the delta
+   grows *more negative* with horizon). The instrument is not underpowered: the
+   z_t-alone baseline it detects is stable at r 0.128–0.171 across every k.
+3. **An objective that demands action-dependence can only manufacture it.** A
+   counterfactual action-contrastive term (§13.15) reached a perfect
+   discrimination score by driving the counterfactual rollouts 12–17× further from
+   the truth than the true-action rollout, while degrading prediction — the
+   degenerate ẑ = f(z) + λa its own derivation predicts.
+4. **The `nrmse` improvements this programme has ranked arms on are real, and are
+   not world modelling.** They are genuine learning of the drift function.
+
+**The residual is noise, in every arm.** Fitting the drift model on the fit clips
+only and probing what predicts the held-out residual: the action reads t 0.12, the
+scene t −1.18. Across all eight arms measured, **0 carry the action positively**
+(t > 2); the single arm at |t| > 2 has t = −2.17, i.e. the action makes the
+residual prediction *worse*. No objective can recover information that is not
+present.
+
+*The campaign this fact opened — where the drift comes from, what removes it, what
+does not, and what it costs at T1 — is §14.*
+
+### 13.15 ⛔ RETRACTED — "initialisation determines groundedness" was a confounded grouping
+
+⛔⛔ **This section's attribution does not survive (2026-08-26).** It reported that
+latent drift separates cleanly by initialisation — 0.175–0.365 for distilled arms
+against 0.614–0.642 for scratch — across unrelated recipes, and concluded that
+initialisation, not the objective, is what matters.
+
+**Two arms initialised from the same distilled checkpoint, both trained to 30,000
+steps, read drift 0.669 and 0.679; a third, also distilled, reads 0.199.** A
+variable shared by arms 0.47 apart cannot be the cause. The clean non-overlap was
+real, but the groups differed in recipe as well as in initialisation, so the label
+stood for a bundle rather than an intervention — and the crossed cell that would
+have tested it (distilled init on a scratch-line recipe) was never run until now.
+
+⭐ **The effect survives; the attribution does not.** One arm's drift really is
+0.199 against 0.657–0.679 for three others, and a seed replicate puts run-to-run
+variance at ~1.5 %, so the difference is far outside noise. What causes it is
+open, and the ablation that would identify it is well posed.
+
+*The original section follows, retained unedited as the record of what was claimed
+and on what evidence.*
+
+### 13.15 (superseded) Proven result 12 — initialisation, not the objective, determines whether the latent is grounded in the image
+
+Eight objective terms have now been tested and closed. The one factor that
+separates arms cleanly is not an objective at all.
+
+Measuring how much of z_t's top-8 PCA directions is explained by raw 8×8 pixels —
+same probe, same controls:
+
+| arm | pixels → z_t | t | initialisation |
+|---|---|---|---|
+| `splitfrz10k` | **+0.2513** | 6.99 | distilled |
+| `splitp30k` | **+0.2104** | 5.78 | distilled |
+| `postrain10k` | **+0.1838** | 6.23 | post-trained |
+| `rdw8p30k` | +0.0830 | 4.95 | scratch |
+| `rdw8s30k` | +0.0275 | 1.95 | scratch |
+| `ro128p30k` | +0.0116 | 0.82 | scratch |
+| `champ30k` | +0.0105 | 0.63 | scratch |
+| `scale1` | +0.0098 | 0.79 | scratch |
+
+**min(distilled) +0.1838 versus max(scratch) +0.0830 — a 2.2× gap with nothing in
+between**, and three of the five scratch-trained arms are not significantly
+grounded at all. The same split appears in spatial content: on centre-occupancy
+the three distilled arms span [+0.1090, +0.3351] and the five scratch arms
+[−0.1607, +0.0035] — again disjoint, and the scratch arms sit at or below the
+raw-pixel floor (−0.1720).
+
+The full ordering is monotone in the strength of the visual prior the encoder
+began with: **frozen DINOv3 (+0.3998) > distilled inits > scratch-trained ≈ raw
+pixels.**
+
+⚠️ **What this does not show.** Groundedness does not predict content in general:
+`ro128p30k` has the lowest groundedness of any arm and still carries more
+`n_agents` than `rdw8p30k`, whose groundedness is seven times higher. The
+separation holds on centre-occupancy and fails on `n_agents` and free-space. The
+claim is specifically about *where things are*, not *how many* or *how much space
+is free*.
+
+⚠️ **And it does not buy physics.** The three distilled arms — the best-positioned
+in the programme — answer a counterfactual no better than arms carrying nothing:
+brake-versus-maintain moves their prediction by 0.24–0.37 % of what a 10 %
+perturbation of the latent does, the true action is identifiable at chance
+(0.2203–0.2747 against 0.25), and the closing/free-flow ratio scatters 0.67–1.67
+with one arm below one. **Scene content and action-conditioning are independent
+problems**, and only the first currently has an answer.
+
+### 13.16 What §13.14–13.15 do not establish
+
+The drift result is measured on Δz's **top-8 PCA directions**, which are by
+construction its highest-variance ones. A band control (directions 8–16, 32–40,
+128–136, 512–520) shows drift concentrated in roughly the top 40 directions and
+absent beyond them, and finds a small but real action contribution in band 8–16
+(+0.0258, t 2.73) — marginal after correcting for four bands. So *"the action
+contributes nothing"* is too strong; *"the action contributes roughly 4 % of what
+drift does, in a narrow band"* is what the data support.
+
+No claim is made about driving. Every number here is T0 — a diagnostic of what the
+representation contains and how it responds, never a statement that a planner
+built on it would drive. The corpus is a 124-clip held-out validation set,
+lead-matched to the in-sample selection criterion; that matching was necessary
+because comparing across the unmatched split reversed a verdict once already.
+
+
+### 13.17 Proven result 13 — in observational driving data the action is redundant with the scene, and that single fact explains nine failed objectives at once
+
+Nine objective terms in this programme (O1, O2, O3, O7, O8, O9, O10, O11, PSG)
+were designed to make the latent transition depend on the ego's action. All nine
+failed. The natural reading is that nine designs were wrong. The measurement below
+supports a different and much simpler one: **they were all asking the model to
+extract information that observational driving data does not contain.**
+
+The test predicts the **future scene** at t+k — deliberately, because the scene at
+t demonstrably predicts it, which is what makes *"the action adds nothing on top of
+it"* a meaningful statement rather than a restatement of a null. Three nested
+predictors are compared on 20 held-out lead-matched clips, k = 4, with a nonlinear
+RFF+ridge, clip-disjoint λ selection, a within-clip Pearson r, a time-shuffled
+control on every cell, and a constant control reading exactly +0.0000.
+
+| target at t+k | `scene_t` (positive control) | `action_t` | **action's marginal given the scene** |
+|---|---|---|---|
+| `n_agents` | **+0.7089 (t 12.58)** | +0.0755 (t 0.64) | **−0.1678 (t −3.50)** |
+| `occ_center` | **+0.6588 (t 8.52)** | −0.0179 (t 0.14) | +0.0217 (t 0.40) |
+| `n_free_cols` | **+0.6324 (t 14.34)** | +0.1083 (t 1.43) | **−0.1337 (t −1.83)** |
+| `lead_closing` | +0.0988 (t 1.83) ✗ | — | **no verdict** — control failed |
+
+The scene predicts the future scene strongly and the action predicts it not at
+all. ⚠️ The *marginal* column should not be over-read: a 104-draw empirical null for
+this estimator (built by replacing the input with Gaussian noise) reaches \|t\| =
+**3.49**, so the `n_free_cols` marginal (−1.83) is inside it and `n_agents` (−3.50)
+clears it by 0.01. **"Adding the action actively hurts" is therefore not
+supportable; "the action adds nothing" is**, and it is what the argument needs — it
+rests on the action columns being null against a control at t 8.5–14.3. The fourth row is reported as
+**no verdict** rather than as a null: its positive control did not pass, and a
+panel whose baseline does not work cannot demonstrate redundancy. That guard is not
+decorative — an earlier version of this experiment predicted Δz, where nothing
+works, and its automatic verdict line printed *"the action is redundant"* off an
+all-null panel. Redundancy requires the baseline to succeed.
+
+The interpretation is causal, and it runs opposite to the intuition the objectives
+encoded. In real traffic **the scene causes the action**, not the reverse: a driver
+brakes *because* the lead brakes, while the lead's behaviour is almost unaffected
+by the ego. A model that reads the scene can therefore predict the future without
+using the action at all, and the action's *marginal* information is ≈ 0 even though
+its *causal* effect on the ego is real. This is the mirror of causal confusion in
+imitation learning (de Haan et al., arXiv 1905.11979): there the entanglement
+destroys a policy, here it starves an objective.
+
+⇒ *"If the lead decelerates, the ego must react"* is **not a proposition the world
+model should encode — it is one the planner should.** The world model's job is to
+predict the scene from the scene.
+
+What would change this conclusion is not a better loss but **interventional data** —
+the same scene paired with different actions, which only simulation supplies.
+
+### 13.18 Proven result 14 — the action's entire causal content is the ego's own dynamics, a target no objective had used
+
+§13.17 establishes what the action cannot do. It does not test the one thing the
+action certainly *does* determine: the ego's own future state. That omission
+mattered, because the two results have opposite implications and only the pair is
+actionable.
+
+The panel below is gated on an **identity control** — `action_t` predicting
+`accel_t`, a quantity it contains — which must read ≈ 1.0 for anything below it to
+be admissible. It reads **+0.9337 (t 23.74)**.
+
+| target | `z_t` (encoded) | `ẑ_{t+k}` (predicted) | `action_t` |
+|---|---|---|---|
+| identity `accel_t` | +0.1555 (3.10) | +0.0504 (0.78) | **+0.9337 (23.74)** |
+| speed (**level**) | **+0.1255 (2.07)** | +0.0697 (0.94) | +0.1504 (1.30) |
+| yaw-rate (**level**) | **+0.1176 (2.76)** | +0.1414 (2.50) | +0.5773 (5.09) |
+| Δspeed (**change**) | −0.0077 (−0.13) | −0.0445 (−0.72) | **+0.3171 (2.56)** |
+| Δyaw (**change**) | +0.0636 (0.98) | +0.0670 (1.06) | **+0.5638 (4.57)** |
+
+Three facts appeared to compose; two have since been retracted. **The action
+determines the ego's own Δyaw** (t 4.57, and the relation is kinematic). ⛔ **The
+Δspeed half (t 2.56) does not survive the estimator's measured null** — P(null ≥
+2.56) = 0.070 against 104 draws whose max is 3.49 — so the longitudinal channel is
+withdrawn. **The transition connects nothing**: ẑ never exceeds z_t on any ego
+target.
+
+⛔ **The middle claim — that the encoder already represents ego state, "three for
+three" at speed 2.07, yaw-rate 2.76 and accel 3.10 — does not survive its own null.**
+Re-running the identical panel with the latent replaced by Gaussian noise of the
+same shape gives \|t\| p95 **2.71** and max **2.93** over 24 draws: all three cells
+are inside it, and a subsequent 8-arm census contained no cell above the null
+either. The correct statement is that **whether the encoder carries ego state is
+UNRESOLVED at this sample size**, not that it does. The null is column-specific and
+was measured for a 2048-d latent, so it does not touch the 3-scalar action columns
+(whose identity control reads t 23.74) — but it does mean the marginal
+latent-side rows in this section carried no information.
+
+The action→Δspeed relation is not an artefact of label construction. The corpus's
+acceleration channel is the dataset's own measured longitudinal `ax`, taken from a
+different sensor stream than the speed (which is derived from vx, vy); the ingest
+states explicitly that it is not a finite difference of v; and empirically
+`r(accel, realised Δv over one tick) = +0.326`, nowhere near the ≈ 1.0 an identity
+would produce. The Δyaw relation, by contrast, **is** close to kinematic — steering
+is stored as atan(L·curvature) and yaw-rate ≈ v·curvature — and that is precisely
+why it is the right target rather than a suspicious one: it is closed-form driving
+physics, a deterministic function of two quantities the encoder already carries,
+that the transition nonetheless fails to compute.
+
+⇒ The objective this implies (**O13**) predicts Δ(speed, yaw) from the *predicted
+latent alone*, through a frozen, parameter-free random readout. The readout is
+denied the action, so the action's only route to the loss is through the predictor;
+and denied z_t, so the passthrough solution is closed. Its floor is arithmetic —
+standardised targets make a zero prediction score exactly 1.0 — so the
+no-information value is asserted rather than estimated.
+
+That design was itself corrected by measurement before any compute was spent. The
+obvious form, a head on (z_t, action_t), was tested first: the latent adds
+**−0.0065 (t −0.06)** to Δspeed and **−0.0153 (t −0.12)** to Δyaw over the action
+alone, meaning such a head would read the two action scalars and ignore the 2048-d
+latent — the loss would fall, the metric would look excellent, and the world model
+would have learned nothing. That is the same degeneracy O11 exhibited, on a better
+target, and it cost forty minutes of probe rather than eight GPU-hours to find.
+
+### 13.19 What §13.17–13.18 do not establish
+
+**O13 has not been run.** Everything above is a diagnosis and a design; the
+objective's efficacy is pre-registered with four outcomes and an abort criterion
+fixed in advance, and none of them has been read. A training-set-positive result
+would not settle it — the pre-registration classes that as PARTIAL precisely
+because O11 also produced a positive training signal while degrading prediction.
+
+**§13.17 measures the action's contribution to predicting *other agents*, not the
+ego.** Read alone it would license the much stronger and false claim that the
+action is uninformative; §13.18 is what bounds it.
+
+**The ego panel spans roughly forty cells at t ≈ 2**, and several marginal rows in
+it will be noise. The load-bearing claims are chosen not to depend on them: the
+identity control (23.74), the action columns (2.56 / 4.57 / 5.09), the coherent
+level triple (3.10 / 2.76 / 2.07), and one arm's Δspeed content replicated three
+times across three independent code paths (t 2.50 / 2.05 / 2.10).
+
+**The estimator's null is heavy-tailed and was measured, not assumed.** Replacing
+the input with Gaussian noise and rerunning the identical panel gives, over 104 independent
+draws at two column dimensionalities, p95 **2.60**, p99 **2.93**, max **3.49** —
+so \|t\| ≈ 2.9 is this family's effective bar, not 2.0. ⚠️ Dimensionality is not
+what sets the tail: a random **3-vector** reached 3.49 while a random 2048-d latent
+peaked at 2.93. The heaviness comes from the estimator — 20 clip-level scores, a
+ridge refit per fold, and a difference of two correlated means — and it must not be
+read as a t-distribution. Every claim in §13.17–13.18 has been re-tested against
+this null; what survives is listed above, and what did not is withdrawn in place.
+
+**No claim is made about driving.** Every number in §13.17–13.18 is T0 — a
+diagnostic of what the representation contains and how it responds. A confirmed
+O13 would establish that the transition can be made to carry ego dynamics. It would
+say nothing about whether a planner built on it drives.
+
+## 14. The self-prediction drift attractor: how a self-targeted objective manufactures its own dynamics, and the teacher that did not cure it (2026-08-26 → 08-29)
+
+**Tier: T0-DIAGNOSTIC throughout, except §14.8, which is T1 and says so.** Every
+drift, nrmse and cosine number in this section is a world-model diagnostic — never
+driving performance. Evidence class: **MEASURED (ours)** with raw artifact and
+registry section named, except the published teacher-schedule facts (**PUBLISHED**,
+banked by library key in `TanitAD Research Lab/Library/library.json`), the one
+decomposition explicitly labelled **ESTIMATED**, and the closing designs labelled
+**PROPOSED**. Registry anchors: `MODEL_REGISTRY.md` §13.9–§13.10; claims register
+rows E-DEC-61/63/64/65/66/67/69.
+
+> **Figure 4 — `Paper/figures/drift_story.svg`** (generated by
+> `Paper/figures/make_drift_story.py`, which **reads the banked probe JSONs at generation
+> time and exits if one is missing** — no hand-typed fallback, with two cross-artifact
+> tripwires: the 2 k incumbent must agree between the ladder's and the bake-off's raws, and
+> the 30 k incumbent's cosine must agree between its own raw and the EMA pair's; the `.png`
+> export runs wherever cairosvg's native cairo is present — absent on the dev box, and a
+> substitute rasteriser is exactly the invisible-labels trap Figure 2 documented, so the
+> SVG is the checked-in render): left and
+> middle, the 2 k → 30 k **inversion of both EMA-teacher effects** (drift and centred
+> cosine) — the pre-registered transient account confirmed in its strongest form; right,
+> the **drift decomposition** — the frozen-encoder world-smoothness component against the
+> trained arms' band, the self-generated excess marked as an ESTIMATE, and the
+> within-recipe 10 k → 30 k manufacture trajectory.
+
+§13.14 established the fact this section starts from: the latent transition of every
+arm this programme trains is dominated by **drift** — Δz is ~64 % predictable from
+z_t alone, and neither the action nor the scene's change adds anything. §13.14 read
+that as a property of the *data* (observational driving) and of the *representation*.
+The campaign below establishes something sharper and more disturbing: **the drift is
+substantially a property of the TRAINING PROCESS — the objective manufactures it —
+and no training knob we have measured removes it while keeping prediction.** The
+section states the statistic and its instrument (§14.1), the mechanism (§14.2), the
+measured chain (§14.3–§14.6), the EMA-teacher experiment in full (§14.7), the T1
+consequence (§14.8), the decision table (§14.9), and the open problem with its attack
+list (§14.10).
+
+### 14.1 The statistic, and the instrument that reads it
+
+Let \(f_\theta\) be the encoder, \(z_t = f_\theta(x_t) \in \mathbb{R}^{2048}\), and
+fix a horizon \(k\) (every read below uses k = 4 ticks = 0.4 s). Define the latent's
+own change \(\Delta z_{t\to t+k} = z_{t+k} - z_t\). **Self-prediction drift** is the
+fraction of that change predictable from where the latent already is:
+
+$$\mathrm{drift}\;r \;=\; \operatorname{mean}_{\text{held-out clips}}\;
+\operatorname{corr}\big(\,g(z_t),\; \Delta z_{t\to t+k}\,\big),$$
+
+with \(g\) a probe fitted on clips disjoint from those it scores. The deployed
+instrument (`latentmotion.py`, the E-DEC-59 rig): 80 held-out clips × 100 frames;
+\(\Delta z\) projected on its **top-8 PCA directions** (band 0:8); \(g\) a
+random-Fourier-features + ridge probe — convex, closed-form, λ selected on a
+clip-disjoint inner split; **K = 10-fold fit / per-clip score**, so a scored clip is
+never in its own fit; the statistic is the mean per-clip within-clip Pearson r.
+Three controls ride every read: a **constant column that must read exactly 0.0000**;
+a **time-shuffled control through the identical code path**; and the **ego-state
+column** \([\omega, a_{\mathrm{long}}, v]\) whose marginal over \(z_t\) is the
+action-relevance read. The drift column doubles as the panel's **positive control**
+(t 30–155 across the arms below), so a read that cannot reproduce it is void.
+⚠️ Scale validity is itself calibrated: the rig's drift-validity band [0.60, 0.74]
+is **30 k-calibrated**; 2 k arms sit ~0.45 with clean controls, and their absorption
+probes stamp themselves `rig_valid: false` (the band is scale-wrong, not the rig) —
+which is why every 2 k number below is read **vs-base relative only**.
+
+Interpretation. \(r \approx 0\): the latent moves for reasons its own position does
+not contain — external content, or noise. \(r \to 1\): the transition is an
+autonomous flow of the latent's own state, \(z_{t+k} \approx F(z_t)\) — a
+representation that carries its own future and therefore needs no world. Drift is
+not collapse: a full-rank, isotropic, non-degenerate latent can drift maximally
+(§13.1's \((u,\eta)\) solution is one construction), which is why rank instruments
+never saw it.
+
+### 14.2 The mechanism: a movable target admits a shortcut family
+
+The two-term core this campaign trains (the concrete form of §13.1's objective) rolls
+the predictor and penalises every step:
+
+$$\mathcal{L}_{\mathrm{O5}}(\theta,\phi) \;=\; \frac{1}{K}\sum_{j=1}^{K} w_j\,
+\big\|\, \hat z_{t+j} \;-\; \mathrm{sg}\!\left[f_\theta(x_{t+j})\right] \big\|_1,
+\qquad \hat z_{t+j} = P_\phi(\hat z_{t+j-1}, c_t),\;\; \hat z_t = z_t,$$
+
+plus \(\lambda\,\mathrm{SIGReg}(z)\) (the recipe: `--o5-form l1`, K = `--o5-k` 8,
+`w_o5` 1.0 / `w_o6` 0.1, O1/O2/O3 off; \(c_t\) the action/ego conditioning
+channels). \(\mathrm{sg}[\cdot]\) is the stop-gradient, and the incumbent
+(`--o5-target live`) produces the target with **the same network being optimised**.
+
+**The stop-gradient removes the target's gradient *path*, not its *dependence on
+θ*.** The population objective in one-step form is
+
+$$J(\theta,\phi) \;=\; \mathbb{E}\,\big\| P_\phi(f_\theta(x_t), c_t) -
+f_\theta(x_{t+k}) \big\|,$$
+
+and **both arguments move with θ**: a step in θ changes the prediction *and* the
+target, and sg only deletes the explicit \(\partial(\text{target})/\partial\theta\)
+term from backprop. Optimisation over θ therefore still searches over *target
+processes*, and the minimiser set contains two families:
+
+* **(a) the intended one** — representations whose future is informative about the
+  world and predicted by \(P_\phi\);
+* **(b) the shortcut** — representations shaped so that \(f_\theta(x_{t+k})\) is an
+  *easy function of* \(f_\theta(x_t)\): a smooth, self-predictable latent
+  trajectory. Family (b) needs no prediction skill at all — the encoder makes the
+  **target** easier instead of the predictor better. Equivalently: O5 rewards θ for
+  reducing the conditional entropy \(H(z_{t+k}\,|\,z_t)\), and that can be done
+  either by putting more of the world into \(z\) or by **discarding from \(z\)
+  everything whose future is hard**. Nothing in the objective separates the two.
+
+Three properties make (b) a distinct failure class rather than a variant of
+collapse. It is **invisible to rank and isotropy constraints** — SIGReg/O6 is
+satisfied exactly by an isotropic drifting latent (§13.1). It is **invisible to the
+loss curve** — \(\mathcal{L}_{\mathrm{O5}}\) falls under (a) and (b) alike, so a
+healthy-looking training curve carries no information about which family the run is
+in. And it is **not** the trivial constant solution: the latent moves, richly and
+predictably — along its own manifold rather than with the world (§13.14's measured
+signature: \(z_t \to \Delta z\) at r +0.657 while action and scene add nothing).
+The claims register states the mechanism in one line (E-DEC-61): *the cheapest way
+to satisfy \(\hat z_{t+k} \approx z_{t+k}\) is an easier target, not a better
+prediction.*
+
+### 14.3 Measured: training manufactures the drift (E-DEC-61)
+
+The load-bearing evidence is a **within-recipe trajectory, deliberately not a
+grouped comparison** — a grouped comparison is exactly what produced the C164
+retraction (§13.15): `postrain10k` → `postrain30k` is the same recipe, the same
+`--init-from distill_init.pt`, the same everything except training length, and its
+drift goes **0.359 → 0.669**. The full panel (9 arms, 80 clips, 7,680 rows, drift
+controls t 26–147; `MODEL_REGISTRY.md` §13.9, raws `seedrep.json` /
+`deltaz_distilled.json` / `freezedrift.json`):
+
+| arm | encoder | steps | drift |
+|---|---|---|---|
+| `splitp30k` | **frozen** | 30 k | **0.199** |
+| `splitfrz10k` | **frozen** | 10 k | **0.337** |
+| `postrain10k` | trained | 10 k | 0.359 |
+| `champ30k` | trained | 30 k | 0.616 |
+| `o11p30k` | trained | **7.5 k** | 0.646 |
+| `rdw8s30k` | trained | 30 k | 0.635 |
+| `rdw8p30k` | trained | 30 k | 0.657 |
+| `ro128p30k` | trained | 30 k | 0.658 |
+| `postrain30k` | trained | 30 k | 0.669 |
+| `postrain30k_seed1` | trained | 30 k | 0.679 |
+
+**Trained encoders converge to drift 0.616–0.679** — six of seven trained arms,
+spanning 7.5 k–30 k steps and *both* initialisations, land in a 0.06-wide band; the
+two frozen arms are the only ones outside it. The seed replicate supplies the
+programme's first run-to-run variance estimate on this metric — 0.669 vs 0.679,
+**~1.5 %** — so the 0.47 frozen-vs-trained gap is emphatically not noise, and every
+single-seed comparison below is read against a known band. ⚠️ What this is *not*:
+a clean frozen-good/trained-bad split (`splitfrz10k` 0.337 and `postrain10k` 0.359
+are 0.022 apart), nor a simple function of step count (`o11p30k` reaches 0.646 at
+7.5 k). It is an **attractor of joint training**: run the encoder under O5 long
+enough and drift converges to ~0.62–0.68 regardless of where it started.
+
+This measurement also **re-explains the failure record**. Ten objective terms
+designed to make the transition action-dependent failed (§13.17); each was bolted
+onto an O5 that was, in parallel, optimising the encoder toward exactly the property
+those terms were fighting. They were not merely mining an empty seam — **they were
+mining against an active pump.**
+
+### 14.4 The crossed cell: freezing removes the manufacture — and is still not the fix (E-DEC-64)
+
+The mechanism's clean test is the crossed cell (`PREREG_FREEZE_CROSSED_CELL.md`,
+registered before launch with all four outcomes committed): the `postrain` recipe,
+byte-identical, plus `--freeze-encoder`. If O5's encoder gradient is the drift pump,
+removing that single degree of freedom must remove the manufactured component.
+
+It does: **drift 0.669 → 0.3905** (t 32.21), one variable. But the pre-registration
+also carried the lesson of E-DEC-20c — *drift alone cannot win; the pair (drift,
+prediction) is the read* — and an amendment (recorded before any read) replaced the
+original `o5`-loss criterion after recognising it as scale-incomparable across
+different latent spaces (C137: the two arms have different encoders, so a smaller
+loss may only mean smaller latents). On the amended, scale-free criterion:
+
+| read (same 80 held-out clips, same instrument) | frozen | trained incumbent | band |
+|---|---|---|---|
+| drift | **0.3905** | 0.669 | < 0.45 ✅ |
+| held-out `nrmse` (constant predictor = 1.0) | **0.9301** | 0.8115 | **+14.6 % — over the ×1.10 band** ⛔ |
+
+⇒ **DEGENERATE, per the committed table**: freezing trades collapse for
+miscalibration and is not a fix. (Texture so the band is not over-read: cos 0.3792,
+t 24.27, still clearly beating the mean-only control at 0.9984 — degradation, not
+the E-DEC-20c collapse.) The v7 encoder policy is therefore **TRAINABLE**, drift
+accepted as a cost where it arises — and E-DEC-61's mechanism is **SUPPORTED by an
+intervention**, not a correlation: one flag moved drift by 0.28.
+
+**The decomposition this licenses — PRESENTED AS AN ESTIMATE.** The frozen cell
+reads what a *fixed* representation of a smooth world already makes predictable —
+a **world-smoothness null of ≈ 0.39**. The trained arms at matched read (k = 4,
+band 0:8, same clips) sit at 0.669–0.695, so the **self-generated component is
+≈ 0.28–0.31** of drift-r. ⚠️ The different-rulers caveat travels with this number:
+drift is measured per-arm *in that arm's own latent geometry*, so subtracting the
+two correlations compares different representations on different rulers — it is an
+**ESTIMATE of the manufactured share, not a variance decomposition**, and it is
+never quoted below without this label.
+
+Two residues, stated rather than rounded. The freeze did **not** reproduce
+`splitp30k`'s 0.199 — 0.3905 sits between the bands, so part of that arm's
+separation lay beyond trainability. The A7 cell closed it (E-DEC-66): `--o5-k 4` on
+the **trainable** line is **INERT** (drift 0.6701, t 148.81, vs incumbent 0.669),
+so `splitp30k` = freeze main effect **+ freeze×k4 interaction** — the shorter
+rollout helps only when the encoder cannot chase it (0.3905 → 0.199 under freeze).
+C164's leftover is thereby fully resolved. And the exploratory T1 corroboration
+(declared before the run, not a criterion): the frozen arm's masked S-rate at the
+primary tier is 0.0175 vs the trained arm's 0.2632 — the same direction, at T1.
+
+### 14.5 The knob sweep: nothing on the trainable line moves it
+
+With the mechanism supported and freezing rejected, every available training knob
+was run as a one-variable 30 k arm against the same incumbent (registry §13.10; all
+T0-DIAGNOSTIC, parity corpus, 1.5 % seed band):
+
+| knob | arm | drift | verdict on drift |
+|---|---|---|---|
+| shorter rollout `--o5-k 4` | `k4_30k` | 0.6701 (t 148.81) | **INERT** (E-DEC-66) — helps only under freeze |
+| measured-state conditioning `[ω, a, v]` | `omega30k` | 0.6911 (t 149.16) | not separated (~2× band, single seed) — **adopted for prediction**, nrmse 0.8115 → 0.6911 (−14.8 %) (E-DEC-65) |
+| future-observation auxiliary O14 | `o14fut30k` | 0.6709 (t 142.96) | **unchanged** (≈ band) — anti-displacement, not anti-drift (E-DEC-67, §14.6) |
+| EMA teacher `--o5-target ema` | `emao14_30k` | 0.6952 (t 154.57) | **+3.6 % — above** the incumbent (E-DEC-69, §14.7) |
+
+**No measured training knob moves drift downward on the trainable line at 30 k.**
+The one lever that moved it at 2 k — the EMA teacher, −12/−20 % — inverted at 30 k
+(§14.7). The attractor is, so far, robust to every objective-level and
+conditioning-level intervention this programme has run at scale.
+
+### 14.6 What lies beyond drift, and the displacement defect O14 repairs (E-DEC-63 → E-DEC-67)
+
+If drift owns ~0.67 of the transition, what owns the rest? The residual-ceiling
+panel (arm `rdw8p30k`, n = 7,280 rows, 80 held-out clips, rig valid: A1 reproduces
+the banked drift +0.6722 vs +0.6718, the constant control exact, the deliberate-
+regression arm correctly null; `…/incoming/2026-08-26-residual-ceiling/`) answers:
+**small, but not zero — and pixel-borne.** Raw 32×80 grey pixels carry a marginal
+over \(z_t\) of **+0.0096 (t 5.11**, above the ≥ 4.2 survives-bar**)**, while our
+own predictor adds −0.0023 (t −1.84, null) and even a tokens+pixels oracle reads
+−0.0040 (t −2.52, null) — a superset of a surviving input reading null. The F1–F4
+follow-ups located the mechanism: not photometrics (lum3 null), not PCA dilution
+(pixels+noise5120 still survives at t 9.10), but **the pooled token field itself —
+tokens-alone reads *negative* (t −3.95)**: the 4×10-pooled tokens carry
+drift-redundant structure that actively **displaces** the pixel-borne signal.
+⇒ the encoder **discards pixel information that predicts its own latent's future**
+— the sharpest held-out evidence yet for the representational half of the v7 plan.
+
+**O14-fut** (R2; `PREREG_O14_FUTURE_OBS.md`, E-DEC-67) attacks exactly that: a
+small bottleneck head from \((z_t, a_t)\) predicting the 32×80 grey **future
+observation** at t+4, loss \(w\cdot\mathrm{L1}\), gradient reaching the encoder —
+the first term in this programme whose target is **data the network never
+produces**. The tiny ladder first (5 arms at 2 k, matched pairs, a deliberate-
+regression arm with time-shuffled targets that must stay inert — it does, 0.4533 vs
+base 0.4531): gates pass, and the ladder's headline finding is about the
+instrument's scale — **the pixel-marginal does not exist at 2 k** (base −0.0033,
+t −0.59; no dose effect), i.e. the displacement **builds with training**, which
+moved the absorption primary to a 30 k matched pair by amendment recorded before
+further reads. At 30 k, one variable vs `postrain30k`:
+
+| read | `o14fut30k` | incumbent | verdict |
+|---|---|---|---|
+| pixel-marginal over \(z_t\) (PRIMARY) | **−0.0047 (t −3.09)** | +0.0096 (t +5.11) | **ABSORBED** — the positive marginal is gone |
+| drift | 0.6709 | 0.669 | unchanged (+0.3 % rel) |
+| held-out nrmse | 0.8288 | 0.8115 | +2.1 % (< 10 % gate) |
+| cos (centred) | 0.6043 | 0.6395 | −5.5 % rel, stated |
+| participation (val / held-out24) | 22.97 / 19.55 | 22.37 / 20.58 | rank gate holds |
+
+(The residual marginal is a small *negative* — adding 2,560 now-uninformative pixel
+dims costs the fit, z_t+pixels 0.6685 < z_t 0.6732 — which cannot be unabsorbed
+information; the ABSORBED reading stands.) **Two facts travel with the verdict**:
+R2 earned its place in the v7r recipe as the representational auxiliary, and
+**absorption did not touch drift** — O14 is the **anti-DISPLACEMENT lever, not an
+anti-drift lever**. E-DEC-66's interim "O14 is the only live anti-drift lever" is
+thereby corrected: after this cell, *no* measured lever moved drift on the
+trainable line — until the EMA teacher's 2 k read briefly appeared to (§14.7).
+
+### 14.7 The EMA teacher: the mathematics, the schedule error, and a two-stage inversion (MM-E1, E-DEC-69)
+
+The classical remedy for a movable target is to hand the target to a **slower
+copy** of the network. Formally (`--o5-target ema`; `_EmaCopy` of encoder *and*
+readout, re-synced after any `--init-from` load):
+
+$$\bar\theta_{s} \;=\; \tau\,\bar\theta_{s-1} + (1-\tau)\,\theta_{s},
+\qquad \bar z_{t+k} = f_{\bar\theta}(x_{t+k}),
+\qquad \mathcal{L}_{\mathrm{O5}}^{\mathrm{ema}} = \frac{1}{K}\sum_j w_j
+\big\| \hat z_{t+j} - f_{\bar\theta}(x_{t+j}) \big\|_1 .$$
+
+Unrolling, \(\bar\theta_T = (1-\tau)\sum_{s\le T}\tau^{T-s}\theta_s +
+\tau^{T}\bar\theta_0\): an exponential average of the student's history with
+**memory horizon \((1-\tau)^{-1}\)** — 250 steps at the deployed τ = 0.996. **In
+principle this removes the movable-target shortcut in its instantaneous form**: the
+target at step s is produced by weights the current gradient step cannot move, so
+the encoder can no longer *reshape this step's target while fitting it*. But the
+removal is only up to the teacher's lag — over any window ≫ \((1-\tau)^{-1}\) the
+teacher tracks the student, so **slow** self-simplification of the representation
+carries its target with it. **An EMA teacher is a low-pass filter on the shortcut,
+not a wall** — a fact the measurement below lands on exactly.
+
+**Why fixed τ fails early — the published operating points (all PUBLISHED, banked
+by library key).** Every shipped EMA/teacher recipe *ramps* τ, precisely because a
+fixed-τ teacher early in training is an average dominated by near-random weights:
+Mean Teacher runs α = 0.99 during ramp-up and 0.999 after [1703.01780]; data2vec
+anneals τ linearly 0.999 → 0.9999 so the teacher updates fastest while the student
+is still random [2202.03555]; I-JEPA ramps momentum 0.996 → 1.0 linearly over
+pretraining [2301.08243]; BYOL ramps 0.996 → 1.0 on a cosine, and its constant-τ
+ablation measures the stakes — top-1 72.5 (τ = 0.99) / 69.8 (0.999) / 68.4 (0.9) /
+18.8 (τ = 1, a frozen random teacher) / 0.3 (τ = 0, no teacher) [2006.07733].
+V-JEPA carries the same EMA-teacher core into video feature prediction
+[2404.08471]. **Our arms run fixed τ = 0.996, no ramp** (MEASURED,
+`train_v6_staged.py`, `--ema-decay` default). At 2 k steps the 250-step horizon is
+**12.5 % of the run** — proportionally about 12 to 125 times above the published operating
+points it is compared with (12.5 % against data2vec's start ≈ 1 % of run, and against BYOL's constant-0.99 ≈ 0.1 %; those two fractions are not re-derived here) — and **no
+published EMA study exists at ≤ 5 k steps at all** (a named empty search of the
+banked literature pass). At 30 k the same τ is 0.83 % of the run, **inside** the
+published early-phase band. These are the scope facts the two-stage read below was
+committed against, *recorded before the stage-2 read*.
+
+**Stage 1 — the 2 k pair (`PREREG_P0_EMA_BAKEOFF.md`, one variable vs the ladder's
+base arm, plus a seed):**
+
+| read | `o14base2k` | `ema2k_s0` | `ema2k_s1` | seed spread |
+|---|---|---|---|---|
+| drift | 0.4531 (t 45.18) | **0.4002** | **0.3644** | 0.0358 |
+| cos (centred) | 0.1845 | **0.1336** | **0.0979** | 0.0357 |
+| nrmse | 0.9876 | 0.9912 | 0.9954 | 0.0042 |
+
+Drift **better on both seeds beyond the spread** (−11.7 / −19.6 % rel) — the first
+measured lever ever to move drift downward on the trainable line at any scale — and
+prediction **worse on both seeds beyond the spread** (cos −27.6 / −46.9 %).
+**MIXED; per the committed table: the numbers, no verdict.** The τ-schedule
+amendment then bound the stage-2 read in advance: the transient account **predicts
+the cos gap narrows at 30 k**, and — the symmetric caveat, equally committed — the
+2 k **drift gain may share the transient origin**; if both vanish, that is EMA-OUT,
+not "mixed again". The 2 k stage-1 verdict was simultaneously down-weighted to
+motivation-only, being off the published τ map in both directions.
+
+**Stage 2 — the 30 k pair** (`emao14_30k` = the `o14fut30k` line verbatim +
+`--o5-target ema`, config-diff clean, one variable; the O14 arm is the deliberate
+incumbent because the decision is "does EMA join the v7r *recipe*", which now
+carries O14 — with the interpretation limit committed up front that this pair
+cannot separate "EMA at 30 k" from "EMA×O14 interaction"):
+
+| read | `emao14_30k` (EMA) | `o14fut30k` | committed criterion | result |
+|---|---|---|---|---|
+| drift | **0.6952** (t 154.57) | 0.6709 | below, beyond ~1.5 % band | **FAILS — +3.6 % above** |
+| cos (centred) | **0.7524** | 0.6043 | within band | **+24.5 % better** |
+| nrmse | **0.7466** | 0.8288 | within +10 % | **−9.9 % better** |
+| absorption marginal | +0.0028 (t 2.16), inside null | −0.0047 | must stay absorbed | **HOLDS** |
+
+**Verdict: EMA-OUT on the committed question — the teacher does not remove the
+attractor.** The amendment's symmetric caveat fired exactly: the 2 k drift gain
+vanished *and inverted* at 30 k, as did the 2 k cos cost — **both stage-1 effects
+were artifacts of a fixed-τ teacher read far outside its operating band**, and the
+pre-registered prediction ("the cos gap narrows at 30 k") is confirmed in the
+strongest form. This is the low-pass account arriving in data: at 2 k the teacher
+lags into near-random weights (an accidental *almost-fixed* target — hence lower
+drift, at a prediction price); at 30 k the teacher has converged onto the student's
+slow trajectory and the slow shortcut passes through it untouched.
+
+⭐ **E-DEC-69, the serendipitous finding this experiment was not run for: the EMA
+teacher is the largest prediction improvement ever measured on the trainable line**
+— cos_ctr 0.6043 → 0.7524 (+24.5 %), nrmse 0.8288 → 0.7466 (−9.9 %), absorption
+preserved, at a +3.6 % drift cost. The reading consistent with all four cells is
+**target denoising**: the teacher's temporal average strips per-step fitting noise
+from the target, so the predictor fits signal — the same rationale data2vec states
+for teacher averaging — while the slow self-simplification is untouched. Whether
+v7f *ships* with EMA for prediction quality was, at the time §14 was written, an **open PI decision** — taken in the affirmative the same evening (§15.4); on adoption,
+the amendment's requirement of a τ-ramp arm first applies unchanged (fixed-τ is a
+mis-specification no published system ships), and the EMA×O14 interaction remains
+unseparated.
+
+A consistency note the pair settles: **drift is not a proxy for prediction
+quality.** The two co-rise with training length (both 2 k → 30 k), but the EMA
+intervention moved prediction by +24.5 % while moving drift by +3.6 % *in the wrong
+direction* — they are separable by intervention, and each needs its own gate.
+
+### 14.8 The T1 face of the drift predictor [TIER T1 — this subsection only]
+
+What does a ~0.67-drift transition do when the loop is closed on its own actions?
+The first parity-corpus T1 (both `postrain` arms, 40 episodes × 6,924 windows,
+episode-cluster bootstrap; registry §13.9):
+
+* **ADE dense 14.52 m [11.55, 17.58] (trained) / 14.21 m [11.23, 17.35] (frozen)
+  against a constant-velocity floor of 0.5352 — neither arm drives.** Both arms
+  carry `_longitudinal_claim_admissible: False` (`LOSES_TO_HOLDV0`, copy-detector
+  CLEAN), so per the 2026-08-16 rule every longitudinal figure here is a
+  **fidelity diagnostic, not a capability result**.
+* **Speed bias ≈ −(mean speed): the rollout sheds speed** — the T0 drift statistic
+  wearing its T1 consequence. A transition that is chiefly a function of the
+  latent's own position relaxes toward its attractor instead of integrating the
+  commanded speed; closed on itself, the imagined ego decelerates the scene away.
+* Masked S-rate separates (0.2632 [0.1404, 0.4182] trained vs 0.0175 [0.0, 0.0556]
+  frozen) — but the trained arm achieves it with oscillatory jerk 185 m/s³ against
+  the frozen arm's inert 5.6, and **neither is skill**.
+* STRATEGIC, distance-keeping and `sel_gap` are UNAVAILABLE in this read (named
+  work items, per the §5.5 contract); the paired decision-grade read is queued.
+
+The chain from §14.1 to here is the point of the chapter: **at T0 drift is a
+statistic; at T1 it is the car that will not hold speed.** No further driving claim
+is made, and none of §14.1–§14.7's numbers may be quoted as one.
+
+### 14.9 The decision arms, in one table
+
+All drift/nrmse/cos rows T0-DIAGNOSTIC (the two T1 rows say so); every number from
+`MODEL_REGISTRY.md` §13.9–§13.10 or the named raw; 1.5 % seed band on drift.
+
+| arm | one variable | steps | drift | prediction | verdict | tier |
+|---|---|---|---|---|---|---|
+| `postrain10k` | (length control) | 10 k | 0.359 | — | the manufacture trajectory's start (E-DEC-61) | T0 |
+| `postrain30k` | the incumbent | 30 k | 0.669 | nrmse 0.8115 · cos 0.6395 | the trained attractor | T0 |
+| `postrain30k_seed1` | `--seed 1` | 30 k | 0.679 | — | seed band ~1.5 % | T0 |
+| `postrain30k_freeze` | `--freeze-encoder` | 30 k | **0.3905** | nrmse 0.9301 (+14.6 %) | **DEGENERATE** — manufacture removed, prediction fails the band (E-DEC-64) | T0 |
+| `k4_30k` | `--o5-k 4` | 30 k | 0.6701 | nrmse 0.7682 | k INERT on trainable; freeze×k4 explains `splitp30k` (E-DEC-66) | T0 |
+| `omega30k` | `--cond-param omega_accel_v` | 30 k | 0.6911 | nrmse **0.6911** (−14.8 %) | MIXED — **adopted** for prediction; marginal null (E-DEC-65) | T0 |
+| `o14base2k` + `o14fut01/10`, `o14rec10`, `o14dr10` | O14 ladder (w 0 / 0.1 / 1.0 fut / 1.0 rec / DR-shuffled) | 2 k | 0.4531–0.4733 (DR 0.4533 = base) | nrmse 0.9746–0.9895, all at the mean-predictor floor | gates pass; DR inert; marginal does not exist at 2 k | T0 |
+| `o14fut30k` | `--w-o14 1.0 --o14-mode fut` | 30 k | 0.6709 | nrmse 0.8288 · cos 0.6043 | **ABSORBED** (+0.0096 → −0.0047) — anti-displacement, not anti-drift; adopted (E-DEC-67) | T0 |
+| `ema2k_s0` / `ema2k_s1` | `--o5-target ema` (2 k) | 2 k | 0.4002 / 0.3644 | cos 0.1336 / 0.0979 | MIXED — both effects later shown transient (MM-E1 st. 1) | T0 |
+| `emao14_30k` | `--o5-target ema` (30 k) | 30 k | 0.6952 | nrmse **0.7466** · cos **0.7524** | **EMA-OUT on drift; largest prediction gain on record** (E-DEC-69) | T0 |
+| `postrain30k` @ T1 | — | 30 k | — | ADE 14.52 [11.55, 17.58] vs CV 0.5352 | LOSES_TO_HOLDV0 — fidelity diagnostic only | **T1** |
+| `postrain30k_freeze` @ T1 | — | 30 k | — | ADE 14.21 [11.23, 17.35] vs CV 0.5352 | LOSES_TO_HOLDV0 — fidelity diagnostic only | **T1** |
+
+### 14.10 The open problem, and the attack list
+
+**Statement of the open problem.** Under a self-targeted latent-prediction
+objective with a trainable encoder, drift converges to ~0.62–0.68 regardless of
+initialisation and step count ≥ 7.5 k; freezing removes the manufactured component
+(≈ 0.28–0.31, ESTIMATED, §14.4) but fails the prediction gate; and every measured
+objective-level knob — rollout depth, conditioning parameterisation, a
+future-observation auxiliary, an EMA teacher — leaves drift within +3.6 %/−0 % of
+the incumbent at 30 k. **No measured lever moves drift downward on the trainable
+line.** The attack list, in the order the evidence ranks it:
+
+1. **Frozen-teacher feature target (SALT-class) — the pre-committed next lever**
+   (bound in the MM-E1 outcome). Replace the EMA teacher with a *frozen*
+   pixel-pretrained encoder as the target producer: the target then never moves
+   with θ at any timescale — the only family that removes the movable target
+   rather than low-passing it. PUBLISHED support [2509.24317]: a frozen-teacher
+   student at ViT-g reaches 76.2 on SSv2 vs V-JEPA 2's 75.3 at a better
+   accuracy–compute Pareto, with the training loss becoming downstream-predictive
+   (R² 0.951), and the teacher may be small and sub-optimal. Our own §13
+   distillation evidence points the same way. Status: PLANNED, unregistered.
+2. **Variance–covariance regularisation on *both* branches (C-JEPA-class).**
+   VICReg terms applied to student and target branches [2410.19560, with VICReg
+   itself 2105.04906] are published as stabilising JEPA training against
+   collapse-family shortcuts. Whether they touch *drift* — which rank constraints
+   provably do not (§14.2) — is exactly the open question; the tiny ladder prices
+   the test at ~35 min/arm. Status: HYPOTHESIS.
+3. **Predictor-capacity threshold (IWM-class).** The image-world-model result
+   [2403.00504] that the *predictor's* capacity and conditioning decide whether a
+   JEPA predictor learns an equivariant world model or collapses to an invariant
+   one implies a capacity band worth sweeping before further objective surgery —
+   our K = 8 rollout with a fixed predictor has never been capacity-swept against
+   drift. Status: HYPOTHESIS.
+4. **Contrastive future discrimination.** PROPOSED (Master Mind, 2026-08-29;
+   unmeasured, no pre-registration): require \(\hat z_{t+k}\) to *identify* the
+   true future among within-clip time-shifted distractor futures (InfoNCE over
+   futures). A pure drift solution scores at chance exactly when the distractors
+   share \(z_t\)'s predictable component — i.e. the discriminator must be built
+   the way the probe family builds its time-shuffled control, or it manufactures
+   the result (the §13.15 lesson at training time). C160 applies before any run.
+5. **Drift-orthogonalised target.** PROPOSED (Master Mind, 2026-08-29;
+   unmeasured): fit the drift map \(g\) (frozen bank or slow refit) and train O5
+   on the residual target \(\Delta z - g(z_t)\) — equivalently, project the
+   per-step loss onto the orthogonal complement of the drift-predictable subspace
+   — so the shortcut's gradient contribution is subtracted by construction. Two
+   failure modes are named in advance: \(g\) in the loop is a second movable
+   target, and a frozen \(g\) goes stale as the latent moves; both need controls
+   before the first arm. ⚠️ **A third failure mode, not named here, was found by measurement the same evening and is structural rather than practical: this design's training signal is the read's own residual (§15.3).**
+
+Two cheaper due-diligence arms ride alongside: a **τ-ramp arm** (the I-JEPA
+schedule) is *required before any EMA adoption* per the stage-2 amendment, and a
+2 k **fast-early-teacher discriminator** (data2vec-style low-τ start) would confirm
+the transient account at the scale it was observed — both one-variable,
+ladder-priced.
+
+⇒ **§15 reports the first cell of this ladder to return**, the standing consequence it earned, and the hypothesis it raised about whether *drift downward* is the right direction at all.
+
+### 14.11 What §14 does not establish
+
+Drift is measured on \(\Delta z\)'s **top-8 PCA directions at k = 4 over 80
+held-out clips**; §13.16's band control found the only hint of action content in
+directions 8–16, which every number here is blind to by construction. The
+world-smoothness/self-generated split is an **ESTIMATE across different latent
+geometries**, not a decomposition (§14.4). The 2 k stage-1 numbers are
+**motivation-only** — off the published τ operating map in both directions, by the
+amendment that pre-dated the stage-2 read. The **EMA×O14 interaction is
+unseparated** (the 2 k evidence was collected without O14; the diagnostic arm would
+be a follow-up, not a rerun). E-DEC-69's +24.5 % prediction gain is a **single
+matched pair, single seed** — the seed band for *this* recipe at 30 k is not yet
+measured, though the effect is ~7× the 2-seed 3.5 % nrmse spread measured on the
+omega pair. Items 4–5 of the attack list are **PROPOSED and unmeasured**; items
+2–3 are hypotheses supported at other scales and domains. And no claim about
+driving is made anywhere except §14.8 — which is *negative* at T1 for both arms
+and carries its admissibility flags in the same sentence.
+
+## 15. Prediction at matched drift: an anti-drift objective that succeeded and failed, a coupling hypothesis, and the mode our numbers were measured in (2026-08-29)
+
+**Tier: T0-DIAGNOSTIC throughout.** Every drift, cosine and nrmse number in this
+section is a world-model diagnostic — never driving performance; the one driving
+number quoted (§15.5) is T1 and belongs to a *retracted* readout, quoted only to
+size an instrument defect. Evidence class: **MEASURED (ours)** with the raw
+artifact named, except the published SIGReg/LeJEPA construction (**PUBLISHED**,
+banked), the coupling statement of §15.4 (**HYPOTHESIS**, and it is labelled as
+one in every sentence that carries it), and the §14.10-item-5 consequence
+(**inference from the mechanism, not a measurement**). Pre-registrations:
+`PREREG_DRIFT_ATTACK_LADDER.md` (MM-E4, with Amendments A and B), and
+`PREREG_DRIFT_PREDICTION_FRONTIER.md` (MM-E5). Retraction-log entries: TRAIN-C5
+and MM-C2.
+
+> **Figure 5 — `Paper/figures/drift_frontier.svg`** (generated by
+> `Paper/figures/make_drift_frontier.py`, which **reads the banked probe JSONs at
+> generation time and exits if one is missing** — no hand-typed fallback, with four
+> cross-artifact tripwires: the base arm `o14fut10`'s drift *and* centred cosine
+> must agree between the O14 ladder's and the drift-ladder's raws, the 2 k incumbent
+> `o14base2k`'s drift must agree between the ladder's and the bake-off's, and the
+> 30 k incumbent's cosine between its own raw and the EMA pair's; the `.png` export
+> is gated on cairosvg's native cairo exactly as Figure 4's is): the (drift,
+> prediction) plane drawn **once per scale and never once for both** — panel A at
+> 2 k, panel B at 30 k, **axes deliberately not shared**, because a 2 k drift number
+> and a 30 k drift number are not commensurable (§14.1's validity band is
+> 30 k-calibrated) and plotting them on one pair of axes would assert a comparison
+> the instrument cannot support. Each intervention appears as an **arrow from its
+> own base to itself** — the one-variable delta, which is the only comparison
+> licensed — and panel C draws the registered dose curve with its two measured and
+> two not-yet-run points.
+
+§14 closed on an open problem and a ranked attack list. The PI ranked that list on
+2026-08-29 and the ranking produced a tiny ladder, MM-E4, whose cells are the top
+two mechanisms and their combination: a **frozen-teacher** target (attack-list item
+1) and **innovation-SIGReg**, the regulariser-side sibling of item 5. This section
+reports the **first of those cells to report**, and it is a result of an unusual
+shape: the intervention **worked on the primary metric, by the largest margin the
+programme has ever measured, and was failed anyway** — correctly, by a protection
+rule registered less than three hours earlier. §15.1 states the cell and its
+numbers; §15.2 gives the mechanism with its mathematics; §15.3 names the class and
+the standing consequence, including what the failure implies for an item still
+sitting on §14.10's list; §15.4 states the coupling hypothesis MM-E5 raises, with
+its limits and its registered discriminating tests; §15.5 is a provenance note on
+the configuration in which this paper's numbers were produced; §15.6 states what
+§15 does not establish.
+
+### 15.1 The cell: innovation-SIGReg (MM-E4 L1)
+
+The lever. §14.10's item 5 proposed subtracting the drift-predictable component
+from O5's target. MM-E4's L1 is the same idea placed in the **regulariser**
+instead of the target: the sketched-Gaussianity term O6 keeps its machinery
+verbatim and only its *input tensor* changes, from the latents \(z\) to the
+**dynamics innovations**
+
+$$\varepsilon_t \;=\; \Delta z_t \;-\; g(z_t), \qquad \Delta z_t = z_{t+1} - z_t ,$$
+
+with \(g\) a closed-form ridge with intercept, fitted **under `no_grad` on one half
+of the batch and applied to the other, both ways** — so no row is ever scored under
+a \(g\) that saw it, which is the 2026-08-22 probe rule carried into a
+training term. The ridge constant is **relative** (`O6_INNOVATION_RIDGE_REL` = 1e-2
+of the fit half's mean centred-Gram diagonal) and fixed in advance by the
+pre-registration: an *absolute* λ would shrink in relative terms as latent norms
+grow, which is the very quantity under study, and would couple the constraint's
+strength to the thing being measured. Gradient reaches only the live \(z_t,
+z_{t+1}\) of the scored rows; \(g\) is a per-batch constant. Implementation:
+`stack/scripts/train_v6_staged.py`, `o6_innovation_rows` (flag `--o6-innovation`),
+default-off and bit-identical when off, with an 18-test suite whose analytic anchor
+is the inversion this cell depends on — \(z_{t+1} \equiv z_t\) makes the rows
+exactly zero, a point mass the sketched test penalises hard where plain SIGReg on
+the same states reads near-null.
+
+The read (MEASURED, ours; `…/incoming/2026-08-29-e4-drift-ladder/raw/`,
+`e4_e4_l1_inno_drift.json` and `e4_e4_l1_inno_nrmse.json`; the v7-tiny 2 k rig,
+80 held-out clips, 7,680 rows, one variable against the recipe base `o14fut10`
+— itself the O14 ladder's `--w-o14 1.0` arm, so the lever is tested *on* the
+adopted recipe rather than beside it, per Amendment A):
+
+| read | `e4_l1_inno` | base `o14fut10` | change | verdict |
+|---|---|---|---|---|
+| **drift r** (PRIMARY) | **0.3551** (t 26.59) | 0.4733 (t 47.90) | **−25.0 %** | the largest drift reduction ever measured on the trainable line |
+| cos (centred) — PROTECTED | **0.0108** | 0.2462 | **−95.6 %** | ⛔ |
+| cos vs its permutation null | **0.72 σ** | 11.26 σ | — | ⛔ **no longer separated from its own null** |
+| nrmse (constant predictor = 1.0) | **1.0162** | 0.9746 | +4.3 % | ⛔ **above 1.0, and above its own mean-only control (0.9984)** |
+| mean fraction of the prediction | **0.9876** | 0.0952 | — | ⛔ 98.8 % of the predicted \(\Delta z\) *is* the batch mean |
+| constant control | 0.0000 | 0.0000 | — | ✅ exact, both arms |
+| ego-state marginal over \(z_t\) | +0.0077 (t 1.25) | −0.0047 (t −1.14) | — | inside null, both arms |
+
+⇒ **PRED-PAYS ⇒ FAILED**, by the committed protection: *any cell that pays > 5 %
+centred cosine is FAILED regardless of drift.* The protection is not a
+post-hoc reading. It entered the pre-registration at **19:00** on 2026-08-29
+(commit `96ac1dc`), derived from E-DEC-69's finding that landed at **17:57** the
+same day (commit `c716276`, §14.7) — **2 h 40 min before the 21:40 read it
+failed** (commit `9c5cb6f`). Without that clause the ladder's own `DRIFT-DOWN`
+outcome would have awarded this arm the 30 k confirmation run the pre-registration
+prices at **~8.2 h of Thor**, spent confirming a latent that had become noise.
+⚠️ Note also which axis the protection had to be written on: at 2 k every arm sits
+near the mean-predictor floor (the ladder's nrmse span is 0.9746–0.9895 against a
+mean-only control of ~0.998), so **nrmse has almost no headroom at this scale and
+the centred cosine is the sensitive read** — a scale fact recorded in the
+pre-registration before the arm ran, not discovered in it.
+
+### 15.2 Why it worked, and why working is exactly the failure
+
+**The objective.** SIGReg is the sliced Gaussianity test of LeJEPA
+[arXiv:2511.08544] (PUBLISHED, banked): by Cramér–Wold a distribution is
+\(\mathcal{N}(0, I)\) iff every one-dimensional projection is
+\(\mathcal{N}(0,1)\), so for \(M\) freshly drawn unit directions \(u_m\) and the
+Epps–Pulley statistic \(T_{\mathrm{EP}}\) against \(\mathcal{N}(0,1)\),
+
+$$\mathrm{SIGReg}(E) \;=\; \frac{1}{M}\sum_{m=1}^{M}
+T_{\mathrm{EP}}\!\big(\{\langle u_m,\, e_i\rangle\}_{i=1}^{n}\big),$$
+
+minimised exactly when the empirical law of \(E\) is isotropic standard Gaussian.
+The incumbent applies it to the embeddings, \(E = \{z_i\}\); L1's single change is
+\(E = \{\varepsilon_i\}\). The trained objective is therefore
+
+$$\mathcal{L} \;=\; \mathcal{L}_{\mathrm{O5}}(\theta,\phi)
+\;+\; \lambda_6\,\mathrm{SIGReg}\big(\{\Delta z_t - g(z_t)\}\big).$$
+
+**The read.** §14.1's drift statistic is \(r = \operatorname{corr}(\tilde
+g(z_t),\, \Delta z_{t\to t+k})\) with \(\tilde g\) a cross-fitted probe. Write the
+regression decomposition (exact for the least-squares fit, and approximate at the
+ridge constant used here):
+
+$$\operatorname{Var}(\Delta z) \;=\; \operatorname{Var}\big(\tilde g(z_t)\big)
+\;+\; \operatorname{Var}(\varepsilon)
+\qquad\Longrightarrow\qquad
+r^{2} \;=\; 1 \;-\; \frac{\operatorname{Var}(\varepsilon)}
+{\operatorname{Var}(\Delta z)} .$$
+
+**The collision, in one line: the regulariser's argument is the read's own
+residual.** The term constrains \(\varepsilon\); the statistic is a monotone
+function of \(\operatorname{Var}(\varepsilon)/\operatorname{Var}(\Delta z)\).
+
+**Why a minimiser can satisfy the term by destroying the dynamics.** The
+constraint pins the *residual* — it demands \(\varepsilon\) be isotropic with unit
+variance in every direction — and says **nothing whatever about**
+\(\operatorname{Var}(\tilde g(z_t))\), the numerator that carries the predictable
+structure. Two families satisfy it:
+
+* **(a) the intended one** — the latent keeps its world-driven temporal structure
+  and the *residual around* that structure is Gaussianised;
+* **(b) the shortcut** — the encoder makes \(\Delta z\) an i.i.d. isotropic
+  Gaussian sequence, **independent of \(z_t\)**. At that configuration the optimal
+  ridge is \(g \equiv 0\), so \(\varepsilon = \Delta z\) and the term is satisfied
+  *exactly*. And there,
+  * **drift is zero by construction**: no map of \(z_t\) correlates with a change
+    independent of \(z_t\), so \(r \to 0\) whatever probe family reads it;
+  * **prediction is impossible by construction**: the best attainable output of any
+    predictor is \(\mathbb{E}[\Delta z \mid z_t, c_t] = 0\), i.e. the mean
+    predictor, so \(\mathrm{nrmse} \to 1\) and the centred cosine collapses to its
+    permutation null.
+
+Family (b) is strictly cheaper for the encoder than family (a) — it requires no
+world content at all — and nothing in the term separates them. This is the §14.2
+argument in its sharpest form: there, the *target* was movable and the shortcut was
+an easier target; here, the *constraint* is a function of the read's residual and
+the shortcut is a structureless latent.
+
+**The measured signature is the predicted signature.** Family (b) predicts four
+things jointly, and the raws read all four: drift falls (0.4733 → 0.3551, −25.0 %);
+nrmse crosses 1.0 (1.0162) *and* its own mean-only control (0.9984); the predicted
+\(\Delta z\) becomes the batch mean (mean fraction 0.0952 → 0.9876); and the
+centred cosine loses separation from its permutation null (\(z\) 11.26 → 0.72). It
+is the co-occurrence that identifies the mechanism — any one of the four alone
+would admit weaker readings.
+
+⚠️ **What this argument does and does not establish.** It establishes that the
+degenerate family **is in the minimiser set** and that the measured arm sits **at
+its predicted signature**. It does **not** prove the arm arrived there by that
+route: a 2 k arm is not converged, the drift did not go to zero (0.3551, still
+t 26.59 against its controls), and an alternative account in which the term merely
+adds a large gradient that damages the representation non-specifically is not
+excluded by these reads. The dose curve of §15.4 is the measurement that
+discriminates the two, and it is registered rather than run.
+
+⚠️ **A scope precision the argument needs, and which strengthens rather than
+weakens it.** The training term's \(g\) and the read's \(\tilde g\) are **not the
+same map**: the term uses a *linear* ridge over the full \(d = 2048\) at \(k = 1\)
+tick, cross-fitted across batch halves; the read uses a *random-Fourier-features*
+ridge on the **top-8 PCA band** of \(\Delta z\) at \(k = 4\) ticks, cross-fitted
+across clip-disjoint folds. So the term does not literally optimise the reported
+statistic — and the collision does not require that it does. It requires only that
+the term's argument be the residual of a regression *in the same family* as the
+read's, because the degenerate configuration is horizon- and basis-free: if the
+increments are i.i.d. and independent of \(z_t\), then \(z_{t+4} - z_t\) is a sum
+of terms independent of \(z_t\) and every band of it is unpredictable from \(z_t\)
+too. The 25 % transfer from a \(k=1\), full-dimensional, linear constraint to a
+\(k=4\), top-8-band, nonlinear read is itself the measurement of that transfer.
+
+### 15.3 The class, the standing consequence, and one design it re-prices
+
+**The class: Goodhart in objective form — *tune-on-what-you-score*, moved from the
+probe to the loss.** The programme already carries the probe-side rule, earned on
+2026-08-22: *fit every hyper-parameter on the fit split only; the scored
+split is scored, never tuned on.*
+L1 is the same failure one level up, and the probe-side rule does not reach it —
+L1's ridge is **impeccably cross-fitted**, its constant control reads exactly
+0.0000, and its λ was fixed in advance and made relative precisely so it could not
+track the quantity under study. Every safeguard the earlier lesson demanded was in
+place, and none of them could help, because the defect is not in how the term was
+*fitted* but in what the term is a function *of*. The training-time rule is
+therefore distinct and stronger:
+
+> ⛔ **An objective may not be a function of the read's own residual.** A
+> regulariser aimed at the statistic the primary read measures can drive that
+> statistic to its no-information value while destroying the quantity the statistic
+> was a proxy for — and the loss curve, the controls, and the cross-fitting will all
+> look correct while it does.
+>
+> — entered as **I16** in §5.8, because a rule that lives only in the
+> results section that earned it is a rule the next experiment will not read.
+
+**The standing consequence the programme adopted** (`PREREG_DRIFT_ATTACK_LADDER.md`,
+L1 OUTCOME):
+
+> ⛔ **Drift alone is never a valid objective.** Any future anti-drift lever is
+> admissible only with the prediction protection attached, and **a drift number
+> quoted without its paired prediction reads is inadmissible** — in this paper, in
+> the registry, and in any report.
+
+Applied backwards, this does not disturb §14: every drift number there is already
+published beside its nrmse and cosine, and the two arms that moved drift most —
+the frozen encoder (§14.4) and this one — were both failed on the prediction side
+by pre-committed bands. Applied forwards it re-prices a design:
+
+⭐ **§14.10's item 5 — the drift-orthogonalised target — is now a worse bet than it
+was written as, and for a reason its own pre-registration did not name.** Item 5
+proposed training O5 on the residual target \(\Delta z - g(z_t)\). It named two
+failure modes in advance (a \(g\) inside the loop is a second movable target; a
+frozen \(g\) goes stale). The collision above is a **third**, it is structural
+rather than practical, and it applies to item 5 exactly as it applies to L1,
+because item 5's *training signal* is likewise the read's residual — the placement
+in the target rather than the regulariser changes which term carries the gradient,
+not what the gradient is a function of. ⇒ Item 5 is **not refuted** — it was never
+run — but it may not be launched without the same protection, and its prior should
+now be read from L1's result. This is an **inference from the mechanism, not a
+measurement of item 5**, and it is labelled as such. Items 1–3 of the attack list
+(frozen-teacher/SALT-class, both-branch VICReg, predictor-capacity) are untouched
+by this argument: none of them takes the read's residual as its argument. Item 4
+(contrastive future discrimination) is likewise untouched, its own registered
+hazard being a different one.
+
+### 15.4 The coupling hypothesis (MM-E5) — stated as a hypothesis
+
+**The observation.** Two interventions have now moved drift and prediction, and
+they moved them **in the same direction**:
+
+| lever | scale | drift | prediction (cos, centred) | source |
+|---|---|---|---|---|
+| EMA teacher | 30 k | **+3.6 %** (0.6709 → 0.6952) | **+24.5 %** (0.6043 → 0.7524) | E-DEC-69, §14.7 |
+| innovation-SIGReg | 2 k | **−25.0 %** (0.4733 → 0.3551) | **−95.6 %** (0.2462 → 0.0108) | MM-E4 L1, §15.1 |
+
+**The hypothesis.** If that co-movement is **mechanism-independent**, then the
+programme's objective is mis-stated. The target would not be *minimum drift* but
+**maximum prediction at matched drift** — a frontier — and §14's open problem would
+be restated from *"we have a defect to remove"* to *"we sit at a bad point on a
+frontier"*. Every anti-drift result in the programme, §14's included, would be
+re-read as a **position** on that frontier rather than as a pass or a fail.
+
+**Precedence.** MM-E5 was registered in `PREREG_DRIFT_PREDICTION_FRONTIER.md`,
+commit **`6e719a493`, 2026-08-29 22:02** — **before the arms that can discriminate
+it reported**: at registration L2 (frozen-teacher) was mid-training and L3/L4 were
+unstarted. That ordering is in the git history rather than in the document's own
+prose, and it is part of the claim's standing: the outcomes below were committed
+against unknown results.
+
+⚠️ **The limits, stated with the claim and not after it.** **n = 2.** The two
+points differ in **mechanism** (one constrains the innovations, one replaces the
+target with a slow copy), in **scale** (2 k against 30 k), and in the **part of the
+prediction axis they occupy** — the 2 k pair moves between "barely predicting" and
+"not predicting" (0.2462 → 0.0108) while the 30 k pair moves within a régime where
+prediction is real (0.6043 → 0.7524); those are not the same dynamic range. There
+is **no shared axis**: §14.1's drift-validity band is 30 k-calibrated, 2 k arms sit
+near 0.45 with clean controls, and every 2 k number is admissible **vs-base
+relative only** — which is why Figure 5 draws two panels and never one. ⇒ This is a
+**HYPOTHESIS**, and no result in this paper may be re-read through it until the
+tests below report.
+
+⚠️ **A competing account that the same n = 2 fits equally well, and that the
+registered outcomes anticipate.** The co-movement may be a property not of the
+(drift, prediction) plane but of **which levers happen to work**. Note what the
+record actually contains: **every drift reduction this programme has measured on
+the trainable line either turned out to be a warm-up transient (the 2 k EMA arms,
+§14.7) or is explained by the removal of temporal structure (L1, §15.2)** — we
+have no example of a drift reduction by a route we would call good. Under that account there is no frontier — there is a
+**selection effect over mechanisms**, and a lever that lowered drift by some other
+route could still buy prediction. This distinction decides which test is
+load-bearing: **the dose curve cannot separate the two**, because it varies only the
+weight of a mechanism already known to work by removing structure; **only the
+disjoint-mechanism arms can.** The pre-registration's `L1-SPECIFIC` outcome is
+exactly this possibility, committed in advance.
+
+**The two registered discriminating tests, with their committed outcomes.**
+
+1. **Test 1 — the disjoint-mechanism arms (free; already queued in the E4 chain).**
+   MM-E4's **L2 (frozen-teacher)** and **L4 (azimuthal-crop targets)** constrain the
+   **target**, not the innovations — a mechanism family disjoint from L1's. Their
+   (drift, cos) pairs are read against the same base `o14fut10` on the same
+   instrument. *(L4's crop is geometrically clean only because our 256×640 corpus is
+   **cylindrical**, where column is linear in azimuth, so a horizontal crop is a
+   pure FOV restriction; the pre-registration records that scope condition, because
+   the same trick on a pinhole projection would warp the view.)*
+2. **Test 2 — the dose curve (PI-approved; 2 arms, ~1.2 h Thor).** A sweep of the
+   innovation constraint's weight: `--o6-innovation` at `--w-o6` ∈ {0.01, 0.03}
+   added to the two measured points {0 = base, 0.1 = L1}, everything else the
+   `o14fut10` line at 2 k. **Four points on one axis with one mechanism varying** —
+   the clean shape test that a single arm cannot give.
+
+Committed outcomes, verbatim in substance from the pre-registration:
+
+| outcome | condition | consequence |
+|---|---|---|
+| **COUPLED** | drift and cos move **monotonically together** across test 2's four points | the objective is restated as the frontier; the programme reports *prediction at matched drift* from then on, and MM-E4's remaining levers are re-read as frontier **positions**, not pass/fail |
+| **DECOUPLED** | a point exists with **lower drift and cos within the seed band of base** | coupling refuted; that weight is the innovation constraint's operating point and the minimise-drift framing survives |
+| **L1-SPECIFIC** | test 1's disjoint-mechanism arms do **not** trade along the same line while test 2's do | the coupling is a property of **innovation constraints**, not of drift — reported as such, **not generalised** |
+| **NON-MONOTONE** | the dose sweep is not monotone | **no verdict** — report the points and stop; a non-monotone dose curve means an uncontrolled variable |
+
+**One decision already taken, and what it is and is not.** On the evening of the
+same day the PI adopted the EMA teacher for v7f (`D-EMA-ADOPT`, commit `a67b3c0`,
+21:52), accepting its **+3.6 % drift cost** for its **+24.5 % prediction gain**,
+gated on a τ-ramp arm — which supersedes §14.7's description of ship-with-EMA as an
+open decision. That decision is **consistent with** the coupling reading and is
+**not evidence for it**: it was taken on prediction grounds with the drift cost
+knowingly accepted, and a decision cannot corroborate the hypothesis that would
+justify it. If MM-E5 returns COUPLED, the trade the PI made is the *shape* the
+programme should have been making all along; if it returns DECOUPLED or
+L1-SPECIFIC, the decision stands unchanged on its own prediction evidence.
+
+### 15.5 Provenance: the configuration our numbers were measured in
+
+A reader is entitled to know that the numbers in this paper were produced with the
+model in the configuration being claimed about. On 2026-08-29 we found one that was
+not, and audited the rest.
+
+**The defect (TRAIN-C5, RETRACTED; commit `1c914808a`).** A sibling experiment —
+the GRPO post-training pilot on REF-C v2.1, `stack/scripts/rl_pilot_refc21.py` —
+scored its model in **`train` mode**. `nn.Module.training` defaults to **True** and
+nothing in that path overrode it, so every readout was taken with `ego_dropout` and
+`route_dropout` at 0.5 (per-sample Bernoulli zeroing of \(v_0\) and of the route)
+and with stochastic truncated-diffusion noise live. **MEASURED impact** on the same
+cold-start checkpoint, three seeds per mode (`raw/p_rc21/eval_mode_impact.json`,
+probe `code/eval_mode_impact.py`): selection-ADE **2.000 m in `train` mode against
+0.726 m in `eval` mode — the readout overstated the error by +175.7 %** (from the
+unrounded per-seed means; the tabled values round as shown) [TIER T1;
+quoted here only to size the defect, and belonging to a retracted result], the
+collision rate barely moved (11.063 % → 10.638 %), and the run-to-run spread went
+**0.099 m → exactly 0.000 m**. That last number dissolved two of the experiment's
+own pre-registered limitations rather than fixing them: the planned "seed the
+decoder noise" work was unnecessary because `.eval()` is total, and the 17 %
+wobble that had been attributed to diffusion noise was **dropout**.
+
+**The audit (MM-C2), established by source — and re-verified independently for this
+section on 2026-08-29 rather than inherited:**
+
+| instrument | how it obtains eval mode | verdict |
+|---|---|---|
+| drift / prediction probes `latentmotion.py`, `meanpred.py` — **the source of every §14 and §15 drift, cos and nrmse number** | **0** direct calls each; their shared loader `v7tiny_g2.load_arm` (defined :96) calls `world.eval()` at :103 | ✅ SAFE |
+| T1 driving instrument `taniteval/tools/t1_eval.py` — **the source of §14.8** | **5** direct calls (:1044, :1052, :1070, :1229, :1242) | ✅ SAFE |
+| eval harness `taniteval/runner.py` | **0** direct; its loader `taniteval/data.py:173` does `.to(device).eval()`; `compounding.py:112` and `hierarchy.py:551` are explicit | ✅ SAFE |
+| flagship / diagnostic evals | explicit calls throughout `stack/scripts/eval_*.py` and `stack/tanitad/eval/`; the one file with **zero** direct calls, `eval_v58f.py`, is assembled by `tanitad.models.v58f.load_v58f`, whose module sets `requires_grad_(False)` and `self.eval()` in its constructor (:326) | ✅ SAFE |
+| **the RL pilot** | **built its own model path, bypassing every loader that sets eval** | ⛔ the sole affected instrument |
+
+⇒ **No number in this paper is affected.** The defect was local to a new code path
+that constructed a model without going through a house loader.
+
+⭐ **The class, which is why this note is in the paper rather than in an errata
+file: a safety default that lives in a LOADER is not a property of the MODEL.** The
+audit's own table is the argument — **three of the four safe families contain at
+least one scoring path that never sets eval itself** and is safe only because a
+loader does it on their behalf. That is not a property of those instruments, it is a property of how
+they were invoked, and a new script that builds its own object silently opts out.
+The recognition signal is therefore not "a missing `.eval()`" but **"a code path
+that constructs or loads a model without the house loader"**. ⇒ **The standing
+rule: a scoring function asserts `not model.training` itself, and records the mode
+in its output** — the assertion belongs where the number is produced, not where the
+object is built. The companion rule earned in the same pass: **every training run
+saves the checkpoint its numbers describe**, because the pilot's trained decoder had
+not been saved and its result therefore could not be re-measured at all once the
+defect surfaced. A run whose result cannot be re-measured is a run that has to be
+repeated.
+
+This generalises one step further, and the generalisation is the reason it earns a
+methods note: **the mode a model is in is an experimental variable like any other,
+and it had no instrument.** Framework defaults are not neutral — they are a
+configuration choice made by someone who never saw the experiment.
+
+### 15.6 What §15 does not establish
+
+The L1 mechanism argument (§15.2) is a statement about the **minimiser set** plus a
+**four-way signature match**, not a demonstration that this particular 2 k arm
+reached the degenerate configuration by the degenerate route; the dose curve is the
+registered discriminator and it has not run. The consequence drawn for §14.10's
+item 5 (§15.3) is an **inference from the mechanism**, not a measurement of item 5,
+which remains unrun. The coupling statement (§15.4) is a **HYPOTHESIS at n = 2**
+across two mechanisms, two scales and two different parts of the prediction axis,
+with a **competing selection-over-mechanisms account** that the same evidence fits;
+neither test 1 nor test 2 had reported when this section was written, and **no
+result in this paper may be re-read through the frontier framing until they do**.
+All L1 numbers are **2 k**, hence admissible **vs-base relative only** under
+§14.1's 30 k-calibrated validity band, and the arm's own deliberate-regression
+control (`--o6-innovation-shuffle`, the time-shuffled \(g\) that must destroy the
+constraint) is **implemented and registered but not yet read** — until it is, L1's
+drift reduction carries the ladder's `REGRESSION-FAILS` clause as an open
+instrument risk, not a discharged one. Nothing in §15 is a driving claim; the sole
+T1 number quoted (§15.5) belongs to a retracted readout of a different model and is
+quoted only to size an instrument defect.
+
 ## References
 
 (Formal bibliography at LaTeX export; the working citations live in
-`TanitAD Research Hub/INITIAL_RESEARCH_SYNTHESIS.md` and the dated research notes: LeJEPA
+`TanitAD Research Lab/INITIAL_RESEARCH_SYNTHESIS.md` and the dated research notes: LeJEPA
 arXiv:2511.08544; LeJEPA-identifiability (Klindt et al.) arXiv:2605.26379; JEPA generalization theory
 arXiv:2606.27014; V-JEPA-2 / V-JEPA-2-AC arXiv:2506.09985; DINO-WM arXiv:2411.04983; fine-tuning
 distorts features / LP-FT (Kumar et al., ICLR 2022) arXiv:2202.10054; DiffusionDrive
 arXiv:2411.15139; LAW arXiv:2406.08481; World4Drive arXiv:2507.00603; HiT-JEPA arXiv:2507.00028;
 GAIA-2 arXiv:2503.20523; Drive-JEPA arXiv:2601.22032; ego-status open-loop shortcut (AD-MLP /
 BEV-Planner) arXiv:2312.03031; open-loop⊥closed-loop arXiv:2605.00066; ALPS-4B transfer study
-`Ressources/AD_TRANSFER_RESEARCH.md` v1.1.)
+`Ressources/AD_TRANSFER_RESEARCH.md` v1.1. Added v0.9 (all PUBLISHED, §3.9/§7.14): AD-L-JEPA
+arXiv:2501.04969; V-JEPA 2.1 dense features arXiv:2603.14482; JEPA LiDAR occupancy WM
+arXiv:2602.12540; geographic diversity vs data volume for zero-label JEPA driving WMs
+arXiv:2607.04500. Added v1.2 (§14, all PUBLISHED **and banked** — sha256-verified under the same
+key in `TanitAD Research Lab/Library/library.json`): BYOL arXiv:2006.07733; Mean Teacher
+arXiv:1703.01780; data2vec arXiv:2202.03555; I-JEPA arXiv:2301.08243; V-JEPA feature prediction
+arXiv:2404.08471; C-JEPA (VICReg×JEPA) arXiv:2410.19560; VICReg arXiv:2105.04906; IWM
+(predictor-capacity world models) arXiv:2403.00504; SALT (frozen-teacher JEPA) arXiv:2509.24317;
+CGTR (teacher refresh; LLM-distillation scope) arXiv:2606.03532; PhyLatent arXiv:2608.05720
+(already cited in §13.1). Added v1.5 (§7.21; PUBLISHED and banked, sha256 in `TanitAD Research Lab/Library/library.json`): CLOVER
+arXiv:2605.15120; DriveZero arXiv:2609.06055 and NAVSIM arXiv:2406.15349, which §7.20 has cited by
+library key since v1.4 and which are listed here for the first time.)
 
 ---
 
@@ -1829,7 +6601,9 @@ BEV-Planner) arXiv:2312.03031; open-loop⊥closed-loop arXiv:2605.00066; ALPS-4B
   0.575 [0.429, 0.752], paired ΔCI [−0.221, −0.145]) with the C64 leak (21/40) and the
   `--v2-cache`/`--v2` conflation making it a corpus+architecture+rollout_k change, hence not a
   corpus result; the longitudinal **sign flip** (+1.465 vs −1.260 m/s) that ADE cannot represent;
-  tactical κ 0.253 → 0.0072 (decorative) and the `route_acc_nav`-is-copying correction (vision
+  tactical κ 0.253 → 0.0072 @ `DIR_YAW_RAD` 0.15 (**decorative** — the word and the collapse both
+  survive a 0.10 re-read; v1's own word does not, and is not quoted) and the
+  `route_acc_nav`-is-copying correction (vision
   route = exactly the majority-straight rate; 0/3 hierarchy seams on both arms); **H-COMPOUND**
   (CR 3.50 → 80.77, teacher-forced flat; C61 resolved) and E-DPSI null < 12°; rollout recovery
   RR-20 vs RR-CTL (ADE 0.424 → 0.348, ΔCI [0.0613, 0.0906]; speed bias erased +0.9397 → −0.0092;
@@ -1863,3 +6637,363 @@ BEV-Planner) arXiv:2312.03031; open-loop⊥closed-loop arXiv:2605.00066; ALPS-4B
   AlpaSim collision/offroad score; strategic family degenerate on a junction-free 20 s clip; rates
   are within-sim relative (3.21x OOD).
 
+- v0.9 (2026-08-11): the eval-tier and repair round. *(Version note: the status line had again
+  drifted — it read v0.6 while the changelog carried v0.7 and v0.8; this round was requested as
+  "v0.7" but that number is taken, so it is v0.9 — numbering not silently reused, twice.)*
+  **§5 extended** with (i) the episode-cluster bootstrap stated mathematically (cluster resample
+  over the 40 val episodes, statistic recomputed per draw, percentile interval, paired form for
+  two arms; full-set point estimate, never a mean of split-means) and (ii) the **binding
+  T0/T1/T2 eval-tier doctrine** with its measured basis — the §1.12 action echo: S-curve
+  reproduction 0.9785 open-loop vs 0.0538/0.0430 closed-loop and **0.0 % hold-action**; T0 is a
+  WM diagnostic, never driving performance; T1 (action-closed loop) is the primary capability
+  tier; cross-tier comparison invalid. **New §3.9** (theory): the JEPA objective in
+  predictor/target-encoder form with our no-EMA/no-stop-gradient SIGReg-only instantiation and
+  the deployed `full_relaxed` variant; the hierarchical 4B formulation as per-layer predictors at
+  separated clocks with goals as upper-level actions conditioning downward; the stage-A
+  control-response loss written out (counterfactual δa, response gain g = ‖Δ_probe‖/‖Δ_analytic‖
+  gated into [0.5, 2], L_factual anchor, L_scene complement-subspace stability); H-COTRAIN
+  pre-registered on the λ_plan curriculum milestones with both outcomes bound; the
+  staged-training evidence (Drive-JEPA 2601.22032, V-JEPA 2 2506.09985, DINO-WM 2411.04983,
+  AD-L-JEPA 2501.04969, V-JEPA 2.1 2603.14482 — all PUBLISHED). **New §7.12b** — the
+  v1arch/v1.6/v1.7 line: v1arch as the attributable data-axis arm with the programme's first
+  complete four-family block on the leak-free official OOD-val split (over-speed is a prior:
+  71.95 % ahead; seams 0/3 falsified; route head a constant predictor confirmed off-leak); the
+  v1.6 latents-only unicycle readout (jerk 36.17 → 1.13, distance-keeping indistinguishable from
+  GT, reliance-gated); v1.7's pre-registered refutation (outcome B) despite a −16 % ADE win; and
+  the §1.12 T1 action-echo measurement restated as the experiment that produced the tier
+  doctrine. **New §7.13** — v5f completed
+  30 k (T0 selected 0.4011 / fan oracle 0.1975 / accel MAE 8.11, four families with
+  TAC/STR honestly UNAVAILABLE); the wedge ladder (W1 refuted −16.7 %; W2 97.6 % of fan steps
+  infeasible; W2b smoother ⇒ jitter is denoise residue); **W4 unicycle emission head**
+  (a = a_max·tanh, κ = κ_max·tanh; accel MAE → 0.774, oracle 0.1991 → 0.1077, violations 0.0);
+  the three-surface fast-selector elimination (W4b feat 0.5600 / kin 0.5637 / W4c 0.6609, all
+  memorisation — retired by pre-registration) reproduced at the tactical level (E4.4: goal fan
+  beats CV at 4/6 s, selector throws it away); W7 K-sweep (roll-cost the first calibrated
+  selector, ρ 0.399, collapsing at dense K); **W3's unifying defect** (lateral sign 99.5 % at
+  gain 0.27, 3-dim action subspace) and the **stage-A predictor-only repair — all gates PASS**
+  (gain → 0.971/0.966, lon sign → 1.0, subspace preserved, factual roll improves); W7-on-repaired
+  = instrument-composition failure with ρ 0.716 [0.585, 0.770] calibration; W4r PASS (oracle
+  0.1273, winner accel 0.276) isolating the frozen selector as the last stale part; v5.8f
+  assembled T0 rows (0.4815 [0.393, 0.577] vs 0.7933 [0.641, 0.976]; +0.08 m ADE traded for 16×
+  kinematics; NOT a release row — families + T1 pending). **New §7.14** — the WM-physics proof
+  battery P1–P9 + I4 as a methods contribution: P1 decodability PASS (pred > enc), the P1
+  lead-gap resolution (class-filter fix did not dissolve it; transforms + MLP ceiling −0.334 ⇒
+  **the latent lacks a readable lead-distance variable**; aux-label lever retracted by the PI;
+  label-free LF0–LF4 program instead), P7 calibration (v5f ρ 0.49 pass; both v5.8f learned arms
+  fail), P5 instrument byte-close, and the P8 attempt-1 instrument lesson (unweighted BCE on
+  overwhelmingly-empty rasters collapses to all-empty; IoU-at-0.5 on a collapsed readout is a
+  ratio of noise; fix = auto pos-weight + soft-Dice + τ\* swept on the encoded arm). **New
+  §7.15** — Alpamayo-2-Super augmentation (**counts now MEASURED and registry-anchored at
+  `MODEL_REGISTRY.md` §11.1 — 4,729 clips / 23,644 rows, correcting the card-derived 4,800 /
+  23,999 that stood here as INHERITED**; plus the PH1-fused layer at §11.2 with its named 57.2 %
+  SAM3 hole), the obstacle.offline join
+  (26,084 records / 137 clips, occlusion flags), and the VLM strategic-labeling design + PH0
+  three-arm prereg with its admissibility rules. §7.11(f) status-noted; §10 extended with the
+  W7-FULL/T1/release-row ladder, the v6 staged direction (S-W/S-P/S-J), LF0–LF4, and the S1–S4
+  scaling ladder; references extended. Every §7.13–§7.15 number is MEASURED with artifact
+  filename or registry section inline, tier-stamped, with corpus-grid point estimates named as
+  such where the cluster-CI rescore is still pending.
+- **v1.0 (2026-08-12): the four verdicts, their mathematics, the doctrines as method, and the v6
+  ladder.** **New §7.16** — W7-FULL, the selector-free planner: gate FAIL 3.3348 m vs 0.4505 m
+  over a 0.1273 m-oracle fan with **no shortlist** (256/256, `winner_in_shortlist_frac` 1.0) on
+  the repaired trunk with a refit head; within-window rank correlation 0.445/0.497, across-window
+  ρ 0.3185 [0.2064, 0.4086] (episode-cluster bootstrap), **argmin error-rank 132 of 256**, top-m
+  mean error flat at the fan mean (~5.32) for every m while top-m ceilings fall (0.356 at m = 32),
+  roll-cost alone 5.2898 ⇒ the deployed number comes from the kinematic term; plus the
+  **consumer-invalidation** result (frozen selector 0.7933 → 4.4159 on repaired features) and the
+  consequent decision that v5.8f ships the **frozen-trunk** assembly at 0.4815 [0.3928, 0.5771].
+  **New §7.17** — H-COTRAIN **REJECTED within the measured range** on the λ_plan dose–response
+  curve (curvature 0.213 → 0.551 enc / 0.225 → 0.704 pred; yaw 0.583 → 0.869; P1 FAIL → PASS at
+  20 k) and **SIGReg VALIDATED** (participation ratio 4.53 → 6.94 of 2048, +53 %, retention 1.532
+  vs a ≥ 0.8× gate; top-8 share 0.9903 → 0.9232), with three scope bounds stated in the section
+  rather than buried — lowest available λ is 0.5 not 0, the spectrum series ends at 20 k not the
+  pre-registered 30 k, and a **real transient** dips the predicted-latent readouts at 10 k right
+  after λ hits 1.0 before they recover and overshoot — and the **retraction** of the erosion
+  premise this paper carried at v0.9 (root-cause class: a mechanism inferred from a coincidence
+  of symptoms, never dose-tested). **New §7.18** — P8 attempt-2 **GATE PASS** (retention 0.932 at
+  k = 10; IoU 0.01869 pred / 0.02005 enc; τ\* = 0.7 chosen on the *encoded* arm; 74× lift over
+  attempt 1; pos_weight 79.7 from 1.239 % positive cells), P4 permanence (occluded recall ≥
+  visible: enc 0.2178 vs 0.1881, pred 0.1743 vs 0.1717, n 194/548) with the **diffuseness
+  control** named as required before it stands alone, and **I4a** (intact 0.4011 / shuffled
+  1.2492 / zeroed 7.6493 — the ordering, not the magnitudes, is the result). **New mathematics:**
+  §3.10 the label-free commitment as an admissibility algebra (L1–L3); §3.11 the 4-brain
+  hierarchy formally — per-layer predictors, goal-token conditioning downward, latents upward
+  through sg/EMA, and the **gradient-isolation matrix** with its autograd probe and the two
+  vacuous-pass traps; §3.12 **the winner's curse** — the Gaussian-copula model (capture fraction
+  = ρ; E[error│argmin] ≍ −ρ√(2 ln N), which our data *refutes*), lower-tail dependence λ_L as the
+  statistic that actually governs selection, and the **degenerate-minimiser** model that the data
+  supports, with its prescribed remedies (a term inaction cannot minimise; top-m aggregation;
+  monotone recalibration); §3.13 SIGReg, participation ratio / effective rank, and what
+  "retention" measures (a ratio, with named endpoints). **Doctrine promoted to method:** §5 is
+  now sectioned, with **§5.4 the eval-tier doctrine** (T0 WM-diagnostic / T1 primary / T2 not
+  provisioned, on the measured action-echo basis) and **§5.5 the four metric families** as the
+  evaluation contract — including the honest statement that **STRATEGIC is uncomputable on
+  PhysicalAI-AV** (no map, no lane graph, no route signal; the card's verbatim "we do not include
+  open maps data"; `obstacle.offline`'s 87,481 cuboids are 10 all-dynamic classes; `egomotion`
+  has no GNSS) and exactly what would close it; §5.3 gains the **algebraic** account of why
+  `overlapping_holdout_se` moves the point estimate (a multiplicity-weighted mean, bias
+  Cov(ω, e)). **§10 rewritten as future work:** the v6 staged ladder S-W → S-T → S-S → (optional)
+  S-J with each stage's pre-registered gate and the O1–O6 measures; the VLM/SAM/Alpamayo
+  vocabulary pipeline **promoted to a precursor** of v6 (PH0 → PH1 → PH2) because S-S cannot be
+  gated until STRATEGIC is computable; the 6 s single-rollout horizon; and **§10.1, the open PI
+  decisions with their costed inputs** — S-W ESTIMATED 175–290 A40-hours (ladder ≈ 220–370), the
+  6 s windowing's MEASURED ≈ 43 % window loss at untouched parity, and the E-ENC matched pair
+  (per-layer 120.74 M vs shared `--pred-dim 960` 118.11 M, 2.2 % residual gap). **New Figure 3**
+  (winner's curse), generated by a script that reads the gate JSONs at generation time and
+  refuses to draw if one is missing or if two artifacts disagree on the fan oracle — palette
+  re-validated (`#2a78d6,#eb6834,#4a3aa7`, all pairs, light: ALL CHECKS PASS). **Figure 2
+  re-rendered**: its bar-value labels were *invisible in the PNG* because
+  `paint-order="stroke"` is not honoured by the rasteriser, so every label was erased by its own
+  white halo — present in the file, absent from the render; the halo is now a separate underlay
+  element, the takeaway cell no longer overflows into the footer, and its footer (written while
+  W7-FULL was queued) now states the outcome. Corrections: the PH0 sequencing sentence in §7.15
+  (the pipeline now runs *ahead of* v6, per the PI's 2026-08-11 resequencing) and the
+  clarification that 0.4505 m is the pre-registered **gate threshold**, not a deployed arm's
+  score. A third correction is registry-vs-doc: §10.1's S-W cost basis had inherited the design
+  note's attribution of the MEASURED 59.04 h / 7.085 s-per-step row to **"v4.2"**; the registry
+  assigns it to **`flagship-v4-fromscratch` (§1.5.5)**, while `flagship-v4.2-30k` (§1.5.3) was
+  killed at ~step 5 k and has no 30 k cost. The registry wins and the paper now names the right
+  arm; the estimate is unaffected because the basis runs are the same two.
+- **v1.1 (2026-08-18): the negative round, the instrument rules it earned, and a roadmap re-ordered
+  by evidence.** **New §7.19**, five results produced with **zero training** from banked artifacts and
+  frozen checkpoints, every one tier-stamped and estimator-stamped. **(a) E-R1-0 — the 40:1 pooling
+  bottleneck REFUTED** (four pooling ratios differing only in the kernel, 5 projection seeds, 1,302
+  train / 1,507 eval windows in 70 episode clusters, `intercept_col = −1`, paired episode-cluster
+  bootstrap: removing the pool moves r² by **|Δ| ≤ 0.0002, CI ∋ 0 on all five seeds** on the four
+  rungs the hypothesis was built to explain; `lead_gap`'s 15× rise is the ego-speed proxy and
+  collapses to 1.4× with `v₀` partialled out), plus the discriminator that settles it — a frozen
+  **`facebook/dinov2-base` (86 M vs our 87.3 M)** through the **same deployed pool** on the **same
+  windows** reads `lead_gap` **0.44997 vs 0.00496**, `ego_v0` **0.71733 vs 0.05240**, `lead_closing`
+  **0.01713 vs 0.00000** ⇒ **the encoder/objective is the constraint, not pooling and not corpus
+  narrowness**; and the correction that travels with it — **`PC-2OBJ` is inert at the deployed ratio
+  by construction** (opposing plants cancel under the cell mean; reproduces the un-planted arm to
+  5e-05), so the power claim is re-anchored on **`PC-LOCAL`/`PC-DIST`** (0.0596 → 1.0000, K1 9/9) and
+  **the verdict is unchanged**. **(b) The encoder falsifier battery and its adversarial re-read** —
+  `ego_v0` random-init-over-trained **survives with a real estimator** (Δr²c **+0.150
+  [+0.055, +0.226]**, p = 1.000, **27/27 cells positive**) and gains a from-the-weights mechanism
+  (LayerScale `ls_init` 1e-5 ⇒ residual fraction 0.0002, cos 1.0000 at init; the trained arm has moved
+  to `ls` 70× init, residual 0.38); `lead_gap` **dies** (0/27 separated, sign flips 9/27); ⛔ **the
+  "3.6×" ratio is WITHDRAWN** (near-constant vs live predictor; 2.8×/2.0× on a re-drawn inner split)
+  because **our trained arm is not CI-separated from its own matched-random null** — the admissible
+  claim is **signal vs no-signal on one rung**; an α-widening attack to 1e13 **failed and is reported
+  because it failed**; and the **rank collapse** is new and monitorable (97.6 % of token-channel
+  variance in one direction, effective rank 1.22 vs 67–68; whitening lifts both arms and closes
+  nothing ⇒ co-symptom). The step-0 → 9,250 sweep is **UNAVAILABLE, not unretrieved**; the `z_op`
+  ladder's step-2,000 point supplies the only real trajectory evidence (`ego_v0` 0.1346 → 0.0801 by
+  step 9,000, then flat) and **no exponent was fit**. **(c) `planner_beats_cv` answered at T1, and
+  answered against the planner** — paired **+0.2585 m [+0.0869, +0.4309]**, p(Δ>0) 0.9975,
+  CI-separated (**35.8 % worse than constant velocity**) with the **full four-family block** showing
+  the loss lands on **LONGITUDINAL**, the family the cost is aimed at, while **operative-under-true-
+  actions BEATS CV** (−0.3151 m [−0.6277, −0.0602]) ⇒ **the loss is in the action search, not the
+  world model**; TACTICAL and STRATEGIC are genuine N/A **with reasons and n** (the CEM emits no
+  manoeuvre class; the P2 cost carries no route/goal term), distance-keeping likewise (no lead-agent
+  track); a curvature artifact on stopped-ego windows (GT `|κ|` mean 34.82 vs median 0.0008 1/m) is
+  **masked with the excluded n published, never clamped**; and the **open-loop** verdict is stated as
+  still undecided. **(d) The linear-readout ladder at three seeds — substantive count ZERO on both
+  repair routes** (58 dead / 11 flip / 9 survive-all, all `ego_yawrate` at |K1B|/gt_sd ≤ 0.013 and one
+  on a random null / 9 unstable; reproduction gate 3,465/3,465), with the generalisable mechanism —
+  **a repair unfroze the α sweep**, 132/165 same-α rows → 42/165 — and the counter-column published
+  (max K1 spread *larger* on the incumbent, 4.239 vs 2.812); plus a **missing control whose absence
+  was invisible** (33 of 165 rows had no trivial-proxy column; added, the single ego-speed scalar
+  matches or beats the 2,048-d latent on 120 of 154 paired rows). **(e) 201 of 4,729 Alpamayo clips
+  are already in the parity TRAIN corpus** ⇒ any eval split on it is **4.3 % contaminated**, the REF-A
+  I-JEPA class; overlap computed from ids against the live trainer's own `--v2-cache` read from
+  `/proc/<pid>/cmdline`, mtimes proving genuine selection membership, exclusion list banked.
+  **New §5.8 — five instrument rules**, each earned by one of our own claims failing: **I11** ablate
+  the mechanism, don't narrate it (and two methods agreeing is not evidence when both are consistent
+  with a weaker cause); **I12** compare every arm to **itself at initialisation** — the only control
+  that can detect an objective making a representation worse; **I13** label every bracket with its
+  estimator (a **dispersion is not a confidence interval**) and never quote a ratio whose denominator
+  is not separated from its null; **I14** a control must be able to **fire at the deployed operating
+  point** and must be enumerated **per arm**; **I15** a stability claim measured under a defect is not
+  inherited by the repaired instrument, and when you loosen a gate you must test the direction you
+  were not trying to fix. **§9.4 re-audited:** G4 1.7318 / G5 0.4271 / head 3.3839 independently
+  reproduce to 4 dp from banked windows; the three trivial floors are `full_set` by construction;
+  deciding call sites on the banned estimator are **0** across an unbounded 4,696-file walk; and
+  **a third inherited bar was found** — §7.6's two v4 bars are pre-registered on adjacent lines with
+  their derivations stated, and `ade_0_2s ≤ 0.60` is anchored on v1's honest **full-set 0.4271**
+  while `wm_canary_ade_2s ≤ 0.55` is anchored on the legacy split-mean **0.452** (its own
+  "+0.10 on the baseline" rule against 0.4271 gives **0.53**, so the shipped bar is ~3.8 % looser than
+  intended). ⛔ **No verdict moves**, and the bars are left standing with the note beside them rather
+  than silently restated — the transferable point being that the audit was only possible because both
+  derivations were written down. **§10 re-ordered:** item 10
+  retires **LF0 as already executed and negative** — E-R1-0's 1:1 arm *is* the pre-pool probe LF0
+  specified, so RC1 is measured false and the budget moves on, while **RC2/RC3/RC4 stay open and must
+  not be read as dead**; new **item 13** promotes the encoder arms (frozen-external readout,
+  token-distillation aux, plus a free per-step token-rank monitor) above the pooling and
+  target-placement ladders, with the *warm-start caveat pre-registered in advance*; new **item 14**
+  binds a re-measurement at step 30,000 because §7.19a–b is a 37.5 % early read on a 130-clip probe
+  pool; items 9 and 11 carry the Alpamayo exclusion-list constraint. **§10.1 gains two open PI
+  decisions:** the live successor run is **336,542,025 parameters — 12.2 % over the sub-300 M
+  envelope** that §10's dominance claim is stated against (not a silent breach — `param_budget`
+  350 M by design — but a contradiction that must be resolved in the envelope or in the model, and a
+  companion scope error corrected: the *live* checkpoint's predictor share is **55.9 %**, not the
+  68.5 % computed from library defaults); and the **DINOv3 licence acceptance**, which is a human
+  action, was correctly not automated, and blocks only the stronger *positive* arm. §3.10 and §7.14
+  updated in place to record LF0's executed-and-negative status. Corrections adopted from the citation
+  sweep: quote by **section heading, never by line number** — two source documents were rewritten in
+  place and every line-number citation into them is void.
+- **v1.2 (2026-08-29): the drift chapter.** *(Version note, continuing the tradition this note
+  keeps having to continue: **§12 — World-Action Models / REF-D — and §13 — the representation
+  campaign of 2026-08-23 → 08-26 — entered the paper WITHOUT changelog entries** while the status
+  line sat at v1.1; the same status-line drift, third occurrence. They are hereby owned by the
+  changelog as pre-existing content of this version rather than silently absorbed.)* **New §14 —
+  the self-prediction drift attractor**, the phenomenon §13.14 measured, now given its mechanism,
+  its campaign, and its mathematics: the drift statistic and its instrument stated formally
+  (RFF+ridge probe, K-fold clip-disjoint fit / per-clip score, top-8 PCA band of Δz at k = 4,
+  constant/shuffle/ego controls, the 30 k-calibrated validity band); the **movable-target
+  mechanism** — sg removes the target's gradient *path*, not its θ-dependence, so O5's minimiser
+  set contains a self-simplification family that is invisible to rank constraints and to the loss
+  curve, distinct from dimensional collapse; **E-DEC-61's manufacture evidence** (within-recipe
+  0.359 → 0.669; the 0.616–0.679 trained attractor across 7.5 k–30 k and both inits; seed band
+  ~1.5 %); the **freeze crossed cell** (0.669 → 0.3905 on one flag — mechanism SUPPORTED by
+  intervention — yet DEGENERATE at nrmse +14.6 %, so the v7 encoder stays trainable) with the
+  ≈ 0.39 world-smoothness / ≈ 0.28–0.31 self-generated split **presented as an ESTIMATE under a
+  different-rulers caveat**, and the freeze×k4 interaction that fully resolves C164's residue;
+  the **knob sweep that left drift flat** (k4 INERT 0.6701 · omega 0.6911 adopted for its
+  −14.8 % nrmse · O14 0.6709 · EMA 0.6952); **E-DEC-63 → E-DEC-67** — the pixel-borne +0.0096
+  (t 5.11) ceiling beyond drift, the token-field displacement mechanism (tokens-alone t −3.95),
+  and O14-fut's ABSORBED verdict (−0.0047, t −3.09) re-scoped as **anti-displacement, not
+  anti-drift**; **§14.7, MM-E1 in full** — the EMA teacher's mathematics (θ̄ ← τθ̄ + (1−τ)θ,
+  memory horizon (1−τ)⁻¹ = 250 steps; a low-pass filter on the shortcut, not a wall), the
+  fixed-τ = 0.996 schedule fact and its published operating points (Mean Teacher / data2vec /
+  I-JEPA / BYOL's constant-τ ablation, all banked), the 2 k stage-1 MIXED read (drift −12/−20 %,
+  cos −28/−47 %, both beyond seed spread) at **10–100× off every published τ-to-run-length
+  point**, the τ-amendment recorded BEFORE the stage-2 read with the symmetric caveat, and the
+  30 k stage-2 outcome: **both 2 k effects inverted — EMA-OUT on drift (0.6952 vs 0.6709,
+  +3.6 %), the pre-registered transient prediction confirmed in its strongest form — while the
+  serendipitous E-DEC-69 finding lands: cos_ctr 0.6043 → 0.7524 (+24.5 %) and nrmse 0.8288 →
+  0.7466 (−9.9 %), the largest prediction improvement ever measured on the trainable line, with
+  absorption preserved; ship-with-EMA is an open PI decision gated on a τ-ramp arm, and drift is
+  measured to NOT be a proxy for prediction quality (separable by intervention)**; **§14.8, the
+  T1 face** — parity-T1 ADE 14.52 / 14.21 m vs CV 0.5352, LOSES_TO_HOLDV0 both (fidelity
+  diagnostics only), speed bias ≈ −(mean speed) = the drift predictor shedding speed in closed
+  loop, masked S-rate 0.2632 vs 0.0175 with neither arm's jerk being skill; **§14.9** the
+  decision-arms table with tiers; **§14.10** the open problem stated and the attack list ranked
+  (frozen-teacher SALT-class — the pre-committed next lever; C-JEPA-class both-branch VICReg;
+  IWM predictor-capacity sweep; and two Master-Mind designs — contrastive future discrimination
+  and the drift-orthogonalised target — marked **PROPOSED/unmeasured** with their failure modes
+  named in advance); **§14.11** scope limits (top-8 band blindness, the estimate's rulers, 2 k
+  as motivation-only, EMA×O14 unseparated, single-seed +24.5 %). **New Figure 4**
+  (`Paper/figures/make_drift_story.py` → `drift_story.svg`; the `.png` export is gated on
+  cairosvg's native cairo, absent on the dev box — a substitute rasteriser is the Figure-2
+  invisible-labels trap, so SVG is the checked-in render) — the 2 k → 30 k EMA
+  inversion on both axes and the drift decomposition, every value read from the banked probe
+  JSONs at generation time (two cross-artifact tripwires; no hand-typed fallback). §13.14 gains
+  a one-line forward pointer. References extended with the teacher-family primaries, every one
+  banked by library key. All §14 numbers MEASURED with raws named in `MODEL_REGISTRY.md`
+  §13.9–§13.10 / the ladder and bake-off packages; tier stamps throughout (T0-DIAGNOSTIC except
+  the two T1 rows, which say so).
+
+- **v1.3 (2026-08-29, the same evening): prediction at matched drift.** **New §15**, which
+  reports the first cell of the PI-ranked drift-attack ladder (MM-E4,
+  `PREREG_DRIFT_ATTACK_LADDER.md` with Amendments A and B) to return, and takes three things
+  from it. **(a) An anti-drift objective that worked and failed.** *Innovation-SIGReg* — O6's
+  sketched-Gaussianity test with its input swapped from the latents to the dynamics innovations
+  \(\Delta z - g(z_t)\), \(g\) a cross-fitted per-batch ridge with a deliberately RELATIVE
+  constant — cut drift **0.4733 → 0.3551 (−25.0 %), the largest reduction ever measured on the
+  trainable line**, and destroyed prediction in the same arm: **cos_ctr 0.2462 → 0.0108
+  (−95.6 %)**, **nrmse 0.9746 → 1.0162 — above 1.0 and above its own mean-only control 0.9984**,
+  **98.8 % of the predicted \(\Delta z\) being the batch mean**, and the centred cosine falling
+  from **11.26σ to 0.72σ** against its permutation null. The mechanism is given with its
+  mathematics: the regulariser's argument **is the read's own residual**, and since
+  \(r^2 = 1 - \operatorname{Var}(\varepsilon)/\operatorname{Var}(\Delta z)\), a minimiser can
+  satisfy an isotropic-Gaussian constraint on \(\varepsilon\) by making \(\Delta z\) i.i.d.
+  and independent of \(z_t\) — at which point drift is zero **by construction** and prediction
+  is the mean predictor **by construction**. All four predicted signatures co-occur in the raws.
+  The scope precision that the term's \(g\) (linear, full-\(d\), \(k=1\), batch-half
+  cross-fit) is **not** the read's \(\tilde g\) (RFF, top-8 PCA band, \(k=4\), clip-disjoint
+  folds) is stated, and shown to strengthen rather than weaken the argument. **Class: Goodhart in
+  objective form**, promoted to the method section as **§5.8's I16** (the heading's count and
+  span are corrected with it) — the 2026-08-22 probe rule (*never tune on what you score*) moved from the
+  probe to the loss, and demonstrably out of that rule's reach: L1's ridge was impeccably
+  cross-fitted, its constant control read exactly 0.0000, its λ was fixed in advance and made
+  relative, and none of it helped, because the defect is in what the term is a function **of**.
+  ⇒ **Standing consequence adopted: drift alone is never a valid objective, and a drift number
+  quoted without its paired prediction reads is inadmissible.** The pre-committed protection
+  (> 5 % cos cost ⇒ FAIL regardless of drift), itself derived from E-DEC-69 at 17:57 and
+  registered at 19:00, caught the 21:40 read; without its clause the ladder's own `DRIFT-DOWN`
+  outcome would have spent the ~8.2 h of Thor it prices on confirming a latent that had become
+  noise. §14.10's **item 5 (the drift-orthogonalised target) is re-priced** by the same argument
+  — an inference from the mechanism, not a measurement, and labelled as such — while items 1–4
+  are untouched. **(b) The coupling hypothesis (MM-E5), stated as a hypothesis and not as a
+  finding.** Two measurements now move drift and prediction the SAME way — EMA at 30 k (+3.6 %
+  drift, +24.5 % cos; E-DEC-69) and innovation-SIGReg at 2 k (−25.0 %, −95.6 %) — and if that is
+  mechanism-independent the programme's objective is mis-stated: not minimum drift but **maximum
+  prediction at matched drift**, a frontier, with §14's open problem restated from *a defect to
+  remove* to *a bad point on a frontier*. Registered in
+  `PREREG_DRIFT_PREDICTION_FRONTIER.md`, commit `6e719a493`, **BEFORE the discriminating arms
+  reported** (L2 mid-training, L3/L4 unstarted — precedence in the git history, and part of the
+  claim's standing). Carried with its limits in the same breath: **n = 2**, different mechanisms,
+  different scales, **no shared axis**, and two different parts of the cosine axis (0.01–0.25
+  against 0.60–0.75); plus a **competing account the same evidence fits** — a selection effect
+  over which levers happen to work, since the only lever that ever lowered drift did so by
+  removing temporal structure — which makes **test 1 (the disjoint-mechanism arms) load-bearing
+  and test 2 (the 4-point dose curve) unable to settle it**, exactly as the pre-registration's
+  `L1-SPECIFIC` outcome anticipates. All four committed outcomes are tabled. The PI's same-evening
+  `D-EMA-ADOPT` decision (commit `a67b3c0`) is recorded as **consistent with, and not evidence
+  for**, the hypothesis — and it supersedes §14.7's description of ship-with-EMA as open.
+  **(c) New §15.5, a provenance note: the configuration our numbers were measured in.** TRAIN-C5
+  retracted a sibling experiment's magnitudes — the RL pilot scored in **`train` mode**, dropout
+  live, **overstating selection-ADE by +175.7 %** (2.000 m vs 0.726 m in eval mode) and dissolving
+  two of its own pre-registered limits (the eval-mode readout is exactly deterministic, spread
+  0.099 → 0.000 m; the wobble blamed on diffusion noise was dropout). The MM-C2 blast-radius audit
+  is reproduced **and independently re-verified by source for this section**: the drift/prediction
+  probes get eval mode from their shared loader `v7tiny_g2.load_arm` (`world.eval()`, :103), the
+  T1 instrument has 5 direct calls, the eval harness gets it from `data.py:173` with
+  `compounding.py:112` and `hierarchy.py:551` explicit, and the one flagship script with **zero**
+  direct calls (`eval_v58f.py`) is assembled by `load_v58f`, whose module sets `self.eval()` in
+  its constructor — **so no number in this paper is affected**, and the sole affected path was the
+  one that built its own model. **Class: a safety default that lives in a LOADER is not a property
+  of the MODEL**; three of the four safe instrument families never set eval themselves. ⇒
+  **Standing rule: a scoring function asserts `not model.training` itself and records the mode**,
+  and every training run saves the checkpoint its numbers describe. **New Figure 5**
+  (`Paper/figures/make_drift_frontier.py` → `drift_frontier.svg`; same generation contract as
+  Figure 4 — every value read from the banked probe JSONs, no hand-typed fallback, **four**
+  cross-artifact tripwires, `.png` gated on cairosvg's native cairo) draws the (drift, prediction)
+  plane **once per scale and never once for both**, with unshared and separately-labelled axes,
+  every intervention as an arrow **from its own base to itself**, the coupling hypothesis as
+  shaded **quadrants** rather than a fitted frontier line (sign agreement is its entire content;
+  a drawn curve would assert a slope no measurement supports), the motivation-only 2 k EMA arms
+  muted and excluded from the n, and the two unrun doses drawn as **absence**. **§15.6** states
+  what §15 does not establish: the mechanism argument is a minimiser-set claim plus a signature
+  match, not a demonstration of route; the item-5 consequence is an inference; the coupling
+  statement is a HYPOTHESIS whose tests had not reported; all L1 numbers are 2 k and hence
+  vs-base relative only; and **L1's own deliberate-regression control is registered but not yet
+  read**, so the ladder's `REGRESSION-FAILS` clause stands open. Tier stamps throughout:
+  T0-DIAGNOSTIC except the single T1 number in §15.5, which belongs to a retracted readout of a
+  different model and is quoted only to size an instrument defect.
+
+- **v1.4 (2026-10-17): the first published-row comparison, and a zero tail located.** **New §7.20**: REFe, a reproduction attempt of
+  DriveZero's camera planner (library `2609.06055`) on NAVSIM v1.1 (library `2406.15349`), tier T1. The best checkpoint
+  (SFT-4 B u400) scores **88.25 [87.05, 89.36]** against the matched published row 94.55: **not cleared**. The 6.30-point
+  gap decomposes (exact, sequential, gate first) as zeroed tokens 4.15 [3.31, 5.07] + TTC 1.31 + EP 0.86 − C 0.01; the
+  zero tail is SELECTION (86.0 % [80.1, 91.7] of u400's 529 zeros had a non-zero proposal), mostly near-twin grazes the
+  scorer's DAC head cannot rank (AUC 0.46 vs 0.92); the execution-side mechanism (the heading channel) is found and no
+  admissible fix clears its bar. **One correction of our own (R47)**: an execution-side "reach" of 1.07 PDMS was gross,
+  not net. Four metric families reported, STRATEGIC as PAUSED. The intervals of the ladder and of the decomposition are
+  new, computed by `RP/raw/2026-10-17-paper-s720-recompute/` and reproduced byte-identical on an independent rerun.
+  §12.4 gains a dated correction; the abstract gains a reference-arm paragraph.
+
+- **v1.5 (2026-10-18): where the REFe headroom sits, and the first levers aimed at it.** **New §7.21** (tier T1 for
+  (a), (b), (d); the RL-val selection tier, not T1, for (c)). (a) P2's own 64-proposal table over the full navtest,
+  proven P2's by a same-pick check on all 12,146 tokens: best-of-64 oracle 98.23 [97.82, 98.62] against the pick 88.82
+  [87.86, 89.77], a 9.41 [8.68, 10.18] ceiling of which 62.4 % is ranking among non-zero proposals and 37.6 % the zero
+  tail §7.20 priced: the scorer, not the fan, holds it (a ceiling, not an expected gain). (b) The RL lever's navtest
+  anatomy, row FP-NONE: R0B over the deployed scorer PDMS +0.55 [+0.24, +0.84], EP +1.81, with NC −0.25 and TTC −0.40
+  both separated adverse and 36 more zero-PDMS picks; the family screen flags 0 of 21 but has low power, and the 'slow
+  bias removed' reading in the package prose does not survive its own JSON (the two intervals overlap). (c) Why the
+  safety constraint failed: the dual held in-sample on E_π[TTC] at the training temperature T = 0.1 (signed g
+  −0.000343) while the pick lost TTC −0.767 [−1.487, −0.065] on RL-val (K3-killed, outcome O4); on the unconstrained
+  R0's full RL-val the constrained quantity understates the pick's loss (+0.223 against +1.000 at u1000, paired
+  difference −0.777 [−1.320, −0.251], separated at one of three states), a train-to-val gap is not demonstrated, and a
+  pick-aligned temperature (T = 0.02) is PROVISIONAL because its control 3 failed as registered. (d) SELRULE-DAC reads
+  ADOPT, +0.0235 [+0.0002, +0.0546] PDMS = 0.7 % of the O-DAC oracle reach: inert, consistent with confident
+  drivable-area errors (median p̂_DAC 0.932 at the failing picks). **Stated as method:** a constraint must bind the
+  statistic its acceptance test reads. Four metric families reported where the source carries them; STRATEGIC PAUSED
+  (PI, 2026-09-19). §7.20(g) gains a dated pointer; the one literature row used (CLOVER, library `2605.15120`) was
+  re-read in the banked PDF; the abstract is unchanged. One-seed states throughout: no lever-effect claim.
+- **v1.5.1 (2026-10-18): a two-month-old contamination rate corrected.** The Alpamayo augmentation's overlap with the parity training corpus was printed as **4.3 %** (201 / 4,729) in §1, §7.19e and §10. That is the CATALOGUE rate. A split can only contain clips that exist, and only 257 have a w120 cache, 201 of them parity-train, so the buildable split is **78.21 %** contaminated, REF-A I-JEPA scale, not "smaller scale". The registry corrected this on 2026-08-18 (§12.4, C113). The paper did not, until the E10 recount (`FlyWheels/TanitAD_DataFlyWheel/incoming/2026-10-18-e10-alpamayo-counts/`, 114 counts re-derived from bytes, 25 of 26 paper figures matching) found it. The historical changelog line for v1.x is left as written. Root-cause class (registry): a contamination rate quoted over the catalogue rather than over the buildable set.
+- **v1.6 (2026-11-08): the three bands defined, the top-down cascade stated, the first planning read, and a mathematics audit.** **New §3.14**: the PI's definition of the horizons (operative up to 2 s, tactical up to 6 s with the tactical vocabulary, strategic 6 to 30 s with route checkpoints, detected context and derived goals; trajectory = operative + tactical = 6 s), the reader cascade in which all three layers read the current measured ego state and the tactical layer emits goals and constraints that are the operative layer's action, the k-step world-model loss and its trained reach (2, 6 and 18 s at k = 10, 10, 6; a window of 91 frames), the top-down planner after H-JEPA Eqs. 4 to 6, and the gradient statement (`detach_upper` default off, so M2b trained its upper layer through the lower layer's loss). Each object is stamped TRAINED, BUILT or DESIGN. **New §7.22**: PLANTEST, tier T0 with an oracle goal and zero training, never a driving result: NO-GAIN for both planners, both training seeds and both families, HIER-ADDS NO, M2b_s0 TD3 acceleration MAE 1.4228 [1.3800, 1.4647] against HOLD 0.3296 [0.2973, 0.3623], untrained stacks goal-blind, and the card's next lever (planner cost and solver, then the world model). **Scoped, record kept:** §3.3, §3.9, §3.11, §9, §10 and §11.4 gain one dated sentence each pointing to §3.14 where their horizons, rates, dimensions or goal-in-predictor equations record an earlier generation; the abstract and §1 gain a scope note (v8F budget at most 800 M since 2026-10-17, frozen DINOv3 encoder, vision-only rule scoped to the scenario classifier and labels). **Mathematics audit** (`MATH_AUDIT.md`; each item in `EDIT_LOG.md`): the fan-depth evidence in §3.12 and §7.16 did not support the sentence hung on it (the frozen-trunk K-sweep 0.5772 / 0.5173 / 0.5319 is non-monotone and ends better at K = 64 than at K = 8), so the refutation of the noisy-honest-cost model now rests on the fixed-N tail evidence; the Model B limit gains its stated separation condition; the §3.3 regret factorisation and product-to-sum claims gain their conditions; the §4 bound is read as a sufficient-condition trade-off; the §4 frame-change figure is named as the quantity measured; §13.1 states (u, eta) as a solution that satisfies every term, not a proven optimum; four arithmetic items fixed (§3.11 roll steps, §11.4 limit at lambda = 1, §11.6 candidate cost, §14.7 ratio). No measured number moves. STRATEGIC remains PAUSED (PI item 25). Nothing in §3.14 or §7.22 is a driving result.
+- **v1.7 (2026-11-09): the planner gates, the readout ceiling and the band-trained ladder.** **New §7.23**, tier T0, never a driving result: the planner gates on M2b stay NO-GAIN, an end-point goal with true end values beats HOLD and one read from the latent does not, and the band-trained ladder predicts inside the 6 s and 12 s bands above a no-action baseline. A same-seed replicate is bit-identical on this rig, and the section reports that as a finding about determinism. No earlier number moves. STRATEGIC remains PAUSED (PI item 25).
+- **v1.8 (2026-11-10): the band loss on the 6 s plan, and the levers behind the adopted base.** **New §7.24**, tier T1-kin, never a closed-scene driving result: the band loss (operative layer detached from the tactical layer) improves the operative band at both seeds above a same-recipe replicate (ADE -0.0168 / -0.0149 m) and moves no tactical row, where one training run's spread is 0.287 m; the banked ladder puts the adopted base's tactical gain on the DAgger rows and its operative and acceleration gains on the acceleration term; T's top three plans hold the logged manoeuvre in 0.90 of windows against 0.57 for its first choice. Stated as method: on this rig a lever is read as an effect only above a same-recipe replicate. No earlier number moves. STRATEGIC remains PAUSED (PI item 25).

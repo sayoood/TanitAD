@@ -1,0 +1,11 @@
+PASS G2 sign green on the real cache  [corr(omega, ay/v)=0.9569 (bar 0.85, n=2499), corr(omega, yaw@4s)=0.7387 (bar >0)]
+PASS RED-AS-REQUIRED G2: negated omega  [rc 3 corr_ay_over_v -0.9569]
+PASS G3 cache: frozen_in_proxy fingerprint == u400's == model_final's, snapshot sha == u400  [160b61bc8cb0]
+PASS G3 cache: frames 4000, zero visual frames, C1 == 0.0 on every pass  [frames 4000 visual 0 C1 0.0]
+PASS RED-AS-REQUIRED G3: the ep015 cache carries a DIFFERENT fingerprint  [e155e5277ead != 160b61bc8cb0]
+PASS G4+G5 green on the real cache (arm B, 512 frames)  [n 512 grad_table 0.1076 grad_control 0.0]
+PASS G4 green on the real cache (arm C)  [identity yaw0 True yaw!=0 True]
+PASS RED-AS-REQUIRED G4 (real cache): u400's random column left in place  [rc 3 identity_yaw_nonzero False]
+PASS RED-AS-REQUIRED G5 (real cache): table loaded but not applied  [rc 3 grad_table 0.0]
+PASS RED-AS-REQUIRED G9 (real cache): 2 % of the tokens missing -> TableRefused  [rc 1, dropped 80 of 4000 tokens]
+ZZYF3_REAL_GATES_OK

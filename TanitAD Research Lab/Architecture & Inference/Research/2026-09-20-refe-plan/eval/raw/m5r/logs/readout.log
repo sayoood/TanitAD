@@ -1,0 +1,37 @@
+  return np.nanmean(np.stack([ev[f"{nm}_s{s}"][key] for s in seeds]), 0)
+{
+ "verdict": "STAGE-1 PASS",
+ "gates_failed": [],
+ "models_absent": [],
+ "rule": "STAGE-1 PASS iff E1 V4r-V3 >= +0.03, CI lo > 0, > seed floor; E3a lo > -0.01; E3b lo > -2.0; E2 lo > -2.0. REFUTED iff E1 CI hi < 0. Otherwise NOT PROVEN. ADOPT needs Stage 2 (A5's 923 fresh tokens) on the same bars.",
+ "E1": {
+  "diff": 0.05908,
+  "ci95": [
+   0.01118,
+   0.104
+  ]
+ },
+ "E3a": {
+  "diff": 0.02465,
+  "ci95": [
+   0.00547,
+   0.04449
+  ]
+ },
+ "E3b": {
+  "diff": 1.97975,
+  "ci95": [
+   -1.81456,
+   6.60857
+  ]
+ },
+ "E2": {
+  "diff": 7.97636,
+  "ci95": [
+   4.15953,
+   11.75091
+  ]
+ },
+ "seed_floor": 0.02619
+}
+ZZM5R_STAGE1 STAGE-1 PASS

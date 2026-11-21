@@ -1,0 +1,39 @@
+=== suite-refav1-21109-cos_ext_dryrun.json ===
+tier: T1  (driving-performance tier)
+
+LONGITUDINAL  [4/4 present]
+   [  ok  ] target-speed accuracy
+   [  ok  ] along-track displacement error
+   [  ok  ] ego progress
+   [  ok  ] distance-keeping (headway / time-gap / TTC to the lead agent)
+
+LATERAL  [4/4 present]
+   [  ok  ] cross-track error
+   [  ok  ] heading error
+   [  ok  ] curvature error
+   [  ok  ] yaw-rate error
+
+TACTICAL  [3/3 present]
+   [  ok  ] manoeuvre-decision quality (selected vs executed)
+   [  ok  ] confusion over the manoeuvre classes
+   [  ok  ] tactical goal / anchor selection quality
+
+STRATEGIC  [2/2 present]
+   [  ok  ] strategic decision quality
+   [  ok  ] strategic route / goal-setting quality
+
+ARTIFACT HYGIENE
+   [  ok  ] tier stamp present
+   [  ok  ] estimator named
+   [  ok  ] n printed (windows and episodes)
+   [  ok  ] overlapping_holdout_se not used as a decision-grade interval
+   [  ok  ] corpus identity recorded (parity key + skip-hash)
+   [  ok  ] headline metrics reported against their trivial control(s)
+
+LEAK GUARDS
+   [  ok  ] Inference uses VISION ONLY. Labels may use ego/privileged data (PI, 2026-08-03, binding).
+   [  ok  ] The goal path and the situation path stay information-disjoint at inference; a goal input must not carry the situation classifier's output in any form (PI, 2026-08-03, binding).
+   [  ok  ] A route/goal head scoring near 1.0 must publish its echo test against its own input.
+
+VIOLATIONS (silently absent, required): 0
+WORK ITEMS (refused with a reason, or partial): 0

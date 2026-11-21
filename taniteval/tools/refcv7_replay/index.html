@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>refcv7 replay</title>
+<link rel="stylesheet" href="replay.css">
+</head>
+<body>
+<header id="top">
+  <div class="ttl">
+    <b id="runlabel">refcv7-r101-s0</b>
+    <span class="dim" id="stepinfo"></span>
+  </div>
+  <div class="warn" id="tiernote"></div>
+  <div class="pills">
+    <span class="pill gt">GT = green · dashed / outline only</span>
+    <span class="pill model">MODEL = orange / blue · solid / filled</span>
+    <span class="pill given">GIVEN input = amber text</span>
+  </div>
+</header>
+
+<section id="bar">
+  <label class="field">clip
+    <select id="clipSel"></select>
+  </label>
+  <div class="btns">
+    <button id="bPrevClip" title="previous clip  [ ">⏮</button>
+    <button id="bBack" title="step back  ←">◀</button>
+    <button id="bPlay" title="play / pause  space">▶ play</button>
+    <button id="bFwd" title="step forward  →">▶|</button>
+    <button id="bNextClip" title="next clip  ] ">⏭</button>
+  </div>
+  <label class="field">speed
+    <select id="speedSel">
+      <option value="0.25">0.25×</option>
+      <option value="0.5">0.5×</option>
+      <option value="1" selected>1× (10 fps, real time)</option>
+      <option value="2">2×</option>
+    </select>
+  </label>
+  <label class="field"><input type="checkbox" id="loopChk" checked> loop clip</label>
+  <input type="range" id="scrub" min="0" max="0" value="0" step="1">
+  <span id="timeLbl" class="mono">t = –</span>
+  <span id="frameLbl" class="mono">frame –</span>
+  <button id="bHelp" title="keys">?</button>
+  <button id="bSelfTest" title="check the JavaScript projection and box matcher against the Python values">self-test</button>
+</section>
+
+<section id="stripWrap">
+  <canvas id="strip" width="1600" height="118"></canvas>
+  <div id="stripLegend" class="legend small"></div>
+</section>
+
+<main id="grid">
+  <div id="colL">
+    <div class="panelHead"><span class="tag all">CAMERA</span><span class="dim" id="camLabel"></span></div>
+    <canvas id="cam" width="1024" height="416"></canvas>
+    <div id="inputs" class="chipline"></div>
+    <div id="tacWrap">
+      <div class="panelHead"><span class="tag model">MODEL</span> tactical behaviour decoder <span class="dim">(refcv6 behaviour decoder: lat / lon posteriors + 22 goal-token validities)</span> <span class="tag gt">GT</span><span class="dim"> = v7 label</span></div>
+      <div id="agree"></div>
+      <div id="tacCols">
+        <div id="latBox"></div>
+        <div id="lonBox"></div>
+      </div>
+      <div class="sub">GOAL TOKENS <span class="dim">(22 independent sigmoids; sorted by MODEL validity; the line marks 0.5 = the planner-feed threshold)</span></div>
+      <div id="goalBox"></div>
+      <div class="sub">TACTICAL GEOMETRIC GOALS g_tac <span class="dim">(x, y, heading, speed at 2 / 4 / 6 s; ego frame; emitted by the hierarchy's goal head, drawn as diamonds in the camera and BEV. The behaviour decoder itself emits NO spatial goal cells: UNAVAILABLE)</span></div>
+      <div id="gtacBox"></div>
+    </div>
+  </div>
+
+  <div id="colM">
+    <div class="panelHead"><span class="tag all">BEV</span><span class="dim"> 100 m ahead × ±30 m · forward is up · LEFT is left</span></div>
+    <div id="bevWrap">
+      <div class="bevPanel" id="bevPanelA">
+        <div class="bevTitle"><span class="tag model" id="bevTagA">MODEL</span> <span id="bevNameA">predicted 10 cm map</span></div>
+        <canvas id="bevA" width="480" height="800"></canvas>
+      </div>
+      <div class="bevPanel" id="bevPanelB">
+        <div class="bevTitle"><span class="tag gt">GT</span> <span>SAM3 ground-truth 10 cm map</span></div>
+        <canvas id="bevB" width="480" height="800"></canvas>
+      </div>
+    </div>
+    <div id="metrics"></div>
+  </div>
+
+  <aside id="colR">
+    <div class="box" id="viewBox">
+      <h3>VIEW</h3>
+      <div class="radio" id="viewRadio">
+        <label><input type="radio" name="view" value="both" checked> Both</label>
+        <label><input type="radio" name="view" value="gt"> GT only</label>
+        <label><input type="radio" name="view" value="model"> Model only</label>
+      </div>
+      <div class="small dim">keys: b / g / m</div>
+    </div>
+    <div class="box" id="layerBox"></div>
+    <div class="box" id="fanBox"></div>
+    <div class="box" id="mapBox"></div>
+    <div class="box" id="legendBox"></div>
+  </aside>
+</main>
+
+<div id="selftest" class="hidden"></div>
+<div id="help" class="hidden">
+  <b>Keys</b> · <span class="mono">space</span> play/pause · <span class="mono">← →</span> step ±1 (shift ±10) · <span class="mono">[ ]</span> previous / next clip ·
+  <span class="mono">b g m</span> both / GT only / Model only · click the strip or drag the slider to seek.
+  <br>OPEN-LOOP replay of recorded held-out windows: the emitted plan never drives the car.
+</div>
+
+<script src="data/manifest.js"></script>
+<script src="replay.js"></script>
+</body>
+</html>

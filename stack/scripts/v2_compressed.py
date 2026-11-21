@@ -32,6 +32,10 @@ from tanitad.data.calib import (CanonicalFrame, as_frame,      # noqa: E402
                                 observed_report, subframe_slice)
 from tanitad.data.comma2k19 import stack_frames                # noqa: E402
 from tanitad.data.toy_driving import ToyEpisode                # noqa: E402
+# ⛔ HARD import: a build whose parity gate is unreachable must die in seconds,
+# not build an unchecked corpus (RETRACTION_LOG C112 — "a guard that no-ops when
+# its oracle is missing is C112 wearing a green suite").
+from tanitad.data import parity                                # noqa: E402
 
 _TN = int(os.environ.get("V2_TORCH_THREADS", "0"))
 if _TN > 0:
@@ -261,10 +265,37 @@ def _hf_download(rel, root, dest=None):
 
 
 def _ensure_ego(root, ch):
-    """Egomotion zip for `ch` must exist (poses/maneuvers need it). Fetch if missing."""
+    """Egomotion zip for `ch` must exist (poses/maneuvers need it). Fetch if missing.
+
+    ⛔ VERIFY BY CONTENT, NOT BY SIZE. This gated on ``getsize > 1_000_000`` — a
+    threshold that silently encoded the OLD corpus's chunk DENSITY. MEASURED
+    2026-08-30 on B1: 4,719 clips spread over 1,411 chunks (~3.3 per chunk) give
+    zips of min 154,719 / mean 1,388,744 B, and **881 of 1,411 are VALID BUT UNDER
+    1 MB**. Every one was declared missing and sent to a doomed HF fetch (401,
+    the bundle is private), which killed all six build shards on chunk 0007.
+
+    ⚠️ WORSE THAN THE CRASH, AND THE REASON THIS IS A CONTENT CHECK NOW: ``dest``
+    is the EXISTING valid zip and ``_hf_download`` runs ``curl -C -``, so a fetch
+    that SUCCEEDED would have RESUMED ONTO A COMPLETE ARCHIVE and corrupted it —
+    the log shows `Resuming transfer from byte position 419509`, exactly
+    chunk_0007's true size. The 401 is the only reason that did not happen, i.e.
+    an auth failure protected the data from a size heuristic. A corrupt egomotion
+    zip yields wrong POSES, which is a silently wrong training corpus.
+
+    Same family as the decode-into-memmap trap: a cheap proxy (size) standing in
+    for the real question (is this a readable archive), read as an answer.
+    """
     ez = os.path.join(root, "labels", "egomotion", f"egomotion.chunk_{ch:04d}.zip")
-    if os.path.exists(ez) and os.path.getsize(ez) > 1_000_000:
-        return ez
+    if os.path.exists(ez):
+        import zipfile
+        try:
+            with zipfile.ZipFile(ez) as z:
+                if z.namelist():                  # openable AND non-empty
+                    return ez
+        except Exception:                                          # noqa: BLE001
+            pass
+        # truncated or corrupt: remove it so curl cannot RESUME onto the debris
+        os.unlink(ez)
     return _hf_download(f"labels/egomotion/egomotion.chunk_{ch:04d}.zip", root, dest=ez)
 
 
@@ -391,6 +422,34 @@ def build(a):
                 f"[build] REFUSING: {len(missing)} clip ids in --only-clips are "
                 f"NOT in --sel. A build over a DIFFERENT clip set than the one "
                 f"requested is an episode re-selection; fix the inputs.")
+
+    # ----------------------------------------------------------------- #
+    # ⛔ THE PARITY INGEST GATE (parity.py §10c, RETRACTION_LOG C112/C113)
+    # ----------------------------------------------------------------- #
+    # This is the point that cannot be bypassed: no w120 / v2 episode cache
+    # has ever come into existence except through this function, so the
+    # question "does this corpus swallow the deployed val?" is asked HERE
+    # rather than by whoever remembered to ask it.
+    #
+    # ⭐ It runs BEFORE the first chunk zip is fetched. C112's own launch-path
+    # defect died *after* paying for a 536 MB download; a gate that trips late
+    # is a gate that costs egress to trip.
+    #
+    # MEASURED 2026-08-18: the parity TRAIN digest set (2 400) and the deployed
+    # VAL digest set (40) intersect in ZERO clips, so the canonical train build
+    # passes this untouched. The build it stops is the Alpamayo 4 472 (6 of the
+    # 40 canonical val episodes are inside that record set — 15 % of the episode
+    # set behind EVERY published open-loop number).
+    parity.require_ingest_gate("v2_compressed.build")
+    _ids = [str(c) for c in sel["clip_id"].tolist()]
+    _kept, parity_gate = parity.guard_corpus_build(
+        _ids, label=f"v2_compressed.build -> {a.out}",
+        role=a.corpus_role,
+        mode="exclude" if a.exclude_parity_overlap else "refuse",
+        sanctioned_audit=a.sanctioned_audit or None)
+    if len(_kept) != len(_ids):
+        sel = sel[sel["clip_id"].isin(set(_kept))]
+
     frame = _frame_from_args(a)
     by_chunk: dict[int, set] = {}
     for _, r in sel.iterrows():
@@ -417,6 +476,12 @@ def build(a):
         "quality": a.quality if a.codec == "jpeg" else None,
         "selection_parquet": str(a.sel), "only_clips": a.only_clips or None,
         "clips_requested": int(len(sel)),
+        # ⚠️ The gate's record rides in the manifest whatever it decided. A
+        # filtered build whose manifest does not say what was filtered reports
+        # a clip count that no longer matches the selection it names — and a
+        # PASSING build still records both overlap counts, because the fact
+        # nobody asked for is the one that goes unnoticed.
+        "parity_ingest_gate": parity_gate,
     }
     t0, nbuilt, nbytes = time.time(), 0, 0
     checked_geometry = False
@@ -570,6 +635,20 @@ if __name__ == "__main__":
                    help="path to a newline-separated clip_id list — restricts "
                         "the build to EXACTLY those clips (e.g. the parity "
                         "train split). Refuses if any id is not in --sel.")
+    b.add_argument("--corpus-role", default="", choices=("",) + parity.CORPUS_ROLES,
+                   help="what this corpus IS. Undeclared and train/augmentation "
+                        "are checked against the DEPLOYED VAL (a corpus being "
+                        "built is presumed to become supervision); val/eval flip "
+                        "the check to the parity TRAIN split. See parity.py §10c.")
+    b.add_argument("--exclude-parity-overlap", action="store_true",
+                   help="drop the disqualifying clips and build the rest, "
+                        "recording the exclusion in _geometry.json, instead of "
+                        "refusing. This is the sanctioned repair for the "
+                        "Alpamayo 4,472 build (6 deployed-val episodes).")
+    b.add_argument("--sanctioned-audit", default="",
+                   help="REASON for keeping a disqualifying overlap (a label "
+                        "census, a coverage audit). Stamps decision_grade False "
+                        "on the build record; not a boolean on purpose.")
     _add_geometry_args(b)
     a = ap.parse_args()
     (measure if a.mode == "measure" else build)(a)

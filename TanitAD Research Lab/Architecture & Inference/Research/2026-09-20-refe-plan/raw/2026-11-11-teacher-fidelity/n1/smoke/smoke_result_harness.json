@@ -1,0 +1,1295 @@
+{
+ "prereg": "UNSET (the MM writes the frozen sha256 here)",
+ "rows": [],
+ "n_rows": 43,
+ "n_error_lines": 0,
+ "n_primary": 43,
+ "controls": {
+  "C-COV": {
+   "pass": true,
+   "tokens": 43,
+   "expect": 43,
+   "primary": 43,
+   "expect_primary": 43,
+   "error_lines": 0,
+   "every_arm_on_every_token": true
+  },
+  "C-BUILD": {
+   "pass": true,
+   "controls": {
+    "C-BUILD-COV": true,
+    "C-BUILD-T-IS-BANKED": true,
+    "C-DERIV": true,
+    "C-DAM (validation only)": true
+   }
+  },
+  "C-PIN": {
+   "pass": true,
+   "mismatch": []
+  },
+  "C-EST": {
+   "pass": true,
+   "proxy_eval_boot": [
+    0.7090856836855157,
+    0.6506296814549171,
+    0.8444956015337902
+   ],
+   "ours": [
+    0.7090856836855157,
+    0.6506296814549171,
+    0.8444956015337902
+   ],
+   "max_abs_dev": 0.0
+  },
+  "C-ID-H": {
+   "pass": true,
+   "tol": 1e-06,
+   "tokens_compared": 43,
+   "missing_in_reference": 0,
+   "tokens_over_tol": 0,
+   "max_abs_diff": 0.0,
+   "max_abs_diff_by_metric": {
+    "nc": 0.0,
+    "dac": 0.0,
+    "ddc": 0.0,
+    "ep": 0.0,
+    "ttc": 0.0,
+    "c": 0.0,
+    "pdms": 0.0
+   },
+   "pdms_all_tokens_x100": 70.9086,
+   "reference_pdms_all_tokens_x100": 70.9086,
+   "reference": "tfrows|E:/Projects/TanitAD-artifacts/scorer_gym_20261107/teacher_fidelity/tf2/rows/tf2_s*.jsonl|T_tracked"
+  },
+  "C-REG": {
+   "pass": true,
+   "N1W_pdms": 34.5529,
+   "N1T_pdms": 70.9086,
+   "bar": "PDMS(N1W) <= PDMS(N1T) - 10.0"
+  }
+ },
+ "diag_human_vs_banked_harness": {
+  "n": 43,
+  "tokens_over_tol": 0,
+  "max_abs_diff": 0.0,
+  "note": "diagnostic, decides nothing: the banked human seam is NAVSIM's human, the W-TRANSP human arm is the DB's logged future (they differ on the 36 C1 tokens by construction)"
+ },
+ "scorer_of_record": "pinned W3 harness CSVs (FALLBACK ROUTE: C-ID-H failed on W-TRANSP)",
+ "tables": {
+  "primary_12110": {
+   "N1T_tracked": {
+    "nc": {
+     "mean": 97.6744,
+     "ci95": [
+      94.2308,
+      100.0
+     ],
+     "ci_bonferroni_K41": [
+      92.8571,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "dac": {
+     "mean": 76.7442,
+     "ci95": [
+      70.8333,
+      89.2857
+     ],
+     "ci_bonferroni_K41": [
+      70.0,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "ddc": {
+     "mean": 91.8605,
+     "ci95": [
+      75.5814,
+      100.0
+     ],
+     "ci_bonferroni_K41": [
+      65.0,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "ep": {
+     "mean": 65.9945,
+     "ci95": [
+      59.9502,
+      77.73
+     ],
+     "ci_bonferroni_K41": [
+      58.3726,
+      89.1224
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "ttc": {
+     "mean": 97.6744,
+     "ci95": [
+      94.2308,
+      100.0
+     ],
+     "ci_bonferroni_K41": [
+      92.8571,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "c": {
+     "mean": 100.0,
+     "ci95": [
+      100.0,
+      100.0
+     ],
+     "ci_bonferroni_K41": [
+      100.0,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "pdms": {
+     "mean": 70.9086,
+     "ci95": [
+      65.063,
+      84.4496
+     ],
+     "ci_bonferroni_K41": [
+      63.7844,
+      95.4677
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "zero_rows": {
+     "pdms": 11,
+     "dac": 10,
+     "nc": 1
+    }
+   },
+   "N1C_tracked": {
+    "nc": {
+     "mean": 100.0,
+     "ci95": [
+      100.0,
+      100.0
+     ],
+     "ci_bonferroni_K41": [
+      100.0,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "dac": {
+     "mean": 76.7442,
+     "ci95": [
+      66.6667,
+      93.75
+     ],
+     "ci_bonferroni_K41": [
+      64.2857,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "ddc": {
+     "mean": 98.8372,
+     "ci95": [
+      96.5116,
+      100.0
+     ],
+     "ci_bonferroni_K41": [
+      95.0,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "ep": {
+     "mean": 68.6319,
+     "ci95": [
+      56.2903,
+      87.6404
+     ],
+     "ci_bonferroni_K41": [
+      51.1206,
+      89.8931
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "ttc": {
+     "mean": 100.0,
+     "ci95": [
+      100.0,
+      100.0
+     ],
+     "ci_bonferroni_K41": [
+      100.0,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "c": {
+     "mean": 100.0,
+     "ci95": [
+      100.0,
+      100.0
+     ],
+     "ci_bonferroni_K41": [
+      100.0,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "pdms": {
+     "mean": 73.3641,
+     "ci95": [
+      62.792,
+      91.2043
+     ],
+     "ci_bonferroni_K41": [
+      61.6849,
+      95.7888
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "zero_rows": {
+     "pdms": 10,
+     "dac": 10,
+     "nc": 0
+    }
+   },
+   "N1W_tracked": {
+    "nc": {
+     "mean": 75.5814,
+     "ci95": [
+      47.1154,
+      100.0
+     ],
+     "ci_bonferroni_K41": [
+      39.2857,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "dac": {
+     "mean": 55.814,
+     "ci95": [
+      30.4348,
+      85.0
+     ],
+     "ci_bonferroni_K41": [
+      20.0,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "ddc": {
+     "mean": 70.9302,
+     "ci95": [
+      37.5,
+      97.5
+     ],
+     "ci_bonferroni_K41": [
+      25.0,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "ep": {
+     "mean": 31.3308,
+     "ci95": [
+      16.587,
+      55.2376
+     ],
+     "ci_bonferroni_K41": [
+      12.7471,
+      78.8434
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "ttc": {
+     "mean": 72.093,
+     "ci95": [
+      54.1667,
+      94.7368
+     ],
+     "ci_bonferroni_K41": [
+      50.0,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "c": {
+     "mean": 65.1163,
+     "ci95": [
+      52.1739,
+      82.1429
+     ],
+     "ci_bonferroni_K41": [
+      50.0,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "pdms": {
+     "mean": 34.5529,
+     "ci95": [
+      20.2056,
+      60.6614
+     ],
+     "ci_bonferroni_K41": [
+      13.6446,
+      84.2403
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "zero_rows": {
+     "pdms": 24,
+     "dac": 19,
+     "nc": 10
+    }
+   },
+   "N1M_tracked": {
+    "nc": {
+     "mean": 97.6744,
+     "ci95": [
+      94.2308,
+      100.0
+     ],
+     "ci_bonferroni_K41": [
+      92.8571,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "dac": {
+     "mean": 100.0,
+     "ci95": [
+      100.0,
+      100.0
+     ],
+     "ci_bonferroni_K41": [
+      100.0,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "ddc": {
+     "mean": 98.8372,
+     "ci95": [
+      96.5116,
+      100.0
+     ],
+     "ci_bonferroni_K41": [
+      95.0,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "ep": {
+     "mean": 88.6159,
+     "ci95": [
+      83.1135,
+      93.6008
+     ],
+     "ci_bonferroni_K41": [
+      80.1957,
+      94.4927
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "ttc": {
+     "mean": 95.3488,
+     "ci95": [
+      88.4615,
+      100.0
+     ],
+     "ci_bonferroni_K41": [
+      85.7143,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "c": {
+     "mean": 100.0,
+     "ci95": [
+      100.0,
+      100.0
+     ],
+     "ci_bonferroni_K41": [
+      100.0,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "pdms": {
+     "mean": 92.931,
+     "ci95": [
+      90.1937,
+      96.9866
+     ],
+     "ci_bonferroni_K41": [
+      89.3944,
+      97.7053
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "zero_rows": {
+     "pdms": 1,
+     "dac": 0,
+     "nc": 1
+    }
+   },
+   "human_tracked": {
+    "nc": {
+     "mean": 100.0,
+     "ci95": [
+      100.0,
+      100.0
+     ],
+     "ci_bonferroni_K41": [
+      100.0,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "dac": {
+     "mean": 100.0,
+     "ci95": [
+      100.0,
+      100.0
+     ],
+     "ci_bonferroni_K41": [
+      100.0,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "ddc": {
+     "mean": 89.5349,
+     "ci95": [
+      79.1667,
+      100.0
+     ],
+     "ci_bonferroni_K41": [
+      75.0,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "ep": {
+     "mean": 83.1379,
+     "ci95": [
+      72.5447,
+      91.5241
+     ],
+     "ci_bonferroni_K41": [
+      66.7609,
+      94.8805
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "ttc": {
+     "mean": 97.6744,
+     "ci95": [
+      93.0233,
+      100.0
+     ],
+     "ci_bonferroni_K41": [
+      90.0,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "c": {
+     "mean": 100.0,
+     "ci95": [
+      100.0,
+      100.0
+     ],
+     "ci_bonferroni_K41": [
+      100.0,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "pdms": {
+     "mean": 92.0051,
+     "ci95": [
+      87.648,
+      96.4023
+     ],
+     "ci_bonferroni_K41": [
+      86.1504,
+      97.8669
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "zero_rows": {
+     "pdms": 0,
+     "dac": 0,
+     "nc": 0
+    }
+   },
+   "CERT_tracked": {
+    "nc": {
+     "mean": 97.6744,
+     "ci95": [
+      94.2308,
+      100.0
+     ],
+     "ci_bonferroni_K41": [
+      92.8571,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "dac": {
+     "mean": 100.0,
+     "ci95": [
+      100.0,
+      100.0
+     ],
+     "ci_bonferroni_K41": [
+      100.0,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "ddc": {
+     "mean": 96.5116,
+     "ci95": [
+      89.5349,
+      100.0
+     ],
+     "ci_bonferroni_K41": [
+      85.0,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "ep": {
+     "mean": 88.3067,
+     "ci95": [
+      82.3356,
+      93.4846
+     ],
+     "ci_bonferroni_K41": [
+      79.268,
+      94.2989
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "ttc": {
+     "mean": 97.6744,
+     "ci95": [
+      94.2308,
+      100.0
+     ],
+     "ci_bonferroni_K41": [
+      92.8571,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "c": {
+     "mean": 100.0,
+     "ci95": [
+      100.0,
+      100.0
+     ],
+     "ci_bonferroni_K41": [
+      100.0,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "pdms": {
+     "mean": 92.8022,
+     "ci95": [
+      90.212,
+      96.9361
+     ],
+     "ci_bonferroni_K41": [
+      89.4154,
+      97.6245
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "zero_rows": {
+     "pdms": 1,
+     "dac": 0,
+     "nc": 1
+    }
+   }
+  },
+  "all_12146_sensitivity": {
+   "N1T_tracked": {
+    "nc": {
+     "mean": 97.6744,
+     "ci95": [
+      94.2308,
+      100.0
+     ],
+     "ci_bonferroni_K41": [
+      92.8571,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "dac": {
+     "mean": 76.7442,
+     "ci95": [
+      70.8333,
+      89.2857
+     ],
+     "ci_bonferroni_K41": [
+      70.0,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "ddc": {
+     "mean": 91.8605,
+     "ci95": [
+      75.5814,
+      100.0
+     ],
+     "ci_bonferroni_K41": [
+      65.0,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "ep": {
+     "mean": 65.9945,
+     "ci95": [
+      59.9502,
+      77.73
+     ],
+     "ci_bonferroni_K41": [
+      58.3726,
+      89.1224
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "ttc": {
+     "mean": 97.6744,
+     "ci95": [
+      94.2308,
+      100.0
+     ],
+     "ci_bonferroni_K41": [
+      92.8571,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "c": {
+     "mean": 100.0,
+     "ci95": [
+      100.0,
+      100.0
+     ],
+     "ci_bonferroni_K41": [
+      100.0,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "pdms": {
+     "mean": 70.9086,
+     "ci95": [
+      65.063,
+      84.4496
+     ],
+     "ci_bonferroni_K41": [
+      63.7844,
+      95.4677
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "zero_rows": {
+     "pdms": 11,
+     "dac": 10,
+     "nc": 1
+    }
+   },
+   "N1C_tracked": {
+    "nc": {
+     "mean": 100.0,
+     "ci95": [
+      100.0,
+      100.0
+     ],
+     "ci_bonferroni_K41": [
+      100.0,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "dac": {
+     "mean": 76.7442,
+     "ci95": [
+      66.6667,
+      93.75
+     ],
+     "ci_bonferroni_K41": [
+      64.2857,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "ddc": {
+     "mean": 98.8372,
+     "ci95": [
+      96.5116,
+      100.0
+     ],
+     "ci_bonferroni_K41": [
+      95.0,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "ep": {
+     "mean": 68.6319,
+     "ci95": [
+      56.2903,
+      87.6404
+     ],
+     "ci_bonferroni_K41": [
+      51.1206,
+      89.8931
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "ttc": {
+     "mean": 100.0,
+     "ci95": [
+      100.0,
+      100.0
+     ],
+     "ci_bonferroni_K41": [
+      100.0,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "c": {
+     "mean": 100.0,
+     "ci95": [
+      100.0,
+      100.0
+     ],
+     "ci_bonferroni_K41": [
+      100.0,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "pdms": {
+     "mean": 73.3641,
+     "ci95": [
+      62.792,
+      91.2043
+     ],
+     "ci_bonferroni_K41": [
+      61.6849,
+      95.7888
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "zero_rows": {
+     "pdms": 10,
+     "dac": 10,
+     "nc": 0
+    }
+   },
+   "CERT_tracked": {
+    "nc": {
+     "mean": 97.6744,
+     "ci95": [
+      94.2308,
+      100.0
+     ],
+     "ci_bonferroni_K41": [
+      92.8571,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "dac": {
+     "mean": 100.0,
+     "ci95": [
+      100.0,
+      100.0
+     ],
+     "ci_bonferroni_K41": [
+      100.0,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "ddc": {
+     "mean": 96.5116,
+     "ci95": [
+      89.5349,
+      100.0
+     ],
+     "ci_bonferroni_K41": [
+      85.0,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "ep": {
+     "mean": 88.3067,
+     "ci95": [
+      82.3356,
+      93.4846
+     ],
+     "ci_bonferroni_K41": [
+      79.268,
+      94.2989
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "ttc": {
+     "mean": 97.6744,
+     "ci95": [
+      94.2308,
+      100.0
+     ],
+     "ci_bonferroni_K41": [
+      92.8571,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "c": {
+     "mean": 100.0,
+     "ci95": [
+      100.0,
+      100.0
+     ],
+     "ci_bonferroni_K41": [
+      100.0,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "pdms": {
+     "mean": 92.8022,
+     "ci95": [
+      90.212,
+      96.9361
+     ],
+     "ci_bonferroni_K41": [
+      89.4154,
+      97.6245
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "zero_rows": {
+     "pdms": 1,
+     "dac": 0,
+     "nc": 1
+    }
+   },
+   "human_tracked": {
+    "nc": {
+     "mean": 100.0,
+     "ci95": [
+      100.0,
+      100.0
+     ],
+     "ci_bonferroni_K41": [
+      100.0,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "dac": {
+     "mean": 100.0,
+     "ci95": [
+      100.0,
+      100.0
+     ],
+     "ci_bonferroni_K41": [
+      100.0,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "ddc": {
+     "mean": 89.5349,
+     "ci95": [
+      79.1667,
+      100.0
+     ],
+     "ci_bonferroni_K41": [
+      75.0,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "ep": {
+     "mean": 83.1379,
+     "ci95": [
+      72.5447,
+      91.5241
+     ],
+     "ci_bonferroni_K41": [
+      66.7609,
+      94.8805
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "ttc": {
+     "mean": 97.6744,
+     "ci95": [
+      93.0233,
+      100.0
+     ],
+     "ci_bonferroni_K41": [
+      90.0,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "c": {
+     "mean": 100.0,
+     "ci95": [
+      100.0,
+      100.0
+     ],
+     "ci_bonferroni_K41": [
+      100.0,
+      100.0
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "pdms": {
+     "mean": 92.0051,
+     "ci95": [
+      87.648,
+      96.4023
+     ],
+     "ci_bonferroni_K41": [
+      86.1504,
+      97.8669
+     ],
+     "n": 43,
+     "n_logs": 4
+    },
+    "zero_rows": {
+     "pdms": 0,
+     "dac": 0,
+     "nc": 0
+    }
+   }
+  }
+ },
+ "primary": {
+  "contrast": "N1C - N1T, paired PDMS x100, tracked (W-TRANSP), primary 12,110",
+  "delta": {
+   "mean": 2.4555,
+   "ci95": [
+    -5.5159,
+    13.7005
+   ],
+   "ci_bonferroni_K41": [
+    -7.5089,
+    20.0774
+   ],
+   "n": 43,
+   "n_logs": 4
+  },
+  "N1C_dac": 76.7442,
+  "N1C_pdms": {
+   "mean": 73.3641,
+   "ci95": [
+    62.792,
+    91.2043
+   ],
+   "ci_bonferroni_K41": [
+    61.6849,
+    95.7888
+   ],
+   "n": 43,
+   "n_logs": 4
+  },
+  "N1T_pdms": {
+   "mean": 70.9086,
+   "ci95": [
+    65.063,
+    84.4496
+   ],
+   "ci_bonferroni_K41": [
+    63.7844,
+    95.4677
+   ],
+   "n": 43,
+   "n_logs": 4
+  },
+  "rule": "CONFIRMED iff delta >= +3.0 AND ci95 lo > 0 AND N1C DAC >= 98.5",
+  "outcome": "NOT CONFIRMED",
+  "dac_delta": {
+   "mean": 0.0,
+   "ci95": [
+    -7.4074,
+    12.5
+   ],
+   "ci_bonferroni_K41": [
+    -7.6923,
+    20.0
+   ],
+   "n": 43,
+   "n_logs": 4
+  },
+  "sensitivity_all_12146": {
+   "mean": 2.4555,
+   "ci95": [
+    -5.5159,
+    13.7005
+   ],
+   "ci_bonferroni_K41": [
+    -7.5089,
+    20.0774
+   ],
+   "n": 43,
+   "n_logs": 4
+  }
+ },
+ "paper_level": {
+  "N1C": {
+   "pdms": {
+    "mean": 73.3641,
+    "ci95": [
+     62.792,
+     91.2043
+    ],
+    "ci_bonferroni_K41": [
+     61.6849,
+     95.7888
+    ],
+    "n": 43,
+    "n_logs": 4
+   },
+   "dac": {
+    "mean": 76.7442,
+    "ci95": [
+     66.6667,
+     93.75
+    ],
+    "ci_bonferroni_K41": [
+     64.2857,
+     100.0
+    ],
+    "n": 43,
+    "n_logs": 4
+   },
+   "level": "BELOW",
+   "gap_to_paper_pdms": 22.4359,
+   "decomposition_mean_field": {
+    "what": "PDMS formula on the arm's sub-score MEANS; each sub-score swapped one at a time to the paper's Table 4 value (descriptive, never a bar)",
+    "formula_on_means_x100": 66.7137,
+    "residual_actual_minus_formula": 6.6504,
+    "swap_gain_x100": {
+     "nc": -0.1334,
+     "dac": 20.1293,
+     "ep": 7.3125,
+     "ttc": -0.2878,
+     "c": -0.1279
+    }
+   }
+  },
+  "rule": "PAPER LEVEL iff PDMS >= 95.8 AND DAC >= 99.9; NEAR iff >= 95.3 AND >= 99.5; else BELOW (point values)",
+  "human_anchored_descriptive": {
+   "our_human": 92.0051,
+   "paper_human": 94.8,
+   "human_anchored_paper_level": 93.0051,
+   "N1C_minus_human": {
+    "mean": -18.6411,
+    "ci95": [
+     -31.1294,
+     2.433
+    ],
+    "ci_bonferroni_K41": [
+     -34.0467,
+     9.6384
+    ],
+    "n": 43,
+    "n_logs": 4
+   }
+  }
+ },
+ "secondary_CERT": {
+  "label": "teacher + map-certified selection (NEVER the teacher alone, NEVER checkpoint identity)",
+  "decides": "nothing",
+  "choice_primary": {
+   "N1C": 33,
+   "N1M": 6,
+   "N1T": 4
+  },
+  "none_pass_primary": 0,
+  "CERT_minus_N1C": {
+   "mean": 19.4382,
+   "ci95": [
+    5.7318,
+    27.5604
+   ],
+   "ci_bonferroni_K41": [
+    0.0,
+    29.6768
+   ],
+   "n": 43,
+   "n_logs": 4
+  },
+  "CERT_minus_N1C_dac": {
+   "mean": 23.2558,
+   "ci95": [
+    6.25,
+    33.3333
+   ],
+   "ci_bonferroni_K41": [
+    0.0,
+    35.7143
+   ],
+   "n": 43,
+   "n_logs": 4
+  },
+  "CERT_minus_N1T": {
+   "mean": 21.8936,
+   "ci95": [
+    10.6523,
+    27.1382
+   ],
+   "ci_bonferroni_K41": [
+    0.3211,
+    29.2483
+   ],
+   "n": 43,
+   "n_logs": 4
+  },
+  "paper_read_descriptive": {
+   "pdms": {
+    "mean": 92.8022,
+    "ci95": [
+     90.212,
+     96.9361
+    ],
+    "ci_bonferroni_K41": [
+     89.4154,
+     97.6245
+    ],
+    "n": 43,
+    "n_logs": 4
+   },
+   "dac": {
+    "mean": 100.0,
+    "ci95": [
+     100.0,
+     100.0
+    ],
+    "ci_bonferroni_K41": [
+     100.0,
+     100.0
+    ],
+    "n": 43,
+    "n_logs": 4
+   },
+   "level": "BELOW",
+   "gap_to_paper_pdms": 2.9978,
+   "decomposition_mean_field": {
+    "what": "PDMS formula on the arm's sub-score MEANS; each sub-score swapped one at a time to the paper's Table 4 value (descriptive, never a bar)",
+    "formula_on_means_x100": 91.969,
+    "residual_actual_minus_formula": 0.8332,
+    "swap_gain_x100": {
+     "nc": 2.0014,
+     "dac": -0.092,
+     "ep": 1.2996,
+     "ttc": 0.5802,
+     "c": -0.1628
+    }
+   }
+  }
+ },
+ "transparent_descriptive": "from the W-TRANSP rows (not in the harness CSVs)",
+ "families": "NOT RUN (a read requirement: run families_run.py per arm on rows_cert_primary.jsonl)",
+ "k_ledger": {
+  "entry": "ONE K entry (TF-N1). N1T (identity), N1W (regression), N1M (CERT input) and CERT (secondary) are logged under it as non-selection reads",
+  "K": 41
+ }
+}

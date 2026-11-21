@@ -1,0 +1,40 @@
+CMD: C:/Users/Admin/venvs/tanitad/Scripts/python.exe -m pytest -q -p no:cacheprovider C:\Users\Admin\ev6\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-23-refcv6-standard-tests\navsim\tests\test_model_seam6.py -k K0 or KD
+.F                                                                       [100%]
+================================== FAILURES ===================================
+______________________ test_KD_exact_dedup_equals_native ______________________
+
+rig = {'model': RefCV3Model(
+  (core): RefCModel(
+    (encoder): TimmResNetTrunk(
+      (net): FeatureListNet(
+        (conv...y:90,144).", 'devkit': 'C:\\Users\\Admin\\navsim-crun\\devkit', 'split': 'warmup_two_stage', 'n_stage1': 16, ...}, ...}
+
+    @need
+    def test_KD_exact_dedup_equals_native(rig):
+        enc = rig["model"].core.encoder
+        native = [_scene(rig, t) for t in rig["toks"]]
+        assert all(r["diag"]["dedup"] == [24, 10] for r in native)       # the trunk's own path
+        saved = enc._backbone_dedup
+        R6.exact_dedup(enc)
+        try:
+            exact = [_scene(rig, t) for t in rig["toks"]]
+        finally:
+            enc._backbone_dedup = saved
+            enc.memory_levers.pop("eval_exact_dedup", None)
+        assert all(r["diag"]["dedup"] == [24, 1] for r in exact)
+        d = max(float(np.abs(x["traj"] - y["traj"]).max()) for x, y in zip(native, exact))
+        sel_same = sum(x["diag"]["sel_idx"] == y["diag"]["sel_idx"] for x, y in zip(native, exact))
+        out = {"n": len(native), "max_abs_traj_diff_m": d, "sel_identical": sel_same, "device": DEV,
+               "ckpt": CKPT}
+        os.makedirs(os.path.join(PKG, "raw", "controls"), exist_ok=True)
+        json.dump(out, open(os.path.join(PKG, "raw", "controls", f"KD_exact_dedup_{DEV}.json"), "w"),
+                  indent=1)
+        assert sel_same == len(native)
+>       assert d < 1e-3, out
+E       AssertionError: {'n': 4, 'max_abs_traj_diff_m': 0.01102447509765625, 'sel_identical': 4, 'device': 'cuda', ...}
+E       assert 0.01102447509765625 < 0.001
+
+tests\test_model_seam6.py:115: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_model_seam6.py::test_KD_exact_dedup_equals_native - Asserti...
+1 failed, 1 passed, 7 deselected in 13.14s

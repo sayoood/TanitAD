@@ -1,0 +1,116 @@
+{
+ "created": "2026-11-07T21:29:49+0100",
+ "python": "3.11.13",
+ "numpy": "1.26.4",
+ "scipy": "1.17.1",
+ "script": {
+  "path": "tsf_bundle2_20261107/code/select_suite_tokens.py",
+  "sha256": "359c571059d8f95cf4b69f708abd2df87adde530b4217c903e5e0b832c97b180"
+ },
+ "spec_sha256": "e5f5c31747b9e5066109297bb2addbea2ff987f3963b47808019c943059039e2",
+ "inputs": {
+  "scorecard": {
+   "path": "E:/Projects/TanitAD-artifacts/refe_behaviour_20261107/BEHAVIOUR_SCORECARD.md",
+   "sha256": "fac6c7f150eb026de0708c6f6557df52481216f76b35f3c8c8b8045bcb8ec0c5"
+  },
+  "tokens_cruise_json": {
+   "path": "E:/Projects/TanitAD-artifacts/refe_ego_probe_20261106/tokens_cruise.json",
+   "sha256": "57db811e644218c00020cd6d25b417b604ffc9af7b81612976d0d52f02263f78",
+   "n_tokens_list": 154
+  },
+  "navtest_yaml": {
+   "path": "F:/Archive/devbox-C/navsim/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/config/common/train_test_split/scene_filter/navtest.yaml",
+   "sha256": "61284edf5003c0291f843ce9817c822ba306609a62d54544223adae3fc7fc9cd",
+   "n_tokens": 12146,
+   "n_logs": 136,
+   "token_list_sha256_sorted_newline_joined": "8d42fef68542f095d0e03894fdaf38babfdc89f3fd7cdc26080c3a6009cb4108"
+  },
+  "nuplan_db": {
+   "dir": "E:/Projects/TanitAD/data/nuplan/nuplan-v1.1/splits/test",
+   "n_files_used": 136,
+   "identity": "sha256 over sorted 'name:size' lines of the 136 navtest DB files (file CONTENT was not hashed: ~25 GB on a contended drive)",
+   "identity_sha256": "6b473902d4a68cd473eec642617dc5d677c149003a3550867f56864ca6cd6105",
+   "total_bytes": 13156085760
+  }
+ },
+ "outputs": {
+  "SUITE_CANDIDATES_json_sha256": "3d669b74c331f121fa74eaa67bcca1475c032d48de09f1cd6c967ddbdbac03cc",
+  "SUITE_CANDIDATES_ALT_json_sha256": "5633414dac21c8aeb1f130afa851e5e9a3f52bc7b81882c69919573924c01320",
+  "suite_features_csv_gz_sha256": "053046d5b702bc74610338df9abad469cc40cb0980d95aa5f9c6db43559aefb5",
+  "candidate_tokens_literal": {
+   "cruise": [
+    "86cad912457d5115",
+    "5971485918d155dd",
+    "13fa82d6564e5bac",
+    "3309408516525e17",
+    "c052667192cb5ade"
+   ],
+   "steady_lead": [
+    "024d89a3e1e752dc",
+    "adfdcd3c5a9a5fb9",
+    "87751a071a7e50a4",
+    "68ece717ce6553e7",
+    "b1c09de2415c5b14"
+   ],
+   "lead_braking": [
+    "9164913b818a58b1",
+    "9f97b9c20ffc50b5",
+    "390d9e3b03a15695",
+    "b425ed76adfb5351",
+    "f233f263a7e75621"
+   ],
+   "stop_go": [
+    "3984225e4458525b",
+    "95472243c6245fec",
+    "435eadb0f1fe5b49",
+    "71adcc94aa6856a6",
+    "f233f263a7e75621"
+   ],
+   "merge_cutin": [
+    "963d98eaf75259f6",
+    "adfdcd3c5a9a5fb9",
+    "b1c09de2415c5b14",
+    "61421159b240530d",
+    "afd632f043e35a49"
+   ]
+  },
+  "candidate_tokens_alt": {
+   "cruise": [
+    "86cad912457d5115",
+    "5971485918d155dd",
+    "13fa82d6564e5bac",
+    "3309408516525e17",
+    "c052667192cb5ade"
+   ],
+   "steady_lead": [
+    "024d89a3e1e752dc",
+    "adfdcd3c5a9a5fb9",
+    "87751a071a7e50a4",
+    "b1c09de2415c5b14",
+    "1a1fbb255ec55813"
+   ],
+   "lead_braking": [
+    "9164913b818a58b1",
+    "9f97b9c20ffc50b5",
+    "390d9e3b03a15695",
+    "f233f263a7e75621",
+    "17c627139c325a9c"
+   ],
+   "stop_go": [
+    "95472243c6245fec",
+    "435eadb0f1fe5b49",
+    "71adcc94aa6856a6",
+    "f233f263a7e75621",
+    "83d9a73b7a3650c7"
+   ],
+   "merge_cutin": [
+    "adfdcd3c5a9a5fb9",
+    "b1c09de2415c5b14",
+    "afd632f043e35a49",
+    "19e90f2757b25f38",
+    "30f09e001cf55013"
+   ]
+  }
+ },
+ "note": "Pinned by the run that wrote the outputs; the sim session re-runs `python -I select_suite_tokens.py --out <dir>` and compares SUITE_CANDIDATES.json."
+}

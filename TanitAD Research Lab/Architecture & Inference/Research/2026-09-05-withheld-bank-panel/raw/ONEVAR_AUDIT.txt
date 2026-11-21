@@ -1,0 +1,36 @@
+# one-variable check vs A0_fixed (argv as the trainer received it)
+
+A0b_replicate: PASS — moved []
+A1_pred: PASS — moved ['--withheld-bank', '--withheld-bank-warmup']
+    --withheld-bank: 'fixed' -> 'pred'
+    --withheld-bank-warmup: '<absent>' -> '450'
+A2_random: PASS — moved ['--withheld-bank', '--withheld-bank-warmup']
+    --withheld-bank: 'fixed' -> 'random'
+    --withheld-bank-warmup: '<absent>' -> '450'
+A3_drop25: PASS — moved ['--ego-dropout']
+    --ego-dropout: '0.5' -> '0.25'
+A4_none: PASS — moved ['--withheld-bank']
+    --withheld-bank: 'fixed' -> 'none'
+A5_regress: PASS — moved ['--ablate-frames']
+    --ablate-frames: '<absent>' -> ''
+
+# held-constant set (must be identical on every arm)
+  --arm                      ok  'hier'
+  --size                     ok  'tiny'
+  --data-root                ok  'C:\\Users\\Admin\\tanitad-data\\physicalai\\_epcache'
+  --episodes                 ok  '48'
+  --steps                    ok  '2000'
+  --batch                    ok  '12'
+  --lr                       ok  '1e-4'
+  --warmup                   ok  '250'
+  --seed                     ok  '0'
+  --log-every                ok  '50'
+  --anchors                  ok  'C:\\Users\\Admin\\run_wbank\\refc_anchors_6s_v0cond_alat_117.pt'
+  --n-anchors                ok  '117'
+  --anchor-control-units     ok  'alat'
+  --sel-accel-max            ok  '2.0'
+  --device                   ok  'cuda'
+
+# A1 vs A2 (must be ONLY --withheld-bank): moved ['--withheld-bank'] -> PASS
+
+ONEVAR_VERDICT=PASS

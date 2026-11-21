@@ -1,0 +1,176 @@
+[ego] ego_state_inject build: feeding the MEASURED ego block (v0, a_long, yaw_rate, curvature, keep=1) at t0 to every forward — refc_v3.ego_state_from_batch, the trainer's own entry
+[v3] nav_from_v7: follow 90 / left 13 / right 38, missing 0 (of 141 clips; md5=aa12c948f062181c3297265b51526ec5)
+[model] C:/Users/Admin/refcv4b_final/ckpt_40284_FINAL.pt step=40284 arm=hier anchors=117 horizons=[5, 10, 15, 20, 30, 40, 50, 60] window=8 decoder=diffusion/2 config<-config.json[argv] -> refc_v3_train.build_parser + _pin_trainer_cfg (the trainer's own build path)
+[grid] 2s: dt=0.5 s K=4 instants=[0.5, 1.0, 1.5, 2.0] s <- model slots [5, 10, 15, 20] (indices [0, 1, 2, 3]); dropped [30, 40, 50, 60]
+[units] action_units=steer — the RECORDED channel 1 is a road-wheel STEER angle (physicalai.py:621). kappa = tan(steer)/2.9 is applied before integration; `ha` is NOT comparable to a kappa-unit refav1 run (`ha0` is, it is zero).
+[nav] ⚠️ --no-navshuf: the record is NOT admissible for any nav-conditioned (STRATEGIC) claim
+[nav] ⚠️ --no-navzero: BACKLOG R39 binds every nav-conditioned claim to carry the nav-ZERO arm BESIDE the nav-shuffle one; this record carries only the shuffle
+[roll] 24114 windows / 141 episodes · arms=['os', 'ha', 'ha0', 'ha0_ext'] · fed conditionings=['nav_true'] · nav_shuffle changed 12273/24114
+[cost] first forward (1 fed row(s), 1 rows total) took 0.57 s -> ESTIMATED 3.83 h for 24114 windows (forward only; IO/analysis extra)
+  [1/141] 01be5919-6e6 171 windows 29s
+  [2/141] 060531e1-993 171 windows 56s
+  [3/141] 0fa2b231-435 171 windows 82s
+  [4/141] 10804db8-d07 171 windows 109s
+  [5/141] 11e40da1-3d9 171 windows 135s
+  [6/141] 126b3a97-087 171 windows 161s
+  [7/141] 13c95b6a-5d1 171 windows 187s
+  [8/141] 14157960-84d 171 windows 213s
+  [9/141] 142a3a72-6cd 171 windows 239s
+  [10/141] 14bc9fcf-c04 171 windows 265s
+  [11/141] 16d89725-2f3 171 windows 291s
+  [12/141] 17775e74-2d8 172 windows 316s
+  [13/141] 18b72291-84f 171 windows 338s
+  [14/141] 1bd040a8-182 171 windows 361s
+  [15/141] 1c3a2c7c-7e8 169 windows 386s
+  [16/141] 204b15b4-bd0 171 windows 412s
+  [17/141] 2172a5a3-8a1 171 windows 438s
+  [18/141] 24fee8a5-9cc 171 windows 465s
+  [19/141] 2602baaa-436 171 windows 491s
+  [20/141] 262b900f-2cf 171 windows 517s
+  [21/141] 269478eb-2da 177 windows 545s
+  [22/141] 27f44280-3e5 171 windows 571s
+  [23/141] 2cd0f4e4-dce 171 windows 597s
+  [24/141] 2e8a2df2-3f7 171 windows 624s
+  [25/141] 316f3c56-914 171 windows 651s
+  [26/141] 31d0adc4-4e8 171 windows 678s
+  [27/141] 32f9b6b2-edc 171 windows 705s
+  [28/141] 330b4626-96d 171 windows 731s
+  [29/141] 34a1e12e-95c 171 windows 758s
+  [30/141] 37e61793-36e 171 windows 785s
+  [31/141] 38fe80c1-caf 171 windows 811s
+  [32/141] 3971a8c6-0c5 171 windows 837s
+  [33/141] 39bf584e-5bb 170 windows 864s
+  [34/141] 3ef3dcc8-7fd 171 windows 891s
+  [35/141] 3ff11411-fa2 171 windows 918s
+  [36/141] 42745b48-a01 171 windows 944s
+  [37/141] 45358841-692 171 windows 971s
+  [38/141] 45a9f7ec-991 171 windows 998s
+  [39/141] 45aea78c-776 171 windows 1025s
+  [40/141] 47241da8-c00 171 windows 1052s
+  [41/141] 480d7910-cec 171 windows 1078s
+  [42/141] 4c5264dd-911 171 windows 1104s
+  [43/141] 4ee70f88-f03 171 windows 1131s
+  [44/141] 50caa2df-cf8 171 windows 1157s
+  [45/141] 51c01ba4-900 171 windows 1184s
+  [46/141] 5271d125-613 171 windows 1210s
+  [47/141] 52ddcaaf-06c 171 windows 1237s
+  [48/141] 565b6ff0-c9f 171 windows 1264s
+  [49/141] 5716299c-a9e 171 windows 1290s
+  [50/141] 59c25a0f-d4b 171 windows 1316s
+  [51/141] 5b4df66c-31a 171 windows 1343s
+  [52/141] 5d39a1de-bd2 171 windows 1370s
+  [53/141] 5d94cbbb-55e 171 windows 1397s
+  [54/141] 5f86e111-b21 171 windows 1424s
+  [55/141] 62f3222e-9aa 171 windows 1451s
+  [56/141] 63434e0b-8cd 171 windows 1477s
+  [57/141] 66e4d574-2b3 171 windows 1504s
+  [58/141] 672d70d8-812 170 windows 1530s
+  [59/141] 6908302e-14b 171 windows 1557s
+  [60/141] 695081db-431 171 windows 1584s
+  [61/141] 6a89cca3-64e 171 windows 1611s
+  [62/141] 6b3e802e-ea8 171 windows 1637s
+  [63/141] 6ed4ef7a-1a7 171 windows 1664s
+  [64/141] 73e750eb-684 171 windows 1690s
+  [65/141] 7526e299-040 171 windows 1716s
+  [66/141] 77a247be-ad5 171 windows 1743s
+  [67/141] 79e30ac2-c61 171 windows 1770s
+  [68/141] 80b890fc-114 171 windows 1796s
+  [69/141] 80fcd92f-7bb 171 windows 1824s
+  [70/141] 826cd25c-fa4 171 windows 1851s
+  [71/141] 829320e2-ba1 171 windows 1878s
+  [72/141] 84952a7e-a54 171 windows 1905s
+  [73/141] 85a47aa1-146 171 windows 1932s
+  [74/141] 8d610d87-817 171 windows 1958s
+  [75/141] 8df0cb04-8b6 171 windows 1985s
+  [76/141] 8f1baf35-90f 171 windows 2011s
+  [77/141] 8fe27d99-23e 170 windows 2038s
+  [78/141] 91929cea-f8d 170 windows 2064s
+  [79/141] 91e90a95-a12 171 windows 2091s
+  [80/141] 9370d445-320 171 windows 2118s
+  [81/141] 93854321-c88 171 windows 2145s
+  [82/141] 998310a5-277 170 windows 2171s
+  [83/141] 9b4347d2-fdc 171 windows 2198s
+  [84/141] 9c50f803-c78 171 windows 2225s
+  [85/141] 9d3d1cd1-ce5 171 windows 2252s
+  [86/141] 9fc24b6e-3ec 171 windows 2278s
+  [87/141] a0d95df6-499 171 windows 2304s
+  [88/141] a459164a-0c6 171 windows 2331s
+  [89/141] a6b2719b-771 171 windows 2358s
+  [90/141] a7e15877-946 171 windows 2384s
+  [91/141] aa00f477-540 171 windows 2411s
+  [92/141] aa594aa8-bc9 171 windows 2436s
+  [93/141] ac81f868-f50 171 windows 2460s
+  [94/141] acf8e77f-7d5 171 windows 2482s
+  [95/141] af6f5964-263 171 windows 2504s
+  [96/141] afe44776-866 169 windows 2527s
+  [97/141] b0252ad5-8cd 171 windows 2551s
+  [98/141] b05195bf-36d 171 windows 2578s
+  [99/141] b19eb35f-396 171 windows 2604s
+  [100/141] b62be3fa-4fb 171 windows 2631s
+  [101/141] b99058dc-680 172 windows 2658s
+  [102/141] c0142275-d0c 171 windows 2685s
+  [103/141] c08bebe5-c3f 171 windows 2711s
+  [104/141] c1cb24d2-0af 171 windows 2734s
+  [105/141] c84ea182-972 171 windows 2757s
+  [106/141] c8a39711-ce0 171 windows 2780s
+  [107/141] ca11a2a2-102 177 windows 2804s
+  [108/141] caf90ce8-c1c 171 windows 2827s
+  [109/141] d1d382aa-035 170 windows 2849s
+  [110/141] d217b78a-0da 171 windows 2873s
+  [111/141] d4729053-1eb 171 windows 2899s
+  [112/141] d571e998-57d 171 windows 2925s
+  [113/141] d85682b8-f61 171 windows 2952s
+  [114/141] dbad28c2-dfc 170 windows 2978s
+  [115/141] dca157a0-20a 171 windows 3005s
+  [116/141] e0e6b875-eb1 170 windows 3031s
+  [117/141] e319062b-376 171 windows 3057s
+  [118/141] e66979e0-6f5 171 windows 3083s
+  [119/141] e6cb7cd4-834 171 windows 3110s
+  [120/141] e7ada9bb-f5f 171 windows 3137s
+  [121/141] e8ace736-b9b 171 windows 3164s
+  [122/141] ea019ab7-bd2 171 windows 3189s
+  [123/141] eabb9abf-06a 171 windows 3213s
+  [124/141] eb96a48b-db1 171 windows 3236s
+  [125/141] ebd51f52-29f 171 windows 3259s
+  [126/141] ed09262b-3ac 171 windows 3285s
+  [127/141] ed87040c-cf3 171 windows 3312s
+  [128/141] edd5d17b-1be 171 windows 3338s
+  [129/141] f14ae2d2-7bf 172 windows 3365s
+  [130/141] f19cffbf-562 171 windows 3390s
+  [131/141] f1a94fee-838 171 windows 3416s
+  [132/141] f1e1536b-1e2 171 windows 3442s
+  [133/141] f26af403-f54 171 windows 3466s
+  [134/141] f4226f59-077 171 windows 3488s
+  [135/141] f4740120-50c 171 windows 3510s
+  [136/141] f6e7827e-fd4 171 windows 3533s
+  [137/141] f901e9e6-cc3 171 windows 3555s
+  [138/141] fb8e8200-bde 171 windows 3577s
+  [139/141] fe764229-15d 171 windows 3600s
+  [140/141] fe83e06e-3c2 171 windows 3622s
+  [141/141] ffcd075e-c25 171 windows 3644s
+[dump] 24114 windows over 141 episodes (0 skipped: none)
+REFCV3_DUMP_DONE
+[trivial-profile] 24114 windows — arm SHAPE before any family row (straight |y|<1e-06 m, const-speed spread<0.0001 m)
+  os             n=24114 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000
+  ha             n=24114 straight=0.0393 const_speed=0.0312 CONSTANT-VELOCITY=0.0309  identical_to: ha0=740/24114, ha0_ext=1063/24114
+  ha0            n=24114 straight=1.0000 const_speed=1.0000 CONSTANT-VELOCITY=1.0000  identical_to: ha=740/24114, ha0_ext=740/24114
+  ha0_ext        n=24114 straight=0.0393 const_speed=0.0312 CONSTANT-VELOCITY=0.0309  identical_to: ha=1063/24114, ha0=740/24114
+  ⚠️ CONSTANT-VELOCITY on > 50 % of windows: ['ha0'] — read their LATERAL rows as a control, never as planning skill
+  ha0_ext ≡ ha0 on 740/24114 windows (3.07%) — on those the echo control adds nothing beyond the constant-velocity floor, and 'beat BOTH' collapses to 'beat ha0'.
+[selection-profile] 24114 windows over 117 anchors — the model's OWN choice, before any family row
+  n_distinct=  57  modal=#67 (0.4848)  entropy=2.1600/4.7622 nats (ratio 0.4536)  agrees_with_oracle=0.1012
+[out] C:/Users/Admin/tanitad-selq-20260906/out/refcv4b_t1_s1.json
+  os           tier=T1*  ADE=0.297 [0.2679, 0.3269]  families_unavailable=['strategic']  distance_keeping=REFUSED
+  ha           tier=T1   ADE=0.3024 [0.2761, 0.3266]  families_unavailable=['strategic']  distance_keeping=REFUSED
+  ha0          tier=T1   ADE=0.6722 [0.588, 0.7537]  families_unavailable=['strategic']  distance_keeping=REFUSED
+  ha0_ext      tier=T1   ADE=0.2901 [0.267, 0.3119]  families_unavailable=['strategic']  distance_keeping=REFUSED
+  * = tier stamped T1 with the ruling OPEN (does EVAL_DOCTRINE admit as T1 a model that consumes NO acti…)
+  paired_os_minus_ha0          ADE delta=-0.3752 [-0.4335, -0.318] separated=True n_win=24114 n_ep=141
+  paired_os_minus_ha           ADE delta=-0.0054 [-0.0206, 0.011] separated=False n_win=24114 n_ep=141
+  paired_ha_minus_ha0          ADE delta=-0.3698 [-0.4353, -0.3079] separated=True n_win=24114 n_ep=141
+  paired_os_minus_ha0ext       ADE delta=0.0069 [-0.0081, 0.0224] separated=False n_win=24114 n_ep=141
+  ⚠️ nav-zero arm ABSENT: --no-navzero, or nav source 'none' (in which case `os` already IS the nav-zero arm) — ⛔ BACKLOG R39 requires it beside the shuffle for any nav-conditioned claim
+  ABSENT: ol — `ol` is 'the RECORDED future (a, steer) integrated from v0'. refcv3 CONSUMES NO ACTIONS (r…
+  strategic nav_valid_frac=1.0 n_labeled=18135 changed_subset_n=None
+  tactical anchor_acc=0.1012 (chance 0.008547) n_distinct_selected=57
+ARM_EXIT=0

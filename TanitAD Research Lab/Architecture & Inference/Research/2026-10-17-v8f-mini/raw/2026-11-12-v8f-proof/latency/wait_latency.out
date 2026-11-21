@@ -1,0 +1,63 @@
+[2026-11-19T06:50:53Z] poll 1: [06:50:20Z] no slot [3 33.0] (GPU jobs, free GB; need fewer than 2 jobs and more than 28 GB)
+[2026-11-19T07:21:05Z] poll 7: [07:20:21Z] no slot [3 33.6] (GPU jobs, free GB; need fewer than 2 jobs and more than 28 GB)
+[2026-11-19T07:51:17Z] poll 13: [07:50:23Z] no slot [3 37.0] (GPU jobs, free GB; need fewer than 2 jobs and more than 28 GB)
+[2026-11-19T08:21:29Z] poll 19: [08:21:25Z] no slot [2 37.6] (GPU jobs, free GB; need fewer than 2 jobs and more than 28 GB)
+[2026-11-19T08:51:39Z] poll 25: [08:50:26Z] no slot [2 40.4] (GPU jobs, free GB; need fewer than 2 jobs and more than 28 GB)
+[2026-11-19T09:16:48Z] latency run ended on the pod: DONE
+[08:43:26Z] no slot [2 37.5] (GPU jobs, free GB; need fewer than 2 jobs and more than 28 GB)
+[08:44:26Z] no slot [2 37.5] (GPU jobs, free GB; need fewer than 2 jobs and more than 28 GB)
+[08:45:26Z] no slot [2 37.7] (GPU jobs, free GB; need fewer than 2 jobs and more than 28 GB)
+[08:46:26Z] no slot [3 35.9] (GPU jobs, free GB; need fewer than 2 jobs and more than 28 GB)
+[08:47:26Z] no slot [2 37.1] (GPU jobs, free GB; need fewer than 2 jobs and more than 28 GB)
+[08:48:26Z] no slot [3 32.8] (GPU jobs, free GB; need fewer than 2 jobs and more than 28 GB)
+[08:49:26Z] no slot [2 40.4] (GPU jobs, free GB; need fewer than 2 jobs and more than 28 GB)
+[08:50:26Z] no slot [2 40.4] (GPU jobs, free GB; need fewer than 2 jobs and more than 28 GB)
+[08:52:12Z] slot free: probe 1 [1 41.8], probe 2 [1 41.8] (GPU jobs, free GB)
+[08:52:12Z] run actcons_c0_RLAm_s0: ckpt sha256 51a280fedb5a8226fc9768f8dcf540d37694cbe1e2ed8a4f93c5e89626963bf3
+[09:14:07Z] run actcons_c0_RLAm_s0: rc 0; last log line: wrote /workspace/v8proof/runs/latency_proxy/actcons_c0_RLAm_s0/LATENCY_PROXY.json /workspace/v8proof/runs/latency_proxy/actcons_c0_RLAm_s0/LATENCY_PROXY.md
+[09:14:07Z] ZZ LATENCY DONE
+/workspace/v8proof/runs/latency_proxy/actcons_c0_RLAm_s0/: LATENCY_PROXY.json LATENCY_PROXY.md  /workspace/v8proof/runs/latency_proxy/checks/: run_20261119_064644_191557 [2026-11-19T09:16:55Z] pulled actcons_c0_RLAm_s0_LATENCY_PROXY.json sha256 21456fb99fd484d1
+[2026-11-19T09:16:58Z] pulled actcons_c0_RLAm_s0_LATENCY_PROXY.md sha256 2bd07f0f77124206
+[2026-11-19T09:17:01Z] pulled checks.log sha256 6a4a8500892ca1d1
+[2026-11-19T09:17:05Z] pulled latency.log sha256 60a83d665f15979b
+Latency proxy on the pod GPU (not Thor, not a product latency; the image encoder is not included). Tier: none (a cost measurement, not a driving metric).
+LONGITUDINAL, LATERAL, TACTICAL, STRATEGIC: not applicable (a cost measurement)
+
+Generated 2026-11-19T09:14:04Z by latency_proxy.py (sha256 d1a5a743de1c). All times in ms; p50 / p95 / mean over n timed repetitions after warm-up; every timed region is bracketed by a device synchronisation.
+
+## Setup
+
+* subject: real; device cuda; GPU NVIDIA A40; torch 2.8.0+cu128 (cuda 12.8); cudnn 91002
+* checkpoint sha256 51a280fedb5a8226fc9768f8dcf540d37694cbe1e2ed8a4f93c5e89626963bf3; pinned tool sha256 61e140edb9da01acbbba4eef81e74bbb68b57e2ff31842e05958759446d97397 (expected 61e140edb9da01acbbba4eef81e74bbb68b57e2ff31842e05958759446d97397)
+* state shape at batch 1 [1, 640]; predictor context 3; cached tokens at batch 1 [1, 16, 40, 1024] (tokens per frame 40, frames 16, feature width 1024)
+* planner horizon 10 steps of 0.2 s = 2.0 s; source: imag_plan.N_ROLL (imag_plan.py:41): 10 rollout steps of 0.2 s = 2.0 s, the horizon the planner rolls
+* parameters 9191726; per top-level module {"prior": 17724, "adapter": 264448, "e_ego": 2304, "e_nav": 1536, "e_lim": 1536, "e_age": 768, "e_ck": 3328, "e_code": 15616, "read_s": 792320, "read_t": 792320, "read_o": 1583104, "head_s": 529417, "trunk_t": 656128, "h_goal": 5654, "h_lat": 1285, "h_lon":
+* windows: 80 of the 2399 grid windows; n 200, warm-up 20, K list [1, 8, 16, 32]
+
+## Self-checks (all passed, or no table is written)
+
+* s1 timer measures a known 50 ms sleep: PASS ({"value_p50_ms": 50.27670149866026, "bar": "|p50 - 50| <= 5.0 ms"})
+* s1a timer waits for an asynchronous device (50 ms of async work): PASS ({"value_p50_ms": 50.09225249523297, "bar": "|p50 - 50| <= 5.0 ms"})
+* s2 batched and sequential rollouts give the same states: PASS ({"value_max_abs_diff": 9.5367431640625e-07, "max_abs_state": 4.625880718231201, "K": 32, "H": 10, "bar": "max abs diff <= 0.0001 and states not all zero"})
+* s3 a doubled horizon takes between 1.6 and 2.4 times as long: PASS ({"value_ratio": 2.089567373922049, "p50_ms_H": 11.488870994071476, "p50_ms_2H": 24.006769992411137, "K": 8, "H": 10, "bar": "1.6 <= ratio <= 2.4"})
+* s4 counted predictor calls per tick: PASS ({"value": [10, 10], "input_index": 1, "bar": "calls > 0 and equal on two ticks of one input"})
+* s5 statistics of two known lists (1..100 ms; 1,1,1,1,100 ms): PASS ({"value": {"p50": 50.5, "p95": 95.05, "mean": 50.5, "n": 100}, "value_skewed": {"p50": 1.0, "p95": 80.19999999999999, "mean": 20.8, "max": 100.0}, "bar": "p50 50.5, p95 95.05, mean 50.5, n 100; skewed list p50 1, p95 80.2, mean 20
+
+## Variant: eager
+
+### (a) one predictor step at batch 1
+
+| region | p50 | p95 | mean | n |
+|---|---|---|---|---|
+| predictor step, batch 1 | 1.244 | 1.486 | 1.287 | 200 |
+
+### (b) imagined rollout, K candidates
+
+| H (steps / s) | K | batch p50 | batch p95 | batch mean | K x batch-1 total p50 | total p95 | per rollout mean | seq / batch | real-time factor (batch p50) |
+|---|---|---|---|---|---|---|---|---|---|
+| 10 / 2.0 (planner horizon) | 1 | 11.823 | 13.190 | 11.988 | 11.293 | 14.719 | 11.649 | 0.96 | 169.2 |
+| 10 / 2.0 (planner horizon) | 8 | 11.768 | 12.828 | 11.908 | 90.092 | 103.542 | 11.611 | 7.66 | 170.0 |
+| 10 / 2.0 (planner horizon) | 16 | 11.543 | 12.314 | 11.549 | 151.622 | 183.788 | 10.056 | 13.14 | 173.3 |
+| 10 / 2.0 (planner horizon) | 32 | 9.711 | 10.762 | 9.851 | 295.961 | 306.069 | 9.283 | 30.48 | 205.9 |
+| 30 / 6.0 | 1 | 27.522 | 28.162 | 27.531 | 28.055 | 28.851 | 28.152 | 1.02 | 218.0 |
+ZZ LATENCY-WAIT DONE 2026-11-19T09:17:05Z

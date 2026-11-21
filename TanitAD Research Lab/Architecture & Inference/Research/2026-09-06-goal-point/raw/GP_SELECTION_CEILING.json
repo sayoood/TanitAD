@@ -1,0 +1,368 @@
+{
+  "_is": "GP-PROBE: the SELECTION-surface ceiling of a geometric goal point on refcv4b's live, v0-conditioned 117-anchor fan. ZERO GPU, from the banked navflip dump. UPPER BOUNDS, not a trained-arm result.",
+  "evidence_class": "MEASURED (ours)",
+  "tier": "T1 (the dump's tier; this probe re-ranks within it)",
+  "n_windows": 4823,
+  "n_episodes": 141,
+  "n_anchors": 117,
+  "estimator": "paired episode-cluster bootstrap, n_boot=2000, seed=0",
+  "variance_answered": "would another draw of EPISODES say this? \u2014 the fan and the checkpoint are held fixed, so no training-run and no inference-sampling variance enters",
+  "anchor_bank": {
+    "v0_conditioned": true,
+    "control_units": "alat",
+    "ref_speed_ms": 10.0,
+    "alat_v_floor_ms": 4.0,
+    "kappa_cap": 0.12,
+    "integrator": "tanitad.models.kinematic.rollout_unicycle (imported)"
+  },
+  "controls": {
+    "K1_gt_future_ext_transformed_equals_scored_grid": {
+      "max_abs_m": 7.62939453125e-06,
+      "must_be": "< 1e-3",
+      "verdict": "PASS"
+    },
+    "K2_rebuilt_v0_bank_equals_banked_sel_bank": {
+      "max_abs_m": 1.52587890625e-05,
+      "must_be": "< 1e-4 (float32 roll noise)",
+      "verdict": "PASS",
+      "_same_breath_NEGATIVE_control_fixed_anchors_table": {
+        "max_abs_m": 157.6234,
+        "_is": "the FIXED anchors[sel] reading, which must NOT match \u2014 it is 157 m off. A probe whose control and its negative both passed would be measuring nothing. This is also an independent re-validation of the `alat` control units."
+      }
+    },
+    "K3_os_ADE_reproduces_banked": {
+      "measured": 0.2965,
+      "known": 0.2965,
+      "verdict": "PASS"
+    },
+    "K4_model_free_known_values": {
+      "ha0": 0.6723,
+      "ha0_ext": 0.2874,
+      "ha": 0.2996,
+      "known": [
+        0.6723,
+        0.2874,
+        0.2996
+      ],
+      "verdict": "PASS"
+    },
+    "K5_reachable_anchors_per_window": {
+      "mean": 116.09,
+      "min": 108
+    }
+  },
+  "scope_selection_vs_generation": {
+    "_is": "the emitted plan is the DECODER's refinement of the picked candidate. Everything below is on the BANK scale and is never mixed with it.",
+    "ADE_2s_of_the_SELECTED_BANK_PATH": 0.4281,
+    "ADE_2s_of_the_EMITTED_PLAN(os)": 0.2965,
+    "mean_decoder_offset_m": 0.2718
+  },
+  "goal_point_availability": {
+    "_is": "what fraction of windows HAS a goal-point label. A TIME horizon loses windows to clip end; an ARC-LENGTH horizon loses them to low speed. A goal point therefore needs a validity bit (the X15 rule: withheld must not be byte-identical to a genuine zero).",
+    "by_TIME": {
+      "t_0.5s": 1.0,
+      "t_1.0s": 1.0,
+      "t_1.5s": 1.0,
+      "t_2.0s": 1.0,
+      "t_3.0s": 0.9533,
+      "t_4.0s": 0.8949,
+      "t_5.0s": 0.8364,
+      "t_6.0s": 0.7779
+    },
+    "by_ARC_LENGTH": {
+      "s_20m": 0.8453,
+      "s_40m": 0.6492,
+      "s_60m": 0.4427,
+      "s_80m": 0.2714,
+      "s_100m": 0.1796
+    },
+    "arc_length_available_m": {
+      "mean": 62.93,
+      "p05": 3.99,
+      "median": 54.87
+    }
+  },
+  "goal_specs": {
+    "s40": {
+      "arc_length_m": 40.0,
+      "n_with_label": 3131,
+      "frac_with_label": 0.6492,
+      "constant_goal_point_m": [
+        39.409,
+        -0.62
+      ]
+    },
+    "s60": {
+      "arc_length_m": 60.0,
+      "n_with_label": 2135,
+      "frac_with_label": 0.4427,
+      "constant_goal_point_m": [
+        59.247,
+        -0.877
+      ]
+    }
+  },
+  "categorical_ceiling_note": {
+    "_is": "a categorical command can only name a CLASS, so the strongest thing it can encode is ONE anchor per class. Chosen with the TRUE route label and by class-mean 2 s bank error \u2014 an ORACLE token used optimally.",
+    "n_unreachable_fallback": 0,
+    "per_class_anchor": {
+      "-100": 67,
+      "0": 67,
+      "1": 67,
+      "2": 67
+    }
+  },
+  "selection_surfaces": {
+    "live_selection": {
+      "bank_ADE_2s_m": 0.4281,
+      "curvature_mae_1pm": 0.004019,
+      "heading_mae_deg": 1.7665,
+      "cross_mae_m": 0.1754,
+      "lat_recall": {
+        "lane_keep": 0.9624,
+        "turn_left": 0.7251,
+        "turn_right": 0.7955
+      },
+      "n_distinct_anchors": 51,
+      "agrees_with_live_selection": 1.0
+    },
+    "oracle_anchor_2s": {
+      "bank_ADE_2s_m": 0.1993,
+      "curvature_mae_1pm": 0.002878,
+      "heading_mae_deg": 0.8313,
+      "cross_mae_m": 0.1045,
+      "lat_recall": {
+        "lane_keep": 0.9773,
+        "turn_left": 0.8088,
+        "turn_right": 0.8788
+      },
+      "n_distinct_anchors": 79,
+      "agrees_with_live_selection": 0.4671
+    },
+    "point_ORACLE_s40": {
+      "bank_ADE_2s_m": 2.0774,
+      "curvature_mae_1pm": 0.013563,
+      "heading_mae_deg": 3.2254,
+      "cross_mae_m": 0.3045,
+      "lat_recall": {
+        "lane_keep": 0.7672,
+        "turn_left": 0.5378,
+        "turn_right": 0.7904
+      },
+      "n_distinct_anchors": 97,
+      "agrees_with_live_selection": 0.085
+    },
+    "point_MIRRORED_s40": {
+      "bank_ADE_2s_m": 2.3208,
+      "curvature_mae_1pm": 0.017555,
+      "heading_mae_deg": 5.4532,
+      "cross_mae_m": 0.652,
+      "lat_recall": {
+        "lane_keep": 0.7672,
+        "turn_left": 0.0,
+        "turn_right": 0.2626
+      },
+      "n_distinct_anchors": 97,
+      "agrees_with_live_selection": 0.0763
+    },
+    "point_CONSTANT_s40": {
+      "bank_ADE_2s_m": 1.6946,
+      "curvature_mae_1pm": 0.007105,
+      "heading_mae_deg": 2.9093,
+      "cross_mae_m": 0.3678,
+      "lat_recall": {
+        "lane_keep": 1.0,
+        "turn_left": 0.0,
+        "turn_right": 0.0
+      },
+      "n_distinct_anchors": 26,
+      "agrees_with_live_selection": 0.0865
+    },
+    "bearing_ORACLE_s40": {
+      "bank_ADE_2s_m": 2.9598,
+      "curvature_mae_1pm": 0.014994,
+      "heading_mae_deg": 3.4212,
+      "cross_mae_m": 0.2971,
+      "lat_recall": {
+        "lane_keep": 0.7524,
+        "turn_left": 0.5857,
+        "turn_right": 0.8485
+      },
+      "n_distinct_anchors": 97,
+      "agrees_with_live_selection": 0.0404
+    },
+    "point_ORACLE_s60": {
+      "bank_ADE_2s_m": 2.4397,
+      "curvature_mae_1pm": 0.027609,
+      "heading_mae_deg": 8.037,
+      "cross_mae_m": 0.6943,
+      "lat_recall": {
+        "lane_keep": 0.5699,
+        "turn_left": 0.3187,
+        "turn_right": 0.8182
+      },
+      "n_distinct_anchors": 73,
+      "agrees_with_live_selection": 0.0829
+    },
+    "point_MIRRORED_s60": {
+      "bank_ADE_2s_m": 2.6075,
+      "curvature_mae_1pm": 0.029321,
+      "heading_mae_deg": 9.2567,
+      "cross_mae_m": 0.9305,
+      "lat_recall": {
+        "lane_keep": 0.5699,
+        "turn_left": 0.004,
+        "turn_right": 0.5328
+      },
+      "n_distinct_anchors": 76,
+      "agrees_with_live_selection": 0.0767
+    },
+    "point_CONSTANT_s60": {
+      "bank_ADE_2s_m": 1.6724,
+      "curvature_mae_1pm": 0.007045,
+      "heading_mae_deg": 2.8377,
+      "cross_mae_m": 0.3433,
+      "lat_recall": {
+        "lane_keep": 1.0,
+        "turn_left": 0.0,
+        "turn_right": 0.0
+      },
+      "n_distinct_anchors": 25,
+      "agrees_with_live_selection": 0.0755
+    },
+    "bearing_ORACLE_s60": {
+      "bank_ADE_2s_m": 3.1132,
+      "curvature_mae_1pm": 0.023196,
+      "heading_mae_deg": 5.8584,
+      "cross_mae_m": 0.4949,
+      "lat_recall": {
+        "lane_keep": 0.5685,
+        "turn_left": 0.3546,
+        "turn_right": 0.8586
+      },
+      "n_distinct_anchors": 95,
+      "agrees_with_live_selection": 0.0369
+    },
+    "categorical_ORACLE_3way": {
+      "bank_ADE_2s_m": 0.6723,
+      "curvature_mae_1pm": 0.006802,
+      "heading_mae_deg": 2.7799,
+      "cross_mae_m": 0.3132,
+      "lat_recall": {
+        "lane_keep": 1.0,
+        "turn_left": 0.0,
+        "turn_right": 0.0
+      },
+      "n_distinct_anchors": 1,
+      "agrees_with_live_selection": 0.4889
+    },
+    "random_reachable": {
+      "bank_ADE_2s_m": 2.3162,
+      "curvature_mae_1pm": 0.025349,
+      "heading_mae_deg": 9.5149,
+      "cross_mae_m": 1.2896,
+      "lat_recall": {
+        "lane_keep": 0.4164,
+        "turn_left": 0.3865,
+        "turn_right": 0.3611
+      },
+      "n_distinct_anchors": 117,
+      "agrees_with_live_selection": 0.0104
+    }
+  },
+  "lat_recall_support": {
+    "lane_keep": 4176,
+    "turn_left": 251,
+    "turn_right": 396
+  },
+  "contrasts_bank_ADE_2s": {
+    "point_ORACLE_s60__minus__bearing_ORACLE_s60": {
+      "delta": -0.6734,
+      "ci95": [
+        -0.8124,
+        -0.5326
+      ],
+      "separated": true
+    },
+    "point_ORACLE_s40__minus__bearing_ORACLE_s40": {
+      "delta": -0.8824,
+      "ci95": [
+        -1.0131,
+        -0.761
+      ],
+      "separated": true
+    },
+    "point_ORACLE_s60__minus__categorical_ORACLE_3way": {
+      "delta": 1.7674,
+      "ci95": [
+        1.6087,
+        1.9194
+      ],
+      "separated": true
+    },
+    "point_ORACLE_s60__minus__live_selection": {
+      "delta": 2.0116,
+      "ci95": [
+        1.8651,
+        2.1516
+      ],
+      "separated": true
+    },
+    "bearing_ORACLE_s60__minus__live_selection": {
+      "delta": 2.685,
+      "ci95": [
+        2.5448,
+        2.821
+      ],
+      "separated": true
+    },
+    "categorical_ORACLE_3way__minus__live_selection": {
+      "delta": 0.2441,
+      "ci95": [
+        0.1966,
+        0.2952
+      ],
+      "separated": true
+    },
+    "point_MIRRORED_s60__minus__point_ORACLE_s60": {
+      "delta": 0.1678,
+      "ci95": [
+        0.0937,
+        0.2601
+      ],
+      "separated": true
+    },
+    "point_MIRRORED_s60__minus__live_selection": {
+      "delta": 2.1794,
+      "ci95": [
+        2.0314,
+        2.3253
+      ],
+      "separated": true
+    },
+    "point_CONSTANT_s60__minus__point_ORACLE_s60": {
+      "delta": -0.7673,
+      "ci95": [
+        -0.9491,
+        -0.5721
+      ],
+      "separated": true
+    },
+    "oracle_anchor_2s__minus__live_selection": {
+      "delta": -0.2288,
+      "ci95": [
+        -0.2621,
+        -0.2004
+      ],
+      "separated": true
+    },
+    "random_reachable__minus__live_selection": {
+      "delta": 1.888,
+      "ci95": [
+        1.8197,
+        1.9508
+      ],
+      "separated": true
+    }
+  }
+}

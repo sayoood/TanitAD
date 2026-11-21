@@ -1,0 +1,18 @@
+# HANDOFF: read_dose.py (reader of PREREG_DOSE_P6, card sha256 037c1272...ebb52; CPU only)
+Files (p6base/dose/read/): read_dose.py, test_read_dose.py (25 pass, 41 s, rc 0, test_results.json), control_out/ (a_s1z1_as_s1zd, b_p6_as_s1zd: dose_read.json/.md), HANDOFF.md. Nothing in git. Real ledger_K.json sha256 e5af2214... before and after every control and test (all used COPIES).
+Reuses read_rep.py (Table, changed_rows, run_vector, slot_inputs, make_inputs, bar_proven, goal_label) -> read_s1z.s1z_read -> read_scorer1p6, all unchanged. Regret split = logic of raw/2026-11-09-p6-navtest-read/selection/split.py on table_p6final_c.npz.
+## CLI (venv C:/Users/Admin/venvs/tanitad/Scripts/python.exe, CUDA_VISIBLE_DEVICES=-1; ~35 s; exit 0 READ, 2 otherwise)
+python read_dose.py read --p6-pass F:/tanitad_scratch/p6arms/pass --c0 F:/tanitad_scratch/p6arms/pass/C0 --c0r F:/tanitad_scratch/p6arms/pass/C0r --s1z F:/tanitad_scratch/p6arms/pass_s1z/S1Z --s1z1 F:/tanitad_scratch/p6arms/pass_rep_c0r2_s1e1_s1z1/S1Z1 --s1zd <DIR> [--sft-log <sft.jsonl>] --out <OUT> [--no-ledger | --ledger PATH]
+A READ adds key DOSE:S1ZD:<logits sha>:E3 to selectors/ledger_K.json (omit --no-ledger only for the real read). ADDED inputs: --c0, --c0r (s1z_read needs C0 and the floor F = |C0r - C0|; they decide nothing here), --p6-pass (gate G0-P6PASS).
+S1ZD needs e3_logits.npz only (changed-pick scores come from the table; its e3_changed_scores.csv is not used).
+## Controls (--control-standin; stamped CONTROL_NOT_A_RESULT; out only under F:/tanitad_scratch/dose_read_work; refuses the real ledger)
+a) S1Z1 as S1ZD: D1 d +0.3861 [+0.1705, +0.6148], dict-equal to rep_read.json runs.S1Z1.E3_pdms_vs_P6 (every digit); D1 NOT PROVEN (0.3861 < 0.4972); D2 +0.1145 [+0.0139, +0.2274] NOT PROVEN; outcome DOSE-C; G1-G4 ok; K +1 on the copy (CONTROL: key).
+b) P6_control as S1ZD: d exactly 0 [0, 0], every regret delta 0 [0, 0]; regret 6.704 = zero-multiplier 2.810 (355 tok) + TTC-0 1.578 (449) + rest 2.316 (11,313) (+29 all-zero tokens, 0.0): reproduces 2.81 / 1.58 / 2.32 and best of 64 97.90.
+c) deliberate regressions (tests): D1 threshold set to 0 flips control a to PROVEN and the outcome to DOSE-B; an edited card (copy) -> READ STOPPED, no verdict; a bit-identical S1ZD in a real read -> REFUSED.
+G0-P6PASS on the real pass: P6_control picks equal banked P6 on 12,146/12,146, proposals and logits bit-identical.
+## Ambiguities resolved (also in the json, D1-D10)
+D1 S1Z, S1Z1, S1ZD all via s1z_read as read_rep does; table-route scores. D2 guards = G1-G4 decide (as read_rep's guards_ok), M2 reported only. D3 thresholds computed from printed s_p and t (0.49718 / 0.60892), printed 0.4972 / 0.6089 shown. D4 D2 reference = mean of S1Z and S1Z1 vectors in each draw. D5 labels literal: A = D1+D2+guards; B = D1 and not D2 (no guard clause, so B and D can co-match, primary B); D = D1 and guard fail; C = not D1; Unnamed only if a CI is undefined. D6 regret CIs use this read's shared draws (split.py's own draws differ in later digits; points equal). D7 sft-log: JSON rows event "eval"; default --eval-every is 400, card says 200 (tags printed as found). D8 G0-P6PASS. D9 K key per S1ZD only. D10 duplicate arm refused.
+## UNVERIFIED
+No real S1ZD logits or sft.jsonl exist yet: the sft-log parser is tested on synthetic rows built from scorer_finetune.py's logging code (event "eval", tags step0 / update<N>); real-arm path exercised only through the two controls. Strategic quoted via R.STRATEGIC (the PI ruling text read_rep uses).
+## Temp deleted
+F:/tanitad_scratch/dose_read_work/ (308,406 bytes, 15 files: control reruns, ledger copies, pytest basetemp), dose/read/__pycache__ (small).

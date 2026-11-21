@@ -1,0 +1,29 @@
+--- a/refe/gate_checks.py
++++ b/refe/gate_checks.py
+@@ -987,6 +987,16 @@
+     for h, v in (g16.get("bank_share") or {}).items():
+         if not (isinstance(v.get("share_with_pair"), float) and v["share_with_pair"] > 0.0):
+             out.append(f"G16: head {h} has share 0 of sets with a kept pair: LAUNCH BLOCKER (PREREG_SCORER1 8.1)")
++    if "lane" in heads:                                    # S1L (AMENDMENT_2 "Conditions on S1L"): G-LIVE for the lane column -- the share of sets with a kept lane pair, and the lane ROW of the score head moving with L_pair
++        bs = (g16.get("bank_share") or {}).get("lane") or {}
++        if not (isinstance(bs.get("with_pair"), int) and bs["with_pair"] > 0 and isinstance(bs.get("labelled"), int) and bs["labelled"] >= bs["with_pair"]):
++            out.append(f"G16: no lane-labelled set of the bank sample holds a kept lane pair (with_pair {bs.get('with_pair')}, labelled {bs.get('labelled')}): LAUNCH BLOCKER (AMENDMENT_2)")
++        lr = g16.get("lane_row") or {}
++        dl = lr.get("delta_lane_row_w1_minus_w0")
++        if not (isinstance(dl, (int, float)) and math.isfinite(dl) and dl > 0.0 and isinstance(lr.get("sets"), int) and lr["sets"] > 0):
++            out.append(f"G16: the lane row of the score head does not move with L_pair on a lane-labelled batch (delta {dl}, sets {lr.get('sets')}): the lane pair term is not in the loss")
++    elif "lane_row" in g16:
++        out.append("G16: a lane_row block without the lane head named")
+     if g16.get("balanced_built") is not True or g16.get("mutate_nobalance") or g16.get("mutate_drop_loss"):
+         out.append("G16 was produced under a regression arm (REFE_PAIR_MUTATE_*) or by an unbalanced PairLoss: it can never count")
+     return out
+@@ -1406,6 +1416,9 @@
+             add("pair_heads", [h for h in ns.pair_heads.split(",") if h], blk.get("heads"), "data event: pair.heads (the heads the PairLoss was built for)")
+             add("pair_w", True, blk.get("balanced"), "data event: pair.balanced (the F/S balancing step is built; the NOBALANCE mutation reads False)")
+             add("pair_w", 20261107, blk.get("seed"), "data event: pair.seed (the registered sampling seed)")
++            if "lane" in [h for h in ns.pair_heads.split(",") if h]:        # S1L: the BUILT lane pair rule (column 6, margin 0.1 on the soft target)
++                add("pair_heads", 6, blk.get("lane_col"), "data event: pair.lane_col (the logit/label column the lane head pairs on)")
++                add("pair_heads", 0.1, blk.get("lane_margin"), "data event: pair.lane_margin (t_i - t_j threshold of a lane pair, AMENDMENT_2)")
+     hn_named, cc_named = bool(getattr(ns, "hn_bank", "")), bool(getattr(ns, "ctx_cache", ""))
+     if hn_named or "hn" in data:                                   # P6-HN-S: the bank, against the BUILT block of the bank the trainer holds (never an echo of the namespace)
+         blk = data.get("hn") if isinstance(data.get("hn"), dict) else {}

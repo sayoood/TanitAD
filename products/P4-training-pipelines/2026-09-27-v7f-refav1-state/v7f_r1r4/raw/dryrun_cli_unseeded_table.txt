@@ -1,0 +1,45 @@
+# ⚠️ NOT AN ON/OFF COMPARISON. Six CLI dry-runs (one per flag arm) of train_v6_staged.py at the tip's
+# dry_run(), which builds the stack WITHOUT seeding the global RNG (torch.manual_seed(a.seed) is in train()
+# only). Every arm therefore starts from DIFFERENT random weights, so step-1 losses differ for reasons that
+# have nothing to do with the flags. MEASURED separately: two identical OFF runs gave step-1 loss 46.577919006
+# vs 46.583385468. The valid ON/OFF comparison is trainer_smoke.py -> trainer_smoke.json (seeded driver).
+# What this file DOES show: every arm assembles, steps 4x, stays finite, passes X3, and the R1b cap smoke
+# reports n_plan_over_limit 0.
+== off: terms ['plan', 'seam', 't1'] n_trainable_tensors 76 iso_pass True
+   step 1: loss 46.683135986 plan_wta 44.844451904 t1 0.909630597 seam 0.929054201 gnorm 3.1196
+   step 2: loss 38.264617920 plan_wta 36.642871857 t1 0.714567423 seam 0.907180548 gnorm 7.47
+   step 3: loss 34.513557434 plan_wta 32.759151459 t1 0.861089826 seam 0.893318117 gnorm 8.7028
+   step 4: loss 42.629219055 plan_wta 40.794010162 t1 0.843479872 seam 0.991727114 gnorm 29.0786
+== r4_e2e: terms ['plan', 'seam', 't1'] n_trainable_tensors 78 iso_pass True
+   step 1: loss 46.489574432 plan_wta 44.844451904 t1 0.720703602 seam 0.924418926 gnorm 2.9795
+   step 2: loss 38.373947144 plan_wta 36.651046753 t1 0.808512628 seam 0.914389253 gnorm 5.7131
+   step 3: loss 34.597465515 plan_wta 32.757339478 t1 0.939711392 seam 0.900416136 gnorm 9.2504
+   step 4: loss 42.726455688 plan_wta 40.865764618 t1 0.906759560 seam 0.953929901 gnorm 23.1194
+== r4_detached: terms ['plan', 'seam', 't1'] n_trainable_tensors 78 iso_pass True
+   step 1: loss 46.666809082 plan_wta 44.844451904 t1 0.846754074 seam 0.975601256 gnorm 3.269
+   step 2: loss 38.343769073 plan_wta 36.647056580 t1 0.740390182 seam 0.956323922 gnorm 6.4394
+   step 3: loss 34.625579834 plan_wta 32.778739929 t1 0.944975734 seam 0.901863933 gnorm 7.0979
+   step 4: loss 42.602565765 plan_wta 40.854503632 t1 0.835191727 seam 0.912868798 gnorm 22.5783
+== r1a: terms ['plan', 'seam', 't1'] n_trainable_tensors 78 iso_pass True
+   step 1: loss 46.655838013 plan_wta 44.844451904 t1 0.845757782 seam 0.965626597 gnorm 3.0386
+   step 2: loss 38.330818176 plan_wta 36.650447845 t1 0.744451463 seam 0.935920298 gnorm 5.319
+   step 3: loss 34.595642090 plan_wta 32.778438568 t1 0.968982220 seam 0.848220587 gnorm 6.9353
+   step 4: loss 42.578426361 plan_wta 40.856018066 t1 0.825713992 seam 0.896695733 gnorm 25.9044
+== r1b: terms ['plan', 'seam', 't1'] n_trainable_tensors 76 iso_pass True
+   step 1: loss 46.563957214 plan_wta 44.844451904 t1 0.784593284 seam 0.934912026 gnorm 2.8577
+   step 2: loss 38.352462769 plan_wta 36.642848969 t1 0.809919178 seam 0.899693489 gnorm 7.7917
+   step 3: loss 34.521213531 plan_wta 32.758087158 t1 0.891822219 seam 0.871305048 gnorm 8.2685
+   step 4: loss 42.599864960 plan_wta 40.787914276 t1 0.858859241 seam 0.953091145 gnorm 31.2759
+   cap smoke: {"n_rows": 4, "limits_ms": [8.3333, 8.3333, 33.3333, Infinity], "n_v0_over_limit": 1, "n_candidates": 32, "n_candidates_binding": 8, "n_plan_over_limit": 0, "max_plan_excess_ms_t0_under_limit": 0.0, "max_uncapped_speed_minus_limit_ms": 3.666027069091797}
+== all_e2e: terms ['plan', 'seam', 't1'] n_trainable_tensors 80 iso_pass True
+   step 1: loss 46.508293152 plan_wta 44.844451904 t1 0.729669392 seam 0.934171796 gnorm 2.7492
+   step 2: loss 38.360332489 plan_wta 36.643226624 t1 0.810057342 seam 0.907049775 gnorm 7.3752
+   step 3: loss 34.581657410 plan_wta 32.747612000 t1 0.934341788 seam 0.899702549 gnorm 10.3537
+   step 4: loss 42.694007874 plan_wta 40.854904175 t1 0.883847058 seam 0.955257535 gnorm 23.9362
+   cap smoke: {"n_rows": 4, "limits_ms": [8.3333, 8.3333, 33.3333, Infinity], "n_v0_over_limit": 1, "n_candidates": 32, "n_candidates_binding": 8, "n_plan_over_limit": 0, "max_plan_excess_ms_t0_under_limit": 0.0, "max_uncapped_speed_minus_limit_ms": 3.6662025451660156}
+
+r4_e2e: loss bit-identical to OFF per step: [False, False, False, False]
+r4_detached: loss bit-identical to OFF per step: [False, False, False, False]
+r1a: loss bit-identical to OFF per step: [False, False, False, False]
+r1b: loss bit-identical to OFF per step: [False, False, False, False]
+all_e2e: loss bit-identical to OFF per step: [False, False, False, False]

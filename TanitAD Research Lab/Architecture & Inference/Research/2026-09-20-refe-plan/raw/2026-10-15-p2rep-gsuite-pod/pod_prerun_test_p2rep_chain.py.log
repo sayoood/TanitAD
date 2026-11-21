@@ -1,0 +1,50 @@
+  G-HYG     FAIL  profile refusal: refe_p2rep requires --seed 1; the argv does not carry it; profile refusal: refe_p2rep PINS --seed 1; the argv does not carry it
+  G-DVB     FAIL  profile refusal: refe_p2rep requires --seed 1; the argv does not carry it; profile refusal: refe_p2rep PINS --seed 1; the argv does not carry it
+  G-LIVE    FAIL  profile refusal: refe_p2rep requires --seed 1; the argv does not carry it; profile refusal: refe_p2rep PINS --seed 1; the argv does not carry it
+  G-EVAL    FAIL  profile refusal: refe_p2rep requires --seed 1; the argv does not carry it; profile refusal: refe_p2rep PINS --seed 1; the argv does not carry it
+  G-CKPT    FAIL  profile refusal: refe_p2rep requires --seed 1; the argv does not carry it; profile refusal: refe_p2rep PINS --seed 1; the argv does not carry it
+  G-SUITE   FAIL  profile refusal: refe_p2rep requires --seed 1; the argv does not carry it; profile refusal: refe_p2rep PINS --seed 1; the argv does not carry it
+  G-P2GATE  FAIL  profile refusal: refe_p2rep requires --seed 1; the argv does not carry it; profile refusal: refe_p2rep PINS --seed 1; the argv does not carry it
+  G-CLOCK   FAIL  profile refusal: refe_p2rep requires --seed 1; the argv does not carry it; profile refusal: refe_p2rep PINS --seed 1; the argv does not carry it
+  G-HYG     FAIL  profile refusal: refe_p2rep PINS --out /workspace/data/refe_runs/p2_joint_pdm_s1; the argv has --out /workspace/data/refe_runs/p2_joint_pdm
+  G-DVB     FAIL  profile refusal: refe_p2rep PINS --out /workspace/data/refe_runs/p2_joint_pdm_s1; the argv has --out /workspace/data/refe_runs/p2_joint_pdm
+  G-LIVE    FAIL  profile refusal: refe_p2rep PINS --out /workspace/data/refe_runs/p2_joint_pdm_s1; the argv has --out /workspace/data/refe_runs/p2_joint_pdm
+  G-EVAL    FAIL  profile refusal: refe_p2rep PINS --out /workspace/data/refe_runs/p2_joint_pdm_s1; the argv has --out /workspace/data/refe_runs/p2_joint_pdm
+  G-CKPT    FAIL  profile refusal: refe_p2rep PINS --out /workspace/data/refe_runs/p2_joint_pdm_s1; the argv has --out /workspace/data/refe_runs/p2_joint_pdm
+  G-SUITE   FAIL  profile refusal: refe_p2rep PINS --out /workspace/data/refe_runs/p2_joint_pdm_s1; the argv has --out /workspace/data/refe_runs/p2_joint_pdm
+  G-P2GATE  FAIL  profile refusal: refe_p2rep PINS --out /workspace/data/refe_runs/p2_joint_pdm_s1; the argv has --out /workspace/data/refe_runs/p2_joint_pdm
+  G-CLOCK   FAIL  profile refusal: refe_p2rep PINS --out /workspace/data/refe_runs/p2_joint_pdm_s1; the argv has --out /workspace/data/refe_runs/p2_joint_pdm
+  G-HYG     FAIL  profile refusal: refe_p2rep requires --lr 5e-5; the argv has --lr 6e-5; profile refusal: refe_p2rep PINS --lr 5e-5; the argv has --lr 6e-5
+  G-DVB     FAIL  profile refusal: refe_p2rep requires --lr 5e-5; the argv has --lr 6e-5; profile refusal: refe_p2rep PINS --lr 5e-5; the argv has --lr 6e-5
+  G-LIVE    FAIL  profile refusal: refe_p2rep requires --lr 5e-5; the argv has --lr 6e-5; profile refusal: refe_p2rep PINS --lr 5e-5; the argv has --lr 6e-5
+  G-EVAL    FAIL  profile refusal: refe_p2rep requires --lr 5e-5; the argv has --lr 6e-5; profile refusal: refe_p2rep PINS --lr 5e-5; the argv has --lr 6e-5
+  G-CKPT    FAIL  profile refusal: refe_p2rep requires --lr 5e-5; the argv has --lr 6e-5; profile refusal: refe_p2rep PINS --lr 5e-5; the argv has --lr 6e-5
+  G-SUITE   FAIL  profile refusal: refe_p2rep requires --lr 5e-5; the argv has --lr 6e-5; profile refusal: refe_p2rep PINS --lr 5e-5; the argv has --lr 6e-5
+  G-P2GATE  FAIL  profile refusal: refe_p2rep requires --lr 5e-5; the argv has --lr 6e-5; profile refusal: refe_p2rep PINS --lr 5e-5; the argv has --lr 6e-5
+  G-CLOCK   FAIL  profile refusal: refe_p2rep requires --lr 5e-5; the argv has --lr 6e-5; profile refusal: refe_p2rep PINS --lr 5e-5; the argv has --lr 6e-5
+Traceback (most recent call last):
+  File "/workspace/refe-plan-p2rep/refe/test_p2rep_chain.py", line 1138, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/workspace/refe-plan-p2rep/refe/test_p2rep_chain.py", line 1127, in main
+    behaviour(text, td / "b", rep_argv)
+  File "/workspace/refe-plan-p2rep/refe/test_p2rep_chain.py", line 588, in behaviour
+    rc, out, lg = wc(); ok(rc == 0 and out == "CLEAR" and "WAITING" not in lg, (rc, out, lg))                          # nothing upstream, the GPU idle: 3 polls, no wait
+                  ^^^^
+  File "/workspace/refe-plan-p2rep/refe/test_p2rep_chain.py", line 585, in wc
+    rc, out, err = bash_run(f'bash "{posix(harness)}"', e, timeout=60)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/refe-plan-p2rep/refe/test_p2rep_chain.py", line 72, in bash_run
+    r = subprocess.run([BASH, "-c", script], capture_output=True, text=True, env=e, timeout=timeout)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/subprocess.py", line 550, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/subprocess.py", line 1209, in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/subprocess.py", line 2116, in _communicate
+    self._check_timeout(endtime, orig_timeout, stdout, stderr)
+  File "/usr/lib/python3.11/subprocess.py", line 1253, in _check_timeout
+    raise TimeoutExpired(
+subprocess.TimeoutExpired: Command '['/usr/bin/bash', '-c', 'bash "/tmp/tmpi8kfnp7a/b/wc.sh"']' timed out after 60 seconds

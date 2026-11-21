@@ -1,0 +1,138 @@
+........................................................................ [ 46%]
+............................................................F.....s..... [ 93%]
+....s....F                                                               [100%]
+================================== FAILURES ===================================
+__ test_G_SUITE_PINNED_git_reads_go_to_a_THROWAWAY_repo_never_the_shared_one __
+
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/orecover_build/pt/b_launch_gate/test_G_SUITE_PINNED_git_reads_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001BF818942F0>
+
+    def test_G_SUITE_PINNED_git_reads_go_to_a_THROWAWAY_repo_never_the_shared_one(tmp_path,
+                                                                                  monkeypatch):
+        """Master Mind 2026-09-27: tanitad-push's SHARED INDEX carries real staged deletions and some
+        pinned tests run `git init` / `git add` / `git diff --cached`. The archive gets its own repo
+        (objects borrowed read-only through `alternates`), and a GIT_DIR in the caller's environment
+        must reach neither that repo's setup nor the tests."""
+        if shutil.which("git") is None:
+            pytest.skip("git is not on PATH")
+        clean = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+        src = tmp_path / "src"
+        src.mkdir()
+        _git("init", "-q", cwd=src, env=clean)
+        (src / "stack").mkdir()
+        (src / "stack" / "a.py").write_bytes(b"A = 1\n")
+>       _git("add", "stack/a.py", cwd=src, env=clean)
+
+stack\tests\test_launch_gate.py:2356: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_launch_gate.py:2338: in _git
+    return subprocess.run(["git", *a], cwd=cwd, env=env, capture_output=True, text=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+input = None, capture_output = True, timeout = None, check = True
+popenargs = (['git', 'add', 'stack/a.py'],)
+kwargs = {'cwd': WindowsPath('E:/Projects/TanitAD-artifacts/orecover_build/pt/b_launch_gate/test_G_SUITE_PINNED_git_reads_0/src...ROPIC_BASE_URL': 'https://api.anthropic.com', 'API_TIMEOUT_MS': '900000', ...}, 'text': True, 'encoding': 'utf-8', ...}
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['git', 'add', 'stack/a.py']' returned non-zero exit status 128.
+
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\subprocess.py:577: CalledProcessError
+_____ test_the_throwaway_repo_reaches_HEAD_where_git_sees_a_FOREIGN_owner _____
+
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/orecover_build/pt/b_launch_gate/test_the_throwaway_repo_reache0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001BFB98E7590>
+
+    def test_the_throwaway_repo_reaches_HEAD_where_git_sees_a_FOREIGN_owner(tmp_path, monkeypatch):
+        if shutil.which("git") is None:
+            pytest.fail("git is not on PATH -- G-SUITE-PINNED cannot run here either")
+>       src, sha = _source_repo(tmp_path)
+                   ^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_launch_gate_safe_directory.py:84: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/orecover_build/pt/b_launch_gate/test_the_throwaway_repo_reache0')
+
+    def _source_repo(tmp_path: Path) -> tuple[Path, str]:
+        src = tmp_path / "src"
+        src.mkdir()
+        env = _clean()
+        assert _git("init", "-q", cwd=src, env=env).returncode == 0
+        (src / "stack").mkdir()
+        (src / "stack" / "a.py").write_bytes(b"A = 1\n")
+>       assert _git("add", "stack/a.py", cwd=src, env=env).returncode == 0
+E       assert 128 == 0
+E        +  where 128 = CompletedProcess(args=['git', 'add', 'stack/a.py'], returncode=128, stdout='', stderr="fatal: detected dubious ownersh...dd safe.directory E:/Projects/TanitAD-artifacts/orecover_build/pt/b_launch_gate/test_the_throwaway_repo_reache0/src\n").returncode
+E        +    where CompletedProcess(args=['git', 'add', 'stack/a.py'], returncode=128, stdout='', stderr="fatal: detected dubious ownersh...dd safe.directory E:/Projects/TanitAD-artifacts/orecover_build/pt/b_launch_gate/test_the_throwaway_repo_reache0/src\n") = _git('add', 'stack/a.py', cwd=WindowsPath('E:/Projects/TanitAD-artifacts/orecover_build/pt/b_launch_gate/test_the_throwaway_repo_reache0/src'), env={'AI_AGENT': 'claude-code_2-1-308_agent', 'ALLUSERSPROFILE': 'C:\\ProgramData', 'ANTHROPIC_BASE_URL': 'https://api.anthropic.com', 'API_TIMEOUT_MS': '900000', ...})
+
+stack\tests\test_launch_gate_safe_directory.py:49: AssertionError
+=========================== short test summary info ===========================
+FAILED stack\tests\test_launch_gate.py::test_G_SUITE_PINNED_git_reads_go_to_a_THROWAWAY_repo_never_the_shared_one
+FAILED stack\tests\test_launch_gate_safe_directory.py::test_the_throwaway_repo_reaches_HEAD_where_git_sees_a_FOREIGN_owner
+2 failed, 150 passed, 2 skipped in 92.34s (0:01:32)

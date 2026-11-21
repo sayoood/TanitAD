@@ -1,0 +1,412 @@
+{
+ "caught": 50,
+ "total": 50,
+ "survived_or_inapplicable": [],
+ "results": [
+  {
+   "mutation": "CONTROL (unmutated)",
+   "status": "CONTROL_GREEN",
+   "tail": "........................................................................ [ 61%]\n.............................................                            [100%]\n117 passed in 10.11s\n"
+  },
+  {
+   "mutation": "IDENTITY: the timed output is compared with the untimed reference",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_identity_control_goes_red_when_the_timed_path_is_perturbed"
+   ]
+  },
+  {
+   "mutation": "IDENTITY: array equality is bitwise (dtype, shape, bytes)",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_identity_control_goes_red_when_the_timed_path_is_perturbed"
+   ]
+  },
+  {
+   "mutation": "IDENTITY: scalars compare by value and type",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_outputs_identical_is_bitwise - Asser..."
+   ]
+  },
+  {
+   "mutation": "DETERMINISM: the device floor is a control",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_determinism_floor_goes_red_on_a_nondeterministic_device"
+   ]
+  },
+  {
+   "mutation": "CONJ: controls_ok is the conjunction of every control",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_call_count_control_is_green_when_honest_and_red_when_a_count_is_off"
+   ]
+  },
+  {
+   "mutation": "EXITCODE: a RED control exits non-zero",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_finalize_returns_zero_only_when_every_control_is_green_and_always_writes_the_record"
+   ]
+  },
+  {
+   "mutation": "THORNUMBER: needs green controls and a passed preflight",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_is_thor_number_needs_thor_green_controls_and_a_passed_preflight"
+   ]
+  },
+  {
+   "mutation": "COUNTS: scorer calls and rows per token equal the config's formula",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_call_count_control_is_green_when_honest_and_red_when_a_count_is_off"
+   ]
+  },
+  {
+   "mutation": "COUNTS: the call formula",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_expected_counts_formula_for_the_real_configs"
+   ]
+  },
+  {
+   "mutation": "COUNTS: rows are counted",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_observed_counts_match_the_config_for_c8_and_o4_on_the_real_search"
+   ]
+  },
+  {
+   "mutation": "COUNTS: calls are counted",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_observed_counts_match_the_config_for_c8_and_o4_on_the_real_search"
+   ]
+  },
+  {
+   "mutation": "SEESWORK: a < b < c",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_timer_sees_the_work_a_lt_b_lt_c_and_goes_red_if_not"
+   ]
+  },
+  {
+   "mutation": "FLOOR: the no-op timing floor is far below what is measured",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_noop_timer_floor_reads_zero_on_a_quiet_clock_and_goes_red_on_a_heavy_one"
+   ]
+  },
+  {
+   "mutation": "N0: k_iters = 0 returns the pick bit for bit with one call",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_n0_control_goes_red_when_the_call_count_or_the_pick_is_off"
+   ]
+  },
+  {
+   "mutation": "WARMUP: warm-up tokens are actually run",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_warmup_is_run_but_excluded_from_every_statistic"
+   ]
+  },
+  {
+   "mutation": "ROTATE: arms rotate through every position",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_determinism_floor_goes_red_on_a_nondeterministic_device"
+   ]
+  },
+  {
+   "mutation": "PICKONLY: (a) is argmax of the aggregate",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_pick_only_is_the_argmax_of_the_aggregate"
+   ]
+  },
+  {
+   "mutation": "BRACKET: sync before each scorer call is timed",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_every_timed_call_is_bracketed_by_a_device_sync"
+   ]
+  },
+  {
+   "mutation": "BRACKET: sync after each scorer call",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_every_timed_call_is_bracketed_by_a_device_sync"
+   ]
+  },
+  {
+   "mutation": "BRACKET: outer sync before the token is timed",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_every_timed_call_is_bracketed_by_a_device_sync"
+   ]
+  },
+  {
+   "mutation": "BRACKET: outer sync after the token",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_every_timed_call_is_bracketed_by_a_device_sync"
+   ]
+  },
+  {
+   "mutation": "PERCENTILE: linear interpolation",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_percentile_known_values - assert 50...."
+   ]
+  },
+  {
+   "mutation": "PERCENTILE: rank position",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_percentile_known_values - assert 50...."
+   ]
+  },
+  {
+   "mutation": "PERCENTILE: non-finite samples are refused",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_percentile_refuses_bad_input - Faile..."
+   ]
+  },
+  {
+   "mutation": "RATIO: a non-positive baseline is refused",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_summarize_and_ratios - ZeroDivisionE..."
+   ]
+  },
+  {
+   "mutation": "RATIO: numerator over denominator",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_summarize_and_ratios - AssertionErro..."
+   ]
+  },
+  {
+   "mutation": "DEVFIELDS: missing device fields are refused",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_every_missing_thor_field_is_refused[None-hostname]"
+   ]
+  },
+  {
+   "mutation": "READONLY: only allowlisted commands run",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_readonly_allowlist_refuses_everything_else"
+   ]
+  },
+  {
+   "mutation": "READONLY: bare jetson_clocks (which SETS clocks) is not on the list",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_readonly_allowlist_refuses_everything_else"
+   ]
+  },
+  {
+   "mutation": "READONLY: no Thor memory probe on the list",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_readonly_allowlist_refuses_everything_else"
+   ]
+  },
+  {
+   "mutation": "STALE: a stale pre-captured status is refused",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_device_state_reads_live_then_falls_back_to_fresh_files_and_refuses_stale_ones"
+   ]
+  },
+  {
+   "mutation": "BUSY: trainers / supervisors by command line",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_preflight_refuses_a_running_trainer_eval_or_supervisor[ 3002     1 nvidia    90000 /bin/bash /home/nvidia/ops/supervise_run.sh refcv8-r101-s0\\n-busy process]"
+   ]
+  },
+  {
+   "mutation": "BUSY: any other python job of this user",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_preflight_refuses_a_running_trainer_eval_or_supervisor[ 3001  2100 nvidia      600 /home/nvidia/venvs/tanitad-train/bin/python taniteval/tools/refav1_arm.py --ckpt x\\n-busy process]"
+   ]
+  },
+  {
+   "mutation": "BUSY: this process and its ancestors are excluded",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_preflight_passes_on_an_idle_box_and_excludes_self_and_ancestors"
+   ]
+  },
+  {
+   "mutation": "BUSY: a busy process refuses the start",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_preflight_refuses_a_running_trainer_eval_or_supervisor[ 3000  2100 nvidia      600 /home/nvidia/venvs/tanitad-train/bin/python scripts/train_v6_staged.py --stage 3 --steps 30000\\n-busy process]"
+   ]
+  },
+  {
+   "mutation": "PSREAD: an unreadable process table refuses",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_preflight_fails_closed_when_the_process_table_is_unreadable"
+   ]
+  },
+  {
+   "mutation": "UTIL: GPU utilisation >= 5 % refuses",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_preflight_refuses_a_busy_gpu - asser..."
+   ]
+  },
+  {
+   "mutation": "UTILREAD: unreadable GPU utilisation refuses",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_preflight_fails_closed_when_gpu_utilisation_is_unreadable[[N/A]]"
+   ]
+  },
+  {
+   "mutation": "APPS: listed compute apps refuse",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_preflight_refuses_listed_compute_apps"
+   ]
+  },
+  {
+   "mutation": "HOST: the box must be the named one",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_preflight_binds_the_run_to_a_named_box"
+   ]
+  },
+  {
+   "mutation": "NOHOST: a run is bound to a named box",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_preflight_binds_the_run_to_a_named_box"
+   ]
+  },
+  {
+   "mutation": "LOCK: a held Thor GPU flock refuses",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_preflight_refuses_a_held_gpu_lock_and_holds_a_free_one"
+   ]
+  },
+  {
+   "mutation": "LOCK: a failed flock means held",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_preflight_refuses_a_held_gpu_lock_and_holds_a_free_one"
+   ]
+  },
+  {
+   "mutation": "LOCK: a free lock is held for the run",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_preflight_refuses_a_held_gpu_lock_and_holds_a_free_one"
+   ]
+  },
+  {
+   "mutation": "ENDSCAN: a job that appeared during the run is contamination",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_end_scan_marks_a_job_that_started_during_the_run_as_contamination"
+   ]
+  },
+  {
+   "mutation": "NOLABEL: label arrays are never read",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_labels_are_never_indexed_and_requesting_one_raises"
+   ]
+  },
+  {
+   "mutation": "SORTED: the first N sorted tokens is well defined",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_tokens_must_be_sorted_and_the_carve_is_the_sealed_one"
+   ]
+  },
+  {
+   "mutation": "CODEPIN: the sealed Step B files are the landed ones",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_stepb_code_pins_equal_the_sealed_pins_and_a_tampered_copy_is_refused"
+   ]
+  },
+  {
+   "mutation": "PIN: a different file is refused",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_pin_check_refuses_a_different_file"
+   ]
+  },
+  {
+   "mutation": "NTOK: the token count is in range",
+   "file": "thor_search_latency.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_thor_search_latency.py::test_n_tokens_range_is_checked - Failed: ..."
+   ]
+  }
+ ]
+}

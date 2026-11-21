@@ -1,0 +1,225 @@
+{
+ "schema": "v8f-pgt-tail-oracle-v1",
+ "exploratory": true,
+ "one_training_seed": true,
+ "reading_rule_written_before_the_run": "READING RULE (M2b-pgt_s0 decides; M2b_s0 is the reference):\n  CODE-STILL-MOVES  d(M2b-pgt_s0_orc - M2b-pgt_s0) S5 < 0 separated\n                    => T's code still reaches the tail after PGT; a more accurate T (GRID) has a route to it.\n  O-OWN             d(M2b-pgt_s0_orc - M2b-pgt_s0) S5 not separated  AND  d(M2b-pgt_s0_orc - P10) S5 > 0 separated\n                    => with the GT code O still closes early: the tail is O's own (its longitudinal head or input), not T's code.\n  otherwise MIXED.\n  LATCONS (read beside, not a verdict) d(*_alll - *_orc) S5: the tail that comes back when T's own latcons is put back.",
+ "tier": {
+  "own": "T1-class open loop",
+  "_orc / _alll / _orcold": "T0 (O reads GT code)"
+ },
+ "estimator": "taniteval.ci.paired_episode_cluster_bootstrap, B 2000, seed 0, over episodes; blind to training-seed variance (H-ESTIM-SEED-1)",
+ "inputs": {
+  "M2b_s0": {
+   "path": "box2_ship/logs/v8f_mini/eval/eval_M2b_s0.npz",
+   "sha256": "8ddcd42c119f7ca9cc6a434103f40d017d61f809161c517310f2fb778df20501"
+  },
+  "M2b_s0_orc": {
+   "path": "box2_ship/logs/v8f_tacgrp2/eval/eval_M2b_s0-tacorc-all-goal.npz",
+   "sha256": "8992c35668de044aedb7bbca676013d5a0687309b0e5ae8ead9f1a7f57cf1f23"
+  },
+  "M2b_s0_alll": {
+   "path": "box2_ship/logs/v8f_tacgrp2/eval/eval_M2b_s0-tacorc-all-latcons.npz",
+   "sha256": "8755df07aed08cc0f521f86f0691e1db51594e116337775492d56eb9aa2807db"
+  },
+  "M2b_s0_orcold": {
+   "path": "box2_ship/logs/v8f_cz/eval/eval_M2b_s0-tacorc.npz",
+   "sha256": "14d7ebeec7df29d38eb3b8938c12270be4a0e5231b0337985612d28a240b66d7"
+  },
+  "M2b-pgt_s0": {
+   "path": "box2_ship/logs/v8f_pgt/eval/eval_M2b-pgt_s0.npz",
+   "sha256": "12ed3d09c8b59500ce895b522f133224cd2653fce828fe66efedfe74013910b7"
+  },
+  "M2b-pgt_s0_orc": {
+   "path": "box2_ship/logs/v8f_pgt/eval/eval_M2b-pgt_s0-tacorc.npz",
+   "sha256": "115de4df58a3d750cde276a79ccbdb87754cb72b3fa0ae2de2358f088573bd47"
+  },
+  "M2b-pgt_s0_alll": {
+   "path": "box2_ship/logs/v8f_pgt/eval/eval_M2b-pgt_s0-tacorc-all-latcons.npz",
+   "sha256": "845dfb5ab0b35496517ee0a1867c045e30528e4eff3a550802b178655319a7db"
+  },
+  "P10": {
+   "path": "P10_DEFAULT",
+   "sha256": "9657c0fdce187ecbc33174759fcc337b034e59b80bbc9057bd547b10f7d7a336"
+  }
+ },
+ "lead_block_sha256": "c0525943605cfd4ab55258bed04046b0e58257bb888544c385095708a0091898",
+ "window_states": {
+  "LEAD": 743,
+  "NO_LEAD": 561,
+  "NOT_STRAIGHT": 937,
+  "NO_LABEL": 158
+ },
+ "arms": {
+  "M2b_s0": {
+   "n": 705,
+   "S5": 0.16879432624113475,
+   "ttc_mean_s": 20.61150042227963
+  },
+  "M2b_s0_orc": {
+   "n": 701,
+   "S5": 0.14835948644793154,
+   "ttc_mean_s": 21.450201020919305
+  },
+  "M2b_s0_alll": {
+   "n": 712,
+   "S5": 0.17837078651685392,
+   "ttc_mean_s": 20.128033881491284
+  },
+  "M2b_s0_orcold": {
+   "n": 711,
+   "S5": 0.1420534458509142,
+   "ttc_mean_s": 21.61511468600986
+  },
+  "M2b-pgt_s0": {
+   "n": 683,
+   "S5": 0.1800878477306003,
+   "ttc_mean_s": 20.114804033554144
+  },
+  "M2b-pgt_s0_orc": {
+   "n": 706,
+   "S5": 0.14447592067988668,
+   "ttc_mean_s": 21.233927072024173
+  },
+  "M2b-pgt_s0_alll": {
+   "n": 689,
+   "S5": 0.15965166908563136,
+   "ttc_mean_s": 20.92973527331273
+  },
+  "P10": {
+   "n": 723,
+   "S5": 0.12171507607192254,
+   "ttc_mean_s": 22.55075872060587
+  }
+ },
+ "pairs": {
+  "M2b_s0_orc__minus__M2b_s0": {
+   "n_used": 689,
+   "S5": {
+    "delta": -0.0218,
+    "lo": -0.0468,
+    "hi": 0.0,
+    "sep": false
+   },
+   "ttc_mean_s": {
+    "delta": 0.9078,
+    "lo": 0.353,
+    "hi": 1.5163,
+    "sep": true
+   }
+  },
+  "M2b_s0_orc__minus__P10": {
+   "n_used": 696,
+   "S5": {
+    "delta": 0.023,
+    "lo": 0.0015,
+    "hi": 0.0486,
+    "sep": true
+   },
+   "ttc_mean_s": {
+    "delta": -0.8764,
+    "lo": -1.3975,
+    "hi": -0.3651,
+    "sep": true
+   }
+  },
+  "M2b_s0__minus__P10": {
+   "n_used": 701,
+   "S5": {
+    "delta": 0.0442,
+    "lo": 0.0123,
+    "hi": 0.0821,
+    "sep": true
+   },
+   "ttc_mean_s": {
+    "delta": -1.759,
+    "lo": -2.5799,
+    "hi": -1.018,
+    "sep": true
+   }
+  },
+  "M2b_s0_alll__minus__M2b_s0_orc": {
+   "n_used": 695,
+   "S5": {
+    "delta": 0.0331,
+    "lo": 0.009,
+    "hi": 0.0608,
+    "sep": true
+   },
+   "ttc_mean_s": {
+    "delta": -1.4898,
+    "lo": -2.4339,
+    "hi": -0.6469,
+    "sep": true
+   }
+  },
+  "M2b-pgt_s0_orc__minus__M2b-pgt_s0": {
+   "n_used": 679,
+   "S5": {
+    "delta": -0.0309,
+    "lo": -0.0559,
+    "hi": -0.0097,
+    "sep": true
+   },
+   "ttc_mean_s": {
+    "delta": 0.8288,
+    "lo": 0.1333,
+    "hi": 1.6234,
+    "sep": true
+   }
+  },
+  "M2b-pgt_s0_orc__minus__P10": {
+   "n_used": 703,
+   "S5": {
+    "delta": 0.0199,
+    "lo": 0.0065,
+    "hi": 0.0342,
+    "sep": true
+   },
+   "ttc_mean_s": {
+    "delta": -1.1611,
+    "lo": -1.7164,
+    "hi": -0.6266,
+    "sep": true
+   }
+  },
+  "M2b-pgt_s0__minus__P10": {
+   "n_used": 680,
+   "S5": {
+    "delta": 0.0515,
+    "lo": 0.0227,
+    "hi": 0.0853,
+    "sep": true
+   },
+   "ttc_mean_s": {
+    "delta": -2.0085,
+    "lo": -2.8425,
+    "hi": -1.2263,
+    "sep": true
+   }
+  },
+  "M2b-pgt_s0_alll__minus__M2b-pgt_s0_orc": {
+   "n_used": 688,
+   "S5": {
+    "delta": 0.0116,
+    "lo": 0.0027,
+    "hi": 0.0222,
+    "sep": true
+   },
+   "ttc_mean_s": {
+    "delta": -0.088,
+    "lo": -0.2712,
+    "hi": 0.1109,
+    "sep": false
+   }
+  }
+ },
+ "reproduction_dk_9_4": {
+  "M2b_s0_orcold__minus__M2b_s0_S5": {
+   "delta": -0.0259,
+   "lo": -0.051,
+   "hi": -0.0041
+  },
+  "banked": "-2.6 pp [-5.1, -0.4]"
+ },
+ "verdict": "CODE-STILL-MOVES"
+}

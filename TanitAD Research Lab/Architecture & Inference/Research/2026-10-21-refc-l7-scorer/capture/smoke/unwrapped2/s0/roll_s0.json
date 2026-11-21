@@ -1,0 +1,230 @@
+{
+ "tool": "roll_seed_r8_train_pf.py (wraps roll_seed_r8_train.py)",
+ "seed": 0,
+ "arm_set": "os + model-free controls (SPEC A3)",
+ "dump_dir": "C:/Users/Admin/refcv8_pf/l7cap/smoke/unwrapped2/s0/dump",
+ "episodes": "E:/refcv6_eval_kit/data/refcv6-b1-416x1024-train-a6",
+ "labels": "E:/refcv6_eval_kit/data/a6/s2_labels_v8_train.jsonl.gz",
+ "remap_overrides": {
+  "--agent-rig-extrinsics": "E:/refcv8_eval_kit/data/refcv8_train4572_eval139_extrinsics.json",
+  "--clip-clock-sidecar": "E:/refcv8_eval_kit/data/refcv8_clip_clock_sidecar_ts33.jsonl",
+  "--vis1-sidecar": "E:/refcv8_eval_kit/data/refcv8/vis1_sidecar_refcv8b1_train4572_eval139.npz",
+  "--nav-compliance-tau-file": "E:/refcv8_eval_kit/data/refcv8/nav_compliance_tau_train4572.json",
+  "--r8-v9-labels-eval": "E:/refcv8_eval_kit/data/refcv8_v9labels/release_train4572/v9_labels_train.npz",
+  "--pose-sync-sidecar": "E:/refcv8_eval_kit/data/refcv8_pose_sync_sidecar.jsonl",
+  "--join-defect-masks": "C:/lgs/Lfb47a58376/stack/tanitad/configs/refcv8_join_label_defects_train4572.json",
+  "--eval-cache": "E:/refcv6_eval_kit/data/refcv6-b1-416x1024-train-a6",
+  "--eval-labels": "E:/refcv6_eval_kit/data/a6/s2_labels_v8_train.jsonl.gz",
+  "--speed-max-sidecar-v6-eval": "E:/refcv6_eval_kit/data/a6/refcv6_speed_max_v8_train.jsonl"
+ },
+ "pose_clock": "STANDALONE (R8_NO_POSE_SYNC=1) = the clock of the eval trees step30000_unc and step30000ema_unc",
+ "v9_eval_md5_set_to": "83e30bd3791f0767707eade5f4671759",
+ "wall_s": 39.5,
+ "n_windows": 3,
+ "n_episodes": 1,
+ "skipped": 0,
+ "extras": {
+  "n_windows": 3,
+  "keys": [
+   "clip_index",
+   "gt_max_speed_6s",
+   "lat_v7",
+   "lon_v7",
+   "nav_true.lat_logits_tac",
+   "nav_true.lon_logits_tac",
+   "nav_true.sel_idx",
+   "nav_true.tacv6_goal_conf",
+   "nav_true.tacv6_goal_logits",
+   "nav_true.tacv6_lat_logits",
+   "nav_true.tacv6_lon_logits",
+   "nav_true.traj",
+   "obey30.n_fan_compliant",
+   "obey30.planned_max_ms",
+   "tac_goal_w",
+   "tac_goal_y",
+   "v0",
+   "v_max_ms",
+   "v_max_valid",
+   "ws"
+  ],
+  "clip_sha12_by_index": {
+   "0": "07b61be0acf7"
+  },
+  "proxy_calls": 3,
+  "filteroff_calls": 0,
+  "filter_modules": [
+   "AnchoredDiffusionDecoder"
+  ]
+ },
+ "device": "cpu",
+ "cuda_max_memory_allocated_gib": null,
+ "model_record": {
+  "state_dict": {
+   "strict": true,
+   "missing": [],
+   "unexpected": [],
+   "n_keys": 1165,
+   "n_map_hires_keys": 54,
+   "ckpt_keys": [
+    "ema_decay",
+    "kind",
+    "num_updates",
+    "step"
+   ],
+   "step": 48852
+  },
+  "param_breakdown": {
+   "rebuilt": {
+    "core": 90897767,
+    "phi_tac": 2101504,
+    "str_goal_head": 771,
+    "gstr_cond": 66816,
+    "tac_heads": 14364,
+    "tac_latent_proj": 262656,
+    "scorer": 1145,
+    "nav_inject": 50176,
+    "tac_decoder_v6": 2272802,
+    "tac_behaviour_gate_v6": 2574,
+    "total": 100598182
+   },
+   "config_json": {
+    "core": 90897767,
+    "phi_tac": 2101504,
+    "str_goal_head": 771,
+    "gstr_cond": 66816,
+    "tac_heads": 14364,
+    "tac_latent_proj": 262656,
+    "scorer": 1145,
+    "nav_inject": 50176,
+    "tac_decoder_v6": 2272802,
+    "tac_behaviour_gate_v6": 2574,
+    "total": 100598182
+   },
+   "equal": true
+  },
+  "anchor_file_vs_ckpt_buffers": {
+   "core.decoder.anchors": {
+    "shape": [
+     117,
+     8,
+     2
+    ],
+    "max_abs_diff": 0.0
+   },
+   "core.decoder.anchor_controls": {
+    "shape": [
+     117,
+     2
+    ],
+    "max_abs_diff": 0.0
+   }
+  },
+  "declared_vs_built": {
+   "mismatches": [],
+   "registry_entries": 276
+  }
+ },
+ "window_restriction": {
+  "rule": "the eval dataset's V3Dataset index restricted to t % 5 == 0 (ws = t + W - 1), TRAIN clips (SPEC A6 precedent)",
+  "n_index_before": 23751,
+  "n_index_after": 3,
+  "n_clips_after": 1,
+  "smoke_max_clips": 1,
+  "smoke_max_windows_per_clip": 3
+ },
+ "label_clock": {
+  "rule": "t_now = grid_start_s + (t + w - 1 + n_stack - 1) * dt_s (tanitad/data/clip_clock.py; A16 2026-09-26)",
+  "sidecar": "E:/refcv8_eval_kit/data/refcv8_clip_clock_sidecar_ts33.jsonl",
+  "sidecar_rows": 4686,
+  "n_clips": 139,
+  "n_from_sidecar": 139,
+  "n_pose_dt_grid_start_0": 0,
+  "n_nominal_dt_grid_start_0": 0,
+  "raw_offsets": [
+   2
+  ],
+  "dt_s_median": 0.1006666152798521,
+  "dt_s_min": 0.10050010510322484,
+  "dt_s_max": 0.10100497482385506,
+  "g3": {
+   "g3": "PASS",
+   "split": "eval",
+   "tol_s": 0.05,
+   "n_clips": 139,
+   "n_reads_checked": 417,
+   "worst_abs_err_s": 0.0,
+   "n_unverified_clips": 0,
+   "tactical_scored_on_clips": 139,
+   "tactical_excluded_clips": 0,
+   "tactical_excluded_sids": [],
+   "tactical_excluded_reason": "no MEASURED label clock (absent from the clip-clock sidecar): their tactical targets cannot be shown within tol_s of the truth",
+   "families_on_all_clips": [
+    "longitudinal",
+    "lateral",
+    "strategic"
+   ],
+   "mode": "per-family: TACTICAL on verified clips only (E2(b))",
+   "rule": "t_true = grid_start_s + (t + w - 1 + n_stack - 1) * dt_s (sidecar)",
+   "tactical_excluded_sha12": []
+  }
+ },
+ "dataset_record_keys": [
+  "camera_coverage",
+  "label_clock",
+  "labels",
+  "max_speed_v6",
+  "n_episodes",
+  "n_windows",
+  "nav",
+  "r8_v9"
+ ],
+ "frame_memo": {
+  "hits": 0,
+  "misses": 30
+ },
+ "smoke": true,
+ "pf": {
+  "nav_feed": "perframe_full",
+  "ok": true,
+  "census": {
+   "ok": true,
+   "manifest_nav_feed": {
+    "mode": "perframe_full",
+    "spec": "PREREG_NAV_FEED.md",
+    "n_windows": 3,
+    "n_token_differs_from_clip": 3,
+    "n_args_known": 3,
+    "token_source": "v9 per-frame nav_token via ds.r8_join.item (refc_v3_train.py:4657-4668, refcv8_train.py:895-898)",
+    "args_fed": true,
+    "args_rule": "r8_nav = refcv8_train.scale_nav(item r8_nav_raw, item r8_nav_known) on the nav_true row; unknown (known=0) -> exactly zeros; shuffled / flipped rows carry the unknown row; nav-zero call carries none",
+    "other_conditions": "nav_shuffled / nav_flipped are derived from the SAME per-frame nav_true vector"
+   },
+   "n_decision_files": 1,
+   "n_windows": 3,
+   "n_args_known": 3,
+   "n_token_differs_from_clip": 3,
+   "missing_keys_first": [],
+   "n_missing": 0
+  },
+  "overlay": {
+   "navfeed_overlay_sha256": "98293dd7411270160cb47d070bb1538babe1ff3a0f8ab85da61dcc84129ba72f",
+   "prereg_nav_feed_sha256": "e103a3b9d6fef39b1f7fc1e4937d9c2e6f12ac76d11c5afe8a03e92f4adde269"
+  },
+  "patched_refcv3_arm": {
+   "src_sha256": "a45677cc8f8accda25ec45882eb2f7daa951873af3c502c7c9d905cc6b4eab07",
+   "patched_sha256": "64e6ffbb1d0434d13badf82f39daf46608ad8404e2ec9e8797c375be5e5df543",
+   "patches": [
+    "P1-argparse",
+    "P2-nav_true",
+    "P3-item-assert",
+    "P4-model-call",
+    "P5-sidecar",
+    "P6-manifest"
+   ]
+  },
+  "parent_roll_script": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\code\\roll_seed_r8_train.py",
+  "parent_roll_script_sha256": "75efde042cb533b9a6f6991dd6cfd96dcfb1f927025e00617d820d13ad1a858d",
+  "this_script_sha256": "bf8ab9381121481cba5a808e5bb5e555f4d1a65ef79af7d6a54cd4db1131b72c",
+  "spec": "SHIP-R8 AMENDMENT 3 (ii): the train-fit procedure re-run on PER-FRAME-fed train rolls"
+ }
+}

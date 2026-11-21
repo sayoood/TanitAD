@@ -1,0 +1,316 @@
+{
+ "caught": 38,
+ "total": 38,
+ "survived_or_inapplicable": [],
+ "results": [
+  {
+   "mutation": "CONTROL (unmutated)",
+   "status": "CONTROL_GREEN",
+   "tail": "........................................................................ [ 62%]\n...........................................                              [100%]\n115 passed in 5.01s\n"
+  },
+  {
+   "mutation": "G-SEAL: the text's sha256 vs its .sha256",
+   "file": "spc_chain.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_spc.py::test_seal_red_one_byte_edit - Failed: DID NOT RAISE StopC..."
+   ]
+  },
+  {
+   "mutation": "G-SEAL: the first Status line must be SEALED",
+   "file": "spc_chain.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_spc.py::test_seal_red_draft_status - Failed: DID NOT RAISE StopChain"
+   ]
+  },
+  {
+   "mutation": "G-SEAL: a required pin missing",
+   "file": "spc_chain.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_spc.py::test_seal_red_missing_required_pin[b_rest_tokens_sha256]"
+   ]
+  },
+  {
+   "mutation": "G-SEAL: a pin that differs from its file",
+   "file": "spc_chain.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_spc.py::test_seal_red_changed_pin[b_rest_tokens_sha256] - Failed:..."
+   ]
+  },
+  {
+   "mutation": "G-SEAL: an operative file with no pin",
+   "file": "spc_chain.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_spc.py::test_seal_red_operative_file_not_pinned - Failed: DID NOT..."
+   ]
+  },
+  {
+   "mutation": "G-SEAL: the B-REST pin vs the launcher constant",
+   "file": "spc_chain.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_spc.py::test_seal_red_changed_pin[b_rest_tokens_sha256] - Failed:..."
+   ]
+  },
+  {
+   "mutation": "G-DATA: raw/b_rest.json vs the recomputation and the pin",
+   "file": "spc_chain.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_spc.py::test_data_red_token_replaced_dropped_swapped_appended - F..."
+   ]
+  },
+  {
+   "mutation": "G-DATA: the C-ID sample is the pinned list",
+   "file": "spc_chain.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_spc.py::test_data_red_cid_sample_not_carve_b - Failed: DID NOT RA..."
+   ]
+  },
+  {
+   "mutation": "disk gate",
+   "file": "spc_chain.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_spc.py::test_disk_red - Failed: DID NOT RAISE StopChain"
+   ]
+  },
+  {
+   "mutation": "G-BRIDGE / G-BUNDLE markers",
+   "file": "spc_chain.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_spc.py::test_gpu_stage_red_missing_marker[ZZBRIDGE_PASS-G-BRIDGE]"
+   ]
+  },
+  {
+   "mutation": "GPU stage failure marker",
+   "file": "spc_chain.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_spc.py::test_gpu_stage_red_stage_fail_marker - Failed: DID NOT RA..."
+   ]
+  },
+  {
+   "mutation": "G-BUNDLE: bundle token list vs the pinned read",
+   "file": "spc_chain.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_spc.py::test_gpu_stage_red_invalid_bundle[bundle_tokens_replaced_ctx_json_claims_the_pin]"
+   ]
+  },
+  {
+   "mutation": "G-BUNDLE: ctx.json vs the pinned read",
+   "file": "spc_chain.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_spc.py::test_gpu_stage_red_invalid_bundle[ctx_json_sha_wrong] - F..."
+   ]
+  },
+  {
+   "mutation": "G-BUNDLE: ctx.npy bytes vs ctx.json",
+   "file": "spc_chain.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_spc.py::test_gpu_stage_red_invalid_bundle[ctx_tampered] - Failed:..."
+   ]
+  },
+  {
+   "mutation": "G-REACH: the stamp must bind THIS bundle",
+   "file": "spc_chain.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_spc.py::test_reach_red_no_stamp_and_wrong_bundle_stamp - Assertio..."
+   ]
+  },
+  {
+   "mutation": "G-REACH: the stamp must be a PASS",
+   "file": "spc_chain.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_spc.py::test_reach_red_no_stamp_and_wrong_bundle_stamp - Assertio..."
+   ]
+  },
+  {
+   "mutation": "G-REACH: no stamp, no search",
+   "file": "spc_chain.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_spc.py::test_reach_red_no_stamp_and_wrong_bundle_stamp - Failed: ..."
+   ]
+  },
+  {
+   "mutation": "G-NOHEAD",
+   "file": "spc_chain.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_spc.py::test_chain_nohead_and_meta_red[head_set] - Failed: DID NO..."
+   ]
+  },
+  {
+   "mutation": "the data clause recorded in the search meta",
+   "file": "spc_chain.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_spc.py::test_chain_nohead_and_meta_red[wrong_carve] - Failed: DID..."
+   ]
+  },
+  {
+   "mutation": "ckpt / config recorded in the search meta",
+   "file": "spc_chain.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_spc.py::test_chain_nohead_and_meta_red[wrong_ckpt] - Failed: DID ..."
+   ]
+  },
+  {
+   "mutation": "C-ID",
+   "file": "spc_chain.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_spc.py::test_chain_cid_gate_green_and_red - Failed: DID NOT RAISE..."
+   ]
+  },
+  {
+   "mutation": "G-LABEL: the planted identity and its control",
+   "file": "spc_chain.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_spc.py::test_g_label_red_arms[identity_failed-False] - assert Tru..."
+   ]
+  },
+  {
+   "mutation": "G-LABEL: tokens aligned and finite",
+   "file": "spc_chain.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_spc.py::test_g_label_red_arms[nan-False] - assert True is False"
+   ]
+  },
+  {
+   "mutation": "RAM gate before the labeller",
+   "file": "spc_chain.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_spc.py::test_g_label_run_labels_refuses_low_ram_and_failed_identity"
+   ]
+  },
+  {
+   "mutation": "G-ORDER",
+   "file": "spc_chain.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_spc.py::test_g_order_analysis_refused_unless_every_stage_is_done"
+   ]
+  },
+  {
+   "mutation": "C-ID: the bitwise comparison",
+   "file": "spc_cid.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_spc.py::test_cid_red_one_bit_in_each_search_array[exec] - assert ..."
+   ]
+  },
+  {
+   "mutation": "C-ID: non-vacuity",
+   "file": "spc_cid.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_spc.py::test_cid_red_ctx_bit_and_negative_zero_and_vacuous_and_unknown_token"
+   ]
+  },
+  {
+   "mutation": "C-ID: the ctx rows",
+   "file": "spc_cid.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_spc.py::test_cid_red_ctx_bit_and_negative_zero_and_vacuous_and_unknown_token"
+   ]
+  },
+  {
+   "mutation": "C-ID: search and bundle on the same tokens",
+   "file": "spc_cid.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_spc.py::test_cid_red_search_and_bundle_on_different_token_sets - ..."
+   ]
+  },
+  {
+   "mutation": "launcher: no head argument",
+   "file": "spc_launch.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_spc.py::test_launcher_refuses_head_and_non_p2head_arm - Assertion..."
+   ]
+  },
+  {
+   "mutation": "launcher: P2HEAD only",
+   "file": "spc_launch.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_spc.py::test_launcher_refuses_head_and_non_p2head_arm - Assertion..."
+   ]
+  },
+  {
+   "mutation": "launcher: the pinned data clause reaches the search",
+   "file": "spc_launch.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_spc.py::test_launcher_passes_the_pinned_data_clause_to_step_b - A..."
+   ]
+  },
+  {
+   "mutation": "classifier: the +0.30 point bar",
+   "file": "spc_analyse.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_spc.py::test_cid_green_on_the_real_banked_rows - numpy._core._exc..."
+   ]
+  },
+  {
+   "mutation": "classifier: the lower-CI term",
+   "file": "spc_analyse.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_spc.py::test_classify_c1_branch_table[dp3-0.1-safety3-inert3-O3_NULL]"
+   ]
+  },
+  {
+   "mutation": "classifier: the seed-range term",
+   "file": "spc_analyse.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_spc.py::test_classify_c1_branch_table[dp5-0.33-safety5-inert5-O2_DIRECTIONAL]"
+   ]
+  },
+  {
+   "mutation": "classifier: the safety terms",
+   "file": "spc_analyse.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_spc.py::test_classify_c1_branch_table[dp7-0.1-safety7-inert7-TRADE]"
+   ]
+  },
+  {
+   "mutation": "classifier: NEGATIVE",
+   "file": "spc_analyse.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_spc.py::test_classify_c1_branch_table[dp11-0.1-safety11-inert11-NEGATIVE]"
+   ]
+  },
+  {
+   "mutation": "GPU stage: rc and marker per step",
+   "file": "spc_gpu_stage.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_spc.py::test_gpu_stage_script_plan_and_stops_at_first_failure - A..."
+   ]
+  }
+ ]
+}

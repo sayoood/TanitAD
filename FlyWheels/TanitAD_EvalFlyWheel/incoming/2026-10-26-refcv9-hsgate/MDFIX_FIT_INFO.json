@@ -1,0 +1,99 @@
+{
+ "tool": "mdfix_fit.py",
+ "prereg": {
+  "file": "C:\\Users\\Admin\\refcv8_pf\\refcv9_hsgate\\PREREG_HSGATE_MDFIX.md",
+  "sha256": "545ff2175a9c948c92fcd29b265dac4fbdb7e0d737ba8d9d3ec9a6a44a614dd1"
+ },
+ "frozen": {
+  "path": "C:\\Users\\Admin\\refcv8_pf\\refcv9_hsgate\\MDFIX_FROZEN.json",
+  "sha256": "ef760a45209f5f18f2d6c19c734adfb2c18b683fae6242a1ce821b20bed1d0a8",
+  "bytes": 3002
+ },
+ "c": 0.002,
+ "tau": -2.0796768066788296,
+ "lambda": 0.1,
+ "power_record": {
+  "path": "C:\\Users\\Admin\\refcv8_pf\\refcv9_hsgate\\next\\MDFIX_POWER_FIT.json",
+  "sha256": "0187bb3f82f7deae06666dcffe75c9429ba968357bb2d4e51a617489c963af00"
+ },
+ "fit": {
+  "loss": 0.14590149094053334,
+  "max_abs_grad": 1.827479666725862e-09,
+  "n_iter": 16,
+  "objective": "mean_i BCEwithLogits(w . x_std_i + b, y_i) + 0.5 * lambda * ||w||^2 (b unpenalised); float64; torch.optim.LBFGS(lr=1, max_iter=5000, history_size=50, tolerance_grad=1e-12, tolerance_change=1e-15, line_search_fn='strong_wolfe'), w = 0, b = 0 init, torch.manual_seed(0)"
+ },
+ "heldout_at_tau": {
+  "F_rate": 0.014691478942213516,
+  "MD": 0.44045242847638055,
+  "FD": 0.08342332613390929,
+  "md_count": 662,
+  "fd_count": 309
+ },
+ "insample_FIT_beside": {
+  "F_rate": 0.013432209318595215,
+  "md_count": 663,
+  "fd_count": 307,
+  "MD": 0.4411177644710579,
+  "FD": 0.08288336933045357
+ },
+ "reference_H2cn_OOF": {
+  "MD": 0.4624085163007319,
+  "FD": 0.08153347732181425,
+  "n_GT_decel": 1503,
+  "n_GT_cruise": 3704
+ },
+ "controls": {
+  "K-LABEL": {
+   "label_equals_md_indicator_derivation_every_row": true,
+   "gt_class_equal_both_calls": true,
+   "base_rate": 0.03707849447320554,
+   "base_rate_4dp": 0.0371,
+   "expected_literal": 0.0371,
+   "n_pos": 265,
+   "PASS": true
+  },
+  "K-TAU": {
+   "primary": {
+    "tau": -2.0796768066788296,
+    "md_count": 662,
+    "fd_count": 309,
+    "n_candidates": 7148,
+    "n_feasible": 111
+   },
+   "bruteforce": {
+    "tau": -2.0796768066788296,
+    "md_count": 662,
+    "fd_count": 309
+   },
+   "direct_mask_counts": [
+    662,
+    309
+   ],
+   "PASS": true
+  },
+  "K-MUT": {
+   "label_differs_rows": 721,
+   "mutant_gate_sha256": "a687149677135e5080f90690d0942e0f764f7414089db7df4029950d9636aeac",
+   "frozen_sha256": "ef760a45209f5f18f2d6c19c734adfb2c18b683fae6242a1ce821b20bed1d0a8",
+   "mutant_tau": 0.3373149496356347,
+   "mutant_F_rate_insample": 0.025465230166503428,
+   "PASS": true
+  },
+  "K-RELOAD": true,
+  "carried_from_HSGATE_phase1": {
+   "HSGATE_FIT_INFO_sha256": "9ec82af9328d2379bf31d421054f35db4e64b09667cd6c7557f7eccb6981c7c4",
+   "ALL_PASS": true,
+   "note": "K-FRESH-SS / K-JOIN / K-OOF on the SAME FIT rows (FIT_ROWS.npz) -- PREREG s1 'exactly PREREG_HSGATE s1'"
+  },
+  "FIT_ROWS_row_order_equals_load_fresh": true,
+  "ALL_PASS": true
+ },
+ "ALL_PASS": true,
+ "disclosures": [
+  "Forking paths: the MDFIX label was chosen AFTER the HSGATE8 eval139 read, on FIT-row arithmetic only (next/FDCAP_FRONTIER_FIT.json; next/DRAFT_NEXT_ARM_HSGATE_MDFIX.md). This is the SECOND eval139 read of the gate family; the multiplicity is paid in the bars (G1 at 97.5 %).",
+  "No MDFIX output on eval139 existed at sealing; the draft's FIT-side numbers are 5-fold episode CV on 7,147 FIT rows, one training seed, one fit, no interval."
+ ],
+ "fit_rows_npz_sha256": "fdb9147d0212c2ea5e7e25b4bae7a68bb10d797ba329025e838b051778571686",
+ "generated": "2026-10-26T08:22:07+0100",
+ "wall_s": 6.7
+}

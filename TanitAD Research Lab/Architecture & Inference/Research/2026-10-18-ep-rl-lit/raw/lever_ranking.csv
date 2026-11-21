@@ -1,0 +1,11 @@
+rank,id,lever,reach_pdms_lo,reach_pdms_hi,reach_mid,cost_a40h_equiv,evidence_weight,rank_key,evidence_class
+1,L1,"Test-time CEM search on the scorer, admission test first (TOAD form)",0.3,1.5,0.9,2.5,0.7,0.504,"PUBLISHED (TOAD Tab. 5), transfer ESTIMATED"
+2,L2,"SR-TTC extension (SR-TTC itself is registered, not re-proposed): EP-output contender pairs + designed negatives + EMA soft targets on SR-TTC's cached features",0.1,0.8,0.45,1.0,0.5,0.2045,ESTIMATED (policy-level DPO PUBLISHED; scorer-only analogue +0.2)
+3,L4,RL that also updates the encoder under a representation/aux loss (not head-only EPO),0.0,0.8,0.4,15.0,0.7,0.112,"PUBLISHED on one base (SimVTA Tab. 5), transfer HYPOTHESIS"
+4,L5,Alternating generator top-k / vector-Pareto self-distillation to clean the fan (CLOVER form),0.2,1.0,0.6,30.0,0.7,0.105,"PUBLISHED (CLOVER Tab. 5-8), transfer ESTIMATED"
+5,L3,Two-scorer sub-score ensemble on one fan (P2-s0 + P2-s1 logits),0.1,0.4,0.25,3.0,0.3,0.0577,"HYPOTHESIS (bounded by the measured seed floor +0.33 [+0.04, +0.64])"
+6,L7,Proposal-anchored scorer features (iPad ProFormer form); needs a PI architecture decision,0.3,1.5,0.9,60.0,0.3,0.0386,"PUBLISHED on ResNet-34 (iPad Tab. 4), transfer HYPOTHESIS"
+7,L6,Confidence-gated verifier on the pick (DriveVer form),0.1,0.5,0.3,30.0,0.5,0.0375,"PUBLISHED on weaker bases, transfer ESTIMATED"
+8,L10,SimScale / RAP-style synthetic data scale-up,0.5,1.0,0.75,150.0,0.7,0.0328,"PUBLISHED (DrivoR Tab. 1, RAP Tab. 1), transfer ESTIMATED"
+9,L8,DrivoR layer-wise scoring / refinement decoder,0.1,0.5,0.3,36.0,0.5,0.0326,"PUBLISHED (DrivoR Tab. 6), transfer ESTIMATED"
+10,L9,DrivoR accelerated second target (full retrain),0.2,0.6,0.4,160.0,0.7,0.0165,"PUBLISHED (DrivoR Tab. 7; -1.6 on v2), transfer ESTIMATED"

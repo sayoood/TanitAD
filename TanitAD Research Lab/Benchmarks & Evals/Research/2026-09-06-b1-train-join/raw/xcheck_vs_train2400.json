@@ -1,0 +1,58 @@
+{
+ "n_shared_clips": 182,
+ "ref": "C:/Users/Admin/tanitad-data/joins/joins/train2400_agents.jsonl",
+ "mine": "b1train_agents.jsonl.xz",
+ "TRUE_same_frame_idx": {
+  "n_keys": 34764,
+  "n_tracks": 1063192,
+  "dcx_m": {
+   "median": 0.0,
+   "p95": 0.0,
+   "max": 4.040700000000001
+  },
+  "dcy_m": {
+   "median": 0.0,
+   "p95": 0.0,
+   "max": 1.8763000000000005
+  },
+  "dyaw_deg": {
+   "median": 0.0,
+   "p95": 0.0,
+   "max": 9.770649280365928
+  },
+  "n_tracks_dcx_exactly_zero": 1061921,
+  "frac_dcx_exactly_zero": 0.998805,
+  "n_tracks_dcx_gt_0p05m": 495,
+  "frac_dcx_gt_0p05m": 0.000466
+ },
+ "CONTROL_misjoin_plus1": {
+  "n_keys": 34732,
+  "n_tracks": 1036188,
+  "dcx_m": {
+   "median": 0.6954000000000065,
+   "p95": 2.2729,
+   "max": 1300.8881
+  },
+  "dcy_m": {
+   "median": 0.04600000000000115,
+   "p95": 1.2914999999999992,
+   "max": 1194.2258
+  },
+  "dyaw_deg": {
+   "median": 0.15126085791453595,
+   "p95": 2.1600508876432043,
+   "max": 179.29942465605072
+  },
+  "n_tracks_dcx_exactly_zero": 691,
+  "frac_dcx_exactly_zero": 0.000667,
+  "n_tracks_dcx_gt_0p05m": 938935,
+  "frac_dcx_gt_0p05m": 0.906143
+ },
+ "note": "TRUE compares (clip, frame_idx) against the SAME frame_idx in a join built by a different builder from a different pose source; CONTROL shifts by one frame and must be far worse.",
+ "headline": "99.8805 % of 1,063,192 shared agent boxes agree EXACTLY (to the joins 4-decimal rounding) with train2400_agents.jsonl -- a DIFFERENT builder, a DIFFERENT pose source, a DIFFERENT corpus. The mis-join(+1) control drops to 0.0667 %.",
+ "separation_exact_agreement_x": 1497.5,
+ "_retracted_separation_dcx_median_x": {
+  "value": 695400000.0,
+  "why": "the TRUE median |dcx| is EXACTLY 0.0, so this ratio is a division by zero dressed as a measurement. It is replaced by the EXACT-AGREEMENT FRACTION, which is bounded in [0,1] and means something. Quoting 695,400,000x would have been a meaningless number with a plausible shape."
+ }
+}

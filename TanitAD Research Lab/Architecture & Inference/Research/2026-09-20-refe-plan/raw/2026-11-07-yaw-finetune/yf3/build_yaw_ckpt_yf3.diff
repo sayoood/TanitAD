@@ -1,0 +1,19 @@
+11c11
+<   K4 the composed first-layer column 4 equals final.pt["col4"] exactly
+---
+>   K4 arm B: the composed first-layer column 4 equals final.pt["col4"] exactly; arm C (YF3 fix): it equals u400's own column 4
+22,23c22,23
+< sys.path.insert(0, str(HERE))
+< import yaw_common as YC  # noqa: E402
+---
+> sys.path.insert(0, "E:/Projects/TanitAD-artifacts/yawrate_wp/YF2")                 # YF3 copy: yaw_common lives in YF2
+> import yaw_common as YC  # noqa: E402  (YF2's, read-only)
+67c67,72
+<     gates["K4_col4_equal_final"] = bool(torch.equal(st["ego_enc.0.weight"][:, YC.EGO_YAW_SLOT], fin["col4"].to(st["ego_enc.0.weight"].dtype)))
+---
+>     if fed:
+>         gates["K4_col4_equal_final"] = bool(torch.equal(st["ego_enc.0.weight"][:, YC.EGO_YAW_SLOT], fin["col4"].to(st["ego_enc.0.weight"].dtype)))
+>     else:
+>         # YF3 FIX (AMENDMENT_1 B.3): for arm C the trained leaf col4 is the zero-init that is NEVER deployed (yaw 0 at train and eval), so "composed column 4 == final col4" is the wrong statement
+>         # and made the C checkpoint impossible to compose (MEASURED in the YF3 smoke: K4 False, ZZYAWCKPT_GATE_RED). The right K4 for C: the composed column 4 is u400's own column, untouched.
+>         gates["K4_col4_untouched_for_C"] = bool(torch.equal(st["ego_enc.0.weight"][:, YC.EGO_YAW_SLOT], base["ego_enc.0.weight"][:, YC.EGO_YAW_SLOT]))

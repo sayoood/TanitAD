@@ -1,0 +1,25 @@
+2026-10-15T22:05:30Z token: found in Keys.txt (37 chars, never printed)
+2026-10-15T22:05:30Z start: repo Sayood/tanitad-refe-p2-joint-pdm-s1 name p2s1_full dry_run=True poll 0.05 s, pkg E:\Projects\TanitAD\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan
+2026-10-15T22:05:30Z poll 1: waiting: repo does not exist yet (or is not visible to this token)
+2026-10-15T22:05:30Z poll 2: waiting: summary.json: done is not true (training or final steps running)
+2026-10-15T22:05:30Z poll 3: waiting: summary.json is done=true but run/model_final.pt is not in the repo yet (a light tick pushes summary first)
+2026-10-15T22:05:30Z poll 4: inconsistent: remote LFS sha256 000000000000.. != summary model_final_sha256 48d743a5215e..
+2026-10-15T22:05:30Z poll 5: FINAL marker: summary done=true + model_final.pt listed + LFS sha256 equal + chain FINAL_OK equal (sha256 48d743a5215e.., 4223 B, steps 1209)
+2026-10-15T22:05:30Z download: downloaded 4223 B, sha256 verified == published
+2026-10-15T22:05:30Z dry-run negative control OK: corrupt download refused (REFUSED: downloaded model_final.pt sha256 2c48958b01de161f54b57664440df87611f1cc8782a81633..); destination exists: False
+2026-10-15T22:05:30Z preflight ok   stage2_sft.py md5 == R1's pin
+2026-10-15T22:05:30Z preflight ok   stage3_full.py exists
+2026-10-15T22:05:30Z preflight ok   score_e.py (stage 2 scratch)
+2026-10-15T22:05:30Z preflight ok   families6.py md5
+2026-10-15T22:05:30Z preflight ok   token file md5
+2026-10-15T22:05:30Z preflight ok   frames dir
+2026-10-15T22:05:30Z preflight ok   p2rep_read inputs
+2026-10-15T22:05:30Z WOULD RUN [idle_gate] C:/Users/Admin/venvs/tanitad/Scripts/python.exe D:/Projects/TanitAD-artifacts/_rlfan_work/wait_idle.py ; then require no C:/Users/Admin/qland/work/refcv7/devbox_gpu.lock and no C:/Users/Admin/qland/work/refcv7/devbox_gpu.chain_active. now: GPU used 2664 MiB; lock HELD {"pid": 30716, "owner": "aux_navtest_forward", "t": 1792101710.7026293}
+2026-10-15T22:05:30Z WOULD RUN [stage2_attempt1] cwd=E:\Projects\TanitAD\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan :: C:/Users/Admin/venvs/tanitad/Scripts/python.exe "E:\Projects\TanitAD\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\eval\stage2_sft.py" --ckpt "C:/Users/Admin/AppData/Local/Temp/p2s1r/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-16-p2s1-read/out/dryrun/ck/model_final.pt" --name p2s1_full --rule navsim_v1 --tokens E:/Projects/TanitAD/data/refe_navtest/navtest_full_tokens.json
+2026-10-15T22:05:30Z attempt 1 ends `ZZSTAGE2 <name> INCOMPLETE (seam failed)` BY DESIGN (the C1 frame-control gate); the seam .npz decides whether to continue
+2026-10-15T22:05:30Z WOULD RUN [stage2_attempt2] cwd=E:\Projects\TanitAD\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan :: C:/Users/Admin/venvs/tanitad/Scripts/python.exe "E:\Projects\TanitAD\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\eval\stage2_sft.py" --ckpt "C:/Users/Admin/AppData/Local/Temp/p2s1r/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-16-p2s1-read/out/dryrun/ck/model_final.pt" --name p2s1_full --rule navsim_v1 --tokens E:/Projects/TanitAD/data/refe_navtest/navtest_full_tokens.json
+2026-10-15T22:05:30Z WOULD RUN [stage3] cwd=E:\Projects\TanitAD\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan :: C:/Users/Admin/venvs/tanitad/Scripts/python.exe "E:\Projects\TanitAD\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\eval\stage3_full.py" --name p2s1_full --ckpt "C:/Users/Admin/AppData/Local/Temp/p2s1r/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-16-p2s1-read/out/dryrun/ck/model_final.pt" --expect-ckpt-sha256 48d743a5215e4cb2deedd07b0f82cd5db3de680eab407aadf74aa57d8fca0e1f
+2026-10-15T22:05:30Z WOULD RUN [read] cwd=E:\Projects\TanitAD\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan :: C:/Users/Admin/venvs/tanitad/Scripts/python.exe "C:\Users\Admin\AppData\Local\Temp\p2s1r\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\raw\2026-10-16-p2s1-read\p2rep_read.py" --name p2s1_full --r2-result "E:\Projects\TanitAD\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\raw\p2_readout\p2s1_full\r2_result.json" --out-dir "C:\Users\Admin\AppData\Local\Temp\p2s1r\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\raw\2026-10-16-p2s1-read\out\dryrun\read"
+2026-10-15T22:05:30Z ZZP2S1READ_DRYRUN_OK {}
+2026-10-15T22:05:30Z check (the fake download landed at the checkpoint path, its sha256 equals the published one): True
+2026-10-15T22:05:30Z DRY RUN PASS

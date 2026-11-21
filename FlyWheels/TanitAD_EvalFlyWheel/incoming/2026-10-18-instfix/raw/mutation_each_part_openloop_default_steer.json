@@ -1,0 +1,203 @@
+[
+ {
+  "name": "openloop_default_steer",
+  "mutation": "taniteval/tools/openloop_suite.py",
+  "rc_units": 1,
+  "rc_internal_t1": 0,
+  "rc_chain_controls": 0,
+  "summary_units": [
+   "5 failed, 19 passed, 2 skipped, 121 deselected in 10.43s"
+  ],
+  "summary_internal_t1": [
+   "8 passed, 1 skipped in 0.78s"
+  ],
+  "summary_chain_controls": [
+   "34 passed in 1.14s"
+  ],
+  "n_red": 5,
+  "red_tests": [
+   "tests/test_refav1_units_required.py::test_k6_openloop_rollout_without_units_is_refused_the_other_sources_are_not_asked",
+   "tests/test_refav1_units_required.py::test_k7_openloop_declaration_has_no_default_by_ast_and_the_default_is_the_mutation_target",
+   "tests/test_refav1_units_required.py::test_k8_openloop_mutation_in_process_and_in_a_temp_copy",
+   "tests/test_refav1_units_required.py::test_l3_census_mutation_restoring_a_default_in_each_REAL_file_is_caught",
+   "tests/test_refav1_units_required.py::test_l_census_every_live_action_units_declaration_has_no_default"
+  ]
+ },
+ {
+  "name": "openloop_gate_deleted",
+  "mutation": "taniteval/tools/openloop_suite.py",
+  "rc_units": 1,
+  "rc_internal_t1": 0,
+  "rc_chain_controls": 0,
+  "summary_units": [
+   "1 failed, 23 passed, 2 skipped, 121 deselected in 14.65s"
+  ],
+  "summary_internal_t1": [
+   "8 passed, 1 skipped in 0.69s"
+  ],
+  "summary_chain_controls": [
+   "34 passed in 2.02s"
+  ],
+  "n_red": 1,
+  "red_tests": [
+   "tests/test_refav1_units_required.py::test_k6_openloop_rollout_without_units_is_refused_the_other_sources_are_not_asked"
+  ]
+ },
+ {
+  "name": "internal_t1_flag_removed",
+  "mutation": "taniteval/taniteval/bench/internal_t1.py",
+  "rc_units": 1,
+  "rc_internal_t1": 1,
+  "rc_chain_controls": 0,
+  "summary_units": [
+   "1 failed, 23 passed, 2 skipped, 121 deselected in 14.97s"
+  ],
+  "summary_internal_t1": [
+   "1 failed, 7 passed, 1 skipped in 0.83s"
+  ],
+  "summary_chain_controls": [
+   "34 passed in 1.45s"
+  ],
+  "n_red": 2,
+  "red_tests": [
+   "tests/test_bench_suite_internal_t1.py::test_cmd_is_the_tool_unmodified",
+   "tests/test_refav1_units_required.py::test_m5_live_caller_internal_t1_rollout_states_the_unit_and_analyze_only_does_not"
+  ]
+ },
+ {
+  "name": "panel_flag_removed",
+  "mutation": "taniteval/tools/run_hierarchy_panel.py",
+  "rc_units": 1,
+  "rc_internal_t1": 0,
+  "rc_chain_controls": 0,
+  "summary_units": [
+   "1 failed, 23 passed, 2 skipped, 121 deselected in 16.62s"
+  ],
+  "summary_internal_t1": [
+   "8 passed, 1 skipped in 0.99s"
+  ],
+  "summary_chain_controls": [
+   "34 passed in 1.99s"
+  ],
+  "n_red": 1,
+  "red_tests": [
+   "tests/test_refav1_units_required.py::test_m6_live_caller_run_hierarchy_panel_rollout_states_the_unit_and_the_recover_branch_does_not"
+  ]
+ },
+ {
+  "name": "doc_flag_removed_openloop_stack_example",
+  "mutation": "taniteval/tools/OPENLOOP_SUITE.md",
+  "rc_units": 1,
+  "rc_internal_t1": 0,
+  "rc_chain_controls": 0,
+  "summary_units": [
+   "2 failed, 22 passed, 2 skipped, 121 deselected in 14.63s"
+  ],
+  "summary_internal_t1": [
+   "8 passed, 1 skipped in 0.77s"
+  ],
+  "summary_chain_controls": [
+   "34 passed in 1.04s"
+  ],
+  "n_red": 2,
+  "red_tests": [
+   "tests/test_refav1_units_required.py::test_m3_cli_census_mutation_removing_the_flag_from_a_REAL_doc_is_caught",
+   "tests/test_refav1_units_required.py::test_m_cli_census_every_live_invocation_of_the_four_rollout_CLIs_states_the_unit"
+  ]
+ },
+ {
+  "name": "cc_no_producer_check_deleted",
+  "mutation": "taniteval/tools/chain_controls.py",
+  "rc_units": 0,
+  "rc_internal_t1": 0,
+  "rc_chain_controls": 1,
+  "summary_units": [
+   "24 passed, 2 skipped, 121 deselected in 14.13s"
+  ],
+  "summary_internal_t1": [
+   "8 passed, 1 skipped in 0.68s"
+  ],
+  "summary_chain_controls": [
+   "13 failed, 21 passed in 1.10s"
+  ],
+  "n_red": 13,
+  "red_tests": [
+   "tests/test_chain_controls.py::test_a2_no_producer_is_refused_naming_stage_and_control",
+   "tests/test_chain_controls.py::test_a3_a_producer_AFTER_its_consumer_is_no_producer",
+   "tests/test_chain_controls.py::test_a3b_a_stage_cannot_be_its_own_producer",
+   "tests/test_chain_controls.py::test_a4_globs_cover_names_and_a_glob_gate_needs_a_matching_declaration",
+   "tests/test_chain_controls.py::test_a9_require_producers_raises_with_every_problem_and_returns_the_ledger",
+   "tests/test_chain_controls.py::test_b2_the_ORIGINAL_chain_is_refused_at_startup_for_exactly_one_reason_D3",
+   "tests/test_chain_controls.py::test_b6_mutation_dropping_the_d3_stages_from_the_improved_chain_makes_main_refuse_at_startup",
+   "tests/test_chain_controls.py::test_c2_with_the_gate_a_missing_producer_is_refused_before_ANY_stage_runs",
+   "tests/test_chain_controls.py::test_c4_mutation_removing_the_producer_declaration_from_the_working_chain_turns_it_RED",
+   "tests/test_chain_controls.py::test_d1_mutation_removing_the_producer_stage_turns_the_fixed_plan_RED",
+   "tests/test_chain_controls.py::test_d2_mutation_removing_only_the_produces_declaration_turns_it_RED",
+   "tests/test_chain_controls.py::test_d3_mutation_moving_the_producer_after_its_consumer_turns_it_RED",
+   "tests/test_chain_controls.py::test_f1_cli_exit_codes_refused_2_ok_0"
+  ]
+ },
+ {
+  "name": "cc_late_producer_counts",
+  "mutation": "taniteval/tools/chain_controls.py",
+  "rc_units": 0,
+  "rc_internal_t1": 0,
+  "rc_chain_controls": 1,
+  "summary_units": [
+   "24 passed, 2 skipped, 121 deselected in 15.11s"
+  ],
+  "summary_internal_t1": [
+   "8 passed, 1 skipped in 0.72s"
+  ],
+  "summary_chain_controls": [
+   "3 failed, 31 passed in 1.66s"
+  ],
+  "n_red": 3,
+  "red_tests": [
+   "tests/test_chain_controls.py::test_a3_a_producer_AFTER_its_consumer_is_no_producer",
+   "tests/test_chain_controls.py::test_a3b_a_stage_cannot_be_its_own_producer",
+   "tests/test_chain_controls.py::test_d3_mutation_moving_the_producer_after_its_consumer_turns_it_RED"
+  ]
+ },
+ {
+  "name": "cc_source_check_disabled",
+  "mutation": "taniteval/tools/chain_controls.py",
+  "rc_units": 0,
+  "rc_internal_t1": 0,
+  "rc_chain_controls": 1,
+  "summary_units": [
+   "24 passed, 2 skipped, 121 deselected in 16.36s"
+  ],
+  "summary_internal_t1": [
+   "8 passed, 1 skipped in 0.90s"
+  ],
+  "summary_chain_controls": [
+   "2 failed, 32 passed in 0.94s"
+  ],
+  "n_red": 2,
+  "red_tests": [
+   "tests/test_chain_controls.py::test_a8_source_check_a_producer_script_that_never_names_the_file_is_refused",
+   "tests/test_chain_controls.py::test_d4_mutation_a_producer_script_that_does_not_name_the_file_turns_it_RED"
+  ]
+ },
+ {
+  "name": "cc_ledger_check_deleted",
+  "mutation": "taniteval/tools/chain_controls.py",
+  "rc_units": 0,
+  "rc_internal_t1": 0,
+  "rc_chain_controls": 1,
+  "summary_units": [
+   "24 passed, 2 skipped, 121 deselected in 17.64s"
+  ],
+  "summary_internal_t1": [
+   "8 passed, 1 skipped in 0.66s"
+  ],
+  "summary_chain_controls": [
+   "1 failed, 33 passed in 0.80s"
+  ],
+  "n_red": 1,
+  "red_tests": [
+   "tests/test_chain_controls.py::test_e1_verify_stage_outputs_missing_empty_present_and_glob"
+  ]
+ }
+]

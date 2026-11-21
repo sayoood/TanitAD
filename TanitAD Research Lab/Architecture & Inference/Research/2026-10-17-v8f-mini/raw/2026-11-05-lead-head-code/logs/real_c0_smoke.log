@@ -1,0 +1,24 @@
+C0 init E:\Projects\TanitAD-artifacts\v8f-dagoacc\M2b_s0_dagoacc\ckpt_last.pt exists True
+[add (lead only)] tensors 276 mismatch 0 fresh 6 ['e_lead.bias', 'e_lead.weight', 'lead_head.0.bias', 'lead_head.0.weight', 'lead_head.2.bias', 'lead_head.2.weight']
+   old keys bit-identical: True | step-0 forward equals C0's exactly: True | max |d traj60| 0
+   lever params {k: v for k, v in lv['params'].items() if k in ('LEVEL', 'LEAD', 'AUX')} -> {'LEAD': 67074} | aux_cond add
+   lead probe pass True head_grad_diff 31.61 presence_row 2.494 gap_row 0.2123 detach_control 0.0 allfalse_term 0.0 plan_moves 7.152
+   step0 (synthetic batch, meaningless) lead_share 0.0126 w_lead_for_10pct 8.6932
+[add (level + lead)] tensors 276 mismatch 0 fresh 12 ['e_lead.bias', 'e_lead.weight', 'e_level.bias', 'e_level.weight', 'lead_head.0.bias', 'lead_head.0.weight', 'lead_head.2.bias', 'lead_head.2.weight', 'lvl_head.0.bias', 'lvl_head.0.weight', 'lvl_head.2.bias', 'lvl_head.2.weight']
+   old keys bit-identical: True | step-0 forward equals C0's exactly: True | max |d traj60| 0
+   lever params {k: v for k, v in lv['params'].items() if k in ('LEVEL', 'LEAD', 'AUX')} -> {'LEVEL': 66561, 'LEAD': 67074} | aux_cond add
+   lead probe pass True head_grad_diff 32 presence_row 2.65 gap_row 0.226 detach_control 0.0 allfalse_term 0.0 plan_moves 7.129
+   step0 (synthetic batch, meaningless) lead_share 0.0113 w_lead_for_10pct 9.7530
+   level probe pass True keys ['e_level_grad_at_w0'] plan_moves 3.655
+[token (level + lead)] tensors 276 mismatch 0 fresh 10 ['e_aux.bias', 'e_aux.weight', 'lead_head.0.bias', 'lead_head.0.weight', 'lead_head.2.bias', 'lead_head.2.weight', 'lvl_head.0.bias', 'lvl_head.0.weight', 'lvl_head.2.bias', 'lvl_head.2.weight']
+   old keys bit-identical: True | step-0 forward equals C0's exactly: False | max |d traj60| 3.11087
+   lever params {k: v for k, v in lv['params'].items() if k in ('LEVEL', 'LEAD', 'AUX')} -> {'LEVEL': 66049, 'LEAD': 66306, 'AUX': 1024} | aux_cond token
+   lead probe pass True head_grad_diff 33.71 presence_row 2.824 gap_row 0.2277 detach_control 0.0 allfalse_term 0.0 plan_moves 4.554
+   step0 (synthetic batch, meaningless) lead_share 0.0116 w_lead_for_10pct 9.4379
+   level probe pass True keys ['e_aux_level_col_grad_at_w0'] plan_moves 0.01389
+[token (lead only)] tensors 276 mismatch 0 fresh 6 ['e_aux.bias', 'e_aux.weight', 'lead_head.0.bias', 'lead_head.0.weight', 'lead_head.2.bias', 'lead_head.2.weight']
+   old keys bit-identical: True | step-0 forward equals C0's exactly: False | max |d traj60| 3.56512
+   lever params {k: v for k, v in lv['params'].items() if k in ('LEVEL', 'LEAD', 'AUX')} -> {'LEAD': 66306, 'AUX': 1024} | aux_cond token
+   lead probe pass True head_grad_diff 31.61 presence_row 2.494 gap_row 0.2123 detach_control 0.0 allfalse_term 0.0 plan_moves 1.039
+   step0 (synthetic batch, meaningless) lead_share 0.0127 w_lead_for_10pct 8.6588
+SMOKE-DONE

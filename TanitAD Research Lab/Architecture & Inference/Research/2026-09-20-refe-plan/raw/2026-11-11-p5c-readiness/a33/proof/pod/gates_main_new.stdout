@@ -1,0 +1,11 @@
+LABEL p5r (PREREG_P5C amendment A1, conditional)
+TB-0 NOT_RUN  n=None value=None bar=[R-B: per rank, ALL of R-TOL-1 (sim8 identical >= 99.5%), R-TOL-2 (per-row max abs diff median <= 0.001, p99 <= 0.005), R-TOL-3 (TB-6 ratios within +-0.01 of the dev-box ratios on the same rows, sim8-fail rate within +-0.25 pp) on the P5-R EVAL control rows; AND Tc20s warm start == dev-box Tc20s build within 1e-09 (R-A)]
+TB-1 NOT_RUN  n=None value=None bar=[Tc20s TB-1 (1018/1018, diff <= 1e-09) AND reproduction of all 2400 P5-R EVAL labels under R-TOL-1/2/3 (per rank, as TB-0)]
+TB-2 PASS     n=150603 value=0.0 bar=[S3: tracked8 of the stored label, simulated alone, equals the solver's final s: <= 1e-06 (m, rad) on every p5r row (replaces TB-2's spline knot exactness)]
+TB-3 PASS     n=150603 value=150603/150603 bar=[ident == traj bit-for-bit on 100 % of rows]
+TB-4 PASS     n=150603 value=150603/150603 bar=[table keys == bank keys (all of them, none extra, no duplicate); n_raw_fallback <= 1.0 % of rows; S4: fallbacks <= 1.0 % of rows PER RANK]
+TB-5 PASS     n=150603 value=150603/150603 bar=[every label finite; |dyaw vs traj| < pi; sim_hz == 10 on every row (100 %); S1/S2/S5 flags recorded true on every p5r row; A3.3: at most 1 disclosed Tc20s-label fallback row(s), on the allow-list only, label == own Tc20s label]
+TB-6 PASS     n=150603 value={'rank0': [1.3229928750893978, 1.7052521722557064], 'rank1': [1.1372542528854357, 1.3663305648984196]} bar=[per rank: median per-row max|acc| and max|heading rate| of labels / same for traj <= 2x on both. Rank-0 FAIL => STOP (PREREG_P5R 10: next lever P5-T); rank-1 FAIL => rank-0 only]
+TB-7 PASS     n=150603 value={'0': 92896, '1': 57707} bar=[n_differs per rank recorded]
+RANK_POLICY all {"RK0_stop_rule_r0_hi_lt_0": false, "RK1_n_ge_200_and_logs_ge_5": true, "RK2_r1_lo_gt_0": true, "RK3_r0_point_gt_0": true, "RK4_TB6_passes_on_rank1": true, "RK5_TB2_TB3_pass_on_every_rank1_row": true, "RK6_guards": "not required: the repair json carries sim8 only (no DDC / comfort / lk10 / executed-vs-intended)"}
+ZZTB_FAIL TB-0 TB-1

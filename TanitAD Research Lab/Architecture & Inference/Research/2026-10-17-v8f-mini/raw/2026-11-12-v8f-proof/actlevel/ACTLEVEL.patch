@@ -1,0 +1,651 @@
+--- a/stack/tanitad/models/act_cons.py
++++ b/stack/tanitad/models/act_cons.py
+@@ -61,13 +61,18 @@
+     return bad
+ 
+ 
+-def build_record(w: float, max_off: float, cfg, model) -> dict:
+-    """What the term was BUILT as, read from the model and the config (the G-DVB 'built' side; ``info["act_cons"]``)."""
++def build_record(w: float, max_off: float, cfg, model, level_w: float = 0.0) -> dict:
++    """What the term was BUILT as, read from the model and the config (the G-DVB 'built' side; ``info["act_cons"]``). ``level_w`` > 0 (ACTLEVEL, ``--w-act-level``) adds the keys ``w_act_level`` and
++    ``level_reads`` (the read steps and the label frame rule); with ``level_w`` 0 the record has exactly the keys of the tree without the level term."""
+     wm = model.wm
+-    return {"w_act_cons": float(w), "act_cons_max": float(max_off), "k": ROLL_K, "starts": valid_starts(cfg.hmax), "reads": [list(r) for r in T_READS],
++    rec = {"w_act_cons": float(w), "act_cons_max": float(max_off), "k": ROLL_K, "starts": valid_starts(cfg.hmax), "reads": [list(r) for r in T_READS],
+             "speed_bound_mps": float(max_off) * SPEED_MULT, "gap_range_m": [GAP_LO_M, GAP_HI_M], "acc_scale": float(M.WM_ACC_SCALE),
+             "lead_hist": int(wm.lead_head.mlp[0].in_features // M.LEAD_SUP_FRAME_DIM), "l1_act": wm.l1_act,
+             "gap_scale_m": float(M.LEAD_SUP_GAP_SCALE_M), "head_params_detached": True, "start_state_detached": True}
++    if float(level_w) > 0.0:
++        rec["w_act_level"] = float(level_w)
++        rec["level_reads"] = [[int(hi), "label at frame s + step"] for _, hi, _ in T_READS]
++    return rec
+ 
+ 
+ def valid_mask(batch: dict, starts: list, max_off: float) -> Tensor:
+@@ -87,10 +92,31 @@
+     return (o[:, 0, 1].float() * M.LEAD_SUP_GAP_SCALE_M).reshape(s, b)
+ 
+ 
+-def act_cons_term(model, adapt: Tensor, batch: dict, d: Tensor, max_off: float) -> dict:
++def level_label_mask(batch: dict, starts: list, hi_steps: tuple) -> tuple:
++    """ACTLEVEL: for each start s (index i) and read step k: the label at frame s + k. Returns ``(gap [S, K, B] metres with 0.0 where invalid, ok [S, K, B] bool)``; ok = presence > 0.5, finite gap,
++    0 <= gap <= 60 m, ``frame_ok`` at frame s + k. Step k of ``HJEPAStack.roll_pairs`` from start s is the state of frame s + k (``tgt = z[:, s + 1 : s + k + 1]``, hjepa.py), the read of the five states
++    ending at step k is the gap at that frame."""
++    gaps, oks = [], []
++    for s in starts:
++        g_k, o_k = [], []
++        for k in hi_steps:
++            f = s + k
++            pres, gap = batch["lead_pres"][:, f].float(), batch["lead_gapm"][:, f].float()
++            ok = (pres > 0.5) & torch.isfinite(gap) & (gap >= GAP_LO_M) & (gap <= GAP_HI_M) & batch["frame_ok"][:, f].bool()
++            g_k.append(torch.where(ok, gap, torch.zeros_like(gap)))
++            o_k.append(ok)
++        gaps.append(torch.stack(g_k, 0))
++        oks.append(torch.stack(o_k, 0))
++    return torch.stack(gaps, 0), torch.stack(oks, 0)
++
++
++def act_cons_term(model, adapt: Tensor, batch: dict, d: Tensor, max_off: float, level: bool = False) -> dict:
+     """The ACTCONS term on one batch. ``adapt`` [B, F, n_tok, d_model] (the loss's own adapter tokens), ``batch`` with act / wm_speed / frame_ok / lead_pres / lead_gapm, ``d`` [B] offsets [m/s2].
+     Returns ``term`` (a scalar tensor in metres: exactly 0.0 with NO gradient when no sample is valid), ``n_valid`` (valid (sample, start) pairs, float tensor), ``n_rows`` (samples with at least one valid start).
+-    Everything is computed in float32 (autocast off) on the device of ``adapt``."""
++    Everything is computed in float32 (autocast off) on the device of ``adapt``.
++    ``level`` (ACTLEVEL, ``--w-act-level`` > 0): the reference rollout is computed WITH gradient and the result also holds ``level`` (mean over the valid (pair, read step) entries of
++    | gap_reference(s, k) - gap_label(s + k) | in metres; exactly 0.0 with no graph when no entry is valid) and ``n_level`` (valid entries). The consistency term reads the reference DETACHED in both
++    cases. ``level`` False: no level key, and the code path and every float are those of the tree without the level term."""
+     wm = model.wm
+     st, head = wm.stack, wm.lead_head
+     dev = adapt.device
+@@ -102,22 +128,40 @@
+         rows = valid.any(1)
+         n_valid = valid.sum().to(torch.float32)
+         if not bool(rows.any()):
+-            return {"term": torch.zeros((), dtype=torch.float32, device=dev), "n_valid": n_valid, "n_rows": torch.zeros((), dtype=torch.float32, device=dev)}
++            r0 = {"term": torch.zeros((), dtype=torch.float32, device=dev), "n_valid": n_valid, "n_rows": torch.zeros((), dtype=torch.float32, device=dev)}
++            if level:
++                r0["level"], r0["n_level"] = torch.zeros((), dtype=torch.float32, device=dev), torch.zeros((), dtype=torch.float32, device=dev)
++            return r0
+         zr = z[rows]
+         a = wm.scale_actions(batch["act"][rows].float())[:, :-1]         # [Br, F-1, 2] the WM's action units: acc / WM_ACC_SCALE (v8f_mini.py scale_actions), yaw / ch1_scale
+         dr = d.to(dev).float()[rows]
+         off = torch.stack([dr / float(M.WM_ACC_SCALE), torch.zeros_like(dr)], -1)[:, None, :]      # d / WM_ACC_SCALE on the acceleration channel, yaw unchanged
+-        with torch.no_grad():
+-            ref, _, _ = st.roll_pairs(zr, st.act_embed(a), ROLL_K)       # reference: logged actions, no gradient
++        with torch.set_grad_enabled(bool(level)):                        # reference: logged actions; no gradient (level off: exactly torch.no_grad), with gradient only for the level term
++            ref, _, _ = st.roll_pairs(zr, st.act_embed(a), ROLL_K)
+         rolled, _, _ = st.roll_pairs(zr, st.act_embed(a + off), ROLL_K)  # offset actions, with gradient (predictor, action embedding)
+         params = {n: p.detach() for n, p in head.named_parameters()}     # the head's parameters carry NO gradient from this term (its own supervised loss in the same step keeps its gradient)
+         vr = valid[rows].T.float()                                       # [S, Br]
+         tot = rolled.new_zeros(())
+         for lo, hi, T in T_READS:
+             with torch.no_grad():
+-                g_ref = _gap_m(head, params, ref[:, :, lo:hi])
++                g_ref = _gap_m(head, params, ref[:, :, lo:hi])           # the consistency term reads the reference DETACHED
+             g_off = _gap_m(head, params, rolled[:, :, lo:hi])
+             resid = g_off - g_ref + 0.5 * dr[None, :] * (T ** 2)
+             tot = tot + (resid.abs() * vr).sum()
+         term = tot / (2.0 * n_valid.clamp_min(1.0))
+-    return {"term": term, "n_valid": n_valid, "n_rows": rows.sum().to(torch.float32)}
++        res = {"term": term, "n_valid": n_valid, "n_rows": rows.sum().to(torch.float32)}
++        if level:
++            lab, ok = level_label_mask(batch, starts, tuple(hi for _, hi, _ in T_READS))     # [S, K, B_all] label at frame s + k
++            lab, ok = lab[:, :, rows], ok[:, :, rows]
++            use = ok & valid[rows].T[:, None, :]                          # the valid (sample, start) pairs of the consistency term x the label rule at s + k
++            n_level = use.sum().to(torch.float32)
++            if float(n_level) > 0.0:
++                e_tot = rolled.new_zeros(())
++                for j, (lo, hi, T) in enumerate(T_READS):
++                    g_lvl = _gap_m(head, params, ref[:, :, lo:hi])        # the reference read WITH gradient (predictor, action embedding); head parameters detached
++                    e_tot = e_tot + ((g_lvl - lab[:, j, :]).abs() * use[:, j, :].float()).sum()
++                res["level"] = e_tot / n_level
++            else:
++                res["level"] = torch.zeros((), dtype=torch.float32, device=dev)
++            res["n_level"] = n_level
++    return res
+--- a/stack/scripts/v8f_mini_train.py
++++ b/stack/scripts/v8f_mini_train.py
+@@ -127,6 +127,7 @@
+     "rule_relabel": "data:rule_relabel",      # RULETRAIN: argv -> RuleRelabel (built from the join) -> info["rule_relabel"] (bad_rule_relabel) -> rule_relabel_probe (G-LIVE: count > 0, the relabelled target reaches the loss and gradient, all-False mask reads EXACTLY 0.0) -> `b["gt"] = rr_gt` in the loop
+     "w_rule_own": "data:rule_own",            # RULEOWN: argv -> RuleOwn (built from the join) -> info["rule_own"] (bad_rule_own) -> rule_own_probe (G-LIVE: term finite, n_lead > 0, n_active, gradient norms, zero controls) -> `ROW.add_own_term` in the loop
+     "rule_own_form": "data:rule_own_form",                    # RULEOWNL1 (note PREREG_V8F_PROOF_ADD34_N1): argv -> RuleOwn.form -> info["rule_own"]["form"] (l1 only; bad_rule_own) -> rule_own_probe (reports the form) -> `ROW.add_own_term(..., form)` in the loop
++    "w_act_level": "data:act_level",          # ACTLEVEL (PREREG_V8F_PROOF_ADD37_N6): argv -> AC.build_record(level_w) -> info["act_cons"]["w_act_level"] (bad_act_cons) -> act_cons_probe level reads (G-LIVE) -> `W x cons + V x level` in the loop
+     "w_act_cons": "data:act_cons", "act_cons_max": "data:act_cons_max",      # ACTCONS: argv -> AC.build_record (read from the BUILT model: lead head, window, starts) -> info["act_cons"] (bad_act_cons) -> act_cons_probe (G-LIVE) -> `AC.act_cons_term` in the loop
+     "rule_relabel_weight": "data:rule_relabel_weight",      # RULEOWN stage 2: argv -> RuleOwn.w_weight -> info["rule_relabel_weight"] (bad_rule_relabel_weight) -> `ROW.add_weight_extra` in the loop
+     "init_ckpt": "data:init_ckpt",            # O-RECOVER's start state: the MODEL weights of an earlier checkpoint, config-checked, loaded strictly and READ BACK (load_init_ckpt) -> declared_vs_built (bad_init_ckpt)
+@@ -302,6 +303,10 @@
+                          "the level-1 predictor is rolled 10 steps from the DETACHED state of frame s (the starts of the rollout loss) under the logged actions (no gradient) and under the logged actions + one offset d ~ U(-max, +max) m/s2 per sample on the "
+                          "acceleration channel (gradient); the supervised lead head (its parameters without gradient) reads the gap from steps 1..5 and 6..10. Valid: a label lead at frame s (gap 0 to 60 m) and ego speed at frame s >= 2 x max. "
+                          "The gradient reaches the predictor and its action embedding only. Needs --lead-sup on (and --lead-hist 5, --wm-state grid). Training only, nothing at inference, no new module or state-dict key. Default 0.0 = every earlier arm, bit for bit")
++    ap.add_argument("--w-act-level", dest="w_act_level", type=float, default=0.0,
++                    help="ACTLEVEL (PREREG_V8F_PROOF_ADD37_N6): V > 0 adds V x level to the loss, inside the --w-act-cons block (V > 0 needs --w-act-cons > 0). level = mean over the valid (sample, start s) pairs of the consistency term and the read steps k = 5 (1.0 s) and k = 10 (2.0 s) "
++                         "of | gap_reference(s, k) - gap_label(s + k) | in metres, the reference read now WITH gradient; an entry is valid when the label at frame s + k has presence > 0.5, a finite gap in [0, 60] m and frame_ok. The consistency term still reads the reference detached. "
++                         "The gradient reaches the predictor and its action embedding only (lead head parameters and start state without gradient). Training only. Default 0.0 = the tree without the level term, bit for bit")
+     ap.add_argument("--act-cons-max", dest="act_cons_max", type=float, default=AC.ACT_CONS_MAX_DEFAULT,
+                     help="ACTCONS: the half-width of the offset range d ~ U(-max, +max) [m/s2] and (x 2.0 s) the ego speed bound of a valid sample. Default 1.5. A value other than the default needs --w-act-cons > 0")
+     ap.add_argument("--rule-relabel-weight", dest="rule_relabel_weight", type=float, default=1.0,
+@@ -1272,6 +1277,10 @@
+         bad.append(f"w_act_cons {a.w_act_cons!r} must be a finite number >= 0")
+     if not (math.isfinite(a.act_cons_max) and a.act_cons_max > 0.0):
+         bad.append(f"act_cons_max {a.act_cons_max!r} must be a finite number > 0")
++    if not (math.isfinite(a.w_act_level) and a.w_act_level >= 0.0):
++        bad.append(f"w_act_level {a.w_act_level!r} must be a finite number >= 0")
++    if a.w_act_level > 0.0 and a.w_act_cons == 0.0:
++        bad.append(f"w_act_level {a.w_act_level} declared with --w-act-cons 0: the level term lives inside the consistency block, a lever that is declared and does nothing")
+     if a.w_act_cons == 0.0:
+         if rec:
+             bad.append("w_act_cons 0 declared but an act-cons stage was built")
+@@ -1285,6 +1294,11 @@
+         bad.append(f"w_act_cons: declared {a.w_act_cons} but built {rec.get('w_act_cons')}")
+     if rec.get("act_cons_max") != a.act_cons_max:
+         bad.append(f"act_cons_max: declared {a.act_cons_max} but built {rec.get('act_cons_max')}")
++    if a.w_act_level > 0.0:
++        if rec.get("w_act_level") != a.w_act_level:
++            bad.append(f"w_act_level: declared {a.w_act_level} but built {rec.get('w_act_level')}")
++    elif "w_act_level" in rec:
++        bad.append(f"w_act_level 0 declared but the act-cons stage was built with the level term ({rec.get('w_act_level')})")
+     if rec.get("k") != AC.ROLL_K or rec.get("starts") != AC.valid_starts(cfg.hmax) or not rec.get("starts"):
+         bad.append(f"act_cons: built rollout {rec.get('k')} steps from starts {rec.get('starts')}, expected {AC.ROLL_K} from {AC.valid_starts(cfg.hmax)}")
+     if not (rec.get("head_params_detached") and rec.get("start_state_detached")):
+@@ -2059,15 +2073,25 @@
+     m = copy.deepcopy(model).cpu()
+     m.train()
+     d = AC.draw_offsets(a.seed, 0, int(batch["frame_ok"].shape[0]), a.act_cons_max)
++    lvl = a.w_act_level > 0.0
+ 
+     def run(mm, bt):
+         mm.zero_grad(set_to_none=True)
+         out = mm.loss(dict(bt), p_gt=0.5, gen=torch.Generator().manual_seed(11))
+-        r = AC.act_cons_term(mm, out["adapt"], bt, d, a.act_cons_max)
++        r = AC.act_cons_term(mm, out["adapt"], bt, d, a.act_cons_max, level=lvl)
+         if r["term"].requires_grad:
+             r["term"].backward()
+         return r
+ 
++    def run_level(mm, bt):
++        """ACTLEVEL: the gradient of the level term ALONE (no consistency term in the backward), on the same batch."""
++        mm.zero_grad(set_to_none=True)
++        out = mm.loss(dict(bt), p_gt=0.5, gen=torch.Generator().manual_seed(11))
++        r = AC.act_cons_term(mm, out["adapt"], bt, d, a.act_cons_max, level=True)
++        if r["level"].requires_grad:
++            r["level"].backward()
++        return r
++
+     def norms(mm):
+         pred = {id(p) for p in list(mm.wm.stack.predictors[0].parameters())}
+         emb = {id(p) for p in list(mm.wm.stack.act_embed.parameters())}
+@@ -2096,9 +2120,25 @@
+     nv = float(r["n_valid"])
+     ctl = dict(batch)
+     ctl["lead_pres"] = torch.zeros_like(batch["lead_pres"])                           # no label lead anywhere
+-    rc = AC.act_cons_term(m, m.loss(dict(ctl), p_gt=0.5, gen=torch.Generator().manual_seed(11))["adapt"], ctl, d, a.act_cons_max)
++    rc = AC.act_cons_term(m, m.loss(dict(ctl), p_gt=0.5, gen=torch.Generator().manual_seed(11))["adapt"], ctl, d, a.act_cons_max, level=lvl)
+     rec = {"act_cons": "on", "w_act_cons": a.w_act_cons, "act_cons_max": a.act_cons_max, "term": float(r["term"].detach()), "n_valid": nv, "n_rows": float(r["n_rows"]), "n_batch": int(batch["frame_ok"].shape[0]),
+            "starts": AC.valid_starts(cfg.hmax), "woken": woken, **n, "control_all_invalid_term": float(rc["term"]), "control_all_invalid_has_graph": bool(rc["term"].requires_grad)}
++    if lvl:                                                                           # ACTLEVEL: the level term's own reach and zeros (same copy, woken as above when the consistency read needed it)
++        mm_l = m2 if woken else m
++        rl = run_level(mm_l, batch)
++        nl = norms(mm_l)
++        rec.update({"w_act_level": a.w_act_level, "level": float(rl["level"].detach()), "n_level": float(rl["n_level"]), "level_grad_norm_predictor": nl["grad_norm_predictor"],
++                    "level_grad_norm_action_embed": nl["grad_norm_action_embed"], "level_grad_norm_lead_head": nl["grad_norm_lead_head"], "level_grad_norm_state_projection": nl["grad_norm_state_projection"],
++                    "level_grad_abs_sum_outside_predictor_and_embed": nl["grad_abs_sum_outside_predictor_and_embed"], "control_all_invalid_level": float(rc["level"]),
++                    "control_all_invalid_level_has_graph": bool(rc["level"].requires_grad), "control_all_invalid_n_level": float(rc["n_level"])})
++        if not (rec["n_level"] > 0.0 and np.isfinite(rec["level"])):
++            raise AssertionError(f"act cons probe: no valid level entry on the probe batch (n_level {rec['n_level']}) or the level is not finite: {rec}")
++        if not (rec["level_grad_norm_predictor"] > 0.0 and rec["level_grad_norm_action_embed"] > 0.0):
++            raise AssertionError(f"act cons probe: the level term does not reach the predictor / its action embedding: {rec}")
++        if rec["level_grad_norm_lead_head"] != 0.0 or rec["level_grad_norm_state_projection"] != 0.0 or rec["level_grad_abs_sum_outside_predictor_and_embed"] != 0.0:
++            raise AssertionError(f"act cons probe: the level term reaches the lead head, the start state or the encoder path (must be exactly 0.0): {rec}")
++        if rec["control_all_invalid_level"] != 0.0 or rec["control_all_invalid_level_has_graph"] or rec["control_all_invalid_n_level"] != 0.0:
++            raise AssertionError(f"act cons probe: the all-invalid level control does not read exactly 0.0 without a graph: {rec}")
+     if not (nv > 0.0 and np.isfinite(rec["term"])):
+         raise AssertionError(f"act cons probe: no valid (sample, start) pair on the probe batch (n_valid {nv}) or the term is not finite: {rec}")
+     if not (n["grad_norm_predictor"] > 0.0 and n["grad_norm_action_embed"] > 0.0):
+@@ -3269,7 +3309,7 @@
+     # ---- the launch gate
+     lr_at = LRSchedule(a.lr, a.warmup, total)                        # the loop's schedule, built BEFORE the gate so that G-DVB can read --warmup back from it
+     if a.w_act_cons > 0.0 and not AC.check_buildable(cfg, model):             # ACTCONS: the BUILT record (read from the model); a model that cannot run the term gets no record and the gate refuses it
+-        info["act_cons"] = AC.build_record(a.w_act_cons, a.act_cons_max, cfg, model)
++        info["act_cons"] = AC.build_record(a.w_act_cons, a.act_cons_max, cfg, model, a.w_act_level)
+     bad = declared_vs_built(a, cfg, model, opt, info, enc, ego, lr_at, dag, comp, rcv)
+     if bad:
+         raise SystemExit("ZZDVB-REFUSEDZZ declared-vs-built: " + "; ".join(bad))
+@@ -3403,6 +3443,8 @@
+         levers["rule_relabel_weight"] = RO.w_weight
+     if a.w_act_cons > 0.0:                                            # ACTCONS: lever-ON arms only (a flag-off selfcheck.json keeps its key set); read from the BUILT record
+         levers["w_act_cons"], levers["act_cons_max"] = info["act_cons"]["w_act_cons"], info["act_cons"]["act_cons_max"]
++        if a.w_act_level > 0.0:                                       # ACTLEVEL: present only when the level term is on
++            levers["w_act_level"] = info["act_cons"]["w_act_level"]
+     levers["lr_schedule"] = lr_at.built_levers()                       # the built warmup / peak / total the loop calls (G-DVB read --warmup back from it)
+     if enc is not None:
+         levers["encoder"] = enc.built_levers()
+@@ -3447,6 +3489,7 @@
+     dag_int = {"rows": 0, "eligible": 0, "n": 0, "nav_kept": 0}   # ... and since the last log line
+     rec_tot = {"rows": 0, "eligible": 0, "n": 0, "changed": 0}   # PREREG_RECOVER_FT's run totals (samples seen, eligible = NOW a real kinematic row, perturbed, rows whose kin3 the BATCH-level predicate saw differ); exactly 0 at --recover-p 0; carried in the checkpoint of a lever-ON arm only
+     rec_int = {"rows": 0, "eligible": 0, "n": 0, "changed": 0}   # ... and since the last log line
++    lv_tot = {"n_level": 0.0, "level_sum": 0.0, "steps": 0}       # ACTLEVEL run totals (valid entries, sum of the per-step levels, steps); summary.json only when --w-act-level > 0
+     ac_tot = {"n_valid": 0.0, "term_sum": 0.0, "steps": 0}       # ACTCONS run totals (valid pairs, sum of the per-step terms, steps); summary.json of a lever-ON arm only
+     ov_tot = {"n": 0}                                             # AMEND1 section 1: samples both swapped and perturbed (exactly 0), carried in the checkpoint of a composed arm only
+     ov_int = {"n": 0}                                             # ... and since the last log line
+@@ -3613,10 +3656,18 @@
+                     ro_tot["rows"] += ro_i["n_rows"]
+                 if a.w_act_cons > 0.0:                              # ACTCONS: ONE block adds W x term to the total; its offsets come from a dedicated generator (the per-step global seed above is untouched)
+                     d_ac = AC.draw_offsets(a.seed, step, int(b["frame_ok"].shape[0]), a.act_cons_max)
+-                    ac_r = AC.act_cons_term(model, out["adapt"], b, d_ac, a.act_cons_max)
++                    ac_r = AC.act_cons_term(model, out["adapt"], b, d_ac, a.act_cons_max, level=a.w_act_level > 0.0)
+                     tot_ac = T["total"]
+                     T["total"] = tot_ac + a.w_act_cons * ac_r["term"]       # <- the line the mutation test guards: deleting it makes total(W) - total(0) read 0.0
+                     T["act_cons"], T["act_cons_n"] = ac_r["term"].detach(), ac_r["n_valid"].detach()
++                    if a.w_act_level > 0.0:                                 # ACTLEVEL: V x level added to the total; log keys act_level / act_level_n only when on
++                        T["total"] = T["total"] + a.w_act_level * ac_r["level"]       # <- the line the level mutation test guards
++                        T["act_level"], T["act_level_n"] = ac_r["level"].detach(), ac_r["n_level"].detach()
++                        if float(ac_r["n_level"]) > 0.0 and not ac_r["level"].requires_grad:
++                            raise SystemExit(f"ZZACT-LEVEL-NOT-APPLIEDZZ step {step}: --w-act-level {a.w_act_level} but the level term carries no graph (n_level {float(ac_r['n_level'])}): a lever that is declared and does nothing")
++                        lv_tot["n_level"] += float(ac_r["n_level"])
++                        lv_tot["level_sum"] += float(ac_r["level"].detach())
++                        lv_tot["steps"] += 1
+                     if float(ac_r["n_valid"]) > 0.0 and not ac_r["term"].requires_grad:
+                         raise SystemExit(f"ZZACT-CONS-NOT-APPLIEDZZ step {step}: --w-act-cons {a.w_act_cons} but the term carries no graph (n_valid {float(ac_r['n_valid'])}): a lever that is declared and does nothing")
+                     for c_ in (ac_tot,):
+@@ -3691,6 +3742,9 @@
+     if a.w_act_cons > 0.0:                                                 # ACTCONS: the lever-ON arm's run record (a flag-off summary.json keeps its key set)
+         summary["w_act_cons"], summary["act_cons_max"], summary["act_cons_n_valid"] = a.w_act_cons, a.act_cons_max, ac_tot["n_valid"]
+         summary["act_cons_term_mean"] = ac_tot["term_sum"] / max(ac_tot["steps"], 1)
++        if a.w_act_level > 0.0:                                            # ACTLEVEL: only when the level term is on
++            summary["w_act_level"], summary["act_level_n_valid"] = a.w_act_level, lv_tot["n_level"]
++            summary["act_level_mean"] = lv_tot["level_sum"] / max(lv_tot["steps"], 1)
+     if comp.on:                                                            # AMEND1 section 1: the composed arm's run record (a flag-off summary.json keeps its key set)
+         summary["ego_dagger_overlap_n"], summary["ego_perturb_with_dagger"] = ov_tot["n"], True
+     if launch_on:                                                          # PREREG_V8F_LAUNCH_INTENT: the lever-ON arm's run record (a flag-off summary.json keeps its key set)
+--- a/stack/tests/test_v8f_act_cons.py
++++ b/stack/tests/test_v8f_act_cons.py
+@@ -265,7 +265,7 @@
+ def test_total_moves_by_exactly_w_times_the_term(world):
+     """The trainer's own block, run as the loop runs it (the lines are extracted from the source): total(W) - total(0) = W x term, bit for bit up to one float32 addition."""
+     src = inspect.getsource(TR.main)
+-    assert src.count('T["total"] = tot_ac + a.w_act_cons * ac_r["term"]') == 1 and src.count("AC.act_cons_term(model, out[\"adapt\"], b, d_ac, a.act_cons_max)") == 1
++    assert src.count('T["total"] = tot_ac + a.w_act_cons * ac_r["term"]') == 1 and src.count("AC.act_cons_term(model, out[\"adapt\"], b, d_ac, a.act_cons_max, level=a.w_act_level > 0.0)") == 1
+     _, cfg, m = _built(world, LS)
+     _wake(m)
+     batch = world["batch"]
+@@ -376,7 +376,7 @@
+ 
+ def test_the_loop_lines_exist_once_and_the_gate_calls_exist():
+     src = Path(TR.__file__).read_text(encoding="utf-8")
+-    assert src.count("AC.act_cons_term(model, out[\"adapt\"], b, d_ac, a.act_cons_max)") == 1
++    assert src.count("AC.act_cons_term(model, out[\"adapt\"], b, d_ac, a.act_cons_max, level=a.w_act_level > 0.0)") == 1
+     assert src.count("AC.draw_offsets(a.seed, step,") == 1
+     assert src.count("bad += bad_act_cons(a, cfg, model, data_info)") == 1
+     assert src.count("act_cons_probe(model, probe, cfg, a)") == 1
+--- /dev/null
++++ b/stack/tests/test_v8f_act_level.py
+@@ -0,0 +1,370 @@
++"""ACTLEVEL (`--w-act-level V`; note PREREG_V8F_PROOF_ADD37_N6 sections 2 and 5, controls v2 and v4): a level term inside the ACTCONS block.
++
++level = mean over the valid (sample, start s) pairs of the consistency term and the read steps k = 5 and 10 of | gap_reference(s, k) - gap_label(s + k) | in metres, the reference read WITH gradient.
++Tiny models (d 32) on CPU. Tolerances 1e-5 where floats from different code paths are compared; exact 0.0 only for structural zeros (no valid entry, a parameter outside the reach)."""
++from __future__ import annotations
++
++import copy
++import inspect
++import sys
++import textwrap
++from pathlib import Path
++
++import numpy as np
++import pytest
++import torch
++
++REPO = Path(__file__).resolve().parents[2]
++for p in (REPO / "stack", REPO / "taniteval", REPO / "stack" / "scripts"):
++    if str(p) not in sys.path:
++        sys.path.insert(0, str(p))
++
++from tanitad.data import v8f_mini_data as D  # noqa: E402
++from tanitad.models import act_cons as AC  # noqa: E402
++from tanitad.models import v8f_mini as M  # noqa: E402
++import v8f_mini_train as TR  # noqa: E402
++
++TINY = dict(d=32, ff=64, heads=4, n_q=2, depth_s=1, depth_t=1, depth_o=1, nb=6)
++GRID = ["--wm-state", "grid", "--wm-cell-dim", "16"]
++LS = GRID + ["--lead-sup", "on", "--w-lead-sup", "1.0"]
++MAXOFF = 1.5
++STARTS = AC.valid_starts(16)
++KS = tuple(hi for _, hi, _ in AC.T_READS)
++
++
++@pytest.fixture(scope="module")
++def world(tmp_path_factory):
++    root = tmp_path_factory.mktemp("actlevel")
++    w = D.make_synthetic_world(root, n_train=6, n_eval=2, T=60, seed=0)
++    J = D.load_join(Path(root) / "join_train.npz")
++    store = D.ClipStore(root, "train", lru=8)
++    wins = D.train_windows(store, J, w["names"]["train"])
++    D.synthetic_lead_labels(J, 0)
++    ds = D.V8FMiniWindows(store, J, wins, hmax=16, lead_sup=True)
++    idx = np.random.default_rng(0).choice(len(wins), 8, replace=False)
++    batch = D.collate([ds.item(wins[i][0], wins[i][1], 1, 3) for i in idx])
++    return {"batch": batch, "J": J}
++
++
++def _built(world, extra=(), seed=0, **over):
++    a = TR.build_parser().parse_args(["--out", "x", "--d", "32", "--n-q", "2", "--arm", "M2b", *extra])
++    c0 = TR.make_config(a)
++    keep = {k: v for k, v in TINY.items() if k not in ("nb", "n_q", "d", "ff")}
++    cfg = M.V8FMiniConfig(**{**c0.__dict__, **keep, "d": 32, "ff": 64, **over})
++    mu, sd = M.cons_stats(world["J"])
++    torch.manual_seed(seed)
++    return a, cfg, M.V8FMini(cfg, M.P10Prior.synthetic(0), mu, sd)
++
++
++def _wake(model, seed=1):
++    g = torch.Generator().manual_seed(seed)
++    with torch.no_grad():
++        for m in model.wm.lead_head.mlp:
++            if isinstance(m, torch.nn.Linear):
++                m.weight.copy_(torch.randn(m.weight.shape, generator=g) * 0.3)
++        for p in model.wm.stack.predictors[0].parameters():
++            if float(p.abs().sum()) == 0.0:
++                p.copy_(torch.randn(p.shape, generator=g) * 0.05)
++    return model
++
++
++def _offsets(n, seed=3):
++    return AC.draw_offsets(seed, 0, n, MAXOFF)
++
++
++def _mutant(old, new, name="act_cons_term"):
++    src = textwrap.dedent(inspect.getsource(getattr(AC, name)))
++    assert src.count(old) == 1, (old, src.count(old))
++    ns = dict(vars(AC))
++    exec(compile(src.replace(old, new), f"<mutant {name}>", "exec"), ns)
++    return ns[name]
++
++
++# ------------------------------------------------------------------------------------------ a planted kinematic world: the reference read is known by hand
++class _KinPredictor(torch.nn.Module):
++    """Exact constant-acceleration kinematics per step: state ch0 = ego displacement p [m], ch1 = speed v [m/s]; the embedded action is the scaled action."""
++    context = 1
++
++    def forward(self, zc, e):
++        last = zc[:, -1]
++        a = e[:, -1, 0] * M.WM_ACC_SCALE
++        dt = AC.STEP_S
++        out = last.clone()
++        out[:, 0] = last[:, 0] + last[:, 1] * dt + 0.5 * a * dt * dt
++        out[:, 1] = last[:, 1] + a * dt
++        return out[:, None, :]
++
++
++class _KinHead(torch.nn.Module):
++    """gap = 30 m - p (the lead keeps its place, the ego moves), in the trainer's output unit (gap / 50 m)."""
++
++    def forward(self, x):
++        out = torch.zeros(x.shape[0], 1, 3)
++        out[:, 0, 1] = (30.0 - x[:, -1, 0]) / M.LEAD_SUP_GAP_SCALE_M
++        return out
++
++
++def _planted(world):
++    _, cfg, m = _built(world, LS)
++    m.wm.stack.predictors[0] = _KinPredictor()
++    m.wm.stack.act_embed = torch.nn.Identity()
++    m.wm.lead_head = _KinHead()
++    z1 = m.wm.z1
++
++    def zz(adapt):
++        z = 0.05 * z1(adapt)
++        z = z.clone()
++        z[..., 1] = z[..., 1] + 4.0                                                     # ego speed about 4 m/s: the gap moves about 0.8 m per step, so a shifted frame is visible
++        return z
++
++    m.wm.z1 = zz
++    return m
++
++
++def _hand_reference(m, batch, adapt):
++    """The reference read by an independent route (public ``HJEPAStack.rollout``, the head as a plain module, python loops): {(b, i, j): gap [m]} for i = start index, j = read index."""
++    wm, st, head = m.wm, m.wm.stack, m.wm.lead_head
++    out = {}
++    with torch.no_grad():
++        z = wm.z1(adapt)
++        a = wm.scale_actions(batch["act"].float())[:, :-1]
++        for b in range(z.shape[0]):
++            for i, s in enumerate(STARTS):
++                r = st.rollout(1, z[b, s][None], a[b, s:s + AC.ROLL_K][None], context=1)[0]
++                for j, (lo, hi, _) in enumerate(AC.T_READS):
++                    out[(b, i, j)] = float(head(r[lo:hi][None])[0, 0, 1]) * 50.0
++    return out
++
++
++def _batch_with_labels(batch, labels_by_frame):
++    """A copy of the batch whose labels at the frames in ``labels_by_frame`` ({(b, f): gap}) are those gaps (presence 1, frame_ok True); all other label entries untouched."""
++    b2 = {k: (v.clone() if torch.is_tensor(v) else v) for k, v in batch.items()}
++    for (b, f), g in labels_by_frame.items():
++        b2["lead_gapm"][b, f] = g
++        b2["lead_pres"][b, f] = 1.0
++        b2["frame_ok"][b, f] = True
++    return b2
++
++
++def test_planted_level_reads_abs_c_and_the_frame_rule_is_s_plus_k(world):
++    m = _planted(world)
++    batch = world["batch"]
++    adapt = m._encode(batch)
++    d = _offsets(8)
++    ref = _hand_reference(m, batch, adapt)
++    base = AC.act_cons_term(m, adapt, batch, d, MAXOFF, level=True)
++    nv = int(base["n_valid"])
++    assert nv > 2
++    for c in (2.5, -2.5):
++        lab = {(b, s + k): ref[(b, i, j)] + c for b in range(8) for i, s in enumerate(STARTS) for j, k in enumerate(KS)}
++        assert len({f for (_, f) in lab}) == 6                                         # the six frames s + k are distinct: one planted value per entry
++        r = AC.act_cons_term(m, adapt, _batch_with_labels(batch, lab), d, MAXOFF, level=True)
++        assert int(r["n_level"]) == 2 * nv                                             # every valid (pair, step) entry is valid
++        assert abs(float(r["level"]) - abs(c)) < 1e-5, (float(r["level"]), c)
++    # the same plant one frame EARLY (frame s + k - 1): the level does not read |c|
++    c = 2.5
++    early = {(b, s + k - 1): ref[(b, i, j)] + c for b in range(8) for i, s in enumerate(STARTS) for j, k in enumerate(KS)}
++    r_e = AC.act_cons_term(m, adapt, _batch_with_labels(batch, early), d, MAXOFF, level=True)
++    assert abs(float(r_e["level"]) - c) > 0.1, float(r_e["level"])
++    # and one frame LATE (s + k + 1 where it exists): not |c| either
++    late = {(b, s + k + 1): ref[(b, i, j)] + c for b in range(8) for i, s in enumerate(STARTS) for j, k in enumerate(KS) if s + k + 1 < 16}
++    r_l = AC.act_cons_term(m, adapt, _batch_with_labels(batch, late), d, MAXOFF, level=True)
++    assert abs(float(r_l["level"]) - c) > 0.1, float(r_l["level"])
++
++
++def test_step_k_of_roll_pairs_is_frame_s_plus_k():
++    """The frame rule from source: roll_pairs targets z[:, s + 1 : s + k + 1], so rolled step j (0-based) is frame s + 1 + j; the read slice [lo:hi] ends at step hi (1-based) = frame s + hi."""
++    from tanitad.models.hjepa import HJEPAStack
++    assert "z[:, s + 1:s + k + 1]" in inspect.getsource(HJEPAStack.roll_pairs)
++    assert AC.T_READS == ((0, 5, 1.0), (5, 10, 2.0))
++    gaps, ok = AC.level_label_mask({"lead_pres": torch.ones(1, 16), "lead_gapm": torch.arange(16, dtype=torch.float32)[None] + 1.0, "frame_ok": torch.ones(1, 16, dtype=torch.bool)}, STARTS, KS)
++    for i, s in enumerate(STARTS):
++        for j, k in enumerate(KS):
++            assert float(gaps[i, j, 0]) == float(s + k) + 1.0 and bool(ok[i, j, 0])
++
++
++# ------------------------------------------------------------------------------------------ gradient structure
++def _level_grads(m, batch, d, **kw):
++    mm = copy.deepcopy(m)
++    ad = mm._encode(batch).detach().requires_grad_(True)
++    mm.zero_grad(set_to_none=True)
++    r = AC.act_cons_term(mm, ad, batch, d, MAXOFF, level=True, **kw)
++    if r["level"].requires_grad:
++        r["level"].backward()
++    return mm, ad, r
++
++
++def test_level_gradient_reaches_predictor_and_action_embed_only(world):
++    _, cfg, m = _built(world, LS)
++    _wake(m)
++    batch = world["batch"]
++    mm, ad, r = _level_grads(m, batch, _offsets(8))
++    names = dict(mm.named_parameters())
++    assert float(r["n_level"]) > 0 and float(r["level"].detach()) > 0.0 and r["level"].requires_grad
++    pred = sum(float(p.grad.abs().sum()) for n, p in names.items() if n.startswith("wm.stack.predictors.0.") and p.grad is not None)
++    emb = sum(float(p.grad.abs().sum()) for n, p in names.items() if n.startswith("wm.stack.act_embed.") and p.grad is not None)
++    assert pred > 0.0 and emb > 0.0
++    others = {n: float(p.grad.abs().sum()) for n, p in names.items() if p.grad is not None and not n.startswith(("wm.stack.predictors.0.", "wm.stack.act_embed."))}
++    assert others == {}                                                                # not one other parameter holds a gradient
++    assert all(p.grad is None for n, p in names.items() if n.startswith("wm.lead_head."))      # the lead head: exactly nothing
++    assert ad.grad is None or float(ad.grad.abs().sum()) == 0.0                        # the start state / encoder path: exactly 0.0
++
++
++def test_level_does_not_use_the_offset_and_all_invalid_control_reads_exactly_zero(world):
++    _, cfg, m = _built(world, LS)
++    _wake(m)
++    batch = world["batch"]
++    r1 = AC.act_cons_term(m, m._encode(batch), batch, _offsets(8, 3), MAXOFF, level=True)
++    r2 = AC.act_cons_term(m, m._encode(batch), batch, _offsets(8, 4), MAXOFF, level=True)
++    assert abs(float(r1["level"]) - float(r2["level"])) < 1e-6 and float(r1["n_level"]) == float(r2["n_level"])        # the reference rollout has no offset
++    b0 = dict(batch)
++    b0["lead_pres"] = torch.zeros_like(batch["lead_pres"])
++    r0 = AC.act_cons_term(m, m._encode(batch), b0, _offsets(8), MAXOFF, level=True)
++    assert float(r0["level"]) == 0.0 and not r0["level"].requires_grad and float(r0["n_level"]) == 0.0 and float(r0["n_valid"]) == 0.0
++    assert set(r0) == {"term", "n_valid", "n_rows", "level", "n_level"}
++
++
++def test_consistency_term_is_unchanged_by_the_level_flag(world):
++    """The consistency term reads the reference detached: its value and its gradient with level on equal those with level off (1e-5)."""
++    _, cfg, m = _built(world, LS)
++    _wake(m)
++    batch = world["batch"]
++    d = _offsets(8)
++
++    def run(level):
++        mm = copy.deepcopy(m)
++        mm.zero_grad(set_to_none=True)
++        r = AC.act_cons_term(mm, mm._encode(batch), batch, d, MAXOFF, level=level)
++        r["term"].backward()
++        return r, torch.cat([p.grad.flatten() for n, p in mm.named_parameters() if p.grad is not None])
++
++    r_off, g_off = run(False)
++    r_on, g_on = run(True)
++    assert abs(float(r_off["term"]) - float(r_on["term"])) < 1e-5 and float(r_off["n_valid"]) == float(r_on["n_valid"])
++    assert g_off.shape == g_on.shape and float((g_off - g_on).abs().max()) < 1e-5 * max(1.0, float(g_off.abs().max()))
++
++
++# ------------------------------------------------------------------------------------------ invalid-label masking
++def test_invalid_level_labels_are_masked(world):
++    _, cfg, m = _built(world, LS)
++    _wake(m)
++    batch = world["batch"]
++    d = _offsets(8)
++    adapt = m._encode(batch)
++    full = AC.act_cons_term(m, adapt, batch, d, MAXOFF, level=True)
++    nv = int(full["n_valid"])
++    assert int(full["n_level"]) > 0
++    late = slice(5, 16)                                                                # frames 5 and later: never a start frame (starts 0, 2, 4), so the consistency term keeps its pairs
++
++    def run(**chg):
++        b2 = {k: (v.clone() if torch.is_tensor(v) else v) for k, v in batch.items()}
++        for k, fn in chg.items():
++            b2[k][:, late] = fn(b2[k][:, late])
++        return AC.act_cons_term(m, adapt, b2, d, MAXOFF, level=True)
++
++    for tag, chg in (("no presence", {"lead_pres": torch.zeros_like}), ("gap NaN", {"lead_gapm": lambda x: torch.full_like(x, float("nan"))}), ("gap 61", {"lead_gapm": lambda x: torch.full_like(x, 61.0)}),
++                     ("gap negative", {"lead_gapm": lambda x: torch.full_like(x, -0.5)}), ("frame_ok False", {"frame_ok": torch.zeros_like})):
++        r = run(**chg)
++        assert int(r["n_valid"]) == nv, tag                                            # the consistency pairs are untouched
++        assert float(r["n_level"]) == 0.0 and float(r["level"]) == 0.0 and not r["level"].requires_grad, tag
++    # one frame only: frame 14 is s + k for (s = 4, k = 10) alone
++    b3 = {k: (v.clone() if torch.is_tensor(v) else v) for k, v in batch.items()}
++    b3["lead_pres"][:, 14] = 0.0
++    vm = AC.valid_mask(b3, STARTS, MAXOFF)
++    r3 = AC.act_cons_term(m, adapt, b3, d, MAXOFF, level=True)
++    n_s4 = int(vm[:, STARTS.index(4)].sum())
++    assert n_s4 > 0 and int(r3["n_level"]) == int(full["n_level"]) - n_s4
++    # the level is the mean over the entries that remain: a NaN label at an invalid entry does not enter
++    b4 = {k: (v.clone() if torch.is_tensor(v) else v) for k, v in batch.items()}
++    b4["lead_gapm"][:, 14] = float("nan")
++    r4 = AC.act_cons_term(m, adapt, b4, d, MAXOFF, level=True)
++    assert np.isfinite(float(r4["level"])) and int(r4["n_level"]) == int(r3["n_level"])
++    r4.get("level").backward()                                                         # a finite gradient: no NaN reached the graph
++    assert all(torch.isfinite(p.grad).all() for p in m.parameters() if p.grad is not None)
++
++
++# ------------------------------------------------------------------------------------------ V = 0 and the gate
++def test_level_off_returns_the_old_key_set_and_record(world):
++    _, cfg, m = _built(world, LS)
++    _wake(m)
++    batch = world["batch"]
++    r = AC.act_cons_term(m, m._encode(batch), batch, _offsets(8), MAXOFF)
++    assert set(r) == {"term", "n_valid", "n_rows"}
++    rec = AC.build_record(1.0, 1.5, cfg, m)
++    assert set(rec) == {"w_act_cons", "act_cons_max", "k", "starts", "reads", "speed_bound_mps", "gap_range_m", "acc_scale", "lead_hist", "l1_act", "gap_scale_m", "head_params_detached", "start_state_detached"}
++    rec_l = AC.build_record(1.0, 1.5, cfg, m, 0.01)
++    assert set(rec_l) - set(rec) == {"w_act_level", "level_reads"} and rec_l["w_act_level"] == 0.01
++    a = TR.build_parser().parse_args(["--out", "x", *LS])
++    assert a.w_act_level == 0.0 and "w_act_level" in TR.FLAG_CHECKS
++
++
++def test_gate_refusals_of_the_level_weight(world):
++    _, cfg, m = _built(world, LS)
++    rec0 = AC.build_record(0.001, 1.5, cfg, m)
++    rec1 = AC.build_record(0.001, 1.5, cfg, m, 0.01)
++    mk = lambda *x: TR.build_parser().parse_args(["--out", "x", *LS, *x])  # noqa: E731
++    a_c = mk("--w-act-cons", "0.001")
++    a_cl = mk("--w-act-cons", "0.001", "--w-act-level", "0.01")
++    assert TR.bad_act_cons(a_c, cfg, m, {"act_cons": rec0}) == []                      # V = 0 as before
++    assert TR.bad_act_cons(a_cl, cfg, m, {"act_cons": rec1}) == []                     # declared == built
++    # refusal 1: V > 0 with W == 0
++    assert any("--w-act-cons 0" in b and "w_act_level" in b for b in TR.bad_act_cons(mk("--w-act-level", "0.01"), cfg, m, {}))
++    # refusal 2: V < 0
++    assert any("w_act_level" in b and ">= 0" in b for b in TR.bad_act_cons(mk("--w-act-cons", "0.001", "--w-act-level", "-0.1"), cfg, m, {"act_cons": rec0}))
++    # declared != built, both directions
++    assert any("w_act_level: declared 0.01 but built" in b for b in TR.bad_act_cons(a_cl, cfg, m, {"act_cons": rec0}))
++    assert any("w_act_level: declared 0.01 but built 0.5" in b for b in TR.bad_act_cons(a_cl, cfg, m, {"act_cons": {**rec1, "w_act_level": 0.5}}))
++    assert any("w_act_level 0 declared but" in b for b in TR.bad_act_cons(a_c, cfg, m, {"act_cons": rec1}))
++
++
++def test_probe_reads_level_gradients_and_goes_red_when_the_head_is_attached(world, monkeypatch):
++    _, cfg, m = _built(world, LS)
++    a = TR.build_parser().parse_args(["--out", "x", *LS, "--w-act-cons", "1.0", "--w-act-level", "0.01"])
++    rec = TR.act_cons_probe(m, world["batch"], cfg, a)
++    assert rec["pass"] and rec["w_act_level"] == 0.01 and rec["n_level"] > 0 and np.isfinite(rec["level"])
++    assert rec["level_grad_norm_predictor"] > 0.0 and rec["level_grad_norm_action_embed"] > 0.0
++    assert rec["level_grad_norm_lead_head"] == 0.0 and rec["level_grad_norm_state_projection"] == 0.0 and rec["level_grad_abs_sum_outside_predictor_and_embed"] == 0.0
++    assert rec["control_all_invalid_level"] == 0.0 and not rec["control_all_invalid_level_has_graph"] and rec["control_all_invalid_n_level"] == 0.0
++    a0 = TR.build_parser().parse_args(["--out", "x", *LS, "--w-act-cons", "1.0"])
++    r0 = TR.act_cons_probe(m, world["batch"], cfg, a0)
++    assert r0["pass"] and not [k for k in r0 if "level" in k]                          # V = 0: no level key in the probe record
++    mut = _mutant("params = {n: p.detach() for n, p in head.named_parameters()}", "params = {n: p for n, p in head.named_parameters()}")
++    monkeypatch.setattr(AC, "act_cons_term", mut)
++    with pytest.raises(AssertionError, match="exactly 0.0"):
++        TR.act_cons_probe(m, world["batch"], cfg, a)
++
++
++def test_level_mutations_in_memory_go_red(world):
++    m = _planted(world)
++    batch = world["batch"]
++    adapt = m._encode(batch)
++    d = _offsets(8)
++    ref = _hand_reference(m, batch, adapt)
++    lab = {(b, s + k): ref[(b, i, j)] + 2.5 for b in range(8) for i, s in enumerate(STARTS) for j, k in enumerate(KS)}
++    bt = _batch_with_labels(batch, lab)
++    assert abs(float(AC.act_cons_term(m, adapt, bt, d, MAXOFF, level=True)["level"]) - 2.5) < 1e-5     # the control: the real function reads |c|
++    src = textwrap.dedent(inspect.getsource(AC.level_label_mask))
++    assert src.count("f = s + k\n") == 1
++    ns = dict(vars(AC))
++    exec(compile(src.replace("f = s + k\n", "f = s + k - 1\n"), "<mutant level_label_mask>", "exec"), ns)
++    old = AC.level_label_mask
++    try:
++        AC.level_label_mask = ns["level_label_mask"]
++        assert abs(float(AC.act_cons_term(m, adapt, bt, d, MAXOFF, level=True)["level"]) - 2.5) > 0.1      # label one frame early: RED
++    finally:
++        AC.level_label_mask = old
++
++
++def test_the_loop_lines_of_the_level_exist_once():
++    src = Path(TR.__file__).read_text(encoding="utf-8")
++    assert src.count('T["total"] = T["total"] + a.w_act_level * ac_r["level"]') == 1
++    assert src.count('T["act_level"], T["act_level_n"] = ac_r["level"].detach(), ac_r["n_level"].detach()') == 1
++    assert src.count('levers["w_act_level"] = info["act_cons"]["w_act_level"]') == 1
++    assert src.count("AC.build_record(a.w_act_cons, a.act_cons_max, cfg, model, a.w_act_level)") == 1
++    assert src.count("ZZACT-LEVEL-NOT-APPLIEDZZ") == 1
++    assert src.count('summary["w_act_level"], summary["act_level_n_valid"]') == 1
++    # every key write sits under an `if a.w_act_level > 0.0:` guard: the line above it (or its block header) names the condition
++    lines = src.splitlines()
++    for key in ('T["act_level"]', 'levers["w_act_level"]', 'summary["w_act_level"]'):
++        i = next(n for n, ln in enumerate(lines) if key in ln)
++        assert "if a.w_act_level > 0.0" in lines[i - 1] or "if a.w_act_level > 0.0" in lines[i - 2], key

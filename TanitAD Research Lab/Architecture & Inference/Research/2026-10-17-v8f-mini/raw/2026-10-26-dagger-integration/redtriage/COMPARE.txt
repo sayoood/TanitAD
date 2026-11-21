@@ -1,0 +1,19 @@
+suite                  pristine p/f/e               dagger p/f/e                
+test_v8f_oacc          133 / 0 / 0                  133 / 0 / 0                 
+test_v8f_lora          38 / 2 / 0                   38 / 2 / 0                  
+test_v8f_lora_ar2      64 / 0 / 0                   64 / 0 / 0                  
+test_v8f_speedavg      53 / 0 / 0                   53 / 0 / 0                  
+test_v8f_kindx_s1      187 / 0 / 0 (+1 skipped)     187 / 0 / 0 (+1 skipped)    
+test_v8f_kscore        123 / 0 / 0                  123 / 0 / 0                 
+
+tests whose outcome differs pristine -> dagger: 1
+  test_v8f_lora::test_v8f_lora::test_the_encoder_build_never_moves_the_heads_initialisation  [same status, DIFFERENT message]
+      pristine failed: TypeError: test_the_encoder_build_never_moves_the_heads_initialisation.<locals>.spy() takes from 5 to 6 positional arguments but 8 were given
+      dagger   failed: TypeError: test_the_encoder_build_never_moves_the_heads_initialisation.<locals>.spy() takes from 5 to 6 positional arguments but 9 were given
+
+test_v8f_oacc: red on pristine 0; red on the partial di/tree (old p3) 5; red on partial tree AND pristine 0
+test_v8f_lora: red on pristine 2; red on the partial di/tree (old p3) 15; red on partial tree AND pristine 2
+test_v8f_lora_ar2: red on pristine 0; red on the partial di/tree (old p3) 16; red on partial tree AND pristine 0
+test_v8f_speedavg: red on pristine 0; red on the partial di/tree (old p3) 1; red on partial tree AND pristine 0
+test_v8f_kindx_s1: red on pristine 0; red on the partial di/tree (old p3) 44; red on partial tree AND pristine 0
+test_v8f_kscore: red on pristine 0; red on the partial di/tree (old p3) 2; red on partial tree AND pristine 0

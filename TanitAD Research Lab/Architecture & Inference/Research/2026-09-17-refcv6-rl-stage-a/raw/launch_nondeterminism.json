@@ -1,0 +1,27 @@
+{
+ "_what": "Launch-to-launch TRAINING nondeterminism on the L1 rig: two launches of the IDENTICAL command (--arm rl --seed 1 --steps 600 --batch 4 --il-form matched --grad-clip 100) diverge and end in different regimes.",
+ "_evidence_class": "MEASURED (ours)",
+ "_why_it_matters": "It refutes 'seed 1 is the diverging seed' -- divergence is LAUNCH-dependent, not seed-determined -- and it means a same-seed relaunch on this rig is a FRESH DRAW, not a reproduction.",
+ "step0_fields_identical": 42,
+ "step0_fields_differing": [
+  "fetch_s",
+  "wall_s"
+ ],
+ "_step0_note": "the two differing fields are wall-clock, not state",
+ "first_divergence": {
+  "step": 2,
+  "grad_norm_A": 9.455194473266602,
+  "grad_norm_B": 9.455191612243652,
+  "abs_diff": 2.86102294921875e-06
+ },
+ "launch_A_failed_oom": {
+  "rows": 157,
+  "grad_norm_max": 11511.416015625,
+  "steps_over_clip": 44
+ },
+ "launch_B_current": {
+  "rows_compared": 157,
+  "grad_norm_max": 203.5802459716797,
+  "steps_over_clip": 2
+ }
+}

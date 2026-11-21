@@ -1,0 +1,980 @@
+{
+ "schema": "e4.external_field_sources/1",
+ "generated": "2026-09-19",
+ "stream": "E4 EvalFlyWheel — LEADERBOARD currency",
+ "method": "Every value below was re-read from the BANKED PDF in TanitAD Research Lab/Library/papers/ (text via PyMuPDF 1.28.0; the AD-MLP, BEV-Planner, Bench2Drive and Drive-JEPA Tab.4 tables were additionally re-read from a rendered page image because their check/cross glyphs extract as garbage). Each PDF's sha256 was recomputed and compared with library.json before reading: 17/17 SHA_OK. Page = PDF page index (1-based), not the printed folio.",
+ "evidence_class": "PUBLISHED (banked primary, library key + table + page) unless a row says otherwise",
+ "library_verification": {
+  "2506.04218": {
+   "title": "Pseudo-Simulation for Autonomous Driving (NAVSIM v2 benchmark paper, v3 carrying the 03/2026 leaderboard snapshot)",
+   "sha256": "a8431697ffa276068375c937cc2f90a2c8059a17b285fba0f0c8ba41eb877e81",
+   "bytes": 5341242,
+   "sha_ok": true
+  },
+  "2606.07170": {
+   "title": "Test-Time Trajectory Optimization for Autonomous Driving (TOAD)",
+   "sha256": "552116bd40762e0e57b21ec8793187b1ec222ed107472814f126a167fc5dc1f2",
+   "bytes": 3007062,
+   "sha_ok": true
+  },
+  "2601.05083": {
+   "title": "Driving on Registers (DrivoR)",
+   "sha256": "571ddbe7456844d32baa02639fa310c8a34554e2086f9b5c15b6482305dd483f",
+   "bytes": 13487195,
+   "sha_ok": true
+  },
+  "2605.09701": {
+   "title": "DriveFuture",
+   "sha256": "5467fc85a36ba0425f28a8199b65c1b41fb25765bf5c3a05c68a760000d7bf7e",
+   "bytes": 9453407,
+   "sha_ok": true
+  },
+  "2601.22032": {
+   "title": "Drive-JEPA",
+   "sha256": "d88c053a67aca11b7bbd4c5f9f000cbf95c3f5e94656b6bad89cc9a717ab3672",
+   "bytes": 2376317,
+   "sha_ok": true
+  },
+  "2512.07745": {
+   "title": "DiffusionDriveV2",
+   "sha256": "076ce47e0b0a323c9bb0072432e7f1219ccdcf645b8ff6db172f1bb9efb85023",
+   "bytes": 3550470,
+   "sha_ok": true
+  },
+  "2406.03877": {
+   "title": "Bench2Drive",
+   "sha256": "c4b3514da643b7e564c3bb1efbcdaa17eaf6a61231da22125aeb5af708540c93",
+   "bytes": 7789861,
+   "sha_ok": true
+  },
+  "2212.10156": {
+   "title": "UniAD (Planning-oriented Autonomous Driving)",
+   "sha256": "f236214e135cc63ae7128b7b0a615312f807650510ecf35e00962c4c0e0a61b6",
+   "bytes": 6934559,
+   "sha_ok": true
+  },
+  "2303.12077": {
+   "title": "VAD",
+   "sha256": "9c6d6327439dd784763f6b96ca63301cff04f649bd7108a89cc57b6c0a6cf7b6",
+   "bytes": 3364660,
+   "sha_ok": true
+  },
+  "2305.10430": {
+   "title": "AD-MLP (Rethinking the Open-Loop Evaluation ... nuScenes)",
+   "sha256": "ceab525d5769b984d475b634a17d1a30d5258c9ebe3e83b4932aebc01a416f9b",
+   "bytes": 1596622,
+   "sha_ok": true
+  },
+  "2312.03031": {
+   "title": "BEV-Planner (Is Ego Status All You Need ...)",
+   "sha256": "c289b8904ce05ee3503dd67d3765d9d93da61493a4cf6c2c861a08f4466e7899",
+   "bytes": 9245010,
+   "sha_ok": true
+  }
+ },
+ "harness": {
+  "our_devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27) — CRITERIA_REGISTRY.json v2.9.0 benchmarks.navsim.devkit_pin",
+  "papers_state_a_sha": false,
+  "human_filter_fix": "The official EPDMS implementation changed (human-behaviour filtering fix; CRITERIA_REGISTRY cites devkit issue #151, 2025-09-29). DrivoR Tab.14 (2601.05083 p.16) prints a 'before official metric bug fixing' block and an 'after' block; DriveFuture Tab.2 (2605.09701 p.7) prints EPDMS* (legacy) beside EPDMS (corrected). Every row below states which side its source puts it on.",
+  "rule": "A number whose fix side cannot be established from a source stays out of comparison cells (comparison_admissible=false)."
+ },
+ "protocols": {
+  "EPDMS_v2_navhard_two_stage": {
+   "official": true,
+   "definition": "NAVSIM v2 navhard, two-stage pseudo-simulation: 450 Stage-1 and 5,462 Stage-2 observations (2506.04218 p.7).",
+   "rows": [
+    {
+     "system": "Constant velocity (CV)",
+     "epdms": 11.4,
+     "source": {
+      "key": "2506.04218",
+      "table": "Tab. 2 (navhard leaderboard, snapshot 03/2026)",
+      "page": 8
+     },
+     "fix_side": "post-fix (INFERRED: the same snapshot's PDM-C reads 56.6, matching post-fix sources; DrivoR Tab.14 pre-fix block reads CV 10.9)",
+     "modality_claim": "no camera — ego history only (2506.04218 p.8 lists it among the baselines of differing input modality)",
+     "ego_status": "yes (it is its only input)",
+     "comparison_admissible": true,
+     "role": "the field's trivial floor — the analogue of our ha0"
+    },
+    {
+     "system": "Ego-history MLP",
+     "epdms": 14.1,
+     "source": {
+      "key": "2506.04218",
+      "table": "Tab. 2",
+      "page": 8
+     },
+     "fix_side": "post-fix (INFERRED as above; pre-fix 12.7 in 2601.05083 Tab.14 p.16)",
+     "modality_claim": "no camera",
+     "ego_status": "yes (only input)",
+     "comparison_admissible": true,
+     "role": "ego-status-only floor"
+    },
+    {
+     "system": "LTF (Latent TransFuser)",
+     "epdms": 25.1,
+     "source": {
+      "key": "2506.04218",
+      "table": "Tab. 2",
+      "page": 8
+     },
+     "cross_check": "TOAD Tab.6 (2606.07170 p.15) and DriveFuture Tab.1 (2605.09701 p.7) print 'TransFuser 23.1' — equal to the PRE-fix LTF 23.1 of 2601.05083 Tab.14 p.16 (sub-metrics identical to rounding) ⇒ those two tables carry at least one pre-fix row",
+     "fix_side": "post-fix (INFERRED)",
+     "modality_claim": "forward-facing camera only (2506.04218 p.8 contrasts it with the surround-view NavFormer)",
+     "ego_status": "yes — CRITERIA_REGISTRY navsim.ego_inputs note: driving_command + ego_velocity + ego_acceleration (PUB-DEVKIT, INHERITED here, not re-read)",
+     "comparison_admissible": true
+    },
+    {
+     "system": "iPad",
+     "epdms": 34.7,
+     "source": {
+      "key": "2606.07170",
+      "table": "Tab. 2 / Tab. 6",
+      "page": "5 / 15"
+     },
+     "fix_side": "UNVERIFIED — single source, and that table carries a pre-fix row",
+     "modality_claim": "4 cameras front/left/right/back at 768x432 per 2601.22032 App. B + Tab. 8 p.14 (a third party's statement; iPad's own primary not banked)",
+     "ego_status": "UNVERIFIED (primary not banked)",
+     "comparison_admissible": false
+    },
+    {
+     "system": "iPad + TOAD test-time search",
+     "epdms": 49.8,
+     "source": {
+      "key": "2606.07170",
+      "table": "Tab. 2 / Tab. 6",
+      "page": "5 / 15"
+     },
+     "fix_side": "UNVERIFIED (as above)",
+     "comparison_admissible": false
+    },
+    {
+     "system": "RAP-DINO (ViT-H)",
+     "epdms": 39.6,
+     "source": {
+      "key": "2601.05083",
+      "table": "Tab. 3 / Tab. 14 (post-fix block)",
+      "page": "6 / 16"
+     },
+     "cross_check": "2506.04218 Tab.2 'RAP' 39.6; 2606.07170 Tab.2 39.6 — three sources agree; pre-fix 36.9 (2601.05083 Tab.14)",
+     "fix_side": "post-fix (stated by 2601.05083 Tab.14)",
+     "modality_claim": "UNVERIFIED (primary not banked); trained on a dataset 10x larger than navtrain (2601.05083 Tab.14 footnote †)",
+     "comparison_admissible": true
+    },
+    {
+     "system": "GTRS-D / GTRS-Dense (V2-99)",
+     "epdms": 45.0,
+     "source": {
+      "key": "2601.05083",
+      "table": "Tab. 3 / Tab. 14 (post-fix block)",
+      "page": "6 / 16"
+     },
+     "cross_check": "pre-fix 41.7 (same table); GTRS-A (V2-99) 45.4 post-fix = TOAD Tab.2 'GTRS 45.4'",
+     "fix_side": "post-fix (stated)",
+     "modality_claim": "UNVERIFIED (primary not banked)",
+     "comparison_admissible": true
+    },
+    {
+     "system": "ZTRS (V2-99)",
+     "epdms": 48.1,
+     "source": {
+      "key": "2601.05083",
+      "table": "Tab. 3",
+      "page": 6
+     },
+     "cross_check": "2506.04218 Tab.2 48.1; 2606.07170 Tab.2 48.1",
+     "fix_side": "post-fix",
+     "modality_claim": "UNVERIFIED (primary not banked)",
+     "comparison_admissible": true
+    },
+    {
+     "system": "DrivoR (ViT-S), navtrain only",
+     "epdms": 48.3,
+     "source": {
+      "key": "2601.05083",
+      "table": "Tab. 3 / Tab. 14 (post-fix block)",
+      "page": "6 / 16"
+     },
+     "cross_check": "pre-fix 45.3 (Tab.14)",
+     "fix_side": "post-fix (stated)",
+     "modality_claim": "4 cameras: front, front-left, front-right, back (2601.05083 p.4); DINOv2 ViT-S LoRA",
+     "ego_status": "yes — poses, velocities, accelerations and the driving command are encoded into the trajectory queries (2601.05083 p.3)",
+     "comparison_admissible": true
+    },
+    {
+     "system": "SimScale (+185k SimScale data, V2-99)",
+     "epdms": 53.2,
+     "source": {
+      "key": "2601.05083",
+      "table": "Tab. 3",
+      "page": 6
+     },
+     "cross_check": "2506.04218 Tab.2 53.2; 2606.07170 Tab.6 53.2; 2605.09701 Tab.1 53.2",
+     "fix_side": "post-fix",
+     "modality_claim": "UNVERIFIED (primary not banked)",
+     "comparison_admissible": true
+    },
+    {
+     "system": "DrivoR (+134k SimScale synthetic data, ViT-S)",
+     "epdms": 54.6,
+     "source": {
+      "key": "2601.05083",
+      "table": "Tab. 3",
+      "page": 6
+     },
+     "cross_check": "2606.07170 Tab.2/6 'DrivoR 54.6' and 2605.09701 Tab.1 'DrivoR 54.6' carry the IDENTICAL 18 sub-metrics ⇒ the 54.6 everyone cites is the +134k-synthetic-data variant, not the navtrain-only 48.3; the benchmark snapshot 2506.04218 Tab.2 reads DrivoR 54.5 (0.1 below the self-report)",
+     "fix_side": "post-fix (stated)",
+     "modality_claim": "4 cameras (as above)",
+     "ego_status": "yes (as above)",
+     "comparison_admissible": true
+    },
+    {
+     "system": "DriveFuture (V2-99, learned, no test-time search)",
+     "epdms": 55.5,
+     "source": {
+      "key": "2605.09701",
+      "table": "Tab. 1",
+      "page": 7
+     },
+     "cross_check": "2606.07170 Tab.6 55.5",
+     "fix_side": "corrected EPDMS (DriveFuture's appendix names the corrected EPDMS as its primary metric; the navhard row uses the official two-stage protocol)",
+     "modality_claim": "front AND rear camera streams, 2 temporal frames, 2048x512 (2605.09701 p.8); GTRS-Dense scorer",
+     "ego_status": "yes — the multi-view observation and the ego status are encoded into a scene latent with one ego-status token (2605.09701 p.4)",
+     "comparison_admissible": true
+    },
+    {
+     "system": "DrivoR (+134k SimScale) + TOAD test-time search",
+     "epdms": 56.3,
+     "source": {
+      "key": "2606.07170",
+      "table": "Tab. 2 / Tab. 6",
+      "page": "5 / 15"
+     },
+     "cross_check": "base row = 2601.05083 Tab.3 +134k row (identical sub-metrics)",
+     "fix_side": "post-fix (INFERRED: the base row is the post-fix +134k row)",
+     "modality_claim": "4 cameras + test-time CEM search in control space scored by DrivoR's learned scorer",
+     "ego_status": "yes",
+     "comparison_admissible": true,
+     "note": "the brief's 'DrivoR 56.3 (camera-only, +TOAD)' is this row; it also carries +134k synthetic training samples"
+    },
+    {
+     "system": "PDM-Closed (privileged: ground-truth perception)",
+     "epdms": 56.6,
+     "source": {
+      "key": "2506.04218",
+      "table": "Tab. 2",
+      "page": 8
+     },
+     "cross_check": "2606.07170 Tab.2/6 56.6 (p.6 describes it as using ground-truth perception); ⛔ the page §9.1's inherited '51.3' is the PRE-fix value (the 'before official metric bug fixing' block of 2601.05083 Tab.14 p.16)",
+     "fix_side": "post-fix",
+     "modality_claim": "privileged — ground-truth perception and map",
+     "comparison_admissible": true,
+     "role": "privileged ceiling, never a competitor"
+    }
+   ],
+   "conflicts": [
+    {
+     "what": "GuideFlow",
+     "values": {
+      "2506.04218 Tab.2 (03/2026 snapshot)": 51.5,
+      "2606.07170 Tab.6 and 2605.09701 Tab.1": 27.1
+     },
+     "status": "UNRESOLVED — 24.4 points apart; not a fix-side effect (the fix moves rows by ~2–5 points). Kept out of every comparison cell."
+    },
+    {
+     "what": "DrivoR (+134k)",
+     "values": {
+      "2601.05083 Tab.3 self-report": 54.6,
+      "2506.04218 Tab.2 snapshot": 54.5
+     },
+     "status": "0.1-point self-report vs leaderboard difference; the page quotes 54.6 with the snapshot beside it"
+    },
+    {
+     "what": "pre-fix rows inside post-fix tables",
+     "detail": "TOAD Tab.6 and DriveFuture Tab.1 print TransFuser 23.1 = DrivoR Tab.14's pre-fix LTF 23.1, while printing post-fix PDM-C 56.6. Single-source rows from those two tables (iPad, Hydra-MDP, GuideFlow, Senna-E2E, MindDrive, World4Drive, SpanVLA, DiffVLA, GTRS-E) are therefore fix-side UNVERIFIED."
+    }
+   ],
+   "tanitad_rows": [
+    {
+     "row": "EPDMS_v2_navhard_two_stage",
+     "value": "NOT MEASURED",
+     "pending": "navhard_two_stage bytes are not downloaded (38.54 GB archives measured by HEAD, session PLAN) — a PI decision; then stream E2's bridge (FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-refcv4b-bridge/) scores refcv4b through the official harness @0a380a9"
+    },
+    {
+     "row": "EPDMS_v2_warmup_two_stage (a DIFFERENT protocol — never the navhard column)",
+     "value": "NOT MEASURED",
+     "pending": "stream E1 (…/2026-09-19-navsim-warmup-reference-epdms/, devkit reference agents + metric cache) and stream E2 (…/2026-09-19-navsim-refcv4b-bridge/, refcv4b ego+cmd arm paired with a vision-pure arm). Warmup intersects navhard and was validated as a VALIDATION set by the benchmark authors on request (2606.07170 p.5 footnote *)."
+    }
+   ]
+  },
+  "PDMS_v1_navtest": {
+   "official": false,
+   "definition": "NAVSIM v1 navtest PDMS. ⛔ v1 PDMS must come from the devkit's v1.1 branch (CRITERIA_REGISTRY navsim.published_reference_numbers._harness_pin).",
+   "perception_free_ladder": [
+    {
+     "system": "LAW",
+     "pdms": 83.8,
+     "source": {
+      "key": "2601.22032",
+      "table": "Tab. 1 and Tab. 2 (first block = perception-free)",
+      "page": "4 / 8"
+     },
+     "encoder": "21M (Tab.1); resnet34 (Tab.2)",
+     "data": "~20h",
+     "inputs_as_printed": "Tab.2 Inputs column: 'C & L' (camera & LiDAR)",
+     "comparison_admissible": true,
+     "flag": "⛔ CRITERIA_REGISTRY labels this ladder 'front-camera-only'; the primary's Inputs column says C & L for LAW. LAW's own paper is not banked, so the input claim is UNVERIFIED at source."
+    },
+    {
+     "system": "World4Drive",
+     "pdms": 85.1,
+     "source": {
+      "key": "2601.22032",
+      "table": "Tab. 1 and Tab. 2",
+      "page": "4 / 8"
+     },
+     "encoder": "21M; resnet34",
+     "data": "~20h",
+     "inputs_as_printed": "'C & L'",
+     "comparison_admissible": true,
+     "flag": "same as LAW"
+    },
+    {
+     "system": "Epona",
+     "pdms": 86.2,
+     "source": {
+      "key": "2601.22032",
+      "table": "Tab. 1",
+      "page": 4
+     },
+     "encoder": "1.1B; ViT/G (Tab.2)",
+     "data": "128h",
+     "inputs_as_printed": "'Camera'",
+     "comparison_admissible": true,
+     "flag": "recorded as 86.2 (Tab. 2 p.8) / 86.1 (Tab. 1 p.4) — an inconsistency inside one paper"
+    },
+    {
+     "system": "Drive-JEPA, perception-free",
+     "pdms": 89.0,
+     "source": {
+      "key": "2601.22032",
+      "table": "Tab. 1 and Tab. 2",
+      "page": "4 / 8"
+     },
+     "encoder": "307M V-JEPA-2-init ViT/L",
+     "data": "330h",
+     "inputs_as_printed": "'Camera' — front-view camera only, 2 frames at 512x256 (p.7 §4.2; Tab.8 + App. B p.14)",
+     "ego_status": "yes — driving command, speed and acceleration (p.4)",
+     "comparison_admissible": true
+    }
+   ],
+   "context_rows_not_our_class": [
+    {
+     "system": "Drive-JEPA full framework (ViT/L)",
+     "pdms": 93.7,
+     "source": {
+      "key": "2601.22032",
+      "table": "Tab. 2",
+      "page": 8
+     },
+     "flag": "the paper's own NeurIPS checklist (p.15) says '93.3' — an internal misquote; the page §9.1's inherited 93.3 came from it"
+    },
+    {
+     "system": "DrivoR",
+     "pdms": 94.6,
+     "source": {
+      "key": "2606.07170",
+      "table": "Tab. 1",
+      "page": 5
+     }
+    },
+    {
+     "system": "DrivoR + TOAD",
+     "pdms": 94.7,
+     "source": {
+      "key": "2606.07170",
+      "table": "Tab. 1",
+      "page": 5
+     }
+    },
+    {
+     "system": "PDM-Closed (privileged)",
+     "pdms": 89.1,
+     "source": {
+      "key": "2606.07170",
+      "table": "Tab. 1",
+      "page": 5
+     }
+    },
+    {
+     "system": "Human driver",
+     "pdms": 94.8,
+     "source": {
+      "key": "2606.07170",
+      "table": "Tab. 1",
+      "page": 5
+     }
+    }
+   ],
+   "tanitad_rows": [
+    {
+     "row": "PDMS_v1_navtest",
+     "value": "NOT MEASURED",
+     "pending": "no v1 run is planned; it needs the v1.1 branch, navtest bytes and the same ego-status two-arm design as navhard. Lowest priority of the five protocols."
+    }
+   ]
+  },
+  "EPDMS_v2_navtest_single_stage": {
+   "official": false,
+   "definition": "The method papers' 'NAVSIM v2' number: EPDMS on navtest WITHOUT two-stage pseudo-simulation. ⛔ The benchmark authors discourage exactly this self-reported variant and direct submissions to the official two-stage leaderboard (2506.04218 p.7, paraphrased).",
+   "rows": [
+    {
+     "system": "Ego Status MLP",
+     "epdms": 64.0,
+     "backbone": "—",
+     "source": {
+      "key": "2512.07745",
+      "table": "Tab. 2",
+      "page": 8
+     },
+     "implementation": "UNSTATED"
+    },
+    {
+     "system": "Transfuser",
+     "epdms": 76.7,
+     "backbone": "ResNet34",
+     "source": {
+      "key": "2601.22032",
+      "table": "Tab. 3",
+      "page": 8
+     },
+     "cross_check": "2512.07745 Tab.2 76.7; 2605.09701 Tab.2 labels it EPDMS* (legacy, pre-fix)",
+     "implementation": "EPDMS* (pre-fix) per 2605.09701 Tab.2"
+    },
+    {
+     "system": "Hydra-MDP++",
+     "epdms": 81.4,
+     "backbone": "ResNet34",
+     "source": {
+      "key": "2601.22032",
+      "table": "Tab. 3",
+      "page": 8
+     },
+     "cross_check": "2512.07745 Tab.2 81.4; EPDMS* per 2605.09701 Tab.2",
+     "implementation": "EPDMS* (pre-fix)"
+    },
+    {
+     "system": "DriveSuprim",
+     "epdms": 83.1,
+     "backbone": "ResNet34",
+     "source": {
+      "key": "2601.22032",
+      "table": "Tab. 3",
+      "page": 8
+     },
+     "cross_check": "2512.07745 Tab.2 83.1; EPDMS* per 2605.09701 Tab.2",
+     "implementation": "EPDMS* (pre-fix)"
+    },
+    {
+     "system": "iPad",
+     "epdms": 84.1,
+     "backbone": "ResNet34",
+     "source": {
+      "key": "2601.22032",
+      "table": "Tab. 3",
+      "page": 8
+     },
+     "implementation": "UNSTATED"
+    },
+    {
+     "system": "Drive-JEPA",
+     "epdms": 85.4,
+     "backbone": "ResNet34",
+     "source": {
+      "key": "2601.22032",
+      "table": "Tab. 3",
+      "page": 8
+     },
+     "implementation": "UNSTATED (its baselines match the EPDMS* column)"
+    },
+    {
+     "system": "DiffusionDrive-V2",
+     "epdms": 85.5,
+     "backbone": "ResNet-34",
+     "source": {
+      "key": "2512.07745",
+      "table": "Tab. 2",
+      "page": 8
+     },
+     "cross_check": "2605.09701 Tab.2: EPDMS* 85.5, corrected EPDMS 87.5",
+     "implementation": "EPDMS* (pre-fix); corrected 87.5 per a third party (DriveFuture)"
+    },
+    {
+     "system": "Hydra-MDP++",
+     "epdms": 85.6,
+     "backbone": "ViT/L",
+     "source": {
+      "key": "2601.22032",
+      "table": "Tab. 3",
+      "page": 8
+     },
+     "implementation": "UNSTATED"
+    },
+    {
+     "system": "iPad",
+     "epdms": 85.8,
+     "backbone": "ViT/L",
+     "source": {
+      "key": "2601.22032",
+      "table": "Tab. 3",
+      "page": 8
+     },
+     "implementation": "UNSTATED"
+    },
+    {
+     "system": "DriveSuprim",
+     "epdms": 87.1,
+     "backbone": "ViT/L",
+     "source": {
+      "key": "2601.22032",
+      "table": "Tab. 3",
+      "page": 8
+     },
+     "implementation": "UNSTATED",
+     "flag": "⛔ the brief's ladder 'Transfuser 76.7 → Hydra-MDP++ 81.4 → DriveSuprim 87.1 → Drive-JEPA 87.8' MIXES BACKBONES: the first two are ResNet34 rows, the last two ViT/L rows. DriveSuprim at ResNet34 reads 83.1."
+    },
+    {
+     "system": "Drive-JEPA",
+     "epdms": 87.8,
+     "backbone": "ViT/L",
+     "source": {
+      "key": "2601.22032",
+      "table": "Tab. 3",
+      "page": 8
+     },
+     "implementation": "UNSTATED"
+    },
+    {
+     "system": "DiffusionDrive",
+     "epdms": 84.5,
+     "backbone": "—",
+     "source": {
+      "key": "2605.09701",
+      "table": "Tab. 2 (EPDMS column)",
+      "page": 7
+     },
+     "implementation": "corrected EPDMS (per DriveFuture)"
+    },
+    {
+     "system": "Latent-WAM",
+     "epdms": 89.3,
+     "backbone": "—",
+     "source": {
+      "key": "2605.09701",
+      "table": "Tab. 2 (EPDMS column)",
+      "page": 7
+     },
+     "implementation": "corrected EPDMS (per DriveFuture)",
+     "cross_check": "CRITERIA_REGISTRY published_reference_numbers.latent_wam_v2_EPDMS = 89.3"
+    },
+    {
+     "system": "DriveFuture",
+     "epdms": 89.9,
+     "backbone": "V2-99",
+     "source": {
+      "key": "2605.09701",
+      "table": "Tab. 2",
+      "page": 7
+     },
+     "implementation": "corrected EPDMS; EPDMS* 86.4 on the legacy code"
+    }
+   ],
+   "tanitad_rows": [
+    {
+     "row": "EPDMS_v2_navtest_single_stage",
+     "value": "NOT MEASURED — and NOT TARGETED",
+     "pending": "the benchmark authors discourage this protocol (2506.04218 p.7); kept for orientation only"
+    }
+   ]
+  },
+  "nuscenes_openloop_planning": {
+   "claim_bearing": false,
+   "why_not_a_criterion": "H-EVAL-6 SUPPORTED / D-BENCH-PORT 2026-08-29: SKIP claim-bearing. Cited external rows only.",
+   "convention_source": "products/P7-TanitEval/benchmarks/NUSCENES_PROTOCOL.md §5.2 (MEASURED-from-source there: UniAD `planning_evaluation_strategy='uniad'` = at-timestep; ST-P3 / VAD `metric_stp3.py` / AD-MLP / BEV-Planner = averaged-up-to-t). Stream E5's raw/nuscenes_external_rows.md supersedes this block when it lands.",
+   "rows": [
+    {
+     "system": "UniAD",
+     "l2_1_2_3_avg_m": [
+      0.48,
+      0.96,
+      1.65,
+      1.03
+     ],
+     "col_1_2_3_avg_pct": [
+      0.05,
+      0.17,
+      0.71,
+      0.31
+     ],
+     "source": {
+      "key": "2212.10156",
+      "table": "Tab. 7",
+      "page": 7
+     },
+     "convention": "at-timestep (UniAD)",
+     "ego_status": "yes, in the BEV module of the official model (2312.03031 Tab.1 caption, ID-2)",
+     "command": "yes (high-level command ✓, 2305.10430 Tab.1)"
+    },
+    {
+     "system": "VAD-Base (ego status deactivated)",
+     "l2_1_2_3_avg_m": [
+      0.41,
+      0.7,
+      1.05,
+      0.72
+     ],
+     "col_1_2_3_avg_pct": [
+      0.07,
+      0.17,
+      0.41,
+      0.22
+     ],
+     "source": {
+      "key": "2303.12077",
+      "table": "Tab. 1",
+      "page": 6
+     },
+     "convention": "averaged-up-to-t (ST-P3 style)",
+     "ego_status": "no — the authors switch ego status off for their open-loop comparison (Tab.1 caption)",
+     "command": "yes"
+    },
+    {
+     "system": "VAD-Base‡ (ego status as input)",
+     "l2_1_2_3_avg_m": [
+      0.17,
+      0.34,
+      0.6,
+      0.37
+     ],
+     "col_1_2_3_avg_pct": [
+      0.07,
+      0.1,
+      0.24,
+      0.14
+     ],
+     "source": {
+      "key": "2303.12077",
+      "table": "Tab. 1",
+      "page": 6
+     },
+     "convention": "averaged-up-to-t",
+     "ego_status": "yes",
+     "command": "yes"
+    },
+    {
+     "system": "AD-MLP (no perception; ego velocity+acceleration+trajectory+command)",
+     "l2_1_2_3_avg_m": [
+      0.2,
+      0.26,
+      0.41,
+      0.29
+     ],
+     "col_1_2_3_avg_pct": [
+      0.17,
+      0.18,
+      0.24,
+      0.19
+     ],
+     "source": {
+      "key": "2305.10430",
+      "table": "Tab. 1 (last 'Ours' row)",
+      "page": 3
+     },
+     "convention": "averaged-up-to-t (the authors state they use ST-P3's metric implementation, p.3)",
+     "ego_status": "yes — and NO camera at all",
+     "command": "yes",
+     "note": "Tab.1's non-AD-MLP rows are taken from VAD's paper (caption), i.e. mixed conventions in one table"
+    },
+    {
+     "system": "BEV-Planner (ID-10, no ego status)",
+     "l2_1_2_3_avg_m": [
+      0.3,
+      0.52,
+      0.83,
+      0.55
+     ],
+     "col_1_2_3_avg_pct": [
+      0.1,
+      0.37,
+      1.3,
+      0.59
+     ],
+     "source": {
+      "key": "2312.03031",
+      "table": "Tab. 1",
+      "page": 5
+     },
+     "convention": "averaged-up-to-t, BEV-Planner's own 'union implementation' with a 0.1 m collision grid",
+     "ego_status": "no",
+     "command": "yes"
+    },
+    {
+     "system": "BEV-Planner++ (ID-12, ego status in BEV and planner)",
+     "l2_1_2_3_avg_m": [
+      0.16,
+      0.32,
+      0.57,
+      0.35
+     ],
+     "col_1_2_3_avg_pct": [
+      0.0,
+      0.29,
+      0.73,
+      0.34
+     ],
+     "source": {
+      "key": "2312.03031",
+      "table": "Tab. 1",
+      "page": 5
+     },
+     "convention": "as ID-10",
+     "ego_status": "yes",
+     "command": "yes"
+    },
+    {
+     "system": "Ego-MLP (ID-8, no image)",
+     "l2_1_2_3_avg_m": [
+      0.15,
+      0.32,
+      0.59,
+      0.35
+     ],
+     "col_1_2_3_avg_pct": [
+      0.0,
+      0.27,
+      0.85,
+      0.37
+     ],
+     "source": {
+      "key": "2312.03031",
+      "table": "Tab. 1",
+      "page": 5
+     },
+     "convention": "as ID-10",
+     "ego_status": "yes (only input)",
+     "command": "yes",
+     "role": "the no-vision floor"
+    },
+    {
+     "system": "GoStraight (ID-7, current speed, straight)",
+     "l2_1_2_3_avg_m": [
+      0.38,
+      0.79,
+      1.33,
+      0.83
+     ],
+     "col_1_2_3_avg_pct": [
+      0.15,
+      0.6,
+      2.5,
+      1.08
+     ],
+     "source": {
+      "key": "2312.03031",
+      "table": "Tab. 1",
+      "page": 5
+     },
+     "convention": "as ID-10",
+     "ego_status": "yes (speed)",
+     "command": "—",
+     "role": "the constant-velocity floor — the analogue of our ha0"
+    }
+   ],
+   "tanitad_rows": [
+    {
+     "row": "nuScenes OL planning",
+     "value": "NOT RUN",
+     "pending": "no bytes; registration + ToU acceptance is a HUMAN step; stream E5 (…/2026-09-19-nuscenes-planning-harness/) builds the both-convention harness so the number is one command away"
+    }
+   ]
+  },
+  "bench2drive_closed_loop": {
+   "claim_bearing": "GO-conditional per D-BENCH-PORT",
+   "rows": [
+    {
+     "system": "AD-MLP",
+     "ds": 18.05,
+     "sr_pct": 0.0,
+     "source": {
+      "key": "2406.03877",
+      "table": "Tab. 3 (base training set)",
+      "page": 9
+     },
+     "cross_check": "2601.22032 Tab.4 identical"
+    },
+    {
+     "system": "UniAD-Base",
+     "ds": 45.81,
+     "sr_pct": 16.36,
+     "source": {
+      "key": "2406.03877",
+      "table": "Tab. 3",
+      "page": 9
+     },
+     "cross_check": "2601.22032 Tab.4 'UniAD' identical"
+    },
+    {
+     "system": "VAD",
+     "ds": 42.35,
+     "sr_pct": 15.0,
+     "source": {
+      "key": "2406.03877",
+      "table": "Tab. 3",
+      "page": 9
+     }
+    },
+    {
+     "system": "TCP-traj*",
+     "ds": 59.9,
+     "sr_pct": 30.0,
+     "source": {
+      "key": "2406.03877",
+      "table": "Tab. 3",
+      "page": 9
+     },
+     "note": "* = expert feature distillation"
+    },
+    {
+     "system": "ThinkTwice*",
+     "ds": 62.44,
+     "sr_pct": 31.23,
+     "source": {
+      "key": "2406.03877",
+      "table": "Tab. 3",
+      "page": 9
+     }
+    },
+    {
+     "system": "DriveAdapter*",
+     "ds": 64.22,
+     "sr_pct": 33.08,
+     "source": {
+      "key": "2406.03877",
+      "table": "Tab. 3",
+      "page": 9
+     }
+    },
+    {
+     "system": "iPad",
+     "ds": 60.52,
+     "sr_pct": 33.18,
+     "source": {
+      "key": "2601.22032",
+      "table": "Tab. 4",
+      "page": 9
+     }
+    },
+    {
+     "system": "DriveDPO",
+     "ds": 62.02,
+     "sr_pct": 30.62,
+     "source": {
+      "key": "2601.22032",
+      "table": "Tab. 4",
+      "page": 9
+     }
+    },
+    {
+     "system": "DriveTransformer",
+     "ds": 63.46,
+     "sr_pct": 35.01,
+     "source": {
+      "key": "2601.22032",
+      "table": "Tab. 4",
+      "page": 9
+     }
+    },
+    {
+     "system": "Drive-JEPA",
+     "ds": 64.52,
+     "sr_pct": 36.82,
+     "source": {
+      "key": "2601.22032",
+      "table": "Tab. 4",
+      "page": 9
+     }
+    }
+   ],
+   "inherited_not_banked": [
+    {
+     "system": "TF++ (VLAAD-MIL)",
+     "ds": 86.97,
+     "sr_pct": 71.97,
+     "claimed_source": "arXiv 2603.25946 — NOT in library.json",
+     "status": "PUBLISHED-SECONDARY — out of every comparison cell until banked"
+    },
+    {
+     "system": "ADT",
+     "ds": 77.9,
+     "sr_pct": 55.0,
+     "claimed_source": "'Bench2Drive leaderboard, 2026' — no banked primary",
+     "status": "PUBLISHED-SECONDARY — out of every comparison cell"
+    }
+   ],
+   "tanitad_rows": [
+    {
+     "row": "Bench2Drive DS / SR",
+     "value": "NOT RUN",
+     "pending": "no CARLA/Bench2Drive provisioning; GO-conditional per D-BENCH-PORT"
+    }
+   ]
+  }
+ },
+ "corrections_to_the_existing_page_section_9": [
+  {
+   "site": "§9.1 inherited 'PDM-Closed 51.3 EPDMS navhard, arXiv 2506.04218'",
+   "finding": "51.3 is the PRE-fix value from 2601.05083 Tab.14 ('before official metric bug fixing'); the benchmark's own 03/2026 snapshot (2506.04218 Tab.2) reads 56.6, as does 2606.07170 Tab.2/6.",
+   "action": "superseded visibly by the External Field section; the §9.1 line is kept for traceability and annotated"
+  },
+  {
+   "site": "§9.1 inherited 'Drive-JEPA 93.3 PDMS NAVSIM v1'",
+   "finding": "Tab.2 and the abstract read 93.7; 93.3 is the paper's own checklist misquote (p.15). CRITERIA_REGISTRY already records this.",
+   "action": "annotated"
+  },
+  {
+   "site": "§9.1 inherited 'DrivoR 56.3 EPDMS navhard, arXiv 2606.07170'",
+   "finding": "56.3 is DrivoR(+134k synthetic data) + TOAD test-time search, from TOAD (2606.07170); DrivoR's own best is 54.6 (+134k) / 48.3 (navtrain only), 2601.05083 Tab.3.",
+   "action": "annotated"
+  },
+  {
+   "site": "§9.1 inherited 'SOTA claim (survey) 89.3 EPDMS navtest, arXiv 2606.19641' and 'HAD 88.6 navtest, arXiv 2604.03581'",
+   "finding": "neither primary is in library.json",
+   "action": "stay INHERITED, out of comparison cells"
+  },
+  {
+   "site": "§9.3 'TF++ (VLAAD-MIL) 86.97' and 'ADT 77.90'",
+   "finding": "no banked primary",
+   "action": "stay INHERITED, out of comparison cells"
+  }
+ ],
+ "proposals_for_CRITERIA_REGISTRY_json": [
+  {
+   "key": "benchmarks.navsim.GATE_modality_label.why",
+   "finding": "It says 'Drive-JEPA's 93.7 PDMS headline uses 1024x256 stacking FRONT+LEFT+RIGHT'. The primary says the opposite: Tab.8 lists Drive-JEPA ('Ours') at 2x512x256, App. B (p.14) and §4.2 (p.7) state the setting uses the front camera only, at 512x256, with no LiDAR. The 1024x256 stacking belongs to Transfuser / HydraMDP++ / DriveSuprim / GoalFlow.",
+   "proposed": "rewrite the sentence; Drive-JEPA is front-camera-only in BOTH its perception-free and its full-framework rows — the distinction between them is perception supervision + planner, not the sensor set",
+   "status": "✅ RESOLVED in CRITERIA_REGISTRY 2.10.1 (W2, 2026-09-20), verified from the same banked primary: Drive-JEPA is front-camera-only at 2x512x256 in EVERY row (Tab. 8 p.14 + §4.2 p.7); the 1024x256 front+left+right stack is Transfuser's. The wrong sentence quoted in `finding` below is the OLD registry text, kept only as the record of what was corrected."
+  },
+  {
+   "key": "benchmarks.navsim.GATE_modality_label.comparable_ladder_perception_free_front_only",
+   "finding": "the '_note' calls the ladder 'front-camera-only', but 2601.22032 Tab.2's Inputs column prints 'C & L' for LAW and World4Drive; Epona reads 86.1 in Tab.1 and 86.2 in Tab.2",
+   "proposed": "rename to comparable_ladder_perception_free; add per-row inputs_as_printed; record the Epona 86.1/86.2 inconsistency",
+   "status": "✅ RESOLVED in CRITERIA_REGISTRY 2.10.1 (W2): key renamed; the ladder is perception-free, NOT camera-only (Tab. 2 p.8 prints 'C & L' for LAW and World4Drive); Epona recorded as 86.2/86.1."
+  },
+  {
+   "key": "benchmarks.navsim.published_reference_numbers._harness_pin",
+   "finding": "'which side [of the human-filter fix] they are on is UNVERIFIED' — 2605.09701 Tab.2 now prints EPDMS* (legacy) and EPDMS (corrected) side by side for navtest; 2601.05083 Tab.14 prints pre-/post-fix navhard blocks",
+   "proposed": "record the fix side per published number from these two tables"
+  }
+ ]
+}

@@ -1,0 +1,229 @@
+{
+  "schema": "untrained-params-gate-v1",
+  "status": "FAIL",
+  "reasons": [
+    "4 parameter(s) totalling 12312 never received a gradient and are NOT allow-listed: tac_goal_tok_head.net.weight, tac_goal_tok_head.net.bias, scorer.goal_point.weight, scorer.goal_point.bias"
+  ],
+  "generated_utc": "2026-09-11T00:14:38Z",
+  "argv": [
+    "C:/Users/Admin/refcv5v2_final/ckpt.pt",
+    "--expect-frozen-file",
+    "TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-09-11-untrained-param-gate/expect_frozen_refc_ddim.json",
+    "--control",
+    "str_goal_head",
+    "--control",
+    "core.decoder.conf_head",
+    "--md5",
+    "--out",
+    "TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-09-11-untrained-param-gate/raw/refcv5v2_final_gate.json"
+  ],
+  "checkpoint": {
+    "path": "C:\\Users\\Admin\\refcv5v2_final\\ckpt.pt",
+    "bytes": 1299559201,
+    "md5": "9405ec73b2d797c4cebd44f82dbce54b",
+    "model_key": "model",
+    "optimizer_key": "opt",
+    "step": 40284
+  },
+  "optimizer": {
+    "n_groups": 1,
+    "n_registered": 357,
+    "n_with_state": 351,
+    "duplicate_ids": 0,
+    "state_entry_keys": [
+      "exp_avg",
+      "exp_avg_sq",
+      "step"
+    ],
+    "shape_source_key": "exp_avg",
+    "lazy_state_supported": true
+  },
+  "alignment": {
+    "method": "order-preserving shape embedding; leftmost+rightmost uniqueness",
+    "n_state_dict_tensors": 559,
+    "n_non_floating_excluded": 66,
+    "buffer_name_filter": [
+      "running_mean",
+      "running_var",
+      "num_batches_tracked",
+      "pos_emb_cache",
+      ".anchors"
+    ],
+    "n_candidates": 360,
+    "slack": 3,
+    "forced": true,
+    "n_ambiguous": 0,
+    "ambiguous": [],
+    "unconsumed_candidates": [
+      {
+        "name": "core.lat_log_prior",
+        "shape": [
+          3
+        ],
+        "numel": 3
+      },
+      {
+        "name": "core.lon_log_prior",
+        "shape": [
+          3
+        ],
+        "numel": 3
+      },
+      {
+        "name": "core.decoder.anchor_controls",
+        "shape": [
+          117,
+          2
+        ],
+        "numel": 234
+      }
+    ]
+  },
+  "cross_checks": {
+    "shape_match": {
+      "matched": 351,
+      "total": 351,
+      "ok": true,
+      "mismatches": []
+    },
+    "param_total": {
+      "mapped": 108257502,
+      "reference": 108257502,
+      "source": "C:\\Users\\Admin\\refcv5v2_final\\config.json:param_breakdown.total",
+      "waived": false,
+      "ok": true
+    },
+    "controls": {
+      "auto": {
+        "n_with_state": 351,
+        "n_nonzero_optimizer_moment": 351,
+        "n_zero_optimizer_moment": 0,
+        "moment_key": "exp_avg",
+        "ok": true,
+        "note": "at least one trained parameter must carry a NONZERO optimizer moment; a count of zero untrained params from a probe that read nothing would otherwise be indistinguishable from a genuine zero"
+      },
+      "named": [
+        {
+          "name": "str_goal_head",
+          "found": true,
+          "resolved": "str_goal_head.weight",
+          "has_state": true,
+          "optimizer_moment_abs_sum": 7.593052387237549,
+          "ok": true
+        },
+        {
+          "name": "core.decoder.conf_head",
+          "found": true,
+          "resolved": "core.decoder.conf_head.weight",
+          "has_state": true,
+          "optimizer_moment_abs_sum": 2.2762272357940674,
+          "ok": true
+        }
+      ]
+    }
+  },
+  "untrained": {
+    "count_params": 6,
+    "count_numel": 18472,
+    "params": [
+      {
+        "name": "core.decoder.offset_head.weight",
+        "optimizer_id": 274,
+        "shape": [
+          16,
+          384
+        ],
+        "numel": 6144,
+        "exactly_zero": false,
+        "absmax": 0.051027607172727585,
+        "n_nonzero": 6144,
+        "allowed": true,
+        "allowlist_entry": "core.decoder.offset_head"
+      },
+      {
+        "name": "core.decoder.offset_head.bias",
+        "optimizer_id": 275,
+        "shape": [
+          16
+        ],
+        "numel": 16,
+        "exactly_zero": false,
+        "absmax": 0.049880530685186386,
+        "n_nonzero": 16,
+        "allowed": true,
+        "allowlist_entry": "core.decoder.offset_head"
+      },
+      {
+        "name": "tac_goal_tok_head.net.weight",
+        "optimizer_id": 347,
+        "shape": [
+          22,
+          512
+        ],
+        "numel": 11264,
+        "exactly_zero": false,
+        "absmax": 0.04418979585170746,
+        "n_nonzero": 11264,
+        "allowed": false,
+        "allowlist_entry": null
+      },
+      {
+        "name": "tac_goal_tok_head.net.bias",
+        "optimizer_id": 348,
+        "shape": [
+          22
+        ],
+        "numel": 22,
+        "exactly_zero": false,
+        "absmax": 0.03127637878060341,
+        "n_nonzero": 22,
+        "allowed": false,
+        "allowlist_entry": null
+      },
+      {
+        "name": "scorer.goal_point.weight",
+        "optimizer_id": 355,
+        "shape": [
+          2,
+          512
+        ],
+        "numel": 1024,
+        "exactly_zero": true,
+        "absmax": 0.0,
+        "n_nonzero": 0,
+        "allowed": false,
+        "allowlist_entry": null
+      },
+      {
+        "name": "scorer.goal_point.bias",
+        "optimizer_id": 356,
+        "shape": [
+          2
+        ],
+        "numel": 2,
+        "exactly_zero": true,
+        "absmax": 0.0,
+        "n_nonzero": 0,
+        "allowed": false,
+        "allowlist_entry": null
+      }
+    ]
+  },
+  "allowlist": {
+    "entries": [
+      "core.decoder.offset_head"
+    ],
+    "unmatched": [],
+    "strict": false
+  },
+  "unexpected_untrained": {
+    "count_params": 4,
+    "count_numel": 12312,
+    "names": [
+      "tac_goal_tok_head.net.weight",
+      "tac_goal_tok_head.net.bias",
+      "scorer.goal_point.weight",
+      "scorer.goal_point.bias"
+    ]
+  }
+}

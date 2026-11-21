@@ -1,0 +1,35 @@
+  REFe vits16 31.95 M total / 10.36 M trainable (32.43 %)  device=cuda
+  WTA reach: at most 2 of 64 proposals updated per step (3.1 %)
+  *** SYNTHETIC IMAGES: this run validates the LOOP MECHANICS ONLY.
+  *** Its loss says nothing about driving and must not be quoted as a result.
+  scorer bank: 2,332 rows over 212 frames  <- D:/Projects/TanitAD/data/refe_scorer_targets_full
+      component        mean  pooled sd  varies in   <- 'varies in' is the fraction of FRAMES whose candidates differ at all
+      collision       0.780      0.414      81.6 %
+      drivable_area   0.969      0.174      32.5 %
+      progress        0.737      0.407      88.2 %
+      ttc             0.700      0.436      97.2 %
+      comfort         0.799      0.288     100.0 %
+      ddc             0.912      0.284      82.1 %
+  bank: 8 tuples   batch 2   OVERFIT CONTROL on 8 tuples
+  schedule from EPOCHS: 2 x 4 steps/epoch = 8 steps (paper: 25 epochs at batch 256)
+  optimiser: AdamW lr 0.0002 wd 0.01  schedule: cosine -> 0 over 8 steps
+  gradient accumulation: 4 micro-batches of 2 = effective batch 8  (paper: 256)
+    step     0  traj_L1   2.4138  score -0.0000  winners 1/2  assign_d    nan m  scorer_cov   0.0 %  lr 1.92e-04     4.7s
+    step     1  traj_L1   1.8853  score -0.0000  winners 1/2  assign_d    nan m  scorer_cov   0.0 %  lr 1.71e-04     8.9s
+    step     2  traj_L1   1.6352  score -0.0000  winners 2/2  assign_d    nan m  scorer_cov   0.0 %  lr 1.38e-04    13.1s
+    step     3  traj_L1   1.4763  score -0.0000  winners 1/2  assign_d    nan m  scorer_cov   0.0 %  lr 1.00e-04    17.3s
+    step     4  traj_L1   1.3366  score  0.0000  winners 1/2  assign_d    nan m  scorer_cov   0.0 %  lr 6.17e-05    21.5s
+    step     5  traj_L1   1.2256  score  0.0000  winners 2/2  assign_d    nan m  scorer_cov   0.0 %  lr 2.93e-05    25.7s
+    step     6  traj_L1   1.1725  score  0.0000  winners 1/2  assign_d    nan m  scorer_cov   0.0 %  lr 7.61e-06    29.9s
+    step     7  traj_L1   1.1446  score  0.0000  winners 1/2  assign_d    nan m  scorer_cov   0.0 %  lr 0.00e+00    34.1s
+
+  scorer coverage: 0 of 64 samples carried PDM targets (0.0 %)
+  batches with NO scorer supervision at all: 32 (they contribute zero gradient, not a zero target)
+  *** THE SCORER SAW NO REAL TARGETS. It trained against the zero placeholder and
+  *** proposal selection at inference is still arbitrary. Do not report a selection
+  *** result from this run.
+
+  traj L1: first 2.4138 -> last 1.1446   (52.6 % reduction)
+  OVERFIT CONTROL: final L1 1.1446 < 0.5 ? FAIL -- the loop cannot memorise 8 tuples
+TRAIN_CONTROL_FAILED
+EXIT=1

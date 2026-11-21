@@ -1,0 +1,26 @@
+ARM         A0b_replicate  (A0's flags, A0's SEED, run again; zero levers moved)
+C1 PASS     bootstrapped cells found: 42
+
+SEPARATED CELLS (each one is a FALSE POSITIVE by construction):
+   /k/plan_2s/LON_along_mae_m                 delta=0.0955     ci95=0.094
+   /k/plan_6s/LAT_yaw_rate_mae_radps          delta=0.0141     ci95=0.01503
+   /w/plan_2s/LON_accel_mae_mps2              delta=0.1638     ci95=0.1399
+   /w/plan_2s/LAT_yaw_rate_mae_radps          delta=0.0759     ci95=0.0655
+   /w/plan_6s/LON_accel_mae_mps2              delta=0.0616     ci95=0.0533
+   /w/plan_6s/LAT_yaw_rate_mae_radps          delta=0.0183     ci95=0.0165
+
+REPLICATE FALSE-POSITIVE RATE = 6 / 42 = 0.1429 = 14.3 %
+
+C2 positive control -- separated counts on the OTHER arms of the same report:
+   A1_pred          40 / 84
+   A2_random        18 / 63
+   A3_drop25        16 / 42
+   A4_none           8 / 42
+   A5_regress       39 / 42
+C2 PASS     at least one other arm differs from 6: [8, 16, 18, 39, 40]
+
+NOTE  The restricted view the panel's own VERDICT.md tabulates -- 7 family rows
+      at the 2 s horizon, both regimes -- is 3 of 14 = 21.4 %. Neither view
+      is 3 of 18 and neither is ~17 %.
+
+<!-- ARTIFACT-COMPLETE: REPLICATE_FP_RATE -->

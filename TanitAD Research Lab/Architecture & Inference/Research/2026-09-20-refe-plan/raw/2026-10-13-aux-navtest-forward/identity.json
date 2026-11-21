@@ -1,0 +1,158 @@
+{
+ "tool": "aux_navtest_forward/1",
+ "bar": "scorer logits [N,64,7] bit-identical to raw/2026-10-11-c3-selection-headroom/table.npz['logits'] at c3_run's grouping (one planner.infer per token, batch 1)",
+ "reference": "raw/2026-10-11-c3-selection-headroom/table.npz",
+ "ckpt": "D:/Projects/TanitAD/data/refe_runs_eval/sft4_peek/model_sft4_B_u400.pt",
+ "ckpt_md5": "8e382eebb35b3e155862453617e5786e",
+ "rule": "navsim_v1_lane",
+ "smoke32_planner_path": {
+  "PASS": true,
+  "n_tokens": 32,
+  "n_tokens_bit_identical": 32,
+  "n_values": 14336,
+  "n_values_differ": 0,
+  "max_abs_delta": 0.0,
+  "median_token_max_delta": 0.0,
+  "from_ctx_cache": 0,
+  "mutate_swap_cams": false,
+  "worst_tokens": [
+   [
+    "5e74b6a61b715f47",
+    0.0
+   ],
+   [
+    "c65181647b3b5092",
+    0.0
+   ],
+   [
+    "5d3573d6da7952d3",
+    0.0
+   ],
+   [
+    "75bf56ae8b9d5673",
+    0.0
+   ],
+   [
+    "a9fb1181686753ec",
+    0.0
+   ]
+  ]
+ },
+ "DELIBERATE_REGRESSION_swap_camera_slots_1_2_on_the_real_path": {
+  "PASS": false,
+  "n_tokens": 4,
+  "n_tokens_bit_identical": 0,
+  "n_values": 1792,
+  "n_values_differ": 1792,
+  "max_abs_delta": 1.7168744802474976,
+  "median_token_max_delta": 0.9089282751083374,
+  "from_ctx_cache": 0,
+  "mutate_swap_cams": true,
+  "worst_tokens": [
+   [
+    "78beb0eba954535e",
+    1.7168744802474976
+   ],
+   [
+    "55204d7112015beb",
+    0.9569787979125977
+   ],
+   [
+    "04fbbb5817255f30",
+    0.8608777523040771
+   ],
+   [
+    "5e74b6a61b715f47",
+    0.7705743312835693
+   ]
+  ],
+  "expected": "PASS == false",
+  "exit_code": 2
+ },
+ "note": "32 of 1,058 C3 tokens (one log, 2021.09.16.19.27.01_veh-45_01749_03230). The full 1,058 were NOT run (see HANDOFF.md): the identity is established on 32, not 1,058.",
+ "cache_pass_32_tokens_no_trunk [earlier code: logits cached in one npz]": {
+  "PASS": true,
+  "n_tokens": 32,
+  "n_tokens_bit_identical": 32,
+  "n_values": 14336,
+  "n_values_differ": 0,
+  "max_abs_delta": 0.0,
+  "median_token_max_delta": 0.0,
+  "from_ctx_cache": 32,
+  "mutate_swap_cams": false,
+  "worst_tokens": [
+   [
+    "5e74b6a61b715f47",
+    0.0
+   ],
+   [
+    "c65181647b3b5092",
+    0.0
+   ],
+   [
+    "5d3573d6da7952d3",
+    0.0
+   ],
+   [
+    "75bf56ae8b9d5673",
+    0.0
+   ],
+   [
+    "a9fb1181686753ec",
+    0.0
+   ]
+  ]
+ },
+ "chunked_6_tokens_3_cached_plus_3_fresh [earlier code: logits cached in one npz]": {
+  "PASS": true,
+  "n_tokens": 6,
+  "n_tokens_bit_identical": 6,
+  "n_values": 2688,
+  "n_values_differ": 0,
+  "max_abs_delta": 0.0,
+  "median_token_max_delta": 0.0,
+  "from_ctx_cache": 3,
+  "mutate_swap_cams": false,
+  "worst_tokens": [
+   [
+    "5e74b6a61b715f47",
+    0.0
+   ],
+   [
+    "04fbbb5817255f30",
+    0.0
+   ],
+   [
+    "78beb0eba954535e",
+    0.0
+   ],
+   [
+    "55204d7112015beb",
+    0.0
+   ],
+   [
+    "96164ad9ed8557a7",
+    0.0
+   ]
+  ]
+ },
+ "FINAL_CODE chunked_6_tokens_3_cached_plus_3_fresh (per-token logits cache)": {
+  "PASS": true,
+  "n_tokens": 6,
+  "n_tokens_bit_identical": 6,
+  "n_values": 2688,
+  "n_values_differ": 0,
+  "max_abs_delta": 0.0,
+  "from_ctx_cache": 3
+ },
+ "FINAL_CODE head_only_6_tokens_all_from_cache (no trunk)": {
+  "PASS": true,
+  "n_tokens": 6,
+  "n_tokens_bit_identical": 6,
+  "n_values": 2688,
+  "n_values_differ": 0,
+  "max_abs_delta": 0.0,
+  "from_ctx_cache": 6
+ },
+ "head_outputs_across_processes": "the 6-token chunked run and the 6-token head-only pass are BIT-EQUAL (logit and sdf_m) to the same 6 rows of the original 32-token inline run; the 32-token cache pass (earlier code) was bit-equal to the inline run on all 32"
+}

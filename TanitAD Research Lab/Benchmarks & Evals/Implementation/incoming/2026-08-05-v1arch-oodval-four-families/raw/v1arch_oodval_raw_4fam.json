@@ -1,0 +1,286 @@
+{
+  "arm": "flagship-v1arch-v2bal-30k-RAWPIXELS",
+  "ckpt": "/workspace/experiments/flagship-v1arch-v2bal-30k/ckpt.pt",
+  "run_config": "/workspace/experiments/flagship-v1arch-v2bal-30k/config.json",
+  "corpus": "/workspace/pai_epcache/physicalai-oodval-6f4b94e4c7ce",
+  "corpus_key": "physicalai-oodval-6f4b94e4c7ce",
+  "episodes_scored": 290,
+  "episodes_available": 290,
+  "episodes_flag": 0,
+  "stride": 8,
+  "speed_input": true,
+  "n_windows": 6382,
+  "four_families": {
+    "longitudinal": {
+      "speed_mae_mps": 0.8498,
+      "speed_bias_mps": 0.4856,
+      "speed_rmse_mps": 1.4014,
+      "along_mae_m": 0.4101,
+      "along_bias_m": 0.1939,
+      "along_final_bias_m": 0.9452,
+      "accel_mae_mps2": 2.3669,
+      "ego_progress": {
+        "status": "OK",
+        "convention": "human_dir",
+        "progress_ratio_mean": 1.0797,
+        "progress_ratio_median": 1.0619,
+        "progress_error_mean": 0.1487,
+        "under_progress_rate": 0.2654,
+        "gt_progress_mean_m": 16.7152,
+        "n": 5796,
+        "n_windows": 6382,
+        "n_excluded_low_gt_progress": 586,
+        "min_progress_m": 0.5,
+        "t0_axis_gt_self_ratio": 0.9903,
+        "t0_axis_gt_self_ratio_note": "what the GROUND TRUTH scores under pseudosim's published t0-axis reading. 1.0 means the windows are straight; below 1.0 is the CURVATURE CONFOUND \u2014 the human charged for under-progress it did not commit, and an arm that drives straighter than the human rewarded for it.",
+        "definition": "along-track distance covered / the human's, both projected on the human's own final-displacement direction; dt-invariant; <1 = under-drives, >1 = over-drives; GT scores exactly 1.0 by construction",
+        "published_motivation": "arXiv 2605.00066 \u2014 Ego Progress alone rho=0.83 vs closed-loop Driving Score while traditional L2 gives rho=-0.36 (p=0.43, n=8, NO CI). Direction only; those magnitudes are NOT a target."
+      },
+      "dt_s": 0.1,
+      "rate_scaling_note": "speed ~ 1/dt, accel ~ 1/dt^2. Numbers computed with a wrong dt are off by those powers; along_* are dt-invariant.",
+      "distance_keeping": {
+        "status": "UNAVAILABLE",
+        "reason": "no lead-agent track supplied \u2014 pass `lead=` (see this function's caller docstring). PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus); the reader is `Architecture & Inference/Implementation/incoming/2026-08-03-longitudinal-distance-keeping/build_lead_tracks.py`. Not supplying it is a WORK ITEM, not a pass.",
+        "n": 0
+      },
+      "n_windows": 6382
+    },
+    "lateral": {
+      "heading_mae_deg": 0.8216,
+      "yaw_rate_mae_degps": 1.6248,
+      "curvature_mae_1pm": 0.006853,
+      "curvature_bias_1pm": -8e-06,
+      "cross_mae_m": 0.0553,
+      "cross_bias_m": -0.0139,
+      "cross_final_mae_m": 0.1922,
+      "n_steps_heading": 112004,
+      "n_steps_curvature": 106141,
+      "excluded_below_min_ds": 15636,
+      "min_ds_m": 0.05,
+      "min_ds_mps": 0.5,
+      "dt_s": 0.1,
+      "dt_invariant": [
+        "heading_mae_deg",
+        "curvature_*",
+        "cross_*"
+      ],
+      "n_windows": 6382
+    },
+    "tactical": {
+      "status": "OK",
+      "source": "hierarchy.run",
+      "maneuver_vs_trajectory_kappa": 0.6058,
+      "maneuver_vs_trajectory_agreement": {
+        "mean": 0.8891,
+        "lo": 0.8749,
+        "hi": 0.9032,
+        "ci95": 0.0141,
+        "se": 0.0071,
+        "reducer": "mean",
+        "n_windows": 6382,
+        "n_episodes": 290,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "n": 6382,
+        "separated_positive": true,
+        "separated": true
+      },
+      "seams_beneficial_of_3": 0,
+      "seam_verdict": "FALSIFIED \u2014 top-down conditioning does NOT measurably carry downstream performance at this checkpoint",
+      "grounded_op_rollout_ade_2s": 0.5767,
+      "ungrounded_tactical_head_ade_2s": 2.1922,
+      "n_windows": 6382,
+      "maneuver_consistency_verdict": "SUBSTANTIAL"
+    },
+    "strategic": {
+      "status": "OK",
+      "source": "hierarchy.run",
+      "route_acc_nav": 1.0,
+      "route_acc_follow": 0.8031,
+      "route_acc_zeronav": 0.2573,
+      "majority_straight_rate": 0.8031,
+      "chance_1_of_3": 0.3333,
+      "follow_pred_distribution": {
+        "route_left": 0,
+        "route_straight": 1737,
+        "route_right": 0
+      },
+      "delta_nav_vs_follow": {
+        "delta": 0.1969,
+        "lo": 0.1538,
+        "hi": 0.2432,
+        "ci95": 0.0447,
+        "p_delta_gt0": 1.0,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 1737,
+        "n_episodes": 290,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap",
+        "mean": 0.1969,
+        "n": 1737,
+        "separated_positive": true
+      },
+      "delta_nav_vs_zeronav": {
+        "delta": 0.7427,
+        "lo": 0.7015,
+        "hi": 0.783,
+        "ci95": 0.0407,
+        "p_delta_gt0": 1.0,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 1737,
+        "n_episodes": 290,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap",
+        "mean": 0.7427,
+        "n": 1737,
+        "separated_positive": true
+      },
+      "n_valid": 1737,
+      "\u26d4_void_by_construction": "GATE_PROTOCOL \u00a70.7 \u2014 `nonav_route_beats_majority` is VOID BY CONSTRUCTION. If route accuracy looks impossible, adjudicate INSTRUMENT-FAIL, never MODEL-FAIL. `route_skill_vs_majority` is NOT admissible as a model verdict.",
+      "beats_majority_baseline": false,
+      "_baseline_used": "route_acc_follow (vision-only) vs majority_straight_rate, margin 0.03 \u2014 route_acc_nav is PRIVILEGED and is reported for reference only, never as the skill test",
+      "_reading": "vision-only route accuracy does NOT beat always-predict-straight \u2014 the strategic layer is not demonstrably doing route work"
+    },
+    "_grid": {
+      "used": "dense",
+      "dt_s": 0.1,
+      "horizon_steps": 20,
+      "provenance": "DENSE path ((6382, 20, 2)) at dt_s 0.1 \u2014 the grid the derivatives are defined on",
+      "\u26d4_history": "BEFORE 2026-08-03 this module hard-coded dt=0.1 s while reading the SPARSE 4-waypoint view (0.5 s spacing), so EVERY published speed_* was x5, EVERY accel_* x25 and EVERY yaw_rate_* x5. Positions, heading and curvature were unaffected. Cross-arm comparisons stay valid (common factor); ABSOLUTE quotations and any comparison to a physical bar do not. MEASURED negative control: GT ego speed 12.4565 m/s vs _seq_geometry 62.9789 m/s = 5.0559x, on 859 real held-out windows."
+    },
+    "_binding_rule": "Sayed 2026-08-02: every eval reports LONGITUDINAL + LATERAL + TACTICAL + STRATEGIC in ADDITION to ADE. Per-family, never pooled. A family reported UNAVAILABLE is a WORK ITEM, not a pass.",
+    "_families_unavailable": [],
+    "_complete": false
+  },
+  "intervals": {
+    "ade_mean_4wp_m": {
+      "mean": 0.5767,
+      "lo": 0.5381,
+      "hi": 0.6157,
+      "ci95": 0.0388,
+      "se": 0.0197,
+      "reducer": "mean",
+      "n_windows": 6382,
+      "n_episodes": 290,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    },
+    "fde_2s_m": {
+      "mean": 1.4052,
+      "lo": 1.3082,
+      "hi": 1.5033,
+      "ci95": 0.0976,
+      "se": 0.0504,
+      "reducer": "mean",
+      "n_windows": 6382,
+      "n_episodes": 290,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    },
+    "LON_speed_mae_mps": {
+      "mean": 0.8498,
+      "lo": 0.7899,
+      "hi": 0.9115,
+      "ci95": 0.0608,
+      "se": 0.0314,
+      "reducer": "mean",
+      "n_windows": 6382,
+      "n_episodes": 290,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    },
+    "LON_along_mae_m": {
+      "mean": 0.4101,
+      "lo": 0.3828,
+      "hi": 0.4384,
+      "ci95": 0.0278,
+      "se": 0.0145,
+      "reducer": "mean",
+      "n_windows": 6382,
+      "n_episodes": 290,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    },
+    "LAT_cross_mae_m": {
+      "mean": 0.0553,
+      "lo": 0.0501,
+      "hi": 0.0613,
+      "ci95": 0.0056,
+      "se": 0.0029,
+      "reducer": "mean",
+      "n_windows": 6382,
+      "n_episodes": 290,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    },
+    "LAT_heading_mae_deg": {
+      "mean": 0.9405,
+      "lo": 0.7509,
+      "hi": 1.1739,
+      "ci95": 0.2115,
+      "se": 0.1092,
+      "reducer": "mean",
+      "n_windows": 5802,
+      "n_episodes": 288,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap",
+      "n_windows_dropped_no_valid_step": 580
+    },
+    "LAT_curvature_mae_1pm": {
+      "mean": 0.0101,
+      "lo": 0.0065,
+      "hi": 0.0151,
+      "ci95": 0.0043,
+      "se": 0.0022,
+      "reducer": "mean",
+      "n_windows": 5774,
+      "n_episodes": 288,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap",
+      "n_windows_dropped_no_valid_step": 608
+    }
+  },
+  "pc2": {
+    "block": "taniteval.hierarchy_guard/pc2",
+    "version": "1.0.0",
+    "spec": "Project Steering/Reviews/2026-07-25-independent-chief-scientist-review/01_EXECUTION_PLAN.md Part A, PC2",
+    "counts": {
+      "strategic": 0,
+      "tactical": 0,
+      "operative_intent": 0
+    },
+    "absent_modules": [],
+    "bypassed_seams": [
+      "strategic",
+      "tactical",
+      "operative_intent"
+    ],
+    "hierarchy_traversed": false,
+    "_read": "counts are FORWARD CALLS through each seam during the scored pass. `absent` = this architecture has no such module (structural); `bypassed` = it exists and the scored path never called it (a wiring defect). Traversal is necessary, NOT sufficient: it does not show the command CHANGED the trajectory (that is HP-3) and does not show the actions were CHOSEN (see assert_actions_are_chosen).",
+    "claim": "grounded operative rollout (WM fidelity)",
+    "asserted_block": "taniteval.rollout/collect",
+    "required_seams": [
+      "strategic",
+      "tactical",
+      "operative_intent"
+    ],
+    "missing_seams": [
+      "strategic",
+      "tactical",
+      "operative_intent"
+    ],
+    "pc2_pass": false,
+    "decision_surface": {
+      "block": "taniteval.rollout/collect",
+      "actions_source": "expert_future",
+      "actions_are_chosen": false,
+      "_read": "a `expert_future` surface measures world-model fidelity under a known control sequence. No policy of any shape can differ on it except through decode fidelity, so it may not carry a hierarchy-vs-flat verdict."
+    },
+    "honest_metric_name": "wm_fidelity_ade_2s"
+  },
+  "_estimator": "episode-cluster bootstrap over the corpus's episodes (taniteval.ci). \u26d4 overlapping_holdout_se is NOT used: it biases the POINT ESTIMATE, not only the interval.",
+  "_binding": "Sayed 2026-08-02 \u2014 LONGITUDINAL + LATERAL + TACTICAL + STRATEGIC in ADDITION to ADE, per-family, never pooled. A family reported UNAVAILABLE is a WORK ITEM, not a pass.",
+  "_vision_only": "Sayed 2026-08-03 \u2014 inference is VISION-ONLY. The deployable route read is route_acc_follow; route_acc_nav feeds the model a label-derived nav command and is reference-only."
+}

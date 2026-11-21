@@ -1,0 +1,245 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "arm": "champ30k",
+ "step": 30000,
+ "n_clips": 24,
+ "frames_per_clip": 100,
+ "scope_caveat": "agent labels exist only on the 130-clip TRAINING corpus, so absolute R2 is optimistic for our columns and comparisons against DINOv3/pixels FAVOUR us; the enc-vs-z_op contrast is unaffected",
+ "estimator": "leave-one-clip-out, paired against the 4x4 incumbent pooling",
+ "targets": {
+  "lead_gap_m": {
+   "4x4": {
+    "r2": 0.0004,
+    "delta_vs_4x4": 0.0,
+    "t": 0.0,
+    "n_favouring": 0,
+    "n_clips": 24
+   },
+   "4x10": {
+    "r2": -0.0273,
+    "delta_vs_4x4": -0.0277,
+    "t": -11.57,
+    "n_favouring": 0,
+    "n_clips": 24
+   },
+   "4x20": {
+    "r2": -0.0505,
+    "delta_vs_4x4": -0.0509,
+    "t": -11.71,
+    "n_favouring": 0,
+    "n_clips": 24
+   },
+   "enc (full mean)": {
+    "r2": 0.012,
+    "delta_vs_4x4": 0.0117,
+    "t": 2.72,
+    "n_favouring": 13,
+    "n_clips": 24
+   },
+   "z_op (incumbent readout)": {
+    "r2": 0.0589,
+    "delta_vs_4x4": 0.0586,
+    "t": 6.71,
+    "n_favouring": 20,
+    "n_clips": 24
+   },
+   "pixel (floor)": {
+    "r2": 0.0064,
+    "delta_vs_4x4": 0.0061,
+    "t": 0.89,
+    "n_favouring": 14,
+    "n_clips": 24
+   },
+   "frozen DINOv3*": {
+    "r2": 0.0294,
+    "delta_vs_4x4": 0.0291,
+    "t": 6.57,
+    "n_favouring": 20,
+    "n_clips": 24
+   },
+   "constant (control)": {
+    "r2": 0.0,
+    "delta_vs_4x4": -0.0004,
+    "t": -0.05,
+    "n_favouring": 12,
+    "n_clips": 24
+   }
+  },
+  "n_agents": {
+   "4x4": {
+    "r2": 0.0118,
+    "delta_vs_4x4": 0.0,
+    "t": 0.0,
+    "n_favouring": 0,
+    "n_clips": 24
+   },
+   "4x10": {
+    "r2": 0.0948,
+    "delta_vs_4x4": 0.083,
+    "t": 7.68,
+    "n_favouring": 24,
+    "n_clips": 24
+   },
+   "4x20": {
+    "r2": 0.0864,
+    "delta_vs_4x4": 0.0746,
+    "t": 5.35,
+    "n_favouring": 21,
+    "n_clips": 24
+   },
+   "enc (full mean)": {
+    "r2": -0.0703,
+    "delta_vs_4x4": -0.0821,
+    "t": -5.8,
+    "n_favouring": 1,
+    "n_clips": 24
+   },
+   "z_op (incumbent readout)": {
+    "r2": -0.1533,
+    "delta_vs_4x4": -0.1651,
+    "t": -8.8,
+    "n_favouring": 2,
+    "n_clips": 24
+   },
+   "pixel (floor)": {
+    "r2": -0.2156,
+    "delta_vs_4x4": -0.2275,
+    "t": -9.9,
+    "n_favouring": 1,
+    "n_clips": 24
+   },
+   "frozen DINOv3*": {
+    "r2": 0.2754,
+    "delta_vs_4x4": 0.2636,
+    "t": 19.03,
+    "n_favouring": 24,
+    "n_clips": 24
+   },
+   "constant (control)": {
+    "r2": 0.0,
+    "delta_vs_4x4": -0.0118,
+    "t": -1.01,
+    "n_favouring": 4,
+    "n_clips": 24
+   }
+  },
+  "nearest_cy": {
+   "4x4": {
+    "r2": -0.0242,
+    "delta_vs_4x4": 0.0,
+    "t": 0.0,
+    "n_favouring": 0,
+    "n_clips": 24
+   },
+   "4x10": {
+    "r2": -0.0537,
+    "delta_vs_4x4": -0.0295,
+    "t": -12.38,
+    "n_favouring": 1,
+    "n_clips": 24
+   },
+   "4x20": {
+    "r2": -0.0849,
+    "delta_vs_4x4": -0.0607,
+    "t": -15.61,
+    "n_favouring": 1,
+    "n_clips": 24
+   },
+   "enc (full mean)": {
+    "r2": -0.0134,
+    "delta_vs_4x4": 0.0108,
+    "t": 2.94,
+    "n_favouring": 20,
+    "n_clips": 24
+   },
+   "z_op (incumbent readout)": {
+    "r2": -0.0169,
+    "delta_vs_4x4": 0.0072,
+    "t": 2.82,
+    "n_favouring": 20,
+    "n_clips": 24
+   },
+   "pixel (floor)": {
+    "r2": -0.0092,
+    "delta_vs_4x4": 0.015,
+    "t": 2.2,
+    "n_favouring": 23,
+    "n_clips": 24
+   },
+   "frozen DINOv3*": {
+    "r2": -0.0003,
+    "delta_vs_4x4": 0.0239,
+    "t": 10.31,
+    "n_favouring": 24,
+    "n_clips": 24
+   },
+   "constant (control)": {
+    "r2": 0.0,
+    "delta_vs_4x4": 0.0242,
+    "t": 10.42,
+    "n_favouring": 24,
+    "n_clips": 24
+   }
+  },
+  "nearest_bearing": {
+   "4x4": {
+    "r2": -0.0427,
+    "delta_vs_4x4": 0.0,
+    "t": 0.0,
+    "n_favouring": 0,
+    "n_clips": 24
+   },
+   "4x10": {
+    "r2": -0.0622,
+    "delta_vs_4x4": -0.0195,
+    "t": -5.68,
+    "n_favouring": 2,
+    "n_clips": 24
+   },
+   "4x20": {
+    "r2": -0.111,
+    "delta_vs_4x4": -0.0683,
+    "t": -13.56,
+    "n_favouring": 1,
+    "n_clips": 24
+   },
+   "enc (full mean)": {
+    "r2": -0.064,
+    "delta_vs_4x4": -0.0213,
+    "t": -1.2,
+    "n_favouring": 16,
+    "n_clips": 24
+   },
+   "z_op (incumbent readout)": {
+    "r2": -0.0359,
+    "delta_vs_4x4": 0.0068,
+    "t": 1.04,
+    "n_favouring": 8,
+    "n_clips": 24
+   },
+   "pixel (floor)": {
+    "r2": -0.0247,
+    "delta_vs_4x4": 0.018,
+    "t": 1.38,
+    "n_favouring": 20,
+    "n_clips": 24
+   },
+   "frozen DINOv3*": {
+    "r2": -0.0317,
+    "delta_vs_4x4": 0.011,
+    "t": 0.25,
+    "n_favouring": 23,
+    "n_clips": 24
+   },
+   "constant (control)": {
+    "r2": 0.0,
+    "delta_vs_4x4": 0.0427,
+    "t": 8.23,
+    "n_favouring": 24,
+    "n_clips": 24
+   }
+  }
+ },
+ "verdict": "azimuth widening beats the 4x4 incumbent on: {'n_agents': ['4x10', '4x20']}. Encoder beats the pixel floor on ['lead_gap_m', 'n_agents'] (in-sample, see caveat)."
+}

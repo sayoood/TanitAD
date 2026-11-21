@@ -1,0 +1,39 @@
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from /home/nvidia/data/refcv8_train4572_eval139_extrinsics.json (4711 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[v2] /home/nvidia/data/refcv6-b1-416x1024-eval139: 139 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 139 distinct for 139 clips]
+[v2] 139 providers, 139 distinct episode ids
+[v3] nav_from_v7: follow 88 / left 13 / right 38, missing 0 (of 139 clips; md5=eefc38d1453bd1c73802d44d45affced)
+[v3] refcv8 label speed input (road-type sidecar refcv6_speed_max_v8_eval.jsonl): 23772/23772 windows fed, per-step windows {'30': 8042, '50': 8382, '100': 6153, '120': 1195}, per-clip rows {'30': 49, '50': 52, '100': 39, '120': 7}
+[v3] agent join: 139/139 episodes (stable-63bit), 22663/23772 windows labelled (95.3 %), 776801 prefilter target boxes, pad 397
+[v3] SAM3 map GT at 10 cm (100 m x +-30 m): frac_ok 0.9856 of 23772 windows over 139 clips (verdict PASS)
+[perc] LAW-frame control: PASS on 2 windows
+[perc] 1/4754 windows (0 s; map 1, box3d 1, box3d refcv6 0; timing {'wait_decode': 0.1, 'forward': 0.4, 'stats_submit': 0.0, 'det': 0.0}; peak 1.10 GiB)
+[perc] 201/4754 windows (86 s; map 201, box3d 189, box3d refcv6 0; timing {'wait_decode': 0.1, 'forward': 85.5, 'stats_submit': 0.0, 'det': 0.0}; peak 1.12 GiB)
+[perc] 401/4754 windows (167 s; map 401, box3d 389, box3d refcv6 0; timing {'wait_decode': 0.1, 'forward': 166.5, 'stats_submit': 0.0, 'det': 0.0}; peak 1.12 GiB)
+[perc] 601/4754 windows (250 s; map 601, box3d 589, box3d refcv6 0; timing {'wait_decode': 0.1, 'forward': 249.4, 'stats_submit': 0.0, 'det': 0.1}; peak 1.12 GiB)
+[perc] 801/4754 windows (333 s; map 801, box3d 789, box3d refcv6 0; timing {'wait_decode': 0.1, 'forward': 331.9, 'stats_submit': 0.0, 'det': 0.1}; peak 1.12 GiB)
+[perc] 1001/4754 windows (416 s; map 1001, box3d 989, box3d refcv6 0; timing {'wait_decode': 0.1, 'forward': 414.3, 'stats_submit': 0.1, 'det': 0.1}; peak 1.12 GiB)
+[perc] 1201/4754 windows (498 s; map 1201, box3d 1189, box3d refcv6 0; timing {'wait_decode': 0.1, 'forward': 496.3, 'stats_submit': 0.1, 'det': 0.1}; peak 1.12 GiB)
+[perc] 1401/4754 windows (579 s; map 1401, box3d 1379, box3d refcv6 0; timing {'wait_decode': 0.1, 'forward': 576.3, 'stats_submit': 0.1, 'det': 0.1}; peak 1.12 GiB)
+[perc] 1601/4754 windows (660 s; map 1601, box3d 1553, box3d refcv6 0; timing {'wait_decode': 0.1, 'forward': 657.4, 'stats_submit': 0.1, 'det': 0.1}; peak 1.12 GiB)
+[perc] 1801/4754 windows (740 s; map 1801, box3d 1736, box3d refcv6 0; timing {'wait_decode': 0.1, 'forward': 737.1, 'stats_submit': 0.1, 'det': 0.2}; peak 1.12 GiB)
+[perc] 2001/4754 windows (821 s; map 2001, box3d 1919, box3d refcv6 0; timing {'wait_decode': 0.1, 'forward': 817.4, 'stats_submit': 0.1, 'det': 0.2}; peak 1.12 GiB)
+[perc] 2201/4754 windows (902 s; map 2201, box3d 2105, box3d refcv6 0; timing {'wait_decode': 0.1, 'forward': 898.0, 'stats_submit': 0.1, 'det': 0.2}; peak 1.12 GiB)
+[perc] 2401/4754 windows (985 s; map 2401, box3d 2305, box3d refcv6 0; timing {'wait_decode': 0.1, 'forward': 981.2, 'stats_submit': 0.1, 'det': 0.2}; peak 1.12 GiB)
+[perc] 2601/4754 windows (1066 s; map 2601, box3d 2505, box3d refcv6 0; timing {'wait_decode': 0.1, 'forward': 1062.0, 'stats_submit': 0.2, 'det': 0.2}; peak 1.12 GiB)
+[perc] 2801/4754 windows (1149 s; map 2801, box3d 2705, box3d refcv6 0; timing {'wait_decode': 0.1, 'forward': 1144.5, 'stats_submit': 0.2, 'det': 0.3}; peak 1.12 GiB)
+[perc] 3001/4754 windows (1230 s; map 3001, box3d 2875, box3d refcv6 0; timing {'wait_decode': 0.1, 'forward': 1224.6, 'stats_submit': 0.2, 'det': 0.3}; peak 1.12 GiB)
+[perc] 3201/4754 windows (1310 s; map 3167, box3d 3044, box3d refcv6 0; timing {'wait_decode': 0.1, 'forward': 1304.4, 'stats_submit': 0.2, 'det': 0.3}; peak 1.12 GiB)
+[perc] 3401/4754 windows (1391 s; map 3367, box3d 3230, box3d refcv6 0; timing {'wait_decode': 0.1, 'forward': 1385.3, 'stats_submit': 0.2, 'det': 0.3}; peak 1.12 GiB)
+[perc] 3601/4754 windows (1471 s; map 3567, box3d 3404, box3d refcv6 0; timing {'wait_decode': 0.1, 'forward': 1465.5, 'stats_submit': 0.2, 'det': 0.3}; peak 1.12 GiB)
+[perc] 3801/4754 windows (1554 s; map 3767, box3d 3602, box3d refcv6 0; timing {'wait_decode': 0.1, 'forward': 1547.6, 'stats_submit': 0.2, 'det': 0.3}; peak 1.12 GiB)
+[perc] 4001/4754 windows (1638 s; map 3967, box3d 3802, box3d refcv6 0; timing {'wait_decode': 0.1, 'forward': 1631.2, 'stats_submit': 0.2, 'det': 0.4}; peak 1.12 GiB)
+[perc] 4201/4754 windows (1722 s; map 4167, box3d 4002, box3d refcv6 0; timing {'wait_decode': 0.1, 'forward': 1715.5, 'stats_submit': 0.2, 'det': 0.4}; peak 1.12 GiB)
+[perc] 4401/4754 windows (1807 s; map 4367, box3d 4202, box3d refcv6 0; timing {'wait_decode': 0.1, 'forward': 1800.2, 'stats_submit': 0.3, 'det': 0.4}; peak 1.12 GiB)
+[perc] 4601/4754 windows (1891 s; map 4567, box3d 4402, box3d refcv6 0; timing {'wait_decode': 0.1, 'forward': 1883.2, 'stats_submit': 0.3, 'det': 0.4}; peak 1.12 GiB)
+[perc] done: {"n_windows": 4754, "n_map_windows": 4686, "arms": ["refcv7"], "timing_s": {"wait_decode": 0.1, "forward": 1945.4, "stats_submit": 0.3, "det": 0.4}, "build_s": 127.2, "loop_s": 1954.8}

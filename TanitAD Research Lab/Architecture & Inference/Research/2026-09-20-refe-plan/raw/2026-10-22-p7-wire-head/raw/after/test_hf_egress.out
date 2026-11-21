@@ -1,0 +1,38 @@
+2026-10-22T19:30:19Z ZZEGRESS_FAIL u400 over_allowance:999999999500+1017>1000000000000
+2026-10-22T19:30:19Z ZZEGRESS_FAIL u400 usage_unknown:RuntimeError:listing unavailable
+2026-10-22T19:30:19Z ZZEGRESS_FAIL u400 usage_unknown:RuntimeError:used_storage unknown for Sayood/private-one
+PASS test_allowance_and_unknown_usage_fail_closed
+2026-10-22T19:30:19Z ZZEGRESS_OK G-EGR 1 files 118 B
+2026-10-22T19:30:19Z ZZEGRESS_FAIL G-EGR-REGRESSION exception:PermissionError:403 Forbidden: token hf_*** cannot write google/tanitad-egress-regression-must-fail
+2026-10-22T19:30:19Z ZZEGR_PASS main_ok=True regression_refused=True
+2026-10-22T19:30:19Z ZZEGRESS_OK G-EGR 1 files 118 B
+2026-10-22T19:30:19Z ZZEGRESS_OK G-EGR-REGRESSION 1 files 118 B
+2026-10-22T19:30:19Z ZZEGR_FAIL main_ok=True regression_refused=False
+2026-10-22T19:30:19Z ZZEGRESS_FAIL G-EGR not_private
+2026-10-22T19:30:19Z ZZEGRESS_FAIL G-EGR-REGRESSION exception:PermissionError:403 Forbidden: token hf_*** cannot write google/tanitad-egress-regression-must-fail
+2026-10-22T19:30:19Z ZZEGR_FAIL main_ok=False regression_refused=True
+PASS test_gate
+2026-10-22T19:30:19Z ZZEGRESS_OK u400 3 files 1017 B
+PASS test_identity_ok
+2026-10-22T19:30:19Z ZZEGRESS_FAIL u400 missing_remote:p/gate.json
+PASS test_missing_remote
+2026-10-22T19:30:19Z ZZEGRESS_OK u400 3 files 1017 B
+2026-10-22T19:30:19Z ZZEGRESS_OK u400 3 files 1017 B
+PASS test_mutant_listing_check
+2026-10-22T19:30:20Z ZZEGRESS_FAIL u400 not_private
+PASS test_not_private
+2026-10-22T19:30:20Z ZZEGRESS_FAIL u400 over_budget:1017>100
+PASS test_over_budget_never_touches_the_server
+PASS test_real_add_op_builds_the_commit_operation
+PASS test_retry_carries_pending_states
+2026-10-22T19:30:21Z ZZEGRESS_FAIL u400 size_mismatch:p/scorer_states_u400.pt=1001!=1000,p/sft.log=9!=8,p/gate.json=10!=9
+PASS test_size_mismatch
+2026-10-22T19:30:21Z ZZEGRESS_FAIL u400 exception:PermissionError:403 Forbidden: token hf_*** cannot write Sayood/tanitad-refe-sft4r
+PASS test_unwritable_refused_and_sanitized
+2026-10-22T19:30:21Z ZZEGRESS_HALT_ARMED u800: two consecutive failed pushes; the run stops after the next checkpoint
+2026-10-22T19:30:21Z ZZEGRESS_HALT u1200: two consecutive failed pushes, then this checkpoint; killing the run
+2026-10-22T19:30:21Z ZZEGRESS_WATCH_END ok=False pushed=[] pending=[400, 800, 1200, 1600]
+PASS test_watch_halts_after_the_checkpoint_following_two_failures
+2026-10-22T19:30:21Z ZZEGRESS_WATCH_END ok=True pushed=[400, 800, 1200] pending=[]
+PASS test_watch_pushes_each_checkpoint_once
+ZZTEST_PASS 13

@@ -1,0 +1,521 @@
+{
+ "tool": "read_pess.py",
+ "card": {
+  "path": "E:/Projects/TanitAD-artifacts/scorer_gym_20261107/p6base/PREREG_PESS_P6.md",
+  "sha256_expected": "185de4067ede99ff9aca0c0f559e5a62f0989872aef07b8b7c4bd8657d42f380",
+  "sha256_actual": "185de4067ede99ff9aca0c0f559e5a62f0989872aef07b8b7c4bd8657d42f380"
+ },
+ "tier": {
+  "E3": "T1-class open loop: NAVSIM v1.1 PDMS of the arm's own pick on the full navtest (self-action open loop, not closed loop)",
+  "E2": "selection tier: PDM truth of P6's own 64 proposals on E2, the arm judged by which proposal it picks",
+  "E1": "descriptive, C3 stratum-weighted, never decisive"
+ },
+ "evidence_class": "MEASURED (ours; every input artifact and its sha256 is listed under 'inputs')",
+ "estimator": "paired log-cluster bootstrap, 10,000 draws, seed 20260927, 95 % percentile, over the evaluation set's own logs (sel_common.log_boot_idx draws via selc6_analyze.Boot). It answers 'another draw of logs' only. Training variance is read from the replicate floor F = |C0r - C0|; inference is deterministic (PREREG_P6 bit-identity check). Training variance is not resampled: ensembles of fixed members are read as fixed scorers. Inference is deterministic.",
+ "bars": {
+  "P1": "PESS - P6: CI-lo > 0 and d > t*s_p = 0.4971",
+  "P2": "PESS - ENS9: CI-lo > 0",
+  "M": "zero-pick share (pick PDMS exactly 0), PESS - ENS9: CI-hi < 0",
+  "G1": "TTC, NC, DAC sub-scores x100 of the pick, PESS - P6: each point >= -0.5",
+  "G2": "regret on E2, PESS - P6: CI-hi < +0.5",
+  "G3": "overspeed share on E2 CRUISE, PESS - P6: CI-hi < +0.10",
+  "G4": "slow-pick share on E2 CRUISE, PESS - P6: CI-hi < +0.10"
+ },
+ "strategic": "PAUSED -- PI ruling Sayed 2026-09-19, PI_DECISION_QUEUE ITEM 25: \"the strategic layer will be only switched off temporarily until we proved that both tactical and operative layers are driving with high quality. So the 4 layer rule is just temporarily paused and concerns only the strategic part.\" Not a pass; not omitted; lifting it is the PI's call.",
+ "ambiguities": [
+  "T1 P1 d is the POINT difference PESS - P6 in PDMS x100 (E3), compared strictly with the constant 0.4971 printed in the card (not recomputed as 2.776 x 0.1791 = 0.49718); CI-lo > 0 strict. The earlier readers' 2F rule is not used: the card fixes the floor.",
+  "T2 M is the share of E3 tokens whose pick has PDMS exactly 0.0 (card: 'pick PDMS exactly 0'), NOT the S1ZSM reader's M2 (PDMS 0 or TTC 0). The failure share (PDMS 0 or TTC 0) is also printed, as reported-not-deciding. CI over the same paired log-cluster draws as P1.",
+  "T3 G1 to G4 are the Batch 1 / S1Z definitions applied to PESS - P6: G1 sub-score points x100 from the table's sub-scores at the pick (each >= -0.5, EPS slack of read_scorer1p6.g1_ok); G2 regret on the 2,000 E2 tokens (best valid proposal PDMS x100 minus the pick's); G3 overspeed (plan v4/v0 > 1.15) share on E2 CRUISE, CI-hi < +0.10; G4 slow (v4/v0 < 0.85) share on E2 CRUISE, CI-hi < +0.10 (EPS slack of read_s1z.g4_ok). E2 quantities use the combined E3 logits restricted to the E2 tokens (the E2 logit files of members are not read; a member's e2 logits could differ from its E3 rows by float drift).",
+  "T4 PE labels overlap and every match is listed; the primary label follows PE1, PE2, PE3, PE4, Unnamed. PE1 = P1 and P2 and M and G1..G4; PE2 = P2 holds and P1 fails (M and the guards are not conditions of PE2); PE3 = M holds and P2 fails; PE4 = neither P2 nor M holds. P1 holds, P2 holds, M fails (or a guard fails) matches none -> Unnamed.",
+  "T5 Scoring = lookup in the full truth table at the pick; the table's valid flag must be True and the value finite at every pick (else the read stops). A gate checks that the table reproduces P6's csv scores on 100 % of tokens (G0-TABLE) and the E2 table on the E2 tokens; a check on S1ZSM's own picks vs its e3_changed_scores.csv runs in control c1.",
+  "T6 Combine in float32: mean = np.mean(axis=0, dtype=float32) (the ENS3 convention of read_scorer1p6); min = np.min; SD = ddof-0 population SD computed in float64 from the float32 member logits, LCB1 = mean32 - SD cast to float32. With one member min = mean and SD = 0 exactly, so every arm is that member's own logits bit for bit (control c1 asserts it).",
+  "T7 The ledger key is <ARM>:<sha256 of the arm's combined float32 [12146,64,6] C-contiguous logits>:E3 for each of PESS, LCB1, ENS9 (K + 3). The arm name stays ENS9 even if only eight members are present; the members used are listed in the output and the sha differs by member set.",
+  "T8 Members are loaded as given by --member; the card's nine are C0, C0r, C0r2, S1E, S1E1, S1Z, S1Z1, S1ZSM, S1ZD. If S1ZD is not given the read states it uses n members. Each member must pass G0-E3 (proposals bit-identical to P6's) and its token set must equal the table's.",
+  "T9 Family clause: the Batch 1 family tables of the arm vs P6 (paired CIs) incl. EP x100; STRATEGIC printed as PAUSED with the PI ruling. EP x100 vs P6 is reported for every arm.",
+  "T10 The Bonferroni intervals at the ledger's running K are printed per arm for best-of-K statements; P1 and P2 are PESS's own tests."
+ ],
+ "members": [
+  "C0",
+  "C0r",
+  "S1E"
+ ],
+ "n_members": 3,
+ "control": "c2",
+ "arms_scored": [
+  "ENS9"
+ ],
+ "code_sha256": {
+  "read_pess.py": "d04122282369b12dc3df14612661fd38f3a0eb45ccaaf914712f16fd2e5b27a8",
+  "read_scorer1p6.py": "1508b383e69aa9656843774b393823a9bddc5ee5d65f2f25faddcad223618020"
+ },
+ "gates": {
+  "G0-PICK": {
+   "name": "G0-PICK",
+   "n_equal_to_banked_pick": 12146,
+   "n": 12146,
+   "PASS": true
+  },
+  "G0-P6LOGITS": {
+   "name": "G0-P6LOGITS",
+   "P6 dir logits bit-identical to the table's logits": true,
+   "PASS": true
+  },
+  "G0-TABLE": {
+   "name": "G0-TABLE",
+   "n_tokens_absent_in_p6_csv": 0,
+   "n_pdms_equal_to_p6_csv": 12146,
+   "PASS": true
+  },
+  "G0-E2": {
+   "name": "G0-E2",
+   "n_e2": 2000,
+   "n_missing_in_table": 0,
+   "n_missing_in_world": 0,
+   "n_pdms_bit_equal": 2000,
+   "n_sub_bit_equal": 2000,
+   "max_abs_pdms_diff": 0.0,
+   "formula_max_abs_diff": 0.0,
+   "all_finite_valid": true,
+   "pick_is_argmax_of_p6_logits": 2000,
+   "RED_shifted_pick_n_differ": 1402,
+   "PASS": true
+  },
+  "G0-E2-vs-TABLE": {
+   "name": "G0-E2-vs-TABLE",
+   "E2 table pdms bit-identical to the full table on the E2 tokens": true,
+   "PASS": true
+  },
+  "G0-E3[C0]": {
+   "name": "G0-E3[C0]",
+   "n": 12146,
+   "n_tokens_not_bit_identical": 0,
+   "PASS": true
+  },
+  "G0-E3[C0r]": {
+   "name": "G0-E3[C0r]",
+   "n": 12146,
+   "n_tokens_not_bit_identical": 0,
+   "PASS": true
+  },
+  "G0-E3[S1E]": {
+   "name": "G0-E3[S1E]",
+   "n": 12146,
+   "n_tokens_not_bit_identical": 0,
+   "PASS": true
+  }
+ },
+ "member_e3_logits_sha256": {
+  "C0": "6187c55e93da1a41413232deb3f23b5d7892ff7775badb7110869c6e762df698",
+  "C0r": "82e716cd8fa5045d1db01e48adac26fc874190e52fc1883124892ad220edb86f",
+  "S1E": "82aa48efcf54e3e687c3e882013c54e0f9fd9becbaff32fa9de1cc51d446d296"
+ },
+ "arm_logits_sha256": {
+  "ENS9": "4f306b49e8eb34ecefe98348f69ecf279cebdd9812bd69a0ac612a99386ae50b"
+ },
+ "arm_pick_changed_vs_P6": {
+  "ENS9": 5397
+ },
+ "arm_pick_changed_vs_ENS9": {},
+ "status": "READ",
+ "arms": {
+  "ENS9": {
+   "PDMS_x100_E3": {
+    "point": 91.36145855110553,
+    "lo": 90.54876956882335,
+    "hi": 92.1741774109579,
+    "n": 12146
+   },
+   "minus_P6": {
+    "point": 0.1649806668275697,
+    "lo": -0.011302442072228792,
+    "hi": 0.34573361633709415,
+    "n": 12146
+   },
+   "P1_vs_P6": {
+    "point": 0.1649806668275697,
+    "lo": -0.011302442072228792,
+    "hi": 0.34573361633709415,
+    "n": 12146,
+    "floor": 0.4971,
+    "clears": false
+   },
+   "EP_x100_E3": {
+    "arm_mean": 86.99143916233672,
+    "P6_mean": 87.03441689794842,
+    "minus_P6": {
+     "point": -0.0429777356117002,
+     "lo": -0.2104245858493768,
+     "hi": 0.12424957130318438,
+     "n": 12146
+    }
+   },
+   "failure_share_minus_P6_reported": {
+    "point": -0.003869586695208299,
+    "lo": -0.00712459299367272,
+    "hi": -0.0006140122301461812,
+    "n": 12146
+   },
+   "zero_pick_share": 0.030380372138975795,
+   "G": {
+    "G1": {
+     "per_head_points_vs_P6": {
+      "TTC": {
+       "point": 0.2469948954388276,
+       "lo": -0.06592573637960512,
+       "hi": 0.5747718204719612,
+       "n": 12146,
+       "arm_mean_x100": 95.33179647620616,
+       "P6_mean_x100": 95.08480158076733,
+       "ok": true
+      },
+      "NC": {
+       "point": 0.004116581590647127,
+       "lo": -0.11420198719070968,
+       "hi": 0.12639881744885612,
+       "n": 12146,
+       "arm_mean_x100": 98.85147373620946,
+       "P6_mean_x100": 98.8473571546188,
+       "ok": true
+      },
+      "DAC": {
+       "point": 0.11526428453811954,
+       "lo": -0.007390970845066537,
+       "hi": 0.232173501424041,
+       "n": 12146,
+       "arm_mean_x100": 98.06520665239584,
+       "P6_mean_x100": 97.94994236785773,
+       "ok": true
+      }
+     },
+     "bar": "each point >= -0.5",
+     "ok": true,
+     "failed_heads": []
+    },
+    "G2": {
+     "delta_regret_vs_P6": {
+      "point": -0.2671951260085849,
+      "lo": -0.7335501830147624,
+      "hi": 0.19723145159149927,
+      "n": 2000,
+      "arm_regret": 5.619939519807711,
+      "P6_regret": 5.887134645816295
+     },
+     "bar": "CI-hi < +0.5 points",
+     "ok": true
+    },
+    "G3": {
+     "overspeed_diff_vs_P6": {
+      "point": 0.0,
+      "lo": -0.02510460251046025,
+      "hi": 0.027777777777777776,
+      "n": 258,
+      "arm_share": 0.41472868217054265,
+      "P6_share": 0.41472868217054265
+     },
+     "bar": "CI-hi < +0.10",
+     "ok": true
+    },
+    "G4": {
+     "slow_diff_vs_P6": {
+      "point": 0.007751937984496124,
+      "lo": -0.017857142857142856,
+      "hi": 0.035461564859299924,
+      "n": 258,
+      "arm_share": 0.18604651162790697,
+      "P6_share": 0.17829457364341086
+     },
+     "bar": "CI-hi < +0.10",
+     "n_cruise_tokens_E2": 258,
+     "ok": true
+    },
+    "ok": {
+     "G1": true,
+     "G2": true,
+     "G3": true,
+     "G4": true
+    }
+   },
+   "family_vs_P6": {
+    "NC": {
+     "point": 0.004116581590647127,
+     "lo": -0.11420198719070968,
+     "hi": 0.12639881744885612,
+     "n": 12146,
+     "direction": "higher",
+     "family": "pdms-other",
+     "arm_mean": 98.85147373620946,
+     "P6_mean": 98.8473571546188,
+     "adverse": false
+    },
+    "DAC": {
+     "point": 0.11526428453811954,
+     "lo": -0.007390970845066537,
+     "hi": 0.232173501424041,
+     "n": 12146,
+     "direction": "higher",
+     "family": "lateral",
+     "arm_mean": 98.06520665239584,
+     "P6_mean": 97.94994236785773,
+     "adverse": false
+    },
+    "EP": {
+     "point": -0.0429777356117002,
+     "lo": -0.2104245858493768,
+     "hi": 0.12424957130318438,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 86.99143916233672,
+     "P6_mean": 87.03441689794842,
+     "adverse": false
+    },
+    "TTC": {
+     "point": 0.2469948954388276,
+     "lo": -0.06592573637960512,
+     "hi": 0.5747718204719612,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 95.33179647620616,
+     "P6_mean": 95.08480158076733,
+     "adverse": false
+    },
+    "C": {
+     "point": -0.008233163181294254,
+     "lo": -0.02794786359672253,
+     "hi": 0.0,
+     "n": 12146,
+     "direction": "higher",
+     "family": "pdms-other",
+     "arm_mean": 99.99176683681871,
+     "P6_mean": 100.0,
+     "adverse": false
+    },
+    "DDC": {
+     "point": -0.16466326362588507,
+     "lo": -0.3209555308762455,
+     "hi": -0.008574107491167278,
+     "n": 12146,
+     "direction": "higher",
+     "family": "pdms-other",
+     "arm_mean": 96.31977605796146,
+     "P6_mean": 96.48443932158736,
+     "adverse": false
+    },
+    "speed_mae_mps": {
+     "point": -0.01806209298775763,
+     "lo": -0.02448905405545485,
+     "hi": -0.011293744287530499,
+     "n": 12146,
+     "direction": "lower",
+     "family": "longitudinal",
+     "arm_mean": 0.819318171708573,
+     "P6_mean": 0.8373802646963306,
+     "adverse": false
+    },
+    "target_speed_within_0.5mps": {
+     "point": 0.006576239091058785,
+     "lo": 0.0022784964851239346,
+     "hi": 0.010589159233396622,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 0.50419891322246,
+     "P6_mean": 0.49762267413140127,
+     "adverse": false
+    },
+    "target_speed_within_1.0mps": {
+     "point": 0.006020500576321423,
+     "lo": 0.0024613080348028804,
+     "hi": 0.00943884942240555,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 0.7114687963115429,
+     "P6_mean": 0.7054482957352215,
+     "adverse": false
+    },
+    "target_speed_within_2.0mps": {
+     "point": 0.005454470607607443,
+     "lo": 0.003361566978542163,
+     "hi": 0.007466350647885707,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 0.8934628684340523,
+     "P6_mean": 0.8880083978264449,
+     "adverse": false
+    },
+    "along_mae_m": {
+     "point": -0.023129333293554016,
+     "lo": -0.03224954932804959,
+     "hi": -0.013544144787103331,
+     "n": 12146,
+     "direction": "lower",
+     "family": "longitudinal",
+     "arm_mean": 1.176197699598708,
+     "P6_mean": 1.199327032892262,
+     "adverse": false
+    },
+    "along_final_abs_m": {
+     "point": -0.06082021333393775,
+     "lo": -0.08443011436666956,
+     "hi": -0.03562291466808905,
+     "n": 12146,
+     "direction": "lower",
+     "family": "longitudinal",
+     "arm_mean": 2.8959152452278407,
+     "P6_mean": 2.9567354585617784,
+     "adverse": false
+    },
+    "accel_mae_mps2": {
+     "point": -0.0071422171483155866,
+     "lo": -0.010279083655570665,
+     "hi": -0.003958514229493611,
+     "n": 12146,
+     "direction": "lower",
+     "family": "longitudinal",
+     "arm_mean": 0.5376971830437093,
+     "P6_mean": 0.5448394001920249,
+     "adverse": false
+    },
+    "heading_mae_deg": {
+     "point": -0.055740224778976534,
+     "lo": -0.0922978296502694,
+     "hi": -0.019542134095732137,
+     "n": 12083,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 2.7038737474658228,
+     "P6_mean": 2.7596224259149373,
+     "adverse": false
+    },
+    "yaw_rate_mae_degps": {
+     "point": -0.05568249829652354,
+     "lo": -0.07868387453285186,
+     "hi": -0.03279157814555147,
+     "n": 11939,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 3.0036235558370974,
+     "P6_mean": 3.0602104178209193,
+     "adverse": false
+    },
+    "curvature_mae_1pm": {
+     "point": -0.0005218692863237889,
+     "lo": -0.0008354429214212839,
+     "hi": -0.00020982273113943705,
+     "n": 11939,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 0.019700162275907856,
+     "P6_mean": 0.02030395948348201,
+     "adverse": false
+    },
+    "cross_mae_m": {
+     "point": -0.011554569462732906,
+     "lo": -0.017211970515897755,
+     "hi": -0.005724517576558133,
+     "n": 12146,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 0.4314792066948886,
+     "P6_mean": 0.4430337761576215,
+     "adverse": false
+    },
+    "cross_final_abs_m": {
+     "point": -0.04035252326325558,
+     "lo": -0.056378352978636345,
+     "hi": -0.02352866063940543,
+     "n": 12146,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 1.0349060580218525,
+     "P6_mean": 1.075258581285108,
+     "adverse": false
+    },
+    "lateral_decision_acc": {
+     "point": 0.001399637740820023,
+     "lo": -0.0008115733443332216,
+     "hi": 0.003765007001861538,
+     "n": 12146,
+     "direction": "higher",
+     "family": "tactical",
+     "arm_mean": 0.9144574345463528,
+     "P6_mean": 0.9130577968055327,
+     "adverse": false
+    },
+    "longitudinal_decision_acc": {
+     "point": 0.005186892804215379,
+     "lo": 0.00092988087990813,
+     "hi": 0.009319216370624193,
+     "n": 12146,
+     "direction": "higher",
+     "family": "tactical",
+     "arm_mean": 0.653301498435699,
+     "P6_mean": 0.6481146056314836,
+     "adverse": false
+    },
+    "command_adherence_all": {
+     "point": 8.233163181294254e-05,
+     "lo": -0.0020551722993991995,
+     "hi": 0.0023448418894533953,
+     "n": 12146,
+     "direction": "higher",
+     "family": "tactical",
+     "arm_mean": 0.8601185575498106,
+     "P6_mean": 0.8600362259179977,
+     "adverse": false
+    },
+    "command_adherence_turn_active": {
+     "point": 0.0014720314033366045,
+     "lo": -0.0037604537470388756,
+     "hi": 0.0070542580564882775,
+     "n": 4076,
+     "direction": "higher",
+     "family": "tactical",
+     "arm_mean": 0.8883709519136408,
+     "P6_mean": 0.8868989205103042,
+     "adverse": false
+    },
+    "_distance_keeping": "UNAVAILABLE at this tier (no lead-agent block in NAVSIM open loop); read in card section 6 of PREREG_SCORER1P6"
+   },
+   "adverse_components": []
+  }
+ },
+ "K_ledger": {
+  "ledger": null,
+  "K": null,
+  "note": "no ledger written: K NOT COUNTED"
+ },
+ "seconds": 7.0,
+ "control_result": {
+  "control": "c2",
+  "banked_path": "F:/tanitad_scratch/p6arms/read/verdict_ens3/scorer1p6_read.json",
+  "banked_sha256_actual": "4cbe86d77ef9a6d3fadc9386cf223d3ca3cfb3137252a17c9018dac8aa5a0bfd",
+  "banked_sha256_noted": "4cbe86d77ef9a6d3fadc9386cf223d3ca3cfb3137252a17c9018dac8aa5a0bfd",
+  "banked_diff_vs_P6": {
+   "point": 0.1649806668275697,
+   "lo": -0.011302442072228792,
+   "hi": 0.34573361633709415,
+   "n": 12146
+  },
+  "banked_PDMS_x100_E3": 91.36145855110553,
+  "mine_diff_vs_P6": {
+   "point": 0.1649806668275697,
+   "lo": -0.011302442072228792,
+   "hi": 0.34573361633709415,
+   "n": 12146
+  },
+  "mine_PDMS_x100_E3": 91.36145855110553,
+  "abs_diff_point": 0.0,
+  "abs_diff_lo": 0.0,
+  "abs_diff_hi": 0.0,
+  "n_changed_picks_vs_P6_banked": 5397,
+  "n_changed_picks_vs_P6_mine": 5397,
+  "arms_scored": [
+   "ENS9"
+  ],
+  "PASS": true
+ }
+}

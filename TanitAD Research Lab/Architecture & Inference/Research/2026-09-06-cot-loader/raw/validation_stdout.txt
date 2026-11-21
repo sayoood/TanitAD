@@ -1,0 +1,105 @@
+CORPUS C:/Users/Admin/tanitad-data/alpamayo/records.parquet
+  distinct clips = 4729   rows = 23644
+
+========================================================================
+PR-2a  CLASSIFICATION (denominator = 4729 clips)
+  READ  (value off a sign, unhedged, un-negated) :   57 clips  1.21 %
+  HEDGED (language prior)                        :   66 clips  1.40 %
+  NEGATED                                        :   26 clips  0.55 %
+  READ clip-ROWS = 77, by task: {'trajectory': 15, 'meta_action': 15, 'auto_labeling': 24, 'vqa': 23}
+  vs sibling classify_limits.py: read 57/57  hedged 66/66  neg 26/26
+  clip-id sets identical: True   values identical: True
+
+PR-2b/2e  UNITS -- BOTH denominators, because they differ
+  clip level: {'NONE': 18, 'kph': 37, 'mph': 2}   ->  no unit 18 / 57 = 31.58 %
+  row  level: {'NONE': 32, 'kph': 42, 'mph': 3}   ->  no unit 32 / 77 = 41.56 %
+  UNIT-LESS readings carrying an m/s value (MUST be 0): 0
+
+PR-2c  CONTROLS AT KNOWN VALUES
+  constant_no_phrase   state=None     value=None  ms=None     OK
+  empty                state=None     value=None  ms=None     OK
+  none                 state=None     value=None  ms=None     OK
+  read_kmh             state=READ     value=70    ms=19.4444  OK
+  read_mph             state=READ     value=35    ms=15.6464  OK
+  read_no_unit         state=READ     value=70    ms=None     OK
+  hedged               state=HEDGED   value=None  ms=None     OK
+  negated_via_hedge_word state=HEDGED   value=None  ms=None     OK
+  negated_true         state=NEGATED  value=None  ms=None     OK
+  mention_no_value     state=MENTION  value=None  ms=None     OK
+
+PR-2d  DELIBERATE REGRESSION on the capture
+  pre-fix regex r'\bspeed limit\b' captured values : 0  (must be 0)
+  current regex captured values                    : 57  (must be > 0)
+
+PR-3a  THE DOCSTRING'S SCOPE (n = 4729 clips)
+  phrase               cot meta_task     all5
+  speed limit           41       41      219
+  yield                400      400      688
+  parked               419      419      821
+  pedestrian           278      278     2115
+  traffic light        636      636     2032
+  oncoming             142      142      496
+  merge                 44       44      153
+  ramp                  26       26       60
+  open door              0        0        3
+
+THE 57 CAPTURED READINGS (clip, task, value, unit, m/s)
+  02066bc4 vqa                50 kph   13.8889   | speed limit sign indicates a maximum speed of 50 km/h
+  09cf59f8 vqa                60 kph   16.6667   | speed limit sign indicates 60 km/h
+  132d381e auto_labeling      30 kph   8.3333    | A 30 km/h speed limit sign
+  13452833 vqa                30 kph   8.3333    | speed limit sign indicates 30 km/h
+  146c5306 trajectory        100 NONE  -         | speed limit sign indicates 100
+  190b47af vqa                30 kph   8.3333    | sign indicates the speed limit of 30 km/h
+  1ad72863 trajectory         70 kph   19.4444   | a 70 km/h speed limit sign
+  1c3a2c7c vqa                30 kph   8.3333    | speed limit sign indicates 30 km/h
+  1f15eb99 vqa                30 NONE  -         | speed limit of 30
+  207e5b1f auto_labeling      20 kph   5.5556    | A 20 km/h speed limit sign
+  208a0e26 vqa                70 kph   19.4444   | speed limit sign indicates 70 km/h
+  21f81dfb trajectory         80 NONE  -         | speed limit signs display 80
+  269478eb vqa                20 kph   5.5556    | sign indicates the speed limit is reduced to 20 km/h
+  27c07b76 trajectory         60 NONE  -         | gantry signs display a speed limit of 60
+  2844b027 meta_action        80 NONE  -         | an 80 speed limit sign
+  2f5c3835 auto_labeling      30 kph   8.3333    | A 30 km/h speed limit sign
+  30f158ae auto_labeling      30 kph   8.3333    | a 30 km/h speed limit sign
+  34ce16b0 meta_action        70 NONE  -         | a 70 speed limit sign
+  3d459173 meta_action        70 NONE  -         | speed limit signs indicate 70
+  42f52617 trajectory         10 mph   4.4704    | speed limit sign indicating 10 mph
+  4ceb00df auto_labeling      60 kph   16.6667   | A 60 km/h speed limit sign
+  4f8d5cfc auto_labeling      30 NONE  -         | a 30 speed limit sign
+  5205b292 vqa                30 kph   8.3333    | speed limit sign indicates a maximum speed of 30 km/h
+  6019007f auto_labeling      30 NONE  -         | speed limit sign 30
+  60a70984 vqa                30 kph   8.3333    | speed limit sign indicates 30 km/h
+  612fd302 auto_labeling      40 kph   11.1111   | a 40 km/h speed limit sign
+  6f913f08 vqa                30 kph   8.3333    | speed limit sign indicates 30 km/h
+  73763170 trajectory        120 NONE  -         | a 120 speed limit sign
+  74808e88 vqa                15 kph   4.1667    | speed limit sign indicates 15 km/h
+  75d228a8 vqa                30 kph   8.3333    | speed limit sign indicates 30 km/h
+  7663d56e trajectory        100 kph   27.7778   | speed limit sign indicates 100 km/h
+  7833a334 trajectory        120 NONE  -         | gantry signs display 120
+  7b2470d2 trajectory         50 kph   13.8889   | a 50 km/h speed limit sign
+  7b798cfa vqa                40 kph   11.1111   | speed limit sign indicates a maximum speed of 40 km/h
+  7d63dd9a auto_labeling      50 kph   13.8889   | a 50 km/h speed limit sign
+  815d1f6d auto_labeling     100 kph   27.7778   | A 100 km/h speed limit sign
+  81644d9b vqa                30 kph   8.3333    | speed limit sign indicates 30 km/h
+  834e68f1 auto_labeling      60 NONE  -         | speed limit sign indicates 60
+  856a0dba trajectory         50 kph   13.8889   | a 50 km/h speed limit sign
+  940cbda9 auto_labeling      30 kph   8.3333    | speed limit sign 30 km/h
+  95a6e61d auto_labeling      60 NONE  -         | speed limit signs display 60
+  bfdc9915 vqa                50 kph   13.8889   | speed limit sign indicates 50 km/h
+  c70f1d6f vqa                30 kph   8.3333    | speed limit sign indicates 30 km/h
+  cafa9663 vqa                70 kph   19.4444   | speed limit sign indicates 70 km/h
+  ccb80b67 vqa                30 kph   8.3333    | speed limit sign indicates 30 km/h
+  cf51ee98 vqa                70 kph   19.4444   | speed limit sign indicates 70 km/h
+  cf8384a7 auto_labeling      30 kph   8.3333    | speed limit sign 30 km/h
+  d5ecf705 trajectory         35 mph   15.6464   | a 35 mph speed limit sign
+  d979624e trajectory         60 NONE  -         | speed limit signs indicate 60
+  e3afb1e1 vqa                50 NONE  -         | speed limit sign indicates 50
+  e5f27074 auto_labeling      70 kph   19.4444   | A 70 km/h speed limit sign
+  e83683db vqa                30 NONE  -         | speed limit sign indicates 30
+  e9ce43a5 trajectory        100 kph   27.7778   | a 100 km/h speed limit sign
+  f1bb7e59 trajectory        100 NONE  -         | speed limit signs indicate 100
+  f6e7827e vqa                30 kph   8.3333    | sign indicates the speed limit of 30 km/h
+  fa970a60 auto_labeling      30 kph   8.3333    | A 30 km/h speed limit sign
+  fddcec7f trajectory         70 NONE  -         | a 70 speed limit sign
+
+WROTE C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/f407bc82-7969-457c-a947-6be2014fee89/scratchpad/speedlimit_validation.json

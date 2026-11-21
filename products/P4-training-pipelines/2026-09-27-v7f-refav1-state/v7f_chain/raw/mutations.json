@@ -1,0 +1,133 @@
+{
+ "file": "<V7F_CHAIN>\\stack\\scripts\\v6_chain.py",
+ "orig_sha256": "b1bf626b5f0b466354ebf551cad95827802f294f77d2c8486a335d772f5a434a",
+ "mutations": {
+  "M1_delete_the_emission_guard_call": {
+   "applied": true,
+   "rc": 1,
+   "summary": [
+    "17 failed, 40 passed in 21.86s"
+   ],
+   "n_failed": 17,
+   "failed": [
+    "tests/test_v6_chain_v7f.py::test_ARM_SOURCE_without_the_emission_guard_the_tac_goal_cond_arm_ESCAPES",
+    "tests/test_v6_chain_v7f.py::test_ARM_a_fan_widened_after_planning_is_CAUGHT",
+    "tests/test_v6_chain_v7f.py::test_ARM_a_step_missing_an_R_flag_is_CAUGHT[S-T-drop0---plan-vmax-cap",
+    "tests/test_v6_chain_v7f.py::test_ARM_a_step_missing_an_R_flag_is_CAUGHT[S-T-drop1---max-speed-input-v6",
+    "tests/test_v6_chain_v7f.py::test_ARM_a_step_missing_an_R_flag_is_CAUGHT[S-T-drop2---speed-max-sidecar-v6",
+    "tests/test_v6_chain_v7f.py::test_ARM_a_step_missing_an_R_flag_is_CAUGHT[S-T-drop3---tac-op-cond",
+    "tests/test_v6_chain_v7f.py::test_ARM_a_step_missing_an_R_flag_is_CAUGHT[S-T-drop4---w-tac-label-all",
+    "tests/test_v6_chain_v7f.py::test_ARM_a_step_missing_an_R_flag_is_CAUGHT[S-T-drop5---s2-labels",
+    "tests/test_v6_chain_v7f.py::test_ARM_a_step_missing_an_R_flag_is_CAUGHT[S-T-drop6---nav-labels",
+    "tests/test_v6_chain_v7f.py::test_ARM_a_step_missing_an_R_flag_is_CAUGHT[S-W-drop7---nav-cond",
+    "tests/test_v6_chain_v7f.py::test_ARM_a_step_missing_an_R_flag_is_CAUGHT[S-W-drop8---strategic-off",
+    "tests/test_v6_chain_v7f.py::test_ARM_a_step_missing_an_R_flag_is_CAUGHT[S-W-drop9---nav-labels",
+    "tests/test_v6_chain_v7f.py::test_ARM_an_S_T_step_emitting_tac_goal_cond_is_CAUGHT",
+    "tests/test_v6_chain_v7f.py::test_ARM_an_S_T_step_with_a_forbidden_value_is_CAUGHT[extra0---selector",
+    "tests/test_v6_chain_v7f.py::test_ARM_an_S_T_step_with_a_forbidden_value_is_CAUGHT[extra1-R5:",
+    "tests/test_v6_chain_v7f.py::test_ARM_an_S_T_step_with_a_forbidden_value_is_CAUGHT[extra2---tac-op-cond",
+    "tests/test_v6_chain_v7f.py::test_ARM_an_S_T_step_with_a_forbidden_value_is_CAUGHT[extra3---goal-factored"
+   ],
+   "old": "        assert_v7f_argv(step, argv)\n    return argv",
+   "new": "        pass\n    return argv"
+  },
+  "M2_v7f_S_T_emits_tac_goal_cond": {
+   "applied": true,
+   "rc": 1,
+   "summary": [
+    "27 failed, 30 passed in 12.56s"
+   ],
+   "n_failed": 27,
+   "failed": [
+    "tests/test_v6_chain_v7f.py::test_ARM_a_fan_widened_after_planning_is_CAUGHT",
+    "tests/test_v6_chain_v7f.py::test_ARM_a_step_missing_an_R_flag_is_CAUGHT[S-T-drop0---plan-vmax-cap",
+    "tests/test_v6_chain_v7f.py::test_ARM_a_step_missing_an_R_flag_is_CAUGHT[S-T-drop1---max-speed-input-v6",
+    "tests/test_v6_chain_v7f.py::test_ARM_a_step_missing_an_R_flag_is_CAUGHT[S-T-drop2---speed-max-sidecar-v6",
+    "tests/test_v6_chain_v7f.py::test_ARM_a_step_missing_an_R_flag_is_CAUGHT[S-T-drop3---tac-op-cond",
+    "tests/test_v6_chain_v7f.py::test_ARM_a_step_missing_an_R_flag_is_CAUGHT[S-T-drop4---w-tac-label-all",
+    "tests/test_v6_chain_v7f.py::test_ARM_a_step_missing_an_R_flag_is_CAUGHT[S-T-drop5---s2-labels",
+    "tests/test_v6_chain_v7f.py::test_ARM_a_step_missing_an_R_flag_is_CAUGHT[S-T-drop6---nav-labels",
+    "tests/test_v6_chain_v7f.py::test_ARM_a_step_missing_an_R_flag_is_CAUGHT[S-W-drop7---nav-cond",
+    "tests/test_v6_chain_v7f.py::test_ARM_a_step_missing_an_R_flag_is_CAUGHT[S-W-drop8---strategic-off",
+    "tests/test_v6_chain_v7f.py::test_ARM_a_step_missing_an_R_flag_is_CAUGHT[S-W-drop9---nav-labels",
+    "tests/test_v6_chain_v7f.py::test_ARM_an_S_T_step_emitting_tac_goal_cond_is_CAUGHT",
+    "tests/test_v6_chain_v7f.py::test_ARM_an_S_T_step_with_a_forbidden_value_is_CAUGHT[extra0---selector",
+    "tests/test_v6_chain_v7f.py::test_ARM_an_S_T_step_with_a_forbidden_value_is_CAUGHT[extra1-R5:",
+    "tests/test_v6_chain_v7f.py::test_ARM_an_S_T_step_with_a_forbidden_value_is_CAUGHT[extra2---tac-op-cond",
+    "tests/test_v6_chain_v7f.py::test_ARM_an_S_T_step_with_a_forbidden_value_is_CAUGHT[extra3---goal-factored",
+    "tests/test_v6_chain_v7f.py::test_S_T_gets_its_geometry_levers_back_from_S_W_s_record",
+    "tests/test_v6_chain_v7f.py::test_manifests_under_v7f_include_S_W_because_it_is_a_NEW_run",
+    "tests/test_v6_chain_v7f.py::test_tac_op_cond_is_the_declared_D1_value",
+    "tests/test_v6_chain_v7f.py::test_the_S_T_line_flag_by_flag",
+    "tests/test_v6_chain_v7f.py::test_the_S_W_line_flag_by_flag",
+    "tests/test_v6_chain_v7f.py::test_the_dry_ladder_REFUSES_a_sidecar_built_over_a_different_label_blob",
+    "tests/test_v6_chain_v7f.py::test_the_emitted_R_flags_equal_the_gates_rehearsed_argv",
+    "tests/test_v6_chain_v7f.py::test_the_launch_gate_v7f_rules_PASS_both_lines_and_D1_stays_open",
+    "tests/test_v6_chain_v7f.py::test_the_launch_line_carries_both_pythonpath_roots_and_the_seam_dir",
+    "tests/test_v6_chain_v7f.py::test_the_v7f_DRY_LADDER_executes_S_W_then_S_T_on_the_real_inputs",
+    "tests/test_v6_chain_v7f.py::test_v7f_ladder_is_S_W_then_S_T_and_nothing_above"
+   ],
+   "old": "            init_from_key=\"S-W\", prev_gate_key=\"S-W\", max_horizon=60,\n            tac_goal_cond=False, extra=st_extra,",
+   "new": "            init_from_key=\"S-W\", prev_gate_key=\"S-W\", max_horizon=60,\n            tac_goal_cond=True, extra=st_extra,"
+  },
+  "M3_S_T_drops_plan_vmax_cap": {
+   "applied": true,
+   "rc": 1,
+   "summary": [
+    "26 failed, 31 passed in 14.12s"
+   ],
+   "n_failed": 26,
+   "failed": [
+    "tests/test_v6_chain_v7f.py::test_ARM_a_fan_widened_after_planning_is_CAUGHT",
+    "tests/test_v6_chain_v7f.py::test_ARM_a_step_missing_an_R_flag_is_CAUGHT[S-T-drop0---plan-vmax-cap",
+    "tests/test_v6_chain_v7f.py::test_ARM_a_step_missing_an_R_flag_is_CAUGHT[S-T-drop1---max-speed-input-v6",
+    "tests/test_v6_chain_v7f.py::test_ARM_a_step_missing_an_R_flag_is_CAUGHT[S-T-drop2---speed-max-sidecar-v6",
+    "tests/test_v6_chain_v7f.py::test_ARM_a_step_missing_an_R_flag_is_CAUGHT[S-T-drop3---tac-op-cond",
+    "tests/test_v6_chain_v7f.py::test_ARM_a_step_missing_an_R_flag_is_CAUGHT[S-T-drop4---w-tac-label-all",
+    "tests/test_v6_chain_v7f.py::test_ARM_a_step_missing_an_R_flag_is_CAUGHT[S-T-drop5---s2-labels",
+    "tests/test_v6_chain_v7f.py::test_ARM_a_step_missing_an_R_flag_is_CAUGHT[S-T-drop6---nav-labels",
+    "tests/test_v6_chain_v7f.py::test_ARM_a_step_missing_an_R_flag_is_CAUGHT[S-W-drop7---nav-cond",
+    "tests/test_v6_chain_v7f.py::test_ARM_a_step_missing_an_R_flag_is_CAUGHT[S-W-drop8---strategic-off",
+    "tests/test_v6_chain_v7f.py::test_ARM_a_step_missing_an_R_flag_is_CAUGHT[S-W-drop9---nav-labels",
+    "tests/test_v6_chain_v7f.py::test_ARM_an_S_T_step_emitting_tac_goal_cond_is_CAUGHT",
+    "tests/test_v6_chain_v7f.py::test_ARM_an_S_T_step_with_a_forbidden_value_is_CAUGHT[extra0---selector",
+    "tests/test_v6_chain_v7f.py::test_ARM_an_S_T_step_with_a_forbidden_value_is_CAUGHT[extra1-R5:",
+    "tests/test_v6_chain_v7f.py::test_ARM_an_S_T_step_with_a_forbidden_value_is_CAUGHT[extra2---tac-op-cond",
+    "tests/test_v6_chain_v7f.py::test_ARM_an_S_T_step_with_a_forbidden_value_is_CAUGHT[extra3---goal-factored",
+    "tests/test_v6_chain_v7f.py::test_S_T_gets_its_geometry_levers_back_from_S_W_s_record",
+    "tests/test_v6_chain_v7f.py::test_manifests_under_v7f_include_S_W_because_it_is_a_NEW_run",
+    "tests/test_v6_chain_v7f.py::test_tac_op_cond_is_the_declared_D1_value",
+    "tests/test_v6_chain_v7f.py::test_the_S_T_line_flag_by_flag",
+    "tests/test_v6_chain_v7f.py::test_the_S_W_line_flag_by_flag",
+    "tests/test_v6_chain_v7f.py::test_the_dry_ladder_REFUSES_a_sidecar_built_over_a_different_label_blob",
+    "tests/test_v6_chain_v7f.py::test_the_emitted_R_flags_equal_the_gates_rehearsed_argv",
+    "tests/test_v6_chain_v7f.py::test_the_launch_gate_v7f_rules_PASS_both_lines_and_D1_stays_open",
+    "tests/test_v6_chain_v7f.py::test_the_launch_line_carries_both_pythonpath_roots_and_the_seam_dir",
+    "tests/test_v6_chain_v7f.py::test_the_v7f_DRY_LADDER_executes_S_W_then_S_T_on_the_real_inputs"
+   ],
+   "old": "                   \"--max-speed-input-v6\", \"--plan-vmax-cap\",\n",
+   "new": "                   \"--max-speed-input-v6\",\n"
+  },
+  "M4_S_W_fan_back_to_the_trainer_default": {
+   "applied": true,
+   "rc": 1,
+   "summary": [
+    "7 failed, 50 passed in 21.28s"
+   ],
+   "n_failed": 7,
+   "failed": [
+    "tests/test_v6_chain_v7f.py::test_S_S_and_S_J_are_REFUSED_BY_NAME_under_v7f[argv0]",
+    "tests/test_v6_chain_v7f.py::test_S_S_and_S_J_are_REFUSED_BY_NAME_under_v7f[argv1]",
+    "tests/test_v6_chain_v7f.py::test_S_S_and_S_J_are_REFUSED_BY_NAME_under_v7f[argv2]",
+    "tests/test_v6_chain_v7f.py::test_S_S_and_S_J_are_REFUSED_BY_NAME_under_v7f[argv3]",
+    "tests/test_v6_chain_v7f.py::test_manifests_under_v7f_include_S_W_because_it_is_a_NEW_run",
+    "tests/test_v6_chain_v7f.py::test_next_under_v7f_names_S_W_with_the_gate_verdict",
+    "tests/test_v6_chain_v7f.py::test_the_CLI_applies_the_v7f_defaults"
+   ],
+   "old": "        cfg.n_candidates = 1              # R5 \u2014 overrides the dry fan of 3",
+   "new": "        pass                              # R5 \u2014 MUTATED: the fan is left at the v6 default"
+  }
+ },
+ "restored_sha256": "b1bf626b5f0b466354ebf551cad95827802f294f77d2c8486a335d772f5a434a",
+ "restored_ok": true
+}

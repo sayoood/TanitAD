@@ -1,0 +1,33 @@
+# PROVISIONAL: the s1-only read of the pickers through SHIP-R8 + RETIME (NOT the registered read)
+
+* **Generated:** 2026-10-21 22:45:43 +0200. All numbers come from `PROVISIONAL_S1_RULE_READ.json`. **Evidence class:** MEASURED.
+* **Tier and estimator:** T1 self-action OPEN LOOP on logged eval139 frames (not driving performance); paired episode-cluster bootstrap (taniteval.ci via pair_read_r8.paired_cell), B 2000, seed 0, 95 % percentile; models and RETIME gains FIXED: answers ONLY 'another draw of EPISODES'; ONE training seed; inference seeds 0 and 1 are the inference replicate; picker - SHIP is within one DDIM draw.
+* **Source fan.** The fanceil Thor s1 fan: os-only, inference seed 1. It matches the bank's s1 draw on 99.4 % of fan cells, and its own sel agrees with the bank's on 0.9958 of windows.
+* **Seed 0.** Seed 0 of every provisional tree is the bank's OWN plan, so s0 is a machinery control: every +RT cell must read exactly 0 vs SHIP (112 cells), and each raw arm's cell must equal SHIP_raw's (the raw-vs-SHIP+RT gap is the RETIME gain, not 0). **Control PASS: True** {'n_rt_cells': 112, 'rt_cells_all_exactly_zero': True, 'raw_cells_equal_SHIP_raw': True, 'compliance_rt_zero': True, 'compliance_raw_equal_SHIP_raw': True}. K13 (SHIP − SHIP = 0): True.
+* **SHIP inference floor** (|S2 compliant ADE, s0 bank draw − s1 Thor draw|): 0.0013 m. The prereg's A3 bar needs |delta| > 2× this floor at BOTH seeds; only s1 is read here.
+* **MBR here is the RE-DERIVED e9_keep cell** (`pvmbrrule_pf`): reach_keep captured, ceil_keep re-derived by the producer's rule (control in PROVISIONAL_S1_RULE_BUILD.json), r8_emit_keep assumed all True. The registered MBR32 uses the CAPTURED e9_keep.
+
+## SHIP-R8 per provisional tree
+
+The `overall` column is not a picker verdict, because s0 = own pick.
+
+| tree | overall | per clause | E1 s1 | E3 s1 |
+|---|---|---|---|---|
+| pvship_pf | PASS | {'1': 'PASS', '1b': 'PASS', '2': 'PASS', '3': 'PASS', '4': 'PASS', '5': 'PASS', '6': 'N/A', '7': 'PASS'} | -0.0329 [-0.0452, -0.0207] sep | -0.8684 [-1.1913, -0.5447] sep |
+| pvbase_pf | PASS | {'1': 'PASS', '1b': 'PASS', '2': 'PASS', '3': 'PASS', '4': 'PASS', '5': 'PASS', '6': 'N/A', '7': 'PASS'} | -0.0395 [-0.0506, -0.0288] sep | -1.0225 [-1.3376, -0.7212] sep |
+| pvmbrrule_pf | PASS | {'1': 'PASS', '1b': 'PASS', '2': 'PASS', '3': 'PASS', '4': 'PASS', '5': 'PASS', '6': 'N/A', '7': 'PASS'} | -0.0436 [-0.0540, -0.0334] sep | -1.0792 [-1.3819, -0.7819] sep |
+
+## Arm − SHIP (= own + RETIME_DEPLOY8) at seed 1, compliant windows
+
+| arm | S2 ADE − SHIP | S6 ADE − SHIP | COMPLIANCE − SHIP | cells separated WORSE at s1 |
+|---|---|---|---|---|
+| BASE+RT | -0.0066 [-0.0108, -0.0029] sep | -0.1541 [-0.2301, -0.0918] sep | -0.0002 [-0.0015, +0.0010] | none |
+| MBR32+RT | -0.0107 [-0.0158, -0.0060] sep | -0.2108 [-0.2991, -0.1332] sep | -0.0029 [-0.0053, -0.0007] sep | LATERAL:S6:LAT_heading_mae_deg +0.1485 [+0.0349, +0.2693] sep; LATERAL:S2:LAT_curvature_mae_1pm_valid +0.0002 [+0.0001, +0.0004] sep; LATERAL:S6:LAT_curvature_mae_1pm_valid +0.0003 [+0.0000, +0.0007] sep; LATERAL:S2:LAT_yaw_rate_mae_radps_valid +0.0007 [+0.0002, +0.0012] sep; LATERAL:S6:LAT_yaw_rate_mae_radps_valid +0.0011 [+0.0002, +0.0022] sep |
+| BASE_raw_capped | +0.0125 [+0.0068, +0.0184] sep | -0.0572 [-0.1269, +0.0039] | -0.0058 [-0.0094, -0.0029] sep | ADE:S2:ade_m +0.0125 [+0.0068, +0.0184] sep; ADE:S2:fde_m +0.0277 [+0.0148, +0.0408] sep; LONGITUDINAL:S2:LON_speed_mae_mps +0.0194 [+0.0129, +0.0259] sep; LONGITUDINAL:S2:LON_along_mae_m +0.0131 [+0.0073, +0.0192] sep; LONGITUDINAL:S2:LON_along_abs_final_m +0.0287 [+0.0156, +0.0421] sep; LONGITUDINAL:S2:LON_speed_within_0p5 -0.0154 [-0.0219, -0.0093] sep; LONGITUDINAL:S2:LON_accel_mae_mps2 +0.0563 [+0.0475, +0.0652] sep |
+| MBR32_raw_capped | -0.0012 [-0.0064, +0.0038] | -0.1325 [-0.2152, -0.0615] sep | -0.0063 [-0.0098, -0.0035] sep | LONGITUDINAL:S2:LON_accel_mae_mps2 +0.0412 [+0.0318, +0.0503] sep; LATERAL:S6:LAT_heading_mae_deg +0.1572 [+0.0440, +0.2782] sep; LATERAL:S2:LAT_curvature_mae_1pm_valid +0.0002 [+0.0001, +0.0004] sep; LATERAL:S6:LAT_curvature_mae_1pm_valid +0.0003 [+0.0001, +0.0007] sep; LATERAL:S2:LAT_yaw_rate_mae_radps_valid +0.0007 [+0.0003, +0.0013] sep; LATERAL:S6:LAT_yaw_rate_mae_radps_valid +0.0013 [+0.0003, +0.0024] sep |
+| SHIP_raw_capped | +0.0283 [+0.0222, +0.0350] sep | +0.1391 [+0.1117, +0.1693] sep | -0.0063 [-0.0098, -0.0035] sep | ADE:S2:ade_m +0.0283 [+0.0222, +0.0350] sep; ADE:S6:ade_m +0.1391 [+0.1117, +0.1693] sep; ADE:S2:fde_m +0.0678 [+0.0523, +0.0852] sep; ADE:S6:fde_m +0.2624 [+0.2107, +0.3176] sep; LONGITUDINAL:S2:LON_speed_mae_mps +0.0397 [+0.0315, +0.0486] sep; LONGITUDINAL:S6:LON_speed_mae_mps +0.0428 [+0.0345, +0.0522] sep; LONGITUDINAL:S2:LON_along_mae_m +0.0302 [+0.0239, +0.0370] sep; LONGITUDINAL:S6:LON_along_mae_m +0.1397 [+0.1116, +0.1696] sep; LONGITUDINAL:S2:LON_along_abs_final_m +0.0720 [+0.0555, +0.0891] sep; LONGITUDINAL:S6:LON_along_abs_final_m +0.2557 [+0.2048, +0.3098] sep; LONGITUDINAL:S2:LON_speed_within_0p5 -0.0314 [-0.0391, -0.0246] sep; LONGITUDINAL:S6:LON_speed_within_0p5 -0.0149 [-0.0193, -0.0105] sep; LONGITUDINAL:S2:LON_accel_mae_mps2 +0.0808 [+0.0677, +0.0936] sep; LONGITUDINAL:S6:LON_accel_mae_mps2 +0.0057 [+0.0033, +0.0080] sep; LATERAL:S6:LAT_curvature_mae_1pm_valid +0.0000 [+0.0000, +0.0001] sep; LATERAL:S2:LAT_yaw_rate_mae_radps_valid +0.0002 [+0.0000, +0.0003] sep; LATERAL:S6:LAT_yaw_rate_mae_radps_valid +0.0003 [+0.0001, +0.0005] sep; LATERAL:S2:LAT_cross_mae_m +0.0012 [+0.0003, +0.0022] sep; LATERAL:S6:LAT_cross_mae_m +0.0157 [+0.0068, +0.0256] sep; LATERAL:S2:LAT_cross_abs_final_m +0.0034 [+0.0008, +0.0064] sep; LATERAL:S6:LAT_cross_abs_final_m +0.0396 [+0.0202, +0.0608] sep; TACTICAL:S2:TAC_traj_lon_correct -0.0291 [-0.0423, -0.0169] sep |
+
+SHIP (own + RETIME) has an S2 compliant mean ADE of 0.2529 and a compliance rate of 0.0063.
+
+ZZPKPROVREADDONEZZ 343.5
+ZZPKPEAKRSSZZ provisional_read peak_working_set_GB=0.526 peak_commit_GB=1.005

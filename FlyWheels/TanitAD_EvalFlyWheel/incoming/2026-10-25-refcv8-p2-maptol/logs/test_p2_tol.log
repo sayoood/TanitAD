@@ -1,0 +1,25 @@
+PASS strip literal w=1 d=0
+PASS strip literal w=1 d=1
+PASS strip literal w=1 d=2
+PASS strip literal w=2 d=1
+PASS strip literal w=2 d=3
+PASS strip literal w=3 d=6
+PASS strip closed form (28 geometries x 4 k x 2 sides + exact IoU)
+PASS GT-as-prediction: P=R=F=IoU=1.0 at every k (8 classes)
+PASS all-one-class prediction: IoU_k = 0 for every other class at every k
+PASS diagonal d=1: tpp at k=(1,2,5,10) == (1, 1, 1, 1)
+PASS diagonal d=2: tpp at k=(1,2,5,10) == (0, 1, 1, 1)
+PASS diagonal d=3: tpp at k=(1,2,5,10) == (0, 0, 1, 1)
+PASS diagonal d=6: tpp at k=(1,2,5,10) == (0, 0, 0, 1)
+PASS mutation (taxicab metric) is caught by the diagonal literal
+PASS vs torch max-pool dilate + MH.window_stats EDT (6 random scenes, 1092 count cells, exact)
+PASS prf: neither side -> NaN
+PASS prf: pred only -> F=0, IoU=0
+PASS prf: gt only -> F=0, IoU=0
+PASS prf: P=R=0.5 -> F=0.5, IoU=1/3
+PASS census: lane line thickness 3 x 450 cells in band 0
+PASS census: crosswalk stripe thickness 2 x 80 cells
+PASS census: lateral runs of the stripe are 40 wide
+PASS census: arrow mark thickness 1 x 5 cells in band 1
+PASS census summary: median 3 cells = 0.3 m, share_le_2 = 0
+ZZP2TESTS fails=0 ZZ

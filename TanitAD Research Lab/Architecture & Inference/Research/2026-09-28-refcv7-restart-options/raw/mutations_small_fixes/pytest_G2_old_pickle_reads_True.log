@@ -1,0 +1,19 @@
+...F.                                                                    [100%]
+================================== FAILURES ===================================
+_____________ test_4_an_OLD_pickle_without_the_key_reads_as_False _____________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4395/test_4_an_OLD_pickle_without_t0')
+
+    def test_4_an_OLD_pickle_without_the_key_reads_as_False(tmp_path):
+        """A state dict written by the pre-fix __getstate__ (five keys) still loads."""
+        c = V2CompressedCache.__new__(V2CompressedCache)
+        c.__setstate__({"cache_dir": str(tmp_path), "lru_size": 2, "files": [], "frame": None,
+                        "allow_lossy": False})
+>       assert c.newest_frame_only is False
+E       assert True is False
+E        +  where True = <tanitad.data.v2_dataset.V2CompressedCache object at 0x000002F7B96B6360>.newest_frame_only
+
+tests\test_v2_cache_pickle_state.py:84: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_v2_cache_pickle_state.py::test_4_an_OLD_pickle_without_the_key_reads_as_False
+1 failed, 4 passed in 5.53s

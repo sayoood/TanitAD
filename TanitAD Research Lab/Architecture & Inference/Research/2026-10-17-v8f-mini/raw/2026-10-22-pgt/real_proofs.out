@@ -1,0 +1,16 @@
+PGT INPUTS OK: the banked M2b side loads; F 0.1207; LAMBDA(M2b) +0.2678 / +0.1667; S5 excess over P10 +0.0442 / +0.0250; identity control exactly +0 [0, 0]; GT sources {'M2b_s0': '-tacorc-all-goal', 'M2b_s1': '-tacorc-all-goal'}
+[identity] rc 0
+[identity] 13 contrasts x 2 seeds, every one exactly +0 [0, 0]: ['family:lateral/cross_mae_m', 'family:lateral/curvature_mae_1pm', 'family:lateral/heading_mae_deg', 'family:lateral/yaw_rate_mae_degps', 'family:longitudinal/accel_mae_mps2', 'family:longitudinal/along_mae_m', 'family:longitudinal/speed_mae_mps', 'mdk', 'mdk_alt', 'mleak', 'oracle_ade6', 'present_mse', 'primary']
+{
+ "reading": "PREREG_V8F_PGT stage final: FAIL-NO-MECHANISM; ADE6 M2b-pgt - M2b +0.557 / +0.779 m (2F 0.2415); M-LEAK d-LAMBDA +0.5000 / +0.5000 m (M2b +0.2678 / +0.1667); M-DK d-S5 +11.79pp / +10.94pp (M2b excess over P10 +4.42pp / +2.50pp); mechanism NOT met. VERDICT FAIL-NO-MECHANISM.",
+ "next": "FAIL without the mechanism: the leak or the tail did not halve, so the coupling is structural, not exposure. Next lever: separate O's longitudinal head from the lateral code slots (an architecture change, so a PI go)."
+}
+[regression] rc=0
+[regression] PREREG_V8F_PGT stage final: FAIL-NO-MECHANISM; ADE6 M2b-pgt - M2b +0.557 / +0.779 m (2F 0.2415); M-LEAK d-LAMBDA +0.5000 / +0.5000 m (M2b +0.2678 / +0.1667); M-DK d-S5 +11.79pp / +10.94pp (M2b excess over P10 +4.42pp / +2.50pp); mechanism NOT met. VERDICT FAIL-NO-MECHANISM.
+{
+ "reading": "PREREG_V8F_PGT stage final: SUCCESS; ADE6 M2b-pgt - M2b -1.305 / -1.233 m (2F 0.2415); M-LEAK d-LAMBDA -0.1607 / -0.1000 m (M2b +0.2678 / +0.1667); M-DK d-S5 -4.99pp / -3.34pp (M2b excess over P10 +4.42pp / +2.50pp); mechanism MET. VERDICT SUCCESS.",
+ "next": "SUCCESS: M2b-pgt drives better than M2b beyond 2F at both seeds. Next: the T1-kin read of M2b-pgt (stack/scripts/v8f_t1_eval.py, m in {30, 10}), then the pool8x20 input arm on top, under its own PREREG and a PI go."
+}
+[positive] rc=0
+[positive] PREREG_V8F_PGT stage final: SUCCESS; ADE6 M2b-pgt - M2b -1.305 / -1.233 m (2F 0.2415); M-LEAK d-LAMBDA -0.1607 / -0.1000 m (M2b +0.2678 / +0.1667); M-DK d-S5 -4.99pp / -3.34pp (M2b excess over P10 +4.42pp / +2.50pp); mechanism MET. VERDICT SUCCESS.
+OK

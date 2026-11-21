@@ -1,0 +1,267 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "model": "v6F@20000",
+ "parity": false,
+ "n_clips": 24,
+ "panels": {
+  "A_z_to_dego": {
+   "latent z": {
+    "em": 2e-06,
+    "lambda": 1000000.0,
+    "ci95": [
+     -1.2e-05,
+     7e-06
+    ],
+    "verdict": "does NOT carry it",
+    "ridge": {
+     "ridge_0.01": {
+      "em": -0.96799,
+      "ci95": [
+       -3.04134,
+       -0.202341
+      ],
+      "selected": false
+     },
+     "ridge_1": {
+      "em": -0.372014,
+      "ci95": [
+       -1.721017,
+       0.187723
+      ],
+      "selected": false
+     },
+     "ridge_100": {
+      "em": 0.010457,
+      "ci95": [
+       -0.10281,
+       0.054263
+      ],
+      "selected": false
+     },
+     "ridge_10000": {
+      "em": 0.00018,
+      "ci95": [
+       -0.001139,
+       0.000711
+      ],
+      "selected": false
+     },
+     "ridge_1e+06": {
+      "em": 2e-06,
+      "ci95": [
+       -1.2e-05,
+       7e-06
+      ],
+      "selected": true
+     }
+    }
+   },
+   "latent [z, dz]": {
+    "em": 2e-06,
+    "lambda": 1000000.0,
+    "ci95": [
+     -1.2e-05,
+     7e-06
+    ],
+    "verdict": "does NOT carry it",
+    "ridge": {
+     "ridge_0.01": {
+      "em": -0.967897,
+      "ci95": [
+       -3.048637,
+       -0.196368
+      ],
+      "selected": false
+     },
+     "ridge_1": {
+      "em": -0.370487,
+      "ci95": [
+       -1.719668,
+       0.189291
+      ],
+      "selected": false
+     },
+     "ridge_100": {
+      "em": 0.010498,
+      "ci95": [
+       -0.102037,
+       0.054054
+      ],
+      "selected": false
+     },
+     "ridge_10000": {
+      "em": 0.000179,
+      "ci95": [
+       -0.001129,
+       0.000708
+      ],
+      "selected": false
+     },
+     "ridge_1e+06": {
+      "em": 2e-06,
+      "ci95": [
+       -1.2e-05,
+       7e-06
+      ],
+      "selected": true
+     }
+    }
+   },
+   "pixel (floor)": {
+    "em": 0.000448,
+    "lambda": 1000000.0,
+    "ci95": [
+     -0.004145,
+     0.002247
+    ],
+    "verdict": "does NOT carry it",
+    "ridge": {
+     "ridge_0.01": {
+      "em": -0.838698,
+      "ci95": [
+       -3.056249,
+       -0.065576
+      ],
+      "selected": false
+     },
+     "ridge_1": {
+      "em": -0.778659,
+      "ci95": [
+       -2.638935,
+       -0.071267
+      ],
+      "selected": false
+     },
+     "ridge_100": {
+      "em": -0.721224,
+      "ci95": [
+       -2.632321,
+       0.014511
+      ],
+      "selected": false
+     },
+     "ridge_10000": {
+      "em": -0.009864,
+      "ci95": [
+       -0.341188,
+       0.125074
+      ],
+      "selected": false
+     },
+     "ridge_1e+06": {
+      "em": 0.000448,
+      "ci95": [
+       -0.004145,
+       0.002247
+      ],
+      "selected": true
+     }
+    }
+   },
+   "constant (control)": {
+    "em": 0.0,
+    "lambda": 0.01,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "verdict": "does NOT carry it",
+    "ridge": {
+     "ridge_0.01": {
+      "em": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "selected": true
+     },
+     "ridge_1": {
+      "em": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "selected": false
+     },
+     "ridge_100": {
+      "em": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "selected": false
+     },
+     "ridge_10000": {
+      "em": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "selected": false
+     },
+     "ridge_1e+06": {
+      "em": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "selected": false
+     }
+    }
+   }
+  },
+  "B_dego_to_dz": {
+   "em": -0.000667,
+   "lambda": 1000000.0,
+   "ci95": [
+    -0.001665,
+    -0.000194
+   ],
+   "meaning": "the share of the latent's per-tick movement that ego motion can explain -- the CEILING for any action-conditioned predictor scored on the FULL latent"
+  },
+  "C_subspace": {
+   "k2": {
+    "em": -0.005637,
+    "ci95": [
+     -0.021116,
+     0.001018
+    ],
+    "share_of_dz_energy": 0.048793
+   },
+   "k4": {
+    "em": -0.00542,
+    "ci95": [
+     -0.019745,
+     -0.000223
+    ],
+    "share_of_dz_energy": 0.085904
+   },
+   "k8": {
+    "em": -0.004526,
+    "ci95": [
+     -0.015178,
+     -0.000363
+    ],
+    "share_of_dz_energy": 0.126714
+   },
+   "k16": {
+    "em": -0.004256,
+    "ci95": [
+     -0.014178,
+     -0.000345
+    ],
+    "share_of_dz_energy": 0.132237
+   },
+   "k32": {
+    "em": -0.003831,
+    "ci95": [
+     -0.012527,
+     -0.000308
+    ],
+    "share_of_dz_energy": 0.143153
+   }
+  }
+ },
+ "verdict": "THE LATENT DOES NOT CARRY THE DYNAMICS (best z -> d(ego) EM +0.0004). This is an ENCODER problem and no change of prediction target will fix it."
+}

@@ -1,0 +1,369 @@
+{
+  "_is": "Sidecar for the eval dumps banked out of a session-keyed TEMP DIRECTORY into the repo.",
+  "date": "2026-09-06",
+  "stream": "Architecture & Inference",
+  "evidence_class": "MEASURED (ours)",
+  "gpu_days": 0,
+  "why": "The session's load-bearing evidence (refcv4b - refcv3 -0.1444 [-0.1647,-0.1227], the trivial-control ties, os_navzero +0.1054, the four metric families) rested on dumps living ONLY in C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\...\\<session-id>\\scratchpad\\. The operating standard is explicit: an artifact on one disk is NOT done. A scratchpad is worse than one disk - it is a temp directory keyed to a session id.",
+  "precedent_followed": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-refcv4b-navpred/raw/navpred_dump.tgz (13,048,687 B) and navflip_dump.tgz (14,804,062 B) - tarballs banked into a package raw/. This package ADDS the sidecar those two lack.",
+  "verification_protocol": {
+    "md5_both_ends": "md5 computed on the LOCAL tar and again on the REPO copy; recorded only on match.",
+    "content_not_size": "This mount has produced correct-size ALL-NUL files. Every banked tar was asserted on CONTENT: non-zero bytes in the first 64 KiB.",
+    "discriminating_control": "A genuine all-NUL file (262,144 B) was created and passed through the SAME non-zero counter IN THE SAME RUN. It read 0 non-zero bytes while every banked tar read >65,000. Without this the '>0' assertion proves nothing.",
+    "deep_assert": "For every dump the BANKED (repo) tar was re-opened, its manifest.json parsed, and an ep*.npz loaded with numpy - asserting g finite, nonzero_frac > 0.5, |sum| > 1.",
+    "identity_from_manifest_not_name": "Directory names were NOT trusted. Identity comes from manifest.model.ckpt / .step / .n_anchors / .cfg.core.anchors and the arm key set, PLUS a numeric discriminator over all 141 episodes: ground truth `g` must be bit-identical across dumps (same windows) while the model prediction `os` must DIFFER (different model).",
+    "inconclusive_never_absent": "Any unreadable byte range would have been reported INCONCLUSIVE; none occurred."
+  },
+  "identity_discriminator_MEASURED": {
+    "_is": "Concatenated over all 141 episodes per dump, float64.",
+    "g_sum_all_four_dumps": 272810.9308184178,
+    "g_bit_identical_across_refcv4b_refcv3_40284_refcv3_30k": true,
+    "os_sum": {
+      "refcv4b_t1_dump": 273410.8759207088,
+      "refcv3_40284_dump": 273475.4834483545,
+      "refcv3_30k_full_dump": 273117.6786894891
+    },
+    "refcv4b_vs_refcv3_40284": {
+      "g_identical": true,
+      "os_identical": false,
+      "os_max_abs_diff": 6.90476,
+      "os_mean_abs_diff": 0.198314,
+      "verdict": "DIFFERENT MODEL / same windows"
+    },
+    "refcv3_40284_vs_refcv3_30k": {
+      "g_identical": true,
+      "os_identical": false,
+      "os_max_abs_diff": 3.77343,
+      "os_mean_abs_diff": 0.119577,
+      "verdict": "DIFFERENT MODEL (40284 vs 30000) / same windows"
+    },
+    "why_this_matters": "A sibling found a local dump NAMED refcv4b that was actually refcv3. This is the check that settles it: identical GT proves the same eval grid, differing predictions prove a different model."
+  },
+  "banked": [
+    {
+      "tgz": "refcv4b_t1_dump.tgz",
+      "what_it_is": "refcv4b LANDING ARM. The dump every refcv4b-vs-refcv3 headline this session rests on, and the dump `paired_navpred_SELFTEST_on_banked_landing_dump.json` reproduces (C3_os_reproduction PASS).",
+      "source_temp_path": "scratchpad/dump/refcv4b_t1_dump",
+      "tgz_bytes": 10531256,
+      "tgz_md5": "f7d3a8ca0eaec4a6c624a8d947ae6dfe",
+      "md5_match_both_ends": true,
+      "content_digest_md5": "427529e56ebd644876aa512e4b1f2835",
+      "content_digest_note": "md5 over sorted '<member> <md5(member bytes)>' lines. STABLE across re-tarring; the .tgz md5 is NOT (gzip embeds mtime).",
+      "src_dir_bytes": 11763914,
+      "n_member_files": 284,
+      "n_episodes": 141,
+      "n_windows": 4823,
+      "identity": {
+        "ckpt": "/workspace/experiments/refcv4b-b1-v72-40k/ckpt_40284_FINAL.pt",
+        "step": 40284,
+        "n_anchors": 117,
+        "anchors_cfg": {
+          "n_anchors": 117,
+          "pool_size": 4096,
+          "seed": 0,
+          "v0_conditioned": true,
+          "ref_speed_ms": 10.0,
+          "control_units": "alat",
+          "alat_v_floor_ms": 4.0,
+          "kappa_cap": 0.12
+        },
+        "arms": [
+          "os",
+          "ha",
+          "ha0",
+          "ha0_ext",
+          "os_navshuf",
+          "os_navzero",
+          "oracle_sel"
+        ],
+        "n_episodes": 141,
+        "n_windows": 4823,
+        "tool": "taniteval/tools/refcv3_arm.py",
+        "eval_labels_md5": "aa12c948f062181c3297265b51526ec5",
+        "has_oracle_sel_arm": true,
+        "_unverified_key_present": true,
+        "ckpt_md5": null,
+        "ckpt_md5_class": "UNAVAILABLE - checkpoint is pod-side (workspace) and this box does not reach it; identity rests on ckpt path + step + n_anchors + anchors_cfg + arm key set + the GT/prediction discriminator."
+      },
+      "content_assertion": {
+        "banked_nonzero_in_first_64k": 65337,
+        "allnul_control_nonzero": 0,
+        "discriminating": true,
+        "banked_npz_opened": "ep000.npz",
+        "banked_npz_keys": [
+          "clip_index",
+          "eid",
+          "g",
+          "ha",
+          "ha0",
+          "ha0_ext",
+          "oracle_sel",
+          "os",
+          "os_navshuf",
+          "os_navzero",
+          "v0",
+          "ws"
+        ],
+        "banked_npz_g_sum": 1244.6760268509388,
+        "banked_npz_g_finite": true
+      }
+    },
+    {
+      "tgz": "refcv3_40284_dump.tgz",
+      "what_it_is": "refcv3 CONTROL for the landing arm, matched at the same step (40284) on the same 141 episodes / 4,823 windows.",
+      "source_temp_path": "scratchpad/dump40284/refcv3_40284_dump",
+      "tgz_bytes": 1385352,
+      "tgz_md5": "0079766f9a53acaf3f0b1adc61af786e",
+      "md5_match_both_ends": true,
+      "content_digest_md5": "56c5e5d308c4c3141d2a737a0b1155f7",
+      "content_digest_note": "md5 over sorted '<member> <md5(member bytes)>' lines. STABLE across re-tarring; the .tgz md5 is NOT (gzip embeds mtime).",
+      "src_dir_bytes": 2293188,
+      "n_member_files": 283,
+      "n_episodes": 141,
+      "n_windows": 4823,
+      "identity": {
+        "ckpt": "/workspace/experiments/refcv3-b1-v72-30k/ckpt_40284_FINAL.pt",
+        "step": 40284,
+        "n_anchors": 128,
+        "anchors_cfg": {
+          "n_anchors": 128,
+          "pool_size": 4096,
+          "seed": 0
+        },
+        "arms": [
+          "os",
+          "ha",
+          "ha0",
+          "os_navshuf",
+          "os_navzero",
+          "oracle_sel"
+        ],
+        "n_episodes": 141,
+        "n_windows": 4823,
+        "tool": "taniteval/tools/refcv3_arm.py",
+        "eval_labels_md5": "aa12c948f062181c3297265b51526ec5",
+        "has_oracle_sel_arm": true,
+        "_unverified_key_present": true,
+        "ckpt_md5": null,
+        "ckpt_md5_class": "UNAVAILABLE - checkpoint is pod-side (workspace) and this box does not reach it; identity rests on ckpt path + step + n_anchors + anchors_cfg + arm key set + the GT/prediction discriminator."
+      },
+      "content_assertion": {
+        "banked_nonzero_in_first_64k": 65234,
+        "allnul_control_nonzero": 0,
+        "discriminating": true,
+        "banked_npz_opened": "ep000.npz",
+        "banked_npz_keys": [
+          "clip_index",
+          "eid",
+          "g",
+          "ha",
+          "ha0",
+          "oracle_sel",
+          "os",
+          "os_navshuf",
+          "os_navzero",
+          "v0",
+          "ws"
+        ],
+        "banked_npz_g_sum": 1244.6760268509388,
+        "banked_npz_g_finite": true
+      }
+    },
+    {
+      "tgz": "refcv3_30k_full_dump.tgz",
+      "what_it_is": "refcv3 at step 30000 - the earlier refcv3 checkpoint. Its ckpt is on LOCAL disk, so it is the one arm whose checkpoint md5 could be MEASURED.",
+      "source_temp_path": "scratchpad/dump30k/full_dump",
+      "tgz_bytes": 1387427,
+      "tgz_md5": "a4515312577860c4ea3397ba9995ee0e",
+      "md5_match_both_ends": true,
+      "content_digest_md5": "44bbb5e9138ff158f1bff38e0e43b520",
+      "content_digest_note": "md5 over sorted '<member> <md5(member bytes)>' lines. STABLE across re-tarring; the .tgz md5 is NOT (gzip embeds mtime).",
+      "src_dir_bytes": 2295778,
+      "n_member_files": 283,
+      "n_episodes": 141,
+      "n_windows": 4823,
+      "identity": {
+        "ckpt": "C:/Users/Admin/run_refcv3_ol/ckpt/ckpt_30000.pt",
+        "step": 30000,
+        "n_anchors": 128,
+        "anchors_cfg": {
+          "n_anchors": 128,
+          "pool_size": 4096,
+          "seed": 0
+        },
+        "arms": [
+          "os",
+          "ha",
+          "ha0",
+          "os_navshuf",
+          "os_navzero",
+          "oracle_sel"
+        ],
+        "n_episodes": 141,
+        "n_windows": 4823,
+        "tool": "taniteval/tools/refcv3_arm.py",
+        "eval_labels_md5": "aa12c948f062181c3297265b51526ec5",
+        "has_oracle_sel_arm": true,
+        "_unverified_key_present": true,
+        "ckpt_md5": "00da81c6efcd91e7b618a1fbddb3b78f",
+        "ckpt_md5_class": "MEASURED (ours, local disk)"
+      },
+      "content_assertion": {
+        "banked_nonzero_in_first_64k": 65240,
+        "allnul_control_nonzero": 0,
+        "discriminating": true,
+        "banked_npz_opened": "ep000.npz",
+        "banked_npz_keys": [
+          "clip_index",
+          "eid",
+          "g",
+          "ha",
+          "ha0",
+          "oracle_sel",
+          "os",
+          "os_navshuf",
+          "os_navzero",
+          "v0",
+          "ws"
+        ],
+        "banked_npz_g_sum": 1244.6760268509388,
+        "banked_npz_g_finite": true
+      }
+    },
+    {
+      "tgz": "refav1_t1_dump.tgz",
+      "what_it_is": "refav1 (Thor). Different tool (`refav1_arm.py`), different arm set (cl/ha/ha0/ol), coarser grid: 282 windows over 141 episodes.",
+      "source_temp_path": "scratchpad/dk/dump/full",
+      "tgz_bytes": 286086,
+      "tgz_md5": "ded1c675982cc669b84c21bb32defa2f",
+      "md5_match_both_ends": true,
+      "content_digest_md5": "5b5bb19947e6f505a345d3c37846199f",
+      "content_digest_note": "md5 over sorted '<member> <md5(member bytes)>' lines. STABLE across re-tarring; the .tgz md5 is NOT (gzip embeds mtime).",
+      "src_dir_bytes": 1305548,
+      "n_member_files": 283,
+      "n_episodes": 141,
+      "n_windows": 282,
+      "identity": {
+        "ckpt": "/home/nvidia/experiments/refav1-b1-v72-ep3-speed/ckpt.pt",
+        "step": 21109,
+        "n_anchors": null,
+        "anchors_cfg": null,
+        "arms": [
+          "cl",
+          "ha",
+          "ha0",
+          "ol"
+        ],
+        "n_episodes": 141,
+        "n_windows": 282,
+        "tool": "taniteval/tools/refav1_arm.py",
+        "eval_labels_md5": "aa12c948f062181c3297265b51526ec5",
+        "has_oracle_sel_arm": false,
+        "_unverified_key_present": false,
+        "ckpt_md5": null,
+        "ckpt_md5_class": "UNAVAILABLE - checkpoint is pod-side (home) and this box does not reach it; identity rests on ckpt path + step + n_anchors + anchors_cfg + arm key set + the GT/prediction discriminator."
+      },
+      "content_assertion": {
+        "banked_nonzero_in_first_64k": 65238,
+        "allnul_control_nonzero": 0,
+        "discriminating": true,
+        "banked_npz_opened": "ep000.npz",
+        "banked_npz_keys": [
+          "cl",
+          "clip_index",
+          "eid",
+          "g",
+          "ha",
+          "ha0",
+          "ol",
+          "v0",
+          "ws"
+        ],
+        "banked_npz_g_sum": 188.29665578668937,
+        "banked_npz_g_finite": true
+      }
+    }
+  ],
+  "not_banked": [
+    {
+      "path": "scratchpad/rc3dump/refcv3_40284_dump",
+      "reason": "BYTE-IDENTICAL DUPLICATE of scratchpad/dump40284/refcv3_40284_dump.",
+      "proof": [
+        "`diff -r -q` reports no differences",
+        "manifest.json md5 equal: c3c4910395a6f23998b9054dbf83a809",
+        "ep000.npz md5 equal: 908eb2485437877279d8a036e9d0ff3e",
+        "independent numeric check: `os` concatenated over 141 eps is bit-identical (max|d| = 0)"
+      ],
+      "bytes": 2293188,
+      "action": "Not banked twice. refcv3_40284_dump.tgz IS this dump."
+    }
+  ],
+  "too_large_to_bank": [],
+  "notes": [
+    {
+      "id": "N1",
+      "severity": "HIGH",
+      "note": "`_unverified` DOES NOT DISCRIMINATE a fixture from a real dump. The string 'UNVERIFIED on a real checkpoint ... random-init RefCV3Model at refc_v3_smoke_config over a synthetic 3-episode slice only' is BOILERPLATE emitted by `taniteval/tools/refcv3_arm.py` and is present on ALL FOUR refcv3-family dumps banked here - including the refcv4b landing arm at step 40284 over 141 episodes / 4,823 windows, whose state_dict loads with missing_keys=[] and unexpected_keys=[]. It is absent only from the refav1 dump, which a different tool wrote. Anyone using that key to tell fixture from real will misclassify the real dumps. Use model.ckpt / model.step / grid.n_episodes / grid.n_windows / model.n_anchors.",
+      "discriminators_MEASURED": {
+        "in_repo_fixture (Benchmarks & Evals/Research/2026-09-03-refcv3-arm/raw/fixture_dump)": {
+          "ckpt": "a scratchpad out/fixture/run/ckpt.pt under a DIFFERENT session id",
+          "step": 11,
+          "n_episodes": 3,
+          "n_windows": 42,
+          "n_anchors": 20,
+          "_unverified": true
+        },
+        "real refcv4b landing arm": {
+          "ckpt": "/workspace/experiments/refcv4b-b1-v72-40k/ckpt_40284_FINAL.pt",
+          "step": 40284,
+          "n_episodes": 141,
+          "n_windows": 4823,
+          "n_anchors": 117,
+          "_unverified": true
+        }
+      }
+    },
+    {
+      "id": "N2",
+      "severity": "MEDIUM",
+      "note": "The in-repo `fixture_dump` is a SYNTHETIC 3-episode fixture and MUST NEVER be mistaken for a real arm. It lives at 'TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-03-refcv3-arm/raw/fixture_dump' - NOT under Implementation/incoming/ as sometimes cited. MEASURED: step 11, 3 episodes, 42 windows, 20 anchors, ckpt under a temp scratchpad. It is the ONLY in-repo 'dump' that predates this banking, and it is not evidence about any trained model."
+    },
+    {
+      "id": "N3",
+      "severity": "MEDIUM",
+      "note": "The navpred/navflip dumps DROP `oracle_sel` ENTIRELY - VERIFIED by opening navpred_dump.tgz: arms = [os, ha, ha0, ha0_ext, os_navshuf, os_navzero, os_navpred], oracle_sel absent. That is why the `os_navpred` roll has NO CEILING ARM. Do not go looking for it later. The dumps banked HERE do carry oracle_sel (refcv4b and both refcv3 dumps).",
+      "measured": {
+        "navpred_dump.tgz arms": [
+          "os",
+          "ha",
+          "ha0",
+          "ha0_ext",
+          "os_navshuf",
+          "os_navzero",
+          "os_navpred"
+        ],
+        "oracle_sel_present": false
+      }
+    },
+    {
+      "id": "N4",
+      "severity": "MEDIUM",
+      "note": "HARDWARE SPLIT, verified from the manifests: the refcv4b dump banked here has ckpt `/workspace/experiments/refcv4b-b1-v72-40k/ckpt_40284_FINAL.pt` (the A40 pod), while the in-repo navpred_dump.tgz has ckpt `/home/nvidia/refcv4b/ckpt_40284_FINAL.pt` (Thor). Same step 40284, same n_anchors 117, same 141/4823 grid - DIFFERENT HARDWARE. This is exactly the A40-vs-Thor split behind the C3 reproduction result recorded in RESULT.md."
+    },
+    {
+      "id": "N5",
+      "severity": "LOW",
+      "note": "STALE DOCSTRING inside the refcv4b manifest: `sidecar_schema.anchor_acc` says 'chance = 1/128 = 0.0078', but that dump has n_anchors = 117, so chance is 1/117 = 0.00855. The string is hardcoded in the tool and was not re-derived for the 117-anchor bank. Minor, but anyone quoting anchor_acc against chance from this manifest would use the wrong denominator. Escalated, not edited - this agent owns no code file."
+    },
+    {
+      "id": "N6",
+      "severity": "LOW",
+      "note": "The .tgz md5 is NOT reproducible across re-tarring because gzip embeds an mtime. Verify a banked tar with `content_digest_md5` (md5 over sorted '<member> <md5(member bytes)>' lines), which is stable. The .tgz md5 recorded here identifies THESE bytes as written."
+    },
+    {
+      "id": "N7",
+      "severity": "INFO",
+      "note": "Checkpoint md5 is MEASURED for exactly one arm - refcv3 @30000, whose ckpt is on local disk (C:\\Users\\Admin\\run_refcv3_ol\\ckpt\\ckpt_30000.pt, 428,519,790 B, md5 00da81c6efcd91e7b618a1fbddb3b78f). The other three checkpoints are pod-side (/workspace/... on the A40, /home/nvidia/... on Thor) and this box does not reach them; no manifest records a ckpt hash. For those, identity rests on ckpt path + step + n_anchors + anchors_cfg + arm key set + the GT/prediction discriminator above."
+    }
+  ]
+}

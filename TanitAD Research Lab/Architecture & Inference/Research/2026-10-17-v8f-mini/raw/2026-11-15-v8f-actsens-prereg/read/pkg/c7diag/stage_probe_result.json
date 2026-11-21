@@ -1,0 +1,557 @@
+{
+ "prior_fit_1_vs_2_threads": {
+  "A_sc": {
+   "bit_equal": true,
+   "n_diff": 0,
+   "size": 54990,
+   "max_abs": 0.0
+  },
+  "act1": {
+   "bit_equal": false,
+   "n_diff": 114,
+   "size": 293280,
+   "max_abs": 2.1457672119140625e-06
+  },
+  "act2": {
+   "bit_equal": false,
+   "n_diff": 286,
+   "size": 58656,
+   "max_abs": 1.1920928955078125e-06
+  },
+  "buf_prior_mean_1": {
+   "bit_equal": true,
+   "n_diff": 0,
+   "size": 2,
+   "max_abs": 0.0
+  },
+  "buf_prior_std_1": {
+   "bit_equal": true,
+   "n_diff": 0,
+   "size": 2,
+   "max_abs": 0.0
+  },
+  "buf_prior_lo_1": {
+   "bit_equal": true,
+   "n_diff": 0,
+   "size": 2,
+   "max_abs": 0.0
+  },
+  "buf_prior_hi_1": {
+   "bit_equal": true,
+   "n_diff": 0,
+   "size": 2,
+   "max_abs": 0.0
+  },
+  "buf_prior_mean_2": {
+   "bit_equal": true,
+   "n_diff": 0,
+   "size": 32,
+   "max_abs": 0.0
+  },
+  "buf_prior_std_2": {
+   "bit_equal": true,
+   "n_diff": 0,
+   "size": 32,
+   "max_abs": 0.0
+  },
+  "buf_prior_lo_2": {
+   "bit_equal": true,
+   "n_diff": 0,
+   "size": 32,
+   "max_abs": 0.0
+  },
+  "buf_prior_hi_2": {
+   "bit_equal": true,
+   "n_diff": 0,
+   "size": 32,
+   "max_abs": 0.0
+  },
+  "buf_prior_mean_3": {
+   "bit_equal": false,
+   "n_diff": 6,
+   "size": 32,
+   "max_abs": 3.725290298461914e-09
+  },
+  "buf_prior_std_3": {
+   "bit_equal": true,
+   "n_diff": 0,
+   "size": 32,
+   "max_abs": 0.0
+  },
+  "buf_prior_lo_3": {
+   "bit_equal": true,
+   "n_diff": 0,
+   "size": 32,
+   "max_abs": 0.0
+  },
+  "buf_prior_hi_3": {
+   "bit_equal": true,
+   "n_diff": 0,
+   "size": 32,
+   "max_abs": 0.0
+  }
+ },
+ "st_encode_per_module_1_vs_2_threads": [
+  {
+   "call": "0000|act_embed.0|Linear",
+   "in_shape": [
+    1833,
+    15,
+    2
+   ],
+   "in_bit_equal": true,
+   "in_n_diff": 0,
+   "out_shape": [
+    1833,
+    15,
+    32
+   ],
+   "out_bit_equal": false,
+   "out_n_diff": 1
+  },
+  {
+   "call": "0001|act_embed.1|GELU",
+   "in_shape": [
+    1833,
+    15,
+    32
+   ],
+   "in_bit_equal": false,
+   "in_n_diff": 1,
+   "out_shape": [
+    1833,
+    15,
+    32
+   ],
+   "out_bit_equal": true,
+   "out_n_diff": 0
+  },
+  {
+   "call": "0002|act_embed.2|Linear",
+   "in_shape": [
+    1833,
+    15,
+    32
+   ],
+   "in_bit_equal": true,
+   "in_n_diff": 0,
+   "out_shape": [
+    1833,
+    15,
+    32
+   ],
+   "out_bit_equal": false,
+   "out_n_diff": 104
+  },
+  {
+   "call": "0003|act_embed|Sequential",
+   "in_shape": [
+    1833,
+    15,
+    2
+   ],
+   "in_bit_equal": true,
+   "in_n_diff": 0,
+   "out_shape": [
+    1833,
+    15,
+    32
+   ],
+   "out_bit_equal": false,
+   "out_n_diff": 104
+  },
+  {
+   "call": "0004|encoders.0.net.0|Linear",
+   "in_shape": [
+    1833,
+    6,
+    128
+   ],
+   "in_bit_equal": true,
+   "in_n_diff": 0,
+   "out_shape": [
+    1833,
+    6,
+    128
+   ],
+   "out_bit_equal": false,
+   "out_n_diff": 29
+  },
+  {
+   "call": "0005|encoders.0.net.1|GELU",
+   "in_shape": [
+    1833,
+    6,
+    128
+   ],
+   "in_bit_equal": false,
+   "in_n_diff": 29,
+   "out_shape": [
+    1833,
+    6,
+    128
+   ],
+   "out_bit_equal": false,
+   "out_n_diff": 28
+  },
+  {
+   "call": "0006|encoders.0.net.2|Linear",
+   "in_shape": [
+    1833,
+    6,
+    128
+   ],
+   "in_bit_equal": false,
+   "in_n_diff": 28,
+   "out_shape": [
+    1833,
+    6,
+    128
+   ],
+   "out_bit_equal": false,
+   "out_n_diff": 299
+  },
+  {
+   "call": "0007|encoders.0.net|Sequential",
+   "in_shape": [
+    1833,
+    6,
+    128
+   ],
+   "in_bit_equal": true,
+   "in_n_diff": 0,
+   "out_shape": [
+    1833,
+    6,
+    128
+   ],
+   "out_bit_equal": false,
+   "out_n_diff": 299
+  },
+  {
+   "call": "0008|encoders.0|LevelEncoder",
+   "in_shape": [
+    1833,
+    6,
+    128
+   ],
+   "in_bit_equal": true,
+   "in_n_diff": 0,
+   "out_shape": [
+    1833,
+    6,
+    128
+   ],
+   "out_bit_equal": false,
+   "out_n_diff": 299
+  },
+  {
+   "call": "0009|macro_encoders.0.net.0|Linear",
+   "in_shape": [
+    1833,
+    5,
+    96
+   ],
+   "in_bit_equal": false,
+   "in_n_diff": 104,
+   "out_shape": [
+    1833,
+    5,
+    32
+   ],
+   "out_bit_equal": false,
+   "out_n_diff": 95
+  },
+  {
+   "call": "0010|macro_encoders.0.net.1|GELU",
+   "in_shape": [
+    1833,
+    5,
+    32
+   ],
+   "in_bit_equal": false,
+   "in_n_diff": 95,
+   "out_shape": [
+    1833,
+    5,
+    32
+   ],
+   "out_bit_equal": false,
+   "out_n_diff": 93
+  },
+  {
+   "call": "0011|macro_encoders.0.net.2|Linear",
+   "in_shape": [
+    1833,
+    5,
+    32
+   ],
+   "in_bit_equal": false,
+   "in_n_diff": 93,
+   "out_shape": [
+    1833,
+    5,
+    32
+   ],
+   "out_bit_equal": false,
+   "out_n_diff": 103
+  },
+  {
+   "call": "0012|macro_encoders.0.net|Sequential",
+   "in_shape": [
+    1833,
+    5,
+    96
+   ],
+   "in_bit_equal": false,
+   "in_n_diff": 104,
+   "out_shape": [
+    1833,
+    5,
+    32
+   ],
+   "out_bit_equal": false,
+   "out_n_diff": 103
+  },
+  {
+   "call": "0013|macro_encoders.0.norm|LayerNorm",
+   "in_shape": [
+    1833,
+    5,
+    32
+   ],
+   "in_bit_equal": false,
+   "in_n_diff": 103,
+   "out_shape": [
+    1833,
+    5,
+    32
+   ],
+   "out_bit_equal": false,
+   "out_n_diff": 114
+  },
+  {
+   "call": "0014|macro_encoders.0|MacroActionEncoder",
+   "in_shape": [
+    1833,
+    5,
+    3,
+    32
+   ],
+   "in_bit_equal": false,
+   "in_n_diff": 104,
+   "out_shape": [
+    1833,
+    5,
+    32
+   ],
+   "out_bit_equal": false,
+   "out_n_diff": 114
+  },
+  {
+   "call": "0015|encoders.1.net.0|Linear",
+   "in_shape": [
+    1833,
+    2,
+    128
+   ],
+   "in_bit_equal": false,
+   "in_n_diff": 130,
+   "out_shape": [
+    1833,
+    2,
+    128
+   ],
+   "out_bit_equal": false,
+   "out_n_diff": 193
+  },
+  {
+   "call": "0016|encoders.1.net.1|GELU",
+   "in_shape": [
+    1833,
+    2,
+    128
+   ],
+   "in_bit_equal": false,
+   "in_n_diff": 193,
+   "out_shape": [
+    1833,
+    2,
+    128
+   ],
+   "out_bit_equal": false,
+   "out_n_diff": 183
+  },
+  {
+   "call": "0017|encoders.1.net.2|Linear",
+   "in_shape": [
+    1833,
+    2,
+    128
+   ],
+   "in_bit_equal": false,
+   "in_n_diff": 183,
+   "out_shape": [
+    1833,
+    2,
+    128
+   ],
+   "out_bit_equal": false,
+   "out_n_diff": 255
+  },
+  {
+   "call": "0018|encoders.1.net|Sequential",
+   "in_shape": [
+    1833,
+    2,
+    128
+   ],
+   "in_bit_equal": false,
+   "in_n_diff": 130,
+   "out_shape": [
+    1833,
+    2,
+    128
+   ],
+   "out_bit_equal": false,
+   "out_n_diff": 255
+  },
+  {
+   "call": "0019|encoders.1|LevelEncoder",
+   "in_shape": [
+    1833,
+    2,
+    128
+   ],
+   "in_bit_equal": false,
+   "in_n_diff": 130,
+   "out_shape": [
+    1833,
+    2,
+    128
+   ],
+   "out_bit_equal": false,
+   "out_n_diff": 255
+  },
+  {
+   "call": "0020|macro_encoders.1.net.0|Linear",
+   "in_shape": [
+    1833,
+    1,
+    160
+   ],
+   "in_bit_equal": false,
+   "in_n_diff": 114,
+   "out_shape": [
+    1833,
+    1,
+    32
+   ],
+   "out_bit_equal": false,
+   "out_n_diff": 270
+  },
+  {
+   "call": "0021|macro_encoders.1.net.1|GELU",
+   "in_shape": [
+    1833,
+    1,
+    32
+   ],
+   "in_bit_equal": false,
+   "in_n_diff": 270,
+   "out_shape": [
+    1833,
+    1,
+    32
+   ],
+   "out_bit_equal": false,
+   "out_n_diff": 258
+  },
+  {
+   "call": "0022|macro_encoders.1.net.2|Linear",
+   "in_shape": [
+    1833,
+    1,
+    32
+   ],
+   "in_bit_equal": false,
+   "in_n_diff": 258,
+   "out_shape": [
+    1833,
+    1,
+    32
+   ],
+   "out_bit_equal": false,
+   "out_n_diff": 287
+  },
+  {
+   "call": "0023|macro_encoders.1.net|Sequential",
+   "in_shape": [
+    1833,
+    1,
+    160
+   ],
+   "in_bit_equal": false,
+   "in_n_diff": 114,
+   "out_shape": [
+    1833,
+    1,
+    32
+   ],
+   "out_bit_equal": false,
+   "out_n_diff": 287
+  },
+  {
+   "call": "0024|macro_encoders.1.norm|LayerNorm",
+   "in_shape": [
+    1833,
+    1,
+    32
+   ],
+   "in_bit_equal": false,
+   "in_n_diff": 287,
+   "out_shape": [
+    1833,
+    1,
+    32
+   ],
+   "out_bit_equal": false,
+   "out_n_diff": 286
+  },
+  {
+   "call": "0025|macro_encoders.1|MacroActionEncoder",
+   "in_shape": [
+    1833,
+    1,
+    5,
+    32
+   ],
+   "in_bit_equal": false,
+   "in_n_diff": 114,
+   "out_shape": [
+    1833,
+    1,
+    32
+   ],
+   "out_bit_equal": false,
+   "out_n_diff": 286
+  }
+ ],
+ "first_divergent_module": {
+  "call": "0000|act_embed.0|Linear",
+  "in_shape": [
+   1833,
+   15,
+   2
+  ],
+  "in_bit_equal": true,
+  "in_n_diff": 0,
+  "out_shape": [
+   1833,
+   15,
+   32
+  ],
+  "out_bit_equal": false,
+  "out_n_diff": 1
+ }
+}

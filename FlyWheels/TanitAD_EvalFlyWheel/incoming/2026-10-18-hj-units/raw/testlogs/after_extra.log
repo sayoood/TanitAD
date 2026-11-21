@@ -1,0 +1,55 @@
+=== tests/test_openloop_suite.py
+
+(no criteria render)
+
+[suite] wrote C:\Users\Admin\AppData\Local\Temp\pytest-of-Admin\pytest-5240\test_arm_json_roundtrip_is_the0\out\RT.json
+[suite] wrote C:\Users\Admin\AppData\Local\Temp\pytest-of-Admin\pytest-5240\test_arm_json_roundtrip_is_the0\out\RT.md
+[suite] wrote C:\Users\Admin\AppData\Local\Temp\pytest-of-Admin\pytest-5240\test_arm_json_roundtrip_is_the0\out\RT.html
+[suite] loop-vocabulary guard: CLEAN (0 occurrences of the forbidden phrase in either rendering)
+[suite] constant-only control: OK
+[suite] criteria: None violations, None work items (registry vNone)
+=========================== short test summary info ===========================
+FAILED tests/test_openloop_suite.py::test_criteria_checker_reports_zero_violations
+FAILED tests/test_openloop_suite.py::test_forbidden_estimator_is_never_a_decision_grade_interval
+FAILED tests/test_openloop_suite.py::test_all_four_families_present_and_never_pooled
+FAILED tests/test_openloop_suite.py::test_arm_json_roundtrip_is_the_contract_with_another_stream
+4 failed, 19 passed in 43.69s
+=== tests/test_t1_v2_adapter.py
+.............................                                            [100%]
+29 passed in 23.03s
+=== tests/test_residual_prior.py
+............s.....................                                       [100%]
+33 passed, 1 skipped in 9.06s
+=== tests/test_launch_closure_audit.py
+        repo = Path(__file__).resolve().parents[2]
+        for rel in LCA.DEFAULT_LAUNCH_SOURCES:
+>           assert (repo / rel).is_file(), (
+                f"launch source moved: {rel}. Repoint DEFAULT_LAUNCH_SOURCES — do "
+                "NOT let the derivation quietly shrink.")
+E           AssertionError: launch source moved: TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-08-07-hierarchical-wm-redesign/V6_GO_PACKAGE.md. Repoint DEFAULT_LAUNCH_SOURCES — do NOT let the derivation quietly shrink.
+E           assert False
+E            +  where False = is_file()
+E            +    where is_file = (WindowsPath('C:/Users/Admin/hjunits/tree') / 'TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-08-07-hierarchical-wm-redesign/V6_GO_PACKAGE.md').is_file
+
+tests\test_launch_closure_audit.py:243: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_launch_closure_audit.py::test_default_entries_and_roots_exist_in_the_repo
+FAILED tests/test_launch_closure_audit.py::test_launch_sources_exist_or_the_whole_audit_silently_narrows
+2 failed, 27 passed in 19.76s
+=== tests/test_kingate_contract.py
+__________ test_the_gate_result_is_stamped_T0_until_a_T1_leg_exists ___________
+
+    def test_the_gate_result_is_stamped_T0_until_a_T1_leg_exists():
+        """⛔ EVAL_DOCTRINE: T1 is the primary tier for any capability claim. The banked gate
+        numbers are T0 (the 4060 was saturated), and nothing may quote them as driving
+        performance until the T1 leg runs."""
+        d = os.path.join(REPO, "Project Steering", "Decisions", "2026-09-05-mm-decisions.md")
+>       with io.open(d, encoding="utf-8") as fh:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\hjunits\\tree\\Project Steering\\Decisions\\2026-09-05-mm-decisions.md'
+
+tests\test_kingate_contract.py:106: FileNotFoundError
+=========================== short test summary info ===========================
+FAILED tests/test_kingate_contract.py::test_the_gate_result_is_stamped_T0_until_a_T1_leg_exists
+1 failed, 2 passed, 2 skipped in 0.14s
+=== DONE

@@ -1,0 +1,5 @@
+...........s.s........                                                   [100%]
+=========================== short test summary info ===========================
+SKIPPED [1] tests\test_anchor_prefilter.py:53: anchor fixture absent: refc_anchors_small64.pt
+SKIPPED [1] tests\test_anchor_prefilter.py:258: Windows-CPU BLAS picks shape-dependent gemm tilings, so the batched and the subset decode differ by ULPs (measured max 1.9e-06 on the dev box, 2026-08-15). The claim is per-backend: bit-exact where it deploys — 881/881 identical selections on Linux/CUDA and on Thor (fan-width stream, 2026-08-04). A ULP tolerance here would silently weaken the structural guarantee this test exists to pin, so on Windows it is skipped, not loosened.
+20 passed, 2 skipped in 1.95s

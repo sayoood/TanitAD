@@ -1,0 +1,369 @@
+{
+ "_label": "PRE-REGISTERED readout, eval/PREREG_MEASURE5.md (blob c668b5b6, SPEC_PREREG_HASH 13:22)",
+ "n_tokens": 200,
+ "n_logs": 93,
+ "seeds": [
+  0,
+  1,
+  2
+ ],
+ "estimator": "paired log-cluster bootstrap over the logs, 10,000 resamples, 95 % percentile, seed 20260927 (eval/snapshot_pair_under_rule.py's draws)",
+ "variance_answered": "EPISODES for the CI; TRAINING (batch order) by the seed floor; inference is deterministic",
+ "estimator_selftest": {
+  "reference_ci": [
+   -2.43,
+   6.56
+  ],
+  "ours": [
+   -2.43,
+   6.56
+  ],
+  "identical": true
+ },
+ "gates": {
+  "copies_equal_harness_scored_max_abs": 0.0,
+  "harness_missing": 0,
+  "A0_pure_vs_table_logits_max_abs": 3.337860107421875e-06,
+  "A0_pick_equals_table": 200,
+  "masked_64_vs_pure_max_abs": 1.0013580322265625e-05
+ },
+ "token_means": {
+  "A0": {
+   "E1_masked": 0.64998,
+   "E1_plain": 0.66122,
+   "E3a": 0.64694,
+   "E3b": 61.18301,
+   "E2": 70.07764
+  },
+  "V3_s0": {
+   "E1_masked": 0.57738,
+   "E1_plain": 0.59328,
+   "E3a": 0.63725,
+   "E3b": 62.64046,
+   "E2": 68.47608
+  },
+  "V3_s1": {
+   "E1_masked": 0.59006,
+   "E1_plain": 0.60638,
+   "E3a": 0.65297,
+   "E3b": 60.84004,
+   "E2": 67.57613
+  },
+  "V3_s2": {
+   "E1_masked": 0.61765,
+   "E1_plain": 0.64338,
+   "E3a": 0.64301,
+   "E3b": 62.74777,
+   "E2": 70.76797
+  },
+  "V4_s0": {
+   "E1_masked": 0.73481,
+   "E1_plain": 0.75754,
+   "E3a": 0.63699,
+   "E3b": 64.50703,
+   "E2": 76.54652
+  },
+  "V4_s1": {
+   "E1_masked": 0.74844,
+   "E1_plain": 0.78625,
+   "E3a": 0.6488,
+   "E3b": 62.80826,
+   "E2": 76.90177
+  },
+  "V4_s2": {
+   "E1_masked": 0.76216,
+   "E1_plain": 0.77792,
+   "E3a": 0.64199,
+   "E3b": 62.66335,
+   "E2": 77.92711
+  },
+  "V4all_s0": {
+   "E1_masked": 0.76485,
+   "E1_plain": 0.76961,
+   "E3a": 0.64071,
+   "E3b": 62.80896,
+   "E2": 79.55058
+  },
+  "V4all_s1": {
+   "E1_masked": 0.77463,
+   "E1_plain": 0.78972,
+   "E3a": 0.64453,
+   "E3b": 62.61604,
+   "E2": 78.20122
+  },
+  "V4all_s2": {
+   "E1_masked": 0.78302,
+   "E1_plain": 0.77894,
+   "E3a": 0.64088,
+   "E3b": 61.11901,
+   "E2": 80.09265
+  }
+ },
+ "comparisons": {
+  "E1_masked": {
+   "V4_minus_V3": {
+    "diff": 0.15344,
+    "ci95": [
+     0.10372,
+     0.21044
+    ]
+   },
+   "V4all_minus_V4": {
+    "diff": 0.02569,
+    "ci95": [
+     0.01581,
+     0.03677
+    ]
+   },
+   "V3_minus_A0": {
+    "diff": -0.05495,
+    "ci95": [
+     -0.09123,
+     -0.02482
+    ]
+   }
+  },
+  "E1_plain": {
+   "V4_minus_V3": {
+    "diff": 0.15956,
+    "ci95": [
+     0.11763,
+     0.20569
+    ]
+   },
+   "V4all_minus_V4": {
+    "diff": 0.00552,
+    "ci95": [
+     0.00197,
+     0.00926
+    ]
+   },
+   "V3_minus_A0": {
+    "diff": -0.04687,
+    "ci95": [
+     -0.06954,
+     -0.02362
+    ]
+   }
+  },
+  "E3a": {
+   "V4_minus_V3": {
+    "diff": -0.00181,
+    "ci95": [
+     -0.00807,
+     0.00476
+    ]
+   },
+   "V4all_minus_V4": {
+    "diff": -0.00056,
+    "ci95": [
+     -0.01121,
+     0.00935
+    ]
+   },
+   "V3_minus_A0": {
+    "diff": -0.00254,
+    "ci95": [
+     -0.02121,
+     0.01604
+    ]
+   }
+  },
+  "E3b": {
+   "V4_minus_V3": {
+    "diff": 1.25012,
+    "ci95": [
+     -0.2202,
+     2.84223
+    ]
+   },
+   "V4all_minus_V4": {
+    "diff": -1.14488,
+    "ci95": [
+     -3.3601,
+     0.74731
+    ]
+   },
+   "V3_minus_A0": {
+    "diff": 0.89308,
+    "ci95": [
+     -2.64381,
+     4.3014
+    ]
+   }
+  },
+  "E2": {
+   "V4_minus_V3": {
+    "diff": 8.18507,
+    "ci95": [
+     5.0919,
+     11.81269
+    ]
+   },
+   "V4all_minus_V4": {
+    "diff": 2.15635,
+    "ci95": [
+     -0.09194,
+     4.30448
+    ]
+   },
+   "V3_minus_A0": {
+    "diff": -1.13759,
+    "ci95": [
+     -4.51552,
+     1.91069
+    ]
+   }
+  }
+ },
+ "seed_floor_E1": {
+  "floor": 0.04027,
+  "by_arm": {
+   "V3": {
+    "seed_token_means": [
+     0.57738,
+     0.59006,
+     0.61765
+    ],
+    "max_pair_abs": 0.04027
+   },
+   "V4": {
+    "seed_token_means": [
+     0.73481,
+     0.74844,
+     0.76216
+    ],
+    "max_pair_abs": 0.02735
+   }
+  }
+ },
+ "decision": {
+  "ADOPT": true,
+  "REFUTED": false,
+  "verdict": "ADOPT",
+  "gates_failed": [],
+  "models_absent": [],
+  "rule": "ADOPT iff E1 V4-V3 >= +0.03, CI lo > 0, > seed floor; E3a CI lo > -0.01; E3b CI lo > -2.0 PDMS points. REFUTED iff E1 CI hi < 0. Otherwise NOT PROVEN.",
+  "E1": {
+   "diff": 0.15344,
+   "ci95": [
+    0.10372,
+    0.21044
+   ]
+  },
+  "E3a": {
+   "diff": -0.00181,
+   "ci95": [
+    -0.00807,
+    0.00476
+   ]
+  },
+  "E3b": {
+   "diff": 1.25012,
+   "ci95": [
+    -0.2202,
+    2.84223
+   ]
+  },
+  "seed_floor": 0.04027
+ },
+ "E4_reported": {
+  "harness_stop_NC_TTC_EP": [
+   0.97,
+   0.965,
+   0.3059
+  ],
+  "harness_copies_NC_TTC_EP": [
+   0.9663,
+   0.9287,
+   0.6741
+  ],
+  "models": {
+   "A0": {
+    "pred_stop_NC_TTC_EP": [
+     0.7759,
+     0.7576,
+     0.2638
+    ],
+    "pred_copies_NC_TTC_EP": [
+     0.8687,
+     0.6423,
+     0.7779
+    ]
+   },
+   "V3_s0": {
+    "pred_stop_NC_TTC_EP": [
+     0.8603,
+     0.7513,
+     0.3571
+    ],
+    "pred_copies_NC_TTC_EP": [
+     0.8065,
+     0.5364,
+     0.8883
+    ]
+   },
+   "V3_s1": {
+    "pred_stop_NC_TTC_EP": [
+     0.86,
+     0.7789,
+     0.2894
+    ],
+    "pred_copies_NC_TTC_EP": [
+     0.8302,
+     0.5818,
+     0.8501
+    ]
+   },
+   "V3_s2": {
+    "pred_stop_NC_TTC_EP": [
+     0.8669,
+     0.8065,
+     0.2868
+    ],
+    "pred_copies_NC_TTC_EP": [
+     0.8578,
+     0.6339,
+     0.8263
+    ]
+   },
+   "V4_s0": {
+    "pred_stop_NC_TTC_EP": [
+     0.9488,
+     0.942,
+     0.0989
+    ],
+    "pred_copies_NC_TTC_EP": [
+     0.9085,
+     0.63,
+     0.827
+    ]
+   },
+   "V4_s1": {
+    "pred_stop_NC_TTC_EP": [
+     0.9634,
+     0.9578,
+     0.0469
+    ],
+    "pred_copies_NC_TTC_EP": [
+     0.9237,
+     0.7073,
+     0.7492
+    ]
+   },
+   "V4_s2": {
+    "pred_stop_NC_TTC_EP": [
+     0.9651,
+     0.9677,
+     0.047
+    ],
+    "pred_copies_NC_TTC_EP": [
+     0.9339,
+     0.748,
+     0.7348
+    ]
+   }
+  }
+ },
+ "written_to": "D:\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\eval\\raw\\m5_effectiveness"
+}

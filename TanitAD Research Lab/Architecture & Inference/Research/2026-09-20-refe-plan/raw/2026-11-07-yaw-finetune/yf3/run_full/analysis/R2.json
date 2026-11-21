@@ -1,0 +1,764 @@
+{
+ "decision": {
+  "conditions": {
+   "F_lt_half_abs_mean_delta": false,
+   "abs_improvement_ge_0.00094_(restatement_at_A0_0.0188)": false,
+   "all_gates_green": true,
+   "both_seeds_agree_in_sign": false,
+   "families_adverse_empty_every_seed": true,
+   "pdms_delta_CI_lower_bound_ge_-1.0": true,
+   "primary_CI_upper_bound_lt_0": false,
+   "relative_improvement_ge_5pct": false
+  },
+  "refuted_reasons": [],
+  "relative_improvement": -0.009413955871920232,
+  "rule": "ADOPT iff ALL: G1-G8 green; primary Delta(B - C) paired-CI upper bound < 0 AND relative improvement >= 5 % (>= 0.00094 1/m on A0's 0.0188); both seeds agree in sign AND F < |mean Delta| / 2; PDMS Delta CI lower bound >= -1.0; families_adverse empty on every longitudinal and lateral component. NOT PROVEN if the primary CI straddles 0, or the seeds disagree, or F >= |mean Delta| / 2. REFUTED if the PDMS upper bound < -1.0, or the primary CI lies entirely above 0 (worse), or a lateral / longitudinal component separates adversely.",
+  "text": "unmet: primary_CI_upper_bound_lt_0, relative_improvement_ge_5pct, both_seeds_agree_in_sign, F_lt_half_abs_mean_delta -> advance the rung (Rule Zero)",
+  "verdict": "NOT PROVEN"
+ },
+ "descriptive": {
+  "n_straight_tokens": 756,
+  "n_turn_tokens(|omega_t0|>0.05)": 167,
+  "pick_changed_share_vs_ref(any bit differs)": [
+   1.0,
+   1.0
+  ],
+  "pick_changed_share_vs_ref(max pose difference > 1 cm)": [
+   0.9945828819068255,
+   0.9837486457204767
+  ],
+  "strata_curvature_mae_1pm": {
+   "STRAIGHT": {
+    "R2_B_s0": 0.018843352766408365,
+    "R2_B_s1": 0.01824999503747819,
+    "R2_C_s0": 0.01821201476940879,
+    "R2_C_s1": 0.018376516599814912
+   },
+   "TURN": {
+    "R2_B_s0": 0.017320464857254626,
+    "R2_B_s1": 0.01795903215269086,
+    "R2_C_s0": 0.01767195683000742,
+    "R2_C_s1": 0.017904079597354898
+   }
+  },
+  "strategic": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE.md item 25): not a pass, not omitted. NAVSIM scores no strategic decision and REFe has no strategic layer.",
+  "tactical": {
+   "per_arm_vs_ref": [
+    {
+     "lateral_decision": {
+      "P": {
+       "accuracy": 0.9523,
+       "kappa": 0.8694
+      },
+      "W": {
+       "accuracy": 0.9534,
+       "kappa": 0.8716
+      }
+     },
+     "longitudinal_decision": {
+      "P": {
+       "accuracy": 0.7259,
+       "kappa": 0.5583
+      },
+      "W": {
+       "accuracy": 0.7281,
+       "kappa": 0.5605
+      }
+     },
+     "maneuver_5way_collapsed": {
+      "P": {
+       "accuracy": 0.7844,
+       "kappa": 0.7
+      },
+      "W": {
+       "accuracy": 0.7887,
+       "kappa": 0.7052
+      }
+     }
+    },
+    {
+     "lateral_decision": {
+      "P": {
+       "accuracy": 0.9512,
+       "kappa": 0.8667
+      },
+      "W": {
+       "accuracy": 0.9534,
+       "kappa": 0.8721
+      }
+     },
+     "longitudinal_decision": {
+      "P": {
+       "accuracy": 0.7248,
+       "kappa": 0.5543
+      },
+      "W": {
+       "accuracy": 0.7291,
+       "kappa": 0.5626
+      }
+     },
+     "maneuver_5way_collapsed": {
+      "P": {
+       "accuracy": 0.7822,
+       "kappa": 0.6962
+      },
+      "W": {
+       "accuracy": 0.7876,
+       "kappa": 0.7044
+      }
+     }
+    }
+   ],
+   "status": "n/a as a test: REFe has no tactical layer; families6 derives lateral / longitudinal / 5-way decisions from the EXECUTED geometry, so they are reported descriptively beside each arm"
+  }
+ },
+ "estimator": "Q1 another draw of LOGS: paired log-cluster bootstrap, 10,000 resamples, percentile 95 %, seed 20260927, the same resample for every arm (answers that and nothing else). Q2 another TRAINING run: two seeds per arm, floor F = |Delta(s0) - Delta(s1)|; a separated CI from one seed is necessary, not sufficient (H-ESTIM-SEED-1). Q3 another INFERENCE run: the planner is deterministic (ego probe C1: replicate bit-identical on 265/265 tokens), no inference-seed arm. NOT measured: another BASE training run -- the claim is scoped to this u400 checkpoint.",
+ "families_adverse": [
+  {
+   "adverse": [],
+   "components_compared": 21,
+   "strategic": "UNAVAILABLE in NAVSIM (no strategic decision scored; the arm has no strategic layer)",
+   "tactical_no_interval": {
+    "lateral_decision": {
+     "P": {
+      "accuracy": 0.9523,
+      "kappa": 0.8694
+     },
+     "W": {
+      "accuracy": 0.9534,
+      "kappa": 0.8716
+     }
+    },
+    "longitudinal_decision": {
+     "P": {
+      "accuracy": 0.7259,
+      "kappa": 0.5583
+     },
+     "W": {
+      "accuracy": 0.7281,
+      "kappa": 0.5605
+     }
+    },
+    "maneuver_5way_collapsed": {
+     "P": {
+      "accuracy": 0.7844,
+      "kappa": 0.7
+     },
+     "W": {
+      "accuracy": 0.7887,
+      "kappa": 0.7052
+     }
+    }
+   }
+  },
+  {
+   "adverse": [],
+   "components_compared": 21,
+   "strategic": "UNAVAILABLE in NAVSIM (no strategic decision scored; the arm has no strategic layer)",
+   "tactical_no_interval": {
+    "lateral_decision": {
+     "P": {
+      "accuracy": 0.9512,
+      "kappa": 0.8667
+     },
+     "W": {
+      "accuracy": 0.9534,
+      "kappa": 0.8721
+     }
+    },
+    "longitudinal_decision": {
+     "P": {
+      "accuracy": 0.7248,
+      "kappa": 0.5543
+     },
+     "W": {
+      "accuracy": 0.7291,
+      "kappa": 0.5626
+     }
+    },
+    "maneuver_5way_collapsed": {
+     "P": {
+      "accuracy": 0.7822,
+      "kappa": 0.6962
+     },
+     "W": {
+      "accuracy": 0.7876,
+      "kappa": 0.7044
+     }
+    }
+   }
+  }
+ ],
+ "families_component_means": {
+  "R2_B_s0": {
+   "lateral": {
+    "cross_bias_m": -0.0987,
+    "cross_final_mae_m": 0.588,
+    "cross_mae_m": 0.2749,
+    "curvature_bias_1pm": 0.000121,
+    "curvature_mae_1pm": 0.018536,
+    "heading_mae_deg": 1.9232,
+    "yaw_rate_mae_degps": 2.609
+   },
+   "longitudinal": {
+    "accel_mae_mps2": 0.5297,
+    "along_bias_m": -0.4923,
+    "along_final_bias_m": -1.2858,
+    "along_mae_m": 1.0681,
+    "ego_progress.gt_progress_mean_m": 19.6499,
+    "ego_progress.progress_error_mean": 0.2035,
+    "ego_progress.progress_ratio_mean": 0.9891,
+    "ego_progress.progress_ratio_median": 0.934,
+    "ego_progress.t0_axis_gt_self_ratio": 0.9838,
+    "ego_progress.under_progress_rate": 0.6492,
+    "speed_bias_mps": -0.3332,
+    "speed_mae_mps": 0.7512,
+    "speed_rmse_mps": 1.1229,
+    "target_speed_acc.within_0.5_mps": 0.5359,
+    "target_speed_acc.within_1.0_mps": 0.7427,
+    "target_speed_acc.within_2.0_mps": 0.9156
+   }
+  },
+  "R2_B_s1": {
+   "lateral": {
+    "cross_bias_m": -0.105,
+    "cross_final_mae_m": 0.5999,
+    "cross_mae_m": 0.2782,
+    "curvature_bias_1pm": 0.000423,
+    "curvature_mae_1pm": 0.018191,
+    "heading_mae_deg": 1.938,
+    "yaw_rate_mae_degps": 2.6014
+   },
+   "longitudinal": {
+    "accel_mae_mps2": 0.5384,
+    "along_bias_m": -0.5174,
+    "along_final_bias_m": -1.354,
+    "along_mae_m": 1.0869,
+    "ego_progress.gt_progress_mean_m": 19.6499,
+    "ego_progress.progress_error_mean": 0.2038,
+    "ego_progress.progress_ratio_mean": 0.986,
+    "ego_progress.progress_ratio_median": 0.9285,
+    "ego_progress.t0_axis_gt_self_ratio": 0.9838,
+    "ego_progress.under_progress_rate": 0.6514,
+    "speed_bias_mps": -0.3478,
+    "speed_mae_mps": 0.7654,
+    "speed_rmse_mps": 1.144,
+    "target_speed_acc.within_0.5_mps": 0.5324,
+    "target_speed_acc.within_1.0_mps": 0.7377,
+    "target_speed_acc.within_2.0_mps": 0.9095
+   }
+  },
+  "R2_C_s0": {
+   "lateral": {
+    "cross_bias_m": -0.1027,
+    "cross_final_mae_m": 0.601,
+    "cross_mae_m": 0.2791,
+    "curvature_bias_1pm": 0.000149,
+    "curvature_mae_1pm": 0.018103,
+    "heading_mae_deg": 1.9237,
+    "yaw_rate_mae_degps": 2.5986
+   },
+   "longitudinal": {
+    "accel_mae_mps2": 0.5339,
+    "along_bias_m": -0.5206,
+    "along_final_bias_m": -1.352,
+    "along_mae_m": 1.0807,
+    "ego_progress.gt_progress_mean_m": 19.6499,
+    "ego_progress.progress_error_mean": 0.203,
+    "ego_progress.progress_ratio_mean": 0.9841,
+    "ego_progress.progress_ratio_median": 0.9303,
+    "ego_progress.t0_axis_gt_self_ratio": 0.9838,
+    "ego_progress.under_progress_rate": 0.6601,
+    "speed_bias_mps": -0.3501,
+    "speed_mae_mps": 0.7595,
+    "speed_rmse_mps": 1.1326,
+    "target_speed_acc.within_0.5_mps": 0.5326,
+    "target_speed_acc.within_1.0_mps": 0.7371,
+    "target_speed_acc.within_2.0_mps": 0.9121
+   }
+  },
+  "R2_C_s1": {
+   "lateral": {
+    "cross_bias_m": -0.1036,
+    "cross_final_mae_m": 0.5944,
+    "cross_mae_m": 0.2776,
+    "curvature_bias_1pm": 0.000219,
+    "curvature_mae_1pm": 0.018282,
+    "heading_mae_deg": 1.9274,
+    "yaw_rate_mae_degps": 2.6092
+   },
+   "longitudinal": {
+    "accel_mae_mps2": 0.5294,
+    "along_bias_m": -0.4817,
+    "along_final_bias_m": -1.2657,
+    "along_mae_m": 1.0667,
+    "ego_progress.gt_progress_mean_m": 19.6499,
+    "ego_progress.progress_error_mean": 0.2031,
+    "ego_progress.progress_ratio_mean": 0.9926,
+    "ego_progress.progress_ratio_median": 0.9355,
+    "ego_progress.t0_axis_gt_self_ratio": 0.9838,
+    "ego_progress.under_progress_rate": 0.6481,
+    "speed_bias_mps": -0.3281,
+    "speed_mae_mps": 0.751,
+    "speed_rmse_mps": 1.1272,
+    "target_speed_acc.within_0.5_mps": 0.54,
+    "target_speed_acc.within_1.0_mps": 0.7419,
+    "target_speed_acc.within_2.0_mps": 0.9154
+   }
+  }
+ },
+ "gates": {
+  "G-CKPT/K1-K4/identity(C==A0, B0==A0, trained decode==composed decode)": {
+   "n": 4,
+   "ok": true
+  },
+  "G1_table_coverage(YT control is YT's; here: every eval token present)": {
+   "n": 923,
+   "ok": true,
+   "table_sha256": "f5ebe24fd05a"
+  },
+  "G2/G3/G4/G5/G9_real_cache_suite_with_RED_arms": {
+   "file": "gates_real/real_cache_gates.json",
+   "ok": true
+  },
+  "G4/G5_in_each_trained_arm(gates.json before step 1)": {
+   "n_arms": 4,
+   "ok": true
+  },
+  "G6_A0_rerun_bit_identical_to_banked": {
+   "banked_pdms_x100": 88.6473,
+   "n": 923,
+   "ok": true,
+   "pdms_x100": 88.64734662134671,
+   "plans_bit_identical": true,
+   "scores_identical": true
+  },
+  "G7_R2_B_s0": {
+   "equal_float32_10x_table": 923,
+   "n_calls": 923,
+   "n_incoming_nonzero": 0,
+   "n_tokens": 923,
+   "navtest_table_sha256": "f5ebe24fd05a8067215c22f08f873808a7020a97eca6940fdcc568f8b39e29a5",
+   "nonzero": 923,
+   "nonzero_fraction": 1.0,
+   "ok": true,
+   "scale": 10.0,
+   "tokens_fed": 923
+  },
+  "G7_R2_B_s1": {
+   "equal_float32_10x_table": 923,
+   "n_calls": 923,
+   "n_incoming_nonzero": 0,
+   "n_tokens": 923,
+   "navtest_table_sha256": "f5ebe24fd05a8067215c22f08f873808a7020a97eca6940fdcc568f8b39e29a5",
+   "nonzero": 923,
+   "nonzero_fraction": 1.0,
+   "ok": true,
+   "scale": 10.0,
+   "tokens_fed": 923
+  },
+  "G7_R2_C_s0(non-yaw: shim untouched)": {
+   "n_calls": 0,
+   "note": "non-yaw checkpoint: YT's shim must stay out of the planner",
+   "ok": true,
+   "shim_installed": false
+  },
+  "G7_R2_C_s1(non-yaw: shim untouched)": {
+   "n_calls": 0,
+   "note": "non-yaw checkpoint: YT's shim must stay out of the planner",
+   "ok": true,
+   "shim_installed": false
+  },
+  "G8_determinism(CPU col4 torch.equal on a B rerun; eval 10 % of tokens bit-identical)": {
+   "file": "analysis/G8.json",
+   "ok": true
+  }
+ },
+ "gates_red": [],
+ "n_logs": 43,
+ "n_tokens": 923,
+ "pdms_subscores_x100": {
+  "comfort": {
+   "F_seed_floor": 0.0,
+   "ci95": [
+    0.0,
+    0.0
+   ],
+   "n_seeds": 2,
+   "per_seed_ci95": [
+    [
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0
+    ]
+   ],
+   "per_seed_point": [
+    0.0,
+    0.0
+   ],
+   "point": 0.0
+  },
+  "drivable_area_compliance": {
+   "F_seed_floor": 0.21668472372698488,
+   "ci95": [
+    -0.26178010471204516,
+    0.7415254237288167
+   ],
+   "n_seeds": 2,
+   "per_seed_ci95": [
+    [
+     -0.10940919037199137,
+     0.8083286824818925
+    ],
+    [
+     -0.5422993492407787,
+     0.7462885678331983
+    ]
+   ],
+   "per_seed_point": [
+    0.3250270855904773,
+    0.10834236186349244
+   ],
+   "point": 0.21668472372698488
+  },
+  "driving_direction_compliance": {
+   "F_seed_floor": 0.10834236186349244,
+   "ci95": [
+    0.0,
+    0.16872890888638636
+   ],
+   "n_seeds": 2,
+   "per_seed_ci95": [
+    [
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.33745781777277273
+    ]
+   ],
+   "per_seed_point": [
+    0.0,
+    0.10834236186349244
+   ],
+   "point": 0.05417118093174622
+  },
+  "ego_progress": {
+   "F_seed_floor": 0.8165692937654825,
+   "ci95": [
+    -0.4545143954637531,
+    0.44896999295029943
+   ],
+   "n_seeds": 2,
+   "per_seed_ci95": [
+    [
+     -0.08107712714717223,
+     0.8492816371137194
+    ],
+    [
+     -1.0609944065781765,
+     0.20720402987411538
+    ]
+   ],
+   "per_seed_point": [
+    0.38890517731209684,
+    -0.42766411645338565
+   ],
+   "point": -0.019379469570644403
+  },
+  "no_at_fault_collisions": {
+   "F_seed_floor": 0.10834236186349244,
+   "ci95": [
+    -0.4065247628036358,
+    0.0558035714285694
+   ],
+   "n_seeds": 2,
+   "per_seed_ci95": [
+    [
+     -0.5149330587023684,
+     0.22346368715083997
+    ],
+    [
+     -0.6521739130434696,
+     0.21436227224009485
+    ]
+   ],
+   "per_seed_point": [
+    -0.10834236186349244,
+    -0.21668472372698488
+   ],
+   "point": -0.16251354279523866
+  },
+  "time_to_collision_within_bound": {
+   "F_seed_floor": 0.21668472372697067,
+   "ci95": [
+    -0.45716903943707904,
+    0.21413850006082322
+   ],
+   "n_seeds": 2,
+   "per_seed_ci95": [
+    [
+     -0.6458557588805149,
+     0.5500550055005533
+    ],
+    [
+     -1.0638297872340416,
+     0.7502880780536164
+    ]
+   ],
+   "per_seed_point": [
+    0.0,
+    -0.21668472372697067
+   ],
+   "point": -0.10834236186348534
+  }
+ },
+ "pdms_x100": {
+  "F_seed_floor": 0.6201216405496552,
+  "arm_value": 88.6216176983427,
+  "ci95": [
+   -0.32136881228595265,
+   0.6019872487414126
+  ],
+  "n_seeds": 2,
+  "per_seed_ci95": [
+   [
+    -0.10171765473458656,
+    0.9764705891075875
+   ],
+   [
+    -0.874580351692293,
+    0.5183180770504151
+   ]
+  ],
+  "per_seed_point": [
+   0.4238711983834662,
+   -0.19625044216618903
+  ],
+  "point": 0.11381037810863859,
+  "ref_value": 88.50780732023406
+ },
+ "primary": {
+  "B": [
+   "R2_B_s0",
+   "R2_B_s1"
+  ],
+  "C_equals_A0_by_K3": null,
+  "F_seed_floor": 0.0005232449513554865,
+  "arm_value": 0.01836384895557891,
+  "ci95": [
+   -0.00013945464887782174,
+   0.0004343379182612135
+  ],
+  "metric": "LATERAL curvature MAE (1/m), executed pick vs human future; B - Ref; negative = B better",
+  "n_seeds": 2,
+  "per_seed_ci95": [
+   [
+    -6.138020776187232e-05,
+    0.0009883852213503858
+   ],
+   [
+    -0.0006327639855043364,
+    0.00035681350573591147
+   ]
+  ],
+  "per_seed_point": [
+   0.000432886665855399,
+   -9.035828550008757e-05
+  ],
+  "point": 0.0001712641901776557,
+  "ref": [
+   "R2_C_s0",
+   "R2_C_s1"
+  ],
+  "ref_value": 0.018192584765401254
+ },
+ "rung": "R2",
+ "secondary_lateral_and_longitudinal(paired B - Ref, same resample)": {
+  "along_bias_m(longitudinal)": {
+   "F_seed_floor": 0.06408239778066666,
+   "arm_value": -0.5048367087410174,
+   "ci95": [
+    -0.015079512797060601,
+    0.006534072051430701
+   ],
+   "n_seeds": 2,
+   "per_seed_ci95": [
+    [
+     0.014613259030253466,
+     0.04039992566214934
+    ],
+    [
+     -0.051042917868097025,
+     -0.019386212756909035
+    ]
+   ],
+   "per_seed_point": [
+    0.028356084616235178,
+    -0.03572631316443148
+   ],
+   "point": -0.00368511427409815,
+   "ref_value": -0.5011515944669193
+  },
+  "along_mae_m(longitudinal)": {
+   "F_seed_floor": 0.03269645202307614,
+   "arm_value": 1.0775133245676314,
+   "ci95": [
+    -0.004396064217699945,
+    0.01177877696454574
+   ],
+   "n_seeds": 2,
+   "per_seed_ci95": [
+    [
+     -0.024653247937700636,
+     0.0001354636213194243
+    ],
+    [
+     0.007981795905793634,
+     0.031169261637224534
+    ]
+   ],
+   "per_seed_point": [
+    -0.012534629263968755,
+    0.020161822759107384
+   ],
+   "point": 0.0038135967475693144,
+   "ref_value": 1.073699727820062
+  },
+  "cross_bias_m": {
+   "F_seed_floor": 0.005395478794384942,
+   "arm_value": -0.10181417791428594,
+   "ci95": [
+    -0.0020535100192315132,
+    0.004564249375504704
+   ],
+   "n_seeds": 2,
+   "per_seed_ci95": [
+    [
+     0.0003162000501054349,
+     0.008439247523607304
+    ],
+    [
+     -0.00631881095099663,
+     0.0029441836410181157
+    ]
+   ],
+   "per_seed_point": [
+    0.004042948049257852,
+    -0.0013525307451270896
+   ],
+   "point": 0.0013452086520653814,
+   "ref_value": -0.10315938656635132
+  },
+  "cross_mae_m": {
+   "F_seed_floor": 0.0048209385201751775,
+   "arm_value": 0.27654999030811755,
+   "ci95": [
+    -0.004361684910756919,
+    0.000716780360196928
+   ],
+   "n_seeds": 2,
+   "per_seed_ci95": [
+    [
+     -0.0068911990289692035,
+     -0.0018189491109751217
+    ],
+    [
+     -0.002980358563116814,
+     0.004319505664123795
+    ]
+   ],
+   "per_seed_point": [
+    -0.004205131946291185,
+    0.0006158065738839924
+   ],
+   "point": -0.0017946626862035964,
+   "ref_value": 0.2783446529943212
+  },
+  "curvature_bias_1pm": {
+   "F_seed_floor": 0.00023246545830905477,
+   "arm_value": 0.00027179044376788306,
+   "ci95": [
+    -0.00011033102163568495,
+    0.00029436109878641854
+   ],
+   "n_seeds": 2,
+   "per_seed_ci95": [
+    [
+     -0.0004310623581832875,
+     0.00038881870390012284
+    ],
+    [
+     -9.610660592982669e-05,
+     0.000482988644426824
+    ]
+   ],
+   "per_seed_point": [
+    -2.8523011668077065e-05,
+    0.0002039424466409777
+   ],
+   "point": 8.770971748645032e-05,
+   "ref_value": 0.00018408072628143277
+  },
+  "heading_mae_deg": {
+   "F_seed_floor": 0.011126661010180556,
+   "arm_value": 1.9306019027232282,
+   "ci95": [
+    -0.0076757784985749915,
+    0.017551584164284723
+   ],
+   "n_seeds": 2,
+   "per_seed_ci95": [
+    [
+     -0.013780121585172382,
+     0.012306234649763043
+    ],
+    [
+     -0.007857282800052068,
+     0.02983803702827874
+    ]
+   ],
+   "per_seed_point": [
+    -0.000506271341488867,
+    0.01062038966869169
+   ],
+   "point": 0.005057059163601411,
+   "ref_value": 1.925544843559627
+  },
+  "yaw_rate_mae_degps": {
+   "F_seed_floor": 0.01819303114743815,
+   "arm_value": 2.60516902199615,
+   "ci95": [
+    -0.017490860326000546,
+    0.018308847060897335
+   ],
+   "n_seeds": 2,
+   "per_seed_ci95": [
+    [
+     -0.017204435368144817,
+     0.040567308078845635
+    ],
+    [
+     -0.03286952928332759,
+     0.015618408767479944
+    ]
+   ],
+   "per_seed_point": [
+    0.01036257870891622,
+    -0.00783045243852193
+   ],
+   "point": 0.0012660631351971443,
+   "ref_value": 2.6039029588609526
+  }
+ },
+ "strategic": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE.md item 25): not a pass, not omitted. NAVSIM scores no strategic decision and REFe has no strategic layer.",
+ "tactical": "n/a as a test: REFe has no tactical layer; families6 derives lateral / longitudinal / 5-way decisions from the EXECUTED geometry, so they are reported descriptively beside each arm",
+ "tier": "NAVSIM v1.1 pseudo-simulation (PDMS) and families6 of an OPEN-LOOP plan against logged agents on the A5 confirmation tokens (n in the header) -- NOT the EVAL_DOCTRINE action-closed-loop tier (families6 labels itself 'T1-family (stage-1 loop OPEN)'). Cached-frame VAL diagnostics are T0 (teacher-forced). Nothing here may be quoted as 'drives better'.",
+ "verdict": "NOT PROVEN",
+ "written": "2026-11-07T08:49:25",
+ "yaw_table_navtest_sha256": "f5ebe24fd05a8067215c22f08f873808a7020a97eca6940fdcc568f8b39e29a5"
+}

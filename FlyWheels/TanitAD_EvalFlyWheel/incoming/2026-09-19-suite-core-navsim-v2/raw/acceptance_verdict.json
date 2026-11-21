@@ -1,0 +1,96 @@
+{
+ "run_dir": "taniteval/results/bench/navsim_v2/warmup_two_stage/20260920T075608Z-navsim_v2-none-5e2458",
+ "run_id": "20260920T075608Z-navsim_v2-none-5e2458",
+ "rc": 0,
+ "status": "COMPLETE",
+ "wall_s": 302.6,
+ "criteria": {
+  "ACC-1": {
+   "what": "exit 0, both records validate, the six files exist non-empty",
+   "rc": 0,
+   "status": "COMPLETE",
+   "missing_or_empty": [],
+   "bench_run_errors": [],
+   "summary_errors": [],
+   "pass": true
+  },
+  "ACC-2": {
+   "what": "CV headline == 0.1853562745165113 from column `score`, x100 -> 18.5356",
+   "value": 0.1853562745165113,
+   "column": "score",
+   "row": "extended_pdm_score_combined",
+   "x100_rounded": 18.5356,
+   "pass": true
+  },
+  "ACC-3": {
+   "what": "STOP headline == 0.3009023137456225",
+   "value": 0.3009023137456225,
+   "pass": true
+  },
+  "ACC-4": {
+   "what": "every cell equals E1/E2's banked CSV (max |\u0394| = 0.0, NaN pattern identical)",
+   "detail": {
+    "CV": {
+     "max_abs_diff": 0.0,
+     "nan_pattern_mismatch": 0,
+     "same_token_set": true,
+     "same_row_order": true,
+     "cells_identical": true,
+     "n_numeric_cells": 4237,
+     "first_or_worst_difference": null,
+     "md5": "b4b33ac29c39c37832371b8b68c9f898",
+     "reference_md5": "b4b33ac29c39c37832371b8b68c9f898",
+     "file_identical": true,
+     "headline_equals_banked": true
+    },
+    "STOP": {
+     "max_abs_diff": 0.0,
+     "nan_pattern_mismatch": 0,
+     "same_token_set": true,
+     "same_row_order": true,
+     "cells_identical": true,
+     "n_numeric_cells": 4237,
+     "first_or_worst_difference": null,
+     "md5": "4a15c3a1d59234e518291a1a9e1d5bff",
+     "reference_md5": "4a15c3a1d59234e518291a1a9e1d5bff",
+     "file_identical": true,
+     "headline_equals_banked": true
+    }
+   },
+   "pass": true
+  },
+  "ACC-5": {
+   "what": "file-level md5 identity with the banked CSVs",
+   "md5": {
+    "CV": "b4b33ac29c39c37832371b8b68c9f898",
+    "STOP": "4a15c3a1d59234e518291a1a9e1d5bff"
+   },
+   "expected": {
+    "CV": "b4b33ac29c39c37832371b8b68c9f898",
+    "STOP": "4a15c3a1d59234e518291a1a9e1d5bff"
+   },
+   "pass": true
+  },
+  "ACC-6": {
+   "what": "the floors are machinery: a NavSim summary without STOP is REFUSED",
+   "floors": [
+    "STOP",
+    "CV"
+   ],
+   "added_by_rule": {
+    "CV": false,
+    "STOP": false
+   },
+   "mutation_errors": [
+    "/floors: no item matches contains {\"const\": \"STOP\"}",
+    "/arms: mandatory NavSim floor 'STOP' missing"
+   ],
+   "pass": true
+  }
+ },
+ "ALL_PASS": true,
+ "external_reference": {
+  "HF_warmup_LB_baseline_constant_velocity_x100": 18.5356,
+  "evidence_class": "INHERITED (NAVSIM_PROTOCOL.md \u00a76.3)"
+ }
+}

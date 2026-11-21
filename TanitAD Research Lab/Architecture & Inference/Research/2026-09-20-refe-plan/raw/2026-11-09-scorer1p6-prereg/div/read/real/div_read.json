@@ -1,0 +1,2250 @@
+{
+ "tool": "read_div.py",
+ "card": {
+  "path": "E:/Projects/TanitAD-artifacts/scorer_gym_20261107/p6base/PREREG_DIV_P6.md",
+  "sha256_expected": "e5fb2f8e4123fcfe3a599b0cc71537bab187716c6a5d3e46735ce094bacf6fac",
+  "sha256_actual": "e5fb2f8e4123fcfe3a599b0cc71537bab187716c6a5d3e46735ce094bacf6fac"
+ },
+ "tier": {
+  "E3": "T1-class open loop: NAVSIM v1.1 PDMS of the arm's own pick on the full navtest (self-action open loop, not closed loop)",
+  "E2": "selection tier: PDM truth of P6's own 64 proposals on E2, the arm judged by which proposal it picks",
+  "E1": "descriptive, C3 stratum-weighted, never decisive"
+ },
+ "evidence_class": "MEASURED (ours; every input artifact and its sha256 is listed under 'inputs')",
+ "estimator": "paired log-cluster bootstrap, 10,000 draws, seed 20260927, 95 % percentile, over the evaluation set's own logs (sel_common.log_boot_idx draws via selc6_analyze.Boot). It answers 'another draw of logs' only. Training variance is read from the replicate floor F = |C0r - C0|; inference is deterministic (PREREG_P6 bit-identity check). Training variance is not resampled: ensembles of fixed members are read as fixed scorers. Inference is deterministic.",
+ "bars": {
+  "Q1": "PESS-DV - PESS-SEED (PDMS x100): CI-lo > 0",
+  "Q2": "PESS-10 - P6: CI-lo > 0 and d > 0.4971; AND PESS-10 - PESS-8: CI-lo > 0",
+  "M": "zero-pick share (pick PDMS exactly 0), PESS-DV - PESS-SEED: CI-hi < 0",
+  "G1-G4": "as PREREG_PESS_P6 for PESS-10 vs P6 (G1 TTC/NC/DAC points >= -0.5; G2 regret CI-hi < +0.5; G3 overspeed CI-hi < +0.10; G4 slow CI-hi < +0.10)"
+ },
+ "strategic": "PAUSED -- PI ruling Sayed 2026-09-19, PI_DECISION_QUEUE ITEM 25: \"the strategic layer will be only switched off temporarily until we proved that both tactical and operative layers are driving with high quality. So the 4 layer rule is just temporarily paused and concerns only the strategic part.\" Not a pass; not omitted; lifting it is the PI's call.",
+ "ambiguities": [
+  "D1 Every arm is PESS (read_pess.combine, rule PESS) over the named members; DV0 and DV1 as single arms are bit-for-bit the member's own logits (one member: min = mean). Member ORDER is part of the combined-logit sha256 (float32 mean); PESS-8 uses the banked order C0, C0r, S1E, C0r2, S1E1, S1Z1, S1Z, S1ZSM and PESS-10 appends DV0, DV1.",
+  "D2 Q2 has two parts, both required: PESS-10 - P6 with CI-lo > 0 and the POINT d strictly above the printed constant 0.4971 (as P1 of the PESS card), and PESS-10 - PESS-8 with CI-lo > 0. 'Q2 fails' = not both parts.",
+  "D3 Outcomes, card section 4: DV1 = Q2 (both parts) and G1 to G4; DV2 = Q1 holds and Q2 fails; DV3 = Q1 fails. M is a reported bar and is not a condition of any label. Labels may overlap (Q1 fails and Q2 and the guards hold matches DV1 and DV3): every match is listed, the primary follows DV1, DV2, DV3, Unnamed. Q1 holds, Q2 holds, a guard fails matches none -> Unnamed. Any undefined input -> Unnamed.",
+  "D4 M is the share of E3 tokens whose pick has PDMS exactly 0.0, difference PESS-DV - PESS-SEED, over the same paired log-cluster draws as Q1; CI-hi < 0 strict.",
+  "D5 G1 to G4 are read_pess.guards_vs_p6 (Batch 1 / S1Z definitions) for PESS-10 vs P6; E2 quantities use PESS-10's E3 combined logits restricted to the E2 tokens. Guards are also printed for the other arms, not deciding.",
+  "D6 Scoring = lookup in the full truth table at the pick (valid and finite at every pick or the read stops). G0 gates of read_pess run for P6 and every member (G0-E3: proposals bit-identical to P6's). A further gate G0-PESS8 requires PESS-8 rebuilt here to equal the banked PESS read (combined-logit sha256 and PDMS x100) exactly; otherwise READ STOPPED and no verdict is written.",
+  "D7 Ledger keys <ARM>:<sha256 of the combined float32 [12146,64,6] logits>:E3 for DV0, DV1, PESS-DV, PESS-SEED, PESS-10 (K + 5). PESS-8, C0 and C0r are already-read arms and are not keyed. A key that is already in the ledger is not added again (selcore.Ledger.add), so K + 5 holds only if all five are new. Controls never write the ledger.",
+  "D8 Reported, not deciding (card section 3): DV0 and DV1 each vs P6 and vs C0 / C0r (paired); the failure share and the four metric families per arm vs P6 (STRATEGIC PAUSED). The trainer held-out monitor is read from the chain's training log, not by this tool."
+ ],
+ "members": [
+  "C0",
+  "C0r",
+  "S1E",
+  "C0r2",
+  "S1E1",
+  "S1Z1",
+  "S1Z",
+  "S1ZSM",
+  "DV0",
+  "DV1"
+ ],
+ "n_members": 10,
+ "control": null,
+ "code_sha256": {
+  "read_div.py": "6463f1daee9f28ce1c1df886bdd465569789518c494e30121f6f5a8b0c6296ce",
+  "read_pess.py": "d04122282369b12dc3df14612661fd38f3a0eb45ccaaf914712f16fd2e5b27a8",
+  "read_scorer1p6.py": "1508b383e69aa9656843774b393823a9bddc5ee5d65f2f25faddcad223618020"
+ },
+ "gates": {
+  "G0-PICK": {
+   "name": "G0-PICK",
+   "n_equal_to_banked_pick": 12146,
+   "n": 12146,
+   "PASS": true
+  },
+  "G0-P6LOGITS": {
+   "name": "G0-P6LOGITS",
+   "P6 dir logits bit-identical to the table's logits": true,
+   "PASS": true
+  },
+  "G0-TABLE": {
+   "name": "G0-TABLE",
+   "n_tokens_absent_in_p6_csv": 0,
+   "n_pdms_equal_to_p6_csv": 12146,
+   "PASS": true
+  },
+  "G0-E2": {
+   "name": "G0-E2",
+   "n_e2": 2000,
+   "n_missing_in_table": 0,
+   "n_missing_in_world": 0,
+   "n_pdms_bit_equal": 2000,
+   "n_sub_bit_equal": 2000,
+   "max_abs_pdms_diff": 0.0,
+   "formula_max_abs_diff": 0.0,
+   "all_finite_valid": true,
+   "pick_is_argmax_of_p6_logits": 2000,
+   "RED_shifted_pick_n_differ": 1402,
+   "PASS": true
+  },
+  "G0-E2-vs-TABLE": {
+   "name": "G0-E2-vs-TABLE",
+   "E2 table pdms bit-identical to the full table on the E2 tokens": true,
+   "PASS": true
+  },
+  "G0-E3[C0]": {
+   "name": "G0-E3[C0]",
+   "n": 12146,
+   "n_tokens_not_bit_identical": 0,
+   "PASS": true
+  },
+  "G0-E3[C0r]": {
+   "name": "G0-E3[C0r]",
+   "n": 12146,
+   "n_tokens_not_bit_identical": 0,
+   "PASS": true
+  },
+  "G0-E3[S1E]": {
+   "name": "G0-E3[S1E]",
+   "n": 12146,
+   "n_tokens_not_bit_identical": 0,
+   "PASS": true
+  },
+  "G0-E3[C0r2]": {
+   "name": "G0-E3[C0r2]",
+   "n": 12146,
+   "n_tokens_not_bit_identical": 0,
+   "PASS": true
+  },
+  "G0-E3[S1E1]": {
+   "name": "G0-E3[S1E1]",
+   "n": 12146,
+   "n_tokens_not_bit_identical": 0,
+   "PASS": true
+  },
+  "G0-E3[S1Z1]": {
+   "name": "G0-E3[S1Z1]",
+   "n": 12146,
+   "n_tokens_not_bit_identical": 0,
+   "PASS": true
+  },
+  "G0-E3[S1Z]": {
+   "name": "G0-E3[S1Z]",
+   "n": 12146,
+   "n_tokens_not_bit_identical": 0,
+   "PASS": true
+  },
+  "G0-E3[S1ZSM]": {
+   "name": "G0-E3[S1ZSM]",
+   "n": 12146,
+   "n_tokens_not_bit_identical": 0,
+   "PASS": true
+  },
+  "G0-E3[DV0]": {
+   "name": "G0-E3[DV0]",
+   "n": 12146,
+   "n_tokens_not_bit_identical": 0,
+   "PASS": true
+  },
+  "G0-E3[DV1]": {
+   "name": "G0-E3[DV1]",
+   "n": 12146,
+   "n_tokens_not_bit_identical": 0,
+   "PASS": true
+  },
+  "G0-PESS8": {
+   "name": "G0-PESS8",
+   "banked_json": "E:/Projects/TanitAD-artifacts/scorer_gym_20261107/p6base/pess/read/real/pess_read.json",
+   "banked_json_sha256": "4feb7f0a9c48348378fde92f39257a2887bc873fc339e92b6a958db037e15a72",
+   "banked_members": [
+    "C0",
+    "C0r",
+    "S1E",
+    "C0r2",
+    "S1E1",
+    "S1Z1",
+    "S1Z",
+    "S1ZSM"
+   ],
+   "members_equal_banked_order": true,
+   "banked_sha256": "8912f1d04ab3e22571397d53580ddafebc3beb78e1e27d34fe21db25e5bf7ae5",
+   "rebuilt_sha256": "8912f1d04ab3e22571397d53580ddafebc3beb78e1e27d34fe21db25e5bf7ae5",
+   "sha256_equal": true,
+   "sha256_has_card_prefix": true,
+   "banked_PDMS_x100": 91.47901718634304,
+   "rebuilt_PDMS_x100": 91.47901718634304,
+   "PDMS_equal_exactly": true,
+   "PASS": true
+  }
+ },
+ "member_e3_logits_sha256": {
+  "C0": "6187c55e93da1a41413232deb3f23b5d7892ff7775badb7110869c6e762df698",
+  "C0r": "82e716cd8fa5045d1db01e48adac26fc874190e52fc1883124892ad220edb86f",
+  "S1E": "82aa48efcf54e3e687c3e882013c54e0f9fd9becbaff32fa9de1cc51d446d296",
+  "C0r2": "57f9b9216b1f1e7821fa948e74264ced023a29e3995fe5cb957160090a379312",
+  "S1E1": "9fab0b7af7565418df9746f6c61b304b6faeafb7e2d4afdab88430ca1c89767a",
+  "S1Z1": "719494f13fd7bd7667251a315bcb399dd202602c4268ed113f5c057267ae5392",
+  "S1Z": "96c7a86408fc12c0e122cce07b29a4ec46bfa7aa6da2579f517773bfeaa4153b",
+  "S1ZSM": "ef0b7278d3a650f43c9e093c44ba020e18e280fa6f5fade0517a2bad4dc45083",
+  "DV0": "37777a6d2f551db89557c9ab56bc75882b317579b080cf5ba5af56806bc472ce",
+  "DV1": "50ccac66e57bfedc8fb4d1b0d5678f18a560d84e166511999bb79d2f80ba314a"
+ },
+ "arm_members": {
+  "DV0": [
+   "DV0"
+  ],
+  "DV1": [
+   "DV1"
+  ],
+  "PESS-DV": [
+   "DV0",
+   "DV1"
+  ],
+  "PESS-SEED": [
+   "C0",
+   "C0r"
+  ],
+  "PESS-10": [
+   "C0",
+   "C0r",
+   "S1E",
+   "C0r2",
+   "S1E1",
+   "S1Z1",
+   "S1Z",
+   "S1ZSM",
+   "DV0",
+   "DV1"
+  ],
+  "PESS-8": [
+   "C0",
+   "C0r",
+   "S1E",
+   "C0r2",
+   "S1E1",
+   "S1Z1",
+   "S1Z",
+   "S1ZSM"
+  ],
+  "C0": [
+   "C0"
+  ],
+  "C0r": [
+   "C0r"
+  ]
+ },
+ "arm_logits_sha256": {
+  "DV0": "876ec4d8389ddd552c44ad850784a65bca28791edd2b087f080f84d8bceb074b",
+  "DV1": "c82cc0ce421fa170498c5f1e2cc6682c4274229fac328b8648e18b061a5663e8",
+  "PESS-DV": "814fd44032fd0a07f25f01b92bb9824e75a7a3c1b4aee4be4c98c3f1d7ca9406",
+  "PESS-SEED": "e43f13412203c95073be66c80fd75158e2f952a42c9b0ea83d7f2fc4f4d7aeba",
+  "PESS-10": "84b33d871310f6a0e575435421dfc4ffa08a7d7b4a01358a03233bf1c8efafaf",
+  "PESS-8": "8912f1d04ab3e22571397d53580ddafebc3beb78e1e27d34fe21db25e5bf7ae5",
+  "C0": "fdf2f4e45ee9348232ecd0960985aee069709a0c57e620df1b68e1f3f199b68e",
+  "C0r": "c7b30a0b852bc056011997484e1b488a6429a4a90d09accfb2725b3a5c239460"
+ },
+ "arm_pick_changed_vs_P6": {
+  "DV0": 5731,
+  "DV1": 5702,
+  "PESS-DV": 5874,
+  "PESS-SEED": 6106,
+  "PESS-10": 6729,
+  "PESS-8": 6669,
+  "C0": 5998,
+  "C0r": 5852
+ },
+ "arms": {
+  "DV0": {
+   "members": [
+    "DV0"
+   ],
+   "PDMS_x100_E3": {
+    "point": 91.33203076270026,
+    "lo": 90.5298971437465,
+    "hi": 92.13162932947513,
+    "n": 12146
+   },
+   "minus_P6": {
+    "point": 0.1355528784222731,
+    "lo": -0.06907430508089571,
+    "hi": 0.3365107495295407,
+    "n": 12146
+   },
+   "zero_pick_share": 0.03095669356166639,
+   "EP_x100_E3": {
+    "arm_mean": 86.93833762180277,
+    "P6_mean": 87.03441689794842,
+    "minus_P6": {
+     "point": -0.09607927614566913,
+     "lo": -0.2894614733813042,
+     "hi": 0.10335081615089665,
+     "n": 12146
+    }
+   },
+   "failure_share_minus_P6_reported": {
+    "point": -0.003869586695208299,
+    "lo": -0.007273446001504368,
+    "hi": -0.00039753941668414317,
+    "n": 12146
+   },
+   "G": {
+    "G1": {
+     "per_head_points_vs_P6": {
+      "TTC": {
+       "point": 0.2799275481640046,
+       "lo": -0.030295903273327856,
+       "hi": 0.5884318833154584,
+       "n": 12146,
+       "arm_mean_x100": 95.36472912893133,
+       "P6_mean_x100": 95.08480158076733,
+       "ok": true
+      },
+      "NC": {
+       "point": -0.028816071134529886,
+       "lo": -0.15752144252043493,
+       "hi": 0.09784054528075385,
+       "n": 12146,
+       "arm_mean_x100": 98.81854108348428,
+       "P6_mean_x100": 98.8473571546188,
+       "ok": true
+      },
+      "DAC": {
+       "point": 0.09056479499423678,
+       "lo": -0.05346828615907006,
+       "hi": 0.23659305993690852,
+       "n": 12146,
+       "arm_mean_x100": 98.04050716285197,
+       "P6_mean_x100": 97.94994236785773,
+       "ok": true
+      }
+     },
+     "bar": "each point >= -0.5",
+     "ok": true,
+     "failed_heads": []
+    },
+    "G2": {
+     "delta_regret_vs_P6": {
+      "point": -0.29925151333591704,
+      "lo": -0.7829947855099229,
+      "hi": 0.18302995438730857,
+      "n": 2000,
+      "arm_regret": 5.587883132480378,
+      "P6_regret": 5.887134645816295
+     },
+     "bar": "CI-hi < +0.5 points",
+     "ok": true
+    },
+    "G3": {
+     "overspeed_diff_vs_P6": {
+      "point": -0.003875968992248062,
+      "lo": -0.02734375,
+      "hi": 0.018726591760299626,
+      "n": 258,
+      "arm_share": 0.4108527131782946,
+      "P6_share": 0.41472868217054265
+     },
+     "bar": "CI-hi < +0.10",
+     "ok": true
+    },
+    "G4": {
+     "slow_diff_vs_P6": {
+      "point": -0.015503875968992248,
+      "lo": -0.0398406374501992,
+      "hi": 0.010033444816053512,
+      "n": 258,
+      "arm_share": 0.16279069767441862,
+      "P6_share": 0.17829457364341086
+     },
+     "bar": "CI-hi < +0.10",
+     "n_cruise_tokens_E2": 258,
+     "ok": true
+    },
+    "ok": {
+     "G1": true,
+     "G2": true,
+     "G3": true,
+     "G4": true
+    }
+   },
+   "family_vs_P6": {
+    "NC": {
+     "point": -0.028816071134529886,
+     "lo": -0.15752144252043493,
+     "hi": 0.09784054528075385,
+     "n": 12146,
+     "direction": "higher",
+     "family": "pdms-other",
+     "arm_mean": 98.81854108348428,
+     "P6_mean": 98.8473571546188,
+     "adverse": false
+    },
+    "DAC": {
+     "point": 0.09056479499423678,
+     "lo": -0.05346828615907006,
+     "hi": 0.23659305993690852,
+     "n": 12146,
+     "direction": "higher",
+     "family": "lateral",
+     "arm_mean": 98.04050716285197,
+     "P6_mean": 97.94994236785773,
+     "adverse": false
+    },
+    "EP": {
+     "point": -0.09607927614566913,
+     "lo": -0.2894614733813042,
+     "hi": 0.10335081615089665,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 86.93833762180277,
+     "P6_mean": 87.03441689794842,
+     "adverse": false
+    },
+    "TTC": {
+     "point": 0.2799275481640046,
+     "lo": -0.030295903273327856,
+     "hi": 0.5884318833154584,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 95.36472912893133,
+     "P6_mean": 95.08480158076733,
+     "adverse": false
+    },
+    "C": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n": 12146,
+     "direction": "higher",
+     "family": "pdms-other",
+     "arm_mean": 100.0,
+     "P6_mean": 100.0,
+     "adverse": false
+    },
+    "DDC": {
+     "point": -0.2552280586201219,
+     "lo": -0.4583568945040023,
+     "hi": -0.07099824679235148,
+     "n": 12146,
+     "direction": "higher",
+     "family": "pdms-other",
+     "arm_mean": 96.22921126296723,
+     "P6_mean": 96.48443932158736,
+     "adverse": false
+    },
+    "speed_mae_mps": {
+     "point": -0.009995760896825748,
+     "lo": -0.01814193630942909,
+     "hi": -0.0009355111300063734,
+     "n": 12146,
+     "direction": "lower",
+     "family": "longitudinal",
+     "arm_mean": 0.8273845037995049,
+     "P6_mean": 0.8373802646963306,
+     "adverse": false
+    },
+    "target_speed_within_0.5mps": {
+     "point": 0.0011114770294747241,
+     "lo": -0.0037260309082550232,
+     "hi": 0.00562730328131848,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 0.498734151160876,
+     "P6_mean": 0.49762267413140127,
+     "adverse": false
+    },
+    "target_speed_within_1.0mps": {
+     "point": 0.0025419891322246008,
+     "lo": -0.0016516781346097998,
+     "hi": 0.006476346743322566,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 0.7079902848674461,
+     "P6_mean": 0.7054482957352215,
+     "adverse": false
+    },
+    "target_speed_within_2.0mps": {
+     "point": 0.0034579285361435864,
+     "lo": 0.0006488706594599202,
+     "hi": 0.0059931067400905876,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 0.8914663263625885,
+     "P6_mean": 0.8880083978264449,
+     "adverse": false
+    },
+    "along_mae_m": {
+     "point": -0.008946269730505638,
+     "lo": -0.020423135609707724,
+     "hi": 0.003987511137303878,
+     "n": 12146,
+     "direction": "lower",
+     "family": "longitudinal",
+     "arm_mean": 1.1903807631617562,
+     "P6_mean": 1.199327032892262,
+     "adverse": false
+    },
+    "along_final_abs_m": {
+     "point": -0.025911967938242332,
+     "lo": -0.056519365138607454,
+     "hi": 0.008359847234757831,
+     "n": 12146,
+     "direction": "lower",
+     "family": "longitudinal",
+     "arm_mean": 2.930823490623536,
+     "P6_mean": 2.9567354585617784,
+     "adverse": false
+    },
+    "accel_mae_mps2": {
+     "point": -0.005072052140453198,
+     "lo": -0.00890740700348443,
+     "hi": -0.0009573668649784073,
+     "n": 12146,
+     "direction": "lower",
+     "family": "longitudinal",
+     "arm_mean": 0.5397673480515717,
+     "P6_mean": 0.5448394001920249,
+     "adverse": false
+    },
+    "heading_mae_deg": {
+     "point": 0.0024674311243259666,
+     "lo": -0.04152712475501709,
+     "hi": 0.05032118349819453,
+     "n": 12085,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 2.762040536668526,
+     "P6_mean": 2.7596224259149373,
+     "adverse": false
+    },
+    "yaw_rate_mae_degps": {
+     "point": -0.01628752405375569,
+     "lo": -0.037508671463254255,
+     "hi": 0.007274790199628134,
+     "n": 11949,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 3.044140450539434,
+     "P6_mean": 3.0602104178209193,
+     "adverse": false
+    },
+    "curvature_mae_1pm": {
+     "point": -0.00013596931996109402,
+     "lo": -0.0004567276359914026,
+     "hi": 0.00021173638602607145,
+     "n": 11949,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 0.020161899047417598,
+     "P6_mean": 0.02030395948348201,
+     "adverse": false
+    },
+    "cross_mae_m": {
+     "point": 0.0013719465308176303,
+     "lo": -0.005265388589607875,
+     "hi": 0.008140721269340163,
+     "n": 12146,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 0.44440572268843914,
+     "P6_mean": 0.4430337761576215,
+     "adverse": false
+    },
+    "cross_final_abs_m": {
+     "point": -0.010643329928897586,
+     "lo": -0.02765815542963185,
+     "hi": 0.006800554355575946,
+     "n": 12146,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 1.0646152513562106,
+     "P6_mean": 1.075258581285108,
+     "adverse": false
+    },
+    "lateral_decision_acc": {
+     "point": -0.0006586530545035403,
+     "lo": -0.003203126283283234,
+     "hi": 0.001953170455338856,
+     "n": 12146,
+     "direction": "higher",
+     "family": "tactical",
+     "arm_mean": 0.9123991437510292,
+     "P6_mean": 0.9130577968055327,
+     "adverse": false
+    },
+    "longitudinal_decision_acc": {
+     "point": 0.001234974477194138,
+     "lo": -0.003636105803875421,
+     "hi": 0.005665743501443467,
+     "n": 12146,
+     "direction": "higher",
+     "family": "tactical",
+     "arm_mean": 0.6493495801086777,
+     "P6_mean": 0.6481146056314836,
+     "adverse": false
+    },
+    "command_adherence_all": {
+     "point": -0.003704923431582414,
+     "lo": -0.006420286610378739,
+     "hi": -0.0009257980356046674,
+     "n": 12146,
+     "direction": "higher",
+     "family": "tactical",
+     "arm_mean": 0.8563313024864153,
+     "P6_mean": 0.8600362259179977,
+     "adverse": false
+    },
+    "command_adherence_turn_active": {
+     "point": 0.0,
+     "lo": -0.005714314874755781,
+     "hi": 0.005799202977016194,
+     "n": 4076,
+     "direction": "higher",
+     "family": "tactical",
+     "arm_mean": 0.8868989205103042,
+     "P6_mean": 0.8868989205103042,
+     "adverse": false
+    },
+    "_distance_keeping": "UNAVAILABLE at this tier (no lead-agent block in NAVSIM open loop); read in card section 6 of PREREG_SCORER1P6"
+   },
+   "adverse_components": []
+  },
+  "DV1": {
+   "members": [
+    "DV1"
+   ],
+   "PDMS_x100_E3": {
+    "point": 91.40872229339693,
+    "lo": 90.60810812828176,
+    "hi": 92.21380676263901,
+    "n": 12146
+   },
+   "minus_P6": {
+    "point": 0.2122444091189482,
+    "lo": 0.017362257858183003,
+    "hi": 0.41473871269085416,
+    "n": 12146
+   },
+   "zero_pick_share": 0.03054503540260168,
+   "EP_x100_E3": {
+    "arm_mean": 86.99673856243214,
+    "P6_mean": 87.03441689794842,
+    "minus_P6": {
+     "point": -0.03767833551629068,
+     "lo": -0.25650480237508777,
+     "hi": 0.1929514891717044,
+     "n": 12146
+    }
+   },
+   "failure_share_minus_P6_reported": {
+    "point": -0.005022229540589495,
+    "lo": -0.008135604066309162,
+    "hi": -0.0020551945089177545,
+    "n": 12146
+   },
+   "G": {
+    "G1": {
+     "per_head_points_vs_P6": {
+      "TTC": {
+       "point": 0.4034249958834184,
+       "lo": 0.1038886355221458,
+       "hi": 0.7182959313187068,
+       "n": 12146,
+       "arm_mean_x100": 95.48822657665075,
+       "P6_mean_x100": 95.08480158076733,
+       "ok": true
+      },
+      "NC": {
+       "point": 0.028816071134529886,
+       "lo": -0.10531103091328722,
+       "hi": 0.16176315137597172,
+       "n": 12146,
+       "arm_mean_x100": 98.87617322575333,
+       "P6_mean_x100": 98.8473571546188,
+       "ok": true
+      },
+      "DAC": {
+       "point": 0.07409846863164828,
+       "lo": -0.0663604324995851,
+       "hi": 0.20952610444100106,
+       "n": 12146,
+       "arm_mean_x100": 98.02404083648938,
+       "P6_mean_x100": 97.94994236785773,
+       "ok": true
+      }
+     },
+     "bar": "each point >= -0.5",
+     "ok": true,
+     "failed_heads": []
+    },
+    "G2": {
+     "delta_regret_vs_P6": {
+      "point": -0.11885137922735163,
+      "lo": -0.5784012544223021,
+      "hi": 0.32091034599322404,
+      "n": 2000,
+      "arm_regret": 5.768283266588945,
+      "P6_regret": 5.887134645816295
+     },
+     "bar": "CI-hi < +0.5 points",
+     "ok": true
+    },
+    "G3": {
+     "overspeed_diff_vs_P6": {
+      "point": 0.003875968992248062,
+      "lo": -0.022058823529411766,
+      "hi": 0.03225806451612903,
+      "n": 258,
+      "arm_share": 0.4186046511627907,
+      "P6_share": 0.41472868217054265
+     },
+     "bar": "CI-hi < +0.10",
+     "ok": true
+    },
+    "G4": {
+     "slow_diff_vs_P6": {
+      "point": 0.01937984496124031,
+      "lo": -0.020921965064224477,
+      "hi": 0.06589349160206716,
+      "n": 258,
+      "arm_share": 0.19767441860465115,
+      "P6_share": 0.17829457364341086
+     },
+     "bar": "CI-hi < +0.10",
+     "n_cruise_tokens_E2": 258,
+     "ok": true
+    },
+    "ok": {
+     "G1": true,
+     "G2": true,
+     "G3": true,
+     "G4": true
+    }
+   },
+   "family_vs_P6": {
+    "NC": {
+     "point": 0.028816071134529886,
+     "lo": -0.10531103091328722,
+     "hi": 0.16176315137597172,
+     "n": 12146,
+     "direction": "higher",
+     "family": "pdms-other",
+     "arm_mean": 98.87617322575333,
+     "P6_mean": 98.8473571546188,
+     "adverse": false
+    },
+    "DAC": {
+     "point": 0.07409846863164828,
+     "lo": -0.0663604324995851,
+     "hi": 0.20952610444100106,
+     "n": 12146,
+     "direction": "higher",
+     "family": "lateral",
+     "arm_mean": 98.02404083648938,
+     "P6_mean": 97.94994236785773,
+     "adverse": false
+    },
+    "EP": {
+     "point": -0.03767833551629068,
+     "lo": -0.25650480237508777,
+     "hi": 0.1929514891717044,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 86.99673856243214,
+     "P6_mean": 87.03441689794842,
+     "adverse": false
+    },
+    "TTC": {
+     "point": 0.4034249958834184,
+     "lo": 0.1038886355221458,
+     "hi": 0.7182959313187068,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 95.48822657665075,
+     "P6_mean": 95.08480158076733,
+     "adverse": false
+    },
+    "C": {
+     "point": -0.008233163181294254,
+     "lo": -0.02794786359672253,
+     "hi": 0.0,
+     "n": 12146,
+     "direction": "higher",
+     "family": "pdms-other",
+     "arm_mean": 99.99176683681871,
+     "P6_mean": 100.0,
+     "adverse": false
+    },
+    "DDC": {
+     "point": -0.36637576156759427,
+     "lo": -0.551150338366363,
+     "hi": -0.18973536978289035,
+     "n": 12146,
+     "direction": "higher",
+     "family": "pdms-other",
+     "arm_mean": 96.11806356001976,
+     "P6_mean": 96.48443932158736,
+     "adverse": false
+    },
+    "speed_mae_mps": {
+     "point": -0.015109280679143675,
+     "lo": -0.02229441446310739,
+     "hi": -0.00782868247179873,
+     "n": 12146,
+     "direction": "lower",
+     "family": "longitudinal",
+     "arm_mean": 0.822270984017187,
+     "P6_mean": 0.8373802646963306,
+     "adverse": false
+    },
+    "target_speed_within_0.5mps": {
+     "point": 0.00414745595257698,
+     "lo": -7.382858978232122e-05,
+     "hi": 0.008346395270113936,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 0.5017701300839783,
+     "P6_mean": 0.49762267413140127,
+     "adverse": false
+    },
+    "target_speed_within_1.0mps": {
+     "point": 0.005258932982051704,
+     "lo": 0.0012745139213404515,
+     "hi": 0.009057684923732125,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 0.7107072287172732,
+     "P6_mean": 0.7054482957352215,
+     "adverse": false
+    },
+    "target_speed_within_2.0mps": {
+     "point": 0.004322410670179483,
+     "lo": 0.0021921950722163055,
+     "hi": 0.00656341587601212,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 0.8923308084966244,
+     "P6_mean": 0.8880083978264449,
+     "adverse": false
+    },
+    "along_mae_m": {
+     "point": -0.019728324260417276,
+     "lo": -0.029907231169751608,
+     "hi": -0.009909006383808793,
+     "n": 12146,
+     "direction": "lower",
+     "family": "longitudinal",
+     "arm_mean": 1.1795987086318447,
+     "P6_mean": 1.199327032892262,
+     "adverse": false
+    },
+    "along_final_abs_m": {
+     "point": -0.050503207237220335,
+     "lo": -0.07789057886162636,
+     "hi": -0.024078186000661254,
+     "n": 12146,
+     "direction": "lower",
+     "family": "longitudinal",
+     "arm_mean": 2.906232251324558,
+     "P6_mean": 2.9567354585617784,
+     "adverse": false
+    },
+    "accel_mae_mps2": {
+     "point": -0.005802961910429041,
+     "lo": -0.00913740457300608,
+     "hi": -0.0025057268674207878,
+     "n": 12146,
+     "direction": "lower",
+     "family": "longitudinal",
+     "arm_mean": 0.5390364382815959,
+     "P6_mean": 0.5448394001920249,
+     "adverse": false
+    },
+    "heading_mae_deg": {
+     "point": -0.07634004871425328,
+     "lo": -0.11874315410151996,
+     "hi": -0.03533447876452982,
+     "n": 12081,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 2.683104128312204,
+     "P6_mean": 2.7596224259149373,
+     "adverse": false
+    },
+    "yaw_rate_mae_degps": {
+     "point": -0.06263502719762569,
+     "lo": -0.08705410793891566,
+     "hi": -0.039899189601502676,
+     "n": 11941,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 2.996887365263127,
+     "P6_mean": 3.0602104178209193,
+     "adverse": false
+    },
+    "curvature_mae_1pm": {
+     "point": -0.0005405643486564887,
+     "lo": -0.0008224286441330136,
+     "hi": -0.0002678654314658173,
+     "n": 11941,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 0.019709498739042708,
+     "P6_mean": 0.02030395948348201,
+     "adverse": false
+    },
+    "cross_mae_m": {
+     "point": -0.012417411086066395,
+     "lo": -0.018856581389130555,
+     "hi": -0.005875064956152962,
+     "n": 12146,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 0.4306163650715551,
+     "P6_mean": 0.4430337761576215,
+     "adverse": false
+    },
+    "cross_final_abs_m": {
+     "point": -0.03808505900516201,
+     "lo": -0.05620807214799863,
+     "hi": -0.019174349846542885,
+     "n": 12146,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 1.037173522279946,
+     "P6_mean": 1.075258581285108,
+     "adverse": false
+    },
+    "lateral_decision_acc": {
+     "point": 0.0036225917997694712,
+     "lo": 0.0011971961890519258,
+     "hi": 0.006108924789639811,
+     "n": 12146,
+     "direction": "higher",
+     "family": "tactical",
+     "arm_mean": 0.9166803886053022,
+     "P6_mean": 0.9130577968055327,
+     "adverse": false
+    },
+    "longitudinal_decision_acc": {
+     "point": 0.003869586695208299,
+     "lo": -0.0010988720484997642,
+     "hi": 0.008637835435935357,
+     "n": 12146,
+     "direction": "higher",
+     "family": "tactical",
+     "arm_mean": 0.6519841923266919,
+     "P6_mean": 0.6481146056314836,
+     "adverse": false
+    },
+    "command_adherence_all": {
+     "point": 0.0015643010044459082,
+     "lo": -0.0009156156688619077,
+     "hi": 0.004041834421831028,
+     "n": 12146,
+     "direction": "higher",
+     "family": "tactical",
+     "arm_mean": 0.8616005269224436,
+     "P6_mean": 0.8600362259179977,
+     "adverse": false
+    },
+    "command_adherence_turn_active": {
+     "point": 0.006133464180569185,
+     "lo": 0.0009498481077195479,
+     "hi": 0.01139832523446284,
+     "n": 4076,
+     "direction": "higher",
+     "family": "tactical",
+     "arm_mean": 0.8930323846908734,
+     "P6_mean": 0.8868989205103042,
+     "adverse": false
+    },
+    "_distance_keeping": "UNAVAILABLE at this tier (no lead-agent block in NAVSIM open loop); read in card section 6 of PREREG_SCORER1P6"
+   },
+   "adverse_components": []
+  },
+  "PESS-DV": {
+   "members": [
+    "DV0",
+    "DV1"
+   ],
+   "PDMS_x100_E3": {
+    "point": 91.51842627905833,
+    "lo": 90.77201305056069,
+    "hi": 92.28994672264413,
+    "n": 12146
+   },
+   "minus_P6": {
+    "point": 0.32194839478035425,
+    "lo": 0.11760217907547663,
+    "hi": 0.5262316989187344,
+    "n": 12146
+   },
+   "zero_pick_share": 0.02832208134365223,
+   "EP_x100_E3": {
+    "arm_mean": 86.80235191201977,
+    "P6_mean": 87.03441689794842,
+    "minus_P6": {
+     "point": -0.23206498592865205,
+     "lo": -0.43949121598762025,
+     "hi": -0.018608483568939623,
+     "n": 12146
+    }
+   },
+   "failure_share_minus_P6_reported": {
+    "point": -0.008644821340358965,
+    "lo": -0.011776661642164489,
+    "hi": -0.005525278680072895,
+    "n": 12146
+   },
+   "G": {
+    "G1": {
+     "per_head_points_vs_P6": {
+      "TTC": {
+       "point": 0.650419891322246,
+       "lo": 0.36463088828208295,
+       "hi": 0.942837516048182,
+       "n": 12146,
+       "arm_mean_x100": 95.73522147208958,
+       "P6_mean_x100": 95.08480158076733,
+       "ok": true
+      },
+      "NC": {
+       "point": 0.09879795817553104,
+       "lo": -0.02965922934939609,
+       "hi": 0.22471238288031758,
+       "n": 12146,
+       "arm_mean_x100": 98.94615511279433,
+       "P6_mean_x100": 98.8473571546188,
+       "ok": true
+      },
+      "DAC": {
+       "point": 0.22229540589494484,
+       "lo": 0.07792175598323342,
+       "hi": 0.36726417138191547,
+       "n": 12146,
+       "arm_mean_x100": 98.17223777375267,
+       "P6_mean_x100": 97.94994236785773,
+       "ok": true
+      }
+     },
+     "bar": "each point >= -0.5",
+     "ok": true,
+     "failed_heads": []
+    },
+    "G2": {
+     "delta_regret_vs_P6": {
+      "point": -0.19618230850176593,
+      "lo": -0.6657752225823419,
+      "hi": 0.25218753947117506,
+      "n": 2000,
+      "arm_regret": 5.690952337314529,
+      "P6_regret": 5.887134645816295
+     },
+     "bar": "CI-hi < +0.5 points",
+     "ok": true
+    },
+    "G3": {
+     "overspeed_diff_vs_P6": {
+      "point": -0.007751937984496124,
+      "lo": -0.032868079346952586,
+      "hi": 0.015937848605577665,
+      "n": 258,
+      "arm_share": 0.4069767441860465,
+      "P6_share": 0.41472868217054265
+     },
+     "bar": "CI-hi < +0.10",
+     "ok": true
+    },
+    "G4": {
+     "slow_diff_vs_P6": {
+      "point": 0.015503875968992248,
+      "lo": -0.026145217912492507,
+      "hi": 0.062505444250871,
+      "n": 258,
+      "arm_share": 0.1937984496124031,
+      "P6_share": 0.17829457364341086
+     },
+     "bar": "CI-hi < +0.10",
+     "n_cruise_tokens_E2": 258,
+     "ok": true
+    },
+    "ok": {
+     "G1": true,
+     "G2": true,
+     "G3": true,
+     "G4": true
+    }
+   },
+   "family_vs_P6": {
+    "NC": {
+     "point": 0.09879795817553104,
+     "lo": -0.02965922934939609,
+     "hi": 0.22471238288031758,
+     "n": 12146,
+     "direction": "higher",
+     "family": "pdms-other",
+     "arm_mean": 98.94615511279433,
+     "P6_mean": 98.8473571546188,
+     "adverse": false
+    },
+    "DAC": {
+     "point": 0.22229540589494484,
+     "lo": 0.07792175598323342,
+     "hi": 0.36726417138191547,
+     "n": 12146,
+     "direction": "higher",
+     "family": "lateral",
+     "arm_mean": 98.17223777375267,
+     "P6_mean": 97.94994236785773,
+     "adverse": false
+    },
+    "EP": {
+     "point": -0.23206498592865205,
+     "lo": -0.43949121598762025,
+     "hi": -0.018608483568939623,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 86.80235191201977,
+     "P6_mean": 87.03441689794842,
+     "adverse": true
+    },
+    "TTC": {
+     "point": 0.650419891322246,
+     "lo": 0.36463088828208295,
+     "hi": 0.942837516048182,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 95.73522147208958,
+     "P6_mean": 95.08480158076733,
+     "adverse": false
+    },
+    "C": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n": 12146,
+     "direction": "higher",
+     "family": "pdms-other",
+     "arm_mean": 100.0,
+     "P6_mean": 100.0,
+     "adverse": false
+    },
+    "DDC": {
+     "point": -0.10291453976617816,
+     "lo": -0.27283620095100325,
+     "hi": 0.05810098046699232,
+     "n": 12146,
+     "direction": "higher",
+     "family": "pdms-other",
+     "arm_mean": 96.38152478182117,
+     "P6_mean": 96.48443932158736,
+     "adverse": false
+    },
+    "speed_mae_mps": {
+     "point": -0.01787782417174454,
+     "lo": -0.02539770296444431,
+     "hi": -0.009938652910252841,
+     "n": 12146,
+     "direction": "lower",
+     "family": "longitudinal",
+     "arm_mean": 0.8195024405245861,
+     "P6_mean": 0.8373802646963306,
+     "adverse": false
+    },
+    "target_speed_within_0.5mps": {
+     "point": 0.006195455293923926,
+     "lo": 0.001703353648399919,
+     "hi": 0.010516392040677539,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 0.5038181294253252,
+     "P6_mean": 0.49762267413140127,
+     "adverse": false
+    },
+    "target_speed_within_1.0mps": {
+     "point": 0.005989626214391569,
+     "lo": 0.0017747355680762407,
+     "hi": 0.009937477469427322,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 0.7114379219496131,
+     "P6_mean": 0.7054482957352215,
+     "adverse": false
+    },
+    "target_speed_within_2.0mps": {
+     "point": 0.005063395356495966,
+     "lo": 0.002645455308400912,
+     "hi": 0.007358428353349825,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 0.8930717931829408,
+     "P6_mean": 0.8880083978264449,
+     "adverse": false
+    },
+    "along_mae_m": {
+     "point": -0.024309009248407662,
+     "lo": -0.03450060271446475,
+     "hi": -0.013776479704003312,
+     "n": 12146,
+     "direction": "lower",
+     "family": "longitudinal",
+     "arm_mean": 1.1750180236438543,
+     "P6_mean": 1.199327032892262,
+     "adverse": false
+    },
+    "along_final_abs_m": {
+     "point": -0.062335830473824266,
+     "lo": -0.08862756035870788,
+     "hi": -0.03460248767118272,
+     "n": 12146,
+     "direction": "lower",
+     "family": "longitudinal",
+     "arm_mean": 2.8943996280879545,
+     "P6_mean": 2.9567354585617784,
+     "adverse": false
+    },
+    "accel_mae_mps2": {
+     "point": -0.007090031693674343,
+     "lo": -0.010728780765096615,
+     "hi": -0.0032486255519437028,
+     "n": 12146,
+     "direction": "lower",
+     "family": "longitudinal",
+     "arm_mean": 0.5377493684983505,
+     "P6_mean": 0.5448394001920249,
+     "adverse": false
+    },
+    "heading_mae_deg": {
+     "point": -0.036483543609715896,
+     "lo": -0.07313798603968315,
+     "hi": -0.00014749672748282883,
+     "n": 12082,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 2.722971398103412,
+     "P6_mean": 2.7596224259149373,
+     "adverse": false
+    },
+    "yaw_rate_mae_degps": {
+     "point": -0.024278866855974177,
+     "lo": -0.045354184187654516,
+     "hi": -0.002932476294851459,
+     "n": 11945,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 3.03485305192749,
+     "P6_mean": 3.0602104178209193,
+     "adverse": false
+    },
+    "curvature_mae_1pm": {
+     "point": -6.089051874033255e-05,
+     "lo": -0.0003496752212242809,
+     "hi": 0.00024359218390601742,
+     "n": 11945,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 0.020209775579320112,
+     "P6_mean": 0.02030395948348201,
+     "adverse": false
+    },
+    "cross_mae_m": {
+     "point": -0.0055887644211484845,
+     "lo": -0.011665593935802342,
+     "hi": 0.0007390844522325755,
+     "n": 12146,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 0.437445011736473,
+     "P6_mean": 0.4430337761576215,
+     "adverse": false
+    },
+    "cross_final_abs_m": {
+     "point": -0.029543093387592083,
+     "lo": -0.046668113259082246,
+     "hi": -0.01142354099135053,
+     "n": 12146,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 1.0457154878975161,
+     "P6_mean": 1.075258581285108,
+     "adverse": false
+    },
+    "lateral_decision_acc": {
+     "point": 0.002140622427136506,
+     "lo": -8.304406407389659e-05,
+     "hi": 0.004515497557563749,
+     "n": 12146,
+     "direction": "higher",
+     "family": "tactical",
+     "arm_mean": 0.9151984192326692,
+     "P6_mean": 0.9130577968055327,
+     "adverse": false
+    },
+    "longitudinal_decision_acc": {
+     "point": 0.0057632142269059775,
+     "lo": 0.0009674298509211349,
+     "hi": 0.010360125202501574,
+     "n": 12146,
+     "direction": "higher",
+     "family": "tactical",
+     "arm_mean": 0.6538778198583896,
+     "P6_mean": 0.6481146056314836,
+     "adverse": false
+    },
+    "command_adherence_all": {
+     "point": -0.0005763214226905978,
+     "lo": -0.0029788151817353344,
+     "hi": 0.001892815489180739,
+     "n": 12146,
+     "direction": "higher",
+     "family": "tactical",
+     "arm_mean": 0.8594599044953071,
+     "P6_mean": 0.8600362259179977,
+     "adverse": false
+    },
+    "command_adherence_turn_active": {
+     "point": 0.0031894013738959764,
+     "lo": -0.0018200680334380043,
+     "hi": 0.00836771500003722,
+     "n": 4076,
+     "direction": "higher",
+     "family": "tactical",
+     "arm_mean": 0.8900883218842002,
+     "P6_mean": 0.8868989205103042,
+     "adverse": false
+    },
+    "_distance_keeping": "UNAVAILABLE at this tier (no lead-agent block in NAVSIM open loop); read in card section 6 of PREREG_SCORER1P6"
+   },
+   "adverse_components": [
+    "EP"
+   ]
+  },
+  "PESS-SEED": {
+   "members": [
+    "C0",
+    "C0r"
+   ],
+   "PDMS_x100_E3": {
+    "point": 91.45254186028298,
+    "lo": 90.64227881481669,
+    "hi": 92.26280045922587,
+    "n": 12146
+   },
+   "minus_P6": {
+    "point": 0.2560639760049988,
+    "lo": 0.0718382390873633,
+    "hi": 0.4472075443369397,
+    "n": 12146
+   },
+   "zero_pick_share": 0.02832208134365223,
+   "EP_x100_E3": {
+    "arm_mean": 86.76214610352942,
+    "P6_mean": 87.03441689794842,
+    "minus_P6": {
+     "point": -0.27227079441900776,
+     "lo": -0.4577758602533685,
+     "hi": -0.07002351106911732,
+     "n": 12146
+    }
+   },
+   "failure_share_minus_P6_reported": {
+    "point": -0.00749217849497777,
+    "lo": -0.011075772404644066,
+    "hi": -0.0038865765452244547,
+    "n": 12146
+   },
+   "G": {
+    "G1": {
+     "per_head_points_vs_P6": {
+      "TTC": {
+       "point": 0.5680882595093035,
+       "lo": 0.22568224918411867,
+       "hi": 0.9097115619707382,
+       "n": 12146,
+       "arm_mean_x100": 95.65288984027663,
+       "P6_mean_x100": 95.08480158076733,
+       "ok": true
+      },
+      "NC": {
+       "point": 0.13173061090070806,
+       "lo": -0.003957132954254142,
+       "hi": 0.2756069229622784,
+       "n": 12146,
+       "arm_mean_x100": 98.97908776551951,
+       "P6_mean_x100": 98.8473571546188,
+       "ok": true
+      },
+      "DAC": {
+       "point": 0.19759591635106208,
+       "lo": 0.062411169130024625,
+       "hi": 0.340654889250165,
+       "n": 12146,
+       "arm_mean_x100": 98.14753828420879,
+       "P6_mean_x100": 97.94994236785773,
+       "ok": true
+      }
+     },
+     "bar": "each point >= -0.5",
+     "ok": true,
+     "failed_heads": []
+    },
+    "G2": {
+     "delta_regret_vs_P6": {
+      "point": -0.29686770190563727,
+      "lo": -0.7915024343089333,
+      "hi": 0.18814528722843482,
+      "n": 2000,
+      "arm_regret": 5.590266943910659,
+      "P6_regret": 5.887134645816295
+     },
+     "bar": "CI-hi < +0.5 points",
+     "ok": true
+    },
+    "G3": {
+     "overspeed_diff_vs_P6": {
+      "point": -0.01937984496124031,
+      "lo": -0.04428044280442804,
+      "hi": 0.007843909217230188,
+      "n": 258,
+      "arm_share": 0.3953488372093023,
+      "P6_share": 0.41472868217054265
+     },
+     "bar": "CI-hi < +0.10",
+     "ok": true
+    },
+    "G4": {
+     "slow_diff_vs_P6": {
+      "point": 0.015503875968992248,
+      "lo": -0.018117588932806322,
+      "hi": 0.05387380024309482,
+      "n": 258,
+      "arm_share": 0.1937984496124031,
+      "P6_share": 0.17829457364341086
+     },
+     "bar": "CI-hi < +0.10",
+     "n_cruise_tokens_E2": 258,
+     "ok": true
+    },
+    "ok": {
+     "G1": true,
+     "G2": true,
+     "G3": true,
+     "G4": true
+    }
+   },
+   "family_vs_P6": {
+    "NC": {
+     "point": 0.13173061090070806,
+     "lo": -0.003957132954254142,
+     "hi": 0.2756069229622784,
+     "n": 12146,
+     "direction": "higher",
+     "family": "pdms-other",
+     "arm_mean": 98.97908776551951,
+     "P6_mean": 98.8473571546188,
+     "adverse": false
+    },
+    "DAC": {
+     "point": 0.19759591635106208,
+     "lo": 0.062411169130024625,
+     "hi": 0.340654889250165,
+     "n": 12146,
+     "direction": "higher",
+     "family": "lateral",
+     "arm_mean": 98.14753828420879,
+     "P6_mean": 97.94994236785773,
+     "adverse": false
+    },
+    "EP": {
+     "point": -0.27227079441900776,
+     "lo": -0.4577758602533685,
+     "hi": -0.07002351106911732,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 86.76214610352942,
+     "P6_mean": 87.03441689794842,
+     "adverse": true
+    },
+    "TTC": {
+     "point": 0.5680882595093035,
+     "lo": 0.22568224918411867,
+     "hi": 0.9097115619707382,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 95.65288984027663,
+     "P6_mean": 95.08480158076733,
+     "adverse": false
+    },
+    "C": {
+     "point": -0.008233163181294254,
+     "lo": -0.02794786359672253,
+     "hi": 0.0,
+     "n": 12146,
+     "direction": "higher",
+     "family": "pdms-other",
+     "arm_mean": 99.99176683681871,
+     "P6_mean": 100.0,
+     "adverse": false
+    },
+    "DDC": {
+     "point": -0.18112958998847356,
+     "lo": -0.362206355029777,
+     "hi": 0.0,
+     "n": 12146,
+     "direction": "higher",
+     "family": "pdms-other",
+     "arm_mean": 96.30330973159889,
+     "P6_mean": 96.48443932158736,
+     "adverse": false
+    },
+    "speed_mae_mps": {
+     "point": -0.026457282780948273,
+     "lo": -0.03317154233622943,
+     "hi": -0.019560126511494698,
+     "n": 12146,
+     "direction": "lower",
+     "family": "longitudinal",
+     "arm_mean": 0.8109229819153824,
+     "P6_mean": 0.8373802646963306,
+     "adverse": false
+    },
+    "target_speed_within_0.5mps": {
+     "point": 0.009818047093693397,
+     "lo": 0.005740024226926935,
+     "hi": 0.013669414126926021,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 0.5074407212250946,
+     "P6_mean": 0.49762267413140127,
+     "adverse": false
+    },
+    "target_speed_within_1.0mps": {
+     "point": 0.00919026840111971,
+     "lo": 0.005314171313848355,
+     "hi": 0.012876981098799417,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 0.7146385641363412,
+     "P6_mean": 0.7054482957352215,
+     "adverse": false
+    },
+    "target_speed_within_2.0mps": {
+     "point": 0.007471595587024535,
+     "lo": 0.0050941007813783525,
+     "hi": 0.009772450706513136,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 0.8954799934134694,
+     "P6_mean": 0.8880083978264449,
+     "adverse": false
+    },
+    "along_mae_m": {
+     "point": -0.03691035193091643,
+     "lo": -0.04658636319190044,
+     "hi": -0.02708055398266244,
+     "n": 12146,
+     "direction": "lower",
+     "family": "longitudinal",
+     "arm_mean": 1.1624166809613454,
+     "P6_mean": 1.199327032892262,
+     "adverse": false
+    },
+    "along_final_abs_m": {
+     "point": -0.09446832748973721,
+     "lo": -0.11973713312287282,
+     "hi": -0.06875327591500109,
+     "n": 12146,
+     "direction": "lower",
+     "family": "longitudinal",
+     "arm_mean": 2.8622671310720413,
+     "P6_mean": 2.9567354585617784,
+     "adverse": false
+    },
+    "accel_mae_mps2": {
+     "point": -0.010030529163526326,
+     "lo": -0.013472165339251684,
+     "hi": -0.00651683481422206,
+     "n": 12146,
+     "direction": "lower",
+     "family": "longitudinal",
+     "arm_mean": 0.5348088710284986,
+     "P6_mean": 0.5448394001920249,
+     "adverse": false
+    },
+    "heading_mae_deg": {
+     "point": -0.03619467581572961,
+     "lo": -0.07858583194942956,
+     "hi": 0.006900476910137411,
+     "n": 12080,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 2.7232133357717796,
+     "P6_mean": 2.7596224259149373,
+     "adverse": false
+    },
+    "yaw_rate_mae_degps": {
+     "point": -0.03682361616918017,
+     "lo": -0.06063695929396007,
+     "hi": -0.012712882473341472,
+     "n": 11934,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 3.0223395955290413,
+     "P6_mean": 3.0602104178209193,
+     "adverse": false
+    },
+    "curvature_mae_1pm": {
+     "point": -7.89049693382262e-05,
+     "lo": -0.00039042284793144784,
+     "hi": 0.00024983257796620865,
+     "n": 11934,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 0.02013252564835833,
+     "P6_mean": 0.02030395948348201,
+     "adverse": false
+    },
+    "cross_mae_m": {
+     "point": -0.012728596946516558,
+     "lo": -0.01912845163590176,
+     "hi": -0.006319572426463242,
+     "n": 12146,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 0.43030517921110495,
+     "P6_mean": 0.4430337761576215,
+     "adverse": false
+    },
+    "cross_final_abs_m": {
+     "point": -0.04628039168043227,
+     "lo": -0.06359250936251255,
+     "hi": -0.0286121670870505,
+     "n": 12146,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 1.028978189604676,
+     "P6_mean": 1.075258581285108,
+     "adverse": false
+    },
+    "lateral_decision_acc": {
+     "point": 0.00041165815906471265,
+     "lo": -0.002077346536599358,
+     "hi": 0.0029952081260495793,
+     "n": 12146,
+     "direction": "higher",
+     "family": "tactical",
+     "arm_mean": 0.9134694549645974,
+     "P6_mean": 0.9130577968055327,
+     "adverse": false
+    },
+    "longitudinal_decision_acc": {
+     "point": 0.008068499917668368,
+     "lo": 0.003226066623654596,
+     "hi": 0.01271427518651609,
+     "n": 12146,
+     "direction": "higher",
+     "family": "tactical",
+     "arm_mean": 0.6561831055491519,
+     "P6_mean": 0.6481146056314836,
+     "adverse": false
+    },
+    "command_adherence_all": {
+     "point": -0.002140622427136506,
+     "lo": -0.004535614567987624,
+     "hi": 0.00030682387259063024,
+     "n": 12146,
+     "direction": "higher",
+     "family": "tactical",
+     "arm_mean": 0.8578956034908611,
+     "P6_mean": 0.8600362259179977,
+     "adverse": false
+    },
+    "command_adherence_turn_active": {
+     "point": -0.004416094210009814,
+     "lo": -0.01000761646950757,
+     "hi": 0.0014289495393922673,
+     "n": 4076,
+     "direction": "higher",
+     "family": "tactical",
+     "arm_mean": 0.8824828263002944,
+     "P6_mean": 0.8868989205103042,
+     "adverse": false
+    },
+    "_distance_keeping": "UNAVAILABLE at this tier (no lead-agent block in NAVSIM open loop); read in card section 6 of PREREG_SCORER1P6"
+   },
+   "adverse_components": [
+    "EP"
+   ]
+  },
+  "PESS-10": {
+   "members": [
+    "C0",
+    "C0r",
+    "S1E",
+    "C0r2",
+    "S1E1",
+    "S1Z1",
+    "S1Z",
+    "S1ZSM",
+    "DV0",
+    "DV1"
+   ],
+   "PDMS_x100_E3": {
+    "point": 91.42858201455567,
+    "lo": 90.65654429984006,
+    "hi": 92.20791508424003,
+    "n": 12146
+   },
+   "minus_P6": {
+    "point": 0.23210413027769905,
+    "lo": 0.03772967317515114,
+    "hi": 0.4417124908118571,
+    "n": 12146
+   },
+   "zero_pick_share": 0.027581096657335748,
+   "EP_x100_E3": {
+    "arm_mean": 86.37595767066536,
+    "P6_mean": 87.03441689794842,
+    "minus_P6": {
+     "point": -0.65845922728307,
+     "lo": -0.8623835856106024,
+     "hi": -0.436848245550036,
+     "n": 12146
+    }
+   },
+   "failure_share_minus_P6_reported": {
+    "point": -0.010373785608430759,
+    "lo": -0.013937955308085757,
+    "hi": -0.007062675771317281,
+    "n": 12146
+   },
+   "G": {
+    "G1": {
+     "per_head_points_vs_P6": {
+      "TTC": {
+       "point": 0.8233163181294253,
+       "lo": 0.4980761838965242,
+       "hi": 1.172592179983046,
+       "n": 12146,
+       "arm_mean_x100": 95.90811789889676,
+       "P6_mean_x100": 95.08480158076733,
+       "ok": true
+      },
+      "NC": {
+       "point": 0.19759591635106208,
+       "lo": 0.051790554284370495,
+       "hi": 0.3438678047139501,
+       "n": 12146,
+       "arm_mean_x100": 99.04495307096987,
+       "P6_mean_x100": 98.8473571546188,
+       "ok": true
+      },
+      "DAC": {
+       "point": 0.20582907953235632,
+       "lo": 0.07319297969774187,
+       "hi": 0.3461601215784965,
+       "n": 12146,
+       "arm_mean_x100": 98.15577144739008,
+       "P6_mean_x100": 97.94994236785773,
+       "ok": true
+      }
+     },
+     "bar": "each point >= -0.5",
+     "ok": true,
+     "failed_heads": []
+    },
+    "G2": {
+     "delta_regret_vs_P6": {
+      "point": -0.3068615555381708,
+      "lo": -0.8091410391380698,
+      "hi": 0.16110897305231342,
+      "n": 2000,
+      "arm_regret": 5.580273090278124,
+      "P6_regret": 5.887134645816295
+     },
+     "bar": "CI-hi < +0.5 points",
+     "ok": true
+    },
+    "G3": {
+     "overspeed_diff_vs_P6": {
+      "point": -0.01937984496124031,
+      "lo": -0.047619047619047616,
+      "hi": 0.010583417764268807,
+      "n": 258,
+      "arm_share": 0.3953488372093023,
+      "P6_share": 0.41472868217054265
+     },
+     "bar": "CI-hi < +0.10",
+     "ok": true
+    },
+    "G4": {
+     "slow_diff_vs_P6": {
+      "point": 0.023255813953488372,
+      "lo": -0.011238075047699808,
+      "hi": 0.06538461538461539,
+      "n": 258,
+      "arm_share": 0.20155038759689922,
+      "P6_share": 0.17829457364341086
+     },
+     "bar": "CI-hi < +0.10",
+     "n_cruise_tokens_E2": 258,
+     "ok": true
+    },
+    "ok": {
+     "G1": true,
+     "G2": true,
+     "G3": true,
+     "G4": true
+    }
+   },
+   "family_vs_P6": {
+    "NC": {
+     "point": 0.19759591635106208,
+     "lo": 0.051790554284370495,
+     "hi": 0.3438678047139501,
+     "n": 12146,
+     "direction": "higher",
+     "family": "pdms-other",
+     "arm_mean": 99.04495307096987,
+     "P6_mean": 98.8473571546188,
+     "adverse": false
+    },
+    "DAC": {
+     "point": 0.20582907953235632,
+     "lo": 0.07319297969774187,
+     "hi": 0.3461601215784965,
+     "n": 12146,
+     "direction": "higher",
+     "family": "lateral",
+     "arm_mean": 98.15577144739008,
+     "P6_mean": 97.94994236785773,
+     "adverse": false
+    },
+    "EP": {
+     "point": -0.65845922728307,
+     "lo": -0.8623835856106024,
+     "hi": -0.436848245550036,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 86.37595767066536,
+     "P6_mean": 87.03441689794842,
+     "adverse": true
+    },
+    "TTC": {
+     "point": 0.8233163181294253,
+     "lo": 0.4980761838965242,
+     "hi": 1.172592179983046,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 95.90811789889676,
+     "P6_mean": 95.08480158076733,
+     "adverse": false
+    },
+    "C": {
+     "point": -0.008233163181294254,
+     "lo": -0.02794786359672253,
+     "hi": 0.0,
+     "n": 12146,
+     "direction": "higher",
+     "family": "pdms-other",
+     "arm_mean": 99.99176683681871,
+     "P6_mean": 100.0,
+     "adverse": false
+    },
+    "DDC": {
+     "point": -0.13584719249135518,
+     "lo": -0.3052552682830464,
+     "hi": 0.02530460559660681,
+     "n": 12146,
+     "direction": "higher",
+     "family": "pdms-other",
+     "arm_mean": 96.348592129096,
+     "P6_mean": 96.48443932158736,
+     "adverse": false
+    },
+    "speed_mae_mps": {
+     "point": -0.026180266058227337,
+     "lo": -0.034254003493217944,
+     "hi": -0.018092790575432345,
+     "n": 12146,
+     "direction": "lower",
+     "family": "longitudinal",
+     "arm_mean": 0.8111999986381033,
+     "P6_mean": 0.8373802646963306,
+     "adverse": false
+    },
+    "target_speed_within_0.5mps": {
+     "point": 0.011567594269718425,
+     "lo": 0.007037180768971906,
+     "hi": 0.016170979825397377,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 0.5091902684011197,
+     "P6_mean": 0.49762267413140127,
+     "adverse": false
+    },
+    "target_speed_within_1.0mps": {
+     "point": 0.00942697184258192,
+     "lo": 0.005041986513454526,
+     "hi": 0.013830692617361078,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 0.7148752675778034,
+     "P6_mean": 0.7054482957352215,
+     "adverse": false
+    },
+    "target_speed_within_2.0mps": {
+     "point": 0.0065247818211756955,
+     "lo": 0.003742837660552165,
+     "hi": 0.009269352967105333,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 0.8945331796476206,
+     "P6_mean": 0.8880083978264449,
+     "adverse": false
+    },
+    "along_mae_m": {
+     "point": -0.037317137449376175,
+     "lo": -0.0485433841822815,
+     "hi": -0.026558373168367226,
+     "n": 12146,
+     "direction": "lower",
+     "family": "longitudinal",
+     "arm_mean": 1.1620098954428857,
+     "P6_mean": 1.199327032892262,
+     "adverse": false
+    },
+    "along_final_abs_m": {
+     "point": -0.09633624664770503,
+     "lo": -0.12489192118799072,
+     "hi": -0.06835610563934298,
+     "n": 12146,
+     "direction": "lower",
+     "family": "longitudinal",
+     "arm_mean": 2.8603992119140735,
+     "P6_mean": 2.9567354585617784,
+     "adverse": false
+    },
+    "accel_mae_mps2": {
+     "point": -0.009997639358509868,
+     "lo": -0.014217654389997747,
+     "hi": -0.005746405519273645,
+     "n": 12146,
+     "direction": "lower",
+     "family": "longitudinal",
+     "arm_mean": 0.5348417608335151,
+     "P6_mean": 0.5448394001920249,
+     "adverse": false
+    },
+    "heading_mae_deg": {
+     "point": -0.004413774138832355,
+     "lo": -0.049321378096554944,
+     "hi": 0.04245622314762892,
+     "n": 12082,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 2.7549693012249943,
+     "P6_mean": 2.7596224259149373,
+     "adverse": false
+    },
+    "yaw_rate_mae_degps": {
+     "point": -0.00562464331419347,
+     "lo": -0.03069777556593059,
+     "hi": 0.020345728710295434,
+     "n": 11936,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 3.0539134990663617,
+     "P6_mean": 3.0602104178209193,
+     "adverse": false
+    },
+    "curvature_mae_1pm": {
+     "point": 0.00041755298377086795,
+     "lo": 0.00011973166905267128,
+     "hi": 0.0007468763752375544,
+     "n": 11936,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 0.02064160176504124,
+     "P6_mean": 0.02030395948348201,
+     "adverse": true
+    },
+    "cross_mae_m": {
+     "point": -0.006950152859995171,
+     "lo": -0.013731167182082683,
+     "hi": 6.71269575918188e-05,
+     "n": 12146,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 0.43608362329762634,
+     "P6_mean": 0.4430337761576215,
+     "adverse": false
+    },
+    "cross_final_abs_m": {
+     "point": -0.03511528284551754,
+     "lo": -0.054550085075427406,
+     "hi": -0.01455713849488807,
+     "n": 12146,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 1.0401432984395906,
+     "P6_mean": 1.075258581285108,
+     "adverse": false
+    },
+    "lateral_decision_acc": {
+     "point": 0.00016466326362588507,
+     "lo": -0.0024523186706459175,
+     "hi": 0.0028597224744281937,
+     "n": 12146,
+     "direction": "higher",
+     "family": "tactical",
+     "arm_mean": 0.9132224600691585,
+     "P6_mean": 0.9130577968055327,
+     "adverse": false
+    },
+    "longitudinal_decision_acc": {
+     "point": 0.009303474394862506,
+     "lo": 0.003928862703020995,
+     "hi": 0.014359720750341925,
+     "n": 12146,
+     "direction": "higher",
+     "family": "tactical",
+     "arm_mean": 0.6574180800263462,
+     "P6_mean": 0.6481146056314836,
+     "adverse": false
+    },
+    "command_adherence_all": {
+     "point": -0.0022229540589494483,
+     "lo": -0.00463215869613724,
+     "hi": 0.0003312266346269801,
+     "n": 12146,
+     "direction": "higher",
+     "family": "tactical",
+     "arm_mean": 0.8578132718590482,
+     "P6_mean": 0.8600362259179977,
+     "adverse": false
+    },
+    "command_adherence_turn_active": {
+     "point": -0.0034347399411187437,
+     "lo": -0.00878053411913184,
+     "hi": 0.0023232266883462397,
+     "n": 4076,
+     "direction": "higher",
+     "family": "tactical",
+     "arm_mean": 0.8834641805691855,
+     "P6_mean": 0.8868989205103042,
+     "adverse": false
+    },
+    "_distance_keeping": "UNAVAILABLE at this tier (no lead-agent block in NAVSIM open loop); read in card section 6 of PREREG_SCORER1P6"
+   },
+   "adverse_components": [
+    "EP",
+    "curvature_mae_1pm"
+   ]
+  },
+  "PESS-8": {
+   "members": [
+    "C0",
+    "C0r",
+    "S1E",
+    "C0r2",
+    "S1E1",
+    "S1Z1",
+    "S1Z",
+    "S1ZSM"
+   ],
+   "PDMS_x100_E3": {
+    "point": 91.47901718634304,
+    "lo": 90.68677744742727,
+    "hi": 92.2830827522656,
+    "n": 12146
+   },
+   "minus_P6": {
+    "point": 0.28253930206506506,
+    "lo": 0.07556348091937434,
+    "hi": 0.5042409646725554,
+    "n": 12146
+   },
+   "zero_pick_share": 0.027416433393709864
+  },
+  "C0": {
+   "members": [
+    "C0"
+   ],
+   "PDMS_x100_E3": {
+    "point": 91.22893541456432,
+    "lo": 90.41272860297012,
+    "hi": 92.04346088691936,
+    "n": 12146
+   },
+   "minus_P6": {
+    "point": 0.03245753028633605,
+    "lo": -0.15840912500227203,
+    "hi": 0.23069788681451273,
+    "n": 12146
+   },
+   "zero_pick_share": 0.030051045611724024
+  },
+  "C0r": {
+   "members": [
+    "C0r"
+   ],
+   "PDMS_x100_E3": {
+    "point": 91.6084855199265,
+    "lo": 90.82676183172072,
+    "hi": 92.39632001060382,
+    "n": 12146
+   },
+   "minus_P6": {
+    "point": 0.41200763564852233,
+    "lo": 0.19705249603058073,
+    "hi": 0.6363995098262604,
+    "n": 12146
+   },
+   "zero_pick_share": 0.028651407870904002
+  }
+ },
+ "reported_pairs": {
+  "DV0_minus_C0": {
+   "point": 0.10309534813593713,
+   "lo": -0.1046627156033357,
+   "hi": 0.30284807145572273,
+   "n": 12146
+  },
+  "DV1_minus_C0r": {
+   "point": -0.19976322652957412,
+   "lo": -0.3648609371361573,
+   "hi": -0.0387671064573568,
+   "n": 12146
+  }
+ },
+ "bars_read": {
+  "Q1": {
+   "point": 0.06588441877535549,
+   "lo": -0.09030849398687424,
+   "hi": 0.22506877008578904,
+   "n": 12146,
+   "clears": false
+  },
+  "Q2a_vs_P6": {
+   "point": 0.23210413027769905,
+   "lo": 0.03772967317515114,
+   "hi": 0.4417124908118571,
+   "n": 12146,
+   "floor": 0.4971,
+   "clears": false
+  },
+  "Q2b_vs_PESS8": {
+   "point": -0.05043517178736603,
+   "lo": -0.13411945382093085,
+   "hi": 0.03125241320209007,
+   "n": 12146,
+   "clears": false
+  },
+  "M": {
+   "point": 0.0,
+   "lo": -0.001822681025617876,
+   "hi": 0.0018437084973636332,
+   "n": 12146,
+   "PESS-DV_share": 0.02832208134365223,
+   "PESS-SEED_share": 0.02832208134365223,
+   "clears": false,
+   "n_pick_pdms_zero_PESS-DV": 344,
+   "n_pick_pdms_zero_PESS-SEED": 344
+  }
+ },
+ "outcome": {
+  "matches": [
+   "DV3"
+  ],
+  "primary": "DV3",
+  "name": "NO DIVERSITY GAIN",
+  "adopted": false,
+  "q2": false,
+  "failed_guards": [],
+  "next_levers": {
+   "DV3": "the shared error sits in P6's frozen trunk, not in the fine-tune data. The ensemble line is closed; Decision A"
+  },
+  "inputs": {
+   "Q1": false,
+   "Q2a": false,
+   "Q2b": false,
+   "M_reported": false,
+   "guards": {
+    "G1": true,
+    "G2": true,
+    "G3": true,
+    "G4": true
+   },
+   "point_PESS-10": 91.42858201455567
+  }
+ },
+ "goal_status_PESS-10": "BELOW GOAL",
+ "status": "READ",
+ "K_ledger": {
+  "ledger": "E:/Projects/TanitAD-artifacts/scorer_gym_20261107/p6base/selectors/ledger_K.json",
+  "K_before": 35,
+  "K": 40,
+  "keys": {
+   "DV0": "DV0:876ec4d8389ddd552c44ad850784a65bca28791edd2b087f080f84d8bceb074b:E3",
+   "DV1": "DV1:c82cc0ce421fa170498c5f1e2cc6682c4274229fac328b8648e18b061a5663e8:E3",
+   "PESS-DV": "PESS-DV:814fd44032fd0a07f25f01b92bb9824e75a7a3c1b4aee4be4c98c3f1d7ca9406:E3",
+   "PESS-SEED": "PESS-SEED:e43f13412203c95073be66c80fd75158e2f952a42c9b0ea83d7f2fc4f4d7aeba:E3",
+   "PESS-10": "PESS-10:84b33d871310f6a0e575435421dfc4ffa08a7d7b4a01358a03233bf1c8efafaf:E3"
+  },
+  "this_read_added": {
+   "DV0": true,
+   "DV1": true,
+   "PESS-DV": true,
+   "PESS-SEED": true,
+   "PESS-10": true
+  },
+  "bonferroni_pdms_minus_P6": {
+   "DV0": {
+    "point": 0.1355528784222731,
+    "lo": -0.20163501709154108,
+    "hi": 0.4788329816150003
+   },
+   "DV1": {
+    "point": 0.2122444091189482,
+    "lo": -0.10460474672795272,
+    "hi": 0.5660164383743952
+   },
+   "PESS-DV": {
+    "point": 0.32194839478035425,
+    "lo": -0.006940250976650453,
+    "hi": 0.6458351040143915
+   },
+   "PESS-SEED": {
+    "point": 0.2560639760049988,
+    "lo": -0.03308253899284858,
+    "hi": 0.5816580324275086
+   },
+   "PESS-10": {
+    "point": 0.23210413027769905,
+    "lo": -0.07849053227118372,
+    "hi": 0.575924143710957
+   }
+  },
+  "note": "K counts every navtest read in the programme's ledger; expected K_before + 5; best-of-K statements use these intervals; Q1, Q2, M are the card's own tests"
+ },
+ "seconds": 28.2
+}

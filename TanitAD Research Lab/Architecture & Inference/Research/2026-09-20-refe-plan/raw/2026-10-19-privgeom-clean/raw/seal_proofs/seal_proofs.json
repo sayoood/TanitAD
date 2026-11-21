@@ -1,0 +1,253 @@
+{
+ "schema": "privgeom-clean-seal-proofs-v1",
+ "seal_holds_on_the_real_root": {
+  "pins": {
+   "prereg": "148ebf0f2162b43ba7a1c29243fceac5900fe6b88ace3cae04fc27bdf29c6cf9"
+  },
+  "sealed_at": "2026-10-19T21:28:18+02:00",
+  "revision": 1,
+  "n_code_pins": 28,
+  "status": "SEALED",
+  "inputs_checked": true
+ },
+ "A_entry_point_refuses": [
+  {
+   "arm": "genuine seal: seal-check",
+   "expected": "ACCEPTED",
+   "rc": 0,
+   "stage": "seal-check",
+   "needle": "",
+   "ok": true,
+   "tail": "[21:28:29] SEAL HOLDS: {\"prereg\": \"148ebf0f2162b43ba7a1c29243fceac5900fe6b88ace3cae04fc27bdf29c6cf9\"}"
+  },
+  {
+   "arm": "one-byte-edited prereg: seal-check",
+   "expected": "REFUSED",
+   "rc": 1,
+   "stage": "seal-check",
+   "needle": "does not hash to its recorded sha256",
+   "ok": true,
+   "tail": "reg\n    raise C.P.PgError(str(e)) from None\npg_lib.PgError: PREREG does not hash to its recorded sha256 148ebf0f2162b43ba7a1c29243fceac5900fe6b88ace3cae04fc27bdf29c6cf9 (got d48f6db04d07983d0b6e63d169b408b600485e76b864ded59d97502481115d7e): every stage refuses"
+  },
+  {
+   "arm": "one-byte-edited prereg: preflight",
+   "expected": "REFUSED",
+   "rc": 1,
+   "stage": "preflight",
+   "needle": "does not hash to its recorded sha256",
+   "ok": true,
+   "tail": "reg\n    raise C.P.PgError(str(e)) from None\npg_lib.PgError: PREREG does not hash to its recorded sha256 148ebf0f2162b43ba7a1c29243fceac5900fe6b88ace3cae04fc27bdf29c6cf9 (got d48f6db04d07983d0b6e63d169b408b600485e76b864ded59d97502481115d7e): every stage refuses"
+  },
+  {
+   "arm": "one-byte-edited prereg: select",
+   "expected": "REFUSED",
+   "rc": 1,
+   "stage": "select",
+   "needle": "does not hash to its recorded sha256",
+   "ok": true,
+   "tail": "reg\n    raise C.P.PgError(str(e)) from None\npg_lib.PgError: PREREG does not hash to its recorded sha256 148ebf0f2162b43ba7a1c29243fceac5900fe6b88ace3cae04fc27bdf29c6cf9 (got d48f6db04d07983d0b6e63d169b408b600485e76b864ded59d97502481115d7e): every stage refuses"
+  },
+  {
+   "arm": "one-byte-edited prereg: join",
+   "expected": "REFUSED",
+   "rc": 1,
+   "stage": "join",
+   "needle": "does not hash to its recorded sha256",
+   "ok": true,
+   "tail": "reg\n    raise C.P.PgError(str(e)) from None\npg_lib.PgError: PREREG does not hash to its recorded sha256 148ebf0f2162b43ba7a1c29243fceac5900fe6b88ace3cae04fc27bdf29c6cf9 (got d48f6db04d07983d0b6e63d169b408b600485e76b864ded59d97502481115d7e): every stage refuses"
+  },
+  {
+   "arm": "one-byte-edited prereg: gate",
+   "expected": "REFUSED",
+   "rc": 1,
+   "stage": "gate",
+   "needle": "does not hash to its recorded sha256",
+   "ok": true,
+   "tail": "reg\n    raise C.P.PgError(str(e)) from None\npg_lib.PgError: PREREG does not hash to its recorded sha256 148ebf0f2162b43ba7a1c29243fceac5900fe6b88ace3cae04fc27bdf29c6cf9 (got d48f6db04d07983d0b6e63d169b408b600485e76b864ded59d97502481115d7e): every stage refuses"
+  },
+  {
+   "arm": "one-byte-edited prereg: fit",
+   "expected": "REFUSED",
+   "rc": 1,
+   "stage": "fit",
+   "needle": "does not hash to its recorded sha256",
+   "ok": true,
+   "tail": "reg\n    raise C.P.PgError(str(e)) from None\npg_lib.PgError: PREREG does not hash to its recorded sha256 148ebf0f2162b43ba7a1c29243fceac5900fe6b88ace3cae04fc27bdf29c6cf9 (got d48f6db04d07983d0b6e63d169b408b600485e76b864ded59d97502481115d7e): every stage refuses"
+  },
+  {
+   "arm": "one-byte-edited prereg: analyze",
+   "expected": "REFUSED",
+   "rc": 1,
+   "stage": "analyze",
+   "needle": "does not hash to its recorded sha256",
+   "ok": true,
+   "tail": "reg\n    raise C.P.PgError(str(e)) from None\npg_lib.PgError: PREREG does not hash to its recorded sha256 148ebf0f2162b43ba7a1c29243fceac5900fe6b88ace3cae04fc27bdf29c6cf9 (got d48f6db04d07983d0b6e63d169b408b600485e76b864ded59d97502481115d7e): every stage refuses"
+  },
+  {
+   "arm": "refused stages create no output",
+   "ok": true,
+   "outputs": [
+    "MM_RULING_PGCLEAN.md",
+    "PREREG_PRIVGEOM_CLEAN.md",
+    "PREREG_PRIVGEOM_CLEAN.sha256",
+    "SEALED_AT.txt",
+    "code",
+    "ref"
+   ]
+  },
+  {
+   "arm": "real pre-revision DRAFT prereg (self-consistent hash): seal-check",
+   "expected": "REFUSED",
+   "rc": 1,
+   "stage": "seal-check",
+   "needle": "status is 'DRAFT'",
+   "ok": true,
+   "tail": "un_clean/seal_proofs\\pgc_mirror_kqgf5p2_/draft_real/code/pgc_run.py\", line 81, in require_prereg\n    raise C.P.PgError(str(e)) from None\npg_lib.PgError: PREREG status is 'DRAFT', not SEALED: a draft-status copy is refused (even if it hashes to its own .sha256)"
+  },
+  {
+   "arm": "real pre-revision DRAFT prereg (self-consistent hash): select",
+   "expected": "REFUSED",
+   "rc": 1,
+   "stage": "select",
+   "needle": "status is 'DRAFT'",
+   "ok": true,
+   "tail": "un_clean/seal_proofs\\pgc_mirror_kqgf5p2_/draft_real/code/pgc_run.py\", line 81, in require_prereg\n    raise C.P.PgError(str(e)) from None\npg_lib.PgError: PREREG status is 'DRAFT', not SEALED: a draft-status copy is refused (even if it hashes to its own .sha256)"
+  },
+  {
+   "arm": "draft-STATUS copy of the sealed text: seal-check",
+   "expected": "REFUSED",
+   "rc": 1,
+   "stage": "seal-check",
+   "needle": "status is 'DRAFT'",
+   "ok": true,
+   "tail": "clean/seal_proofs\\pgc_mirror_kqgf5p2_/draft_flipped/code/pgc_run.py\", line 81, in require_prereg\n    raise C.P.PgError(str(e)) from None\npg_lib.PgError: PREREG status is 'DRAFT', not SEALED: a draft-status copy is refused (even if it hashes to its own .sha256)"
+  },
+  {
+   "arm": "draft-STATUS copy of the sealed text: gate",
+   "expected": "REFUSED",
+   "rc": 1,
+   "stage": "gate",
+   "needle": "status is 'DRAFT'",
+   "ok": true,
+   "tail": "clean/seal_proofs\\pgc_mirror_kqgf5p2_/draft_flipped/code/pgc_run.py\", line 81, in require_prereg\n    raise C.P.PgError(str(e)) from None\npg_lib.PgError: PREREG status is 'DRAFT', not SEALED: a draft-status copy is refused (even if it hashes to its own .sha256)"
+  },
+  {
+   "arm": "real DRAFT prereg against the sealed .sha256: seal-check",
+   "expected": "REFUSED",
+   "rc": 1,
+   "stage": "seal-check",
+   "needle": "does not hash",
+   "ok": true,
+   "tail": "reg\n    raise C.P.PgError(str(e)) from None\npg_lib.PgError: PREREG does not hash to its recorded sha256 148ebf0f2162b43ba7a1c29243fceac5900fe6b88ace3cae04fc27bdf29c6cf9 (got 56f8cc0bff494c82bac5e37745d7f26a786f99d7ea633de882f65e0202bf7345): every stage refuses"
+  },
+  {
+   "arm": "one-byte-edited pinned code file (pgc_lib.py): seal-check",
+   "expected": "REFUSED",
+   "rc": 1,
+   "stage": "seal-check",
+   "needle": "pinned file(s) differ",
+   "ok": true,
+   "tail": "\\Users\\Admin\\par18\\pgclean/run_clean/seal_proofs\\pgc_mirror_kqgf5p2_/code_edit/code/pgc_run.py\", line 81, in require_prereg\n    raise C.P.PgError(str(e)) from None\npg_lib.PgError: pinned file(s) differ from the seal (edited after sealing?): ['code/pgc_lib.py']"
+  },
+  {
+   "arm": "one-byte-edited pinned code file (pgc_lib.py): fit",
+   "expected": "REFUSED",
+   "rc": 1,
+   "stage": "fit",
+   "needle": "pinned file(s) differ",
+   "ok": true,
+   "tail": "\\Users\\Admin\\par18\\pgclean/run_clean/seal_proofs\\pgc_mirror_kqgf5p2_/code_edit/code/pgc_run.py\", line 81, in require_prereg\n    raise C.P.PgError(str(e)) from None\npg_lib.PgError: pinned file(s) differ from the seal (edited after sealing?): ['code/pgc_lib.py']"
+  },
+  {
+   "arm": "PGC_REHEARSAL=1: seal-check",
+   "expected": "REFUSED",
+   "rc": 3,
+   "stage": "seal-check",
+   "needle": "",
+   "ok": true,
+   "tail": "[21:28:33] seal-check REFUSES under PGC_REHEARSAL (the rehearsal bypass is not a seal)"
+  },
+  {
+   "arm": "PGC_REHEARSAL=1: preflight",
+   "expected": "REFUSED",
+   "rc": 3,
+   "stage": "preflight",
+   "needle": "",
+   "ok": true,
+   "tail": "[21:28:34] seal-check REFUSES under PGC_REHEARSAL (the rehearsal bypass is not a seal)"
+  }
+ ],
+ "B_seal_check_opens_no_label": {
+  "ok": true,
+  "np_load_calls": 0,
+  "opened_as_text_and_is_npz_or_npy": [],
+  "n_opens": 39,
+  "opened_basenames": [
+   "MM_RULING_PGCLEAN.md",
+   "PINS.json",
+   "PREREG_PRIVGEOM_CLEAN.md",
+   "PREREG_PRIVGEOM_CLEAN.sha256",
+   "SEALED_AT.txt",
+   "build_package.py",
+   "coverage.json",
+   "fastneg_lib.py",
+   "feat_f10.npy",
+   "finish_clean.sh",
+   "glive.json",
+   "launch.ps1",
+   "meta.npz",
+   "pg_extract.py",
+   "pg_geom.py",
+   "pg_lib.py",
+   "pgc_admit.py",
+   "pgc_admit_seen.py",
+   "pgc_calibrate_plant.py",
+   "pgc_cost.py",
+   "pgc_coverage.py",
+   "pgc_design.py",
+   "pgc_glive.py",
+   "pgc_lib.py",
+   "pgc_pins.py",
+   "pgc_read_chain.py",
+   "pgc_rehearsal_identity.py",
+   "pgc_run.py",
+   "pgc_seal.py",
+   "pgc_seal_proofs.py",
+   "plant_calibration.json",
+   "rehearsal_chain.sh",
+   "test_pg_geom.py",
+   "test_pg_lib.py",
+   "test_pgc_admit.py",
+   "test_pgc_lib.py",
+   "test_pgc_seal.py"
+  ],
+  "info": {
+   "prereg": "148ebf0f2162b43ba7a1c29243fceac5900fe6b88ace3cae04fc27bdf29c6cf9"
+  },
+  "note": "meta.npz / feat_f10.npy are opened in 'rb' mode ONLY to sha256 their bytes (the seal pins them); no member is parsed and no array is loaded."
+ },
+ "C_phase_A_failure_opens_no_label": {
+  "ok": true,
+  "gate_rc": 5,
+  "labels_opened": false,
+  "stopped_before_labels": true,
+  "label_loads_before_stop": [],
+  "label_file_written": false,
+  "spy_control_sees_a_label_load": true,
+  "phase_A_flags": {
+   "C-JOIN": true,
+   "C-ID-EXTRACT": true,
+   "C-GRAD-REAL": true
+  },
+  "branch_table_failures": [
+   [
+    "injected failure",
+    "x",
+    "y"
+   ]
+  ],
+  "child_rc": 0
+ },
+ "A_all_ok": true,
+ "all_ok": true
+}

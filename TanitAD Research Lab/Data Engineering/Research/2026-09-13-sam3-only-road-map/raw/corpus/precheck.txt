@@ -1,0 +1,20 @@
+# corpus_precheck.py on Thor, 2026-09-15 07:4x (Europe/Berlin), output verbatim
+clips 4719 | unique 4719 | unique c8 4719 | not in B1 index 0
+chunks 1411 | clips lacking front-wide calibration 0
+sha table entries 4719 | key form [2 clip ids]
+order clips in sha table 4719
+validated-input mp4s hashed 160 | equal to HF table 160 | 2s
+
+# hf_probe_thor.py (Thor's own HF login)
+user: Sayood | orgs: []
+private: True | sha: a0cf20dfb4eafa29b0ac1f3c05337f002bc33ca0
+camera/*mp4 4719 files, camera/camera_sha256.json 1
+
+# hf_pathinfo_probe.py: the Hub reports lfs.sha256 per file, equal to the published tables
+camera/<clip>.mp4 lfs.sha256 83ed8495c45688f9... == camera_sha256.json 83ed8495c45688f9...
+labels/s2_labels_v8_train.jsonl.gz lfs.sha256 0cb3c5021491f6ba... == V8_MANIFEST.json files.train.sha256 0cb3c5021491f6ba...
+
+# hf_tree_summary.py before any push (4,747 files, 63.68 GB)
+<top> 6 files · alpamayo 2 (0.026 GB) · camera 4720 (61.618 GB) · egomotion 1 (1.967 GB) · index 5 · labels 7 · splits 3 · timestamps 1 (0.053 GB) · tools 2
+
+# feeder, first 128 downloads: 1,872.5 MB, mean 2.08 s per file including sha256; 0 errors, 0 sha mismatches

@@ -1,0 +1,162 @@
+===== mutation flipped (rc 1) =====
+...F.FFFFFFF..F.F......F                                                 [100%]
+================================== FAILURES ===================================
+__________ test_detach_keeps_and_band_adds_with_committed_next_step ___________
+
+    def test_detach_keeps_and_band_adds_with_committed_next_step():
+        rep = world(band=({R.OP_ADE: -0.5}, {R.OP_ADE: -0.5}))
+>       assert rep["detach"]["outcome"] == "DETACH-KEEPS" and rep["band"]["outcome"] == "BAND-ADDS"
+E       AssertionError: assert ('DETACH-KEEPS' == 'DETACH-KEEPS'
+E         
+E           DETACH-KEEPS and 'BAND-NEUTRAL' == 'BAND-ADDS'
+E         
+E         - BAND-ADDS
+E         + BAND-NEUTRAL)
+
+test_obd_read.py:82: AssertionError
+_________________ test_subfloor_delta_is_not_a_cost_or_a_gain _________________
+
+    def test_subfloor_delta_is_not_a_cost_or_a_gain():
+        rep = world(ctl=({TAC_ADE: 0.005}, {TAC_ADE: 0.005}), band=({R.OP_ADE: -0.005}, {R.OP_ADE: -0.005}))
+        c = rep["detach"]["per_seed"][0]["cells"][TAC_ADE]
+>       assert c["separated"] and c["delta"] > 0 and not c["above_floor"] and not c["cost"], c
+E       AssertionError: {'status': 'OK', 'delta': 0.004999999999999893, 'delta_rounded': 0.005, 'lo': 0.005, ...}
+E       assert (True and 0.004999999999999893 > 0 and not True)
+
+test_obd_read.py:94: AssertionError
+_______ test_detach_costs_names_every_costing_cell_with_delta_ci_floor ________
+
+    def test_detach_costs_names_every_costing_cell_with_delta_ci_floor():
+        rep = world(ctl=({TAC_ADE: 0.5, TAC_FDE: 0.4}, {TAC_ADE: 0.5}))
+>       assert rep["detach"]["outcome"] == "DETACH-COSTS"
+E       AssertionError: assert 'DETACH-KEEPS' == 'DETACH-COSTS'
+E         
+E         - DETACH-COSTS
+E         + DETACH-KEEPS
+
+test_obd_read.py:103: AssertionError
+________ test_accuracy_direction_a_fall_is_a_cost_and_a_rise_is_a_gain ________
+
+    def test_accuracy_direction_a_fall_is_a_cost_and_a_rise_is_a_gain():
+        rep = world(ctl=({TAC_LON: -0.2}, {TAC_LON: -0.2}))
+>       assert rep["detach"]["outcome"] == "DETACH-COSTS" and rep["detach"]["per_seed"][0]["cells"][TAC_LON]["cost"]
+E       AssertionError: assert ('DETACH-KEEPS' == 'DETACH-COSTS'
+E         
+E         - DETACH-COSTS
+E         + DETACH-KEEPS)
+
+test_obd_read.py:113: AssertionError
+_______________ test_an_improvement_of_the_detach_is_not_a_cost _______________
+
+    def test_an_improvement_of_the_detach_is_not_a_cost():
+        rep = world(ctl=({R.OP_ADE: -0.5}, {R.OP_ADE: -0.5}))
+>       assert rep["detach"]["outcome"] == "DETACH-KEEPS" and rep["detach"]["per_seed"][0]["named_gains"]
+E       AssertionError: assert ('DETACH-KEEPS' == 'DETACH-KEEPS'
+E         
+E           DETACH-KEEPS and [])
+
+test_obd_read.py:120: AssertionError
+_________________________ test_detach_seeds_disagree __________________________
+
+    def test_detach_seeds_disagree():
+        rep = world(ctl=({TAC_ADE: 0.5}, None))
+>       assert rep["detach"]["outcome"].startswith("SEEDS-DISAGREE") and "s0 DETACH-COSTS" in rep["detach"]["outcome"] and "s1 DETACH-KEEPS" in rep["detach"]["outcome"]
+E       AssertionError: assert (False)
+E        +  where False = <built-in method startswith of str object at 0x0000023C91AB14F0>('SEEDS-DISAGREE')
+E        +    where <built-in method startswith of str object at 0x0000023C91AB14F0> = 'DETACH-KEEPS'.startswith
+
+test_obd_read.py:125: AssertionError
+_____________________________ test_band_outcomes ______________________________
+
+    def test_band_outcomes():
+        adds = world(band=({R.OP_ADE: -0.5}, {R.OP_ADE: -0.5}))
+        neutral = world(band=({TAC_ADE: -0.5}, {TAC_ADE: -0.5}))                       # a tactical gain does not make BAND-ADDS: the card keys it on operative ADE
+        costs = world(band=({R.OP_ADE: -0.5, TAC_FDE: 0.5}, {R.OP_ADE: -0.5}))         # operative gain but a cost at seed 0 only
+        both_cost = world(band=({R.OP_ADE: -0.5, TAC_FDE: 0.5}, {R.OP_ADE: -0.5, TAC_LON: -0.2}))
+>       assert adds["band"]["outcome"] == "BAND-ADDS" and neutral["band"]["outcome"] == "BAND-NEUTRAL"
+E       AssertionError: assert ('BAND-NEUTRAL' == 'BAND-ADDS'
+E         
+E         - BAND-ADDS
+E         + BAND-NEUTRAL)
+
+test_obd_read.py:134: AssertionError
+__________________ test_band_seeds_disagree_adds_vs_neutral ___________________
+
+    def test_band_seeds_disagree_adds_vs_neutral():
+        rep = world(band=({R.OP_ADE: -0.5}, None))
+>       assert rep["band"]["outcome"] == "SEEDS-DISAGREE (s0 BAND-ADDS; s1 BAND-NEUTRAL)", rep["band"]["outcome"]
+E       AssertionError: BAND-NEUTRAL
+E       assert 'BAND-NEUTRAL' == 'SEEDS-DISAGR...BAND-NEUTRAL)'
+E         
+E         - SEEDS-DISAGREE (s0 BAND-ADDS; s1 BAND-NEUTRAL)
+E         + BAND-NEUTRAL
+
+test_obd_read.py:142: AssertionError
+_______ test_null_parity_fails_reads_against_the_null_of_the_same_seed ________
+
+    def test_null_parity_fails_reads_against_the_null_of_the_same_seed():
+        drift = {TAC_ADE: 0.5}                      # the code drifted: NULL itself is 0.5 worse than DAG-OACC on tactical ADE; CTL inherits it
+        holds = world(ctl=(drift, drift), null_s0=drift, parity="holds")
+        fails = world(ctl=(drift, drift), null_s0=drift, parity="fails", null_s1_present=True)
+>       assert holds["detach"]["outcome"] == "DETACH-COSTS"                  # against DAG-OACC it looks like a detach cost
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert 'DETACH-KEEPS' == 'DETACH-COSTS'
+E         
+E         - DETACH-COSTS
+E         + DETACH-KEEPS
+
+test_obd_read.py:164: AssertionError
+_____________ test_parity_unknown_blocks_the_detach_question_only _____________
+
+    def test_parity_unknown_blocks_the_detach_question_only():
+        rep = world(parity="unknown", band=({R.OP_ADE: -0.5}, {R.OP_ADE: -0.5}))
+>       assert rep["detach"]["outcome"].startswith("NOT-YET") and rep["band"]["outcome"] == "BAND-ADDS"
+E       AssertionError: assert (True and 'BAND-NEUTRAL' == 'BAND-ADDS'
+E        +  where True = <built-in method startswith of str object at 0x0000023CC0EAD0B0>('NOT-YET')
+E        +    where <built-in method startswith of str object at 0x0000023CC0EAD0B0> = 'NOT-YET: per-seed labels so far {} decide nothing (the card needs both seeds)'.startswith
+E         
+E         - BAND-ADDS
+E         + BAND-NEUTRAL)
+
+test_obd_read.py:181: AssertionError
+_______________ test_render_md_names_costs_and_pauses_strategic _______________
+
+    def test_render_md_names_costs_and_pauses_strategic():
+        rep = world(ctl=({TAC_ADE: 0.5}, {TAC_ADE: 0.5}))
+        rep.update({"outcome": "x", "card_sha256": R.CARD_SHA256, "code_of_record": R.CODE_OF_RECORD, "tier": "T1-kin", "evidence_class": "MEASURED", "estimator": "e",
+                    "parity_state": "holds", "STRATEGIC": {"ruling": "PI item 25"}, "controls": {"problems": []}})
+        md = R.render_md(rep)
+>       assert "COST tactical_2_6s:ade_m" in md and "PAUSED" in md and "DETACH-COSTS" in md
+E       AssertionError: assert ('COST tactical_2_6s:ade_m' in '# OBD read: x\n\nCard `PREREG_V8F_OBD.md` (frozen, sha256 `2d42cd51`), code of record `cdbff971`. Tier T1-kin. Eviden...rd; the band loss leaves the recipe, with its logged-only operative gain recorded as not carried to the DAgger base.\n')
+
+test_obd_read.py:247: AssertionError
+=========================== short test summary info ===========================
+FAILED test_obd_read.py::test_detach_keeps_and_band_adds_with_committed_next_step
+FAILED test_obd_read.py::test_subfloor_delta_is_not_a_cost_or_a_gain - Assert...
+FAILED test_obd_read.py::test_detach_costs_names_every_costing_cell_with_delta_ci_floor
+FAILED test_obd_read.py::test_accuracy_direction_a_fall_is_a_cost_and_a_rise_is_a_gain
+FAILED test_obd_read.py::test_an_improvement_of_the_detach_is_not_a_cost - As...
+FAILED test_obd_read.py::test_detach_seeds_disagree - AssertionError: assert ...
+FAILED test_obd_read.py::test_band_outcomes - AssertionError: assert ('BAND-N...
+FAILED test_obd_read.py::test_band_seeds_disagree_adds_vs_neutral - Assertion...
+FAILED test_obd_read.py::test_null_parity_fails_reads_against_the_null_of_the_same_seed
+FAILED test_obd_read.py::test_parity_unknown_blocks_the_detach_question_only
+FAILED test_obd_read.py::test_render_md_names_costs_and_pauses_strategic - As...
+11 failed, 13 passed in 19.09s
+
+===== mutation dropped (rc 1) =====
+.....F..................                                                 [100%]
+================================== FAILURES ===================================
+_________________ test_subfloor_delta_is_not_a_cost_or_a_gain _________________
+
+    def test_subfloor_delta_is_not_a_cost_or_a_gain():
+        rep = world(ctl=({TAC_ADE: 0.005}, {TAC_ADE: 0.005}), band=({R.OP_ADE: -0.005}, {R.OP_ADE: -0.005}))
+        c = rep["detach"]["per_seed"][0]["cells"][TAC_ADE]
+>       assert c["separated"] and c["delta"] > 0 and not c["above_floor"] and not c["cost"], c
+E       AssertionError: {'status': 'OK', 'delta': 0.004999999999999893, 'delta_rounded': 0.005, 'lo': 0.005, ...}
+E       assert (True and 0.004999999999999893 > 0 and not True)
+
+test_obd_read.py:94: AssertionError
+=========================== short test summary info ===========================
+FAILED test_obd_read.py::test_subfloor_delta_is_not_a_cost_or_a_gain - Assert...
+1 failed, 23 passed in 21.68s

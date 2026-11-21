@@ -1,0 +1,575 @@
+{
+ "arm": "DAGSTRICT",
+ "cfg": "frozen_causal",
+ "tier": "T1-kin (self-action OPEN loop; m=10, nav deadreckon, periodic, causal bucket unless cfg says otherwise)",
+ "seeds": {
+  "s0": {
+   "rows_arm_minus_P10": {
+    "ADE6": {
+     "delta": -1.0603,
+     "lo": -1.2273,
+     "hi": -0.9014,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "mean_a": 2.3830205119920866,
+     "mean_b": 3.443279013457244,
+     "separated_better": true,
+     "separated_worse": false,
+     "family": "PRIMARY",
+     "key": "ade6_m"
+    },
+    "speed MAE": {
+     "delta": -0.5488,
+     "lo": -0.7485,
+     "hi": -0.3787,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "mean_a": 1.339254884571678,
+     "mean_b": 1.8880307728496237,
+     "separated_better": true,
+     "separated_worse": false,
+     "family": "LONGITUDINAL",
+     "key": "speed_mae_mps"
+    },
+    "along-track MAE": {
+     "delta": -0.5499,
+     "lo": -0.6843,
+     "hi": -0.4213,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "mean_a": 1.9082595390562482,
+     "mean_b": 2.4581475137665323,
+     "separated_better": true,
+     "separated_worse": false,
+     "family": "LONGITUDINAL",
+     "key": "along_mae_m"
+    },
+    "accel MAE": {
+     "delta": 0.7828,
+     "lo": 0.3065,
+     "hi": 1.2481,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "mean_a": 2.8726268132488872,
+     "mean_b": 2.0898610243415527,
+     "separated_better": false,
+     "separated_worse": true,
+     "family": "LONGITUDINAL",
+     "key": "accel_mae_mps2"
+    },
+    "heading MAE": {
+     "delta": -2.7217,
+     "lo": -3.425,
+     "hi": -2.0901,
+     "separated": true,
+     "n_windows": 2372,
+     "n_episodes": 141,
+     "mean_a": 6.801611390591729,
+     "mean_b": 9.52330927958859,
+     "separated_better": true,
+     "separated_worse": false,
+     "family": "LATERAL",
+     "key": "heading_mae_deg"
+    },
+    "yaw-rate MAE": {
+     "delta": 0.2554,
+     "lo": -2.165,
+     "hi": 2.5958,
+     "separated": false,
+     "n_windows": 2364,
+     "n_episodes": 141,
+     "mean_a": 20.00481707680027,
+     "mean_b": 19.749420765340133,
+     "separated_better": false,
+     "separated_worse": false,
+     "family": "LATERAL",
+     "key": "yaw_rate_mae_degps"
+    },
+    "curvature MAE": {
+     "delta": 0.0629,
+     "lo": 0.043,
+     "hi": 0.0861,
+     "separated": true,
+     "n_windows": 2364,
+     "n_episodes": 141,
+     "mean_a": 0.13511528086602917,
+     "mean_b": 0.07226340931883754,
+     "separated_better": false,
+     "separated_worse": true,
+     "family": "LATERAL",
+     "key": "curvature_mae_1pm"
+    },
+    "cross-track MAE": {
+     "delta": -0.928,
+     "lo": -1.0697,
+     "hi": -0.8,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "mean_a": 0.9915686689814248,
+     "mean_b": 1.9195239231042973,
+     "separated_better": true,
+     "separated_worse": false,
+     "family": "LATERAL",
+     "key": "cross_mae_m"
+    },
+    "L1 lateral-accel MAE": {
+     "delta": -2.315,
+     "lo": -3.692,
+     "hi": -1.1802,
+     "separated": true,
+     "n_windows": 2364,
+     "n_episodes": 141,
+     "mean_a": 2.0482273177828487,
+     "mean_b": 4.363196847594186,
+     "separated_better": true,
+     "separated_worse": false,
+     "family": "LATERAL",
+     "key": "L1_lat_accel_mae_mps2"
+    },
+    "L2 curvature MAE (GT>=5.2)": {
+     "delta": 0.0286,
+     "lo": 0.0169,
+     "hi": 0.0425,
+     "separated": true,
+     "n_windows": 2106,
+     "n_episodes": 135,
+     "mean_a": 0.04518807676514829,
+     "mean_b": 0.016540340744098478,
+     "separated_better": false,
+     "separated_worse": true,
+     "family": "LATERAL",
+     "key": "L2_curvature_mae_fast_1pm"
+    },
+    "ADE2 (beside)": {
+     "delta": 0.0586,
+     "lo": 0.0377,
+     "hi": 0.0897,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "mean_a": 0.2806592217108605,
+     "mean_b": 0.22205752566375564,
+     "separated_better": false,
+     "separated_worse": true,
+     "family": "beside",
+     "key": "ade2_m"
+    },
+    "L3 yaw-rate fast (beside)": {
+     "delta": 1.5046,
+     "lo": -0.8128,
+     "hi": 3.6456,
+     "separated": false,
+     "n_windows": 2106,
+     "n_episodes": 135,
+     "mean_a": 11.324187485209354,
+     "mean_b": 9.819576333765788,
+     "separated_better": false,
+     "separated_worse": false,
+     "family": "beside",
+     "key": "L3_yaw_rate_mae_fast_degps"
+    },
+    "M1 crawl share": {
+     "delta": 0.0487,
+     "lo": 0.0308,
+     "hi": 0.0694,
+     "separated": true,
+     "n_windows": 2106,
+     "n_episodes": 135,
+     "mean_a": 0.0717002457827926,
+     "mean_b": 0.02295177580131704,
+     "separated_better": false,
+     "separated_worse": true,
+     "family": "crawl",
+     "key": "M1 per-window share",
+     "pooled_M1_a": 0.044726032421330594,
+     "pooled_M1_b": 0.013674524324522491,
+     "n_arm_crawl_pairs_a": 2439,
+     "n_fast_pairs_a": 54532,
+     "n_crawl_pairs_b": 746,
+     "n_fast_pairs_b": 54554
+    },
+    "_M2": {
+     "M1_pooled": 0.044726032421330594,
+     "M1_P10_pooled": 0.013674524324522491,
+     "M2": 0.029017960777412595,
+     "n_arm_crawl_pairs": 2439,
+     "n_fast_pairs": 54532
+    }
+   },
+   "C2_identity_comps_rows": {
+    "all_exactly_zero": true,
+    "rows": {
+     "ADE6": [
+      0.0,
+      0.0,
+      0.0,
+      2399
+     ],
+     "speed MAE": [
+      0.0,
+      0.0,
+      0.0,
+      2399
+     ],
+     "along-track MAE": [
+      0.0,
+      0.0,
+      0.0,
+      2399
+     ],
+     "accel MAE": [
+      0.0,
+      0.0,
+      0.0,
+      2399
+     ],
+     "heading MAE": [
+      0.0,
+      0.0,
+      0.0,
+      2372
+     ],
+     "yaw-rate MAE": [
+      0.0,
+      0.0,
+      0.0,
+      2364
+     ],
+     "curvature MAE": [
+      0.0,
+      0.0,
+      0.0,
+      2364
+     ],
+     "cross-track MAE": [
+      0.0,
+      0.0,
+      0.0,
+      2399
+     ],
+     "L1 lateral-accel MAE": [
+      0.0,
+      0.0,
+      0.0,
+      2364
+     ],
+     "L2 curvature MAE (GT>=5.2)": [
+      0.0,
+      0.0,
+      0.0,
+      2106
+     ],
+     "ADE2 (beside)": [
+      0.0,
+      0.0,
+      0.0,
+      2399
+     ],
+     "L3 yaw-rate fast (beside)": [
+      0.0,
+      0.0,
+      0.0,
+      2106
+     ],
+     "M1 crawl share": [
+      0.0,
+      0.0,
+      0.0,
+      2106
+     ]
+    }
+   },
+   "n_windows_total": 2399,
+   "n_episodes_total": 141
+  },
+  "s1": {
+   "rows_arm_minus_P10": {
+    "ADE6": {
+     "delta": -0.8535,
+     "lo": -1.028,
+     "hi": -0.6727,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "mean_a": 2.5897653957380764,
+     "mean_b": 3.443279013457244,
+     "separated_better": true,
+     "separated_worse": false,
+     "family": "PRIMARY",
+     "key": "ade6_m"
+    },
+    "speed MAE": {
+     "delta": -0.2833,
+     "lo": -0.4653,
+     "hi": -0.1148,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "mean_a": 1.60468527809367,
+     "mean_b": 1.8880307728496237,
+     "separated_better": true,
+     "separated_worse": false,
+     "family": "LONGITUDINAL",
+     "key": "speed_mae_mps"
+    },
+    "along-track MAE": {
+     "delta": -0.3904,
+     "lo": -0.5482,
+     "hi": -0.2237,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "mean_a": 2.0677655333651157,
+     "mean_b": 2.4581475137665323,
+     "separated_better": true,
+     "separated_worse": false,
+     "family": "LONGITUDINAL",
+     "key": "along_mae_m"
+    },
+    "accel MAE": {
+     "delta": 1.4033,
+     "lo": 0.9111,
+     "hi": 1.9358,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "mean_a": 3.4931385405380926,
+     "mean_b": 2.0898610243415527,
+     "separated_better": false,
+     "separated_worse": true,
+     "family": "LONGITUDINAL",
+     "key": "accel_mae_mps2"
+    },
+    "heading MAE": {
+     "delta": -0.8571,
+     "lo": -1.4577,
+     "hi": -0.2218,
+     "separated": true,
+     "n_windows": 2373,
+     "n_episodes": 141,
+     "mean_a": 8.695462185676996,
+     "mean_b": 9.552514477304545,
+     "separated_better": true,
+     "separated_worse": false,
+     "family": "LATERAL",
+     "key": "heading_mae_deg"
+    },
+    "yaw-rate MAE": {
+     "delta": 9.301,
+     "lo": 6.4773,
+     "hi": 12.2903,
+     "separated": true,
+     "n_windows": 2365,
+     "n_episodes": 141,
+     "mean_a": 29.173759718257802,
+     "mean_b": 19.872715124493325,
+     "separated_better": false,
+     "separated_worse": true,
+     "family": "LATERAL",
+     "key": "yaw_rate_mae_degps"
+    },
+    "curvature MAE": {
+     "delta": 0.1169,
+     "lo": 0.0809,
+     "hi": 0.16,
+     "separated": true,
+     "n_windows": 2365,
+     "n_episodes": 141,
+     "mean_a": 0.18927652769724243,
+     "mean_b": 0.072372415358591,
+     "separated_better": false,
+     "separated_worse": true,
+     "family": "LATERAL",
+     "key": "curvature_mae_1pm"
+    },
+    "cross-track MAE": {
+     "delta": -0.8238,
+     "lo": -0.9626,
+     "hi": -0.695,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "mean_a": 1.095765177949999,
+     "mean_b": 1.9195239231042973,
+     "separated_better": true,
+     "separated_worse": false,
+     "family": "LATERAL",
+     "key": "cross_mae_m"
+    },
+    "L1 lateral-accel MAE": {
+     "delta": -1.0725,
+     "lo": -2.0595,
+     "hi": -0.2122,
+     "separated": true,
+     "n_windows": 2365,
+     "n_episodes": 141,
+     "mean_a": 3.3345233767592055,
+     "mean_b": 4.407071306037995,
+     "separated_better": true,
+     "separated_worse": false,
+     "family": "LATERAL",
+     "key": "L1_lat_accel_mae_mps2"
+    },
+    "L2 curvature MAE (GT>=5.2)": {
+     "delta": 0.0594,
+     "lo": 0.0376,
+     "hi": 0.0853,
+     "separated": true,
+     "n_windows": 2105,
+     "n_episodes": 135,
+     "mean_a": 0.07597979589597463,
+     "mean_b": 0.016540821619620675,
+     "separated_better": false,
+     "separated_worse": true,
+     "family": "LATERAL",
+     "key": "L2_curvature_mae_fast_1pm"
+    },
+    "ADE2 (beside)": {
+     "delta": 0.0814,
+     "lo": 0.0587,
+     "hi": 0.1153,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "mean_a": 0.30346729943049333,
+     "mean_b": 0.22205752566375564,
+     "separated_better": false,
+     "separated_worse": true,
+     "family": "beside",
+     "key": "ade2_m"
+    },
+    "L3 yaw-rate fast (beside)": {
+     "delta": 5.5235,
+     "lo": 3.0059,
+     "hi": 8.2525,
+     "separated": true,
+     "n_windows": 2105,
+     "n_episodes": 135,
+     "mean_a": 15.344756956041142,
+     "mean_b": 9.821245604734868,
+     "separated_better": false,
+     "separated_worse": true,
+     "family": "beside",
+     "key": "L3_yaw_rate_mae_fast_degps"
+    },
+    "M1 crawl share": {
+     "delta": 0.0642,
+     "lo": 0.0437,
+     "hi": 0.0881,
+     "separated": true,
+     "n_windows": 2105,
+     "n_episodes": 135,
+     "mean_a": 0.0871733173626322,
+     "mean_b": 0.02296267925775472,
+     "separated_better": false,
+     "separated_worse": true,
+     "family": "crawl",
+     "key": "M1 per-window share",
+     "pooled_M1_a": 0.060836850798311616,
+     "pooled_M1_b": 0.013674524324522491,
+     "n_arm_crawl_pairs_a": 3315,
+     "n_fast_pairs_a": 54490,
+     "n_crawl_pairs_b": 746,
+     "n_fast_pairs_b": 54554
+    },
+    "_M2": {
+     "M1_pooled": 0.060836850798311616,
+     "M1_P10_pooled": 0.013674524324522491,
+     "M2": 0.057641912004408026,
+     "n_arm_crawl_pairs": 3315,
+     "n_fast_pairs": 54490
+    }
+   },
+   "C2_identity_comps_rows": {
+    "all_exactly_zero": true,
+    "rows": {
+     "ADE6": [
+      0.0,
+      0.0,
+      0.0,
+      2399
+     ],
+     "speed MAE": [
+      0.0,
+      0.0,
+      0.0,
+      2399
+     ],
+     "along-track MAE": [
+      0.0,
+      0.0,
+      0.0,
+      2399
+     ],
+     "accel MAE": [
+      0.0,
+      0.0,
+      0.0,
+      2399
+     ],
+     "heading MAE": [
+      0.0,
+      0.0,
+      0.0,
+      2373
+     ],
+     "yaw-rate MAE": [
+      0.0,
+      0.0,
+      0.0,
+      2365
+     ],
+     "curvature MAE": [
+      0.0,
+      0.0,
+      0.0,
+      2365
+     ],
+     "cross-track MAE": [
+      0.0,
+      0.0,
+      0.0,
+      2399
+     ],
+     "L1 lateral-accel MAE": [
+      0.0,
+      0.0,
+      0.0,
+      2365
+     ],
+     "L2 curvature MAE (GT>=5.2)": [
+      0.0,
+      0.0,
+      0.0,
+      2105
+     ],
+     "ADE2 (beside)": [
+      0.0,
+      0.0,
+      0.0,
+      2399
+     ],
+     "L3 yaw-rate fast (beside)": [
+      0.0,
+      0.0,
+      0.0,
+      2105
+     ],
+     "M1 crawl share": [
+      0.0,
+      0.0,
+      0.0,
+      2105
+     ]
+    }
+   },
+   "n_windows_total": 2399,
+   "n_episodes_total": 141
+  }
+ }
+}

@@ -1,0 +1,36 @@
+{
+ "kind": "launch-gate-token",
+ "verdict": "PASS",
+ "prereg": "PREREG_V8F_ORECOVER",
+ "run": "M2b_s0_orc",
+ "binding": {
+  "commit": "853f2fc3330d29fbd73f44b4e758b31bd4ce8572",
+  "argv_sha256": "449992a3c9afe5a6a15760ca27518c655341fc826df2345712ebe4b3de160685",
+  "data_sha256": "37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1"
+ },
+ "binding_note": "argv_sha256 = launch_gate.argv_sha256 of the TRAINING argv (v8f_mini_train.py's sys.argv[1:], which argv.json will record); the in-process gate ran the same argv with --out and --selfcheck-only changed",
+ "gate": {
+  "kind": "v8f_mini_train.py --selfcheck-only (in-process: G-DVB FLAG_CHECKS + G-LIVE + ego_perturb_probe)",
+  "argv_sha256": "e770a49f2005897c097d0985f96119d96050a6c26583e565be48b79e050ce425",
+  "argv_sha16": "e4b7f70af1a12b80",
+  "selfcheck_sha256": "a5dcf3be23d74ba4e914781c756d2d57ccfabed5a67c4bb65694372201044638"
+ },
+ "queue_sha256": "2eb0f9b8d78690b63a8c228b378c422a195a40c1b99d6b07f2cbc123d0dac5cb",
+ "key_files_sha256": {
+  "stack/scripts/v8f_mini_train.py": "65ea1e3a5c05117862c0bceb384849cadf5eb5c372f5fb0152b02984b9f4c158",
+  "stack/scripts/v8f_mini_eval.py": "50c70ae868262f2a480b8172e477f27b140d40f5164e5cbabe38228343957e6d",
+  "stack/tanitad/models/v8f_mini.py": "8ec5e19037b681242a13f3642818b2a82e84395b0b5436bc5ff17f39822c5b3a",
+  "stack/tanitad/data/v8f_mini_data.py": "0e4a8cea438532424addb14d3c28a8f0b34f6c1ca33562384c3e389141f49588",
+  "stack/tanitad/models/hjepa.py": "368a01f205c70bbf34a37e50c6b39dd0e0ab5e9a54a64c17a6ff6a4e35b561f1",
+  "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_mini_box2_queue.cmd": "c92ca88d3962cc20e4915fda3e1265bd957ad6a55f8ee1995a24ad2bdd3edbbc",
+  "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-refav1-hj-mini/raw/p10_yaw4512/p10_prior.pt": "14a062a91078266a1b3226af91bf52b23b5238d84fe7e633323d0b0bea2703bf",
+  "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-refav1-hj-mini/raw/p10_yaw4512/p10_eval_pred6.npy": "9657c0fdce187ecbc33174759fcc337b034e59b80bbc9057bd547b10f7d7a336"
+ },
+ "excluded_sha256": "f6a1dee02af0b96f815416bfef9bc11a04554702525135aa75a740942d7750f9",
+ "init_ckpt_sha256": "601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8",
+ "v9_md5": {
+  "v9_labels_train.npz": "83e30bd3791f0767707eade5f4671759",
+  "v9_labels_eval139.npz": "6b5c7f207cffc3b7eb3cd527fd433599"
+ },
+ "hmac": "none: written by the box-2 chain, not by launch_gate.py (its key lives on the launch host); orc_read.py checks the binding and does not verify an HMAC"
+}

@@ -1,0 +1,35 @@
+# argv template (one token per line; '#' lines are comments): the causal lane (decisive).  COPIED token for token from the DAG-ORC chain's template E:/Projects/TanitAD-artifacts/dagorc_t1/argv/rollout_causal.tmpl,
+# which was derived programmatically from DAG-OACC's banked rollout argv (v8f-dagoacc-t1/argv/DAGOACC_s0_m10_causal_heads.argv) / the commands that RAN for DAGGER2 and DAG-ORC r2.  Proven on every start (lit1_selftest.py and the chain's template proofs)
+# against the commands DAG-ORC r2 RAN for REP s0 (dagorc_t1/logs/chain.out.prev_*).  Only the run-specific values are @KEY@ placeholders.
+@PY@
+@TREE@/stack/scripts/v8f_t1_eval.py
+run
+--ckpt
+@CKPT@
+--tag
+@TAG@
+--tracks
+@TRACKS@
+--eval-cache
+@CACHE@
+--eval-grid
+@GRID@
+--eval-join
+@JOIN@
+--out-dir
+@OUT@
+--replan-steps
+10
+--nav
+deadreckon
+--scene
+logged
+--schedule
+periodic
+--limit
+causal
+--dump-ticks
+@OUT@/ticks
+--dump-heads
+--device
+cpu

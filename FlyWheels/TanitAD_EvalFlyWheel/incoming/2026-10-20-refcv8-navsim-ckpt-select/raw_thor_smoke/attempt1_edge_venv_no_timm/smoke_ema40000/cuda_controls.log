@@ -1,0 +1,44 @@
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from /home/nvidia/data/refcv8_train4572_eval139_extrinsics.json (4711 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+Traceback (most recent call last):
+  File "/home/nvidia/r8ns/code/tree/stack/tanitad/models/timm_trunk.py", line 551, in __init__
+    import timm
+ModuleNotFoundError: No module named 'timm'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/nvidia/r8ns/code/thor/r8ns_cuda_controls.py", line 47, in <module>
+    w = T.world()
+        ^^^^^^^^^
+  File "/home/nvidia/r8ns/code/pkg/tests/test_model_seam8.py", line 44, in world
+    model, cfg, args, rec, meta = B.load_refcv8(CKPT, CONFIG, DEVICE, "auto")
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/nvidia/r8ns/code/pkg/code/refcv8_bridge.py", line 252, in load_refcv8
+    model, cfg, args, rec = L.build_model(cfgd, ckpt, device=device)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/nvidia/r8ns/code/tree/stack/tanitad/eval/refcv7_loader.py", line 314, in build_model
+    return _build_model(config, ckpt_path, device, remap, strict)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/nvidia/r8ns/code/tree/stack/tanitad/eval/refcv7_loader.py", line 385, in _build_model
+    model = v3.RefCV3Model(cfg).to(device)
+            ^^^^^^^^^^^^^^^^^^^
+  File "/home/nvidia/r8ns/code/tree/stack/tanitad/refs/refc_v3.py", line 1124, in __init__
+    self.core = refc.RefCModel(cfg.core)
+                ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/nvidia/r8ns/code/tree/stack/tanitad/refs/refc.py", line 4129, in __init__
+    self.encoder = build_encoder(cfg.encoder)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/nvidia/r8ns/code/tree/stack/tanitad/refs/refc.py", line 1483, in build_encoder
+    return build_timm_trunk(
+           ^^^^^^^^^^^^^^^^^
+  File "/home/nvidia/r8ns/code/tree/stack/tanitad/models/timm_trunk.py", line 1374, in build_timm_trunk
+    return TimmResNetTrunk(TimmTrunkConfig(image_hw=tuple(image_hw), **kw))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/nvidia/r8ns/code/tree/stack/tanitad/models/timm_trunk.py", line 553, in __init__
+    raise ImportError(
+ImportError: refcv6 §2 needs `timm` for the ImageNet trunk. Install it into the run's venv — there is no fallback, because a random init silently standing in for ImageNet is the one failure this module exists to prevent.

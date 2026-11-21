@@ -1,0 +1,22 @@
+[15:32:51Z] container free 46 GB
+[15:33:04Z] e1 headway rc 0
+[15:33:10Z] e1 families rc 0
+e1 hw/RESULT_HEADWAY.json     PASS leaves 1836 / 1836 differing 0 only-bank 0 only-got 0 max abs diff 0
+e1 q3/RESULT_Q3.json          PASS leaves 1897 / 1897 differing 0 only-bank 0 only-got 0 max abs diff 1.44e-15
+ZZ ENV-E1 PASS
+[15:33:20Z] headway rc 0
+[15:33:26Z] families rc 0
+[15:33:26Z] read rc 0
+TIER: T1-kin (kinematic rollout on the model's own actions; the lead does not react); never driving performance
+== controls (h1 to h8)
+   h1_rerun_equals_banked PASS {"line": "CMP files=141 differing=0", "PASS": true}
+   h2_closing_read_T0 FAIL {"per_seed": {"0": {"n_ticks": 1813, "pearson_r": 0.27062732307185455, "mae_mps": 1.959265985823572, "mae_of_zero_mps": 1.882562264643909, "mean_read_mps": 0.10354393682819141, "mean_label_mps": 0.027821211412475063, "PASS": false}, "1": {"n_ticks": 1948, "pearson_r": 0.283803939029566, "mae_mps": 1.8848613311500273, "mae_of_zero_mps": 1.8585453510773986, "mean_read_mps": -0.1374048032478508, "mean_l
+   h3_feed PASS {"per_seed": {"0": {"max_abs_fed_minus_read_mps": 0.0, "max_abs_identity_mps": 0.0, "n_finite": 7197, "PASS": true}, "1": {"max_abs_fed_minus_read_mps": 0.0, "max_abs_identity_mps": 0.0, "n_finite": 7197, "PASS": true}}, "PASS": true}
+   h4_same_read PASS {"per_seed": {"0": {"same_read_RQ50_RQ50h": true, "same_ticks": true, "PASS": true}, "1": {"same_read_RQ50_RQ50h": true, "same_ticks": true, "PASS": true}}, "PASS": true}
+   h5_counts PASS {"dump_files": {"I10RQ50h_s0": 141, "I10RQ50h_s1": 141, "I10RQ50R_s0": 141}, "n_windows_total": 2399, "n_lead_windows": 642, "PASS": true}
+   h6_reused_dumps PASS {"n_files": 10, "differing": [], "PASS": true}
+   h7_reader_controls PASS {"headway": true, "family": true, "PASS": true}
+   h8_model PASS {"per_run": {"I10RQ50h_s0": true, "I10RQ50h_s1": true, "I10RQ50R_s0": true}, "PASS": true}
+== a control did not pass: no name, the differences stay withheld
+STRATEGIC: as note N1 of card ADD46 (T0 first tick: the banked read of the two models without the rule; along the rule-driven rollout NOT COMPUTED, n = 0, no instrument)
+ZZ PODREAD-CLOSER DONE 15:33:26Z

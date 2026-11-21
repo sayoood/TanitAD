@@ -1,0 +1,140 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "model": "v6F@20000",
+ "parity": false,
+ "n_clips": 24,
+ "k_pca": 128,
+ "reference": "REF-A frozen-DINO trunk reads ego speed at R^2 0.61 (D-A5 attributed REF-A's failure to that encoder)",
+ "probes": {
+  "speed": {
+   "latent": {
+    "r2": 0.0025,
+    "ci95": [
+     -0.018,
+     0.0102
+    ],
+    "lambda": 1000.0,
+    "n_train_rows": 1800,
+    "d_features": 128
+   },
+   "pixel (floor)": {
+    "r2": -0.0177,
+    "ci95": [
+     -0.4742,
+     0.1607
+    ],
+    "lambda": 10000.0,
+    "n_train_rows": 1800,
+    "d_features": 128
+   },
+   "constant (control)": {
+    "r2": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "lambda": 0.001,
+    "n_train_rows": 1800,
+    "d_features": 1
+   }
+  },
+  "yaw": {
+   "latent": {
+    "r2": -0.0001,
+    "ci95": [
+     -0.0005,
+     0.0002
+    ],
+    "lambda": 10000.0,
+    "n_train_rows": 1800,
+    "d_features": 128
+   },
+   "pixel (floor)": {
+    "r2": -0.0084,
+    "ci95": [
+     -0.2006,
+     0.1106
+    ],
+    "lambda": 1000.0,
+    "n_train_rows": 1800,
+    "d_features": 128
+   },
+   "constant (control)": {
+    "r2": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "lambda": 0.001,
+    "n_train_rows": 1800,
+    "d_features": 1
+   }
+  },
+  "yaw_rate": {
+   "latent": {
+    "r2": -0.4504,
+    "ci95": [
+     -0.932,
+     -0.2782
+    ],
+    "lambda": 0.1,
+    "n_train_rows": 1800,
+    "d_features": 128
+   },
+   "pixel (floor)": {
+    "r2": -0.032,
+    "ci95": [
+     -0.0657,
+     -0.0141
+    ],
+    "lambda": 10000.0,
+    "n_train_rows": 1800,
+    "d_features": 128
+   },
+   "constant (control)": {
+    "r2": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "lambda": 0.001,
+    "n_train_rows": 1800,
+    "d_features": 1
+   }
+  },
+  "d_ego": {
+   "latent": {
+    "r2": 0.0001,
+    "ci95": [
+     -0.0015,
+     0.0009
+    ],
+    "lambda": 10000.0,
+    "n_train_rows": 1800,
+    "d_features": 128
+   },
+   "pixel (floor)": {
+    "r2": -0.035,
+    "ci95": [
+     -0.3901,
+     0.1361
+    ],
+    "lambda": 10000.0,
+    "n_train_rows": 1800,
+    "d_features": 128
+   },
+   "constant (control)": {
+    "r2": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "lambda": 0.001,
+    "n_train_rows": 1800,
+    "d_features": 1
+   }
+  }
+ },
+ "verdict": "THE LATENT DOES NOT LINEARLY ENCODE EGO SPEED (R^2 +0.0025, CI [-0.018, 0.0102]; pixel floor -0.0177). With the power problem fixed (n=1800 rows on d=128), this is now a real negative and points at the ENCODER."
+}

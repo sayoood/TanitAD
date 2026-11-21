@@ -1,0 +1,163 @@
+{
+ "estimator": "navsim_ci.paired_log_cluster_bootstrap (AGG_TWO_STAGE), log-cluster resampling",
+ "answers": "another draw of LOGS? (blind to training and inference variance)",
+ "backend": "R7_VMAXOFF scored on Thor; floors scored on the dev box => MIXED-BACKEND under RULING_BACKEND_POLICY.md",
+ "official_two_stage_EPDMS": {
+  "R7_VMAXOFF": 0.1987287818414988,
+  "STOP_zero": 0.2985321254269824,
+  "CV_official": 0.11481608441648,
+  "ECHO_ha0_ext": 0.1429384814411483
+ },
+ "pairs": {
+  "R7_VMAXOFF__minus__STOP_zero": {
+   "delta": -0.0998,
+   "lo": -0.1383,
+   "hi": -0.0627,
+   "ci95": 0.0378,
+   "p_delta_gt0": 0.0,
+   "separated": true,
+   "reducer": "nanmean_official_skipna",
+   "n_boot": 2000,
+   "estimator": "paired_navsim_log_cluster_bootstrap",
+   "separated_log_name": true,
+   "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+   "sensitivity_nuplan_drive": {
+    "status": "OK",
+    "unit": "nuplan_drive",
+    "n_clusters": 34,
+    "lo": -0.1367,
+    "hi": -0.0701,
+    "separated": true
+   },
+   "status": "OK",
+   "cluster_unit": "log_name",
+   "resample_unit": "log_name",
+   "aggregation": "two_stage_mapping_key_mean",
+   "aggregation_source": "run_pdm_score.py::calculate_individual_mapping_scores L242-290 @0a380a9 \u2014 per key ((s1(orig)*wavg(now)) + (s1(prev)*wavg(prev)))/2, then pd.DataFrame(...).mean() (skipna) over keys",
+   "n_clusters": 76,
+   "n_units": 225,
+   "n_units_nan": 0,
+   "min_clusters": 8,
+   "seed": 0,
+   "alpha": 0.05,
+   "reproduces_official_a": {
+    "status": "OK",
+    "official_value": 0.1987287818414988,
+    "point": 0.19872878184149886,
+    "abs_diff": 5.551115123125783e-17,
+    "tol": 1e-09
+   },
+   "reproduces_official_b": {
+    "status": "OK",
+    "official_value": 0.2985321254269824,
+    "point": 0.2985321254269824,
+    "abs_diff": 0.0,
+    "tol": 1e-09
+   },
+   "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+   "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+   "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+   "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+  },
+  "R7_VMAXOFF__minus__CV_official": {
+   "delta": 0.0839,
+   "lo": 0.0437,
+   "hi": 0.1266,
+   "ci95": 0.0414,
+   "p_delta_gt0": 1.0,
+   "separated": true,
+   "reducer": "nanmean_official_skipna",
+   "n_boot": 2000,
+   "estimator": "paired_navsim_log_cluster_bootstrap",
+   "separated_log_name": true,
+   "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+   "sensitivity_nuplan_drive": {
+    "status": "OK",
+    "unit": "nuplan_drive",
+    "n_clusters": 34,
+    "lo": 0.0368,
+    "hi": 0.1236,
+    "separated": true
+   },
+   "status": "OK",
+   "cluster_unit": "log_name",
+   "resample_unit": "log_name",
+   "aggregation": "two_stage_mapping_key_mean",
+   "aggregation_source": "run_pdm_score.py::calculate_individual_mapping_scores L242-290 @0a380a9 \u2014 per key ((s1(orig)*wavg(now)) + (s1(prev)*wavg(prev)))/2, then pd.DataFrame(...).mean() (skipna) over keys",
+   "n_clusters": 76,
+   "n_units": 225,
+   "n_units_nan": 0,
+   "min_clusters": 8,
+   "seed": 0,
+   "alpha": 0.05,
+   "reproduces_official_a": {
+    "status": "OK",
+    "official_value": 0.1987287818414988,
+    "point": 0.19872878184149886,
+    "abs_diff": 5.551115123125783e-17,
+    "tol": 1e-09
+   },
+   "reproduces_official_b": {
+    "status": "OK",
+    "official_value": 0.11481608441648,
+    "point": 0.11481608441648,
+    "abs_diff": 0.0,
+    "tol": 1e-09
+   },
+   "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+   "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+   "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+   "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+  },
+  "R7_VMAXOFF__minus__ECHO_ha0_ext": {
+   "delta": 0.0558,
+   "lo": 0.022,
+   "hi": 0.092,
+   "ci95": 0.035,
+   "p_delta_gt0": 1.0,
+   "separated": true,
+   "reducer": "nanmean_official_skipna",
+   "n_boot": 2000,
+   "estimator": "paired_navsim_log_cluster_bootstrap",
+   "separated_log_name": true,
+   "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+   "sensitivity_nuplan_drive": {
+    "status": "OK",
+    "unit": "nuplan_drive",
+    "n_clusters": 34,
+    "lo": 0.0137,
+    "hi": 0.0922,
+    "separated": true
+   },
+   "status": "OK",
+   "cluster_unit": "log_name",
+   "resample_unit": "log_name",
+   "aggregation": "two_stage_mapping_key_mean",
+   "aggregation_source": "run_pdm_score.py::calculate_individual_mapping_scores L242-290 @0a380a9 \u2014 per key ((s1(orig)*wavg(now)) + (s1(prev)*wavg(prev)))/2, then pd.DataFrame(...).mean() (skipna) over keys",
+   "n_clusters": 76,
+   "n_units": 225,
+   "n_units_nan": 0,
+   "min_clusters": 8,
+   "seed": 0,
+   "alpha": 0.05,
+   "reproduces_official_a": {
+    "status": "OK",
+    "official_value": 0.1987287818414988,
+    "point": 0.19872878184149886,
+    "abs_diff": 5.551115123125783e-17,
+    "tol": 1e-09
+   },
+   "reproduces_official_b": {
+    "status": "OK",
+    "official_value": 0.1429384814411483,
+    "point": 0.14293848144114832,
+    "abs_diff": 2.7755575615628914e-17,
+    "tol": 1e-09
+   },
+   "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+   "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+   "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+   "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+  }
+ }
+}

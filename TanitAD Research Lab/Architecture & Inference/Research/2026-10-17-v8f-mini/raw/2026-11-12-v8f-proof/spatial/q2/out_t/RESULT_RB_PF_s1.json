@@ -1,0 +1,211 @@
+{
+ "rb": {
+  "i": {
+   "r2": 0.40941751300810525,
+   "ci95": [
+    0.1800026676438686,
+    0.5709891531598087
+   ],
+   "n": 441
+  },
+  "ii": {
+   "r2": 0.5212284323801413,
+   "ci95": [
+    0.34209899204740957,
+    0.6460371317157062
+   ],
+   "n": 441
+  },
+  "iii": {
+   "r2": 0.5962042423926599,
+   "ci95": [
+    0.4358432569765372,
+    0.7047288989498597
+   ],
+   "n": 441
+  },
+  "iv": {
+   "r2": 0.08125785827388976,
+   "ci95": [
+    -0.35698008000654,
+    0.34645210365404705
+   ],
+   "n": 441
+  },
+  "ivb": {
+   "r2": 0.17870649128875993,
+   "ci95": [
+    -0.21145142750818588,
+    0.4207661140439178
+   ],
+   "n": 441
+  }
+ },
+ "perm": {
+  "i": {
+   "r2": -0.04190878053548208,
+   "ci95": [
+    -0.06961582490957406,
+    -0.026099642794029154
+   ],
+   "n": 441
+  },
+  "ii": {
+   "r2": -0.03456750605901804,
+   "ci95": [
+    -0.0659832704696044,
+    -0.01752807670443881
+   ],
+   "n": 441
+  },
+  "iii": {
+   "r2": -0.03947736339399932,
+   "ci95": [
+    -0.07188909371278278,
+    -0.0223303378033553
+   ],
+   "n": 441
+  },
+  "iv": {
+   "r2": -0.03817151404316421,
+   "ci95": [
+    -0.09032463245957896,
+    0.00642132025300117
+   ],
+   "n": 441
+  },
+  "ivb": {
+   "r2": -0.026933820737470526,
+   "ci95": [
+    -0.0743191444507839,
+    0.014804416450939176
+   ],
+   "n": 441
+  }
+ },
+ "floor_used": "ivb",
+ "i_minus_ii": {
+  "diff": -0.11181091937203602,
+  "ci95": [
+   -0.21953073950004692,
+   -0.02698970031314386
+  ],
+  "separated_pos": false,
+  "separated_neg": true
+ },
+ "i_minus_floor": {
+  "diff": 0.23071102171934532,
+  "ci95": [
+   0.005127877226787873,
+   0.5291366958722283
+  ],
+  "separated_pos": true,
+  "separated_neg": false
+ },
+ "ii_minus_floor": {
+  "diff": 0.34252194109138134,
+  "ci95": [
+   0.12098772573563883,
+   0.6728604862021745
+  ],
+  "separated_pos": true,
+  "separated_neg": false
+ },
+ "iii_minus_i": {
+  "diff": 0.18678672938455465,
+  "ci95": [
+   0.09387181680475264,
+   0.3019194331082126
+  ],
+  "separated_pos": true,
+  "separated_neg": false
+ },
+ "iii_minus_ii": {
+  "diff": 0.07497581001251863,
+  "ci95": [
+   0.01034146404771385,
+   0.14061282868012534
+  ],
+  "separated_pos": true,
+  "separated_neg": false
+ },
+ "outcome_this_seed": "IMAGINE-FLAT",
+ "fold_map_equals_latents_file": true,
+ "controls": {
+  "t1_bank_rows_have_states": {
+   "pass": true,
+   "bank_rows": 9321,
+   "bank_rows_without_state": 0,
+   "episodes": 139,
+   "windows_in_latents": 1948,
+   "windows_used": 1809,
+   "windows_dropped": 139,
+   "state_width": 640
+  },
+  "t2_ego_floor_bank": {
+   "pass": true,
+   "ego_gap_r2": 0.13274532858514854,
+   "reference": 0.133,
+   "tol": 0.03,
+   "chosen": {
+    "scores": {
+     "P1": 0.016116915791232755,
+     "P2": -0.11121577704296559,
+     "linear": 0.13274532858514854
+    },
+    "chosen": "linear"
+   }
+  },
+  "t3_permuted_labels": {
+   "pass": true,
+   "bar": 0.02,
+   "values": {
+    "i": -0.04190878053548208,
+    "ii": -0.03456750605901804,
+    "iii": -0.03947736339399932,
+    "iv": -0.03817151404316421,
+    "ivb": -0.026933820737470526
+   }
+  },
+  "t4_ceiling": {
+   "pass": true,
+   "r2_i": 0.40941751300810525,
+   "r2_ii": 0.5212284323801413,
+   "r2_iii": 0.5962042423926599
+  },
+  "t5_state_sources_agree": {
+   "pass": true,
+   "corr_future": 0.9999378331148249,
+   "corr_start": 0.9999399137181915,
+   "bar": 0.999,
+   "max_abs_state_diff_future": 0.2560698986053467,
+   "max_abs_state_diff_start": 0.2519431710243225
+  },
+  "t6_known_values": {
+   "pass": true,
+   "copy_as_rollout_diff": 0.0,
+   "true_as_rollout_diff": 0.07497581001251863
+  }
+ },
+ "controls_pass": true,
+ "n_lead_both_windows": 441,
+ "meta": {
+  "arm": "PF_s1",
+  "states": "C:/Users/Admin/v8proof_c/s1states/PF_s1_eval.npz",
+  "latents": "C:/Users/Admin/v8proof_c/ctxroll/LATENTS_F0_PF_s1.npz",
+  "tier": "T0 (a world-model diagnostic on logged frames, never driving performance)",
+  "families": "LONGITUDINAL, LATERAL, TACTICAL: not measured by this read; STRATEGIC: PAUSED (PI item 25)",
+  "B": 2000,
+  "counts": {
+   "bank_rows": 9321,
+   "bank_rows_without_state": 0,
+   "episodes": 139,
+   "windows_in_latents": 1948,
+   "windows_used": 1809,
+   "windows_dropped": 139,
+   "state_width": 640
+  },
+  "estimator": "episode-cluster bootstrap, paired for differences (resprobe, unchanged)",
+  "elapsed_s": 39.8
+ }
+}

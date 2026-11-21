@@ -1,0 +1,28 @@
+PASS control: RE-MOVES  [RE-MOVES]
+PASS control: C0C's own separated-worse rows are present at both seeds and none is new
+PASS control: deterministic (two runs, same JSON)
+PASS R1 pair M1 -> separated-worse at s1 changes RE-MOVES to RE-HARMS  [RE-HARMS]
+PASS R2 a NEW separated-worse row against P10 (speed MAE, s0) changes RE-MOVES to RE-HARMS  [RE-HARMS]
+PASS R5 ADE6 unseparated at s1 -> RE-NULL  [RE-NULL]
+PASS R5 ADE6 separated-worse at s0 -> RE-HARMS  [RE-HARMS]
+PASS control: pinned DOMINANT-T2 at both seeds -> RE-DOMINANT, replicate required, not counted as the scale signal  [RE-DOMINANT]
+PASS R3 one family row flipped to separated-worse inside a DOMINANT-T2 claim -> INPUT-INVALID (was RE-DOMINANT)  [INPUT-INVALID]
+PASS R3 the flip written consistently everywhere but the DOMINANT-T2 claim left standing (D2 broken) -> INPUT-INVALID  [INPUT-INVALID]
+PASS R4 the same flip written consistently (reader says NOT-DOMINANT) -> not RE-DOMINANT; a new separated-worse row gives RE-HARMS  [RE-HARMS]
+PASS R6 a failed gate in the pinned read -> NOT-READ (exit 2), no section-6 outcome  [NOT-READ]
+PASS R6 the pinned read's own outcome GATE-FAIL with every gate listed PASS -> NOT-READ
+PASS R6 the pair read's own outcome GATE-FAIL -> NOT-READ
+PASS R7 pair labelled with the wrong arm -> INPUT-INVALID
+PASS R7 the pair's C0C reference differs from the pin-4 read of C0C by 1e-9 -> INPUT-INVALID
+PASS R7 card prefix edited -> INPUT-INVALID
+PASS R7 the pinned read is not pin 4 -> INPUT-INVALID
+PASS the card on disk: first 5,544 bytes hash to 425d3496...  [425d3496]
+PASS beside: C0C-RE-BLIND - C0C-RE tabulated, outcome unchanged (decides nothing)  [RE-MOVES]
+PASS beside: a BLIND pair with the wrong label is reported as a problem, outcome unchanged
+PASS md for RE-MOVES: starts with the outcome, no banned word  [RE-MOVES]
+PASS md for RE-DOMINANT: starts with the outcome, no banned word  [RE-DOMINANT]
+PASS md for RE-HARMS: starts with the outcome, no banned word  [RE-HARMS]
+PASS md for NOT-READ: starts with the outcome, no banned word  [NOT-READ]
+PASS md: the four families appear for each seed, STRATEGIC marked PAUSED, 19 rows per seed in the pair table
+
+26 of 26 checks hold

@@ -1,0 +1,6 @@
+MUT unmutated tool: check_kri2 PASS; check_kri3 PASS; check_kri5 PASS; 
+MUT m1: the apply line deleted -> check_kri2: RED  AssertionError: row i=24: tau 24, expected 22 +-1
+MUT m2: the min(i, .) clamp dropped -> check_kri3: RED  AssertionError: ([16, 17, 18, 19, 20, 22, 23, 25, 26, 28], [16, 17, 18, 19, 20, 21, 22, 23, 24, 25])
+MUT m3: the past rows reindexed too -> check_kri5: RED  AssertionError: a past row was reindexed
+MUT m3 -> receipt past-row check: RED (rows_checked 15, rows_changed 15)
+MUTATIONS ALL RED

@@ -1,0 +1,15 @@
+S1 default run (UUID half), new tool + new baseline            exit 0  NO-GROWTH                  uuids 120 prefixes 0 files 27 shrank 0
+S2 --clips v7 corpus list, new tool + new baseline             exit 0  NO-GROWTH                  uuids 120 prefixes 530 files 67 shrank 0
+S3 --clips list rebuilt from mp4 names (reversed, BOM, CRLF)   exit 0  NO-GROWTH                  uuids 120 prefixes 530 files 67 shrank 0
+S4 --clips 306,152-id index (the wrong list)                   exit 1  REFUSED ClipListMismatch   ClipListMismatch: the prefix floor was recorded against the list v7 corpus a48251e89c7a8603 (4,719 clip ids) (n=4719, sha256 a48251e89c7a8603…); this 
+S5 --clips same size, ONE id swapped                           exit 1  REFUSED ClipListMismatch   ClipListMismatch: the prefix floor was recorded against the list v7 corpus a48251e89c7a8603 (4,719 clip ids) (n=4719, sha256 a48251e89c7a8603…); this 
+S6 growth: +1 prefix in a file that already carries some       exit 1  REFUSED LeakGrew           LeakGrew: identifiers were ADDED to the record. ⛔ Use sha12 (`sha256(clip_id)[:12]`) — a UUID in prose is an unstable handle and the reason this guard
+S7 growth: a NEW file carrying one prefix                      exit 1  REFUSED LeakGrew           LeakGrew: identifiers were ADDED to the record. ⛔ Use sha12 (`sha256(clip_id)[:12]`) — a UUID in prose is an unstable handle and the reason this guard
+S8 cleanup: -1 prefix in one file (allowed, reported)          exit 0  NO-GROWTH                  uuids 120 prefixes 529 files 67 shrank 1
+S8b the copy restored: back to green                           exit 0  NO-GROWTH                  uuids 120 prefixes 530 files 67 shrank 0
+S9a OLD tool + NEW baseline, default                           exit 0  NO-GROWTH                  uuids 120 prefixes 0 files 27 shrank 13
+S9b OLD tool + NEW baseline, --clips corpus                    exit 0  NO-GROWTH                  uuids 120 prefixes 530 files 67 shrank 0
+S9c OLD tool + NEW baseline, --clips index                     exit 1  REFUSED LeakGrew           LeakGrew: identifiers were ADDED to the record. ⛔ Use sha12 (`sha256(clip_id)[:12]`) — a UUID in prose is an unstable handle and the reason this guard
+S10a NEW tool + OLD baseline, default                          exit 0  NO-GROWTH                  uuids 120 prefixes 0 files 27 shrank 0
+S10b NEW tool + OLD baseline, --clips corpus                   exit 1  REFUSED ClipListMismatch   ClipListMismatch: this baseline records NO prefix floor, so the prefix half has nothing to compare against. Record one with --write-baseline --clips <
+report leak scan over 306152 ids: 0 hits; written D:/Projects/TanitAD/TanitAD Research Lab/Data Engineering/Research/2026-09-19-clipid-prefix-floor/raw/verify_floor.json

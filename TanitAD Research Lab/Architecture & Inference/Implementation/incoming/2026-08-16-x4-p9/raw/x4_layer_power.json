@@ -1,0 +1,302 @@
+{
+ "_what": "X4 per-layer spectrum monitor sizing (see module docstring)",
+ "_evidence_class": "MEASURED (ours; CPU simulation, seeded, through the real spectrum_report/o6_rank_verdict)",
+ "generative_model": {
+  "alpha": 2.0,
+  "rho_ep": 0.5,
+  "rho_win_for_w>1": 0.4,
+  "collapse": {
+   "keep": 16,
+   "floor": 0.01
+  },
+  "note": "inherited from sigreg_gate_power.py's calibrated regime"
+ },
+ "live_geometry": {
+  "batch": 8,
+  "window": 6,
+  "eps_per_batch": 4
+ },
+ "recommended_accum": 33,
+ "layers": {
+  "op": {
+   "d": 2048,
+   "rows_per_step": 48,
+   "cluster_rows_w": 6,
+   "true_effective_rank": {
+    "healthy": 281.36,
+    "collapsed": 12.12
+   },
+   "per_pool": {
+    "1": {
+     "n_rows": 48,
+     "rank_ceiling": 47,
+     "healthy_mean": 13.403,
+     "healthy_sd": 1.729,
+     "collapsed_mean": 7.723,
+     "collapsed_sd": 0.9108,
+     "separation": 1.735,
+     "pair_fp_at_0p8": 0.1069,
+     "healthy_frac_of_ceiling": 0.2852
+    },
+    "8": {
+     "n_rows": 384,
+     "rank_ceiling": 383,
+     "healthy_mean": 53.821,
+     "healthy_sd": 2.4101,
+     "collapsed_mean": 10.602,
+     "collapsed_sd": 0.3847,
+     "separation": 5.077,
+     "pair_fp_at_0p8": 0.0,
+     "healthy_frac_of_ceiling": 0.1405
+    },
+    "16": {
+     "n_rows": 768,
+     "rank_ceiling": 767,
+     "healthy_mean": 81.285,
+     "healthy_sd": 1.8527,
+     "collapsed_mean": 11.151,
+     "collapsed_sd": 0.2452,
+     "separation": 7.289,
+     "pair_fp_at_0p8": 0.0,
+     "healthy_frac_of_ceiling": 0.106
+    },
+    "32": {
+     "n_rows": 1536,
+     "rank_ceiling": 1535,
+     "healthy_mean": 121.371,
+     "healthy_sd": 2.6788,
+     "collapsed_mean": 11.457,
+     "collapsed_sd": 0.1834,
+     "separation": 10.594,
+     "pair_fp_at_0p8": 0.0,
+     "healthy_frac_of_ceiling": 0.0791
+    },
+    "33": {
+     "n_rows": 1584,
+     "rank_ceiling": 1583,
+     "healthy_mean": 124.308,
+     "healthy_sd": 2.738,
+     "collapsed_mean": 11.465,
+     "collapsed_sd": 0.2037,
+     "separation": 10.842,
+     "pair_fp_at_0p8": 0.0,
+     "healthy_frac_of_ceiling": 0.0785
+    },
+    "64": {
+     "n_rows": 3072,
+     "rank_ceiling": 2048,
+     "healthy_mean": 163.036,
+     "healthy_sd": 2.2447,
+     "collapsed_mean": 11.667,
+     "collapsed_sd": 0.1052,
+     "separation": 13.975,
+     "pair_fp_at_0p8": 0.0,
+     "healthy_frac_of_ceiling": 0.0796
+    }
+   },
+   "selection": {
+    "rule_ceiling": "largest pow2 <= d/2 (cap 1024), raised while pair-FP>0 or separation<3x at first reachable pool; None if no ceiling <= d qualifies",
+    "rule_floor": "smallest pow2 >= geomean(healthy, collapsed) at the recommended pool",
+    "base_candidate": 1024,
+    "raised": [],
+    "ceiling_min": 1024,
+    "floor": 64,
+    "floor_margin_healthy": 1.9,
+    "floor_margin_collapsed": 5.59,
+    "at_pool": 32
+   },
+   "verdict_roundtrip": {
+    "healthy_vs_healthy": "PASS",
+    "collapsed_vs_healthy": "FAIL",
+    "collapsed_reason": "effective_rank 11.321 < the pre-registered absolute floor 64.0 at an ADMISSIBLE ceiling 1535 \u2014 clause 3."
+   }
+  },
+  "tac": {
+   "d": 512,
+   "rows_per_step": 8,
+   "cluster_rows_w": 1,
+   "true_effective_rank": {
+    "healthy": 117.23,
+    "collapsed": 11.58
+   },
+   "per_pool": {
+    "1": {
+     "n_rows": 8,
+     "rank_ceiling": 7,
+     "healthy_mean": 5.226,
+     "healthy_sd": 0.3923,
+     "collapsed_mean": 4.868,
+     "collapsed_sd": 0.4717,
+     "separation": 1.074,
+     "pair_fp_at_0p8": 0.0163,
+     "healthy_frac_of_ceiling": 0.7465
+    },
+    "8": {
+     "n_rows": 64,
+     "rank_ceiling": 63,
+     "healthy_mean": 27.119,
+     "healthy_sd": 1.0503,
+     "collapsed_mean": 10.486,
+     "collapsed_sd": 0.3874,
+     "separation": 2.586,
+     "pair_fp_at_0p8": 0.0,
+     "healthy_frac_of_ceiling": 0.4305
+    },
+    "16": {
+     "n_rows": 128,
+     "rank_ceiling": 127,
+     "healthy_mean": 41.991,
+     "healthy_sd": 1.0483,
+     "collapsed_mean": 10.768,
+     "collapsed_sd": 0.3317,
+     "separation": 3.9,
+     "pair_fp_at_0p8": 0.0,
+     "healthy_frac_of_ceiling": 0.3306
+    },
+    "32": {
+     "n_rows": 256,
+     "rank_ceiling": 255,
+     "healthy_mean": 64.948,
+     "healthy_sd": 1.515,
+     "collapsed_mean": 11.1,
+     "collapsed_sd": 0.1757,
+     "separation": 5.851,
+     "pair_fp_at_0p8": 0.0,
+     "healthy_frac_of_ceiling": 0.2547
+    },
+    "33": {
+     "n_rows": 264,
+     "rank_ceiling": 263,
+     "healthy_mean": 65.977,
+     "healthy_sd": 1.5777,
+     "collapsed_mean": 11.192,
+     "collapsed_sd": 0.2303,
+     "separation": 5.895,
+     "pair_fp_at_0p8": 0.0,
+     "healthy_frac_of_ceiling": 0.2509
+    },
+    "64": {
+     "n_rows": 512,
+     "rank_ceiling": 511,
+     "healthy_mean": 92.015,
+     "healthy_sd": 1.3662,
+     "collapsed_mean": 11.397,
+     "collapsed_sd": 0.1728,
+     "separation": 8.074,
+     "pair_fp_at_0p8": 0.0,
+     "healthy_frac_of_ceiling": 0.1801
+    }
+   },
+   "selection": {
+    "rule_ceiling": "largest pow2 <= d/2 (cap 1024), raised while pair-FP>0 or separation<3x at first reachable pool; None if no ceiling <= d qualifies",
+    "rule_floor": "smallest pow2 >= geomean(healthy, collapsed) at the recommended pool",
+    "base_candidate": 256,
+    "raised": [],
+    "ceiling_min": 256,
+    "floor": 32,
+    "floor_margin_healthy": 2.06,
+    "floor_margin_collapsed": 2.86,
+    "at_pool": 33
+   },
+   "verdict_roundtrip": {
+    "healthy_vs_healthy": "PASS",
+    "collapsed_vs_healthy": "FAIL",
+    "collapsed_reason": "effective_rank 11.096 < the pre-registered absolute floor 32.0 at an ADMISSIBLE ceiling 263 \u2014 clause 3."
+   }
+  },
+  "str": {
+   "d": 256,
+   "rows_per_step": 8,
+   "cluster_rows_w": 1,
+   "true_effective_rank": {
+    "healthy": 74.63,
+    "collapsed": 11.34
+   },
+   "per_pool": {
+    "1": {
+     "n_rows": 8,
+     "rank_ceiling": 7,
+     "healthy_mean": 5.265,
+     "healthy_sd": 0.4648,
+     "collapsed_mean": 4.985,
+     "collapsed_sd": 0.386,
+     "separation": 1.056,
+     "pair_fp_at_0p8": 0.0525,
+     "healthy_frac_of_ceiling": 0.7521
+    },
+    "8": {
+     "n_rows": 64,
+     "rank_ceiling": 63,
+     "healthy_mean": 26.307,
+     "healthy_sd": 1.126,
+     "collapsed_mean": 10.419,
+     "collapsed_sd": 0.2873,
+     "separation": 2.525,
+     "pair_fp_at_0p8": 0.0,
+     "healthy_frac_of_ceiling": 0.4176
+    },
+    "16": {
+     "n_rows": 128,
+     "rank_ceiling": 127,
+     "healthy_mean": 40.884,
+     "healthy_sd": 1.3217,
+     "collapsed_mean": 10.879,
+     "collapsed_sd": 0.2059,
+     "separation": 3.758,
+     "pair_fp_at_0p8": 0.0,
+     "healthy_frac_of_ceiling": 0.3219
+    },
+    "32": {
+     "n_rows": 256,
+     "rank_ceiling": 255,
+     "healthy_mean": 58.707,
+     "healthy_sd": 1.0903,
+     "collapsed_mean": 11.172,
+     "collapsed_sd": 0.2597,
+     "separation": 5.255,
+     "pair_fp_at_0p8": 0.0,
+     "healthy_frac_of_ceiling": 0.2302
+    },
+    "33": {
+     "n_rows": 264,
+     "rank_ceiling": 256,
+     "healthy_mean": 59.488,
+     "healthy_sd": 1.4521,
+     "collapsed_mean": 11.025,
+     "collapsed_sd": 0.1969,
+     "separation": 5.396,
+     "pair_fp_at_0p8": 0.0,
+     "healthy_frac_of_ceiling": 0.2324
+    },
+    "64": {
+     "n_rows": 512,
+     "rank_ceiling": 256,
+     "healthy_mean": 67.247,
+     "healthy_sd": 1.3272,
+     "collapsed_mean": 11.198,
+     "collapsed_sd": 0.1429,
+     "separation": 6.005,
+     "pair_fp_at_0p8": 0.0,
+     "healthy_frac_of_ceiling": 0.2627
+    }
+   },
+   "selection": {
+    "rule_ceiling": "largest pow2 <= d/2 (cap 1024), raised while pair-FP>0 or separation<3x at first reachable pool; None if no ceiling <= d qualifies",
+    "rule_floor": "smallest pow2 >= geomean(healthy, collapsed) at the recommended pool",
+    "base_candidate": 128,
+    "raised": [],
+    "ceiling_min": 128,
+    "floor": 32,
+    "floor_margin_healthy": 1.86,
+    "floor_margin_collapsed": 2.9,
+    "at_pool": 33
+   },
+   "verdict_roundtrip": {
+    "healthy_vs_healthy": "PASS",
+    "collapsed_vs_healthy": "FAIL",
+    "collapsed_reason": "effective_rank 11.194 < the pre-registered absolute floor 32.0 at an ADMISSIBLE ceiling 256 \u2014 clause 3."
+   }
+  }
+ },
+ "elapsed_s": 210.4
+}

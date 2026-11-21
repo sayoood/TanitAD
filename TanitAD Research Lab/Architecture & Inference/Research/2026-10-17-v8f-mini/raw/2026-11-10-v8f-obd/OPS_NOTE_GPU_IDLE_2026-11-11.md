@@ -1,0 +1,7 @@
+# Ops note: box-2 GPU-idle line set to 3,500 MiB for this chain (Master Mind, 2026-11-11 ~01:40, before any run of this chain trained)
+
+* Both the OBD and the STOPBAL chain stopped at their pilots on the GPU-idle guard: `box 2 GPU is not idle: 2471 MiB used >= 1500` (OBD 01:16:18, STOPBAL 01:19:33; their STOP.txt files).
+* MEASURED (read-only `nvidia-smi` on box 2, 01:3x): 2,471 of 8,188 MiB used at 0 % utilisation, every listed process a desktop app of the PI's (dwm, explorer, Firefox, LM Studio, WhatsApp, Proton, Edge WebView, Gigabyte AppCenter); no python.exe.
+* The package exposes the line as an environment override (`stages/*_common.sh`, `GPU_IDLE_MIB="${<CHAIN>_GPU_IDLE_MIB:-1500}"`). It is set to **3,500 MiB**, the EGOWM package's default, under which E-NOW_s1 and E-KIN_rep_s2 trained on 2026-11-10 beside the same desktop load (EGOWM chain log: "GPU idle (2377 MiB used)", "GPU idle (2428 MiB used)"). The no-python.exe condition is unchanged; no package file, argv, arm, read rule or pin changes.
+* Risk named: about 5.7 GB of VRAM is free for the trainer, against about 7 GB when the OTBAND runs trained; the 200-step pilot is the first point where an out-of-memory would show, and it stops the chain (rc 12) rather than producing a run.
+* Launcher: `box2_obd_then_stopbal.sh` (session scratchpad), OBD with `OBD_RESUME=1`, then STOPBAL with `STOPBAL_RESUME=1` only after OBD has ended. It replaces the earlier runner, whose STOPBAL wait took OBD's guard stop for the end of OBD.

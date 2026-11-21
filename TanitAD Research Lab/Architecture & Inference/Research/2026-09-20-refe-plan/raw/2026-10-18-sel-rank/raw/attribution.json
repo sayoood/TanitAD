@@ -1,0 +1,3155 @@
+{
+ "_what": "SEL-RANK Deliverable 1: descriptive attribution on P2's own full-navtest 64-proposal table. MEASURED (descriptive), T1 NAVSIM v1.1. Nothing fitted.",
+ "estimator": {
+  "name": "paired log-cluster bootstrap (zero_tail.Boot)",
+  "B": 10000,
+  "seed": 20260927,
+  "answers": "another draw of LOGS only; NOT another training run (H-ESTIM-SEED-1: P2 is ONE seed); NOT another inference run (deterministic argmax)"
+ },
+ "table": {
+  "path": "D:/Projects/TanitAD-artifacts/p2_full_table/table_p2_full.npz",
+  "sha256": "33441082b7044c951e3cef5fb898cac50797039aed93560b2712e3ff4c34906e"
+ },
+ "G_gates": {
+  "pdms_equals_NC_DAC_W12_max_abs_diff": 0.0,
+  "pdms_with_ddc_in_product_max_abs_diff": 1.0,
+  "pick_equals_planner_rule_torch_f32": {
+   "match": 12146,
+   "of": 12146
+  },
+  "pick_equals_float64_numpy_rule": 12146,
+  "pdms_at_pick_equals_banked_max_abs_diff": 0.0,
+  "mean_pdms_x100": {
+   "pick": 88.8184088897293,
+   "oracle": 98.23109369448531,
+   "random_selector": 73.00314921968499
+  },
+  "n_tokens": 12146,
+  "n_logs": 136
+ },
+ "pool": {
+  "n_tokens": 12146,
+  "n_pick_nonzero": 11637,
+  "n_pick_zero": 509,
+  "n_oracle_beats_pick_all": 8292,
+  "n_pool_S_nonzero_pick_and_oracle_beats": 7847,
+  "gap_x100_all": {
+   "point": 9.412684804756003,
+   "lo": 8.678329397587232,
+   "hi": 10.175686357040858,
+   "B": 10000,
+   "n_nan": 0
+  },
+  "gap_x100_from_nonzero_picks": {
+   "point": 5.874989315858168,
+   "lo": 5.5348189393942935,
+   "hi": 6.212801783721596,
+   "B": 10000,
+   "n_nan": 0
+  },
+  "gap_x100_from_zero_picks": {
+   "point": 3.5376954888978354,
+   "lo": 2.8990280045038053,
+   "hi": 4.23128833687377,
+   "B": 10000,
+   "n_nan": 0
+  },
+  "oracle_tied_proposals_per_token": {
+   "mean": 16.12308578956035,
+   "median": 6.0,
+   "max": 64
+  }
+ },
+ "A_attribution": {
+  "method": "Shapley over the three multiplicative factors (NC, DAC, W) of the move pick -> oracle proposal (6 orderings), W split over EP/TTC/C by its own linear weights 5/5/2 over 12; averaged over proposals tied at the oracle PDMS. EXACT: the five terms sum to oracle - pick token by token.",
+  "formula_source": "NAVSIM v1 PDMS = NC*DAC*(5EP+5TTC+2C)/12, DDC at weight 0: repo-cited navsim @ 3e8291b pdm_scorer.py:38-42 (refe/planner.py:520 and :558-561; refe/scorer_finetune.py:85-87; eval/rule_mismatch_diag.py:7). The vendored NAVSIM source is NOT on this box, so the file:line is INHERITED by citation; the formula itself is MEASURED here: it reproduces the table's pdms on all 12,146 x 64 entries with max |diff| in G.",
+  "max_abs_sum_error_vs_pdms_difference": 2.7755575615628914e-16,
+  "pool_S_gap_by_term_x100_over_all_12146_tokens": {
+   "TOTAL_from_nonzero_picks": {
+    "point": 5.874989315858168,
+    "lo": 5.5348189393942935,
+    "hi": 6.212801783721596,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "nc": {
+    "point": 0.031664824929382315,
+    "lo": 0.0057260172945195085,
+    "hi": 0.06629933293994274,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "dac": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "ep": {
+    "point": 4.531335633142959,
+    "lo": 4.257655209014931,
+    "hi": 4.816289497371577,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "ttc": {
+    "point": 1.307872276195181,
+    "lo": 1.0734598248104226,
+    "hi": 1.5547072753507831,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "c": {
+    "point": 0.004116581590647127,
+    "lo": 0.0,
+    "hi": 0.009382214708762313,
+    "B": 10000,
+    "n_nan": 0
+   }
+  },
+  "all_tokens_gap_by_term_x100": {
+   "TOTAL": {
+    "point": 9.412684804756003,
+    "lo": 8.678329397587232,
+    "hi": 10.175686357040858,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "nc": {
+    "point": 0.6562901893136263,
+    "lo": 0.5011129373414737,
+    "hi": 0.8180809893961652,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "dac": {
+    "point": 1.9442671860714633,
+    "lo": 1.4592837092338302,
+    "hi": 2.4905306935733877,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "ep": {
+    "point": 5.249999065208959,
+    "lo": 4.93083519120715,
+    "hi": 5.581450300070307,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "ttc": {
+    "point": 1.5580117825713085,
+    "lo": 1.2955744691454876,
+    "hi": 1.8322002752127138,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "c": {
+    "point": 0.004116581590647127,
+    "lo": 0.0,
+    "hi": 0.009382214708762313,
+    "B": 10000,
+    "n_nan": 0
+   }
+  },
+  "pool_S_share_of_gap_by_term": {
+   "nc": 0.005389767236497005,
+   "dac": 0.0,
+   "ep": 0.771292574253994,
+   "ttc": 0.22261696249640547,
+   "c": 0.0007006960131034401
+  },
+  "pool_S_oracle_vs_pick_by_term": {
+   "nc": {
+    "oracle_better_frac_of_pool": {
+     "point": 0.0014018096087676818,
+     "lo": 0.0002463054187192118,
+     "hi": 0.002957439812813174,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "oracle_worse_frac_of_pool": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "mean_value_at_pick": {
+     "point": 0.9991716579584554,
+     "lo": 0.9983328470678422,
+     "hi": 0.9998014842354316,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "mean_value_at_oracle": {
+     "point": 0.9998725627628393,
+     "lo": 0.9995821145006268,
+     "hi": 1.0,
+     "B": 10000,
+     "n_nan": 0
+    }
+   },
+   "dac": {
+    "oracle_better_frac_of_pool": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "oracle_worse_frac_of_pool": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "mean_value_at_pick": {
+     "point": 1.0,
+     "lo": 1.0,
+     "hi": 1.0,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "mean_value_at_oracle": {
+     "point": 1.0,
+     "lo": 1.0,
+     "hi": 1.0,
+     "B": 10000,
+     "n_nan": 0
+    }
+   },
+   "ep": {
+    "oracle_better_frac_of_pool": {
+     "point": 0.9731107429590926,
+     "lo": 0.9662314813337255,
+     "hi": 0.979424891941608,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "oracle_worse_frac_of_pool": {
+     "point": 0.006626736332356315,
+     "lo": 0.0039815480269425555,
+     "hi": 0.009744273730747221,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "mean_value_at_pick": {
+     "point": 0.7960936180507111,
+     "lo": 0.7865019726026207,
+     "hi": 0.805680506689577,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "mean_value_at_oracle": {
+     "point": 0.9645758566941902,
+     "lo": 0.9577486499120044,
+     "hi": 0.9709283412025997,
+     "B": 10000,
+     "n_nan": 0
+    }
+   },
+   "ttc": {
+    "oracle_better_frac_of_pool": {
+     "point": 0.04893589906970817,
+     "lo": 0.03938876629730669,
+     "hi": 0.05908630211326054,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "oracle_worse_frac_of_pool": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "mean_value_at_pick": {
+     "point": 0.9502994775073277,
+     "lo": 0.9401530102460269,
+     "hi": 0.9598737169489682,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "mean_value_at_oracle": {
+     "point": 0.9992353765770358,
+     "lo": 0.9984595627824296,
+     "hi": 0.9998624095290921,
+     "B": 10000,
+     "n_nan": 0
+    }
+   },
+   "c": {
+    "oracle_better_frac_of_pool": {
+     "point": 0.00038231171148209506,
+     "lo": 0.0,
+     "hi": 0.0008683162302888258,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "oracle_worse_frac_of_pool": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "mean_value_at_pick": {
+     "point": 0.9996176882885179,
+     "lo": 0.9991316837697112,
+     "hi": 1.0,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "mean_value_at_oracle": {
+     "point": 1.0,
+     "lo": 1.0,
+     "hi": 1.0,
+     "B": 10000,
+     "n_nan": 0
+    }
+   }
+  },
+  "pool_S_dominant_term_of_token": {
+   "nc": {
+    "n_tokens": 11,
+    "share_of_pool_tokens": 0.0014018096087676818,
+    "gap_x100": {
+     "point": 0.06904864698075334,
+     "lo": 0.012500650541629547,
+     "hi": 0.1464138933790666,
+     "B": 10000,
+     "n_nan": 0
+    }
+   },
+   "dac": {
+    "n_tokens": 0,
+    "share_of_pool_tokens": 0.0,
+    "gap_x100": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "B": 10000,
+     "n_nan": 0
+    }
+   },
+   "ep": {
+    "n_tokens": 7461,
+    "share_of_pool_tokens": 0.9508092264559704,
+    "gap_x100": {
+     "point": 4.411955871908538,
+     "lo": 4.13964071803941,
+     "hi": 4.698744252936504,
+     "B": 10000,
+     "n_nan": 0
+    }
+   },
+   "ttc": {
+    "n_tokens": 373,
+    "share_of_pool_tokens": 0.04753408946094049,
+    "gap_x100": {
+     "point": 1.3917786164209482,
+     "lo": 1.1445490702037984,
+     "hi": 1.6518963962536717,
+     "B": 10000,
+     "n_nan": 0
+    }
+   },
+   "c": {
+    "n_tokens": 2,
+    "share_of_pool_tokens": 0.0002548744743213967,
+    "gap_x100": {
+     "point": 0.002206180547929728,
+     "lo": 0.0,
+     "hi": 0.006023083646761561,
+     "B": 10000,
+     "n_nan": 0
+    }
+   }
+  }
+ },
+ "B_calibration": {
+  "heads_in_selection": [
+   "nc",
+   "dac",
+   "ep",
+   "ttc",
+   "c"
+  ],
+  "ddc_head_not_in_sel_score": true,
+  "per_head": {
+   "ep": {
+    "realised_varies_within_token_frac": 0.9827926889510951,
+    "predicted_varies_within_token_frac": 1.0,
+    "all_tokens": {
+     "n_tokens_defined": 11937,
+     "mean_per_token_spearman": {
+      "point": 0.4420143124440106,
+      "lo": 0.42549218357796226,
+      "hi": 0.4581606455517902,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "pooled_within_token_rank_corr": {
+      "point": 0.43270121280485074,
+      "lo": 0.4159757207142101,
+      "hi": 0.4490696067363063,
+      "B": 10000
+     },
+     "pooled_within_token_value_corr_pearson": {
+      "point": 0.5628739965219197,
+      "lo": 0.5454759031288853,
+      "hi": 0.5788232106967731,
+      "B": 10000
+     },
+     "mean_prob_minus_mean_realised_over_64": {
+      "point": 0.0016156369612028126,
+      "lo": -0.006192795768644885,
+      "hi": 0.009350482149477481,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "nonzero_pick_tokens": {
+     "n_tokens_defined": 11492,
+     "mean_per_token_spearman": {
+      "point": 0.4633207001321769,
+      "lo": 0.4482898731754154,
+      "hi": 0.47816290250239274,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "pooled_within_token_rank_corr": {
+      "point": 0.4521225399270749,
+      "lo": 0.4362181330009601,
+      "hi": 0.4679334335384717,
+      "B": 10000
+     },
+     "pooled_within_token_value_corr_pearson": {
+      "point": 0.5899254805304843,
+      "lo": 0.5760612870287392,
+      "hi": 0.6029601639106856,
+      "B": 10000
+     },
+     "mean_prob_minus_mean_realised_over_64": {
+      "point": -0.011878016295230831,
+      "lo": -0.019340257841204255,
+      "hi": -0.004499474018119836,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "pool_S": {
+     "n_tokens_defined": 7842,
+     "mean_per_token_spearman": {
+      "point": 0.3922675507100475,
+      "lo": 0.37205730751016863,
+      "hi": 0.4125159892992047,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "pooled_within_token_rank_corr": {
+      "point": 0.38962102206183336,
+      "lo": 0.36922751045001256,
+      "hi": 0.40998258127229964,
+      "B": 10000
+     },
+     "pooled_within_token_value_corr_pearson": {
+      "point": 0.5153062096456058,
+      "lo": 0.49849813348918315,
+      "hi": 0.5323335512677926,
+      "B": 10000
+     },
+     "mean_prob_minus_mean_realised_over_64": {
+      "point": -0.004443043308840566,
+      "lo": -0.01263098194397631,
+      "hi": 0.00373605903497174,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "top8_contenders_all_tokens": {
+     "n_tokens_defined": 9154,
+     "mean_per_token_spearman": {
+      "point": 0.7652497175690313,
+      "lo": 0.747225841008298,
+      "hi": 0.7838494197320411,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "top8_contenders_pool_S": {
+     "n_tokens_defined": 7764,
+     "mean_per_token_spearman": {
+      "point": 0.8088089040477235,
+      "lo": 0.7891533425877629,
+      "hi": 0.8290368696118386,
+      "B": 10000,
+      "n_nan": 0
+     }
+    }
+   },
+   "ttc": {
+    "realised_varies_within_token_frac": 0.5263461221801417,
+    "predicted_varies_within_token_frac": 1.0,
+    "all_tokens": {
+     "n_tokens_defined": 6393,
+     "mean_per_token_spearman": {
+      "point": 0.5017283762172651,
+      "lo": 0.4820458999555615,
+      "hi": 0.5221545441485351,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "pooled_within_token_rank_corr": {
+      "point": 0.389540094693579,
+      "lo": 0.3628243673826188,
+      "hi": 0.416408765914725,
+      "B": 10000
+     },
+     "pooled_within_token_value_corr_pearson": {
+      "point": 0.6078397585115839,
+      "lo": 0.5885982807081372,
+      "hi": 0.6268167338676516,
+      "B": 10000
+     },
+     "mean_prob_minus_mean_realised_over_64": {
+      "point": -0.009632253660748383,
+      "lo": -0.01778995153222582,
+      "hi": -0.001484891155642094,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "nonzero_pick_tokens": {
+     "n_tokens_defined": 6133,
+     "mean_per_token_spearman": {
+      "point": 0.5153257128767136,
+      "lo": 0.4965994580686045,
+      "hi": 0.5344512295677638,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "pooled_within_token_rank_corr": {
+      "point": 0.4007666802844271,
+      "lo": 0.3743269104235021,
+      "hi": 0.42700807365884286,
+      "B": 10000
+     },
+     "pooled_within_token_value_corr_pearson": {
+      "point": 0.6206343499140883,
+      "lo": 0.602453851457681,
+      "hi": 0.6385221575001104,
+      "B": 10000
+     },
+     "mean_prob_minus_mean_realised_over_64": {
+      "point": -0.015750059270615385,
+      "lo": -0.023209623441334485,
+      "hi": -0.008178430871165482,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "pool_S": {
+     "n_tokens_defined": 4114,
+     "mean_per_token_spearman": {
+      "point": 0.4908032263309969,
+      "lo": 0.47025606774168666,
+      "hi": 0.5130791983049804,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "pooled_within_token_rank_corr": {
+      "point": 0.38005597389341605,
+      "lo": 0.35012848621620013,
+      "hi": 0.41030603469544064,
+      "B": 10000
+     },
+     "pooled_within_token_value_corr_pearson": {
+      "point": 0.5768313878085937,
+      "lo": 0.5560376260665009,
+      "hi": 0.5971927387686065,
+      "B": 10000
+     },
+     "mean_prob_minus_mean_realised_over_64": {
+      "point": -0.029777408394134227,
+      "lo": -0.038705825751360216,
+      "hi": -0.020986194225737095,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "top8_contenders_all_tokens": {
+     "n_tokens_defined": 1018,
+     "mean_per_token_spearman": {
+      "point": 0.3165839425627911,
+      "lo": 0.2663685473342585,
+      "hi": 0.36914770724695306,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "top8_contenders_pool_S": {
+     "n_tokens_defined": 627,
+     "mean_per_token_spearman": {
+      "point": 0.2781392225958602,
+      "lo": 0.21863998813283628,
+      "hi": 0.3383512139100613,
+      "B": 10000,
+      "n_nan": 0
+     }
+    }
+   },
+   "c": {
+    "realised_varies_within_token_frac": 0.003210933640704759,
+    "predicted_varies_within_token_frac": 1.0,
+    "all_tokens": {
+     "n_tokens_defined": 39,
+     "mean_per_token_spearman": {
+      "point": 0.3149296693794585,
+      "lo": 0.2195236598040892,
+      "hi": 0.4041374637251493,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "pooled_within_token_rank_corr": {
+      "point": 0.019798479610788584,
+      "lo": 0.010642061741128457,
+      "hi": 0.028802642962595614,
+      "B": 10000
+     },
+     "pooled_within_token_value_corr_pearson": {
+      "point": 0.3527245730223861,
+      "lo": 0.24147893835683382,
+      "hi": 0.460699835124174,
+      "B": 10000
+     },
+     "mean_prob_minus_mean_realised_over_64": {
+      "point": -0.00010990563732185723,
+      "lo": -0.0003130020115259145,
+      "hi": 0.00015885290481051822,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "nonzero_pick_tokens": {
+     "n_tokens_defined": 34,
+     "mean_per_token_spearman": {
+      "point": 0.28545746655357707,
+      "lo": 0.19936907706782417,
+      "hi": 0.3771881485572124,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "pooled_within_token_rank_corr": {
+      "point": 0.017096749415133117,
+      "lo": 0.009092338717563743,
+      "hi": 0.0255209528260055,
+      "B": 10000
+     },
+     "pooled_within_token_value_corr_pearson": {
+      "point": 0.3698390476440324,
+      "lo": 0.2554278599976,
+      "hi": 0.49918944021484885,
+      "B": 10000
+     },
+     "mean_prob_minus_mean_realised_over_64": {
+      "point": -0.00011786854747397803,
+      "lo": -0.0003188159779055775,
+      "hi": 0.0001522348767127043,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "pool_S": {
+     "n_tokens_defined": 14,
+     "mean_per_token_spearman": {
+      "point": 0.3287487275885151,
+      "lo": 0.12076535108765869,
+      "hi": 0.4881044638623782,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "pooled_within_token_rank_corr": {
+      "point": 0.01608535384224915,
+      "lo": 0.004545683518527111,
+      "hi": 0.027053450292874665,
+      "B": 10000
+     },
+     "pooled_within_token_value_corr_pearson": {
+      "point": 0.3994693525754714,
+      "lo": 0.06057570549057506,
+      "hi": 0.6235227967177268,
+      "B": 10000
+     },
+     "mean_prob_minus_mean_realised_over_64": {
+      "point": -4.935355107476453e-06,
+      "lo": -0.0002898679105057455,
+      "hi": 0.00040044279941358235,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "top8_contenders_all_tokens": {
+     "n_tokens_defined": 3,
+     "mean_per_token_spearman": {
+      "point": 0.27492869961410754,
+      "lo": 0.27492869961410754,
+      "hi": 0.27492869961410754,
+      "B": 10000,
+      "n_nan": 3647
+     }
+    },
+    "top8_contenders_pool_S": {
+     "n_tokens_defined": 2,
+     "mean_per_token_spearman": {
+      "point": 0.12371791482634838,
+      "lo": 0.12371791482634838,
+      "hi": 0.12371791482634838,
+      "B": 10000,
+      "n_nan": 3647
+     }
+    }
+   },
+   "nc": {
+    "realised_varies_within_token_frac": 0.3892639552115923,
+    "predicted_varies_within_token_frac": 1.0,
+    "all_tokens": {
+     "n_tokens_defined": 4728,
+     "mean_per_token_spearman": {
+      "point": 0.5058551419367284,
+      "lo": 0.4870741920700431,
+      "hi": 0.5252577555449875,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "pooled_within_token_rank_corr": {
+      "point": 0.3375681080129606,
+      "lo": 0.3124732027480736,
+      "hi": 0.36273135279679625,
+      "B": 10000
+     },
+     "pooled_within_token_value_corr_pearson": {
+      "point": 0.6249366371339843,
+      "lo": 0.607977862948583,
+      "hi": 0.641516266775388,
+      "B": 10000
+     },
+     "mean_prob_minus_mean_realised_over_64": {
+      "point": -0.002388913537514628,
+      "lo": -0.008871721968671345,
+      "hi": 0.004195304981179222,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "nonzero_pick_tokens": {
+     "n_tokens_defined": 4505,
+     "mean_per_token_spearman": {
+      "point": 0.5228702818872153,
+      "lo": 0.5049909378591056,
+      "hi": 0.540717141589151,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "pooled_within_token_rank_corr": {
+      "point": 0.34920338408376433,
+      "lo": 0.3246853271307325,
+      "hi": 0.373732337472167,
+      "B": 10000
+     },
+     "pooled_within_token_value_corr_pearson": {
+      "point": 0.6405359876703101,
+      "lo": 0.6244114776223415,
+      "hi": 0.655902651610649,
+      "B": 10000
+     },
+     "mean_prob_minus_mean_realised_over_64": {
+      "point": -0.007062860208335794,
+      "lo": -0.013294556987128104,
+      "hi": -0.0007941224112648416,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "pool_S": {
+     "n_tokens_defined": 2770,
+     "mean_per_token_spearman": {
+      "point": 0.4837968993252383,
+      "lo": 0.46435467259817476,
+      "hi": 0.5037728167756952,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "pooled_within_token_rank_corr": {
+      "point": 0.3104533906846387,
+      "lo": 0.2844360802895473,
+      "hi": 0.33620297795966275,
+      "B": 10000
+     },
+     "pooled_within_token_value_corr_pearson": {
+      "point": 0.5748194883159705,
+      "lo": 0.5542713031045564,
+      "hi": 0.5951966504659179,
+      "B": 10000
+     },
+     "mean_prob_minus_mean_realised_over_64": {
+      "point": -0.01811844710590047,
+      "lo": -0.02458921773392935,
+      "hi": -0.011998690599035884,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "top8_contenders_all_tokens": {
+     "n_tokens_defined": 347,
+     "mean_per_token_spearman": {
+      "point": 0.3240113308824401,
+      "lo": 0.23886156571827435,
+      "hi": 0.4097783261723727,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "top8_contenders_pool_S": {
+     "n_tokens_defined": 156,
+     "mean_per_token_spearman": {
+      "point": 0.42220208610288223,
+      "lo": 0.33908411556434714,
+      "hi": 0.4965649788951204,
+      "B": 10000,
+      "n_nan": 0
+     }
+    }
+   },
+   "dac": {
+    "realised_varies_within_token_frac": 0.40852955705582084,
+    "predicted_varies_within_token_frac": 1.0,
+    "all_tokens": {
+     "n_tokens_defined": 4962,
+     "mean_per_token_spearman": {
+      "point": 0.4820782751743249,
+      "lo": 0.46010720643923175,
+      "hi": 0.502822876217321,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "pooled_within_token_rank_corr": {
+      "point": 0.32020810681578576,
+      "lo": 0.29822791862036474,
+      "hi": 0.3413800733929139,
+      "B": 10000
+     },
+     "pooled_within_token_value_corr_pearson": {
+      "point": 0.507983364599902,
+      "lo": 0.4836222977337259,
+      "hi": 0.5320063482774762,
+      "B": 10000
+     },
+     "mean_prob_minus_mean_realised_over_64": {
+      "point": 0.00763160295264527,
+      "lo": 0.00238535977313497,
+      "hi": 0.01295804149411604,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "nonzero_pick_tokens": {
+     "n_tokens_defined": 4600,
+     "mean_per_token_spearman": {
+      "point": 0.5170283351270453,
+      "lo": 0.49971173188834667,
+      "hi": 0.5331344018491395,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "pooled_within_token_rank_corr": {
+      "point": 0.3403703623578598,
+      "lo": 0.3175017615902948,
+      "hi": 0.3621740160026016,
+      "B": 10000
+     },
+     "pooled_within_token_value_corr_pearson": {
+      "point": 0.5440394747381109,
+      "lo": 0.5236210361091165,
+      "hi": 0.5636809067298544,
+      "B": 10000
+     },
+     "mean_prob_minus_mean_realised_over_64": {
+      "point": -0.004934988152075633,
+      "lo": -0.010454557539531183,
+      "hi": 0.0003298930377449072,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "pool_S": {
+     "n_tokens_defined": 3648,
+     "mean_per_token_spearman": {
+      "point": 0.5150621265731287,
+      "lo": 0.49559635812409897,
+      "hi": 0.5333576306100557,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "pooled_within_token_rank_corr": {
+      "point": 0.3669090776609469,
+      "lo": 0.33981557986800454,
+      "hi": 0.39161857160251756,
+      "B": 10000
+     },
+     "pooled_within_token_value_corr_pearson": {
+      "point": 0.5399536161060924,
+      "lo": 0.5179012401016786,
+      "hi": 0.5616173102878361,
+      "B": 10000
+     },
+     "mean_prob_minus_mean_realised_over_64": {
+      "point": -0.009097692309109905,
+      "lo": -0.015911140434361783,
+      "hi": -0.0022719331961236783,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "top8_contenders_all_tokens": {
+     "n_tokens_defined": 711,
+     "mean_per_token_spearman": {
+      "point": 0.3284944800273625,
+      "lo": 0.2816675866720475,
+      "hi": 0.37696558662074664,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "top8_contenders_pool_S": {
+     "n_tokens_defined": 414,
+     "mean_per_token_spearman": {
+      "point": 0.38977473684420355,
+      "lo": 0.3380732175479759,
+      "hi": 0.4405257925031005,
+      "B": 10000,
+      "n_nan": 0
+     }
+    }
+   }
+  },
+  "decisive_pair_pick_vs_oracle_on_pool_S": {
+   "ep": {
+    "pool_tokens_where_oracle_better_on_term": 7636.0,
+    "head_orders_pair_correctly_frac": {
+     "point": 0.3477033976713379,
+     "lo": 0.3255970250047464,
+     "hi": 0.36980626217048435,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "head_orders_pair_WRONG_frac": {
+     "point": 0.6522966023286622,
+     "lo": 0.6301937378295157,
+     "hi": 0.6744029749952537,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "head_ties_pair_frac": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "mean_prob_margin_for_pick_over_oracle_when_wrong": 0.11382566633018794
+   },
+   "ttc": {
+    "pool_tokens_where_oracle_better_on_term": 384.0,
+    "head_orders_pair_correctly_frac": {
+     "point": 0.367086813321248,
+     "lo": 0.29980100434425827,
+     "hi": 0.4404194875151102,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "head_orders_pair_WRONG_frac": {
+     "point": 0.632913186678752,
+     "lo": 0.5595805124848898,
+     "hi": 0.7001989956557417,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "head_ties_pair_frac": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "mean_prob_margin_for_pick_over_oracle_when_wrong": 0.17572550335079695
+   },
+   "c": {
+    "pool_tokens_where_oracle_better_on_term": 3.0,
+    "head_orders_pair_correctly_frac": {
+     "point": 0.9333333333333332,
+     "lo": 0.8,
+     "hi": 1.0,
+     "B": 10000,
+     "n_nan": 484
+    },
+    "head_orders_pair_WRONG_frac": {
+     "point": 0.06666666666666667,
+     "lo": 0.0,
+     "hi": 0.2,
+     "B": 10000,
+     "n_nan": 484
+    },
+    "head_ties_pair_frac": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "B": 10000,
+     "n_nan": 484
+    },
+    "mean_prob_margin_for_pick_over_oracle_when_wrong": -0.00012266954603794565
+   },
+   "nc": {
+    "pool_tokens_where_oracle_better_on_term": 11.0,
+    "head_orders_pair_correctly_frac": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "B": 10000,
+     "n_nan": 65
+    },
+    "head_orders_pair_WRONG_frac": {
+     "point": 1.0,
+     "lo": 1.0,
+     "hi": 1.0,
+     "B": 10000,
+     "n_nan": 65
+    },
+    "head_ties_pair_frac": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "B": 10000,
+     "n_nan": 65
+    },
+    "mean_prob_margin_for_pick_over_oracle_when_wrong": 0.1439477928482278
+   },
+   "dac": {
+    "pool_tokens_where_oracle_better_on_term": 0.0,
+    "head_orders_pair_correctly_frac": {
+     "point": NaN,
+     "lo": NaN,
+     "hi": NaN,
+     "B": 10000,
+     "n_nan": 10000
+    },
+    "head_orders_pair_WRONG_frac": {
+     "point": NaN,
+     "lo": NaN,
+     "hi": NaN,
+     "B": 10000,
+     "n_nan": 10000
+    },
+    "head_ties_pair_frac": {
+     "point": NaN,
+     "lo": NaN,
+     "hi": NaN,
+     "B": 10000,
+     "n_nan": 10000
+    },
+    "mean_prob_margin_for_pick_over_oracle_when_wrong": NaN
+   }
+  },
+  "decisive_pair_error_budget_pool_S": {
+   "note": "pool S tokens only; units = aggregate points x100 averaged over ALL 12,146 tokens (same denominator as the 5.88); predicted terms are Shapley terms of NC_hat*DAC_hat*(5EP_hat+5TTC_hat+2C_hat)/12 on the move pick->oracle, realised terms are the section-A terms. CAUTION: the predicted terms are conditioned on the pick being the scorer's ARGMAX (winner's curse: any noisy scorer over-states its own pick), so 'error' and its share are NOT a head ranking; only frac_pool_tokens_head_inverts_pair is quoted, and the counterfactual section D is the head ranking.",
+   "shapley_sum_err_predicted": 5.238864897449957e-16,
+   "per_head": {
+    "nc": {
+     "realised_term_x100": {
+      "point": 0.031664824929382315,
+      "lo": 0.0057260172945195085,
+      "hi": 0.06629933293994274,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "predicted_term_x100": {
+      "point": -4.32718990367897,
+      "lo": -4.961123678168756,
+      "hi": -3.729755106898416,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "error_realised_minus_predicted_x100": {
+      "point": 4.358854728608351,
+      "lo": 3.7616251333958926,
+      "hi": 4.9895702126534145,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "share_of_total_error": {
+      "point": 0.2123124011131203,
+      "lo": 0.1885029238896393,
+      "hi": 0.2356482075250666,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "frac_pool_tokens_head_inverts_pair": {
+      "point": 0.0014018096087676818,
+      "lo": 0.0002463054187192118,
+      "hi": 0.002957439812813174,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "dac": {
+     "realised_term_x100": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "predicted_term_x100": {
+      "point": -4.64038817083321,
+      "lo": -5.450233781862236,
+      "hi": -3.895967034965429,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "error_realised_minus_predicted_x100": {
+      "point": 4.64038817083321,
+      "lo": 3.895967034965429,
+      "hi": 5.450233781862235,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "share_of_total_error": {
+      "point": 0.22602541630495382,
+      "lo": 0.1876280871236301,
+      "hi": 0.26652994674221664,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "frac_pool_tokens_head_inverts_pair": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "ep": {
+     "realised_term_x100": {
+      "point": 4.531335633142959,
+      "lo": 4.257655209014931,
+      "hi": 4.816289497371577,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "predicted_term_x100": {
+      "point": -1.547130568872228,
+      "lo": -1.6872667429199613,
+      "hi": -1.4155402366328578,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "error_realised_minus_predicted_x100": {
+      "point": 6.078466202015187,
+      "lo": 5.719704466536706,
+      "hi": 6.455894280475018,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "share_of_total_error": {
+      "point": 0.29607175159214844,
+      "lo": 0.28890831700918396,
+      "hi": 0.3032610526388572,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "frac_pool_tokens_head_inverts_pair": {
+      "point": 0.6824264049955397,
+      "lo": 0.65872912034994,
+      "hi": 0.7063498778420263,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "ttc": {
+     "realised_term_x100": {
+      "point": 1.307872276195181,
+      "lo": 1.0734598248104226,
+      "hi": 1.5547072753507831,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "predicted_term_x100": {
+      "point": -4.138692221516587,
+      "lo": -4.657220917698479,
+      "hi": -3.6443761781269783,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "error_realised_minus_predicted_x100": {
+      "point": 5.446564497711768,
+      "lo": 4.852795029601639,
+      "hi": 6.040925731482898,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "share_of_total_error": {
+      "point": 0.26529289419467666,
+      "lo": 0.24104550144035056,
+      "hi": 0.2883762211683218,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "frac_pool_tokens_head_inverts_pair": {
+      "point": 0.032114183764495985,
+      "lo": 0.025135246234495527,
+      "hi": 0.039852377838585855,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "c": {
+     "realised_term_x100": {
+      "point": 0.004116581590647127,
+      "lo": 0.0,
+      "hi": 0.009382214708762313,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "predicted_term_x100": {
+      "point": -0.0019919625144603067,
+      "lo": -0.0027382405772609156,
+      "hi": -0.001316788502455818,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "error_realised_minus_predicted_x100": {
+      "point": 0.006108544105107434,
+      "lo": 0.0019690074223145996,
+      "hi": 0.011443647904002976,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "share_of_total_error": {
+      "point": 0.0002975367951009513,
+      "lo": 9.49636926377389e-05,
+      "hi": 0.0005646716248564374,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "frac_pool_tokens_head_inverts_pair": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "B": 10000,
+      "n_nan": 0
+     }
+    }
+   },
+   "predicted_aggregate_margin_pick_over_oracle_x100": {
+    "point": 14.655392827415456,
+    "lo": 13.793961215012528,
+    "hi": 15.590971325904603,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "realised_gap_x100": {
+    "point": 5.874989315858168,
+    "lo": 5.5348189393942935,
+    "hi": 6.212801783721596,
+    "B": 10000,
+    "n_nan": 0
+   }
+  },
+  "top8_pairwise_concordance_per_head": {
+   "note": "AUC-like: P(head scores the better proposal higher) over ordered pairs INSIDE the scorer's own top-8 by sel_score whose realised values differ (EP: by more than 0.05); 0.5 = chance, ties count half.",
+   "ttc": {
+    "pairs_total": 11443,
+    "tokens_with_pairs": 1018,
+    "pairwise_concordance_top8": {
+     "point": 0.7218386786681814,
+     "lo": 0.6855064514408369,
+     "hi": 0.7593388597966676,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "pairwise_concordance_top8_pool_S": {
+     "point": 0.6971256971256972,
+     "lo": 0.6532899245932958,
+     "hi": 0.7410357097067506,
+     "B": 10000,
+     "n_nan": 0
+    }
+   },
+   "ep": {
+    "pairs_total": 100168,
+    "tokens_with_pairs": 8412,
+    "pairwise_concordance_top8": {
+     "point": 0.8871196390064692,
+     "lo": 0.8755901458243188,
+     "hi": 0.8985866611732899,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "pairwise_concordance_top8_pool_S": {
+     "point": 0.908226851435256,
+     "lo": 0.8962598927403416,
+     "hi": 0.9200277679854969,
+     "B": 10000,
+     "n_nan": 0
+    }
+   },
+   "nc": {
+    "pairs_total": 4004,
+    "tokens_with_pairs": 347,
+    "pairwise_concordance_top8": {
+     "point": 0.7217782217782218,
+     "lo": 0.6625604508458314,
+     "hi": 0.7817650320710341,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "pairwise_concordance_top8_pool_S": {
+     "point": 0.7892074198988196,
+     "lo": 0.7339052479459371,
+     "hi": 0.8394205915161371,
+     "B": 10000,
+     "n_nan": 0
+    }
+   },
+   "dac": {
+    "pairs_total": 8114,
+    "tokens_with_pairs": 711,
+    "pairwise_concordance_top8": {
+     "point": 0.7227015035740695,
+     "lo": 0.6898671698494313,
+     "hi": 0.7564509182552198,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "pairwise_concordance_top8_pool_S": {
+     "point": 0.767879813796022,
+     "lo": 0.7322499653367692,
+     "hi": 0.8027337424206789,
+     "B": 10000,
+     "n_nan": 0
+    }
+   }
+  }
+ },
+ "C_concentration": {
+  "token_concentration": {
+   "pool_total_x100": {
+    "point": 5.874989315858168,
+    "lo": 5.5348189393942935,
+    "hi": 6.212801783721596,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "top_1pct_of_nonzero_pick_tokens_share_of_pool": {
+    "point": 0.09130458349295614,
+    "lo": 0.085929005176846,
+    "hi": 0.09715932151288044,
+    "B": 10000,
+    "k_tokens_point": 117,
+    "universe_tokens": 11637
+   },
+   "top_5pct_of_nonzero_pick_tokens_share_of_pool": {
+    "point": 0.31658099139451856,
+    "lo": 0.2967268411296226,
+    "hi": 0.33560688341891937,
+    "B": 10000,
+    "k_tokens_point": 582,
+    "universe_tokens": 11637
+   },
+   "top_10pct_of_nonzero_pick_tokens_share_of_pool": {
+    "point": 0.44942930998091785,
+    "lo": 0.42785816908545654,
+    "hi": 0.470095520559326,
+    "B": 10000,
+    "k_tokens_point": 1164,
+    "universe_tokens": 11637
+   },
+   "top_20pct_of_nonzero_pick_tokens_share_of_pool": {
+    "point": 0.6363575461171868,
+    "lo": 0.6149570561156589,
+    "hi": 0.6567407988304008,
+    "B": 10000,
+    "k_tokens_point": 2328,
+    "universe_tokens": 11637
+   },
+   "top_50pct_of_nonzero_pick_tokens_share_of_pool": {
+    "point": 0.9432781746376497,
+    "lo": 0.927964869942138,
+    "hi": 0.9573811651978223,
+    "B": 10000,
+    "k_tokens_point": 5819,
+    "universe_tokens": 11637
+   },
+   "top_10pct_of_ALL_12146_tokens_share_of_pool": {
+    "point": 0.459220248309824,
+    "lo": 0.43795888012624135,
+    "hi": 0.4795974705856685,
+    "B": 10000,
+    "k_tokens_point": 1215,
+    "universe_tokens": 12146
+   },
+   "top_10pct_gap_threshold_pdms_points": 0.1381952104181775,
+   "tokens_to_cover_50pct_of_pool": 1440,
+   "tokens_to_cover_80pct_of_pool": 3761,
+   "gap_quantiles_over_nonzero_pick_tokens_pdms_points": {
+    "0.5": 0.034425738150551055,
+    "0.75": 0.08433512837411994,
+    "0.9": 0.13819143829614292,
+    "0.95": 0.20115352249002671,
+    "0.99": 0.47966511523106903,
+    "1.0": 0.8147322699185903
+   },
+   "n_nonzero_pick_tokens_with_zero_gap": 3790
+  },
+  "log_concentration": {
+   "top10_logs_share_of_pool": 0.2892902767754533,
+   "n_logs_to_cover_50pct": 26,
+   "n_logs_with_any_pool_gap": 135,
+   "tokens_share_of_top10_gap_logs": 0.2562983698336901,
+   "top10": [
+    {
+     "log": "2021.06.28.20.24.43_veh-38_03385_04952",
+     "pool_pts_x100_over_all_tokens": 0.2881175620822861,
+     "tokens": 568
+    },
+    {
+     "log": "2021.09.16.19.27.01_veh-45_01749_03230",
+     "pool_pts_x100_over_all_tokens": 0.23617435912827323,
+     "tokens": 546
+    },
+    {
+     "log": "2021.10.06.07.26.10_veh-52_01245_02064",
+     "pool_pts_x100_over_all_tokens": 0.19896866945706293,
+     "tokens": 398
+    },
+    {
+     "log": "2021.09.16.19.49.00_veh-42_00990_01609",
+     "pool_pts_x100_over_all_tokens": 0.1778369742883633,
+     "tokens": 284
+    },
+    {
+     "log": "2021.09.29.19.02.14_veh-28_00964_01689",
+     "pool_pts_x100_over_all_tokens": 0.1731492092356347,
+     "tokens": 226
+    },
+    {
+     "log": "2021.10.06.08.16.17_veh-52_01949_02501",
+     "pool_pts_x100_over_all_tokens": 0.15332939387335173,
+     "tokens": 341
+    },
+    {
+     "log": "2021.09.16.14.39.34_veh-42_00297_00935",
+     "pool_pts_x100_over_all_tokens": 0.1284713894527162,
+     "tokens": 225
+    },
+    {
+     "log": "2021.09.29.19.02.14_veh-28_00540_00917",
+     "pool_pts_x100_over_all_tokens": 0.1196590056394998,
+     "tokens": 178
+    },
+    {
+     "log": "2021.10.06.08.16.17_veh-52_00181_00574",
+     "pool_pts_x100_over_all_tokens": 0.11239569792418524,
+     "tokens": 158
+    },
+    {
+     "log": "2021.09.09.14.18.22_veh-48_00322_00895",
+     "pool_pts_x100_over_all_tokens": 0.11147502415606747,
+     "tokens": 189
+    }
+   ],
+   "permutation_null_top10_logs_share": {
+    "median": 0.26379357262413783,
+    "lo": 0.25265549150886285,
+    "hi": 0.275911619713524,
+    "n_perm": 2000
+   }
+  },
+  "by_driving_command": {
+   "source": "D:/Archive/devbox-C/navsim/exp/w3_navtest_v1/inputs/navtest_inputs.json.gz :: tokens[t].ego_statuses[-1].driving_command (one-hot LEFT, STRAIGHT, RIGHT, UNKNOWN; refe/nav_command.py:20-21)",
+   "classes": {
+    "LEFT": {
+     "n_tokens": 2501,
+     "token_share": 0.20591141116416928,
+     "pick_pdms_x100": {
+      "point": 86.57385786739525,
+      "lo": 83.99913277845717,
+      "hi": 88.96629535275947,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "oracle_pdms_x100": {
+      "point": 97.51559875165502,
+      "lo": 96.58271391814313,
+      "hi": 98.35033974143435,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "mean_gap_x100_per_token_nonzero_picks": {
+      "point": 5.925251572339383,
+      "lo": 5.039868277686469,
+      "hi": 6.799139255601085,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "pool_contribution_x100_over_all_tokens": {
+      "point": 1.2200769127631153,
+      "lo": 0.979246352249322,
+      "hi": 1.4559550739924254,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "share_of_pool": {
+      "point": 0.20767304367172226,
+      "lo": 0.16690738911538003,
+      "hi": 0.24660485085256437,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "zero_pick_rate": {
+      "point": 0.062375049980008,
+      "lo": 0.04420326803243026,
+      "hi": 0.0836067630716967,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "gap_by_term_x100_per_token": {
+      "nc": {
+       "point": 0.014651527849188014,
+       "lo": 0.0,
+       "hi": 0.052952992992513326,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dac": {
+       "point": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "ep": {
+       "point": 4.781884863895767,
+       "lo": 4.0142063959533605,
+       "hi": 5.5418013858677835,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "ttc": {
+       "point": 1.1287151805944287,
+       "lo": 0.7668979697011059,
+       "hi": 1.5404687403334567,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "c": {
+       "point": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      }
+     }
+    },
+    "STRAIGHT": {
+     "n_tokens": 8070,
+     "token_share": 0.6644162687304462,
+     "pick_pdms_x100": {
+      "point": 90.38048850931925,
+      "lo": 89.6734054783851,
+      "hi": 91.05322879189082,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "oracle_pdms_x100": {
+      "point": 98.73978883559865,
+      "lo": 98.47874280072325,
+      "hi": 98.97657835751777,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "mean_gap_x100_per_token_nonzero_picks": {
+      "point": 5.7831072411392155,
+      "lo": 5.400404016002034,
+      "hi": 6.18738157218715,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "pool_contribution_x100_over_all_tokens": {
+      "point": 3.8423905348257423,
+      "lo": 3.481398317349646,
+      "hi": 4.2458046299465275,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "share_of_pool": {
+      "point": 0.6540251102166437,
+      "lo": 0.6010586654372206,
+      "hi": 0.7082993558795155,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "zero_pick_rate": {
+      "point": 0.028500619578686492,
+      "lo": 0.022415003143784248,
+      "hi": 0.03524612909407014,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "gap_by_term_x100_per_token": {
+      "nc": {
+       "point": 0.034127588411580034,
+       "lo": 0.0,
+       "hi": 0.08224983397799615,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dac": {
+       "point": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "ep": {
+       "point": 4.366286550703679,
+       "lo": 4.07032115771632,
+       "hi": 4.676908592436093,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "ttc": {
+       "point": 1.3785625774473358,
+       "lo": 1.1003768048251281,
+       "hi": 1.6917108612842178,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "c": {
+       "point": 0.004130524576621231,
+       "lo": 0.0,
+       "hi": 0.011063941843824893,
+       "B": 10000,
+       "n_nan": 0
+      }
+     }
+    },
+    "RIGHT": {
+     "n_tokens": 1575,
+     "token_share": 0.1296723201053845,
+     "pick_pdms_x100": {
+      "point": 84.37881497021594,
+      "lo": 81.9125224751799,
+      "hi": 87.09735555029634,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "oracle_pdms_x100": {
+      "point": 96.76079722669719,
+      "lo": 95.7723312301719,
+      "hi": 97.81012308981501,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "mean_gap_x100_per_token_nonzero_picks": {
+      "point": 6.2659622933327315,
+      "lo": 5.395536996807857,
+      "hi": 7.096721755422671,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "pool_contribution_x100_over_all_tokens": {
+      "point": 0.812521868269311,
+      "lo": 0.6152125388505357,
+      "hi": 1.0317323588563405,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "share_of_pool": {
+      "point": 0.13830184611163412,
+      "lo": 0.10634347370226101,
+      "hi": 0.17331676321633707,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "zero_pick_rate": {
+      "point": 0.07809523809523809,
+      "lo": 0.056708050496188156,
+      "hi": 0.0987223047282324,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "gap_by_term_x100_per_token": {
+      "nc": {
+       "point": 0.04606212949841745,
+       "lo": 0.0,
+       "hi": 0.14281073614174705,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dac": {
+       "point": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "ep": {
+       "point": 4.979159423093574,
+       "lo": 4.363917660764816,
+       "hi": 5.53774735728429,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "ttc": {
+       "point": 1.2301587301587302,
+       "lo": 0.5917700979473405,
+       "hi": 1.979512735326689,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "c": {
+       "point": 0.010582010582010581,
+       "lo": 0.0,
+       "hi": 0.03156715398769477,
+       "B": 10000,
+       "n_nan": 0
+      }
+     }
+    },
+    "UNKNOWN": {
+     "n_tokens": 0
+    }
+   }
+  }
+ },
+ "D_oracle_head_bounds": {
+  "definition": "at selection, replace the named head(s)' PREDICTED probability by its REALISED sub-score (same token, same 64 proposals), keep every other head as the scorer predicted it, apply the planner's own rule NC*DAC*(5EP+5TTC+2C)/12 and take the argmax (first index on a tie, as torch.argmax in the planner). Gain = mean PDMS at that pick minus mean PDMS at P2's pick. An UPPER bound for 'a perfect <head>', not an estimate of any trainable arm.",
+  "controls": {
+   "identity_replace_no_head_gain_must_be_exactly_0": {
+    "replaced": [],
+    "pdms_at_selection_x100": {
+     "point": 88.8184088897293,
+     "lo": 87.86107970695247,
+     "hi": 89.77011829946386,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_vs_pick_x100": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_from_nonzero_pick_tokens_x100": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_from_zero_pick_tokens_x100": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "share_of_oracle_minus_pick_gap_captured": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "share_of_pool_5p88_captured": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "tokens_improved": 0,
+    "tokens_worsened": 0,
+    "n_tokens_with_exact_score_tie_at_max": 0
+   },
+   "identity_pick_equals_table_pick": {
+    "match": 12146,
+    "of": 12146,
+    "note": "float64 numpy recompute vs the table's float32 torch pick"
+   },
+   "all_five_realised_must_equal_best_of_64": {
+    "replaced": [
+     "nc",
+     "dac",
+     "ep",
+     "ttc",
+     "c"
+    ],
+    "pdms_at_selection_x100": {
+     "point": 98.23109369448527,
+     "lo": 97.81901516296715,
+     "hi": 98.61925747503028,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_vs_pick_x100": {
+     "point": 9.412684804756003,
+     "lo": 8.678329397587232,
+     "hi": 10.175686357040858,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_from_nonzero_pick_tokens_x100": {
+     "point": 5.874989315858168,
+     "lo": 5.5348189393942935,
+     "hi": 6.212801783721596,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_from_zero_pick_tokens_x100": {
+     "point": 3.5376954888978354,
+     "lo": 2.8990280045038053,
+     "hi": 4.23128833687377,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "share_of_oracle_minus_pick_gap_captured": {
+     "point": 1.0,
+     "lo": 1.0,
+     "hi": 1.0,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "share_of_pool_5p88_captured": {
+     "point": 1.0,
+     "lo": 1.0,
+     "hi": 1.0,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "tokens_improved": 8292,
+    "tokens_worsened": 0,
+    "n_tokens_with_exact_score_tie_at_max": 7646
+   },
+   "all_five_realised_pdms_minus_oracle_max_abs_per_token": 0.0,
+   "negative_control_EP_realised_but_shuffled_within_token": {
+    "replaced": [
+     "ep"
+    ],
+    "pdms_at_selection_x100": {
+     "point": 85.06252622573842,
+     "lo": 84.10838179786981,
+     "hi": 85.99213061323701,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_vs_pick_x100": {
+     "point": -3.7558826639908736,
+     "lo": -4.242731421128997,
+     "hi": -3.265652504994926,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_from_nonzero_pick_tokens_x100": {
+     "point": -4.817536477065805,
+     "lo": -5.227279689789041,
+     "hi": -4.424458682489986,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_from_zero_pick_tokens_x100": {
+     "point": 1.0616538130749316,
+     "lo": 0.7942966092837811,
+     "hi": 1.3336201436066992,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "share_of_oracle_minus_pick_gap_captured": {
+     "point": -0.3990235243076573,
+     "lo": -0.4736673853413273,
+     "hi": -0.3308490889484756,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "share_of_pool_5p88_captured": {
+     "point": -0.8200077001096809,
+     "lo": -0.9075852919463149,
+     "hi": -0.7387251390759203,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "tokens_improved": 1407,
+    "tokens_worsened": 7083,
+    "n_tokens_with_exact_score_tie_at_max": 0
+   }
+  },
+  "realised_TTC_vs_violations": {
+   "p_ttc0_given_nc0": 0.9697417428509866,
+   "p_ttc0_given_dac0": 0.16811902679578095,
+   "p_nc0_given_ttc0": 0.4939092263071255,
+   "p_dac0_given_ttc0": 0.12506858979383867,
+   "ttc0_among_nonviolating_proposals": 0.08673400586917016
+  },
+  "realised_EP_zero_on_violating_proposals": {
+   "n_violating_proposals": 154428,
+   "ep_zero_among_violating": 1.0,
+   "ep_zero_among_nonviolating": 0.00015090317153516685,
+   "tokens_with_max_nonviolating_EP_eq_1": 0.7357977935122674
+  },
+  "paired_TTC_minus_EP_bound_x100": {
+   "total": {
+    "point": -1.574525559661492,
+    "lo": -2.3725321565769164,
+    "hi": -0.8215548015975743,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "pool_nonzero_picks": {
+    "point": 0.2598727496190708,
+    "lo": -0.06628302394252596,
+    "hi": 0.5942978633030139,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "pool_nonzero_picks_vs_EP_nonviolating_only": {
+    "point": 1.0310885910299663,
+    "lo": 0.6722204119227888,
+    "hi": 1.3951879067899462,
+    "B": 10000,
+    "n_nan": 0
+   }
+  },
+  "gain_by_term_of_each_oracle_selection_pool_x100_over_all_tokens": {
+   "oracle_TTC": {
+    "nc": {
+     "point": 0.027876835089247803,
+     "lo": 0.001926334436475986,
+     "hi": 0.06187590496017099,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "dac": {
+     "point": -0.15152453887845746,
+     "lo": -0.23785566704481914,
+     "hi": -0.07952879013756778,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "ep": {
+     "point": 0.6520567069923244,
+     "lo": 0.5860087082020043,
+     "hi": 0.7203405909018243,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "ttc": {
+     "point": 1.3027265492068718,
+     "lo": 1.0709025404687824,
+     "hi": 1.549663994334687,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "c": {
+     "point": 0.0013721938635490422,
+     "lo": 0.0,
+     "hi": 0.004343238288291682,
+     "B": 10000,
+     "n_nan": 0
+    }
+   },
+   "oracle_EP": {
+    "nc": {
+     "point": 0.014924637816163313,
+     "lo": 0.0012555158660960625,
+     "hi": 0.03674759296950365,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "dac": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "ep": {
+     "point": 1.496304683444482,
+     "lo": 1.3655445967792244,
+     "hi": 1.6316987829989025,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "ttc": {
+     "point": 0.06003348153027062,
+     "lo": -0.1007326516023883,
+     "hi": 0.22866656159348864,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "c": {
+     "point": 0.0013721938635490422,
+     "lo": 0.0,
+     "hi": 0.004343238288291682,
+     "B": 10000,
+     "n_nan": 0
+    }
+   },
+   "oracle_EP_nonviolating_only": {
+    "nc": {
+     "point": -0.10244332533491374,
+     "lo": -0.16635649908116465,
+     "hi": -0.047990626906550184,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "dac": {
+     "point": -0.48104625143012053,
+     "lo": -0.6547622182324893,
+     "hi": -0.32862170448877503,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "ep": {
+     "point": 1.3469447017837468,
+     "lo": 1.2234429540365204,
+     "hi": 1.4792276035220193,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "ttc": {
+     "point": 0.036591836361307806,
+     "lo": -0.12869926028442072,
+     "hi": 0.2091209440094818,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "c": {
+     "point": 0.0013721938635490422,
+     "lo": 0.0,
+     "hi": 0.004343238288291682,
+     "B": 10000,
+     "n_nan": 0
+    }
+   },
+   "oracle_EP_TTC": {
+    "nc": {
+     "point": 0.031456954884101045,
+     "lo": 0.005715611731925547,
+     "hi": 0.06568076772968541,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "dac": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "ep": {
+     "point": 2.3064089783803468,
+     "lo": 2.1780301082156677,
+     "hi": 2.438329104050117,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "ttc": {
+     "point": 1.3078722761951809,
+     "lo": 1.0734598248104226,
+     "hi": 1.5547072753507833,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "c": {
+     "point": 0.0013721938635490422,
+     "lo": 0.0,
+     "hi": 0.004343238288291682,
+     "B": 10000,
+     "n_nan": 0
+    }
+   }
+  },
+  "reach_vs_head_quality_blend": {
+   "definition": "p_head' = (1 - lam) * P2's predicted probability + lam * the realised sub-score; PDMS at argmax of the planner's rule. lam is an explicit, ASSUMED model of 'how far a retrained head moves toward the truth'; it is not an estimate of any arm.",
+   "curves": {
+    "TTC": {
+     "0.1": {
+      "pool_gain_x100": {
+       "point": 1.138657748667175,
+       "lo": 0.926066346963818,
+       "hi": 1.3665821264429585,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "pool_share": {
+       "point": 0.1938144373460617,
+       "lo": 0.16179169374912838,
+       "hi": 0.2276292650995413,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "total_gain_x100": {
+       "point": 1.648892484305841,
+       "lo": 1.3319804420305903,
+       "hi": 1.993623417464866,
+       "B": 10000,
+       "n_nan": 0
+      }
+     },
+     "0.25": {
+      "pool_gain_x100": {
+       "point": 1.3481042236787855,
+       "lo": 1.1138147208454539,
+       "hi": 1.5982434753898576,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "pool_share": {
+       "point": 0.22946496601106853,
+       "lo": 0.19472117974388414,
+       "hi": 0.2649679748178722,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "total_gain_x100": {
+       "point": 2.2035907694633514,
+       "lo": 1.8428576342270164,
+       "hi": 2.5845663097901763,
+       "B": 10000,
+       "n_nan": 0
+      }
+     },
+     "0.5": {
+      "pool_gain_x100": {
+       "point": 1.5058216321331626,
+       "lo": 1.2675290922679305,
+       "hi": 1.7664000354924116,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "pool_share": {
+       "point": 0.2563105311644647,
+       "lo": 0.22080545576307056,
+       "hi": 0.2931760200859378,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "total_gain_x100": {
+       "point": 2.5256813069668875,
+       "lo": 2.1514730798584476,
+       "hi": 2.922627253448939,
+       "B": 10000,
+       "n_nan": 0
+      }
+     },
+     "0.75": {
+      "pool_gain_x100": {
+       "point": 1.6394016665550504,
+       "lo": 1.3813734466511496,
+       "hi": 1.9144542007224539,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "pool_share": {
+       "point": 0.2790475996492226,
+       "lo": 0.24091139915823742,
+       "hi": 0.3174172528633382,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "total_gain_x100": {
+       "point": 2.781202113127481,
+       "lo": 2.3771642685593255,
+       "hi": 3.214440454364542,
+       "B": 10000,
+       "n_nan": 0
+      }
+     },
+     "1.0": {
+      "pool_gain_x100": {
+       "point": 1.8325077462735355,
+       "lo": 1.569446981396404,
+       "hi": 2.1121851149755395,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "pool_share": {
+       "point": 0.31191677937645035,
+       "lo": 0.2730711405029257,
+       "hi": 0.35109332704626955,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "total_gain_x100": {
+       "point": 3.042940448570026,
+       "lo": 2.628598711952632,
+       "hi": 3.4807965167063264,
+       "B": 10000,
+       "n_nan": 0
+      }
+     }
+    },
+    "EP_all": {
+     "0.1": {
+      "pool_gain_x100": {
+       "point": 0.20919061808723494,
+       "lo": 0.16952386660144017,
+       "hi": 0.253732031293947,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "pool_share": {
+       "point": 0.0356069784710201,
+       "lo": 0.028819919724650873,
+       "hi": 0.04322160729150943,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "total_gain_x100": {
+       "point": 1.9420897857023938,
+       "lo": 1.551275958532283,
+       "hi": 2.381849223977349,
+       "B": 10000,
+       "n_nan": 0
+      }
+     },
+     "0.25": {
+      "pool_gain_x100": {
+       "point": 0.4635369658442663,
+       "lo": 0.38622418005922243,
+       "hi": 0.5435925438486634,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "pool_share": {
+       "point": 0.07890005256572227,
+       "lo": 0.06581330267692707,
+       "hi": 0.09202591817988458,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "total_gain_x100": {
+       "point": 2.90443506086163,
+       "lo": 2.378145102888161,
+       "hi": 3.473218512676919,
+       "B": 10000,
+       "n_nan": 0
+      }
+     },
+     "0.5": {
+      "pool_gain_x100": {
+       "point": 0.888344088035662,
+       "lo": 0.7693352489781389,
+       "hi": 1.0110333048462619,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "pool_share": {
+       "point": 0.15120777932953572,
+       "lo": 0.1317900432357359,
+       "hi": 0.17100467682454898,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "total_gain_x100": {
+       "point": 3.656816918581581,
+       "lo": 3.0761694631599013,
+       "hi": 4.285450268112157,
+       "B": 10000,
+       "n_nan": 0
+      }
+     },
+     "0.75": {
+      "pool_gain_x100": {
+       "point": 1.2617181823866512,
+       "lo": 1.0905001431803412,
+       "hi": 1.4339297115413745,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "pool_share": {
+       "point": 0.2147609322421976,
+       "lo": 0.18694361540307314,
+       "hi": 0.2422162885445078,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "total_gain_x100": {
+       "point": 4.187362757480869,
+       "lo": 3.557618981824616,
+       "hi": 4.8523659123897,
+       "B": 10000,
+       "n_nan": 0
+      }
+     },
+     "1.0": {
+      "pool_gain_x100": {
+       "point": 1.5726349966544646,
+       "lo": 1.3494549798347153,
+       "hi": 1.7955292567851335,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "pool_share": {
+       "point": 0.26768303942434446,
+       "lo": 0.2315041786154246,
+       "hi": 0.30310138330769293,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "total_gain_x100": {
+       "point": 4.617466008231517,
+       "lo": 3.948684728148458,
+       "hi": 5.316194559012853,
+       "B": 10000,
+       "n_nan": 0
+      }
+     }
+    },
+    "EP_nonviolating_only": {
+     "0.1": {
+      "pool_gain_x100": {
+       "point": 0.07618001314012007,
+       "lo": -0.007896376349713147,
+       "hi": 0.1521745731897007,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "pool_share": {
+       "point": 0.012966834328445472,
+       "lo": -0.0013318924283860184,
+       "hi": 0.026088096274678466,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "total_gain_x100": {
+       "point": 0.6850215881586913,
+       "lo": 0.48135179797102357,
+       "hi": 0.9074693123685152,
+       "B": 10000,
+       "n_nan": 0
+      }
+     },
+     "0.25": {
+      "pool_gain_x100": {
+       "point": 0.15599377398451938,
+       "lo": 0.03545795638573494,
+       "hi": 0.2709658221260423,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "pool_share": {
+       "point": 0.0265521800292386,
+       "lo": 0.005930391795492088,
+       "hi": 0.046256712385044065,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "total_gain_x100": {
+       "point": 1.2225559546871754,
+       "lo": 0.8997822521559288,
+       "hi": 1.5794613115171456,
+       "B": 10000,
+       "n_nan": 0
+      }
+     },
+     "0.5": {
+      "pool_gain_x100": {
+       "point": 0.4255268268804354,
+       "lo": 0.24298823944706133,
+       "hi": 0.60511546231266,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "pool_share": {
+       "point": 0.07243022991238889,
+       "lo": 0.04125870085124327,
+       "hi": 0.10335917000001954,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "total_gain_x100": {
+       "point": 1.8616172889040876,
+       "lo": 1.4525162112969734,
+       "hi": 2.301826410245996,
+       "B": 10000,
+       "n_nan": 0
+      }
+     },
+     "0.75": {
+      "pool_gain_x100": {
+       "point": 0.6071839460943832,
+       "lo": 0.36976183872644075,
+       "hi": 0.8492636244823072,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "pool_share": {
+       "point": 0.10335064686082598,
+       "lo": 0.06282438655101824,
+       "hi": 0.14475856399919457,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "total_gain_x100": {
+       "point": 2.276285707280791,
+       "lo": 1.775008520108383,
+       "hi": 2.793581178455074,
+       "B": 10000,
+       "n_nan": 0
+      }
+     },
+     "1.0": {
+      "pool_gain_x100": {
+       "point": 0.8014191552435693,
+       "lo": 0.4995289321540182,
+       "hi": 1.103274486561341,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "pool_share": {
+       "point": 0.1364120191810944,
+       "lo": 0.08544189164895309,
+       "hi": 0.1882504103058878,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "total_gain_x100": {
+       "point": 2.6649357756557044,
+       "lo": 2.104301888834486,
+       "hi": 3.253748529904911,
+       "B": 10000,
+       "n_nan": 0
+      }
+     }
+    },
+    "EP_and_TTC": {
+     "0.1": {
+      "pool_gain_x100": {
+       "point": 1.3362301463154764,
+       "lo": 1.128171646844022,
+       "hi": 1.55919420133679,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "pool_share": {
+       "point": 0.2274438427842981,
+       "lo": 0.1971022967208685,
+       "hi": 0.2598181176520866,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "total_gain_x100": {
+       "point": 3.3636027380067905,
+       "lo": 2.9046569113588308,
+       "hi": 3.8416789707165737,
+       "B": 10000,
+       "n_nan": 0
+      }
+     },
+     "0.25": {
+      "pool_gain_x100": {
+       "point": 1.8560874232028595,
+       "lo": 1.6252265224666747,
+       "hi": 2.096498546175271,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "pool_share": {
+       "point": 0.3159303487059598,
+       "lo": 0.2842950153455866,
+       "hi": 0.3479875489876021,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "total_gain_x100": {
+       "point": 4.6337693216006555,
+       "lo": 4.076799771585141,
+       "hi": 5.2083188013342046,
+       "B": 10000,
+       "n_nan": 0
+      }
+     },
+     "0.5": {
+      "pool_gain_x100": {
+       "point": 2.4878530902623233,
+       "lo": 2.250168487128376,
+       "hi": 2.737020998364987,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "pool_share": {
+       "point": 0.4234651258934109,
+       "lo": 0.39393641582545524,
+       "hi": 0.4537521845470944,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "total_gain_x100": {
+       "point": 5.624680371766008,
+       "lo": 5.003823794998462,
+       "hi": 6.263921574211552,
+       "B": 10000,
+       "n_nan": 0
+      }
+     },
+     "0.75": {
+      "pool_gain_x100": {
+       "point": 3.0681848328180283,
+       "lo": 2.818391756968352,
+       "hi": 3.3301592122623185,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "pool_share": {
+       "point": 0.5222451766058835,
+       "lo": 0.4938717917552109,
+       "hi": 0.5508525950025459,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "total_gain_x100": {
+       "point": 6.311214069348065,
+       "lo": 5.682610233630437,
+       "hi": 6.956834863083366,
+       "B": 10000,
+       "n_nan": 0
+      }
+     },
+     "1.0": {
+      "pool_gain_x100": {
+       "point": 3.6471104033231767,
+       "lo": 3.3775498866798133,
+       "hi": 3.920968593900247,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "pool_share": {
+       "point": 0.6207858784489446,
+       "lo": 0.5938851582772794,
+       "hi": 0.6476243420830563,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "total_gain_x100": {
+       "point": 6.959482273126495,
+       "lo": 6.325212839449538,
+       "hi": 7.609255839614916,
+       "B": 10000,
+       "n_nan": 0
+      }
+     }
+    }
+   }
+  },
+  "arms": {
+   "oracle_EP": {
+    "replaced": [
+     "ep"
+    ],
+    "pdms_at_selection_x100": {
+     "point": 93.43587489796083,
+     "lo": 92.93575551224161,
+     "hi": 93.93780582784166,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_vs_pick_x100": {
+     "point": 4.617466008231517,
+     "lo": 3.948684728148458,
+     "hi": 5.316194559012853,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_from_nonzero_pick_tokens_x100": {
+     "point": 1.5726349966544646,
+     "lo": 1.3494549798347153,
+     "hi": 1.7955292567851335,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_from_zero_pick_tokens_x100": {
+     "point": 3.044831011577053,
+     "lo": 2.474053055790269,
+     "hi": 3.666765753306273,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "share_of_oracle_minus_pick_gap_captured": {
+     "point": 0.4905578061955738,
+     "lo": 0.445458312235983,
+     "hi": 0.5321818927376742,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "share_of_pool_5p88_captured": {
+     "point": 0.26768303942434446,
+     "lo": 0.2315041786154246,
+     "hi": 0.30310138330769293,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "tokens_improved": 6017,
+    "tokens_worsened": 336,
+    "n_tokens_with_exact_score_tie_at_max": 0
+   },
+   "oracle_TTC": {
+    "replaced": [
+     "ttc"
+    ],
+    "pdms_at_selection_x100": {
+     "point": 91.8613493382993,
+     "lo": 90.85989147312216,
+     "hi": 92.81144026425471,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_vs_pick_x100": {
+     "point": 3.042940448570026,
+     "lo": 2.628598711952632,
+     "hi": 3.4807965167063264,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_from_nonzero_pick_tokens_x100": {
+     "point": 1.8325077462735355,
+     "lo": 1.569446981396404,
+     "hi": 2.1121851149755395,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_from_zero_pick_tokens_x100": {
+     "point": 1.2104327022964905,
+     "lo": 0.9645248426238284,
+     "hi": 1.466132123137874,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "share_of_oracle_minus_pick_gap_captured": {
+     "point": 0.3232808185643804,
+     "lo": 0.27820715949334507,
+     "hi": 0.3684735303138276,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "share_of_pool_5p88_captured": {
+     "point": 0.31191677937645035,
+     "lo": 0.2730711405029257,
+     "hi": 0.35109332704626955,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "tokens_improved": 4181,
+    "tokens_worsened": 153,
+    "n_tokens_with_exact_score_tie_at_max": 0
+   },
+   "oracle_C": {
+    "replaced": [
+     "c"
+    ],
+    "pdms_at_selection_x100": {
+     "point": 88.81398852499852,
+     "lo": 87.85042214630094,
+     "hi": 89.7650252829247,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_vs_pick_x100": {
+     "point": -0.0044203647307672405,
+     "lo": -0.02214034656001562,
+     "hi": 0.014501059428024075,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_from_nonzero_pick_tokens_x100": {
+     "point": -0.010981407154617512,
+     "lo": -0.024661689458185213,
+     "hi": 0.0011134761390217385,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_from_zero_pick_tokens_x100": {
+     "point": 0.006561042423850273,
+     "lo": 0.0,
+     "hi": 0.020540974601710726,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "share_of_oracle_minus_pick_gap_captured": {
+     "point": -0.00046961784256642025,
+     "lo": -0.0023337331198621924,
+     "hi": 0.0015600412675529586,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "share_of_pool_5p88_captured": {
+     "point": -0.0018691790851390578,
+     "lo": -0.004134784738038875,
+     "hi": 0.00019580552156820024,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "tokens_improved": 9,
+    "tokens_worsened": 8,
+    "n_tokens_with_exact_score_tie_at_max": 0
+   },
+   "oracle_EP_TTC": {
+    "replaced": [
+     "ep",
+     "ttc"
+    ],
+    "pdms_at_selection_x100": {
+     "point": 95.77789116285578,
+     "lo": 95.28837824188129,
+     "hi": 96.26106057923487,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_vs_pick_x100": {
+     "point": 6.959482273126495,
+     "lo": 6.325212839449538,
+     "hi": 7.609255839614916,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_from_nonzero_pick_tokens_x100": {
+     "point": 3.6471104033231767,
+     "lo": 3.3775498866798133,
+     "hi": 3.920968593900247,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_from_zero_pick_tokens_x100": {
+     "point": 3.312371869803317,
+     "lo": 2.7185863756654234,
+     "hi": 3.9468427783226354,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "share_of_oracle_minus_pick_gap_captured": {
+     "point": 0.7393727100699299,
+     "lo": 0.7162561551394537,
+     "hi": 0.7618261197282528,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "share_of_pool_5p88_captured": {
+     "point": 0.6207858784489446,
+     "lo": 0.5938851582772794,
+     "hi": 0.6476243420830563,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "tokens_improved": 7379,
+    "tokens_worsened": 65,
+    "n_tokens_with_exact_score_tie_at_max": 0
+   },
+   "oracle_EP_TTC_C": {
+    "replaced": [
+     "ep",
+     "ttc",
+     "c"
+    ],
+    "pdms_at_selection_x100": {
+     "point": 95.78002578252088,
+     "lo": 95.2892651691724,
+     "hi": 96.26387878940768,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_vs_pick_x100": {
+     "point": 6.961616892791597,
+     "lo": 6.327287941468646,
+     "hi": 7.61218958542459,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_from_nonzero_pick_tokens_x100": {
+     "point": 3.6492450229882802,
+     "lo": 3.3797627121233633,
+     "hi": 3.92325094877643,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_from_zero_pick_tokens_x100": {
+     "point": 3.312371869803317,
+     "lo": 2.7185863756654234,
+     "hi": 3.9468427783226354,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "share_of_oracle_minus_pick_gap_captured": {
+     "point": 0.7395994912391054,
+     "lo": 0.7165052452943831,
+     "hi": 0.7620393026016269,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "share_of_pool_5p88_captured": {
+     "point": 0.6211492186271711,
+     "lo": 0.5941515524821779,
+     "hi": 0.6480016298372381,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "tokens_improved": 7378,
+    "tokens_worsened": 66,
+    "n_tokens_with_exact_score_tie_at_max": 0
+   },
+   "oracle_NC": {
+    "replaced": [
+     "nc"
+    ],
+    "pdms_at_selection_x100": {
+     "point": 89.8076317728141,
+     "lo": 88.86768733639573,
+     "hi": 90.70029235160415,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_vs_pick_x100": {
+     "point": 0.989222883084811,
+     "lo": 0.7759903694967927,
+     "hi": 1.2029589845590842,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_from_nonzero_pick_tokens_x100": {
+     "point": 0.15444156076656387,
+     "lo": 0.03999225769452328,
+     "hi": 0.2700342129335919,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_from_zero_pick_tokens_x100": {
+     "point": 0.8347813223182473,
+     "lo": 0.6585550697693552,
+     "hi": 1.0181405163668338,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "share_of_oracle_minus_pick_gap_captured": {
+     "point": 0.10509465722096425,
+     "lo": 0.08350647822934489,
+     "hi": 0.12721211178811132,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "share_of_pool_5p88_captured": {
+     "point": 0.02628797304357384,
+     "lo": 0.0069526122791636205,
+     "hi": 0.04506710495473148,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "tokens_improved": 2261,
+    "tokens_worsened": 203,
+    "n_tokens_with_exact_score_tie_at_max": 0
+   },
+   "oracle_DAC": {
+    "replaced": [
+     "dac"
+    ],
+    "pdms_at_selection_x100": {
+     "point": 92.00284102250777,
+     "lo": 91.37759120224703,
+     "hi": 92.63005223730485,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_vs_pick_x100": {
+     "point": 3.184432132778482,
+     "lo": 2.4975430404427708,
+     "hi": 3.954501175699711,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_from_nonzero_pick_tokens_x100": {
+     "point": 0.6835893701700051,
+     "lo": 0.5148027770378412,
+     "hi": 0.8661084545869345,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_from_zero_pick_tokens_x100": {
+     "point": 2.500842762608477,
+     "lo": 1.914427445214676,
+     "hi": 3.1684350936410715,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "share_of_oracle_minus_pick_gap_captured": {
+     "point": 0.338312840473471,
+     "lo": 0.27901741424755666,
+     "hi": 0.39737911938328796,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "share_of_pool_5p88_captured": {
+     "point": 0.11635584907785523,
+     "lo": 0.0875655704269678,
+     "hi": 0.14687157784523755,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "tokens_improved": 3330,
+    "tokens_worsened": 400,
+    "n_tokens_with_exact_score_tie_at_max": 59
+   },
+   "oracle_NC_DAC": {
+    "replaced": [
+     "nc",
+     "dac"
+    ],
+    "pdms_at_selection_x100": {
+     "point": 92.86099552011086,
+     "lo": 92.32126028581536,
+     "hi": 93.39374891446096,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_vs_pick_x100": {
+     "point": 4.04258663038157,
+     "lo": 3.335547494181146,
+     "hi": 4.811871535363804,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_from_nonzero_pick_tokens_x100": {
+     "point": 0.9330036350913592,
+     "lo": 0.7351081756835038,
+     "hi": 1.1369253727036095,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_from_zero_pick_tokens_x100": {
+     "point": 3.109582995290211,
+     "lo": 2.510411361163491,
+     "hi": 3.7740100467978563,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "share_of_oracle_minus_pick_gap_captured": {
+     "point": 0.4294828430182798,
+     "lo": 0.37587237532341944,
+     "hi": 0.4806283121618883,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "share_of_pool_5p88_captured": {
+     "point": 0.1588094181844608,
+     "lo": 0.12595216360614964,
+     "hi": 0.19226019071019396,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "tokens_improved": 5122,
+    "tokens_worsened": 200,
+    "n_tokens_with_exact_score_tie_at_max": 64
+   },
+   "oracle_NC_DAC_EP": {
+    "replaced": [
+     "nc",
+     "dac",
+     "ep"
+    ],
+    "pdms_at_selection_x100": {
+     "point": 95.29619683402302,
+     "lo": 94.85098073339222,
+     "hi": 95.73686618679896,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_vs_pick_x100": {
+     "point": 6.477787944293739,
+     "lo": 5.656467930839871,
+     "hi": 7.363839534011494,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_from_nonzero_pick_tokens_x100": {
+     "point": 3.1850790313479584,
+     "lo": 2.829692597943777,
+     "hi": 3.543425495503027,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_from_zero_pick_tokens_x100": {
+     "point": 3.2927089129457814,
+     "lo": 2.682605612417194,
+     "hi": 3.967347462099904,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "share_of_oracle_minus_pick_gap_captured": {
+     "point": 0.6881976905272201,
+     "lo": 0.6397412587186772,
+     "hi": 0.7351449087203262,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "share_of_pool_5p88_captured": {
+     "point": 0.5421420976461315,
+     "lo": 0.4898911134674084,
+     "hi": 0.5972925250611499,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "tokens_improved": 7816,
+    "tokens_worsened": 337,
+    "n_tokens_with_exact_score_tie_at_max": 64
+   },
+   "oracle_NC_DAC_TTC": {
+    "replaced": [
+     "nc",
+     "dac",
+     "ttc"
+    ],
+    "pdms_at_selection_x100": {
+     "point": 96.10578028835671,
+     "lo": 95.67264647852231,
+     "hi": 96.53824281184119,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_vs_pick_x100": {
+     "point": 7.287371398627427,
+     "lo": 6.592692464112946,
+     "hi": 8.003065050514467,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_from_nonzero_pick_tokens_x100": {
+     "point": 3.836204856297641,
+     "lo": 3.5726415997171546,
+     "hi": 4.108798819321893,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_from_zero_pick_tokens_x100": {
+     "point": 3.4511665423297875,
+     "lo": 2.828898529253578,
+     "hi": 4.125013718885621,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "share_of_oracle_minus_pick_gap_captured": {
+     "point": 0.7742075241853732,
+     "lo": 0.7526882025992055,
+     "hi": 0.7940823509939336,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "share_of_pool_5p88_captured": {
+     "point": 0.6529722268503021,
+     "lo": 0.6309711125785947,
+     "hi": 0.6750517782948068,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "tokens_improved": 7710,
+    "tokens_worsened": 17,
+    "n_tokens_with_exact_score_tie_at_max": 64
+   },
+   "oracle_EP_realised_only_on_nonviolating_proposals": {
+    "replaced": [
+     "ep (realised only where NC*DAC != 0)"
+    ],
+    "pdms_at_selection_x100": {
+     "point": 91.48334466538499,
+     "lo": 90.71632458307543,
+     "hi": 92.24450114669536,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_vs_pick_x100": {
+     "point": 2.6649357756557044,
+     "lo": 2.104301888834486,
+     "hi": 3.253748529904911,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_from_nonzero_pick_tokens_x100": {
+     "point": 0.8014191552435693,
+     "lo": 0.4995289321540182,
+     "hi": 1.103274486561341,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_from_zero_pick_tokens_x100": {
+     "point": 1.863516620412135,
+     "lo": 1.423942105665935,
+     "hi": 2.3395368793611864,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "share_of_pool_5p88_captured": {
+     "point": 0.1364120191810944,
+     "lo": 0.08544189164895309,
+     "hi": 0.1882504103058878,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "tokens_improved": 5782,
+    "tokens_worsened": 444
+   },
+   "oracle_TTC_realised_only_on_nonviolating_proposals": {
+    "replaced": [
+     "ttc (realised only where NC*DAC != 0)"
+    ],
+    "pdms_at_selection_x100": {
+     "point": 91.75616299232794,
+     "lo": 90.90135595075355,
+     "hi": 92.6057462348949,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_vs_pick_x100": {
+     "point": 2.9377541025986487,
+     "lo": 2.5979384768606484,
+     "hi": 3.2948600009417297,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_from_nonzero_pick_tokens_x100": {
+     "point": 1.7225917163586433,
+     "lo": 1.5181609235975997,
+     "hi": 1.9513281071319835,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "gain_from_zero_pick_tokens_x100": {
+     "point": 1.2151623862400054,
+     "lo": 0.9486433951317624,
+     "hi": 1.5083299237955274,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "share_of_pool_5p88_captured": {
+     "point": 0.29320763387754717,
+     "lo": 0.2644243401117993,
+     "hi": 0.3239167189376804,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "tokens_improved": 4158,
+    "tokens_worsened": 167
+   }
+  }
+ },
+ "runtime_s": 44.8
+}

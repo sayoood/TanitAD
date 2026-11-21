@@ -1,0 +1,641 @@
+{
+ "checks": 196,
+ "checks_failed": 0,
+ "mutants": [
+  {
+   "id": "M01",
+   "what": "s0's C also holds yaw-rate",
+   "result": "KILLED",
+   "red": [
+    "C1 crawl set s0",
+    "C3 s0: the crawl set is the banked DAG - P10 separated-worse rows minus accel / DK-VIOL (MEASURED, banked READ_A.json)",
+    "C8 s0: yaw-rate and accel are NOT in C_0 (a worse yaw-rate / accel does not break s0's R-CRAWL)"
+   ]
+  },
+  {
+   "id": "M02",
+   "what": "s1's C drops yaw-rate",
+   "result": "KILLED",
+   "red": [
+    "C2 crawl set s1",
+    "C3 s1: the crawl set is the banked DAG - P10 separated-worse rows minus accel / DK-VIOL (MEASURED, banked READ_A.json)",
+    "C9 s1: yaw-rate IS in C_1"
+   ]
+  },
+  {
+   "id": "M03",
+   "what": "s0's C drops L2",
+   "result": "KILLED",
+   "red": [
+    "C1 crawl set s0",
+    "C3 s0: the crawl set is the banked DAG - P10 separated-worse rows minus accel / DK-VIOL (MEASURED, banked READ_A.json)"
+   ]
+  },
+  {
+   "id": "M04",
+   "what": "RF lon s0 halved",
+   "result": "KILLED",
+   "red": [
+    "B1 bars == the PREREG's printed bars",
+    "B2 RF constants are the PREREG's",
+    "B3 bars literal 0.0248 / 0.0248 / 0.0502 / 0.0278"
+   ]
+  },
+  {
+   "id": "M05",
+   "what": "R-T0 bar moved",
+   "result": "KILLED",
+   "red": [
+    "O2 guard R-T0 fails at s0 (base (1, 1, 1, 1)) -> HARMS and only HARMS",
+    "O2 guard R-T0 fails at s0 (base (0, 0, 0, 0)) -> HARMS and only HARMS",
+    "O2 guard R-T0 fails at s1 (base (1, 1, 1, 1)) -> HARMS and only HARMS"
+   ]
+  },
+  {
+   "id": "M06",
+   "what": "accel no longer exempt",
+   "result": "KILLED",
+   "red": [
+    "C3 s0: the crawl set is the banked DAG - P10 separated-worse rows minus accel / DK-VIOL (MEASURED, banked READ_A.json)",
+    "C3 s1: the crawl set is the banked DAG - P10 separated-worse rows minus accel / DK-VIOL (MEASURED, banked READ_A.json)",
+    "N3 accel and DK-VIOL are exempt, held, and reported"
+   ]
+  },
+  {
+   "id": "M07",
+   "what": "DK-HW exempt",
+   "result": "KILLED",
+   "red": [
+    "N4 DK-HW is NOT exempt"
+   ]
+  },
+  {
+   "id": "M08",
+   "what": "R-CRAWL demands separated-better",
+   "result": "KILLED",
+   "red": [
+    "O16 (c0,c1,m0,m1)=(1, 1, 1, 1) -> ['FIXED']",
+    "O1 FIXED: outcome word, condition and committed next carried verbatim",
+    "O3 R-T0 exactly 0.0604 holds (inclusive)"
+   ]
+  },
+  {
+   "id": "M09",
+   "what": "R-MOVE accepts not-worse",
+   "result": "KILLED",
+   "red": [
+    "O16 (c0,c1,m0,m1)=(0, 0, 0, 0) -> ['NO EFFECT']",
+    "O16 (c0,c1,m0,m1)=(0, 1, 0, 0) -> ['NO EFFECT']",
+    "O16 (c0,c1,m0,m1)=(1, 0, 0, 0) -> ['NO EFFECT']"
+   ]
+  },
+  {
+   "id": "M10",
+   "what": "R-TLAT direction flipped",
+   "result": "KILLED",
+   "red": [
+    "O16 (c0,c1,m0,m1)=(0, 0, 0, 0) -> ['NO EFFECT']",
+    "O16 (c0,c1,m0,m1)=(0, 1, 0, 0) -> ['NO EFFECT']",
+    "O16 (c0,c1,m0,m1)=(1, 0, 0, 0) -> ['NO EFFECT']"
+   ]
+  },
+  {
+   "id": "M11",
+   "what": "R-TLON guard dropped",
+   "result": "KILLED",
+   "red": [
+    "O2 guard R-TLON fails at s0 (base (1, 1, 1, 1)) -> HARMS and only HARMS",
+    "O2 guard R-TLON fails at s0 (base (0, 0, 0, 0)) -> HARMS and only HARMS",
+    "O2 guard R-TLON fails at s1 (base (1, 1, 1, 1)) -> HARMS and only HARMS"
+   ]
+  },
+  {
+   "id": "M12",
+   "what": "R-ADE guard reads better",
+   "result": "KILLED",
+   "red": [
+    "O16 (c0,c1,m0,m1)=(0, 0, 0, 0) -> ['NO EFFECT']",
+    "O16 (c0,c1,m0,m1)=(0, 1, 0, 0) -> ['NO EFFECT']",
+    "O16 (c0,c1,m0,m1)=(1, 0, 0, 0) -> ['NO EFFECT']"
+   ]
+  },
+  {
+   "id": "M13",
+   "what": "R-T0 bar strict",
+   "result": "KILLED",
+   "red": [
+    "O3 R-T0 exactly 0.0604 holds (inclusive)",
+    "O4 a guard that reads worse but is NOT separated holds"
+   ]
+  },
+  {
+   "id": "M14",
+   "what": "newly-worse counts rows that were already worse",
+   "result": "KILLED",
+   "red": [
+    "O16 (c0,c1,m0,m1)=(0, 0, 0, 0) -> ['NO EFFECT']",
+    "O16 (c0,c1,m0,m1)=(0, 1, 0, 0) -> ['NO EFFECT']",
+    "O16 (c0,c1,m0,m1)=(1, 0, 0, 0) -> ['NO EFFECT']"
+   ]
+  },
+  {
+   "id": "M15",
+   "what": "newly-worse skips STRATEGIC",
+   "result": "KILLED",
+   "red": [
+    "N5 a STRATEGIC row newly worse counts"
+   ]
+  },
+  {
+   "id": "M16",
+   "what": "no exemption",
+   "result": "KILLED",
+   "red": [
+    "N3 accel and DK-VIOL are exempt, held, and reported"
+   ]
+  },
+  {
+   "id": "M17",
+   "what": "FIXED needs one seed",
+   "result": "KILLED",
+   "red": [
+    "O16 (c0,c1,m0,m1)=(1, 0, 1, 1) -> ['PARTIAL']",
+    "O16 (c0,c1,m0,m1)=(0, 1, 1, 1) -> ['PARTIAL']",
+    "O16 (c0,c1,m0,m1)=(1, 0, 1, 0) -> ['PARTIAL']"
+   ]
+  },
+  {
+   "id": "M18",
+   "what": "PARTIAL(a) with one seed's move",
+   "result": "KILLED",
+   "red": [
+    "O11 (1, 0, 1, 0): PARTIAL clause a (R-MOVE at both seeds, R-CRAWL fails somewhere) == False, clause b (R-MOVE at exactly one seed) == True",
+    "O11 (0, 0, 1, 0): PARTIAL clause a (R-MOVE at both seeds, R-CRAWL fails somewhere) == False, clause b (R-MOVE at exactly one seed) == True",
+    "O11 (0, 1, 1, 0): PARTIAL clause a (R-MOVE at both seeds, R-CRAWL fails somewhere) == False, clause b (R-MOVE at exactly one seed) == True"
+   ]
+  },
+  {
+   "id": "M19",
+   "what": "PARTIAL(b) R-MOVE at least one seed (== 1 -> >= 1)",
+   "result": "KILLED",
+   "red": [
+    "O16 (c0,c1,m0,m1)=(1, 1, 1, 1) -> ['FIXED']",
+    "O11 (1, 1, 1, 1): PARTIAL clause a (R-MOVE at both seeds, R-CRAWL fails somewhere) == False, clause b (R-MOVE at exactly one seed) == False",
+    "O11 (1, 0, 1, 1): PARTIAL clause a (R-MOVE at both seeds, R-CRAWL fails somewhere) == True, clause b (R-MOVE at exactly one seed) == False"
+   ]
+  },
+  {
+   "id": "M20",
+   "what": "NO EFFECT on one seed's failure",
+   "result": "KILLED",
+   "red": [
+    "O16 (c0,c1,m0,m1)=(1, 0, 1, 0) -> ['PARTIAL']",
+    "O16 (c0,c1,m0,m1)=(1, 1, 1, 0) -> ['PARTIAL']",
+    "O16 (c0,c1,m0,m1)=(0, 0, 1, 0) -> ['PARTIAL']"
+   ]
+  },
+  {
+   "id": "M21",
+   "what": "guards ignored",
+   "result": "KILLED",
+   "red": [
+    "O2 guard R-TLAT fails at s0 (base (1, 1, 1, 1)) -> HARMS and only HARMS",
+    "O2 guard R-TLAT fails at s0 (base (0, 0, 0, 0)) -> HARMS and only HARMS",
+    "O2 guard R-TLON fails at s0 (base (1, 1, 1, 1)) -> HARMS and only HARMS"
+   ]
+  },
+  {
+   "id": "M22",
+   "what": "a table gap silently becomes PARTIAL",
+   "result": "KILLED",
+   "red": [
+    "U1 a cell whose row is missing from the table comes back UNPLACED: no outcome word, no matching row, no condition, no committed next",
+    "U2 UNPLACED exits with rc 3",
+    "U3 UNPLACED adopts nothing and carries no qualifier"
+   ]
+  },
+  {
+   "id": "M23",
+   "what": "seed 1's guards ignored",
+   "result": "KILLED",
+   "red": [
+    "O2 guard R-TLAT fails at s1 (base (1, 1, 1, 1)) -> HARMS and only HARMS",
+    "O2 guard R-TLAT fails at s1 (base (0, 0, 0, 0)) -> HARMS and only HARMS",
+    "O2 guard R-TLON fails at s1 (base (1, 1, 1, 1)) -> HARMS and only HARMS"
+   ]
+  },
+  {
+   "id": "M24",
+   "what": "RF ignored in the bars",
+   "result": "KILLED",
+   "red": [
+    "B1 bars == the PREREG's printed bars",
+    "B3 bars literal 0.0248 / 0.0248 / 0.0502 / 0.0278"
+   ]
+  },
+  {
+   "id": "M25",
+   "what": "bar strict",
+   "result": "KILLED",
+   "red": [
+    "B4 clears is inclusive at the bar"
+   ]
+  },
+  {
+   "id": "M26",
+   "what": "sep_worse flipped",
+   "result": "KILLED",
+   "red": [
+    "O16 (c0,c1,m0,m1)=(0, 0, 0, 0) -> ['NO EFFECT']",
+    "O16 (c0,c1,m0,m1)=(0, 1, 0, 0) -> ['NO EFFECT']",
+    "O16 (c0,c1,m0,m1)=(1, 0, 0, 0) -> ['NO EFFECT']"
+   ]
+  },
+  {
+   "id": "M27",
+   "what": "BLOCKED reads REFUSED",
+   "result": "KILLED",
+   "red": [
+    "O5 BLOCKED block"
+   ]
+  },
+  {
+   "id": "M28",
+   "what": "coverage minimum lowered",
+   "result": "KILLED",
+   "red": [
+    "O5 BLOCKED block",
+    "L7 coverage minimum"
+   ]
+  },
+  {
+   "id": "M29",
+   "what": "init tail is the iteration-1 one",
+   "result": "KILLED",
+   "red": [
+    "L1 init DAG_s0 accepted; the reader's own clause sees the M2b-shaped tail; the record is not mutated",
+    "L2 an M2b init (iteration 1) is refused and the reader is not asked",
+    "L3 the other seed's DAG is refused"
+   ]
+  },
+  {
+   "id": "M30",
+   "what": "init tail check removed",
+   "result": "KILLED",
+   "red": [
+    "L2 an M2b init (iteration 1) is refused and the reader is not asked",
+    "L3 the other seed's DAG is refused",
+    "L4 no --init-ckpt is refused"
+   ]
+  },
+  {
+   "id": "M31",
+   "what": "ORC0 slot may be any directory",
+   "result": "KILLED",
+   "red": [
+    "L6 an ORC0 slot that is another directory is refused"
+   ]
+  },
+  {
+   "id": "M32",
+   "what": "R-MOVE reads DAG2 - P10",
+   "result": "KILLED",
+   "red": [
+    "O16 (c0,c1,m0,m1)=(1, 1, 1, 1) -> ['FIXED']",
+    "O16 (c0,c1,m0,m1)=(1, 0, 1, 1) -> ['PARTIAL']",
+    "O16 (c0,c1,m0,m1)=(0, 1, 1, 1) -> ['PARTIAL']"
+   ]
+  },
+  {
+   "id": "M33",
+   "what": "newly-worse baseline is DAG2-0",
+   "result": "KILLED",
+   "red": [
+    "O16 (c0,c1,m0,m1)=(0, 0, 0, 0) -> ['NO EFFECT']",
+    "O16 (c0,c1,m0,m1)=(0, 1, 0, 0) -> ['NO EFFECT']",
+    "O16 (c0,c1,m0,m1)=(1, 0, 0, 0) -> ['NO EFFECT']"
+   ]
+  },
+  {
+   "id": "M34",
+   "what": "PREREG pin changed",
+   "result": "KILLED",
+   "red": [
+    "T1 the pinned PREREG_V8F_DAGGER2.md (1446333d blob) holds exactly the six amended outcome-table rows the reader codes",
+    "T3 pinned PREREG sha256 (the 1446333d blob)"
+   ]
+  },
+  {
+   "id": "M35",
+   "what": "FIXED's committed next edited",
+   "result": "KILLED",
+   "red": [
+    "T1 the pinned PREREG_V8F_DAGGER2.md (1446333d blob) holds exactly the six amended outcome-table rows the reader codes",
+    "T4 table_problems on the pinned amended text: none"
+   ]
+  },
+  {
+   "id": "M36",
+   "what": "newly-worse clause not a guard",
+   "result": "KILLED",
+   "red": [
+    "O2 guard NEWLY-WORSE fails at s0 (base (1, 1, 1, 1)) -> HARMS and only HARMS",
+    "O2 guard NEWLY-WORSE fails at s0 (base (0, 0, 0, 0)) -> HARMS and only HARMS",
+    "O2 guard NEWLY-WORSE fails at s1 (base (1, 1, 1, 1)) -> HARMS and only HARMS"
+   ]
+  },
+  {
+   "id": "M37",
+   "what": "R-CRAWL reads DAG - P10",
+   "result": "KILLED",
+   "red": [
+    "O16 (c0,c1,m0,m1)=(1, 1, 1, 1) -> ['FIXED']",
+    "O1 FIXED: outcome word, condition and committed next carried verbatim",
+    "O3 R-T0 exactly 0.0604 holds (inclusive)"
+   ]
+  },
+  {
+   "id": "M38",
+   "what": "PARTIAL(b) as landed: R-CRAWL and R-MOVE at one seed only (4 cells unplaced again)",
+   "result": "KILLED",
+   "red": [
+    "O16 (c0,c1,m0,m1)=(0, 0, 1, 0) -> ['PARTIAL']",
+    "O16 (c0,c1,m0,m1)=(0, 1, 1, 0) -> ['PARTIAL']",
+    "O16 (c0,c1,m0,m1)=(0, 0, 0, 1) -> ['PARTIAL']"
+   ]
+  },
+  {
+   "id": "M39",
+   "what": "adopts_DAG2 ignores the both-seeds condition (a one-seed PARTIAL adopts)",
+   "result": "KILLED",
+   "red": [
+    "O9 (c0,c1,m0,m1)=(1, 0, 1, 0): (PARTIAL_one_seed, adopts_DAG2, outcome_qualifier) == (True, False, 'one seed')",
+    "O9 (c0,c1,m0,m1)=(1, 1, 1, 0): (PARTIAL_one_seed, adopts_DAG2, outcome_qualifier) == (True, False, 'one seed')",
+    "O9 (c0,c1,m0,m1)=(0, 0, 1, 0): (PARTIAL_one_seed, adopts_DAG2, outcome_qualifier) == (True, False, 'one seed')"
+   ]
+  },
+  {
+   "id": "M40",
+   "what": "FIXED does not adopt",
+   "result": "KILLED",
+   "red": [
+    "O9 (c0,c1,m0,m1)=(1, 1, 1, 1): (PARTIAL_one_seed, adopts_DAG2, outcome_qualifier) == (False, True, None)",
+    "W1 write_out (1, 1, 1, 1): prints and writes outcome_qualifier=None, adopts_DAG2=True, rc 0"
+   ]
+  },
+  {
+   "id": "M41",
+   "what": "adopts_DAG2 on R-MOVE at ONE seed (all -> any)",
+   "result": "KILLED",
+   "red": [
+    "O9 (c0,c1,m0,m1)=(1, 0, 1, 0): (PARTIAL_one_seed, adopts_DAG2, outcome_qualifier) == (True, False, 'one seed')",
+    "O9 (c0,c1,m0,m1)=(1, 1, 1, 0): (PARTIAL_one_seed, adopts_DAG2, outcome_qualifier) == (True, False, 'one seed')",
+    "O9 (c0,c1,m0,m1)=(0, 0, 1, 0): (PARTIAL_one_seed, adopts_DAG2, outcome_qualifier) == (True, False, 'one seed')"
+   ]
+  },
+  {
+   "id": "M42",
+   "what": "PARTIAL_one_seed without the PARTIAL condition",
+   "result": "KILLED",
+   "red": [
+    "O10 HARMS on base (0, 0, 1, 0): DAG stays the base (adopts_DAG2 False), no PARTIAL_one_seed, no qualifier"
+   ]
+  },
+  {
+   "id": "M43",
+   "what": "PARTIAL_one_seed for a both-seeds PARTIAL (== 1 -> >= 1)",
+   "result": "KILLED",
+   "red": [
+    "O9 (c0,c1,m0,m1)=(1, 0, 1, 1): (PARTIAL_one_seed, adopts_DAG2, outcome_qualifier) == (False, True, None)",
+    "O9 (c0,c1,m0,m1)=(0, 1, 1, 1): (PARTIAL_one_seed, adopts_DAG2, outcome_qualifier) == (False, True, None)",
+    "O9 (c0,c1,m0,m1)=(0, 0, 1, 1): (PARTIAL_one_seed, adopts_DAG2, outcome_qualifier) == (False, True, None)"
+   ]
+  },
+  {
+   "id": "M44",
+   "what": "outcome_qualifier on every PARTIAL",
+   "result": "KILLED",
+   "red": [
+    "O9 (c0,c1,m0,m1)=(1, 0, 1, 1): (PARTIAL_one_seed, adopts_DAG2, outcome_qualifier) == (False, True, None)",
+    "O9 (c0,c1,m0,m1)=(0, 1, 1, 1): (PARTIAL_one_seed, adopts_DAG2, outcome_qualifier) == (False, True, None)",
+    "O9 (c0,c1,m0,m1)=(0, 0, 1, 1): (PARTIAL_one_seed, adopts_DAG2, outcome_qualifier) == (False, True, None)"
+   ]
+  },
+  {
+   "id": "M45",
+   "what": "outcome_qualifier never set",
+   "result": "KILLED",
+   "red": [
+    "O9 (c0,c1,m0,m1)=(1, 0, 1, 0): (PARTIAL_one_seed, adopts_DAG2, outcome_qualifier) == (True, False, 'one seed')",
+    "O9 (c0,c1,m0,m1)=(1, 1, 1, 0): (PARTIAL_one_seed, adopts_DAG2, outcome_qualifier) == (True, False, 'one seed')",
+    "O9 (c0,c1,m0,m1)=(0, 0, 1, 0): (PARTIAL_one_seed, adopts_DAG2, outcome_qualifier) == (True, False, 'one seed')"
+   ]
+  },
+  {
+   "id": "M46",
+   "what": "UNPLACED exits 0 instead of 3",
+   "result": "KILLED",
+   "red": [
+    "U2 UNPLACED exits with rc 3"
+   ]
+  },
+  {
+   "id": "M47",
+   "what": "PARTIAL condition as landed",
+   "result": "KILLED",
+   "red": [
+    "T1 the pinned PREREG_V8F_DAGGER2.md (1446333d blob) holds exactly the six amended outcome-table rows the reader codes",
+    "T4 table_problems on the pinned amended text: none",
+    "T6 a PREREG whose PARTIAL condition is the as-landed one is refused"
+   ]
+  },
+  {
+   "id": "M48",
+   "what": "PARTIAL committed next as landed (on DAG2 states)",
+   "result": "KILLED",
+   "red": [
+    "T1 the pinned PREREG_V8F_DAGGER2.md (1446333d blob) holds exactly the six amended outcome-table rows the reader codes",
+    "T4 table_problems on the pinned amended text: none",
+    "T7 a PREREG whose PARTIAL committed next is the as-landed one is refused"
+   ]
+  },
+  {
+   "id": "M49",
+   "what": "the table is read from the FIRST (as-landed) table in the file",
+   "result": "KILLED",
+   "red": [
+    "T1 the pinned PREREG_V8F_DAGGER2.md (1446333d blob) holds exactly the six amended outcome-table rows the reader codes",
+    "T4 table_problems on the pinned amended text: none"
+   ]
+  },
+  {
+   "id": "M50",
+   "what": "a PREREG without the amendment heading is not refused",
+   "result": "KILLED",
+   "red": [
+    "T5",
+    "T5 the AS-LANDED text (everything before Amendment 1) is not the amended table"
+   ]
+  },
+  {
+   "id": "P01",
+   "what": "init tail reverted to M2b",
+   "result": "KILLED",
+   "red": [
+    "P1 a COMPLETE dag2 run",
+    "P2 a COMPLETE dag20 run",
+    "P dag2 whose init is M2b (an iteration-1 run) -> WRONG"
+   ]
+  },
+  {
+   "id": "P02",
+   "what": "iteration-1 bank accepted",
+   "result": "KILLED",
+   "red": [
+    "P dag2 fed the ITERATION-1 bank -> WRONG"
+   ]
+  },
+  {
+   "id": "P03",
+   "what": "dag20 p-check removed",
+   "result": "KILLED",
+   "red": [
+    "P dag20 naming --dagger-p 0.1 with a CONSISTENT summary (only the arm clause can catch it) -> WRONG"
+   ]
+  },
+  {
+   "id": "P04",
+   "what": "pin read from the dag20 gate",
+   "result": "KILLED",
+   "red": [
+    "P REAL iteration-2 bank s0 -> COMPLETE and == the gate's declared sha (MEASURED)",
+    "P REAL iteration-2 bank s1 -> COMPLETE and == the gate's declared sha (MEASURED)",
+    "P the pin read is the DAG2 gate's"
+   ]
+  },
+  {
+   "id": "P05",
+   "what": "arm names are DAG's",
+   "result": "KILLED",
+   "red": [
+    "P1 a COMPLETE dag2 run",
+    "P2 a COMPLETE dag20 run",
+    "P dag2 whose init is M2b (an iteration-1 run) -> WRONG"
+   ]
+  },
+  {
+   "id": "P06",
+   "what": "--dagger-seed unchecked",
+   "result": "KILLED",
+   "red": [
+    "P dag2 with --dagger-seed of the other seed -> WRONG"
+   ]
+  },
+  {
+   "id": "C01",
+   "what": "run order swapped",
+   "result": "KILLED",
+   "red": [
+    "scenario order red"
+   ]
+  },
+  {
+   "id": "C02",
+   "what": "OUT is DAG's output directory",
+   "result": "KILLED",
+   "red": [
+    "scenario out_not_dag red",
+    "scenario paths red"
+   ]
+  },
+  {
+   "id": "C03",
+   "what": "ART is DAG's pull directory",
+   "result": "KILLED",
+   "red": [
+    "static defaults red"
+   ]
+  },
+  {
+   "id": "C04",
+   "what": "C: gate removed",
+   "result": "KILLED",
+   "red": [
+    "scenario c1500 red"
+   ]
+  },
+  {
+   "id": "C05",
+   "what": "E: gate removed",
+   "result": "KILLED",
+   "red": [
+    "scenario e1499 red"
+   ]
+  },
+  {
+   "id": "C06",
+   "what": "rollout tags are DAG's",
+   "result": "KILLED",
+   "red": [
+    "scenario order red"
+   ]
+  },
+  {
+   "id": "C07",
+   "what": "another tool tree",
+   "result": "KILLED",
+   "red": [
+    "scenario order red"
+   ]
+  },
+  {
+   "id": "C08",
+   "what": "PREREG pin check removed",
+   "result": "KILLED",
+   "red": [
+    "scenario prereg_tamper red"
+   ]
+  },
+  {
+   "id": "C09",
+   "what": "the removed switch accepted",
+   "result": "KILLED",
+   "red": [
+    "scenario b2fresh red"
+   ]
+  },
+  {
+   "id": "C10",
+   "what": "C: gate lowered",
+   "result": "KILLED",
+   "red": [
+    "scenario c1500 red"
+   ]
+  },
+  {
+   "id": "C11",
+   "what": "PREREG default is the as-landed (1d4f4fbb) dagland copy",
+   "result": "KILLED",
+   "red": [
+    "scenario order red",
+    "static defaults red"
+   ]
+  },
+  {
+   "id": "C12",
+   "what": "PREREG pin is the as-landed sha",
+   "result": "KILLED",
+   "red": [
+    "scenario order red",
+    "static defaults red"
+   ]
+  }
+ ],
+ "control_green": true,
+ "real_pulls_run": false,
+ "not_run_when_blind": [
+  "P REAL pulled M2b_s0_dag2",
+  "P REAL pulled M2b_s0_dag20",
+  "CH real"
+ ]
+}

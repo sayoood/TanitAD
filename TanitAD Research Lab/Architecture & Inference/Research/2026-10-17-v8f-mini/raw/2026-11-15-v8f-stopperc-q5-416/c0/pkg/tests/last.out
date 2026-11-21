@@ -1,0 +1,48 @@
+== T6 test hook without Q5C0_DRY: refused rc 8
+PASS T6 rc
+PASS T6 final line
+== T2 predecessor STOP: report and exit rc 12
+PASS T2 rc
+PASS T2 final
+PASS T2 nothing launched
+== T2b no DONE yet: waits, times out rc 12, box untouched
+PASS T2b rc
+PASS T2b no ssh
+== T3 dev busy marker: waits, rc 12, marker not taken over
+PASS T3 rc
+PASS T3 marker intact
+== T3b box 2 own busy file / GPU busy / python running: rc 12
+PASS T3b busyfile rc
+PASS T3b no launch
+PASS T3c gpu rc
+PASS T3c no launch
+PASS T3d python rc
+PASS T3d no launch
+== T5 dry-run sample sha wrong: rc 4
+PASS T5 rc
+PASS T5 busy released
+== T7 a shard job fails: rc 5, busy released, resume finishes without a second launch of finished shards
+PASS T7 rc
+PASS T7 busy released
+PASS T7 resume reaches C0 check (fails: no banked refs, fail closed) rc
+PASS T7 shards launched on resume: S1 2,3 + S2 0..3 = 6
+== T1 full chain: C0 fails closed without refs (rc 10), then refs from the same run, resume -> DONE
+PASS T1 no refs rc
+FAIL T1 final FAIL: got 'ZZ Q5C0 FAIL ZZ c0check c0-che' want 'ZZ Q5C0 FAIL ZZ c0check c0-c'
+PASS T1 result written FAIL
+PASS T1 pulls kept for diagnosis
+PASS T1 box-2 shard copies deleted
+PASS T1 resume rc
+PASS T1 final DONE
+PASS T1 C0 overall
+PASS T1 pulls deleted after PASS
+PASS T1 assembled y == sample y (S2)
+PASS T1 busy marker gone
+PASS T1 box-2 files only under q5c0
+== T8 regression arm: one flipped byte in a pulled S1 shard array makes c0check FAIL
+PASS T8 mutated rc 3
+PASS T8 names shard 1
+== T9 python helpers: ref_meta parses the four real S0-P shard logs; mkjob has no BS mangling
+PASS T9 ref_meta
+PASS T9 job file clean
+RESULT ok=36 failed=1

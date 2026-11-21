@@ -1,0 +1,45 @@
+  tanitad imported from C:\Users\Admin\tanitad-wt\stack\tanitad\__init__.py
+
+  MM-E6 — DRIFT DECOMPOSITION: environment vs self-reference
+  corpus physicalai-val130-heldout · SCORED 14 clips / FIT 10 clips (disjoint) · k=4 · PCA band [0:3) · rank(P)=24 · device cuda
+
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] O6 rank gate CAN rule: --spectrum-accum 43 x 48 rows/call -> ceiling 2063 >= 1024
+[v6] params 19.30 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.97, 'readout': 0.01, 'predictor_op': 7.57, 'layer_tac': 4.88, 'layer_str': 3.56, 'planner': 0.69, 'aux': 1.62, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+[geometry] v6_probe_trunk: NON-DEFAULT - 256x640px, f_ref 305.58, cylindrical, HFOV 120.00deg / VFOV 45.46deg, tokens 640 (16x40 @ patch 16), state_dim 2048, cache fragment {'geom': '256x640f305.5775cyl'}
+[geometry] WARNING: this frame (120.00deg) EXCEEDS comma2k19's entire field (65.203deg). comma2k19 cannot supply it at any resolution — it must be letterboxed (geometry_mode='rectify', explicit unobserved mask), given its own frame, or dropped from the mix. That is a PI decision, not a default.
+  === postrain30k (step 30000) — SCORED 14 clips, 1344 rows, d_z 2048 ===
+    P: lambda 10 (clip-disjoint inner split, 2/10 clips held) · in-FIT R2 +0.0099
+    P: ⭐ OUT-OF-SAMPLE R2 (scene->z, SCORED) -0.0003
+    P [SCENE-SHUFFLED]: lambda 10 (clip-disjoint inner split, 2/10 clips held) · in-FIT R2 +0.0088
+    P [SCENE-SHUFFLED]: ⭐ OUT-OF-SAMPLE R2 +0.0002 (must be ~0 or negative)
+    P_3f: lambda 10 (clip-disjoint inner split, 2/10 clips held) · in-FIT R2 +0.0098
+    P_3f: ⭐ OUT-OF-SAMPLE R2 (scene->z, SCORED) -0.0001
+    participation: z_full 24.25 · z_env 5.09 · z_res 24.25 · z_env 5.56 · rand24 11.70 · rand_res 24.25 · z_env_3f 5.18 · z_res_3f 24.25
+    P prep 9s
+    ⛔ VECTORISATION GATE: max|rff_fold_multi - rff_fold| = 1.821e-14 PASS
+    column                                    r     shuf   r-shuf       t     d
+    ---------------------------------------------------------------------------
+    z_full (r_full)                     +0.6323  -0.0286  +0.6609   30.03  2048
+    z_env rank24 (r_env)                +0.0138  +0.0150  -0.0011   -0.05  2048
+    z_res (r_res)                       +0.6342  -0.0216  +0.6558   32.87  2048
+    z_env SCENE-SHUFFLED (ctrl)         +0.0158  +0.0179  -0.0021   -0.10  2048
+    rand24 (rank-matched ctrl)          +0.5842  +0.0025  +0.5818   25.90  2048
+    rand_res (ADDED null)               +0.6326  -0.0256  +0.6583   31.96  2048
+    constant (ctrl)                     +0.0000  +0.0000  +0.0000    0.00     1
+    z_env_3f (SECONDARY)                +0.0008  +0.0216  -0.0208   -1.12  2048
+    z_res_3f (SECONDARY)                +0.6349  -0.0224  +0.6573   32.14  2048
+
+    CONTROLS  constant +0.000000 [PASS] · scene-shuffled +0.0158 vs r_env +0.0138 [PASS (collapsed)] · rank-matched +0.5842 vs r_env +0.0138 [PASS (distinct)]
+    P POWER   out-of-sample R2 -0.0003 [⚠️ P IS UNDERPOWERED — reads vacuous] · shuffled-P +0.0002
+    share_self 0.9995 [0.9952, 1.0]  ·  null (rank-matched pair) 0.5397 [0.5281, 0.5516]  ·  diff +0.4598 [0.4467, 0.4704]
+    SECONDARY (3-frame scene) share_self 1.0000 [0.9985, 1.0]
+    arm elapsed 74s
+
+-> C:\Users\Admin\AppData\Local\Temp\claude\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\8e7cfa33-c625-47cf-88aa-711db80ac113\scratchpad\mm_e6_smoke.json
+
+real	1m16.213s
+user	0m0.000s
+sys	0m0.015s
+RC=0

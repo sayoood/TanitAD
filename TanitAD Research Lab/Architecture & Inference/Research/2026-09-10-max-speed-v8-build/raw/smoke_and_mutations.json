@@ -1,0 +1,160 @@
+{
+ "instrument": "smoke_and_mutations.py",
+ "steps": 20,
+ "trainer": "D:\\Projects\\TanitAD\\stack\\scripts\\refc_v3_train.py",
+ "labels": "D:\\Projects\\TanitAD\\TanitAD Research Lab\\Data Engineering\\Implementation\\incoming\\2026-09-10-v8-speed-max-label-release\\raw\\s2_labels_v8.0_train.jsonl.gz",
+ "arms": {
+  "A_on": {
+   "argv": [
+    "--arm",
+    "hier",
+    "--out",
+    "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\\7c618562-39eb-4a61-af81-755048086a13\\scratchpad\\smokework3\\A_on",
+    "--smoke",
+    "--device",
+    "cpu",
+    "--synth-episodes",
+    "4",
+    "--steps",
+    "20",
+    "--log-every",
+    "1",
+    "--v7-labels",
+    "D:\\Projects\\TanitAD\\TanitAD Research Lab\\Data Engineering\\Implementation\\incoming\\2026-09-10-v8-speed-max-label-release\\raw\\s2_labels_v8.0_train.jsonl.gz",
+    "--max-speed-input"
+   ],
+   "checks": {
+    "rc_is_0": true,
+    "config_json_written": true,
+    "metrics_jsonl_written": true,
+    "summary_json_written": true,
+    "census_line_present": true,
+    "windows_fed_GT_0": true,
+    "every_window_fed": true,
+    "clips_with_ceiling_GT_0": true,
+    "loss_rows_present": true,
+    "loss_all_finite": true,
+    "loss_is_NOT_constant": true,
+    "config_max_speed_input_true": true,
+    "config_stamp_present": true,
+    "config_stamp_declares_all_tokens": true,
+    "config_window_ceiling_frac_GT_0": true,
+    "config_provenance_is_ego_future": true
+   },
+   "PASS": true,
+   "census": [
+    "quantized",
+    "4572",
+    "4572",
+    "112",
+    "112",
+    "28"
+   ],
+   "n_loss_rows": 20,
+   "n_distinct_losses": 20,
+   "loss_min": 118.44627,
+   "loss_max": 169.52849,
+   "stamp": "v7.2 g_tac.goals.SPEED_BAND.v_hi_ms (oracle, provenance ego-future: max of the ego's OWN REALISED speed over [t0+2 s, +6 s]; floor from .v_lo_ms; allow_oracle_nav=True). INPUT standing in for a speed-limit service, never a training signal."
+  },
+  "B_off": {
+   "argv": [
+    "--arm",
+    "hier",
+    "--out",
+    "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\\7c618562-39eb-4a61-af81-755048086a13\\scratchpad\\smokework3\\B_off",
+    "--smoke",
+    "--device",
+    "cpu",
+    "--synth-episodes",
+    "4",
+    "--steps",
+    "20",
+    "--log-every",
+    "1",
+    "--v7-labels",
+    "D:\\Projects\\TanitAD\\TanitAD Research Lab\\Data Engineering\\Implementation\\incoming\\2026-09-10-v8-speed-max-label-release\\raw\\s2_labels_v8.0_train.jsonl.gz"
+   ],
+   "checks": {
+    "rc_is_0": true,
+    "config_json_written": true,
+    "config_max_speed_input_false": true,
+    "config_stamp_is_None": true,
+    "config_max_speed_stats_is_None": true,
+    "no_census_line": true,
+    "loss_rows_present": true
+   },
+   "PASS": true
+  },
+  "M1_no_block": {
+   "argv": [
+    "--arm",
+    "hier",
+    "--out",
+    "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\\7c618562-39eb-4a61-af81-755048086a13\\scratchpad\\smokework3\\M1_no_block",
+    "--smoke",
+    "--device",
+    "cpu",
+    "--synth-episodes",
+    "4",
+    "--steps",
+    "20",
+    "--log-every",
+    "1",
+    "--v7-labels",
+    "C:\\Users\\Admin\\AppData\\Local\\Temp\\tmpyjhwrr_r\\s2_labels_NO_BLOCK.jsonl.gz",
+    "--max-speed-input"
+   ],
+   "n_blocks_removed": 4572,
+   "checks": {
+    "rc_is_NONZERO": true,
+    "no_config_json_written": true,
+    "no_summary_json_written": true,
+    "message_says_v8_addition": true,
+    "message_says_NOT_ONE": true
+   },
+   "PASS": true,
+   "tail": [
+    "[v3] \u26d4 anchors: NO --anchors GIVEN \u2014 using the SYNTHETIC `default_anchors` fallback. Its oracle-in-vocabulary ADE was MEASURED at 0.9433 m, worse than a single straight line (0.6780 m) and 2.16x the data-driven vocabulary (0.4369 m). The model's ceiling is below the trivial floor. This is almost certainly NOT what you want.",
+    "[v3] v7.2 labels: 4572 records, joined 4/4 episodes = 100.0 % (release ?)",
+    "[v3] \u26d4 --max-speed-input: NOT ONE of this split's 112 windows receives a `speed_max_input` value. The field is a v8 addition \u2014 the v7.2 release carries it on 0/4,572 records \u2014 so this is almost certainly a v7.2 label blob (md5=cca79f665f8e08900f3214ec5a7502bf). The channel would be a constant invalid pad and the arm would measure it as noise. Refusing rather than feeding nothing."
+   ]
+  },
+  "M2_no_stamp": {
+   "argv": [
+    "--arm",
+    "hier",
+    "--out",
+    "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\\7c618562-39eb-4a61-af81-755048086a13\\scratchpad\\smokework3\\M2_no_stamp",
+    "--smoke",
+    "--device",
+    "cpu",
+    "--synth-episodes",
+    "4",
+    "--steps",
+    "20",
+    "--log-every",
+    "1",
+    "--v7-labels",
+    "D:\\Projects\\TanitAD\\TanitAD Research Lab\\Data Engineering\\Implementation\\incoming\\2026-09-10-v8-speed-max-label-release\\raw\\s2_labels_v8.0_train.jsonl.gz",
+    "--max-speed-input"
+   ],
+   "mutant_trainer": "D:\\Projects\\TanitAD\\stack\\scripts\\_MUTANT_no_stamp_refc_v3_train.py",
+   "checks": {
+    "rc_is_NONZERO": true,
+    "no_config_json_written": true,
+    "no_summary_json_written": true,
+    "message_says_speed_max_derivation": true,
+    "message_says_Refusing_to_start": true
+   },
+   "PASS": true,
+   "tail": [
+    "[v3] agent ground-plane prior                                --agent-w-ground   0        0      0          dflt  no     OFF_BY_DEFAULT  missing=--agents off: no AgentSeamConfig is built, so `refc_agents.agent_losses` is never called                                                              ",
+    "[v3] E15 geometric goal point (GP-2)                         --goal-point-w     0        0      0          dflt  no     OFF_BY_DEFAULT  missing=no --goal-point-inject: the head that predicts the point is never built                                                                               ",
+    "[v3] 0/7 terms build a graph. A term with graph=no contributes EXACTLY zero gradient; 'p.grad is None' is the sound check, never the weight value.",
+    "[v3] \u26d4 --max-speed-input is ON but this run's config.json would carry no `speed_max_derivation`. The channel's value is the ego's OWN FUTURE speed over the horizon being scored; the PI authorised it as a declared oracle INPUT, and the declaration is the condition. Refusing to start rather than banking an arm whose record cannot say what fed it."
+   ],
+   "mutant_removed": true
+  }
+ },
+ "OVERALL_PASS": true
+}

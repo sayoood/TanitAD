@@ -55,7 +55,7 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 
 INCOMING_GLOB = "*/Implementation/incoming/*"
-HUB_DIR = "TanitAD Research Hub"
+HUB_DIR = "TanitAD Research Lab"
 VERDICT_PLACEHOLDER = "integrate / integrate-with-changes / defer / reject"
 VERDICT_UNFILLED = {"", "-", "--", "_pending_", "pending", "tbd", "todo", "none", "n/a"}
 
@@ -72,7 +72,7 @@ class GitError(RuntimeError):
 
 def git(repo: Path, *args: str, check: bool = True) -> str:
     proc = subprocess.run(["git", *args], cwd=str(repo), capture_output=True,
-                          text=True, errors="replace")
+                          text=True, errors="replace", encoding="utf-8")
     if check and proc.returncode != 0:
         raise GitError(f"git {' '.join(args)} -> {proc.returncode}: "
                        f"{proc.stderr.strip()}")

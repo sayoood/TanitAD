@@ -1,0 +1,38 @@
+== variant steer: mode p10, profile v8f_steer, artifact p10_prior.pt sha af5a29ddadb4
+CONTROL                    G-DVB    GREEN regex=None  
+p10_zero_weights           G-DVB    RED   regex=True  --p10-prior: declared 'e2a1ab05f526f79acd0f3bfd0dbfae12ec7567dd15eacc85aebdf12b3650d9b1' but BUILT '587ce5c85ded95d75da3c4b2e167b8e827940f8f199113117fc67a9959347358' (read from
+p10_unfrozen               G-DVB    RED   regex=True  --p10-prior: declared 0 but BUILT 5 (read from core.decoder.p10 Parameter count (FROZEN: buffers only))
+p10_variant_flipped        G-DVB    RED   regex=True  --p10-prior: declared 'steer' but BUILT 'pose' (read from core.decoder.p10.variant (the mode <-> the input channel the P10 was fit on))
+p10_wrong_sha              G-DVB    RED   regex=True  P10Error: P10 file 'C:\\Users\\Admin\\v8fa1\\tree\\stack\\tanitad\\configs\\v8f_p10\\p10_prior.pt' has sha256 af5a29ddadb4c7d98f1db0d8116bddd0634e83a7e687fc601989d3fda984d7b3, 
+p10_missing_file           G-DVB    RED   regex=True  P10Error: P10 file 'C:\\Users\\Admin\\v8fa1\\tree\\stack\\tanitad\\configs\\v8f_p10\\__nope__.pt' does not exist
+wrong_variant_file (not an ARMS entry) G-DVB    RED   regex=None  P10Error: P10 file 'C:\\Users\\Admin\\v8fa1\\tree\\stack\\tanitad\\configs\\v8f_p10\\p10_pose_prior.pt' is the 'pose' variant (meta['units']='pose_kappa'); the call
+CONTROL                    argv     GREEN regex=None  
+p10_wrong_sha              argv     RED   regex=None  --p10-prior-sha256 af5a29ddadb4c7d98f1db0d8116bddd0634e83a7e687fc601989d3fda984d7b3 is REQUIRED for a v8f_steer launch (the banked v8F-mini P10 (raw/p10/p10_prior.pt, 74,475 by
+argv:ha0_ext_pose (alpha-0 prior) argv     RED   regex=None  --residual-prior ['ha0_ext_pose'] is REFUSED for a v8f_steer launch (refused values: ['off', 'ha0_ext', 'ha0_ext_pose', 'cv_yawrate', 'p10_pose']; PLAN_V8F section 6: th
+argv:ha0_ext (the steer echo) argv     RED   regex=None  --residual-prior ['ha0_ext'] is REFUSED for a v8f_steer launch (refused values: ['off', 'ha0_ext', 'ha0_ext_pose', 'cv_yawrate', 'p10_pose']; PLAN_V8F section 6: this arm's 
+argv:p10_pose (the other P10 variant) argv     RED   regex=None  --residual-prior ['p10_pose'] is REFUSED for a v8f_steer launch (refused values: ['off', 'ha0_ext', 'ha0_ext_pose', 'cv_yawrate', 'p10_pose']; PLAN_V8F section 6: th
+argv:no --p10-prior        argv     RED   regex=None  profile v8f_steer requires --p10-prior in the launch argv (PLAN_V8F section 6 (alpha-1): the frozen learned kinematic floor P10 is the residual prior)
+CONTROL                    G-LIVE   GREEN regex=None  
+p10_fallback_ha0_ext       G-LIVE   RED   regex=True  G-LIVE P10: the FrozenP10 module was CALLED 0 times over 1 training forwards -- the prior the loss composed on did not come from P10 (a fallback to another prior)
+p10_clock_shift            G-LIVE   RED   regex=None  G-LIVE P10: the emitted prior's accel channel differs from the INDEPENDENT P10 recompute by 3.38 (> 0.0001) -- the model's prior is not the declared P10 evaluated on this windo
+p10_unfrozen               G-LIVE   RED   regex=True  G-LIVE P10: the P10 module has 5 Parameters -- it must be buffers only (UNFROZEN: it would train)
+p10_zero_weights           G-LIVE   RED   regex=None  G-LIVE P10: the emitted prior's accel channel differs from the INDEPENDENT P10 recompute by 7.07 (> 0.0001) -- the model's prior is not the declared P10 evaluated on this windo
+CONTROL                    G-CKPT   GREEN regex=None  
+p10_ckpt_stamp_dropped     G-CKPT   RED   regex=True  G-CKPT P10: ckpt.pt carries NO `p10_prior` identity -- a resume could not tell which P10 trained
+CONTROL                    G-EVAL   GREEN regex=None  
+p10_loader_other_p10       G-EVAL   RED   regex=True  G-EVAL P10: the loader's P10 weights (d79e66fce59b71cb) are not the trainer's (e2a1ab05f526f79a)
+p10_variant_flipped        G-EVAL   RED   regex=None  G-EVAL P10: the loader built the 'pose' P10 variant, the trainer the 'steer' one
+CONTROL                    G-CLOCK  GREEN regex=None  
+p10_clock_shift            G-CLOCK  RED   regex=True  G-CLOCK P10: the in-decoder P10 (kin3_from_window -> FrozenP10) differs from the banked floors_kin / v8F-mini predictions by up to 16.9 m (> 0.0001) on 557 of 565 windows -- a 
+{
+ "variant": "steer",
+ "profile": "v8f_steer",
+ "mode": "p10",
+ "artifact_sha256": "af5a29ddadb4c7d98f1db0d8116bddd0634e83a7e687fc601989d3fda984d7b3",
+ "n_controls": 6,
+ "controls_all_green": true,
+ "n_arm_rows": 19,
+ "arm_rows_red": 19,
+ "arm_rows_escaped": [],
+ "arm_rows_regex_mismatch": []
+}

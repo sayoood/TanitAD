@@ -1,0 +1,14 @@
+C:\Users\Admin\qland\hold_r8batt\stage\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-10-15-refcv8-milestone-battery\raw\turn_lever\turn_head_loss_ref.py:147: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+  check("short chords gated, finite grad", float(lc) == 0.0 and bool(torch.isfinite(cp.grad).all()),
+[PASS] weight literal: w = 1.8974361, expected 1.8974359
+[PASS] weight straight = 0: yaw 0.01 rad/s -> 0
+[PASS] weight crawl = 0: v0 1 m/s -> 0
+[PASS] plan == GT -> exactly 0: L = 0.000e+00, rows = 1
+[PASS] straight plan == straight GT -> 0: L = 0.000e+00
+[PASS] 0.7x under-rotation literal: L = 2.7215486, expected 2.7215495 (literal 2.7215495)
+[PASS] gradient increases rotation of an under-rotated plan: dL/dkappa = -272.1548 (< 0 => descent raises kappa toward GT)
+[PASS] zero-weight window -> 0: L = 0.000e+00, rows = 0
+[PASS] short chords gated, finite grad: L = 0.000e+00, grad finite = True
+[PASS] mutation (sign flip) is detected by the plan==GT literal: mutated L(plan==GT) = 15.2789 (> 0 => the literal-0 check would be RED)
+ALL PASS (C:\Users\Admin\qland\hold_r8batt\stage\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-10-15-refcv8-milestone-battery\raw\turn_lever\turn_head_loss_ref.py)

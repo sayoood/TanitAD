@@ -29,7 +29,7 @@ import registry_paths as rp  # noqa: E402
 @pytest.fixture
 def tree(tmp_path):
     """A miniature repo with the shapes the registry actually cites."""
-    hub = tmp_path / "TanitAD Research Hub"
+    hub = tmp_path / "TanitAD Research Lab"
     (hub / "Arch" / "Implementation" / "incoming" /
      "2026-07-22-own-dynamics-encoder").mkdir(parents=True)
     (hub / "Arch" / "Implementation" / "incoming" /

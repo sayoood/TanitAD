@@ -1,0 +1,1307 @@
+.FFFFFFFFFFFFFFFFFFFFFFFFsFFFFFFFFFFFFF................................. [ 38%]
+...............................................s........................ [ 76%]
+...............................FFFF......EEE                             [100%]
+=================================== ERRORS ====================================
+_ ERROR at setup of test_mixos_argv_with_seed_1_passes_the_trainers_gate_on_the_new_tip_without_naming_o_interface _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur'), _trace=<pluggy._tracing.TagTra...E188A0>, _basetemp=WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def trainer_runs(tmp_path_factory):
+        import torch  # noqa: F401
+        sys.path.insert(0, str(REPO / "stack" / "scripts"))
+>       TR = _load("v8f_mini_train_for_kindx", REPO / "stack" / "scripts" / "v8f_mini_train.py")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kindx_s1.py:1259: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_kindx_s1.py:59: in _load
+    spec.loader.exec_module(m)
+<frozen importlib._bootstrap_external>:1026: in exec_module
+    ???
+<frozen importlib._bootstrap>:488: in _call_with_frames_removed
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    #!/usr/bin/env python3
+    """v8F-mini training (track M): S -> T -> O on the cached frozen DINOv3-L pooled features. CPU-testable, 8 GB GPU-sized.
+    
+    Seeded, resumable, writes ``summary.json {"done": true}`` ONLY at the very end (a supervisor that restarts a run whose
+    done-marker is missing will resurrect it; one that finds the marker leaves it alone).
+    
+    LAUNCH-GATE DISCIPLINE (the project rule of 2026-09-26): every argparse flag has an entry in :data:`FLAG_CHECKS`; a flag
+    without one makes ``self_check`` REFUSE the launch (and ``tests/test_v8f_mini.py`` fail). ``declared_vs_built``
+    compares what argv DECLARES against what the BUILT model/optimiser/data actually are; ``live_check`` runs three
+    optimiser steps on a real batch and requires every declared loss term finite and every trainable parameter group to
+    receive a non-zero gradient, against a control (the frozen P10 prior) that must read EXACTLY 0.0.
+    
+    Arms (PREREG_V8F_MINI.md): M1, M1-navonly, M1-nocons, M2a, M2b are trained arms. ``M1-navshuf`` is an EVALUATION control
+    (nav taken from another episode): it trains exactly M1 and is accepted here as an alias so the supervisor can name it.
+    H-DATA-SCALE-1: ``--data-frac {0.25,0.5,1.0}`` and ``--steps-mult {1,2,4}``; S = one epoch of windows at 100 % of the
+    TRAIN clips at the chosen batch size, the optimiser-step budget is ``S * steps-mult`` regardless of the data fraction.
+    
+    PREREG_V8F_LORA: ``--encoder lora`` runs the frame encoder (DINOv3 ViT-L/16, frozen, + LoRA r/alpha on q and v of every block) ON THE FLY on the frames
+    behind the cache (``--frames-root``: ``<clip>.v2ep.pt``) and feeds the heads exactly the tensor the cache would have held (``tanitad.models.v8f_lora_encoder``).
+    ``--encoder cache`` (the default) is every earlier arm, bit for bit: none of the lora code runs, and nothing it imports is imported. ``--accum k`` splits the
+    ENCODER's work of one effective batch into micro-batches of ``batch / k`` windows; the heads' loss is still evaluated once on the full batch (the gradient-cache
+    scheme of ``cached_grad_step``), because plain accumulation is not exact for this model (masked-mean normalisers, SIGReg).
+    """
+    from __future__ import annotations
+    
+    import argparse
+    import copy
+    import hashlib
+    import json
+    import math
+    import os
+    import sys
+    import threading
+    import queue
+    import time
+    
+    import numpy as np
+    import torch
+    
+    REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    for p in (os.path.join(REPO, "stack"), os.path.join(REPO, "taniteval")):
+        if p not in sys.path:
+            sys.path.insert(0, p)
+    
+>   from tanitad.data import v8f_dagger as DG  # noqa: E402      PREREG_V8F_DAGGER: the own-state bank + the swap (the DATA library; `--dagger-p 0` = no bank is read and no row is swapped)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ImportError: cannot import name 'v8f_dagger' from 'tanitad.data' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\data\__init__.py)
+
+stack\scripts\v8f_mini_train.py:45: ImportError
+_ ERROR at setup of test_seed_1_builds_the_same_model_and_data_as_seed_0_apart_from_the_seed _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur'), _trace=<pluggy._tracing.TagTra...E188A0>, _basetemp=WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def trainer_runs(tmp_path_factory):
+        import torch  # noqa: F401
+        sys.path.insert(0, str(REPO / "stack" / "scripts"))
+>       TR = _load("v8f_mini_train_for_kindx", REPO / "stack" / "scripts" / "v8f_mini_train.py")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kindx_s1.py:1259: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_kindx_s1.py:59: in _load
+    spec.loader.exec_module(m)
+<frozen importlib._bootstrap_external>:1026: in exec_module
+    ???
+<frozen importlib._bootstrap>:488: in _call_with_frames_removed
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    #!/usr/bin/env python3
+    """v8F-mini training (track M): S -> T -> O on the cached frozen DINOv3-L pooled features. CPU-testable, 8 GB GPU-sized.
+    
+    Seeded, resumable, writes ``summary.json {"done": true}`` ONLY at the very end (a supervisor that restarts a run whose
+    done-marker is missing will resurrect it; one that finds the marker leaves it alone).
+    
+    LAUNCH-GATE DISCIPLINE (the project rule of 2026-09-26): every argparse flag has an entry in :data:`FLAG_CHECKS`; a flag
+    without one makes ``self_check`` REFUSE the launch (and ``tests/test_v8f_mini.py`` fail). ``declared_vs_built``
+    compares what argv DECLARES against what the BUILT model/optimiser/data actually are; ``live_check`` runs three
+    optimiser steps on a real batch and requires every declared loss term finite and every trainable parameter group to
+    receive a non-zero gradient, against a control (the frozen P10 prior) that must read EXACTLY 0.0.
+    
+    Arms (PREREG_V8F_MINI.md): M1, M1-navonly, M1-nocons, M2a, M2b are trained arms. ``M1-navshuf`` is an EVALUATION control
+    (nav taken from another episode): it trains exactly M1 and is accepted here as an alias so the supervisor can name it.
+    H-DATA-SCALE-1: ``--data-frac {0.25,0.5,1.0}`` and ``--steps-mult {1,2,4}``; S = one epoch of windows at 100 % of the
+    TRAIN clips at the chosen batch size, the optimiser-step budget is ``S * steps-mult`` regardless of the data fraction.
+    
+    PREREG_V8F_LORA: ``--encoder lora`` runs the frame encoder (DINOv3 ViT-L/16, frozen, + LoRA r/alpha on q and v of every block) ON THE FLY on the frames
+    behind the cache (``--frames-root``: ``<clip>.v2ep.pt``) and feeds the heads exactly the tensor the cache would have held (``tanitad.models.v8f_lora_encoder``).
+    ``--encoder cache`` (the default) is every earlier arm, bit for bit: none of the lora code runs, and nothing it imports is imported. ``--accum k`` splits the
+    ENCODER's work of one effective batch into micro-batches of ``batch / k`` windows; the heads' loss is still evaluated once on the full batch (the gradient-cache
+    scheme of ``cached_grad_step``), because plain accumulation is not exact for this model (masked-mean normalisers, SIGReg).
+    """
+    from __future__ import annotations
+    
+    import argparse
+    import copy
+    import hashlib
+    import json
+    import math
+    import os
+    import sys
+    import threading
+    import queue
+    import time
+    
+    import numpy as np
+    import torch
+    
+    REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    for p in (os.path.join(REPO, "stack"), os.path.join(REPO, "taniteval")):
+        if p not in sys.path:
+            sys.path.insert(0, p)
+    
+>   from tanitad.data import v8f_dagger as DG  # noqa: E402      PREREG_V8F_DAGGER: the own-state bank + the swap (the DATA library; `--dagger-p 0` = no bank is read and no row is swapped)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ImportError: cannot import name 'v8f_dagger' from 'tanitad.data' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\data\__init__.py)
+
+stack\scripts\v8f_mini_train.py:45: ImportError
+_ ERROR at setup of test_the_trainers_own_gate_refuses_a_declared_cut_that_was_not_built_and_the_new_tip_names_its_flag _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur'), _trace=<pluggy._tracing.TagTra...E188A0>, _basetemp=WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def trainer_runs(tmp_path_factory):
+        import torch  # noqa: F401
+        sys.path.insert(0, str(REPO / "stack" / "scripts"))
+>       TR = _load("v8f_mini_train_for_kindx", REPO / "stack" / "scripts" / "v8f_mini_train.py")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kindx_s1.py:1259: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_kindx_s1.py:59: in _load
+    spec.loader.exec_module(m)
+<frozen importlib._bootstrap_external>:1026: in exec_module
+    ???
+<frozen importlib._bootstrap>:488: in _call_with_frames_removed
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    #!/usr/bin/env python3
+    """v8F-mini training (track M): S -> T -> O on the cached frozen DINOv3-L pooled features. CPU-testable, 8 GB GPU-sized.
+    
+    Seeded, resumable, writes ``summary.json {"done": true}`` ONLY at the very end (a supervisor that restarts a run whose
+    done-marker is missing will resurrect it; one that finds the marker leaves it alone).
+    
+    LAUNCH-GATE DISCIPLINE (the project rule of 2026-09-26): every argparse flag has an entry in :data:`FLAG_CHECKS`; a flag
+    without one makes ``self_check`` REFUSE the launch (and ``tests/test_v8f_mini.py`` fail). ``declared_vs_built``
+    compares what argv DECLARES against what the BUILT model/optimiser/data actually are; ``live_check`` runs three
+    optimiser steps on a real batch and requires every declared loss term finite and every trainable parameter group to
+    receive a non-zero gradient, against a control (the frozen P10 prior) that must read EXACTLY 0.0.
+    
+    Arms (PREREG_V8F_MINI.md): M1, M1-navonly, M1-nocons, M2a, M2b are trained arms. ``M1-navshuf`` is an EVALUATION control
+    (nav taken from another episode): it trains exactly M1 and is accepted here as an alias so the supervisor can name it.
+    H-DATA-SCALE-1: ``--data-frac {0.25,0.5,1.0}`` and ``--steps-mult {1,2,4}``; S = one epoch of windows at 100 % of the
+    TRAIN clips at the chosen batch size, the optimiser-step budget is ``S * steps-mult`` regardless of the data fraction.
+    
+    PREREG_V8F_LORA: ``--encoder lora`` runs the frame encoder (DINOv3 ViT-L/16, frozen, + LoRA r/alpha on q and v of every block) ON THE FLY on the frames
+    behind the cache (``--frames-root``: ``<clip>.v2ep.pt``) and feeds the heads exactly the tensor the cache would have held (``tanitad.models.v8f_lora_encoder``).
+    ``--encoder cache`` (the default) is every earlier arm, bit for bit: none of the lora code runs, and nothing it imports is imported. ``--accum k`` splits the
+    ENCODER's work of one effective batch into micro-batches of ``batch / k`` windows; the heads' loss is still evaluated once on the full batch (the gradient-cache
+    scheme of ``cached_grad_step``), because plain accumulation is not exact for this model (masked-mean normalisers, SIGReg).
+    """
+    from __future__ import annotations
+    
+    import argparse
+    import copy
+    import hashlib
+    import json
+    import math
+    import os
+    import sys
+    import threading
+    import queue
+    import time
+    
+    import numpy as np
+    import torch
+    
+    REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    for p in (os.path.join(REPO, "stack"), os.path.join(REPO, "taniteval")):
+        if p not in sys.path:
+            sys.path.insert(0, p)
+    
+>   from tanitad.data import v8f_dagger as DG  # noqa: E402      PREREG_V8F_DAGGER: the own-state bank + the swap (the DATA library; `--dagger-p 0` = no bank is read and no row is swapped)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ImportError: cannot import name 'v8f_dagger' from 'tanitad.data' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\data\__init__.py)
+
+stack\scripts\v8f_mini_train.py:45: ImportError
+================================== FAILURES ===================================
+___________ test_carrier_when_the_s0_candidate_clears_2F_at_s1_too ____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001103DD96060>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_carrier_when_the_s0_candi0')
+
+    def test_carrier_when_the_s0_candidate_clears_2F_at_s1_too(monkeypatch, tmp_path):
+>       R, res, _ = reader_case(monkeypatch, tmp_path, {"speed": 0.70})
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kindx_s1.py:215: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_kindx_s1.py:199: in reader_case
+    w = make_world(tmp_path / "w", 1, gains, ep_sd, **wk)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tests\test_v8f_kindx_s1.py:170: in make_world
+    j["tac_manipulation"] = _man(spec)
+                            ^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+spec = 'none'
+
+    def _man(spec):
+>       from tanitad.models import v8f_mini as M
+E       ImportError: cannot import name 'v8f_mini' from 'tanitad.models' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\__init__.py)
+
+stack\tests\test_v8f_kindx_s1.py:128: ImportError
+____________ test_not_a_carrier_when_the_candidate_misses_2F_at_s1 ____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000110789A09D0>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_not_a_carrier_when_the_ca0')
+
+    def test_not_a_carrier_when_the_candidate_misses_2F_at_s1(monkeypatch, tmp_path):
+>       R, res, _ = reader_case(monkeypatch, tmp_path, {"speed": 0.10})
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kindx_s1.py:226: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_kindx_s1.py:199: in reader_case
+    w = make_world(tmp_path / "w", 1, gains, ep_sd, **wk)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tests\test_v8f_kindx_s1.py:170: in make_world
+    j["tac_manipulation"] = _man(spec)
+                            ^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+spec = 'none'
+
+    def _man(spec):
+>       from tanitad.models import v8f_mini as M
+E       ImportError: cannot import name 'v8f_mini' from 'tanitad.models' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\__init__.py)
+
+stack\tests\test_v8f_kindx_s1.py:128: ImportError
+_ test_not_a_carrier_when_the_point_clears_but_the_interval_does_not_exclude_zero _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001107899CEF0>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_not_a_carrier_when_the_po0')
+
+    def test_not_a_carrier_when_the_point_clears_but_the_interval_does_not_exclude_zero(monkeypatch, tmp_path):
+>       R, res, _ = reader_case(monkeypatch, tmp_path, {"speed": 0.30}, ep_sd={"speed": 3.0})
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kindx_s1.py:233: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_kindx_s1.py:199: in reader_case
+    w = make_world(tmp_path / "w", 1, gains, ep_sd, **wk)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tests\test_v8f_kindx_s1.py:170: in make_world
+    j["tac_manipulation"] = _man(spec)
+                            ^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+spec = 'none'
+
+    def _man(spec):
+>       from tanitad.models import v8f_mini as M
+E       ImportError: cannot import name 'v8f_mini' from 'tanitad.models' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\__init__.py)
+
+stack\tests\test_v8f_kindx_s1.py:128: ImportError
+_ test_a_kind_that_clears_at_s1_only_is_reported_and_is_a_carrier_at_neither_seed _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000110779728B0>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_a_kind_that_clears_at_s1_0')
+
+    def test_a_kind_that_clears_at_s1_only_is_reported_and_is_a_carrier_at_neither_seed(monkeypatch, tmp_path):
+>       R, res, _ = reader_case(monkeypatch, tmp_path, {"speed": 0.05, "angle": 0.60})
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kindx_s1.py:240: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_kindx_s1.py:199: in reader_case
+    w = make_world(tmp_path / "w", 1, gains, ep_sd, **wk)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tests\test_v8f_kindx_s1.py:170: in make_world
+    j["tac_manipulation"] = _man(spec)
+                            ^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+spec = 'none'
+
+    def _man(spec):
+>       from tanitad.models import v8f_mini as M
+E       ImportError: cannot import name 'v8f_mini' from 'tanitad.models' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\__init__.py)
+
+stack\tests\test_v8f_kindx_s1.py:128: ImportError
+_ test_two_s0_candidates_keep_their_s0_rank_and_only_the_confirmed_one_is_a_carrier _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000011077972250>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_two_s0_candidates_keep_th0')
+
+    def test_two_s0_candidates_keep_their_s0_rank_and_only_the_confirmed_one_is_a_carrier(monkeypatch, tmp_path):
+        s0 = s0_read_variant(tmp_path, candidates_ranked=["geom", "speed"])
+>       R, res, _ = reader_case(monkeypatch, tmp_path, {"speed": 0.70, "geom": 0.05}, s0=s0)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kindx_s1.py:247: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_kindx_s1.py:199: in reader_case
+    w = make_world(tmp_path / "w", 1, gains, ep_sd, **wk)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tests\test_v8f_kindx_s1.py:170: in make_world
+    j["tac_manipulation"] = _man(spec)
+                            ^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+spec = 'none'
+
+    def _man(spec):
+>       from tanitad.models import v8f_mini as M
+E       ImportError: cannot import name 'v8f_mini' from 'tanitad.models' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\__init__.py)
+
+stack\tests\test_v8f_kindx_s1.py:128: ImportError
+____________ test_clears_is_inclusive_at_2F_and_needs_the_interval ____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000011077735950>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_clears_is_inclusive_at_2F0')
+
+    def test_clears_is_inclusive_at_2F_and_needs_the_interval(monkeypatch, tmp_path):
+>       R, _, _ = reader_case(monkeypatch, tmp_path, {"speed": 0.70})
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kindx_s1.py:255: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_kindx_s1.py:199: in reader_case
+    w = make_world(tmp_path / "w", 1, gains, ep_sd, **wk)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tests\test_v8f_kindx_s1.py:170: in make_world
+    j["tac_manipulation"] = _man(spec)
+                            ^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+spec = 'none'
+
+    def _man(spec):
+>       from tanitad.models import v8f_mini as M
+E       ImportError: cannot import name 'v8f_mini' from 'tanitad.models' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\__init__.py)
+
+stack\tests\test_v8f_kindx_s1.py:128: ImportError
+_ test_reader_refuses_rc2_with_the_reason_and_writes_nothing[s0 read is NO CANDIDATE] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000011077735B50>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_reader_refuses_rc2_with_t0')
+capsys = <_pytest.capture.CaptureFixture object at 0x00000110770C3770>
+name = 's0 read is NO CANDIDATE'
+
+    @pytest.mark.parametrize("name", list(REFUSALS))
+    def test_reader_refuses_rc2_with_the_reason_and_writes_nothing(monkeypatch, tmp_path, capsys, name):
+        kw, frag = REFUSALS[name][0](tmp_path), REFUSALS[name][1]
+        s0 = kw.pop("s0", None)
+>       w = make_world(tmp_path / "w", 1, None, None, **kw)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kindx_s1.py:282: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_kindx_s1.py:170: in make_world
+    j["tac_manipulation"] = _man(spec)
+                            ^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+spec = 'none'
+
+    def _man(spec):
+>       from tanitad.models import v8f_mini as M
+E       ImportError: cannot import name 'v8f_mini' from 'tanitad.models' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\__init__.py)
+
+stack\tests\test_v8f_kindx_s1.py:128: ImportError
+_ test_reader_refuses_rc2_with_the_reason_and_writes_nothing[s0 read is another checkpoint] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001107899A990>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_reader_refuses_rc2_with_t1')
+capsys = <_pytest.capture.CaptureFixture object at 0x00000110774E7C50>
+name = 's0 read is another checkpoint'
+
+    @pytest.mark.parametrize("name", list(REFUSALS))
+    def test_reader_refuses_rc2_with_the_reason_and_writes_nothing(monkeypatch, tmp_path, capsys, name):
+        kw, frag = REFUSALS[name][0](tmp_path), REFUSALS[name][1]
+        s0 = kw.pop("s0", None)
+>       w = make_world(tmp_path / "w", 1, None, None, **kw)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kindx_s1.py:282: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_kindx_s1.py:170: in make_world
+    j["tac_manipulation"] = _man(spec)
+                            ^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+spec = 'none'
+
+    def _man(spec):
+>       from tanitad.models import v8f_mini as M
+E       ImportError: cannot import name 'v8f_mini' from 'tanitad.models' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\__init__.py)
+
+stack\tests\test_v8f_kindx_s1.py:128: ImportError
+_ test_reader_refuses_rc2_with_the_reason_and_writes_nothing[s0 read has a candidate that is not a kind] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001107899B110>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_reader_refuses_rc2_with_t2')
+capsys = <_pytest.capture.CaptureFixture object at 0x0000011078D44190>
+name = 's0 read has a candidate that is not a kind'
+
+    @pytest.mark.parametrize("name", list(REFUSALS))
+    def test_reader_refuses_rc2_with_the_reason_and_writes_nothing(monkeypatch, tmp_path, capsys, name):
+        kw, frag = REFUSALS[name][0](tmp_path), REFUSALS[name][1]
+        s0 = kw.pop("s0", None)
+>       w = make_world(tmp_path / "w", 1, None, None, **kw)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kindx_s1.py:282: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_kindx_s1.py:170: in make_world
+    j["tac_manipulation"] = _man(spec)
+                            ^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+spec = 'none'
+
+    def _man(spec):
+>       from tanitad.models import v8f_mini as M
+E       ImportError: cannot import name 'v8f_mini' from 'tanitad.models' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\__init__.py)
+
+stack\tests\test_v8f_kindx_s1.py:128: ImportError
+_ test_reader_refuses_rc2_with_the_reason_and_writes_nothing[s0 read has another bar] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000011078A0DB70>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_reader_refuses_rc2_with_t3')
+capsys = <_pytest.capture.CaptureFixture object at 0x00000110789A1E00>
+name = 's0 read has another bar'
+
+    @pytest.mark.parametrize("name", list(REFUSALS))
+    def test_reader_refuses_rc2_with_the_reason_and_writes_nothing(monkeypatch, tmp_path, capsys, name):
+        kw, frag = REFUSALS[name][0](tmp_path), REFUSALS[name][1]
+        s0 = kw.pop("s0", None)
+>       w = make_world(tmp_path / "w", 1, None, None, **kw)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kindx_s1.py:282: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_kindx_s1.py:170: in make_world
+    j["tac_manipulation"] = _man(spec)
+                            ^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+spec = 'none'
+
+    def _man(spec):
+>       from tanitad.models import v8f_mini as M
+E       ImportError: cannot import name 'v8f_mini' from 'tanitad.models' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\__init__.py)
+
+stack\tests\test_v8f_kindx_s1.py:128: ImportError
+_ test_reader_refuses_rc2_with_the_reason_and_writes_nothing[s0 read's controls did not pass] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000011078A0E970>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_reader_refuses_rc2_with_t4')
+capsys = <_pytest.capture.CaptureFixture object at 0x00000110789A2060>
+name = "s0 read's controls did not pass"
+
+    @pytest.mark.parametrize("name", list(REFUSALS))
+    def test_reader_refuses_rc2_with_the_reason_and_writes_nothing(monkeypatch, tmp_path, capsys, name):
+        kw, frag = REFUSALS[name][0](tmp_path), REFUSALS[name][1]
+        s0 = kw.pop("s0", None)
+>       w = make_world(tmp_path / "w", 1, None, None, **kw)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kindx_s1.py:282: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_kindx_s1.py:170: in make_world
+    j["tac_manipulation"] = _man(spec)
+                            ^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+spec = 'none'
+
+    def _man(spec):
+>       from tanitad.models import v8f_mini as M
+E       ImportError: cannot import name 'v8f_mini' from 'tanitad.models' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\__init__.py)
+
+stack\tests\test_v8f_kindx_s1.py:128: ImportError
+_ test_reader_refuses_rc2_with_the_reason_and_writes_nothing[an eval scored X_s0's checkpoint] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000011078A14EF0>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_reader_refuses_rc2_with_t5')
+capsys = <_pytest.capture.CaptureFixture object at 0x000001103D250DD0>
+name = "an eval scored X_s0's checkpoint"
+
+    @pytest.mark.parametrize("name", list(REFUSALS))
+    def test_reader_refuses_rc2_with_the_reason_and_writes_nothing(monkeypatch, tmp_path, capsys, name):
+        kw, frag = REFUSALS[name][0](tmp_path), REFUSALS[name][1]
+        s0 = kw.pop("s0", None)
+>       w = make_world(tmp_path / "w", 1, None, None, **kw)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kindx_s1.py:282: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_kindx_s1.py:170: in make_world
+    j["tac_manipulation"] = _man(spec)
+                            ^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+spec = 'none'
+
+    def _man(spec):
+>       from tanitad.models import v8f_mini as M
+E       ImportError: cannot import name 'v8f_mini' from 'tanitad.models' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\__init__.py)
+
+stack\tests\test_v8f_kindx_s1.py:128: ImportError
+_ test_reader_refuses_rc2_with_the_reason_and_writes_nothing[an oracle declared another group] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000011077529FD0>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_reader_refuses_rc2_with_t6')
+capsys = <_pytest.capture.CaptureFixture object at 0x0000011077973AC0>
+name = 'an oracle declared another group'
+
+    @pytest.mark.parametrize("name", list(REFUSALS))
+    def test_reader_refuses_rc2_with_the_reason_and_writes_nothing(monkeypatch, tmp_path, capsys, name):
+        kw, frag = REFUSALS[name][0](tmp_path), REFUSALS[name][1]
+        s0 = kw.pop("s0", None)
+>       w = make_world(tmp_path / "w", 1, None, None, **kw)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kindx_s1.py:282: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_kindx_s1.py:170: in make_world
+    j["tac_manipulation"] = _man(spec)
+                            ^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+spec = 'none'
+
+    def _man(spec):
+>       from tanitad.models import v8f_mini as M
+E       ImportError: cannot import name 'v8f_mini' from 'tanitad.models' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\__init__.py)
+
+stack\tests\test_v8f_kindx_s1.py:128: ImportError
+_ test_reader_refuses_rc2_with_the_reason_and_writes_nothing[an oracle declared alpha 0.5] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001107752A8D0>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_reader_refuses_rc2_with_t7')
+capsys = <_pytest.capture.CaptureFixture object at 0x00000110779727A0>
+name = 'an oracle declared alpha 0.5'
+
+    @pytest.mark.parametrize("name", list(REFUSALS))
+    def test_reader_refuses_rc2_with_the_reason_and_writes_nothing(monkeypatch, tmp_path, capsys, name):
+>       kw, frag = REFUSALS[name][0](tmp_path), REFUSALS[name][1]
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kindx_s1.py:280: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_kindx_s1.py:269: in <lambda>
+    "an oracle declared alpha 0.5": (lambda tp: {"extra_json": {"only-tte": {"tac_manipulation": {**_man("tte"), "alpha": 0.5}}}}, "alpha 1"),
+                                                                                                    ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+spec = 'tte'
+
+    def _man(spec):
+>       from tanitad.models import v8f_mini as M
+E       ImportError: cannot import name 'v8f_mini' from 'tanitad.models' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\__init__.py)
+
+stack\tests\test_v8f_kindx_s1.py:128: ImportError
+_ test_reader_refuses_rc2_with_the_reason_and_writes_nothing[own is not T's own code] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000011078975E90>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_reader_refuses_rc2_with_t8')
+capsys = <_pytest.capture.CaptureFixture object at 0x0000011077736D50>
+name = "own is not T's own code"
+
+    @pytest.mark.parametrize("name", list(REFUSALS))
+    def test_reader_refuses_rc2_with_the_reason_and_writes_nothing(monkeypatch, tmp_path, capsys, name):
+        kw, frag = REFUSALS[name][0](tmp_path), REFUSALS[name][1]
+        s0 = kw.pop("s0", None)
+>       w = make_world(tmp_path / "w", 1, None, None, **kw)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kindx_s1.py:282: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_kindx_s1.py:170: in make_world
+    j["tac_manipulation"] = _man(spec)
+                            ^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+spec = 'none'
+
+    def _man(spec):
+>       from tanitad.models import v8f_mini as M
+E       ImportError: cannot import name 'v8f_mini' from 'tanitad.models' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\__init__.py)
+
+stack\tests\test_v8f_kindx_s1.py:128: ImportError
+_ test_reader_refuses_rc2_with_the_reason_and_writes_nothing[the strategic family is missing] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000011078977960>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_reader_refuses_rc2_with_t9')
+capsys = <_pytest.capture.CaptureFixture object at 0x0000011077736F50>
+name = 'the strategic family is missing'
+
+    @pytest.mark.parametrize("name", list(REFUSALS))
+    def test_reader_refuses_rc2_with_the_reason_and_writes_nothing(monkeypatch, tmp_path, capsys, name):
+        kw, frag = REFUSALS[name][0](tmp_path), REFUSALS[name][1]
+        s0 = kw.pop("s0", None)
+>       w = make_world(tmp_path / "w", 1, None, None, **kw)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kindx_s1.py:282: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_kindx_s1.py:170: in make_world
+    j["tac_manipulation"] = _man(spec)
+                            ^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+spec = 'none'
+
+    def _man(spec):
+>       from tanitad.models import v8f_mini as M
+E       ImportError: cannot import name 'v8f_mini' from 'tanitad.models' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\__init__.py)
+
+stack\tests\test_v8f_kindx_s1.py:128: ImportError
+_ test_reader_refuses_rc2_with_the_reason_and_writes_nothing[the tactical family is missing] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000110789ABF70>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_reader_refuses_rc2_with_t10')
+capsys = <_pytest.capture.CaptureFixture object at 0x000001107899A210>
+name = 'the tactical family is missing'
+
+    @pytest.mark.parametrize("name", list(REFUSALS))
+    def test_reader_refuses_rc2_with_the_reason_and_writes_nothing(monkeypatch, tmp_path, capsys, name):
+        kw, frag = REFUSALS[name][0](tmp_path), REFUSALS[name][1]
+        s0 = kw.pop("s0", None)
+>       w = make_world(tmp_path / "w", 1, None, None, **kw)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kindx_s1.py:282: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_kindx_s1.py:170: in make_world
+    j["tac_manipulation"] = _man(spec)
+                            ^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+spec = 'none'
+
+    def _man(spec):
+>       from tanitad.models import v8f_mini as M
+E       ImportError: cannot import name 'v8f_mini' from 'tanitad.models' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\__init__.py)
+
+stack\tests\test_v8f_kindx_s1.py:128: ImportError
+_ test_reader_refuses_rc2_with_the_reason_and_writes_nothing[the arms are on another window list] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000110789F5950>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_reader_refuses_rc2_with_t11')
+capsys = <_pytest.capture.CaptureFixture object at 0x0000011078998F50>
+name = 'the arms are on another window list'
+
+    @pytest.mark.parametrize("name", list(REFUSALS))
+    def test_reader_refuses_rc2_with_the_reason_and_writes_nothing(monkeypatch, tmp_path, capsys, name):
+        kw, frag = REFUSALS[name][0](tmp_path), REFUSALS[name][1]
+        s0 = kw.pop("s0", None)
+>       w = make_world(tmp_path / "w", 1, None, None, **kw)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kindx_s1.py:282: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_kindx_s1.py:170: in make_world
+    j["tac_manipulation"] = _man(spec)
+                            ^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+spec = 'none'
+
+    def _man(spec):
+>       from tanitad.models import v8f_mini as M
+E       ImportError: cannot import name 'v8f_mini' from 'tanitad.models' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\__init__.py)
+
+stack\tests\test_v8f_kindx_s1.py:128: ImportError
+_ test_reader_refuses_rc2_with_the_reason_and_writes_nothing[an eval is missing] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000110789A5B50>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_reader_refuses_rc2_with_t12')
+capsys = <_pytest.capture.CaptureFixture object at 0x0000011077866350>
+name = 'an eval is missing'
+
+    @pytest.mark.parametrize("name", list(REFUSALS))
+    def test_reader_refuses_rc2_with_the_reason_and_writes_nothing(monkeypatch, tmp_path, capsys, name):
+        kw, frag = REFUSALS[name][0](tmp_path), REFUSALS[name][1]
+        s0 = kw.pop("s0", None)
+>       w = make_world(tmp_path / "w", 1, None, None, **kw)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kindx_s1.py:282: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_kindx_s1.py:170: in make_world
+    j["tac_manipulation"] = _man(spec)
+                            ^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+spec = 'none'
+
+    def _man(spec):
+>       from tanitad.models import v8f_mini as M
+E       ImportError: cannot import name 'v8f_mini' from 'tanitad.models' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\__init__.py)
+
+stack\tests\test_v8f_kindx_s1.py:128: ImportError
+_ test_reader_reads_no_gain_while_a_control_phase_is_not_pass[ctl0-phase1 is not PASS] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000011078C02AD0>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_reader_reads_no_gain_whil0')
+capsys = <_pytest.capture.CaptureFixture object at 0x000001103E015710>
+ctl = {'phase1': {'PASS': False}, 'phase2': {'PASS': True}}
+frag = 'phase1 is not PASS'
+
+    @pytest.mark.parametrize("ctl, frag", [({"phase1": {"PASS": False}, "phase2": {"PASS": True}}, "phase1 is not PASS"), ({"phase1": {"PASS": True}, "phase2": {"PASS": False}}, "phase2 is not PASS"),
+                                           ({"phase1": {"PASS": True}}, "phase2 is not PASS")])
+    def test_reader_reads_no_gain_while_a_control_phase_is_not_pass(monkeypatch, tmp_path, capsys, ctl, frag):
+>       w = make_world(tmp_path / "w", 1)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kindx_s1.py:294: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_kindx_s1.py:170: in make_world
+    j["tac_manipulation"] = _man(spec)
+                            ^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+spec = 'none'
+
+    def _man(spec):
+>       from tanitad.models import v8f_mini as M
+E       ImportError: cannot import name 'v8f_mini' from 'tanitad.models' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\__init__.py)
+
+stack\tests\test_v8f_kindx_s1.py:128: ImportError
+_ test_reader_reads_no_gain_while_a_control_phase_is_not_pass[ctl1-phase2 is not PASS] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000011078987150>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_reader_reads_no_gain_whil1')
+capsys = <_pytest.capture.CaptureFixture object at 0x00000110789FB2B0>
+ctl = {'phase1': {'PASS': True}, 'phase2': {'PASS': False}}
+frag = 'phase2 is not PASS'
+
+    @pytest.mark.parametrize("ctl, frag", [({"phase1": {"PASS": False}, "phase2": {"PASS": True}}, "phase1 is not PASS"), ({"phase1": {"PASS": True}, "phase2": {"PASS": False}}, "phase2 is not PASS"),
+                                           ({"phase1": {"PASS": True}}, "phase2 is not PASS")])
+    def test_reader_reads_no_gain_while_a_control_phase_is_not_pass(monkeypatch, tmp_path, capsys, ctl, frag):
+>       w = make_world(tmp_path / "w", 1)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kindx_s1.py:294: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_kindx_s1.py:170: in make_world
+    j["tac_manipulation"] = _man(spec)
+                            ^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+spec = 'none'
+
+    def _man(spec):
+>       from tanitad.models import v8f_mini as M
+E       ImportError: cannot import name 'v8f_mini' from 'tanitad.models' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\__init__.py)
+
+stack\tests\test_v8f_kindx_s1.py:128: ImportError
+_ test_reader_reads_no_gain_while_a_control_phase_is_not_pass[ctl2-phase2 is not PASS] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000011077983150>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_reader_reads_no_gain_whil2')
+capsys = <_pytest.capture.CaptureFixture object at 0x00000110789EBAD0>
+ctl = {'phase1': {'PASS': True}}, frag = 'phase2 is not PASS'
+
+    @pytest.mark.parametrize("ctl, frag", [({"phase1": {"PASS": False}, "phase2": {"PASS": True}}, "phase1 is not PASS"), ({"phase1": {"PASS": True}, "phase2": {"PASS": False}}, "phase2 is not PASS"),
+                                           ({"phase1": {"PASS": True}}, "phase2 is not PASS")])
+    def test_reader_reads_no_gain_while_a_control_phase_is_not_pass(monkeypatch, tmp_path, capsys, ctl, frag):
+>       w = make_world(tmp_path / "w", 1)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kindx_s1.py:294: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_kindx_s1.py:170: in make_world
+    j["tac_manipulation"] = _man(spec)
+                            ^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+spec = 'none'
+
+    def _man(spec):
+>       from tanitad.models import v8f_mini as M
+E       ImportError: cannot import name 'v8f_mini' from 'tanitad.models' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\__init__.py)
+
+stack\tests\test_v8f_kindx_s1.py:128: ImportError
+__ test_reader_refuses_a_seed_argument_that_disagrees_with_its_configuration __
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000011077983540>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_reader_refuses_a_seed_arg0')
+capsys = <_pytest.capture.CaptureFixture object at 0x00000110789E8050>
+
+    def test_reader_refuses_a_seed_argument_that_disagrees_with_its_configuration(monkeypatch, tmp_path, capsys):
+>       w = make_world(tmp_path / "w", 1)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kindx_s1.py:303: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_kindx_s1.py:170: in make_world
+    j["tac_manipulation"] = _man(spec)
+                            ^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+spec = 'none'
+
+    def _man(spec):
+>       from tanitad.models import v8f_mini as M
+E       ImportError: cannot import name 'v8f_mini' from 'tanitad.models' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\__init__.py)
+
+stack\tests\test_v8f_kindx_s1.py:128: ImportError
+_ test_the_s1_reader_writes_the_deciding_block_before_it_computes_the_beside_block _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000011077983150>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_the_s1_reader_writes_the_0')
+
+    def test_the_s1_reader_writes_the_deciding_block_before_it_computes_the_beside_block(monkeypatch, tmp_path):
+>       w = make_world(tmp_path / "w", 1)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kindx_s1.py:314: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_kindx_s1.py:170: in make_world
+    j["tac_manipulation"] = _man(spec)
+                            ^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+spec = 'none'
+
+    def _man(spec):
+>       from tanitad.models import v8f_mini as M
+E       ImportError: cannot import name 'v8f_mini' from 'tanitad.models' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\__init__.py)
+
+stack\tests\test_v8f_kindx_s1.py:128: ImportError
+_ test_mutation_clears_that_ignores_the_interval_turns_the_not_separated_row_red _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000110789673F0>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_mutation_clears_that_igno0')
+
+    def test_mutation_clears_that_ignores_the_interval_turns_the_not_separated_row_red(monkeypatch, tmp_path):
+        ep = {"speed": 3.0}
+>       assert reader_case(monkeypatch, tmp_path / "a", {"speed": 0.30}, ep_sd=ep)[1]["OUTCOME"] == "NOT A CARRIER"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kindx_s1.py:349: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_kindx_s1.py:199: in reader_case
+    w = make_world(tmp_path / "w", 1, gains, ep_sd, **wk)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tests\test_v8f_kindx_s1.py:170: in make_world
+    j["tac_manipulation"] = _man(spec)
+                            ^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+spec = 'none'
+
+    def _man(spec):
+>       from tanitad.models import v8f_mini as M
+E       ImportError: cannot import name 'v8f_mini' from 'tanitad.models' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\__init__.py)
+
+stack\tests\test_v8f_kindx_s1.py:128: ImportError
+______________ test_mutation_a_lower_bar_turns_the_miss_row_red _______________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000011078966B30>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_mutation_a_lower_bar_turn0')
+
+    def test_mutation_a_lower_bar_turns_the_miss_row_red(monkeypatch, tmp_path):
+>       assert reader_case(monkeypatch, tmp_path / "a", {"speed": 0.20})[1]["OUTCOME"] == "NOT A CARRIER"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kindx_s1.py:357: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_kindx_s1.py:199: in reader_case
+    w = make_world(tmp_path / "w", 1, gains, ep_sd, **wk)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tests\test_v8f_kindx_s1.py:170: in make_world
+    j["tac_manipulation"] = _man(spec)
+                            ^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+spec = 'none'
+
+    def _man(spec):
+>       from tanitad.models import v8f_mini as M
+E       ImportError: cannot import name 'v8f_mini' from 'tanitad.models' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\__init__.py)
+
+stack\tests\test_v8f_kindx_s1.py:128: ImportError
+_ test_mutation_a_carrier_that_need_not_have_been_an_s0_candidate_turns_the_s1_only_row_red _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000011078A384B0>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_mutation_a_carrier_that_n0')
+
+    def test_mutation_a_carrier_that_need_not_have_been_an_s0_candidate_turns_the_s1_only_row_red(monkeypatch, tmp_path):
+        g = {"speed": 0.05, "angle": 0.60}
+>       assert reader_case(monkeypatch, tmp_path / "a", g)[1]["OUTCOME"] == "NOT A CARRIER"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kindx_s1.py:367: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_kindx_s1.py:199: in reader_case
+    w = make_world(tmp_path / "w", 1, gains, ep_sd, **wk)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tests\test_v8f_kindx_s1.py:170: in make_world
+    j["tac_manipulation"] = _man(spec)
+                            ^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+spec = 'none'
+
+    def _man(spec):
+>       from tanitad.models import v8f_mini as M
+E       ImportError: cannot import name 'v8f_mini' from 'tanitad.models' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\__init__.py)
+
+stack\tests\test_v8f_kindx_s1.py:128: ImportError
+______ test_mutation_swapping_the_two_outcomes_turns_the_carrier_row_red ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000011078A3BBD0>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_mutation_swapping_the_two0')
+
+    def test_mutation_swapping_the_two_outcomes_turns_the_carrier_row_red(monkeypatch, tmp_path):
+>       out = _mut_outcome(monkeypatch, tmp_path, '"CARRIER" if carriers else "NOT A CARRIER"', '"NOT A CARRIER" if carriers else "CARRIER"', {"speed": 0.70})
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kindx_s1.py:373: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_kindx_s1.py:341: in _mut_outcome
+    w = make_world(tmp_path / "w", 1, gains, ep_sd)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tests\test_v8f_kindx_s1.py:170: in make_world
+    j["tac_manipulation"] = _man(spec)
+                            ^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+spec = 'none'
+
+    def _man(spec):
+>       from tanitad.models import v8f_mini as M
+E       ImportError: cannot import name 'v8f_mini' from 'tanitad.models' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\__init__.py)
+
+stack\tests\test_v8f_kindx_s1.py:128: ImportError
+__________ test_s0_mode_reproduces_the_banked_deciding_block_exactly __________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000011078A3B5B0>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_s0_mode_reproduces_the_ba0')
+
+    def test_s0_mode_reproduces_the_banked_deciding_block_exactly(monkeypatch, tmp_path):
+        """The reader was PARAMETRISED, not rewritten: on the banked s0 evals and controls it writes the banked READ.json's deciding block bit for bit (B = 2,000)."""
+        if not (RAWX / "eval" / "eval_M2b-mixo_s0-kindx-own.npz").exists() or not (RAWX / "controls.json").exists():
+            pytest.skip("the banked s0 evals are not in this checkout")
+        (tmp_path / "controls.json").write_bytes((RAWX / "controls.json").read_bytes())
+        _env(monkeypatch, tmp_path, 0, ev=RAWX / "eval")
+        R = _load(f"kindx_read_s0_{next(CNT)}", READER)
+        assert R.SEED == 0 and R.T == "M2b-mixo_s0" and R.B_BOOT == 2000
+>       rc = R.main(["--no-beside", "--out", str(tmp_path / "READ.json")])
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kindx_s1.py:388: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-v8f-mini\raw\2026-10-25-kindx\kindx_read.py:328: in main
+    R, eid = load_x()
+             ^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+ev = 'E:/Projects/TanitAD-artifacts/di/tree/TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-25-kindx/eval'
+t = 'M2b-mixo_s0', xdir = 'M2b_s0_mixo'
+
+    def load_x(ev=None, t=None, xdir=None):
+        """X's evals keyed by KIND's suffixes (default: this seed's, in EV). Each json is checked: X's checkpoint, the manipulation the arm declares, tactical + strategic families present."""
+        ev, t, xdir = ev or EV, t or T, xdir or XDIR
+>       from tanitad.models import v8f_mini as M
+E       ImportError: cannot import name 'v8f_mini' from 'tanitad.models' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\__init__.py)
+
+TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-v8f-mini\raw\2026-10-25-kindx\kindx_read.py:101: ImportError
+_ test_s0_mode_still_names_candidate_and_no_candidate_and_never_the_s1_outcomes _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000011078A3D630>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_s0_mode_still_names_candi0')
+
+    def test_s0_mode_still_names_candidate_and_no_candidate_and_never_the_s1_outcomes(monkeypatch, tmp_path):
+        for gains, want in (({"speed": 0.70}, "CANDIDATE"), ({"speed": 0.10}, "NO CANDIDATE")):
+>           w = make_world(tmp_path / want.replace(" ", "_") / "w", 0, gains)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kindx_s1.py:396: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_kindx_s1.py:170: in make_world
+    j["tac_manipulation"] = _man(spec)
+                            ^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+spec = 'none'
+
+    def _man(spec):
+>       from tanitad.models import v8f_mini as M
+E       ImportError: cannot import name 'v8f_mini' from 'tanitad.models' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\__init__.py)
+
+stack\tests\test_v8f_kindx_s1.py:128: ImportError
+_________________ test_controls_pass_on_a_consistent_s1_world _________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000011078A3F380>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_controls_pass_on_a_consis0')
+
+    def test_controls_pass_on_a_consistent_s1_world(monkeypatch, tmp_path):
+>       w = _controls_world(tmp_path)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kindx_s1.py:421: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_kindx_s1.py:408: in _controls_world
+    w = make_world(tmp_path / "w", seed, **wk)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tests\test_v8f_kindx_s1.py:170: in make_world
+    j["tac_manipulation"] = _man(spec)
+                            ^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+spec = 'none'
+
+    def _man(spec):
+>       from tanitad.models import v8f_mini as M
+E       ImportError: cannot import name 'v8f_mini' from 'tanitad.models' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\__init__.py)
+
+stack\tests\test_v8f_kindx_s1.py:128: ImportError
+_ test_controls_fail_when_the_s1_world_is_not_the_preregs[own differs from the standard eval by 1e-3 m] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000011078A3F9A0>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_controls_fail_when_the_s10')
+name = 'own differs from the standard eval by 1e-3 m'
+
+    @pytest.mark.parametrize("name", list(CONTROL_MUTANTS))
+    def test_controls_fail_when_the_s1_world_is_not_the_preregs(monkeypatch, tmp_path, name):
+        kw, phase, key = CONTROL_MUTANTS[name]
+        kw = dict(kw or {})
+>       w = _controls_world(tmp_path, **kw)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kindx_s1.py:444: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_kindx_s1.py:408: in _controls_world
+    w = make_world(tmp_path / "w", seed, **wk)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tests\test_v8f_kindx_s1.py:170: in make_world
+    j["tac_manipulation"] = _man(spec)
+                            ^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+spec = 'none'
+
+    def _man(spec):
+>       from tanitad.models import v8f_mini as M
+E       ImportError: cannot import name 'v8f_mini' from 'tanitad.models' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\__init__.py)
+
+stack\tests\test_v8f_kindx_s1.py:128: ImportError
+_ test_controls_fail_when_the_s1_world_is_not_the_preregs[the identity oracle gains something] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000011078A3D400>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_controls_fail_when_the_s11')
+name = 'the identity oracle gains something'
+
+    @pytest.mark.parametrize("name", list(CONTROL_MUTANTS))
+    def test_controls_fail_when_the_s1_world_is_not_the_preregs(monkeypatch, tmp_path, name):
+        kw, phase, key = CONTROL_MUTANTS[name]
+        kw = dict(kw or {})
+>       w = _controls_world(tmp_path, **kw)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kindx_s1.py:444: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_kindx_s1.py:408: in _controls_world
+    w = make_world(tmp_path / "w", seed, **wk)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tests\test_v8f_kindx_s1.py:170: in make_world
+    j["tac_manipulation"] = _man(spec)
+                            ^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+spec = 'none'
+
+    def _man(spec):
+>       from tanitad.models import v8f_mini as M
+E       ImportError: cannot import name 'v8f_mini' from 'tanitad.models' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\__init__.py)
+
+stack\tests\test_v8f_kindx_s1.py:128: ImportError
+_ test_controls_fail_when_the_s1_world_is_not_the_preregs[trained and after-eval sha256 disagree] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000011078A3CEC0>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_controls_fail_when_the_s12')
+name = 'trained and after-eval sha256 disagree'
+
+    @pytest.mark.parametrize("name", list(CONTROL_MUTANTS))
+    def test_controls_fail_when_the_s1_world_is_not_the_preregs(monkeypatch, tmp_path, name):
+        kw, phase, key = CONTROL_MUTANTS[name]
+        kw = dict(kw or {})
+>       w = _controls_world(tmp_path, **kw)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kindx_s1.py:444: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_kindx_s1.py:408: in _controls_world
+    w = make_world(tmp_path / "w", seed, **wk)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tests\test_v8f_kindx_s1.py:170: in make_world
+    j["tac_manipulation"] = _man(spec)
+                            ^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+spec = 'none'
+
+    def _man(spec):
+>       from tanitad.models import v8f_mini as M
+E       ImportError: cannot import name 'v8f_mini' from 'tanitad.models' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\__init__.py)
+
+stack\tests\test_v8f_kindx_s1.py:128: ImportError
+_ test_controls_fail_when_the_s1_world_is_not_the_preregs[the sha256 on the record is not the file's] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000011078A3D6A0>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_controls_fail_when_the_s13')
+name = "the sha256 on the record is not the file's"
+
+    @pytest.mark.parametrize("name", list(CONTROL_MUTANTS))
+    def test_controls_fail_when_the_s1_world_is_not_the_preregs(monkeypatch, tmp_path, name):
+        kw, phase, key = CONTROL_MUTANTS[name]
+        kw = dict(kw or {})
+>       w = _controls_world(tmp_path, **kw)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kindx_s1.py:444: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_kindx_s1.py:408: in _controls_world
+    w = make_world(tmp_path / "w", seed, **wk)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tests\test_v8f_kindx_s1.py:170: in make_world
+    j["tac_manipulation"] = _man(spec)
+                            ^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+spec = 'none'
+
+    def _man(spec):
+>       from tanitad.models import v8f_mini as M
+E       ImportError: cannot import name 'v8f_mini' from 'tanitad.models' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\__init__.py)
+
+stack\tests\test_v8f_kindx_s1.py:128: ImportError
+_ test_controls_fail_when_the_s1_world_is_not_the_preregs[an oracle arm moves a window with no v9 row] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000011078A3E040>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_controls_fail_when_the_s14')
+name = 'an oracle arm moves a window with no v9 row'
+
+    @pytest.mark.parametrize("name", list(CONTROL_MUTANTS))
+    def test_controls_fail_when_the_s1_world_is_not_the_preregs(monkeypatch, tmp_path, name):
+        kw, phase, key = CONTROL_MUTANTS[name]
+        kw = dict(kw or {})
+>       w = _controls_world(tmp_path, **kw)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kindx_s1.py:444: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_kindx_s1.py:408: in _controls_world
+    w = make_world(tmp_path / "w", seed, **wk)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tests\test_v8f_kindx_s1.py:170: in make_world
+    j["tac_manipulation"] = _man(spec)
+                            ^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+spec = 'none'
+
+    def _man(spec):
+>       from tanitad.models import v8f_mini as M
+E       ImportError: cannot import name 'v8f_mini' from 'tanitad.models' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\__init__.py)
+
+stack\tests\test_v8f_kindx_s1.py:128: ImportError
+________________ test_the_checkpoint_of_x_s1_must_not_be_x_s0s ________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000011078A3E820>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_the_checkpoint_of_x_s1_mu0')
+
+    def test_the_checkpoint_of_x_s1_must_not_be_x_s0s(monkeypatch, tmp_path):
+>       w = _controls_world(tmp_path)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kindx_s1.py:463: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_kindx_s1.py:408: in _controls_world
+    w = make_world(tmp_path / "w", seed, **wk)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tests\test_v8f_kindx_s1.py:170: in make_world
+    j["tac_manipulation"] = _man(spec)
+                            ^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+spec = 'none'
+
+    def _man(spec):
+>       from tanitad.models import v8f_mini as M
+E       ImportError: cannot import name 'v8f_mini' from 'tanitad.models' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\__init__.py)
+
+stack\tests\test_v8f_kindx_s1.py:128: ImportError
+__ test_the_identity_patch_selects_nothing_and_leaves_every_other_spec_alone __
+
+    def test_the_identity_patch_selects_nothing_and_leaves_every_other_spec_alone():
+>       from tanitad.models import v8f_mini as M
+E       ImportError: cannot import name 'v8f_mini' from 'tanitad.models' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\__init__.py)
+
+stack\tests\test_v8f_kindx_s1.py:1026: ImportError
+_ test_the_driver_runs_the_ten_evals_in_order_restores_the_patch_skips_what_exists_and_checks_the_sha _
+
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_the_driver_runs_the_ten_e0')
+
+    def test_the_driver_runs_the_ten_evals_in_order_restores_the_patch_skips_what_exists_and_checks_the_sha(tmp_path):
+>       from tanitad.models import v8f_mini as M
+E       ImportError: cannot import name 'v8f_mini' from 'tanitad.models' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\__init__.py)
+
+stack\tests\test_v8f_kindx_s1.py:1062: ImportError
+_ test_the_driver_refuses_a_missing_checkpoint_and_one_that_changes_during_the_evals _
+
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_the_driver_refuses_a_miss0')
+
+    def test_the_driver_refuses_a_missing_checkpoint_and_one_that_changes_during_the_evals(tmp_path):
+>       from tanitad.models import v8f_mini as M
+E       ImportError: cannot import name 'v8f_mini' from 'tanitad.models' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\__init__.py)
+
+stack\tests\test_v8f_kindx_s1.py:1095: ImportError
+_ test_mutation_an_identity_patch_that_selects_everything_turns_the_none_row_red _
+
+    def test_mutation_an_identity_patch_that_selects_everything_turns_the_none_row_red():
+>       from tanitad.models import v8f_mini as M
+E       ImportError: cannot import name 'v8f_mini' from 'tanitad.models' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\__init__.py)
+
+stack\tests\test_v8f_kindx_s1.py:1112: ImportError
+=========================== short test summary info ===========================
+FAILED stack\tests\test_v8f_kindx_s1.py::test_carrier_when_the_s0_candidate_clears_2F_at_s1_too
+FAILED stack\tests\test_v8f_kindx_s1.py::test_not_a_carrier_when_the_candidate_misses_2F_at_s1
+FAILED stack\tests\test_v8f_kindx_s1.py::test_not_a_carrier_when_the_point_clears_but_the_interval_does_not_exclude_zero
+FAILED stack\tests\test_v8f_kindx_s1.py::test_a_kind_that_clears_at_s1_only_is_reported_and_is_a_carrier_at_neither_seed
+FAILED stack\tests\test_v8f_kindx_s1.py::test_two_s0_candidates_keep_their_s0_rank_and_only_the_confirmed_one_is_a_carrier
+FAILED stack\tests\test_v8f_kindx_s1.py::test_clears_is_inclusive_at_2F_and_needs_the_interval
+FAILED stack\tests\test_v8f_kindx_s1.py::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[s0 read is NO CANDIDATE]
+FAILED stack\tests\test_v8f_kindx_s1.py::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[s0 read is another checkpoint]
+FAILED stack\tests\test_v8f_kindx_s1.py::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[s0 read has a candidate that is not a kind]
+FAILED stack\tests\test_v8f_kindx_s1.py::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[s0 read has another bar]
+FAILED stack\tests\test_v8f_kindx_s1.py::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[s0 read's controls did not pass]
+FAILED stack\tests\test_v8f_kindx_s1.py::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[an eval scored X_s0's checkpoint]
+FAILED stack\tests\test_v8f_kindx_s1.py::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[an oracle declared another group]
+FAILED stack\tests\test_v8f_kindx_s1.py::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[an oracle declared alpha 0.5]
+FAILED stack\tests\test_v8f_kindx_s1.py::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[own is not T's own code]
+FAILED stack\tests\test_v8f_kindx_s1.py::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[the strategic family is missing]
+FAILED stack\tests\test_v8f_kindx_s1.py::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[the tactical family is missing]
+FAILED stack\tests\test_v8f_kindx_s1.py::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[the arms are on another window list]
+FAILED stack\tests\test_v8f_kindx_s1.py::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[an eval is missing]
+FAILED stack\tests\test_v8f_kindx_s1.py::test_reader_reads_no_gain_while_a_control_phase_is_not_pass[ctl0-phase1 is not PASS]
+FAILED stack\tests\test_v8f_kindx_s1.py::test_reader_reads_no_gain_while_a_control_phase_is_not_pass[ctl1-phase2 is not PASS]
+FAILED stack\tests\test_v8f_kindx_s1.py::test_reader_reads_no_gain_while_a_control_phase_is_not_pass[ctl2-phase2 is not PASS]
+FAILED stack\tests\test_v8f_kindx_s1.py::test_reader_refuses_a_seed_argument_that_disagrees_with_its_configuration
+FAILED stack\tests\test_v8f_kindx_s1.py::test_the_s1_reader_writes_the_deciding_block_before_it_computes_the_beside_block
+FAILED stack\tests\test_v8f_kindx_s1.py::test_mutation_clears_that_ignores_the_interval_turns_the_not_separated_row_red
+FAILED stack\tests\test_v8f_kindx_s1.py::test_mutation_a_lower_bar_turns_the_miss_row_red
+FAILED stack\tests\test_v8f_kindx_s1.py::test_mutation_a_carrier_that_need_not_have_been_an_s0_candidate_turns_the_s1_only_row_red
+FAILED stack\tests\test_v8f_kindx_s1.py::test_mutation_swapping_the_two_outcomes_turns_the_carrier_row_red
+FAILED stack\tests\test_v8f_kindx_s1.py::test_s0_mode_reproduces_the_banked_deciding_block_exactly
+FAILED stack\tests\test_v8f_kindx_s1.py::test_s0_mode_still_names_candidate_and_no_candidate_and_never_the_s1_outcomes
+FAILED stack\tests\test_v8f_kindx_s1.py::test_controls_pass_on_a_consistent_s1_world
+FAILED stack\tests\test_v8f_kindx_s1.py::test_controls_fail_when_the_s1_world_is_not_the_preregs[own differs from the standard eval by 1e-3 m]
+FAILED stack\tests\test_v8f_kindx_s1.py::test_controls_fail_when_the_s1_world_is_not_the_preregs[the identity oracle gains something]
+FAILED stack\tests\test_v8f_kindx_s1.py::test_controls_fail_when_the_s1_world_is_not_the_preregs[trained and after-eval sha256 disagree]
+FAILED stack\tests\test_v8f_kindx_s1.py::test_controls_fail_when_the_s1_world_is_not_the_preregs[the sha256 on the record is not the file's]
+FAILED stack\tests\test_v8f_kindx_s1.py::test_controls_fail_when_the_s1_world_is_not_the_preregs[an oracle arm moves a window with no v9 row]
+FAILED stack\tests\test_v8f_kindx_s1.py::test_the_checkpoint_of_x_s1_must_not_be_x_s0s
+FAILED stack\tests\test_v8f_kindx_s1.py::test_the_identity_patch_selects_nothing_and_leaves_every_other_spec_alone
+FAILED stack\tests\test_v8f_kindx_s1.py::test_the_driver_runs_the_ten_evals_in_order_restores_the_patch_skips_what_exists_and_checks_the_sha
+FAILED stack\tests\test_v8f_kindx_s1.py::test_the_driver_refuses_a_missing_checkpoint_and_one_that_changes_during_the_evals
+FAILED stack\tests\test_v8f_kindx_s1.py::test_mutation_an_identity_patch_that_selects_everything_turns_the_none_row_red
+ERROR stack\tests\test_v8f_kindx_s1.py::test_mixos_argv_with_seed_1_passes_the_trainers_gate_on_the_new_tip_without_naming_o_interface
+ERROR stack\tests\test_v8f_kindx_s1.py::test_seed_1_builds_the_same_model_and_data_as_seed_0_apart_from_the_seed
+ERROR stack\tests\test_v8f_kindx_s1.py::test_the_trainers_own_gate_refuses_a_declared_cut_that_was_not_built_and_the_new_tip_names_its_flag
+41 failed, 142 passed, 2 skipped, 3 errors in 171.36s (0:02:51)

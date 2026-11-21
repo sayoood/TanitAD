@@ -1,0 +1,97 @@
+  tokens: 12,146 over 136 logs; ckpt D:/Projects/TanitAD/data/refe_runs_eval/model_final.pt
+  planner: trained=True per_sample_calib=True device=cuda select=best
+C:\Users\Admin\dz\DriveZero\DriveRL\nuplan-devkit\nuplan\common\maps\nuplan_map\utils.py:413: RuntimeWarning: invalid value encountered in cast
+  return elements.iloc[np.where(elements[column_label].to_numpy().astype(int) == int(desired_value))]
+    [5/136] rows 434  misses 0  609 s
+    [10/136] rows 699  misses 0  979 s
+    [15/136] rows 956  misses 0  1334 s
+    [20/136] rows 1,223  misses 0  1705 s
+    [25/136] rows 1,458  misses 0  2028 s
+    [30/136] rows 1,673  misses 0  2329 s
+    [35/136] rows 2,041  misses 0  2842 s
+    [40/136] rows 2,504  misses 0  3485 s
+    [45/136] rows 3,117  misses 0  4331 s
+    [50/136] rows 4,064  misses 0  5666 s
+C:\Users\Admin\dz\DriveZero\DriveRL\nuplan-devkit\nuplan\common\maps\nuplan_map\utils.py:413: RuntimeWarning: invalid value encountered in cast
+  return elements.iloc[np.where(elements[column_label].to_numpy().astype(int) == int(desired_value))]
+C:\Users\Admin\dz\DriveZero\DriveRL\nuplan-devkit\nuplan\common\maps\nuplan_map\utils.py:413: RuntimeWarning: invalid value encountered in cast
+  return elements.iloc[np.where(elements[column_label].to_numpy().astype(int) == int(desired_value))]
+    [55/136] rows 4,400  misses 0  6137 s
+    [60/136] rows 4,847  misses 0  6758 s
+    [65/136] rows 5,284  misses 0  7364 s
+    [70/136] rows 5,618  misses 0  7827 s
+    [75/136] rows 5,918  misses 0  8243 s
+    [80/136] rows 6,151  misses 0  8567 s
+    [85/136] rows 6,503  misses 0  9066 s
+    [90/136] rows 7,163  misses 0  9996 s
+    [95/136] rows 7,475  misses 0  10432 s
+    [100/136] rows 8,495  misses 0  11936 s
+    [105/136] rows 8,811  misses 0  12398 s
+    [110/136] rows 9,052  misses 0  12752 s
+    [115/136] rows 9,566  misses 0  13511 s
+    [120/136] rows 10,089  misses 0  14277 s
+C:\Users\Admin\dz\DriveZero\DriveRL\nuplan-devkit\nuplan\common\maps\nuplan_map\utils.py:413: RuntimeWarning: invalid value encountered in cast
+  return elements.iloc[np.where(elements[column_label].to_numpy().astype(int) == int(desired_value))]
+    [125/136] rows 10,559  misses 0  14965 s
+    [130/136] rows 11,298  misses 0  16092 s
+    [135/136] rows 11,805  misses 0  16866 s
+    [136/136] rows 12,146  misses 0  17393 s
+{
+ "tokens_asked": 12146,
+ "rows": 12146,
+ "misses": 0,
+ "ckpt": "D:/Projects/TanitAD/data/refe_runs_eval/model_final.pt",
+ "select": "best",
+ "rule": "navsim_v1",
+ "repair_last_heading": true,
+ "sanitize_goal": false,
+ "frame_control": {
+  "n": 12146,
+  "max_m": 6.18063877792441,
+  "median_m": 9.155133597044475e-16,
+  "bar_m": 0.001,
+  "what": "log future on NAVSIM's 0.5 s grid vs W3 human_future_poses"
+ },
+ "interpolation_residual": {
+  "n": 12146,
+  "max_m": 6.180638777924402,
+  "median_m": 0.0073124447051554865,
+  "what": "log future on REFe's 0.2 s grid -> to_navsim, vs W3; reported, not gated"
+ },
+ "seconds": 17393.3,
+ "proposals": {
+  "n": 12146,
+  "M": 64,
+  "ade_selected_m": 1.5056,
+  "ade_random_m": 1.5576,
+  "ade_oracle_m": 0.4164,
+  "oracle_index_distinct": 64,
+  "oracle_index_top5": [
+   [
+    12,
+    967
+   ],
+   [
+    56,
+    563
+   ],
+   [
+    4,
+    517
+   ],
+   [
+    52,
+    472
+   ],
+   [
+    6,
+    464
+   ]
+  ],
+  "selected_index_distinct": 64,
+  "endpoint_spread_m": 2.116,
+  "what": "open-loop ADE over NAVSIM's 8 poses (0.5 s) vs W3's human future: selected = the planner's pick; random = mean over the M proposals (a random selector's expectation); oracle = best of M; oracle_index_* = how many proposals are ever best (WTA collapse if few); endpoint_spread = mean distance of the M endpoints from their centroid"
+ },
+ "proposal_dump": "D:\\Projects\\TanitAD\\data\\refe_navtest\\proptable\\navtest_final\\proposals.npz"
+}
+ZZSEAM_FAIL 12146 6.1806

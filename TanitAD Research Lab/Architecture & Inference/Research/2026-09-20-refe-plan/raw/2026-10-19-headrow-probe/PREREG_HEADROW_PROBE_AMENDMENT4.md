@@ -1,0 +1,13 @@
+# Amendment 4 to PREREG_HEADROW_PROBE: C2z, the C2 rule's false-RED rate under the null it is MEANT to pass (label noise on these features); POST-HOC, UNREGISTERED, DESCRIPTIVE (it decides nothing)
+
+**Parent:** `PREREG_HEADROW_PROBE.md` sha256 `1800705ef49333dffe0162ea5e51eb72fa1fe8fba57a0ea2f2869bf156762c55`; Amendments 1 to 3 (sha256 in their `.sha256` files).
+
+**Written 2026-10-19 ~09:54, after the outcome tables, the C2x numbers and the C2y numbers were read, BEFORE any C2z number exists.** Sections 2 to 7 of the parent are unchanged. Nothing here changes, rescues or voids a call.
+
+## Why
+
+The parent promised "the control's false-RED rate under the null it is meant to pass". It was measured (nullrate.json) with iid N(0,1) scores independent of the labels: 13 to 17 % per (row, arm) cell, about 3 % per replicate. That null is NOT the one C2 faces: C2 scores a probe that was TRAINED on noise labels, whose output is a function of P2's strongly structured features, not iid noise. The data after the fact: the registered C2 read +0.00 to +0.32 above 0.5 in 8 of 8 cells, C2x 8 of 8 RED (+0.10 to +0.33), C2y (entry-level permutation) 2 of 8 RED with points from -0.09 to +0.10 (both signs), and the proposal index alone scores 0.49 to 0.51 against the labels (no position prior). A noise-trained probe whose sign and size vary from fit to fit has a false-RED rate far above 3 % under a "lower CI > 0" rule that only sees log-sampling noise. C2z measures it.
+
+## C2z (exact)
+
+L arm only (the cheap arm; M is not run, a stated limit), cold start, Adam lr 1e-3, weight decay 1e-4, 20 epochs, 256 sets per batch, 5 folds grouped by log, training seed 0, the C2y entry-level label permutation (the flattened [sets x 64] labels of the row randomly permuted), **8 replicates per row** with permutation seeds `20261019 + 1000*rep + 10*col + 5` (rep = 1..8), scored OOF against the real labels and valid mask, all-64 concordance, the registered estimator. Per row report: for each replicate (concordance - 0.5) and its lower bound; the number of replicates with lower bound > 0 (RED), the number with upper bound < 0 (significantly BELOW 0.5), their Wilson 95 % intervals, and the spread (min, max) of (concordance - 0.5). **No threshold is committed: it is a measurement of the control's calibration.** Reading, committed now: if the per-replicate RED rate exceeds 10 % in any row, the registered C2 rule is miscalibrated for features of this kind, the C2 REDs of this probe carry no information about a pipeline artefact, and any successor registration that reuses the rule must replace it (e.g. by a null calibrated on noise-trained fits of the same arm).

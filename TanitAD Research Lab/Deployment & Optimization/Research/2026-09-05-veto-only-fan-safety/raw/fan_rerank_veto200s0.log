@@ -1,0 +1,41 @@
+[v3] nav_from_v7: follow 90 / left 13 / right 38, missing 0 (of 141 clips; md5=aa12c948f062181c3297265b51526ec5)
+[rerank] 480 windows · device=cuda · step=40284
+  [4/480]
+  [52/480]
+  [100/480]
+  [148/480]
+  [196/480]
+  [244/480]
+  [292/480]
+  [340/480]
+  [388/480]
+  [436/480]
+
+=== SELECTED-PATH SAFETY vs ADE, by selection rule (n=480w / 138ep, lead n=139) ===
+  rule            ade_m     d_ade  sep |  envelope     d_env  sep |   infeas   peak_g  agree
+  model          0.4810      +nan    - |    0.1104      +nan    - |   0.1104   0.2016  1.000
+  kin_only       0.5817   -0.1007 True |    0.0729   +0.0375 True |   0.0729   0.1297  0.171
+  reward_full    1.0875   -0.6065 True |    0.0708   +0.0396 True |   0.0708   0.4481    nan
+  gate2          0.4834   -0.0023 False |    0.0896   +0.0208 True |   0.0896   0.1617  0.492
+  gate4          0.5084   -0.0273 False |    0.0771   +0.0333 True |   0.0771   0.1409  0.277
+  gate8          0.5500   -0.0689 True |    0.0729   +0.0375 True |   0.0729   0.1293  0.202
+  gate16         0.5745   -0.0935 True |    0.0729   +0.0375 True |   0.0729   0.1299  0.175
+  gate32         0.5773   -0.0962 True |    0.0729   +0.0375 True |   0.0729   0.1298  0.171
+  gate128        0.5817   -0.1007 True |    0.0729   +0.0375 True |   0.0729   0.1297  0.171
+  oracle         0.2313   +0.2498 True |    0.1521   -0.0417 True |   0.1542   0.2238    nan
+
+=== STAGE DECOMPOSITION: bank -> +classifier offset -> emitted fan ===
+  after the classifier pass: fan_env 1.0000 · fan_peak_g 8.8146 · off_reach 0.4272 · oracle_ade 2.2202
+
+=== SHRINK SWEEP  path(lambda) = ANCHOR BANK + lambda * (fan - bank) ===
+  (lambda=0 must reproduce bank_vs_fan_feasibility.py's independent bank rates)
+   lambda  fan_env  fan_peak_g  fan_offreach  oracle_ade  sel_ade  sel_env  spread_m
+     0.00   0.0156      0.4808        0.7811      1.0978   4.1001   0.0083   18.2174
+     0.10   0.2161      0.5445        0.7588      1.0008   3.6957   0.0083   16.6832
+     0.25   0.6178      0.8172        0.7141      0.8549   3.0923   0.0000   14.3964
+     0.40   0.7398      1.1829        0.6458      0.7099   2.4942   0.0021   12.1348
+     0.55   0.8030      1.6628        0.5435      0.5656   1.9030   0.0521    9.9142
+     0.70   0.8431      2.5113        0.3888      0.4269   1.3294   0.0792    7.7672
+     0.85   0.8692      3.5350        0.2200      0.2971   0.8000   0.1000    5.7769
+     1.00   0.8882      4.0828        0.1009      0.2313   0.4810   0.1104    4.2270
+[rerank] -> C:/Users/Admin/veto_run/raw/fan_rerank_veto200s0.json

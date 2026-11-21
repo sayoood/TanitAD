@@ -1,0 +1,115 @@
+PASS  probe/unmutated_script_has_no_violation
+PASS  probe/mutation_caught: no lock refusal
+PASS  probe/mutation_caught: a read-only lock fd
+PASS  probe/mutation_caught: no -e guard (the rw open would create a lock file)
+PASS  probe/mutation_caught: s1aux lock dropped
+PASS  probe/mutation_caught: p2 replicate lock dropped
+PASS  probe/mutation_caught: rls1 lock dropped
+PASS  probe/mutation_caught: pkill
+PASS  probe/mutation_caught: pgrep -f
+PASS  probe/mutation_caught: a child without fd 200 closed
+PASS  probe/mutation_caught: the GPU is not asked
+PASS  probe/mutation_caught: the quiet check is gone
+PASS  probe/mutation_caught: D9 writes the real cache
+PASS  probe/mutation_caught: no cleanup trap
+PASS  probe/mutation_caught: a token reaches a child
+PASS  probe/mutation_caught: the token is not dropped
+PASS  probe/mutation_caught: a network call
+PASS  probe/mutation_caught: an address
+PASS  probe/mutation_caught: workers from nproc
+PASS  probe/mutation_caught: the diag under another OMP
+PASS  probe/mutation_caught: 64 sets only
+PASS  probe/mutation_caught: one worker count
+PASS  probe/mutation_caught: no time budget
+PASS  probe/mutation_caught: a stage without its budget check
+PASS  probe/mutation_caught: a dd in one piece
+PASS  probe/mutation_caught: the verdict before the dd
+PASS  probe/mutation_caught: xtrace
+PASS  probe/lw_formula_equals_p6_pod_sh
+PASS  probe/cw_formula_equals_p6_pod_sh
+PASS  probe/chain_exports_omp4_before_the_lab_stage
+PASS  probe/chain_sets_no_sim_hz_so_neither_does_the_probe_by_default
+PASS  probe/shell_syntax
+PASS  probe/test_flock_rw_passes_with_the_probe_in_the_tree
+PASS  helper/constants_equal_the_gates_own
+PASS  helper/gate_bar_is_6_735
+PASS  helper/micro_batch_is_57_over_64
+PASS  cgroup/v2_cpu_max
+PASS  cgroup/v1_cfs_is_11_05_not_96
+PASS  cgroup/max_falls_back_and_says_UNVERIFIED
+PASS  cgroup/unlimited_v1_falls_back_and_says_UNVERIFIED
+PASS  cgroup/no_files_falls_back
+PASS  cgroup/v1_counters
+PASS  cgroup/v2_counters_and_unlimited_memory
+PASS  cgroup/unreadable_is_empty_not_zero
+PASS  cgroup/delta
+PASS  bank/exact_workload_counts
+PASS  bank/sample_is_whole_logs_evenly_spaced
+PASS  bank/the_sample_is_a_bank_build_metric_cache_reads
+PASS  bank/a_capped_scan_says_INCOMPLETE
+PASS  bank/head_row_none_on_garbage
+PASS  verdict/FIT
+PASS  verdict/FIT_at_exactly_the_bar
+PASS  verdict/just_below_the_bar_is_not_FIT
+PASS  verdict/stall_over_5pct_is_not_FIT
+PASS  verdict/no_paced_data_is_not_FIT
+PASS  verdict/MARGINAL_when_another_W_passes
+PASS  verdict/MARGINAL_at_exactly_the_need
+PASS  verdict/SHORT_just_below_the_need
+PASS  verdict/VOID_on_identity_failure_even_with_a_great_rate
+PASS  verdict/VOID_when_the_stale_arm_is_not_refused
+PASS  verdict/VOID_when_nothing_was_measured
+PASS  verdict/default_W_missing_cannot_be_FIT
+PASS  days/at_the_need_it_is_the_accepted_6_8
+PASS  days/half_the_rate_doubles_it
+PASS  helper/percentile
+PASS  d9/arithmetic
+PASS  pool/thru_labels_everything
+PASS  pool/chunks_2_makes_2_jobs_per_set_and_labels_all
+PASS  pool/latency_records_one_value_per_micro_batch
+PASS  pool/paced_reports_a_stall_fraction_in_0_1
+PASS  pool/chunks_must_divide_64
+PASS  tree/sees_a_real_child_with_rss
+PASS  verdict_cli/one_line_MARGINAL_with_the_numbers
+PASS  verdict_cli/writes_verdict_json
+PASS  sandbox/FIT_path_prints_ZZP6CPU_FIT_and_exits_0
+PASS  sandbox/the_verdict_line_carries_the_numbers
+PASS  sandbox/diag_ran_once_per_worker_count_with_256_sets
+PASS  sandbox/the_diag_ran_under_the_chains_OMP_4_and_the_D9_build_under_1
+PASS  sandbox/the_AB_arm_ran_with_1_BLAS_thread
+PASS  sandbox/the_chunk_2_arm_ran_at_the_default_W
+PASS  sandbox/D9_build_used_the_cgroup_cores_as_workers_and_the_scratch_dir
+PASS  sandbox/no_token_reached_any_child
+PASS  sandbox/REFE_SIM_HZ_is_not_set_unless_asked
+PASS  sandbox/scratch_is_removed
+PASS  sandbox/the_dd_file_is_removed
+PASS  sandbox/the_real_metric_cache_dir_was_never_created
+PASS  sandbox/no_lock_file_was_created_by_the_probe
+PASS  sandbox/dd_reached_its_target_in_chunks
+PASS  sandbox/log_markers_in_stage_order
+PASS  sandbox/the_probe_log_holds_no_token
+PASS  sandbox/MARGINAL_when_the_default_W_is_under_the_bar
+PASS  sandbox/MARGINAL_when_throughput_passes_but_the_paced_stall_does_not
+PASS  sandbox/SHORT_when_no_W_reaches_the_need
+PASS  sandbox/VOID_when_identity_fails_at_any_W
+PASS  sandbox/VOID_and_no_pool_when_D9_failed
+PASS  sandbox/REFUSED_while_the_rls1_chain_holds_its_lock
+PASS  sandbox/REFUSED_while_the_s1aux_chain_holds_its_lock
+PASS  sandbox/REFUSED_while_the_refe_p2rep_chain_holds_its_lock
+PASS  sandbox/REFUSED_when_a_process_is_on_the_GPU
+PASS  sandbox/REFUSED_when_nvidia_smi_cannot_be_asked
+PASS  sandbox/REFUSED_when_the_cgroup_is_already_burning_cores
+PASS  sandbox/REFUSED_when_another_probe_runs
+PASS  sandbox/the_refused_second_probe_deleted_nothing_of_the_running_one
+PASS  sandbox/the_quiet_bar_is_a_knob_not_a_constant
+PASS  sandbox/a_spent_budget_skips_stages_and_says_so
+PASS  sandbox/a_spent_budget_is_VOID_and_stale_files_of_the_previous_run_do_not_leak
+PASS  sandbox/dd_stops_at_its_time_cap_and_reports_the_GB_proven
+PASS  sandbox/P6CPU_KEEP_keeps_the_scratch
+PASS  sandbox/the_next_default_run_clears_it
+PASS  sandbox/P6CPU_SIM_HZ_reaches_the_build_and_the_pool
+PASS  sandbox/a_worker_count_above_cores_plus_1_is_skipped_and_logged
+ZZINFO what only the pod can prove: the real NAVSIM labeller's cost on its vCPUs, its cgroup counters (cpu.stat, memory.stat), NFSv4 flock semantics, the real dd, and the real bank's row layout (this fixture puts the key fields at the tail, as the dev-box bank does)
+ZZTEST_PASS 111
+
+ZZBOUNDED rc=0 peak_children=8 secs=148.2 killed=none survivors=0

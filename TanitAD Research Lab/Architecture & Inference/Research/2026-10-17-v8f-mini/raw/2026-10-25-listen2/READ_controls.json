@@ -1,0 +1,437 @@
+{
+ "prereg": "PREREG_V8F_LISTEN2",
+ "prereg_commit": "067c8b74",
+ "executed": "2026-10-25",
+ "tier": "T1-class open loop, DIAGNOSTIC (donor / mean inputs are interventions, not driving)",
+ "estimator": "paired episode-cluster bootstrap, B=2000, seed 0, 141 episodes (taniteval/ci.py); answers 'another draw of EPISODES', not 'another training run' (two seeds side by side) and not 'another inference run' (deterministic)",
+ "evidence_class": "MEASURED (ours); artifacts in this directory (runs/*.npz)",
+ "controls": {
+  "identity": {
+   "s0": {
+    "n_rows": 8,
+    "max_abs_diff_vs_clean": 0.0,
+    "rows_not_identical": [],
+    "pass": true,
+    "delta_zero": {
+     "n_cells": 18,
+     "max_abs_delta": 0.0,
+     "n_separated": 0,
+     "pass": true
+    }
+   },
+   "s1": {
+    "n_rows": 8,
+    "max_abs_diff_vs_clean": 0.0,
+    "rows_not_identical": [],
+    "pass": true,
+    "delta_zero": {
+     "n_cells": 18,
+     "max_abs_delta": 0.0,
+     "n_separated": 0,
+     "pass": true
+    }
+   }
+  },
+  "own_value": {
+   "s0": {
+    "n_rows": 19,
+    "max_abs_diff_vs_clean": 0.0,
+    "rows_not_identical": [],
+    "pass": true,
+    "delta_zero": {
+     "n_cells": 33,
+     "max_abs_delta": 0.0,
+     "n_separated": 0,
+     "pass": true
+    }
+   },
+   "s1": {
+    "n_rows": 19,
+    "max_abs_diff_vs_clean": 0.0,
+    "rows_not_identical": [],
+    "pass": true,
+    "delta_zero": {
+     "n_cells": 33,
+     "max_abs_delta": 0.0,
+     "n_separated": 0,
+     "pass": true
+    }
+   }
+  },
+  "reproduction": {
+   "s0": {
+    "levels": {
+     "S": {
+      "mine": 8.01224136352539,
+      "listen": 8.01224136352539,
+      "abs_diff": 0.0
+     },
+     "T-lat": {
+      "mine": 0.8156957183062286,
+      "listen": 0.8156957183062286,
+      "abs_diff": 0.0
+     },
+     "T-lon": {
+      "mine": 0.49915533884637825,
+      "listen": 0.49915533884637825,
+      "abs_diff": 0.0
+     },
+     "O": {
+      "mine": 2.1753060746752637,
+      "listen": 2.1753060638040864,
+      "abs_diff": 1.0871177291704726e-08
+     }
+    },
+    "max_level_diff": 1.0871177291704726e-08,
+    "max_perwindow_diff_vs_listen_clean": 0.0001068115234375,
+    "perwindow": {
+     "clean/S:ck_now": 3.0517578125e-05,
+     "clean/T:lat_pred": 0.0,
+     "clean/T:lon_pred": 0.0,
+     "clean/O:ade6": 3.516108830758924e-06,
+     "clean/O:ade2": 1.143512461165841e-06,
+     "clean/full:ckpt": 2.288818359375e-05,
+     "clean/full:goal_prob": 3.8743019104003906e-07,
+     "clean/full:cons_pred": 0.0001068115234375,
+     "clean/full:lat_logits": 9.5367431640625e-06,
+     "clean/full:lon_logits": 3.0994415283203125e-06,
+     "clean/full:traj30": 2.288818359375e-05,
+     "clean/full:code": 5.7220458984375e-06
+    },
+    "pass_1e-4": true,
+    "listen_cells_recomputed_maxabs_DIAGNOSTIC": {
+     "S/nav": 3.0517578125e-05,
+     "T/ck": 0.0,
+     "T/nav": 0.0,
+     "O/ego": 1.0448934656182018e-05,
+     "O/ck": 3.5384402714555563e-06,
+     "O/code": 1.068037079754447e-05,
+     "e1/nav@S vs LISTEN nav@S (ade6)": 6.683622871150874e-06,
+     "e1/nav@S S-row vs own S/nav cell (bit-identity expected)": 0.0
+    }
+   },
+   "s1": {
+    "levels": {
+     "S": {
+      "mine": 7.938448429107666,
+      "listen": 7.938449382781982,
+      "abs_diff": 9.5367431640625e-07
+     },
+     "T-lat": {
+      "mine": 0.8292251400240062,
+      "listen": 0.8292251400240062,
+      "abs_diff": 0.0
+     },
+     "T-lon": {
+      "mine": 0.509529097663864,
+      "listen": 0.509529097663864,
+      "abs_diff": 0.0
+     },
+     "O": {
+      "mine": 2.054566016801991,
+      "listen": 2.054566010448041,
+      "abs_diff": 6.3539498107445525e-09
+     }
+    },
+    "max_level_diff": 9.5367431640625e-07,
+    "max_perwindow_diff_vs_listen_clean": 0.0001220703125,
+    "perwindow": {
+     "clean/S:ck_now": 4.57763671875e-05,
+     "clean/T:lat_pred": 0.0,
+     "clean/T:lon_pred": 0.0,
+     "clean/O:ade6": 3.3012211200222907e-06,
+     "clean/O:ade2": 9.710532480333711e-07,
+     "clean/full:ckpt": 4.57763671875e-05,
+     "clean/full:goal_prob": 7.003545761108398e-07,
+     "clean/full:cons_pred": 0.0001220703125,
+     "clean/full:lat_logits": 5.7220458984375e-06,
+     "clean/full:lon_logits": 3.814697265625e-06,
+     "clean/full:traj30": 2.002716064453125e-05,
+     "clean/full:code": 6.67572021484375e-06
+    },
+    "pass_1e-4": true,
+    "listen_cells_recomputed_maxabs_DIAGNOSTIC": {
+     "S/nav": 2.288818359375e-05,
+     "T/ck": 0.0,
+     "T/nav": 0.0,
+     "O/ego": 9.007514421455198e-06,
+     "O/ck": 4.183669082280517e-06,
+     "O/code": 1.0126679093502844e-05,
+     "e1/nav@S vs LISTEN nav@S (ade6)": 3.6116513388861904e-06,
+     "e1/nav@S S-row vs own S/nav cell (bit-identity expected)": 0.0
+    }
+   }
+  },
+  "means": {
+   "s0": {
+    "n_windows": 9582,
+    "n_fit_windows_hblend": 9582,
+    "fit_clips_sha256": "458ce2975914b20c7dd91ed4b47032de55d86d9b8fda4df8a0cc0e3ca09921b1",
+    "ckpt_sha256": "601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8",
+    "native_tracks_sha256": "1db431f112b1bd7c426073c43c7df5fc75b2a032736c1e2020f02ffb118669e7",
+    "window_list_equal": {
+     "ci": true,
+     "t": true,
+     "a_t": true,
+     "a_s": true
+    },
+    "max_abs_traj30_vs_hblend_fit_windows_m": 2.6702880859375e-05,
+    "pass": true,
+    "pad_any_windows_per_layer": {
+     "S": 697,
+     "T": 421,
+     "O": 282
+    },
+    "mean_ages_ticks": [
+     0.9803798789396786,
+     2.8916718847839697
+    ],
+    "seconds": 53.0
+   },
+   "s1": {
+    "n_windows": 9582,
+    "n_fit_windows_hblend": 9582,
+    "fit_clips_sha256": "458ce2975914b20c7dd91ed4b47032de55d86d9b8fda4df8a0cc0e3ca09921b1",
+    "ckpt_sha256": "6104fb15dc21d524b6ed53be632b8d53ec5413526ac587734c22684c7e50c2e6",
+    "native_tracks_sha256": "1db431f112b1bd7c426073c43c7df5fc75b2a032736c1e2020f02ffb118669e7",
+    "window_list_equal": {
+     "ci": true,
+     "t": true,
+     "a_t": true,
+     "a_s": true
+    },
+    "max_abs_traj30_vs_hblend_fit_windows_m": 3.814697265625e-05,
+    "pass": true,
+    "pad_any_windows_per_layer": {
+     "S": 697,
+     "T": 421,
+     "O": 282
+    },
+    "mean_ages_ticks": [
+     0.9803798789396786,
+     2.8916718847839697
+    ],
+    "seconds": 51.8
+   }
+  },
+  "e1_invariance": {
+   "s0": {
+    "windows_asserted": 2399,
+    "windows": 2399,
+    "pass": true
+   },
+   "s1": {
+    "windows_asserted": 2399,
+    "windows": 2399,
+    "pass": true
+   },
+   "s0_d1": {
+    "windows_asserted": 2399,
+    "windows": 2399,
+    "pass": true
+   },
+   "s0_id": {
+    "windows_asserted": 2399,
+    "windows": 2399,
+    "pass": true
+   },
+   "s1_id": {
+    "windows_asserted": 2399,
+    "windows": 2399,
+    "pass": true
+   }
+  },
+  "required_present": {
+   "identity": [
+    "s0",
+    "s1"
+   ],
+   "own_value": [
+    "s0",
+    "s1"
+   ],
+   "reproduction": [
+    "s0",
+    "s1"
+   ],
+   "means": [
+    "s0",
+    "s1"
+   ],
+   "e1_invariance": [
+    "s0",
+    "s0_d1",
+    "s0_id",
+    "s1",
+    "s1_id"
+   ]
+  },
+  "all_present_pass": true,
+  "complete": true
+ },
+ "readings_fixed_before_data": "THAT THE TEXT LEAVES OPEN (all fixed here and in ``read2.py``, in code, BEFORE any LISTEN2 number was computed):\n  M1  \"the training-set mean of that input\": the mean over the 9,582 HBLEND training windows (``train_windows(hist, start)`` of the 141 fit clips, the\n      eval's cycle ages by window index) of the input AS THE LAYER READS IT at inference (``forward_infer``): per layer, at that layer's own tick, the\n      token its producer builds (ego / nav / limit), the scene tokens, S's checkpoints in the layer's frame (``ck_for_t`` for T, ``ck_for_o`` for O),\n      T's code, and the age pair. Every producer except the scene's is LINEAR, so the mean token of an input IS the producer of the mean input; the\n      scene mean is taken token by token over the windows whose frame is not padded, and the replacement scene is not padded (pad all False).\n  M2  mean ages: the mean (a_t, a_s) in ticks, fed as FLOAT tensors (the model only ever calls ``.float()`` on them).\n  M3  E2's \"largest effect\": the argmax over the row's input columns of the SIGNED delta (the harm direction of the PREREG's sign convention). With\n      delta(L, all) > 0 this equals R1's argmax of n = delta(L,X) / delta(L,all); it is used because 'all' may be undefined under mean replacement.\n  M4  E2 verdict: a row AGREES iff its argmax equals the grid's largest-n input at BOTH seeds; k = the number of agreeing rows; ROBUST iff k = 4,\n      PARTLY ROBUST iff k in {2, 3}, NOT ROBUST iff k < 2. The per-seed counts are reported beside.\n  M5  E3 \"max over the three single swaps\": the single swap with the largest MEAN ADE6 on the full set (per seed); E3 = joint - that swap, paired.\n      (A per-window maximum would be an upward-biased comparator and is reported only as a descriptive row.)\n  M6  E1 \"above the donor-seed floor\": |E1(s0, donor 0) - E1(s0, donor 1)| of the same metric, applied to BOTH seeds (LISTEN's R3).\n  M7  E1 outcome precedence: ROUTE FLOWS DOWN iff E1 > 0, separated and above the floor at both seeds; else PARALLEL PATH iff E1 is not separated\n      at either seed; else SEEDS DISAGREE.",
+ "run_meta": {
+  "s0": {
+   "prereg": "PREREG_V8F_LISTEN2",
+   "prereg_commit": "067c8b74",
+   "mode": "donor",
+   "seed": "s0",
+   "identity": false,
+   "donor_seed": 0,
+   "n_windows": 2399,
+   "n_windows_asserted_E1_invariance": 2399,
+   "ckpt": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\sfresh\\inputs\\M2b_s0\\ckpt_last.pt",
+   "ckpt_sha256": "601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8",
+   "threads": 6,
+   "device": "cpu",
+   "ages": "cycle",
+   "seconds": 43.1,
+   "perm_sha256": "116c17f563630559ffb13f5c9c36d0a2cf32e612eedee48f5c8a4157373f6503",
+   "means_sha256": null
+  },
+  "s1": {
+   "prereg": "PREREG_V8F_LISTEN2",
+   "prereg_commit": "067c8b74",
+   "mode": "donor",
+   "seed": "s1",
+   "identity": false,
+   "donor_seed": 0,
+   "n_windows": 2399,
+   "n_windows_asserted_E1_invariance": 2399,
+   "ckpt": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\sfresh\\inputs\\M2b_s1\\ckpt_last.pt",
+   "ckpt_sha256": "6104fb15dc21d524b6ed53be632b8d53ec5413526ac587734c22684c7e50c2e6",
+   "threads": 6,
+   "device": "cpu",
+   "ages": "cycle",
+   "seconds": 40.6,
+   "perm_sha256": "116c17f563630559ffb13f5c9c36d0a2cf32e612eedee48f5c8a4157373f6503",
+   "means_sha256": null
+  },
+  "s0_d1": {
+   "prereg": "PREREG_V8F_LISTEN2",
+   "prereg_commit": "067c8b74",
+   "mode": "donor",
+   "seed": "s0",
+   "identity": false,
+   "donor_seed": 1,
+   "n_windows": 2399,
+   "n_windows_asserted_E1_invariance": 2399,
+   "ckpt": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\sfresh\\inputs\\M2b_s0\\ckpt_last.pt",
+   "ckpt_sha256": "601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8",
+   "threads": 6,
+   "device": "cpu",
+   "ages": "cycle",
+   "seconds": 41.7,
+   "perm_sha256": "c712deb43c403e08a109e8e0e23538b3773456c0882f67e6286f395024f39cac",
+   "means_sha256": null
+  },
+  "s0_id": {
+   "prereg": "PREREG_V8F_LISTEN2",
+   "prereg_commit": "067c8b74",
+   "mode": "donor",
+   "seed": "s0",
+   "identity": true,
+   "donor_seed": null,
+   "n_windows": 2399,
+   "n_windows_asserted_E1_invariance": 2399,
+   "ckpt": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\sfresh\\inputs\\M2b_s0\\ckpt_last.pt",
+   "ckpt_sha256": "601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8",
+   "threads": 6,
+   "device": "cpu",
+   "ages": "cycle",
+   "seconds": 47.2,
+   "perm_sha256": "792496bca39d08a97024759c08eab2b36ad9ca88408d71dcd990e193120c905c",
+   "means_sha256": null
+  },
+  "s1_id": {
+   "prereg": "PREREG_V8F_LISTEN2",
+   "prereg_commit": "067c8b74",
+   "mode": "donor",
+   "seed": "s1",
+   "identity": true,
+   "donor_seed": null,
+   "n_windows": 2399,
+   "n_windows_asserted_E1_invariance": 2399,
+   "ckpt": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\sfresh\\inputs\\M2b_s1\\ckpt_last.pt",
+   "ckpt_sha256": "6104fb15dc21d524b6ed53be632b8d53ec5413526ac587734c22684c7e50c2e6",
+   "threads": 6,
+   "device": "cpu",
+   "ages": "cycle",
+   "seconds": 41.7,
+   "perm_sha256": "792496bca39d08a97024759c08eab2b36ad9ca88408d71dcd990e193120c905c",
+   "means_sha256": null
+  },
+  "s0_mean": {
+   "prereg": "PREREG_V8F_LISTEN2",
+   "prereg_commit": "067c8b74",
+   "mode": "mean",
+   "seed": "s0",
+   "identity": false,
+   "donor_seed": null,
+   "n_windows": 2399,
+   "n_windows_asserted_E1_invariance": 0,
+   "ckpt": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\sfresh\\inputs\\M2b_s0\\ckpt_last.pt",
+   "ckpt_sha256": "601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8",
+   "threads": 6,
+   "device": "cpu",
+   "ages": "cycle",
+   "seconds": 38.9,
+   "perm_sha256": null,
+   "means_sha256": "f09974ed69fa10840eccba2e155cab57e02630f14b9df1e8765ac864f57aef9a"
+  },
+  "s1_mean": {
+   "prereg": "PREREG_V8F_LISTEN2",
+   "prereg_commit": "067c8b74",
+   "mode": "mean",
+   "seed": "s1",
+   "identity": false,
+   "donor_seed": null,
+   "n_windows": 2399,
+   "n_windows_asserted_E1_invariance": 0,
+   "ckpt": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\sfresh\\inputs\\M2b_s1\\ckpt_last.pt",
+   "ckpt_sha256": "6104fb15dc21d524b6ed53be632b8d53ec5413526ac587734c22684c7e50c2e6",
+   "threads": 6,
+   "device": "cpu",
+   "ages": "cycle",
+   "seconds": 42.6,
+   "perm_sha256": null,
+   "means_sha256": "cb7e4ba5d2cd39a4e562a190bc5b35e422ce12e4f907afcca64d3a14f75b5f3d"
+  },
+  "s0_own": {
+   "prereg": "PREREG_V8F_LISTEN2",
+   "prereg_commit": "067c8b74",
+   "mode": "own",
+   "seed": "s0",
+   "identity": false,
+   "donor_seed": null,
+   "n_windows": 2399,
+   "n_windows_asserted_E1_invariance": 0,
+   "ckpt": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\sfresh\\inputs\\M2b_s0\\ckpt_last.pt",
+   "ckpt_sha256": "601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8",
+   "threads": 6,
+   "device": "cpu",
+   "ages": "cycle",
+   "seconds": 39.6,
+   "perm_sha256": null,
+   "means_sha256": null
+  },
+  "s1_own": {
+   "prereg": "PREREG_V8F_LISTEN2",
+   "prereg_commit": "067c8b74",
+   "mode": "own",
+   "seed": "s1",
+   "identity": false,
+   "donor_seed": null,
+   "n_windows": 2399,
+   "n_windows_asserted_E1_invariance": 0,
+   "ckpt": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\sfresh\\inputs\\M2b_s1\\ckpt_last.pt",
+   "ckpt_sha256": "6104fb15dc21d524b6ed53be632b8d53ec5413526ac587734c22684c7e50c2e6",
+   "threads": 6,
+   "device": "cpu",
+   "ages": "cycle",
+   "seconds": 40.6,
+   "perm_sha256": null,
+   "means_sha256": null
+  }
+ }
+}

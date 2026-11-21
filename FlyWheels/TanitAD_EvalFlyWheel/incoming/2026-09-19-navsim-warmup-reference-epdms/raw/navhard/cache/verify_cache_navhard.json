@@ -1,0 +1,112 @@
+{
+ "split": "navhard_two_stage",
+ "cache": "C:\\Users\\Admin\\navsim-crun\\exp\\metric_cache_navhard_two_stage",
+ "checks": {
+  "C3_counts": {
+   "n_on_disk": 5912,
+   "n_disk_tokens": 5912,
+   "n_csv_rows": 5912,
+   "n_csv_tokens": 5912,
+   "n_expected": 5912,
+   "n_expected_stage_one": 450,
+   "n_expected_stage_two": 5462,
+   "disk_eq_csv": true,
+   "disk_eq_yaml": true,
+   "missing_vs_yaml": [],
+   "unused_vs_yaml": [],
+   "n_log_groups_in_scene_filter": 76,
+   "pass": true
+  },
+  "C2_scene_type": {
+   "n_loaded": 5912,
+   "scene_type_counts": {
+    "SceneFrameType.SYNTHETIC": 5462,
+    "SceneFrameType.ORIGINAL": 450
+   },
+   "n_mismatch_vs_yaml": 0,
+   "mismatch": [],
+   "human_trajectory_none_iff_synthetic": true,
+   "pass": true
+  }
+ },
+ "fail": [],
+ "metadata_csvs": [
+  "C:\\Users\\Admin\\navsim-crun\\exp\\metric_cache_navhard_two_stage\\metadata\\metric_cache_navhard_two_stage_metadata_node_0.csv"
+ ],
+ "csv_header": "file_name",
+ "csv_rows_contain_backslash": 5912,
+ "csv_rows_contain_forwardslash": 0,
+ "unpatched_loader": {
+  "status": "OK",
+  "n_tokens": 5912
+ },
+ "patched_loader": {
+  "status": "OK",
+  "n_tokens": 5912
+ },
+ "map_roots_recorded": [
+  "C:/Users/Admin/navsim-crun/data/maps"
+ ],
+ "map_names": {
+  "sg-one-north": 1320,
+  "us-ma-boston": 1448,
+  "us-nv-las-vegas-strip": 786,
+  "us-pa-pittsburgh-hazelwood": 2358
+ },
+ "cache_bytes_total": 1274707584,
+ "entry_load_s_mean": 0.323,
+ "build": {
+  "wrapper_status": "OK",
+  "wall_s": 5175.9,
+  "peak_rss_mb": 399.2,
+  "min_system_available_mb": 8569.7,
+  "n_hook_scenes": 0,
+  "n_hook_ok": 0,
+  "stage_one_scene_s": {
+   "n": 0,
+   "sum": 0,
+   "mean": 0.0,
+   "max": null
+  },
+  "stage_two_scene_s": {
+   "n": 0,
+   "sum": 0,
+   "mean": 0.0,
+   "max": null
+  },
+  "first_scene_s_includes_map_load": null,
+  "command": [
+   "D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-warmup-reference-epdms/code/navsim_win.py",
+   "--script",
+   "metric_caching",
+   "--label",
+   "nh_cache",
+   "--out-dir",
+   "D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-warmup-reference-epdms/raw/navhard/cache",
+   "--",
+   "train_test_split=navhard_two_stage",
+   "metric_cache_path=C:/Users/Admin/navsim-crun/exp/metric_cache_navhard_two_stage",
+   "synthetic_scenes_path=C:/Users/Admin/navsim-crun/data/openscene/navhard_two_stage/synthetic_scene_pickles",
+   "worker=single_machine_thread_pool",
+   "worker.use_process_pool=true",
+   "worker.max_workers=1"
+  ],
+  "overrides": [
+   "train_test_split=navhard_two_stage",
+   "metric_cache_path=C:/Users/Admin/navsim-crun/exp/metric_cache_navhard_two_stage",
+   "synthetic_scenes_path=C:/Users/Admin/navsim-crun/data/openscene/navhard_two_stage/synthetic_scene_pickles",
+   "worker=single_machine_thread_pool",
+   "worker.use_process_pool=true",
+   "worker.max_workers=1"
+  ],
+  "imported_from": {
+   "navsim": "C:\\Users\\Admin\\navsim-crun\\devkit\\navsim\\__init__.py",
+   "nuplan": "C:\\Users\\Admin\\navsim-crun\\nuplan-devkit\\nuplan\\__init__.py",
+   "script": "C:\\Users\\Admin\\navsim-crun\\devkit\\navsim\\planning\\script\\run_metric_caching.py",
+   "fcntl": "C:\\Users\\Admin\\navsim-crun\\venv\\lib\\site-packages\\fcntl.py"
+  },
+  "devkit_sha": "0a380a9063d7162ec93d0f51e9990ebac585f720"
+ },
+ "verify_wall_s": 495.2,
+ "pass": true
+}

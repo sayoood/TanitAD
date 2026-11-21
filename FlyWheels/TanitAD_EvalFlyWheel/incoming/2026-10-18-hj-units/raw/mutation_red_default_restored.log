@@ -1,0 +1,112 @@
+# HJ-UNITS mutation arm (d): the REAL test (a) [-k 'test_a_ or test_a2_'] run in a TEMP COPY of the tree
+# CLEAN copy first (control), then the copy with `= "kappa"` restored on all three signatures:
+#   taniteval/tools/refav1_arm.py::paths_from_controls, floors_kin.const_control_paths, floors_kin.ha0_ext_paths
+# temp dir: C:\Users\Admin\AppData\Local\Temp\hj_units_mut_b29hq4ub
+
+##### CLEAN copy -- return code 0
+......                                                                   [100%]
+6 passed, 43 deselected in 2.24s
+
+
+##### MUTANT copy (default restored) -- return code 1
+FFFFFF                                                                   [100%]
+================================== FAILURES ===================================
+____ test_a_omitted_units_raises_TypeError[refav1_arm.paths_from_controls] ____
+
+arm = <module '_hj_units_arm_live' from 'C:\\Users\\Admin\\AppData\\Local\\Temp\\hj_units_mut_b29hq4ub\\mutant\\taniteval\\tools\\refav1_arm.py'>
+name = 'refav1_arm.paths_from_controls'
+
+    @pytest.mark.parametrize("name", _NAMES)
+    def test_a_omitted_units_raises_TypeError(arm, name):
+        call = _surfaces(arm, fk)[name]
+>       assert _omission_rejected(call), name + ": a call without action_units must raise TypeError"
+E       AssertionError: refav1_arm.paths_from_controls: a call without action_units must raise TypeError
+E       assert False
+E        +  where False = _omission_rejected(<function _surfaces.<locals>.<lambda> at 0x0000023C0F1DCCC0>)
+
+tests\test_refav1_units_required.py:132: AssertionError
+____ test_a_omitted_units_raises_TypeError[floors_kin.const_control_paths] ____
+
+arm = <module '_hj_units_arm_live' from 'C:\\Users\\Admin\\AppData\\Local\\Temp\\hj_units_mut_b29hq4ub\\mutant\\taniteval\\tools\\refav1_arm.py'>
+name = 'floors_kin.const_control_paths'
+
+    @pytest.mark.parametrize("name", _NAMES)
+    def test_a_omitted_units_raises_TypeError(arm, name):
+        call = _surfaces(arm, fk)[name]
+>       assert _omission_rejected(call), name + ": a call without action_units must raise TypeError"
+E       AssertionError: floors_kin.const_control_paths: a call without action_units must raise TypeError
+E       assert False
+E        +  where False = _omission_rejected(<function _surfaces.<locals>.<lambda> at 0x0000023C0F25BD80>)
+
+tests\test_refav1_units_required.py:132: AssertionError
+_______ test_a_omitted_units_raises_TypeError[floors_kin.ha0_ext_paths] _______
+
+arm = <module '_hj_units_arm_live' from 'C:\\Users\\Admin\\AppData\\Local\\Temp\\hj_units_mut_b29hq4ub\\mutant\\taniteval\\tools\\refav1_arm.py'>
+name = 'floors_kin.ha0_ext_paths'
+
+    @pytest.mark.parametrize("name", _NAMES)
+    def test_a_omitted_units_raises_TypeError(arm, name):
+        call = _surfaces(arm, fk)[name]
+>       assert _omission_rejected(call), name + ": a call without action_units must raise TypeError"
+E       AssertionError: floors_kin.ha0_ext_paths: a call without action_units must raise TypeError
+E       assert False
+E        +  where False = _omission_rejected(<function _surfaces.<locals>.<lambda> at 0x0000023C0F224220>)
+
+tests\test_refav1_units_required.py:132: AssertionError
+_ test_a2_unit_parameter_is_keyword_only_with_no_default[refav1_arm.paths_from_controls] _
+
+arm = <module '_hj_units_arm_live' from 'C:\\Users\\Admin\\AppData\\Local\\Temp\\hj_units_mut_b29hq4ub\\mutant\\taniteval\\tools\\refav1_arm.py'>
+name = 'refav1_arm.paths_from_controls'
+
+    @pytest.mark.parametrize("name", _NAMES)
+    def test_a2_unit_parameter_is_keyword_only_with_no_default(arm, name):
+        prm = inspect.signature(_function(arm, fk, name)).parameters["action_units"]
+>       assert prm.default is inspect.Parameter.empty, (name, prm.default)
+E       AssertionError: ('refav1_arm.paths_from_controls', 'kappa')
+E       assert 'kappa' is <class 'inspect._empty'>
+E        +  where 'kappa' = <Parameter "action_units: 'str' = 'kappa'">.default
+E        +  and   <class 'inspect._empty'> = <class 'inspect.Parameter'>.empty
+E        +    where <class 'inspect.Parameter'> = inspect.Parameter
+
+tests\test_refav1_units_required.py:138: AssertionError
+_ test_a2_unit_parameter_is_keyword_only_with_no_default[floors_kin.const_control_paths] _
+
+arm = <module '_hj_units_arm_live' from 'C:\\Users\\Admin\\AppData\\Local\\Temp\\hj_units_mut_b29hq4ub\\mutant\\taniteval\\tools\\refav1_arm.py'>
+name = 'floors_kin.const_control_paths'
+
+    @pytest.mark.parametrize("name", _NAMES)
+    def test_a2_unit_parameter_is_keyword_only_with_no_default(arm, name):
+        prm = inspect.signature(_function(arm, fk, name)).parameters["action_units"]
+>       assert prm.default is inspect.Parameter.empty, (name, prm.default)
+E       AssertionError: ('floors_kin.const_control_paths', 'kappa')
+E       assert 'kappa' is <class 'inspect._empty'>
+E        +  where 'kappa' = <Parameter "action_units: 'str' = 'kappa'">.default
+E        +  and   <class 'inspect._empty'> = <class 'inspect.Parameter'>.empty
+E        +    where <class 'inspect.Parameter'> = inspect.Parameter
+
+tests\test_refav1_units_required.py:138: AssertionError
+_ test_a2_unit_parameter_is_keyword_only_with_no_default[floors_kin.ha0_ext_paths] _
+
+arm = <module '_hj_units_arm_live' from 'C:\\Users\\Admin\\AppData\\Local\\Temp\\hj_units_mut_b29hq4ub\\mutant\\taniteval\\tools\\refav1_arm.py'>
+name = 'floors_kin.ha0_ext_paths'
+
+    @pytest.mark.parametrize("name", _NAMES)
+    def test_a2_unit_parameter_is_keyword_only_with_no_default(arm, name):
+        prm = inspect.signature(_function(arm, fk, name)).parameters["action_units"]
+>       assert prm.default is inspect.Parameter.empty, (name, prm.default)
+E       AssertionError: ('floors_kin.ha0_ext_paths', 'kappa')
+E       assert 'kappa' is <class 'inspect._empty'>
+E        +  where 'kappa' = <Parameter "action_units: 'str' = 'kappa'">.default
+E        +  and   <class 'inspect._empty'> = <class 'inspect.Parameter'>.empty
+E        +    where <class 'inspect.Parameter'> = inspect.Parameter
+
+tests\test_refav1_units_required.py:138: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_refav1_units_required.py::test_a_omitted_units_raises_TypeError[refav1_arm.paths_from_controls]
+FAILED tests/test_refav1_units_required.py::test_a_omitted_units_raises_TypeError[floors_kin.const_control_paths]
+FAILED tests/test_refav1_units_required.py::test_a_omitted_units_raises_TypeError[floors_kin.ha0_ext_paths]
+FAILED tests/test_refav1_units_required.py::test_a2_unit_parameter_is_keyword_only_with_no_default[refav1_arm.paths_from_controls]
+FAILED tests/test_refav1_units_required.py::test_a2_unit_parameter_is_keyword_only_with_no_default[floors_kin.const_control_paths]
+FAILED tests/test_refav1_units_required.py::test_a2_unit_parameter_is_keyword_only_with_no_default[floors_kin.ha0_ext_paths]
+6 failed, 43 deselected in 2.48s
+

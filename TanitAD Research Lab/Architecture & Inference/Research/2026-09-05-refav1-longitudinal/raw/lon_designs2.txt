@@ -1,0 +1,20 @@
+# GOAL_A_MAX = 1.50   PlanConfig.a_max = 4.00   ratio 2.67x
+# n = 40 windows (dump_wk15, the shared baseline grid)
+
+== MEAN PAIRED difference vs the ha0_ext FLOOR (negative = beats it) ==
+design                             d LON speed   d LON accel       d ADE d LON on the 6
+---------------------------------------------------------------------------------------
+GT identity control                    -0.3058       -0.4487     -0.8772        -0.3526
+ha0_ext FLOOR                           0.0000        0.0000      0.0000         0.0000
+SHIPPED canon @ decoded                 0.4551        0.3672      0.1492         1.5469
+D2  a_shift clip 1.5 (landed)           0.1517        0.1031     -0.0214         0.6752
+D4b a_shift clip 2.5                    0.1310        0.0891     -0.0365         0.5155
+D4a a_shift clip 4.0 = plan box         0.1310        0.0891     -0.0365         0.5155
+D5a a_shift tau 1.0 s                   0.1552        0.1436     -0.0111         0.5048
+D5b a_shift tau 0.6 s                   0.1825        0.1915      0.0010         0.4741
+D5c a_shift tau 2.0 s = D2 control        0.1517        0.1031     -0.0214         0.6752
+
+# 'd LON on the 6' is the mean paired difference on the SIX windows whose
+# a0 hint GOAL_A_MAX clips -- the 15 %% of the grid carrying 47.4 %% of
+# lonshift's residual. That column is what D4 exists to move.
+# GT |accel| p90 1.8443  max 3.4095  -- inside the plan box, outside the goal's.

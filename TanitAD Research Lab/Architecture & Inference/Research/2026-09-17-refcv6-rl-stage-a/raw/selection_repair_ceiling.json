@@ -1,0 +1,105 @@
+{
+ "_what": "An ORACLE-REPAIR upper bound: what lifting a named sub-population to the best candidate the fan actually held would buy on the corpus mean.",
+ "_tier": "T0 (deployed sampler, recorded future, proxy reward)",
+ "_evidence_class": "MEASURED (ours)",
+ "_estimator": "taniteval.ci.paired_episode_cluster_bootstrap, n_boot 2000, seed 0",
+ "_caveat": "A CEILING, NOT A RESULT. No selector reaches an oracle. This prices the lever before GPU is spent on it and is equally a basis for REFUSING it.",
+ "arms": {
+  "L1-NORL-s0": {
+   "selector_mean": 0.916096,
+   "full_oracle_mean": 0.993801,
+   "repair_collision_windows": {
+    "n": 25,
+    "delta": 0.0485,
+    "lo": 0.0228,
+    "hi": 0.0801,
+    "ci95": 0.0287,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 493,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "share_of_full_oracle_gap": 0.6242
+   },
+   "repair_worst10pct_tail": {
+    "n": 49,
+    "delta": 0.0672,
+    "lo": 0.0347,
+    "hi": 0.104,
+    "ci95": 0.0347,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 493,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "share_of_full_oracle_gap": 0.8649
+   },
+   "repair_full_oracle": {
+    "n": 493,
+    "delta": 0.0777,
+    "lo": 0.0454,
+    "hi": 0.114,
+    "ci95": 0.0343,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 493,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   }
+  },
+  "L1-RL-s0": {
+   "selector_mean": 0.871201,
+   "full_oracle_mean": 0.994863,
+   "repair_collision_windows": {
+    "n": 37,
+    "delta": 0.0733,
+    "lo": 0.0388,
+    "hi": 0.112,
+    "ci95": 0.0366,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 493,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "share_of_full_oracle_gap": 0.5926
+   },
+   "repair_worst10pct_tail": {
+    "n": 49,
+    "delta": 0.0848,
+    "lo": 0.0474,
+    "hi": 0.1262,
+    "ci95": 0.0394,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 493,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "share_of_full_oracle_gap": 0.6855
+   },
+   "repair_full_oracle": {
+    "n": 493,
+    "delta": 0.1237,
+    "lo": 0.0835,
+    "hi": 0.1709,
+    "ci95": 0.0437,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 493,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   }
+  }
+ }
+}

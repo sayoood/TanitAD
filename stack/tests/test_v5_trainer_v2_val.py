@@ -822,11 +822,27 @@ def test_train_flagship4b_is_untouched_by_this_change():
     behind v1, v2corpus, RR-20/RR-CTL and v1arch — arms whose weights are published and whose
     numbers are quoted in ``MODEL_REGISTRY.md``. A silent edit here changes what those names mean.
 
-    **Why the hash moved:** ``_preflight_banner`` was added — the DATA-vs-ARCHITECTURE launch
-    banner. It is the fix for the mistake that produced ``flagship-v2corpus-30k``: ``--v2-cache``
-    (a DATA flag) and ``--v2`` (a ten-lever ARCHITECTURE pack that also forces ``rollout_k=12``)
-    were both passed to a run intended as a corpus experiment. The banner is **print + record
-    only** — it mutates no config, and it appends ``launch_axes`` to ``config.json``.
+    **Why the hash moved (2026-08-02):** ``_preflight_banner`` was added — the DATA-vs-ARCHITECTURE
+    launch banner. It is the fix for the mistake that produced ``flagship-v2corpus-30k``:
+    ``--v2-cache`` (a DATA flag) and ``--v2`` (a ten-lever ARCHITECTURE pack that also forces
+    ``rollout_k=12``) were both passed to a run intended as a corpus experiment. The banner is
+    **print + record only** — it mutates no config, and it appends ``launch_axes`` to
+    ``config.json``.
+
+    **Why the hash moved again (2026-08-17) — DELIBERATE, AND BEHAVIOUR-PRESERVING.**
+    ``FlagshipWindowDataset.__getitem__``'s ``if self.labels_v2: … else: …`` manoeuvre-label
+    branch was replaced by the single call ``refb_labels.window_maneuver_labels_for(…,
+    v2=self.labels_v2)``. Nothing about WHICH labeler runs changed — what changed is that the
+    mapping now exists in ONE place. It had to, because ``taniteval/hierarchy.py:592`` carried the
+    second, WRONG copy: it called ``classify_maneuver`` unconditionally, so every ``--v2`` arm's
+    ``seam_ctx_to_tactical.maneuver_acc`` was scored against v1 labels its head never saw.
+
+    ⭐ **The edit is proven inert for training**, so no published arm's weights or targets can
+    move: over 2000 random (pose_last, future_poses, horizon) draws the new call is
+    **bit-identical** to the old expression on BOTH branches (0/2000 mismatches each), and
+    ``tests/test_labels_v2_wiring.py`` — which asserts the emitted ``maneuver_label`` against
+    direct ``refb_labels`` calls on both settings — is unchanged and green. No arm was mid-run on
+    this trainer (the live 30k is ``train_v6_staged.py``).
 
     ⇒ When this fails again: confirm the edit is intended, confirm no arm is mid-run on this
     trainer, then update the pin **deliberately** — do not silently re-baseline it.
@@ -845,9 +861,25 @@ def test_train_flagship4b_is_untouched_by_this_change():
     # trains the reader to re-baseline on red, which is precisely how a real edit
     # would slip through. The pin below is the same content, keyed on `\n`, so it
     # now means the same thing on every platform.
+    # WHY THE PIN MOVED (2026-08-24) -- DELIBERATE, AND PROVEN INERT.
+    # `FlagshipWindowDataset.__getitem__` now also emits `ep_idx` and `t_last`:
+    # FRAME IDENTITY. Nothing in the batch could say WHICH clip and WHICH frame
+    # it held, so a label-conditioned term (E-DEC-18 / PSG -- a shared
+    # physical-state head on the encoded AND the predicted trajectory,
+    # supervised by our own banked 3D cuboids) could not be written at all.
+    # PROVEN INERT BY MEASUREMENT, not by inspection: the pre-edit file was
+    # reconstructed from the index and both datasets built over identical
+    # episodes. Over 42 windows x 12 pre-existing keys every value is
+    # BIT-IDENTICAL and no key is removed; the ONLY difference is the two added
+    # int64 keys. No tensor value moves and no RNG is consumed, so no published
+    # arm's weights or targets can shift.
+    # `t_last` is `t + window - 1`, the LAST OBSERVED frame -- the same frame
+    # O7/O8/O9 target via `frames[:, -1]`. Pinned separately by
+    # tests/test_frame_identity.py because an off-by-window here would be
+    # invisible in a loss curve.
     src = p.read_bytes().replace(b"\r\n", b"\n")
     assert hashlib.sha256(src).hexdigest() == \
-        "702a683bb21dee3eb319d1f4869aac36bd333266612c442d074565a60d9cd4b3", (
+        "181f3726c671a1627d7d705d533a9a9a1658a25ac74e86898a2f73230ceb73c0", (
             "train_flagship4b.py changed. This trainer produced v1, v2corpus, RR-20/RR-CTL "
             "and v1arch — published weights and registry numbers depend on it. Confirm the "
             "edit is intended AND that no arm is mid-run on it, then update this pin "

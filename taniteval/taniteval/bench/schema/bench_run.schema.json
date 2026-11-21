@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "taniteval.bench.bench_run/1",
+  "title": "TanitEval one-command suite: bench_run.json (one run of one benchmark)",
+  "description": "Written by `python -m taniteval.bench` at the end of every run (also on FAILED / REFUSED). Contract: FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-eval-suite-build/BUILD_PLAN.md section 1. Owner W1 (taniteval/taniteval/bench/**). Consumers: W4 leaderboard, W5 report. A run whose bench_run.json does not validate is not a result.",
+  "type": "object",
+  "required": ["schema", "run_id", "utc", "git_head", "ckpt", "benchmark", "protocol", "devkit",
+               "split", "arms", "device", "wall_s", "claim_bearing", "status", "stamps", "report"],
+  "properties": {
+    "schema": {"const": "taniteval.bench.bench_run/1"},
+    "run_id": {"type": "string", "pattern": "^[0-9]{8}T[0-9]{6}Z-[a-z0-9_]+-[a-z0-9_.]+-[0-9a-f]{6}$",
+               "description": "<utc yyyymmddTHHMMSSZ>-<benchmark>-<ckpt tag>-<6 hex>; also the run directory name"},
+    "utc": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"},
+    "utc_end": {"type": ["string", "null"]},
+    "git_head": {"type": "string", "pattern": "^([0-9a-f]{40}|UNAVAILABLE)$",
+                 "description": "HEAD of the repo the suite ran from; UNAVAILABLE only when git could not answer (then git.reason says why)"},
+    "git": {"type": "object"},
+    "command": {"type": "array", "items": {"type": "string"}},
+    "ckpt": {
+      "type": "object",
+      "required": ["path", "sha256", "registry_key"],
+      "properties": {
+        "path": {"type": ["string", "null"]},
+        "sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+        "registry_key": {"type": ["string", "null"],
+                         "description": "Project Steering/MODEL_REGISTRY.md key; null when --ckpt none or when the operator did not name one (then registry_key_status says so)"}
+      }
+    },
+    "benchmark": {"enum": ["navsim_v2", "navsim_v1", "nuscenes_ol", "internal_t1"]},
+    "protocol": {"$ref": "#/$defs/protocol"},
+    "devkit": {
+      "type": "object",
+      "required": ["repo", "sha", "patches"],
+      "properties": {
+        "repo": {"type": "string", "minLength": 1},
+        "sha": {"type": "string", "pattern": "^([0-9a-f]{40}|NOT_APPLICABLE|UNAVAILABLE)$"},
+        "patches": {"type": "array", "items": {
+          "type": "object", "required": ["name", "kind"],
+          "properties": {"name": {"type": "string"},
+                         "kind": {"enum": ["pre-existing", "harness", "in-process", "none"]}}}}
+      }
+    },
+    "split": {
+      "type": "object",
+      "required": ["name", "n_scenes", "n_logs"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "n_scenes": {"type": ["integer", "null"], "minimum": 0},
+        "n_logs": {"type": ["integer", "null"], "minimum": 0}
+      }
+    },
+    "arms": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "kind", "declared_inputs"],
+        "properties": {
+          "name": {"type": "string", "pattern": "^[A-Za-z0-9_]+$"},
+          "kind": {"enum": ["model", "floor", "reference"]},
+          "declared_inputs": {"type": "array", "items": {"type": "string"}},
+          "added_by_rule": {"type": "boolean"},
+          "status": {"enum": ["OK", "FAILED", "REFUSED", "SKIPPED"]}
+        }
+      }
+    },
+    "device": {
+      "type": "object",
+      "required": ["requested", "used"],
+      "properties": {
+        "requested": {"enum": ["auto", "cpu", "cuda"]},
+        "used": {"enum": ["cpu", "cuda", "mixed", "none"]},
+        "gpu_gap": {"type": "object"}
+      }
+    },
+    "wall_s": {"type": "number", "minimum": 0},
+    "claim_bearing": {"type": "boolean"},
+    "status": {"enum": ["COMPLETE", "PARTIAL", "FAILED", "REFUSED", "DRY_RUN_PASSED"],
+               "description": "DRY_RUN_PASSED is a PASS (--dry-run: preflight succeeded, nothing was scored) and exits 0. It exists because a passing dry run used to report REFUSED, a failure word on a success — E1, 2026-09-20. REFUSED now means only a real refusal."},
+    "stamps": {"$ref": "#/$defs/stamps"},
+    "report": {
+      "type": "object", "required": ["status"],
+      "properties": {"status": {"enum": ["RENDERED", "REPORT_PENDING", "REPORT_FAILED", "SKIPPED"]}}
+    },
+    "files": {"type": "object",
+              "description": "every file of the run dir: relpath -> {bytes, sha256, location: repo|offrepo, offrepo_path}. Files > 20 MB live off-repo."}
+  },
+  "allOf": [
+    {"if": {"properties": {"benchmark": {"const": "nuscenes_ol"}}, "required": ["benchmark"]},
+     "then": {"properties": {"claim_bearing": {"const": false}}}},
+    {"if": {"properties": {"benchmark": {"enum": ["navsim_v2"]}}, "required": ["benchmark"]},
+     "then": {"properties": {"protocol": {"enum": ["EPDMS_v2_navhard_two_stage", "EPDMS_v2_warmup_two_stage",
+                                                    "EPDMS_v2_private_test_hard_two_stage", "EPDMS_v2_navtest_single_stage"]}}}},
+    {"if": {"properties": {"benchmark": {"const": "navsim_v1"}}, "required": ["benchmark"]},
+     "then": {"properties": {"protocol": {"const": "PDMS_v1_navtest"}}}},
+    {"if": {"properties": {"benchmark": {"const": "nuscenes_ol"}}, "required": ["benchmark"]},
+     "then": {"properties": {"protocol": {"enum": ["nuScenes_OL_L2_stp3", "nuScenes_OL_L2_uniad"]}}}},
+    {"if": {"properties": {"benchmark": {"const": "internal_t1"}}, "required": ["benchmark"]},
+     "then": {"properties": {"protocol": {"const": "TanitAD_T1_refc_physicalai"}}}}
+  ],
+  "$defs": {
+    "protocol": {
+      "description": "CLOSED SET. One protocol per run, one table per protocol on the leaderboard; never two protocols in one column (registry benchmarks.navsim.GATE_no_cross_protocol_comparison).",
+      "enum": ["EPDMS_v2_navhard_two_stage", "EPDMS_v2_warmup_two_stage", "EPDMS_v2_private_test_hard_two_stage",
+               "EPDMS_v2_navtest_single_stage", "PDMS_v1_navtest", "nuScenes_OL_L2_stp3", "nuScenes_OL_L2_uniad",
+               "TanitAD_T1_refc_physicalai"]
+    },
+    "stamps": {
+      "type": "object",
+      "required": ["tier", "loop", "evidence_class"],
+      "properties": {
+        "tier": {"enum": ["T0", "T1", "T1*", "T1-family", "T2", "OPEN-LOOP-L2"]},
+        "loop": {"type": "object", "minProperties": 1},
+        "evidence_class": {"enum": ["MEASURED", "INHERITED", "ESTIMATED"]},
+        "closed_loop": {"type": "boolean"}
+      }
+    }
+  }
+}

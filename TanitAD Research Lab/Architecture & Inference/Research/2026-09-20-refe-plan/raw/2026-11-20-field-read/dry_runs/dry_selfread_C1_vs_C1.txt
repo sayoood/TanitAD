@@ -1,0 +1,29 @@
+DRY RUN — NOT A FIELD VERDICT
+(CTRL-ID: C1 read against itself)
+
+VERDICT: DRY RUN:NOT PROVEN | NOT PROVEN
+tier: T1 (NAVSIM v1 PDMS, open-loop pseudo-simulation of the executed LQR-tracked plan; not closed loop, not T0)
+estimator: paired log-cluster bootstrap, 10000 draws, seed 20260927; answers: another draw of LOGS only; another TRAINING run = the replicate pair (Fs - Cs floor, Fs - Cs sign reproduction; H-ESTIM-SEED-1); another INFERENCE run = none (deterministic planner, asserted by the P5-C determinism control)
+n tokens 12146, logs 136; arms {'F': 'C1', 'C': 'C1', 'Fs': None, 'Cs': None}
+controls: CTRL-SET=PASS, CTRL-CSV=PASS, CTRL-CSV=PASS, CTRL-SEAM=PASS, CTRL-ID=PASS  (all pass: True)
+E1 PDMS F-C (tracked, decision): 0.0000 [0.0000, 0.0000]
+E2 DAC F-C: 0.0000 [0.0000, 0.0000] | DAC-zero share F-C pp: 0.0000 [0.0000, 0.0000]
+E3 zeroed-token share F-C pp: 0.0000 [0.0000, 0.0000]
+  sub nc: tracked 0.0000 [0.0000, 0.0000] | transparent (no tracker in this number) 0.0000 [0.0000, 0.0000]
+  sub dac: tracked 0.0000 [0.0000, 0.0000] | transparent (no tracker in this number) 0.0000 [0.0000, 0.0000]
+  sub ddc: tracked 0.0000 [0.0000, 0.0000] | transparent (no tracker in this number) 0.0000 [0.0000, 0.0000]
+  sub ttc: tracked 0.0000 [0.0000, 0.0000] | transparent (no tracker in this number) 0.0000 [0.0000, 0.0000]
+  sub ep: tracked 0.0000 [0.0000, 0.0000] | transparent (no tracker in this number) 0.0000 [0.0000, 0.0000]
+  sub c: tracked 0.0000 [0.0000, 0.0000] | transparent (no tracker in this number) 0.0000 [0.0000, 0.0000]
+A1 EP delta F - C (x100), tracked: 0.0000 [0.0000, 0.0000] bar hi < 0 AND point <= -1.0 -> clear
+A2 picked plan 4 s along-track, mean F / mean C: 1.0000 [1.0000, 1.0000] bar hi < 0.97 -> clear
+A3 fan spread (mean pairwise 4 s endpoint distance over 64 proposals), mean F / mean C: 1.0000 [1.0000, 1.0000] bar hi < 0.9 -> clear
+K4: not fired
+M1: C3 tokens, n = 1058, logs = 123: failure-enriched, so these are NOT rates; DAC-compliant share of 64 F-C pp tracked 0.0000 [0.0000, 0.0000], raw 0.0000 [0.0000, 0.0000]
+M2: dDAC tracked 0.0000 [0.0000, 0.0000], raw 0.0000 [0.0000, 0.0000] -> no raw-vs-tracked split (raw improves and tracked does not: false)
+families (each stands alone, never pooled):
+  LONGITUDINAL: 22 components, separated adverse (F vs C, tracked frame): ['min_ttc_s', 'speed_mae_mps', 'speed_bias_mps', 'speed_rmse_mps', 'target_speed_acc.within_0.5_mps', 'target_speed_acc.within_1.0_mps', 'target_speed_acc.within_2.0_mps', 'along_mae_m', 'along_bias_m', 'along_final_bias_m', 'accel_mae_mps2', 'ego_progress.progress_ratio_mean', 'ego_progress.progress_error_mean']
+  LATERAL: 8 components, separated adverse (F vs C, tracked frame): ['cross_mae_m', 'cross_final_mae_m']
+  TACTICAL: command adherence COMPUTED; selection quality actual F-C 0.0000 [0.0000, 0.0000], random F-C 0.0000 [0.0000, 0.0000]
+  STRATEGIC: REPORTED IN FULL (not gating; PI ruling 2026-11-16)
+  guard (longitudinal/lateral separated adverse): FAIL

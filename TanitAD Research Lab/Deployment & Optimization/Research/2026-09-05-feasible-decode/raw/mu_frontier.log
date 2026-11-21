@@ -1,0 +1,47 @@
+=== P2: the FEASIBILITY-AWARE DECODE -- the mu frontier vs the lambda frontier ===
+  object under test: fan8 (400, 128, 8, 2)  npz md5 9bda7715a6571186935243b242c2ab74
+  bank tensor: core.decoder.anchors (128, 8, 2)
+  C-OFF PASS=True | C-ROUNDTRIP PASS=True (0.00e+00 m) | C-KNOWN PASS=True (bank peak_g ours 0.480782 vs ref 0.480782) | C-LAMBDA1 PASS=True
+
+  arm                     fan_env fan_kamm   peak_g   offrch   orc_ade   sel_ade   sel_pkg   sel_env
+  emitted (mu=off)         0.8879   0.8408   4.1789   0.1094    0.2063    0.4486    0.1718    0.1075
+  proj mu=box              0.0000   0.6340   1.9404   0.2372    0.1965    0.4491    0.1526    0.0000
+  proj mu=2.00             0.0000   0.6340   1.2347   0.3084    0.1965    0.4491    0.1526    0.0000
+  proj mu=1.50             0.0000   0.6340   1.0233   0.3215    0.1965    0.4491    0.1526    0.0000
+  proj mu=1.00             0.0000   0.6340   0.7720   0.3338    0.1965    0.4491    0.1526    0.0000
+  proj mu=0.70             0.0000   0.0000   0.5964   0.3405    0.1960    0.4491    0.1526    0.0000
+  proj mu=0.50             0.0000   0.0000   0.4596   0.3482    0.1945    0.4490    0.1523    0.0000
+  proj mu=0.40             0.0000   0.0000   0.3786   0.3525    0.1923    0.4488    0.1510    0.0000
+  proj mu=0.30             0.0000   0.0000   0.2879   0.3430    0.1858    0.4443    0.1439    0.0000
+  proj mu=0.70 +entry      0.0000   0.0000   0.5743   0.0000    0.1960    0.4491    0.1526    0.0000
+
+  --- the SHRINK frontier on the SAME windows (for the matched-peak_g axis) ---
+  lambda=0.00              0.0156   0.1953   0.4808   0.7822    1.0985    3.9824    0.2372    0.0075
+  lambda=0.10              0.2285   0.2706   0.5506   0.7612    1.0000    3.5905    0.2213    0.0075
+  lambda=0.20              0.5425   0.4731   0.7274   0.7346    0.9010    3.1999    0.2085    0.0050
+  lambda=0.30              0.6782   0.6020   0.9564   0.6984    0.8016    2.8110    0.1967    0.0025
+  lambda=0.40              0.7433   0.6722   1.2165   0.6511    0.7021    2.4246    0.1854    0.0025
+  lambda=0.50              0.7871   0.7169   1.5234   0.5863    0.6028    2.0420    0.1748    0.0300
+  lambda=0.60              0.8180   0.7512   1.9626   0.5054    0.5049    1.6658    0.1647    0.0700
+  lambda=0.70              0.8417   0.7791   2.5966   0.4035    0.4119    1.2985    0.1562    0.0800
+  lambda=0.80              0.8611   0.8031   3.3017   0.2878    0.3226    0.9486    0.1514    0.0900
+  lambda=0.90              0.8756   0.8232   3.9007   0.1838    0.2493    0.6347    0.1524    0.0975
+  lambda=1.00              0.8879   0.8408   4.1789   0.1094    0.2063    0.4486    0.1718    0.1075
+
+  --- MATCHED fan_peak_g: what each family costs to reach the same safety ---
+  arm                      peak_g proj d_orcADE shrink d_orcADE    ratio
+  proj mu=box              1.9404      -0.0098       0.3035   -0.032
+  proj mu=2.00             1.2347      -0.0098       0.4899   -0.020
+  proj mu=1.50             1.0233      -0.0098       0.5697   -0.017
+  proj mu=1.00             0.7720      -0.0098       0.6753   -0.015
+  proj mu=0.70             0.5964      -0.0103       0.7680   -0.013
+  proj mu=0.50             0.4596  outside the lambda frontier's peak_g range
+  proj mu=0.40             0.3786  outside the lambda frontier's peak_g range
+  proj mu=0.30             0.2879  outside the lambda frontier's peak_g range
+
+  P2-C1 structural zero at mu=0.70: envelope 0.0000 kamm 0.0000 -> PASS
+  P2-C2 matched-peak_g ADE ratio proj/shrink = -0.013 -> PASS
+  P2-C3 closed 96.87% of the D1 = 3.6981 g fan gap; ratio to bank 8.69x -> 1.24x
+  P2-C4 off_reach 0.1094 -> 0.3405 (delta +0.2311) -> FAIL
+  sel_ade delta at mu=0.70: +0.0004 m [-0.0026, +0.0034] separated=False (paired episode-cluster bootstrap, 400 windows / 70 episodes)
+[mu] wrote C:/Users/Admin/feasdec/raw/mu_frontier.json

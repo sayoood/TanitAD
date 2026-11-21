@@ -1,0 +1,79 @@
+FFFFF                                                                    [100%]
+================================== FAILURES ===================================
+________ test_the_refcv8_family_profiles_refuse_the_r9_freeze[refcv8] _________
+
+name = 'refcv8'
+
+    @pytest.mark.parametrize("name", ["refcv8", "refcv8-nt", "refcv8-mapft", "v8f", "v8f_steer"])
+    def test_the_refcv8_family_profiles_refuse_the_r9_freeze(name):
+        prof = LG.PROFILES[name]
+        r = LG.forbidden_lever_reasons(prof, ["--arm", "hier", "--r9-train-only", "planner,tactical,map"])[0]
+>       assert len(r) == 1 and "--r9-train-only" in r[0] and "refcv9-warm" in r[0], r
+E       AssertionError: []
+E       assert (0 == 1)
+E        +  where 0 = len([])
+
+tests\test_r9_train_only.py:737: AssertionError
+_______ test_the_refcv8_family_profiles_refuse_the_r9_freeze[refcv8-nt] _______
+
+name = 'refcv8-nt'
+
+    @pytest.mark.parametrize("name", ["refcv8", "refcv8-nt", "refcv8-mapft", "v8f", "v8f_steer"])
+    def test_the_refcv8_family_profiles_refuse_the_r9_freeze(name):
+        prof = LG.PROFILES[name]
+        r = LG.forbidden_lever_reasons(prof, ["--arm", "hier", "--r9-train-only", "planner,tactical,map"])[0]
+>       assert len(r) == 1 and "--r9-train-only" in r[0] and "refcv9-warm" in r[0], r
+E       AssertionError: []
+E       assert (0 == 1)
+E        +  where 0 = len([])
+
+tests\test_r9_train_only.py:737: AssertionError
+_____ test_the_refcv8_family_profiles_refuse_the_r9_freeze[refcv8-mapft] ______
+
+name = 'refcv8-mapft'
+
+    @pytest.mark.parametrize("name", ["refcv8", "refcv8-nt", "refcv8-mapft", "v8f", "v8f_steer"])
+    def test_the_refcv8_family_profiles_refuse_the_r9_freeze(name):
+        prof = LG.PROFILES[name]
+        r = LG.forbidden_lever_reasons(prof, ["--arm", "hier", "--r9-train-only", "planner,tactical,map"])[0]
+>       assert len(r) == 1 and "--r9-train-only" in r[0] and "refcv9-warm" in r[0], r
+E       AssertionError: []
+E       assert (0 == 1)
+E        +  where 0 = len([])
+
+tests\test_r9_train_only.py:737: AssertionError
+__________ test_the_refcv8_family_profiles_refuse_the_r9_freeze[v8f] __________
+
+name = 'v8f'
+
+    @pytest.mark.parametrize("name", ["refcv8", "refcv8-nt", "refcv8-mapft", "v8f", "v8f_steer"])
+    def test_the_refcv8_family_profiles_refuse_the_r9_freeze(name):
+        prof = LG.PROFILES[name]
+        r = LG.forbidden_lever_reasons(prof, ["--arm", "hier", "--r9-train-only", "planner,tactical,map"])[0]
+>       assert len(r) == 1 and "--r9-train-only" in r[0] and "refcv9-warm" in r[0], r
+E       AssertionError: []
+E       assert (0 == 1)
+E        +  where 0 = len([])
+
+tests\test_r9_train_only.py:737: AssertionError
+_______ test_the_refcv8_family_profiles_refuse_the_r9_freeze[v8f_steer] _______
+
+name = 'v8f_steer'
+
+    @pytest.mark.parametrize("name", ["refcv8", "refcv8-nt", "refcv8-mapft", "v8f", "v8f_steer"])
+    def test_the_refcv8_family_profiles_refuse_the_r9_freeze(name):
+        prof = LG.PROFILES[name]
+        r = LG.forbidden_lever_reasons(prof, ["--arm", "hier", "--r9-train-only", "planner,tactical,map"])[0]
+>       assert len(r) == 1 and "--r9-train-only" in r[0] and "refcv9-warm" in r[0], r
+E       AssertionError: []
+E       assert (0 == 1)
+E        +  where 0 = len([])
+
+tests\test_r9_train_only.py:737: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_r9_train_only.py::test_the_refcv8_family_profiles_refuse_the_r9_freeze[refcv8]
+FAILED tests/test_r9_train_only.py::test_the_refcv8_family_profiles_refuse_the_r9_freeze[refcv8-nt]
+FAILED tests/test_r9_train_only.py::test_the_refcv8_family_profiles_refuse_the_r9_freeze[refcv8-mapft]
+FAILED tests/test_r9_train_only.py::test_the_refcv8_family_profiles_refuse_the_r9_freeze[v8f]
+FAILED tests/test_r9_train_only.py::test_the_refcv8_family_profiles_refuse_the_r9_freeze[v8f_steer]
+5 failed in 5.55s

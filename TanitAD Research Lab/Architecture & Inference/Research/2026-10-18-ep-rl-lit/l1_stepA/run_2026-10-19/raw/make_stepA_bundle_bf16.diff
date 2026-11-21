@@ -1,0 +1,14 @@
+--- code/make_stepA_bundle.py.pre_bf16	2026-10-19 11:31:55.141409000 +0200
++++ code/make_stepA_bundle.py	2026-10-19 11:31:55.187194000 +0200
+@@ -105,7 +105,10 @@
+                 continue
+             tap.reset()
+             traj, score, k = planner.infer(ego, img)                 # ONE forward; `traj` is the RAW [64,20,3] model output
+-            ctx = CC.to_u16(tap.visual_ctx())[0]                      # raises CaptureError unless the decoder's ctx IS scene_proj's second output
++            # MM plumbing fix 2026-10-19: the planner runs fp32 (no autocast), so visual_ctx arrives fp32; the bundle format is bf16 bits.
++            # Round explicitly (round-to-nearest). G2b (fan/logits/pick) is unaffected; the CPU scoring phase is not bit-comparable anyway (C9).
++            _v = tap.visual_ctx()
++            ctx = CC.to_u16(_v.to(torch.bfloat16) if _v.dtype == torch.float32 else _v)[0]   # raises CaptureError unless the decoder's ctx IS scene_proj's second output
+             i = row[tok]
+             r = traj.float().cpu().numpy().astype(np.float32)
+             lg = score.float().cpu().numpy().astype(np.float32)

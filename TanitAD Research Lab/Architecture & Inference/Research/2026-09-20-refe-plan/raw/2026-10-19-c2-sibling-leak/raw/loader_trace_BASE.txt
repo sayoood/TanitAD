@@ -1,0 +1,42 @@
+srttc_c2.py:35:if HERE not in sys.path:
+srttc_c2.py:36:    sys.path.insert(0, HERE)
+srttc_c2.py:37:import srttc_r1 as R   # noqa: E402
+srttc_c2_gate.py:101:    if name in sys.modules:
+srttc_c2_gate.py:102:        return sys.modules[name], sha
+srttc_c2_gate.py:105:    sys.modules[name] = mod                      # dataclasses (with `from __future__ import annotations`) looks the module up here
+srttc_c2_gate.py:106:    exec(compile(src, p, "exec", dont_inherit=True), mod.__dict__)
+srttc_c2_gate.py:123:    if name in sys.modules:
+srttc_c2_gate.py:124:        return sys.modules[name], sha
+srttc_c2_gate.py:127:    sys.modules[name] = mod                      # dataclasses (with `from __future__ import annotations`) looks the module up here
+srttc_c2_gate.py:128:    exec(compile(src, p, "exec", dont_inherit=True), mod.__dict__)
+srttc_c2_gate.py:142:    if name in sys.modules:
+srttc_c2_gate.py:143:        return mod, sys.modules[name], {"srttc_r1.py": sha_r1, "srttc_c2.py": sha_c2}
+srttc_c2_gate.py:146:    sys.modules[name] = c2mod
+srttc_c2_gate.py:147:    prev = sys.modules.get("srttc_r1")
+srttc_c2_gate.py:148:    sys.modules["srttc_r1"] = mod
+srttc_c2_gate.py:150:        exec(compile(src, p, "exec", dont_inherit=True), c2mod.__dict__)
+srttc_c2_gate.py:153:            sys.modules.pop("srttc_r1", None)
+srttc_c2_gate.py:155:            sys.modules["srttc_r1"] = prev
+srttc_c2_run.py:21:if HERE not in sys.path:
+srttc_c2_run.py:22:    sys.path.insert(0, HERE)
+srttc_c2_run.py:23:import srttc_c2_gate as CG   # noqa: E402
+srttc_r1_gate.py:276:_MODULES: dict = {}
+srttc_r1_gate.py:286:    if name in _MODULES:
+srttc_r1_gate.py:287:        return _MODULES[name], sha
+srttc_r1_gate.py:290:    sys.modules[name] = mod                      # dataclasses (with `from __future__ import annotations`) looks the module up here
+srttc_r1_gate.py:291:    exec(compile(src, p, "exec", dont_inherit=True), mod.__dict__)
+srttc_r1_gate.py:292:    _MODULES[name] = mod
+test_srttc_c2_gate.py:38:sys.path.insert(0, HERE)
+test_srttc_c2_gate.py:39:import srttc_c2_gate as CG   # noqa: E402
+test_srttc_c2_gate.py:70:    import srttc_r1 as R_
+test_srttc_c2_gate.py:725:        sys.modules[modname] = m
+test_srttc_c2_gate.py:726:        exec(compile(src, m.__file__, "exec", dont_inherit=True), m.__dict__)
+test_srttc_r1.py:18:import importlib.util
+test_srttc_r1.py:30:sys.path.insert(0, HERE)
+test_srttc_r1.py:31:import srttc_r1 as R   # noqa: E402
+test_srttc_r1.py:152:    spec = importlib.util.spec_from_file_location(name, p)
+test_srttc_r1.py:153:    m = importlib.util.module_from_spec(spec)
+test_srttc_r1.py:154:    sys.modules[name] = m                # dataclasses (with `from __future__ import annotations`) looks the module up here
+test_srttc_r1.py:155:    spec.loader.exec_module(m)
+test_srttc_r1_gate.py:38:sys.path.insert(0, HERE)
+test_srttc_r1_gate.py:39:import srttc_r1_gate as G   # noqa: E402

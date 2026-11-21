@@ -1,0 +1,62 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.5, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\Admin\venvs\tanitad\Scripts\python.exe
+rootdir: C:\Users\Admin\t1heads\tree\stack
+configfile: pyproject.toml
+plugins: anyio-4.14.1
+collecting ... collected 49 items
+
+tests/test_v8f_t1.py::test_hermite_recovers_constant_acceleration_line PASSED [  2%]
+tests/test_v8f_t1.py::test_hermite_recovers_constant_curvature_arc PASSED [  4%]
+tests/test_v8f_t1.py::test_envelope_leaves_sane_plans_bit_identical_and_bounds_insane_ones PASSED [  6%]
+tests/test_v8f_t1.py::test_hermite_holds_heading_at_standstill PASSED    [  8%]
+tests/test_v8f_t1.py::test_window_state_has_no_logged_ego_after_t0 PASSED [ 10%]
+tests/test_v8f_t1.py::test_model_gets_exactly_the_keys_it_reads PASSED   [ 12%]
+tests/test_v8f_t1.py::test_c1_logged_executor_reproduces_open_loop_exactly PASSED [ 14%]
+tests/test_v8f_t1.py::test_c1_is_sensitive_the_deadreckoned_nav_breaks_it PASSED [ 16%]
+tests/test_v8f_t1.py::test_c2_replan_30_executes_the_open_loop_plan PASSED [ 18%]
+tests/test_v8f_t1.py::test_executing_m_knots_commits_exactly_those_knots PASSED [ 20%]
+tests/test_v8f_t1.py::test_c3_perturbing_the_executed_action_changes_the_next_ticks_inputs PASSED [ 22%]
+tests/test_v8f_t1.py::test_c4_poisoned_logged_ego_after_t0_changes_nothing PASSED [ 24%]
+tests/test_v8f_t1.py::test_c4_mutation_a_leaky_state_makes_the_guard_fail PASSED [ 26%]
+tests/test_v8f_t1.py::test_c4_the_open_loop_item_builder_does_read_those_rows PASSED [ 28%]
+tests/test_v8f_t1.py::test_deadreckoned_nav_counts_down_by_the_executed_arc_and_clamps_at_zero PASSED [ 30%]
+tests/test_v8f_t1.py::test_nav_rows_up_to_t0_stay_logged_and_future_rows_are_nan_until_executed PASSED [ 32%]
+tests/test_v8f_t1.py::test_floor_planner_is_the_prior_run_o_uses PASSED  [ 34%]
+tests/test_v8f_t1.py::test_scene_frozen_and_limit_off_knobs PASSED       [ 36%]
+tests/test_v8f_t1.py::test_ages_schedule_is_nested_and_inside_the_trained_support PASSED [ 38%]
+tests/test_v8f_t1.py::test_replan_steps_must_divide_the_horizon PASSED   [ 40%]
+tests/test_v8f_t1.py::test_cli_run_end_to_end_writes_tier_stamped_scores PASSED [ 42%]
+tests/test_v8f_t1.py::test_refuses_a_steer_mode_checkpoint PASSED        [ 44%]
+tests/test_v8f_t1.py::test_real_m2b_checkpoint_rolls_on_the_synthetic_world PASSED [ 46%]
+tests/test_v8f_t1_causal.py::test_modes_are_declared PASSED              [ 48%]
+tests/test_v8f_t1_causal.py::test_c_l2_rows_after_j_are_never_read[nan-20] PASSED [ 51%]
+tests/test_v8f_t1_causal.py::test_c_l2_rows_after_j_are_never_read[nan-None] PASSED [ 53%]
+tests/test_v8f_t1_causal.py::test_c_l2_rows_after_j_are_never_read[99.0-20] PASSED [ 55%]
+tests/test_v8f_t1_causal.py::test_c_l2_rows_after_j_are_never_read[99.0-None] PASSED [ 57%]
+tests/test_v8f_t1_causal.py::test_c_l2_rows_after_j_are_never_read[1000000.0-20] PASSED [ 59%]
+tests/test_v8f_t1_causal.py::test_c_l2_rows_after_j_are_never_read[1000000.0-None] PASSED [ 61%]
+tests/test_v8f_t1_causal.py::test_c_l2_the_next_row_alone_cannot_move_it PASSED [ 63%]
+tests/test_v8f_t1_causal.py::test_the_window_is_the_last_4_s_and_causal_all_is_the_whole_past PASSED [ 65%]
+tests/test_v8f_t1_causal.py::test_the_containing_window_rule_is_the_sidecars PASSED [ 67%]
+tests/test_v8f_t1_causal.py::test_no_finite_past_is_the_off_format PASSED [ 69%]
+tests/test_v8f_t1_causal.py::test_build_item_counts_the_models_ticks_only PASSED [ 71%]
+tests/test_v8f_t1_heads.py::test_c_off_flags_absent_is_byte_identical_to_the_tip_tool PASSED [ 73%]
+tests/test_v8f_t1_heads.py::test_c_off_flags_absent_leaves_no_tick_machinery_in_the_output PASSED [ 75%]
+tests/test_v8f_t1_heads.py::test_c_on_the_flags_change_no_trajectory_dump_and_no_json_value PASSED [ 77%]
+tests/test_v8f_t1_heads.py::test_schema_ticks_alone_is_the_carried_one_and_heads_add_exactly_the_head_columns PASSED [ 79%]
+tests/test_v8f_t1_heads.py::test_tick0_head_rows_equal_a_direct_forward_infer_call PASSED [ 81%]
+tests/test_v8f_t1_heads.py::test_every_tick_head_rows_equal_a_direct_forward_infer_on_that_ticks_batch PASSED [ 83%]
+tests/test_v8f_t1_heads.py::test_ckpt_frames_denote_the_same_world_points PASSED [ 85%]
+tests/test_v8f_t1_heads.py::test_dump_heads_without_dump_ticks_is_refused PASSED [ 87%]
+tests/test_v8f_t1_heads.py::test_a_recorder_asked_for_heads_by_a_planner_that_keeps_none_raises PASSED [ 89%]
+tests/test_v8f_t1_heads.py::test_the_floor_planner_has_no_heads_and_is_never_recorded PASSED [ 91%]
+tests/test_v8f_t1_heads.py::test_heads_ride_the_same_call_that_made_the_plan_not_a_second_one PASSED [ 93%]
+tests/test_v8f_t1_heads.py::test_carried_tick0_equals_the_open_loop_batch_at_tick0_ages PASSED [ 95%]
+tests/test_v8f_t1_heads.py::test_carried_gt_follows_the_executed_frame PASSED [ 97%]
+tests/test_v8f_t1_heads.py::test_carried_gt_in_frame_is_nan_when_the_clip_ends_inside_the_plan PASSED [100%]
+
+======================= 49 passed in 178.89s (0:02:58) ========================
+
+real	3m2.001s
+user	0m0.000s
+sys	0m0.015s

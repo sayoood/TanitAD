@@ -1,0 +1,261 @@
+# LANDING_READY — EvalFlyWheel suite-runnability audit + the GPU-gate reachability fix
+# For the Master Mind as single committer (PI ruling 2026-09-26). Paths are repo-relative.
+# ⛔ NOTHING here is committed or pushed by me. All paths staged by exact path and blob-verified
+#    (index blob == `git hash-object`, both 40 chars) at the end of the turn.
+# ⚠️ Read RESULT.md §8 and §11 BEFORE the clean-tree test run: the full suite was 31 failed /
+#    2,380 passed / 27 skipped, and at least one of those failures reproduces only under the
+#    full-suite ordering. None of the 7 failing files imports anything in this batch (control:
+#    all 7 import something). Expect a non-green run that this batch did not cause.
+
+## 2026-09-26 batch 1 — the fix (4 files) + its tests + the audit
+
+# the reachability fix: --gpu-mem-limit-mib / $TANITAD_GPU_MEM_LIMIT_MIB, threaded to both call sites
+taniteval/taniteval/bench/gpu_gap.py
+taniteval/taniteval/bench/cli.py
+taniteval/taniteval/bench/contract.py
+taniteval/taniteval/bench/navsim/benchmark.py
+
+# 19 tests: literal expectations, a mutation arm for the old behaviour, and the discriminating
+# control that a live training pid still REFUSES at limit_mib=1e9
+taniteval/tests/test_gpu_gap_limit_reachable.py
+
+# the audit itself (contains the A16 label-clock finding in §9 — read it before the FINAL eval)
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/RESULT.md
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/LANDING_READY.txt
+
+## 2026-09-26 batch 2 — Master Mind item 4 (W4 source row)
+
+# DiffusionDrive navtest PDMS 88.1 added under PDMS_v1_navtest, verified in the banked primary
+# (2411.15139 Tab. 1 p.6). 113 -> 114 rows; superset-guarded (0 of the 113 originals changed).
+# ⚠️ This file is W4's. It has NO HEAD version (new since 09-19), so a three-blob check reads
+#    INCONCLUSIVE by design; index == worktree.
+products/P7-TanitEval/benchmarks/published_results.json
+
+## 2026-09-26 batch 3 — Master Mind item 5 (the one-copy frame set)
+
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-20-navhard-stage1-extract/code/write_manifest.py
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-20-navhard-stage1-extract/raw/MANIFEST_stage1_frames.json
+
+# ⛔ EXISTS IN ONE PLACE ONLY, off-repo, NOT covered by any commit:
+#    C:/Users/Admin/tanitad-caches/navhard-stage1-frames-20260920
+#    3,375 files · 76 logs · 711,722,316 bytes · sha256 per file in the manifest above.
+#    Provenance: extracted from the sha256-verified navtest camera archives (32 shards,
+#    127,882,665,618 B); reproducible from them in ~1.5-2 h if lost. Relocating it (e.g. private HF)
+#    is a quota/spend decision for the PI and has NOT been done.
+
+## 2026-09-26 batch 4 — UTF-8 restore + a style pin (follow-up to 57a2a835)
+
+# ⛔ MY DEFECT, FIXED: batch 2 wrote this file with json.dumps(indent=1), whose ensure_ascii
+#    defaults to True — flipping all 191 non-ASCII chars to \uXXXX and costing the Master Mind
+#    4 section numbers behind §. Restored with ensure_ascii=False.
+#    Guard used: the PARSED objects are deep-equal before/after (114 rows unchanged); only the
+#    escaping differs. 191 escapes -> 0; 0 literal non-ASCII -> 191; '§' greppable again.
+products/P7-TanitEval/benchmarks/published_results.json
+
+# The durable fix so it cannot recur: 5 tests pinning the serialisation style, with a control that
+# the file really does hold non-ASCII (else the pin passes trivially), and the navtest headline
+# pinned as a literal. MUTATION-VERIFIED: re-escaping the file turns 3 of the 5 RED, while the two
+# content tests correctly stay green.
+taniteval/tests/test_published_results_style.py
+
+## 2026-09-26 batch 5 -- the slow gate fixed (26m 25s -> 0.53 s) + the correctness bug behind it
+
+# ONE `git cat-file --batch-check` replaces 552 per-file calls. NOT ls-tree -r (truncates on G:).
+# The real defect was the CLASSIFIER: git says "exists on disk, but not in HEAD", which the old
+# prose match missed, so every unbanked PDF read UNDECIDED ("re-run") instead of MISSING ("commit").
+# 86 missing x 6 attempts x 3 s = 25.8 min of sleeping = the whole 26 minutes.
+# Arms: deliberate regression (real temp PDF must read MISSING), a control that the batch ANSWERED
+# (counts reconcile; 0-decided REFUSES), a not-inert control, and a 60 s speed bar. 6 pass + the gate.
+# Verdict: FAILS on my stale tree naming 86 PDFs (correct); 552/552 present at tip 4c94f4ee => PASSES.
+tools/tests/test_library_tracking.py
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/RESULT.md
+
+## 2026-09-26 batch 6 -- nuScenes: a metadata-only fetch tier
+
+# The fetch script offered pilot|planning|maps|sweeps; "planning" bundles the 0.46 GB metadata with all
+# ten keyframe parts (45.36 GB), so there was NO cheap first step. Added `meta` = v1.0-trainval_meta.tgz
+# (461,678,030 B) alone: validates the harness end to end (GT-collision floor, STOP+CV floors, sample
+# counts, VAD audit) before the 44.9 GB pull. VERIFIED: bash -n OK; the Terms-of-Use gate STILL refuses
+# without the attestation (rc 2, no network touched); meta resolves to exactly that one file.
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-nuscenes-planning-harness/code/fetch_nuscenes_after_tou.sh
+
+## 2026-09-26 batch 7 -- nuScenes first contact + the VAD category gate (8th unreachable-guard instance)
+
+# Metadata tier downloaded (PI-authorised, Terms accepted by Sayed); verified byte-identical to the live
+# S3 object by multipart ETag (the bucket md5.checksum entry does NOT match it). Floors run under both
+# conventions. VAD collision was computed over the WRONG categories on the 23-entry base metadata (0.359%
+# vs PARA-Drive 0.96%); now REFUSED with the reason, audit recorded every run, L2 bit-identical. See §17.
+taniteval/adapters/nuscenes_planning.py
+taniteval/tests/test_nuscenes_vad_category_gate.py
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/RESULT.md
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/raw/nuscenes/RECEIPT_meta.json
+# run dirs (report/** is gitignored by policy): UniAD, the REFUSED VAD re-run, and the TOMBSTONED pre-fix run
+taniteval/results/bench/nuscenes_ol/val/20260926T131756Z-nuscenes_ol-none-21abb2/artifacts/CV.json
+taniteval/results/bench/nuscenes_ol/val/20260926T131756Z-nuscenes_ol-none-21abb2/artifacts/GT.json
+taniteval/results/bench/nuscenes_ol/val/20260926T131756Z-nuscenes_ol-none-21abb2/artifacts/STOP.json
+taniteval/results/bench/nuscenes_ol/val/20260926T131756Z-nuscenes_ol-none-21abb2/bench_run.json
+taniteval/results/bench/nuscenes_ol/val/20260926T131756Z-nuscenes_ol-none-21abb2/criteria/CV.txt
+taniteval/results/bench/nuscenes_ol/val/20260926T131756Z-nuscenes_ol-none-21abb2/criteria/GT.txt
+taniteval/results/bench/nuscenes_ol/val/20260926T131756Z-nuscenes_ol-none-21abb2/criteria/STOP.txt
+taniteval/results/bench/nuscenes_ol/val/20260926T131756Z-nuscenes_ol-none-21abb2/raw/bench.log
+taniteval/results/bench/nuscenes_ol/val/20260926T131756Z-nuscenes_ol-none-21abb2/raw/benchreport.log
+taniteval/results/bench/nuscenes_ol/val/20260926T131756Z-nuscenes_ol-none-21abb2/raw/criteria_CV.json
+taniteval/results/bench/nuscenes_ol/val/20260926T131756Z-nuscenes_ol-none-21abb2/raw/criteria_GT.json
+taniteval/results/bench/nuscenes_ol/val/20260926T131756Z-nuscenes_ol-none-21abb2/raw/criteria_STOP.json
+taniteval/results/bench/nuscenes_ol/val/20260926T131756Z-nuscenes_ol-none-21abb2/scores/CV.csv
+taniteval/results/bench/nuscenes_ol/val/20260926T131756Z-nuscenes_ol-none-21abb2/scores/GT.csv
+taniteval/results/bench/nuscenes_ol/val/20260926T131756Z-nuscenes_ol-none-21abb2/scores/STOP.csv
+taniteval/results/bench/nuscenes_ol/val/20260926T131756Z-nuscenes_ol-none-21abb2/summary.json
+taniteval/results/bench/nuscenes_ol/val/20260926T131946Z-nuscenes_ol-none-0885ff/TOMBSTONE.json
+taniteval/results/bench/nuscenes_ol/val/20260926T131946Z-nuscenes_ol-none-0885ff/artifacts/CV.json
+taniteval/results/bench/nuscenes_ol/val/20260926T131946Z-nuscenes_ol-none-0885ff/artifacts/GT.json
+taniteval/results/bench/nuscenes_ol/val/20260926T131946Z-nuscenes_ol-none-0885ff/artifacts/STOP.json
+taniteval/results/bench/nuscenes_ol/val/20260926T131946Z-nuscenes_ol-none-0885ff/bench_run.json
+taniteval/results/bench/nuscenes_ol/val/20260926T131946Z-nuscenes_ol-none-0885ff/criteria/CV.txt
+taniteval/results/bench/nuscenes_ol/val/20260926T131946Z-nuscenes_ol-none-0885ff/criteria/GT.txt
+taniteval/results/bench/nuscenes_ol/val/20260926T131946Z-nuscenes_ol-none-0885ff/criteria/STOP.txt
+taniteval/results/bench/nuscenes_ol/val/20260926T131946Z-nuscenes_ol-none-0885ff/raw/bench.log
+taniteval/results/bench/nuscenes_ol/val/20260926T131946Z-nuscenes_ol-none-0885ff/raw/benchreport.log
+taniteval/results/bench/nuscenes_ol/val/20260926T131946Z-nuscenes_ol-none-0885ff/raw/criteria_CV.json
+taniteval/results/bench/nuscenes_ol/val/20260926T131946Z-nuscenes_ol-none-0885ff/raw/criteria_GT.json
+taniteval/results/bench/nuscenes_ol/val/20260926T131946Z-nuscenes_ol-none-0885ff/raw/criteria_STOP.json
+taniteval/results/bench/nuscenes_ol/val/20260926T131946Z-nuscenes_ol-none-0885ff/scores/CV.csv
+taniteval/results/bench/nuscenes_ol/val/20260926T131946Z-nuscenes_ol-none-0885ff/scores/GT.csv
+taniteval/results/bench/nuscenes_ol/val/20260926T131946Z-nuscenes_ol-none-0885ff/scores/STOP.csv
+taniteval/results/bench/nuscenes_ol/val/20260926T131946Z-nuscenes_ol-none-0885ff/summary.json
+taniteval/results/bench/nuscenes_ol/val/20260926T132840Z-nuscenes_ol-none-fcfc20/artifacts/CV.json
+taniteval/results/bench/nuscenes_ol/val/20260926T132840Z-nuscenes_ol-none-fcfc20/artifacts/GT.json
+taniteval/results/bench/nuscenes_ol/val/20260926T132840Z-nuscenes_ol-none-fcfc20/artifacts/STOP.json
+taniteval/results/bench/nuscenes_ol/val/20260926T132840Z-nuscenes_ol-none-fcfc20/bench_run.json
+taniteval/results/bench/nuscenes_ol/val/20260926T132840Z-nuscenes_ol-none-fcfc20/criteria/CV.txt
+taniteval/results/bench/nuscenes_ol/val/20260926T132840Z-nuscenes_ol-none-fcfc20/criteria/GT.txt
+taniteval/results/bench/nuscenes_ol/val/20260926T132840Z-nuscenes_ol-none-fcfc20/criteria/STOP.txt
+taniteval/results/bench/nuscenes_ol/val/20260926T132840Z-nuscenes_ol-none-fcfc20/raw/bench.log
+taniteval/results/bench/nuscenes_ol/val/20260926T132840Z-nuscenes_ol-none-fcfc20/raw/benchreport.log
+taniteval/results/bench/nuscenes_ol/val/20260926T132840Z-nuscenes_ol-none-fcfc20/raw/criteria_CV.json
+taniteval/results/bench/nuscenes_ol/val/20260926T132840Z-nuscenes_ol-none-fcfc20/raw/criteria_GT.json
+taniteval/results/bench/nuscenes_ol/val/20260926T132840Z-nuscenes_ol-none-fcfc20/raw/criteria_STOP.json
+taniteval/results/bench/nuscenes_ol/val/20260926T132840Z-nuscenes_ol-none-fcfc20/scores/CV.csv
+taniteval/results/bench/nuscenes_ol/val/20260926T132840Z-nuscenes_ol-none-fcfc20/scores/GT.csv
+taniteval/results/bench/nuscenes_ol/val/20260926T132840Z-nuscenes_ol-none-fcfc20/scores/STOP.csv
+taniteval/results/bench/nuscenes_ol/val/20260926T132840Z-nuscenes_ol-none-fcfc20/summary.json
+
+## 2026-09-26 batch 8 -- VAD collision BY NAME (pre-registered gate PASSED, within 3% of PARA-Drive) + the fetch script now COMPARES by S3 ETag
+
+# Prereg sha256 3ca3f905... staged BEFORE the code change. Gate C: GT floor 1.035/0.987/0.938% vs PARA-Drive
+# 1.02/0.96/0.91%. Gates A,B,D pass; 67 nuScenes tests. ETag verifier: 7 tests; both branches run in the real
+# script (MATCH on the real archive; exit 1 + REFUSE on a deliberate mismatch). EXCLUDES W8 files (cli.py,
+# navsim/benchmark.py, contract.py are W8 in-progress edits -- not mine, not staged).
+taniteval/adapters/nuscenes_planning.py
+taniteval/tests/test_nuscenes_vad_category_gate.py
+tools/verify_s3_etag.py
+tools/tests/test_verify_s3_etag.py
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-nuscenes-planning-harness/code/fetch_nuscenes_after_tou.sh
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/RESULT.md
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/raw/nuscenes/RECEIPT_meta.json
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/raw/nuscenes/PREREG_VAD_NAME_BASED.md
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/raw/nuscenes/PREREG_VAD_NAME_BASED.sha256
+taniteval/results/bench/nuscenes_ol/val/20260926T133942Z-nuscenes_ol-none-2caba6/artifacts/CV.json
+taniteval/results/bench/nuscenes_ol/val/20260926T133942Z-nuscenes_ol-none-2caba6/artifacts/GT.json
+taniteval/results/bench/nuscenes_ol/val/20260926T133942Z-nuscenes_ol-none-2caba6/artifacts/STOP.json
+taniteval/results/bench/nuscenes_ol/val/20260926T133942Z-nuscenes_ol-none-2caba6/bench_run.json
+taniteval/results/bench/nuscenes_ol/val/20260926T133942Z-nuscenes_ol-none-2caba6/criteria/CV.txt
+taniteval/results/bench/nuscenes_ol/val/20260926T133942Z-nuscenes_ol-none-2caba6/criteria/GT.txt
+taniteval/results/bench/nuscenes_ol/val/20260926T133942Z-nuscenes_ol-none-2caba6/criteria/STOP.txt
+taniteval/results/bench/nuscenes_ol/val/20260926T133942Z-nuscenes_ol-none-2caba6/raw/bench.log
+taniteval/results/bench/nuscenes_ol/val/20260926T133942Z-nuscenes_ol-none-2caba6/raw/benchreport.log
+taniteval/results/bench/nuscenes_ol/val/20260926T133942Z-nuscenes_ol-none-2caba6/raw/criteria_CV.json
+taniteval/results/bench/nuscenes_ol/val/20260926T133942Z-nuscenes_ol-none-2caba6/raw/criteria_GT.json
+taniteval/results/bench/nuscenes_ol/val/20260926T133942Z-nuscenes_ol-none-2caba6/raw/criteria_STOP.json
+taniteval/results/bench/nuscenes_ol/val/20260926T133942Z-nuscenes_ol-none-2caba6/scores/CV.csv
+taniteval/results/bench/nuscenes_ol/val/20260926T133942Z-nuscenes_ol-none-2caba6/scores/GT.csv
+taniteval/results/bench/nuscenes_ol/val/20260926T133942Z-nuscenes_ol-none-2caba6/scores/STOP.csv
+taniteval/results/bench/nuscenes_ol/val/20260926T133942Z-nuscenes_ol-none-2caba6/summary.json
+
+## 2026-09-26 batch 9 -- append-only receipts + the UniAD GT-floor denominator (pre-registered H1 CONFIRMED)
+
+# Receipt: first_fetch_utc restored from git 55aa747 with a recorded repair, and held through a re-run.
+# UniAD: GT floor now uses the reference all-samples denominator -> 0.3655/0.3821/0.3655% vs PARA-Drive
+# 0.35/0.38/0.35%; VAD unchanged. Old value kept labelled. Tombstoned the old UniAD run. EXCLUDES W8 files.
+tools/download_receipt.py
+tools/tests/test_download_receipt.py
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-nuscenes-planning-harness/code/fetch_nuscenes_after_tou.sh
+taniteval/adapters/nuscenes_planning.py
+taniteval/tests/test_nuscenes_gt_floor_denominator.py
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/RESULT.md
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/raw/nuscenes/RECEIPT_meta.json
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/raw/nuscenes/PREREG_UNIAD_GT_FLOOR_GAP.md
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/raw/nuscenes/PREREG_UNIAD_GT_FLOOR_GAP.sha256
+taniteval/results/bench/nuscenes_ol/val/20260926T131756Z-nuscenes_ol-none-21abb2/TOMBSTONE.json
+taniteval/results/bench/nuscenes_ol/val/20260926T140150Z-nuscenes_ol-none-e01c44/artifacts/CV.json
+taniteval/results/bench/nuscenes_ol/val/20260926T140150Z-nuscenes_ol-none-e01c44/artifacts/GT.json
+taniteval/results/bench/nuscenes_ol/val/20260926T140150Z-nuscenes_ol-none-e01c44/artifacts/STOP.json
+taniteval/results/bench/nuscenes_ol/val/20260926T140150Z-nuscenes_ol-none-e01c44/bench_run.json
+taniteval/results/bench/nuscenes_ol/val/20260926T140150Z-nuscenes_ol-none-e01c44/criteria/CV.txt
+taniteval/results/bench/nuscenes_ol/val/20260926T140150Z-nuscenes_ol-none-e01c44/criteria/GT.txt
+taniteval/results/bench/nuscenes_ol/val/20260926T140150Z-nuscenes_ol-none-e01c44/criteria/STOP.txt
+taniteval/results/bench/nuscenes_ol/val/20260926T140150Z-nuscenes_ol-none-e01c44/raw/bench.log
+taniteval/results/bench/nuscenes_ol/val/20260926T140150Z-nuscenes_ol-none-e01c44/raw/benchreport.log
+taniteval/results/bench/nuscenes_ol/val/20260926T140150Z-nuscenes_ol-none-e01c44/raw/criteria_CV.json
+taniteval/results/bench/nuscenes_ol/val/20260926T140150Z-nuscenes_ol-none-e01c44/raw/criteria_GT.json
+taniteval/results/bench/nuscenes_ol/val/20260926T140150Z-nuscenes_ol-none-e01c44/raw/criteria_STOP.json
+taniteval/results/bench/nuscenes_ol/val/20260926T140150Z-nuscenes_ol-none-e01c44/scores/CV.csv
+taniteval/results/bench/nuscenes_ol/val/20260926T140150Z-nuscenes_ol-none-e01c44/scores/GT.csv
+taniteval/results/bench/nuscenes_ol/val/20260926T140150Z-nuscenes_ol-none-e01c44/scores/STOP.csv
+taniteval/results/bench/nuscenes_ol/val/20260926T140150Z-nuscenes_ol-none-e01c44/summary.json
+taniteval/results/bench/nuscenes_ol/val/20260926T140356Z-nuscenes_ol-none-0660f6/artifacts/CV.json
+taniteval/results/bench/nuscenes_ol/val/20260926T140356Z-nuscenes_ol-none-0660f6/artifacts/GT.json
+taniteval/results/bench/nuscenes_ol/val/20260926T140356Z-nuscenes_ol-none-0660f6/artifacts/STOP.json
+taniteval/results/bench/nuscenes_ol/val/20260926T140356Z-nuscenes_ol-none-0660f6/bench_run.json
+taniteval/results/bench/nuscenes_ol/val/20260926T140356Z-nuscenes_ol-none-0660f6/criteria/CV.txt
+taniteval/results/bench/nuscenes_ol/val/20260926T140356Z-nuscenes_ol-none-0660f6/criteria/GT.txt
+taniteval/results/bench/nuscenes_ol/val/20260926T140356Z-nuscenes_ol-none-0660f6/criteria/STOP.txt
+taniteval/results/bench/nuscenes_ol/val/20260926T140356Z-nuscenes_ol-none-0660f6/raw/bench.log
+taniteval/results/bench/nuscenes_ol/val/20260926T140356Z-nuscenes_ol-none-0660f6/raw/benchreport.log
+taniteval/results/bench/nuscenes_ol/val/20260926T140356Z-nuscenes_ol-none-0660f6/raw/criteria_CV.json
+taniteval/results/bench/nuscenes_ol/val/20260926T140356Z-nuscenes_ol-none-0660f6/raw/criteria_GT.json
+taniteval/results/bench/nuscenes_ol/val/20260926T140356Z-nuscenes_ol-none-0660f6/raw/criteria_STOP.json
+taniteval/results/bench/nuscenes_ol/val/20260926T140356Z-nuscenes_ol-none-0660f6/scores/CV.csv
+taniteval/results/bench/nuscenes_ol/val/20260926T140356Z-nuscenes_ol-none-0660f6/scores/GT.csv
+taniteval/results/bench/nuscenes_ol/val/20260926T140356Z-nuscenes_ol-none-0660f6/scores/STOP.csv
+taniteval/results/bench/nuscenes_ol/val/20260926T140356Z-nuscenes_ol-none-0660f6/summary.json
+
+## 2026-09-26 batch 10 -- the third nuScenes count (4,819) reproduced from real data; W6 first-contact prereg fully closed
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/RESULT.md
+
+## 2026-09-26 batch 11 -- on TRAIN the sample-count formula over-counts ST-P3 by 510; it now REFUSES there
+taniteval/adapters/nuscenes_planning.py
+taniteval/tests/test_nuscenes_stp3_blacklist_train.py
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/RESULT.md
+
+## 2026-09-26 batch 12 -- REFCV6-STOP: waiter_final stopped; W8's full-floors waiter rewired off FINAL (+2 gate defects fixed, 19 tests)
+# The PI stopped refcv6 (STOPPED_BY_PI.json, ckpt 38000) -> the FINAL chain can never end. waiter_final PID 34612 stopped
+# by explicit PID (record below). W8's waiter no longer waits on FINAL: cache DONE + GPU gate + nothing queued ahead
+# (run_battery / ev6_battery chain / navhard@30k / any navsim_win.py scorer) + a sustained 11.5 GB RAM window, ALL re-read
+# before every run attempt. The literal "no run_battery.py" check read [] while A6 held the GPU (tonight's battery never
+# names that file) and could not see navhard@30k's CPU scoring; the old loop also started after a FAILED RAM wait.
+# 19 tests (literal live command lines; 2 pattern mutations; 3 code mutations each RED on one test). Live: PID 46536.
+# Also carries the audit RESULT.md 23a provenance append (staged 1a7727638e51) in case batch 11 predates it.
+# NOT staged (live, handed over at the waiter's END): FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-navtest-single-stage/raw/full_waiter.log, raw/full_waiter.out
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-navtest-single-stage/code/navtest_full_after_final.py
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-navtest-single-stage/tests/test_full_waiter_gate.py
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-navtest-single-stage/RESULT.md
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/raw/milestones/WAITER_FINAL_STOPPED.json
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/RESULT.md
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/LANDING_READY.txt
+
+## 2026-09-26 batch 13 -- E3: the NavSim STRATEGIC n/a no longer tells readers NAVSIM has no map (per-corpus reason; 6 new tests, 3 mutations RED)
+# four_families.STRATEGIC_NA_BY_CORPUS (physicalai verbatim, navsim new; unknown corpus REFUSED); the adapter passes
+# strategic_corpus="navsim"; the summarizer renders legacy artifacts NavSim-first. 438 passed over 11 suites.
+# EOL: four_families.py is CRLF in the tip (ea9b02d4) -- staged BYTE-EXACT (hash-object --no-filters + cacheinfo) so the
+# landing is +73 -15 in 5 hunks, not a whole-file rewrite. The other code/test files differ from the tip by their hunks only.
+# W8's RESULT.md is also in batch 12; it now carries the E3-resolved line too.
+taniteval/taniteval/four_families.py
+taniteval/adapters/navsim.py
+taniteval/taniteval/bench/navsim/summarize.py
+taniteval/tests/test_strategic_na_per_corpus.py
+taniteval/tests/test_navsim_adapter.py
+taniteval/tests/test_bench_suite_navsim_offline.py
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/RESULT.md
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-navtest-single-stage/RESULT.md
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/LANDING_READY.txt

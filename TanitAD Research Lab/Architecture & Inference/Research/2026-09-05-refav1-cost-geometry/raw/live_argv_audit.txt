@@ -1,0 +1,17 @@
+AUDIT OF THE LIVE PROCESSES (what the OS reports, not what I intended)
+reference = the banked `combined` invocation, 37 tokens
+
+== combined_seed1  (37 tokens)
+   DIFF @26  under --plan-seed        '0' -> '1'
+   identity  --dump-dir     dump_combined -> dump_combined_seed1
+   identity  --out          rec_combined.json -> rec_combined_seed1.json
+   identity  --arm          refav1-21109-p4-combined -> refav1-21109-p4-combined_seed1
+   REAL DIFFERING TOKENS: 1  => PASS (exactly one variable)
+
+== bestlad  (37 tokens)
+   DIFF @24  under --cost-weights     '0.0,0.0,64.29715042415070' -> '0.0,15.11245,64.29715042415070'
+   identity  --dump-dir     dump_combined -> dump_bestlad
+   identity  --out          rec_combined.json -> rec_bestlad.json
+   identity  --arm          refav1-21109-p4-combined -> refav1-21109-p4-bestlad
+   REAL DIFFERING TOKENS: 1  => PASS (exactly one variable)
+

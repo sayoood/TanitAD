@@ -1,0 +1,19 @@
+F:\tanitad_scratch\a2_wiring_20261108\a2\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_a2_wiring.py:52: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+  return gB, gA, float(lB)
+PASS G-BEH-LIVE: B grad on weight[7:12] non-zero
+PASS G-BEH-LIVE: A grad on weight[7:12] EXACTLY 0.0
+PASS G-BEH-LIVE: explicit w=0.0 control (graph live) EXACTLY 0.0
+PASS listwise product alone: grad on weight[7:12] non-zero (selfac reaches the head)
+PASS q_stall default EXCLUDED from the listwise columns, flag adds col 3
+PASS G-BEH-ID: loss B bit-identical to pre-A2 (all bact False)
+PASS G-BEH-ID: d lossB / d sxB[:, :, :6] bit-identical
+PASS MUTATION delete `lB = lB + w * beh_bce(...)` -> G-BEH-LIVE RED (B grad == 0)
+PASS MUTATION delete `sc = sc * selfac` -> listwise-only grad on weight[7:12] == 0 (RED)
+PASS listwise value depends on bq (rfac reaches the loss)
+PASS MUTATION delete `r = r * rfac` -> value no longer depends on bq (RED)
+PASS LEAK: no bq/bact/beh_ name in model.py, planner.py or eval/ ([])
+PASS OFF: extend_beh_head is called once, under `if a.beh_heads:`; defaults are OFF
+PASS extend_beh_head: same state_dict KEYS, 12 rows, rows 0-6 verbatim, rows 7-11 zero weight
+PASS BEH_ORDER == behaviour_terms.ORDER
+ZZTEST_PASS 0

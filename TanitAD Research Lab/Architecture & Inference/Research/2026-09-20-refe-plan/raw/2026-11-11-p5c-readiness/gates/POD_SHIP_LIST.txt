@@ -1,0 +1,20 @@
+P5-C pod label run: files to ship to the pod (flat into $P5CL_SHIP, default /workspace/data/p5c_ship). Every one is sha256-pinned inside p5c_pod_label.sh.
+Source root: E:/Projects/TanitAD-artifacts/scorer_gym_20261107/p5c
+
+ ship name                          source                                                       sha256
+ p5c_pod_label.sh                   gates/p5c_pod_label.sh                                       (the runner; run it from anywhere)
+ p5c_labels.py                      labels/p5c_labels.py                                         77724709088044d19e132cde5eb8a6e549665af37a8a79bcfd245f1ad2a8f933
+ p5_target_labels.py                TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/p5_target_labels.py   2b31af64d6f6bcff7ffc0a59d524528b48ad8fceb44033e9cc845b201326c8d0  (git blob 294644df)
+ p4_tracker_comp.py                 same tree, eval/p4_tracker_comp.py (p5_target_labels imports it)   193c024b107fd2b73fdb9541f805a1000a1c882660f7cd2684a5bc70335609d5
+ traj_label_table.py                hold/files/TanitAD Research Lab/.../refe/traj_label_table.py (wiring hold copy; not landed on the pod's tree)   9592b62cc9428d215d6c75cff36987a0b66d6274ba89fd119df9457d2c869646
+ p5c_table_gates.py                 gates/p5c_table_gates.py                                     c1260394b783923072172245fab7c2afe886ea13e2ce824fce61356c1ee0181d
+ dev_labels/labels_s0of2.jsonl      labels/out/labels_s0of2.jsonl (56 MB; TB-0 control)          7f8d58cc967117ef9d66ed98c6c04d7df044cc98cdc6ea889ae43199bccb5bd3
+ dev_labels/labels_s1of2.jsonl      labels/out/labels_s1of2.jsonl (54 MB; TB-0 control)          2dea6e4326ea38feb7ec4ff06c3daaabff5632d700b948ebf3ace8b81083f2a1
+ TB1_control_1018.json              gates/TB1_control_1018.json (TB-1 result, 1018/1018)         (content-checked by the gate, n == 1018)
+ repair_rank0.json                  labels/repair_rank0.json (per-row sim8, for the 4.3 policy)
+ repair_rank1.json                  labels/repair_rank1.json
+
+Already on the pod (NOT shipped, pinned/checked by the runner):
+ /workspace/data/refe_navtrain/train_grow_cmd_3c_p7/targets_rank{0,1}.jsonl  (sha256 a5690f81..., 8b6ccd1b...)
+ /workspace/data/navtrain_dbs, /workspace/data/nuplan-maps/nuplan-maps-v1.0, /workspace/venv-teacher/bin/python (nuplan, scipy), /workspace/refe-plan-vdac/{refe,code} (never /workspace/refe-plan-p7)
+Total shipped size ~ 112 MB. Open: the pod's refe/ is not hash-pinned by the runner (only TB-0, bit-identity vs the dev-box build on the 482 logs, guards drift in it).

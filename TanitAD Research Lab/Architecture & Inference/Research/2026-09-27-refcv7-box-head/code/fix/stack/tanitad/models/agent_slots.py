@@ -1,0 +1,1141 @@
+"""F-18 — the PERCEPTION agent-slot decoder: a DETR-style set head on frozen
+spatial tokens.
+
+⛔ WHY THIS FILE EXISTS. ``DIAGRAM_CONFORMANCE.md`` (2026-08-16) audited the
+binding v6 diagram element by element. §4.2's first interpretation-head row —
+
+    perception agent slots (bbox cx,cy,yaw,l,w · state v,yaw-rate,occluded ·
+    class & size)                                             ⬜ NOT BUILT
+
+was one of eight ⬜ cells, with the status line *"NEW — design here; DETR-style
+slot decoder ~2–4 M params on spatial tokens"* and the note that **the LABEL
+side already exists** (``scripts/build_obstacle_join.py``). This module is the
+model side of that row (fix F-18). It is the LAST unbuilt PERCEPTION cell.
+
+──────────────────────────────────────────────────────────────────────────────
+⛔ THE THREE BINDING RULES THIS MODULE IS BUILT AROUND
+──────────────────────────────────────────────────────────────────────────────
+
+1. **VISION-ONLY AT INFERENCE** (PI, 2026-08-03, verbatim: *"for ground truth
+   data of scenario classification you can use both ego and other label, for
+   inference only vision"*). :meth:`AgentSlotDecoder.forward` takes **exactly
+   one tensor** — the spatial memory computed from the camera frames — and
+   **nothing else**. No ``v0``, no actions, no goal embedding, no pose, no
+   situation channel; there is no keyword argument through which one could
+   arrive. The signature IS the audit.
+   ⚠️ The labels may and DO use privilege: ``obstacle.offline`` cuboids are
+   composed through **egomotion** to reach the ego frame
+   (``build_obstacle_join.py`` transform 1), and the per-slot rates below are a
+   finite difference of those label positions. That is the admissible half of
+   the rule.
+
+2. **NO PERCEPTION LABEL IN ANY TRUNK LOSS** (the diagram's header row, audited
+   ✅ CONFORMS in §2.1). This head is trained on ``obstacle.offline`` labels,
+   which are PERCEPTION labels — so its gradient must never reach the encoder,
+   the readout, or any predictor. The enforcement is structural (the memory is
+   ``.detach()``-ed at the seam in :meth:`V6Stack.forward`) **and measured**:
+   ``V6Stack.assert_isolation`` grows a fourth edge, ``perception_to_trunk``,
+   whenever this head is built, and the mis-wired control arm
+   (``isolate_interp_from_encoder=False``) makes that edge FAIL — which is what
+   keeps the probe a probe rather than a comment (the C13 "guard that cannot
+   fail" family).
+
+3. **THE LABEL PATH ALREADY EXISTS — DO NOT BUILD A SECOND ONE.** Every target
+   this module consumes comes from the join file
+   ``build_obstacle_join.py`` writes and ``train_p8_occupancy.JoinFileReader``
+   reads, through ``tanitad.data.bev_raster.agents_to_array``'s
+   ``[A, 6] = (cx, cy, yaw, l, w, occ)`` rows and the reader's per-agent ``cls``
+   column. :func:`targets_from_join` is a pure re-shaping of exactly those
+   arrays — it opens no file, invents no field, and re-derives no geometry.
+   The class vocabulary is ``bev_raster.ALL_CLASSES`` **imported**, never
+   re-listed (10 classes, all dynamic agents — MEASURED over 87,481 cuboids).
+
+──────────────────────────────────────────────────────────────────────────────
+WHAT A SLOT EMITS, AND THE ONE PLACE THE DIAGRAM CELL IS INTERPRETED
+──────────────────────────────────────────────────────────────────────────────
+:data:`SLOT_FIELDS` is the channel layout as data. Reading the cell literally:
+
+  * ``bbox cx, cy, yaw, l, w``  -> ``cx``/``cy`` (ego frame, +x fwd, +y LEFT —
+    the ``refb_labels.ego_frame`` convention the join already writes),
+    ``l = size_x`` / ``w = size_y`` (the join's mapping), and yaw as a
+    ``(sin, cos)`` PAIR rather than a scalar: a scalar yaw regression is
+    discontinuous at ±π and its L1 is not a metric on the circle, which is the
+    same wrap defect ``bev_raster.wrap_to_pi`` exists to remove downstream.
+  * ``state v, yaw-rate, occluded`` -> ⚠️ **the rates are EGO-FRAME RELATIVE**:
+    ``v_rel_x``/``v_rel_y`` are d/dt of the agent's own ``(cx, cy)`` and
+    ``yaw_rate_rel`` is d/dt of its ``yaw``, all in the ego frame.
+    THIS IS A DECISION, and here is why it is the right one:
+      - ``obstacle.offline`` **carries no velocity column** (MEASURED, join doc
+        §1 / ``build_obstacle_join.py``'s header), so ANY rate is derived. The
+        ego-frame difference needs the join and its own ``t_s`` and NOTHING
+        else; an absolute ground-speed target would additionally need the
+        egomotion poses composed per frame — a second derivation, i.e. exactly
+        the parallel label path rule 3 forbids.
+      - It is the quantity the LONGITUDINAL family actually consumes: closing
+        speed to a lead is ``-v_rel_x`` and ``TTC = cx / max(-v_rel_x, ε)``,
+        with no ego-speed term to supply. Absolute speed would have to be
+        turned back into this by subtracting the ego's own velocity.
+      - It is the quantity a monocular sequence SHOWS (looming). An absolute
+        speed target asks the head to infer ego speed and add it — a harder
+        task whose failure would be unattributable between "cannot see the
+        agent" and "cannot see its own speed".
+    ``occluded`` is the join's ``occ`` flag. ⚠️ Its stamp travels with it:
+    MEASURED 2026-08-16 that ``occ`` IS ``bev_raster.fov_mask``'s predicate
+    (0/7,680 cells disagree), so "occluded" here means OUT OF THE FRONT
+    CAMERA'S FIELD while the track continues — not object-object occlusion.
+    Predicting it is therefore the sharpest available form of the P4 question
+    ("does the latent carry agents the camera cannot see"), and it must never
+    be reported as generic occlusion reasoning.
+  * ``class & size`` -> ``cls`` logits over :data:`AGENT_CLASSES` plus the
+    ``l``/``w`` regression above (size IS the box's two extents; there is no
+    second size channel to emit).
+
+Plus ``presence`` — the DETR "∅ / no-object" logit. It is not in the diagram
+cell because the cell describes an agent, not the set; a set-prediction head
+without it cannot express "this slot is empty" and would be forced to place
+every query on something.
+
+──────────────────────────────────────────────────────────────────────────────
+GEOMETRY, UNITS AND THE DECODE — all declared, none tuned
+──────────────────────────────────────────────────────────────────────────────
+The decode constants come from ``bev_raster.GRID_DEFAULT`` (60 m forward,
+±16 m lateral — the P8 field), so the perception heads share ONE field
+definition instead of two that drift. Coordinates are emitted NORMALISED and
+multiplied by those extents; sizes go through ``softplus`` (a negative length
+is not a value the label set can contain, and softplus is monotone with no
+dead zone). ⛔ NOTHING here uses ``tanh``: MEASURED 2026-08-15 in fp32 that
+``d/draw tanh(raw)`` is EXACTLY 0.0 from ``raw >= 10``, and this programme has
+a gnorm-354,076 spike on the record — the regime that kills a saturating head
+(``V6Config.emission_squash``'s docstring, and the reason the emission moved to
+``_squash``). A coordinate head that saturates cannot recover a far agent.
+
+⚠️ EVERY LOSS TERM IS IN ITS OWN UNIT and is returned SEPARATELY (metres,
+nats, m/s, rad/s, dimensionless). :func:`slot_set_loss` returns the parts and a
+weighted ``total``; a caller that logs only the total has thrown away the
+attribution, which is the ADE-only failure in a detector's costume.
+
+──────────────────────────────────────────────────────────────────────────────
+THE MATCHER
+──────────────────────────────────────────────────────────────────────────────
+:func:`hungarian` is an exact O(n²m) rectangular assignment written in numpy so
+this module adds NO dependency (``scipy`` is not in ``pyproject.toml``'s core
+deps and every stack use of it is a lazy import inside a script). It is PINNED
+against ``scipy.optimize.linear_sum_assignment`` in
+``tests/test_v6_agent_slots.py`` — the duplication is admissible only WITH that
+equivalence proof, the same contract ``bev_raster.yaw_from_quaternion`` carries
+against ``physicalai.quaternion_yaw``.
+
+⛔ ``n_queries`` must be >= the per-frame agent count. When it is not, the
+FARTHEST targets are dropped (by range) and the drop is COUNTED and RETURNED
+(``n_target_dropped``) — never silently absorbed, because a head that quietly
+stops being scored on crowded frames would report its best numbers exactly
+where driving is hardest. ⚠️ The right ``n_queries`` is the join's measured
+per-frame agent-count distribution, and it has now been **MEASURED on the
+train corpus** — so :data:`N_QUERIES_DEFAULT` is a RULED value (mm-decisions
+M17), no longer a placeholder. ⚠️ It is the ONE spelling of that number:
+``train_v6_staged.py`` reads this symbol rather than carrying its own literal,
+because a constant with two spellings does not move when you change one.
+"""
+from __future__ import annotations
+
+import math
+from dataclasses import dataclass
+
+import numpy as np
+import torch
+from torch import Tensor, nn
+
+from tanitad.data.bev_raster import ALL_CLASSES, GRID_DEFAULT, BEVGrid
+
+__all__ = [
+    "AGENT_CLASSES", "SLOT_FIELDS", "SLOT_WIDTH", "SLOT_SLICES",
+    "PARAM_BAND", "N_QUERIES_DEFAULT", "MATCH_COST_W", "SLOT_LOSS_W",
+    "NO_OBJECT_W", "AgentSlotDecoder", "hungarian", "match_slots",
+    "slot_set_loss", "targets_from_join", "track_rates_from_join",
+    "SlotDecodeRanges", "TARGET_POPULATION_RAW", "TARGET_POPULATION_VISIBLE",
+    "JOIN_CORPUS_LINES", "corpus_line_for_join",
+]
+
+#: The class vocabulary — IMPORTED from the label side, never re-listed.
+#: 10 classes, all dynamic agents (MEASURED over 87,481 cuboids; there is no
+#: infrastructure class, which is why `TRAFFIC_LIGHT_REACT`'s agent slot can
+#: never come from `obstacle.offline` — V6Config.n_agent_slots' own docstring).
+AGENT_CLASSES: tuple[str, ...] = tuple(ALL_CLASSES)
+
+#: ⛔ THE EMITTED CHANNEL LAYOUT, AS DATA. Order is the contract; the slices in
+#: :data:`SLOT_SLICES` are derived from it so there is exactly one spelling.
+SLOT_FIELDS: tuple[tuple[str, int], ...] = (
+    ("presence", 1),                    # logit — DETR's ∅ / no-object
+    ("cls", len(AGENT_CLASSES)),        # logits over AGENT_CLASSES
+    ("cx", 1), ("cy", 1),               # normalised centre (decoded to metres)
+    ("l", 1), ("w", 1),                 # pre-softplus size (decoded to metres)
+    ("yaw_sin", 1), ("yaw_cos", 1),     # unnormalised heading vector
+    ("v_rel_x", 1), ("v_rel_y", 1),     # ego-frame relative velocity, m/s
+    ("yaw_rate_rel", 1),                # ego-frame relative yaw rate, rad/s
+    ("occluded", 1),                    # logit — the join's `occ` (== ~fov_mask)
+)
+SLOT_WIDTH: int = sum(n for _, n in SLOT_FIELDS)
+
+
+def _slices() -> dict[str, slice]:
+    out, off = {}, 0
+    for name, n in SLOT_FIELDS:
+        out[name] = slice(off, off + n)
+        off += n
+    return out
+
+
+SLOT_SLICES: dict[str, slice] = _slices()
+
+#: §6's pre-registered size for this head: *"DETR-style slot decoder ~2–4 M
+#: params on spatial tokens"*. Enforced at construction (``enforce_band``) for
+#: the same reason ``train_p8_occupancy.BEVOccupancyHead`` enforces its ~1 M
+#: band: a bigger head stops measuring what the LATENT carries and starts
+#: measuring its own capacity.
+PARAM_BAND: tuple[int, int] = (2_000_000, 4_000_000)
+
+#: ⭐ A RULED VALUE, MEASURED — not a placeholder (mm-decisions M17).
+#: MEASURED on the 2,308-clip train join (433,040 frames / 12,122,129 boxes,
+#: ``Data Engineering/Research/2026-09-05-agent-join-into-batch/raw/``
+#: ``train_agent_density.json``) over the in-field ∩ decode-box target set:
+#: mean **4.39**, p99 **30**, **max 94** per frame — so the zero-drop floor is
+#: 94 and **100** carries headroom over what is a max-over-a-sample, not a
+#: bound. ⛔ **16 is REFUTED**: it drops 212,224 boxes (11.17 %) across 23,103
+#: frames, and because :func:`match_slots` keeps the NEAREST N, a drop is BY
+#: CONSTRUCTION the closest thing the head failed to see — the nearest
+#: sacrificed target sits at **7.3 m**, inside the braking envelope. (32 is
+#: refuted too, at 13.1 m.) ⚠️ A count measured on val40 (max 24) is not a
+#: bound on train; that mistake is what put 32 here before 16 was corrected.
+#: ⛔ THIS IS THE ONLY SPELLING. ``train_v6_staged.py`` imports it for both
+#: its argparse default and its ``getattr`` fallback, and
+#: ``tests/test_v6_agent_slots.py`` FAILS if either re-grows a literal.
+#: ⭐⭐ RE-RULED 2026-09-27 (SPEC_REFCV7 §14 A9, R4 -- M17's zero-drop rule was already BROKEN
+#: at 100): **300**. The refcv6 corpus line (v7-B1, not the parity join M17 was ruled on)
+#: reaches **120 targets per window** on the B1 eval clip ``0191487845ef`` (80.3 mean, 146
+#: targets with no slot -- the literature pass's S-crowd), and DETR's own appendix shows a
+#: 100-query DETR finds every instance only up to ~50, i.e. ~N/2. The rule is therefore
+#: **N >= 2 x the observed max**, which 300 meets (2.5 x 120) BEFORE VIS-1 narrows the targets
+#: (the audit: 26.2 -> 9.0 targets per window at vis >= 0.30 on the crowded pool). The
+#: nuScenes camera heads run 900. Cost: +200 x d_model = +51,200 parameters per head (the
+#: box3d decoder 3,806,999 -> 3,858,199 and the agent head 3,822,869 -> 3,874,069, both inside
+#: PARAM_BAND -- pinned by ``tests/test_refcv7_box_head.py``). ⚠️ A run recorded BEFORE this
+#: ruling is rebuilt at ITS OWN count: ``refc_v3_train.agent_queries_as_trained`` reads the
+#: stamp, and the perception branch is rebuilt from its ``n_queries`` stamp.
+N_QUERIES_DEFAULT: int = 300
+
+#: Hungarian matching costs. DETR's shape (class prob + box L1), with the box
+#: term in METRES so the cost is interpretable rather than an arbitrary scale.
+MATCH_COST_W: dict[str, float] = {
+    "presence": 1.0,        # x (-sigmoid(presence)) — prefer confident slots
+    "cls": 1.0,             # x (-p[true class])
+    "centre_m": 1.0,        # x |Δcx| + |Δcy|, metres
+    "size_m": 0.5,          # x |Δl| + |Δw|, metres
+}
+
+#: Loss weights. ⚠️ Units differ per term BY CONSTRUCTION (metres · nats ·
+#: m/s · rad/s · dimensionless), so these are declared decisions, never
+#: defaults — the same rule ``V6LossWeights.w_select`` carries.
+SLOT_LOSS_W: dict[str, float] = {
+    "presence": 1.0, "cls": 1.0, "centre": 1.0, "size": 1.0,
+    "yaw": 1.0, "rates": 0.5, "occ": 0.5,
+}
+
+#: DETR's ∅-class down-weight: unmatched slots vastly outnumber matched ones,
+#: and an unweighted BCE simply learns "always empty".
+NO_OBJECT_W: float = 0.1
+
+#: refcv7 A9 R1 -- the PRESENCE term of the Hungarian cost. ``"sigmoid"`` (the default,
+#: every arm before A9, bit-identical): ``MATCH_COST_W["presence"] x (-sigmoid(presence))``.
+#: ``"focal"``: ``slot_presence.FOCAL_MATCH_W`` (2.0) x mmdet's ``FocalLossCost`` on the
+#: presence logit -- the DETR3D / BEVFormer matcher. The class, centre and size terms are
+#: unchanged either way (one variable per arm).
+PRESENCE_COSTS: tuple[str, ...] = ("sigmoid", "focal")
+
+#: The FOV half-angle the join's ``occ`` flag actually encodes.
+#:
+#: ⭐ THIS IS NOT A TUNING KNOB — IT IS AN IDENTITY, AND IT WAS RE-DERIVED FROM
+#: THE DATA RATHER THAN INHERITED. MEASURED 2026-09-21 (`6c5fb62`): sweeping the
+#: half-angle over 20–90° and choosing it on the FIT half alone gives **60.0°**,
+#: with agreement **1.0000 on the fit half AND 1.0000 on the scored half** over
+#: 1,482 supervised pairs. ⇒ ``occ == |atan2(cy, cx)| > 60.0°`` on the box
+#: centre, exactly. That reproduces :func:`bev_raster.fov_mask`'s own predicate
+#: from the corpus instead of quoting it.
+#: ⛔ It is pinned to ``fov_mask``'s default by a test rather than by a comment:
+#: two sites carrying one angle is precisely how the gate-value drift happened.
+OCC_HALF_ANGLE_RAD: float = math.radians(60.0)
+
+#: Logit steepness for :func:`occ_logit_from_centre`, in units of 1/radian.
+#:
+#: MEASURED on A8's eval FIT half: a 2-parameter logistic on the head's own
+#: predicted azimuth fits slope **6.6902** and bias **−7.1085**, i.e. a threshold
+#: at 7.1085/6.6902 = 1.0625 rad = **60.88°** against the identity's true 60.0° —
+#: 0.88° off, so the fit recovered the PHYSICS, not the corpus.
+#: ⚠️ The slope is a CALIBRATION, not an identity: it sets how fast the
+#: probability saturates away from the boundary and nothing else. The sign of the
+#: logit — which is the whole classification — depends only on
+#: :data:`OCC_HALF_ANGLE_RAD`.
+OCC_TEMPERATURE: float = 6.6902
+
+
+#: The banked TRAIN class-frequency weights (`H-BOXCLS-1`). A NAMED ARTIFACT, never a
+#: recomputation: two runs at the same flag must be the same arm, and a vector recomputed at
+#: launch is only as stable as whatever corpus happened to be mounted.
+CLS_WEIGHTS_TRAIN2400 = "agent_cls_weights_train2400.json"
+CLS_WEIGHTS_B1 = "agent_cls_weights_b1.json"
+
+#: ⛔⛔ A CLASS-WEIGHT VECTOR IS ONLY VALID FOR THE CORPUS IT WAS COUNTED ON, AND THIS
+#: CONSTANT EXISTS BECAUSE I SHIPPED ONE THAT WAS NOT.
+#: MEASURED 2026-09-22: `train2400_agents.jsonl.xz` (the PARITY line) overlaps refcv6's 4,719-clip
+#: v7/B1 corpus by **193 clips = 4.09 %**, while `b1_train_plus_eval_agents.jsonl.xz` covers
+#: **96.76 %** with 0 clips outside. I censused the first and reported it as refcv6 readiness.
+#: ⚠️ The argument against that is this programme's own: `e172c65` refused a held-out EVAL split
+#: as a frequency proxy BECAUSE class frequencies are sampling-sensitive (2.26x across two disjoint
+#: 62-clip halves). A 4 %-overlapping corpus is that refusal with a better disguise.
+#: ⭐ So the line is DECLARED in the artifact and CHECKED on load -- the `anchors.pt` units fix
+#: in a frequency costume: a file that declares no scope is REFUSED, never guessed.
+CORPUS_LINE_PARITY = "parity-physicalai-train-e438721ae894"
+CORPUS_LINE_B1 = "v7-b1-physicalai-b1-w120-256x640cyl"
+
+#: ⛔⛔ THE SECOND SCOPE A FREQUENCY VECTOR CARRIES, AND THE ONE THAT HAS NO NAME YET.
+#: :data:`CORPUS_LINE_B1` answers *"counted on WHICH CORPUS?"*. This answers *"counted
+#: over WHICH BOXES OF IT?"* — and the two are independent. MEASURED 2026-09-22
+#: (`…/2026-09-22-refcv6-review/raw/p6_query_budget_bias.json`) on the v7-B1 line: adding
+#: :func:`refc_agents.visible_target_filter` to the loss changes the frequencies the `cls`
+#: term actually meets by **1.746x** (`other_vehicle`), **1.729x** (`heavy_truck`) and
+#: **0.663x** (`stroller`) — **2.63x end to end** — because 83.626 % of the raw join lies
+#: outside the decode box and the survivors are not a uniform sample of it.
+#: ⇒ **A filtered loss running the raw vector is a NEW scope error**, and it is exactly
+#: the `anchors.pt` units defect in a frequency costume: a correct number applied outside
+#: the population it was counted on. The vector and the filter must move together, so the
+#: population is DECLARED in the artifact and CHECKED on load, never inferred.
+TARGET_POPULATION_RAW = "raw_join"
+TARGET_POPULATION_VISIBLE = "in_field_and_decode_box"
+
+#: ``(weights key, digest key, counts key)`` per population. ⛔ ONE artifact carries BOTH
+#: vectors, deliberately: two FILES selected by one flag is the very defect
+#: `raw/p5_cls_weight_guard.json` measured -- the expectation and the file would again come
+#: from the same key, and the guard could not go red on the operator error it names.
+_CLS_WEIGHT_KEYS_RAW = ("weights_inv_freq_mean1",
+                        "_self_digest_sha256_of_weights", "counts")
+_CLS_WEIGHT_KEYS_VISIBLE = ("weights_inv_freq_mean1_visible",
+                            "_self_digest_sha256_of_weights_visible", "counts_visible")
+
+#: Join artifact -> the corpus line it IS. ⛔ This exists so the expected line can be
+#: derived from **the arm** (which join it actually trains on) instead of from the same
+#: key that picks the weight file. MEASURED 2026-09-22 (`raw/p5_cls_weight_guard.json`):
+#: with both sides selected by one key the guard **cannot go red on the operator error it
+#: names** — `train2400` artifact + `train2400` expectation LOADS on a B1 arm, because the
+#: arm's actual corpus was never an input. Two independent sources is the whole fix.
+JOIN_CORPUS_LINES: dict[str, str] = {
+    "b1_train_plus_eval_agents.jsonl.xz": CORPUS_LINE_B1,
+    "b1train_agents.jsonl.xz": CORPUS_LINE_B1,
+    "b1eval_agents.jsonl.xz": CORPUS_LINE_B1,
+    "b1eval_agents_3d.jsonl.xz": CORPUS_LINE_B1,
+    "train2400_agents.jsonl.xz": CORPUS_LINE_PARITY,
+    "val40_agents.jsonl.xz": CORPUS_LINE_PARITY,
+}
+
+
+def corpus_line_for_join(join_path, *, strict: bool = False) -> str | None:
+    """The corpus line a join file IS, from the ARM rather than from the weight key.
+
+    ⭐ Two independent sources are the point. ``CLS_WEIGHT_CHOICES`` states which line a
+    weight artifact *claims*; this states which line the arm *trains*. A guard fed both
+    can refuse the mismatch; a guard fed one key twice agrees with itself forever.
+
+    ⚠️ Returns ``None`` (or raises with ``strict=True``) for a join this table does not
+    name — **never a guess**. An unknown join is a case for the operator to state the line
+    explicitly and have that stated-by-the-operator provenance land in ``config.json``,
+    which is the `--anchor-control-units` precedent verbatim.
+    """
+    import pathlib as _pathlib
+    if join_path is None:
+        if strict:
+            raise SystemExit(
+                "[agent-slots] ⛔ corpus_line_for_join: no join path. The expected corpus "
+                "line must come from the arm, not from the flag that picks the vector.")
+        return None
+    base = _pathlib.Path(str(join_path)).name
+    hit = JOIN_CORPUS_LINES.get(base)
+    if hit is None and strict:
+        raise SystemExit(
+            f"[agent-slots] ⛔ corpus_line_for_join: {base!r} is not a join this table "
+            f"names, so the arm's corpus line cannot be DERIVED. State it explicitly "
+            f"(and it will be recorded as operator-supplied) rather than letting the "
+            f"weight key answer a question about the arm.")
+    return hit
+
+
+def cls_weight_digest(vec, classes: tuple[str, ...] = AGENT_CLASSES) -> str:
+    """A STATED, reproducible digest of a class-weight vector: 16 hex chars.
+
+    ⛔ **WHY THIS FUNCTION EXISTS, AND IT IS A CORRECTION.** The banked artifact shipped a
+    ``_self_digest_sha256_of_weights`` that **no code could reproduce** -- it was written by hand
+    beside the numbers it claimed to attest. A digest nothing can recompute is a DECORATION: it
+    cannot detect an edited vector, a permuted class order, or a stamp that never reached the
+    model. This is the `A CHECK THAT SHARES THE DEFECT IT CHECKS FOR IS GREEN FOREVER` family,
+    in its most literal form -- the check and the claim were the same keystrokes.
+
+    ⭐ The recipe is deliberately **over the TENSOR plus the CLASS NAMES**, not over the JSON
+    text: the whole point is that it can be computed from the weight the MODEL carries, so the
+    run record's `built` slot states a fact about the weights rather than re-reading the file
+    that produced them. Class names are included so a PERMUTED vector -- same ten numbers, wrong
+    order, the failure that would silently up-weight `automobile` -- cannot collide.
+
+    Values are formatted at 6 dp, which is the precision the artifact states and is stable across
+    a float32 device round-trip.
+    """
+    import hashlib as _hashlib
+    vals = [float(v) for v in (vec.detach().to("cpu").reshape(-1).tolist()
+                               if hasattr(vec, "detach") else list(vec))]
+    if len(vals) != len(classes):
+        raise ValueError(f"cls_weight_digest: {len(vals)} values for {len(classes)} classes")
+    payload = "|".join(f"{c}={v:.6f}" for c, v in zip(classes, vals))
+    return _hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
+
+
+def load_cls_class_weight(name: str = CLS_WEIGHTS_TRAIN2400,
+                          classes: tuple[str, ...] = AGENT_CLASSES,
+                          *, expect_corpus_line: str | None = None,
+                          target_population: str | None = None):
+    """-> (weight tensor [C], stamp dict). Reads the banked vector; computes nothing.
+
+    ``target_population`` selects WHICH counted population the vector must be over:
+    :data:`TARGET_POPULATION_RAW` (the default, and what every pre-2026-09-23 arm ran) or
+    :data:`TARGET_POPULATION_VISIBLE`. ⛔ It is the arm's ACTUAL box-loss filter state, not
+    a second name for the file — passing the visible population selects a different vector
+    from the same artifact, so a filtered loss cannot silently run the raw frequencies.
+    An artifact that carries no vector for the requested population is REFUSED.
+
+    ⛔ REFUSES rather than guesses. A class in :data:`AGENT_CLASSES` that the artifact does not
+    name would otherwise silently take an implicit weight, and the arm would be running a vector
+    nobody wrote. MEASURED on the canonical train join: 2,308 episodes / 433,040 frames /
+    12,122,129 boxes, imbalance **1,071.1 : 1** (`automobile` : `animal`).
+
+    ⚠️ The returned stamp carries ALL TEN values plus the artifact's digest, because
+    `config.json` is where a finished run states the weights it trained at -- a flag name alone
+    does not reconstruct the arm.
+    """
+    import json as _json
+    import pathlib as _pathlib
+    p = _pathlib.Path(__file__).resolve().parent.parent / "data" / name
+    if not p.exists():
+        raise SystemExit(f"[agent-slots] ⛔ class-weight artifact not found: {p}. The vector is "
+                         f"READ from a banked file, never recomputed at launch.")
+    art = _json.loads(p.read_text(encoding="utf-8"))
+    # ⛔ THE CORPUS LINE IS CHECKED BEFORE ANYTHING ELSE. A vector counted on one corpus and
+    # applied to another is a correct number under the wrong scope -- and a file that declares no
+    # scope at all is REFUSED rather than assumed, exactly as `refc_v3_train` refuses a
+    # `controls`-carrying anchor file that declares no units.
+    _line = art.get("corpus_line")
+    if not _line:
+        raise SystemExit(
+            f"[agent-slots] ⛔ the class-weight artifact {name} declares no `corpus_line`. A "
+            f"frequency vector is only valid for the corpus it was counted on, and this one does "
+            f"not say which that is. Refusing rather than guessing.")
+    if expect_corpus_line is not None and str(_line) != str(expect_corpus_line):
+        raise SystemExit(
+            f"[agent-slots] ⛔ {name} was counted on corpus line {_line!r} but this arm trains "
+            f"on {expect_corpus_line!r}. MEASURED 2026-09-22: the parity and v7-B1 lines share "
+            f"only 4.09 % of their clips, so the vectors are not interchangeable.")
+    # ⛔ AND SO IS THE TARGET POPULATION. The corpus line says WHICH CLIPS were counted;
+    # this says WHICH BOXES OF THEM. MEASURED 2026-09-22: the two populations' vectors
+    # differ by 2.63x end to end on the same corpus, so a file that names only the corpus
+    # is under-scoped for an arm that filters. Absent == RAW, which is what every arm
+    # before 2026-09-23 ran and is therefore the only safe default.
+    _pop = str(target_population or TARGET_POPULATION_RAW)
+    _art_pop = str(art.get("target_population") or TARGET_POPULATION_RAW)
+    if _pop == TARGET_POPULATION_RAW:
+        _wkey, _dkey, _ckey = _CLS_WEIGHT_KEYS_RAW
+        if _art_pop != TARGET_POPULATION_RAW:
+            raise SystemExit(
+                f"[agent-slots] ⛔ {name}'s primary vector is counted over "
+                f"{_art_pop!r} but this arm's box loss is unfiltered "
+                f"({TARGET_POPULATION_RAW!r}).")
+    elif _pop == TARGET_POPULATION_VISIBLE:
+        _wkey, _dkey, _ckey = _CLS_WEIGHT_KEYS_VISIBLE
+        if not art.get(_wkey):
+            raise SystemExit(
+                f"[agent-slots] ⛔ this arm applies the visibility filter to the box loss "
+                f"({TARGET_POPULATION_VISIBLE!r}) but {name} carries no vector counted on "
+                f"that population -- only the raw-join one. MEASURED 2026-09-22: the two "
+                f"differ by up to 1.746x per class and 2.63x end to end, so running the "
+                f"raw vector under a filtered loss swaps one scope error for another. "
+                f"Recount with stack/scripts/build_cls_weight_artifact.py --visible, or "
+                f"turn the filter off by name.")
+    else:
+        raise SystemExit(
+            f"[agent-slots] ⛔ unknown target_population {target_population!r}; expected "
+            f"{TARGET_POPULATION_RAW!r} or {TARGET_POPULATION_VISIBLE!r}.")
+    w = art.get(_wkey) or {}
+    missing = [c for c in classes if c not in w]
+    if missing:
+        raise SystemExit(f"[agent-slots] ⛔ the class-weight artifact {name} does not name "
+                         f"{missing}; a class with no stated weight would take an implicit one and "
+                         f"the run would train a vector nobody wrote.")
+    vec = torch.tensor([float(w[c]) for c in classes], dtype=torch.float32)
+    # ⛔ THE DIGEST IS VERIFIED, NOT COPIED. The artifact's stated digest must reproduce from
+    # the vector just built, or the file and its own attestation disagree and the run refuses.
+    # Before `cls_weight_digest` existed this field was unreproducible by any code and could not
+    # have caught an edited or permuted vector -- see that function's docstring.
+    _dig = cls_weight_digest(vec, classes)
+    _stated = art.get(_dkey)
+    if _stated != _dig:
+        raise SystemExit(f"[agent-slots] ⛔ class-weight artifact {name} states digest "
+                         f"{_stated!r} but its own weights digest to {_dig!r}. The vector and its "
+                         f"attestation disagree; refusing rather than training an edited vector.")
+    _counts = art.get(_ckey)
+    _imb = (art.get("imbalance_majority_to_rarest") if _pop == TARGET_POPULATION_RAW
+            else art.get("imbalance_majority_to_rarest_visible"))
+    stamp = {"source": name, "corpus_line": str(_line),
+             # ⛔ IN THE STAMP, so `config.json` states the population the arm trained at.
+             # A weight vector without its population is the `anchors.pt` file without its
+             # units: a reader opening the record in isolation cannot tell which one ran.
+             "target_population": _pop,
+             "normalisation": art.get("_normalisation"),
+             "weights": {c: float(w[c]) for c in classes},
+             "counts": _counts,
+             "imbalance_majority_to_rarest": _imb,
+             "digest": _dig,
+             "out_of_vocabulary": art.get("_out_of_vocabulary"),
+             "provenance": art.get("_source")}
+    return vec, stamp
+
+
+def occ_logit_from_centre(cx: Tensor, cy: Tensor,
+                          half_angle_rad: float = OCC_HALF_ANGLE_RAD,
+                          temperature: float = OCC_TEMPERATURE) -> Tensor:
+    """``occ`` derived from a box centre, as a logit. Zero parameters, no training.
+
+    ⛔ **WHY THIS EXISTS: THE LEARNED CHANNEL IS WORSE THAN FREE.** MEASURED
+    2026-09-21 (`6c5fb62`) on A8 ``ckpt_5000``, 848 scored pairs over 18
+    episodes, episode-disjoint:
+
+    ======================================================  ========
+    arm                                                     log-loss
+    ======================================================  ========
+    base-rate control                                        0.67462
+    HARD predicate on the head's own box                     0.44896
+    **the head's learned** ``occ_logit``                     **0.28818**
+    **a 2-parameter logistic on the head's own azimuth**     **0.16055**
+    a logistic on the head's WHOLE own box (d = 5)           0.16211
+    ======================================================  ========
+
+    The learned channel loses to a two-parameter read of a number the head
+    already emits by **0.1276 log-loss, CI [−0.1844, −0.0376]**, and the whole
+    box adds nothing over azimuth alone — exactly what the identity predicts.
+    ⭐ It survives the matcher-selection confound, which runs entirely against
+    it: stratified on ``|az_pred − az_gt|`` the channel loses in the LOW (0.031
+    vs 0.201) and MID (0.068 vs 0.267) strata and merely ties in the HIGH one
+    (0.403 vs 0.404). **It never wins, and it is worst precisely where the box is
+    accurate.**
+
+    ⚠️ **An upper bound on what this can buy, stated honestly:** the derivation
+    is exact in the TARGET, so its accuracy here is bounded by the accuracy of
+    the predicted centre it reads. It removes a lossy re-encoding; it does not
+    manufacture localisation the head does not have.
+
+    ⛔ Not enabled by default — see :attr:`AgentSlotDecoder.occ_from_geometry`.
+    """
+    az = torch.atan2(cy, cx).abs()
+    return float(temperature) * (az - float(half_angle_rad))
+
+
+@dataclass(frozen=True)
+class SlotDecodeRanges:
+    """The normalised -> metres decode, from ``bev_raster.GRID_DEFAULT``.
+
+    ⚠️ These are DECODE CONSTANTS, not clamps: a prediction outside the field
+    is representable (and is then simply wrong), because a head that CANNOT
+    express "there is a car at 70 m" would report a systematic error as a
+    modelling success.
+    """
+    x_fwd_m: float = GRID_DEFAULT.x_fwd_m       # 60.0
+    y_half_m: float = GRID_DEFAULT.y_half_m     # 16.0
+
+    @classmethod
+    def from_grid(cls, grid: BEVGrid) -> "SlotDecodeRanges":
+        return cls(x_fwd_m=float(grid.x_fwd_m), y_half_m=float(grid.y_half_m))
+
+
+# ============================================================================
+# the module
+# ============================================================================
+
+class AgentSlotDecoder(nn.Module):
+    """DETR-style slot decoder: spatial memory -> a SET of agent slots.
+
+    ``memory`` ``[B, M, d_memory]`` — the spatial tokens, and the ONLY input.
+    Returns a dict of decoded per-slot fields (metres / m·s⁻¹ / rad·s⁻¹) plus
+    the raw head output, all ``[B, N, ·]``.
+
+    ⛔ The forward signature is the vision-only audit: one tensor, no keyword
+    inputs. Whatever privilege exists elsewhere in the stack cannot enter here
+    because there is no door.
+
+    Architecture: ``Linear`` memory projection + learned memory positions, N
+    learned slot queries, a ``nn.TransformerDecoder`` (self-attention over
+    slots, cross-attention into the memory — the DETR pattern that makes the
+    output a SET rather than a grid), and one linear head over
+    :data:`SLOT_FIELDS`.
+
+    ``presence`` carries a **prior bias** ``logit(0.05)`` so an untrained head
+    starts near "every slot empty" instead of near "every slot occupied" — the
+    focal/DETR foreground-prior discipline. Nothing downstream in the v6 ladder
+    consumes this head's output, so unlike the ``cond_tac_dyn`` port there is no
+    loss-continuity-at-introduction requirement and hence no zero-init: a
+    zero-init output layer would additionally starve the decoder below it of
+    gradient on the first step.
+    """
+
+    #: prior probability a slot is occupied, at init.
+    PRESENCE_PRIOR: float = 0.05
+
+    def __init__(self, d_memory: int, n_memory: int, *,
+                 n_queries: int = N_QUERIES_DEFAULT, d_model: int = 256,
+                 depth: int = 3, n_heads: int = 8,
+                 ranges: SlotDecodeRanges | None = None,
+                 enforce_band: bool = True,
+                 presence_prior: float | None = None):
+        super().__init__()
+        if n_queries < 1:
+            raise ValueError(f"n_queries must be >= 1, got {n_queries}")
+        if d_model % n_heads:
+            raise ValueError(f"d_model {d_model} must divide by n_heads "
+                             f"{n_heads}")
+        self.d_memory, self.n_memory = int(d_memory), int(n_memory)
+        self.n_queries, self.d_model = int(n_queries), int(d_model)
+        self.ranges = ranges or SlotDecodeRanges()
+
+        #: ⛔ OPT-IN, DEFAULT OFF — the emitted contract is unchanged unless a
+        #: caller sets this. When True, :meth:`decode` replaces the LEARNED
+        #: ``occ_logit`` with :func:`occ_logit_from_centre` read off this head's
+        #: own predicted centre. Enable with ``decoder.occ_from_geometry = True``
+        #: — deliberately an attribute and not a constructor argument, so the
+        #: change needs no config plumbing and :class:`Box3DSlotDecoder`
+        #: inherits it without forwarding anything.
+        #: ⚠️ Flipping this changes what the model EMITS at inference. It is
+        #: measured strictly better (see :func:`occ_logit_from_centre`), but it
+        #: is a contract change and therefore the PI's call, not a default.
+        self.occ_from_geometry: bool = False
+        #: ⛔ refcv7 A9 R2, OPT-IN, DEFAULT OFF (the ``occ_from_geometry`` idiom: an attribute,
+        #: set by the builders from a DECLARED config field). When True, :meth:`forward` also
+        #: reads EVERY decoder layer through the SHARED ``norm`` + ``head`` (0 new parameters) and
+        #: returns the earlier layers' decodes under ``"aux"``; the returned dict's own keys stay
+        #: the LAST layer's, bit-identical to the off path (pinned by a test).
+        self.deep_supervision: bool = False
+        #: refcv7 A9 R1: the presence probability this head was INITIALISED at (the logit bias).
+        #: ``None`` keeps :attr:`PRESENCE_PRIOR` (0.05), so every pre-A9 build is unchanged.
+        self.presence_prior: float = float(
+            self.PRESENCE_PRIOR if presence_prior is None else presence_prior)
+        if not 0.0 < self.presence_prior < 1.0:
+            raise ValueError(f"presence_prior must be in (0, 1), got "
+                             f"{self.presence_prior}")
+
+        self.mem_proj = nn.Linear(self.d_memory, self.d_model)
+        self.mem_pos = nn.Parameter(torch.zeros(1, self.n_memory,
+                                                self.d_model))
+        nn.init.trunc_normal_(self.mem_pos, std=0.02)
+        self.queries = nn.Parameter(torch.zeros(1, self.n_queries,
+                                                self.d_model))
+        nn.init.trunc_normal_(self.queries, std=0.02)
+        layer = nn.TransformerDecoderLayer(
+            self.d_model, n_heads, dim_feedforward=4 * self.d_model,
+            dropout=0.0, activation="gelu", batch_first=True, norm_first=True)
+        self.blocks = nn.TransformerDecoder(layer, num_layers=int(depth))
+        self.norm = nn.LayerNorm(self.d_model)
+        self.head = nn.Linear(self.d_model, SLOT_WIDTH)
+        with torch.no_grad():
+            self.head.bias[SLOT_SLICES["presence"]] = math.log(
+                self.presence_prior / (1.0 - self.presence_prior))
+
+        n = self.n_params
+        if enforce_band and not (PARAM_BAND[0] <= n <= PARAM_BAND[1]):
+            raise ValueError(
+                f"AgentSlotDecoder has {n:,} params — outside the §6 "
+                f"pre-registered band {PARAM_BAND} (d_model={d_model}, "
+                f"depth={depth}, n_memory={n_memory}, d_memory={d_memory}). A "
+                f"bigger head stops measuring what the LATENT carries and "
+                f"starts measuring its own capacity (the BEVOccupancyHead "
+                f"precedent). Pass enforce_band=False only for shape tests at "
+                f"toy widths.")
+
+    @property
+    def n_params(self) -> int:
+        return sum(p.numel() for p in self.parameters())
+
+    def forward(self, memory: Tensor) -> dict:
+        """``memory`` [B, M, d_memory] -> per-slot fields [B, N, ·].
+
+        ⛔ ONE argument. See the class docstring: the signature is the
+        vision-only audit.
+        """
+        if memory.ndim != 3:
+            raise ValueError(f"memory must be [B, M, d_memory], got "
+                             f"{tuple(memory.shape)}")
+        if memory.shape[1] != self.n_memory or \
+                memory.shape[2] != self.d_memory:
+            raise ValueError(
+                f"memory must be [B, {self.n_memory}, {self.d_memory}], got "
+                f"{tuple(memory.shape)} — the decoder's positional table is "
+                f"per-token, so a memory of a different length is a geometry "
+                f"mismatch, not a resize.")
+        b = memory.shape[0]
+        mem = self.mem_proj(memory) + self.mem_pos.to(memory.dtype)
+        q = self.queries.to(memory.dtype).expand(b, -1, -1)
+        if not getattr(self, "deep_supervision", False):
+            raw = self.head(self.norm(self.blocks(q, mem)))      # [B, N, W]
+            return self.decode(raw)
+        # ---- refcv7 A9 R2: every layer through the SHARED norm + head -------- #
+        # ``nn.TransformerDecoder.forward`` is exactly this loop (no masks, not
+        # causal, no stack-level norm), so the LAST entry is bit-identical to the
+        # off path; the earlier ones are the deep-supervision targets.
+        if self.blocks.norm is not None:
+            raise RuntimeError("deep supervision assumes no stack-level norm")
+        x = q
+        raws = []
+        for layer in self.blocks.layers:
+            x = layer(x, mem)
+            raws.append(self.head(self.norm(x)))
+        out = self.decode(raws[-1])
+        out["aux"] = [self.decode(r) for r in raws[:-1]]
+        return out
+
+    def decode(self, raw: Tensor) -> dict:
+        """Split :data:`SLOT_FIELDS` out of the head output and apply the
+        declared decode. Separated from :meth:`forward` so a test (or a probe
+        replaying banked logits) can decode without re-running the network."""
+        s = SLOT_SLICES
+        r = self.ranges
+        yaw_vec = raw[..., s["yaw_sin"].start:s["yaw_cos"].stop]
+        yaw_vec = yaw_vec / yaw_vec.norm(dim=-1, keepdim=True).clamp_min(1e-6)
+        cx = raw[..., s["cx"]].squeeze(-1) * r.x_fwd_m
+        cy = raw[..., s["cy"]].squeeze(-1) * r.y_half_m
+        lw = nn.functional.softplus(
+            raw[..., s["l"].start:s["w"].stop])
+        return {
+            "raw": raw,
+            "presence_logit": raw[..., s["presence"]].squeeze(-1),   # [B,N]
+            "cls_logits": raw[..., s["cls"]],                        # [B,N,C]
+            "box": torch.stack([cx, cy, lw[..., 0], lw[..., 1]], dim=-1),
+            "yaw_vec": yaw_vec,                                      # [B,N,2]
+            "yaw": torch.atan2(yaw_vec[..., 0], yaw_vec[..., 1]),    # [B,N]
+            "rates": torch.cat(
+                [raw[..., s["v_rel_x"]], raw[..., s["v_rel_y"]],
+                 raw[..., s["yaw_rate_rel"]]], dim=-1),              # [B,N,3]
+            # ⛔ The learned slice stays the DEFAULT and stays spelled out here:
+            # the geometric read is opt-in (`occ_from_geometry`), so nothing
+            # changes for any existing caller.
+            "occ_logit": (occ_logit_from_centre(cx, cy)
+                          if getattr(self, "occ_from_geometry", False)
+                          else raw[..., s["occluded"]].squeeze(-1)),   # [B,N]
+        }
+
+
+# ============================================================================
+# the matcher — exact, dependency-free, and pinned against scipy in tests
+# ============================================================================
+
+def hungarian(cost: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Exact minimum-cost assignment of ``cost`` ``[n, m]``; returns
+    ``(rows, cols)`` with ``len == min(n, m)``.
+
+    The classic O(n²m) shortest-augmenting-path (Kuhn–Munkres / JV) form for a
+    RECTANGULAR matrix, transposing when ``n > m`` so the inner loop always
+    runs over the longer axis.
+
+    ⚠️ Written out here rather than importing ``scipy.optimize`` because scipy
+    is NOT a core dependency of this package (``pyproject.toml``: torch +
+    numpy) and every existing stack use of it is a lazy import inside a
+    *script*. The duplication is admissible only WITH the equivalence proof:
+    ``tests/test_v6_agent_slots.py`` pins this against
+    ``scipy.optimize.linear_sum_assignment`` on random matrices and on the
+    degenerate/tied cases, skipping honestly when scipy is absent.
+    """
+    c = np.asarray(cost, dtype=np.float64)
+    if c.ndim != 2:
+        raise ValueError(f"cost must be 2-D, got {c.shape}")
+    if c.size == 0:
+        return (np.zeros(0, dtype=np.int64), np.zeros(0, dtype=np.int64))
+    if not np.isfinite(c).all():
+        raise ValueError("cost contains non-finite entries — an assignment "
+                         "over NaN/inf is undefined, not merely unstable")
+    flip = c.shape[0] > c.shape[1]
+    if flip:
+        c = c.T
+    n, m = c.shape
+    inf = float("inf")
+    u = np.zeros(n + 1, dtype=np.float64)
+    v = np.zeros(m + 1, dtype=np.float64)
+    p = np.zeros(m + 1, dtype=np.int64)          # p[j] = row matched to col j
+    way = np.zeros(m + 1, dtype=np.int64)
+    for i in range(1, n + 1):
+        p[0] = i
+        j0 = 0
+        minv = np.full(m + 1, inf, dtype=np.float64)
+        used = np.zeros(m + 1, dtype=bool)
+        while True:
+            used[j0] = True
+            i0 = p[j0]
+            delta, j1 = inf, -1
+            free = ~used[1:]
+            if free.any():
+                cur = c[i0 - 1] - u[i0] - v[1:]
+                better = free & (cur < minv[1:])
+                if better.any():
+                    minv[1:][better] = cur[better]
+                    way[1:][better] = j0
+                cand = np.where(free, minv[1:], inf)
+                k = int(np.argmin(cand))
+                delta, j1 = float(cand[k]), k + 1
+            if j1 < 0:                              # defensive: cannot happen
+                raise RuntimeError("no free column — the assignment loop lost "
+                                   "its invariant")
+            u[p[used]] += delta
+            v[used] -= delta
+            minv[1:][~used[1:]] -= delta
+            j0 = j1
+            if p[j0] == 0:
+                break
+        while j0:
+            j1 = way[j0]
+            p[j0] = p[j1]
+            j0 = j1
+    rows = np.zeros(n, dtype=np.int64)
+    cols = np.zeros(n, dtype=np.int64)
+    for j in range(1, m + 1):
+        if p[j] > 0:
+            rows[p[j] - 1] = p[j] - 1
+            cols[p[j] - 1] = j - 1
+    if flip:
+        return cols, rows
+    return rows, cols
+
+
+def _match_cost(pred: dict, tgt: dict, b: int, keep: np.ndarray,
+                presence_cost: str = "sigmoid") -> np.ndarray:
+    """Cost matrix ``[N, A_kept]`` for one batch element, in the declared
+    :data:`MATCH_COST_W` mixture. Built under ``no_grad`` by the caller — the
+    ASSIGNMENT is a discrete decision and must not be differentiated (DETR)."""
+    w = MATCH_COST_W
+    box_p = pred["box"][b]                                   # [N, 4]
+    box_t = tgt["box"][b][keep]                              # [A, 4]
+    centre = (box_p[:, None, :2] - box_t[None, :, :2]).abs().sum(-1)
+    size = (box_p[:, None, 2:] - box_t[None, :, 2:]).abs().sum(-1)
+    cls_t = tgt["cls"][b][keep]                              # [A] long, -1 ok
+    prob = pred["cls_logits"][b].softmax(-1)                 # [N, C]
+    safe = cls_t.clamp_min(0)
+    cls_c = -prob[:, safe]                                   # [N, A]
+    cls_c = torch.where(
+        (cls_t >= 0)[None, :], cls_c, torch.zeros_like(cls_c))
+    if presence_cost == "focal":
+        # refcv7 A9 R1: mmdet FocalLossCost x 2.0 (DETR3D / BEVFormer).
+        from tanitad.models.slot_presence import FOCAL_MATCH_W, focal_presence_cost
+        pres = focal_presence_cost(
+            pred["presence_logit"][b])[:, None].expand_as(centre)
+        w_pres = FOCAL_MATCH_W
+    elif presence_cost == "sigmoid":
+        pres = -pred["presence_logit"][b].sigmoid()[:, None].expand_as(centre)
+        w_pres = w["presence"]
+    else:
+        raise ValueError(f"presence_cost {presence_cost!r} not in {PRESENCE_COSTS}")
+    c = (w["centre_m"] * centre + w["size_m"] * size
+         + w["cls"] * cls_c + w_pres * pres)
+    return c.detach().to(torch.float64).cpu().numpy()
+
+
+def match_slots(pred: dict, tgt: dict, *, presence_cost: str = "sigmoid") -> dict:
+    """Hungarian-match slots to targets, per batch element.
+
+    ``tgt`` carries ``box`` [B, A, 4], ``cls`` [B, A] (long, -1 = unknown) and
+    ``valid`` [B, A] bool. Returns ``{"rows": [list[LongTensor]], "cols":
+    [...], "n_target": [...], "n_dropped": [...]}`` — Python lists because the
+    per-element match counts differ and a padded tensor would need a mask that
+    is exactly this information again.
+
+    ⛔ When a frame carries MORE valid targets than there are queries, the
+    FARTHEST (by range ``√(cx²+cy²)``) are dropped and COUNTED. That policy is
+    declared, not incidental: the near field is the one the plan acts on
+    (``time_to_reach`` weighting, O2), and a silent drop would flatter the head
+    exactly on crowded frames.
+
+    ``presence_cost`` (refcv7 A9 R1): ``"sigmoid"`` (default, bit-identical) or
+    ``"focal"`` -- see :data:`PRESENCE_COSTS`.
+    """
+    if presence_cost not in PRESENCE_COSTS:
+        raise ValueError(f"presence_cost {presence_cost!r} not in {PRESENCE_COSTS}")
+    rows, cols, n_t, n_d = [], [], [], []
+    n_q = int(pred["box"].shape[1])
+    with torch.no_grad():
+        for b in range(int(pred["box"].shape[0])):
+            valid = tgt["valid"][b].nonzero(as_tuple=False).flatten()
+            n_t.append(int(valid.numel()))
+            if valid.numel() > n_q:
+                rng = tgt["box"][b][valid][:, :2].norm(dim=-1)
+                order = torch.argsort(rng)[:n_q]
+                valid = valid[order]
+            n_d.append(n_t[-1] - int(valid.numel()))
+            if valid.numel() == 0:
+                rows.append(torch.zeros(0, dtype=torch.long))
+                cols.append(torch.zeros(0, dtype=torch.long))
+                continue
+            keep = valid.cpu().numpy()
+            c = _match_cost(pred, tgt, b, valid, presence_cost=presence_cost)
+            r, k = hungarian(c)
+            rows.append(torch.as_tensor(r, dtype=torch.long))
+            cols.append(torch.as_tensor(keep[k], dtype=torch.long))
+    return {"rows": rows, "cols": cols, "n_target": n_t, "n_dropped": n_d}
+
+
+# ============================================================================
+# the set-prediction loss
+# ============================================================================
+
+def slot_set_loss(pred: dict, tgt: dict, *, match: dict | None = None,
+                  weights: dict | None = None,
+                  cls_class_weight: Tensor | None = None) -> dict:
+    """DETR set loss over :data:`SLOT_FIELDS`, returned PER TERM.
+
+    Terms and their units, all reported separately (§ the four-families rule's
+    sibling discipline — a pooled score hides exactly the trade-off one wants
+    to see):
+
+      ``presence`` nats · ``cls`` nats · ``centre`` metres · ``size`` metres ·
+      ``yaw`` dimensionless (``1 − cos Δ``) · ``rates`` m·s⁻¹ + rad·s⁻¹ ·
+      ``occ`` nats.
+
+    Masking, and what a mask means here:
+      * ``tgt["valid"]``     — padding. Absent agents are not "clear road".
+      * ``tgt["cls"] < 0``   — class unknown (a join without the ``cls``
+        column, which ``JoinFileReader.has_classes`` reports). The class term
+        is then computed over ZERO items and ``n_cls`` says so.
+      * ``tgt["rates_mask"]`` — the track was not seen in the neighbouring
+        frames, so no finite difference exists. ⛔ A missing rate is MASKED,
+        never zero-filled: zero is a legitimate value (a stationary car) and
+        filling it would teach the head that unseen means still.
+      * ``tgt["occ"] < 0``   — the join carried no occlusion flag.
+
+    Returns the parts, the weighted ``total``, and the counts every part was
+    computed over — a term with ``n == 0`` is reported as ``0.0`` WITH its
+    count, never dropped, so a silently-uncomputed term is visible.
+    """
+    w = {**SLOT_LOSS_W, **(weights or {})}
+    m = match or match_slots(pred, tgt)
+    dev = pred["presence_logit"].device
+    dt = pred["presence_logit"].dtype
+    b_n = int(pred["presence_logit"].shape[0])
+
+    # ---- presence: BCE over ALL slots (matched -> 1, else 0) ---------------
+    tgt_pres = torch.zeros_like(pred["presence_logit"])
+    wgt_pres = torch.full_like(pred["presence_logit"], NO_OBJECT_W)
+    for b in range(b_n):
+        r = m["rows"][b].to(dev)
+        if r.numel():
+            tgt_pres[b, r] = 1.0
+            wgt_pres[b, r] = 1.0
+    l_pres = nn.functional.binary_cross_entropy_with_logits(
+        pred["presence_logit"], tgt_pres, weight=wgt_pres)
+
+    zero = torch.zeros((), device=dev, dtype=dt)
+    acc = {"cls": zero.clone(), "centre": zero.clone(), "size": zero.clone(),
+           "yaw": zero.clone(), "rates": zero.clone(), "occ": zero.clone()}
+    n = {"cls": 0, "centre": 0, "size": 0, "yaw": 0, "rates": 0, "occ": 0}
+
+    for b in range(b_n):
+        r, c = m["rows"][b].to(dev), m["cols"][b].to(dev)
+        if r.numel() == 0:
+            continue
+        pb, tb = pred["box"][b][r], tgt["box"][b][c]
+        acc["centre"] = acc["centre"] + (pb[:, :2] - tb[:, :2]).abs().sum()
+        n["centre"] += int(r.numel())
+        acc["size"] = acc["size"] + (pb[:, 2:] - tb[:, 2:]).abs().sum()
+        n["size"] += int(r.numel())
+        # yaw on the circle: 1 - cos(Δ) via the unit (sin, cos) pair. No wrap,
+        # no discontinuity, and the minimum is exact at Δ = 0.
+        yv = pred["yaw_vec"][b][r]
+        yt = tgt["box"].new_zeros((r.numel(), 2))
+        yt[:, 0] = torch.sin(tgt["yaw"][b][c])
+        yt[:, 1] = torch.cos(tgt["yaw"][b][c])
+        acc["yaw"] = acc["yaw"] + (1.0 - (yv * yt).sum(-1)).sum()
+        n["yaw"] += int(r.numel())
+        ct = tgt["cls"][b][c]
+        ok = ct >= 0
+        if bool(ok.any()):
+            _cw = (None if cls_class_weight is None else
+                   cls_class_weight.to(device=pred["cls_logits"].device,
+                                       dtype=pred["cls_logits"].dtype))
+            acc["cls"] = acc["cls"] + nn.functional.cross_entropy(
+                pred["cls_logits"][b][r][ok], ct[ok], reduction="sum",
+                weight=_cw)
+            # ⛔ THE DENOMINATOR MUST FOLLOW THE WEIGHTS, OR RE-WEIGHTING
+            # SILENTLY CHANGES THE TERM'S SCALE AS WELL AS ITS PER-CLASS
+            # EMPHASIS — two variables inside a one-variable arm, and the
+            # `cls` term would then be competing differently against `centre`,
+            # `size` and the rest for reasons nobody asked for.
+            # `cross_entropy(reduction="sum", weight=w)` returns
+            # Σ w[target_i] · loss_i, so the matching normaliser is
+            # Σ w[target_i], not the item COUNT.
+            # ⭐ This also buys the identity control for free: at w = ones the
+            # weight sum IS the count, so a uniform weight is bit-identical to
+            # passing nothing. A test pins exactly that.
+            n["cls"] += (int(ok.sum()) if _cw is None
+                         else float(_cw[ct[ok]].sum()))
+        rm = tgt["rates_mask"][b][c]
+        if bool(rm.any()):
+            acc["rates"] = acc["rates"] + (
+                pred["rates"][b][r][rm] - tgt["rates"][b][c][rm]).abs().sum()
+            n["rates"] += int(rm.sum())
+        ot = tgt["occ"][b][c]
+        om = ot >= 0.0
+        if bool(om.any()):
+            acc["occ"] = acc["occ"] + \
+                nn.functional.binary_cross_entropy_with_logits(
+                    pred["occ_logit"][b][r][om], ot[om], reduction="sum")
+            n["occ"] += int(om.sum())
+
+    parts = {"presence": l_pres}
+    for k, v in acc.items():
+        parts[k] = v / max(n[k], 1)
+    total = sum(w[k] * parts[k] for k in parts)
+    out = {f"loss_{k}": v for k, v in parts.items()}
+    out["total"] = total
+    out["n"] = {"matched": sum(int(x.numel()) for x in m["rows"]),
+                "target": int(sum(m["n_target"])),
+                "dropped": int(sum(m["n_dropped"])), **n}
+    out["_weights"] = dict(w)
+    return out
+
+
+# ============================================================================
+# targets — a re-shaping of the EXISTING join arrays, nothing more
+# ============================================================================
+
+def track_rates_from_join(prev_rec: dict | None, rec: dict,
+                          next_rec: dict | None) -> tuple[np.ndarray,
+                                                          np.ndarray]:
+    """Ego-frame relative rates for one join record, by track id.
+
+    ``rec`` is a join LINE as ``build_obstacle_join.py`` writes it:
+    ``{"clip_id", "frame_idx", "t_s", "agents": [{cx, cy, yaw, l, w, occ,
+    track_id, cls}]}``. Returns ``(rates [A, 3], mask [A] bool)`` with
+    ``rates = (v_rel_x, v_rel_y, yaw_rate_rel)``.
+
+    A CENTRAL difference when both neighbours carry the track, one-sided when
+    only one does, and ``mask=False`` when neither does — because a rate that
+    was not observed must be masked out of the loss, not filled with zero (zero
+    is a legitimate value: a stationary car).
+
+    ⚠️ ``t_s`` is the join's own frame time and the episode grid's spacing is
+    ~0.1007 s, NOT 0.1 (MEASURED, ``build_obstacle_join.py`` header §CLOCK) —
+    so the denominator is read from the records, never assumed.
+
+    ⚠️ Yaw differences are wrapped to (−π, π] before dividing, or a wrap at ±π
+    would manufacture a ~63 rad/s spike out of a straight-driving car.
+    """
+    ag = rec.get("agents") or []
+    a = len(ag)
+    rates = np.zeros((a, 3), dtype=np.float64)
+    mask = np.zeros(a, dtype=bool)
+    if a == 0:
+        return rates, mask
+
+    def _index(r):
+        if not r:
+            return {}, None
+        return ({str(d.get("track_id", "")): d for d in (r.get("agents") or [])
+                 if d.get("track_id") is not None},
+                float(r["t_s"]))
+
+    prev_i, t_prev = _index(prev_rec)
+    next_i, t_next = _index(next_rec)
+    t0 = float(rec["t_s"])
+    for i, d in enumerate(ag):
+        tid = str(d.get("track_id", ""))
+        if not tid:
+            continue
+        lo, t_lo = (prev_i.get(tid), t_prev)
+        hi, t_hi = (next_i.get(tid), t_next)
+        if lo is not None and hi is not None:
+            dt = t_hi - t_lo
+            src_lo, src_hi = lo, hi
+        elif hi is not None:
+            dt, src_lo, src_hi = t_hi - t0, d, hi
+        elif lo is not None:
+            dt, src_lo, src_hi = t0 - t_lo, lo, d
+        else:
+            continue
+        if not dt or not math.isfinite(dt) or abs(dt) < 1e-6:
+            continue
+        dyaw = float(src_hi["yaw"]) - float(src_lo["yaw"])
+        dyaw -= 2.0 * math.pi * math.floor((dyaw + math.pi) / (2.0 * math.pi))
+        rates[i] = ((float(src_hi["cx"]) - float(src_lo["cx"])) / dt,
+                    (float(src_hi["cy"]) - float(src_lo["cy"])) / dt,
+                    dyaw / dt)
+        mask[i] = True
+    return rates, mask
+
+
+def targets_from_join(agents, classes=None, rates=None, rates_mask=None, *,
+                      n_pad: int | None = None, device=None,
+                      dtype=torch.float32) -> dict:
+    """Turn ONE frame's join arrays into the target dict :func:`slot_set_loss`
+    consumes. Pure re-shaping — no file is opened and no geometry is re-derived.
+
+    ``agents``: the ``[A, 6] = (cx, cy, yaw, l, w, occ)`` array
+    ``tanitad.data.bev_raster.agents_to_array`` produces and
+    ``JoinFileReader.lookup`` returns (``occ`` ``-1`` = no flag).
+    ``classes``: the per-agent ``label_class`` strings ``JoinFileReader.
+    lookup_classes`` returns, or ``None`` when the join predates the column —
+    unknown classes become ``-1`` and the class term is then computed over
+    zero items and SAYS SO, rather than defaulting to class 0.
+    ``rates``/``rates_mask``: from :func:`track_rates_from_join`; omitted =
+    all-masked.
+
+    ⛔ ``agents is None`` (a frame ABSENT from the join) is NOT accepted here:
+    NO_LABEL is a state of its own and must be skipped+counted by the caller,
+    never passed in as an empty set — an empty ``[0, 6]`` array means LABELLED
+    CLEAR, which is a different fact (join doc §4).
+
+    Returns a batch of ONE (leading axis 1) so the caller can ``torch.cat``
+    frames into a batch after padding to a common ``n_pad``.
+    """
+    if agents is None:
+        raise ValueError(
+            "agents is None — that is NO_LABEL, not an empty agent set. Skip "
+            "and count the frame; an empty [0, 6] array is 'labelled clear', "
+            "which is a different state (obstacle-join doc §4).")
+    a = np.asarray(agents, dtype=np.float64).reshape(-1, 6)
+    n = a.shape[0]
+    pad = int(n_pad if n_pad is not None else n)
+    if pad < n:
+        raise ValueError(f"n_pad {pad} < n_agents {n}")
+
+    def _z(shape, fill=0.0, dt=dtype):
+        return torch.full((1, *shape), fill, dtype=dt, device=device)
+
+    box = _z((pad, 4))
+    yaw = _z((pad,))
+    occ = _z((pad,), -1.0)
+    cls = torch.full((1, pad), -1, dtype=torch.long, device=device)
+    rt = _z((pad, 3))
+    rm = torch.zeros((1, pad), dtype=torch.bool, device=device)
+    valid = torch.zeros((1, pad), dtype=torch.bool, device=device)
+    if n:
+        t = torch.as_tensor(a, dtype=dtype, device=device)
+        box[0, :n] = torch.stack([t[:, 0], t[:, 1], t[:, 3], t[:, 4]], dim=-1)
+        yaw[0, :n] = t[:, 2]
+        occ[0, :n] = t[:, 5]
+        valid[0, :n] = True
+        if classes is not None:
+            idx = {c: i for i, c in enumerate(AGENT_CLASSES)}
+            cls[0, :n] = torch.as_tensor(
+                [idx.get(str(c), -1) for c in list(classes)[:n]],
+                dtype=torch.long, device=device)
+        if rates is not None:
+            rt[0, :n] = torch.as_tensor(np.asarray(rates)[:n], dtype=dtype,
+                                        device=device)
+            rm[0, :n] = torch.as_tensor(
+                np.asarray(rates_mask)[:n] if rates_mask is not None
+                else np.ones(n, dtype=bool), dtype=torch.bool, device=device)
+    return {"box": box, "yaw": yaw, "cls": cls, "occ": occ,
+            "rates": rt, "rates_mask": rm, "valid": valid}

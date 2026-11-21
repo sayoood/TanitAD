@@ -1,0 +1,34 @@
+MM-E18: the FiLM gain CONVERGED — action-deafness is an optimum of the objective, and the horizon is why
+
+MM-E17 localised the attenuation and pointed at "the conditioning mechanism's gain" as the next lever.
+That lever is now REFUTED, before it cost a single GPU-hour, by reading weights I already had.
+
+|to_scale_shift| across all 10 snapshots of o1ctrl30k:
+  step  5000   film0 2.2576  film1 2.3594  film2 3.3117   act_emb2 9.5694
+  step 30000   film0 2.9700  film1 3.0605  film2 5.4368   act_emb2 9.4015
+  per-snapshot deltas decay +0.349 -> +0.148 -> +0.080 -> ... -> +0.0005, ~1000x smaller by 30k.
+
+CONVERGED, not still climbing. The model COULD raise the FiLM gain -- the parameters are free and
+nothing constrains them -- and it chose not to, settling at a gain where the action moves the prediction
+0.24%. Hand-raising it would push the model off the optimum its own objective selected: it would decay
+back, or cost loss. And act_emb is SHRINKING monotonically (9.5694 -> 9.4015): the optimiser is actively
+de-weighting the action path, not straining against a bottleneck.
+
+THE CORRECT READING. O5 is rollout consistency. Over ONE TICK (0.1 s) the next latent is almost entirely
+determined by the current one, so the action's marginal contribution to reducing O5 is tiny and the
+optimiser rationally allocates it a tiny gain. That is not a defect -- it is correct inference under the
+objective we posed. The model is not failing to use actions; it is correctly concluding that over 0.1 s
+they barely matter.
+
+=> THE HORIZON AND THE ACTION-DEAFNESS ARE THE SAME PROBLEM. At o5_k 8 (0.8 s) the scene predicts itself.
+At 6.0 s the ego has moved 60-170 m and the action becomes the dominant determinant of where the scene
+goes. So --o5-k 60 is not merely the section-4b horizon fix -- it IS the action-conditioning experiment,
+and it is the one intervention MM-E11's objective-family exhaustion does not rule out.
+
+ANTICIPATED VERBATIM A WEEK EARLIER, without a mechanism. PLAN_TO_THE_GOAL_2026-08-24.md:159: "The 0.6 s
+horizon may be too short for actions to matter at all. If the ego's command genuinely cannot move the
+scene in 6 ticks, no objective will make it." MM-E11 is that prediction confirmed: no objective made it.
+
+Three levers have now been eliminated for the price of reading weights rather than training arms:
+"the FiLM never left zero-init" (refuted: it trained), "O1 was simply off" (refuted: MM-E11), and "the
+mechanism's gain is starved" (refuted here: it converged). Each cost minutes instead of hours.

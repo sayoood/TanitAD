@@ -1,0 +1,93 @@
+{
+ "item": "W4b \u2014 selector recalibration on the frozen unicycle fan (PREREG_W4B_SELECTOR.md, registered 2026-08-10 pre-launch)",
+ "variant": "kin",
+ "gate_G1_recalibration_suffices": {
+  "rule": "selected ADE on the unicycle fan <= 0.45 m on the same 881-window grid",
+  "selected_ade": 0.563688,
+  "threshold_m": 0.45,
+  "pass": false,
+  "consequence_if_pass": "v5.8f assembly proceeds as W4-fan + recalibrated selector; W7 then attacks the remaining sel_gap (0.45 -> 0.11 headroom)"
+ },
+ "gate_G2_recalibration_insufficient": {
+  "rule": "selected ADE > 0.45 => selector demotes to top-K pruner and W7 (WM-roll re-rank on the clean fan) becomes the primary selection mechanism",
+  "engaged": true,
+  "top8_oracle": 0.315457,
+  "pruner_viable": false,
+  "pruner_threshold_m": 0.15,
+  "note": "top-8 oracle reported either way, per the prereg"
+ },
+ "reference": {
+  "frozen_selector_selected_ade_new_fan": 0.7933,
+  "old_selector_selected_ade_old_fan": 0.4056,
+  "w4_oracle_ade_new_fan": 0.1077
+ },
+ "mini_eval": {
+  "n_windows": 881,
+  "n_candidates": 256,
+  "grid": {
+   "episodes": 40,
+   "stride": 8,
+   "batch": 16,
+   "expected_n": 881,
+   "matches_banked_grid": true
+  },
+  "selected_ade": 0.563688,
+  "oracle_ade": 0.107688,
+  "sel_gap": 0.456,
+  "oracle_topk": {
+   "4": 0.394478,
+   "8": 0.315457,
+   "16": 0.246902
+  },
+  "frozen_selected_ade": 0.793318,
+  "winner_hit_frac": 0.064699,
+  "sel_rank_pct_mean": 0.160442,
+  "families": {
+   "LONGITUDINAL": {
+    "speed_mae_ms": 0.588875,
+    "accel_mae_ms2": 0.629711,
+    "headway_ttc": "not computable here: no lead-agent channel in this instrument \u2014 pod-side taniteval harness item, stated per the 2026-08-02 rule"
+   },
+   "LATERAL": {
+    "heading_mae_rad": 0.042124,
+    "yaw_rate_mae_rads": 0.11756,
+    "curvature_mae_1pm": 6.085076,
+    "note": "waypoint-derived adjuncts (atan2 of finite differences; noisy near standstill)"
+   },
+   "TACTICAL": {
+    "note": "selector rank quality IS this instrument's family",
+    "winner_hit_frac": 0.064699,
+    "sel_rank_pct_mean": 0.160442
+   },
+   "STRATEGIC": "n/a: no route/goal label exists on PhysicalAI-AV (settled, five probes \u2014 CLAUDE.md rule 2); stated per the 2026-08-02 rule"
+  },
+  "selgap_ci": "taniteval unavailable here (ModuleNotFoundError: No module named 'taniteval.selgap') \u2014 rescore pod-side from w4b_eval_windows.pt",
+  "wallclock_s": 211.0
+ },
+ "tier": "T0",
+ "_tier_note": "T0 teacher-forced diagnostic \u2014 conditioned on logged frames; NEVER quotable as driving performance (EVAL_DOCTRINE.md)",
+ "_estimator_note": "POINT ESTIMATES over the eval grid (episodes<40, stride 8). The decision-grade interval for any registry claim is the EPISODE-CLUSTER BOOTSTRAP (taniteval.selgap / taniteval/ci.py) on the banked per-window arrays (w4b_eval_windows.pt) \u2014 run it before publishing; never overlapping_holdout_se.",
+ "_evidence_class": "MEASURED (ours; artifact = this JSON)",
+ "steps": 2000,
+ "base_ckpt": "/workspace/experiments/flagship-v5f-w120-30k/ckpt_30k_final.pt",
+ "base_step": 29999,
+ "w4_ckpt": "/workspace/experiments/w4-unicycle-head-c/unicycle_emission.pt",
+ "w4_meta": {
+  "w4_step": 4000,
+  "w4_base_ckpt": "/workspace/experiments/flagship-v5f-w120-30k/ckpt_30k_final.pt",
+  "w4_base_step": 29999,
+  "cond_mode": "feature",
+  "feat_dim": 384,
+  "k": 20
+ },
+ "n_trainable": 109057,
+ "in_dim": 424,
+ "margin": 0.1,
+ "frozen_proof": {
+  "md5_before": "623218cf88e9e4d6c6f7e91b468a239c",
+  "md5_after": "623218cf88e9e4d6c6f7e91b468a239c",
+  "identical": true,
+  "modules": "world + head + W4 emission"
+ },
+ "wall_s": 11612.3
+}

@@ -1,0 +1,51 @@
+CMD: C:/Users/Admin/venvs/tanitad/Scripts/python.exe -m pytest -q -rA -p no:cacheprovider D:\Projects\TanitAD\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-28-refcv7-standard-tests\navsim\tests\test_model_seam7.py -k K0 or KD
+.F                                                                       [100%]
+================================== FAILURES ===================================
+______________________ test_KD_exact_dedup_equals_native ______________________
+
+rig = {'model': RefCV3Model(
+  (core): RefCModel(
+    (encoder): TimmResNetTrunk(
+      (net): FeatureListNet(
+        (conv...8_train.jsonl', '--out': '/home/nvidia/refcv7_run/runs/refcv7-r101-s0'}, 'kit': 'D:\\refcv6_eval_kit', ...}, ...}, ...}
+
+    @need
+    def test_KD_exact_dedup_equals_native(rig):
+        enc = rig["model"].core.encoder
+        saved = enc._backbone_dedup
+        native = [_run(rig, t) for t in rig["toks"]]
+        assert all(r["diag"]["dedup"] == [24, 10] for r in native), [r["diag"]["dedup"] for r in native]
+        R7.exact_dedup(enc)
+        try:
+            exact = [_run(rig, t) for t in rig["toks"]]
+        finally:
+            enc._backbone_dedup = saved
+            enc.memory_levers.pop("eval_exact_dedup", None)
+        assert all(r["diag"]["dedup"] == [24, 1] for r in exact)
+        d = max(float(np.abs(x["traj"] - y["traj"]).max()) for x, y in zip(native, exact))
+        sel = sum(x["diag"]["sel_idx"] == y["diag"]["sel_idx"] for x, y in zip(native, exact))
+        out = {"n": len(native), "max_abs_traj_diff_m": d, "sel_identical": sel, "device": DEV,
+               "ckpt": CKPT}
+        os.makedirs(os.path.join(PKG, "raw", "controls"), exist_ok=True)
+        json.dump(out, open(os.path.join(PKG, "raw", "controls", f"KD_exact_dedup_{DEV}.json"), "w",
+                            encoding="utf-8"), indent=1)
+>       assert sel == len(native) and d < 1e-3, out
+E       AssertionError: {'n': 4, 'max_abs_traj_diff_m': 0.0055141448974609375, 'sel_identical': 4, 'device': 'cuda', ...}
+E       assert (4 == 4 and 0.0055141448974609375 < 0.001)
+E        +  where 4 = len([{'traj': array([[ 5.72762775e+00,  2.39858069e-02],\n       [ 1.16090078e+01,  5.47467060e-02],\n       [ 1.75569363e+0...7390556e+00, 2.93258708e-02],\n       [5.47390556e+00, 2.93258708e-02],\n       [5.47390556e+00, 2.93258708e-02]]), ...}])
+
+tests\test_model_seam7.py:231: AssertionError
+=================================== PASSES ====================================
+_____________________ test_K0_same_seed_is_bit_identical ______________________
+---------------------------- Captured stdout setup ----------------------------
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from D:\refcv6_eval_kit\data\refcv6_train_eval139_extrinsics.json (4508 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+=========================== short test summary info ===========================
+PASSED tests/test_model_seam7.py::test_K0_same_seed_is_bit_identical
+FAILED tests/test_model_seam7.py::test_KD_exact_dedup_equals_native - Asserti...
+1 failed, 1 passed, 11 deselected in 10.26s

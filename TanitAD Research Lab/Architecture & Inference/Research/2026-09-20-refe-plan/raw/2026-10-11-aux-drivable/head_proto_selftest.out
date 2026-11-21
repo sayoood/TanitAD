@@ -1,0 +1,23 @@
+W1011 19:13:36.374000 44560 Lib\site-packages\torch\utils\flop_counter.py:29] triton not found; flop counting will not work for triton kernels
+  head params 2,440,450  (12.9 % of REFe's 18,991,426 trainable)
+  head fwd: 8.7 GFLOP counted (matmuls) + 23.5 GFLOP attention (analytic) = 32.2 GFLOP; fwd+bwd 96.7 GFLOP per sample
+  trunk fwd (refe_flops.py analytic, 4 cameras) 6.12 TFLOP -> head fwd = 0.53 % of it; head fwd+bwd vs trunk fwd + dgrad (2x fwd) = 0.79 %
+  [PASS] output grid (1, 40, 32)
+  [PASS] all-inside, logit 0: BCE == ln 2 exactly 0.69314730
+  [PASS] all-inside, sdf = +clip: Huber == 0.0 exactly 0.0
+  [PASS] half-half label: mask fraction 1 on one side, 0 on the other 
+  [PASS] no valid label in the batch: loss is exactly 0.0 (control reads 0) 
+  [PASS] aux loss -> NON-ZERO gradient on the head 1.879e+03
+  [PASS] aux loss -> NON-ZERO gradient on trunk group lora 8.261e-01
+  [PASS] aux loss -> NON-ZERO gradient on trunk group scene_proj 1.066e+02
+  [PASS] aux loss -> NON-ZERO gradient on trunk group pos3d_mlp 1.195e+01
+  [PASS] CONTROL: aux-only gradient on traj_head reads exactly 0.0 (not on the visual_ctx path) 0.0
+  [PASS] CONTROL: aux-only gradient on reg_compress reads exactly 0.0 (not on the visual_ctx path) 0.0
+  [PASS] MUTATION (head fed ctx.detach()): head still learns 3.695e+03
+  [PASS] MUTATION (head detached): trunk group lora gradient is exactly 0.0 0.0
+  [PASS] MUTATION (head detached): trunk group scene_proj gradient is exactly 0.0 0.0
+  [PASS] MUTATION (head detached): trunk group pos3d_mlp gradient is exactly 0.0 0.0
+  [PASS] w_aux = 0: every gradient exactly 0.0 (head and trunk) 
+  [PASS] derangement: 0 fixed points 
+  [PASS] derangement: same multiset of labels 
+SELFTEST PASSED (0 failing)

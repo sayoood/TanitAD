@@ -1,0 +1,20 @@
+# PUBLISHED-CODE extract - OpenDriveLab/UniAD @ 4e91222da855fa83a8caa55f512536e82f9f9818
+# path: projects/mmdet3d_plugin/datasets/nuscenes_e2e_dataset.py
+# git blob sha1 of the fetched file: 693b75b8bacf1136e02be88374411525ac6a7a69 (53641 B); verified against the GitHub contents API: MATCH
+# fetched 2026-09-19T13:46:02Z from raw.githubusercontent.com (read-only source text; excerpts only, attribution retained)
+
+## lines 1024-1036: FIRST PUBLIC COMMIT: value[i] only (at-t)
+ 1024              if 'planning_results_computed' in results.keys():
+ 1025                  planning_results_computed = results['planning_results_computed']
+ 1026                  planning_tab = PrettyTable()
+ 1027                  planning_tab.field_names = [
+ 1028                      "metrics", "0.5s", "1.0s", "1.5s", "2.0s", "2.5s", "3.0s"]
+ 1029                  for key in planning_results_computed.keys():
+ 1030                      value = planning_results_computed[key]
+ 1031                      row_value = []
+ 1032                      row_value.append(key)
+ 1033                      for i in range(len(value)):
+ 1034                          row_value.append('%.4f' % float(value[i]))
+ 1035                      planning_tab.add_row(row_value)
+ 1036                  print(planning_tab)
+

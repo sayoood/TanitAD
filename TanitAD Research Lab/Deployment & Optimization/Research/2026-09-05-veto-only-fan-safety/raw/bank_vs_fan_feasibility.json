@@ -1,0 +1,39 @@
+{
+ "_tool": "stack/scripts/bank_vs_fan_feasibility.py",
+ "_tier": "T0 instrument probe, 0 GPU",
+ "_evidence_class": "MEASURED (ours)",
+ "ckpt": "C:/Users/Admin/rl_refcv3_min/base/ckpt_step40284_frozen.pt",
+ "fan_npz": "C:/Users/Admin/veto_run/raw/fan_bank_base_240w.npz",
+ "n_windows": 240,
+ "n_candidates": 128,
+ "note": "the anchor bank is a FIXED path set (not v0-conditioned), so its envelope/kamm rates are window-independent; off_reach and the lead-dependent flags are not.",
+ "bank": {
+  "envelope": 0.015625,
+  "kamm_over": 0.1953125,
+  "off_reach": 0.7782877683639526,
+  "infeasible": 0.8036783933639526,
+  "contact": 0.02392578125,
+  "ttc_below": 0.12584635615348816,
+  "peak_g": 0.4807818531990051
+ },
+ "emitted": {
+  "envelope": 0.8877278645833333,
+  "kamm_over": 0.840625,
+  "off_reach": 0.10774739583333333,
+  "infeasible": 0.8919596354166667,
+  "contact": 0.024869791666666665,
+  "ttc_below": 0.109375,
+  "peak_g": 4.1130900382995605
+ },
+ "delta": {
+  "envelope": 0.8721028645833333,
+  "kamm_over": 0.6453125,
+  "off_reach": -0.6705403725306193,
+  "infeasible": 0.08828124205271404,
+  "contact": 0.000944010416666665,
+  "ttc_below": -0.01647135615348816,
+  "peak_g": 3.6323081851005554
+ },
+ "mean_abs_offset_m_2s_prefix": 9.2944917678833,
+ "peak_g_ratio_emitted_over_bank": 8.555002671028582
+}

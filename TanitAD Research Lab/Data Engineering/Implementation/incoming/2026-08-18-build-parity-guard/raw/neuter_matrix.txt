@@ -1,0 +1,27 @@
+# C107 discharge — each guard NEUTERED in turn, the suite required to go RED.
+# MEASURED 2026-08-18 by scratchpad/neuter.py against stack/tests/test_build_parity_guard.py
+# (24 tests green when intact). Every gated file was byte-compared to a pre-matrix
+# backup afterwards: all 7 IDENTICAL, so nothing was left neutered.
+# NOTE: an earlier attempt was killed by a 2-minute tool timeout MID-CASE and left
+# aug120_pipeline.py neutered on disk — a try/finally is no protection against
+# SIGKILL. That is why the byte-compare exists, and why it is reported here.
+
+=== C107 NEUTER MATRIX (suite MUST go red) ===
+RED                  12  core guard_corpus_build -> no-op
+            12 failed, 12 passed in 23.16s
+RED                   1  require_ingest_gate -> no-op
+            1 failed, 23 passed in 26.31s
+RED                   2  v2_compressed.build gate removed
+            2 failed, 22 passed in 26.78s
+RED                   3  epcache gate removed
+            3 failed, 21 passed in 23.92s
+RED                   3  aug120_pipeline gate removed
+            3 failed, 21 passed in 27.89s
+RED                   2  v2_to_pilot gate removed
+            2 failed, 22 passed in 21.64s
+RED                   2  slice_v2_cache gate removed
+            2 failed, 22 passed in 22.30s
+RED                   2  rebuild_pai_rolling gate removed
+            2 failed, 22 passed in 25.04s
+
+[exited with code 0]

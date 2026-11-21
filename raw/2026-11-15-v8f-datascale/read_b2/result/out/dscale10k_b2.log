@@ -1,0 +1,79 @@
+[dscale10k b2 read] start 2026-11-17T22:23:21Z
+block-1 read DONE: ZZ DSCALE10K B1 READ DONE ZZ
+commit free 6.44 GB >= 5.5 after 1 min
+........................................................................ [ 94%]
+F.ss                                                                     [100%]
+================================== FAILURES ===================================
+__________________ test_preflight_names_every_unbanked_item ___________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001E702F85130>
+tmp_path = WindowsPath('F:/TanitAD-scratch/datascale/read2/bt/t/test_preflight_names_every_unb1')
+
+    def test_preflight_names_every_unbanked_item(monkeypatch, tmp_path):
+        monkeypatch.setattr(L, "CK", str(tmp_path))
+        monkeypatch.setattr(RUN.L, "disk_problem", lambda *a, **k: None)
+        monkeypatch.setattr(RUN.L, "tree_problem", lambda *a, **k: None)
+        monkeypatch.setattr(RUN, "import_check", lambda: None)
+        bad = RUN.preflight([("B_s0", "A"), ("R_s0", "A")])
+        assert set(bad) == {"B_s0.A", "R_s0.A"}
+>       assert RUN.parse_items([]) == list(L.READ_ITEMS) and len(L.READ_ITEMS) == 7 and ("R_s0", "B") not in L.READ_ITEMS
+E       AssertionError: assert ([('B_s1', 'A'...('U_s1', 'B')] == [('B_s0', 'A'...p', 'B'), ...]
+E         
+E         At index 0 diff: ('B_s1', 'A') != ('B_s0', 'A')
+E         Right contains 3 more items, first extra item: ('B_rep', 'A')
+E         Use -v to get more diff)
+
+test_ds_read.py:389: AssertionError
+=========================== short test summary info ===========================
+FAILED test_ds_read.py::test_preflight_names_every_unbanked_item - AssertionE...
+1 failed, 73 passed, 2 skipped in 53.42s
+ZZ DSCALE10K B2 READ FAIL ZZ the reader tests are not green
+[dscale10k b2 read] start 2026-11-17T22:28:10Z
+block-1 read DONE: ZZ DSCALE10K B1 READ DONE ZZ
+commit free 5.77 GB >= 5.5 after 4 min
+........................................................................ [ 94%]
+..ss                                                                     [100%]
+74 passed, 2 skipped in 75.21s (0:01:15)
+deleted F:/TanitAD-scratch/datascale/read2/bt (own pytest basetemp)
+B_s1.A ok (hf)
+B_s1.B ok (hf)
+U_s1.A ok (hf)
+U_s1.B ok (hf)
+23:39:34 DS-B_s1-A_m10_causal_heads rc 0 ok 332 s
+23:44:54 DS-B_s1-B_m10_causal_heads rc 0 ok 320 s
+23:51:12 DS-U_s1-A_m10_causal_heads rc 0 ok 378 s
+23:56:31 DS-U_s1-B_m10_causal_heads rc 0 ok 318 s
+23:57:21 DSBs1A_s0 rc 0 ok 47 s
+23:58:16 DSBs1A_s0-tacabs rc 0 ok 54 s
+23:59:12 DSBs1A_s0-tacorc rc 0 ok 56 s
+00:00:18 DSBs1A_s0-tacorc-all-latcons rc 0 ok 66 s
+00:01:09 DSUs1A_s0 rc 0 ok 51 s
+00:02:10 DSUs1A_s0-tacabs rc 0 ok 61 s
+00:03:10 DSUs1A_s0-tacorc rc 0 ok 60 s
+00:04:07 DSUs1A_s0-tacorc-all-latcons rc 0 ok 57 s
+00:04:57 DS-B_s1-B_real rc 0 ok 35 s
+00:05:35 DS-B_s1-B_donor rc 0 ok 38 s
+00:06:07 DS-B_s1-B_zero rc 0 ok 32 s
+00:06:35 DS-B_s1-B_realx rc 0 ok 29 s
+00:07:16 DS-B_s1-B_donorx rc 0 ok 41 s
+00:07:48 DS-U_s1-B_real rc 0 ok 32 s
+00:08:22 DS-U_s1-B_donor rc 0 ok 34 s
+00:08:51 DS-U_s1-B_zero rc 0 ok 29 s
+00:09:21 DS-U_s1-B_realx rc 0 ok 30 s
+00:09:53 DS-U_s1-B_donorx rc 0 ok 32 s
+K-EVALX PASS {"B_s1.B real": true, "B_s1.B donor": true, "U_s1.B real": true, "U_s1.B donor": true}
+commit free 7.37 GB >= 5.5 after 0 min
+[taniteval] tanitad OVERRIDE -> F:/TanitAD-scratch/otband_read/tree/stack (F:\TanitAD-scratch/otband_read/tree/stack\tanitad\__init__.py)
+loaded B_s0.A 17s
+loaded B_s0.B 27s
+loaded U_s0.A 41s
+loaded U_s0.B 55s
+loaded B_rep.A 70s
+loaded B_rep.B 80s
+loaded R_s0.A 89s
+loaded B_s1.A 106s
+loaded B_s1.B 119s
+loaded U_s1.A 130s
+loaded U_s1.B 142s
+WROTE F:/TanitAD-scratch/datascale/read2/out/RESULT_DSCALE10K_B2.json | ['DATA-HURTS'] | problems: 0 | 215.0 s
+ZZ DSCALE10K B2 READ DONE ZZ

@@ -1,0 +1,189 @@
+{
+ "tool": "gain_traj_train_vs_eval_r8.py",
+ "status": "POST-HOC addendum, NOT registered in PREREG_GAINTRAJ; no role in the label",
+ "generated": "2026-10-19T15:13:42",
+ "prereg_sha256": "4245baceb53d75fded31602fa996ad7b95ea5306e69c2056f0ed78ad80a6ddcc",
+ "script_sha256": "28ff1f8185fba1f04c1020172775d3a5110c5fbc9b504c89e76492d15ce5eda5",
+ "tree_eval": "step30000ema_unc",
+ "tree_train": "E:/refcv8_eval_kit/trainfit/step30000ema_train139",
+ "estimator": "ratio sum(d*h)/sum(d*d); episode-cluster bootstrap B 2000 within each clip set; train-minus-eval difference from INDEPENDENT episode draws (two different clip sets); answers 'another draw of episodes' only",
+ "caveats": "single training seed (the trees are checkpoints of ONE run); T1 open loop on logged eval139 frames; per-instant fits are in-sample per tree; eval episodes only; the interval answers 'another draw of EPISODES' only (not another training run, not another inference run); no extrapolation beyond step 30,000 (final = 48,852); train clips are in this run's training set",
+ "rows": {
+  "S2|compliant|s0": {
+   "train": {
+    "g_star": 0.686281943691279,
+    "lo": 0.6026022305398572,
+    "hi": 0.7721812297040108,
+    "n_episodes": 137,
+    "n_windows": 4211
+   },
+   "eval_ema30k": {
+    "g_star": 0.4551880739801369,
+    "lo": 0.3773167985482543,
+    "hi": 0.5362343389056484,
+    "n_episodes": 138,
+    "n_windows": 4159
+   },
+   "diff_train_minus_eval": {
+    "delta": 0.23109386971114215,
+    "lo": 0.11268872983180493,
+    "hi": 0.3496957460429559,
+    "separated": true
+   }
+  },
+  "S2|all|s0": {
+   "train": {
+    "g_star": 0.4959849675857316,
+    "lo": 0.41697762618934836,
+    "hi": 0.5780684244127633,
+    "n_episodes": 139,
+    "n_windows": 4855
+   },
+   "eval_ema30k": {
+    "g_star": 0.3840731057254213,
+    "lo": 0.3284193470047043,
+    "hi": 0.4490402597926695,
+    "n_episodes": 139,
+    "n_windows": 4754
+   },
+   "diff_train_minus_eval": {
+    "delta": 0.11191186186031027,
+    "lo": 0.01119453550105185,
+    "hi": 0.21012137278662532,
+    "separated": true
+   }
+  },
+  "S2|compliant|s1": {
+   "train": {
+    "g_star": 0.6764661844213626,
+    "lo": 0.5954420309928531,
+    "hi": 0.7602895624250643,
+    "n_episodes": 137,
+    "n_windows": 4211
+   },
+   "eval_ema30k": {
+    "g_star": 0.4616256267172504,
+    "lo": 0.38607230021956096,
+    "hi": 0.5402665404870373,
+    "n_episodes": 138,
+    "n_windows": 4159
+   },
+   "diff_train_minus_eval": {
+    "delta": 0.21484055770411226,
+    "lo": 0.10213270437113253,
+    "hi": 0.32663395880646956,
+    "separated": true
+   }
+  },
+  "S2|all|s1": {
+   "train": {
+    "g_star": 0.5011985351283882,
+    "lo": 0.4228652951384605,
+    "hi": 0.5844507611149353,
+    "n_episodes": 139,
+    "n_windows": 4855
+   },
+   "eval_ema30k": {
+    "g_star": 0.37941439182276615,
+    "lo": 0.3213386100105451,
+    "hi": 0.44010406497214605,
+    "n_episodes": 139,
+    "n_windows": 4754
+   },
+   "diff_train_minus_eval": {
+    "delta": 0.12178414330562204,
+    "lo": 0.02646902875682376,
+    "hi": 0.22014419717219075,
+    "separated": true
+   }
+  },
+  "S6|compliant|s0": {
+   "train": {
+    "g_star": 0.8331422411302511,
+    "lo": 0.7359455111034661,
+    "hi": 0.9294712953150336,
+    "n_episodes": 137,
+    "n_windows": 3301
+   },
+   "eval_ema30k": {
+    "g_star": 0.6191549818644185,
+    "lo": 0.5308095288327682,
+    "hi": 0.7011559290847211,
+    "n_episodes": 138,
+    "n_windows": 3251
+   },
+   "diff_train_minus_eval": {
+    "delta": 0.21398725926583262,
+    "lo": 0.09325902234995494,
+    "hi": 0.3391557039208507,
+    "separated": true
+   }
+  },
+  "S6|all|s0": {
+   "train": {
+    "g_star": 0.7812501307290116,
+    "lo": 0.6679347616839022,
+    "hi": 0.9028333940503949,
+    "n_episodes": 139,
+    "n_windows": 3749
+   },
+   "eval_ema30k": {
+    "g_star": 0.5997531101232569,
+    "lo": 0.5286121106759295,
+    "hi": 0.6660560813608352,
+    "n_episodes": 139,
+    "n_windows": 3668
+   },
+   "diff_train_minus_eval": {
+    "delta": 0.18149702060575468,
+    "lo": 0.0510996223503728,
+    "hi": 0.3170182778650903,
+    "separated": true
+   }
+  },
+  "S6|compliant|s1": {
+   "train": {
+    "g_star": 0.8268056707183205,
+    "lo": 0.7337304712019378,
+    "hi": 0.9229603228040407,
+    "n_episodes": 137,
+    "n_windows": 3301
+   },
+   "eval_ema30k": {
+    "g_star": 0.6185365281753225,
+    "lo": 0.531078449491959,
+    "hi": 0.7001453196095601,
+    "n_episodes": 138,
+    "n_windows": 3251
+   },
+   "diff_train_minus_eval": {
+    "delta": 0.208269142542998,
+    "lo": 0.08702043917867983,
+    "hi": 0.33299156882228503,
+    "separated": true
+   }
+  },
+  "S6|all|s1": {
+   "train": {
+    "g_star": 0.7821018980175017,
+    "lo": 0.6711538262444902,
+    "hi": 0.9025932314924956,
+    "n_episodes": 139,
+    "n_windows": 3749
+   },
+   "eval_ema30k": {
+    "g_star": 0.5970819180253295,
+    "lo": 0.5253072165700198,
+    "hi": 0.6631304894952386,
+    "n_episodes": 139,
+    "n_windows": 3668
+   },
+   "diff_train_minus_eval": {
+    "delta": 0.18501997999217223,
+    "lo": 0.05340564417233028,
+    "hi": 0.3202038269938918,
+    "separated": true
+   }
+  }
+ }
+}

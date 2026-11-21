@@ -1,0 +1,126 @@
+# E-only lines of TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/LANDING_READY_WPB.txt  (E lines absent from the tip blob; CR-normalised; E line numbers)
+# tip blob last changed in 0efda5f; E mtime 2026-10-05 11:01; verdict: NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)
+4: md5 = of the file as it sits on disk (D:) at hand-over. Sections WPB-1..WPB-4 are HISTORY (WPB-4 LANDED in c39798d). The CURRENT hand-over is ## WPB-L6 (L1 LANDED badb582, L2 a5c2a9b, L3 4785e5e, L4 cb8289b, L5 903dd51), based on tip ce17f6f432c181ed588f4d6302c4c0f298800ae7 (stack / taniteval / tools subtrees == c39798d, asserted by tree hash).
+192: * L2: see ## WPB-L2-GATE (no candidate-only failure).
+194: ## WPB-L2 (the drivable-area critic --r8-critic-drivable; base tip feee18a361254722ad264635602b607e5c58f3b6)
+195: Source = <package>/code/fix_L2/<repo path>. Base blob = `git rev-parse feee18a:<path>`; fix blob = the blob these exact bytes hash to (each file carries its tip blob's EOL; new files LF), so `git add` and `hash-object --no-filters` give the SAME blob. Every MODIFIED file is a DESCENDANT of its tip blob (descendant check: every removed line is an intended edit). Land onto the tip, never from D:.
+196: f9731b7b8653f5a1ab3178d6027658ab  stack/scripts/launch_gate.py  -- MODIFIED (+4/-0, LF): refcv8 profile: + --max-speed-input-v6 / --r8-speed-input / --pose-sync-sidecar required, --r8-speed-unknown-p 0.45 and --r8-alloc-emit-start 2000 required values, --w-r8-v9-cons positive, the v8 sidecar flags and --r8-roll-speed-input forbidden, --r8-speed-input PI-pending (decision 2); G-LIVE rule w_r8_v9_cons
+197: #   fix blob e4aa6588220c873ef621b26a226aaf0b39dc7005 ; tip base blob db3354e79d8156407b47a38d05abd04f8e179ff1
+198: 9c05c3393112d896e2ffef336c9c8278  stack/scripts/refc_v3_train.py  -- MODIFIED (+27/-1, CRLF): OWNED (CRLF). Since c39798d: ladder support (--grad-share-every + gs rows, --init-from, --r8-derange-feed / --r8-rc-roll / --r8-roll-targets, the agent term in the conflict detector); P7 X3 (--r8-speed-input n2|n3, --r8-speed-unknown-p, --r8-roll-speed-input, V3Dataset.enable_r8_speed, the v8 sidecar REFUSED on refcv8, the r8_speed_derivation stamp, the fwd override of v_max_ms); P8 (--w-r8-v9-cons, the dataset's r8_v9_* targets, REFC_WEIGHT_GATES row); P9 (--r8-alloc-emit-start, per-step emission schedule, warm start emitting at step 0 refused); (B) --r8-speed-enc8; X10 merged 3-way (Data FlyWheel +109 lines: --pose-sync-sidecar, enable_pose_sync)
+199: #   fix blob 2e49ea2453d1a5fad91804d025b740efcfa0dc35 ; tip base blob 3c79cfbcefcb6f649a1aa081fd1d7edd2fb45fe6
+200: bc97bc300b56334b8a9a3b44b1ee641c  stack/tanitad/refs/refc_v3.py  -- MODIFIED (+16/-0, LF): OWNED. X3: the ceiling never below the fed value with a past-only source (and = the N2 value under enc8); the v9 constraint heads' outputs into the cache (P8); the enc8 seam input (B)
+201: #   fix blob 4f5c21bf2515eec0043f077d5031d0b4b7b57015 ; tip base blob 841696c0e5aae1f36d69f8780d541fc04a360708
+202: d18327ec1a1e5f7cd7c9bdd18dadda05  stack/tanitad/refs/refcv8_conditioning.py  -- MODIFIED (+119/-0, LF): OWNED. R8Config speed_input / v9_cons / w_v9_cons / emit_start / speed_enc8; v9_constraint_targets / v9_constraint_loss (P8); speed_enc8 (B)
+203: #   fix blob d626c117c15c48dd6ee275b128a4726b1f0d4476 ; tip base blob 5a25d99857e0ff3d2929310758ec126d40508fea
+204: 0133c0bb150a8773ad30891c64d07f25  stack/tanitad/train/refcv8_train.py  -- MODIFIED (+28/-1, LF): OWNED. roll_targets, warm_start_from, is_refcv8_key (ladder); X3 speed source, census, treatment, stamp; P8 constraint targets / loss / tactical_rows (Q8 key r8v9_tac_rows); P9 schedule + I-2 row; (B) stamp; G-DVB rows (registry 256 -> 268 with X10)
+205: #   fix blob e03f0cf70008d29c4ba3668d74483729a7e27cd6 ; tip base blob 993ff4ca0413f0ff45eb4d52ffeb0ea80a0915d7
+206: 7090bdfaed7769f56e64a2c47f80ef8c  stack/tests/test_declared_vs_built.py  -- MODIFIED (+3/-3, LF): the registry pin set ONCE to 268 (256 + 5 ladder + 3 X3 + 1 P8 + 1 P9 + 1 enc8 + 1 X10)
+207: #   fix blob 26eed21eabf4abf7ebd0014d25aea083cf5bf514 ; tip base blob d6beb4a4269f8c32b40d059737805b92eb7f83d2
+208: 67dfd337b5b59d79d877350abade38e3  stack/tests/test_refc_v3_agent_provenance.py  -- MODIFIED (+6/-0, CRLF): (CRLF) the P2 probe rows for --w-r8-v9-cons (and, in L2, --w-r8-drivable): each refusal satisfied, none weakened
+209: #   fix blob c10d8b1fa80efb152267603ed6a24814dc69ab47 ; tip base blob 50efb347b646b65e6aae97bf08d8907473fa8829
+212: # L1 LANDED as badb582; every L1 blob verified at the tip (36 / 36 fix_L1 files == tip blobs). Base above = that tip.
+213: # THE CRITIC WEIGHT FOR V-R8-DRV (A1), DECLARED HERE, FIXED, NEVER TUNED ON A LADDER NUMBER: --w-r8-drivable 1.0 -- the BCE
+214: #   reaches ONLY the critic's own MLP (its inputs, the map-head feature and the path geometry, are detached), so its weight
+215: #   cannot shift any shared budget; 1.0 is the unit BCE by construction.
+216: ## WPB-L2-GATE: tip side (the L1 gate's, same tip code) 15 failed / 2,918 passed; candidate fix_L2 (158 files) 15 failed /
+217: #   3,072 passed / 26 skipped. Candidate-only failures: NONE. Shared: the same 15 pre-existing failures.
+218: 
+219: ## WPB-L3 (X3 speed-only mode for the ladder's V0 + the VIS-1 x ego-strip fix; base tip 3cd48fd40c23db89af74126e82663e5607da67dc)
+220: Source = <package>/code/fix/<repo path>. Base = 3cd48fd (stack / taniteval / tools tree hashes == a5c2a9b, the L2 landing; all 37
+221: fix_L2 files verified == tip blobs). Fix blob = `hash-object --no-filters` of these bytes (each file keeps its tip blob's EOL).
+222: Every modified file is a DESCENDANT of its tip blob: every removed line (17 in all: 9 + 3 + 1 + 2 + 1 + 1) is an intended edit point (checked line by line).
+223: 627b2a9a8614de5ca2a151a932292c56  stack/scripts/refc_v3_train.py  -- MODIFIED 2e49ea2453d1a5fad91804d025b740efcfa0dc35 (+133/-9, CRLF): OWNED (CRLF). Speed-only mode (V0: X3 flags legal without --refcv8; v9 joined for the input column only); r8_spd_crc on every arm; vis1_rows_by_track + the listed-frame re-key in _vis1_item (the WP-C ego strip x VIS-1 crash, MEASURED on Thor); per-window vis1_rekeyed -> per-step `vis1_rekeyed`; --smoke-seed-ego-frames (smoke only, refused > 100 steps)
+224: #   fix blob 2da00e3e77a65fd64a149d750b4d3b785a72602e ; tip base blob 2e49ea2453d1a5fad91804d025b740efcfa0dc35
+225: ffcc58ca61c859a7afee09ff4a94c7a3  stack/tanitad/train/refcv8_train.py  -- MODIFIED e03f0cf70008d29c4ba3668d74483729a7e27cd6 (+53/-3, LF): OWNED. speed_gen / speed_crc / speed_only_fwd (dedicated generator); G-DVB r8_speed_input custom check; smoke_seed_ego_frames registered (runtime)
+226: #   fix blob 577a8246267ce9f19c9ce91b4bcd60b9d133ea62 ; tip base blob e03f0cf70008d29c4ba3668d74483729a7e27cd6
+227: 960d91da269b94d442746ab941006171  stack/tanitad/refs/refc_v3.py  -- MODIFIED 4f5c21bf2515eec0043f077d5031d0b4b7b57015 (+1/-1, LF): OWNED. The fed ceiling honoured whenever cfg.refcv8.speed_input is set (not only with the seams)
+228: #   fix blob 4d9d6648cc676b64e20841ea0f92b459d63816c9 ; tip base blob 4f5c21bf2515eec0043f077d5031d0b4b7b57015
+229: 3761553ae5df4f324cdb719ff97025ed  stack/tanitad/eval/refcv7_loader.py  -- MODIFIED a3a0ab45c1b5d9799c1e7606a826ccea856ceb33 (+3/-2, LF): The speed-only eval join (input column only; targets only on refcv8). The eval CLOCK is UNCHANGED (MM ruling).
+230: #   fix blob bc065e855ae2ffe7a0ac0a9c64c8551a71bcd7f9 ; tip base blob a3a0ab45c1b5d9799c1e7606a826ccea856ceb33
+231: d58e58d0e855da8001f4e9929cb26057  stack/tests/test_refcv8_speed_input.py  -- MODIFIED 6da3d424844447191e9fb5581f1e1357fe432f7f (+143/-0, LF): speed-only mode, V0/V-R8 fed-channel byte identity, CRC, RC shuffle
+232: #   fix blob ca63993386ae49c88552ca9292ce4d600dbab8bc ; tip base blob 6da3d424844447191e9fb5581f1e1357fe432f7f
+233: 91e6fc2cbe15cde59520378cd7be8275  stack/tests/test_refcv8_trainer_pin.py  -- MODIFIED 5b1bc315ece3088775a298849401a2df0b1c08bb (+2/-1, LF): a speed-only argv is now valid; its refusal row reads --max-speed-input-v6
+234: #   fix blob 6bf1baf0a5a932226d6a255d16fd10383aad8321 ; tip base blob 5b1bc315ece3088775a298849401a2df0b1c08bb
+235: a27c10795e1a51c9df471f00ac097649  stack/tests/test_declared_vs_built.py  -- MODIFIED 26eed21eabf4abf7ebd0014d25aea083cf5bf514 (+2/-1, LF): registry pin 270 -> 271 (--smoke-seed-ego-frames)
+236: #   fix blob a77339061268db1905325a50d15019f578cf6538 ; tip base blob 26eed21eabf4abf7ebd0014d25aea083cf5bf514
+237: 0ef6fdec67ea998ec7ad69363319e967  stack/tests/test_refcv8_vis1_ego_rekey.py  -- NEW (+164/-0, LF): NEW. Re-key literals; RED arm = the position key reproduces the exact Thor refusal; centre / unstored-track refusals kept; truncation composition; duplicated sidecar track refused; vis1_rekeyed flag; smoke seed picks NOW-listed windows; the flag refused above 100 steps
+238: #   fix blob 93c8f59a2f0ec5da5fd4c740a763697ebf1039dd ; tip base blob NEW
+239: ## WPB-L3-GATE (MM 2026-10-05 rule: sequential, serial, commit >= 8 GB, the L1/L2 selection = test files importing refc_v3_train /
+240: #   refcv8 / v9_labels / launch_gate / refcv7_loader / refc_v3 / speed_leak / pose_sync; dev box, never Thor):
+241: #   tip 3cd48fd (git archive, autocrlf=false, 324/324 blobs checked): 135 files, 7 failed / 2,526 passed / 11 skipped;
+242: #   candidate (tip + these 8 files, md5-equal to code/fix): 136 files, 7 failed / 2,555 passed / 11 skipped.
+243: #   Candidate-only failures: NONE. Shared 7 = test_openloop_suite x4 + test_refcv6_diffusion bit-identity x3 (pre-existing on the tip).
+244: #   Package harness: code/ladder/test_ladder_score.py 18 passed on the candidate tree.
+245: ## WPB-L3 PACKAGE files (land with L3, under the package prefix)
+246: 1084579a2a424d8469ce39b2014b8880  code/ladder/ladder_arms.py
+247: 02e2bddbde06ea5998a83c4cbafecbe4  code/ladder/ladder_eval.py
+248: 7c85d2142ab081b4ba11ce0ca9486a8b  code/ladder/ladder_score.py
+249: f55dc2abda854241de1566facefc9204  code/ladder/ladder_i0.py
+250: 48abcfb0e72b50e70e425bc9f0a5fe90  code/ladder/ladder_chain.sh
+251: c919bb93bf73e9f661c7e6a119a4ddb1  code/ladder/ladder_pull.sh
+252: 4a3222128667ab1737e7f002f60087a1  code/ladder/ladder_stage_thor.sh
+253: 3244adf6f8e0c9410466e97b1bdbcea2  code/ladder/local_smoke.py
+254: 3d9a661cd77eb6d9a1d14bba9162bcd7  code/ladder/test_ladder_score.py
+255: d33b080415e14eb727bdaf49158969d8  code/r8_smoke_thor_L1.sh
+256: 424dd2d334300a375792a867bdd4bb53  code/r8_smoke_thor_L3.sh
+257: 47e602c109619e2cc21443e33d8539f1  RESULT_L3_LADDER_HARNESS.md
+258: # Corrected: code/r8_smoke_thor_L1.sh (rc captured before $(date)). NEW: code/r8_smoke_thor_L3.sh (the re-run; MM read added).
+259: # AFTER the landing (MM sequence): (1) stage <tip>'s minimal tree as /home/nvidia/refcv8_run/tree_L3, (2) the L3 smoke under the
+260: #   lock (vis1_rekey_check.json + smoke_summary.json + p7_smoke_check.json decide), (3) only then ladder_stage_thor.sh.
+261: 
+262: ## WPB-L4 (seam RNG isolation + the gradient-share fp32 replay; base tip 4785e5ebaeb4744218b0d1c003843583691fab13 = the L3 landing)
+263: Source = <package>/code/fix/<repo path>. Base blob = `git rev-parse 4785e5e:<path>`; fix blob = `hash-object --no-filters` of these
+264: bytes (tip EOL kept; new files LF). Descendants of the tip blobs: 13 removed lines in all (6 + 2 + 1 + 4), each an intended edit.
+265: 23570f7d20033dc204ae65c46457cf70  stack/tanitad/refs/refc_v3.py  -- MODIFIED (+16/-6, LF): OWNED. enable_refcv8 builds the seams inside torch.random.fork_rng from a DEDICATED stream (cfg.refcv8.seed + R8_INIT_SEED_OFFSET): the global stream leaves the call exactly as it entered (MEASURED: V-R8's map / box3d heads had a different init than V0's -- the I-0 arm-level identity failed 184/354 map keys; with the fix 354/354)
+266: #   fix blob 68ff839c6aa47ec18a65d5da97c03a1659663511 ; tip base blob 4d9d6648cc676b64e20841ea0f92b459d63816c9
+267: 861b76ba54d045fb1f9a6b22d8647a98  stack/scripts/refc_v3_train.py  -- MODIFIED (+14/-2, CRLF): OWNED (CRLF). `_gs_due`; under a bf16 trunk the gs reading is grad_share.fp32_replay of THIS step, taken BEFORE the training forward
+268: #   fix blob f1054903e97f153b3b950107135fedf20cfa3ac5 ; tip base blob 2da00e3e77a65fd64a149d750b4d3b785a72602e
+269: e24ceb3e41093be4ef265dce2b7d1402  stack/tanitad/train/grad_share.py  -- MODIFIED (+67/-1, LF): OWNED. bf16_levers, fp32_replay (levers OFF; forked global RNG; dedicated generators snapshotted/restored, replay-created ones dropped; buffers restored; .grad untouched) -- MEASURED need: Thor L3 smoke gs_trunk_lin_rel_err 5.9e-3 under --trunk-bf16 vs the 1e-4 bar
+270: #   fix blob 3218bd72e1f0e9343317bfb7f3dc9138d87f0675 ; tip base blob a47c7194ba37befcc28922369253f15d3cd78e4a
+271: 3e6bab1757e8914e5229c91f1b9a7a1a  stack/tests/test_refcv8_grad_share.py  -- MODIFIED (+9/-4, LF): the wiring pin reads the `_gs_due` gate; its mutation now asserts it applied
+272: #   fix blob ae18cbd812e52635322c77011e954bfa7b731c85 ; tip base blob 0658cf3b36489ef73e8fc7f6b517f69902474ce1
+273: c734d53a18843690ef48c156a25fdfb1  stack/tests/test_refcv8_seam_rng.py  -- NEW (+65/-0, LF): global stream unchanged by the seam build (off / on / on+critic+v9); every shared parameter identical; seam init independent of the global seed; RED arm = a non-restoring fork
+274: #   fix blob b467d40755f734fc65545319d073f77efb6c099d ; tip base blob NEW
+275: 12bdbdb43079a94aa5b7fb723fd8cf23  stack/tests/test_refcv8_grad_share_fp32.py  -- NEW (+124/-0, LF): RED arm = the direct bf16 reading misses 1e-4, the replay meets it (shares sum 1); the training step after a replay is BIT-identical (loss + every .grad); buffers restored; the real timm trunk exposes the lever; the trainer replays before its forward
+276: #   fix blob ddbef279c256d3ce613d900eef9aabdf026da43b ; tip base blob NEW
+277: ## WPB-L4-GATE (MM rule; dev box): tip 4785e5e 7 failed / 2,555 passed / 11 skipped; candidate (these 6 files, md5-equal to code/fix)
+278: #   7 failed / 2,564 passed / 11 skipped. Candidate-only failures: NONE (the shared 7 = the tip's). An earlier candidate with the seam
+279: #   fix alone: 7 / 2,559, also NONE.
+280: ## WPB-L4 PACKAGE files
+281: 4fbf81257b46e99374745d6a8e0d864a  code/ladder/ladder_eval.py  (the pre-intervention RC arrays renamed rc_raw_ds / rc_valid_ds: a record, never scored --
+282: #   VALIDATED on the dev-box 1-step checkpoints: V0 base / vmax_off / vmax_shuf and V-R8 base / legal on the SAME 16 windows
+283: #   (digest dab1cc06...), V0 and V-R8 fed-speed bytes identical, vmax_off = unknown everywhere, vmax_shuf = roll(base, 1),
+284: #   legal = speed unknown; ladder_score.score_pass reads every family off the real npz)
+285: 63930d79a5eef8e8c44c39162d0ecadc  RESULT_L4_SEAM_RNG_AND_GSMOKE.md  (NEW: the L3 G-SMOKE reads, the seam-RNG defect + fix, the fp32 replay)
+286: c5da55d75bd371c0fd3a6129af69d619  code/ladder/ladder_i0.py  (I0-a compares the 10 cm MAP terms; agent / box3d printed -- they read the join through WP-C's masks; rows_of restored)
+287: # MEASURED for the record (dev box, CPU, 1 step each, same seed, same first batch, fed-speed CRC 4015187787 on both): with the fix,
+288: #   I0-a PASS 354/354 map keys, agent 36/36 and box3d 53/53 identical, MM-2 PASS.
+289: 
+290: ## WPB-L5 (TF32 off inside the gradient-share fp32 replay; base tip 26dcb6a58ebd44f715b91db88a63e88286e0c34b; L4 LANDED cb8289b)
+291: Source = <package>/code/fix/<repo path>. Pure additions to the tip blobs (+10/-0, +26/-0); LF kept.
+292: f9e11ad99849340405b07807bab45881  stack/tanitad/train/grad_share.py  -- MODIFIED (+10/-0, LF): OWNED. fp32_replay sets cuda.matmul.allow_tf32 / cudnn.allow_tf32 False and matmul precision 'highest' INSIDE the replay, restores all three in finally; row gs_fp32_replay_tf32_off. Touches nothing the training step executes (MM condition for keeping S0's N).
+293: #   fix blob 96d7483118de33d1f33fbd0e5c5b7e599bb3dc34 ; tip base blob 3218bd72e1f0e9343317bfb7f3dc9138d87f0675
+294: 72dbf0a0fbc962d56abe4362d01cbaa8  stack/tests/test_refcv8_grad_share_fp32.py  -- MODIFIED (+26/-0, LF): + the switches read (False, False, 'highest') inside the replay and are restored to (True, True, 'high'); the bit-identity test of the training step is unchanged and green
+295: #   fix blob 6f0876829948dcea9fba2d7c98f55917fa9d7bc8 ; tip base blob ddbef279c256d3ce613d900eef9aabdf026da43b
+296: ## WPB-L5-GATE (MM rule; dev box): tip 26dcb6a 7 failed / 2,564 passed / 11 skipped; candidate 7 / 2,565 / 11. Candidate-only: NONE.
+297: ## WPB-L5 PACKAGE files
+298: fbe506819164ba951cf0d123eadd6ded  RESULT_L5_TF32_REPLAY.md  (NEW: what L5 changes and does not; the two-halved GPU diagnosis; gate)
+299: 553adfec6945c41aea55ccc15012876c  code/tf32_microcheck.py  (NEW: Thor GPU micro-check, run under the lock)
+300: ff9250f09da7015d9f1e6c84ebb9f859  raw/tf32_microcheck.json  (NEW, MEASURED Thor: TF32 ON 5.26e-4 / OFF 8.85e-7 / L5 replay 8.85e-7 -> PASS)
+301: fe1b9c7c14348dc940a95742526bd27d  code/r8_smoke_thor_L5_s3.sh  (NEW: the full-size S3 re-read, 10 steps, gs at 10, MemAvailable >= 40 GB guard in the lock)
+302: 71cab85be5a29c8d22706a9da8bf61f7  code/r8_smoke_thor_L4.sh  (NEW: the L4 G-SMOKE driver -- the G-SMOKE-L4 evidence run)
+303: c2b565f88e611ffbab17b71bf95b7f3e  code/ladder/ladder_chain.sh  (UPDATED: the MM's arm order; MemAvailable >= 40 GB inside the lock on every GPU job, release + retry; chunk clock from the trainer's start; trainer PID by comm + its own --out; ONLY_S0 mode)
+304: 
+305: ## WPB-L6 (the gradient-share replay runs EAGER under --trunk-compile; base tip 2bdabfd031ff45ee90ea9f62e9324889876f5edf; L5 LANDED 903dd51)
+306: Source = <package>/code/fix/<repo path>; LF kept. Descendants: the one removed line is the replay's `with fork_rng(...)` line, now `with fork_rng(...), _eager()`.
+307: 61c4d8fc9f561078ab64ae444d06d30b  stack/tanitad/train/grad_share.py  -- MODIFIED (+16/-1, LF): OWNED. _eager() = torch.compiler.set_stance("force_eager") around the replay's forward (restored on exit); row gs_fp32_replay_eager. MEASURED need: the L5 S3 re-read with --trunk-compile died at step 10 (inductor recompile inside the replay, gcc failure on Thor)
+308: #   fix blob d9c05ef8f92913b506b53246671ac67a2c4e307f ; tip base blob 96d7483118de33d1f33fbd0e5c5b7e599bb3dc34
+309: d295d04328dac79ea776a0fdf9d0f19f  stack/tests/test_refcv8_grad_share_fp32.py  -- MODIFIED (+31/-0, LF): counting compile backend -> the replay adds NO compile and meets 1e-4; RED arm (no eager stance) recompiles
+310: #   fix blob dafca74b754a1e33e33acbad79162560a42b9e2b ; tip base blob 6f0876829948dcea9fba2d7c98f55917fa9d7bc8
+311: ## WPB-L6-GATE (MM rule; dev box): tip 2bdabfd 7 failed / 2,565 passed / 11 skipped; candidate 7 / 2,566 / 11. Candidate-only: NONE.
+312: ## WPB-L6 PACKAGE files
+313: b759751d6e180db2cad0d2ac72bb0b7f  RESULT_L5_TF32_REPLAY.md  (UPDATED: + the L6 section)
+314: 0c863cbbff51f68027f0ee3011dfa02d  code/r8_smoke_thor_L5_s3.sh  (UPDATED: NOCOMPILE switch; the arms' path, and the compile-path read owed before the launch)
+346: * code/fix_P7/: a frozen P7-only tree (superseded). code/fix_L1/: the L1 source (LANDED badb582). code/fix_L2/: the L2 source.
+347: * code/fix/: the L3 source (## WPB-L3). C:/Users/Admin/r8_wpb_t3cd (tip archive) and r8_wpb_ov3cd (the gated candidate): regenerable.
+348: * Dev-box smoke split: C:/Users/Admin/ladder_smoke_cache/{train,eval} (8 / 4 eval139 episodes copied; a SMOKE, never scored).

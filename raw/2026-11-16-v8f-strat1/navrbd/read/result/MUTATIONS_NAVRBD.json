@@ -1,0 +1,367 @@
+[
+ {
+  "mutation": "the 5-way lat_cls accepted as the D1-HO label",
+  "file": "navrbd_read.py",
+  "red_tests": [
+   "test_kinematic_label_accuracy_not_five_way",
+   "test_alias_and_paths",
+   "test_card_sha_prefix_matches",
+   "test_banked_f_ho_file_is_the_card_value",
+   "test_t1_argv_follow_and_zero_twin"
+  ],
+  "expected_red": "test_kinematic_label_accuracy_not_five_way",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "the driver reads the 5-way lat_cls instead of read_otband.labels",
+  "file": "navrbd_read.py",
+  "red_tests": [
+   "test_alias_and_paths",
+   "test_card_sha_prefix_matches",
+   "test_banked_f_ho_file_is_the_card_value",
+   "test_t1_argv_follow_and_zero_twin",
+   "test_driver_reads_the_kinematic_label"
+  ],
+  "expected_red": "test_driver_reads_the_kinematic_label",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "the bar dropped to 0.0383",
+  "file": "navrbd_read.py",
+  "red_tests": [
+   "test_bar_is_the_larger_of_the_rig_floor_and_f_ho",
+   "test_gain_needs_the_bar_and_a_positive_lower_bound",
+   "test_outcome_uses_the_bar_from_f_ho_not_the_rig_floor",
+   "test_alias_and_paths",
+   "test_card_sha_prefix_matches",
+   "test_banked_f_ho_file_is_the_card_value",
+   "test_t1_argv_follow_and_zero_twin"
+  ],
+  "expected_red": "test_bar_is_the_larger_of_the_rig_floor_and_f_ho",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "the bar dropped to 0.0383 (gain rule reads the rig floor)",
+  "file": "navrbd_read.py",
+  "red_tests": [
+   "test_d1_ho_gain_rule_on_planted_windows",
+   "test_alias_and_paths",
+   "test_card_sha_prefix_matches",
+   "test_banked_f_ho_file_is_the_card_value",
+   "test_t1_argv_follow_and_zero_twin"
+  ],
+  "expected_red": "test_d1_ho_gain_rule_on_planted_windows",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "N1D read against the wrong seed",
+  "file": "navrbd_read.py",
+  "red_tests": [
+   "test_pairing_is_same_seed",
+   "test_alias_and_paths",
+   "test_card_sha_prefix_matches",
+   "test_banked_f_ho_file_is_the_card_value",
+   "test_t1_argv_follow_and_zero_twin"
+  ],
+  "expected_red": "test_pairing_is_same_seed",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "gain without the positive lower bound",
+  "file": "navrbd_read.py",
+  "red_tests": [
+   "test_d1_ho_gain_rule_on_planted_windows",
+   "test_alias_and_paths",
+   "test_card_sha_prefix_matches",
+   "test_banked_f_ho_file_is_the_card_value",
+   "test_t1_argv_follow_and_zero_twin"
+  ],
+  "expected_red": "test_d1_ho_gain_rule_on_planted_windows",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "F_HO not absolute",
+  "file": "navrbd_read.py",
+  "red_tests": [
+   "test_f_ho_is_the_absolute_mean_difference_of_the_pair",
+   "test_alias_and_paths",
+   "test_card_sha_prefix_matches",
+   "test_banked_f_ho_file_is_the_card_value",
+   "test_t1_argv_follow_and_zero_twin"
+  ],
+  "expected_red": "test_f_ho_is_the_absolute_mean_difference_of_the_pair",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "Z-EVAL exact-zero comparison dropped",
+  "file": "navrbd_read.py",
+  "red_tests": [
+   "test_z_eval_exact_zero_and_mask",
+   "test_alias_and_paths",
+   "test_card_sha_prefix_matches",
+   "test_banked_f_ho_file_is_the_card_value",
+   "test_t1_argv_follow_and_zero_twin"
+  ],
+  "expected_red": "test_z_eval_exact_zero_and_mask",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "Z-EVAL mask ignored",
+  "file": "navrbd_read.py",
+  "red_tests": [
+   "test_z_eval_exact_zero_and_mask",
+   "test_alias_and_paths",
+   "test_card_sha_prefix_matches",
+   "test_banked_f_ho_file_is_the_card_value",
+   "test_t1_argv_follow_and_zero_twin"
+  ],
+  "expected_red": "test_z_eval_exact_zero_and_mask",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "K-CONST compares against the wrong share",
+  "file": "navrbd_read.py",
+  "red_tests": [
+   "test_k_const_and_k_floor",
+   "test_alias_and_paths",
+   "test_card_sha_prefix_matches",
+   "test_banked_f_ho_file_is_the_card_value",
+   "test_t1_argv_follow_and_zero_twin"
+  ],
+  "expected_red": "test_k_const_and_k_floor",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "K-FLOOR vacuous",
+  "file": "navrbd_read.py",
+  "red_tests": [
+   "test_k_const_and_k_floor",
+   "test_alias_and_paths",
+   "test_card_sha_prefix_matches",
+   "test_banked_f_ho_file_is_the_card_value",
+   "test_t1_argv_follow_and_zero_twin"
+  ],
+  "expected_red": "test_k_const_and_k_floor",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "K1 self-pair accepts a non-degenerate interval",
+  "file": "navrbd_read.py",
+  "red_tests": [
+   "test_d1_ho_uses_the_bar_it_is_given_and_reads_a_self_pair_as_zero",
+   "test_alias_and_paths",
+   "test_card_sha_prefix_matches",
+   "test_banked_f_ho_file_is_the_card_value",
+   "test_t1_argv_follow_and_zero_twin"
+  ],
+  "expected_red": "test_d1_ho_uses_the_bar_it_is_given_and_reads_a_self_pair_as_zero",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "RBD-GAIN: N1Dx dropped",
+  "file": "navrbd_read.py",
+  "red_tests": [
+   "test_outcome_gain_needs_every_condition",
+   "test_alias_and_paths",
+   "test_card_sha_prefix_matches",
+   "test_banked_f_ho_file_is_the_card_value",
+   "test_t1_argv_follow_and_zero_twin"
+  ],
+  "expected_red": "test_outcome_gain_needs_every_condition",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "RBD-GAIN: Z-USE dropped",
+  "file": "navrbd_read.py",
+  "red_tests": [
+   "test_outcome_gain_needs_every_condition",
+   "test_outcome_missing_input_is_not_yet_never_a_pass",
+   "test_alias_and_paths",
+   "test_card_sha_prefix_matches",
+   "test_banked_f_ho_file_is_the_card_value",
+   "test_t1_argv_follow_and_zero_twin"
+  ],
+  "expected_red": "test_outcome_gain_needs_every_condition",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "RBD-GAIN: the guard at seed 1 dropped",
+  "file": "navrbd_read.py",
+  "red_tests": [
+   "test_outcome_gain_needs_every_condition",
+   "test_alias_and_paths",
+   "test_card_sha_prefix_matches",
+   "test_banked_f_ho_file_is_the_card_value",
+   "test_t1_argv_follow_and_zero_twin"
+  ],
+  "expected_red": "test_outcome_gain_needs_every_condition",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "N1Dx gain does not stand the labels down",
+  "file": "navrbd_read.py",
+  "red_tests": [
+   "test_outcome_gain_needs_every_condition",
+   "test_alias_and_paths",
+   "test_card_sha_prefix_matches",
+   "test_banked_f_ho_file_is_the_card_value",
+   "test_t1_argv_follow_and_zero_twin"
+  ],
+  "expected_red": "test_outcome_gain_needs_every_condition",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "RBD-ONE-SEED: reads at least one seed",
+  "file": "navrbd_read.py",
+  "red_tests": [
+   "test_outcome_gain_needs_every_condition",
+   "test_alias_and_paths",
+   "test_card_sha_prefix_matches",
+   "test_banked_f_ho_file_is_the_card_value",
+   "test_t1_argv_follow_and_zero_twin"
+  ],
+  "expected_red": "test_outcome_gain_needs_every_condition",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "RBD-NO-GAIN: Z-USE at one seed enough",
+  "file": "navrbd_read.py",
+  "red_tests": [
+   "test_outcome_no_gain_unread_costs_floor_high",
+   "test_alias_and_paths",
+   "test_card_sha_prefix_matches",
+   "test_banked_f_ho_file_is_the_card_value",
+   "test_t1_argv_follow_and_zero_twin"
+  ],
+  "expected_red": "test_outcome_no_gain_unread_costs_floor_high",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "RBD-UNREAD on one unread seed",
+  "file": "navrbd_read.py",
+  "red_tests": [
+   "test_outcome_no_gain_unread_costs_floor_high",
+   "test_alias_and_paths",
+   "test_card_sha_prefix_matches",
+   "test_banked_f_ho_file_is_the_card_value",
+   "test_t1_argv_follow_and_zero_twin"
+  ],
+  "expected_red": "test_outcome_no_gain_unread_costs_floor_high",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "RBD-COSTS: any guard cell, not the same cell at both seeds",
+  "file": "navrbd_read.py",
+  "red_tests": [
+   "test_outcome_no_gain_unread_costs_floor_high",
+   "test_alias_and_paths",
+   "test_card_sha_prefix_matches",
+   "test_banked_f_ho_file_is_the_card_value",
+   "test_t1_argv_follow_and_zero_twin"
+  ],
+  "expected_red": "test_outcome_no_gain_unread_costs_floor_high",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "RBD-FLOOR-HIGH without the rig-floor condition",
+  "file": "navrbd_read.py",
+  "red_tests": [
+   "test_outcome_floor_high_needs_f_above_the_rig_floor",
+   "test_alias_and_paths",
+   "test_card_sha_prefix_matches",
+   "test_banked_f_ho_file_is_the_card_value",
+   "test_t1_argv_follow_and_zero_twin"
+  ],
+  "expected_red": "test_outcome_floor_high_needs_f_above_the_rig_floor",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "a missing input reads as a pass (no NOT-YET)",
+  "file": "navrbd_read.py",
+  "red_tests": [
+   "test_outcome_missing_input_is_not_yet_never_a_pass",
+   "test_alias_and_paths",
+   "test_card_sha_prefix_matches",
+   "test_banked_f_ho_file_is_the_card_value",
+   "test_t1_argv_follow_and_zero_twin"
+  ],
+  "expected_red": "test_outcome_missing_input_is_not_yet_never_a_pass",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "a missing N1Dx not listed",
+  "file": "navrbd_read.py",
+  "red_tests": [
+   "test_outcome_missing_input_is_not_yet_never_a_pass",
+   "test_alias_and_paths",
+   "test_card_sha_prefix_matches",
+   "test_banked_f_ho_file_is_the_card_value",
+   "test_t1_argv_follow_and_zero_twin"
+  ],
+  "expected_red": "test_outcome_missing_input_is_not_yet_never_a_pass",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "the zero twin dumped with the channel on",
+  "file": "navrbd_dumps.py",
+  "red_tests": [
+   "test_alias_and_paths",
+   "test_card_sha_prefix_matches",
+   "test_banked_f_ho_file_is_the_card_value",
+   "test_t1_argv_follow_and_zero_twin"
+  ],
+  "expected_red": "test_t1_argv_follow_and_zero_twin",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "the feat dropped from the dump argv",
+  "file": "navrbd_dumps.py",
+  "red_tests": [
+   "test_alias_and_paths",
+   "test_card_sha_prefix_matches",
+   "test_banked_f_ho_file_is_the_card_value",
+   "test_t1_argv_follow_and_zero_twin"
+  ],
+  "expected_red": "test_t1_argv_follow_and_zero_twin",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "the RB table pin not checked",
+  "file": "navrbd_dumps.py",
+  "red_tests": [
+   "test_alias_and_paths",
+   "test_card_sha_prefix_matches",
+   "test_banked_f_ho_file_is_the_card_value",
+   "test_t1_argv_follow_and_zero_twin",
+   "test_dump_wrapper_uses_the_rbd_script_and_refuses_a_wrong_rb_table"
+  ],
+  "expected_red": "test_dump_wrapper_uses_the_rbd_script_and_refuses_a_wrong_rb_table",
+  "expected_in_red": true,
+  "went_red": true
+ }
+]

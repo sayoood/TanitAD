@@ -1,0 +1,9 @@
+{
+ "TOMBSTONE": true,
+ "run_id": "20260920T144140Z-navsim_v2-refcv4b_b1_v72_40k-b11027",
+ "removed_utc": "2026-09-21T12:28:28Z",
+ "superseded_by": "20260921T122714Z-navsim_v2-refcv4b_b1_v72_40k-859e25",
+ "why": "every arm E1_RAM_GUARD_ABORT (available 1035 MB vs floor 3000; scorer RSS 768 MB) while other sessions held the box — the run never finished",
+ "evidence_kept": "raw/model/A1.npz + A1.manifest.json (5,462 model rows + 450 cv_standin, 11,232.6 s) — ADOPTED by the final run via --reuse-seams; raw/<arm>/<arm>.counts.json (the abort records)",
+ "rule": "taniteval/results/bench/** is APPEND-ONLY (W4, 2026-09-20): a withdrawn run leaves this tombstone instead of vanishing under a consumer that has already cited it"
+}

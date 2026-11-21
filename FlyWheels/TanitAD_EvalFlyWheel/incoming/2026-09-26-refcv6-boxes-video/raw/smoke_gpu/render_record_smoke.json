@@ -1,0 +1,605 @@
+{
+ "tool": "taniteval/tools/render_refcv6_map_video.py",
+ "mode": "render",
+ "started": "2026-09-26T22:13:00",
+ "argv": [
+  "--mode",
+  "render",
+  "--gpu-smoke",
+  "--device",
+  "cuda",
+  "--boxes",
+  "--dump-map",
+  "--ckpt",
+  "D:/refcv6_eval_kit/ckpt_final/ckpt_step38000.pt",
+  "--config",
+  "D:/refcv6_eval_kit/ckpt_final/config.json",
+  "--metrics",
+  "D:/refcv6_eval_kit/ckpt_final/metrics.jsonl",
+  "--expect-step",
+  "38000",
+  "--expect-ckpt-md5",
+  "5a2e7222a9f5f8c7aa7bf38ef4698d8a",
+  "--expect-config-md5",
+  "a3193a4685ce0d07a6ae6b89fdc994a8",
+  "--out-dir",
+  "D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-boxes-video/raw",
+  "--tag",
+  "refcv6_boxes_step38000_gpusmoke",
+  "--smoke-windows",
+  "2",
+  "--smoke-dump-windows",
+  "2",
+  "--dump-dir",
+  "C:/Users/Admin/qland/work/mapvid/mapdump_gpusmoke",
+  "--gate-wait-min",
+  "60",
+  "--cpu-render-ram-gb",
+  "999"
+ ],
+ "run_label": "refcv6-r101-s0",
+ "hybrid_note": "hybrid: F3 + true label clock from step 34,500",
+ "caveat": "perception diagnostic, open loop \u2014 not driving performance",
+ "departures": [
+  "providers filtered to the rendered clips before build_eval_dataset (Q3_ONLY_EPISODE_SHA12 pattern) -- RAM",
+  "agent join + 3-D join ATTACHED (GT boxes); the 3-D join opened for the rendered clips only (_clip_table_for_caches restricted to them); the forward reads neither (--agents head, agents.oracle asserted False)",
+  "future_frames not decoded (only the LAW loss reads them; it never runs)",
+  "forward = refc_v3_train.compute_losses_v3 interrupted by a forward hook right after model(...) returns",
+  "DDIM draw seeded per window: torch.manual_seed(0) before every forward",
+  "torch.load(ckpt, mmap=True) -- same bytes, paged on touch",
+  "train():6946 `assert_ground_prior_is_supervised` (a startup gradient probe) is NOT run: it measures a training property and writes nothing the forward or the loss reads"
+ ],
+ "gpu_smoke": true,
+ "palette_distance_to_paths": {
+  "class0": 144.6,
+  "class1": 147.6,
+  "class2": 159.7,
+  "class3": 158.3,
+  "class4": 155.1,
+  "class5": 102.6,
+  "class6": 89.2,
+  "class7": 115.4,
+  "class8": 243.1,
+  "TP": 147.8,
+  "FP": 101.8,
+  "FN": 83.8,
+  "TN": 207.2,
+  "agent_automobile": 135.3,
+  "agent_heavy_truck": 73.9,
+  "agent_bus": 77.7,
+  "agent_other_vehicle": 184.7,
+  "agent_trailer": 144.1,
+  "agent_person": 187.9,
+  "agent_rider": 95.6,
+  "agent_stroller": 98.4,
+  "agent_animal": 94.1,
+  "agent_protruding_object": 94.4
+ },
+ "gpu_gate": {
+  "final": {
+   "ok": true,
+   "gpu_used_mib": 1513,
+   "python_compute": [],
+   "self_pids_excluded": [
+    47340
+   ],
+   "free_ram_gb": 8.49,
+   "rule": "used<4300 MiB, no other python compute, free RAM>=8.0 GB",
+   "t": "2026-09-26T22:28:13"
+  },
+  "n_checks": 16,
+  "waited_s": 912.8
+ },
+ "device": "cuda",
+ "ram_at_start_gb": 8.54,
+ "tanitad_file": "C:\\Users\\Admin\\ev6_82c2331\\stack\\tanitad\\__init__.py",
+ "reused": {
+  "render_refcv3_video": "C:\\Users\\Admin\\ev6_82c2331\\taniteval\\tools\\render_refcv3_video.py",
+  "render_refcv3_video_md5": "a8471a6adb90c107ffa1961a227c6257",
+  "pai_extrinsics_table": "C:\\Users\\Admin\\ev6_82c2331\\taniteval\\tools\\pai_extrinsics_table.py",
+  "refcv6_loader": "C:\\Users\\Admin\\ev6_battery\\code\\refcv6_loader.py",
+  "refcv6_loader_md5": "3ef86651fe56cceb8ca6cc3ed06bdf08",
+  "trainer_md5": "ba58e7468f28b9a0bbc765916b4a2083"
+ },
+ "ckpt": {
+  "path": "D:/refcv6_eval_kit/ckpt_final/ckpt_step38000.pt",
+  "md5": "5a2e7222a9f5f8c7aa7bf38ef4698d8a",
+  "bytes": 1177897033,
+  "md5_s": 34.8
+ },
+ "config": {
+  "path": "D:/refcv6_eval_kit/ckpt_final/config.json",
+  "md5": "a3193a4685ce0d07a6ae6b89fdc994a8"
+ },
+ "inrun_eval_row": {
+  "path": "D:/refcv6_eval_kit/ckpt_final/metrics.jsonl",
+  "md5": "1f195e3b1b897e4255bd1b8f3984514d",
+  "row": {
+   "eval_map_n_windows": 16.0,
+   "eval_map_n_labelled": 15.875,
+   "eval_map": 0.6738,
+   "eval_n_map_cells_seen": 117322.25,
+   "eval_n_map_cells_unobserved": 12758.75,
+   "eval_n_map_cells": 104563.5,
+   "eval_map_iou_drivable": 0.67629,
+   "eval_map_pred_drivable_frac": 0.31961,
+   "eval_map_gt_drivable_frac": 0.35833,
+   "eval_map_pred_drivable_prob_mean": 0.33757,
+   "step": 38000,
+   "eval_batches": 8,
+   "eval_windows": 128
+  },
+  "aggregation": "mean over eval_batches of a per-batch POOLED IoU (refc_v3_train.py:8377-8401); a DIFFERENT window set"
+ },
+ "model": {
+  "argv_remap": {
+   "remapped": {
+    "--anchors": {
+     "thor": "/home/nvidia/data/anchors/refc_anchors_6s_v0cond_alat_117.pt",
+     "local": "D:\\refcv6_eval_kit\\data\\anchors\\refc_anchors_6s_v0cond_alat_117.pt"
+    },
+    "--eval-cache": {
+     "thor": "/home/nvidia/data/refcv6-b1-416x1024-eval139",
+     "local": "D:\\refcv6_eval_kit\\data\\refcv6-b1-416x1024-eval139"
+    },
+    "--eval-labels": {
+     "thor": "/home/nvidia/data/v8labels/labels/s2_labels_v8_eval.jsonl.gz",
+     "local": "D:\\refcv6_eval_kit\\data\\v8labels\\labels\\s2_labels_v8_eval.jsonl.gz"
+    },
+    "--speed-max-sidecar-v6-eval": {
+     "thor": "/home/nvidia/data/refcv6_speed_max_v8_eval.jsonl",
+     "local": "D:\\refcv6_eval_kit\\data\\refcv6_speed_max_v8_eval.jsonl"
+    },
+    "--agent-join": {
+     "thor": "/home/nvidia/data/joins/b1_train_plus_eval_agents.jsonl.xz",
+     "local": "D:\\refcv6_eval_kit\\data\\joins\\b1_train_plus_eval_agents.jsonl.xz"
+    },
+    "--agent-rig-extrinsics": {
+     "thor": "/home/nvidia/data/refcv6_train_eval139_extrinsics.json",
+     "local": "D:\\refcv6_eval_kit\\data\\refcv6_train_eval139_extrinsics.json"
+    },
+    "--map-gt-root": {
+     "thor": "/home/nvidia/data/sam3_corpus",
+     "local": "D:\\refcv6_eval_kit\\data\\sam3_gt_eval_thor137"
+    },
+    "--join3d": {
+     "thor": "/home/nvidia/data/join3d/b1_train_plus_eval_agents_3d.jsonl.xz",
+     "local": "D:\\refcv6_eval_kit\\data\\join3d\\b1_train_plus_eval_agents_3d.jsonl.xz"
+    },
+    "--clip-clock-sidecar": {
+     "thor": "/home/nvidia/data/refcv6_clip_clock_sidecar.jsonl",
+     "local": "D:\\refcv6_eval_kit\\data\\refcv6_clip_clock_sidecar.jsonl"
+    }
+   },
+   "dropped": {
+    "--trunk-compile": "no Triton on Windows; torch.compile wraps the backbone CALL only -- module tree and state_dict identical (LAUNCH_READINESS_FIXES.md \u00a710b)"
+   },
+   "train_only_kept_unread": {
+    "--v2-cache": "/home/nvidia/data/refcv6-b1-416x1024-train",
+    "--v7-labels": "/home/nvidia/data/v8labels/labels/s2_labels_v8_train.jsonl.gz",
+    "--speed-max-sidecar-v6": "/home/nvidia/data/refcv6_speed_max_v8_train.jsonl",
+    "--out": "/home/nvidia/refcv6_run/runs/refcv6-r101-s0"
+   }
+  },
+  "departures": [
+   "train():6946 `assert_ground_prior_is_supervised` (a startup gradient probe) is NOT run: it measures a training property and writes nothing the forward or the loss reads"
+  ],
+  "state_dict": {
+   "strict": true,
+   "missing": [],
+   "unexpected": [],
+   "n_keys": 1101,
+   "step": 38000,
+   "ckpt_keys": [
+    "data_pos",
+    "opt",
+    "step"
+   ]
+  },
+  "param_breakdown": {
+   "rebuilt": {
+    "core": 90734473,
+    "phi_tac": 2101504,
+    "str_goal_head": 771,
+    "gstr_cond": 66816,
+    "tac_heads": 14364,
+    "tac_latent_proj": 262656,
+    "scorer": 1145,
+    "nav_inject": 50176,
+    "tac_decoder_v6": 2253828,
+    "tac_behaviour_gate_v6": 2574,
+    "total": 100893747
+   },
+   "config_json": {
+    "core": 90734473,
+    "phi_tac": 2101504,
+    "str_goal_head": 771,
+    "gstr_cond": 66816,
+    "tac_heads": 14364,
+    "tac_latent_proj": 262656,
+    "scorer": 1145,
+    "nav_inject": 50176,
+    "tac_decoder_v6": 2253828,
+    "tac_behaviour_gate_v6": 2574,
+    "total": 100893747
+   },
+   "equal": true
+  },
+  "anchor_file_vs_ckpt_buffers": {
+   "core.decoder.anchors": {
+    "shape": [
+     117,
+     8,
+     2
+    ],
+    "max_abs_diff": 0.0
+   },
+   "core.decoder.anchor_controls": {
+    "shape": [
+     117,
+     2
+    ],
+    "max_abs_diff": 0.0
+   }
+  },
+  "trunk_memory_levers_built": {
+   "chunk_ckpt": 8,
+   "frozen_bn": true,
+   "bn_pinned": 104,
+   "relu_out_of_place": 100,
+   "bf16": true,
+   "channels_last": true,
+   "bn_folded": 104,
+   "dedup_frames": true
+  },
+  "mode": "diffusion",
+  "sampler": "ddim",
+  "decoder_steps": 2,
+  "build_s": 5.1,
+  "perception": {
+   "cfg": {
+    "w_map": 1.0,
+    "w_box3d": 1.0,
+    "d_bev": 128,
+    "n_queries": 100,
+    "d_model": 256,
+    "bev_tokens_hw": [
+     30,
+     16
+    ],
+    "heights_m": [
+     0.0,
+     0.5,
+     1.5,
+     2.5
+    ],
+    "stride": 16,
+    "use_bev_in_box_head": true,
+    "occ_from_geometry": false,
+    "bev_encoder": {
+     "d_in": 128,
+     "d_model": 96,
+     "d_out": 96,
+     "dilations": [
+      1,
+      2,
+      4,
+      8
+     ]
+    }
+   },
+   "branch_params": {
+    "lift": 524544,
+    "bev_encoder": 785280,
+    "map_head": 873,
+    "box_memory": 287744,
+    "box_decoder": 3806999,
+    "total": 5405440
+   },
+   "lift_bank_n_clips": 4508,
+   "equalize_bottom_rows": 43,
+   "frame": {
+    "height": 416,
+    "width": 1024,
+    "projection": "cylindrical",
+    "f_ref": 488.92398517830253
+   }
+  },
+  "rig_camera": {
+   "source": "extrinsics",
+   "mount_pose": "from-sensor_extrinsics",
+   "mount_pose_scope": "PER-CLIP",
+   "extrinsics_path": "D:\\refcv6_eval_kit\\data\\refcv6_train_eval139_extrinsics.json",
+   "n_clips": 4508,
+   "key": "stable_episode_id(clip_id)",
+   "height_m_min": 1.2031489610671997,
+   "height_m_max": 1.6871625185012817,
+   "height_m_median": 1.3118689060211182,
+   "optical_axis_pitch_rad_min": -0.0755354301422919,
+   "optical_axis_pitch_rad_max": 0.06831051518379166,
+   "frame": {
+    "height": 416,
+    "width": 1024,
+    "f_ref": 488.92398517830253,
+    "projection": "cylindrical"
+   },
+   "image_hw": [
+    416,
+    1024
+   ],
+   "w_project": 0.0,
+   "w_ground": 0.0
+  }
+ },
+ "map_lift_valid_mask": true,
+ "equalize_bottom_rows": {
+  "argv": 43,
+  "trunk_built": 0,
+  "lift_bank": 43,
+  "n_trunks": 1
+ },
+ "detections": {
+  "gate": 0.5,
+  "gate_source": "config.json seams.agents.presence_gate == AgentSeamConfig.presence_gate (refc_agents.py:197-199), a threshold on sigmoid(presence_logit)",
+  "heads": {
+   "box3d": "out['perception']['box_slots'] (Box3DSlotDecoder, box3d_head.py:227-284)",
+   "agent": "out['agent_slots'] (core AgentSlotDecoder, the planner's agent tokens; agent_slots.py:546-684)"
+  },
+  "target_set": "refc_agents.visible_target_filter (refc_agents.py:410-433)",
+  "matcher": "agent_slots.match_slots (agent_slots.py:788-823)",
+  "greedy": "box3d_head.box3d_match_rows at 2.0 m (box3d_head.py:482-536)"
+ },
+ "dataset": {
+  "label_clock": {
+   "rule": "t_now = grid_start_s + (t + w - 1 + n_stack - 1) * dt_s (tanitad/data/clip_clock.py; A16 2026-09-26)",
+   "sidecar": "D:\\refcv6_eval_kit\\data\\refcv6_clip_clock_sidecar.jsonl",
+   "sidecar_rows": 4483,
+   "n_clips": 1,
+   "n_from_sidecar": 1,
+   "n_pose_dt_grid_start_0": 0,
+   "n_nominal_dt_grid_start_0": 0,
+   "raw_offsets": [
+    2
+   ],
+   "dt_s_median": 0.10066662534542875,
+   "dt_s_min": 0.10066662534542875,
+   "dt_s_max": 0.10066662534542875
+  },
+  "labels": {
+   "path": "D:\\refcv6_eval_kit\\data\\v8labels\\labels\\s2_labels_v8_eval.jsonl.gz",
+   "md5": "eefc38d1453bd1c73802d44d45affced",
+   "n_records": 147
+  },
+  "nav": {
+   "n_clips": 1,
+   "follow": 0,
+   "left": 0,
+   "right": 1,
+   "missing": 0,
+   "derivation": "v7.2 nav_command token (oracle, provenance ego-future; allow_oracle_nav=True)",
+   "unlabeled_default": "nav_cmd=0 ('follow') + nav_valid=False (refav1_loader convention)",
+   "label_md5": "eefc38d1453bd1c73802d44d45affced",
+   "allow_oracle_nav": true
+  },
+  "max_speed_v6": {
+   "sidecar": "refcv6_speed_max_v8_eval.jsonl",
+   "n_rows": 147,
+   "n_valid": 147,
+   "n_over_ceiling": 1,
+   "over_ceiling_frac": 0.006803,
+   "source_md5": null,
+   "source_labels": null,
+   "join_key": "sid = stable_episode_id(clip_id)",
+   "ladder_kmh": [
+    30,
+    50,
+    100,
+    120
+   ],
+   "quantized_by": "tanitad.refs.refcv6_max_speed.MaxSpeedOneHotEncoder (model side, ONCE); this reader ships the RAW v_hi_ms and only CHECKS the sidecar's own bin",
+   "_derivation": "refcv6 4-way one-hot set-speed, CONTAINING-WINDOW quantization over {30, 50, 100, 120} km/h: (0,30]->30, (30,50]->50, (50,100]->100, (100,120]->120, and > 120 CLAMPS to 120 (counted and reported). Source field v7.2/v8 g_tac.goals.SPEED_BAND.v_hi_ms (oracle, provenance ego-future: max of the ego's OWN REALISED speed over [t0+2 s, +6 s]); the PI authorised the future-ego derivation explicitly on 2026-09-16 provided the value lands in the containing window. It models a max SET speed - a limiter the driver sets - so the realised speed sits INSIDE the window and never above it. INPUT, never a training signal: no loss reaches this channel in refcv6.",
+   "channel": "refcv6 4-way one-hot (\u00a75)",
+   "label_md5": "eefc38d1453bd1c73802d44d45affced",
+   "n_windows": 171,
+   "n_windows_fed": 171,
+   "window_ceiling_frac": 1.0
+  },
+  "agent_join": {
+   "path": "D:\\refcv6_eval_kit\\data\\joins\\b1_train_plus_eval_agents.jsonl.xz",
+   "n_episodes": 1,
+   "n_episodes_joined_stable_id": 1,
+   "n_episodes_joined_legacy_id": 0,
+   "n_ambiguous_legacy_ids_in_join": 0,
+   "id_space": "stable-63bit",
+   "allow_legacy_ids": false,
+   "n_windows": 171,
+   "n_windows_labelled": 171,
+   "frac_windows_labelled": 1.0,
+   "n_windows_labelled_clear": 0,
+   "n_target_boxes_prefilter": 38444,
+   "agent_pad": 397,
+   "reader_max_agents_per_frame": 395,
+   "reader_n_records": 200,
+   "reader_n_clips": 1,
+   "reader_has_classes": true,
+   "reader_has_occlusion_flags": true,
+   "reader_with_rates": true,
+   "pad_source": "config.json agent_join_stats.train.agent_pad",
+   "load_s": 53.1
+  },
+  "map_gt": {
+   "root": "D:\\refcv6_eval_kit\\data\\sam3_gt_eval_thor137",
+   "n_windows": 171,
+   "n_clips": 1,
+   "frac_ok": 1.0,
+   "frac_ok_upper": 1.0,
+   "verdict": "PASS",
+   "min_coverage": 0.9,
+   "states": {
+    "ok": 171,
+    "no_file": 0,
+    "frame_out_of_range": 0,
+    "inconclusive": 0
+   },
+   "reasons": {},
+   "n_stack": 3,
+   "layouts": [
+    "flat_sha12"
+   ]
+  },
+  "join3d": {
+   "path": "D:\\refcv6_eval_kit\\data\\join3d\\b1_train_plus_eval_agents_3d.jsonl.xz",
+   "n_lines": 200,
+   "n_agents": 45084,
+   "n_clips": 1,
+   "load_s": 77.1
+  },
+  "n_episodes": 1,
+  "n_windows": 171
+ },
+ "extrinsics": {
+  "path": "D:\\refcv6_eval_kit\\data\\refcv6_train_eval139_extrinsics.json",
+  "md5": "3bd70d987d00936c1ac810ffd95facf1",
+  "n_clips_found": 3
+ },
+ "map_dump": {
+  "dir": "C:\\Users\\Admin\\qland\\work\\mapvid\\mapdump_gpusmoke",
+  "n_windows": 4,
+  "chunks": [
+   "C:\\Users\\Admin\\qland\\work\\mapvid\\mapdump_gpusmoke\\chunk_000.npz"
+  ],
+  "layout": "probs f16 [N,9,120,64] softmax(map_logits); frac u8 [N,9,120,64] (x255); seen/valid bool [N,120,64]; row i -> x=(i+0.5)*0.5 m, col j -> y=-16+(j+0.5)*0.5 m (col 0 RIGHT)",
+  "n_skipped_no_gt": 0,
+  "n_by_set": {
+   "inrun_eval": 2,
+   "boxes_clip": 2,
+   "map_clip": 0,
+   "inrun_perm_ext": 0
+  },
+  "inrun_perm": {
+   "seed": 12345,
+   "n": 128,
+   "source": "refcv6_loader.inrun_eval_perm (train():7661-7663)"
+  },
+  "wall_s": 4.7
+ },
+ "viz_standard_elements": [
+  {
+   "element": "camera",
+   "state": "present",
+   "value": "GT path + selected out['traj'] projected",
+   "source": "render_refcv3_video.CylProjector(payload['frame'], per-clip extrinsics) on item['frames'][-1][-3:]",
+   "kind": "derived",
+   "reason": null,
+   "n": null,
+   "conditioned_on": []
+  },
+  {
+   "element": "bev",
+   "state": "present",
+   "value": "predicted map | SAM3 GT map | drivable agreement | detected agents vs GT boxes (+ GT path, selected path)",
+   "source": "softmax(out['perception']['map_logits']).argmax / batch['map_frac'].argmax / trainer IoU rule / out['perception']['box_slots'] + out['agent_slots'] at sigmoid(presence) >= presence_gate vs the agent join",
+   "kind": "model_output",
+   "reason": null,
+   "n": null,
+   "conditioned_on": [
+    "nav_cmd"
+   ]
+  },
+  {
+   "element": "tactical",
+   "state": "unavailable",
+   "value": null,
+   "source": null,
+   "kind": null,
+   "reason": "not drawn: this reel examines the map head only; refcv6's tactical decoder is scored by the battery",
+   "n": null,
+   "conditioned_on": []
+  },
+  {
+   "element": "strategic",
+   "state": "unavailable",
+   "value": null,
+   "source": null,
+   "kind": null,
+   "reason": "not drawn: this reel examines the map head only",
+   "n": null,
+   "conditioned_on": []
+  },
+  {
+   "element": "ade",
+   "state": "unavailable",
+   "value": null,
+   "source": null,
+   "kind": null,
+   "reason": "not computed here: a perception diagnostic; trajectory metrics are the battery's four-family T1 eval",
+   "n": null,
+   "conditioned_on": []
+  },
+  {
+   "element": "strategic_input",
+   "state": "present",
+   "value": "right",
+   "source": "V3Dataset.enable_nav_from_v7 (v8 eval labels, oracle nav, provenance ego-future)",
+   "kind": "given_input",
+   "reason": null,
+   "n": null,
+   "conditioned_on": []
+  }
+ ],
+ "ram": {
+  "floor_gb": 8.0,
+  "min_available_gb": 4.73,
+  "process_peak_working_set_gb": 2.68,
+  "kill_mode": false,
+  "n_samples_below_floor": 526
+ },
+ "cuda_max_memory_allocated_gib": 1.104,
+ "video": {
+  "frames": 27,
+  "fps": 10,
+  "title_frames_per_clip": 25,
+  "resolution": "1920x1200",
+  "duration_s": 2.7,
+  "ffmpeg": "C:\\Users\\Admin\\AppData\\Local\\Microsoft\\WinGet\\Packages\\Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\\ffmpeg-8.1.1-full_build\\bin\\ffmpeg.EXE",
+  "full": {
+   "path": "D:\\Projects\\TanitAD\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-refcv6-boxes-video\\raw\\smoke_gpu\\refcv6_boxes_step38000_gpusmoke.mp4",
+   "bytes": 645920,
+   "crf": 18,
+   "scale": null,
+   "cmd": "-y -r 10 -i C:\\Users\\Admin\\qland\\work\\mapvid\\seq_refcv6_boxes_step38000_gpusmoke\\f%06d.png -c:v libx264 -pix_fmt yuv420p -crf 18 -preset slow -movflags +faststart"
+  },
+  "verify_mp4": {
+   "exit": 0,
+   "stdout_tail": "==============================================================================\nFILE        D:\\Projects\\TanitAD\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-refcv6-boxes-video\\raw\\smoke_gpu\\refcv6_boxes_step38000_gpusmoke.mp4\nsize        645,920 B = 0.62 MiB   [UNDER the 30 MiB delivery limit]\ncodec       h264 / High pix=yuv420p\ndimensions  1920x1200   (container metadata)\navg_fps     10.000      duration 2.70 s\nDECODED     27 frames   decode_clean=True\nconsistency n/fps = 2.70 s vs container 2.70 s\n==============================================================================\n",
+   "stderr_tail": ""
+  }
+ },
+ "contact_sheet": {
+  "path": "D:\\Projects\\TanitAD\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-refcv6-boxes-video\\raw\\smoke_gpu\\contact_sheet_smoke.png",
+  "n_keyframes": 2,
+  "size": [
+   1920,
+   378
+  ],
+  "keyframes": [
+   {
+    "clip_sha12": "0191487845ef",
+    "nav": "right",
+    "window": 1,
+    "iou": 0.6186023622047244,
+    "t_label_s": 0.9855186053051678
+   },
+   {
+    "clip_sha12": "0191487845ef",
+    "nav": "right",
+    "window": 2,
+    "iou": 0.6401960784313725,
+    "t_label_s": 1.0861852306505966
+   }
+  ]
+ },
+ "per_frame": "D:\\Projects\\TanitAD\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-refcv6-boxes-video\\raw\\smoke_gpu\\per_frame_smoke.jsonl",
+ "wall_s": 1179.2,
+ "finished": "2026-09-26T22:32:39"
+}

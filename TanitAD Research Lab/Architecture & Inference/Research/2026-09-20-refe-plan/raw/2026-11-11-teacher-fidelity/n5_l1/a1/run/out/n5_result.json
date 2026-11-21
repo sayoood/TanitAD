@@ -1,0 +1,547 @@
+{
+ "prereg": "96a65416b3c22eefa8cd26fda335692033d9a652798c113eea6bce2c8cc7666c",
+ "K": 48,
+ "n_tokens": 12146,
+ "n_primary": 12110,
+ "controls": {
+  "C-COV": {
+   "pass": true,
+   "tokens": 12146,
+   "expect": 12146,
+   "primary": 12110,
+   "expect_primary": 12110,
+   "invalid_or_error_rows": {}
+  },
+  "C-BUILD": {
+   "pass": true,
+   "controls": {
+    "C-COVB": true,
+    "C-DACMAP": true,
+    "C-DERIV": true,
+    "C-LABELEGO": true,
+    "C-DET": true,
+    "C-SET": true,
+    "C-CERT-B": true,
+    "C-SEAMFN": true,
+    "C-UNCH": true,
+    "C-REACH": true
+   }
+  },
+  "C-UNCH": {
+   "pass": true,
+   "arms": {
+    "N5A": true,
+    "N5X": true,
+    "N5R": true
+   },
+   "n_l1_run": 25,
+   "what": "plan20 and seam files on disk, bit-identical to banked N4-D off the L1-applied set; L1-run count == 25"
+  },
+  "C-PIN": {
+   "pass": true,
+   "mismatch": [],
+   "n": 956,
+   "families_run_is_tip": true
+  },
+  "C-CERT": {
+   "pass": true,
+   "exceptions": {
+    "N5A": 0,
+    "N5X": 0
+   },
+   "examples": {
+    "N5A": [],
+    "N5X": []
+   },
+   "certified": {
+    "N5A": 5,
+    "N5X": 0
+   },
+   "what": "every token the builder L1-certified (DAC = 1) has harness DAC = 1"
+  },
+  "C-ID-C": {
+   "pass": true,
+   "tol": 1e-06,
+   "arms": {
+    "N5A": {
+     "unchanged_tokens": 12141,
+     "tokens_over_tol": 0
+    },
+    "N5X": {
+     "unchanged_tokens": 12146,
+     "tokens_over_tol": 0
+    }
+   },
+   "sentinel_200_over_tol": {
+    "N5A": 0,
+    "N5X": 0
+   },
+   "max_abs_diff_by_metric": {
+    "nc": 0.0,
+    "dac": 0.0,
+    "ddc": 0.0,
+    "ep": 0.0,
+    "ttc": 0.0,
+    "c": 0.0,
+    "pdms": 0.0
+   },
+   "what": "full set: every token outside the L1-applied set has a harness row equal to the banked N4-D row on all 7 metrics (incl. the 200 smallest-sha1 sentinels)"
+  },
+  "C-EST": {
+   "pass": true,
+   "max_abs_dev": 0.0
+  },
+  "C-REG": {
+   "pass": true,
+   "N5X_repaired_of_l1_set": 0,
+   "l1_set": 25,
+   "N5X_pdms": 96.3257,
+   "N4D_pdms": 96.3257,
+   "bar": "N5X repairs <= 10 % of the 25 and PDMS(N5X) <= PDMS(N4D) + 0.05"
+  }
+ },
+ "estimator": "repair COUNT: exact Clopper-Pearson; everything else paired log-cluster bootstrap, 136 logs, 10,000 draws, seed 20260927, 95 percent percentile (eval/proxy_eval.boot draws); Bonferroni at K=48",
+ "primary": {
+  "contrast": "N5A - N4D, harness, 136 logs (RJ5 teacher + P5-R + REPAIR-D + L1 on the REPAIR-D residual with a scorer no-harm guard)",
+  "repair_count": {
+   "non_guard_dac1": 4,
+   "of": 20,
+   "exact_ci95": [
+    0.0573,
+    0.4366
+   ],
+   "bar": 5,
+   "tokens": [
+    "72be63ed04f15f97",
+    "74cc0056b2c05248",
+    "d1bae9e7d9785598",
+    "f004b5e4838455f3"
+   ],
+   "of_all_25": 5,
+   "paper_needs_of_25": 13
+  },
+  "delta_pdms_not_a_bar": {
+   "mean": 0.0413,
+   "ci95": [
+    0.0076,
+    0.0903
+   ],
+   "ci_bonferroni_K48": [
+    0.0,
+    0.1342
+   ],
+   "n": 12110,
+   "n_logs": 136
+  },
+  "no_harm_paired_x100": {
+   "nc": {
+    "mean": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "ci_bonferroni_K48": [
+     0.0,
+     0.0
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "ddc": {
+    "mean": 0.0041,
+    "ci95": [
+     0.0,
+     0.0139
+    ],
+    "ci_bonferroni_K48": [
+     0.0,
+     0.024
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "ttc": {
+    "mean": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "ci_bonferroni_K48": [
+     0.0,
+     0.0
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "c": {
+    "mean": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "ci_bonferroni_K48": [
+     0.0,
+     0.0
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "ep": {
+    "mean": 0.0413,
+    "ci95": [
+     0.0076,
+     0.0903
+    ],
+    "ci_bonferroni_K48": [
+     0.0,
+     0.1342
+    ],
+    "n": 12110,
+    "n_logs": 136
+   }
+  },
+  "no_new_failure": {
+   "count": 0,
+   "tokens": []
+  },
+  "bars": {
+   "1_repair_count_ge_5_of_20": false,
+   "2_no_harm_each_ge_-0.10_and_identity": true,
+   "3_certificate_integrity": true,
+   "4_no_new_failure": true
+  },
+  "outcome": "NOT CONFIRMED",
+  "not_confirmed_branches_in_card_order": [
+   "repair_count_below_5"
+  ]
+ },
+ "paper_level": {
+  "N5A": {
+   "pdms": {
+    "mean": 96.367,
+    "ci95": [
+     96.0266,
+     96.6798
+    ],
+    "ci_bonferroni_K48": [
+     95.7858,
+     96.8892
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "dac": {
+    "mean": 99.8348,
+    "ci95": [
+     99.6945,
+     99.9405
+    ],
+    "ci_bonferroni_K48": [
+     99.57,
+     99.9837
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "level": "NEAR",
+   "zero_dac_tokens": 20,
+   "gap_to_paper_pdms": -0.567,
+   "decomposition_mean_field": {
+    "swap_gain_x100": {
+     "nc": 0.054,
+     "dac": 0.0628,
+     "ep": -0.728,
+     "ttc": 0.2433,
+     "c": -0.1153
+    },
+    "what": "descriptive, never a bar"
+   },
+   "table": {
+    "nc": {
+     "mean": 99.744,
+     "ci95": [
+      99.5917,
+      99.8821
+     ],
+     "ci_bonferroni_K48": [
+      99.4764,
+      99.9474
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "dac": {
+     "mean": 99.8348,
+     "ci95": [
+      99.6945,
+      99.9405
+     ],
+     "ci_bonferroni_K48": [
+      99.57,
+      99.9837
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ddc": {
+     "mean": 99.0504,
+     "ci95": [
+      98.7177,
+      99.3364
+     ],
+     "ci_bonferroni_K48": [
+      98.4817,
+      99.5196
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ep": {
+     "mean": 93.2545,
+     "ci95": [
+      92.8172,
+      93.6744
+     ],
+     "ci_bonferroni_K48": [
+      92.5231,
+      93.951
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ttc": {
+     "mean": 98.5136,
+     "ci95": [
+      98.0335,
+      98.9722
+     ],
+     "ci_bonferroni_K48": [
+      97.7395,
+      99.2247
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "c": {
+     "mean": 99.6945,
+     "ci95": [
+      99.5433,
+      99.8354
+     ],
+     "ci_bonferroni_K48": [
+      99.4251,
+      99.9128
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "pdms": {
+     "mean": 96.367,
+     "ci95": [
+      96.0266,
+      96.6798
+     ],
+     "ci_bonferroni_K48": [
+      95.7858,
+      96.8892
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "zero_rows": {
+     "pdms": 48,
+     "dac": 20,
+     "nc": 28
+    }
+   }
+  },
+  "N4D_comparator": {
+   "pdms": {
+    "mean": 96.3257,
+    "ci95": [
+     95.9783,
+     96.6427
+    ],
+    "ci_bonferroni_K48": [
+     95.728,
+     96.8546
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "dac": {
+    "mean": 99.7936,
+    "ci95": [
+     99.6411,
+     99.914
+    ],
+    "ci_bonferroni_K48": [
+     99.498,
+     99.9662
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "level": "NEAR",
+   "zero_dac_tokens": 25,
+   "gap_to_paper_pdms": -0.5257,
+   "decomposition_mean_field": {
+    "swap_gain_x100": {
+     "nc": 0.0539,
+     "dac": 0.1024,
+     "ep": -0.7105,
+     "ttc": 0.2432,
+     "c": -0.1152
+    },
+    "what": "descriptive, never a bar"
+   },
+   "table": {
+    "nc": {
+     "mean": 99.744,
+     "ci95": [
+      99.5917,
+      99.8821
+     ],
+     "ci_bonferroni_K48": [
+      99.4764,
+      99.9474
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "dac": {
+     "mean": 99.7936,
+     "ci95": [
+      99.6411,
+      99.914
+     ],
+     "ci_bonferroni_K48": [
+      99.498,
+      99.9662
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ddc": {
+     "mean": 99.0462,
+     "ci95": [
+      98.713,
+      99.3327
+     ],
+     "ci_bonferroni_K48": [
+      98.4774,
+      99.5166
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ep": {
+     "mean": 93.2132,
+     "ci95": [
+      92.7646,
+      93.6423
+     ],
+     "ci_bonferroni_K48": [
+      92.4529,
+      93.917
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ttc": {
+     "mean": 98.5136,
+     "ci95": [
+      98.0335,
+      98.9722
+     ],
+     "ci_bonferroni_K48": [
+      97.7395,
+      99.2247
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "c": {
+     "mean": 99.6945,
+     "ci95": [
+      99.5433,
+      99.8354
+     ],
+     "ci_bonferroni_K48": [
+      99.4251,
+      99.9128
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "pdms": {
+     "mean": 96.3257,
+     "ci95": [
+      95.9783,
+      96.6427
+     ],
+     "ci_bonferroni_K48": [
+      95.728,
+      96.8546
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "zero_rows": {
+     "pdms": 53,
+     "dac": 25,
+     "nc": 28
+    }
+   }
+  },
+  "rule": "PAPER LEVEL iff PDMS >= 95.8 AND DAC >= 99.9 (<= 12 zero-DAC tokens: L1 repairs >= 13 of the 25); NEAR iff >= 95.3 AND >= 99.5; else BELOW"
+ },
+ "secondary": {
+  "decides": "nothing",
+  "N5A_minus_N2R": {
+   "mean": 0.7583,
+   "ci95": [
+    0.4499,
+    1.1264
+   ],
+   "ci_bonferroni_K48": [
+    0.3076,
+    1.3977
+   ],
+   "n": 12110,
+   "n_logs": 136
+  },
+  "N4D_minus_N2R": {
+   "mean": 0.717,
+   "ci95": [
+    0.4195,
+    1.0647
+   ],
+   "ci_bonferroni_K48": [
+    0.2886,
+    1.3577
+   ],
+   "n": 12110,
+   "n_logs": 136
+  },
+  "N5X_minus_N4D": {
+   "mean": 0.0,
+   "ci95": [
+    0.0,
+    0.0
+   ],
+   "ci_bonferroni_K48": [
+    0.0,
+    0.0
+   ],
+   "n": 12110,
+   "n_logs": 136
+  },
+  "n5r_builder_only": {
+   "repaired_of_116": 86,
+   "n4d_repaired_of_116": 91,
+   "what": "builder-side counts only, decides nothing"
+  }
+ },
+ "families": "read in stage families: n5_nt_analyze.py famread (guard flags the student label only)"
+}

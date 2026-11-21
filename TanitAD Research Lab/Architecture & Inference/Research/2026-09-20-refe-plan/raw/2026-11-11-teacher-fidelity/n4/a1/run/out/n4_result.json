@@ -1,0 +1,1079 @@
+{
+ "prereg": "319bedbf89b6946d0fb7058b87aea562b5760c9b8591607333d02cf34a9754e0",
+ "K": 46,
+ "n_tokens": 12146,
+ "n_primary": 12110,
+ "controls": {
+  "C-COV": {
+   "pass": true,
+   "tokens": 12146,
+   "expect": 12146,
+   "primary": 12110,
+   "expect_primary": 12110,
+   "invalid_or_error_rows": {}
+  },
+  "C-BUILD": {
+   "pass": true,
+   "controls": {
+    "C-COVB": true,
+    "C-DACMAP": true,
+    "C-DERIV": true,
+    "C-LABELEGO": true,
+    "C-DET": true,
+    "C-CERT-B": true,
+    "C-UNCH": true
+   }
+  },
+  "C-UNCH": {
+   "pass": true,
+   "arms": {
+    "N4D": true,
+    "N4X": true,
+    "N4DM": true
+   },
+   "what": "plan20 and seam files on disk, bit-identical to N2-R off the repaired set"
+  },
+  "C-PIN": {
+   "pass": true,
+   "mismatch": [],
+   "n": 946
+  },
+  "C-CERT": {
+   "pass": true,
+   "exceptions": {
+    "N4D": 0,
+    "N4X": 0,
+    "N4DM": 0
+   },
+   "examples": {
+    "N4D": [],
+    "N4X": [],
+    "N4DM": []
+   },
+   "certified": {
+    "N4D": 91,
+    "N4X": 3,
+    "N4DM": 96
+   },
+   "what": "every token the builder certified (DAC = 1) has harness DAC = 1"
+  },
+  "C-ID-C": {
+   "pass": true,
+   "tol": 1e-06,
+   "arms": {
+    "N4D": {
+     "unchanged_tokens": 12055,
+     "tokens_over_tol": 0
+    },
+    "N4X": {
+     "unchanged_tokens": 12143,
+     "tokens_over_tol": 0
+    },
+    "N4DM": {
+     "unchanged_tokens": 12050,
+     "tokens_over_tol": 0
+    }
+   },
+   "max_abs_diff_by_metric": {
+    "nc": 0.0,
+    "dac": 0.0,
+    "ddc": 0.0,
+    "ep": 0.0,
+    "ttc": 0.0,
+    "c": 0.0,
+    "pdms": 0.0
+   },
+   "what": "full set: every unrepaired token's harness row equals the banked N2-R row on all 7 metrics"
+  },
+  "C-EST": {
+   "pass": true,
+   "max_abs_dev": 0.0
+  },
+  "C-REG": {
+   "pass": true,
+   "N4X_repaired_zero_dac": 3,
+   "N2R_zero_dac": 116,
+   "N4X_pdms": 95.6329,
+   "N2R_pdms": 95.6087,
+   "bar": "N4X repairs <= 10 % of the N2-R zero-DAC tokens and PDMS(N4X) <= PDMS(N2R) + 0.05"
+  }
+ },
+ "estimator": "paired log-cluster bootstrap, 136 logs, 10,000 draws, seed 20260927, 95 percent percentile (eval/proxy_eval.boot draws); Bonferroni at K=46",
+ "primary": {
+  "contrast": "N4D - N2R, paired PDMS x100, harness, primary 12,110 (RJ5 teacher + P5-R + map-certified DAC repair with a scorer no-harm guard)",
+  "delta": {
+   "mean": 0.717,
+   "ci95": [
+    0.4195,
+    1.0647
+   ],
+   "ci_bonferroni_K46": [
+    0.289,
+    1.352
+   ],
+   "n": 12110,
+   "n_logs": 136
+  },
+  "bars": {
+   "1_delta_ge_0.50": true,
+   "2_ci_lo_gt_0": true,
+   "3_repair_rate_ge_0.75": true,
+   "4_no_harm_each_ge_-0.10": true
+  },
+  "repair": {
+   "n2r_zero_dac_primary": 116,
+   "n4d_dac1_among_them": 91,
+   "rate": 0.7845
+  },
+  "no_harm_paired_x100": {
+   "nc": {
+    "mean": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "ci_bonferroni_K46": [
+     0.0,
+     0.0
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "ddc": {
+    "mean": 0.0248,
+    "ci95": [
+     0.0039,
+     0.0553
+    ],
+    "ci_bonferroni_K46": [
+     0.0,
+     0.0787
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "ttc": {
+    "mean": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "ci_bonferroni_K46": [
+     0.0,
+     0.0
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "c": {
+    "mean": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "ci_bonferroni_K46": [
+     0.0,
+     0.0
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "ep": {
+    "mean": 0.7118,
+    "ci95": [
+     0.4176,
+     1.0574
+    ],
+    "ci_bonferroni_K46": [
+     0.2916,
+     1.3385
+    ],
+    "n": 12110,
+    "n_logs": 136
+   }
+  },
+  "outcome": "CONFIRMED",
+  "not_confirmed_branches_in_card_order": []
+ },
+ "paper_level": {
+  "N4D": {
+   "pdms": {
+    "mean": 96.3257,
+    "ci95": [
+     95.9783,
+     96.6427
+    ],
+    "ci_bonferroni_K46": [
+     95.7283,
+     96.8503
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "dac": {
+    "mean": 99.7936,
+    "ci95": [
+     99.6411,
+     99.914
+    ],
+    "ci_bonferroni_K46": [
+     99.4988,
+     99.9656
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "level": "NEAR",
+   "zero_dac_tokens": 25,
+   "gap_to_paper_pdms": -0.5257,
+   "decomposition_mean_field": {
+    "swap_gain_x100": {
+     "nc": 0.0539,
+     "dac": 0.1024,
+     "ep": -0.7105,
+     "ttc": 0.2432,
+     "c": -0.1152
+    },
+    "what": "descriptive, never a bar"
+   }
+  },
+  "N4DM_map_only_form_secondary": {
+   "pdms": {
+    "mean": 96.3525,
+    "ci95": [
+     96.0098,
+     96.6642
+    ],
+    "ci_bonferroni_K46": [
+     95.7632,
+     96.867
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "dac": {
+    "mean": 99.8348,
+    "ci95": [
+     99.7005,
+     99.94
+    ],
+    "ci_bonferroni_K46": [
+     99.5738,
+     99.9756
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "level": "NEAR",
+   "zero_dac_tokens": 20,
+   "gap_to_paper_pdms": -0.5525,
+   "decomposition_mean_field": {
+    "swap_gain_x100": {
+     "nc": 0.0579,
+     "dac": 0.0628,
+     "ep": -0.7257,
+     "ttc": 0.2501,
+     "c": -0.1111
+    },
+    "what": "descriptive, never a bar"
+   }
+  },
+  "rule": "PAPER LEVEL iff PDMS >= 95.8 AND DAC >= 99.9; NEAR iff >= 95.3 AND >= 99.5; else BELOW"
+ },
+ "tables": {
+  "primary_12110": {
+   "N2R": {
+    "nc": {
+     "mean": 99.744,
+     "ci95": [
+      99.5917,
+      99.8821
+     ],
+     "ci_bonferroni_K46": [
+      99.4767,
+      99.9464
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "dac": {
+     "mean": 99.0421,
+     "ci95": [
+      98.5848,
+      99.4233
+     ],
+     "ci_bonferroni_K46": [
+      98.2099,
+      99.6021
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ddc": {
+     "mean": 99.0215,
+     "ci95": [
+      98.6877,
+      99.3107
+     ],
+     "ci_bonferroni_K46": [
+      98.4616,
+      99.4935
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ep": {
+     "mean": 92.5015,
+     "ci95": [
+      91.8788,
+      93.0684
+     ],
+     "ci_bonferroni_K46": [
+      91.4494,
+      93.4131
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ttc": {
+     "mean": 98.5136,
+     "ci95": [
+      98.0335,
+      98.9722
+     ],
+     "ci_bonferroni_K46": [
+      97.7415,
+      99.2232
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "c": {
+     "mean": 99.6945,
+     "ci95": [
+      99.5433,
+      99.8354
+     ],
+     "ci_bonferroni_K46": [
+      99.4254,
+      99.9123
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "pdms": {
+     "mean": 95.6087,
+     "ci95": [
+      95.0788,
+      96.0784
+     ],
+     "ci_bonferroni_K46": [
+      94.6426,
+      96.3447
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "zero_rows": {
+     "pdms": 142,
+     "dac": 116,
+     "nc": 28
+    }
+   },
+   "N4D": {
+    "nc": {
+     "mean": 99.744,
+     "ci95": [
+      99.5917,
+      99.8821
+     ],
+     "ci_bonferroni_K46": [
+      99.4767,
+      99.9464
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "dac": {
+     "mean": 99.7936,
+     "ci95": [
+      99.6411,
+      99.914
+     ],
+     "ci_bonferroni_K46": [
+      99.4988,
+      99.9656
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ddc": {
+     "mean": 99.0462,
+     "ci95": [
+      98.713,
+      99.3327
+     ],
+     "ci_bonferroni_K46": [
+      98.4797,
+      99.5109
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ep": {
+     "mean": 93.2132,
+     "ci95": [
+      92.7646,
+      93.6423
+     ],
+     "ci_bonferroni_K46": [
+      92.4558,
+      93.9165
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ttc": {
+     "mean": 98.5136,
+     "ci95": [
+      98.0335,
+      98.9722
+     ],
+     "ci_bonferroni_K46": [
+      97.7415,
+      99.2232
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "c": {
+     "mean": 99.6945,
+     "ci95": [
+      99.5433,
+      99.8354
+     ],
+     "ci_bonferroni_K46": [
+      99.4254,
+      99.9123
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "pdms": {
+     "mean": 96.3257,
+     "ci95": [
+      95.9783,
+      96.6427
+     ],
+     "ci_bonferroni_K46": [
+      95.7283,
+      96.8503
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "zero_rows": {
+     "pdms": 53,
+     "dac": 25,
+     "nc": 28
+    }
+   },
+   "N4X": {
+    "nc": {
+     "mean": 99.744,
+     "ci95": [
+      99.5917,
+      99.8821
+     ],
+     "ci_bonferroni_K46": [
+      99.4767,
+      99.9464
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "dac": {
+     "mean": 99.0669,
+     "ci95": [
+      98.624,
+      99.4398
+     ],
+     "ci_bonferroni_K46": [
+      98.2455,
+      99.6105
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ddc": {
+     "mean": 99.0215,
+     "ci95": [
+      98.6877,
+      99.3107
+     ],
+     "ci_bonferroni_K46": [
+      98.4616,
+      99.4935
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ep": {
+     "mean": 92.5249,
+     "ci95": [
+      91.9111,
+      93.0868
+     ],
+     "ci_bonferroni_K46": [
+      91.4967,
+      93.425
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ttc": {
+     "mean": 98.5136,
+     "ci95": [
+      98.0335,
+      98.9722
+     ],
+     "ci_bonferroni_K46": [
+      97.7415,
+      99.2232
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "c": {
+     "mean": 99.6945,
+     "ci95": [
+      99.5433,
+      99.8354
+     ],
+     "ci_bonferroni_K46": [
+      99.4254,
+      99.9123
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "pdms": {
+     "mean": 95.6329,
+     "ci95": [
+      95.1139,
+      96.0972
+     ],
+     "ci_bonferroni_K46": [
+      94.7095,
+      96.3582
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "zero_rows": {
+     "pdms": 139,
+     "dac": 113,
+     "nc": 28
+    }
+   },
+   "N4DM": {
+    "nc": {
+     "mean": 99.7399,
+     "ci95": [
+      99.5884,
+      99.8785
+     ],
+     "ci_bonferroni_K46": [
+      99.4692,
+      99.9423
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "dac": {
+     "mean": 99.8348,
+     "ci95": [
+      99.7005,
+      99.94
+     ],
+     "ci_bonferroni_K46": [
+      99.5738,
+      99.9756
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ddc": {
+     "mean": 99.0586,
+     "ci95": [
+      98.7261,
+      99.3426
+     ],
+     "ci_bonferroni_K46": [
+      98.4931,
+      99.5284
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ep": {
+     "mean": 93.2492,
+     "ci95": [
+      92.8073,
+      93.6763
+     ],
+     "ci_bonferroni_K46": [
+      92.5046,
+      93.9409
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ttc": {
+     "mean": 98.4971,
+     "ci95": [
+      98.0204,
+      98.9541
+     ],
+     "ci_bonferroni_K46": [
+      97.721,
+      99.2149
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "c": {
+     "mean": 99.6697,
+     "ci95": [
+      99.5142,
+      99.8123
+     ],
+     "ci_bonferroni_K46": [
+      99.3971,
+      99.8964
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "pdms": {
+     "mean": 96.3525,
+     "ci95": [
+      96.0098,
+      96.6642
+     ],
+     "ci_bonferroni_K46": [
+      95.7632,
+      96.867
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "zero_rows": {
+     "pdms": 48,
+     "dac": 20,
+     "nc": 28
+    }
+   },
+   "CERT2": {
+    "nc": {
+     "mean": 99.744,
+     "ci95": [
+      99.5917,
+      99.8821
+     ],
+     "ci_bonferroni_K46": [
+      99.4767,
+      99.9464
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "dac": {
+     "mean": 99.3476,
+     "ci95": [
+      99.0066,
+      99.627
+     ],
+     "ci_bonferroni_K46": [
+      98.7013,
+      99.7603
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ddc": {
+     "mean": 99.0215,
+     "ci95": [
+      98.6877,
+      99.3107
+     ],
+     "ci_bonferroni_K46": [
+      98.4616,
+      99.4935
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ep": {
+     "mean": 92.7877,
+     "ci95": [
+      92.2386,
+      93.2961
+     ],
+     "ci_bonferroni_K46": [
+      91.8813,
+      93.6268
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ttc": {
+     "mean": 98.5136,
+     "ci95": [
+      98.0335,
+      98.9722
+     ],
+     "ci_bonferroni_K46": [
+      97.7415,
+      99.2232
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "c": {
+     "mean": 99.6945,
+     "ci95": [
+      99.5433,
+      99.8354
+     ],
+     "ci_bonferroni_K46": [
+      99.4254,
+      99.9123
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "pdms": {
+     "mean": 95.9062,
+     "ci95": [
+      95.458,
+      96.3129
+     ],
+     "ci_bonferroni_K46": [
+      95.1013,
+      96.583
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "zero_rows": {
+     "pdms": 105,
+     "dac": 79,
+     "nc": 28
+    }
+   },
+   "N4P2": {
+    "nc": {
+     "mean": 99.744,
+     "ci95": [
+      99.5917,
+      99.8821
+     ],
+     "ci_bonferroni_K46": [
+      99.4767,
+      99.9464
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "dac": {
+     "mean": 99.8018,
+     "ci95": [
+      99.6488,
+      99.9226
+     ],
+     "ci_bonferroni_K46": [
+      99.5148,
+      99.9757
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ddc": {
+     "mean": 99.0462,
+     "ci95": [
+      98.713,
+      99.3327
+     ],
+     "ci_bonferroni_K46": [
+      98.4797,
+      99.5109
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ep": {
+     "mean": 93.2084,
+     "ci95": [
+      92.7563,
+      93.6394
+     ],
+     "ci_bonferroni_K46": [
+      92.4547,
+      93.9025
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ttc": {
+     "mean": 98.5136,
+     "ci95": [
+      98.0335,
+      98.9722
+     ],
+     "ci_bonferroni_K46": [
+      97.7415,
+      99.2232
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "c": {
+     "mean": 99.6945,
+     "ci95": [
+      99.5433,
+      99.8354
+     ],
+     "ci_bonferroni_K46": [
+      99.4254,
+      99.9123
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "pdms": {
+     "mean": 96.3285,
+     "ci95": [
+      95.9822,
+      96.6468
+     ],
+     "ci_bonferroni_K46": [
+      95.7381,
+      96.8508
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "zero_rows": {
+     "pdms": 52,
+     "dac": 24,
+     "nc": 28
+    }
+   },
+   "human": {
+    "nc": {
+     "mean": 100.0,
+     "ci95": [
+      100.0,
+      100.0
+     ],
+     "ci_bonferroni_K46": [
+      100.0,
+      100.0
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "dac": {
+     "mean": 100.0,
+     "ci95": [
+      100.0,
+      100.0
+     ],
+     "ci_bonferroni_K46": [
+      100.0,
+      100.0
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ddc": {
+     "mean": 98.8233,
+     "ci95": [
+      98.3837,
+      99.2019
+     ],
+     "ci_bonferroni_K46": [
+      98.1051,
+      99.4059
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ep": {
+     "mean": 86.9387,
+     "ci95": [
+      85.0852,
+      88.5769
+     ],
+     "ci_bonferroni_K46": [
+      83.9596,
+      89.4728
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "ttc": {
+     "mean": 100.0,
+     "ci95": [
+      100.0,
+      100.0
+     ],
+     "ci_bonferroni_K46": [
+      100.0,
+      100.0
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "c": {
+     "mean": 99.9587,
+     "ci95": [
+      99.91,
+      99.9925
+     ],
+     "ci_bonferroni_K46": [
+      99.8682,
+      100.0
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "pdms": {
+     "mean": 94.5509,
+     "ci95": [
+      93.7788,
+      95.2338
+     ],
+     "ci_bonferroni_K46": [
+      93.3079,
+      95.6082
+     ],
+     "n": 12110,
+     "n_logs": 136
+    },
+    "zero_rows": {
+     "pdms": 0,
+     "dac": 0,
+     "nc": 0
+    }
+   }
+  }
+ },
+ "secondary": {
+  "decides": "nothing",
+  "N4D_minus_N4DM__value_of_the_future_aware_no_harm_guard": {
+   "mean": -0.0268,
+   "ci95": [
+    -0.0659,
+    -0.0012
+   ],
+   "ci_bonferroni_K46": [
+    -0.0973,
+    0.0
+   ],
+   "n": 12110,
+   "n_logs": 136
+  },
+  "N4DM_minus_N2R": {
+   "mean": 0.7438,
+   "ci95": [
+    0.437,
+    1.1046
+   ],
+   "ci_bonferroni_K46": [
+    0.3029,
+    1.4004
+   ],
+   "n": 12110,
+   "n_logs": 136
+  },
+  "N4P2_minus_N2R": {
+   "mean": 0.7198,
+   "ci95": [
+    0.4254,
+    1.0684
+   ],
+   "ci_bonferroni_K46": [
+    0.2918,
+    1.3508
+   ],
+   "n": 12110,
+   "n_logs": 136
+  },
+  "N4P2_minus_CERT2": {
+   "mean": 0.4223,
+   "ci95": [
+    0.2457,
+    0.6294
+   ],
+   "ci_bonferroni_K46": [
+    0.1479,
+    0.7959
+   ],
+   "n": 12110,
+   "n_logs": 136
+  },
+  "N4D_minus_CERT2": {
+   "mean": 0.4195,
+   "ci95": [
+    0.2418,
+    0.6288
+   ],
+   "ci_bonferroni_K46": [
+    0.1487,
+    0.801
+   ],
+   "n": 12110,
+   "n_logs": 136
+  },
+  "CERT2_minus_N2R": {
+   "mean": 0.2975,
+   "ci95": [
+    0.1317,
+    0.5181
+   ],
+   "ci_bonferroni_K46": [
+    0.0698,
+    0.6497
+   ],
+   "n": 12110,
+   "n_logs": 136
+  },
+  "N4P2_row_rule": "CERT2's banked row where a candidate passes DAC, else the N4-D row (REPAIR-D of N2-R is N4-D's plan on those tokens): derived, not separately scored",
+  "N4DM_repair": {
+   "repaired": 96,
+   "N4D_repaired": 91,
+   "N4X_repaired": 3
+  },
+  "human_anchored": {
+   "our_human": 94.5509,
+   "paper_human": 94.8,
+   "human_anchored_paper_level_pdms": 95.5509,
+   "N4D_minus_human": {
+    "mean": 1.7748,
+    "ci95": [
+     0.97,
+     2.6621
+    ],
+    "ci_bonferroni_K46": [
+     0.4387,
+     3.2309
+    ],
+    "n": 12110,
+    "n_logs": 136
+   }
+  }
+ },
+ "families": "read in stage families: n4_nt_analyze.py famread (guard flags the student label only)"
+}

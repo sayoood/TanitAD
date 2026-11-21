@@ -1,0 +1,84 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "prereg": "TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-08-26-residual-ceiling/SPEC.md (+AMENDMENT A1)",
+ "arm": "rdw8p30k",
+ "step": 30000,
+ "n_clips": 10,
+ "n_rows": 910,
+ "k": 4,
+ "pca_band": [
+  0,
+  2
+ ],
+ "k_folds": 10,
+ "oracle_form": "tokens 4x10x768 + grey 32x80 + z_t (AMENDMENT A1 pooling)",
+ "columns": {
+  "constant (A0)": {
+   "d": 1,
+   "r": 0.0,
+   "shuf": 0.0
+  },
+  "z_t (A1 DRIFT/POSITIVE CTRL)": {
+   "d": 2048,
+   "r": 0.6108,
+   "shuf": 0.0286
+  },
+  "z_t + noise3 (A6 DELIB-REGRESS)": {
+   "d": 2051,
+   "r": 0.5886,
+   "shuf": 0.0312
+  },
+  "z_t + zhat_k4 (A2 OUR PREDICTOR)": {
+   "d": 4096,
+   "r": 0.5939,
+   "shuf": 0.0155
+  },
+  "z_t + pixels (A3 RAW FLOOR)": {
+   "d": 4608,
+   "r": 0.5829,
+   "shuf": 0.0673
+  },
+  "z_t + tokens4x10 + pixels (A4 ORACLE-t)": {
+   "d": 9728,
+   "r": 0.5902,
+   "shuf": 0.0053
+  }
+ },
+ "marginals_over_drift": {
+  "z_t + noise3 (A6 DELIB-REGRESS)": {
+   "delta": -0.0222,
+   "t": -2.03,
+   "verdict": "INSIDE_NULL"
+  },
+  "z_t + zhat_k4 (A2 OUR PREDICTOR)": {
+   "delta": -0.0168,
+   "t": -1.5,
+   "verdict": "INSIDE_NULL"
+  },
+  "z_t + pixels (A3 RAW FLOOR)": {
+   "delta": -0.0278,
+   "t": -1.09,
+   "verdict": "INSIDE_NULL"
+  },
+  "z_t + tokens4x10 + pixels (A4 ORACLE-t)": {
+   "delta": -0.0205,
+   "t": -1.54,
+   "verdict": "INSIDE_NULL"
+  }
+ },
+ "rig_checks": {
+  "A0_constant_reads_zero": true,
+  "A1_drift_in_known_band": true,
+  "A1_banked_value": {
+   "expected_r": 0.6718,
+   "expected_t": 134.84,
+   "got_r": 0.6108,
+   "got_t": 17.12
+  },
+  "A6_deliberate_regression_failed_as_required": true,
+  "all_shuffle_controls_near_zero": true
+ },
+ "rig_valid": true,
+ "verdict": "H-A: the post-drift residual is NOT predictable from 4x10-pooled time-t observation \u2014 stop optimising the predictor; the work is representational"
+}

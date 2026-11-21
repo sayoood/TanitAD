@@ -1,0 +1,263 @@
+{
+ "meta": {
+  "utc": "2026-09-01T13:58:49Z",
+  "gpu": "NVIDIA GeForce RTX 4060",
+  "torch": "2.11.0+cu128",
+  "python": "3.13.5",
+  "dtype": "float16",
+  "reps": 40,
+  "warmup": 12,
+  "config": {
+   "dim": 384,
+   "depth": 4,
+   "heads": 6,
+   "tokens": 16
+  },
+  "predictor_params_M": 7.098,
+  "value_head_params_M": 0.149,
+  "what_this_is": "PROXY predictor, not TanitAD's. Measures how latency splits between BREADTH (N candidates) and DEPTH (K steps) at equal budget B = N*K. Config identical to 2026-08-31 package."
+ },
+ "equal_budget": {
+  "N16_K60": {
+   "p50_ms": 82.0579,
+   "p95_ms": 108.7456,
+   "min_ms": 67.7003,
+   "n": 40,
+   "N": 16,
+   "K": 60,
+   "budget": 960,
+   "ms_per_candidate": 5.12862
+  },
+  "N64_K15": {
+   "p50_ms": 15.3013,
+   "p95_ms": 17.2127,
+   "min_ms": 14.4293,
+   "n": 40,
+   "N": 64,
+   "K": 15,
+   "budget": 960,
+   "ms_per_candidate": 0.23908
+  },
+  "N320_K3": {
+   "p50_ms": 12.3393,
+   "p95_ms": 12.7278,
+   "min_ms": 11.3775,
+   "n": 40,
+   "N": 320,
+   "K": 3,
+   "budget": 960,
+   "ms_per_candidate": 0.03856
+  },
+  "N960_K1": {
+   "p50_ms": 12.3758,
+   "p95_ms": 12.686,
+   "min_ms": 11.4089,
+   "n": 40,
+   "N": 960,
+   "K": 1,
+   "budget": 960,
+   "ms_per_candidate": 0.01289
+  }
+ },
+ "controls": {
+  "C0_nowork_by_K": {
+   "1": {
+    "p50_ms": 0.0028,
+    "p95_ms": 0.0032,
+    "min_ms": 0.0027,
+    "n": 40
+   },
+   "15": {
+    "p50_ms": 0.003,
+    "p95_ms": 0.0033,
+    "min_ms": 0.0028,
+    "n": 40
+   },
+   "60": {
+    "p50_ms": 0.0035,
+    "p95_ms": 0.004,
+    "min_ms": 0.0033,
+    "n": 40
+   }
+  },
+  "C1_depth_N1": {
+   "by_K": {
+    "1": {
+     "p50_ms": 1.1538,
+     "p95_ms": 2.4508,
+     "min_ms": 1.0613,
+     "n": 40,
+     "ms_per_step": 1.1538
+    },
+    "3": {
+     "p50_ms": 4.3365,
+     "p95_ms": 6.5028,
+     "min_ms": 3.1327,
+     "n": 40,
+     "ms_per_step": 1.4455
+    },
+    "8": {
+     "p50_ms": 14.307,
+     "p95_ms": 16.4698,
+     "min_ms": 8.394,
+     "n": 40,
+     "ms_per_step": 1.7884
+    },
+    "15": {
+     "p50_ms": 18.4432,
+     "p95_ms": 29.0719,
+     "min_ms": 16.7504,
+     "n": 40,
+     "ms_per_step": 1.2295
+    },
+    "30": {
+     "p50_ms": 43.0728,
+     "p95_ms": 55.4502,
+     "min_ms": 32.1352,
+     "n": 40,
+     "ms_per_step": 1.4358
+    },
+    "60": {
+     "p50_ms": 73.9244,
+     "p95_ms": 93.7049,
+     "min_ms": 64.4378,
+     "n": 40,
+     "ms_per_step": 1.2321
+    }
+   },
+   "ms_per_step_min": 1.1538,
+   "ms_per_step_max": 1.7884,
+   "ratio_max_over_min": 1.55,
+   "note": "MUST be ~flat (device-bound chain) AND must agree with 2026-08-31 rollout_depth_4060.json tiny_d4_dim384. Disagreement => one of the two packages is wrong and neither number is quotable."
+  },
+  "C2_breadth_fixed_K": {
+   "K1": {
+    "1": {
+     "p50_ms": 1.0917,
+     "p95_ms": 2.6727,
+     "min_ms": 1.0203,
+     "n": 40,
+     "ms_per_candidate": 1.0917
+    },
+    "8": {
+     "p50_ms": 1.0744,
+     "p95_ms": 2.4829,
+     "min_ms": 0.9682,
+     "n": 40,
+     "ms_per_candidate": 0.1343
+    },
+    "32": {
+     "p50_ms": 1.0009,
+     "p95_ms": 2.712,
+     "min_ms": 0.9863,
+     "n": 40,
+     "ms_per_candidate": 0.03128
+    },
+    "128": {
+     "p50_ms": 3.0908,
+     "p95_ms": 4.6162,
+     "min_ms": 1.4857,
+     "n": 40,
+     "ms_per_candidate": 0.02415
+    },
+    "320": {
+     "p50_ms": 3.8857,
+     "p95_ms": 4.911,
+     "min_ms": 3.7315,
+     "n": 40,
+     "ms_per_candidate": 0.01214
+    },
+    "960": {
+     "p50_ms": 12.2122,
+     "p95_ms": 12.4928,
+     "min_ms": 11.1798,
+     "n": 40,
+     "ms_per_candidate": 0.01272
+    },
+    "_summary": {
+     "p50_at_N1_ms": 1.0917,
+     "p50_at_N960_ms": 12.2122,
+     "observed_growth_x": 11.19,
+     "linear_would_be_x": 960.0,
+     "note": "sub-linear growth => candidates batch; ~960x => breadth is as serial as depth"
+    }
+   },
+   "K3": {
+    "1": {
+     "p50_ms": 5.8339,
+     "p95_ms": 6.5975,
+     "min_ms": 3.2484,
+     "n": 40,
+     "ms_per_candidate": 5.8339
+    },
+    "8": {
+     "p50_ms": 5.7156,
+     "p95_ms": 6.4913,
+     "min_ms": 3.0729,
+     "n": 40,
+     "ms_per_candidate": 0.71445
+    },
+    "32": {
+     "p50_ms": 5.0963,
+     "p95_ms": 5.8755,
+     "min_ms": 2.971,
+     "n": 40,
+     "ms_per_candidate": 0.15926
+    },
+    "128": {
+     "p50_ms": 5.1892,
+     "p95_ms": 6.368,
+     "min_ms": 4.2464,
+     "n": 40,
+     "ms_per_candidate": 0.04054
+    },
+    "320": {
+     "p50_ms": 12.4169,
+     "p95_ms": 12.7213,
+     "min_ms": 11.3184,
+     "n": 40,
+     "ms_per_candidate": 0.0388
+    },
+    "960": {
+     "p50_ms": 36.4395,
+     "p95_ms": 37.2701,
+     "min_ms": 35.1156,
+     "n": 40,
+     "ms_per_candidate": 0.03796
+    },
+    "_summary": {
+     "p50_at_N1_ms": 5.8339,
+     "p50_at_N960_ms": 36.4395,
+     "observed_growth_x": 6.25,
+     "linear_would_be_x": 960.0,
+     "note": "sub-linear growth => candidates batch; ~960x => breadth is as serial as depth"
+    }
+   }
+  },
+  "C3_identity_N320_K3": {
+   "run_a_p50_ms": 12.5063,
+   "run_b_p50_ms": 12.4872,
+   "rel_spread": 0.0015
+  },
+  "C4_value_head_by_N": {
+   "16": {
+    "p50_ms": 0.1483,
+    "p95_ms": 0.1546,
+    "min_ms": 0.1453,
+    "n": 40
+   },
+   "320": {
+    "p50_ms": 0.1541,
+    "p95_ms": 0.4874,
+    "min_ms": 0.1446,
+    "n": 40
+   },
+   "960": {
+    "p50_ms": 0.1424,
+    "p95_ms": 0.1509,
+    "min_ms": 0.1405,
+    "n": 40
+   }
+  }
+ }
+}

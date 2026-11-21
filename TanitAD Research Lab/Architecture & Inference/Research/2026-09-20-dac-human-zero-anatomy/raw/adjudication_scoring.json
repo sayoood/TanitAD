@@ -1,0 +1,161 @@
+{
+ "_what": "H-DAC-DEF-1 \u00a75 scoring: the Master Mind's 60 blind labels against the key",
+ "_evidence_class": "MEASURED (ours; CPU, read-only)",
+ "labels_source": "C:/Users/Admin/AppData/Local/Temp/claude/labels_mm.csv",
+ "key_sha256": "3ed0f10add9aaf1a76d4f4c4b45c15645979b3f5c54030e585d8ebe83e06d44a",
+ "key_seed": 20260920,
+ "label_cells_total": {
+  "on-surface": 60,
+  "over-boundary": 0,
+  "cannot-tell": 0
+ },
+ "label_cells_by_stratum": {
+  "A V0 fires, P1 does not": {
+   "on-surface": 20,
+   "over-boundary": 0,
+   "cannot-tell": 0
+  },
+  "B P1 fires, P2 does not": {
+   "on-surface": 20,
+   "over-boundary": 0,
+   "cannot-tell": 0
+  },
+  "C all three fire": {
+   "on-surface": 10,
+   "over-boundary": 0,
+   "cannot-tell": 0
+  },
+  "D none fires": {
+   "on-surface": 10,
+   "over-boundary": 0,
+   "cannot-tell": 0
+  }
+ },
+ "borderline_rows": {
+  "n": 9,
+  "by_stratum": {
+   "B P1 fires, P2 does not": 6,
+   "D none fires": 2,
+   "C all three fire": 1
+  },
+  "ids": [
+   "W18",
+   "W19",
+   "W25",
+   "W28",
+   "W43",
+   "W44",
+   "W50",
+   "W51",
+   "W60"
+  ]
+ },
+ "candidates": {
+  "V0": {
+   "by_stratum": {
+    "A V0 fires, P1 does not": {
+     "false-fire (rule fires, adjudicator says on-surface)": 20
+    },
+    "B P1 fires, P2 does not": {
+     "false-fire (rule fires, adjudicator says on-surface)": 20
+    },
+    "C all three fire": {
+     "false-fire (rule fires, adjudicator says on-surface)": 10
+    },
+    "D none fires": {
+     "agree": 10
+    }
+   },
+   "totals": {
+    "false-fire (rule fires, adjudicator says on-surface)": 50,
+    "agree": 10
+   },
+   "scored_windows": 60,
+   "committed_reading (\u00a75.4, over the 60)": {
+    "agreement": 0.1667,
+    "false_fire": 0.8333,
+    "false_pass": 0.0,
+    "clears_bar": false
+   },
+   "post_hoc_population_reweighted": {
+    "agreement_point": 0.5543,
+    "agreement_lower_bound_95": 0.4108,
+    "note": "point assumes each stratum's sampled labels hold for its whole population; the bound lets every unsampled window go the other way, at the one-sided 95 % limit for 0 observed in n"
+   }
+  },
+  "P1": {
+   "by_stratum": {
+    "A V0 fires, P1 does not": {
+     "agree": 20
+    },
+    "B P1 fires, P2 does not": {
+     "false-fire (rule fires, adjudicator says on-surface)": 20
+    },
+    "C all three fire": {
+     "false-fire (rule fires, adjudicator says on-surface)": 10
+    },
+    "D none fires": {
+     "agree": 10
+    }
+   },
+   "totals": {
+    "false-fire (rule fires, adjudicator says on-surface)": 30,
+    "agree": 30
+   },
+   "scored_windows": 60,
+   "committed_reading (\u00a75.4, over the 60)": {
+    "agreement": 0.5,
+    "false_fire": 0.5,
+    "false_pass": 0.0,
+    "clears_bar": false
+   },
+   "post_hoc_population_reweighted": {
+    "agreement_point": 0.913,
+    "agreement_lower_bound_95": 0.7196,
+    "note": "point assumes each stratum's sampled labels hold for its whole population; the bound lets every unsampled window go the other way, at the one-sided 95 % limit for 0 observed in n"
+   }
+  },
+  "P2": {
+   "by_stratum": {
+    "A V0 fires, P1 does not": {
+     "agree": 20
+    },
+    "B P1 fires, P2 does not": {
+     "agree": 20
+    },
+    "C all three fire": {
+     "false-fire (rule fires, adjudicator says on-surface)": 10
+    },
+    "D none fires": {
+     "agree": 10
+    }
+   },
+   "totals": {
+    "agree": 50,
+    "false-fire (rule fires, adjudicator says on-surface)": 10
+   },
+   "scored_windows": 60,
+   "committed_reading (\u00a75.4, over the 60)": {
+    "agreement": 0.8333,
+    "false_fire": 0.1667,
+    "false_pass": 0.0,
+    "clears_bar": false
+   },
+   "post_hoc_population_reweighted": {
+    "agreement_point": 0.9552,
+    "agreement_lower_bound_95": 0.7559,
+    "note": "point assumes each stratum's sampled labels hold for its whole population; the bound lets every unsampled window go the other way, at the one-sided 95 % limit for 0 observed in n"
+   }
+  }
+ },
+ "population_sizes": {
+  "A V0 fires, P1 does not": 264,
+  "B P1 fires, P2 does not": 31,
+  "C all three fire": 33,
+  "D none fires": 408
+ },
+ "bar": {
+  "agreement": 0.95,
+  "either_error_direction": 0.05
+ }
+}

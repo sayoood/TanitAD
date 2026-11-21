@@ -1,0 +1,30 @@
+10-25 09:25 waiting for the predecessor chain (/c/Users/Admin/box2_ship/logs/chain_v8f_kind.out)
+10-25 09:25 boot0=2026-10-17 18:43:26
+10-25 09:26 launched pid=20492 rc=0 log=D:\tanitad\logs\v8fmixo10250925_refresh.log
+===== ZZJOB-END 25.10.2026  9:27:46,26 rc=0
+10-25 09:28 v8fmixo10250925_refresh rc=0
+10-25 09:28 box 2 code = tip 18c623068626d5f9f57d5aeb09d2fddb6b89e1fb (8 key files sha-checked; both v9 releases md5-checked)
+10-25 09:28 before the gate: both M2b checkpoints are the banked runs' (sha256 asserted)
+10-25 09:28 NOTE: no banked eval_M2b_s0-tacorc.json (its mode is then unchecked)
+10-25 09:28 NOTE: no banked eval_M2b_s1-tacorc.json (its mode is then unchecked)
+MIXO INPUTS OK: base M2b; F 0.1207 (2F bar 0.2415); LAMBDA(B) +0.2678 / +0.1667; r_B(0.5) 0.3647 / 0.2085 (committed 0.36 / 0.21); 2399 windows over 141 episodes; expects 7 evals per seed; identity control exactly +0 [0, 0]
+10-25 09:28 launched pid=9820 rc=0 log=D:\tanitad\logs\telemetry_long.log
+10-25 09:29 launched pid=17276 rc=0 log=D:\tanitad\logs\v8fmixo10250925_gatemixo.log
+===== ZZJOB-END 25.10.2026  9:30:08,22 rc=0
+10-25 09:30 v8fmixo10250925_gatemixo rc=0
+X gate: PASS | clips 4512 steps 19164 windows 306566 | built code_mix kind | built p_gt 1.0 -> 0.2 | probe partial 124 of 128 | params 7214495 (B 7214495 ) | lru 174
+gate token written for commit 18c623068626d5f9f57d5aeb09d2fddb6b89e1fb
+10-25 09:30 launched pid=7396 rc=0 log=D:\tanitad\logs\v8fmixo10250925_t_M2b_s0_mixo.log
+===== ZZJOB-END 25.10.2026 13:30:20,41 rc=0
+10-25 13:30 v8fmixo10250925_t_M2b_s0_mixo rc=0
+10-25 13:30 M2b_s0_mixo checkpoint sha256 (trained) c6a628762790b4fc...
+10-25 13:30 launched pid=22988 rc=0 log=D:\tanitad\logs\v8fmixo10250925_e_M2b_s0_mixo.log
+===== ZZJOB-END 25.10.2026 13:34:42,47 rc=0
+10-25 13:34 v8fmixo10250925_e_M2b_s0_mixo rc=0
+10-25 13:34 M2b_s0_mixo checkpoint sha256 (after_evals) c6a628762790b4fc...
+{
+ "reading": "PREREG_V8F_MIXO stage s0: STOP; ADE6 X - B +0.022 ns m (bar -2F = -0.2415); D-M r_X(0.5) 0.64 against B's 0.36 (bar +0.10); HARM (GT-code oracle, X - B) +0.400 m. VERDICT FAIL-O-LEARNED.",
+ "next": "FAIL, O LEARNED: the PRIMARY missed but r(0.5) rose by >= 0.10 over B's. Next: O now consumes partial codes, but T is too wrong where O reads it: the T-side arm on the kind KIND ranks first."
+}
+10-25 13:36 PREREG_V8F_MIXO stage s0: STOP; ADE6 X - B +0.022 ns m (bar -2F = -0.2415); D-M r_X(0.5) 0.64 against B's 0.36 (bar +0.10); HARM (GT-code oracle, X - B) +0.400 m. VERDICT FAIL-O-LEARNED.
+ZZV8FMINI-DONE 10-25 13:36 tip 18c623068626d5f9f57d5aeb09d2fddb6b89e1fb: PREREG_V8F_MIXO stage s0: STOP; ADE6 X - B +0.022 ns m (bar -2F = -0.2415); D-M r_X(0.5) 0.64 against B's 0.36 (bar +0.10); HARM (GT-code oracle, X - B) +0.400 m. VERDICT FAIL-O-LEARNED. -- seed 1 not trained (committed): FAIL, O LEARNED: the PRIMARY missed but r(0.5) rose by >= 0.10 over B's. Next: O now consumes partial codes, but T is too wrong where O reads it: the T-side arm on the kind KIND ranks first. (boot unchanged 2026-10-17 18:43:26)

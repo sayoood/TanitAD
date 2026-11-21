@@ -1,0 +1,32 @@
+  [timing] finalize: tree_manifest 0.0s, data_manifest 0.0s (--ctx-cache 0.0s, --ckpt 0.0s, --targets 0.0s, --images 0.0s)
+  [timing] finalize: tree_manifest 0.0s, data_manifest 0.0s (--ctx-cache 0.0s, --targets 0.0s, --images 0.0s, --calib 0.0s)
+  [timing] run: tree_manifest 0.0s, data_manifest 0.0s (--ctx-cache 0.0s, --images 0.0s, --calib 0.0s, --onpolicy 0.0s)
+  G-HYG     FAIL  profile refusal: refe_hnscreen: the content fingerprint of --ctx-cache cannot be taken: 1 problem(s): BYTES CHANGED at the same size (576): units/log0.ctx.u16 (sha256 manifest 04f3ac74a3ca, now 2182ce
+  G-DVB     FAIL  profile refusal: refe_hnscreen: the content fingerprint of --ctx-cache cannot be taken: 1 problem(s): BYTES CHANGED at the same size (576): units/log0.ctx.u16 (sha256 manifest 04f3ac74a3ca, now 2182ce
+  G-PREFLIGHT FAIL  profile refusal: refe_hnscreen: the content fingerprint of --ctx-cache cannot be taken: 1 problem(s): BYTES CHANGED at the same size (576): units/log0.ctx.u16 (sha256 manifest 04f3ac74a3ca, now 2182ce
+  G-SUITE   FAIL  profile refusal: refe_hnscreen: the content fingerprint of --ctx-cache cannot be taken: 1 problem(s): BYTES CHANGED at the same size (576): units/log0.ctx.u16 (sha256 manifest 04f3ac74a3ca, now 2182ce
+  G-CLOCK   FAIL  profile refusal: refe_hnscreen: the content fingerprint of --ctx-cache cannot be taken: 1 problem(s): BYTES CHANGED at the same size (576): units/log0.ctx.u16 (sha256 manifest 04f3ac74a3ca, now 2182ce
+  [timing] run: tree_manifest 0.0s, data_manifest 0.0s (--ctx-cache 0.0s, --targets 0.0s, --images 0.0s, --calib 0.0s)
+  G-HYG     PASS  
+  [timing] finalize: tree_manifest 0.0s, data_manifest 0.0s (--ctx-cache 0.0s, --targets 0.0s, --images 0.0s, --calib 0.0s)
+62 arms green on the real tree.  Mutation matrix (each mutant is a fresh copy of the tree with ONE source edit; it runs the checks it must turn RED):
+gate_token.content_check: the per-file byte comparison is deleted                                    RED   4  e.g. U_invalid_flip, G_refused_flip_pin_registered
+launch_gate.hnscreen_refusals: the comparison with the registered pin is deleted                     RED   2  e.g. G_refused_resealed_pin_registered, G_refused_a_wrong_dirc_pin_on_the_sealed_cache
+launch_gate.hnscreen_refusals: BOTH content comparisons are deleted (the same-size flip must now PAS RED   5  e.g. G_refused_flip_pin_registered, G_refused_flip_pin_follows_the_tampered_bytes_only_the_manifest_check_can_refus
+gate_token.verify_token: the data fingerprint comparison is deleted (the supervisor trusts the token RED   4  e.g. G_verify_REFUSES_flip_after_the_token_was_minted_in_process_and_as_subprocess, G_verify_REFUSES_add_after_the_
+launch_gate.cmd_verify: the content flags are not passed to verify_token (the profile -> caller wiri RED   1  e.g. G_verify_clean_control_MATCHES_in_process_and_as_the_chains_subprocess
+launch_gate.finalize AND cmd_verify both drop the content flags (the token binds a size listing and  RED   2  e.g. G_mint_finalize_PASSES_on_the_sealed_cache_and_binds_its_CONTENT_fingerprint, G_verify_REFUSES_flip_after_the_
+launch_gate.finalize: the content flags are not passed to data_manifest (the token binds a size list RED   2  e.g. G_mint_finalize_PASSES_on_the_sealed_cache_and_binds_its_CONTENT_fingerprint, G_mint_finalize_FAILS_on_a_same_
+launch_gate.run_checks: the content flags are not passed to data_manifest                            RED   1  e.g. G_run_checks_fails_every_check_on_a_same_size_flip_and_records_the_content_fingerprint
+launch_gate.content_flags_of: the profile no longer fingerprints by content                          RED   2  e.g. U_only_the_hn_screen_profile_fingerprints_by_content_and_only_ctx_cache, G_verify_REFUSES_flip_after_the_token
+launch_gate.hnscreen_refusals: --ctx-cache is fingerprinted by size listing again (the defect)       RED   1  e.g. G_clean_control_the_sealed_cache_passes_the_refusals_cli
+gate_token.content_check: a missing manifest is silent (no problem, nothing listed)                  RED   3  e.g. U_invalid_nomanifest, G_refused_nomanifest_pin_follows_the_tampered_bytes_only_the_manifest_check_can_refuse
+gate_token.content_check: an extra file is not reported                                              RED   2  e.g. U_invalid_add, G_refused_add_pin_follows_the_tampered_bytes_only_the_manifest_check_can_refuse
+gate_token.content_check: a missing file is not reported                                             RED   2  e.g. U_invalid_delete, G_refused_delete_pin_follows_the_tampered_bytes_only_the_manifest_check_can_refuse
+gate_token.content_check: a stale manifest (a resized file) is not reported                          RED   2  e.g. U_invalid_stale, G_refused_stale_pin_follows_the_tampered_bytes_only_the_manifest_check_can_refuse
+gate_token.content_check: the canonical-form check is deleted                                        RED   2  e.g. U_invalid_noncanonical, G_refused_noncanonical_pin_registered
+gate_token._content_listing: a symlinked directory is silently skipped                               RED   1  e.g. U_a_symlinked_directory_is_a_problem_not_a_silent_skip
+gate_token.fp_key: an INVALID content fingerprint is keyed like a valid one (problems ignored)       RED   1  e.g. U_defect_reproduced_listing_fingerprint_blind_to_a_same_size_flip
+ctx_cache.finalize: the cache is not sealed at build                                                 RED   1  e.g. B_finalize_leaves_a_sealed_cache_covering_manifest_json_and_every_unit
+hn_fingerprints: --ctx-cache is described by the size listing                                        RED   1  e.g. B_hn_fingerprints_py_prints_the_dirc_key_and_refuses_an_unsealed_or_tampered_cache
+ZZTEST_PASS 81  (62 arms on the real tree + 19 RED mutations)

@@ -1,0 +1,46 @@
+usage: orct1_selftest.py [-h] {manifest,m2bsha} ...
+orct1_selftest.py: error: unrecognized arguments: --t0-use fresh
+COMPLETE b6992e660c461af0db8944a494d83a09faf15f5497a2835b0b3458856168a8b4 all 8 files present, non-empty, sha256-verified against SHA256SUMS.txt; summary.json done
+INCOMPLETE no run directory C:/Users/Admin/orct1/smoke/selftest\run_1026_130131\art17\M2b_s0_orc0 yet
+PASS  PC0 positive control: a complete, aged run is COMPLETE                                                                        | COMPLETE: all 8 files present, non-empty, sha256-verified against SHA256SUMS.txt; summary.json done
+PASS  PC0b the returned sha256 is the ckpt's                                                                                        | d706c288a00b9290
+PASS  PC1 SHA256SUMS.txt modified < 3 s ago -> INCOMPLETE                                                                           | INCOMPLETE: SHA256SUMS.txt was modified 0.0 s ago (< 3.0 s): it may still be filling
+PASS  PC1b same run with min_age 0 -> COMPLETE (so PC1 failed ONLY on the age)                                                      | all 8 files present, non-empty, sha256-verified against SHA256SUMS.txt; summary.
+PASS  PC2 no run directory -> INCOMPLETE                                                                                            | INCOMPLETE: no run directory C:/Users/Admin/orct1/smoke/selftest\run_1026_130131\nowhere\M2b_s0_orc yet
+PASS  PC3 no SHA256SUMS.txt (ckpt etc. present) -> INCOMPLETE                                                                       | INCOMPLETE: C:/Users/Admin/orct1/smoke/selftest\run_1026_130131\art3\M2b_s0_orc has no SHA256SUMS.txt yet (the box-2 chain writes it after the
+PASS  PC4 SHA256SUMS.txt lists 7 of 8 -> INCOMPLETE                                                                                 | INCOMPLETE: SHA256SUMS.txt lists 7 names, expected the 8 of the box-2 chain (missing ['launch_gate_token.json'], unexpected [])
+PASS  PC5 SHA256SUMS.txt lists a 9th name -> INCOMPLETE                                                                             | INCOMPLETE: SHA256SUMS.txt lists 9 names, expected the 8 of the box-2 chain (missing [], unexpected ['train.log'])
+PASS  PC6 SHA256SUMS.txt without final newline (partial last line) -> INCOMPLETE                                                    | INCOMPLETE: SHA256SUMS.txt does not end with a newline (its last line may be partial)
+PASS  PC7 last line cut inside its name -> INCOMPLETE                                                                               | INCOMPLETE: SHA256SUMS.txt lists 8 names, expected the 8 of the box-2 chain (missing ['launch_gate_token.json'], unexpected ['launch_gate_t'])
+PASS  PC7b last line cut inside its hash -> INCOMPLETE                                                                              | INCOMPLETE: SHA256SUMS.txt has a line that is not '<sha256>  <name>': 'bc6c11a2a1a66c176820aa73a3fe'
+PASS  PC8 half-pulled ckpt_last.pt under an intact SHA256SUMS.txt -> INCOMPLETE                                                     | INCOMPLETE: ckpt_last.pt sha256 c87f14be04df != the listed 418153c5747d (half-pulled, or replaced after SHA256SUMS.txt was written)
+PASS  PC9 one flipped bit in ckpt_last.pt (same size) -> INCOMPLETE                                                                 | INCOMPLETE: ckpt_last.pt sha256 73b2ed88814e != the listed ab1fafe749c7 (half-pulled, or replaced after SHA256SUMS.txt was written)
+PASS  PC10 a listed file is absent -> INCOMPLETE                                                                                    | INCOMPLETE: eval_M2b-orc_s0.npz is listed but absent
+PASS  PC11 an empty file with a matching sha -> INCOMPLETE                                                                          | INCOMPLETE: train_log.jsonl is empty
+PASS  PC12 summary.json done: false (sums match) -> INCOMPLETE                                                                      | INCOMPLETE: summary.json done is False, not true (the training did not finish)
+PASS  PC13 argv.json not parseable (sums match) -> INCOMPLETE                                                                       | INCOMPLETE: argv.json does not parse: JSONDecodeError: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
+PASS  PC14 the orc s0 pull does not satisfy orc0 s0                                                                                 | INCOMPLETE: no run directory C:/Users/Admin/orct1/smoke/selftest\run_1026_130131\art15\M2b_s0_orc0 yet
+PASS  PC15 ... nor orc s1                                                                                                           | INCOMPLETE: no run directory C:/Users/Admin/orct1/smoke/selftest\run_1026_130131\art15\M2b_s1_orc yet
+PASS  PC16 orc0 s1 complete under its own name                                                                                      | COMPLETE: all 8 files present, non-empty, sha256-verified against SHA256SUMS.txt; summary.json done
+PASS  PC17 CLI rc 0 on a complete run                                                                                               | rc 0
+PASS  PC18 CLI rc 1 on an absent run                                                                                                | rc 1
+PASS  MF0 positive control: a complete fixture verifies with no complaint                                                           | 
+PASS  MF1 schema: arms ORC / ORC0 x seeds '0' '1', no M2b arm, t1 + t1_logged + t0 + t0_fresh (A4) + token + train_dir + ckpt_tail  | 
+PASS  MF2 tags follow the T1-HEADS naming                                                                                           | 
+PASS  MF3 a missing ticks file is caught                                                                                            | ORC s0 t1 ticks: C:/Users/Admin/orct1/smoke/selftest/run_1026_130131/mout/ticks/ticks_ORC_s0_m10_causal_heads.npz missing or empty
+PASS  MF4 a json whose limit is not causal is caught                                                                                | ORC s0 t1: json header limit 'logged' (want causal), ticks_heads True, tag 'ORC_s0_m10_causal_heads' (want ORC_s0_m10_causal_heads)
+PASS  MF5 a json without ticks_heads is caught                                                                                      | ORC s0 t1: json header limit 'causal' (want causal), ticks_heads False, tag 'ORC_s0_m10_causal_heads' (want ORC_s0_m10_causal_heads)
+PASS  MF6 a rollout that scored ANOTHER run's checkpoint is caught                                                                  | ORC s0 t1: the rollout scored .../M2b_s0_orc0/ckpt_last.pt, the manifest expects .../M2b_s0_orc/ckpt_last.pt
+PASS  MF7 fewer episode dumps than required is caught                                                                               | ORC s0 t1: 3 ep*.npz in C:/Users/Admin/orct1/smoke/selftest/run_1026_130131/mout/dump_ORC_s0_m10_cau
+PASS  MF8 A4: t0 stays box 2's standard eval, t0_fresh is added beside it                                                           | 
+PASS  MF9 A4: there is no --t0-use (t0 can never be repointed at the fresh eval)                                                    | 2
+PASS  MF12 A4: a manifest without t0_fresh is refused                                                                               | ORC s0 t0_fresh: absent (Amendment 4: K4's comparator, the --ages fresh T0 eval); ORC s1 t0_fresh: a
+PASS  MF9b the SMOKE_ prefix reaches the fresh-eval file names (the chain's t0tag)                                                  | 
+PASS  MF10 it verifies with no complaint when the files exist                                                                       | 
+PASS  MF11 a missing fresh eval file is caught                                                                                      | ORC0 s1 t0_fresh npz: C:/Users/Admin/orct1/smoke/selftest/run_1026_130131/t0fresh/eval_M2b-orc0_s1-fresh.npz missing or 
+PASS  MS0 m2bsha: both seeds from the four runs' records                                                                            | {0: 'aaaaaa', 1: 'bbbbbb'}
+PASS  MS1 disagreeing init records are refused                                                                                      | seed 1: the runs' own records disagree about the M2b init checkpoint: ['bbbbbbbbbbbbbbbbbbbbbbbbbbbb
+PASS  MS2 the box-2 chain's measured sha that differs from the records is refused                                                   | seed 1: the chain's measured M2b sha256 dddddddddddddddd != the runs' recorded init bbbbbbbbbbbbbbbb
+PASS  MS3 ... and agrees when it agrees                                                                                             | 
+
+SELFTEST (SMOKE fixtures under C:/Users/Admin/orct1/smoke/selftest\run_1026_130131): 40/40 as expected

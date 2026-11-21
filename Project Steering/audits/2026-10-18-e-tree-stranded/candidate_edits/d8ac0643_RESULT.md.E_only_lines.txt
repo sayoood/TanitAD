@@ -1,0 +1,111 @@
+# E-only lines of FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/RESULT.md  (E lines absent from the tip blob; CR-normalised; E line numbers)
+# tip blob last changed in da8400b; E mtime 2026-09-26 22:59; verdict: NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)
+811: ## §25 The leaderboard READ runs it never SHOWED, would have re-published four withdrawn runs, and could silently undo a retraction — all three fixed and pinned
+812: 
+813: **Why now.** W8's escalation E1: tonight's full-split navtest single-stage floors (post-#151) have to land in the
+814: right comparability group. Wiring that exposed a defect CLASS — "built, tested, unreachable from its caller" in
+815: leaderboard form — once a general invariant was written: **every run the page reads, it shows.**
+816: 
+817: **1. Runs read and rendered nowhere (MEASURED on the real inputs).** `EPDMS_v2_navtest_single_stage` and both nuScenes
+818: protocols have tables that print ONLY published rows plus a "TanitAD — pending" placeholder. Because those protocols
+819: HAVE a table, `orphan_runs_block` did not list their runs either. The invariant failed on **6 nuScenes runs of
+820: 2026-09-26** (including the validated GT-floor runs) and would have failed on tonight's single-stage run. Fixes:
+821: * `navtest2_tables` renders our runs in the group their artifact's own `provenance.harness.fix151` names — never
+822:   assumed. A run with no side goes to its own out-of-comparison group. The #151 note (`FIX151_POST_ONLY_COMPARABLE`,
+823:   non-reactive caveat) travels with the table.
+824: * Harness floors print as **"our floor — CV"**, never as TanitAD. The "TanitAD — any arm: pending" line stays until a
+825:   MODEL arm exists, and now sits in the post-#151 group (it used to sit after whichever group came last, which here is
+826:   the one "out of comparison").
+827: * `orphan_runs_block` now asks "is the run ON THE PAGE?" (the rendered text), not "does its protocol have a table?".
+828: * W8 writes caveats as `{id, one_line}` objects. The loader carries the producer's ids; the first cut would have printed
+829:   a Python dict repr into the page, and a test caught it.
+830: 
+831: **2. Withdrawn runs would have been re-published as results.** `results/bench/**` is append-only, so a withdrawn run
+832: keeps its `summary.json` and gains a `TOMBSTONE.json`. The loader never looked for one. MEASURED: a rebuild today prints
+833: **four withdrawn refcv4b navhard runs** (`b11027`, `d3c2b2`, `f99b29`, `e6560d`) as live result blocks beside the run that
+834: superseded them (`859e25`), and the two withdrawn nuScenes runs would count as runs too. No wrong number was published:
+835: the page has not been rebuilt since 09-21. Fix: `sources.tombstone_of` (an unreadable or malformed tombstone is
+836: REFUSED, never treated as "not withdrawn"); `load_model` keeps withdrawn rows out of every table and out of the
+837: legacy-supersession map, and a new **0E.y Withdrawn runs** block lists each one with what superseded it and why, in the
+838: tombstone's own words.
+839: 
+840: **3. A retraction that lived only as a hand edit.** The tip's `LEADERBOARD.md` carries the RETR-2026-09-26-YAWMASK
+841: correction of the refcv3 LATERAL yaw row **typed into the generated section** (`da5760e2` changed the page and no input;
+842: the data-model digest `33cb7073…` did not move). A rebuild from inputs overwrites that section by design, so it would
+843: have put back the retracted "+0.1700 → floor WINS", silently. Fix: every generated section now records its own
+844: **SHA-256** (`<!-- BENCH:SECTION-SHA256 … -->`). A build REFUSES to replace a section whose fingerprint no longer
+845: matches, or one built before fingerprints existed, unless `--discard-hand-edits` is passed. The refusal lists the lines
+846: it would drop, **corrections and retractions first**. A rebuild that drops nothing (an emptied section) is not refused.
+847: ⭐ **Demonstrated on a copy of the tip's page: REFUSED; 4 lines would drop; the FIRST listed is the hand-typed YAWMASK
+848: row.** ⚠️ The durable fix is to feed the masked value through the INPUTS. The mask package banked the fixed cells in a
+849: compact list form (`raw/claims/refcv3_40284_arm.result.json`, `yaw_fixed`), not as a replacement for the ARM record the
+850: leaderboard reads, so choosing that source is for the Master Mind and the package owner.
+851: 
+852: **Tests.** `taniteval/tests/test_leaderboard_navtest_single_stage_ours.py` (new, 10), driven by W8's real, tracked
+853: `raw/smoke218_run/summary.json` through the real loader, plus the page-level invariants on the real results tree.
+854: `taniteval/tests/test_leaderboard_hand_edit_guard.py` (new, 4). `test_leaderboard.py`: the six first builds on a copy of
+855: today's unfingerprinted page pass `discard_hand_edits=True`; the second builds stay unflagged, so an untouched
+856: fingerprinted section is proven to rebuild without refusal. **346 passed, 9 skipped** across the leaderboard, bench-suite
+857: and bench-report suites. Every skip was read: 1 NO_TREE, and 8 W5 report cases on runs with no cross-track value, which
+858: glob the runs themselves and do not use this code.
+859: 
+860: **Mutations — real source edits in an ISOLATED mirror** (the leaderboard package and 3 test files copied; everything
+861: else junctioned; the D: tree never touched). Control first: **88 passed, 0 failed**. The first mirror sat under the long
+862: scratchpad path, and a banked raw file's path passed MAX_PATH, so the control read 1 failed; it was rebuilt at a short
+863: root before any mutation was read. Each mutation turns exactly its intended tests RED:
+864: 
+865: | mutation | RED |
+866: |---|---|
+867: | M1 the loader ignores `TOMBSTONE.json` | tombstone read + withdrawn-only-in-0E.y (2) |
+868: | M2 orphans judged by protocol again | every-live-run-is-shown (1) |
+869: | M3 the single-stage table ignores our runs | 4 table tests (the page invariant stays green: the orphan block now catches it) |
+870: | M4 the placeholder after the last group | 2 |
+871: | M5 floors labelled as TanitAD | 2 |
+872: | G1 no hand-edit guard | 3 guard tests |
+873: | G2 the fingerprint drifts | an untouched fingerprinted section is refused (1) |
+874: | G3 no retraction-first ordering | 1 (ten ordinary edits early, one retraction last; only the sort surfaces it) |
+875: | G4 refuses even when nothing would be lost | the emptied-section round trip (1) |
+876: 
+877: ### §25.4 RETR-2026-09-26-YAWMASK now lives in the INPUTS (Master Mind decision, same batch)
+878: 
+879: **Decision (Master Mind):** never point the leaderboard at the mask package's compact `yaw_fixed` list, and never
+880: modify the banked ARM record. DERIVE a new input instead, point the leaderboard at it, and prove the rebuilt row equals
+881: the tip's hand-typed row value for value.
+882: 
+883: * **`taniteval/tools/derive_yawmask_record.py`** writes **`taniteval/results/refcv3-40284-openloop.ARM.yawmask.json`**:
+884:   the banked ARM with ONLY its **7 paired yaw-rate cells** replaced by the mask package's `yaw_fixed` values (list
+885:   layout `FIELDS`, `rederive_claims.py:53`). Guards, each refusing rather than guessing:
+886:   * the banked record's git blob must equal the mask package's `banked_blob` (`15dd6504…`, MEASURED equal on D:, the
+887:     tip, and the mask result);
+888:   * every cell's current values must equal the mask package's `yaw_banked` view, field for field;
+889:   * `ci95` and `p_delta_gt0`, which the mask package did not re-derive, are **nulled**, never left stale (the banked
+890:     `p_delta_gt0` 1.0 would sit beside a delta of −0.0100);
+891:   * the 18 per-arm yaw-rate values it did not re-derive are **listed as stale** in `_derived.stale_not_rederived`.
+892:   The old values ride along in each changed cell's `_unmasked`; the provenance block carries both source blobs and
+893:   sha256s, the changed pointers and the RETR id. `--check` re-derives and must MATCH (it does). **The banked ARM is
+894:   byte-identical** (blob still `15dd6504…`), and a structural diff shows **exactly 7 cells + `_derived`** differ.
+895: * **Rendered from the inputs**, not from a hand edit: a corrected cell prints its corrected value in bold with what it
+896:   read before; the n column reads "4,823 windows; 4,524 / 4,535 with a valid pair · RETR-2026-09-26-YAWMASK".
+897:   **Value for value equal to the tip's hand-typed row** — checked by an independent regex reader against that row as a
+898:   verbatim literal.
+899: * **Regression arm:** pointed back at the banked ARM, the row reads "+0.1700 [+0.1006, +0.2534] → ⛔ floor WINS" and
+900:   FAILS the comparison.
+901: * **One `--discard-hand-edits` rebuild** over a page carrying the hand-typed row refuses first, listing that row FIRST.
+902:   Once acknowledged, it drops 6 lines on D:, and **every one has a regenerated twin**: the hand-typed row (its twin
+903:   carries the same values), and 5 generated lines whose only changes are provenance —
+904:   * the refcv3 source path and sha, twice;
+905:   * a run note's source sha;
+906:   * the navhard headline now citing the newest live run (same STOP 29.85 / CV 11.48);
+907:   * the inputs line (113 → 114 published rows, 24 → 40 run rows, new digest).
+908:   Nothing is dropped without a twin.
+909: * **Tests:** `taniteval/tests/test_leaderboard_yawmask_input.py` (new, 10). Five more source mutations, each RED on its
+910:   own test:
+911:   * Y1 the loader drops the unmasked values → the value comparison and the twin check;
+912:   * Y2 the config points at the old ARM → the same two;
+913:   * Y3 the derivation keeps stale fields → the exact-derivation test;
+914:   * Y4 no per-cell guard → a mask whose banked view disagrees is accepted;
+915:   * Y5 no blob guard → a record changed OUTSIDE the yaw cells is accepted (only the blob guard can see it; the per-cell
+916:     guard passes it by construction).
+917:   The whole mirror run is **14 mutations, all RED, against a control of 98 passed / 0 failed**. **356 passed, 9 skipped**
+918:   across the leaderboard, bench-suite and bench-report suites.
+919: 

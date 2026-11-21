@@ -1,0 +1,55 @@
+[2026-11-16 07:24:39] preflight ok: ckpt sha256 2613fc17b9e5, yaw f5ebe24f, tokens md5 3a8b3653, comparators p6/p2, navsim root F:/Archive/devbox-C/navsim
+[2026-11-16 07:24:39] RUN seam1: C:/Users/Admin/venvs/tanitad/Scripts/python.exe "F:/TanitAD_p7read_tip/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/stage2_sft.py" --ckpt F:/TanitAD_p7read/run/model_final.pt --name p7_full --rule navsim_v1 --tokens E:/Projects/TanitAD/data/refe_navtest/navtest_full_tokens.json --dump-proposals --ego-yaw-table E:/Projects/TanitAD-artifacts/yawrate_wp/tables/ego_yaw_navtest.json.gz
+[2026-11-16 11:37:47]   rc 1 after 15188 s (log E:/Projects/TanitAD-artifacts/p7_full_read/logs/seam1.log)
+[2026-11-16 11:37:47] FAILED seam1
+Traceback (most recent call last):
+  File "F:\TanitAD_p7read_tip\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\eval\p7_read_chain.py", line 535, in run
+    payload = getattr(self, f"step_{step}")()
+  File "F:\TanitAD_p7read_tip\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\eval\p7_read_chain.py", line 450, in step_seam1
+    info = validate_seam(c, c.name, rc, need_dump=True)
+  File "F:\TanitAD_p7read_tip\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\eval\p7_read_chain.py", line 312, in validate_seam
+    raise RuntimeError(f"seam artifacts absent: {seam} / {rep_p}")
+RuntimeError: seam artifacts absent: E:\Projects\TanitAD\data\refe_navtest\seams\stage2_p7_full.npz / E:\Projects\TanitAD\data\refe_navtest\seams\stage2_p7_full.report.json
+
+[2026-11-16 12:35:27] preflight ok: ckpt sha256 2613fc17b9e5, yaw f5ebe24f, tokens md5 3a8b3653, comparators p6/p2, navsim root F:/Archive/devbox-C/navsim
+[2026-11-16 12:35:27] previous seam1.FAILED kept as seam1.FAILED.attempt_1; retrying seam1
+[2026-11-16 12:35:27] RUN seam1: C:/Users/Admin/venvs/tanitad/Scripts/python.exe "F:/TanitAD_p7read_tip/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/stage2_sft.py" --ckpt F:/TanitAD_p7read/run/model_final.pt --name p7_full --rule navsim_v1 --tokens E:/Projects/TanitAD/data/refe_navtest/navtest_full_tokens.json --dump-proposals --ego-yaw-table E:/Projects/TanitAD-artifacts/yawrate_wp/tables/ego_yaw_navtest.json.gz
+[2026-11-16 12:53:17]   rc 1 after 1070 s (log E:/Projects/TanitAD-artifacts/p7_full_read/logs/seam1.log)
+[2026-11-16 12:53:17] FAILED seam1
+Traceback (most recent call last):
+  File "F:\TanitAD_p7read_tip\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\eval\p7_read_chain.py", line 535, in run
+    payload = getattr(self, f"step_{step}")()
+  File "F:\TanitAD_p7read_tip\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\eval\p7_read_chain.py", line 450, in step_seam1
+    info = validate_seam(c, c.name, rc, need_dump=True)
+  File "F:\TanitAD_p7read_tip\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\eval\p7_read_chain.py", line 312, in validate_seam
+    raise RuntimeError(f"seam artifacts absent: {seam} / {rep_p}")
+RuntimeError: seam artifacts absent: E:\Projects\TanitAD\data\refe_navtest\seams\stage2_p7_full.npz / E:\Projects\TanitAD\data\refe_navtest\seams\stage2_p7_full.report.json
+
+[2026-11-16 13:07:05] preflight ok: ckpt sha256 2613fc17b9e5, yaw f5ebe24f, tokens md5 3a8b3653, comparators p6/p2, navsim root F:/Archive/devbox-C/navsim
+[2026-11-16 13:07:05] previous seam1.FAILED kept as seam1.FAILED.attempt_2; retrying seam1
+[2026-11-16 13:07:05] RUN seam1: C:/Users/Admin/venvs/tanitad/Scripts/python.exe "F:/TanitAD_p7read_tip/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/stage2_sft.py" --ckpt F:/TanitAD_p7read/run/model_final.pt --name p7_full --rule navsim_v1 --tokens E:/Projects/TanitAD/data/refe_navtest/navtest_full_tokens.json --dump-proposals --ego-yaw-table E:/Projects/TanitAD-artifacts/yawrate_wp/tables/ego_yaw_navtest.json.gz
+[2026-11-16 17:33:35]   rc 1 after 15990 s (log E:/Projects/TanitAD-artifacts/p7_full_read/logs/seam1.log)
+[2026-11-16 17:33:35] DONE seam1
+[2026-11-16 17:33:35] RUN score: C:/Users/Admin/venvs/tanitad/Scripts/python.exe "F:/TanitAD_p7read_tip/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/stage2_sft.py" --ckpt F:/TanitAD_p7read/run/model_final.pt --name p7_full --rule navsim_v1 --tokens E:/Projects/TanitAD/data/refe_navtest/navtest_full_tokens.json --dump-proposals --ego-yaw-table E:/Projects/TanitAD-artifacts/yawrate_wp/tables/ego_yaw_navtest.json.gz
+[2026-11-16 18:07:36]   rc 0 after 2041 s (log E:/Projects/TanitAD-artifacts/p7_full_read/logs/score.log)
+[2026-11-16 18:07:36] DONE score
+[2026-11-16 18:07:36] RUN stage3: C:/Users/Admin/venvs/tanitad/Scripts/python.exe "F:/TanitAD_p7read_tip/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/stage3_full.py" --name p7_full --ckpt F:/TanitAD_p7read/run/model_final.pt --expect-ckpt-sha256 2613fc17b9e5d63342c9f42120c5612a6ec7061fda72f83dac46ddd2e70fd3fe --base p6 --also p2 --expect-rule navsim_v1 --out-dir E:/Projects/TanitAD-artifacts/p7_full_read/stage3
+[2026-11-16 18:09:14]   rc 0 after 98 s (log E:/Projects/TanitAD-artifacts/p7_full_read/logs/stage3.log)
+[2026-11-16 18:09:14] DONE stage3
+[2026-11-16 18:09:14] RUN adherence: C:/Users/Admin/venvs/tanitad/Scripts/python.exe "F:/TanitAD_p7read_tip/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/command_adherence.py" read --name p7_full --dump E:/Projects/TanitAD/data/refe_navtest/seams/stage2_p7_full.proposals.npz --base p6 --also p2 --out E:/Projects/TanitAD-artifacts/p7_full_read/command_adherence_p7_full.json
+[2026-11-16 18:09:27]   rc 0 after 13 s (log E:/Projects/TanitAD-artifacts/p7_full_read/logs/adherence.log)
+[2026-11-16 18:09:27] DONE adherence
+[2026-11-16 18:09:27] RUN rep: C:/Users/Admin/venvs/tanitad/Scripts/python.exe "F:/TanitAD_p7read_tip/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/stage2_sft.py" --ckpt F:/TanitAD_p7read/run/model_final.pt --name p7_full_rep --rule navsim_v1 --tokens E:/Projects/TanitAD/data/refe_navtest/navtest_full_tokens.json --ego-yaw-table E:/Projects/TanitAD-artifacts/yawrate_wp/tables/ego_yaw_navtest.json.gz
+[2026-11-16 22:41:14]   rc 1 after 16307 s (log E:/Projects/TanitAD-artifacts/p7_full_read/logs/rep.log)
+[2026-11-16 22:41:14] DONE rep
+[2026-11-16 22:41:15] plans8 written: 12146 tokens each (base seam E:\Projects\TanitAD\data\refe_navtest\seams\refe_p6final.npz)
+[2026-11-16 23:04:58] RUN transp_s0: rc 0
+[2026-11-16 23:04:58] RUN transp_s1: rc 0
+[2026-11-16 23:04:58] RUN fam_arm: C:/Users/Admin/navsim-crun/venv/Scripts/python.exe "F:/TanitAD_p7read_tip/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/instruments/families_run.py" --rows E:/Projects/TanitAD-artifacts/p7_full_read/families/rows_s*.jsonl --per-window --tanitad-repo F:/TanitAD_p7read_tip --arm P7 --label P7 --out E:/Projects/TanitAD-artifacts/p7_full_read/families/fam_P7.json
+[2026-11-16 23:06:03]   rc 0 after 65 s (log E:/Projects/TanitAD-artifacts/p7_full_read/logs/fam_arm.log)
+[2026-11-16 23:06:03] RUN fam_base: C:/Users/Admin/navsim-crun/venv/Scripts/python.exe "F:/TanitAD_p7read_tip/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/instruments/families_run.py" --rows E:/Projects/TanitAD-artifacts/p7_full_read/families/rows_s*.jsonl --per-window --tanitad-repo F:/TanitAD_p7read_tip --arm P6 --label P6 --out E:/Projects/TanitAD-artifacts/p7_full_read/families/fam_P6.json
+[2026-11-16 23:06:56]   rc 0 after 53 s (log E:/Projects/TanitAD-artifacts/p7_full_read/logs/fam_base.log)
+[2026-11-16 23:06:56] RUN fam_ci: C:/Users/Admin/venvs/tanitad/Scripts/python.exe "F:/TanitAD_p7read_tip/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-11-12-instruments/fam_ci/fam_ci.py" --a E:/Projects/TanitAD-artifacts/p7_full_read/families/fam_P6.json --b E:/Projects/TanitAD-artifacts/p7_full_read/families/fam_P7.json --out E:/Projects/TanitAD-artifacts/p7_full_read/fam_ci_P6_vs_P7.json
+[2026-11-16 23:07:27]   rc 0 after 31 s (log E:/Projects/TanitAD-artifacts/p7_full_read/logs/fam_ci.log)
+[2026-11-16 23:07:27] DONE families
+[2026-11-16 23:07:27] chain DONE

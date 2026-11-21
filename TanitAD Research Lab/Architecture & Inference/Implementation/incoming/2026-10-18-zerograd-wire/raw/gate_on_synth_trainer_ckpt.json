@@ -1,0 +1,78 @@
+{
+  "gate": "zerograd_gate",
+  "gate_version": "1",
+  "verdict": "FAIL",
+  "model_key": "model",
+  "optimizer_key": "opt",
+  "optimizer": {
+    "n_groups": 2,
+    "n_registered": 151,
+    "n_with_state_entry": 149,
+    "n_trained": 149,
+    "n_case_a_no_state": 2,
+    "n_case_b_zero_state": 0,
+    "step_max": 2,
+    "ckpt_step": 2
+  },
+  "alignment": {
+    "mode": "param_names",
+    "unique": true,
+    "n_alignments": 1.0,
+    "param_names_source": "ckpt",
+    "param_names_rejected": null,
+    "n_model_float_entries": 157,
+    "n_entries_excluded": 24,
+    "exclude_entries": [
+      "(.*\\.)?(running_mean|running_var|num_batches_tracked)"
+    ],
+    "note": "",
+    "n_ids_name_ambiguous": 0,
+    "n_ids_unnamed": 0
+  },
+  "offenders": [
+    {
+      "id": 100,
+      "case": "a_no_state",
+      "names": [
+        "core.route_head.weight"
+      ],
+      "ambiguous": false,
+      "state_shape": null,
+      "numel_lo": 192,
+      "numel_hi": 192,
+      "allowed_by": null
+    },
+    {
+      "id": 101,
+      "case": "a_no_state",
+      "names": [
+        "core.route_head.bias"
+      ],
+      "ambiguous": false,
+      "state_shape": null,
+      "numel_lo": 3,
+      "numel_hi": 3,
+      "allowed_by": null
+    }
+  ],
+  "allowed": [],
+  "unused_allow": [],
+  "untrained_numel": {
+    "offending_lo": 195,
+    "offending_hi": 195,
+    "allowed_lo": 0,
+    "allowed_hi": 0
+  },
+  "controls": [],
+  "info": {
+    "partial_grad": []
+  },
+  "ckpt": "C:/Users/Admin/zgwire/evidence/synth_run/ckpt.pt",
+  "ckpt_size_bytes": 1734893,
+  "load": {
+    "weights_only": true,
+    "mmap": true,
+    "earlier_load_failures": []
+  },
+  "ckpt_sha256": "0f0c18bc7ab555f008cc0981941913236864714cca54e4b4ce85cae6ada22591"
+}

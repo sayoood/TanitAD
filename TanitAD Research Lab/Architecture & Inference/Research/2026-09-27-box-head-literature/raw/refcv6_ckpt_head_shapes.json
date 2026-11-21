@@ -1,0 +1,26 @@
+{
+ "_doc": "MEASURED 2026-09-27: tensor shapes of the two refcv6 detection heads, read with torch.load(mmap=True, map_location='cpu') from D:/refcv6_eval_kit/ckpt_final/ckpt_step38000.pt (md5 5a2e7222a9f5f8c7aa7bf38ef4698d8a per the kit README; not re-hashed here). Only shapes and numel were read; no forward was run. The parameter totals are reproduced EXACTLY by raw/head_param_counts.py from the layer shapes (the self-check keys there).",
+ "agent_head (core.agent_head, AgentSlotDecoder, refc_agents seam)": {
+  "mem_pos": [1, 416, 256],
+  "queries": [1, 100, 256],
+  "mem_proj.weight": [256, 2048],
+  "blocks.layers.0.linear1.weight": [1024, 256],
+  "head.weight": [21, 256],
+  "n_params_total": 3822869,
+  "reads": "the stride-32 trunk map fmap, 2048 ch, 13 x 32 = 416 tokens (refc.py:4381-4382)"
+ },
+ "box3d_head (_perception.box_mem + _perception.box_dec, Box3DMemory + Box3DSlotDecoder)": {
+  "box_mem.img_proj.weight": [256, 1024],
+  "box_mem.bev_proj.weight": [256, 96],
+  "box_mem.src_embed": [1, 2, 256],
+  "box_dec.mem_pos": [1, 2144, 256],
+  "box_dec.queries": [1, 100, 256],
+  "box_dec.mem_proj.weight": [256, 256],
+  "box_dec.blocks.layers.0.linear1.weight": [1024, 256],
+  "box_dec.head.weight": [23, 256],
+  "n_params_total": 4094743,
+  "n_params_decoder_config_json": 3806999,
+  "n_params_memory_config_json": 287744,
+  "reads": "fmap_s16 1024 ch at 26 x 64 = 1,664 image tokens + BEV features pooled to 30 x 16 = 480 tokens (config.json refcv6_perception.fmap_s16_hw, bev_tokens_hw)"
+ }
+}

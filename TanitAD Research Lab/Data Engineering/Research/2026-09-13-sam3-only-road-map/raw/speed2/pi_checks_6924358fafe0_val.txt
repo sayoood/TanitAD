@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "/home/nvidia/sam3map/eval/pi_checks.py", line 59, in <module>
+    clip = mo.Clip(c8)
+           ^^^^^^^^^^^
+  File "/home/nvidia/sam3map/eval/mapq_ours.py", line 48, in __init__
+    self.pf = pq.ParquetFile(LIDAR / f"{cid}.lidar_top_360fov.parquet")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/nvidia/venvs/tanitad-edge/lib/python3.12/site-packages/pyarrow/parquet/core.py", line 327, in __init__
+    source = filesystem.open_input_file(source)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "pyarrow/_fs.pyx", line 815, in pyarrow._fs.FileSystem.open_input_file
+  File "pyarrow/error.pxi", line 155, in pyarrow.lib.pyarrow_internal_check_status
+  File "pyarrow/error.pxi", line 92, in pyarrow.lib.check_status
+FileNotFoundError: [Errno 2] Failed to open local file '/home/nvidia/sam3map/data/6924358fafe0.lidar_top_360fov.parquet'. Detail: [errno 2] No such file or directory

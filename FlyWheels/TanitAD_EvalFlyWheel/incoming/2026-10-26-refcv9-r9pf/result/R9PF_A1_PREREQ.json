@@ -1,0 +1,317 @@
+{
+ "tool": "a1_prereq.py",
+ "prereg": {
+  "file": "C:\\Users\\Admin\\refcv8_pf\\refcv9_r9pf\\PREREG_REFCV9_INMODEL_PA.md",
+  "sha256": "67d178600a87ba128d8b5e76adbbf32a6fcfe7ac5374e38f1375ddd1fe918da8",
+  "seal_matches": true
+ },
+ "script_sha256": "c7dcb323faa806e3279acbb210b8746390125566ddf96fd75a5921093bbd798f",
+ "common_sha256": "c54db6322e43b3e0d07eef7ad7807e122753d6ce5d7e1f4173a614c64f8729a9",
+ "r9_code": {
+  "copy": "F:\\refcv9_r9pf_scratch\\tree\\stack",
+  "refcv9_progress_sha256": "7a7e0a41888c2b265e86f5fec2538323a0693ddb27cb4df28718f8548bb701d0",
+  "patch_file": "F:\\refcv9_r9pf_scratch\\REFCV9_INMODEL.tip.patch",
+  "patch_sha256": "3646a2900cf2f8f14edd423c5ed4d7a84ef6c210b445b4428f4d5b775fc22ec8",
+  "patch_landed_at": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-26-refcv9-inmodel/REFCV9_INMODEL.patch (commit 4b5f7fb; git blob 0a165b98 == F:/refcv9_inmodel copy)",
+  "copy_reverse_dry_run_rc": 0,
+  "copy_carries_patch": true,
+  "scalar_names": [
+   "v0",
+   "a0",
+   "omega0",
+   "v0_omega0",
+   "v0_sq",
+   "a0_v0",
+   "ceiling",
+   "ceiling_minus_v0",
+   "ceiling_valid"
+  ],
+  "regimes": [
+   "decel",
+   "cruise",
+   "accel"
+  ],
+  "dv_threshold": 1.5
+ },
+ "eval_ztac_bank": {
+  "s0": {
+   "file": "C:\\Users\\Admin\\refcv8_pf\\refcv9_l1\\bank\\ztac_eval_s0.npz",
+   "sha256": "e807c0d7d43ece24e39b6b23d1d5504162222bddca2e24b86c7e7b0d48bd1586",
+   "ckpt": "E:/refcv8_eval_kit/ckpt/ckpt_ema_48852.pt",
+   "ckpt_is_ema_48852": true,
+   "seed_argv": 0,
+   "final": true,
+   "n_windows": 4754,
+   "d_tac": 512,
+   "rows": 4754,
+   "finite": true,
+   "counters": {
+    "own_calls": 4754,
+    "navnull_calls": 0,
+    "caps_per_call_hist": {
+     "1": 4754
+    },
+    "filteroff_cap_maxdiff": 0.0,
+    "batch_gt1": 0,
+    "hook_calls_unarmed": 0
+   },
+   "os_only": true,
+   "own_plan_vs_dump": {
+    "dump": "C:\\Users\\Admin\\refcv8_pf\\r8oracle\\run_48852ema_pf\\dump_s0\\refcv6_extras.npz",
+    "all_joined": true,
+    "max_abs_m": 0.0
+   }
+  },
+  "s1": {
+   "file": "C:\\Users\\Admin\\refcv8_pf\\refcv9_l1\\bank\\ztac_eval_s1.npz",
+   "sha256": "a1de32c6236b2335790b9a322301814e4923bca9c73d2e9abeebc10bd9f5ac5d",
+   "ckpt": "E:/refcv8_eval_kit/ckpt/ckpt_ema_48852.pt",
+   "ckpt_is_ema_48852": true,
+   "seed_argv": 1,
+   "final": true,
+   "n_windows": 4754,
+   "d_tac": 512,
+   "rows": 4754,
+   "finite": true,
+   "counters": {
+    "own_calls": 4754,
+    "navnull_calls": 0,
+    "caps_per_call_hist": {
+     "1": 4754
+    },
+    "filteroff_cap_maxdiff": 0.0,
+    "batch_gt1": 0,
+    "hook_calls_unarmed": 0
+   },
+   "os_only": true,
+   "own_plan_vs_dump": {
+    "dump": "C:\\Users\\Admin\\refcv8_eval_archive\\battery\\step48852ema_pf\\dump_s1\\refcv6_extras.npz",
+    "all_joined": true,
+    "max_abs_m": 0.0
+   }
+  },
+  "seed_independence": {
+   "aligned_keys": true,
+   "n": 4754,
+   "max_abs_z_s0_minus_s1": 0.0,
+   "discriminating_control_traj_own_differs_across_seeds_max_abs_m": 34.03599548339844,
+   "frac_windows_traj_differs": 0.9737063525452251,
+   "PASS": true
+  },
+  "PASS": true
+ },
+ "fresh_ztac_bank": {
+  "file": "F:\\l1c\\bank\\ztac_fresh.npz",
+  "sha256": "c07c7849c7ba897aea29ee0068d970ae5d511a13f88f4113f25c033a3fa20755",
+  "sha256_expected_H2CN_FREEZE_INFO": "c07c7849c7ba897aea29ee0068d970ae5d511a13f88f4113f25c033a3fa20755",
+  "ckpt": "E:/refcv8_eval_kit/ckpt/ckpt_ema_48852.pt",
+  "final": true,
+  "n_windows": 10456,
+  "rows": 10456,
+  "finite": true,
+  "PASS": true
+ },
+ "calibration_load": {
+  "S2": {
+   "n_compliant": 9135,
+   "n_all": 10456,
+   "expected_H2CN_FREEZE_INFO": 9135,
+   "n_episodes": 297,
+   "n_clips": 297,
+   "decisions_PASS": true,
+   "validation_PASS": true
+  },
+  "S6": {
+   "n_compliant": 7147,
+   "n_all": 8095,
+   "expected_H2CN_FREEZE_INFO": 7147,
+   "n_episodes": 297,
+   "n_clips": 297,
+   "decisions_PASS": true,
+   "validation_PASS": true
+  }
+ },
+ "K-DISJ": {
+  "PASS": true,
+  "check": {
+   "sources": {
+    "fresh_ids": {
+     "file": "F:\\l1c\\select\\final_ids_fresh.json",
+     "sha256": "04ff350eb37e00e8ccde395498a70ac737fb3c269fe584c81dfe5bcb626e628a",
+     "n": 300
+    },
+    "v9_eval139": {
+     "file": "E:\\refcv8_eval_kit\\data\\refcv8_v9labels\\release\\v9_labels_eval139.npz",
+     "md5": "6b5c7f207cffc3b7eb3cd527fd433599",
+     "md5_pinned": "6b5c7f207cffc3b7eb3cd527fd433599",
+     "n": 139
+    },
+    "v9_train4572": {
+     "file": "E:\\refcv8_eval_kit\\data\\refcv8_v9labels\\release_train4572\\v9_labels_train.npz",
+     "md5": "83e30bd3791f0767707eade5f4671759",
+     "md5_pinned": "83e30bd3791f0767707eade5f4671759",
+     "n": 4572
+    },
+    "extrinsics_train4572_eval139": {
+     "file": "E:\\refcv8_eval_kit\\data\\refcv8_train4572_eval139_extrinsics.json",
+     "sha256": "933c779b52a0fbb20e37445a933d49d8fa7a630307d3b5eceaeb1a751cc3eb1a",
+     "n": 4711
+    },
+    "eval_tree_dump_json": {
+     "file": "C:\\Users\\Admin\\refcv8_eval_archive\\battery\\step48852ema_pf\\dump_s0\\refcv6_extras.npz.json",
+     "n": 139
+    },
+    "fresh_tree_dump_json": {
+     "file": "F:\\l1c\\tree\\step48852ema_fresh\\dump_s0\\refcv6_extras.npz.json",
+     "n": 300
+    },
+    "programme_digest_lists": {
+     "parity_train": 2400,
+     "deployed_val40": 40,
+     "v72_eval": 147
+    }
+   },
+   "fit_rows_S2_n_clips": 297,
+   "fit_rows_S6_n_clips": 297,
+   "consistency": {
+    "v9_md5s_pinned": true,
+    "counts": true,
+    "xcheck_fresh_ids_eq_fresh_dump": true,
+    "xcheck_v9_eval_eq_eval_dump": true,
+    "xcheck_extrinsics_sha12_eq_train_union_eval": true,
+    "xcheck_train_eval_disjoint": true,
+    "fit_rows_S2_subset_of_fresh": true,
+    "fit_rows_S6_subset_of_fresh": true
+   },
+   "intersections": {
+    "fresh_full_x_extrinsics_full": 0,
+    "fresh12_x_eval139": 0,
+    "fresh12_x_train4572": 0,
+    "fresh12_x_eval_dump": 0,
+    "fresh_full_x_parity_train": 0,
+    "fresh_full_x_deployed_val40": 0,
+    "fresh_full_x_v72_eval": 0,
+    "fit_rows_S2_x_train4572_or_eval139": 0,
+    "fit_rows_S6_x_train4572_or_eval139": 0
+   },
+   "disjoint": true,
+   "PASS": true,
+   "mutation_injected_one_eval139_clip": false
+  },
+  "mutation_arm": {
+   "sources": {
+    "fresh_ids": {
+     "file": "F:\\l1c\\select\\final_ids_fresh.json",
+     "sha256": "04ff350eb37e00e8ccde395498a70ac737fb3c269fe584c81dfe5bcb626e628a",
+     "n": 300
+    },
+    "v9_eval139": {
+     "file": "E:\\refcv8_eval_kit\\data\\refcv8_v9labels\\release\\v9_labels_eval139.npz",
+     "md5": "6b5c7f207cffc3b7eb3cd527fd433599",
+     "md5_pinned": "6b5c7f207cffc3b7eb3cd527fd433599",
+     "n": 139
+    },
+    "v9_train4572": {
+     "file": "E:\\refcv8_eval_kit\\data\\refcv8_v9labels\\release_train4572\\v9_labels_train.npz",
+     "md5": "83e30bd3791f0767707eade5f4671759",
+     "md5_pinned": "83e30bd3791f0767707eade5f4671759",
+     "n": 4572
+    },
+    "extrinsics_train4572_eval139": {
+     "file": "E:\\refcv8_eval_kit\\data\\refcv8_train4572_eval139_extrinsics.json",
+     "sha256": "933c779b52a0fbb20e37445a933d49d8fa7a630307d3b5eceaeb1a751cc3eb1a",
+     "n": 4711
+    },
+    "eval_tree_dump_json": {
+     "file": "C:\\Users\\Admin\\refcv8_eval_archive\\battery\\step48852ema_pf\\dump_s0\\refcv6_extras.npz.json",
+     "n": 139
+    },
+    "fresh_tree_dump_json": {
+     "file": "F:\\l1c\\tree\\step48852ema_fresh\\dump_s0\\refcv6_extras.npz.json",
+     "n": 300
+    },
+    "programme_digest_lists": {
+     "parity_train": 2400,
+     "deployed_val40": 40,
+     "v72_eval": 147
+    }
+   },
+   "consistency": {
+    "v9_md5s_pinned": true,
+    "counts": true,
+    "xcheck_fresh_ids_eq_fresh_dump": true,
+    "xcheck_v9_eval_eq_eval_dump": true,
+    "xcheck_extrinsics_sha12_eq_train_union_eval": true,
+    "xcheck_train_eval_disjoint": true
+   },
+   "intersections": {
+    "fresh_full_x_extrinsics_full": 1,
+    "fresh12_x_eval139": 1,
+    "fresh12_x_train4572": 0,
+    "fresh12_x_eval_dump": 1,
+    "fresh_full_x_parity_train": 0,
+    "fresh_full_x_deployed_val40": 0,
+    "fresh_full_x_v72_eval": 1
+   },
+   "disjoint": false,
+   "PASS": false,
+   "mutation_injected_one_eval139_clip": true
+  },
+  "mutation_red": true
+ },
+ "calibration_rows": {
+  "S6_subset_of_S2": true,
+  "n_rows": 7147,
+  "n_episodes": 297,
+  "n_clips": 297,
+  "G_overlap_slots_1_3_S2_eq_S6_bit": true,
+  "win_S2_eq_S6_bit": true,
+  "v0_S2_eq_S6": true,
+  "prior8_at_S6_slots_eq_RT_HP_bit": true,
+  "prior8_at_S2_slots_eq_RT_HP_bit": true,
+  "plan8_at_S6_slots_eq_panel_os_bit": true,
+  "x9_inmodel_vs_progress_scalar_feats_maxabs": 5.773942393716425e-05,
+  "x9_maxabs_scale": 1112.2638723787531,
+  "bank_v0_vs_panel_maxabs": 0.0,
+  "z_rows": 7147,
+  "fit_rows_sha12_subset_of_fresh_S6": true,
+  "PASS": true
+ },
+ "K-LABSRC-R9": {
+  "source_fit": "refcv9_progress.gt_regime(G8 slots 50/60, panel v0) -- the in-model loss's own target function",
+  "source_independent_raw": "decisions/gt_future_ext[:, 49/59] (world frame) + extras v0, numpy float64, l2_common threshold",
+  "source_independent_plan_class": "s6_lon_decomp.plan_lon_class on the S6 panel GT (the MD/FD cells' own class)",
+  "decisions_order_eq_extras": true,
+  "all_rows_joined": true,
+  "gt_valid_at_50_60_all": true,
+  "n_rows": 7147,
+  "ok_all": true,
+  "class_counts_fit": {
+   "decel": 1503,
+   "cruise": 3704,
+   "accel": 1940
+  },
+  "mismatch_fit_vs_raw": 0,
+  "mismatch_fit_vs_plan_class": 0,
+  "rows_within_1e-4_of_threshold": 0,
+  "mutation_lon_v7": {
+   "mismatch_vs_raw": 6831,
+   "n_unmapped": 6658,
+   "class_counts": {
+    "decel": 489,
+    "cruise": 0,
+    "accel": 0
+   }
+  },
+  "mutation_red": true,
+  "PASS": true
+ },
+ "calib_cache": {
+  "file": "F:\\refcv9_r9pf_scratch\\calib_rows.npz",
+  "sha256": "5c2280781fd7ff0f63731329c6ccc31c2d151915b3c48525850b25ae1cb359ff",
+  "n_rows": 7147
+ },
+ "ALL_PASS": true,
+ "wall_s": 38.8,
+ "generated": "2026-10-26T13:30:54+0100"
+}

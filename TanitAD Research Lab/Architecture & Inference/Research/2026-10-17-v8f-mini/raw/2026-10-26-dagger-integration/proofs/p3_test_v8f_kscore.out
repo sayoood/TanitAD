@@ -1,0 +1,48 @@
+F...........F........................................................... [ 58%]
+...................................................                      [100%]
+================================== FAILURES ===================================
+_____________________ test_constants_are_the_prereg_text ______________________
+
+    def test_constants_are_the_prereg_text():
+        t = PREREG.read_text(encoding="utf-8") if PREREG.exists() else ""
+>       assert t, "PREREG_V8F_KSCORE.md must be in the tree"
+E       AssertionError: PREREG_V8F_KSCORE.md must be in the tree
+E       assert ''
+
+stack\tests\test_v8f_kscore.py:144: AssertionError
+_______________ test_every_outcome_quotes_the_prereg_next_step ________________
+
+    def test_every_outcome_quotes_the_prereg_next_step():
+>       t = PREREG.read_text(encoding="utf-8")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kscore.py:450: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('E:/Projects/TanitAD-artifacts/di/tree/Project Steering/PREREG_V8F_KSCORE.md')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'E:\\Projects\\TanitAD-artifacts\\di\\tree\\Project Steering\\PREREG_V8F_KSCORE.md'
+
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+=========================== short test summary info ===========================
+FAILED stack\tests\test_v8f_kscore.py::test_constants_are_the_prereg_text - A...
+FAILED stack\tests\test_v8f_kscore.py::test_every_outcome_quotes_the_prereg_next_step
+2 failed, 121 passed in 382.89s (0:06:22)

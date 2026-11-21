@@ -1,0 +1,40 @@
+
+  E-DEC-58 — EGO-MOTION STATE vs GEOMETRIC scene change
+  channels: [yaw_rate, a_long, v] as MEASURED STATE (PI directive)
+  124 held-out clips, k=4 (0.4 s)
+
+  NULL MODE - inputs are Gaussian noise; every t below is a null draw
+
+  76 clips, 5747 rows
+
+  target         column                              r     shuf   t-shuf      t
+  --------------------------------------------------------------------------------
+  d_bearing      scene_t (POSITIVE CONTROL)    +0.0274  +0.0025  +0.0249   1.22
+  d_bearing      ego_state [w, a, v]           -0.0095  +0.0255  -0.0350  -1.43
+  d_bearing      scene_t + ego_state           +0.0092  +0.0322  -0.0230  -0.97
+  d_bearing      CLOSED FORM (kinematics)      -0.0152  -0.0006  -0.0146  -0.65
+  d_bearing      constant (control)            +0.0000  +0.0000  +0.0000   0.00
+                 -> EGO-STATE's marginal given the scene: -0.0182 (t -1.35)
+
+  d_range        scene_t (POSITIVE CONTROL)    -0.0038  -0.0086  +0.0049   0.24
+  d_range        ego_state [w, a, v]           -0.0084  -0.0065  -0.0019  -0.10
+  d_range        scene_t + ego_state           -0.0145  -0.0103  -0.0043  -0.23
+  d_range        CLOSED FORM (kinematics)      -0.0009  -0.0089  +0.0080   0.40
+  d_range        constant (control)            +0.0000  +0.0000  +0.0000   0.00
+                 -> EGO-STATE's marginal given the scene: -0.0108 (t -0.65)
+
+  bearing_t+k    scene_t (POSITIVE CONTROL)    -0.0209  -0.0129  -0.0080  -0.42
+  bearing_t+k    ego_state [w, a, v]           -0.0192  -0.0061  -0.0131  -0.63
+  bearing_t+k    scene_t + ego_state           -0.0201  -0.0120  -0.0081  -0.38
+  bearing_t+k    CLOSED FORM (kinematics)      -0.0191  +0.0250  -0.0441  -2.13
+  bearing_t+k    constant (control)            +0.0000  +0.0000  +0.0000   0.00
+                 -> EGO-STATE's marginal given the scene: +0.0009 (t +0.07)
+
+  range_t+k      scene_t (POSITIVE CONTROL)    +0.0194  +0.0143  +0.0050   0.22
+  range_t+k      ego_state [w, a, v]           -0.0316  -0.0068  -0.0248  -1.04
+  range_t+k      scene_t + ego_state           -0.0105  +0.0113  -0.0219  -0.98
+  range_t+k      CLOSED FORM (kinematics)      +0.0180  -0.0023  +0.0203   1.06
+  range_t+k      constant (control)            +0.0000  -0.0000  +0.0000   0.00
+                 -> EGO-STATE's marginal given the scene: -0.0299 (t -3.14)
+
+-> C:\Users\Admin\AppData\Local\Temp\claude\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\8fc25020-a1d5-4e1b-a9e2-aeccf845c5a2\scratchpad\geomnull_0.json

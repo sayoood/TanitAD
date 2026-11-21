@@ -1,0 +1,24 @@
+--- a/code/ship_r8_verdict_pf.py
++++ b/code/ship_r8_verdict_pf.py
+@@ -194,9 +194,20 @@
+     return "PASS"
+ 
+ 
++def clause7_pf(pp, tree: str) -> dict:
++    """B.clause7 + the TREE check it lacks: PRIOR_PARITY.json is the one lane artifact whose name carries no tree tag, and lane() skips a stage whose
++    artifact exists, so a pf package reused across trees would hand clause (7) another tree's parity.  Every panel must be <tree>|s<seed>."""
++    c = B.clause7(pp)
++    panels = (c.get("evidence") or {}).get("panels") or []
++    foreign = sorted({str(q.get("panel", "")).split("|")[0] for q in panels} - {tree})
++    if c.get("status") == "PASS" and (not panels or foreign):
++        c = {**c, "status": "INCOMPLETE", "reason": f"PRIOR_PARITY.json covers {foreign or 'no named panel'}, not the tree {tree} (INCOMPLETE, not PASS)"}
++    return c
++
++
+ def evaluate_pf(tree, fd8, tf, tac, pr, pp, fd_ps, deploy_sha, parity, expected_n, reg, perclip=None, prov=None, archive=ARCHIVE) -> dict:
+     clauses = [clause1_pf(fd8, tf, deploy_sha, reg), clause1b(parity, tree, expected_n, archive), B.clause_e(2, "S2", fd8), B.clause_e(3, "S6", fd8),
+-               B.clause4(fd8), B.clause5(tac), B.clause6(pr), B.clause7(pp)]
++               B.clause4(fd8), B.clause5(tac), B.clause6(pr), clause7_pf(pp, tree)]
+     ov = overall_pf(clauses)
+     orient = tree != CONDITION_TREE
+     bes = B.beside(fd8, tf, tac, fd_ps, None, None)

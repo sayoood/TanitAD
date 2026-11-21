@@ -1,0 +1,443 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box CPU dual ridge)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "_arm": "champ30k = two-term(o5+o6) + k1 + sigreg-subspaces 32, S-W, 30,000 steps, parity cache e438721ae894",
+ "_precision_note": "champ30k loaded from FULL fp32 ckpt.pt; the banked v6F rungs were fp16->fp32 (lossy). Stated, not matched.",
+ "_prereg": "both outcomes committed in this file's docstring before the number existed",
+ "n_frames": 5617,
+ "n_episodes": 130,
+ "controls": {
+  "C-EGO": {
+   "lead_gap_m": {
+    "metric": "R2",
+    "point": 0.334,
+    "ci95": [
+     0.2543,
+     0.4182
+    ],
+    "n": 5394,
+    "lambda_at_grid_edge": 1
+   },
+   "nearest_any_m": {
+    "metric": "R2",
+    "point": 0.1194,
+    "ci95": [
+     0.0211,
+     0.193
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 5
+   },
+   "n_agents_log": {
+    "metric": "R2",
+    "point": 0.1601,
+    "ci95": [
+     0.0663,
+     0.2343
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 0
+   },
+   "occluded_frac": {
+    "metric": "R2",
+    "point": -0.0081,
+    "ci95": [
+     -0.0354,
+     -0.0021
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 5
+   },
+   "ego_speed": {
+    "metric": "R2",
+    "point": 1.0,
+    "ci95": [
+     1.0,
+     1.0
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 5
+   },
+   "ego_yawrate": {
+    "metric": "R2",
+    "point": 0.9845,
+    "ci95": [
+     0.9785,
+     0.9892
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 5
+   },
+   "ego_accel": {
+    "metric": "R2",
+    "point": 1.0,
+    "ci95": [
+     1.0,
+     1.0
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 5
+   },
+   "left_occupied": {
+    "metric": "AUC",
+    "point": 0.5009,
+    "ci95": [
+     0.4379,
+     0.5649
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 3
+   },
+   "right_occupied": {
+    "metric": "AUC",
+    "point": 0.5307,
+    "ci95": [
+     0.4534,
+     0.6046
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 0
+   },
+   "vru_ahead": {
+    "metric": "AUC",
+    "point": 0.5612,
+    "ci95": [
+     0.4916,
+     0.6314
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 0
+   }
+  },
+  "C-PIXEL": {
+   "lead_gap_m": {
+    "metric": "R2",
+    "point": 0.002,
+    "ci95": [
+     -0.0174,
+     0.0156
+    ],
+    "n": 5394,
+    "lambda_at_grid_edge": 4
+   },
+   "nearest_any_m": {
+    "metric": "R2",
+    "point": 0.0227,
+    "ci95": [
+     -0.0396,
+     0.0742
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 1
+   },
+   "n_agents_log": {
+    "metric": "R2",
+    "point": 0.0661,
+    "ci95": [
+     -0.0553,
+     0.1742
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 0
+   },
+   "occluded_frac": {
+    "metric": "R2",
+    "point": -0.0082,
+    "ci95": [
+     -0.0454,
+     0.0128
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 1
+   },
+   "ego_speed": {
+    "metric": "R2",
+    "point": -0.051,
+    "ci95": [
+     -0.1232,
+     -0.0109
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 3
+   },
+   "ego_yawrate": {
+    "metric": "R2",
+    "point": -0.0546,
+    "ci95": [
+     -0.1391,
+     -0.005
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 0
+   },
+   "ego_accel": {
+    "metric": "R2",
+    "point": -0.0141,
+    "ci95": [
+     -0.0376,
+     0.0015
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 1
+   },
+   "left_occupied": {
+    "metric": "AUC",
+    "point": 0.4672,
+    "ci95": [
+     0.3957,
+     0.5404
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 1
+   },
+   "right_occupied": {
+    "metric": "AUC",
+    "point": 0.4703,
+    "ci95": [
+     0.3989,
+     0.5457
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 1
+   },
+   "vru_ahead": {
+    "metric": "AUC",
+    "point": 0.5967,
+    "ci95": [
+     0.5155,
+     0.6791
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 0
+   }
+  }
+ },
+ "reference": {
+  "dino_pooled": {
+   "lead_gap_m": {
+    "metric": "R2",
+    "point": 0.351,
+    "ci95": [
+     0.2863,
+     0.4222
+    ],
+    "n": 5394,
+    "lambda_at_grid_edge": 0
+   },
+   "nearest_any_m": {
+    "metric": "R2",
+    "point": 0.3508,
+    "ci95": [
+     0.2508,
+     0.4255
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 0
+   },
+   "n_agents_log": {
+    "metric": "R2",
+    "point": 0.5743,
+    "ci95": [
+     0.3983,
+     0.688
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 0
+   },
+   "occluded_frac": {
+    "metric": "R2",
+    "point": -0.0022,
+    "ci95": [
+     -0.1774,
+     0.1337
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 0
+   },
+   "ego_speed": {
+    "metric": "R2",
+    "point": 0.684,
+    "ci95": [
+     0.5906,
+     0.7482
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 1
+   },
+   "ego_yawrate": {
+    "metric": "R2",
+    "point": -0.1829,
+    "ci95": [
+     -0.4527,
+     0.0091
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 2
+   },
+   "ego_accel": {
+    "metric": "R2",
+    "point": -0.042,
+    "ci95": [
+     -0.0799,
+     -0.0146
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 2
+   },
+   "left_occupied": {
+    "metric": "AUC",
+    "point": 0.8146,
+    "ci95": [
+     0.7724,
+     0.8527
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 0
+   },
+   "right_occupied": {
+    "metric": "AUC",
+    "point": 0.8361,
+    "ci95": [
+     0.7889,
+     0.8764
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 0
+   },
+   "vru_ahead": {
+    "metric": "AUC",
+    "point": 0.703,
+    "ci95": [
+     0.6119,
+     0.7846
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 0
+   }
+  }
+ },
+ "arm": {
+  "champ30k": {
+   "spectrum": {
+    "participation_ratio": 6.335091864547648,
+    "effective_rank": 21.34725808291237,
+    "top_k_share": 0.8705170880296209,
+    "rank_ceiling": 2048,
+    "verdict": "FAIL"
+   },
+   "targets": {
+    "lead_gap_m": {
+     "metric": "R2",
+     "point": 0.1273,
+     "ci95": [
+      0.0866,
+      0.1683
+     ],
+     "n": 5394,
+     "lambda_at_grid_edge": 0
+    },
+    "nearest_any_m": {
+     "metric": "R2",
+     "point": 0.0144,
+     "ci95": [
+      -0.054,
+      0.0658
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 0
+    },
+    "n_agents_log": {
+     "metric": "R2",
+     "point": 0.1353,
+     "ci95": [
+      -0.0292,
+      0.2582
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 1
+    },
+    "occluded_frac": {
+     "metric": "R2",
+     "point": -0.0585,
+     "ci95": [
+      -0.1361,
+      0.001
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 0
+    },
+    "ego_speed": {
+     "metric": "R2",
+     "point": 0.1823,
+     "ci95": [
+      0.0847,
+      0.2686
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 3
+    },
+    "ego_yawrate": {
+     "metric": "R2",
+     "point": -0.4925,
+     "ci95": [
+      -0.924,
+      -0.2306
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 2
+    },
+    "ego_accel": {
+     "metric": "R2",
+     "point": -0.0214,
+     "ci95": [
+      -0.0499,
+      0.0011
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 0
+    },
+    "left_occupied": {
+     "metric": "AUC",
+     "point": 0.524,
+     "ci95": [
+      0.464,
+      0.583
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 2
+    },
+    "right_occupied": {
+     "metric": "AUC",
+     "point": 0.6144,
+     "ci95": [
+      0.5423,
+      0.6838
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 0
+    },
+    "vru_ahead": {
+     "metric": "AUC",
+     "point": 0.4544,
+     "ci95": [
+      0.3974,
+      0.5095
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 3
+    }
+   }
+  }
+ },
+ "verdict": "SEPARATED ABOVE ZERO AND ABOVE THE PIXEL FLOOR \u2014 the first v6/v7 checkpoint to acquire environment information",
+ "_LEAK_AUDIT": {
+  "finding": "ALL 130 probe episodes are members of the 2,400-episode training cache physicalai-train-e438721ae894-w120-256x640cyl. Overlap = 130/130 = 100%.",
+  "measured_by": "set intersection of e_trunk2_feat/keys.json clip_ids vs ls of the Thor training cache, 2026-08-23",
+  "consequence_absolute": "These are IN-SAMPLE (training-episode) decodability numbers. The episode-disjoint 5-fold holds episodes out of the RIDGE FIT only; every episode was seen by the TRUNK during training. The absolute R2 is memorisation-permissive and MUST NOT be quoted as held-out decodability.",
+  "consequence_comparative": "The cross-rung COMPARISON remains valid: the banked v6F rungs (2000/16000/18000/20000) and the DINOv3 reference were scored on these identical episodes, folds and probe. champ30k separating where every v6F rung did not is a real difference under identical conditions.",
+  "clean_test": "Re-run this battery on episodes NOT in the training set (e.g. the physicalai-val-0c5f7dac3b11 corpus). Requires building the agent/obstacle join + targets jsonl for those episodes first \u2014 the existing e_trunk2_targets.jsonl covers only the lead130 set.",
+  "_evidence_class": "MEASURED (ours)"
+ },
+ "_corpus_note": "The probe corpus slotprobe-lead130 carries NO registered parity key (the trainer warned NON-PARITY at cache build). All rungs share it, so cross-rung comparison holds; these are not parity-corpus numbers.",
+ "_reference_discrepancy": "This run reads dino_pooled lead_gap_m +0.3510 [0.2863,0.4222]; E_TRUNK_3_LADDER.md:20 banked +0.3792 for the same reference. Same order, same conclusion (far above the pixel floor 0.0020), but NOT byte-identical - flagged, not hidden."
+}

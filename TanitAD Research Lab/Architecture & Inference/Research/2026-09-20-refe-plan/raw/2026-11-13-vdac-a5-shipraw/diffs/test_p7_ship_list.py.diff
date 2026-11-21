@@ -1,0 +1,85 @@
+--- E:/Projects/TanitAD-artifacts/scorer_gym_20261107/vdac_a5_shipraw/pristine/test_p7_ship_list.py	2026-11-13 03:18:58.000000000 +0100
++++ "E:/Projects/TanitAD-artifacts/scorer_gym_20261107/vdac_a5_shipraw/files/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_p7_ship_list.py"	2026-11-13 03:25:50.000000000 +0100
+@@ -7,6 +7,11 @@
+   2. a STALE list (a suite script changed since the list was derived) REFUSES; a CRLF-only difference is accepted; a missing shipped root / SHIP_MANIFEST.json REFUSES;
+   3. files made AFTER the derive (the list inside the package, its trace sidecar, SHIP_MANIFEST.json regenerated at ship time) are presence-only: check is a fixed point;
+   4. the INCIDENT: on the real package (the tree this file sits in), the four files P6 lost are in the derived list, and removing any one of them from a copy of the package makes `check` REFUSE.
++  5. A5 (2026-11-13; HC-s0's pod G-SUITE failed on test_aux_drivable_head.py A1 because raw/2026-10-11-aux-drivable/head_proto_selftest.out was never shipped): an
++     `os.path.join(PKG, "raw", ...)` read and a `Path(PKG, "eval", ...)` read are found statically; a mutant without the Call branch does NOT find the join read; a derive on a
++     PARTIAL tree (the raw/ file absent) REFUSES and writes no list, `--allow-unresolved` lets it through and the list discloses it, and a mutant without the refusal passes
++     silently; an unresolved name under a shipped root (a temp-tree fixture) is reported, not refused; on the real package the three raw files A5 lost are in the
++     refe_vdac_p6 list.
+ """
+ from __future__ import annotations
+ 
+@@ -36,6 +41,21 @@
+     return r.returncode, r.stdout + r.stderr
+ 
+ 
++def run_tool(tool: Path, *a):
++    r = subprocess.run([sys.executable, str(tool), *map(str, a)], capture_output=True, text=True, encoding="utf-8", errors="replace")
++    return r.returncode, r.stdout + r.stderr
++
++
++def mutant(tmp: Path, name: str, old: str, new: str) -> Path:
++    """A copy of the tool with ONE line changed (the old text must occur exactly once)."""
++    src = TOOL.read_text(encoding="utf-8")
++    assert src.count(old) == 1, (name, src.count(old))
++    p = tmp / f"mut_{name}" / "p7_ship_list.py"
++    p.parent.mkdir(parents=True, exist_ok=True)
++    p.write_text(src.replace(old, new), encoding="utf-8")
++    return p
++
++
+ def build_pkg(root: Path):
+     (root / "refe").mkdir(parents=True)
+     for d in ("code", "splits", "eval", "raw/x"):
+@@ -114,6 +134,36 @@
+         rc, out = run("check", "--pkg", pk2, "--list", l2)
+         ok(rc == 1 and "SHIP_MANIFEST.json" in out, "control: SHIP_MANIFEST.json is still REQUIRED (presence)")
+ 
++        # ---- A5 (2026-11-13): os.path.join / Path(...) reads, and a derive on a PARTIAL tree
++        pk3 = tmp / "pkg3"; build_pkg(pk3)
++        (pk3 / "raw" / "y").mkdir(parents=True)
++        (pk3 / "raw" / "y" / "joined.out").write_text("2,440,450\n"); (pk3 / "eval" / "ctor.json").write_text("{}\n")
++        (pk3 / "refe" / "test_a.py").write_text((pk3 / "refe" / "test_a.py").read_text().replace('print("ZZA_PASS 1")',
++            'import os\nopen(os.path.join(str(PKG), "raw", "y", "joined.out")).read()\nPath(PKG, "eval", "ctor.json").read_text()\n'
++            'FIXTURE = PKG / "refe" / "made_in_tmp.py"\nprint("ZZA_PASS 1")'))
++        l3 = tmp / "l3j.json"
++        rc, out = run("derive", "--pkg", pk3, "--out", l3)
++        d3 = json.loads(l3.read_text()) if rc == 0 else {"files": {}}
++        ok(rc == 0 and "raw/y/joined.out" in d3["files"] and "static" in d3["files"]["raw/y/joined.out"]["via"],
++           f"static derive finds an os.path.join(PKG, 'raw', 'y', 'joined.out') read (A5: head_proto_selftest.out) ({out.strip()[:120]})")
++        ok("eval/ctor.json" in d3["files"], "static derive finds a Path(PKG, 'eval', 'ctor.json') read")
++        ok("refe/made_in_tmp.py" in d3.get("unresolved_in_roots", []) and not d3.get("unresolved_allowed"),
++           "an unresolved name under a shipped root (a temp-tree fixture) is reported, not refused")
++        mt = mutant(tmp, "nocall", "        elif isinstance(n, ast.Call):\n", "        elif False:\n")
++        rc, out = run_tool(mt, "derive", "--pkg", pk3, "--out", tmp / "l3m.json")
++        dm = json.loads((tmp / "l3m.json").read_text()) if rc == 0 else {"files": {"raw/y/joined.out": 1}}
++        ok(rc == 0 and "raw/y/joined.out" not in dm["files"], f"MUTANT (no Call branch): the join read is NOT found, the pre-fix behaviour, so the check above is not vacuous (rc {rc})")
++        cp = tmp / "cp3"; shutil.rmtree(cp, ignore_errors=True); shutil.copytree(pk3, cp); (cp / "raw" / "y" / "joined.out").unlink()
++        rc, out = run("derive", "--pkg", cp, "--out", tmp / "l3p.json")
++        ok(rc == 1 and "ZZP7SHIP_BAD unresolved=1" in out and "raw/y/joined.out" in out and not (tmp / "l3p.json").exists(),
++           f"derive on a PARTIAL tree REFUSES the unresolved raw/ read and writes no list ({out.strip()[:140]})")
++        rc, out = run("derive", "--pkg", cp, "--out", tmp / "l3a.json", "--allow-unresolved", "raw/y/joined.out")
++        da = json.loads((tmp / "l3a.json").read_text()) if rc == 0 else {}
++        ok(rc == 0 and "raw/y/joined.out" in da.get("unresolved_allowed", {}), f"--allow-unresolved lets it through and the list DISCLOSES it ({out.strip()[:100]})")
++        mt2 = mutant(tmp, "norefuse", "    if refused:\n", "    if False:\n")
++        rc, out = run_tool(mt2, "derive", "--pkg", cp, "--out", tmp / "l3n.json")
++        ok(rc == 0, f"MUTANT (refusal removed): the partial-tree derive passes silently, so the refusal is the operative line (rc {rc})")
++
+         # ---- the INCIDENT, on the real package
+         real = HERE.parent
+         if (real / "eval" / "rls1b_arms.json").is_file():
+@@ -123,6 +173,11 @@
+             four = ["eval/rls1b_arms.json", "eval/rls1d_arms.json", "eval/rls1e_arms.json", "raw/2026-10-18-r0e-pick/PREREG_R0E_PICK.md"]
+             ok(rc == 0 and all(f in rd["files"] for f in four), f"the four files P6 lost are in the derived list ({[f for f in four if f not in rd['files']]})")
+             ok(rd["profile"] == "refe_p7" and "test_p7_integration.py" in " ".join(rd["suite"]), "the derived suite is refe_p7's")
++            rv_path = tmp / "real_vdac.json"
++            rc, out = run("derive", "--pkg", real, "--out", rv_path, "--profile", "refe_vdac_p6")
++            rv = json.loads(rv_path.read_text()) if rc == 0 else {"files": {}}
++            a5 = ["raw/2026-10-11-aux-drivable/head_proto_selftest.out", "raw/2026-10-13-aux-head/PREREG_BLANKS_PROPOSED.md", "raw/2026-10-18-r0e-pick/PREREG_R0E_PICK.md"]
++            ok(rc == 0 and all(f in rv["files"] for f in a5), f"A5: the three raw files the A5 ship lost are in the refe_vdac_p6 list (rc {rc}; absent {[f for f in a5 if f not in rv['files']]}; {out.strip()[:100]})")
+         else:
+             ok(False, "real package not found next to refe/ (run this test inside the full package tree)")
+     finally:

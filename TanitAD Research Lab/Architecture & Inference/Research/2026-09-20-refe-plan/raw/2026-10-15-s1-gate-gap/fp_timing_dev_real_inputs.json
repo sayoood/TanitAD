@@ -1,0 +1,174 @@
+{
+ "env": {
+  "node": "FREEDOM2035",
+  "python": "3.13.5",
+  "os": "Windows-11-10.0.26200-SP0",
+  "cpu_count": 24,
+  "high_priority": true,
+  "cpu_load_pct_at_start": 96.0
+ },
+ "old": "E:/Projects/TanitAD/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-15-s1-gate-gap/gate_token_OLD_snapshot.py",
+ "new": "E:/Projects/TanitAD/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-15-s1-gate-gap/gate_token_NEW_snapshot.py",
+ "repeat": 2,
+ "dirs": [
+  {
+   "path_label": "D:/Projects/TanitAD-artifacts/aux_drivable/label_store",
+   "old": {
+    "min_s": 0.128,
+    "median_s": 0.155,
+    "all_s": [
+     0.128,
+     0.183
+    ]
+   },
+   "new": {
+    "1": {
+     "min_s": 0.103,
+     "median_s": 0.105,
+     "all_s": [
+      0.107,
+      0.103
+     ],
+     "identical": true,
+     "speedup_vs_old_min": 1.24
+    },
+    "16": {
+     "min_s": 0.079,
+     "median_s": 0.091,
+     "all_s": [
+      0.104,
+      0.079
+     ],
+     "identical": true,
+     "speedup_vs_old_min": 1.62
+    }
+   },
+   "n_files": 1196,
+   "bytes": 351647342
+  }
+ ],
+ "files": [
+  {
+   "path": "D:/Projects/TanitAD-artifacts/refcv3_final/ckpt_40284_FINAL.pt",
+   "bytes": 1284991701,
+   "variants": {
+    "old gate_token.sha256_file (read 4 MiB)": {
+     "min_s": 3.847,
+     "median_s": 17.521,
+     "all_s": [
+      31.195,
+      3.847
+     ],
+     "digest_equal_to_first": true,
+     "MB_per_s_min": 334
+    },
+    "new gate_token.sha256_file (readinto 4 MiB)": {
+     "min_s": 2.296,
+     "median_s": 2.658,
+     "all_s": [
+      2.296,
+      3.021
+     ],
+     "digest_equal_to_first": true,
+     "MB_per_s_min": 560
+    },
+    "readinto 1 MiB": {
+     "min_s": 2.042,
+     "median_s": 2.074,
+     "all_s": [
+      2.042,
+      2.105
+     ],
+     "digest_equal_to_first": true,
+     "MB_per_s_min": 629
+    },
+    "readinto 16 MiB": {
+     "min_s": 2.117,
+     "median_s": 2.551,
+     "all_s": [
+      2.985,
+      2.117
+     ],
+     "digest_equal_to_first": true,
+     "MB_per_s_min": 607
+    },
+    "hashlib.file_digest (3.11+)": {
+     "min_s": 1.967,
+     "median_s": 2.343,
+     "all_s": [
+      2.718,
+      1.967
+     ],
+     "digest_equal_to_first": true,
+     "MB_per_s_min": 653
+    }
+   }
+  }
+ ],
+ "data_manifest": {
+  "old": {
+   "min_s": 102.444,
+   "median_s": 103.861,
+   "all_s": [
+    102.444,
+    105.278
+   ]
+  },
+  "new": {
+   "1": {
+    "min_s": 71.752,
+    "median_s": 75.142,
+    "all_s": [
+     78.533,
+     71.752
+    ],
+    "identical": true,
+    "speedup_vs_old_min": 1.43
+   },
+   "16": {
+    "min_s": 10.925,
+    "median_s": 11.078,
+    "all_s": [
+     11.231,
+     10.925
+    ],
+    "identical": true,
+    "speedup_vs_old_min": 9.38
+   }
+  }
+ },
+ "simulated": {
+  "path_label": "synthetic 20000 files, +0.5 ms per stat (SIMULATED)",
+  "old": {
+   "min_s": 41.022,
+   "median_s": 41.022,
+   "all_s": [
+    41.022
+   ]
+  },
+  "new": {
+   "1": {
+    "min_s": 39.083,
+    "median_s": 39.083,
+    "all_s": [
+     39.083
+    ],
+    "identical": true,
+    "speedup_vs_old_min": 1.05
+   },
+   "16": {
+    "min_s": 1.775,
+    "median_s": 1.775,
+    "all_s": [
+     1.775
+    ],
+    "identical": true,
+    "speedup_vs_old_min": 23.11
+   }
+  },
+  "n_files": 20000,
+  "bytes": 959289,
+  "simulated_latency_ms": 0.5,
+  "evidence_class": "SIMULATED (a sleep inside os.stat on this host); not a measurement of any network filesystem"
+ }
+}

@@ -1,0 +1,54 @@
+[
+ {
+  "id": "R2-D1",
+  "text": "AMENDMENT2 CPU roll script = code/a3_keq_roll_amend2.py, a BYTE-PRESERVING copy (CRLF kept) of a3_keq_roll.py with exactly three changes (diff in the file pair): output dir keq_amend2_{device}_s{seed}_on (the banked CUDA rolls keq_s{seed}_on stay untouched); a guard refusing anything but --device cpu, flags ON, --kit eval139, no --dry-build; and an unreachable guard before the old in-script writer of result/R9PF_KEQ.json (the eval139 path already exits before it). The model, tree (F:/refcv9_r9pf_scratch/launch_tree_fix, pins re-hashed), head (R9PF_fs0, registered sha), windows rule (>= 500, first clips in sha12 order), pose clock and argv are unchanged. ROLL_RECORD.json's 'tool' field still reads 'a3_keq_roll.py' (a hard-coded string); its script_sha256 is the copy's."
+ },
+ {
+  "id": "R2-D2",
+  "text": "Only the ON (in-forward) roll was re-run on CPU, at inference seeds 0 and 1: AMENDMENT2 change 1 names the in-forward roll; K-OFF PASSED in run 1 (CUDA, flags ON vs OFF, 515 windows, both seeds) and is not re-read."
+ },
+ {
+  "id": "R2-D3",
+  "text": "The K-EQ comparison (code/a3_keq_amend2_compare.py) runs a3_keq_compare.k_eq copied verbatim (one beside field added: n_windows_bit_equal) on the CPU roll. 'Same tree / flags / windows' is ASSERTED against the banked CUDA ON roll record (tree, refc_v3 sha, attached head except its device, subset, seed, pose clock, (e_i, t) sequence). Known-value control: the same copy run on the banked CUDA roll must reproduce result/R9PF_KEQ.json's per-seed max |d|, ratio, windows over 2 ulp, decision agreement and n."
+ },
+ {
+  "id": "R2-D4",
+  "text": "The seed-0 CPU roll started alone (16:23:29); its first forward took 77.7 s and no 34-window clip chunk had landed after 34 min (the CUDA roll lands one every ~18 s), i.e. >= ~60 s / window -> ~11 h per seed on 4 threads (MEASURED rate bound, ESTIMATED total). To halve the wall clock the seed-1 roll was started IN PARALLEL at ~16:59 after checking headroom (8.8 GB commit free of 72 GB, 3.7 GB RAM free; one roll holds ~3.7 GB private). Each roll keeps CUDA_VISIBLE_DEVICES=-1, OMP_NUM_THREADS=4 / MKL_NUM_THREADS=4 (the brief's bound; not raised). Separate processes share no state, so concurrency cannot change a CPU result. UPDATE ~21:05: the box's commit headroom fell to 1.23 GB (C: 0.2 GB free, so the system-managed C:\\pagefile.sys could not grow; the two rolls' private memory had grown to 4.3 / 5.2 GB). The seed-1 roll (this agent's own PIDs 68932 / 69424) was killed at 3 / 15 clip chunks to protect other agents' allocations (headroom back to 9.4 GB); its partial dump in F:/refcv9_r9pf_scratch/keq_amend2_cpu_s1_on/ has NO roll record and is never read. Seed 1 is re-run ALONE after seed 0 -- and only if seed 0 PASSES: K-EQ is a conjunction over both seeds, so a seed-0 FAIL decides it (the compare records seed 1 as 'NOT RUN -- the conjunction already failed')."
+ },
+ {
+  "id": "R2-D5",
+  "text": "PREREG_R9PF_LH s3 names the 97.5 % interval for 'PA-1a and PA-1b separations'; the brief says 'the separations at 97.5 %'. Stricter reading taken: EVERY required separation (PA-1a MD vs H2CN_DEPLOY8, PA-1b FD vs FACTORED_DEPLOY8, and the four PA-2 ADE cells -- D11's conjunction) is read on the 97.5 % interval; every 'not separated above / worse' clause (PA-1a FD, PA-1b MD, PA-G family rows and exceedance) on the 95 % interval. Both intervals come from the SAME bootstrap draw (taniteval.ci, B 2000, seed 0, alpha 0.025 vs 0.05). PA-2 at 95 % is reported beside."
+ },
+ {
+  "id": "R2-D6",
+  "text": "PA-G is read as binding at R9 profile fit seeds 0, 1 AND 2 for the LH arms (stricter than the parent run's D12, which bound PA-G on fs0 only and reported fs1 / fs2 beside); the fs0-only reading is reported beside ('PA-G_fs0_only_beside')."
+ },
+ {
+  "id": "R2-D7",
+  "text": "K-DER read conservatively: the control FAILS if R9DER-ARG passes PA-1a (both inference seeds, as the bar defines) at ANY fit seed, under EITHER the registered 97.5 % separation or a 95 % separation reading."
+ },
+ {
+  "id": "R2-D8",
+  "text": "R9LH-ARG / R9DER-ARG are composed through heads/R9PF-TL_fs{k}.pt -- the SAME fitted head as R9PF_fs{k} (D4; asserted: state dicts bit-equal, K-SAMEPROFILES) with decision 'trunk_lon' -- so the decision runs through refcv9_progress.trunk_lon_regime itself: LH's (DER's) six LON6 logits are written into their v7 columns (refcv8_conditioning.LON6_V7_IDS), every other column 0 (dropped by index_select). Nothing is re-typed; K-MAP (the trunk's own LON6 logits through the same function == R9PF-TL's banked plans and decisions bit for bit) and K-ARGMAP (the float32 in-path argmax == LONHEAD's float64 argmax on 4,754 / 4,754 windows) check it."
+ },
+ {
+  "id": "R2-D9",
+  "text": "R9LH-SOFT's regime posterior = the float64 softmax of LH's six LON6 logits summed per regime by refcv9_progress.LON6_TO_REGIME, cast to float32 before weighting the registered profiles: dS = sum_r p(r) dS[r]; s_t = monotone(s_P + dS); traj = retime(battery plan8, s_t) -- R9-PF's exploratory SOFT decode (x_attrib_r9pf.py) with LH's posterior in place of the R9 head's own. Its TACTICAL decision row is the posterior's argmax. K-SOFT1: a one-hot posterior reproduces R9LH-ARG bit for bit."
+ },
+ {
+  "id": "R2-D10",
+  "text": "Word mapping onto s5: VOID if any control fails (incl. K-DER and the precondition); PASS if R9LH-ARG or R9LH-SOFT passes all five bars; else PARTIAL if a primary arm has PA-1a xor PA-1b; else FAIL ('Both FAIL'). An arm with PA-1a AND PA-1b but a failed PA-2 / PA-G / PA-R is FAIL (s5 names no separate branch) -- its failing bars are named."
+ },
+ {
+  "id": "R2-D11",
+  "text": "Process: lh_r9pf_run2.py was run ONCE before K-EQ(AMEND2) was known, as a PLUMBING run whose output went to scratch only (F:/refcv9_r9pf_scratch/R9PF_LH_RUN2_PROVISIONAL_NO_KEQ.json; word VOID on the precondition by construction). Only its control rows were read (all PASS except the precondition); no arm, bar, interval or control was changed afterwards."
+ },
+ {
+  "id": "R2-D12",
+  "text": "Beside references are READ from their own records, never re-scored: R9PF / R9PF-TL / FACTORED / RETIME / H2CN cells and rates from result/R9PF_PA_BARS.json (497a551d...), ORACLE from result/R9PF_X_ATTRIB.json (EXPLORATORY, inadmissible), LHS_FACT8 from refcv9_lonhead/result/LONHEAD_VERDICT.json. K-SCORE asserts that this script's scoring reproduces the registered bars' R9PF-TL cells exactly on the K-MAP plans."
+ },
+ {
+  "id": "R2-D13",
+  "text": "STOPPED BY THE MASTER MIND (~23:45): the seed-0 CPU roll was killed at 7 / 15 clip chunks (241 windows; no record -- the roll writes it only at the end), seed 1 had been killed at 3 / 15 (103 windows) by this agent. On the MM's order no further compute ran: K-EQ under AMENDMENT2 is NOT COMPLETED, result/R9PF_KEQ_AMEND2.json and result/R9PF_PA_VERDICT_AMEND2.* were never written, and R9PF_LH is VOID (precondition not completed). The MM ordered result/R9PF_LH_VERDICT.{json,md} UPDATED (this overrides the earlier brief's 'must stay'): the run-1 record is embedded verbatim with its sha256 (json ebc82e31..., md 41f247e7...), and the provisional run-2 bars are copied in as result/R9PF_LH_RUN2_PROVISIONAL_NO_KEQ.json and reported BESIDE, never as a verdict."
+ }
+]

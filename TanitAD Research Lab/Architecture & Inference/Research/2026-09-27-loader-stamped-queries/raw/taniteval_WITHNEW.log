@@ -1,0 +1,1003 @@
+...................F...............FFFFFEEEEE........................... [ 26%]
+........................................................................ [ 53%]
+.....s...............EEEEEEEEEEEFE..................FFFFFFFFFFFFFF..F... [ 80%]
+...........................FF....F...F...........s....                   [100%]
+=================================== ERRORS ====================================
+___ ERROR at setup of test_offline_single_stage_run_completes_and_validates ___
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x000001262283C050>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4119'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def offline_single(tmp_path_factory):
+        import shutil
+        from taniteval.bench.navsim import export as EX
+        need = [FIX / f"{a}{s}" for a in SMOKE218_HEADLINES for s in (".devkit.csv", "_hooks.json", "_final_scores_frame.csv")]
+        need += [FIX / "navsim_agent_inputs.json", SMOKE218]
+        miss = [str(p) for p in need if not p.exists()]
+>       assert not miss, f"MISSING banked smoke218 fixtures: {miss}"
+E       AssertionError: MISSING banked smoke218 fixtures: ['C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\CV.devkit.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\CV_hooks.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\CV_final_scores_frame.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\STOP.devkit.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\STOP_hooks.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\STOP_final_scores_frame.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\HUMAN.devkit.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\HUMAN_hooks.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\HUMAN_final_scores_frame.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\navsim_agent_inputs.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke_tokens_wholelog218.json']
+E       assert not ['C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\...tAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\STOP_final_scores_frame.csv', ...]
+
+tests\test_bench_navsim_navtest_single_stage.py:374: AssertionError
+_ ERROR at setup of test_offline_headlines_are_the_banked_average_all_frames_literals _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x000001262283C050>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4119'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def offline_single(tmp_path_factory):
+        import shutil
+        from taniteval.bench.navsim import export as EX
+        need = [FIX / f"{a}{s}" for a in SMOKE218_HEADLINES for s in (".devkit.csv", "_hooks.json", "_final_scores_frame.csv")]
+        need += [FIX / "navsim_agent_inputs.json", SMOKE218]
+        miss = [str(p) for p in need if not p.exists()]
+>       assert not miss, f"MISSING banked smoke218 fixtures: {miss}"
+E       AssertionError: MISSING banked smoke218 fixtures: ['C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\CV.devkit.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\CV_hooks.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\CV_final_scores_frame.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\STOP.devkit.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\STOP_hooks.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\STOP_final_scores_frame.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\HUMAN.devkit.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\HUMAN_hooks.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\HUMAN_final_scores_frame.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\navsim_agent_inputs.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke_tokens_wholelog218.json']
+E       assert not ['C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\...tAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\STOP_final_scores_frame.csv', ...]
+
+tests\test_bench_navsim_navtest_single_stage.py:374: AssertionError
+___ ERROR at setup of test_offline_controls_formula_average_and_counts_pass ___
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x000001262283C050>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4119'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def offline_single(tmp_path_factory):
+        import shutil
+        from taniteval.bench.navsim import export as EX
+        need = [FIX / f"{a}{s}" for a in SMOKE218_HEADLINES for s in (".devkit.csv", "_hooks.json", "_final_scores_frame.csv")]
+        need += [FIX / "navsim_agent_inputs.json", SMOKE218]
+        miss = [str(p) for p in need if not p.exists()]
+>       assert not miss, f"MISSING banked smoke218 fixtures: {miss}"
+E       AssertionError: MISSING banked smoke218 fixtures: ['C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\CV.devkit.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\CV_hooks.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\CV_final_scores_frame.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\STOP.devkit.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\STOP_hooks.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\STOP_final_scores_frame.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\HUMAN.devkit.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\HUMAN_hooks.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\HUMAN_final_scores_frame.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\navsim_agent_inputs.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke_tokens_wholelog218.json']
+E       assert not ['C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\...tAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\STOP_final_scores_frame.csv', ...]
+
+tests\test_bench_navsim_navtest_single_stage.py:374: AssertionError
+___ ERROR at setup of test_offline_single_block_pairs_and_refused_interval ____
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x000001262283C050>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4119'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def offline_single(tmp_path_factory):
+        import shutil
+        from taniteval.bench.navsim import export as EX
+        need = [FIX / f"{a}{s}" for a in SMOKE218_HEADLINES for s in (".devkit.csv", "_hooks.json", "_final_scores_frame.csv")]
+        need += [FIX / "navsim_agent_inputs.json", SMOKE218]
+        miss = [str(p) for p in need if not p.exists()]
+>       assert not miss, f"MISSING banked smoke218 fixtures: {miss}"
+E       AssertionError: MISSING banked smoke218 fixtures: ['C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\CV.devkit.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\CV_hooks.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\CV_final_scores_frame.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\STOP.devkit.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\STOP_hooks.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\STOP_final_scores_frame.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\HUMAN.devkit.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\HUMAN_hooks.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\HUMAN_final_scores_frame.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\navsim_agent_inputs.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke_tokens_wholelog218.json']
+E       assert not ['C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\...tAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\STOP_final_scores_frame.csv', ...]
+
+tests\test_bench_navsim_navtest_single_stage.py:374: AssertionError
+_ ERROR at setup of test_offline_four_families_reported_or_refused_per_family _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x000001262283C050>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4119'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def offline_single(tmp_path_factory):
+        import shutil
+        from taniteval.bench.navsim import export as EX
+        need = [FIX / f"{a}{s}" for a in SMOKE218_HEADLINES for s in (".devkit.csv", "_hooks.json", "_final_scores_frame.csv")]
+        need += [FIX / "navsim_agent_inputs.json", SMOKE218]
+        miss = [str(p) for p in need if not p.exists()]
+>       assert not miss, f"MISSING banked smoke218 fixtures: {miss}"
+E       AssertionError: MISSING banked smoke218 fixtures: ['C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\CV.devkit.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\CV_hooks.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\CV_final_scores_frame.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\STOP.devkit.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\STOP_hooks.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\STOP_final_scores_frame.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\HUMAN.devkit.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\HUMAN_hooks.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\HUMAN_final_scores_frame.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\navsim_agent_inputs.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke_tokens_wholelog218.json']
+E       assert not ['C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\...tAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke218_fixtures\\STOP_final_scores_frame.csv', ...]
+
+tests\test_bench_navsim_navtest_single_stage.py:374: AssertionError
+_________ ERROR at setup of test_offline_run_completes_and_validates __________
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x000001262283C050>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4119'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def offline_run(tmp_path_factory):
+        miss = _missing()
+>       assert not miss, f"MISSING banked E1/E2 fixtures (the historical record moved?): {miss}"
+E       AssertionError: MISSING banked E1/E2 fixtures (the historical record moved?): ['C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\devkit_2026.09.19.12.24.20.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\A1_hooks.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\A1_final_scores_frame.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero_wrapper\\STOP_zero_hooks.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero_wrapper\\STOP_zero_final_scores_frame.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\navsim_agent_inputs.json']
+E       assert not ['C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\devki...heel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero_wrapper\\STOP_zero_final_scores_frame.csv', ...]
+
+tests\test_bench_suite_navsim_offline.py:41: AssertionError
+______________ ERROR at setup of test_floor_arms_route_as_banked ______________
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x000001262283C050>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4119'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def offline_run(tmp_path_factory):
+        miss = _missing()
+>       assert not miss, f"MISSING banked E1/E2 fixtures (the historical record moved?): {miss}"
+E       AssertionError: MISSING banked E1/E2 fixtures (the historical record moved?): ['C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\devkit_2026.09.19.12.24.20.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\A1_hooks.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\A1_final_scores_frame.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero_wrapper\\STOP_zero_hooks.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero_wrapper\\STOP_zero_final_scores_frame.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\navsim_agent_inputs.json']
+E       assert not ['C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\devki...heel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero_wrapper\\STOP_zero_final_scores_frame.csv', ...]
+
+tests\test_bench_suite_navsim_offline.py:41: AssertionError
+__________ ERROR at setup of test_headlines_are_the_banked_literals ___________
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x000001262283C050>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4119'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def offline_run(tmp_path_factory):
+        miss = _missing()
+>       assert not miss, f"MISSING banked E1/E2 fixtures (the historical record moved?): {miss}"
+E       AssertionError: MISSING banked E1/E2 fixtures (the historical record moved?): ['C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\devkit_2026.09.19.12.24.20.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\A1_hooks.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\A1_final_scores_frame.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero_wrapper\\STOP_zero_hooks.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero_wrapper\\STOP_zero_final_scores_frame.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\navsim_agent_inputs.json']
+E       assert not ['C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\devki...heel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero_wrapper\\STOP_zero_final_scores_frame.csv', ...]
+
+tests\test_bench_suite_navsim_offline.py:41: AssertionError
+________________ ERROR at setup of test_reference_checks_fire _________________
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x000001262283C050>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4119'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def offline_run(tmp_path_factory):
+        miss = _missing()
+>       assert not miss, f"MISSING banked E1/E2 fixtures (the historical record moved?): {miss}"
+E       AssertionError: MISSING banked E1/E2 fixtures (the historical record moved?): ['C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\devkit_2026.09.19.12.24.20.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\A1_hooks.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\A1_final_scores_frame.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero_wrapper\\STOP_zero_hooks.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero_wrapper\\STOP_zero_final_scores_frame.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\navsim_agent_inputs.json']
+E       assert not ['C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\devki...heel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero_wrapper\\STOP_zero_final_scores_frame.csv', ...]
+
+tests\test_bench_suite_navsim_offline.py:41: AssertionError
+_______________ ERROR at setup of test_e2_statistics_reproduced _______________
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x000001262283C050>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4119'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def offline_run(tmp_path_factory):
+        miss = _missing()
+>       assert not miss, f"MISSING banked E1/E2 fixtures (the historical record moved?): {miss}"
+E       AssertionError: MISSING banked E1/E2 fixtures (the historical record moved?): ['C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\devkit_2026.09.19.12.24.20.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\A1_hooks.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\A1_final_scores_frame.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero_wrapper\\STOP_zero_hooks.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero_wrapper\\STOP_zero_final_scores_frame.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\navsim_agent_inputs.json']
+E       assert not ['C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\devki...heel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero_wrapper\\STOP_zero_final_scores_frame.csv', ...]
+
+tests\test_bench_suite_navsim_offline.py:41: AssertionError
+____________ ERROR at setup of test_controls_c4_c5_pass_on_banked _____________
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x000001262283C050>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4119'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def offline_run(tmp_path_factory):
+        miss = _missing()
+>       assert not miss, f"MISSING banked E1/E2 fixtures (the historical record moved?): {miss}"
+E       AssertionError: MISSING banked E1/E2 fixtures (the historical record moved?): ['C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\devkit_2026.09.19.12.24.20.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\A1_hooks.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\A1_final_scores_frame.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero_wrapper\\STOP_zero_hooks.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero_wrapper\\STOP_zero_final_scores_frame.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\navsim_agent_inputs.json']
+E       assert not ['C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\devki...heel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero_wrapper\\STOP_zero_final_scores_frame.csv', ...]
+
+tests\test_bench_suite_navsim_offline.py:41: AssertionError
+________________ ERROR at setup of test_no_interval_on_warmup _________________
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x000001262283C050>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4119'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def offline_run(tmp_path_factory):
+        miss = _missing()
+>       assert not miss, f"MISSING banked E1/E2 fixtures (the historical record moved?): {miss}"
+E       AssertionError: MISSING banked E1/E2 fixtures (the historical record moved?): ['C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\devkit_2026.09.19.12.24.20.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\A1_hooks.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\A1_final_scores_frame.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero_wrapper\\STOP_zero_hooks.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero_wrapper\\STOP_zero_final_scores_frame.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\navsim_agent_inputs.json']
+E       assert not ['C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\devki...heel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero_wrapper\\STOP_zero_final_scores_frame.csv', ...]
+
+tests\test_bench_suite_navsim_offline.py:41: AssertionError
+__________ ERROR at setup of test_cv_families_reproduce_e1_artifact ___________
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x000001262283C050>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4119'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def offline_run(tmp_path_factory):
+        miss = _missing()
+>       assert not miss, f"MISSING banked E1/E2 fixtures (the historical record moved?): {miss}"
+E       AssertionError: MISSING banked E1/E2 fixtures (the historical record moved?): ['C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\devkit_2026.09.19.12.24.20.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\A1_hooks.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\A1_final_scores_frame.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero_wrapper\\STOP_zero_hooks.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero_wrapper\\STOP_zero_final_scores_frame.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\navsim_agent_inputs.json']
+E       assert not ['C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\devki...heel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero_wrapper\\STOP_zero_final_scores_frame.csv', ...]
+
+tests\test_bench_suite_navsim_offline.py:41: AssertionError
+_______________ ERROR at setup of test_per_log_and_stage_blocks _______________
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x000001262283C050>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4119'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def offline_run(tmp_path_factory):
+        miss = _missing()
+>       assert not miss, f"MISSING banked E1/E2 fixtures (the historical record moved?): {miss}"
+E       AssertionError: MISSING banked E1/E2 fixtures (the historical record moved?): ['C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\devkit_2026.09.19.12.24.20.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\A1_hooks.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\A1_final_scores_frame.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero_wrapper\\STOP_zero_hooks.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero_wrapper\\STOP_zero_final_scores_frame.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\navsim_agent_inputs.json']
+E       assert not ['C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\devki...heel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero_wrapper\\STOP_zero_final_scores_frame.csv', ...]
+
+tests\test_bench_suite_navsim_offline.py:41: AssertionError
+__________ ERROR at setup of test_no_criteria_violations_on_any_arm ___________
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x000001262283C050>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4119'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def offline_run(tmp_path_factory):
+        miss = _missing()
+>       assert not miss, f"MISSING banked E1/E2 fixtures (the historical record moved?): {miss}"
+E       AssertionError: MISSING banked E1/E2 fixtures (the historical record moved?): ['C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\devkit_2026.09.19.12.24.20.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\A1_hooks.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\A1_final_scores_frame.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero_wrapper\\STOP_zero_hooks.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero_wrapper\\STOP_zero_final_scores_frame.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\navsim_agent_inputs.json']
+E       assert not ['C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\devki...heel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero_wrapper\\STOP_zero_final_scores_frame.csv', ...]
+
+tests\test_bench_suite_navsim_offline.py:41: AssertionError
+______ ERROR at setup of test_stop_lateral_terms_are_refused_not_absent _______
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x000001262283C050>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4119'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def offline_run(tmp_path_factory):
+        miss = _missing()
+>       assert not miss, f"MISSING banked E1/E2 fixtures (the historical record moved?): {miss}"
+E       AssertionError: MISSING banked E1/E2 fixtures (the historical record moved?): ['C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\devkit_2026.09.19.12.24.20.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\A1_hooks.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\A1_final_scores_frame.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero_wrapper\\STOP_zero_hooks.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero_wrapper\\STOP_zero_final_scores_frame.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\navsim_agent_inputs.json']
+E       assert not ['C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\devki...heel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero_wrapper\\STOP_zero_final_scores_frame.csv', ...]
+
+tests\test_bench_suite_navsim_offline.py:41: AssertionError
+____________ ERROR at setup of test_gallery_inputs_have_w5s_shape _____________
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x000001262283C050>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4119'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def offline_run(tmp_path_factory):
+        miss = _missing()
+>       assert not miss, f"MISSING banked E1/E2 fixtures (the historical record moved?): {miss}"
+E       AssertionError: MISSING banked E1/E2 fixtures (the historical record moved?): ['C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\devkit_2026.09.19.12.24.20.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\A1_hooks.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\A1_final_scores_frame.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero_wrapper\\STOP_zero_hooks.json', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero_wrapper\\STOP_zero_final_scores_frame.csv', 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\navsim_agent_inputs.json']
+E       assert not ['C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\raw\\A1\\devki...heel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\raw\\score_STOP_zero_wrapper\\STOP_zero_final_scores_frame.csv', ...]
+
+tests\test_bench_suite_navsim_offline.py:41: AssertionError
+================================== FAILURES ===================================
+______ test_the_devkit_yaml_is_read_as_one_stage_with_the_literal_counts ______
+
+    def test_the_devkit_yaml_is_read_as_one_stage_with_the_literal_counts():
+        y = P.read_split_yaml(NAVTEST)
+        assert (len(y["stage_one"]), len(y["stage_two"]), len(y["log_names"]), len(y["mapping"])) == (12146, 0, 136, 0)
+>       t2l = P.token_to_log(P.SPLITS[NAVTEST])
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_bench_navsim_navtest_single_stage.py:69: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+prof = SplitProfile(name='navtest_single_stage', protocol='EPDMS_v2_navtest_single_stage', n_stage1=12146, n_stage2=0, n_logs...ree/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/raw/cluster_maps/navtest.json'))
+
+    def token_to_log(prof: "SplitProfile") -> dict:
+        """``{token: log_name}`` for a single-stage split (W2's cluster map), VERIFIED against the devkit yaml:
+        a map whose token set differs from the split's is REFUSED (a cluster is never guessed)."""
+        if prof.cluster_map is None or not Path(prof.cluster_map).exists():
+>           raise Refusal(f"{prof.name}: no token -> log_name map at {prof.cluster_map}")
+E           taniteval.bench.navsim.profiles.Refusal: navtest_single_stage: no token -> log_name map at C:\lgt\i3tree\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-19-navsim-estimator-and-route-leak\raw\cluster_maps\navtest.json
+
+taniteval\bench\navsim\profiles.py:380: Refusal
+____________ test_export_agent_inputs_is_e2_plus_marked_additions _____________
+
+    def test_export_agent_inputs_is_e2_plus_marked_additions():
+        """The single-stage export lives in MARKED blocks: stripping them (the promotion test's own rule)
+        must reproduce E2's origin BYTE-FOR-BYTE, and the two-stage path is therefore untouched."""
+        from test_bench_suite_promotion import _blob, _strip_w1_additions
+        bench = REPO / "taniteval" / "taniteval" / "bench"
+        prov = json.loads((bench / "navsim/devkit_side/PROVENANCE.json").read_text(encoding="utf-8"))
+        rec = prov["files"]["export_agent_inputs.py"]
+        assert rec.get("w1_additions"), "the addition must be declared in PROVENANCE.json"
+        raw = (bench / "navsim/devkit_side/export_agent_inputs.py").read_bytes()
+        product = raw.decode("utf-8")
+>       origin = (REPO / rec["origin"]).read_bytes().decode("utf-8")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_bench_navsim_navtest_single_stage.py:269: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/lgt/i3tree/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-refcv4b-bridge/code/export_agent_inputs.py')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\code\\export_agent_inputs.py'
+
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+___________ test_MUTATION_an_unmarked_edit_to_the_export_is_caught ____________
+
+    def test_MUTATION_an_unmarked_edit_to_the_export_is_caught():
+        """The pin has teeth: one unmarked character outside the blocks breaks the byte identity."""
+        from test_bench_suite_promotion import _strip_w1_additions
+        bench = REPO / "taniteval" / "taniteval" / "bench"
+        prov = json.loads((bench / "navsim/devkit_side/PROVENANCE.json").read_text(encoding="utf-8"))
+        product = (bench / "navsim/devkit_side/export_agent_inputs.py").read_text(encoding="utf-8")
+>       origin = (REPO / prov["files"]["export_agent_inputs.py"]["origin"]).read_text(encoding="utf-8")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_bench_navsim_navtest_single_stage.py:282: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/lgt/i3tree/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-refcv4b-bridge/code/export_agent_inputs.py')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\code\\export_agent_inputs.py'
+
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+____________ test_offline_dry_run_dispatches_to_the_one_stage_path ____________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4119/test_offline_dry_run_dispatche0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001263CEE64E0>
+
+    def test_offline_dry_run_dispatches_to_the_one_stage_path(tmp_path, monkeypatch):
+        seen = {}
+    
+        def fake_preflight(prof, **kw):
+            seen["prof"], seen["kw"] = prof, kw
+            return {"split": prof.name, "OFFLINE_TEST": "preflight replaced"}
+    
+        monkeypatch.setattr(P, "preflight", fake_preflight)
+        rc = cli.main(["navsim_v2", "--ckpt", "none", "--split", NAVTEST, "--arms", "CV,STOP,HUMAN", "--dry-run",
+                       "--results-root", str(tmp_path), "--no-report"])
+>       assert rc == 0
+E       assert 2 == 0
+
+tests\test_bench_navsim_navtest_single_stage.py:302: AssertionError
+---------------------------- Captured stdout call -----------------------------
+17:08:07 [bench] run 20260927T150807Z-navsim_v2-none-cb9edd -> C:\Users\Admin\AppData\Local\Temp\pytest-of-Admin\pytest-4119\test_offline_dry_run_dispatche0\navsim_v2\navtest_single_stage\20260927T150807Z-navsim_v2-none-cb9edd
+17:08:07 ⛔ REFUSED: navtest_single_stage: no token -> log_name map at C:\lgt\i3tree\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-19-navsim-estimator-and-route-leak\raw\cluster_maps\navtest.json
+17:08:07 [bench] report: SKIPPED
+17:08:07 [bench] REFUSED in 0.4 s -> C:\Users\Admin\AppData\Local\Temp\pytest-of-Admin\pytest-4119\test_offline_dry_run_dispatche0\navsim_v2\navtest_single_stage\20260927T150807Z-navsim_v2-none-cb9edd
+BENCH_RUN_DIR=C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4119/test_offline_dry_run_dispatche0/navsim_v2/navtest_single_stage/20260927T150807Z-navsim_v2-none-cb9edd
+BENCH_STATUS=REFUSED
+BENCH_RETRYABLE=0
+____________________ test_live_dry_run_on_the_smoke_subset ____________________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4119/test_live_dry_run_on_the_smoke0')
+
+    def test_live_dry_run_on_the_smoke_subset(tmp_path):
+        why = _live_ok()
+        if why:
+            pytest.skip(why)
+        if not (SMOKE_CACHE / "CACHE_DONE.json").exists():
+            pytest.skip(f"NO_TREE: the smoke cache {SMOKE_CACHE} is not built on this machine "
+                        "(python -m taniteval.bench.navsim.cache_build --tokens-file … --cache …)")
+        rc = cli.main(["navsim_v2", "--ckpt", "none", "--split", NAVTEST, "--tokens-file", str(SMOKE_TOKENS),
+                       "--metric-cache", str(SMOKE_CACHE), "--dry-run", "--results-root", str(tmp_path), "--no-report"])
+        run = next(tmp_path.rglob("bench_run.json")).parent
+        rec = json.loads((run / "bench_run.json").read_text(encoding="utf-8"))
+>       assert rc == 0, rec.get("refusal")
+E       AssertionError: None
+E       assert 1 == 0
+
+tests\test_bench_navsim_navtest_single_stage.py:334: AssertionError
+---------------------------- Captured stdout call -----------------------------
+17:08:07 [bench] run 20260927T150807Z-navsim_v2-none-dd274b -> C:\Users\Admin\AppData\Local\Temp\pytest-of-Admin\pytest-4119\test_live_dry_run_on_the_smoke0\_scratch\navsim_v2\navtest_single_stage\20260927T150807Z-navsim_v2-none-dd274b
+17:08:07 ⛔ FAILED: FileNotFoundError: [Errno 2] No such file or directory: 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-navtest-single-stage\\raw\\smoke_tokens_sub200.json'
+17:08:07 [bench] report: SKIPPED
+17:08:07 [bench] FAILED in 0.0 s -> C:\Users\Admin\AppData\Local\Temp\pytest-of-Admin\pytest-4119\test_live_dry_run_on_the_smoke0\_scratch\navsim_v2\navtest_single_stage\20260927T150807Z-navsim_v2-none-dd274b
+BENCH_RUN_DIR=C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4119/test_live_dry_run_on_the_smoke0/_scratch/navsim_v2/navtest_single_stage/20260927T150807Z-navsim_v2-none-dd274b
+BENCH_STATUS=FAILED
+BENCH_RETRYABLE=0
+_____________________ test_live_dry_run_on_the_full_split _____________________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4119/test_live_dry_run_on_the_full_0')
+
+    def test_live_dry_run_on_the_full_split(tmp_path):
+        why = _live_ok()
+        if why:
+            pytest.skip(why)
+        if not (P.SPLITS[NAVTEST].cache / "CACHE_DONE.json").exists():
+            pytest.skip(f"NO_TREE: the 12,146-token v2 metric cache is not built on this machine "
+                        f"({P.SPLITS[NAVTEST].cache}; build: cd taniteval && python -m taniteval.bench.navsim.cache_build "
+                        f"--split {NAVTEST} --out <dir>)")
+        rc = cli.main(["navsim_v2", "--ckpt", "none", "--split", NAVTEST, "--dry-run", "--results-root", str(tmp_path),
+                       "--no-report"])
+        rec = _bench_rec(tmp_path)
+>       assert rc == 0, rec.get("refusal")
+E       AssertionError: navtest_single_stage: no token -> log_name map at C:\lgt\i3tree\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-19-navsim-estimator-and-route-leak\raw\cluster_maps\navtest.json
+E       assert 2 == 0
+
+tests\test_bench_navsim_navtest_single_stage.py:352: AssertionError
+---------------------------- Captured stdout call -----------------------------
+17:08:08 [bench] run 20260927T150807Z-navsim_v2-none-34992b -> C:\Users\Admin\AppData\Local\Temp\pytest-of-Admin\pytest-4119\test_live_dry_run_on_the_full_0\navsim_v2\navtest_single_stage\20260927T150807Z-navsim_v2-none-34992b
+17:08:08 [navsim] CV added by rule (MANDATORY NavSim floor)
+17:08:08 [navsim] STOP added by rule (MANDATORY NavSim floor)
+17:08:08 ⛔ REFUSED: navtest_single_stage: no token -> log_name map at C:\lgt\i3tree\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-19-navsim-estimator-and-route-leak\raw\cluster_maps\navtest.json
+17:08:08 [bench] report: SKIPPED
+17:08:08 [bench] REFUSED in 0.4 s -> C:\Users\Admin\AppData\Local\Temp\pytest-of-Admin\pytest-4119\test_live_dry_run_on_the_full_0\navsim_v2\navtest_single_stage\20260927T150807Z-navsim_v2-none-34992b
+BENCH_RUN_DIR=C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4119/test_live_dry_run_on_the_full_0/navsim_v2/navtest_single_stage/20260927T150807Z-navsim_v2-none-34992b
+BENCH_STATUS=REFUSED
+BENCH_RETRYABLE=0
+____________ test_hybrid_arm_headline_is_refused_with_reason_and_n ____________
+
+    def test_hybrid_arm_headline_is_refused_with_reason_and_n():
+        """⛔ MEASURED (E2, 2026-09-19): warmup's 16 stage-1 scenes ship no camera frames, so a camera
+        arm's stage 1 is answered by the devkit's CV STAND-IN — and those rows set both the stage-1
+        factor and the stage-2 Gaussian kernel weights. The devkit still prints an
+        `extended_pdm_score_combined`; it is HYBRID (CV ⊕ model) and is NOT that arm's EPDMS.
+        Fixture: E2's own banked A1 (`refcv4b::A1_ego_cmd`) CSV."""
+        from taniteval.bench.navsim import artifacts as ART
+        from taniteval.bench.navsim import summarize as S
+        csv = E2 / "score_A1_ego_cmd.csv"
+>       assert csv.exists(), f"MISSING E2 fixture {csv}"
+E       AssertionError: MISSING E2 fixture C:\lgt\i3tree\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-19-navsim-refcv4b-bridge\raw\score_A1_ego_cmd.csv
+E       assert False
+E        +  where False = exists()
+E        +    where exists = WindowsPath('C:/lgt/i3tree/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-refcv4b-bridge/raw/score_A1_ego_cmd.csv').exists
+
+tests\test_bench_suite_navsim_offline.py:214: AssertionError
+_ test_promoted_functions_are_ast_identical[verify_controls.py->summarize.py] _
+
+origin = WindowsPath('C:/lgt/i3tree/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-warmup-reference-epdms/code/verify_controls.py')
+product = WindowsPath('C:/lgt/i3tree/taniteval/taniteval/bench/navsim/summarize.py')
+names = ['epdms_formula', 'c4']
+
+    @pytest.mark.parametrize("origin,product,names", PROMOTED, ids=[f"{o.name}->{p.name}" for o, p, _ in PROMOTED])
+    def test_promoted_functions_are_ast_identical(origin, product, names):
+>       assert origin.exists(), f"MISSING origin (historical record moved?): {origin}"
+E       AssertionError: MISSING origin (historical record moved?): C:\lgt\i3tree\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-19-navsim-warmup-reference-epdms\code\verify_controls.py
+E       assert False
+E        +  where False = exists()
+E        +    where exists = WindowsPath('C:/lgt/i3tree/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-warmup-reference-epdms/code/verify_controls.py').exists
+
+tests\test_bench_suite_promotion.py:88: AssertionError
+__ test_promoted_functions_are_ast_identical[parse_scores.py->summarize.py] ___
+
+origin = WindowsPath('C:/lgt/i3tree/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-refcv4b-bridge/code/parse_scores.py')
+product = WindowsPath('C:/lgt/i3tree/taniteval/taniteval/bench/navsim/summarize.py')
+names = ['s2_group_uniform']
+
+    @pytest.mark.parametrize("origin,product,names", PROMOTED, ids=[f"{o.name}->{p.name}" for o, p, _ in PROMOTED])
+    def test_promoted_functions_are_ast_identical(origin, product, names):
+>       assert origin.exists(), f"MISSING origin (historical record moved?): {origin}"
+E       AssertionError: MISSING origin (historical record moved?): C:\lgt\i3tree\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-19-navsim-refcv4b-bridge\code\parse_scores.py
+E       assert False
+E        +  where False = exists()
+E        +    where exists = WindowsPath('C:/lgt/i3tree/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-refcv4b-bridge/code/parse_scores.py').exists
+
+tests\test_bench_suite_promotion.py:88: AssertionError
+_ test_promoted_functions_are_ast_identical[build_artifacts.py->artifacts.py0] _
+
+origin = WindowsPath('C:/lgt/i3tree/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-warmup-reference-epdms/code/build_artifacts.py')
+product = WindowsPath('C:/lgt/i3tree/taniteval/taniteval/bench/navsim/artifacts.py')
+names = ['build_win']
+
+    @pytest.mark.parametrize("origin,product,names", PROMOTED, ids=[f"{o.name}->{p.name}" for o, p, _ in PROMOTED])
+    def test_promoted_functions_are_ast_identical(origin, product, names):
+>       assert origin.exists(), f"MISSING origin (historical record moved?): {origin}"
+E       AssertionError: MISSING origin (historical record moved?): C:\lgt\i3tree\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-19-navsim-warmup-reference-epdms\code\build_artifacts.py
+E       assert False
+E        +  where False = exists()
+E        +    where exists = WindowsPath('C:/lgt/i3tree/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-warmup-reference-epdms/code/build_artifacts.py').exists
+
+tests\test_bench_suite_promotion.py:88: AssertionError
+_ test_promoted_functions_are_ast_identical[build_artifacts.py->artifacts.py1] _
+
+origin = WindowsPath('C:/lgt/i3tree/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-refcv4b-bridge/code/build_artifacts.py')
+product = WindowsPath('C:/lgt/i3tree/taniteval/taniteval/bench/navsim/artifacts.py')
+names = ['_set', '_get']
+
+    @pytest.mark.parametrize("origin,product,names", PROMOTED, ids=[f"{o.name}->{p.name}" for o, p, _ in PROMOTED])
+    def test_promoted_functions_are_ast_identical(origin, product, names):
+>       assert origin.exists(), f"MISSING origin (historical record moved?): {origin}"
+E       AssertionError: MISSING origin (historical record moved?): C:\lgt\i3tree\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-19-navsim-refcv4b-bridge\code\build_artifacts.py
+E       assert False
+E        +  where False = exists()
+E        +    where exists = WindowsPath('C:/lgt/i3tree/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-refcv4b-bridge/code/build_artifacts.py').exists
+
+tests\test_bench_suite_promotion.py:88: AssertionError
+_ test_promoted_functions_are_ast_identical[tanitad_navsim_bridge.py->bridge.py] _
+
+origin = WindowsPath('C:/lgt/i3tree/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-refcv4b-bridge/code/tanitad_navsim_bridge.py')
+product = WindowsPath('C:/lgt/i3tree/taniteval/taniteval/bench/navsim/bridge.py')
+names = ['declare', 'nav_index_from_command', 'ego_block', 'FrameBank', 'frame_tag_check', 'slot_sources', ...]
+
+    @pytest.mark.parametrize("origin,product,names", PROMOTED, ids=[f"{o.name}->{p.name}" for o, p, _ in PROMOTED])
+    def test_promoted_functions_are_ast_identical(origin, product, names):
+>       assert origin.exists(), f"MISSING origin (historical record moved?): {origin}"
+E       AssertionError: MISSING origin (historical record moved?): C:\lgt\i3tree\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-19-navsim-refcv4b-bridge\code\tanitad_navsim_bridge.py
+E       assert False
+E        +  where False = exists()
+E        +    where exists = WindowsPath('C:/lgt/i3tree/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-refcv4b-bridge/code/tanitad_navsim_bridge.py').exists
+
+tests\test_bench_suite_promotion.py:88: AssertionError
+___ test_promoted_constants_are_identical[verify_controls.py->summarize.py] ___
+
+origin = WindowsPath('C:/lgt/i3tree/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-warmup-reference-epdms/code/verify_controls.py')
+product = WindowsPath('C:/lgt/i3tree/taniteval/taniteval/bench/navsim/summarize.py')
+names = ['M8', 'EC', 'W', 'SUMMARY', 'SIGMA2']
+
+    @pytest.mark.parametrize("origin,product,names", CONSTANTS, ids=[f"{o.name}->{p.name}" for o, p, _ in CONSTANTS])
+    def test_promoted_constants_are_identical(origin, product, names):
+>       o, p = _consts(origin), _consts(product)
+               ^^^^^^^^^^^^^^^
+
+tests\test_bench_suite_promotion.py:98: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_bench_suite_promotion.py:74: in _consts
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/lgt/i3tree/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-warmup-reference-epdms/code/verify_controls.py')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\code\\verify_controls.py'
+
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+____ test_promoted_constants_are_identical[parse_scores.py->summarize.py] _____
+
+origin = WindowsPath('C:/lgt/i3tree/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-refcv4b-bridge/code/parse_scores.py')
+product = WindowsPath('C:/lgt/i3tree/taniteval/taniteval/bench/navsim/summarize.py')
+names = ['SUB']
+
+    @pytest.mark.parametrize("origin,product,names", CONSTANTS, ids=[f"{o.name}->{p.name}" for o, p, _ in CONSTANTS])
+    def test_promoted_constants_are_identical(origin, product, names):
+>       o, p = _consts(origin), _consts(product)
+               ^^^^^^^^^^^^^^^
+
+tests\test_bench_suite_promotion.py:98: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_bench_suite_promotion.py:74: in _consts
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/lgt/i3tree/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-refcv4b-bridge/code/parse_scores.py')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\code\\parse_scores.py'
+
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+__ test_promoted_constants_are_identical[build_artifacts.py->artifacts.py0] ___
+
+origin = WindowsPath('C:/lgt/i3tree/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-warmup-reference-epdms/code/build_artifacts.py')
+product = WindowsPath('C:/lgt/i3tree/taniteval/taniteval/bench/navsim/artifacts.py')
+names = ['SHA', 'LONG', 'SUMMARY']
+
+    @pytest.mark.parametrize("origin,product,names", CONSTANTS, ids=[f"{o.name}->{p.name}" for o, p, _ in CONSTANTS])
+    def test_promoted_constants_are_identical(origin, product, names):
+>       o, p = _consts(origin), _consts(product)
+               ^^^^^^^^^^^^^^^
+
+tests\test_bench_suite_promotion.py:98: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_bench_suite_promotion.py:74: in _consts
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/lgt/i3tree/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-warmup-reference-epdms/code/build_artifacts.py')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\code\\build_artifacts.py'
+
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+__ test_promoted_constants_are_identical[build_artifacts.py->artifacts.py1] ___
+
+origin = WindowsPath('C:/lgt/i3tree/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-refcv4b-bridge/code/build_artifacts.py')
+product = WindowsPath('C:/lgt/i3tree/taniteval/taniteval/bench/navsim/artifacts.py')
+names = ['NO_GT']
+
+    @pytest.mark.parametrize("origin,product,names", CONSTANTS, ids=[f"{o.name}->{p.name}" for o, p, _ in CONSTANTS])
+    def test_promoted_constants_are_identical(origin, product, names):
+>       o, p = _consts(origin), _consts(product)
+               ^^^^^^^^^^^^^^^
+
+tests\test_bench_suite_promotion.py:98: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_bench_suite_promotion.py:74: in _consts
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/lgt/i3tree/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-refcv4b-bridge/code/build_artifacts.py')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\code\\build_artifacts.py'
+
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+_ test_promoted_constants_are_identical[tanitad_navsim_bridge.py->bridge.py] __
+
+origin = WindowsPath('C:/lgt/i3tree/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-refcv4b-bridge/code/tanitad_navsim_bridge.py')
+product = WindowsPath('C:/lgt/i3tree/taniteval/taniteval/bench/navsim/bridge.py')
+names = ['KNOT_T_S', 'NAVSIM_T_S', 'ALAT_V_FLOOR_MS', 'KAPPA_CAP_INV_M', 'DT_FRAME_S', 'N_STACK', ...]
+
+    @pytest.mark.parametrize("origin,product,names", CONSTANTS, ids=[f"{o.name}->{p.name}" for o, p, _ in CONSTANTS])
+    def test_promoted_constants_are_identical(origin, product, names):
+>       o, p = _consts(origin), _consts(product)
+               ^^^^^^^^^^^^^^^
+
+tests\test_bench_suite_promotion.py:98: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_bench_suite_promotion.py:74: in _consts
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/lgt/i3tree/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-refcv4b-bridge/code/tanitad_navsim_bridge.py')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\code\\tanitad_navsim_bridge.py'
+
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+_________________ test_bridge_has_exactly_one_promotion_edit __________________
+
+    def test_bridge_has_exactly_one_promotion_edit():
+        """bridge.py is E2's file with a 4-line PROMOTED header and ONE changed line (the REPO depth)."""
+>       o = (E2 / "tanitad_navsim_bridge.py").read_text(encoding="utf-8").splitlines()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_bench_suite_promotion.py:105: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/lgt/i3tree/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-refcv4b-bridge/code/tanitad_navsim_bridge.py')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-refcv4b-bridge\\code\\tanitad_navsim_bridge.py'
+
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+_____________ test_devkit_side_files_are_byte_identical_to_origin _____________
+
+    def test_devkit_side_files_are_byte_identical_to_origin():
+        prov = json.loads((BENCH / "navsim/devkit_side/PROVENANCE.json").read_text(encoding="utf-8"))
+        assert set(prov["files"]) == {"navsim_win.py", "tanitad_seam_agent.py", "export_agent_inputs.py"}
+        for name, rec in prov["files"].items():
+            b = (BENCH / "navsim/devkit_side" / name).read_bytes()
+>           ob = (REPO / rec["origin"]).read_bytes()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_bench_suite_promotion.py:137: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/lgt/i3tree/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-warmup-reference-epdms/code/navsim_win.py')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\code\\navsim_win.py'
+
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+_________________ test_navsim_win_is_e1_plus_marked_additions _________________
+
+    def test_navsim_win_is_e1_plus_marked_additions():
+        """The wrapper carries ONE W1 addition (the pre-aggregation dump). Removing every line between
+        the `# --- W1 ADDITION` / `# --- end W1 ADDITION` markers must reproduce E1's file BYTE-FOR-BYTE."""
+        prov = json.loads((BENCH / "navsim/devkit_side/PROVENANCE.json").read_text(encoding="utf-8"))
+        rec = prov["files"]["navsim_win.py"]
+        assert rec.get("w1_additions"), "the addition must be declared in PROVENANCE.json"
+        product = (BENCH / "navsim/devkit_side/navsim_win.py").read_bytes().decode("utf-8")
+>       origin = (REPO / rec["origin"]).read_bytes().decode("utf-8")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_bench_suite_promotion.py:151: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/lgt/i3tree/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-warmup-reference-epdms/code/navsim_win.py')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\code\\navsim_win.py'
+
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+_______________ test_deliberate_regression_ast_check_has_teeth ________________
+
+    def test_deliberate_regression_ast_check_has_teeth():
+        """Mutate one token of a promoted function (the EPDMS denominator weight 5.0 -> 4.0 inside W is a
+        constant; here: `worst <= 1e-9` -> `worst <= 1e-6` in c4) — the AST comparison must go RED."""
+        src = (BENCH / "navsim/summarize.py").read_text(encoding="utf-8")
+        mutated = src.replace("\"pass\": bool(n > 0 and worst <= 1e-9)}", "\"pass\": bool(n > 0 and worst <= 1e-6)}", 1)
+        assert mutated != src
+        m = {n.name: n for n in ast.parse(mutated).body if isinstance(n, ast.FunctionDef)}
+>       o = _defs(E1 / "verify_controls.py")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_bench_suite_promotion.py:164: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_bench_suite_promotion.py:69: in _defs
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/lgt/i3tree/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-warmup-reference-epdms/code/verify_controls.py')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\lgt\\i3tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-warmup-reference-epdms\\code\\verify_controls.py'
+
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+_________ test_orphaned_names_are_really_absent_from_the_live_origin __________
+
+    def test_orphaned_names_are_really_absent_from_the_live_origin():
+        """⭐ THE DISCRIMINATING CONTROL. If E1 ever restores one of these, this goes RED and tells us to
+        move it back under the real AST pin -- otherwise an 'orphaned' claim would quietly outlive the
+        condition that justified it, which is a stale absence-claim of exactly the kind CLAUDE.md warns
+        about. It also fails if the origin file disappears, rather than passing vacuously."""
+>       assert ORPHANED_ORIGIN.exists(), f"origin file is gone: {ORPHANED_ORIGIN}"
+E       AssertionError: origin file is gone: C:\lgt\i3tree\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-19-navsim-warmup-reference-epdms\code\build_artifacts.py
+E       assert False
+E        +  where False = exists()
+E        +    where exists = WindowsPath('C:/lgt/i3tree/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-warmup-reference-epdms/code/build_artifacts.py').exists
+
+tests\test_bench_suite_promotion.py:202: AssertionError
+______________ test_protocol_closed_set_agrees_with_the_registry ______________
+
+    def test_protocol_closed_set_agrees_with_the_registry():
+        from taniteval.bench.contract import PROTOCOLS
+>       mine, theirs = set(PROTOCOLS), _registry_protocol_tags()
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_bench_suite_schema.py:172: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_bench_suite_schema.py:144: in _registry_protocol_tags
+    reg = json.loads((REPO / "products/P7-TanitEval/CRITERIA_REGISTRY.json").read_text(encoding="utf-8"))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/lgt/i3tree/products/P7-TanitEval/CRITERIA_REGISTRY.json')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\lgt\\i3tree\\products\\P7-TanitEval\\CRITERIA_REGISTRY.json'
+
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+____________ test_navsim_subset_matches_the_registry_gate_exactly _____________
+
+    def test_navsim_subset_matches_the_registry_gate_exactly():
+>       reg = json.loads((REPO / "products/P7-TanitEval/CRITERIA_REGISTRY.json").read_text(encoding="utf-8"))
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_bench_suite_schema.py:183: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/lgt/i3tree/products/P7-TanitEval/CRITERIA_REGISTRY.json')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\lgt\\i3tree\\products\\P7-TanitEval\\CRITERIA_REGISTRY.json'
+
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+____________ test_no_approval_exists_in_the_real_committed_records ____________
+
+    def test_no_approval_exists_in_the_real_committed_records():
+        """MEASURED: today no PI record carries a SUBMISSION-APPROVED line, so every submission refuses."""
+        recs = S.read_committed_records()
+>       assert recs, "no PI decision record could be read from HEAD — the gate must then refuse anyway"
+E       AssertionError: no PI decision record could be read from HEAD — the gate must then refuse anyway
+E       assert {}
+
+tests\test_bench_suite_submission.py:40: AssertionError
+__________________ test_worktree_only_marker_does_not_count ___________________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4119/test_worktree_only_marker_does0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001263F5C9350>
+
+    def test_worktree_only_marker_does_not_count(tmp_path, monkeypatch):
+        """The records are read from HEAD (`git show HEAD:<file>`), so an agent's worktree edit cannot
+        manufacture an approval."""
+        import subprocess
+        out = subprocess.run(["git", "-c", "safe.directory=*", "-C", str(S.REPO), "show",
+                              "HEAD:Project Steering/PI_DECISION_QUEUE.md"], capture_output=True, text=True,
+                             encoding="utf-8", errors="replace")
+>       assert out.returncode == 0 and "SUBMISSION-APPROVED" not in out.stdout
+E       AssertionError: assert (128 == 0)
+E        +  where 128 = CompletedProcess(args=['git', '-c', 'safe.directory=*', '-C', 'C:\\lgt\\i3tree', 'show', 'HEAD:Project Steering/PI_DEC...QUEUE.md'], returncode=128, stdout='', stderr='fatal: not a git repository (or any of the parent directories): .git\n').returncode
+
+tests\test_bench_suite_submission.py:77: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_bench_navsim_navtest_single_stage.py::test_the_devkit_yaml_is_read_as_one_stage_with_the_literal_counts
+FAILED tests/test_bench_navsim_navtest_single_stage.py::test_export_agent_inputs_is_e2_plus_marked_additions
+FAILED tests/test_bench_navsim_navtest_single_stage.py::test_MUTATION_an_unmarked_edit_to_the_export_is_caught
+FAILED tests/test_bench_navsim_navtest_single_stage.py::test_offline_dry_run_dispatches_to_the_one_stage_path
+FAILED tests/test_bench_navsim_navtest_single_stage.py::test_live_dry_run_on_the_smoke_subset
+FAILED tests/test_bench_navsim_navtest_single_stage.py::test_live_dry_run_on_the_full_split
+FAILED tests/test_bench_suite_navsim_offline.py::test_hybrid_arm_headline_is_refused_with_reason_and_n
+FAILED tests/test_bench_suite_promotion.py::test_promoted_functions_are_ast_identical[verify_controls.py->summarize.py]
+FAILED tests/test_bench_suite_promotion.py::test_promoted_functions_are_ast_identical[parse_scores.py->summarize.py]
+FAILED tests/test_bench_suite_promotion.py::test_promoted_functions_are_ast_identical[build_artifacts.py->artifacts.py0]
+FAILED tests/test_bench_suite_promotion.py::test_promoted_functions_are_ast_identical[build_artifacts.py->artifacts.py1]
+FAILED tests/test_bench_suite_promotion.py::test_promoted_functions_are_ast_identical[tanitad_navsim_bridge.py->bridge.py]
+FAILED tests/test_bench_suite_promotion.py::test_promoted_constants_are_identical[verify_controls.py->summarize.py]
+FAILED tests/test_bench_suite_promotion.py::test_promoted_constants_are_identical[parse_scores.py->summarize.py]
+FAILED tests/test_bench_suite_promotion.py::test_promoted_constants_are_identical[build_artifacts.py->artifacts.py0]
+FAILED tests/test_bench_suite_promotion.py::test_promoted_constants_are_identical[build_artifacts.py->artifacts.py1]
+FAILED tests/test_bench_suite_promotion.py::test_promoted_constants_are_identical[tanitad_navsim_bridge.py->bridge.py]
+FAILED tests/test_bench_suite_promotion.py::test_bridge_has_exactly_one_promotion_edit
+FAILED tests/test_bench_suite_promotion.py::test_devkit_side_files_are_byte_identical_to_origin
+FAILED tests/test_bench_suite_promotion.py::test_navsim_win_is_e1_plus_marked_additions
+FAILED tests/test_bench_suite_promotion.py::test_deliberate_regression_ast_check_has_teeth
+FAILED tests/test_bench_suite_promotion.py::test_orphaned_names_are_really_absent_from_the_live_origin
+FAILED tests/test_bench_suite_schema.py::test_protocol_closed_set_agrees_with_the_registry
+FAILED tests/test_bench_suite_schema.py::test_navsim_subset_matches_the_registry_gate_exactly
+FAILED tests/test_bench_suite_submission.py::test_no_approval_exists_in_the_real_committed_records
+FAILED tests/test_bench_suite_submission.py::test_worktree_only_marker_does_not_count
+ERROR tests/test_bench_navsim_navtest_single_stage.py::test_offline_single_stage_run_completes_and_validates
+ERROR tests/test_bench_navsim_navtest_single_stage.py::test_offline_headlines_are_the_banked_average_all_frames_literals
+ERROR tests/test_bench_navsim_navtest_single_stage.py::test_offline_controls_formula_average_and_counts_pass
+ERROR tests/test_bench_navsim_navtest_single_stage.py::test_offline_single_block_pairs_and_refused_interval
+ERROR tests/test_bench_navsim_navtest_single_stage.py::test_offline_four_families_reported_or_refused_per_family
+ERROR tests/test_bench_suite_navsim_offline.py::test_offline_run_completes_and_validates
+ERROR tests/test_bench_suite_navsim_offline.py::test_floor_arms_route_as_banked
+ERROR tests/test_bench_suite_navsim_offline.py::test_headlines_are_the_banked_literals
+ERROR tests/test_bench_suite_navsim_offline.py::test_reference_checks_fire - ...
+ERROR tests/test_bench_suite_navsim_offline.py::test_e2_statistics_reproduced
+ERROR tests/test_bench_suite_navsim_offline.py::test_controls_c4_c5_pass_on_banked
+ERROR tests/test_bench_suite_navsim_offline.py::test_no_interval_on_warmup - ...
+ERROR tests/test_bench_suite_navsim_offline.py::test_cv_families_reproduce_e1_artifact
+ERROR tests/test_bench_suite_navsim_offline.py::test_per_log_and_stage_blocks
+ERROR tests/test_bench_suite_navsim_offline.py::test_no_criteria_violations_on_any_arm
+ERROR tests/test_bench_suite_navsim_offline.py::test_stop_lateral_terms_are_refused_not_absent
+ERROR tests/test_bench_suite_navsim_offline.py::test_gallery_inputs_have_w5s_shape
+SKIPPED [1] tests\test_bench_suite_internal_t1.py:109: NO_TREE: E9's banked refcv3_arm record is not on this machine
+SKIPPED [1] tests\test_refcv6_perception_rebuild.py:129: branch build needs a full model; contract covered above
+26 failed, 225 passed, 2 skipped, 17 errors in 16.65s
+PYTEST_EXIT=1

@@ -1,0 +1,708 @@
+{
+ "card": "PREREG_N1D_CEIL.md (sha256 092bb25c...)",
+ "tier": "T0 decodability of frozen features / inputs, never driving performance",
+ "smoke": false,
+ "evidence_class": "MEASURED (ours; banked N1D checkpoints, D1-HO grid, CPU, zero training)",
+ "estimator": "taniteval.ci.paired_episode_cluster_bootstrap, B 2000, seed 0, over the held-out episodes; answers another draw of EPISODES only (training variance: the two N1D seeds)",
+ "n_windows": 5736,
+ "n_episodes": 497,
+ "class_counts": [
+  1934,
+  1862,
+  1940
+ ],
+ "majority_share": 0.3382147838214784,
+ "bar": 0.0383,
+ "probe_seed": 0,
+ "feat_dims": {
+  "F_TEXT": [
+   15
+  ],
+  "F_EGO": [
+   8
+  ],
+  "F_PLAN": [
+   1024
+  ]
+ },
+ "ego_columns": [
+  "v",
+  "a",
+  "k",
+  "v^2",
+  "v*a",
+  "v*k",
+  "v^2*k",
+  "a*k"
+ ],
+ "join": {
+  "N1D_s0": {
+   "same_order_and_count": true,
+   "n_ego": 5736,
+   "n_banked": 5736,
+   "ci_equal": true,
+   "t0_equal": true,
+   "g_equal": true,
+   "F_TEXT_equal": true,
+   "F_PLAN_equal": true,
+   "F_PLAN_max_abs_diff": 0.0
+  },
+  "N1D_s1": {
+   "same_order_and_count": true,
+   "n_ego": 5736,
+   "n_banked": 5736,
+   "ci_equal": true,
+   "t0_equal": true,
+   "g_equal": true,
+   "F_TEXT_equal": true,
+   "F_PLAN_equal": true,
+   "F_PLAN_max_abs_diff": 0.0
+  }
+ },
+ "windows_per_fold": [
+  1131,
+  1214,
+  1105,
+  1183,
+  1103
+ ],
+ "gt_ok_false": 0,
+ "accuracy": {
+  "N1D_s0": {
+   "tree": {
+    "F-TEXT": {
+     "point": 0.6044281729428173,
+     "lo": 0.5794,
+     "hi": 0.6274,
+     "pred_counts": [
+      1894,
+      1797,
+      2045
+     ]
+    },
+    "F-EGO": {
+     "point": 0.5578800557880056,
+     "lo": 0.5403,
+     "hi": 0.5741,
+     "pred_counts": [
+      1954,
+      1908,
+      1874
+     ]
+    },
+    "F-TE": {
+     "point": 0.6854951185495118,
+     "lo": 0.6657,
+     "hi": 0.7051,
+     "pred_counts": [
+      1849,
+      1770,
+      2117
+     ]
+    },
+    "F-TE-EGOCONST": {
+     "point": 0.6044281729428173,
+     "lo": 0.5794,
+     "hi": 0.6274,
+     "pred_counts": [
+      1894,
+      1797,
+      2045
+     ]
+    },
+    "F-TE-TEXTZERO": {
+     "point": 0.5578800557880056,
+     "lo": 0.5403,
+     "hi": 0.5741,
+     "pred_counts": [
+      1954,
+      1908,
+      1874
+     ]
+    },
+    "F-PLAN": {
+     "point": 0.7027545327754533,
+     "lo": 0.6854,
+     "hi": 0.7192,
+     "pred_counts": [
+      1816,
+      1951,
+      1969
+     ]
+    },
+    "F-ALL": {
+     "point": 0.7306485355648535,
+     "lo": 0.7128,
+     "hi": 0.748,
+     "pred_counts": [
+      1810,
+      1899,
+      2027
+     ]
+    }
+   },
+   "logit": {
+    "F-TEXT": {
+     "point": 0.5158647140864714,
+     "lo": 0.4908,
+     "hi": 0.5411,
+     "pred_counts": [
+      1983,
+      1579,
+      2174
+     ]
+    },
+    "F-EGO": {
+     "point": 0.49825662482566246,
+     "lo": 0.4779,
+     "hi": 0.5183,
+     "pred_counts": [
+      1316,
+      2311,
+      2109
+     ]
+    },
+    "F-TE": {
+     "point": 0.5746164574616457,
+     "lo": 0.5518,
+     "hi": 0.5967,
+     "pred_counts": [
+      1999,
+      1768,
+      1969
+     ]
+    },
+    "F-PLAN": {
+     "point": 0.6842747559274756,
+     "lo": 0.665,
+     "hi": 0.7026,
+     "pred_counts": [
+      1964,
+      1864,
+      1908
+     ]
+    },
+    "F-ALL": {
+     "point": 0.6860181311018131,
+     "lo": 0.6667,
+     "hi": 0.7048,
+     "pred_counts": [
+      1945,
+      1863,
+      1928
+     ]
+    }
+   }
+  },
+  "N1D_s1": {
+   "tree": {
+    "F-TEXT": {
+     "point": 0.6044281729428173,
+     "lo": 0.5794,
+     "hi": 0.6274,
+     "pred_counts": [
+      1894,
+      1797,
+      2045
+     ]
+    },
+    "F-EGO": {
+     "point": 0.5578800557880056,
+     "lo": 0.5403,
+     "hi": 0.5741,
+     "pred_counts": [
+      1954,
+      1908,
+      1874
+     ]
+    },
+    "F-TE": {
+     "point": 0.6854951185495118,
+     "lo": 0.6657,
+     "hi": 0.7051,
+     "pred_counts": [
+      1849,
+      1770,
+      2117
+     ]
+    },
+    "F-TE-EGOCONST": {
+     "point": 0.6044281729428173,
+     "lo": 0.5794,
+     "hi": 0.6274,
+     "pred_counts": [
+      1894,
+      1797,
+      2045
+     ]
+    },
+    "F-TE-TEXTZERO": {
+     "point": 0.5578800557880056,
+     "lo": 0.5403,
+     "hi": 0.5741,
+     "pred_counts": [
+      1954,
+      1908,
+      1874
+     ]
+    },
+    "F-PLAN": {
+     "point": 0.6936889818688982,
+     "lo": 0.6752,
+     "hi": 0.711,
+     "pred_counts": [
+      1854,
+      1888,
+      1994
+     ]
+    },
+    "F-ALL": {
+     "point": 0.7287308228730823,
+     "lo": 0.7109,
+     "hi": 0.7455,
+     "pred_counts": [
+      1839,
+      1847,
+      2050
+     ]
+    }
+   },
+   "logit": {
+    "F-TEXT": {
+     "point": 0.5158647140864714,
+     "lo": 0.4908,
+     "hi": 0.5411,
+     "pred_counts": [
+      1983,
+      1579,
+      2174
+     ]
+    },
+    "F-EGO": {
+     "point": 0.49825662482566246,
+     "lo": 0.4779,
+     "hi": 0.5183,
+     "pred_counts": [
+      1316,
+      2311,
+      2109
+     ]
+    },
+    "F-TE": {
+     "point": 0.5746164574616457,
+     "lo": 0.5518,
+     "hi": 0.5967,
+     "pred_counts": [
+      1999,
+      1768,
+      1969
+     ]
+    },
+    "F-PLAN": {
+     "point": 0.6849721059972106,
+     "lo": 0.6671,
+     "hi": 0.7022,
+     "pred_counts": [
+      1957,
+      1879,
+      1900
+     ]
+    },
+    "F-ALL": {
+     "point": 0.6886331938633193,
+     "lo": 0.6711,
+     "hi": 0.7054,
+     "pred_counts": [
+      1931,
+      1877,
+      1928
+     ]
+    }
+   }
+  }
+ },
+ "contrasts": {
+  "N1D_s0|tree": {
+   "TE-PLAN": {
+    "delta": -0.01725941422594146,
+    "lo": -0.0361,
+    "hi": 0.0029,
+    "separated": false,
+    "n_windows": 5736,
+    "n_episodes": 497
+   },
+   "TE-TEXT": {
+    "delta": 0.08106694560669458,
+    "lo": 0.0629,
+    "hi": 0.0989,
+    "separated": true,
+    "n_windows": 5736,
+    "n_episodes": 497
+   },
+   "ALL-PLAN": {
+    "delta": 0.02789400278940024,
+    "lo": 0.0188,
+    "hi": 0.0375,
+    "separated": true,
+    "n_windows": 5736,
+    "n_episodes": 497
+   },
+   "EGO-TEXT": {
+    "delta": -0.04654811715481166,
+    "lo": -0.0739,
+    "hi": -0.0192,
+    "separated": true,
+    "n_windows": 5736,
+    "n_episodes": 497
+   },
+   "TE-EGO": {
+    "delta": 0.12761506276150625,
+    "lo": 0.1074,
+    "hi": 0.1493,
+    "separated": true,
+    "n_windows": 5736,
+    "n_episodes": 497
+   },
+   "ALL-TE": {
+    "delta": 0.0451534170153417,
+    "lo": 0.0278,
+    "hi": 0.0624,
+    "separated": true,
+    "n_windows": 5736,
+    "n_episodes": 497
+   },
+   "PLAN-TE": {
+    "delta": 0.01725941422594146,
+    "lo": -0.0029,
+    "hi": 0.0361,
+    "separated": false,
+    "n_windows": 5736,
+    "n_episodes": 497
+   }
+  },
+  "N1D_s0|logit": {
+   "TE-PLAN": {
+    "delta": -0.10965829846582986,
+    "lo": -0.1317,
+    "hi": -0.0878,
+    "separated": true,
+    "n_windows": 5736,
+    "n_episodes": 497
+   },
+   "TE-TEXT": {
+    "delta": 0.0587517433751743,
+    "lo": 0.0425,
+    "hi": 0.075,
+    "separated": true,
+    "n_windows": 5736,
+    "n_episodes": 497
+   },
+   "ALL-PLAN": {
+    "delta": 0.0017433751743375359,
+    "lo": -0.0051,
+    "hi": 0.0086,
+    "separated": false,
+    "n_windows": 5736,
+    "n_episodes": 497
+   },
+   "EGO-TEXT": {
+    "delta": -0.017608089260808923,
+    "lo": -0.0492,
+    "hi": 0.0145,
+    "separated": false,
+    "n_windows": 5736,
+    "n_episodes": 497
+   },
+   "TE-EGO": {
+    "delta": 0.07635983263598323,
+    "lo": 0.0497,
+    "hi": 0.1022,
+    "separated": true,
+    "n_windows": 5736,
+    "n_episodes": 497
+   },
+   "ALL-TE": {
+    "delta": 0.1114016736401674,
+    "lo": 0.0903,
+    "hi": 0.1331,
+    "separated": true,
+    "n_windows": 5736,
+    "n_episodes": 497
+   },
+   "PLAN-TE": {
+    "delta": 0.10965829846582986,
+    "lo": 0.0878,
+    "hi": 0.1317,
+    "separated": true,
+    "n_windows": 5736,
+    "n_episodes": 497
+   }
+  },
+  "N1D_s1|tree": {
+   "TE-PLAN": {
+    "delta": -0.008193863319386319,
+    "lo": -0.0278,
+    "hi": 0.0109,
+    "separated": false,
+    "n_windows": 5736,
+    "n_episodes": 497
+   },
+   "TE-TEXT": {
+    "delta": 0.08106694560669458,
+    "lo": 0.0629,
+    "hi": 0.0989,
+    "separated": true,
+    "n_windows": 5736,
+    "n_episodes": 497
+   },
+   "ALL-PLAN": {
+    "delta": 0.03504184100418417,
+    "lo": 0.0252,
+    "hi": 0.045,
+    "separated": true,
+    "n_windows": 5736,
+    "n_episodes": 497
+   },
+   "EGO-TEXT": {
+    "delta": -0.04654811715481166,
+    "lo": -0.0739,
+    "hi": -0.0192,
+    "separated": true,
+    "n_windows": 5736,
+    "n_episodes": 497
+   },
+   "TE-EGO": {
+    "delta": 0.12761506276150625,
+    "lo": 0.1074,
+    "hi": 0.1493,
+    "separated": true,
+    "n_windows": 5736,
+    "n_episodes": 497
+   },
+   "ALL-TE": {
+    "delta": 0.04323570432357049,
+    "lo": 0.0273,
+    "hi": 0.0583,
+    "separated": true,
+    "n_windows": 5736,
+    "n_episodes": 497
+   },
+   "PLAN-TE": {
+    "delta": 0.008193863319386319,
+    "lo": -0.0109,
+    "hi": 0.0278,
+    "separated": false,
+    "n_windows": 5736,
+    "n_episodes": 497
+   }
+  },
+  "N1D_s1|logit": {
+   "TE-PLAN": {
+    "delta": -0.1103556485355649,
+    "lo": -0.1312,
+    "hi": -0.0895,
+    "separated": true,
+    "n_windows": 5736,
+    "n_episodes": 497
+   },
+   "TE-TEXT": {
+    "delta": 0.0587517433751743,
+    "lo": 0.0425,
+    "hi": 0.075,
+    "separated": true,
+    "n_windows": 5736,
+    "n_episodes": 497
+   },
+   "ALL-PLAN": {
+    "delta": 0.0036610878661087476,
+    "lo": -0.0034,
+    "hi": 0.0107,
+    "separated": false,
+    "n_windows": 5736,
+    "n_episodes": 497
+   },
+   "EGO-TEXT": {
+    "delta": -0.017608089260808923,
+    "lo": -0.0492,
+    "hi": 0.0145,
+    "separated": false,
+    "n_windows": 5736,
+    "n_episodes": 497
+   },
+   "TE-EGO": {
+    "delta": 0.07635983263598323,
+    "lo": 0.0497,
+    "hi": 0.1022,
+    "separated": true,
+    "n_windows": 5736,
+    "n_episodes": 497
+   },
+   "ALL-TE": {
+    "delta": 0.11401673640167365,
+    "lo": 0.0942,
+    "hi": 0.1343,
+    "separated": true,
+    "n_windows": 5736,
+    "n_episodes": 497
+   },
+   "PLAN-TE": {
+    "delta": 0.1103556485355649,
+    "lo": 0.0895,
+    "hi": 0.1312,
+    "separated": true,
+    "n_windows": 5736,
+    "n_episodes": 497
+   }
+  }
+ },
+ "outcome_tree": {
+  "per_unit": {
+   "N1D_s0": "CEIL-AT-PLAN",
+   "N1D_s1": "CEIL-AT-PLAN"
+  },
+  "labels": {
+   "CEIL-AT-PLAN": "HOLDS",
+   "CEIL-ABOVE-PLAN": "NOT-HELD"
+  },
+  "headline": "CEIL-AT-PLAN",
+  "deciding": true
+ },
+ "outcome_logit": {
+  "per_unit": {
+   "N1D_s0": "CEIL-AT-PLAN",
+   "N1D_s1": "CEIL-AT-PLAN"
+  },
+  "labels": {
+   "CEIL-AT-PLAN": "HOLDS",
+   "CEIL-ABOVE-PLAN": "NOT-HELD"
+  },
+  "headline": "CEIL-AT-PLAN",
+  "deciding": false
+ },
+ "controls": {
+  "K-CONST": {
+   "majority_share_live": 0.3382147838214784,
+   "majority_share_card": 0.338215,
+   "pass": true
+  },
+  "K-PARITY": {
+   "cells": {
+    "N1D_s0|F-TEXT": {
+     "identical_correct_vector": true,
+     "accuracy": 0.6044281729428173,
+     "banked_accuracy": 0.6044281729428173
+    },
+    "N1D_s0|F-PLAN": {
+     "identical_correct_vector": true,
+     "accuracy": 0.7027545327754533,
+     "banked_accuracy": 0.7027545327754533
+    },
+    "N1D_s1|F-TEXT": {
+     "identical_correct_vector": true,
+     "accuracy": 0.6044281729428173,
+     "banked_accuracy": 0.6044281729428173
+    },
+    "N1D_s1|F-PLAN": {
+     "identical_correct_vector": true,
+     "accuracy": 0.6936889818688982,
+     "banked_accuracy": 0.6936889818688982
+    }
+   },
+   "card_accuracies": {
+    "F-TEXT": 0.6044,
+    "F-PLAN": [
+     0.7028,
+     0.6937
+    ]
+   },
+   "live_accuracies_4dp": {
+    "F-TEXT": 0.6044,
+    "F-PLAN": [
+     0.7028,
+     0.6937
+    ]
+   },
+   "pass": true,
+   "join_ok": true
+  },
+  "K-EGO-DET": {
+   "second_extraction_vs_first": {
+    "N1D_s0": {
+     "F_EGO": true,
+     "F_TEXT": true,
+     "F_PLAN": true,
+     "g": true,
+     "ci": true,
+     "t0": true
+    },
+    "N1D_s1": {
+     "F_EGO": true,
+     "F_TEXT": true,
+     "F_PLAN": true,
+     "g": true,
+     "ci": true,
+     "t0": true
+    }
+   },
+   "F_EGO_bit_identical_across_all_four": true,
+   "pass": true
+  },
+  "IDENTITY-ARM": {
+   "definition": "F-TE with the 8 ego columns constant: out-of-fold predictions identical to F-TEXT's on every window",
+   "n_differing_windows": 0,
+   "n_windows": 5736,
+   "pass": true
+  },
+  "REGRESSION-ARM": {
+   "definition": "F-TE with the 15 text columns zeroed reads separated below F-TE, unless F-TE does not clear F-EGO (then printed as such)",
+   "cells": {
+    "N1D_s0": {
+     "F-TE_clears_F-EGO": true,
+     "TEXTZERO_minus_F-TE": {
+      "delta": -0.12761506276150625,
+      "lo": -0.1493,
+      "hi": -0.1074,
+      "separated": true,
+      "n_windows": 5736,
+      "n_episodes": 497
+     },
+     "TEXTZERO_minus_F-EGO": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "n_windows": 5736,
+      "n_episodes": 497
+     },
+     "n_windows_TEXTZERO_pred_differs_from_F-EGO_pred": 0,
+     "separated_below_F-TE": true,
+     "status": "PASS"
+    },
+    "N1D_s1": {
+     "F-TE_clears_F-EGO": true,
+     "TEXTZERO_minus_F-TE": {
+      "delta": -0.12761506276150625,
+      "lo": -0.1493,
+      "hi": -0.1074,
+      "separated": true,
+      "n_windows": 5736,
+      "n_episodes": 497
+     },
+     "TEXTZERO_minus_F-EGO": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "n_windows": 5736,
+      "n_episodes": 497
+     },
+     "n_windows_TEXTZERO_pred_differs_from_F-EGO_pred": 0,
+     "separated_below_F-TE": true,
+     "status": "PASS"
+    }
+   },
+   "pass": true
+  }
+ },
+ "elapsed_s": 899.4008359909058
+}

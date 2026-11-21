@@ -1,0 +1,1079 @@
+{
+ "tool": "ship_r8_verdict_pf.py",
+ "generated": "2026-10-22T06:22:06+0200",
+ "tree": "pkship_pf",
+ "condition_tree": "step48852ema_pf",
+ "orientation_only": true,
+ "label": "SHIP-R8 (AMENDMENT 3) on pkship_pf: PASS -- ORIENTATION ONLY (the condition's tree is step48852ema_pf)",
+ "overall": "PASS",
+ "clauses": [
+  {
+   "id": 1,
+   "text": "(1) FORWARD_TRAINFIT controls ALL_PASS",
+   "status": "PASS",
+   "reason": "FORWARD_TRAINFIT and FORWARD_DEPLOY8 controls ALL_PASS; the frozen gains hash is the pinned one; seeds 0 and 1; B 2000 | the per-frame table's sha256 was registered before every pf roll of the tree (Amendment 3 (ii))",
+   "evidence": {
+    "forward_trainfit_present": true,
+    "forward_deploy8_present": true,
+    "trainfit_controls_ALL_PASS": true,
+    "deploy8_controls_ALL_PASS": true,
+    "trainfit_frozen_gains_sha256": "2aacc9ff32d3d2a5a18dda2d72ab5ce6c42d1c1268e9186912c5151bbe4d6d80",
+    "deploy8_recorded_gain_hashes": [
+     "2aacc9ff32d3d2a5a18dda2d72ab5ce6c42d1c1268e9186912c5151bbe4d6d80"
+    ],
+    "deploy8_n_boot_ok": true,
+    "trainfit_n_boot_ok": true,
+    "trainfit_seeds": [
+     "0",
+     "1"
+    ],
+    "deploy8_seeds": [
+     "0",
+     "1"
+    ],
+    "amendment3_registration": {
+     "ok": true,
+     "bad": [],
+     "unknown": [],
+     "evidence": {
+      "registered": "2aacc9ff32d3d2a5a18dda2d72ab5ce6c42d1c1268e9186912c5151bbe4d6d80",
+      "frozen_file_sha256": "2aacc9ff32d3d2a5a18dda2d72ab5ce6c42d1c1268e9186912c5151bbe4d6d80",
+      "provenance_sha256": "2aacc9ff32d3d2a5a18dda2d72ab5ce6c42d1c1268e9186912c5151bbe4d6d80",
+      "gate_registered_sha256": "2aacc9ff32d3d2a5a18dda2d72ab5ce6c42d1c1268e9186912c5151bbe4d6d80",
+      "gate_passed_epoch": 1792513597.5774632,
+      "forward_trainfit_frozen_gains_sha256": "2aacc9ff32d3d2a5a18dda2d72ab5ce6c42d1c1268e9186912c5151bbe4d6d80",
+      "roll_artifact_mtimes_epoch": {
+       "0": 1792520180.052072,
+       "1": 1792522099.574576
+      }
+     }
+    }
+   }
+  },
+  {
+   "id": "1b",
+   "text": "(1b) FEED PARITY: on the tree's own roll artifacts, both seeds, every window: the fed token equals the v9 per-frame token, `nav_cmd_clip` equals the per-clip token, and `r8_nav` is non-zero exactly where `r8_nav_known`; fails or cannot be shown -> SHIP-R8 INCOMPLETE",
+   "status": "PASS",
+   "reason": "both seeds, every window of the tree's dumps: fed token == v9 per-frame token, nav_cmd_clip == per-clip token, r8_nav non-zero exactly where known",
+   "evidence": {
+    "seeds": {
+     "0": {
+      "file_status": "PASS",
+      "checks": {
+       "T_fed_token_equals_v9_per_frame_token": true,
+       "C_nav_cmd_clip_equals_clip_fed_reference": true,
+       "C_reference_constant_within_every_clip": true,
+       "C_same_window_set_as_clip_fed_reference": true,
+       "K_known_equals_release_args_valid": true,
+       "A_r8_nav_nonzero_exactly_where_known_and_equals_independent_scaling": true,
+       "I_clip_identity_sha12_matches_release": true,
+       "manifest_mode_is_perframe_full": true
+      },
+      "n_windows": 4754,
+      "n_windows_expected_from_tree_manifest": 4754,
+      "n_windows_only_in_pf": 0,
+      "n_windows_only_in_reference": 0,
+      "n_token_differs_from_clip": 1157,
+      "n_args_known": 2802,
+      "subset_ok_smoke_only": false,
+      "pf_dump": "C:/Users/Admin/refcv8_pf/picker/archive/pkship_pf/dump_s0",
+      "clip_dump": "C:/Users/Admin/refcv8_eval_archive/battery/step40000ema_unc/dump_s0",
+      "first_failures": {}
+     },
+     "1": {
+      "file_status": "PASS",
+      "checks": {
+       "T_fed_token_equals_v9_per_frame_token": true,
+       "C_nav_cmd_clip_equals_clip_fed_reference": true,
+       "C_reference_constant_within_every_clip": true,
+       "C_same_window_set_as_clip_fed_reference": true,
+       "K_known_equals_release_args_valid": true,
+       "A_r8_nav_nonzero_exactly_where_known_and_equals_independent_scaling": true,
+       "I_clip_identity_sha12_matches_release": true,
+       "manifest_mode_is_perframe_full": true
+      },
+      "n_windows": 4754,
+      "n_windows_expected_from_tree_manifest": 4754,
+      "n_windows_only_in_pf": 0,
+      "n_windows_only_in_reference": 0,
+      "n_token_differs_from_clip": 1157,
+      "n_args_known": 2802,
+      "subset_ok_smoke_only": false,
+      "pf_dump": "C:/Users/Admin/refcv8_pf/picker/archive/pkship_pf/dump_s1",
+      "clip_dump": "C:/Users/Admin/refcv8_eval_archive/battery/step40000ema_unc/dump_s1",
+      "first_failures": {}
+     }
+    }
+   }
+  },
+  {
+   "id": 2,
+   "text": "(2) E1 S2 ADE \u2212 `ha0_ext_pose` separated below 0 at both seeds",
+   "status": "PASS",
+   "reason": "E1: RETIME_DEPLOY8 - ha0_ext_pose ADE on S2 is separated below 0 at both inference seeds",
+   "evidence": {
+    "surface": "S2",
+    "reference": "ha0_ext_pose",
+    "arm": "RETIME_DEPLOY8",
+    "cells": {
+     "s0": {
+      "delta": -0.034,
+      "lo": -0.0471,
+      "hi": -0.0211,
+      "separated": true,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.2518468690824961,
+      "mean_ref": 0.28581937894529424
+     },
+     "s1": {
+      "delta": -0.0329,
+      "lo": -0.0452,
+      "hi": -0.0207,
+      "separated": true,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.2528902675425348,
+      "mean_ref": 0.28581937894529424
+     }
+    },
+    "separated_below_0": {
+     "s0": true,
+     "s1": true
+    }
+   }
+  },
+  {
+   "id": 3,
+   "text": "(3) E3 S6 ADE \u2212 `ha0_ext_pose` separated below 0 at both seeds",
+   "status": "PASS",
+   "reason": "E3: RETIME_DEPLOY8 - ha0_ext_pose ADE on S6 is separated below 0 at both inference seeds",
+   "evidence": {
+    "surface": "S6",
+    "reference": "ha0_ext_pose",
+    "arm": "RETIME_DEPLOY8",
+    "cells": {
+     "s0": {
+      "delta": -0.8672,
+      "lo": -1.1957,
+      "hi": -0.5368,
+      "separated": true,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 2.5426042270655445,
+      "mean_ref": 3.4097815215823526
+     },
+     "s1": {
+      "delta": -0.8684,
+      "lo": -1.1913,
+      "hi": -0.5447,
+      "separated": true,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 2.541414921261271,
+      "mean_ref": 3.4097815215823526
+     }
+    },
+    "separated_below_0": {
+     "s0": true,
+     "s1": true
+    }
+   }
+  },
+  {
+   "id": 4,
+   "text": "(4) LONGITUDINAL / LATERAL / ADE no row separated worse than refcv7-50,400 at both seeds (FZR-NR), and S6 lateral HOLDS (FZR-LAT)",
+   "status": "PASS",
+   "reason": "FZR-NR ADE / LONGITUDINAL / LATERAL all PASS (no headline row separated worse than refcv7-50,400 at either seed) and FZR-LAT HOLDS",
+   "evidence": {
+    "FZR-NR_per_family": {
+     "ADE": "PASS",
+     "LONGITUDINAL": "PASS",
+     "LATERAL": "PASS"
+    },
+    "FZR-LAT_HOLDS": true,
+    "FZR-LAT_separated_worse_at_any_seed": []
+   }
+  },
+  {
+   "id": 5,
+   "text": "(5) TACTICAL `TAC_traj_lat_correct` and `TAC_traj_lon_correct` of the RE-TIMED plan not separated worse than refcv7-50,400 at both seeds (instrument being built 2026-10-19; if it cannot be computed, SHIP-R8 reads INCOMPLETE, not PASS)",
+   "status": "PASS",
+   "reason": "no TAC_traj_lat / TAC_traj_lon cell (S2, S6 x seeds 0, 1) of RETIME_DEPLOY8 is separated worse than refcv7-50,400",
+   "evidence": {
+    "n_cells": 8,
+    "separated_worse_cells": [],
+    "missing": [],
+    "tac_file_status": "PASS",
+    "deploy8_load_status": {
+     "S2|s0": "ok",
+     "S6|s0": "ok",
+     "S2|s1": "ok",
+     "S6|s1": "ok"
+    },
+    "cells": {
+     "S2|TAC_traj_lat_correct|s0": {
+      "delta": 0.0036,
+      "lo": -0.0007,
+      "hi": 0.0081,
+      "separated": false,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.9636931954796826,
+      "mean_ref": 0.9600865592690551
+     },
+     "S2|TAC_traj_lat_correct|s1": {
+      "delta": 0.0043,
+      "lo": 0.0,
+      "hi": 0.0086,
+      "separated": false,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.9644145227218082,
+      "mean_ref": 0.9600865592690551
+     },
+     "S2|TAC_traj_lon_correct|s0": {
+      "delta": 0.0195,
+      "lo": 0.0042,
+      "hi": 0.0348,
+      "separated": true,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8542918970906468,
+      "mean_ref": 0.834816061553258
+     },
+     "S2|TAC_traj_lon_correct|s1": {
+      "delta": 0.0142,
+      "lo": 0.0,
+      "hi": 0.0279,
+      "separated": false,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.855494109160856,
+      "mean_ref": 0.8413080067323876
+     },
+     "S6|TAC_traj_lat_correct|s0": {
+      "delta": 0.0098,
+      "lo": -0.0021,
+      "hi": 0.0218,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8901876345739772,
+      "mean_ref": 0.8803445093817287
+     },
+     "S6|TAC_traj_lat_correct|s1": {
+      "delta": 0.0089,
+      "lo": -0.0028,
+      "hi": 0.0207,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8904952322362351,
+      "mean_ref": 0.8815749000307598
+     },
+     "S6|TAC_traj_lon_correct|s0": {
+      "delta": -0.004,
+      "lo": -0.0292,
+      "hi": 0.0187,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.5958166717932943,
+      "mean_ref": 0.5998154414026453
+     },
+     "S6|TAC_traj_lon_correct|s1": {
+      "delta": -0.0065,
+      "lo": -0.0306,
+      "hi": 0.0169,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.5918179021839434,
+      "mean_ref": 0.5982774530913565
+     }
+    }
+   }
+  },
+  {
+   "id": 6,
+   "text": "(6) STRATEGIC not applicable, n = 0, `--no-strategic`",
+   "status": "N/A",
+   "reason": "the battery's strategic block reads NOT APPLICABLE, n = 0 (--no-strategic): satisfied as the condition states",
+   "evidence": {
+    "strategic": {
+     "status": "NOT APPLICABLE",
+     "n": 0
+    }
+   }
+  },
+  {
+   "id": 7,
+   "text": "(7) PRIOR PARITY: the prior the eval rebuilds from banked poses must equal the model's emitted `residual_prior_path` (built in `RefCModel.forward` via `kinematic_prior.prior_controls('ha0_ext_pose')`) to \u2264 1e-3 m at all 8 slots on \u2265 200 eval windows; if it cannot be shown, SHIP-R8 reads INCOMPLETE",
+   "status": "PASS",
+   "reason": "max |delta| <= 0.001 m at all 8 slots on >= 200 windows (smallest panel 4754; 2 panel(s))",
+   "evidence": {
+    "panels": [
+     {
+      "panel": "pkship_pf|s0",
+      "n_windows": 4754,
+      "per_slot_max_m": [
+       0.0,
+       0.0,
+       0.0,
+       0.0,
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ]
+     },
+     {
+      "panel": "pkship_pf|s1",
+      "n_windows": 4754,
+      "per_slot_max_m": [
+       0.0,
+       0.0,
+       0.0,
+       0.0,
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ]
+     }
+    ],
+    "file_reading": "PASS (model-path parity)",
+    "known_values_ok": true,
+    "source_trace_all_verified": true,
+    "min_windows_per_panel": 4754,
+    "slot_max_abs_m": {
+     "values": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    }
+   }
+  }
+ ],
+ "arm": "RETIME_DEPLOY8",
+ "registered_pf_table_sha256": "2aacc9ff32d3d2a5a18dda2d72ab5ce6c42d1c1268e9186912c5151bbe4d6d80",
+ "condition_text": "SHIP-R8 holds iff, on tree `step48852ema_unc` (EMA weights), ceiling-compliant windows, arm `RETIME_TRAINFIT` with the frozen gains UNCHANGED (sha256 b208c9c1e4236075\u2026), both inference seeds 0 and 1, paired episode-cluster bootstrap B 2000: ... Any failed clause = the stage does NOT ship and refcv8 is reported failing that bar.",
+ "amendment_text": "AMENDMENT 1: SHIP-R8 clauses (1)\u2013(6) are evaluated on `RETIME_DEPLOY`; `RETIME_TRAINFIT` (per-surface) is printed beside. If `RETIME_DEPLOY` cannot be computed for 48,852, SHIP-R8 reads INCOMPLETE.  AMENDMENT 2: `RETIME_DEPLOY` = ONE call per window on all 8 model slots with Amendment 1's table, prior = `ha0_ext_pose` at the same 8 slots; each surface is scored on that call's outputs at its own instants; the per-surface form is printed beside.  New clause (7) PRIOR PARITY.  AMENDMENT 3: (i) every SHIP-R8 clause and every refcv8 bar is read on rolls fed `perframe_full` (tree step 48,852 EMA, tag `step48852ema_pf`, inference seeds 0 and 1, paired episode-cluster bootstrap B 2000); (ii) the RETIME table is re-fitted by the unchanged H-R8-RETIME-TRAINFIT-1 procedure on per-frame-fed train rolls (30k EMA, A6 train139, seeds 0+1 pooled, prior ha0_ext_pose), its sha256 registered BEFORE any 48,852 pf eval roll; the clip-fed table b208c9c1... is printed beside only; (iii) new clause (1b) FEED PARITY asserted on the roll artifacts -- if it fails or cannot be shown, SHIP-R8 reads INCOMPLETE; (iv) the per-clip reads (`step48852ema_unc`) are printed beside as the deliberate-regression arm, never binding; (v) a missing clause means INCOMPLETE, never PASS.  Amendments 1 and 2 still apply.",
+ "per_clause": {
+  "1": "PASS",
+  "1b": "PASS",
+  "2": "PASS",
+  "3": "PASS",
+  "4": "PASS",
+  "5": "PASS",
+  "6": "N/A",
+  "7": "PASS"
+ },
+ "caveats": [
+  "single training seed",
+  "T1 open loop (not driving performance)",
+  "the stage was found post-hoc",
+  "the E1/E3 reference was switched after the 30k reads (D-R8-E1-REF)",
+  "the bootstrap answers 'another draw of EPISODES' only (not another training or inference run)",
+  "the speed-obedience / vmax-zero proxy arms of the battery carry no r8_nav (unknown row); they enter no SHIP-R8 clause"
+ ],
+ "beside": {
+  "pre_ruling_ha0_ext": {
+   "E1_S2": {
+    "s0": {
+     "delta": -0.0288,
+     "lo": -0.0414,
+     "hi": -0.0167,
+     "separated": true,
+     "n_windows": 4159,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 0.2518468690824961,
+     "mean_ref": 0.2806968202410624
+    },
+    "s1": {
+     "delta": -0.0278,
+     "lo": -0.0398,
+     "hi": -0.0158,
+     "separated": true,
+     "n_windows": 4159,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 0.2528902675425348,
+     "mean_ref": 0.2806968202410624
+    }
+   },
+   "E3_S6": {
+    "s0": {
+     "delta": -0.8384,
+     "lo": -1.1662,
+     "hi": -0.5117,
+     "separated": true,
+     "n_windows": 3251,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 2.5426042270655445,
+     "mean_ref": 3.3810287398475665
+    },
+    "s1": {
+     "delta": -0.8396,
+     "lo": -1.1563,
+     "hi": -0.5219,
+     "separated": true,
+     "n_windows": 3251,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 2.541414921261271,
+     "mean_ref": 3.3810287398475665
+    }
+   }
+  },
+  "flat_0p5_CONST_G05": {
+   "E1_S2_vs_pose": {
+    "s0": {
+     "delta": -0.035,
+     "lo": -0.0473,
+     "hi": -0.0235,
+     "separated": true,
+     "n_windows": 4159,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 0.2507805249208564,
+     "mean_ref": 0.28581937894529424
+    },
+    "s1": {
+     "delta": -0.0342,
+     "lo": -0.0453,
+     "hi": -0.0229,
+     "separated": true,
+     "n_windows": 4159,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 0.2516290353165023,
+     "mean_ref": 0.28581937894529424
+    }
+   },
+   "E3_S6_vs_pose": {
+    "s0": {
+     "delta": -1.0524,
+     "lo": -1.3325,
+     "hi": -0.7895,
+     "separated": true,
+     "n_windows": 3251,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 2.357426461075859,
+     "mean_ref": 3.4097815215823526
+    },
+    "s1": {
+     "delta": -1.0535,
+     "lo": -1.328,
+     "hi": -0.792,
+     "separated": true,
+     "n_windows": 3251,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 2.356288403874794,
+     "mean_ref": 3.4097815215823526
+    }
+   }
+  },
+  "per_surface_RETIME_DEPLOY_amendment1": {
+   "E1_S2_vs_pose": {
+    "s0": {
+     "delta": -0.034,
+     "lo": -0.0472,
+     "hi": -0.0212,
+     "separated": true,
+     "n_windows": 4159,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 0.25181444055271346,
+     "mean_ref": 0.28581937894529424
+    },
+    "s1": {
+     "delta": -0.033,
+     "lo": -0.0452,
+     "hi": -0.0207,
+     "separated": true,
+     "n_windows": 4159,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 0.2528605530343041,
+     "mean_ref": 0.28581937894529424
+    }
+   },
+   "E3_S6_vs_pose": {
+    "s0": {
+     "delta": -0.8671,
+     "lo": -1.1956,
+     "hi": -0.5366,
+     "separated": true,
+     "n_windows": 3251,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 2.5427071623539543,
+     "mean_ref": 3.4097815215823526
+    },
+    "s1": {
+     "delta": -0.8682,
+     "lo": -1.1911,
+     "hi": -0.5446,
+     "separated": true,
+     "n_windows": 3251,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 2.5415402226254167,
+     "mean_ref": 3.4097815215823526
+    }
+   },
+   "clause2_on_this_arm": "PASS",
+   "clause3_on_this_arm": "PASS"
+  },
+  "RETIME_TRAINFIT_per_surface": {
+   "E1_S2_vs_pose": {
+    "s0": {
+     "delta": -0.034,
+     "lo": -0.0472,
+     "hi": -0.0212,
+     "separated": true,
+     "n_windows": 4159,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 0.25181444055271346,
+     "mean_ref": 0.28581937894529424
+    },
+    "s1": {
+     "delta": -0.033,
+     "lo": -0.0452,
+     "hi": -0.0207,
+     "separated": true,
+     "n_windows": 4159,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 0.2528605530343041,
+     "mean_ref": 0.28581937894529424
+    }
+   },
+   "E3_S6_vs_pose": {
+    "s0": {
+     "delta": -0.8658,
+     "lo": -1.1947,
+     "hi": -0.5351,
+     "separated": true,
+     "n_windows": 3251,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 2.5439808773740142,
+     "mean_ref": 3.4097815215823526
+    },
+    "s1": {
+     "delta": -0.8669,
+     "lo": -1.1898,
+     "hi": -0.543,
+     "separated": true,
+     "n_windows": 3251,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 2.542848833545487,
+     "mean_ref": 3.4097815215823526
+    }
+   },
+   "clause2_on_this_arm": "PASS",
+   "clause3_on_this_arm": "PASS"
+  },
+  "raw_weights_tree": null,
+  "tactical_per_surface_form": {
+   "status": "PASS",
+   "separated_worse_cells": [],
+   "arm": "RETIME_DEPLOY"
+  },
+  "tactical_beside": {
+   "S2|s0": {
+    "TAC_traj_lat_correct": {
+     "os_minus_refcv7": {
+      "delta": 0.0026,
+      "lo": -0.0017,
+      "hi": 0.0073,
+      "separated": false,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.9627314258235152,
+      "mean_ref": 0.9600865592690551
+     },
+     "TRAINFIT_minus_refcv7": {
+      "delta": 0.0038,
+      "lo": -0.0005,
+      "hi": 0.0083,
+      "separated": false,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.9639336378937244,
+      "mean_ref": 0.9600865592690551
+     },
+     "per_surface_DEPLOY_minus_refcv7": {
+      "delta": 0.0038,
+      "lo": -0.0005,
+      "hi": 0.0083,
+      "separated": false,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.9639336378937244,
+      "mean_ref": 0.9600865592690551
+     },
+     "DEPLOY8_minus_os": {
+      "delta": 0.001,
+      "lo": -0.0002,
+      "hi": 0.0024,
+      "separated": false,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.9636931954796826,
+      "mean_ref": 0.9627314258235152
+     }
+    },
+    "TAC_traj_lon_correct": {
+     "os_minus_refcv7": {
+      "delta": -0.006,
+      "lo": -0.0226,
+      "hi": 0.0097,
+      "separated": false,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8288050012022121,
+      "mean_ref": 0.834816061553258
+     },
+     "TRAINFIT_minus_refcv7": {
+      "delta": 0.0195,
+      "lo": 0.0042,
+      "hi": 0.0348,
+      "separated": true,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8542918970906468,
+      "mean_ref": 0.834816061553258
+     },
+     "per_surface_DEPLOY_minus_refcv7": {
+      "delta": 0.0195,
+      "lo": 0.0042,
+      "hi": 0.0348,
+      "separated": true,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8542918970906468,
+      "mean_ref": 0.834816061553258
+     },
+     "DEPLOY8_minus_os": {
+      "delta": 0.0255,
+      "lo": 0.0154,
+      "hi": 0.0359,
+      "separated": true,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8542918970906468,
+      "mean_ref": 0.8288050012022121
+     }
+    }
+   },
+   "S2|s1": {
+    "TAC_traj_lat_correct": {
+     "os_minus_refcv7": {
+      "delta": 0.0031,
+      "lo": -0.0012,
+      "hi": 0.0075,
+      "separated": false,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.963212310651599,
+      "mean_ref": 0.9600865592690551
+     },
+     "TRAINFIT_minus_refcv7": {
+      "delta": 0.0046,
+      "lo": 0.0002,
+      "hi": 0.0088,
+      "separated": true,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.9646549651358499,
+      "mean_ref": 0.9600865592690551
+     },
+     "per_surface_DEPLOY_minus_refcv7": {
+      "delta": 0.0046,
+      "lo": 0.0002,
+      "hi": 0.0088,
+      "separated": true,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.9646549651358499,
+      "mean_ref": 0.9600865592690551
+     },
+     "DEPLOY8_minus_os": {
+      "delta": 0.0012,
+      "lo": 0.0,
+      "hi": 0.0027,
+      "separated": false,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.9644145227218082,
+      "mean_ref": 0.963212310651599
+     }
+    },
+    "TAC_traj_lon_correct": {
+     "os_minus_refcv7": {
+      "delta": -0.0149,
+      "lo": -0.0317,
+      "hi": 0.0002,
+      "separated": false,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8264005770617937,
+      "mean_ref": 0.8413080067323876
+     },
+     "TRAINFIT_minus_refcv7": {
+      "delta": 0.0142,
+      "lo": 0.0,
+      "hi": 0.0279,
+      "separated": false,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.855494109160856,
+      "mean_ref": 0.8413080067323876
+     },
+     "per_surface_DEPLOY_minus_refcv7": {
+      "delta": 0.0142,
+      "lo": 0.0,
+      "hi": 0.0279,
+      "separated": false,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.855494109160856,
+      "mean_ref": 0.8413080067323876
+     },
+     "DEPLOY8_minus_os": {
+      "delta": 0.0291,
+      "lo": 0.0169,
+      "hi": 0.0423,
+      "separated": true,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.855494109160856,
+      "mean_ref": 0.8264005770617937
+     }
+    }
+   },
+   "S6|s0": {
+    "TAC_traj_lat_correct": {
+     "os_minus_refcv7": {
+      "delta": 0.0098,
+      "lo": -0.0021,
+      "hi": 0.0218,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8901876345739772,
+      "mean_ref": 0.8803445093817287
+     },
+     "TRAINFIT_minus_refcv7": {
+      "delta": 0.0098,
+      "lo": -0.0021,
+      "hi": 0.0218,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8901876345739772,
+      "mean_ref": 0.8803445093817287
+     },
+     "per_surface_DEPLOY_minus_refcv7": {
+      "delta": 0.0098,
+      "lo": -0.0021,
+      "hi": 0.0218,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8901876345739772,
+      "mean_ref": 0.8803445093817287
+     },
+     "DEPLOY8_minus_os": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8901876345739772,
+      "mean_ref": 0.8901876345739772
+     }
+    },
+    "TAC_traj_lon_correct": {
+     "os_minus_refcv7": {
+      "delta": -0.0074,
+      "lo": -0.0333,
+      "hi": 0.0168,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.592433097508459,
+      "mean_ref": 0.5998154414026453
+     },
+     "TRAINFIT_minus_refcv7": {
+      "delta": -0.004,
+      "lo": -0.0293,
+      "hi": 0.0184,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.5958166717932943,
+      "mean_ref": 0.5998154414026453
+     },
+     "per_surface_DEPLOY_minus_refcv7": {
+      "delta": -0.004,
+      "lo": -0.0292,
+      "hi": 0.0187,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.5958166717932943,
+      "mean_ref": 0.5998154414026453
+     },
+     "DEPLOY8_minus_os": {
+      "delta": 0.0034,
+      "lo": -0.003,
+      "hi": 0.0098,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.5958166717932943,
+      "mean_ref": 0.592433097508459
+     }
+    }
+   },
+   "S6|s1": {
+    "TAC_traj_lat_correct": {
+     "os_minus_refcv7": {
+      "delta": 0.008,
+      "lo": -0.0035,
+      "hi": 0.0197,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8895724392494617,
+      "mean_ref": 0.8815749000307598
+     },
+     "TRAINFIT_minus_refcv7": {
+      "delta": 0.0089,
+      "lo": -0.0028,
+      "hi": 0.0207,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8904952322362351,
+      "mean_ref": 0.8815749000307598
+     },
+     "per_surface_DEPLOY_minus_refcv7": {
+      "delta": 0.0089,
+      "lo": -0.0028,
+      "hi": 0.0207,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8904952322362351,
+      "mean_ref": 0.8815749000307598
+     },
+     "DEPLOY8_minus_os": {
+      "delta": 0.0009,
+      "lo": -0.0006,
+      "hi": 0.0025,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8904952322362351,
+      "mean_ref": 0.8895724392494617
+     }
+    },
+    "TAC_traj_lon_correct": {
+     "os_minus_refcv7": {
+      "delta": -0.008,
+      "lo": -0.0333,
+      "hi": 0.0168,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.5902799138726545,
+      "mean_ref": 0.5982774530913565
+     },
+     "TRAINFIT_minus_refcv7": {
+      "delta": -0.0058,
+      "lo": -0.0297,
+      "hi": 0.0176,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.592433097508459,
+      "mean_ref": 0.5982774530913565
+     },
+     "per_surface_DEPLOY_minus_refcv7": {
+      "delta": -0.0065,
+      "lo": -0.0306,
+      "hi": 0.0169,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.5918179021839434,
+      "mean_ref": 0.5982774530913565
+     },
+     "DEPLOY8_minus_os": {
+      "delta": 0.0015,
+      "lo": -0.0037,
+      "hi": 0.0071,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.5918179021839434,
+      "mean_ref": 0.5902799138726545
+     }
+    }
+   }
+  },
+  "clip_fed_table_beside": {
+   "sha256": "b208c9c1e4236075de107ef49eaef39c1dddddba257f6e594bf6b84f8a24b1ee",
+   "gains": {
+    "S2": {
+     "instants_s": [
+      0.5,
+      1.0,
+      1.5,
+      2.0
+     ],
+     "RETIME": [
+      0.9673903790217738,
+      0.6192916835387219,
+      0.5511341845460037,
+      0.530539399347386
+     ]
+    },
+    "S6": {
+     "instants_s": [
+      1.0,
+      2.0,
+      3.0,
+      4.0,
+      5.0,
+      6.0
+     ],
+     "RETIME": [
+      0.6393548580383511,
+      0.5969720822621201,
+      0.6546139969520486,
+      0.6994940271226132,
+      0.7222699235551424,
+      0.7453601677670005
+     ]
+    }
+   },
+   "note": "Amendment 3 (ii): printed beside only"
+  },
+  "per_clip_verdict_deliberate_regression_arm": {
+   "file": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\raw\\ship_r8\\SHIP_R8_step48852ema_unc.json",
+   "overall": "FAIL",
+   "per_clause": {
+    "1": "PASS",
+    "2": "PASS",
+    "3": "PASS",
+    "4": "PASS",
+    "5": "FAIL",
+    "6": "N/A",
+    "7": "PASS"
+   },
+   "tree": "step48852ema_unc",
+   "binding": false
+  }
+ },
+ "base_verdict_copy": {
+  "file": "C:\\Users\\Admin\\qland\\hold_r8pf\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-20-refcv8-perframe-final\\code\\_ship_r8_verdict_base.py",
+  "sha256": "7543c585d9cc099942862c7f644c5fcae797272cd9b4dfec93708450224660f2"
+ },
+ "inputs": {
+  "tf": "C:\\Users\\Admin\\refcv8_pf\\picker\\lane\\pkship_pf\\pfpkg\\raw\\retime_trainfit\\FORWARD_TRAINFIT_pkship_pf.json",
+  "fd8": "C:\\Users\\Admin\\refcv8_pf\\picker\\lane\\pkship_pf\\pfpkg\\raw\\retime_deploy\\FORWARD_DEPLOY8_pkship_pf.json",
+  "tac": "C:\\Users\\Admin\\refcv8_pf\\picker\\lane\\pkship_pf\\pfpkg\\raw\\retime_deploy\\TAC_pkship_pf.json",
+  "pp": "C:\\Users\\Admin\\refcv8_pf\\picker\\lane\\pkship_pf\\pfpkg\\raw\\retime_deploy\\PRIOR_PARITY.json",
+  "fd_ps": "C:\\Users\\Admin\\refcv8_pf\\picker\\lane\\pkship_pf\\pfpkg\\raw\\retime_deploy\\FORWARD_DEPLOY_pkship_pf.json",
+  "pr": "C:\\Users\\Admin\\refcv8_pf\\picker\\archive\\pkship_pf\\PAIRED_READ_pkship_pf.json",
+  "deploy_sha": "C:\\Users\\Admin\\refcv8_pf\\picker\\lane\\pkship_pf\\pfpkg\\raw\\retime_deploy\\FROZEN_GAINS_RETIME_deploy.sha256",
+  "frozen": "C:\\Users\\Admin\\qland\\hold_r8pf\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-20-refcv8-perframe-final\\raw\\retime_trainfit_pf\\FROZEN_GAINS_RETIME_train_pf.json",
+  "provenance": "C:\\Users\\Admin\\qland\\hold_r8pf\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-20-refcv8-perframe-final\\raw\\retime_trainfit_pf\\FROZEN_GAINS_RETIME_train_pf.provenance.json",
+  "gate": "C:\\Users\\Admin\\qland\\hold_r8pf\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-20-refcv8-perframe-final\\raw\\REGISTRATION_GATE.json",
+  "registered": "C:\\Users\\Admin\\qland\\hold_r8pf\\REGISTERED_PF_TABLE.sha256",
+  "parity_s0": "C:\\Users\\Admin\\refcv8_pf\\picker\\lane\\pkship_pf\\feed_parity\\FEED_PARITY_pkship_pf_s0.json",
+  "parity_s1": "C:\\Users\\Admin\\refcv8_pf\\picker\\lane\\pkship_pf\\feed_parity\\FEED_PARITY_pkship_pf_s1.json",
+  "perclip": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\raw\\ship_r8\\SHIP_R8_step48852ema_unc.json"
+ },
+ "inputs_sha256": {
+  "tf": "007fecf1a85fbfc208897ac04e865747452aa50c4623722412925f3b0c416500",
+  "fd8": "4a5a1befe63ac2fcd36199c8b34a4c2824c0a7bd1ba73b876b8c767acc1becc9",
+  "tac": "61e3e87189517f0a2f7c4eaa763f1534540f73079efa78f18a069981effd5974",
+  "pp": "9ac3461466daf144296df9b89fd2517d9a2d2258c7cbc66aff7ff78d5c978f26",
+  "fd_ps": "818e9dedb83f2aea82dadbb550dabf93d0d97621a7c76deaf4b0bdcf63442eda",
+  "pr": "9251aa1fe5d0fce121d5f18323737ea2efb439f73e16a1342b06dfb0e5227bc1",
+  "deploy_sha": "9949d73ca191440d48f2243506809a6d21c34144cf935707dc164b6b10dc74b1",
+  "frozen": "2aacc9ff32d3d2a5a18dda2d72ab5ce6c42d1c1268e9186912c5151bbe4d6d80",
+  "provenance": "a1645f88dc01c5e316579e2e22310e62a2426fc9159a8adde7120d424a5d7269",
+  "gate": "7478b23366da249ab75471363b2e245c1fc0f8eebcc549bc828b5b6a5f64e5f2",
+  "registered": "3e77cd12e2e584e8be5da469da9e5bb4e51e4eda02ec048c7d3470eb7310b7ae",
+  "parity_s0": "65564ce94b2983c56421d57fec746fa5aaad36f39c5d7931f35b18e10b602ab4",
+  "parity_s1": "77ee7f7c4b1bbadd8a3357986c8265ae3d94dd148002bba9ec5e1619af3be7a7",
+  "perclip": "4b7410a28258b252fe6c65731e6bb218b76b4bae1f5581d9a56690cbb9b3093a"
+ },
+ "script_sha256": "61095bc603adf1db4ae1b295c7e7f73962e62903974976c2444bf186d8b1e769"
+}

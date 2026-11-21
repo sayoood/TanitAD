@@ -1,0 +1,2789 @@
+{
+ "artifact_kind": "taniteval.openloop_suite",
+ "tier": "T1",
+ "tool": "taniteval/tools/openloop_suite.py",
+ "tag": "openloop-suite-DRYRUN-refcv3-fixture",
+ "generated_utc": "2026-09-03T20:47:01Z",
+ "schema": "taniteval.openloop_suite/1",
+ "loop_class": {
+  "value": "OPEN LOOP",
+  "ruling": "PI, 2026-09-02: a predictor consuming the planner's own output is STILL open loop, because the model's trajectory does not affect the ego data it is next fed. The other regime means the trajectory controls a vehicle in a simulator (AlpaSim) or a real test vehicle.",
+  "applies_to": "every arm in this suite, without exception",
+  "why_the_tier_letter_is_kept": "T1 is the doctrine's machine-readable stamp and the criteria registry keys on it. The LETTER is kept; the doctrine's PROSE for that row is superseded by the ruling above and is reported, not edited, in stale_loop_labels.",
+  "stale_loop_labels": [
+   {
+    "path": "taniteval/tools/t1_eval.py",
+    "symbol": "_TIER_NOTE / _tier_doctrine",
+    "text": "describes T1 with the superseded regime phrase",
+    "action": "REPORTED, not edited — separate stream (PI ruling 2026-09-02)"
+   },
+   {
+    "path": "products/P7-TanitEval/CRITERIA_REGISTRY.json",
+    "symbol": "tiers.values.T1.note",
+    "text": "describes T1 with the superseded regime phrase, as the PRIMARY driving tier",
+    "action": "REPORTED, not edited — the registry is the EvalFlyWheel's"
+   },
+   {
+    "path": "Project Steering/EVAL_DOCTRINE.md",
+    "symbol": "the T1 row",
+    "text": "defines T1 with the superseded regime phrase",
+    "action": "REPORTED, not edited — doctrine change is a PI/Master-Mind call"
+   }
+  ]
+ },
+ "headline_arm": "os",
+ "floor_arm": "ha0",
+ "n_windows": 42,
+ "n_episodes": 3,
+ "dt_s": 0.5,
+ "horizon_steps": 4,
+ "estimator": {
+  "point": "full_set pooled mean over windows",
+  "interval": "episode_cluster_bootstrap (taniteval/ci.py)",
+  "paired": "paired_episode_cluster_bootstrap — two arms on the SAME windows, resampled together so the shared per-window difficulty cancels inside each draw",
+  "cluster_unit": "the episode (windows inside one clip are dependent)",
+  "n_boot": 300,
+  "seed": 0,
+  "forbidden_estimator": "overlapping_holdout_se is NOT used anywhere in this suite. It is not a jackknife, it is anti-conservative, and it BIASES THE POINT ESTIMATE bidirectionally — measured up to a sign flip on a paired delta. Named here only to disavow it.",
+  "quadrature_rule": "⛔ two single-arm intervals are NEVER combined in quadrature; the paired form is the only valid one"
+ },
+ "protocol": {
+  "inference_inputs": "the OBSERVED window's frames (vision); the MEASURED v0 at t0 (PI ruling 2026-09-02); the clip's v7.2 nav token (goal input, PI 2026-08-03); NOTHING recorded after the window origin on any arm here",
+  "vision_only": "vision + v0(t0) + nav token — both additions admitted by the two PI rulings above; no ego state beyond v0, no future",
+  "goal_source": "the model's own tactical goal head (E4/E9), decoded from vision + nav + v0 inside the forward pass; the selection it grafts is banked per window (sel_score_v3)",
+  "goal_situation_disjoint": "True by construction: nav is the v7.2 labels blob's nav_command token, not a situation classifier output",
+  "corpus": "C:\\Users\\Admin\\run_taniteval\\dryrun\\fixture\\eps",
+  "labels": {
+   "path": "C:\\Users\\Admin\\run_taniteval\\dryrun\\fixture\\labels_v72_eval.jsonl",
+   "md5": "ffe781e088cd05a47b01f1d31c6263c0",
+   "n_records": 3,
+   "n_episodes": 3,
+   "n_joined": 3,
+   "n_missing": 0,
+   "join_key": "stable_episode_id(clip_id) (the trainer's key)",
+   "schema_version": "s2-geom-v7",
+   "vocab": "v7",
+   "allow_oracle_nav": true,
+   "divergences": []
+  },
+  "parity_key": "the eval split is the v7.2 EVAL clip set, identified by the labels blob md5 in corpus.labels — NOT the canonical train parity key e438721ae894; cross-arm deltas are valid only against dumps on this SAME corpus + grid",
+  "tier": "T1",
+  "loop_class": "OPEN LOOP",
+  "labels_may_use_ego": "yes — label derivation may use ego and privileged channels (PI 2026-08-03). The restriction is on INFERENCE only."
+ },
+ "parity": {
+  "parity_key": "NON-PARITY — synthetic fixture, not the canonical corpus",
+  "corpus": "SYNTHETIC 3-clip fixture (stack/tests/test_refcv3_arm.py)",
+  "n_episodes_scored": 3,
+  "n_windows_scored": 42,
+  "window_stride": 1,
+  "grid": "2s",
+  "labels_md5": null,
+  "_rule": "Parity is sacred. The canonical TRAIN corpus is physicalai-train-e438721ae894 (2376 episodes), skip-hash f09e44db. This suite scores an EVAL slice; anything that re-selects episodes breaks cross-arm comparability and must be flagged NON-PARITY explicitly.",
+  "parity_status": "NON-PARITY — synthetic fixture; no v2_parity block exists",
+  "⛔_cross_arm_comparability": "⛔ THIS RUN IS NON-PARITY unless `parity_status` says otherwise. refcv3's own config.json carries `v2_parity.parity false`, `checked false` and `corpus_key null`, and the trainer prints a non-parity warning on line 2 of its train.log. ⇒ refcv3 is NOT cross-arm comparable with refc-base or refc-xl, and a reader must not assume the programme's usual parity. The ONLY admissible cross-model statistic here is each arm's MARGIN over the shared `ha0` floor, which is bit-identically defined everywhere — never a level against another model's level.",
+  "train_eval_disjoint": "N/A — synthetic fixture, no training run",
+  "_train_eval_note": "⛔ train ∩ eval = ∅ is a property of the RUN, not of this tool, and this tool cannot check it. Assert it before quoting anything (GATE 3).",
+  "t1_definition": {
+   "arm": "os",
+   "_is": "ONE forward pass of RefCV3Model at the window origin, consuming the observed frames, the clip's v7.2 nav token and the MEASURED v0 at t0 and nothing else, emitting the whole 6 s path as the model's OWN sel_score_v3-ranked choice among its 128 anchors.",
+   "no_closed_loop_because": "refc_v3.py:480 — forward(frames, nav_cmd, v0, steps, lan, nav_known) has NO action argument; there is no per-step decode and no state that advances, so t1_eval.roll_closed (t1_eval.py:760) has no action to feed back and CANNOT be ported. The flagship is supervised AND autoregressive; that is the difference.",
+   "selection": "out['traj'] — refc_v3.py:520-525: rank = sel_score_v3 (= apply_seam_clamp(sel_score, goal_gate*score), banked at :527) masked by reach_keep, then argmax — on the hier arm; the core's own sel_score at refc.py:1531-1534 on the flat arm. ⛔ NEVER a_star (refc_v3_train.py:460), which is the GT-nearest anchor and makes eval_traj an ORACLE-SELECTED lower bound.",
+   "inputs_admitted": [
+    "frames <= t0",
+    "nav_cmd (v7.2 token)",
+    "v0 = pose_last[:, 3] measured at t0"
+   ],
+   "ade_note": "ADE here is recomputed as an L2 norm from the dumped path. refcv3's training-time `traj` is a mean L1 PER COORDINATE (refc_v3_train.py:464-465) — ⛔ a different statistic; never convert one into the other."
+  }
+ },
+ "four_families": {
+  "longitudinal": {
+   "speed_mae_mps": 4.7021,
+   "speed_bias_mps": -4.5804,
+   "speed_rmse_mps": 5.2691,
+   "target_speed_acc": {
+    "within_0.5_mps": 0.0595,
+    "within_1.0_mps": 0.0952,
+    "within_2.0_mps": 0.2024
+   },
+   "target_speed_acc_note": "fraction of the 168 horizon STEPS (not windows) whose |speed error| is within the band. Bands are PROPOSED reporting tolerances, not a gate.",
+   "along_mae_m": 9.0068,
+   "along_bias_m": -9.0068,
+   "along_final_bias_m": -12.0075,
+   "accel_mae_mps2": 3.9545,
+   "ego_progress": {
+    "status": "OK",
+    "convention": "human_dir",
+    "progress_ratio_mean": 0.1779,
+    "progress_ratio_median": 0.1729,
+    "progress_error_mean": 0.8221,
+    "under_progress_rate": 1.0,
+    "gt_progress_mean_m": 14.5351,
+    "n": 42,
+    "n_windows": 42,
+    "n_excluded_low_gt_progress": 0,
+    "min_progress_m": 0.5,
+    "t0_axis_gt_self_ratio": 0.9935,
+    "t0_axis_gt_self_ratio_note": "what the GROUND TRUTH scores under pseudosim's published t0-axis reading. 1.0 means the windows are straight; below 1.0 is the CURVATURE CONFOUND — the human charged for under-progress it did not commit, and an arm that drives straighter than the human rewarded for it.",
+    "definition": "along-track distance covered / the human's, both projected on the human's own final-displacement direction; dt-invariant; <1 = under-drives, >1 = over-drives; GT scores exactly 1.0 by construction",
+    "published_motivation": "arXiv 2605.00066 — Ego Progress alone rho=0.83 vs closed-loop Driving Score while traditional L2 gives rho=-0.36 (p=0.43, n=8, NO CI). Direction only; those magnitudes are NOT a target."
+   },
+   "dt_s": 0.5,
+   "rate_scaling_note": "speed ~ 1/dt, accel ~ 1/dt^2. Numbers computed with a wrong dt are off by those powers; along_* are dt-invariant.",
+   "distance_keeping": {
+    "status": "UNAVAILABLE",
+    "reason": "no lead-agent track supplied — pass `lead=` (see this function's caller docstring). PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus); the reader is `Architecture & Inference/Implementation/incoming/2026-08-03-longitudinal-distance-keeping/build_lead_tracks.py`. Not supplying it is a WORK ITEM, not a pass.",
+    "n": 0
+   },
+   "anti_echo": {
+    "status": "OK",
+    "block": "taniteval.v0_antiecho",
+    "version": "1.0.0",
+    "ruling": "Sayed 2026-08-16: v0 is ADMISSIBLE as a planner input (measured present state, not the future) PROVIDED the planner is shown not to be 'just outputting v0 as longitudinal plan'. See Project Steering/V6F_PLANNER_DESIGN.md §1.4.",
+    "v0_provenance": "win['v0'] — supplied explicitly by the caller",
+    "longitudinal_claim_admissible": false,
+    "flagged": true,
+    "summary": "holdv0=LOSES_TO_HOLDV0 · copy_detector=CLEAN (echo_index 0.0000 vs GT 0.0000) · shuffle=UNAVAILABLE",
+    "holdv0_baseline": {
+     "status": "OK",
+     "verdict": "LOSES_TO_HOLDV0",
+     "verdict_reason": "⛔ the arm is WORSE than hold-v0 on speed_mae_mps by 3.9930 m/s [2.7275, 5.3616], separated AGAINST it. A 0-parameter copy of the arm's own input outperforms the arm. No longitudinal claim is admissible.",
+     "admissible": false,
+     "admissible_def": "⛔ Sayed 2026-08-16: no longitudinal claim is admissible until the planner BEATS hold-v0, SEPARATED, on the LONGITUDINAL family. This bit is that condition, evaluated on speed_mae_mps.",
+     "primary_metric": "speed_mae_mps",
+     "metrics": {
+      "speed_mae_mps": {
+       "arm": 4.7021,
+       "holdv0": 0.7091,
+       "what": "mean |speed error| over the horizon, m/s (PRIMARY — the binding rule's target-speed accuracy)",
+       "lower_is_better": true,
+       "delta": 3.993,
+       "lo": 2.7275,
+       "hi": 5.3616,
+       "ci95": 1.3171,
+       "p_delta_gt0": 1.0,
+       "separated": true,
+       "reducer": "mean",
+       "n_windows": 42,
+       "n_episodes": 3,
+       "n_boot": 2000,
+       "estimator": "paired_episode_cluster_bootstrap",
+       "delta_sign_note": "delta = arm - holdv0; NEGATIVE and separated is an arm WIN",
+       "verdict": "LOSES_TO_HOLDV0"
+      },
+      "along_abs_m": {
+       "arm": 12.0075,
+       "holdv0": 1.3692,
+       "what": "|along-track position error| at the final horizon step, m — the POSITIONAL consequence of the speed plan; dt-invariant",
+       "lower_is_better": true,
+       "delta": 10.6383,
+       "lo": 7.6404,
+       "hi": 13.628,
+       "ci95": 2.9938,
+       "p_delta_gt0": 1.0,
+       "separated": true,
+       "reducer": "mean",
+       "n_windows": 42,
+       "n_episodes": 3,
+       "n_boot": 2000,
+       "estimator": "paired_episode_cluster_bootstrap",
+       "delta_sign_note": "delta = arm - holdv0; NEGATIVE and separated is an arm WIN",
+       "verdict": "LOSES_TO_HOLDV0"
+      },
+      "target_speed_miss_1mps": {
+       "arm": 0.9048,
+       "holdv0": 0.3214,
+       "what": "fraction of horizon steps whose |speed error| exceeds 1.0 m/s (1 - target_speed_acc.within_1_mps)",
+       "lower_is_better": true,
+       "delta": 0.5833,
+       "lo": 0.5357,
+       "hi": 0.6786,
+       "ci95": 0.0714,
+       "p_delta_gt0": 1.0,
+       "separated": true,
+       "reducer": "mean",
+       "n_windows": 42,
+       "n_episodes": 3,
+       "n_boot": 2000,
+       "estimator": "paired_episode_cluster_bootstrap",
+       "delta_sign_note": "delta = arm - holdv0; NEGATIVE and separated is an arm WIN",
+       "verdict": "LOSES_TO_HOLDV0"
+      }
+     },
+     "estimator": "paired_episode_cluster_bootstrap (taniteval.ci) — ⛔ NOT overlapping_holdout_se, which is anti-conservative AND biases the point estimate [openloop_suite: that estimator is deprecated and forbidden here; it is not used anywhere in this suite]",
+     "n_boot": 2000,
+     "seed": 0,
+     "n_windows": 42,
+     "n_episodes": 3,
+     "dt_s": 0.5,
+     "horizon_steps": 4,
+     "baseline": "hold-v0: along = v0 * t, lateral = 0, zero commanded acceleration. 0 parameters, 0 vision, 0 training.",
+     "⚠️_scope": "hold-v0 is a STRAIGHT line and is the LONGITUDINAL floor ONLY. Beating it says nothing about lateral or tactical quality, and it must never be used to judge a turn — for that the floor family is driving.FLOORS (cv/holdv0/ctrv)."
+    },
+    "copy_detector": {
+     "status": "OK",
+     "verdict": "CLEAN",
+     "verdict_reason": "echo_index_excess +0.0000 < 0.2: the arm is not measurably flatter than the human on these windows. ⚠️ CLEAN here is NOT an admissibility verdict — that is holdv0_baseline's job. This detector can only refute a copy, never establish skill.",
+     "echo_index": 0.0,
+     "echo_index_gt": 0.0,
+     "echo_index_excess": 0.0,
+     "echo_index_def": "fraction of windows with r(along, hold-v0) >= 0.999 AND mean |commanded accel| <= 0.1 m/s^2, JOINTLY. A pure hold-v0 planner scores exactly 1.0. Reported beside the GT's own value because most of this corpus genuinely is cruising; the EXCESS is the read.",
+     "r_vs_holdv0_mean": 0.7397,
+     "r_vs_holdv0_mean_gt": 0.9995,
+     "r_alone_is_not_the_detector": "⛔ both profiles are monotone ramps from the origin, so ANY forward-moving plan correlates ~1 with hold-v0 — a hard-braking planner still scores r ~0.99. r is a COMPONENT of echo_index, never a verdict on its own.",
+     "cmd_accel_mae_mps2": 3.7231,
+     "cmd_accel_mae_mps2_gt": 0.9668,
+     "speed_dev_rms_mps": 5.6521,
+     "speed_dev_rms_mps_gt": 0.8214,
+     "dev_ratio": 6.8813,
+     "dev_ratio_def": "RMS(speed_arm - v0) / RMS(speed_gt - v0). 0.0 = the arm commands NOTHING while the human did; 1.0 = it commands the same magnitude (says nothing about the sign — that is dev_r).",
+     "dev_r": 0.0966,
+     "dev_r_degenerate": false,
+     "dev_r_rms_arm_mps": 5.773716,
+     "dev_r_rms_gt_mps": 0.854641,
+     "dev_r_def": "Pearson r between (speed_arm - v0) and (speed_gt - v0) pooled over every (window, step) — the correlation of the DEPARTURE from the echo. A pure hold-v0 planner has a nil departure, so this is UNDEFINED (dev_r_degenerate=true), which IS the signature. ⛔ The degeneracy gate is PHYSICAL (RMS <= 0.001 m/s), not `== 0`: the geometry recovers speed from norm(diff(positions))/dt and leaves a ~1.9e-06 m/s float32 residue, which an exact test correlated into a spurious dev_r = -0.0133 for a PURE ECHO.",
+     "echo_frac_where_human_acted": 0.0,
+     "echo_frac_where_human_acted_def": "of the 36 windows where the human's own speed departed from v0 by >= 0.5 m/s RMS, the fraction on which the arm nevertheless stayed within 0.1 m/s of v0. The discriminating subset: holding was demonstrably the wrong answer and the arm held anyway.",
+     "n_windows_human_acted": 36,
+     "n_windows": 42,
+     "horizon_steps": 4,
+     "dt_s": 0.5,
+     "thresholds": {
+      "ECHO_R_MIN": 0.999,
+      "ECHO_ACCEL_MPS2": 0.1,
+      "ECHO_DEV_MPS": 0.1,
+      "HUMAN_ACTED_DEV_MPS": 0.5,
+      "ECHO_INDEX_ECHO": 0.99,
+      "ECHO_EXCESS_SUSPECT": 0.2,
+      "_class": "ALL PROPOSED, and ALL applied to the arm AND the GT alike so the headline (the excess) is threshold-robust."
+     }
+    },
+    "shuffle_control": {
+     "status": "UNAVAILABLE",
+     "reason": "no shuffled-v0 re-run supplied. This control needs a SECOND forward pass of the model with v0 permuted across windows — it cannot be computed from a banked dump. stack/scripts/probe_latent_state.py — collect_grid(..., speed_echo_control=True) at line 578 permutes b['pose_last'][:, 3] across the batch (same frames, same recorded actions, WRONG speed scalar); CLI flag --speed-echo-control at line 775; already wired by stack/ops/pbattery_watcher.py:80. This is the machinery that produced the P1 speed-echo row (R2 0.995 -> -0.72). Re-run the planner under it and pass the resulting waypoints as win['pred_v0shuffled'] (+ win['v0_shuffled']). Not running it is a WORK ITEM, not a pass.",
+     "n": 0,
+     "n_windows_available": 42,
+     "producer": "stack/scripts/probe_latent_state.py — collect_grid(..., speed_echo_control=True) at line 578 permutes b['pose_last'][:, 3] across the batch (same frames, same recorded actions, WRONG speed scalar); CLI flag --speed-echo-control at line 775; already wired by stack/ops/pbattery_watcher.py:80. This is the machinery that produced the P1 speed-echo row (R2 0.995 -> -0.72). Re-run the planner under it and pass the resulting waypoints as win['pred_v0shuffled'] (+ win['v0_shuffled']).",
+     "how_to_supply": "win['pred_v0shuffled'] [n,H,2] (+ optionally win['v0_shuffled'] [n]; when absent the permutation is regenerated with shuffle_v0(v0, seed) and the seed is stamped)"
+    },
+    "_why_all_three": "holdv0_baseline is the ADMISSIBILITY test (does the arm beat the copy, separated). copy_detector is the cheap always-on SCALAR (is the emitted plan literally the copy). shuffle_control is the FALSIFIER (does the plan follow a v0 we know to be wrong). The first can pass while the arm still copies on the subset that matters, the second cannot establish skill, and the third needs the model — so none of the three substitutes for another.",
+    "⚠️_context": "admitting v0 removed an ARGUMENT, not a DEFICIT: MEASURED, vision + v0 sat at sigma/ADE 3.527 on the REF-C surface, still worse than a 0-parameter constant-yaw-rate rule at 1.1888."
+   },
+   "n_windows": 42,
+   "ci": {
+    "estimator": "episode_cluster_bootstrap",
+    "point_estimate": "full_set (the block's own printed value, recomputed by the same arithmetic — never a second implementation)",
+    "resampling_unit": "EPISODE (win['eid']) — consecutive windows of one clip are not independent, so the episode is the cluster unit",
+    "n_windows": 42,
+    "components": {
+     "speed_mae_mps": {
+      "mean": 4.7021,
+      "lo": 3.4371,
+      "hi": 6.0698,
+      "ci95": 1.3163,
+      "se": 0.6165,
+      "reducer": "mean",
+      "n_windows": 42,
+      "n_episodes": 3,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap",
+      "resampling_unit": "EPISODE (win['eid']) — consecutive windows of one clip are not independent, so the episode is the cluster unit"
+     },
+     "speed_bias_mps": {
+      "mean": -4.5804,
+      "lo": -6.0698,
+      "hi": -3.0719,
+      "ci95": 1.4989,
+      "se": 0.7008,
+      "reducer": "mean",
+      "n_windows": 42,
+      "n_episodes": 3,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap",
+      "resampling_unit": "EPISODE (win['eid']) — consecutive windows of one clip are not independent, so the episode is the cluster unit"
+     },
+     "speed_rmse_mps": {
+      "mean": 5.2691,
+      "lo": 3.8419,
+      "hi": 6.4937,
+      "ci95": 1.3259,
+      "se": 0.619,
+      "reducer": "rms",
+      "n_windows": 42,
+      "n_episodes": 3,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap",
+      "resampling_unit": "EPISODE (win['eid']) — consecutive windows of one clip are not independent, so the episode is the cluster unit"
+     },
+     "target_speed_acc.within_0.5_mps": {
+      "mean": 0.0595,
+      "lo": 0.0,
+      "hi": 0.0893,
+      "ci95": 0.0446,
+      "se": 0.0241,
+      "reducer": "mean",
+      "n_windows": 42,
+      "n_episodes": 3,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap",
+      "resampling_unit": "EPISODE (win['eid']) — consecutive windows of one clip are not independent, so the episode is the cluster unit"
+     },
+     "target_speed_acc.within_1.0_mps": {
+      "mean": 0.0952,
+      "lo": 0.0,
+      "hi": 0.1429,
+      "ci95": 0.0714,
+      "se": 0.0385,
+      "reducer": "mean",
+      "n_windows": 42,
+      "n_episodes": 3,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap",
+      "resampling_unit": "EPISODE (win['eid']) — consecutive windows of one clip are not independent, so the episode is the cluster unit"
+     },
+     "target_speed_acc.within_2.0_mps": {
+      "mean": 0.2024,
+      "lo": 0.1071,
+      "hi": 0.25,
+      "ci95": 0.0714,
+      "se": 0.0385,
+      "reducer": "mean",
+      "n_windows": 42,
+      "n_episodes": 3,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap",
+      "resampling_unit": "EPISODE (win['eid']) — consecutive windows of one clip are not independent, so the episode is the cluster unit"
+     },
+     "along_mae_m": {
+      "mean": 9.0068,
+      "lo": 7.1367,
+      "hi": 10.8779,
+      "ci95": 1.8706,
+      "se": 0.8745,
+      "reducer": "mean",
+      "n_windows": 42,
+      "n_episodes": 3,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap",
+      "resampling_unit": "EPISODE (win['eid']) — consecutive windows of one clip are not independent, so the episode is the cluster unit"
+     },
+     "along_bias_m": {
+      "mean": -9.0068,
+      "lo": -10.8779,
+      "hi": -7.1367,
+      "ci95": 1.8706,
+      "se": 0.8745,
+      "reducer": "mean",
+      "n_windows": 42,
+      "n_episodes": 3,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap",
+      "resampling_unit": "EPISODE (win['eid']) — consecutive windows of one clip are not independent, so the episode is the cluster unit"
+     },
+     "along_final_bias_m": {
+      "mean": -12.0075,
+      "lo": -14.9708,
+      "hi": -9.0237,
+      "ci95": 2.9735,
+      "se": 1.3902,
+      "reducer": "mean",
+      "n_windows": 42,
+      "n_episodes": 3,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap",
+      "resampling_unit": "EPISODE (win['eid']) — consecutive windows of one clip are not independent, so the episode is the cluster unit"
+     },
+     "accel_mae_mps2": {
+      "mean": 3.9545,
+      "lo": 3.9141,
+      "hi": 3.9766,
+      "ci95": 0.0313,
+      "se": 0.0164,
+      "reducer": "mean",
+      "n_windows": 42,
+      "n_episodes": 3,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap",
+      "resampling_unit": "EPISODE (win['eid']) — consecutive windows of one clip are not independent, so the episode is the cluster unit"
+     },
+     "ego_progress.progress_ratio_mean": {
+      "mean": 0.1779,
+      "lo": 0.1442,
+      "hi": 0.2183,
+      "ci95": 0.037,
+      "se": 0.0175,
+      "reducer": "mean",
+      "n_windows": 42,
+      "n_episodes": 3,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap",
+      "resampling_unit": "EPISODE (win['eid']) — consecutive windows of one clip are not independent, so the episode is the cluster unit",
+      "n_excluded_low_gt_progress": 0
+     },
+     "ego_progress.progress_ratio_median": {
+      "mean": 0.1729,
+      "lo": 0.1437,
+      "hi": 0.2196,
+      "ci95": 0.0379,
+      "se": 0.026,
+      "reducer": "median",
+      "n_windows": 42,
+      "n_episodes": 3,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap",
+      "resampling_unit": "EPISODE (win['eid']) — consecutive windows of one clip are not independent, so the episode is the cluster unit",
+      "n_excluded_low_gt_progress": 0
+     },
+     "ego_progress.progress_error_mean": {
+      "mean": 0.8221,
+      "lo": 0.7817,
+      "hi": 0.8558,
+      "ci95": 0.037,
+      "se": 0.0175,
+      "reducer": "mean",
+      "n_windows": 42,
+      "n_episodes": 3,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap",
+      "resampling_unit": "EPISODE (win['eid']) — consecutive windows of one clip are not independent, so the episode is the cluster unit",
+      "n_excluded_low_gt_progress": 0
+     },
+     "ego_progress.under_progress_rate": {
+      "mean": 1.0,
+      "lo": 1.0,
+      "hi": 1.0,
+      "ci95": 0.0,
+      "se": 0.0,
+      "reducer": "mean",
+      "n_windows": 42,
+      "n_episodes": 3,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap",
+      "resampling_unit": "EPISODE (win['eid']) — consecutive windows of one clip are not independent, so the episode is the cluster unit",
+      "n_excluded_low_gt_progress": 0
+     },
+     "ego_progress.gt_progress_mean_m": {
+      "mean": 14.5351,
+      "lo": 11.5471,
+      "hi": 17.504,
+      "ci95": 2.9785,
+      "se": 1.3925,
+      "reducer": "mean",
+      "n_windows": 42,
+      "n_episodes": 3,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap",
+      "resampling_unit": "EPISODE (win['eid']) — consecutive windows of one clip are not independent, so the episode is the cluster unit",
+      "n_excluded_low_gt_progress": 0
+     },
+     "ego_progress.t0_axis_gt_self_ratio": {
+      "mean": 0.9935,
+      "lo": 0.9924,
+      "hi": 0.9945,
+      "ci95": 0.0011,
+      "se": 0.0005,
+      "reducer": "mean",
+      "n_windows": 42,
+      "n_episodes": 3,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap",
+      "resampling_unit": "EPISODE (win['eid']) — consecutive windows of one clip are not independent, so the episode is the cluster unit",
+      "_what": "a property of the GROUND TRUTH's own geometry (the curvature confound in pseudosim's published reading), not of the arm — its interval is corpus dispersion"
+     }
+    },
+    "unavailable": {
+     "distance_keeping.mean_headway_min_m": {
+      "status": "UNAVAILABLE",
+      "reason": "no lead-agent track supplied — pass `lead=` (see this function's caller docstring). PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus); the reader is `Architecture & Inference/Implementation/incoming/2026-08-03-longitudinal-distance-keeping/build_lead_tracks.py`. Not supplying it is a WORK ITEM, not a pass.",
+      "n": 0
+     },
+     "distance_keeping.mean_time_gap_min_s": {
+      "status": "UNAVAILABLE",
+      "reason": "no lead-agent track supplied — pass `lead=` (see this function's caller docstring). PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus); the reader is `Architecture & Inference/Implementation/incoming/2026-08-03-longitudinal-distance-keeping/build_lead_tracks.py`. Not supplying it is a WORK ITEM, not a pass.",
+      "n": 0
+     },
+     "distance_keeping.mean_min_ttc_s": {
+      "status": "UNAVAILABLE",
+      "reason": "no lead-agent track supplied — pass `lead=` (see this function's caller docstring). PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus); the reader is `Architecture & Inference/Implementation/incoming/2026-08-03-longitudinal-distance-keeping/build_lead_tracks.py`. Not supplying it is a WORK ITEM, not a pass.",
+      "n": 0
+     }
+    },
+    "n_components": 19,
+    "n_with_interval": 16,
+    "n_unavailable": 3,
+    "complete": false,
+    "⛔_rule": "every component this family REPORTS carries an episode-cluster-bootstrap interval, or an explicit {status,reason,n}. A bare point estimate is neither."
+   },
+   "tier": "T1",
+   "n": 42,
+   "estimator": "full_set pooled mean over windows (point); intervals under 'intervals'"
+  },
+  "lateral": {
+   "heading_mae_deg": 93.6787,
+   "yaw_rate_mae_degps": 169.0004,
+   "curvature_mae_1pm": 1.429682,
+   "curvature_bias_1pm": 1.184698,
+   "cross_mae_m": 0.5906,
+   "cross_bias_m": -0.2763,
+   "cross_final_mae_m": 0.8369,
+   "n_steps_heading": 168,
+   "n_steps_curvature": 126,
+   "n_steps_yaw_rate": 126,
+   "excluded_below_min_ds": 0,
+   "min_ds_m": 0.25,
+   "min_ds_mps": 0.5,
+   "dt_s": 0.5,
+   "dt_invariant": [
+    "heading_mae_deg",
+    "curvature_*",
+    "cross_*"
+   ],
+   "n_windows": 42,
+   "ci": {
+    "estimator": "episode_cluster_bootstrap",
+    "point_estimate": "full_set (the block's own printed value, recomputed by the same arithmetic — never a second implementation)",
+    "resampling_unit": "EPISODE (win['eid']) — consecutive windows of one clip are not independent, so the episode is the cluster unit",
+    "n_windows": 42,
+    "components": {
+     "heading_mae_deg": {
+      "mean": 93.6787,
+      "lo": 93.2635,
+      "hi": 94.0116,
+      "ci95": 0.374,
+      "se": 0.1778,
+      "reducer": "heading_mae_deg=sum(err)/sum(valid_steps)",
+      "n_windows": 42,
+      "n_episodes": 3,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap",
+      "resampling_unit": "EPISODE (win['eid']) — consecutive windows of one clip are not independent, so the episode is the cluster unit",
+      "n_steps": 168,
+      "n_windows_dropped_no_valid_step": 0,
+      "_reduction": "MICRO mean = sum(per-window error sums) / sum(per-window valid-step counts) — identical to the masked mean the block prints, NOT a mean of per-window means"
+     },
+     "yaw_rate_mae_degps": {
+      "mean": 169.0004,
+      "lo": 165.6469,
+      "hi": 171.1985,
+      "ci95": 2.7758,
+      "se": 1.3781,
+      "reducer": "yaw_rate_mae_degps=sum(err)/sum(valid_steps)",
+      "n_windows": 42,
+      "n_episodes": 3,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap",
+      "resampling_unit": "EPISODE (win['eid']) — consecutive windows of one clip are not independent, so the episode is the cluster unit",
+      "n_steps": 126,
+      "n_windows_dropped_no_valid_step": 0,
+      "_reduction": "MICRO mean = sum(per-window error sums) / sum(per-window valid-step counts) — identical to the masked mean the block prints, NOT a mean of per-window means"
+     },
+     "curvature_mae_1pm": {
+      "mean": 1.429682,
+      "lo": 1.409092,
+      "hi": 1.460584,
+      "ci95": 0.025746,
+      "se": 0.012816,
+      "reducer": "curvature_mae_1pm=sum(err)/sum(valid_steps)",
+      "n_windows": 42,
+      "n_episodes": 3,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap",
+      "display_dp": 6,
+      "resampling_unit": "EPISODE (win['eid']) — consecutive windows of one clip are not independent, so the episode is the cluster unit",
+      "n_steps": 126,
+      "n_windows_dropped_no_valid_step": 0,
+      "_reduction": "MICRO mean = sum(per-window error sums) / sum(per-window valid-step counts) — identical to the masked mean the block prints, NOT a mean of per-window means"
+     },
+     "curvature_bias_1pm": {
+      "mean": 1.184698,
+      "lo": 1.160491,
+      "hi": 1.205476,
+      "ci95": 0.022493,
+      "se": 0.010609,
+      "reducer": "curvature_bias_1pm=sum(err)/sum(valid_steps)",
+      "n_windows": 42,
+      "n_episodes": 3,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap",
+      "display_dp": 6,
+      "resampling_unit": "EPISODE (win['eid']) — consecutive windows of one clip are not independent, so the episode is the cluster unit",
+      "n_steps": 126,
+      "n_windows_dropped_no_valid_step": 0,
+      "_reduction": "MICRO mean = sum(per-window error sums) / sum(per-window valid-step counts) — identical to the masked mean the block prints, NOT a mean of per-window means"
+     },
+     "cross_mae_m": {
+      "mean": 0.5906,
+      "lo": 0.5357,
+      "hi": 0.6568,
+      "ci95": 0.0606,
+      "se": 0.0289,
+      "reducer": "mean",
+      "n_windows": 42,
+      "n_episodes": 3,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap",
+      "resampling_unit": "EPISODE (win['eid']) — consecutive windows of one clip are not independent, so the episode is the cluster unit"
+     },
+     "cross_bias_m": {
+      "mean": -0.2763,
+      "lo": -0.3502,
+      "hi": -0.2389,
+      "ci95": 0.0556,
+      "se": 0.0299,
+      "reducer": "mean",
+      "n_windows": 42,
+      "n_episodes": 3,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap",
+      "resampling_unit": "EPISODE (win['eid']) — consecutive windows of one clip are not independent, so the episode is the cluster unit"
+     },
+     "cross_final_mae_m": {
+      "mean": 0.8369,
+      "lo": 0.7121,
+      "hi": 1.049,
+      "ci95": 0.1685,
+      "se": 0.0867,
+      "reducer": "mean",
+      "n_windows": 42,
+      "n_episodes": 3,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap",
+      "resampling_unit": "EPISODE (win['eid']) — consecutive windows of one clip are not independent, so the episode is the cluster unit"
+     }
+    },
+    "unavailable": {},
+    "n_components": 7,
+    "n_with_interval": 7,
+    "n_unavailable": 0,
+    "complete": true,
+    "⛔_rule": "every component this family REPORTS carries an episode-cluster-bootstrap interval, or an explicit {status,reason,n}. A bare point estimate is neither."
+   },
+   "tier": "T1",
+   "n": 42,
+   "estimator": "full_set pooled mean over windows (point); intervals under 'intervals'"
+  },
+  "tactical": {
+   "status": "OK",
+   "source": "trajectory-derived (four_families.tactical_from_trajectory)",
+   "n": 42,
+   "n_windows": 42,
+   "labeller": "tanitad.refs.refc_tactical.factor_from_kinematics — the programme's OWN canonical gate (v1 branch, kappa=None); no thresholds are defined in this module",
+   "lateral_decision": {
+    "status": "OK",
+    "n": 42,
+    "n_windows": 42,
+    "classes": [
+     "lane_keep",
+     "turn_left",
+     "turn_right"
+    ],
+    "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+    "tier": "T1",
+    "per_class": {
+     "lane_keep": {
+      "n_true": 22,
+      "n_pred": 0,
+      "recall": 0.0,
+      "precision": null
+     },
+     "turn_left": {
+      "n_true": 20,
+      "n_pred": 42,
+      "recall": 1.0,
+      "precision": 0.4762
+     },
+     "turn_right": {
+      "n_true": 0,
+      "n_pred": 0,
+      "recall": null,
+      "precision": null
+     }
+    },
+    "confusion_gt_rows_pred_cols": [
+     [
+      0,
+      22,
+      0
+     ],
+     [
+      0,
+      20,
+      0
+     ],
+     [
+      0,
+      0,
+      0
+     ]
+    ],
+    "class_order": [
+     "lane_keep",
+     "turn_left",
+     "turn_right"
+    ],
+    "never_predicted": [
+     "lane_keep"
+    ],
+    "accuracy": 0.4762,
+    "kappa": 0.0,
+    "kappa_undefined_reason": null,
+    "ci": {
+     "accuracy": {
+      "mean": 0.4762,
+      "lo": 0.2857,
+      "hi": 0.7143,
+      "ci95": 0.2143,
+      "se": 0.102,
+      "reducer": "_acc",
+      "n_windows": 42,
+      "n_episodes": 3,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "kappa": {
+      "mean": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "se": 0.0,
+      "reducer": "_kap",
+      "n_windows": 42,
+      "n_episodes": 3,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    }
+   },
+   "longitudinal_decision": {
+    "status": "OK",
+    "n": 42,
+    "n_windows": 42,
+    "classes": [
+     "brake_stop",
+     "steady",
+     "accelerate"
+    ],
+    "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+    "tier": "T1",
+    "per_class": {
+     "brake_stop": {
+      "n_true": 15,
+      "n_pred": 0,
+      "recall": 0.0,
+      "precision": null
+     },
+     "steady": {
+      "n_true": 21,
+      "n_pred": 0,
+      "recall": 0.0,
+      "precision": null
+     },
+     "accelerate": {
+      "n_true": 6,
+      "n_pred": 42,
+      "recall": 1.0,
+      "precision": 0.1429
+     }
+    },
+    "confusion_gt_rows_pred_cols": [
+     [
+      0,
+      0,
+      15
+     ],
+     [
+      0,
+      0,
+      21
+     ],
+     [
+      0,
+      0,
+      6
+     ]
+    ],
+    "class_order": [
+     "brake_stop",
+     "steady",
+     "accelerate"
+    ],
+    "never_predicted": [
+     "brake_stop",
+     "steady"
+    ],
+    "accuracy": 0.1429,
+    "kappa": 0.0,
+    "kappa_undefined_reason": null,
+    "ci": {
+     "accuracy": {
+      "mean": 0.1429,
+      "lo": 0.1429,
+      "hi": 0.1429,
+      "ci95": 0.0,
+      "se": 0.0,
+      "reducer": "_acc",
+      "n_windows": 42,
+      "n_episodes": 3,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "kappa": {
+      "mean": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "se": 0.0,
+      "reducer": "_kap",
+      "n_windows": 42,
+      "n_episodes": 3,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    }
+   },
+   "maneuver_5way_collapsed": {
+    "status": "OK",
+    "n": 42,
+    "n_windows": 42,
+    "classes": [
+     "lane_keep",
+     "turn_left",
+     "turn_right",
+     "accelerate",
+     "brake_stop"
+    ],
+    "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+    "tier": "T1",
+    "per_class": {
+     "lane_keep": {
+      "n_true": 15,
+      "n_pred": 0,
+      "recall": 0.0,
+      "precision": null
+     },
+     "turn_left": {
+      "n_true": 20,
+      "n_pred": 42,
+      "recall": 1.0,
+      "precision": 0.4762
+     },
+     "turn_right": {
+      "n_true": 0,
+      "n_pred": 0,
+      "recall": null,
+      "precision": null
+     },
+     "accelerate": {
+      "n_true": 4,
+      "n_pred": 0,
+      "recall": 0.0,
+      "precision": null
+     },
+     "brake_stop": {
+      "n_true": 3,
+      "n_pred": 0,
+      "recall": 0.0,
+      "precision": null
+     }
+    },
+    "confusion_gt_rows_pred_cols": [
+     [
+      0,
+      15,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      20,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      4,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      3,
+      0,
+      0,
+      0
+     ]
+    ],
+    "class_order": [
+     "lane_keep",
+     "turn_left",
+     "turn_right",
+     "accelerate",
+     "brake_stop"
+    ],
+    "never_predicted": [
+     "lane_keep",
+     "accelerate",
+     "brake_stop"
+    ],
+    "accuracy": 0.4762,
+    "kappa": 0.0,
+    "kappa_undefined_reason": null,
+    "ci": {
+     "accuracy": {
+      "mean": 0.4762,
+      "lo": 0.2857,
+      "hi": 0.7143,
+      "ci95": 0.2143,
+      "se": 0.102,
+      "reducer": "_acc",
+      "n_windows": 42,
+      "n_episodes": 3,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "kappa": {
+      "mean": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "se": 0.0,
+      "reducer": "_kap",
+      "n_windows": 42,
+      "n_episodes": 3,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    }
+   },
+   "goal_setting": {
+    "status": "OK",
+    "n": 42,
+    "n_windows": 42,
+    "goal_point_error_m": 12.0508,
+    "_goal_point_error_is": "the final-displacement error (FDE) at the tactical horizon — reported for continuity, NOT offered as a new metric",
+    "goal_bearing_mae_deg": 17.4467,
+    "goal_bearing_bias_deg": 17.4467,
+    "n_bearing": 42,
+    "n_excluded_goal_below_0.5m": 0,
+    "goal_range_ratio": 0.187,
+    "goal_long_bias_m": -12.0075,
+    "goal_lat_bias_m": -0.3241,
+    "sign_conventions": {
+     "goal_long_bias_m": "+ = commits FURTHER ahead than the human",
+     "goal_lat_bias_m": "+ = commits LEFT of the human",
+     "goal_range_ratio": "1.0 = correct reach; <1 under-commits"
+    },
+    "anchor_selection": {
+     "status": "UNAVAILABLE",
+     "reason": "this dump's arm commits to ONE path per window, so there is no candidate fan and no selection to score. Closing it needs a fan+selector surface (<arm>_fan_err / <arm>_sel_idx), which taniteval.selgap then scores. A WORK ITEM, not a pass.",
+     "n": 42
+    },
+    "tier": "T1",
+    "ci": {
+     "goal_point_error_m": {
+      "mean": 12.0508,
+      "lo": 9.0627,
+      "hi": 15.0006,
+      "ci95": 2.969,
+      "se": 1.3882,
+      "reducer": "mean",
+      "n_windows": 42,
+      "n_episodes": 3,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "goal_long_bias_m": {
+      "mean": -12.0075,
+      "lo": -14.9708,
+      "hi": -9.0237,
+      "ci95": 2.9735,
+      "se": 1.3902,
+      "reducer": "mean",
+      "n_windows": 42,
+      "n_episodes": 3,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "goal_lat_bias_m": {
+      "mean": -0.3241,
+      "lo": -0.711,
+      "hi": -0.122,
+      "ci95": 0.2945,
+      "se": 0.1565,
+      "reducer": "mean",
+      "n_windows": 42,
+      "n_episodes": 3,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "goal_bearing_mae_deg": {
+      "mean": 17.4467,
+      "lo": 17.1916,
+      "hi": 17.9535,
+      "ci95": 0.381,
+      "se": 0.2062,
+      "reducer": "mean",
+      "n_windows": 42,
+      "n_episodes": 3,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    }
+   },
+   "kinematics_provenance": {
+    "pred": {
+     "n_windows": 42,
+     "n_heading_held_from_last_moving_step": 0,
+     "n_never_moved": 0,
+     "min_ds_m": 0.25,
+     "dt_s": 0.5,
+     "caveats": [
+      "dyaw is the PATH TANGENT at the horizon, not the vehicle yaw",
+      "v0/v1 are one-step CHORD speeds, not the recorded poses[:,3]",
+      "heading is HELD at the last moving step when the window ends stationary — dropping those windows would delete brake_stop from the denominator"
+     ]
+    },
+    "gt": {
+     "n_windows": 42,
+     "n_heading_held_from_last_moving_step": 0,
+     "n_never_moved": 0,
+     "min_ds_m": 0.25,
+     "dt_s": 0.5,
+     "caveats": [
+      "dyaw is the PATH TANGENT at the horizon, not the vehicle yaw",
+      "v0/v1 are one-step CHORD speeds, not the recorded poses[:,3]",
+      "heading is HELD at the last moving step when the window ends stationary — dropping those windows would delete brake_stop from the denominator"
+     ]
+    }
+   },
+   "_factored_before_collapsed": "⭐ Read LAT and LON first. CLAUDE.md names the 5-way softmax that MIXES lateral and longitudinal decisions as the programme's single largest known architectural defect; the collapsed row cannot show it, and a turn absorbs the longitudinal decision entirely (refc_tactical.COLLAPSE_TABLE).",
+   "_is_not": "⛔ NOT 'selected vs executed'. Both label streams are EXECUTED manoeuvres — the arm's own and the human's. Scoring a DECLARED decision against the driven path needs a tactical head (hierarchy.run's maneuver_vs_trajectory kappa) and stays unavailable on a trajectory dump.",
+   "_estimator": "full_set point estimate; episode-cluster bootstrap intervals (taniteval.ci). ⛔ overlapping_holdout_se is NOT used — it biases the POINT ESTIMATE.",
+   "tier": "T1",
+   "estimator": "full_set pooled mean over windows (point); intervals under 'intervals'"
+  },
+  "strategic": {
+   "tier": "T1 (the route head reads the OBSERVED window only)",
+   "tier_ruling": "UNRULED",
+   "n_windows": 42,
+   "n_nav_valid": 42,
+   "nav_valid_frac": 1.0,
+   "n_route_labeled": 22,
+   "n_excluded_no_route_label": 20,
+   "nav_shuffle": {
+    "seed": 0,
+    "n_windows": 42,
+    "n_valid": 42,
+    "n_changed": 25,
+    "changed_frac": 0.5952,
+    "rule": "permutation among nav_valid windows; invalid rows keep nav_cmd=0 / nav_valid=False and are EXCLUDED from route accuracy"
+   },
+   "_echo_caveat": "nav_cmd is an INPUT and the route label derives from the same clip, so under the TRUE nav this measures the nav ECHO (flagship v1 scored 1.0000 on a bijection of its own input). Evidence of route skill is ONLY the shuffled/zero conditioning, and the CHANGED subset is where the control has power at all.",
+   "conditionings": {
+    "nav_true": {
+     "status": "OK",
+     "n": 22,
+     "n_windows": 22,
+     "classes": [
+      "route_left",
+      "route_straight",
+      "route_right"
+     ],
+     "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+     "tier": "T1",
+     "per_class": {
+      "route_left": {
+       "n_true": 22,
+       "n_pred": 22,
+       "recall": 1.0,
+       "precision": 1.0
+      },
+      "route_straight": {
+       "n_true": 0,
+       "n_pred": 0,
+       "recall": null,
+       "precision": null
+      },
+      "route_right": {
+       "n_true": 0,
+       "n_pred": 0,
+       "recall": null,
+       "precision": null
+      }
+     },
+     "confusion_gt_rows_pred_cols": [
+      [
+       22,
+       0,
+       0
+      ],
+      [
+       0,
+       0,
+       0
+      ],
+      [
+       0,
+       0,
+       0
+      ]
+     ],
+     "class_order": [
+      "route_left",
+      "route_straight",
+      "route_right"
+     ],
+     "never_predicted": [],
+     "accuracy": 1.0,
+     "kappa": null,
+     "kappa_undefined_reason": "1 - p_expected vanishes: both label streams are constant on one class, so there is no chance-corrected agreement to report. NOT reported as 1.0",
+     "ci": {
+      "accuracy": {
+       "mean": 1.0,
+       "lo": 1.0,
+       "hi": 1.0,
+       "ci95": 0.0,
+       "se": 0.0,
+       "reducer": "_acc",
+       "n_windows": 22,
+       "n_episodes": 3,
+       "n_boot": 300,
+       "estimator": "episode_cluster_bootstrap"
+      },
+      "kappa": {
+       "mean": NaN,
+       "lo": NaN,
+       "hi": NaN,
+       "ci95": NaN,
+       "se": NaN,
+       "reducer": "_kap",
+       "n_windows": 22,
+       "n_episodes": 3,
+       "n_boot": 300,
+       "estimator": "episode_cluster_bootstrap"
+      }
+     },
+     "nav_echo_index": 0.3636,
+     "_nav_echo_index_is": "fraction of scored windows whose route_pred equals the FED nav index — the echo index under this conditioning. NAV_COMMANDS and ROUTE_CLASSES are both 3-wide and index-aligned in refb.",
+     "majority_class": "route_left",
+     "majority_class_rate": 1.0
+    },
+    "nav_shuffled": {
+     "status": "OK",
+     "n": 22,
+     "n_windows": 22,
+     "classes": [
+      "route_left",
+      "route_straight",
+      "route_right"
+     ],
+     "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+     "tier": "T1",
+     "per_class": {
+      "route_left": {
+       "n_true": 22,
+       "n_pred": 22,
+       "recall": 1.0,
+       "precision": 1.0
+      },
+      "route_straight": {
+       "n_true": 0,
+       "n_pred": 0,
+       "recall": null,
+       "precision": null
+      },
+      "route_right": {
+       "n_true": 0,
+       "n_pred": 0,
+       "recall": null,
+       "precision": null
+      }
+     },
+     "confusion_gt_rows_pred_cols": [
+      [
+       22,
+       0,
+       0
+      ],
+      [
+       0,
+       0,
+       0
+      ],
+      [
+       0,
+       0,
+       0
+      ]
+     ],
+     "class_order": [
+      "route_left",
+      "route_straight",
+      "route_right"
+     ],
+     "never_predicted": [],
+     "accuracy": 1.0,
+     "kappa": null,
+     "kappa_undefined_reason": "1 - p_expected vanishes: both label streams are constant on one class, so there is no chance-corrected agreement to report. NOT reported as 1.0",
+     "ci": {
+      "accuracy": {
+       "mean": 1.0,
+       "lo": 1.0,
+       "hi": 1.0,
+       "ci95": 0.0,
+       "se": 0.0,
+       "reducer": "_acc",
+       "n_windows": 22,
+       "n_episodes": 3,
+       "n_boot": 300,
+       "estimator": "episode_cluster_bootstrap"
+      },
+      "kappa": {
+       "mean": NaN,
+       "lo": NaN,
+       "hi": NaN,
+       "ci95": NaN,
+       "se": NaN,
+       "reducer": "_kap",
+       "n_windows": 22,
+       "n_episodes": 3,
+       "n_boot": 300,
+       "estimator": "episode_cluster_bootstrap"
+      }
+     },
+     "nav_echo_index": 0.3636,
+     "_nav_echo_index_is": "fraction of scored windows whose route_pred equals the FED nav index — the echo index under this conditioning. NAV_COMMANDS and ROUTE_CLASSES are both 3-wide and index-aligned in refb.",
+     "majority_class": "route_left",
+     "majority_class_rate": 1.0
+    },
+    "nav_zero": {
+     "status": "OK",
+     "n": 22,
+     "n_windows": 22,
+     "classes": [
+      "route_left",
+      "route_straight",
+      "route_right"
+     ],
+     "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+     "tier": "T1",
+     "per_class": {
+      "route_left": {
+       "n_true": 22,
+       "n_pred": 22,
+       "recall": 1.0,
+       "precision": 1.0
+      },
+      "route_straight": {
+       "n_true": 0,
+       "n_pred": 0,
+       "recall": null,
+       "precision": null
+      },
+      "route_right": {
+       "n_true": 0,
+       "n_pred": 0,
+       "recall": null,
+       "precision": null
+      }
+     },
+     "confusion_gt_rows_pred_cols": [
+      [
+       22,
+       0,
+       0
+      ],
+      [
+       0,
+       0,
+       0
+      ],
+      [
+       0,
+       0,
+       0
+      ]
+     ],
+     "class_order": [
+      "route_left",
+      "route_straight",
+      "route_right"
+     ],
+     "never_predicted": [],
+     "accuracy": 1.0,
+     "kappa": null,
+     "kappa_undefined_reason": "1 - p_expected vanishes: both label streams are constant on one class, so there is no chance-corrected agreement to report. NOT reported as 1.0",
+     "ci": {
+      "accuracy": {
+       "mean": 1.0,
+       "lo": 1.0,
+       "hi": 1.0,
+       "ci95": 0.0,
+       "se": 0.0,
+       "reducer": "_acc",
+       "n_windows": 22,
+       "n_episodes": 3,
+       "n_boot": 300,
+       "estimator": "episode_cluster_bootstrap"
+      },
+      "kappa": {
+       "mean": NaN,
+       "lo": NaN,
+       "hi": NaN,
+       "ci95": NaN,
+       "se": NaN,
+       "reducer": "_kap",
+       "n_windows": 22,
+       "n_episodes": 3,
+       "n_boot": 300,
+       "estimator": "episode_cluster_bootstrap"
+      }
+     },
+     "nav_echo_index": 0.3636,
+     "_nav_echo_index_is": "fraction of scored windows whose route_pred equals the FED nav index — the echo index under this conditioning. NAV_COMMANDS and ROUTE_CLASSES are both 3-wide and index-aligned in refb.",
+     "majority_class": "route_left",
+     "majority_class_rate": 1.0
+    }
+   },
+   "paired_true_minus_shuffled_accuracy": {
+    "delta": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "ci95": 0.0,
+    "p_delta_gt0": 0.0,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 22,
+    "n_episodes": 3,
+    "n_boot": 300,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "n_changed_subset": 14,
+   "changed_subset": {
+    "n": 14,
+    "tier": "T1",
+    "estimator": "episode_cluster_bootstrap",
+    "route_follows_LABEL_under_shuffle": {
+     "mean": 1.0,
+     "lo": 1.0,
+     "hi": 1.0,
+     "ci95": 0.0,
+     "se": 0.0,
+     "reducer": "mean",
+     "n_windows": 14,
+     "n_episodes": 3,
+     "n_boot": 300,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "route_follows_SHUFFLED_NAV_under_shuffle": {
+     "mean": 0.2857,
+     "lo": 0.0,
+     "hi": 0.5,
+     "ci95": 0.25,
+     "se": 0.1121,
+     "reducer": "mean",
+     "n_windows": 14,
+     "n_episodes": 3,
+     "n_boot": 300,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "_reading": "on windows whose nav token CHANGED, the label route and the shuffled-nav route are different classes by construction, so the two rates are mutually exclusive: an ECHO reads follows_nav ~ 1 / follows_label ~ 0; route skill from vision reads follows_label high regardless of the token."
+   },
+   "status": "OK",
+   "_source": "refcv3's OWN route head vs the v2.1 route label, under THREE nav conditionings (true / shuffled / zero), with the echo index beside it",
+   "_echo_rule": "⛔ A route head that reproduces its own nav input scores well and has learned nothing — flagship v1's scored 1.0000 on a bijection of the fed nav (369/369 and 81/81). This block is INADMISSIBLE without the navshuf control beside it."
+  },
+  "_grid": {
+   "used": "dense",
+   "dt_s": 0.5,
+   "horizon_steps": 4,
+   "provenance": "DENSE path ((42, 4, 2)) at dt_s 0.5 — the grid the derivatives are defined on",
+   "⛔_history": "BEFORE 2026-08-03 this module hard-coded dt=0.1 s while reading the SPARSE 4-waypoint view (0.5 s spacing), so EVERY published speed_* was x5, EVERY accel_* x25 and EVERY yaw_rate_* x5. Positions, heading and curvature were unaffected. Cross-arm comparisons stay valid (common factor); ABSOLUTE quotations and any comparison to a physical bar do not. MEASURED negative control: GT ego speed 12.4565 m/s vs _seq_geometry 62.9789 m/s = 5.0559x, on 859 real held-out windows."
+  },
+  "_binding_rule": "Sayed 2026-08-02: every eval reports LONGITUDINAL + LATERAL + TACTICAL + STRATEGIC in ADDITION to ADE. Per-family, never pooled. A family reported UNAVAILABLE is a WORK ITEM, not a pass.",
+  "_families_unavailable": [
+   "strategic"
+  ],
+  "_ci_coverage": {
+   "longitudinal": {
+    "family": "longitudinal",
+    "status": "OK",
+    "n_declared": 19,
+    "n_with_interval": 16,
+    "missing": [],
+    "unavailable": [
+     "distance_keeping.mean_headway_min_m",
+     "distance_keeping.mean_min_ttc_s",
+     "distance_keeping.mean_time_gap_min_s"
+    ],
+    "undeclared": [],
+    "not_reported": [],
+    "complete": true,
+    "⛔_verdict": "every reported component carries an interval or a reasoned refusal"
+   },
+   "lateral": {
+    "family": "lateral",
+    "status": "OK",
+    "n_declared": 7,
+    "n_with_interval": 7,
+    "missing": [],
+    "unavailable": [],
+    "undeclared": [],
+    "not_reported": [],
+    "complete": true,
+    "⛔_verdict": "every reported component carries an interval or a reasoned refusal"
+   }
+  },
+  "_intervals_complete": true,
+  "_intervals_rule": "every component the LONGITUDINAL and LATERAL blocks REPORT carries an episode-cluster-bootstrap interval (taniteval.ci, cluster unit = the episode), or an explicit {status,reason,n}. ⛔ overlapping_holdout_se is never used: it biases the POINT ESTIMATE, not only the interval. Any TWO-ARM delta must use ci.paired_episode_cluster_bootstrap — never a combination of two single-arm intervals in quadrature.",
+  "_complete": false,
+  "_longitudinal_claim_admissible": false,
+  "_anti_echo_summary": "holdv0=LOSES_TO_HOLDV0 · copy_detector=CLEAN (echo_index 0.0000 vs GT 0.0000) · shuffle=UNAVAILABLE",
+  "_anti_echo_rule": "Sayed 2026-08-16: v0 is ADMISSIBLE as a planner input, PROVIDED the planner is shown not to be 'just outputting v0 as longitudinal plan'. ⛔ A LONGITUDINAL number emitted while _longitudinal_claim_admissible is False is a fidelity diagnostic, NOT a longitudinal capability result, and must not be presented as one.",
+  "_rule_satisfied": true,
+  "_rule_satisfied_note": "clause 5: a family that genuinely cannot be computed satisfies the rule by stating its REASON and its n. `_complete` is the stricter question — whether all four carry numbers — and stays False while STRATEGIC is n/a.",
+  "_tier": "T1",
+  "_protocol": {
+   "inference_inputs": "the OBSERVED window's frames (vision); the MEASURED v0 at t0 (PI ruling 2026-09-02); the clip's v7.2 nav token (goal input, PI 2026-08-03); NOTHING recorded after the window origin on any arm here",
+   "vision_only": "vision + v0(t0) + nav token — both additions admitted by the two PI rulings above; no ego state beyond v0, no future",
+   "goal_source": "the model's own tactical goal head (E4/E9), decoded from vision + nav + v0 inside the forward pass; the selection it grafts is banked per window (sel_score_v3)",
+   "goal_situation_disjoint": "True by construction: nav is the v7.2 labels blob's nav_command token, not a situation classifier output",
+   "corpus": "C:\\Users\\Admin\\run_taniteval\\dryrun\\fixture\\eps",
+   "parity_key": "the eval split is the v7.2 EVAL clip set, identified by the labels blob md5 in corpus.labels — NOT the canonical train parity key e438721ae894; cross-arm deltas are valid only against dumps on this SAME corpus + grid",
+   "_binding": "vision-only at inference (labels MAY use ego); the goal input must not carry the situation classifier's output in any form; the corpus identity makes cross-arm deltas interpretable. An UNDECLARED value is a WORK ITEM — it is never read as compliance.",
+   "_declared_by": "taniteval/tools/refcv3_arm.py analyze_refcv3 (post hoc, from the roll's manifest + the model's own input contract)"
+  },
+  "_protocol_undeclared": [],
+  "_disavowal_annotations": {
+   "n_sites": 1,
+   "sites": [
+    {
+     "path": "four_families.longitudinal.anti_echo.holdv0_baseline.estimator",
+     "original_redacted": "paired_episode_cluster_bootstrap (taniteval.ci) — ⛔ NOT <forbidden-estimator-token>, which is anti-conservative AND biases the point estimate"
+    }
+   ],
+   "clause": "[openloop_suite: that estimator is deprecated and forbidden here; it is not used anywhere in this suite]",
+   "why": "these strings already disavowed the forbidden estimator in the EMITTER's wording; the criteria checker's exoneration list does not carry that phrasing, so a correct disavowal scored as a use. The clause is appended on republication, the sites are listed here, and the mismatch is reported as a finding — neither the emitter nor the checker was edited.",
+   "finding": [
+    {
+     "emitter": "taniteval/four_families.py",
+     "field": "longitudinal.anti_echo.holdv0_baseline.estimator",
+     "says_redacted": "paired_episode_cluster_bootstrap (taniteval.ci) — NOT <forbidden-estimator-token>, which is anti-conservative AND biases the point estimate",
+     "checker": "tools/criteria_check.py::_check_forbidden_estimator",
+     "problem": "the checker's exoneration list carries 'not used' / 'never used' / 'is not' / 'must not' / 'deprecated' / 'forbidden' / 'banned', and none of them matches the emitter's own 'NOT <estimator>' phrasing — so a correct, explicit disavowal is scored as a USE",
+     "consequence": "hyg.no_forbidden_estimator reads MISSING on an artifact whose estimator discipline is exemplary",
+     "action": "REPORTED, not edited. This suite republishes the string with the programme's canonical disavowal clause appended (recorded in four_families._disavowal_annotations) rather than touching either the emitter or the checker."
+    }
+   ]
+  }
+ },
+ "_families_rule": "Sayed 2026-08-02, binding: LONGITUDINAL + LATERAL + TACTICAL + STRATEGIC in ADDITION to ADE, per family, NEVER pooled. This suite emits no composite score and refuses to invent one. A family reported REFUSED/UNAVAILABLE is a WORK ITEM, not a pass.",
+ "_strategic_source": "refcv3 route head (sidecar)",
+ "controls": {
+  "_rule": "⛔ A model number without its control is unreadable. MEASURED 2026-08-23: a T1 arm read 9.3697 m while its own hold-action control read 0.4246 m on the SAME windows — the trivial baseline beat the model 22x, and an artifact reporting only the model's value looked like a result.",
+  "ha0": {
+   "definition": "constant velocity at the MEASURED v0 — a = 0, kappa = 0, integrated on the corpus's native 0.1 s tick and index-selected onto the scoring grid",
+   "tier": "T1",
+   "loop_class": "OPEN LOOP",
+   "why": "the strongest trivial baseline, and the ONLY arm that is bit-comparable across models — identically defined, identical windows, identical integrator, and exactly zero in either action unit",
+   "evidence_class": "MEASURED (ours; the dump)",
+   "trivial_profile": {
+    "n": 42,
+    "straight_frac": 1.0,
+    "const_speed_frac": 1.0,
+    "trivial_frac": 1.0,
+    "identical_to": {}
+   }
+  },
+  "ha": {
+   "definition": "hold the last OBSERVED (a, steer)",
+   "tier": "T1",
+   "loop_class": "OPEN LOOP",
+   "why": "⭐ the reason ha0 exists: holding a NOISY observed steer drifts, so an arm that does nothing can beat `ha` and read as lateral skill. A win over `ha` alone is not skill.",
+   "evidence_class": "MEASURED (ours; the dump)"
+  },
+  "const0": {
+   "status": "OK",
+   "arm": "const0",
+   "tier": "T1",
+   "tier_note": "VACUOUS for this arm — a constant-only control consumes NO input at all, so no tier statement about what reaches inference can distinguish it. Stamped so the artifact stays machine-checkable.",
+   "loop_class": "OPEN LOOP",
+   "definition": "a predictor that emits the SAME output for every input: identically zero ego-frame displacement at every slot",
+   "evidence_class": "MEASURED (ours; dump C:\\Users\\Admin\\run_taniteval\\dryrun\\dump)",
+   "n_windows": 42,
+   "n_episodes": 3,
+   "exact_check": {
+    "what": "const0 paired against ITSELF, episode-cluster bootstrap",
+    "expected": {
+     "delta": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "separated": false
+    },
+    "measured": {
+     "delta": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "separated": false
+    },
+    "tolerance": "NONE — this one is bit-exact",
+    "pass": true,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "n_boot": 300
+   },
+   "analytic_checks": {
+    "ade_m": {
+     "expected": 9.162551,
+     "measured": 9.162552,
+     "abs_delta": 6.51e-07,
+     "expected_is": "mean over (window, slot) of ‖GT‖, float64 numpy",
+     "rel_tol": 0.0001,
+     "tol_reason": "the production geometry path runs in float32 torch; the independent reference is float64 numpy, so the two agree to float32 resolution",
+     "pass": true
+    },
+    "LON_speed_mae_mps": {
+     "expected": 7.283556,
+     "measured": 7.283556,
+     "abs_delta": 0.0,
+     "expected_is": "mean over (window, slot) of the GT speed — a zero path has speed 0 everywhere, so its MAE IS the GT speed",
+     "rel_tol": 0.0001,
+     "pass": true
+    }
+   },
+   "_why": "a control that must read a KNOWN value is the only thing that catches a metric pipeline which is confidently wrong. If this block does not pass, THE HARNESS IS WRONG, NOT THE MODEL.",
+   "components": {}
+  },
+  "nav_controls": {
+   "os_navshuf": "withholds the PAIRING between a window and its nav token; the nav MARGINAL is preserved exactly",
+   "os_navzero": "withholds the SIGNAL — nav_cmd=None, the model's own documented no-nav path. This is the DEPLOYMENT condition, because the nav token is an ORACLE (provenance ego-future) that will not exist there.",
+   "not_interchangeable": "⛔ a shuffle cannot stand in for a zero. MEASURED elsewhere: a tactical head ranked turns at AUC 0.873 under true nav and collapsed to 0.520 (chance) under nav_zero.",
+   "navzero_is_a_lower_bound": true
+  }
+ },
+ "floors": {
+  "floor_arm": "ha0",
+  "_is": "the trivial control every headline claim is measured against"
+ },
+ "vs_floor_paired": {
+  "direction": "os - ha0",
+  "tier": "T1 minus T1",
+  "estimator": "paired_episode_cluster_bootstrap",
+  "families": {
+   "ADE": {
+    "ade_m": {
+     "delta": 7.9571,
+     "lo": 6.153,
+     "hi": 9.7625,
+     "ci95": 1.8048,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 42,
+     "n_episodes": 3,
+     "n_boot": 300,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    },
+    "fde_m": {
+     "delta": 10.015,
+     "lo": 7.206,
+     "hi": 12.6691,
+     "ci95": 2.7316,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 42,
+     "n_episodes": 3,
+     "n_boot": 300,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    }
+   },
+   "longitudinal": {
+    "LON_speed_mae_mps": {
+     "delta": 3.993,
+     "lo": 2.7275,
+     "hi": 5.3616,
+     "ci95": 1.3171,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 42,
+     "n_episodes": 3,
+     "n_boot": 300,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    },
+    "LON_along_mae_m": {
+     "delta": 8.2747,
+     "lo": 6.3989,
+     "hi": 10.1609,
+     "ci95": 1.881,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 42,
+     "n_episodes": 3,
+     "n_boot": 300,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    },
+    "LON_accel_mae_mps2": {
+     "delta": 2.9877,
+     "lo": 2.9461,
+     "hi": 3.0132,
+     "ci95": 0.0336,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 42,
+     "n_episodes": 3,
+     "n_boot": 300,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    }
+   },
+   "lateral": {
+    "LAT_cross_mae_m": {
+     "delta": -0.1209,
+     "lo": -0.1849,
+     "hi": -0.0474,
+     "ci95": 0.0687,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 42,
+     "n_episodes": 3,
+     "n_boot": 300,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    },
+    "LAT_heading_mae_deg": {
+     "delta": 87.9913,
+     "lo": 87.5558,
+     "hi": 88.7813,
+     "ci95": 0.6128,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 42,
+     "n_episodes": 3,
+     "n_boot": 300,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    },
+    "LAT_yaw_rate_mae_radps": {
+     "delta": 2.8489,
+     "lo": 2.769,
+     "hi": 2.9132,
+     "ci95": 0.0721,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 42,
+     "n_episodes": 3,
+     "n_boot": 300,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    }
+   },
+   "tactical": {
+    "TAC_traj_lat_correct": {
+     "delta": -0.0476,
+     "lo": -0.4286,
+     "hi": 0.4286,
+     "ci95": 0.4286,
+     "p_delta_gt0": 0.4233,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 42,
+     "n_episodes": 3,
+     "n_boot": 300,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    },
+    "TAC_traj_lon_correct": {
+     "delta": -0.3571,
+     "lo": -0.3571,
+     "hi": -0.3571,
+     "ci95": 0.0,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 42,
+     "n_episodes": 3,
+     "n_boot": 300,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    }
+   }
+  }
+ },
+ "vs_floor_paired_deployment": {
+  "direction": "os_navzero - ha0",
+  "tier": "T1 minus T1",
+  "estimator": "paired_episode_cluster_bootstrap",
+  "families": {
+   "ADE": {
+    "ade_m": {
+     "delta": 7.9572,
+     "lo": 6.1513,
+     "hi": 9.7646,
+     "ci95": 1.8067,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 42,
+     "n_episodes": 3,
+     "n_boot": 300,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    },
+    "fde_m": {
+     "delta": 10.0169,
+     "lo": 7.2083,
+     "hi": 12.6726,
+     "ci95": 2.7322,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 42,
+     "n_episodes": 3,
+     "n_boot": 300,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    }
+   },
+   "longitudinal": {
+    "LON_speed_mae_mps": {
+     "delta": 4.0017,
+     "lo": 2.7285,
+     "hi": 5.3865,
+     "ci95": 1.329,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 42,
+     "n_episodes": 3,
+     "n_boot": 300,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    },
+    "LON_along_mae_m": {
+     "delta": 8.275,
+     "lo": 6.3976,
+     "hi": 10.1631,
+     "ci95": 1.8827,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 42,
+     "n_episodes": 3,
+     "n_boot": 300,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    },
+    "LON_accel_mae_mps2": {
+     "delta": 2.9497,
+     "lo": 2.943,
+     "hi": 2.9601,
+     "ci95": 0.0086,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 42,
+     "n_episodes": 3,
+     "n_boot": 300,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    }
+   },
+   "lateral": {
+    "LAT_cross_mae_m": {
+     "delta": -0.1217,
+     "lo": -0.1831,
+     "hi": -0.0474,
+     "ci95": 0.0678,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 42,
+     "n_episodes": 3,
+     "n_boot": 300,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    },
+    "LAT_heading_mae_deg": {
+     "delta": 87.7397,
+     "lo": 87.1586,
+     "hi": 88.7813,
+     "ci95": 0.8114,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 42,
+     "n_episodes": 3,
+     "n_boot": 300,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    },
+    "LAT_yaw_rate_mae_radps": {
+     "delta": 2.8531,
+     "lo": 2.7563,
+     "hi": 2.9132,
+     "ci95": 0.0784,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 42,
+     "n_episodes": 3,
+     "n_boot": 300,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    }
+   },
+   "tactical": {
+    "TAC_traj_lat_correct": {
+     "delta": -0.0476,
+     "lo": -0.4286,
+     "hi": 0.4286,
+     "ci95": 0.4286,
+     "p_delta_gt0": 0.4233,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 42,
+     "n_episodes": 3,
+     "n_boot": 300,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    },
+    "TAC_traj_lon_correct": {
+     "delta": -0.3571,
+     "lo": -0.3571,
+     "hi": -0.3571,
+     "ci95": 0.0,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 42,
+     "n_episodes": 3,
+     "n_boot": 300,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    }
+   }
+  }
+ },
+ "headline": {
+  "question": "does `os` beat the trivial control `ha0`, per family, on the same windows, paired?",
+  "_rule": "⛔ A paired interval that excludes zero while favouring the FLOOR means the trivial baseline WON. Render that as LOST, never as a tie.",
+  "tier": "T1",
+  "loop_class": "OPEN LOOP",
+  "estimator": "paired_episode_cluster_bootstrap",
+  "harness_controls_pass": true,
+  "families": {
+   "ADE": {
+    "contrast": "os - ha0",
+    "which_margin": "oracle-nav margin",
+    "metrics": {
+     "ade_m": {
+      "label": "ADE (mean L2 over the grid)",
+      "verdict": "LOST",
+      "why": "lower is better; delta +7.9571 and the interval excludes zero",
+      "delta": 7.9571,
+      "lo": 6.153,
+      "hi": 9.7625,
+      "separated": true,
+      "n_windows": 42,
+      "n_episodes": 3,
+      "rendered": "+7.9571  [6.1530, 9.7625]"
+     },
+     "fde_m": {
+      "label": "FDE (final displacement)",
+      "verdict": "LOST",
+      "why": "lower is better; delta +10.0150 and the interval excludes zero",
+      "delta": 10.015,
+      "lo": 7.206,
+      "hi": 12.6691,
+      "separated": true,
+      "n_windows": 42,
+      "n_episodes": 3,
+      "rendered": "+10.0150  [7.2060, 12.6691]"
+     }
+    },
+    "tally": {
+     "WON": 0,
+     "LOST": 2,
+     "TIED": 0,
+     "UNREADABLE": 0
+    },
+    "family_verdict": "LOST: 2/2 LOST — the trivial control won where the arm LOST",
+    "_never_pooled": "this family is reported on its own; no composite over families is computed anywhere in this suite"
+   },
+   "longitudinal": {
+    "contrast": "os - ha0",
+    "which_margin": "oracle-nav margin",
+    "metrics": {
+     "LON_speed_mae_mps": {
+      "label": "target-speed MAE (m/s)",
+      "verdict": "LOST",
+      "why": "lower is better; delta +3.9930 and the interval excludes zero",
+      "delta": 3.993,
+      "lo": 2.7275,
+      "hi": 5.3616,
+      "separated": true,
+      "n_windows": 42,
+      "n_episodes": 3,
+      "rendered": "+3.9930  [2.7275, 5.3616]"
+     },
+     "LON_along_mae_m": {
+      "label": "along-track MAE (m)",
+      "verdict": "LOST",
+      "why": "lower is better; delta +8.2747 and the interval excludes zero",
+      "delta": 8.2747,
+      "lo": 6.3989,
+      "hi": 10.1609,
+      "separated": true,
+      "n_windows": 42,
+      "n_episodes": 3,
+      "rendered": "+8.2747  [6.3989, 10.1609]"
+     },
+     "LON_accel_mae_mps2": {
+      "label": "acceleration MAE (m/s²)",
+      "verdict": "LOST",
+      "why": "lower is better; delta +2.9877 and the interval excludes zero",
+      "delta": 2.9877,
+      "lo": 2.9461,
+      "hi": 3.0132,
+      "separated": true,
+      "n_windows": 42,
+      "n_episodes": 3,
+      "rendered": "+2.9877  [2.9461, 3.0132]"
+     }
+    },
+    "tally": {
+     "WON": 0,
+     "LOST": 3,
+     "TIED": 0,
+     "UNREADABLE": 0
+    },
+    "family_verdict": "LOST: 3/3 LOST — the trivial control won where the arm LOST",
+    "_never_pooled": "this family is reported on its own; no composite over families is computed anywhere in this suite"
+   },
+   "lateral": {
+    "contrast": "os - ha0",
+    "which_margin": "oracle-nav margin",
+    "metrics": {
+     "LAT_cross_mae_m": {
+      "label": "cross-track MAE (m)",
+      "verdict": "WON",
+      "why": "lower is better; delta -0.1209 and the interval excludes zero",
+      "delta": -0.1209,
+      "lo": -0.1849,
+      "hi": -0.0474,
+      "separated": true,
+      "n_windows": 42,
+      "n_episodes": 3,
+      "rendered": "-0.1209  [-0.1849, -0.0474]"
+     },
+     "LAT_heading_mae_deg": {
+      "label": "heading MAE (deg)",
+      "verdict": "LOST",
+      "why": "lower is better; delta +87.9913 and the interval excludes zero",
+      "delta": 87.9913,
+      "lo": 87.5558,
+      "hi": 88.7813,
+      "separated": true,
+      "n_windows": 42,
+      "n_episodes": 3,
+      "rendered": "+87.9913  [87.5558, 88.7813]"
+     },
+     "LAT_yaw_rate_mae_radps": {
+      "label": "yaw-rate MAE (rad/s)",
+      "verdict": "LOST",
+      "why": "lower is better; delta +2.8489 and the interval excludes zero",
+      "delta": 2.8489,
+      "lo": 2.769,
+      "hi": 2.9132,
+      "separated": true,
+      "n_windows": 42,
+      "n_episodes": 3,
+      "rendered": "+2.8489  [2.7690, 2.9132]"
+     }
+    },
+    "tally": {
+     "WON": 1,
+     "LOST": 2,
+     "TIED": 0,
+     "UNREADABLE": 0
+    },
+    "family_verdict": "LOST: 1/3 WON, 2/3 LOST — the trivial control won where the arm LOST",
+    "_never_pooled": "this family is reported on its own; no composite over families is computed anywhere in this suite"
+   },
+   "tactical": {
+    "contrast": "os - ha0",
+    "which_margin": "oracle-nav margin",
+    "metrics": {
+     "TAC_traj_lat_correct": {
+      "label": "lateral manoeuvre agreement (fraction)",
+      "verdict": "TIED",
+      "why": "the paired interval includes zero",
+      "delta": -0.0476,
+      "lo": -0.4286,
+      "hi": 0.4286,
+      "separated": false,
+      "n_windows": 42,
+      "n_episodes": 3,
+      "rendered": "-0.0476  [-0.4286, 0.4286]"
+     },
+     "TAC_traj_lon_correct": {
+      "label": "longitudinal manoeuvre agreement (fraction)",
+      "verdict": "LOST",
+      "why": "higher is better; delta -0.3571 and the interval excludes zero",
+      "delta": -0.3571,
+      "lo": -0.3571,
+      "hi": -0.3571,
+      "separated": true,
+      "n_windows": 42,
+      "n_episodes": 3,
+      "rendered": "-0.3571  [-0.3571, -0.3571]"
+     }
+    },
+    "tally": {
+     "WON": 0,
+     "LOST": 1,
+     "TIED": 1,
+     "UNREADABLE": 0
+    },
+    "family_verdict": "LOST: 1/2 LOST, 1/2 TIED — the trivial control won where the arm LOST",
+    "_never_pooled": "this family is reported on its own; no composite over families is computed anywhere in this suite"
+   },
+   "strategic": {
+    "which_margin": "route head vs its own no-information rate",
+    "deployment_covered_by": "covered in-family by the `nav_zero` conditioning row above",
+    "contrast": "accuracy vs the MAJORITY-CLASS rate (the no-information value for a classifier), plus the nav controls",
+    "_never_pooled": "reported on its own; STRATEGIC has no paired block against `ha0` because the constant-velocity floor has no route head",
+    "metrics": {
+     "route_acc_nav_true": {
+      "label": "route accuracy — nav_true",
+      "verdict": "TIED",
+      "why": "the interval [1.0, 1.0] straddles the no-information rate 1.0",
+      "delta": 1.0,
+      "lo": 1.0,
+      "hi": 1.0,
+      "separated": null,
+      "no_information_value": 1.0,
+      "echo_index": 0.3636,
+      "kappa": null,
+      "never_predicted": [],
+      "n_windows": 22,
+      "n_episodes": 3,
+      "rendered": "1.0  [1.0, 1.0]  vs no-info 1.0"
+     },
+     "route_acc_nav_shuffled": {
+      "label": "route accuracy — nav_shuffled",
+      "verdict": "TIED",
+      "why": "the interval [1.0, 1.0] straddles the no-information rate 1.0",
+      "delta": 1.0,
+      "lo": 1.0,
+      "hi": 1.0,
+      "separated": null,
+      "no_information_value": 1.0,
+      "echo_index": 0.3636,
+      "kappa": null,
+      "never_predicted": [],
+      "n_windows": 22,
+      "n_episodes": 3,
+      "rendered": "1.0  [1.0, 1.0]  vs no-info 1.0"
+     },
+     "route_acc_nav_zero": {
+      "label": "route accuracy — nav_zero",
+      "verdict": "TIED",
+      "why": "the interval [1.0, 1.0] straddles the no-information rate 1.0",
+      "delta": 1.0,
+      "lo": 1.0,
+      "hi": 1.0,
+      "separated": null,
+      "no_information_value": 1.0,
+      "echo_index": 0.3636,
+      "kappa": null,
+      "never_predicted": [],
+      "n_windows": 22,
+      "n_episodes": 3,
+      "rendered": "1.0  [1.0, 1.0]  vs no-info 1.0"
+     },
+     "paired_true_minus_shuffled_accuracy": {
+      "label": "nav dependence — true minus shuffled accuracy (paired)",
+      "verdict": "TIED",
+      "why": "positive and separated means the head is using THIS window's nav; not separated means the pairing carries nothing",
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "n_windows": 22,
+      "n_episodes": 3,
+      "rendered": "+0.0000  [0.0000, 0.0000]"
+     }
+    },
+    "tally": {
+     "WON": 0,
+     "LOST": 0,
+     "TIED": 4,
+     "UNREADABLE": 0
+    },
+    "family_verdict": "TIED: 4/4 TIED — no separation from the control",
+    "echo_caveat": "nav_cmd is an INPUT and the route label derives from the same clip, so under the TRUE nav this measures the nav ECHO (flagship v1 scored 1.0000 on a bijection of its own input). Evidence of route skill is ONLY the shuffled/zero conditioning, and the CHANGED subset is where the control has power at all.",
+    "n_excluded_no_route_label": 20
+   }
+  },
+  "deployment_families": {
+   "ADE": {
+    "contrast": "os_navzero - ha0",
+    "which_margin": "deployment margin",
+    "metrics": {
+     "ade_m": {
+      "label": "ADE (mean L2 over the grid)",
+      "verdict": "LOST",
+      "why": "lower is better; delta +7.9572 and the interval excludes zero",
+      "delta": 7.9572,
+      "lo": 6.1513,
+      "hi": 9.7646,
+      "separated": true,
+      "n_windows": 42,
+      "n_episodes": 3,
+      "rendered": "+7.9572  [6.1513, 9.7646]"
+     },
+     "fde_m": {
+      "label": "FDE (final displacement)",
+      "verdict": "LOST",
+      "why": "lower is better; delta +10.0169 and the interval excludes zero",
+      "delta": 10.0169,
+      "lo": 7.2083,
+      "hi": 12.6726,
+      "separated": true,
+      "n_windows": 42,
+      "n_episodes": 3,
+      "rendered": "+10.0169  [7.2083, 12.6726]"
+     }
+    },
+    "tally": {
+     "WON": 0,
+     "LOST": 2,
+     "TIED": 0,
+     "UNREADABLE": 0
+    },
+    "family_verdict": "LOST: 2/2 LOST — the trivial control won where the arm LOST",
+    "_never_pooled": "this family is reported on its own; no composite over families is computed anywhere in this suite"
+   },
+   "longitudinal": {
+    "contrast": "os_navzero - ha0",
+    "which_margin": "deployment margin",
+    "metrics": {
+     "LON_speed_mae_mps": {
+      "label": "target-speed MAE (m/s)",
+      "verdict": "LOST",
+      "why": "lower is better; delta +4.0017 and the interval excludes zero",
+      "delta": 4.0017,
+      "lo": 2.7285,
+      "hi": 5.3865,
+      "separated": true,
+      "n_windows": 42,
+      "n_episodes": 3,
+      "rendered": "+4.0017  [2.7285, 5.3865]"
+     },
+     "LON_along_mae_m": {
+      "label": "along-track MAE (m)",
+      "verdict": "LOST",
+      "why": "lower is better; delta +8.2750 and the interval excludes zero",
+      "delta": 8.275,
+      "lo": 6.3976,
+      "hi": 10.1631,
+      "separated": true,
+      "n_windows": 42,
+      "n_episodes": 3,
+      "rendered": "+8.2750  [6.3976, 10.1631]"
+     },
+     "LON_accel_mae_mps2": {
+      "label": "acceleration MAE (m/s²)",
+      "verdict": "LOST",
+      "why": "lower is better; delta +2.9497 and the interval excludes zero",
+      "delta": 2.9497,
+      "lo": 2.943,
+      "hi": 2.9601,
+      "separated": true,
+      "n_windows": 42,
+      "n_episodes": 3,
+      "rendered": "+2.9497  [2.9430, 2.9601]"
+     }
+    },
+    "tally": {
+     "WON": 0,
+     "LOST": 3,
+     "TIED": 0,
+     "UNREADABLE": 0
+    },
+    "family_verdict": "LOST: 3/3 LOST — the trivial control won where the arm LOST",
+    "_never_pooled": "this family is reported on its own; no composite over families is computed anywhere in this suite"
+   },
+   "lateral": {
+    "contrast": "os_navzero - ha0",
+    "which_margin": "deployment margin",
+    "metrics": {
+     "LAT_cross_mae_m": {
+      "label": "cross-track MAE (m)",
+      "verdict": "WON",
+      "why": "lower is better; delta -0.1217 and the interval excludes zero",
+      "delta": -0.1217,
+      "lo": -0.1831,
+      "hi": -0.0474,
+      "separated": true,
+      "n_windows": 42,
+      "n_episodes": 3,
+      "rendered": "-0.1217  [-0.1831, -0.0474]"
+     },
+     "LAT_heading_mae_deg": {
+      "label": "heading MAE (deg)",
+      "verdict": "LOST",
+      "why": "lower is better; delta +87.7397 and the interval excludes zero",
+      "delta": 87.7397,
+      "lo": 87.1586,
+      "hi": 88.7813,
+      "separated": true,
+      "n_windows": 42,
+      "n_episodes": 3,
+      "rendered": "+87.7397  [87.1586, 88.7813]"
+     },
+     "LAT_yaw_rate_mae_radps": {
+      "label": "yaw-rate MAE (rad/s)",
+      "verdict": "LOST",
+      "why": "lower is better; delta +2.8531 and the interval excludes zero",
+      "delta": 2.8531,
+      "lo": 2.7563,
+      "hi": 2.9132,
+      "separated": true,
+      "n_windows": 42,
+      "n_episodes": 3,
+      "rendered": "+2.8531  [2.7563, 2.9132]"
+     }
+    },
+    "tally": {
+     "WON": 1,
+     "LOST": 2,
+     "TIED": 0,
+     "UNREADABLE": 0
+    },
+    "family_verdict": "LOST: 1/3 WON, 2/3 LOST — the trivial control won where the arm LOST",
+    "_never_pooled": "this family is reported on its own; no composite over families is computed anywhere in this suite"
+   },
+   "tactical": {
+    "contrast": "os_navzero - ha0",
+    "which_margin": "deployment margin",
+    "metrics": {
+     "TAC_traj_lat_correct": {
+      "label": "lateral manoeuvre agreement (fraction)",
+      "verdict": "TIED",
+      "why": "the paired interval includes zero",
+      "delta": -0.0476,
+      "lo": -0.4286,
+      "hi": 0.4286,
+      "separated": false,
+      "n_windows": 42,
+      "n_episodes": 3,
+      "rendered": "-0.0476  [-0.4286, 0.4286]"
+     },
+     "TAC_traj_lon_correct": {
+      "label": "longitudinal manoeuvre agreement (fraction)",
+      "verdict": "LOST",
+      "why": "higher is better; delta -0.3571 and the interval excludes zero",
+      "delta": -0.3571,
+      "lo": -0.3571,
+      "hi": -0.3571,
+      "separated": true,
+      "n_windows": 42,
+      "n_episodes": 3,
+      "rendered": "-0.3571  [-0.3571, -0.3571]"
+     }
+    },
+    "tally": {
+     "WON": 0,
+     "LOST": 1,
+     "TIED": 1,
+     "UNREADABLE": 0
+    },
+    "family_verdict": "LOST: 1/2 LOST, 1/2 TIED — the trivial control won where the arm LOST",
+    "_never_pooled": "this family is reported on its own; no composite over families is computed anywhere in this suite"
+   }
+  }
+ },
+ "arms": {
+  "os": {
+   "tier": "T1",
+   "loop_class": "OPEN LOOP",
+   "meaning": "T1 (RULING OPEN) — ONE forward pass at t0: observed frames + the clip's v7.2 nav token + the MEASURED v0, path = the model's OWN sel_score_v3 selection out['traj']. NEVER a_star. No action input, no rollout, no loop to close — hence 'os', never 'cl'.",
+   "evidence_class": "MEASURED (ours; the banked dump + this record)",
+   "tier_status": "UNRULED — see tier_ruling"
+  },
+  "ha": {
+   "tier": "T1",
+   "loop_class": "OPEN LOOP",
+   "meaning": "T1 — HOLD-ACTION control: the (a, steer) that CLOSES at t0 held for the horizon. Consumes no recorded future. NOT the floor — a held noisy steer drifts, so this arm can be WORSE than trivial.",
+   "evidence_class": "MEASURED (ours; the banked dump + this record)",
+   "tier_status": "stamped"
+  },
+  "ha0": {
+   "tier": "T1",
+   "loop_class": "OPEN LOOP",
+   "meaning": "T1 — ⭐ CONSTANT VELOCITY: a = 0, kappa = 0 at the measured v0, i.e. a straight line at constant speed. The STRONGEST TRIVIAL BASELINE, the echo test's real bar, and the ONLY arm bit-comparable with refav1's (zero is zero in either action unit).",
+   "evidence_class": "MEASURED (ours; the banked dump + this record)",
+   "tier_status": "stamped"
+  },
+  "os_navshuf": {
+   "tier": "T1",
+   "loop_class": "OPEN LOOP",
+   "meaning": "T1 (RULING OPEN) — as os with nav_cmd PERMUTED across the eval windows: breaks the PAIRING while preserving the nav marginal. Answers 'is the model using THIS window's nav?' (nav is an INPUT; an echo scores well and learns nothing)",
+   "evidence_class": "MEASURED (ours; the banked dump + this record)",
+   "tier_status": "UNRULED — see tier_ruling"
+  },
+  "os_navzero": {
+   "tier": "T1",
+   "loop_class": "OPEN LOOP",
+   "meaning": "T1 (RULING OPEN) — ⭐ as os with nav WITHHELD (nav_cmd=None): the E13 injection into the tactical and strategic layers is SKIPPED ENTIRELY and the core collapses to the 'follow' one-hot. Answers 'what does the model do when the ORACLE nav is not there' — i.e. what DEPLOYMENT looks like. ⛔ NOT interchangeable with the shuffle; BACKLOG R39 binds both. See NAV_NULL for the per-layer breakdown and why it is a LOWER BOUND on nav dependence.",
+   "evidence_class": "MEASURED (ours; the banked dump + this record)",
+   "tier_status": "UNRULED — see tier_ruling"
+  },
+  "oracle_sel": {
+   "tier": "T0",
+   "loop_class": "OPEN LOOP",
+   "meaning": "T0 — the a_star-selected anchor's refinement: a_star is the GT-NEAREST anchor (refc_v3_train.py:460), so this is the CEILING, not a driveable arm. Never compared to a T1 number.",
+   "evidence_class": "MEASURED (ours; the banked dump + this record)",
+   "tier_status": "stamped"
+  },
+  "const0": {
+   "tier": "T1",
+   "loop_class": "OPEN LOOP",
+   "meaning": "a predictor that emits the SAME output for every input: identically zero ego-frame displacement at every slot",
+   "evidence_class": "MEASURED (ours; dump C:\\Users\\Admin\\run_taniteval\\dryrun\\dump)",
+   "tier_status": "VACUOUS — consumes no input at all"
+  },
+  "_tier_ruling": {
+   "arm": "os",
+   "stamped": "T1",
+   "status": "UNRULED",
+   "decided_by": "PI / Master Mind — NOT a FlyWheel",
+   "question": "does EVAL_DOCTRINE admit as T1 a model that consumes NO actions at all? Its T1 row reads 'the predictor consumes the decoder/planner's own actions', which does not literally cover refcv3.",
+   "benchmarks_recommendation": "ADMIT IT, flagged as a recommendation: the doctrine's PURPOSE is to keep future information out of inference, and a correctly-gated refcv3 forward pass (frames <= t0, nav token, measured v0, selection by sel_score_v3 and never by a_star) admits none — but keep the DISTINCT arm name `os` so no reader believes two `cl` columns describe the same procedure.",
+   "why_the_numbers_are_valid_either_way": "every headline statistic here is a MARGIN over `ha0` measured on the same windows with the same instrument (`os - ha0`), so the ruling changes the LABEL on the row, never the arithmetic in it."
+  },
+  "_absent": {
+   "ol": {
+    "status": "ABSENT",
+    "arm": "ol",
+    "tier_if_it_existed": "T0",
+    "reason": "`ol` is 'the RECORDED future (a, steer) integrated from v0'. refcv3 CONSUMES NO ACTIONS (refc_v3.py:480 — the forward signature has no action argument), so integrating the recorded actions is not a rollout OF THIS MODEL: it is a property of the corpus and of the unicycle, identical for every refcv3 checkpoint ever trained. Emitting it under this model's name would put the same name on two different objects across the H-vs-F table — the exact failure D-HF-COMPARABILITY forbids.",
+    "for_comparison": "use `ha0` — the ONLY bit-comparable arm across refav1 and refcv3 — as the shared floor; the kinematic-contract control that `ol` provides lives in refav1_arm.py, where the model actually consumes actions."
+   }
+  }
+ },
+ "void_gates": {
+  "_rule": "⛔ If either profile is degenerate the read is VOID, not negative. Void means the instrument saw the baseline (or one constant anchor), not the model.",
+  "trivial_profile": {
+   "n_windows": 42,
+   "rule": {
+    "straight_m": 1e-06,
+    "const_speed_m": 0.0001,
+    "identical_m": 1e-09,
+    "trivial": "straight AND constant-speed = the constant-velocity profile"
+   },
+   "arms": {
+    "os": {
+     "n": 42,
+     "straight_frac": 0.0,
+     "const_speed_frac": 0.0,
+     "trivial_frac": 0.0,
+     "identical_to": {
+      "os_navshuf": {
+       "n": 17,
+       "frac": 0.4048
+      }
+     }
+    },
+    "ha": {
+     "n": 42,
+     "straight_frac": 0.0,
+     "const_speed_frac": 0.0714,
+     "trivial_frac": 0.0,
+     "identical_to": {}
+    },
+    "ha0": {
+     "n": 42,
+     "straight_frac": 1.0,
+     "const_speed_frac": 1.0,
+     "trivial_frac": 1.0,
+     "identical_to": {}
+    },
+    "os_navshuf": {
+     "n": 42,
+     "straight_frac": 0.0,
+     "const_speed_frac": 0.0,
+     "trivial_frac": 0.0,
+     "identical_to": {
+      "os": {
+       "n": 17,
+       "frac": 0.4048
+      }
+     }
+    },
+    "os_navzero": {
+     "n": 42,
+     "straight_frac": 0.0,
+     "const_speed_frac": 0.0,
+     "trivial_frac": 0.0,
+     "identical_to": {}
+    },
+    "oracle_sel": {
+     "n": 42,
+     "straight_frac": 0.0,
+     "const_speed_frac": 0.0,
+     "trivial_frac": 0.0,
+     "identical_to": {}
+    }
+   },
+   "degenerate_arms": [
+    "ha0"
+   ],
+   "note": "An arm with trivial_frac near 1.0 emits the CONSTANT-VELOCITY plan: its LATERAL rows are a property of the baseline, not of planning, and a win over `ha` (hold observed a, kappa) is NOT evidence of lateral skill — compare it to `ha0`. identical_to counts windows where two arms agree to 1e-09 m: an ablation identical to its own reference measured nothing on those windows.",
+   "degenerate_arms_excluding_floor": [],
+   "_floor_note": "`ha0` is expected in degenerate_arms — it IS the constant-velocity plan. VOID-RISK is raised only on degenerate_arms_excluding_floor.",
+   "cross_call_arms": [
+    "os_navzero"
+   ],
+   "cross_call_note": "`os_navzero` is produced by a SEPARATE forward call (nav_cmd=None is a whole-call property), while `os` and `os_navshuf` are two ROWS of one batched call. Different batch sizes take different GEMM kernel paths, so two arms that are the SAME computation still differ by a float32 floor. MEASURED on the flat smoke build, CPU: batch-2-row-0 vs batch-1 with the SAME nav = max 5.96e-07 m; the same call at MATCHED batch size with nav_cmd=None vs nav_cmd=0 = EXACTLY 0.0; a real nav difference (follow vs left) = 2.78e-02..3.41e-02 m, i.e. ~4.7e4x the floor. ⛔ CONSEQUENCE: `trivial_profile.identical_to` uses a 1e-9 m threshold and therefore CANNOT resolve a cross-call arm as identical even when it is. Read `identical_to` for os-vs-os_navshuf (same call, exact) and IGNORE it for os-vs-os_navzero; the separation above is what makes a nav-zero difference readable, and it is 4-5 orders of magnitude clear."
+  },
+  "selection_profile": {
+   "n_windows": 42,
+   "n_anchors": 20,
+   "n_distinct_selected": 1,
+   "modal_anchor": 2,
+   "modal_frac": 1.0,
+   "entropy_nats": 0.0,
+   "max_entropy_nats": 2.9957,
+   "entropy_ratio": 0.0,
+   "agrees_with_oracle_frac": 0.0,
+   "degenerate": true,
+   "rule": {
+    "degenerate_modal_frac_at_or_above": 0.9
+   },
+   "_reading": "a DEGENERATE selection means the model emits essentially ONE anchor for every scene: the arm is a constant map and every family row is a property of that constant, not of the model's scene understanding. It is invisible to the trivial profile, because the constant anchor is neither straight nor constant-speed."
+  }
+ },
+ "strategic": {
+  "status": "OK",
+  "echo_test": {
+   "status": "OK",
+   "per_conditioning": {
+    "nav_true": {
+     "accuracy": 1.0,
+     "majority_class_rate": 1.0,
+     "n": 22,
+     "kappa": null
+    },
+    "nav_shuffled": {
+     "accuracy": 1.0,
+     "majority_class_rate": 1.0,
+     "n": 22,
+     "kappa": null
+    },
+    "nav_zero": {
+     "accuracy": 1.0,
+     "majority_class_rate": 1.0,
+     "n": 22,
+     "kappa": null
+    }
+   },
+   "what": "`echo_index` is the fraction of windows where the predicted route equals the route the FED nav token maps to — i.e. the head reproducing its own input",
+   "controls_present": [
+    "nav_shuffled",
+    "nav_true",
+    "nav_zero"
+   ],
+   "_rule": "⛔ INADMISSIBLE without the nav-shuffle control beside it, and the nav-ZERO arm answers a different question again (the signal withheld, i.e. deployment). A shuffle cannot stand in for a zero."
+  },
+  "changed_subset": {
+   "n": 14,
+   "tier": "T1",
+   "estimator": "episode_cluster_bootstrap",
+   "route_follows_LABEL_under_shuffle": {
+    "mean": 1.0,
+    "lo": 1.0,
+    "hi": 1.0,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "mean",
+    "n_windows": 14,
+    "n_episodes": 3,
+    "n_boot": 300,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "route_follows_SHUFFLED_NAV_under_shuffle": {
+    "mean": 0.2857,
+    "lo": 0.0,
+    "hi": 0.5,
+    "ci95": 0.25,
+    "se": 0.1121,
+    "reducer": "mean",
+    "n_windows": 14,
+    "n_episodes": 3,
+    "n_boot": 300,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "_reading": "on windows whose nav token CHANGED, the label route and the shuffled-nav route are different classes by construction, so the two rates are mutually exclusive: an ECHO reads follows_nav ~ 1 / follows_label ~ 0; route skill from vision reads follows_label high regardless of the token."
+  },
+  "_source": "refcv3 route head (sidecar), republished at the guard's key"
+ },
+ "provenance": {
+  "source": "ROLLED OUT by taniteval/tools/refcv3_arm.py::run_dump",
+  "dump_dir": "C:\\Users\\Admin\\run_taniteval\\dryrun\\dump",
+  "manifest_episodes": 3,
+  "gpu_used": "cpu",
+  "stack_pin": {
+   "pinned_to": "C:\\Users\\Admin\\run_taniteval\\stack",
+   "tanitad__file__": "C:\\Users\\Admin\\run_taniteval\\stack\\tanitad\\__init__.py",
+   "evicted_meta_path_finders": [],
+   "verified_by": "CONTENT"
+  },
+  "resolved_trees": {
+   "tanitad": "C:\\Users\\Admin\\run_taniteval\\stack\\tanitad\\__init__.py",
+   "tanitad_version": "0.0.1",
+   "taniteval": "C:\\Users\\Admin\\run_taniteval\\taniteval\\taniteval\\__init__.py",
+   "taniteval_version": "0.1.0",
+   "torch": "C:\\Users\\Admin\\venvs\\tanitad\\Lib\\site-packages\\torch\\__init__.py",
+   "torch_version": "2.11.0+cu128",
+   "numpy": "C:\\Users\\Admin\\venvs\\tanitad\\Lib\\site-packages\\numpy\\__init__.py",
+   "numpy_version": "2.5.1"
+  }
+ },
+ "refused": {
+  "headway_ttc_distance_keeping": "no lead-agent track supplied — pass `lead=` (see this function's caller docstring). PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus); the reader is `Architecture & Inference/Implementation/incoming/2026-08-03-longitudinal-distance-keeping/build_lead_tracks.py`. Not supplying it is a WORK ITEM, not a pass. (n=0). WORK ITEM: attach the banked B1 EVAL lead block with --lead-block, or rebuild it on this grid (tools/build_lead_block_b1.py --dt 0.5 --k 4)."
+ },
+ "_evidence_classes": {
+  "MEASURED": "computed here, with the artifact path recorded",
+  "PUBLISHED": "cited to a banked primary",
+  "INHERITED": "taken from another agent/doc and NOT re-verified",
+  "ESTIMATED": "a derivation, stated as one",
+  "HYPOTHESIS": "not yet evidence"
+ },
+ "gaps": {
+  "_rule": "a KPI that could not be measured is NAMED with its reason and its n. An eval that silently omits one reads at a glance exactly like an eval that has no gap.",
+  "items": [
+   {
+    "criterion": "long.distance_keeping",
+    "family": "LONGITUDINAL",
+    "state": "REFUSED",
+    "reason": "no lead-agent track supplied — pass `lead=` (see this function's caller docstring). PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus); the reader is `Architecture & Inference/Implementation/incoming/2026-08-03-longitudinal-distance-keeping/build_lead_tracks.py`. Not suppl",
+    "n_it_would_have_had": 0,
+    "work_item": "attach the banked B1 EVAL lead block; rebuild on this grid with build_lead_block_b1.py --dt 0.5 --k 4 to remove the min-over-2-instants coarseness"
+   }
+  ],
+  "n_gaps": 1
+ },
+ "criteria": {
+  "scope": "IN_SCOPE",
+  "scope_why": "matched key_present='four_families'",
+  "tier": "T1",
+  "tier_raw": "T1",
+  "tier_is_driving_performance": true,
+  "families": {
+   "LONGITUDINAL": [
+    {
+     "id": "long.target_speed",
+     "label": "target-speed accuracy",
+     "required": true,
+     "state": "PRESENT",
+     "detail": "four_families.longitudinal.speed_mae_mps"
+    },
+    {
+     "id": "long.along_track_error",
+     "label": "along-track displacement error",
+     "required": true,
+     "state": "PRESENT",
+     "detail": "four_families.longitudinal.along_mae_m"
+    },
+    {
+     "id": "long.progress",
+     "label": "ego progress",
+     "required": true,
+     "state": "PRESENT",
+     "detail": "four_families.longitudinal.ego_progress: status=OK"
+    },
+    {
+     "id": "long.distance_keeping",
+     "label": "distance-keeping (headway / time-gap / TTC to the lead agent)",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "four_families.longitudinal.distance_keeping: no lead-agent track supplied — pass `lead=` (see this function's caller docstring). PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus); the reader is `Architecture & Inferen (n=0)"
+    }
+   ],
+   "LATERAL": [
+    {
+     "id": "lat.cross_track",
+     "label": "cross-track error",
+     "required": true,
+     "state": "PRESENT",
+     "detail": "four_families.lateral.cross_mae_m"
+    },
+    {
+     "id": "lat.heading",
+     "label": "heading error",
+     "required": true,
+     "state": "PRESENT",
+     "detail": "four_families.lateral.heading_mae_deg"
+    },
+    {
+     "id": "lat.curvature",
+     "label": "curvature error",
+     "required": true,
+     "state": "PRESENT",
+     "detail": "four_families.lateral.curvature_mae_1pm"
+    },
+    {
+     "id": "lat.yaw_rate",
+     "label": "yaw-rate error",
+     "required": true,
+     "state": "PRESENT",
+     "detail": "four_families.lateral.yaw_rate_mae_degps"
+    }
+   ],
+   "TACTICAL": [
+    {
+     "id": "tac.manoeuvre_decision",
+     "label": "manoeuvre-decision quality (selected vs executed)",
+     "required": true,
+     "state": "PRESENT",
+     "detail": "four_families.tactical.lateral_decision: status=OK"
+    },
+    {
+     "id": "tac.confusion",
+     "label": "confusion over the manoeuvre classes",
+     "required": true,
+     "state": "PRESENT",
+     "detail": "four_families.tactical.lateral_decision.confusion_gt_rows_pred_cols"
+    },
+    {
+     "id": "tac.goal_selection",
+     "label": "tactical goal / anchor selection quality",
+     "required": true,
+     "state": "PRESENT",
+     "detail": "four_families.tactical.goal_setting: status=OK"
+    }
+   ],
+   "STRATEGIC": [
+    {
+     "id": "strat.decision",
+     "label": "strategic decision quality",
+     "required": true,
+     "state": "PRESENT",
+     "detail": "four_families.strategic: status=OK"
+    },
+    {
+     "id": "strat.route_goal",
+     "label": "strategic route / goal-setting quality",
+     "required": true,
+     "state": "PRESENT",
+     "detail": "four_families.strategic: status=OK"
+    }
+   ]
+  },
+  "hygiene": [
+   {
+    "id": "hyg.tier_stamp",
+    "label": "tier stamp present",
+    "required": true,
+    "state": "PRESENT",
+    "detail": "T1 (T1)"
+   },
+   {
+    "id": "hyg.estimator_named",
+    "label": "estimator named",
+    "required": true,
+    "state": "PRESENT",
+    "detail": "estimator.interval"
+   },
+   {
+    "id": "hyg.n_reported",
+    "label": "n printed (windows and episodes)",
+    "required": true,
+    "state": "PRESENT",
+    "detail": "n_windows"
+   },
+   {
+    "id": "hyg.no_forbidden_estimator",
+    "label": "overlapping_holdout_se not used as a decision-grade interval",
+    "required": true,
+    "state": "PRESENT",
+    "detail": "named only to disavow or deprecate it (estimator.forbidden_estimator)"
+   },
+   {
+    "id": "hyg.parity",
+    "label": "corpus identity recorded (parity key + skip-hash)",
+    "required": true,
+    "state": "PRESENT",
+    "detail": "parity"
+   },
+   {
+    "id": "ctrl.floor_comparison",
+    "label": "headline metrics reported against their trivial control(s)",
+    "required": true,
+    "state": "PRESENT",
+    "detail": "floors"
+   }
+  ],
+  "leak_guards": [
+   {
+    "id": "vision_only_inference",
+    "label": "Inference uses VISION ONLY. Labels may use ego/privileged data (PI, 2026-08-03, binding).",
+    "required": true,
+    "state": "PRESENT",
+    "detail": "protocol.inference_inputs"
+   },
+   {
+    "id": "goal_situation_disjoint",
+    "label": "The goal path and the situation path stay information-disjoint at inference; a goal input must not carry the situation classifier's output in any form (PI, 2026-08-03, binding).",
+    "required": true,
+    "state": "PRESENT",
+    "detail": "protocol.goal_source"
+   },
+   {
+    "id": "route_head_echo",
+    "label": "A route/goal head scoring near 1.0 must publish its echo test against its own input.",
+    "required": false,
+    "state": "PRESENT",
+    "detail": "strategic.echo_test: status=OK"
+   }
+  ],
+  "n_violations": 0,
+  "n_work_items": 1,
+  "violations": [],
+  "work_items": [
+   {
+    "id": "long.distance_keeping",
+    "label": "distance-keeping (headway / time-gap / TTC to the lead agent)",
+    "required": true,
+    "state": "REFUSED",
+    "detail": "four_families.longitudinal.distance_keeping: no lead-agent track supplied — pass `lead=` (see this function's caller docstring). PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus); the reader is `Architecture & Inferen (n=0)"
+   }
+  ],
+  "registry_version": "2.5.0",
+  "registry_path": "C:\\Users\\Admin\\run_taniteval\\products\\P7-TanitEval\\CRITERIA_REGISTRY.json"
+ }
+}

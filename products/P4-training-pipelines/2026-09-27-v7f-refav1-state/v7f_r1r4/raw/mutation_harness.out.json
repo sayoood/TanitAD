@@ -1,0 +1,131 @@
+[
+ {
+  "mutant": "M1 default build constructs the R4 port (draws RNG, adds keys)",
+  "targeted": [
+   "test_default_BUILD_is_byte_identical_to_the_pre_change_module",
+   "test_the_three_levers_default_OFF_and_build_nothing"
+  ],
+  "pytest_rc": 1,
+  "summary": "3 failed, 60 deselected in 4.39s",
+  "KILLED": true
+ },
+ {
+  "mutant": "M2 the R4 port is built but never added to the plan conditioning",
+  "targeted": [
+   "test_R4_ON_changing_the_tactical_BEHAVIOUR_moves_the_operative_plan",
+   "test_R4_the_REAL_loss_step_makes_the_port_live_from_zero"
+  ],
+  "pytest_rc": 1,
+  "summary": "3 failed, 60 deselected, 1 warning in 4.91s",
+  "KILLED": true
+ },
+ {
+  "mutant": "M3 'detached' mode does not detach",
+  "targeted": [
+   "test_R4_detached_the_operative_loss_trains_the_port_and_NEVER_the_behaviour_heads"
+  ],
+  "pytest_rc": 1,
+  "summary": "1 failed, 62 deselected in 1.99s",
+  "KILLED": true
+ },
+ {
+  "mutant": "M4 the cap tracks speed WITHOUT the v6 floor (refav1 verbatim)",
+  "targeted": [
+   "test_cap_LITERAL_tracks_the_v6_integrators_FLOOR_at_zero"
+  ],
+  "pytest_rc": 1,
+  "summary": "1 failed, 62 deselected in 3.13s",
+  "KILLED": true
+ },
+ {
+  "mutant": "M5 the cap is applied AFTER selection (selector scores the uncapped fan)",
+  "targeted": [
+   "test_cap_binds_BEFORE_selection"
+  ],
+  "pytest_rc": 1,
+  "summary": "1 failed, 62 deselected in 2.00s",
+  "KILLED": true
+ },
+ {
+  "mutant": "M6 no braking floor: v0 above the limit is not braked at -a_max",
+  "targeted": [
+   "test_cap_LITERAL_v0_ABOVE_the_limit_brakes_at_a_max_until_under_it"
+  ],
+  "pytest_rc": 1,
+  "summary": "1 failed, 62 deselected in 1.77s",
+  "KILLED": true
+ },
+ {
+  "mutant": "M7 the R1a port output lands on the WM-side z_tac, not the decision view z_tac_p",
+  "targeted": [
+   "test_R1a_the_limit_moves_the_tactical_DECISIONS_and_not_the_WM_latent"
+  ],
+  "pytest_rc": 1,
+  "summary": "1 failed, 62 deselected in 2.81s",
+  "KILLED": true
+ },
+ {
+  "mutant": "M8 an invalid max-speed row is fed as 30 km/h (validity ignored)",
+  "targeted": [
+   "test_R1a_an_INVALID_row_is_all_zero_not_30_kmh"
+  ],
+  "pytest_rc": 1,
+  "summary": "1 failed, 62 deselected in 2.36s",
+  "KILLED": true
+ },
+ {
+  "mutant": "M9 the eval-mode cap refusal is gone",
+  "targeted": [
+   "test_the_cap_is_MANDATORY_at_inference_and_absent_in_training"
+  ],
+  "pytest_rc": 1,
+  "summary": "1 failed, 62 deselected in 4.59s",
+  "KILLED": true
+ },
+ {
+  "mutant": "M10 the trainer drops the refcv6 stamp",
+  "targeted": [
+   "test_the_DRY_RUN_exercises_all_three_levers_and_the_cap_never_exceeds"
+  ],
+  "pytest_rc": 1,
+  "summary": "1 failed, 62 deselected in 7.68s",
+  "KILLED": true
+ },
+ {
+  "mutant": "M11 G-DVB reads nothing (always clean)",
+  "targeted": [
+   "test_G_DVB_v6_CATCHES_a_lever_declared_but_not_built"
+  ],
+  "pytest_rc": 1,
+  "summary": "1 failed, 62 deselected in 2.32s",
+  "KILLED": true
+ },
+ {
+  "mutant": "M12 synthetic batch always carries v_max keys",
+  "targeted": [
+   "test_synthetic_train_batch_carries_v_max_ONLY_when_the_port_is_built"
+  ],
+  "pytest_rc": 1,
+  "summary": "1 failed, 62 deselected in 3.06s",
+  "KILLED": true
+ },
+ {
+  "mutant": "M13 the preflight forgets the S-W refusal",
+  "targeted": [
+   "test_preflight_REFUSES_each_lever_in_S_W"
+  ],
+  "pytest_rc": 1,
+  "summary": "1 failed, 62 deselected in 2.24s",
+  "KILLED": true
+ },
+ {
+  "mutant": "M14 the sidecar join ignores validity",
+  "targeted": [
+   "test_the_sidecar_JOIN_is_per_episode_by_stable_id_and_refuses_zero_coverage"
+  ],
+  "pytest_rc": 1,
+  "summary": "1 failed, 62 deselected in 8.08s",
+  "KILLED": true
+ }
+]
+KILLED 14 of 14

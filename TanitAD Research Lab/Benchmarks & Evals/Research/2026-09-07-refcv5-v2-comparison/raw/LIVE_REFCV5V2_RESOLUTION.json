@@ -1,0 +1,129 @@
+{
+ "_what_this_is": "MEASURED 2026-09-07 on the LIVE refcv5-v2 config.json fetched from the A40 while it was training at step ~16,850 of 40,284. ZERO GPU: the rebuild and the cross-check run on the dev-box CPU.",
+ "config_top_level_keys": [
+  "ablate_frames",
+  "admission_sigma_m",
+  "agent_join",
+  "agent_join_digest",
+  "agent_join_stats",
+  "anchors",
+  "argv",
+  "arm",
+  "effective_weights",
+  "ego",
+  "frame_batch_bytes_est",
+  "goal_provenance",
+  "goal_tau_steps",
+  "horizons",
+  "image_hw",
+  "nav_args",
+  "nav_args_stats",
+  "nav_cmd_derivation",
+  "nav_from_v7",
+  "nav_from_v7_stats",
+  "param_breakdown",
+  "provenance_roles",
+  "registered_delta",
+  "require_parity",
+  "rig_rung",
+  "seams",
+  "seed",
+  "selection",
+  "size",
+  "tac_vocab_version",
+  "u8_batches",
+  "v2_cache",
+  "v2_parity",
+  "v7_labels",
+  "withheld_bank"
+ ],
+ "n_anchors_resolution": {
+  "n_anchors": 117,
+  "chance": 0.008547,
+  "primary": "config.json:anchors.shape[0]",
+  "witnesses_agreeing": {
+   "config.json:anchors.shape[0]": 117,
+   "config.json:anchors.controls_shape[0]": 117,
+   "argv:--n-anchors": 117
+  },
+  "witnesses_absent": [
+   "checkpoint:model['core.decoder.anchors'].shape[0]",
+   "dump/manifest.json:model.n_anchors"
+  ],
+  "checkpoint_read": "no checkpoint given",
+  "_rule": "chance = 1/n_anchors, DERIVED from this run's own bank. \u26d4 Never a remembered constant; the tensor is authoritative and every other field corroborates it."
+ },
+ "n_anchors": 117,
+ "anchor_chance": 0.008547,
+ "the_name_n_anchors_appears_in_the_config": false,
+ "rebuild": {
+  "source": "config.json[argv] -> refc_v3_train.build_parser + _pin_trainer_cfg (the trainer's own build path)",
+  "cfg.core.anchors.n_anchors": 117,
+  "args.n_anchors": 117,
+  "params_total": 108257502,
+  "state_dict_anchor_shapes": {
+   "core.decoder.anchors": [
+    117,
+    8,
+    2
+   ],
+   "core.decoder.anchor_controls": [
+    117,
+    2
+   ]
+  },
+  "cross_check_config_keys": [
+   "arm",
+   "goal_tau_steps",
+   "horizons",
+   "image_hw",
+   "param_breakdown",
+   "tac_vocab_version"
+  ],
+  "cross_check_passed": true
+ },
+ "levers": {
+  "sel_refined": {
+   "value": true,
+   "declared_at": "/selection/sel_refined",
+   "source": "nested declaration"
+  },
+  "sel_score_emitted": {
+   "value": true,
+   "declared_at": "/selection/sel_score_emitted",
+   "source": "nested declaration"
+  },
+  "sampler_ranks_the_fan": {
+   "value": true,
+   "declared_at": "/selection/sampler_ranks_the_fan",
+   "source": "nested declaration"
+  },
+  "tac_goal_tok_head": {
+   "value": true,
+   "declared_at": "/seams/tac_goal_tok_head/built",
+   "source": "nested declaration"
+  },
+  "goal_str": {
+   "value": true,
+   "declared_at": "/seams/goal_str",
+   "source": "nested declaration"
+  },
+  "anchor_v0_conditioned": {
+   "value": true,
+   "declared_at": "/anchors/v0_conditioned",
+   "source": "nested declaration"
+  }
+ },
+ "values": {
+  "anchor_control_units": {
+   "value": "alat",
+   "declared_at": "/anchors/control_units"
+  },
+  "sampler": {
+   "value": "ddim",
+   "declared_at": "/seams/sampler"
+  }
+ },
+ "sampler_stochastic_at_inference": true,
+ "sampler_reason": "--sampler ddim: samples are drawn at inference, so a re-roll of this same checkpoint can move every number below"
+}

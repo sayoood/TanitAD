@@ -1,0 +1,96 @@
+{
+ "_what": "mutation proof that test_resume_continues_the_data_order.py can FAIL",
+ "_evidence_class": "MEASURED (ours), CPU",
+ "targets": {
+  "stack\\tests\\test_resume_continues_the_data_order.py": "2dbf51e442e391b10dc907f2a28464f2",
+  "stack\\scripts\\refc_v3_train.py": "26ff2433e7b99e965828ce9f1c207224"
+ },
+ "arms": [
+  {
+   "arm": "D1_sampler_ignores_the_resume_offset",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_a_resume_from_EVERY_boundary_continues_the_uninterrupted_order",
+    "test_train_RESUMED_trains_on_the_windows_the_uninterrupted_run_trains_on"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "D2_permutation_ignores_the_epoch",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_each_epoch_is_a_PERMUTATION_and_epochs_DIFFER"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "D3_HISTORICAL_loader_back_to_shuffle_True",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_train_RESUMED_trains_on_the_windows_the_uninterrupted_run_trains_on"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "D4_resume_does_not_restore_the_position",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_a_resume_from_EVERY_boundary_continues_the_uninterrupted_order",
+    "test_train_RESUMED_trains_on_the_windows_the_uninterrupted_run_trains_on"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "D5_checkpoint_stops_saving_the_position",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_train_RESUMED_trains_on_the_windows_the_uninterrupted_run_trains_on"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "D6_changed_run_validation_removed",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_a_resume_with_a_CHANGED_run_REFUSES_and_names_the_field[batch_size-4]",
+    "test_a_resume_with_a_CHANGED_run_REFUSES_and_names_the_field[n-11]",
+    "test_a_resume_with_a_CHANGED_run_REFUSES_and_names_the_field[seed-1]"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "D7_rollover_stops_advancing_the_epoch",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_each_epoch_is_a_PERMUTATION_and_epochs_DIFFER"
+   ],
+   "tail": null
+  }
+ ],
+ "baseline": {
+  "rc": 0,
+  "failed": []
+ },
+ "restored_ok": true,
+ "final_clean_run": {
+  "rc": 0,
+  "failed": []
+ },
+ "arms_caught": 7,
+ "arms_total": 7,
+ "_VERDICT": "⭐ MUTATION-PROVEN — all 7/7 arms RED, including the the historical shuffle=True replay; both files restored byte-identical and the final clean run is green."
+}

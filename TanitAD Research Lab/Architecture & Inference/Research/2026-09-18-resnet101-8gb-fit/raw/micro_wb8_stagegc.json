@@ -1,0 +1,143 @@
+{
+ "host": "dev-box RTX 4060 8188 MiB",
+ "torch": "2.11.0+cu128",
+ "alloc_conf": "",
+ "geometry": [
+  416,
+  1024
+ ],
+ "wb": 8,
+ "frames": 3,
+ "arms": [
+  {
+   "arm": "r101_timmgc",
+   "model": "resnet101.a1_in1k",
+   "levers": {
+    "grad_checkpoint": true
+   },
+   "image_hw": [
+    416,
+    1024
+   ],
+   "wb": 8,
+   "frames": 3,
+   "mode": "shared",
+   "images_through_trunk": 24,
+   "backbone_params": 42500160,
+   "total_params": 58231872,
+   "relu_outofplace": 100,
+   "gc_applied": true,
+   "trainable_params": 58231872,
+   "peak_alloc_gb": 15.165349006652832,
+   "peak_reserved_gb": 22.26171875,
+   "iter_s_all": [
+    31.2635,
+    33.1055,
+    34.6506
+   ],
+   "iter_s": 34.6506,
+   "s16_shape": [
+    8,
+    1024,
+    26,
+    64
+   ],
+   "s32_shape": [
+    8,
+    2048,
+    13,
+    32
+   ],
+   "trunk_grad_abs_sum": 777.1539334008498,
+   "n_grad_none": 0,
+   "status": "OK"
+  },
+  {
+   "arm": "r34_timmgc",
+   "model": "resnet34.a1_in1k",
+   "levers": {
+    "grad_checkpoint": true
+   },
+   "image_hw": [
+    416,
+    1024
+   ],
+   "wb": 8,
+   "frames": 3,
+   "mode": "shared",
+   "images_through_trunk": 24,
+   "backbone_params": 21284672,
+   "total_params": 22268480,
+   "relu_outofplace": 33,
+   "gc_applied": true,
+   "trainable_params": 22268480,
+   "peak_alloc_gb": 4.861874103546143,
+   "peak_reserved_gb": 8.3671875,
+   "iter_s_all": [
+    1.4774,
+    1.4237,
+    1.4305
+   ],
+   "iter_s": 1.4305,
+   "s16_shape": [
+    8,
+    256,
+    26,
+    64
+   ],
+   "s32_shape": [
+    8,
+    512,
+    13,
+    32
+   ],
+   "trunk_grad_abs_sum": 585.6898582893868,
+   "n_grad_none": 0,
+   "status": "OK"
+  },
+  {
+   "arm": "r101_timmgc_bf16",
+   "model": "resnet101.a1_in1k",
+   "levers": {
+    "grad_checkpoint": true,
+    "bf16": true
+   },
+   "image_hw": [
+    416,
+    1024
+   ],
+   "wb": 8,
+   "frames": 3,
+   "mode": "shared",
+   "images_through_trunk": 24,
+   "backbone_params": 42500160,
+   "total_params": 58231872,
+   "relu_outofplace": 100,
+   "gc_applied": true,
+   "trainable_params": 58231872,
+   "peak_alloc_gb": 8.08464765548706,
+   "peak_reserved_gb": 12.0703125,
+   "iter_s_all": [
+    6.8092,
+    8.5164,
+    8.6372
+   ],
+   "iter_s": 8.6372,
+   "s16_shape": [
+    8,
+    1024,
+    26,
+    64
+   ],
+   "s32_shape": [
+    8,
+    2048,
+    13,
+    32
+   ],
+   "trunk_grad_abs_sum": 773.9501330957487,
+   "n_grad_none": 0,
+   "status": "OK"
+  }
+ ]
+}

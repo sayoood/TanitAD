@@ -1,0 +1,59 @@
+{
+ "instrument": "verify_eval_split_feeds.py",
+ "why": "the 20-step smoke has no --eval-cache, so the eval split's enable_max_speed is never called by it",
+ "splits": {
+  "eval": {
+   "split": "eval",
+   "blob": "TanitAD Research Lab\\Data Engineering\\Implementation\\incoming\\2026-09-10-v8-speed-max-label-release\\raw\\s2_labels_v8.0_eval.jsonl.gz",
+   "label_md5": "38a6239903478c078702d12b518b4bac",
+   "n_clips": 147,
+   "n_windows": 147,
+   "n_windows_with_ceiling": 147,
+   "window_ceiling_frac": 1.0,
+   "n_clips_over_ceiling": 0,
+   "v_min_ms": 0.0,
+   "v_max_ms": 35.54,
+   "checks": {
+    "n_records_matches_blob": true,
+    "every_window_receives_a_ceiling": true,
+    "window_ceiling_frac_is_1": true,
+    "every_clip_carries_a_block": true,
+    "units_declared_m_s": true,
+    "provenance_is_ego_future": true,
+    "ladder_is_the_pinned_one": true,
+    "label_md5_recorded": true,
+    "oracle_stamp_recorded": true,
+    "values_are_RAW_not_on_the_ladder": true,
+    "CONTROL_more_than_100_windows": true
+   },
+   "PASS": true
+  },
+  "train": {
+   "split": "train",
+   "blob": "TanitAD Research Lab\\Data Engineering\\Implementation\\incoming\\2026-09-10-v8-speed-max-label-release\\raw\\s2_labels_v8.0_train.jsonl.gz",
+   "label_md5": "fa89ea55dfce68403eb30300e57852ab",
+   "n_clips": 4572,
+   "n_windows": 4572,
+   "n_windows_with_ceiling": 4572,
+   "window_ceiling_frac": 1.0,
+   "n_clips_over_ceiling": 28,
+   "v_min_ms": 0.0,
+   "v_max_ms": 37.8,
+   "checks": {
+    "n_records_matches_blob": true,
+    "every_window_receives_a_ceiling": true,
+    "window_ceiling_frac_is_1": true,
+    "every_clip_carries_a_block": true,
+    "units_declared_m_s": true,
+    "provenance_is_ego_future": true,
+    "ladder_is_the_pinned_one": true,
+    "label_md5_recorded": true,
+    "oracle_stamp_recorded": true,
+    "values_are_RAW_not_on_the_ladder": true,
+    "CONTROL_more_than_100_windows": true
+   },
+   "PASS": true
+  }
+ },
+ "OVERALL_PASS": true
+}

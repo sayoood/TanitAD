@@ -1,0 +1,295 @@
+{
+ "card": "LEVEL-FLOOR smoke: kappa 0.5, s0, 6 windows, reindexed",
+ "clock": "2026-11-05T21:34:07+0100",
+ "S1_composite": {
+  "out": "F:/TanitAD-scratch/motion_c/lf_read/smoke/SMK_LF_composite",
+  "wall_s": 7.796533823013306,
+  "loop_s": 1.0,
+  "n_windows": 6,
+  "threads": 12,
+  "replans": 18,
+  "windows": 6,
+  "dtypes": {
+   "lf_bind": "bool",
+   "lf_cap": "bool",
+   "lf_vf": "float32",
+   "lf_vhat": "float32",
+   "lf_pi": "float32",
+   "lf_gap": "float32",
+   "lf_lift": "float32",
+   "lf_bind_k10": "bool"
+  },
+  "band_rate": 1.0,
+  "bind_rate": 0.05555555555555555,
+  "bind_k10_rate": 0.0,
+  "cap_rate": 0.0,
+  "n_bind": 1,
+  "n_cap": 0,
+  "lift_mean_ms_where_bound": 0.0,
+  "lift_max_ms": 0.0,
+  "lift_zero_where_not_bound": true,
+  "vf_nan_iff_no_band": true,
+  "vhat_range_ms": [
+   5.703807353973389,
+   12.368773460388184
+  ],
+  "v0_range_ms": [
+   5.516480445861816,
+   10.27579116821289
+  ],
+  "fields_present": [
+   "lf_bind",
+   "lf_bind_k10",
+   "lf_cap",
+   "lf_gap",
+   "lf_lift",
+   "lf_pi",
+   "lf_vf",
+   "lf_vhat"
+  ],
+  "scene": "reindexed",
+  "level_floor": "on",
+  "floor_kappa": 0.5,
+  "recompute_max_abs_m": 0.0,
+  "recompute_bind_agreement": 1.0,
+  "plan_differs_from_raw_rows": 18,
+  "F_alone_changed_rows": 1,
+  "PASS": true,
+  "header": {
+   "level_floor": "on",
+   "floor_kappa": 0.5,
+   "floor_ckpt": "E:/Projects/TanitAD-artifacts/v8f-recover/M2b_s0_recft_LLR/ckpt_last.pt",
+   "floor_ckpt_sha256": "5a52b28bcf3e2f153baeb0835f1e9dd44eb918319b51b1e804a5d686276817bc",
+   "scene": "reindexed",
+   "smooth": {
+    "mode": "sg72",
+    "operator": "P + savgol_filter(plan - P, 7, 2, axis=1, mode='interp')",
+    "prereg": "PREREG_V8F_SMOOTH (sha256 a2f19e48...)",
+    "applied": "to the model's plan at every replan, before the executor; the P10 floor is not smoothed"
+   },
+   "feasible": {
+    "mode": "kbox",
+    "operator": "tanitad.refs.feasible_decode.project_feasible(origin + plan, dt=DT, a_max=inf, kappa_max=KAPPA_MAX_1PM, mu=None, clamp_entry=False)",
+    "prereg": "dagland/feas2_t1/PREREG_FROZEN.md (H-FEAS2-T1-1)",
+    "applied": "to the plan after --smooth at every replan, before the executor; the P10 floor is not projected"
+   }
+  },
+  "header_detail_counts": {
+   "replans": 18,
+   "band": 18,
+   "bind": 1,
+   "bind_k10": 0,
+   "cap": 0,
+   "dir_fallback_binds": 0,
+   "short_last_seg_binds": 0,
+   "lift_sum_ms": 0.0,
+   "lift_mean_ms_where_bound": 0.0
+  },
+  "header_parity": {
+   "checked_replans": 1,
+   "max_abs_diff": 0.0
+  },
+  "header_keys_read": [
+   "feats",
+   "frame_ok"
+  ]
+ },
+ "S2_bare": {
+  "out": "F:/TanitAD-scratch/motion_c/lf_read/smoke/SMK_LF_bare",
+  "wall_s": 7.842631816864014,
+  "loop_s": 1.0,
+  "n_windows": 6,
+  "threads": 12,
+  "replans": 18,
+  "windows": 6,
+  "dtypes": {
+   "lf_bind": "bool",
+   "lf_cap": "bool",
+   "lf_vf": "float32",
+   "lf_vhat": "float32",
+   "lf_pi": "float32",
+   "lf_gap": "float32",
+   "lf_lift": "float32",
+   "lf_bind_k10": "bool"
+  },
+  "band_rate": 1.0,
+  "bind_rate": 0.05555555555555555,
+  "bind_k10_rate": 0.0,
+  "cap_rate": 0.0,
+  "n_bind": 1,
+  "n_cap": 0,
+  "lift_mean_ms_where_bound": 0.0,
+  "lift_max_ms": 0.0,
+  "lift_zero_where_not_bound": true,
+  "vf_nan_iff_no_band": true,
+  "vhat_range_ms": [
+   5.703807353973389,
+   12.368773460388184
+  ],
+  "v0_range_ms": [
+   5.516480445861816,
+   10.27579116821289
+  ],
+  "fields_present": [
+   "lf_bind",
+   "lf_bind_k10",
+   "lf_cap",
+   "lf_gap",
+   "lf_lift",
+   "lf_pi",
+   "lf_vf",
+   "lf_vhat"
+  ],
+  "scene": "reindexed",
+  "level_floor": "on",
+  "floor_kappa": 0.5,
+  "recompute_max_abs_m": 0.0,
+  "recompute_bind_agreement": 1.0,
+  "plan_differs_from_raw_rows": 18,
+  "F_alone_changed_rows": 1,
+  "PASS": true,
+  "header": {
+   "level_floor": "on",
+   "floor_kappa": 0.5,
+   "floor_ckpt": "E:/Projects/TanitAD-artifacts/v8f-recover/M2b_s0_recft_LLR/ckpt_last.pt",
+   "floor_ckpt_sha256": "5a52b28bcf3e2f153baeb0835f1e9dd44eb918319b51b1e804a5d686276817bc",
+   "scene": "reindexed",
+   "smooth": {
+    "mode": "sg72",
+    "operator": "P + savgol_filter(plan - P, 7, 2, axis=1, mode='interp')",
+    "prereg": "PREREG_V8F_SMOOTH (sha256 a2f19e48...)",
+    "applied": "to the model's plan at every replan, before the executor; the P10 floor is not smoothed"
+   },
+   "feasible": null
+  },
+  "header_detail_counts": {
+   "replans": 18,
+   "band": 18,
+   "bind": 1,
+   "bind_k10": 0,
+   "cap": 0,
+   "dir_fallback_binds": 0,
+   "short_last_seg_binds": 0,
+   "lift_sum_ms": 0.0,
+   "lift_mean_ms_where_bound": 0.0
+  },
+  "header_parity": {
+   "checked_replans": 1,
+   "max_abs_diff": 0.0
+  },
+  "header_keys_read": [
+   "feats",
+   "frame_ok"
+  ]
+ },
+ "S3_smooth_off": {
+  "out": "F:/TanitAD-scratch/motion_c/lf_read/smoke/SMK_LF_raw",
+  "wall_s": 7.063323497772217,
+  "loop_s": 1.0,
+  "n_windows": 6,
+  "threads": 12,
+  "replans": 18,
+  "windows": 6,
+  "dtypes": {
+   "lf_bind": "bool",
+   "lf_cap": "bool",
+   "lf_vf": "float32",
+   "lf_vhat": "float32",
+   "lf_pi": "float32",
+   "lf_gap": "float32",
+   "lf_lift": "float32",
+   "lf_bind_k10": "bool"
+  },
+  "band_rate": 1.0,
+  "bind_rate": 0.2222222222222222,
+  "bind_k10_rate": 0.05555555555555555,
+  "cap_rate": 0.0,
+  "n_bind": 4,
+  "n_cap": 0,
+  "lift_mean_ms_where_bound": 0.15571989119052887,
+  "lift_max_ms": 0.6228795647621155,
+  "lift_zero_where_not_bound": true,
+  "vf_nan_iff_no_band": true,
+  "vhat_range_ms": [
+   5.387328624725342,
+   12.368773460388184
+  ],
+  "v0_range_ms": [
+   5.063416481018066,
+   10.27579116821289
+  ],
+  "fields_present": [
+   "lf_bind",
+   "lf_bind_k10",
+   "lf_cap",
+   "lf_gap",
+   "lf_lift",
+   "lf_pi",
+   "lf_vf",
+   "lf_vhat"
+  ],
+  "scene": "reindexed",
+  "level_floor": "on",
+  "floor_kappa": 0.5,
+  "recompute_max_abs_m": 0.0,
+  "recompute_bind_agreement": 1.0,
+  "plan_differs_from_raw_rows": 4,
+  "F_alone_changed_rows": 4,
+  "PASS": true,
+  "header": {
+   "level_floor": "on",
+   "floor_kappa": 0.5,
+   "floor_ckpt": "E:/Projects/TanitAD-artifacts/v8f-recover/M2b_s0_recft_LLR/ckpt_last.pt",
+   "floor_ckpt_sha256": "5a52b28bcf3e2f153baeb0835f1e9dd44eb918319b51b1e804a5d686276817bc",
+   "scene": "reindexed",
+   "smooth": null,
+   "feasible": null
+  },
+  "header_detail_counts": {
+   "replans": 18,
+   "band": 18,
+   "bind": 4,
+   "bind_k10": 1,
+   "cap": 0,
+   "dir_fallback_binds": 0,
+   "short_last_seg_binds": 0,
+   "lift_sum_ms": 0.6228795701772908,
+   "lift_mean_ms_where_bound": 0.1557198925443227
+  },
+  "header_parity": {
+   "checked_replans": 1,
+   "max_abs_diff": 0.0
+  },
+  "header_keys_read": [
+   "feats",
+   "frame_ok"
+  ]
+ },
+ "timing_64_windows_composite_12t": {
+  "off": {
+   "loop_s": [
+    5.0,
+    6.0
+   ],
+   "wall_s": [
+    12.3,
+    13.2
+   ],
+   "loop_s_per_window_min": 0.078125,
+   "wall_s_per_window_min": 0.19199573621153831
+  },
+  "on_k0.5": {
+   "loop_s": [
+    6.0,
+    6.0
+   ],
+   "wall_s": [
+    13.7,
+    15.9
+   ],
+   "loop_s_per_window_min": 0.09375,
+   "wall_s_per_window_min": 0.21385208517313004
+  }
+ },
+ "PASS": true
+}

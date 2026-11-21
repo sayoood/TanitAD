@@ -1,0 +1,29 @@
+[2026-11-13T11:49:18] guards PASS: {"card": "96a65416b3c2", "k": 48, "pins": 956, "reach": "PASS", "families_run": "TIP", "free_gb": 22.4}
+[2026-11-13T11:49:35] STAGE reach_real DONE {"rc": 0}
+[2026-11-13T11:49:36] start job 0 (free virt 12875 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe F:/tanitad_scratch/n5nt/run\n5\n5_nt_build.py derive --route cache --n2r-plans F:/tanitad_scratch/n5nt/run\inputs\n2r\n2_plans_N2R.npz --n4d-report F:/tanitad_scratch/n5nt/run\inputs\n4d\n4_build_report.json --rolls F:/tanitad_scratch/n5nt/run\input
+[2026-11-13T11:49:56] start job 1 (free virt 12719 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe F:/tanitad_scratch/n5nt/run\n5\n5_nt_build.py derive --route cache --n2r-plans F:/tanitad_scratch/n5nt/run\inputs\n2r\n2_plans_N2R.npz --n4d-report F:/tanitad_scratch/n5nt/run\inputs\n4d\n4_build_report.json --rolls F:/tanitad_scratch/n5nt/run\input
+[2026-11-13T12:10:32] job 1 rc 0
+[2026-11-13T12:11:17] job 0 rc 0
+[2026-11-13T12:11:32] STAGE derive DONE {"rcs": [0, 0]}
+[2026-11-13T12:11:40] STAGE build DONE {"merge_rc": 0, "controls": {"C-COVB": true, "C-DACMAP": true, "C-DERIV": true, "C-LABELEGO": true, "C-DET": true, "C-SET": true, "C-CERT-B": true, "C-SEAMFN": true, "C-UNCH": true, "C-REACH": true}, "dac0": 116, "repaired": {"N5A": 5, "N5X": 0, "N5R": 86}, "l1_run": 25}
+[2026-11-13T12:11:41] STAGE unch DONE {"rc": 0}
+[2026-11-13T12:11:42] start job 0 (free virt 11303 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe F:/tanitad_scratch/n5nt/run\w\pk\eval\score_p4_a1.py --label refe_tfn5_n5a --seam F:/tanitad_scratch/n5nt/run\n5run\build\out\refe_tfn5_n5a.npz --tokens all --log-dir F:/tanitad_scratch/n5nt/run\n5run\logs --score-root F:/tanitad_scratch/n5nt/run\n5
+[2026-11-13T12:12:03] start job 1 (free virt 10912 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe F:/tanitad_scratch/n5nt/run\w\pk\eval\score_p4_a1.py --label refe_tfn5_n5x --seam F:/tanitad_scratch/n5nt/run\n5run\build\out\refe_tfn5_n5x.npz --tokens all --log-dir F:/tanitad_scratch/n5nt/run\n5run\logs --score-root F:/tanitad_scratch/n5nt/run\n5
+[2026-11-13T12:40:09] job 0 rc 0
+[2026-11-13T12:40:09] job 1 rc 0
+[2026-11-13T12:40:24] score ['A', 'X'] attempt 1: pending []
+[2026-11-13T12:40:24] STAGE score_A_X DONE {"pending": [], "status": "PASS", "csv_tokens": 12146, "want": 12146}
+[2026-11-13T12:40:35] STAGE read DONE {"rc": 0, "log": "F:/tanitad_scratch/n5nt/run\\n5run\\out\\read.log"}
+[2026-11-13T12:40:36] start job 0 (free virt 14892 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe F:/tanitad_scratch/n5nt/run\w\pk\eval\instruments\transp_score.py --refe F:/tanitad_scratch/n5nt/run\w\pk\refe --split navtest --token-log F:/Archive/devbox-C/navsim/exp/w3_navtest_v1/inputs/navtest_inputs.json.gz --metric-cache-root F:/Archive/devb
+[2026-11-13T12:40:56] start job 1 (free virt 14100 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe F:/tanitad_scratch/n5nt/run\w\pk\eval\instruments\transp_score.py --refe F:/tanitad_scratch/n5nt/run\w\pk\refe --split navtest --token-log F:/Archive/devbox-C/navsim/exp/w3_navtest_v1/inputs/navtest_inputs.json.gz --metric-cache-root F:/Archive/devb
+[2026-11-13T12:59:31] job 1 rc 0
+[2026-11-13T12:59:46] job 0 rc 0
+[2026-11-13T13:00:08] STAGE families_rows DONE {"transp_rcs": [0, 0], "famprep_rc": 0, "primary_rows": 12110, "want": 12110}
+[2026-11-13T13:00:09] start job 0 (free virt 15040 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe F:/tanitad_scratch/n5nt/run\w\pk\eval\instruments\families_run.py --rows F:/tanitad_scratch/n5nt/run\n5run\score\rows_primary.jsonl --arm N4D --label TF-N5 N4D --out F:/tanitad_scratch/n5nt/run\n5run\fam\fam_N4D.json --per-window --n-boot 2000 --tan
+[2026-11-13T13:00:30] start job 1 (free virt 14655 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe F:/tanitad_scratch/n5nt/run\w\pk\eval\instruments\families_run.py --rows F:/tanitad_scratch/n5nt/run\n5run\score\rows_primary.jsonl --arm N5A --label TF-N5 N5A --out F:/tanitad_scratch/n5nt/run\n5run\fam\fam_N5A.json --per-window --n-boot 2000 --tan
+[2026-11-13T13:01:05] job 0 rc 0
+[2026-11-13T13:01:20] job 1 rc 0
+[2026-11-13T13:01:36] STAGE families_run DONE {"fam_rcs": [0, 0], "tokens_logs_check": {"N4D": "ok", "N5A": "ok"}}
+[2026-11-13T13:02:03] STAGE families_ci DONE {"fam_ci_rc": 0}
+[2026-11-13T13:02:03] STAGE families DONE {"famread_rc": 0}
+[2026-11-13T13:02:03] ZZN5_CHAIN DONE

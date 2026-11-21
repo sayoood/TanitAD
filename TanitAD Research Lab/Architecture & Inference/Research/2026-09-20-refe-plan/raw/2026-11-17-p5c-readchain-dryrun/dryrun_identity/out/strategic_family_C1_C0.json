@@ -1,0 +1,1101 @@
+{
+ "instrument": "eval/instruments/strategic_family.py (STRAT-FAM)",
+ "tier": "T1 = NAVSIM v1.1 PDMS-side plan, an ego pseudo-simulation of an open-loop plan against logged agents (self-action open loop, not closed loop); the command is an INPUT of the agent",
+ "estimator": "paired log-cluster bootstrap over the navtest logs, 10,000 resamples, 95 %, seed 20260927: the resample stream of proxy_eval.boot (command_adherence.resample_weights), arm and base on identical tokens and identical resamples; per-token means = resampled sum / resampled count, route-progress = resampled sum of plan arc / resampled sum of logged arc. It answers 'another draw of LOGS'; training variance (one seed per arm, H-ESTIM-SEED-1) is unmeasured; inference is deterministic. A separated interval is necessary, not sufficient, for a lever claim.",
+ "authority": "NONE. STRATEGIC is a REPORTED family (PI 2026-11-16: not paused). It is not a decision bar and carries no authority over any PREREG; PREREG_P5C froze its bars before the ruling. Quote it only with the estimator and n.",
+ "evidence_class": "MEASURED (ours) on the named seams; the logged future is the navtest export's human_future_poses",
+ "tokens": {
+  "n": 12146,
+  "n_logs": 136,
+  "command_counts": {
+   "LEFT": 2501,
+   "STRAIGHT": 8070,
+   "RIGHT": 1575,
+   "UNKNOWN": 0
+  },
+  "turn_active_n": 4076
+ },
+ "seams": {
+  "C1": "E:/Projects/TanitAD/data/refe_navtest/seams/stage2_p7_full.npz",
+  "C0": "E:/Projects/TanitAD/data/refe_navtest/seams/stage2_p7_full.npz"
+ },
+ "base": "C0",
+ "arms": {
+  "C1": {
+   "S_DEC": {
+    "all_tokens": {
+     "n": 12146,
+     "n_logs": 136,
+     "accuracy": {
+      "point": 0.8622591799769471,
+      "ci95": [
+       0.8397559385454374,
+       0.8837213921462357
+      ]
+     },
+     "kappa": {
+      "point": 0.7395661455206183,
+      "ci95": [
+       0.7046687256603131,
+       0.7735489514912124
+      ],
+      "n_undefined_resamples": 0
+     },
+     "confusion_command_rows_plan_cols": [
+      [
+       2283.0,
+       206.0,
+       12.0
+      ],
+      [
+       617.0,
+       6884.0,
+       569.0
+      ],
+      [
+       20.0,
+       249.0,
+       1306.0
+      ]
+     ],
+     "rows": [
+      "LEFT",
+      "STRAIGHT",
+      "RIGHT"
+     ],
+     "cols": [
+      "LEFT",
+      "STRAIGHT",
+      "RIGHT"
+     ],
+     "per_command_recall": {
+      "LEFT": 0.9128348660535786,
+      "STRAIGHT": 0.8530359355638166,
+      "RIGHT": 0.8292063492063492
+     },
+     "per_command_n": {
+      "LEFT": 2501.0,
+      "STRAIGHT": 8070.0,
+      "RIGHT": 1575.0
+     },
+     "_what": "C1: all tokens"
+    },
+    "turn_active": {
+     "n": 4076,
+     "n_logs": 113,
+     "accuracy": {
+      "point": 0.8805201177625123,
+      "ci95": [
+       0.8555089821607637,
+       0.9025413780124738
+      ]
+     },
+     "kappa": {
+      "point": 0.7738682859650065,
+      "ci95": [
+       0.7311089181462825,
+       0.8120352931876319
+      ],
+      "n_undefined_resamples": 0
+     },
+     "confusion_command_rows_plan_cols": [
+      [
+       2283.0,
+       206.0,
+       12.0
+      ],
+      [
+       0.0,
+       0.0,
+       0.0
+      ],
+      [
+       20.0,
+       249.0,
+       1306.0
+      ]
+     ],
+     "rows": [
+      "LEFT",
+      "STRAIGHT",
+      "RIGHT"
+     ],
+     "cols": [
+      "LEFT",
+      "STRAIGHT",
+      "RIGHT"
+     ],
+     "per_command_recall": {
+      "LEFT": 0.9128348660535786,
+      "STRAIGHT": null,
+      "RIGHT": 0.8292063492063492
+     },
+     "per_command_n": {
+      "LEFT": 2501.0,
+      "STRAIGHT": 0.0,
+      "RIGHT": 1575.0
+     },
+     "_what": "C1: turn-active (LEFT u RIGHT commands) = HEADLINE"
+    },
+    "per_class": {
+     "LEFT": {
+      "n": 2501,
+      "n_logs": 96,
+      "adherence": {
+       "point": 0.9128348660535786,
+       "ci95": [
+        0.8908638805906176,
+        0.935388837172026
+       ]
+      },
+      "executed_direction_counts": [
+       2283.0,
+       206.0,
+       12.0
+      ]
+     },
+     "STRAIGHT": {
+      "n": 8070,
+      "n_logs": 134,
+      "adherence": {
+       "point": 0.8530359355638166,
+       "ci95": [
+        0.8147666221625932,
+        0.8863528563225332
+       ]
+      },
+      "executed_direction_counts": [
+       617.0,
+       6884.0,
+       569.0
+      ]
+     },
+     "RIGHT": {
+      "n": 1575,
+      "n_logs": 93,
+      "adherence": {
+       "point": 0.8292063492063492,
+       "ci95": [
+        0.7837595968602511,
+        0.8682562517401808
+       ]
+      },
+      "executed_direction_counts": [
+       20.0,
+       249.0,
+       1306.0
+      ]
+     }
+    }
+   },
+   "S_GOAL": {
+    "LEFT": {
+     "n": 2501,
+     "n_logs": 96,
+     "endpoint_error_m": {
+      "point": 3.7048636474797076,
+      "ci95": [
+       3.455411026585661,
+       3.960132921267587
+      ],
+      "n_undefined_resamples": 0
+     },
+     "endpoint_heading_err_rad": {
+      "point": 0.13159567528418753,
+      "ci95": [
+       0.11438367790322944,
+       0.15167736185534764
+      ],
+      "n_undefined_resamples": 0
+     },
+     "route_progress_ratio": {
+      "point": 1.01774759907333,
+      "ci95": [
+       0.9850006952285681,
+       1.0540368907718307
+      ],
+      "n_undefined_resamples": 0
+     },
+     "lateral_offset_m": {
+      "point": -0.11139781396266989,
+      "ci95": [
+       -0.4212669860449298,
+       0.1952776628705678
+      ],
+      "n_undefined_resamples": 0
+     },
+     "abs_lateral_offset_m": {
+      "point": 1.901321797052472,
+      "ci95": [
+       1.6991558654694245,
+       2.117752289436208
+      ],
+      "n_undefined_resamples": 0
+     },
+     "descriptive_mean_token_ratio": {
+      "mean_per_token_ratio": 1.035252266507526,
+      "n_defined": 2485,
+      "n_excluded_gt_arc_below_min": 16,
+      "min_gt_arc_m": 1.0,
+      "descriptive_only": true
+     }
+    },
+    "STRAIGHT": {
+     "n": 8070,
+     "n_logs": 134,
+     "endpoint_error_m": {
+      "point": 3.192793606967397,
+      "ci95": [
+       2.9973525566633947,
+       3.404934241782352
+      ],
+      "n_undefined_resamples": 0
+     },
+     "endpoint_heading_err_rad": {
+      "point": 0.041293579268211214,
+      "ci95": [
+       0.038135611589962516,
+       0.04478938650288236
+      ],
+      "n_undefined_resamples": 0
+     },
+     "route_progress_ratio": {
+      "point": 1.054652077127414,
+      "ci95": [
+       1.0379794627513814,
+       1.0721460898289243
+      ],
+      "n_undefined_resamples": 0
+     },
+     "lateral_offset_m": {
+      "point": 0.06782145390552337,
+      "ci95": [
+       -0.008435577152605072,
+       0.137853560080903
+      ],
+      "n_undefined_resamples": 0
+     },
+     "abs_lateral_offset_m": {
+      "point": 0.5972359221506268,
+      "ci95": [
+       0.5362018525631286,
+       0.6638769361354355
+      ],
+      "n_undefined_resamples": 0
+     },
+     "descriptive_mean_token_ratio": {
+      "mean_per_token_ratio": 1.0932494827362604,
+      "n_defined": 7902,
+      "n_excluded_gt_arc_below_min": 168,
+      "min_gt_arc_m": 1.0,
+      "descriptive_only": true
+     }
+    },
+    "RIGHT": {
+     "n": 1575,
+     "n_logs": 93,
+     "endpoint_error_m": {
+      "point": 3.4337374834924055,
+      "ci95": [
+       3.215967672147566,
+       3.6390154131543446
+      ],
+      "n_undefined_resamples": 0
+     },
+     "endpoint_heading_err_rad": {
+      "point": 0.17057862368001195,
+      "ci95": [
+       0.15236867003630972,
+       0.1902332952362522
+      ],
+      "n_undefined_resamples": 0
+     },
+     "route_progress_ratio": {
+      "point": 1.059290527630253,
+      "ci95": [
+       1.0261222199979294,
+       1.0909575560403193
+      ],
+      "n_undefined_resamples": 0
+     },
+     "lateral_offset_m": {
+      "point": 0.2655890868716484,
+      "ci95": [
+       -0.1307858078847986,
+       0.643279347309148
+      ],
+      "n_undefined_resamples": 0
+     },
+     "abs_lateral_offset_m": {
+      "point": 1.8141633012622458,
+      "ci95": [
+       1.6258166604869941,
+       1.983294646114427
+      ],
+      "n_undefined_resamples": 0
+     },
+     "descriptive_mean_token_ratio": {
+      "mean_per_token_ratio": 1.0922494356829535,
+      "n_defined": 1559,
+      "n_excluded_gt_arc_below_min": 16,
+      "min_gt_arc_m": 1.0,
+      "descriptive_only": true
+     }
+    },
+    "TURN_ACTIVE": {
+     "n": 4076,
+     "n_logs": 113,
+     "endpoint_error_m": {
+      "point": 3.6000982627201394,
+      "ci95": [
+       3.405017500457057,
+       3.7917892160838673
+      ],
+      "n_undefined_resamples": 0
+     },
+     "endpoint_heading_err_rad": {
+      "point": 0.1466590078954297,
+      "ci95": [
+       0.13135038821398853,
+       0.1646737905958692
+      ],
+      "n_undefined_resamples": 0
+     },
+     "route_progress_ratio": {
+      "point": 1.0325459377265243,
+      "ci95": [
+       1.0026355015200785,
+       1.0621147766758803
+      ],
+      "n_undefined_resamples": 0
+     },
+     "lateral_offset_m": {
+      "point": 0.03427303216442807,
+      "ci95": [
+       -0.2587870969705868,
+       0.3184267768032785
+      ],
+      "n_undefined_resamples": 0
+     },
+     "abs_lateral_offset_m": {
+      "point": 1.8676430357988887,
+      "ci95": [
+       1.7315608894601708,
+       2.0045268745017677
+      ],
+      "n_undefined_resamples": 0
+     },
+     "descriptive_mean_token_ratio": {
+      "mean_per_token_ratio": 1.0572252108063613,
+      "n_defined": 4044,
+      "n_excluded_gt_arc_below_min": 32,
+      "min_gt_arc_m": 1.0,
+      "descriptive_only": true
+     }
+    }
+   },
+   "labeller_provenance": {
+    "n": 12146,
+    "n_heading_held_from_last_moving_step": 598,
+    "n_never_moved": 37,
+    "dt_s": 0.5,
+    "n_poses": 8
+   }
+  },
+  "C0": {
+   "S_DEC": {
+    "all_tokens": {
+     "n": 12146,
+     "n_logs": 136,
+     "accuracy": {
+      "point": 0.8622591799769471,
+      "ci95": [
+       0.8397559385454374,
+       0.8837213921462357
+      ]
+     },
+     "kappa": {
+      "point": 0.7395661455206183,
+      "ci95": [
+       0.7046687256603131,
+       0.7735489514912124
+      ],
+      "n_undefined_resamples": 0
+     },
+     "confusion_command_rows_plan_cols": [
+      [
+       2283.0,
+       206.0,
+       12.0
+      ],
+      [
+       617.0,
+       6884.0,
+       569.0
+      ],
+      [
+       20.0,
+       249.0,
+       1306.0
+      ]
+     ],
+     "rows": [
+      "LEFT",
+      "STRAIGHT",
+      "RIGHT"
+     ],
+     "cols": [
+      "LEFT",
+      "STRAIGHT",
+      "RIGHT"
+     ],
+     "per_command_recall": {
+      "LEFT": 0.9128348660535786,
+      "STRAIGHT": 0.8530359355638166,
+      "RIGHT": 0.8292063492063492
+     },
+     "per_command_n": {
+      "LEFT": 2501.0,
+      "STRAIGHT": 8070.0,
+      "RIGHT": 1575.0
+     },
+     "_what": "C0: all tokens"
+    },
+    "turn_active": {
+     "n": 4076,
+     "n_logs": 113,
+     "accuracy": {
+      "point": 0.8805201177625123,
+      "ci95": [
+       0.8555089821607637,
+       0.9025413780124738
+      ]
+     },
+     "kappa": {
+      "point": 0.7738682859650065,
+      "ci95": [
+       0.7311089181462825,
+       0.8120352931876319
+      ],
+      "n_undefined_resamples": 0
+     },
+     "confusion_command_rows_plan_cols": [
+      [
+       2283.0,
+       206.0,
+       12.0
+      ],
+      [
+       0.0,
+       0.0,
+       0.0
+      ],
+      [
+       20.0,
+       249.0,
+       1306.0
+      ]
+     ],
+     "rows": [
+      "LEFT",
+      "STRAIGHT",
+      "RIGHT"
+     ],
+     "cols": [
+      "LEFT",
+      "STRAIGHT",
+      "RIGHT"
+     ],
+     "per_command_recall": {
+      "LEFT": 0.9128348660535786,
+      "STRAIGHT": null,
+      "RIGHT": 0.8292063492063492
+     },
+     "per_command_n": {
+      "LEFT": 2501.0,
+      "STRAIGHT": 0.0,
+      "RIGHT": 1575.0
+     },
+     "_what": "C0: turn-active (LEFT u RIGHT commands) = HEADLINE"
+    },
+    "per_class": {
+     "LEFT": {
+      "n": 2501,
+      "n_logs": 96,
+      "adherence": {
+       "point": 0.9128348660535786,
+       "ci95": [
+        0.8908638805906176,
+        0.935388837172026
+       ]
+      },
+      "executed_direction_counts": [
+       2283.0,
+       206.0,
+       12.0
+      ]
+     },
+     "STRAIGHT": {
+      "n": 8070,
+      "n_logs": 134,
+      "adherence": {
+       "point": 0.8530359355638166,
+       "ci95": [
+        0.8147666221625932,
+        0.8863528563225332
+       ]
+      },
+      "executed_direction_counts": [
+       617.0,
+       6884.0,
+       569.0
+      ]
+     },
+     "RIGHT": {
+      "n": 1575,
+      "n_logs": 93,
+      "adherence": {
+       "point": 0.8292063492063492,
+       "ci95": [
+        0.7837595968602511,
+        0.8682562517401808
+       ]
+      },
+      "executed_direction_counts": [
+       20.0,
+       249.0,
+       1306.0
+      ]
+     }
+    }
+   },
+   "S_GOAL": {
+    "LEFT": {
+     "n": 2501,
+     "n_logs": 96,
+     "endpoint_error_m": {
+      "point": 3.7048636474797076,
+      "ci95": [
+       3.455411026585661,
+       3.960132921267587
+      ],
+      "n_undefined_resamples": 0
+     },
+     "endpoint_heading_err_rad": {
+      "point": 0.13159567528418753,
+      "ci95": [
+       0.11438367790322944,
+       0.15167736185534764
+      ],
+      "n_undefined_resamples": 0
+     },
+     "route_progress_ratio": {
+      "point": 1.01774759907333,
+      "ci95": [
+       0.9850006952285681,
+       1.0540368907718307
+      ],
+      "n_undefined_resamples": 0
+     },
+     "lateral_offset_m": {
+      "point": -0.11139781396266989,
+      "ci95": [
+       -0.4212669860449298,
+       0.1952776628705678
+      ],
+      "n_undefined_resamples": 0
+     },
+     "abs_lateral_offset_m": {
+      "point": 1.901321797052472,
+      "ci95": [
+       1.6991558654694245,
+       2.117752289436208
+      ],
+      "n_undefined_resamples": 0
+     },
+     "descriptive_mean_token_ratio": {
+      "mean_per_token_ratio": 1.035252266507526,
+      "n_defined": 2485,
+      "n_excluded_gt_arc_below_min": 16,
+      "min_gt_arc_m": 1.0,
+      "descriptive_only": true
+     }
+    },
+    "STRAIGHT": {
+     "n": 8070,
+     "n_logs": 134,
+     "endpoint_error_m": {
+      "point": 3.192793606967397,
+      "ci95": [
+       2.9973525566633947,
+       3.404934241782352
+      ],
+      "n_undefined_resamples": 0
+     },
+     "endpoint_heading_err_rad": {
+      "point": 0.041293579268211214,
+      "ci95": [
+       0.038135611589962516,
+       0.04478938650288236
+      ],
+      "n_undefined_resamples": 0
+     },
+     "route_progress_ratio": {
+      "point": 1.054652077127414,
+      "ci95": [
+       1.0379794627513814,
+       1.0721460898289243
+      ],
+      "n_undefined_resamples": 0
+     },
+     "lateral_offset_m": {
+      "point": 0.06782145390552337,
+      "ci95": [
+       -0.008435577152605072,
+       0.137853560080903
+      ],
+      "n_undefined_resamples": 0
+     },
+     "abs_lateral_offset_m": {
+      "point": 0.5972359221506268,
+      "ci95": [
+       0.5362018525631286,
+       0.6638769361354355
+      ],
+      "n_undefined_resamples": 0
+     },
+     "descriptive_mean_token_ratio": {
+      "mean_per_token_ratio": 1.0932494827362604,
+      "n_defined": 7902,
+      "n_excluded_gt_arc_below_min": 168,
+      "min_gt_arc_m": 1.0,
+      "descriptive_only": true
+     }
+    },
+    "RIGHT": {
+     "n": 1575,
+     "n_logs": 93,
+     "endpoint_error_m": {
+      "point": 3.4337374834924055,
+      "ci95": [
+       3.215967672147566,
+       3.6390154131543446
+      ],
+      "n_undefined_resamples": 0
+     },
+     "endpoint_heading_err_rad": {
+      "point": 0.17057862368001195,
+      "ci95": [
+       0.15236867003630972,
+       0.1902332952362522
+      ],
+      "n_undefined_resamples": 0
+     },
+     "route_progress_ratio": {
+      "point": 1.059290527630253,
+      "ci95": [
+       1.0261222199979294,
+       1.0909575560403193
+      ],
+      "n_undefined_resamples": 0
+     },
+     "lateral_offset_m": {
+      "point": 0.2655890868716484,
+      "ci95": [
+       -0.1307858078847986,
+       0.643279347309148
+      ],
+      "n_undefined_resamples": 0
+     },
+     "abs_lateral_offset_m": {
+      "point": 1.8141633012622458,
+      "ci95": [
+       1.6258166604869941,
+       1.983294646114427
+      ],
+      "n_undefined_resamples": 0
+     },
+     "descriptive_mean_token_ratio": {
+      "mean_per_token_ratio": 1.0922494356829535,
+      "n_defined": 1559,
+      "n_excluded_gt_arc_below_min": 16,
+      "min_gt_arc_m": 1.0,
+      "descriptive_only": true
+     }
+    },
+    "TURN_ACTIVE": {
+     "n": 4076,
+     "n_logs": 113,
+     "endpoint_error_m": {
+      "point": 3.6000982627201394,
+      "ci95": [
+       3.405017500457057,
+       3.7917892160838673
+      ],
+      "n_undefined_resamples": 0
+     },
+     "endpoint_heading_err_rad": {
+      "point": 0.1466590078954297,
+      "ci95": [
+       0.13135038821398853,
+       0.1646737905958692
+      ],
+      "n_undefined_resamples": 0
+     },
+     "route_progress_ratio": {
+      "point": 1.0325459377265243,
+      "ci95": [
+       1.0026355015200785,
+       1.0621147766758803
+      ],
+      "n_undefined_resamples": 0
+     },
+     "lateral_offset_m": {
+      "point": 0.03427303216442807,
+      "ci95": [
+       -0.2587870969705868,
+       0.3184267768032785
+      ],
+      "n_undefined_resamples": 0
+     },
+     "abs_lateral_offset_m": {
+      "point": 1.8676430357988887,
+      "ci95": [
+       1.7315608894601708,
+       2.0045268745017677
+      ],
+      "n_undefined_resamples": 0
+     },
+     "descriptive_mean_token_ratio": {
+      "mean_per_token_ratio": 1.0572252108063613,
+      "n_defined": 4044,
+      "n_excluded_gt_arc_below_min": 32,
+      "min_gt_arc_m": 1.0,
+      "descriptive_only": true
+     }
+    }
+   },
+   "labeller_provenance": {
+    "n": 12146,
+    "n_heading_held_from_last_moving_step": 598,
+    "n_never_moved": 37,
+    "dt_s": 0.5,
+    "n_poses": 8
+   }
+  }
+ },
+ "paired_vs_base": {
+  "C1_minus_C0": {
+   "S_DEC": {
+    "all_tokens": {
+     "n": 12146.0,
+     "n_logs": 136,
+     "accuracy_delta": {
+      "point": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "separated": false
+     },
+     "kappa_delta": {
+      "point": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "separated": false,
+      "n_undefined_resamples": 0
+     }
+    },
+    "turn_active": {
+     "n": 4076.0,
+     "n_logs": 113,
+     "accuracy_delta": {
+      "point": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "separated": false
+     },
+     "kappa_delta": {
+      "point": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "separated": false,
+      "n_undefined_resamples": 0
+     }
+    },
+    "per_class": {
+     "LEFT": {
+      "point": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "separated": false
+     },
+     "STRAIGHT": {
+      "point": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "separated": false
+     },
+     "RIGHT": {
+      "point": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "separated": false
+     }
+    }
+   },
+   "S_GOAL": {
+    "LEFT": {
+     "n": 2501,
+     "n_logs": 96,
+     "endpoint_error_m": {
+      "point": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "separated": false,
+      "n_undefined_resamples": 0
+     },
+     "endpoint_heading_err_rad": {
+      "point": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "separated": false,
+      "n_undefined_resamples": 0
+     },
+     "route_progress_ratio": {
+      "point": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "separated": false,
+      "n_undefined_resamples": 0
+     },
+     "lateral_offset_m": {
+      "point": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "separated": false,
+      "n_undefined_resamples": 0
+     },
+     "abs_lateral_offset_m": {
+      "point": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "separated": false,
+      "n_undefined_resamples": 0
+     }
+    },
+    "STRAIGHT": {
+     "n": 8070,
+     "n_logs": 134,
+     "endpoint_error_m": {
+      "point": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "separated": false,
+      "n_undefined_resamples": 0
+     },
+     "endpoint_heading_err_rad": {
+      "point": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "separated": false,
+      "n_undefined_resamples": 0
+     },
+     "route_progress_ratio": {
+      "point": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "separated": false,
+      "n_undefined_resamples": 0
+     },
+     "lateral_offset_m": {
+      "point": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "separated": false,
+      "n_undefined_resamples": 0
+     },
+     "abs_lateral_offset_m": {
+      "point": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "separated": false,
+      "n_undefined_resamples": 0
+     }
+    },
+    "RIGHT": {
+     "n": 1575,
+     "n_logs": 93,
+     "endpoint_error_m": {
+      "point": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "separated": false,
+      "n_undefined_resamples": 0
+     },
+     "endpoint_heading_err_rad": {
+      "point": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "separated": false,
+      "n_undefined_resamples": 0
+     },
+     "route_progress_ratio": {
+      "point": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "separated": false,
+      "n_undefined_resamples": 0
+     },
+     "lateral_offset_m": {
+      "point": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "separated": false,
+      "n_undefined_resamples": 0
+     },
+     "abs_lateral_offset_m": {
+      "point": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "separated": false,
+      "n_undefined_resamples": 0
+     }
+    },
+    "TURN_ACTIVE": {
+     "n": 4076,
+     "n_logs": 113,
+     "endpoint_error_m": {
+      "point": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "separated": false,
+      "n_undefined_resamples": 0
+     },
+     "endpoint_heading_err_rad": {
+      "point": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "separated": false,
+      "n_undefined_resamples": 0
+     },
+     "route_progress_ratio": {
+      "point": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "separated": false,
+      "n_undefined_resamples": 0
+     },
+     "lateral_offset_m": {
+      "point": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "separated": false,
+      "n_undefined_resamples": 0
+     },
+     "abs_lateral_offset_m": {
+      "point": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "separated": false,
+      "n_undefined_resamples": 0
+     }
+    }
+   }
+  }
+ },
+ "gates": {
+  "G_COUNTS": {
+   "ok": true,
+   "observed": {
+    "LEFT": 2501,
+    "STRAIGHT": 8070,
+    "RIGHT": 1575,
+    "UNKNOWN": 0
+   },
+   "n_tokens": 12146,
+   "n_logs": 136
+  }
+ },
+ "n_boot": 10000,
+ "seed": 20260927,
+ "controls": {
+  "logged_future_as_arm": {
+   "ok": true,
+   "violations": [],
+   "expected": "endpoint error 0, heading error 0, lateral offset 0, route-progress ratio 1, CI degenerate at the same value"
+  },
+  "mirror_C1": {
+   "ok": true,
+   "turn_active_adherence_real": 0.8805201177625123,
+   "turn_active_adherence_mirrored": 0.007850834151128557,
+   "max_abs_change_by_mirror": 42.476959228515625,
+   "expected": "mirrored turn-active adherence strictly below the real one, and the mirror must actually change the plan"
+  },
+  "mirror_C0": {
+   "ok": true,
+   "turn_active_adherence_real": 0.8805201177625123,
+   "turn_active_adherence_mirrored": 0.007850834151128557,
+   "max_abs_change_by_mirror": 42.476959228515625,
+   "expected": "mirrored turn-active adherence strictly below the real one, and the mirror must actually change the plan"
+  },
+  "self_vs_self_C1": {
+   "ok": true,
+   "violations": [],
+   "expected": "delta 0.0, CI [0.0, 0.0] on every cell"
+  }
+ },
+ "seconds": 2.2
+}

@@ -1,0 +1,91 @@
+  tokens: 12,146 over 136 logs; ckpt F:\TanitAD_p6read_work\ckpt\run\model_final.pt
+  planner: trained=True per_sample_calib=True device=cuda select=best
+    [5/136] rows 434  misses 0  607 s
+    [10/136] rows 699  misses 0  943 s
+    [15/136] rows 956  misses 0  1271 s
+    [20/136] rows 1,223  misses 0  1611 s
+    [25/136] rows 1,458  misses 0  1908 s
+    [30/136] rows 1,673  misses 0  2182 s
+    [35/136] rows 2,041  misses 0  2657 s
+    [40/136] rows 2,504  misses 0  3248 s
+    [45/136] rows 3,117  misses 0  4035 s
+    [50/136] rows 4,064  misses 0  5284 s
+    [55/136] rows 4,400  misses 0  5712 s
+    [60/136] rows 4,847  misses 0  6291 s
+    [65/136] rows 5,284  misses 0  6864 s
+    [70/136] rows 5,618  misses 0  7290 s
+    [75/136] rows 5,918  misses 0  7676 s
+    [80/136] rows 6,151  misses 0  7972 s
+    [85/136] rows 6,503  misses 0  8417 s
+    [90/136] rows 7,163  misses 0  9262 s
+    [95/136] rows 7,475  misses 0  9652 s
+    [100/136] rows 8,495  misses 0  10988 s
+    [105/136] rows 8,811  misses 0  11394 s
+    [110/136] rows 9,052  misses 0  11699 s
+    [115/136] rows 9,566  misses 0  12343 s
+    [120/136] rows 10,089  misses 0  13008 s
+    [125/136] rows 10,559  misses 0  13613 s
+    [130/136] rows 11,298  misses 0  14567 s
+    [135/136] rows 11,805  misses 0  15198 s
+    [136/136] rows 12,146  misses 0  15623 s
+{
+ "tokens_asked": 12146,
+ "rows": 12146,
+ "misses": 0,
+ "ckpt": "F:\\TanitAD_p6read_work\\ckpt\\run\\model_final.pt",
+ "select": "best",
+ "rule": "navsim_v1",
+ "repair_last_heading": true,
+ "sanitize_goal": false,
+ "goal_fix": "pdm_route",
+ "nav_mode": "command",
+ "driving_command_set": 12146,
+ "frame_control": {
+  "n": 12146,
+  "max_m": 6.18063877792441,
+  "median_m": 9.155133597044475e-16,
+  "bar_m": 0.001,
+  "what": "log future on NAVSIM's 0.5 s grid vs W3 human_future_poses"
+ },
+ "interpolation_residual": {
+  "n": 12146,
+  "max_m": 6.180638777924402,
+  "median_m": 0.0073124447051554865,
+  "what": "log future on REFe's 0.2 s grid -> to_navsim, vs W3; reported, not gated"
+ },
+ "seconds": 15623.2,
+ "proposals": {
+  "n": 12146,
+  "M": 64,
+  "ade_selected_m": 1.3642,
+  "ade_random_m": 1.5691,
+  "ade_oracle_m": 0.3778,
+  "oracle_index_distinct": 64,
+  "oracle_index_top5": [
+   [
+    35,
+    1249
+   ],
+   [
+    1,
+    666
+   ],
+   [
+    57,
+    663
+   ],
+   [
+    2,
+    635
+   ],
+   [
+    18,
+    516
+   ]
+  ],
+  "selected_index_distinct": 64,
+  "endpoint_spread_m": 2.354,
+  "what": "open-loop ADE over NAVSIM's 8 poses (0.5 s) vs W3's human future: selected = the planner's pick; random = mean over the M proposals (a random selector's expectation); oracle = best of M; oracle_index_* = how many proposals are ever best (WTA collapse if few); endpoint_spread = mean distance of the M endpoints from their centroid"
+ }
+}
+ZZSEAM_FAIL 12146 6.1806

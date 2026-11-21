@@ -1,0 +1,44 @@
+.....F........................F..........................                [100%]
+================================== FAILURES ===================================
+_________________ test_join_is_keyed_by_token_not_by_position _________________
+
+    def test_join_is_keyed_by_token_not_by_position():
+        info = mk_info()
+        base = 0.30 + 0.01 * np.arange(64)                                   # a different value on every token
+        a = mk_arm(base, info.index)
+        b = mk_arm(base, info.index).sample(frac=1.0, random_state=7)       # SAME numbers per token, rows shuffled
+        assert list(b.index) != list(a.index)
+        r = B.evaluate_navtest({"R8_LEGAL": a, "STOP": b}, info, ELIGIBLE, {**B.DEFAULT_CFG, **CFG})
+        p = r["pairs"]["R8_LEGAL__minus__STOP"]
+>       assert p["delta_x100"] == 0.0 and (p["wins"], p["ties"], p["losses"]) == (0, 64, 0)
+E       assert (0.0 == 0.0 and (28, 0, 36) == (0, 64, 0)
+E         
+E         At index 0 diff: 28 != 0
+E         Use -v to get more diff)
+
+tests\test_navsim_bars8.py:118: AssertionError
+___________________ test_seed_floor_flag_in_strata_literal ____________________
+
+    def test_seed_floor_flag_in_strata_literal():
+        # LEGAL 0.60 everywhere; s1 0.50 on the 16 Singapore tokens only -> global floor 2.5, Singapore floor 10.0, US floor 0.0
+        info = mk_info()
+        sg = np.array([m == SG for m in info["map_name"]])
+        r = ev({"R8_LEGAL": 0.6, "R8_LEGAL_s1": np.where(sg, 0.5, 0.6), "STOP": np.where(sg, 0.59, 0.5)}, info=info, cfg={"strata_pairs": True})
+        assert r["inference_seed_floor"]["x100"] == 2.5
+        s = r["strata"]["partitions"]["city"]
+        assert s["Singapore"]["seed_floor_x100_in_stratum"] == 10.0 and s["US"]["seed_floor_x100_in_stratum"] == 0.0
+        d_sg = s["Singapore"]["pairs"]["R8_LEGAL__minus__STOP"]
+        d_us = s["US"]["pairs"]["R8_LEGAL__minus__STOP"]
+        assert (d_sg["delta_x100"], d_sg["floor_used_x100"], d_sg["exceeds_seed_floor"]) == (1.0, 10.0, False)     # 1.0 <= 10.0: not an effect
+>       assert (d_us["delta_x100"], d_us["floor_used_x100"], d_us["exceeds_seed_floor"]) == (10.0, 2.5, True)       # 10.0 > max(0.0, 2.5)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       assert (7.0, 2.5, True) == (10.0, 2.5, True)
+E         
+E         At index 0 diff: 7.0 != 10.0
+E         Use -v to get more diff
+
+tests\test_navsim_bars8.py:178: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_navsim_bars8.py::test_join_is_keyed_by_token_not_by_position
+FAILED tests/test_navsim_bars8.py::test_seed_floor_flag_in_strata_literal - a...
+2 failed, 55 passed, 2 deselected in 26.69s

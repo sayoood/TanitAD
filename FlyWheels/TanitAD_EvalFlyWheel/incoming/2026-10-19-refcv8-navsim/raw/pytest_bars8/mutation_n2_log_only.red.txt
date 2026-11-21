@@ -1,0 +1,20 @@
+....................................................F.........           [100%]
+================================== FAILURES ===================================
+________________________ test_n2_needs_the_drive_level ________________________
+
+    def test_n2_needs_the_drive_level():
+        # A-R8-NS1 AMENDMENT 3: log level lo +0.0005 excludes 0, the nuplan_drive level lo -0.0001 does not -> not separated -> FAILED
+        # (the builder's log-only gate read PASS here; the n2_log_only mutation restores it and must go red)
+        r = B.navhard_bar(_nh(dlo=-0.0001), ELIGIBLE, B.DEFAULT_CFG)
+>       assert r["per_arm_verdict"] == {"R8_LEGAL": "FAILED", "R8_LEGAL_s1": "FAILED"}
+E       AssertionError: assert {'R8_LEGAL': ...L_s1': 'PASS'} == {'R8_LEGAL': ...s1': 'FAILED'}
+E         
+E         Differing items:
+E         {'R8_LEGAL': 'PASS'} != {'R8_LEGAL': 'FAILED'}
+E         {'R8_LEGAL_s1': 'PASS'} != {'R8_LEGAL_s1': 'FAILED'}
+E         Use -v to get more diff
+
+tests\test_navsim_bars8.py:353: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_navsim_bars8.py::test_n2_needs_the_drive_level - AssertionE...
+1 failed, 61 passed, 2 deselected in 34.87s

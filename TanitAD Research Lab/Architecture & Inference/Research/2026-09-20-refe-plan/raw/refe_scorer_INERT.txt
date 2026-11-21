@@ -1,0 +1,120 @@
+RETRACTED 2026-09-20, SAME DAY. See raw/refe_scorer_discriminates.txt for the measured result.
+
+⛔ THE HEADLINE OF THIS FILE IS WRONG. The scorer is NOT inert. It distinguishes a legal path from
+one that drives over a curb: OffRoad.info 0.0000 vs 1.0000, reward -1.6994, 10 of 28 signals
+separating. Everything below was measured; the CONCLUSION drawn from it was not supported.
+
+THREE CLAIMS BELOW ARE RETRACTED
+  ⛔ "0 of 9 signals differ"  -- that was MY READOUT, not their calculators. I collapsed each
+     calculator's nested dict to its `reward` key, which is the weighted, saturated training signal
+     and is flat by design; the `info` key carries the discrimination and I was discarding it.
+     MEASURED: CenterLine.info reads 0.0691 for the teacher path and 0.3211 for the veer -- a
+     difference that was present the whole time, in the very first run.
+  ⛔ "a builder-produced ScenarioData is NECESSARY but NOT SUFFICIENT; the engine-side derivation
+     has to be reproduced" -- it does not. The builder's object is sufficient.
+  ⛔ "the fix is to populate lanes_centers_groups / _ids / _next_groups" -- implemented and
+     MEASURED to change NOTHING: the with- and without-enrichment arms are identical on all 28
+     signals. The lane graph is not load-bearing for these six calculators. (The related note that
+     obtaining those arrays "is genuine reconstruction work" is also wrong: one offline call to
+     `_build_map_arrays` returns 1,019 nonzero groups and 4,095 next-group links.)
+
+AND THE DELIBERATE-REGRESSION ARM ITSELF WAS THE DEFECT
+  The "25 m sideways veer" never left the road. MEASURED: +y moves the ego AWAY from the nearest
+  curb (10.66 m -> 19.06 m at +14 m, minimum 0.87 m at +40 m, never touching). OffRoad was right to
+  stay silent. ⭐ A control that does not commit the violation it tests for proves nothing, and
+  this one nearly produced the confident conclusion "their off-road detector is broken".
+
+WHAT SURVIVES, AND IT IS THE VALUABLE PART
+  The escalation pattern documented below -- four estimates, each greener and each wrong, settled
+  only by a control that MUST read a different value -- is correct and is why the defect was found.
+  The fifth version simply added the control I had still not built: one whose expected answer is
+  known from the map rather than assumed from a guess about geometry.
+
+============================================================================================
+THE SCORER PIPELINE RUNS AND IS INERT. NEGATIVE RESULT, MEASURED 2026-09-20.
+
+I claimed this gap was "verified and small". IT IS NOT, and only an end-to-end DISCRIMINATING test
+showed it. Every weaker check I ran along the way was green.
+
+WHAT WORKS (all MEASURED, all real)
+  * EngineMergedConfig builds from THEIR released driverl_teacher.yaml (6 required args + the yaml).
+  * all six calculators instantiate.
+  * ScenarioData is reconstructible OFFLINE from a banked simulation log -- no live sim needed.
+  * candidate injection reaches the object: appending 20 poses takes agent_positions_all from
+    (1,128,5,2) to (1,128,25,2), and the ego track ends at [24.8,-0.5] for the teacher's path vs
+    [24.8,24.5] for one veering 25 m sideways. The injection is demonstrably different.
+  * four calculators return REAL numbers: center_line.CenterLine 0.7500, CurbClearance 1.0000,
+    Overspeed 1.0000, comfort.Comfort 1.0000, off_road.CrossLane 1.0000, OffRoad -0.0000,
+    goal_reaching.GoalReaching -0.0000.
+
+WHAT DOES NOT WORK -- AND IT IS THE WHOLE POINT
+  those numbers are IDENTICAL for all three candidates:
+      teacher's realised 4 s path | the same path veering 25 m sideways | a stationary ego
+  0 of 9 signals differ. A 25 m lateral excursion must leave the drivable area; the scorer reports
+  the same "no event" value as for the teacher's own trajectory.
+  collision and ttc additionally raise IndexError ("too many indices for tensor of dimension 1").
+
+DIAGNOSIS
+  the ScenarioData produced by DriveRLNuPlanFeatureBuilder has EMPTY
+      lanes_centers_groups · agent_nearest_indices · occupancy_grid
+  These are DERIVED structures the RL engine populates, not the feature builder, and they are what
+  the off-road / collision / TTC computations index into. Without them the calculators fall through
+  to their no-event defaults -- which is why the output is plausible, constant, and useless.
+  => a builder-produced ScenarioData is NECESSARY but NOT SUFFICIENT. The engine-side derivation
+     has to be reproduced or invoked.
+
+THE ESTIMATE, FOURTH REVISION -- and the pattern is the lesson
+  v1 "their builder already emits most of it"        from a NAME GREP            WRONG
+  v2 "3 of 14 fields; budget real work"              from _empty_map_arrays      wrong object
+  v3 "verified: build() returns a complete object"   from imports + a self-test  TOO WEAK A TEST
+  v4 THIS: it runs, returns real numbers, and CANNOT DISTINGUISH A GOOD PATH FROM A 25 m VEER.
+  Every version was greener than the one before and every one was wrong. The only check that
+  settled it was a control that MUST read a different value and did not.
+
+CONSEQUENCE, unchanged and now firmer: REFe's scorer has no usable targets. Proposal selection at
+inference stays arbitrary, and any closed-loop number from the pod's first arms is a TRAJECTORY
+result, not a SELECTION result.
+
+----------------------------------------------------------------------------------------------
+PROGRESS AFTER THE ABOVE, and the precise remaining fix.
+
+FIXED: `ScenarioData.update_nearest_neighbors()` is a PUBLIC method that derives
+`agent_nearest_indices`, which collision and TTC index as [:, :, -1, :]. Calling it after
+injection removed BOTH IndexErrors -- collision and TTC now RUN and return numbers
+(collision.NuPlanCollision -0.0000, ttc.NuPlanTTC 1.0000).
+
+STILL INERT: 0 of 9 signals differ across teacher / 25 m veer / stationary. So the errors were
+never the reason it could not discriminate.
+
+THE REMAINING GAP, located exactly:
+  * `driverl_runtime_map_features.py:470` DOES emit `lanes_centers_groups` (and the ids and
+    next-group arrays) -- the lane-graph structure is computed.
+  * `feature_builder.py:226`, where ScenarioData is constructed, NEVER PASSES THEM IN. grep for
+    `lanes_centers_groups` in feature_builder.py returns nothing.
+  => the lane-graph arrays exist upstream and are DROPPED on the way into ScenarioData. The
+     calculators that need lane structure (off_road, center_line) therefore see an empty graph and
+     fall through to no-event defaults for every candidate.
+  * `occupancy_grid` is legitimately empty: the released config sets enable_occupancy_grid: false.
+    It is NOT the blocker.
+
+FIRST THING TO TRY (a named, bounded fix rather than 'reproduce the engine'):
+  populate lanes_centers_groups / lanes_centers_ids / lanes_centers_next_groups into the
+  ScenarioData from the map_features dict the builder already computes, then re-run THIS test.
+  ⛔ The acceptance criterion is NOT 'it runs' and NOT 'the numbers look plausible' -- both were
+     already true while it was useless. It is that a 25 m sideways veer scores DIFFERENTLY from the
+     teacher's own path. Keep `raw/refe_scorer_discriminates.txt` as the gate.
+
+FINAL PRECISION on the remaining fix -- it is deeper than the construction site.
+  I said 'the builder computes the lane-graph arrays and drops them at ScenarioData construction'.
+  MEASURED: `feature_builder._build_map_features` returns only EIGHT keys --
+    lanes_points(+mask) · lanes_centers_points(+mask) · lanes_centers_lines(+mask) ·
+    route_points_array(+mask)
+  and `lanes_centers_groups` / `_ids` / `_next_groups` are NOT among them. So the nuPlan feature
+  path never produces the lane GRAPH at all; only the devkit's lower-level `_build_map_arrays`
+  does (18 arrays, including the group structure).
+  => the fix is not 'pass through an array that is already computed'. It is to call the devkit's
+     `_build_map_arrays` and map its group/ids/next_groups outputs onto ScenarioData's schema.
+     That is genuine reconstruction work, which is what the v2 estimate said before I talked
+     myself out of it twice.
+  => the gate is unchanged and non-negotiable: a 25 m sideways veer must score DIFFERENTLY from
+     the teacher's own path before any of this counts as working.

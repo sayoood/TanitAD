@@ -1,0 +1,13 @@
+[gate] arm no_cascade_passthrough: CAUGHT -- G-LIVE FAIL: the smoke did not complete: SystemExit: [G-DVB] ⛔⛔ train: 2 lever(s) DECLARED in argv are NOT what the model BUILT. Refusing before the first step -- a run that trains the other arm while
+[gate] arm no_cascade_silent: CAUGHT -- G-LIVE FAIL: declared term `cascade` (F3 per-stage cascade loss (D-REFCV6-F3-WHITELIST)) is ABSENT from all 0 training steps
+[gate] arm ga_off_by_one: NOT-APPLICABLE -- a model with the perception branch or the tactical decoder (a reach log exists to break) (control: ga_on False)
+[gate] arm undeclared_equalize: CAUGHT -- G-HYG ERROR: UndeclaredConfigAttribute: tanitad.refs.refc.CNNEncoderConfig.trunk_equalize_bottom_rows_undeclared is NOT a declared field. An undeclared attribute lives only in this instance's __dict__
+[gate] arm missing_hygiene_module: CAUGHT -- G-HYG FAIL: tanitad.train.config_hygiene is not importable -- module not yet landed => the gate FAILS (ModuleNotFoundError: No module named 'tanitad.train.config_hygiene' (gate arm))
+[gate] arm missing_dvb_module: CAUGHT -- G-DVB FAIL: tanitad.train.declared_vs_built is not importable -- module not yet landed => the gate FAILS (ModuleNotFoundError: No module named 'tanitad.train.declared_vs_built' (gate arm))
+[gate] token arm token_argv_changed: CAUGHT
+[gate] token arm token_hand_edited: CAUGHT
+[gate] token arm token_argv_and_token_edited: CAUGHT
+[gate] token arm token_other_key: CAUGHT
+[gate] token arm token_tree_changed: CAUGHT
+[gate] token arm token_data_changed: CAUGHT
+[gate] arms: {'CAUGHT': 11, 'NOT-APPLICABLE': 8} -> /home/nvidia/gate_lg_0928/out/arms_tiny/arms_result.json

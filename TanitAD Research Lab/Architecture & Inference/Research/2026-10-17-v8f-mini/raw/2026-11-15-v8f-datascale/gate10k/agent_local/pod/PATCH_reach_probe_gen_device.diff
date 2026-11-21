@@ -1,0 +1,4 @@
+68c68
+<         out = model.loss(b, p_gt=0.5, gen=torch.Generator().manual_seed(0))
+---
+>         out = model.loss(b, p_gt=0.5, gen=torch.Generator(device=dev).manual_seed(0))

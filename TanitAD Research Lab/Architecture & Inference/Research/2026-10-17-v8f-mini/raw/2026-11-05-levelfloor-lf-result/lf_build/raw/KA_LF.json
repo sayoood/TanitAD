@@ -1,0 +1,704 @@
+{
+ "card": "KA-LF1 / KA-LF2 of the LEVEL-FLOOR build: the LF tool with the floor off / on at kappa 0 re-rolls C0 s0 and matches the banked rollouts",
+ "tol_m": 0.0,
+ "tree": "F:/TanitAD-scratch/motion_c/lf_read/tree",
+ "cases": {
+  "LF1_A": {
+   "key": "LF1_A",
+   "name": "LF1_A_C0s0_logged_off_first64_16t_vs_banked_C0_s0",
+   "decides": true,
+   "rc": 0,
+   "max_plan_diff_m": 0.0,
+   "max_dump_diff_m": 0.0,
+   "rows": 192,
+   "windows": 64,
+   "threads": 16,
+   "scene": "logged",
+   "feasible": "off",
+   "floor": false,
+   "ckpt_sha256": "bc3f926b7d5bc034ebb7043e5ef186a9dcad29ef404341fcd0493c7a22ca9fdf",
+   "tool_sha256": "6166178a604edc5343faa4fc6f139ec83dc65d00b91155a77b3f33dda65f4d70",
+   "reference_ticks": "C:/Users/Admin/rr_scratch/out/C0_s0/ticks/ticks_C0_s0.npz",
+   "wall_s": 11.515369653701782,
+   "header_level_floor": null,
+   "header_floor_kappa": null,
+   "header_floor_ckpt_sha256": null,
+   "level_floor_detail": null,
+   "PASS": true
+  },
+  "LF1_B": {
+   "key": "LF1_B",
+   "name": "LF1_B_C0s0_reindexed_off_first64_12t_vs_banked_RIC0_s0",
+   "decides": true,
+   "rc": 0,
+   "max_plan_diff_m": 0.0,
+   "max_dump_diff_m": 0.0,
+   "rows": 192,
+   "windows": 64,
+   "threads": 12,
+   "scene": "reindexed",
+   "feasible": "off",
+   "floor": false,
+   "ckpt_sha256": "bc3f926b7d5bc034ebb7043e5ef186a9dcad29ef404341fcd0493c7a22ca9fdf",
+   "tool_sha256": "6166178a604edc5343faa4fc6f139ec83dc65d00b91155a77b3f33dda65f4d70",
+   "reference_ticks": "F:/TanitAD-scratch/motion_c/ri/out/RIC0_s0/ticks/ticks_RIC0_s0.npz",
+   "wall_s": 11.612329006195068,
+   "header_level_floor": null,
+   "header_floor_kappa": null,
+   "header_floor_ckpt_sha256": null,
+   "level_floor_detail": null,
+   "PASS": true
+  },
+  "LF1_C": {
+   "key": "LF1_C",
+   "name": "LF1_C_C0s0_reindexed_kbox_first64_12t_vs_banked_RIC0C_s0",
+   "decides": false,
+   "rc": 0,
+   "max_plan_diff_m": 0.0,
+   "max_dump_diff_m": 0.0,
+   "rows": 192,
+   "windows": 64,
+   "threads": 12,
+   "scene": "reindexed",
+   "feasible": "kbox",
+   "floor": false,
+   "ckpt_sha256": "bc3f926b7d5bc034ebb7043e5ef186a9dcad29ef404341fcd0493c7a22ca9fdf",
+   "tool_sha256": "6166178a604edc5343faa4fc6f139ec83dc65d00b91155a77b3f33dda65f4d70",
+   "reference_ticks": "F:/TanitAD-scratch/motion_c/ri/out/RIC0C_s0/ticks/ticks_RIC0C_s0.npz",
+   "wall_s": 11.544225215911865,
+   "header_level_floor": null,
+   "header_floor_kappa": null,
+   "header_floor_ckpt_sha256": null,
+   "level_floor_detail": null,
+   "PASS": true
+  },
+  "LF2_A": {
+   "key": "LF2_A",
+   "name": "LF2_A_C0s0_logged_off_first64_16t_vs_banked_C0_s0",
+   "decides": true,
+   "rc": 0,
+   "max_plan_diff_m": 0.0,
+   "max_dump_diff_m": 0.0,
+   "rows": 192,
+   "windows": 64,
+   "threads": 16,
+   "scene": "logged",
+   "feasible": "off",
+   "floor": true,
+   "ckpt_sha256": "bc3f926b7d5bc034ebb7043e5ef186a9dcad29ef404341fcd0493c7a22ca9fdf",
+   "tool_sha256": "6166178a604edc5343faa4fc6f139ec83dc65d00b91155a77b3f33dda65f4d70",
+   "reference_ticks": "C:/Users/Admin/rr_scratch/out/C0_s0/ticks/ticks_C0_s0.npz",
+   "wall_s": 13.505598306655884,
+   "header_level_floor": "on",
+   "header_floor_kappa": 0.0,
+   "header_floor_ckpt_sha256": "5a52b28bcf3e2f153baeb0835f1e9dd44eb918319b51b1e804a5d686276817bc",
+   "level_floor_detail": {
+    "operator": "v_f = kappa * v_hat if v_hat >= 3 else none; if pi >= 0.5: v_f = min(v_f, max(0, (40 * gap_hat - 2) / 1.5)); s_f(t_k) = integral_0^t_k min(v_f, max(v0, 0) + 1.0 t) dt; s'_k = max(s_k, s_f(t_k)); resample the plan's own origin-prepended polyline at s'_k, extrapolating along the last segment's direction; unchanged => the same object",
+    "constants": {
+     "dt_s": 0.2,
+     "knots": 30,
+     "v_band_min_ms": 3.0,
+     "pi_min": 0.5,
+     "gap_scale_m": 40.0,
+     "cap_standstill_gap_m": 2.0,
+     "cap_time_gap_s": 1.5,
+     "a_f_mps2": 1.0
+    },
+    "prereg": "dagland/motion_c/a3_prereg/PREREG_LEVELFLOOR_A3.md (sha256 977a785e...), H-LEVELFLOOR-1",
+    "applied": "at every replan inside model_planner's plan(batch): raw -> S (--smooth) -> F -> the projection (--feasible); the P10 floor is not floored",
+    "vision_only": "v_hat, presence and gap_hat come from the floor model's adapter + lvl_head + lead_head on the tick's frames; v0 = batch['p10f'][:, -1, 0] (measured ego speed); nothing else enters",
+    "floor_model_batch_keys_read": [
+     "feats",
+     "frame_ok"
+    ],
+    "heads_parity_vs_forward_infer": {
+     "checked_replans": 1,
+     "max_abs_diff": 0.0
+    },
+    "counts": {
+     "replans": 192,
+     "band": 191,
+     "bind": 0,
+     "bind_k10": 0,
+     "cap": 0,
+     "dir_fallback_binds": 0,
+     "short_last_seg_binds": 0,
+     "lift_sum_ms": 0.0,
+     "lift_mean_ms_where_bound": null
+    }
+   },
+   "PASS": true,
+   "vs_floor_off_run": {
+    "ticks": {
+     "P": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "age_s": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "age_t": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "ci": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "fired": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "gt": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "gt_ok": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "j": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "n_windows": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "plan": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "plan_raw": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "pose": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "pose_w0": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "replan_steps": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "s_ckpt": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "s_ckpt_now": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "s_ckpt_w0": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "s_pose": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "t0": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "t_cons_pred": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "t_goal_prob": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "t_lat_logits": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "t_lon_logits": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "t_pose": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "tau": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "tick": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "v0": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "win": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     }
+    },
+    "dumps": {
+     "cl": {
+      "bit_identical": true
+     },
+     "ol": {
+      "bit_identical": true
+     },
+     "fl": {
+      "bit_identical": true
+     },
+     "g": {
+      "bit_identical": true
+     },
+     "v0": {
+      "bit_identical": true
+     }
+    },
+    "only_in_a": [
+     "floor_ckpt_sha256",
+     "floor_kappa",
+     "level_floor",
+     "lf_bind",
+     "lf_bind_k10",
+     "lf_cap",
+     "lf_gap",
+     "lf_lift",
+     "lf_pi",
+     "lf_vf",
+     "lf_vhat"
+    ],
+    "only_in_b": [],
+    "all_common_fields_bit_identical": true
+   }
+  },
+  "LF2_B": {
+   "key": "LF2_B",
+   "name": "LF2_B_C0s0_reindexed_off_first64_12t_vs_banked_RIC0_s0",
+   "decides": true,
+   "rc": 0,
+   "max_plan_diff_m": 0.0,
+   "max_dump_diff_m": 0.0,
+   "rows": 192,
+   "windows": 64,
+   "threads": 12,
+   "scene": "reindexed",
+   "feasible": "off",
+   "floor": true,
+   "ckpt_sha256": "bc3f926b7d5bc034ebb7043e5ef186a9dcad29ef404341fcd0493c7a22ca9fdf",
+   "tool_sha256": "6166178a604edc5343faa4fc6f139ec83dc65d00b91155a77b3f33dda65f4d70",
+   "reference_ticks": "F:/TanitAD-scratch/motion_c/ri/out/RIC0_s0/ticks/ticks_RIC0_s0.npz",
+   "wall_s": 11.843370914459229,
+   "header_level_floor": "on",
+   "header_floor_kappa": 0.0,
+   "header_floor_ckpt_sha256": "5a52b28bcf3e2f153baeb0835f1e9dd44eb918319b51b1e804a5d686276817bc",
+   "level_floor_detail": {
+    "operator": "v_f = kappa * v_hat if v_hat >= 3 else none; if pi >= 0.5: v_f = min(v_f, max(0, (40 * gap_hat - 2) / 1.5)); s_f(t_k) = integral_0^t_k min(v_f, max(v0, 0) + 1.0 t) dt; s'_k = max(s_k, s_f(t_k)); resample the plan's own origin-prepended polyline at s'_k, extrapolating along the last segment's direction; unchanged => the same object",
+    "constants": {
+     "dt_s": 0.2,
+     "knots": 30,
+     "v_band_min_ms": 3.0,
+     "pi_min": 0.5,
+     "gap_scale_m": 40.0,
+     "cap_standstill_gap_m": 2.0,
+     "cap_time_gap_s": 1.5,
+     "a_f_mps2": 1.0
+    },
+    "prereg": "dagland/motion_c/a3_prereg/PREREG_LEVELFLOOR_A3.md (sha256 977a785e...), H-LEVELFLOOR-1",
+    "applied": "at every replan inside model_planner's plan(batch): raw -> S (--smooth) -> F -> the projection (--feasible); the P10 floor is not floored",
+    "vision_only": "v_hat, presence and gap_hat come from the floor model's adapter + lvl_head + lead_head on the tick's frames; v0 = batch['p10f'][:, -1, 0] (measured ego speed); nothing else enters",
+    "floor_model_batch_keys_read": [
+     "feats",
+     "frame_ok"
+    ],
+    "heads_parity_vs_forward_infer": {
+     "checked_replans": 1,
+     "max_abs_diff": 0.0
+    },
+    "counts": {
+     "replans": 192,
+     "band": 191,
+     "bind": 0,
+     "bind_k10": 0,
+     "cap": 0,
+     "dir_fallback_binds": 0,
+     "short_last_seg_binds": 0,
+     "lift_sum_ms": 0.0,
+     "lift_mean_ms_where_bound": null
+    }
+   },
+   "PASS": true,
+   "vs_floor_off_run": {
+    "ticks": {
+     "P": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "age_s": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "age_t": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "ci": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "fired": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "gt": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "gt_ok": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "j": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "n_windows": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "plan": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "plan_raw": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "pose": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "pose_w0": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "replan_steps": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "s_ckpt": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "s_ckpt_now": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "s_ckpt_w0": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "s_pose": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "t0": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "t_cons_pred": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "t_goal_prob": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "t_lat_logits": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "t_lon_logits": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "t_pose": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "tau": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "tick": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "v0": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "win": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     }
+    },
+    "dumps": {
+     "cl": {
+      "bit_identical": true
+     },
+     "ol": {
+      "bit_identical": true
+     },
+     "fl": {
+      "bit_identical": true
+     },
+     "g": {
+      "bit_identical": true
+     },
+     "v0": {
+      "bit_identical": true
+     }
+    },
+    "only_in_a": [
+     "floor_ckpt_sha256",
+     "floor_kappa",
+     "level_floor",
+     "lf_bind",
+     "lf_bind_k10",
+     "lf_cap",
+     "lf_gap",
+     "lf_lift",
+     "lf_pi",
+     "lf_vf",
+     "lf_vhat"
+    ],
+    "only_in_b": [],
+    "all_common_fields_bit_identical": true
+   }
+  },
+  "LF2_C": {
+   "key": "LF2_C",
+   "name": "LF2_C_C0s0_reindexed_kbox_first64_12t_vs_banked_RIC0C_s0",
+   "decides": false,
+   "rc": 0,
+   "max_plan_diff_m": 0.0,
+   "max_dump_diff_m": 0.0,
+   "rows": 192,
+   "windows": 64,
+   "threads": 12,
+   "scene": "reindexed",
+   "feasible": "kbox",
+   "floor": true,
+   "ckpt_sha256": "bc3f926b7d5bc034ebb7043e5ef186a9dcad29ef404341fcd0493c7a22ca9fdf",
+   "tool_sha256": "6166178a604edc5343faa4fc6f139ec83dc65d00b91155a77b3f33dda65f4d70",
+   "reference_ticks": "F:/TanitAD-scratch/motion_c/ri/out/RIC0C_s0/ticks/ticks_RIC0C_s0.npz",
+   "wall_s": 12.102370738983154,
+   "header_level_floor": "on",
+   "header_floor_kappa": 0.0,
+   "header_floor_ckpt_sha256": "5a52b28bcf3e2f153baeb0835f1e9dd44eb918319b51b1e804a5d686276817bc",
+   "level_floor_detail": {
+    "operator": "v_f = kappa * v_hat if v_hat >= 3 else none; if pi >= 0.5: v_f = min(v_f, max(0, (40 * gap_hat - 2) / 1.5)); s_f(t_k) = integral_0^t_k min(v_f, max(v0, 0) + 1.0 t) dt; s'_k = max(s_k, s_f(t_k)); resample the plan's own origin-prepended polyline at s'_k, extrapolating along the last segment's direction; unchanged => the same object",
+    "constants": {
+     "dt_s": 0.2,
+     "knots": 30,
+     "v_band_min_ms": 3.0,
+     "pi_min": 0.5,
+     "gap_scale_m": 40.0,
+     "cap_standstill_gap_m": 2.0,
+     "cap_time_gap_s": 1.5,
+     "a_f_mps2": 1.0
+    },
+    "prereg": "dagland/motion_c/a3_prereg/PREREG_LEVELFLOOR_A3.md (sha256 977a785e...), H-LEVELFLOOR-1",
+    "applied": "at every replan inside model_planner's plan(batch): raw -> S (--smooth) -> F -> the projection (--feasible); the P10 floor is not floored",
+    "vision_only": "v_hat, presence and gap_hat come from the floor model's adapter + lvl_head + lead_head on the tick's frames; v0 = batch['p10f'][:, -1, 0] (measured ego speed); nothing else enters",
+    "floor_model_batch_keys_read": [
+     "feats",
+     "frame_ok"
+    ],
+    "heads_parity_vs_forward_infer": {
+     "checked_replans": 1,
+     "max_abs_diff": 0.0
+    },
+    "counts": {
+     "replans": 192,
+     "band": 191,
+     "bind": 0,
+     "bind_k10": 0,
+     "cap": 0,
+     "dir_fallback_binds": 0,
+     "short_last_seg_binds": 0,
+     "lift_sum_ms": 0.0,
+     "lift_mean_ms_where_bound": null
+    }
+   },
+   "PASS": true,
+   "vs_floor_off_run": {
+    "ticks": {
+     "P": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "age_s": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "age_t": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "ci": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "fired": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "gt": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "gt_ok": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "j": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "n_windows": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "plan": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "plan_raw": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "plan_s": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "pose": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "pose_w0": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "replan_steps": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "s_ckpt": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "s_ckpt_now": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "s_ckpt_w0": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "s_pose": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "t0": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "t_cons_pred": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "t_goal_prob": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "t_lat_logits": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "t_lon_logits": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "t_pose": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "tau": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "tick": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "v0": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     },
+     "win": {
+      "bit_identical": true,
+      "max_abs": 0.0
+     }
+    },
+    "dumps": {
+     "cl": {
+      "bit_identical": true
+     },
+     "ol": {
+      "bit_identical": true
+     },
+     "fl": {
+      "bit_identical": true
+     },
+     "g": {
+      "bit_identical": true
+     },
+     "v0": {
+      "bit_identical": true
+     }
+    },
+    "only_in_a": [
+     "floor_ckpt_sha256",
+     "floor_kappa",
+     "level_floor",
+     "lf_bind",
+     "lf_bind_k10",
+     "lf_cap",
+     "lf_gap",
+     "lf_lift",
+     "lf_pi",
+     "lf_vf",
+     "lf_vhat"
+    ],
+    "only_in_b": [],
+    "all_common_fields_bit_identical": true
+   }
+  }
+ },
+ "model_sha256": "5fd4baea4d08a5400fc73cfd283c546d0bef528e71459f9845e6442244fc4d57",
+ "data_sha256": "22672d87bb0bb749efa3dbe16c55ad2b2992c5e93cb77b9c2673a341e8220c85",
+ "trainer_sha256": "e808cf1a71dd904b1a9161ebbeff9ebebe60c9f19ae766182d3cbcfa9d4035ee",
+ "tool_sha256": "6166178a604edc5343faa4fc6f139ec83dc65d00b91155a77b3f33dda65f4d70",
+ "operator_sha256": "2781e23af3d0052cb45be2e5895f14ebd56a9779dc7fcd65104a58d5f141a5e7",
+ "decides": "KA-LF1 A and B, KA-LF2 A and B (C is beside)",
+ "PASS": true,
+ "max_plan_diff_m": 0.0,
+ "clock": "2026-11-05T21:34:06+0100"
+}

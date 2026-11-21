@@ -1,0 +1,43 @@
+{
+ "_what": "sidecar for the B1 train+eval agent join (the join refcv6 trains against)",
+ "_evidence_class": "MEASURED (ours), CPU, read-only over the join itself",
+ "_written": "2026-09-22, by qland/work/pbox/build_b1_join_sidecar.py",
+ "_why_it_exists": "refcv5_preflight reported the digest scope UNDECLARED and noted that 'a checker inherited from the other join REFUSES a good file'. The join the programme actually trains on had no sidecar at all.",
+ "corpus_line": "v7-b1-physicalai-b1-w120-256x640cyl",
+ "_corpus_line_note": "⛔ LOAD-BEARING. This join serves the v7/B1 line, NOT the parity line. MEASURED 2026-09-22: it covers 4,566 / 4,719 = 96.76 % of the v7 corpus with 0 clips outside, while the PARITY join (train2400_agents.jsonl.xz) covers 193 / 4,719 = 4.09 %. The two are not interchangeable -- see RETR-2026-09-22-WRONG-CORPUS-FOR-REFCV6.",
+ "summary": {
+  "n_clips": 4566,
+  "n_frames": 875657,
+  "n_agent_boxes": 28958699,
+  "n_agent_boxes_in_AGENT_CLASSES": 28929493,
+  "out_of_vocabulary": {
+   "train_or_tram_car": 29206,
+   "_handling": "targets_from_join maps it to -1 and slot_set_loss masks ok = ct >= 0, so it is EXCLUDED from the cls term, never relabelled"
+  },
+  "md5": "0c31a3a63d7205e9fa50e8ac4204ef46"
+ },
+ "reader_verify": {
+  "n_records": 875657,
+  "n_clips": 4566,
+  "_control": "these two reproduce the independent coverage pass; the class census ABORTS if a read does not reproduce them, because a partial read yields a plausible vector from a partial corpus"
+ },
+ "joins_to": {
+  "cache": "v2ep-eval139-416x1024cyl",
+  "episodes_joined": "139/139 on the STABLE id (1.0000)",
+  "on_colliding_legacy_key_only": 0,
+  "_measured_by": "stack/scripts/refcv5_preflight.py --agent-join --v2-cache, 2026-09-22"
+ },
+ "_NOT_ESTABLISHED": {
+  "conventions": "⛔ The parity join's sidecar declares a frame convention, a time base and occlusion-flag semantics. NONE of those have been verified for THIS join against its builder, so none are stated here. Copying them because the sibling sidecar has them would turn an INHERITED fact into a MEASURED-looking one -- which is the exact error class this file exists to close. Verify against the builder before quoting any of them.",
+  "builder": "not identified in this pass; the file arrived via a40-rescue"
+ },
+ "digest_scope": {
+  "algo": "md5",
+  "digest": "0c31a3a63d7205e9fa50e8ac4204ef46",
+  "scope": "compressed",
+  "filename": "b1_train_plus_eval_agents.jsonl.xz",
+  "declared_by": "builder-backfill-MEASURED",
+  "note": "scope is `compressed`: the md5 above is of the .xz itself. Only the .xz exists for this join -- there is no decompressed sibling on this box -- so the other candidate scope is not merely unlikely, it is unavailable.",
+  "schema": "tanitad.join_digest_scope/1"
+ }
+}

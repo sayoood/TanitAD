@@ -1,0 +1,80 @@
+{
+ "name": "selftest_deployed",
+ "ckpt": "NONE",
+ "rule": "navsim_v1",
+ "tokens": "E:\\Projects\\TanitAD\\data\\refe_navtest\\a5_confirm_tokens.json",
+ "n_tokens": 923,
+ "deployed_seam": "E:\\Projects\\TanitAD\\data\\refe_navtest\\seams\\refe_navtest_final_routefix.npz",
+ "deployed_csv": "E:\\Projects\\TanitAD\\data\\refe_navtest\\score\\refe_navtest_final_routefix\\refe_navtest_final_routefix.csv",
+ "estimator": "paired log-cluster bootstrap over the confirmation logs, 10,000 resamples, 95 %, seed 20260927",
+ "tier": "NAVSIM v1.1 PDMS = ego pseudo-simulation of an open-loop plan against logged agents",
+ "gates": {
+  "rows": {
+   "ok": true,
+   "scored": 923,
+   "asked": 923,
+   "seam_misses": 0
+  },
+  "consistency": {
+   "ok": true,
+   "same_pose_tokens": 923,
+   "same_pose_different_score": 0
+  },
+  "frame_control_reported": {
+   "note": "selftest"
+  }
+ },
+ "primary": {
+  "mean": 0.0,
+  "ci95": [
+   0.0,
+   0.0
+  ],
+  "pdms_deployed": 85.60547217918212,
+  "pdms_arm": 85.60547217918212,
+  "better": 0,
+  "worse": 0,
+  "tied": 923,
+  "zero_deployed": 56,
+  "zero_arm": 56,
+  "n_logs": 43
+ },
+ "families_adverse_arm_vs_deployed": {
+  "adverse": [],
+  "components_compared": 21,
+  "tactical_no_interval": {
+   "lateral_decision": {
+    "W": {
+     "accuracy": 0.9447,
+     "kappa": 0.8482
+    },
+    "P": {
+     "accuracy": 0.9447,
+     "kappa": 0.8482
+    }
+   },
+   "longitudinal_decision": {
+    "W": {
+     "accuracy": 0.6977,
+     "kappa": 0.5129
+    },
+    "P": {
+     "accuracy": 0.6977,
+     "kappa": 0.5129
+    }
+   },
+   "maneuver_5way_collapsed": {
+    "W": {
+     "accuracy": 0.7746,
+     "kappa": 0.6876
+    },
+    "P": {
+     "accuracy": 0.7746,
+     "kappa": 0.6876
+    }
+   }
+  },
+  "strategic": "UNAVAILABLE in NAVSIM (no strategic decision scored; the arm has no strategic layer)"
+ },
+ "verdict": "NOT PROVEN"
+}

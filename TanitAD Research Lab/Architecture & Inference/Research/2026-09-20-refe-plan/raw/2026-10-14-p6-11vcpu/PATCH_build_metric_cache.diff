@@ -1,0 +1,25 @@
+--- a/refe/build_metric_cache.py
++++ b/refe/build_metric_cache.py
+@@ -76,6 +76,14 @@
+     return {sc._initial_lidar_token: sc for sc in NS.build_scenarios_for_log(db, sorted(tokens), history_rows=40, future_rows=100, **kw)}
+ 
+ 
++def _pause_point():
++    """P6 OVERLAP (eval/P6_ON_11VCPU.md section 9): while the file named by REFE_PAUSE_FILE exists a worker sleeps, so the chain's step-time guard can back a build off a running trainer
++    without killing it.  Unset (every other caller) = no effect."""
++    pf = os.environ.get("REFE_PAUSE_FILE", "")
++    while pf and os.path.exists(pf):
++        time.sleep(float(os.environ.get("REFE_PAUSE_POLL_S", "2")))
++
++
+ def _build_log(job):
+     log, items, out, db_root, map_root, lane_rank = job
+     import navsim_pdm_targets as PT
+@@ -86,6 +94,7 @@
+     except Exception as e:                                                   # noqa: BLE001
+         return 0, 0, len(items), [f"{log}: scenario build {type(e).__name__}: {str(e)[:120]}"]
+     for tok, aug_s in items:
++        _pause_point()
+         aug = json.loads(aug_s)
+         dst = OL.parts_path(out, log, tok, aug)
+         if dst.is_file():

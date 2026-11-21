@@ -1,0 +1,47 @@
+{
+ "_what": "the alignment gate for the 0-GPU endpoint backfill, MEASURED",
+ "dump": "latents_refc-base-30k-ep.pt",
+ "dump_sha256": "db4d8937a66ede3353daa7659bc9e162fa454cf0da41ad8ca25467ccadce8f67",
+ "ckpt": "/home/nvidia/models/refc-base/ckpt.pt",
+ "ckpt_step": 29999,
+ "producer_instrument_fail": [],
+ "controls_vs_bank": {
+  "n_windows_match": true,
+  "n_windows": 881,
+  "n_episodes": 40,
+  "eid_match": true,
+  "fan_bit_identical": true,
+  "fan_max_abs_diff": 0.0,
+  "gt_bit_identical": true,
+  "sel_bit_identical": true,
+  "v0_bit_identical": true
+ },
+ "endpoint_backfill_controls": {
+  "rebuilt_windows": 881,
+  "banked_windows": 881,
+  "eid_match": true,
+  "endpoint_20_matches_gt": true,
+  "endpoint_20_agreement": {
+   "n_rows": 881,
+   "bit_identical": false,
+   "rows_bit_identical": 825,
+   "max_abs_diff_m": 7.630325853824615e-06,
+   "max_row_ulps": 1.1180340051651,
+   "ulp_tol": 4.0,
+   "shift1_median_abs_m": 0.5122950673103333,
+   "separation_factor": 67139.34334187722,
+   "shift_margin": 1000.0,
+   "ok": true
+  },
+  "valid_frac": {
+   "20": 1.0,
+   "60": 0.773
+  },
+  "fails": []
+ },
+ "endpoint_steps": [
+  20,
+  60
+ ],
+ "endpoint_provenance": "endpoints BACKFILLED from poses only \u2014 no model, no GPU, no re-inference. The latent rows are the original banked ones; the alignment gate (eid element-for-element + bit-identical endpoint at a coinciding fan waypoint) is in `endpoint_backfill_controls`."
+}

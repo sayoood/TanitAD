@@ -1,0 +1,262 @@
+LANDING_READY_WPB -- refcv8 WP-B tactical conditioning (Architecture & Inference, 2026-10-04)
+Hand-over: NOTHING staged or committed by this agent (no git add / commit / push). The Master Mind lands these paths, BY PATH.
+Package prefix for every package path below:  TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/
+md5 = of the file as it sits on disk (D:) at hand-over. Sections WPB-1..WPB-4 are HISTORY (WPB-4 LANDED in c39798d). The CURRENT hand-over is ## WPB-L1 (then ## WPB-L2), based on tip ce17f6f432c181ed588f4d6302c4c0f298800ae7 (stack / taniteval / tools subtrees == c39798d, asserted by tree hash).
+
+## WPB-1 (stage 1: DESIGN + the registered zero-GPU dose-response D0)
+DESIGN.md                              fe55bdce4ce87db32e301f37d6906269  the design + sec. 3.9 "as implemented" (every deviation from 3.1-3.8, the v9 wiring, WP-C I1-I3)
+SPEC_D0_DOSE_RESPONSE.md               35013034f115659da1dea1855e13a8d9  D0 pre-registration (sha256 7c7e4f52..., registered 2026-10-04T11:11:58Z, before any number)
+raw/SPEC_SHA256.txt                    618eb347067873c970c6fafa3d1e184c  the D0 registration line + the MM's SPEC_WPB registration lines
+code/d0_dose_response.py               29c6a71ed5cc2642f14e8c78dbc60807  D0; CPU ~30 s; refuses on SPEC hash mismatch; md5-checks inputs; deterministic
+code/d0b_prior_follow.py               ca4e01e2f2d6e9222effe20955591503  X2 baseline (descriptive, post-hoc, labelled)
+code/d0c_heading_posthoc.py            a420fa967a9f023c913a3cc3874044c5  heading-constraint dose response (POST-HOC, labelled)
+raw/d0_dose_response.json              b6a4e499418c9d4529090b5172d64788  every D0 number (rerun; identical to the first run except wall_s)
+raw/d0b_prior_follow.json              0aa12139da4576bdd547dd1dd5e97329  X2 baseline numbers
+raw/d0c_heading_posthoc.json           b3f985c067faf920bb32ee9efe220187  D0c numbers
+raw/d0_run.log                         baac9e27563342488c8b27e34499851b  first D0 run log
+Library (outside this package): kb_add banked 2212.09748, 2302.05543, 1506.03099, 1910.05449, 2209.13508, 2008.08294, 1909.06722, 2512.12302, 1412.6980 (reconciled into the tip by cf5c1f5).
+
+## WPB-2 (stage 2: the R8-4 metric suite + refcv7's baseline row)
+RESULT_STAGE2.md                       f1f46ed75ebf6e8474d01c7e9335f9dc  the suite, refcv7's row, why the two lat3 grids differ (834 vs 800 windows; 30 deg excursion vs 10.35 deg terminal class; argmax vs side-summed)
+code/r84_baseline_refcv7.py            89b347500088f65409b01ae2fe5b2869  refcv7 baseline through the suite (CPU)
+raw/r84_baseline_refcv7.json           fe4ae3c95a26357d3208cf2cd61d3dfe  the baseline numbers (two runs identical except wall_s)
+code/fix/taniteval/taniteval/tactical_conditioning.py + code/fix/taniteval/tests/test_tactical_conditioning.py -> listed in WPB-4 (repo paths)
+
+## WPB-3 (stage 3: SPEC)
+SPEC_WPB_DRAFT.md                      a5f7678b46bf5b1741c278d3ead854bd  my draft
+SPEC_WPB.md                            bc527bf5f5507c72e220a141fbbdc289  REGISTERED by the MM (sha256 c952d4b45a55dfd422c920264f900057e4876780d81d01b859b6695c2d60e04f, 2026-10-04T12:33:09Z)
+code/wpb_arms.py                       d8aa529a3647ac53a446ab9d1476dda8  the SPEC's harness (phases iw / timing / train / eval + forced-condition passes); imports R1's r1_* from Thor
+code/wpb_chain.sh                      0460cfb5fe633a284e0dc77f0af9562f  the Thor chain (waits for R1, then I-W -> timing -> arms; each GPU pass its own flock)
+code/wpb_score.py                      a59de391e245101e2f60f9dfd8a83098  SPEC sec. 5-6 scoring (CPU); dry-run end to end on the Thor smoke outputs (exit 0)
+code/wpb_score_after_chain.sh          972274e7865fb76e41e0bd8c2879e9ea  detached waiter: runs wpb_score.py when the chain prints ZZALLDONEZZ or is gone
+code/wpb_smoke.sh                      38dd77d1a947c5710657484131d1c424  CPU smoke (I-W, 3 T2 steps, T2 eval on 2 windows)
+code/wpb_smoke2.sh                     1123a68d7d55a126c95814b2085c5e04  the same, TREE / SUFFIX parameterised (a candidate tree is smoked before it replaces the live one)
+raw/smoke_cpu/I_W.json                 c8042b3ebf7e162fd8ac909ed533700b  CPU smoke I-W on the 50efa52 tree: PASS (bit-identical, 2 windows)
+raw/smoke_cpu_c367/I_W.json            c8042b3ebf7e162fd8ac909ed533700b  CPU smoke I-W on the c367e7b tree: PASS (same bytes)
+
+## WPB-4 [LANDED in c39798d -- history] (stage 4: implementation in code/fix/, base tip 5388a438611e8c401becdacbf66bb40d7f5bd247)
+Repo path = the path under code/fix/. Base blob = `git rev-parse 5388a43:<path>`, asserted 40 chars. Every modified file still has
+the blob it was started from at 50efa52, unchanged at 49a0655, c367e7b and 5388a43 (re-checked after each MM rebase notice). Fix blob =
+the blob these exact bytes hash to (`git hash-object --no-filters`); each file already carries its landed EOL (the base blob's EOL
+for a modified file, LF for a new one; core.autocrlf=true), so `git add` and the plumbing route produce the SAME blob. Descendant
+check: every line removed from a base blob is an intended modification point (the trainer: 10 lines, all extended call sites).
+The same table, tab-separated: code/fix/BASE_BLOBS.txt.
+
+MODIFIED (base blob -> fix blob, md5, EOL):
+stack/scripts/refc_v3_train.py               ce448f3d7d56574b777812fe438ce022c379fa93 -> 042bd5a709c45ac28d749f0f53888a59c7e9811b  2398f3c64f74ef956cb772632a19a987 CRLF
+    (2026-10-04 landing-gate fix) the five --w-r8-* rows in REFC_WEIGHT_GATES (the exhaustiveness contract); all five CLI
+    defaults 0.0 (the zero-default invariant: a non-zero default is NO_GRAPH on every run without --refcv8); _pin_refcv8
+    dead-flag list + the converse refusals (--refcv8 with --w-r8-cons 0; allocation with --w-r8-alloc-l1 0).
+    OWNED. refcv8: _pin_refcv8 + CLI group g8 + config.json stamp; the r8 forward/loss hooks (r8 inputs ride a wrapper so the
+    pinned forward call is byte-for-byte the tip's); v9 wiring (V3Dataset.enable_r8_v9 joins EVERY window at launch through the
+    reader's refusing row_for_now; v9 lat / lon / goals replace v7.2's; goal pos_weight / class mask from the v9 TRAIN windows;
+    the partial-label correction inside the same tactical weights; RC noise + dropout; --r8-no-rc; the v7 scope only when the
+    policy does not travel) + WP-C I1-I3 (_pin_wpc_fixes, _wpc_eval_keys, --det-nms / --det-zh-trust / --join-defect-masks,
+    the model._det_zh_range carrier, TRAIN-reader defect masks). MM item 6: --refcv8 --agent-join refuses without --join-defect-masks.
+stack/tanitad/refs/refc.py                   fc38e3109115f41cee31c425a451c4cbd0d68fba -> 969c22b984bd8a2b3aab095d6e5487f642e20da9  717674f0f7a3c4329bf0e82619173c3a CRLF
+    OWNED. attach_refcv8, per-candidate modulation, the extended fan, the r8 selection term, emission mask, X2a
+stack/tanitad/refs/refc_v3.py                935ac36fd467266e57c8c4825d903dcff3b647bf -> 1473860baa97d80ab34a91b820391124f5b1bdff  2ebf563be0f69a455c79b28fd72643a5 LF
+    OWNED. RefCV3Config.refcv8, enable_refcv8 (post hoc), teacher / force, the scene-hook r8 feed; R8_NAV_DIMS 6 (v9 nav args + known), R8_RC_DIMS 4
+stack/tanitad/refs/refcv6_tactical.py        7499fba08c7c12ef0acfa2413e564714cbf9f231 -> e1f1e9efc9f41a98070246f9040768c5628ec8a4  047344531836ec44063c3fb0864c0f69 LF
+    OWNED (decoder family). attach_refcv8_heads: cons_lat / cons_lon, zero-init per-layer cond_extra FiLM; refuses cond_extra without heads
+stack/tanitad/channel_admissibility.py       e4e7fd814258a2fc19f51532381ef2fde386e7d3 -> 802fa0c5d3e063575252c2508937113da52460ae  13d66afb82c9b3eb9261448cd0b7ff5f LF
+    + refcv8_conditioning in SEAM_MODULES
+stack/tanitad/train/declared_vs_built.py     3a810a2593ce9fc73dd9bd9e978ebff611cd8273 -> 73439b37f7c6f34f8be604b208edd7af00d2bc92  078768ba08507b58b5836c4e631b7e49 LF
+    WP-C I1-I3: det_nms / det_zh_trust / join_defect_masks ('data')
+stack/tanitad/eval/refcv7_loader.py          fa1e7e61a25c2444d1091d9dd9ef8471bd40ba74 -> b1508e19eefb6d25ee20aa591ddb9928c3c49832  8f926d54cba451fd816edd104b8f4d40 LF
+    WP-C I2: the model._det_zh_range carrier (eval readers unmasked, unchanged)
+stack/tests/test_declared_vs_built.py        1166422bf1c6bb3181b06314684143825e2ed015 -> 460ebf1c02b1ae85decdc4489876ccf38bda64bd  443a5a111d6de7ef7514cd213f681acc LF
+    pin 223 -> 256 (= 223 + 3 WP-C + 30 refcv8, of which 6 are the v9 wiring's) + kind checks
+stack/tests/test_refcv6_tactical.py          f878af4ccac5c6dd5fcb446db8fe015ac284d618 -> 19fae8d6acb874d7b7dc2a2712638cb39e60fc74  e695c152f801010b8f2fc9f8617d5a26 LF
+    the pinned TacticalBehaviourDecoder.forward signature gains cond_extra
+stack/tests/test_refc_v3_agent_provenance.py e9810bd13c7608ec8b2163d617bf17b774b772b6 -> fbc78b0ae9d49fe46a316ff0f18fa5f68b5444c4  f2d6dc6aef3abe804b296129295e4cd1 CRLF
+    P2 seam rows for the five --w-r8-* knobs (each refusal satisfied, none weakened; the REAL mask file, never a placeholder)
+stack/scripts/launch_gate.py                 ddd07b9538f5812b92d136898a3564070c0503b8 -> 1f2c24934d89ff514df8c3a529bbb3096bad3251  8cacec67f43b687ad928b99db53e13a2 LF
+    the five G-LIVE rows (LIVE_WEIGHT_RULES is EXHAUSTIVE over REFC_WEIGHT_GATES: without them every arm's G-LIVE reports
+    'the trainer registers weight w_r8_* and G-LIVE has no rule for it'); keys = r8_losses' telemetry. +14 lines, -0.
+stack/tests/test_rl_refcv3_used_path_guard.py 9662fafdb58fb1c44fe9224588dda29ea44b3db3 -> 90019f9c3b3d91eb63f9f879ac8233dbceaa3d86  1a842a65f54a86794f10228ed887c3e8 LF
+    the hard-coded v3-only forward set gains r8_nav / r8_rc (dated note; both are FORWARD_EXCLUSIONS) -- an RL-stream test: tell WP-RL
+
+NEW (fix blob, md5; all LF):
+stack/tanitad/refs/refcv8_conditioning.py    30260d1360ec712f396ed993157d497bdd61feeb  c7c009fbc1e45210ff8ec00e62d68396
+stack/tanitad/train/refcv8_train.py          c913bf257491675d1b3d0a3bc4f1b8251c3e542e  b61df7d2d1b261ed86a38b01990559d5   (+ the v9 join / census / goal census / partial-label loss / RC noise / NavSim legal map; G-DVB 30 flags)
+stack/tests/_refcv8_rig.py                   be4e2118c541b72e1c9ece8e2d217bbc9f694a88  b3436e8b083ea4025a38fa655532b8a1
+stack/tests/test_refcv8_conditioning.py      d9363e1efa4e805ca156a733161d01bcd6fac470  33929464eb2a7248a1ad9961c30b2107
+stack/tests/test_refcv8_warm_start.py        b51e77de4e51e775f310aa65b904468802219b41  5719d80e9feccfe780098d85539800cc
+stack/tests/test_refcv8_label_scope.py       fb095434c06f1d63a2bfd6031a3de1e29cd89d8e  a18dfc1691406c0838cf2ba20045bd3a   (the trainer-side pin of WP-A's v7_labels fix; real v8 blobs; skips if absent)
+stack/tests/test_refcv8_trainer_pin.py       f45253f5607421d1f72fe643e86a58462ea70322  45d25a87214ea301da6f404f913130eb   (+ the audit rows: zero defaults literal, OFF_BY_DEFAULT without --refcv8, TRAINS on T2, 5 RED, G-LIVE coverage with the REAL trainer)
+stack/tests/test_refcv8_v9_wiring.py         7fa014cbcbe7614433b7e37a0c89b74a272044ef  c372c9a5e8f29c8237054a3d66644073   (the real-release test skips if D:/Projects/TanitAD-artifacts/v9labels is absent)
+stack/tests/test_refcv8_wpc_wiring.py        9b63f4d57169d0a4a8b919a70859ae43dc0f12ee  e3904b8cc41892a8ca980a560e6ed712
+taniteval/taniteval/tactical_conditioning.py b5f0b15c22cecb3ace4b54c8d7422cf6c60da7f5  251d6e31ea1b0b60743c655868ad2f78
+taniteval/tests/test_tactical_conditioning.py b7fdba89d8f7e219904ba4bd7939b732a188a336  df78778edf5b587ce4e360c57ace565f
+code/fix/BASE_BLOBS.txt (package file, not a repo path): the same table, machine-readable.
+
+Stage-4 measurement artefacts (package):
+code/v9_join_measure.py                71afde2a0829675349a797e6dfa91fd1  the v9 join through the trainer's own path (eval139 cache, CPU)
+raw/v9_join_eval139.json               a8ab67e26a8b4fad1ef76a3781ed42ff  MEASURED: 23,772 / 23,772 windows joined over 139 clips, clock residual 0.0 s, census 0 violations
+code/mask_crosscheck.py                ab99ac847cd3513689e87242066b7f9c  WP-C ego list vs WP-A corpus-manifest mask
+raw/mask_crosscheck.json               22455c19943f18952afefbeb86b475ac  MEASURED: identical at k = frame_idx + 2 -- 693 / 693 frames, 18 / 18 clips, 0 either-only
+
+Test evidence (dev box, CPU; PYTHONPATH = an extract + code/fix, tanitad imported from C:, never G:):
+* LANDING-GATE FIX, tip 5388a43 vs 5388a43 + fix, on EVERY test file that imports refc_v3_train (90) + the refcv8 / v9 /
+  launch_gate files (98 on the tip, 105 with the new ones): tip 11 failed / 1,887 passed; candidate 11 failed / 2,070 passed;
+  the failing sets are IDENTICAL (g_box_overfit 2, launch_gate 1, openloop_suite 4, refcv6_diffusion 3,
+  refcv6_loader_stamped_queries 1); test_v6_effective_weights.py passes on both. 0 candidate-only failures.
+  Why my 149-file set missed it: it was chosen by NAME PREFIX and test_v6_effective_weights.py (one of 36 refc_v3_train-
+  importing files outside it) did not match; it was never failing on my baseline. The selection is now 'every file that
+  imports the trainer', the MM's own rule.
+* tip c367e7b + fix: tests/test_refcv8_*.py, test_v9_labels*.py (incl. the builder), test_declared_vs_built.py,
+  test_refc_v3_agent_provenance.py, test_rl_refcv3_used_path_guard.py, test_refc_v3_agent_gt_reaches_forward.py,
+  test_refcv6_tactical.py, test_refcv7_infer_fixes_wiring.py, test_refcv7_eval_loader.py, test_rl_forward_keys_cover_signature.py,
+  test_config_hygiene.py, taniteval test_tactical_conditioning.py: 565 passed, 3 skipped.
+* the 149-file regression set (refcv8/7/6, refc*, declared, rl_*, launch_gate, map_hires, labels, v9 ...) on 49a0655 + WP-A's files + fix
+  (content-identical to c367e7b + fix but for build_v9_labels.py): 2,751 passed, 22 failed, 27 skipped. The 22 failures are EXACTLY the
+  22 that fail on the PRISTINE 49a0655 extract (launch_gate G_SUITE env list 1, refcv6_diffusion bit-identity 3, refcv6_loader_stamped
+  vendored body 1, refcv6_no_session_paths 3, rl_gate_statistic 3, rl_veto_explicit 1, tactical_goal_underpowered census 10) -- none is
+  WP-B's.
+
+Landing order: needs WP-A's batch (v9_labels.py + the v7_labels fix), which is on c367e7b. test_refcv8_label_scope.py asserts the FIXED
+v7_labels (it fails on a tree without it -- correctly).
+
+## WPB-L1 (the combined landing: ladder support + I-W split decode + P7 X3 + P8 Q2/Q8 + P9 Q1 + X10 + (B) enc8; base tip ce17f6f432c181ed588f4d6302c4c0f298800ae7)
+Source = <package>/code/fix_L1/<repo path>. Base blob = `git rev-parse ce17f6f:<path>`; fix blob = the blob these exact bytes hash to (each file carries its tip blob's EOL; new files LF), so `git add` and `hash-object --no-filters` give the SAME blob. Every MODIFIED file is a DESCENDANT of its tip blob (descendant check: every removed line is an intended edit). Land onto the tip, never from D:.
+8958dab6e08eda34a00074d00d695f20  stack/ops/runs.d/refcv8-wpb-smoke.argv.json  -- NEW (+454/-0, LF): NEW. the canonical refcv8 smoke/launch argv (203 tokens): N2 + unknown row, no v8 sidecar, --w-r8-v9-cons 0.05, --r8-alloc-emit-start 2000, --pose-sync-sidecar (Thor path)
+#   fix blob f3d6fcd6a77b73bba004e7e1aa01ee9604d91f88 ; tip base blob NEW
+a07873e89c483f95ddb8998de8791780  stack/scripts/build_pose_sync_sidecar.py  -- NEW (+143/-0, LF): NEW (X10, Data FlyWheel, unchanged)
+#   fix blob acc810c383ccb83fcc655348fa17c7e19498c7c6 ; tip base blob NEW
+f755e123b6b82f8bddb8250ccb22e215  stack/scripts/launch_gate.py  -- MODIFIED (+91/-0, LF): refcv8 profile: + --max-speed-input-v6 / --r8-speed-input / --pose-sync-sidecar required, --r8-speed-unknown-p 0.45 and --r8-alloc-emit-start 2000 required values, --w-r8-v9-cons positive, the v8 sidecar flags and --r8-roll-speed-input forbidden, --r8-speed-input PI-pending (decision 2); G-LIVE rule w_r8_v9_cons
+#   fix blob db3354e79d8156407b47a38d05abd04f8e179ff1 ; tip base blob 1f2c24934d89ff514df8c3a529bbb3096bad3251
+1a0ed0bdff2b0619e84a2e5237e5611e  stack/scripts/refc_v3_train.py  -- MODIFIED (+346/-11, CRLF): OWNED (CRLF). Since c39798d: ladder support (--grad-share-every + gs rows, --init-from, --r8-derange-feed / --r8-rc-roll / --r8-roll-targets, the agent term in the conflict detector); P7 X3 (--r8-speed-input n2|n3, --r8-speed-unknown-p, --r8-roll-speed-input, V3Dataset.enable_r8_speed, the v8 sidecar REFUSED on refcv8, the r8_speed_derivation stamp, the fwd override of v_max_ms); P8 (--w-r8-v9-cons, the dataset's r8_v9_* targets, REFC_WEIGHT_GATES row); P9 (--r8-alloc-emit-start, per-step emission schedule, warm start emitting at step 0 refused); (B) --r8-speed-enc8; X10 merged 3-way (Data FlyWheel +109 lines: --pose-sync-sidecar, enable_pose_sync)
+#   fix blob 3c79cfbcefcb6f649a1aa081fd1d7edd2fb45fe6 ; tip base blob 042bd5a709c45ac28d749f0f53888a59c7e9811b
+dabaedc777cf3c96981d85020f7626da  stack/tanitad/data/pose_sync.py  -- NEW (+289/-0, LF): NEW (X10, Data FlyWheel, unchanged)
+#   fix blob 04563301523e39dcdca392b9d23653032e94912c ; tip base blob NEW
+c8387d6cbba52894875cbc078a0b3359  stack/tanitad/eval/refcv7_loader.py  -- MODIFIED (+20/-1, LF): the refcv8 eval path: the X3 source on the eval split, the v9 constraint targets, the emission state from the checkpoint's refcv8 step. NOT the X10 clock (the kit stays on the uncorrected clock)
+#   fix blob a3a0ab45c1b5d9799c1e7606a826ccea856ceb33 ; tip base blob b1508e19eefb6d25ee20aa591ddb9928c3c49832
+950a45f3c1ae8efe7b17b260e87fc447  stack/tanitad/eval/speed_leak.py  -- NEW (+214/-0, LF): NEW. X3's LEAK instrument (D4's estimator restated; the fed channels incl. enc8)
+#   fix blob d1f5ef8c3f5443530355a8e62d73c73ec66dc19c ; tip base blob NEW
+3475a24635e018187a235e393a94dc01  stack/tanitad/refs/refc.py  -- MODIFIED (+44/-2, CRLF): OWNED (CRLF). The I-W split decode (`_r8_split`: base and extras in separate passes -> the base fan bit-identical); the per-step emission switch r8_emit_live (P9)
+#   fix blob b30839eb39894abad46044c5bb42d06c42672048 ; tip base blob 969c22b984bd8a2b3aab095d6e5487f642e20da9
+3dc159c92fddf3187f75de01c92dcdde  stack/tanitad/refs/refc_v3.py  -- MODIFIED (+30/-2, LF): OWNED. X3: the ceiling never below the fed value with a past-only source (and = the N2 value under enc8); the v9 constraint heads' outputs into the cache (P8); the enc8 seam input (B)
+#   fix blob 841696c0e5aae1f36d69f8780d541fc04a360708 ; tip base blob 1473860baa97d80ab34a91b820391124f5b1bdff
+f0ad0142a271b964bddeeaec5f4b08d5  stack/tanitad/refs/refcv6_tactical.py  -- MODIFIED (+36/-6, LF): OWNED. attach_refcv8_heads: v9 constraint heads (P8) and the zero-init 8-step speed FiLM (B); forward(cond_speed8) refused in both directions
+#   fix blob 11de086266dc67627761c16ed4896106c45398d8 ; tip base blob e1f1e9efc9f41a98070246f9040768c5628ec8a4
+3d3eb6056eeda317fa2104651bb7e51e  stack/tanitad/refs/refcv8_conditioning.py  -- MODIFIED (+124/-1, LF): OWNED. R8Config speed_input / v9_cons / w_v9_cons / emit_start / speed_enc8; v9_constraint_targets / v9_constraint_loss (P8); speed_enc8 (B)
+#   fix blob 5a25d99857e0ff3d2929310758ec126d40508fea ; tip base blob 30260d1360ec712f396ed993157d497bdd61feeb
+253b978d9dfa7def195e4a9472af1950  stack/tanitad/train/declared_vs_built.py  -- MODIFIED (+1/-0, LF): X10 (Data FlyWheel): registers pose_sync_sidecar
+#   fix blob 5733983f1f7961391453793d5afa5333c18a245b ; tip base blob 73439b37f7c6f34f8be604b208edd7af00d2bc92
+16e609ea6de406aca7fd0a70f17d9425  stack/tanitad/train/grad_share.py  -- NEW (+128/-0, LF): NEW (ladder). the in-run gradient-share instrument (P-GRAD's projection statistic)
+#   fix blob a47c7194ba37befcc28922369253f15d3cd78e4a ; tip base blob NEW
+1db0936f0834782b1d673f423f0b68eb  stack/tanitad/train/refcv8_train.py  -- MODIFIED (+403/-5, LF): OWNED. roll_targets, warm_start_from, is_refcv8_key (ladder); X3 speed source, census, treatment, stamp; P8 constraint targets / loss / tactical_rows (Q8 key r8v9_tac_rows); P9 schedule + I-2 row; (B) stamp; G-DVB rows (registry 256 -> 268 with X10)
+#   fix blob 993ff4ca0413f0ff45eb4d52ffeb0ea80a0915d7 ; tip base blob c913bf257491675d1b3d0a3bc4f1b8251c3e542e
+facc31e62604c26a674ecdcc5656b5ec  stack/tests/_refcv8_rig.py  -- MODIFIED (+6/-1, LF): the rig gains the 4-way channel + ceiling filter (vmax=True)
+#   fix blob be3d9d31d6b3e79daa92fb755e5c12651a00f3f0 ; tip base blob be4e2118c541b72e1c9ece8e2d217bbc9f694a88
+5baf34bf6e2e990feab4aee56c02a54c  stack/tests/test_declared_vs_built.py  -- MODIFIED (+23/-1, LF): the registry pin set ONCE to 268 (256 + 5 ladder + 3 X3 + 1 P8 + 1 P9 + 1 enc8 + 1 X10)
+#   fix blob d6beb4a4269f8c32b40d059737805b92eb7f83d2 ; tip base blob 460ebf1c02b1ae85decdc4489876ccf38bda64bd
+17ef6c87d41b7a62a34e8d96f819a384  stack/tests/test_pose_sync.py  -- NEW (+407/-0, LF): NEW (X10, Data FlyWheel, unchanged; 27 tests)
+#   fix blob 3b742905b9b15a63a31819331ba0b75ad8849374 ; tip base blob NEW
+c9aa1c6b8f51297fece673b8d148dd6e  stack/tests/test_refc_v3_agent_provenance.py  -- MODIFIED (+3/-0, CRLF): (CRLF) the P2 probe rows for --w-r8-v9-cons (and, in L2, --w-r8-drivable): each refusal satisfied, none weakened
+#   fix blob 50efb347b646b65e6aae97bf08d8907473fa8829 ; tip base blob fbc78b0ae9d49fe46a316ff0f18fa5f68b5444c4
+20bcdfb41955a23db10cdc07f4f21502  stack/tests/test_refcv6_tactical.py  -- MODIFIED (+3/-2, LF): the pinned decoder signature gains cond_speed8 (a FiLM input, not a key/value source)
+#   fix blob 815b5895c05e1198b186c3516d078293a083a53b ; tip base blob 19fae8d6acb874d7b7dc2a2712638cb39e60fc74
+98fae07c24122ab8312fa48304134a85  stack/tests/test_refcv8_emit_schedule.py  -- NEW (+147/-0, LF): NEW (P9). schedule literal, I-2 PASS emission-off / FAIL emitting at step 0, literal cases, argv, loader step
+#   fix blob bc25ab44b736877b5a830e32aa0b3658196e0113 ; tip base blob NEW
+500706a35509235d6ef43c1fe662588d  stack/tests/test_refcv8_grad_share.py  -- NEW (+219/-0, LF): NEW (ladder). conflict detector agent row + grad_share analytic; relative tolerance
+#   fix blob 0658cf3b36489ef73e8fc7f6b517f69902474ce1 ; tip base blob NEW
+2561dfd55e3a0e3143cbe7a37be1349f  stack/tests/test_refcv8_init_from.py  -- NEW (+103/-0, LF): NEW (ladder). the warm-start rule
+#   fix blob 9f25171bbb67de9e01a90df662019ca54782d760 ; tip base blob NEW
+66c8ae4563c68c6d5b250f48abb365f0  stack/tests/test_refcv8_launch_profile.py  -- NEW (+122/-0, LF): NEW. the refcv8 profile; the sidecar re-attach mutation RED at gate + trainer
+#   fix blob 517bffdb4749842d9f51a65db08ad5fc82ef95f8 ; tip base blob NEW
+0f1d6e6255e348b198b5b641dea6fce1  stack/tests/test_refcv8_speed_enc8.py  -- NEW (+230/-0, LF): NEW (B). encoding literals, step-0 identity incl. the tactical outputs + a non-zero-init regression RED, N2-value ceiling, emitted-plan obedience (non-vacuous), roll, gradient, argv / stamp
+#   fix blob edbb290994a07ae32f674cbcd6546409615404d4 ; tip base blob NEW
+a58cc0c88f27ad32a7092922fe7c98fe  stack/tests/test_refcv8_speed_input.py  -- NEW (+434/-0, LF): NEW (P7). leak instrument controls + REAL reproduction (data-gated), encoding literals, dataset, treatment, ceiling never below the fed value, emitted-plan obedience on the extended fan, stamp
+#   fix blob 6da3d424844447191e9fb5581f1e1357fe432f7f ; tip base blob NEW
+41512714a7813ae6da9d4216f5cfa799  stack/tests/test_refcv8_trainer_pin.py  -- MODIFIED (+63/-0, LF): X3 refusals + GREEN; earlier rows unchanged
+#   fix blob 5b1bc315ece3088775a298849401a2df0b1c08bb ; tip base blob f45253f5607421d1f72fe643e86a58462ea70322
+70cdb15254c0492b40194673490e45da  stack/tests/test_refcv8_v9_constraints.py  -- NEW (+353/-0, LF): NEW (P8). targets/masks, GT-query loss, analytic stop-at-d control (R2 0.9994) + shuffled regression (R2 -0.0035), rig integration, Q8 key, argv / audit / G-LIVE
+#   fix blob dcfaed961103677adb0cc03e86b19c09b7f81c76 ; tip base blob NEW
+c586f1a28d126b85a974d789ab6c2631  stack/tests/test_refcv8_v9_wiring.py  -- MODIFIED (+61/-0, LF): ladder roll / derange tests
+#   fix blob 55f7d78c767d85fe1c2217ee33d5b882754faca2 ; tip base blob 7fa014cbcbe7614433b7e37a0c89b74a272044ef
+b27d5c73250edaef2a16e66047497063  stack/tests/test_refcv8_warm_start.py  -- MODIFIED (+37/-4, LF): the extended fan is BIT-identical (split decode) + split == one pass
+#   fix blob a8528e3b245eca2f83959404c9f2cb5ece6efc84 ; tip base blob b51e77de4e51e775f310aa65b904468802219b41
+# unchanged since c39798d (bytes == tip blob, NOT part of this landing): stack/tanitad/channel_admissibility.py, stack/tests/test_refcv8_conditioning.py, stack/tests/test_refcv8_label_scope.py, stack/tests/test_refcv8_wpc_wiring.py, stack/tests/test_rl_refcv3_used_path_guard.py, taniteval/taniteval/tactical_conditioning.py, taniteval/tests/test_tactical_conditioning.py
+
+
+## Gate (tip ce17f6f vs candidate; every test file importing the trainer / refcv8 / launch gate / loader / X10 / refcv6_tactical)
+* L1: tip side 150 files: 15 failed / 2,918 passed / 26 skipped. Candidate 158 files: 16 failed / 3,062 passed / 26 skipped.
+  The ONE candidate-only failure was test_refc_v3_agent_provenance::test_P2_every_knob_is_recoverable_from_the_stamp_BY_VALUE
+  (no admissible probe value for the new --w-r8-v9-cons). FIXED with a seam row (each refusal satisfied, none weakened);
+  that file re-runs at 38 passed / 1 pre-existing skip. Candidate-only failures: NONE.
+  The 15 shared, pre-existing failures: g_box_overfit 2, launch_gate 1, openloop_suite 4, refcv6_diffusion 3,
+  refcv6_loader_stamped_queries 1, refcv6_no_session_paths 3, secret_scan 1. None is WP-B's.
+* X10's own 27 tests (test_pose_sync.py) are green in this tree.
+* L2: candidate side on code/fix (L1 + critic), compared against the same tip-side set -- see ## WPB-L2-GATE (appended when done).
+
+## WPB-L2 (the drivable-area critic --r8-critic-drivable; lands AFTER L1; source = <package>/code/fix/)
+Listed: the 8 files whose bytes differ from code/fix_L1 (L1 lands first). Status / +- / base blob are vs the TIP ce17f6f (before L1); after L1 lands, each MODIFIED file's base is its L1 blob.
+f9731b7b8653f5a1ab3178d6027658ab  stack/scripts/launch_gate.py  -- MODIFIED (+95/-0, LF): refcv8 profile: + --max-speed-input-v6 / --r8-speed-input / --pose-sync-sidecar required, --r8-speed-unknown-p 0.45 and --r8-alloc-emit-start 2000 required values, --w-r8-v9-cons positive, the v8 sidecar flags and --r8-roll-speed-input forbidden, --r8-speed-input PI-pending (decision 2); G-LIVE rule w_r8_v9_cons
+#   fix blob e4aa6588220c873ef621b26a226aaf0b39dc7005 ; tip base blob 1f2c24934d89ff514df8c3a529bbb3096bad3251
+9c05c3393112d896e2ffef336c9c8278  stack/scripts/refc_v3_train.py  -- MODIFIED (+372/-11, CRLF): OWNED (CRLF). Since c39798d: ladder support (--grad-share-every + gs rows, --init-from, --r8-derange-feed / --r8-rc-roll / --r8-roll-targets, the agent term in the conflict detector); P7 X3 (--r8-speed-input n2|n3, --r8-speed-unknown-p, --r8-roll-speed-input, V3Dataset.enable_r8_speed, the v8 sidecar REFUSED on refcv8, the r8_speed_derivation stamp, the fwd override of v_max_ms); P8 (--w-r8-v9-cons, the dataset's r8_v9_* targets, REFC_WEIGHT_GATES row); P9 (--r8-alloc-emit-start, per-step emission schedule, warm start emitting at step 0 refused); (B) --r8-speed-enc8; X10 merged 3-way (Data FlyWheel +109 lines: --pose-sync-sidecar, enable_pose_sync)
+#   fix blob 2e49ea2453d1a5fad91804d025b740efcfa0dc35 ; tip base blob 042bd5a709c45ac28d749f0f53888a59c7e9811b
+bc97bc300b56334b8a9a3b44b1ee641c  stack/tanitad/refs/refc_v3.py  -- MODIFIED (+46/-2, LF): OWNED. X3: the ceiling never below the fed value with a past-only source (and = the N2 value under enc8); the v9 constraint heads' outputs into the cache (P8); the enc8 seam input (B)
+#   fix blob 4f5c21bf2515eec0043f077d5031d0b4b7b57015 ; tip base blob 1473860baa97d80ab34a91b820391124f5b1bdff
+d18327ec1a1e5f7cd7c9bdd18dadda05  stack/tanitad/refs/refcv8_conditioning.py  -- MODIFIED (+243/-1, LF): OWNED. R8Config speed_input / v9_cons / w_v9_cons / emit_start / speed_enc8; v9_constraint_targets / v9_constraint_loss (P8); speed_enc8 (B)
+#   fix blob d626c117c15c48dd6ee275b128a4726b1f0d4476 ; tip base blob 30260d1360ec712f396ed993157d497bdd61feeb
+0133c0bb150a8773ad30891c64d07f25  stack/tanitad/train/refcv8_train.py  -- MODIFIED (+430/-5, LF): OWNED. roll_targets, warm_start_from, is_refcv8_key (ladder); X3 speed source, census, treatment, stamp; P8 constraint targets / loss / tactical_rows (Q8 key r8v9_tac_rows); P9 schedule + I-2 row; (B) stamp; G-DVB rows (registry 256 -> 268 with X10)
+#   fix blob e03f0cf70008d29c4ba3668d74483729a7e27cd6 ; tip base blob c913bf257491675d1b3d0a3bc4f1b8251c3e542e
+7090bdfaed7769f56e64a2c47f80ef8c  stack/tests/test_declared_vs_built.py  -- MODIFIED (+23/-1, LF): the registry pin set ONCE to 268 (256 + 5 ladder + 3 X3 + 1 P8 + 1 P9 + 1 enc8 + 1 X10)
+#   fix blob 26eed21eabf4abf7ebd0014d25aea083cf5bf514 ; tip base blob 460ebf1c02b1ae85decdc4489876ccf38bda64bd
+67dfd337b5b59d79d877350abade38e3  stack/tests/test_refc_v3_agent_provenance.py  -- MODIFIED (+9/-0, CRLF): (CRLF) the P2 probe rows for --w-r8-v9-cons (and, in L2, --w-r8-drivable): each refusal satisfied, none weakened
+#   fix blob c10d8b1fa80efb152267603ed6a24814dc69ab47 ; tip base blob fbc78b0ae9d49fe46a316ff0f18fa5f68b5444c4
+2728412fe1d53596204febcfbacbbe68  stack/tests/test_refcv8_drivable_critic.py  -- NEW (+232/-0, LF): NEW (L2). known values (corridor 1, 3 m shift 0), footprint = pdm_proxy, detached feature, step-0 identity + regression RED, BCE, map-roll arm, argv/gates
+#   fix blob 952126e317b88aeeb50e5eece988f07a5f96c25c ; tip base blob NEW
+
+## PACKAGE files (land under the package prefix)
+1539c22ed4dd780088d2698a9f51d3e5  RESULT_IW.md
+e21c276d9110292458c34b450160ab00  RESULT_P7_P9.md
+1154acccd7fbc0fdabcb362dfe606614  raw/I_W.json
+6f034439e63d51005ec796aed3ae0cdf  raw/I_W_diag.json
+5b5ff7d84e7f65597888838f5805fbd4  raw/I_W.FAILED_unsplit.json
+7a6b621436793fc357a4eeb882327898  raw/r8_fullsize_warmstart.json
+db829b2253eeb112b83c872817b03318  raw/r8_fullsize_warmstart_split.json
+610e7511c5182081be3d5393eb36f9f7  raw/x3_leak.json
+b4c51dbab8a5ba796bf5a6e380bf33f5  raw/label_tag_agreement_train.json
+7ad12cb484847bb209c7d9f8a995f452  raw/label_tag_agreement_eval139.json
+d171e134bad728be5c126448cd9b53d6  raw/turn_disagreement_train.json
+533b0fdb400df93dbe57b87a34a50a20  raw/turn_disagreement_eval139.json
+9564f5c3c577936c8577eeb8ae67d4be  code/x3_leak_check.py
+8f15dfde8762588fa8272c257a7077c1  code/label_tag_agreement.py
+476b5cf19c07d42c4855f75c58107da3  code/turn_disagreement.py
+d87f74ae36c50b5505017c47cd631f19  code/p7_smoke_check.py
+b7f0fbc3e73b24347686b590f030219e  code/r8_fullsize_warmstart_check.py
+0be52c334325ac9cd4107d317de901e0  code/iw_diag.py
+bc563be5f3063ca4fc7ea50cd01f1e17  code/r8_smoke_thor.sh
+73083a927a28e6a750eff48e1ebad6ea  code/r8_smoke_thor_L1.sh
+64e9c1af6505bafa039f9a287fa70e3b  code/r8_smoke_summary.py
+36d9a6167d00cc9e7699d1e726cd8d51  code/wpb_chain2.sh
+fa213dc6d1e2bf47f894cecc34aaf231  SPEC_WPB_LADDER.md
+# L2 adds:
+7a0a93bc68188fc65aaeba1e1b57bc7b  RESULT_DRIVABLE_CRITIC.md
+
+## NOT-for-git
+* C:/Users/Admin/r8_wpb_c397: git archive of c39798d (== the tip ce17f6f for stack / taniteval / tools, tree hash). Overlays (extract +
+  code/fix*): r8_wpb_ovc397 (gated L1), r8_wpb_ovL1 (the Thor L1 tree), r8_wpb_ovdrv (L2), r8_wpb_ovp7 (P7 snapshot). Regenerable.
+* code/fix_P7/: a frozen P7-only tree (superseded: the Master Mind approved ONE combined landing). code/fix_L1/: the L1 source.
+* Inputs read only: D:/Projects/TanitAD-artifacts/v9labels/v9_labels_{train,eval139}.npz (md5 f63ece41 / 6b5c7f20, checked at load);
+  D:/Projects/TanitAD-artifacts/refcv8_wpb/inputs/train_v2manifest.pt (md5 3c9f8bc8, D4's manifest, COPIED there by WP-B for the
+  data-gated leak test; it carries clip ids -- an input artifact, never written into any WP-B output);
+  D:/refcv6_eval_kit/data/a6/refcv6_speed_max_v8_train.jsonl (md5 bab41adf == Thor's); D:/refcv6_eval_kit/data/refcv6-b1-416x1024-eval139
+  (+ its _v2manifest.pt); D:/refcv7_eval_kit/ckpt. No raw clip UUID is written by any WP-B artefact. Nothing on G: read or written.
+
+## Thor-only
+* /home/nvidia/refcv8_wpb: tree_c397/ (the split-decode tree the chain runs), wpb_chain2.sh PID 410917 (RUNNING: I-W PASS banked,
+  timing banked, arms T0... under the GPU lock), wpb_score_after_chain.sh PID 411586 (waits for the chain).
+  arms/I_W.json (PASS, copied to raw/), arms/I_W.FAILED_unsplit.json, arms/I_W_diag.json, arms/timing_wpb.json.
+* /home/nvidia/refcv8_run: tree/ (the old c397 smoke tree), tree_L1/ (THE L1 tree, md5-verified: refc_v3_train.py 1a0ed0bd..., argv json
+  8958dab6...), code/ (r8_smoke_thor_L1.sh, r8_smoke_summary.py, p7_smoke_check.py, p7_smoke_cleanup.sh).
+  RUNNING: r8_smoke_thor_L1.sh PID 479790 -- queued on the GPU lock: the L1 launch argv, 30 steps from refcv7-50,400, smoke-only
+  --r8-alloc-emit-start 10; writes runs/refcv8-wpb-smoke-L1/{smoke_summary.json, p7_smoke_check.json} and REMOVES its ckpt.pt.
+  runs/refcv8-wpb-smoke/ (the pre-P7 smoke, killed by the OOM below; config + 1 row), runs/refcv8-p7-cpu-smoke/ (config.json only).
+  tree_p7/ DELETED (mine, obsolete).
+* ⚠️ INCIDENT 2026-10-04 22:57:19: WP-B's full-size CPU smoke (16.4 GB RSS) caused a GLOBAL OOM on Thor -- killed desktop session
+  daemons, itself, and the registered pre-P7 GPU smoke's DataLoader worker. R1 / WP-D P-BOX / WP-RL unaffected. No CPU full-size
+  forward on Thor again.

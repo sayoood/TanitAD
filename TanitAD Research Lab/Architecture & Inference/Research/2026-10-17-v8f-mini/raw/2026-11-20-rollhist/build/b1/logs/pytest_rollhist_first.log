@@ -1,0 +1,40 @@
+  (prior): P10Prior(
+    (net): Sequential(
+      (0): Linear(in_features=8, out_features=256, bias=True)
+   ...m((32,), eps=1e-05, elementwise_affine=True)
+      (1): Linear(in_features=32, out_features=128, bias=True)
+    )
+  )
+)
+name = 'head_t'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'V8FMini' object has no attribute 'head_t'. Did you mean: 'head_o'?
+
+C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\nn\modules\module.py:1968: AttributeError
+============================== warnings summary ===============================
+tests/test_v8f_rollhist.py::test_r4_control_pinned_none_is_todays_generator_array_for_array_max_abs_difference_zero
+  F:\TanitAD-scratch\rollhist\build\tree\stack\scripts\v8f_mini_train.py:2775: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    "sec": time.time() - t0, **{k: float(v) for k, v in T.items()}}
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_v8f_rollhist.py::test_r2_r3_s_and_o_train_on_the_swapped_rolled_history_and_the_p0_controls_read_exactly_zero
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 20 passed, 1 warning in 117.44s (0:01:57)

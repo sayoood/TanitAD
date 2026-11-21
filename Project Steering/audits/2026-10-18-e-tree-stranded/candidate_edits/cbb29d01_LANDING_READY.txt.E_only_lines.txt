@@ -1,0 +1,47 @@
+# E-only lines of FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/LANDING_READY.txt  (E lines absent from the tip blob; CR-normalised; E line numbers)
+# tip blob last changed in da8400b; E mtime 2026-09-26 23:00; verdict: NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)
+263: ## 2026-09-26 batch 14 -- D:-only register lines as APPEND/REPLACE BLOCKS (Master Mind request). TARGETS, as MODS on the tip blob, NEVER as files:
+264: #   Project Steering/RETRACTION_LOG.md   <- FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-d-register-handover/APPEND_RETRACTION_LOG.md (R25, 21 lines verbatim)
+265: #   Project Steering/GOALS_AND_CLAIMS.md <- FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-d-register-handover/APPEND_GOALS_AND_CLAIMS.md (3 REFe rows) + REPLACE_GOALS_AND_CLAIMS.md (D-REFE-SEL-1, descendant)
+266: #   OPTIONAL, same hazard: Project Steering/PI_DECISION_QUEUE.md (4 PI decisions of today exist only on D:) and
+267: #   Project Steering/MODEL_REGISTRY.md <- FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-d-register-handover/optional_other_steering/*
+268: # EXCLUDED on purpose: 21 sha12 redactions of existing rows; MODEL_REGISTRY's 2 HISTORICAL lines (= pre-YAWMASK text).
+269: # Content is the REFe stream's (2026-09-20-refe-plan), not the EvalFlyWheel's; its LANDING_READY lists these registers WHOLE-FILE.
+270: # The package files below land as ordinary new files in the package; the four Project Steering targets are MODS.
+271: FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-d-register-handover/HANDOVER.md
+272: FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-d-register-handover/APPEND_RETRACTION_LOG.md
+273: FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-d-register-handover/APPEND_GOALS_AND_CLAIMS.md
+274: FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-d-register-handover/REPLACE_GOALS_AND_CLAIMS.md
+275: FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-d-register-handover/optional_other_steering/APPEND_PI_DECISION_QUEUE.md
+276: FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-d-register-handover/optional_other_steering/APPEND_MODEL_REGISTRY.md
+277: FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-d-register-handover/optional_other_steering/REPLACE_MODEL_REGISTRY.md
+278: FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-d-register-handover/code/d_only_register_lines.py
+279: FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-d-register-handover/tests/test_d_only_register_lines.py
+280: FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-d-register-handover/raw/d_only_register_lines.json
+281: FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-d-register-handover/raw/d_only_other_steering.json
+282: FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/LANDING_READY.txt
+283: 
+284: ## 2026-09-26 batch 15 (ONE heading, land as a unit) -- leaderboard shows every run it reads, never a withdrawn one; YAWMASK lives in the INPUTS; hand edits are refused
+285: # (1) E1: our single-stage runs render in their artifact's #151 group (floors as "our floor"; placeholder kept until a MODEL arm).
+286: #     The invariant "every run the page reads, it shows" found 6 nuScenes runs rendered nowhere -> the orphan block now tests the page.
+287: # (2) TOMBSTONE.json is honoured: 4 withdrawn refcv4b navhard runs would have printed as live results on the next build.
+288: # (3) Section SHA-256 guard: a build refuses to overwrite a hand-edited / pre-fingerprint section (--discard-hand-edits).
+289: # (4) MM decision: RETR-2026-09-26-YAWMASK via a DERIVED input record (banked ARM untouched, blob 15dd6504); the rebuilt row
+290: #     equals the tip's hand-typed row value for value; old-ARM regression arm FAILS; one discard rebuild drops only lines with twins.
+291: # After landing: ONE rebuild with --discard-hand-edits is safe (pinned by test_leaderboard_yawmask_input.py).
+292: # 24 new tests; 14 source mutations all RED vs a control of 98 passed; 356 passed / 9 skipped across the affected suites.
+293: taniteval/taniteval/leaderboard/sources.py
+294: taniteval/taniteval/leaderboard/render.py
+295: taniteval/taniteval/leaderboard/build.py
+296: taniteval/taniteval/leaderboard/__main__.py
+297: taniteval/taniteval/leaderboard/leaderboard_sources.json
+298: taniteval/tools/derive_yawmask_record.py
+299: taniteval/results/refcv3-40284-openloop.ARM.yawmask.json
+300: taniteval/tests/test_leaderboard_navtest_single_stage_ours.py
+301: taniteval/tests/test_leaderboard_hand_edit_guard.py
+302: taniteval/tests/test_leaderboard_yawmask_input.py
+303: taniteval/tests/test_leaderboard.py
+304: FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/RESULT.md
+305: FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-navtest-single-stage/RESULT.md
+306: FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/LANDING_READY.txt
+307: 

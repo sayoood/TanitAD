@@ -1,0 +1,141 @@
+[taniteval] tanitad OVERRIDE -> E:\Projects\TanitAD-artifacts\dagt1_tree_b43c7a9a\stack (E:\Projects\TanitAD-artifacts\dagt1_tree_b43c7a9a\stack\tanitad\__init__.py)
+PASS SPEC-LABELS  this reader's Read A rows equal build_report.SPEC
+PASS C4-WINDOWS:REHEARSAL-DAG0-vs-DAG:s0  {'n_windows': 2399, 'n_episodes': 141, 'note': "clip_index, ws, eid, g, v0 bit-equal to the banked DAG's"}
+PASS C3-FLOOR:REHEARSAL-DAG0-vs-DAG:s0  P10's tracks read no model: max |delta| must be exactly 0.0
+PASS C2-IDENTITY:REHEARSAL-DAG0-REHEARSAL-DAG0:s0  (REHEARSAL-DAG0, REHEARSAL-DAG0) reads +0 [0, 0] on every comps and TAC / DK row
+PASS C4-WINDOWS:REHEARSAL-DAG0-vs-DAG:s1  {'n_windows': 2399, 'n_episodes': 141, 'note': "clip_index, ws, eid, g, v0 bit-equal to the banked DAG's"}
+PASS C3-FLOOR:REHEARSAL-DAG0-vs-DAG:s1  P10's tracks read no model: max |delta| must be exactly 0.0
+PASS C2-IDENTITY:REHEARSAL-DAG0-REHEARSAL-DAG0:s1  (REHEARSAL-DAG0, REHEARSAL-DAG0) reads +0 [0, 0] on every comps and TAC / DK row
+PASS RC-DAG:s0  {'rows_compared': 19, 'tolerance': 0.0001, 'differences': [], 'note': 'C1: the readers re-computed on the banked arm (DAG - P10) reproduce READ_A.json
+PASS RC-DAG:s1  {'rows_compared': 19, 'tolerance': 0.0001, 'differences': [], 'note': 'C1: the readers re-computed on the banked arm (DAG - P10) reproduce READ_A.json
+PASS LON-ROWS-COMPUTED:s0  the six LONGITUDINAL rows of DAG-OACC - P10 and the PRIMARY-ACC / KEEP rows of DAG-OACC - DAG are all computed (a row that cannot be computed never co
+PASS READA-VERDICT-LINK:s0  {'build_report.verdict': {'D1': True, 'D2': False, 'D3': True}, 'this reader': {'D1': True, 'D2': False, 'D3': True}}
+PASS LON-ROWS-COMPUTED:s1  the six LONGITUDINAL rows of DAG-OACC - P10 and the PRIMARY-ACC / KEEP rows of DAG-OACC - DAG are all computed (a row that cannot be computed never co
+PASS READA-VERDICT-LINK:s1  {'build_report.verdict': {'D1': True, 'D2': False, 'D3': False}, 'this reader': {'D1': True, 'D2': False, 'D3': False}}
+PASS T0-CKPT:REHEARSAL-DAG0_s0  T0 eval json ckpt 'D:\\tanitad\\runs\\v8f_mini_full\\M2b_s0_dag0\\ckpt_last.pt' / DAG's 'D:\\tanitad\\runs\\v8f_mini_full\\M2b_s0_dag\\ckpt_last.pt' v
+PASS R-T0-GRID:s0  the two T0 evals are on the same eval-141 grid (eid equal)
+PASS T0-CKPT:REHEARSAL-DAG0_s1  T0 eval json ckpt 'D:\\tanitad\\runs\\v8f_mini_full\\M2b_s1_dag0\\ckpt_last.pt' / DAG's 'D:\\tanitad\\runs\\v8f_mini_full\\M2b_s1_dag\\ckpt_last.pt' v
+PASS R-T0-GRID:s1  the two T0 evals are on the same eval-141 grid (eid equal)
+{
+ "REHEARSAL (DAG-0 as the stand-in for DAG-OACC; banked data only; NOT a DAG-OACC result)": "NO EFFECT",
+ "matching": [
+  "NO EFFECT"
+ ],
+ "flags": {
+  "PRIMARY-ACC_per_seed": {
+   "s0": false,
+   "s1": true
+  },
+  "KEEP_per_seed": {
+   "s0": false,
+   "s1": false
+  },
+  "LON-CLEAR_per_seed": {
+   "s0": false,
+   "s1": false
+  },
+  "D1_per_seed": {
+   "s0": true,
+   "s1": true
+  },
+  "D2_per_seed": {
+   "s0": false,
+   "s1": false
+  },
+  "D3_per_seed": {
+   "s0": true,
+   "s1": false
+  },
+  "lateral_or_crawl_row_separated_worse_per_seed": {
+   "s0": true,
+   "s1": true
+  },
+  "crawl_share_M1_separated_worse_per_seed": {
+   "s0": true,
+   "s1": true
+  },
+  "controls_failed": []
+ },
+ "outcome_unamended": {
+  "OUTCOME": "NO EFFECT",
+  "matching_rows_in_table_order": [
+   "NO EFFECT"
+  ],
+  "differs_from_amended": false,
+  "descriptive_only": true,
+  "note": "the section-4 table as printed in PREREG_V8F_DAG_OACC.md before Amendment 1, computed beside; it decides nothing (the amended outcome is the result)"
+ },
+ "crawl_open": false,
+ "dominant_clauses_failed_per_seed": {
+  "s0": [
+   "D2",
+   "crawl"
+  ],
+  "s1": [
+   "D2",
+   "D3",
+   "crawl"
+  ]
+ },
+ "LON-CLEAR": {
+  "s0": {
+   "clear": false,
+   "worse": [
+    "accel MAE"
+   ],
+   "not_computed": []
+  },
+  "s1": {
+   "clear": false,
+   "worse": [
+    "accel MAE"
+   ],
+   "not_computed": []
+  }
+ },
+ "lateral_or_crawl_worse": {
+  "s0": [
+   "yaw-rate MAE",
+   "curvature MAE",
+   "L2 curvature MAE (GT>=5.2)",
+   "M1 crawl share"
+  ],
+  "s1": [
+   "yaw-rate MAE",
+   "curvature MAE",
+   "L2 curvature MAE (GT>=5.2)",
+   "M1 crawl share"
+  ]
+ }
+}
+{
+ "OUTCOME": "NO EFFECT",
+ "matching_rows": [
+  "NO EFFECT"
+ ],
+ "committed_next": "the accel error is not reachable through O's loss on DAG's states at this capacity. Next: OACC's NO EFFECT next, an O-capacity read, under its own PREREG",
+ "reported_as": null,
+ "crawl_open": false,
+ "dominant_clauses_failed_per_seed": {
+  "s0": [
+   "D2",
+   "crawl"
+  ],
+  "s1": [
+   "D2",
+   "D3",
+   "crawl"
+  ]
+ },
+ "outcome_unamended": {
+  "OUTCOME": "NO EFFECT",
+  "matching_rows_in_table_order": [
+   "NO EFFECT"
+  ],
+  "differs_from_amended": false,
+  "descriptive_only": true,
+  "note": "the section-4 table as printed in PREREG_V8F_DAG_OACC.md before Amendment 1, computed beside; it decides nothing (the amended outcome is the result)"
+ },
+ "note": null
+}
+wrote F:/TanitAD-scratch/dagoacc_t1_tmp/amend1/REH_after.json  sha256 d9e257e6c0d5c95491dc9353827159d21817b6f0dde3f17e588fe14c029a6d09

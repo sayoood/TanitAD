@@ -1,0 +1,32 @@
+{
+ "ckpt": "E:/Projects/TanitAD/data/refe_runs_eval/model_final.pt",
+ "select": "best",
+ "rule": "navsim_v1",
+ "repair_last_heading": true,
+ "sanitize_goal": false,
+ "goal_fix": "pdm_route",
+ "tokens_asked": 3069,
+ "rows": 3069,
+ "misses": 0,
+ "miss_examples": [],
+ "frame_control": {
+  "max_m": 7.32410687763558e-15,
+  "bar_m": 0.001,
+  "what": "max over the chunks' own frame controls"
+ },
+ "interpolation_residual": {
+  "max_m": 0.18904005237047464
+ },
+ "chunked": {
+  "chunks": [
+   "c0",
+   "c1",
+   "c2",
+   "c3",
+   "c4",
+   "c5"
+  ],
+  "crashed_logs": [],
+  "why": "Amendment 9, one arm in LOG CHUNKS (the unchanged seam per chunk), then merged into the single seam / report / inputs\nfiles a9_analyze.py reads. Why: the pdm_route arm's single 3,069-token seam died after 25 of 84 logs with a NATIVE access\nviolation (rc 0xC0000005, no Python traceback) and the seam only writes at the end. A chunk that crashes is re-run log by\nlog, so a crash costs at most one log and is localised; a log that still crashes is recorded, never silently dropped.\n    python run_a9_chunked.py <arm> [--chunks 6]\n"
+ }
+}

@@ -1,0 +1,205 @@
+--- ship_r8_sub/ship_r8_4c_verdict.py
++++ ship_r8_hsgate_verdict.py
+@@ -1,4 +1,10 @@
+-"""ship_r8_4c_verdict.py -- SHIP-R8 AMENDMENT 4c: a COPY of ship_r8_sub_verdict.py (left untouched: it is pinned by MANIFEST_4B) with the arm H2CNL_DEPLOY8
++"""ship_r8_hsgate_verdict.py -- PREREG_HSGATE (2331e1f3...) bar G3: a COPY of ship_r8_sub/ship_r8_4c_verdict.py (left untouched; built by
++make_hsgate_verdict.py, diff ship_r8_hsgate_verdict.DIFF.txt) with the arm HSGATE8 added.  Clause (1) for HSGATE8 = Amendment 4's clause-1 function
++(UNEDITED, run on the --hsgate forward) AND the PREREG_HSGATE seal re-hashed now == the forward's record AND the gate file sha256 now ==
++REGISTERED_HSGATE.sha256 == the forward's record AND K_REG_HSGATE, K_FIT_HSGATE, K_ID0, K_ID1, K_EVALFEAT, K_LANDED, K_GATE_SURF, K_TRACE AND the A5 input
++traces re-hashed now == the forward's record.  (1b) = Amendment 4's (1b) AND Amendment 5's (1b).  Writes only under refcv9_hsgate.
++
++ship_r8_4c_verdict.py -- SHIP-R8 AMENDMENT 4c: a COPY of ship_r8_sub_verdict.py (left untouched: it is pinned by MANIFEST_4B) with the arm H2CNL_DEPLOY8
+ added (diff: ship_r8_4c_verdict.DIFF.txt).  Clause (1) for H2CNL_DEPLOY8 = Amendment 4's clause-1 function (UNEDITED, run on the --h2cnl forward) AND the 4c
+ seal re-hashed now == the forward's record AND the H2cn-L stage file's sha256 now == REGISTERED_H2CNL_STAGE.sha256 == the forward's record AND K_REG_H2CNL
+ (registration precedes the first eval-side output) AND K_FREEZE_H2CNL (the freeze controls: K-H2CN-REPRO, K-FIT, K-RELOAD, K-DETERM, K-DISJ, K-JOIN, K-MUT)
+@@ -35,8 +41,11 @@
+ from pathlib import Path
+ 
+ HERE = Path(__file__).resolve().parent
++SUBDIR = Path("C:/Users/Admin/refcv8_pf/ship_r8_sub")                # READ-ONLY
++sys.path.insert(0, str(SUBDIR))
+ sys.path.insert(0, str(HERE))
+ import ship_r8_sub_common as C  # noqa: E402
++import hsgate_common as HG  # noqa: E402
+ 
+ sys.path.insert(0, str(C.PF_HOLD / "code"))
+ import ship_r8_verdict_pf as VPF  # noqa: E402   (loads + pins the base copy)
+@@ -80,6 +89,12 @@
+     "cell, bar flag and control is the same mechanical computation (the first file was overwritten)",
+ ]
+ CL1B_A5 = "(1b) [AMENDMENT 5] FEED PARITY: the os-only rolls use the per-frame feed (perframe_full), asserted from the rolls' own manifests; not shown -> INCOMPLETE"
++CL1_TEXT["HSGATE8"] = ("(1) [PREREG_HSGATE] everything Amendment 4's clause 1 states (H2cn stage sha256 == registered; registration precedes the first eval-side "
++                       "output; fresh-clip disjoint; H2CN_PERSURFACE and RETIME_DEPLOY8 identities) AND the PREREG_HSGATE seal == its file (re-hashed now) AND the "
++                       "gate sha256 == REGISTERED_HSGATE.sha256 (re-hashed now) and its registration precedes the first eval-side output AND K_FIT_HSGATE, K_ID0, "
++                       "K_ID1, K_EVALFEAT, K_LANDED, K_GATE_SURF, K_TRACE AND the Amendment 5 input traces unchanged since the forward recorded them")
++CL1B_HSG = "(1b) [PREREG_HSGATE] FEED PARITY of BOTH halves: Amendment 4's (1b) (the registered FEED_PARITY of the battery rolls) AND Amendment 5's (1b) (the os-only and SELFSHARP rolls' own manifests perframe_full)"
++from deviations_hsgate import DEVIATIONS as DEVIATIONS_HSG  # noqa: E402   (confirmed by the Master Mind in the PHASE 2 GO)
+ 
+ 
+ def exact_equal(a, b, path: str = "") -> list:
+@@ -356,6 +371,77 @@
+             "both seeds: the L1 os-only and the SELFSHARP rolls' own manifests read nav_feed perframe_full (roll pf ok, 4,754 windows)", "evidence": d}
+ 
+ 
++def clause1_hsgate(fd, rid) -> dict:
++    """PREREG_HSGATE clause 1 (see the module docstring).  Amendment 4's own conjunction is NOT edited; its status/reason are carried into this one."""
++    base = clause1_a4(fd, rid)
++    ctl = (fd or {}).get("controls") or {}
++    bad, unk = [], []
++    if base["status"] == "FAIL":
++        bad.append("Amendment 4 clause-1 conjunction: " + base["reason"])
++    elif base["status"] != "PASS":
++        unk.append("Amendment 4 clause-1 conjunction: " + base["reason"])
++    now = HG.check_prereg()                                             # SystemExit if the sealed text is not the file (never a silent pass)
++    rec = ((fd or {}).get("amendments") or {}).get("PREREG_HSGATE") or {}
++    hrec = (fd or {}).get("hsgate") or {}
++    gfile, regf = HG.WORK / "HSGATE_FROZEN.json", HG.WORK / "REGISTERED_HSGATE.sha256"
++    reg_tok = C.read_seal(regf)
++    gate_now = C.sha256_file(gfile) if gfile.exists() else ""
++    ev = dict(base["evidence"])
++    ev.update(prereg_seal_now=now, prereg_seal_forward_record=rec, gate_sha256_now=gate_now, gate_registered_sha256=reg_tok, gate_forward_record=hrec.get("gate_sha256"))
++    if fd is None:
++        unk.append("the forward file is absent")
++    elif not hrec:
++        bad.append("the forward is not an --hsgate run")
++    if not rec:
++        unk.append("the forward carries no PREREG_HSGATE seal record")
++    elif rec.get("sha256") != now["sha256"]:
++        bad.append("PREREG_HSGATE hashed now != the sha256 the forward recorded")
++    if len(reg_tok) != 64 or len(gate_now) != 64:
++        unk.append("the registered gate sha256 or the gate file is not readable as 64 hex")
++    elif not (gate_now == reg_tok == hrec.get("gate_sha256") == hrec.get("registered")):
++        bad.append("the gate file / forward record / registration disagree on the sha256")
++    for nm, key in (("K_REG_HSGATE (gate registration precedes the first eval-side output)", "K_REG_HSGATE"), ("K_FIT_HSGATE (fit controls ALL_PASS)", "K_FIT_HSGATE"),
++                    ("K_ID0 (g := 0 reproduces H2CN_DEPLOY8 bit for bit)", "K_ID0"), ("K_ID1 (g := 1 reproduces FACTORED_DEPLOY8 bit for bit)", "K_ID1"),
++                    ("K_EVALFEAT (eval features from the K-LABSRC extras keys; joins exact, mutation RED)", "K_EVALFEAT"),
++                    ("K_LANDED (H2CN / FACTORED positions == the landed packages)", "K_LANDED"), ("K_GATE_SURF (S2 / S6 decisions agree)", "K_GATE_SURF"),
++                    ("K_TRACE (Amendment 5 traces final / 4,754 / counters)", "K_TRACE")):
++        v = ctl.get(key)
++        ev[key] = v
++        if v is False:
++            bad.append(nm + " is false")
++        elif v is not True:
++            unk.append(nm + " not shown")
++    trs = {}
++    for s, r0 in ((ctl.get("K_TRACE_detail") or {}).get("inputs") or {}).items():
++        for nm in ("l1_base", "selfsharp"):
++            r = r0.get(nm) or {}
++            f = r.get("file")
++            nw = C.sha256_file(f) if f and Path(f).exists() else None
++            trs[f"s{s}|{nm}"] = {"sha256_forward_record": r.get("sha256"), "sha256_now": nw}
++            if r.get("sha256") is None or nw is None:
++                unk.append(f"s{s} {nm}: sha256 not recorded / file unreadable")
++            elif nw != r["sha256"]:
++                bad.append(f"s{s} {nm}: the trace changed since it was recorded")
++    if not trs:
++        unk.append("no input-trace record in the forward")
++    ev["traces"] = trs
++    ev["K_ID_detail"] = ctl.get("K_ID_detail")
++    ev["K_REG_HSGATE_detail"] = ctl.get("K_REG_HSGATE_detail")
++    st = _status(bad, unk)
++    return {"id": 1, "text": CL1_TEXT["HSGATE8"], "status": st, "reason": "; ".join(bad + unk) if (bad or unk) else
++            "Amendment 4's clause-1 conjunction holds on the --hsgate forward; PREREG_HSGATE seal == its file (re-hashed now) and == the forward's record; the gate "
++            "sha256 == registered (re-hashed now); K_REG_HSGATE, K_FIT_HSGATE, K_ID0, K_ID1, K_EVALFEAT, K_LANDED, K_GATE_SURF, K_TRACE all true; traces unchanged",
++            "evidence": ev}
++
++
++def clause1b_hsgate(reg_ship, fd) -> dict:
++    a, b = clause1b_a4(reg_ship), clause1b_a5(fd)
++    sts = (a["status"], b["status"])
++    st = "FAIL" if "FAIL" in sts else ("INCOMPLETE" if "INCOMPLETE" in sts else "PASS")
++    return {"id": "1b", "text": CL1B_HSG, "status": st, "reason": f"A4 (1b): {a['status']} -- {a['reason']} || A5 (1b): {b['status']} -- {b['reason']}",
++            "evidence": {"A4_1b": a, "A5_1b": b}}
++
++
+ def overall(clauses) -> str:
+     by = {str(c.get("id")): c.get("status") for c in clauses}
+     if any(i not in by or by[i] not in ("PASS", "FAIL", "INCOMPLETE", "N/A") for i in REQUIRED):
+@@ -409,7 +495,7 @@
+ 
+ def main() -> int:
+     ap = argparse.ArgumentParser()
+-    ap.add_argument("--arm", choices=("H2CN_DEPLOY8", "H2CN_CAP8", "FACTORED_DEPLOY8", "H2CNL_DEPLOY8"))
++    ap.add_argument("--arm", choices=("H2CN_DEPLOY8", "H2CN_CAP8", "FACTORED_DEPLOY8", "H2CNL_DEPLOY8", "HSGATE8"))
+     ap.add_argument("--identity-only", action="store_true")
+     ap.add_argument("--forward", required=True)
+     ap.add_argument("--arms-dir", required=True)
+@@ -441,8 +527,15 @@
+     if not a.arm:
+         ap.error("--arm is required unless --identity-only")
+     arm = a.arm
+-    amend = {"H2CN_DEPLOY8": "4", "H2CN_CAP8": "4b", "FACTORED_DEPLOY8": "5", "H2CNL_DEPLOY8": "4c"}[arm]
+-    h2 = amend in ("4", "4b", "4c")
++    amend = {"H2CN_DEPLOY8": "4", "H2CN_CAP8": "4b", "FACTORED_DEPLOY8": "5", "H2CNL_DEPLOY8": "4c", "HSGATE8": "HSG"}[arm]
++    h2 = amend in ("4", "4b", "4c", "HSG")
++    if amend == "HSG":
++        HG.check_prereg()                                                 # refuses before anything is read
++        if fd is None or not fd.get("hsgate"):
++            raise SystemExit("[hsgate-verdict] HSGATE8 needs an --hsgate forward")
++        rod = od.resolve()
++        if not (rod == HG.WORK.resolve() or HG.WORK.resolve() in rod.parents):
++            raise SystemExit(f"[hsgate-verdict] REFUSING: --out-dir {od} is outside {HG.WORK}")
+     if fd is not None and fd.get("mode") != ("h2cn" if h2 else "factored"):
+         raise SystemExit(f"[sub-verdict] the forward file is mode {fd.get('mode')!r}, the arm {arm} needs Amendment {amend}'s forward")
+     if amend == "4b":
+@@ -457,8 +550,8 @@
+     tac = load(ad / arm / f"TAC_{TREE}.json")
+     pr, pp = load(ri["pr"]["path"]), load(ri["pp"]["path"])
+     pins = load(a.trace_pins) if a.trace_pins else None
+-    c1 = clause1_4b(fd, rid) if amend == "4b" else (clause1_a4(fd, rid) if amend == "4" else (clause1_4c(fd, rid, arm) if amend == "4c" else clause1_a5(fd, rid, reg_ship, pins)))
+-    c1b = clause1b_a4(reg_ship) if h2 else clause1b_a5(fd)
++    c1 = clause1_hsgate(fd, rid) if amend == "HSG" else (clause1_4b(fd, rid) if amend == "4b" else (clause1_a4(fd, rid) if amend == "4" else (clause1_4c(fd, rid, arm) if amend == "4c" else clause1_a5(fd, rid, reg_ship, pins))))
++    c1b = clause1b_hsgate(reg_ship, fd) if amend == "HSG" else (clause1b_a4(reg_ship) if h2 else clause1b_a5(fd))
+     c25 = clauses_on(arm, fd, tac)
+     c6, c7 = B.clause6(pr), B.clause7(pp)
+     for c_, k in ((c6, "pr"), (c7, "pp")):
+@@ -468,7 +561,8 @@
+     clauses = [c1, c1b] + c25 + [c6, c7]
+     ov = overall(clauses)
+     beside_arms = {"4": ("H2CN_NEAR", "H2CN_PERSURFACE", "RETIME_DEPLOY8"), "4b": ("H2CN_DEPLOY8", "H2CN_NEAR", "H2CN_PERSURFACE", "RETIME_DEPLOY8"),
+-                   "5": ("OSONLY_DEPLOY8", "RETIME_DEPLOY8"), "4c": ("H2CN_DEPLOY8", "H2CNL_MUT8", "H2CN_NEAR", "H2CN_PERSURFACE", "RETIME_DEPLOY8")}[amend]
++                   "5": ("OSONLY_DEPLOY8", "RETIME_DEPLOY8"), "4c": ("H2CN_DEPLOY8", "H2CNL_MUT8", "H2CN_NEAR", "H2CN_PERSURFACE", "RETIME_DEPLOY8"),
++                   "HSG": ("H2CN_DEPLOY8", "FACTORED_DEPLOY8", "RETIME_DEPLOY8")}[amend]
+     bes = {"arms": {}}
+     for b_arm in beside_arms:
+         cs = clauses_on(b_arm, fd, load(ad / b_arm / f"TAC_{TREE}.json"))
+@@ -482,6 +576,10 @@
+         bes["arms"]["H2CNL_MUT8"]["clauses"]["1"] = {k: v for k, v in clause1_4c(fd, rid, "H2CNL_MUT8").items() if k in ("status", "reason")}
+         bes["h2cnl_per_window"] = {k: {kk: vv for kk, vv in (v.get("h2cnl") or {}).items() if kk not in ("join", "join_mutation_next_window")}
+                                    for k, v in ((fd or {}).get("per_window_extra") or {}).items()}
++    if amend == "HSG":
++        bes["hsgate_F_rate"] = ((fd or {}).get("hsgate") or {}).get("F_rate")
++        bes["hsgate_per_window"] = {k: {kk: vv for kk, vv in (v.get("hsgate") or {}).items() if kk not in ("join", "join_mutation_next_window", "landed")}
++                                    for k, v in ((fd or {}).get("per_window_extra") or {}).items()}
+     if amend == "4b":
+         bes["clamp_touched_windows"] = {k: {kk: (v.get("cap8") or {}).get(kk) for kk in ("n_changed_by_clamp", "share_changed_by_clamp", "n_changed_by_clamp_compliant",
+                                                                                          "share_changed_by_clamp_compliant", "n_windows", "n_compliant", "n_nonfinite_lim")}
+@@ -509,6 +607,10 @@
+                        "the Master Mind's recommendation is H2CN_CAP8. NavSim only with a separate go.",
+                "FAIL": "FAIL -> clause(s) " + ", ".join(fails) + " named; H2CN_DEPLOY8 stands as Amendment 4 registered it, with its compliance row put to the PI.",
+                "INCOMPLETE": "INCOMPLETE -> a clause could not be shown (see the reasons); H2CN_DEPLOY8 stands as Amendment 4 registered it."}.get(ov)
++    elif amend == "HSG":
++        fails = [str(c["id"]) for c in clauses if c["status"] == "FAIL"]
++        nxt = ("this verdict is bar G3 of PREREG_HSGATE (SHIP-R8 OVERALL " + ov + (": clause(s) " + ", ".join(fails) + " named" if fails else "") +
++               "); the committed next step reads G1 + G2 + G3 + G4 together -> result/HSGATE_VERDICT.json (hsgate_bars.py)")
+     elif amend == "4c":
+         fails = [str(c["id"]) for c in clauses if c["status"] == "FAIL"]
+         nxt = ("this verdict is bar L3 of Amendment 4c (SHIP-R8 OVERALL " + ov + (": clause(s) " + ", ".join(fails) + " named" if fails else "") +
+@@ -517,7 +619,7 @@
+         nxt = {"PASS": "PASS -> the factored decode is a refcv8 deliverable candidate; build the in-model implementation (two planner passes on one trunk forward) "
+                        "and its bit-equal control before anything ships; NavSim only with a separate go.",
+                "FAIL": "FAIL -> the failing clause names the lever; the decode stays a refcv9 design input (H-R9-SSGUARD-1)."}.get(ov)
+-    v = {"tool": "ship_r8_4c_verdict.py", "generated": time.strftime("%FT%T%z"), "tree": TREE, "arm": arm, "amendment": amend, "overall": ov, "clauses": clauses,
++    v = {"tool": "ship_r8_hsgate_verdict.py", "generated": time.strftime("%FT%T%z"), "tree": TREE, "arm": arm, "amendment": amend, "overall": ov, "clauses": clauses,
+          "per_clause": {str(c["id"]): c["status"] for c in clauses}, "beside": bes, "next_step": nxt, "amendments": seals,
+          "tier": "T1 self-action OPEN LOOP on logged eval139 frames (not driving performance)",
+          "estimator": "paired episode-cluster bootstrap B 2000, bootstrap seed 0 (pair_read_r8.paired_cell -> taniteval.ci), over EPISODES with the models FIXED: "
+@@ -528,6 +630,8 @@
+          "script_sha256": SCRIPT_SHA}
+     if amend == "4c":
+         v["disclosed_deviations"] = DEVIATIONS_4C
++    if amend == "HSG":
++        v["disclosed_deviations"] = DEVIATIONS_HSG
+     v["inputs_sha256"] = {k: (C.sha256_file(p) if p and Path(p).exists() else None) for k, p in v["inputs"].items()}
+     jp = od / f"SHIP_R8_{arm}.json"
+     jp.write_text(json.dumps(v, indent=1, default=str) + "\n", encoding="utf-8")

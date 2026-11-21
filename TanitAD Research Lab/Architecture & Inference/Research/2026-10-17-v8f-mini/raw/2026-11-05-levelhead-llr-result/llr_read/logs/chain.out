@@ -1,0 +1,40 @@
+2026-11-05T20:17:17 ZZLLR-GATE0 pins, tests, known answers ok (tool 0417c838, model 5fd4baea, trainer e808cf1a)
+PRECHECK PASS
+2026-11-05T20:17:19 ZZLLR-GATE1 LLR checkpoints present, sha256 == SHA256SUMS.txt == box-2 marker, argv = CLR's + the three lead tokens (W_LEAD, token wiring), cfg lead_head on, e_aux keys, gate token, CLR base checkpoint = the banked arrays' checkpoint
+2026-11-05T20:17:19 ZZLLR-GATE2 reused arrays (16, the banked CLR base included), the CL card's rules and the A2 card match their pins
+2026-11-05T20:17:34 ZZLLR-PREFLIGHT-OK PRE_LLR_s0_ri_kbox
+2026-11-05T20:17:42 ZZLLR-PREFLIGHT-OK PRE_LLR_s1_hold
+2026-11-05T20:17:51 ZZLLR-PREFLIGHT-OK PRE_LLR_s0_logged
+2026-11-05T20:17:51 ZZLLR-START tool 0417c838 threads reindexed=12 logged=16
+2026-11-05T20:17:51 ZZLLR-RUN RILLR_s0 flags=--smooth sg72 --scene reindexed threads=12 ckpt=M2b_s0_recft_LLR
+2026-11-05T20:21:47 ZZLLR-RUN-DONE RILLR_s0 wall=236s
+2026-11-05T20:21:47 ZZLLR-RUN RILLR_s1 flags=--smooth sg72 --scene reindexed threads=12 ckpt=M2b_s1_recft_LLR
+2026-11-05T20:24:31 ZZLLR-RUN-DONE RILLR_s1 wall=164s
+2026-11-05T20:24:32 ZZLLR-RUN RILLRC_s0 flags=--smooth sg72 --scene reindexed --feasible kbox threads=12 ckpt=M2b_s0_recft_LLR
+2026-11-05T20:27:16 ZZLLR-RUN-DONE RILLRC_s0 wall=165s
+2026-11-05T20:27:17 ZZLLR-RUN RILLRC_s1 flags=--smooth sg72 --scene reindexed --feasible kbox threads=12 ckpt=M2b_s1_recft_LLR
+2026-11-05T20:30:46 ZZLLR-RUN-DONE RILLRC_s1 wall=209s
+2026-11-05T20:30:46 ZZLLR-RUN LLR_s0 flags=--smooth sg72 --scene logged threads=16 ckpt=M2b_s0_recft_LLR
+2026-11-05T20:33:48 ZZLLR-RUN-DONE LLR_s0 wall=182s
+2026-11-05T20:33:48 ZZLLR-RUN LLR_s1 flags=--smooth sg72 --scene logged threads=16 ckpt=M2b_s1_recft_LLR
+2026-11-05T20:37:21 ZZLLR-RUN-DONE LLR_s1 wall=213s
+2026-11-05T20:37:21 ZZLLR-RUN LLRC_s0 flags=--smooth sg72 --scene logged --feasible kbox threads=16 ckpt=M2b_s0_recft_LLR
+2026-11-05T20:40:31 ZZLLR-RUN-DONE LLRC_s0 wall=190s
+2026-11-05T20:40:31 ZZLLR-RUN LLRC_s1 flags=--smooth sg72 --scene logged --feasible kbox threads=16 ckpt=M2b_s1_recft_LLR
+2026-11-05T20:43:11 ZZLLR-RUN-DONE LLRC_s1 wall=160s
+2026-11-05T20:43:11 ZZLLR-RUN FZLLR_s0 flags=--smooth sg72 --scene hold_now threads=16 ckpt=M2b_s0_recft_LLR
+2026-11-05T20:47:27 ZZLLR-RUN-DONE FZLLR_s0 wall=256s
+2026-11-05T20:47:27 ZZLLR-RUN FZLLR_s1 flags=--smooth sg72 --scene hold_now threads=16 ckpt=M2b_s1_recft_LLR
+2026-11-05T20:51:50 ZZLLR-RUN-DONE FZLLR_s1 wall=263s
+2026-11-05T20:51:50 ZZLLR-ROLLOUTS-DONE nfail=0
+2026-11-05T20:51:50 ZZLLR-LLRRO-DONE
+2026-11-05T20:51:50 ZZLLR-READ start
+2026-11-05T20:55:42 ZZLLR-READ rc=0
+s0 M1 RILLR-RIC0 -0.0125 [-0.0177, -0.0080] sep True | RIC0-P10 +0.0533 | share 0.23497565086399333 | logged share 0.2395634215639144 | ADE6 RILLR-RIC0 +0.0309 | RILLRC read A DOMINANT False
+s1 M1 RILLR-RIC0 -0.0116 [-0.0163, -0.0074] sep True | RIC0-P10 +0.0596 | share 0.194873336797161 | logged share 0.19182391563567106 | ADE6 RILLR-RIC0 +0.0540 | RILLRC read A DOMINANT False
+OUTCOME P-FAILS-FAMILY-EXHAUSTED | the vision-head family on frozen single-frame features is exhausted at these forms (A2 card, Outcomes: LLR P fails); the remaining levers are the named blockers of option (c) (T2 re-perception, the A40), reported to the PI with the numbers
+2026-11-05T20:55:42 ZZLLR-READ-DONE
+2026-11-05T20:56:32 ZZLLR-READOUT s0 rc=0
+2026-11-05T20:57:20 ZZLLR-READOUT s1 rc=0
+MERGE PASS | {'s0': {'level': 'O-INSENSITIVE', 'lead_by_analogy': 'O-INSENSITIVE', 'level_same_under_both_readings': True, 'lead_same_under_both_readings': True}, 's1': {'level': 'O-INSENSITIVE', 'lead_by_analogy': 'O-INSENSITIVE', 'level_same_under_both_readings': True, 'lead_same_under_both_readings': True}}
+2026-11-05T20:57:20 ZZLLR-CHAIN-DONE

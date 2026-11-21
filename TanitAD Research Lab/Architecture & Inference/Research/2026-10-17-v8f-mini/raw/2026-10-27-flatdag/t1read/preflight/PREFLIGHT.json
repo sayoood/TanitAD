@@ -1,0 +1,521 @@
+{
+ "preflight": true,
+ "state": {
+  "coverage_s0": {
+   "n_windows": 306566,
+   "n_eligible_windows": 230176,
+   "eligible_fraction": 0.7508203779936458,
+   "n_states_before_cuts": 613132,
+   "n_states_kept": 401163,
+   "cuts": {
+    "off_lat": 39892,
+    "off_head": 63475,
+    "end_edge": 108602,
+    "nonfinite": 0
+   },
+   "states_by_tick": {
+    "1": 306566,
+    "2": 306566
+   },
+   "stated_fraction": 0.7508203779936458
+  },
+  "coverage_s1": {
+   "n_windows": 306566,
+   "n_eligible_windows": 230106,
+   "eligible_fraction": 0.7505920421703646,
+   "n_states_before_cuts": 613132,
+   "n_states_kept": 396619,
+   "cuts": {
+    "off_lat": 44995,
+    "off_head": 64015,
+    "end_edge": 107503,
+    "nonfinite": 0
+   },
+   "states_by_tick": {
+    "1": 306566,
+    "2": 306566
+   },
+   "stated_fraction": 0.7505920421703646
+  },
+  "FLATDAG0_s1": "not pulled"
+ },
+ "controls_PASS": {
+  "PINS": true,
+  "BANK-FILES:s0": true,
+  "BANK-CONFIG:s0": true,
+  "K-B0:s0": true,
+  "K-B1:s0": true,
+  "K-B2:s0": true,
+  "K-B3.1:s0": true,
+  "K-B3.3:s0": true,
+  "K-B4:s0": true,
+  "K-B5:s0": true,
+  "BANK-ACCOUNTING:s0": true,
+  "BANK-FILES:s1": true,
+  "BANK-CONFIG:s1": true,
+  "K-B0:s1": true,
+  "K-B1:s1": true,
+  "K-B2:s1": true,
+  "K-B3.1:s1": true,
+  "K-B3.3:s1": true,
+  "K-B4:s1": true,
+  "K-B5:s1": true,
+  "BANK-ACCOUNTING:s1": true,
+  "M2B-CKPT:s0": true,
+  "SUMMARY:FLATDAG_s0": true,
+  "INIT-CKPT:FLATDAG_s0": true,
+  "ARGV:FLATDAG_s0": true,
+  "FLAT-ARGV:FLATDAG_s0": true,
+  "DAGGER-REACHED:FLATDAG_s0": true,
+  "GATE-TOKEN:FLATDAG_s0": true,
+  "BANK-DECLARED:FLATDAG_s0": true,
+  "SUMMARY:FLATDAG0_s0": true,
+  "INIT-CKPT:FLATDAG0_s0": true,
+  "ARGV:FLATDAG0_s0": true,
+  "FLAT-ARGV:FLATDAG0_s0": true,
+  "DAGGER-REACHED:FLATDAG0_s0": true,
+  "GATE-TOKEN:FLATDAG0_s0": true,
+  "PAIR:s0": true,
+  "K-B3.2:s0": true,
+  "TRAIN-LIST:s0": true,
+  "M2B-CKPT:s1": true,
+  "SUMMARY:FLATDAG_s1": true,
+  "INIT-CKPT:FLATDAG_s1": true,
+  "ARGV:FLATDAG_s1": true,
+  "FLAT-ARGV:FLATDAG_s1": true,
+  "DAGGER-REACHED:FLATDAG_s1": true,
+  "GATE-TOKEN:FLATDAG_s1": true,
+  "BANK-DECLARED:FLATDAG_s1": true
+ },
+ "controls": {
+  "PINS": {
+   "PASS": true,
+   "detail": "pinned inputs re-hashed; PREREG_V8F_FLATDAG section 2 and 4 cells verbatim"
+  },
+  "BANK-FILES:s0": {
+   "PASS": true,
+   "detail": {
+    "bank_sha256": "1fa89521d9c0f452f03e29176cd3ac6bb85c6cb478e6316b3806e0bdedb540c3",
+    "n_shards": 4,
+    "n_records": 613132,
+    "n_bank_clips": 4512
+   }
+  },
+  "BANK-CONFIG:s0": {
+   "PASS": true,
+   "detail": {
+    "rollout": {
+     "executor": "plan",
+     "limit": "causal",
+     "nav": "deadreckon",
+     "post_map": "none (PLAIN)",
+     "replan_steps": 10,
+     "scene": "logged",
+     "schedule": "periodic"
+    },
+    "thresholds_file_sha256": "438366d5e5ce4077564a70323f906c892fa112a804741fc1367b956a8d76504b",
+    "train": {
+     "exclude": "540:600",
+     "n_clips": 4512,
+     "n_excluded": 60,
+     "n_windows": 306566,
+     "train_sha256": "37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1"
+    },
+    "hmax": 16
+   }
+  },
+  "K-B0:s0": {
+   "PASS": true,
+   "detail": {
+    "checked": 306566,
+    "n_windows": 306566,
+    "mismatch": 0,
+    "verified_by_reader": false
+   }
+  },
+  "K-B1:s0": {
+   "PASS": true,
+   "detail": {
+    "chunks": 48,
+    "windows": 1536,
+    "required": 1532,
+    "mismatch_chunks": 0,
+    "verified_by_reader": false
+   }
+  },
+  "K-B2:s0": {
+   "PASS": true,
+   "detail": {
+    "generator_ckpt_sha256": "8496934a2ce262c128a3e975da156de2f40e422925893c9979169a4c114493cc",
+    "verified_by_reader": "common.ckpt_sha256 and every shard's inputs.ckpt.sha256 vs the CLI's M2b sha256"
+   }
+  },
+  "K-B3.1:s0": {
+   "PASS": true,
+   "detail": {
+    "n_bank_clips": 4512,
+    "n_train_clips": 4512,
+    "n_train_clips_without_bank_records": 0,
+    "deliberate_regression": "refused",
+    "verified_by_reader": "clip names from the shard npz headers vs the TRAIN list"
+   }
+  },
+  "K-B3.3:s0": {
+   "PASS": true,
+   "detail": {
+    "n_bank_clips": 4512,
+    "n_eval_clips": 141,
+    "overlap": 0,
+    "deliberate_regression": "refused",
+    "verified_by_reader": "ids and stable sids vs the eval-141 list"
+   }
+  },
+  "K-B4:s0": {
+   "PASS": true,
+   "detail": {
+    "cases": [
+     "straight",
+     "stationary_tie",
+     "lateral_cut",
+     "heading_cut",
+     "end_edge",
+     "loop"
+    ],
+    "verified_by_reader": false
+   }
+  },
+  "K-B5:s0": {
+   "PASS": true,
+   "detail": {
+    "max_pose_now_err_m": 0.0,
+    "max_rel_transform_err_m": 6.077559365090305e-05,
+    "verified_by_reader": false
+   }
+  },
+  "BANK-ACCOUNTING:s0": {
+   "PASS": true,
+   "detail": {
+    "n_windows": 306566,
+    "n_eligible_windows": 230176,
+    "eligible_fraction": 0.7508203779936458,
+    "n_states_before_cuts": 613132,
+    "n_states_kept": 401163,
+    "cuts": {
+     "off_lat": 39892,
+     "off_head": 63475,
+     "end_edge": 108602,
+     "nonfinite": 0
+    },
+    "states_by_tick": {
+     "1": 306566,
+     "2": 306566
+    }
+   }
+  },
+  "BANK-FILES:s1": {
+   "PASS": true,
+   "detail": {
+    "bank_sha256": "f52475553fd6ff3f8097861f29f572280f37e05519bd47755c0ec315efebbdf6",
+    "n_shards": 4,
+    "n_records": 613132,
+    "n_bank_clips": 4512
+   }
+  },
+  "BANK-CONFIG:s1": {
+   "PASS": true,
+   "detail": {
+    "rollout": {
+     "executor": "plan",
+     "limit": "causal",
+     "nav": "deadreckon",
+     "post_map": "none (PLAIN)",
+     "replan_steps": 10,
+     "scene": "logged",
+     "schedule": "periodic"
+    },
+    "thresholds_file_sha256": "438366d5e5ce4077564a70323f906c892fa112a804741fc1367b956a8d76504b",
+    "train": {
+     "exclude": "540:600",
+     "n_clips": 4512,
+     "n_excluded": 60,
+     "n_windows": 306566,
+     "train_sha256": "37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1"
+    },
+    "hmax": 16
+   }
+  },
+  "K-B0:s1": {
+   "PASS": true,
+   "detail": {
+    "checked": 306566,
+    "n_windows": 306566,
+    "mismatch": 0,
+    "verified_by_reader": false
+   }
+  },
+  "K-B1:s1": {
+   "PASS": true,
+   "detail": {
+    "chunks": 48,
+    "windows": 1536,
+    "required": 1532,
+    "mismatch_chunks": 0,
+    "verified_by_reader": false
+   }
+  },
+  "K-B2:s1": {
+   "PASS": true,
+   "detail": {
+    "generator_ckpt_sha256": "6fdfc9b02ce87248c5315dd7604d3642a3b39f7ae0f593ec6b6ef5ef8df64c95",
+    "verified_by_reader": "common.ckpt_sha256 and every shard's inputs.ckpt.sha256 vs the CLI's M2b sha256"
+   }
+  },
+  "K-B3.1:s1": {
+   "PASS": true,
+   "detail": {
+    "n_bank_clips": 4512,
+    "n_train_clips": 4512,
+    "n_train_clips_without_bank_records": 0,
+    "deliberate_regression": "refused",
+    "verified_by_reader": "clip names from the shard npz headers vs the TRAIN list"
+   }
+  },
+  "K-B3.3:s1": {
+   "PASS": true,
+   "detail": {
+    "n_bank_clips": 4512,
+    "n_eval_clips": 141,
+    "overlap": 0,
+    "deliberate_regression": "refused",
+    "verified_by_reader": "ids and stable sids vs the eval-141 list"
+   }
+  },
+  "K-B4:s1": {
+   "PASS": true,
+   "detail": {
+    "cases": [
+     "straight",
+     "stationary_tie",
+     "lateral_cut",
+     "heading_cut",
+     "end_edge",
+     "loop"
+    ],
+    "verified_by_reader": false
+   }
+  },
+  "K-B5:s1": {
+   "PASS": true,
+   "detail": {
+    "max_pose_now_err_m": 0.0,
+    "max_rel_transform_err_m": 6.114566140956352e-05,
+    "verified_by_reader": false
+   }
+  },
+  "BANK-ACCOUNTING:s1": {
+   "PASS": true,
+   "detail": {
+    "n_windows": 306566,
+    "n_eligible_windows": 230106,
+    "eligible_fraction": 0.7505920421703646,
+    "n_states_before_cuts": 613132,
+    "n_states_kept": 396619,
+    "cuts": {
+     "off_lat": 44995,
+     "off_head": 64015,
+     "end_edge": 107503,
+     "nonfinite": 0
+    },
+    "states_by_tick": {
+     "1": 306566,
+     "2": 306566
+    }
+   }
+  },
+  "M2B-CKPT:s0": {
+   "PASS": true,
+   "detail": {
+    "passed": "8496934a2ce262c1",
+    "FLAT_s0": "8496934a2ce262c1"
+   }
+  },
+  "SUMMARY:FLATDAG_s0": {
+   "PASS": true,
+   "detail": {
+    "argv_sha": "43364fc1cb7becb3",
+    "steps": 3000
+   }
+  },
+  "INIT-CKPT:FLATDAG_s0": {
+   "PASS": true,
+   "detail": {
+    "init_sha256": "8496934a2ce262c128a3e975da156de2f40e422925893c9979169a4c114493cc",
+    "sources": [
+     "summary:levers.init_ckpt.sha256",
+     "selfcheck:levers.init_ckpt.sha256"
+    ]
+   }
+  },
+  "ARGV:FLATDAG_s0": {
+   "PASS": true,
+   "detail": "argv names the registered fine-tune"
+  },
+  "FLAT-ARGV:FLATDAG_s0": {
+   "PASS": true,
+   "detail": "every other flag is FLAT's argv; --o-interface cut named once"
+  },
+  "DAGGER-REACHED:FLATDAG_s0": {
+   "PASS": true,
+   "detail": {
+    "dagger_n": 14581,
+    "dagger_eligible": 144182,
+    "ratio": 0.1011291284626375
+   }
+  },
+  "GATE-TOKEN:FLATDAG_s0": {
+   "PASS": true,
+   "detail": {
+    "commit": "3101dbf1dab6399252dbcec7f2f1ada7325a8317",
+    "argv_sha256": "4bdaa4d01bbe54d37b34ac2660900b8233e1af34520bcb67ca3d20e370576e67",
+    "data_sha256": "37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1",
+    "hmac": "absent"
+   }
+  },
+  "BANK-DECLARED:FLATDAG_s0": {
+   "PASS": true,
+   "detail": {
+    "bank_sha256": "1fa89521d9c0f452f03e29176cd3ac6bb85c6cb478e6316b3806e0bdedb540c3",
+    "built_records": [
+     "summary:levers.dagger_bank_sha256",
+     "selfcheck:levers.dagger_bank_sha256"
+    ],
+    "bank_manifest_hashed_here": true
+   }
+  },
+  "SUMMARY:FLATDAG0_s0": {
+   "PASS": true,
+   "detail": {
+    "argv_sha": "a45fb0aefe831e42",
+    "steps": 3000
+   }
+  },
+  "INIT-CKPT:FLATDAG0_s0": {
+   "PASS": true,
+   "detail": {
+    "init_sha256": "8496934a2ce262c128a3e975da156de2f40e422925893c9979169a4c114493cc",
+    "sources": [
+     "summary:levers.init_ckpt.sha256",
+     "selfcheck:levers.init_ckpt.sha256"
+    ]
+   }
+  },
+  "ARGV:FLATDAG0_s0": {
+   "PASS": true,
+   "detail": "argv names the registered fine-tune"
+  },
+  "FLAT-ARGV:FLATDAG0_s0": {
+   "PASS": true,
+   "detail": "every other flag is FLAT's argv; --o-interface cut named once"
+  },
+  "DAGGER-REACHED:FLATDAG0_s0": {
+   "PASS": true,
+   "detail": {
+    "dagger_n": 0
+   }
+  },
+  "GATE-TOKEN:FLATDAG0_s0": {
+   "PASS": true,
+   "detail": {
+    "commit": "3101dbf1dab6399252dbcec7f2f1ada7325a8317",
+    "argv_sha256": "e5f00d8a4c5d5c6539cc6c190619309df0002947bced7bac2f8da5f55b79165b",
+    "data_sha256": "37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1",
+    "hmac": "absent"
+   }
+  },
+  "PAIR:s0": {
+   "PASS": true,
+   "detail": "same init, steps, data, seed; argv identical except --out, --dagger-p and the DAG-only flags"
+  },
+  "K-B3.2:s0": {
+   "PASS": true,
+   "detail": {
+    "window_list_sha256": "e144adcd9b6273f2b44ad7dfa162931b90e159f7b3911e0893b25777b2ae8168",
+    "trainer": {
+     "DAG": "e144adcd9b6273f2b44ad7dfa162931b90e159f7b3911e0893b25777b2ae8168",
+     "DAG-0": "e144adcd9b6273f2b44ad7dfa162931b90e159f7b3911e0893b25777b2ae8168"
+    }
+   }
+  },
+  "TRAIN-LIST:s0": {
+   "PASS": true,
+   "detail": {
+    "train_sha256": "37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1",
+    "trainer": {
+     "DAG": "37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1",
+     "DAG-0": "37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1"
+    }
+   }
+  },
+  "M2B-CKPT:s1": {
+   "PASS": true,
+   "detail": {
+    "passed": "6fdfc9b02ce87248",
+    "FLAT_s1": "6fdfc9b02ce87248"
+   }
+  },
+  "SUMMARY:FLATDAG_s1": {
+   "PASS": true,
+   "detail": {
+    "argv_sha": "9152223f41b85164",
+    "steps": 3000
+   }
+  },
+  "INIT-CKPT:FLATDAG_s1": {
+   "PASS": true,
+   "detail": {
+    "init_sha256": "6fdfc9b02ce87248c5315dd7604d3642a3b39f7ae0f593ec6b6ef5ef8df64c95",
+    "sources": [
+     "summary:levers.init_ckpt.sha256",
+     "selfcheck:levers.init_ckpt.sha256"
+    ]
+   }
+  },
+  "ARGV:FLATDAG_s1": {
+   "PASS": true,
+   "detail": "argv names the registered fine-tune"
+  },
+  "FLAT-ARGV:FLATDAG_s1": {
+   "PASS": true,
+   "detail": "every other flag is FLAT's argv; --o-interface cut named once"
+  },
+  "DAGGER-REACHED:FLATDAG_s1": {
+   "PASS": true,
+   "detail": {
+    "dagger_n": 14426,
+    "dagger_eligible": 143592,
+    "ratio": 0.10046520697531897
+   }
+  },
+  "GATE-TOKEN:FLATDAG_s1": {
+   "PASS": true,
+   "detail": {
+    "commit": "3101dbf1dab6399252dbcec7f2f1ada7325a8317",
+    "argv_sha256": "f8fa8f3016df29895227cf614b02a8290e544e75c6e8f9df4f3c10f2d25997e3",
+    "data_sha256": "37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1",
+    "hmac": "absent"
+   }
+  },
+  "BANK-DECLARED:FLATDAG_s1": {
+   "PASS": true,
+   "detail": {
+    "bank_sha256": "f52475553fd6ff3f8097861f29f572280f37e05519bd47755c0ec315efebbdf6",
+    "built_records": [
+     "summary:levers.dagger_bank_sha256",
+     "selfcheck:levers.dagger_bank_sha256"
+    ],
+    "bank_manifest_hashed_here": true
+   }
+  }
+ },
+ "blocked": []
+}

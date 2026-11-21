@@ -1,0 +1,476 @@
+{
+ "what": "scoping probe for the unseen-stratum data job (read-only, no network)",
+ "evidence": "MEASURED (directory listings + token table; nothing downloaded)",
+ "db_name_sets": {
+  "splits/trainval": 1381,
+  "splits/test": 1349,
+  "splits/top_level": 249,
+  "extra_p2heldout_work/dbs": 11,
+  "union_all": 2990
+ },
+ "navtrain_token_table": {
+  "rows": 103288,
+  "named_logs": 1191,
+  "logless_tokens": 251,
+  "heldout_24": 24,
+  "heldout_in_named": 24,
+  "M_PDM_logs_served_train_sets_gt0": 1167
+ },
+ "overlaps": {
+  "navtrain_named_in_trainval": 214,
+  "navtrain_named_in_top_level": 248,
+  "navtrain_named_in_test": 0,
+  "navtrain_named_in_extra": 11,
+  "navtrain_named_in_NO_local_db": 718,
+  "trainval_and_top_level": 0,
+  "trainval_and_test": 0
+ },
+ "candidate_sets": {
+  "U_trainval_minus_navtrain (A1.5(ii) by name)": 1167,
+  "top_level_minus_navtrain_minus_trainval": 1,
+  "(trainval|top_level|extra)_minus_navtrain": 1168,
+  "the_number_1167_in_the_ruling_and_A1.5": 1167,
+  "len(U)==1167": true,
+  "M_PDM_logs==1167": true
+ },
+ "location_1_local_frame_roots": {
+  "refe_proxy/pixels": {
+   "exists": true,
+   "entries": 1628,
+   "distinct_log_like_names": 407,
+   "names_in_U": 0,
+   "names_in_navtrain": 407,
+   "names_in_heldout_24": 11,
+   "example": [
+    "2021.05.12.19.36.12_veh-35_01179_01278_CAM_B0.zip",
+    "2021.05.12.19.36.12_veh-35_01179_01278_CAM_F0.zip"
+   ]
+  },
+  "refe_m5/pixels": {
+   "exists": true,
+   "entries": 206,
+   "distinct_log_like_names": 206,
+   "names_in_U": 0,
+   "names_in_navtrain": 206,
+   "names_in_heldout_24": 5,
+   "example": [
+    "2021.06.07.11.59.52_veh-35_02283_02464",
+    "2021.06.07.12.42.11_veh-38_01777_02078"
+   ]
+  },
+  "nuplan-camera/mini": {
+   "exists": true,
+   "entries": 64,
+   "distinct_log_like_names": 64,
+   "names_in_U": 1,
+   "names_in_navtrain": 52,
+   "names_in_heldout_24": 1,
+   "example": [
+    "2021.05.12.22.00.38_veh-35_01008_01518_CAM_F0.zip",
+    "2021.05.12.22.28.35_veh-35_00620_01164_CAM_F0.zip"
+   ]
+  },
+  "nuplan-camera/scenarios": {
+   "exists": true,
+   "entries": 4,
+   "distinct_log_like_names": 4,
+   "names_in_U": 0,
+   "names_in_navtrain": 0,
+   "names_in_heldout_24": 0,
+   "example": [
+    "nuplan-v1.1_mini_camera_0",
+    "nuplan-v1.1_mini_camera_1"
+   ]
+  },
+  "nuplan-camera/scenarios4": {
+   "exists": true,
+   "entries": 22,
+   "distinct_log_like_names": 7,
+   "names_in_U": 0,
+   "names_in_navtrain": 6,
+   "names_in_heldout_24": 0,
+   "example": [
+    "2021.05.12.23.36.44_veh-35_01133_01535_CAM_B0.zip",
+    "2021.05.12.23.36.44_veh-35_01133_01535_CAM_L0.zip"
+   ]
+  },
+  "nuplan-camera/probe": {
+   "exists": true,
+   "entries": 1,
+   "distinct_log_like_names": 1,
+   "names_in_U": 0,
+   "names_in_navtrain": 0,
+   "names_in_heldout_24": 0,
+   "example": [
+    "nuplan-v1.1_mini_camera_0"
+   ]
+  },
+  "refe_navtrain": {
+   "exists": true,
+   "entries": 30,
+   "distinct_log_like_names": 30,
+   "names_in_U": 0,
+   "names_in_navtrain": 0,
+   "names_in_heldout_24": 0,
+   "example": [
+    "_INVALID_2s_horizon_20Hz_stride",
+    "aug_s0"
+   ]
+  },
+  "refe_navtrain10": {
+   "exists": true,
+   "entries": 42,
+   "distinct_log_like_names": 42,
+   "names_in_U": 0,
+   "names_in_navtrain": 0,
+   "names_in_heldout_24": 0,
+   "example": [
+    ".upload_state_DEV10.json",
+    ".upload_state_DEV10_8312240f.json"
+   ]
+  },
+  "refe_navtest": {
+   "exists": true,
+   "entries": 34,
+   "distinct_log_like_names": 34,
+   "names_in_U": 0,
+   "names_in_navtrain": 0,
+   "names_in_heldout_24": 0,
+   "example": [
+    "a5_confirm_tokens.json",
+    "a9_tokens_a8_lane.json"
+   ]
+  },
+  "refe_m5r": {
+   "exists": true,
+   "entries": 16,
+   "distinct_log_like_names": 16,
+   "names_in_U": 0,
+   "names_in_navtrain": 0,
+   "names_in_heldout_24": 0,
+   "example": [
+    "M5R_GPU_DONE",
+    "evals"
+   ]
+  },
+  "refe_consistent": {
+   "exists": true,
+   "entries": 6,
+   "distinct_log_like_names": 6,
+   "names_in_U": 0,
+   "names_in_navtrain": 0,
+   "names_in_heldout_24": 0,
+   "example": [
+    "_quarantine_rank1_was_duplicate_of_rank0",
+    "scorer_targets.jsonl"
+   ]
+  },
+  "heldout_frames": {
+   "exists": true,
+   "entries": 24,
+   "distinct_log_like_names": 24,
+   "names_in_U": 0,
+   "names_in_navtrain": 24,
+   "names_in_heldout_24": 24,
+   "example": [
+    "2021.06.09.14.50.36_veh-26_00832_00905",
+    "2021.06.09.18.23.43_veh-35_03110_03179"
+   ]
+  },
+  "videos": {
+   "exists": true,
+   "entries": 2,
+   "distinct_log_like_names": 2,
+   "names_in_U": 0,
+   "names_in_navtrain": 0,
+   "names_in_heldout_24": 0,
+   "example": [
+    "u400_realframes.mp4",
+    "u400_realframes_1080p.mp4"
+   ]
+  }
+ },
+ "location_2a_openscene_navtrain_current_25_members": {
+  "distinct_logs": 38,
+  "in_U": 0,
+  "in_navtrain": 38,
+  "in_heldout_24": 3
+ },
+ "db_sample_of_U": {
+  "n": 24,
+  "all_four_channels_have_images": true,
+  "rows": [
+   {
+    "log": "2021.06.07.11.59.52_veh-35_00008_00083",
+    "lidar_pc_rows": 1501,
+    "image_rows_by_channel": {
+     "CAM_F0": 750,
+     "CAM_L0": 750,
+     "CAM_R0": 750,
+     "CAM_B0": 750
+    },
+    "size_mb": 43.6
+   },
+   {
+    "log": "2021.06.07.12.42.11_veh-38_04577_04768",
+    "lidar_pc_rows": 3820,
+    "image_rows_by_channel": {
+     "CAM_F0": 1910,
+     "CAM_L0": 1910,
+     "CAM_R0": 1910,
+     "CAM_B0": 1910
+    },
+    "size_mb": 93.6
+   },
+   {
+    "log": "2021.06.07.13.53.57_veh-35_02309_02468",
+    "lidar_pc_rows": 3180,
+    "image_rows_by_channel": {
+     "CAM_F0": 1590,
+     "CAM_L0": 1590,
+     "CAM_R0": 1590,
+     "CAM_B0": 1590
+    },
+    "size_mb": 138.4
+   },
+   {
+    "log": "2021.06.07.17.49.04_veh-47_01934_02036",
+    "lidar_pc_rows": 2040,
+    "image_rows_by_channel": {
+     "CAM_F0": 1020,
+     "CAM_L0": 1020,
+     "CAM_R0": 1020,
+     "CAM_B0": 1020
+    },
+    "size_mb": 66.5
+   },
+   {
+    "log": "2021.06.07.19.29.59_veh-38_01586_01704",
+    "lidar_pc_rows": 2360,
+    "image_rows_by_channel": {
+     "CAM_F0": 1180,
+     "CAM_L0": 1180,
+     "CAM_R0": 1180,
+     "CAM_B0": 1180
+    },
+    "size_mb": 139.9
+   },
+   {
+    "log": "2021.06.08.12.10.22_veh-38_00505_00600",
+    "lidar_pc_rows": 1900,
+    "image_rows_by_channel": {
+     "CAM_F0": 950,
+     "CAM_L0": 950,
+     "CAM_R0": 950,
+     "CAM_B0": 950
+    },
+    "size_mb": 57.0
+   },
+   {
+    "log": "2021.06.08.13.14.49_veh-47_00344_00674",
+    "lidar_pc_rows": 6600,
+    "image_rows_by_channel": {
+     "CAM_F0": 3300,
+     "CAM_L0": 3300,
+     "CAM_R0": 3300,
+     "CAM_B0": 3300
+    },
+    "size_mb": 169.7
+   },
+   {
+    "log": "2021.06.08.14.14.51_veh-35_00331_00850",
+    "lidar_pc_rows": 10380,
+    "image_rows_by_channel": {
+     "CAM_F0": 5190,
+     "CAM_L0": 5190,
+     "CAM_R0": 5190,
+     "CAM_B0": 5190
+    },
+    "size_mb": 310.5
+   },
+   {
+    "log": "2021.06.08.14.57.07_veh-47_00890_01000",
+    "lidar_pc_rows": 2200,
+    "image_rows_by_channel": {
+     "CAM_F0": 1100,
+     "CAM_L0": 1100,
+     "CAM_R0": 1100,
+     "CAM_B0": 1100
+    },
+    "size_mb": 97.5
+   },
+   {
+    "log": "2021.06.08.17.25.03_veh-35_02351_02436",
+    "lidar_pc_rows": 1700,
+    "image_rows_by_channel": {
+     "CAM_F0": 850,
+     "CAM_L0": 850,
+     "CAM_R0": 850,
+     "CAM_B0": 850
+    },
+    "size_mb": 55.7
+   },
+   {
+    "log": "2021.06.08.17.36.50_veh-26_03742_03862",
+    "lidar_pc_rows": 2402,
+    "image_rows_by_channel": {
+     "CAM_F0": 1200,
+     "CAM_L0": 1200,
+     "CAM_R0": 1200,
+     "CAM_B0": 1200
+    },
+    "size_mb": 88.2
+   },
+   {
+    "log": "2021.06.08.18.59.48_veh-12_00161_00545",
+    "lidar_pc_rows": 7680,
+    "image_rows_by_channel": {
+     "CAM_F0": 3840,
+     "CAM_L0": 3840,
+     "CAM_R0": 3840,
+     "CAM_B0": 3840
+    },
+    "size_mb": 275.9
+   },
+   {
+    "log": "2021.07.24.00.58.02_veh-12_03954_04144",
+    "lidar_pc_rows": 3801,
+    "image_rows_by_channel": {
+     "CAM_F0": 1900,
+     "CAM_L0": 1900,
+     "CAM_R0": 1900,
+     "CAM_B0": 1900
+    },
+    "size_mb": 186.5
+   },
+   {
+    "log": "2021.07.24.19.24.15_veh-26_04143_04216",
+    "lidar_pc_rows": 1461,
+    "image_rows_by_channel": {
+     "CAM_F0": 730,
+     "CAM_L0": 730,
+     "CAM_R0": 730,
+     "CAM_B0": 730
+    },
+    "size_mb": 54.5
+   },
+   {
+    "log": "2021.07.24.23.50.16_veh-17_01343_01674",
+    "lidar_pc_rows": 6620,
+    "image_rows_by_channel": {
+     "CAM_F0": 3310,
+     "CAM_L0": 3310,
+     "CAM_R0": 3310,
+     "CAM_B0": 3310
+    },
+    "size_mb": 183.8
+   },
+   {
+    "log": "2021.08.24.12.40.19_veh-45_01472_01612",
+    "lidar_pc_rows": 2800,
+    "image_rows_by_channel": {
+     "CAM_F0": 1400,
+     "CAM_L0": 1400,
+     "CAM_R0": 1400,
+     "CAM_B0": 1400
+    },
+    "size_mb": 8.4
+   },
+   {
+    "log": "2021.08.24.17.45.37_veh-42_02371_02441",
+    "lidar_pc_rows": 1400,
+    "image_rows_by_channel": {
+     "CAM_F0": 700,
+     "CAM_L0": 700,
+     "CAM_R0": 700,
+     "CAM_B0": 700
+    },
+    "size_mb": 4.8
+   },
+   {
+    "log": "2021.09.13.13.38.29_veh-28_00283_00398",
+    "lidar_pc_rows": 2300,
+    "image_rows_by_channel": {
+     "CAM_F0": 1150,
+     "CAM_L0": 1150,
+     "CAM_R0": 1150,
+     "CAM_B0": 1150
+    },
+    "size_mb": 18.0
+   },
+   {
+    "log": "2021.09.13.17.32.06_veh-39_00533_00750",
+    "lidar_pc_rows": 4340,
+    "image_rows_by_channel": {
+     "CAM_F0": 2170,
+     "CAM_L0": 2170,
+     "CAM_R0": 2170,
+     "CAM_B0": 2169
+    },
+    "size_mb": 39.2
+   },
+   {
+    "log": "2021.09.13.19.54.33_veh-39_00005_00106",
+    "lidar_pc_rows": 2020,
+    "image_rows_by_channel": {
+     "CAM_F0": 1010,
+     "CAM_L0": 1010,
+     "CAM_R0": 1010,
+     "CAM_B0": 1010
+    },
+    "size_mb": 22.9
+   },
+   {
+    "log": "2021.09.14.20.42.30_veh-45_00221_00440",
+    "lidar_pc_rows": 4380,
+    "image_rows_by_channel": {
+     "CAM_F0": 2190,
+     "CAM_L0": 2190,
+     "CAM_R0": 2190,
+     "CAM_B0": 2190
+    },
+    "size_mb": 41.4
+   },
+   {
+    "log": "2021.09.23.03.06.36_veh-49_00309_00469",
+    "lidar_pc_rows": 3200,
+    "image_rows_by_channel": {
+     "CAM_F0": 1600,
+     "CAM_L0": 1600,
+     "CAM_R0": 1600,
+     "CAM_B0": 1600
+    },
+    "size_mb": 29.7
+   },
+   {
+    "log": "2021.09.23.06.04.24_veh-53_00258_00380",
+    "lidar_pc_rows": 2440,
+    "image_rows_by_channel": {
+     "CAM_F0": 1220,
+     "CAM_L0": 1220,
+     "CAM_R0": 1220,
+     "CAM_B0": 1220
+    },
+    "size_mb": 14.3
+   },
+   {
+    "log": "2021.09.23.07.27.52_veh-50_00016_00106",
+    "lidar_pc_rows": 1800,
+    "image_rows_by_channel": {
+     "CAM_F0": 900,
+     "CAM_L0": 900,
+     "CAM_R0": 900,
+     "CAM_B0": 900
+    },
+    "size_mb": 9.4
+   }
+  ]
+ },
+ "U_first_5": [
+  "2021.06.07.11.59.52_veh-35_00008_00083",
+  "2021.06.07.11.59.52_veh-35_00095_00555",
+  "2021.06.07.11.59.52_veh-35_00566_00754",
+  "2021.06.07.11.59.52_veh-35_00765_01072",
+  "2021.06.07.11.59.52_veh-35_01102_01213"
+ ]
+}

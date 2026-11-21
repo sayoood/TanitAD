@@ -1,0 +1,73 @@
+{
+ "schema": "tanitad.map_hires_class_thresholds/1",
+ "classes": [
+  "nocls",
+  "drivable",
+  "lane",
+  "crosswalk",
+  "arrow",
+  "edge",
+  "hatched",
+  "sidewalk"
+ ],
+ "score": "p_hat = softmax(z - ln w) over the 8 classes (w = the run's frozen class weights); rule: cell is class c iff logit(p_hat_c) >= tau_phat_logit[c]  (one-vs-rest, MULTI-LABEL)",
+ "tau_phat_logit": [
+  -0.41000000000000014,
+  -0.5199999999999996,
+  -1.8999999999999986,
+  -2.129999999999999,
+  -2.8599999999999994,
+  -3.1400000000000006,
+  -3.09,
+  -0.8099999999999987
+ ],
+ "tau_phat_prob": [
+  0.3989121211516302,
+  0.37285223368680454,
+  0.13010847436299802,
+  0.10621499167517566,
+  0.054166700481236105,
+  0.04148711930169583,
+  0.04352163495527219,
+  0.3078904956982121
+ ],
+ "class_weight_values": [
+  0.14101280272006989,
+  0.20596274733543396,
+  0.93941730260849,
+  1.0740513801574707,
+  2.957174062728882,
+  1.571183204650879,
+  2.152963638305664,
+  0.16493748128414154
+ ],
+ "provenance": {
+  "run": "refcv7-r101-s0",
+  "checkpoint_step": 50400,
+  "checkpoint_md5": "d5f104ee54ba6b2861e38030b4f6fcf1",
+  "fit_split": "TRAIN",
+  "fit_set": "TRAIN-DIAG: 139 TRAIN episodes x 8 windows, fitted on TRAIN only, scored on EVAL (never tuned on eval)",
+  "n_windows": 1112,
+  "n_episodes": 139,
+  "fit_objective": "per class, the one-vs-rest threshold on logit(p_hat_c) that maximises the pooled TRAIN-DIAG IoU (histogram sweep, 4000 bins over [-20, 20], so each tau sits on a 0.01 logit grid)",
+  "source_file": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv7-map-box-diagnostics/raw/fit_map.json",
+  "source_md5": "39a6341d05458f41fd3a898977324cbc",
+  "source_keys": [
+   "tau_phat_logit",
+   "tau_phat_prob"
+  ],
+  "fit_code": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv7-map-box-diagnostics/code/fit_map.py",
+  "result_doc": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv7-map-box-diagnostics/RESULT.md (sec. 1.2, fix F1)",
+  "train_iou_at_tau_phat": [
+   0.6407972033154268,
+   0.5913196812600565,
+   0.16163508728265136,
+   0.12318963013807123,
+   0.07079523081860728,
+   0.042740441262647096,
+   0.05436837267112912,
+   0.49187805820695857
+  ],
+  "caveat": "fitted on ONE checkpoint (step 50,400) of ONE run: valid for refcv7-r101-s0's final weights and the class weights above; a retrained or different-step model needs its own fit"
+ }
+}

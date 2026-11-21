@@ -1,0 +1,26 @@
+[preflight] 11 analysis imports OK  (this probe exists because a 3.0 h rollout once died in analyze())
+[refav1-labels] v7.2 join: labels 1/1 eps (0 missing), 21/67 windows in-band +-[2.0]s, md5=aa12c948f062181c3297265b51526ec5 | nav 1/1 eps (0 missing -> nav_cmd=0+nav_valid=False), md5=aa12c948f062181c3297265b51526ec5, allow_oracle_nav=True
+[model] /home/nvidia/experiments/refav1-b1-v72-ep3-speed/ckpt.pt step=21109 params=0 a_dim=2 target_space=frozen vocab=v7.0 config<-/home/nvidia/experiments/refav1-b1-v72-ep3-speed/config.json
+[loader] 67 windows over 1 episodes (W=4, K_loader=30, grid 0.2 s); labels=ON nav=ON
+[cost] metric=ccos weights={'W_JERK': 0.02, 'W_KAPPA': 0.05, 'W_VEND': 0.1} (shipped module constants); COST_METRICS=('cos', 'chord', 'ccos') from /home/nvidia/refav1_ccos/repo/stack/tanitad/refs/refa_v1.py
+[grid] K=10 (2.0 s) K_wm=30 stride=40 windows=2 arms=['cl', 'ha', 'ha0', 'ha0_ext', 'ol'] plan={samples 300, iters 30, elites 30, seed 0} nav_shuffle=0/2 changed
+[cost] first plan() took 36.87 s -> ESTIMATED 0.02 h for 2 windows x 1 planning arms (plan only; forward()/IO extra)
+  [1/1] 01be5919-6e6 2 windows 77s
+REFAV1_DUMP_DONE
+[trivial-profile] 2 windows — arm SHAPE before any family row (straight |y|<1e-06 m, const-speed spread<0.0001 m)
+  cl             n=   2 straight=0.5000 const_speed=0.5000 CONSTANT-VELOCITY=0.0000
+  ha             n=   2 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000
+  ha0            n=   2 straight=1.0000 const_speed=1.0000 CONSTANT-VELOCITY=1.0000
+  ha0_ext        n=   2 straight=0.5000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000
+  ol             n=   2 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000
+  ⚠️ CONSTANT-VELOCITY on > 50 % of windows: ['ha0'] — read their LATERAL rows as a control, never as planning skill
+[lead] b1_eval_lead_block.npz: 2 windows / 1 eps · OK eps 1 · LEAD 0 NO_LEAD 0 NOT_STRAIGHT 2 NO_LABEL 0 (no-row 0) · speed-check max 0.0 m/s · REFUSED
+[out] /home/nvidia/refav1_ccos/rec_smoke.json
+  cl             tier=T1  ADE=1.5787 [1.5787, 1.5787]  families_unavailable=['strategic']  distance_keeping=REFUSED n=None headway=None time_gap=None min_ttc=None
+  ha             tier=T1  ADE=0.1862 [0.1862, 0.1862]  families_unavailable=['strategic']  distance_keeping=REFUSED n=None headway=None time_gap=None min_ttc=None
+  ha0            tier=T1  ADE=0.5165 [0.5165, 0.5165]  families_unavailable=['strategic']  distance_keeping=REFUSED n=None headway=None time_gap=None min_ttc=None
+  ha0_ext        tier=T1  ADE=0.2121 [0.2121, 0.2121]  families_unavailable=['strategic']  distance_keeping=REFUSED n=None headway=None time_gap=None min_ttc=None
+  ol             tier=T0  ADE=0.1984 [0.1984, 0.1984]  families_unavailable=['strategic']  distance_keeping=REFUSED n=None headway=None time_gap=None min_ttc=None
+  distance_keeping coverage: {'LEAD': 0, 'NO_LEAD': 0, 'NOT_STRAIGHT': 2, 'NO_LABEL': 0} of 2 windows (no-row 0; eps OK 1/1) status=REFUSED
+  planner[cl] baseline_won_frac=0.5 sources={'cem': 0.5, 'baseline:decel_1.5': 0.5} goal={'tactical_imagined': 1.0} goal_action_lon={'BRAKE_TO': 0.5, 'ADAPT_SPEED_FOR_CURVE': 0.5}
+  strategic nav_valid_frac=1.0 n_labeled=1

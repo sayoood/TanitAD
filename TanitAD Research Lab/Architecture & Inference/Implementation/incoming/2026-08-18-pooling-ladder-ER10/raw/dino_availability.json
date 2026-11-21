@@ -1,0 +1,153 @@
+{
+ "_evidence_class": "MEASURED (ours; live HF probe from the dev box)",
+ "token_found_in_keys_txt": true,
+ "token_value_ever_printed": false,
+ "truststore_injected": true,
+ "probes": {
+  "facebook/dinov3-vitb16-pretrain-lvd1689m": {
+   "patch": 16,
+   "d_model": 768,
+   "why": "\u2b50 PREFERRED \u2014 /16 reproduces our 16x40 grid EXACTLY; LVD-1689M is the high-diversity corpus the discriminator needs",
+   "probe1_model_info": "OK",
+   "gated": "manual",
+   "files": [
+    ".gitattributes",
+    "LICENSE.md",
+    "README.md",
+    "config.json",
+    "model.safetensors",
+    "preprocessor_config.json"
+   ],
+   "probe2_list_repo_files": "OK",
+   "n_files": 6,
+   "has_safetensors": true,
+   "has_config": true,
+   "REACHABLE": true
+  },
+  "facebook/dinov3-vits16-pretrain-lvd1689m": {
+   "patch": 16,
+   "d_model": 384,
+   "why": "smaller /16 fallback, same corpus and same grid",
+   "probe1_model_info": "OK",
+   "gated": "manual",
+   "files": [
+    ".gitattributes",
+    "LICENSE.md",
+    "README.md",
+    "config.json",
+    "model.safetensors",
+    "preprocessor_config.json"
+   ],
+   "probe2_list_repo_files": "OK",
+   "n_files": 6,
+   "has_safetensors": true,
+   "has_config": true,
+   "REACHABLE": true
+  },
+  "facebook/dinov3-vitl16-pretrain-lvd1689m": {
+   "patch": 16,
+   "d_model": 1024,
+   "why": "larger /16, same corpus and same grid",
+   "probe1_model_info": "OK",
+   "gated": "manual",
+   "files": [
+    ".gitattributes",
+    "LICENSE.md",
+    "README.md",
+    "config.json",
+    "model.safetensors",
+    "preprocessor_config.json"
+   ],
+   "probe2_list_repo_files": "OK",
+   "n_files": 6,
+   "has_safetensors": true,
+   "has_config": true,
+   "REACHABLE": true
+  },
+  "facebook/dinov3-convnext-base-pretrain-lvd1689m": {
+   "patch": null,
+   "d_model": null,
+   "why": "convnext variant \u2014 NOT token-grid comparable",
+   "probe1_model_info": "OK",
+   "gated": "manual",
+   "files": [
+    ".gitattributes",
+    "LICENSE.md",
+    "README.md",
+    "config.json",
+    "model.safetensors",
+    "preprocessor_config.json"
+   ],
+   "probe2_list_repo_files": "OK",
+   "n_files": 6,
+   "has_safetensors": true,
+   "has_config": true,
+   "REACHABLE": true
+  },
+  "facebook/dinov2-base": {
+   "patch": 14,
+   "d_model": 768,
+   "why": "\u26a0\ufe0f /14 \u2014 does NOT tile 256x640; a substitution costs grid parity",
+   "probe1_model_info": "OK",
+   "gated": false,
+   "files": [
+    ".gitattributes",
+    "README.md",
+    "config.json",
+    "model.safetensors",
+    "preprocessor_config.json",
+    "pytorch_model.bin"
+   ],
+   "probe2_list_repo_files": "OK",
+   "n_files": 6,
+   "has_safetensors": true,
+   "has_config": true,
+   "REACHABLE": true
+  },
+  "facebook/dinov2-with-registers-base": {
+   "patch": 14,
+   "d_model": 768,
+   "why": "\u26a0\ufe0f /14, registers variant",
+   "probe1_model_info": "OK",
+   "gated": false,
+   "files": [
+    ".gitattributes",
+    "README.md",
+    "config.json",
+    "model.safetensors",
+    "preprocessor_config.json"
+   ],
+   "probe2_list_repo_files": "OK",
+   "n_files": 5,
+   "has_safetensors": true,
+   "has_config": true,
+   "REACHABLE": true
+  },
+  "timm/vit_base_patch16_224.dino": {
+   "patch": 16,
+   "d_model": 768,
+   "why": "\u26a0\ufe0f ORIGINAL DINO (v1), /16 \u2014 ImageNet-1k only, i.e. NOT high-diversity, so it does not serve the corpus-narrowness argument",
+   "probe1_model_info": "OK",
+   "gated": false,
+   "files": [
+    ".gitattributes",
+    "README.md",
+    "config.json",
+    "model.safetensors",
+    "pytorch_model.bin"
+   ],
+   "probe2_list_repo_files": "OK",
+   "n_files": 5,
+   "has_safetensors": true,
+   "has_config": true,
+   "REACHABLE": true
+  }
+ },
+ "local_packages": {
+  "transformers": "ABSENT (ModuleNotFoundError)",
+  "timm": "ABSENT (ModuleNotFoundError)",
+  "safetensors": "ABSENT (ModuleNotFoundError)",
+  "torch": "2.11.0+cu128"
+ },
+ "grid_parity_note": "our encoder: 256x640 px, patch 16 -> 16x40 = 640 tokens (sp1 meta token_grid). Only a /16 backbone reproduces it."
+}

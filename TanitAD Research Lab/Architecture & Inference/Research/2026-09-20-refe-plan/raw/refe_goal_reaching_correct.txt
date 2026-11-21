@@ -1,0 +1,53 @@
+goal_reaching IS CORRECT. A SINGLE-FRAME OBSERVATION WAS GENERALISED TO THE COMPONENT.
+MEASURED 2026-09-20. Retracts the 'goal progress is unvalidated' note written the same hour.
+
+THE CLAIM I MADE:  'goal_reaching.GoalReaching.info reads 0.0000 for EVERY candidate,
+                    including a stationary ego => the component is unvalidated.'
+IT WAS ONE FRAME.
+
+OVER 664 BANKED ROWS IT VARIES, AND IN THE RIGHT DIRECTION:
+  lon x1.5   45/74 reach a goal   <- driving further reaches goals more often
+  teacher    13/74
+  lat+-2     10/74
+  lat+-4      0/74                <- veering off misses them
+  over-curb   0/73
+  stopped     0/73                <- a stationary ego NEVER reaches a goal. Correct.
+  per-bank sd 0.294; NONE of the six components is constant.
+
+WHY THE SINGLE FRAME READ ZERO -- and it is not a defect:
+  goal points sit at 30.0 m and 60.0 m ahead (ego frame), threshold 3.0 m.
+  the teacher's 4 s path ends at 24.78 m -- short of 30 - 3 = 27 m.
+  GoalReaching fires when a STEP's swept segment passes within the threshold of a goal, so
+  every candidate that stops short reads 0. That is the calculator working.
+
+THE DISCRIMINATING CONTROL, which is what settled it:
+  a candidate driven ONTO the nearest goal point [30.0, -0.6]:
+    GoalReaching.info           teacher 0.0000   onto-goal 1.0000
+    GoalReaching.stage_reached  teacher 0.0000   onto-goal 1.0000
+
+PROCESS NOTE. This is the SAME over-generalisation that produced the SCORER_INERT verdict two
+hours earlier: an observation true of one setting, written down as a property of the
+instrument. The check that caught it was not a re-reading -- it was ScorerBank's whole-bank
+variance report in train.py, which measures every component's spread at load time precisely
+because a constant target trains a bias and looks exactly like a learned component.
+
+-------------------------------------------------------------------------------------------
+goal_positions (1, 128, 5, 4)  nonzero 20
+  ego goal points (ego frame): [[29.99, -0.63], [59.97, -1.77]]
+  distance from ego origin   : [30.0, 60.0] m
+  goal_reaching_threshold          3.0000
+  goal_reaching_weight             0.3000
+  goal_reaching_distance_weight    0.0000
+  survival_reward_numerator        0.0000
+
+  teacher 4 s endpoint      : [24.78, -0.52]  |24.78| m
+  => a 0.2 s STEP covers ~1-2 m; the nearest goal is the distance above.
+     GoalReaching fires only when the step's swept segment passes within the threshold,
+     so 0.0000 on a 4 s proposal is EXPECTED, not a broken calculator.
+
+  CONTROL -- a candidate driven ONTO the nearest goal point [30.0, -0.6]:
+    goal_reaching.GoalReaching.info              teacher   0.0000   onto-goal   1.0000
+    goal_reaching.GoalReaching.reward            teacher  -0.0000   onto-goal  -0.0000
+    goal_reaching.GoalReaching.stage_reached     teacher   0.0000   onto-goal   1.0000
+
+[exited with code 0]

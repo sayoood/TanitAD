@@ -1,0 +1,238 @@
+F....................F..............                                     [100%]
+================================== FAILURES ===================================
+___________ test_flag_off_reproduces_the_unmodified_tip_bit_for_bit ___________
+
+pack = <test_v8f_dagger_train.Pack object at 0x00000252E5769010>
+tmp_path = WindowsPath('F:/TanitAD-scratch/n1dw/build/tmp/reg_new/test_v8f_ego_dagger_compose/bt/test_flag_off_reproduces_the_u0')
+
+    def test_flag_off_reproduces_the_unmodified_tip_bit_for_bit(pack, tmp_path):
+        """K-BUILD: the golden was written by the unmodified tip (66b6c80e) for (a) a DAG-OACC-style argv, (b) an ORC-style argv and (c) plain M2b -- 4 CPU steps each on the trainer's synthetic world. With the flag
+        absent this tree must give the same log (every loss, every logged key), the same final weights and optimiser state, the same counters, and the same SET of keys in summary.json and in the checkpoint."""
+        got = {}
+        for name in ("dag", "orc", "m2b"):
+>           assert TR.main(_run(tmp_path / name, argv_family(pack, name))) == 0
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_ego_dagger_compose.py:101: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+scripts\v8f_mini_train.py:3826: in main
+    store, J, wins, clips, info = build_data(a, cfg)
+                                  ^^^^^^^^^^^^^^^^^^
+scripts\v8f_mini_train.py:3643: in build_data
+    w = D.make_synthetic_world(root, n_train=6, n_eval=2, T=60, seed=a.seed)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_v8f_dagger_train.py:61: in <lambda>
+    mp.setattr(D, "make_synthetic_world", lambda root, n_train=6, n_eval=3, T=70, seed=0, **kw: orig(root, n_train=n_train, n_eval=n_eval, T=SYN_T, seed=seed, **kw))
+                                                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+root = WindowsPath('F:/TanitAD-scratch/n1dw/build/tmp/reg_new/test_v8f_ego_dagger_compose/bt/test_flag_off_reproduces_the_u0/orc/_synthetic')
+n_train = 6, n_eval = 2, T = 90, seed = 5, d_feat = 1024
+
+    def make_synthetic_world(root, n_train=6, n_eval=3, T=70, seed=0, d_feat=D_FEAT) -> dict:
+        """A tiny world in the exact S4/v9 formats, for tests and the 30-step smoke. Real driving-like kinematics; the
+        features are random but ARE a function of (speed, curvature) so the model has something to learn."""
+        import torch
+        rng = np.random.default_rng(seed)
+        root = Path(root)
+        fk = _fk()
+        names = {"train": [f"syn-train-{i:03d}" for i in range(n_train)], "eval": [f"syn-eval-{i:03d}" for i in range(n_eval)]}
+        joins, windows, kin_eval, native = {}, {"order": names["eval"], "windows": {}}, [], {}
+        GY = {g: i for i, g in enumerate(GOAL22)}
+        for split, clips in names.items():
+            (root / split / "clips").mkdir(parents=True, exist_ok=True)
+            man = open(root / split / "manifest.jsonl", "w", encoding="utf-8")
+            entries = []
+            for cid in clips:
+                v = np.clip(8 + np.cumsum(rng.normal(0, 0.25, T)), 0.0, 25.0)
+                kap = np.cumsum(rng.normal(0, 0.004, T)) * 0.2
+                yaw = np.cumsum(v * kap * DT)
+                x = np.cumsum(v * np.cos(yaw) * DT)
+                y = np.cumsum(v * np.sin(yaw) * DT)
+                pose = np.stack([x, y, yaw, v], 1).astype(np.float32)
+                steer = np.arctan(2.9 * kap).astype(np.float32)
+                a = np.concatenate([(v[2:] - v[:-2]) / DT, [0.0, 0.0]]).astype(np.float32)
+                kin3 = np.full((T, 3), np.nan)
+                kin3[1:, 0] = v[1:]
+                kin3[1:, 1] = (v[1:] - v[:-1]) / DT
+                kin3[1:, 2] = steer[1:]
+                p10 = np.full((T, 8), np.nan, np.float32)
+                p10[1:] = fk.kin_features(kin3[1:]).astype(np.float32)
+>               f = rng.normal(0, 1, (T, N_TOK, d_feat)).astype(np.float32)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               numpy._core._exceptions._ArrayMemoryError: Unable to allocate 14.1 MiB for an array with shape (90, 40, 1024) and data type float32
+
+tanitad\data\v8f_mini_data.py:1357: MemoryError
+---------------------------- Captured stdout setup ----------------------------
+[1/2] ade 7.258 total 80.931 p_gt 1.00
+[2/2] ade 4.967 total 70.105 p_gt 0.60
+DONE {"steps": 2, "arm": "M2b", "seed": 5, "seconds": 10.10373568534851}
+[200/342 windows] 6s
+[342/342 windows] 11s
+wrote F:\TanitAD-scratch\n1dw\build\tmp\reg_new\test_v8f_ego_dagger_compose\bt\dagt0\bank\shard_000of001.npz  records 684  coverage 0.6462  K-B0 {'checked': 342, 'mismatch': 0}  K-B1 {'chunks': 5, 'windows': 40, 'mismatch_chunks': 0}
+wrote F:\TanitAD-scratch\n1dw\build\tmp\reg_new\test_v8f_ego_dagger_compose\bt\dagt0\bank\bank.json  bank sha256 08f4946e6102631adde11c4ac2fffb90f49871f44c5a123377be5f29bf537ca1  records 684  coverage 0.6462  K-B4 True  K-B5 True
+---------------------------- Captured stdout call -----------------------------
+[1/4] ade 8.421 total 58.805 p_gt 0.20
+[2/4] ade 6.468 total 55.524 p_gt 0.20
+[3/4] ade 5.821 total 53.133 p_gt 0.20
+[4/4] ade 11.245 total 61.673 p_gt 0.20
+DONE {"steps": 4, "arm": "M2b", "seed": 5, "seconds": 7.10982608795166}
+_ test_a_real_composed_run_feeds_the_loss_the_composed_batch_and_records_the_counts _
+
+pack = <test_v8f_dagger_train.Pack object at 0x00000252E5769010>
+tmp_path = WindowsPath('F:/TanitAD-scratch/n1dw/build/tmp/reg_new/test_v8f_ego_dagger_compose/bt/test_a_real_composed_run_feeds0')
+spy = [{'p10f': tensor([[[ 3.5124e+00, -5.3735e-01, -7.6913e-03,  ..., -2.7015e-02,
+          -9.4885e-02,  4.1329e-03],
+   ...e+00,  1.2978e+00, -6.6342e-03,  1.4504e+01,  4.9426e+00,
+         -2.5265e-02, -9.6220e-02, -8.6099e-03]]), ...}, ...]
+stage_calls = [{'step': 0, 'in': {'feats': tensor([[[[-0.0254, -1.2500, -0.3125,  ..., -0.6875, -0.6875, -1.2500],
+          [-1.250...alse, False, False,  True, False, False,  True,  True, False,
+         True,  True, False,  True, False,  True]), ...}]
+
+    def test_a_real_composed_run_feeds_the_loss_the_composed_batch_and_records_the_counts(pack, tmp_path, spy, stage_calls):
+        steps = 6
+        assert TR.main(_run(tmp_path / "ref", ["--steps", str(steps), "--init-ckpt", str(pack.ck)])) == 0               # the same data order with both levers off: the LOGGED batches
+        c0 = spy[-steps:]
+        spy.clear()
+>       assert TR.main(_run(tmp_path / "c", ["--steps", str(steps), *COMPOSED(pack, 0.5, 0.5)])) == 0
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_ego_dagger_compose.py:361: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+scripts\v8f_mini_train.py:4190: in main
+    for b in pf:
+             ^^
+scripts\v8f_mini_train.py:3738: in __iter__
+    raise x
+scripts\v8f_mini_train.py:3727: in _run
+    self.q.put(self.fn(x))
+               ^^^^^^^^^^
+scripts\v8f_mini_train.py:4187: in <lambda>
+    pf = Prefetch(gen_batches, (lambda idx: WW.collate_wm([ds.item(*w) for w in idx])) if a.wm_windows == "wmonly" else (lambda idx: D.collate([ds.item(*w) for w in idx])), depth=3)
+                                                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tanitad\data\v8f_mini_data.py:910: in collate
+    out["feats"] = stack("feats", torch.float16)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tanitad\data\v8f_mini_data.py:908: in <lambda>
+    stack = lambda key, dt=None: torch.as_tensor(np.stack([np.asarray(it[key]) for it in items]), dtype=dt)
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+arrays = [array([[[-0.9375  , -1.125   ,  1.125   , ..., -1.875   ,  1.625   ,
+          0.625   ],
+        [ 1.      ,  0.3125... 1.5    , -0.1562 , -0.2344 , ..., -1.75   ,  0.5625 ,
+         -0.2188 ]]], shape=(16, 40, 1024), dtype=float16), ...]
+axis = 0, out = None, dtype = None, casting = 'same_kind'
+
+    @array_function_dispatch(_stack_dispatcher)
+    def stack(arrays, axis=0, out=None, *, dtype=None, casting="same_kind"):
+        """
+        Join a sequence of arrays along a new axis.
+    
+        The ``axis`` parameter specifies the index of the new axis in the
+        dimensions of the result. For example, if ``axis=0`` it will be the first
+        dimension and if ``axis=-1`` it will be the last dimension.
+    
+        Parameters
+        ----------
+        arrays : sequence of ndarrays
+            Each array must have the same shape. In the case of a single ndarray
+            array_like input, it will be treated as a sequence of arrays; i.e.,
+            each element along the zeroth axis is treated as a separate array.
+    
+        axis : int, optional
+            The axis in the result array along which the input arrays are stacked.
+    
+        out : ndarray, optional
+            If provided, the destination to place the result. The shape must be
+            correct, matching that of what stack would have returned if no
+            out argument were specified.
+    
+        dtype : str or dtype
+            If provided, the destination array will have this dtype. Cannot be
+            provided together with `out`.
+    
+            .. versionadded:: 1.24
+    
+        casting : {'no', 'equiv', 'safe', 'same_kind', 'unsafe'}, optional
+            Controls what kind of data casting may occur. Defaults to 'same_kind'.
+    
+            .. versionadded:: 1.24
+    
+    
+        Returns
+        -------
+        stacked : ndarray
+            The stacked array has one more dimension than the input arrays.
+    
+        See Also
+        --------
+        concatenate : Join a sequence of arrays along an existing axis.
+        block : Assemble an nd-array from nested lists of blocks.
+        split : Split array into a list of multiple sub-arrays of equal size.
+        unstack : Split an array into a tuple of sub-arrays along an axis.
+    
+        Examples
+        --------
+        >>> import numpy as np
+        >>> rng = np.random.default_rng()
+        >>> arrays = [rng.normal(size=(3,4)) for _ in range(10)]
+        >>> np.stack(arrays, axis=0).shape
+        (10, 3, 4)
+    
+        >>> np.stack(arrays, axis=1).shape
+        (3, 10, 4)
+    
+        >>> np.stack(arrays, axis=2).shape
+        (3, 4, 10)
+    
+        >>> a = np.array([1, 2, 3])
+        >>> b = np.array([4, 5, 6])
+        >>> np.stack((a, b))
+        array([[1, 2, 3],
+               [4, 5, 6]])
+    
+        >>> np.stack((a, b), axis=-1)
+        array([[1, 4],
+               [2, 5],
+               [3, 6]])
+    
+        """
+        arrays = [asanyarray(arr) for arr in arrays]
+        if not arrays:
+            raise ValueError('need at least one array to stack')
+    
+        shapes = {arr.shape for arr in arrays}
+        if len(shapes) != 1:
+            raise ValueError('all input arrays must have the same shape')
+    
+        result_ndim = arrays[0].ndim + 1
+        axis = normalize_axis_index(axis, result_ndim)
+    
+        sl = (slice(None),) * axis + (_nx.newaxis,)
+        expanded_arrays = [arr[sl] for arr in arrays]
+>       return _nx.concatenate(expanded_arrays, axis=axis, out=out,
+                               dtype=dtype, casting=casting)
+E       numpy._core._exceptions._ArrayMemoryError: Unable to allocate 20.0 MiB for an array with shape (16, 16, 40, 1024) and data type float16
+
+C:\Users\Admin\venvs\tanitad\Lib\site-packages\numpy\_core\shape_base.py:465: MemoryError
+---------------------------- Captured stdout call -----------------------------
+[1/6] ade 6.364 total 49.450 p_gt 1.00
+[2/6] ade 4.267 total 46.434 p_gt 0.87
+[3/6] ade 4.870 total 43.006 p_gt 0.73
+[4/6] ade 8.498 total 48.178 p_gt 0.60
+[5/6] ade 5.224 total 42.536 p_gt 0.47
+[6/6] ade 5.803 total 40.804 p_gt 0.33
+DONE {"steps": 6, "arm": "M2b", "seed": 5, "seconds": 9.021644830703735}
+[1/6] ade 10.730 total 49.875 p_gt 1.00
+============================== warnings summary ===============================
+tests/test_v8f_ego_dagger_compose.py::test_flag_off_reproduces_the_unmodified_tip_bit_for_bit
+  F:\TanitAD-scratch\n1dw\build\tree\stack\scripts\v8f_mini_train.py:4284: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    "sec": time.time() - t0, **{k: float(v) for k, v in T.items()}}
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_v8f_ego_dagger_compose.py::test_flag_off_reproduces_the_unmodified_tip_bit_for_bit
+FAILED tests/test_v8f_ego_dagger_compose.py::test_a_real_composed_run_feeds_the_loss_the_composed_batch_and_records_the_counts
+2 failed, 34 passed, 1 warning in 599.05s (0:09:59)

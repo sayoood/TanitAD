@@ -1,0 +1,140 @@
+{
+ "tool": "code/ho_floor.py (NAVRBD step 0)",
+ "evidence_class": "MEASURED (ours; T1-kin dumps, zero training, CPU)",
+ "tier": "T1-kin (self-action open loop, m = 10, causal bucket; pinned t1 tool), route supplied along the driven path (optimistic by construction)",
+ "estimator": "taniteval.ci.paired_episode_cluster_bootstrap, B 2000, seed 0 (F:\\TanitAD-scratch\\strat1\\read/tree/taniteval/taniteval/ci.py); answers 'another draw of EPISODES' only (not another training run, not another inference run)",
+ "tac_lat_path": "obd_read.to_cells (obd_read.py:347-351) over obd_geom.build().labels = read_otband.labels (read_otband.py:112-118, factor_from_kinematics); load via strat1_read.load_dump_n (strat1_read.py:124); cell test via obd_read.cell_delta (obd_read.py:114)",
+ "grid": {
+  "windows": 5736,
+  "episodes": 497,
+  "sha256": "ca289d0f40a8f71043796fe626b26ecaa141853f843acdb1eecbf5648b9ab148",
+  "match": "windows equal the feasible grid exactly (clip, t)"
+ },
+ "D1_HO": {
+  "N1R_s0": 0.5904811715481172,
+  "N1R_s1": 0.6328451882845189
+ },
+ "F_HO": 0.042364016736401666,
+ "F_HO_paired_bootstrap_s1_minus_s0": {
+  "delta": 0.042364016736401666,
+  "lo": 0.026,
+  "hi": 0.0582,
+  "separated": true,
+  "n_windows": 5736,
+  "n_episodes": 497
+ },
+ "gt_class_share": {
+  "lane_keep": 0.33716875871687585,
+  "turn_left": 0.32461645746164575,
+  "turn_right": 0.3382147838214784
+ },
+ "descriptive": {
+  "N1R_s0": {
+   "pred_share": {
+    "lane_keep": 0.2592398884239888,
+    "turn_left": 0.46112273361227335,
+    "turn_right": 0.2796373779637378
+   },
+   "lane_keep_recall": 0.5439503619441571,
+   "turn_recall_any_side": 0.8855865334034718,
+   "side_given_turn": 0.6934956934956935,
+   "n_side_given_turn": 3367,
+   "false_turn_share_on_gt_lane_keep": 0.4560496380558428,
+   "confusion_rows_gt_cols_pred": [
+    [
+     1052,
+     622,
+     260
+    ],
+    [
+     149,
+     1352,
+     361
+    ],
+    [
+     286,
+     671,
+     983
+    ]
+   ]
+  },
+  "N1R_s1": {
+   "pred_share": {
+    "lane_keep": 0.29602510460251047,
+    "turn_left": 0.3624476987447699,
+    "turn_right": 0.3415271966527197
+   },
+   "lane_keep_recall": 0.5749741468459152,
+   "turn_recall_any_side": 0.8458705944239874,
+   "side_given_turn": 0.7829601990049752,
+   "n_side_given_turn": 3216,
+   "false_turn_share_on_gt_lane_keep": 0.4250258531540848,
+   "confusion_rows_gt_cols_pred": [
+    [
+     1112,
+     440,
+     382
+    ],
+    [
+     233,
+     1285,
+     344
+    ],
+    [
+     353,
+     354,
+     1233
+    ]
+   ]
+  }
+ },
+ "controls": {
+  "K1_self_pair": {
+   "delta": 0.0,
+   "lo": 0.0,
+   "hi": 0.0,
+   "pass": true
+  },
+  "K-CONST": {
+   "majority_class": "turn_right",
+   "majority_share": 0.3382147838214784,
+   "constant_accuracy": 0.3382147838214784,
+   "pass": true
+  },
+  "K-RE": {
+   "banked_cell": {
+    "status": "OK",
+    "delta": -0.004168403501458973,
+    "lo": -0.0163,
+    "hi": 0.0067,
+    "separated": false,
+    "floor": 0.00666944560233429,
+    "above_floor": false,
+    "gain": false,
+    "cost": false,
+    "n_windows": 2399,
+    "n_episodes": 141
+   },
+   "mine": {
+    "delta": -0.004168403501458973,
+    "lo": -0.0163,
+    "hi": 0.0067,
+    "n_windows": 2399,
+    "n_episodes": 141
+   },
+   "acc_N1R_s0": 0.775323051271363,
+   "acc_N1_s0": 0.779491454772822,
+   "pass": true
+  }
+ },
+ "dump_provenance": {
+  "N1R_s0": {
+   "done_file": "ZZ DUMP N1R_s0 DONE ZZ",
+   "t1_json_sha256": "0de29d1d5d8b5cb53338efe7bbd72689dc1673490a0cfba9d3c4d5d65feb5c94"
+  },
+  "N1R_s1": {
+   "done_file": "ZZ DUMP N1R_s1 DONE ZZ",
+   "t1_json_sha256": "e36c38b44cf3ba0071d78cb671d1fff2ec9ee7153adbebb4ec9a2ecc9642c895"
+  }
+ }
+}

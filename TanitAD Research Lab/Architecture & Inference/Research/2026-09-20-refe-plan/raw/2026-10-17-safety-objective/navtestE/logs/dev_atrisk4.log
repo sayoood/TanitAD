@@ -1,0 +1,24 @@
+MUT gates:key_suffix_not_enforced
+  expected-RED-at ['gates:state_key_must_be_the_name_suffix']
+  groups ['light']  5s
+  RED checks (1): ['gates:state_key_must_be_the_name_suffix']
+    reason[gates:state_key_must_be_the_name_suffix]: AssertionError: {'hard': {'harness_PASS_R0d_A': True, 'harness_PASS_R0d_B': True, 'harness_PASS_R1d_A': True, 'harness_PASS_R1d_B': True, 'picks_report_present': True, 'IC2_replicated_scorer_path_bit_equal': True, 'n_tokens_12146': True, 'states_bound_to_e
+  VERDICT: RED at the stated check; extra RED beyond the stated: []
+MUT plan:reader_command_without_the_addendum
+  expected-RED-at ['plan:script_names_every_stage_and_label_prefix']
+  groups ['light']  5s
+  RED checks (1): ['plan:script_names_every_stage_and_label_prefix']
+    reason[plan:script_names_every_stage_and_label_prefix]: AssertionError: --addendum raw/2026-10-17-safety-objective/PREREG_SAFEOBJ.addendum1.md
+  VERDICT: RED at the stated check; extra RED beyond the stated: []
+MUT cli:subset_allowed_without_the_dry_run_flag_(both_guard_layers_removed)
+  expected-RED-at ['cli:subset_refused_without_the_dry_run_flag']
+  groups ['cli', 'light']  28s
+  RED checks (0): []
+  VERDICT: NOT RED AT THE STATED CHECK; extra RED beyond the stated: []
+MUT cli:dry_run_writes_the_real_file_name
+  expected-RED-at ['cli:dry_run_names_only_DRYRUN_files']
+  groups ['cli', 'light']  24s
+  RED checks (1): ['cli:dry_run_names_only_DRYRUN_files']
+    reason[cli:dry_run_names_only_DRYRUN_files]: AssertionError: ['navtest_E.json', 'navtest_E.provenance.json', 'navtest_families.DRYRUN.json']
+  VERDICT: RED at the stated check; extra RED beyond the stated: []
+ZZATRISK_DONE

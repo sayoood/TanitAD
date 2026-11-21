@@ -1,0 +1,21 @@
+RC 1 | sentinel ["0000000000000000:outer_not_a_suite_entry", "90b7cb8e9342e0a4:test_sft4r_gate.py"]
+---- stdout tail
+  [timing] run: tree_manifest 0.0s, data_manifest 0.0s (--ckpt 0.0s, --targets 0.0s, --images 0.0s, --calib 0.0s)
+  G-HYG     PASS  
+  G-DVB     PASS  
+  G-PREFLIGHT PASS  
+  G-SUITE   FAIL  G-SUITE refuses to nest: this process is already 2 suite level(s) deep (limit 2); running above it: ['0000000000000000:outer_not_a_suite_entry', '90b7cb8e9342e0a4:test_sft4r_gate.py']
+  G-EGR     PASS  
+  G-CLOCK   NA    SFT-4R has no label clock of its own: its labels are the PDM relabel of an on-policy bank, stamped by the relabeller's ckpt_step; the preflight's G9 bounds the stale share and G-DVB asserts the covera
+ZZTEST_FAIL after 132 checks: {'G-HYG': 'PASS', 'G-DVB': 'PASS', 'G-PREFLIGHT': 'PASS', 'G-SUITE': 'FAIL', 'G-EGR': 'PASS', 'G-CLOCK': 'NA'}
+---- stderr tail
+Traceback (most recent call last):
+  File "C:\so\s4r_p\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_sft4r_gate.py", line 319, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\so\s4r_p\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_sft4r_gate.py", line 236, in main
+    ok(st == {"G-HYG": "PASS", "G-DVB": "PASS", "G-PREFLIGHT": "PASS", "G-SUITE": "PASS", "G-EGR": "PASS", "G-CLOCK": "NA"}, st)
+  File "C:\so\s4r_p\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_sft4r_gate.py", line 42, in ok
+    assert cond, msg
+           ^^^^
+AssertionError: {'G-HYG': 'PASS', 'G-DVB': 'PASS', 'G-PREFLIGHT': 'PASS', 'G-SUITE': 'FAIL', 'G-EGR': 'PASS', 'G-CLOCK': 'NA'}

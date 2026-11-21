@@ -1,0 +1,62 @@
+clips 220 records 41537
+  clip 50 static-instances so far 46844
+  clip 100 static-instances so far 81803
+  clip 150 static-instances so far 133071
+{
+ "G2_formula_join_ts_minus_sidecar_clock": {
+  "min": -0.20064253988498137,
+  "p05": -0.19950874761240095,
+  "med": -0.1953413660043979,
+  "p95": -0.19071123560823047,
+  "max": -0.18739988665919682,
+  "n": 41537
+ },
+ "join_ts_minus_CAMERA_grid": {
+  "min": -0.0013469899999999924,
+  "p05": -0.00041461400000386556,
+  "med": -3.657000000067967e-05,
+  "p95": 0.00045264200000332233,
+  "max": 0.010908680000000004,
+  "n": 41537
+ },
+ "sidecar_clock_on_raw_clock_minus_CAMERA_grid": {
+  "min": -4.3334080146451015e-07,
+  "p05": -4.6550144894297316e-08,
+  "med": -8.278391305793775e-10,
+  "p95": 5.206900084431252e-08,
+  "max": 5.725718494886678e-07,
+  "n": 41537
+ },
+ "ego_log_first_timestamp_s": {
+  "min": -0.2,
+  "p05": -0.199509,
+  "med": -0.1953095,
+  "p95": -0.1908013,
+  "max": -0.189911,
+  "n": 220
+ },
+ "per_clip_g2_minus_ts0": {
+  "min": -0.0006325632461508246,
+  "p05": -0.00033236025213192745,
+  "med": -4.543933768381969e-05,
+  "p95": 0.0003198663023797425,
+  "max": 0.00511020828166403,
+  "n": 220
+ },
+ "frame_minus_frame_idx_counts": {
+  "2": 220
+ },
+ "corr_g2_med_vs_ts0": 0.9883590246456925,
+ "two_dt_median": 0.201333289795583,
+ "n_clips": 220
+}
+C0 median |poses - ego(T_{i+k})| by k: {'k-3': 2.4813031854167837, 'k-2': 1.6572292880979413, 'k-1': 0.8270618001106569, 'k+0': 1.3568790469239347e-06, 'k+1': 0.8270608033855904, 'k+2': 1.6572305832376037, 'k+3': 2.4813032464263243}
+TRUE_labels delta* 0.0001 CI [-0.0001, 0.0004] err@0 0.1 err@-0.2 1.715 n_inst 206957 n_clips 173
+CONTROL_shift_+0.10s delta* 0.1001 CI [0.0999, 0.1004] err@0 0.862 err@-0.2 2.568 n_inst 206957 n_clips 173
+CONTROL_shift_-0.10s delta* -0.0999 CI [-0.1001, -0.0997] err@0 0.86 err@-0.2 0.863 n_inst 206957 n_clips 173
+CONTROL_shift_-0.20s delta* -0.1999 CI [-0.2001, -0.1996] err@0 1.712 err@-0.2 0.1 n_inst 206957 n_clips 173
+CONTROL_miskey_+2frames delta* -0.2009 CI [-0.2011, -0.2006] err@0 1.715 err@-0.2 0.107 n_inst 206957 n_clips 173
+CONTROL_miskey_-2frames delta* 0.2 CI [0.2, 0.2] err@0 1.723 err@-0.2 3.427 n_inst 206957 n_clips 173
+CONTROL_miskey_+1frames delta* -0.1004 CI [-0.1006, -0.1001] err@0 0.864 err@-0.2 0.858 n_inst 206957 n_clips 173
+expected {'shift+0.10': 0.1, 'shift-0.10': -0.1, 'shift-0.20': -0.2, 'miskey+2': -0.201333289795583, 'miskey-2': 0.201333289795583}
+C {'lines_compared': 120000, 'same_key_and_t_s': 120000, 'same_xy_and_track_ids': 120000, 'agents': 4146672, 'agents_with_cz': 4146672}

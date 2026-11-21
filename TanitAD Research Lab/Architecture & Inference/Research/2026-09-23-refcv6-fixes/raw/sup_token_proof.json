@@ -1,0 +1,55 @@
+{
+ "_what": "the supervisor's error-count token, old (fe5872f) vs fixed, from its REAL block",
+ "_evidence_class": "MEASURED (ours), Git Bash on the dev box",
+ "cases": {
+  "empty_stderr": {
+   "old": {
+    "token": "ZZrefcv6-r101-s0-6571-50400-0-1ZZ",
+    "expected": "ZZrefcv6-r101-s0-6571-50400-0-1ZZ",
+    "match": true
+   },
+   "fixed": {
+    "token": "ZZrefcv6-r101-s0-6571-50400-0-1ZZ",
+    "expected": "ZZrefcv6-r101-s0-6571-50400-0-1ZZ",
+    "match": true
+   }
+  },
+  "one_benign_line_like_the_live_run": {
+   "old": {
+    "token": "ZZrefcv6-r101-s0-6571-50400-0\n0-1ZZ",
+    "expected": "ZZrefcv6-r101-s0-6571-50400-0\n0-1ZZ",
+    "match": true
+   },
+   "fixed": {
+    "token": "ZZrefcv6-r101-s0-6571-50400-0-1ZZ",
+    "expected": "ZZrefcv6-r101-s0-6571-50400-0-1ZZ",
+    "match": true
+   }
+  },
+  "two_tracebacks": {
+   "old": {
+    "token": "ZZrefcv6-r101-s0-6571-50400-2-1ZZ",
+    "expected": "ZZrefcv6-r101-s0-6571-50400-2-1ZZ",
+    "match": true
+   },
+   "fixed": {
+    "token": "ZZrefcv6-r101-s0-6571-50400-2-1ZZ",
+    "expected": "ZZrefcv6-r101-s0-6571-50400-2-1ZZ",
+    "match": true
+   }
+  },
+  "grep_cannot_read_the_log_exit2": {
+   "old": {
+    "token": "ZZrefcv6-r101-s0-6571-50400-0-1ZZ",
+    "expected": "ZZrefcv6-r101-s0-6571-50400-0-1ZZ",
+    "match": true
+   },
+   "fixed": {
+    "token": "ZZrefcv6-r101-s0-6571-50400-U-1ZZ",
+    "expected": "ZZrefcv6-r101-s0-6571-50400-U-1ZZ",
+    "match": true
+   }
+  }
+ },
+ "_VERDICT": "PROVEN -- the old block splits its token on a benign stderr and reports an unread log as 0; the fixed block emits one line and U"
+}

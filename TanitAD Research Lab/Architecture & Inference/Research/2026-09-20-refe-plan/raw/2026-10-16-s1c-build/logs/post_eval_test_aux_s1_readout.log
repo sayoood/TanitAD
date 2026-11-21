@@ -1,0 +1,29 @@
+unmutated module: 29 checks GREEN
+GREEN real_store_navtest_oracle_and_leak_cli
+GREEN real_store_a2_floor_cli
+mutation                           class     must go RED -> went RED
+sign_pdms_delta_reversed           sign      chk_selection_exact[AssertionError]
+sign_e2_not_negated                sign      chk_selection_exact[AssertionError]
+sign_p3_score_inverted             sign      chk_corner_min_sdf[AssertionError]
+sign_p3_pass_label_inverted        sign      chk_p3_integration[AssertionError]
+sign_dac_split_inverted            sign      chk_p1_exact[AssertionError], chk_p1_split_direction[AssertionError]
+unpaired_ratio_bootstrap           unpaired  chk_selfpair_zero[AssertionError], chk_swap_flips[AssertionError], chk_pairing_is_paired[AssertionError]
+unpaired_auc_bootstrap             unpaired  chk_selfpair_zero[AssertionError], chk_swap_flips[AssertionError]
+bootstrap_not_pe_boot              unpaired  chk_boot_scheme_is_pe_boot[AssertionError]
+mask_lookup_band_axis_swapped      xy        chk_band_geometry[AssertionError], chk_p1_exact[AssertionError]
+mask_lookup_p3_xy_swapped          xy        chk_corner_min_sdf[AssertionError], chk_p3_integration[AssertionError]
+leak_key_guard_off                 leak      chk_leak_key_and_log[AssertionError]
+leak_heldout_guard_off             leak      chk_leak_heldout[AssertionError]
+leak_train_keys_not_filtered       leak      chk_train_keys_for[AssertionError]
+Traceback (most recent call last):
+  File "C:\Users\Admin\AppData\Local\Temp\s1c_work\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\eval\test_aux_s1_readout.py", line 826, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\Users\Admin\AppData\Local\Temp\s1c_work\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\eval\test_aux_s1_readout.py", line 808, in main
+    assert cnt == 1, f"mutation {name}: the snippet occurs {cnt} times (must be exactly 1) -- a vacuous mutation proves nothing"
+           ^^^^^^^^
+AssertionError: mutation pair_seed_ignored: the snippet occurs 0 times (must be exactly 1) -- a vacuous mutation proves nothing
+
+real	0m28.578s
+user	0m0.015s
+sys	0m0.015s

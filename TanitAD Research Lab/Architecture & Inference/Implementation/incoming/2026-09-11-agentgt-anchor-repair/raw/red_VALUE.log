@@ -1,0 +1,160 @@
+..........FF......FF.                                                    [100%]
+================================== FAILURES ===================================
+____________ test_agent_gt_REACHES_THE_FORWARD_under_agents_oracle ____________
+
+    def test_agent_gt_REACHES_THE_FORWARD_under_agents_oracle():
+        """⛔ THE CLAIM, as an assertion. Not *"the token appears in the file"* —
+        the forward is run and asked what it was handed."""
+        T = _trainer()
+        _model, losses, seen = _run(T, "oracle", spy=True)
+        assert seen["n_calls"] == 1
+        ag = seen["agent_gt"]
+        assert ag is not None, (
+            "`--agents oracle` reached RefCV3Model.forward with agent_gt=None. "
+            "The oracle's tokens ARE the ground-truth boxes; the arm would read "
+            f"as 'agent tokens do not help' while never having had any. "
+            f"{RECORD_DOC}")
+        assert sorted(ag.keys()) == ["box", "cls", "rates", "valid", "yaw"]
+        assert tuple(ag["box"].shape) == (2, 8, 4)
+        assert tuple(ag["yaw"].shape) == (2, 8)
+        assert tuple(ag["cls"].shape) == (2, 8)
+        assert tuple(ag["valid"].shape) == (2, 8)
+        assert tuple(ag["rates"].shape) == (2, 8, 3)
+        assert ag["valid"].dtype is torch.bool
+        assert ag["cls"].dtype is torch.int64
+        # ...and it is THIS test's tensors, not some other batch's
+        box, yaw, cls, valid = _gt_tensors()
+>       assert torch.equal(ag["box"], box)
+E       assert False
+E        +  where False = <built-in method equal of type object at 0x00007FFA5C718DE0>(tensor([[[23.3969,  9.9521, 28.3685, 28.2756],\n         [11.3105, 19.0025, 10.2834, 27.1895],\n         [16.6126, 36.05...115,  6.1969, 22.5465],\n         [12.6956, 21.9615, 31.7893, 30.8535],\n         [19.6547, 24.2019, 27.4427,  6.3235]]]), tensor([[[11.6985,  4.9761, 14.1842, 14.1378],\n         [ 5.6552,  9.5012,  5.1417, 13.5947],\n         [ 8.3063, 18.02...058,  3.0985, 11.2732],\n         [ 6.3478, 10.9808, 15.8946, 15.4267],\n         [ 9.8274, 12.1010, 13.7214,  3.1618]]]))
+E        +    where <built-in method equal of type object at 0x00007FFA5C718DE0> = torch.equal
+
+tests\test_refc_v3_agent_gt_reaches_forward.py:294: AssertionError
+________ test_the_ORACLES_EMITTED_TOKENS_ARE_THE_BATCHS_BOXES_BITWISE _________
+
+    def test_the_ORACLES_EMITTED_TOKENS_ARE_THE_BATCHS_BOXES_BITWISE():
+        """⛔⛔ THE ASSERTION WITH CONTENT — value flow THROUGH the seam, one level
+        past the kwarg. ``degrade_boxes`` returns its inputs unchanged at
+        ``sigma = 0 / miss = 0``, so a byte-for-byte match proves the batch's boxes
+        are what the decoder cross-attends. A dict built from the wrong tensors
+        would satisfy the test above and fail this one."""
+        T = _trainer()
+        _model, _losses, seen = _run(T, "oracle", spy=True)
+        out = seen["out"]
+        assert "agent_slots" in out
+        slots = out["agent_slots"]
+        assert tuple(slots["box"].shape) == (2, 8, 4)
+        box, _yaw, _cls, valid = _gt_tensors()
+>       assert torch.equal(slots["box"].detach(), box)
+E       assert False
+E        +  where False = <built-in method equal of type object at 0x00007FFA5C718DE0>(tensor([[[23.3969,  9.9521, 28.3685, 28.2756],\n         [11.3105, 19.0025, 10.2834, 27.1895],\n         [16.6126, 36.05...115,  6.1969, 22.5465],\n         [12.6956, 21.9615, 31.7893, 30.8535],\n         [19.6547, 24.2019, 27.4427,  6.3235]]]), tensor([[[11.6985,  4.9761, 14.1842, 14.1378],\n         [ 5.6552,  9.5012,  5.1417, 13.5947],\n         [ 8.3063, 18.02...058,  3.0985, 11.2732],\n         [ 6.3478, 10.9808, 15.8946, 15.4267],\n         [ 9.8274, 12.1010, 13.7214,  3.1618]]]))
+E        +    where <built-in method equal of type object at 0x00007FFA5C718DE0> = torch.equal
+E        +    and   tensor([[[23.3969,  9.9521, 28.3685, 28.2756],\n         [11.3105, 19.0025, 10.2834, 27.1895],\n         [16.6126, 36.05...115,  6.1969, 22.5465],\n         [12.6956, 21.9615, 31.7893, 30.8535],\n         [19.6547, 24.2019, 27.4427,  6.3235]]]) = <built-in method detach of Tensor object at 0x00000279A3A16530>()
+E        +      where <built-in method detach of Tensor object at 0x00000279A3A16530> = tensor([[[23.3969,  9.9521, 28.3685, 28.2756],\n         [11.3105, 19.0025, 10.2834, 27.1895],\n         [16.6126, 36.05...115,  6.1969, 22.5465],\n         [12.6956, 21.9615, 31.7893, 30.8535],\n         [19.6547, 24.2019, 27.4427,  6.3235]]]).detach
+
+tests\test_refc_v3_agent_gt_reaches_forward.py:314: AssertionError
+__________________ test_the_ORACLE_value_assertion_CAN_FAIL ___________________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2019/test_the_ORACLE_value_assertio0')
+
+    def test_the_ORACLE_value_assertion_CAN_FAIL(tmp_path):
+        """⛔ The other half of the same discipline, on the ON side. Corrupt the
+        VALUE inside the branch and leave the gate alone: the oracle's bitwise
+        assertion must break while nothing else can see the change."""
+>       M = _mutate(tmp_path, "value_corrupt",
+                    CORRUPT_VALUE_FROM, CORRUPT_VALUE_TO)
+
+tests\test_refc_v3_agent_gt_reaches_forward.py:416: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2019/test_the_ORACLE_value_assertio0')
+name = 'value_corrupt'
+old = '        agent_gt = {"box": batch["agent_box"].to(device),'
+new = '        agent_gt = {"box": batch["agent_box"].to(device) * 2.0,'
+
+    def _mutate(tmp_path, name: str, old: str, new: str):
+        r"""A COPY of the trainer with one exact substitution, imported as its own
+        module.
+    
+        ⛔ Read and written as BYTES: a text-mode round-trip on Windows rewrites
+        every line ending, which turns a one-line mutant into a 5,640-line diff and
+        makes the arm impossible to audit (MEASURED 2026-09-10 — and ``grep -c``
+        for a carriage return reported 0 while the file SIZE said otherwise, so the
+        size was the artifact that settled it).
+    
+        ⛔ The anchor is resolved to this checkout's line ending by
+        :func:`_resolve_anchor`; the trainer's own bytes are NOT normalised, so the
+        mutant still differs from the shipped file by exactly ONE HUNK on every
+        platform and stays auditable.
+        """
+        src = open(_TRAINER_PY, "rb").read()
+        ob, n = _resolve_anchor(src, old)
+        nb = new.encode("utf-8").replace(b"\n", _eol(src))
+>       assert n == 1, (
+            f"the mutation anchor for {name!r} matched {n} times, not 1. The "
+            f"deliberate-regression arm is DISARMED, so this test would pass "
+            f"without proving anything. Re-anchor it against the current "
+            f"`refc_v3_train.py`; see {RECORD_DOC}.\nanchor:\n{old}")
+E       AssertionError: the mutation anchor for 'value_corrupt' matched 0 times, not 1. The deliberate-regression arm is DISARMED, so this test would pass without proving anything. Re-anchor it against the current `refc_v3_train.py`; see TanitAD Research Lab/Architecture & Inference/Research/2026-09-09-wpc-oracle-gate/raw/APPLICATION_RECORD.md.
+E         anchor:
+E                 agent_gt = {"box": batch["agent_box"].to(device),
+E       assert 0 == 1
+
+tests\test_refc_v3_agent_gt_reaches_forward.py:182: AssertionError
+____________ test_the_VALUE_corruption_leaves_agents_off_UNTOUCHED ____________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2019/test_the_VALUE_corruption_leav0')
+
+    def test_the_VALUE_corruption_leaves_agents_off_UNTOUCHED(tmp_path):
+        """⛔ ...and its converse, which is what makes the pair a discriminator
+        rather than two separate observations: the in-branch corruption must be
+        INVISIBLE to ``--agents off``. If this failed, the corruption would be
+        leaking outside the gate and the test above would prove nothing about
+        where the sensitivity lives."""
+        T = _trainer()
+>       M = _mutate(tmp_path, "value_corrupt_off",
+                    CORRUPT_VALUE_FROM, CORRUPT_VALUE_TO)
+
+tests\test_refc_v3_agent_gt_reaches_forward.py:431: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2019/test_the_VALUE_corruption_leav0')
+name = 'value_corrupt_off'
+old = '        agent_gt = {"box": batch["agent_box"].to(device),'
+new = '        agent_gt = {"box": batch["agent_box"].to(device) * 2.0,'
+
+    def _mutate(tmp_path, name: str, old: str, new: str):
+        r"""A COPY of the trainer with one exact substitution, imported as its own
+        module.
+    
+        ⛔ Read and written as BYTES: a text-mode round-trip on Windows rewrites
+        every line ending, which turns a one-line mutant into a 5,640-line diff and
+        makes the arm impossible to audit (MEASURED 2026-09-10 — and ``grep -c``
+        for a carriage return reported 0 while the file SIZE said otherwise, so the
+        size was the artifact that settled it).
+    
+        ⛔ The anchor is resolved to this checkout's line ending by
+        :func:`_resolve_anchor`; the trainer's own bytes are NOT normalised, so the
+        mutant still differs from the shipped file by exactly ONE HUNK on every
+        platform and stays auditable.
+        """
+        src = open(_TRAINER_PY, "rb").read()
+        ob, n = _resolve_anchor(src, old)
+        nb = new.encode("utf-8").replace(b"\n", _eol(src))
+>       assert n == 1, (
+            f"the mutation anchor for {name!r} matched {n} times, not 1. The "
+            f"deliberate-regression arm is DISARMED, so this test would pass "
+            f"without proving anything. Re-anchor it against the current "
+            f"`refc_v3_train.py`; see {RECORD_DOC}.\nanchor:\n{old}")
+E       AssertionError: the mutation anchor for 'value_corrupt_off' matched 0 times, not 1. The deliberate-regression arm is DISARMED, so this test would pass without proving anything. Re-anchor it against the current `refc_v3_train.py`; see TanitAD Research Lab/Architecture & Inference/Research/2026-09-09-wpc-oracle-gate/raw/APPLICATION_RECORD.md.
+E         anchor:
+E                 agent_gt = {"box": batch["agent_box"].to(device),
+E       assert 0 == 1
+
+tests\test_refc_v3_agent_gt_reaches_forward.py:182: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_refc_v3_agent_gt_reaches_forward.py::test_agent_gt_REACHES_THE_FORWARD_under_agents_oracle
+FAILED tests/test_refc_v3_agent_gt_reaches_forward.py::test_the_ORACLES_EMITTED_TOKENS_ARE_THE_BATCHS_BOXES_BITWISE
+FAILED tests/test_refc_v3_agent_gt_reaches_forward.py::test_the_ORACLE_value_assertion_CAN_FAIL
+FAILED tests/test_refc_v3_agent_gt_reaches_forward.py::test_the_VALUE_corruption_leaves_agents_off_UNTOUCHED
+4 failed, 17 passed in 4.72s

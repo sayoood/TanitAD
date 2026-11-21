@@ -1,0 +1,64 @@
+{
+ "tool": "s0l_read.py",
+ "card": "theory/stopperc/PREREG_V8F_STOPPERC.md section 4 (S0-L)",
+ "tier": "T1-kin (first tick, eval-141); a decision-head diagnostic, never driving performance",
+ "estimator": "taniteval.ci.paired_stat_cluster_bootstrap, B=2000, seed 0, by episode, same resample for both arms; answers 'another draw of EPISODES' only, not 'another training run'",
+ "ci_py_sha256": "528276c5a51a94dc614406a6907b7f0da51081f6d3bd8bf5d8432857393755be",
+ "floor": 0.037,
+ "floor_source": "card section 4; STOPBAL VERDICT_STOPBAL.md:35 'about 0.037' (INHERITED, not re-measured here)",
+ "counts": {
+  "n_windows": 2365,
+  "n_pos": 131,
+  "n_episodes": 139
+ },
+ "counts_expected_STOPCUE": {
+  "n_windows": 2365,
+  "n_pos": 131,
+  "n_episodes": 139
+ },
+ "inputs": {
+  "L": {
+   "path": "out/stopdec_L/stopdec_L_s0.npz",
+   "sha256": "c1f3670a5c4e3e940aba4ca1fa45f66925e3c6637661309700a8adacf619f5d2"
+  },
+  "B_prime_s0": {
+   "path": "out/stopdec_L/stopdec_BPRIME_s0.npz",
+   "sha256": "00910001cfc2222f5c9c4302476f8959d167385373990f3f1399448cb0fec35d"
+  }
+ },
+ "stopcue_statistic": "AUROC of goal_prob[:,6] (p(STOP_POINT)) vs stop_hit on the `has` windows (stopcue_read.py:75-77)",
+ "goal_stop": {
+  "auroc_a": 0.8655887156847335,
+  "auroc_b": 0.8561270305548532,
+  "dauc": 0.009461685129880326,
+  "lo": -0.0289,
+  "hi": 0.0525,
+  "separated": false,
+  "p_delta_gt0": 0.673,
+  "undefined": false,
+  "n_boot": 2000
+ },
+ "gain": false,
+ "rule": "AMENDMENT_5_S0L.md: GAIN iff paired dAUC point > 0.037 AND paired CI lower bound > 0; otherwise NO-GAIN. One training seed per arm: a GAIN licenses L-DAG, not a lever claim (H-ESTIM-SEED-1).",
+ "point_only_beside": false,
+ "ci_lower_above_zero": false,
+ "descriptive_dauc_below_minus_floor": false,
+ "beside_lon_stop_vs_regime_stop": {
+  "auroc_a": 0.7705611395772451,
+  "auroc_b": 0.7595401590900156,
+  "dauc": 0.011020980487229548,
+  "lo": -0.0198,
+  "hi": 0.0429,
+  "separated": false,
+  "p_delta_gt0": 0.7725,
+  "undefined": false,
+  "n_boot": 2000
+ },
+ "families": {
+  "TACTICAL": "COVERED (stop / not-stop decision quality: AUROC of p(STOP_POINT) against stop_hit)",
+  "LONGITUDINAL": "NOT COVERED by S0-L (no speed, acceleration or distance-keeping cell is read; those stay with the OTBAND four-family reader)",
+  "LATERAL": "NOT COVERED by S0-L (no heading, curvature, yaw-rate or cross-track cell is read)",
+  "STRATEGIC": "PAUSED (PI item 25, PI_DECISION_QUEUE): reported as paused, never a pass"
+ },
+ "licenses_if_gain": "L-DAG 'conditional on S0-L' (card section 4 table): proceed to DAG-OACC from L on an L-merged train cache. A non-gain does not license it; it licenses 'otherwise the 416x1024 source (Q5)' per PERC-NULL."
+}

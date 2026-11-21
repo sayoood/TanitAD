@@ -1,0 +1,64 @@
+anchors: 13/13 present exactly once
+baseline: rc=0  134 passed, 1 skipped, 1 warning in 12.85s
+
+CAUGHT       rig_camera_none
+             1 failed, 133 passed, 1 skipped, 1 warning in 13.83s
+             tests/test_refc_v3_agent_provenance.py::test_P1_the_trainer_never_assigns_a_CONSTANT_None_rig_camera <-- named
+
+CAUGHT       off_camera_refusal_removed
+             2 failed, 132 passed, 1 skipped, 1 warning in 13.80s
+             tests/test_refc_v3_agent_provenance.py::test_P1_weight_without_a_camera_REFUSES[--agent-w-ground] <-- named
+             tests/test_refc_v3_agent_provenance.py::test_P1_weight_without_a_camera_REFUSES[--agent-w-project] <-- named
+
+CAUGHT       monocular_terms_skipped
+             1 failed, 133 passed, 1 skipped, 1 warning in 13.74s
+             tests/test_refc_v3_agent_provenance.py::test_P1_the_camera_the_TRAINER_builds_makes_the_terms_COMPUTE <-- named
+
+CAUGHT       ground_term_skipped
+             1 failed, 133 passed, 1 skipped, 1 warning in 13.64s
+             tests/test_refc_v3_agent_provenance.py::test_P1_the_camera_the_TRAINER_builds_makes_the_terms_COMPUTE <-- named
+
+CAUGHT       unsupervised_detector_allowed
+             1 failed, 133 passed, 1 skipped, 1 warning in 13.63s
+             tests/test_refc_v3_refcv5_wiring.py::test_agent_head_without_its_LOSS_REFUSES <-- named
+
+CAUGHT       weights_absent_from_config
+             2 failed, 132 passed, 1 skipped, 1 warning in 13.83s
+             tests/test_refc_v3_refcv5_wiring.py::test_seam_stamp_carries_every_refcv5_lever <-- named
+             tests/test_refc_v3_refcv5_wiring.py::test_seam_stamp_on_a_DEFAULT_run_says_off 
+
+CAUGHT       registry_anchor_rotted
+             1 failed, 133 passed, 1 skipped, 1 warning in 13.52s
+             tests/test_guard_mutation_audit.py::test_every_anchor_is_present_in_the_shipped_source_exactly_once <-- named
+
+CAUGHT       registry_names_a_dead_guard
+             1 failed, 133 passed, 1 skipped, 1 warning in 13.31s
+             tests/test_guard_mutation_audit.py::test_every_named_guard_actually_exists <-- named
+
+CAUGHT       weight_lost_between_argv_and_config
+             1 failed, 133 passed, 1 skipped, 1 warning in 13.00s
+             tests/test_refc_v3_agent_provenance.py::test_P1_the_two_weights_SURVIVE_the_trip_from_argv_to_the_LOSS_CONFIG <-- named
+
+CAUGHT       knob_stamp_emptied
+             2 failed, 132 passed, 1 skipped, 1 warning in 13.00s
+             tests/test_refc_v3_agent_provenance.py::test_P2_assert_knobs_stamped_FAILS_a_stamp_that_lost_a_knob 
+             tests/test_refc_v3_agent_provenance.py::test_P2_every_knob_is_recoverable_from_the_stamp_BY_VALUE <-- named
+
+CAUGHT       bev_mirrored_world
+             3 failed, 131 passed, 1 skipped, 1 warning in 12.90s
+             tests/test_bev_aux.py::test_MUTATION_mirrored_world_moves_every_column <-- named
+             tests/test_bev_aux.py::test_MUTATION_pinhole_fov_deletes_the_near_lateral_band 
+             tests/test_bev_aux.py::test_every_occupied_cell_is_confirmed_by_an_independent_predicate <-- named
+
+CAUGHT       bev_two_state_merge
+             2 failed, 132 passed, 1 skipped, 1 warning in 13.31s
+             tests/test_bev_aux.py::test_MUTATION_two_state_merge_supervises_occluded_space_as_free <-- named
+             tests/test_bev_aux.py::test_census_counts_are_consistent_literals <-- named
+
+CAUGHT       bev_head_not_constructed_last
+             2 failed, 132 passed, 1 skipped, 1 warning in 13.79s
+             tests/test_bev_aux.py::test_planner_output_bit_identical <-- named
+             tests/test_bev_aux.py::test_shared_params_bit_identical <-- named
+
+=== 13/13 defects CAUGHT by the named guard ===
+tree restored and verified by sha256.

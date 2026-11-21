@@ -1,0 +1,49 @@
+READ_N1DC_D1HO (MEASURED; T1-kin; D1-HO 5,736 windows / 497 held-out episodes; dev box CPU; B 2,000 seed 0 paired episode-cluster bootstrap = 'another draw of EPISODES' only)
+card PREREG_V8F_N1DC.md sha256 2eae7964; executor of record T1-kin/hb0.2, T1-kin/old beside; eval-141 guard and STRATEGIC NOT here: every label that needs them is PENDING-GUARD
+STATUS: VALID
+
+=== executor hb ===
+  K-RE PASS (RESULT_N1DW_D1HO_HB.json D1_HO_each_acc); K1 PASS; K-CONST 0.338215 PASS; K-T0 (N1D re-derived) PASS
+  accuracy N1R_s0 0.6102, N1R_s1 0.6348, N1D_s0 0.6346, N1D_s1 0.6515, N1DC_s0 0.6391, N1DC_s1 0.6583
+  T0 level N1R_s0 0.6102 [0.5885,0.6308], N1R_s1 0.6194 [0.5984,0.6393], N1D_s0 0.6266 [0.6055,0.6468], N1D_s1 0.6349 [0.6141,0.6544], N1DC_s0 0.6224 [0.6017,0.6426], N1DC_s1 0.6379 [0.6169,0.6581]
+  bar 0.042364 = max(0.0383, F_HO 0.0424, |N1D draw| 0.0169, |N1DC draw| 0.0192)
+  DECIDING N1DC - N1D N1DC_s0: +0.0045 [-0.0041,+0.0132] sep False gain False cost False
+  DECIDING N1DC - N1D N1DC_s1: +0.0068 [-0.0030,+0.0156] sep False gain False cost False
+  beside   N1DC - N1R N1DC_s0: +0.0289 [+0.0160,+0.0411] sep True gain False cost False
+  beside   N1DC - N1R N1DC_s1: +0.0235 [+0.0112,+0.0353] sep True gain False cost False
+  T0 TAC-LAT s0: N1DC 0.6224 vs N1D 0.6266; N1DC - N1D -0.0042 [-0.0091,+0.0007]; T1 0.6391
+  T0 TAC-LAT s1: N1DC 0.6379 vs N1D 0.6349; N1DC - N1D +0.0030 [-0.0048,+0.0105]; T1 0.6583
+  Z-USE (skip zeroed) N1DC_s0: -0.0005 [-0.0051,+0.0042]
+  Z-USE (skip zeroed) N1DC_s1: +0.0049 [+0.0003,+0.0099]
+  D-channel zero twin N1DC_s0: +0.0457 [+0.0319,+0.0585]
+  D-channel zero twin N1DC_s1: +0.0248 [+0.0122,+0.0376]
+  D-channel zero twin N1D_s0: +0.0377 [+0.0239,+0.0508]
+  D-channel zero twin N1D_s1: +0.0190 [+0.0054,+0.0316]
+  R1 cells on D1-HO (no bar; dk cells NOT-COMPUTABLE n=0) are in the JSON: R1_LON_LAT_HO_beside_no_bar
+
+=== executor old ===
+  K-RE PASS (RESULT_NAVRBD.json D1_HO_each_acc (+ N1D-N1R deltas)); K1 PASS; K-CONST 0.338215 PASS; K-T0 (N1D re-derived) PASS
+  accuracy N1R_s0 0.5905, N1R_s1 0.6328, N1D_s0 0.6196, N1D_s1 0.6499, N1DC_s0 0.6226, N1DC_s1 0.6501
+  T0 level N1R_s0 0.6102 [0.5885,0.6308], N1R_s1 0.6194 [0.5984,0.6393], N1D_s0 0.6266 [0.6055,0.6468], N1D_s1 0.6349 [0.6141,0.6544], N1DC_s0 0.6224 [0.6017,0.6426], N1DC_s1 0.6379 [0.6169,0.6581]
+  bar 0.042364 = max(0.0383, F_HO 0.0424, |N1D draw| 0.0303, |N1DC draw| 0.0275)
+  DECIDING N1DC - N1D N1DC_s0: +0.0030 [-0.0058,+0.0115] sep False gain False cost False
+  DECIDING N1DC - N1D N1DC_s1: +0.0002 [-0.0104,+0.0110] sep False gain False cost False
+  beside   N1DC - N1R N1DC_s0: +0.0321 [+0.0206,+0.0433] sep True gain False cost False
+  beside   N1DC - N1R N1DC_s1: +0.0173 [+0.0044,+0.0309] sep True gain False cost False
+  T0 TAC-LAT s0: N1DC 0.6224 vs N1D 0.6266; N1DC - N1D -0.0042 [-0.0091,+0.0007]; T1 0.6226
+  T0 TAC-LAT s1: N1DC 0.6379 vs N1D 0.6349; N1DC - N1D +0.0030 [-0.0048,+0.0105]; T1 0.6501
+  Z-USE (skip zeroed) N1DC_s0: +0.0010 [-0.0038,+0.0059]
+  Z-USE (skip zeroed) N1DC_s1: +0.0016 [-0.0034,+0.0068]
+  D-channel zero twin N1DC_s0: +0.0471 [+0.0347,+0.0597]
+  D-channel zero twin N1DC_s1: +0.0180 [+0.0048,+0.0309]
+  D-channel zero twin N1D_s0: +0.0464 [+0.0334,+0.0592]
+  D-channel zero twin N1D_s1: +0.0202 [+0.0064,+0.0331]
+  R1 cells on D1-HO (no bar; dk cells NOT-COMPUTABLE n=0) are in the JSON: R1_LON_LAT_HO_beside_no_bar
+
+OUTCOME (card section 4, D1-HO under hb0.2 alone)
+  N1DC-GAIN / N1DC-GAIN-COST (D1-HO gain above the bar at both seeds): not fired
+  N1DC-ONE-SEED / N1DC-GAIN-COST (D1-HO gain at exactly one seed): not fired
+  N1DC-COST (D1-HO a cost at both seeds, or guard cost at both): PENDING-GUARD (D1-HO shows no cost at both seeds; the guard part needs eval-141)
+  N1DC-NO-GAIN (otherwise): PENDING-GUARD (D1-HO shows no gain at either seed; NO-GAIN unless the guard cost at both seeds fires COST)
+problems: none
+notes: none

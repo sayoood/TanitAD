@@ -1,0 +1,23 @@
+
+  E-DEC-59 — DOES EGO MOTION PREDICT THE LATENT'S OWN CHANGE?
+  channels [yaw_rate, a_long, v] · K-fold fit / per-clip score
+  NULL MODE - inputs are Gaussian noise; every t is a null draw
+
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] O6 rank gate CAN rule: --spectrum-accum 43 x 48 rows/call -> ceiling 2063 >= 1024
+[v6] params 19.30 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.97, 'readout': 0.01, 'predictor_op': 7.57, 'layer_tac': 4.88, 'layer_str': 3.56, 'planner': 0.69, 'aux': 1.62, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+[geometry] v6_probe_trunk: NON-DEFAULT - 256x640px, f_ref 305.58, cylindrical, HFOV 120.00deg / VFOV 45.46deg, tokens 640 (16x40 @ patch 16), state_dim 2048, cache fragment {'geom': '256x640f305.5775cyl'}
+[geometry] WARNING: this frame (120.00deg) EXCEEDS comma2k19's entire field (65.203deg). comma2k19 cannot supply it at any resolution — it must be letterboxed (geometry_mode='rectify', explicit unobserved mask), given its own frame, or dropped from the mix. That is a PI decision, not a default.
+  === rdw8p30k (step 30000) — 80 clips, 7680 rows, PCA directions [8:16) of Δz ===
+  column                                  r     shuf   t-shuf      t
+  --------------------------------------------------------------------
+  z_t (DRIFT / POSITIVE CONTROL)    +0.0132  +0.0003  +0.0129   2.27
+  ego_state [w, a, v]               +0.0088  +0.0077  +0.0011   0.19
+  z_t + ego_state                   +0.0113  +0.0007  +0.0106   1.86
+  constant (control)                +0.0000  +0.0000  +0.0000   0.00
+
+  drift control t +2.27  (E-DEC-40 banked it at 8.38)
+  EGO-STATE's marginal over the drift: -0.0019 (t -1.01)
+
+-> C:\Users\Admin\AppData\Local\Temp\claude\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\8fc25020-a1d5-4e1b-a9e2-aeccf845c5a2\scratchpad\latentbandnull_5.json

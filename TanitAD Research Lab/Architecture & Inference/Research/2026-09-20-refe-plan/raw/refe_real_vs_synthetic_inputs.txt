@@ -1,0 +1,54 @@
+WHY REAL IMAGES ARE A HARDER OVERFIT TARGET THAN SYNTHETIC NOISE
+
+the 8 tuples the overfit control uses -- all CONSECUTIVE steps of ONE scenario:
+  step   0  accelerating_at_traffic_light_withou  9e60849b882c52e1.jpg
+  step   1  accelerating_at_traffic_light_withou  4de1edbc6e3c5168.jpg
+  step   2  accelerating_at_traffic_light_withou  68f968822b2c5d9f.jpg
+  step   3  accelerating_at_traffic_light_withou  b6acbc7339015e3c.jpg
+  step   4  accelerating_at_traffic_light_withou  1717c251a2dc53b8.jpg
+  step   5  accelerating_at_traffic_light_withou  b4aa5d56be2c592a.jpg
+  step   6  accelerating_at_traffic_light_withou  4f2b8b9422325ae2.jpg
+  step   7  accelerating_at_traffic_light_withou  6b5743207e1c5e14.jpg
+
+  loaded 8/8 frames
+
+  pairwise L2 between REAL frames      mean    7.40  min   4.85  max  10.18
+  pairwise L2 between SYNTHETIC noise  mean  294.29
+  => synthetic inputs sit ~39.8x further apart than real consecutive frames
+
+  pairwise max|target diff|            mean    0.96 m
+
+MECHANISM: the synthetic arm gets 8 INDEPENDENT noise patterns -- effectively a perfect
+per-index lookup key, so memorising 8 targets is trivial. The real arm gets 8 frames taken
+0.1 s apart from the SAME scenario, i.e. near-identical inputs that must map to targets
+differing by ~1.0 m. That is a genuinely harder function to fit, and it is a property of
+HOW THE 8 TUPLES WERE CHOSEN (the first 8 rows of the bank), not of real imagery as such.
+
+=> An overfit control on 8 CONSECUTIVE frames is a weak test. A better one samples 8 tuples
+   from DIFFERENT scenarios. Noted for the pod: do not read the real-vs-synthetic gap as a
+   statement about image difficulty until that is redone.
+
+----------------------------------------------------------------------------------------------
+FIX APPLIED: train.py --spread
+
+  default (first 8 rows)   pairwise L2  7.40   1 scenario, frames 0.1 s apart
+  --spread (every 40th)    pairwise L2 57.60   3 scenarios   => 7.8x more separated
+  synthetic noise          pairwise L2 294.29
+
+CONSEQUENCE FOR THE COMPARISON THAT WAS RUNNING:
+  the ViT-S batch-8 synthetic-vs-real isolation was intended to move ONLY the images, and it did --
+  but BOTH arms drew the SAME 8 consecutive frames of one scenario, so the real arm faced a much
+  harder function (near-identical inputs, ~1 m apart targets) than the synthetic arm (independent
+  noise = a perfect per-index key). The arms are therefore NOT a clean test of "are real images
+  harder"; they are a test of "is memorising 8 near-duplicate frames harder than memorising 8
+  independent noise patterns", whose answer was never in doubt.
+
+  => Any real-vs-synthetic gap must be re-measured with --spread before it is quoted at all.
+  => The SYNTHETIC path's value is unchanged: it validates loop MECHANICS. It was never meant to
+     be a difficulty baseline, and using it as one was my error, not the harness's.
+
+WHAT STILL STANDS FROM THE ORIGINAL RUNS:
+  * the loop learns on real camera frames (1.0781 -> 0.1791, PASS) -- a pass is a pass regardless
+    of how the 8 tuples were drawn;
+  * the deliberate-regression arm froze at 1.2460, so the control is discriminating;
+  * WTA winner diversity is bounded by batch size (arithmetic, unaffected by sampling).

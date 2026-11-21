@@ -1,0 +1,76 @@
+RED      Q1 drop --init-ckpt  [the fine-tune no longer starts from the banked M2b checkpoint]
+         first failure: tests/test_v8f_orc_chain.py::test_queue_orc_stages_are_one_flat_command_string_each_that_the_dry_run_prints_and_the_real_run_executes  | 1 failed, 1 passed in 0.49s
+RED      Q2 swap p between the arms  [ORC trains without the perturbation and ORC-0 with it]
+         first failure: tests/test_v8f_orc_chain.py::test_queue_orc_stages_are_one_flat_command_string_each_that_the_dry_run_prints_and_the_real_run_executes  | 1 failed, 1 passed in 0.49s
+RED      Q3 --ego-perturb-p not named  [the flag's default disables the lever: nothing names it]
+         first failure: tests/test_v8f_orc_chain.py::test_queue_orc_stages_are_one_flat_command_string_each_that_the_dry_run_prints_and_the_real_run_executes  | 1 failed, 1 passed in 0.49s
+RED      Q4 gate line carries a lever the run does not  [the gate gates another run than the one that trains]
+         first failure: tests/test_v8f_orc_chain.py::test_queue_orc_stages_are_one_flat_command_string_each_that_the_dry_run_prints_and_the_real_run_executes  | 1 failed, 1 passed in 0.51s
+RED      Q5 perturbation seed fixed to 0  [seed 1 perturbs with seed 0's draws]
+         first failure: tests/test_v8f_orc_chain.py::test_queue_orc_stages_are_one_flat_command_string_each_that_the_dry_run_prints_and_the_real_run_executes  | 1 failed, 1 passed in 0.49s
+RED      Q6 init of the wrong seed  [seed 1 fine-tunes seed 0's checkpoint]
+         first failure: tests/test_v8f_orc_chain.py::test_queue_orc_stages_are_one_flat_command_string_each_that_the_dry_run_prints_and_the_real_run_executes  | 1 failed, 1 passed in 0.50s
+RED      Q7 the skip runs before the dry-run echo  [a finished run prints [skip] instead of the line it ran]
+         first failure: tests/test_v8f_orc_chain.py::test_queue_orc_stages_are_one_flat_command_string_each_that_the_dry_run_prints_and_the_real_run_executes  | 1 failed, 1 passed in 0.50s
+RED      Q8 the eval reads B's checkpoint  [the eval scores the base, not the fine-tune]
+         first failure: tests/test_v8f_orc_chain.py::test_queue_orc_stages_are_one_flat_command_string_each_that_the_dry_run_prints_and_the_real_run_executes  | 1 failed, 1 passed in 0.50s
+RED      Q9 an older stage edited  [a label the PREREG did not touch changes]
+         first failure: tests/test_v8f_orc_chain.py::test_queue_is_crlf_every_older_label_is_byte_identical_and_only_the_four_orc_labels_are_added  | 1 failed in 0.48s
+RED      Q10 yaw-rate std dropped from ORC's law flags  [the lateral half of the lever is not named]
+         first failure: tests/test_v8f_orc_chain.py::test_queue_orc_stages_are_one_flat_command_string_each_that_the_dry_run_prints_and_the_real_run_executes  | 1 failed, 1 passed in 0.48s
+RED      Q11 a law flag leaks onto ORC-0  [ORC-0 carries the five law flags again (the shape the trainer's gate refused: Amendment 3 undone)]
+         first failure: tests/test_v8f_orc_chain.py::test_queue_orc_stages_are_one_flat_command_string_each_that_the_dry_run_prints_and_the_real_run_executes  | 1 failed, 1 passed in 0.50s
+RED      Q12 a law flag missing on ORC  [ORC loses the adrop law flag]
+         first failure: tests/test_v8f_orc_chain.py::test_queue_orc_stages_are_one_flat_command_string_each_that_the_dry_run_prints_and_the_real_run_executes  | 1 failed, 1 passed in 0.50s
+RED      Q13 ORC loses all five law flags  [ORCL is set but never read: both arms are p-only]
+         first failure: tests/test_v8f_orc_chain.py::test_queue_orc_stages_are_one_flat_command_string_each_that_the_dry_run_prints_and_the_real_run_executes  | 1 failed, 1 passed in 0.49s
+RED      Q14 a law flag value moved on ORC  [ORC's registered yaw-rate std changes]
+         first failure: tests/test_v8f_orc_chain.py::test_queue_orc_stages_are_one_flat_command_string_each_that_the_dry_run_prints_and_the_real_run_executes  | 1 failed, 1 passed in 0.51s
+RED      C1 a run is skipped  [ORC-0 s1 never runs]
+         first failure: tests/test_v8f_orc_chain.py::test_chain_static_order_refusal_wait_atomic_marker_refresh_checkpoint_sha_all_four_gates_then_the_four_runs_nothing_conditional  | 1 failed, 20 passed in 8.76s
+RED      C2 the runs are in another order  [seed 1 ORC before seed 0 ORC-0]
+         first failure: tests/test_v8f_orc_chain.py::test_chain_static_order_refusal_wait_atomic_marker_refresh_checkpoint_sha_all_four_gates_then_the_four_runs_nothing_conditional  | 1 failed, 20 passed in 9.49s
+RED      C3 the token binds the gate argv, not the training argv  [orc_read.g_token refuses every run]
+         first failure: tests/test_v8f_orc_chain.py::test_the_token_is_accepted_by_the_readers_g_token_against_the_real_runs_argv_json_and_binds_the_training_argv_not_the_gates  | 1 failed, 29 passed, 1 warning in 82.82s (0:01:22)
+RED      C4 a wrong banked checkpoint sha  [the chain would assert a checkpoint that is not the banked one]
+         first failure: tests/test_v8f_orc_chain.py::test_chain_is_lf_only_bash_syntax_clean_and_pins_the_banked_checkpoints  | 1 failed, 19 passed in 9.34s
+RED      C5 a default predecessor log  [an OLD log's end marker satisfies the wait at once]
+         first failure: tests/test_v8f_orc_chain.py::test_chain_static_order_refusal_wait_atomic_marker_refresh_checkpoint_sha_all_four_gates_then_the_four_runs_nothing_conditional  | 1 failed, 20 passed in 9.11s
+RED      C6 the gate assertions skip the init sha  [a fine-tune from the wrong checkpoint passes the gate]
+         first failure: tests/test_v8f_orc_chain.py::test_gate_assertions_pass_the_registered_gate_of_every_run_and_refuse_every_single_field_corruption_of_orc  | 1 failed, 25 passed, 1 warning in 78.20s (0:01:18)
+RED      C7 the gates run after the runs  [a gate that fails for the fourth run is found after three runs were trained]
+         first failure: tests/test_v8f_orc_chain.py::test_chain_static_order_refusal_wait_atomic_marker_refresh_checkpoint_sha_all_four_gates_then_the_four_runs_nothing_conditional  | 1 failed, 20 passed in 12.11s
+RED      C8 a failed gate assertion does not stop the chain  [no PASS, yet training goes on]
+         first failure: tests/test_v8f_orc_chain.py::test_chain_static_order_refusal_wait_atomic_marker_refresh_checkpoint_sha_all_four_gates_then_the_four_runs_nothing_conditional  | 1 failed, 20 passed in 9.67s
+RED      C9 the busy marker is not taken atomically  [two chains can both arm]
+         first failure: tests/test_v8f_orc_chain.py::test_chain_static_order_refusal_wait_atomic_marker_refresh_checkpoint_sha_all_four_gates_then_the_four_runs_nothing_conditional  | 1 failed, 20 passed in 9.69s
+RED      C10 the end marker is renamed  [the guard and the next chain never see the end]
+         first failure: tests/test_v8f_orc_chain.py::test_chain_load_bearing_lines_are_present  | 1 failed, 21 passed in 8.51s
+RED      C11 the run record skips argv.json = planned  [a token binds an argv that did not run]
+         first failure: tests/test_v8f_orc_chain.py::test_run_record_assertions_pass_a_real_run_and_refuse_a_token_that_binds_an_argv_that_did_not_run  | 1 failed, 30 passed, 1 warning in 107.03s (0:01:47)
+RED      C12 stop does not release the box  [a stopped chain leaves the busy marker]
+         first failure: tests/test_v8f_orc_chain.py::test_chain_load_bearing_lines_are_present  | 1 failed, 21 passed in 15.50s
+RED      C13 the reach bound is widened  [a perturbed fraction of 0.15 passes]
+         first failure: tests/test_v8f_orc_chain.py::test_the_perturbation_reached_control_agrees_with_the_readers_own_on_a_grid_and_on_the_real_summary  | 1 failed, 31 passed, 1 warning in 102.78s (0:01:42)
+RED      C14 the wait does not stop on the predecessor's STOP  [a stopped predecessor is waited on forever]
+         first failure: tests/test_v8f_orc_chain.py::test_chain_wait_loop_runs_end_to_end_waits_proceeds_on_done_stops_on_stop_and_takes_and_releases_the_marker  | 1 failed, 23 passed in 11.94s
+RED      C15 an empty AFTER_OUT is accepted  [AFTER_OUT= passes the refusal]
+         first failure: tests/test_v8f_orc_chain.py::test_chain_static_order_refusal_wait_atomic_marker_refresh_checkpoint_sha_all_four_gates_then_the_four_runs_nothing_conditional  | 1 failed, 20 passed in 9.15s
+RED      C16 the pre-flight no longer looks for the apply line  [a tip without the apply line is accepted]
+         first failure: tests/test_v8f_orc_chain.py::test_chain_load_bearing_lines_are_present  | 1 failed, 21 passed in 10.19s
+RED      C17 the guard is not started  [the temperature / time guard is blind]
+         first failure: tests/test_v8f_orc_chain.py::test_chain_static_order_refusal_wait_atomic_marker_refresh_checkpoint_sha_all_four_gates_then_the_four_runs_nothing_conditional  | 1 failed, 20 passed in 9.94s
+RED      C18 the gate no longer requires the ORC-0 probe to read off  [a perturbation leaking into the control passes]
+         first failure: tests/test_v8f_orc_chain.py::test_gate_assertions_for_orc0_read_the_probe_as_off_and_refuse_a_perturbation_that_leaked_into_the_control  | 1 failed, 26 passed, 1 warning in 75.20s (0:01:15)
+RED      C19 the gate/train identity is not checked  [the gate gates another argv than the run trains]
+         first failure: tests/test_v8f_orc_chain.py::test_gate_assertions_refuse_every_way_the_queues_printed_lines_can_be_wrong  | 1 failed, 27 passed, 1 warning in 84.60s (0:01:24)
+RED      C20 a law flag named on ORC-0 is not refused  [ORC-0 may carry a law flag]
+         first failure: tests/test_v8f_orc_chain.py::test_gate_assertions_for_orc0_read_the_probe_as_off_and_refuse_a_perturbation_that_leaked_into_the_control  | 1 failed, 26 passed, 1 warning in 73.83s (0:01:13)
+RED      C21 ORC-0's built law values are not checked  [a moved built law value passes on the control]
+         first failure: tests/test_v8f_orc_chain.py::test_gate_assertions_for_orc0_read_the_probe_as_off_and_refuse_a_perturbation_that_leaked_into_the_control  | 1 failed, 26 passed, 1 warning in 79.16s (0:01:19)
+RED      C22 ORC is not required to name the law flags  [ORC may lose a law flag]
+         first failure: tests/test_v8f_orc_chain.py::test_gate_assertions_refuse_every_way_the_queues_printed_lines_can_be_wrong  | 1 failed, 27 passed, 1 warning in 81.03s (0:01:21)
+RED      C23 ORC-0's expected built yaw-rate std is ORC's  [the control's built law is expected at ORC's value]
+         first failure: tests/test_v8f_orc_chain.py::test_gate_assertions_pass_the_registered_gate_of_every_run_and_refuse_every_single_field_corruption_of_orc  | 1 failed, 25 passed, 1 warning in 67.26s (0:01:07)
+SUMMARY: 37 of 37 mutants RED
+mutation rc=0

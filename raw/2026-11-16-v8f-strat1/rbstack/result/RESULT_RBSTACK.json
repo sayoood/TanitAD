@@ -1,0 +1,539 @@
+{
+ "tool": "rbstack.py",
+ "card": "PREREG_RBSTACK.md sha256 bf4d5395bb481cbeaca552bd66a987071e772655b11f8a1d1a8bda2e22c72901",
+ "tier": "T0 decodability (NOT driving performance)",
+ "estimator": "taniteval.ci.paired_episode_cluster_bootstrap, B=2000, seed 0, episodes = train clips; answers 'another draw of EPISODES' only (probe training variance: two probe seeds)",
+ "margin": 0.0383,
+ "reading": "STACK-WEAK",
+ "reading_by_seed": {
+  "0": "STACK-WEAK",
+  "1": "STACK-WEAK"
+ },
+ "controls": {
+  "K-REPRO": "PASS",
+  "K-NEST": "PASS",
+  "K-SHUF": "PASS",
+  "K-V": "PASS"
+ },
+ "not_read_reason": null,
+ "K_REPRO": {
+  "ED": {
+   "mine": 0.6406453009961022,
+   "rbjk": 0.6406453009961022,
+   "pass": true
+  },
+  "S": {
+   "mine": 0.4075357297531399,
+   "rbjk": 0.4075357297531399,
+   "pass": true
+  },
+  "n_windows": {
+   "mine": 9236,
+   "rbjk": 9236
+  },
+  "pass": true
+ },
+ "primary": {
+  "0": {
+   "arms": {
+    "EDV": {
+     "accuracy": {
+      "point": 0.6622996968384582,
+      "lo": 0.6364,
+      "hi": 0.6867,
+      "n_windows": 9236,
+      "n_episodes": 395
+     },
+     "pred_counts": [
+      3192,
+      2649,
+      3395
+     ]
+    },
+    "EDV_SHUF": {
+     "accuracy": {
+      "point": 0.6281940233867475,
+      "lo": 0.6011,
+      "hi": 0.655,
+      "n_windows": 9236,
+      "n_episodes": 395
+     },
+     "pred_counts": [
+      3904,
+      2565,
+      2767
+     ]
+    },
+    "ED_STR": {
+     "accuracy": {
+      "point": 0.6389129493287137,
+      "lo": 0.6093,
+      "hi": 0.6671,
+      "n_windows": 9236,
+      "n_episodes": 395
+     },
+     "pred_counts": [
+      3781,
+      2606,
+      2849
+     ]
+    },
+    "V": {
+     "accuracy": {
+      "point": 0.6254872239064531,
+      "lo": 0.5971,
+      "hi": 0.6537,
+      "n_windows": 9236,
+      "n_episodes": 395
+     },
+     "pred_counts": [
+      3445,
+      2576,
+      3215
+     ]
+    },
+    "S": {
+     "accuracy": {
+      "point": 0.4075357297531399,
+      "lo": 0.3682,
+      "hi": 0.4472,
+      "n_windows": 9236,
+      "n_episodes": 395
+     },
+     "pred_counts": [
+      9236,
+      0,
+      0
+     ]
+    },
+    "ED": {
+     "accuracy": {
+      "point": 0.6406453009961022,
+      "lo": 0.6122,
+      "hi": 0.6696,
+      "n_windows": 9236,
+      "n_episodes": 395
+     },
+     "pred_counts": [
+      3734,
+      2634,
+      2868
+     ]
+    }
+   },
+   "paired": {
+    "EDV-ED": {
+     "delta": 0.021654395842356067,
+     "lo": 0.0012,
+     "hi": 0.0434,
+     "separated": true,
+     "n_windows": 9236,
+     "n_episodes": 395
+    },
+    "EDV-ED_STR": {
+     "delta": 0.023386747509744565,
+     "lo": 0.0029,
+     "hi": 0.0445,
+     "separated": true,
+     "n_windows": 9236,
+     "n_episodes": 395
+    },
+    "EDV_SHUF-ED": {
+     "delta": -0.012451277609354716,
+     "lo": -0.0215,
+     "hi": -0.0035,
+     "separated": true,
+     "n_windows": 9236,
+     "n_episodes": 395
+    },
+    "EDV_SHUF-ED_STR": {
+     "delta": -0.010718925941966218,
+     "lo": -0.0198,
+     "hi": -0.0021,
+     "separated": true,
+     "n_windows": 9236,
+     "n_episodes": 395
+    },
+    "V-S": {
+     "delta": 0.21795149415331316,
+     "lo": 0.1808,
+     "hi": 0.2549,
+     "separated": true,
+     "n_windows": 9236,
+     "n_episodes": 395
+    },
+    "EDV-V": {
+     "delta": 0.03681247293200518,
+     "lo": 0.008,
+     "hi": 0.0633,
+     "separated": true,
+     "n_windows": 9236,
+     "n_episodes": 395
+    },
+    "ED-S": {
+     "delta": 0.23310957124296228,
+     "lo": 0.1906,
+     "hi": 0.2748,
+     "separated": true,
+     "n_windows": 9236,
+     "n_episodes": 395
+    }
+   },
+   "n_windows": 9236,
+   "n_episodes": 395,
+   "majority_rate": 0.4075357297531399,
+   "class_shares": [
+    0.4075357297531399,
+    0.29428323949761803,
+    0.29818103074924207
+   ],
+   "controls_seed": {
+    "K-NEST": "PASS",
+    "K-SHUF": "PASS",
+    "K-V": "PASS"
+   }
+  },
+  "1": {
+   "arms": {
+    "EDV": {
+     "accuracy": {
+      "point": 0.6665223040277176,
+      "lo": 0.6398,
+      "hi": 0.6913,
+      "n_windows": 9236,
+      "n_episodes": 395
+     },
+     "pred_counts": [
+      3290,
+      2666,
+      3280
+     ]
+    },
+    "EDV_SHUF": {
+     "accuracy": {
+      "point": 0.6273278475530533,
+      "lo": 0.5994,
+      "hi": 0.6535,
+      "n_windows": 9236,
+      "n_episodes": 395
+     },
+     "pred_counts": [
+      3843,
+      2572,
+      2821
+     ]
+    },
+    "ED_STR": {
+     "accuracy": {
+      "point": 0.6389129493287137,
+      "lo": 0.6093,
+      "hi": 0.6671,
+      "n_windows": 9236,
+      "n_episodes": 395
+     },
+     "pred_counts": [
+      3781,
+      2606,
+      2849
+     ]
+    },
+    "V": {
+     "accuracy": {
+      "point": 0.6294932871372889,
+      "lo": 0.5997,
+      "hi": 0.6579,
+      "n_windows": 9236,
+      "n_episodes": 395
+     },
+     "pred_counts": [
+      3486,
+      3042,
+      2708
+     ]
+    },
+    "S": {
+     "accuracy": {
+      "point": 0.4075357297531399,
+      "lo": 0.3682,
+      "hi": 0.4472,
+      "n_windows": 9236,
+      "n_episodes": 395
+     },
+     "pred_counts": [
+      9236,
+      0,
+      0
+     ]
+    },
+    "ED": {
+     "accuracy": {
+      "point": 0.6406453009961022,
+      "lo": 0.6122,
+      "hi": 0.6696,
+      "n_windows": 9236,
+      "n_episodes": 395
+     },
+     "pred_counts": [
+      3734,
+      2634,
+      2868
+     ]
+    }
+   },
+   "paired": {
+    "EDV-ED": {
+     "delta": 0.025877003031615442,
+     "lo": 0.0049,
+     "hi": 0.0484,
+     "separated": true,
+     "n_windows": 9236,
+     "n_episodes": 395
+    },
+    "EDV-ED_STR": {
+     "delta": 0.02760935469900394,
+     "lo": 0.0075,
+     "hi": 0.0496,
+     "separated": true,
+     "n_windows": 9236,
+     "n_episodes": 395
+    },
+    "EDV_SHUF-ED": {
+     "delta": -0.01331745344304891,
+     "lo": -0.0223,
+     "hi": -0.0051,
+     "separated": true,
+     "n_windows": 9236,
+     "n_episodes": 395
+    },
+    "EDV_SHUF-ED_STR": {
+     "delta": -0.011585101775660411,
+     "lo": -0.021,
+     "hi": -0.0026,
+     "separated": true,
+     "n_windows": 9236,
+     "n_episodes": 395
+    },
+    "V-S": {
+     "delta": 0.22195755738414902,
+     "lo": 0.1858,
+     "hi": 0.2577,
+     "separated": true,
+     "n_windows": 9236,
+     "n_episodes": 395
+    },
+    "EDV-V": {
+     "delta": 0.0370290168904287,
+     "lo": 0.0088,
+     "hi": 0.0638,
+     "separated": true,
+     "n_windows": 9236,
+     "n_episodes": 395
+    },
+    "ED-S": {
+     "delta": 0.23310957124296228,
+     "lo": 0.1906,
+     "hi": 0.2748,
+     "separated": true,
+     "n_windows": 9236,
+     "n_episodes": 395
+    }
+   },
+   "n_windows": 9236,
+   "n_episodes": 395,
+   "majority_rate": 0.4075357297531399,
+   "class_shares": [
+    0.4075357297531399,
+    0.29428323949761803,
+    0.29818103074924207
+   ],
+   "controls_seed": {
+    "K-NEST": "PASS",
+    "K-SHUF": "PASS",
+    "K-V": "PASS"
+   }
+  }
+ },
+ "beside_lat5_seed0_no_bar": {
+  "population": {
+   "windows": 12201,
+   "episodes": 426
+  },
+  "paired": {
+   "EDV-ED": {
+    "delta": -0.0064748791082698265,
+    "lo": -0.026,
+    "hi": 0.013,
+    "separated": false,
+    "n_windows": 12201,
+    "n_episodes": 426
+   },
+   "EDV-ED_STR": {
+    "delta": -0.004098024752069551,
+    "lo": -0.0226,
+    "hi": 0.0145,
+    "separated": false,
+    "n_windows": 12201,
+    "n_episodes": 426
+   },
+   "EDV_SHUF-ED": {
+    "delta": -0.012212113761167154,
+    "lo": -0.0209,
+    "hi": -0.003,
+    "separated": true,
+    "n_windows": 12201,
+    "n_episodes": 426
+   },
+   "EDV_SHUF-ED_STR": {
+    "delta": -0.009835259404966878,
+    "lo": -0.0184,
+    "hi": -0.0011,
+    "separated": true,
+    "n_windows": 12201,
+    "n_episodes": 426
+   },
+   "V-S": {
+    "delta": 0.026637160888451805,
+    "lo": 0.0043,
+    "hi": 0.0493,
+    "separated": true,
+    "n_windows": 12201,
+    "n_episodes": 426
+   },
+   "EDV-V": {
+    "delta": 0.024997950987623918,
+    "lo": 0.0075,
+    "hi": 0.0413,
+    "separated": true,
+    "n_windows": 12201,
+    "n_episodes": 426
+   },
+   "ED-S": {
+    "delta": 0.05810999098434555,
+    "lo": 0.0287,
+    "hi": 0.0857,
+    "separated": true,
+    "n_windows": 12201,
+    "n_episodes": 426
+   }
+  },
+  "arms": {
+   "EDV": {
+    "accuracy": {
+     "point": 0.7091222030981067,
+     "lo": 0.6839,
+     "hi": 0.7338,
+     "n_windows": 12201,
+     "n_episodes": 426
+    },
+    "pred_counts": [
+     8967,
+     2101,
+     1133,
+     0,
+     0
+    ]
+   },
+   "EDV_SHUF": {
+    "accuracy": {
+     "point": 0.7033849684452094,
+     "lo": 0.6783,
+     "hi": 0.7273,
+     "n_windows": 12201,
+     "n_episodes": 426
+    },
+    "pred_counts": [
+     8986,
+     2282,
+     933,
+     0,
+     0
+    ]
+   },
+   "ED_STR": {
+    "accuracy": {
+     "point": 0.7132202278501762,
+     "lo": 0.6873,
+     "hi": 0.7379,
+     "n_windows": 12201,
+     "n_episodes": 426
+    },
+    "pred_counts": [
+     8813,
+     2424,
+     964,
+     0,
+     0
+    ]
+   },
+   "V": {
+    "accuracy": {
+     "point": 0.6841242521104828,
+     "lo": 0.6558,
+     "hi": 0.7124,
+     "n_windows": 12201,
+     "n_episodes": 426
+    },
+    "pred_counts": [
+     9149,
+     2085,
+     967,
+     0,
+     0
+    ]
+   },
+   "S": {
+    "accuracy": {
+     "point": 0.657487091222031,
+     "lo": 0.6244,
+     "hi": 0.6914,
+     "n_windows": 12201,
+     "n_episodes": 426
+    },
+    "pred_counts": [
+     12201,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   "ED": {
+    "accuracy": {
+     "point": 0.7155970822063765,
+     "lo": 0.6892,
+     "hi": 0.7409,
+     "n_windows": 12201,
+     "n_episodes": 426
+    },
+    "pred_counts": [
+     8892,
+     2382,
+     927,
+     0,
+     0
+    ]
+   }
+  },
+  "reading_this_seed_for_reference_only": "STACK-SILENT",
+  "rbjoint_reference": {
+   "ED_acc": 0.7155970822063765,
+   "RAW8_acc": 0.6841242521104828
+  },
+  "feature_replay_check": {
+   "per_fold_agreement_with_rbjoint_RAW8": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "note": "diagnostic of the re-extracted features; drift from thread counts can flip a few windows"
+  },
+  "controls_seed": {
+   "K-NEST": "PASS",
+   "K-SHUF": "PASS",
+   "K-V": "PASS"
+  }
+ },
+ "stage_B": "NOT-YET: the NAVRBD D1-HO windows are the 10k data-scale RB grid windows (5,736 / 497 under the card, 7,594 / 545 in the NAVRBD count). Their pooled 8x20 DINOv3 features and join/ED rows are not on this machine (strat1/navrbd/in is absent; the cached pooled grids here cover only the train4572 and eval-141 clips), so stage B needs the pod-side cache, and the card forbids pulling from the pod and re-selecting episodes. It never changes the section 3 reading."
+}

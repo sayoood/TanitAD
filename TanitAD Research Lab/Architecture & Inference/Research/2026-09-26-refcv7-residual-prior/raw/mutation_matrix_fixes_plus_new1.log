@@ -1,0 +1,127 @@
+M1 ha0_ext reads the steer at t0-1 (the `ha` index) instead of t0 -> 2 failed ['test_b_P_equals_the_BANKED_battery_echo_on_real_windows', 'test_b_P_equals_the_battery_FUNCTIONS_on_real_windows']
+M2 the prior is squeezed through the vocabulary's kappa cap -> 3 failed ['test_d_a_zero_prior_is_the_vocabularys_own_roll', 'test_d_zero_residual_rolls_to_the_prior_bit_for_bit[alat]', 'test_d_zero_residual_rolls_to_the_prior_bit_for_bit[kappa]']
+M3 (equivalent) drop `_sample`'s `v = prior[2]` only -> 0 failed []
+M3b the sampled fan is rolled at the RAW v0 (refcv6's speed), not the prior's -> 1 failed ['test_d_TRAINING_forwards_with_withheld_rows_still_emit_P_plus_Delta']
+M4 RefCModel's pass-through drops the prior keys (the A16 whitelist class) -> 11 failed ['test_A2_MUTATION_Delta_fed_to_selection_goes_RED', 'test_A2_nav_compliance_and_the_ceiling_rank_the_ABSOLUTE_plan', 'test_c_off_is_BIT_IDENTICAL_to_refcv6_digest_recorded_on_the_tip', 'test_d_TRAINING_forwards_with_withheld_rows_still_emit_P_plus_Delta', 'test_d_the_model_emits_P_plus_Delta_and_the_zero_anchor_IS_P[cv_yawrate]', 'test_d_the_model_emits_P_plus_Delta_and_the_zero_anchor_IS_P[ha0_ext]']
+M5 the prior's speed ignores ego-dropout -> 2 failed ['test_d_TRAINING_forwards_with_withheld_rows_still_emit_P_plus_Delta', 'test_d_withheld_rows_compose_on_the_no_information_prior_at_the_banks_speed']
+M6 the prior is NOT withheld on dropped rows -> 2 failed ['test_d_TRAINING_forwards_with_withheld_rows_still_emit_P_plus_Delta', 'test_d_withheld_rows_compose_on_the_no_information_prior_at_the_banks_speed']
+M7 the prior path is read one tick late -> 9 failed ['test_A2_MUTATION_Delta_fed_to_selection_goes_RED', 'test_A2_nav_compliance_and_the_ceiling_rank_the_ABSOLUTE_plan', 'test_a_deceleration_stops_the_car_it_never_reverses', 'test_a_straight_at_10_mps_is_x_equals_10t_y_zero', 'test_b_P_equals_the_BANKED_battery_echo_on_real_windows', 'test_b_P_equals_the_battery_FUNCTIONS_on_real_windows']
+M8 the trainer's F3 cascade re-rolls without the prior -> 2 failed ['test_c_off_is_BIT_IDENTICAL_to_refcv6_digest_recorded_on_the_tip', 'test_d_the_trainers_OWN_loss_runs_with_every_term_live']
+M9 an OFF build computes (and ignores) a prior anyway -> 1 failed ['test_c_an_OFF_build_never_reaches_the_prior_module']
+{
+ "baseline": {
+  "passed": 30,
+  "failed": 0,
+  "failed_tests": [],
+  "exit": 0
+ },
+ "M1 ha0_ext reads the steer at t0-1 (the `ha` index) instead of t0": {
+  "passed": 28,
+  "failed": 2,
+  "failed_tests": [
+   "test_b_P_equals_the_BANKED_battery_echo_on_real_windows",
+   "test_b_P_equals_the_battery_FUNCTIONS_on_real_windows"
+  ],
+  "exit": 1
+ },
+ "M2 the prior is squeezed through the vocabulary's kappa cap": {
+  "passed": 27,
+  "failed": 3,
+  "failed_tests": [
+   "test_d_a_zero_prior_is_the_vocabularys_own_roll",
+   "test_d_zero_residual_rolls_to_the_prior_bit_for_bit[alat]",
+   "test_d_zero_residual_rolls_to_the_prior_bit_for_bit[kappa]"
+  ],
+  "exit": 1
+ },
+ "M3 (equivalent) drop `_sample`'s `v = prior[2]` only": {
+  "passed": 30,
+  "failed": 0,
+  "failed_tests": [],
+  "exit": 0
+ },
+ "M3b the sampled fan is rolled at the RAW v0 (refcv6's speed), not the prior's": {
+  "passed": 29,
+  "failed": 1,
+  "failed_tests": [
+   "test_d_TRAINING_forwards_with_withheld_rows_still_emit_P_plus_Delta"
+  ],
+  "exit": 1
+ },
+ "M4 RefCModel's pass-through drops the prior keys (the A16 whitelist class)": {
+  "passed": 19,
+  "failed": 11,
+  "failed_tests": [
+   "test_A2_MUTATION_Delta_fed_to_selection_goes_RED",
+   "test_A2_nav_compliance_and_the_ceiling_rank_the_ABSOLUTE_plan",
+   "test_c_off_is_BIT_IDENTICAL_to_refcv6_digest_recorded_on_the_tip",
+   "test_d_TRAINING_forwards_with_withheld_rows_still_emit_P_plus_Delta",
+   "test_d_the_model_emits_P_plus_Delta_and_the_zero_anchor_IS_P[cv_yawrate]",
+   "test_d_the_model_emits_P_plus_Delta_and_the_zero_anchor_IS_P[ha0_ext]",
+   "test_d_the_model_emits_P_plus_Delta_and_the_zero_anchor_IS_P[ha0_ext_pose]",
+   "test_d_the_trainers_OWN_loss_runs_with_every_term_live",
+   "test_e_MUTATION_a_FAN_rolled_without_the_prior_is_caught",
+   "test_e_MUTATION_a_roll_that_drops_the_prior_is_caught",
+   "test_e_MUTATION_exporting_the_residual_controls_is_caught"
+  ],
+  "exit": 1
+ },
+ "M5 the prior's speed ignores ego-dropout": {
+  "passed": 28,
+  "failed": 2,
+  "failed_tests": [
+   "test_d_TRAINING_forwards_with_withheld_rows_still_emit_P_plus_Delta",
+   "test_d_withheld_rows_compose_on_the_no_information_prior_at_the_banks_speed"
+  ],
+  "exit": 1
+ },
+ "M6 the prior is NOT withheld on dropped rows": {
+  "passed": 28,
+  "failed": 2,
+  "failed_tests": [
+   "test_d_TRAINING_forwards_with_withheld_rows_still_emit_P_plus_Delta",
+   "test_d_withheld_rows_compose_on_the_no_information_prior_at_the_banks_speed"
+  ],
+  "exit": 1
+ },
+ "M7 the prior path is read one tick late": {
+  "passed": 21,
+  "failed": 9,
+  "failed_tests": [
+   "test_A2_MUTATION_Delta_fed_to_selection_goes_RED",
+   "test_A2_nav_compliance_and_the_ceiling_rank_the_ABSOLUTE_plan",
+   "test_a_deceleration_stops_the_car_it_never_reverses",
+   "test_a_straight_at_10_mps_is_x_equals_10t_y_zero",
+   "test_b_P_equals_the_BANKED_battery_echo_on_real_windows",
+   "test_b_P_equals_the_battery_FUNCTIONS_on_real_windows",
+   "test_c_a_ZERO_prior_reproduces_the_off_build_when_no_row_is_withheld",
+   "test_d_a_zero_prior_is_the_vocabularys_own_roll",
+   "test_d_withheld_rows_compose_on_the_no_information_prior_at_the_banks_speed"
+  ],
+  "exit": 1
+ },
+ "M8 the trainer's F3 cascade re-rolls without the prior": {
+  "passed": 28,
+  "failed": 2,
+  "failed_tests": [
+   "test_c_off_is_BIT_IDENTICAL_to_refcv6_digest_recorded_on_the_tip",
+   "test_d_the_trainers_OWN_loss_runs_with_every_term_live"
+  ],
+  "exit": 1
+ },
+ "M9 an OFF build computes (and ignores) a prior anyway": {
+  "passed": 29,
+  "failed": 1,
+  "failed_tests": [
+   "test_c_an_OFF_build_never_reaches_the_prior_module"
+  ],
+  "exit": 1
+ },
+ "restored_baseline": {
+  "passed": 30,
+  "failed": 0,
+  "failed_tests": [],
+  "exit": 0
+ }
+}
+MM_EXIT=0

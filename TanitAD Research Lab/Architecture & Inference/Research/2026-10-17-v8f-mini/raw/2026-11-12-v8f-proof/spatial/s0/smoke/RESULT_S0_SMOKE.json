@@ -1,0 +1,73 @@
+{
+ "meta": {
+  "card": "PREREG_V8F_PROOF_ADD12.md Stage 0",
+  "defs": "S0_DEFS.md",
+  "tier": "T0",
+  "statement": "a world-model diagnostic, never driving performance",
+  "families": "Four metric families: LONGITUDINAL, LATERAL, TACTICAL not measured by this read; STRATEGIC: PAUSED (PI item 25, never a pass).",
+  "B": 200,
+  "n_episodes": 12,
+  "counts": {
+   "windows_eval141": 2399,
+   "windows_16_real_frames": 1976,
+   "windows_dropped_clip_not_in_bank_set": 1808,
+   "windows_dropped_no_bank_row_at_g0_or_g0+10": 12,
+   "windows_dropped_nonfinite_actions": 0,
+   "windows_used": 156,
+   "bank_rows": 804,
+   "lead_both_windows": 36,
+   "gap_valid_bank_rows": 185,
+   "presence_valid_bank_rows": 769
+  },
+  "fold_map_equals_latvis_construction": null,
+  "smoke": true,
+  "stage_seconds": {
+   "fold0": 11.069955587387085,
+   "fold1": 11.32494854927063,
+   "fold2": 11.48015570640564,
+   "fold3": 11.816498279571533,
+   "fold4": 11.377788305282593
+  },
+  "token_seconds": 0.15551185607910156,
+  "r_c": "not run (S0_DEFS R14: frames64.u8 and LO_r128.i8 deleted; LATVIS prep took 1,895 s of CPU; decoders need the GPU)",
+  "estimator": "paired episode-cluster bootstrap",
+  "shapes": {
+   "X": [
+    804,
+    40,
+    1024
+   ],
+   "S0g": [
+    804,
+    640
+   ],
+   "S0m": [
+    804,
+    128
+   ]
+  }
+ },
+ "controls": {
+  "s2": {
+   "pass": true,
+   "auc_S0g": 1.0,
+   "auc_S0m": 0.5205566019032514,
+   "bars": "S0g > 0.95 and S0m <= 0.60"
+  },
+  "s2p": {
+   "pass": true,
+   "auc_S0g": 1.0,
+   "auc_S0m": 0.45470017762209197,
+   "bars": "S0g > 0.95 and S0m <= 0.60",
+   "target": "position of the planted object (cell or mirror cell), f5 amplitude; lemma group P predicts S0m at 0.5"
+  },
+  "s4": {
+   "pass": true,
+   "max_abs_diff": {
+    "S0g": 0.0,
+    "S0m": 0.0
+   }
+  }
+ },
+ "total_seconds": 61.37708115577698
+}

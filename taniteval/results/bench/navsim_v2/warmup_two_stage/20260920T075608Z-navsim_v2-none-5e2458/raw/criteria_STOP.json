@@ -1,0 +1,384 @@
+{
+ "registry_version": "2.10.2",
+ "unreadable": [],
+ "artifacts": {
+  "STOP.json": {
+   "scope": "IN_SCOPE",
+   "scope_why": "matched key_present='four_families'",
+   "tier": "T1",
+   "tier_raw": "T1",
+   "tier_is_driving_performance": true,
+   "families": {
+    "LONGITUDINAL": [
+     {
+      "id": "long.target_speed",
+      "label": "target-speed accuracy",
+      "required": true,
+      "state": "PRESENT",
+      "detail": "four_families.longitudinal.speed_mae_mps"
+     },
+     {
+      "id": "long.along_track_error",
+      "label": "along-track displacement error",
+      "required": true,
+      "state": "PRESENT",
+      "detail": "four_families.longitudinal.along_mae_m"
+     },
+     {
+      "id": "long.progress",
+      "label": "ego progress",
+      "required": true,
+      "state": "PRESENT",
+      "detail": "four_families.longitudinal.ego_progress: status=OK"
+     },
+     {
+      "id": "long.distance_keeping",
+      "label": "distance-keeping (headway / time-gap / TTC to the lead agent)",
+      "required": true,
+      "state": "REFUSED",
+      "detail": "four_families.longitudinal.distance_keeping: no lead-agent track supplied — pass `lead=` (see this function's caller docstring). PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus); the reader is `Architecture & Inferen (n=0)"
+     }
+    ],
+    "LATERAL": [
+     {
+      "id": "lat.cross_track",
+      "label": "cross-track error",
+      "required": true,
+      "state": "PRESENT",
+      "detail": "four_families.lateral.cross_mae_m"
+     },
+     {
+      "id": "lat.heading",
+      "label": "heading error",
+      "required": true,
+      "state": "REFUSED",
+      "detail": "four_families.lateral.heading_mae_deg: heading_mae_deg is UNDEFINED for this plan: 128 step(s) moved less than min_ds_m=0.25 m (n_steps_heading=0, n_steps_curvature=0) — a stationary path has no tangent, so heading/curvature/yaw-rate error (n=0)"
+     },
+     {
+      "id": "lat.curvature",
+      "label": "curvature error",
+      "required": true,
+      "state": "REFUSED",
+      "detail": "four_families.lateral.curvature_mae_1pm: curvature_mae_1pm is UNDEFINED for this plan: 128 step(s) moved less than min_ds_m=0.25 m (n_steps_heading=0, n_steps_curvature=0) — a stationary path has no tangent, so heading/curvature/yaw-rate err (n=0)"
+     },
+     {
+      "id": "lat.yaw_rate",
+      "label": "yaw-rate error",
+      "required": true,
+      "state": "REFUSED",
+      "detail": "four_families.lateral.yaw_rate_mae_degps: yaw_rate_mae_degps is UNDEFINED for this plan: 128 step(s) moved less than min_ds_m=0.25 m (n_steps_heading=0, n_steps_curvature=0) — a stationary path has no tangent, so heading/curvature/yaw-rate er (n=0)"
+     }
+    ],
+    "TACTICAL": [
+     {
+      "id": "tac.manoeuvre_decision",
+      "label": "manoeuvre-decision quality (selected vs executed)",
+      "required": true,
+      "state": "PRESENT",
+      "detail": "four_families.tactical.lateral_decision: status=OK"
+     },
+     {
+      "id": "tac.confusion",
+      "label": "confusion over the manoeuvre classes",
+      "required": true,
+      "state": "PRESENT",
+      "detail": "four_families.tactical.lateral_decision.confusion_gt_rows_pred_cols"
+     },
+     {
+      "id": "tac.goal_selection",
+      "label": "tactical goal / anchor selection quality",
+      "required": true,
+      "state": "PRESENT",
+      "detail": "four_families.tactical.goal_setting: status=OK"
+     }
+    ],
+    "STRATEGIC": [
+     {
+      "id": "strat.decision",
+      "label": "strategic decision quality",
+      "required": true,
+      "state": "REFUSED",
+      "detail": "four_families.strategic: PhysicalAI-AV carries NO map, NO lane graph, NO junction/roundabout label, NO traffic-light feature and NO route/goal signal — the dataset card says verbatim 'we do not include open maps data', and ob (n=16)"
+     },
+     {
+      "id": "strat.route_goal",
+      "label": "strategic route / goal-setting quality",
+      "required": true,
+      "state": "REFUSED",
+      "detail": "four_families.strategic: PhysicalAI-AV carries NO map, NO lane graph, NO junction/roundabout label, NO traffic-light feature and NO route/goal signal — the dataset card says verbatim 'we do not include open maps data', and ob (n=16)"
+     },
+     {
+      "id": "strat.nav_compliance",
+      "label": "nav-COMPLIANCE — the emitted BEHAVIOUR follows the route command (imminent windows)",
+      "required": true,
+      "state": "REFUSED",
+      "detail": "STOP consumes NO route / driving_command input, so 'behaviour follows the route command' is undefined for it; NavSim never scores the route."
+     },
+     {
+      "id": "strat.nav_compliance_ctrl_shuffle",
+      "label": "nav-compliance CONTROL: paired drop under nav-SHUFFLE (token permuted across windows)",
+      "required": true,
+      "state": "REFUSED",
+      "detail": "no route input exists to shuffle or withhold."
+     },
+     {
+      "id": "strat.nav_compliance_ctrl_zero",
+      "label": "nav-compliance CONTROL: paired drop under nav-ZERO (nav withheld, E13 skipped)",
+      "required": true,
+      "state": "REFUSED",
+      "detail": "no route input exists to shuffle or withhold."
+     }
+    ]
+   },
+   "hygiene": [
+    {
+     "id": "hyg.tier_stamp",
+     "label": "tier stamp present",
+     "required": true,
+     "state": "PRESENT",
+     "detail": "T1 (T1)"
+    },
+    {
+     "id": "hyg.estimator_named",
+     "label": "estimator named",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "estimator.interval: ⛔ warmup NEVER carries a CI — D-BENCH-PORT (PI approval 2026-08-29): 7 log groups < the RG-14 floor of 8 (products/P7-TanitEval/RELEASE_GATE.md); the 7 is re-read from scene_filter/warmup_two_stage.ya (n=7)"
+    },
+    {
+     "id": "hyg.n_reported",
+     "label": "n printed (windows and episodes)",
+     "required": true,
+     "state": "PRESENT",
+     "detail": "n_windows"
+    },
+    {
+     "id": "hyg.no_forbidden_estimator",
+     "label": "overlapping_holdout_se not used as a decision-grade interval",
+     "required": true,
+     "state": "PRESENT",
+     "detail": "named only to disavow or deprecate it (four_families.longitudinal.anti_echo.holdv0_baseline.estimator)"
+    },
+    {
+     "id": "hyg.parity",
+     "label": "corpus identity recorded (parity key + skip-hash)",
+     "required": true,
+     "state": "PRESENT",
+     "detail": "protocol.corpus"
+    },
+    {
+     "id": "ctrl.floor_comparison",
+     "label": "headline metrics reported against their trivial control(s)",
+     "required": true,
+     "state": "PRESENT",
+     "detail": "controls"
+    },
+    {
+     "id": "hyg.inference_seed",
+     "label": "stochastic planner: inference-seed replicate + the seed floor",
+     "required": false,
+     "state": "REFUSED",
+     "detail": "the floor arms are deterministic and the scoring path has no RNG (E1 C7: a hash-seed-2 replicate reproduced every per-token value bit-for-bit); a sampling planner arm would need an inference-seed replicate."
+    }
+   ],
+   "leak_guards": [
+    {
+     "id": "vision_only_inference",
+     "label": "Inference uses VISION ONLY. Labels may use ego/privileged data (PI, 2026-08-03, binding).",
+     "required": true,
+     "state": "PRESENT",
+     "detail": "protocol.inference_inputs"
+    },
+    {
+     "id": "goal_situation_disjoint",
+     "label": "The goal path and the situation path stay information-disjoint at inference; a goal input must not carry the situation classifier's output in any form (PI, 2026-08-03, binding).",
+     "required": true,
+     "state": "PRESENT",
+     "detail": "protocol.goal_source"
+    },
+    {
+     "id": "route_head_echo",
+     "label": "A route/goal head scoring near 1.0 must publish its echo test against its own input.",
+     "required": false,
+     "state": "ABSENT",
+     "detail": "no key present and not refused"
+    }
+   ],
+   "benchmarks": [
+    {
+     "id": "protocol.tag_registered",
+     "label": "protocol tag is a registered one",
+     "required": true,
+     "state": "PRESENT",
+     "detail": "EPDMS_v2_warmup_two_stage (benchmarks.navsim.GATE_no_cross_protocol_comparison.closed_set)"
+    },
+    {
+     "id": "navsim.score",
+     "label": "EPDMS/PDMS from the `score` column",
+     "required": true,
+     "state": "PRESENT",
+     "detail": "benchmark.navsim.score"
+    },
+    {
+     "id": "navsim.variant",
+     "label": "which variant + split named",
+     "required": true,
+     "state": "PRESENT",
+     "detail": "benchmark.navsim.variant"
+    },
+    {
+     "id": "navsim.submetrics",
+     "label": "every sub-metric reported",
+     "required": true,
+     "state": "PRESENT",
+     "detail": "benchmark.navsim.submetrics"
+    },
+    {
+     "id": "navsim.ego_inputs",
+     "label": "declared ego inputs (vision-only compliance)",
+     "required": true,
+     "state": "PRESENT",
+     "detail": "benchmark.navsim.ego_inputs"
+    },
+    {
+     "id": "navsim.route_leak_check",
+     "label": "route_roadblock_ids provenance checked",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "benchmark.navsim.route_leak_check: this arm consumes no route / driving_command input, so a route-derived leak cannot enter it (n=220)"
+    },
+    {
+     "id": "navsim.ego_enforcement",
+     "label": "GATE navsim.ego_enforcement",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "declared not applicable (no vision-only claim): arm is NOT vision-only and does not claim to be: none — reads no input at all"
+    },
+    {
+     "id": "navsim.estimator_unit",
+     "label": "GATE navsim.estimator_unit",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "interval refused: ⛔ warmup NEVER carries a CI — D-BENCH-PORT (PI approval 2026-08-29): 7 log groups < the RG-14 floor of 8 (products/P7-TanitEval/RELEASE_GATE.md); the 7 is re-re (n=7)"
+    },
+    {
+     "id": "navsim.modality_label",
+     "label": "GATE navsim.modality_label",
+     "required": true,
+     "state": "PRESENT",
+     "detail": "PASS — sensor_set and setting declared"
+    },
+    {
+     "id": "navsim.cross_protocol",
+     "label": "GATE navsim.cross_protocol",
+     "required": true,
+     "state": "PRESENT",
+     "detail": "PASS — EPDMS_v2_warmup_two_stage @ 0a380a9063"
+    }
+   ],
+   "n_violations": 0,
+   "n_work_items": 14,
+   "violations": [],
+   "work_items": [
+    {
+     "id": "long.distance_keeping",
+     "label": "distance-keeping (headway / time-gap / TTC to the lead agent)",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "four_families.longitudinal.distance_keeping: no lead-agent track supplied — pass `lead=` (see this function's caller docstring). PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus); the reader is `Architecture & Inferen (n=0)"
+    },
+    {
+     "id": "lat.heading",
+     "label": "heading error",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "four_families.lateral.heading_mae_deg: heading_mae_deg is UNDEFINED for this plan: 128 step(s) moved less than min_ds_m=0.25 m (n_steps_heading=0, n_steps_curvature=0) — a stationary path has no tangent, so heading/curvature/yaw-rate error (n=0)"
+    },
+    {
+     "id": "lat.curvature",
+     "label": "curvature error",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "four_families.lateral.curvature_mae_1pm: curvature_mae_1pm is UNDEFINED for this plan: 128 step(s) moved less than min_ds_m=0.25 m (n_steps_heading=0, n_steps_curvature=0) — a stationary path has no tangent, so heading/curvature/yaw-rate err (n=0)"
+    },
+    {
+     "id": "lat.yaw_rate",
+     "label": "yaw-rate error",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "four_families.lateral.yaw_rate_mae_degps: yaw_rate_mae_degps is UNDEFINED for this plan: 128 step(s) moved less than min_ds_m=0.25 m (n_steps_heading=0, n_steps_curvature=0) — a stationary path has no tangent, so heading/curvature/yaw-rate er (n=0)"
+    },
+    {
+     "id": "strat.decision",
+     "label": "strategic decision quality",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "four_families.strategic: PhysicalAI-AV carries NO map, NO lane graph, NO junction/roundabout label, NO traffic-light feature and NO route/goal signal — the dataset card says verbatim 'we do not include open maps data', and ob (n=16)"
+    },
+    {
+     "id": "strat.route_goal",
+     "label": "strategic route / goal-setting quality",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "four_families.strategic: PhysicalAI-AV carries NO map, NO lane graph, NO junction/roundabout label, NO traffic-light feature and NO route/goal signal — the dataset card says verbatim 'we do not include open maps data', and ob (n=16)"
+    },
+    {
+     "id": "strat.nav_compliance",
+     "label": "nav-COMPLIANCE — the emitted BEHAVIOUR follows the route command (imminent windows)",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "STOP consumes NO route / driving_command input, so 'behaviour follows the route command' is undefined for it; NavSim never scores the route."
+    },
+    {
+     "id": "strat.nav_compliance_ctrl_shuffle",
+     "label": "nav-compliance CONTROL: paired drop under nav-SHUFFLE (token permuted across windows)",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "no route input exists to shuffle or withhold."
+    },
+    {
+     "id": "strat.nav_compliance_ctrl_zero",
+     "label": "nav-compliance CONTROL: paired drop under nav-ZERO (nav withheld, E13 skipped)",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "no route input exists to shuffle or withhold."
+    },
+    {
+     "id": "hyg.estimator_named",
+     "label": "estimator named",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "estimator.interval: ⛔ warmup NEVER carries a CI — D-BENCH-PORT (PI approval 2026-08-29): 7 log groups < the RG-14 floor of 8 (products/P7-TanitEval/RELEASE_GATE.md); the 7 is re-read from scene_filter/warmup_two_stage.ya (n=7)"
+    },
+    {
+     "id": "hyg.inference_seed",
+     "label": "stochastic planner: inference-seed replicate + the seed floor",
+     "required": false,
+     "state": "REFUSED",
+     "detail": "the floor arms are deterministic and the scoring path has no RNG (E1 C7: a hash-seed-2 replicate reproduced every per-token value bit-for-bit); a sampling planner arm would need an inference-seed replicate."
+    },
+    {
+     "id": "navsim.route_leak_check",
+     "label": "route_roadblock_ids provenance checked",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "benchmark.navsim.route_leak_check: this arm consumes no route / driving_command input, so a route-derived leak cannot enter it (n=220)"
+    },
+    {
+     "id": "navsim.ego_enforcement",
+     "label": "GATE navsim.ego_enforcement",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "declared not applicable (no vision-only claim): arm is NOT vision-only and does not claim to be: none — reads no input at all"
+    },
+    {
+     "id": "navsim.estimator_unit",
+     "label": "GATE navsim.estimator_unit",
+     "required": true,
+     "state": "REFUSED",
+     "detail": "interval refused: ⛔ warmup NEVER carries a CI — D-BENCH-PORT (PI approval 2026-08-29): 7 log groups < the RG-14 floor of 8 (products/P7-TanitEval/RELEASE_GATE.md); the 7 is re-re (n=7)"
+    }
+   ]
+  }
+ }
+}

@@ -1,0 +1,35 @@
+C:\Users\Admin\par18\p7wire_head\baseline_run\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\scorer_finetune.py:1995: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:821.)
+  d0A, dBA = float((sx0 - sxA[..., :sx0.shape[-1]]).abs().max()), float((sxB - sxA).abs().max())
+HOP TRACE of --epo-con-temp (file:line of the patched trainer)
+  1 argparse declares the flag                               refe/scorer_finetune.py:837
+  2 namespace -> the dual (main reads a.epo_con_temp)        refe/scorer_finetune.py:954
+  3 EpoDual holds it                                         refe/scorer_finetune.py:303
+  4 train_losses passes dual.temp to the constraint term     refe/scorer_finetune.py:1068
+  5a epo_con_term: policy of arm B at T                      refe/scorer_finetune.py:274
+  5b epo_con_term: policy of arm A at T                      refe/scorer_finetune.py:275
+  6 epo_policy divides by T                                  refe/scorer_finetune.py:201
+  7 the term joins arm B's loss                              refe/scorer_finetune.py:1069
+  8 the loop backwards it                                    refe/scorer_finetune.py:1678
+  9 G13 gets the dual's T                                    refe/scorer_finetune.py:1593
+mutation                                                                                             part caught-by (failing checks)
+M1 (d) the OLD T hard-coded at the call: train_losses passes a.epo_temp again                        U    R_hop_4_train_losses_passes_dual_temp_as_the_T_of_epo_con_term_and_not_a_epo_temp, U_a_the_constraint_s_gradient_on_the_scorer_params_DIFFERS_between_0.1_and_0.02_and_arm_A_does_not, U_b_the_default_INHERITS_epo_temp_for_any_value_of_it_it_is_not_a_constant_0.1
+M2 (d) the OLD T hard-coded INSIDE the term (policy of B and of A at a literal 0.1)                  U    R_hop_5_epo_con_term_runs_BOTH_policies_at_its_T_parameter_with_no_literal_0.1_in_it, U_a_the_constraint_s_gradient_on_the_scorer_params_DIFFERS_between_0.1_and_0.02_and_arm_A_does_not, U_b_the_default_INHERITS_epo_temp_for_any_value_of_it_it_is_not_a_constant_0.1
+M3 the flag parsed but never reaches the dual (main passes a.epo_temp)                               U    R_hop_2_main_builds_the_dual_with_temp_from_the_flag_and_falls_back_to_epo_temp_only_when_None, R_hop_9_the_gate_s_own_dead_lever_scan_sees_main_read_the_flag, U_a_the_constraint_s_gradient_on_the_scorer_params_DIFFERS_between_0.1_and_0.02_and_arm_A_does_not
+M4 the default flipped from None to 0.1 (no inheritance)                                             U    R_hop_1_parser_declares_the_flag_float_default_None, U_b_the_default_INHERITS_epo_temp_for_any_value_of_it_it_is_not_a_constant_0.1
+M5 the resolution inverted (the flag loses to --epo-temp)                                            U    R_hop_2_main_builds_the_dual_with_temp_from_the_flag_and_falls_back_to_epo_temp_only_when_None, U_a_the_constraint_s_gradient_on_the_scorer_params_DIFFERS_between_0.1_and_0.02_and_arm_A_does_not, U_b_IDENTITY_default_vs_explicit_0.1_gives_bit_identical_loss_and_gradient_difference_EXACTLY_0.0
+M6 epo_con_temp dropped from EPO_CON_DESTS (named-while-off no longer refused)                       U    U_refusal_temp_named_while_off_or_without_epo_is_refused_because_the_term_is_OFF, U_refusal_temp_alone_with_eps_lam_etc_are_still_governed_by_the_same_rule
+M7 the refusal of a non-positive temperature removed                                                 U    U_refusal_a_non_positive_or_non_finite_temp_is_refused
+M8 the T2 probe does not double (con_probe)                                                          E    E_t002_the_real_main_runs_preflight_PASS_then_trains
+M9 (d, preflight) the OLD T hard-coded at the call: the PREFLIGHT must FAIL (G13 temp_reach)         E    E_t002_the_real_main_runs_preflight_PASS_then_trains
+G1 the G-DVB row for epo_con.temp removed (it falls to the generic branch)                           G    G_dvb_PASS_default_named_0.02_and_explicit_0.1_each_with_the_block_that_matches, G_dvb_the_epo_con_temp_row_is_observed_and_carries_the_effective_declared_value, G_dvb_FAIL_the_argv_is_silent_but_the_trainer_built_0.02
+G2 the entry dropped from DVB_KINDS_SCORER                                                           G    G_dvb_registry_classifies_epo_con_temp_as_built, G_dvb_PASS_default_named_0.02_and_explicit_0.1_each_with_the_block_that_matches, G_dvb_legacy_block_without_temp_key_PASSES_when_the_flag_is_unnamed_it_ran_at_epo_temp
+G3 judge_g13 does not require temp_reach                                                             G    G_judge_g13_twin_temp_reach_absent, G_judge_g13_twin_temp_reach_not_a_dict, G_consumer_FAIL_a_preflight_without_temp_reach
+G4 judge_g13 does not require the gradient to move when T doubles                                    G    G_judge_g13_twin_temp_reach_not_moved_equal_reads
+G5 judge_g13 does not bind the probed T to the argv's effective T                                    G    G_judge_g13_twin_temp_reach_wrong_T, G_judge_g13_twin_the_argv_names_another_T_than_the_probe_ran_at, G_consumer_FAIL_the_same_evidence_for_the_inherited_0.1_argv
+G6 the registered default constraint T removed (older arms accept a changed T)                       G    G_a_registered_arm_refuses_a_changed_T_and_says_what_it_resolves_to, G_future_arm_fixture_leaves_R0d_refusing_a_changed_T
+G7 the gate compares the RAW namespace value, not the effective one                                  G    G_the_registered_arms_are_unchanged_R0d_R1d_R1o_clean_without_the_flag, G_the_older_profiles_still_accept_what_they_accepted
+G8 the aux profile no longer forbids --epo-con-temp                                                  G    G_the_aux_and_sft4r_profiles_forbid_the_flag
+G9 the regression arm con_temp_ignored is inert                                                      G    G_dvb_REGRESSION_ARM_con_temp_ignored_FAILS_on_the_named_argv, G_dvb_REGRESSION_ARM_con_temp_ignored_FAILS_on_the_unnamed_argv, G_dvb_the_regression_arm_leaves_no_residue
+G10 a future arm may omit a registered T (arm_must_name ignored)                                     G    G_future_arm_fixture_R0p_with_the_flag_OMITTED_is_refused_NAMED_and_registered_value_and_the_parser_DEFAULT
+ZZTEST_PASS 20  (1 unmutated suite + 19 RED mutations)

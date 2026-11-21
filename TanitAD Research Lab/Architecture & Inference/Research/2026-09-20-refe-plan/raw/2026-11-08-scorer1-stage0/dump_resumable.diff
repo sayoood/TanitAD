@@ -1,0 +1,61 @@
+--- a/scorer_finetune.py
++++ b/scorer_finetune.py
+@@ -306,2 +306,18 @@
+         return out
++    def save_partial(self, path):
++        """Scratch Stage 0: a crash-safe snapshot of the rows so far (written beside, then renamed over)."""
++        tmp = path + ".tmp.npz"
++        np.savez(tmp, log=np.asarray([k[0] for k in self.keys]), token=np.asarray([k[1] for k in self.keys]),
++                 step=np.asarray([k[2] for k in self.keys], np.int64), rank=np.asarray([k[3] for k in self.keys], np.int64),
++                 ckpt_step=np.asarray(self.ckpts, np.int64), **{"scores_" + arm: np.concatenate(self.chunks[arm], 0) for arm in self.ARMS})
++        os.replace(tmp, path)
++
++    def load_partial(self, path):
++        """-> rows restored; the inverse of save_partial."""
++        with np.load(path, allow_pickle=False) as z:
++            self.keys = [(str(l), str(t), int(s), int(r)) for l, t, s, r in zip(z["log"], z["token"], z["step"], z["rank"])]
++            self.ckpts = [int(c) for c in z["ckpt_step"]]
++            self.chunks = {arm: [z["scores_" + arm].astype(np.float64)] for arm in self.ARMS}
++        return len(self.keys)
++
+ 
+@@ -1313,2 +1329,3 @@
+     ap.add_argument("--epo-carve-micro", type=int, default=EPO_CARVE_MICRO_DEFAULT, help="B8: carve micro-batches (--batch sets each) scored per optimiser update; only with --epo-con-feed carve")
++    ap.add_argument("--dump-batch", type=int, default=16, help="--dump-step0-only: held-out batch size of the dump (evaluate() uses 16 otherwise)")
+     ap.add_argument("--dump-step0-only", action="store_true", help="eval-only: write the step-0 --dump-scores files and exit before any optimizer step (needs --lr 0)")
+@@ -1785,3 +1802,12 @@
+         idx = ho_idx[:limit] if limit else ho_idx
+-        dlh = DataLoader(Subset(ds_ho, idx), batch_size=16, shuffle=False, num_workers=2)
++        _s0 = bool(a.dump_step0_only and a.dump_scores)                      # Stage 0 (scratch): scores only, progress lines, partial saves, resume
++        _part = os.path.join(a.dump_scores, "partial_step0.npz") if _s0 else None
++        _pre, _n0, _nb, _t0 = None, 0, 0, time.time()
++        if _part and os.path.exists(_part):
++            _pre = ScoreDump(); _n0 = _pre.load_partial(_part)
++            if [key(ds.rows[i]) for i in idx[:_n0]] != _pre.keys:
++                raise RuntimeError("partial dump does not match the held-out row order: " + _part)
++            log({"event": "dump_resume", "rows_restored": _n0})
++        _n_tot = len(idx); idx = idx[_n0:]
++        dlh = DataLoader(Subset(ds_ho, idx), batch_size=(a.dump_batch if _s0 else 16), shuffle=False, num_workers=2)
+         res = {k: {"pick": [], "rand": [], "best": [], "zero": [], "auc_nc": [], "auc_dac": [], "auc_ddc": [],
+@@ -1791,3 +1817,3 @@
+         toks, logs_ = [], []
+-        sdump = ScoreDump() if a.dump_scores else None
++        sdump = _pre if _pre is not None else (ScoreDump() if a.dump_scores else None)
+         j = 0
+@@ -1798,2 +1824,10 @@
+                 sdump.add(bkeys, [ho.by[k_][0] for k_ in bkeys], sx0, sxA, sxB)
++            if _s0:
++                j += tg.shape[0]; _nb += 1
++                if _nb == 1 or _nb % 5 == 0:
++                    log({"event": "dump_progress", "done": len(sdump.keys), "of": _n_tot, "elapsed_s": round(time.time() - _t0, 1),
++                         "vram_alloc_mib": int(torch.cuda.memory_allocated() / 2**20), "vram_reserved_mib": int(torch.cuda.memory_reserved() / 2**20)})
++                if _nb % 25 == 0:
++                    os.makedirs(a.dump_scores, exist_ok=True); sdump.save_partial(_part)
++                continue
+             tlane = tg[..., 6] if tg.shape[-1] == 7 else None                    # teacher lane target (-1 = none)
+@@ -1837,2 +1871,5 @@
+                 toks.append(f"{r.get('log_name')}|{r.get('token')}|{r.get('step')}|{r.get('rank', 0)}"); logs_.append(r.get("log_name"))
++        if _s0:
++            log({"event": "score_dump", "tag": tag, "n_sets": len(sdump.keys), "files": sdump.write(a.dump_scores, tag)})
++            return {"event": "eval", "tag": tag, "n": len(sdump.keys), "dump_only": True}
+         out = {"event": "eval", "tag": tag, "n": len(toks)}

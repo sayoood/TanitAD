@@ -1,0 +1,59 @@
+# PREREG_V8F_FLAT mutation proof, RE-RUNS of 2026-10-25 (after the first full run in mutate_flat.out: 164/172 RED, 8 SURVIVED). Same runner, run on a FRESH copy of the tree (C:/Users/Admin/pt_flat_mutcopy2), basetemp C:/Users/Admin/pt_flat_mut2 (the runner's BASE edited to that path in a byte-for-byte copy of mutate_flat.py; nothing else differs).
+# Part 1: --from 68 --to 78 (the 4 'killed by a pytest ERROR while C: was full' mutants #68 #69 #76 #77, plus #70-75 and #72). 254-test file (the test file as of the first run).
+172 mutants over 6 files, each anchor found exactly once
+baseline: 0 254 passed, 1 warning in 164.52s (0:02:44)
+RED      #68 [v8f_flat_read.py] the built o_interface may be anything [reader group]: FAILED stack\tests\test_v8f_flat.py::test_reader_refuses_rc2_with_the_reason[x built o_interface full (summary)] | 1 failed, 66 passed, 114 deselected, 1 warning in 65.86s (0:01:05)
+RED      #69 [v8f_flat_read.py] the built code_mix may be anything [reader group]: FAILED stack\tests\test_v8f_flat.py::test_reader_refuses_rc2_with_the_reason[x built code_mix kind (summary)] | 1 failed, 70 passed, 114 deselected, 1 warning in 93.79s (0:01:33)
+RED      #70 [v8f_flat_read.py] the built p_gt schedule may be anything [reader group]: FAILED stack\tests\test_v8f_flat.py::test_reader_refuses_rc2_with_the_reason[x built another p_gt] | 1 failed, 72 passed, 114 deselected, 1 warning in 91.28s (0:01:31)
+RED      #71 [v8f_flat_read.py] the built hmax may be anything [reader group]: FAILED stack\tests\test_v8f_flat.py::test_reader_refuses_rc2_with_the_reason[x built hmax 10] | 1 failed, 74 passed, 114 deselected, 1 warning in 79.89s (0:01:19)
+RED      #72 [v8f_flat_read.py] the built levers may differ from B's [reader group]: FAILED stack\tests\test_v8f_flat.py::test_reader_refuses_rc2_with_the_reason[x built another mask] | 1 failed, 77 passed, 114 deselected, 1 warning in 79.60s (0:01:19)
+RED      #73 [v8f_flat_read.py] the built loss weights may differ from B's [reader group]: FAILED stack\tests\test_v8f_flat.py::test_reader_refuses_rc2_with_the_reason[x built another weight] | 1 failed, 75 passed, 114 deselected, 1 warning in 84.26s (0:01:24)
+RED      #74 [v8f_flat_read.py] B may have built the cut [reader group]: FAILED stack\tests\test_v8f_flat.py::test_reader_refuses_rc2_with_the_reason[B built the cut] | 1 failed, 81 passed, 114 deselected, 1 warning in 84.24s (0:01:24)
+RED      #75 [v8f_flat_read.py] a parameter group may differ from B's [reader group]: FAILED stack\tests\test_v8f_flat.py::test_reader_refuses_rc2_with_the_reason[x grew a group] | 1 failed, 79 passed, 114 deselected, 1 warning in 85.89s (0:01:25)
+RED      #76 [v8f_flat_read.py] the parameter total may differ from B's [reader group]: FAILED stack\tests\test_v8f_flat.py::test_reader_refuses_rc2_with_the_reason[x has one parameter too many] | 1 failed, 78 passed, 114 deselected, 1 warning in 80.24s (0:01:20)
+RED      #77 [v8f_flat_read.py] the checkpoint may be built full [reader group]: FAILED stack\tests\test_v8f_flat.py::test_reader_refuses_rc2_with_the_reason[x checkpoint built full] | 1 failed, 82 passed, 114 deselected, 1 warning in 78.67s (0:01:18)
+restored: 0 254 passed, 1 warning in 193.43s (0:03:13) | byte-identical: True
+10/10 RED
+rc=0
+
+# Part 2: --from 0 --to 8 (#0-5 and #7 were killed by 'error during collection', not by an assertion: see anchor_repro.out for the cause). 254-test file.
+172 mutants over 6 files, each anchor found exactly once
+baseline: 0 254 passed, 1 warning in 192.42s (0:03:12)
+RED      #0 [v8f_mini.py] the cut never runs (cut == full) [model group]: !!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!! | 1 error in 4.05s
+RED      #1 [v8f_mini.py] the cut runs under full (and not under cut) [model group]: !!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!! | 1 error in 2.38s
+RED      #2 [v8f_mini.py] the checkpoint half is deleted: O still reads S's checkpoints [model group]: !!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!! | 1 error in 3.31s
+RED      #3 [v8f_mini.py] the ok half is deleted: O reads the nominal arcs but is told they are present [model group]: !!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!! | 1 error in 2.30s
+RED      #4 [v8f_mini.py] the code half is deleted: O still reads T's code [model group]: !!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!! | 1 error in 2.13s
+RED      #5 [v8f_mini.py] the cut hands O ones, not zeros [model group]: !!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!! | 1 error in 2.74s
+RED      #6 [v8f_mini.py] the cut hands O a nominal arc that is not the model's [model group]: FAILED stack\tests\test_v8f_flat.py::test_under_cut_o_is_handed_the_constants_under_every_route | 1 failed, 5 passed, 202 deselected in 37.46s
+RED      #7 [v8f_mini.py] the cut hands O the ok flag set [model group]: !!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!! | 1 error in 3.52s
+restored: 0 254 passed, 1 warning in 195.25s (0:03:15) | byte-identical: True
+8/8 RED
+rc=0
+
+# Part 3: --from 20 --to 40 with the 9 NEW tests of section (H) added to test_v8f_flat.py (263 tests). The 8 survivors are #20 #23 #27 #28 #29 #30 #37 #39.
+172 mutants over 6 files, each anchor found exactly once
+baseline: 0 263 passed, 1 warning in 254.14s (0:04:14)
+RED      #20 [v8f_mini_train.py] live_check_lora does not declare e_code.weight dead under cut [model group]: FAILED stack\tests\test_v8f_flat.py::test_live_check_lora_declares_e_code_weight_dead_under_cut_and_only_under_cut[cut-dead0] | 1 failed, 57 passed, 203 deselected, 1 warning in 77.79s (0:01:17)
+RED      #21 [v8f_mini_train.py] live_check does not require the zero (the dead weight may be alive) [model group]: FAILED stack\tests\test_v8f_flat.py::test_live_check_requires_the_zero_under_cut_and_the_nonzero_under_full | 1 failed, 27 passed, 203 deselected in 48.25s
+RED      #22 [v8f_mini_train.py] the probe is faked (never reads what O is handed) [model group]: FAILED stack\tests\test_v8f_flat.py::test_the_trainer_source_has_every_hop_of_the_trace | 1 failed, 33 passed, 203 deselected, 1 warning in 53.01s
+RED      #23 [v8f_mini_train.py] the probe's refusal does not stop the run [model group]: FAILED stack\tests\test_v8f_flat.py::test_a_refusing_o_interface_probe_stops_the_trainer_before_it_writes_the_selfcheck | 1 failed, 56 passed, 203 deselected, 1 warning in 57.82s
+RED      #24 [v8f_mini_train.py] selfcheck.json omits the probe [model group]: FAILED stack\tests\test_v8f_flat.py::test_trainer_argv_reaches_the_config_the_checkpoint_the_records_and_the_gate | 1 failed, 29 passed, 203 deselected, 1 warning in 55.28s
+RED      #25 [v8f_mini_train.py] the probe does not refuse a cut whose traj60 moves [model group]: FAILED stack\tests\test_v8f_flat.py::test_gdvb_refuses_a_model_built_by_a_mutant_that_ignores_the_config | 1 failed, 26 passed, 203 deselected in 48.45s
+RED      #26 [v8f_mini_train.py] the probe does not refuse a full whose traj60 does not move (it cannot see a change) [model group]: FAILED stack\tests\test_v8f_flat.py::test_the_probe_passes_both_modes_and_refuses_a_declaration_the_model_does_not_build | 1 failed, 28 passed, 203 deselected in 46.42s
+RED      #27 [v8f_mini_train.py] the probe does not refuse a cut that hands O a non-constant [model group]: FAILED stack\tests\test_v8f_flat.py::test_the_probe_refuses_a_declared_cut_whose_o_is_handed_a_non_constant_even_though_traj60_does_not_move | 1 failed, 52 passed, 203 deselected, 1 warning in 55.33s
+RED      #28 [v8f_mini_train.py] the probe does not require T to still read S [model group]: FAILED stack\tests\test_v8f_flat.py::test_the_probe_refuses_a_model_whose_t_no_longer_reads_s | 1 failed, 53 passed, 203 deselected, 1 warning in 55.19s
+RED      #29 [v8f_mini_train.py] the probe does not check the override reached the interface [model group]: FAILED stack\tests\test_v8f_flat.py::test_the_probe_refuses_a_code_override_that_never_reached_the_interface | 1 failed, 54 passed, 203 deselected, 1 warning in 57.35s
+RED      #30 [v8f_mini_train.py] the probe does not check the checkpoint shift moved S [model group]: FAILED stack\tests\test_v8f_flat.py::test_the_probe_refuses_a_checkpoint_shift_that_did_not_move_s | 1 failed, 55 passed, 203 deselected, 1 warning in 57.30s
+RED      #31 [v8f_mini_train.py] the probe leaves the residual head at zero (blind) [model group]: FAILED stack\tests\test_v8f_flat.py::test_gdvb_refuses_a_model_built_by_a_mutant_that_ignores_the_config | 1 failed, 26 passed, 203 deselected in 46.52s
+RED      #32 [v8f_mini_train.py] the probe perturbs no random code [whole file]: FAILED stack\tests\test_v8f_flat.py::test_reader_decision_table_every_cell_end_to_end[d_ade0-HIERARCHY BEATS FLAT-states0] | 1 failed, 62 passed, 1 warning in 56.05s
+RED      #33 [v8f_mini_train.py] the probe shifts the checkpoints by nothing [model group]: FAILED stack\tests\test_v8f_flat.py::test_the_probe_passes_both_modes_and_refuses_a_declaration_the_model_does_not_build | 1 failed, 28 passed, 203 deselected in 40.98s
+RED      #34 [v8f_mini_eval.py] the eval does not record the interface it built [model group]: FAILED stack\tests\test_v8f_flat.py::test_the_eval_builds_the_interface_from_the_checkpoint_and_the_gt_code_oracle_reads_the_identity | 1 failed, 34 passed, 203 deselected, 1 warning in 44.77s
+RED      #35 [v8f_flat_read.py] the 2F bar is 0.2400 [reader group]: FAILED stack\tests\test_v8f_flat.py::test_a_seed_state_needs_the_committed_2F_AND_a_separated_interval_on_the_right_side | 1 failed, 9 passed, 122 deselected in 3.11s
+RED      #36 [v8f_flat_read.py] the bootstrap B defaults to 1,000 [reader group]: FAILED stack\tests\test_v8f_flat.py::test_the_committed_outcome_table_and_constants_are_verbatim_the_preregs | 1 failed, 137 passed, 122 deselected, 1 warning in 96.50s (0:01:36)
+RED      #37 [v8f_flat_read.py] LO needs no separation [reader group]: FAILED stack\tests\test_v8f_flat.py::test_a_seed_state_needs_the_librarys_separated_flag_on_top_of_the_side_of_the_interval | 1 failed, 140 passed, 122 deselected, 1 warning in 96.47s (0:01:36)
+RED      #38 [v8f_flat_read.py] LO needs no interval below 0 [reader group]: FAILED stack\tests\test_v8f_flat.py::test_a_seed_state_needs_the_committed_2F_AND_a_separated_interval_on_the_right_side | 1 failed, 9 passed, 122 deselected in 3.14s
+RED      #39 [v8f_flat_read.py] HI needs no separation [reader group]: FAILED stack\tests\test_v8f_flat.py::test_a_seed_state_needs_the_librarys_separated_flag_on_top_of_the_side_of_the_interval | 1 failed, 140 passed, 122 deselected, 1 warning in 103.77s (0:01:43)
+restored: 0 263 passed, 1 warning in 238.30s (0:03:58) | byte-identical: True
+20/20 RED
+rc=0

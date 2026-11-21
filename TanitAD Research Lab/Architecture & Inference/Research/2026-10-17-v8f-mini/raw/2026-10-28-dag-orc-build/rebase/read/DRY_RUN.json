@@ -1,0 +1,227 @@
+{
+ "DRY_RUN": true,
+ "controls_PASS": {
+  "STATIC": true,
+  "K-P0": true,
+  "SLOTS-BANKED": true,
+  "SUMMARY:CTRL_s0": true,
+  "K-INIT:CTRL_s0": true,
+  "ARGV:CTRL_s0": true,
+  "K-GATE:CTRL_s0": true,
+  "CTRL-CKPT:CTRL_s0": true,
+  "K-PAIR-selfcheck:CTRL_s0": true,
+  "K-REGISTERED-selfcheck:CTRL_s0": true,
+  "SUMMARY:CTRL_s1": true,
+  "K-INIT:CTRL_s1": true,
+  "ARGV:CTRL_s1": true,
+  "K-GATE:CTRL_s1": true,
+  "CTRL-CKPT:CTRL_s1": true,
+  "K-PAIR-selfcheck:CTRL_s1": true,
+  "K-REGISTERED-selfcheck:CTRL_s1": true
+ },
+ "controls": {
+  "STATIC": {
+   "PASS": true,
+   "detail": "staged readers, Read A's banked inputs, PREREG text, RF0 pin"
+  },
+  "K-P0": {
+   "PASS": true,
+   "detail": {
+    "RF0_sha256": "1608d70b21b6b6a4...",
+    "inputs": "PINS.txt tool files + the recorded dump digests re-hashed",
+    "rollout_files_checked": 0
+   }
+  },
+  "SLOTS-BANKED": {
+   "PASS": true,
+   "detail": {
+    "CTRL": {
+     "s0": "PRESENT",
+     "s1": "PRESENT"
+    }
+   }
+  },
+  "SUMMARY:CTRL_s0": {
+   "PASS": true,
+   "detail": {
+    "argv_sha": "0ee46fc1a9a0493b",
+    "steps": 3000
+   }
+  },
+  "K-INIT:CTRL_s0": {
+   "PASS": true,
+   "detail": {
+    "init_sha256": "601cb43526731786...",
+    "sources": [
+     "summary:levers.init_ckpt.sha256",
+     "selfcheck:levers.init_ckpt.sha256"
+    ]
+   }
+  },
+  "ARGV:CTRL_s0": {
+   "PASS": true,
+   "detail": "argv names the registered fine-tune"
+  },
+  "K-GATE:CTRL_s0": {
+   "PASS": true,
+   "detail": {
+    "commit": "aeb544683b1c6b70e29f241fe7133d4290a1b4a5",
+    "argv_sha256": "8e2fee6e0daf86f4a12d583a8d8b3cecd9662c30ff14e3115f564fc7ffe57f44",
+    "data_sha256": "37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1",
+    "hmac": "absent"
+   }
+  },
+  "CTRL-CKPT:CTRL_s0": {
+   "PASS": true,
+   "detail": {
+    "ckpt_sha256": "67265ec1666fae3a",
+    "A1 (DAG-OACC)": "67265ec1666fae3a"
+   }
+  },
+  "K-PAIR-selfcheck:CTRL_s0": {
+   "PASS": true,
+   "detail": "A / REP / B argv built from DAG-OACC's banked argv pass K-PAIR; DAG-OACC's own argv does not pass as A"
+  },
+  "K-REGISTERED-selfcheck:CTRL_s0": {
+   "PASS": true,
+   "detail": "the registered-argv control passes DAG-OACC / A / REP built from its banked argv and refuses A without the composition flag and REP with it"
+  },
+  "SUMMARY:CTRL_s1": {
+   "PASS": true,
+   "detail": {
+    "argv_sha": "2d846e7c9fbcc28b",
+    "steps": 3000
+   }
+  },
+  "K-INIT:CTRL_s1": {
+   "PASS": true,
+   "detail": {
+    "init_sha256": "6104fb15dc21d524...",
+    "sources": [
+     "summary:levers.init_ckpt.sha256",
+     "selfcheck:levers.init_ckpt.sha256"
+    ]
+   }
+  },
+  "ARGV:CTRL_s1": {
+   "PASS": true,
+   "detail": "argv names the registered fine-tune"
+  },
+  "K-GATE:CTRL_s1": {
+   "PASS": true,
+   "detail": {
+    "commit": "aeb544683b1c6b70e29f241fe7133d4290a1b4a5",
+    "argv_sha256": "fb932fe8f2b4ae7a1cefb28f4a6739e2eee3c2b45efabf7ebc17a4472413acd3",
+    "data_sha256": "37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1",
+    "hmac": "absent"
+   }
+  },
+  "CTRL-CKPT:CTRL_s1": {
+   "PASS": true,
+   "detail": {
+    "ckpt_sha256": "90b01474819082a6",
+    "A1 (DAG-OACC)": "90b01474819082a6"
+   }
+  },
+  "K-PAIR-selfcheck:CTRL_s1": {
+   "PASS": true,
+   "detail": "A / REP / B argv built from DAG-OACC's banked argv pass K-PAIR; DAG-OACC's own argv does not pass as A"
+  },
+  "K-REGISTERED-selfcheck:CTRL_s1": {
+   "PASS": true,
+   "detail": "the registered-argv control passes DAG-OACC / A / REP built from its banked argv and refuses A without the composition flag and REP with it"
+  }
+ },
+ "slots": {
+  "A": {
+   "s0": "MISSING",
+   "s1": "MISSING"
+  },
+  "CTRL": {
+   "s0": "PRESENT",
+   "s1": "PRESENT"
+  },
+  "REP": {
+   "s0": "MISSING",
+   "s1": "MISSING"
+  },
+  "B": {
+   "s0": "MISSING",
+   "s1": "MISSING"
+  }
+ },
+ "slots_detail": {
+  "A": {
+   "s0": {
+    "state": "MISSING",
+    "missing": [
+     "no manifest entry"
+    ]
+   },
+   "s1": {
+    "state": "MISSING",
+    "missing": [
+     "no manifest entry"
+    ]
+   }
+  },
+  "CTRL": {
+   "s0": {
+    "state": "PRESENT",
+    "missing": []
+   },
+   "s1": {
+    "state": "PRESENT",
+    "missing": []
+   }
+  },
+  "REP": {
+   "s0": {
+    "state": "MISSING",
+    "missing": [
+     "no manifest entry"
+    ]
+   },
+   "s1": {
+    "state": "MISSING",
+    "missing": [
+     "no manifest entry"
+    ]
+   }
+  },
+  "B": {
+   "s0": {
+    "state": "MISSING",
+    "missing": [
+     "no manifest entry"
+    ]
+   },
+   "s1": {
+    "state": "MISSING",
+    "missing": [
+     "no manifest entry"
+    ]
+   }
+  }
+ },
+ "new_arms_missing": {
+  "A": [
+   "s0",
+   "s1"
+  ],
+  "REP": [
+   "s0",
+   "s1"
+  ],
+  "B": [
+   "s0",
+   "s1"
+  ]
+ },
+ "wall_s": 14.7,
+ "prereg": "Project Steering/PREREG_V8F_DAG_ORC.md @ 3b7b404e + Amendment 1 (A1-2026-10-27, re-based on DAG-OACC)",
+ "prereg_sha256": "38bc688b173cdb8c94b8a4ce37a29876cb7b9b1cf8170043afc22290aca0c4ee",
+ "amend1_sha256": "f2f9615748451fd7d1b832ab1b04c45f4285621298f9f35a0cad9e9b75725ac1",
+ "rf0_sha256": "1608d70b21b6b6a45136a6d96828f70b5bbabd9c0ceb84db136927593c79ad0f",
+ "reader_sha256": "2e5f9f1778e104615d4480f51c6246703c9e3bb8f6c0eeaa3fc0c5621bd8adcf"
+}

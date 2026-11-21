@@ -1,0 +1,544 @@
+{
+ "tool": "d1_census.py",
+ "split": "train",
+ "tag": "train_smoke140",
+ "repo": "C:/Users/Admin/ev7",
+ "kit": "D:/refcv6_eval_kit",
+ "config": "D:/refcv7_eval_kit/ckpt/config.json",
+ "config_md5": "e6512a01b9c70f0e4a4dac581621984a",
+ "started_utc": "2026-10-04T10:38:38Z",
+ "blobs": {
+  "stack/scripts/refc_v3_train.py": {
+   "git_blob_raw_bytes": "203b437f0d0d86e97949cba3a8dedb810dc4d620",
+   "git_blob_lf_normalised": "c34198e1c9b79c97bacdddbdadf098cd6adb8da3",
+   "n_crlf": 11372,
+   "bytes": 712810
+  },
+  "stack/tanitad/data/v7_labels.py": {
+   "git_blob_raw_bytes": "1317370d61aaeab6b71a87a5cb311a98c51d62d1",
+   "git_blob_lf_normalised": "86f0c46ed63eaa9f07a303e0c61d9aec5bbdf076",
+   "n_crlf": 1338,
+   "bytes": 70109
+  },
+  "stack/tanitad/data/v2_dataset.py": {
+   "git_blob_raw_bytes": "3fea73f44d8b88f202bdc6b7e11387c054df4edd",
+   "git_blob_lf_normalised": "ee61ea938f2a7ec249513e28d0029fe8ab2d6d5d",
+   "n_crlf": 590,
+   "bytes": 30666
+  }
+ },
+ "pin": {
+  "argv_remap": {
+   "remapped": {
+    "--anchors": {
+     "thor": "/home/nvidia/data/anchors/refc_anchors_6s_v0cond_alat_117.pt",
+     "local": "D:\\refcv6_eval_kit\\data\\anchors\\refc_anchors_6s_v0cond_alat_117.pt",
+     "source": "kit default",
+     "basename_expected": "refc_anchors_6s_v0cond_alat_117.pt"
+    },
+    "--v2-cache": {
+     "thor": "/home/nvidia/data/refcv6-b1-416x1024-train",
+     "local": "D:/refcv6_eval_kit/data/refcv6-b1-416x1024-train-a6",
+     "source": "recorded override"
+    },
+    "--v7-labels": {
+     "thor": "/home/nvidia/data/v8labels/labels/s2_labels_v8_train.jsonl.gz",
+     "local": "D:/refcv6_eval_kit/data/a6/s2_labels_v8_train.jsonl.gz",
+     "source": "recorded override"
+    },
+    "--eval-cache": {
+     "thor": "/home/nvidia/data/refcv6-b1-416x1024-eval139",
+     "local": "D:\\refcv6_eval_kit\\data\\refcv6-b1-416x1024-eval139",
+     "source": "kit default",
+     "basename_expected": "refcv6-b1-416x1024-eval139"
+    },
+    "--eval-labels": {
+     "thor": "/home/nvidia/data/v8labels/labels/s2_labels_v8_eval.jsonl.gz",
+     "local": "D:\\refcv6_eval_kit\\data\\v8labels\\labels\\s2_labels_v8_eval.jsonl.gz",
+     "source": "kit default",
+     "basename_expected": "s2_labels_v8_eval.jsonl.gz"
+    },
+    "--speed-max-sidecar-v6-eval": {
+     "thor": "/home/nvidia/data/refcv6_speed_max_v8_eval.jsonl",
+     "local": "D:\\refcv6_eval_kit\\data\\refcv6_speed_max_v8_eval.jsonl",
+     "source": "kit default",
+     "basename_expected": "refcv6_speed_max_v8_eval.jsonl"
+    },
+    "--speed-max-sidecar-v6": {
+     "thor": "/home/nvidia/data/refcv6_speed_max_v8_train.jsonl",
+     "local": "D:/refcv6_eval_kit/data/a6/refcv6_speed_max_v8_train.jsonl",
+     "source": "recorded override"
+    },
+    "--agent-join": {
+     "thor": "/home/nvidia/data/joins/b1_train_plus_eval_agents.jsonl.xz",
+     "local": "D:\\refcv6_eval_kit\\data\\joins\\b1_train_plus_eval_agents.jsonl.xz",
+     "source": "kit default",
+     "basename_expected": "b1_train_plus_eval_agents.jsonl.xz"
+    },
+    "--agent-rig-extrinsics": {
+     "thor": "/home/nvidia/data/refcv6_train_eval139_extrinsics.json",
+     "local": "D:\\refcv6_eval_kit\\data\\refcv6_train_eval139_extrinsics.json",
+     "source": "kit default",
+     "basename_expected": "refcv6_train_eval139_extrinsics.json"
+    },
+    "--map-gt-root": {
+     "thor": "/home/nvidia/data/sam3_gt_v3",
+     "local": "D:\\refcv6_eval_kit\\data\\sam3_gt_v3_eval",
+     "source": "kit default",
+     "basename_expected": "sam3_gt_v3"
+    },
+    "--join3d": {
+     "thor": "/home/nvidia/data/join3d/b1_train_plus_eval_agents_3d.jsonl.xz",
+     "local": "D:\\refcv6_eval_kit\\data\\join3d\\b1_train_plus_eval_agents_3d.jsonl.xz",
+     "source": "kit default",
+     "basename_expected": "b1_train_plus_eval_agents_3d.jsonl.xz"
+    },
+    "--vis1-sidecar": {
+     "thor": "/home/nvidia/data/refcv7/vis1_sidecar_refcv6b1_train4369_eval139.npz",
+     "local": "D:\\refcv6_eval_kit\\data\\refcv7\\vis1_sidecar_refcv6b1_train4369_eval139.npz",
+     "source": "kit default",
+     "basename_expected": "vis1_sidecar_refcv6b1_train4369_eval139.npz"
+    },
+    "--nav-compliance-tau-file": {
+     "thor": "/home/nvidia/data/refcv7/nav_compliance_tau_train.json",
+     "local": "D:\\refcv6_eval_kit\\data\\refcv7\\nav_compliance_tau_train.json",
+     "source": "kit default",
+     "basename_expected": "nav_compliance_tau_train.json"
+    },
+    "--map-hires-class-weights": {
+     "thor": "/home/nvidia/data/refcv7/map_hires_class_weights_train_100x30.json",
+     "local": "D:\\refcv6_eval_kit\\data\\refcv7\\map_hires_class_weights_train_100x30.json",
+     "source": "kit default",
+     "basename_expected": "map_hires_class_weights_train_100x30.json"
+    },
+    "--clip-clock-sidecar": {
+     "thor": "/home/nvidia/data/refcv6_clip_clock_sidecar.jsonl",
+     "local": "D:\\refcv6_eval_kit\\data\\refcv6_clip_clock_sidecar.jsonl",
+     "source": "kit default",
+     "basename_expected": "refcv6_clip_clock_sidecar.jsonl"
+    }
+   },
+   "dropped": {
+    "--trunk-compile": "no Triton on Windows; torch.compile wraps the backbone CALL only -- module tree and state_dict identical (LAUNCH_READINESS_FIXES.md sec. 10b)"
+   },
+   "train_only_kept_unread": {
+    "--out": "/home/nvidia/refcv7_run/runs/refcv7-r101-s0"
+   },
+   "kit": "D:\\refcv6_eval_kit",
+   "overrides_file": "C:/Users/Admin/AppData/Local/Temp/d1_overrides.json"
+  },
+  "cfg": "trainer _pin_trainer_cfg"
+ },
+ "vocab": {
+  "goal_tokens": [
+   "FOLLOW_LANE",
+   "TURN_L",
+   "TURN_R",
+   "YIELD_FOR_TURN_L",
+   "YIELD_FOR_TURN_R",
+   "YIELD",
+   "STOP_POINT",
+   "SPEED_BAND",
+   "CORRIDOR_OFFSET",
+   "EVADE_IN_CORRIDOR",
+   "OVERTAKE_VEHICLE",
+   "MERGE",
+   "GAP_TARGET",
+   "REACT_ON_ONCOMING",
+   "TAKE_EXIT_L",
+   "TAKE_EXIT_R",
+   "TRAFFIC_LIGHT_REACT",
+   "TRAFFIC_LIGHT_REACT_RED",
+   "TRAFFIC_LIGHT_REACT_YELLOW",
+   "TRAFFIC_LIGHT_REACT_GREEN",
+   "LANE_CHANGE_L",
+   "LANE_CHANGE_R"
+  ],
+  "lat_classes": [
+   "LANE_KEEP",
+   "LANE_CHANGE_L",
+   "LANE_CHANGE_R",
+   "ABORT_LC",
+   "NUDGE_L",
+   "NUDGE_R",
+   "TURN_L",
+   "TURN_R"
+  ],
+  "lon_classes": [
+   "FOLLOW",
+   "CRUISE",
+   "YIELD_MERGE",
+   "BRAKE_TO",
+   "CREEP",
+   "HOLD",
+   "ADAPT_SPEED_FOR_CURVE",
+   "ACCELERATE"
+  ],
+  "nav_commands": [
+   "follow",
+   "left",
+   "right",
+   "straight"
+  ],
+  "speed_ladder_kmh": [
+   30,
+   50,
+   100,
+   120
+  ]
+ },
+ "window": 8,
+ "channels": 9,
+ "raw_entries": {
+  "turn_entries": 2419,
+  "follow_road_pseudo_entries": 2833,
+  "turn_entries_with_missing_field": 0
+ },
+ "build": {
+  "departures": [
+   "JoinFileReader with_rates=False (rates are loss targets; no label presence effect)",
+   "SMOKE: --map-min-coverage forced to 0.0"
+  ],
+  "train_eval_episode_overlap": 0,
+  "clock": {
+   "rule": "t_now = grid_start_s + (t + w - 1 + n_stack - 1) * dt_s (tanitad/data/clip_clock.py; A16 2026-09-26)",
+   "sidecar": "D:\\refcv6_eval_kit\\data\\refcv6_clip_clock_sidecar.jsonl",
+   "sidecar_rows": 4483,
+   "n_clips": 139,
+   "n_from_sidecar": 139,
+   "n_pose_dt_grid_start_0": 0,
+   "n_nominal_dt_grid_start_0": 0,
+   "raw_offsets": [
+    2
+   ],
+   "dt_s_median": 0.1006666152798521,
+   "dt_s_min": 0.10050010510322484,
+   "dt_s_max": 0.10100497482385506,
+   "g3": {
+    "g3": "PASS",
+    "split": "train",
+    "tol_s": 0.05,
+    "n_clips": 139,
+    "n_reads_checked": 417,
+    "worst_abs_err_s": 0.0,
+    "n_unverified_clips": 0,
+    "max_unverified_frac": 0.01,
+    "max_unverified_frac_source": "default",
+    "rule": "t_true = grid_start_s + (t + w - 1 + n_stack - 1) * dt_s (sidecar)"
+   }
+  },
+  "labels": {
+   "path": "D:\\refcv6_eval_kit\\data\\a6\\s2_labels_v8_train.jsonl.gz",
+   "md5": "b45377a1f25263b5c0f3d318c126b1ac",
+   "n_records": 4572,
+   "schema_version": "s2-geom-v7",
+   "vocab": "v7",
+   "allow_oracle_nav": true,
+   "cot_absence_negative": null,
+   "divergences": [],
+   "_read": "md5 is the identity \u2014 six copies of this blob exist under three roots and their md5s differ."
+  },
+  "max_speed_v6": {
+   "sidecar": "refcv6_speed_max_v8_train.jsonl",
+   "n_rows": 4572,
+   "n_valid": 4572,
+   "n_over_ceiling": 86,
+   "over_ceiling_frac": 0.01881,
+   "source_md5": "b45377a1f25263b5c0f3d318c126b1ac",
+   "source_labels": "s2_labels_v8_train.jsonl.gz",
+   "join_key": "sid = stable_episode_id(clip_id)",
+   "ladder_kmh": [
+    30,
+    50,
+    100,
+    120
+   ],
+   "quantized_by": "tanitad.refs.refcv6_max_speed.MaxSpeedOneHotEncoder (model side, ONCE); this reader ships the RAW v_hi_ms and only CHECKS the sidecar's own bin",
+   "_derivation": "refcv6 4-way one-hot set-speed, CONTAINING-WINDOW quantization over {30, 50, 100, 120} km/h: (0,30]->30, (30,50]->50, (50,100]->100, (100,120]->120, and > 120 CLAMPS to 120 (counted and reported). Source field v7.2/v8 g_tac.goals.SPEED_BAND.v_hi_ms (oracle, provenance ego-future: max of the ego's OWN REALISED speed over [t0+2 s, +6 s]); the PI authorised the future-ego derivation explicitly on 2026-09-16 provided the value lands in the containing window. It models a max SET speed - a limiter the driver sets - so the realised speed sits INSIDE the window and never above it. INPUT, never a training signal: no loss reaches this channel in refcv6.",
+   "channel": "refcv6 4-way one-hot (\u00a75)",
+   "label_md5": "b45377a1f25263b5c0f3d318c126b1ac",
+   "n_windows": 23751,
+   "n_windows_fed": 23751,
+   "window_ceiling_frac": 1.0
+  },
+  "nav": {
+   "n_clips": 139,
+   "follow": 90,
+   "left": 24,
+   "right": 25,
+   "missing": 0,
+   "derivation": "v7.2 nav_command token (oracle, provenance ego-future; allow_oracle_nav=True)",
+   "unlabeled_default": "nav_cmd=0 ('follow') + nav_valid=False (refav1_loader convention)",
+   "label_md5": "b45377a1f25263b5c0f3d318c126b1ac",
+   "allow_oracle_nav": true
+  },
+  "agent_join": {
+   "path": "D:\\refcv6_eval_kit\\data\\joins\\b1_train_plus_eval_agents.jsonl.xz",
+   "n_episodes": 139,
+   "n_episodes_joined_stable_id": 139,
+   "n_episodes_joined_legacy_id": 0,
+   "n_ambiguous_legacy_ids_in_join": 0,
+   "id_space": "stable-63bit",
+   "allow_legacy_ids": false,
+   "n_windows": 23751,
+   "n_windows_labelled": 22946,
+   "frac_windows_labelled": 0.9661,
+   "n_windows_labelled_clear": 210,
+   "n_target_boxes_prefilter": 763600,
+   "agent_pad": 234,
+   "reader_max_agents_per_frame": 234,
+   "reader_n_records": 26726,
+   "reader_n_clips": 139,
+   "reader_has_classes": true,
+   "reader_has_occlusion_flags": true,
+   "reader_with_rates": false
+  },
+  "map_fine": {
+   "root": "D:\\refcv6_eval_kit\\data\\sam3_gt_v3_eval",
+   "n_windows": 23751,
+   "n_clips": 139,
+   "frac_ok": 0.0,
+   "frac_ok_upper": 0.0,
+   "verdict": "PASS",
+   "states": {
+    "ok": 0,
+    "no_file": 23751,
+    "frame_out_of_range": 0,
+    "inconclusive": 0
+   },
+   "reasons": {
+    "07b61be0acf7": "FileNotFoundError errno 2",
+    "03dc6c78adb9": "FileNotFoundError errno 2",
+    "0252e8fcd0a4": "FileNotFoundError errno 2",
+    "059b96507a37": "FileNotFoundError errno 2",
+    "02b239dd8a35": "FileNotFoundError errno 2",
+    "03a7f1fdd7ca": "FileNotFoundError errno 2",
+    "0545e84987bb": "FileNotFoundError errno 2",
+    "035cc36de712": "FileNotFoundError errno 2",
+    "071ede2f8c8d": "FileNotFoundError errno 2",
+    "036578a19f38": "FileNotFoundError errno 2",
+    "00407448d806": "FileNotFoundError errno 2",
+    "04922c4ff16d": "FileNotFoundError errno 2",
+    "029a585e015e": "FileNotFoundError errno 2",
+    "0775378976b8": "FileNotFoundError errno 2",
+    "069ea0e95edb": "FileNotFoundError errno 2",
+    "014e4dd092be": "FileNotFoundError errno 2",
+    "069fe5a48991": "FileNotFoundError errno 2",
+    "029f313f841a": "FileNotFoundError errno 2",
+    "004ec4b2780d": "FileNotFoundError errno 2",
+    "086812263073": "FileNotFoundError errno 2",
+    "036682d50bf7": "FileNotFoundError errno 2",
+    "03038b162025": "FileNotFoundError errno 2",
+    "037d9e68df6f": "FileNotFoundError errno 2",
+    "0498bf3ff1b0": "FileNotFoundError errno 2",
+    "0783de21a057": "FileNotFoundError errno 2",
+    "04c95c9103a9": "FileNotFoundError errno 2",
+    "077bf5cc1244": "FileNotFoundError errno 2",
+    "00a7249b9758": "FileNotFoundError errno 2",
+    "021be01a117d": "FileNotFoundError errno 2",
+    "04e9094ada2b": "FileNotFoundError errno 2",
+    "042826a6faf9": "FileNotFoundError errno 2",
+    "07e14b7dd6c5": "FileNotFoundError errno 2",
+    "00e879180df8": "FileNotFoundError errno 2",
+    "01156c9ce069": "FileNotFoundError errno 2",
+    "0376ab382692": "FileNotFoundError errno 2",
+    "074aac717706": "FileNotFoundError errno 2",
+    "02607661a547": "FileNotFoundError errno 2",
+    "0710811e8c77": "FileNotFoundError errno 2",
+    "047c28976246": "FileNotFoundError errno 2",
+    "06286e9cd123": "FileNotFoundError errno 2",
+    "037758fd2a58": "FileNotFoundError errno 2",
+    "0690cc9e2d6a": "FileNotFoundError errno 2",
+    "04406a6c5417": "FileNotFoundError errno 2",
+    "080368c0874b": "FileNotFoundError errno 2",
+    "051e7d2ff48a": "FileNotFoundError errno 2",
+    "005f95c23c6c": "FileNotFoundError errno 2",
+    "084d8550a1f4": "FileNotFoundError errno 2",
+    "00719cc697cc": "FileNotFoundError errno 2",
+    "035b59b5b801": "FileNotFoundError errno 2",
+    "0593d0a0d60c": "FileNotFoundError errno 2",
+    "01fe3cfed9f0": "FileNotFoundError errno 2",
+    "0710f411498c": "FileNotFoundError errno 2",
+    "04b3621a7b46": "FileNotFoundError errno 2",
+    "00a9f72ef853": "FileNotFoundError errno 2",
+    "03f0be20346c": "FileNotFoundError errno 2",
+    "0184f64720f4": "FileNotFoundError errno 2",
+    "06f7fe68c3ca": "FileNotFoundError errno 2",
+    "0683cdee76fa": "FileNotFoundError errno 2",
+    "02094073847f": "FileNotFoundError errno 2",
+    "0119f6cd59a5": "FileNotFoundError errno 2",
+    "04ea6bda95b4": "FileNotFoundError errno 2",
+    "01cb74650aff": "FileNotFoundError errno 2",
+    "0198206e0111": "FileNotFoundError errno 2",
+    "046846d02831": "FileNotFoundError errno 2",
+    "02dcd655883e": "FileNotFoundError errno 2",
+    "0275ce06ddfd": "FileNotFoundError errno 2",
+    "07d19c1514d7": "FileNotFoundError errno 2",
+    "04b32d12ac9f": "FileNotFoundError errno 2",
+    "04f89dcd1e58": "FileNotFoundError errno 2",
+    "05c575ed45be": "FileNotFoundError errno 2",
+    "023f9679d5f6": "FileNotFoundError errno 2",
+    "00d3108ba31a": "FileNotFoundError errno 2",
+    "0384547594c4": "FileNotFoundError errno 2",
+    "00bbd5035b2c": "FileNotFoundError errno 2",
+    "037cfbe80493": "FileNotFoundError errno 2",
+    "05fb34da0770": "FileNotFoundError errno 2",
+    "054327c6bd81": "FileNotFoundError errno 2",
+    "04a1e4982766": "FileNotFoundError errno 2",
+    "034334ad956e": "FileNotFoundError errno 2",
+    "0045221d060c": "FileNotFoundError errno 2",
+    "03952195f146": "FileNotFoundError errno 2",
+    "014a1bcdc965": "FileNotFoundError errno 2",
+    "02f7878099fa": "FileNotFoundError errno 2",
+    "028f78772fda": "FileNotFoundError errno 2",
+    "02bffd58099a": "FileNotFoundError errno 2",
+    "006fd1b65c1b": "FileNotFoundError errno 2",
+    "036c18fd3e43": "FileNotFoundError errno 2",
+    "054120f27048": "FileNotFoundError errno 2",
+    "056698c1d76b": "FileNotFoundError errno 2",
+    "001e7d520dd0": "FileNotFoundError errno 2",
+    "01fbe016688e": "FileNotFoundError errno 2",
+    "075e230dacec": "FileNotFoundError errno 2",
+    "038351da7f32": "FileNotFoundError errno 2",
+    "0858c2406c24": "FileNotFoundError errno 2",
+    "03df23057f5a": "FileNotFoundError errno 2",
+    "0538720ebf05": "FileNotFoundError errno 2",
+    "00b751945401": "FileNotFoundError errno 2",
+    "02dba36f981f": "FileNotFoundError errno 2",
+    "03a02abb8f1d": "FileNotFoundError errno 2",
+    "0622a7903174": "FileNotFoundError errno 2",
+    "0587cfbcd0c6": "FileNotFoundError errno 2",
+    "086830066c20": "FileNotFoundError errno 2",
+    "055107ecbc4f": "FileNotFoundError errno 2",
+    "06e92f4a4413": "FileNotFoundError errno 2",
+    "01ebf2a80bbd": "FileNotFoundError errno 2",
+    "03d33eec7ae0": "FileNotFoundError errno 2",
+    "07f23c306783": "FileNotFoundError errno 2",
+    "082fe957ec14": "FileNotFoundError errno 2",
+    "038a50273027": "FileNotFoundError errno 2",
+    "04e941edb256": "FileNotFoundError errno 2",
+    "003b733271dd": "FileNotFoundError errno 2",
+    "03ef04f0d748": "FileNotFoundError errno 2",
+    "074f3464855b": "FileNotFoundError errno 2",
+    "0749625285f4": "FileNotFoundError errno 2",
+    "0501aaf9d954": "FileNotFoundError errno 2",
+    "04e59df09d92": "FileNotFoundError errno 2",
+    "0825f5ac9c7e": "FileNotFoundError errno 2",
+    "046c8d9a8cc0": "FileNotFoundError errno 2",
+    "032f081d34f1": "FileNotFoundError errno 2",
+    "0189e6128422": "FileNotFoundError errno 2",
+    "086bb25ad2fd": "FileNotFoundError errno 2",
+    "070985985c35": "FileNotFoundError errno 2",
+    "072b6ef6a1a0": "FileNotFoundError errno 2",
+    "03f43c1ed521": "FileNotFoundError errno 2",
+    "05d89c5418a3": "FileNotFoundError errno 2",
+    "00ed1965cf1d": "FileNotFoundError errno 2",
+    "0257e4426c97": "FileNotFoundError errno 2",
+    "059da4abab9b": "FileNotFoundError errno 2",
+    "055824e58835": "FileNotFoundError errno 2",
+    "07659d289daf": "FileNotFoundError errno 2",
+    "078ef6858bc6": "FileNotFoundError errno 2",
+    "01aab543e9a4": "FileNotFoundError errno 2",
+    "0096d5aae681": "FileNotFoundError errno 2",
+    "02360db99599": "FileNotFoundError errno 2",
+    "035e022d854b": "FileNotFoundError errno 2",
+    "00ab8f697a09": "FileNotFoundError errno 2",
+    "00877c7351bf": "FileNotFoundError errno 2",
+    "04a26c244584": "FileNotFoundError errno 2",
+    "00cac5692bdc": "FileNotFoundError errno 2"
+   },
+   "n_stack": 3,
+   "extent": {
+    "x_max_m": 100.0,
+    "y_half_m": 30.0,
+    "fine_shape": [
+     1000,
+     600
+    ],
+    "band_keys": [
+     "0_20",
+     "20_40",
+     "40_60",
+     "60_80",
+     "80_100"
+    ]
+   },
+   "fine_spec": {
+    "x_max_m": 100.0,
+    "y_half_m": 30.0,
+    "cell_m": 0.1,
+    "shape": [
+     1000,
+     600
+    ],
+    "codes": "0-7 class, 255 not seen"
+   }
+  },
+  "join3d": {
+   "path": "D:\\refcv6_eval_kit\\data\\join3d\\b1_train_plus_eval_agents_3d.jsonl.xz",
+   "n_lines": 26726,
+   "n_agents": 880016,
+   "n_clips": 139
+  },
+  "geom_tokens": {
+   "train_blob_state": [
+    "FOLLOW_LANE",
+    "SPEED_BAND",
+    "STOP_POINT",
+    "TURN_L",
+    "TURN_R",
+    "YIELD_FOR_TURN_L",
+    "YIELD_FOR_TURN_R"
+   ],
+   "eval_blob_state_as_in_workers": [
+    "FOLLOW_LANE",
+    "LANE_CHANGE_L",
+    "SPEED_BAND",
+    "STOP_POINT",
+    "TURN_L",
+    "TURN_R",
+    "YIELD_FOR_TURN_L",
+    "YIELD_FOR_TURN_R"
+   ]
+  }
+ },
+ "build_s": 134.0,
+ "raw_labels": {
+  "path": "D:/refcv6_eval_kit/data/a6/s2_labels_v8_train.jsonl.gz",
+  "md5": "b45377a1f25263b5c0f3d318c126b1ac",
+  "n": 4572
+ },
+ "census_s": 0.6,
+ "C2_direct_equals_getitem": {
+  "n_windows": 24,
+  "n_clips": 6,
+  "n_in_band": 12,
+  "mismatches": [],
+  "pass": true
+ },
+ "C2_s": 16.1,
+ "pose_controls": {
+  "n_ratio_clips": 139,
+  "speed_over_finite_diff_median": 0.9999897620661282,
+  "speed_over_finite_diff_p05_p95": [
+   0.9995568257248736,
+   1.0002567330810208
+  ],
+  "n_entries_inside_pose_range": 29,
+  "label_token_L_has_positive_dyaw_deg": 1.0,
+  "label_token_R_has_negative_dyaw_deg": 1.0,
+  "n_big": 29,
+  "sign_agree_big": 1.0,
+  "median_abs_diff_deg": 0.5871276945935477,
+  "p90_abs_diff_deg": 0.6515010701060163,
+  "pearson_r": 0.9999955589123741,
+  "mean_pose_dyaw_deg_by_token": {
+   "L": 75.34802891568555,
+   "R": -62.21289096751152
+  }
+ },
+ "n_windows": 23751,
+ "n_clips": 139,
+ "finished_utc": "2026-10-04T10:41:12Z",
+ "wall_s": 155.7
+}

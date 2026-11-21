@@ -1,0 +1,112 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "arm": "champ30k",
+ "step": 30000,
+ "n_clips": 12,
+ "hypothesis": "E-DEC-1 encoder vs readout",
+ "targets": {
+  "speed": {
+   "z_op (AFTER readout)": {
+    "r2": 0.2426,
+    "ci95": [
+     -0.5199,
+     0.4003
+    ],
+    "n": 600,
+    "d": 128
+   },
+   "enc tokens (mean-pooled)": {
+    "r2": 0.4359,
+    "ci95": [
+     -0.3993,
+     0.5646
+    ],
+    "n": 600,
+    "d": 128
+   },
+   "frozen DINOv3": {
+    "r2": 0.4955,
+    "ci95": [
+     0.1927,
+     0.5446
+    ],
+    "n": 600,
+    "d": 128
+   },
+   "pixel (floor)": {
+    "r2": 0.2063,
+    "ci95": [
+     -0.0756,
+     0.3764
+    ],
+    "n": 600,
+    "d": 128
+   },
+   "constant (control)": {
+    "r2": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "n": 600,
+    "d": 1
+   }
+  },
+  "d_ego": {
+   "z_op (AFTER readout)": {
+    "r2": 0.2356,
+    "ci95": [
+     -0.2782,
+     0.3547
+    ],
+    "n": 600,
+    "d": 128
+   },
+   "enc tokens (mean-pooled)": {
+    "r2": 0.4067,
+    "ci95": [
+     -0.2109,
+     0.5438
+    ],
+    "n": 600,
+    "d": 128
+   },
+   "frozen DINOv3": {
+    "r2": 0.3112,
+    "ci95": [
+     0.1214,
+     0.3462
+    ],
+    "n": 600,
+    "d": 128
+   },
+   "pixel (floor)": {
+    "r2": 0.195,
+    "ci95": [
+     -0.0465,
+     0.3378
+    ],
+    "n": 600,
+    "d": 128
+   },
+   "constant (control)": {
+    "r2": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "n": 600,
+    "d": 1
+   }
+  }
+ },
+ "constant_control_violations": [],
+ "point_estimates": {
+  "enc_over_zop": 1.797,
+  "enc_over_pixel": 2.113,
+  "enc_over_dinov3": 0.88,
+  "note": "a CI that straddles zero at this n is an UNDERPOWERED statement, not a null result -- report both the ratio and the CI, never the CI alone"
+ },
+ "verdict": "THE ENCODER NEVER LEARNED IT \u2014 encoder tokens +0.4359 CI[-0.3993, +0.5646] do not beat the pixel floor +0.2063, so the readout is exonerated and the OBJECTIVE is the defect: O5+O6 never required decodable content (SIGReg's isotropy is satisfied by noise). Frozen DINOv3 reads +0.4955 on the same clips."
+}

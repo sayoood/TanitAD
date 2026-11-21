@@ -1,0 +1,123 @@
+diff --git "a/C:\\Users\\Admin\\v7f_ckpt\\pristine\\test_launch_gate_v7f.py" "b/C:\\Users\\Admin\\v7f_ckpt\\stack\\tests\\test_launch_gate_v7f.py"
+index 7b6fa69..17a6cb5 100644
+--- "a/C:\\Users\\Admin\\v7f_ckpt\\pristine\\test_launch_gate_v7f.py"
++++ "b/C:\\Users\\Admin\\v7f_ckpt\\stack\\tests\\test_launch_gate_v7f.py"
+@@ -10,7 +10,10 @@ Facts the positive runs pin (MEASURED by the gate agent, 2026-09-27, at c36b6ddd
+ `…/2026-09-27-v7f-refav1-state/v7f_merge/`) -- each is a DEFECT the gate exists to catch; when one is
+ fixed its test must be updated IN THE SAME CHANGE:
+   * G-HYG FAILS: EncoderConfig / PredictorConfig / ReadoutConfig / V6Config are not strict;
+-  * G-CKPT FAILS: a resume replays the sampler/RNG stream from --seed (no RNG state in ckpt.pt).
++  * (F3 + F3b, FIXED 2026-09-27 and flipped below) G-CKPT: a resume replayed the sampler/RNG stream
++    from --seed, and the cosine LR replay compounded on the loaded lr -- the rehearsals now PASS G-CKPT on
++    the interrupted-run protocol (arms `v6_resume_drops_rng`, `v6_resume_lr_compounds`,
++    `v6_ckpt_strips_rng`, `v6_resume_drops_opt` + a source mutation of the restore call).
+ FIXED in the merge (2026-09-27) and flipped here in the same change, each with an arm that must FAIL:
+   * `--nav-cond` was declared but NOT BUILT (build_stack_from_args never mapped it) -- G-DVB now PASSES
+     on the compliant S-T and S-W rehearsals; arm `v6_nav_not_mapped` + a source mutation;
+@@ -299,15 +302,36 @@ def test_positive_G_EVAL_passes_and_its_controls_are_live(st_positive):
+     assert d["negative_control_outputs_moved"] > 0
+ 
+ 
+-def test_positive_G_CKPT_names_the_TIP_defect_and_only_it(st_positive):
++def test_positive_G_CKPT_PASSES_the_resume_IS_the_uninterrupted_run(st_positive):
++    """Was F3 (MEASURED 2026-09-27: the resumed S-T run drew the uninterrupted run's FIRST batches) and F3b
++    (the cosine replay compounding on the loaded lr, hidden by an lr-excluding comparison). Flipped in the
++    same change as the trainer fix: the interrupted-then-resumed S-T rehearsal draws the uninterrupted
++    run's batches at the same steps and ends BIT-identical in model AND optimiser state."""
+     _ctx_, evs = st_positive
+     ev = evs["G-CKPT"]
+-    r = _reasons(ev)
+-    assert ev["status"] == "FAIL"
+-    assert "restarts at every launch" in r                      # MEASURED: the RNG stream replays
+-    for clean in ("save_model_vs_memory", "save_opt_state_vs_memory", "resume_model_vs_saved",
+-                  "resume_opt_state_vs_saved"):
+-        assert clean not in r, clean                            # save -> load itself is exact
++    assert ev["status"] == "PASS", _reasons(ev)
++    d = ev["details"]
++    assert d["ckpt_rng_or_data_position_keys"] == ["data_pos", "rng_state"]
++    assert len(d["draws_resumed"]) == 2                                       # resume_extra_steps
++    assert d["draws_resumed"] == d["draws_uninterrupted_same_steps"]
++    assert d["draws_resumed"] != d["draws_uninterrupted_first_steps"]         # NOT a replay
++    for k in ("save_model_vs_memory", "save_opt_state_vs_memory", "resume_model_vs_saved",
++              "resume_opt_state_vs_saved", "resumed_final_vs_uninterrupted_final",
++              "resumed_final_opt_vs_uninterrupted_final"):
++        assert d[k]["n"] > 0 and d[k]["n_differ"] == 0, k
++    assert d["resume_lr"]["saved"] == d["resume_lr"]["after_replay"]
++    assert d["resume_config_launch_mode"] == "resume" and d["resume_config_resume_rng"] == "restored"
++    assert d["protocol"]["interrupt_after_checkpoint_at"] == 4 and d["protocol"]["resume_to"] == 6
++
++
++def test_positive_S_W_G_CKPT_PASSES(tmp_path):
++    ev = LG.job_smoke_v6(_ctx(tmp_path, SW_ARGV), ["G-CKPT"])["G-CKPT"]
++    assert ev["status"] == "PASS", _reasons(ev)
++    d = ev["details"]
++    assert d["draws_resumed"] == d["draws_uninterrupted_same_steps"]
++    assert d["draws_resumed"] != d["draws_uninterrupted_first_steps"]
++    assert d["resumed_final_vs_uninterrupted_final"]["n_differ"] == 0
++    assert d["resumed_final_opt_vs_uninterrupted_final"]["n_differ"] == 0
+ 
+ 
+ def test_positive_G_DVB_PASSES_now_that_the_merge_maps_nav(st_positive):
+@@ -391,6 +415,62 @@ def test_ARM_v6_resume_drops_opt_FAILS_G_CKPT_on_the_optimizer(tmp_path):
+     assert ev["status"] == "FAIL" and "resume_opt_state_vs_saved" in _reasons(ev)
+ 
+ 
++def test_ARM_v6_resume_drops_rng_REPLAYS_the_first_batches_and_FAILS_G_CKPT(tmp_path):
++    """F3 re-introduced through the trainer's own seam: the resume restores no stream."""
++    ev = LG.job_smoke_v6(_ctx(tmp_path, ST_ARGV, arm="v6_resume_drops_rng"), ["G-CKPT"])["G-CKPT"]
++    r = _reasons(ev)
++    assert ev["status"] == "FAIL" and "restarts at every launch" in r, r
++    d = ev["details"]
++    assert d["draws_resumed"] == d["draws_uninterrupted_first_steps"]         # the MEASURED defect
++    assert "resumed_final_vs_uninterrupted_final" in r
++
++
++def test_ARM_v6_resume_lr_compounds_FAILS_G_CKPT_on_the_lr(tmp_path):
++    """F3b re-introduced: the draws stay exact, but the lr after the replay is lr_n x (lr_n / lr_0) --
++    the whole remainder of the run on a scaled schedule."""
++    ev = LG.job_smoke_v6(_ctx(tmp_path, SW_ARGV, arm="v6_resume_lr_compounds"), ["G-CKPT"])["G-CKPT"]
++    r = _reasons(ev)
++    assert ev["status"] == "FAIL" and "F3b" in r, r
++    d = ev["details"]
++    assert d["draws_resumed"] == d["draws_uninterrupted_same_steps"]          # F3 itself holds
++    s, a = d["resume_lr"]["saved"][0], d["resume_lr"]["after_replay"][0]
++    assert s > 0 and abs(a / s - s / 1e-4) < 1e-9                             # --lr 0.0001 in the argv
++
++
++def test_ARM_v6_ckpt_strips_rng_a_PRE_F3_checkpoint_FAILS_G_CKPT_and_the_trainer_records_it(tmp_path):
++    """A checkpoint in the pre-F3 layout {stack, opt, step, config}: the trainer resumes it LOUDLY
++    (`resume_rng.mode = "absent-replayed"`), and G-CKPT FAILS on the missing keys, the replay AND the record."""
++    ev = LG.job_smoke_v6(_ctx(tmp_path, SW_ARGV, arm="v6_ckpt_strips_rng"), ["G-CKPT"])["G-CKPT"]
++    r = _reasons(ev)
++    assert ev["status"] == "FAIL"
++    assert "carries no RNG state" in r and "restarts at every launch" in r and "'absent-replayed'" in r, r
++    assert ev["details"]["ckpt_rng_or_data_position_keys"] == []
++
++
++#: the F3 restore call in the trainer (its first line) -- the source mutation below deletes the call
++F3_RESTORE_CALL = "_rl = apply_resume_state(resume_state, device=device, rng=rng, gen=gen,"
++
++
++def test_ARM_SOURCE_deleting_the_resume_restore_call_FAILS_G_CKPT(tmp_path, monkeypatch):
++    """Mutation, not inspection: the F3 restore call replaced by a no-op in the trainer SOURCE (compiled
++    under its own path) -- G-CKPT must FAIL on the replayed stream."""
++    import types
++    src_path = TREE / LG.PROFILES["v7f"]["trainer"]
++    src = src_path.read_text(encoding="utf-8")
++    assert src.count(F3_RESTORE_CALL) == 1                     # the fix is present, exactly once
++    src = src.replace(F3_RESTORE_CALL, "_rl = (lambda *_a, **_k: {'t3_alpha_applied': None, "
++                      "'t3_prog_applied': None, 'monitors': {}, 'applied': []})(resume_state, "
++                      "device=device, rng=rng, gen=gen,")
++    mod = types.ModuleType(LG._TRAINER_MOD_V6)
++    mod.__file__ = str(src_path)
++    monkeypatch.setitem(sys.modules, LG._TRAINER_MOD_V6, mod)  # the gate's loader returns it
++    exec(compile(src, str(src_path), "exec"), mod.__dict__)
++    ev = LG.job_smoke_v6(_ctx(tmp_path, SW_ARGV), ["G-CKPT"])["G-CKPT"]
++    r = _reasons(ev)
++    assert ev["status"] == "FAIL" and "restarts at every launch" in r, r
++    assert ev["details"]["draws_resumed"] == ev["details"]["draws_uninterrupted_first_steps"]
++
++
+ def test_ARM_v6_undeclared_attribute_FAILS_G_HYG_by_name(tmp_path):
+     ctx = _ctx(tmp_path, ST_ARGV, arm="v6_undeclared_attribute")
+     ev = LG.job_model_v6(ctx, ["G-HYG"])["G-HYG"]

@@ -1,0 +1,208 @@
+# E-only lines of Project Steering/SPEC_REFCV8_DRAFT.md  (E lines absent from the tip blob; CR-normalised; E line numbers)
+# tip blob last changed in d014ff2; E mtime 2026-10-04 23:11; verdict: NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)
+1: # SPEC_REFCV8 — DRAFT pre-registration of the refcv8 run (binds NOTHING until the Master Mind registers it)
+3: **Status: DRAFT.** Written 2026-10-04 ~21:20 Berlin (19:20Z) by a design agent for the Master Mind. It binds nothing until
+4: the Master Mind registers it: the sha256 of the registered file and the UTC time, written **before any refcv8 number
+5: exists**. At the time of writing no refcv8 checkpoint, no refcv8 training step and no refcv8 metric exists. The only
+6: refcv8-labelled measurements are instrument and warm-start checks on refcv7 weights (cited where used).
+7: 
+14: (the calibration disclosure). No bar can have been chosen after seeing refcv8 data, because none exists.
+51: | v9 per-frame labels: tactical actions + goals over [NOW+2 s, NOW+8 s] with constraints; per-frame nav; route checkpoint input | WP-A release (train md5 `f63ece410b725febb8a5242cf2b01d3c`, eval139 md5 `6b5c7f207cffc3b7eb3cd527fd433599`) | R8-1, R8-2, R8-3 |
+57: **What does NOT change:** the corpus (refcv7's 4,369 train clips and the 139 eval clips, unless PI decision 8 says
+58: otherwise, §11), the 416×1024 cylindrical front camera, the ResNet-101 trunk, the 117 anchors, the 10 cm map head
+107: 3. **Privileged inputs, named** (GATE_PROTOCOL §0.8): on PhysicalAI the per-frame nav and the route checkpoint are
+108:    derived from the ego's own future path. They are optimistic by construction. Every route number is quoted beside
+109:    its **RC-OFF** and **LEGAL** rows (§4.3, §6).
+110: 4. The speed input: which channel was fed (N2 / N3 / the v8 future-max sidecar / unknown), §8 X3.
+118:   supplied nav, the route checkpoint (PI R8-3), and the speed limit (PI R1, 2026-09-27).
+122:   posterior). The tactical layer's own lat/lon posteriors conditioning the planner ARE the hierarchy the PI asked for
+146: **I-2 (allocation attached, emission OFF): OPEN — see §13 Q1.** MEASURED: with allocation M = 32 attached and
+147: emission OFF, `sel_idx` stays identical but `traj` and the base fan differ, and base scores move by up to 5.7e-6 on
+148: the CPU (variant `B_alloc32_emit_off`, `identity_PASS: false` against its own criterion) and by up to 2.1e-5 on
+149: Thor (> the registered 1e-5; INHERITED, `iw_diag.py` docstring). The mechanism proposed by WP-B (GEMM shape over 149
+150: or 266 rows instead of 117) is a HYPOTHESIS until `iw_diag.py` reports.
+151: * **Proposed literal** (if allocation is in the launch argv): `sel_idx` identical on **100 %** of the I-1 windows AND
+152:   **max |Δ traj| ≤ 1e-3 m** AND max |Δ base score| ≤ 1e-4, with emission OFF at step 0.
+153: * If allocation is emitted from step 0 (`--r8-alloc-emit`, as in the WP-B smoke argv), step-0 identity of the
+154:   EMITTED plan does not hold by design. §13 Q1 asks the Master Mind to choose: emission from step `S_emit` > 0, or
+155:   identity stated for the 117-candidate base fan only.
+156: 
+162: * **required flags:** `--refcv8 --init-from --r8-v9-labels --r8-v9-labels-eval --r8-nav-from-v9 --r8-rc-variant
+163:   --join-defect-masks --grad-share-every`;
+164: * **required values:** `--r8-v9-md5 f63ece410b725febb8a5242cf2b01d3c`, `--r8-v9-eval-md5
+165:   6b5c7f207cffc3b7eb3cd527fd433599`, `--r8-v9-lat-variant a`, `--r8-rc-noise-along-m 2.0`, `--r8-rc-noise-lat-m
+166:   0.75`, `--r8-rc-dropout 0.3`, `--r8-nav-args-dropout 0.5`, **`--w-r8-cons 0.05`**;
+167: * **forbidden levers:** the regression flags `--r8-derange-feed`, `--r8-rc-roll`, `--r8-roll-targets`.
+173: 2. **The four open items of the profile must be CLOSED, by name, before a PASS token:** R8-RECIPE, R8-BUDGET,
+174:    R8-WARMUP, R8-INHERITED-RECORDS (§10). While one is open the token is not a PASS.
+177:    refcv7 argv sha and cannot bind refcv8's.
+179:    non-zero gradient, with a control that must read exactly 0.0 (a seam whose weight is 0 in that smoke).
+180: 6. **The speed-input channel is named in the argv** (§8 X3). The WP-B smoke argv
+181:    (`stack/ops/runs.d/refcv8-wpb-smoke.argv.json`, 197 tokens) still feeds refcv7's v8 future-max sidecar
+182:    (`--speed-max-sidecar-v6 …/refcv6_speed_max_v8_train.jsonl`). A launch that keeps it is stamped "future-ego speed
+183:    oracle input (K12)" on every number, and X3 then reads FAILED (§8).
+184: 7. **The refcv7-50,400 four-family baseline row exists** (X8) before launch, or every §5 bar reads PENDING.
+185: 
+209:     from the run's own logged rows over all logged steps. It is the D1 K2 form ("tactical rows / window logged").
+222: * **(e) Control.** The same instrument on refcv7's own log must read **0.2357** (D1 K2). The release census (95.09 %)
+223:   is the analytic expectation; the logged share must lie within ±0.02 of 0.9509.
+234: ⚠️ **Not consumed in the WP-B overlay: the v9 CONSTRAINT vectors** (`lat_c`, `lon_c`, `speed_goal`). The constraint
+235: heads regress plan-derived [0, 6] s quantities (terminal heading, turn onset, 6-s progress, v at 6 s), not the v9
+236: fields (stop distance and time, lead gap and time gap, target speed and time to reach). WP-B DESIGN §3.9 items 2 and 10
+237: name this. R8-1's "with constraints like distance and time" is therefore only partly delivered by the current build.
+238: See §13 Q2.
+239: 
+256:     A6 dense capture (`raw/a6_dense_score.json` inputs) joined to the v9 eval139 release. Owner: EvalFlyWheel / WP-B.
+276: | NAV-PREMATURE FAIL | the spatial early announcement (D-WPA-4) causes premature turns, the D6 navhard pattern (~59 % of 724 command-but-straight scenes, D6 §7) | the onset constraint: condition on `nav_d_next` with the turn-onset constraint head (t_onset) in selection (γ_head term) — WP-B arm T4 on the frozen trunk first |
+285: admissible inside a route input. **PI decision 11 is open (§11).** If the PI overrules, the run carries `--r8-no-rc`
+286: and every row below reads NOT APPLICABLE.
+303:     heading-15 0.640. On S-ROUTE: **PENDING** — `code/` of WP-A Stage 2 run on `a6_window_list.json` (zero GPU).
+315:   (`--r8-rc-roll` + `--r8-derange-feed`) must fail B-RECIPE (`SPEC_WPB_LADDER_DRAFT.md` §5 B-REG).
+321: | 1 FAIL (does not beat E-1) | the model is no better than aiming at the point: the echo risk the PI flagged (Hidden Biases' TP shortcut) | per-candidate RC bearing in selection only (ρ term), RC removed from the operative condition; then yaw augmentation (V-YAW, ladder) |
+371: | CONS-* FAIL | the constraint heads do not reach D0's σ\* / 15°; D0 §2.3 says a weak constraint HURTS when conditioned on (+0.213 m) | zero the γ_prog / γ_head selection terms at eval (`sat` off) and re-read (iv); next: supervise the v9 constraint fields (§13 Q2) |
+384:   closest frozen-trunk reading (PENDING, R1 arms running).
+386:   allocated share **≥ 0.95** for each (if allocation is in the argv); STOP-at-d within tolerance on **≥ 0.95** of
+402: | FAIL on STOP-at-d | the longitudinal constraint does not reach the plan | supervise v9 stop constraints (§13 Q2); the STOP-at-d sat hinge |
+413: * **(c) Bars.** **CONS-ALLOC ≥ 0.95** (if allocation is on); **CONS-PICK-TAG ≥ 0.95**. Reading (3) has no separate
+429:   RC-ON row (the model as configured), sampler seeds 0 and 1: turn direction-correct pick (terminal-heading class,
+439:      privileged input; §4.3).
+444: * **(f) Deliberate regression.** Eval-time: RC-SHUF + NAVSHUF + CTRL-SHUF together (the "all route evidence
+445:   deranged" row) must FAIL bar 1. Lever level: the ladder's `V-R8d` must fail B-RECIPE.
+451: | 1–3 PASS, 4 FAIL | route following lives in the privileged RC | RC dropout 0.5 and the LEGAL schedule (§4.3 g); NavSim LEGAL row decides severity |
+453: | 2 FAIL with 1 PASS | direction right, geometry wrong (over/under-steer, D6 classes) | the heading constraint (CONS-HEAD) and the curvature family; then yaw augmentation (V-YAW) |
+467: in-run eval row) runs under **A7**. ⚠️ A7.2–A7.4 must be implemented before any refcv8 G0: until then a refcv8 G0
+468: under A7 REFUSES (battery SPEC A7, "Implementation owed"). No refcv8 battery number counts unless its G0 passes.
+472: | **LONGITUDINAL** | speed MAE 0–2 s and 2–6 s; along-track error at 2 s and 6 s (signed and absolute); target-speed accuracy @ 0.5 m/s; 6-s progress relative error; **distance keeping** (min headway, time gap, min TTC to the in-path lead; X7); ceiling compliance of the EMITTED plan (X3) | S2: **PENDING** — the step-50,400 battery (`battery/raw/step50400/`) produced no family number: G0-A6 FAIL as coded, PASS under the A7 text ruling (`g0_A6_text.json`); the battery must be re-run under the ruling (X8). S-ROUTE, MEASURED (`a6_dense_score.json`, V0 seed 0): turn speed MAE 0–2 s **0.347** m/s, straight 0.252; turn \|along\| 6 s 7.37 m, straight 5.00 m |
+473: | **LATERAL** | heading error (MAE 0–2 s; terminal at 6 s); **curvature** MAE 0–2 s (masked, beside the `ha0` straight-line floor); **yaw-rate** MAE with the standstill mask (RETR-2026-09-26-YAWMASK); cross-track at 2 s and 6 s; route direction and heading-15 (R8-4 iv) | S2: PENDING (as above). S-ROUTE, MEASURED (V0 seed 0): turn terminal-heading error **23.8°**, curvature MAE 0–2 s 0.0098, \|cross\| 6 s 6.33 m; straight 2.29°, 0.0016, 1.05 m |
+512: | route checkpoint | none: `route_cp_valid = 0` | the centreline point at arc L = 50 m from the metric-cache route |
+527: | **BAR-R8-N1** (navtest, FULL 12,146 tokens) | PDMS(refcv8 LEGAL) > STOP, paired interval excluding 0, margin > 2× the full-split inference floor | step 30,000: **71.8849** vs STOP 61.8202, Δ +0.1006 [+0.0829, +0.1178], PASS; step 5,000: 65.5976, PASS. Step 50,400: PENDING (`step50400/runner.log`: navtest scoring aborted by the RAM guard, last line 19:03Z) |
+528: | **BAR-R8-N2** (navhard, official two-stage EPDMS) — **the decisive NavSim bar** | EPDMS(refcv8 LEGAL) > max(STOP, CV, ECHO); paired interval vs STOP excluding 0; margin > 2× the seed floor | step 30,000: **0.2269** vs STOP 0.2985, Δ −0.0716 [−0.1112, −0.0346], **FAILED**; step 5,000: 0.1624, FAILED. 50,400: PENDING |
+530: | **BAR-R8-N4** (vs refcv7, same inputs) | navtest PDMS(refcv8 LEGAL) − PDMS(refcv7-50,400 LEGAL) > 0, separated | **PENDING: refcv7-50,400 rolled through the LEGAL inputs** (bare command, unknown speed row) on navtest FULL and navhard, by the EvalFlyWheel bridge with `R7_VMAXOFF`-style inputs (that arm exists for warmup and a navtest subset only) |
+552: | PRIVILEGED PASS, LEGAL FAIL | the model needs the privileged route | the RC-dropout / LEGAL schedule lever (§4.3 g) |
+672:   oracle-117 (the ADE-nearest candidate; T0, a denominator only). Random-in-reach pick beside both. Tier T1.
+702: ### 8.3 X3 — a past-only speed input with a trained "unknown" row, and the ceiling on the emitted plan
+704: ⚠️ **NOT BUILT in the WP-B overlay** (base tip `5388a43`): no `--r8-*` flag carries N2 / N3 or the unknown-row dropout,
+705: and the smoke argv feeds refcv7's v8 future-max sidecar. PI decision 2 (N2 vs N3) is open (§11).
+708:   max) for the channel actually fed; (2) **CEIL-OBEY** = share of S-ROUTE windows whose EMITTED plan's max speed
+709:   exceeds the fed finite ceiling by > 0.5 m/s; (3) **VMAX-OFF** and **VMAX-SHUF** eval rows (input removed / taken
+717: * **(c) Bars.** (1) **LEAK ≤ 0.05** for the fed channel; (2) **CEIL-OBEY ≤ 0.01**; (3) VMAX-SHUF − VMAX-OFF on speed
+723: * **(g) Outcome.** PASS ⇒ the speed channel is admissible and used as a limit. **If the launch keeps the v8 sidecar,
+724:   X3 reads FAILED on bar 1 (0.238 > 0.05) at launch**, and every speed-family number carries the K12 oracle stamp; the
+725:   next arm is the N2 / N3 wiring on the ladder (one variable vs V-R8) with the unknown row at p 0.45, then a re-launch
+726:   decision for the PI.
+767: * **(a) Measure.** On S2 and S-ROUTE windows with a v9 in-path lead (`lead_valid`): the plan's minimum time gap and
+768:   minimum TTC to the lead's logged future (join3d); **LEAD-VIOL** = share of lead windows whose plan's minimum time gap
+769:   is < 1.0 s while the human's is ≥ 1.0 s.
+770: * **(b) Baseline.** **PENDING:** refcv7-50,400 through the same instrument (the battery's distance-keeping block, X8).
+771:   Context (MEASURED): refcv7's agent store scope x ≤ 61 m excluded 84 % of joined agents (D4); NavSim navhard NC-zero is
+772:   94.8 % front collisions (D6).
+773: * **(c) Bar.** refcv8 − refcv7 on LEAD-VIOL **< 0, separated**, at both seeds; and the LONGITUDINAL family carries the
+774:   distance-keeping metrics with n (completeness).
+775: * **(d)** §2.2.
+778:   lead).
+779: * **(g) Outcome.** FAIL ⇒ the FOLLOW lead-gap / time-gap constraints from v9 as a longitudinal condition (§13 Q2); the
+780:   agent-store range extension (§13 Q4).
+781: 
+786:   `battery_summary.json` carries no family number.
+787: * **(c) Bar (precondition, not a model bar):** the baseline row exists before the refcv8 launch.
+794: §9. A second training seed of the full run is a PI compute decision. Without it, every claim is restricted as §9 says.
+798: * **(a) Measure.** **POSE-SYNC** = mean \|t_pose − t_image\| after interpolating poses to the camera timestamp;
+799:   **NIGHT-LUMA** = the night stratum defined by mean luma < 30 (not the clock label); **LEFT-N** = every left-turn
+800:   result with its clip count.
+803: * **(c) Bar.** POSE-SYNC **≤ 1 ms** if the interpolation is in the build; otherwise the row reads NOT BUILT. NIGHT-LUMA
+804:   and LEFT-N are report-only.
+806: * **(f) Deliberate regression.** Interpolation off must read ≈ 16.5 ms.
+807: * **(g) Outcome.** NOT BUILT ⇒ R8-7 reads FAILED on X10; the next arm is the interpolation in the dataset reader
+808:   (Data FlyWheel), a label-time fix with its own G-CLOCK-style guard.
+809: 
+820: **What the v7-tiny replicate floor supplies.** For each LEVER the ladder tests (`SPEC_WPB_LADDER_DRAFT.md` L1 recipe,
+822: and the ratio R = E / F. A lever earns its place in the refcv8 argv only with a separated CI **and** R > 1 (its
+834:    * eval-time intervention rows of ONE refcv8 checkpoint (RC-OFF, RC-SHUF, NAVSHUF, CTRL-SHUF, forced conditions,
+835:      VMAX-OFF / VMAX-SHUF, UNKNOWN). These compare rows of the same weights, so they carry no training variance; they
+872:   value on the same set, the head re-warm is cut to the trunk's 5e-5.
+895: ### 10.3 The loss-budget weights and the conditioning recipe values
+898:   `--w-r8-subscore`, `--r8-lat-prior-dropout`, `--r8-prior-free-group`): **SPEC_WPB §6's reading rule** (registered,
+899:   sha256 `c952d4b4…`) on the frozen trunk. The first arm in the order T1 → T2 that clears B-ROUTE, with T1d / T2d
+900:   failing, names the base. T2 is adopted over T1 only if T2 − T1 is CI-separated on turn direction or heading-15 at
+901:   both seeds. X1h, T2s, X2a and X2b are adopted only on a CI-separated gain over their base arm, with straight ΔADE ≤
+902:   +0.05 m. Then ladder **L1 (B-RECIPE)** must clear on the trunk-trainable tiny rig. If no WP-B arm clears B-ROUTE, the
+903:   run carries T1's seams with the listwise selector, and refcv8's own R8-4 (iv) is the only deciding bar.
+904: * **R8-BUDGET** (`--w-tac-v6`, `--w-map-hires`): `SPEC_WPB_LADDER_DRAFT.md` L2 / L3, **once registered** (it is a DRAFT
+905:   at this writing, §13 Q9). `--w-tac-v6` = 1.0 × k, with k from the ladder's §4.2 rule, iff B-PREM and B-BUDGET pass;
+906:   `--w-map-hires` = 4.0 iff B-PREM and B-MAPW pass. Otherwise refcv7's 1.0 stands for each. A PREMISE-UNMET arm is
+907:   never read as a lever negative.
+910: * **R8-WARMUP** (Master Mind ruling; proposed default from WP-D W1 / W2): re-warm both LR groups over 1,000 steps to
+911:   refcv7's peaks (head 1e-4, trunk 5e-5 under `--opt dd`), cosine over the run; EMA 0.9998 evaluated at every in-run
+912:   eval and saved; the B1 guard above.
+913: * **Steps and cost:** ~30,000 steps (PLAN §0.1, ESTIMATED 3.5–4 days at ~10–11 s/step). The projected s/step must be
+914:   **≤ 10.5** (the PI's approved refcv7 ceiling, `pi_cost_approval.json` `max_s_per_step` 10.5); above it, the PI decides
+915:   before launch.
+916: 
+919: ## 11. PI decisions still open, each with its default
+923: | **11** | road-geometry speed information admissible inside the route input? | **admissible** (Master Mind provisional ruling): RC-A50 with the certified noise, dropout 0.3 | `--r8-no-rc`; §4.3 rows NOT APPLICABLE; R8-4 (iv) bar 4 (the RC-OFF row) becomes the main route row |
+924: | **8** | drop the 8 train clips that share a recording with eval clips or duplicate a video? | **keep** the refcv7 train corpus; mask the 693 ego boxes only; every eval139 number is also reported on the eval clips that share no recording with train (the leak-free sensitivity row, PLAN decision 8) | the train corpus is re-selected (≈ 0.2 % of train); refcv8-vs-refcv7 comparability carries that stamp |
+925: | **2** | N2 or N3 as the past-only speed proxy | **N2** (past-20-s max snapped up the road-law ladder, urban floor 50 km/h) with an unknown row at p 0.45 | N3 (coarse urban / rural / motorway); X3's bars are unchanged. Either needs X3 built (§8.3) |
+929: Also owed to the PI (no default assumed): a **second training seed** (X9, §9); the **NavSim leaderboard examination**
+933: R8-6; 5 by E2′ (RC-A50, conditional on 11); 7 by §10.3.
+939: 1. **Registration.** The Master Mind renames this file `SPEC_REFCV8.md`, records its sha256 and the UTC time (in
+940:    `Project Steering/` beside it, e.g. `SPEC_REFCV8_SHA256.txt`) **before any refcv8 number exists**: no refcv8
+941:    training step's in-run eval row, no refcv8 eval, no refcv8 NavSim score.
+957: ## 13. OPEN QUESTIONS FOR THE MASTER MIND
+959: * **Q1 — I-2, allocation identity.** Allocation attached with emission OFF moves `traj` and base scores (CPU 5.7e-6,
+960:   Thor 2.1e-5) while `sel_idx` holds. Accept the proposed I-2 literals (`sel_idx` 100 %, max \|Δ traj\| ≤ 1e-3 m,
+961:   max \|Δ base score\| ≤ 1e-4)? And choose: allocation emitted from step `S_emit` > 0, or identity stated for the
+962:   117-candidate base fan only? `iw_diag.py`'s result (Thor) should be read first.
+963: * **Q2 — the v9 constraint vectors are not consumed.** `lat_c`, `lon_c` and `speed_goal` (stop distance and time, lead
+964:   gap and time gap, target speed and time to reach) are not supervised; the constraint heads regress plan-derived
+965:   [0, 6] s quantities. R8-1's "constraints like distance and time" and R8-4 (ii) STOP-at-d / X7 FOLLOW therefore rest
+966:   on partial machinery. Build before launch, or launch and report R8-1 constraints as partly delivered? Also owed:
+967:   the label ↔ tag agreement on the [2, 6] s overlap (v9 band [2, 8] s vs plan [0, 6] s; WP-B DESIGN §3.9.4).
+968: * **Q3 — NavSim LEGAL speed input.** Default here: the unknown row (NavSim's `AgentInput` has no map and only a short
+969:   ego history). Is a map speed limit leaderboard-legal? The refcv7 A1 bar arm fed it, so refcv7's NavSim numbers are
+970:   not LEGAL-row baselines; BAR-R8-N4 needs a refcv7-50,400 LEGAL roll (dev-box GPU).
+971: * **Q4 — agent-store range (X7).** D4 measured that x ≤ 61 m excludes 84 % of joined agents. I found no range change in
+972:   the WP-B overlay. In scope for refcv8?
+973: * **Q5 — X3 before launch?** The smoke argv keeps refcv7's v8 future-max sidecar. If refcv8 launches with it, X3 reads
+974:   FAILED on LEAK at launch, and every speed number carries the K12 oracle stamp.
+975: * **Q6 — MODEL_REGISTRY on D:.** The D: working-tree `MODEL_REGISTRY.md` (mtime 2026-10-01; HEAD `37645fc`) has no
+976:   refcv7 row. PLAN cites block `REFCV7-2026-10-04-FINAL`, which is only at the lander tip. Every refcv7 number here is
+977:   from raw JSON on D:; please cross-check against that registry block before registration.
+978: * **Q7 — primary route surface.** I chose S-ROUTE (the dense 4,634 windows: every one of the 2,317 GT-turn windows, 43
+979:   episodes) over S-GRID (107 GT-turn windows), where the PI's quoted 0.84 / 0.51 live. Confirm.
+980: * **Q8 — R8-1-REACH key.** Which in-run key carries the supervised-window share under v9 partial labels (refcv7:
+981:   `tac_label_rows`)?
+982: * **Q9 — SPEC_WPB_LADDER is a DRAFT.** §10.3's budget rule depends on its registration.
+983: * **Q10 — X10 pose interpolation** is not built. In scope, or accept R8-7 FAILED on X10?
+984: * **Q11 — R8-4 (iv) bar 4** (RC-OFF ≥ 0.90 / ≥ 0.60) is my proposal, not from any registered document. Confirm or
+985:   strike.
+986: * **Q12 — B3 default OUT.** WP-D ranks it third and proposes a zero-gated entry; with no registered probe I set it OUT.
+987:   Register the R1-harness box3d-slots arm, or accept OUT?
+989: ### 13b. Open PI question raised 2026-10-04 23:10 — the NavSim road-plane constant
+990: 
+991: Every NavSim arm, the LEGAL R7_VMAXOFF included, uses one global road-plane scalar of −0.3557 m
+992: (`run_bridge7.py:167-168`). It is the median of (z − h/2) over the 'vehicle' GT boxes of 74 navhard/warmup logs
+993: (`…/2026-09-23-refcv6-standard-tests/…/raw/inputs/road_plane_navhard_warmup_logs.json`). It is a dataset-level
+994: calibration constant, not a per-scene or map channel, but it is derived from GT annotations.
+995: 
+996: **Default until the PI rules:** the LEGAL row keeps it, and it is stamped "road-plane calibrated from GT boxes (dataset
+997: constant)". **The next step if the PI rules it inadmissible:** re-derive it from the ego's own camera extrinsics (mount
+998: height) and re-score the LEGAL row.
+999: 
+1000: ### 13a. Master Mind rulings on Q1–Q12 (2026-10-04 ~22:00 Europe/Berlin; draft-stage, before any refcv8 number exists)
+1006:   [2, 6] s label ↔ tag agreement owed by DESIGN §3.9.4.
+1010:   needs no new build.
+1011: * **Q1 — accept the I-2 literals** (`sel_idx` 100 %, max |Δ traj| ≤ 1e-3 m, max |Δ base score| ≤ 1e-4). Identity is
+1014:   identity row.
+1017:   assigned to the EvalFlyWheel, queued behind the running 50,400 NavSim scoring and P1'.
+1022:   `REFCV7-2026-10-04-FINAL` before registration.**
+1025: * **Q8 — WP-B names the key** (the v9 supervised-window share logged in-run) before registration.
+1026: * **Q9 — SPEC_WPB_LADDER** is registered by the Master Mind when WP-B hands it over; §10.3 binds on that registration.
+1038:   checkpoint at inference). Calibration disclosure in §14 stands.
+1062:     ~1 day), entering through ladder arm V-R8-DRV at R ≥ 2;
+1063:   - the NC speed commit is addressed by X3 + `--r8-speed-enc8` + v9 longitudinal constraints (P8).
+1076: | R8-3 bars 1–3 | > E-1 / ≤ +0.02 / ≤ +0.05 m | E-1 RC-A50 0.916 / 0.654 (grid); refcv7 0.841 / 0.514 | PLAN R8-3 ("a trivial planner … sets a floor"; "a shuffled-checkpoint arm must lose the gain"); the ladder's B-RECIPE LEGAL rule (+0.05 m) |
+1082: | R8-4 (iv) bar 4 | ≥ 0.90 / ≥ 0.60 (RC-OFF) | as above | this SPEC (§13 Q11) |
+1083: | BAR-R8-E1 / E3 / NR | < 0 separated / not separated worse | refcv7-50,400 battery values do NOT exist yet | SPEC_REFCV7 BAR-R7-1 / R7-3 |
+1089: | X3 | LEAK ≤ 0.05; CEIL-OBEY ≤ 0.01; UNKNOWN ≤ +0.10 m/s | 0.238 leak; 110 / 2,059 over the ceiling | LEAK: above D4's N2 0.0346; others this SPEC |
+1091: | X7 | LEAD-VIOL refcv8 − refcv7 < 0, separated | refcv7 value not yet measured | this SPEC |
+1092: | X10 | POSE-SYNC ≤ 1 ms | 16.5 ms mean | this SPEC |

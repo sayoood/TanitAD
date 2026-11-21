@@ -1,0 +1,54 @@
+# W2 2026-09-20 -- four_families consumer sweep + checker suite, AFTER the lateral-refusal source fix
+# (an UNDEFINED lateral term refuses with reason+n; the reachable yaw-rate NaN branch refuses too).
+# FILES = grep -rl --include=*.py 'four_families|refav1_openloop_report' taniteval/tests tools/tests
+#   taniteval/tests/test_bench_suite_internal_t1.py
+#   taniteval/tests/test_bench_suite_navsim_offline.py
+#   taniteval/tests/test_decision_capture.py
+#   taniteval/tests/test_dump_lead_join.py
+#   taniteval/tests/test_eval_four_families_tool.py
+#   taniteval/tests/test_four_families_curvature_analytic.py
+#   taniteval/tests/test_four_families_dt.py
+#   taniteval/tests/test_four_families_lateral_undefined.py
+#   taniteval/tests/test_kappa_ladder_single_source.py
+#   taniteval/tests/test_lead_metrics.py
+#   taniteval/tests/test_lead_strata.py
+#   taniteval/tests/test_navsim_adapter.py
+#   taniteval/tests/test_nuscenes_planning.py
+#   taniteval/tests/test_progress.py
+#   taniteval/tests/test_strategic_optionset.py
+#   taniteval/tests/test_t1_eval.py
+#   taniteval/tests/test_v0_antiecho.py
+#   tools/tests/test_criteria_check.py
+#   tools/tests/test_release_gate.py
+# NOTE: the 17 tools/tests/test_release_gate.py failures are PRE-EXISTING and NOT this stream's:
+#   the identical 17F/34P was reproduced from the HEAD blobs in an isolated 'git archive' tree (RG-02 fixtures).
+
+........................................................................ [ 12%]
+........................................................................ [ 24%]
+........................................................................ [ 36%]
+....................s................................................... [ 48%]
+........................................................................ [ 61%]
+........................................................................ [ 73%]
+........................................................................ [ 85%]
+...............................................F....FFF.FFFFF.F.F.FFF..F [ 97%]
+F.......F....                                                            [100%]
+=========================== short test summary info ===========================
+FAILED tools/tests/test_release_gate.py::test_the_synthetic_release_PASSES - ...
+FAILED tools/tests/test_release_gate.py::test_DELIBERATE_REGRESSION_each_criterion_can_actually_fail[RG-03]
+FAILED tools/tests/test_release_gate.py::test_DELIBERATE_REGRESSION_each_criterion_can_actually_fail[RG-04]
+FAILED tools/tests/test_release_gate.py::test_DELIBERATE_REGRESSION_each_criterion_can_actually_fail[RG-05]
+FAILED tools/tests/test_release_gate.py::test_DELIBERATE_REGRESSION_each_criterion_can_actually_fail[RG-07]
+FAILED tools/tests/test_release_gate.py::test_DELIBERATE_REGRESSION_each_criterion_can_actually_fail[RG-08]
+FAILED tools/tests/test_release_gate.py::test_DELIBERATE_REGRESSION_each_criterion_can_actually_fail[RG-09]
+FAILED tools/tests/test_release_gate.py::test_DELIBERATE_REGRESSION_each_criterion_can_actually_fail[RG-10.LON]
+FAILED tools/tests/test_release_gate.py::test_DELIBERATE_REGRESSION_each_criterion_can_actually_fail[RG-11.LON]
+FAILED tools/tests/test_release_gate.py::test_DELIBERATE_REGRESSION_each_criterion_can_actually_fail[RG-13]
+FAILED tools/tests/test_release_gate.py::test_regression_is_ADVISORY_until_the_registry_says_otherwise
+FAILED tools/tests/test_release_gate.py::test_a_clean_release_exits_zero - as...
+FAILED tools/tests/test_release_gate.py::test_CANNOT_RULE_when_n_episodes_is_below_the_cluster_floor
+FAILED tools/tests/test_release_gate.py::test_CANNOT_RULE_when_no_control_was_banked
+FAILED tools/tests/test_release_gate.py::test_cannot_rule_exits_two_not_zero
+FAILED tools/tests/test_release_gate.py::test_a_refusal_WITH_a_reason_is_admissible
+FAILED tools/tests/test_release_gate.py::test_the_json_report_carries_every_criterion_and_the_scope
+SKIPPED [1] taniteval\tests\test_nuscenes_planning.py:401: NOT RUN: OpenCV not installed in this venv
+17 failed, 571 passed, 1 skipped in 61.56s (0:01:01)

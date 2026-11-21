@@ -1,0 +1,80 @@
+{
+ "_what": "box3d_centre (summed L1 in metres over x,y for matched pairs) vs step",
+ "_evidence_class": "MEASURED (ours; A8's own banked metrics.jsonl)",
+ "_tier": "train-side",
+ "bar_m": 2.0,
+ "n_rows": 498,
+ "last_500_steps_mean_centre_m": 10.32,
+ "distance_to_bar_x": 5.16,
+ "fit_full": {
+  "exponent": -0.3481709736088623,
+  "intercept": 5.178678102126279,
+  "r2": 0.40999436323194693,
+  "n": 498,
+  "window": [
+   10,
+   5000
+  ]
+ },
+ "fit_last_half": {
+  "exponent": -0.567009851946784,
+  "intercept": 6.9823954358978995,
+  "r2": 0.09307813993472347,
+  "n": 251,
+  "window": [
+   2500,
+   5000
+  ]
+ },
+ "extrapolation_bound_steps": 10000,
+ "quotable": {
+  "fit_full": {
+   "r2": 0.41,
+   "window": [
+    10,
+    5000
+   ],
+   "n": 498,
+   "quotable_rate": false,
+   "reading": "R2 below 0.80: NO quotable exponent. Use the matched-step ratio instead, and do not convert this into a step count."
+  },
+  "fit_last_half": {
+   "r2": 0.0931,
+   "window": [
+    2500,
+    5000
+   ],
+   "n": 251,
+   "quotable_rate": false,
+   "reading": "R2 below 0.80: NO quotable exponent. Use the matched-step ratio instead, and do not convert this into a step count."
+  }
+ },
+ "matched_step_ratio": {
+  "window_a": [
+   1000,
+   3000
+  ],
+  "mean_a_m": 15.114,
+  "window_b": [
+   3000,
+   5000
+  ],
+  "mean_b_m": 10.423,
+  "ratio_per_2000_steps": 0.6896,
+  "implied_extra_2000_step_blocks_to_2m": 4.44,
+  "implied_total_steps": 13885,
+  "within_2x_bound": false,
+  "reading": "\u26d4 A DIRECTION, NOT A RATE. With no quotable exponent (R2 0.41 / 0.09) this ratio may say 'still falling' and roughly how fast between these two windows; it may NOT be turned into a promised step count. Where the implied total exceeds the 2x extrapolation bound, the honest sentence is that THIS RUN CANNOT ANSWER IT."
+ },
+ "matched_count": {
+  "n_matched_mean": 37.443,
+  "n_target_mean": 37.443,
+  "n_dropped_mean": 0.0,
+  "matched_equals_target_share": 1.0,
+  "reading": "match_slots matches min(n_target, n_query) pairs; with 100 queries and at most --agent-pad 32 targets per window EVERY valid target is matched BY CONSTRUCTION. \u21d2 a stable matched count measures LABEL DENSITY, not that the head keeps matching the SAME agents, and it is not evidence about head quality in either direction."
+ },
+ "axis_split": {
+  "available_from_banked_rows": false,
+  "reading": "box3d_centre is a SUMMED L1 over x and y (agent_slots.py:577) and the trainer logs no per-axis split, so this question CANNOT be answered from banked rows. The held-out probe answers it on predictions instead."
+ }
+}

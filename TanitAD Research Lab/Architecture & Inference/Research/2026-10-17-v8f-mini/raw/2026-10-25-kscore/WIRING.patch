@@ -1,0 +1,37 @@
+WIRING.patch - PREREG_V8F_KSCORE (one change to an existing file; everything else is NEW files)
+
+WHAT: add `v8f_kscore` to the process-name regex in v8f_guard.sh's kill_ours() (and to the comment that lists it).
+WHY:  v8f_guard.sh is the box-2 temperature + time guard the chain depends on. Its Stop = Stop-Process on python.exe processes whose
+      command line matches 'v8f_mini_train|v8f_mini_eval|v8f_lora_smoke|v8f_lora_identity_dev'. Our python's command line is
+      `...\v8f_kscore.py hyps|fit|eval|read ...`, which matches NONE of them, so on a USB-HDD temperature STOP (>=4 of 20 samples >= 61 C, or one >= 63 C)
+      the guard would print ZZGUARD-STOP and kill nothing - the 2-3 h-per-seed hyps stages read ~95 GB from that drive. This is a regression of the
+      guard's purpose, not a convenience.
+      The chain REFUSES to start (ZZV8FMINI-STOP) unless the remote tip's v8f_guard.sh already contains `v8f_kscore`, and re-checks box 2's copy
+      (box2_ship/v8f_guard.sh) before arming; so applying this patch is a precondition, not an option.
+NOT NEEDED (checked): the queue (v8f_mini_box2_queue.cmd) - the chain writes its own job .cmd files via `v8f_kscore.py mkjob`; the anchored end-marker regex
+      '^(ZZV8FMINI|ZZBETA|ZZV8FTAC)-(DONE|STOP)' already covers the chain's ZZV8FMINI-DONE/-STOP; the TIME rule reads train_log.jsonl {step,sec} and
+      selfcheck.json {steps_total}, which our fit writes (pinned by test_the_box2_guard_can_read_our_fit_logs, which runs the guard's own embedded reader).
+HOW:  from the repo root, on the tip 4a59a711 (the file is identical to the tip's):   git apply --check WIRING.patch && git apply WIRING.patch
+      then copy the patched file over box2_ship/v8f_guard.sh on the dev box (the chain asserts it). No launch-gate change is needed: the scorer launch gate is
+      INSIDE `fit` (v8f_kscore.py) and `--require-token` makes it unskippable.
+
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/box2_ops/v8f_guard.sh
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/box2_ops/v8f_guard.sh
+@@ -4,7 +4,7 @@
+ #                STOP if >= 4 of the last 20 telemetry samples (15 s apart) read >= 61 C, or any one reads >= 63 C.
+ #   TIME:        once the running trainer has logged >= 1,000 steps, its rate over the last 20 log records (1,000 steps) x the run's
+ #                step total must stay <= 10 h. Above that the input pipeline, not the model, is the experiment: STOP and report.
+-# Stop = Stop-Process on OUR job's python processes only (v8f_mini_train / v8f_mini_eval / v8f_lora_smoke / v8f_lora_identity_dev) and their workers. A stopped run resumes
++# Stop = Stop-Process on OUR job's python processes only (v8f_mini_train / v8f_mini_eval / v8f_lora_smoke / v8f_lora_identity_dev / v8f_kscore) and their workers. A stopped run resumes
+ # from ckpt_last.pt on the same argv. Exits when the chain ends. Script polling, not model turns.
+ # 2026-10-20: the end test is ANCHORED (^MARKER) and knows PREREG_V8F_TAC's chain (ZZV8FTAC-DONE / -STOP). Unanchored, the same
+ # test in ra1runs_guard.sh matched a chain's own "waiting for <marker>" line and switched itself off (2026-10-20 22:43).
+@@ -14,7 +14,7 @@
+ MAXH=${V8F_MAX_RUN_H:-10}
+ CHAIN_OUT=${V8F_CHAIN_OUT:-$L/chain_v8f_mini.out}       # chain_beta.sh points this at its own log; the default is the v8F-mini chain's
+ kill_ours() {
+-  $SSH "powershell -NoProfile -Command \"\$p = @(Get-CimInstance Win32_Process -Filter \\\"Name = 'python.exe'\\\"); \$ours = @(\$p | Where-Object { \$_.CommandLine -match 'v8f_mini_train|v8f_mini_eval|v8f_lora_smoke|v8f_lora_identity_dev' }); \$ids = @(\$ours | ForEach-Object { \$_.ProcessId }); \$kids = @(\$p | Where-Object { \$ids -contains \$_.ParentProcessId }); (\$ours + \$kids) | ForEach-Object { Stop-Process -Id \$_.ProcessId -Force -ErrorAction SilentlyContinue; 'stopped ' + \$_.ProcessId }\"" 2>/dev/null | tr -d '\r'
++  $SSH "powershell -NoProfile -Command \"\$p = @(Get-CimInstance Win32_Process -Filter \\\"Name = 'python.exe'\\\"); \$ours = @(\$p | Where-Object { \$_.CommandLine -match 'v8f_mini_train|v8f_mini_eval|v8f_lora_smoke|v8f_lora_identity_dev|v8f_kscore' }); \$ids = @(\$ours | ForEach-Object { \$_.ProcessId }); \$kids = @(\$p | Where-Object { \$ids -contains \$_.ParentProcessId }); (\$ours + \$kids) | ForEach-Object { Stop-Process -Id \$_.ProcessId -Force -ErrorAction SilentlyContinue; 'stopped ' + \$_.ProcessId }\"" 2>/dev/null | tr -d '\r'
+ }
+ echo "$(date '+%m-%d %H:%M') v8F guard armed (USB >= 4/20 samples >= 61 C or one >= 63 C; projected run > ${MAXH} h after 1,000 steps)"
+ hi=0

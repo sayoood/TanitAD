@@ -1,0 +1,73 @@
+{
+ "what": "R7_A1 step 5000 -> step 30000 on navtest",
+ "a": "D:\\Projects\\TanitAD\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-28-refcv7-standard-tests\\navsim\\raw/milestones/step5000",
+ "b": "D:\\Projects\\TanitAD\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-28-refcv7-standard-tests\\navsim\\raw\\milestones\\step30000",
+ "step_a": 5000,
+ "step_b": 30000,
+ "device_a": "cuda as_trained",
+ "device_b": "cpu fp32",
+ "same_device": false,
+ "model_as_trained_a": "\"refcv7-r101-s0 as launched\" (FIX-1..5; NEW-1 ha0_ext_pose; NEW-2 10 cm map, A6/A7 pooled BEV; A9 box head 300 queries learned_ref; A2 selection mechanisms ON; strategic OFF; config.json md5 e6512a01...; no mid-run recipe change recorded -- INHERITED)",
+ "model_as_trained_b": "\"refcv7-r101-s0 as launched\" (FIX-1..5; NEW-1 ha0_ext_pose; NEW-2 10 cm map, A6/A7 pooled BEV; A9 box head 300 queries learned_ref; A2 selection mechanisms ON; strategic OFF; config.json md5 e6512a01...; no mid-run recipe change recorded -- INHERITED)",
+ "device_warning": "the two readings ran on DIFFERENT devices (amendment A3): read the delta against the precision floor KP before calling it a training effect",
+ "PDMS_x100_a": 65.5976,
+ "seed_floor_a": 0.0849,
+ "PDMS_x100_b": 71.8849,
+ "seed_floor_b": 0.2483,
+ "delta_PDMS_x100": 6.2872,
+ "paired_interval_b_minus_a": {
+  "delta": 0.0629,
+  "lo": 0.0508,
+  "hi": 0.0748,
+  "ci95": 0.012,
+  "p_delta_gt0": 1.0,
+  "separated": true,
+  "reducer": "nanmean_official_skipna",
+  "n_boot": 2000,
+  "estimator": "paired_navsim_log_cluster_bootstrap",
+  "separated_log_name": true,
+  "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+  "sensitivity_nuplan_drive": {
+   "status": "OK",
+   "unit": "nuplan_drive",
+   "n_clusters": 44,
+   "lo": 0.0482,
+   "hi": 0.0759,
+   "separated": true
+  },
+  "status": "OK",
+  "cluster_unit": "log_name",
+  "resample_unit": "log_name",
+  "aggregation": "single_stage_token_mean",
+  "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+  "n_clusters": 136,
+  "n_units": 12146,
+  "n_units_nan": 0,
+  "min_clusters": 8,
+  "seed": 0,
+  "alpha": 0.05,
+  "reproduces_official_a": {
+   "status": "OK",
+   "official_value": 0.7188488716864708,
+   "point": 0.7188488716864708,
+   "abs_diff": 0.0,
+   "tol": 1e-09
+  },
+  "reproduces_official_b": {
+   "status": "OK",
+   "official_value": 0.6559764439111124,
+   "point": 0.6559764439111124,
+   "abs_diff": 0.0,
+   "tol": 1e-09
+  },
+  "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+  "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+  "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+  "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+ },
+ "estimator": {
+  "name": "paired_navsim_log_cluster_bootstrap",
+  "unit": "log_name",
+  "question": "another draw of LOGS only; inference variance = the seed floors above; training variance untested (one run)"
+ }
+}

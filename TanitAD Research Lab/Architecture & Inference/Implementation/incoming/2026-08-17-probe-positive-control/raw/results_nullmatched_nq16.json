@@ -1,0 +1,563 @@
+{
+ "run_stamp": "RANDOM-LATENT-NULL-MATCHED@11250",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "_evidence_class": "MEASURED (ours)",
+ "estimator": "taniteval.ci.paired_episode_cluster_bootstrap",
+ "n_boot": 2000,
+ "forbidden": "overlapping_holdout_se",
+ "split_source": "DECLARED p3_selection.json (stratum n_lead_frames >= 120 over the full train join, seed 0)",
+ "n_eval_episodes": 70,
+ "n_eval_episodes_with_gt_lead": 70,
+ "n_eval_windows": 3023,
+ "n_train_windows": 2594,
+ "c_shuf_fixed_points": 0,
+ "c_shuf_xep_same_episode_windows": 0,
+ "c_shuf_discriminability": {
+  "within_episode_gt_gap_sd_m": 3.6878,
+  "between_episode_gt_gap_sd_m": 6.1999,
+  "realised_swap_mae_m": 3.6696,
+  "n_episodes_with_ge2_leads": 70,
+  "fixed_points": 0,
+  "_read": "realised_swap_mae_m is the perturbation C-SHUF actually applies to the QUESTION. If an arm's own error is much larger than this, K2 has little to detect and its 'not separated' is uninformative \u2014 say so rather than reading it as a null."
+ },
+ "prereg_amendment": "2026-08-17 \u2014 C-EPMEAN + C-SHUF-XEP added to \u00a71.4's control list (C-CONST/C-SHUF/C-TOK/C-V5F), which does not cover EPISODE IDENTITY. Made BEFORE any arm on this corpus was fitted. See PREREG_AMENDMENT_EPISODE_IDENTITY.md",
+ "c_const_m": 15.013299942016602,
+ "gt_lead_rate": 0.900099239166391,
+ "n_queries": 16,
+ "cache_meta": {
+  "step": 11250,
+  "step_source": "ckpt['_meta']['step']",
+  "n_frames": 5617,
+  "stride": 4,
+  "n_cells": 16,
+  "d_readout": 128,
+  "token_grid": [
+   16,
+   40
+  ],
+  "cuda_max_mem_gb": 1.457058816
+ },
+ "arms": {
+  "cells": {
+   "status": "TRAINED",
+   "n_params": 3207445,
+   "param_band_ok": true,
+   "memory_shape": [
+    16,
+    128
+   ],
+   "train": {
+    "history": [
+     {
+      "step": 0,
+      "loss_presence": 1.1895,
+      "loss_cls": 2.6329,
+      "loss_centre": 60.4178,
+      "loss_size": 4.4421,
+      "loss_yaw": 0.6207,
+      "loss_rates": 5.9446,
+      "loss_occ": 0.6192,
+      "total": 72.585,
+      "n_matched": 231,
+      "n_dropped": 50
+     },
+     {
+      "step": 200,
+      "loss_presence": 0.17,
+      "loss_cls": 0.7326,
+      "loss_centre": 8.8541,
+      "loss_size": 1.3255,
+      "loss_yaw": 0.5963,
+      "loss_rates": 4.9867,
+      "loss_occ": 0.1238,
+      "total": 14.2337,
+      "n_matched": 247,
+      "n_dropped": 7
+     },
+     {
+      "step": 400,
+      "loss_presence": 0.1581,
+      "loss_cls": 0.8153,
+      "loss_centre": 7.4414,
+      "loss_size": 1.5975,
+      "loss_yaw": 0.5772,
+      "loss_rates": 4.5102,
+      "loss_occ": 0.1887,
+      "total": 12.9388,
+      "n_matched": 292,
+      "n_dropped": 15
+     },
+     {
+      "step": 600,
+      "loss_presence": 0.1677,
+      "loss_cls": 0.8779,
+      "loss_centre": 7.1191,
+      "loss_size": 1.593,
+      "loss_yaw": 0.5309,
+      "loss_rates": 4.1783,
+      "loss_occ": 0.1675,
+      "total": 12.4615,
+      "n_matched": 259,
+      "n_dropped": 37
+     },
+     {
+      "step": 800,
+      "loss_presence": 0.1662,
+      "loss_cls": 0.8944,
+      "loss_centre": 6.2416,
+      "loss_size": 1.5278,
+      "loss_yaw": 0.4868,
+      "loss_rates": 4.638,
+      "loss_occ": 0.1343,
+      "total": 11.7029,
+      "n_matched": 254,
+      "n_dropped": 4
+     },
+     {
+      "step": 1000,
+      "loss_presence": 0.1713,
+      "loss_cls": 0.6671,
+      "loss_centre": 6.6925,
+      "loss_size": 1.2871,
+      "loss_yaw": 0.7869,
+      "loss_rates": 5.1961,
+      "loss_occ": 0.1221,
+      "total": 12.264,
+      "n_matched": 236,
+      "n_dropped": 19
+     },
+     {
+      "step": 1200,
+      "loss_presence": 0.1804,
+      "loss_cls": 0.5825,
+      "loss_centre": 5.9521,
+      "loss_size": 1.0287,
+      "loss_yaw": 0.4644,
+      "loss_rates": 5.1904,
+      "loss_occ": 0.1365,
+      "total": 10.8715,
+      "n_matched": 216,
+      "n_dropped": 1
+     },
+     {
+      "step": 1400,
+      "loss_presence": 0.1785,
+      "loss_cls": 0.8426,
+      "loss_centre": 5.6893,
+      "loss_size": 1.4242,
+      "loss_yaw": 0.5271,
+      "loss_rates": 5.3293,
+      "loss_occ": 0.0722,
+      "total": 11.3627,
+      "n_matched": 211,
+      "n_dropped": 0
+     },
+     {
+      "step": 1600,
+      "loss_presence": 0.1769,
+      "loss_cls": 0.8295,
+      "loss_centre": 5.237,
+      "loss_size": 1.399,
+      "loss_yaw": 0.3915,
+      "loss_rates": 5.0618,
+      "loss_occ": 0.0768,
+      "total": 10.6031,
+      "n_matched": 220,
+      "n_dropped": 0
+     },
+     {
+      "step": 1800,
+      "loss_presence": 0.1677,
+      "loss_cls": 0.629,
+      "loss_centre": 5.0982,
+      "loss_size": 1.152,
+      "loss_yaw": 0.4441,
+      "loss_rates": 4.5978,
+      "loss_occ": 0.1461,
+      "total": 9.8628,
+      "n_matched": 251,
+      "n_dropped": 28
+     },
+     {
+      "step": 2000,
+      "loss_presence": 0.1698,
+      "loss_cls": 0.6119,
+      "loss_centre": 5.2421,
+      "loss_size": 1.1092,
+      "loss_yaw": 0.4954,
+      "loss_rates": 4.2114,
+      "loss_occ": 0.0861,
+      "total": 9.777,
+      "n_matched": 241,
+      "n_dropped": 1
+     },
+     {
+      "step": 2200,
+      "loss_presence": 0.1582,
+      "loss_cls": 0.723,
+      "loss_centre": 4.6313,
+      "loss_size": 1.4703,
+      "loss_yaw": 0.3999,
+      "loss_rates": 4.2497,
+      "loss_occ": 0.1176,
+      "total": 9.5664,
+      "n_matched": 286,
+      "n_dropped": 38
+     },
+     {
+      "step": 2400,
+      "loss_presence": 0.1797,
+      "loss_cls": 0.43,
+      "loss_centre": 4.2172,
+      "loss_size": 0.8783,
+      "loss_yaw": 0.3263,
+      "loss_rates": 4.3383,
+      "loss_occ": 0.0898,
+      "total": 8.2456,
+      "n_matched": 212,
+      "n_dropped": 4
+     },
+     {
+      "step": 2600,
+      "loss_presence": 0.1702,
+      "loss_cls": 0.799,
+      "loss_centre": 4.3118,
+      "loss_size": 1.647,
+      "loss_yaw": 0.4405,
+      "loss_rates": 4.1752,
+      "loss_occ": 0.0618,
+      "total": 9.487,
+      "n_matched": 243,
+      "n_dropped": 1
+     },
+     {
+      "step": 2800,
+      "loss_presence": 0.1658,
+      "loss_cls": 0.6569,
+      "loss_centre": 4.917,
+      "loss_size": 1.5517,
+      "loss_yaw": 0.4773,
+      "loss_rates": 4.3535,
+      "loss_occ": 0.1435,
+      "total": 10.0172,
+      "n_matched": 235,
+      "n_dropped": 52
+     },
+     {
+      "step": 2999,
+      "loss_presence": 0.1775,
+      "loss_cls": 0.6304,
+      "loss_centre": 4.1026,
+      "loss_size": 1.1973,
+      "loss_yaw": 0.4546,
+      "loss_rates": 4.9223,
+      "loss_occ": 0.1242,
+      "total": 9.0856,
+      "n_matched": 195,
+      "n_dropped": 0
+     }
+    ],
+    "wall_s": 695.2
+   },
+   "cuda_max_mem_gb": 0.110939136,
+   "mean_presence_at_lead": 0.9231268167495728
+  }
+ },
+ "n_scored_windows": 2665,
+ "abstentions": {
+  "cells": 19,
+  "cells__C-SHUF": 19,
+  "cells__C-SHUF-XEP": 18,
+  "C-CONST": 0,
+  "C-EPMEAN": 0
+ },
+ "n_bootstrap_clusters": 70,
+ "per_arm": {
+  "cells": {
+   "lead_gap_abs_err_m": {
+    "mean": 9.943,
+    "lo": 9.3348,
+    "hi": 10.5721,
+    "ci95": 0.6187,
+    "se": 0.3114,
+    "reducer": "mean",
+    "n_windows": 2665,
+    "n_episodes": 70,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "median_abs_err_m": 7.729920387268066,
+   "mean_pred_gap_m": 21.626808166503906,
+   "mean_gt_gap_m": 15.536426933548688,
+   "_diag_oracle_slot_abs_err_m": {
+    "mean": 4.404955962764389,
+    "median": 2.8088321685791016,
+    "n": 2665,
+    "_read": "the BEST in-corridor slot vs the GT lead. Small here with a large headline = the geometry is in the latent and the presence-ranked SELECTION fails; large here too = the latent does not carry it."
+   }
+  },
+  "cells__C-SHUF": {
+   "lead_gap_abs_err_m": {
+    "mean": 9.8888,
+    "lo": 9.2952,
+    "hi": 10.511,
+    "ci95": 0.6079,
+    "se": 0.3088,
+    "reducer": "mean",
+    "n_windows": 2665,
+    "n_episodes": 70,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "median_abs_err_m": 7.675449371337891,
+   "mean_pred_gap_m": 21.699684143066406,
+   "mean_gt_gap_m": 15.536426933548688,
+   "_diag_oracle_slot_abs_err_m": {
+    "mean": 4.442549100870487,
+    "median": 2.8799877166748047,
+    "n": 2665,
+    "_read": "the BEST in-corridor slot vs the GT lead. Small here with a large headline = the geometry is in the latent and the presence-ranked SELECTION fails; large here too = the latent does not carry it."
+   }
+  },
+  "cells__C-SHUF-XEP": {
+   "lead_gap_abs_err_m": {
+    "mean": 9.6522,
+    "lo": 9.0983,
+    "hi": 10.2235,
+    "ci95": 0.5626,
+    "se": 0.2872,
+    "reducer": "mean",
+    "n_windows": 2665,
+    "n_episodes": 70,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "median_abs_err_m": 7.528247833251953,
+   "mean_pred_gap_m": 21.67831039428711,
+   "mean_gt_gap_m": 15.536426933548688,
+   "_diag_oracle_slot_abs_err_m": {
+    "mean": 4.232662376386811,
+    "median": 2.8236026763916016,
+    "n": 2665,
+    "_read": "the BEST in-corridor slot vs the GT lead. Small here with a large headline = the geometry is in the latent and the presence-ranked SELECTION fails; large here too = the latent does not carry it."
+   }
+  },
+  "C-CONST": {
+   "lead_gap_abs_err_m": {
+    "mean": 5.135,
+    "lo": 4.6196,
+    "hi": 5.7423,
+    "ci95": 0.5614,
+    "se": 0.2852,
+    "reducer": "mean",
+    "n_windows": 2665,
+    "n_episodes": 70,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "median_abs_err_m": 4.686500549316406,
+   "mean_pred_gap_m": 15.013299942016602,
+   "mean_gt_gap_m": 15.536426933548688,
+   "_diag_oracle_slot_abs_err_m": {
+    "mean": 5.13497571818265,
+    "median": 4.686500549316406,
+    "n": 2665,
+    "_read": "the BEST in-corridor slot vs the GT lead. Small here with a large headline = the geometry is in the latent and the presence-ranked SELECTION fails; large here too = the latent does not carry it."
+   }
+  },
+  "C-EPMEAN": {
+   "lead_gap_abs_err_m": {
+    "mean": 3.1207,
+    "lo": 2.7428,
+    "hi": 3.5056,
+    "ci95": 0.3814,
+    "se": 0.1902,
+    "reducer": "mean",
+    "n_windows": 2665,
+    "n_episodes": 70,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "median_abs_err_m": 2.4472807248433437,
+   "mean_pred_gap_m": 15.547304566458134,
+   "mean_gt_gap_m": 15.536426933548688,
+   "_diag_oracle_slot_abs_err_m": {
+    "mean": 3.120676172135292,
+    "median": 2.4472807248433437,
+    "n": 2665,
+    "_read": "the BEST in-corridor slot vs the GT lead. Small here with a large headline = the geometry is in the latent and the presence-ranked SELECTION fails; large here too = the latent does not carry it."
+   }
+  }
+ },
+ "paired": {
+  "cells vs C-CONST": {
+   "delta": 4.8081,
+   "lo": 4.1119,
+   "hi": 5.482,
+   "ci95": 0.685,
+   "p_delta_gt0": 1.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 2665,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "cells vs C-EPMEAN": {
+   "delta": 6.8224,
+   "lo": 6.0791,
+   "hi": 7.5991,
+   "ci95": 0.76,
+   "p_delta_gt0": 1.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 2665,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "cells vs cells__C-SHUF": {
+   "delta": 0.0542,
+   "lo": -0.0897,
+   "hi": 0.2112,
+   "ci95": 0.1505,
+   "p_delta_gt0": 0.7415,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 2665,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "cells vs cells__C-SHUF-XEP": {
+   "delta": 0.2908,
+   "lo": -0.1077,
+   "hi": 0.7023,
+   "ci95": 0.405,
+   "p_delta_gt0": 0.916,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 2665,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  }
+ },
+ "four_families": {
+  "LONGITUDINAL": {
+   "served": true,
+   "headway_error": "lead_gap_abs_err_m \u2014 the PRIMARY above; the lead slot's cx IS the headway",
+   "time_gap_s_GT_mean": 19.273398196125996,
+   "n_windows": 2665,
+   "ttc": {
+    "cells": {
+     "lead_ttc_abs_err_s": {
+      "mean": 10.5152,
+      "lo": 9.3682,
+      "hi": 11.9049,
+      "ci95": 1.2683,
+      "se": 0.6524,
+      "reducer": "mean",
+      "n_windows": 566,
+      "n_episodes": 61,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "n": 566
+    },
+    "cells__C-SHUF": {
+     "lead_ttc_abs_err_s": {
+      "mean": 10.0481,
+      "lo": 9.1278,
+      "hi": 11.1747,
+      "ci95": 1.0235,
+      "se": 0.5223,
+      "reducer": "mean",
+      "n_windows": 546,
+      "n_episodes": 61,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "n": 546
+    },
+    "cells__C-SHUF-XEP": {
+     "lead_ttc_abs_err_s": {
+      "mean": 10.0464,
+      "lo": 8.9791,
+      "hi": 11.3227,
+      "ci95": 1.1718,
+      "se": 0.5985,
+      "reducer": "mean",
+      "n_windows": 548,
+      "n_episodes": 61,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "n": 548
+    },
+    "C-CONST": {
+     "status": "UNAVAILABLE",
+     "n": 0,
+     "reason": "fewer than 10 windows where BOTH the GT lead and the predicted lead are CLOSING (TTC is undefined for a receding lead)"
+    },
+    "C-EPMEAN": {
+     "status": "UNAVAILABLE",
+     "n": 0,
+     "reason": "fewer than 10 windows where BOTH the GT lead and the predicted lead are CLOSING (TTC is undefined for a receding lead)"
+    }
+   }
+  },
+  "LATERAL": {
+   "served": false,
+   "reason": "the head emits AGENT geometry, not ego path; heading / curvature / yaw-rate / cross-track are ego quantities this readout never produces"
+  },
+  "TACTICAL": {
+   "served": "ENABLING CONDITION ONLY",
+   "reason": "slot-referent agreement needs a TRAINED goal head with the categorical `agent_slot` arg on; S-T has not run, so the four agent-referencing g_tac tokens still index an empty set. NOT COMPUTED \u2014 a follow-on, per prereg \u00a73."
+  },
+  "STRATEGIC": {
+   "served": false,
+   "reason": "`obstacle.offline` has no map, lane graph, junction, traffic-light or route feature \u2014 10 classes, all dynamic agents. Nothing strategic is derivable from this label at all."
+  },
+  "_note": "`taniteval.lead_metrics.distance_keeping` is NOT attached: it consumes a predicted ego PATH (W,K,2) over K steps, and this is a single-frame perception readout that produces no path. Reporting it would require a planner rollout, which is the T1 integration prereg \u00a74.6 defers. Stated rather than silently skipped."
+ },
+ "recall": {
+  "tau_star": 0.926721,
+  "tau_source": "median lead-slot presence of the ENCODED (cells) arm over GT-lead windows; FROZEN and reused by every other arm",
+  "cells": {
+   "lead_presence_recall": 0.4667401690554943,
+   "n_gt_lead_windows": 2721,
+   "geometric_emission_rate": 0.9930172730613744
+  },
+  "cells__C-SHUF": {
+   "lead_presence_recall": 0.4652701212789416,
+   "n_gt_lead_windows": 2721,
+   "geometric_emission_rate": 0.9930172730613744
+  },
+  "cells__C-SHUF-XEP": {
+   "lead_presence_recall": 0.4693127526644616,
+   "n_gt_lead_windows": 2721,
+   "geometric_emission_rate": 0.9933847850055126
+  },
+  "C-EPMEAN": {
+   "lead_presence_recall": 1.0,
+   "n_gt_lead_windows": 2721,
+   "geometric_emission_rate": 1.0
+  }
+ },
+ "verdict": {
+  "cells": {
+   "K1_better_than_C-CONST": false,
+   "K2_better_than_C-SHUF": false,
+   "K3_recall_ge_0.50": false,
+   "K3_recall": 0.4667401690554943,
+   "K4_median_err_lt_0.9769m": false,
+   "median_abs_err_m": 7.729920387268066,
+   "K5_better_than_C-EPMEAN": false,
+   "K5_note": "NOT pre-registered; never gates KEEP. Read it ONLY when K1 passes: K1 true with K5 false means the gain could be episode recognition, which C-SHUF cannot detect.",
+   "KEEP": false,
+   "admissible_as": "DROP/RE-SCOPE"
+  }
+ },
+ "d_rule": null
+}

@@ -1,0 +1,35 @@
+{
+ "pipeline": "ra1a-pooled-v1",
+ "script_sha256": "a7dee3884e9667c65d21c1ba04a109e917bc87bef5012d0efd339d5798018292",
+ "encoder_module": "/root/tad/stack/scripts/dinov3_fp8_encode_ship.py",
+ "encoder_module_sha256": "308f36c949979495cd454ac7a20a2cc1dffe0369577cb91f44183d7af52101fd",
+ "model": "facebook/dinov3-vitl16-pretrain-lvd1689m",
+ "model_safetensors_sha256": "dcb2e45127cccbf1601e5f42fef165eea275c8e5213197e8dcf3f48822718179",
+ "torch": "2.11.0+cu128",
+ "transformers": "5.15.0",
+ "device": "cuda",
+ "cuda_device": "NVIDIA RTX 4000 Ada Generation",
+ "enc_dtype": "bf16",
+ "argv": [
+  "--out",
+  "/root/datascale/cache_ctl",
+  "--poll",
+  "5",
+  "--threads",
+  "2"
+ ],
+ "started": "2026-11-15 18:30:26",
+ "grids": [
+  "4x10",
+  "8x20"
+ ],
+ "stored_dtype": "float8_e4m3fn",
+ "source": {
+  "kind": "local256",
+  "dir": "/root/datascale/v2ep_ctl",
+  "remote": false,
+  "resize": false
+ },
+ "frames": "pod-built v2ep (Linux CPU cylindrical rectify), ledger-checked by size and sha256",
+ "pod_stage": "PREREG_V8F_LORA B' base re-encode"
+}

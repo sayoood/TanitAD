@@ -1,0 +1,29 @@
+{
+  "tool": "coverage_proof.py",
+  "min_coverage": 0.9,
+  "fixtures": {
+    "n_corpus_clips": 4572,
+    "n_b1_join_clips": 4427,
+    "n_disaster_clips": 182,
+    "note": "SYNTHETIC fixtures at the REAL shapes"
+  },
+  "pass_arm": {
+    "verdict": "PASS",
+    "coverage": 0.968285,
+    "n_intersection": 4427,
+    "n_label_clips": 4572,
+    "n_join_clips": 4427,
+    "why": "4427/4572 = 0.9683 >= 0.9"
+  },
+  "fail_arm": {
+    "verdict": "FAIL",
+    "coverage": 0.039808,
+    "n_intersection": 182,
+    "n_label_clips": 4572,
+    "n_join_clips": 182,
+    "why": "⛔ 182/4572 = 0.0398 < 0.9. An arm on this join would train on 4.0% of its intended supervision and read as 'the lever does not help' -- a MANUFACTURED NEGATIVE. (The 182-clip incident is 182/4572 = 0.0398.)"
+  },
+  "reproduces_published_0_9683": true,
+  "verdict": "PASS",
+  "why": "the gate PASSES the real B1 shape at the published 0.9683 and REFUSES the 182-clip disaster at 0.0398"
+}

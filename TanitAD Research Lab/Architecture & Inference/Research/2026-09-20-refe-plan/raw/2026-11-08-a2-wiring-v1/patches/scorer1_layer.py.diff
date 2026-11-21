@@ -1,0 +1,13 @@
+diff --git a/base/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/scorer1_layer.py b/a2/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/scorer1_layer.py
+index be6dacd..a917345 100644
+--- a/base/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/scorer1_layer.py	
++++ b/a2/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/scorer1_layer.py	
+@@ -40,6 +40,8 @@ def has_layer(src: str) -> bool:
+ 
+ def peel(src: str) -> str:
+     """undo the SCORER1 edits (each `new` text must occur exactly once); a trainer without the layer is returned unchanged"""
++    import a2_layer                                              # A2 is the OUTERMOST layer (--beh-*): peeled first; a trainer without it passes through unchanged
++    src = a2_layer.peel(src)
+     if not has_layer(src):
+         return src
+     for new, old in SCORER1_FILE_REVERSALS:

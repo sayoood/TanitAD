@@ -1,0 +1,358 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "question": "is the DECODER the limit, or the representation?",
+ "protocol": "same 5,617 keys / episode-disjoint folds / episode-cluster bootstrap as E-TRUNK-2; only the decoder changes",
+ "arms": {
+  "cls192": {
+   "d": 192,
+   "d_window": 576,
+   "targets": {
+    "lead_gap_m": {
+     "mlp": {
+      "point": -0.3411,
+      "ci95": [
+       -0.5368,
+       -0.2049
+      ]
+     },
+     "window": {
+      "point": -0.0068,
+      "ci95": [
+       -0.0213,
+       -0.0022
+      ]
+     }
+    },
+    "left_occupied": {
+     "mlp": {
+      "point": 0.6111,
+      "ci95": [
+       0.5536,
+       0.67
+      ]
+     },
+     "window": {
+      "point": 0.5028,
+      "ci95": [
+       0.4398,
+       0.5701
+      ]
+     }
+    },
+    "right_occupied": {
+     "mlp": {
+      "point": 0.547,
+      "ci95": [
+       0.4856,
+       0.6075
+      ]
+     },
+     "window": {
+      "point": 0.4813,
+      "ci95": [
+       0.4137,
+       0.5527
+      ]
+     }
+    },
+    "ego_speed": {
+     "mlp": {
+      "point": -0.0684,
+      "ci95": [
+       -0.2552,
+       0.0619
+      ]
+     },
+     "window": {
+      "point": -0.0242,
+      "ci95": [
+       -0.0704,
+       -0.0003
+      ]
+     }
+    }
+   }
+  },
+  "v6shape": {
+   "d": 2048,
+   "d_window": 6144,
+   "targets": {
+    "lead_gap_m": {
+     "mlp": {
+      "point": -1.1479,
+      "ci95": [
+       -1.8908,
+       -0.6199
+      ]
+     },
+     "window": {
+      "point": -0.0102,
+      "ci95": [
+       -0.0256,
+       -0.0034
+      ]
+     }
+    },
+    "left_occupied": {
+     "mlp": {
+      "point": 0.5428,
+      "ci95": [
+       0.477,
+       0.6067
+      ]
+     },
+     "window": {
+      "point": 0.5346,
+      "ci95": [
+       0.4676,
+       0.6042
+      ]
+     }
+    },
+    "right_occupied": {
+     "mlp": {
+      "point": 0.6153,
+      "ci95": [
+       0.5415,
+       0.6917
+      ]
+     },
+     "window": {
+      "point": 0.5276,
+      "ci95": [
+       0.4502,
+       0.6042
+      ]
+     }
+    },
+    "ego_speed": {
+     "mlp": {
+      "point": -0.5337,
+      "ci95": [
+       -0.8866,
+       -0.3045
+      ]
+     },
+     "window": {
+      "point": -0.0563,
+      "ci95": [
+       -0.1519,
+       0.0112
+      ]
+     }
+    }
+   }
+  },
+  "random-CONTROL": {
+   "d": 192,
+   "d_window": 576,
+   "targets": {
+    "lead_gap_m": {
+     "mlp": {
+      "point": -0.6838,
+      "ci95": [
+       -1.1148,
+       -0.4019
+      ]
+     },
+     "window": {
+      "point": -0.016,
+      "ci95": [
+       -0.0397,
+       0.0019
+      ]
+     }
+    },
+    "left_occupied": {
+     "mlp": {
+      "point": 0.5192,
+      "ci95": [
+       0.4548,
+       0.5797
+      ]
+     },
+     "window": {
+      "point": 0.5191,
+      "ci95": [
+       0.4453,
+       0.5941
+      ]
+     }
+    },
+    "right_occupied": {
+     "mlp": {
+      "point": 0.5516,
+      "ci95": [
+       0.4813,
+       0.6167
+      ]
+     },
+     "window": {
+      "point": 0.5499,
+      "ci95": [
+       0.4736,
+       0.6224
+      ]
+     }
+    },
+    "ego_speed": {
+     "mlp": {
+      "point": -0.0745,
+      "ci95": [
+       -0.3108,
+       0.0819
+      ]
+     },
+     "window": {
+      "point": 0.0111,
+      "ci95": [
+       -0.1398,
+       0.1226
+      ]
+     }
+    }
+   }
+  },
+  "v6_cells": {
+   "d": 2048,
+   "d_window": 6144,
+   "targets": {
+    "lead_gap_m": {
+     "mlp": {
+      "point": -0.1477,
+      "ci95": [
+       -0.2918,
+       -0.0332
+      ]
+     },
+     "window": {
+      "point": -0.0168,
+      "ci95": [
+       -0.0462,
+       0.0018
+      ]
+     }
+    },
+    "left_occupied": {
+     "mlp": {
+      "point": 0.6019,
+      "ci95": [
+       0.5376,
+       0.6592
+      ]
+     },
+     "window": {
+      "point": 0.534,
+      "ci95": [
+       0.4595,
+       0.609
+      ]
+     }
+    },
+    "right_occupied": {
+     "mlp": {
+      "point": 0.6162,
+      "ci95": [
+       0.5499,
+       0.6771
+      ]
+     },
+     "window": {
+      "point": 0.5968,
+      "ci95": [
+       0.5219,
+       0.6726
+      ]
+     }
+    },
+    "ego_speed": {
+     "mlp": {
+      "point": -0.0775,
+      "ci95": [
+       -0.3287,
+       0.0875
+      ]
+     },
+     "window": {
+      "point": -0.0061,
+      "ci95": [
+       -0.1481,
+       0.1114
+      ]
+     }
+    }
+   }
+  },
+  "dino_pooled": {
+   "d": 16384,
+   "d_window": 49152,
+   "targets": {
+    "lead_gap_m": {
+     "mlp": {
+      "point": 0.3056,
+      "ci95": [
+       0.2327,
+       0.3785
+      ]
+     },
+     "window": {
+      "point": 0.3481,
+      "ci95": [
+       0.2813,
+       0.4205
+      ]
+     }
+    },
+    "left_occupied": {
+     "mlp": {
+      "point": 0.8427,
+      "ci95": [
+       0.8056,
+       0.876
+      ]
+     },
+     "window": {
+      "point": 0.8392,
+      "ci95": [
+       0.8008,
+       0.8727
+      ]
+     }
+    },
+    "right_occupied": {
+     "mlp": {
+      "point": 0.814,
+      "ci95": [
+       0.7665,
+       0.857
+      ]
+     },
+     "window": {
+      "point": 0.8102,
+      "ci95": [
+       0.7592,
+       0.8539
+      ]
+     }
+    },
+    "ego_speed": {
+     "mlp": {
+      "point": 0.6102,
+      "ci95": [
+       0.5252,
+       0.6657
+      ]
+     },
+     "window": {
+      "point": 0.7037,
+      "ci95": [
+       0.6226,
+       0.7661
+      ]
+     }
+    }
+   }
+  }
+ }
+}

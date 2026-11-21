@@ -1,0 +1,22 @@
+ZZSTART stages=[rank0 aug score gate] shards=1 threads=4 cores=24 tau=0.3 2026-09-23T08:16:33Z ZZ
+=== rank0 ===
+  merged 61 rows -> C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/bd7d00af-b98e-42f1-a53c-cb4113059b0f/scratchpad/fakepod/data/refe_navtrain/r0/targets_rank0.jsonl
+ZZOK rank0 61 rows ZZ
+=== aug (tau=0.3) ===
+  merged 58 rows -> C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/bd7d00af-b98e-42f1-a53c-cb4113059b0f/scratchpad/fakepod/data/refe_navtrain/aug/targets_aug.jsonl
+  merged 61 rows -> C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/bd7d00af-b98e-42f1-a53c-cb4113059b0f/scratchpad/fakepod/data/refe_navtrain/aug/aug_stats.jsonl
+ZZOK aug 58 rows ZZ
+=== score: rank 0, then the augmented half under its own per-row route (R18) ===
+  merged 671 rows -> C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/bd7d00af-b98e-42f1-a53c-cb4113059b0f/scratchpad/fakepod/data/refe_navtrain/sc_r0/scorer_targets.jsonl
+  merged 638 rows -> C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/bd7d00af-b98e-42f1-a53c-cb4113059b0f/scratchpad/fakepod/data/refe_navtrain/sc_aug/scorer_targets_rank1.jsonl
+ZZOK score r0=671 aug=638 ZZ
+ZZOK train dir C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/bd7d00af-b98e-42f1-a53c-cb4113059b0f/scratchpad/fakepod/data/refe_navtrain/train: 119 target rows ZZ
+=== gate ===
+  [PASS] 7 CONTROL a real bank row was actually read
+
+CONSUMERS_CONFORM
+
+  !! 2 arm(s) N/A -- no closed-loop counterpart exists for any row in this bank (navtrain has no closed-loop run), so the goal-vs-closed-loop contrast could not run. Verified by P1/P2/S1/C only; G1/G2 are NOT evidence here.
+
+SIGNALS_CONSISTENT_PARTIAL_2_ARM_NA
+ZZDONE 2026-09-23T08:50:40Z ZZ

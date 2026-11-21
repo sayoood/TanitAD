@@ -1,0 +1,11 @@
+--- a/srttc_r1.py
++++ b/srttc_r1.py
+@@ -353,6 +353,8 @@
+     table: dict = {}
+     for rel, ent in doc["files"].items():
+         base = os.path.basename(str(ent.get("path", rel)).replace("\\", "/"))
++        if not base.endswith(".sets.npz"):
++            continue    # only bank UNITS are looked up by basename; the real S0 manifest also lists run/batches/<unit>/audit.json etc., one per batch with the SAME basename and different content
+         if base in table and table[base] != ent["sha256"]:
+             raise BankError(f"manifest lists {base} twice with different sha256")
+         table[base] = ent["sha256"]

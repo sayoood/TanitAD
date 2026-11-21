@@ -1,0 +1,342 @@
+#!/usr/bin/env bash
+# PREREG_V8F_DAG_OACC on box 2: OACC's acceleration-matching term inside DAG's fine-tune. ONE lever (--w-acc W) on DAG's banked argv; its control is the banked DAG run (no new control is trained).
+#   DAG-OACC_s = DAG_s's training argv VERBATIM (init M2b_s<S>, 3,000 steps, lr 1e-4, warmup 100, p_gt 0.2 -> 0.2, --ego-perturb-p 0, --dagger-p 0.1, the ITERATION-1 bank dagger_bank/s<S> with DAG's sha256, --dagger-seed S) + --w-acc W
+# This file is GENERATED from chain_v8f_dagoacc.sh.in by make_chains.py (every pinned sha256 is COPIED from a banked artifact, never retyped). BUILT, NOT LAUNCHED: it runs only on the PI's go.
+# One chain, in PREREG_V8F_DAG_OACC's order, ONE job at a time on box 2 (mk_v8f_job.py, SAFE MODE):
+#   1. wait for the predecessor (AFTER_OUT, REQUIRED, no default): GO after ZZV8FMINI-DONE, or after a ZZV8FMINI-STOP of the predecessor's OWN (BLOCKED / REFUSED / a failed run) once its BOX2_BUSY is released -- a predecessor STOP must
+#      not idle box 2; HALT on a ZZGUARD-STOP (temperature) or a BOX2_BUSY that stays held. Take BOX2_BUSY atomically, refresh box 2's code from the REMOTE tip with a SMALL export (repo_v8fdagoacc_tip.tar, <= 300 MB asserted),
+#      sha-check the key files, md5-check the v9 releases, assert box 2's DAG_s<S> checkpoint / argv.json / summary.json, M2b_s<S>'s checkpoint and the ITERATION-1 bank.json (sha256) are the banked ones
+#   2. `waccdag` (the w_acc rule with B = DAG, into box 2's OWN %RUNSM%\dagoacc): pull w_acc.json + w_acc.txt, then C-O3 (`wacc-check`): the box value == the offline recomputation on DAG_s0's banked fit plans within 1e-4 relative.
+#      A mismatch STOPS the chain (ZZDAGOACC-CO3-STOP) BEFORE any gate; it is never resolved by picking one
+#   3. BOTH GATES FIRST (`gatedag dagoacc S 0.1`), each pulled and asserted HERE (gate_oaf_assert.py: acc term finite non-zero, head_o gradient from it non-zero, swap reached, built w_acc == argv == W, ONE-LEVER RULE: the pinned line ==
+#      box 2's DAG pin + --w-acc W, only --out differing), then the LAUNCH-GATE TOKEN (never by hand)
+#   4. s0 then s1: `traindag dagoacc` (3,000 steps) -> `evaldag dagoacc` (the standard T0 eval) -> pull to $ART/<run>/ (every pull behind the 1 GiB floor on E:) -> the run record is asserted -> the REACHED control is PRINTED and ENFORCED
+#      (F2: the gate does not cover the loop's dag.apply; dagger_n / dagger_eligible must lie in 0.1 +- 0.02, else ZZDAGOACC-CONTROL-FAIL and the chain stops)
+#   NOT HERE: the T1-kin rollouts and the reader: dev-box CPU.
+#   chain_v8f_dagoacc.sh --dry-run                PRINTS every stage line and the checks, touches nothing (w_acc = the offline value unless DAGOACC_DRY_WACC is set)
+#   chain_v8f_dagoacc.sh --check-tree ROOT        OFFLINE: the tip-carries-the-lever greps applied to a directory
+#   chain_v8f_dagoacc.sh --wait-only              OFFLINE: only the predecessor wait (AFTER_OUT, BOX2_BUSY.txt in $B): prints ZZOAF-WAIT-GO or the STOP marker
+#   chain_v8f_dagoacc.sh --co3-only BOX_W_ACC_JSON [W_ACC_TXT]   OFFLINE: C-O3 on a pulled record
+#   AFTER_OUT=<log> chain_v8f_dagoacc.sh          the real run
+# Markers in ITS OWN log (chain_v8f_dagoacc.out): ZZV8FMINI-DONE / ZZV8FMINI-STOP (v8f_guard_dagoacc.sh's anchored end test knows them), ZZDAGOACC-CO3-STOP, ZZDAGOACC-CONTROL-FAIL, ZZDISK-FLOOR-STOP. Script polling, not model turns.
+# TIMEOUTS (polls of 30 s): wacc 120, gate 120, train 1,320 (11 h, one above the guard's 10 h cap), eval 600.
+PK="TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini"
+R=D:/tanitad/runs/v8f_mini_full
+CH=dagoacc
+@@PINS@@
+RUNS=("dagoacc 0" "dagoacc 1")      # PREREG_V8F_DAG_OACC section 5: s0 then s1; ARM SEED
+PY=C:/Users/Admin/venvs/tanitad/Scripts/python.exe
+ART=${DAGOACC_ART:-/e/Projects/TanitAD-artifacts/v8f-dagoacc}
+DAG1_DIR=${DAGOACC_DAG1_DIR:-/e/Projects/TanitAD-artifacts/v8f-dagger}      # the DAG run's pulled artifacts (iteration 1: checkpoints, argv.json, summary.json, bank_s<S>/): read-only here
+OFFLINE=${DAGOACC_OFFLINE:-/e/Projects/TanitAD-artifacts/dagoacc_dry/wacc_offline_DAG_s0.json}      # C-O3's reference: the offline recomputation on DAG_s0's banked fit plans
+FITPLANS=${DAGOACC_FITPLANS:-/e/Projects/TanitAD-artifacts/daghacc/plans/fitplans_DAG_s0.npz}      # DAG_s0's banked fit windows: shipped to box 2 for the stage's own cross-check
+PVAL=0.1      # DAG-OACC's P, fixed by PREREG_V8F_DAG_OACC (the queue refuses any other)
+B=${OAF_SHIP_DIR:-/c/Users/Admin/box2_ship}; L=$B/logs; E=$L/v8f_dagoacc
+HERE_SHIP=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)      # the helper scripts sit beside this file (box2_ship when installed)
+CHECKS=$HERE_SHIP/v8f_oaf_chain_checks.py; ASSERT=$HERE_SHIP/gate_oaf_assert.py
+DAG_STEPS=3000
+GUARD_OUT=$L/v8fdagoacc_guard.out
+FLOOR_BYTES=1073741824      # a pull must leave >= 1 GiB free on E:
+BUSY_TAKEN=0
+rn() { echo "M2b_s${2}_${1}"; }       # rn <arm> <seed>: the run's directory under $R (M2b_s0_dagoacc, ...)
+rt() { echo "M2b-${1}_s${2}"; }       # rt <arm> <seed>: the run's eval tag
+rg() { echo "gate_M2b-${1}_s${2}"; }  # rg <arm> <seed>: the run's gate directory under $R
+# the lever-in-the-tip checks: "<file>|<grep -E pattern>". `.` = a backslash in the queue patterns.
+LEVER=(
+  'stack/scripts/v8f_mini_train.py|add_argument\("--w-acc"'
+  'stack/scripts/v8f_mini_train.py|add_argument\("--dagger-p"'
+  'stack/scripts/v8f_mini_train.py|add_argument\("--dagger-bank"'
+  'stack/scripts/v8f_mini_train.py|add_argument\("--dagger-bank-sha256"'
+  'stack/scripts/v8f_mini_train.py|add_argument\("--dagger-seed"'
+  'stack/scripts/v8f_mini_train.py|"w_acc": "cfg:w_acc"'
+  'stack/scripts/v8f_mini_train.py|"dagger_p": "dagger:dagger_p"'
+  'stack/scripts/v8f_mini_train.py|"dagger_bank_sha256": "dagger:dagger_bank_sha256"'
+  'stack/scripts/v8f_mini_train.py|^def acc_probe'
+  'stack/scripts/v8f_mini_train.py|^ +b = dag\.apply\(b, step\)'
+  'stack/scripts/v8f_mini_train.py|"dagger_n": dag_tot\["n"\]'
+  'stack/tanitad/models/v8f_mini.py|T\["acc"\] = accel_term'
+  'stack/tanitad/models/v8f_mini.py|total = total \+ cfg\.w_acc \* T\["acc"\] if cfg\.w_acc > 0\.0 else total'
+  'stack/tanitad/data/v8f_dagger.py|^class DaggerSwap'
+  'stack/scripts/v8f_mini_eval_oacc.py|^def cmd_wacc'
+  'stack/scripts/v8f_dagger_queue_tool.py|^def cmd_bank'
+  # the DAG-OACC queue insertions (the queue file on the tip; `.` = a backslash)
+  "$PK/code/v8f_mini_box2_queue.cmd|^:waccdag"
+  "$PK/code/v8f_mini_box2_queue.cmd|^:dagoaccarm"
+  "$PK/code/v8f_mini_box2_queue.cmd|^:dagoaccwacc"
+  "$PK/code/v8f_mini_box2_queue.cmd|goto :waccdag"
+  "$PK/code/v8f_mini_box2_queue.cmd|goto :dagoaccarm"
+  "$PK/code/v8f_mini_box2_queue.cmd|DAGS=dagoacc"
+  "$PK/code/v8f_mini_box2_queue.cmd|--dagger-seed %~2 --w-acc %WACCDAG%"
+  "$PK/code/v8f_mini_box2_queue.cmd|wacc --ckpt .%RUNSM%.M2b_s0_dag.ckpt_last.pt"
+  "$PK/raw/2026-10-25-hblend/fit_clips.json|."
+)
+STAGES=(waccdag gatedag traindag evaldag dagname dagarm dagoaccarm dagoaccwacc)
+lever_check() {   # lever_check <git tip | tree ROOT>: 0 iff every LEVER pattern is in its file
+  local mode=$1 ref=$2 rec f pat miss=0
+  for rec in "${LEVER[@]}"; do
+    f=${rec%%|*}; pat=${rec#*|}
+    if [ "$mode" = tree ]; then grep -qE -- "$pat" "$ref/$f" 2>/dev/null; else git -C $MIRROR show "$ref:$f" 2>/dev/null | grep -qE -- "$pat"; fi \
+      || { echo "MISSING in $f: $pat"; miss=$((miss+1)); }
+  done
+  [ $miss = 0 ]
+}
+source "$HERE_SHIP/oaf_lib.sh"
+plan() {   # plan <queue file> <arm> <seed> <bank sha or ""> <w_acc>: GL / TL / EL = the lines the queue prints for the run's gate / train / eval stages. rc 1 if a stage prints no trainer / eval line
+  GL=$(dry_stage "$1" "$4" "$5" gatedag $2 $3 $PVAL | grep -a 'v8f_mini_train.py'); TL=$(dry_stage "$1" "$4" "$5" traindag $2 $3 $PVAL | grep -a 'v8f_mini_train.py')
+  EL=$(dry_stage "$1" "" "" evaldag $2 $3 | grep -a 'v8f_mini_eval.py')
+  [ -n "$GL" ] && [ -n "$TL" ] && [ -n "$EL" ]
+}
+co3() {   # co3 <box w_acc.json> <w_acc.txt>: C-O3 on a pulled record; prints the verdict; rc 0 = equal
+  local o rc
+  o=$($PY "$(cygpath -m $CHECKS)" wacc-check --box "$(cygpath -m "$1")" --offline "$(cygpath -m "$OFFLINE")" --offline-sha $OFFLINE_SHA --txt "$(cygpath -m "$2")" --expect-ckpt-sha ${CKPT_SHA[0]}); rc=$?
+  echo "$o" | cut -c1-1500
+  return $rc
+}
+if [ "${1:-}" = "--check-tree" ]; then
+  [ -d "${2:-}" ] || { echo "usage: --check-tree ROOT"; exit 2; }
+  MIRROR=none; if lever_check tree "$2"; then echo "lever check: every one of ${#LEVER[@]} patterns is in $2"; exit 0; fi; echo "lever check: FAILED"; exit 1
+fi
+if [ "${1:-}" = "--co3-only" ]; then
+  [ -f "${2:-}" ] && [ -f "${3:-}" ] || { echo "usage: --co3-only BOX_W_ACC_JSON W_ACC_TXT"; exit 2; }
+  co3 "$2" "$3" || { echo "ZZDAGOACC-CO3-STOP C-O3: the box-2 w_acc does not equal the offline recomputation (REFUSED, never resolved by picking one)"; exit 1; }
+  echo "ZZDAGOACC-CO3-PASS"; exit 0
+fi
+if [ "${1:-}" = "--wait-only" ]; then
+  AFTER_OUT=${AFTER_OUT:-}; [ -n "$AFTER_OUT" ] || { echo "ZZV8FMINI-STOP AFTER_OUT is not set"; exit 1; }
+  wait_predecessor; echo "ZZOAF-WAIT-GO"; exit 0
+fi
+if [ "${1:-}" = "--dry-run" ]; then
+  QF=${V8F_QUEUE:-}
+  if [ -z "$QF" ]; then
+    MIRROR=${MIRROR:-/c/Users/Admin/tanitad-push}; BR=${BR:-agent/arch-inf-20260803}
+    T=$(git -C $MIRROR ls-remote origin $BR | cut -f1); QF=${TMPDIR:-/tmp}/v8fdagoacc_queue_dry_$T.cmd
+    git -C $MIRROR show "$T:$PK/code/v8f_mini_box2_queue.cmd" > "$QF" || { echo "ZZV8FMINI-STOP no queue at the tip"; exit 1; }
+  fi
+  WACC=${DAGOACC_DRY_WACC:-$($PY -c "import json,sys;print(repr(json.load(open(sys.argv[1]))['w_acc']))" "$(cygpath -m "$OFFLINE")")}
+  echo "== predecessor"; echo "wait for ${AFTER_OUT:-<UNSET: a real run REFUSES to start without AFTER_OUT>}: GO after ^ZZV8FMINI-DONE or a predecessor ^ZZV8FMINI-STOP of its own with BOX2_BUSY released; HALT on a ZZGUARD-STOP or a held BOX2_BUSY"
+  echo "== pinned (asserted on box 2 before the w_acc stage and after the last run)"
+  for s in 0 1; do echo "DAG_s$s $R/M2b_s${s}_dag/ckpt_last.pt ${CKPT_SHA[$s]} (argv.json ${ARGV_SHA[$s]}, summary.json ${SUMM_SHA[$s]}); init M2b_s$s ${M2B_SHA[$s]}; iteration-1 bank.json ${BANK1_SHA[$s]}"; done
+  echo "== C-O3: the box-2 w_acc (stage waccdag) must equal the offline value $WACC (record $OFFLINE, sha256 $OFFLINE_SHA) within 1e-4 relative; a mismatch STOPS the chain before any gate"
+  echo "-- waccdag"; dry_stage "$QF" "" "" waccdag | grep -a 'v8f_mini_eval_oacc.py' || { echo "ZZV8FMINI-STOP the queue prints no waccdag line"; exit 1; }
+  echo "== launch-gate token (written by the chain, one per run, after the gate's assertions pass; never by hand)"
+  echo '{"kind": "launch-gate-token", "verdict": "PASS", "prereg": "PREREG_V8F_DAG_OACC", "binding": {"commit": "<the remote tip, 40 hex>", "argv_sha256": "<launch_gate.argv_sha256 of THE TRAINING ARGV as pinned by box 2>", "data_sha256": "<the gate selfcheck'"'"'s info.train_sha256>"}, ...}'
+  for run in "${RUNS[@]}"; do
+    set -- $run; arm=$1; s=$2; sh=DAG_DRY_SHA$s; sha=${!sh:-${BANK1_SHA[$s]}}
+    plan "$QF" $arm $s "$sha" "$WACC" || { echo "ZZV8FMINI-STOP the queue prints no gate / train / eval line for $(rn $arm $s)"; exit 1; }
+    echo "== $(rn $arm $s): --dagger-p $PVAL --w-acc $WACC init $R/M2b_s${s}/ckpt_last.pt (${M2B_SHA[$s]}), tag $(rt $arm $s), bank sha256 $sha"
+    echo "-- gatedag $arm $s"; echo "$GL"
+    echo "-- traindag $arm $s"; echo "$TL"
+    echo "-- evaldag $arm $s"; echo "$EL"
+    printf '%s' "$TL" > ${TMPDIR:-/tmp}/v8fdagoacc_tl_$$.txt; printf '%s' "$GL" > ${TMPDIR:-/tmp}/v8fdagoacc_gl_$$.txt
+    echo "-- token argv_sha256 (the training argv): $(argvsha ${TMPDIR:-/tmp}/v8fdagoacc_tl_$$.txt)"
+    same=$($PY "$(cygpath -m $CHECKS)" argv-same "$(cygpath -m ${TMPDIR:-/tmp}/v8fdagoacc_gl_$$.txt)" "$(cygpath -m ${TMPDIR:-/tmp}/v8fdagoacc_tl_$$.txt)"); echo "-- gate argv = training argv with --out and --selfcheck-only changed: $same"
+    # the ONE-LEVER RULE on the PLANNED line: DAG's banked argv.json argv (with its --out) + --w-acc W
+    ol=$($PY - "$(cygpath -m "$DAG1_DIR/M2b_s${s}_dag/argv.json")" "$(cygpath -m ${TMPDIR:-/tmp}/v8fdagoacc_tl_$$.txt)" "$WACC" <<'EOF'
+import json, re, sys
+ref = json.load(open(sys.argv[1], encoding="utf-8"))["argv"]
+t = [x.strip('"') for x in re.findall(r'"[^"]*"|\S+', open(sys.argv[2], encoding="utf-8").read().strip())]
+mine = t[next(k for k, x in enumerate(t) if x.lower().endswith("v8f_mini_train.py")) + 1:]
+def nout(a):
+    o, k = [], 0
+    while k < len(a):
+        if a[k] == "--out": k += 2
+        else: o.append(a[k]); k += 1
+    return o
+print("ONE-LEVER" if nout(mine)[-2:] == ["--w-acc", sys.argv[3]] and nout(mine)[:-2] == nout(ref) else "NOT-ONE-LEVER")
+EOF
+)
+    echo "-- planned line == DAG's banked argv.json argv + --w-acc W (only --out differing): $ol"
+    rm -f ${TMPDIR:-/tmp}/v8fdagoacc_tl_$$.txt ${TMPDIR:-/tmp}/v8fdagoacc_gl_$$.txt
+    [ "$same" = SAME ] && [ "$ol" = ONE-LEVER ] || { echo "ZZV8FMINI-STOP the planned lines are not the one-lever DAG-OACC argv ($(rn $arm $s))"; exit 1; }
+  done
+  echo "== not run here: the T1-kin rollouts (dev box CPU) and the reader"
+  exit 0
+fi
+# ======================================================================== the real run
+if [ -z "${AFTER_OUT:-}" ]; then
+  echo "ZZV8FMINI-STOP AFTER_OUT is not set: this chain has no default predecessor log (a default can already be satisfied by an OLD log). Set AFTER_OUT to the log of the chain that holds box 2 now."
+  exit 1
+fi
+[ -d "$(dirname "$ART")" ] || { echo "ZZV8FMINI-STOP $(dirname "$ART") does not exist: the artifacts have nowhere to go"; exit 1; }
+MIRROR=${OAF_MIRROR:-/c/Users/Admin/tanitad-push}; BR=${OAF_BR:-agent/arch-inf-20260803}
+@@EXPORT@@
+SSH="ssh -o BatchMode=yes -o ConnectTimeout=20 tanitad-box2"
+SCP="scp -q -o BatchMode=yes -o ConnectTimeout=20"
+MIN_FREE_GB=8
+WACC_POLLS=120; GATE_POLLS=120; TRAIN_POLLS=1320; EVAL_POLLS=600
+TAG=$(date '+%m%d%H%M')
+CUR=$L/v8fdagoacc_current.txt
+wait_predecessor
+[ -f $B/BOX2_BUSY.txt ] && { echo "ZZV8FMINI-STOP busy marker present: $(cat $B/BOX2_BUSY.txt)"; exit 1; }
+# the marker is taken ATOMICALLY (noclobber): two chains that wait on the same predecessor cannot both pass the test above and both write it
+( set -C; echo "v8F-mini PREREG_V8F_DAG_OACC (w_acc rule on DAG_s0 + C-O3, both gates, then DAG-OACC x seeds 0 and 1: 3,000-step fine-tunes of M2b with DAG's argv + --w-acc, standard T0 evals) since $(date '+%m-%d %H:%M'). Do NOT launch box 2 jobs while this file exists." > $B/BOX2_BUSY.txt ) 2>/dev/null \
+  || { echo "ZZV8FMINI-STOP busy marker taken while arming: $(cat $B/BOX2_BUSY.txt 2>/dev/null)"; exit 1; }
+BUSY_TAKEN=1
+BOOT0=$(boot); [ -n "$BOOT0" ] || stop "box 2 unreachable"
+echo "$(date '+%m-%d %H:%M') boot0=$BOOT0"
+mkdir -p $E/runs $E/lines      # only now: a chain that refused or stopped while waiting has touched nothing
+# ---- 1. code refresh from the remote tip
+git -C $MIRROR fetch -q origin $BR; T=$(git -C $MIRROR ls-remote origin $BR | cut -f1)
+git -C $MIRROR cat-file -e "$T^{commit}" || stop "remote tip $T is not in the mirror"
+QT=$B/v8fdagoacc_queue_$TAG.cmd; git -C $MIRROR show "$T:$PK/code/v8f_mini_box2_queue.cmd" | tr -d '\r' > $QT
+QC=$B/v8fdagoacc_queue_$TAG.crlf.cmd; git -C $MIRROR show "$T:$PK/code/v8f_mini_box2_queue.cmd" > $QC      # the committed bytes (CRLF): what cmd.exe can run for the dry-run lines
+for st in "${STAGES[@]}"; do grep -q "^:$st\$\|^if /i \"%~1\"==\"$st\" goto" $QT || stop "the tip's queue has no $st stage"; done
+lever_check git "$T" || stop "the tip does not carry the DAG-OACC levers and queue stages (the greps above): land them first"
+for xf in "${EXPORT[@]}"; do git -C $MIRROR cat-file -e "$T:$xf" || stop "the tip has no $xf (the export list names only files box 2 reads)"; done
+git -C $MIRROR cat-file -e "$T:$PK/raw/eval_grid_windows.json" || stop "the tip has no eval-141 grid"
+git -C $MIRROR -c core.autocrlf=false archive --format=tar -o $B/repo_v8fdagoacc_tip.tar $T -- "${EXPORT[@]}" || stop "archive"
+tsz=$(stat -c %s $B/repo_v8fdagoacc_tip.tar); [ "$tsz" -gt 0 ] && [ "$tsz" -le $EXPORT_MAX_BYTES ] || stop "the code archive is $tsz bytes (must be 1..$EXPORT_MAX_BYTES)"
+echo "$(date '+%m-%d %H:%M') code archive $B/repo_v8fdagoacc_tip.tar: $tsz bytes, ${#EXPORT[@]} paths"
+$SCP $B/repo_v8fdagoacc_tip.tar tanitad-box2:D:/tanitad/repo_v8fdagoacc_tip.tar || stop "ship the code archive"
+printf '@echo off\r\necho ===== refresh %s %%DATE%% %%TIME%%\r\ntar -xf D:\\tanitad\\repo_v8fdagoacc_tip.tar -C D:\\tanitad\\repo\r\nset RC=%%ERRORLEVEL%%\r\necho %s> D:\\tanitad\\repo\\TIP_V8FDAGOACC.txt\r\necho ===== ZZJOB-END %%DATE%% %%TIME%% rc=%%RC%%\r\n' "$T" "$T" > $B/v8fdagoacc${TAG}_refresh.cmd
+$SCP $B/v8fdagoacc${TAG}_refresh.cmd tanitad-box2:D:/tanitad/jobs/ || stop "ship refresh job"
+launch v8fdagoacc${TAG}_refresh || stop "launch refresh"
+waitrc v8fdagoacc${TAG}_refresh 40
+KEYSHA=""
+for f in stack/scripts/v8f_mini_train.py stack/scripts/v8f_mini_eval.py stack/scripts/v8f_mini_eval_oacc.py stack/scripts/v8f_dagger_queue_tool.py stack/tanitad/models/v8f_mini.py stack/tanitad/data/v8f_mini_data.py \
+         stack/tanitad/data/v8f_dagger.py "$PK/code/v8f_mini_box2_queue.cmd" "$PK/raw/eval_grid_windows.json" "$PK/raw/2026-10-25-hblend/fit_clips.json"; do
+  l=$(git -C $MIRROR show "$T:$f" | sha256sum | cut -c1-64)
+  [ "$l" = "$(rsha "D:/tanitad/repo/$f" SHA256)" ] || stop "box 2 $f != tip $T"
+  KEYSHA="$KEYSHA\"$f\": \"$l\", "
+done
+for kv in v9_labels_train.npz=83e30bd3791f0767707eade5f4671759 v9_labels_eval139.npz=6b5c7f207cffc3b7eb3cd527fd433599; do
+  [ "${kv#*=}" = "$(rsha "D:/tanitad/data/v9/${kv%%=*}" MD5)" ] || stop "box 2 v9 ${kv%%=*} md5 != ${kv#*=}"
+done
+echo "$(date '+%m-%d %H:%M') box 2 code = tip $T (${#KEYSHA} chars of key-file sha256; both v9 releases md5-checked)"
+CK=$E/ckpt_sha256.json
+# ---- 2. the base is fixed (PREREG section 1): DAG_s<S> (the rule's B, the one-lever comparator), M2b_s<S> (the init) and the iteration-1 bank are the banked ones
+pinned_b() {   # pinned_b <phase>
+  local s f g exp
+  for s in 0 1; do
+    for f in ckpt_last.pt argv.json summary.json; do
+      case $f in ckpt_last.pt) exp=${CKPT_SHA[$s]} ;; argv.json) exp=${ARGV_SHA[$s]} ;; *) exp=${SUMM_SHA[$s]} ;; esac
+      g=$(rsha "$R/M2b_s${s}_dag/$f" SHA256); [ -n "$g" ] || stop "$1: cannot hash box 2's M2b_s${s}_dag/$f"
+      [ "$g" = "$exp" ] || stop "$1: box 2's M2b_s${s}_dag/$f sha256 $g != the banked DAG run's $exp"
+    done
+    g=$(rsha "$R/M2b_s${s}/ckpt_last.pt" SHA256); [ "$g" = "${M2B_SHA[$s]}" ] || stop "$1: box 2's M2b_s${s} checkpoint sha256 '$g' != the banked M2b's ${M2B_SHA[$s]} (the init of DAG-OACC)"
+    g=$(rsha "$R/dagger_bank/s${s}/bank.json" SHA256); [ "$g" = "${BANK1_SHA[$s]}" ] || stop "$1: box 2's iteration-1 bank s${s} bank.json sha256 '$g' != the one DAG's argv names ${BANK1_SHA[$s]}"
+  done
+  echo "$(date '+%m-%d %H:%M') $1: DAG_s0/s1 (checkpoint, argv.json, summary.json), M2b_s0/s1 (the init) and the iteration-1 banks are the banked ones (sha256 asserted)"
+}
+rm -f $CK
+pinned_b "before the w_acc stage"
+for s in 0 1; do      # the dev box's pulled copy of DAG is the banked run: summary.json is the gate comparator "B", argv.json the one-lever reference, bank.json the K-B3 reference
+  mkdir -p $E/runs/M2b_s$s $E/ref/s$s
+  for f in ckpt_last.pt argv.json summary.json; do
+    case $f in ckpt_last.pt) exp=${CKPT_SHA[$s]} ;; argv.json) exp=${ARGV_SHA[$s]} ;; *) exp=${SUMM_SHA[$s]} ;; esac
+    [ -f "$DAG1_DIR/M2b_s${s}_dag/$f" ] || stop "the pulled DAG run $DAG1_DIR/M2b_s${s}_dag/$f is missing"
+    g=$(sha256sum "$DAG1_DIR/M2b_s${s}_dag/$f" | cut -c1-64); [ "$g" = "$exp" ] || stop "the dev box's $DAG1_DIR/M2b_s${s}_dag/$f sha256 $g != SHA256SUMS.txt's $exp"
+  done
+  cp "$DAG1_DIR/M2b_s${s}_dag/summary.json" $E/runs/M2b_s$s/summary.json || stop "stage DAG_s$s/summary.json as the gate comparator"
+  [ "$(sha256sum "$DAG1_DIR/bank_s${s}/bank.json" | cut -c1-64)" = "${BANK1_SHA[$s]}" ] || stop "the dev box's iteration-1 bank_s$s/bank.json is not the one DAG's argv names"
+done
+[ "$(sha256sum "$OFFLINE" | cut -c1-64)" = "$OFFLINE_SHA" ] || stop "the offline w_acc record $OFFLINE is not the pinned one ($OFFLINE_SHA)"
+[ "$(sha256sum "$FITPLANS" | cut -c1-64)" = "$FITPLANS_SHA" ] || stop "DAG_s0's banked fit plans $FITPLANS are not the pinned file ($FITPLANS_SHA)"
+fr=$($SSH "powershell -NoProfile -Command \"[int]((Get-PSDrive D).Free / 1GB)\"" 2>/dev/null | tr -d '\r' | grep -E '^[0-9]+$' | head -1)
+[ -n "$fr" ] && [ "$fr" -ge $MIN_FREE_GB ] || stop "box 2's D: has '$fr' GB free (< $MIN_FREE_GB): two checkpoints and the evals need room"
+$SSH "powershell -NoProfile -Command \"if (Test-Path D:/tanitad/logs/telemetry.stop) { Remove-Item D:/tanitad/logs/telemetry.stop }\"" 2>/dev/null
+launch telemetry_long || echo "$(date '+%m-%d %H:%M') telemetry did not launch"
+tl() { $SSH "powershell -NoProfile -Command \"Get-Content D:/tanitad/logs/telemetry_full.csv -Tail 1\"" 2>/dev/null | tr -d '\r'; }
+sleep ${OAF_TELEMETRY_S:-45}; t1=$(tl); sleep ${OAF_TELEMETRY_S2:-35}; t2=$(tl)
+[[ $t2 == 20* && $t2 != "$t1" ]] || stop "no fresh telemetry ($t1 / $t2): the temperature guard would be blind"
+grep -qF "'^(ZZV8FMINI|" $B/v8f_guard_dagoacc.sh || stop "v8f_guard_dagoacc.sh does not know this chain's markers (anchored): it would never exit"
+grep -qF 'v8f_mini_eval_oacc' $B/v8f_guard_dagoacc.sh || stop "v8f_guard_dagoacc.sh would not stop the w_acc stage on a temperature stop"
+echo "" > $CUR
+V8F_CHAIN_OUT=$L/chain_v8f_dagoacc.out V8F_CURRENT=$CUR bash $B/v8f_guard_dagoacc.sh > $GUARD_OUT 2>&1 &
+# ---- 3. the w_acc rule with B = DAG (box 2's OWN %RUNSM%\dagoacc), C-O3, then the gates
+RS=D:/tanitad/runs/v8f_mini_full/dagoacc
+$SSH "powershell -NoProfile -Command \"New-Item -ItemType Directory -Force '$RS' | Out-Null\"" 2>/dev/null
+$SCP "$FITPLANS" tanitad-box2:$RS/fit_windows_DAG_s0.npz || stop "ship DAG_s0's banked fit windows"
+[ "$(rsha "$RS/fit_windows_DAG_s0.npz" SHA256)" = "$FITPLANS_SHA" ] || stop "box 2's fit_windows_DAG_s0.npz != the pinned file"
+GATE_LOG="$R/dagoacc/waccdag.log"; queue "wacc" $WACC_POLLS waccdag; GATE_LOG=
+mkdir -p "$ART/wacc"
+pull "dagoacc/w_acc.json" "$ART/wacc"; pull "dagoacc/w_acc.txt" "$ART/wacc"; pull_opt "dagoacc/waccdag.log" "$ART/wacc"
+co3 "$ART/wacc/w_acc.json" "$ART/wacc/w_acc.txt" || { echo "ZZDAGOACC-CO3-STOP C-O3: the box-2 w_acc does not equal the offline recomputation on DAG_s0's banked fit plans within 1e-4 relative (REFUSED, never resolved by picking one): no gate was queued, nothing was trained"; stop "C-O3 mismatch"; }
+WACC=$(tr -d '\r\n' < "$ART/wacc/w_acc.txt"); [[ $WACC =~ ^[0-9]+(\.[0-9]+)?$ ]] || stop "w_acc.txt is not a number: '$WACC'"
+echo "$(date '+%m-%d %H:%M') C-O3 PASS: box-2 w_acc $WACC == the offline value (1e-4 relative)"
+declare -a BSHA=("${BANK1_SHA[0]}" "${BANK1_SHA[1]}")
+gate_one() {   # gate_one <arm> <seed>: the run's in-process launch gate on box 2, pulled and asserted HERE, then its launch-gate token (written by this function, never by hand)
+  local arm=$1 s=$2 g gd SC pin dpin xa
+  g=$(rn $arm $s); gd=$(rg $arm $s); SC="$ART/$g/gate/selfcheck.json"; pin="$ART/$g/gate/pin.txt"; dpin="$ART/$g/gate/dag_pin.txt"
+  plan "$QC" $arm $s "${BSHA[$s]}" "$WACC" || stop "the tip's queue prints no gate / train / eval line for $g"
+  mkdir -p "$ART/$g/gate" "$E/lines"
+  printf '%s\n' "$GL" > "$E/lines/$g.gate.txt"; printf '%s\n' "$TL" > "$E/lines/$g.train.txt"; printf '%s\n' "$EL" > "$E/lines/$g.eval.txt"
+  GATE_LOG="$R/$gd.log"; queue "gate_$g" $GATE_POLLS gatedag $arm $s $PVAL; GATE_LOG=
+  pull "$gd/selfcheck.json" "$ART/$g/gate"
+  pull_opt "$gd.log" "$ART/$g/gate"
+  pull "dagpin/M2b_s${s}_${arm}.train.argv.txt" "$ART/$g/gate"; mv -f "$ART/$g/gate/M2b_s${s}_${arm}.train.argv.txt" "$pin"
+  pull "dagpin/M2b_s${s}_dag.train.argv.txt" "$ART/$g/gate"; mv -f "$ART/$g/gate/M2b_s${s}_dag.train.argv.txt" "$dpin"      # box 2's DAG pin: the one-lever comparator
+  xa=(--selfcheck "$(cygpath -m $SC)" --gate-line "$(cygpath -m $E/lines/$g.gate.txt)" --train-line "$(cygpath -m $E/lines/$g.train.txt)" --pin-line "$(cygpath -m $pin)" --arm $arm --seed $s --banked-init-sha ${M2B_SHA[$s]}
+      --b-summary "$(cygpath -m $E/runs/M2b_s$s/summary.json)" --p $PVAL --bank-sha ${BSHA[$s]} --bank-json "$(cygpath -m $DAG1_DIR/bank_s$s/bank.json)" --w-acc $WACC --dag-pin-line "$(cygpath -m $dpin)" --ref-argv-json "$(cygpath -m $DAG1_DIR/M2b_s${s}_dag/argv.json)")
+  $PY "$(cygpath -m $ASSERT)" check "${xa[@]}" || stop "gate DAG-OACC assertions $g"
+  $PY "$(cygpath -m $ASSERT)" token "${xa[@]}" --commit "$T" --queue-sha "$(sha256sum $QT | cut -c1-64)" --key-sha-json "{${KEYSHA%, }}" --run $g --out "$(cygpath -m $ART/$g/launch_gate_token.json)" || stop "write the gate token $g"
+}
+ckptsha_x() {   # ckptsha_x <arm> <seed> <trained|after_evals>
+  local g h h0; g=$(rn $1 $2)
+  h=$(rsha "$R/$g/ckpt_last.pt" SHA256); [ -n "$h" ] || stop "cannot hash box 2's $g checkpoint ($3)"
+  if [ "$3" = after_evals ]; then h0=$(ckget "$(rt $1 $2)_trained"); [ "$h" = "$h0" ] || stop "$g's checkpoint changed during the evals: $h != $h0"; fi
+  ckset "$(rt $1 $2)_$3" "$h"
+  echo "$(date '+%m-%d %H:%M') $g checkpoint sha256 ($3) ${h:0:16}..."
+}
+runone() {   # runone <arm> <seed>: train, standard T0 eval, pull, record and print the checkpoint sha256, assert the run's record and the REACHED control
+  local arm=$1 s=$2 g tg f x l
+  g=$(rn $arm $s); tg=$(rt $arm $s)
+  echo "$g" > $CUR
+  queue "t_$g" $TRAIN_POLLS traindag $arm $s $PVAL
+  echo "" > $CUR
+  ckptsha_x $arm $s trained
+  queue "e_$g" $EVAL_POLLS evaldag $arm $s
+  ckptsha_x $arm $s after_evals
+  for f in selfcheck.json summary.json argv.json train_log.jsonl train.log ckpt_last.pt; do pull "$g/$f" "$ART/$g"; done
+  for x in json npz log; do pull "eval/eval_$tg.$x" "$ART/$g"; done
+  pull_opt "eval/eval_${tg}_proj.npz" "$ART/$g"
+  l=$(sha256sum "$ART/$g/ckpt_last.pt" | cut -c1-64); [ "$l" = "$(ckget "${tg}_after_evals")" ] || stop "$g: the pulled checkpoint's sha256 $l != the value measured on box 2"
+  ( cd "$ART/$g" && sha256sum ckpt_last.pt "eval_$tg.json" "eval_$tg.npz" selfcheck.json summary.json argv.json train_log.jsonl launch_gate_token.json | tee SHA256SUMS.txt )
+  echo "$(date '+%m-%d %H:%M') $g pulled to $ART/$g (checkpoint sha256 $l)"
+  $PY - "$(cygpath -m $ART/$g)" "$(cygpath -m $E/lines/$g.train.txt)" "$(cygpath -m $ART/$g/gate/pin.txt)" $arm $s $PVAL $DAG_STEPS ${M2B_SHA[$s]} "${BSHA[$s]}" "$WACC" <<'EOF' || stop "run DAG-OACC record $g"
+import hashlib, json, os, re, sys
+d, tlf, pinf, arm, seed, p, steps, banked, bsha, wacc = sys.argv[1:11]
+seed, p, steps, wacc = int(seed), float(p), int(steps), float(wacc)
+J = lambda f: json.load(open(os.path.join(d, f), encoding="utf-8"))
+def argv_of(path):
+    t = [x.strip('"') for x in re.findall(r'"[^"]*"|\S+', open(path, encoding="utf-8").read().strip())]
+    return t[next(k for k, x in enumerate(t) if x.lower().endswith("v8f_mini_train.py")) + 1:]
+planned, pinned = argv_of(tlf), argv_of(pinf)
+aj, sm, sc = J("argv.json"), J("summary.json"), J("selfcheck.json")
+bad = []
+if pinned != planned:
+    bad.append("the pinned training argv (box 2) is not the planned one")
+if aj.get("argv") != planned:
+    got = aj.get("argv") or []
+    k = next((k for k in range(min(len(got), len(planned))) if got[k] != planned[k]), min(len(got), len(planned)))
+    bad.append(f"argv.json is not the planned training argv (first difference at token {k}: {got[k:k + 2]} vs {planned[k:k + 2]}): the token binds an argv that did not run")
+sha16 = hashlib.sha256(" ".join(planned).encode()).hexdigest()[:16]
+for name, v in (("argv.json sha", aj.get("sha")), ("summary.json argv_sha", sm.get("argv_sha")), ("selfcheck.json argv_sha", sc.get("argv_sha"))):
+    if v != sha16: bad.append(f"{name} {v} != the planned argv's {sha16}")
+if sm.get("done") is not True: bad.append("summary.json done is not true")
+if sm.get("steps") != steps: bad.append(f"summary.json steps {sm.get('steps')} != {steps}")
+if (sm.get("arm"), sm.get("seed")) != ("M2b", seed): bad.append(f"summary.json arm / seed {(sm.get('arm'), sm.get('seed'))} != ('M2b', {seed})")
+if sc.get("declared_vs_built") != "PASS": bad.append("the run's own selfcheck.json is not a PASS")
+lv = sm.get("levers") or {}
+if (lv.get("init_ckpt") or {}).get("sha256") != banked: bad.append(f"summary.json levers.init_ckpt.sha256 {(lv.get('init_ckpt') or {}).get('sha256')} != M2b_s{seed}'s checkpoint")
+if lv.get("dagger_p") != p: bad.append(f"summary.json built dagger_p {lv.get('dagger_p')} != {p}")
+if lv.get("dagger_bank_sha256") != bsha: bad.append(f"summary.json built dagger_bank_sha256 {str(lv.get('dagger_bank_sha256'))[:12]} != DAG's bank {bsha[:12]}")
+if lv.get("w_acc") != wacc: bad.append(f"summary.json built w_acc {lv.get('w_acc')!r} != the argv's {wacc!r} (C-O2)")
+print("DAG-OACC run record:", "PASS" if not bad else bad, "|", arm, "s%d" % seed, "| argv sha16", sha16, "| steps", sm.get("steps"), "| w_acc", lv.get("w_acc"))
+sys.exit(1 if bad else 0)
+EOF
+  $PY - "$(cygpath -m $ART/$g/summary.json)" $s $PVAL <<'EOF' || { echo "ZZDAGOACC-CONTROL-FAIL $g: the swap did not reach training as registered (F2: the gate does not cover the loop's dag.apply); the reader would REFUSE this run"; stop "reached-control fail $g"; }
+import json, sys
+sm, seed, p = json.load(open(sys.argv[1], encoding="utf-8")), sys.argv[2], float(sys.argv[3])
+n, e = sm.get("dagger_n"), sm.get("dagger_eligible")
+ok = isinstance(n, int) and isinstance(e, int) and e > 0 and 0 <= n <= e and p - 0.02 - 1e-12 <= n / e <= p + 0.02 + 1e-12
+print("DAG-OACC swap-reached:", "PASS" if ok else "FAIL", f"| dagoacc s{seed} | dagger_n {n} / eligible {e} = {n / e if ok else 'n/a'} (must lie in {p} +- 0.02)")
+sys.exit(0 if ok else 1)
+EOF
+  grep ZZGUARD-STOP $GUARD_OUT 2>/dev/null && stop "guard stop"
+}
+for run in "${RUNS[@]}"; do set -- $run; gate_one $1 $2; done
+for run in "${RUNS[@]}"; do set -- $run; runone $1 $2; done
+pinned_b "after the last run"
+echo "$(date '+%m-%d %H:%M') summary: $(for run in "${RUNS[@]}"; do set -- $run; echo -n "$(rn $1 $2)=$(ckget "$(rt $1 $2)_after_evals" | cut -c1-12) "; done)"
+finish "PREREG_V8F_DAG_OACC: w_acc $WACC (C-O3 PASS), both gates passed (acc term, head_o gradient, swap, one-lever rule), DAG-OACC x seeds 0 and 1 trained (3,000 steps each, M2b + DAG's argv + --w-acc), T0-evaluated (standard) and pulled to $ART (sha256 in each SHA256SUMS.txt); the T1-kin rollouts and the reader run on the dev box (NOT here)"

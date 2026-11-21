@@ -1,0 +1,196 @@
+{
+ "_meta": {
+  "question": "attribute 3.844 s/step (LIVE refcv4b) vs 1.946 s/step (ABORTED refcv4) on pod tanitad-refcv3",
+  "date_utc": "2026-09-04",
+  "pod": "tanitad-refcv3 = tanitad-a40, 69.30.85.211:22001, single NVIDIA A40",
+  "evidence_class": "MEASURED (raw metrics.jsonl pulled from the pod, md5-verified)",
+  "trainer_timing_semantics": "refc_v3_train.py logs elapsed_s = CUMULATIVE wall clock since t0; it does NOT log step_s. Marginal pace = (elapsed_s[n]-elapsed_s[n-1])/log_every. The 500-step ckpt+eval cost lands in the interval AFTER the boundary: the log row is written BEFORE the save and eval blocks.",
+  "md5_verified": {
+   "config.aborted.json": "3e5a29dc3a5830e211fa12f263b97dd9",
+   "config.live.json": "58ad809aaf241729c1695bec2ab30d8e",
+   "metrics.aborted.jsonl": "fa5103e62986be19ac743815f00046ba"
+  }
+ },
+ "runs": {
+  "aborted": {
+   "label": "refcv4-b1-v72-40k.ABORTED-step6400 (128 FIXED-path anchors)",
+   "n_rows": 128,
+   "n_restart_segments": 1,
+   "last_step": 6400,
+   "last_elapsed_s": 13350.9,
+   "segments": [
+    {
+     "steps": [
+      50,
+      6400
+     ],
+     "n_intervals": 115,
+     "marginal_median_s_per_step": 1.964,
+     "marginal_p10": 1.944,
+     "marginal_p90": 1.98,
+     "post_500_boundary_median": 3.251,
+     "eval_ckpt_overhead_s_per_500_steps": 64.3
+    }
+   ]
+  },
+  "live": {
+   "label": "refcv4b-b1-v72-40k (117 v0-CONDITIONED anchors) - LIVE",
+   "n_rows": 16,
+   "n_restart_segments": 1,
+   "last_step": 800,
+   "last_elapsed_s": 3147.3,
+   "segments": [
+    {
+     "steps": [
+      50,
+      800
+     ],
+     "n_intervals": 14,
+     "marginal_median_s_per_step": 3.844,
+     "marginal_p10": 3.836,
+     "marginal_p90": 3.86,
+     "post_500_boundary_median": 5.132,
+     "eval_ckpt_overhead_s_per_500_steps": 64.4
+    }
+   ]
+  },
+  "superseded": {
+   "label": "refcv4b-b1-v72-40k.SUPERSEDED-flatkappa (v0-cond, kappa units)",
+   "n_rows": 4,
+   "n_restart_segments": 1,
+   "last_step": 200,
+   "last_elapsed_s": 773.4,
+   "segments": [
+    {
+     "steps": [
+      50,
+      200
+     ],
+     "n_intervals": 3,
+     "marginal_median_s_per_step": 3.836,
+     "marginal_p10": 3.836,
+     "marginal_p90": 3.84,
+     "post_500_boundary_median": null,
+     "eval_ckpt_overhead_s_per_500_steps": null
+    }
+   ]
+  },
+  "v3ref": {
+   "label": "refcv3-b1-v72-30k (COMPLETED 40284 steps; NO --anchors)",
+   "n_rows": 852,
+   "n_restart_segments": 10,
+   "last_step": 40284,
+   "last_elapsed_s": 88636.3,
+   "segments": [
+    {
+     "steps": [
+      550,
+      1250
+     ],
+     "n_intervals": 13,
+     "marginal_median_s_per_step": 4.738,
+     "marginal_p10": 4.622,
+     "marginal_p90": 6.62,
+     "post_500_boundary_median": 6.6,
+     "eval_ckpt_overhead_s_per_500_steps": 93.1
+    },
+    {
+     "steps": [
+      1050,
+      2000
+     ],
+     "n_intervals": 18,
+     "marginal_median_s_per_step": 4.698,
+     "marginal_p10": 4.534,
+     "marginal_p90": 4.726,
+     "post_500_boundary_median": 6.666,
+     "eval_ckpt_overhead_s_per_500_steps": 98.4
+    },
+    {
+     "steps": [
+      1550,
+      4500
+     ],
+     "n_intervals": 54,
+     "marginal_median_s_per_step": 4.602,
+     "marginal_p10": 4.54,
+     "marginal_p90": 4.616,
+     "post_500_boundary_median": 6.56,
+     "eval_ckpt_overhead_s_per_500_steps": 97.9
+    },
+    {
+     "steps": [
+      4050,
+      6000
+     ],
+     "n_intervals": 36,
+     "marginal_median_s_per_step": 4.588,
+     "marginal_p10": 4.53,
+     "marginal_p90": 4.706,
+     "post_500_boundary_median": 6.71,
+     "eval_ckpt_overhead_s_per_500_steps": 106.1
+    },
+    {
+     "steps": [
+      5550,
+      10500
+     ],
+     "n_intervals": 90,
+     "marginal_median_s_per_step": 4.532,
+     "marginal_p10": 4.486,
+     "marginal_p90": 4.63,
+     "post_500_boundary_median": 6.556,
+     "eval_ckpt_overhead_s_per_500_steps": 101.2
+    },
+    {
+     "steps": [
+      10050,
+      17000
+     ],
+     "n_intervals": 126,
+     "marginal_median_s_per_step": 4.5,
+     "marginal_p10": 4.468,
+     "marginal_p90": 4.536,
+     "post_500_boundary_median": 6.486,
+     "eval_ckpt_overhead_s_per_500_steps": 99.3
+    },
+    {
+     "steps": [
+      16550,
+      17500
+     ],
+     "n_intervals": 18,
+     "marginal_median_s_per_step": 4.596,
+     "marginal_p10": 4.55,
+     "marginal_p90": 4.654,
+     "post_500_boundary_median": 6.794,
+     "eval_ckpt_overhead_s_per_500_steps": 109.9
+    },
+    {
+     "steps": [
+      17550,
+      18500
+     ],
+     "n_intervals": 18,
+     "marginal_median_s_per_step": 4.542,
+     "marginal_p10": 4.502,
+     "marginal_p90": 4.562,
+     "post_500_boundary_median": 6.618,
+     "eval_ckpt_overhead_s_per_500_steps": 103.8
+    },
+    {
+     "steps": [
+      18550,
+      40284
+     ],
+     "n_intervals": 392,
+     "marginal_median_s_per_step": 3.942,
+     "marginal_p10": 3.922,
+     "marginal_p90": 3.98,
+     "post_500_boundary_median": 5.212,
+     "eval_ckpt_overhead_s_per_500_steps": 63.5
+    }
+   ]
+  }
+ }
+}

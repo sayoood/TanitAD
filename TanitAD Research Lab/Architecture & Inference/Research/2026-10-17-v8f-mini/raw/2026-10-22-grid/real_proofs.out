@@ -1,0 +1,45 @@
+BASE=M2b (PREREG_V8F_PGT final read VERDICT FAIL-NO-MECHANISM)
+GRID INPUTS OK: base M2b (PREREG_V8F_PGT final read VERDICT FAIL-NO-MECHANISM); F 0.1207; LAMBDA(B) +0.2678 / +0.1667; latcons RMSE(B) 0.6861 / 0.6846 SD; identity control exactly +0 [0, 0]
+[identity M2b] rc 0
+[identity M2b] 17 contrasts x 2 seeds, every one exactly +0 [0, 0]; latcons RMSE(B) {'0': 0.6861413005973933, '1': 0.6845808549656447} (window-weighted {'0': 0.4678448881355327, '1': 0.4740638806290459})
+{
+ "reading": "PREREG_V8F_GRID stage final: FAIL-NO-MECHANISM; base M2b; ADE6 G - B +0.557 / +0.779 m (2F 0.2415); M-LAT latcons RMSE fall +0.0% ns / +0.0% ns (bar 12.5%; B 0.686 / 0.685 SD); mechanism NOT met. VERDICT FAIL-NO-MECHANISM.",
+ "next": "FAIL without the mechanism: latcons accuracy did not fall >= 12.5 %, so spatial resolution is not T's limit. Next lever: plan 13.6's more history frames (temporal context for turn timing), under its own PREREG."
+}
+[regression M2b] rc=0
+[regression M2b] PREREG_V8F_GRID stage final: FAIL-NO-MECHANISM; base M2b; ADE6 G - B +0.557 / +0.779 m (2F 0.2415); M-LAT latcons RMSE fall +0.0% ns / +0.0% ns (bar 12.5%; B 0.686 / 0.685 SD); mechanism NOT met. VERDICT FAIL-NO-MECHANISM.
+{
+ "reading": "PREREG_V8F_GRID stage final: SUCCESS; base M2b; ADE6 G - B -1.305 / -1.233 m (2F 0.2415); M-LAT latcons RMSE fall +40.0% / +40.0% (bar 12.5%; B 0.686 / 0.685 SD); mechanism MET. VERDICT SUCCESS.",
+ "next": "SUCCESS: the stack at 8x20 drives better than B beyond 2F at both seeds. Next: the T1-kin read of G (stack/scripts/v8f_t1_eval.py, m in {30, 10}), then the next plan 13.6 lever on top (more history frames), under its own PREREG."
+}
+[success M2b] rc=0
+[success M2b] PREREG_V8F_GRID stage final: SUCCESS; base M2b; ADE6 G - B -1.305 / -1.233 m (2F 0.2415); M-LAT latcons RMSE fall +40.0% / +40.0% (bar 12.5%; B 0.686 / 0.685 SD); mechanism MET. VERDICT SUCCESS.
+{
+ "reading": "PREREG_V8F_GRID stage final: FAIL-MECHANISM-OK; base M2b; ADE6 G - B +0.000 ns / +0.000 ns m (2F 0.2415); M-LAT latcons RMSE fall +30.0% / +30.0% (bar 12.5%; B 0.686 / 0.685 SD); mechanism MET. VERDICT FAIL-MECHANISM-OK.",
+ "next": "FAIL with the mechanism in place: latcons accuracy fell >= 12.5 % but driving did not move beyond 2F. T is getting more accurate but not enough to convert: the encoder itself, LoRA on DINOv3 (needs the PI's AR-2 go)."
+}
+[mechanism-only M2b] rc=0
+[mechanism-only M2b] PREREG_V8F_GRID stage final: FAIL-MECHANISM-OK; base M2b; ADE6 G - B +0.000 ns / +0.000 ns m (2F 0.2415); M-LAT latcons RMSE fall +30.0% / +30.0% (bar 12.5%; B 0.686 / 0.685 SD); mechanism MET. VERDICT FAIL-MECHANISM-OK.
+BASE=M2b-pgt (PREREG_V8F_PGT final read VERDICT SUCCESS)
+GRID INPUTS OK: base M2b-pgt (PREREG_V8F_PGT final read VERDICT SUCCESS); F 0.0483; LAMBDA(B) +0.1071 / +0.0667; latcons RMSE(B) 0.6861 / 0.6846 SD; identity control exactly +0 [0, 0]
+[identity M2b-pgt] rc 0
+[identity M2b-pgt] 17 contrasts x 2 seeds, every one exactly +0 [0, 0]; latcons RMSE(B) {'0': 0.6861413005973933, '1': 0.6845808549656447} (window-weighted {'0': 0.4678448881355327, '1': 0.4740638806290459})
+{
+ "reading": "PREREG_V8F_GRID stage final: FAIL-NO-MECHANISM; base M2b-pgt; ADE6 G - B +0.934 / +1.115 m (2F 0.0966); M-LAT latcons RMSE fall +0.0% ns / +0.0% ns (bar 12.5%; B 0.686 / 0.685 SD); mechanism NOT met. VERDICT FAIL-NO-MECHANISM.",
+ "next": "FAIL without the mechanism: latcons accuracy did not fall >= 12.5 %, so spatial resolution is not T's limit. Next lever: plan 13.6's more history frames (temporal context for turn timing), under its own PREREG."
+}
+[regression M2b-pgt] rc=0
+[regression M2b-pgt] PREREG_V8F_GRID stage final: FAIL-NO-MECHANISM; base M2b-pgt; ADE6 G - B +0.934 / +1.115 m (2F 0.0966); M-LAT latcons RMSE fall +0.0% ns / +0.0% ns (bar 12.5%; B 0.686 / 0.685 SD); mechanism NOT met. VERDICT FAIL-NO-MECHANISM.
+{
+ "reading": "PREREG_V8F_GRID stage final: SUCCESS; base M2b-pgt; ADE6 G - B -0.522 / -0.493 m (2F 0.0966); M-LAT latcons RMSE fall +40.0% / +40.0% (bar 12.5%; B 0.686 / 0.685 SD); mechanism MET. VERDICT SUCCESS.",
+ "next": "SUCCESS: the stack at 8x20 drives better than B beyond 2F at both seeds. Next: the T1-kin read of G (stack/scripts/v8f_t1_eval.py, m in {30, 10}), then the next plan 13.6 lever on top (more history frames), under its own PREREG."
+}
+[success M2b-pgt] rc=0
+[success M2b-pgt] PREREG_V8F_GRID stage final: SUCCESS; base M2b-pgt; ADE6 G - B -0.522 / -0.493 m (2F 0.0966); M-LAT latcons RMSE fall +40.0% / +40.0% (bar 12.5%; B 0.686 / 0.685 SD); mechanism MET. VERDICT SUCCESS.
+{
+ "reading": "PREREG_V8F_GRID stage final: FAIL-MECHANISM-OK; base M2b-pgt; ADE6 G - B +0.000 ns / +0.000 ns m (2F 0.0966); M-LAT latcons RMSE fall +30.0% / +30.0% (bar 12.5%; B 0.686 / 0.685 SD); mechanism MET. VERDICT FAIL-MECHANISM-OK.",
+ "next": "FAIL with the mechanism in place: latcons accuracy fell >= 12.5 % but driving did not move beyond 2F. T is getting more accurate but not enough to convert: the encoder itself, LoRA on DINOv3 (needs the PI's AR-2 go)."
+}
+[mechanism-only M2b-pgt] rc=0
+[mechanism-only M2b-pgt] PREREG_V8F_GRID stage final: FAIL-MECHANISM-OK; base M2b-pgt; ADE6 G - B +0.000 ns / +0.000 ns m (2F 0.0966); M-LAT latcons RMSE fall +30.0% / +30.0% (bar 12.5%; B 0.686 / 0.685 SD); mechanism MET. VERDICT FAIL-MECHANISM-OK.
+OK

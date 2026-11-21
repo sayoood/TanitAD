@@ -1,0 +1,29 @@
+===== OLD bytes, clean completion
+ZZPGC_PREFLIGHT_OK
+worker1 pid 36168 exited rc=0 without finishing (respawn 1/3)
+worker2 pid 43124 exited rc=0 without finishing (respawn 2/3)
+worker1 pid 57188 exited rc=0 without finishing (respawn 3/3)
+worker2 pid 71064 exited rc=0 without finishing (respawn 4/3)
+ZZPGC_STOP extraction worker crashed 4 times: see run_clean/worker2.log
+STOP: 2026-10-20T01:25:14+02:00 extraction worker crashed 4 times: see run_clean/worker2.log
+===== FIX, clean completion
+ZZPGC_PREFLIGHT_OK
+worker1 pid 69500 finished (done record WORKER_DONE_68476.txt)
+worker2 pid 34792 finished (done record WORKER_DONE_41264.txt)
+ZZPGC_EXTRACT_DONE 4/4 logs in 0 min
+ZZPGC_STOP join failed (label-free); see run_clean/stages.log
+STOP: 2026-10-20T01:25:15+02:00 join failed (label-free); see run_clean/stages.log
+===== FIX, relaunch 4/4 extracted
+ZZPGC_PREFLIGHT_OK
+extraction already complete (4/4): no worker spawned
+ZZPGC_EXTRACT_DONE 4/4 logs in 0 min
+ZZPGC_STOP join failed (label-free); see run_clean/stages.log
+STOP: 2026-10-20T01:25:15+02:00 join failed (label-free); see run_clean/stages.log
+===== FIX, rc0 + logs missing
+ZZPGC_PREFLIGHT_OK
+worker1 pid 68624 exited rc=0 without finishing (respawn 1/3)
+worker2 pid 70216 exited rc=0 without finishing (respawn 2/3)
+worker1 pid 64532 exited rc=0 without finishing (respawn 3/3)
+worker2 pid 53872 exited rc=0 without finishing (respawn 4/3)
+ZZPGC_STOP extraction worker crashed 4 times: see run_clean/worker2.log
+STOP: 2026-10-20T01:25:17+02:00 extraction worker crashed 4 times: see run_clean/worker2.log

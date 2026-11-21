@@ -1,0 +1,25 @@
+PREREG_V8F_KIND instruments + Amendment 1 (window strata). Export tree = repo layout (base: mirror tip c7d40467; PREREG at 93340166). Land ONLY the paths below.
+No file outside this list was changed (verified: diff -r against a pristine export of c7d40467, __pycache__ excluded). v8f_mini_train.py, v8f_mini_data.py, v8f_mini_eval.py, v8f_lora_*, chain_v8f_lora_ar2.sh, v8f_guard.sh are UNTOUCHED.
+
+MODIFIED (3)
+stack/tanitad/models/v8f_mini.py                                                                        CODE_KINDS (6 kinds, 26 cells) + code_group_index takes a kind
+TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_mini_box2_queue.cmd  +4 labels (kind kindseed kindown kindorc) + 1 dispatch line + usage text; every old label byte-identical; CRLF kept
+stack/tests/test_v8f_lora_ar2.py                                                                        ONE assert extended: the exact-label-set pin now also allows the four kind labels (it pinned set(blocks) exactly)
+
+NEW (code + test)
+TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_kind_read.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/box2_ops/chain_v8f_kind.sh
+stack/tests/test_v8f_kind.py
+
+NEW (raw/2026-10-25-kind/, under TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/)
+raw/2026-10-25-kind/window_strata_eval141.npz     Amendment 1 per-window stratum labels (2,399 windows), built from the v9 release
+raw/2026-10-25-kind/mk_window_strata.py           its builder
+raw/2026-10-25-kind/mk_window_strata.out
+raw/2026-10-25-kind/mutate_kind.py                57 mutants
+raw/2026-10-25-kind/mutate_kind.out               final run: 57/57 RED, restored byte-identical
+raw/2026-10-25-kind/mutate_kind_run1.out          first run: 54/57 RED, 3 survivors (then fixed by strengthening three tests; kept as the record)
+raw/2026-10-25-kind/dryrun_queue_kind.out         the queue's `kind` dry run (30 eval commands)
+raw/2026-10-25-kind/dryrun_chain_kind.out         chain_v8f_kind.sh --dry-run
+raw/2026-10-25-kind/check_inputs_real.out         v8f_kind_read.py --check-inputs on the REAL banked M2b side
+raw/2026-10-25-kind/check_inputs_real.json
+raw/2026-10-25-kind/suites.out                    stack/tests/test_v8f*.py + test_launch_gate_v8f.py on CPU (counts at the end)

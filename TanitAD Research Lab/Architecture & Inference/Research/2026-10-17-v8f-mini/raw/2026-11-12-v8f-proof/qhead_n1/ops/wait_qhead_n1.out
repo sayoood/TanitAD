@@ -1,0 +1,36 @@
+[2026-11-19T04:15:12Z] poll 1: MARK;[2026-11-19T04:14:33Z] queue start; run script sha256 43b8ee03542ca73b tool 21cf7ac38d344fd7 arms 2;
+[2026-11-19T04:45:29Z] poll 11: MARK;[2026-11-19T04:38:13Z] rollout LSQE_s0 rc 0 T1_DONE;
+[2026-11-19T05:15:45Z] rollout queue state DONE
+[2026-11-19T05:15:49Z] pulled qhead_n1_rollouts.out sha256 9ade0ea2d7981bc5
+[2026-11-19T05:15:52Z] pulled qhead_n1_fits.out sha256 9010a34662928ac4
+[2026-11-19T05:15:56Z] pulled LS_s0.qhead.json sha256 c16e7cee6cd5b13d
+[2026-11-19T05:15:59Z] pulled LS_s0.qhead.npz sha256 d947acad2d910eff
+[2026-11-19T05:16:02Z] pulled LS_s1.qhead.json sha256 684fa55539b202f8
+[2026-11-19T05:16:06Z] pulled LS_s1.qhead.npz sha256 ff65326b06d8b597
+[2026-11-19T05:16:09Z] pulled LSD_s0.qhead.json sha256 59d677e3a7ba4dc2
+[2026-11-19T05:16:13Z] pulled LSD_s0.qhead.npz sha256 499c88882ad1aaa7
+[2026-11-19T05:16:17Z] pulled LSD_s1.qhead.json sha256 4ab27ce26591e2da
+[2026-11-19T05:16:20Z] pulled LSD_s1.qhead.npz sha256 4b78820779834877
+ZZ PULL-SPATIAL DONE
+ZZ PULL-SPATIAL DONE
+[2026-11-19T05:17:50Z] qhead_read_n2.sh rc 0
+[05:17:09Z] arm types read under note N2 section 2: LS
+[05:17:09Z] pairs headway: LSQE:LS,LSQE:LSRH,LSQE:LSRL,LSQE:LSMC,LSQE:LSQC | families: LSQE:LS,LSQE:LSQC,LSQE:LSMC
+[05:17:38Z] headway r2 rc 0 : controls PASS | counts {'PASS': True, 'n_lead_windows': 642, 'n_episodes_with_lead': 56, 'enough': True, 'min_windows': 200, 'min_episodes': 20, 'n_windows_total': 2399, 'n_episodes_total': 141} | spr
+[05:17:43Z] families r3 rc 0 : controls PASS | spread seeds [0, 1, 2, 3, 4, 5] | missing []
+h3 LSQE_s0: PASS | {"n_first_tick_present": 1088, "a_in_rollout": {"max_abs_g_src_vs_g_used": 0.0, "max_abs_g_used_vs_min": 0.0, "bar_m": 0.0, "PASS": true}, "n_recomputed": 1088, "b_offline_recompute": {"max_abs_g_src_vs_recomputed_min": 0.0038909912109375, "mean_abs": 0.000813586514114457, "within
+h3 LSQE_s1: PASS | {"n_first_tick_present": 928, "a_in_rollout": {"max_abs_g_src_vs_g_used": 0.0, "max_abs_g_used_vs_min": 0.0, "bar_m": 0.0, "PASS": true}, "n_recomputed": 928, "b_offline_recompute": {"max_abs_g_src_vs_recomputed_min": 0.003177642822265625, "mean_abs": 0.0006698517064596044, "withi
+== controls of note ADD42_N1 (printed first)
+  h1_control_rollout_equals_head_fed_dump          PASS {"cmp": ["141", "0"], "tool_sha256_recorded_in_first_run": ["21cf7ac38d344fd7"], "tool_sha256_now_prefix": "21cf7ac38d344fd7", "tool_unchanged": true, "why": nu
+  h2_no_plan_moved_ahead                           PASS {}
+  h3_gap_used_equals_min_recomputed                PASS {}
+  h4_train_files_only                              PASS {}
+  h5_check_coverage_in_0.15_0.25                   PASS {"rule": "per arm type: a type is read only if both of its checkpoints are inside the band (note N1 section 4, note N2 section 2)", "types_read": ["LS"], "types
+  h8_check_clips_used_by_no_fit_and_no_selection   PASS {}
+  h6_fit_reaches_parameters_and_learns_a_quantile  PASS {"n_mutations": 7, "why": null}
+  h7_reader_controls                               PASS {"headway_ALL_PASS": true, "family_ALL_PASS": true, "g5_planted_regression_read_as_worse": true}
+== names LS {"reaches_oracle": "QHEAD-REACHES-ORACLE-QE", "U_against_map": "QHEAD-U-EQUAL-QE", "cost_against_map": "QHEAD-COST-EQUAL-QE", "cost_against_no_rule": "QHEAD-COSTS-QE", "cost_against_no_rule_cells": {"name": "COST-LONGITUDINAL COST-TACTICAL", "cost_families": ["LONGITUDINAL", "TACTICAL"], "gain_families": []}}
+== names LSD {"all": "NOT NAMED (h5: the coverage on the check clips is outside the band at LSD_s0; note N1 section 4, note N2 section 2); no outcome number of this type is written"}
+== beside LS {"share_of_label_fed_fall_reached_per_base": [1.0, 0.6808510638297873], "U_qh_minus_none": {"per_base": [-0.0747, -0.0569], "pooled": -0.0658, "interval": [-0.1055, -0.0269], "excludes_0": true}, "U_qh_minus_map": {"per_base": [-0.016, 0.0036], "pooled": -0.0062, "interval": [-0.0251, 0.0167], "excludes_0": false}, 
+ZZ READ-QHEAD-N2 DONE 05:17:50Z
+ZZ QHEAD-N1-WAIT DONE 2026-11-19T05:17:50Z

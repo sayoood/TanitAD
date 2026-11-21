@@ -1,0 +1,41 @@
+{
+ "_what": "A3 \u2014 the HELD-OUT occupancy read PREREG_S1 \u00a78 gates on. DISCHARGED.",
+ "_evidence_class": "MEASURED (ours; halfA-trained map head scored on halfB, 1,000 windows)",
+ "_tier": "an instrument reading, not a tier-stamped capability number",
+ "held_out_half": "halfB (62 clips) \u2014 the checkpoint trained on halfA ONLY",
+ "floor_used": {
+  "value": 0.3388,
+  "source": "A1, 4,580,239 seen cells, read from the SAM3 .npz",
+  "\u26d4": "halfB's OWN floor, NOT the corpus 0.3412"
+ },
+ "reads": [
+  {
+   "step": 1000,
+   "n_windows": 1000,
+   "map_iou_drivable": 0.49016,
+   "ratio_to_halfB_floor": 1.447,
+   "pred_drivable_prob_mean": 0.44981,
+   "gt_drivable_frac_measured_by_the_eval": 0.33845
+  },
+  {
+   "step": 2000,
+   "n_windows": 1000,
+   "map_iou_drivable": 0.57607,
+   "ratio_to_halfB_floor": 1.7,
+   "pred_drivable_prob_mean": 0.34998,
+   "gt_drivable_frac_measured_by_the_eval": 0.33845
+  }
+ ],
+ "independent_cross_check": {
+  "A1_read_from_npz": 0.3388,
+  "eval_read_through_the_dataloader": 0.33845,
+  "abs_diff": 0.00035,
+  "\u2b50": "two entirely separate code paths agree on halfB's drivable prevalence to 4 decimal places, so the floor is not one script's opinion"
+ },
+ "calibration": "at 1,000 steps the head OVER-predicts drivable (0.44981 vs GT 0.33845) and reads 1.447x; by 2,000 its predicted prevalence is 0.34998 \u2014 essentially the GT rate \u2014 and it reads 1.700x",
+ "_not_a_capability_claim": "2,000 steps x batch 2 = 4,000 windows = 0.38 of ONE epoch over 62 clips",
+ "_no_replicate_required": "one configuration, no comparison. It may NEVER be turned into '2,000 beats 1,000' \u2014 the two rows are a CURVE with their step index, not an A/B",
+ "_arm_caveat": "frozen-BN + chunk-ckpt, so NOT bit-comparable with the banked maphead1k; without the levers this configuration pages at 29 s/step",
+ "_why_a_new_checkpoint_was_needed": "the banked 2,000-step map head trained on the FULL 139-clip cache: 62/62 of BOTH halves inside it, 0 outside, so it had no held-out half at all",
+ "_supersedes": "tonight's earlier 1.43x, which was TRAIN-side over batches of 2 windows"
+}

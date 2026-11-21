@@ -1,0 +1,22 @@
+{
+ "utc": "20260903T204145Z",
+ "question": "do the two banked refav1 checkpoints emit DIFFERENT trajectories on the same 140 windows?",
+ "dumps": {
+  "incumbent": "C:/Users/Admin/refav1_eval_slice/t1_dump",
+  "clean_epoch": "C:/Users/Admin/refav1_eval_slice/t1_dump_ep2"
+ },
+ "ckpt_bytes": {
+  "incumbent": 2093802833,
+  "clean_epoch": 2122973057
+ },
+ "note": "the two checkpoint FILES differ in size, so they are different weights; both store step=1000 (the counter restarts at the epoch boundary)",
+ "max_abs_diff_m": {
+  "cl": 0.0,
+  "ha": 0.0,
+  "ol": 0.0,
+  "cl_navshuf": 0.0,
+  "cl_oraclegoal": 2.7000045776367188
+ },
+ "n_windows": 140,
+ "reading": "cl, cl_navshuf, ha and ol are BYTE-IDENTICAL across the two checkpoints on all 140 windows, while cl_oraclegoal \u2014 the only arm whose goal is not the degenerate imagined one \u2014 moves up to 2.70 m. The deployed plan is therefore NOT a property of these particular weights. Independent corroboration of D-REFAV1-COST-SURFACE / D-REFAV1-GOAL-DEGENERATE, measured here off the banked dumps with no model loaded."
+}

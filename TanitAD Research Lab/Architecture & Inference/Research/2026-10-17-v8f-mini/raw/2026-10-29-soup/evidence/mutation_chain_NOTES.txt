@@ -1,0 +1,25 @@
+mutation_chain.json / .out -- how to read them, and the two earlier passes that were DISCARDED (2026-10-28/29)
+
+THE BANKED RESULT: 153 of 155 one-change mutants of the runner (soup_chain.sh, soup_chain_lib.py, wake_soup.sh, soup_chain.cmd) are KILLED by tests/test_soup_chain.py; 2 are named EQUIVALENT (each with its reason in the json
+"equivalent_named"); 0 are unexplained.  The unmutated runner passes the whole file first (pass 1 baseline: 91 passed, 3 deselected -- the three tests that only read production facts).
+
+TWO PASSES BEFORE IT WERE THROWN AWAY, and why (a kill that cannot be explained is not a kill):
+  1. The first pass reported 155/155 killed.  It was not.  14 mutants were "killed" in the FULL stage by the tests that read a moved-aside output (10 of them by test_an_incomplete_earlier_attempt...):
+     the pytest basetemp carried the mutant's NAME, the path went past MAX_PATH (python.exe here is not long-path aware) and open() failed -- for the UNMUTATED runner too.  Reproduced by hand: the same test passes
+     under a short path and fails under the long one; the mutant world_not_a_dir_unchecked passes the whole file (87 passed) when run under a short path.  Fixed in the TESTS (lp(): a long-path-safe open) and in the
+     HARNESS (every mutant and the baseline get a basetemp of the same short length, <work>/pytmp/NNNt|f).
+  2. The second pass again "killed" a mutant (world_not_a_dir_unchecked) in 26 s with NO failing test: the chain's start gate read "C: has 250 MB free (< 256 MB)".  C: on this box is almost full and fluctuates between
+     0 MB and ~1 GB because of other processes (the session scratchpad holds ~32 GB that this package did not create).  A later kill read "C: has 0 MB free (< 32 MB)".  Fixed in the TESTS: the test world's gates are
+     open by default (RAM 1 MB, out-drive 0 GB, C: 0 MB), and the tests that exercise a gate set it themselves with a hook (so no test depends on the machine's real C: / RAM / disk any more).
+  The harness now stores the last 60 lines of pytest output of every failing run (json "fail_output"), so a kill is explainable after the fact.
+
+WHAT WAS RE-RUN WHEN TESTS WERE ADDED:  pass 1 (all 155, tests sha256 098a33ab...) left 6 survivors: 2 named equivalent, 4 real (plan_short_line_allowed, plan_tool_name_unchecked, reader_changed_not_detected,
+ready_basin_truthy).  Four tests were added and one extended (they only ADD cases), then those four and pins_default_digest_off (killed only in the full stage; its targeted selection was widened) were re-judged
+against the FINAL tests (pass 2, --merge).  Each mutant's record carries the sha256 of the tests that judged it; the unmutated runner passes the FINAL tests too (evidence/selftest_chain.out).
+
+THE TWO EQUIVALENT MUTANTS:
+  done_record_after_is_before    --after "$sha2" -> --after "$pinned": at that line sha2 == sha (the step stops "changed during" otherwise) and sha == pinned (the step stops before it starts otherwise).
+  world_not_a_dir_unchecked      os.path.isdir(w) in world_ok is redundant: when w is not a directory, os.path.join(w, marker) cannot be a file and the next check returns False.
+
+WHAT THE MUTATION PASS DOES NOT PROVE: that the runner is right about the REAL tools and the REAL reader (stubs stand in for both in the self-test).  That part is the production --dry-run (evidence/dry_run_chain.out:
+every one of the 28 commands parsed by the pinned tool's own argparse) and the reader's own evidence (evidence/dry_run_soup_read.*, evidence/mutation_reader.*).

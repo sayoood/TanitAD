@@ -1,0 +1,185 @@
+{
+ "controls": {
+  "s0": {
+   "K1_knots_to_navsim(LEGAL knots) == banked LEGAL poses, max abs": 0.0,
+   "K2_retime_plan(LEGAL, prior, deploy table) == banked RT knots, max abs": 0.0,
+   "K2b_RT poses rebuilt == banked RT poses, max abs": 0.0,
+   "K3_prior_emitted knots -> poses == banked PRIOR_ha0p poses, max abs": 7.62939453125e-06,
+   "K4_g=1 retime_positions == LEGAL knots, max abs": 0.0,
+   "K5_prior path with prior progress == prior knots, max abs": 0.0,
+   "K6_banked PRIOR_ha0p knots vs model's emitted prior, max abs (same token order)": 1.52587890625e-05,
+   "pass": true,
+   "ALPHA000_equals_prior_max_abs": 0.0
+  },
+  "s1": {
+   "K1_knots_to_navsim(LEGAL knots) == banked LEGAL poses, max abs": 0.0,
+   "K2_retime_plan(LEGAL, prior, deploy table) == banked RT knots, max abs": 0.0,
+   "K2b_RT poses rebuilt == banked RT poses, max abs": 0.0,
+   "K3_prior_emitted knots -> poses == banked PRIOR_ha0p poses, max abs": 7.62939453125e-06,
+   "K4_g=1 retime_positions == LEGAL knots, max abs": 0.0,
+   "K5_prior path with prior progress == prior knots, max abs": 0.0,
+   "K6_banked PRIOR_ha0p knots vs model's emitted prior, max abs (same token order)": 1.52587890625e-05,
+   "pass": true,
+   "ALPHA000_equals_prior_max_abs": 0.0
+  }
+ },
+ "arms": {
+  "R8PATH_PRIORPROG": {
+   "spec": "refcv8's PATH (LEGAL polyline) driven at the PRIOR's progress s'=M (g=0)",
+   "max_abs_knot_change_vs_LEGAL_m": 51.25458335876465,
+   "max_abs_knot_change_vs_prior_m": 54.21211678534746,
+   "mean_abs_pose_x4s_change_vs_prior_m": 0.4816993714001988,
+   "seam_sha256": "6506a7d7e220bd93ab8c5292ef1369a73328f0c8ad81c7bec35b6f8aa70d2119",
+   "ade_to_human_m_mean": 1.3236233747593193
+  },
+  "R8PATH_HALFPROG": {
+   "spec": "refcv8's PATH driven at s' = M + 0.5 (L - M)",
+   "max_abs_knot_change_vs_LEGAL_m": 25.627290725708008,
+   "max_abs_knot_change_vs_prior_m": 54.06676943600178,
+   "mean_abs_pose_x4s_change_vs_prior_m": 2.3133583104627014,
+   "seam_sha256": "6d24d3afdc30698133ff047e396741775449f3f725459175a6b514ce0a63debc",
+   "ade_to_human_m_mean": 1.33220396948876
+  },
+  "PRIORPATH_R8PROG": {
+   "spec": "the PRIOR's path driven at refcv8's (LEGAL) progress s' = L",
+   "max_abs_knot_change_vs_LEGAL_m": 37.02464121580124,
+   "max_abs_knot_change_vs_prior_m": 51.53556442260742,
+   "mean_abs_pose_x4s_change_vs_prior_m": 4.143521577904837,
+   "seam_sha256": "11c5b3306bf6b246b6bc770b08955c528550152f8c5d886955563fdaec9fdee6",
+   "ade_to_human_m_mean": 1.7775017083649707
+  },
+  "PRIORPATH_RTPROG": {
+   "spec": "the PRIOR's path driven at the shipped RT progress s' = M + g (L - M), g = deploy table",
+   "max_abs_knot_change_vs_LEGAL_m": 37.798436254262924,
+   "max_abs_knot_change_vs_prior_m": 47.05955123901367,
+   "mean_abs_pose_x4s_change_vs_prior_m": 3.520748450062067,
+   "seam_sha256": "f4ed327e5796b8705618a10d02b2110a2590fcf7d7eb7ce392b5895485114d09",
+   "ade_to_human_m_mean": 1.4752705124324954
+  },
+  "R8PATH_MINPROG": {
+   "spec": "refcv8's PATH driven at s' = min(L, M): never faster than the prior (a progress CAP)",
+   "max_abs_knot_change_vs_LEGAL_m": 45.61452043056488,
+   "max_abs_knot_change_vs_prior_m": 53.921422094106674,
+   "mean_abs_pose_x4s_change_vs_prior_m": 2.6081608737410504,
+   "seam_sha256": "fc874a047e5a70846458531a422063a5b60030fbf932ea9f09dab70da5ec0a56",
+   "ade_to_human_m_mean": 1.5689285059505786
+  },
+  "R8PATH_MAXPROG": {
+   "spec": "refcv8's PATH driven at s' = max(L, M): never slower than the prior (the expected-worse mirror of the cap)",
+   "max_abs_knot_change_vs_LEGAL_m": 51.25458335876465,
+   "max_abs_knot_change_vs_prior_m": 54.21211678534746,
+   "mean_abs_pose_x4s_change_vs_prior_m": 2.1367394610258073,
+   "seam_sha256": "9e688f3f563776a407c8058d720ad41a13d9f8b0ca5b4b7501a331a6593ad4e4",
+   "ade_to_human_m_mean": 1.5790909503854311
+  },
+  "ALPHA025": {
+   "spec": "plan = prior + 0.25 (R8_LEGAL knots - prior knots)",
+   "max_abs_knot_change_vs_LEGAL_m": 40.44106778502464,
+   "max_abs_knot_change_vs_prior_m": 13.480354309082031,
+   "mean_abs_pose_x4s_change_vs_prior_m": 1.0658002415353747,
+   "seam_sha256": "638829ad27327d770f3d9187151154afaa22b74c48a9e042611846cd2173dd53",
+   "ade_to_human_m_mean": 0.9531404871014663
+  },
+  "ALPHA050": {
+   "spec": "plan = prior + 0.50 (R8_LEGAL knots - prior knots)",
+   "max_abs_knot_change_vs_LEGAL_m": 26.96071156859398,
+   "max_abs_knot_change_vs_prior_m": 26.960710525512695,
+   "mean_abs_pose_x4s_change_vs_prior_m": 2.131600500640668,
+   "seam_sha256": "efcd4e923702e949e810935ab3389de9ba526c15cca59b1ce773e32e7b0cb1ce",
+   "ade_to_human_m_mean": 1.136777402569678
+  },
+  "ALPHA075": {
+   "spec": "plan = prior + 0.75 (R8_LEGAL knots - prior knots)",
+   "max_abs_knot_change_vs_LEGAL_m": 13.480355352163315,
+   "max_abs_knot_change_vs_prior_m": 40.44106674194336,
+   "mean_abs_pose_x4s_change_vs_prior_m": 3.197400723064436,
+   "seam_sha256": "cc4c23ac4a857bf88374ca46a2a5735cdba0a07ea465f615b94aec6d60ed0da9",
+   "ade_to_human_m_mean": 1.4454947942750682
+  },
+  "R8PATH_PRIORPROG_s1": {
+   "spec": "refcv8's PATH (LEGAL polyline) driven at the PRIOR's progress s'=M (g=0)",
+   "max_abs_knot_change_vs_LEGAL_m": 51.27128028869629,
+   "max_abs_knot_change_vs_prior_m": 55.315319895744324,
+   "mean_abs_pose_x4s_change_vs_prior_m": 0.4748317954692914,
+   "seam_sha256": "ac1a67def0fe8b3dfff4ac8f3e247529c0913f5c63a86e50c210538d6444b4f3",
+   "ade_to_human_m_mean": 1.324753187915086
+  },
+  "R8PATH_HALFPROG_s1": {
+   "spec": "refcv8's PATH driven at s' = M + 0.5 (L - M)",
+   "max_abs_knot_change_vs_LEGAL_m": 25.63564109802246,
+   "max_abs_knot_change_vs_prior_m": 54.92100691795349,
+   "mean_abs_pose_x4s_change_vs_prior_m": 2.3391646651479467,
+   "seam_sha256": "5253aec58e42304d026d18464d44ccb9493b5ada777d7cd605b2a7d3bcbd8626",
+   "ade_to_human_m_mean": 1.33136689506035
+  },
+  "PRIORPATH_R8PROG_s1": {
+   "spec": "the PRIOR's path driven at refcv8's (LEGAL) progress s' = L",
+   "max_abs_knot_change_vs_LEGAL_m": 35.68668618798256,
+   "max_abs_knot_change_vs_prior_m": 51.593544006347656,
+   "mean_abs_pose_x4s_change_vs_prior_m": 4.176999054879826,
+   "seam_sha256": "c454853b9e15e68935dfcc40111a56b1a0d28ddbdaec67e6d154fae47c4e4e1c",
+   "ade_to_human_m_mean": 1.7979316196614843
+  },
+  "PRIORPATH_RTPROG_s1": {
+   "spec": "the PRIOR's path driven at the shipped RT progress s' = M + g (L - M), g = deploy table",
+   "max_abs_knot_change_vs_LEGAL_m": 37.423018127679825,
+   "max_abs_knot_change_vs_prior_m": 47.112518310546875,
+   "mean_abs_pose_x4s_change_vs_prior_m": 3.5496565371141684,
+   "seam_sha256": "952262af27d6e6ba0d76891b995342b8122d48e66d0e679c7e75fbb7f4786544",
+   "ade_to_human_m_mean": 1.487577212482575
+  },
+  "R8PATH_MINPROG_s1": {
+   "spec": "refcv8's PATH driven at s' = min(L, M): never faster than the prior (a progress CAP)",
+   "max_abs_knot_change_vs_LEGAL_m": 43.3021354675293,
+   "max_abs_knot_change_vs_prior_m": 54.52669396996498,
+   "mean_abs_pose_x4s_change_vs_prior_m": 2.6459304138326787,
+   "seam_sha256": "2354ac6052522f95b5cefb29d639ebcc7ca9844be52c8dcbef4ea9e8efd4e0f5",
+   "ade_to_human_m_mean": 1.577689115780303
+  },
+  "R8PATH_MAXPROG_s1": {
+   "spec": "refcv8's PATH driven at s' = max(L, M): never slower than the prior (the expected-worse mirror of the cap)",
+   "max_abs_knot_change_vs_LEGAL_m": 51.27128028869629,
+   "max_abs_knot_change_vs_prior_m": 55.315319895744324,
+   "mean_abs_pose_x4s_change_vs_prior_m": 2.1379909707181266,
+   "seam_sha256": "4121978595664710e321b77ca7562525cefc6db2d10f002572775d8ddf21179a",
+   "ade_to_human_m_mean": 1.5842532142137191
+  },
+  "ALPHA025_s1": {
+   "spec": "plan = prior + 0.25 (R8_LEGAL knots - prior knots)",
+   "max_abs_knot_change_vs_LEGAL_m": 40.8950220644474,
+   "max_abs_knot_change_vs_prior_m": 13.631671905517578,
+   "mean_abs_pose_x4s_change_vs_prior_m": 1.0772723741861614,
+   "seam_sha256": "2e7e6d4305d63c0633d71fad8fbed44be10435b87611cc21027fe09cb942c522",
+   "ade_to_human_m_mean": 0.9525933771425501
+  },
+  "ALPHA050_s1": {
+   "spec": "plan = prior + 0.50 (R8_LEGAL knots - prior knots)",
+   "max_abs_knot_change_vs_LEGAL_m": 27.26334634423256,
+   "max_abs_knot_change_vs_prior_m": 27.263347625732422,
+   "mean_abs_pose_x4s_change_vs_prior_m": 2.1545448135489194,
+   "seam_sha256": "888626e024d67d145fad06fc33f120de392d5bd8e67b1b2672aeb48f0cc43e35",
+   "ade_to_human_m_mean": 1.1375245090590476
+  },
+  "ALPHA075_s1": {
+   "spec": "plan = prior + 0.75 (R8_LEGAL knots - prior knots)",
+   "max_abs_knot_change_vs_LEGAL_m": 13.631673485040665,
+   "max_abs_knot_change_vs_prior_m": 40.895020484924316,
+   "mean_abs_pose_x4s_change_vs_prior_m": 3.231817210737622,
+   "seam_sha256": "0099bee760e42b977e175bc6c89879d5d524d6f81a9ccc7c55a5e0b5e24d1684",
+   "ade_to_human_m_mean": 1.4511159857811617
+  }
+ },
+ "reference_ade_to_human_m_mean": {
+  "PRIOR_ha0p": 1.0218109651912552,
+  "R8_LEGAL": 1.8243998841340068,
+  "R8_RT": 1.5743310429872082
+ },
+ "jobs": {
+  "n": 18,
+  "file": "jobs_prior_gap_levers.jsonl",
+  "thor_seam_dir_placeholder": "/home/nvidia/r8ns/navtrain_sel/ema48852/lever",
+  "thor_out_placeholder": "/home/nvidia/r8ns/navtrain_sel/lever",
+  "single_arm_command": "python3 /home/nvidia/r8ns/code/navtrain/navtrain_cache_score.py score --profile thor --sample /home/nvidia/r8ns/navtrain/NAVTRAIN_SAMPLE_TOKENS.json --out <OUT> --label <LABEL> --seam <seam_X.npz> --exp /home/nvidia/r8ns/navtrain/nsexp/r8sel_navtrain --data /home/nvidia/r8ns/navtrain/nsdata/openscene --maps /home/nvidia/r8ns/navtrain/nsdata/maps   (env: PYTHONHASHSEED=1, OMP_NUM_THREADS<=6 per concurrent arm)",
+  "reference_wall_s_per_arm": 347.3
+ }
+}

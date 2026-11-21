@@ -1,0 +1,132 @@
+
+====================================================================================================
+M2b_s0: cell KINDS (share of total squared error; CI = episode-cluster bootstrap)
+====================================================================================================
+kind                                      n_cells  cell%   RMSE SSEshare           [CI95]  lift
+ANGLE (deg)                                  3303  12.7%  0.635    0.145 [ 0.092, 0.212]  1.15
+GEOMETRY distance/position (m)               3727  14.3%  0.664    0.179 [ 0.133, 0.225]  1.25
+LEAD GAP distance                            2120   8.1%  0.739    0.126 [ 0.091, 0.170]  1.55
+SPEED (m/s)                                 11704  44.9%  0.304    0.118 [ 0.094, 0.152]  0.26
+TIME-GAP to lead (gap/closing speed)         2120   8.1%  0.849    0.166 [ 0.061, 0.274]  2.04
+TIME-TO-EVENT (turn/lc/reach/start)          3082  11.8%  0.889    0.266 [ 0.216, 0.322]  2.25
+
+----------------------------------------------------------------------------------------------------
+M2b_s0: by |GT std| magnitude of the cell (all present cells)
+----------------------------------------------------------------------------------------------------
+|GT| bin    n_cells  cell%   RMSE SSEshare bias(T-GT) T/GT slope
+<0.5          11585  44.5%  0.339    0.145     -0.041      0.861
+0.5-1          8223  31.6%  0.440    0.173     -0.004      0.781
+1-2            4648  17.8%  0.699    0.247     -0.053      0.705
+2-3            1240   4.8%  1.119    0.169     -0.386      0.709
+3-5             334   1.3%  2.101    0.161     -0.385      0.517
+>=5              26   0.1%  6.086    0.105     -4.930      0.147
+
+cells with |GT| >= 3 SD: 360 (1.38% of cells) carry 0.266 of the SSE; cells with |GT| >= 2: 6.14% carry 0.435
+
+----------------------------------------------------------------------------------------------------
+M2b_s0: GT label tail per cell (std units): max, p99, share of the cell's SSE from cells with |GT|>=3; and T's range on those
+----------------------------------------------------------------------------------------------------
+cell                     n   GTmax   GTp99  GTskew SSEfrom|GT|>=3 meanT on those meanGT on those
+lat_theta_deg         2351    4.13    2.71   -0.50          0.337          -1.04           -1.42
+lon_t_start_s         1045    3.81    2.97    1.25          0.122           0.01            3.20
+lon_t_reach_s         1045    0.69    0.69   -1.45          0.197          -0.29           -3.45
+lead_tg_min_s         1060   12.27    4.49    6.37          0.835           0.62            6.58
+lead_tg_s             1060    8.66    5.19    4.53          0.770           1.10            5.09
+lead_gap_min_m        1060    2.68    2.46    1.00          0.000            nan             nan
+lead_gap_m            1060    2.20    2.20    0.73          0.000            nan             nan
+turn_exit_y_m          476    3.39    2.95   -0.97          0.335          -1.32           -2.59
+turn_t_start_s         476    1.72    1.65   -1.03          0.270          -1.21           -3.65
+lon_v_target_ms       2334    3.22    2.69    0.91          0.017           2.60            3.12
+
+----------------------------------------------------------------------------------------------------
+M2b_s0: top-24 windows by SSE (1% of windows) -- which cells and what GT
+----------------------------------------------------------------------------------------------------
+dominant cell of each of the 24 worst windows: {'lead_tg_min_s': 9, 'lead_tg_s': 6, 'lat_theta_deg': 6, 'lon_t_reach_s': 1, 'turn_exit_x_m': 1, 'turn_dyaw_deg': 1}
+episodes of those 24 windows: 7 distinct
+  win  ep   t     SSE          topcell   GTraw?   GTstd    Tstd lead_gap   v_T        lon       lat
+ 1268  74  39  160.58    lead_tg_min_s            12.27    1.67     77.5   3.1       HOLD LANE_KEEP
+ 1267  74  35  153.12    lead_tg_min_s            11.65    1.43     73.8   4.5       HOLD LANE_KEEP
+ 1817 106  59  110.33    lead_tg_min_s             7.10   -0.07      nan  10.3       STOP    TURN_L
+ 1816 106  55  109.75    lead_tg_min_s             7.10   -0.03     43.9   9.9       STOP    TURN_L
+ 1818 106  63  103.72    lead_tg_min_s             7.10   -0.14      nan   8.8       STOP    TURN_L
+ 1815 106  51  100.43    lead_tg_min_s             7.10    0.01     31.8   9.7 DECELERATE    TURN_L
+ 1819 106  67   97.62    lead_tg_min_s             7.10   -0.28      nan   7.2       STOP    TURN_L
+ 1820 106  71   94.11    lead_tg_min_s             7.10   -0.23      nan   5.8       STOP    TURN_L
+  118   6  67   54.67        lead_tg_s             7.93    0.95     67.1   0.0       none      none
+ 2308 135  47   54.58    lon_t_reach_s            -2.83    0.37      nan   5.7 ACCELERATE LANE_KEEP
+ 2307 135  43   53.85    turn_exit_x_m             3.45    0.04      nan   5.1 ACCELERATE LANE_KEEP
+ 1079  63  31   53.45    lat_theta_deg             4.13   -0.84     16.3   9.9     FOLLOW LANE_KEEP
+
+Huber(delta=1) pooled over present cells: 0.1355; cells with |error| >= 2 SD: 385 (1.48%) carry 0.400 of the SSE
+
+----------------------------------------------------------------------------------------------------
+M2b_s0: lead-present windows -- lead-time-gap cells vs label construction
+----------------------------------------------------------------------------------------------------
+lead_tg_s: GT std percentiles 50/90/99/max = -0.31/0.63/5.19/8.66; raw max 92.0 s; share of cell SSE from the worst 1% of its windows: 0.455
+lead_tg_min_s: GT std percentiles 50/90/99/max = -0.28/0.66/4.49/12.27; raw max 92.0 s; share of cell SSE from the worst 1% of its windows: 0.736
+
+====================================================================================================
+M2b_s1: cell KINDS (share of total squared error; CI = episode-cluster bootstrap)
+====================================================================================================
+kind                                      n_cells  cell%   RMSE SSEshare           [CI95]  lift
+ANGLE (deg)                                  3303  12.7%  0.631    0.142 [ 0.094, 0.197]  1.12
+GEOMETRY distance/position (m)               3727  14.3%  0.662    0.176 [ 0.132, 0.220]  1.23
+LEAD GAP distance                            2120   8.1%  0.729    0.121 [ 0.090, 0.159]  1.49
+SPEED (m/s)                                 11704  44.9%  0.314    0.124 [ 0.099, 0.157]  0.28
+TIME-GAP to lead (gap/closing speed)         2120   8.1%  0.855    0.167 [ 0.062, 0.278]  2.05
+TIME-TO-EVENT (turn/lc/reach/start)          3082  11.8%  0.902    0.270 [ 0.222, 0.324]  2.28
+
+----------------------------------------------------------------------------------------------------
+M2b_s1: by |GT std| magnitude of the cell (all present cells)
+----------------------------------------------------------------------------------------------------
+|GT| bin    n_cells  cell%   RMSE SSEshare bias(T-GT) T/GT slope
+<0.5          11585  44.5%  0.332    0.138      0.047      0.788
+0.5-1          8223  31.6%  0.449    0.179      0.097      0.703
+1-2            4648  17.8%  0.726    0.264      0.044      0.664
+2-3            1240   4.8%  1.103    0.162     -0.241      0.751
+3-5             334   1.3%  2.056    0.152     -0.167      0.556
+>=5              26   0.1%  6.144    0.106     -5.126      0.140
+
+cells with |GT| >= 3 SD: 360 (1.38% of cells) carry 0.258 of the SSE; cells with |GT| >= 2: 6.14% carry 0.420
+
+----------------------------------------------------------------------------------------------------
+M2b_s1: GT label tail per cell (std units): max, p99, share of the cell's SSE from cells with |GT|>=3; and T's range on those
+----------------------------------------------------------------------------------------------------
+cell                     n   GTmax   GTp99  GTskew SSEfrom|GT|>=3 meanT on those meanGT on those
+lat_theta_deg         2351    4.13    2.71   -0.50          0.333          -0.68           -1.42
+lon_t_start_s         1045    3.81    2.97    1.25          0.124          -0.01            3.20
+lon_t_reach_s         1045    0.69    0.69   -1.45          0.192          -0.24           -3.45
+lead_tg_min_s         1060   12.27    4.49    6.37          0.825           0.55            6.58
+lead_tg_s             1060    8.66    5.19    4.53          0.791           0.98            5.09
+lead_gap_min_m        1060    2.68    2.46    1.00          0.000            nan             nan
+lead_gap_m            1060    2.20    2.20    0.73          0.000            nan             nan
+turn_exit_y_m          476    3.39    2.95   -0.97          0.313          -1.55           -2.59
+lon_v_target_ms       2334    3.22    2.69    0.91          0.001           3.16            3.12
+v_end_ms              2317    3.17    2.77    0.94          0.002           3.06            3.10
+
+----------------------------------------------------------------------------------------------------
+M2b_s1: top-24 windows by SSE (1% of windows) -- which cells and what GT
+----------------------------------------------------------------------------------------------------
+dominant cell of each of the 24 worst windows: {'lead_tg_min_s': 9, 'lead_tg_s': 6, 'lat_theta_deg': 6, 'turn_exit_x_m': 1, 'lon_t_reach_s': 1, 'turn_exit_y_m': 1}
+episodes of those 24 windows: 7 distinct
+  win  ep   t     SSE          topcell   GTraw?   GTstd    Tstd lead_gap   v_T        lon       lat
+ 1268  74  39  168.25    lead_tg_min_s            12.27    1.44     77.5   3.1       HOLD LANE_KEEP
+ 1267  74  35  158.49    lead_tg_min_s            11.65    1.13     73.8   4.5       HOLD LANE_KEEP
+ 1816 106  55   92.28    lead_tg_min_s             7.10    0.11     43.9   9.9       STOP    TURN_L
+ 1818 106  63   89.67    lead_tg_min_s             7.10    0.16      nan   8.8       STOP    TURN_L
+ 1817 106  59   88.33    lead_tg_min_s             7.10    0.22      nan  10.3       STOP    TURN_L
+ 1819 106  67   87.01    lead_tg_min_s             7.10    0.22      nan   7.2       STOP    TURN_L
+ 1815 106  51   85.27    lead_tg_min_s             7.10    0.10     31.8   9.7 DECELERATE    TURN_L
+ 1820 106  71   83.88    lead_tg_min_s             7.10    0.22      nan   5.8       STOP    TURN_L
+  118   6  67   63.20        lead_tg_s             7.93    0.70     67.1   0.0       none      none
+ 2240 131  47   61.88        lead_tg_s             6.99    1.20     50.9   1.1 ACCELERATE LANE_KEEP
+ 2307 135  43   58.81    turn_exit_x_m             3.45   -0.53      nan   5.1 ACCELERATE LANE_KEEP
+ 1266  74  31   58.02    lead_tg_min_s             6.95    0.69     85.9   5.9      CREEP LANE_KEEP
+
+Huber(delta=1) pooled over present cells: 0.1381; cells with |error| >= 2 SD: 382 (1.47%) carry 0.387 of the SSE
+
+----------------------------------------------------------------------------------------------------
+M2b_s1: lead-present windows -- lead-time-gap cells vs label construction
+----------------------------------------------------------------------------------------------------
+lead_tg_s: GT std percentiles 50/90/99/max = -0.31/0.63/5.19/8.66; raw max 92.0 s; share of cell SSE from the worst 1% of its windows: 0.458
+lead_tg_min_s: GT std percentiles 50/90/99/max = -0.28/0.66/4.49/12.27; raw max 92.0 s; share of cell SSE from the worst 1% of its windows: 0.718

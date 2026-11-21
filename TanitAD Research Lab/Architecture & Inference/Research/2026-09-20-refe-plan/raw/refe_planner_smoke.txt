@@ -1,0 +1,23 @@
+REFePlanner smoke test, 2026-09-20. Untrained weights -- this validates the INTERFACE, not driving.
+
+  name REFePlanner | backbone vitl16 | device cuda
+  model through the planner's own path: traj (1, 64, 20, 3)  score (1, 64, 6)
+  proposal selection 'best' -> a valid index
+
+FrameResolver (the camera-only planner's hardest dependency: nuPlan DBs carry filenames, not pixels)
+  log spans 543.9 s, 5,440 CAM_F0 frames
+  exact frame timestamp          expect resolve   got resolve   PASS
+  mid-log timestamp              expect resolve   got resolve   PASS
+  +30 ms from a frame            expect resolve   got resolve   PASS
+  +10 s AFTER the last frame     expect REFUSE    got REFUSE    PASS
+  -10 s BEFORE the first frame   expect REFUSE    got REFUSE    PASS
+  unknown log                    expect REFUSE    got REFUSE    PASS
+
+!! A FIRST VERSION OF THIS TEST REPORTED A FAILURE THAT DID NOT EXIST. It used ts[0] + 10 s as the
+   "far away" case, but the log is 543.9 s long, so a frame legitimately sits there and resolving
+   was CORRECT. The bug was in the test, not the resolver. Checking which one is wrong before
+   "fixing" the code is the same discipline that saved the 12 % horizon control earlier today.
+
+DESIGN NOTE. When no frame is within the tolerance the planner HOLDS the current state rather than
+inventing input. A camera-only planner fed noise would emit a confident trajectory from no
+perception at all; a hold is a visible, scoreable failure. `report()` counts those steps.

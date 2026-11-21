@@ -1,0 +1,106 @@
+scratch: C:/Users/Admin/AppData/Local/Temp/dort1_st/dagorct1_0jt9y6f2
+PASS const M2B_SHA == the reader's M2B_CKPT_SHA
+PASS const OACC_CKPT_SHA == the reader's
+PASS const BANK1_SHA == the reader's OACC_BANK_SHA
+PASS const W_ACC / REP_SEED / STEPS == the reader's
+PASS const BASE_COMMIT / BUILD_FILES == the reader's
+PASS DAG-OACC s0 ckpt in its SHA256SUMS.txt == OACC_CKPT_SHA
+PASS DAG-OACC s0 argv names the bank sha / w_acc / init the lib pins
+PASS DAG-OACC s1 ckpt in its SHA256SUMS.txt == OACC_CKPT_SHA
+PASS DAG-OACC s1 argv names the bank sha / w_acc / init the lib pins
+PASS REAL r1 log: A s0 reads FAIL (K-REACH FAIL + CONTROL-FAIL + STOP)
+PASS REAL r1 log: the other three runs read NOT-PULLED
+PASS REAL r1 log: meta stops=1 pending=3 pulled=1 done=0
+PASS REAL r1 log: the run-record line of the FAILED run still parsed as PASS (so the verdict comes from K-REACH, not a missing line)
+PASS synthetic r2 log, 4 x PASS: every run PASS with its pull-line sha
+PASS ... meta: pending 0, done 0 before a DONE line
+PASS ... a DONE line AFTER the last pull -> done=1
+PASS NEG: a DONE line BEFORE the pulls (a stale DONE) -> done=0
+PASS NEG: DONE with only 3 of 4 pulled -> done=0, pending=1
+PASS NEG: run record not PASS -> FAIL
+PASS NEG: K-REACH FAIL (+ CONTROL-FAIL + STOP) -> FAIL
+PASS NEG: pulled, controls not printed yet -> AWAITING-CONTROLS (wait, not a pass)
+PASS NEG: pulled + run record PASS but no K-REACH line -> AWAITING-CONTROLS
+PASS NEG: pulled + K-REACH PASS but no run record -> AWAITING-CONTROLS
+PASS NEG: pulled to ANOTHER directory than this chain reads -> FAIL
+PASS NEG: pulled to a *_r1_kreach_stop directory -> FAIL
+PASS NEG: pulled, then a box-2 STOP before both controls printed -> FAIL
+PASS NEG: REP's run-record line inside A's section -> A is NOT PASS (a section never borrows another run's line) and REP is FAIL (a record with no pull)
+PASS NEG: REP's K-REACH line inside A's section -> A is FAIL (a foreign control line in the section is a defect, and it cannot satisfy A)
+PASS a RE-PULL restarts the section: r1 FAIL followed by an r2 PASS reads PASS (the LAST pull wins)
+PASS ... and the old STOP line is BEFORE the new section, so it does not poison it
+PASS CRLF line endings parse
+PASS an empty log: every run NOT-PULLED, pending 4
+PASS the arm-name prefix trap: 'dagoaccorc' never matches a 'dagoaccorcrep' line
+PASS pullcheck dagoaccorc s0 valid -> COMPLETE, rc 0, returns the ckpt sha
+PASS pullcheck dagoaccorcrep s0 valid -> COMPLETE, rc 0, returns the ckpt sha
+PASS pullcheck A s1 valid -> COMPLETE
+PASS NEG pullcheck A: --seed wrong -> WRONG (rc 3)
+PASS NEG pullcheck A: summary seed wrong -> WRONG (rc 3)
+PASS NEG pullcheck A: --steps 2999 -> WRONG (rc 3)
+PASS NEG pullcheck A: --ego-perturb-p 0.1 -> WRONG (rc 3)
+PASS NEG pullcheck A: composition flag absent -> WRONG (rc 3)
+PASS NEG pullcheck A: --ego-perturb-seed wrong -> WRONG (rc 3)
+PASS NEG pullcheck A: --w-acc wrong -> WRONG (rc 3)
+PASS NEG pullcheck A: bank sha wrong -> WRONG (rc 3)
+PASS NEG pullcheck A: --dagger-p 0 -> WRONG (rc 3)
+PASS NEG pullcheck A: init-ckpt of the other seed -> WRONG (rc 3)
+PASS NEG pullcheck A: summary does not record M2b_s0 as the init -> WRONG (rc 3)
+PASS NEG pullcheck A: --out names another run -> WRONG (rc 3)
+PASS NEG pullcheck A: token names another run -> WRONG (rc 3)
+PASS NEG pullcheck A: token verdict FAIL -> WRONG (rc 3)
+PASS NEG pullcheck A: token binds no commit -> WRONG (rc 3)
+PASS NEG pullcheck REP: perturbation on (--ego-perturb-p 0.3) -> WRONG (rc 3)
+PASS NEG pullcheck REP: composition flag named -> WRONG (rc 3)
+PASS NEG pullcheck REP: --seed 0 (A's seed, not 10) -> WRONG (rc 3)
+PASS NEG pullcheck REP s1: --seed 10 (s0's replicate seed, not 11) -> WRONG (rc 3)
+PASS NEG pullcheck: token binds the REFUSED r1 commit e7ea20d1 -> WRONG
+PASS NEG pullcheck: a commit named in DORT1_REFUSE_COMMITS -> WRONG
+PASS NEG pullcheck: the box-2 log's checkpoint sha differs from the pulled file's -> WRONG
+PASS NEG pullcheck: SHA256SUMS.txt lists a wrong hash for the checkpoint -> INCOMPLETE (a pull still filling / corrupt)
+PASS NEG pullcheck: SHA256SUMS.txt lists 7 of the 8 names -> INCOMPLETE
+PASS NEG pullcheck: SHA256SUMS.txt younger than min-age -> INCOMPLETE
+PASS NEG pullcheck: no SHA256SUMS.txt -> INCOMPLETE
+PASS NEG pullcheck: a listed file missing -> INCOMPLETE
+PASS NEG pullcheck: a directory named *_r1_kreach_stop is REFUSED even when it is otherwise COMPLETE
+PASS ... while the same content under its proper name is COMPLETE (the suffix is the only difference)
+PASS NEG identity: a checkpoint equal to DAG-OACC_s0's (nothing trained) is named
+PASS stand-in: DAG-OACC s0's real pull is COMPLETE by content (no identity asked)
+PASS NEG: ... and the same pull is WRONG when asked to be A s0
+PASS K-BUILD (r1 build, REAL git objects): exactly the trainer and the data lib changed; the model and the dagger lib are byte-identical
+PASS K-BUILD: every hunk default_off, behind the flag, bit_identity_test PASS
+PASS K-BUILD: the base blobs are the files DAG-OACC trained (trainer sha256 30819a6f...)
+PASS K-BUILD record is accepted by the READER's own k_build()
+PASS NEG K-BUILD (the suite shows 25 passed, not 26) -> the reader's k_build() REFUSES
+PASS NEG K-BUILD (mutant M13 not killed) -> the reader's k_build() REFUSES
+PASS NEG K-BUILD (the package's tested train.py sha256 is not the launch blob) -> the reader's k_build() REFUSES
+PASS NEG K-BUILD (the golden's unmodified file is not the base blob) -> the reader's k_build() REFUSES
+PASS NEG K-BUILD (a mutant survived: 18 of 19 killed) -> the reader's k_build() REFUSES
+PASS NEG K-BUILD (compose_run2.log reports a failure) -> the reader's k_build() REFUSES
+PASS K-BUILD (a re-run with 28 tests passed and 21 of 21 mutants killed) -> still accepted
+PASS K-BUILD with launch == base: nothing changed, record accepted (positive control for the 'identical' branch)
+PASS NEG K-BUILD: a launch commit that is not in the mirror raises (the chain STOPs, it does not write a record)
+PASS manifest: every path the READER's slot_needs() asks of A / REP / CTRL is named (no None)
+PASS manifest: arms are exactly A, REP, CTRL (B absent: not queued)
+PASS verify_manifest on a complete synthetic world -> no problem
+PASS NEG verify_manifest: A s0's causal rollout json is a --max-windows smoke (max_windows field) -> refused
+PASS NEG verify_manifest: A s0's causal rollout json has n_windows 8 (the shape the real --max-windows 8 smoke wrote: max_windows None, n_windows 8) -> refused
+PASS NEG verify_manifest: A s0's done record says smoke=true -> refused
+PASS NEG verify_manifest: A s0's causal dump dir holds 140 of 141 episodes -> refused
+PASS NEG verify_manifest: A s0's done record names another checkpoint -> refused
+PASS NEG verify_manifest: a train_dir that is a *_r1_kreach_stop directory -> refused
+PASS NEG verify_manifest: the CTRL slot points at a dir whose checkpoint is not DAG-OACC's -> refused
+PASS NEG verify_manifest: an A entry missing -> refused
+PASS NEG verify_manifest: the four runs bind two different launch commits -> refused
+PASS NEG verify_manifest: a run whose token binds the REFUSED r1 commit -> refused
+PASS rolloutcode (r1 build): the closure holds the harness's v8f_mini and v8f_mini_data and 100+ files
+PASS rolloutcode (r1 build): v8f_mini.py IDENTICAL, v8f_mini_data.py DIFFERS only in EgoPerturb, which the harness never reaches
+PASS rolloutcode (r1 build): the trainer script is NOT in the closure (the harness never imports it)
+PASS rolloutcode (r1 build): the gate on the two gated files passes
+PASS NEG rolloutcode: gating a file the harness never loads is a mis-specified gate -> failure
+PASS NEG rolloutcode: gating refc.py (which differs and whose changed name is reached by the static closure) -> failure
+PASS NEG rolloutcode: a commit not in the mirror raises (never 'every file absent, nothing differs')
+PASS AST diff: changing foo() is seen as a change of foo only (layout / comments ignored)
+PASS call graph: bar -> foo is followed (the harness reaches bar, hence foo)
+SELFTEST: 103/103 checks as expected (17 s)
+ZZDAGORCT1-SELFTEST-OK

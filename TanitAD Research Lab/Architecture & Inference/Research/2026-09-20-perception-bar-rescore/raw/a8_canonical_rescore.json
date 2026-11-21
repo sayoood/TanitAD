@@ -1,0 +1,80 @@
+{
+ "_what": "box-head centre error per target population (PREREG_PERCEPTION_BOX_QUALITY)",
+ "_primary": "near_forward",
+ "n_windows": 24,
+ "n_pairs": 623,
+ "near_forward": {
+  "n": 129,
+  "centre_l1_m": 5.9539,
+  "abs_dx_m": 2.9826,
+  "abs_dy_m": 2.9713,
+  "median_l1_m": 4.9819,
+  "x_share_of_l1": 0.501,
+  "meets_bar": false,
+  "bar_m": 2.0,
+  "ci": {
+   "mean": 5.9539,
+   "lo": 4.8922,
+   "hi": 7.1084,
+   "ci95": 1.1081,
+   "se": 0.5784,
+   "reducer": "_r",
+   "n_windows": 24,
+   "n_episodes": 21,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap"
+  }
+ },
+ "all_360": {
+  "n": 623,
+  "centre_l1_m": 12.0381,
+  "abs_dx_m": 5.3614,
+  "abs_dy_m": 6.6767,
+  "median_l1_m": 7.6949,
+  "x_share_of_l1": 0.4454,
+  "meets_bar": false,
+  "bar_m": 2.0,
+  "ci": {
+   "mean": 12.0381,
+   "lo": 9.5176,
+   "hi": 15.2023,
+   "ci95": 2.8423,
+   "se": 1.4951,
+   "reducer": "_r",
+   "n_windows": 24,
+   "n_episodes": 21,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap"
+  }
+ },
+ "far_or_behind": {
+  "n": 494,
+  "centre_l1_m": 13.6269,
+  "abs_dx_m": 5.9826,
+  "abs_dy_m": 7.6443,
+  "median_l1_m": 8.7444,
+  "x_share_of_l1": 0.439,
+  "meets_bar": false,
+  "bar_m": 2.0
+ },
+ "controls": {
+  "n_target": 623,
+  "n_matched": 623,
+  "n_dropped": 0,
+  "matched_equals_target": true,
+  "identity_rule": "match_slots matches min(n_target, n_query); with <= 32 padded targets against 100 queries this is an IDENTITY. False \u21d2 the matcher changed and no centre number from this run is readable.",
+  "vel_pairs": 623,
+  "vel_mae_pred_mps": 5.9389,
+  "vel_mae_zero_floor_mps": 8.8126,
+  "vel_gain_mps": 2.8738,
+  "vel_beats_zero_floor": true,
+  "vel_rule": "a regression below the zero-velocity floor is FAIL-HARM for the arm"
+ },
+ "_provenance": {
+  "ckpt": "C:/Users/Admin/tanitad-caches/a8-occupancy-5k-20260919/run/ckpt_5000.pt",
+  "config": "C:/Users/Admin/tanitad-caches/a8-occupancy-5k-20260919/run/config.json",
+  "cache": "D:/Projects/TanitAD-artifacts/v2ep-eval124clean-416x1024cyl-halfB",
+  "device": "cpu",
+  "windows_scored": 24
+ }
+}

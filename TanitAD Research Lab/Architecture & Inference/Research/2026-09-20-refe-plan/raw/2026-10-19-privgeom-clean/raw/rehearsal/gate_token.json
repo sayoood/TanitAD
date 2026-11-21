@@ -1,0 +1,637 @@
+{
+ "created": "2026-10-19T21:20:35+02:00",
+ "pass": true,
+ "rehearsal": true,
+ "pins": {
+  "prereg": "REHEARSAL (not sealed)"
+ },
+ "code_pins": {
+  "code": {
+   "pg_geom.py": "5b78a694f40b6b2b4030fdeb3bf5be2c65b349c8887f9c11c78d0dfd8d9df7de",
+   "pg_extract.py": "64a148906329f8aeba5dc3d87d30aba9f2e91d90389ea77c0169614e1bade23b",
+   "pg_lib.py": "61bfe59692987de6e43cf9d2585c2992192a4b9dca6d513688bffc5c77dd7178",
+   "pgc_lib.py": "85561d6b8eb34190ea936236443ef298cfa4206cbba738c44e9beecb611daa9d",
+   "pgc_admit.py": "4a68f58ed1629c831a4263f2bcc30f1bbc730a5cd81ebb6fe50f0f5c99354696",
+   "pgc_run.py": "62a16c3e28ffd40d483c5cda204b1c428f98bd916d8d1409eb503fecf60469e7",
+   "pgc_coverage.py": "06115f13b7c7e4b748225faeff0dbfa118d96df9cd75cd0ceafb39fdfcc6e097",
+   "pgc_seal.py": "4c07240efb7c0cdee4a8add26851efa4f09b4d0a410d0d45401dbe6a073bcf69",
+   "test_pgc_lib.py": "9f701bc784015e5d5c73d5deca59b3290bcff94878505fd4ceefa275d66a2807",
+   "test_pgc_admit.py": "ccc5dfa7f27959b6af1c8b26e8cba8e259615dfbf26b32a2b22611c92783dad3",
+   "test_pgc_seal.py": "2279057ed675fd995a9f01d933937c5ba2072efa3ea526a53d6cfc2e5c204214",
+   "test_pg_geom.py": "3cf48766adc17b4c1ac07bb1b043e3798ffa2a680226196f124fc69f56406b64",
+   "test_pg_lib.py": "fd1d408aed2d870f86c9a02a556b32ce0f54708042c25823666c425f06b89cfa"
+  },
+  "ref": {
+   "fastneg_lib.py": "0c0b399b37a47ee3e17f9d5484bc7f9521ff7dbe6bea37e8c7a38042668667ca"
+  }
+ },
+ "arrays_sha256": "40caedb9d80611d0ee129417d53ad38567323887728db4fd625e2f375050e969",
+ "labels_sub_sha256": "2813bbf47cd1c9703fb5fea5e42b87305c86d9802c08738ab25856d0566ed2f3",
+ "gate": {
+  "primary_arm": "LGc",
+  "labels_opened": true,
+  "C-JOIN": {
+   "n_retained": 4941,
+   "n_expected": 4941,
+   "n_logs": 41,
+   "n_logs_expected": 41,
+   "lost_frac": 0.0,
+   "folds_logs": [
+    10,
+    8,
+    8,
+    3,
+    12
+   ],
+   "pass": true
+  },
+  "C-ID-EXTRACT": {
+   "rows": {
+    "2021.06.09.14.58.55_veh-35_02778_02850": {
+     "registered": "344ac86cb900562538f82d8387a4451d4ccd8809e0ee2739210dd6b4ba7943a9",
+     "recomputed": null,
+     "match": null
+    },
+    "2021.06.14.11.44.56_veh-35_02696_02932": {
+     "registered": "404d071c4f858ddd7c8e24666d268a0dbb3b61c0ebc34d7586d3bb0494d8c658",
+     "recomputed": null,
+     "match": null
+    }
+   },
+   "pass": true
+  },
+  "suites": {
+   "test_pg_geom.py": {
+    "rc": 0,
+    "tail": "...................\n----------------------------------------------------------------------\nRan 19 tests in 0.216s\n\nOK\n"
+   },
+   "test_pg_lib.py": {
+    "rc": 0,
+    "tail": "\n  synthetic F-AUC: L 0.7737  L+G(true hidden) 0.8810  oracle 0.8842\n  null rep 0: Delta +0.0002 [-0.0001, +0.0005]\n  null rep 1: Delta -0.0001 [-0.0005, +0.0002]\n  null rep 2: Delta -0.0001 [-0.0003, +0.0002]\n  empirical false-fire (3 replicates, seed 0, synthetic): 0/3\n  weak plant: Delta +0.0736 [+0.0704, +0.0771]\n.........\n----------------------------------------------------------------------\nRan 9 tests in 80.464s\n\nOK\n"
+   },
+   "test_pgc_lib.py": {
+    "rc": 0,
+    "tail": "  centred arm Delta_F +0.0529 [+0.0478, +0.0576]\n  null rep 0: Delta +0.0003 [-0.0004, +0.0010]\n  null rep 1: Delta +0.0003 [-0.0005, +0.0010]\n  null rep 2: Delta +0.0007 [+0.0000, +0.0014]\n  weak plant Delta +0.0781 [+0.0728, +0.0828]\n.............\n----------------------------------------------------------------------\nRan 13 tests in 69.273s\n\nOK\n"
+   },
+   "test_pgc_admit.py": {
+    "rc": 0,
+    "tail": "=. POS-VALUE=. POS-ORDER=. POS-LIN=. NEG-PERM=. NEG-NOISE=. NEG-PROX=.\n     A: POS-REGISTERED=. POS-EQUAL=Y POS-VALUE=Y POS-ORDER=. POS-LIN=. NEG-PERM=. NEG-NOISE=. NEG-PROX=.\n     T: POS-REGISTERED=Y POS-EQUAL=Y POS-VALUE=Y POS-ORDER=Y POS-LIN=. NEG-PERM=. NEG-NOISE=. NEG-PROX=.\n   LIN: POS-REGISTERED=Y POS-EQUAL=Y POS-VALUE=Y POS-ORDER=Y POS-LIN=Y NEG-PERM=. NEG-NOISE=. NEG-PROX=.\n..............\n----------------------------------------------------------------------\nRan 14 tests in 24.791s\n\nOK\n"
+   },
+   "test_pgc_seal.py": {
+    "rc": 0,
+    "tail": "........................\n----------------------------------------------------------------------\nRan 24 tests in 1.574s\n\nOK\n"
+   }
+  },
+  "C-RED_branch_table_failures": [],
+  "C-GRAD-REAL": {
+   "pass": true,
+   "n_sets": 256,
+   "token_w_moved": 0.2559998333454132,
+   "token_b_moved": 0.0010000001639127731,
+   "u_moved": [
+    0.0,
+    0.009999997913837433,
+    0.009999997913837433,
+    0.009999996982514858,
+    0.009999997913837433,
+    0.009999996982514858,
+    0.009999996051192284,
+    0.009999996982514858,
+    0.009999987669289112
+   ],
+   "column_varies": [
+    false,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "zero_block_u_max": 0.0,
+   "zero_block_token_w_moved": 0.2559998333454132
+  },
+  "phase_A_label_free_pass": true,
+  "C-AGREE": {
+   "nc": {
+    "exact_frac": 1.0,
+    "n_prop": 316224
+   },
+   "dac": {
+    "exact_frac": 1.0,
+    "n_prop": 316224,
+    "pass": true
+   }
+  },
+  "label_identity": {
+   "P(dac_frac_out>0 | DAC=0)": 1.0,
+   "P(dac_clear_min<0 | DAC=0)": 1.0,
+   "P(dac_clear_min>=0 | DAC=1)": 1.0,
+   "n_dac0": 53221,
+   "n_prop": 316224
+  },
+  "C-ADMIT": {
+   "admissible": true,
+   "controls_ok": true,
+   "controls": {
+    "POS-REGISTERED": {
+     "flagged": true,
+     "expected_flagged": true,
+     "read_right": true,
+     "hits_by_family": {
+      "U": 0,
+      "P": 43,
+      "V": 107,
+      "A": 0,
+      "T": 4,
+      "LIN": 1
+     },
+     "best_unsafe_proof_by_family": {
+      "U": {
+       "precision": 0.8428850704805021,
+       "recall": 0.15392420285225758,
+       "rule": "C7 < 0.1"
+      },
+      "P": {
+       "precision": 1.0,
+       "recall": 0.3336089137746378,
+       "rule": "C1 + 0.0 < C0"
+      },
+      "V": {
+       "precision": 1.0,
+       "recall": 0.16328141147291483,
+       "rule": "V(C1 + 0.0 < min(C0, C2))"
+      },
+      "A": {
+       "precision": 0.29528571428571426,
+       "recall": 0.03883805264839067,
+       "rule": "max C < 0.5"
+      },
+      "T": {
+       "precision": 1.0,
+       "recall": 0.00584575142675967,
+       "rule": "(C8-C0) > -0.009074 & (C7-C0) > 0 & min > 0.09856 & C9 > 0.2714 & (C5-C0) <= 0"
+      },
+      "LIN": {
+       "precision": 1.0,
+       "recall": 0.005013474952441344,
+       "rule": "LIN top-prefix"
+      }
+     },
+     "top": [
+      {
+       "rule": "C8 + 0.0 < C0",
+       "family": "P",
+       "precision": 1.0,
+       "recall": 0.7760658386727044
+      },
+      {
+       "rule": "(C8-C0) <= -0.009074",
+       "family": "T",
+       "precision": 1.0,
+       "recall": 0.7431039949270767
+      }
+     ]
+    },
+    "POS-EQUAL": {
+     "flagged": true,
+     "expected_flagged": true,
+     "read_right": true,
+     "hits_by_family": {
+      "U": 4,
+      "P": 0,
+      "V": 0,
+      "A": 2,
+      "T": 1,
+      "LIN": 1
+     },
+     "best_unsafe_proof_by_family": {
+      "U": {
+       "precision": 1.0,
+       "recall": 1.0,
+       "rule": "C9 < 0.1"
+      },
+      "P": {
+       "precision": 0.43765524093392943,
+       "recall": 0.016553616053813343,
+       "rule": "C4 + 2.0 < C3"
+      },
+      "V": {
+       "precision": 0.8838427947598253,
+       "recall": 0.038030100900020666,
+       "rule": "V(C5 + 0.5 < min(C4, C6))"
+      },
+      "A": {
+       "precision": 1.0,
+       "recall": 0.04017211251197835,
+       "rule": "max C < 0.5"
+      },
+      "T": {
+       "precision": 1.0,
+       "recall": 1.0,
+       "rule": "C9 <= 1"
+      },
+      "LIN": {
+       "precision": 1.0,
+       "recall": 0.005013474952441344,
+       "rule": "LIN top-prefix"
+      }
+     },
+     "top": [
+      {
+       "rule": "C9 < 0.1",
+       "family": "U",
+       "precision": 1.0,
+       "recall": 1.0
+      },
+      {
+       "rule": "C9 < 0.25",
+       "family": "U",
+       "precision": 1.0,
+       "recall": 1.0
+      }
+     ]
+    },
+    "POS-VALUE": {
+     "flagged": true,
+     "expected_flagged": true,
+     "read_right": true,
+     "hits_by_family": {
+      "U": 6,
+      "P": 0,
+      "V": 0,
+      "A": 4,
+      "T": 2,
+      "LIN": 1
+     },
+     "best_unsafe_proof_by_family": {
+      "U": {
+       "precision": 1.0,
+       "recall": 0.5791135078258582,
+       "rule": "C9 < 0.1"
+      },
+      "P": {
+       "precision": 0.6786533163980667,
+       "recall": 0.7730407170102027,
+       "rule": "C9 + 0.25 < C3"
+      },
+      "V": {
+       "precision": 0.8838427947598253,
+       "recall": 0.038030100900020666,
+       "rule": "V(C5 + 0.5 < min(C4, C6))"
+      },
+      "A": {
+       "precision": 1.0,
+       "recall": 0.03402792130925762,
+       "rule": "max C < 0.5"
+      },
+      "T": {
+       "precision": 1.0,
+       "recall": 0.056535351934052,
+       "rule": "C9 > 0.7314 & max <= 3.705 & (C9-C0) <= 1.246 & mean <= 1.624 & (C9-C3) <= 0.8838"
+      },
+      "LIN": {
+       "precision": 1.0,
+       "recall": 0.005013474952441344,
+       "rule": "LIN top-prefix"
+      }
+     },
+     "top": [
+      {
+       "rule": "C9 < 3.0",
+       "family": "U",
+       "precision": 0.9996806792140952,
+       "recall": 1.0
+      },
+      {
+       "rule": "LIN top-prefix",
+       "family": "LIN",
+       "precision": 0.9990101753969197,
+       "recall": 1.0
+      }
+     ]
+    },
+    "POS-ORDER": {
+     "flagged": true,
+     "expected_flagged": true,
+     "read_right": true,
+     "hits_by_family": {
+      "U": 0,
+      "P": 1,
+      "V": 0,
+      "A": 0,
+      "T": 1,
+      "LIN": 1
+     },
+     "best_unsafe_proof_by_family": {
+      "U": {
+       "precision": 0.9573719522173131,
+       "recall": 0.2198568234343586,
+       "rule": "C9 < 0.1"
+      },
+      "P": {
+       "precision": 1.0,
+       "recall": 1.0,
+       "rule": "C9 + 0.0 < C6"
+      },
+      "V": {
+       "precision": 0.8838427947598253,
+       "recall": 0.038030100900020666,
+       "rule": "V(C5 + 0.5 < min(C4, C6))"
+      },
+      "A": {
+       "precision": 0.3149211960524378,
+       "recall": 0.04017211251197835,
+       "rule": "max C < 0.5"
+      },
+      "T": {
+       "precision": 1.0,
+       "recall": 1.0,
+       "rule": "(C9-C6) <= 0.05"
+      },
+      "LIN": {
+       "precision": 1.0,
+       "recall": 0.005013474952441344,
+       "rule": "LIN top-prefix"
+      }
+     },
+     "top": [
+      {
+       "rule": "C9 + 0.0 < C6",
+       "family": "P",
+       "precision": 1.0,
+       "recall": 1.0
+      },
+      {
+       "rule": "(C9-C6) <= 0.05",
+       "family": "T",
+       "precision": 1.0,
+       "recall": 1.0
+      }
+     ]
+    },
+    "POS-LIN": {
+     "flagged": true,
+     "expected_flagged": true,
+     "read_right": true,
+     "hits_by_family": {
+      "U": 0,
+      "P": 0,
+      "V": 0,
+      "A": 0,
+      "T": 0,
+      "LIN": 1
+     },
+     "best_unsafe_proof_by_family": {
+      "U": {
+       "precision": 0.8428850704805021,
+       "recall": 0.15392420285225758,
+       "rule": "C6 < 0.1"
+      },
+      "P": {
+       "precision": 0.6575952498762989,
+       "recall": 0.04994269179459236,
+       "rule": "C1 + 0.25 < C9"
+      },
+      "V": {
+       "precision": 0.8838427947598253,
+       "recall": 0.038030100900020666,
+       "rule": "V(C5 + 0.5 < min(C4, C6))"
+      },
+      "A": {
+       "precision": 0.3024473051350969,
+       "recall": 0.04017211251197835,
+       "rule": "max C < 0.5"
+      },
+      "T": {
+       "precision": 0.9634506852996506,
+       "recall": 0.07104074191502853,
+       "rule": "C7 > 0.4381 & C6 <= 0.3748 & (C6-C4) <= -0.136 & (C6-C4) <= -0.5805 & (C6-C5) <= -0.07068"
+      },
+      "LIN": {
+       "precision": 1.0,
+       "recall": 0.005013474952441344,
+       "rule": "LIN top-prefix"
+      }
+     },
+     "top": [
+      {
+       "rule": "LIN top-prefix",
+       "family": "LIN",
+       "precision": 0.9990101753969197,
+       "recall": 1.0
+      }
+     ]
+    },
+    "NEG-PERM": {
+     "flagged": false,
+     "expected_flagged": false,
+     "read_right": true,
+     "hits_by_family": {
+      "U": 0,
+      "P": 0,
+      "V": 0,
+      "A": 0,
+      "T": 0,
+      "LIN": 0
+     },
+     "best_unsafe_proof_by_family": {
+      "U": {
+       "precision": 0.46813663013000256,
+       "recall": 0.06901411097123315,
+       "rule": "C4 < 0.1"
+      },
+      "P": {
+       "precision": 0.32934824527574236,
+       "recall": 0.016046297514139156,
+       "rule": "C4 + 2.0 < C3"
+      },
+      "V": {
+       "precision": 0.3181328545780969,
+       "recall": 0.016647563931530787,
+       "rule": "V(C2 + 0.25 < min(C1, C3))"
+      },
+      "A": {
+       "precision": 0.2659106688266605,
+       "recall": 0.021589222299468254,
+       "rule": "max C < 0.5"
+      },
+      "T": {
+       "precision": 0.6487488415199258,
+       "recall": 0.0277425491439442,
+       "rule": "min <= 0.3817 & min <= 0.1819 & C0 > 0.2497 & C3 <= 0.1493 & (C0+C2-2C1) <= -0.05544"
+      },
+      "LIN": {
+       "precision": 0.6520618556701031,
+       "recall": 0.005013474952441344,
+       "rule": "LIN top-prefix"
+      }
+     },
+     "top": []
+    },
+    "NEG-NOISE": {
+     "flagged": false,
+     "expected_flagged": false,
+     "read_right": true,
+     "hits_by_family": {
+      "U": 0,
+      "P": 0,
+      "V": 0,
+      "A": 0,
+      "T": 0,
+      "LIN": 0
+     },
+     "best_unsafe_proof_by_family": {
+      "U": {
+       "precision": 0.8428850704805021,
+       "recall": 0.15392420285225758,
+       "rule": "C6 < 0.1"
+      },
+      "P": {
+       "precision": 0.5139607032057911,
+       "recall": 0.009338419045113771,
+       "rule": "C7 + 2.0 < C9"
+      },
+      "V": {
+       "precision": 0.8838427947598253,
+       "recall": 0.038030100900020666,
+       "rule": "V(C5 + 0.5 < min(C4, C6))"
+      },
+      "A": {
+       "precision": 0.306975781411716,
+       "recall": 0.027864940530993403,
+       "rule": "max C < 0.5"
+      },
+      "T": {
+       "precision": 0.9634506852996506,
+       "recall": 0.07104074191502853,
+       "rule": "C7 > 0.4381 & C6 <= 0.3748 & (C6-C4) <= -0.136 & (C6-C4) <= -0.5805 & (C6-C5) <= -0.07068"
+      },
+      "LIN": {
+       "precision": 0.7021791767554479,
+       "recall": 0.0057466708941027265,
+       "rule": "LIN top-prefix"
+      }
+     },
+     "top": []
+    },
+    "NEG-PROX": {
+     "flagged": false,
+     "expected_flagged": false,
+     "read_right": true,
+     "hits_by_family": {
+      "U": 0,
+      "P": 0,
+      "V": 0,
+      "A": 0,
+      "T": 0,
+      "LIN": 0
+     },
+     "best_unsafe_proof_by_family": {
+      "U": {
+       "precision": 0.8428850704805021,
+       "recall": 0.15392420285225758,
+       "rule": "C6 < 0.1"
+      },
+      "P": {
+       "precision": 0.43765524093392943,
+       "recall": 0.016553616053813343,
+       "rule": "C4 + 2.0 < C3"
+      },
+      "V": {
+       "precision": 0.8838427947598253,
+       "recall": 0.038030100900020666,
+       "rule": "V(C5 + 0.5 < min(C4, C6))"
+      },
+      "A": {
+       "precision": 0.3186865107488779,
+       "recall": 0.02534713740816595,
+       "rule": "max C < 0.5"
+      },
+      "T": {
+       "precision": 0.9613500272182907,
+       "recall": 0.06999048826886493,
+       "rule": "min <= 0.2297 & C6 > 0.291 & C7 <= 0.1887 & (C8-C7) > 0.1037 & (C7-C6) <= -0.304"
+      },
+      "LIN": {
+       "precision": 0.6924219910846954,
+       "recall": 0.00923430564362714,
+       "rule": "LIN top-prefix"
+      }
+     },
+     "top": []
+    }
+   },
+   "candidate": {
+    "flagged": false,
+    "hits_by_family": {
+     "U": 0,
+     "P": 0,
+     "V": 0,
+     "A": 0,
+     "T": 0,
+     "LIN": 0
+    },
+    "best_unsafe_proof_by_family": {
+     "U": {
+      "precision": 0.8428850704805021,
+      "recall": 0.15392420285225758,
+      "rule": "C6 < 0.1"
+     },
+     "P": {
+      "precision": 0.43765524093392943,
+      "recall": 0.016553616053813343,
+      "rule": "C4 + 2.0 < C3"
+     },
+     "V": {
+      "precision": 0.8838427947598253,
+      "recall": 0.038030100900020666,
+      "rule": "V(C5 + 0.5 < min(C4, C6))"
+     },
+     "A": {
+      "precision": 0.30236175929854336,
+      "recall": 0.04017211251197835,
+      "rule": "max C < 0.5"
+     },
+     "T": {
+      "precision": 0.8863916091400439,
+      "recall": 0.3282339885859226,
+      "rule": "min <= 0.2343 & C0 > 0.2497 & min <= 0.1051 & C8 > 0.1846 & C1 > 0.2376"
+     },
+     "LIN": {
+      "precision": 0.849079754601227,
+      "recall": 0.19197844007609385,
+      "rule": "LIN top-prefix"
+     }
+    },
+    "n_rules": 792,
+    "n_unsafe": 53221,
+    "n_proposals": 316224,
+    "top": []
+   },
+   "red_arm_controls_ok": false,
+   "red_arm_leaks_through": [
+    "POS-EQUAL",
+    "POS-LIN",
+    "POS-ORDER",
+    "POS-REGISTERED",
+    "POS-VALUE"
+   ],
+   "seconds": 82.25432991981506,
+   "pass": true
+  },
+  "C-REACH": {
+   "F_auc": {
+    "plantlabel_LG_s0": 1.0,
+    "plantlabel_G_s0": 1.0,
+    "plantlabel_LG_s1": 1.0,
+    "plantlabel_G_s1": 1.0
+   },
+   "min": 0.99,
+   "pass": true
+  },
+  "gate_pass": true
+ }
+}

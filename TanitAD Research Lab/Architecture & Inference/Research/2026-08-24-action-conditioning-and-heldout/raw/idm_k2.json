@@ -1,0 +1,78 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "split": "HELD-OUT, LEAD-MATCHED",
+ "k": 2,
+ "function_class": "RFF+ridge, convex, clip-disjoint lambda",
+ "arms": {
+  "rdw8p30k": {
+   "step": 30000,
+   "channels": {
+    "steer": {
+     "z_t alone": {
+      "true_within": -0.0738,
+      "shuffled_within": -0.0175,
+      "delta_vs_z_t_alone": 0.0,
+      "t": 0.0
+     },
+     "[z_t, z_t+k]": {
+      "true_within": -0.021,
+      "shuffled_within": -0.0281,
+      "delta_vs_z_t_alone": 0.0528,
+      "t": 1.23
+     },
+     "[z_t, dz]": {
+      "true_within": -0.0596,
+      "shuffled_within": -0.0816,
+      "delta_vs_z_t_alone": 0.0142,
+      "t": 0.28
+     },
+     "pixels (floor)": {
+      "true_within": -0.0986,
+      "shuffled_within": 0.0452,
+      "delta_vs_z_t_alone": -0.0247,
+      "t": -0.24
+     },
+     "constant (control)": {
+      "true_within": 0.0,
+      "shuffled_within": 0.0,
+      "delta_vs_z_t_alone": 0.0738,
+      "t": 1.07
+     }
+    },
+    "accel": {
+     "z_t alone": {
+      "true_within": 0.1381,
+      "shuffled_within": -0.0409,
+      "delta_vs_z_t_alone": 0.0,
+      "t": 0.0
+     },
+     "[z_t, z_t+k]": {
+      "true_within": 0.1369,
+      "shuffled_within": 0.0028,
+      "delta_vs_z_t_alone": -0.0012,
+      "t": -0.02
+     },
+     "[z_t, dz]": {
+      "true_within": 0.0674,
+      "shuffled_within": -0.0308,
+      "delta_vs_z_t_alone": -0.0707,
+      "t": -1.22
+     },
+     "pixels (floor)": {
+      "true_within": 0.1915,
+      "shuffled_within": 0.0298,
+      "delta_vs_z_t_alone": 0.0534,
+      "t": 0.52
+     },
+     "constant (control)": {
+      "true_within": 0.0,
+      "shuffled_within": 0.0,
+      "delta_vs_z_t_alone": -0.1381,
+      "t": -2.16
+     }
+    }
+   }
+  }
+ }
+}

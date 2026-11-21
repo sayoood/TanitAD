@@ -1,0 +1,114 @@
+{
+ "arm_dir": "msi_on",
+ "max_speed_input": true,
+ "max_speed_mode": "quantized",
+ "max_speed_stats": {
+  "train": {
+   "schema": "tanitad.max_speed_input/1",
+   "control_units": "m_s",
+   "mode": "quantized",
+   "steps_kmh": [
+    20,
+    30,
+    50,
+    70,
+    80,
+    100,
+    120,
+    130
+   ],
+   "steps_ms": [
+    5.555556,
+    8.333333,
+    13.888889,
+    19.444444,
+    22.222222,
+    27.777778,
+    33.333333,
+    36.111111
+   ],
+   "rule": "snap UP to the next posted limit; above the top step the value is the top step and over_ceiling is True",
+   "v_scale_ms": 36.11111111111111,
+   "dims": 3,
+   "dim_names": [
+    "value_norm",
+    "over_ceiling",
+    "valid"
+   ],
+   "source_field": "speed_max_input.v_max_ms (= g_tac.goals.SPEED_BAND.v_hi_ms)",
+   "provenance": "ego-future (stands in for a map/nav speed-limit service)",
+   "role": "INPUT CHANNEL, user/nav-supplied at inference, like nav_command",
+   "label_md5": "baf5dadca9feaef658c2261452338582",
+   "allow_oracle_nav": true,
+   "quantized_by": "tanitad.refs.max_speed_input.encode_block (model side, ONCE); the loader ships the RAW shipped v_max_ms",
+   "bucket_cross_check": "module snap == record v_max_bucket_kmh on every clip (refused otherwise)",
+   "n_clips": 147,
+   "n_clips_with_block": 147,
+   "n_clips_over_ceiling": 0,
+   "n_windows": 1026,
+   "n_windows_with_ceiling": 1026,
+   "window_ceiling_frac": 1.0
+  },
+  "eval": null
+ },
+ "param_breakdown": {
+  "core": 61054298,
+  "phi_tac": 1708288,
+  "str_goal_head": 771,
+  "gstr_cond": 66816,
+  "tac_heads": 14364,
+  "tac_latent_proj": 262656,
+  "scorer": 1156,
+  "nav_inject": 50176,
+  "max_speed_inject": 25472,
+  "total": 63183997
+ },
+ "seam_max_speed": {
+  "requested": true,
+  "cfg": true,
+  "mode": "quantized",
+  "d_speed": 32,
+  "meta": {
+   "schema": "tanitad.max_speed_input/1",
+   "control_units": "m_s",
+   "mode": "quantized",
+   "steps_kmh": [
+    20,
+    30,
+    50,
+    70,
+    80,
+    100,
+    120,
+    130
+   ],
+   "steps_ms": [
+    5.555556,
+    8.333333,
+    13.888889,
+    19.444444,
+    22.222222,
+    27.777778,
+    33.333333,
+    36.111111
+   ],
+   "rule": "snap UP to the next posted limit; above the top step the value is the top step and over_ceiling is True",
+   "v_scale_ms": 36.11111111111111,
+   "dims": 3,
+   "dim_names": [
+    "value_norm",
+    "over_ceiling",
+    "valid"
+   ],
+   "source_field": "speed_max_input.v_max_ms (= g_tac.goals.SPEED_BAND.v_hi_ms)",
+   "provenance": "ego-future (stands in for a map/nav speed-limit service)",
+   "role": "INPUT CHANNEL, user/nav-supplied at inference, like nav_command"
+  },
+  "required_controls": [
+   "shuffled",
+   "withheld"
+  ],
+  "controls_note": "⛔ EVAL OBLIGATION, inseparable from this edge and identical to E13's: a max-speed-conditioned result carries a SHUFFLE control (serve another clip's ceiling) and a WITHHOLD control (valid = 0), or 'the arm improved' cannot be separated from 'the arm gained a parameter'.",
+  "built": true
+ }
+}

@@ -1,0 +1,350 @@
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-18-sel-rank/code/srttc_c2_gate.py (tip d2f4a062)
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-18-sel-rank/code/srttc_c2_gate.py (fix)
+@@ -43,8 +43,10 @@
+ from __future__ import annotations
+ 
+ import argparse
++import builtins
+ import dataclasses
+ import hashlib
++import itertools
+ import json
+ import os
+ import re
+@@ -91,20 +93,71 @@
+ 
+ 
+ # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+-# the frozen gate, loaded from the bytes that are hashed (read once, hashed, exec'd from those same bytes: no check-then-use gap)
+-# ----------------------------------------------------------------------------------------------------------------------------------------------------------------
++# module loading.  EVERY load execs the bytes that were hashed into a NEW module of its own (C2-GATE-SIBLING-LEAK, 2026-10-19)
++#
++# The loaders used to register the module in `sys.modules` under a name that carried only the sha256 of the bytes, and to SERVE that module to any later caller holding the same bytes.  That is sound for the
++# bytes and wrong for everything else a module is: its `__file__` (srttc_c2.py:110 and srttc_r1.py:258,858 re-read it at run time) and its state belonged to the FIRST load.  A second code dir with identical
++# bytes was handed the first dir's module; once the first dir was gone `run_c2` raised FileNotFoundError, and while it was there the file that "ran" was the other dir's.  The sibling import had the same shape:
++# `import srttc_r1 as R` (srttc_c2.py:37) was answered by a PROCESS-GLOBAL `sys.modules['srttc_r1']` swapped in for the duration of the exec, and srttc_c2.py's own `sys.path.insert(0, HERE)`
++# (srttc_c2.py:35-36) left the dir on the path for good.
++# Now (1) a unique module name per load: nothing is looked up, nothing is served; (2) a load that raises removes its module; (3) the sibling import of the exec'd module is answered by THAT load's verified
++# module through the exec'd module's OWN `__import__`: `sys.modules['srttc_r1']` and `sys.path` are never consulted for it and never touched; (4) `sys.path` is put back after every exec.
++# Reference pattern: EPR1UB-GATE-CACHE's `load_verified_ub` (epr1ub_gate.py), no cache.  A repeat load costs one exec of a ~60 kB source.
++# ----------------------------------------------------------------------------------------------------------------------------------------------------------------
++_LOADS = itertools.count(1)
++
++
++def _unique_name(stem: str) -> str:
++    """A module name no earlier load used (and none squatting in sys.modules): `<stem>_n<k>`.  The stem carries the sha256 for the log; the counter is what makes every load its own module."""
++    name = f"{stem}_n{next(_LOADS)}"
++    while name in sys.modules:
++        name = f"{stem}_n{next(_LOADS)}"
++    return name
++
++
++def _bound_builtins(bound: dict) -> dict:
++    """A copy of `builtins` whose `__import__` answers `import <name>` for each name in `bound` with exactly that module (the one THIS load verified) and sends every other import to the normal machinery.
++    It is the `__builtins__` of ONE exec'd module, so nothing process-global is touched.  A dotted import of a bound name is refused: it would reach past the verified module."""
++    real = builtins.__import__
++
++    def __import__(name, globals=None, locals=None, fromlist=(), level=0):          # noqa: A001, A002
++        top = name.partition(".")[0]
++        if level == 0 and top in bound:
++            if name != top:
++                raise ImportError(f"import {name!r}: only the verified {top!r} module of this load may be imported, not a submodule of it")
++            return bound[top]
++        return real(name, globals, locals, fromlist, level)
++
++    ns = dict(builtins.__dict__)
++    ns["__import__"] = __import__
++    return ns
++
++
++def _exec_fresh(stem: str, p: str, src: bytes, *, bind: dict | None = None):
++    """Exec `src` (the bytes that were hashed, read once) as a NEW module `<stem>_n<k>` with `__file__ = p`.  `bind` = {import name: verified module}: that module is what `import <name>` inside `src` gives."""
++    name = _unique_name(stem)                                                       # MUTATION-TARGET-SIBLING-NAME
++    mod = types.ModuleType(name)
++    mod.__file__ = p
++    if bind:                                                                        # MUTATION-TARGET-SIBLING-BIND
++        mod.__dict__["__builtins__"] = _bound_builtins(bind)
++    saved_path = list(sys.path)
++    sys.modules[name] = mod                                                         # dataclasses (with `from __future__ import annotations`) looks the module up here
++    try:
++        exec(compile(src, p, "exec", dont_inherit=True), mod.__dict__)
++    except BaseException:
++        sys.modules.pop(name, None)                                                 # MUTATION-TARGET-POISON-GUARD: a load that raised leaves no module behind
++        raise
++    finally:
++        sys.path[:] = saved_path                                                    # srttc_c2.py does `sys.path.insert(0, HERE)` when exec'd: that must not outlive the load
++    return mod
++
++
+ def _load_frozen_gate(code_dir: str = HERE):
++    """The frozen R1 gate, from the bytes that are hashed (read once, hashed, exec'd from those same bytes: no check-then-use gap), as a module of its own.  -> (module, sha256)."""
+     p = os.path.join(code_dir, "srttc_r1_gate.py")
+     src = Path(p).read_bytes()
+     sha = hashlib.sha256(src).hexdigest()
+-    name = "srttc_r1_gate__c2dep_" + sha[:12]
+-    if name in sys.modules:
+-        return sys.modules[name], sha
+-    mod = types.ModuleType(name)
+-    mod.__file__ = p
+-    sys.modules[name] = mod                      # dataclasses (with `from __future__ import annotations`) looks the module up here
+-    exec(compile(src, p, "exec", dont_inherit=True), mod.__dict__)
+-    return mod, sha
++    return _exec_fresh("srttc_r1_gate__c2dep_" + sha[:12], p, src), sha
+ 
+ 
+ G, FROZEN_GATE_SHA = _load_frozen_gate()
+@@ -113,46 +166,29 @@
+ 
+ 
+ def exec_verified_module(code_dir: str, filename: str, modname: str, expect_sha256: str | None = None):
+-    """Exec `filename` from the exact bytes that are hashed and register it as `modname__c2g_<sha>`.  -> (module, sha256).  A module of that name that already exists is the same bytes (the name carries the sha)."""
++    """Exec `filename` from the exact bytes that are hashed, as a NEW module `<modname>__c2g_<sha12>_n<k>` (never a module an earlier load made; its `__file__` is THIS dir's file).  -> (module, sha256)."""
+     p = os.path.join(code_dir, filename)
+     src = Path(p).read_bytes()
+     sha = sha256_bytes(src)
+     if expect_sha256 is not None and sha != expect_sha256:
+         raise GateError(f"{filename} sha256 {sha} != the verified {expect_sha256}")
+-    name = f"{modname}__c2g_{sha[:12]}"
+-    if name in sys.modules:
+-        return sys.modules[name], sha
+-    mod = types.ModuleType(name)
+-    mod.__file__ = p
+-    sys.modules[name] = mod                      # dataclasses (with `from __future__ import annotations`) looks the module up here
+-    exec(compile(src, p, "exec", dont_inherit=True), mod.__dict__)
+-    return mod, sha
++    return _exec_fresh(f"{modname}__c2g_{sha[:12]}", p, src), sha
+ 
+ 
+ def load_verified_pair(code_dir: str, expect: dict) -> tuple:
+-    """-> (srttc_r1 module, srttc_c2 module, shas).  srttc_c2.py does `import srttc_r1 as R`: while it is exec'd, `srttc_r1` resolves to THE verified module (restored afterwards), so the C2 fit runs on the bytes
+-    that were hashed and not on whatever file the import path would find."""
++    """-> (srttc_r1 module, srttc_c2 module, shas), both NEW modules made from the bytes of THIS code_dir that were hashed.  srttc_c2.py does `import srttc_r1 as R`: that import is answered by the srttc_r1
++    module of THIS pair (the exec'd module's own `__import__`, see `_bound_builtins`), so the C2 fit runs on the bytes that were hashed and not on whatever `sys.modules` / the import path would give."""
+     mod, sha_r1 = exec_verified_module(code_dir, "srttc_r1.py", "srttc_r1", expect.get("srttc_r1.py"))
+-    p = os.path.join(code_dir, "srttc_c2.py")
+-    src = Path(p).read_bytes()
+-    sha_c2 = sha256_bytes(src)
+-    if expect.get("srttc_c2.py") is not None and sha_c2 != expect["srttc_c2.py"]:
+-        raise GateError(f"srttc_c2.py sha256 {sha_c2} != the verified {expect['srttc_c2.py']}")
+-    name = f"srttc_c2__c2g_{sha_c2[:12]}_{sha_r1[:12]}"
+-    if name in sys.modules:
+-        return mod, sys.modules[name], {"srttc_r1.py": sha_r1, "srttc_c2.py": sha_c2}
+-    c2mod = types.ModuleType(name)
+-    c2mod.__file__ = p
+-    sys.modules[name] = c2mod
+-    prev = sys.modules.get("srttc_r1")
+-    sys.modules["srttc_r1"] = mod
+-    try:
+-        exec(compile(src, p, "exec", dont_inherit=True), c2mod.__dict__)
+-    finally:
+-        if prev is None:
+-            sys.modules.pop("srttc_r1", None)
+-        else:
+-            sys.modules["srttc_r1"] = prev
++    try:
++        p = os.path.join(code_dir, "srttc_c2.py")
++        src = Path(p).read_bytes()
++        sha_c2 = sha256_bytes(src)
++        if expect.get("srttc_c2.py") is not None and sha_c2 != expect["srttc_c2.py"]:
++            raise GateError(f"srttc_c2.py sha256 {sha_c2} != the verified {expect['srttc_c2.py']}")
++        c2mod = _exec_fresh(f"srttc_c2__c2g_{sha_c2[:12]}_{sha_r1[:12]}", p, src, bind={"srttc_r1": mod})
++    except BaseException:
++        sys.modules.pop(mod.__name__, None)                                         # a pair that failed leaves neither half behind
++        raise
+     return mod, c2mod, {"srttc_r1.py": sha_r1, "srttc_c2.py": sha_c2}
+ 
+ 
+
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-18-sel-rank/code/test_srttc_c2_gate.py (tip d2f4a062)
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-18-sel-rank/code/test_srttc_c2_gate.py (fix)
+@@ -16,6 +16,8 @@
+   ENTRY    srttc_c2_run.py REFUSES with no token (exit 3, nothing written), with --no-gate-stage-ack (exit 2), with the lc sub-command (exit 2), with a token for another argv, with srttc_c2.py edited after the mint;
+            with a valid token it writes the C2 rows + result + attestation, bound to the R1 run; a second run writes nothing; the attestation refuses an edited result
+   MUTATION the enforcement code itself: each marked line of srttc_c2_gate.py is mutated and a scenario that is GREEN on the original must go RED
++  LOADERS  C2-GATE-SIBLING-LEAK: every load execs the hashed bytes into a module of its own: a second code dir (a different srttc_r1, identical bytes, or the first dir DELETED) runs ITS files,
++           never a sys.modules / sys.path / earlier-load module; a load that raises leaves nothing behind; restoring each process-global lookup must turn the arms RED
+ """
+ from __future__ import annotations
+ 
+@@ -829,5 +831,181 @@
+         self.assertTrue(any("REAL labels" in r for r in mut["reasons"]), "the 'received the REAL labels' arm still catches the real-label fit")
+ 
+ 
++# ----------------------------------------------------------------------------------------------------------------------------------------------------------------
++@dataclasses.dataclass
++class _FakeFitData:
++    """The two fields `srttc_c2.fit_c2_rows` reads (`y3`, `n_sets`) and `dataclasses.replace`s: enough to run the module's own function against a stand-in `srttc_r1.fit_row` that returns a sentinel."""
++    y3: torch.Tensor
++    n_sets: int
++
++
++class TestEachLoadUsesExactlyTheVerifiedFiles(unittest.TestCase):
++    """C2-GATE-SIBLING-LEAK (BACKLOG, fix before any reuse of the C2 chain).  The loaders registered the module in `sys.modules` under the sha256 of its bytes and served it to every later caller with the
++    same bytes, and srttc_c2.py's `import srttc_r1 as R` was answered by a process-global `sys.modules['srttc_r1']`.  A second code dir therefore ran the FIRST dir's module (its `__file__`, its state): once that
++    dir was gone `run_c2` raised FileNotFoundError.  Every arm asserts on a SENTINEL value the module under test returns, not on a path string, and each arm is paired with the mutant that restores the lookup."""
++
++    GATE_SRC = rb(os.path.join(HERE, "srttc_c2_gate.py")).decode("utf-8")
++    FILES = ("srttc_r1_gate.py", "srttc_r1.py", "srttc_c2.py")
++    PREFIXES = ("srttc_r1__c2g_", "srttc_c2__c2g_", "srttc_r1_gate__c2dep_")
++
++    @classmethod
++    def setUpClass(cls):
++        cls.tmp = tempfile.mkdtemp(prefix="c2g_sibling_")
++
++    @classmethod
++    def tearDownClass(cls):
++        for k in [k for k in sys.modules if k.startswith("srttc_c2_gate_sibling_mutant_")]:
++            sys.modules.pop(k, None)
++        shutil.rmtree(cls.tmp, ignore_errors=True)
++
++    # -- helpers --------------------------------------------------------------------------------------------------------------------------------------------------
++    def mk(self, name, tag, uid, **boom):
++        """A code dir with the real three files.  srttc_r1.py gets `SENTINEL = tag` and a `fit_row` that returns ('fit_row from', tag) appended (its sha256 therefore depends on `tag` and `uid`: the same tag and
++        uid is the SAME bytes in another dir).  A file named in `boom` gets a `raise RuntimeError(msg)` appended."""
++        d = os.path.join(self.tmp, f"{name}_{uid}")
++        os.makedirs(d)
++        for f in self.FILES:
++            data = rb(os.path.join(HERE, f))
++            if f == "srttc_r1.py":
++                data += (f"\n\nSENTINEL = {tag!r}\n\n\ndef fit_row(*a, **k):\n    return ('fit_row from', SENTINEL)\n\n# uid {uid}\n").encode("utf-8")
++            if f in boom:
++                data += ("\nraise RuntimeError(%r)\n" % boom[f]).encode("utf-8")
++            wb(os.path.join(d, f), data)
++        return d
++
++    def snap(self):
++        return {k for k in sys.modules if k.startswith(self.PREFIXES)}
++
++    def run_fit(self, c2):
++        """`srttc_c2.fit_c2_rows` as the module ITSELF runs it: its default `fit` is `R.fit_row`, so the row it returns is whatever the srttc_r1 it was bound to returns."""
++        rows, _ = c2.fit_c2_rows(_FakeFitData(torch.zeros(3, 8), 3), None, (0,), None, None)
++        return rows["0"]
++
++    def mutant(self, marker, new, name):
++        """srttc_c2_gate.py with the ONE line that carries `marker` replaced by `new` (the lines of `new` are indented like the original)."""
++        lines = self.GATE_SRC.split("\n")
++        idx = [i for i, ln in enumerate(lines) if marker in ln]
++        self.assertEqual(len(idx), 1, (marker, len(idx)))
++        ln = lines[idx[0]]
++        indent = ln[:len(ln) - len(ln.lstrip())]
++        lines[idx[0]] = "\n".join(indent + x for x in new.split("\n"))
++        modname = f"srttc_c2_gate_sibling_mutant_{name}"
++        m = types.ModuleType(modname)
++        m.__file__ = os.path.join(HERE, "srttc_c2_gate.py")
++        sys.modules[modname] = m
++        exec(compile("\n".join(lines), m.__file__, "exec", dont_inherit=True), m.__dict__)
++        return m
++
++    # -- the arms: each takes a gate module and raises AssertionError when that gate hands a load the wrong module ---------------------------------------------------
++    def arm_poison(self, gm):
++        """Code dirs A, B (a DIFFERENT srttc_r1) and A2 (the SAME bytes as A, in another dir) are loaded in a process that already has some other `srttc_r1` registered under that name.  Each load must run ITS
++        dir's srttc_r1: asserted by the sentinel its `fit_row` returns through `srttc_c2.fit_c2_rows`."""
++        uid = os.urandom(6).hex()
++        dirs = [self.mk(f"pa_{n}", tag, uid) for n, tag in (("A", "A"), ("B", "B"), ("A2", "A"))]
++        decoy = types.ModuleType("srttc_r1")
++        decoy.SENTINEL = "GLOBAL"
++        decoy.fit_row = lambda *a, **k: ("fit_row from", "GLOBAL")
++        saved, path0 = sys.modules.get("srttc_r1"), list(sys.path)
++        sys.modules["srttc_r1"] = decoy                                           # a process that already imported another srttc_r1 (every test run does: setUpModule)
++        try:
++            loads = [gm.load_verified_pair(d, {}) for d in dirs]
++            untouched = sys.modules.get("srttc_r1") is decoy
++            path_same = sys.path == path0
++        finally:
++            if saved is None:
++                sys.modules.pop("srttc_r1", None)
++            else:
++                sys.modules["srttc_r1"] = saved
++            sys.path[:] = path0
++        for tag, (r1, c2, _shas) in zip(("A", "B", "A"), loads):
++            self.assertIs(c2.R, r1, f"{tag}: srttc_c2's R is not the srttc_r1 that was loaded with it")
++            self.assertEqual(r1.SENTINEL, tag, f"{tag}: the srttc_r1 module of this load carries another dir's sentinel")
++            self.assertEqual(self.run_fit(c2), ("fit_row from", tag), f"{tag}: the C2 fit ran another module's srttc_r1 code")
++        self.assertIsNot(loads[2][0], loads[0][0], "identical bytes in a second dir were served the first dir's srttc_r1 module")
++        self.assertIsNot(loads[2][1], loads[0][1], "identical bytes in a second dir were served the first dir's srttc_c2 module")
++        self.assertTrue(untouched, "a load replaced or removed sys.modules['srttc_r1'] (process-global state)")
++        self.assertTrue(path_same, "a load left an entry on sys.path")
++
++    def arm_gone(self, gm):
++        """A is loaded and then DELETED; B (identical bytes) is loaded next.  B must not raise, must not carry A's state, and the file its module points at (what `run_c2` re-reads at srttc_c2.py:110) must
++        be readable and be the bytes that were verified."""
++        uid = os.urandom(6).hex()
++        dA = self.mk("pb_A", "same", uid)
++        r1A, _c2A, _ = gm.load_verified_pair(dA, {})
++        r1A.LEFT_BY_A = "state of A"
++        shutil.rmtree(dA)
++        dB = self.mk("pb_B", "same", uid)
++        r1B, c2B, shas = gm.load_verified_pair(dB, {})
++        self.assertFalse(hasattr(r1B, "LEFT_BY_A"), "B was handed A's module object (its state is visible)")
++        self.assertIsNot(r1B, r1A)
++        with open(os.path.abspath(c2B.R.__file__), "rb") as f:
++            self.assertEqual(hashlib.sha256(f.read()).hexdigest(), shas["srttc_r1.py"], "the file the loaded module points at is not the file whose sha256 was verified")
++
++    def arm_failed_load(self, gm):
++        """A load whose exec raises leaves no module in sys.modules, restores sys.path and never touches sys.modules['srttc_r1']; the same bytes raise again on the next call."""
++        uid = os.urandom(6).hex()
++        cases = (("frozen gate", {"srttc_r1_gate.py": "boom frozen"}, lambda d: gm._load_frozen_gate(d)),
++                 ("exec_verified_module", {"srttc_r1.py": "boom evm"}, lambda d: gm.exec_verified_module(d, "srttc_r1.py", "srttc_r1")),
++                 ("pair, srttc_c2.py raises", {"srttc_c2.py": "boom c2"}, lambda d: gm.load_verified_pair(d, {})),
++                 ("pair, srttc_r1.py raises", {"srttc_r1.py": "boom r1"}, lambda d: gm.load_verified_pair(d, {})))
++        for i, (label, broken, call) in enumerate(cases):
++            d = self.mk(f"pf{i}", "boom", uid, **broken)
++            before, r1_before, path0 = self.snap(), sys.modules.get("srttc_r1"), list(sys.path)
++            for attempt in (1, 2):
++                with self.assertRaises(RuntimeError) as cm:
++                    call(d)
++                self.assertIn(next(iter(broken.values())), str(cm.exception), f"{label}, attempt {attempt}")
++            self.assertEqual(self.snap() - before, set(), f"{label}: a FAILED load left modules registered in sys.modules")
++            self.assertIs(sys.modules.get("srttc_r1"), r1_before, f"{label}: sys.modules['srttc_r1'] changed")
++            self.assertEqual(sys.path, path0, f"{label}: sys.path changed")
++
++    # -- the tests ------------------------------------------------------------------------------------------------------------------------------------------------
++    def test_a_second_code_dir_runs_its_own_srttc_r1_poison_arm(self):
++        self.arm_poison(CG)
++
++    def test_a_deleted_first_code_dir_is_never_touched_by_a_later_load(self):
++        self.arm_gone(CG)
++
++    def test_a_failed_load_leaves_nothing_behind_and_fails_again(self):
++        self.arm_failed_load(CG)
++
++    def test_restoring_each_process_global_lookup_turns_the_arms_red(self):
++        reuse = self.mutant("MUTATION-TARGET-SIBLING-NAME", "name = stem\nif name in sys.modules:\n    return sys.modules[name]", "reuse")     # the sha-keyed sys.modules lookup of the old loaders
++        nobind = self.mutant("MUTATION-TARGET-SIBLING-BIND", "if False:", "nobind")                                                        # `import srttc_r1` answered by sys.modules / sys.path again
++        noguard = self.mutant("MUTATION-TARGET-POISON-GUARD", "pass", "noguard")                                                           # a failed load stays registered
++        for arm in (self.arm_poison, self.arm_gone, self.arm_failed_load):
++            arm(CG)                                                                    # the GREEN side, in the same breath
++        for name, gm, arms in (("sha-keyed sys.modules lookup", reuse, (self.arm_poison, self.arm_gone)), ("global srttc_r1 binding", nobind, (self.arm_poison,)),
++                               ("no poison guard", noguard, (self.arm_failed_load,))):
++            for arm in arms:
++                with self.assertRaises(AssertionError, msg=f"{name}: the mutant must turn {arm.__name__} RED"):
++                    arm(gm)
++
++    def test_the_sibling_import_is_answered_by_the_verified_module_only(self):
++        import builtins
++        process_import = builtins.__import__
++        sentinel = types.ModuleType("verified_srttc_r1")
++        ns = CG._bound_builtins({"srttc_r1": sentinel})
++        imp = ns["__import__"]
++        self.assertIs(imp("srttc_r1"), sentinel)
++        self.assertIs(imp("srttc_r1", None, None, ("Cfg",), 0), sentinel)
++        self.assertIs(imp("json"), json)                                                # everything else goes to the normal machinery
++        with self.assertRaises(ImportError):
++            imp("srttc_r1.sub")                                                         # a submodule would reach past the verified module
++        self.assertIs(builtins.__import__, process_import)                              # the process-wide __import__ is untouched
++        self.assertIsNot(ns["__import__"], process_import)
++
++    def test_every_load_is_a_module_of_its_own_with_its_own_file(self):
++        uid = os.urandom(6).hex()
++        d1, d2 = self.mk("pe1", "same", uid), self.mk("pe2", "same", uid)
++        (a1, b1, _), (a2, b2, _) = CG.load_verified_pair(d1, {}), CG.load_verified_pair(d2, {})
++        self.assertEqual((os.path.dirname(a1.__file__), os.path.dirname(a2.__file__)), (d1, d2))
++        self.assertEqual((os.path.dirname(b1.__file__), os.path.dirname(b2.__file__)), (d1, d2))
++        self.assertEqual(len({a1.__name__, a2.__name__, b1.__name__, b2.__name__}), 4)
++        g1, g2 = CG._load_frozen_gate(d1)[0], CG._load_frozen_gate(d2)[0]
++        self.assertIsNot(g1, g2)
++        self.assertIsNot(g1, CG.G)
++
++
+ if __name__ == "__main__":
+     unittest.main(verbosity=2)

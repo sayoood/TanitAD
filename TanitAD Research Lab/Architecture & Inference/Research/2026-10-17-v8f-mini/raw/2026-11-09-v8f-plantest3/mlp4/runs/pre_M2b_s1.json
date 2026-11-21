@@ -1,0 +1,80 @@
+{
+ "tag": "M2b_s1",
+ "fit_set": "N1053, four-frame reader",
+ "n_inner_fit_episodes": 1053,
+ "n_inner_held_episodes": 17,
+ "enc_L1": {
+  "r2_speed": 0.6856701763934585,
+  "r2_yaw": 0.3957584276016919,
+  "n_speed": 3094,
+  "n_yaw": 3094
+ },
+ "enc_L2": {
+  "r2_speed": NaN,
+  "r2_yaw": NaN,
+  "n_speed": 0,
+  "n_yaw": 0
+ },
+ "enc_L1_k12": {
+  "r2_speed": 0.6888506816796776,
+  "r2_yaw": 0.4290571983797412,
+  "n_speed": 238,
+  "n_yaw": 238
+ },
+ "rollout_L1_k12_logged_actions": {
+  "r2_speed": 0.6026027971176802,
+  "r2_yaw": 0.536179091301032,
+  "n_speed": 238,
+  "n_yaw": 238
+ },
+ "ystd": [
+  7.390989804890239,
+  0.09946673927537819
+ ],
+ "lr_grid": {
+  "0.001": {
+   "es_loss": 0.00635660532861948,
+   "r2_held": 0.44090500991544446,
+   "epochs": 13
+  },
+  "0.0003": {
+   "es_loss": 0.0061025554314255714,
+   "r2_held": 0.43232968442394226,
+   "epochs": 13
+  },
+  "0.0001": {
+   "es_loss": 0.005999957676976919,
+   "r2_held": 0.3957584122807455,
+   "epochs": 14
+  }
+ },
+ "lr_chosen": 0.0001,
+ "yaw_shuffled_at_chosen_lr": -0.31361376527326246,
+ "reader_sha256": "b4a30808f8549996bad19f9b689746a7df2d05a2494e6d1f4a478617bec32ced",
+ "planning_decoder_sha256": "b4a30808f8549996bad19f9b689746a7df2d05a2494e6d1f4a478617bec32ced",
+ "gate_decoder_sha256": "b4a30808f8549996bad19f9b689746a7df2d05a2494e6d1f4a478617bec32ced",
+ "planning_ystd": [
+  7.390989804890239,
+  0.09946673927537819
+ ],
+ "DECODER_WEAK_this_seed": true,
+ "control1_tie_decn": {
+  "speed_ridge_m4": {
+   "mine": 0.6856702063920614,
+   "decn": 0.6856702063920614,
+   "abs_diff": 0.0,
+   "passed": true
+  },
+  "yaw_mlp_m4_lr1e-3": {
+   "mine": 0.44090500991544446,
+   "decn": 0.44090500991544446,
+   "abs_diff": 0.0,
+   "passed": true
+  }
+ },
+ "harness_vs_fitset_held_read": {
+  "speed_abs_diff": 2.999860293506629e-08,
+  "yaw_abs_diff": 1.5320946400443347e-08
+ },
+ "wall_s": 112.56068444252014
+}

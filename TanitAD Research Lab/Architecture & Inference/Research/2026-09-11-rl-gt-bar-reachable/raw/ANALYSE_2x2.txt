@@ -1,0 +1,18 @@
+================================================================================================
+setting    seed  gt_bar  steps  frac_above       dR1    dR2 pp     dR3 %      audit
+------------------------------------------------------------------------------------------------
+off           0   False   2000        null   +0.0264    -0.410   +221.18      clean
+off           1   False   2000        null   +0.0991    +0.625    +76.02      clean
+on            0    True   2000      0.1505   +0.1238    +0.990    +42.26      clean
+on            1    True   2000      0.1371   +0.0814    +1.224    +38.61      clean
+================================================================================================
+
+LEVER vs NOISE  (⛔ a lever smaller than its noise is NOT an effect)
+
+metric       lever (on-off)    noise |s1-s0| off    noise |s1-s0| on                      verdict
+dR1                 +0.0398               0.0727              0.0424       ⛔ WITHIN NOISE (0.55x)
+dR2 pp              +0.9993               1.0352              0.2344       ⛔ WITHIN NOISE (0.97x)
+dR3 %             -108.1656             145.1534              3.6584       ⛔ WITHIN NOISE (0.75x)
+
+⛔ TIER: T0 training-side. n = 2 per cell, no paired CI, non-parity corpus.
+⛔ Nothing here is a capability claim; that requires T1.

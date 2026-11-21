@@ -1,0 +1,142 @@
+{
+ "available": [
+  "repro_native256_fp32",
+  "repro_local416_fp32",
+  "repro_native256_bf16_control",
+  "repro_native256_fp32_12",
+  "repro_native256_fp32_full"
+ ],
+ "per_clip": {
+  "8f387977": {
+   "DEVICE_ONLY_thor416_cpu_fp32_vs_gpu_bf16__21steps": {
+    "rel_l2": 0.02986476756632328,
+    "max_abs": 0.25,
+    "frac_bitwise_equal": 0.6839390397071838,
+    "n_values": 860160
+   },
+   "ROUTE_ONLY_native256_cpu_fp32_vs_thor416_cpu_fp32__21steps": {
+    "rel_l2": 0.07801588624715805,
+    "max_abs": 0.25,
+    "frac_bitwise_equal": 0.32501280307769775,
+    "n_values": 860160
+   },
+   "ROUTE_PLUS_DEVICE_native256_cpu_fp32_vs_thor416_gpu_bf16__21steps": {
+    "rel_l2": 0.07985907047986984,
+    "max_abs": 0.25,
+    "frac_bitwise_equal": 0.3177374005317688,
+    "n_values": 860160
+   },
+   "LOCAL416_cpu_fp32_vs_thor416_cpu_fp32__21steps": {
+    "rel_l2": 0.05301807448267937,
+    "max_abs": 0.25,
+    "frac_bitwise_equal": 0.4806419610977173,
+    "n_values": 860160
+   },
+   "LOCAL416_cpu_fp32_vs_thor416_gpu_bf16__21steps": {
+    "rel_l2": 0.0552641898393631,
+    "max_abs": 0.25,
+    "frac_bitwise_equal": 0.46021902561187744,
+    "n_values": 860160
+   },
+   "NATIVE256_vs_LOCAL416_both_cpu_fp32__21steps": {
+    "rel_l2": 0.06602834165096283,
+    "max_abs": 0.25,
+    "frac_bitwise_equal": 0.37336891889572144,
+    "n_values": 860160
+   },
+   "DTYPE_ONLY_production_frames_cpu_bf16_vs_cpu_fp32__12steps": {
+    "rel_l2": 0.028962697833776474,
+    "max_abs": 0.25,
+    "frac_bitwise_equal": 0.690399169921875,
+    "n_values": 491520
+   },
+   "CONTROL_native256_cpu_bf16_vs_thor416_gpu_bf16__12steps(identity_control_ROUTE_case)": {
+    "rel_l2": 0.07936478406190872,
+    "max_abs": 0.25,
+    "frac_bitwise_equal": 0.3189229369163513,
+    "n_values": 491520
+   },
+   "native256_cpu_fp32_vs_thor416_gpu_bf16__12steps": {
+    "rel_l2": 0.07955307513475418,
+    "max_abs": 0.25,
+    "frac_bitwise_equal": 0.3178344666957855,
+    "n_values": 491520
+   }
+  },
+  "bf5ec76e": {
+   "DEVICE_ONLY_thor416_cpu_fp32_vs_gpu_bf16__21steps": {
+    "rel_l2": 0.03604024276137352,
+    "max_abs": 0.25,
+    "frac_bitwise_equal": 0.6232619285583496,
+    "n_values": 860160
+   },
+   "ROUTE_ONLY_native256_cpu_fp32_vs_thor416_cpu_fp32__21steps": {
+    "rel_l2": 0.08452746272087097,
+    "max_abs": 0.3125,
+    "frac_bitwise_equal": 0.3249407112598419,
+    "n_values": 860160
+   },
+   "ROUTE_PLUS_DEVICE_native256_cpu_fp32_vs_thor416_gpu_bf16__21steps": {
+    "rel_l2": 0.08889752626419067,
+    "max_abs": 0.3125,
+    "frac_bitwise_equal": 0.3149867355823517,
+    "n_values": 860160
+   },
+   "LOCAL416_cpu_fp32_vs_thor416_cpu_fp32__21steps": {
+    "rel_l2": 0.07166244089603424,
+    "max_abs": 0.25,
+    "frac_bitwise_equal": 0.3822963237762451,
+    "n_values": 860160
+   },
+   "LOCAL416_cpu_fp32_vs_thor416_gpu_bf16__21steps": {
+    "rel_l2": 0.07760953903198242,
+    "max_abs": 0.25,
+    "frac_bitwise_equal": 0.3624918758869171,
+    "n_values": 860160
+   },
+   "NATIVE256_vs_LOCAL416_both_cpu_fp32__21steps": {
+    "rel_l2": 0.05803162232041359,
+    "max_abs": 0.25,
+    "frac_bitwise_equal": 0.4222749173641205,
+    "n_values": 860160
+   },
+   "DTYPE_ONLY_production_frames_cpu_bf16_vs_cpu_fp32__12steps": {
+    "rel_l2": 0.033140264451503754,
+    "max_abs": 0.25,
+    "frac_bitwise_equal": 0.6486307978630066,
+    "n_values": 491520
+   },
+   "CONTROL_native256_cpu_bf16_vs_thor416_gpu_bf16__12steps(identity_control_ROUTE_case)": {
+    "rel_l2": 0.08961015939712524,
+    "max_abs": 0.2578125,
+    "frac_bitwise_equal": 0.31547242403030396,
+    "n_values": 491520
+   },
+   "native256_cpu_fp32_vs_thor416_gpu_bf16__12steps": {
+    "rel_l2": 0.0894097164273262,
+    "max_abs": 0.25,
+    "frac_bitwise_equal": 0.3142639100551605,
+    "n_values": 491520
+   }
+  }
+ },
+ "cpu_fp32_reference_cache_production_route": {
+  "8f387977": {
+   "steps": 101,
+   "shape": [
+    101,
+    40,
+    1024
+   ]
+  },
+  "bf5ec76e": {
+   "steps": 101,
+   "shape": [
+    101,
+    40,
+    1024
+   ]
+  }
+ },
+ "device_only_all_frames_see": "probe_provenance.json:device_only_floor_same_frames"
+}

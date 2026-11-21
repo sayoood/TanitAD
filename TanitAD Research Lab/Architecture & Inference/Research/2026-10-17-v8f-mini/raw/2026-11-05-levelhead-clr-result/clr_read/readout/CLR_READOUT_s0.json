@@ -1,0 +1,295 @@
+{
+ "seed": 0,
+ "n_windows": 2399,
+ "n_episodes": 141,
+ "full_eval_set": true,
+ "ckpt_sha256": "87feb6c21269f056ccf6e1137ea6dc6c29c67c6d9cb227440e97ae5b2f831031",
+ "ckpt_cfg": {
+  "level_head": "on",
+  "w_level": 0.2027
+ },
+ "n_frame_ok_false_now": 0,
+ "n_nonfinite_vhat_or_target": 0,
+ "target_check": {
+  "max_abs_cache_v_minus_kin3_v0": 0.0,
+  "mean_abs": 0.0,
+  "n_kin3_nonfinite": 0,
+  "logged_speed_range": [
+   0.0,
+   36.27064514160156
+  ],
+  "v_hat_range": [
+   -3.973799705505371,
+   33.898502349853516
+  ]
+ },
+ "tracking": {
+  "r2_all": {
+   "point": 0.7803708573565679,
+   "ci95": [
+    0.6845533979989951,
+    0.8447374348278827
+   ],
+   "n_boot_finite": 2000
+  },
+  "pearson_r2_all_beside": 0.7804128940492515,
+  "bias_mean_vhat_minus_y": -0.0470776443188003,
+  "mae_all": {
+   "point": 2.5826637788412516,
+   "ci95": [
+    2.2662737899425482,
+    2.9343824567043426
+   ],
+   "n_boot_finite": 2000
+  },
+  "n_band": 586,
+  "band_mae": {
+   "point": 1.9017805277843525,
+   "ci95": [
+    1.6253102312841154,
+    2.208810563058133
+   ],
+   "n_boot_finite": 2000
+  },
+  "band_bias_mean_vhat_minus_y": 1.0115019374180572,
+  "band_mean_y": 5.678959859516026,
+  "band_mean_vhat": 6.690461158752441,
+  "label": "PARTIAL",
+  "label_rule": "TRACKS iff R2>=0.5 and band MAE<=1.5; DOES-NOT-TRACK iff R2<0.3 or band MAE>2.5; else PARTIAL (point estimates)"
+ },
+ "tracking_beside_target_kin3_v0": {
+  "r2_all": {
+   "point": 0.7803708573565679,
+   "ci95": [
+    0.6845533979989951,
+    0.8447374348278827
+   ],
+   "n_boot_finite": 2000
+  },
+  "pearson_r2_all_beside": 0.7804128940492515,
+  "bias_mean_vhat_minus_y": -0.0470776443188003,
+  "mae_all": {
+   "point": 2.5826637788412516,
+   "ci95": [
+    2.2662737899425482,
+    2.9343824567043426
+   ],
+   "n_boot_finite": 2000
+  },
+  "n_band": 586,
+  "band_mae": {
+   "point": 1.9017805277843525,
+   "ci95": [
+    1.6253102312841154,
+    2.208810563058133
+   ],
+   "n_boot_finite": 2000
+  },
+  "band_bias_mean_vhat_minus_y": 1.0115019374180572,
+  "band_mean_y": 5.678959859516026,
+  "band_mean_vhat": 6.690461158752441,
+  "label": "PARTIAL",
+  "label_rule": "TRACKS iff R2>=0.5 and band MAE<=1.5; DOES-NOT-TRACK iff R2<0.3 or band MAE>2.5; else PARTIAL (point estimates)"
+ },
+ "label_unchanged_under_kin3_target": true,
+ "m1_windows": {
+  "definition": "per window, C0 rollout's M1 crawl share a_18 (recover_next/read/raw/arrays/C0_s{s}.npz) from rr_lib.m1_window; a crawl window = a_18 > 0 (the rollout's own speed drops below 5.2 m/s while the GT is >= 5.2 m/s); beside: the GT-fast set (a_18 finite) and the heavy-crawl set (a_18 >= 0.5)",
+  "v0_alignment_max_abs_dev_vs_kin3": 0.0,
+  "c0_array_sha256": "5b04b8f92c710444bb1517d802d0b9a57b8134c41f4304d635417585cbc163ab",
+  "status": "computed",
+  "crawl_share_gt0": {
+   "n": 330,
+   "n_episodes": 62,
+   "mae": {
+    "point": 2.078413427914634,
+    "ci95": [
+     1.7255479827862716,
+     2.4633315356087238
+    ],
+    "n_boot_finite": 2000
+   },
+   "bias_mean_vhat_minus_y": 0.8721816132014448,
+   "mean_logged_speed": 5.502309873440501,
+   "mean_vhat": 6.374491214752197,
+   "in_band_share": 0.6515151515151515
+  },
+  "gt_fast_set_finite": {
+   "n": 2105,
+   "n_episodes": 135,
+   "mae": {
+    "point": 2.5696602187572917,
+    "ci95": [
+     2.2767877961445695,
+     2.8875715561998647
+    ],
+    "n_boot_finite": 2000
+   },
+   "bias_mean_vhat_minus_y": -0.3612349693183378,
+   "mean_logged_speed": 12.723360862119252,
+   "mean_vhat": 12.362126350402832,
+   "in_band_share": 0.22992874109263658
+  },
+  "heavy_crawl_share_ge_0p5": {
+   "n": 133,
+   "n_episodes": 40,
+   "mae": {
+    "point": 1.8798012396222668,
+    "ci95": [
+     1.4719021541844697,
+     2.32973917640301
+    ],
+    "n_boot_finite": 2000
+   },
+   "bias_mean_vhat_minus_y": 1.0306375229493119,
+   "mean_logged_speed": 4.2027297602560285,
+   "mean_vhat": 5.233367919921875,
+   "in_band_share": 0.7293233082706767
+  }
+ },
+ "sensitivity": {
+  "statistic": "plan mean speed over 0..3 s from traj60 rows 0..29 (origin first), step length / 0.1 s; change = shifted - unshifted, per window",
+  "mean_plan_speed_unshifted": 11.413064962385018,
+  "plus3": {
+   "mean_signed_change_ms": {
+    "point": 0.0004534233136323697,
+    "ci95": [
+     0.0003643284249064026,
+     0.0005455546548565705
+    ],
+    "n_boot_finite": 2000
+   },
+   "mean_abs_change_ms": {
+    "point": 0.0006382725208480123,
+    "ci95": [
+     0.000563673624514884,
+     0.0007223149879950855
+    ],
+    "n_boot_finite": 2000
+   },
+   "median_signed_change_ms": 0.0003310296576941596,
+   "p95_abs_change_ms": 0.002206500395358013,
+   "max_abs_change_ms": 0.0065483433443747074
+  },
+  "minus3": {
+   "mean_signed_change_ms": {
+    "point": -0.0004548454920520294,
+    "ci95": [
+     -0.0005467845408404645,
+     -0.0003650822774119533
+    ],
+    "n_boot_finite": 2000
+   },
+   "mean_abs_change_ms": {
+    "point": 0.0006376511133563106,
+    "ci95": [
+     0.0005631011726539726,
+     0.0007212373236840018
+    ],
+    "n_boot_finite": 2000
+   },
+   "median_signed_change_ms": -0.00033055915047341955,
+   "p95_abs_change_ms": 0.00220102360969463,
+   "max_abs_change_ms": 0.006543384077022374
+  },
+  "controls": {
+   "zero_shift_change_max_abs": 0.0,
+   "zero_shift_traj_max_abs_diff_m": 0.0,
+   "e_in_equals_vhat_over_10_where_frame_ok_max_abs_dev": 0.0,
+   "e_in_plus_minus_baseline_max_abs_dev_from_0p3": 5.960464477539063e-08,
+   "level_v_equals_hook_vhat_max_abs_dev": 0.0,
+   "reach_control_big_e_level_output_perturbation": {
+    "mean_abs_plan_speed_change_ms": 0.1418653910387391,
+    "max_abs_ms": 0.9788149301160729,
+    "note": "instrument control, not a prereg measurement: a norm-8 perturbation of e_level's output must move the plan (reads > 0 iff the token position is wired into O's plan in this harness)"
+   }
+  },
+  "beside_e_level_output_zeroed": {
+   "mean_signed_change_ms": {
+    "point": -0.0015771948979094912,
+    "ci95": [
+     -0.0019142160904797383,
+     -0.001239928340711694
+    ],
+    "n_boot_finite": 2000
+   },
+   "mean_abs_change_ms": {
+    "point": 0.002301178007009517,
+    "ci95": [
+     0.0020208423101378357,
+     0.0026051440233456494
+    ],
+    "n_boot_finite": 2000
+   },
+   "note": "attribution beside (card section 5 names it): e_level's output replaced by zeros at inference; not a committed outcome measurement"
+  },
+  "e_level_weights": {
+   "abs_weight_sum": 0.34241124987602234,
+   "abs_bias_sum": 0.08451204001903534
+  },
+  "e_level_over_ego_norm": {
+   "mean_of_per_window_ratio": {
+    "point": 0.00590027720252665,
+    "ci95": [
+     0.0054460954006905,
+     0.006383856282231196
+    ],
+    "n_boot_finite": 2000
+   },
+   "ratio_of_means_beside": 0.004783495794981718,
+   "mean_e_level_norm": 0.03499240428209305,
+   "mean_ego_token_norm": 7.315237045288086
+  },
+  "label": "O-INSENSITIVE",
+  "label_alt_mean_abs_reading": "O-INSENSITIVE",
+  "label_rule": "O-SENSITIVE iff |mean plan-speed change| for +3 m/s >= 0.5; O-INSENSITIVE iff < 0.1; else WEAK. Decided on |mean signed change| (measurement 2's quantity); the mean-of-absolute reading is reported beside and its label is label_alt_mean_abs_reading"
+ },
+ "labels": {
+  "tracking": "PARTIAL",
+  "sensitivity": "O-INSENSITIVE",
+  "next_arm": "lead-aware head (addendum branch 3): the frozen single-frame field does not carry the afforded speed well enough in the crawl band; lead presence and distance from the frame (CRAWL-LEAD), own card",
+  "sensitivity_label_same_under_both_readings": true
+ },
+ "banked_tick0_check": {
+  "status": "computed",
+  "path": "F:/TanitAD-scratch/motion_c/clr_read/out/CLR_s0/ticks/ticks_CLR_s0.npz",
+  "n_compared": 2399,
+  "max_abs_dev_m": 3.0517578125e-05,
+  "mean_abs_dev_m": 2.9545253261620857e-07,
+  "p99_abs_dev_m": 3.814697265625e-06,
+  "ci_t0_identical": true,
+  "v0_max_abs_dev_vs_kin3": 0.0,
+  "note": "banked rollout used 16 threads, batch 32 and the rollout's own tick 0; a different thread count / batch changes float rounding only (1e-5 m class); a gap >> 1e-3 m would mean a different tick-0 batch"
+ },
+ "label_function_controls": {
+  "perfect": [
+   "TRACKS",
+   1.0
+  ],
+  "constant_mean": [
+   "DOES-NOT-TRACK",
+   -1.3322676295501878e-15
+  ],
+  "plus2_in_band_offset": [
+   "PARTIAL",
+   0.9820303389995162
+  ],
+  "shuffled": [
+   "DOES-NOT-TRACK",
+   -0.9601251505789608
+  ],
+  "sens_labels_0p5_0p1_0p3": [
+   "O-SENSITIVE",
+   "O-INSENSITIVE",
+   "WEAK"
+  ],
+  "pass": true,
+  "note": "plus2_in_band_offset: R2 stays high while the band MAE is 2.0 m/s: PARTIAL expected (informative, not part of pass)"
+ },
+ "wall_s": 36.87286734580994,
+ "prereg": {
+  "file": "PREREG_CL_READOUT_A1.md",
+  "sha256": "1f96d833a9c5e32eb7f845d669d2f825485daee5d3b8fcd29bbec45a2523a8bb",
+  "bootstrap": "episode-cluster, B=2000, seed 0"
+ },
+ "control_failures": []
+}

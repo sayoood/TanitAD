@@ -1,0 +1,259 @@
+....................EEEEE..                                              [100%]
+=================================== ERRORS ====================================
+_ ERROR at setup of test_an_old_checkpoint_gets_the_SAME_ITEMS_from_the_evaluator_as_from_the_saved_pre_amendment_dataset[old4-mini] _
+
+runs = {'h4': {'cap': {'tw': [{'hist': 4, 'start': -1}, {'hist': 4, 'start': -1}], 'ds': [(4, 16, 3)]}, 'out': WindowsPath('E...6759262085, 'o_read_ck_minus_nominal_abs_max': 5.378961563110352, 'o_read_ck_ok_abs_max': 1.0, ...}}, ...}, ...}, ...}}
+world = {'root': 'E:\\Projects\\TanitAD-artifacts\\egocut_build\\bt\\cur\\syn_ws0', 'J': {'clip': array(['syn-train-000', 'syn...  True,
+        True,  True,  True,  True,  True,  True,  True,  True,  True,
+        True,  True,  True]), ...}}, ...}
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('E:/Projects/TanitAD-artifacts/egocut_build/bt/cur'), _trace=<pluggy._trac...basetemp=WindowsPath('E:/Projects/TanitAD-artifacts/egocut_build/bt/cur'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def evals(runs, world, tmp_path_factory):
+        tmp, root = tmp_path_factory.mktemp("ws_evals"), world["root"]
+        out = {}
+        for tag in ("h4", "h10", "h10ws3"):
+            ck = runs[tag]["out"] / "ckpt_last.pt"
+>           out[tag] = {s: _eval_run(root, ck, tag, tmp, s)[0] for s in ("mini", "t1")}
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_window_start.py:721: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_window_start.py:711: in _eval_run
+    assert mod.main(_eval_argv(root, ck, tag, out, script)) == 0
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:595: in main
+    return {"run": cmd_run, "analyze": cmd_analyze}[a.mode](a)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:579: in cmd_run
+    res = analyze_dumps(files, header, a.n_boot)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:461: in analyze_dumps
+    t1 = load_t1_eval()
+         ^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:442: in load_t1_eval
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x000001C6F3A94950>
+path = 'E:\\Projects\\TanitAD-artifacts\\egocut_build\\tree\\taniteval\\tools\\t1_eval.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'E:\\Projects\\TanitAD-artifacts\\egocut_build\\tree\\taniteval\\tools\\t1_eval.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+---------------------------- Captured stdout setup ----------------------------
+[2/4] ade 6.449 total 85.620 p_gt 0.80
+[4/4] ade 9.601 total 98.097 p_gt 0.40
+DONE {"steps": 4, "arm": "M2b", "seed": 5, "seconds": 1.2955212593078613}
+[2/4] ade 7.475 total 54.403 p_gt 0.80
+[4/4] ade 6.523 total 51.404 p_gt 0.40
+DONE {"steps": 4, "arm": "M2b", "seed": 5, "seconds": 1.2747395038604736}
+[2/4] ade 6.449 total 49.045 p_gt 0.80
+[4/4] ade 9.600 total 58.780 p_gt 0.40
+DONE {"steps": 4, "arm": "M2b", "seed": 5, "seconds": 2.3015825748443604}
+h4 ADE6 8.0911 ADE2 3.1215 CONS(a) 1.0
+[6/12] 0s
+[12/12] 1s
+_ ERROR at setup of test_an_old_checkpoint_gets_the_SAME_ITEMS_from_the_evaluator_as_from_the_saved_pre_amendment_dataset[old10-mini] _
+
+runs = {'h4': {'cap': {'tw': [{'hist': 4, 'start': -1}, {'hist': 4, 'start': -1}], 'ds': [(4, 16, 3)]}, 'out': WindowsPath('E...6759262085, 'o_read_ck_minus_nominal_abs_max': 5.378961563110352, 'o_read_ck_ok_abs_max': 1.0, ...}}, ...}, ...}, ...}}
+world = {'root': 'E:\\Projects\\TanitAD-artifacts\\egocut_build\\bt\\cur\\syn_ws0', 'J': {'clip': array(['syn-train-000', 'syn...  True,
+        True,  True,  True,  True,  True,  True,  True,  True,  True,
+        True,  True,  True]), ...}}, ...}
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('E:/Projects/TanitAD-artifacts/egocut_build/bt/cur'), _trace=<pluggy._trac...basetemp=WindowsPath('E:/Projects/TanitAD-artifacts/egocut_build/bt/cur'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def evals(runs, world, tmp_path_factory):
+        tmp, root = tmp_path_factory.mktemp("ws_evals"), world["root"]
+        out = {}
+        for tag in ("h4", "h10", "h10ws3"):
+            ck = runs[tag]["out"] / "ckpt_last.pt"
+>           out[tag] = {s: _eval_run(root, ck, tag, tmp, s)[0] for s in ("mini", "t1")}
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_window_start.py:721: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_window_start.py:711: in _eval_run
+    assert mod.main(_eval_argv(root, ck, tag, out, script)) == 0
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:595: in main
+    return {"run": cmd_run, "analyze": cmd_analyze}[a.mode](a)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:579: in cmd_run
+    res = analyze_dumps(files, header, a.n_boot)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:461: in analyze_dumps
+    t1 = load_t1_eval()
+         ^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:442: in load_t1_eval
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x000001C6F3A94950>
+path = 'E:\\Projects\\TanitAD-artifacts\\egocut_build\\tree\\taniteval\\tools\\t1_eval.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'E:\\Projects\\TanitAD-artifacts\\egocut_build\\tree\\taniteval\\tools\\t1_eval.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+_ ERROR at setup of test_an_old_checkpoint_gets_the_SAME_ITEMS_from_the_evaluator_as_from_the_saved_pre_amendment_dataset[old10-t1] _
+
+runs = {'h4': {'cap': {'tw': [{'hist': 4, 'start': -1}, {'hist': 4, 'start': -1}], 'ds': [(4, 16, 3)]}, 'out': WindowsPath('E...6759262085, 'o_read_ck_minus_nominal_abs_max': 5.378961563110352, 'o_read_ck_ok_abs_max': 1.0, ...}}, ...}, ...}, ...}}
+world = {'root': 'E:\\Projects\\TanitAD-artifacts\\egocut_build\\bt\\cur\\syn_ws0', 'J': {'clip': array(['syn-train-000', 'syn...  True,
+        True,  True,  True,  True,  True,  True,  True,  True,  True,
+        True,  True,  True]), ...}}, ...}
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('E:/Projects/TanitAD-artifacts/egocut_build/bt/cur'), _trace=<pluggy._trac...basetemp=WindowsPath('E:/Projects/TanitAD-artifacts/egocut_build/bt/cur'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def evals(runs, world, tmp_path_factory):
+        tmp, root = tmp_path_factory.mktemp("ws_evals"), world["root"]
+        out = {}
+        for tag in ("h4", "h10", "h10ws3"):
+            ck = runs[tag]["out"] / "ckpt_last.pt"
+>           out[tag] = {s: _eval_run(root, ck, tag, tmp, s)[0] for s in ("mini", "t1")}
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_window_start.py:721: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_window_start.py:711: in _eval_run
+    assert mod.main(_eval_argv(root, ck, tag, out, script)) == 0
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:595: in main
+    return {"run": cmd_run, "analyze": cmd_analyze}[a.mode](a)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:579: in cmd_run
+    res = analyze_dumps(files, header, a.n_boot)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:461: in analyze_dumps
+    t1 = load_t1_eval()
+         ^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:442: in load_t1_eval
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x000001C6F3A94950>
+path = 'E:\\Projects\\TanitAD-artifacts\\egocut_build\\tree\\taniteval\\tools\\t1_eval.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'E:\\Projects\\TanitAD-artifacts\\egocut_build\\tree\\taniteval\\tools\\t1_eval.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+_ ERROR at setup of test_an_old_checkpoint_scores_bit_for_bit_the_same_through_the_fixed_and_the_saved_pre_fix_evaluator[old4] _
+
+runs = {'h4': {'cap': {'tw': [{'hist': 4, 'start': -1}, {'hist': 4, 'start': -1}], 'ds': [(4, 16, 3)]}, 'out': WindowsPath('E...6759262085, 'o_read_ck_minus_nominal_abs_max': 5.378961563110352, 'o_read_ck_ok_abs_max': 1.0, ...}}, ...}, ...}, ...}}
+world = {'root': 'E:\\Projects\\TanitAD-artifacts\\egocut_build\\bt\\cur\\syn_ws0', 'J': {'clip': array(['syn-train-000', 'syn...  True,
+        True,  True,  True,  True,  True,  True,  True,  True,  True,
+        True,  True,  True]), ...}}, ...}
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('E:/Projects/TanitAD-artifacts/egocut_build/bt/cur'), _trace=<pluggy._trac...basetemp=WindowsPath('E:/Projects/TanitAD-artifacts/egocut_build/bt/cur'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def evals(runs, world, tmp_path_factory):
+        tmp, root = tmp_path_factory.mktemp("ws_evals"), world["root"]
+        out = {}
+        for tag in ("h4", "h10", "h10ws3"):
+            ck = runs[tag]["out"] / "ckpt_last.pt"
+>           out[tag] = {s: _eval_run(root, ck, tag, tmp, s)[0] for s in ("mini", "t1")}
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_window_start.py:721: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_window_start.py:711: in _eval_run
+    assert mod.main(_eval_argv(root, ck, tag, out, script)) == 0
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:595: in main
+    return {"run": cmd_run, "analyze": cmd_analyze}[a.mode](a)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:579: in cmd_run
+    res = analyze_dumps(files, header, a.n_boot)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:461: in analyze_dumps
+    t1 = load_t1_eval()
+         ^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:442: in load_t1_eval
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x000001C6F3A94950>
+path = 'E:\\Projects\\TanitAD-artifacts\\egocut_build\\tree\\taniteval\\tools\\t1_eval.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'E:\\Projects\\TanitAD-artifacts\\egocut_build\\tree\\taniteval\\tools\\t1_eval.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+_ ERROR at setup of test_an_old_checkpoint_scores_bit_for_bit_the_same_through_the_fixed_and_the_saved_pre_fix_evaluator[old10] _
+
+runs = {'h4': {'cap': {'tw': [{'hist': 4, 'start': -1}, {'hist': 4, 'start': -1}], 'ds': [(4, 16, 3)]}, 'out': WindowsPath('E...6759262085, 'o_read_ck_minus_nominal_abs_max': 5.378961563110352, 'o_read_ck_ok_abs_max': 1.0, ...}}, ...}, ...}, ...}}
+world = {'root': 'E:\\Projects\\TanitAD-artifacts\\egocut_build\\bt\\cur\\syn_ws0', 'J': {'clip': array(['syn-train-000', 'syn...  True,
+        True,  True,  True,  True,  True,  True,  True,  True,  True,
+        True,  True,  True]), ...}}, ...}
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('E:/Projects/TanitAD-artifacts/egocut_build/bt/cur'), _trace=<pluggy._trac...basetemp=WindowsPath('E:/Projects/TanitAD-artifacts/egocut_build/bt/cur'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def evals(runs, world, tmp_path_factory):
+        tmp, root = tmp_path_factory.mktemp("ws_evals"), world["root"]
+        out = {}
+        for tag in ("h4", "h10", "h10ws3"):
+            ck = runs[tag]["out"] / "ckpt_last.pt"
+>           out[tag] = {s: _eval_run(root, ck, tag, tmp, s)[0] for s in ("mini", "t1")}
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_window_start.py:721: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_window_start.py:711: in _eval_run
+    assert mod.main(_eval_argv(root, ck, tag, out, script)) == 0
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:595: in main
+    return {"run": cmd_run, "analyze": cmd_analyze}[a.mode](a)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:579: in cmd_run
+    res = analyze_dumps(files, header, a.n_boot)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:461: in analyze_dumps
+    t1 = load_t1_eval()
+         ^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:442: in load_t1_eval
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x000001C6F3A94950>
+path = 'E:\\Projects\\TanitAD-artifacts\\egocut_build\\tree\\taniteval\\tools\\t1_eval.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'E:\\Projects\\TanitAD-artifacts\\egocut_build\\tree\\taniteval\\tools\\t1_eval.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+============================== warnings summary ===============================
+tests/test_v8f_flat.py::test_the_default_run_is_the_pre_change_trainer_for_every_other_field
+  E:\Projects\TanitAD-artifacts\egocut_build\tree\stack\scripts\v8f_mini_train.py:1892: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    "sec": time.time() - t0, **{k: float(v) for k, v in T.items()}}
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+ERROR stack\tests\test_v8f_window_start.py::test_an_old_checkpoint_gets_the_SAME_ITEMS_from_the_evaluator_as_from_the_saved_pre_amendment_dataset[old4-mini]
+ERROR stack\tests\test_v8f_window_start.py::test_an_old_checkpoint_gets_the_SAME_ITEMS_from_the_evaluator_as_from_the_saved_pre_amendment_dataset[old10-mini]
+ERROR stack\tests\test_v8f_window_start.py::test_an_old_checkpoint_gets_the_SAME_ITEMS_from_the_evaluator_as_from_the_saved_pre_amendment_dataset[old10-t1]
+ERROR stack\tests\test_v8f_window_start.py::test_an_old_checkpoint_scores_bit_for_bit_the_same_through_the_fixed_and_the_saved_pre_fix_evaluator[old4]
+ERROR stack\tests\test_v8f_window_start.py::test_an_old_checkpoint_scores_bit_for_bit_the_same_through_the_fixed_and_the_saved_pre_fix_evaluator[old10]
+22 passed, 612 deselected, 1 warning, 5 errors in 121.99s (0:02:01)

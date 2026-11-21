@@ -1,0 +1,27 @@
+t test_p6_levers.py rc=0 ZZP6_PASS 156 232s
+t test_p6_chain.py rc=0 ZZP6CHAIN_PASS 341 362s
+t test_launch_gate.py rc=0 ZZLG_FULL_PASS 690 323s
+t test_launch_gate.py --no-banked rc=0 ZZLG_FULL_PASS 676 317s
+t test_p6_overlap.py rc=0 ZZTEST_PASS 54 2s
+t test_p6_cpu_probe.py rc=0 ZZTEST_PASS 111 125s
+t test_gate_gpu_probes.py rc=0 ZZTEST_PASS 16 3s
+t test_aux_s1_wiring.py rc=0 ZZTEST_PASS 20 110s
+t test_p2r_chain.py rc=0 ZZTEST_PASS 139 5s
+t test_p2rep_chain.py rc=0 ZZTEST_PASS 353 201s
+t test_rls1_chain.py rc=0 ZZTEST_PASS 512 197s
+t test_s1aux_chain.py rc=1  88s
+SWEEP_DONE
+b test_launch_gate.py --no-banked rc=0 ZZLG_FULL_PASS 569 443s
+b test_rls1_chain.py rc=0 ZZTEST_PASS 355 41s
+b test_s1aux_chain.py rc=0 ZZTEST_PASS 353 268s
+SWEEP2_DONE
+t test_aux_g12_bf16.py rc=1  16s
+t test_gate_suite_prerun.py rc=0 ZZTEST_PASS 144 260s
+t test_rl_r0c.py rc=0 ZZTEST_PASS 26 55s
+t test_rl_s1b.py rc=0 ZZTEST_PASS 18 13s
+t test_rls1_queue.py rc=0 ZZTEST_PASS 134 508s
+t test_s1c.py rc=0 ZZTEST_PASS 242 135s
+SWEEP3_DONE
+t test_s1aux_chain.py rc=0 ZZTEST_PASS 404 341s
+SWEEP4_DONE
+u(6c3d469 unpatched) test_aux_g12_bf16.py rc=1 -- identical failing set to t: h1cuda/* CUDA checks on a contended dev-box GPU (100 % util, 5.2/8 GB held by another session); NOT a regression

@@ -1,0 +1,478 @@
+# PUBLISHED-CODE extract - opencv/opencv @ 4.5.4
+# path: modules/imgproc/src/drawing.cpp
+# git blob sha1 of the fetched file: ae8c6209e87e975a37f84ba4104ab5b879da1629 (98317 B); verified against the GitHub contents API: MATCH
+# fetched 2026-09-19T13:46:02Z from raw.githubusercontent.com (read-only source text; excerpts only, attribution retained)
+
+## lines 46-58: XY_SHIFT, PolyEdge
+   46  enum { XY_SHIFT = 16, XY_ONE = 1 << XY_SHIFT, DRAWING_STORAGE_BLOCK = (1<<12) - 256 };
+   47  
+   48  static const int MAX_THICKNESS = 32767;
+   49  
+   50  struct PolyEdge
+   51  {
+   52      PolyEdge() : y0(0), y1(0), x(0), dx(0), next(0) {}
+   53      //PolyEdge(int _y0, int _y1, int _x, int _dx) : y0(_y0), y1(_y1), x(_x), dx(_dx) {}
+   54  
+   55      int y0, y1;
+   56      int64 x, dx;
+   57      PolyEdge *next;
+   58  };
+
+## lines 80-145: clipLine
+   80  bool clipLine( Size img_size, Point& pt1, Point& pt2 )
+   81  {
+   82      Point2l p1(pt1);
+   83      Point2l p2(pt2);
+   84      bool inside = clipLine(Size2l(img_size.width, img_size.height), p1, p2);
+   85      pt1.x = (int)p1.x;
+   86      pt1.y = (int)p1.y;
+   87      pt2.x = (int)p2.x;
+   88      pt2.y = (int)p2.y;
+   89      return inside;
+   90  }
+   91  
+   92  bool clipLine( Size2l img_size, Point2l& pt1, Point2l& pt2 )
+   93  {
+   94      CV_INSTRUMENT_REGION();
+   95  
+   96      int c1, c2;
+   97      int64 right = img_size.width-1, bottom = img_size.height-1;
+   98  
+   99      if( img_size.width <= 0 || img_size.height <= 0 )
+  100          return false;
+  101  
+  102      int64 &x1 = pt1.x, &y1 = pt1.y, &x2 = pt2.x, &y2 = pt2.y;
+  103      c1 = (x1 < 0) + (x1 > right) * 2 + (y1 < 0) * 4 + (y1 > bottom) * 8;
+  104      c2 = (x2 < 0) + (x2 > right) * 2 + (y2 < 0) * 4 + (y2 > bottom) * 8;
+  105  
+  106      if( (c1 & c2) == 0 && (c1 | c2) != 0 )
+  107      {
+  108          int64 a;
+  109          if( c1 & 12 )
+  110          {
+  111              a = c1 < 8 ? 0 : bottom;
+  112              x1 += (int64)((double)(a - y1) * (x2 - x1) / (y2 - y1));
+  113              y1 = a;
+  114              c1 = (x1 < 0) + (x1 > right) * 2;
+  115          }
+  116          if( c2 & 12 )
+  117          {
+  118              a = c2 < 8 ? 0 : bottom;
+  119              x2 += (int64)((double)(a - y2) * (x2 - x1) / (y2 - y1));
+  120              y2 = a;
+  121              c2 = (x2 < 0) + (x2 > right) * 2;
+  122          }
+  123          if( (c1 & c2) == 0 && (c1 | c2) != 0 )
+  124          {
+  125              if( c1 )
+  126              {
+  127                  a = c1 == 1 ? 0 : right;
+  128                  y1 += (int64)((double)(a - x1) * (y2 - y1) / (x2 - x1));
+  129                  x1 = a;
+  130                  c1 = 0;
+  131              }
+  132              if( c2 )
+  133              {
+  134                  a = c2 == 1 ? 0 : right;
+  135                  y2 += (int64)((double)(a - x2) * (y2 - y1) / (x2 - x1));
+  136                  x2 = a;
+  137                  c2 = 0;
+  138              }
+  139          }
+  140  
+  141          assert( (c1 & c2) != 0 || (x1 | y1 | x2 | y2) >= 0 );
+  142      }
+  143  
+  144      return (c1 | c2) == 0;
+  145  }
+
+## lines 159-297: LineIterator::init + Line
+  159  void LineIterator::init( const Mat* img, Rect rect, Point pt1_, Point pt2_, int connectivity, bool leftToRight )
+  160  {
+  161      CV_Assert( connectivity == 8 || connectivity == 4 );
+  162  
+  163      count = -1;
+  164      p = Point(0, 0);
+  165      ptr0 = ptr = 0;
+  166      step = elemSize = 0;
+  167      ptmode = !img;
+  168  
+  169      Point pt1 = pt1_ - rect.tl();
+  170      Point pt2 = pt2_ - rect.tl();
+  171  
+  172      if( (unsigned)pt1.x >= (unsigned)(rect.width) ||
+  173          (unsigned)pt2.x >= (unsigned)(rect.width) ||
+  174          (unsigned)pt1.y >= (unsigned)(rect.height) ||
+  175          (unsigned)pt2.y >= (unsigned)(rect.height) )
+  176      {
+  177          if( !clipLine(Size(rect.width, rect.height), pt1, pt2) )
+  178          {
+  179              err = plusDelta = minusDelta = plusStep = minusStep = plusShift = minusShift = count = 0;
+  180              return;
+  181          }
+  182      }
+  183  
+  184      pt1 += rect.tl();
+  185      pt2 += rect.tl();
+  186  
+  187      int delta_x = 1, delta_y = 1;
+  188      int dx = pt2.x - pt1.x;
+  189      int dy = pt2.y - pt1.y;
+  190  
+  191      if( dx < 0 )
+  192      {
+  193          if( leftToRight )
+  194          {
+  195              dx = -dx;
+  196              dy = -dy;
+  197              pt1 = pt2;
+  198          }
+  199          else
+  200          {
+  201              dx = -dx;
+  202              delta_x = -1;
+  203          }
+  204      }
+  205  
+  206      if( dy < 0 )
+  207      {
+  208          dy = -dy;
+  209          delta_y = -1;
+  210      }
+  211  
+  212      bool vert = dy > dx;
+  213      if( vert )
+  214      {
+  215          std::swap(dx, dy);
+  216          std::swap(delta_x, delta_y);
+  217      }
+  218  
+  219      CV_Assert( dx >= 0 && dy >= 0 );
+  220  
+  221      if( connectivity == 8 )
+  222      {
+  223          err = dx - (dy + dy);
+  224          plusDelta = dx + dx;
+  225          minusDelta = -(dy + dy);
+  226          minusShift = delta_x;
+  227          plusShift = 0;
+  228          minusStep = 0;
+  229          plusStep = delta_y;
+  230          count = dx + 1;
+  231      }
+  232      else /* connectivity == 4 */
+  233      {
+  234          err = 0;
+  235          plusDelta = (dx + dx) + (dy + dy);
+  236          minusDelta = -(dy + dy);
+  237          minusShift = delta_x;
+  238          plusShift = -delta_x;
+  239          minusStep = 0;
+  240          plusStep = delta_y;
+  241          count = dx + dy + 1;
+  242      }
+  243  
+  244      if( vert )
+  245      {
+  246          std::swap(plusStep, plusShift);
+  247          std::swap(minusStep, minusShift);
+  248      }
+  249  
+  250      p = pt1;
+  251      if( !ptmode )
+  252      {
+  253          ptr0 = img->ptr();
+  254          step = (int)img->step;
+  255          elemSize = (int)img->elemSize();
+  256          ptr = (uchar*)ptr0 + (size_t)p.y*step + (size_t)p.x*elemSize;
+  257          plusStep = plusStep*step + plusShift*elemSize;
+  258          minusStep = minusStep*step + minusShift*elemSize;
+  259      }
+  260  }
+  261  
+  262  static void
+  263  Line( Mat& img, Point pt1, Point pt2,
+  264        const void* _color, int connectivity = 8 )
+  265  {
+  266      if( connectivity == 0 )
+  267          connectivity = 8;
+  268      else if( connectivity == 1 )
+  269          connectivity = 4;
+  270  
+  271      LineIterator iterator(img, pt1, pt2, connectivity, true);
+  272      int i, count = iterator.count;
+  273      int pix_size = (int)img.elemSize();
+  274      const uchar* color = (const uchar*)_color;
+  275  
+  276      if( pix_size == 3 )
+  277      {
+  278          for( i = 0; i < count; i++, ++iterator )
+  279          {
+  280              uchar* ptr = *iterator;
+  281              ptr[0] = color[0];
+  282              ptr[1] = color[1];
+  283              ptr[2] = color[2];
+  284          }
+  285      }
+  286      else
+  287      {
+  288          for( i = 0; i < count; i++, ++iterator )
+  289          {
+  290              uchar* ptr = *iterator;
+  291              if( pix_size == 1 )
+  292                  ptr[0] = color[0];
+  293              else
+  294                  memcpy( *iterator, color, pix_size );
+  295          }
+  296      }
+  297  }
+
+## lines 1258-1471: CollectPolyEdges + FillEdgeCollection
+ 1258  /******** Arbitrary polygon **********/
+ 1259  
+ 1260  static void
+ 1261  CollectPolyEdges( Mat& img, const Point2l* v, int count, std::vector<PolyEdge>& edges,
+ 1262                    const void* color, int line_type, int shift, Point offset )
+ 1263  {
+ 1264      int i, delta = offset.y + ((1 << shift) >> 1);
+ 1265      Point2l pt0 = v[count-1], pt1;
+ 1266      pt0.x = (pt0.x + offset.x) << (XY_SHIFT - shift);
+ 1267      pt0.y = (pt0.y + delta) >> shift;
+ 1268  
+ 1269      edges.reserve( edges.size() + count );
+ 1270  
+ 1271      for( i = 0; i < count; i++, pt0 = pt1 )
+ 1272      {
+ 1273          Point2l t0, t1;
+ 1274          PolyEdge edge;
+ 1275  
+ 1276          pt1 = v[i];
+ 1277          pt1.x = (pt1.x + offset.x) << (XY_SHIFT - shift);
+ 1278          pt1.y = (pt1.y + delta) >> shift;
+ 1279  
+ 1280          if( line_type < CV_AA )
+ 1281          {
+ 1282              t0.y = pt0.y; t1.y = pt1.y;
+ 1283              t0.x = (pt0.x + (XY_ONE >> 1)) >> XY_SHIFT;
+ 1284              t1.x = (pt1.x + (XY_ONE >> 1)) >> XY_SHIFT;
+ 1285              Line( img, t0, t1, color, line_type );
+ 1286          }
+ 1287          else
+ 1288          {
+ 1289              t0.x = pt0.x; t1.x = pt1.x;
+ 1290              t0.y = pt0.y << XY_SHIFT;
+ 1291              t1.y = pt1.y << XY_SHIFT;
+ 1292              LineAA( img, t0, t1, color );
+ 1293          }
+ 1294  
+ 1295          if( pt0.y == pt1.y )
+ 1296              continue;
+ 1297  
+ 1298          if( pt0.y < pt1.y )
+ 1299          {
+ 1300              edge.y0 = (int)(pt0.y);
+ 1301              edge.y1 = (int)(pt1.y);
+ 1302              edge.x = pt0.x;
+ 1303          }
+ 1304          else
+ 1305          {
+ 1306              edge.y0 = (int)(pt1.y);
+ 1307              edge.y1 = (int)(pt0.y);
+ 1308              edge.x = pt1.x;
+ 1309          }
+ 1310          edge.dx = (pt1.x - pt0.x) / (pt1.y - pt0.y);
+ 1311          edges.push_back(edge);
+ 1312      }
+ 1313  }
+ 1314  
+ 1315  struct CmpEdges
+ 1316  {
+ 1317      bool operator ()(const PolyEdge& e1, const PolyEdge& e2)
+ 1318      {
+ 1319          return e1.y0 - e2.y0 ? e1.y0 < e2.y0 :
+ 1320              e1.x - e2.x ? e1.x < e2.x : e1.dx < e2.dx;
+ 1321      }
+ 1322  };
+ 1323  
+ 1324  /**************** helper macros and functions for sequence/contour processing ***********/
+ 1325  
+ 1326  static void
+ 1327  FillEdgeCollection( Mat& img, std::vector<PolyEdge>& edges, const void* color )
+ 1328  {
+ 1329      PolyEdge tmp;
+ 1330      int i, y, total = (int)edges.size();
+ 1331      Size size = img.size();
+ 1332      PolyEdge* e;
+ 1333      int y_max = INT_MIN, y_min = INT_MAX;
+ 1334      int64 x_max = 0xFFFFFFFFFFFFFFFF, x_min = 0x7FFFFFFFFFFFFFFF;
+ 1335      int pix_size = (int)img.elemSize();
+ 1336  
+ 1337      if( total < 2 )
+ 1338          return;
+ 1339  
+ 1340      for( i = 0; i < total; i++ )
+ 1341      {
+ 1342          PolyEdge& e1 = edges[i];
+ 1343          assert( e1.y0 < e1.y1 );
+ 1344          // Determine x-coordinate of the end of the edge.
+ 1345          // (This is not necessary x-coordinate of any vertex in the array.)
+ 1346          int64 x1 = e1.x + (e1.y1 - e1.y0) * e1.dx;
+ 1347          y_min = std::min( y_min, e1.y0 );
+ 1348          y_max = std::max( y_max, e1.y1 );
+ 1349          x_min = std::min( x_min, e1.x );
+ 1350          x_max = std::max( x_max, e1.x );
+ 1351          x_min = std::min( x_min, x1 );
+ 1352          x_max = std::max( x_max, x1 );
+ 1353      }
+ 1354  
+ 1355      if( y_max < 0 || y_min >= size.height || x_max < 0 || x_min >= ((int64)size.width<<XY_SHIFT) )
+ 1356          return;
+ 1357  
+ 1358      std::sort( edges.begin(), edges.end(), CmpEdges() );
+ 1359  
+ 1360      // start drawing
+ 1361      tmp.y0 = INT_MAX;
+ 1362      edges.push_back(tmp); // after this point we do not add
+ 1363                            // any elements to edges, thus we can use pointers
+ 1364      i = 0;
+ 1365      tmp.next = 0;
+ 1366      e = &edges[i];
+ 1367      y_max = MIN( y_max, size.height );
+ 1368  
+ 1369      for( y = e->y0; y < y_max; y++ )
+ 1370      {
+ 1371          PolyEdge *last, *prelast, *keep_prelast;
+ 1372          int sort_flag = 0;
+ 1373          int draw = 0;
+ 1374          int clipline = y < 0;
+ 1375  
+ 1376          prelast = &tmp;
+ 1377          last = tmp.next;
+ 1378          while( last || e->y0 == y )
+ 1379          {
+ 1380              if( last && last->y1 == y )
+ 1381              {
+ 1382                  // exclude edge if y reaches its lower point
+ 1383                  prelast->next = last->next;
+ 1384                  last = last->next;
+ 1385                  continue;
+ 1386              }
+ 1387              keep_prelast = prelast;
+ 1388              if( last && (e->y0 > y || last->x < e->x) )
+ 1389              {
+ 1390                  // go to the next edge in active list
+ 1391                  prelast = last;
+ 1392                  last = last->next;
+ 1393              }
+ 1394              else if( i < total )
+ 1395              {
+ 1396                  // insert new edge into active list if y reaches its upper point
+ 1397                  prelast->next = e;
+ 1398                  e->next = last;
+ 1399                  prelast = e;
+ 1400                  e = &edges[++i];
+ 1401              }
+ 1402              else
+ 1403                  break;
+ 1404  
+ 1405              if( draw )
+ 1406              {
+ 1407                  if( !clipline )
+ 1408                  {
+ 1409                      // convert x's from fixed-point to image coordinates
+ 1410                      uchar *timg = img.ptr(y);
+ 1411                      int x1, x2;
+ 1412  
+ 1413                      if (keep_prelast->x > prelast->x)
+ 1414                      {
+ 1415                          x1 = (int)((prelast->x + XY_ONE - 1) >> XY_SHIFT);
+ 1416                          x2 = (int)(keep_prelast->x >> XY_SHIFT);
+ 1417                      }
+ 1418                      else
+ 1419                      {
+ 1420                          x1 = (int)((keep_prelast->x + XY_ONE - 1) >> XY_SHIFT);
+ 1421                          x2 = (int)(prelast->x >> XY_SHIFT);
+ 1422                      }
+ 1423  
+ 1424                      // clip and draw the line
+ 1425                      if( x1 < size.width && x2 >= 0 )
+ 1426                      {
+ 1427                          if( x1 < 0 )
+ 1428                              x1 = 0;
+ 1429                          if( x2 >= size.width )
+ 1430                              x2 = size.width - 1;
+ 1431                          ICV_HLINE( timg, x1, x2, color, pix_size );
+ 1432                      }
+ 1433                  }
+ 1434                  keep_prelast->x += keep_prelast->dx;
+ 1435                  prelast->x += prelast->dx;
+ 1436              }
+ 1437              draw ^= 1;
+ 1438          }
+ 1439  
+ 1440          // sort edges (using bubble sort)
+ 1441          keep_prelast = 0;
+ 1442  
+ 1443          do
+ 1444          {
+ 1445              prelast = &tmp;
+ 1446              last = tmp.next;
+ 1447  
+ 1448              while( last != keep_prelast && last->next != 0 )
+ 1449              {
+ 1450                  PolyEdge *te = last->next;
+ 1451  
+ 1452                  // swap edges
+ 1453                  if( last->x > te->x )
+ 1454                  {
+ 1455                      prelast->next = te;
+ 1456                      last->next = te->next;
+ 1457                      te->next = last;
+ 1458                      prelast = te;
+ 1459                      sort_flag = 1;
+ 1460                  }
+ 1461                  else
+ 1462                  {
+ 1463                      prelast = last;
+ 1464                      last = te;
+ 1465                  }
+ 1466              }
+ 1467              keep_prelast = prelast;
+ 1468          }
+ 1469          while( sort_flag && keep_prelast != tmp.next && keep_prelast != &tmp );
+ 1470      }
+ 1471  }
+
+## lines 1984-2014: fillPoly
+ 1984  void fillPoly( InputOutputArray _img, const Point** pts, const int* npts, int ncontours,
+ 1985                 const Scalar& color, int line_type,
+ 1986                 int shift, Point offset )
+ 1987  {
+ 1988      CV_INSTRUMENT_REGION();
+ 1989  
+ 1990      Mat img = _img.getMat();
+ 1991  
+ 1992      if( line_type == CV_AA && img.depth() != CV_8U )
+ 1993          line_type = 8;
+ 1994  
+ 1995      CV_Assert( pts && npts && ncontours >= 0 && 0 <= shift && shift <= XY_SHIFT );
+ 1996  
+ 1997      double buf[4];
+ 1998      scalarToRawData(color, buf, img.type(), 0);
+ 1999  
+ 2000      std::vector<PolyEdge> edges;
+ 2001  
+ 2002      int i, total = 0;
+ 2003      for( i = 0; i < ncontours; i++ )
+ 2004          total += npts[i];
+ 2005  
+ 2006      edges.reserve( total + 1 );
+ 2007      for (i = 0; i < ncontours; i++)
+ 2008      {
+ 2009          std::vector<Point2l> _pts(pts[i], pts[i] + npts[i]);
+ 2010          CollectPolyEdges(img, _pts.data(), npts[i], edges, buf, line_type, shift, offset);
+ 2011      }
+ 2012  
+ 2013      FillEdgeCollection(img, edges, buf);
+ 2014  }
+

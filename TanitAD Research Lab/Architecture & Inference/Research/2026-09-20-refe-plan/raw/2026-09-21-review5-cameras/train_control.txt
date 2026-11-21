@@ -1,0 +1,51 @@
+  REFe vits16 31.95 M total / 10.36 M trainable (32.44 %)  device=cpu
+  WTA reach: at most 2 of 64 proposals updated per step (3.1 %)
+  *** SYNTHETIC IMAGES: this run validates the LOOP MECHANICS ONLY.
+  *** Its loss says nothing about driving and must not be quoted as a result.
+  scorer bank: 737 rows over 67 frames  <- D:/Projects/TanitAD/data/refe_scorer_targets_full
+      component        mean  pooled sd  varies in   <- 'varies in' is the fraction of FRAMES whose candidates differ at all
+      collision       0.566      0.496     100.0 %
+      drivable_area   0.976      0.154      26.9 %
+      progress        0.705      0.421     100.0 %
+      ttc             0.614      0.479     100.0 %
+      comfort         0.777      0.294     100.0 %
+      ddc             0.917      0.276      86.6 %
+  bank: 4 tuples   batch 2   OVERFIT CONTROL on 4 tuples
+  optimiser: AdamW lr 0.0002 wd 0.01  schedule: cosine -> 0 over 1 steps
+Traceback (most recent call last):
+  File "D:\Projects\TanitAD\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\train.py", line 551, in <module>
+    main()
+  File "D:\Projects\TanitAD\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\train.py", line 547, in main
+    sys.exit(run(ap.parse_args()))
+             ^^^^^^^^^^^^^^^^^^^^
+  File "D:\Projects\TanitAD\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\train.py", line 421, in run
+    traj, score = model(img, ego, goal)
+                  ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Temp\claude\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\bd7d00af-b98e-42f1-a53c-cb4113059b0f\scratchpad\driverl-venv\Lib\site-packages\torch\nn\modules\module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Temp\claude\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\bd7d00af-b98e-42f1-a53c-cb4113059b0f\scratchpad\driverl-venv\Lib\site-packages\torch\nn\modules\module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Projects\TanitAD\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\model.py", line 590, in forward
+    ego_tok = self.ego_enc(torch.cat([ego, goal_feat], -1)).unsqueeze(1)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Temp\claude\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\bd7d00af-b98e-42f1-a53c-cb4113059b0f\scratchpad\driverl-venv\Lib\site-packages\torch\nn\modules\module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Temp\claude\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\bd7d00af-b98e-42f1-a53c-cb4113059b0f\scratchpad\driverl-venv\Lib\site-packages\torch\nn\modules\module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Temp\claude\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\bd7d00af-b98e-42f1-a53c-cb4113059b0f\scratchpad\driverl-venv\Lib\site-packages\torch\nn\modules\container.py", line 240, in forward
+    input = module(input)
+            ^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Temp\claude\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\bd7d00af-b98e-42f1-a53c-cb4113059b0f\scratchpad\driverl-venv\Lib\site-packages\torch\nn\modules\module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Temp\claude\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\bd7d00af-b98e-42f1-a53c-cb4113059b0f\scratchpad\driverl-venv\Lib\site-packages\torch\nn\modules\module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Temp\claude\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\bd7d00af-b98e-42f1-a53c-cb4113059b0f\scratchpad\driverl-venv\Lib\site-packages\torch\nn\modules\linear.py", line 125, in forward
+    return F.linear(input, self.weight, self.bias)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: mat1 and mat2 shapes cannot be multiplied (2x44 and 45x256)

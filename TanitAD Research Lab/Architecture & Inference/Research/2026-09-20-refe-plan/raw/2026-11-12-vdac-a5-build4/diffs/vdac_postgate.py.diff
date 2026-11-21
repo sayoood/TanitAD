@@ -1,0 +1,102 @@
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/vdac_postgate.py
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/vdac_postgate.py
+@@ -11,31 +11,28 @@
+ import sys
+ 
+ N_PARAMS_CARD = 2440450          # PREREG_VDAC_P6 section 7: aux_drv declared = head built (n_params 2,440,450, S1c run.json)
++N_LORA_CARD = 3145728            # PREREG_VDAC_P6_A5_DRAFT section 6 (HB): the copy's LoRA tensors, 24 blocks x {q, v} x 32 x (1,024 + 1,024); the Adam state of aux_drv/2 must cover exactly these
+ 
+ 
+-def judge(ck, updates, n_params=N_PARAMS_CARD) -> list:
++def _adam_findings(opt, updates, n_expected, what) -> list:
++    """every registered tensor of `opt` holds Adam state, a non-zero finite first moment, the arm's step count; the state covers `n_expected` elements"""
+     import torch
+     bad = []
+-    if not isinstance(ck, dict) or ck.get("format") != "aux_drv/1":
+-        return [f"not an aux_drv/1 checkpoint (format {ck.get('format') if isinstance(ck, dict) else type(ck).__name__})"]
+-    opt = ck.get("opt")
+     if not isinstance(opt, dict) or "state" not in opt or "param_groups" not in opt:
+-        return ["the checkpoint carries no head optimiser state"]
+-    if ck.get("update") != updates:
+-        bad.append(f"checkpoint update {ck.get('update')} != the arm's {updates}")
++        return [f"the checkpoint carries no {what} optimiser state"]
+     registered = [p for g in opt["param_groups"] for p in g["params"]]
+     state = opt["state"]
+     with_state = [p for p in registered if p in state]
+     if not registered:
+-        bad.append("the head optimiser registers no parameter")
++        bad.append(f"the {what} optimiser registers no parameter")
+     if len(with_state) != len(registered):
+-        bad.append(f"{len(registered) - len(with_state)} of {len(registered)} registered head parameters have NO Adam state (they never received a gradient)")
++        bad.append(f"{len(registered) - len(with_state)} of {len(registered)} registered {what} parameters have NO Adam state (they never received a gradient)")
+     numel, zero_m, nonfinite, wrong_step = 0, [], [], []
+     for p in with_state:
+         st = state[p]
+         m = st.get("exp_avg")
+         if m is None:
+-            bad.append(f"parameter {p}: Adam state without exp_avg")
++            bad.append(f"{what} parameter {p}: Adam state without exp_avg")
+             continue
+         numel += int(m.numel())
+         if not bool(torch.isfinite(m).all()) or not bool(torch.isfinite(st.get("exp_avg_sq", m)).all()):
+@@ -46,13 +43,39 @@
+         if step != float(updates):
+             wrong_step.append((p, step))
+     if zero_m:
+-        bad.append(f"{len(zero_m)} head parameters have an EXACTLY ZERO first moment (only zero gradients were applied): {zero_m[:8]}")
++        bad.append(f"{len(zero_m)} {what} parameters have an EXACTLY ZERO first moment (only zero gradients were applied): {zero_m[:8]}")
+     if nonfinite:
+-        bad.append(f"{len(nonfinite)} head parameters have a non-finite Adam state: {nonfinite[:8]}")
++        bad.append(f"{len(nonfinite)} {what} parameters have a non-finite Adam state: {nonfinite[:8]}")
+     if wrong_step:
+-        bad.append(f"{len(wrong_step)} head parameters took a step count other than {updates}: {wrong_step[:4]}")
+-    if numel != n_params:
+-        bad.append(f"the Adam state covers {numel} head parameters, the card's built head has {n_params}")
++        bad.append(f"{len(wrong_step)} {what} parameters took a step count other than {updates}: {wrong_step[:4]}")
++    if numel != n_expected:
++        bad.append(f"the Adam state covers {numel} {what} parameters, the card's built {what} has {n_expected}")
++    return bad
++
++
++def judge(ck, updates, n_params=N_PARAMS_CARD, n_lora=N_LORA_CARD) -> list:
++    """aux_drv/1 (HA): the head's Adam state.  aux_drv/2 (HB): the head's AND the copy's LoRA Adam state (every LoRA tensor holds state, a non-zero first moment, the step count), and the file carries the LoRA tensors."""
++    import torch
++    bad = []
++    fmt = ck.get("format") if isinstance(ck, dict) else type(ck).__name__
++    if fmt not in ("aux_drv/1", "aux_drv/2"):
++        return [f"not an aux_drv/1 or aux_drv/2 checkpoint (format {fmt})"]
++    hb = fmt == "aux_drv/2"
++    if ck.get("update") != updates:
++        bad.append(f"checkpoint update {ck.get('update')} != the arm's {updates}")
++    bad += _adam_findings(ck.get("opt"), updates, n_params, "head")
++    if hb:
++        bad += _adam_findings(ck.get("opt_lora"), updates, n_lora, "LoRA")
++        lt = ck.get("hb_lora")
++        if not isinstance(lt, dict) or not lt:
++            bad.append("the aux_drv/2 checkpoint carries no hb_lora tensors")
++        else:
++            if sum(int(v.numel()) for v in lt.values()) != n_lora:
++                bad.append(f"the checkpoint's LoRA tensors hold {sum(int(v.numel()) for v in lt.values())} elements, the card's copy has {n_lora}")
++            for k, v in lt.items():
++                if hasattr(v, "dtype") and v.dtype.is_floating_point and not bool(torch.isfinite(v).all()):
++                    bad.append(f"LoRA tensor {k} is non-finite")
++                    break
+     head = ck.get("head")
+     if not isinstance(head, dict) or not head:
+         bad.append("the checkpoint carries no head state_dict")
+@@ -69,13 +92,14 @@
+     ap.add_argument("out")
+     ap.add_argument("--updates", type=int, required=True)
+     ap.add_argument("--n-params", type=int, default=N_PARAMS_CARD)
++    ap.add_argument("--n-lora", type=int, default=N_LORA_CARD, help="aux_drv/2 (HB) only: the LoRA elements the Adam state must cover")
+     a = ap.parse_args()
+     import torch
+     p = os.path.join(a.out, "aux_drv.pt")
+     if not os.path.isfile(p):
+         print(f"ZZVDAC_POSTGATE_FAIL {p} does not exist")
+         return 1
+-    bad = judge(torch.load(p, map_location="cpu", weights_only=False), a.updates, a.n_params)
++    bad = judge(torch.load(p, map_location="cpu", weights_only=False), a.updates, a.n_params, a.n_lora)
+     if bad:
+         print("ZZVDAC_POSTGATE_FAIL " + "; ".join(bad))
+         return 1

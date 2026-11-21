@@ -1,0 +1,113 @@
+{
+ "tool": "/home/nvidia/r8ns/mapft/launch_tree/stack/scripts/assert_map_only_finetune.py",
+ "src": "/home/nvidia/r8ns/ckpt/ckpt_ema_48852.pt",
+ "raw": {
+  "dst": {
+   "path": "/home/nvidia/r8ns/mapft/runs/refcv8-mapft-s0/ckpt.pt",
+   "step": 4129,
+   "kind": null,
+   "top_keys": [
+    "data_pos",
+    "ema",
+    "opt",
+    "param_names",
+    "step"
+   ],
+   "n_keys": 1165,
+   "ema_decay": 0.99758,
+   "ema_num_updates": 4129,
+   "n_shadow": 18,
+   "n_shadow_outside_map_only": 0
+  },
+  "views": {
+   "ema": {
+    "tool_ok": true,
+    "n_non_map_changed": 0,
+    "n_missing": 0,
+    "n_extra": 0,
+    "per_module_changed": {
+     "_map_hires.refine": 11,
+     "_map_hires.near": 3,
+     "_map_hires.near_refine": 4
+    },
+    "each_module_changed": true,
+    "stray_rows": [],
+    "pass": true
+   },
+   "raw": {
+    "tool_ok": true,
+    "n_non_map_changed": 0,
+    "n_missing": 0,
+    "n_extra": 0,
+    "per_module_changed": {
+     "_map_hires.refine": 11,
+     "_map_hires.near": 3,
+     "_map_hires.near_refine": 4
+    },
+    "each_module_changed": true,
+    "stray_rows": [],
+    "pass": true
+   }
+  },
+  "step_ok": true,
+  "step": 4129
+ },
+ "ema": {
+  "dst": {
+   "path": "/home/nvidia/r8ns/mapft/runs/refcv8-mapft-s0/model_ema.pt",
+   "step": 4129,
+   "kind": "ema_model_only",
+   "top_keys": [
+    "ema_decay",
+    "kind",
+    "num_updates",
+    "step"
+   ],
+   "n_keys": 1165
+  },
+  "views": {
+   "ema": {
+    "tool_ok": true,
+    "n_non_map_changed": 0,
+    "n_missing": 0,
+    "n_extra": 0,
+    "per_module_changed": {
+     "_map_hires.refine": 11,
+     "_map_hires.near": 3,
+     "_map_hires.near_refine": 4
+    },
+    "each_module_changed": true,
+    "stray_rows": [],
+    "pass": true
+   }
+  },
+  "step_ok": true,
+  "step": 4129
+ },
+ "C1_control_src_vs_src": {
+  "tool_says_ok": true,
+  "my_criterion_reads_FAIL": true,
+  "views": {
+   "ema": {
+    "tool_ok": true,
+    "n_non_map_changed": 0,
+    "n_missing": 0,
+    "n_extra": 0,
+    "per_module_changed": {
+     "_map_hires.refine": 0,
+     "_map_hires.near": 0,
+     "_map_hires.near_refine": 0
+    },
+    "each_module_changed": false,
+    "stray_rows": [],
+    "pass": false
+   }
+  },
+  "control_ok": true
+ },
+ "C2_control_ema_file_is_ckpt_ema_view": {
+  "identical": true,
+  "n_map_changed": 0
+ },
+ "K_FROZEN": "PASS"
+}

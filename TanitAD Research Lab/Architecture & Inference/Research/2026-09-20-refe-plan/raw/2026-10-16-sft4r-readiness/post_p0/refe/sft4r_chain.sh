@@ -1,0 +1,310 @@
+#!/bin/bash
+# SFT-4R chain (eval/PREREG_SFT4R.md + Amendment 3).  v2, 2026-10-16: brought to the pod's CURRENT conventions (raw/2026-10-16-sft4r-readiness/READINESS.md lists what each change fixes).
+#   nohup setsid bash /workspace/refe-plan-sft4r/refe/sft4r_chain.sh > /workspace/data/refe_sft4r/chain.out 2>&1 < /dev/null &
+# Start order and the labels: on THIS pod every label the arm needs already exists (P2 built train_pdm, the S1 chain built heldout_pdm + the lane labels; PDM train 174,912 rows, held-out 3,137), so there is
+# NO relabel step: sft4r_relabel.sh is for a pod that lacks them and must not run here.  This chain AUDITS them (read-only) instead of trusting them.
+# Order, every step fail-closed (a refusal is `REFUSED: stage=<stage>: <why>` in chain.log, exit 1):
+#  precheck  the HF token file, the shipped tree == its SHIP_MANIFEST.json, the files this chain calls; then the lock (one chain at a time);
+#  inputs    the PDM labels are COMPLETE (pdm_label_complete.py: train recomputed from the sets and == 174,912, held-out == 3,137) -- SFT-4 launched on 146,185 of 174,912 because "complete" was never
+#            computed (PREREG_SFT4 Amendment 4) --; the lane labels (train >= 2,109 rows, held-out lane + teacher-lane == 3,137); the init checkpoint's md5;
+#  egr       G-EGR: hf_egress.py gate (a real push that must verify, and a regression push the SERVER must refuse), auth from the token FILE, read in place;
+#  pdm_push  the PDM labels leave the pod BEFORE training (they cost ~11 h CPU; STOP_CONSEQUENCES: they were lost once), verified by the remote listing;
+#  dd        a real write test of the disk (never `df`: the pod volume is a per-pod quota);
+#  gpu_wait  nothing else may hold the pod: the other chains' locks free AND the GPU idle on 3 consecutive polls (CLAUDE.md: never add load to a pod that is training);
+#  preflight scorer_finetune.py --preflight on the REAL configuration, then BOTH deliberate regressions must turn it RED: empty PDM -> G9, MUTATE_G3 -> G3;
+#  gate      ⛔ the LAUNCH GATE (CLAUDE.md, PI 2026-09-26, BINDING): profile refe_sft4r mints a PASS token for this commit / tree / argv / data; the token is VERIFIED, never grepped;
+#  train     gpu_wait again, the token verified AGAIN right before the trainer, then the run in its OWN process group with the egress watcher beside it (pushes every checkpoint, halts the run after
+#            two consecutive failed pushes plus the next checkpoint -- PREREG_SFT4R "Changed 3"); a run that did not reach 2,733 updates is a failure.
+# Auth: hf_egress.py reads <token file> IN PLACE (--token-file); the pod has no HF_TOKEN in its environment and no cached login (MEASURED 2026-10-16).  No token is read, printed or written here.
+# Markers are written under $OUT/stage/<name>.ok with the SHA-256 of SHIP_MANIFEST.json: a marker of another tree is not a marker.  SFT4R_STOP_AFTER=<stage> ends the chain after that stage (a dry run).
+set -u
+WS=${SFT4R_WS:-/workspace}
+DATA=$WS/data
+PKG=${SFT4R_PKG:-$WS/refe-plan-sft4r}
+RUN=$PKG/refe
+D=$DATA/refe_sft2
+OUT=$DATA/refe_sft4r
+S=$OUT/stage
+LG=$OUT/lg
+L=$OUT/chain.log
+REPO=Sayood/tanitad-refe-sft4r
+BANKS_REPO=Sayood/tanitad-refe-navtrain-banks
+HFTOK=${SFT4R_HF_TOKEN_FILE:-<token file>}
+ONP=$DATA/refe_navtrain/onpolicy/sets
+HO=$DATA/refe_heldout/sets
+INIT=$DATA/refe_runs/vitl16_navtrain10_grow_tau0.3/model_final.pt
+INIT_MD5=b54773f8c302b2ec8ff4c5971d1e1370
+# the held-out PDM relabel and the lane relabel were run by the S1 chain on this pod, so their logs live there; a pod that ran sft4r_relabel.sh has them beside the labels
+PDM_TRAIN_LOG=${SFT4R_PDM_TRAIN_LOG:-$D/pdm_train.log}
+PDM_HELDOUT_LOG=${SFT4R_PDM_HELDOUT_LOG:-$( [ -f $D/pdm_heldout.log ] && echo $D/pdm_heldout.log || echo $DATA/s1aux/pdm_heldout.log )}
+LANE_EXIT_LOG=${SFT4R_LANE_EXIT_LOG:-$( [ -f $D/tl_train.log ] && echo $D/tl_train.log || echo $DATA/s1aux/tl_train.log )}
+export TANITAD_GATE_KEY_FILE=${TANITAD_GATE_KEY_FILE:-$OUT/launch_gate.key}      # the HMAC key lives on the volume, OUTSIDE the shipped tree and outside anything the egress pushes
+mkdir -p $OUT $S
+STAGE=start
+TREE=""
+export SFT4R_WS=$WS
+log() { echo "$(date -u +%FT%T) $*" >> $L; }
+refuse() { log "REFUSED: stage=$STAGE: $*"; exit 1; }
+stop_after() { if [ "${SFT4R_STOP_AFTER:-}" = "$1" ]; then log "stopping after $1 (SFT4R_STOP_AFTER)"; exit 0; fi; }
+# The LAST exit marker decides: the relabel logs and chain.log are APPENDED across attempts, so an earlier attempt's
+# "0" must never vouch for a later attempt that failed.  last_exit <marker> <log>
+last_exit() { grep "^$1 " "$2" 2>/dev/null | tail -1 | cut -d' ' -f2-; }
+# Gate JSON is PARSED, never grepped. json.dumps keeps insertion order and scorer_finetune.py writes G3's "ok" LAST,
+# so the earlier grep for '{"ok": false' could never match (MEASURED on SFT-4's
+# raw/2026-10-04-sft4-smoke/r2_smoke2_g3mut.log) and the chain would have refused every launch at step 5.
+#   gate_is <log> <gate> <key> <json literal>   -> rc 0 iff the log's single preflight row has gates.<gate>.<key> == it
+gate_is() {
+  $PY_C - "$@" <<'PYEOF'
+import json, sys
+log, gate, key, want = sys.argv[1:5]
+rows = [json.loads(ln) for ln in open(log, encoding="utf-8", errors="replace") if ln.startswith('{"event": "preflight"')]
+if len(rows) != 1:
+    sys.exit("%s: %d preflight rows, want 1" % (log, len(rows)))
+got = json.dumps(rows[0]["gates"].get(gate, {}).get(key, "<absent>"))
+if got != want:
+    sys.exit("%s: %s.%s = %s, want %s" % (log, gate, key, got, want))
+PYEOF
+}
+
+# ---- stage markers.  A marker carries the SHA-256 of SHIP_MANIFEST.json: a re-ship of another tree makes every earlier marker void (the token binds the tree, so must the skip).
+tree_sha() { sha256sum "$PKG/SHIP_MANIFEST.json" 2>/dev/null | cut -c1-64; }
+stage_done() { [ -f "$S/$1.ok" ] && [ "$(sed -n 2p "$S/$1.ok")" = "$TREE" ]; }
+stage_mark() { { date -u +%FT%T; echo "$TREE"; } > "$S/$1.ok"; }
+# rc 0 = a process is on the GPU, OR the GPU cannot be asked (what cannot be proven idle is busy).  Never pgrep -f: it matches its own command line.
+gpu_busy() {
+  local nv="${SFT4R_NVSMI:-nvidia-smi}" apps
+  apps="$("$nv" --query-compute-apps=pid --format=csv,noheader 2> /dev/null)" || return 0
+  [ -n "$(echo "$apps" | tr -d '[:space:]')" ]
+}
+# rc 0 = no other chain holds the pod, rc 2 = one still does (WAIT).  The lock probe opens the file READ-WRITE: `flock -n` on a read-only fd would report "free" for a held lock.
+others_hold() {
+  local c
+  for c in refe_p2 refe_p2rep rls1 s1aux refe_p6; do
+    if [ -e "$DATA/$c/chain.lock" ] && ! ( flock -n 9 ) 9<> "$DATA/$c/chain.lock"; then echo "the $c chain holds $DATA/$c/chain.lock"; return 2; fi
+  done
+  return 0
+}
+# BLOCK until no other chain holds the pod AND the GPU was idle on SFT4R_IDLE_POLLS consecutive polls.
+wait_clear() {
+  local poll="${SFT4R_POLL_S:-30}" need="${SFT4R_IDLE_POLLS:-3}" max="${SFT4R_WAIT_MAX_S:-0}" idle=0 waited=0 since=0 why rc
+  while :; do
+    why="$(others_hold)"; rc=$?
+    if [ "$rc" = 0 ] && gpu_busy; then why="a process is on the GPU (or nvidia-smi cannot say)"; rc=2; fi
+    if [ "$rc" = 0 ]; then
+      idle=$((idle + 1))
+      [ "$idle" -ge "$need" ] && return 0
+    else
+      idle=0
+      if [ "$since" = 0 ] || [ "$since" -ge 600 ]; then log "ZZSFT4R_WAITING $why (waited ${waited}s)"; since=0; fi
+    fi
+    [ "$max" -gt 0 ] && [ "$waited" -ge "$max" ] && refuse "waited ${waited}s for the pod (SFT4R_WAIT_MAX_S): $why"
+    sleep "$poll" 200>&-
+    waited=$((waited + poll)); since=$((since + poll))
+  done
+}
+# ⛔ THE LAUNCH-GATE TOKEN: scorer_finetune.py does not start unless this returns 0.  `launch_gate.py verify` RE-MEASURES the argv, the code tree and the data and checks the HMAC.
+#   token_ok -> rc 0 iff ZZGATE-MATCHZZ
+token_ok() {
+  tok="$(ls "$LG"/PASS_*.json 2> /dev/null | head -n 1)"
+  [ -n "$tok" ] || return 1
+  env -u HF_TOKEN "$PY_C" "$RUN/launch_gate.py" verify --profile refe_sft4r --token "$tok" --args "$ARGS" --pkg "$PKG" --json "$OUT/token_verify.json" >> "$OUT/token_verify.log" 2>&1 200>&-
+}
+# best-effort last push of chain.log, so a REFUSED line reaches HF too (only once G-EGR has passed on this tree)
+on_exit() {
+  rc=$?
+  if [ -n "${HPY:-}" ] && stage_done egr 2> /dev/null && [ "${SFT4R_NO_EXIT_PUSH:-}" != "1" ]; then
+    ( cd "$RUN" && "$HPY" hf_egress.py push --repo $REPO --prefix logs --tag chain_exit --files "$L" --chain-log "$OUT/egress_exit.log" --token-file "$HFTOK" ) >> "$OUT/exit_push.log" 2>&1 200>&-
+  fi
+  exit $rc
+}
+
+# ---- 0. precheck: cheap refusals FIRST, then the lock
+exec 200>"$OUT/chain.lock"
+flock -n 200 || { echo "REFUSED: another sft4r chain holds $OUT/chain.lock"; exit 1; }
+trap on_exit EXIT
+STAGE=precheck
+TREE="$(tree_sha)"
+log "chain armed (ZZSFT4R_START; sft4r_chain.sh md5 $(md5sum "$0" | cut -c1-12), tree ${TREE:0:12})"
+[ -n "$TREE" ] || refuse "no $PKG/SHIP_MANIFEST.json: ship the landed tree with its manifest (launch_gate.py ship-manifest --commit <40-hex>)"
+[ -r "$HFTOK" ] && grep -qE 'hf_[A-Za-z0-9]{8,}' "$HFTOK" || refuse "$HFTOK is missing, unreadable or holds no hf_ token (the pod has no HF_TOKEN in its environment and no cached login: hf_egress.py reads this file in place)"
+[ -f "$WS/teacher_env.sh" ] || refuse "$WS/teacher_env.sh is missing (the venv-teacher environment)"
+source $WS/teacher_env.sh
+# what the labellers and the trainer import (the S1 chain exports exactly these; MEASURED to work on this pod)
+export NUPLAN_DATA_ROOT="$DATA" REFE_NUPLAN_DB_ROOT="$DATA/navtrain_dbs" REFE_NAVTRAIN_YAML="$PKG/splits/navtrain.yaml"
+PY_C="${DRIVERL_EVAL_PYTHON:-}"
+[ -n "$PY_C" ] && [ -x "$PY_C" ] || refuse "teacher_env.sh did not set a runnable DRIVERL_EVAL_PYTHON"
+HPY=${HF_PY:-$PY_C}
+for f in refe/scorer_finetune.py refe/launch_gate.py refe/gate_token.py refe/gate_checks.py refe/gate_fixture.py refe/hf_egress.py refe/pdm_label_complete.py refe/onpolicy_relabel_pdm.py \
+         refe/sft4r_pod.sh refe/sft4r_chain.sh refe/test_sft4r_chain.py refe/test_sft4r_gate.py refe/test_launch_gate.py refe/train.py refe/model.py refe/ckpt_io.py refe/planner.py \
+         raw/2026-10-04-sft4-smoke/r2_smoke2.log raw/2026-10-04-sft4-smoke/r2_smoke2_g3mut.log splits/navtrain.yaml SHIP_MANIFEST.json; do
+  [ -f "$PKG/$f" ] || refuse "$PKG/$f is missing from the shipped package"
+done
+env -u HF_TOKEN "$PY_C" - "$PKG" "$RUN" > "$OUT/tree_check.log" 2>&1 200>&- <<'PYEOF' || refuse "the shipped tree is not its SHIP_MANIFEST.json: $(tail -n 1 "$OUT/tree_check.log" | cut -c1-300)"
+import sys
+from pathlib import Path
+sys.path.insert(0, sys.argv[2])
+import gate_token as GT
+pkg = Path(sys.argv[1])
+man = GT.read_json(pkg / GT.SHIP_MANIFEST)
+tree = GT.tree_manifest(pkg)
+if man.get("files") != tree:
+    sys.exit("tree differs from the manifest: %s" % GT.tree_diff(man.get("files") or {}, tree))
+print("ZZSFT4R_TREE_OK %d files commit %s" % (len(tree), str(man.get("commit"))[:12]))
+PYEOF
+log "ZZSFT4R_PRECHECK_OK ($(tail -n 1 "$OUT/tree_check.log"))"; stop_after precheck
+
+# ---- 1. the inputs, AUDITED (read-only): none of them is rebuilt here
+STAGE=inputs
+if ! stage_done inputs; then
+  for p in "$ONP" "$HO" "$HO/../heldout_logs.txt" "$DATA/refe_navtrain/train_grow" "$DATA/navtrain_pixels" "$INIT"; do
+    [ -e "$p" ] || refuse "$p is missing (the pod's P2 / S1 inputs are gone)"
+  done
+  [ "$(md5sum "$INIT" | cut -c1-32)" = "$INIT_MD5" ] || refuse "$INIT is not the registered init checkpoint (md5 ${INIT_MD5:0:12})"
+  [ "$(last_exit ZZPDM_TRAIN_EXIT $PDM_TRAIN_LOG)" = "0" ] \
+    || refuse "PDM train relabel's last exit is '$(last_exit ZZPDM_TRAIN_EXIT $PDM_TRAIN_LOG)', not 0 ($PDM_TRAIN_LOG)"
+  [ "$(last_exit ZZPDM_HELDOUT_EXIT $PDM_HELDOUT_LOG)" = "0" ] \
+    || refuse "PDM held-out relabel's last exit is '$(last_exit ZZPDM_HELDOUT_EXIT $PDM_HELDOUT_LOG)', not 0 ($PDM_HELDOUT_LOG)"
+  env -u HF_TOKEN OMP_NUM_THREADS=1 nice -n 19 "$PY_C" $RUN/pdm_label_complete.py --log $PDM_TRAIN_LOG --out $D/train_pdm --sets $ONP --expect 174912 \
+    --json $OUT/pdm_complete_train.json >> $L 2>&1 200>&- || refuse "train PDM labels INCOMPLETE ($(tail -1 $L))"
+  env -u HF_TOKEN OMP_NUM_THREADS=1 nice -n 19 "$PY_C" $RUN/pdm_label_complete.py --log $PDM_HELDOUT_LOG --out $D/heldout_pdm --sets $HO --expect 3137 \
+    --json $OUT/pdm_complete_heldout.json >> $L 2>&1 200>&- || refuse "held-out PDM labels INCOMPLETE ($(tail -1 $L))"
+  log "PDM COMPLETE: train $(cat $D/train_pdm/*.jsonl | wc -l) rows, held-out $(cat $D/heldout_pdm/*.jsonl | wc -l) rows"
+  NL=$(cat $D/train_teacher_lane/*.jsonl 2>/dev/null | wc -l)
+  [ "$NL" -ge 2109 ] || refuse "train teacher-lane rows $NL < 2,109 (SFT-4's count at launch)"
+  for d in heldout_lane heldout_teacher_lane; do
+    [ "$(cat $D/$d/*.jsonl 2>/dev/null | wc -l)" = 3137 ] || refuse "$d holds $(cat $D/$d/*.jsonl 2>/dev/null | wc -l) rows, want 3137 (the labels SFT-4 trained against)"
+  done
+  log "lane labels: train $NL, held-out lane $(cat $D/heldout_lane/*.jsonl | wc -l), teacher $(cat $D/heldout_teacher_lane/*.jsonl | wc -l)"
+  # PREREG_SFT4R "Changed 2" trains on the rows written by launch with a 2,109 floor, so a non-zero lane rc is RECORDED,
+  # not refused -- refusing on it would move the registered rule. The floor above still refuses.
+  log "lane relabel last exit (rank0 rank1): '$(last_exit ZZLANE_TRAIN_EXIT $LANE_EXIT_LOG)' ($LANE_EXIT_LOG)"
+  stage_mark inputs
+fi
+NL=$(cat $D/train_teacher_lane/*.jsonl 2>/dev/null | wc -l)
+log "ZZSFT4R_INPUTS_OK"; stop_after inputs
+
+# ---- 2. G-EGR, then the PDM labels leave the pod
+STAGE=egr
+$HPY -c "import huggingface_hub, torch" 2>>$L || refuse "huggingface_hub/torch not importable by $HPY"
+if ! stage_done egr; then
+  $HPY $RUN/hf_egress.py gate --repo $REPO --out $OUT/gate --chain-log $L --egress-log $OUT/egress.jsonl --token-file "$HFTOK" > $OUT/gate.log 2>&1 200>&-
+  grep -q " ZZEGR_PASS " $OUT/gate.log || refuse "G-EGR did not pass ($(tail -1 $OUT/gate.log | cut -c1-300))"
+  [ -f $OUT/gate/g_egr_result.json ] || refuse "G-EGR wrote no g_egr_result.json"
+  stage_mark egr
+fi
+log "G-EGR PASS (ZZSFT4R_EGR_OK)"; stop_after egr
+STAGE=pdm_push
+if ! stage_done pdm_push; then
+  mkdir -p $OUT/pdm_egress
+  tar -C $D -cf $OUT/pdm_egress/train_pdm.tar train_pdm && tar -C $D -cf $OUT/pdm_egress/heldout_pdm.tar heldout_pdm \
+    || refuse "tar of the PDM labels failed"
+  ( cd $OUT/pdm_egress && sha256sum train_pdm.tar heldout_pdm.tar > MANIFEST_pdm_sha256.txt
+    cp $OUT/pdm_complete_train.json $OUT/pdm_complete_heldout.json . )
+  log "PDM egress staged: $(du -sb $OUT/pdm_egress | cut -f1) bytes"
+  N0=$(wc -l < $L)      # only THIS push's lines may vouch for it (chain.log is appended across attempts)
+  $HPY $RUN/hf_egress.py push --repo $BANKS_REPO --repo-type dataset --prefix pdm_labels_sft4r --max-push-bytes 2e9 \
+    --tag pdm_labels --chain-log $L --egress-log $OUT/egress.jsonl --token-file "$HFTOK" \
+    --files $OUT/pdm_egress/train_pdm.tar $OUT/pdm_egress/heldout_pdm.tar $OUT/pdm_egress/MANIFEST_pdm_sha256.txt \
+            $OUT/pdm_egress/pdm_complete_train.json $OUT/pdm_egress/pdm_complete_heldout.json >> $OUT/gate.log 2>&1 200>&-
+  tail -n +$((N0 + 1)) $L | grep -q " ZZEGRESS_OK pdm_labels " || refuse "the PDM label push did not verify"
+  rm -f $OUT/pdm_egress/train_pdm.tar $OUT/pdm_egress/heldout_pdm.tar          # verified on the remote listing: the pod volume is a per-pod quota, do not keep a second 0.5 GB copy
+  stage_mark pdm_push
+fi
+log "ZZSFT4R_PDM_PUSHED"; stop_after pdm_push
+
+# ---- 3. a real write test of the disk (the pod volume is a per-pod quota; `df` is not the judge).  Footprint of the run: ~2.6 GB (model_sft_A/B) + ~0.3 GB states + staging.
+STAGE=dd
+if ! stage_done dd; then
+  DDMB=${SFT4R_DD_MB:-6144}
+  dd if=/dev/zero of=$OUT/dd_test.tmp bs=1M count=$DDMB conv=fsync > $OUT/dd_test.log 2>&1 200>&- ; ddrc=$?
+  rm -f $OUT/dd_test.tmp
+  [ $ddrc -eq 0 ] || refuse "the ${DDMB} MB write test failed: $(tail -n 1 $OUT/dd_test.log)"
+  stage_mark dd
+fi
+log "ZZSFT4R_DD_OK (${SFT4R_DD_MB:-6144} MB written and removed)"; stop_after dd
+
+# ---- 4. the GPU, then preflight + both deliberate regressions
+STAGE=gpu_wait
+wait_clear
+STAGE=preflight
+ARGS="$(MODE=argv SFT4R_WS=$WS bash $RUN/sft4r_pod.sh)" && [ -n "$ARGS" ] || refuse "sft4r_pod.sh MODE=argv printed nothing"
+if ! stage_done preflight; then
+  rm -f $OUT/preflight.jsonl $OUT/PREFLIGHT_PASS.json
+  MODE=preflight bash $RUN/sft4r_pod.sh 200>&-
+  grep -q "^ZZSFT_PREFLIGHT_PASS" $OUT/preflight.log || refuse "preflight did not pass ($(tail -n 2 $OUT/preflight.log | tr '\n' ' ' | cut -c1-300))"
+  log "preflight PASS"
+  MODE=mutate bash $RUN/sft4r_pod.sh 200>&-
+  grep -q "^ZZSFT_PREFLIGHT_FAIL" $OUT/mutate.log || refuse "the empty-PDM mutation did not fail the preflight"
+  m=$(gate_is $OUT/mutate.log G9_pdm_targets_in_bank train_pdm 0 2>&1) || refuse "the empty-PDM mutation did not empty the train PDM bank ($m)"
+  m=$(gate_is $OUT/mutate.log G9_pdm_targets_in_bank ok false 2>&1) || refuse "the empty-PDM mutation did NOT fail G9 ($m)"
+  log "G9 mutation RED as required"
+  MODE=mutate_g3 bash $RUN/sft4r_pod.sh 200>&-
+  grep -q "^ZZSFT_PREFLIGHT_FAIL" $OUT/mutate_g3.log || refuse "the MUTATE_G3 regression did not fail the preflight"
+  m=$(gate_is $OUT/mutate_g3.log G3_copies_equal_model_at_step0 ok false 2>&1) || refuse "the MUTATE_G3 regression did NOT fail G3 ($m)"
+  log "G3 mutation RED as required"
+  stage_mark preflight
+fi
+log "ZZSFT4R_PREFLIGHT_OK"; stop_after preflight
+
+# ---- 5. ⛔ the launch gate: a PASS token for THIS tree, argv and data, or a refusal.  The gate consumes the REAL preflight's preflight.jsonl and G-EGR's own JSON.
+STAGE=gate
+if ! stage_done gate; then
+  rm -rf "$LG"; mkdir -p "$LG"
+  env -u HF_TOKEN OMP_NUM_THREADS=4 "$PY_C" $RUN/launch_gate.py run --profile refe_sft4r --pkg "$PKG" --args "$ARGS" --out-dir "$LG" \
+    --gate-preflight-json $OUT/preflight.jsonl --gate-egr-json $OUT/gate/g_egr_result.json > $OUT/launch_gate.log 2>&1 200>&-
+  echo "ZZEXIT $?" >> $OUT/launch_gate.log
+  token_ok || refuse "the launch gate did not mint a PASS token that verifies (launch_gate.log, lg/, token_verify.log): $(grep -E 'REASON|FAIL' $OUT/launch_gate.log | head -n 3 | cut -c1-300 | tr '\n' ' ')"
+  stage_mark gate
+fi
+log "ZZSFT4R_GATE_OK (token $(ls "$LG"/PASS_*.json | head -n 1 | xargs -n1 basename))"; stop_after gate
+
+# ---- 6. train.  The GPU is re-checked and the token VERIFIED AGAIN right before the trainer (the BINDING verify; the one above may be hours old on a re-run).
+STAGE=train
+if stage_done trainstart && ! stage_done train; then
+  k=1; while [ -e "$OUT.killed_$k" ]; do k=$((k + 1)); done
+  refuse "a previous attempt STARTED training and did not finish; scorer_finetune.py has no resume and its scorer_states are not resumable. Archive it (mv $OUT $OUT.killed_$k), re-run, and the chain restarts at update 0 under a fresh preflight and a fresh token"
+fi
+wait_clear
+token_ok || refuse "the launch-gate token does not verify: scorer_finetune.py is NOT started ($(tail -n 2 $OUT/token_verify.log | tr '\n' ' ' | cut -c1-300))"
+stage_mark trainstart
+log "run launch: PDM train rows $(cat $D/train_pdm/*.jsonl | wc -l), lane rows $NL (ZZSFT4R_TRAIN_START)"
+set -m
+MODE=run bash $RUN/sft4r_pod.sh 200>&- &
+TPID=$!
+set +m
+sleep 2
+PG=$(${SFT4R_PS:-ps} -o pgid= $TPID | tr -d ' ')
+if [ "$PG" != "$TPID" ]; then kill $TPID; refuse "run is not its own process group (pgid $PG, pid $TPID)"; fi
+$HPY $RUN/hf_egress.py watch --repo $REPO --out $OUT --stage $OUT/egress_stage --halt-pid $TPID --chain-log $L \
+  --egress-log $OUT/egress.jsonl --token-file "$HFTOK" --log $OUT/sft.log $L $OUT/preflight.log $OUT/mutate.log $OUT/mutate_g3.log $OUT/launch_gate.log $OUT/token_verify.json \
+  $OUT/gate/g_egr_result.json $OUT/pdm_complete_train.json $OUT/pdm_complete_heldout.json "$LG"/PASS_*.json > $OUT/watch.log 2>&1 200>&- &
+WPID=$!
+log "run pid/pgid $TPID, watcher pid $WPID"
+wait $TPID; RRC=$?
+wait $WPID; WRC=$?
+log "RUN EXIT $RRC ($(tail -1 $OUT/sft.log)); WATCH EXIT $WRC ($(tail -1 $OUT/watch.log))"
+# the finished run IS the registered run: ZZSFT_DONE, 2,733 updates (scorer_finetune.py:1363 on 174,912 sets), both models written
+env -u HF_TOKEN "$PY_C" - "$OUT" > "$OUT/run_check.log" 2>&1 200>&- <<'PYEOF'
+import json, os, sys
+out = sys.argv[1]
+want = 2733
+rows = [json.loads(ln) for ln in open(os.path.join(out, "sft.jsonl"), encoding="utf-8") if ln.startswith("{")]
+done = [r for r in rows if r.get("event") == "done"]
+start = [r for r in rows if r.get("event") == "start"]
+bad = []
+if "ZZSFT_DONE" not in open(os.path.join(out, "sft.log"), encoding="utf-8", errors="replace").read():
+    bad.append("no ZZSFT_DONE in sft.log")
+if len(done) != 1 or done[0].get("updates") != want:
+    bad.append("done event %s, want updates %d" % ([d.get("updates") for d in done], want))
+if len(start) != 1 or start[0].get("updates") != want or start[0].get("train_sets") != 174912:
+    bad.append("start event %s, want updates %d on 174912 sets" % ([(s.get("updates"), s.get("train_sets")) for s in start], want))
+for m in ("model_sft_A.pt", "model_sft_B.pt", "scorer_states_last.pt"):
+    if not os.path.isfile(os.path.join(out, m)):
+        bad.append("missing " + m)
+if bad:
+    sys.exit("; ".join(bad))
+print("ZZSFT4R_RUN_OK updates %d" % want)
+PYEOF
+RCC=$?
+log "run check: $(tail -n 1 $OUT/run_check.log | cut -c1-300)"
+if [ $RRC -eq 0 ] && [ $WRC -eq 0 ] && [ $RCC -eq 0 ]; then stage_mark train; log "ZZSFT4R_CHAIN_DONE"; else log "ZZSFT4R_CHAIN_FAIL"; exit 1; fi

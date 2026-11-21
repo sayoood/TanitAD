@@ -1,0 +1,30 @@
+..............F...........                                               [100%]
+================================== FAILURES ===================================
+_ test_actions_of_a_candidate_equal_what_the_pinned_commit_writes_bit_for_bit _
+
+T = <module 'v8f_t1_eval' from 'F:\\TanitAD-scratch\\v8proof\\moved_from_c\\leadsup\\tree_patch\\stack\\scripts\\v8f_t1_eval.py'>
+world = {'root': 'F:\\TanitAD-scratch\\v8proof\\imagplan\\work\\pt\\lead2\\synth0', 'names': {'train': ['syn-train-000', 'syn-train-001', 'syn-train-002', 'syn-train-003'], 'eval': ['syn-eval-000', 'syn-eval-001', 'syn-eval-002']}}
+
+    def test_actions_of_a_candidate_equal_what_the_pinned_commit_writes_bit_for_bit(T, world):
+        _, p = _lead_join(T, world["root"], name="join_act.npz", const_gap=20.0)
+        states, *_ = _window_states(T, world, p)
+        rng = np.random.default_rng(5)
+        for st in states:
+            for _ in range(4):
+                v = rng.uniform(2, 15)
+                plan = np.stack([np.cumsum(np.full(30, v * DT) + rng.normal(0, 0.05, 30)), np.cumsum(rng.normal(0, 0.03, 30))], 1)
+                j = int(st.j)
+                act = IP.candidate_actions(T, st, plan, 10, "executed")
+                alog = IP.candidate_actions(T, st, plan, 10, "logged")
+                st.commit_plan(plan, 10)                                              # the pinned executor writes d['a'], d['ch1'] of frames j+1 .. j+10
+                got = np.stack([np.nan_to_num(st.d["a"][j + 1:j + 10]), np.nan_to_num(st.d["ch1"][j + 1:j + 10])], 1)
+>               assert arrays_equal(act[1:], got), "candidate actions must be the very numbers the pinned tool writes when it executes the plan"
+E               AssertionError: candidate actions must be the very numbers the pinned tool writes when it executes the plan
+E               assert False
+E                +  where False = arrays_equal(array([[ 9.1639805e+00, -2.1924073e-02],\n       [ 1.9368393e+00,  2.4165444e-01],\n       [-1.2838535e+00, -1.4271662e-...+00, -4.4427481e-01],\n       [ 1.2106472e-01,  1.6334096e-01],\n       [ 3.6349233e-02, -2.0784605e-03]], dtype=float32), array([[ 9.1639805e+00, -2.1924073e-02],\n       [ 1.9368393e+00,  2.4165444e-01],\n       [-1.2838535e+00, -1.4271662e-...+00, -6.8538272e-01],\n       [ 1.2106472e-01,  1.6334096e-01],\n       [ 3.6349233e-02, -2.0784605e-03]], dtype=float32))
+
+test_imag_plan.py:300: AssertionError
+=========================== short test summary info ===========================
+FAILED test_imag_plan.py::test_actions_of_a_candidate_equal_what_the_pinned_commit_writes_bit_for_bit
+1 failed, 25 passed in 50.93s
+PYTEST_RC 1

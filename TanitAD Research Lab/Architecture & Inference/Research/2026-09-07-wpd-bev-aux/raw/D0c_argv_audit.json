@@ -1,0 +1,193 @@
+{
+ "_evidence_class": "MEASURED (ours; artifact = this file, read from each run own config.json on tanitad-thor-wifi)",
+ "_what": "A3 replicate arms: the audit that says how many tokens moved. D0b must differ from D0 in the OUTPUT PATH ALONE.",
+ "base_arm": "D0",
+ "base_argv_n_tokens": 59,
+ "arms": {
+  "D0": {
+   "n_tokens": 59,
+   "seed": 0,
+   "summary": {
+    "done": true,
+    "step": 4000,
+    "arm": "hier",
+    "seed": 0,
+    "wallclock_s": 16821.2
+   },
+   "diff_blocks_vs_D0": [],
+   "n_diff_blocks_excluding_out_path": 0,
+   "levers_moved_vs_D0": []
+  },
+  "D0b": {
+   "n_tokens": 59,
+   "seed": 0,
+   "summary": {
+    "done": true,
+    "step": 4000,
+    "arm": "hier",
+    "seed": 0,
+    "wallclock_s": 16433.0
+   },
+   "diff_blocks_vs_D0": [
+    {
+     "op": "replace",
+     "D0": [
+      "/home/nvidia/experiments/wpd-D0-4k"
+     ],
+     "D0b": [
+      "/home/nvidia/experiments/wpd-D0b-4k"
+     ]
+    }
+   ],
+   "n_diff_blocks_excluding_out_path": 0,
+   "levers_moved_vs_D0": []
+  },
+  "D0c": {
+   "n_tokens": 59,
+   "seed": 1,
+   "summary": {
+    "done": true,
+    "step": 4000,
+    "arm": "hier",
+    "seed": 1,
+    "wallclock_s": 16443.3
+   },
+   "diff_blocks_vs_D0": [
+    {
+     "op": "replace",
+     "D0": [
+      "0"
+     ],
+     "D0c": [
+      "1"
+     ]
+    },
+    {
+     "op": "replace",
+     "D0": [
+      "/home/nvidia/experiments/wpd-D0-4k"
+     ],
+     "D0c": [
+      "/home/nvidia/experiments/wpd-D0c-4k"
+     ]
+    }
+   ],
+   "n_diff_blocks_excluding_out_path": 1,
+   "levers_moved_vs_D0": [
+    {
+     "op": "replace",
+     "D0": [
+      "0"
+     ],
+     "D0c": [
+      "1"
+     ]
+    }
+   ]
+  },
+  "D1": {
+   "n_tokens": 65,
+   "seed": 0,
+   "summary": {
+    "done": true,
+    "step": 4000,
+    "arm": "hier",
+    "seed": 0,
+    "wallclock_s": 16822.0
+   },
+   "diff_blocks_vs_D0": [
+    {
+     "op": "insert",
+     "D0": [],
+     "D1": [
+      "--bev-aux",
+      "col",
+      "--w-bev-aux",
+      "0.1",
+      "--bev-aux-pos-weight",
+      "30.3397163338613"
+     ]
+    },
+    {
+     "op": "replace",
+     "D0": [
+      "/home/nvidia/experiments/wpd-D0-4k"
+     ],
+     "D1": [
+      "/home/nvidia/experiments/wpd-D1-4k"
+     ]
+    }
+   ],
+   "n_diff_blocks_excluding_out_path": 1,
+   "levers_moved_vs_D0": [
+    {
+     "op": "insert",
+     "D0": [],
+     "D1": [
+      "--bev-aux",
+      "col",
+      "--w-bev-aux",
+      "0.1",
+      "--bev-aux-pos-weight",
+      "30.3397163338613"
+     ]
+    }
+   ]
+  },
+  "D2": {
+   "n_tokens": 66,
+   "seed": 0,
+   "summary": {
+    "done": true,
+    "step": 4000,
+    "arm": "hier",
+    "seed": 0,
+    "wallclock_s": 16557.5
+   },
+   "diff_blocks_vs_D0": [
+    {
+     "op": "insert",
+     "D0": [],
+     "D2": [
+      "--bev-aux",
+      "col",
+      "--w-bev-aux",
+      "0.1",
+      "--bev-aux-pos-weight",
+      "30.3397163338613",
+      "--bev-aux-shuffle"
+     ]
+    },
+    {
+     "op": "replace",
+     "D0": [
+      "/home/nvidia/experiments/wpd-D0-4k"
+     ],
+     "D2": [
+      "/home/nvidia/experiments/wpd-D2-4k"
+     ]
+    }
+   ],
+   "n_diff_blocks_excluding_out_path": 1,
+   "levers_moved_vs_D0": [
+    {
+     "op": "insert",
+     "D0": [],
+     "D2": [
+      "--bev-aux",
+      "col",
+      "--w-bev-aux",
+      "0.1",
+      "--bev-aux-pos-weight",
+      "30.3397163338613",
+      "--bev-aux-shuffle"
+     ]
+    }
+   ]
+  }
+ },
+ "_reading": {
+  "D0b": "ZERO levers moved: the only differing token is --out. Same flags, SAME SEED (0). This is the A0b_replicate design and it measures run-to-run NONDETERMINISM alone.",
+  "D0c": "ONE lever moved and it is the SEED (0 -> 1). This is the prereg section 4 replicate and it measures nondeterminism PLUS init/shuffle variance."
+ }
+}

@@ -1,0 +1,39 @@
+H1 HARNESS CONTROL -- E-DEP-VGEO-6 vs the landed E-DEP-VGEO-5, SPEC.md section 3
+generated 2026-09-20 from the two raw jsons; MUST-REPRODUCE block first, PREDICTED-TO-DIFFER block second
+
+quantity                       VGEO-5 s32     VGEO-6 s16     exact?
+clips_kept                     134            134            True
+fit_clips                      94             94             True
+scored_clips                   40             40             True
+rows                           6704           6704           True
+n_triplet_clips                29             29             True
+degenerate_partial_cells       0              0              True
+interp_frames                  411            411            True
+scored_clip_ordinals           40 ordinals    40 ordinals    True
+deltas_rows                    13 deltas      13 deltas      True
+p2_kept_per_clip_of_200        40 counts      40 counts      True
+excluded clips                 5 no_bev_gt    5 no_bev_gt    True
+screen kept/dropped/clips      195/182/17     195/182/17     True
+C_const P1r                    0.0            0.0            True
+C_const P2                     0.5            0.5            True
+pixel_1440|raw P1r point       0.1116         0.1116         True
+pixel_1440|raw P2 point        0.5329         0.5329         True
+pixel_1440|raw P3 point        0.5923         0.5923         True
+
+H1 VERDICT: PASS -- all 13 must-reproduce quantities exact
+
+PREDICTED TO DIFFER (SPEC section 3, H2) -- these drifting is the prediction being CONFIRMED,
+not a defect. Mechanism: fit_diag draws rng.choice(len(L), 40000000//dims) from the MODULE rng,
+so the stream diverges before pixel_1440 is fitted.
+quantity                       VGEO-5 s32       VGEO-6 s16       differs?
+pixel_1440|diag P1r point      0.1063           0.1081           True
+pixel_1440|diag P2 point       0.7494           0.7335           True
+pixel_1440|diag P3 point       0.5668           0.5655           True
+pixel_1440 nonzero_w           74               65               True
+pixel_1440|raw P2 ci95         [0.5108, 0.5555] [0.5091, 0.5562] True
+
+REFINEMENT the SPEC sketch did not have: available fit pairs are 57,387 in BOTH runs.
+s32 latent_704 cap = 40e6//704 = 56,818 < 57,387 -> a subsample IS drawn.
+s16 latent_352 cap = 40e6//352 = 113,636 > 57,387 -> NO rng.choice is drawn at all.
+So the streams diverge at the FIRST latent arm, one draw earlier than the SPEC implied.
+Reported fit_pairs: s32 56818 / 5681 ; s16 57387 / 11363

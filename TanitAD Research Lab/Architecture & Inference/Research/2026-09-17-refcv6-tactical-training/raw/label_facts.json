@@ -1,0 +1,112 @@
+{
+ "blob": "s2_labels_v8.0_train.jsonl.gz",
+ "md5": "fa89ea55dfce68403eb30300e57852ab",
+ "n_clips": 4572,
+ "pos_weight_cap": 50.0,
+ "scoreability_floor_n": 200,
+ "policies": {
+  "measured": {
+   "n_trainable": 17,
+   "n_total": 22,
+   "n_on_pos_weight_cap": 3,
+   "on_pos_weight_cap": [
+    "YIELD_FOR_TURN_L",
+    "YIELD_FOR_TURN_R",
+    "OVERTAKE_VEHICLE"
+   ],
+   "n_under_scoreability_floor": 10,
+   "under_scoreability_floor": [
+    "YIELD_FOR_TURN_L",
+    "YIELD_FOR_TURN_R",
+    "OVERTAKE_VEHICLE",
+    "MERGE",
+    "TAKE_EXIT_L",
+    "TAKE_EXIT_R",
+    "TRAFFIC_LIGHT_REACT",
+    "TRAFFIC_LIGHT_REACT_YELLOW",
+    "LANE_CHANGE_L",
+    "LANE_CHANGE_R"
+   ],
+   "pos_weight": [
+    0.2599,
+    15.6255,
+    16.6525,
+    50.0,
+    50.0,
+    0.0,
+    12.9817,
+    0.0,
+    0.0,
+    0.0833,
+    50.0,
+    45.9367,
+    0.0,
+    0.0,
+    17.5714,
+    2.2656,
+    42.2778,
+    1.0718,
+    34.4091,
+    1.146,
+    12.6087,
+    18.8
+   ],
+   "⚠️": "for the tokens ON the cap it is the CAP, not the data, that sets the weight"
+  },
+  "cot-absence-negative": {
+   "n_trainable": 21,
+   "n_total": 22,
+   "n_on_pos_weight_cap": 9,
+   "on_pos_weight_cap": [
+    "YIELD_FOR_TURN_L",
+    "YIELD_FOR_TURN_R",
+    "OVERTAKE_VEHICLE",
+    "MERGE",
+    "TAKE_EXIT_L",
+    "TRAFFIC_LIGHT_REACT",
+    "TRAFFIC_LIGHT_REACT_YELLOW",
+    "LANE_CHANGE_L",
+    "LANE_CHANGE_R"
+   ],
+   "n_under_scoreability_floor": 10,
+   "under_scoreability_floor": [
+    "YIELD_FOR_TURN_L",
+    "YIELD_FOR_TURN_R",
+    "OVERTAKE_VEHICLE",
+    "MERGE",
+    "TAKE_EXIT_L",
+    "TAKE_EXIT_R",
+    "TRAFFIC_LIGHT_REACT",
+    "TRAFFIC_LIGHT_REACT_YELLOW",
+    "LANE_CHANGE_L",
+    "LANE_CHANGE_R"
+   ],
+   "pos_weight": [
+    0.2599,
+    15.6255,
+    16.6525,
+    50.0,
+    50.0,
+    6.5074,
+    12.9817,
+    0.0,
+    4.3163,
+    18.05,
+    50.0,
+    50.0,
+    11.4239,
+    12.7297,
+    50.0,
+    34.7188,
+    50.0,
+    11.1596,
+    50.0,
+    11.595,
+    50.0,
+    50.0
+   ],
+   "⚠️": "for the tokens ON the cap it is the CAP, not the data, that sets the weight"
+  }
+ },
+ "⛔": "the trainer's DEFAULT is `measured`. The 21/22 + 9-on-cap figures quoted around this programme are the `cot-absence-negative` numbers and are WRONG for a `measured` run. Name the policy."
+}

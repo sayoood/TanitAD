@@ -1,0 +1,1468 @@
+{
+ "tool": "refcv4b_egodrop/egodrop_dump.py (paired kept/withheld; instruments IMPORTED from taniteval/tools/refcv3_arm.py + refav1_arm.py)",
+ "model": {
+  "ckpt": "pull\\ckpt_9500.pt",
+  "step": 9500,
+  "config_json": "pull\\config.json",
+  "rebuilt_from": "config.json[argv] -> refc_v3_train.build_parser + _pin_trainer_cfg (the trainer's own build path)",
+  "config_cross_checks": {
+   "arm": {
+    "config_json": "hier",
+    "rebuilt": "hier"
+   },
+   "image_hw": {
+    "config_json": [
+     256,
+     640
+    ],
+    "rebuilt": [
+     256,
+     640
+    ]
+   },
+   "tac_vocab_version": {
+    "config_json": "v7.0",
+    "rebuilt": "v7.0"
+   },
+   "horizons": {
+    "config_json": [
+     5,
+     10,
+     15,
+     20,
+     30,
+     40,
+     50,
+     60
+    ],
+    "rebuilt": [
+     5,
+     10,
+     15,
+     20,
+     30,
+     40,
+     50,
+     60
+    ]
+   },
+   "goal_tau_steps": {
+    "config_json": [
+     20,
+     40,
+     60
+    ],
+    "rebuilt": [
+     20,
+     40,
+     60
+    ]
+   },
+   "param_breakdown": {
+    "config_json": {
+     "core": 104879584,
+     "phi_tac": 1757440,
+     "str_goal_head": 771,
+     "gstr_cond": 66816,
+     "tac_heads": 14364,
+     "tac_latent_proj": 262656,
+     "scorer": 1145,
+     "ego_inject": 25536,
+     "nav_inject": 50176,
+     "total": 107058488
+    },
+    "rebuilt": {
+     "core": 104879584,
+     "phi_tac": 1757440,
+     "str_goal_head": 771,
+     "gstr_cond": 66816,
+     "tac_heads": 14364,
+     "tac_latent_proj": 262656,
+     "scorer": 1145,
+     "ego_inject": 25536,
+     "nav_inject": 50176,
+     "total": 107058488
+    }
+   }
+  },
+  "state_dict_load": {
+   "missing_keys": [],
+   "unexpected_keys": []
+  },
+  "eval_time_cfg_overrides": {
+   "v3.seam_fail_patience": {
+    "trained": 50,
+    "eval": 0
+   },
+   "core.decoder.sel.seam_fail_patience": {
+    "trained": 50,
+    "eval": 0
+   }
+  },
+  "cfg": {
+   "tac_vocab_version": "v7.0",
+   "core": {
+    "encoder": {
+     "in_channels": 9,
+     "image_size": 256,
+     "image_width": 640,
+     "base_width": 88,
+     "blocks": [
+      3,
+      6,
+      16,
+      6
+     ]
+    },
+    "window": 8,
+    "measurement": {
+     "hidden": 128,
+     "d_out": 128
+    },
+    "trajectory": {
+     "horizons": [
+      5,
+      10,
+      15,
+      20,
+      30,
+      40,
+      50,
+      60
+     ]
+    },
+    "anchors": {
+     "n_anchors": 117,
+     "pool_size": 4096,
+     "seed": 0,
+     "v0_conditioned": true,
+     "ref_speed_ms": 10.0,
+     "control_units": "alat",
+     "alat_v_floor_ms": 4.0,
+     "kappa_cap": 0.12
+    },
+    "decoder": {
+     "d": 384,
+     "n_heads": 8,
+     "layers": 4,
+     "ff_mult": 4,
+     "aux_hidden": 384,
+     "diffusion_steps": 2,
+     "noise_std": 0.1
+    },
+    "law": {
+     "hidden": 2048
+    },
+    "strategic": {
+     "hidden": 512,
+     "d_ctx": 256
+    },
+    "imagination": {
+     "d": 512,
+     "depth": 6,
+     "n_heads": 8,
+     "ff_mult": 4,
+     "head_hidden": 1024
+    },
+    "lan": {
+     "k": 4,
+     "feats": 4,
+     "hidden": 64,
+     "d_out": 64
+    },
+    "speed_hidden": 256,
+    "ego_dropout": 0.5,
+    "route_dropout": 0.5,
+    "hierarchy": true,
+    "graft_maneuver": true,
+    "factored_maneuver": true,
+    "tactical_speed_input": false,
+    "man_prior_tau": 0.0,
+    "graft_prior_center": true,
+    "tactical_prior_momentum": 0.99,
+    "graft_target_latent": true,
+    "grounded_selector": false,
+    "graft_imagination": false,
+    "graft_lan": false,
+    "sel_refined": false,
+    "sel_score_emitted": false,
+    "sel_ce_reach": false,
+    "sel_score_emitted_t": -1,
+    "sel_ce_objective": "ce",
+    "sel_ce_weight": 1.0,
+    "sel_ce_soft_tau": 0.0,
+    "sel_reach_clamp": true,
+    "sel_accel_max": 2.0,
+    "sel_anchor_prefilter": false,
+    "sel_anchor_prefilter_guard": true,
+    "graft_cons": false,
+    "cons_detach": true,
+    "graft_route": false,
+    "graft_goal": false,
+    "seam_clamp": 0.0,
+    "seam_fail": 1.5,
+    "seam_fail_frac": 0.75,
+    "seam_fail_patience": 0,
+    "ego_valid_channel": true,
+    "nav_known_channel": false,
+    "tactical_latent_dim": 512,
+    "refc1": false,
+    "path_dists": [
+     2.0,
+     5.0,
+     10.0,
+     20.0
+    ],
+    "speed_bins": 4,
+    "speed_max": 30.0
+   },
+   "hier": true,
+   "d_tac": 512,
+   "tac_hidden": 256,
+   "d_gcond": 64,
+   "goal_tau_steps": [
+    20,
+    40,
+    60
+   ],
+   "scorer_tau_m": 1.0,
+   "seam_clamp": 1.0,
+   "seam_fail": 1.5,
+   "seam_fail_frac": 0.75,
+   "seam_fail_patience": 0,
+   "admission_sigma_m": 0.8,
+   "nav_inject": true,
+   "n_nav_commands": 4,
+   "d_nav": 64,
+   "uplink_grad": true,
+   "ego_state_inject": true,
+   "d_ego": 32,
+   "echo_base": false
+  },
+  "param_breakdown": {
+   "core": 104879584,
+   "phi_tac": 1757440,
+   "str_goal_head": 771,
+   "gstr_cond": 66816,
+   "tac_heads": 14364,
+   "tac_latent_proj": 262656,
+   "scorer": 1145,
+   "ego_inject": 25536,
+   "nav_inject": 50176,
+   "total": 107058488
+  },
+  "arm": "hier",
+  "hier": true,
+  "tac_vocab_version": "v7.0",
+  "horizons": [
+   5,
+   10,
+   15,
+   20,
+   30,
+   40,
+   50,
+   60
+  ],
+  "n_anchors": 117,
+  "window": 8,
+  "decoder_steps": 2,
+  "decoder_mode": "diffusion",
+  "nav_from_v7_trained": true,
+  "nav_cmd_derivation_trained": "v7.2 nav_command token (oracle, provenance ego-future; allow_oracle_nav=True)",
+  "train_labels_manifest": {
+   "path": "/workspace/TanitAD/data/s2_labels_v7.2_train.jsonl.gz",
+   "md5": "0ff902130ce76886b8a925eceed9e3a5",
+   "n_records": 4572,
+   "schema_version": "s2-geom-v7",
+   "vocab": "v7",
+   "allow_oracle_nav": true,
+   "divergences": [],
+   "_read": "md5 is the identity \u2014 six copies of this blob exist under three roots and their md5s differ."
+  },
+  "eval_labels_md5_at_train": "aa12c948f062181c3297265b51526ec5",
+  "u8_batches_trained": true
+ },
+ "model_checks": {
+  "ego_state_inject": true,
+  "core.ego_valid_channel": true,
+  "core.ego_dropout": 0.5,
+  "echo_base": false,
+  "anchor_v0_cond": true,
+  "anchor_ref_speed": 10.0,
+  "anchor_control_units": "alat",
+  "anchor_kappa_cap": 0.12,
+  "anchor_alat_v_floor": 4.0,
+  "sel_reach_clamp": true,
+  "sel_accel_max": 2.0,
+  "horizon_s": 6.0,
+  "decoder_steps": 2,
+  "window": 8,
+  "n_anchors": 117,
+  "refc1_speed_head": false,
+  "hier": true,
+  "tac_vocab_version": "v7.0",
+  "anchors_file_sha256": "e86cf507d55a4585435025fe52f33817d08dab879e1f65ff6a1fc9b0eb81e8fb",
+  "anchors_buffer_equals_file": true,
+  "controls_buffer_equals_file": true,
+  "straight_ahead_index": [
+   67
+  ]
+ },
+ "bit_control": {
+  "kept_row_vs_single_row_forward_max_abs_traj_m": 3.814697265625e-06,
+  "kept_row_vs_single_row_sel_idx_equal": true,
+  "withheld_row_vs_zeroed_values_row_max_abs_traj_m": 0.0,
+  "withheld_row_vs_zeroed_values_row_max_abs_fan_m": 0.0,
+  "withheld_bank_equals_ref_speed_roll_max_abs_m": 0.0,
+  "kept_bank_vs_withheld_bank_max_abs_m": 0.4252204895019531,
+  "v0_first_window": 9.976810455322266,
+  "_reads": "row 0 of the paired batch vs a SINGLE-row forward is a cross-call comparison and carries the float32 batching floor (~1e-6..1e-5 m, informational, tolerance 1e-4); the withheld row must be EXACTLY invariant to the VALUES of the ego block at the same batch shape (the keep bit zeroes them downstream); the withheld bank must equal the decoder's own reference-speed roll (v_ms=None) EXACTLY"
+ },
+ "out_keys": [
+  "anchor_bank",
+  "anchor_logits",
+  "anchor_traj",
+  "ctx",
+  "ego_injected",
+  "ego_keep_frac",
+  "g_str",
+  "g_str_raw",
+  "g_tac",
+  "g_tac_delta",
+  "goal_dist",
+  "goal_gate_value",
+  "goal_point_free",
+  "goal_point_tac",
+  "goal_score_absmean",
+  "lat_decision",
+  "lat_logits",
+  "lat_logits_tac",
+  "law_pred",
+  "lon_decision",
+  "lon_logits",
+  "lon_logits_tac",
+  "maneuver_decision",
+  "maneuver_logits",
+  "measurement",
+  "nav_injected",
+  "offset",
+  "pooled",
+  "reach_keep",
+  "refined_logits",
+  "route_logits",
+  "seam_goal_sel_bound_frac",
+  "seam_goal_sel_ratio_max",
+  "seam_goal_sel_ratio_preclamp_max",
+  "seam_goal_sel_ratio_preclamp_mean",
+  "seam_goal_sel_sat_steps",
+  "sel_idx",
+  "sel_idx_base",
+  "sel_score",
+  "sel_score_v3",
+  "sel_tele",
+  "traj",
+  "traj_base",
+  "waypoints",
+  "wp_seq",
+  "z_tac"
+ ],
+ "ckpt_md5": "ab4cd79e35b92bf70d6e2b80ba053e51",
+ "config_md5": "58ad809aaf241729c1695bec2ab30d8e",
+ "regimes": {
+  "k": "ego block MEASURED at t0, keep=1 (the eval regime)",
+  "w": "ego block WITHHELD, keep=0 (the training-time dropout regime; the anchor bank is rolled at anchor_ref_speed=10 m/s)"
+ },
+ "arms": [
+  "os_k",
+  "os_w",
+  "orc_k",
+  "orc_w",
+  "ha",
+  "ha0"
+ ],
+ "tiers": {
+  "os_k": "T1",
+  "os_w": "T1",
+  "orc_k": "T0",
+  "orc_w": "T0",
+  "ha": "T1",
+  "ha0": "T1"
+ },
+ "arm_meaning": {
+  "os_k": "deployed selection out['traj'], ego kept (T1 open loop, self-action)",
+  "os_w": "deployed selection out['traj'], ego withheld (T1 open loop)",
+  "orc_k": "anchor_traj[a_star] with a_star = GT-nearest anchor on the KEPT bank (T0 oracle selection)",
+  "orc_w": "anchor_traj[a_star] with a_star = GT-nearest anchor on the WITHHELD 10 m/s bank (T0)",
+  "ha": "hold the action that closes at t0 (steer units, programme integrator)",
+  "ha0": "constant velocity at measured v0, straight (a=0, kappa=0)"
+ },
+ "grid": {
+  "slots_steps": [
+   5,
+   10,
+   15,
+   20,
+   30,
+   40,
+   50,
+   60
+  ],
+  "instants_s": [
+   0.5,
+   1.0,
+   1.5,
+   2.0,
+   3.0,
+   4.0,
+   5.0,
+   6.0
+  ],
+  "dt_frame_s": 0.1,
+  "n_windows": 4823,
+  "n_skipped": 0,
+  "skip_reasons": {},
+  "n_episodes": 141,
+  "window_stride": 5,
+  "obs_window": 8,
+  "ws_is": "PROVIDER frame index of the window origin t0 = t + window - 1; RAW frame = ws + 2",
+  "window_selection_rule": "identical to refcv3_arm.run_dump --grid 2s --window-stride 5 (2 s slots valid, t0 >= 1)"
+ },
+ "corpus": {
+  "episodes": "C:\\Users\\Admin\\run_refcv3_ol\\data\\eval",
+  "labels": {
+   "path": "C:\\Users\\Admin\\run_refcv3_ol\\data\\s2_labels_v7.2_eval.jsonl.gz",
+   "md5": "aa12c948f062181c3297265b51526ec5",
+   "n_records": 147,
+   "n_episodes": 141,
+   "n_joined": 141,
+   "n_missing": 0,
+   "join_key": "stable_episode_id(clip_id) (the trainer's key)",
+   "schema_version": "s2-geom-v7",
+   "vocab": "v7",
+   "allow_oracle_nav": true,
+   "divergences": []
+  },
+  "frames": {
+   "n_stack": 3,
+   "provider_to_raw_frame_offset": 2,
+   "rule": "v2_dataset.py:36-38 \u2014 the provider stores poses[n_stack-1:], so provider row j is RAW frame j + (n_stack-1). The lead block is keyed on RAW frames and this is the ONLY place the two meet."
+  },
+  "nav": {
+   "source": "v72",
+   "stats": {
+    "n_clips": 141,
+    "follow": 90,
+    "left": 13,
+    "right": 38,
+    "missing": 0,
+    "derivation": "v7.2 nav_command token (oracle, provenance ego-future; allow_oracle_nav=True)",
+    "unlabeled_default": "nav_cmd=0 ('follow') + nav_valid=False (refav1_loader convention)",
+    "label_md5": "aa12c948f062181c3297265b51526ec5",
+    "allow_oracle_nav": true
+   },
+   "trained_on": "v7.2 nav_command token (oracle, provenance ego-future; allow_oracle_nav=True)",
+   "rule": "v72: the clip's v7.2 nav_command token -> refb.NAV_COMMANDS index (V3Dataset.enable_nav_from_v7, refc_v3_train.py:246-306, position-pinned); a clip without a record feeds index 0 + nav_valid=False. none: nav_cmd=0 on every window (the published REF-C convention) and NO shuffle arm \u2014 the v1 derivation reads 15-25 s of FUTURE poses and is not an inference input."
+  }
+ },
+ "episodes": [
+  {
+   "file_index": 0,
+   "episode_index": 0,
+   "clip_id": "01be5919-6e61-45ba-a193-5f447efb4b51",
+   "episode_id": 8659539322628976639,
+   "n_windows": 35
+  },
+  {
+   "file_index": 1,
+   "episode_index": 1,
+   "clip_id": "060531e1-9935-482e-8c25-2abf37bdc41b",
+   "episode_id": 4496843389521607997,
+   "n_windows": 34
+  },
+  {
+   "file_index": 2,
+   "episode_index": 2,
+   "clip_id": "0fa2b231-435e-4700-9138-30f333dc5d6e",
+   "episode_id": 8856432279623052471,
+   "n_windows": 34
+  },
+  {
+   "file_index": 3,
+   "episode_index": 3,
+   "clip_id": "10804db8-d070-444e-a1f1-89c1871588d5",
+   "episode_id": 6364938407247536202,
+   "n_windows": 34
+  },
+  {
+   "file_index": 4,
+   "episode_index": 4,
+   "clip_id": "11e40da1-3d9e-4ee6-8406-8db2eed4a594",
+   "episode_id": 1445869799409465680,
+   "n_windows": 34
+  },
+  {
+   "file_index": 5,
+   "episode_index": 5,
+   "clip_id": "126b3a97-0879-4ff3-9f4a-ea846f8a70ef",
+   "episode_id": 3481082292674736890,
+   "n_windows": 35
+  },
+  {
+   "file_index": 6,
+   "episode_index": 6,
+   "clip_id": "13c95b6a-5d18-4267-8943-1ddb8fe85008",
+   "episode_id": 2631527165423235638,
+   "n_windows": 34
+  },
+  {
+   "file_index": 7,
+   "episode_index": 7,
+   "clip_id": "14157960-84db-4f4e-84f1-a4664086c6f8",
+   "episode_id": 5931368308581280564,
+   "n_windows": 34
+  },
+  {
+   "file_index": 8,
+   "episode_index": 8,
+   "clip_id": "142a3a72-6cd4-4056-bb66-c9098f54b7fa",
+   "episode_id": 8521689459048363261,
+   "n_windows": 34
+  },
+  {
+   "file_index": 9,
+   "episode_index": 9,
+   "clip_id": "14bc9fcf-c048-42c3-b35d-0fc13b8ddc04",
+   "episode_id": 2802898153618280498,
+   "n_windows": 34
+  },
+  {
+   "file_index": 10,
+   "episode_index": 10,
+   "clip_id": "16d89725-2f31-4a12-9244-658d2b83994c",
+   "episode_id": 4887716128241600005,
+   "n_windows": 35
+  },
+  {
+   "file_index": 11,
+   "episode_index": 11,
+   "clip_id": "17775e74-2d89-4c4f-9347-c58cea5585cb",
+   "episode_id": 5972251013168014251,
+   "n_windows": 34
+  },
+  {
+   "file_index": 12,
+   "episode_index": 12,
+   "clip_id": "18b72291-84f4-45e0-a736-908fc303020e",
+   "episode_id": 5996229755916728552,
+   "n_windows": 34
+  },
+  {
+   "file_index": 13,
+   "episode_index": 13,
+   "clip_id": "1bd040a8-1828-4f1f-933e-20fd53c45641",
+   "episode_id": 5940166191116434775,
+   "n_windows": 34
+  },
+  {
+   "file_index": 14,
+   "episode_index": 14,
+   "clip_id": "1c3a2c7c-7e82-4c22-92ad-59a5823b3c5f",
+   "episode_id": 3780736022118627546,
+   "n_windows": 34
+  },
+  {
+   "file_index": 15,
+   "episode_index": 15,
+   "clip_id": "204b15b4-bd0a-4155-b01e-572c55197d0e",
+   "episode_id": 444803398223577397,
+   "n_windows": 34
+  },
+  {
+   "file_index": 16,
+   "episode_index": 16,
+   "clip_id": "2172a5a3-8a1d-4458-8aa7-b86ca16eb2d8",
+   "episode_id": 1323659229957915940,
+   "n_windows": 35
+  },
+  {
+   "file_index": 17,
+   "episode_index": 17,
+   "clip_id": "24fee8a5-9ccc-4610-b27b-560f08fd46c8",
+   "episode_id": 7889889810377234261,
+   "n_windows": 34
+  },
+  {
+   "file_index": 18,
+   "episode_index": 18,
+   "clip_id": "2602baaa-4364-4c50-8fb5-a27254c77cb3",
+   "episode_id": 8158875834339337835,
+   "n_windows": 34
+  },
+  {
+   "file_index": 19,
+   "episode_index": 19,
+   "clip_id": "262b900f-2cff-4ddf-a95e-2aaa5eaff9bc",
+   "episode_id": 1021513293499080694,
+   "n_windows": 34
+  },
+  {
+   "file_index": 20,
+   "episode_index": 20,
+   "clip_id": "269478eb-2da4-42cb-bfd3-3ad9b024d88b",
+   "episode_id": 8017074428804167949,
+   "n_windows": 36
+  },
+  {
+   "file_index": 21,
+   "episode_index": 21,
+   "clip_id": "27f44280-3e5a-4b2f-9420-f38b9210bee4",
+   "episode_id": 3089291144579937575,
+   "n_windows": 34
+  },
+  {
+   "file_index": 22,
+   "episode_index": 22,
+   "clip_id": "2cd0f4e4-dce0-4c02-904e-8045ffe3da7e",
+   "episode_id": 2286297764427265840,
+   "n_windows": 34
+  },
+  {
+   "file_index": 23,
+   "episode_index": 23,
+   "clip_id": "2e8a2df2-3f74-448e-9781-0739328ab42e",
+   "episode_id": 2970904550955637515,
+   "n_windows": 34
+  },
+  {
+   "file_index": 24,
+   "episode_index": 24,
+   "clip_id": "316f3c56-9142-4c97-95e8-29fe6f1f2108",
+   "episode_id": 5141423024137074127,
+   "n_windows": 34
+  },
+  {
+   "file_index": 25,
+   "episode_index": 25,
+   "clip_id": "31d0adc4-4e87-4ecd-920c-80a51afb3dbd",
+   "episode_id": 3030744820343445576,
+   "n_windows": 35
+  },
+  {
+   "file_index": 26,
+   "episode_index": 26,
+   "clip_id": "32f9b6b2-edc6-4cad-b383-1e2b3a55871b",
+   "episode_id": 2617555561780420775,
+   "n_windows": 34
+  },
+  {
+   "file_index": 27,
+   "episode_index": 27,
+   "clip_id": "330b4626-96d0-46fd-a10b-3532f389bd34",
+   "episode_id": 3805832636909416499,
+   "n_windows": 34
+  },
+  {
+   "file_index": 28,
+   "episode_index": 28,
+   "clip_id": "34a1e12e-95cb-4a6c-bbcf-20356f0d364e",
+   "episode_id": 6936675322640746092,
+   "n_windows": 34
+  },
+  {
+   "file_index": 29,
+   "episode_index": 29,
+   "clip_id": "37e61793-36e9-426a-b257-23e684ba18b6",
+   "episode_id": 6974475918360064182,
+   "n_windows": 34
+  },
+  {
+   "file_index": 30,
+   "episode_index": 30,
+   "clip_id": "38fe80c1-caf1-45ea-810b-2681ea488c6d",
+   "episode_id": 6863898044652059094,
+   "n_windows": 35
+  },
+  {
+   "file_index": 31,
+   "episode_index": 31,
+   "clip_id": "3971a8c6-0c53-4c0f-a06d-69fbd817a180",
+   "episode_id": 1090067183473506969,
+   "n_windows": 34
+  },
+  {
+   "file_index": 32,
+   "episode_index": 32,
+   "clip_id": "39bf584e-5bb5-43fb-93ab-c8cec7efbf01",
+   "episode_id": 5993044672443247295,
+   "n_windows": 34
+  },
+  {
+   "file_index": 33,
+   "episode_index": 33,
+   "clip_id": "3ef3dcc8-7fd8-44df-837e-2820e969e691",
+   "episode_id": 6490043046866519733,
+   "n_windows": 34
+  },
+  {
+   "file_index": 34,
+   "episode_index": 34,
+   "clip_id": "3ff11411-fa2f-4815-acc1-0a18d124861f",
+   "episode_id": 1841490482485328900,
+   "n_windows": 34
+  },
+  {
+   "file_index": 35,
+   "episode_index": 35,
+   "clip_id": "42745b48-a015-4a7d-9ae0-a4f6986f918e",
+   "episode_id": 1825349519609453262,
+   "n_windows": 34
+  },
+  {
+   "file_index": 36,
+   "episode_index": 36,
+   "clip_id": "45358841-6928-4d33-9166-1432d9d550dd",
+   "episode_id": 4517849686862906151,
+   "n_windows": 35
+  },
+  {
+   "file_index": 37,
+   "episode_index": 37,
+   "clip_id": "45a9f7ec-991f-4bf1-ae0e-41d9a233853e",
+   "episode_id": 8549471864306221121,
+   "n_windows": 34
+  },
+  {
+   "file_index": 38,
+   "episode_index": 38,
+   "clip_id": "45aea78c-7762-4e46-aef1-e9e22602b8fd",
+   "episode_id": 6200387429381491383,
+   "n_windows": 34
+  },
+  {
+   "file_index": 39,
+   "episode_index": 39,
+   "clip_id": "47241da8-c00e-4d4d-ae12-8cc51b7d09f6",
+   "episode_id": 8884658653802878962,
+   "n_windows": 34
+  },
+  {
+   "file_index": 40,
+   "episode_index": 40,
+   "clip_id": "480d7910-cece-47a0-9910-c279daa09e95",
+   "episode_id": 2322468152441458910,
+   "n_windows": 34
+  },
+  {
+   "file_index": 41,
+   "episode_index": 41,
+   "clip_id": "4c5264dd-9110-46d4-88e7-693ffde925e5",
+   "episode_id": 6738429145476776717,
+   "n_windows": 35
+  },
+  {
+   "file_index": 42,
+   "episode_index": 42,
+   "clip_id": "4ee70f88-f036-4029-adc6-f93fb5e22f0a",
+   "episode_id": 8221838326782292436,
+   "n_windows": 34
+  },
+  {
+   "file_index": 43,
+   "episode_index": 43,
+   "clip_id": "50caa2df-cf8f-44fb-b0fc-8f72c2fdeb29",
+   "episode_id": 4625754905267914014,
+   "n_windows": 34
+  },
+  {
+   "file_index": 44,
+   "episode_index": 44,
+   "clip_id": "51c01ba4-9000-4370-8abb-9fd22b397d05",
+   "episode_id": 3649879828249570056,
+   "n_windows": 34
+  },
+  {
+   "file_index": 45,
+   "episode_index": 45,
+   "clip_id": "5271d125-6137-4ece-92b9-d58f29eb2420",
+   "episode_id": 6444911681449589215,
+   "n_windows": 34
+  },
+  {
+   "file_index": 46,
+   "episode_index": 46,
+   "clip_id": "52ddcaaf-06cb-4654-894f-962f27c2bb34",
+   "episode_id": 5026852328165551436,
+   "n_windows": 35
+  },
+  {
+   "file_index": 47,
+   "episode_index": 47,
+   "clip_id": "565b6ff0-c9f6-46f6-8acf-3ec383beb3dc",
+   "episode_id": 8066687926120920584,
+   "n_windows": 34
+  },
+  {
+   "file_index": 48,
+   "episode_index": 48,
+   "clip_id": "5716299c-a9e7-4d83-9c76-55fb3900a146",
+   "episode_id": 2033609177101732670,
+   "n_windows": 34
+  },
+  {
+   "file_index": 49,
+   "episode_index": 49,
+   "clip_id": "59c25a0f-d4b8-4cfe-9213-d1502554b001",
+   "episode_id": 5135522014018546707,
+   "n_windows": 34
+  },
+  {
+   "file_index": 50,
+   "episode_index": 50,
+   "clip_id": "5b4df66c-31a2-4ad1-8d3e-bc3162d03d1c",
+   "episode_id": 2772907115362269697,
+   "n_windows": 34
+  },
+  {
+   "file_index": 51,
+   "episode_index": 51,
+   "clip_id": "5d39a1de-bd2e-4652-8777-00f3e7a1108d",
+   "episode_id": 1253267261038422520,
+   "n_windows": 35
+  },
+  {
+   "file_index": 52,
+   "episode_index": 52,
+   "clip_id": "5d94cbbb-55eb-4642-add5-054b9c47ccf3",
+   "episode_id": 7077038175376882531,
+   "n_windows": 34
+  },
+  {
+   "file_index": 53,
+   "episode_index": 53,
+   "clip_id": "5f86e111-b219-4a6e-ab95-8675ee598084",
+   "episode_id": 8153856093095347385,
+   "n_windows": 34
+  },
+  {
+   "file_index": 54,
+   "episode_index": 54,
+   "clip_id": "62f3222e-9aa8-4520-b025-0166b36f5054",
+   "episode_id": 2207627396838316214,
+   "n_windows": 34
+  },
+  {
+   "file_index": 55,
+   "episode_index": 55,
+   "clip_id": "63434e0b-8cd2-4e1f-9526-8a06bd7f4b0d",
+   "episode_id": 5251127185988105001,
+   "n_windows": 34
+  },
+  {
+   "file_index": 56,
+   "episode_index": 56,
+   "clip_id": "66e4d574-2b35-4b55-a13d-905d9b6ecc2b",
+   "episode_id": 4781874996789565458,
+   "n_windows": 35
+  },
+  {
+   "file_index": 57,
+   "episode_index": 57,
+   "clip_id": "672d70d8-812c-4174-b134-3024707dcf39",
+   "episode_id": 1147093929533943775,
+   "n_windows": 34
+  },
+  {
+   "file_index": 58,
+   "episode_index": 58,
+   "clip_id": "6908302e-14b7-4463-b86b-f33232bc3e11",
+   "episode_id": 4856496206293652198,
+   "n_windows": 34
+  },
+  {
+   "file_index": 59,
+   "episode_index": 59,
+   "clip_id": "695081db-4312-44bc-95d6-4d5f509180fa",
+   "episode_id": 6612039838703251343,
+   "n_windows": 34
+  },
+  {
+   "file_index": 60,
+   "episode_index": 60,
+   "clip_id": "6a89cca3-64e9-49fd-ae34-9c5a636981b4",
+   "episode_id": 3982889017717917144,
+   "n_windows": 34
+  },
+  {
+   "file_index": 61,
+   "episode_index": 61,
+   "clip_id": "6b3e802e-ea88-48c8-aa13-3e072c8c1409",
+   "episode_id": 6033215366162380979,
+   "n_windows": 34
+  },
+  {
+   "file_index": 62,
+   "episode_index": 62,
+   "clip_id": "6ed4ef7a-1a70-48c5-8dc1-3c6a48ec3ecc",
+   "episode_id": 6992839427445224886,
+   "n_windows": 35
+  },
+  {
+   "file_index": 63,
+   "episode_index": 63,
+   "clip_id": "73e750eb-684f-4aa1-953e-eb0f671a86b7",
+   "episode_id": 8348901771088347109,
+   "n_windows": 34
+  },
+  {
+   "file_index": 64,
+   "episode_index": 64,
+   "clip_id": "7526e299-0404-407e-bf63-39901ba08ff2",
+   "episode_id": 830030824022209707,
+   "n_windows": 34
+  },
+  {
+   "file_index": 65,
+   "episode_index": 65,
+   "clip_id": "77a247be-ad56-4712-8e16-5d4acc5c241d",
+   "episode_id": 4755961725313043249,
+   "n_windows": 34
+  },
+  {
+   "file_index": 66,
+   "episode_index": 66,
+   "clip_id": "79e30ac2-c619-4d61-98a3-1007037b4d05",
+   "episode_id": 6484165013774404905,
+   "n_windows": 34
+  },
+  {
+   "file_index": 67,
+   "episode_index": 67,
+   "clip_id": "80b890fc-1140-4ea2-a4da-267580ff82f8",
+   "episode_id": 4821335691185267029,
+   "n_windows": 35
+  },
+  {
+   "file_index": 68,
+   "episode_index": 68,
+   "clip_id": "80fcd92f-7bb3-430a-835e-ac72e8ffdda7",
+   "episode_id": 7619001800864643648,
+   "n_windows": 34
+  },
+  {
+   "file_index": 69,
+   "episode_index": 69,
+   "clip_id": "826cd25c-fa4a-4e7d-9fbb-f64486fe3712",
+   "episode_id": 1285873692655759190,
+   "n_windows": 34
+  },
+  {
+   "file_index": 70,
+   "episode_index": 70,
+   "clip_id": "829320e2-ba11-48e9-8196-1247e5709b5f",
+   "episode_id": 3119486229009641073,
+   "n_windows": 34
+  },
+  {
+   "file_index": 71,
+   "episode_index": 71,
+   "clip_id": "84952a7e-a54b-4453-9ad4-2b6c0bc240a8",
+   "episode_id": 5444309113988531226,
+   "n_windows": 34
+  },
+  {
+   "file_index": 72,
+   "episode_index": 72,
+   "clip_id": "85a47aa1-1465-4b72-aaac-bcddb2decfdd",
+   "episode_id": 5455254795794215821,
+   "n_windows": 35
+  },
+  {
+   "file_index": 73,
+   "episode_index": 73,
+   "clip_id": "8d610d87-8170-41c1-bc61-c771a9500322",
+   "episode_id": 1261900632416950580,
+   "n_windows": 34
+  },
+  {
+   "file_index": 74,
+   "episode_index": 74,
+   "clip_id": "8df0cb04-8b64-42de-97b9-ce57df3908f4",
+   "episode_id": 9062135385030390400,
+   "n_windows": 34
+  },
+  {
+   "file_index": 75,
+   "episode_index": 75,
+   "clip_id": "8f1baf35-90f6-4a03-ad23-f461d98ef393",
+   "episode_id": 6168823534433910413,
+   "n_windows": 34
+  },
+  {
+   "file_index": 76,
+   "episode_index": 76,
+   "clip_id": "8fe27d99-23e7-4f0f-bacb-f42b055ba2c7",
+   "episode_id": 1385563552574556121,
+   "n_windows": 34
+  },
+  {
+   "file_index": 77,
+   "episode_index": 77,
+   "clip_id": "91929cea-f8d5-4ed7-bbb7-e39f644f10ca",
+   "episode_id": 4499079848997153668,
+   "n_windows": 34
+  },
+  {
+   "file_index": 78,
+   "episode_index": 78,
+   "clip_id": "91e90a95-a129-486a-a1d4-cc1a2915793f",
+   "episode_id": 8874314560695158599,
+   "n_windows": 34
+  },
+  {
+   "file_index": 79,
+   "episode_index": 79,
+   "clip_id": "9370d445-320d-41f5-bde5-66659ae974c7",
+   "episode_id": 327068641428577617,
+   "n_windows": 35
+  },
+  {
+   "file_index": 80,
+   "episode_index": 80,
+   "clip_id": "93854321-c881-4263-9312-252e04934898",
+   "episode_id": 4024518110882967263,
+   "n_windows": 34
+  },
+  {
+   "file_index": 81,
+   "episode_index": 81,
+   "clip_id": "998310a5-2773-40f8-9752-e588e5b400b7",
+   "episode_id": 5685839324975230701,
+   "n_windows": 34
+  },
+  {
+   "file_index": 82,
+   "episode_index": 82,
+   "clip_id": "9b4347d2-fdcb-4232-93db-acc6b1e3d5c7",
+   "episode_id": 1908740305293478079,
+   "n_windows": 34
+  },
+  {
+   "file_index": 83,
+   "episode_index": 83,
+   "clip_id": "9c50f803-c78c-4b69-8a83-443ad312553e",
+   "episode_id": 6467117152891379441,
+   "n_windows": 34
+  },
+  {
+   "file_index": 84,
+   "episode_index": 84,
+   "clip_id": "9d3d1cd1-ce59-46e1-a85b-02131b07a69c",
+   "episode_id": 8671166832698325708,
+   "n_windows": 34
+  },
+  {
+   "file_index": 85,
+   "episode_index": 85,
+   "clip_id": "9fc24b6e-3ece-4a3b-bb00-eb3454b1eabb",
+   "episode_id": 5142559792866782175,
+   "n_windows": 35
+  },
+  {
+   "file_index": 86,
+   "episode_index": 86,
+   "clip_id": "a0d95df6-499b-45ee-a424-5954f6e65f77",
+   "episode_id": 254350182404654030,
+   "n_windows": 34
+  },
+  {
+   "file_index": 87,
+   "episode_index": 87,
+   "clip_id": "a459164a-0c6c-4a3b-9963-0d5deacacb4f",
+   "episode_id": 4051929393764391985,
+   "n_windows": 34
+  },
+  {
+   "file_index": 88,
+   "episode_index": 88,
+   "clip_id": "a6b2719b-7712-41be-9032-43216f52f516",
+   "episode_id": 2631052477045966872,
+   "n_windows": 34
+  },
+  {
+   "file_index": 89,
+   "episode_index": 89,
+   "clip_id": "a7e15877-9469-4b98-b633-f1a32722aecf",
+   "episode_id": 1824502254617144919,
+   "n_windows": 34
+  },
+  {
+   "file_index": 90,
+   "episode_index": 90,
+   "clip_id": "aa00f477-540e-4b04-aaa9-948c5b227a65",
+   "episode_id": 8811338848695437121,
+   "n_windows": 35
+  },
+  {
+   "file_index": 91,
+   "episode_index": 91,
+   "clip_id": "aa594aa8-bc96-40d1-80f3-a6bc12855766",
+   "episode_id": 658505054094811091,
+   "n_windows": 34
+  },
+  {
+   "file_index": 92,
+   "episode_index": 92,
+   "clip_id": "ac81f868-f505-4268-bfeb-c58c0a0a1605",
+   "episode_id": 633041096268336337,
+   "n_windows": 34
+  },
+  {
+   "file_index": 93,
+   "episode_index": 93,
+   "clip_id": "acf8e77f-7d54-49ac-a9a4-dea836784513",
+   "episode_id": 9218007061800746468,
+   "n_windows": 34
+  },
+  {
+   "file_index": 94,
+   "episode_index": 94,
+   "clip_id": "af6f5964-2634-46e3-bbb1-ac2b194aec5f",
+   "episode_id": 1131054092343061790,
+   "n_windows": 34
+  },
+  {
+   "file_index": 95,
+   "episode_index": 95,
+   "clip_id": "afe44776-866c-4425-b792-1a6c3ce6c48c",
+   "episode_id": 5769297210096357786,
+   "n_windows": 34
+  },
+  {
+   "file_index": 96,
+   "episode_index": 96,
+   "clip_id": "b0252ad5-8cdf-45f3-abf8-df22fb4a72b0",
+   "episode_id": 8542660967613513830,
+   "n_windows": 34
+  },
+  {
+   "file_index": 97,
+   "episode_index": 97,
+   "clip_id": "b05195bf-36d7-4233-87bf-518708baa307",
+   "episode_id": 2662085345173601638,
+   "n_windows": 35
+  },
+  {
+   "file_index": 98,
+   "episode_index": 98,
+   "clip_id": "b19eb35f-3966-4513-adaa-ba26d492caf2",
+   "episode_id": 8861780706754199881,
+   "n_windows": 34
+  },
+  {
+   "file_index": 99,
+   "episode_index": 99,
+   "clip_id": "b62be3fa-4fbb-4998-a5c9-b0318db9b4d6",
+   "episode_id": 6954114104208000291,
+   "n_windows": 34
+  },
+  {
+   "file_index": 100,
+   "episode_index": 100,
+   "clip_id": "b99058dc-6802-4f77-af28-a363b5701ab3",
+   "episode_id": 8242789147292199230,
+   "n_windows": 34
+  },
+  {
+   "file_index": 101,
+   "episode_index": 101,
+   "clip_id": "c0142275-d0c7-4a5f-a1a3-ac15c6d7add9",
+   "episode_id": 4346558458338416388,
+   "n_windows": 35
+  },
+  {
+   "file_index": 102,
+   "episode_index": 102,
+   "clip_id": "c08bebe5-c3fc-424f-ab7c-75d019e9035e",
+   "episode_id": 6574988825580588900,
+   "n_windows": 34
+  },
+  {
+   "file_index": 103,
+   "episode_index": 103,
+   "clip_id": "c1cb24d2-0afe-4fff-914f-d6220c4d733d",
+   "episode_id": 3639974664364986853,
+   "n_windows": 34
+  },
+  {
+   "file_index": 104,
+   "episode_index": 104,
+   "clip_id": "c84ea182-972e-4c4e-9be6-9a1bba5908e2",
+   "episode_id": 4267934554494781558,
+   "n_windows": 34
+  },
+  {
+   "file_index": 105,
+   "episode_index": 105,
+   "clip_id": "c8a39711-ce08-421f-b675-6533f89ad8a3",
+   "episode_id": 3945577903879517603,
+   "n_windows": 34
+  },
+  {
+   "file_index": 106,
+   "episode_index": 106,
+   "clip_id": "ca11a2a2-1021-475c-9907-e6dbe658ad12",
+   "episode_id": 3008401244071437273,
+   "n_windows": 36
+  },
+  {
+   "file_index": 107,
+   "episode_index": 107,
+   "clip_id": "caf90ce8-c1c4-4c2a-a781-c129b262b89c",
+   "episode_id": 5332230871558131766,
+   "n_windows": 34
+  },
+  {
+   "file_index": 108,
+   "episode_index": 108,
+   "clip_id": "d1d382aa-035a-4da8-a7c5-d06ec97f0fcd",
+   "episode_id": 2327884757538577311,
+   "n_windows": 34
+  },
+  {
+   "file_index": 109,
+   "episode_index": 109,
+   "clip_id": "d217b78a-0dab-447b-8940-cd0c58b942d2",
+   "episode_id": 761066260686310844,
+   "n_windows": 34
+  },
+  {
+   "file_index": 110,
+   "episode_index": 110,
+   "clip_id": "d4729053-1eb7-4973-a13d-84ecf4874b74",
+   "episode_id": 6960374124148187984,
+   "n_windows": 34
+  },
+  {
+   "file_index": 111,
+   "episode_index": 111,
+   "clip_id": "d571e998-57d4-44d1-971d-4afffae6321b",
+   "episode_id": 3224806804665105264,
+   "n_windows": 35
+  },
+  {
+   "file_index": 112,
+   "episode_index": 112,
+   "clip_id": "d85682b8-f612-4aa3-90a2-ee2bb86151e6",
+   "episode_id": 8795023975710178146,
+   "n_windows": 34
+  },
+  {
+   "file_index": 113,
+   "episode_index": 113,
+   "clip_id": "dbad28c2-dfc1-4860-8c45-bd51760bc969",
+   "episode_id": 1290243999637028924,
+   "n_windows": 34
+  },
+  {
+   "file_index": 114,
+   "episode_index": 114,
+   "clip_id": "dca157a0-20a9-464b-a74c-084b678e7be1",
+   "episode_id": 2074547948974319081,
+   "n_windows": 34
+  },
+  {
+   "file_index": 115,
+   "episode_index": 115,
+   "clip_id": "e0e6b875-eb14-41ba-8988-884da8624b34",
+   "episode_id": 8549884407071846968,
+   "n_windows": 34
+  },
+  {
+   "file_index": 116,
+   "episode_index": 116,
+   "clip_id": "e319062b-3760-4803-bf19-414bbb2a3383",
+   "episode_id": 1483973133454395838,
+   "n_windows": 34
+  },
+  {
+   "file_index": 117,
+   "episode_index": 117,
+   "clip_id": "e66979e0-6f5a-4e27-b497-c4e8a6d26534",
+   "episode_id": 8403258083896915315,
+   "n_windows": 34
+  },
+  {
+   "file_index": 118,
+   "episode_index": 118,
+   "clip_id": "e6cb7cd4-8349-4b9d-9674-e3ebf789e611",
+   "episode_id": 4221619963591443669,
+   "n_windows": 35
+  },
+  {
+   "file_index": 119,
+   "episode_index": 119,
+   "clip_id": "e7ada9bb-f5f4-4623-9713-71baa917dc59",
+   "episode_id": 4821448681613935627,
+   "n_windows": 34
+  },
+  {
+   "file_index": 120,
+   "episode_index": 120,
+   "clip_id": "e8ace736-b9b3-4f0b-a9bd-88b7161fc550",
+   "episode_id": 1025597027217851998,
+   "n_windows": 34
+  },
+  {
+   "file_index": 121,
+   "episode_index": 121,
+   "clip_id": "ea019ab7-bd2d-41b1-b35e-37bbfb578c4b",
+   "episode_id": 3587813618301180002,
+   "n_windows": 34
+  },
+  {
+   "file_index": 122,
+   "episode_index": 122,
+   "clip_id": "eabb9abf-06ae-4fd6-8141-a1d6e6ca4351",
+   "episode_id": 4105169087547256295,
+   "n_windows": 34
+  },
+  {
+   "file_index": 123,
+   "episode_index": 123,
+   "clip_id": "eb96a48b-db1a-49d3-8377-54be35a514d0",
+   "episode_id": 5163748204317926351,
+   "n_windows": 35
+  },
+  {
+   "file_index": 124,
+   "episode_index": 124,
+   "clip_id": "ebd51f52-29f6-4422-b9da-1a90cbbb48f2",
+   "episode_id": 4159723400672986470,
+   "n_windows": 34
+  },
+  {
+   "file_index": 125,
+   "episode_index": 125,
+   "clip_id": "ed09262b-3ac0-41df-a68b-1314eb2ec92d",
+   "episode_id": 6074254364859305900,
+   "n_windows": 34
+  },
+  {
+   "file_index": 126,
+   "episode_index": 126,
+   "clip_id": "ed87040c-cf3c-4fe4-9a95-50c1114f0d38",
+   "episode_id": 5117335902587495697,
+   "n_windows": 34
+  },
+  {
+   "file_index": 127,
+   "episode_index": 127,
+   "clip_id": "edd5d17b-1bea-402f-ad02-7fec082a7f2e",
+   "episode_id": 6462060203729074862,
+   "n_windows": 34
+  },
+  {
+   "file_index": 128,
+   "episode_index": 128,
+   "clip_id": "f14ae2d2-7bfe-4bea-a388-b0eea17709d3",
+   "episode_id": 1771676830055911485,
+   "n_windows": 35
+  },
+  {
+   "file_index": 129,
+   "episode_index": 129,
+   "clip_id": "f19cffbf-5621-4be5-83a4-7a096f6b7c39",
+   "episode_id": 4073021720302196795,
+   "n_windows": 34
+  },
+  {
+   "file_index": 130,
+   "episode_index": 130,
+   "clip_id": "f1a94fee-838c-400a-a603-32c40540068b",
+   "episode_id": 1081419996878382869,
+   "n_windows": 34
+  },
+  {
+   "file_index": 131,
+   "episode_index": 131,
+   "clip_id": "f1e1536b-1e23-4d73-bbf9-492a54358d10",
+   "episode_id": 2574094301292400761,
+   "n_windows": 34
+  },
+  {
+   "file_index": 132,
+   "episode_index": 132,
+   "clip_id": "f26af403-f548-4485-a118-09d6753a7bb8",
+   "episode_id": 7493523082872581448,
+   "n_windows": 35
+  },
+  {
+   "file_index": 133,
+   "episode_index": 133,
+   "clip_id": "f4226f59-077b-494e-a866-30eff5e47d57",
+   "episode_id": 8468062570165922415,
+   "n_windows": 34
+  },
+  {
+   "file_index": 134,
+   "episode_index": 134,
+   "clip_id": "f4740120-50c2-4ed6-a270-cf7ddbc299df",
+   "episode_id": 320416012300456287,
+   "n_windows": 34
+  },
+  {
+   "file_index": 135,
+   "episode_index": 135,
+   "clip_id": "f6e7827e-fd46-4e02-9a42-f7fabe3e036c",
+   "episode_id": 8010116796626921566,
+   "n_windows": 34
+  },
+  {
+   "file_index": 136,
+   "episode_index": 136,
+   "clip_id": "f901e9e6-cc3a-4af4-8461-a6c6a6f3d6d2",
+   "episode_id": 4463070212496215301,
+   "n_windows": 34
+  },
+  {
+   "file_index": 137,
+   "episode_index": 137,
+   "clip_id": "fb8e8200-bde1-4caa-9265-12535e1506c2",
+   "episode_id": 2162810260090415288,
+   "n_windows": 35
+  },
+  {
+   "file_index": 138,
+   "episode_index": 138,
+   "clip_id": "fe764229-15df-4506-b7e4-2977fd78e834",
+   "episode_id": 6479814750558219472,
+   "n_windows": 34
+  },
+  {
+   "file_index": 139,
+   "episode_index": 139,
+   "clip_id": "fe83e06e-3c2c-46a6-8b08-9f1a547cba1f",
+   "episode_id": 1284790499828588811,
+   "n_windows": 34
+  },
+  {
+   "file_index": 140,
+   "episode_index": 140,
+   "clip_id": "ffcd075e-c256-4c8f-af98-b83e86ce51a9",
+   "episode_id": 8185719125143179117,
+   "n_windows": 34
+  }
+ ],
+ "stamp": {
+  "evidence_class": "MEASURED (ours)",
+  "tier": "T1 for os_*/ha/ha0, T0 for orc_*",
+  "scope": "EARLY-TRAINING DIAGNOSTIC of refcv4b-b1-v72-40k at the pulled checkpoint; NOT a capability claim; NOT quotable as driving performance",
+  "loop": "OPEN LOOP (PI ruling 2026-09-02)"
+ },
+ "wallclock_s": 1073.8,
+ "first_forward_s": 0.5429058074951172,
+ "torch": "2.11.0+cu128",
+ "device": "cuda",
+ "dtype": "float32, no autocast"
+}

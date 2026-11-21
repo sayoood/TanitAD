@@ -1,0 +1,2979 @@
+[
+ {
+  "variant": "FlyWheels/TanitAD_DataFlyWheel/incoming/2026-10-04-x10-pose-timing/code/fix/stack/scripts/refc_v3_train.py",
+  "target": "stack/scripts/refc_v3_train.py",
+  "base_blob": "042bd5a",
+  "base_commit": "c39798d776b22662b30eaee61d8dc366a21b4872",
+  "base_date": "2026-10-04 18:21:48",
+  "base_subj": "+0200 refcv8 WP-B lands in the trainer: tactical-conditioned fan generation + factorised/listwise selection, the route-checkpoint input with",
+  "base_to_variant_linediff": 109,
+  "tip_to_variant_linediff": 919,
+  "n_hunks": 7,
+  "status_counts": {
+   "APPLIED": 7
+  },
+  "hunks": [
+   {
+    "a_start": 2889,
+    "n_add": 8,
+    "n_rem": 0,
+    "status": "APPLIED",
+    "add_lines_present_frac": 1.0,
+    "first_commit_with_add": [
+     "badb5821",
+     "2026-10-04"
+    ],
+    "add_head": [
+     "    #: \u2b50 refcv8 X10 (PI data audit D3): the POSE-TO-IMAGE timing correction, ``tanitad/data/pose_sync.py``.",
+     "    #: ``None`` = OFF, the DEFAULT: ``__getitem__`` is then byte-for-byte the pre-X10 path (no new key, no new",
+     "    #: branch taken). Set by :meth:`enable_pose_sync` from ``--pose-sync-sidecar``. It re-samples the WINDOW's ego"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 4078,
+    "n_add": 81,
+    "n_rem": 0,
+    "status": "APPLIED",
+    "add_lines_present_frac": 1.0,
+    "first_commit_with_add": [
+     "badb5821",
+     "2026-10-04"
+    ],
+    "add_head": [
+     "    def enable_pose_sync(self, sidecar_path: str, *, sign: float = 1.0,",
+     "                         max_uncovered_frac: float = 0.01) -> dict:",
+     "        \"\"\"\u2b50 refcv8 X10 -- OPT-IN pose-to-image timing correction. Returns the census ``config.json`` stamps."
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 4103,
+    "n_add": 3,
+    "n_rem": 0,
+    "status": "APPLIED",
+    "add_lines_present_frac": 1.0,
+    "first_commit_with_add": [
+     "badb5821",
+     "2026-10-04"
+    ],
+    "add_head": [
+     "        # ---- \u2b50 refcv8 X10: pose-to-image timing (OPT-IN; None = this line is a no-op) ----",
+     "        if self.pose_sync is not None:",
+     "            self._pose_sync_apply(item, ep, t)"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 8747,
+    "n_add": 5,
+    "n_rem": 0,
+    "status": "APPLIED",
+    "add_lines_present_frac": 1.0,
+    "first_commit_with_add": [
+     "badb5821",
+     "2026-10-04"
+    ],
+    "add_head": [
+     "    pose_sync_stats = eval_pose_sync_stats = None            # refcv8 X10 (opt-in)",
+     "    if getattr(args, \"pose_sync_sidecar\", None):",
+     "        pose_sync_stats = ds.enable_pose_sync(args.pose_sync_sidecar)"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 9155,
+    "n_add": 2,
+    "n_rem": 0,
+    "status": "APPLIED",
+    "add_lines_present_frac": 1.0,
+    "first_commit_with_add": [
+     "badb5821",
+     "2026-10-04"
+    ],
+    "add_head": [
+     "        if getattr(args, \"pose_sync_sidecar\", None):             # refcv8 X10: the eval GT rides the SAME clock",
+     "            eval_pose_sync_stats = e_ds.enable_pose_sync(args.pose_sync_sidecar)"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 9729,
+    "n_add": 3,
+    "n_rem": 0,
+    "status": "APPLIED",
+    "add_lines_present_frac": 1.0,
+    "first_commit_with_add": [
+     "badb5821",
+     "2026-10-04"
+    ],
+    "add_head": [
+     "        # \u2b50 refcv8 X10: None = the pose-to-image offset is UNCORRECTED (every refcv<=7 run). Never a silent default.",
+     "        \"pose_sync\": ({\"train\": pose_sync_stats, \"eval\": eval_pose_sync_stats}",
+     "                      if pose_sync_stats is not None else None),"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 10344,
+    "n_add": 7,
+    "n_rem": 0,
+    "status": "APPLIED",
+    "add_lines_present_frac": 1.0,
+    "first_commit_with_add": [
+     "badb5821",
+     "2026-10-04"
+    ],
+    "add_head": [
+     "    ap.add_argument(\"--pose-sync-sidecar\", default=None,",
+     "                    help=\"\u2b50 refcv8 X10 (OPT-IN, default OFF): JSON-lines {sid, dt_s, n_rows, delta_us} built by \"",
+     "                         \"`scripts/build_pose_sync_sidecar.py` from each clip's camera timestamps. Re-samples the \""
+    ],
+    "rem_head": []
+   }
+  ],
+  "diff_file": "base2var_2e07e0d6.diff"
+ },
+ {
+  "variant": "FlyWheels/TanitAD_DataFlyWheel/incoming/2026-10-04-x10-pose-timing/code/fix/stack/tests/test_declared_vs_built.py",
+  "target": "stack/tests/test_declared_vs_built.py",
+  "base_blob": "460ebf1",
+  "base_commit": "c39798d776b22662b30eaee61d8dc366a21b4872",
+  "base_date": "2026-10-04 18:21:48",
+  "base_subj": "+0200 refcv8 WP-B lands in the trainer: tactical-conditioned fan generation + factorised/listwise selection, the route-checkpoint input with",
+  "base_to_variant_linediff": 3,
+  "tip_to_variant_linediff": 35,
+  "n_hunks": 1,
+  "status_counts": {
+   "CHANGED": 1
+  },
+  "hunks": [
+   {
+    "a_start": 273,
+    "n_add": 2,
+    "n_rem": 1,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "    # refcv8 X10 (pose-to-image timing): +1 = --pose-sync-sidecar, \"data\", registered in declared_vs_built itself (256 -> 257)",
+     "    assert len(dvb.REGISTRY) == 257"
+    ],
+    "rem_head": [
+     "    assert len(dvb.REGISTRY) == 256"
+    ]
+   }
+  ],
+  "diff_file": "base2var_e31c57bb.diff"
+ },
+ {
+  "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/code/fix/stack/scripts/refc_v3_train.py",
+  "target": "stack/scripts/refc_v3_train.py",
+  "base_blob": "203b437",
+  "base_commit": "28d8365f40f0971f1ecef1f4eacdadc31da1a2e2",
+  "base_date": "2026-09-27 15:26:57",
+  "base_subj": "+0200 refcv7 box head lands (A9-A14.1): focal presence, per-layer supervision, VIS-1 with IGNORE semantics, 300 queries, P0 detection metric",
+  "base_to_variant_linediff": 23,
+  "tip_to_variant_linediff": 1617,
+  "n_hunks": 3,
+  "status_counts": {
+   "DEL-MISSING": 2,
+   "MISSING": 1
+  },
+  "hunks": [
+   {
+    "a_start": 1470,
+    "n_add": 0,
+    "n_rem": 12,
+    "status": "DEL-MISSING",
+    "add_lines_present_frac": null,
+    "first_commit_with_add": null,
+    "add_head": [],
+    "rem_head": [
+     "    if str(getattr(args, \"slot_query_select\", \"learned\") or \"learned\") == \"heatmap\":",
+     "        if not float(getattr(args, \"w_box3d\", 0.0) or 0.0) > 0.0:",
+     "            raise SystemExit(\"[v3] \u26d4 --slot-query-select heatmap with --w-box3d 0: HQS selects the BOX head's \""
+    ]
+   },
+   {
+    "a_start": 8088,
+    "n_add": 1,
+    "n_rem": 2,
+    "status": "MISSING",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "        _pcfg = _dc.replace(_pcfg, **_slot_refine_kwargs(args))"
+    ],
+    "rem_head": [
+     "        _pcfg = _dc.replace(_pcfg, **_slot_refine_kwargs(args),",
+     "                            query_select=str(getattr(args, \"slot_query_select\", \"learned\") or \"learned\"))"
+    ]
+   },
+   {
+    "a_start": 10376,
+    "n_add": 0,
+    "n_rem": 8,
+    "status": "DEL-MISSING",
+    "add_lines_present_frac": null,
+    "first_commit_with_add": null,
+    "add_head": [],
+    "rem_head": [
+     "    g5.add_argument(\"--slot-query-select\", choices=(\"learned\", \"heatmap\", \"learned_ref\"),",
+     "                    default=\"learned\",",
+     "                    help=\"refcv7 A14 (SPEC_REFCV7 \u00a719): the BOX head's query selection. learned (default) = the \""
+    ]
+   }
+  ],
+  "diff_file": "base2var_ccf00909.diff"
+ },
+ {
+  "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/code/fix/stack/tanitad/models/refcv6_perception_branch.py",
+  "target": "stack/tanitad/models/refcv6_perception_branch.py",
+  "base_blob": "6bba17a",
+  "base_commit": "cef9709de91bbc749bd579746203da75e8cdbe43",
+  "base_date": "2026-09-27 05:06:04",
+  "base_subj": "+0200 refcv7 NEW-2 lands: the semantic map at 10 cm over 100 m x +-30 m (PI option c) -- one stride-8 lift feeds the 10 cm decoder and a poo",
+  "base_to_variant_linediff": 45,
+  "tip_to_variant_linediff": 64,
+  "n_hunks": 9,
+  "status_counts": {
+   "APPLIED": 9
+  },
+  "hunks": [
+   {
+    "a_start": 64,
+    "n_add": 1,
+    "n_rem": 0,
+    "status": "APPLIED",
+    "add_lines_present_frac": 1.0,
+    "first_commit_with_add": [
+     "28d8365f",
+     "2026-09-27"
+    ],
+    "add_head": [
+     "from tanitad.models.agent_slots import N_QUERIES_DEFAULT"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 167,
+    "n_add": 3,
+    "n_rem": 1,
+    "status": "APPLIED",
+    "add_lines_present_frac": 1.0,
+    "first_commit_with_add": [
+     "28d8365f",
+     "2026-09-27"
+    ],
+    "add_head": [
+     "    #: \u26d4 the ONE spelling (refcv7 A9 R4: 300). A run recorded before the ruling is rebuilt from",
+     "    #: its own ``refcv6_perception.n_queries`` stamp (``refcv3_arm.rebuild_perception_branch``).",
+     "    n_queries: int = N_QUERIES_DEFAULT"
+    ],
+    "rem_head": [
+     "    n_queries: int = 100              # agent_slots.N_QUERIES_DEFAULT"
+    ]
+   },
+   {
+    "a_start": 189,
+    "n_add": 8,
+    "n_rem": 0,
+    "status": "APPLIED",
+    "add_lines_present_frac": 1.0,
+    "first_commit_with_add": [
+     "28d8365f",
+     "2026-09-27"
+    ],
+    "add_head": [
+     "    #: \u2b50\u2b50 refcv7 A9 (SPEC_REFCV7 \u00a714) -- the REFINED box head; every default is the pre-A9 arm.",
+     "    #: R1 presence objective (``\"bce\"`` | ``\"focal\"``), R1 init prior, R2 per-layer",
+     "    #: supervision, R3 VIS-1 targets. Same four fields, same meaning, as"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 258,
+    "n_add": 4,
+    "n_rem": 0,
+    "status": "APPLIED",
+    "add_lines_present_frac": 1.0,
+    "first_commit_with_add": [
+     "28d8365f",
+     "2026-09-27"
+    ],
+    "add_head": [
+     "                \"presence_loss\": str(self.presence_loss),",
+     "                \"presence_prior\": float(self.presence_prior),",
+     "                \"deep_supervision\": bool(self.deep_supervision),"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 475,
+    "n_add": 2,
+    "n_rem": 1,
+    "status": "APPLIED",
+    "add_lines_present_frac": 1.0,
+    "first_commit_with_add": [
+     "28d8365f",
+     "2026-09-27"
+    ],
+    "add_head": [
+     "                enforce_band=bool(cfg.enforce_param_band),",
+     "                presence_prior=float(cfg.presence_prior))"
+    ],
+    "rem_head": [
+     "                enforce_band=bool(cfg.enforce_param_band))"
+    ]
+   },
+   {
+    "a_start": 480,
+    "n_add": 2,
+    "n_rem": 0,
+    "status": "APPLIED",
+    "add_lines_present_frac": 1.0,
+    "first_commit_with_add": [
+     "28d8365f",
+     "2026-09-27"
+    ],
+    "add_head": [
+     "            # \u26d4 refcv7 A9 R2 -- declared is not plumbed; the test pins THIS line too.",
+     "            self.box_dec.deep_supervision = bool(cfg.deep_supervision)"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 750,
+    "n_add": 3,
+    "n_rem": 1,
+    "status": "APPLIED",
+    "add_lines_present_frac": 1.0,
+    "first_commit_with_add": [
+     "28d8365f",
+     "2026-09-27"
+    ],
+    "add_head": [
+     "                   cls_class_weight=None, visible_filter: bool = True,",
+     "                   presence_loss: str = \"bce\", vis1: bool = False,",
+     "                   vis: dict | None = None) -> dict:"
+    ],
+    "rem_head": [
+     "                   cls_class_weight=None, visible_filter: bool = True) -> dict:"
+    ]
+   },
+   {
+    "a_start": 756,
+    "n_add": 12,
+    "n_rem": 2,
+    "status": "APPLIED",
+    "add_lines_present_frac": 1.0,
+    "first_commit_with_add": [
+     "28d8365f",
+     "2026-09-27"
+    ],
+    "add_head": [
+     "    # ---- refcv7 A9 (R1-R3): the REFINED path, only when asked for --------------- #",
+     "    from tanitad.models import slot_presence as _sp",
+     "    if _sp.refined_is_legacy(presence_loss, vis1, slots):"
+    ],
+    "rem_head": [
+     "    r = box3d_set_loss(slots, tgt, weights=weights, cls_class_weight=cls_class_weight,",
+     "                       visible_filter=visible_filter)"
+    ]
+   },
+   {
+    "a_start": 768,
+    "n_add": 5,
+    "n_rem": 0,
+    "status": "APPLIED",
+    "add_lines_present_frac": 1.0,
+    "first_commit_with_add": [
+     "28d8365f",
+     "2026-09-27"
+    ],
+    "add_head": [
+     "    if \"_refine\" in r:                   # refcv7 A9: the arm, in the log row",
+     "        row[\"box3d_presence_focal\"] = 1.0 if presence_loss == \"focal\" else 0.0",
+     "        row[\"box3d_vis1\"] = 1.0 if vis1 else 0.0"
+    ],
+    "rem_head": []
+   }
+  ],
+  "diff_file": "base2var_7b9d0b17.diff"
+ },
+ {
+  "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/code/fix/stack/tanitad/train/declared_vs_built.py",
+  "target": "stack/tanitad/train/declared_vs_built.py",
+  "base_blob": "87cad54",
+  "base_commit": "28d8365f40f0971f1ecef1f4eacdadc31da1a2e2",
+  "base_date": "2026-09-27 15:26:57",
+  "base_subj": "+0200 refcv7 box head lands (A9-A14.1): focal presence, per-layer supervision, VIS-1 with IGNORE semantics, 300 queries, P0 detection metric",
+  "base_to_variant_linediff": 16,
+  "tip_to_variant_linediff": 212,
+  "n_hunks": 1,
+  "status_counts": {
+   "DEL-MISSING": 1
+  },
+  "hunks": [
+   {
+    "a_start": 946,
+    "n_add": 0,
+    "n_rem": 16,
+    "status": "DEL-MISSING",
+    "add_lines_present_frac": null,
+    "first_commit_with_add": null,
+    "add_head": [],
+    "rem_head": [
+     "",
+     "",
+     "def _c_slot_query_select(m, a):"
+    ]
+   }
+  ],
+  "diff_file": "base2var_05fff399.diff"
+ },
+ {
+  "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/code/fix/stack/tests/test_declared_vs_built.py",
+  "target": "stack/tests/test_declared_vs_built.py",
+  "base_blob": "00775e1",
+  "base_commit": "28d8365f40f0971f1ecef1f4eacdadc31da1a2e2",
+  "base_date": "2026-09-27 15:26:57",
+  "base_subj": "+0200 refcv7 box head lands (A9-A14.1): focal presence, per-layer supervision, VIS-1 with IGNORE semantics, 300 queries, P0 detection metric",
+  "base_to_variant_linediff": 3,
+  "tip_to_variant_linediff": 56,
+  "n_hunks": 1,
+  "status_counts": {
+   "CHANGED": 1
+  },
+  "hunks": [
+   {
+    "a_start": 268,
+    "n_add": 1,
+    "n_rem": 2,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "    assert len(dvb.REGISTRY) == 220"
+    ],
+    "rem_head": [
+     "    assert len(dvb.REGISTRY) == 221",
+     "    # refcv7 A14 (HQS): +1 = --slot-query-select (220 -> 221)"
+    ]
+   }
+  ],
+  "diff_file": "base2var_ecf8ec7c.diff"
+ },
+ {
+  "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/code/fix/stack/tests/test_occ_knob_is_stamped.py",
+  "target": "stack/tests/test_occ_knob_is_stamped.py",
+  "base_blob": "37e05fa",
+  "base_commit": "28d8365f40f0971f1ecef1f4eacdadc31da1a2e2",
+  "base_date": "2026-09-27 15:26:57",
+  "base_subj": "+0200 refcv7 box head lands (A9-A14.1): focal presence, per-layer supervision, VIS-1 with IGNORE semantics, 300 queries, P0 detection metric",
+  "base_to_variant_linediff": 1,
+  "tip_to_variant_linediff": 1,
+  "n_hunks": 1,
+  "status_counts": {
+   "DEL-MISSING": 1
+  },
+  "hunks": [
+   {
+    "a_start": 45,
+    "n_add": 0,
+    "n_rem": 1,
+    "status": "DEL-MISSING",
+    "add_lines_present_frac": null,
+    "first_commit_with_add": null,
+    "add_head": [],
+    "rem_head": [
+     "    \"query_select\",   # refcv7 A14 (HQS)"
+    ]
+   }
+  ],
+  "diff_file": "base2var_3433cda5.diff"
+ },
+ {
+  "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/code/fix_r6/stack/scripts/refc_v3_train.py",
+  "target": "stack/scripts/refc_v3_train.py",
+  "base_blob": "203b437",
+  "base_commit": "28d8365f40f0971f1ecef1f4eacdadc31da1a2e2",
+  "base_date": "2026-09-27 15:26:57",
+  "base_subj": "+0200 refcv7 box head lands (A9-A14.1): focal presence, per-layer supervision, VIS-1 with IGNORE semantics, 300 queries, P0 detection metric",
+  "base_to_variant_linediff": 55,
+  "tip_to_variant_linediff": 1649,
+  "n_hunks": 4,
+  "status_counts": {
+   "MISSING": 4
+  },
+  "hunks": [
+   {
+    "a_start": 1470,
+    "n_add": 6,
+    "n_rem": 12,
+    "status": "MISSING",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "    _dng = int(getattr(args, \"slot_dn_groups\", 0) or 0)",
+     "    if _dng < 0:",
+     "        raise SystemExit(\"[v3] \u26d4 --slot-dn-groups must be >= 0.\")"
+    ],
+    "rem_head": [
+     "    if str(getattr(args, \"slot_query_select\", \"learned\") or \"learned\") == \"heatmap\":",
+     "        if not float(getattr(args, \"w_box3d\", 0.0) or 0.0) > 0.0:",
+     "            raise SystemExit(\"[v3] \u26d4 --slot-query-select heatmap with --w-box3d 0: HQS selects the BOX head's \""
+    ]
+   },
+   {
+    "a_start": 5518,
+    "n_add": 21,
+    "n_rem": 1,
+    "status": "MISSING",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "                # \u2b50 +R6 (A10.1): the denoising pass, TRAINING only, added INTO the box term so every",
+     "                # reader of `box3d` (the loss, the log, G-BOX-OVERFIT) sees the same number.",
+     "                if getattr(_br, \"box_dn\", None) is not None and model.training \\"
+    ],
+    "rem_head": [
+     "                loss = loss + _w_b3d * _brow[\"loss\"]"
+    ]
+   },
+   {
+    "a_start": 8089,
+    "n_add": 2,
+    "n_rem": 1,
+    "status": "MISSING",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "                            dn_groups=int(getattr(args, \"slot_dn_groups\", 0) or 0))",
+     "        model._dn_gen = torch.Generator().manual_seed(int(getattr(args, \"seed\", 0)) + 7919)"
+    ],
+    "rem_head": [
+     "                            query_select=str(getattr(args, \"slot_query_select\", \"learned\") or \"learned\"))"
+    ]
+   },
+   {
+    "a_start": 10376,
+    "n_add": 4,
+    "n_rem": 8,
+    "status": "MISSING",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "    g5.add_argument(\"--slot-dn-groups\", type=int, default=0,",
+     "                    help=\"+R6 (SPEC_REFCV7 A10.1): denoising-query groups for the BOX head, training only \"",
+     "                         \"(DN-DETR/DINO-style: noised GT positives + a no-object negative group, masked per \""
+    ],
+    "rem_head": [
+     "    g5.add_argument(\"--slot-query-select\", choices=(\"learned\", \"heatmap\", \"learned_ref\"),",
+     "                    default=\"learned\",",
+     "                    help=\"refcv7 A14 (SPEC_REFCV7 \u00a719): the BOX head's query selection. learned (default) = the \""
+    ]
+   }
+  ],
+  "diff_file": "base2var_61b0d328.diff"
+ },
+ {
+  "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/code/fix_r6/stack/tanitad/models/refcv6_perception_branch.py",
+  "target": "stack/tanitad/models/refcv6_perception_branch.py",
+  "base_blob": "6bba17a",
+  "base_commit": "cef9709de91bbc749bd579746203da75e8cdbe43",
+  "base_date": "2026-09-27 05:06:04",
+  "base_subj": "+0200 refcv7 NEW-2 lands: the semantic map at 10 cm over 100 m x +-30 m (PI option c) -- one stride-8 lift feeds the 10 cm decoder and a poo",
+  "base_to_variant_linediff": 63,
+  "tip_to_variant_linediff": 82,
+  "n_hunks": 12,
+  "status_counts": {
+   "APPLIED": 6,
+   "CHANGED": 6
+  },
+  "hunks": [
+   {
+    "a_start": 64,
+    "n_add": 1,
+    "n_rem": 0,
+    "status": "APPLIED",
+    "add_lines_present_frac": 1.0,
+    "first_commit_with_add": [
+     "28d8365f",
+     "2026-09-27"
+    ],
+    "add_head": [
+     "from tanitad.models.agent_slots import N_QUERIES_DEFAULT"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 167,
+    "n_add": 3,
+    "n_rem": 1,
+    "status": "APPLIED",
+    "add_lines_present_frac": 1.0,
+    "first_commit_with_add": [
+     "28d8365f",
+     "2026-09-27"
+    ],
+    "add_head": [
+     "    #: \u26d4 the ONE spelling (refcv7 A9 R4: 300). A run recorded before the ruling is rebuilt from",
+     "    #: its own ``refcv6_perception.n_queries`` stamp (``refcv3_arm.rebuild_perception_branch``).",
+     "    n_queries: int = N_QUERIES_DEFAULT"
+    ],
+    "rem_head": [
+     "    n_queries: int = 100              # agent_slots.N_QUERIES_DEFAULT"
+    ]
+   },
+   {
+    "a_start": 189,
+    "n_add": 11,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.7272727272727273,
+    "first_commit_with_add": null,
+    "add_head": [
+     "    #: \u2b50\u2b50 refcv7 A9 (SPEC_REFCV7 \u00a714) -- the REFINED box head; every default is the pre-A9 arm.",
+     "    #: R1 presence objective (``\"bce\"`` | ``\"focal\"``), R1 init prior, R2 per-layer",
+     "    #: supervision, R3 VIS-1 targets. Same four fields, same meaning, as"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 258,
+    "n_add": 5,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.8,
+    "first_commit_with_add": null,
+    "add_head": [
+     "                \"presence_loss\": str(self.presence_loss),",
+     "                \"presence_prior\": float(self.presence_prior),",
+     "                \"deep_supervision\": bool(self.deep_supervision),"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 465,
+    "n_add": 2,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "        #: +R6: the denoising-query embedder (training only; outside the decoder's \u00a76 band)",
+     "        self.box_dn = None"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 475,
+    "n_add": 2,
+    "n_rem": 1,
+    "status": "APPLIED",
+    "add_lines_present_frac": 1.0,
+    "first_commit_with_add": [
+     "28d8365f",
+     "2026-09-27"
+    ],
+    "add_head": [
+     "                enforce_band=bool(cfg.enforce_param_band),",
+     "                presence_prior=float(cfg.presence_prior))"
+    ],
+    "rem_head": [
+     "                enforce_band=bool(cfg.enforce_param_band))"
+    ]
+   },
+   {
+    "a_start": 480,
+    "n_add": 8,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.25,
+    "first_commit_with_add": null,
+    "add_head": [
+     "            # \u26d4 refcv7 A9 R2 -- declared is not plumbed; the test pins THIS line too.",
+     "            self.box_dec.deep_supervision = bool(cfg.deep_supervision)",
+     "            if int(cfg.dn_groups) > 0:"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 550,
+    "n_add": 4,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.25,
+    "first_commit_with_add": null,
+    "add_head": [
+     "        if getattr(self, \"box_dn\", None) is not None:",
+     "            # +R6 (A10.1) only, as bev_pool: the DN embedder's key appears only when it is built",
+     "            d = {**{k: v for k, v in d.items() if k != \"total\"},"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 624,
+    "n_add": 2,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "            if self.box_dn is not None and self.training:",
+     "                out[\"box_memory\"] = mem          # +R6: the DN pass reads the SAME memory"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 750,
+    "n_add": 3,
+    "n_rem": 1,
+    "status": "APPLIED",
+    "add_lines_present_frac": 1.0,
+    "first_commit_with_add": [
+     "28d8365f",
+     "2026-09-27"
+    ],
+    "add_head": [
+     "                   cls_class_weight=None, visible_filter: bool = True,",
+     "                   presence_loss: str = \"bce\", vis1: bool = False,",
+     "                   vis: dict | None = None) -> dict:"
+    ],
+    "rem_head": [
+     "                   cls_class_weight=None, visible_filter: bool = True) -> dict:"
+    ]
+   },
+   {
+    "a_start": 756,
+    "n_add": 12,
+    "n_rem": 2,
+    "status": "APPLIED",
+    "add_lines_present_frac": 1.0,
+    "first_commit_with_add": [
+     "28d8365f",
+     "2026-09-27"
+    ],
+    "add_head": [
+     "    # ---- refcv7 A9 (R1-R3): the REFINED path, only when asked for --------------- #",
+     "    from tanitad.models import slot_presence as _sp",
+     "    if _sp.refined_is_legacy(presence_loss, vis1, slots):"
+    ],
+    "rem_head": [
+     "    r = box3d_set_loss(slots, tgt, weights=weights, cls_class_weight=cls_class_weight,",
+     "                       visible_filter=visible_filter)"
+    ]
+   },
+   {
+    "a_start": 768,
+    "n_add": 5,
+    "n_rem": 0,
+    "status": "APPLIED",
+    "add_lines_present_frac": 1.0,
+    "first_commit_with_add": [
+     "28d8365f",
+     "2026-09-27"
+    ],
+    "add_head": [
+     "    if \"_refine\" in r:                   # refcv7 A9: the arm, in the log row",
+     "        row[\"box3d_presence_focal\"] = 1.0 if presence_loss == \"focal\" else 0.0",
+     "        row[\"box3d_vis1\"] = 1.0 if vis1 else 0.0"
+    ],
+    "rem_head": []
+   }
+  ],
+  "diff_file": "base2var_d8eac1fd.diff"
+ },
+ {
+  "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/code/fix_r6/stack/tanitad/train/declared_vs_built.py",
+  "target": "stack/tanitad/train/declared_vs_built.py",
+  "base_blob": "87cad54",
+  "base_commit": "28d8365f40f0971f1ecef1f4eacdadc31da1a2e2",
+  "base_date": "2026-09-27 15:26:57",
+  "base_subj": "+0200 refcv7 box head lands (A9-A14.1): focal presence, per-layer supervision, VIS-1 with IGNORE semantics, 300 queries, P0 detection metric",
+  "base_to_variant_linediff": 16,
+  "tip_to_variant_linediff": 212,
+  "n_hunks": 4,
+  "status_counts": {
+   "MISSING": 4
+  },
+  "hunks": [
+   {
+    "a_start": 948,
+    "n_add": 2,
+    "n_rem": 2,
+    "status": "MISSING",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "def _c_slot_dn(m, a):",
+     "    want = int(_a(a, \"slot_dn_groups\", 0) or 0)"
+    ],
+    "rem_head": [
+     "def _c_slot_query_select(m, a):",
+     "    want = str(_a(a, \"slot_query_select\", \"learned\") or \"learned\")"
+    ]
+   },
+   {
+    "a_start": 951,
+    "n_add": 2,
+    "n_rem": 4,
+    "status": "MISSING",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "    out = _eq(\"slot_dn_groups\", want > 0, getattr(br, \"box_dn\", None) is not None,",
+     "              \"model._perception.box_dn is not None\", \"+R6's embedder is built iff the groups are > 0\")"
+    ],
+    "rem_head": [
+     "    out = _eq(\"slot_query_select\", want == \"heatmap\", getattr(br, \"box_heat\", None) is not None,",
+     "              \"model._perception.box_heat is not None\", \"HQS's heatmap is built iff heatmap is declared\")",
+     "    out += _eq(\"slot_query_select\", want == \"learned_ref\", getattr(br, \"box_refpts\", None) is not None,"
+    ]
+   },
+   {
+    "a_start": 956,
+    "n_add": 2,
+    "n_rem": 2,
+    "status": "MISSING",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "        out += _eq(\"slot_dn_groups\", want, int(getattr(br.cfg, \"dn_groups\", 0)),",
+     "                   \"model._perception.cfg.dn_groups (read by the loss)\")"
+    ],
+    "rem_head": [
+     "        out += _eq(\"slot_query_select\", want, str(getattr(br.cfg, \"query_select\", \"learned\")),",
+     "                   \"model._perception.cfg.query_select (read by the forward)\")"
+    ]
+   },
+   {
+    "a_start": 961,
+    "n_add": 1,
+    "n_rem": 1,
+    "status": "MISSING",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "_b(\"slot_dn_groups\", _c_slot_dn)"
+    ],
+    "rem_head": [
+     "_b(\"slot_query_select\", _c_slot_query_select)"
+    ]
+   }
+  ],
+  "diff_file": "base2var_1c4ebb4f.diff"
+ },
+ {
+  "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/code/fix_r6/stack/tests/test_cls_weight_stamp.py",
+  "target": "stack/tests/test_cls_weight_stamp.py",
+  "base_blob": "151e609",
+  "base_commit": "e152e40489902302602ef4bcef4fa04cd150623a",
+  "base_date": "2026-09-23 07:53:12",
+  "base_subj": "+0200 refcv6: every launch-blocking review finding FIXED and MUTATION-PROVEN; eval split protected",
+  "base_to_variant_linediff": 4,
+  "tip_to_variant_linediff": 4,
+  "n_hunks": 1,
+  "status_counts": {
+   "MISSING": 1
+  },
+  "hunks": [
+   {
+    "a_start": 322,
+    "n_add": 3,
+    "n_rem": 1,
+    "status": "MISSING",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "    # +R6 (SPEC_REFCV7 A10.1): the box head's DN (denoising-query) loss is a THIRD call site of the SAME",
+     "    # weight -- the agent head, the box head's matched loss, and its DN loss.",
+     "    assert n == 3, f\"expected the weight at all THREE loss sites (+R6), found {n}\""
+    ],
+    "rem_head": [
+     "    assert n == 2, f\"expected the weight at BOTH loss sites, found {n}\""
+    ]
+   }
+  ],
+  "diff_file": "base2var_a4c70a9a.diff"
+ },
+ {
+  "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/code/fix_r6/stack/tests/test_declared_vs_built.py",
+  "target": "stack/tests/test_declared_vs_built.py",
+  "base_blob": "00775e1",
+  "base_commit": "28d8365f40f0971f1ecef1f4eacdadc31da1a2e2",
+  "base_date": "2026-09-27 15:26:57",
+  "base_subj": "+0200 refcv7 box head lands (A9-A14.1): focal presence, per-layer supervision, VIS-1 with IGNORE semantics, 300 queries, P0 detection metric",
+  "base_to_variant_linediff": 2,
+  "tip_to_variant_linediff": 57,
+  "n_hunks": 1,
+  "status_counts": {
+   "MISSING": 1
+  },
+  "hunks": [
+   {
+    "a_start": 269,
+    "n_add": 1,
+    "n_rem": 1,
+    "status": "MISSING",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "    # +R6 (A10.1, banked): +1 = --slot-dn-groups (220 -> 221)"
+    ],
+    "rem_head": [
+     "    # refcv7 A14 (HQS): +1 = --slot-query-select (220 -> 221)"
+    ]
+   }
+  ],
+  "diff_file": "base2var_b3985a1b.diff"
+ },
+ {
+  "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/code/fix_r6/stack/tests/test_occ_knob_is_stamped.py",
+  "target": "stack/tests/test_occ_knob_is_stamped.py",
+  "base_blob": "37e05fa",
+  "base_commit": "28d8365f40f0971f1ecef1f4eacdadc31da1a2e2",
+  "base_date": "2026-09-27 15:26:57",
+  "base_subj": "+0200 refcv7 box head lands (A9-A14.1): focal presence, per-layer supervision, VIS-1 with IGNORE semantics, 300 queries, P0 detection metric",
+  "base_to_variant_linediff": 2,
+  "tip_to_variant_linediff": 2,
+  "n_hunks": 1,
+  "status_counts": {
+   "MISSING": 1
+  },
+  "hunks": [
+   {
+    "a_start": 45,
+    "n_add": 1,
+    "n_rem": 1,
+    "status": "MISSING",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "    \"dn_groups\",   # +R6 (A10.1), banked unlanded"
+    ],
+    "rem_head": [
+     "    \"query_select\",   # refcv7 A14 (HQS)"
+    ]
+   }
+  ],
+  "diff_file": "base2var_26fb9670.diff"
+ },
+ {
+  "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/code/fix_P7/stack/ops/runs.d/refcv8-wpb-smoke.argv.json",
+  "target": "stack/ops/runs.d/refcv8-wpb-smoke.argv.json",
+  "base_blob": "f3d6fcd",
+  "base_commit": "badb5821fd8d43ee5141ba5652290fb292033a27",
+  "base_date": "2026-10-04 23:51:21",
+  "base_subj": "+0200 refcv8 WP-B landing L1: past-only speed input N2 (+ 8-step encoding) with the future-max sidecar refused, v9 constraint supervision, t",
+  "base_to_variant_linediff": 34,
+  "tip_to_variant_linediff": 67,
+  "n_hunks": 5,
+  "status_counts": {
+   "CHANGED": 1,
+   "DEL-APPLIED": 2,
+   "DEL-MISSING": 1,
+   "BOTH-PRESENT": 1
+  },
+  "hunks": [
+   {
+    "a_start": 4,
+    "n_add": 1,
+    "n_rem": 1,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     " \"what\": \"The refcv8 FULL-SIZE SMOKE argv (SPEC_WPB_LADDER sec. 7): refcv7-r101-s0's canonical argv + every refcv8 seam, the v9 release, the RC, the warm start, and X3's past-only speed input N2 in place of refcv7's v8 future-max sidecar. A SMOKE, not a launch: R8-RECIPE / R8-BUDGET / R8-WARMUP are OPEN ITEMS of the refcv8 gate profile, and the RC and the N2/N3 choice (PI decision 2) are PI-DECISION.\","
+    ],
+    "rem_head": [
+     " \"what\": \"The refcv8 FULL-SIZE SMOKE argv (SPEC_WPB_LADDER sec. 7): refcv7-r101-s0's canonical argv + every refcv8 seam, the v9 release, the RC, the warm start, and X3's past-only speed input N2 in place of refcv7's v8 future-max sidecar, the v9 constraint supervision (Q2) and X10's pose-to-image timing correction. A SMOKE, not a launch: R8-RECIPE / R8-BUDGET / R8-WARMUP are OPEN ITEMS of the refcv8 gate profile, and the RC and the N2/N3 choice (PI decision 2) are PI-DECISION.\","
+    ]
+   },
+   {
+    "a_start": 46,
+    "n_add": 0,
+    "n_rem": 8,
+    "status": "DEL-APPLIED",
+    "add_lines_present_frac": null,
+    "first_commit_with_add": null,
+    "add_head": [],
+    "rem_head": [
+     "  {",
+     "   \"flag\": \"--r8-alloc-emit-start\",",
+     "   \"value\": ["
+    ]
+   },
+   {
+    "a_start": 224,
+    "n_add": 0,
+    "n_rem": 16,
+    "status": "DEL-MISSING",
+    "add_lines_present_frac": null,
+    "first_commit_with_add": null,
+    "add_head": [],
+    "rem_head": [
+     "  {",
+     "   \"flag\": \"--w-r8-v9-cons\",",
+     "   \"value\": ["
+    ]
+   },
+   {
+    "a_start": 408,
+    "n_add": 0,
+    "n_rem": 2,
+    "status": "DEL-APPLIED",
+    "add_lines_present_frac": null,
+    "first_commit_with_add": null,
+    "add_head": [],
+    "rem_head": [
+     "  \"--r8-alloc-emit-start\",",
+     "  \"2000\","
+    ]
+   },
+   {
+    "a_start": 448,
+    "n_add": 1,
+    "n_rem": 5,
+    "status": "BOTH-PRESENT",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": [
+     "badb5821",
+     "2026-10-04"
+    ],
+    "add_head": [
+     "  \"0.45\""
+    ],
+    "rem_head": [
+     "  \"0.45\",",
+     "  \"--w-r8-v9-cons\",",
+     "  \"0.05\","
+    ]
+   }
+  ],
+  "diff_file": "base2var_4fcf17f5.diff"
+ },
+ {
+  "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/code/fix_P7/stack/scripts/launch_gate.py",
+  "target": "stack/scripts/launch_gate.py",
+  "base_blob": "db3354e",
+  "base_commit": "badb5821fd8d43ee5141ba5652290fb292033a27",
+  "base_date": "2026-10-04 23:51:21",
+  "base_subj": "+0200 refcv8 WP-B landing L1: past-only speed input N2 (+ 8-step encoding) with the future-max sidecar refused, v9 constraint supervision, t",
+  "base_to_variant_linediff": 16,
+  "tip_to_variant_linediff": 1143,
+  "n_hunks": 7,
+  "status_counts": {
+   "MISSING": 2,
+   "CHANGED": 1,
+   "DEL-MISSING": 2,
+   "DEL-APPLIED": 2
+  },
+  "hunks": [
+   {
+    "a_start": 626,
+    "n_add": 1,
+    "n_rem": 2,
+    "status": "MISSING",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "             \"--w-r8-sat, --w-r8-subscore, --r8-lat-prior-dropout, --r8-prior-free-group) are decided by SPEC_WPB's \""
+    ],
+    "rem_head": [
+     "             \"--w-r8-sat, --w-r8-subscore, --w-r8-v9-cons, --r8-lat-prior-dropout, --r8-prior-free-group) are decided \"",
+     "             \"by SPEC_WPB's \""
+    ]
+   },
+   {
+    "a_start": 651,
+    "n_add": 1,
+    "n_rem": 2,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "        \"--r8-rc-variant\", \"--join-defect-masks\", \"--grad-share-every\", \"--max-speed-input-v6\", \"--r8-speed-input\"),"
+    ],
+    "rem_head": [
+     "        \"--r8-rc-variant\", \"--join-defect-masks\", \"--grad-share-every\", \"--max-speed-input-v6\", \"--r8-speed-input\",",
+     "        \"--pose-sync-sidecar\"),"
+    ]
+   },
+   {
+    "a_start": 656,
+    "n_add": 0,
+    "n_rem": 2,
+    "status": "DEL-MISSING",
+    "add_lines_present_frac": null,
+    "first_commit_with_add": null,
+    "add_head": [],
+    "rem_head": [
+     "        \"--pose-sync-sidecar\": \"X10 (MM ruling 2026-10-04, closes SPEC X10): the pose-to-image timing correction \"",
+     "                               \"(Data FlyWheel; tanitad/data/pose_sync.py)\","
+    ]
+   },
+   {
+    "a_start": 675,
+    "n_add": 0,
+    "n_rem": 1,
+    "status": "DEL-APPLIED",
+    "add_lines_present_frac": null,
+    "first_commit_with_add": null,
+    "add_head": [],
+    "rem_head": [
+     "        \"--r8-alloc-emit-start\": \"2000\","
+    ]
+   },
+   {
+    "a_start": 686,
+    "n_add": 0,
+    "n_rem": 2,
+    "status": "DEL-APPLIED",
+    "add_lines_present_frac": null,
+    "first_commit_with_add": null,
+    "add_head": [],
+    "rem_head": [
+     "        \"--r8-alloc-emit-start\": \"MM ruling Q1 (I-2): extras emitted from the end of the LR warmup (--warmup 2000); \"",
+     "                                 \"the emission-OFF phase is identity-free (iw_diag + the split decode)\","
+    ]
+   },
+   {
+    "a_start": 689,
+    "n_add": 1,
+    "n_rem": 1,
+    "status": "MISSING",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "    required_positive=tuple(_R7[\"required_positive\"]) + (\"--w-r8-cons\",),"
+    ],
+    "rem_head": [
+     "    required_positive=tuple(_R7[\"required_positive\"]) + (\"--w-r8-cons\", \"--w-r8-v9-cons\"),"
+    ]
+   },
+   {
+    "a_start": 2379,
+    "n_add": 0,
+    "n_rem": 3,
+    "status": "DEL-MISSING",
+    "add_lines_present_frac": null,
+    "first_commit_with_add": null,
+    "add_head": [],
+    "rem_head": [
+     "    \"w_r8_v9_cons\": (lambda a: bool(getattr(a, \"refcv8\", False)) and _w(a, \"w_r8_v9_cons\") > 0",
+     "                     and bool(getattr(a, \"r8_v9_labels\", None)), (\"r8_v9_cons\",), 1.0,",
+     "                     \"refcv8 v9 constraint vectors (MM ruling Q2)\"),"
+    ]
+   }
+  ],
+  "diff_file": "base2var_4b6dbe5f.diff"
+ },
+ {
+  "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/code/fix_P7/stack/scripts/refc_v3_train.py",
+  "target": "stack/scripts/refc_v3_train.py",
+  "base_blob": "3c79cfb",
+  "base_commit": "badb5821fd8d43ee5141ba5652290fb292033a27",
+  "base_date": "2026-10-04 23:51:21",
+  "base_subj": "+0200 refcv8 WP-B landing L1: past-only speed input N2 (+ 8-step encoding) with the future-max sidecar refused, v9 constraint supervision, t",
+  "base_to_variant_linediff": 176,
+  "tip_to_variant_linediff": 877,
+  "n_hunks": 23,
+  "status_counts": {
+   "CHANGED": 2,
+   "DEL-MISSING": 17,
+   "DEL-APPLIED": 1,
+   "MISSING": 3
+  },
+  "hunks": [
+   {
+    "a_start": 785,
+    "n_add": 1,
+    "n_rem": 2,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "                  \"r8_speed_input\", \"r8_speed_unknown_p\", \"r8_roll_speed_input\"):"
+    ],
+    "rem_head": [
+     "                  \"r8_speed_input\", \"r8_speed_unknown_p\", \"r8_roll_speed_input\", \"w_r8_v9_cons\",",
+     "                  \"r8_alloc_emit_start\", \"r8_speed_enc8\"):"
+    ]
+   },
+   {
+    "a_start": 862,
+    "n_add": 1,
+    "n_rem": 5,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "    elif getattr(args, \"r8_speed_unknown_p\", None) is not None or bool(getattr(args, \"r8_roll_speed_input\", False)):"
+    ],
+    "rem_head": [
+     "    if bool(getattr(args, \"r8_speed_enc8\", False)) and _si != \"n2\":",
+     "        raise SystemExit(\"[refcv8] --r8-speed-enc8 encodes the N2 LADDER: it needs --r8-speed-input n2 (N3 has three \"",
+     "                         \"classes; with no source there is nothing to encode)\")"
+    ]
+   },
+   {
+    "a_start": 892,
+    "n_add": 0,
+    "n_rem": 5,
+    "status": "DEL-MISSING",
+    "add_lines_present_frac": null,
+    "first_commit_with_add": null,
+    "add_head": [],
+    "rem_head": [
+     "    r.w_v9_cons = float(getattr(args, \"w_r8_v9_cons\", 0.0) or 0.0)",
+     "    r.v9_cons = r.w_v9_cons > 0.0",
+     "    if r.v9_cons and not getattr(args, \"r8_v9_labels\", None):"
+    ]
+   },
+   {
+    "a_start": 899,
+    "n_add": 0,
+    "n_rem": 1,
+    "status": "DEL-MISSING",
+    "add_lines_present_frac": null,
+    "first_commit_with_add": null,
+    "add_head": [],
+    "rem_head": [
+     "    r.speed_enc8 = bool(getattr(args, \"r8_speed_enc8\", False))"
+    ]
+   },
+   {
+    "a_start": 909,
+    "n_add": 0,
+    "n_rem": 14,
+    "status": "DEL-APPLIED",
+    "add_lines_present_frac": null,
+    "first_commit_with_add": null,
+    "add_head": [],
+    "rem_head": [
+     "    # ---- MM ruling Q1 (SPEC_REFCV8 sec. 3.1, I-2): the extra candidates' EMISSION schedule ---------------------- #",
+     "    _es = getattr(args, \"r8_alloc_emit_start\", None)",
+     "    if _es is not None:"
+    ]
+   },
+   {
+    "a_start": 2807,
+    "n_add": 0,
+    "n_rem": 12,
+    "status": "DEL-MISSING",
+    "add_lines_present_frac": null,
+    "first_commit_with_add": null,
+    "add_head": [],
+    "rem_head": [
+     "    \"w_r8_v9_cons\": {",
+     "        \"flag\": \"--w-r8-v9-cons\",",
+     "        \"term\": \"refcv8 v9 CONSTRAINT vectors (MM ruling Q2): Huber on the GT-active action query, masked where the \""
+    ]
+   },
+   {
+    "a_start": 2962,
+    "n_add": 0,
+    "n_rem": 2,
+    "status": "DEL-MISSING",
+    "add_lines_present_frac": null,
+    "first_commit_with_add": null,
+    "add_head": [],
+    "rem_head": [
+     "    #: refcv8 Q2: emit the v9 CONSTRAINT vectors (`r8_v9_lat_c` / `r8_v9_lon_c` / `r8_v9_speed`) from the join",
+     "    r8_v9_cons = False"
+    ]
+   },
+   {
+    "a_start": 2984,
+    "n_add": 0,
+    "n_rem": 8,
+    "status": "DEL-MISSING",
+    "add_lines_present_frac": null,
+    "first_commit_with_add": null,
+    "add_head": [],
+    "rem_head": [
+     "    #: \u2b50 refcv8 X10 (PI data audit D3): the POSE-TO-IMAGE timing correction, ``tanitad/data/pose_sync.py``.",
+     "    #: ``None`` = OFF, the DEFAULT: ``__getitem__`` is then byte-for-byte the pre-X10 path (no new key, no new",
+     "    #: branch taken). Set by :meth:`enable_pose_sync` from ``--pose-sync-sidecar``. It re-samples the WINDOW's ego"
+    ]
+   },
+   {
+    "a_start": 4200,
+    "n_add": 0,
+    "n_rem": 81,
+    "status": "DEL-MISSING",
+    "add_lines_present_frac": null,
+    "first_commit_with_add": null,
+    "add_head": [],
+    "rem_head": [
+     "    def enable_pose_sync(self, sidecar_path: str, *, sign: float = 1.0,",
+     "                         max_uncovered_frac: float = 0.01) -> dict:",
+     "        \"\"\"\u2b50 refcv8 X10 -- OPT-IN pose-to-image timing correction. Returns the census ``config.json`` stamps."
+    ]
+   },
+   {
+    "a_start": 4306,
+    "n_add": 0,
+    "n_rem": 3,
+    "status": "DEL-MISSING",
+    "add_lines_present_frac": null,
+    "first_commit_with_add": null,
+    "add_head": [],
+    "rem_head": [
+     "        # ---- \u2b50 refcv8 X10: pose-to-image timing (OPT-IN; None = this line is a no-op) ----",
+     "        if self.pose_sync is not None:",
+     "            self._pose_sync_apply(item, ep, t)"
+    ]
+   },
+   {
+    "a_start": 4427,
+    "n_add": 1,
+    "n_rem": 1,
+    "status": "MISSING",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "                                    self._now_s(ep, t), speed_mode=self.r8_speed_mode)"
+    ],
+    "rem_head": [
+     "                                    self._now_s(ep, t), speed_mode=self.r8_speed_mode, cons=self.r8_v9_cons)"
+    ]
+   },
+   {
+    "a_start": 8976,
+    "n_add": 0,
+    "n_rem": 5,
+    "status": "DEL-MISSING",
+    "add_lines_present_frac": null,
+    "first_commit_with_add": null,
+    "add_head": [],
+    "rem_head": [
+     "    pose_sync_stats = eval_pose_sync_stats = None            # refcv8 X10 (opt-in)",
+     "    if getattr(args, \"pose_sync_sidecar\", None):",
+     "        pose_sync_stats = ds.enable_pose_sync(args.pose_sync_sidecar)"
+    ]
+   },
+   {
+    "a_start": 9176,
+    "n_add": 0,
+    "n_rem": 1,
+    "status": "DEL-MISSING",
+    "add_lines_present_frac": null,
+    "first_commit_with_add": null,
+    "add_head": [],
+    "rem_head": [
+     "        ds.r8_v9_cons = float(getattr(args, \"w_r8_v9_cons\", 0.0) or 0.0) > 0.0     # MM ruling Q2"
+    ]
+   },
+   {
+    "a_start": 9392,
+    "n_add": 0,
+    "n_rem": 2,
+    "status": "DEL-MISSING",
+    "add_lines_present_frac": null,
+    "first_commit_with_add": null,
+    "add_head": [],
+    "rem_head": [
+     "        if getattr(args, \"pose_sync_sidecar\", None):             # refcv8 X10: the eval GT rides the SAME clock",
+     "            eval_pose_sync_stats = e_ds.enable_pose_sync(args.pose_sync_sidecar)"
+    ]
+   },
+   {
+    "a_start": 9465,
+    "n_add": 0,
+    "n_rem": 1,
+    "status": "DEL-MISSING",
+    "add_lines_present_frac": null,
+    "first_commit_with_add": null,
+    "add_head": [],
+    "rem_head": [
+     "                e_ds.r8_v9_cons = float(getattr(args, \"w_r8_v9_cons\", 0.0) or 0.0) > 0.0"
+    ]
+   },
+   {
+    "a_start": 9990,
+    "n_add": 0,
+    "n_rem": 3,
+    "status": "DEL-MISSING",
+    "add_lines_present_frac": null,
+    "first_commit_with_add": null,
+    "add_head": [],
+    "rem_head": [
+     "        # \u2b50 refcv8 X10: None = the pose-to-image offset is UNCORRECTED (every refcv<=7 run). Never a silent default.",
+     "        \"pose_sync\": ({\"train\": pose_sync_stats, \"eval\": eval_pose_sync_stats}",
+     "                      if pose_sync_stats is not None else None),"
+    ]
+   },
+   {
+    "a_start": 10005,
+    "n_add": 2,
+    "n_rem": 2,
+    "status": "MISSING",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "        \"r8_speed_derivation\": (r8train.R8_SPEED_DERIVATION.get(str(args.r8_speed_input))",
+     "                                if getattr(args, \"r8_speed_input\", None) else None),"
+    ],
+    "rem_head": [
+     "        \"r8_speed_derivation\": r8train.speed_derivation(getattr(args, \"r8_speed_input\", None),",
+     "                                                        bool(getattr(args, \"r8_speed_enc8\", False))),"
+    ]
+   },
+   {
+    "a_start": 10022,
+    "n_add": 1,
+    "n_rem": 2,
+    "status": "MISSING",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "    r8train.assert_r8_speed_stamp(_run_config, getattr(args, \"r8_speed_input\", None))"
+    ],
+    "rem_head": [
+     "    r8train.assert_r8_speed_stamp(_run_config, getattr(args, \"r8_speed_input\", None),",
+     "                                  enc8=bool(getattr(args, \"r8_speed_enc8\", False)))"
+    ]
+   },
+   {
+    "a_start": 10140,
+    "n_add": 0,
+    "n_rem": 1,
+    "status": "DEL-MISSING",
+    "add_lines_present_frac": null,
+    "first_commit_with_add": null,
+    "add_head": [],
+    "rem_head": [
+     "            r8train.apply_emit_schedule(model, step)        # MM ruling Q1: extras emitted only from emit_start"
+    ]
+   },
+   {
+    "a_start": 10634,
+    "n_add": 0,
+    "n_rem": 7,
+    "status": "DEL-MISSING",
+    "add_lines_present_frac": null,
+    "first_commit_with_add": null,
+    "add_head": [],
+    "rem_head": [
+     "    ap.add_argument(\"--pose-sync-sidecar\", default=None,",
+     "                    help=\"\u2b50 refcv8 X10 (OPT-IN, default OFF): JSON-lines {sid, dt_s, n_rows, delta_us} built by \"",
+     "                         \"`scripts/build_pose_sync_sidecar.py` from each clip's camera timestamps. Re-samples the \""
+    ]
+   },
+   {
+    "a_start": 11769,
+    "n_add": 0,
+    "n_rem": 4,
+    "status": "DEL-MISSING",
+    "add_lines_present_frac": null,
+    "first_commit_with_add": null,
+    "add_head": [],
+    "rem_head": [
+     "    g8.add_argument(\"--w-r8-v9-cons\", type=float, default=0.0,",
+     "                    help=\"MM ruling Q2: supervise the v9 CONSTRAINT vectors (lat_c 12 / lon_c 10 / speed_goal 4) with heads \"",
+     "                         \"on the behaviour decoder's action queries (Huber on the GT-active query; masked where the \""
+    ]
+   },
+   {
+    "a_start": 11809,
+    "n_add": 0,
+    "n_rem": 4,
+    "status": "DEL-MISSING",
+    "add_lines_present_frac": null,
+    "first_commit_with_add": null,
+    "add_head": [],
+    "rem_head": [
+     "    g8.add_argument(\"--r8-alloc-emit-start\", type=int, default=None,",
+     "                    help=\"MM ruling Q1 (I-2): the training step from which the extra candidates (allocated / \"",
+     "                         \"prior-free) may be EMITTED; before it they are generated and trained but never win the \""
+    ]
+   },
+   {
+    "a_start": 11817,
+    "n_add": 0,
+    "n_rem": 4,
+    "status": "DEL-MISSING",
+    "add_lines_present_frac": null,
+    "first_commit_with_add": null,
+    "add_head": [],
+    "rem_head": [
+     "    g8.add_argument(\"--r8-speed-enc8\", action=\"store_true\",",
+     "                    help=\"refcv8 (B): ALSO feed the full N2 ladder (8 steps + unknown) through a zero-init FiLM seam on \"",
+     "                         \"the behaviour decoder (the 4-way bins merge 70 / 80 into 100); the ceiling becomes the fed \""
+    ]
+   }
+  ],
+  "diff_file": "base2var_6af3f506.diff"
+ },
+ {
+  "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/code/fix_P7/stack/tanitad/eval/refcv7_loader.py",
+  "target": "stack/tanitad/eval/refcv7_loader.py",
+  "base_blob": "a3a0ab4",
+  "base_commit": "badb5821fd8d43ee5141ba5652290fb292033a27",
+  "base_date": "2026-10-04 23:51:21",
+  "base_subj": "+0200 refcv8 WP-B landing L1: past-only speed input N2 (+ 8-step encoding) with the future-max sidecar refused, v9 constraint supervision, t",
+  "base_to_variant_linediff": 6,
+  "tip_to_variant_linediff": 38,
+  "n_hunks": 2,
+  "status_counts": {
+   "DEL-MISSING": 2
+  },
+  "hunks": [
+   {
+    "a_start": 515,
+    "n_add": 0,
+    "n_rem": 5,
+    "status": "DEL-MISSING",
+    "add_lines_present_frac": null,
+    "first_commit_with_add": null,
+    "add_head": [],
+    "rem_head": [
+     "    # refcv8 (MM ruling Q1): the extra candidates are EMITTED as the checkpoint's own training step implies; a",
+     "    # refcv7 checkpoint loaded into a refcv8 build is the warm start = refcv8 step 0 (emission off under a schedule)",
+     "    if bool(getattr(args, \"refcv8\", False)):"
+    ]
+   },
+   {
+    "a_start": 818,
+    "n_add": 0,
+    "n_rem": 1,
+    "status": "DEL-MISSING",
+    "add_lines_present_frac": null,
+    "first_commit_with_add": null,
+    "add_head": [],
+    "rem_head": [
+     "        e_ds.r8_v9_cons = float(getattr(args, \"w_r8_v9_cons\", 0.0) or 0.0) > 0.0     # MM ruling Q2 targets"
+    ]
+   }
+  ],
+  "diff_file": "base2var_d8716621.diff"
+ },
+ {
+  "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/code/fix_P7/stack/tanitad/eval/speed_leak.py",
+  "target": "stack/tanitad/eval/speed_leak.py",
+  "base_blob": "d1f5ef8",
+  "base_commit": "badb5821fd8d43ee5141ba5652290fb292033a27",
+  "base_date": "2026-10-04 23:51:21",
+  "base_subj": "+0200 refcv8 WP-B landing L1: past-only speed input N2 (+ 8-step encoding) with the future-max sidecar refused, v9 constraint supervision, t",
+  "base_to_variant_linediff": 16,
+  "tip_to_variant_linediff": 16,
+  "n_hunks": 2,
+  "status_counts": {
+   "DEL-MISSING": 2
+  },
+  "hunks": [
+   {
+    "a_start": 103,
+    "n_add": 0,
+    "n_rem": 10,
+    "status": "DEL-MISSING",
+    "add_lines_present_frac": null,
+    "first_commit_with_add": null,
+    "add_head": [],
+    "rem_head": [
+     "def fed_enc8(v_ms, known) -> np.ndarray:",
+     "    \"\"\"refcv8 (B) `--r8-speed-enc8`: the 9-dim block the model's own `refcv8_conditioning.speed_enc8` feeds (8-step",
+     "    one-hot + known bit; an unknown row is all zeros).\"\"\""
+    ]
+   },
+   {
+    "a_start": 193,
+    "n_add": 0,
+    "n_rem": 6,
+    "status": "DEL-MISSING",
+    "add_lines_present_frac": null,
+    "first_commit_with_add": null,
+    "add_head": [],
+    "rem_head": [
+     "        # refcv8 (B): the 4-way block AND the 8-step seam, as `--r8-speed-enc8` feeds them together",
+     "        \"v9_N2_fed_bin4+enc8\": np.hstack([fed_bin4(A[\"n2\"] / 3.6, known2), fed_enc8(A[\"n2\"] / 3.6, known2)]),",
+     "        \"v9_N2_fed_bin4+enc8_unknown_p%.2f\" % unknown_p: np.hstack([fed_bin4(A[\"n2\"] / 3.6, known2 & ~unk),"
+    ]
+   }
+  ],
+  "diff_file": "base2var_1da289c2.diff"
+ },
+ {
+  "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/code/fix_P7/stack/tanitad/refs/refc.py",
+  "target": "stack/tanitad/refs/refc.py",
+  "base_blob": "b30839e",
+  "base_commit": "badb5821fd8d43ee5141ba5652290fb292033a27",
+  "base_date": "2026-10-04 23:51:21",
+  "base_subj": "+0200 refcv8 WP-B landing L1: past-only speed input N2 (+ 8-step encoding) with the future-max sidecar refused, v9 constraint supervision, t",
+  "base_to_variant_linediff": 8,
+  "tip_to_variant_linediff": 96,
+  "n_hunks": 3,
+  "status_counts": {
+   "DEL-APPLIED": 1,
+   "MISSING": 2
+  },
+  "hunks": [
+   {
+    "a_start": 2474,
+    "n_add": 0,
+    "n_rem": 3,
+    "status": "DEL-APPLIED",
+    "add_lines_present_frac": null,
+    "first_commit_with_add": null,
+    "add_head": [],
+    "rem_head": [
+     "        #: MM ruling Q1: the per-step emission switch for the EXTRA candidates (set by",
+     "        #: `refcv8_train.apply_emit_schedule` from `emit_start`; True = the config's emit flags apply as written)",
+     "        self.r8_emit_live = True"
+    ]
+   },
+   {
+    "a_start": 2572,
+    "n_add": 1,
+    "n_rem": 2,
+    "status": "MISSING",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "        if bool(cfg.alloc_emit):"
+    ],
+    "rem_head": [
+     "        _live = bool(getattr(self, 'r8_emit_live', True))",
+     "        if bool(cfg.alloc_emit) and _live:"
+    ]
+   },
+   {
+    "a_start": 2575,
+    "n_add": 1,
+    "n_rem": 1,
+    "status": "MISSING",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "        if bool(cfg.prior_free_emit):"
+    ],
+    "rem_head": [
+     "        if bool(cfg.prior_free_emit) and _live:"
+    ]
+   }
+  ],
+  "diff_file": "base2var_43c78e47.diff"
+ },
+ {
+  "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/code/fix_P7/stack/tanitad/refs/refc_v3.py",
+  "target": "stack/tanitad/refs/refc_v3.py",
+  "base_blob": "1473860",
+  "base_commit": "c39798d776b22662b30eaee61d8dc366a21b4872",
+  "base_date": "2026-10-04 18:21:48",
+  "base_subj": "+0200 refcv8 WP-B lands in the trainer: tactical-conditioned fan generation + factorised/listwise selection, the route-checkpoint input with",
+  "base_to_variant_linediff": 7,
+  "tip_to_variant_linediff": 55,
+  "n_hunks": 1,
+  "status_counts": {
+   "CHANGED": 1
+  },
+  "hunks": [
+   {
+    "a_start": 1925,
+    "n_add": 7,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.8571428571428571,
+    "first_commit_with_add": null,
+    "add_head": [
+     "                if getattr(self, \"r8_enabled\", False) and str(getattr(self.cfg.refcv8, \"speed_input\", \"\") or \"\"):",
+     "                    # \u2b50 refcv8 X3: with the PAST-ONLY proxy the ceiling is never BELOW the fed value. N2 = 130 km/h",
+     "                    # (the ego went above 120 in the last 20 s; 1.98 % of train rows) bins to the 4-way top step,"
+    ],
+    "rem_head": []
+   }
+  ],
+  "diff_file": "base2var_0d1c9e67.diff"
+ },
+ {
+  "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/code/fix_P7/stack/tanitad/refs/refcv8_conditioning.py",
+  "target": "stack/tanitad/refs/refcv8_conditioning.py",
+  "base_blob": "30260d1",
+  "base_commit": "c39798d776b22662b30eaee61d8dc366a21b4872",
+  "base_date": "2026-10-04 18:21:48",
+  "base_subj": "+0200 refcv8 WP-B lands in the trainer: tactical-conditioned fan generation + factorised/listwise selection, the route-checkpoint input with",
+  "base_to_variant_linediff": 4,
+  "tip_to_variant_linediff": 295,
+  "n_hunks": 1,
+  "status_counts": {
+   "APPLIED": 1
+  },
+  "hunks": [
+   {
+    "a_start": 122,
+    "n_add": 4,
+    "n_rem": 0,
+    "status": "APPLIED",
+    "add_lines_present_frac": 1.0,
+    "first_commit_with_add": [
+     "badb5821",
+     "2026-10-04"
+    ],
+    "add_head": [
+     "    #: X3 (SPEC_REFCV8 sec. 8.3, MM ruling Q5): the SOURCE of the 4-way set-speed channel -- \"\" = the inherited one,",
+     "    #: \"n2\" / \"n3\" = the past-only v9 proxy. With a past-only source the speed ceiling is never BELOW the fed value",
+     "    #: (refc_v3._scene_hook): a fed 130 km/h is not clamped to the 4-way top step of 120."
+    ],
+    "rem_head": []
+   }
+  ],
+  "diff_file": "base2var_1c4f3f05.diff"
+ },
+ {
+  "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/code/fix_P7/stack/tanitad/train/refcv8_train.py",
+  "target": "stack/tanitad/train/refcv8_train.py",
+  "base_blob": "993ff4c",
+  "base_commit": "badb5821fd8d43ee5141ba5652290fb292033a27",
+  "base_date": "2026-10-04 23:51:21",
+  "base_subj": "+0200 refcv8 WP-B landing L1: past-only speed input N2 (+ 8-step encoding) with the future-max sidecar refused, v9 constraint supervision, t",
+  "base_to_variant_linediff": 156,
+  "tip_to_variant_linediff": 380,
+  "n_hunks": 12,
+  "status_counts": {
+   "CHANGED": 2,
+   "MISSING": 5,
+   "DEL-APPLIED": 3,
+   "DEL-MISSING": 2
+  },
+  "hunks": [
+   {
+    "a_start": 42,
+    "n_add": 1,
+    "n_rem": 3,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "           \"assert_r8_speed_stamp\", \"speed_kmh_of\", \"speed_input_census\", \"speed_input_treatment\"]"
+    ],
+    "rem_head": [
+     "           \"assert_r8_speed_stamp\", \"speed_kmh_of\", \"speed_input_census\", \"speed_input_treatment\", \"tactical_rows\", \"I2_LITERALS\", \"emit_live\",",
+     "           \"apply_emit_schedule\", \"emits_at_step0\", \"checkpoint_r8_step\", \"i2_identity_row\",",
+     "           \"speed_derivation\", \"R8_SPEED_ENC8_NOTE\"]"
+    ]
+   },
+   {
+    "a_start": 107,
+    "n_add": 1,
+    "n_rem": 14,
+    "status": "MISSING",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "def assert_r8_speed_stamp(cfg_dict: dict, mode) -> None:"
+    ],
+    "rem_head": [
+     "#: refcv8 (B) `--r8-speed-enc8`: appended to the N2 stamp; its tokens are required when the encoding is on",
+     "R8_SPEED_ENC8_NOTE = (\" + refcv8 (B): the FULL N2 ladder as an 8-step one-hot + known bit through a zero-init FiLM \"",
+     "                      \"seam on the behaviour decoder's queries; with it the ceiling is the fed N2 value itself.\")"
+    ]
+   },
+   {
+    "a_start": 135,
+    "n_add": 1,
+    "n_rem": 1,
+    "status": "MISSING",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "    missing = [t for t in R8_SPEED_STAMP_REQUIRED[mode] if t not in stamp]"
+    ],
+    "rem_head": [
+     "    missing = [t for t in R8_SPEED_STAMP_REQUIRED[mode] + (R8_SPEED_ENC8_REQUIRED if enc8 else ()) if t not in stamp]"
+    ]
+   },
+   {
+    "a_start": 298,
+    "n_add": 0,
+    "n_rem": 71,
+    "status": "DEL-APPLIED",
+    "add_lines_present_frac": null,
+    "first_commit_with_add": null,
+    "add_head": [],
+    "rem_head": [
+     "# ---- MM ruling Q1 (SPEC_REFCV8 sec. 3.1, I-2): the extra candidates' EMISSION schedule ----------------------------- #",
+     "#: the I-2 literals (accepted by the Master Mind): with emission OFF at step 0, against refcv7 on the same windows",
+     "I2_LITERALS = {\"sel_idx_frac\": 1.0, \"max_dtraj_m\": 1e-3, \"max_dbase_score\": 1e-4}"
+    ]
+   },
+   {
+    "a_start": 442,
+    "n_add": 0,
+    "n_rem": 11,
+    "status": "DEL-APPLIED",
+    "add_lines_present_frac": null,
+    "first_commit_with_add": null,
+    "add_head": [],
+    "rem_head": [
+     "    # ---- MM ruling Q2: the v9 constraint targets on the batch's OWN v9 classes (rolled together under the tac roll) ---",
+     "    v9c = None",
+     "    if \"r8_v9_lat_c\" in batch and \"lat_v7\" in batch and \"lon_v7\" in batch:"
+    ]
+   },
+   {
+    "a_start": 458,
+    "n_add": 1,
+    "n_rem": 2,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "            \"cons_t\": ct, \"lat_t\": lat_t, \"lat_v\": lat_v, \"lon_t\": lon_t, \"lon_v\": lon_v, \"tf\": tf}"
+    ],
+    "rem_head": [
+     "            \"cons_t\": ct, \"lat_t\": lat_t, \"lat_v\": lat_v, \"lon_t\": lon_t, \"lon_v\": lon_v, \"tf\": tf, \"v9c\": v9c,",
+     "            \"tac_rows\": tac_rows}"
+    ]
+   },
+   {
+    "a_start": 473,
+    "n_add": 0,
+    "n_rem": 13,
+    "status": "DEL-MISSING",
+    "add_lines_present_frac": null,
+    "first_commit_with_add": null,
+    "add_head": [],
+    "rem_head": [
+     "    if prep.get(\"tac_rows\") is not None:",
+     "        tele[\"r8v9_tac_rows\"] = float(prep[\"tac_rows\"])",
+     "    # (1b) MM ruling Q2: the v9 constraint vectors on the GT-active query of the v9 class (masked: PARTIAL / absent /"
+    ]
+   },
+   {
+    "a_start": 547,
+    "n_add": 1,
+    "n_rem": 4,
+    "status": "MISSING",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "ROLL_FAMILIES = {\"tac\": (\"lat_v7\", \"lon_v7\", \"lat_allowed_v7\", \"lon_allowed_v7\", \"tac_goal_y\", \"tac_goal_w\"),"
+    ],
+    "rem_head": [
+     "#: \"tac\" includes the v9 CONSTRAINT targets (MM ruling Q2): rolling the classes without them would leave the constraint",
+     "#: heads supervised by this window's geometry under another window's class -- half a regression arm",
+     "ROLL_FAMILIES = {\"tac\": (\"lat_v7\", \"lon_v7\", \"lat_allowed_v7\", \"lon_allowed_v7\", \"tac_goal_y\", \"tac_goal_w\","
+    ]
+   },
+   {
+    "a_start": 701,
+    "n_add": 1,
+    "n_rem": 2,
+    "status": "MISSING",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "    def item(self, sid: int, k: int, now_s: float, speed_mode: str | None = None) -> dict[str, Tensor]:"
+    ],
+    "rem_head": [
+     "    def item(self, sid: int, k: int, now_s: float, speed_mode: str | None = None,",
+     "             cons: bool = False) -> dict[str, Tensor]:"
+    ]
+   },
+   {
+    "a_start": 705,
+    "n_add": 1,
+    "n_rem": 2,
+    "status": "MISSING",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "        GPU-scalar-divisor trap) + ``r8_speed_known``.\"\"\""
+    ],
+    "rem_head": [
+     "        GPU-scalar-divisor trap) + ``r8_speed_known``; and with ``cons`` (MM ruling Q2) the RAW v9 constraint",
+     "        vectors ``r8_v9_lat_c`` [12] / ``r8_v9_lon_c`` [10] / ``r8_v9_speed`` [4] (NaN = undefined; masked in the loss).\"\"\""
+    ]
+   },
+   {
+    "a_start": 716,
+    "n_add": 0,
+    "n_rem": 4,
+    "status": "DEL-MISSING",
+    "add_lines_present_frac": null,
+    "first_commit_with_add": null,
+    "add_head": [],
+    "rem_head": [
+     "        if cons:",
+     "            out[\"r8_v9_lat_c\"] = torch.as_tensor(np.asarray(tg[\"lat_constraints\"], np.float32))",
+     "            out[\"r8_v9_lon_c\"] = torch.as_tensor(np.asarray(tg[\"lon_constraints\"], np.float32))"
+    ]
+   },
+   {
+    "a_start": 934,
+    "n_add": 0,
+    "n_rem": 22,
+    "status": "DEL-APPLIED",
+    "add_lines_present_frac": null,
+    "first_commit_with_add": null,
+    "add_head": [],
+    "rem_head": [
+     "    _v9c_field = _field(\"w_r8_v9_cons\", \"w_v9_cons\", float, 0.0)",
+     "",
+     "    def _c_v9c(m, a):"
+    ]
+   }
+  ],
+  "diff_file": "base2var_8ec9e8ec.diff"
+ },
+ {
+  "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/code/fix_P7/stack/tests/test_declared_vs_built.py",
+  "target": "stack/tests/test_declared_vs_built.py",
+  "base_blob": "26eed21",
+  "base_commit": "a5c2a9b3969d77e7bc0ef00feaafdf24ee469503",
+  "base_date": "2026-10-05 00:18:34",
+  "base_subj": "+0200 refcv8 WP-B landing L2: the drivable sub-score critic (opt-in, zero-init, step 0 bit-identical) -- trained on SAM3 drivable GT over Na",
+  "base_to_variant_linediff": 12,
+  "tip_to_variant_linediff": 22,
+  "n_hunks": 1,
+  "status_counts": {
+   "CHANGED": 1
+  },
+  "hunks": [
+   {
+    "a_start": 278,
+    "n_add": 1,
+    "n_rem": 11,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "    assert len(dvb.REGISTRY) == 264"
+    ],
+    "rem_head": [
+     "    # + MM ruling Q2: --w-r8-v9-cons (the v9 constraint heads, \"loss\") (-> 265)",
+     "    # + refcv8 X10 (pose-to-image timing, Data FlyWheel): --pose-sync-sidecar, \"data\", registered in",
+     "    #   declared_vs_built itself (-> 266)"
+    ]
+   }
+  ],
+  "diff_file": "base2var_509fa6b2.diff"
+ },
+ {
+  "variant": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/code/fix_P7/stack/tests/test_refcv8_speed_input.py",
+  "target": "stack/tests/test_refcv8_speed_input.py",
+  "base_blob": "6da3d42",
+  "base_commit": "badb5821fd8d43ee5141ba5652290fb292033a27",
+  "base_date": "2026-10-04 23:51:21",
+  "base_subj": "+0200 refcv8 WP-B landing L1: past-only speed input N2 (+ 8-step encoding) with the future-max sidecar refused, v9 constraint supervision, t",
+  "base_to_variant_linediff": 4,
+  "tip_to_variant_linediff": 147,
+  "n_hunks": 1,
+  "status_counts": {
+   "DEL-MISSING": 1
+  },
+  "hunks": [
+   {
+    "a_start": 118,
+    "n_add": 0,
+    "n_rem": 4,
+    "status": "DEL-MISSING",
+    "add_lines_present_frac": null,
+    "first_commit_with_add": null,
+    "add_head": [],
+    "rem_head": [
+     "    # refcv8 (B) `--r8-speed-enc8`: the 4-way + 8-step block recovers N2's full information, still under the bar",
+     "    assert rec[\"v9_N2_fed_bin4+enc8\"] <= 0.05 and rec[\"v9_N2_fed_bin4+enc8_unknown_p0.45\"] <= 0.05",
+     "    assert rec[\"v9_N2_fed_bin4+enc8\"] > rec[\"v9_N2_fed_bin4\"]                    # it adds what the 4 bins lose"
+    ]
+   }
+  ],
+  "diff_file": "base2var_23c32cad.diff"
+ },
+ {
+  "variant": "products/P4-training-pipelines/2026-09-27-v7f-refav1-state/v7f_r1r4/code/fix/stack/scripts/train_v6_staged.py",
+  "target": "stack/scripts/train_v6_staged.py",
+  "base_blob": "91b675a",
+  "base_commit": "3886f7b4356186d3f3a56fd51c73d53722ff159e",
+  "base_date": "2026-09-06 20:38:59",
+  "base_subj": "+0200 A refusal that cannot be printed has refused nothing, and one false alarm removed",
+  "base_to_variant_linediff": 387,
+  "tip_to_variant_linediff": 387,
+  "n_hunks": 17,
+  "status_counts": {
+   "CHANGED": 14,
+   "MISSING": 3
+  },
+  "hunks": [
+   {
+    "a_start": 487,
+    "n_add": 7,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "    # \u2b50 2026-09-27, R1/R4 (PI directive for v7F): S-T may also introduce the",
+     "    # tactical-decision -> plan port (`tac_op_port.`, --tac-op-cond, planner",
+     "    # group) and the max-speed INPUT port (`vmax_tac.`, --max-speed-input-v6,"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 489,
+    "n_add": 1,
+    "n_rem": 1,
+    "status": "MISSING",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "            \"agent_slots.\", \"t2_head.\", \"tac_op_port.\", \"vmax_tac.\"),"
+    ],
+    "rem_head": [
+     "            \"agent_slots.\", \"t2_head.\"),"
+    ]
+   },
+   {
+    "a_start": 4262,
+    "n_add": 6,
+    "n_rem": 1,
+    "status": "MISSING",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "        nav_token=batch.get(\"nav_token\"), nav_args=batch.get(\"nav_args\"),",
+     "        # \u2b50 R1a (PI 2026-09-27): the clip's max speed, the TACTICAL input.",
+     "        # `.get` for the same reason as nav: MANDATORY-ness is the stack's own"
+    ],
+    "rem_head": [
+     "        nav_token=batch.get(\"nav_token\"), nav_args=batch.get(\"nav_args\"))"
+    ]
+   },
+   {
+    "a_start": 5309,
+    "n_add": 7,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "        # \u2b50 R4 / R1a / R1b (PI 2026-09-27, v7F). Defaults (\"off\"/False/False)",
+     "        # = the incumbent build, byte-identical (tests/test_v7f_r1r4.py). A",
+     "        # RECORDED-args namespace from an older run lacks the keys and so"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 5363,
+    "n_add": 5,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "    # \u2b50 R1/R4 G-DVB (2026-09-27): argv vs the BUILT stack for the levers this",
+     "    # change adds, refused before anything else runs. (The binding launch gate",
+     "    # has no train_v6_staged profile yet -- declared_vs_built_v6's docstring.)"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 5712,
+    "n_add": 9,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "    # \u2b50 R1a: present ONLY when the stack built the max-speed port (the F-11",
+     "    # rule above: a key that is always there cannot prove the refusal fires).",
+     "    # RAW v_hi in m/s spanning every bin incl. the > 120 km/h clamp; the last"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 5901,
+    "n_add": 14,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "    # \u2b50 R1: the max-speed sidecar, REALLY read when supplied (same rule as",
+     "    # --s2-labels above); the per-window JOIN needs a corpus and is NOT",
+     "    # exercised -- the synthetic batch carries v_max keys instead, and"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 6014,
+    "n_add": 7,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "    # \u2b50 R1b: the cap exercised through the REAL eval-mode forward (the",
+     "    # training steps above are uncapped by design); absent when the flag is.",
+     "    if getattr(a, \"plan_vmax_cap\", False):"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 6058,
+    "n_add": 5,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "        # \u2b50 R1/R4 (PI 2026-09-27): present only when a lever is on, so the",
+     "        # default dry_run.json is untouched.",
+     "        **({\"r1_r4\": r1_report | {\"config\": r1r4_config_block(a, stack)}}"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 6327,
+    "n_add": 252,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.11904761904761904,
+    "first_commit_with_add": null,
+    "add_head": [
+     "# ============================================================================",
+     "# \u2b50 R1 / R4 (PI directive 2026-09-27, v7F) \u2014 max speed + tactical -> operative",
+     "# ============================================================================"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 6330,
+    "n_add": 1,
+    "n_rem": 1,
+    "status": "MISSING",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "    cfg_json = {"
+    ],
+    "rem_head": [
+     "    return {"
+    ]
+   },
+   {
+    "a_start": 6385,
+    "n_add": 6,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "    # \u2b50 R1/R4 (PI 2026-09-27): EMPTY with every lever off (the default record",
+     "    # is untouched); the R1 declarations are then REFUSED in both directions",
+     "    # BEFORE any caller writes config.json (both callers write right after)."
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 7042,
+    "n_add": 15,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.13333333333333333,
+    "first_commit_with_add": null,
+    "add_head": [
+     "    # ---- \u2b50 R1 (PI 2026-09-27): the per-clip MAX SPEED join -----------------",
+     "    # The refcv6 sidecar (RAW SPEED_BAND.v_hi_ms per clip) joined on the stable",
+     "    # episode id, per EPISODE, then per WINDOW at the batch-build site. Built"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 7108,
+    "n_add": 4,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "    # \u2b50 R1: the join's coverage travels with the run row (window fraction fed",
+     "    # is the number the model actually experiences, the refcv6 precedent).",
+     "    if vmax_join is not None:"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 7414,
+    "n_add": 5,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "        # \u2b50 R1a: the clip's max speed rides the SAME sampled indices (this",
+     "        # dict is a WHITELIST -- added here or it never reaches the stack).",
+     "        # Only when the tactical INPUT is on: the cap is an inference lever."
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 9449,
+    "n_add": 39,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.02564102564102564,
+    "first_commit_with_add": null,
+    "add_head": [
+     "    # ---- R4 / R1 (PI directive 2026-09-27, v7F) -- ALL DEFAULT OFF --------",
+     "    ap.add_argument(\"--tac-op-cond\", choices=(\"off\", \"detached\", \"e2e\"),",
+     "                    default=\"off\","
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 10873,
+    "n_add": 1,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "    problems += _preflight_r1_r4(a)           # R1/R4, PI 2026-09-27"
+    ],
+    "rem_head": []
+   }
+  ],
+  "diff_file": "base2var_f3f787dc.diff"
+ },
+ {
+  "variant": "products/P4-training-pipelines/2026-09-27-v7f-refav1-state/v7f_r1r4/code/fix/stack/tanitad/models/v6.py",
+  "target": "stack/tanitad/models/v6.py",
+  "base_blob": "3d6e223",
+  "base_commit": "982476c9aff21f92f562d8d5af7836168b5fb578",
+  "base_date": "2026-09-06 14:39:20",
+  "base_subj": "+0200 M88: the O5 EMA teacher NEVER TOOK A STEP -- the un-freeze is a BUDGET defect, not an algorithmic one",
+  "base_to_variant_linediff": 212,
+  "tip_to_variant_linediff": 212,
+  "n_hunks": 19,
+  "status_counts": {
+   "CHANGED": 16,
+   "MISSING": 3
+  },
+  "hunks": [
+   {
+    "a_start": 59,
+    "n_add": 10,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "\u26a0\ufe0f DECLARED EXCEPTIONS, each a default-OFF lever the PI directed: the nav",
+     "command (``nav_cond``, PI 2026-08-30) enters all three layers' dynamics, and",
+     "the clip's MAX SPEED (``max_speed_input_v6``, R1, PI 2026-09-27) enters the"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 4057,
+    "n_add": 37,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.02702702702702703,
+    "first_commit_with_add": null,
+    "add_head": [
+     "    # ---- R1 / R4 (PI directive 2026-09-27, v7F) -- ALL DEFAULT OFF ----------",
+     "    # \u26d4 Same construction rule as every gated lever here: the modules are built",
+     "    # at the very END of V6Stack.__init__ and ONLY when asked, so the default"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 4389,
+    "n_add": 6,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.16666666666666666,
+    "first_commit_with_add": null,
+    "add_head": [
+     "        if self.tac_op_cond not in (\"off\", \"detached\", \"e2e\"):",
+     "            raise ValueError(",
+     "                f\"tac_op_cond must be off|detached|e2e, got {self.tac_op_cond!r} \""
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 5389,
+    "n_add": 19,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.05263157894736842,
+    "first_commit_with_add": null,
+    "add_head": [
+     "        # ---- R4 / R1a (PI 2026-09-27) \u2014 built LAST, only when asked ---------",
+     "        # \u26d4 Same rule as every gated lever above, same reason: the default path",
+     "        # draws NO RNG and creates NO state_dict key. ZERO-INIT (weight AND"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 5441,
+    "n_add": 5,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "        # \u2b50 R1a (PI 2026-09-27): the max-speed INPUT port conditions the",
+     "        # tactical DECISION heads (it is added to `z_tac_p`, the heads' input),",
+     "        # so it trains exactly when they do -- `layer_tac`, the F-1 grouping"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 5465,
+    "n_add": 6,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "        # \u2b50 R4 (PI 2026-09-27): the tactical-DECISION -> plan port is the",
+     "        # CONSUMING side of the seam, like `cond_op.` -- a PLANNER module,",
+     "        # trained by the plan loss in S-T on the tactical outputs it reads, and"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 5738,
+    "n_add": 2,
+    "n_rem": 1,
+    "status": "MISSING",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "             generator: torch.Generator | None = None,",
+     "             v_max: Tensor | None = None) -> dict:"
+    ],
+    "rem_head": [
+     "             generator: torch.Generator | None = None) -> dict:"
+    ]
+   },
+   {
+    "a_start": 5763,
+    "n_add": 7,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.14285714285714285,
+    "first_commit_with_add": null,
+    "add_head": [
+     "",
+     "        \u2b50 ``v_max`` [B] m/s (R1, PI 2026-09-27; ``+inf`` = no limit for that",
+     "        row) CAPS every candidate's speed profile BEFORE anything reads the"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 5771,
+    "n_add": 11,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "        if v_max is None and getattr(cfg, \"plan_vmax_cap\", False) \\",
+     "                and not self.training:",
+     "            from tanitad.models.plan_speed_cap import PlanSpeedLimitMissing"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 5792,
+    "n_add": 13,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "        cap_diag = None",
+     "        if v_max is not None:",
+     "            # \u2b50 R1 HARD CAP -- every candidate, BEFORE the anchor/selector/MPC/"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 5795,
+    "n_add": 2,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "        if cap_diag is not None:",
+     "            out |= cap_diag"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 5842,
+    "n_add": 11,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "            if v_max is not None:",
+     "                # \u2b50 R1: the refinement descends from capped seeds but may",
+     "                # push them back over the limit -- the REFINED top-K is an"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 5867,
+    "n_add": 4,
+    "n_rem": 1,
+    "status": "MISSING",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "                nav_args: Tensor | None = None,",
+     "                v_max_ms: Tensor | None = None,",
+     "                v_max_valid: Tensor | None = None,"
+    ],
+    "rem_head": [
+     "                nav_args: Tensor | None = None) -> dict:"
+    ]
+   },
+   {
+    "a_start": 5877,
+    "n_add": 8,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.125,
+    "first_commit_with_add": null,
+    "add_head": [
+     "",
+     "        R1 (PI 2026-09-27): ``v_max_ms`` [B] (the RAW realised-max speed, m/s;",
+     "        0.0 on an invalid row) + ``v_max_valid`` [B] feed the TACTICAL input"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 5879,
+    "n_add": 13,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "        # ---- R1a: the max-speed INPUT is MANDATORY when its port is built ----",
+     "        # \u26d4 Never defaulted, and refused BEFORE any tensor work (the nav rule):",
+     "        # a zero-filled default would train the port on \"no limit known\" while"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 5930,
+    "n_add": 19,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "        # ---- R1a: the clip's MAX SPEED enters the TACTICAL DECISION latent --",
+     "        # \u2b50 Added to the planner-side VIEW (after the cut), so every tactical",
+     "        # decision head reads it (goal / behaviour / factored heads) while the"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 6035,
+    "n_add": 20,
+    "n_rem": 1,
+    "status": "MISSING",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "        # ---- R4: the tactical BEHAVIOURS condition the operative plan -------",
+     "        # \u2b50 PI 2026-09-27: the tactical layer's chosen behaviours AND goals",
+     "        # \"MUST condition the operative planning\". The goal already did"
+    ],
+    "rem_head": [
+     "        plan = self.emit(z_plan, e_g_tac, v0, roll_ctx=roll_ctx)"
+    ]
+   },
+   {
+    "a_start": 6140,
+    "n_add": 6,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "        # \u2b50 R4: the goal+behaviour embedding the emission actually read --",
+     "        # ONLY when the port exists (the default key set is part of the",
+     "        # inertness contract, the F-18 lesson above), so an inference harness"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 6198,
+    "n_add": 10,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "        # \u2b50 R1 (PI 2026-09-27): a MANDATORY input must be in the synthetic",
+     "        # contract too, or `assert_isolation` -- which every trainer build",
+     "        # runs on this batch -- raises the missing-input refusal at BUILD time."
+    ],
+    "rem_head": []
+   }
+  ],
+  "diff_file": "base2var_56938133.diff"
+ },
+ {
+  "variant": "products/P4-training-pipelines/2026-09-27-v7f-refav1-state/v7f_r1r4/code/fix/stack/tanitad/train/declared_vs_built_v6.py",
+  "target": "stack/tanitad/train/declared_vs_built_v6.py",
+  "note": "target NEW on tip"
+ },
+ {
+  "variant": "products/P4-training-pipelines/2026-09-27-v7f-refav1-state/v7f_r3/code/fix/stack/scripts/train_v6_staged.py",
+  "target": "stack/scripts/train_v6_staged.py",
+  "base_blob": "91b675a",
+  "base_commit": "3886f7b4356186d3f3a56fd51c73d53722ff159e",
+  "base_date": "2026-09-06 20:38:59",
+  "base_subj": "+0200 A refusal that cannot be printed has refused nothing, and one false alarm removed",
+  "base_to_variant_linediff": 718,
+  "tip_to_variant_linediff": 718,
+  "n_hunks": 30,
+  "status_counts": {
+   "CHANGED": 23,
+   "MISSING": 7
+  },
+  "hunks": [
+   {
+    "a_start": 349,
+    "n_add": 13,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "    #: \u2b50 R3 (PI 2026-09-27, BINDING) \u2014 ALL TACTICAL LABELS TRAIN THE TACTICAL",
+     "    #: LAYER. DEFAULT 0.0 = OFF everywhere, so the incumbent loss is",
+     "    #: bit-identical. One weight on the sum of four label terms read off the"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 367,
+    "n_add": 3,
+    "n_rem": 1,
+    "status": "MISSING",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "                           w_s1_multi=0.0,",
+     "                           # R3: layer_tac is FROZEN in S-W (world stage)",
+     "                           w_tac_label_all=0.0)"
+    ],
+    "rem_head": [
+     "                           w_s1_multi=0.0)"
+    ]
+   },
+   {
+    "a_start": 393,
+    "n_add": 4,
+    "n_rem": 1,
+    "status": "MISSING",
+    "add_lines_present_frac": 0.25,
+    "first_commit_with_add": null,
+    "add_head": [
+     "                           w_t2_contrast=0.0, w_t5_consist=0.0,",
+     "                           # R3: the tactical heads are `layer_tac` \u2014 FROZEN",
+     "                           # in S-S, for the same reason as T2 above."
+    ],
+    "rem_head": [
+     "                           w_t2_contrast=0.0, w_t5_consist=0.0)"
+    ]
+   },
+   {
+    "a_start": 2580,
+    "n_add": 67,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.1044776119402985,
+    "first_commit_with_add": null,
+    "add_head": [
+     "        def enable_tac_label_targets(self, *, negatives: str, sidecar,",
+     "                                     class_mask, pos_weight) -> dict:",
+     "            \"\"\"\u2b50 R3: also emit the goal-SET + SPEED_BAND-arg targets."
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 2582,
+    "n_add": 1,
+    "n_rem": 1,
+    "status": "MISSING",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "            rep = super().report() | {"
+    ],
+    "rem_head": [
+     "            return super().report() | {"
+    ]
+   },
+   {
+    "a_start": 2592,
+    "n_add": 7,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "            if getattr(self, \"_tg\", None) is not None:",
+     "                # R3 in force: the consumer EXISTS, and the report says which",
+     "                rep[\"tactical_consumer\"] = ("
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 2599,
+    "n_add": 9,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "            tg = getattr(self, \"_tg\", None)",
+     "            if tg is not None:                  # R3 only; absent by default",
+     "                k = int(self._tg_class_mask.numel())"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 2610,
+    "n_add": 6,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "                if tg is not None and tg[e_i] is not None:",
+     "                    yy, ww, ar, am = tg[e_i]",
+     "                    out[\"tac_goal_y\"][j] = yy"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 2897,
+    "n_add": 289,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.13494809688581316,
+    "first_commit_with_add": null,
+    "add_head": [
+     "# ============================================================================",
+     "# R3 \u2014 ALL TACTICAL LABELS -> the TACTICAL layer's loss (PI 2026-09-27)",
+     "# ============================================================================"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 4212,
+    "n_add": 4,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "      ``tac_lat_id``/``tac_lon_id``/``tac_valid`` + ``TAC_LABEL_BATCH_KEYS``",
+     "                          the R3 tactical-label keys (the v7.2 join, after",
+     "                          ``enable_tac_label_targets``) \u2014 REQUIRED iff"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 4717,
+    "n_add": 40,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.125,
+    "first_commit_with_add": null,
+    "add_head": [
+     "    # ---- R3: ALL tactical labels (w_tac_label_all, default 0.0 == absent) --",
+     "    # In force only where for_stage keeps it (S-T / S-J \u2014 the stages that",
+     "    # train layer_tac). Reads the tactical heads straight off the shared"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 5765,
+    "n_add": 44,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.2727272727272727,
+    "first_commit_with_add": null,
+    "add_head": [
+     "def synthetic_tac_label_batch(stack: V6Stack, batch: int = 2, *, seed: int = 0,",
+     "                              valid_frac: float = 0.75, device=None) -> dict:",
+     "    \"\"\"Synthetic R3 keys \u2014 the ``--dry-run`` stand-in for the tactical join."
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 5888,
+    "n_add": 1,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "    _s2_set = None"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 5892,
+    "n_add": 1,
+    "n_rem": 1,
+    "status": "MISSING",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "        _s2_set = load_s2_labels_any("
+    ],
+    "rem_head": [
+     "        s2_report = load_s2_labels_any("
+    ]
+   },
+   {
+    "a_start": 5895,
+    "n_add": 2,
+    "n_rem": 1,
+    "status": "MISSING",
+    "add_lines_present_frac": 0.5,
+    "first_commit_with_add": null,
+    "add_head": [
+     "            stack=stack)",
+     "        s2_report = _s2_set.report() | {"
+    ],
+    "rem_head": [
+     "            stack=stack).report() | {"
+    ]
+   },
+   {
+    "a_start": 5901,
+    "n_add": 24,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "    # ---- R3: the tactical-label term, REALLY exercised when in force -------",
+     "    # Same rule as --s2-labels above: G-DVB (v6) on the BUILT stack, and the",
+     "    # label policy (census / class mask / pos_weight) on the REAL blob when one"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 5933,
+    "n_add": 3,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "        if w_stage_dry.w_tac_label_all:",
+     "            b |= synthetic_tac_label_batch(stack, a.dry_batch,",
+     "                                           seed=a.seed + step, device=device)"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 6058,
+    "n_add": 4,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "        # R3: present ONLY when the term is in force (a flag-off dry_run.json",
+     "        # keeps the incumbent key set)",
+     "        **({\"tac_label_all\": tac_label_report}"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 6094,
+    "n_add": 1,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "        w_tac_label_all=float(getattr(a, \"w_tac_label_all\", 0.0) or 0.0),"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 6662,
+    "n_add": 4,
+    "n_rem": 1,
+    "status": "MISSING",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "    # \u2b50 R3: the tactical label term is the SECOND consumer of this join, and",
+     "    # the one that lives in S-T \u2014 where w_s2_goal is zeroed. `or` keeps the",
+     "    # incumbent condition byte-for-byte when w_tac_label_all is 0 (the default)."
+    ],
+    "rem_head": [
+     "    if a.s2_labels and w_stage.w_s2_goal:"
+    ]
+   },
+   {
+    "a_start": 6692,
+    "n_add": 32,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.03125,
+    "first_commit_with_add": null,
+    "add_head": [
+     "    # ---- R3: ALL tactical labels -> the tactical layer (S-T/S-J) ------------",
+     "    # \u26d4 default absent: with w_tac_label_all 0 nothing below runs, and the",
+     "    # join above emits exactly the incumbent keys."
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 7108,
+    "n_add": 4,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "    if tac_label_cfg is not None:",
+     "        # R3: what the tactical heads were ACTUALLY supervised with (policy,",
+     "        # class mask, pos_weight, census, the join) \u2014 absent when off."
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 9979,
+    "n_add": 32,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "    # ---- R3: ALL tactical labels -> the tactical layer \u2014 DEFAULT OFF -------",
+     "    ap.add_argument(\"--w-tac-label-all\", type=float, default=0.0,",
+     "                    help=\"\u2b50 R3 (PI 2026-09-27, BINDING): weight on the \""
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 10148,
+    "n_add": 1,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "    \"w_tac_label_all\": (\"--w-tac-label-all\", \"w_tac_label_all\"),"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 10191,
+    "n_add": 13,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.23076923076923078,
+    "first_commit_with_add": null,
+    "add_head": [
+     "    if term == \"w_tac_label_all\":",
+     "        # MODULE preconditions first (binding in every mode), then the LABEL",
+     "        # one (exempt under --dry-run, the w_s2_goal rule above)"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 10208,
+    "n_add": 5,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "    # R3: the record's TACTICAL band (+-2 s around t0 at the shipped bands),",
+     "    # then per-cell goal weights (negatives policy x mask_report class mask)",
+     "    \"w_tac_label_all\": \"tac_valid (the record's tactical band) + per-cell \""
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 10297,
+    "n_add": 91,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.15384615384615385,
+    "first_commit_with_add": null,
+    "add_head": [
+     "def _preflight_tac_label_all(a, w_tl: float, s2p) -> list[str]:",
+     "    \"\"\"R3's refusals \u2014 every one fires in MILLISECONDS, before the corpus.",
+     ""
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 10771,
+    "n_add": 3,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "    # R3's weight, read here because the S2 \"labels with no consumer\" refusal",
+     "    # below must know the tactical term is a consumer too (0.0 by default)",
+     "    w_tl = float(getattr(a, \"w_tac_label_all\", 0.0) or 0.0)"
+    ],
+    "rem_head": []
+   },
+   {
+    "a_start": 10808,
+    "n_add": 1,
+    "n_rem": 1,
+    "status": "MISSING",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "    if s2p and not w_s2 and not w_tl and not ack:"
+    ],
+    "rem_head": [
+     "    if s2p and not w_s2 and not ack:"
+    ]
+   },
+   {
+    "a_start": 10829,
+    "n_add": 2,
+    "n_rem": 0,
+    "status": "CHANGED",
+    "add_lines_present_frac": 0.0,
+    "first_commit_with_add": null,
+    "add_head": [
+     "    # ---- R3: ALL tactical labels \u2014 every incoherent combination refused ---",
+     "    problems += _preflight_tac_label_all(a, w_tl, s2p)"
+    ],
+    "rem_head": []
+   }
+  ],
+  "diff_file": "base2var_ccdfb3c5.diff"
+ },
+ {
+  "variant": "products/P4-training-pipelines/2026-09-27-v7f-refav1-state/v7f_r3/code/fix/stack/tanitad/train/declared_vs_built_v6.py",
+  "target": "stack/tanitad/train/declared_vs_built_v6.py",
+  "note": "target NEW on tip"
+ }
+]

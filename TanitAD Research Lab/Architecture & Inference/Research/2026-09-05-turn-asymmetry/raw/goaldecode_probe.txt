@@ -1,0 +1,27 @@
+[refav1-labels] v7.2 join: labels 8/8 eps (0 missing), 168/535 windows in-band +-[2.0]s, md5=aa12c948f062181c3297265b51526ec5 | nav 8/8 eps (0 missing -> nav_cmd=0+nav_valid=False), md5=aa12c948f062181c3297265b51526ec5, allow_oracle_nav=True
+panel: 75 windows  sha256 c765fd4f9b0722b1
+
+============================================================================================
+DECODED GOAL TOKEN on the wide panel (an INPUT to the planner)
+============================================================================================
+  counts: {'TURN_R': 35, 'LANE_KEEP': 27, 'TURN_L': 13}
+  TURN_L n=13 over 2 episodes [1, 6]
+  TURN_R n=35 over 4 episodes [0, 2, 4, 7]
+  episodes carrying BOTH turn goals: NONE
+
+  ⛔ STILL DEGENERATE: no episode carries both turn goals, so the
+     retention statistic is UNATTRIBUTABLE on this panel too and must
+     be reported as such. The RECALL statistic is unaffected -- its
+     strata are GT-defined and 4 episodes carry both directions.
+
+  POWER against SPEC section 1 (>= 27 windows, >= 5 clusters):
+    goal TURN_L  n=13 **MISSED** clusters=2 **MISSED**
+    goal TURN_R  n=35 MET        clusters=4 **MISSED**
+
+  goal-vs-GT confusion (GT rows, decoded-goal cols):
+         LANE_KEEP     TURN_L     TURN_R    other
+  GT LK          7          2          6        0
+  GT TL         12          9          9        0
+  GT TR          8          2         20        0
+  ** GOAL RECALL (the head alone, before any cost): left 9/30 = 0.3000, right 20/30 = 0.6667 **
+  CONTROL, GT strata on the selected windows: {'turn_left': 30, 'lane_keep': 15, 'turn_right': 30}

@@ -1,0 +1,31 @@
+REFe ViT-L on the dev box: what the 4060 can actually rehearse. MEASURED 2026-09-20.
+
+CARD: NVIDIA GeForce RTX 4060, 8.00 GB total (torch.cuda.get_device_properties).
+
+PEAK ALLOCATION, fwd+bwd at 512x960, one front camera:
+  batch 1   3.26 GB   fits
+  batch 2   5.36 GB   fits
+  batch 4   9.37 GB   EXCEEDS THE CARD -- and yet it did NOT raise OutOfMemoryError.
+
+!! WHY "batch 4 OK" IS A FALSE PASS. On Windows WDDM the driver spills to host RAM instead of
+   failing, so an over-sized batch SUCCEEDS and simply crawls. A run that completes is therefore
+   NOT evidence that it fits. The admissible test is the arithmetic: 9.37 GB > 8.00 GB cannot be
+   on-device. Same family as every other TanitAD probe-reports-success trap.
+   => dev-box rehearsal ceiling is BATCH 2. The A40 is unaffected.
+
+CONTENTION, and a correction to my own first reading.
+  Observed 7,700 MiB of 8,188 MiB in use, and nvidia-smi's compute-app list was dominated by
+  DESKTOP processes (Explorer, Chrome, Edge, VS Code, Obsidian, NVIDIA Overlay, even Ribbons.scr).
+  I initially read that as "the desktop is eating the card". THAT WAS WRONG.
+  Stopping my OWN two jobs (PID 57332 the overfit regression arm, PID 58300 the memory probe)
+  dropped usage to 1,018 MiB.
+  => desktop overhead is ~1 GB; my two jobs held ~6.7 GB.
+  => appearing in nvidia-smi's process list is NOT the same as holding memory. The list is long
+     because every compositing app registers; the BYTES were mine.
+
+SIDE EFFECT WORTH KEEPING: under that contention the regression arm ran at 4.07 s/step against
+0.93 s/step for the real arm, a 4.4x slowdown from sharing the card with my own probe. When timing
+anything on this box, check what else of MINE is resident first.
+
+OTHER AGENTS ON THIS MACHINE (CPU, not GPU): a world-modeling `-m reconstruction` job, a
+`navsim-crun` chain, and http.server on 18777. Not mine, left alone.

@@ -1,0 +1,949 @@
+{
+ "prereg": "Project Steering/PREREG_V8F_HACC_MC.md @ 8d4b936d",
+ "tier": "T1-kin (self-action OPEN loop; never 'closed loop')",
+ "tool_tree": "E:/Projects/TanitAD-artifacts/v8f-mini-hacc-mc/tool_81aa3e36",
+ "SMOKE": true,
+ "label": "SMOKE: plumbing only, not outcome-bearing",
+ "estimator": "taniteval.ci.paired_episode_cluster_bootstrap, B 2000, seed 0, per seed, arm - P10 and arm - HACC on the same windows. It answers 'another draw of EPISODES'; it is blind to training variance (H-ESTIM-SEED-1) and the two training seeds are the only replicate; no inference seed is varied (this planner is deterministic).",
+ "amendments_applied": {
+  "c1_bar": "literal",
+  "c1_amendment": "",
+  "c4_clause2": "literal",
+  "c4_amendment": ""
+ },
+ "controls": {
+  "P-1": {
+   "PASS": true,
+   "runs": {
+    "SMOKE_MCH_s0_m10": {
+     "checks": {
+      "replan_steps": true,
+      "scene_logged": true,
+      "nav_deadreckon": true,
+      "schedule_periodic": true,
+      "limit": true,
+      "n_windows": true,
+      "causal_bucket_header": true,
+      "ticks_split_eval": true,
+      "ticks_replan_steps": true,
+      "ticks_ckpt_is_the_baked_file": true,
+      "header_ckpt_is_the_baked_file": true,
+      "ckpt_sha256_is_the_reported_one": true,
+      "n_ticks": true,
+      "episode_files": true,
+      "no_hacc_gate": true,
+      "table_in_loop_is_the_baked_table": true,
+      "window_order_equals_banked": true
+     },
+     "PASS": true,
+     "limit": "causal"
+    },
+    "SMOKE_MCH_s0_m30": {
+     "checks": {
+      "replan_steps": true,
+      "scene_logged": true,
+      "nav_deadreckon": true,
+      "schedule_periodic": true,
+      "limit": true,
+      "n_windows": true,
+      "causal_bucket_header": true,
+      "ticks_split_eval": true,
+      "ticks_replan_steps": true,
+      "ticks_ckpt_is_the_baked_file": true,
+      "header_ckpt_is_the_baked_file": true,
+      "ckpt_sha256_is_the_reported_one": true,
+      "n_ticks": true,
+      "episode_files": true,
+      "no_hacc_gate": true,
+      "table_in_loop_is_the_baked_table": true,
+      "window_order_equals_banked": true
+     },
+     "PASS": true,
+     "limit": "causal"
+    },
+    "SMOKE_MCH_s1_m10": {
+     "checks": {
+      "replan_steps": true,
+      "scene_logged": true,
+      "nav_deadreckon": true,
+      "schedule_periodic": true,
+      "limit": true,
+      "n_windows": true,
+      "causal_bucket_header": true,
+      "ticks_split_eval": true,
+      "ticks_replan_steps": true,
+      "ticks_ckpt_is_the_baked_file": true,
+      "header_ckpt_is_the_baked_file": true,
+      "ckpt_sha256_is_the_reported_one": true,
+      "n_ticks": true,
+      "episode_files": true,
+      "no_hacc_gate": true,
+      "table_in_loop_is_the_baked_table": true,
+      "window_order_equals_banked": true
+     },
+     "PASS": true,
+     "limit": "causal"
+    },
+    "SMOKE_MCH_s1_m30": {
+     "checks": {
+      "replan_steps": true,
+      "scene_logged": true,
+      "nav_deadreckon": true,
+      "schedule_periodic": true,
+      "limit": true,
+      "n_windows": true,
+      "causal_bucket_header": true,
+      "ticks_split_eval": true,
+      "ticks_replan_steps": true,
+      "ticks_ckpt_is_the_baked_file": true,
+      "header_ckpt_is_the_baked_file": true,
+      "ckpt_sha256_is_the_reported_one": true,
+      "n_ticks": true,
+      "episode_files": true,
+      "no_hacc_gate": true,
+      "table_in_loop_is_the_baked_table": true,
+      "window_order_equals_banked": true
+     },
+     "PASS": true,
+     "limit": "causal"
+    },
+    "SMOKE_MCF_s0_m10": {
+     "checks": {
+      "replan_steps": true,
+      "scene_logged": true,
+      "nav_deadreckon": true,
+      "schedule_periodic": true,
+      "limit": true,
+      "n_windows": true,
+      "causal_bucket_header": true,
+      "ticks_split_eval": true,
+      "ticks_replan_steps": true,
+      "ticks_ckpt_is_the_baked_file": true,
+      "header_ckpt_is_the_baked_file": true,
+      "ckpt_sha256_is_the_reported_one": true,
+      "n_ticks": true,
+      "episode_files": true,
+      "no_hacc_gate": true,
+      "table_in_loop_is_the_baked_table": true,
+      "window_order_equals_banked": true
+     },
+     "PASS": true,
+     "limit": "causal"
+    },
+    "SMOKE_MCF_s0_m30": {
+     "checks": {
+      "replan_steps": true,
+      "scene_logged": true,
+      "nav_deadreckon": true,
+      "schedule_periodic": true,
+      "limit": true,
+      "n_windows": true,
+      "causal_bucket_header": true,
+      "ticks_split_eval": true,
+      "ticks_replan_steps": true,
+      "ticks_ckpt_is_the_baked_file": true,
+      "header_ckpt_is_the_baked_file": true,
+      "ckpt_sha256_is_the_reported_one": true,
+      "n_ticks": true,
+      "episode_files": true,
+      "no_hacc_gate": true,
+      "table_in_loop_is_the_baked_table": true,
+      "window_order_equals_banked": true
+     },
+     "PASS": true,
+     "limit": "causal"
+    },
+    "SMOKE_MCF_s1_m10": {
+     "checks": {
+      "replan_steps": true,
+      "scene_logged": true,
+      "nav_deadreckon": true,
+      "schedule_periodic": true,
+      "limit": true,
+      "n_windows": true,
+      "causal_bucket_header": true,
+      "ticks_split_eval": true,
+      "ticks_replan_steps": true,
+      "ticks_ckpt_is_the_baked_file": true,
+      "header_ckpt_is_the_baked_file": true,
+      "ckpt_sha256_is_the_reported_one": true,
+      "n_ticks": true,
+      "episode_files": true,
+      "no_hacc_gate": true,
+      "table_in_loop_is_the_baked_table": true,
+      "window_order_equals_banked": true
+     },
+     "PASS": true,
+     "limit": "causal"
+    },
+    "SMOKE_MCF_s1_m30": {
+     "checks": {
+      "replan_steps": true,
+      "scene_logged": true,
+      "nav_deadreckon": true,
+      "schedule_periodic": true,
+      "limit": true,
+      "n_windows": true,
+      "causal_bucket_header": true,
+      "ticks_split_eval": true,
+      "ticks_replan_steps": true,
+      "ticks_ckpt_is_the_baked_file": true,
+      "header_ckpt_is_the_baked_file": true,
+      "ckpt_sha256_is_the_reported_one": true,
+      "n_ticks": true,
+      "episode_files": true,
+      "no_hacc_gate": true,
+      "table_in_loop_is_the_baked_table": true,
+      "window_order_equals_banked": true
+     },
+     "PASS": true,
+     "limit": "causal"
+    },
+    "SMOKE_STEEP_s0_m10": {
+     "checks": {
+      "replan_steps": true,
+      "scene_logged": true,
+      "nav_deadreckon": true,
+      "schedule_periodic": true,
+      "limit": true,
+      "n_windows": true,
+      "causal_bucket_header": true,
+      "ticks_split_eval": true,
+      "ticks_replan_steps": true,
+      "ticks_ckpt_is_the_baked_file": true,
+      "header_ckpt_is_the_baked_file": true,
+      "ckpt_sha256_is_the_reported_one": true,
+      "n_ticks": true,
+      "episode_files": true,
+      "no_hacc_gate": true,
+      "table_in_loop_is_the_baked_table": true,
+      "window_order_equals_banked": true
+     },
+     "PASS": true,
+     "limit": "causal"
+    },
+    "SMOKE_STEEP_s0_m30": {
+     "checks": {
+      "replan_steps": true,
+      "scene_logged": true,
+      "nav_deadreckon": true,
+      "schedule_periodic": true,
+      "limit": true,
+      "n_windows": true,
+      "causal_bucket_header": true,
+      "ticks_split_eval": true,
+      "ticks_replan_steps": true,
+      "ticks_ckpt_is_the_baked_file": true,
+      "header_ckpt_is_the_baked_file": true,
+      "ckpt_sha256_is_the_reported_one": true,
+      "n_ticks": true,
+      "episode_files": true,
+      "no_hacc_gate": true,
+      "table_in_loop_is_the_baked_table": true,
+      "window_order_equals_banked": true
+     },
+     "PASS": true,
+     "limit": "causal"
+    },
+    "SMOKE_STEEP_s1_m10": {
+     "checks": {
+      "replan_steps": true,
+      "scene_logged": true,
+      "nav_deadreckon": true,
+      "schedule_periodic": true,
+      "limit": true,
+      "n_windows": true,
+      "causal_bucket_header": true,
+      "ticks_split_eval": true,
+      "ticks_replan_steps": true,
+      "ticks_ckpt_is_the_baked_file": true,
+      "header_ckpt_is_the_baked_file": true,
+      "ckpt_sha256_is_the_reported_one": true,
+      "n_ticks": true,
+      "episode_files": true,
+      "no_hacc_gate": true,
+      "table_in_loop_is_the_baked_table": true,
+      "window_order_equals_banked": true
+     },
+     "PASS": true,
+     "limit": "causal"
+    },
+    "SMOKE_STEEP_s1_m30": {
+     "checks": {
+      "replan_steps": true,
+      "scene_logged": true,
+      "nav_deadreckon": true,
+      "schedule_periodic": true,
+      "limit": true,
+      "n_windows": true,
+      "causal_bucket_header": true,
+      "ticks_split_eval": true,
+      "ticks_replan_steps": true,
+      "ticks_ckpt_is_the_baked_file": true,
+      "header_ckpt_is_the_baked_file": true,
+      "ckpt_sha256_is_the_reported_one": true,
+      "n_ticks": true,
+      "episode_files": true,
+      "no_hacc_gate": true,
+      "table_in_loop_is_the_baked_table": true,
+      "window_order_equals_banked": true
+     },
+     "PASS": true,
+     "limit": "causal"
+    }
+   },
+   "what": "each run is the pre-registered configuration of the right baked checkpoint (guards against a wrong ckpt / wrong flags reading as a result)"
+  },
+  "C-1": {
+   "PASS": false,
+   "bar": "max|d| <= 1e-6 m (literal)",
+   "runs": {
+    "MCH_s0_m10": {
+     "n_ticks": 72,
+     "knots": 12,
+     "max_abs_d_m": 3.738041186807095e-06,
+     "bar_m": 1e-06,
+     "PASS": false,
+     "argmax_tick_knot": [
+      58,
+      12
+     ],
+     "plan_along_at_argmax_m": 97.7384262084961,
+     "n_tick_knots_over_bar": 59,
+     "frac_tick_knots_over_bar": 0.06828703703703703,
+     "max_d_over_ulp32_of_plan": 0.49960193037986755,
+     "max_abs_plan_along_m": 97.7384262084961,
+     "float32_lerp_replica_max_abs_vs_dumped_plan_m": 1.52587890625e-05,
+     "float32_lerp_replica_max_over_ulp32_of_plan": 22.0,
+     "const_c_float32": 0.20022018253803253,
+     "table_constant_over_knots_1_12": true,
+     "PASS_literal_1e-6": false,
+     "PASS_ulp32": true
+    },
+    "MCH_s0_m30": {
+     "n_ticks": 24,
+     "knots": 12,
+     "max_abs_d_m": 3.6392824540598667e-06,
+     "bar_m": 1e-06,
+     "PASS": false,
+     "argmax_tick_knot": [
+      8,
+      10
+     ],
+     "plan_along_at_argmax_m": 74.20980072021484,
+     "n_tick_knots_over_bar": 17,
+     "frac_tick_knots_over_bar": 0.059027777777777776,
+     "max_d_over_ulp32_of_plan": 0.49960193037986755,
+     "max_abs_plan_along_m": 88.51657104492188,
+     "float32_lerp_replica_max_abs_vs_dumped_plan_m": 7.62939453125e-06,
+     "float32_lerp_replica_max_over_ulp32_of_plan": 2.0,
+     "const_c_float32": 0.20022018253803253,
+     "table_constant_over_knots_1_12": true,
+     "PASS_literal_1e-6": false,
+     "PASS_ulp32": true
+    },
+    "MCH_s1_m10": {
+     "n_ticks": 72,
+     "knots": 12,
+     "max_abs_d_m": 3.7261402781041397e-06,
+     "bar_m": 1e-06,
+     "PASS": false,
+     "argmax_tick_knot": [
+      60,
+      11
+     ],
+     "plan_along_at_argmax_m": 68.71056365966797,
+     "n_tick_knots_over_bar": 59,
+     "frac_tick_knots_over_bar": 0.06828703703703703,
+     "max_d_over_ulp32_of_plan": 0.4999835789203644,
+     "max_abs_plan_along_m": 88.7500991821289,
+     "float32_lerp_replica_max_abs_vs_dumped_plan_m": 7.62939453125e-06,
+     "float32_lerp_replica_max_over_ulp32_of_plan": 14.0,
+     "const_c_float32": 0.21978281438350677,
+     "table_constant_over_knots_1_12": true,
+     "PASS_literal_1e-6": false,
+     "PASS_ulp32": true
+    },
+    "MCH_s1_m30": {
+     "n_ticks": 24,
+     "knots": 12,
+     "max_abs_d_m": 3.1743688850838225e-06,
+     "bar_m": 1e-06,
+     "PASS": false,
+     "argmax_tick_knot": [
+      8,
+      10
+     ],
+     "plan_along_at_argmax_m": 74.4150619506836,
+     "n_tick_knots_over_bar": 19,
+     "frac_tick_knots_over_bar": 0.06597222222222222,
+     "max_d_over_ulp32_of_plan": 0.4972003996372223,
+     "max_abs_plan_along_m": 88.7500991821289,
+     "float32_lerp_replica_max_abs_vs_dumped_plan_m": 1.9073486328125e-06,
+     "float32_lerp_replica_max_over_ulp32_of_plan": 2.0,
+     "const_c_float32": 0.21978281438350677,
+     "table_constant_over_knots_1_12": true,
+     "PASS_literal_1e-6": false,
+     "PASS_ulp32": true
+    },
+    "MCF_s0_m10": {
+     "n_ticks": 72,
+     "knots": 12,
+     "max_abs_d_m": 3.7274112401064485e-06,
+     "bar_m": 1e-06,
+     "PASS": false,
+     "argmax_tick_knot": [
+      12,
+      12
+     ],
+     "plan_along_at_argmax_m": 70.3363037109375,
+     "n_tick_knots_over_bar": 79,
+     "frac_tick_knots_over_bar": 0.09143518518518519,
+     "max_d_over_ulp32_of_plan": 0.4999198019504547,
+     "max_abs_plan_along_m": 89.04047393798828,
+     "float32_lerp_replica_max_abs_vs_dumped_plan_m": 1.52587890625e-05,
+     "float32_lerp_replica_max_over_ulp32_of_plan": 126.0,
+     "const_c_float32": 0.3070783317089081,
+     "table_constant_over_knots_1_12": true,
+     "PASS_literal_1e-6": false,
+     "PASS_ulp32": true
+    },
+    "MCF_s0_m30": {
+     "n_ticks": 24,
+     "knots": 12,
+     "max_abs_d_m": 3.7274112401064485e-06,
+     "bar_m": 1e-06,
+     "PASS": false,
+     "argmax_tick_knot": [
+      12,
+      12
+     ],
+     "plan_along_at_argmax_m": 70.3363037109375,
+     "n_tick_knots_over_bar": 28,
+     "frac_tick_knots_over_bar": 0.09722222222222222,
+     "max_d_over_ulp32_of_plan": 0.4997476041316986,
+     "max_abs_plan_along_m": 89.04047393798828,
+     "float32_lerp_replica_max_abs_vs_dumped_plan_m": 7.62939453125e-06,
+     "float32_lerp_replica_max_over_ulp32_of_plan": 2.0,
+     "const_c_float32": 0.3070783317089081,
+     "table_constant_over_knots_1_12": true,
+     "PASS_literal_1e-6": false,
+     "PASS_ulp32": true
+    },
+    "MCF_s1_m10": {
+     "n_ticks": 72,
+     "knots": 12,
+     "max_abs_d_m": 3.6061301216250286e-06,
+     "bar_m": 1e-06,
+     "PASS": false,
+     "argmax_tick_knot": [
+      8,
+      10
+     ],
+     "plan_along_at_argmax_m": 75.26935577392578,
+     "n_tick_knots_over_bar": 65,
+     "frac_tick_knots_over_bar": 0.07523148148148148,
+     "max_d_over_ulp32_of_plan": 0.49990999698638916,
+     "max_abs_plan_along_m": 89.45240020751953,
+     "float32_lerp_replica_max_abs_vs_dumped_plan_m": 7.62939453125e-06,
+     "float32_lerp_replica_max_over_ulp32_of_plan": 7.0,
+     "const_c_float32": 0.3468058705329895,
+     "table_constant_over_knots_1_12": true,
+     "PASS_literal_1e-6": false,
+     "PASS_ulp32": true
+    },
+    "MCF_s1_m30": {
+     "n_ticks": 24,
+     "knots": 12,
+     "max_abs_d_m": 3.6061301216250286e-06,
+     "bar_m": 1e-06,
+     "PASS": false,
+     "argmax_tick_knot": [
+      8,
+      10
+     ],
+     "plan_along_at_argmax_m": 75.26935577392578,
+     "n_tick_knots_over_bar": 16,
+     "frac_tick_knots_over_bar": 0.05555555555555555,
+     "max_d_over_ulp32_of_plan": 0.49844682216644287,
+     "max_abs_plan_along_m": 89.45240020751953,
+     "float32_lerp_replica_max_abs_vs_dumped_plan_m": 1.9073486328125e-06,
+     "float32_lerp_replica_max_over_ulp32_of_plan": 2.0,
+     "const_c_float32": 0.3468058705329895,
+     "table_constant_over_knots_1_12": true,
+     "PASS_literal_1e-6": false,
+     "PASS_ulp32": true
+    }
+   },
+   "deliberate_regression": {
+    "HACC_table_on_MCH_s0_m10": {
+     "n_ticks": 72,
+     "knots": 12,
+     "max_abs_d_m": 1.517673834911875,
+     "bar_m": 1e-06,
+     "PASS": false,
+     "argmax_tick_knot": [
+      56,
+      12
+     ],
+     "plan_along_at_argmax_m": 90.95762634277344,
+     "n_tick_knots_over_bar": 805,
+     "frac_tick_knots_over_bar": 0.9317129629629629,
+     "max_d_over_ulp32_of_plan": 19454433.459713936,
+     "max_abs_plan_along_m": 97.7384262084961,
+     "float32_lerp_replica_max_abs_vs_dumped_plan_m": 1.5176773071289062,
+     "float32_lerp_replica_max_over_ulp32_of_plan": 19454432.0,
+     "MUST_FAIL": true,
+     "regression_fails_as_it_must": true
+    },
+    "HACC_table_on_MCH_s1_m10": {
+     "n_ticks": 72,
+     "knots": 12,
+     "max_abs_d_m": 1.7210627399836085,
+     "bar_m": 1e-06,
+     "PASS": false,
+     "argmax_tick_knot": [
+      56,
+      12
+     ],
+     "plan_along_at_argmax_m": 85.15872192382812,
+     "n_tick_knots_over_bar": 803,
+     "frac_tick_knots_over_bar": 0.9293981481481481,
+     "max_d_over_ulp32_of_plan": 6799239.0,
+     "max_abs_plan_along_m": 88.7500991821289,
+     "float32_lerp_replica_max_abs_vs_dumped_plan_m": 1.7210617065429688,
+     "float32_lerp_replica_max_over_ulp32_of_plan": 6799239.0,
+     "MUST_FAIL": true,
+     "regression_fails_as_it_must": true
+    }
+   }
+  },
+  "C-2": {
+   "PASS": true,
+   "bar": "max|MC-H - HACC| executed at m = 10 > 1e-2 m (MC-F, STEEP beside)",
+   "runs": {
+    "MCH_s0": {
+     "max_abs_cl_minus_HACC_banked_m": 12.025007357936119,
+     "gating": true,
+     "PASS": true
+    },
+    "MCF_s0": {
+     "max_abs_cl_minus_HACC_banked_m": 10.731329319832696,
+     "gating": false,
+     "PASS": true
+    },
+    "STEEP_s0": {
+     "max_abs_cl_minus_HACC_banked_m": 28.93896426612764,
+     "gating": false,
+     "PASS": true
+    },
+    "MCH_s1": {
+     "max_abs_cl_minus_HACC_banked_m": 16.05257211657541,
+     "gating": true,
+     "PASS": true
+    },
+    "MCF_s1": {
+     "max_abs_cl_minus_HACC_banked_m": 27.528359944774763,
+     "gating": false,
+     "PASS": true
+    },
+    "STEEP_s1": {
+     "max_abs_cl_minus_HACC_banked_m": 31.53541733987589,
+     "gating": false,
+     "PASS": true
+    }
+   }
+  },
+  "C-3": {
+   "PASS": true,
+   "bar": "exactly 0.0 (<= 1e-9) on MC-H and MC-F ticks (v0, a0, kappa0)",
+   "runs": {
+    "MCH_s0_m10": {
+     "n_ticks": 72,
+     "max_abs_v0_mps": 0.0,
+     "max_abs_a0_mps2": 0.0,
+     "max_abs_kappa0_1pm": 0.0,
+     "median_a0_mps2": 0.0,
+     "frac_ticks_nonzero_a0": 0.0,
+     "bar": 1e-09,
+     "is_zero": true,
+     "PASS": true
+    },
+    "MCH_s0_m30": {
+     "n_ticks": 24,
+     "max_abs_v0_mps": 0.0,
+     "max_abs_a0_mps2": 0.0,
+     "max_abs_kappa0_1pm": 0.0,
+     "median_a0_mps2": 0.0,
+     "frac_ticks_nonzero_a0": 0.0,
+     "bar": 1e-09,
+     "is_zero": true,
+     "PASS": true
+    },
+    "MCH_s1_m10": {
+     "n_ticks": 72,
+     "max_abs_v0_mps": 0.0,
+     "max_abs_a0_mps2": 0.0,
+     "max_abs_kappa0_1pm": 0.0,
+     "median_a0_mps2": 0.0,
+     "frac_ticks_nonzero_a0": 0.0,
+     "bar": 1e-09,
+     "is_zero": true,
+     "PASS": true
+    },
+    "MCH_s1_m30": {
+     "n_ticks": 24,
+     "max_abs_v0_mps": 0.0,
+     "max_abs_a0_mps2": 0.0,
+     "max_abs_kappa0_1pm": 0.0,
+     "median_a0_mps2": 0.0,
+     "frac_ticks_nonzero_a0": 0.0,
+     "bar": 1e-09,
+     "is_zero": true,
+     "PASS": true
+    },
+    "MCF_s0_m10": {
+     "n_ticks": 72,
+     "max_abs_v0_mps": 0.0,
+     "max_abs_a0_mps2": 0.0,
+     "max_abs_kappa0_1pm": 0.0,
+     "median_a0_mps2": 0.0,
+     "frac_ticks_nonzero_a0": 0.0,
+     "bar": 1e-09,
+     "is_zero": true,
+     "PASS": true
+    },
+    "MCF_s0_m30": {
+     "n_ticks": 24,
+     "max_abs_v0_mps": 0.0,
+     "max_abs_a0_mps2": 0.0,
+     "max_abs_kappa0_1pm": 0.0,
+     "median_a0_mps2": 0.0,
+     "frac_ticks_nonzero_a0": 0.0,
+     "bar": 1e-09,
+     "is_zero": true,
+     "PASS": true
+    },
+    "MCF_s1_m10": {
+     "n_ticks": 72,
+     "max_abs_v0_mps": 0.0,
+     "max_abs_a0_mps2": 0.0,
+     "max_abs_kappa0_1pm": 0.0,
+     "median_a0_mps2": 0.0,
+     "frac_ticks_nonzero_a0": 0.0,
+     "bar": 1e-09,
+     "is_zero": true,
+     "PASS": true
+    },
+    "MCF_s1_m30": {
+     "n_ticks": 24,
+     "max_abs_v0_mps": 0.0,
+     "max_abs_a0_mps2": 0.0,
+     "max_abs_kappa0_1pm": 0.0,
+     "median_a0_mps2": 0.0,
+     "frac_ticks_nonzero_a0": 0.0,
+     "bar": 1e-09,
+     "is_zero": true,
+     "PASS": true
+    }
+   },
+   "deliberate_regression": {
+    "MCH_ticks_HACC_table_s0": {
+     "n_ticks": 72,
+     "max_abs_v0_mps": 2.3203876080725294,
+     "max_abs_a0_mps2": 7.621328639068707,
+     "max_abs_kappa0_1pm": 0.0204656700242722,
+     "median_a0_mps2": -0.1919724064255668,
+     "frac_ticks_nonzero_a0": 1.0,
+     "bar": 1e-09,
+     "is_zero": false,
+     "MUST_BE_NONZERO": true,
+     "regression_fires_as_it_must": true
+    },
+    "MCH_ticks_STEEP_table_s0": {
+     "n_ticks": 72,
+     "max_abs_v0_mps": 5.8587522461447925,
+     "max_abs_a0_mps2": 18.4433715448289,
+     "max_abs_kappa0_1pm": 0.037511266002818344,
+     "median_a0_mps2": -0.2998712158501604,
+     "frac_ticks_nonzero_a0": 1.0,
+     "bar": 1e-09,
+     "is_zero": false,
+     "MUST_BE_NONZERO": true,
+     "regression_fires_as_it_must": true
+    },
+    "STEEP_own_ticks_STEEP_table_s0": {
+     "n_ticks": 72,
+     "max_abs_v0_mps": 5.061874528967223,
+     "max_abs_a0_mps2": 7.619722674819478,
+     "max_abs_kappa0_1pm": 0.14741105067283003,
+     "median_a0_mps2": -0.1512242474041514,
+     "frac_ticks_nonzero_a0": 1.0,
+     "bar": 1e-09,
+     "is_zero": false,
+     "MUST_BE_NONZERO": true,
+     "regression_fires_as_it_must": true
+    },
+    "HACC_TRAIN_known_value_s0": {
+     "n": 1747,
+     "median_ramp_a0_mps2": -0.15876310085314316,
+     "banked": -0.1588,
+     "abs_diff": 3.689914685683915e-05,
+     "bar": 0.002,
+     "PASS": true
+    },
+    "MCH_ticks_HACC_table_s1": {
+     "n_ticks": 72,
+     "max_abs_v0_mps": 2.745550154350944,
+     "max_abs_a0_mps2": 11.009669904530966,
+     "max_abs_kappa0_1pm": 0.022822780725369113,
+     "median_a0_mps2": -0.11423269909185407,
+     "frac_ticks_nonzero_a0": 1.0,
+     "bar": 1e-09,
+     "is_zero": false,
+     "MUST_BE_NONZERO": true,
+     "regression_fires_as_it_must": true
+    },
+    "MCH_ticks_STEEP_table_s1": {
+     "n_ticks": 72,
+     "max_abs_v0_mps": 6.359397660652306,
+     "max_abs_a0_mps2": 24.960770722889492,
+     "max_abs_kappa0_1pm": 0.04047687046215928,
+     "median_a0_mps2": -0.1415006382401418,
+     "frac_ticks_nonzero_a0": 1.0,
+     "bar": 1e-09,
+     "is_zero": false,
+     "MUST_BE_NONZERO": true,
+     "regression_fires_as_it_must": true
+    },
+    "STEEP_own_ticks_STEEP_table_s1": {
+     "n_ticks": 72,
+     "max_abs_v0_mps": 6.497464911344842,
+     "max_abs_a0_mps2": 8.69666084231011,
+     "max_abs_kappa0_1pm": 0.06336496620388364,
+     "median_a0_mps2": -0.12283899572500756,
+     "frac_ticks_nonzero_a0": 1.0,
+     "bar": 1e-09,
+     "is_zero": false,
+     "MUST_BE_NONZERO": true,
+     "regression_fires_as_it_must": true
+    },
+    "HACC_TRAIN_known_value_s1": {
+     "n": 1747,
+     "median_ramp_a0_mps2": -0.0726273800838051,
+     "banked": -0.0726,
+     "abs_diff": 2.7380083805095268e-05,
+     "bar": 0.002,
+     "PASS": true
+    }
+   },
+   "note": "HACC's own EVAL ticks are not in the pre-registered matrix: HACC's regression is its table through the same instrument on the MC-H ticks, plus its TRAIN known value (-0.1588 / -0.0726 +- 2e-3, n = 1,747)"
+  },
+  "C-4": {
+   "PASS": false,
+   "C-4": {
+    "clause1": {
+     "s0": {
+      "c_closed_form": 0.30707832486066766,
+      "c_grid_argmin_201pt": 0.305,
+      "abs_diff": 0.0020783248606676685,
+      "bar": 0.005,
+      "PASS": true
+     },
+     "s1": {
+      "c_closed_form": 0.34680587498548143,
+      "c_grid_argmin_201pt": 0.34500000000000003,
+      "abs_diff": 0.0018058749854814038,
+      "bar": 0.005,
+      "PASS": true
+     }
+    },
+    "clause2": {
+     "s0": {
+      "c": 0.3094034378411479,
+      "c_raw_unclipped": 0.3094034378411479,
+      "bar": "c = 0 (the PREREG says 'as stated'; no tolerance is printed, so exact 0 and <= 1e-9 are both reported)",
+      "PASS": false,
+      "variant": "literal PREREG text"
+     },
+     "s1": {
+      "c": 0.3488629300801739,
+      "c_raw_unclipped": 0.3488629300801739,
+      "bar": "c = 0 (the PREREG says 'as stated'; no tolerance is printed, so exact 0 and <= 1e-9 are both reported)",
+      "PASS": false,
+      "variant": "literal PREREG text"
+     }
+    },
+    "ok": false
+   },
+   "TRAIN_qualification_bar_ade6_le_HACC_plus_F_half": {
+    "s0": true,
+    "s1": true
+   },
+   "tables_reproduce_probe12_and_PREREG_values": true,
+   "source": "BAKE_REPORT_MC.json (built before any eval run)"
+  },
+  "C-5": {
+   "PASS": false,
+   "bar": "T1KIN's C-1(i) <= 1e-9, C-1(ii) <= 1e-4 + unique grid + eid, C-2 floor ADE6 = 2.48699212 +- 1e-5 (m30), plus the m10 P10 loop = the banked HACC dump's floor <= 1e-9 (same windows, batch 32, 8 threads: a same-composition identity)",
+   "runs": {
+    "MCH_s0": {
+     "max_abs_cl_minus_ol_m30_m": 7.105427357601002e-14,
+     "max_abs_floor_vs_banked_P10_plan_m": 1.525878911934342e-05,
+     "grid_indices_unique": true,
+     "n_windows": 24,
+     "eid_equals_banked_grid": true,
+     "floor_m30_ade6_m": 1.8386191520941475,
+     "floor_m10_max_abs_vs_banked_HACC_dump_fl_m": 0.0011003195645713504,
+     "C1i_open_loop_identity": true,
+     "C1ii_age_free_identity": true,
+     "C2_floor_ade6": null,
+     "P10_loop_m10_equals_banked": false,
+     "PASS": false,
+     "SMOKE_NOTE": "24 windows in one batch: the loop amplifies float32 batch-composition noise ~1000x (MEASURED: batch 24 vs 12 moves fl by 6e-4 m), so the m10 floor identity is expected to fail here"
+    },
+    "MCF_s0": {
+     "max_abs_cl_minus_ol_m30_m": 7.105427357601002e-14,
+     "max_abs_floor_vs_banked_P10_plan_m": 1.525878911934342e-05,
+     "grid_indices_unique": true,
+     "n_windows": 24,
+     "eid_equals_banked_grid": true,
+     "floor_m30_ade6_m": 1.8386191520941475,
+     "floor_m10_max_abs_vs_banked_HACC_dump_fl_m": 0.0011003195645713504,
+     "C1i_open_loop_identity": true,
+     "C1ii_age_free_identity": true,
+     "C2_floor_ade6": null,
+     "P10_loop_m10_equals_banked": false,
+     "PASS": false,
+     "SMOKE_NOTE": "24 windows in one batch: the loop amplifies float32 batch-composition noise ~1000x (MEASURED: batch 24 vs 12 moves fl by 6e-4 m), so the m10 floor identity is expected to fail here"
+    },
+    "STEEP_s0": {
+     "max_abs_cl_minus_ol_m30_m": 7.105427357601002e-14,
+     "max_abs_floor_vs_banked_P10_plan_m": 1.525878911934342e-05,
+     "grid_indices_unique": true,
+     "n_windows": 24,
+     "eid_equals_banked_grid": true,
+     "floor_m30_ade6_m": 1.8386191520941475,
+     "floor_m10_max_abs_vs_banked_HACC_dump_fl_m": 0.0011003195645713504,
+     "C1i_open_loop_identity": true,
+     "C1ii_age_free_identity": true,
+     "C2_floor_ade6": null,
+     "P10_loop_m10_equals_banked": false,
+     "PASS": false,
+     "SMOKE_NOTE": "24 windows in one batch: the loop amplifies float32 batch-composition noise ~1000x (MEASURED: batch 24 vs 12 moves fl by 6e-4 m), so the m10 floor identity is expected to fail here"
+    },
+    "MCH_s1": {
+     "max_abs_cl_minus_ol_m30_m": 8.526512829121202e-14,
+     "max_abs_floor_vs_banked_P10_plan_m": 1.525878911934342e-05,
+     "grid_indices_unique": true,
+     "n_windows": 24,
+     "eid_equals_banked_grid": true,
+     "floor_m30_ade6_m": 1.8386191520941475,
+     "floor_m10_max_abs_vs_banked_HACC_dump_fl_m": 0.0011003195645713504,
+     "C1i_open_loop_identity": true,
+     "C1ii_age_free_identity": true,
+     "C2_floor_ade6": null,
+     "P10_loop_m10_equals_banked": false,
+     "PASS": false,
+     "SMOKE_NOTE": "24 windows in one batch: the loop amplifies float32 batch-composition noise ~1000x (MEASURED: batch 24 vs 12 moves fl by 6e-4 m), so the m10 floor identity is expected to fail here"
+    },
+    "MCF_s1": {
+     "max_abs_cl_minus_ol_m30_m": 8.526512829121202e-14,
+     "max_abs_floor_vs_banked_P10_plan_m": 1.525878911934342e-05,
+     "grid_indices_unique": true,
+     "n_windows": 24,
+     "eid_equals_banked_grid": true,
+     "floor_m30_ade6_m": 1.8386191520941475,
+     "floor_m10_max_abs_vs_banked_HACC_dump_fl_m": 0.0011003195645713504,
+     "C1i_open_loop_identity": true,
+     "C1ii_age_free_identity": true,
+     "C2_floor_ade6": null,
+     "P10_loop_m10_equals_banked": false,
+     "PASS": false,
+     "SMOKE_NOTE": "24 windows in one batch: the loop amplifies float32 batch-composition noise ~1000x (MEASURED: batch 24 vs 12 moves fl by 6e-4 m), so the m10 floor identity is expected to fail here"
+    },
+    "STEEP_s1": {
+     "max_abs_cl_minus_ol_m30_m": 8.526512829121202e-14,
+     "max_abs_floor_vs_banked_P10_plan_m": 1.525878911934342e-05,
+     "grid_indices_unique": true,
+     "n_windows": 24,
+     "eid_equals_banked_grid": true,
+     "floor_m30_ade6_m": 1.8386191520941475,
+     "floor_m10_max_abs_vs_banked_HACC_dump_fl_m": 0.0011003195645713504,
+     "C1i_open_loop_identity": true,
+     "C1ii_age_free_identity": true,
+     "C2_floor_ade6": null,
+     "P10_loop_m10_equals_banked": false,
+     "PASS": false,
+     "SMOKE_NOTE": "24 windows in one batch: the loop amplifies float32 batch-composition noise ~1000x (MEASURED: batch 24 vs 12 moves fl by 6e-4 m), so the m10 floor identity is expected to fail here"
+    }
+   }
+  },
+  "C-6": {
+   "s0": {
+    "delta": 0.021,
+    "lo": 0.0099,
+    "hi": 0.0351,
+    "separated": true,
+    "n_windows": 2106,
+    "n_episodes": 135,
+    "banked": 0.021,
+    "abs_diff": 0.0,
+    "PASS": true
+   },
+   "s1": {
+    "delta": 0.0082,
+    "lo": 0.0026,
+    "hi": 0.0148,
+    "separated": true,
+    "n_windows": 2106,
+    "n_episodes": 135,
+    "banked": 0.0082,
+    "abs_diff": 0.0,
+    "PASS": true
+   },
+   "PASS": true,
+   "beside_float64_originals_L2_HACC_minus_P10": {
+    "s0": null,
+    "s1": null
+   }
+  },
+  "C-6b": {
+   "PASS": true,
+   "what": "M1 / M2 / M1(P10) of HACC reproduce the PREREG's printed 0.0536 / 0.0277, +0.0202 / +0.0072, 0.0137",
+   "runs": {
+    "s0": {
+     "M1": 0.05356095056476456,
+     "M2": 0.020246303286083366,
+     "M1_P10": 0.013674524324522491,
+     "matches_4dp": {
+      "M1": true,
+      "M2": true,
+      "M1_P10": true
+     }
+    },
+    "s1": {
+     "M1": 0.02766066649558236,
+     "M2": 0.007205373095043685,
+     "M1_P10": 0.013674524324522491,
+     "matches_4dp": {
+      "M1": true,
+      "M2": true,
+      "M1_P10": true
+     }
+    }
+   }
+  },
+  "C-7": {
+   "PASS": true,
+   "note": "SMOKE: the suite is not run by the smoke chain"
+  }
+ },
+ "controls_failed": [
+  "C-1",
+  "C-4",
+  "C-5"
+ ],
+ "controls_all_pass": false,
+ "seconds_controls": 43.780094623565674
+}

@@ -1,0 +1,28 @@
+{
+ "_what": "the clip-id growth guard scanned the LOCAL WORKTREE, not the banked tree",
+ "_evidence_class": "MEASURED (ours), read-only",
+ "divergence": {
+  "recent_packages_worktree": 3,
+  "recent_packages_push_clone": 18,
+  "md_files_worktree": 1835,
+  "md_files_banked": 1826,
+  "_meaning": "not a subset, not a superset -- a different population"
+ },
+ "wrong_in_both_directions": {
+  "false_negative": "15 of 18 recent banked packages were invisible to the scan",
+  "false_positive": "reported +1 uuid in 2026-09-20-refe-plan/REVIEW_4_FINAL.md, a file that exists ONLY in the worktree and was never landed"
+ },
+ "the_record_is_clean": {
+  "files_with_ids": 27,
+  "total_uuids": 120,
+  "total_prefixes": 0,
+  "verdict": "NO-GROWTH",
+  "_note": "exactly the recorded floor"
+ },
+ "fix": "--from-ref <ref> [--git-dir] exports the banked tree with git archive and scans that",
+ "load_bearing_refusal": {
+  "_why": "a failed or empty git archive would scan an empty tree and report a confident NO-GROWTH",
+  "proven": "--from-ref no/such/ref exits 1 with the reason named"
+ },
+ "_not_claimed": "PI item 17's policy is unchanged (banked ids stay; no redaction, no history rewrite); only WHICH TREE the guard reads changed"
+}

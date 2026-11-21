@@ -1,0 +1,45 @@
+[registration] max |col(prog) - j| over the polar grid = 0.000000 (0 means the column-to-column registration is EXACT)
+[geom pol] cells 480  pos_dim 21  test rows 2974 episodes 30
+[split] clips fit/val/test 84/25/30  rows 7842/2407/2974
+[base] test base rate 0.029992479 = 35131/1171327 scored cells -> an ALL-ZERO predictor would score 97.0008 % ACCURACY, which is why no headline number here is an accuracy
+[CONTROL] constant(0.37) AP 0.029992478616   base rate 0.029992478616   exact_match=True
+[CONTROL] allzero AP 0.029992478616  allone AP 0.029992478616  perfect AP 1.000000000000
+C:\Users\Admin\wpd-probe\code\b2_probe_wpd.py:313: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+  print(f"    [{name}/{sign}] step {step:5d} loss {float(loss):.5f}", flush=True)
+    [tok_D0/prog] step     0 loss 1.08180
+    [tok_D0/prog] step   500 loss 1.21232
+    [tok_D0/prog] step  1000 loss 0.79113
+    [tok_D0/prog] step  1499 loss 0.63945
+[tok_D0   ] AP_test 0.1439  AP_val 0.0899  F1 0.2297  IoU 0.1298  par 67.2k  n_scored 1171327  d_raw 112640  (43s)
+    [tok_D1/prog] step     0 loss 1.06964
+    [tok_D1/prog] step   500 loss 1.23882
+    [tok_D1/prog] step  1000 loss 0.71173
+    [tok_D1/prog] step  1499 loss 0.63103
+[tok_D1   ] AP_test 0.1541  AP_val 0.1144  F1 0.2302  IoU 0.1300  par 67.2k  n_scored 1171327  d_raw 112640  (54s)
+    [tok_D2/prog] step     0 loss 1.07479
+    [tok_D2/prog] step   500 loss 1.30053
+    [tok_D2/prog] step  1000 loss 0.90688
+    [tok_D2/prog] step  1499 loss 0.60661
+[tok_D2   ] AP_test 0.1516  AP_val 0.1011  F1 0.2310  IoU 0.1306  par 67.2k  n_scored 1171327  d_raw 112640  (59s)
+    [tok_D0b/prog] step     0 loss 1.07380
+    [tok_D0b/prog] step   500 loss 1.27935
+    [tok_D0b/prog] step  1000 loss 0.80437
+    [tok_D0b/prog] step  1499 loss 0.65923
+[tok_D0b  ] AP_test 0.1433  AP_val 0.1117  F1 0.2127  IoU 0.1190  par 67.2k  n_scored 1171327  d_raw 112640  (57s)
+    [tok_D0c/prog] step     0 loss 1.07476
+    [tok_D0c/prog] step   500 loss 1.26484
+    [tok_D0c/prog] step  1000 loss 0.78243
+    [tok_D0c/prog] step  1499 loss 0.59840
+[tok_D0c  ] AP_test 0.1382  AP_val 0.1060  F1 0.2167  IoU 0.1215  par 67.2k  n_scored 1171327  d_raw 112640  (59s)
+[boot] 200 draws over 30 test episodes, cell stride 1 -> 480 cells/row
+[boot] 163s
+[pair] A3 the lever vs aux-off            tok_D1 - tok_D0: +0.01013 [-0.01156, +0.03000] separated=False
+[pair] A4 information vs shuffled target  tok_D1 - tok_D2: +0.00245 [-0.01397, +0.01616] separated=False
+[pair] D2 vs D0 (context)                 tok_D2 - tok_D0: +0.00769 [-0.00726, +0.01983] separated=False
+[pair] A3 FLOOR f_same: D0's flags, D0's SEED, zero levers tok_D0b - tok_D0: -0.00057 [-0.02346, +0.01212] separated=False
+[pair] A3 FLOOR f_seed: D0's flags, seed 1 (prereg s4) tok_D0c - tok_D0: -0.00571 [-0.02969, +0.01936] separated=False
+[pair] A3 context: replicate vs replicate tok_D0c - tok_D0b: -0.00514 [-0.02448, +0.02884] separated=False
+[pair] A3 context: the lever vs the same-seed replicate tok_D1 - tok_D0b: +0.01071 [-0.01195, +0.02822] separated=False
+[pair] A3 context: shuffled target vs the replicate tok_D2 - tok_D0b: +0.00826 [-0.00480, +0.02673] separated=False
+WROTE C:\Users\Admin\wpd-probe\raw\panel_rep_pol.json

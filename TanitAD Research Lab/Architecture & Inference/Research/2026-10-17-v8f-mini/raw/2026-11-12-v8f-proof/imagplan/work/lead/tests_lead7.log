@@ -1,0 +1,45 @@
+......................F.................                                 [100%]
+================================== FAILURES ===================================
+_____ test_cli_off_equals_the_pinned_tool_and_flags_with_off_are_refused ______
+
+T = <module 'v8f_t1_eval' from 'F:\\TanitAD-scratch\\v8proof\\moved_from_c\\leadsup\\tree_patch\\stack\\scripts\\v8f_t1_eval.py'>
+world = {'root': 'F:\\TanitAD-scratch\\v8proof\\imagplan\\work\\pt7\\bt\\synth0', 'names': {'train': ['syn-train-000', 'syn-train-001', 'syn-train-002', 'syn-train-003'], 'eval': ['syn-eval-000', 'syn-eval-001', 'syn-eval-002']}}
+tiny = {'cfg': V8FMiniConfig(d=32, heads=4, ff=64, d_feat=1024, n_tok=40, hist=4, hmax=16, n_q=2, depth_s=1, depth_t=1, depth...eatures=3, bias=True)
+      )
+    )
+  )
+), 'ckpt': 'F:\\TanitAD-scratch\\v8proof\\imagplan\\work\\pt7\\bt\\ck0\\ck.pt'}
+tmp_path = WindowsPath('F:/TanitAD-scratch/v8proof/imagplan/work/pt7/bt/test_cli_off_equals_the_pinned0')
+
+    def test_cli_off_equals_the_pinned_tool_and_flags_with_off_are_refused(T, world, tiny, tmp_path):
+        a, c = tmp_path / "off", tmp_path / "direct"
+        assert _cli(T, world, tiny, a, [], plan="off") == 0
+        root = world["root"]
+        T.main(["run", "--ckpt", tiny["ckpt"], "--tag", "t", "--tracks", os.path.join(root, "native_tracks.pt"), "--eval-cache", root,
+                "--eval-grid", os.path.join(root, "eval_grid_windows.json"), "--eval-join", os.path.join(root, "join_eval.npz"), "--out-dir", str(c),
+                "--replan-steps", "10", "--nav", "deadreckon", "--scene", "logged", "--schedule", "periodic", "--limit", "causal", "--batch", "8", "--device", "cpu",
+                "--no-analyze", "--dump-ticks", os.path.join(str(c), "ticks"), "--dump-heads"])
+        assert _dump_bytes(a, "t") == _dump_bytes(c, "t") and sorted(os.listdir(a)) == sorted(os.listdir(c))
+        for extra in (["--imag-log", str(tmp_path / "l.npz")], ["--const-gap", "100"], ["--imag-shift-m", "-20"], ["--noise-after-tick", "1"], ["--cand-set", "1.0"], ["--p45-log", str(tmp_path / "p.npz")],
+                      ["--fallback", "none"], ["--floor", "cap-only"], ["--action-def", "executed"]):
+            with pytest.raises(SystemExit, match="would change nothing"):
+                _cli(T, world, tiny, tmp_path / "x", extra, plan="off")
+>       with pytest.raises(SystemExit, match="cand-imag only"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'cand-imag only'
+E         Actual message: 'REFUSED: --imag-shift-m shifts the imagined gap: cand-imag and cand-imagkin only'
+
+test_imag_plan.py:548: AssertionError
+---------------------------- Captured stdout call -----------------------------
+[8/30] 2s
+[16/30] 3s
+[24/30] 4s
+[30/30] 5s
+[8/30] 1s
+[16/30] 3s
+[24/30] 3s
+[30/30] 4s
+=========================== short test summary info ===========================
+FAILED test_imag_plan.py::test_cli_off_equals_the_pinned_tool_and_flags_with_off_are_refused
+1 failed, 39 passed in 112.41s (0:01:52)

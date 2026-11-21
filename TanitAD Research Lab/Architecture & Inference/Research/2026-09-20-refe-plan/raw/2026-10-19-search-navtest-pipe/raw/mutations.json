@@ -1,0 +1,423 @@
+{
+ "caught": 48,
+ "judged": 49,
+ "survived_or_inapplicable": [
+  {
+   "guard": "G-DELETE-STATUS",
+   "file": "navpipe_core.py",
+   "status": "SURVIVED",
+   "first_failing": []
+  }
+ ],
+ "untestable_without_gpu": [
+  {
+   "guard": "MB-IDENT-REF",
+   "file": "make_navtest_bundle.py",
+   "status": "UNTESTABLE_WITHOUT_GPU",
+   "why": "the builder's per-token identity gate runs only inside make_navtest_bundle.py on a GPU forward; the suite cannot execute it. Its comparison is `ref.equal`, the same call G-IDENT-REF mutates, and its bridge judge (BR-*) is mutated."
+  }
+ ],
+ "results": [
+  {
+   "guard": "CONTROL (unmutated)",
+   "status": "CONTROL_GREEN",
+   "tail": "........................................................................ [ 60%]\n...............................................                          [100%]\n119 passed in 44.04s\n"
+  },
+  {
+   "guard": "G-SEAL-ARGS",
+   "file": "navpipe_core.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe.py::test_seal_refuses[no_args] - TypeError: _path_isfile:..."
+   ]
+  },
+  {
+   "guard": "G-SEAL-AMEND-EXISTS",
+   "file": "navpipe_core.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe.py::test_seal_refuses[no_amend] - AssertionError: ('no_am..."
+   ]
+  },
+  {
+   "guard": "G-SEAL-SHA3",
+   "file": "navpipe_core.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe.py::test_seal_refuses[typed_sha_wrong] - Failed: DID NOT ..."
+   ]
+  },
+  {
+   "guard": "G-SEAL-STATUS",
+   "file": "navpipe_core.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe.py::test_seal_refuses[draft] - Failed: DID NOT RAISE Refusal"
+   ]
+  },
+  {
+   "guard": "G-SEAL-PINS-PRESENT",
+   "file": "navpipe_core.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe.py::test_seal_refuses[pin_missing] - Failed: DID NOT RAIS..."
+   ]
+  },
+  {
+   "guard": "G-SEAL-MODE",
+   "file": "navpipe_core.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe_s0.py::test_s0_seal_refuses[mode_navtest] - Failed: DID N..."
+   ]
+  },
+  {
+   "guard": "G-SEAL-OPERATIVE-PINNED",
+   "file": "navpipe_core.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe.py::test_seal_refuses[operative_unpinned] - Failed: DID N..."
+   ]
+  },
+  {
+   "guard": "G-SEAL-CODE-PINS",
+   "file": "navpipe_core.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe.py::test_seal_refuses[code_pin_wrong] - Failed: DID NOT R..."
+   ]
+  },
+  {
+   "guard": "G-SEAL-ADMISSION-EXISTS",
+   "file": "navpipe_core.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe.py::test_seal_refuses[no_admission_file] - FileNotFoundEr..."
+   ]
+  },
+  {
+   "guard": "G-SEAL-ADMISSION-SHA",
+   "file": "navpipe_core.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe.py::test_seal_refuses[admission_sha_wrong] - Failed: DID ..."
+   ]
+  },
+  {
+   "guard": "G-SEAL-ADMIT",
+   "file": "navpipe_core.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe.py::test_seal_refuses[admission_refused] - Failed: DID NO..."
+   ]
+  },
+  {
+   "guard": "G-DISK",
+   "file": "navpipe_core.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe.py::test_disk_guard - Failed: DID NOT RAISE Refusal"
+   ]
+  },
+  {
+   "guard": "G-SEAM-PIN",
+   "file": "navpipe_core.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe.py::test_vendored_seam_module_is_pinned_and_passes_its_own_selftest"
+   ]
+  },
+  {
+   "guard": "G-IDENT-BYTES",
+   "file": "navpipe_core.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe.py::test_identity_passes_and_each_red_arm_fails - assert ..."
+   ]
+  },
+  {
+   "guard": "G-NOT-NAVTEST",
+   "file": "navpipe_core.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe_s0.py::test_refuse_navtest_tokens_and_the_join - Failed: ..."
+   ]
+  },
+  {
+   "guard": "G-FANLABELS-COVER",
+   "file": "navpipe_core.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe_s0.py::test_refuse_navtest_tokens_and_the_join - KeyError..."
+   ]
+  },
+  {
+   "guard": "G-IDENT-REF",
+   "file": "navpipe_core.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe_s0.py::test_s0fan_reference_levels_and_red_arms - assert ..."
+   ]
+  },
+  {
+   "guard": "G-STATE-PLAN",
+   "file": "navpipe_core.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe.py::test_state_is_monotone_atomic_and_bound_to_its_plan"
+   ]
+  },
+  {
+   "guard": "G-STATE-MONOTONE",
+   "file": "navpipe_core.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe.py::test_state_is_monotone_atomic_and_bound_to_its_plan"
+   ]
+  },
+  {
+   "guard": "G-BANK-REQUIRED",
+   "file": "navpipe_core.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe.py::test_bank_refuses_an_incomplete_or_empty_chunk - Fail..."
+   ]
+  },
+  {
+   "guard": "G-DELETE-STATUS",
+   "file": "navpipe_core.py",
+   "status": "SURVIVED",
+   "first_failing": []
+  },
+  {
+   "guard": "G-DELETE-VERIFY",
+   "file": "navpipe_core.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe.py::test_delete_red_arms - Failed: DID NOT RAISE Refusal"
+   ]
+  },
+  {
+   "guard": "G-DELETE-RECORDS",
+   "file": "navpipe_core.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe.py::test_delete_red_arms - Failed: DID NOT RAISE Refusal"
+   ]
+  },
+  {
+   "guard": "G-ARGLEN",
+   "file": "navpipe_core.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe.py::test_seam_writer_and_token_file - Failed: DID NOT RAI..."
+   ]
+  },
+  {
+   "guard": "G-CSV-FORMULA",
+   "file": "navpipe_core.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe.py::test_harness_csv_reader_reproduces_the_registry_p2_point_and_enforces_the_formula"
+   ]
+  },
+  {
+   "guard": "G-T1ID-IDENTITY",
+   "file": "navpipe_core.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe.py::test_t1_planted_identity_and_its_red_arms - assert (n..."
+   ]
+  },
+  {
+   "guard": "G-T1ID-CONTROL",
+   "file": "navpipe_core.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe.py::test_t1_planted_identity_and_its_red_arms - assert (n..."
+   ]
+  },
+  {
+   "guard": "C-CRASH-RETRY",
+   "file": "navpipe_chain.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe.py::test_child_crash_is_retried_but_a_real_failure_is_not"
+   ]
+  },
+  {
+   "guard": "C-SEAL-FIRST",
+   "file": "navpipe_chain.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe.py::test_chain_refuses_before_opening_any_data_without_the_seal"
+   ]
+  },
+  {
+   "guard": "C-S0-SEAL-FIRST",
+   "file": "navpipe_chain.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe_s0.py::test_s0_chain_refuses_before_opening_any_data_without_the_seal"
+   ]
+  },
+  {
+   "guard": "C-FIXTURE-NOT-NAVTEST",
+   "file": "navpipe_chain.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe.py::test_fixture_mode_refuses_a_navtest_token - assert (9..."
+   ]
+  },
+  {
+   "guard": "C-BUNDLE-TOKENS",
+   "file": "navpipe_chain.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe_guards.py::test_chain_stops_on_each_planted_defect_and_keeps_the_ctx[swap_token-G_BUNDLE_INVALID-3]"
+   ]
+  },
+  {
+   "guard": "C-BUNDLE-CTX-SHA",
+   "file": "navpipe_chain.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe_guards.py::test_chain_stops_on_each_planted_defect_and_keeps_the_ctx[ctx_corrupt-G_BUNDLE_INVALID-3]"
+   ]
+  },
+  {
+   "guard": "C-IDENT-STOPS",
+   "file": "navpipe_chain.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe.py::test_chain_red_identity_stops_and_keeps_the_ctx - ass..."
+   ]
+  },
+  {
+   "guard": "C-GATE-STAMP",
+   "file": "navpipe_chain.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe_guards.py::test_chain_stops_on_each_planted_defect_and_keeps_the_ctx[stamp_other_bundle-G_REACH_NOT_PASSED-3]"
+   ]
+  },
+  {
+   "guard": "C-NOHEAD",
+   "file": "navpipe_chain.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe_guards.py::test_chain_stops_on_each_planted_defect_and_keeps_the_ctx[head_in_meta-SEARCH_MERGE_INVALID-6]"
+   ]
+  },
+  {
+   "guard": "C-CLAUSE-IN-META",
+   "file": "navpipe_chain.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe.py::test_chain_red_wrong_data_clause_in_the_search_meta"
+   ]
+  },
+  {
+   "guard": "C-SCORES-IDENTITY",
+   "file": "navpipe_chain.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe_s0.py::test_s0_chain_red_label_planted_identity_failure_stops_before_banking"
+   ]
+  },
+  {
+   "guard": "C-SCORES-ALIGNED",
+   "file": "navpipe_chain.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe_guards.py::test_label_scores_that_are_not_finite_or_not_aligned_to_the_search_are_refused[nan]"
+   ]
+  },
+  {
+   "guard": "C-HARNESS-PASS",
+   "file": "navpipe_chain.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe_guards.py::test_run_harness_returns_the_csv_only_on_the_harnesss_own_pass"
+   ]
+  },
+  {
+   "guard": "C-T1ID-STOPS",
+   "file": "navpipe_chain.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe.py::test_chain_red_t1_identity_stops_and_keeps_the_ctx - ..."
+   ]
+  },
+  {
+   "guard": "C-DELETE-CALLED",
+   "file": "navpipe_chain.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe.py::test_chain_happy_path_deletes_every_ctx_only_after_banking_and_equals_the_unchunked_analysis"
+   ]
+  },
+  {
+   "guard": "L-PLAN-SHA",
+   "file": "navpipe_launch.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe.py::test_launcher_data_clause_comes_from_the_plan_and_the_plan_must_hash"
+   ]
+  },
+  {
+   "guard": "L-NOHEAD",
+   "file": "navpipe_launch.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe.py::test_launcher_refuses_a_head_and_any_arm_but_p2head"
+   ]
+  },
+  {
+   "guard": "L-ARM",
+   "file": "navpipe_launch.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe.py::test_launcher_refuses_a_head_and_any_arm_but_p2head"
+   ]
+  },
+  {
+   "guard": "MB-IDENT-REF",
+   "file": "make_navtest_bundle.py",
+   "status": "UNTESTABLE_WITHOUT_GPU",
+   "why": "the builder's per-token identity gate runs only inside make_navtest_bundle.py on a GPU forward; the suite cannot execute it. Its comparison is `ref.equal`, the same call G-IDENT-REF mutates, and its bridge judge (BR-*) is mutated."
+  },
+  {
+   "guard": "BR-FIRED",
+   "file": "navpipe_bridge.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe.py::test_bridge_judge_pass_and_every_red_arm - assert not..."
+   ]
+  },
+  {
+   "guard": "BR-GATE-FIRES",
+   "file": "navpipe_bridge.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe.py::test_bridge_judge_pass_and_every_red_arm - assert not..."
+   ]
+  },
+  {
+   "guard": "BR-DIFFER",
+   "file": "navpipe_bridge.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe.py::test_bridge_judge_pass_and_every_red_arm - assert not..."
+   ]
+  },
+  {
+   "guard": "GS-STEP",
+   "file": "navpipe_gpu_stage.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe.py::test_gpu_stage_stops_at_the_first_failing_step - Asse..."
+   ]
+  }
+ ]
+}

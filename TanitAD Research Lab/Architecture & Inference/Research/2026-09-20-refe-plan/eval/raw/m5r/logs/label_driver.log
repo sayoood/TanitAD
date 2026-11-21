@@ -1,0 +1,116 @@
+m5r label launch Mon Sep 28 06:43:26     2026
+  setup: {"A_gr2": "2 chunks copied", "C_v5": "119 chunks copied", "B_gr3": "50 chunks copied"}
+  06:43:59 free RAM 3.86 GB; workers 0 []; A_gr2 pend 2 claimed 0 done 0; B_gr3 pend 50 claimed 0 done 0; C_v5 pend 119 claimed 0 done 0
+  06:46:05 free RAM 6.02 GB; workers 0 []; A_gr2 pend 2 claimed 0 done 0; B_gr3 pend 50 claimed 0 done 0; C_v5 pend 119 claimed 0 done 0
+  06:48:11 free RAM 2.90 GB; workers 0 []; A_gr2 pend 2 claimed 0 done 0; B_gr3 pend 50 claimed 0 done 0; C_v5 pend 119 claimed 0 done 0
+  06:49:36 ADDED r0 -> A_gr2 (free RAM 7.31 GB; 1 live)
+  06:50:19 free RAM 7.71 GB; workers 1 ['A_gr2']; A_gr2 pend 1 claimed 1 done 0; B_gr3 pend 50 claimed 0 done 0; C_v5 pend 119 claimed 0 done 0
+  06:52:33 free RAM 5.66 GB; workers 1 ['A_gr2']; A_gr2 pend 1 claimed 1 done 0; B_gr3 pend 50 claimed 0 done 0; C_v5 pend 119 claimed 0 done 0
+  06:54:39 free RAM 5.62 GB; workers 1 ['A_gr2']; A_gr2 pend 1 claimed 1 done 0; B_gr3 pend 50 claimed 0 done 0; C_v5 pend 119 claimed 0 done 0
+  06:57:08 free RAM 1.65 GB; workers 1 ['A_gr2']; A_gr2 pend 1 claimed 1 done 0; B_gr3 pend 50 claimed 0 done 0; C_v5 pend 119 claimed 0 done 0
+  06:59:16 free RAM 4.25 GB; workers 1 ['A_gr2']; A_gr2 pend 1 claimed 1 done 0; B_gr3 pend 50 claimed 0 done 0; C_v5 pend 119 claimed 0 done 0
+  07:00:21 ADDED r1 -> B_gr3 (free RAM 7.05 GB; 2 live)
+m5r label RESTART (adopting, cap 3) Mon Sep 28 07:01:23     2026
+  setup: {"A_gr2": "exists (3 entries)", "C_v5": "exists (119 entries)", "B_gr3": "exists (50 entries)"}
+  ADOPTED r0 on A_gr2 (PIDs [36752, 30880])
+  ADOPTED r1 on B_gr3 (PIDs [33040, 28904])
+  07:01:29 free RAM 5.42 GB; workers 2 ['A_gr2', 'B_gr3']; A_gr2 pend 0 claimed 1 done 1; B_gr3 pend 49 claimed 1 done 0; C_v5 pend 119 claimed 0 done 0
+  07:02:42 RAM 4.57 GB < 4.7 for 40 s: RETIRED r0 (PID 30880); released ['props_r0_004933_10000001.jsonl.r0']
+  07:03:46 free RAM 10.30 GB; workers 1 ['B_gr3']; A_gr2 pend 1 claimed 0 done 1; B_gr3 pend 48 claimed 1 done 1; C_v5 pend 119 claimed 0 done 0
+m5r label RESTART 2 (true launch times, retire order, cap 3) Mon Sep 28 07:04:48     2026
+  setup: {"A_gr2": "exists (3 entries)", "C_v5": "exists (119 entries)", "B_gr3": "exists (51 entries)"}
+  ADOPTED r1 on B_gr3 (PIDs [33040, 28904])
+  07:04:50 ADDED r2 -> A_gr2 (free RAM 10.95 GB; 2 live)
+  07:04:50 free RAM 10.95 GB; workers 2 ['A_gr2', 'B_gr3']; A_gr2 pend 1 claimed 0 done 1; B_gr3 pend 47 claimed 1 done 2; C_v5 pend 119 claimed 0 done 0
+  07:06:59 ADDED r3 -> B_gr3 (free RAM 7.90 GB; 3 live)
+  07:06:59 free RAM 7.90 GB; workers 3 ['A_gr2', 'B_gr3', 'B_gr3']; A_gr2 pend 0 claimed 1 done 1; B_gr3 pend 46 claimed 1 done 3; C_v5 pend 119 claimed 0 done 0
+  07:09:13 free RAM 4.95 GB; workers 3 ['A_gr2', 'B_gr3', 'B_gr3']; A_gr2 pend 0 claimed 1 done 1; B_gr3 pend 42 claimed 2 done 6; C_v5 pend 119 claimed 0 done 0
+  07:11:07 RAM 4.67 GB < 4.7 for 40 s: RETIRED r3 (PID 34444); released ['props_r0_000015_0000000008.jsonl.r3']
+  07:11:29 free RAM 4.99 GB; workers 2 ['A_gr2', 'B_gr3']; A_gr2 pend 0 claimed 1 done 1; B_gr3 pend 41 claimed 1 done 8; C_v5 pend 119 claimed 0 done 0
+  07:11:50 worker r2 (A_gr2) exited rc 0
+  07:13:42 free RAM 5.29 GB; workers 1 ['B_gr3']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 40 claimed 1 done 9; C_v5 pend 119 claimed 0 done 0
+  07:14:46 ADDED r4 -> B_gr3 (free RAM 8.47 GB; 2 live)
+  07:15:50 free RAM 8.33 GB; workers 2 ['B_gr3', 'B_gr3']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 37 claimed 2 done 11; C_v5 pend 119 claimed 0 done 0
+m5r label RESTART 3 (gate G-R3/G-R4 before queue C) Mon Sep 28 07:16:51     2026
+  setup: {"A_gr2": "exists (4 entries)", "C_v5": "exists (119 entries)", "B_gr3": "exists (52 entries)"}
+  ADOPTED r1 on B_gr3 (PIDs [33040, 28904])
+  ADOPTED r4 on B_gr3 (PIDs [6356, 20632])
+  07:16:54 ADDED r5 -> B_gr3 (free RAM 9.11 GB; 3 live)
+  07:16:54 free RAM 9.11 GB; workers 3 ['B_gr3', 'B_gr3', 'B_gr3']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 37 claimed 2 done 11; C_v5 pend 119 claimed 0 done 0
+  07:19:07 free RAM 5.72 GB; workers 3 ['B_gr3', 'B_gr3', 'B_gr3']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 31 claimed 3 done 16; C_v5 pend 119 claimed 0 done 0
+  07:21:25 free RAM 4.06 GB; workers 3 ['B_gr3', 'B_gr3', 'B_gr3']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 28 claimed 3 done 19; C_v5 pend 119 claimed 0 done 0
+  07:23:37 free RAM 6.44 GB; workers 3 ['B_gr3', 'B_gr3', 'B_gr3']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 22 claimed 3 done 25; C_v5 pend 119 claimed 0 done 0
+  07:25:48 free RAM 10.81 GB; workers 3 ['B_gr3', 'B_gr3', 'B_gr3']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 14 claimed 3 done 33; C_v5 pend 119 claimed 0 done 0
+  07:27:57 free RAM 10.72 GB; workers 3 ['B_gr3', 'B_gr3', 'B_gr3']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 7 claimed 3 done 40; C_v5 pend 119 claimed 0 done 0
+  07:30:07 free RAM 8.51 GB; workers 3 ['B_gr3', 'B_gr3', 'B_gr3']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 1 claimed 3 done 46; C_v5 pend 119 claimed 0 done 0
+  07:31:11 worker r1 (B_gr3) exited rc gone
+  07:31:11 worker r4 (B_gr3) exited rc gone
+  07:31:32 worker r5 (B_gr3) exited rc 0
+  07:31:32 queue B complete -- running G-R3/G-R4 before queue C
+  07:31:43 G-R3/G-R4 rc 0 -> queue C OPEN
+  07:31:43 ADDED r6 -> C_v5 (free RAM 12.37 GB; 1 live)
+  07:32:24 free RAM 11.25 GB; workers 1 ['C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 118 claimed 1 done 0
+  07:33:46 ADDED r7 -> C_v5 (free RAM 11.83 GB; 2 live)
+  07:34:27 free RAM 11.27 GB; workers 2 ['C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 117 claimed 2 done 0
+  07:35:49 ADDED r8 -> C_v5 (free RAM 11.18 GB; 3 live)
+  07:36:30 free RAM 11.06 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 115 claimed 3 done 1
+  07:38:33 free RAM 12.00 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 113 claimed 3 done 3
+  07:40:36 free RAM 10.42 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 111 claimed 3 done 5
+  07:42:39 free RAM 9.47 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 110 claimed 3 done 6
+  07:44:42 free RAM 7.96 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 108 claimed 3 done 8
+  07:46:47 free RAM 6.17 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 107 claimed 3 done 9
+  07:48:51 free RAM 7.02 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 106 claimed 3 done 10
+  07:50:56 free RAM 10.19 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 104 claimed 3 done 12
+  07:52:59 free RAM 9.95 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 102 claimed 3 done 14
+  07:55:04 free RAM 9.96 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 101 claimed 3 done 15
+  07:57:07 free RAM 9.94 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 99 claimed 3 done 17
+  07:59:10 free RAM 9.95 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 97 claimed 3 done 19
+  08:01:12 free RAM 9.86 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 95 claimed 3 done 21
+  08:03:15 free RAM 9.42 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 93 claimed 3 done 23
+  08:05:18 free RAM 9.34 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 91 claimed 3 done 25
+  08:07:23 free RAM 9.37 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 90 claimed 3 done 26
+  08:09:25 free RAM 9.29 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 88 claimed 3 done 28
+  08:11:28 free RAM 9.21 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 86 claimed 3 done 30
+  08:13:31 free RAM 9.11 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 84 claimed 3 done 32
+  08:15:34 free RAM 9.03 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 82 claimed 3 done 34
+  08:17:37 free RAM 9.24 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 80 claimed 3 done 36
+  08:19:40 free RAM 9.19 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 78 claimed 3 done 38
+  08:21:43 free RAM 9.13 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 77 claimed 3 done 39
+  08:23:46 free RAM 9.06 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 75 claimed 3 done 41
+  08:25:49 free RAM 11.62 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 73 claimed 3 done 43
+  08:27:51 free RAM 11.53 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 71 claimed 3 done 45
+  08:29:54 free RAM 10.37 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 68 claimed 3 done 48
+  08:31:57 free RAM 11.20 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 66 claimed 3 done 50
+  08:33:59 free RAM 11.13 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 64 claimed 3 done 52
+  08:36:02 free RAM 11.25 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 62 claimed 3 done 54
+  08:38:05 free RAM 11.26 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 59 claimed 3 done 57
+  08:40:07 free RAM 11.17 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 57 claimed 3 done 59
+  08:42:10 free RAM 11.15 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 55 claimed 3 done 61
+  08:44:13 free RAM 11.21 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 53 claimed 3 done 63
+  08:46:15 free RAM 12.00 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 50 claimed 3 done 66
+  08:48:18 free RAM 11.91 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 48 claimed 3 done 68
+  08:50:20 free RAM 11.84 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 46 claimed 3 done 70
+  08:52:23 free RAM 11.79 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 44 claimed 3 done 72
+  08:54:26 free RAM 11.89 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 41 claimed 3 done 75
+  08:56:28 free RAM 11.82 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 39 claimed 3 done 77
+  08:58:31 free RAM 11.79 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 37 claimed 3 done 79
+  09:00:33 free RAM 11.73 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 35 claimed 3 done 81
+  09:02:36 free RAM 11.70 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 32 claimed 3 done 84
+  09:04:39 free RAM 12.97 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 30 claimed 3 done 86
+  09:06:41 free RAM 12.02 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 28 claimed 3 done 88
+  09:08:44 free RAM 12.81 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 26 claimed 3 done 90
+  09:10:46 free RAM 13.39 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 24 claimed 3 done 92
+  09:12:49 free RAM 13.89 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 22 claimed 3 done 94
+  09:14:51 free RAM 13.89 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 19 claimed 3 done 97
+  09:16:54 free RAM 13.88 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 17 claimed 3 done 99
+  09:18:56 free RAM 13.89 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 14 claimed 3 done 102
+  09:20:59 free RAM 13.97 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 12 claimed 3 done 104
+  09:23:01 free RAM 13.99 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 10 claimed 3 done 106
+  09:25:03 free RAM 13.95 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 7 claimed 3 done 109
+  09:27:05 free RAM 13.95 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 5 claimed 3 done 111
+  09:29:08 free RAM 13.95 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 2 claimed 3 done 114
+  09:31:10 free RAM 13.93 GB; workers 3 ['C_v5', 'C_v5', 'C_v5']; A_gr2 pend 0 claimed 0 done 2; B_gr3 pend 0 claimed 0 done 50; C_v5 pend 0 claimed 3 done 116
+  09:31:50 worker r6 (C_v5) exited rc 0
+  09:32:31 worker r8 (C_v5) exited rc 0
+  09:32:52 worker r7 (C_v5) exited rc 0
+ZZM5R_LABEL_DONE {"seconds": 8160.8, "launches": 9, "gate_before_c": "open", "A_gr2": {"written": 32, "failed": 0, "selfcheck_failed": 0, "skipped_ndiff": 0, "keys_in_chunks": 32, "keys_labelled": 32, "label_version_repair": ["(4, None)"]}, "B_gr3": {"written": 200, "failed": 0, "selfcheck_failed": 0, "skipped_ndiff": 0, "keys_in_chunks": 200, "keys_labelled": 200, "label_version_repair": ["(5, 'last_heading_hold')"]}, "C_v5": {"written": 1900, "failed": 0, "selfcheck_failed": 0, "skipped_ndiff": 0, "keys_in_chunks": 1900, "keys_labelled": 1900, "label_version_repair": ["(5, 'last_heading_hold')"]}}

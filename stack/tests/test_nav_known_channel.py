@@ -247,3 +247,44 @@ def test_nav_known_channel_costs_exactly_128_params():
         f"expected exactly +128 (one column of measurement.0.weight), got "
         f"{n_on - n_off:+d}"
     )
+
+
+# --------------------------------------------------------------------------- #
+# E1 IS HALF-MERGED — the refusal must fire at PREFLIGHT, not mid-run           #
+# --------------------------------------------------------------------------- #
+def test_nav_known_channel_refuses_at_preflight_not_on_the_first_batch():
+    """⛔ MEASURED 2026-08-16: `--nav-known-channel` parsed, reached the config,
+    the model widened correctly — and then the FIRST FORWARD PASS raised, because
+    `refc_train.train()` passes `nav_cmd=` and never `nav_known=`.
+
+    The model is correct: it fails loud in both directions BY DESIGN so a
+    companion bit can never be silently dropped. The TRAINER side was never
+    finished. This pins the refusal to `train()`'s config block, so the flag
+    dies immediately with an actionable message instead of after a build.
+
+    Same class as the `--gate-probes` defect that cost ~3.1 GPU-days elsewhere:
+    an argument validated only AFTER the expensive part.
+    """
+    import inspect
+    import scripts.refc_train as RT
+
+    src = inspect.getsource(RT.train)
+    i = src.index("cfg.nav_known_channel = ")
+    tail = src[i:]
+    # the refusal must be in train(), and must come RIGHT AFTER the assignment —
+    # before any model construction, which is what "preflight" means here.
+    assert "HALF-MERGED" in tail, "the half-merge refusal is gone from train()"
+    # ⚠️ NOT `tail.index("model")` — the first draft of this assertion did
+    # exactly that and FAILED, because the refusal's own comment says "the model
+    # widens correctly". A check keyed on a token its own subject contains is the
+    # `pgrep -f` self-match trap, and it bit here in a test written to prevent a
+    # different trap. The property actually wanted is "the refusal is IMMEDIATE",
+    # so measure the distance instead of racing an English word.
+    gap = tail.index("raise SystemExit")
+    assert gap < 2000, (
+        f"the refusal is {gap} chars after the assignment — it must be "
+        f"immediate, or it is not a preflight")
+    # and it must keep steering people away from the wrong substitute
+    assert "nav_valid" in tail, (
+        "the refusal must still warn against substituting nav_valid — it is the "
+        "route-target validity mask, a DIFFERENT quantity")

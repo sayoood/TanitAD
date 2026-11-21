@@ -1,0 +1,24 @@
+--- a/refe/s1aux_pod.sh
++++ b/refe/s1aux_pod.sh
+@@ -392,6 +392,7 @@
+     stage_mark "pre_$ARM"
+   fi
+   # ---- 5b. the launch gate, for THIS arm: a PASS token or a refusal; the token is then VERIFIED (not grepped)
++  GATE_MINTED_NOW=0
+   if ! stage_done "gate_$ARM"; then
+     rm -rf "$LG"; mkdir -p "$LG"
+     env -u HF_TOKEN OMP_NUM_THREADS=4 "$PY" launch_gate.py run --profile refe_aux_s1 --arm-name "$ARM" --pkg "$PKG" --args "$ARGS" --out-dir "$LG" \
+@@ -399,8 +400,12 @@
+     echo "ZZEXIT $?" >> "$ARMDIR/launch_gate.log"
+     token_ok || refuse "the launch gate did not mint a PASS token that verifies for $ARM (launch_gate.log, lg/, token_verify.log)"
+     stage_mark "gate_$ARM"
++    GATE_MINTED_NOW=1
+   fi
+-  token_ok || refuse "the launch-gate token of $ARM no longer verifies (token_verify.log)"
++  # A token minted by THIS invocation was verified (re-measured: argv, code tree, data, HMAC) a few lines up with nothing in between, so it is not re-verified a second time here
++  # (MEASURED 2026-10-14, pod: each verify is 3.4-3.8 min of the GPU-idle gap, and this one repeated the one above it).  A token minted by an EARLIER invocation (the chain was stopped
++  # between the gate and the trainer) is verified here before its row is written.  The BINDING verify, after wait_clear and right before the trainer, is below and is unchanged.
++  [ "$GATE_MINTED_NOW" = 1 ] || token_ok || refuse "the launch-gate token of $ARM no longer verifies (token_verify.log)"
+   # PREREG_AUX_DRIVABLE_S1 section 2: the token id is written to the arms manifest BEFORE the arm's first step
+   if ! stage_done "token_row_$ARM"; then
+     tok="$(ls "$LG"/PASS_*.json | head -n 1)"

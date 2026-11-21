@@ -1,0 +1,253 @@
+"""Critic-free group-relative advantage estimators for planner post-training.
+
+WHY A POLICY GRADIENT IS THE RIGHT TOOL *HERE* — AND NOT AT THE SELECTOR
+------------------------------------------------------------------------
+⚠️ `products/P4-training-pipelines/METHOD_LIBRARY.md` §2 concluded that GRPO/RLOO
+is **dominated** for our stack. That conclusion stands, and this module does not
+contradict it — it applies to a different site. Read the scope carefully, because
+the two documents look contradictory if you do not:
+
+| | METHOD_LIBRARY §2 (dominated) | HERE (policy gradient earns its keep) |
+|---|---|---|
+| site | the SELECTOR over the emitted fan | the DIFFUSION DECODER's sampled offsets |
+| action set | ENUMERABLE (N anchors) — we take the expectation exactly | CONTINUOUS offsets under exploration noise — not enumerable |
+| objective | metric L2 cost, DIFFERENTIABLE end-to-end (`unicycle_rollout` in-graph) | rule-based reward (collision / feasibility / headway) — **NOT differentiable** |
+| ⇒ estimator | sampling only adds variance | the score-function estimator is the only route |
+
+So: the score-function estimator exists because the environment is a black box.
+At the *selector* we are the environment, so it is dominated. At the *decoder*
+under a rule-based reward we are not, so it is not. ⇒ **This library targets the
+generator, never the selector** — which is also exactly what the reward /
+selector disjointness rule (`rewards.FORBIDDEN_REWARD_INPUTS`) requires, so the
+two constraints agree rather than trade off.
+
+THE TWO ESTIMATORS (DiffusionDriveV2, arXiv 2512.07745)
+--------------------------------------------------------
+DDv2 composes two advantages on top of a DiffusionDrive cold start:
+
+1. **Intra-anchor GRPO** — for anchor *i* with a group of G sampled offsets,
+   the advantage of sample *g* is its reward centred (and optionally scaled) on
+   that anchor's OWN group::
+
+       A_intra(i,g) = (r(i,g) - mean_g r(i,.)) / (std_g r(i,.) + eps)
+
+   ⚠️ ``normalize="none"`` (centre only, no std division) is the **Dr. GRPO**
+   correction — dividing by the group std reweights groups by the inverse of
+   their reward spread, which is a bias, not a normalisation. We default to
+   centre-only and make the std path opt-in and named.
+
+2. **Inter-anchor truncated advantage** — across anchors, negatives are
+   truncated to 0 and collisions pinned to -1::
+
+       A_inter(i) = clamp(r_i - mean_i r, min=0)   , then  A_inter(i) = -1 where collided
+
+   The truncation is the load-bearing half: it stops the update from actively
+   pushing probability mass INTO the mass of low-quality modes (DDv2's stated
+   defect — IL "neglects to impose any explicit constraints on trajectories
+   sampled from the negative modes, which constitute the vast majority"),
+   while still hard-penalising the one failure that is never acceptable.
+
+⛔ A GROUP OF ONE HAS NO ADVANTAGE. With G=1 the centred advantage is
+identically 0 and the update is a no-op — silently. `grpo_advantage` REFUSES
+G < 2 rather than returning zeros, because a silent no-op that still exits 0 is
+the false-green class this week's traps name explicitly.
+
+Evidence class: the DDv2 mechanism is PUBLISHED (see the research RESULT.md);
+this implementation is MEASURED (ours) and pinned by tests/test_rl_advantage.py.
+"""
+
+from __future__ import annotations
+
+import torch
+from torch import Tensor
+
+EPS = 1e-8
+
+
+def grpo_advantage(reward: Tensor, *, normalize: str = "none") -> Tensor:
+    """Intra-group (per-anchor) centred advantage. ``reward`` is ``[..., G]``.
+
+    ``normalize``:
+      * ``"none"``  — centre only. **The default, and the Dr. GRPO-correct one.**
+      * ``"std"``   — additionally divide by the group std. Opt-in and named so
+        that choosing it is a decision someone made, not a default they inherited.
+
+    Returns ``[..., G]``, mean-zero along the group axis.
+    """
+    if normalize not in ("none", "std"):
+        raise ValueError(f"normalize must be 'none' or 'std', got {normalize!r}")
+    g = reward.shape[-1]
+    if g < 2:
+        raise ValueError(
+            f"grpo_advantage needs a group of >=2 to have any signal, got G={g}. "
+            "A group of one yields an identically-zero advantage and a SILENT "
+            "no-op update; refusing instead of returning zeros.")
+    adv = reward - reward.mean(dim=-1, keepdim=True)
+    if normalize == "std":
+        adv = adv / (reward.std(dim=-1, keepdim=True) + EPS)
+    return adv
+
+
+#: DDv2's released slack. `diffusiondrivev2_model_rl.py:891-893` writes
+#: ``mask_positive = reward > reward_gt - 1e-6`` — i.e. a candidate that TIES the
+#: human clears the bar. Named ONCE, here, because it was previously written twice
+#: with two different values; see `gt_bar_mask`.
+BAR_EPS = 1e-6
+
+
+def gt_bar_mask(reward: Tensor, gt_bar: Tensor,
+                bar_eps: float = BAR_EPS) -> Tensor:
+    """DDv2's >=GT admission mask, ``reward > gt_bar - bar_eps``, bcast over N.
+
+    ⛔ THE SINGLE DERIVATION, AND THAT IS THE ENTIRE POINT. This predicate used to
+    be computed TWICE — once to mask the advantage (``bar_eps`` 1e-6) and once to
+    report ``frac_above_bar`` (the module's ``EPS``, 1e-8). MEASURED 2026-09-10 on
+    a reward sitting at ``bar - 1e-7``: the mask admitted **1.0** of the anchors
+    while the diagnostic reported **0.0** — i.e. the one number whose whole job is
+    to make a zeroing bar VISIBLE reported the exact opposite of what the mask did,
+    and it erred in the direction that HIDES the failure it exists to catch.
+    Both callers now route through here, so they cannot disagree again.
+
+    ⚠️ Being a shared derivation makes the two agree; it does NOT make either
+    correct. Correctness is pinned in `tests/test_rl_gt_bar_gradient_path.py`
+    against hand-computed literals and a deliberate-regression arm that restores
+    the two-epsilon form and must go RED.
+    """
+    bar = gt_bar
+    if bar.dim() == reward.dim() - 1:
+        bar = bar.unsqueeze(-1)
+    if bar.dim() != reward.dim() or bar.shape[-1] != 1:
+        raise ValueError(f"gt_bar {tuple(gt_bar.shape)} must be per-window "
+                         f"([...] or [..., 1]) against reward {tuple(reward.shape)}")
+    return reward > (bar - bar_eps)
+
+
+def truncated_inter_anchor_advantage(reward: Tensor, *,
+                                     veto: Tensor | None = None,
+                                     veto_value: float = -1.0,
+                                     gt_bar: Tensor | None = None,
+                                     bar_eps: float = BAR_EPS) -> Tensor:
+    """Cross-anchor advantage with negatives truncated to 0. ``reward`` [..., N].
+
+    Negatives -> 0 (do not push mass into the low-quality modes); VETOED
+    candidates -> ``veto_value``.
+
+    ⭐ ``gt_bar`` — THE >=GT POSITIVE MASK (added 2026-09-05, REF-C RL re-scope).
+    DiffusionDriveV2's RELEASED code does something its paper does not say
+    (`hustvl/DiffusionDriveV2@1cd12a1`, `diffusiondrivev2_model_rl.py:891-893`,
+    PUBLISHED-CODE, read in full by the 2026-09-05 DDv2 analysis): the GT
+    trajectory is scored under the SAME reward as the candidates and positive
+    advantage is granted ONLY to candidates whose reward is at least the
+    human's own — ``mask_positive = reward > reward_gt - 1e-6``, then
+    ``clamp(min=0) * mask_positive``. ``gt_bar`` is that per-window scalar,
+    ``[...]`` or ``[..., 1]``, broadcast over N.
+
+    ⛔ WHY THIS IS NOT AN ECHO. The bar is the human's SCORE, not the human's
+    SHAPE: a candidate far from the logged path that scores higher earns
+    positive advantage, and a candidate that merely reproduces the logged path
+    gains nothing beyond it. It is the same object as DDv2's; the ego future
+    enters as one threshold value per window, never as a target (the DDv2
+    analysis §3.3: "a bar, not a target"). The reward context itself still
+    carries no future (``FORBIDDEN_FUTURE_CTX`` in the driver) — the bar is
+    handed in beside the context, and the caller records ``frac_above_bar``
+    so a bar that zeroes every row (V2's own common case: most rows carry
+    lambda_IL = 1.0) is a logged fact, not a silent no-op.
+
+    ⛔ ``veto`` IS THE CONSTRAINT CHANNEL, AND IT IS DELIBERATELY NOT A REWARD
+    TERM. It carries collision AND TTC-imminent — failures that are never
+    acceptable at any ranking. Applying it HERE, after the centring, is what
+    makes it a constraint: a vetoed candidate is PINNED rather than merely
+    ordered below its neighbours, so no amount of good behaviour elsewhere in
+    the trajectory can buy it back. The veto is applied AFTER the bar, so a
+    vetoed candidate is pinned at ``veto_value`` whatever the bar said.
+
+    ⚠️ Why the separation is load-bearing: the first ``headway`` term tried to be
+    a constraint and a ranking signal at once. It saturated at its bound and A0
+    measured a median spread of **0.0000** across the fan — present, and
+    carrying no signal. Constraints pin; ranking signals order. Fusing them
+    produces something that does neither.
+    """
+    adv = (reward - reward.mean(dim=-1, keepdim=True)).clamp_min(0.0)
+    if gt_bar is not None:
+        above = gt_bar_mask(reward, gt_bar, bar_eps)
+        adv = adv * above.to(adv.dtype)
+    if veto is not None:
+        if veto.shape != reward.shape:
+            raise ValueError(f"veto {tuple(veto.shape)} must match "
+                             f"reward {tuple(reward.shape)}")
+        adv = torch.where(veto, torch.full_like(adv, veto_value), adv)
+    return adv
+
+
+def composite_advantage(reward_ig: Tensor, *,
+                        veto_ig: Tensor | None = None,
+                        w_intra: float = 1.0, w_inter: float = 1.0,
+                        normalize: str = "none",
+                        gt_bar: Tensor | None = None,
+                        bar_eps: float = BAR_EPS) -> dict[str, Tensor]:
+    """DDv2's composition on a ``[..., N, G]`` reward (N anchors x G samples).
+
+    Returns the two parts and their weighted sum, so a caller can log and audit
+    each independently — an aggregate that hides which half moved is how a
+    +0.9/+0.6 ablation becomes unattributable.
+
+    ``gt_bar`` ``[...]`` (per window) applies V2's >=GT positive mask to the
+    INTER-anchor half only — exactly where the released code applies it
+    (`_model_rl.py:891-893`); the intra-anchor centring is untouched. The
+    returned ``frac_above_bar`` is the share of anchors whose mean sampled
+    reward cleared the bar, so a bar that zeroed the batch is visible.
+
+    ⛔ ``frac_above_bar`` IS THE MASK'S OWN ADMISSION SET, never a second opinion
+    about it — both come from `gt_bar_mask` under the same ``bar_eps``. It used to
+    be re-derived with a different epsilon and MEASURED as reporting 0.0 while the
+    mask admitted 1.0: a diagnostic whose only purpose is to catch a silent
+    zeroing, lying in the direction that hides one.
+    """
+    if reward_ig.dim() < 2:
+        raise ValueError(f"expected [..., N, G], got {tuple(reward_ig.shape)}")
+    intra = grpo_advantage(reward_ig, normalize=normalize)          # [..., N, G]
+    per_anchor = reward_ig.mean(dim=-1)                              # [..., N]
+    veto_n = veto_ig.any(dim=-1) if veto_ig is not None else None
+    inter = truncated_inter_anchor_advantage(per_anchor, veto=veto_n,
+                                             gt_bar=gt_bar, bar_eps=bar_eps)
+    total = w_intra * intra + w_inter * inter.unsqueeze(-1)
+    out = {"intra": intra, "inter": inter, "total": total,
+           "per_anchor_reward": per_anchor}
+    if gt_bar is not None:
+        # ⭐ THE SAME CALL THE MASK MADE — not a re-derivation of it. Re-deriving
+        # it with a different epsilon is precisely what made this line report
+        # 0.0 while the mask admitted everything (see `gt_bar_mask`).
+        out["frac_above_bar"] = gt_bar_mask(per_anchor, gt_bar,
+                                            bar_eps).to(per_anchor.dtype).mean()
+    return out
+
+
+def policy_gradient_loss(logp: Tensor, advantage: Tensor, *,
+                         logp_ref: Tensor | None = None,
+                         kl_coef: float = 0.0) -> dict[str, Tensor]:
+    """REINFORCE-style surrogate ``-(A * logp)`` with an optional KL anchor.
+
+    ⚠️ ``advantage`` is DETACHED here, always. An advantage that carries
+    gradient turns the estimator into something that is not a policy gradient,
+    and the failure is silent — the loss still decreases.
+
+    The KL term is the k3 estimator (``exp(d) - d - 1``, d = logp_ref - logp),
+    which is non-negative and lower-variance than the naive ``-d``. ⛔ It is
+    OFF by default (``kl_coef=0``): DDv2 regularises toward the IL cold start
+    with an imitation LOSS rather than a KL to a frozen reference, and adding
+    both would double-count the anchor. Turn it on deliberately or not at all.
+    """
+    if logp.shape != advantage.shape:
+        raise ValueError(f"logp {tuple(logp.shape)} vs advantage "
+                         f"{tuple(advantage.shape)} must match")
+    adv = advantage.detach()
+    pg = -(adv * logp).mean()
+    out = {"pg": pg, "loss": pg}
+    if kl_coef:
+        if logp_ref is None:
+            raise ValueError("kl_coef != 0 requires logp_ref")
+        d = (logp_ref.detach() - logp)
+        kl = (torch.exp(d) - d - 1.0).mean()
+        out["kl"] = kl
+        out["loss"] = pg + kl_coef * kl
+    return out

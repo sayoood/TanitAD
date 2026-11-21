@@ -1,0 +1,239 @@
+{
+ "arm": "hier",
+ "seed": 0,
+ "argv": [
+  "--arm",
+  "hier",
+  "--size",
+  "base",
+  "--v2-cache",
+  "/root/data/train",
+  "--v7-labels",
+  "/workspace/TanitAD/data/s2_labels_v7.2_train.jsonl.gz",
+  "--eval-cache",
+  "/root/data/eval",
+  "--eval-labels",
+  "/workspace/TanitAD/data/s2_labels_v7.2_eval.jsonl.gz",
+  "--eval-every",
+  "500",
+  "--eval-batches",
+  "8",
+  "--image-hw",
+  "256",
+  "640",
+  "--steps",
+  "40284",
+  "--batch",
+  "20",
+  "--workers",
+  "6",
+  "--prefetch-factor",
+  "1",
+  "--v2-lru",
+  "24",
+  "--lr",
+  "1e-4",
+  "--warmup",
+  "2000",
+  "--seed",
+  "0",
+  "--log-every",
+  "50",
+  "--save-every",
+  "500",
+  "--nav-from-v7",
+  "--u8-batches",
+  "--anchors",
+  "/workspace/experiments/refcv4b-b1-v72-40k/anchors.pt",
+  "--n-anchors",
+  "117",
+  "--anchor-v0-conditioned",
+  "--sel-accel-max",
+  "2.0",
+  "--goal-str",
+  "--ego-state-inject",
+  "--ego-dropout",
+  "0.5",
+  "--out",
+  "/workspace/experiments/refcv4b-b1-v72-40k"
+ ],
+ "registered_delta": {
+  "core.graft_target_latent": [
+   "True",
+   "False"
+  ],
+  "hier": [
+   "True",
+   "False"
+  ]
+ },
+ "param_breakdown": {
+  "core": 104879584,
+  "phi_tac": 1757440,
+  "str_goal_head": 771,
+  "gstr_cond": 66816,
+  "tac_heads": 14364,
+  "tac_latent_proj": 262656,
+  "scorer": 1145,
+  "ego_inject": 25536,
+  "nav_inject": 50176,
+  "total": 107058488
+ },
+ "goal_provenance": {
+  "inference_inputs": [
+   "pooled (mean-pooled conv features, last frame)"
+  ],
+  "contains_situation_classifier_output": false,
+  "situation_classifier_in_graph": false,
+  "shared_trunk_with": [
+   "route_head",
+   "maneuver_head/tactical_trunk"
+  ],
+  "shared_trunk_justification": "shared ENCODER, not a shared signal; attributability comes from the zero-init gates, and a shared trunk cannot launder a signal that is absent from the graph",
+  "form": "geometric (bearing + signed along-track preference)",
+  "supplied_or_predicted": "predicted",
+  "label_source": "tanitad.data.lan.lan_window_features (ego future path, arc-length resampled, leak-guarded) \u2014 TRAIN ONLY; never read at inference",
+  "admissibility_check": "could this goal have been computed from the situation classifier's output? NO \u2014 that output is not in the graph, is not a batch field, and is not a label source here."
+ },
+ "provenance_roles": {
+  "goal": [
+   "g_str",
+   "g_tac",
+   "goal_point_tac"
+  ],
+  "situation_output": [],
+  "inference_inputs_of_goals": [
+   "frames (via pooled_seq/ctx)",
+   "ego_state @ t0 = (v0, a_long, yaw_rate, curvature, keep) \u2014 MEASURED at the last OBSERVED frame (E11')"
+  ],
+  "required_live_edges": [
+   "ego_state -> {z_tac, g_str, g_tac}",
+   "frames -> every goal"
+  ],
+  "refused_edges": [
+   "lan -> inference (E12; label-only)",
+   "situation classifier output -> any goal node (PI 2026-08-03, UNCHANGED)",
+   "future_poses/future_actions -> any goal node (E11'; the PI's 'not the future one', pinned interventionally)"
+  ],
+  "shared_trunk": "encoder (common ancestor, declared; zero-init gates carry attributability)",
+  "_reads": "`required_live_edges` is not decoration: an arm where the SCENE edge does not fire is ECHOING, and an arm where the EGO edge does not fire is v3 wearing a v4 config. Both are failures and both are measured."
+ },
+ "horizons": [
+  5,
+  10,
+  15,
+  20,
+  30,
+  40,
+  50,
+  60
+ ],
+ "anchors": {
+  "path": "/workspace/experiments/refcv4b-b1-v72-40k/anchors.pt",
+  "shape": [
+   117,
+   8,
+   2
+  ],
+  "sha256_installed": "f9e4eab64841b44d67139afd76268c8fc827fb9263edf13927ee128b4e4390ea",
+  "source": "file",
+  "controls_shape": [
+   117,
+   2
+  ],
+  "controls_sha256_installed": "6cc281c5f5d1d00dfbf949d16205fa3746b1f6f65a8bf2ad0774a25142d30e44",
+  "v0_conditioned": true,
+  "straight_ahead_control_present": true,
+  "file_sha256": "73ea09dd3e18413c6428174659fdc32f9d443abd45b953cff5cc642b8e648631"
+ },
+ "selection": {
+  "sel_reach_clamp": true,
+  "sel_accel_max": 2.0,
+  "horizon_s": 6.0,
+  "band_ms": 12.0,
+  "note": "horizon_s is DERIVED from max(horizons); the 72.08 % / 77.28 % kill statistics quoted elsewhere are 2 s numbers and do NOT hold here (re-derived 2026-09-04)."
+ },
+ "goal_tau_steps": [
+  20,
+  40,
+  60
+ ],
+ "admission_sigma_m": 0.8,
+ "ego": {
+  "ego_state_inject": true,
+  "echo_base": false,
+  "ego_valid_channel": true,
+  "ego_dropout": 0.5,
+  "tactical_speed_input": false,
+  "channels": [
+   "v0",
+   "a_long",
+   "yaw_rate",
+   "curvature",
+   "keep"
+  ],
+  "derivation": "t0 = last OBSERVED frame; a_long = corpus ax (actions[:,-1,1]); curvature = tan(steer)/2.9 (actions[:,-1,0]); yaw_rate = v0*curvature. NO finite differencing, NO future read.",
+  "wheelbase_mode": "const2p9"
+ },
+ "size": "base",
+ "rig_rung": false,
+ "ablate_frames": false,
+ "image_hw": [
+  256,
+  640
+ ],
+ "tac_vocab_version": "v7.0",
+ "v2_cache": [
+  "/root/data/train"
+ ],
+ "require_parity": false,
+ "v2_parity": {
+  "parity": false,
+  "cache_dirs": [
+   "/root/data/train"
+  ],
+  "corpus_key": null,
+  "label": "v3 v2-cache",
+  "uid_kind": "v2ep_clipid",
+  "checked": false,
+  "clips_present": 4572
+ },
+ "u8_batches": true,
+ "frame_batch_bytes_est": 825753600,
+ "nav_from_v7": true,
+ "nav_cmd_derivation": "v7.2 nav_command token (oracle, provenance ego-future; allow_oracle_nav=True)",
+ "nav_from_v7_stats": {
+  "train": {
+   "n_clips": 4572,
+   "follow": 2897,
+   "left": 811,
+   "right": 864,
+   "missing": 0,
+   "derivation": "v7.2 nav_command token (oracle, provenance ego-future; allow_oracle_nav=True)",
+   "unlabeled_default": "nav_cmd=0 ('follow') + nav_valid=False (refav1_loader convention)",
+   "label_md5": "0ff902130ce76886b8a925eceed9e3a5",
+   "allow_oracle_nav": true
+  },
+  "eval": {
+   "n_clips": 141,
+   "follow": 90,
+   "left": 13,
+   "right": 38,
+   "missing": 0,
+   "derivation": "v7.2 nav_command token (oracle, provenance ego-future; allow_oracle_nav=True)",
+   "unlabeled_default": "nav_cmd=0 ('follow') + nav_valid=False (refav1_loader convention)",
+   "label_md5": "aa12c948f062181c3297265b51526ec5",
+   "allow_oracle_nav": true
+  }
+ },
+ "v7_labels": {
+  "path": "/workspace/TanitAD/data/s2_labels_v7.2_train.jsonl.gz",
+  "md5": "0ff902130ce76886b8a925eceed9e3a5",
+  "n_records": 4572,
+  "schema_version": "s2-geom-v7",
+  "vocab": "v7",
+  "allow_oracle_nav": true,
+  "divergences": [],
+  "_read": "md5 is the identity \u2014 six copies of this blob exist under three roots and their md5s differ."
+ }
+}

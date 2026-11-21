@@ -1,0 +1,19 @@
+# address cross-check, executed 2026-09-08
+# bev_aux.py md5 954c7e6e2f98ee4ee225f2f3cf12ec20 (byte-identical copy of the repo file)
+POLAR_DEFAULT = PolarBEVSpec(n_az=20, n_rng=24, r_max_m=60.0, hfov_deg=120.0, r_min_m=0.0, sub_r=2, sub_az=3)
+spec used: n_az=40 -> daz 3.0 deg, hfov 120.0
+
+  az deg  s5:78/s6:82 colf  corrected colf  bev_aux:196  psg:72
+   59.99             39.50           -0.50            0       0
+   45.00             34.50            4.50            5       5
+   30.00             29.50            9.50           10      10
+   15.00             24.50           14.50           15      15
+    0.00             19.50           19.50           20      20
+  -15.00             14.50           24.50           25      25
+  -30.00              9.50           29.50           30      30
+  -45.00              4.50           34.50           35      35
+  -59.99             -0.50           39.50           39      39
+
+=> bev_aux and psg_targets AGREE: +60 deg (LEFT) is column 0.
+=> s5_indexed.py:78 / s6_oracle.py:82 put +60 deg at column 39.5 -- the MIRROR.
+=> the corrected colf reproduces bev_aux/psg to the half-cell centre offset.

@@ -1,0 +1,201 @@
+== 1 normal flow: wait check, ship, pilot, 72 h permit, six runs, banks, cleanups
+FAIL: chain exits 0
+FAIL: DONE sentinel written, no stop
+grep: C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/st_normal/pilot/PILOT.verified.json: No such file or directory
+FAIL: PILOT.verified.json names the commit
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json,sys;d=json.load(open(sys.argv[1]));assert abs(d["timing"]["mean_s_per_step"]-1.0)<1e-9, d["timing"]
+                                ~~~~^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/st_normal/pilot/PILOT.verified.json'
+FAIL: pilot mean s/step excludes start-up (reads 1.0)
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json,sys;d=json.load(open(sys.argv[1]))["projection"];assert d["steps_total"]==114984 and d["n_runs_planned"]==6 and d["within_limit_planned"]
+                                ~~~~^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/st_normal/pilot/PILOT.verified.json'
+FAIL: projection covers 6 runs x 19,164 steps
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import sys,json;sys.path.insert(0,sys.argv[1]);import actrsp_check as C;l=open(sys.argv[2]).read().split();assert l==C.tokens("PILOT_RSP_s0") and l[-2:]==["--steps","200"] and "pilot_out" in l[l.index("--out")+1] and [x for x in l[:-2] if x not in C.tokens("NULL_s4")]==[l[l.index("--out")+1]]
+                                                                              ~~~~^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/st_normal/runs/PILOT_RSP_s0/argv.txt'
+FAIL: pilot used the exact RSP_s0 argv plus --steps 200 and a separate out dir
+Traceback (most recent call last):
+  File "F:\TanitAD-scratch\actrsp\launch\pkg\actrsp_check.py", line 973, in <module>
+    sys.exit(main(sys.argv[1:]))
+             ~~~~^^^^^^^^^^^^^^
+  File "F:\TanitAD-scratch\actrsp\launch\pkg\actrsp_check.py", line 963, in main
+    return cmd_verify_token(a)
+  File "F:\TanitAD-scratch\actrsp\launch\pkg\actrsp_check.py", line 833, in cmd_verify_token
+    tok = json.load(open(a["token"], encoding="utf-8"))
+                    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/st_normal/pilot/gate_token.json'
+FAIL: the pilot token binds commit and argv
+grep: C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/st_normal/pilot/CLEANUP.json: No such file or directory
+FAIL: pilot deletions are logged (path, bytes) and banked
+FAIL: RSP_s0 banked with BANK.done and the six evidence files
+sha256sum: 'C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/pulls_normal/actrsp_RSP_s0/ckpt_last.pt': No such file or directory
+sha256sum: 'C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/box_normal/D/tanitad/runs/v8f_actrsp/RSP_s0/ckpt_last.pt': No such file or directory
+Traceback (most recent call last):
+  File "F:\TanitAD-scratch\actrsp\launch\pkg\actrsp_check.py", line 973, in <module>
+    sys.exit(main(sys.argv[1:]))
+             ~~~~^^^^^^^^^^^^^^
+  File "F:\TanitAD-scratch\actrsp\launch\pkg\actrsp_check.py", line 963, in main
+    return cmd_verify_token(a)
+  File "F:\TanitAD-scratch\actrsp\launch\pkg\actrsp_check.py", line 833, in cmd_verify_token
+    tok = json.load(open(a["token"], encoding="utf-8"))
+                    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/pulls_normal/actrsp_RSP_s0/gate_token.json'
+FAIL: RSP_s0 token binds the commit and the argv
+grep: C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/pulls_normal/actrsp_RSP_s0/RUN.done: No such file or directory
+FAIL: RSP_s0 RUN.done carries the weights identity (non-WM tensors equal, every optimiser parameter has Adam state, rsp-from-log identity read)
+FAIL: RSP_s0 gate dir on the box deleted, the checkpoint kept
+grep: C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/pulls_normal/actrsp_RSP_s0/CLEANUP.json: No such file or directory
+grep: C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/pulls_normal/actrsp_RSP_s0/CLEANUP.json: No such file or directory
+FAIL: RSP_s0 cleanup logged (path, bytes) in the bank
+FAIL: RSP_s2 banked with BANK.done and the six evidence files
+sha256sum: 'C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/pulls_normal/actrsp_RSP_s2/ckpt_last.pt': No such file or directory
+sha256sum: 'C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/box_normal/D/tanitad/runs/v8f_actrsp/RSP_s2/ckpt_last.pt': No such file or directory
+Traceback (most recent call last):
+  File "F:\TanitAD-scratch\actrsp\launch\pkg\actrsp_check.py", line 973, in <module>
+    sys.exit(main(sys.argv[1:]))
+             ~~~~^^^^^^^^^^^^^^
+  File "F:\TanitAD-scratch\actrsp\launch\pkg\actrsp_check.py", line 963, in main
+    return cmd_verify_token(a)
+  File "F:\TanitAD-scratch\actrsp\launch\pkg\actrsp_check.py", line 833, in cmd_verify_token
+    tok = json.load(open(a["token"], encoding="utf-8"))
+                    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/pulls_normal/actrsp_RSP_s2/gate_token.json'
+FAIL: RSP_s2 token binds the commit and the argv
+grep: C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/pulls_normal/actrsp_RSP_s2/RUN.done: No such file or directory
+FAIL: RSP_s2 RUN.done carries the weights identity (non-WM tensors equal, every optimiser parameter has Adam state, rsp-from-log identity read)
+FAIL: RSP_s2 gate dir on the box deleted, the checkpoint kept
+grep: C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/pulls_normal/actrsp_RSP_s2/CLEANUP.json: No such file or directory
+grep: C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/pulls_normal/actrsp_RSP_s2/CLEANUP.json: No such file or directory
+FAIL: RSP_s2 cleanup logged (path, bytes) in the bank
+FAIL: NULL_s4 banked with BANK.done and the six evidence files
+sha256sum: 'C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/pulls_normal/actrsp_NULL_s4/ckpt_last.pt': No such file or directory
+sha256sum: 'C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/box_normal/D/tanitad/runs/v8f_actrsp/NULL_s4/ckpt_last.pt': No such file or directory
+Traceback (most recent call last):
+  File "F:\TanitAD-scratch\actrsp\launch\pkg\actrsp_check.py", line 973, in <module>
+    sys.exit(main(sys.argv[1:]))
+             ~~~~^^^^^^^^^^^^^^
+  File "F:\TanitAD-scratch\actrsp\launch\pkg\actrsp_check.py", line 963, in main
+    return cmd_verify_token(a)
+  File "F:\TanitAD-scratch\actrsp\launch\pkg\actrsp_check.py", line 833, in cmd_verify_token
+    tok = json.load(open(a["token"], encoding="utf-8"))
+                    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/pulls_normal/actrsp_NULL_s4/gate_token.json'
+FAIL: NULL_s4 token binds the commit and the argv
+grep: C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/pulls_normal/actrsp_NULL_s4/RUN.done: No such file or directory
+FAIL: NULL_s4 RUN.done carries the weights identity (non-WM tensors equal, every optimiser parameter has Adam state, rsp-from-log identity read)
+FAIL: NULL_s4 gate dir on the box deleted, the checkpoint kept
+grep: C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/pulls_normal/actrsp_NULL_s4/CLEANUP.json: No such file or directory
+grep: C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/pulls_normal/actrsp_NULL_s4/CLEANUP.json: No such file or directory
+FAIL: NULL_s4 cleanup logged (path, bytes) in the bank
+FAIL: RSP_s1 banked with BANK.done and the six evidence files
+sha256sum: 'C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/pulls_normal/actrsp_RSP_s1/ckpt_last.pt': No such file or directory
+sha256sum: 'C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/box_normal/D/tanitad/runs/v8f_actrsp/RSP_s1/ckpt_last.pt': No such file or directory
+Traceback (most recent call last):
+  File "F:\TanitAD-scratch\actrsp\launch\pkg\actrsp_check.py", line 973, in <module>
+    sys.exit(main(sys.argv[1:]))
+             ~~~~^^^^^^^^^^^^^^
+  File "F:\TanitAD-scratch\actrsp\launch\pkg\actrsp_check.py", line 963, in main
+    return cmd_verify_token(a)
+  File "F:\TanitAD-scratch\actrsp\launch\pkg\actrsp_check.py", line 833, in cmd_verify_token
+    tok = json.load(open(a["token"], encoding="utf-8"))
+                    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/pulls_normal/actrsp_RSP_s1/gate_token.json'
+FAIL: RSP_s1 token binds the commit and the argv
+grep: C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/pulls_normal/actrsp_RSP_s1/RUN.done: No such file or directory
+FAIL: RSP_s1 RUN.done carries the weights identity (non-WM tensors equal, every optimiser parameter has Adam state, rsp-from-log identity read)
+FAIL: RSP_s1 gate dir on the box deleted, the checkpoint kept
+grep: C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/pulls_normal/actrsp_RSP_s1/CLEANUP.json: No such file or directory
+grep: C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/pulls_normal/actrsp_RSP_s1/CLEANUP.json: No such file or directory
+FAIL: RSP_s1 cleanup logged (path, bytes) in the bank
+FAIL: RSP_s3 banked with BANK.done and the six evidence files
+sha256sum: 'C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/pulls_normal/actrsp_RSP_s3/ckpt_last.pt': No such file or directory
+sha256sum: 'C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/box_normal/D/tanitad/runs/v8f_actrsp/RSP_s3/ckpt_last.pt': No such file or directory
+Traceback (most recent call last):
+  File "F:\TanitAD-scratch\actrsp\launch\pkg\actrsp_check.py", line 973, in <module>
+    sys.exit(main(sys.argv[1:]))
+             ~~~~^^^^^^^^^^^^^^
+  File "F:\TanitAD-scratch\actrsp\launch\pkg\actrsp_check.py", line 963, in main
+    return cmd_verify_token(a)
+  File "F:\TanitAD-scratch\actrsp\launch\pkg\actrsp_check.py", line 833, in cmd_verify_token
+    tok = json.load(open(a["token"], encoding="utf-8"))
+                    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/pulls_normal/actrsp_RSP_s3/gate_token.json'
+FAIL: RSP_s3 token binds the commit and the argv
+grep: C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/pulls_normal/actrsp_RSP_s3/RUN.done: No such file or directory
+FAIL: RSP_s3 RUN.done carries the weights identity (non-WM tensors equal, every optimiser parameter has Adam state, rsp-from-log identity read)
+FAIL: RSP_s3 gate dir on the box deleted, the checkpoint kept
+grep: C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/pulls_normal/actrsp_RSP_s3/CLEANUP.json: No such file or directory
+grep: C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/pulls_normal/actrsp_RSP_s3/CLEANUP.json: No such file or directory
+FAIL: RSP_s3 cleanup logged (path, bytes) in the bank
+FAIL: NULL_s5 banked with BANK.done and the six evidence files
+sha256sum: 'C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/pulls_normal/actrsp_NULL_s5/ckpt_last.pt': No such file or directory
+sha256sum: 'C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/box_normal/D/tanitad/runs/v8f_actrsp/NULL_s5/ckpt_last.pt': No such file or directory
+Traceback (most recent call last):
+  File "F:\TanitAD-scratch\actrsp\launch\pkg\actrsp_check.py", line 973, in <module>
+    sys.exit(main(sys.argv[1:]))
+             ~~~~^^^^^^^^^^^^^^
+  File "F:\TanitAD-scratch\actrsp\launch\pkg\actrsp_check.py", line 963, in main
+    return cmd_verify_token(a)
+  File "F:\TanitAD-scratch\actrsp\launch\pkg\actrsp_check.py", line 833, in cmd_verify_token
+    tok = json.load(open(a["token"], encoding="utf-8"))
+                    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/pulls_normal/actrsp_NULL_s5/gate_token.json'
+FAIL: NULL_s5 token binds the commit and the argv
+grep: C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/pulls_normal/actrsp_NULL_s5/RUN.done: No such file or directory
+FAIL: NULL_s5 RUN.done carries the weights identity (non-WM tensors equal, every optimiser parameter has Adam state, rsp-from-log identity read)
+FAIL: NULL_s5 gate dir on the box deleted, the checkpoint kept
+grep: C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/pulls_normal/actrsp_NULL_s5/CLEANUP.json: No such file or directory
+grep: C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/pulls_normal/actrsp_NULL_s5/CLEANUP.json: No such file or directory
+FAIL: NULL_s5 cleanup logged (path, bytes) in the bank
+cat: 'C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/pulls_normal/actrsp_*/gate_token.json': No such file or directory
+FAIL: the six tokens bind six distinct argvs
+FAIL: run order in chain.log: RSP_s0, RSP_s2, NULL_s4, RSP_s1, RSP_s3, NULL_s5
+ls: cannot access 'C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/box_normal/D/tanitad/runs/v8f_actrsp': No such file or directory
+FAIL: only the six runs exist on the box (own folders only)
+FAIL: the box saw only stub traffic and no unknown command
+FAIL: disk was read before every stage (>= 8 reads: ship, pilot, six runs)
+FAIL: own tree exists with the trainer and TIP_ACTRSP.txt
+FAIL: a second chain run skips finished stages
+== 2 the box-side pin refuses a changed token (checker run directly on the fake box, no transport)
+cp: cannot stat 'C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/box_normal/D/tanitad/actrsp/runs/RSP_s0/argv.txt': No such file or directory
+sed: can't read C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/box_normal/D/tanitad/actrsp/runs/RSP_s0/argv.txt: No such file or directory
+FAIL: a changed seed token is refused (rc 3) and the first differing token is named
+cp: cannot stat 'C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/argv.keep': No such file or directory
+== 3 predecessor (OTBAND chain) not ended / stopped, box held, GPU not idle, python running
+FAIL: a finished predecessor, GPU busy (9000 MiB) refuses the pilot (rc 12), nothing trained
+FAIL: 3,600 MiB used (above the 3,500 limit) refuses the pilot (rc 12)
+FAIL: a python process on box 2 refuses the pilot (rc 12)
+== 4 disk gate
+FAIL: 1 GB free: ship passes (1 GB), the pilot stops with the disk-low code (rc 6)
+== 5 projected total above 72 h
+FAIL: pilot at 6.0 s/step: the chain stops at the 72 h rule (rc 3), no run started
+FAIL: an amendment naming another pilot is refused (rc 3)
+sha256sum: 'C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/st_slow/pilot/PILOT.verified.json': No such file or directory
+FAIL: an amendment binding this pilot and commit lets the six runs go (rc 0)
+== 6 gate refusals (BUILT levers planted wrong in the stand-in trainer)
+FAIL: the built stack holds the old IDM weights: the pilot's gate of RSP_s0 refuses (rc 4), the stop line names the read-back
+FAIL: the built dataset reads the other seed's latent cache: refused (rc 4)
+FAIL: a full-length steps_total that is not 19,164 is refused at the pilot (rc 4), before the 72 h decision
+FAIL: an arm-specific gate refusal (RSP_s3: the built loss weight is 0) ends the chain with rc 4 but the other arms ran
+FAIL: the independent arms after it were banked, the refused one was not trained
+head: cannot open 'C:/Users/Admin/AppData/Local/Temp/actrsp_dry_run_594417/st_garm/ARM_REFUSED_RSP_s3.txt' for reading: No such file or directory
+FAIL: the refusal sentinel is in its own file
+== 7 failures after the gate stop the chain (no next arm)
+FAIL: a frozen tensor that moved is a post-check failure: chain stops (rc 5)
+FAIL: the failed arm is not banked and NULL_s5 never started; the four earlier arms are banked
+FAIL: the checkpoint of the failed arm stays on the box (never deleted)
+FAIL: a trainer crash stops the chain (rc 5) before the next arm
+FAIL: a run whose optimiser holds a parameter with no Adam state is a post-check failure (rc 5)
+FAIL: a put that arrives altered is caught by the re-hash on box 2 (rc 5), nothing runs
+== 8 commit, tag and package refusals
+== 9 transport variable unset, relative, absent, the wrong kind, or test mode with a real client (fail closed)
+== 10 hygiene
+DRYRUN ok=45 failed=65
+ZZ DRYRUN-END rc=1 ZZ

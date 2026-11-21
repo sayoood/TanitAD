@@ -1,0 +1,27 @@
+RED the 5-way lat_cls accepted as the D1-HO label | expected: test_kinematic_label_accuracy_not_five_way
+RED the driver reads the 5-way lat_cls instead of read_otband.labels | expected: test_driver_reads_the_kinematic_label
+RED the bar dropped to 0.0383 | expected: test_bar_is_the_larger_of_the_rig_floor_and_f_ho
+RED the bar dropped to 0.0383 (gain rule reads the rig floor) | expected: test_d1_ho_gain_rule_on_planted_windows
+RED N1D read against the wrong seed | expected: test_pairing_is_same_seed
+RED gain without the positive lower bound | expected: test_d1_ho_gain_rule_on_planted_windows
+RED F_HO not absolute | expected: test_f_ho_is_the_absolute_mean_difference_of_the_pair
+RED Z-EVAL exact-zero comparison dropped | expected: test_z_eval_exact_zero_and_mask
+RED Z-EVAL mask ignored | expected: test_z_eval_exact_zero_and_mask
+RED K-CONST compares against the wrong share | expected: test_k_const_and_k_floor
+RED K-FLOOR vacuous | expected: test_k_const_and_k_floor
+RED K1 self-pair accepts a non-degenerate interval | expected: test_d1_ho_uses_the_bar_it_is_given_and_reads_a_self_pair_as_zero
+RED RBD-GAIN: N1Dx dropped | expected: test_outcome_gain_needs_every_condition
+RED RBD-GAIN: Z-USE dropped | expected: test_outcome_gain_needs_every_condition
+RED RBD-GAIN: the guard at seed 1 dropped | expected: test_outcome_gain_needs_every_condition
+RED N1Dx gain does not stand the labels down | expected: test_outcome_gain_needs_every_condition
+RED RBD-ONE-SEED: reads at least one seed | expected: test_outcome_gain_needs_every_condition
+RED RBD-NO-GAIN: Z-USE at one seed enough | expected: test_outcome_no_gain_unread_costs_floor_high
+RED RBD-UNREAD on one unread seed | expected: test_outcome_no_gain_unread_costs_floor_high
+RED RBD-COSTS: any guard cell, not the same cell at both seeds | expected: test_outcome_no_gain_unread_costs_floor_high
+RED RBD-FLOOR-HIGH without the rig-floor condition | expected: test_outcome_floor_high_needs_f_above_the_rig_floor
+RED a missing input reads as a pass (no NOT-YET) | expected: test_outcome_missing_input_is_not_yet_never_a_pass
+RED a missing N1Dx not listed | expected: test_outcome_missing_input_is_not_yet_never_a_pass
+RED the zero twin dumped with the channel on | expected: test_t1_argv_follow_and_zero_twin
+RED the feat dropped from the dump argv | expected: test_t1_argv_follow_and_zero_twin
+RED the RB table pin not checked | expected: test_dump_wrapper_uses_the_rbd_script_and_refuses_a_wrong_rb_table
+26 mutations, 26 as expected

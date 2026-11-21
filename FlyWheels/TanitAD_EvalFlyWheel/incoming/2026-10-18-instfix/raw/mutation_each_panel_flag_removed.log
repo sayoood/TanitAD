@@ -1,0 +1,37 @@
+### units (-k test_j or test_k or test_l or test_m)
+.......s....s............F                                               [100%]
+================================== FAILURES ===================================
+_ test_m6_live_caller_run_hierarchy_panel_rollout_states_the_unit_and_the_recover_branch_does_not _
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5377/test_m6_live_caller_run_hierar0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002143BA8F850>
+
+    def test_m6_live_caller_run_hierarchy_panel_rollout_states_the_unit_and_the_recover_branch_does_not(tmp_path, monkeypatch):
+        import argparse
+        panel = _load_module(_PANEL_PATH, "_instfix_panel_live")
+        try:
+            cmds = []
+            monkeypatch.setattr(panel, "run", lambda cmd, dry: cmds.append(list(cmd)) or 0)
+            monkeypatch.setattr(panel, "record_ok", lambda path: (False, "absent"))
+            a = argparse.Namespace(workdir=str(tmp_path), ckpt="c.pt", episodes="e", labels="l", episodes_n=0)
+            panel.roll("FULL", ["--with-navflip"], a, dry=False)                           # a ROLLOUT: no dump exists yet
+>           assert len(cmds) == 1 and cmds[0][cmds[0].index("--action-units") + 1] == "steer", cmds
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           ValueError: '--action-units' is not in list
+
+tests\test_refav1_units_required.py:1560: ValueError
+---------------------------- Captured stdout call -----------------------------
+  [ROLL  ] FULL
+  [FAIL  ] FULL: exit 0, record absent
+=========================== short test summary info ===========================
+FAILED tests/test_refav1_units_required.py::test_m6_live_caller_run_hierarchy_panel_rollout_states_the_unit_and_the_recover_branch_does_not
+1 failed, 23 passed, 2 skipped, 121 deselected in 16.62s
+
+### internal_t1 (full)
+.....s...                                                                [100%]
+8 passed, 1 skipped in 0.99s
+
+### chain_controls (full)
+..................................                                       [100%]
+34 passed in 1.99s
+

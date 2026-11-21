@@ -1,0 +1,14 @@
+..............................................F..........                [100%]
+================================== FAILURES ===================================
+____________________ test_pair_positive_needs_both_levels _____________________
+
+    def test_pair_positive_needs_both_levels():
+        assert B.compact_pair(_fake(1.0, 2.0, 0.5, 2.5))["positive"] is True
+>       assert B.compact_pair(_fake(1.0, 2.0, -0.5, 2.5))["positive"] is False      # log level separated, drive level straddles 0
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       assert True is False
+
+tests\test_navsim_bars8.py:302: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_navsim_bars8.py::test_pair_positive_needs_both_levels - ass...
+1 failed, 56 passed, 2 deselected in 27.54s

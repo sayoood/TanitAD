@@ -1,0 +1,8 @@
+# HANDOFF (ego_dagger_compose) -- written 2026-10-28 ~00:30
+The CHANGE IS DONE and green on the new tests (see NOTES.md). Detached WMI pipelines (survive the agent) are producing the rest; nothing needs the model until they finish:
+* `pipe_suites.sh` -> existing suites + new file, ONE at a time, logs `F:/TanitAD-scratch/compose_tmp/logs/suite_<file>.log`, progress `suites_progress.txt` (order: new file, ego_perturb, dagger_train, dagger, init_ckpt_o_interface, launch_gate_v8f, orc_chain).
+* `pipe_mut.sh` -> `run_mutations.py` on the copy `F:/TanitAD-scratch/compose_mut` (16 mutants + a control per -k selection) -> `mutation.txt` here.
+* `pipe_final.sh` -> when both are done: `assemble.py` writes `RESULTS.md` (suite counts, mutation table, sha256), refreshes `stage/`, `diff.patch`, `logs/`, then `FINISHED.txt`.
+Next step for a fresh (Haiku-class) agent: wait for `FINISHED.txt` here; read `RESULTS.md`; every suite must read `passed` with 0 failed (the ego_perturb file has 2 skipped by design); every mutant must read RED (killed); controls GREEN.
+If a suite or mutant fails: do NOT edit blindly -- the work tree is `F:/TanitAD-scratch/compose_tree` (trainer `stack/scripts/v8f_mini_train.py`, data `stack/tanitad/data/v8f_mini_data.py`, tests `stack/tests/test_v8f_ego_dagger_compose.py`); re-run `bash F:/TanitAD-scratch/compose_tmp/stage.sh` after any edit and refresh the three files in `compose_mut` + `compose_tmp/pristine/`.
+Rules: pytest only when `C:/Python314/python.exe C:/Users/Admin/orcread/pytest_runs.py` < 2; venv python `C:/Users/Admin/venvs/tanitad/Scripts/python.exe`; no git add/commit/push; never box 2.

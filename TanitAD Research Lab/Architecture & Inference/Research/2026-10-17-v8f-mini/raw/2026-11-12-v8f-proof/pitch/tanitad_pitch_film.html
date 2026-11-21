@@ -1,0 +1,790 @@
+<title>TanitAD Pitch Film</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+:root{
+  color-scheme:dark;
+  --bg0:#05080f; --bg1:#0a1120; --panel:#0e1627; --line:#1d2940; --line2:#2b3b5a;
+  --ink:#f2f5fa; --soft:#c5cedd; --dim:#8593ab;
+  --amber:#ffb627; --cyan:#3ec9ff; --green:#34d399; --red:#ff5d5d; --violet:#a796ff;
+  --display:Bahnschrift,"Barlow Semi Condensed","DIN Alternate","Segoe UI",system-ui,sans-serif;
+  --text:"Segoe UI Variable Text","Segoe UI",Inter,system-ui,sans-serif;
+}
+body{background:var(--bg0);color:var(--ink);font-family:var(--text)}
+#wrap{max-width:1280px;margin:0 auto;padding-block:20px 32px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+#fit{position:relative;width:100%;aspect-ratio:16/9;max-width:100%;overflow:hidden;border-radius:12px;background:var(--bg0);box-shadow:0 0 0 1px var(--line)}
+#stage{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0;overflow:hidden;background:var(--bg0);font-size:30px;line-height:1.35}
+.render #wrap{max-width:none;padding:0;margin:0}
+.render #fit{width:1920px;height:1080px;border-radius:0;box-shadow:none;aspect-ratio:auto}
+.render #ctl,.render #below{display:none}
+#stage *{box-sizing:border-box}
+#stage p{margin:0}
+#bg{position:absolute;inset:0;background:
+  radial-gradient(1300px 760px at 80% -12%, rgba(62,201,255,.11), transparent 62%),
+  radial-gradient(1100px 640px at 6% 112%, rgba(255,182,39,.10), transparent 60%),
+  linear-gradient(180deg,#070b15 0%,#05080f 100%)}
+#grain{position:absolute;inset:0;opacity:.055;pointer-events:none}
+.abs{position:absolute}
+.sc{position:absolute;inset:0;opacity:0;display:none}
+.h1{font:600 100px/1.04 var(--display);font-stretch:88%;letter-spacing:-.005em;margin:0;text-wrap:balance}
+.h2{font:600 68px/1.08 var(--display);font-stretch:88%;margin:0;text-wrap:balance}
+.h3{font:600 42px/1.14 var(--display);font-stretch:90%;margin:0}
+.lead{font:400 38px/1.34 var(--text);color:var(--soft);margin:0}
+.body{font:400 30px/1.38 var(--text);color:var(--soft);margin:0}
+.note{font:400 25px/1.4 var(--text);color:var(--dim);margin:0}
+.amber{color:var(--amber)} .cyan{color:var(--cyan)} .green{color:var(--green)} .red{color:var(--red)} .violet{color:var(--violet)} .dim{color:var(--dim)} .ink{color:var(--ink)}
+.w{display:inline-block}
+.card{background:rgba(255,255,255,.035);border:1px solid var(--line2);border-radius:22px;padding:30px 34px}
+.chip{display:inline-flex;align-items:center;gap:12px;font:600 23px/1 var(--display);letter-spacing:.07em;text-transform:uppercase;padding:13px 20px 11px;border-radius:999px;border:1.5px solid currentColor;white-space:nowrap}
+.big{font:700 190px/.9 var(--display);font-stretch:84%;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.mid{font:700 104px/.95 var(--display);font-stretch:86%;font-variant-numeric:tabular-nums}
+.wm{font:700 150px/1 var(--display);letter-spacing:.14em}
+.bar{transform-origin:left center}
+.vbar{transform-origin:center bottom}
+svg{overflow:visible}
+.st{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.dr{stroke-dasharray:1;stroke-dashoffset:1}
+/* hud */
+#brand{left:140px;top:58px;font:700 30px/1 var(--display);letter-spacing:.2em;opacity:0}
+#kick span{position:absolute;right:140px;top:60px;font:600 24px/1 var(--display);letter-spacing:.16em;text-transform:uppercase;color:var(--amber);opacity:0;white-space:nowrap}
+#prog{left:140px;top:1034px;width:1640px;height:2px;opacity:0}
+#progline{position:absolute;inset:0;background:var(--line2)}
+#progfill{position:absolute;inset:0;background:var(--amber);transform-origin:left center}
+#prog i{position:absolute;top:-5px;width:2px;height:12px;background:var(--line2)}
+#progcar{position:absolute;left:-13px;top:-6px;width:26px;height:14px;border-radius:5px;background:var(--amber);box-shadow:0 0 18px 4px rgba(255,182,39,.45)}
+/* scene pieces */
+.s1card{width:410px;height:250px;padding:28px 30px}
+#stage .s1card .h3{margin-bottom:12px}
+.s1card .body{font-size:28px}
+.node{width:160px;text-align:center;font:500 26px/1.25 var(--text);color:var(--soft)}
+.node svg{display:block;margin:0 auto 14px}
+.pipe{width:56px;height:3px;background:var(--line2);transform-origin:left center}
+.blackbox{width:290px;height:290px;border-radius:30px;background:#02040a;border:1.5px solid var(--line2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+.blackbox b{font:700 150px/1 var(--display);color:var(--dim)}
+.blackbox span{font:500 26px/1.2 var(--text);color:var(--soft)}
+.row2{display:grid;grid-template-columns:470px 110px 1fr;align-items:center;height:112px;border-bottom:1px solid var(--line)}
+.row2 .old{position:relative;justify-self:start;font:500 36px/1 var(--display);font-stretch:90%;color:var(--dim)}
+.row2 .old i{position:absolute;left:-6px;right:-6px;top:52%;height:3px;background:var(--red);transform-origin:left center}
+.row2 .new{font:600 40px/1.15 var(--display);font-stretch:90%}
+.lvl{position:relative;width:780px;height:150px;padding:22px 30px 22px 44px;display:grid;grid-template-columns:1fr auto;align-items:center;column-gap:20px}
+.lvl:before{content:"";position:absolute;left:0;top:18px;bottom:18px;width:6px;border-radius:3px;background:currentColor}
+.lvl p.q{font:400 27px/1.3 var(--text);color:var(--soft);margin-top:6px}
+.lvl .hz{font:600 22px/1 var(--display);letter-spacing:.07em;text-transform:uppercase;padding:11px 16px 9px;border-radius:999px;border:1.5px solid currentColor;white-space:nowrap}
+.cellgrid{display:grid;gap:5px}
+.cellgrid i{display:block;border-radius:6px;background:#13203a}
+.panel3{width:500px}
+#stage .panel3 .cap{font:600 24px/1.2 var(--display);letter-spacing:.07em;text-transform:uppercase;color:var(--dim);margin-bottom:18px}
+.bet{display:grid;grid-template-columns:120px 1fr;align-items:center;height:118px;border-bottom:1px solid var(--line)}
+.bet b{font:700 84px/1 var(--display);font-stretch:84%;color:var(--amber)}
+.bet span{font:500 39px/1.18 var(--display);font-stretch:90%}
+.step{width:380px;height:236px}
+.step .n{font:700 24px/1 var(--display);letter-spacing:.14em;color:var(--amber)}
+#stage .step .h3{margin:14px 0 8px}
+.step p.d{font:400 25px/1.35 var(--text);color:var(--soft);margin:0}
+.cnt{width:400px}
+.cnt .mid{display:block}
+#stage .cnt p{font:400 26px/1.3 var(--text);color:var(--soft);margin:10px 0 0}
+.hb{margin-bottom:34px}
+#stage .hb .lab{font:500 29px/1.2 var(--text);color:var(--soft);margin-bottom:10px}
+.hb .trk{position:relative;height:46px;width:1000px;background:rgba(255,255,255,.04);border-radius:8px}
+.hb .fill{position:absolute;left:0;top:0;bottom:0;border-radius:8px}
+.hb .val{position:absolute;top:3px;font:700 34px/40px var(--display);white-space:nowrap}
+.vb{position:absolute;bottom:0;border-radius:10px 10px 0 0}
+.vl{position:absolute;text-align:center;font:500 25px/1.25 var(--text);color:var(--soft)}
+.vv{position:absolute;text-align:center;font:700 36px/1 var(--display)}
+.axis{position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--line2)}
+.tile{width:392px;height:330px}
+.tile .mid{display:block;margin-bottom:18px;white-space:nowrap}
+.tile .mid small{font-size:46px;font-weight:600;letter-spacing:0}
+#stage .tile p{font:400 27px/1.38 var(--text);color:var(--soft)}
+.sr{display:grid;grid-template-columns:90px 1fr 330px;align-items:center;height:108px;border-bottom:1px solid var(--line)}
+.sr b{font:700 60px/1 var(--display);color:var(--dim)}
+.sr .t{font:600 36px/1.15 var(--display);font-stretch:90%}
+#stage .sr .d{font:400 25px/1.3 var(--text);color:var(--dim);margin-top:6px}
+.sr .chip{justify-self:end}
+.ms{position:absolute;width:330px}
+.ms .t{font:600 31px/1.12 var(--display);font-stretch:90%}
+#stage .ms .d{font:400 24px/1.3 var(--text);color:var(--dim);margin-top:5px}
+/* player */
+#ctl{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:14px}
+#ctl button{font:600 15px/1 var(--text);color:var(--ink);background:var(--panel);border:1px solid var(--line2);border-radius:8px;padding:10px 14px;cursor:pointer}
+#ctl button:hover{border-color:var(--amber)}
+#seek{flex:1 1 220px;min-width:0;accent-color:var(--amber)}
+#time{font:500 14px/1 var(--text);color:var(--dim);font-variant-numeric:tabular-nums}
+#below{margin-top:18px;color:var(--dim);font:400 14px/1.55 var(--text)}
+#chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
+#chips button{font:500 13px/1 var(--text);color:var(--soft);background:transparent;border:1px solid var(--line2);border-radius:999px;padding:8px 12px;cursor:pointer}
+#chips button:hover{color:var(--amber);border-color:var(--amber)}
+#below p{margin:0;max-width:70ch}
+</style>
+
+<div id="wrap">
+<div id="fit"><div id="stage">
+<div id="bg"></div>
+
+<svg id="hero" class="abs" viewBox="0 0 1920 1080" width="1920" height="1080" style="left:0;top:0;opacity:0">
+  <defs>
+    <radialGradient id="hg" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#ffb627" stop-opacity=".5"/><stop offset=".42" stop-color="#ff8a27" stop-opacity=".14"/><stop offset="1" stop-color="#ff8a27" stop-opacity="0"/></radialGradient>
+    <linearGradient id="rg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0d1526"/><stop offset="1" stop-color="#060a13"/></linearGradient>
+  </defs>
+  <g id="stars"></g>
+  <ellipse cx="960" cy="640" rx="940" ry="150" fill="url(#hg)"/>
+  <rect x="0" y="640" width="1920" height="440" fill="#04070d"/>
+  <polygon points="925,640 995,640 2320,1080 -400,1080" fill="url(#rg)"/>
+  <line x1="925" y1="640" x2="-400" y2="1080" stroke="#ffb627" stroke-opacity=".4" stroke-width="3"/>
+  <line x1="995" y1="640" x2="2320" y2="1080" stroke="#ffb627" stroke-opacity=".4" stroke-width="3"/>
+  <g id="dashes"></g>
+  <rect x="0" y="639" width="1920" height="2" fill="#ffb627" opacity=".3"/>
+</svg>
+
+<!-- S0 opening -->
+<section class="sc" id="s0">
+  <div class="abs" style="left:140px;top:170px;width:1640px">
+    <p class="h1 split" id="s0a">A good driver does not memorise the road.</p>
+    <p class="h1 split amber" id="s0b" style="margin-top:20px">A good driver understands it.</p>
+  </div>
+  <div class="abs" style="left:140px;top:170px;width:1640px">
+    <div class="wm" id="s0wm">TANIT<span class="amber">AD</span></div>
+    <p class="h2 split" id="s0l" style="margin-top:30px;max-width:1380px">A driving intelligence that understands, foresees — and can be proven.</p>
+    <p class="note" id="s0n" style="margin-top:30px">Research programme · status report · November 2026</p>
+  </div>
+</section>
+
+<!-- S1 problem -->
+<section class="sc" id="s1">
+  <p class="h2 abs split" style="left:140px;top:160px;width:1500px">Today, most self-driving systems learn by imitation — at enormous scale.</p>
+  <div class="abs" id="s1flow" style="left:140px;top:470px;width:760px;display:flex;align-items:center;gap:10px">
+    <div class="node" id="s1n1"><svg width="84" height="64" viewBox="0 0 84 64"><rect x="4" y="12" width="56" height="40" rx="8" class="st" stroke="#8593ab" stroke-width="3"/><path d="M60 26l20-10v32l-20-10z" class="st" stroke="#8593ab" stroke-width="3"/></svg>camera images</div>
+    <div class="pipe" id="s1p1"></div>
+    <div class="blackbox" id="s1box"><b>?</b><span>one large network</span></div>
+    <div class="pipe" id="s1p2"></div>
+    <div class="node" id="s1n2"><svg width="72" height="72" viewBox="0 0 72 72"><circle cx="36" cy="36" r="30" class="st" stroke="#8593ab" stroke-width="3"/><circle cx="36" cy="36" r="7" class="st" stroke="#8593ab" stroke-width="3"/><path d="M8 30c16-6 40-6 56 0M36 43v22" class="st" stroke="#8593ab" stroke-width="3"/></svg>steering, braking</div>
+  </div>
+  <div class="abs" style="left:930px;top:380px;width:850px;display:grid;grid-template-columns:410px 410px;gap:28px 30px">
+    <div class="card s1card"><p class="h3 red">Data-hungry</p><p class="body">They need vast amounts of recorded driving.</p></div>
+    <div class="card s1card"><p class="h3 red">Opaque</p><p class="body">Their reasons cannot be read.</p></div>
+    <div class="card s1card"><p class="h3 red">Blind to their limits</p><p class="body">They do not know when they are wrong.</p></div>
+    <div class="card s1card"><p class="h3 red">Costly to run</p><p class="body">They need heavy computers on board.</p></div>
+  </div>
+  <p class="lead abs ink" id="s1f" style="left:140px;top:944px;width:1640px">Scale alone does not produce understanding — or proof.</p>
+</section>
+
+<!-- S2 goal -->
+<section class="sc" id="s2">
+  <p class="h2 abs split" style="left:140px;top:160px;width:1500px">Our goal: one compact driving brain that answers all four.</p>
+  <div class="abs" id="s2rows" style="left:140px;top:350px;width:1640px">
+    <div class="row2"><span class="old">Data-hungry<i></i></span><span class="arr amber">&#8594;</span><span class="new">Learns from a fraction of the data</span></div>
+    <div class="row2"><span class="old">Opaque<i></i></span><span class="arr amber">&#8594;</span><span class="new">Shows what it sees and what it expects</span></div>
+    <div class="row2"><span class="old">Blind to its limits<i></i></span><span class="arr amber">&#8594;</span><span class="new">Guarded by rules that are mathematically proven</span></div>
+    <div class="row2"><span class="old">Costly to run<i></i></span><span class="arr amber">&#8594;</span><span class="new">One in-car computer. A tenth of a second to answer.</span></div>
+  </div>
+  <div class="card abs" id="s2p" style="left:140px;top:850px;width:1640px;padding:26px 34px"><p class="lead"><span class="amber">Our design principle:</span> drive at every level of thinking — and make every level accountable.</p></div>
+</section>
+
+<!-- S3a idea: levels -->
+<section class="sc" id="s3">
+  <p class="h2 abs split" style="left:140px;top:150px;width:1640px">Think the way a good driver thinks: on several time scales at once.</p>
+  <div class="abs" id="s3cards" style="left:140px;top:340px;display:grid;gap:16px">
+    <div class="card lvl violet"><div><p class="h3">The navigator</p><p class="q">Where am I going?</p></div><span class="hz">next half minute</span></div>
+    <div class="card lvl amber"><div><p class="h3">The decision maker</p><p class="q">Follow, stop, turn, or change lane?</p></div><span class="hz">next six seconds</span></div>
+    <div class="card lvl cyan"><div><p class="h3">The pilot</p><p class="q">How exactly do I steer and brake?</p></div><span class="hz">next two seconds</span></div>
+    <div class="card lvl green"><div><p class="h3">The guardian</p><p class="q">Hard rules that always win.</p></div><span class="hz">always on</span></div>
+  </div>
+  <svg class="abs" id="s3road" style="left:1010px;top:330px" width="770" height="660" viewBox="0 0 770 660">
+    <rect x="0" y="40" width="770" height="130" fill="#0c1424"/>
+    <rect x="270" y="40" width="250" height="620" fill="#0c1424"/>
+    <path d="M395 170V660" class="st" stroke="#2b3b5a" stroke-width="4" stroke-dasharray="26 24"/>
+    <path d="M0 105H270M520 105H770" class="st" stroke="#2b3b5a" stroke-width="4" stroke-dasharray="26 24"/>
+    <rect id="s3other" x="430" y="330" width="56" height="96" rx="12" fill="#3a4866"/>
+    <path id="s3nav" class="st dr" pathLength="1" d="M332 300V150Q332 105 280 105H40" stroke="#a796ff" stroke-width="7"/>
+    <path id="s3dec" class="st dr" pathLength="1" d="M458 560C458 470 332 470 332 380V300" stroke="#ffb627" stroke-width="9"/>
+    <path id="s3pil" class="st dr" pathLength="1" d="M458 590V520" stroke="#3ec9ff" stroke-width="13"/>
+    <g id="s3car"><rect x="430" y="570" width="56" height="96" rx="12" fill="#05080f" stroke="#3ec9ff" stroke-width="4"/><rect x="440" y="584" width="36" height="22" rx="5" fill="#3ec9ff" opacity=".5"/></g>
+    <g font-family="Bahnschrift,'Barlow Semi Condensed',sans-serif" font-weight="600" font-size="24" letter-spacing="1.5">
+      <text id="s3t1" x="540" y="566" fill="#3ec9ff">2 SECONDS</text>
+      <text id="s3t2" x="540" y="420" fill="#ffb627">6 SECONDS</text>
+      <text id="s3t3" x="40" y="28" fill="#a796ff">30 SECONDS</text>
+    </g>
+  </svg>
+</section>
+
+<!-- S3b inner picture -->
+<section class="sc" id="s3b">
+  <p class="h2 abs split" style="left:140px;top:160px;width:1640px">Each level keeps an inner picture of the world — and predicts how it will change.</p>
+  <div class="abs" style="left:140px;top:420px;width:1640px;display:flex;align-items:flex-start;justify-content:space-between">
+    <div class="panel3" id="p3a"><p class="cap">What the camera sees</p>
+      <svg width="500" height="200" viewBox="0 0 500 200"><rect width="500" height="200" rx="14" fill="#0e1830"/><rect y="104" width="500" height="96" fill="#0a1120"/><polygon points="230,104 270,104 420,200 80,200" fill="#141f38"/><path d="M250 112V200" stroke="#ffb627" stroke-opacity=".6" stroke-width="3" stroke-dasharray="12 12"/><rect x="262" y="108" width="50" height="34" rx="6" fill="#ffb627"/><rect x="0" y="0" width="500" height="200" rx="14" fill="none" stroke="#2b3b5a" stroke-width="1.5"/></svg>
+    </div>
+    <div class="abs amber" id="p3ar1" style="left:522px;top:110px;font:600 52px/1 var(--display)">&#8594;</div>
+    <div class="panel3" id="p3b"><p class="cap">The inner picture: forty regions</p><div class="cellgrid" id="g1" style="grid-template-columns:repeat(10,45.5px);grid-auto-rows:45.5px"></div></div>
+    <div class="abs amber" id="p3ar2" style="left:1092px;top:110px;font:600 52px/1 var(--display)">&#8594;</div>
+    <div class="panel3" id="p3c"><p class="cap cyan">The expected next moment</p><div class="cellgrid" id="g2" style="grid-template-columns:repeat(10,45.5px);grid-auto-rows:45.5px"></div></div>
+  </div>
+  <p class="lead abs" id="p3f" style="left:140px;top:790px;width:1500px">Small enough to read. Structured enough to test. We can turn it back into a picture — and check what it knows.</p>
+</section>
+
+<!-- S4 bets -->
+<section class="sc" id="s4">
+  <p class="h2 abs split" style="left:140px;top:150px;width:1640px">Five bets — each stated so that it can fail.</p>
+  <div class="abs" id="s4rows" style="left:140px;top:320px;width:1640px">
+    <div class="bet"><b>1</b><span>Thinking in levels beats one flat network of the same size.</span></div>
+    <div class="bet"><b>2</b><span>An inner picture that keeps the scene layout can see and foresee other road users.</span></div>
+    <div class="bet"><b>3</b><span>Safety rules can sit above the learned driver as a proven shield.</span></div>
+    <div class="bet"><b>4</b><span>A system built this way needs only a fraction of the data.</span></div>
+    <div class="bet"><b>5</b><span>It can improve itself by rehearsing in its own imagination.</span></div>
+  </div>
+</section>
+
+<!-- S5 method -->
+<section class="sc" id="s5">
+  <p class="h2 abs split" style="left:140px;top:150px;width:1640px">How we work: the test comes first.</p>
+  <p class="lead abs" id="s5l" style="left:140px;top:250px;width:1500px">Before any experiment we write down what will count as success — and what will count as failure.</p>
+  <div class="abs" id="s5line" style="left:200px;top:518px;width:1500px;height:3px;background:var(--line2);transform-origin:left center"></div>
+  <div class="abs" id="s5steps" style="left:140px;top:400px;display:grid;grid-template-columns:repeat(4,380px);gap:40px">
+    <div class="card step" style="background:#0c1424"><span class="n">STEP 1</span><p class="h3">Write the test</p><p class="d">Both outcomes are named in advance.</p></div>
+    <div class="card step" style="background:#0c1424"><span class="n">STEP 2</span><p class="h3">Lock it</p><p class="d">Time-stamped and sealed before the data.</p></div>
+    <div class="card step" style="background:#0c1424"><span class="n">STEP 3</span><p class="h3">Measure</p><p class="d">With checks that must read known values.</p></div>
+    <div class="card step" style="background:#0c1424"><span class="n">STEP 4</span><p class="h3">Report</p><p class="d">A miss is reported as a miss.</p></div>
+  </div>
+  <div class="abs" id="s5cnt" style="left:140px;top:712px;display:grid;grid-template-columns:repeat(4,400px);gap:20px">
+    <div class="cnt"><span class="mid amber" id="c1" data-dec="0">35</span><p>test plans and amendments, locked before their data</p></div>
+    <div class="cnt"><span class="mid green" id="c2" data-dec="0">72</span><p>theorems checked by machine, line by line</p></div>
+    <div class="cnt"><span class="mid cyan" id="c3" data-dec="0">49</span><p>training runs completed</p></div>
+    <div class="cnt"><span class="mid" id="c4" data-dec="0">141</span><p>recorded drives the system never trained on</p></div>
+  </div>
+</section>
+
+<!-- S6a shield proof -->
+<section class="sc" id="s6a">
+  <p class="h2 abs split" style="left:140px;top:150px;width:1640px"><span class="green">Proven:</span> a safety shield that cannot be argued with.</p>
+  <svg class="abs" style="left:140px;top:380px" width="1640" height="300" viewBox="0 0 1640 300">
+    <rect x="0" y="60" width="1640" height="180" rx="14" fill="#0c1424"/>
+    <path d="M0 150H1640" stroke="#2b3b5a" stroke-width="3" stroke-dasharray="30 26"/>
+    <rect id="s6stop" x="1176" y="60" width="10" height="180" fill="#f2f5fa"/>
+    <text id="s6stopt" x="1181" y="38" text-anchor="middle" fill="#c5cedd" font-family="Bahnschrift,'Barlow Semi Condensed',sans-serif" font-weight="600" font-size="24" letter-spacing="1.5">STOPPING POINT</text>
+    <path id="s6red" class="st dr" pathLength="1" d="M250 196H1470" stroke="#ff5d5d" stroke-width="7" stroke-dasharray=".012 .012"/>
+    <path id="s6redh" class="st" d="M1450 180l26 16-26 16" stroke="#ff5d5d" stroke-width="7"/>
+    <text id="s6redt" x="1250" y="282" fill="#ff5d5d" font-family="Bahnschrift,'Barlow Semi Condensed',sans-serif" font-weight="600" font-size="24" letter-spacing="1.5">PLAN OF THE LEARNED DRIVER</text>
+    <rect id="s6sh" x="1160" y="44" width="8" height="212" rx="4" fill="#34d399"/>
+    <path id="s6grn" class="st dr" pathLength="1" d="M250 196H1140" stroke="#34d399" stroke-width="9"/>
+    <circle id="s6dot" cx="1140" cy="196" r="13" fill="#34d399"/>
+    <g id="s6car"><rect x="120" y="168" width="110" height="56" rx="14" fill="#05080f" stroke="#3ec9ff" stroke-width="4"/><rect x="190" y="178" width="24" height="36" rx="5" fill="#3ec9ff" opacity=".5"/></g>
+  </svg>
+  <p class="lead abs" id="s6at" style="left:140px;top:730px;width:1500px">For <span class="ink">every</span> plan the learned driver can propose, the guarded plan never passes the stopping point — whenever stopping is physically possible.</p>
+  <div class="abs" id="s6ac" style="left:140px;top:900px;display:flex;gap:16px"><span class="chip green">Proven for all cases</span><span class="chip green">Checked by machine</span><span class="chip dim">18 theorems</span></div>
+</section>
+
+<!-- S6b pooling proof -->
+<section class="sc" id="s6b">
+  <p class="h2 abs split" style="left:140px;top:150px;width:1640px"><span class="green">Proven:</span> an averaged inner picture forgets where things are.</p>
+  <div class="abs" id="s6grid" style="left:140px;top:400px;width:716px">
+    <div class="cellgrid" id="g3" style="grid-template-columns:repeat(10,67px);grid-auto-rows:67px"></div>
+    <i id="g3hot" class="abs" style="left:0;top:0;width:67px;height:67px;border-radius:8px;background:var(--amber);box-shadow:0 0 26px 6px rgba(255,182,39,.4)"></i>
+    <p class="note" style="margin-top:22px">One vehicle, moving across the scene.</p>
+  </div>
+  <div class="card abs" id="s6bA" style="left:940px;top:390px;width:840px">
+    <p class="h3 dim">Averaged picture</p>
+    <div style="display:flex;align-items:center;gap:22px;margin:16px 0 12px"><div style="width:300px;height:22px;border-radius:11px;background:rgba(255,255,255,.06);overflow:hidden"><div style="width:38%;height:100%;background:var(--dim)"></div></div><span class="note">the same value, wherever the vehicle is</span></div>
+    <p class="body">Where is the vehicle? <span class="red" style="font-weight:600">A coin flip.</span></p>
+    <p class="note" style="margin-top:8px">Theory predicted 50 percent. We measured 49.5.</p>
+  </div>
+  <div class="card abs" id="s6bB" style="left:940px;top:690px;width:840px">
+    <p class="h3 cyan">Picture that keeps its layout</p>
+    <p class="body" style="margin-top:12px">Where is the vehicle? <span class="green" style="font-weight:600">Found every time.</span></p>
+    <p class="note" style="margin-top:8px">Measured: 100 percent.</p>
+  </div>
+  <p class="lead abs" id="s6bf" style="left:140px;top:915px;width:1640px">The theory called the result before we measured it.</p>
+</section>
+
+<!-- S6c dominance theorem -->
+<section class="sc" id="s6c">
+  <p class="h2 abs split" style="left:140px;top:150px;width:1640px"><span class="green">Proven:</span> exactly when levels beat a flat system.</p>
+  <p class="lead abs" id="s6cl" style="left:140px;top:262px;width:1500px">Not a belief. A theorem with two conditions — and both can be measured.</p>
+  <div class="card abs" id="s6c1" style="left:140px;top:380px;width:800px;height:350px">
+    <span class="chip cyan">Condition one</span>
+    <p class="body ink" style="margin-top:20px">One long look ahead must beat many short steps chained together.</p>
+    <p class="body" style="margin-top:14px"><span class="green" style="font-weight:600">Measured: it holds.</span> At two seconds, the single leap stays at 42 percent of the chained error limit.</p>
+  </div>
+  <div class="card abs" id="s6c2" style="left:980px;top:380px;width:800px;height:350px">
+    <span class="chip amber">Condition two</span>
+    <p class="body ink" style="margin-top:20px">The decision maker must choose the right manoeuvre more often than a fixed habit would.</p>
+    <p class="body" style="margin-top:14px"><span class="amber" style="font-weight:600">Measured: met at normal driving speeds, not yet near standstill.</span> So theory alone does not settle it. A direct test must.</p>
+  </div>
+  <div class="abs" id="s6cc" style="left:140px;top:790px;display:grid;grid-template-columns:repeat(3,520px);gap:30px">
+    <div class="cnt" style="width:520px"><span class="mid green" id="c5" data-dec="0">72</span><p>theorems, with no unproven step</p></div>
+    <div class="cnt" style="width:520px"><span class="mid" id="c6" data-dec="0">56</span><p>logical conditions confirmed by an automatic solver</p></div>
+    <div class="cnt" style="width:520px"><span class="mid" id="c7" data-dec="0">30</span><p>deliberately broken variants — every one caught</p></div>
+  </div>
+</section>
+
+<!-- S7a shield measured -->
+<section class="sc" id="s7a">
+  <p class="h2 abs split" style="left:140px;top:150px;width:1640px"><span class="cyan">Measured:</span> the shield stops every stop that can be stopped.</p>
+  <div class="abs" id="s7a1" style="left:140px;top:360px;width:660px"><span class="big red">9 of 10</span><p class="body" style="margin-top:22px">stop situations in which the unguarded plan drove past the stopping point — by more than nine metres on average.</p></div>
+  <div class="abs amber" id="s7aar" style="left:842px;top:400px;font:600 110px/1 var(--display)">&#8594;</div>
+  <div class="abs" id="s7a2" style="left:1040px;top:360px;width:740px"><span class="big green" id="c8" data-dec="0">0</span><p class="body" style="margin-top:22px">overruns with the shield — in every situation where stopping was physically possible.</p></div>
+  <div class="abs" id="s7ac" style="left:140px;top:780px;display:flex;gap:16px"><span class="chip dim">131 stop situations on recorded drives</span><span class="chip green">Position error 3.4 metres lower</span></div>
+  <p class="note abs" id="s7an" style="left:140px;top:880px;width:1500px">The stopping point was supplied from the recording. Reading it reliably from the camera is the next step.</p>
+</section>
+
+<!-- S7b seeing -->
+<section class="sc" id="s7b">
+  <p class="h2 abs split" style="left:140px;top:150px;width:1640px"><span class="cyan">Measured:</span> the new inner picture knows where the vehicle ahead is.</p>
+  <div class="abs" id="s7bb" style="left:140px;top:400px;width:1100px">
+    <div class="hb"><p class="lab">Earlier inner picture, averaged</p><div class="trk"><div class="fill bar" style="width:197px;background:var(--dim)"></div><span class="val dim" style="left:215px">14 to 24 %</span></div></div>
+    <div class="hb"><p class="lab">Averaged picture, enlarged to the same size</p><div class="trk"><div class="fill bar" style="width:335px;background:var(--dim)"></div><span class="val dim" style="left:353px">31 to 36 %</span></div></div>
+    <div class="hb"><p class="lab ink">New inner picture, keeps the layout</p><div class="trk"><div class="fill bar" style="width:547px;background:var(--cyan)"></div><span class="val cyan" style="left:565px">54 to 55 %</span></div></div>
+    <p class="note">How much of the distance to the vehicle ahead can be read from the inner picture.</p>
+  </div>
+  <div class="abs" id="s7bt" style="left:1300px;top:410px;width:480px;display:grid;gap:22px">
+    <p class="body"><span class="ink" style="font-weight:600">The gain comes from keeping the layout</span> — not from size.</p>
+    <p class="body">No loss in driving accuracy.</p>
+    <p class="body">Two independent training runs agree.</p>
+  </div>
+</section>
+
+<!-- S7c foresight -->
+<section class="sc" id="s7c">
+  <p class="h2 abs split" style="left:140px;top:150px;width:1640px"><span class="cyan">Measured:</span> it predicts the next moment better than assuming nothing changes.</p>
+  <div class="abs" id="s7cch" style="left:160px;top:410px;width:640px;height:470px">
+    <div class="axis"></div>
+    <div class="vb vbar" style="left:90px;width:170px;height:372px;background:var(--red);opacity:.85"></div>
+    <div class="vb vbar" style="left:380px;width:170px;height:239px;background:var(--green)"></div>
+    <div class="abs" id="s7cbase" style="left:0;right:60px;bottom:300px;height:0;border-top:3px dashed var(--soft);transform-origin:left center"></div>
+    <span class="note abs" id="s7cbl" style="left:600px;bottom:268px;width:200px;line-height:1.25">assuming nothing changes = 100</span>
+    <span class="vv red" style="left:90px;width:170px;bottom:384px">123 to 125</span>
+    <span class="vv green" style="left:380px;width:170px;bottom:251px">79 to 80</span>
+    <span class="vl" style="left:50px;width:250px;top:486px">earlier predictor</span>
+    <span class="vl" style="left:340px;width:250px;top:486px">new predictor</span>
+  </div>
+  <div class="abs" id="s7ct" style="left:1010px;top:400px;width:770px;display:grid;gap:24px">
+    <p class="body"><span class="ink" style="font-weight:600">Prediction error one moment ahead.</span> Lower is better.</p>
+    <p class="body">The new predictor is less than half the size of the earlier one.</p>
+    <p class="body">Almost one second ahead, its predicted picture is closer to reality than the present picture — in both training runs.</p>
+    <p class="note">Two seconds ahead, the motion of the vehicle in front is not yet foreseen. That is the next milestone.</p>
+  </div>
+</section>
+
+<!-- S7d data -->
+<section class="sc" id="s7d">
+  <p class="h2 abs split" style="left:140px;top:150px;width:1640px"><span class="cyan">Measured:</span> a quarter of the data, no measurable loss.</p>
+  <div class="abs" id="s7dch" style="left:160px;top:400px;width:860px;height:440px">
+    <div class="axis"></div>
+    <div class="vb vbar" style="left:40px;width:150px;height:309px;background:var(--cyan)"></div>
+    <div class="vb vbar" style="left:250px;width:150px;height:301px;background:var(--cyan)"></div>
+    <div class="vb vbar" style="left:460px;width:150px;height:320px;background:var(--cyan)"></div>
+    <div class="vb vbar" style="left:670px;width:150px;height:337px;background:var(--amber)"></div>
+    <span class="vv cyan" style="left:40px;width:150px;bottom:321px">3.09 m</span>
+    <span class="vv cyan" style="left:250px;width:150px;bottom:313px">3.01 m</span>
+    <span class="vv cyan" style="left:460px;width:150px;bottom:332px">3.20 m</span>
+    <span class="vv amber" style="left:670px;width:150px;bottom:349px">3.37 m</span>
+    <span class="vl" style="left:15px;width:200px;top:456px">all data</span>
+    <span class="vl" style="left:225px;width:200px;top:456px">one half</span>
+    <span class="vl" style="left:435px;width:200px;top:456px">one quarter</span>
+    <span class="vl" style="left:645px;width:200px;top:456px">one eighth</span>
+  </div>
+  <div class="abs" id="s7dt" style="left:1120px;top:400px;width:660px;display:grid;gap:24px">
+    <p class="body"><span class="ink" style="font-weight:600">Average position error over six seconds</span>, in metres, two training runs per size. Lower is better.</p>
+    <p class="body">Down to a quarter of the recorded drives, the difference stays inside the spread between repeated training runs.</p>
+    <p class="body">The first measurable loss appears at one eighth.</p>
+    <span class="chip cyan" style="justify-self:start">Two training runs per size</span>
+  </div>
+</section>
+
+<!-- S7e levels vs flat -->
+<section class="sc" id="s7e">
+  <p class="h2 abs split" style="left:140px;top:150px;width:1640px"><span class="cyan">Measured:</span> levels beat the flat design — in six runs out of six.</p>
+  <div class="abs" id="s7ech" style="left:160px;top:420px;width:800px;height:400px">
+    <div class="axis"></div>
+    <div class="vb vbar" style="left:20px;width:96px;height:129px;background:var(--green)"></div>
+    <div class="vb vbar" style="left:150px;width:96px;height:87px;background:var(--green)"></div>
+    <div class="vb vbar" style="left:280px;width:96px;height:298px;background:var(--green)"></div>
+    <div class="vb vbar" style="left:410px;width:96px;height:110px;background:var(--green)"></div>
+    <div class="vb vbar" style="left:540px;width:96px;height:313px;background:var(--green)"></div>
+    <div class="vb vbar" style="left:670px;width:96px;height:235px;background:var(--green)"></div>
+    <span class="vv green" style="left:0;width:136px;bottom:141px">13 cm</span>
+    <span class="vv green" style="left:130px;width:136px;bottom:99px">9 cm</span>
+    <span class="vv green" style="left:260px;width:136px;bottom:310px">30 cm</span>
+    <span class="vv green" style="left:390px;width:136px;bottom:122px">11 cm</span>
+    <span class="vv green" style="left:520px;width:136px;bottom:325px">31 cm</span>
+    <span class="vv green" style="left:650px;width:136px;bottom:247px">24 cm</span>
+    <span class="vl" style="left:0;width:136px;top:414px">run 1</span><span class="vl" style="left:130px;width:136px;top:414px">run 2</span><span class="vl" style="left:260px;width:136px;top:414px">run 3</span><span class="vl" style="left:390px;width:136px;top:414px">run 4</span><span class="vl" style="left:520px;width:136px;top:414px">run 5</span><span class="vl" style="left:650px;width:136px;top:414px">run 6</span>
+    <p class="note abs" style="left:0;top:466px;width:820px">Advantage of the design with levels in situations that need a decision: position error over six seconds, each run against its flat twin.</p>
+  </div>
+  <div class="abs" id="s7et" style="left:1060px;top:380px;width:720px;display:grid;gap:20px">
+    <p class="body">Two designs of identical size, the same data, <span class="ink" style="font-weight:600">six independent training runs each.</span></p>
+    <p class="body">Rule agreed beforehand: all six must point the same way, beyond the margin of chance. <span class="green" style="font-weight:600">Met.</span></p>
+    <p class="body">Ten percentage points fewer wrong manoeuvre decisions. Seventeen centimetres less sideways error.</p>
+    <p class="note">Holds for our adopted training recipe, in which the system practises on the consequences of its own actions. With plain imitation alone, the advantage is not established.</p>
+  </div>
+</section>
+
+<!-- S7f small -->
+<section class="sc" id="s7f">
+  <p class="h2 abs split" style="left:140px;top:150px;width:1640px">And it is small.</p>
+  <div class="abs" id="s7ft" style="left:140px;top:330px;display:grid;grid-template-columns:repeat(4,392px);gap:24px">
+    <div class="card tile"><span class="mid amber">7.2<small> million</small></span><p>adjustable values in the reference system. Small by the standards of the field.</p></div>
+    <div class="card tile"><span class="mid cyan">4<small> hours</small></span><p>of training on a single consumer graphics card.</p></div>
+    <div class="card tile"><span class="mid green">74<small> %</small></span><p>of the benefit of running two systems side by side — obtained by merging them into one.</p></div>
+    <div class="card tile"><span class="mid">1<small> number</small></span><p>changed by hand reproduces a full retraining of the stop decision. Seconds instead of hours.</p></div>
+  </div>
+  <p class="lead abs" id="s7ff" style="left:140px;top:740px;width:1500px">Small systems can be read, tested and proven. That is the point.</p>
+</section>
+
+<!-- S8 scorecard -->
+<section class="sc" id="s8">
+  <p class="h2 abs split" style="left:140px;top:150px;width:1640px">Where the five bets stand.</p>
+  <div class="abs" id="s8rows" style="left:140px;top:290px;width:1640px">
+    <div class="sr"><b>1</b><div><p class="t">Levels beat a flat network</p><p class="d">Six of six training runs with our adopted recipe, on recorded drives.</p></div><span class="chip green">Confirmed</span></div>
+    <div class="sr"><b>2</b><div><p class="t">An inner picture that sees and foresees</p><p class="d">Sees the vehicle ahead. Foresees the next moment. Two seconds of its motion: open.</p></div><span class="chip amber">Half way</span></div>
+    <div class="sr"><b>3</b><div><p class="t">A proven safety shield</p><p class="d">Zero overruns with an exact stop signal. The camera signal comes next.</p></div><span class="chip green">Proven</span></div>
+    <div class="sr"><b>4</b><div><p class="t">A fraction of the data</p><p class="d">No measurable loss down to a quarter, in two runs per size. One data set so far.</p></div><span class="chip cyan">Promising</span></div>
+    <div class="sr"><b>5</b><div><p class="t">Self-improvement by imagination</p><p class="d">Builds on bet two.</p></div><span class="chip dim">Ahead of us</span></div>
+  </div>
+  <div class="card abs" id="s8f" style="left:140px;top:862px;width:1640px;padding:24px 34px"><p class="body"><span class="amber" style="font-weight:600">Plainly:</span> everything shown here is measured on recorded real drives. Not yet in a simulation that reacts — and not yet on the road.</p></div>
+</section>
+
+<!-- S9 roadmap -->
+<section class="sc" id="s9">
+  <p class="h2 abs split" style="left:140px;top:150px;width:1640px">The road ahead.</p>
+  <div class="abs" id="s9box" style="left:140px;top:300px;width:1640px;height:640px">
+    <svg width="1640" height="680" viewBox="0 0 1640 680" class="abs" style="left:0;top:0">
+      <path id="s9road" class="st dr" pathLength="1" d="M20 540C260 540 300 450 520 430S800 380 960 320S1280 250 1400 170S1540 90 1620 60" stroke="#101a2e" stroke-width="64"/>
+      <path id="s9mid" class="st" d="M20 540C260 540 300 450 520 430S800 380 960 320S1280 250 1400 170S1540 90 1620 60" stroke="#ffb627" stroke-opacity=".55" stroke-width="3" stroke-dasharray="20 22"/>
+      <g id="s9dots"></g>
+      <g id="s9car"><rect x="-22" y="-12" width="44" height="24" rx="7" fill="#ffb627"/></g>
+    </svg>
+    <div class="ms" data-p="0.07" data-side="b"><p class="t">Track every vehicle</p><p class="d">Its distance, and how fast the gap closes.</p></div>
+    <div class="ms" data-p="0.25" data-side="a"><p class="t">Read the stop signal from the camera</p><p class="d">To arm the proven shield.</p></div>
+    <div class="ms" data-p="0.43" data-side="b"><p class="t">Plan by imagination</p><p class="d">Rehearse the options inside, choose the best.</p></div>
+    <div class="ms" data-p="0.60" data-side="a"><p class="t">Improve by itself</p><p class="d">Learn from imagined drives.</p></div>
+    <div class="ms" data-p="0.77" data-side="b"><p class="t">Scale up</p><p class="d">More data, four cameras, a simulation that reacts.</p></div>
+    <div class="ms" data-p="0.955" data-side="a"><p class="t">Into the car</p><p class="d">One on-board computer. The test track.</p></div>
+  </div>
+</section>
+
+<!-- S10 close -->
+<section class="sc" id="s10">
+  <p class="h1 abs split" id="s10a" style="left:140px;top:200px;width:1640px">Understand. Foresee. Decide. <span class="amber">Prove.</span></p>
+  <div class="abs" style="left:140px;top:380px;width:1640px">
+    <div class="wm" id="s10wm" style="font-size:110px">TANIT<span class="amber">AD</span></div>
+    <p class="lead" id="s10l" style="margin-top:22px">A driving intelligence you can check.</p>
+  </div>
+</section>
+
+<div id="hud">
+  <div id="brand" class="abs">TANIT<span class="amber">AD</span></div>
+  <div id="kick"></div>
+  <div id="prog" class="abs"><div id="progline"></div><div id="progfill"></div><div id="progcar"></div></div>
+</div>
+<div id="grain"></div>
+</div></div>
+
+<div id="ctl">
+  <button id="play" type="button">Play</button>
+  <input id="seek" type="range" min="0" max="468" step="0.05" value="0" aria-label="Position in the film">
+  <span id="time">0:00 / 7:48</span>
+  <button id="full" type="button">Full screen</button>
+</div>
+<div id="below">
+  <div id="chips"></div>
+  <p>Silent film with on-screen text, made to be spoken over. All figures are measured on recorded real drives; none is a claim about driving on the road.</p>
+</div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var RENDER = /[?&]render\b/.test(location.search);
+if (RENDER) document.documentElement.classList.add("render");
+var NS = "http://www.w3.org/2000/svg";
+function $(s, r){ return (r||document).querySelector(s); }
+function $$(s, r){ return Array.prototype.slice.call((r||document).querySelectorAll(s)); }
+var stage = $("#stage"), fit = $("#fit");
+function fitStage(){ var k = RENDER ? 1 : fit.clientWidth/1920; stage.style.transform = "scale("+k+")"; }
+window.addEventListener("resize", fitStage); fitStage();
+var DUR = 468;
+
+/* ---------- words ---------- */
+$$(".split").forEach(function(el){
+  (function walk(n){
+    Array.prototype.slice.call(n.childNodes).forEach(function(c){
+      if (c.nodeType === 3){
+        var f = document.createDocumentFragment();
+        c.textContent.split(/(\s+)/).forEach(function(p){
+          if (!p) return;
+          if (/^\s+$/.test(p)) f.appendChild(document.createTextNode(" "));
+          else { var s = document.createElement("span"); s.className = "w"; s.textContent = p; f.appendChild(s); }
+        });
+        n.replaceChild(f, c);
+      } else if (c.nodeType === 1) walk(c);
+    });
+  })(el);
+});
+
+/* ---------- generated pieces ---------- */
+function rng(seed){ var s = seed>>>0; return function(){ s = (s*1664525 + 1013904223)>>>0; return s/4294967296; }; }
+(function grain(){
+  var c = document.createElement("canvas"); c.width = c.height = 160; var x = c.getContext("2d"), d = x.createImageData(160,160), r = rng(7);
+  for (var i=0;i<d.data.length;i+=4){ var v = 255*r()|0; d.data[i]=d.data[i+1]=d.data[i+2]=v; d.data[i+3]=255; }
+  x.putImageData(d,0,0); $("#grain").style.backgroundImage = "url("+c.toDataURL()+")";
+})();
+function cells(id, hot, ghost){
+  var g = $("#"+id), r = rng(id.length*31+5), out = [];
+  for (var i=0;i<40;i++){ var e = document.createElement("i"); var a = 0.35 + 0.65*r(); e.style.opacity = a.toFixed(2);
+    if (i === hot){ e.style.background = "var(--amber)"; e.style.opacity = 1; e.style.boxShadow = "0 0 18px 3px rgba(255,182,39,.4)"; }
+    if (i === ghost){ e.style.background = "transparent"; e.style.outline = "2px dashed rgba(255,182,39,.55)"; e.style.outlineOffset = "-2px"; e.style.opacity = 1; }
+    g.appendChild(e); out.push(e); }
+  return out;
+}
+var G1 = cells("g1", 15, -1), G2 = cells("g2", 26, 15), G3 = cells("g3", -1, -1);
+var stars = [], sr = rng(11), sg = $("#stars");
+for (var i=0;i<90;i++){ var c = document.createElementNS(NS,"circle"); c.setAttribute("cx",(sr()*1920).toFixed(1)); c.setAttribute("cy",(10+sr()*590).toFixed(1)); c.setAttribute("r",(0.6+sr()*1.3).toFixed(2)); c.setAttribute("fill","#dfe8f7"); sg.appendChild(c); stars.push([c, sr()*6.28, 0.5+sr()*1.4]); }
+var dashes = [], dg = $("#dashes");
+for (var j=0;j<14;j++){ var p = document.createElementNS(NS,"polygon"); p.setAttribute("fill","#ffdc94"); dg.appendChild(p); dashes.push(p); }
+
+/* ---------- engine ---------- */
+var E = {
+  lin:function(x){return x;},
+  out:function(x){return 1-Math.pow(1-x,3);},
+  out5:function(x){return 1-Math.pow(1-x,5);},
+  io:function(x){return x<0.5 ? 4*x*x*x : 1-Math.pow(-2*x+2,3)/2;}
+};
+var tracks = new Map(), ranges = [], amb = [];
+var DEF = {o:1, s:1, sx:1, sy:1};
+function els(sel){ if (typeof sel === "string") return $$(sel); if (Array.isArray(sel)) return sel; return [sel]; }
+function key(el, prop, t, v, ease){ var m = tracks.get(el); if (!m){ m = {}; tracks.set(el, m); } (m[prop] || (m[prop] = [])).push([t, v, ease || "out"]); }
+function tween(el, prop, t0, d, a, b, ease){ key(el, prop, t0, a, "lin"); key(el, prop, t0+d, b, ease); }
+function to(el, prop, t0, d, b, ease){ var m = tracks.get(el), k = m && m[prop]; var prev = k && k.length ? k[k.length-1][1] : (DEF[prop] !== undefined ? DEF[prop] : 0); key(el, prop, t0, prev, "lin"); key(el, prop, t0+d, b, ease); }
+function show(sel, t, o){ o = o || {}; var d = o.d || 0.8, dy = o.dy === undefined ? 34 : o.dy, st = o.st === undefined ? 0.09 : o.st, list = els(sel);
+  list.forEach(function(el, i){ var a = t + i*st; tween(el, "o", a, d*0.75, 0, 1, "out"); if (dy) tween(el, "y", a, d, dy, 0, "out5"); if (o.dx) tween(el, "x", a, d, o.dx, 0, "out5"); if (o.s) tween(el, "s", a, d, o.s, 1, "out5"); });
+  return t + (list.length-1)*st + d; }
+function hide(sel, t, o){ o = o || {}; var d = o.d || 0.5, dy = o.dy === undefined ? 24 : o.dy; els(sel).forEach(function(el, i){ var a = t + i*(o.st||0); to(el, "o", a, d, 0, "io"); if (dy) to(el, "y", a, d, -dy, "io"); }); }
+function draw(sel, t, d, ease){ els(sel).forEach(function(el){ tween(el, "dash", t, d, 1, 0, ease || "io"); }); }
+function grow(sel, t, d, st, prop){ els(sel).forEach(function(el, i){ tween(el, prop || "sx", t + i*(st||0), d || 0.9, 0, 1, "out5"); }); }
+function count(el, t, d, a, b){ el = typeof el === "string" ? $(el) : el; tween(el, "num", t, d, a, b, "out5"); }
+function scene(id, a, b){ var el = $("#"+id); tween(el, "o", a, 0.6, 0, 1, "io"); to(el, "o", b-0.6, 0.6, 0, "io"); ranges.push([el, a, b]); return function(dt){ return a + dt; }; }
+function head(id, t){ return show("#"+id+" .h2 .w", t, {st:0.055, d:0.7, dy:30}); }
+function val(k, t){ var n = k.length; if (t <= k[0][0]) return k[0][1]; if (t >= k[n-1][0]) return k[n-1][1];
+  for (var i=1;i<n;i++){ if (t < k[i][0]){ var a = k[i-1], b = k[i], sp = b[0]-a[0]; if (sp <= 0) return b[1]; return a[1] + (b[1]-a[1])*E[b[2]]((t-a[0])/sp); } } return k[n-1][1]; }
+var custom = {};
+function apply(el, m, t){ var tf = false, x = 0, y = 0, s = 1, sx = 1, sy = 1, r = 0, v;
+  for (var p in m){ v = val(m[p], t);
+    if (p === "o") el.style.opacity = v.toFixed(4);
+    else if (p === "x"){ x = v; tf = true; } else if (p === "y"){ y = v; tf = true; }
+    else if (p === "s"){ s = v; tf = true; } else if (p === "sx"){ sx = v; tf = true; } else if (p === "sy"){ sy = v; tf = true; }
+    else if (p === "r"){ r = v; tf = true; }
+    else if (p === "dash") el.style.strokeDashoffset = v.toFixed(5);
+    else if (p === "num") el.textContent = (el.dataset.pre||"") + v.toFixed(+el.dataset.dec||0) + (el.dataset.suf||"");
+    else if (custom[p]) custom[p](el, v);
+  }
+  if (tf) el.style.transform = "translate("+x.toFixed(2)+"px,"+y.toFixed(2)+"px) scale("+(s*sx).toFixed(4)+","+(s*sy).toFixed(4)+")" + (r ? " rotate("+r.toFixed(2)+"deg)" : ""); }
+var T = 0;
+function seek(t){ T = t;
+  for (var i=0;i<ranges.length;i++){ var q = ranges[i]; q[0].style.display = (t >= q[1]-0.02 && t <= q[2]+0.02) ? "block" : "none"; }
+  tracks.forEach(function(m, el){ apply(el, m, t); });
+  for (var j=0;j<amb.length;j++) amb[j](t); }
+
+/* ---------- chapters, hud ---------- */
+var CH = [[0,"Opening",""],[15,"The problem","01"],[46,"Our goal","02"],[77,"The idea","03"],[134,"Our hypotheses","04"],[168,"How we work","05"],[203,"What is proven","06"],[270,"What we have measured","07"],[384,"Where we stand","08"],[414,"The road ahead","09"],[452,"Close",""]];
+var kick = $("#kick"), prog = $("#prog");
+CH.forEach(function(c, i){
+  if (c[2]){ var s = document.createElement("span"); s.textContent = c[2] + "  ·  " + c[1]; kick.appendChild(s); var b = CH[i+1][0]; tween(s, "o", c[0]+0.5, 0.6, 0, 1, "io"); to(s, "o", b-0.5, 0.5, 0, "io"); }
+  if (i > 0 && i < CH.length){ var tk = document.createElement("i"); tk.style.left = (1640*c[0]/DUR - 1) + "px"; prog.appendChild(tk); }
+});
+tween($("#brand"), "o", 15.4, 0.8, 0, 1, "io"); to($("#brand"), "o", 451.2, 0.6, 0, "io");
+tween(prog, "o", 15.4, 0.8, 0, 1, "io"); to(prog, "o", 451.2, 0.6, 0, "io");
+var pf = $("#progfill"), pc = $("#progcar");
+amb.push(function(t){ var u = Math.max(0, Math.min(1, t/DUR)); pf.style.transform = "scaleX("+u.toFixed(5)+")"; pc.style.transform = "translateX("+(1640*u).toFixed(2)+"px)"; });
+
+/* ---------- hero road ---------- */
+var hero = $("#hero");
+tween(hero, "o", 0, 1.4, 0, 1, "io"); to(hero, "o", 14.2, 0.9, 0, "io"); to(hero, "o", 451.6, 1.2, 1, "io"); to(hero, "o", 466.6, 1.4, 0, "io");
+amb.push(function(t){
+  if (!(t < 15.3 || t > 451.4)) return;
+  var hz = 640, H = 1080, i, z, z1, y0, y1, w0, w1;
+  for (i=0;i<dashes.length;i++){
+    z = ((i/dashes.length) + t*0.17) % 1; z1 = Math.min(1, z + 0.028 + 0.02*z);
+    y0 = hz + (H-hz)*Math.pow(z, 2.4); y1 = hz + (H-hz)*Math.pow(z1, 2.4);
+    w0 = 1.2 + 18*(y0-hz)/(H-hz); w1 = 1.2 + 18*(y1-hz)/(H-hz);
+    dashes[i].setAttribute("points", (960-w0).toFixed(1)+","+y0.toFixed(1)+" "+(960+w0).toFixed(1)+","+y0.toFixed(1)+" "+(960+w1).toFixed(1)+","+y1.toFixed(1)+" "+(960-w1).toFixed(1)+","+y1.toFixed(1));
+    dashes[i].setAttribute("opacity", (Math.min(1, z*3.2)*0.9).toFixed(3));
+  }
+  for (i=0;i<stars.length;i++) stars[i][0].setAttribute("opacity", (0.25 + 0.6*(0.5+0.5*Math.sin(t*stars[i][2] + stars[i][1]))).toFixed(3));
+});
+
+/* ---------- S0 opening 0-15 ---------- */
+var A = scene("s0", 0, 15);
+show("#s0a .w", A(1.0), {st:0.11, d:0.9});
+show("#s0b .w", A(3.6), {st:0.13, d:0.9});
+hide("#s0a .w", A(6.9), {st:0.02}); hide("#s0b .w", A(7.0), {st:0.02});
+show("#s0wm", A(7.9), {d:1.3, dy:0, s:1.06});
+show("#s0l .w", A(9.0), {st:0.07});
+show("#s0n", A(10.6));
+
+/* ---------- S1 problem 15-46 ---------- */
+A = scene("s1", 15, 46);
+head("s1", A(0.7));
+show("#s1n1", A(3.0), {dx:-30, dy:0}); grow("#s1p1", A(3.5), 0.6); show("#s1box", A(3.9), {dy:0, s:0.9}); grow("#s1p2", A(4.6), 0.6); show("#s1n2", A(5.0), {dx:30, dy:0});
+show("#s1 .s1card", A(7.5), {st:2.6, d:0.9});
+show("#s1f", A(21.5));
+
+/* ---------- S2 goal 46-77 ---------- */
+A = scene("s2", 46, 77);
+head("s2", A(0.7));
+$$("#s2 .row2").forEach(function(r, i){ var t = A(3.6 + i*4.6);
+  show(r, t, {dy:22}); grow($(".old i", r), t + 1.3, 0.6); show($(".arr", r), t + 1.5, {dy:0, dx:-20}); show($(".new", r), t + 1.8, {dy:0, dx:-26, d:0.9}); });
+show("#s2p", A(22.8));
+
+/* ---------- S3a levels 77-110 ---------- */
+A = scene("s3", 77, 110);
+head("s3", A(0.7));
+show("#s3road", A(2.2), {dy:0, d:1.2});
+var L = $$("#s3 .lvl");
+show(L[2], A(4.0)); draw("#s3pil", A(4.6), 0.9); show("#s3t1", A(5.2), {dy:0});
+show(L[1], A(9.0)); draw("#s3dec", A(9.6), 1.5); show("#s3t2", A(10.6), {dy:0});
+show(L[0], A(14.5)); draw("#s3nav", A(15.1), 1.8); show("#s3t3", A(16.4), {dy:0});
+show(L[3], A(20.5));
+[0,1,2].forEach(function(i){ to(L[i], "o", A(21.0), 0.6, 0.45, "io"); to(L[i], "o", A(25.5), 0.6, 1, "io"); });
+
+/* ---------- S3b inner picture 110-134 ---------- */
+A = scene("s3b", 110, 134);
+head("s3b", A(0.7));
+show("#p3a", A(3.2)); show("#p3ar1", A(4.6), {dy:0, dx:-20}); show("#p3b", A(5.2));
+G1.forEach(function(e, i){ var o = +e.style.opacity; tween(e, "o", A(5.5 + (i%10)*0.05 + Math.floor(i/10)*0.07), 0.5, 0, o, "out"); });
+show("#p3ar2", A(9.4), {dy:0, dx:-20}); show("#p3c", A(10.0));
+G2.forEach(function(e, i){ var o = +e.style.opacity; tween(e, "o", A(10.3 + (i%10)*0.05 + Math.floor(i/10)*0.07), 0.5, 0, o, "out"); });
+show("#p3f", A(14.6));
+
+/* ---------- S4 bets 134-168 ---------- */
+A = scene("s4", 134, 168);
+head("s4", A(0.7));
+$$("#s4 .bet").forEach(function(r, i){ var t = A(3.4 + i*5.4); show(r, t, {dy:26}); tween($("b", r), "s", t, 0.9, 0.6, 1, "out5"); });
+
+/* ---------- S5 method 168-203 ---------- */
+A = scene("s5", 168, 203);
+head("s5", A(0.7)); show("#s5l", A(2.4));
+grow("#s5line", A(5.2), 9.5);
+show("#s5 .step", A(5.4), {st:3.0, d:0.9});
+show("#s5 .cnt", A(18.5), {st:1.6});
+count("#c1", A(18.5), 1.6, 0, 35); count("#c2", A(20.1), 1.6, 0, 72); count("#c3", A(21.7), 1.6, 0, 49); count("#c4", A(23.3), 1.6, 0, 141);
+
+/* ---------- S6a shield proof 203-224 ---------- */
+A = scene("s6a", 203, 224);
+head("s6a", A(0.7));
+show("#s6car", A(2.6), {dy:0, dx:-40}); show(["#s6stop","#s6stopt"].map(function(s){return $(s);}), A(3.0), {dy:0, st:0.15});
+draw("#s6red", A(4.2), 1.8, "io"); show("#s6redh", A(5.8), {dy:0, d:0.4}); show("#s6redt", A(6.0), {dy:0});
+show("#s6sh", A(8.4), {dy:0, d:0.6}); tween($("#s6sh"), "sy", A(8.4), 0.7, 0.1, 1, "out5");
+to($("#s6red"), "o", A(9.4), 0.6, 0.28, "io"); to($("#s6redh"), "o", A(9.4), 0.6, 0.28, "io"); to($("#s6redt"), "o", A(9.4), 0.6, 0.4, "io");
+draw("#s6grn", A(9.8), 1.5, "out5"); show("#s6dot", A(11.1), {dy:0, s:0.2, d:0.5});
+show("#s6at", A(11.8)); show("#s6ac .chip", A(15.4), {st:0.5, dy:16});
+
+/* ---------- S6b pooling proof 224-247 ---------- */
+A = scene("s6b", 224, 247);
+head("s6b", A(0.7));
+show("#s6grid", A(2.6));
+G3.forEach(function(e, i){ var o = +e.style.opacity; tween(e, "o", A(2.9 + (i%10)*0.04 + Math.floor(i/10)*0.06), 0.5, 0, o, "out"); });
+var hot = $("#g3hot"), step = 72, pos = [[2,1],[6,2],[4,0],[8,3],[1,2],[5,1]];
+tween(hot, "o", A(3.8), 0.5, 0, 1, "out"); key(hot, "x", A(3.8), pos[0][0]*step, "lin"); key(hot, "y", A(3.8), pos[0][1]*step, "lin");
+pos.forEach(function(p, i){ if (!i) return; var t = A(3.8 + i*3.1); to(hot, "x", t, 0.9, p[0]*step, "io"); to(hot, "y", t, 0.9, p[1]*step, "io"); });
+show("#s6bA", A(6.4)); show("#s6bB", A(11.8)); show("#s6bf", A(16.6));
+
+/* ---------- S6c dominance theorem 247-270 ---------- */
+A = scene("s6c", 247, 270);
+head("s6c", A(0.7)); show("#s6cl", A(2.6));
+show("#s6c1", A(4.6)); show("#s6c2", A(9.4));
+show("#s6cc .cnt", A(14.4), {st:1.2});
+count("#c5", A(14.4), 1.5, 0, 72); count("#c6", A(15.6), 1.5, 0, 56); count("#c7", A(16.8), 1.5, 0, 30);
+
+/* ---------- S7a shield measured 270-289 ---------- */
+A = scene("s7a", 270, 289);
+head("s7a", A(0.7));
+show("#s7a1", A(3.0)); show("#s7aar", A(6.6), {dy:0, dx:-30}); show("#s7a2", A(7.2)); count("#c8", A(7.2), 1.2, 9, 0);
+show("#s7ac .chip", A(11.0), {st:0.6, dy:16}); show("#s7an", A(13.4));
+
+/* ---------- S7b seeing 289-307 ---------- */
+A = scene("s7b", 289, 307);
+head("s7b", A(0.7));
+$$("#s7b .hb").forEach(function(h, i){ var t = A(3.0 + i*2.3); show(h, t, {dy:18}); grow($(".fill", h), t + 0.3, 1.2); show($(".val", h), t + 1.1, {dy:0, dx:-16}); });
+show("#s7bb .note", A(9.8), {dy:0});
+show("#s7bt p", A(10.6), {st:1.7});
+
+/* ---------- S7c foresight 307-326 ---------- */
+A = scene("s7c", 307, 326);
+head("s7c", A(0.7));
+show("#s7cch", A(2.8), {dy:0}); grow("#s7cbase", A(3.0), 0.9); show("#s7cbl", A(3.5), {dy:0});
+var VB = $$("#s7c .vbar"), VV = $$("#s7c .vv"), VL = $$("#s7c .vl");
+show(VL[0], A(4.4), {dy:0}); grow(VB[0], A(4.6), 1.1, 0, "sy"); show(VV[0], A(5.5), {dy:10});
+show(VL[1], A(7.0), {dy:0}); grow(VB[1], A(7.2), 1.1, 0, "sy"); show(VV[1], A(8.1), {dy:10});
+show("#s7ct p", A(4.2), {st:3.0});
+
+/* ---------- S7d data 326-342 ---------- */
+A = scene("s7d", 326, 342);
+head("s7d", A(0.7));
+show("#s7dch", A(2.6), {dy:0});
+$$("#s7d .vbar").forEach(function(b, i){ var t = A(3.0 + i*0.9); grow(b, t, 1.0, 0, "sy"); show($$("#s7d .vv")[i], t + 0.8, {dy:10}); show($$("#s7d .vl")[i], t, {dy:0}); });
+show(Array.prototype.slice.call($("#s7dt").children), A(4.4), {st:2.2});
+
+/* ---------- S7e levels vs flat 342-366 ---------- */
+A = scene("s7e", 342, 366);
+head("s7e", A(0.7));
+show("#s7ech", A(2.8), {dy:0});
+$$("#s7e .vbar").forEach(function(b, i){ var t = A(3.6 + i*0.7); grow(b, t, 1.0, 0, "sy"); show($$("#s7e .vv")[i], t + 0.8, {dy:10}); show($$("#s7e .vl")[i], t, {dy:0}); });
+show("#s7ech .note", A(8.6), {dy:0});
+show("#s7et p", A(6.4), {st:3.3});
+
+/* ---------- S7f small 366-384 ---------- */
+A = scene("s7f", 366, 384);
+head("s7f", A(0.7));
+show("#s7f .tile", A(2.4), {st:2.3, d:0.9});
+show("#s7ff", A(12.6));
+
+/* ---------- S8 scorecard 384-414 ---------- */
+A = scene("s8", 384, 414);
+head("s8", A(0.7));
+$$("#s8 .sr").forEach(function(r, i){ var t = A(2.8 + i*3.6); show(r, t, {dy:22}); show($(".chip", r), t + 1.2, {dy:0, s:0.7, d:0.6}); });
+show("#s8f", A(21.6));
+
+/* ---------- S9 roadmap 414-452 ---------- */
+A = scene("s9", 414, 452);
+head("s9", A(0.7));
+draw("#s9road", A(2.0), 2.4, "io"); show("#s9mid", A(3.8), {dy:0, d:1.2});
+var road = $("#s9mid"), RL = road.getTotalLength(), car = $("#s9car"), dots = $("#s9dots");
+custom.path = function(el, v){ var a = road.getPointAtLength(RL*v), b = road.getPointAtLength(Math.min(RL, RL*v + 2)); var ang = Math.atan2(b.y-a.y, b.x-a.x)*180/Math.PI; el.setAttribute("transform", "translate("+a.x.toFixed(2)+","+a.y.toFixed(2)+") rotate("+ang.toFixed(2)+")"); };
+show(car, A(4.2), {dy:0, d:0.6}); key(car, "path", A(4.2), 0, "lin");
+$$("#s9 .ms").forEach(function(m, i){
+  var p = +m.dataset.p, pt = road.getPointAtLength(RL*p), t = A(5.4 + i*5.0);
+  var c = document.createElementNS(NS, "circle"); c.setAttribute("cx", pt.x); c.setAttribute("cy", pt.y); c.setAttribute("r", 13); c.setAttribute("fill", "#05080f"); c.setAttribute("stroke", "#ffb627"); c.setAttribute("stroke-width", 4); dots.appendChild(c);
+  if (m.dataset.side === "b"){ m.style.left = (pt.x + 24) + "px"; m.style.top = (pt.y + 44) + "px"; }
+  else { m.style.left = (pt.x - 352) + "px"; m.style.top = (pt.y - 156) + "px"; m.style.textAlign = "right"; }
+  to(car, "path", t - 1.6, 1.6, p, "io");
+  show(c, t - 0.2, {dy:0, d:0.5}); show(m, t, {dy:16});
+});
+
+/* ---------- S10 close 452-468 ---------- */
+A = scene("s10", 452, 468);
+show("#s10a .w", A(1.2), {st:0.75, d:0.9});
+show("#s10wm", A(5.6), {d:1.2, dy:0, s:1.05}); show("#s10l", A(6.8));
+
+tracks.forEach(function(m){ for (var p in m) m[p].sort(function(a, b){ return a[0]-b[0]; }); });
+
+/* ---------- player ---------- */
+window.__dur = DUR; window.__seek = seek;
+seek(0);
+if (RENDER) return;
+var playing = false, t0 = 0, base = 0, btn = $("#play"), rng_ = $("#seek"), lab = $("#time");
+function mmss(t){ t = Math.max(0, t); var m = Math.floor(t/60), s = Math.floor(t%60); return m + ":" + (s<10?"0":"") + s; }
+function ui(){ rng_.value = T; lab.textContent = mmss(T) + " / " + mmss(DUR); btn.textContent = playing ? "Pause" : (T >= DUR-0.05 ? "Replay" : "Play"); }
+function frame(now){ if (!playing) return; var t = base + (now - t0)/1000; if (t >= DUR){ t = DUR; playing = false; } seek(t); ui(); if (playing) requestAnimationFrame(frame); }
+function play(){ if (T >= DUR-0.05) T = 0; playing = true; base = T; t0 = performance.now(); ui(); requestAnimationFrame(frame); }
+function pause(){ playing = false; ui(); }
+btn.addEventListener("click", function(){ playing ? pause() : play(); });
+rng_.addEventListener("input", function(){ var was = playing; playing = false; seek(+rng_.value); ui(); if (was) play(); });
+document.addEventListener("keydown", function(e){ if (e.code === "Space" && e.target === document.body){ e.preventDefault(); playing ? pause() : play(); } });
+$("#full").addEventListener("click", function(){ var f = fit.requestFullscreen || fit.webkitRequestFullscreen; if (f){ try { var r = f.call(fit); if (r && r.catch) r.catch(function(){}); } catch (e) {} } });
+document.addEventListener("fullscreenchange", function(){ setTimeout(fitStage, 60); });
+var chips = $("#chips");
+CH.forEach(function(c){ var b = document.createElement("button"); b.type = "button"; b.textContent = (c[2] ? c[2] + " " : "") + c[1]; b.addEventListener("click", function(){ var was = playing; playing = false; seek(c[0] + 0.01); ui(); if (was) play(); }); chips.appendChild(b); });
+ui();
+})();
+</script>

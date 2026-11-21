@@ -1,0 +1,477 @@
+FFFFFFFFFF                                                               [100%]
+================================== FAILURES ===================================
+_ test_equal_seeds_every_sample_eligible_for_both_the_perturbed_share_of_the_not_swapped_is_its_own_p[0.5-0.5-0-30] _
+
+pack = <test_v8f_dagger_train.Pack object at 0x000001D52B850EC0>, p_dag = 0.5
+p_ego = 0.5, seed = 0, steps = 30
+
+    @pytest.mark.parametrize("p_dag, p_ego, seed, steps", [(0.5, 0.5, 0, 30), (0.1, 0.3, 0, 80), (0.1, 0.3, 3, 80)])
+    def test_equal_seeds_every_sample_eligible_for_both_the_perturbed_share_of_the_not_swapped_is_its_own_p(pack, p_dag, p_ego, seed, steps):
+        """The defect, stated as the probability it broke. EQUAL seeds, every swap-eligible sample also perturbation-eligible (vmax lifted): P(perturbed | not swapped) must be p_ego within a binomial tolerance.
+        Shared stream: max(p_ego - p_dag, 0) / (1 - p_dag) -- 0.0 at 0.5 / 0.5 and 0.222 at the registered 0.1 / 0.3. The test asserts its own POWER: the shared-stream value is outside the tolerance."""
+        batch, bank, _ = world_batch(pack)
+        comp = make_stage(bank, p_dag=p_dag, p_ego=p_ego, dseed=seed, eseed=seed, vmax=1e6)
+        ego, dag = comp.ego, comp.dag
+        both = dag.eligible(batch) & ego.eligible(batch)
+        assert int(both.sum()) >= 100 and bool(both.equal(dag.eligible(batch))), "every swap-eligible sample is also perturbation-eligible, and there are enough of them"
+        n = k = n_el = k_sw = 0
+        for step in range(steps):
+            comp.apply(batch, step)
+            sw, pe = dag.last["sel"], ego.last["sel"]
+            free = both & ~sw
+            assert comp.overlap == 0 and bool((pe <= (ego.eligible(batch) & ~sw)).all()), "a perturbed sample is an eligible, non-swapped one"
+            n += int(free.sum())
+            k += int((pe & free).sum())
+            n_el += int(both.sum())
+            k_sw += int((sw & both).sum())
+        shared = max(p_ego - p_dag, 0.0) / (1.0 - p_dag)                                                         # what ONE shared stream gives
+        assert abs(shared - p_ego) > 2 * _binom_tol(p_ego, n), f"power: the shared-stream value {shared:.4f} must be well outside {p_ego} +- {_binom_tol(p_ego, n):.4f} (n={n})"
+>       assert abs(k / n - p_ego) <= _binom_tol(p_ego, n), f"P(perturbed | not swapped, eligible for both) = {k}/{n} = {k / n:.4f}, declared {p_ego} (a shared stream gives {shared:.4f})"
+E       AssertionError: P(perturbed | not swapped, eligible for both) = 0/3362 = 0.0000, declared 0.5 (a shared stream gives 0.0000)
+E       assert 0.5 <= 0.04311626714552119
+E        +  where 0.5 = abs(((0 / 3362) - 0.5))
+E        +  and   0.04311626714552119 = _binom_tol(0.5, 3362)
+
+stack\tests\test_v8f_ego_dagger_compose.py:450: AssertionError
+---------------------------- Captured stdout setup ----------------------------
+[1/2] ade 7.258 total 80.931 p_gt 1.00
+[2/2] ade 4.967 total 70.105 p_gt 0.60
+DONE {"steps": 2, "arm": "M2b", "seed": 5, "seconds": 0.743424654006958}
+[200/342 windows] 8s
+[342/342 windows] 13s
+wrote F:\TanitAD-scratch\compose_fix\tmp\bt_red_on_old\run\dagt0\bank\shard_000of001.npz  records 684  coverage 0.6462  K-B0 {'checked': 342, 'mismatch': 0}  K-B1 {'chunks': 5, 'windows': 40, 'mismatch_chunks': 0}
+wrote F:\TanitAD-scratch\compose_fix\tmp\bt_red_on_old\run\dagt0\bank\bank.json  bank sha256 932ad1cf78eb5ed0a19215a083862521fef4641b00ea55548a3c12d2356dc61c  records 684  coverage 0.6462  K-B4 True  K-B5 True
+_ test_equal_seeds_every_sample_eligible_for_both_the_perturbed_share_of_the_not_swapped_is_its_own_p[0.1-0.3-0-80] _
+
+pack = <test_v8f_dagger_train.Pack object at 0x000001D52B850EC0>, p_dag = 0.1
+p_ego = 0.3, seed = 0, steps = 80
+
+    @pytest.mark.parametrize("p_dag, p_ego, seed, steps", [(0.5, 0.5, 0, 30), (0.1, 0.3, 0, 80), (0.1, 0.3, 3, 80)])
+    def test_equal_seeds_every_sample_eligible_for_both_the_perturbed_share_of_the_not_swapped_is_its_own_p(pack, p_dag, p_ego, seed, steps):
+        """The defect, stated as the probability it broke. EQUAL seeds, every swap-eligible sample also perturbation-eligible (vmax lifted): P(perturbed | not swapped) must be p_ego within a binomial tolerance.
+        Shared stream: max(p_ego - p_dag, 0) / (1 - p_dag) -- 0.0 at 0.5 / 0.5 and 0.222 at the registered 0.1 / 0.3. The test asserts its own POWER: the shared-stream value is outside the tolerance."""
+        batch, bank, _ = world_batch(pack)
+        comp = make_stage(bank, p_dag=p_dag, p_ego=p_ego, dseed=seed, eseed=seed, vmax=1e6)
+        ego, dag = comp.ego, comp.dag
+        both = dag.eligible(batch) & ego.eligible(batch)
+        assert int(both.sum()) >= 100 and bool(both.equal(dag.eligible(batch))), "every swap-eligible sample is also perturbation-eligible, and there are enough of them"
+        n = k = n_el = k_sw = 0
+        for step in range(steps):
+            comp.apply(batch, step)
+            sw, pe = dag.last["sel"], ego.last["sel"]
+            free = both & ~sw
+            assert comp.overlap == 0 and bool((pe <= (ego.eligible(batch) & ~sw)).all()), "a perturbed sample is an eligible, non-swapped one"
+            n += int(free.sum())
+            k += int((pe & free).sum())
+            n_el += int(both.sum())
+            k_sw += int((sw & both).sum())
+        shared = max(p_ego - p_dag, 0.0) / (1.0 - p_dag)                                                         # what ONE shared stream gives
+        assert abs(shared - p_ego) > 2 * _binom_tol(p_ego, n), f"power: the shared-stream value {shared:.4f} must be well outside {p_ego} +- {_binom_tol(p_ego, n):.4f} (n={n})"
+>       assert abs(k / n - p_ego) <= _binom_tol(p_ego, n), f"P(perturbed | not swapped, eligible for both) = {k}/{n} = {k / n:.4f}, declared {p_ego} (a shared stream gives {shared:.4f})"
+E       AssertionError: P(perturbed | not swapped, eligible for both) = 3522/15931 = 0.2211, declared 0.3 (a shared stream gives 0.2222)
+E       assert 0.07892159939740129 <= 0.018153406508114343
+E        +  where 0.07892159939740129 = abs(((3522 / 15931) - 0.3))
+E        +  and   0.018153406508114343 = _binom_tol(0.3, 15931)
+
+stack\tests\test_v8f_ego_dagger_compose.py:450: AssertionError
+_ test_equal_seeds_every_sample_eligible_for_both_the_perturbed_share_of_the_not_swapped_is_its_own_p[0.1-0.3-3-80] _
+
+pack = <test_v8f_dagger_train.Pack object at 0x000001D52B850EC0>, p_dag = 0.1
+p_ego = 0.3, seed = 3, steps = 80
+
+    @pytest.mark.parametrize("p_dag, p_ego, seed, steps", [(0.5, 0.5, 0, 30), (0.1, 0.3, 0, 80), (0.1, 0.3, 3, 80)])
+    def test_equal_seeds_every_sample_eligible_for_both_the_perturbed_share_of_the_not_swapped_is_its_own_p(pack, p_dag, p_ego, seed, steps):
+        """The defect, stated as the probability it broke. EQUAL seeds, every swap-eligible sample also perturbation-eligible (vmax lifted): P(perturbed | not swapped) must be p_ego within a binomial tolerance.
+        Shared stream: max(p_ego - p_dag, 0) / (1 - p_dag) -- 0.0 at 0.5 / 0.5 and 0.222 at the registered 0.1 / 0.3. The test asserts its own POWER: the shared-stream value is outside the tolerance."""
+        batch, bank, _ = world_batch(pack)
+        comp = make_stage(bank, p_dag=p_dag, p_ego=p_ego, dseed=seed, eseed=seed, vmax=1e6)
+        ego, dag = comp.ego, comp.dag
+        both = dag.eligible(batch) & ego.eligible(batch)
+        assert int(both.sum()) >= 100 and bool(both.equal(dag.eligible(batch))), "every swap-eligible sample is also perturbation-eligible, and there are enough of them"
+        n = k = n_el = k_sw = 0
+        for step in range(steps):
+            comp.apply(batch, step)
+            sw, pe = dag.last["sel"], ego.last["sel"]
+            free = both & ~sw
+            assert comp.overlap == 0 and bool((pe <= (ego.eligible(batch) & ~sw)).all()), "a perturbed sample is an eligible, non-swapped one"
+            n += int(free.sum())
+            k += int((pe & free).sum())
+            n_el += int(both.sum())
+            k_sw += int((sw & both).sum())
+        shared = max(p_ego - p_dag, 0.0) / (1.0 - p_dag)                                                         # what ONE shared stream gives
+        assert abs(shared - p_ego) > 2 * _binom_tol(p_ego, n), f"power: the shared-stream value {shared:.4f} must be well outside {p_ego} +- {_binom_tol(p_ego, n):.4f} (n={n})"
+>       assert abs(k / n - p_ego) <= _binom_tol(p_ego, n), f"P(perturbed | not swapped, eligible for both) = {k}/{n} = {k / n:.4f}, declared {p_ego} (a shared stream gives {shared:.4f})"
+E       AssertionError: P(perturbed | not swapped, eligible for both) = 3570/15953 = 0.2238, declared 0.3 (a shared stream gives 0.2222)
+E       assert 0.07621763931548925 <= 0.01814088495330331
+E        +  where 0.07621763931548925 = abs(((3570 / 15953) - 0.3))
+E        +  and   0.01814088495330331 = _binom_tol(0.3, 15953)
+
+stack\tests\test_v8f_ego_dagger_compose.py:450: AssertionError
+_ test_the_swaps_and_the_perturbations_selection_uniforms_are_not_one_stream_on_the_composed_path _
+
+pack = <test_v8f_dagger_train.Pack object at 0x000001D52B850EC0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001D567C98640>
+
+    def test_the_swaps_and_the_perturbations_selection_uniforms_are_not_one_stream_on_the_composed_path(pack, monkeypatch):
+        """Read the uniforms the two levers ACTUALLY draw (a spy on ``torch.rand``: the swap draws rand(2, B), the perturbation rand(3, B), selection = row 0): equal seeds, composed stage -> not equal, and uncorrelated.
+        The CONTROL: the same seeds on an UNSEPARATED perturber (stream 0, the pre-fix generator) read EXACTLY equal -- the spy can see the defect."""
+        batch, bank, _ = world_batch(pack)
+        B = int(batch["t"].shape[0])
+        drawn = []
+        orig = torch.rand
+    
+        def spy_rand(*size, **kw):
+            out = orig(*size, **kw)
+            if kw.get("generator") is not None and len(size) == 2 and size[1] == B and size[0] in (2, 3):
+                drawn.append((size[0], out[0].clone()))
+            return out
+        monkeypatch.setattr(torch, "rand", spy_rand)
+        for seed in (0, 3):
+            comp = make_stage(bank, p_dag=0.1, p_ego=0.3, dseed=seed, eseed=seed)
+            assert comp.dag.seed == comp.ego.seed == seed
+            for step in (0, 1, 7, 1000):
+                drawn.clear()
+                comp.apply(batch, step)
+                assert [d[0] for d in drawn] == [2, 3], "the swap draws first (rand(2, B)), then the perturbation (rand(3, B))"
+                u_swap, u_ego = drawn[0][1], drawn[1][1]
+>               assert not torch.equal(u_swap, u_ego), f"seed {seed} step {step}: the swap's and the perturbation's selection uniforms are the same numbers"
+E               AssertionError: seed 0 step 0: the swap's and the perturbation's selection uniforms are the same numbers
+E               assert not True
+E                +  where True = <built-in method equal of type object at 0x00007FFB00628DE0>(tensor([0.9701, 0.7078, 0.4594, 0.9207, 0.6450, 0.7911, 0.1786, 0.3511, 0.5813,\n        0.2882, 0.4529, 0.1768, 0.3553...2, 0.4249,\n        0.4504, 0.7682, 0.1307, 0.2974, 0.5693, 0.4041, 0.7392, 0.5065, 0.5672],\n       dtype=torch.float64), tensor([0.9701, 0.7078, 0.4594, 0.9207, 0.6450, 0.7911, 0.1786, 0.3511, 0.5813,\n        0.2882, 0.4529, 0.1768, 0.3553...2, 0.4249,\n        0.4504, 0.7682, 0.1307, 0.2974, 0.5693, 0.4041, 0.7392, 0.5065, 0.5672],\n       dtype=torch.float64))
+E                +    where <built-in method equal of type object at 0x00007FFB00628DE0> = torch.equal
+
+stack\tests\test_v8f_ego_dagger_compose.py:476: AssertionError
+_ test_seed_of_stream_zero_is_the_original_formula_and_a_stream_is_a_deterministic_separate_one _
+
+    def test_seed_of_stream_zero_is_the_original_formula_and_a_stream_is_a_deterministic_separate_one():
+        """stream 0 (every non-composed path) is the original formula, bit for bit; a stream is a pure function of (stream, seed, step), in [0, 2**62), never the original seed, collision-free over a grid."""
+        for seed in (0, 1, 3, 7, 12345):
+            e0 = D.EgoPerturb(p=0.3, seed=seed)
+>           es = D.EgoPerturb(p=0.3, seed=seed, stream=D.EGO_PERTURB_COMPOSED_STREAM)
+                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'tanitad.data.v8f_mini_data' has no attribute 'EGO_PERTURB_COMPOSED_STREAM'
+
+stack\tests\test_v8f_ego_dagger_compose.py:490: AttributeError
+_ test_the_trainer_run_at_the_box2_shape_equal_seeds_overlapping_eligibility_perturbs_its_declared_share _
+
+pack = <test_v8f_dagger_train.Pack object at 0x000001D52B850EC0>
+tmp_path = WindowsPath('F:/TanitAD-scratch/compose_fix/tmp/bt_red_on_old/run/test_the_trainer_run_at_the_bo0')
+
+    def test_the_trainer_run_at_the_box2_shape_equal_seeds_overlapping_eligibility_perturbs_its_declared_share(pack, tmp_path):
+        """The box-2 defect through the real caller: the registered argv shape (--dagger-p 0.1, --ego-perturb-p 0.3, BOTH seeds 0, the law's vmax 8) on the trainer's synthetic world, whose eligibility overlaps as the real
+        corpus does (140 of 204 perturbation-eligible windows are also swap-eligible). summary.json's ego_perturb_n / ego_perturb_eligible must be 0.3 +- 0.02 (box 2 read 0.2492; e7ea20d1 reads ~0.25 here)."""
+        common = list(COMMON)
+        common[common.index("--batch") + 1] = "64"
+        assert TR.main(_run(tmp_path / "box2", ["--steps", "200", *COMPOSED(pack, 0.1, 0.3, dseed=0, eseed=0)], common)) == 0
+        s = _summary(tmp_path / "box2")
+        assert s["ego_perturb_with_dagger"] is True and s["ego_dagger_overlap_n"] == 0
+        n_el = s["ego_perturb_eligible"]
+        assert n_el >= 4725, f"power: {n_el} eligible samples is 3 standard deviations of 0.02 or better (0.21 * (3 / 0.02) ** 2 = 4725)"
+        share = s["ego_perturb_n"] / n_el
+>       assert abs(share - 0.3) <= 0.02, f"ego_perturb_n / ego_perturb_eligible = {s['ego_perturb_n']} / {n_el} = {share:.4f}, registered 0.3 +- 0.02"
+E       AssertionError: ego_perturb_n / ego_perturb_eligible = 1561 / 6345 = 0.2460, registered 0.3 +- 0.02
+E       assert 0.05397951142631993 <= 0.02
+E        +  where 0.05397951142631993 = abs((0.24602048857368006 - 0.3))
+
+stack\tests\test_v8f_ego_dagger_compose.py:514: AssertionError
+---------------------------- Captured stdout call -----------------------------
+[1/200] ade 6.708 total 47.829 p_gt 1.00
+[2/200] ade 6.217 total 45.024 p_gt 1.00
+[3/200] ade 6.783 total 46.553 p_gt 0.99
+[4/200] ade 7.993 total 46.342 p_gt 0.99
+[5/200] ade 7.480 total 44.785 p_gt 0.98
+[6/200] ade 6.130 total 40.165 p_gt 0.98
+[7/200] ade 8.291 total 44.928 p_gt 0.98
+[8/200] ade 6.419 total 43.013 p_gt 0.97
+[9/200] ade 6.705 total 41.524 p_gt 0.97
+[10/200] ade 7.601 total 42.494 p_gt 0.96
+[11/200] ade 7.012 total 41.482 p_gt 0.96
+[12/200] ade 6.603 total 40.525 p_gt 0.96
+[13/200] ade 7.460 total 40.724 p_gt 0.95
+[14/200] ade 7.222 total 40.024 p_gt 0.95
+[15/200] ade 7.194 total 40.852 p_gt 0.94
+[16/200] ade 6.036 total 36.932 p_gt 0.94
+[17/200] ade 7.216 total 40.780 p_gt 0.94
+[18/200] ade 5.863 total 37.515 p_gt 0.93
+[19/200] ade 7.055 total 31.451 p_gt 0.93
+[20/200] ade 7.086 total 28.642 p_gt 0.92
+[21/200] ade 6.516 total 23.453 p_gt 0.92
+[22/200] ade 7.828 total 24.832 p_gt 0.92
+[23/200] ade 5.562 total 22.268 p_gt 0.91
+[24/200] ade 4.623 total 19.619 p_gt 0.91
+[25/200] ade 6.614 total 21.368 p_gt 0.90
+[26/200] ade 6.279 total 21.758 p_gt 0.90
+[27/200] ade 7.988 total 22.830 p_gt 0.90
+[28/200] ade 6.412 total 20.730 p_gt 0.89
+[29/200] ade 7.746 total 21.893 p_gt 0.89
+[30/200] ade 7.525 total 21.342 p_gt 0.88
+[31/200] ade 6.555 total 20.033 p_gt 0.88
+[32/200] ade 8.171 total 21.599 p_gt 0.88
+[33/200] ade 7.183 total 20.160 p_gt 0.87
+[34/200] ade 6.492 total 20.394 p_gt 0.87
+[35/200] ade 6.985 total 21.355 p_gt 0.86
+[36/200] ade 6.400 total 20.513 p_gt 0.86
+[37/200] ade 7.954 total 21.997 p_gt 0.86
+[38/200] ade 7.503 total 21.016 p_gt 0.85
+[39/200] ade 6.904 total 21.785 p_gt 0.85
+[40/200] ade 7.214 total 21.902 p_gt 0.84
+[41/200] ade 6.502 total 21.934 p_gt 0.84
+[42/200] ade 5.852 total 20.093 p_gt 0.84
+[43/200] ade 7.837 total 23.846 p_gt 0.83
+[44/200] ade 7.837 total 23.811 p_gt 0.83
+[45/200] ade 6.400 total 21.900 p_gt 0.82
+[46/200] ade 6.938 total 22.914 p_gt 0.82
+[47/200] ade 6.547 total 21.729 p_gt 0.82
+[48/200] ade 5.931 total 23.931 p_gt 0.81
+[49/200] ade 7.355 total 24.494 p_gt 0.81
+[50/200] ade 6.069 total 22.223 p_gt 0.80
+[51/200] ade 7.762 total 23.848 p_gt 0.80
+[52/200] ade 7.998 total 25.068 p_gt 0.80
+[53/200] ade 6.446 total 22.912 p_gt 0.79
+[54/200] ade 5.580 total 22.591 p_gt 0.79
+[55/200] ade 5.954 total 22.113 p_gt 0.78
+[56/200] ade 6.851 total 24.301 p_gt 0.78
+[57/200] ade 7.157 total 25.796 p_gt 0.78
+[58/200] ade 7.394 total 27.283 p_gt 0.77
+[59/200] ade 7.154 total 25.086 p_gt 0.77
+[60/200] ade 8.069 total 26.998 p_gt 0.76
+[61/200] ade 6.464 total 24.495 p_gt 0.76
+[62/200] ade 5.725 total 24.262 p_gt 0.76
+[63/200] ade 6.418 total 25.538 p_gt 0.75
+[64/200] ade 7.588 total 26.598 p_gt 0.75
+[65/200] ade 7.542 total 26.928 p_gt 0.74
+[66/200] ade 6.209 total 23.344 p_gt 0.74
+[67/200] ade 7.547 total 26.767 p_gt 0.74
+[68/200] ade 6.224 total 24.791 p_gt 0.73
+[69/200] ade 6.468 total 26.096 p_gt 0.73
+[70/200] ade 6.038 total 24.688 p_gt 0.72
+[71/200] ade 7.159 total 25.901 p_gt 0.72
+[72/200] ade 6.484 total 26.176 p_gt 0.72
+[73/200] ade 7.866 total 25.668 p_gt 0.71
+[74/200] ade 8.088 total 25.134 p_gt 0.71
+[75/200] ade 7.452 total 23.946 p_gt 0.70
+[76/200] ade 6.948 total 24.715 p_gt 0.70
+[77/200] ade 5.804 total 22.405 p_gt 0.70
+[78/200] ade 7.130 total 23.341 p_gt 0.69
+[79/200] ade 5.371 total 22.460 p_gt 0.69
+[80/200] ade 6.587 total 23.543 p_gt 0.68
+[81/200] ade 8.339 total 24.754 p_gt 0.68
+[82/200] ade 6.618 total 22.436 p_gt 0.68
+[83/200] ade 6.446 total 21.805 p_gt 0.67
+[84/200] ade 6.418 total 21.189 p_gt 0.67
+[85/200] ade 6.494 total 22.143 p_gt 0.66
+[86/200] ade 6.767 total 20.878 p_gt 0.66
+[87/200] ade 7.919 total 21.791 p_gt 0.66
+[88/200] ade 6.731 total 19.683 p_gt 0.65
+[89/200] ade 6.514 total 19.432 p_gt 0.65
+[90/200] ade 5.973 total 18.874 p_gt 0.64
+[91/200] ade 7.163 total 18.747 p_gt 0.64
+[92/200] ade 6.636 total 18.643 p_gt 0.64
+[93/200] ade 6.725 total 18.872 p_gt 0.63
+[94/200] ade 6.856 total 18.771 p_gt 0.63
+[95/200] ade 7.515 total 19.621 p_gt 0.62
+[96/200] ade 6.381 total 18.298 p_gt 0.62
+[97/200] ade 6.894 total 18.084 p_gt 0.62
+[98/200] ade 7.308 total 17.989 p_gt 0.61
+[99/200] ade 7.575 total 17.884 p_gt 0.61
+[100/200] ade 6.764 total 17.625 p_gt 0.60
+[101/200] ade 6.632 total 17.924 p_gt 0.60
+[102/200] ade 5.431 total 14.880 p_gt 0.60
+[103/200] ade 6.997 total 16.579 p_gt 0.59
+[104/200] ade 6.723 total 16.975 p_gt 0.59
+[105/200] ade 6.973 total 17.123 p_gt 0.58
+[106/200] ade 6.455 total 16.991 p_gt 0.58
+[107/200] ade 6.006 total 15.935 p_gt 0.58
+[108/200] ade 6.591 total 15.661 p_gt 0.57
+[109/200] ade 6.395 total 14.915 p_gt 0.57
+[110/200] ade 6.956 total 16.045 p_gt 0.56
+[111/200] ade 6.464 total 15.615 p_gt 0.56
+[112/200] ade 6.462 total 15.968 p_gt 0.56
+[113/200] ade 6.973 total 16.082 p_gt 0.55
+[114/200] ade 5.893 total 14.176 p_gt 0.55
+[115/200] ade 5.844 total 15.045 p_gt 0.54
+[116/200] ade 5.967 total 14.663 p_gt 0.54
+[117/200] ade 5.970 total 13.855 p_gt 0.54
+[118/200] ade 7.385 total 15.095 p_gt 0.53
+[119/200] ade 7.341 total 15.744 p_gt 0.53
+[120/200] ade 6.768 total 14.187 p_gt 0.52
+[121/200] ade 5.745 total 13.195 p_gt 0.52
+[122/200] ade 6.966 total 14.925 p_gt 0.52
+[123/200] ade 6.832 total 15.465 p_gt 0.51
+[124/200] ade 6.122 total 13.556 p_gt 0.51
+[125/200] ade 6.835 total 14.811 p_gt 0.50
+[126/200] ade 6.892 total 12.611 p_gt 0.50
+[127/200] ade 6.703 total 14.931 p_gt 0.50
+[128/200] ade 7.095 total 14.571 p_gt 0.49
+[129/200] ade 6.255 total 13.360 p_gt 0.49
+[130/200] ade 5.954 total 12.751 p_gt 0.48
+[131/200] ade 7.255 total 14.510 p_gt 0.48
+[132/200] ade 5.367 total 12.701 p_gt 0.48
+[133/200] ade 5.625 total 12.927 p_gt 0.47
+[134/200] ade 6.727 total 13.430 p_gt 0.47
+[135/200] ade 6.576 total 14.247 p_gt 0.46
+[136/200] ade 7.165 total 13.989 p_gt 0.46
+[137/200] ade 5.214 total 12.902 p_gt 0.46
+[138/200] ade 6.139 total 12.858 p_gt 0.45
+[139/200] ade 6.816 total 14.748 p_gt 0.45
+[140/200] ade 6.350 total 13.296 p_gt 0.44
+[141/200] ade 7.532 total 15.248 p_gt 0.44
+[142/200] ade 5.813 total 11.906 p_gt 0.44
+[143/200] ade 6.397 total 13.266 p_gt 0.43
+[144/200] ade 5.713 total 12.235 p_gt 0.43
+[145/200] ade 6.333 total 13.204 p_gt 0.42
+[146/200] ade 6.391 total 14.083 p_gt 0.42
+[147/200] ade 5.715 total 11.483 p_gt 0.42
+[148/200] ade 5.352 total 13.259 p_gt 0.41
+[149/200] ade 5.723 total 12.183 p_gt 0.41
+[150/200] ade 7.841 total 14.785 p_gt 0.40
+[151/200] ade 5.492 total 12.458 p_gt 0.40
+[152/200] ade 7.411 total 14.213 p_gt 0.40
+[153/200] ade 6.668 total 12.861 p_gt 0.39
+[154/200] ade 5.901 total 12.607 p_gt 0.39
+[155/200] ade 6.954 total 13.860 p_gt 0.38
+[156/200] ade 8.086 total 13.748 p_gt 0.38
+[157/200] ade 7.400 total 13.368 p_gt 0.38
+[158/200] ade 6.196 total 12.636 p_gt 0.37
+[159/200] ade 7.839 total 14.386 p_gt 0.37
+[160/200] ade 6.343 total 12.413 p_gt 0.36
+[161/200] ade 6.199 total 13.510 p_gt 0.36
+[162/200] ade 6.371 total 13.198 p_gt 0.36
+[163/200] ade 5.980 total 12.797 p_gt 0.35
+[164/200] ade 5.677 total 12.189 p_gt 0.35
+[165/200] ade 6.900 total 13.172 p_gt 0.34
+[166/200] ade 6.744 total 13.679 p_gt 0.34
+[167/200] ade 6.050 total 12.203 p_gt 0.34
+[168/200] ade 5.725 total 11.137 p_gt 0.33
+[169/200] ade 7.241 total 13.804 p_gt 0.33
+[170/200] ade 5.900 total 11.973 p_gt 0.32
+[171/200] ade 6.129 total 14.436 p_gt 0.32
+[172/200] ade 6.665 total 12.973 p_gt 0.32
+[173/200] ade 6.448 total 11.724 p_gt 0.31
+[174/200] ade 6.786 total 12.565 p_gt 0.31
+[175/200] ade 5.630 total 12.057 p_gt 0.30
+[176/200] ade 5.958 total 11.629 p_gt 0.30
+[177/200] ade 5.737 total 11.829 p_gt 0.30
+[178/200] ade 5.853 total 12.217 p_gt 0.29
+[179/200] ade 6.340 total 12.196 p_gt 0.29
+[180/200] ade 6.129 total 12.003 p_gt 0.28
+[181/200] ade 6.870 total 12.772 p_gt 0.28
+[182/200] ade 6.293 total 12.697 p_gt 0.28
+[183/200] ade 5.338 total 11.050 p_gt 0.27
+[184/200] ade 5.939 total 12.061 p_gt 0.27
+[185/200] ade 7.105 total 13.049 p_gt 0.26
+[186/200] ade 5.440 total 11.359 p_gt 0.26
+[187/200] ade 6.562 total 12.972 p_gt 0.26
+[188/200] ade 5.798 total 11.753 p_gt 0.25
+[189/200] ade 7.428 total 13.504 p_gt 0.25
+[190/200] ade 5.982 total 12.344 p_gt 0.24
+[191/200] ade 6.395 total 12.228 p_gt 0.24
+[192/200] ade 4.425 total 10.580 p_gt 0.24
+[193/200] ade 6.255 total 12.610 p_gt 0.23
+[194/200] ade 6.520 total 12.800 p_gt 0.23
+[195/200] ade 6.447 total 11.973 p_gt 0.22
+[196/200] ade 6.494 total 11.833 p_gt 0.22
+[197/200] ade 6.410 total 12.815 p_gt 0.22
+[198/200] ade 6.356 total 11.109 p_gt 0.21
+[199/200] ade 6.548 total 12.058 p_gt 0.21
+[200/200] ade 6.621 total 12.449 p_gt 0.20
+DONE {"steps": 200, "arm": "M2b", "seed": 5, "seconds": 129.9930760860443}
+_ test_the_run_record_names_the_perturbation_stream_and_a_flag_off_record_names_stream_zero _
+
+pack = <test_v8f_dagger_train.Pack object at 0x000001D52B850EC0>
+tmp_path = WindowsPath('F:/TanitAD-scratch/compose_fix/tmp/bt_red_on_old/run/test_the_run_record_names_the_0')
+
+    def test_the_run_record_names_the_perturbation_stream_and_a_flag_off_record_names_stream_zero(pack, tmp_path):
+>       S = D.EGO_PERTURB_COMPOSED_STREAM
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'tanitad.data.v8f_mini_data' has no attribute 'EGO_PERTURB_COMPOSED_STREAM'
+
+stack\tests\test_v8f_ego_dagger_compose.py:520: AttributeError
+_ test_gdvb_deliberate_regression_a_perturbation_that_is_not_on_the_declared_stream_is_refused[composed_without_separation-True-<lambda>-draws from stream 0 but the declaration needs 1] _
+
+pack = <test_v8f_dagger_train.Pack object at 0x000001D52B850EC0>
+name = 'composed_without_separation', flag = True
+make = <function <lambda> at 0x000001D567481800>
+msg = 'draws from stream 0 but the declaration needs 1'
+
+    @pytest.mark.parametrize("name, flag, make, msg", [
+        ("composed_without_separation", True, lambda a, ego, dag: _unseparated(ego, dag, on=True), "draws from stream 0 but the declaration needs 1"),
+        ("separation_without_the_flag", False, lambda a, ego, dag: _separated_off(ego, dag), "draws from stream 1 but the declaration needs 0"),
+    ])
+    def test_gdvb_deliberate_regression_a_perturbation_that_is_not_on_the_declared_stream_is_refused(pack, name, flag, make, msg):
+        bad = _gate(pack, COMPOSED(pack, flag=flag), make)
+>       assert any(msg in m for m in bad), bad
+E       AssertionError: []
+E       assert False
+E        +  where False = any(<generator object test_gdvb_deliberate_regression_a_perturbation_that_is_not_on_the_declared_stream_is_refused.<locals>.<genexpr> at 0x000001D567537850>)
+
+stack\tests\test_v8f_ego_dagger_compose.py:552: AssertionError
+_ test_gdvb_deliberate_regression_a_perturbation_that_is_not_on_the_declared_stream_is_refused[separation_without_the_flag-False-<lambda>-draws from stream 1 but the declaration needs 0] _
+
+pack = <test_v8f_dagger_train.Pack object at 0x000001D52B850EC0>
+name = 'separation_without_the_flag', flag = False
+make = <function <lambda> at 0x000001D5674818A0>
+msg = 'draws from stream 1 but the declaration needs 0'
+
+    @pytest.mark.parametrize("name, flag, make, msg", [
+        ("composed_without_separation", True, lambda a, ego, dag: _unseparated(ego, dag, on=True), "draws from stream 0 but the declaration needs 1"),
+        ("separation_without_the_flag", False, lambda a, ego, dag: _separated_off(ego, dag), "draws from stream 1 but the declaration needs 0"),
+    ])
+    def test_gdvb_deliberate_regression_a_perturbation_that_is_not_on_the_declared_stream_is_refused(pack, name, flag, make, msg):
+>       bad = _gate(pack, COMPOSED(pack, flag=flag), make)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_ego_dagger_compose.py:551: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_ego_dagger_compose.py:174: in _gate
+    comp = TR.make_compose(a, ego, dag) if make is None else make(a, ego, dag)
+                                                             ^^^^^^^^^^^^^^^^^
+stack\tests\test_v8f_ego_dagger_compose.py:548: in <lambda>
+    ("separation_without_the_flag", False, lambda a, ego, dag: _separated_off(ego, dag), "draws from stream 1 but the declaration needs 0"),
+                                                               ^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+ego = <tanitad.data.v8f_mini_data.EgoPerturb object at 0x000001D56ADC5550>
+dag = <tanitad.data.v8f_dagger.DaggerSwap object at 0x000001D56ACF1AE0>
+
+    def _separated_off(ego, dag):
+>       ego.stream = D.EGO_PERTURB_COMPOSED_STREAM                                                            # a stage that is NOT composed but whose perturber was left on the composed stream
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'tanitad.data.v8f_mini_data' has no attribute 'EGO_PERTURB_COMPOSED_STREAM'
+
+stack\tests\test_v8f_ego_dagger_compose.py:542: AttributeError
+_ test_a_composed_checkpoint_from_before_the_stream_separation_is_not_resumed_on_another_generator _
+
+pack = <test_v8f_dagger_train.Pack object at 0x000001D52B850EC0>
+tmp_path = WindowsPath('F:/TanitAD-scratch/compose_fix/tmp/bt_red_on_old/run/test_a_composed_checkpoint_fro0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001D567D1D6D0>
+
+    def test_a_composed_checkpoint_from_before_the_stream_separation_is_not_resumed_on_another_generator(pack, tmp_path, monkeypatch):
+        """e7ea20d1's composed checkpoint carries no ``ego_perturb_stream`` (= stream 0). Same argv, so the argv_sha matches -- the resume must still be REFUSED: the perturbation would switch generators mid-run."""
+        common = [*COMMON, "--steps", "4", "--ckpt-every", "1", *COMPOSED(pack, 0.5, 0.5)]
+        monkeypatch.setenv("V8F_TRAIN_CRASH_AT", "2")
+        with pytest.raises(RuntimeError, match="V8F_TRAIN_CRASH_AT"):
+            TR.main(["--out", str(tmp_path / "old"), *common])
+        monkeypatch.delenv("V8F_TRAIN_CRASH_AT")
+        p = tmp_path / "old" / "ckpt_last.pt"
+        ck = torch.load(p, map_location="cpu", weights_only=False)
+>       assert ck["ego_perturb_stream"] == D.EGO_PERTURB_COMPOSED_STREAM
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'ego_perturb_stream'
+
+stack\tests\test_v8f_ego_dagger_compose.py:565: KeyError
+---------------------------- Captured stdout call -----------------------------
+[1/4] ade 11.050 total 51.471 p_gt 1.00
+[2/4] ade 7.856 total 47.630 p_gt 0.80
+=========================== short test summary info ===========================
+FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_equal_seeds_every_sample_eligible_for_both_the_perturbed_share_of_the_not_swapped_is_its_own_p[0.5-0.5-0-30]
+FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_equal_seeds_every_sample_eligible_for_both_the_perturbed_share_of_the_not_swapped_is_its_own_p[0.1-0.3-0-80]
+FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_equal_seeds_every_sample_eligible_for_both_the_perturbed_share_of_the_not_swapped_is_its_own_p[0.1-0.3-3-80]
+FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_the_swaps_and_the_perturbations_selection_uniforms_are_not_one_stream_on_the_composed_path
+FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_seed_of_stream_zero_is_the_original_formula_and_a_stream_is_a_deterministic_separate_one
+FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_the_trainer_run_at_the_box2_shape_equal_seeds_overlapping_eligibility_perturbs_its_declared_share
+FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_the_run_record_names_the_perturbation_stream_and_a_flag_off_record_names_stream_zero
+FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_gdvb_deliberate_regression_a_perturbation_that_is_not_on_the_declared_stream_is_refused[composed_without_separation-True-<lambda>-draws from stream 0 but the declaration needs 1]
+FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_gdvb_deliberate_regression_a_perturbation_that_is_not_on_the_declared_stream_is_refused[separation_without_the_flag-False-<lambda>-draws from stream 1 but the declaration needs 0]
+FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_a_composed_checkpoint_from_before_the_stream_separation_is_not_resumed_on_another_generator
+10 failed, 26 deselected in 193.51s (0:03:13)

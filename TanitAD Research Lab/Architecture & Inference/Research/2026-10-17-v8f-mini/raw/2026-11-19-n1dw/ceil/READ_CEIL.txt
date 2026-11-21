@@ -1,0 +1,76 @@
+PREREG_N1D_CEIL  FULL RUN   card: PREREG_N1D_CEIL.md (sha256 092bb25c...)
+tier: T0 decodability of frozen features / inputs, never driving performance   evidence: MEASURED (ours; banked N1D checkpoints, D1-HO grid, CPU, zero training)
+estimator: taniteval.ci.paired_episode_cluster_bootstrap, B 2000, seed 0, over the held-out episodes; answers another draw of EPISODES only (training variance: the two N1D seeds)
+windows 5736 / episodes 497; class counts [1934, 1862, 1940]; majority share 0.338215; bar 0.0383; probe seed 0
+feature dims {'F_TEXT': [15], 'F_EGO': [8], 'F_PLAN': [1024]}; F-EGO columns ['v', 'a', 'k', 'v^2', 'v*a', 'v*k', 'v^2*k', 'a*k']
+
+== accuracy (point [95% episode-cluster CI]) ==
+N1D_s0 tree: F-ALL=0.7306[0.713,0.748]  F-EGO=0.5579[0.540,0.574]  F-PLAN=0.7028[0.685,0.719]  F-TE=0.6855[0.666,0.705]  F-TE-EGOCONST=0.6044[0.579,0.627]  F-TE-TEXTZERO=0.5579[0.540,0.574]  F-TEXT=0.6044[0.579,0.627]
+N1D_s0 logit: F-ALL=0.6860[0.667,0.705]  F-EGO=0.4983[0.478,0.518]  F-PLAN=0.6843[0.665,0.703]  F-TE=0.5746[0.552,0.597]  F-TEXT=0.5159[0.491,0.541]
+N1D_s1 tree: F-ALL=0.7287[0.711,0.746]  F-EGO=0.5579[0.540,0.574]  F-PLAN=0.6937[0.675,0.711]  F-TE=0.6855[0.666,0.705]  F-TE-EGOCONST=0.6044[0.579,0.627]  F-TE-TEXTZERO=0.5579[0.540,0.574]  F-TEXT=0.6044[0.579,0.627]
+N1D_s1 logit: F-ALL=0.6886[0.671,0.705]  F-EGO=0.4983[0.478,0.518]  F-PLAN=0.6850[0.667,0.702]  F-TE=0.5746[0.552,0.597]  F-TEXT=0.5159[0.491,0.541]
+
+== contrasts A-B, same windows (paired episode-cluster bootstrap, B 2000 seed 0) ==
+-- N1D_s0|tree
+   TE-PLAN   -0.0173 [-0.0361, +0.0029] not separated (n 5736/497 ep)
+   TE-TEXT   +0.0811 [+0.0629, +0.0989] separated (n 5736/497 ep)
+   ALL-PLAN  +0.0279 [+0.0188, +0.0375] separated (n 5736/497 ep)
+   EGO-TEXT  -0.0465 [-0.0739, -0.0192] separated (n 5736/497 ep)
+   TE-EGO    +0.1276 [+0.1074, +0.1493] separated (n 5736/497 ep)
+   ALL-TE    +0.0452 [+0.0278, +0.0624] separated (n 5736/497 ep)
+   PLAN-TE   +0.0173 [-0.0029, +0.0361] not separated (n 5736/497 ep)
+-- N1D_s0|logit
+   TE-PLAN   -0.1097 [-0.1317, -0.0878] separated (n 5736/497 ep)
+   TE-TEXT   +0.0588 [+0.0425, +0.0750] separated (n 5736/497 ep)
+   ALL-PLAN  +0.0017 [-0.0051, +0.0086] not separated (n 5736/497 ep)
+   EGO-TEXT  -0.0176 [-0.0492, +0.0145] not separated (n 5736/497 ep)
+   TE-EGO    +0.0764 [+0.0497, +0.1022] separated (n 5736/497 ep)
+   ALL-TE    +0.1114 [+0.0903, +0.1331] separated (n 5736/497 ep)
+   PLAN-TE   +0.1097 [+0.0878, +0.1317] separated (n 5736/497 ep)
+-- N1D_s1|tree
+   TE-PLAN   -0.0082 [-0.0278, +0.0109] not separated (n 5736/497 ep)
+   TE-TEXT   +0.0811 [+0.0629, +0.0989] separated (n 5736/497 ep)
+   ALL-PLAN  +0.0350 [+0.0252, +0.0450] separated (n 5736/497 ep)
+   EGO-TEXT  -0.0465 [-0.0739, -0.0192] separated (n 5736/497 ep)
+   TE-EGO    +0.1276 [+0.1074, +0.1493] separated (n 5736/497 ep)
+   ALL-TE    +0.0432 [+0.0273, +0.0583] separated (n 5736/497 ep)
+   PLAN-TE   +0.0082 [-0.0109, +0.0278] not separated (n 5736/497 ep)
+-- N1D_s1|logit
+   TE-PLAN   -0.1104 [-0.1312, -0.0895] separated (n 5736/497 ep)
+   TE-TEXT   +0.0588 [+0.0425, +0.0750] separated (n 5736/497 ep)
+   ALL-PLAN  +0.0037 [-0.0034, +0.0107] not separated (n 5736/497 ep)
+   EGO-TEXT  -0.0176 [-0.0492, +0.0145] not separated (n 5736/497 ep)
+   TE-EGO    +0.0764 [+0.0497, +0.1022] separated (n 5736/497 ep)
+   ALL-TE    +0.1140 [+0.0942, +0.1343] separated (n 5736/497 ep)
+   PLAN-TE   +0.1104 [+0.0895, +0.1312] separated (n 5736/497 ep)
+
+== OUTCOME, tree probe (DECIDES) ==  rule on F-TE - F-PLAN: ABOVE if delta >= 0.0383 and lo > 0
+   N1D_s0: CEIL-AT-PLAN   [F-TE - F-PLAN -0.0173 [-0.0361, +0.0029] not separated (n 5736/497 ep)]
+   N1D_s1: CEIL-AT-PLAN   [F-TE - F-PLAN -0.0082 [-0.0278, +0.0109] not separated (n 5736/497 ep)]
+   CEIL-AT-PLAN     HOLDS
+   CEIL-ABOVE-PLAN  NOT-HELD
+   HEADLINE: CEIL-AT-PLAN
+
+== OUTCOME, logit probe (beside) ==  rule on F-TE - F-PLAN: ABOVE if delta >= 0.0383 and lo > 0
+   N1D_s0: CEIL-AT-PLAN   [F-TE - F-PLAN -0.1097 [-0.1317, -0.0878] separated (n 5736/497 ep)]
+   N1D_s1: CEIL-AT-PLAN   [F-TE - F-PLAN -0.1104 [-0.1312, -0.0895] separated (n 5736/497 ep)]
+   CEIL-AT-PLAN     HOLDS
+   CEIL-ABOVE-PLAN  NOT-HELD
+   HEADLINE: CEIL-AT-PLAN
+
+== printed beside ==
+   tree N1D_s0: F-EGO alone 0.5579; F-TE-F-TEXT +0.0811 [+0.0629, +0.0989] separated (n 5736/497 ep); F-ALL-F-PLAN +0.0279 [+0.0188, +0.0375] separated (n 5736/497 ep)
+   tree N1D_s1: F-EGO alone 0.5579; F-TE-F-TEXT +0.0811 [+0.0629, +0.0989] separated (n 5736/497 ep); F-ALL-F-PLAN +0.0350 [+0.0252, +0.0450] separated (n 5736/497 ep)
+   logit N1D_s0: F-EGO alone 0.4983; F-TE-F-TEXT +0.0588 [+0.0425, +0.0750] separated (n 5736/497 ep); F-ALL-F-PLAN +0.0017 [-0.0051, +0.0086] not separated (n 5736/497 ep)
+   logit N1D_s1: F-EGO alone 0.4983; F-TE-F-TEXT +0.0588 [+0.0425, +0.0750] separated (n 5736/497 ep); F-ALL-F-PLAN +0.0037 [-0.0034, +0.0107] not separated (n 5736/497 ep)
+
+== controls ==
+K-CONST: live 0.338215 vs card 0.338215; pass True
+K-PARITY: pass True; join_ok True; live acc {'F-TEXT': 0.6044, 'F-PLAN': [0.7028, 0.6937]} vs card {'F-TEXT': 0.6044, 'F-PLAN': [0.7028, 0.6937]}; {"N1D_s0|F-TEXT": {"identical_correct_vector": true, "accuracy": 0.6044281729428173, "banked_accuracy": 0.6044281729428173}, "N1D_s0|F-PLAN": {"identical_correct_vector": true, "accuracy": 0.7027545327754533, "banked_accuracy": 0.7027545327754533}, "N1D_s1|F-TEXT": {"identical_correct_vector": true, "accuracy": 0.6044281729428173, "banked_accuracy": 0.6044281729428173}, "N1D_s1|F-PLAN": {"identical_correct_vector": true, "accuracy": 0.6936889818688982, "banked_accuracy": 0.6936889818688982}}
+K-EGO-DET: pass True; bit-identical across all four True; 2nd vs 1st {"N1D_s0": {"F_EGO": true, "F_TEXT": true, "F_PLAN": true, "g": true, "ci": true, "t0": true}, "N1D_s1": {"F_EGO": true, "F_TEXT": true, "F_PLAN": true, "g": true, "ci": true, "t0": true}}
+IDENTITY-ARM (binding): 0 of 5736 windows differ; pass True
+REGRESSION-ARM (binding): F-TE with the 15 text columns zeroed reads separated below F-TE, unless F-TE does not clear F-EGO (then printed as such); pass True
+   N1D_s0: PASS; F-TE clears F-EGO: True; TEXTZERO-F-TE -0.1276 [-0.1493, -0.1074] separated (n 5736/497 ep); TEXTZERO-F-EGO +0.0000 [+0.0000, +0.0000] not separated (n 5736/497 ep); preds differing from F-EGO's 0
+   N1D_s1: PASS; F-TE clears F-EGO: True; TEXTZERO-F-TE -0.1276 [-0.1493, -0.1074] separated (n 5736/497 ep); TEXTZERO-F-EGO +0.0000 [+0.0000, +0.0000] not separated (n 5736/497 ep); preds differing from F-EGO's 0
+
+CONTROL STATUS: ALL CARD CONTROLS READ

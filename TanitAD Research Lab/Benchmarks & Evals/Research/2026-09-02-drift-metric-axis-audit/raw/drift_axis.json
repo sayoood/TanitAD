@@ -1,0 +1,330 @@
+{
+ "_experiment": "E-BE-DRIFT-1",
+ "_date": "2026-09-02",
+ "_generated_utc": "2026-09-02T00:21:45.343942+00:00",
+ "_evidence_class": "MEASURED (ours; re-analysis of banked latentmotion reads)",
+ "_tier": "T0-DIAGNOSTIC (inherited from the source reads) -- NOT a driving claim",
+ "_what_drift_is": "r of a k-fold-fit linear probe predicting dz = z_{t+k} - z_t, projected on ITS OWN top PCA directions, from z_t. Source: mm-e19-probes/latentmotion.py (E-DEC-59). \u26d4 NOT a start-vs-end trajectory measure.",
+ "_caveat_pca_basis": "\u26a0\ufe0f the target is dz projected on the top PCA directions OF THAT k, so k=4 and k=60 are not literally the same target vector -- the claim is about the predictability of each k's own leading dz structure, not about one fixed quantity.",
+ "controls": {
+  "constant_control_required": 0.0,
+  "reads_not_scored_due_to_control_failure": [],
+  "positive_control": "z_t is itself the drift column (E-DEC-59)"
+ },
+ "reads": {
+  "k60clip05p30k": [
+   {
+    "source": "k60_reread_2026-09-02",
+    "file": "latentmotion_k4_band0_8.json",
+    "k": 4,
+    "pca_band": [
+     0,
+     8
+    ],
+    "split": "HELD-OUT",
+    "n_clips": 80,
+    "n_rows": 7680,
+    "drift_r": 0.6331,
+    "drift_t": 127.44,
+    "constant_control_r": 0.0
+   },
+   {
+    "source": "k60_reread_2026-09-02",
+    "file": "latentmotion_k4_band8_16.json",
+    "k": 4,
+    "pca_band": [
+     8,
+     16
+    ],
+    "split": "HELD-OUT",
+    "n_clips": 80,
+    "n_rows": 7680,
+    "drift_r": 0.651,
+    "drift_t": 131.22,
+    "constant_control_r": 0.0
+   },
+   {
+    "source": "k60_reread_2026-09-02",
+    "file": "latentmotion_k60_band0_8.json",
+    "k": 60,
+    "pca_band": [
+     0,
+     8
+    ],
+    "split": "HELD-OUT",
+    "n_clips": 80,
+    "n_rows": 3200,
+    "drift_r": 0.6277,
+    "drift_t": 65.63,
+    "constant_control_r": 0.0
+   },
+   {
+    "source": "k60_reread_2026-09-02",
+    "file": "latentmotion_k60_band8_16.json",
+    "k": 60,
+    "pca_band": [
+     8,
+     16
+    ],
+    "split": "HELD-OUT",
+    "n_clips": 80,
+    "n_rows": 3200,
+    "drift_r": 0.6535,
+    "drift_t": 72.31,
+    "constant_control_r": 0.0
+   }
+  ],
+  "postrain30k": [
+   {
+    "source": "k60_reread_2026-09-02",
+    "file": "latentmotion_k4_band0_8.json",
+    "k": 4,
+    "pca_band": [
+     0,
+     8
+    ],
+    "split": "HELD-OUT",
+    "n_clips": 80,
+    "n_rows": 7680,
+    "drift_r": 0.6674,
+    "drift_t": 146.85,
+    "constant_control_r": 0.0
+   },
+   {
+    "source": "k60_reread_2026-09-02",
+    "file": "latentmotion_k4_band8_16.json",
+    "k": 4,
+    "pca_band": [
+     8,
+     16
+    ],
+    "split": "HELD-OUT",
+    "n_clips": 80,
+    "n_rows": 7680,
+    "drift_r": 0.6712,
+    "drift_t": 144.06,
+    "constant_control_r": 0.0
+   },
+   {
+    "source": "k60_reread_2026-09-02",
+    "file": "latentmotion_k60_band0_8.json",
+    "k": 60,
+    "pca_band": [
+     0,
+     8
+    ],
+    "split": "HELD-OUT",
+    "n_clips": 80,
+    "n_rows": 3200,
+    "drift_r": 0.6625,
+    "drift_t": 86.19,
+    "constant_control_r": 0.0
+   },
+   {
+    "source": "k60_reread_2026-09-02",
+    "file": "latentmotion_k60_band8_16.json",
+    "k": 60,
+    "pca_band": [
+     8,
+     16
+    ],
+    "split": "HELD-OUT",
+    "n_clips": 80,
+    "n_rows": 3200,
+    "drift_r": 0.6585,
+    "drift_t": 84.27,
+    "constant_control_r": 0.0
+   },
+   {
+    "source": "k8_attribution",
+    "file": "MISLABELLED_INSIDE_AS_k60__latentmotion_k4_band0_8.json",
+    "k": 4,
+    "pca_band": [
+     0,
+     8
+    ],
+    "split": "HELD-OUT",
+    "n_clips": 80,
+    "n_rows": 7680,
+    "drift_r": 0.6674,
+    "drift_t": 146.85,
+    "constant_control_r": 0.0
+   },
+   {
+    "source": "k8_attribution",
+    "file": "MISLABELLED_INSIDE_AS_k60__latentmotion_k4_band8_16.json",
+    "k": 4,
+    "pca_band": [
+     8,
+     16
+    ],
+    "split": "HELD-OUT",
+    "n_clips": 80,
+    "n_rows": 7680,
+    "drift_r": 0.6712,
+    "drift_t": 144.06,
+    "constant_control_r": 0.0
+   },
+   {
+    "source": "k8_attribution",
+    "file": "MISLABELLED_INSIDE_AS_k60__latentmotion_k60_band0_8.json",
+    "k": 60,
+    "pca_band": [
+     0,
+     8
+    ],
+    "split": "HELD-OUT",
+    "n_clips": 80,
+    "n_rows": 3200,
+    "drift_r": 0.6625,
+    "drift_t": 86.19,
+    "constant_control_r": 0.0
+   },
+   {
+    "source": "k8_attribution",
+    "file": "MISLABELLED_INSIDE_AS_k60__latentmotion_k60_band8_16.json",
+    "k": 60,
+    "pca_band": [
+     8,
+     16
+    ],
+    "split": "HELD-OUT",
+    "n_clips": 80,
+    "n_rows": 3200,
+    "drift_r": 0.6585,
+    "drift_t": 84.27,
+    "constant_control_r": 0.0
+   }
+  ],
+  "k8clip05p30k": [
+   {
+    "source": "k8_attribution",
+    "file": "MISLABELLED_INSIDE_AS_k60__latentmotion_k4_band0_8.json",
+    "k": 4,
+    "pca_band": [
+     0,
+     8
+    ],
+    "split": "HELD-OUT",
+    "n_clips": 80,
+    "n_rows": 7680,
+    "drift_r": 0.6618,
+    "drift_t": 138.86,
+    "constant_control_r": 0.0
+   },
+   {
+    "source": "k8_attribution",
+    "file": "MISLABELLED_INSIDE_AS_k60__latentmotion_k4_band8_16.json",
+    "k": 4,
+    "pca_band": [
+     8,
+     16
+    ],
+    "split": "HELD-OUT",
+    "n_clips": 80,
+    "n_rows": 7680,
+    "drift_r": 0.6598,
+    "drift_t": 139.54,
+    "constant_control_r": 0.0
+   },
+   {
+    "source": "k8_attribution",
+    "file": "MISLABELLED_INSIDE_AS_k60__latentmotion_k60_band0_8.json",
+    "k": 60,
+    "pca_band": [
+     0,
+     8
+    ],
+    "split": "HELD-OUT",
+    "n_clips": 80,
+    "n_rows": 3200,
+    "drift_r": 0.646,
+    "drift_t": 71.55,
+    "constant_control_r": 0.0
+   },
+   {
+    "source": "k8_attribution",
+    "file": "MISLABELLED_INSIDE_AS_k60__latentmotion_k60_band8_16.json",
+    "k": 60,
+    "pca_band": [
+     8,
+     16
+    ],
+    "split": "HELD-OUT",
+    "n_clips": 80,
+    "n_rows": 3200,
+    "drift_r": 0.6529,
+    "drift_t": 78.7,
+    "constant_control_r": 0.0
+   }
+  ]
+ },
+ "k_axis": {
+  "k60clip05p30k band0_8": {
+   "k_low": 4,
+   "k_high": 60,
+   "horizon_ratio": 15.0,
+   "drift_r_at_k_low": 0.6331,
+   "drift_r_at_k_high": 0.6277,
+   "relative_change": -0.008529458221449945,
+   "n_rows_low": 7680,
+   "n_rows_high": 3200,
+   "endpoints_equal_within_2pct": true
+  },
+  "k60clip05p30k band8_16": {
+   "k_low": 4,
+   "k_high": 60,
+   "horizon_ratio": 15.0,
+   "drift_r_at_k_low": 0.651,
+   "drift_r_at_k_high": 0.6535,
+   "relative_change": 0.0038402457757295647,
+   "n_rows_low": 7680,
+   "n_rows_high": 3200,
+   "endpoints_equal_within_2pct": true
+  },
+  "postrain30k band0_8": {
+   "k_low": 4,
+   "k_high": 60,
+   "horizon_ratio": 15.0,
+   "drift_r_at_k_low": 0.6674,
+   "drift_r_at_k_high": 0.6625,
+   "relative_change": -0.007341923883727923,
+   "n_rows_low": 7680,
+   "n_rows_high": 3200,
+   "endpoints_equal_within_2pct": true
+  },
+  "postrain30k band8_16": {
+   "k_low": 4,
+   "k_high": 60,
+   "horizon_ratio": 15.0,
+   "drift_r_at_k_low": 0.6712,
+   "drift_r_at_k_high": 0.6585,
+   "relative_change": -0.018921334922526883,
+   "n_rows_low": 7680,
+   "n_rows_high": 3200,
+   "endpoints_equal_within_2pct": true
+  },
+  "k8clip05p30k band0_8": {
+   "k_low": 4,
+   "k_high": 60,
+   "horizon_ratio": 15.0,
+   "drift_r_at_k_low": 0.6618,
+   "drift_r_at_k_high": 0.646,
+   "relative_change": -0.023874282260501714,
+   "n_rows_low": 7680,
+   "n_rows_high": 3200,
+   "endpoints_equal_within_2pct": false
+  },
+  "k8clip05p30k band8_16": {
+   "k_low": 4,
+   "k_high": 60,
+   "horizon_ratio": 15.0,
+   "drift_r_at_k_low": 0.6598,
+   "drift_r_at_k_high": 0.6529,
+   "relative_change": -0.010457714458926973,
+   "n_rows_low": 7680,
+   "n_rows_high": 3200,
+   "endpoints_equal_within_2pct": true
+  }
+ }
+}

@@ -1,0 +1,136 @@
+
+====================================================================================================
+M2b_s0: ADE6 means (m) over all 2399 windows -- own 2.1753  GT-code 0.9709  GT-constraints-only 1.0997
+====================================================================================================
+   constraints-only dose alpha 0.25/0.50/0.75: 2.0010 / 1.7831 / 1.3923
+   gap_full mean 1.2045 m; gap_cons mean 1.0756 m (89.3% of the full gap); windows with no v9 row: gap_full mean 0.0000 (oracle = T's own code there)
+   leave-one-out necessity nec_g mean (m): latcons +0.665, lonspeed +1.989, stoplead +0.420, goal +0.079, latdec +0.015, londec +0.057
+   dose r(alpha)= (own - cons_alpha)/(own - full): a0.25 0.145, a0.50 0.326, a0.75 0.650, a1.00 0.893
+
+-- concentration of gap_cons over windows / episodes --
+   worst   5% of windows by gap_cons: carry 0.259 of the total gap; windows with NEGATIVE gap_cons (GT constraints made it worse): 18.0%
+   worst  10% of windows by gap_cons: carry 0.424 of the total gap; windows with NEGATIVE gap_cons (GT constraints made it worse): 18.0%
+   worst  25% of windows by gap_cons: carry 0.741 of the total gap; windows with NEGATIVE gap_cons (GT constraints made it worse): 18.0%
+   worst  50% of windows by gap_cons: carry 0.988 of the total gap; windows with NEGATIVE gap_cons (GT constraints made it worse): 18.0%
+   worst  10% of episodes by gap_cons: carry 0.239 of the total gap
+   worst  25% of episodes by gap_cons: carry 0.478 of the total gap
+
+-- stratum: GT lat class -- ceiling = share of gap_cons (M2b_s0); SSEshare = share of T's constraint squared error (s2)
+   stratum         n_win   win% gap_cons m gap_full m  CEILING           [CI95] SSEshare gap/SSE
+   LANE_KEEP        1907  80.6%      1.087      1.193    0.803 [ 0.748, 0.856]    0.695    1.15
+   TURN_L             45   1.9%      1.750      1.866    0.031 [ 0.008, 0.062]    0.094    0.32
+   TURN_R            152   6.4%      1.217      1.226    0.072 [ 0.037, 0.114]    0.090    0.80
+   none              261  11.0%      0.936      1.316    0.095 [ 0.064, 0.128]    0.121    0.78
+
+-- stratum: GT lon class -- ceiling = share of gap_cons (M2b_s0); SSEshare = share of T's constraint squared error (s2)
+   stratum         n_win   win% gap_cons m gap_full m  CEILING           [CI95] SSEshare gap/SSE
+   ACCELERATE        465  19.7%      1.286      1.449    0.232 [ 0.175, 0.289]    0.224    1.03
+   CREEP              47   2.0%      0.361      0.331    0.007 [-0.000, 0.016]    0.023    0.29
+   DECELERATE        403  17.0%      1.398      1.532    0.218 [ 0.164, 0.275]    0.229    0.95
+   FOLLOW            436  18.4%      1.414      1.526    0.239 [ 0.158, 0.331]    0.114    2.10
+   HOLD               22   0.9%     -0.004      0.026   -0.000 [-0.002, 0.002]    0.053   -0.00
+   KEEP              736  31.1%      0.743      0.834    0.212 [ 0.162, 0.265]    0.127    1.68
+   STOP              131   5.5%      1.084      1.221    0.055 [ 0.026, 0.089]    0.173    0.32
+   none              125   5.3%      0.772      1.145    0.037 [ 0.004, 0.083]    0.058    0.64
+
+-- stratum: ego speed band (m/s) -- ceiling = share of gap_cons (M2b_s0); SSEshare = share of T's constraint squared error (s2)
+   stratum         n_win   win% gap_cons m gap_full m  CEILING           [CI95] SSEshare gap/SSE
+   1-5               352  14.9%      1.287      1.570    0.176 [ 0.119, 0.237]    0.181    0.97
+   10-15             627  26.5%      0.993      1.051    0.241 [ 0.183, 0.310]    0.306    0.79
+   5-10              653  27.6%      1.492      1.608    0.378 [ 0.306, 0.446]    0.320    1.18
+   <1                133   5.6%      0.636      1.051    0.033 [ 0.011, 0.057]    0.068    0.48
+   >=15              600  25.4%      0.742      0.814    0.173 [ 0.117, 0.239]    0.126    1.37
+
+-- stratum: GT path heading change 6 s -- ceiling = share of gap_cons (M2b_s0); SSEshare = share of T's constraint squared error (s2)
+   stratum         n_win   win% gap_cons m gap_full m  CEILING           [CI95] SSEshare gap/SSE
+   10-30             323  13.7%      1.255      1.387    0.157 [ 0.109, 0.210]    0.156    1.01
+   3-10              502  21.2%      1.085      1.190    0.211 [ 0.166, 0.261]    0.149    1.41
+   <3 straight      1207  51.0%      0.945      1.109    0.442 [ 0.370, 0.517]    0.328    1.35
+   >=30 turn         333  14.1%      1.471      1.516    0.190 [ 0.125, 0.257]    0.367    0.52
+
+-- stratum: lead agent -- ceiling = share of gap_cons (M2b_s0); SSEshare = share of T's constraint squared error (s2)
+   stratum         n_win   win% gap_cons m gap_full m  CEILING           [CI95] SSEshare gap/SSE
+   lead present     1060  44.8%      1.134      1.311    0.466 [ 0.369, 0.560]    0.583    0.80
+   no lead          1305  55.2%      1.056      1.149    0.534 [ 0.440, 0.631]    0.417    1.28
+
+-- stratum: nav token -- ceiling = share of gap_cons (M2b_s0); SSEshare = share of T's constraint squared error (s2)
+   stratum         n_win   win% gap_cons m gap_full m  CEILING           [CI95] SSEshare gap/SSE
+   nav0             1970  83.3%      1.074      1.201    0.820 [ 0.745, 0.882]    0.705    1.16
+   nav1              117   4.9%      1.434      1.729    0.065 [ 0.028, 0.115]    0.144    0.45
+   nav2              278  11.8%      1.064      1.154    0.115 [ 0.062, 0.178]    0.151    0.76
+
+-- per-window link: gap_cons vs T's constraint SSE by group (Spearman over windows with a v9 row; NNLS slope m per SD^2) --
+   latcons    Spearman rho(window SSE_g, gap_cons) = +0.103
+   lonspeed   Spearman rho(window SSE_g, gap_cons) = +0.304
+   stoplead   Spearman rho(window SSE_g, gap_cons) = -0.010
+   NNLS gap_cons ~ b_lat*SSE_lat + b_lon*SSE_lon + b_stp*SSE_stp + c : latcons 0.0752, lonspeed 0.1499, stoplead 0.0000, const 0.7988  R2 0.092
+   NNLS gap_cons ~ SSE by cell kind: ANGLE 0.1810, GEOMETRY 0.0000, LEAD 0.0000, SPEED 0.8380, TIME-GAP 0.0000, TIME-TO-EVENT 0.0307, const 0.5734  R2 0.199
+   implied ADE contribution by kind (coef x sum SSE_kind, m summed over windows -> share of the kind-explained part): ANGLE 0.197, GEOMETRY 0.000, LEAD 0.000, SPEED 0.742, TIME-GAP 0.000, TIME-TO-EVENT 0.061
+
+====================================================================================================
+M2b_s1: ADE6 means (m) over all 2399 windows -- own 2.0546  GT-code 1.0037  GT-constraints-only 1.1315
+====================================================================================================
+   constraints-only dose alpha 0.25/0.50/0.75: 1.9850 / 1.8621 / 1.6153
+   gap_full mean 1.0508 m; gap_cons mean 0.9231 m (87.8% of the full gap); windows with no v9 row: gap_full mean 0.0000 (oracle = T's own code there)
+   leave-one-out necessity nec_g mean (m): latcons +0.677, lonspeed +1.743, stoplead +0.390, goal +0.107, latdec +0.014, londec +0.038
+   dose r(alpha)= (own - cons_alpha)/(own - full): a0.25 0.066, a0.50 0.183, a0.75 0.418, a1.00 0.878
+
+-- concentration of gap_cons over windows / episodes --
+   worst   5% of windows by gap_cons: carry 0.274 of the total gap; windows with NEGATIVE gap_cons (GT constraints made it worse): 22.6%
+   worst  10% of windows by gap_cons: carry 0.446 of the total gap; windows with NEGATIVE gap_cons (GT constraints made it worse): 22.6%
+   worst  25% of windows by gap_cons: carry 0.768 of the total gap; windows with NEGATIVE gap_cons (GT constraints made it worse): 22.6%
+   worst  50% of windows by gap_cons: carry 1.013 of the total gap; windows with NEGATIVE gap_cons (GT constraints made it worse): 22.6%
+   worst  10% of episodes by gap_cons: carry 0.248 of the total gap
+   worst  25% of episodes by gap_cons: carry 0.503 of the total gap
+
+-- stratum: GT lat class -- ceiling = share of gap_cons (M2b_s1); SSEshare = share of T's constraint squared error (s2)
+   stratum         n_win   win% gap_cons m gap_full m  CEILING           [CI95] SSEshare gap/SSE
+   LANE_KEEP        1907  80.6%      0.952      1.059    0.820 [ 0.765, 0.867]    0.691    1.19
+   TURN_L             45   1.9%      1.944      2.013    0.039 [ 0.011, 0.075]    0.081    0.49
+   TURN_R            152   6.4%      0.724      0.833    0.050 [ 0.021, 0.090]    0.103    0.48
+   none              261  11.0%      0.770      1.091    0.091 [ 0.065, 0.122]    0.126    0.72
+
+-- stratum: GT lon class -- ceiling = share of gap_cons (M2b_s1); SSEshare = share of T's constraint squared error (s2)
+   stratum         n_win   win% gap_cons m gap_full m  CEILING           [CI95] SSEshare gap/SSE
+   ACCELERATE        465  19.7%      1.145      1.278    0.240 [ 0.182, 0.297]    0.212    1.14
+   CREEP              47   2.0%      0.546      0.578    0.012 [ 0.000, 0.027]    0.022    0.53
+   DECELERATE        403  17.0%      1.013      1.099    0.184 [ 0.133, 0.238]    0.231    0.80
+   FOLLOW            436  18.4%      1.160      1.256    0.228 [ 0.151, 0.316]    0.120    1.90
+   HOLD               22   0.9%     -0.009      0.125   -0.000 [-0.003, 0.003]    0.057   -0.00
+   KEEP              736  31.1%      0.512      0.647    0.170 [ 0.121, 0.223]    0.114    1.49
+   STOP              131   5.5%      1.769      2.003    0.105 [ 0.057, 0.157]    0.176    0.59
+   none              125   5.3%      1.075      1.342    0.061 [ 0.014, 0.121]    0.068    0.89
+
+-- stratum: ego speed band (m/s) -- ceiling = share of gap_cons (M2b_s1); SSEshare = share of T's constraint squared error (s2)
+   stratum         n_win   win% gap_cons m gap_full m  CEILING           [CI95] SSEshare gap/SSE
+   1-5               352  14.9%      1.200      1.355    0.191 [ 0.127, 0.262]    0.187    1.02
+   10-15             627  26.5%      0.806      0.935    0.228 [ 0.166, 0.301]    0.301    0.76
+   5-10              653  27.6%      1.090      1.218    0.322 [ 0.251, 0.388]    0.307    1.05
+   <1                133   5.6%      0.851      0.987    0.051 [ 0.025, 0.082]    0.069    0.74
+   >=15              600  25.4%      0.769      0.885    0.208 [ 0.138, 0.289]    0.135    1.54
+
+-- stratum: GT path heading change 6 s -- ceiling = share of gap_cons (M2b_s1); SSEshare = share of T's constraint squared error (s2)
+   stratum         n_win   win% gap_cons m gap_full m  CEILING           [CI95] SSEshare gap/SSE
+   10-30             323  13.7%      1.247      1.409    0.182 [ 0.134, 0.235]    0.156    1.16
+   3-10              502  21.2%      0.944      1.065    0.214 [ 0.169, 0.263]    0.162    1.32
+   <3 straight      1207  51.0%      0.772      0.907    0.421 [ 0.347, 0.499]    0.337    1.25
+   >=30 turn         333  14.1%      1.219      1.310    0.183 [ 0.121, 0.253]    0.345    0.53
+
+-- stratum: lead agent -- ceiling = share of gap_cons (M2b_s1); SSEshare = share of T's constraint squared error (s2)
+   stratum         n_win   win% gap_cons m gap_full m  CEILING           [CI95] SSEshare gap/SSE
+   lead present     1060  44.8%      0.979      1.123    0.469 [ 0.372, 0.568]    0.564    0.83
+   no lead          1305  55.2%      0.901      1.020    0.531 [ 0.432, 0.628]    0.436    1.22
+
+-- stratum: nav token -- ceiling = share of gap_cons (M2b_s1); SSEshare = share of T's constraint squared error (s2)
+   stratum         n_win   win% gap_cons m gap_full m  CEILING           [CI95] SSEshare gap/SSE
+   nav0             1970  83.3%      0.918      1.049    0.817 [ 0.743, 0.881]    0.710    1.15
+   nav1              117   4.9%      1.640      1.760    0.087 [ 0.039, 0.143]    0.133    0.65
+   nav2              278  11.8%      0.770      0.894    0.097 [ 0.053, 0.149]    0.157    0.62
+
+-- per-window link: gap_cons vs T's constraint SSE by group (Spearman over windows with a v9 row; NNLS slope m per SD^2) --
+   latcons    Spearman rho(window SSE_g, gap_cons) = +0.089
+   lonspeed   Spearman rho(window SSE_g, gap_cons) = +0.290
+   stoplead   Spearman rho(window SSE_g, gap_cons) = +0.054
+   NNLS gap_cons ~ b_lat*SSE_lat + b_lon*SSE_lon + b_stp*SSE_stp + c : latcons 0.0701, lonspeed 0.1718, stoplead 0.0000, const 0.6145  R2 0.129
+   NNLS gap_cons ~ SSE by cell kind: ANGLE 0.1702, GEOMETRY 0.0124, LEAD 0.0000, SPEED 0.6152, TIME-GAP 0.0000, TIME-TO-EVENT 0.0283, const 0.5031  R2 0.211
+   implied ADE contribution by kind (coef x sum SSE_kind, m summed over windows -> share of the kind-explained part): ANGLE 0.219, GEOMETRY 0.020, LEAD 0.000, SPEED 0.692, TIME-GAP 0.000, TIME-TO-EVENT 0.069

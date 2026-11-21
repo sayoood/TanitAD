@@ -1,0 +1,8 @@
+{
+ "max_s_per_step": 12.0,
+ "pi_verbatim": "Keep the fimull rerun,  larger folders  [PI, chat, 2026-11-15 ~04:20Z, answering the MM's question 'Which reading should K2DC's controller use? C, the training-step reading (fits the approved cost; ~5.3 Thor-h to rebuild the K2DC and K0 records), or A, keep the full re-run (you would need to approve about 20 Thor-hours instead of about 17)' after the MM's statement: the K2DC final gate at 68bda0d5 measured one dose-controller reading at 583.76 s (an fp32 replay); the run fires it 24 times in 6,000 steps, adding about 3.9 h, so K2DC needs about 20 Thor-h (K2M1N20's measured 16.3 h + 3.9 h), not the approved 17. Earlier approval: 'Approve K2DC' (2026-11-12 ~23:30Z, ~17 Thor-h, max 10.5). Pre-registration E:/Projects/TanitAD-artifacts/dagland/e2/PREREG_K2DC_2026-11-12.md]",
+ "date": "2026-11-15",
+ "status": "PI-APPROVED. ~20 Thor-h training + ~4 h read for one arm. max_s_per_step 12.0 = 20 h x 3600 / 6,000 steps. The gate judges the arm's steady s/step PLUS its dose-controller readings amortized over the run (launch_gate.dose_ctl_amortized; MEASURED at 68bda0d5: 8.6217 + 24 x 583.76 / 6,000 = 10.96) against it. A judged reading above 12.0 goes back to the PI. Supersedes the 2026-11-12 approval (max 10.5, ~17 h), which did not count the controller's readings.",
+ "context": "refcv9 E2 K2DC = K2M1N20 + the map-hires share controller (target 0.10, every 250, trunk, bounds 1..25), profile refcv9-e2, argv stack/ops/runs.d/r9e2_K2DC.argv.json. The approval is for this arm in E2 only, not for E3 (E3 would add 293 readings, ~47.5 h, and needs its own approval).",
+ "recorded_by": "Master Mind"
+}

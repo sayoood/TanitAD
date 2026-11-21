@@ -1,0 +1,74 @@
+{
+ "rule": "candidates = eval clips with full SAM3 coverage (require_map_coverage n_ok == n_windows over the clip's own eval windows); one clip per v7 nav token in the order ['left', 'right', 'follow']; within a token the smallest sha12 (lowercase hex)",
+ "n_eval_clips": 139,
+ "n_clips_with_windows": 139,
+ "n_full_coverage": 137,
+ "n_full_coverage_by_nav": {
+  "left": 12,
+  "right": 37,
+  "follow": 88
+ },
+ "n_by_nav_all": {
+  "left": 13,
+  "right": 38,
+  "follow": 88
+ },
+ "not_full": [
+  {
+   "sha12": "081b986f8888",
+   "episode_index": 92,
+   "nav": "right",
+   "n_windows": 171,
+   "n_ok": 0,
+   "n_no_file": 171,
+   "n_out_of_range": 0,
+   "n_inconclusive": 0
+  },
+  {
+   "sha12": "2aa810802777",
+   "episode_index": 136,
+   "nav": "left",
+   "n_windows": 171,
+   "n_ok": 0,
+   "n_no_file": 171,
+   "n_out_of_range": 0,
+   "n_inconclusive": 0
+  }
+ ],
+ "chosen": [
+  {
+   "sha12": "693335b810c3",
+   "episode_index": 127,
+   "nav": "left",
+   "n_windows": 171,
+   "n_ok": 171,
+   "n_no_file": 0,
+   "n_out_of_range": 0,
+   "n_inconclusive": 0
+  },
+  {
+   "sha12": "0191487845ef",
+   "episode_index": 116,
+   "nav": "right",
+   "n_windows": 171,
+   "n_ok": 171,
+   "n_no_file": 0,
+   "n_out_of_range": 0,
+   "n_inconclusive": 0
+  },
+  {
+   "sha12": "00213e99adca",
+   "episode_index": 112,
+   "nav": "follow",
+   "n_windows": 171,
+   "n_ok": 171,
+   "n_no_file": 0,
+   "n_out_of_range": 0,
+   "n_inconclusive": 0
+  }
+ ],
+ "n_stack": 3,
+ "window": 8,
+ "selection_s": 0.3,
+ "agrees_with_previous_run": true
+}

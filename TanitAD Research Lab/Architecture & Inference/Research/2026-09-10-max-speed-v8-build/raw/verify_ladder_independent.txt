@@ -1,0 +1,83 @@
+{
+ "instrument": "verify_ladder_independent.py",
+ "ladder_kmh_typed_here": [
+  20,
+  30,
+  50,
+  70,
+  80,
+  100,
+  120,
+  130
+ ],
+ "arithmetic": "exact rational (fractions.Fraction) over the JSON decimal text; NO float rounding in the comparison",
+ "imports_from_max_speed_input": "NONE (deliberate)",
+ "splits": {
+  "s2_labels_v8.0_train.jsonl.gz": {
+   "path": "TanitAD Research Lab\\Data Engineering\\Implementation\\incoming\\2026-09-10-v8-speed-max-label-release\\raw\\s2_labels_v8.0_train.jsonl.gz",
+   "n_records": 4572,
+   "CONTROL_clip_id_present": 4572,
+   "CONTROL_speed_band_present": 4572,
+   "n_with_speed_max_input_block": 4572,
+   "coverage": 1.0,
+   "n_units_declared": 4572,
+   "n_units_MISSING": 0,
+   "n_with_ceiling_value": 4572,
+   "n_records_carrying_an_ms_BUCKET_must_be_0": 0,
+   "ceiling_bucket_MATCH_exact_ladder": 4572,
+   "ceiling_bucket_MISMATCH": 0,
+   "floor_bucket_MATCH_exact_ladder": 4572,
+   "floor_bucket_MISMATCH": 0,
+   "over_ceiling_flag_MATCH": 4572,
+   "under_floor_flag_MATCH": 4572,
+   "mismatch_examples": [],
+   "MUTANT1_rounded_ladder_on_raw_moved": 0,
+   "MUTANT1_moves": {},
+   "MUTANT1_is_RED": false,
+   "MUTANT2_double_quantize_moved": 2631,
+   "MUTANT2_double_quantize_moved_frac": 0.575459,
+   "MUTANT2_moves": {
+    "50->70": 1593,
+    "20->30": 809,
+    "100->120": 229
+   },
+   "MUTANT2_is_RED": true,
+   "VERDICT_all_buckets_agree": true,
+   "VERDICT_mutant_is_RED": true
+  },
+  "s2_labels_v8.0_eval.jsonl.gz": {
+   "path": "TanitAD Research Lab\\Data Engineering\\Implementation\\incoming\\2026-09-10-v8-speed-max-label-release\\raw\\s2_labels_v8.0_eval.jsonl.gz",
+   "n_records": 147,
+   "CONTROL_clip_id_present": 147,
+   "CONTROL_speed_band_present": 147,
+   "n_with_speed_max_input_block": 147,
+   "coverage": 1.0,
+   "n_units_declared": 147,
+   "n_units_MISSING": 0,
+   "n_with_ceiling_value": 147,
+   "n_records_carrying_an_ms_BUCKET_must_be_0": 0,
+   "ceiling_bucket_MATCH_exact_ladder": 147,
+   "ceiling_bucket_MISMATCH": 0,
+   "floor_bucket_MATCH_exact_ladder": 147,
+   "floor_bucket_MISMATCH": 0,
+   "over_ceiling_flag_MATCH": 147,
+   "under_floor_flag_MATCH": 147,
+   "mismatch_examples": [],
+   "MUTANT1_rounded_ladder_on_raw_moved": 0,
+   "MUTANT1_moves": {},
+   "MUTANT1_is_RED": false,
+   "MUTANT2_double_quantize_moved": 84,
+   "MUTANT2_double_quantize_moved_frac": 0.571429,
+   "MUTANT2_moves": {
+    "50->70": 52,
+    "20->30": 23,
+    "100->120": 9
+   },
+   "MUTANT2_is_RED": true,
+   "VERDICT_all_buckets_agree": true,
+   "VERDICT_mutant_is_RED": true
+  }
+ }
+}
+
+OVERALL: PASS

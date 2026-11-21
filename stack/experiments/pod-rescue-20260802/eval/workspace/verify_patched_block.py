@@ -45,7 +45,7 @@ def main():
     shutil.copytree(Path(a.src) / "taniteval", work / "taniteval" / "taniteval")
     r = subprocess.run(["patch", "-p3", "-d", str(work / "taniteval" / "taniteval"),
                         "-i", a.patch, "--batch"],
-                       capture_output=True, text=True)
+                       capture_output=True, text=True, encoding="utf-8")
     print("[patch]", r.returncode, r.stdout.strip()[-400:], r.stderr.strip()[-400:])
     if r.returncode != 0:
         raise SystemExit("patch failed")

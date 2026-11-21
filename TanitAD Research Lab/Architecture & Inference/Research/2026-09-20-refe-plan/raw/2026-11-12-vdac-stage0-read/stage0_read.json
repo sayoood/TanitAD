@@ -1,0 +1,100 @@
+{
+ "tool": "vdac_stage0/1",
+ "n_boot": 10000,
+ "seed": 20260927,
+ "mutate": null,
+ "n_frames": 2048,
+ "n_logs": 550,
+ "frames_per_city": {
+  "LV": 512,
+  "BOS": 512,
+  "PIT": 512,
+  "SG": 512
+ },
+ "in_sample_iou": 0.7864227917638612,
+ "ci95": [
+  0.7802597963036538,
+  0.792433203537081
+ ],
+ "per_city": {
+  "LV": 0.8942296694498456,
+  "BOS": 0.744120619265128,
+  "PIT": 0.7366116140688518,
+  "SG": 0.7033988078138466
+ },
+ "bands": {
+  "0-40": {
+   "point": 0.7864227917638612,
+   "ci95": [
+    0.7802597963036538,
+    0.792433203537081
+   ]
+  },
+  "0-20": {
+   "point": 0.8113251571448328,
+   "ci95": [
+    0.8043225393687944,
+    0.8179895736947747
+   ]
+  },
+  "20-40": {
+   "point": 0.761111240073055,
+   "ci95": [
+    0.7532386761276235,
+    0.7687212699608628
+   ]
+  },
+  "40-72": {
+   "point": 0.6923182256731144,
+   "ci95": [
+    0.6836813807519788,
+    0.7009350662466145
+   ]
+  }
+ },
+ "n_nan_resamples": 0,
+ "controls": {
+  "C0-FLIP": {
+   "in_sample": 0.7864227917638612,
+   "flipped": 0.3419247220558614,
+   "margin": 0.1,
+   "ok": true
+  },
+  "C0-FLOOR": {
+   "value": 0.37638487267019166,
+   "note": "all-drivable constant head on the same frames (reported, not deciding)"
+  },
+  "C0-ID": {
+   "n_frames": 256,
+   "sign_agreement": 1.0,
+   "iou_banked": 0.8477027982759311,
+   "iou_repro": 0.8477027982759311,
+   "iou_diff": 0.0,
+   "bars": {
+    "sign_agreement": ">= 0.999",
+    "iou_diff": "<= 0.002"
+   },
+   "ok": true,
+   "note": "pooled [0,40) IoU over these frames (not city-reweighted)"
+  }
+ },
+ "invalid_controls": [],
+ "row": "S0-WEAK",
+ "fit_bar": 0.85,
+ "row_rule": "S0-FIT iff the point >= 0.85 (the interval is reported, not deciding); S0-INVALID iff C0-ID or C0-FLIP fails; C0-FLOOR is reported",
+ "next": "HB and HC as one registered pair (A5 sections 2, 3)",
+ "gap_vs_heldout": {
+  "s1a_S1_P1_heldout": 0.7801999608707509,
+  "in_sample_minus_heldout": 0.006222830893110265,
+  "note": "reported, not deciding"
+ },
+ "utc": "2026-11-12T20:31:05Z",
+ "tool_sha256": "04a3d5f4dde23dd669167c18a6090cb16a37c3a680ee3351729b4fd8b51dc2b7",
+ "frozen_reader_sha256": "58aa3a77b976a6fb4b08b4bc5126d572e8be8ef1fc37926d9c9ce0983eed718e",
+ "frame_list_sha256": "1d353309a1d81a78cc04197ac39bd4e7ef467853ff59f5f7d3e97fde538eda45",
+ "inputs": {
+  "preds_insample": "c8609b1e426b169303b0ac6a94ebf5ece67edb018fb5cf308599d3d45b7fc9f0",
+  "preds_repro": "6492a78810e635df29dc649abef1e62afb65514a1aa1d4dfb9d1c1822c623559",
+  "banked_pred": "6b9ac2bc1bc5989e7904e1c1b1d12eb6e4c2356fe7ad5658cc6fecc5196c03eb"
+ }
+}

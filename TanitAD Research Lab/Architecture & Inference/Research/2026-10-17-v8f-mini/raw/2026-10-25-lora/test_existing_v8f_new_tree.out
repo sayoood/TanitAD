@@ -1,0 +1,486 @@
+................................................ssssssssssssssssssssssss [ 19%]
+ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss [ 38%]
+sssss..........ss....................................................... [ 57%]
+........................................................................ [ 76%]
+..........FF.............sss............................................ [ 95%]
+EEEEEEEEsssss.Fss                                                        [100%]
+=================================== ERRORS ====================================
+_ ERROR at setup of test_eval_of_an_H_checkpoint_resolves_the_same_held_ages_as_a_hist_4_checkpoint_at_every_window[mini] _
+
+runs = {'h4': {'cap': {'tw': [{'hist': 4, 'start': -1}, {'hist': 4, 'start': -1}], 'ds': [(4, 16, 3)]}, 'out': WindowsPath('C..., 'limit', ...]}, 'levers': {'navonly': False, 'consistency': True, 'wm': 'b', 'cons_absent': 'mask', ...}, ...}, ...}}
+world = {'root': 'C:\\Users\\Admin\\AppData\\Local\\Temp\\lw\\bt_new\\syn_ws0', 'J': {'clip': array(['syn-train-000', 'syn-tra...  True,
+        True,  True,  True,  True,  True,  True,  True,  True,  True,
+        True,  True,  True]), ...}}, ...}
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/lw/bt_new'), _trace=<pluggy._tracing.Ta...E0>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/lw/bt_new'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def evals(runs, world, tmp_path_factory):
+        tmp, root = tmp_path_factory.mktemp("ws_evals"), world["root"]
+        out = {}
+        for tag in ("h4", "h10", "h10ws3"):
+            ck = runs[tag]["out"] / "ckpt_last.pt"
+>           out[tag] = {s: _eval_run(root, ck, tag, tmp, s)[0] for s in ("mini", "t1")}
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_window_start.py:721: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_window_start.py:711: in _eval_run
+    assert mod.main(_eval_argv(root, ck, tag, out, script)) == 0
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:438: in main
+    return {"run": cmd_run, "analyze": cmd_analyze}[a.mode](a)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:422: in cmd_run
+    res = analyze_dumps(files, header, a.n_boot)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:323: in analyze_dumps
+    t1 = load_t1_eval()
+         ^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:304: in load_t1_eval
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x000001F4DE7EDB50>
+path = 'C:\\Users\\Admin\\AppData\\Local\\Temp\\lw\\new\\taniteval\\tools\\t1_eval.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\AppData\\Local\\Temp\\lw\\new\\taniteval\\tools\\t1_eval.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+---------------------------- Captured stdout setup ----------------------------
+h4 ADE6 8.0911 ADE2 3.1215 CONS(a) 1.0
+[6/12] 2s
+[12/12] 2s
+_ ERROR at setup of test_eval_of_an_H_checkpoint_resolves_the_same_held_ages_as_a_hist_4_checkpoint_at_every_window[t1] _
+
+runs = {'h4': {'cap': {'tw': [{'hist': 4, 'start': -1}, {'hist': 4, 'start': -1}], 'ds': [(4, 16, 3)]}, 'out': WindowsPath('C..., 'limit', ...]}, 'levers': {'navonly': False, 'consistency': True, 'wm': 'b', 'cons_absent': 'mask', ...}, ...}, ...}}
+world = {'root': 'C:\\Users\\Admin\\AppData\\Local\\Temp\\lw\\bt_new\\syn_ws0', 'J': {'clip': array(['syn-train-000', 'syn-tra...  True,
+        True,  True,  True,  True,  True,  True,  True,  True,  True,
+        True,  True,  True]), ...}}, ...}
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/lw/bt_new'), _trace=<pluggy._tracing.Ta...E0>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/lw/bt_new'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def evals(runs, world, tmp_path_factory):
+        tmp, root = tmp_path_factory.mktemp("ws_evals"), world["root"]
+        out = {}
+        for tag in ("h4", "h10", "h10ws3"):
+            ck = runs[tag]["out"] / "ckpt_last.pt"
+>           out[tag] = {s: _eval_run(root, ck, tag, tmp, s)[0] for s in ("mini", "t1")}
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_window_start.py:721: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_window_start.py:711: in _eval_run
+    assert mod.main(_eval_argv(root, ck, tag, out, script)) == 0
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:438: in main
+    return {"run": cmd_run, "analyze": cmd_analyze}[a.mode](a)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:422: in cmd_run
+    res = analyze_dumps(files, header, a.n_boot)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:323: in analyze_dumps
+    t1 = load_t1_eval()
+         ^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:304: in load_t1_eval
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x000001F4DE7EDB50>
+path = 'C:\\Users\\Admin\\AppData\\Local\\Temp\\lw\\new\\taniteval\\tools\\t1_eval.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\AppData\\Local\\Temp\\lw\\new\\taniteval\\tools\\t1_eval.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+_ ERROR at setup of test_the_mini_evaluator_applies_the_cycle_rule_by_default_and_the_grid_reaches_the_early_windows _
+
+runs = {'h4': {'cap': {'tw': [{'hist': 4, 'start': -1}, {'hist': 4, 'start': -1}], 'ds': [(4, 16, 3)]}, 'out': WindowsPath('C..., 'limit', ...]}, 'levers': {'navonly': False, 'consistency': True, 'wm': 'b', 'cons_absent': 'mask', ...}, ...}, ...}}
+world = {'root': 'C:\\Users\\Admin\\AppData\\Local\\Temp\\lw\\bt_new\\syn_ws0', 'J': {'clip': array(['syn-train-000', 'syn-tra...  True,
+        True,  True,  True,  True,  True,  True,  True,  True,  True,
+        True,  True,  True]), ...}}, ...}
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/lw/bt_new'), _trace=<pluggy._tracing.Ta...E0>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/lw/bt_new'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def evals(runs, world, tmp_path_factory):
+        tmp, root = tmp_path_factory.mktemp("ws_evals"), world["root"]
+        out = {}
+        for tag in ("h4", "h10", "h10ws3"):
+            ck = runs[tag]["out"] / "ckpt_last.pt"
+>           out[tag] = {s: _eval_run(root, ck, tag, tmp, s)[0] for s in ("mini", "t1")}
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_window_start.py:721: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_window_start.py:711: in _eval_run
+    assert mod.main(_eval_argv(root, ck, tag, out, script)) == 0
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:438: in main
+    return {"run": cmd_run, "analyze": cmd_analyze}[a.mode](a)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:422: in cmd_run
+    res = analyze_dumps(files, header, a.n_boot)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:323: in analyze_dumps
+    t1 = load_t1_eval()
+         ^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:304: in load_t1_eval
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x000001F4DE7EDB50>
+path = 'C:\\Users\\Admin\\AppData\\Local\\Temp\\lw\\new\\taniteval\\tools\\t1_eval.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\AppData\\Local\\Temp\\lw\\new\\taniteval\\tools\\t1_eval.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+_ ERROR at setup of test_CONTROL_without_the_flag_hist_10_resolves_different_ages_exactly_where_the_origins_differ[mini] _
+
+runs = {'h4': {'cap': {'tw': [{'hist': 4, 'start': -1}, {'hist': 4, 'start': -1}], 'ds': [(4, 16, 3)]}, 'out': WindowsPath('C..., 'limit', ...]}, 'levers': {'navonly': False, 'consistency': True, 'wm': 'b', 'cons_absent': 'mask', ...}, ...}, ...}}
+world = {'root': 'C:\\Users\\Admin\\AppData\\Local\\Temp\\lw\\bt_new\\syn_ws0', 'J': {'clip': array(['syn-train-000', 'syn-tra...  True,
+        True,  True,  True,  True,  True,  True,  True,  True,  True,
+        True,  True,  True]), ...}}, ...}
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/lw/bt_new'), _trace=<pluggy._tracing.Ta...E0>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/lw/bt_new'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def evals(runs, world, tmp_path_factory):
+        tmp, root = tmp_path_factory.mktemp("ws_evals"), world["root"]
+        out = {}
+        for tag in ("h4", "h10", "h10ws3"):
+            ck = runs[tag]["out"] / "ckpt_last.pt"
+>           out[tag] = {s: _eval_run(root, ck, tag, tmp, s)[0] for s in ("mini", "t1")}
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_window_start.py:721: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_window_start.py:711: in _eval_run
+    assert mod.main(_eval_argv(root, ck, tag, out, script)) == 0
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:438: in main
+    return {"run": cmd_run, "analyze": cmd_analyze}[a.mode](a)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:422: in cmd_run
+    res = analyze_dumps(files, header, a.n_boot)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:323: in analyze_dumps
+    t1 = load_t1_eval()
+         ^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:304: in load_t1_eval
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x000001F4DE7EDB50>
+path = 'C:\\Users\\Admin\\AppData\\Local\\Temp\\lw\\new\\taniteval\\tools\\t1_eval.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\AppData\\Local\\Temp\\lw\\new\\taniteval\\tools\\t1_eval.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+_ ERROR at setup of test_CONTROL_without_the_flag_hist_10_resolves_different_ages_exactly_where_the_origins_differ[t1] _
+
+runs = {'h4': {'cap': {'tw': [{'hist': 4, 'start': -1}, {'hist': 4, 'start': -1}], 'ds': [(4, 16, 3)]}, 'out': WindowsPath('C..., 'limit', ...]}, 'levers': {'navonly': False, 'consistency': True, 'wm': 'b', 'cons_absent': 'mask', ...}, ...}, ...}}
+world = {'root': 'C:\\Users\\Admin\\AppData\\Local\\Temp\\lw\\bt_new\\syn_ws0', 'J': {'clip': array(['syn-train-000', 'syn-tra...  True,
+        True,  True,  True,  True,  True,  True,  True,  True,  True,
+        True,  True,  True]), ...}}, ...}
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/lw/bt_new'), _trace=<pluggy._tracing.Ta...E0>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/lw/bt_new'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def evals(runs, world, tmp_path_factory):
+        tmp, root = tmp_path_factory.mktemp("ws_evals"), world["root"]
+        out = {}
+        for tag in ("h4", "h10", "h10ws3"):
+            ck = runs[tag]["out"] / "ckpt_last.pt"
+>           out[tag] = {s: _eval_run(root, ck, tag, tmp, s)[0] for s in ("mini", "t1")}
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_window_start.py:721: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_window_start.py:711: in _eval_run
+    assert mod.main(_eval_argv(root, ck, tag, out, script)) == 0
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:438: in main
+    return {"run": cmd_run, "analyze": cmd_analyze}[a.mode](a)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:422: in cmd_run
+    res = analyze_dumps(files, header, a.n_boot)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:323: in analyze_dumps
+    t1 = load_t1_eval()
+         ^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:304: in load_t1_eval
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x000001F4DE7EDB50>
+path = 'C:\\Users\\Admin\\AppData\\Local\\Temp\\lw\\new\\taniteval\\tools\\t1_eval.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\AppData\\Local\\Temp\\lw\\new\\taniteval\\tools\\t1_eval.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+_ ERROR at setup of test_an_old_checkpoint_cfg_without_the_key_loads_with_the_default_and_resolves_todays_ages[old4-mini] _
+
+runs = {'h4': {'cap': {'tw': [{'hist': 4, 'start': -1}, {'hist': 4, 'start': -1}], 'ds': [(4, 16, 3)]}, 'out': WindowsPath('C..., 'limit', ...]}, 'levers': {'navonly': False, 'consistency': True, 'wm': 'b', 'cons_absent': 'mask', ...}, ...}, ...}}
+world = {'root': 'C:\\Users\\Admin\\AppData\\Local\\Temp\\lw\\bt_new\\syn_ws0', 'J': {'clip': array(['syn-train-000', 'syn-tra...  True,
+        True,  True,  True,  True,  True,  True,  True,  True,  True,
+        True,  True,  True]), ...}}, ...}
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/lw/bt_new'), _trace=<pluggy._tracing.Ta...E0>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/lw/bt_new'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def evals(runs, world, tmp_path_factory):
+        tmp, root = tmp_path_factory.mktemp("ws_evals"), world["root"]
+        out = {}
+        for tag in ("h4", "h10", "h10ws3"):
+            ck = runs[tag]["out"] / "ckpt_last.pt"
+>           out[tag] = {s: _eval_run(root, ck, tag, tmp, s)[0] for s in ("mini", "t1")}
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_window_start.py:721: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_window_start.py:711: in _eval_run
+    assert mod.main(_eval_argv(root, ck, tag, out, script)) == 0
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:438: in main
+    return {"run": cmd_run, "analyze": cmd_analyze}[a.mode](a)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:422: in cmd_run
+    res = analyze_dumps(files, header, a.n_boot)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:323: in analyze_dumps
+    t1 = load_t1_eval()
+         ^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:304: in load_t1_eval
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x000001F4DE7EDB50>
+path = 'C:\\Users\\Admin\\AppData\\Local\\Temp\\lw\\new\\taniteval\\tools\\t1_eval.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\AppData\\Local\\Temp\\lw\\new\\taniteval\\tools\\t1_eval.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+_ ERROR at setup of test_an_old_checkpoint_cfg_without_the_key_loads_with_the_default_and_resolves_todays_ages[old10-mini] _
+
+runs = {'h4': {'cap': {'tw': [{'hist': 4, 'start': -1}, {'hist': 4, 'start': -1}], 'ds': [(4, 16, 3)]}, 'out': WindowsPath('C..., 'limit', ...]}, 'levers': {'navonly': False, 'consistency': True, 'wm': 'b', 'cons_absent': 'mask', ...}, ...}, ...}}
+world = {'root': 'C:\\Users\\Admin\\AppData\\Local\\Temp\\lw\\bt_new\\syn_ws0', 'J': {'clip': array(['syn-train-000', 'syn-tra...  True,
+        True,  True,  True,  True,  True,  True,  True,  True,  True,
+        True,  True,  True]), ...}}, ...}
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/lw/bt_new'), _trace=<pluggy._tracing.Ta...E0>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/lw/bt_new'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def evals(runs, world, tmp_path_factory):
+        tmp, root = tmp_path_factory.mktemp("ws_evals"), world["root"]
+        out = {}
+        for tag in ("h4", "h10", "h10ws3"):
+            ck = runs[tag]["out"] / "ckpt_last.pt"
+>           out[tag] = {s: _eval_run(root, ck, tag, tmp, s)[0] for s in ("mini", "t1")}
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_window_start.py:721: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_window_start.py:711: in _eval_run
+    assert mod.main(_eval_argv(root, ck, tag, out, script)) == 0
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:438: in main
+    return {"run": cmd_run, "analyze": cmd_analyze}[a.mode](a)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:422: in cmd_run
+    res = analyze_dumps(files, header, a.n_boot)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:323: in analyze_dumps
+    t1 = load_t1_eval()
+         ^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:304: in load_t1_eval
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x000001F4DE7EDB50>
+path = 'C:\\Users\\Admin\\AppData\\Local\\Temp\\lw\\new\\taniteval\\tools\\t1_eval.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\AppData\\Local\\Temp\\lw\\new\\taniteval\\tools\\t1_eval.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+_ ERROR at setup of test_an_old_checkpoint_cfg_without_the_key_loads_with_the_default_and_resolves_todays_ages[old10-t1] _
+
+runs = {'h4': {'cap': {'tw': [{'hist': 4, 'start': -1}, {'hist': 4, 'start': -1}], 'ds': [(4, 16, 3)]}, 'out': WindowsPath('C..., 'limit', ...]}, 'levers': {'navonly': False, 'consistency': True, 'wm': 'b', 'cons_absent': 'mask', ...}, ...}, ...}}
+world = {'root': 'C:\\Users\\Admin\\AppData\\Local\\Temp\\lw\\bt_new\\syn_ws0', 'J': {'clip': array(['syn-train-000', 'syn-tra...  True,
+        True,  True,  True,  True,  True,  True,  True,  True,  True,
+        True,  True,  True]), ...}}, ...}
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/lw/bt_new'), _trace=<pluggy._tracing.Ta...E0>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/lw/bt_new'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def evals(runs, world, tmp_path_factory):
+        tmp, root = tmp_path_factory.mktemp("ws_evals"), world["root"]
+        out = {}
+        for tag in ("h4", "h10", "h10ws3"):
+            ck = runs[tag]["out"] / "ckpt_last.pt"
+>           out[tag] = {s: _eval_run(root, ck, tag, tmp, s)[0] for s in ("mini", "t1")}
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_window_start.py:721: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_window_start.py:711: in _eval_run
+    assert mod.main(_eval_argv(root, ck, tag, out, script)) == 0
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:438: in main
+    return {"run": cmd_run, "analyze": cmd_analyze}[a.mode](a)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:422: in cmd_run
+    res = analyze_dumps(files, header, a.n_boot)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:323: in analyze_dumps
+    t1 = load_t1_eval()
+         ^^^^^^^^^^^^^^
+stack\scripts\v8f_t1_eval.py:304: in load_t1_eval
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x000001F4DE7EDB50>
+path = 'C:\\Users\\Admin\\AppData\\Local\\Temp\\lw\\new\\taniteval\\tools\\t1_eval.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\AppData\\Local\\Temp\\lw\\new\\taniteval\\tools\\t1_eval.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+================================== FAILURES ===================================
+_ test_a2_the_real_banked_m2b_record_lacks_both_keys_and_a_default_g_reads_equal_to_it[0] _
+
+seed = 0
+
+    @needs_pkg
+    @pytest.mark.parametrize("seed", (0, 1))
+    def test_a2_the_real_banked_m2b_record_lacks_both_keys_and_a_default_g_reads_equal_to_it(seed):
+        rd = PKG / "raw" / "full" / "runs" / f"M2b_s{seed}"
+>       flags = R.PGT._flags(json.loads((rd / "argv.json").read_text(encoding="utf-8"))["argv"])
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_grid.py:1747: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\Programs\Python\Python313\Lib\pathlib\_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/Admin/AppData/Local/Temp/lw/new/TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/full/runs/M2b_s0/argv.json')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\AppData\\Local\\Temp\\lw\\new\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-10-17-v8f-mini\\raw\\full\\runs\\M2b_s0\\argv.json'
+
+..\..\..\Programs\Python\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+_ test_a2_the_real_banked_m2b_record_lacks_both_keys_and_a_default_g_reads_equal_to_it[1] _
+
+seed = 1
+
+    @needs_pkg
+    @pytest.mark.parametrize("seed", (0, 1))
+    def test_a2_the_real_banked_m2b_record_lacks_both_keys_and_a_default_g_reads_equal_to_it(seed):
+        rd = PKG / "raw" / "full" / "runs" / f"M2b_s{seed}"
+>       flags = R.PGT._flags(json.loads((rd / "argv.json").read_text(encoding="utf-8"))["argv"])
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_grid.py:1747: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\Programs\Python\Python313\Lib\pathlib\_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/Admin/AppData/Local/Temp/lw/new/TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/full/runs/M2b_s1/argv.json')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\AppData\\Local\\Temp\\lw\\new\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-10-17-v8f-mini\\raw\\full\\runs\\M2b_s1\\argv.json'
+
+..\..\..\Programs\Python\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+_ test_every_V8FMiniWindows_construction_under_stack_scripts_passes_window_start _
+
+    def test_every_V8FMiniWindows_construction_under_stack_scripts_passes_window_start():
+        """(c) the future-caller guard: a script that builds the dataset and forgets the checkpoint's / the arm's `window_start` is exactly the defect Amendment 1's eval fix closed."""
+        files = sorted((REPO / "stack" / "scripts").rglob("*.py"))
+        assert {p.name for p in files} >= {"v8f_mini_train.py", "v8f_mini_eval.py", "v8f_t1_eval.py"}
+        bad, total = [], {}
+        for p in files:
+            b, n = _constructions_without_window_start(p.read_text(encoding="utf-8"), f"{p.name}")
+            bad += b
+            if n:
+                total[p.name] = n
+>       assert total.keys() >= {"v8f_mini_train.py", "v8f_mini_eval.py", "v8f_t1_eval.py"}, f"the check must SEE the three known callers, saw {total}"
+E       AssertionError: the check must SEE the three known callers, saw {'v8f_mini_eval.py': 1, 'v8f_t1_eval.py': 1}
+E       assert dict_keys(['v8f_mini_eval.py', 'v8f_t1_eval.py']) >= {'v8f_mini_eval.py', 'v8f_mini_train.py', 'v8f_t1_eval.py'}
+E        +  where dict_keys(['v8f_mini_eval.py', 'v8f_t1_eval.py']) = <built-in method keys of dict object at 0x000001F4DF560B40>()
+E        +    where <built-in method keys of dict object at 0x000001F4DF560B40> = {'v8f_mini_eval.py': 1, 'v8f_t1_eval.py': 1}.keys
+
+stack\tests\test_v8f_window_start.py:848: AssertionError
+=========================== short test summary info ===========================
+FAILED stack\tests\test_v8f_grid.py::test_a2_the_real_banked_m2b_record_lacks_both_keys_and_a_default_g_reads_equal_to_it[0]
+FAILED stack\tests\test_v8f_grid.py::test_a2_the_real_banked_m2b_record_lacks_both_keys_and_a_default_g_reads_equal_to_it[1]
+FAILED stack\tests\test_v8f_window_start.py::test_every_V8FMiniWindows_construction_under_stack_scripts_passes_window_start
+ERROR stack\tests\test_v8f_window_start.py::test_eval_of_an_H_checkpoint_resolves_the_same_held_ages_as_a_hist_4_checkpoint_at_every_window[mini]
+ERROR stack\tests\test_v8f_window_start.py::test_eval_of_an_H_checkpoint_resolves_the_same_held_ages_as_a_hist_4_checkpoint_at_every_window[t1]
+ERROR stack\tests\test_v8f_window_start.py::test_the_mini_evaluator_applies_the_cycle_rule_by_default_and_the_grid_reaches_the_early_windows
+ERROR stack\tests\test_v8f_window_start.py::test_CONTROL_without_the_flag_hist_10_resolves_different_ages_exactly_where_the_origins_differ[mini]
+ERROR stack\tests\test_v8f_window_start.py::test_CONTROL_without_the_flag_hist_10_resolves_different_ages_exactly_where_the_origins_differ[t1]
+ERROR stack\tests\test_v8f_window_start.py::test_an_old_checkpoint_cfg_without_the_key_loads_with_the_default_and_resolves_todays_ages[old4-mini]
+ERROR stack\tests\test_v8f_window_start.py::test_an_old_checkpoint_cfg_without_the_key_loads_with_the_default_and_resolves_todays_ages[old10-mini]
+ERROR stack\tests\test_v8f_window_start.py::test_an_old_checkpoint_cfg_without_the_key_loads_with_the_default_and_resolves_todays_ages[old10-t1]
+3 failed, 253 passed, 113 skipped, 8 errors in 472.17s (0:07:52)

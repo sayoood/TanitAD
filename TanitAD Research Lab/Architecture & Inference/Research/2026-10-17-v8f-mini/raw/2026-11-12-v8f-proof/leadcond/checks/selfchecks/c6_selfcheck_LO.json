@@ -1,0 +1,479 @@
+{
+ "declared_vs_built": "PASS",
+ "live": {
+  "terms": {
+   "ckpt": 0.696761429309845,
+   "goal": 0.6950494050979614,
+   "lat": 1.5731513500213623,
+   "lon": 1.8761948347091675,
+   "cons": 0.11379379779100418,
+   "ade": 6.526562690734863,
+   "fde": 15.438596725463867,
+   "acc": 96.07023620605469,
+   "pen_SPEED": 41.142581939697266,
+   "pens_SPEED": 41.480709075927734,
+   "pen_STOP": 0.0,
+   "pens_STOP": 0.0,
+   "pen_TURN": 7.9933271408081055,
+   "pens_TURN": 19.841766357421875,
+   "pen_LEAD": 0.0,
+   "pens_LEAD": 0.0,
+   "wm": 190.54776000976562,
+   "lead_sup": 0.4432208240032196,
+   "lead_sup_bce": 0.41858771443367004,
+   "lead_sup_gap": 0.017504220828413963,
+   "lead_sup_clos": 0.007128898054361343,
+   "lead_sup_n_pres": 77.0,
+   "lead_sup_n_gap": 72.0,
+   "lead_sup_n_clos": 66.0,
+   "total": 66.03202056884766
+  },
+  "missing_terms": [],
+  "unexpected_terms": [],
+  "dead_params": [],
+  "declared_dead": [],
+  "unexpected_dead": [],
+  "declared_dead_but_alive": [],
+  "control_prior_grad_sum": 0.0,
+  "head_o_grad_step0": 257.2849699854851,
+  "n_trainable": 258,
+  "groups_grad": {
+   "adapter": 1623.5691103935242,
+   "S": 89.29346606880426,
+   "T": 31.04749814979732,
+   "O": 67.52699763700366,
+   "head_s": 231.78091901540756,
+   "head_o": 868.3536099791527,
+   "wm": 7312.774347501458
+  },
+  "pass": true
+ },
+ "code_mix_probe": {
+  "code_mix": "whole",
+  "p_gt": 0.5,
+  "n_labelled": 8,
+  "n_draws_samples": 32,
+  "n_partial": 0,
+  "n_all_gt": 16,
+  "n_all_own": 16,
+  "unit_gt_rate": {
+   "decisions": 0.5,
+   "speed": 0.5,
+   "angle": 0.5,
+   "tte": 0.5,
+   "timegap": 0.5,
+   "geom": 0.5,
+   "leadgap": 0.5
+  },
+  "pass": true
+ },
+ "o_interface_probe": {
+  "o_interface": "full",
+  "shift": 2.5,
+  "n_windows": 8,
+  "perturbations": {
+   "donor_code": {
+    "max_abs_dtraj60": 0.002306520938873291,
+    "o_read_code_abs_max": 0.5513672828674316,
+    "o_read_ck_minus_nominal_abs_max": 8.63507080078125,
+    "o_read_ck_ok_abs_max": 1.0
+   },
+   "gt_code": {
+    "max_abs_dtraj60": 0.012328863143920898,
+    "o_read_code_abs_max": 1.5238499641418457,
+    "o_read_ck_minus_nominal_abs_max": 8.63507080078125,
+    "o_read_ck_ok_abs_max": 1.0
+   },
+   "random_code": {
+    "max_abs_dtraj60": 0.040027618408203125,
+    "o_read_code_abs_max": 0.994635283946991,
+    "o_read_ck_minus_nominal_abs_max": 8.63507080078125,
+    "o_read_ck_ok_abs_max": 1.0
+   },
+   "shifted_checkpoints": {
+    "max_abs_dtraj60": 0.07733917236328125,
+    "o_read_code_abs_max": 0.5521405935287476,
+    "o_read_ck_minus_nominal_abs_max": 6.145439147949219,
+    "o_read_ck_ok_abs_max": 1.0,
+    "max_abs_d_ckpt": 2.500001907348633,
+    "t_reads_s_max_abs_dgoal_logits": 0.009822934865951538
+   }
+  },
+  "pass": true
+ },
+ "acc_probe": {
+  "w_acc_declared": 0.0,
+  "w_probe": 1.0,
+  "acc": 96.20355224609375,
+  "acc_at_zero_weight": 96.20355224609375,
+  "total_w": 205.78729248046875,
+  "total_0": 109.58373260498047,
+  "contribution": 96.20355987548828,
+  "w_x_acc": 96.20355224609375,
+  "head_o_grad_diff": 103.28518676757812,
+  "read_o_grad_diff": 6.292965888977051,
+  "control_repeat_total_diff": 0.0,
+  "control_repeat_grad_diff": 0.0,
+  "control_prior_grad_diff": 0.0,
+  "control_wm_grad_diff": 0.0,
+  "declared_zero_total_reproduces_exactly": true,
+  "pass": true
+ },
+ "admissibility": {
+  "allowed": [
+   "a_s",
+   "a_t",
+   "act",
+   "base",
+   "feats",
+   "frame_ok",
+   "limit",
+   "limit_ok",
+   "nav",
+   "p10f",
+   "pose",
+   "pose_now",
+   "pose_s",
+   "pose_t"
+  ],
+  "read": [
+   "a_s",
+   "a_t",
+   "base",
+   "feats",
+   "frame_ok",
+   "limit",
+   "limit_ok",
+   "nav",
+   "p10f",
+   "pose_now",
+   "pose_s",
+   "pose_t"
+  ]
+ },
+ "levers": {
+  "navonly": false,
+  "consistency": true,
+  "wm": "b",
+  "cons_absent": "mask",
+  "code_mix": "whole",
+  "o_interface": "full",
+  "w_acc": 0.0,
+  "goal_pos_weight_stop": 1.0,
+  "lon_class_weight_stop": 1.0,
+  "launch_intent_w": 0.0,
+  "wm_idm_gamma": 100.0,
+  "kin_mode": "yaw",
+  "wm_ch1_scale": 0.4,
+  "p_gt_start": 1.0,
+  "p_gt_end": 0.2,
+  "hist": 4,
+  "hmax": 16,
+  "window_start": 3,
+  "prior_frozen": true,
+  "residual_zero_init": false,
+  "params": {
+   "adapter": 36256,
+   "cond": 3136,
+   "S": 17705,
+   "T": 21180,
+   "O": 31512,
+   "WM": 3963349
+  },
+  "n_params_trainable": 4073138,
+  "w": {
+   "w_pen": 0.5,
+   "w_pen_self": 0.25,
+   "w_wm": 0.1,
+   "w_tac": 1.0,
+   "w_cons": 0.5
+  },
+  "wm_state": "grid",
+  "wm_z1_width": 640,
+  "wm_l1_dim": 640,
+  "wm_l1_pred_width": 256,
+  "wm_upper_dims": [
+   128,
+   128
+  ],
+  "wm_l1_pred": "flat",
+  "wm_l1_pred_params": 2074496,
+  "wm_l1_pred_params_flat_ref": 2074496,
+  "wm_l1_pred_params_le_flat": true,
+  "wm_l1_pred_cross_cell": true,
+  "wm_l1_residual": "off",
+  "wm_l1_roll_k": 0,
+  "w_wm_roll": 0.0,
+  "wm_l1_diag": "off",
+  "wm_l1_act": "acc_yaw",
+  "wm_l1_futtok_k": 0,
+  "w_wm_futtok": 0.0,
+  "lead_sup": "on",
+  "lead_hist": 5,
+  "lead_sup_detach": "off",
+  "w_lead_sup": 1.0,
+  "wm_cell_dim": 16,
+  "wm_dim": null,
+  "ego_perturb": {
+   "ego_perturb_p": 0.0,
+   "ego_perturb_vscale": [
+    0.5,
+    1.0
+   ],
+   "ego_perturb_vmax": 8.0,
+   "ego_perturb_adrop": 1.5,
+   "ego_perturb_yawrate_std": 0.0,
+   "ego_perturb_seed": 0,
+   "kin_mode": "yaw",
+   "rebuilt": [
+    "p10f",
+    "base",
+    "kin3",
+    "p10_t",
+    "pose",
+    "pose_t",
+    "pose_s",
+    "nav"
+   ],
+   "kept": [
+    "feats",
+    "frame_ok",
+    "limit",
+    "limit_ok",
+    "a_t",
+    "a_s",
+    "pose_now"
+   ],
+   "record": [
+    "act"
+   ]
+  },
+  "dagger": {
+   "dagger_p": 0.0,
+   "dagger_seed": 0,
+   "dagger_bank": null,
+   "dagger_bank_sha256": null,
+   "kin_mode": "yaw",
+   "bank_hmax": null,
+   "rebuilt": [
+    "p10f",
+    "base",
+    "kin3",
+    "p10_t",
+    "pose",
+    "pose_t",
+    "pose_s",
+    "nav"
+   ],
+   "kept": [
+    "feats",
+    "frame_ok",
+    "limit",
+    "limit_ok",
+    "a_t",
+    "a_s",
+    "pose_now"
+   ],
+   "record": [
+    "act"
+   ],
+   "labels_re_expressed": [
+    "lab_s.rc"
+   ],
+   "nav_rebuild_invalid": false,
+   "constants_sha256": "8f94b3b5e35f4457be51d695842457a340d1228ab48c5862f4db1e5063f3ffaf"
+  },
+  "dagger_p": 0.0,
+  "dagger_bank_sha256": null,
+  "dagger_bank_sha256_declared": null,
+  "recover": {
+   "recover_p": 0.0,
+   "recover_dev_law": "empirical",
+   "recover_dev_shape": "constant",
+   "recover_dev_bank": null,
+   "recover_dev_bank_sha256": null,
+   "recover_target": "rejoin",
+   "recover_rejoin_steps": 10,
+   "recover_seed": 0,
+   "kin_mode": "yaw",
+   "rebuilt": [
+    "p10f",
+    "base",
+    "kin3",
+    "p10_t",
+    "pose",
+    "pose_t",
+    "pose_s",
+    "nav",
+    "pose_now"
+   ],
+   "retargeted": [
+    "gt",
+    "lab_s.rc"
+   ]
+  },
+  "recover_table": null,
+  "ego_perturb_with_dagger": false,
+  "ego_perturb_stream": 0,
+  "ego_dagger_overlap_n": 0,
+  "launch_intent": {
+   "launch_intent_w": 0.0,
+   "v0_max": 6.0,
+   "dv": 1.0,
+   "dt": 0.2,
+   "knots": [
+    1,
+    12
+   ],
+   "axis": "along (x of the ego frame at NOW)",
+   "mask_from": "the LOGGED kin3[:, 0] and the GT future, taken before any ego stage"
+  },
+  "launch_n": 0,
+  "launch_eligible": 0,
+  "init_ckpt": {
+   "path": "F:\\TanitAD-scratch\\v8proof\\leadcond\\work\\tmp\\base_ls\\ckpt_last.pt",
+   "sha256": "eb07f3940e557a710f4a81e3a0c7078e37e1d01433a1a0c512d85616d4f92400",
+   "applied": true,
+   "skipped": null,
+   "n_tensors": 282,
+   "n_mismatch_after_load": 0,
+   "source_step": 30,
+   "source_arm": "M2b",
+   "source_seed": 0,
+   "source_argv_sha": "33986058ccf9aaea"
+  },
+  "w_rule_own": 4.0,
+  "rule_own_form": "l1",
+  "rule_own_rule": {
+   "dist_rule_sha256": "40b5dd9173aeaf8c7d7a7d4bfbb52484a8f30b9a8480d3356f8fa0aee65746dc",
+   "floor_lifts": false,
+   "m": 10,
+   "constants": {
+    "D_M": 3.0,
+    "TAU_S": 1.2,
+    "B_MAX": 6.0,
+    "DT": 0.2
+   },
+   "output": "traj30"
+  },
+  "lr_schedule": {
+   "lr": 0.0001,
+   "warmup": 100,
+   "total": 6000
+  }
+ },
+ "steps_total": 6000,
+ "S_steps_per_epoch_100pct": 14,
+ "info": {
+  "batch": 8,
+  "md5_overridden": false,
+  "n_clips": 4,
+  "n_clips_expected": 4,
+  "n_clips_all": 4,
+  "n_excluded": 2,
+  "n_excluded_declared": 2,
+  "excluded_in_train": 0,
+  "excluded_sha256": "0198a8e74b0a708753d732ab933163ece89feed30f2ea8cf0e87c2543ce49781",
+  "train_sha256": "5992abb213cd8cb7ad55cc22d40168b730abc90fc6ffd46c0b93cbd66926cfe8",
+  "lru": 305,
+  "kin_mode": "yaw",
+  "n_windows_all_clips": 108,
+  "n_windows": 108,
+  "window_start": 3,
+  "window_t_min": 3,
+  "train_window_list_sha256": "0766cc77cd7f6e01536add92f4f2524fb1e6dcc08b7b317ffa418950735ae0d5",
+  "rule_own": {
+   "w_rule_own": 4.0,
+   "labels_sha256": "7122d70c91bb9df2c17138c0a76c6f8f4979e563e4808ef7a6461a5b03e05043",
+   "n_rows": 360,
+   "n_pres": 294,
+   "n_gap": 294,
+   "n_clos": 270,
+   "dist_rule_sha256": "40b5dd9173aeaf8c7d7a7d4bfbb52484a8f30b9a8480d3356f8fa0aee65746dc",
+   "floor_lifts": false,
+   "m": 10,
+   "output": "traj30",
+   "constants": {
+    "D_M": 3.0,
+    "TAU_S": 1.2,
+    "B_MAX": 6.0,
+    "DT": 0.2
+   },
+   "form": "l1"
+  },
+  "p10_units": null,
+  "ds_lead_sup": true,
+  "lead_sup_labels": {
+   "sha256": "7122d70c91bb9df2c17138c0a76c6f8f4979e563e4808ef7a6461a5b03e05043",
+   "n_rows": 360,
+   "n_pres": 294,
+   "n_gap": 294,
+   "n_clos": 270
+  },
+  "ds_window_start": 3,
+  "init_ckpt": {
+   "path": "F:\\TanitAD-scratch\\v8proof\\leadcond\\work\\tmp\\base_ls\\ckpt_last.pt",
+   "sha256": "eb07f3940e557a710f4a81e3a0c7078e37e1d01433a1a0c512d85616d4f92400",
+   "applied": true,
+   "skipped": null,
+   "n_tensors": 282,
+   "n_mismatch_after_load": 0,
+   "source_step": 30,
+   "source_arm": "M2b",
+   "source_seed": 0,
+   "source_argv_sha": "33986058ccf9aaea"
+  },
+  "lead_sup_n_labelled": 72,
+  "lead_sup_n_presence": 77,
+  "lead_sup_n_closing": 66
+ },
+ "argv_sha": "e3bc22b3aa6b1fec",
+ "ego_perturb_probe": {
+  "ego_perturb": "off",
+  "pass": true,
+  "skipped": "--ego-perturb-p 0: the perturbation is not applied; the default run is the pre-change run"
+ },
+ "dagger_probe": {
+  "dagger": "off",
+  "pass": true,
+  "skipped": "--dagger-p 0: no row is swapped; the default run is the pre-change run"
+ },
+ "ego_dagger_compose_probe": {
+  "ego_dagger_compose": "off",
+  "pass": true,
+  "overlap": 0,
+  "skipped": "--ego-perturb-with-dagger not named: the two levers are not composed (the default run is the pre-change run)"
+ },
+ "recover_probe": {
+  "recover": "off",
+  "pass": true,
+  "skipped": "--recover-p 0: the perturbation is not applied; the default run is the pre-change run"
+ },
+ "launch_intent_probe": {
+  "launch_intent": "off",
+  "pass": true,
+  "launch_n": 0,
+  "launch_eligible": 0,
+  "skipped": "--launch-intent-w not named: the term is not in the loss (the default run is the pre-change run)"
+ },
+ "rule_own_probe": {
+  "rule_own": "on",
+  "w_rule_own": 4.0,
+  "form": "l1",
+  "term": 14.02999210357666,
+  "n_rows": 8,
+  "n_lead": 7,
+  "n_active": 7,
+  "grad_norm_term_on_traj30": 4.212527275085449,
+  "grad_norm_traj_loss_on_traj30": 0.5246942639350891,
+  "total_before": 109.58313751220703,
+  "total_after": 165.70310974121094,
+  "total_delta": 56.119972229003906,
+  "control_same_call_term_diff": 0.0,
+  "control_all_false_term": 0.0,
+  "control_all_false_n_lead": 0,
+  "control_all_false_requires_grad": false,
+  "reach_visible": true,
+  "pass": true
+ }
+}

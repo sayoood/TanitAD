@@ -1,0 +1,693 @@
+{
+ "schema": "r9e1-eval-v1",
+ "tier": "T0 (label level)",
+ "packs": "/home/nvidia/r8ns/r9e2/runs/E2RAW_K2DC/stageA/devdump_K0/perc_det.pkl",
+ "windows_file": "/home/nvidia/r8ns/r9dump/DEV_HOLD_SPLIT.json",
+ "split": "dev",
+ "n_windows": 2308,
+ "n_clips": 70,
+ "gate": {
+  "source": "--gates-json",
+  "sha256": "f4cb9a94f1dc3208599438e6748d19dfd12a0261dd7e476a8934b7ae53b94611",
+  "value": 0.26599645614624023
+ },
+ "definitions": {
+  "ap": "tanitad.eval.detection_metrics greedy 2 m / 1 m rows, pooled AP, head output (NO post-hoc NMS) unless a column says NMS",
+  "dx_0_40": "|x_pred - x_gt| of 2 m greedy TPs whose GT is 0-40 m ahead",
+  "tp_class_acc": "class of the 2 m greedy TPs (all slots)",
+  "boxes_per_object": "PERC8 census_one at the gate, 2 m, no NMS"
+ },
+ "estimator": "episode-cluster bootstrap over clips, B=2000 seed=0 (answers another draw of EPISODES, not another TRAINING run)",
+ "boxes": {
+  "n_pos": {
+   "point": 7410.0,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 5862.925,
+   "hi": 9026.599999999997
+  },
+  "ap1m_all": {
+   "point": 0.19282349495515178,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 0.1647167215509941,
+   "hi": 0.22349340046150187
+  },
+  "ap1m_0_20": {
+   "point": 0.34835587224289644,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 0.300884343619356,
+   "hi": 0.395837877066055
+  },
+  "ap1m_20_40": {
+   "point": 0.11036161605051871,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 0.0948695092312582,
+   "hi": 0.12689639120925078
+  },
+  "ap1m_40_60": {
+   "point": 0.026389903869630263,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 0.021018388774119594,
+   "hi": 0.033707261735725046
+  },
+  "ap1m_20_60": {
+   "point": 0.07923213679126306,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 0.06799829281504148,
+   "hi": 0.0912359606284995
+  },
+  "ap2m_all": {
+   "point": 0.3136159248729779,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 0.27808218901309223,
+   "hi": 0.348914989445604
+  },
+  "ap2m_0_20": {
+   "point": 0.5106166317342657,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 0.4648652585640474,
+   "hi": 0.5529597279033697
+  },
+  "ap2m_20_40": {
+   "point": 0.21207624940801045,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 0.18516704693813102,
+   "hi": 0.23846903005557898
+  },
+  "ap2m_40_60": {
+   "point": 0.09029877429950829,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 0.0696174658974739,
+   "hi": 0.11145718864738656
+  },
+  "ap2m_20_60": {
+   "point": 0.16774030034953072,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 0.14587290031195585,
+   "hi": 0.18900948766117864
+  },
+  "dx_0_40_mean": {
+   "point": 0.7891402450393807,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 0.7681147907965434,
+   "hi": 0.8111615281437865
+  },
+  "dx_0_40_median": {
+   "point": 0.7163934707641602,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 0.685246467590332,
+   "hi": 0.7467584609985352
+  },
+  "tp_class_acc": {
+   "point": 0.8142016691749897,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 0.7868237754438502,
+   "hi": 0.8422657384997719
+  },
+  "prec_gate_noNMS": {
+   "point": 0.36358381502890175,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 0.3469927356821553,
+   "hi": 0.38193204404192305
+  },
+  "rec_gate_noNMS": {
+   "point": 0.3395411605937922,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 0.28851959472604893,
+   "hi": 0.3907831994416701
+  },
+  "boxes_per_object_noNMS": {
+   "point": 2.030528375733855,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 1.9494222660218303,
+   "hi": 2.1070565215564363
+  },
+  "frac_objects_ge2_noNMS": {
+   "point": 0.6665362035225049,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 0.6334578200087095,
+   "hi": 0.6961042125864559
+  },
+  "boxes_per_object_noNMS_0_20": {
+   "point": 2.126548196015078,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 2.035417289907867,
+   "hi": 2.2190355285918923
+  },
+  "n_det_noNMS_0_20": {
+   "point": 1857.0,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 1338.95,
+   "hi": 2432.1749999999993
+  },
+  "boxes_per_object_noNMS_20_40": {
+   "point": 1.795731707317073,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 1.6659716922222993,
+   "hi": 1.92204172618434
+  },
+  "n_det_noNMS_20_40": {
+   "point": 656.0,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 448.0,
+   "hi": 891.0249999999999
+  },
+  "boxes_per_object_noNMS_40_60": {
+   "point": 1.4523809523809523,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 1.111011904761905,
+   "hi": 1.6666666666666667
+  },
+  "n_det_noNMS_40_60": {
+   "point": 42.0,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 10.0,
+   "hi": 90.0
+  }
+ },
+ "nearfield": {
+  "table": {
+   "0-5": {
+    "flag_rate": 0.19008377335425353,
+    "precision_exact": 0.14845098636535675,
+    "precision_within_0p5m": 0.22669709921503103,
+    "recall": 0.6417739199840368,
+    "gt_class_of_flags": [
+     0.05492859582560211,
+     0.7375261938390244,
+     0.030858727125585805,
+     0.013174616362187327,
+     0.002410140900544955,
+     0.012516885602542919,
+     0.00013385397915570448,
+     0.14845098636535675
+    ],
+    "n_flags": 1299924.0,
+    "n_seen": 6838690.0,
+    "n_seen_lift_valid": 2954649.0,
+    "lift_invalid_frac_of_seen": 0.5679510257081399
+   },
+   "5-10": {
+    "flag_rate": 0.05279817320118664,
+    "precision_exact": 0.5677699573794315,
+    "precision_within_0p5m": 0.7152799618258522,
+    "recall": 0.6892087135959875,
+    "gt_class_of_flags": [
+     0.14608931883004914,
+     0.24581114641737792,
+     0.0058725287119478576,
+     0.0008242145560628572,
+     3.5246017200056396e-05,
+     0.03352980728562288,
+     6.778080230780075e-05,
+     0.5677699573794315
+    ],
+    "n_flags": 368836.0,
+    "n_seen": 6985772.0,
+    "n_seen_lift_valid": 6985772.0,
+    "lift_invalid_frac_of_seen": 0.0
+   },
+   "10-20": {
+    "flag_rate": 0.07194325175325604,
+    "precision_exact": 0.623222110042921,
+    "precision_within_0p5m": 0.7516897352623753,
+    "recall": 0.7368661838487286,
+    "gt_class_of_flags": [
+     0.16716119502454405,
+     0.17309653001238393,
+     0.006207880955104517,
+     0.00044860668334435787,
+     0.0003749993783166805,
+     0.029481715050207146,
+     6.962853178293803e-06,
+     0.623222110042921
+    ],
+    "n_flags": 1005335.0,
+    "n_seen": 13974000.0,
+    "n_seen_lift_valid": 13974000.0,
+    "lift_invalid_frac_of_seen": 0.0
+   },
+   "20-40": {
+    "flag_rate": 0.12732337187812673,
+    "precision_exact": 0.6323104322484343,
+    "precision_within_0p5m": 0.7251607491208019,
+    "recall": 0.7301860549956678,
+    "gt_class_of_flags": [
+     0.15901977730365704,
+     0.17773989951699107,
+     0.013132404924186438,
+     0.0029704316391728036,
+     0.0001805219114111285,
+     0.014490550242068601,
+     0.00015598221407867822,
+     0.6323104322484343
+    ],
+    "n_flags": 3545276.0,
+    "n_seen": 27844660.0,
+    "n_seen_lift_valid": 27844660.0,
+    "lift_invalid_frac_of_seen": 0.0
+   }
+  },
+  "n_files": 2329,
+  "n_episodes": 68,
+  "edge_plane": "all",
+  "lift_valid": {
+   "source": "sidecar:LIFT_VALID_M1.npz",
+   "sha256": "8123607329ed03cf40082dd0e2c52b2c04173d8376a526f93806d74bec6fb4aa",
+   "n_episodes": 70,
+   "mean_observed_frac_0_5m": 0.4278571428571428,
+   "rows_m": 40,
+   "cols": [
+    270,
+    330
+   ]
+  },
+  "n_unobs_checked": 0,
+  "definition": {
+   "nf_prec_*": "SIDEWALK only: flag psw >= 128, GT class 7, GT-seen cells (MAPSEL nearfield_prec.py, the historical figure)",
+   "nf_swedge_prec_*": "UNION: flag (psw >= 128) | (pedge >= 128) [sidewalk alone when the raster has no edge plane], GT {5 edge, 7 sidewalk}, GT-seen cells (includes the camera blind zone)",
+   "nf_swedge_prec_lv_*": "as nf_swedge_prec_* AND lift-valid cells only (the --lift-valid mask); every nf_swedge_* key is absent without a mask",
+   "*_5_20": "the 5-10 and 10-20 m bands pooled by counts",
+   "nf_prec_lv_*": "MAP-2 instrument (seal): as nf_prec_* (SIDEWALK only: psw, GT class 7) AND lift-valid cells only (the --lift-valid mask, the same object as nf_swedge_prec_lv_*); absent without a mask",
+   "flag_rule": "the flags are `plane_u8 >= level` at THIS arm's own FIT-split per-band level (`thresholds.applied`), not the fixed 128 the *_prec definitions above name",
+   "nf_edge03_*": "BESIDE rows, never a primary: edge-class precision / recall / F @ 0.3 m of {pedge >= this arm's level} against GT class 5 (E0d, e0d_score._edge_stats); per read band and `*_5_20` (the 5-10 and 10-20 m bands pooled by counts); whole raster width; precision over judged cells (GT-seen, not nocls)"
+  },
+  "ci": {
+   "nf_prec_0_5": {
+    "point": 0.14845098636535675,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.10649656126431109,
+    "hi": 0.19571372302704135
+   },
+   "nf_prec05_0_5": {
+    "point": 0.22669709921503103,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.17087296980603592,
+    "hi": 0.2881069389870625
+   },
+   "nf_prec_5_10": {
+    "point": 0.5677699573794315,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.4639655911142995,
+    "hi": 0.6631890423523951
+   },
+   "nf_prec05_5_10": {
+    "point": 0.7152799618258522,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.6143004498820163,
+    "hi": 0.8008903596205643
+   },
+   "nf_prec_10_20": {
+    "point": 0.623222110042921,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.5047846210796754,
+    "hi": 0.715933547017591
+   },
+   "nf_prec05_10_20": {
+    "point": 0.7516897352623753,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.6312937928708023,
+    "hi": 0.8430634638811579
+   },
+   "nf_prec_20_40": {
+    "point": 0.6323104322484343,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.5546228781978102,
+    "hi": 0.7037227280470923
+   },
+   "nf_prec05_20_40": {
+    "point": 0.7251607491208019,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.6530802989574431,
+    "hi": 0.7921578070150389
+   },
+   "nf_prec_0_10": {
+    "point": 0.24113054004170761,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.17837174443992948,
+    "hi": 0.306293425595519
+   },
+   "nf_swedge_prec_0_5": {
+    "point": 0.16331844171727222,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.12009080979910386,
+    "hi": 0.211096930605304
+   },
+   "nf_swedge_prec_5_10": {
+    "point": 0.41599519030936405,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.34011461135959253,
+    "hi": 0.4890581057682431
+   },
+   "nf_swedge_prec_10_20": {
+    "point": 0.4979895459000327,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.41020799373499445,
+    "hi": 0.5742169143075541
+   },
+   "nf_swedge_prec_20_40": {
+    "point": 0.5635802421963184,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.4882450082822518,
+    "hi": 0.6347549028248983
+   },
+   "nf_swedge_prec_5_20": {
+    "point": 0.4729300316676799,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.39188296646950843,
+    "hi": 0.544303378353335
+   },
+   "nf_swedge_prec_lv_0_5": {
+    "point": 0.34015307689910196,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.2654467591604143,
+    "hi": 0.40957523332417484
+   },
+   "nf_swedge_prec_lv_5_10": {
+    "point": 0.41599519030936405,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.34011461135959253,
+    "hi": 0.4890581057682431
+   },
+   "nf_swedge_prec_lv_10_20": {
+    "point": 0.4979895459000327,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.41020799373499445,
+    "hi": 0.5742169143075541
+   },
+   "nf_swedge_prec_lv_20_40": {
+    "point": 0.5635802421963184,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.4882450082822518,
+    "hi": 0.6347549028248983
+   },
+   "nf_swedge_prec_lv_5_20": {
+    "point": 0.4729300316676799,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.39188296646950843,
+    "hi": 0.544303378353335
+   },
+   "nf_edge03_prec_0_5": {
+    "point": 0.2678763707951883,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.21771207915138502,
+    "hi": 0.3185822833899479
+   },
+   "nf_edge03_rec_0_5": {
+    "point": 0.1237875683723968,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.08924172313481729,
+    "hi": 0.16411863243668165
+   },
+   "nf_edge03_f_0_5": {
+    "point": 0.16932763652244479,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.1293695561232825,
+    "hi": 0.21188852445312112
+   },
+   "nf_edge03_prec_5_10": {
+    "point": 0.361759015138629,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.33065047062929726,
+    "hi": 0.39103562329374697
+   },
+   "nf_edge03_rec_5_10": {
+    "point": 0.5348526058811023,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.47953850756937666,
+    "hi": 0.5905594351265872
+   },
+   "nf_edge03_f_5_10": {
+    "point": 0.43159768937150295,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.39521894974492594,
+    "hi": 0.46652964635655425
+   },
+   "nf_edge03_prec_10_20": {
+    "point": 0.36926272503464386,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.3378172420101728,
+    "hi": 0.4010617449654045
+   },
+   "nf_edge03_rec_10_20": {
+    "point": 0.5270756066829445,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.46722198785727403,
+    "hi": 0.5885766617159219
+   },
+   "nf_edge03_f_10_20": {
+    "point": 0.4342765849365786,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.39656912810151185,
+    "hi": 0.4699883855567997
+   },
+   "nf_edge03_prec_20_40": {
+    "point": 0.31358697382502476,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.2803624864451229,
+    "hi": 0.3459684868890385
+   },
+   "nf_edge03_rec_20_40": {
+    "point": 0.3083783520940636,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.24775413239370633,
+    "hi": 0.3712741810333873
+   },
+   "nf_edge03_f_20_40": {
+    "point": 0.31096085327079975,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.26787554063108565,
+    "hi": 0.35374621110857246
+   },
+   "nf_edge03_prec_5_20": {
+    "point": 0.366889097180718,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.33695758172419504,
+    "hi": 0.39790083825507255
+   },
+   "nf_edge03_rec_5_20": {
+    "point": 0.5296173300076433,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.47354153263161325,
+    "hi": 0.5871094409941983
+   },
+   "nf_edge03_f_5_20": {
+    "point": 0.4334845086770154,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.3976670453803948,
+    "hi": 0.467988244298657
+   },
+   "nf_prec_lv_0_5": {
+    "point": 0.49699057461365487,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.39070205448630857,
+    "hi": 0.5912219023249319
+   },
+   "nf_prec_lv_5_10": {
+    "point": 0.5677699573794315,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.4639655911142995,
+    "hi": 0.6631890423523951
+   },
+   "nf_prec_lv_10_20": {
+    "point": 0.623222110042921,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.5047846210796754,
+    "hi": 0.715933547017591
+   },
+   "nf_prec_lv_20_40": {
+    "point": 0.6323104322484343,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.5546228781978102,
+    "hi": 0.7037227280470923
+   }
+  },
+  "thresholds": {
+   "schema": "tanitad.r9_map_thresholds/1",
+   "sha256": "522b263d5ec88ef41ac494694e5f3c10dc24b1d98290074ce12a992d73cde856",
+   "source": "thr_K0raw_pswpedgeF.json",
+   "bands_m": [
+    [
+     0.0,
+     10.0
+    ],
+    [
+     10.0,
+     40.0
+    ],
+    [
+     40.0,
+     100.0
+    ]
+   ],
+   "planes": {
+    "psw": [
+     78,
+     85,
+     77
+    ],
+    "pedge": [
+     6,
+     7,
+     5
+    ]
+   },
+   "absent_planes_keep": 128,
+   "applied": {
+    "0-5": {
+     "psw": 78,
+     "pedge": 6
+    },
+    "5-10": {
+     "psw": 78,
+     "pedge": 6
+    },
+    "10-20": {
+     "psw": 85,
+     "pedge": 7
+    },
+    "20-40": {
+     "psw": 85,
+     "pedge": 7
+    }
+   },
+   "binding": {
+    "checked": true,
+    "ckpt_md5": "aed728c6765725b94b5a67ae8bf0f04d"
+   }
+  },
+  "edge_tol": {
+   "rule": "edge-class P / R / F @ 0.3 m (E0d, e0d_score._edge_stats): flag = pedge >= this arm's level (applied below), GT class 5, 3-cell square dilation on the whole raster, P over JUDGED cells (GT-seen, not nocls), whole raster width",
+   "tol_cells": 3,
+   "levels": {
+    "0-5": 6,
+    "5-10": 6,
+    "10-20": 7,
+    "20-40": 7
+   }
+  }
+ }
+}

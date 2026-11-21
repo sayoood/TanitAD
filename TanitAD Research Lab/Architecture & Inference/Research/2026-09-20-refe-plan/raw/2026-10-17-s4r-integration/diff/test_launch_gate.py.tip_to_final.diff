@@ -1,0 +1,51 @@
+--- C:/so/s4r_work/tip_test_launch_gate.py	2026-10-17 19:21:22.711469800 +0200
++++ C:/so/s4r_work/final3/refe/test_launch_gate.py	2026-10-17 19:21:22.510806200 +0200
+@@ -47,6 +47,31 @@
+     return m.group(1)
+ 
+ 
++def posix_bash():
++    """Absolute path of a REAL POSIX bash, or None (SO-A16).  A bare `bash` given to CreateProcess is not safe on a Windows box: CreateProcess searches System32 BEFORE PATH, and
++    C:\\Windows\\System32\\bash.exe (and the WindowsApps alias) is the WSL launcher, which drops the argument after `-c '<script>'`, so the word-splitting cross-check read an EMPTY stdout and
++    failed -- while `shutil.which("bash")` (the old guard) answered Git's bash.  So resolve once, to an absolute path, and skip the WSL launcher wherever it sits on PATH.
++    POSIX: the first `bash` on PATH."""
++    if os.name != "nt":
++        return shutil.which("bash")
++
++    def wsl_launcher(p):
++        q = os.path.normcase(os.path.abspath(p))
++        sysroot = os.path.normcase(os.environ.get("SystemRoot", "C:\\Windows"))
++        return q.startswith(sysroot + os.sep) or (os.sep + "windowsapps" + os.sep) in q
++
++    cands = [os.path.join(d, "bash.exe") for d in os.environ.get("PATH", "").split(os.pathsep) if d]
++    git = shutil.which("git")
++    roots = [os.path.dirname(os.path.dirname(git))] if git else []
++    roots += [os.path.join(os.environ[v], "Git") for v in ("ProgramFiles", "ProgramW6432", "ProgramFiles(x86)") if os.environ.get(v)]
++    for r in roots:
++        cands += [os.path.join(r, "usr", "bin", "bash.exe"), os.path.join(r, "bin", "bash.exe")]
++    for c in cands:
++        if os.path.isfile(c) and not wsl_launcher(c):
++            return os.path.abspath(c)
++    return None
++
++
+ P6_ARGS = ("--backbone vitl16 --targets /w/train_grow --images /w/pix --calib /w/calib.json --metric-cache /w/mc --scorer-sees-trunk --yaw-wrap off --nav-mode command "
+            "--labeller online --epochs 25 --batch 4 --accum 64 --lr 2e-4 --weight-decay 0.01 --amp bf16 --score-w 0.1 --tf32 --compile --workers 2 "
+            "--log-every 1 --ckpt-every-min 20 --out /w/run --resume")
+@@ -335,11 +360,12 @@
+         ok(True)
+     ok(pickle.loads(pickle.dumps(cfg)) == cfg and copy.deepcopy(cfg) == cfg)
+     # the SHELL's word splitting of $ARGS is the gate's
+-    if shutil.which("bash"):
+-        r = subprocess.run(["bash", "-c", 'ARGS="$1"; printf "%s\\n" $ARGS', "_", real_args()], capture_output=True, text=True, encoding="utf-8")
+-        ok(r.stdout.split("\n")[:-1] == GT.argv_from_string(real_args()))
++    bash = posix_bash()
++    if bash:
++        r = subprocess.run([bash, "-c", 'ARGS="$1"; printf "%s\\n" $ARGS', "_", real_args()], capture_output=True, text=True, encoding="utf-8")
++        ok(r.stdout.split("\n")[:-1] == GT.argv_from_string(real_args()), (bash, r.returncode, r.stdout, r.stderr))
+     else:
+-        print("ZZTEST_SKIP bash not found: $ARGS word splitting not cross-checked")
++        print("ZZTEST_SKIP no POSIX bash (none, or only the WSL launcher): $ARGS word splitting not cross-checked")
+     # derived argvs: BUILD keeps every launch lever, SMOKE cuts only the schedule and points at the gate's small data
+     w = Path(tempfile.mkdtemp())
+     bld, smk = L.derived_argvs(L.PROFILES["refe_p2"], ra, w, "/gs", "/gp", "/gb")

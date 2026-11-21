@@ -1,0 +1,8 @@
+C1 RED: the s1 bare row carries seed 0 | tests -k 'dry_run_lists' | clean rc 0, mutated rc 1 | 1 failed, 10 deselected in 0.63s
+C2 RED: the tree tool is not compared with the pin | tests -k 'differs_from_the_pinned' | clean rc 0, mutated rc 1 | 1 failed, 10 deselected in 2.35s
+C3 RED: an absent build pins file is tolerated | tests -k 'refuses_without_the_patched' | clean rc 0, mutated rc 1 | 1 failed, 10 deselected in 1.97s
+C4 RED: a missing patched_tool key is tolerated | tests -k 'refuses_without_the_patched' | clean rc 0, mutated rc 1 | 1 failed, 10 deselected in 4.64s
+C5 RED: the operator is not compared with its pin | tests -k 'operator_that_differs' | clean rc 0, mutated rc 1 | 1 failed, 10 deselected in 3.39s
+C6 RED: the EXIT trap leaves no fail marker | tests -k 'chain_that_dies' | clean rc 0, mutated rc 1 | 1 failed, 10 deselected in 0.21s
+C7 RED: the rollout argv does not name the logged source | tests -k 'names_the_logged_source' | clean rc 0, mutated rc 1 | 1 failed, 10 deselected in 0.05s
+C8 RED: a pinned file may differ | tests -k 'pinned_file_that_differs' | clean rc 0, mutated rc 1 | 1 failed, 10 deselected in 2.37s

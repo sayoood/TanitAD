@@ -1,0 +1,27 @@
+{
+  "_doc": "Machine-readable exclusion list for censuses over taniteval/results/windows_*.pt. Any census, ranking, correlation, mean, or interval computed 'over arms' MUST drop the excluded_name rows first (or it double-counts the canonical arm and overstates n). Created 2026-08-18 by the results-hygiene pass; evidence, timeline and corrected census phrasings in DUPLICATES.md (same directory). Do NOT delete the excluded dumps: each is referenced by banked per-arm artifacts (driving_*.json, jack_recompute.json rows, the v1.2 rescorer experiment) and one is a designed within-experiment control.",
+  "_schema": ["excluded_name", "canonical_name", "reason", "evidence", "sha256"],
+  "exclusions": [
+    {
+      "excluded_name": "windows_overfit_refa-dynin-30k.pt",
+      "canonical_name": "windows_refa-dynin-30k.pt",
+      "reason": "Same checkpoint evaluated twice, banked under two naming schemes: the overfit-curve driver's 30k point clones the canonical refa-dynin-30k registry entry and evaluates the identical ckpt (/root/models/refa-dynin-30k/ckpt.pt). All seven dump keys are bit-identical (torch.equal on pred/gt/cv/eid/speed/head_deg/wp_steps). NOT a mislabel: both names truthfully describe the same model; no phantom arm exists.",
+      "evidence": "taniteval/refa_overfit_driver.py:31-38 (CKPTS 30k entry + BASE = registry key refa-dynin-30k); taniteval/taniteval/registry.py:110-112 (canonical arm, same ckpt path); MEASURED 2026-08-18 on this clone: torch.equal true on every key; file bytes differ only via the torch-zip member prefix embedding each basename (96278 vs 96190 B, delta = 8 chars x 11 members)",
+      "sha256": "22cecd302360a836a309aa8776654cd1b4cd19206b5125c296ba8b7ee5665acb",
+      "canonical_sha256": "f159bc60c33ab0bfc226c8c1c5dfde84848834870ca6ecbd45225f717c6c9419"
+    },
+    {
+      "excluded_name": "windows_refc-v12-identity.pt",
+      "canonical_name": "windows_refc-xl-30k.pt",
+      "reason": "Designed control that equals another banked arm: refc-v12-identity is the v1.2 learned-rescorer experiment's zero-init / identity-selection baseline over the SAME frozen refc-xl-30k decode (its own report calls its full_set 0.47144 'the frozen REF-C selection - the number to beat'). Same model, same selection; pred differs only at GPU re-run epsilon (max abs 7.63e-06 over 881x4x2); the canonical dump additionally carries a 'method' key the identity harness did not write. NOT a mislabel. Keep the dump: it is the paired within-experiment control for refc-v12 / refc-v12-k16reg.",
+      "evidence": "TanitAD Research Hub/Benchmarks & Eval/Research/2026-07-20-refc-v12-learned-rescorer.md:33-38 (zero-init head; 'the frozen REF-C selection'); stack/experiments/pod-rescue-20260802/pod3/root/taniteval/results/refc-v12-identity.json (model.rescorer.head_step=0, encoder 'frozen refc-xl-30k'); stack/scripts/refc_v12_eval.py:244 (writer of windows_<tag>.pt); TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-26-doc-correction-sweep/DOC_CORRECTION_SWEEP.md:101-103 ('the same checkpoint under two keys'); MEASURED 2026-08-18 on this clone: max|dpred| 7.62939453125e-06, all other shared keys torch.equal",
+      "sha256": "2be17fd44a8d67f0e7e7dc7cf0e071c29a6f902653fdf33129154a911d8d1506",
+      "canonical_sha256": "e38a9b9e6f9895c539e8eb81b8c2fcfdaaf85c8b0207f8a48a72caf2b10b09a4"
+    }
+  ],
+  "census_note": {
+    "windows_dumps": 27,
+    "distinct_arms": 25,
+    "read": "27 windows_*.pt files = 25 distinct (model, selection-config) arms after dropping the two excluded rows. Of the 25, 23 share the canonical 881-window val40 surface (3 of those with real-eid ordering normalised by rollout.load_windows) and 2 are 88-window refc-v12-smoke-* dumps on their own surface. Historical claims phrased 'over 27 arms' counted dump files; see DUPLICATES.md for which published aggregates move under deduplication (counts only - no verdict, extreme, median, or sign changes)."
+  }
+}

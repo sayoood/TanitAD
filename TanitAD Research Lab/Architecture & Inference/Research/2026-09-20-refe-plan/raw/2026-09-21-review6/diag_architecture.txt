@@ -1,0 +1,27 @@
+--- D2: do the registers COMPRESS, and do the decoders read DIFFERENT tensors? ---
+  patches per camera             : 128   x 4 cameras = 512
+  trajectory decoder context     : [(2, 64, 256)]   (paper: 64 scene tokens)
+  scoring decoder context        : [(2, 512, 256)]   (paper: the visual tokens)
+  same storage pointer?          : no
+
+--- D7: is the pretrained position encoding back? ---
+  backbone.pos parameter exists  : False   (must be False)
+  rope changes the vectors       : max |delta| 5.1962   (must be > 0)
+  rope PRESERVES the norm        : max |delta norm| 9.54e-07   (a rotation must)
+
+--- D6: the review's counterexample, which used to flip the winner ---
+  old metric                     : [0.20000000298023224, 0.10000000149011612] -> picks #1
+  new metric picks               : #0   (must be 0, the one that is exactly on the path)
+
+  [PASS] D2 trajectory decoder sees exactly the scene tokens
+  [PASS] D2 scoring decoder sees the VISUAL tokens of ALL cameras
+  [PASS] D2 the two contexts are DIFFERENT tensors
+  [PASS] D7 the random frozen pos table is gone
+  [PASS] D7 CONTROL rope actually rotates (non-zero delta)
+  [PASS] D7 CONTROL rope preserves the norm (it is a rotation)
+  [PASS] D6 the winner is the proposal on the path
+  [PASS] D6 CONTROL the OLD metric picked the other one
+  [PASS] shapes still correct
+
+ARCHITECTURE_CONFORMS
+EXIT=0

@@ -1,0 +1,72 @@
+{
+ "panel": "logits_stride40.npz, 282 windows / 141 episodes, step 21109",
+ "n_labelled": 141,
+ "lon_head": {
+  "accuracy": 0.3900709219858156,
+  "decoded_hist": {
+   "CRUISE": 116,
+   "BRAKE_TO": 33,
+   "ADAPT_SPEED_FOR_CURVE": 78,
+   "ACCELERATE": 55
+  },
+  "label_hist": {
+   "FOLLOW": 10,
+   "CRUISE": 42,
+   "BRAKE_TO": 22,
+   "CREEP": 6,
+   "HOLD": 2,
+   "ADAPT_SPEED_FOR_CURVE": 22,
+   "ACCELERATE": 37
+  },
+  "per_class_recall": {
+   "FOLLOW": {
+    "n": 10,
+    "recall": 0.0
+   },
+   "CRUISE": {
+    "n": 42,
+    "recall": 0.5952380952380952
+   },
+   "BRAKE_TO": {
+    "n": 22,
+    "recall": 0.13636363636363635
+   },
+   "CREEP": {
+    "n": 6,
+    "recall": 0.0
+   },
+   "HOLD": {
+    "n": 2,
+    "recall": 0.0
+   },
+   "ADAPT_SPEED_FOR_CURVE": {
+    "n": 22,
+    "recall": 0.7727272727272727
+   },
+   "ACCELERATE": {
+    "n": 37,
+    "recall": 0.2702702702702703
+   }
+  },
+  "never_emitted": [
+   "FOLLOW",
+   "YIELD_MERGE",
+   "CREEP",
+   "HOLD"
+  ]
+ },
+ "lat_head_for_comparison": {
+  "accuracy": 0.7021276595744681,
+  "decoded_hist": {
+   "LANE_KEEP": 244,
+   "TURN_L": 7,
+   "TURN_R": 31
+  }
+ },
+ "DISCREPANCY_TO_CHECK": {
+  "what": "the predecessor's raw/confusion_cos_ext.json reports hist_goal_lon = {CRUISE:116, BRAKE_TO:33}, summing to 149 NOT 282, while its hist_goal_lat sums to 282",
+  "this_measurement": "lon_logits.argmax over the SAME 282 windows gives 4 classes summing to 282 (CRUISE 116, ADAPT_SPEED_FOR_CURVE 78, ACCELERATE 55, BRAKE_TO 33)",
+  "note": "CRUISE 116 and BRAKE_TO 33 AGREE exactly, so the banked artifact looks INCOMPLETE rather than contradictory. The extraction control (logits_stride40_prov.json) asserted argmax equality against the banked dump for LAT ONLY - argmax_eq_banked_goal 282/282 - LON was never asserted.",
+  "status": "FLAGGED, NOT RESOLVED - resolve before quoting either lon histogram"
+ }
+}

@@ -1,0 +1,395 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="10" skipped="0" tests="11" time="1.664" timestamp="2026-09-28T05:57:15.183102+02:00" hostname="FREEDOM2035"><testcase classname="tests.test_tactical_goal_underpowered_matches_census" name="test_census_artifact_is_readable_and_populated" time="0.001"><failure message="AssertionError: census artifact not found at C:\Users\Admin\rc7combo\TanitAD Research Lab\Architecture &amp; Inference\Research\2026-09-07-underpowered-pin\raw\vocab_fill_census.json.&#10;  This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without it there is nothing to pin against and the pin must not be assumed to hold. Re-bank it from the DataFlyWheel release (incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json).&#10;assert False&#10; +  where False = is_file()&#10; +    where is_file = WindowsPath('C:/Users/Admin/rc7combo/TanitAD Research Lab/Architecture &amp; Inference/Research/2026-09-07-underpowered-pin/raw/vocab_fill_census.json').is_file">def test_census_artifact_is_readable_and_populated():
+&gt;       counts = _counts()
+                 ^^^^^^^^^
+
+tests\test_tactical_goal_underpowered_matches_census.py:124: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_tactical_goal_underpowered_matches_census.py:100: in _counts
+    field = _census()["fields"][FIELD]
+            ^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def _census():
+        """The census artifact, or a hard failure naming the path.
+    
+        Never returns a default.  A census that cannot be read must FAIL this
+        suite, not silently empty the expected set and turn every assertion below
+        into a tautology.
+        """
+&gt;       assert CENSUS_PATH.is_file(), (
+            "census artifact not found at {p}.\n"
+            "This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without "
+            "it there is nothing to pin against and the pin must not be assumed to "
+            "hold. Re-bank it from the DataFlyWheel release "
+            "(incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json)."
+            .format(p=CENSUS_PATH)
+        )
+E       AssertionError: census artifact not found at C:\Users\Admin\rc7combo\TanitAD Research Lab\Architecture &amp; Inference\Research\2026-09-07-underpowered-pin\raw\vocab_fill_census.json.
+E         This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without it there is nothing to pin against and the pin must not be assumed to hold. Re-bank it from the DataFlyWheel release (incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json).
+E       assert False
+E        +  where False = is_file()
+E        +    where is_file = WindowsPath('C:/Users/Admin/rc7combo/TanitAD Research Lab/Architecture &amp; Inference/Research/2026-09-07-underpowered-pin/raw/vocab_fill_census.json').is_file
+
+tests\test_tactical_goal_underpowered_matches_census.py:87: AssertionError</failure></testcase><testcase classname="tests.test_tactical_goal_underpowered_matches_census" name="test_census_token_set_matches_the_declared_vocabulary" time="1.443"><failure message="AssertionError: census artifact not found at C:\Users\Admin\rc7combo\TanitAD Research Lab\Architecture &amp; Inference\Research\2026-09-07-underpowered-pin\raw\vocab_fill_census.json.&#10;  This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without it there is nothing to pin against and the pin must not be assumed to hold. Re-bank it from the DataFlyWheel release (incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json).&#10;assert False&#10; +  where False = is_file()&#10; +    where is_file = WindowsPath('C:/Users/Admin/rc7combo/TanitAD Research Lab/Architecture &amp; Inference/Research/2026-09-07-underpowered-pin/raw/vocab_fill_census.json').is_file">def test_census_token_set_matches_the_declared_vocabulary():
+        """Pinning against a STALE census would be as bad as the hand-list.
+    
+        If the census predates a vocabulary change, its counts describe tokens that
+        no longer exist (or omit tokens that now do) and the pin silently drifts.
+        """
+        from tanitad.models import vocab_v7
+    
+        declared = set(vocab_v7.TACTICAL_GOAL_TOKENS_V7)
+&gt;       censused = set(_counts())
+                       ^^^^^^^^^
+
+tests\test_tactical_goal_underpowered_matches_census.py:149: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_tactical_goal_underpowered_matches_census.py:100: in _counts
+    field = _census()["fields"][FIELD]
+            ^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def _census():
+        """The census artifact, or a hard failure naming the path.
+    
+        Never returns a default.  A census that cannot be read must FAIL this
+        suite, not silently empty the expected set and turn every assertion below
+        into a tautology.
+        """
+&gt;       assert CENSUS_PATH.is_file(), (
+            "census artifact not found at {p}.\n"
+            "This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without "
+            "it there is nothing to pin against and the pin must not be assumed to "
+            "hold. Re-bank it from the DataFlyWheel release "
+            "(incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json)."
+            .format(p=CENSUS_PATH)
+        )
+E       AssertionError: census artifact not found at C:\Users\Admin\rc7combo\TanitAD Research Lab\Architecture &amp; Inference\Research\2026-09-07-underpowered-pin\raw\vocab_fill_census.json.
+E         This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without it there is nothing to pin against and the pin must not be assumed to hold. Re-bank it from the DataFlyWheel release (incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json).
+E       assert False
+E        +  where False = is_file()
+E        +    where is_file = WindowsPath('C:/Users/Admin/rc7combo/TanitAD Research Lab/Architecture &amp; Inference/Research/2026-09-07-underpowered-pin/raw/vocab_fill_census.json').is_file
+
+tests\test_tactical_goal_underpowered_matches_census.py:87: AssertionError</failure></testcase><testcase classname="tests.test_tactical_goal_underpowered_matches_census" name="test_underpowered_equals_the_census_set_below_the_metric_floor" time="0.001"><failure message="AssertionError: census artifact not found at C:\Users\Admin\rc7combo\TanitAD Research Lab\Architecture &amp; Inference\Research\2026-09-07-underpowered-pin\raw\vocab_fill_census.json.&#10;  This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without it there is nothing to pin against and the pin must not be assumed to hold. Re-bank it from the DataFlyWheel release (incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json).&#10;assert False&#10; +  where False = is_file()&#10; +    where is_file = WindowsPath('C:/Users/Admin/rc7combo/TanitAD Research Lab/Architecture &amp; Inference/Research/2026-09-07-underpowered-pin/raw/vocab_fill_census.json').is_file">def test_underpowered_equals_the_census_set_below_the_metric_floor():
+        """The headline. Names the missing AND the extra tokens, never just fails."""
+        from tanitad.models import vocab_v7
+    
+        threshold = vocab_v7.GOAL_MIN_N_FOR_METRIC
+&gt;       expected = _expected_below(threshold)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_tactical_goal_underpowered_matches_census.py:170: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_tactical_goal_underpowered_matches_census.py:106: in _expected_below
+    return {tok for tok, n in _counts().items() if n &lt; threshold}
+                              ^^^^^^^^^
+tests\test_tactical_goal_underpowered_matches_census.py:100: in _counts
+    field = _census()["fields"][FIELD]
+            ^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def _census():
+        """The census artifact, or a hard failure naming the path.
+    
+        Never returns a default.  A census that cannot be read must FAIL this
+        suite, not silently empty the expected set and turn every assertion below
+        into a tautology.
+        """
+&gt;       assert CENSUS_PATH.is_file(), (
+            "census artifact not found at {p}.\n"
+            "This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without "
+            "it there is nothing to pin against and the pin must not be assumed to "
+            "hold. Re-bank it from the DataFlyWheel release "
+            "(incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json)."
+            .format(p=CENSUS_PATH)
+        )
+E       AssertionError: census artifact not found at C:\Users\Admin\rc7combo\TanitAD Research Lab\Architecture &amp; Inference\Research\2026-09-07-underpowered-pin\raw\vocab_fill_census.json.
+E         This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without it there is nothing to pin against and the pin must not be assumed to hold. Re-bank it from the DataFlyWheel release (incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json).
+E       assert False
+E        +  where False = is_file()
+E        +    where is_file = WindowsPath('C:/Users/Admin/rc7combo/TanitAD Research Lab/Architecture &amp; Inference/Research/2026-09-07-underpowered-pin/raw/vocab_fill_census.json').is_file
+
+tests\test_tactical_goal_underpowered_matches_census.py:87: AssertionError</failure></testcase><testcase classname="tests.test_tactical_goal_underpowered_matches_census" name="test_underpowered_names_are_real_vocabulary_tokens" time="0.000" /><testcase classname="tests.test_tactical_goal_underpowered_matches_census" name="test_the_two_thresholds_are_distinct_and_both_declared" time="0.001"><failure message="AssertionError: census artifact not found at C:\Users\Admin\rc7combo\TanitAD Research Lab\Architecture &amp; Inference\Research\2026-09-07-underpowered-pin\raw\vocab_fill_census.json.&#10;  This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without it there is nothing to pin against and the pin must not be assumed to hold. Re-bank it from the DataFlyWheel release (incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json).&#10;assert False&#10; +  where False = is_file()&#10; +    where is_file = WindowsPath('C:/Users/Admin/rc7combo/TanitAD Research Lab/Architecture &amp; Inference/Research/2026-09-07-underpowered-pin/raw/vocab_fill_census.json').is_file">def test_the_two_thresholds_are_distinct_and_both_declared():
+        """The ambiguity that caused this, kept from silently re-forming.
+    
+        'Too rare to score a metric on' and 'too rare to train a class on' are
+        different questions. One constant serving both is how the set ended up
+        matching neither.
+        """
+        from tanitad.models import vocab_v7
+    
+        metric = vocab_v7.GOAL_MIN_N_FOR_METRIC
+        training = vocab_v7.GOAL_MIN_N_FOR_TRAINING
+        assert training &lt; metric, (
+            "GOAL_MIN_N_FOR_TRAINING ({tr}) is not below GOAL_MIN_N_FOR_METRIC "
+            "({me}). If they have converged, one of them is redundant -- say which "
+            "and delete it, rather than leaving two names for one number."
+            .format(tr=training, me=metric)
+        )
+&gt;       assert _expected_below(training) &lt; _expected_below(metric), (
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+            "the trainability set is not a strict subset of the scoreability set; "
+            "the two thresholds are no longer separating anything on this corpus"
+        )
+
+tests\test_tactical_goal_underpowered_matches_census.py:244: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_tactical_goal_underpowered_matches_census.py:106: in _expected_below
+    return {tok for tok, n in _counts().items() if n &lt; threshold}
+                              ^^^^^^^^^
+tests\test_tactical_goal_underpowered_matches_census.py:100: in _counts
+    field = _census()["fields"][FIELD]
+            ^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def _census():
+        """The census artifact, or a hard failure naming the path.
+    
+        Never returns a default.  A census that cannot be read must FAIL this
+        suite, not silently empty the expected set and turn every assertion below
+        into a tautology.
+        """
+&gt;       assert CENSUS_PATH.is_file(), (
+            "census artifact not found at {p}.\n"
+            "This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without "
+            "it there is nothing to pin against and the pin must not be assumed to "
+            "hold. Re-bank it from the DataFlyWheel release "
+            "(incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json)."
+            .format(p=CENSUS_PATH)
+        )
+E       AssertionError: census artifact not found at C:\Users\Admin\rc7combo\TanitAD Research Lab\Architecture &amp; Inference\Research\2026-09-07-underpowered-pin\raw\vocab_fill_census.json.
+E         This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without it there is nothing to pin against and the pin must not be assumed to hold. Re-bank it from the DataFlyWheel release (incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json).
+E       assert False
+E        +  where False = is_file()
+E        +    where is_file = WindowsPath('C:/Users/Admin/rc7combo/TanitAD Research Lab/Architecture &amp; Inference/Research/2026-09-07-underpowered-pin/raw/vocab_fill_census.json').is_file
+
+tests\test_tactical_goal_underpowered_matches_census.py:87: AssertionError</failure></testcase><testcase classname="tests.test_tactical_goal_underpowered_matches_census" name="test_pinning_on_the_status_field_would_be_circular" time="0.001"><failure message="AssertionError: census artifact not found at C:\Users\Admin\rc7combo\TanitAD Research Lab\Architecture &amp; Inference\Research\2026-09-07-underpowered-pin\raw\vocab_fill_census.json.&#10;  This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without it there is nothing to pin against and the pin must not be assumed to hold. Re-bank it from the DataFlyWheel release (incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json).&#10;assert False&#10; +  where False = is_file()&#10; +    where is_file = WindowsPath('C:/Users/Admin/rc7combo/TanitAD Research Lab/Architecture &amp; Inference/Research/2026-09-07-underpowered-pin/raw/vocab_fill_census.json').is_file">def test_pinning_on_the_status_field_would_be_circular():
+        """Keeps the anti-circularity reasoning falsifiable rather than a comment.
+    
+        vocab_fill_census.py line 78 computes
+            status = "UNDERPOWERED" if t in TACTICAL_GOAL_UNDERPOWERED or n &lt; 30
+        so the status field is a UNION of this frozenset with the n&lt;30 rule. A pin
+        against `status` can therefore never detect an OVER-inclusive frozenset:
+        every extra member marks itself UNDERPOWERED on the next census run.
+        """
+        from tanitad.models import vocab_v7
+    
+&gt;       field = _census()["fields"][FIELD]
+                ^^^^^^^^^
+
+tests\test_tactical_goal_underpowered_matches_census.py:261: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def _census():
+        """The census artifact, or a hard failure naming the path.
+    
+        Never returns a default.  A census that cannot be read must FAIL this
+        suite, not silently empty the expected set and turn every assertion below
+        into a tautology.
+        """
+&gt;       assert CENSUS_PATH.is_file(), (
+            "census artifact not found at {p}.\n"
+            "This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without "
+            "it there is nothing to pin against and the pin must not be assumed to "
+            "hold. Re-bank it from the DataFlyWheel release "
+            "(incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json)."
+            .format(p=CENSUS_PATH)
+        )
+E       AssertionError: census artifact not found at C:\Users\Admin\rc7combo\TanitAD Research Lab\Architecture &amp; Inference\Research\2026-09-07-underpowered-pin\raw\vocab_fill_census.json.
+E         This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without it there is nothing to pin against and the pin must not be assumed to hold. Re-bank it from the DataFlyWheel release (incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json).
+E       assert False
+E        +  where False = is_file()
+E        +    where is_file = WindowsPath('C:/Users/Admin/rc7combo/TanitAD Research Lab/Architecture &amp; Inference/Research/2026-09-07-underpowered-pin/raw/vocab_fill_census.json').is_file
+
+tests\test_tactical_goal_underpowered_matches_census.py:87: AssertionError</failure></testcase><testcase classname="tests.test_tactical_goal_underpowered_matches_census" name="test_mutation_a_dropped_token_is_detected_and_named" time="0.001"><failure message="AssertionError: census artifact not found at C:\Users\Admin\rc7combo\TanitAD Research Lab\Architecture &amp; Inference\Research\2026-09-07-underpowered-pin\raw\vocab_fill_census.json.&#10;  This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without it there is nothing to pin against and the pin must not be assumed to hold. Re-bank it from the DataFlyWheel release (incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json).&#10;assert False&#10; +  where False = is_file()&#10; +    where is_file = WindowsPath('C:/Users/Admin/rc7combo/TanitAD Research Lab/Architecture &amp; Inference/Research/2026-09-07-underpowered-pin/raw/vocab_fill_census.json').is_file">def test_mutation_a_dropped_token_is_detected_and_named():
+        """Reintroduce the original defect: remove a member, require it named."""
+&gt;       expected = _expected_below(200)
+                   ^^^^^^^^^^^^^^^^^^^^
+
+tests\test_tactical_goal_underpowered_matches_census.py:299: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_tactical_goal_underpowered_matches_census.py:106: in _expected_below
+    return {tok for tok, n in _counts().items() if n &lt; threshold}
+                              ^^^^^^^^^
+tests\test_tactical_goal_underpowered_matches_census.py:100: in _counts
+    field = _census()["fields"][FIELD]
+            ^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def _census():
+        """The census artifact, or a hard failure naming the path.
+    
+        Never returns a default.  A census that cannot be read must FAIL this
+        suite, not silently empty the expected set and turn every assertion below
+        into a tautology.
+        """
+&gt;       assert CENSUS_PATH.is_file(), (
+            "census artifact not found at {p}.\n"
+            "This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without "
+            "it there is nothing to pin against and the pin must not be assumed to "
+            "hold. Re-bank it from the DataFlyWheel release "
+            "(incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json)."
+            .format(p=CENSUS_PATH)
+        )
+E       AssertionError: census artifact not found at C:\Users\Admin\rc7combo\TanitAD Research Lab\Architecture &amp; Inference\Research\2026-09-07-underpowered-pin\raw\vocab_fill_census.json.
+E         This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without it there is nothing to pin against and the pin must not be assumed to hold. Re-bank it from the DataFlyWheel release (incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json).
+E       assert False
+E        +  where False = is_file()
+E        +    where is_file = WindowsPath('C:/Users/Admin/rc7combo/TanitAD Research Lab/Architecture &amp; Inference/Research/2026-09-07-underpowered-pin/raw/vocab_fill_census.json').is_file
+
+tests\test_tactical_goal_underpowered_matches_census.py:87: AssertionError</failure></testcase><testcase classname="tests.test_tactical_goal_underpowered_matches_census" name="test_mutation_a_stale_token_is_detected_and_named" time="0.001"><failure message="AssertionError: census artifact not found at C:\Users\Admin\rc7combo\TanitAD Research Lab\Architecture &amp; Inference\Research\2026-09-07-underpowered-pin\raw\vocab_fill_census.json.&#10;  This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without it there is nothing to pin against and the pin must not be assumed to hold. Re-bank it from the DataFlyWheel release (incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json).&#10;assert False&#10; +  where False = is_file()&#10; +    where is_file = WindowsPath('C:/Users/Admin/rc7combo/TanitAD Research Lab/Architecture &amp; Inference/Research/2026-09-07-underpowered-pin/raw/vocab_fill_census.json').is_file">def test_mutation_a_stale_token_is_detected_and_named():
+        """The other direction, using the ACTUAL historical defect string.
+    
+        A length-only or missing-only check would have passed the five-member set
+        forever, because WAIT_FOR_ONCOMING padded the count while covering nothing.
+        """
+&gt;       expected = _expected_below(200)
+                   ^^^^^^^^^^^^^^^^^^^^
+
+tests\test_tactical_goal_underpowered_matches_census.py:318: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_tactical_goal_underpowered_matches_census.py:106: in _expected_below
+    return {tok for tok, n in _counts().items() if n &lt; threshold}
+                              ^^^^^^^^^
+tests\test_tactical_goal_underpowered_matches_census.py:100: in _counts
+    field = _census()["fields"][FIELD]
+            ^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def _census():
+        """The census artifact, or a hard failure naming the path.
+    
+        Never returns a default.  A census that cannot be read must FAIL this
+        suite, not silently empty the expected set and turn every assertion below
+        into a tautology.
+        """
+&gt;       assert CENSUS_PATH.is_file(), (
+            "census artifact not found at {p}.\n"
+            "This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without "
+            "it there is nothing to pin against and the pin must not be assumed to "
+            "hold. Re-bank it from the DataFlyWheel release "
+            "(incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json)."
+            .format(p=CENSUS_PATH)
+        )
+E       AssertionError: census artifact not found at C:\Users\Admin\rc7combo\TanitAD Research Lab\Architecture &amp; Inference\Research\2026-09-07-underpowered-pin\raw\vocab_fill_census.json.
+E         This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without it there is nothing to pin against and the pin must not be assumed to hold. Re-bank it from the DataFlyWheel release (incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json).
+E       assert False
+E        +  where False = is_file()
+E        +    where is_file = WindowsPath('C:/Users/Admin/rc7combo/TanitAD Research Lab/Architecture &amp; Inference/Research/2026-09-07-underpowered-pin/raw/vocab_fill_census.json').is_file
+
+tests\test_tactical_goal_underpowered_matches_census.py:87: AssertionError</failure></testcase><testcase classname="tests.test_tactical_goal_underpowered_matches_census" name="test_mutation_the_correct_set_is_accepted" time="0.001"><failure message="AssertionError: census artifact not found at C:\Users\Admin\rc7combo\TanitAD Research Lab\Architecture &amp; Inference\Research\2026-09-07-underpowered-pin\raw\vocab_fill_census.json.&#10;  This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without it there is nothing to pin against and the pin must not be assumed to hold. Re-bank it from the DataFlyWheel release (incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json).&#10;assert False&#10; +  where False = is_file()&#10; +    where is_file = WindowsPath('C:/Users/Admin/rc7combo/TanitAD Research Lab/Architecture &amp; Inference/Research/2026-09-07-underpowered-pin/raw/vocab_fill_census.json').is_file">def test_mutation_the_correct_set_is_accepted():
+        """The discriminating half. Without it, an always-fail check passes both
+        mutations above while being worthless."""
+&gt;       expected = _expected_below(200)
+                   ^^^^^^^^^^^^^^^^^^^^
+
+tests\test_tactical_goal_underpowered_matches_census.py:331: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_tactical_goal_underpowered_matches_census.py:106: in _expected_below
+    return {tok for tok, n in _counts().items() if n &lt; threshold}
+                              ^^^^^^^^^
+tests\test_tactical_goal_underpowered_matches_census.py:100: in _counts
+    field = _census()["fields"][FIELD]
+            ^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def _census():
+        """The census artifact, or a hard failure naming the path.
+    
+        Never returns a default.  A census that cannot be read must FAIL this
+        suite, not silently empty the expected set and turn every assertion below
+        into a tautology.
+        """
+&gt;       assert CENSUS_PATH.is_file(), (
+            "census artifact not found at {p}.\n"
+            "This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without "
+            "it there is nothing to pin against and the pin must not be assumed to "
+            "hold. Re-bank it from the DataFlyWheel release "
+            "(incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json)."
+            .format(p=CENSUS_PATH)
+        )
+E       AssertionError: census artifact not found at C:\Users\Admin\rc7combo\TanitAD Research Lab\Architecture &amp; Inference\Research\2026-09-07-underpowered-pin\raw\vocab_fill_census.json.
+E         This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without it there is nothing to pin against and the pin must not be assumed to hold. Re-bank it from the DataFlyWheel release (incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json).
+E       assert False
+E        +  where False = is_file()
+E        +    where is_file = WindowsPath('C:/Users/Admin/rc7combo/TanitAD Research Lab/Architecture &amp; Inference/Research/2026-09-07-underpowered-pin/raw/vocab_fill_census.json').is_file
+
+tests\test_tactical_goal_underpowered_matches_census.py:87: AssertionError</failure></testcase><testcase classname="tests.test_tactical_goal_underpowered_matches_census" name="test_mutation_the_comparison_actually_reads_the_counts" time="0.001"><failure message="AssertionError: census artifact not found at C:\Users\Admin\rc7combo\TanitAD Research Lab\Architecture &amp; Inference\Research\2026-09-07-underpowered-pin\raw\vocab_fill_census.json.&#10;  This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without it there is nothing to pin against and the pin must not be assumed to hold. Re-bank it from the DataFlyWheel release (incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json).&#10;assert False&#10; +  where False = is_file()&#10; +    where is_file = WindowsPath('C:/Users/Admin/rc7combo/TanitAD Research Lab/Architecture &amp; Inference/Research/2026-09-07-underpowered-pin/raw/vocab_fill_census.json').is_file">def test_mutation_the_comparison_actually_reads_the_counts():
+        """Proves the expected set is DERIVED, not a hardcoded list wearing a
+        derivation's clothes. If _expected_below ignored its argument, the two
+        thresholds would return identical sets and this would fail."""
+&gt;       lo = _expected_below(30)
+             ^^^^^^^^^^^^^^^^^^^
+
+tests\test_tactical_goal_underpowered_matches_census.py:342: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_tactical_goal_underpowered_matches_census.py:106: in _expected_below
+    return {tok for tok, n in _counts().items() if n &lt; threshold}
+                              ^^^^^^^^^
+tests\test_tactical_goal_underpowered_matches_census.py:100: in _counts
+    field = _census()["fields"][FIELD]
+            ^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def _census():
+        """The census artifact, or a hard failure naming the path.
+    
+        Never returns a default.  A census that cannot be read must FAIL this
+        suite, not silently empty the expected set and turn every assertion below
+        into a tautology.
+        """
+&gt;       assert CENSUS_PATH.is_file(), (
+            "census artifact not found at {p}.\n"
+            "This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without "
+            "it there is nothing to pin against and the pin must not be assumed to "
+            "hold. Re-bank it from the DataFlyWheel release "
+            "(incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json)."
+            .format(p=CENSUS_PATH)
+        )
+E       AssertionError: census artifact not found at C:\Users\Admin\rc7combo\TanitAD Research Lab\Architecture &amp; Inference\Research\2026-09-07-underpowered-pin\raw\vocab_fill_census.json.
+E         This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without it there is nothing to pin against and the pin must not be assumed to hold. Re-bank it from the DataFlyWheel release (incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json).
+E       assert False
+E        +  where False = is_file()
+E        +    where is_file = WindowsPath('C:/Users/Admin/rc7combo/TanitAD Research Lab/Architecture &amp; Inference/Research/2026-09-07-underpowered-pin/raw/vocab_fill_census.json').is_file
+
+tests\test_tactical_goal_underpowered_matches_census.py:87: AssertionError</failure></testcase><testcase classname="tests.test_tactical_goal_underpowered_matches_census" name="test_mutation_a_zero_count_token_would_be_reported_not_hidden" time="0.001"><failure message="AssertionError: census artifact not found at C:\Users\Admin\rc7combo\TanitAD Research Lab\Architecture &amp; Inference\Research\2026-09-07-underpowered-pin\raw\vocab_fill_census.json.&#10;  This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without it there is nothing to pin against and the pin must not be assumed to hold. Re-bank it from the DataFlyWheel release (incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json).&#10;assert False&#10; +  where False = is_file()&#10; +    where is_file = WindowsPath('C:/Users/Admin/rc7combo/TanitAD Research Lab/Architecture &amp; Inference/Research/2026-09-07-underpowered-pin/raw/vocab_fill_census.json').is_file">def test_mutation_a_zero_count_token_would_be_reported_not_hidden():
+        """A documented edge, kept honest.
+    
+        n == 0 is 'below the floor' arithmetically, but the census gives such tokens
+        a STRONGER status (UNREACHABLE / NOT_EXTRACTABLE / ZERO_SUPPLY) -- absent is
+        not the same claim as rare. No tactical-goal token is currently zero, so the
+        choice is inert; this asserts that it is inert rather than leaving a silent
+        behaviour to be discovered later.
+        """
+&gt;       counts = _counts()
+                 ^^^^^^^^^
+
+tests\test_tactical_goal_underpowered_matches_census.py:365: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_tactical_goal_underpowered_matches_census.py:100: in _counts
+    field = _census()["fields"][FIELD]
+            ^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def _census():
+        """The census artifact, or a hard failure naming the path.
+    
+        Never returns a default.  A census that cannot be read must FAIL this
+        suite, not silently empty the expected set and turn every assertion below
+        into a tautology.
+        """
+&gt;       assert CENSUS_PATH.is_file(), (
+            "census artifact not found at {p}.\n"
+            "This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without "
+            "it there is nothing to pin against and the pin must not be assumed to "
+            "hold. Re-bank it from the DataFlyWheel release "
+            "(incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json)."
+            .format(p=CENSUS_PATH)
+        )
+E       AssertionError: census artifact not found at C:\Users\Admin\rc7combo\TanitAD Research Lab\Architecture &amp; Inference\Research\2026-09-07-underpowered-pin\raw\vocab_fill_census.json.
+E         This test pins vocab_v7.TACTICAL_GOAL_UNDERPOWERED against it; without it there is nothing to pin against and the pin must not be assumed to hold. Re-bank it from the DataFlyWheel release (incoming/2026-09-01-v8-tacsit-release/raw/vocab_fill_census.json).
+E       assert False
+E        +  where False = is_file()
+E        +    where is_file = WindowsPath('C:/Users/Admin/rc7combo/TanitAD Research Lab/Architecture &amp; Inference/Research/2026-09-07-underpowered-pin/raw/vocab_fill_census.json').is_file
+
+tests\test_tactical_goal_underpowered_matches_census.py:87: AssertionError</failure></testcase></testsuite></testsuites>

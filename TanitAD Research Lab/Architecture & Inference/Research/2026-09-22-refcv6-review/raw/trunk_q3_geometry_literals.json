@@ -1,0 +1,51 @@
+{
+  "L1_BEVLift_feat_hw_default": {
+    "default_feat_hw": [
+      16,
+      40
+    ],
+    "outcome": "ValueError: feature map is 26x64, the lift geometry was built for 16x40 (wrong stride?)",
+    "LOUD": true,
+    "feat_hw_None_outcome": "accepted ANY map shape (check disabled)"
+  },
+  "L3_TimmTrunkConfig_image_hw_default": {
+    "value": [
+      256,
+      1024
+    ],
+    "SPEC_12_pins": [
+      416,
+      1024
+    ],
+    "STALE": true,
+    "declared_s16_shape": [
+      16,
+      64
+    ],
+    "declared_grid_shape": [
+      8,
+      32
+    ],
+    "ACTUAL_s16_shape_on_416x1024_input": [
+      26,
+      64
+    ],
+    "ACTUAL_s32_shape_on_416x1024_input": [
+      13,
+      32
+    ],
+    "declared_matches_actual": false,
+    "outcome": "the forward SUCCEEDS and the trunk's DECLARED s16_shape/grid_shape are wrong \u2014 no exception. Any consumer reading `enc.s16_shape` (e.g. refcv6_perception_branch.build_perception_branch:467) gets the stale number."
+  },
+  "L2_build_timm_trunk_image_hw_default": {
+    "value": [
+      256,
+      640
+    ],
+    "declared_s16": [
+      16,
+      40
+    ],
+    "note": "overridden at the only production call site, tanitad/refs/refc.py:1442 image_hw=cfg.image_hw()"
+  }
+}

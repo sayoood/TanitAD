@@ -1,0 +1,3 @@
+@echo off
+rem PREREG_V8F_LAUNCH_INTENT arm A (W 1.58926): FOUR runs on box 2 (A_0, A_1, A_rep,0, A_rep,1). NOT RUN: needs the PI's go for box-2 time, the landed queue stage, and PREREG_SHA + READER_SHA filled (LAUNCH.txt; the trainer and model are pinned to the landed commit). AFTER_OUT = the DAG-ORC r2 chain's log: the chain GOes ONLY if it ENDED in its DONE marker with BOX2_BUSY released; a STOP, a guard stop or text after the end HALTs.
+"C:\Program Files\Git\bin\bash.exe" -lc "AFTER_OUT=/c/Users/Admin/box2_ship/logs/chain_v8f_dagoaccorc_r2.out bash /c/Users/Admin/box2_ship/chain_v8f_launchintent.sh < /dev/null > /c/Users/Admin/box2_ship/logs/chain_v8f_launchintent.out 2>&1" < NUL

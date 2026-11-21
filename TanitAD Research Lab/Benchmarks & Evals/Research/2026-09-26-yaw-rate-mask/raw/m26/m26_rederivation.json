@@ -1,0 +1,693 @@
+{
+ "tool": "2026-09-26-yaw-rate-mask/code/rederive_m26.py",
+ "utc": "2026-09-26T11:45:59Z",
+ "claim": "D-FEASDEC-T1-1 / Decisions 2026-09-05 M26",
+ "dumps": {
+  "A_base": "C:/Users/Admin/_wp56/dump/refcv3_40284_dump",
+  "B": {
+   "proj07": "C:/Users/Admin/feasdec/run/proj07_dump",
+   "proj07e": "C:/Users/Admin/feasdec/run/proj07e_dump",
+   "projoff": "C:/Users/Admin/feasdec/run/projoff_dump"
+  }
+ },
+ "tier": "T1 (self-action OPEN loop)",
+ "estimator": "paired_openloop.py: paired episode-cluster bootstrap, n_boot 2000, seed 0, floor ha0, cluster = clip",
+ "tree": {
+  "tip": "121892142a5c6b1ad1890543d11537b281b844c1",
+  "n_files_extracted": 2027,
+  "excluded": {
+   "pathspec": ":(exclude)taniteval/results",
+   "n_files_excluded": 683,
+   "why": "banked result data only; keeps the tree small"
+  },
+  "tip_blob_refav1_arm": "c7013107ab1353c5102fd806d29cd967216b7a3a",
+  "fixed_blob_refav1_arm": "963d98e6c3f1a00df8599c9ea8f39cb538e26e23",
+  "package_blob_refav1_arm": "963d98e6c3f1a00df8599c9ea8f39cb538e26e23",
+  "test_blob": "10d4d68381d90509c8f4456bc64932cb5bf6d678",
+  "package_test_blob": "10d4d68381d90509c8f4456bc64932cb5bf6d678"
+ },
+ "import_probe": {
+  "resolved": {
+   "tanitad": "C:\\Users\\Admin\\ym26\\tree_m26\\stack\\tanitad\\__init__.py",
+   "four_families": "C:\\Users\\Admin\\ym26\\tree_m26\\taniteval\\taniteval\\four_families.py",
+   "ci": "C:\\Users\\Admin\\ym26\\tree_m26\\taniteval\\taniteval\\ci.py"
+  },
+  "all_under_tree": true
+ },
+ "arms": {
+  "proj07": {
+   "banked_artifact": "TanitAD Research Lab/Deployment & Optimization/Research/2026-09-05-feasible-decode/raw/paired_proj07_vs_base.json",
+   "banked_blob": "e1410f12e6806b81b11141e49d99e9c05d8e7442",
+   "tip_run": {
+    "rc": 0,
+    "wall_s": 33.4,
+    "json": "paired_proj07_vs_base.TIPCELL.json",
+    "md": "paired_proj07_vs_base.TIPCELL.md",
+    "log": "paired_proj07_vs_base.TIPCELL.log"
+   },
+   "reproduction_vs_banked": {
+    "n_cells_compared": 114,
+    "n_differences": 0,
+    "differences": []
+   },
+   "fixed_run": {
+    "rc": 0,
+    "wall_s": 32.1,
+    "json": "paired_proj07_vs_base.FIXED.json",
+    "md": "paired_proj07_vs_base.FIXED.md",
+    "log": "paired_proj07_vs_base.FIXED.log"
+   },
+   "fixed_vs_tip_non_yaw": {
+    "n_cells_compared": 108,
+    "n_differences": 0,
+    "differences": []
+   },
+   "yaw_banked": {
+    "absolute:base:os": {
+     "mean": 0.2176,
+     "delta": null,
+     "lo": 0.144,
+     "hi": 0.308,
+     "separated": null,
+     "n_windows": 4823,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 0
+    },
+    "absolute:proj07:os": {
+     "mean": 0.0427,
+     "delta": null,
+     "lo": 0.0324,
+     "hi": 0.0573,
+     "separated": null,
+     "n_windows": 4823,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 0
+    },
+    "absolute:shared:ha0": {
+     "mean": 0.0476,
+     "delta": null,
+     "lo": 0.0365,
+     "hi": 0.0623,
+     "separated": null,
+     "n_windows": 4823,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 0
+    },
+    "margins:base:os": {
+     "mean": null,
+     "delta": 0.17,
+     "lo": 0.1006,
+     "hi": 0.2534,
+     "separated": true,
+     "n_windows": 4823,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 0
+    },
+    "margins:proj07:os": {
+     "mean": null,
+     "delta": -0.0049,
+     "lo": -0.012,
+     "hi": 0.0017,
+     "separated": false,
+     "n_windows": 4823,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 0
+    },
+    "cross": {
+     "mean": null,
+     "delta": -0.1749,
+     "lo": -0.2563,
+     "hi": -0.1088,
+     "separated": true,
+     "n_windows": 4823,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 0
+    }
+   },
+   "yaw_tipcell_rerun": {
+    "absolute:base:os": {
+     "mean": 0.2176,
+     "delta": null,
+     "lo": 0.144,
+     "hi": 0.308,
+     "separated": null,
+     "n_windows": 4823,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 0
+    },
+    "absolute:proj07:os": {
+     "mean": 0.0427,
+     "delta": null,
+     "lo": 0.0324,
+     "hi": 0.0573,
+     "separated": null,
+     "n_windows": 4823,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 0
+    },
+    "absolute:shared:ha0": {
+     "mean": 0.0476,
+     "delta": null,
+     "lo": 0.0365,
+     "hi": 0.0623,
+     "separated": null,
+     "n_windows": 4823,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 0
+    },
+    "margins:base:os": {
+     "mean": null,
+     "delta": 0.17,
+     "lo": 0.1006,
+     "hi": 0.2534,
+     "separated": true,
+     "n_windows": 4823,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 0
+    },
+    "margins:proj07:os": {
+     "mean": null,
+     "delta": -0.0049,
+     "lo": -0.012,
+     "hi": 0.0017,
+     "separated": false,
+     "n_windows": 4823,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 0
+    },
+    "cross": {
+     "mean": null,
+     "delta": -0.1749,
+     "lo": -0.2563,
+     "hi": -0.1088,
+     "separated": true,
+     "n_windows": 4823,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 0
+    }
+   },
+   "yaw_fixed": {
+    "absolute:base:os": {
+     "mean": 0.032,
+     "delta": null,
+     "lo": 0.028,
+     "hi": 0.0363,
+     "separated": null,
+     "n_windows": 4545,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 278
+    },
+    "absolute:proj07:os": {
+     "mean": 0.0304,
+     "delta": null,
+     "lo": 0.0272,
+     "hi": 0.0341,
+     "separated": null,
+     "n_windows": 4545,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 278
+    },
+    "absolute:shared:ha0": {
+     "mean": 0.0414,
+     "delta": null,
+     "lo": 0.0343,
+     "hi": 0.0496,
+     "separated": null,
+     "n_windows": 4532,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 291
+    },
+    "margins:base:os": {
+     "mean": null,
+     "delta": -0.01,
+     "lo": -0.0168,
+     "hi": -0.0037,
+     "separated": true,
+     "n_windows": 4524,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 299
+    },
+    "margins:proj07:os": {
+     "mean": null,
+     "delta": -0.0114,
+     "lo": -0.0181,
+     "hi": -0.0053,
+     "separated": true,
+     "n_windows": 4524,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 299
+    },
+    "cross": {
+     "mean": null,
+     "delta": -0.0014,
+     "lo": -0.0029,
+     "hi": -0.0004,
+     "separated": true,
+     "n_windows": 4524,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 299
+    }
+   },
+   "void": {
+    "tip": false,
+    "fixed": false
+   }
+  },
+  "proj07e": {
+   "banked_artifact": "TanitAD Research Lab/Deployment & Optimization/Research/2026-09-05-feasible-decode/raw/paired_proj07e_vs_base.json",
+   "banked_blob": "0797056ba244643aab92e5029244649413ace7f4",
+   "tip_run": {
+    "rc": 0,
+    "wall_s": 30.1,
+    "json": "paired_proj07e_vs_base.TIPCELL.json",
+    "md": "paired_proj07e_vs_base.TIPCELL.md",
+    "log": "paired_proj07e_vs_base.TIPCELL.log"
+   },
+   "reproduction_vs_banked": {
+    "n_cells_compared": 114,
+    "n_differences": 0,
+    "differences": []
+   },
+   "fixed_run": {
+    "rc": 0,
+    "wall_s": 31.0,
+    "json": "paired_proj07e_vs_base.FIXED.json",
+    "md": "paired_proj07e_vs_base.FIXED.md",
+    "log": "paired_proj07e_vs_base.FIXED.log"
+   },
+   "fixed_vs_tip_non_yaw": {
+    "n_cells_compared": 108,
+    "n_differences": 0,
+    "differences": []
+   },
+   "yaw_banked": {
+    "absolute:base:os": {
+     "mean": 0.2176,
+     "delta": null,
+     "lo": 0.144,
+     "hi": 0.308,
+     "separated": null,
+     "n_windows": 4823,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 0
+    },
+    "absolute:proj07e:os": {
+     "mean": 0.0427,
+     "delta": null,
+     "lo": 0.0324,
+     "hi": 0.0573,
+     "separated": null,
+     "n_windows": 4823,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 0
+    },
+    "absolute:shared:ha0": {
+     "mean": 0.0476,
+     "delta": null,
+     "lo": 0.0365,
+     "hi": 0.0623,
+     "separated": null,
+     "n_windows": 4823,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 0
+    },
+    "margins:base:os": {
+     "mean": null,
+     "delta": 0.17,
+     "lo": 0.1006,
+     "hi": 0.2534,
+     "separated": true,
+     "n_windows": 4823,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 0
+    },
+    "margins:proj07e:os": {
+     "mean": null,
+     "delta": -0.0049,
+     "lo": -0.012,
+     "hi": 0.0017,
+     "separated": false,
+     "n_windows": 4823,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 0
+    },
+    "cross": {
+     "mean": null,
+     "delta": -0.1749,
+     "lo": -0.2563,
+     "hi": -0.1088,
+     "separated": true,
+     "n_windows": 4823,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 0
+    }
+   },
+   "yaw_tipcell_rerun": {
+    "absolute:base:os": {
+     "mean": 0.2176,
+     "delta": null,
+     "lo": 0.144,
+     "hi": 0.308,
+     "separated": null,
+     "n_windows": 4823,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 0
+    },
+    "absolute:proj07e:os": {
+     "mean": 0.0427,
+     "delta": null,
+     "lo": 0.0324,
+     "hi": 0.0573,
+     "separated": null,
+     "n_windows": 4823,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 0
+    },
+    "absolute:shared:ha0": {
+     "mean": 0.0476,
+     "delta": null,
+     "lo": 0.0365,
+     "hi": 0.0623,
+     "separated": null,
+     "n_windows": 4823,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 0
+    },
+    "margins:base:os": {
+     "mean": null,
+     "delta": 0.17,
+     "lo": 0.1006,
+     "hi": 0.2534,
+     "separated": true,
+     "n_windows": 4823,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 0
+    },
+    "margins:proj07e:os": {
+     "mean": null,
+     "delta": -0.0049,
+     "lo": -0.012,
+     "hi": 0.0017,
+     "separated": false,
+     "n_windows": 4823,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 0
+    },
+    "cross": {
+     "mean": null,
+     "delta": -0.1749,
+     "lo": -0.2563,
+     "hi": -0.1088,
+     "separated": true,
+     "n_windows": 4823,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 0
+    }
+   },
+   "yaw_fixed": {
+    "absolute:base:os": {
+     "mean": 0.032,
+     "delta": null,
+     "lo": 0.028,
+     "hi": 0.0363,
+     "separated": null,
+     "n_windows": 4545,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 278
+    },
+    "absolute:proj07e:os": {
+     "mean": 0.0304,
+     "delta": null,
+     "lo": 0.0272,
+     "hi": 0.0341,
+     "separated": null,
+     "n_windows": 4545,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 278
+    },
+    "absolute:shared:ha0": {
+     "mean": 0.0414,
+     "delta": null,
+     "lo": 0.0343,
+     "hi": 0.0496,
+     "separated": null,
+     "n_windows": 4532,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 291
+    },
+    "margins:base:os": {
+     "mean": null,
+     "delta": -0.01,
+     "lo": -0.0168,
+     "hi": -0.0037,
+     "separated": true,
+     "n_windows": 4524,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 299
+    },
+    "margins:proj07e:os": {
+     "mean": null,
+     "delta": -0.0114,
+     "lo": -0.0181,
+     "hi": -0.0053,
+     "separated": true,
+     "n_windows": 4524,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 299
+    },
+    "cross": {
+     "mean": null,
+     "delta": -0.0014,
+     "lo": -0.0029,
+     "hi": -0.0004,
+     "separated": true,
+     "n_windows": 4524,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 299
+    }
+   },
+   "void": {
+    "tip": false,
+    "fixed": false
+   }
+  },
+  "projoff": {
+   "banked_artifact": "TanitAD Research Lab/Deployment & Optimization/Research/2026-09-05-feasible-decode/raw/paired_projoff_vs_base.json",
+   "banked_blob": "a953014975a38ba220ea5ba9c8e33c8aa73bcbd5",
+   "tip_run": {
+    "rc": 0,
+    "wall_s": 31.9,
+    "json": "paired_projoff_vs_base.TIPCELL.json",
+    "md": "paired_projoff_vs_base.TIPCELL.md",
+    "log": "paired_projoff_vs_base.TIPCELL.log"
+   },
+   "reproduction_vs_banked": {
+    "n_cells_compared": 114,
+    "n_differences": 0,
+    "differences": []
+   },
+   "fixed_run": {
+    "rc": 0,
+    "wall_s": 32.4,
+    "json": "paired_projoff_vs_base.FIXED.json",
+    "md": "paired_projoff_vs_base.FIXED.md",
+    "log": "paired_projoff_vs_base.FIXED.log"
+   },
+   "fixed_vs_tip_non_yaw": {
+    "n_cells_compared": 108,
+    "n_differences": 0,
+    "differences": []
+   },
+   "yaw_banked": {
+    "absolute:base:os": {
+     "mean": 0.2176,
+     "delta": null,
+     "lo": 0.144,
+     "hi": 0.308,
+     "separated": null,
+     "n_windows": 4823,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 0
+    },
+    "absolute:projoff:os": {
+     "mean": 0.2176,
+     "delta": null,
+     "lo": 0.144,
+     "hi": 0.308,
+     "separated": null,
+     "n_windows": 4823,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 0
+    },
+    "absolute:shared:ha0": {
+     "mean": 0.0476,
+     "delta": null,
+     "lo": 0.0365,
+     "hi": 0.0623,
+     "separated": null,
+     "n_windows": 4823,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 0
+    },
+    "margins:base:os": {
+     "mean": null,
+     "delta": 0.17,
+     "lo": 0.1006,
+     "hi": 0.2534,
+     "separated": true,
+     "n_windows": 4823,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 0
+    },
+    "margins:projoff:os": {
+     "mean": null,
+     "delta": 0.17,
+     "lo": 0.1006,
+     "hi": 0.2534,
+     "separated": true,
+     "n_windows": 4823,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 0
+    },
+    "cross": {
+     "mean": null,
+     "delta": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "separated": false,
+     "n_windows": 4823,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 0
+    }
+   },
+   "yaw_tipcell_rerun": {
+    "absolute:base:os": {
+     "mean": 0.2176,
+     "delta": null,
+     "lo": 0.144,
+     "hi": 0.308,
+     "separated": null,
+     "n_windows": 4823,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 0
+    },
+    "absolute:projoff:os": {
+     "mean": 0.2176,
+     "delta": null,
+     "lo": 0.144,
+     "hi": 0.308,
+     "separated": null,
+     "n_windows": 4823,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 0
+    },
+    "absolute:shared:ha0": {
+     "mean": 0.0476,
+     "delta": null,
+     "lo": 0.0365,
+     "hi": 0.0623,
+     "separated": null,
+     "n_windows": 4823,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 0
+    },
+    "margins:base:os": {
+     "mean": null,
+     "delta": 0.17,
+     "lo": 0.1006,
+     "hi": 0.2534,
+     "separated": true,
+     "n_windows": 4823,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 0
+    },
+    "margins:projoff:os": {
+     "mean": null,
+     "delta": 0.17,
+     "lo": 0.1006,
+     "hi": 0.2534,
+     "separated": true,
+     "n_windows": 4823,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 0
+    },
+    "cross": {
+     "mean": null,
+     "delta": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "separated": false,
+     "n_windows": 4823,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 0
+    }
+   },
+   "yaw_fixed": {
+    "absolute:base:os": {
+     "mean": 0.032,
+     "delta": null,
+     "lo": 0.028,
+     "hi": 0.0363,
+     "separated": null,
+     "n_windows": 4545,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 278
+    },
+    "absolute:projoff:os": {
+     "mean": 0.032,
+     "delta": null,
+     "lo": 0.028,
+     "hi": 0.0363,
+     "separated": null,
+     "n_windows": 4545,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 278
+    },
+    "absolute:shared:ha0": {
+     "mean": 0.0414,
+     "delta": null,
+     "lo": 0.0343,
+     "hi": 0.0496,
+     "separated": null,
+     "n_windows": 4532,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 291
+    },
+    "margins:base:os": {
+     "mean": null,
+     "delta": -0.01,
+     "lo": -0.0168,
+     "hi": -0.0037,
+     "separated": true,
+     "n_windows": 4524,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 299
+    },
+    "margins:projoff:os": {
+     "mean": null,
+     "delta": -0.01,
+     "lo": -0.0168,
+     "hi": -0.0037,
+     "separated": true,
+     "n_windows": 4524,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 299
+    },
+    "cross": {
+     "mean": null,
+     "delta": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "separated": false,
+     "n_windows": 4524,
+     "n_episodes": 141,
+     "n_dropped_nonfinite": 299
+    }
+   },
+   "void": {
+    "tip": false,
+    "fixed": false
+   }
+  }
+ }
+}

@@ -1,0 +1,202 @@
+{
+ "chosen_device": "cpu",
+ "comparator_identity": {
+  "banked_source": "raw/2026-10-15-s1-read/instrument/perception_navtest.json arms.H1-s0 and raw/2026-10-16-aux-shift-locate/SHIFT_LOCATE.json",
+  "detail": "harness deep-compare max |d| 0 at None; natural ok True",
+  "device": "cpu",
+  "harness_block_vs_banked": {
+   "at": null,
+   "max_abs_diff": 0.0,
+   "n_numeric_leaves": 286,
+   "ok": true,
+   "structural_or_string_mismatches": [],
+   "tol": 1e-09
+  },
+  "natural_ok": true,
+  "natural_read": {
+   "abs_diff_c3": 0.0,
+   "abs_diff_ess": 1.1368683772161603e-13,
+   "abs_diff_natural": 2.220446049250313e-16,
+   "arm": "H1-s0",
+   "banked_c3": 0.4957035913034702,
+   "banked_ess": 575.3679059904473,
+   "banked_natural": 0.5608520369346311,
+   "c3": 0.4957035913034702,
+   "ess": 575.3679059904472,
+   "natural": 0.5608520369346314,
+   "ok": true,
+   "source": "raw/2026-10-16-aux-shift-locate/SHIFT_LOCATE.json (b1_decompose.json S5_standardisation, R0_navtest_repro), MEASURED",
+   "tolerance": 1e-09
+  },
+  "ok": true,
+  "tol": 1e-09
+ },
+ "decision": {
+  "F": {
+   "C3": 0.035,
+   "NAT": 0.023
+  },
+  "conditions": {
+   "O1: P1_C3 >= 0.80 and P1_NAT >= 0.80": false,
+   "O2: Delta_C3 and Delta_NAT both separated and > 0 (and not O1)": false,
+   "O3: Delta_C3 or Delta_NAT not separated": true,
+   "O4: Delta_C3 or Delta_NAT separated and < 0": false,
+   "valid (C1 holds, run-check ok, evidence consistent)": true
+  },
+  "k2": {
+   "C3": {
+    "cleared": false,
+    "p1": 0.4957035913034702
+   },
+   "NAT": {
+    "cleared": false,
+    "p1": 0.5608520369346314
+   },
+   "bar": 0.8,
+   "governing_verdict_C3": "K2 FIRES",
+   "populations_disagree": false
+  },
+  "label": "O3 NO GAIN",
+  "overlap": [],
+  "quoted_row": {
+   "blocks": "PI: trunk lever; P6's checkpoint",
+   "label": "O3 NO GAIN",
+   "meaning": "the training budget is **not** the lever for this tap at >= 80,000 rows; the representation (frozen trunk) or the label coverage limits the head",
+   "next": "**close the budget lever for the visual tap**; go to the trunk lever (head on P6's trained trunk / graft; PI decision) and the label-coverage lever. A null from ONE seed closes nothing alone: if the PI wants it closed, the replicate (seed 1) is the price",
+   "rule": "Delta_C3 or Delta_NAT not separated (CI includes 0 or |Delta| <= F) on either population, and C1 holds"
+  },
+  "remaining_gap_to_0.80": {
+   "C3": 0.30429640869652985,
+   "NAT": 0.23914796306536867,
+   "worse_population": "C3"
+  },
+  "row": "O3",
+  "sensitivity_natural_contrast_rerake": {
+   "ci95": [
+    0.0,
+    0.0
+   ],
+   "gating": false,
+   "same_class_as_primary": true,
+   "separated_if_used": "none"
+  },
+  "separated": {
+   "C3": "none",
+   "NAT": "none"
+  },
+  "stamp": "separated, single seed, not yet a lever claim"
+ },
+ "evidence": {
+  "c1": {
+   "abs_diff": 0.0,
+   "expected": 0.1586791569036157,
+   "ok": true,
+   "step0_iou": 0.1586791569036157,
+   "tol": 0.001
+  },
+  "facts": {
+   "aux_bce_first_last": [
+    0.6219482663273811,
+    0.43245788022875786
+   ],
+   "aux_eval_iou_by_tag": {
+    "step0": 0.1586791569036157,
+    "update400": 0.6071109087152684
+   },
+   "s_per_update_mean": 9.89726301869198,
+   "step0_iou": 0.1586791569036157,
+   "token": {
+    "argv_sha256": "fc606b3e8a5f829e5a8b63f71f233fb5031b68133197ff383013e1468106fb24",
+    "commit": "d257647b7858d1378e4adb4c39ad04f1ca951d12",
+    "file": "PASS_d257647b7858.json",
+    "profile": "refe_aux_s1"
+   },
+   "train_hours": 1.2334586804442935
+  },
+  "problems": [],
+  "warnings": []
+ },
+ "inputs_to_rule": {
+  "c1_ok": true,
+  "d_c3": {
+   "ci95": [
+    0.0,
+    0.0
+   ],
+   "est": 0.0
+  },
+  "d_nat": {
+   "ci95": [
+    0.0,
+    0.0
+   ],
+   "est": 0.0
+  },
+  "evidence_ok": true,
+  "p1_c3": 0.4957035913034702,
+  "p1_nat": 0.5608520369346314,
+  "runcheck_ok": true
+ },
+ "prereg": {
+  "auxveto": {
+   "a1_sha256": "2b26ccadd2095711e6189f41224aaa38fbe3c586b5641aff19b3c1c84e870d4b",
+   "amendments": [
+    "## Amendment A1 (2026-10-16 ~09:30 Berlin, Master Mind; written BEFORE S1c has trained and before any arm of this prereg has been read): arm V-S1C"
+   ],
+   "body_sha256_crlf_form": "ef9f17fa26a9d81817a7a992d2577eebae4f382eda3ed549980f2c079d23a518",
+   "full_sha256": "20574954589e4510cdaee68b27add4dede2547f03e1e1c047b97acab80977ec6",
+   "path": "C:\\Users\\Admin\\AppData\\Local\\Temp\\s1cr\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\eval\\PREREG_AUXVETO.md"
+  },
+  "s1c": {
+   "amendments": [],
+   "body_sha256": "317584a3f7e82ee8cb7fbffc0e44ff1bf4245988fa3f2fa7b8feb28ab004416a",
+   "full_sha256": "317584a3f7e82ee8cb7fbffc0e44ff1bf4245988fa3f2fa7b8feb28ab004416a",
+   "path": "C:\\Users\\Admin\\AppData\\Local\\Temp\\s1cr\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\eval\\PREREG_S1C.md"
+  }
+ },
+ "veto_decision": {
+  "V-GT": {
+   "hi": 0.6384549778172475,
+   "lo": 0.015132405135540827,
+   "n": -0.15391134360183023,
+   "n_hi": 0.022970308295067184,
+   "n_lo": -0.5064844675337042,
+   "point": 0.36702774726742615,
+   "z": 11.807007744674141,
+   "z_hi": 15.286161319957673,
+   "z_lo": 8.513035132008582
+  },
+  "V-S1C": {
+   "hi": -0.3060775239079837,
+   "lo": -1.501671263385864,
+   "n": -1.2722985257798693,
+   "n_hi": -0.6638638264583717,
+   "n_lo": -1.9443149002316653,
+   "point": -0.8756241037293259,
+   "z": 7.835466181641492,
+   "z_hi": 10.02280913007543,
+   "z_lo": 5.717444880560136
+  },
+  "conditions": {
+   "AV-CEILING-ONLY: V-PRED not separated AND V-GT lower bound > 0": false,
+   "AV-GO: V-PRED lower bound > 0 AND point >= +0.30": false,
+   "AV-HARM: V-PRED upper bound < 0": true,
+   "AV-NULL: V-PRED not separated AND V-GT not separated above 0": false,
+   "AV-PROMISING: V-PRED lower bound > 0 AND point < +0.30": false
+  },
+  "gt_branch": {
+   "AV-NULL_next_arm_quoted": null,
+   "V_GT_lower_bound_gt_0": true,
+   "reading": "GT ceiling positive (V-GT lower bound > 0): the lever is raster quality (S1c)"
+  },
+  "quoted_row": {
+   "condition": "V-PRED upper bound < 0",
+   "label": "AV-HARM",
+   "next": "read V-GT: if the GT ceiling is positive, the lever is raster quality (S1c), else AV-NULL's next arm",
+   "reading": "false vetoes on good picks cost more than the recoveries"
+  },
+  "row": "AV-HARM",
+  "stamp": "separated, single head seed, not yet a lever claim"
+ },
+ "veto_validity": true
+}

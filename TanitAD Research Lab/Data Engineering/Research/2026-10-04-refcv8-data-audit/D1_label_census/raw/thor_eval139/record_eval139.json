@@ -1,0 +1,462 @@
+{
+ "tool": "d1_census.py",
+ "split": "eval",
+ "tag": "eval139",
+ "repo": "/home/nvidia/refcv7_run/fec3a0dccf",
+ "kit": "/home/nvidia",
+ "config": "/home/nvidia/refcv7_run/runs/refcv7-r101-s0/config.json",
+ "config_md5": "e6512a01b9c70f0e4a4dac581621984a",
+ "started_utc": "2026-10-04T10:24:10Z",
+ "blobs": {
+  "stack/scripts/refc_v3_train.py": {
+   "git_blob_raw_bytes": "203b437f0d0d86e97949cba3a8dedb810dc4d620",
+   "git_blob_lf_normalised": "c34198e1c9b79c97bacdddbdadf098cd6adb8da3",
+   "n_crlf": 11372,
+   "bytes": 712810
+  },
+  "stack/tanitad/data/v7_labels.py": {
+   "git_blob_raw_bytes": "86f0c46ed63eaa9f07a303e0c61d9aec5bbdf076",
+   "git_blob_lf_normalised": "86f0c46ed63eaa9f07a303e0c61d9aec5bbdf076",
+   "n_crlf": 0,
+   "bytes": 68771
+  },
+  "stack/tanitad/data/v2_dataset.py": {
+   "git_blob_raw_bytes": "ee61ea938f2a7ec249513e28d0029fe8ab2d6d5d",
+   "git_blob_lf_normalised": "ee61ea938f2a7ec249513e28d0029fe8ab2d6d5d",
+   "n_crlf": 0,
+   "bytes": 30076
+  }
+ },
+ "pin": {
+  "argv_remap": {
+   "remapped": {
+    "--anchors": {
+     "thor": "/home/nvidia/data/anchors/refc_anchors_6s_v0cond_alat_117.pt",
+     "local": "/home/nvidia/data/anchors/refc_anchors_6s_v0cond_alat_117.pt",
+     "source": "kit default",
+     "basename_expected": "refc_anchors_6s_v0cond_alat_117.pt"
+    },
+    "--eval-cache": {
+     "thor": "/home/nvidia/data/refcv6-b1-416x1024-eval139",
+     "local": "/home/nvidia/data/refcv6-b1-416x1024-eval139",
+     "source": "kit default",
+     "basename_expected": "refcv6-b1-416x1024-eval139"
+    },
+    "--eval-labels": {
+     "thor": "/home/nvidia/data/v8labels/labels/s2_labels_v8_eval.jsonl.gz",
+     "local": "/home/nvidia/data/v8labels/labels/s2_labels_v8_eval.jsonl.gz",
+     "source": "kit default",
+     "basename_expected": "s2_labels_v8_eval.jsonl.gz"
+    },
+    "--speed-max-sidecar-v6-eval": {
+     "thor": "/home/nvidia/data/refcv6_speed_max_v8_eval.jsonl",
+     "local": "/home/nvidia/data/refcv6_speed_max_v8_eval.jsonl",
+     "source": "kit default",
+     "basename_expected": "refcv6_speed_max_v8_eval.jsonl"
+    },
+    "--agent-join": {
+     "thor": "/home/nvidia/data/joins/b1_train_plus_eval_agents.jsonl.xz",
+     "local": "/home/nvidia/data/joins/b1_train_plus_eval_agents.jsonl.xz",
+     "source": "kit default",
+     "basename_expected": "b1_train_plus_eval_agents.jsonl.xz"
+    },
+    "--agent-rig-extrinsics": {
+     "thor": "/home/nvidia/data/refcv6_train_eval139_extrinsics.json",
+     "local": "/home/nvidia/data/refcv6_train_eval139_extrinsics.json",
+     "source": "kit default",
+     "basename_expected": "refcv6_train_eval139_extrinsics.json"
+    },
+    "--map-gt-root": {
+     "thor": "/home/nvidia/data/sam3_gt_v3",
+     "local": "/home/nvidia/data/sam3_gt_v3",
+     "source": "kit default",
+     "basename_expected": "sam3_gt_v3"
+    },
+    "--join3d": {
+     "thor": "/home/nvidia/data/join3d/b1_train_plus_eval_agents_3d.jsonl.xz",
+     "local": "/home/nvidia/data/join3d/b1_train_plus_eval_agents_3d.jsonl.xz",
+     "source": "kit default",
+     "basename_expected": "b1_train_plus_eval_agents_3d.jsonl.xz"
+    },
+    "--vis1-sidecar": {
+     "thor": "/home/nvidia/data/refcv7/vis1_sidecar_refcv6b1_train4369_eval139.npz",
+     "local": "/home/nvidia/data/refcv7/vis1_sidecar_refcv6b1_train4369_eval139.npz",
+     "source": "kit default",
+     "basename_expected": "vis1_sidecar_refcv6b1_train4369_eval139.npz"
+    },
+    "--nav-compliance-tau-file": {
+     "thor": "/home/nvidia/data/refcv7/nav_compliance_tau_train.json",
+     "local": "/home/nvidia/data/refcv7/nav_compliance_tau_train.json",
+     "source": "kit default",
+     "basename_expected": "nav_compliance_tau_train.json"
+    },
+    "--map-hires-class-weights": {
+     "thor": "/home/nvidia/data/refcv7/map_hires_class_weights_train_100x30.json",
+     "local": "/home/nvidia/data/refcv7/map_hires_class_weights_train_100x30.json",
+     "source": "kit default",
+     "basename_expected": "map_hires_class_weights_train_100x30.json"
+    },
+    "--clip-clock-sidecar": {
+     "thor": "/home/nvidia/data/refcv6_clip_clock_sidecar.jsonl",
+     "local": "/home/nvidia/data/refcv6_clip_clock_sidecar.jsonl",
+     "source": "kit default",
+     "basename_expected": "refcv6_clip_clock_sidecar.jsonl"
+    }
+   },
+   "dropped": {
+    "--trunk-compile": "no Triton on Windows; torch.compile wraps the backbone CALL only -- module tree and state_dict identical (LAUNCH_READINESS_FIXES.md sec. 10b)"
+   },
+   "train_only_kept_unread": {
+    "--v2-cache": "/home/nvidia/data/refcv6-b1-416x1024-train",
+    "--v7-labels": "/home/nvidia/data/v8labels/labels/s2_labels_v8_train.jsonl.gz",
+    "--speed-max-sidecar-v6": "/home/nvidia/data/refcv6_speed_max_v8_train.jsonl",
+    "--out": "/home/nvidia/refcv7_run/runs/refcv7-r101-s0"
+   },
+   "kit": "/home/nvidia",
+   "overrides_file": null
+  },
+  "cfg": "trainer _pin_trainer_cfg"
+ },
+ "vocab": {
+  "goal_tokens": [
+   "FOLLOW_LANE",
+   "TURN_L",
+   "TURN_R",
+   "YIELD_FOR_TURN_L",
+   "YIELD_FOR_TURN_R",
+   "YIELD",
+   "STOP_POINT",
+   "SPEED_BAND",
+   "CORRIDOR_OFFSET",
+   "EVADE_IN_CORRIDOR",
+   "OVERTAKE_VEHICLE",
+   "MERGE",
+   "GAP_TARGET",
+   "REACT_ON_ONCOMING",
+   "TAKE_EXIT_L",
+   "TAKE_EXIT_R",
+   "TRAFFIC_LIGHT_REACT",
+   "TRAFFIC_LIGHT_REACT_RED",
+   "TRAFFIC_LIGHT_REACT_YELLOW",
+   "TRAFFIC_LIGHT_REACT_GREEN",
+   "LANE_CHANGE_L",
+   "LANE_CHANGE_R"
+  ],
+  "lat_classes": [
+   "LANE_KEEP",
+   "LANE_CHANGE_L",
+   "LANE_CHANGE_R",
+   "ABORT_LC",
+   "NUDGE_L",
+   "NUDGE_R",
+   "TURN_L",
+   "TURN_R"
+  ],
+  "lon_classes": [
+   "FOLLOW",
+   "CRUISE",
+   "YIELD_MERGE",
+   "BRAKE_TO",
+   "CREEP",
+   "HOLD",
+   "ADAPT_SPEED_FOR_CURVE",
+   "ACCELERATE"
+  ],
+  "nav_commands": [
+   "follow",
+   "left",
+   "right",
+   "straight"
+  ],
+  "speed_ladder_kmh": [
+   30,
+   50,
+   100,
+   120
+  ]
+ },
+ "window": 8,
+ "channels": 9,
+ "raw_entries": {
+  "turn_entries": 73,
+  "follow_road_pseudo_entries": 93,
+  "turn_entries_with_missing_field": 0
+ },
+ "build": {
+  "label_clock": {
+   "rule": "t_now = grid_start_s + (t + w - 1 + n_stack - 1) * dt_s (tanitad/data/clip_clock.py; A16 2026-09-26)",
+   "sidecar": "/home/nvidia/data/refcv6_clip_clock_sidecar.jsonl",
+   "sidecar_rows": 4483,
+   "n_clips": 139,
+   "n_from_sidecar": 136,
+   "n_pose_dt_grid_start_0": 0,
+   "n_nominal_dt_grid_start_0": 3,
+   "raw_offsets": [
+    2
+   ],
+   "dt_s_median": 0.10066662995966351,
+   "dt_s_min": 0.1,
+   "dt_s_max": 0.10100496421012953,
+   "g3": {
+    "g3": "PASS",
+    "split": "eval",
+    "tol_s": 0.05,
+    "n_clips": 139,
+    "n_reads_checked": 408,
+    "worst_abs_err_s": 0.0,
+    "n_unverified_clips": 3,
+    "tactical_scored_on_clips": 136,
+    "tactical_excluded_clips": 3,
+    "tactical_excluded_sids": [
+     1131054092343061790,
+     6479814750558219472,
+     8549884407071846968
+    ],
+    "tactical_excluded_reason": "no MEASURED label clock (absent from the clip-clock sidecar): their tactical targets cannot be shown within tol_s of the truth",
+    "families_on_all_clips": [
+     "longitudinal",
+     "lateral",
+     "strategic"
+    ],
+    "mode": "per-family: TACTICAL on verified clips only (E2(b))",
+    "rule": "t_true = grid_start_s + (t + w - 1 + n_stack - 1) * dt_s (sidecar)",
+    "tactical_excluded_sha12": [
+     "081b986f8888",
+     "2aa810802777",
+     "3db625a5f941"
+    ]
+   }
+  },
+  "labels": {
+   "path": "/home/nvidia/data/v8labels/labels/s2_labels_v8_eval.jsonl.gz",
+   "md5": "eefc38d1453bd1c73802d44d45affced",
+   "n_records": 147
+  },
+  "nav": {
+   "n_clips": 139,
+   "follow": 88,
+   "left": 13,
+   "right": 38,
+   "missing": 0,
+   "derivation": "v7.2 nav_command token (oracle, provenance ego-future; allow_oracle_nav=True)",
+   "unlabeled_default": "nav_cmd=0 ('follow') + nav_valid=False (refav1_loader convention)",
+   "label_md5": "eefc38d1453bd1c73802d44d45affced",
+   "allow_oracle_nav": true
+  },
+  "max_speed_v6": {
+   "sidecar": "refcv6_speed_max_v8_eval.jsonl",
+   "n_rows": 147,
+   "n_valid": 147,
+   "n_over_ceiling": 1,
+   "over_ceiling_frac": 0.006803,
+   "source_md5": "eefc38d1453bd1c73802d44d45affced",
+   "source_labels": "s2_labels_v8_eval.jsonl.gz",
+   "join_key": "sid = stable_episode_id(clip_id)",
+   "ladder_kmh": [
+    30,
+    50,
+    100,
+    120
+   ],
+   "quantized_by": "tanitad.refs.refcv6_max_speed.MaxSpeedOneHotEncoder (model side, ONCE); this reader ships the RAW v_hi_ms and only CHECKS the sidecar's own bin",
+   "_derivation": "refcv6 4-way one-hot set-speed, CONTAINING-WINDOW quantization over {30, 50, 100, 120} km/h: (0,30]->30, (30,50]->50, (50,100]->100, (100,120]->120, and > 120 CLAMPS to 120 (counted and reported). Source field v7.2/v8 g_tac.goals.SPEED_BAND.v_hi_ms (oracle, provenance ego-future: max of the ego's OWN REALISED speed over [t0+2 s, +6 s]); the PI authorised the future-ego derivation explicitly on 2026-09-16 provided the value lands in the containing window. It models a max SET speed - a limiter the driver sets - so the realised speed sits INSIDE the window and never above it. INPUT, never a training signal: no loss reaches this channel in refcv6.",
+   "channel": "refcv6 4-way one-hot (\u00a75)",
+   "label_md5": "eefc38d1453bd1c73802d44d45affced",
+   "n_windows": 23772,
+   "n_windows_fed": 23772,
+   "window_ceiling_frac": 1.0
+  },
+  "agent_join": {
+   "path": "/home/nvidia/data/joins/b1_train_plus_eval_agents.jsonl.xz",
+   "n_episodes": 139,
+   "n_episodes_joined_stable_id": 139,
+   "n_episodes_joined_legacy_id": 0,
+   "n_ambiguous_legacy_ids_in_join": 0,
+   "id_space": "stable-63bit",
+   "allow_legacy_ids": false,
+   "n_windows": 23772,
+   "n_windows_labelled": 22663,
+   "frac_windows_labelled": 0.9533,
+   "n_windows_labelled_clear": 582,
+   "n_target_boxes_prefilter": 776801,
+   "agent_pad": 397,
+   "reader_max_agents_per_frame": 395,
+   "reader_n_records": 26394,
+   "reader_n_clips": 139,
+   "reader_has_classes": true,
+   "reader_has_occlusion_flags": true,
+   "reader_with_rates": true,
+   "pad_source": "config.json agent_join_stats.train.agent_pad",
+   "load_s": 55.6
+  },
+  "map_fine": {
+   "root": "/home/nvidia/data/sam3_gt_v3",
+   "n_windows": 23772,
+   "n_clips": 139,
+   "frac_ok": 0.9856133266027259,
+   "frac_ok_upper": 0.9856133266027259,
+   "verdict": "PASS",
+   "states": {
+    "ok": 23430,
+    "no_file": 342,
+    "frame_out_of_range": 0,
+    "inconclusive": 0
+   },
+   "reasons": {
+    "081b986f8888": "FileNotFoundError errno 2",
+    "2aa810802777": "FileNotFoundError errno 2"
+   },
+   "n_stack": 3,
+   "extent": {
+    "x_max_m": 100.0,
+    "y_half_m": 30.0,
+    "fine_shape": [
+     1000,
+     600
+    ],
+    "band_keys": [
+     "0_20",
+     "20_40",
+     "40_60",
+     "60_80",
+     "80_100"
+    ]
+   },
+   "fine_spec": {
+    "x_max_m": 100.0,
+    "y_half_m": 30.0,
+    "cell_m": 0.1,
+    "shape": [
+     1000,
+     600
+    ],
+    "codes": "0-7 class, 255 not seen"
+   }
+  },
+  "join3d": {
+   "path": "/home/nvidia/data/join3d/b1_train_plus_eval_agents_3d.jsonl.xz",
+   "n_lines": 26394,
+   "n_agents": 905512,
+   "n_clips": 139,
+   "load_s": 65.6
+  },
+  "vis1": {
+   "sidecar": {
+    "path": "/home/nvidia/data/refcv7/vis1_sidecar_refcv6b1_train4369_eval139.npz",
+    "sha256": "278443b3356bca054c15753e7c08d465d71b0327a2ce564e143d091261349dd4",
+    "content_sha256": "8ba9dafd9e969b6098c16541277cd127f4225bf4511a9a14ec29ae0b402d1a43",
+    "schema": "tanitad.vis1_sidecar/1",
+    "n_clips": 4508,
+    "n_frames": 859497,
+    "n_rows": 4862788,
+    "splits": {
+     "eval": {
+      "cache": "/home/nvidia/data/refcv6-b1-416x1024-eval139",
+      "clip_sha12_sha256": "92b005984cfed78d02451eb1ef9bc33e43630a008417699d3eb9b8ce52091b15",
+      "n_clips": 139
+     },
+     "train": {
+      "cache": "/home/nvidia/data/refcv6-b1-416x1024-train",
+      "clip_sha12_sha256": "52d311a908271a251bd5714721c55a0ca2c28bcbb6734d55a9bd295daa466127",
+      "n_clips": 4369
+     }
+    },
+    "sources": {
+     "agent_join": {
+      "md5": "0c31a3a63d7205e9fa50e8ac4204ef46",
+      "path": "/home/nvidia/data/joins/b1_train_plus_eval_agents.jsonl.xz"
+     },
+     "extrinsics": {
+      "md5": "3bd70d987d00936c1ac810ffd95facf1",
+      "path": "/home/nvidia/data/refcv6_train_eval139_extrinsics.json"
+     },
+     "intrinsics": {
+      "calib_dirs": [
+       "/home/nvidia/bx_0252/calib"
+      ],
+      "md5_of_sorted_chunk_md5s": "dedb36c034b991d29ba4b74afe74dbcf",
+      "n_chunks": 1363,
+      "n_missing": 0
+     },
+     "join3d": {
+      "md5": "401c9c3119a50632dafc35c595d9e051",
+      "path": "/home/nvidia/data/join3d/b1_train_plus_eval_agents_3d.jsonl.xz"
+     }
+    },
+    "zbuffer": {
+     "audit_source": {
+      "lines": "39-144",
+      "md5": "3721a83f6bf8b1072c7b1f987c908c0f",
+      "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/code/vis_zbuf.py"
+     },
+     "function_sha256": {
+      "R_from_quat": "e30c2bb4bccdc2df",
+      "corners": "523c9d642557c085",
+      "observed_mask": "bff155873d8ba014",
+      "zbuffer": "0f6b41fbb32320d6"
+     },
+     "module_md5": "a83fb5cb91070a7f3a1fdcce0b1dcc5c"
+    },
+    "store_scope": {
+     "half_angle_deg": 61.0,
+     "x_max_m": 61.0,
+     "x_min_m": -1.0,
+     "y_half_m": 17.0
+    },
+    "window": 8,
+    "n_stack": 3
+   },
+   "eval": {
+    "split": "eval",
+    "n_clips": 139,
+    "sidecar_sha256": "278443b3356bca054c15753e7c08d465d71b0327a2ce564e143d091261349dd4",
+    "sidecar_n_clips": 4508
+   }
+  },
+  "n_episodes": 139,
+  "n_windows": 23772,
+  "map_open_errors": [
+   "2aa810802777: FileNotFoundError",
+   "081b986f8888: FileNotFoundError"
+  ]
+ },
+ "build_s": 121.8,
+ "raw_labels": {
+  "path": "/home/nvidia/data/v8labels/labels/s2_labels_v8_eval.jsonl.gz",
+  "md5": "eefc38d1453bd1c73802d44d45affced",
+  "n": 147
+ },
+ "census_s": 0.5,
+ "C2_direct_equals_getitem": {
+  "n_windows": 22,
+  "n_clips": 6,
+  "n_in_band": 10,
+  "mismatches": [],
+  "pass": true
+ },
+ "C2_s": 6.2,
+ "pose_controls": {
+  "n_ratio_clips": 137,
+  "speed_over_finite_diff_median": 1.0000027806721172,
+  "speed_over_finite_diff_p05_p95": [
+   0.9995968337175195,
+   1.0003510720594342
+  ],
+  "n_entries_inside_pose_range": 22,
+  "label_token_L_has_positive_dyaw_deg": 1.0,
+  "label_token_R_has_negative_dyaw_deg": 1.0,
+  "n_big": 22,
+  "sign_agree_big": 1.0,
+  "median_abs_diff_deg": 0.5776736820059831,
+  "p90_abs_diff_deg": 0.6421731585640885,
+  "pearson_r": 0.999989762400671,
+  "mean_pose_dyaw_deg_by_token": {
+   "L": 62.49921677628695,
+   "R": -53.313649356122795
+  }
+ },
+ "n_windows": 23772,
+ "n_clips": 139,
+ "finished_utc": "2026-10-04T10:26:19Z",
+ "wall_s": 130.9
+}

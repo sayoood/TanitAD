@@ -1,0 +1,23 @@
+# MEASURED 2026-10-14 on the dev box (Windows 11, 32 GB RAM + 22 GB pagefile, numpy 2.5.1, python 3.13), REAL banked inputs from the private HF repos (no pod access).
+# inputs: Sayood/tanitad-refe-rls1 data/rlfan_{pdm,terms,sets}_val.tar.gz (sha256 = MANIFEST_rlfan_sha256.txt, verified); Sayood/tanitad-refe-rls1-r0 final/scores_*_B.npz, final/sft.jsonl, final/kill_replay.json; Sayood/tanitad-refe-rls1-c0 final/scores_*_A.npz
+## OLD rl_val_eval.load_scores on ONE scores file (R0 update250_B truncated to its first N sets; N=3000 is the whole file): probes/measure_loader.py old N
+{"which": "old", "N": 300, "sets": 300, "seconds": 0.36, "baseline_rss_mb": 41, "end_rss_mb": 351, "peak_rss_mb": 341, "peak_commit_mb": 1076, "file_mb": 1.1}
+{"which": "old", "N": 600, "sets": 600, "seconds": 1.46, "baseline_rss_mb": 41, "end_rss_mb": 1275, "peak_rss_mb": 1275, "peak_commit_mb": 2003, "file_mb": 2.2}
+{"which": "old", "N": 1000, "sets": 1000, "seconds": 4.13, "baseline_rss_mb": 41, "end_rss_mb": 3465, "peak_rss_mb": 3465, "peak_commit_mb": 4197, "file_mb": 3.6}
+{"which": "old", "N": 1500, "sets": 1500, "seconds": 10.27, "baseline_rss_mb": 41, "end_rss_mb": 7737, "peak_rss_mb": 7735, "peak_commit_mb": 8477, "file_mb": 5.5}
+{"which": "old", "N": 3000, "sets": 3000, "seconds": 49.68, "baseline_rss_mb": 43, "end_rss_mb": 21157, "peak_rss_mb": 21395, "peak_commit_mb": 31605, "file_mb": 10.9}
+## NEW rls1_checks.load_scores_light, same files
+{"which": "new", "N": 600, "sets": 600, "seconds": 0.01, "baseline_rss_mb": 42, "end_rss_mb": 44, "peak_rss_mb": 42, "peak_commit_mb": 773, "file_mb": 2.2}
+{"which": "new", "N": 3000, "sets": 3000, "seconds": 0.01, "baseline_rss_mb": 41, "end_rss_mb": 53, "peak_rss_mb": 44, "peak_commit_mb": 779, "file_mb": 10.9}
+## loaders equal (bytes of every row): probes/equal_loaders.py
+EQUAL loaders: keys in the same order, ckpt, space, dtype, shape and the BYTES of every scores row (600 sets)
+## NEW monitor checker, one tag on the full 3,000-set RL-val: probes/measure_rss.py update250
+python+psutil baseline             t=   0.00s rss=    19.4 MB  peak_wset(os)=    19.4 MB  sampled_peak=    19.4 MB
+import rls1_checks                 t=   0.01s rss=    21.1 MB  peak_wset(os)=    21.1 MB  sampled_peak=    19.4 MB
+import rl_val_eval, rl_reward      t=   0.11s rss=    33.0 MB  peak_wset(os)=    33.0 MB  sampled_peak=    32.5 MB
+RlValChecker.__init__ (load)       t=   2.41s rss=    56.4 MB  peak_wset(os)=    56.4 MB  sampled_peak=    56.4 MB
+check_fn(update250)                t=   3.95s rss=    69.3 MB  peak_wset(os)=    95.8 MB  sampled_peak=    95.8 MB
+{"tag": "update250", "g3_ok": true, "g5_ok": false, "k4_breach": false, "pdms_delta_x100": 0.5985392361111113, "k5_breach": false, "n_sets": 3000}
+## NEW replay over R0's banked sft.jsonl vs the kill_replay.json the pod's OLD code wrote: probes/measure_replay.py
+ZZRLS1_REPLAY_KILL R0 K3 g3/g5 bound breached at update250 and update500
+{"rc": 2, "seconds": 6.7, "peak_rss_mb": 96, "new_bytes": 2010, "pod_bytes": 2010, "BYTE_IDENTICAL": true, "new_sha256": "d292d6fd6ae2a782", "pod_sha256": "d292d6fd6ae2a782"}

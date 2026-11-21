@@ -1,0 +1,672 @@
+{
+ "schema": "navtest-epdms7/1",
+ "arm": "PRIOR_ha0p",
+ "scope": "step50400",
+ "step": 50400,
+ "tag": null,
+ "full_split": true,
+ "utc": "2026-10-05T13:58:23Z",
+ "scoring_status": "PASS",
+ "wall_s": 2007.5,
+ "counts": {
+  "arm": "step50400_PRIOR_ha0p",
+  "split": "navtest_single_stage",
+  "cmd": [
+   "C:\\Users\\Admin\\navsim-crun\\venv\\Scripts\\python.exe",
+   "E:\\Projects\\TanitAD\\taniteval\\taniteval\\bench\\navsim\\devkit_side\\navsim_win.py",
+   "--script",
+   "pdm_score_one_stage",
+   "--label",
+   "step50400_PRIOR_ha0p",
+   "--out-dir",
+   "C:\\Users\\Admin\\navsim-crun\\exp\\tanitad_bench\\runs\\epdms7\\step50400\\PRIOR_ha0p\\raw",
+   "--patch-loader",
+   "--ram-floor-mb",
+   "4000.0",
+   "--dump-final-scores",
+   "C:\\Users\\Admin\\navsim-crun\\exp\\tanitad_bench\\runs\\epdms7\\step50400\\PRIOR_ha0p\\raw\\step50400_PRIOR_ha0p_final_scores_frame.csv",
+   "--dump-preaggregation",
+   "C:\\Users\\Admin\\navsim-crun\\exp\\tanitad_bench\\runs\\epdms7\\step50400\\PRIOR_ha0p\\raw\\step50400_PRIOR_ha0p_preaggregation.csv",
+   "--",
+   "train_test_split=navtest",
+   "experiment_name=tanitad_bench_navtest_single_stage_step50400_PRIOR_ha0p",
+   "metric_cache_path=C:/Users/Admin/navsim-crun/exp/metric_cache_navtest_v2",
+   "navsim_log_path=D:/Archive/devbox-C/navsim/data/openscene/navsim_logs/test",
+   "traffic_agents=non_reactive",
+   "worker=sequential",
+   "agent=constant_velocity_agent",
+   "agent._target_=tanitad_seam_agent.TanitADSeamAgent",
+   "+agent.seam_file=E:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step50400/bridge_navtest/seam_PRIOR_ha0p.npz",
+   "+agent.call_log=C:/Users/Admin/navsim-crun/exp/tanitad_bench/runs/epdms7/step50400/PRIOR_ha0p/raw/step50400_PRIOR_ha0p.calls.jsonl",
+   "output_dir=C:/Users/Admin/navsim-crun/exp/tanitad_bench/runs/epdms7/step50400/PRIOR_ha0p/exp/step50400_PRIOR_ha0p"
+  ],
+  "rc": 0,
+  "wall_s": 2007.5,
+  "runner_script": "pdm_score_one_stage",
+  "stages": 1,
+  "traffic_agents": "non_reactive",
+  "logs_dir": "D:/Archive/devbox-C/navsim/data/openscene/navsim_logs/test",
+  "n_tokens_subset": null,
+  "preaggregation_csv": "C:\\Users\\Admin\\navsim-crun\\exp\\tanitad_bench\\runs\\epdms7\\step50400\\PRIOR_ha0p\\raw\\step50400_PRIOR_ha0p_preaggregation.csv",
+  "preaggregation_rows": 12146,
+  "expected_tokens": 12146,
+  "log_successful": 12146,
+  "log_failed": 0,
+  "csv_src": "C:\\Users\\Admin\\navsim-crun\\exp\\tanitad_bench\\runs\\epdms7\\step50400\\PRIOR_ha0p\\exp\\step50400_PRIOR_ha0p\\2026.10.05.15.58.20.csv",
+  "csv": "C:\\Users\\Admin\\navsim-crun\\exp\\tanitad_bench\\runs\\epdms7\\step50400\\PRIOR_ha0p\\raw\\step50400_PRIOR_ha0p.devkit.csv",
+  "csv_token_rows": 12146,
+  "csv_valid_rows": 12146,
+  "agent_calls": {
+   "seam": 12146,
+   "cv_standin": 0,
+   "UNKNOWN_TOKEN": 0
+  },
+  "cache": "C:/Users/Admin/navsim-crun/exp/metric_cache_navtest_v2",
+  "worker": "sequential",
+  "wrapper": "E:/Projects/TanitAD/taniteval/taniteval/bench/navsim/devkit_side/navsim_win.py",
+  "wrapper_sha256": "b955d362dea8c49e0a859fda3ec8c97a1c42d859e17516706267f3ddf6c42f7d",
+  "devkit_side_blobs_at_launch": {
+   "taniteval/taniteval/bench/navsim/devkit_side/export_agent_inputs.py": "fe88f5e0002cf8efbff5882cd9056a464589a41e",
+   "taniteval/taniteval/bench/navsim/devkit_side/navsim_win.py": "935fa44c459a3ee52c5582db288c5b95394ece54",
+   "taniteval/taniteval/bench/navsim/devkit_side/PROVENANCE.json": "169149bad47bf2252538d49050e5a570afe7d008",
+   "taniteval/taniteval/bench/navsim/devkit_side/reaggregate.py": "78b004f9869c291445ecae4de056bae529cfab5b",
+   "taniteval/taniteval/bench/navsim/devkit_side/tanitad_seam_agent.py": "d9561bc67639f20ecd148a3b7ab81a1ec42ee8de",
+   "taniteval/taniteval/bench/navsim/devkit_side/write_cache_metadata.py": "f86d702ec160ac44b269a131f2b40b4e2071792c"
+  },
+  "devkit_side_drift": [],
+  "devkit_side_blob_basis": "git blob over RAW bytes, read at THIS arm's launch; comparable to bench_run.json.git.suite_code_blobs. An empty drift list means the devkit-side code this arm ran IS the code the run recorded at start.",
+  "runtime": "C:/Users/Admin/navsim-crun",
+  "env_fixed": {
+   "NUPLAN_MAP_VERSION": "nuplan-maps-v1.0",
+   "NUPLAN_MAPS_ROOT": "C:/Users/Admin/navsim-crun/data/maps",
+   "NAVSIM_EXP_ROOT": "C:/Users/Admin/navsim-crun/exp/tanitad_bench/runs/epdms7/step50400/PRIOR_ha0p/exp",
+   "NAVSIM_DEVKIT_ROOT": "C:/Users/Admin/navsim-crun/devkit",
+   "OPENSCENE_DATA_ROOT": "C:/Users/Admin/navsim-crun/data/openscene",
+   "PYTHONHASHSEED": "1",
+   "OMP_NUM_THREADS": "2",
+   "MKL_NUM_THREADS": "2",
+   "OPENBLAS_NUM_THREADS": "2",
+   "NUMEXPR_NUM_THREADS": "2",
+   "PYTHONUTF8": "1",
+   "PYTHONIOENCODING": "utf-8",
+   "CUDA_VISIBLE_DEVICES": "-1",
+   "PYTHONPATH": "E:/Projects/TanitAD/taniteval/taniteval/bench/navsim/devkit_side"
+  },
+  "status": "PASS",
+  "retryable": false,
+  "scoring_complete": true,
+  "failures": [],
+  "_promoted_from": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-refcv4b-bridge/code/score_arm.py"
+ },
+ "mem_at_launch": {
+  "free_phys_gb": 12.625595092773438,
+  "free_virt_gb": 12.9854736328125,
+  "total_phys_gb": 31.839496612548828,
+  "load_pct": 60
+ },
+ "addendum": {
+  "current": "43aa6ac7537263b55433a858d9dad4a9b4defdc3775d88a68e0bd10ef6f8dea3",
+  "recorded": [
+   "52fa812cf64f715a046a82ae562f24369c5e86414c06a78afea49e73773049dd",
+   "a6c81b8ea919d6e179f8583e2a1b264f5f8aed101acfa3753dd75a4e8e9d7348",
+   "c6a57112cc06652ea9f212cfa8ea4545c30d633b126c937f47529c037c467047",
+   "43aa6ac7537263b55433a858d9dad4a9b4defdc3775d88a68e0bd10ef6f8dea3"
+  ],
+  "last_recorded": "43aa6ac7537263b55433a858d9dad4a9b4defdc3775d88a68e0bd10ef6f8dea3",
+  "ok": true
+ },
+ "cache": {
+  "tokens_sha256": "8d42fef68542f095d0e03894fdaf38babfdc89f3fd7cdc26080c3a6009cb4108",
+  "manifest_sha256": "b02d1a833f205035421e5ce5b180a8d41657bd7d234dd5866e2aa3df6ca04706",
+  "metadata_csv_sha256": "c6b9c4bf6807da78e1770f564fb469d0eef3dfab5b77f5553a01acc07f1bf840",
+  "token_set": "FULL_SPLIT",
+  "n_cached": 12146,
+  "ok": true,
+  "mismatches": []
+ },
+ "seam": {
+  "path": "D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step50400/bridge_navtest/seam_PRIOR_ha0p.npz",
+  "sha256": "c67c5f0de5f1543a0edff2672bfc8eefe401f598f045802784c6843c18b35fb2",
+  "n": 12146,
+  "n_unique": 12146,
+  "tokens_sha256": "8d42fef68542f095d0e03894fdaf38babfdc89f3fd7cdc26080c3a6009cb4108",
+  "poses_shape": [
+   12146,
+   8,
+   3
+  ],
+  "finite": true,
+  "sampling": [
+   8.0,
+   0.5
+  ],
+  "sources": [
+   "precomputed"
+  ],
+  "arm_key": "PRIOR_ha0p"
+ },
+ "postcheck": {
+  "ok": true,
+  "failures": [],
+  "n_tokens": 12146,
+  "tokens_sha256": "8d42fef68542f095d0e03894fdaf38babfdc89f3fd7cdc26080c3a6009cb4108",
+  "headline_score": 0.6021547840960555,
+  "headline_x100": 60.2155,
+  "KE1_max_abs_gap": 0.0,
+  "C_AVG": {
+   "recomputed_mean": 0.6021547840960555,
+   "devkit_average_all_frames": 0.6021547840960555,
+   "abs_diff": 0.0,
+   "tol": 1e-12,
+   "n": 12146,
+   "pass": true
+  },
+  "n_ec_nan": 2106
+ },
+ "status": "PASS",
+ "retryable": false,
+ "banked": {
+  "csv": "raw/navtest_epdms/step50400/PRIOR_ha0p/PRIOR_ha0p.devkit.csv",
+  "csv_sha256": "0e31f32a0a251553d947d726ef2f8d363b1d6aea172b1c6504ffb1998df67f34",
+  "score_log": {
+   "src_sha256": "43e31b3a3a5b6a175606b72e936c239bf8ea8eb2943c12c323ee793f258f4e70",
+   "dst": "D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/navtest_epdms/step50400/PRIOR_ha0p/PRIOR_ha0p.score.log",
+   "n_uuid_replaced": 12147,
+   "dst_sha256": "a9dd241629feb2a63cdece73a0429c51d11bbd8f4ebb51b7a88bf515f81c73e5"
+  },
+  "PRIOR_ha0p.wrapper_manifest.json": {
+   "src_sha256": "6911921047821ccc98d5b23ddd5a14e6201d4f83a787a6246493339bcafca117",
+   "dst": "D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/navtest_epdms/step50400/PRIOR_ha0p/PRIOR_ha0p.wrapper_manifest.json",
+   "n_uuid_replaced": 0,
+   "dst_sha256": "b152c471c6dbea0c9029878a907bdc7e9988ad549c00d1411fef4892f87da111"
+  },
+  "PRIOR_ha0p.counts.json": {
+   "src_sha256": "352bd906241f450b50b0e2f0782f614e1ee1467f3d3c96819312f5a05de6f19f",
+   "dst": "D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/navtest_epdms/step50400/PRIOR_ha0p/PRIOR_ha0p.counts.json",
+   "n_uuid_replaced": 0,
+   "dst_sha256": "c54ff6ec0adf1bc72f41642d63926e045d427c1d7cf348c745d3c3ddf0bb5dda"
+  }
+ },
+ "resources": {
+  "wall_s": 2006.06,
+  "peak_rss_mb": 2804.4,
+  "peak_process_tree_rss_mb": 2804.4,
+  "min_system_available_mb": 6875.8,
+  "n_samples": 913,
+  "n_samples_below_floor": 0,
+  "sample_interval_s": 2.0,
+  "ram_floor_mb": 4000.0,
+  "abort_policy": "available<4000MB for 60 consecutive samples, or <2000MB once",
+  "trace_every_10th_sample__t_rss_avail": [
+   [
+    0.0,
+    20.6,
+    12885.8
+   ],
+   [
+    21.1,
+    2219.3,
+    10660.0
+   ],
+   [
+    42.4,
+    2232.9,
+    10668.4
+   ],
+   [
+    64.1,
+    2239.3,
+    10622.9
+   ],
+   [
+    85.0,
+    2254.3,
+    10606.1
+   ],
+   [
+    105.5,
+    2255.4,
+    10613.5
+   ],
+   [
+    127.2,
+    2266.5,
+    10579.5
+   ],
+   [
+    148.3,
+    2296.6,
+    10534.6
+   ],
+   [
+    169.2,
+    2278.6,
+    10571.0
+   ],
+   [
+    190.4,
+    2282.0,
+    10584.6
+   ],
+   [
+    211.5,
+    2288.4,
+    10567.8
+   ],
+   [
+    232.7,
+    2292.5,
+    10534.7
+   ],
+   [
+    253.9,
+    2301.7,
+    10537.2
+   ],
+   [
+    274.9,
+    2311.5,
+    10553.3
+   ],
+   [
+    295.6,
+    2309.8,
+    10555.9
+   ],
+   [
+    317.2,
+    2314.7,
+    10560.9
+   ],
+   [
+    338.9,
+    2328.6,
+    10535.3
+   ],
+   [
+    359.7,
+    2333.3,
+    10558.0
+   ],
+   [
+    381.4,
+    2384.3,
+    10516.7
+   ],
+   [
+    402.4,
+    2355.4,
+    10544.8
+   ],
+   [
+    423.1,
+    2356.1,
+    10513.4
+   ],
+   [
+    444.0,
+    2365.4,
+    10509.6
+   ],
+   [
+    464.9,
+    2370.5,
+    10508.0
+   ],
+   [
+    485.6,
+    2373.7,
+    10475.0
+   ],
+   [
+    506.6,
+    2385.4,
+    10469.6
+   ],
+   [
+    527.3,
+    2390.1,
+    10471.2
+   ],
+   [
+    548.0,
+    2392.9,
+    10471.7
+   ],
+   [
+    568.7,
+    2396.7,
+    10454.8
+   ],
+   [
+    589.3,
+    2404.4,
+    10455.0
+   ],
+   [
+    609.8,
+    2412.5,
+    10354.7
+   ],
+   [
+    630.4,
+    2412.0,
+    10363.7
+   ],
+   [
+    651.3,
+    2420.7,
+    10343.1
+   ],
+   [
+    672.2,
+    2427.8,
+    10334.2
+   ],
+   [
+    693.7,
+    2433.1,
+    10336.7
+   ],
+   [
+    715.3,
+    2440.3,
+    10322.0
+   ],
+   [
+    736.4,
+    2449.4,
+    10313.3
+   ],
+   [
+    759.0,
+    2453.6,
+    10343.5
+   ],
+   [
+    782.4,
+    2461.7,
+    8940.0
+   ],
+   [
+    805.9,
+    2465.8,
+    8076.2
+   ],
+   [
+    829.6,
+    2468.8,
+    8048.0
+   ],
+   [
+    853.9,
+    2472.1,
+    8066.6
+   ],
+   [
+    877.6,
+    2481.5,
+    8070.7
+   ],
+   [
+    902.0,
+    2491.7,
+    8040.7
+   ],
+   [
+    925.4,
+    2498.4,
+    8023.0
+   ],
+   [
+    948.5,
+    2498.8,
+    8134.1
+   ],
+   [
+    973.8,
+    2513.8,
+    8087.1
+   ],
+   [
+    995.6,
+    2520.2,
+    8074.7
+   ],
+   [
+    1019.3,
+    2529.7,
+    8070.6
+   ],
+   [
+    1043.6,
+    2532.4,
+    8075.1
+   ],
+   [
+    1069.7,
+    2547.8,
+    8069.9
+   ],
+   [
+    1094.3,
+    2549.3,
+    8044.0
+   ],
+   [
+    1119.1,
+    2555.8,
+    8028.0
+   ],
+   [
+    1143.6,
+    2564.8,
+    8058.2
+   ],
+   [
+    1168.1,
+    2570.1,
+    8033.9
+   ],
+   [
+    1190.9,
+    2575.0,
+    8037.8
+   ],
+   [
+    1213.8,
+    2583.5,
+    8057.3
+   ],
+   [
+    1237.6,
+    2590.4,
+    8049.9
+   ],
+   [
+    1257.8,
+    2595.9,
+    8029.4
+   ],
+   [
+    1281.4,
+    2603.3,
+    8026.2
+   ],
+   [
+    1305.1,
+    2613.0,
+    8023.3
+   ],
+   [
+    1326.6,
+    2619.0,
+    7966.5
+   ],
+   [
+    1347.7,
+    2628.7,
+    7963.9
+   ],
+   [
+    1372.3,
+    2633.2,
+    7959.1
+   ],
+   [
+    1396.0,
+    2645.6,
+    7889.1
+   ],
+   [
+    1418.6,
+    2651.1,
+    7890.3
+   ],
+   [
+    1439.7,
+    2655.1,
+    7876.3
+   ],
+   [
+    1461.3,
+    2662.9,
+    7868.1
+   ],
+   [
+    1482.3,
+    2675.1,
+    7867.5
+   ],
+   [
+    1504.4,
+    2678.8,
+    7881.7
+   ],
+   [
+    1525.7,
+    2681.6,
+    7875.2
+   ],
+   [
+    1548.2,
+    2688.7,
+    7876.3
+   ],
+   [
+    1570.0,
+    2693.7,
+    7854.9
+   ],
+   [
+    1592.4,
+    2700.1,
+    7851.6
+   ],
+   [
+    1614.7,
+    2705.4,
+    7819.4
+   ],
+   [
+    1638.3,
+    2710.5,
+    7843.0
+   ],
+   [
+    1659.9,
+    2715.0,
+    7845.7
+   ],
+   [
+    1682.5,
+    2721.0,
+    7809.8
+   ],
+   [
+    1704.6,
+    2723.8,
+    7819.5
+   ],
+   [
+    1727.4,
+    2735.9,
+    7801.9
+   ],
+   [
+    1748.6,
+    2743.0,
+    7779.5
+   ],
+   [
+    1770.9,
+    2749.6,
+    7792.1
+   ],
+   [
+    1792.2,
+    2754.7,
+    7739.5
+   ],
+   [
+    1812.4,
+    2758.9,
+    7739.8
+   ],
+   [
+    1833.1,
+    2770.1,
+    7655.4
+   ],
+   [
+    1853.7,
+    2766.0,
+    7625.1
+   ],
+   [
+    1874.8,
+    2777.4,
+    7613.6
+   ],
+   [
+    1896.0,
+    2794.6,
+    7601.1
+   ],
+   [
+    1917.2,
+    2794.7,
+    7596.9
+   ],
+   [
+    1937.6,
+    2799.3,
+    7555.4
+   ],
+   [
+    1958.4,
+    2804.4,
+    7582.0
+   ],
+   [
+    1979.7,
+    2142.5,
+    8148.8
+   ],
+   [
+    2001.1,
+    2167.1,
+    8095.6
+   ]
+  ]
+ },
+ "devkit": {
+  "sha": "0a380a9063d7162ec93d0f51e9990ebac585f720",
+  "matches_pin": true,
+  "source": "D:\\Archive\\devbox-C\\navsim\\devkit"
+ },
+ "tokens_sha256": "8d42fef68542f095d0e03894fdaf38babfdc89f3fd7cdc26080c3a6009cb4108",
+ "n_tokens": 12146,
+ "headline_x100": 60.2155,
+ "wall_total_s": 2010.9
+}

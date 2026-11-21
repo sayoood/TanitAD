@@ -1,0 +1,59 @@
+# PUBLISHED-CODE extract - nutonomy/nuscenes-devkit @ b40adc467b919192899405d9b77871afee8efa07
+# path: docs/schema_nuscenes.md
+# git blob sha1 of the fetched file: e69415ca97e49f50fd659aac5cafcd39bffa3cf0 (10333 B); verified against the GitHub contents API: MATCH
+# fetched 2026-09-19T13:46:02Z from raw.githubusercontent.com (read-only source text; excerpts only, attribution retained)
+
+## lines 24-37: calibrated_sensor: images undistorted
+   24  calibrated_sensor
+   25  ---------
+   26  Definition of a particular sensor (lidar/radar/camera) as calibrated on a particular vehicle.
+   27  All extrinsic parameters are given with respect to the ego vehicle body frame.
+   28  All camera images come undistorted and rectified.
+   29  ```
+   30  calibrated_sensor {
+   31     "token":                   <str> -- Unique record identifier.
+   32     "sensor_token":            <str> -- Foreign key pointing to the sensor type.
+   33     "translation":             <float> [3] -- Coordinate system origin in meters: x, y, z.
+   34     "rotation":                <float> [4] -- Coordinate system orientation as quaternion: w, x, y, z.
+   35     "camera_intrinsic":        <float> [3, 3] -- Intrinsic camera calibration. Empty for sensors that are not cameras.
+   36  }
+   37  ```
+
+## lines 52-64: ego_pose
+   52  ego_pose
+   53  ---------
+   54  Ego vehicle pose at a particular timestamp. Given with respect to global coordinate system of the log's map.
+   55  The ego_pose is the output of a lidar map-based localization algorithm described in our paper.
+   56  The localization is 2-dimensional in the x-y plane.
+   57  ```
+   58  ego_pose {
+   59     "token":                   <str> -- Unique record identifier.
+   60     "translation":             <float> [3] -- Coordinate system origin in meters: x, y, z. Note that z is always 0.
+   61     "rotation":                <float> [4] -- Coordinate system orientation as quaternion: w, x, y, z.
+   62     "timestamp":               <int> -- Unix time stamp.
+   63  }
+   64  ```
+
+## lines 152-172: sample_data (sweeps carry ego poses)
+  152  sample_data
+  153  ---------
+  154  A sensor data e.g. image, point cloud or radar return. 
+  155  For sample_data with is_key_frame=True, the time-stamps should be very close to the sample it points to.
+  156  For non key-frames the sample_data points to the sample that follows closest in time.
+  157  ```
+  158  sample_data {
+  159     "token":                   <str> -- Unique record identifier.
+  160     "sample_token":            <str> -- Foreign key. Sample to which this sample_data is associated.
+  161     "ego_pose_token":          <str> -- Foreign key.
+  162     "calibrated_sensor_token": <str> -- Foreign key.
+  163     "filename":                <str> -- Relative path to data-blob on disk.
+  164     "fileformat":              <str> -- Data file format.
+  165     "width":                   <int> -- If the sample data is an image, this is the image width in pixels.
+  166     "height":                  <int> -- If the sample data is an image, this is the image height in pixels.
+  167     "timestamp":               <int> -- Unix time stamp.
+  168     "is_key_frame":            <bool> -- True if sample_data is part of key_frame, else False.
+  169     "next":                    <str> -- Foreign key. Sample data from the same sensor that follows this in time. Empty if end of scene.
+  170     "prev":                    <str> -- Foreign key. Sample data from the same sensor that precedes this in time. Empty if start of scene.
+  171  }
+  172  ```
+

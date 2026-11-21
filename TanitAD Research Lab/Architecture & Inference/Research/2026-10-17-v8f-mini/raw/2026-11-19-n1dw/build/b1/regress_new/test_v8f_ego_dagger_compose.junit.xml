@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="36" time="599.048" timestamp="2026-11-19T15:43:17.291444+01:00" hostname="FREEDOM2035"><testcase classname="tests.test_v8f_ego_dagger_compose" name="test_flag_off_reproduces_the_unmodified_tip_bit_for_bit" time="61.039"><failure message="numpy._core._exceptions._ArrayMemoryError: Unable to allocate 14.1 MiB for an array with shape (90, 40, 1024) and data type float32">pack = &lt;test_v8f_dagger_train.Pack object at 0x00000252E5769010&gt;
+tmp_path = WindowsPath('F:/TanitAD-scratch/n1dw/build/tmp/reg_new/test_v8f_ego_dagger_compose/bt/test_flag_off_reproduces_the_u0')
+
+    def test_flag_off_reproduces_the_unmodified_tip_bit_for_bit(pack, tmp_path):
+        """K-BUILD: the golden was written by the unmodified tip (66b6c80e) for (a) a DAG-OACC-style argv, (b) an ORC-style argv and (c) plain M2b -- 4 CPU steps each on the trainer's synthetic world. With the flag
+        absent this tree must give the same log (every loss, every logged key), the same final weights and optimiser state, the same counters, and the same SET of keys in summary.json and in the checkpoint."""
+        got = {}
+        for name in ("dag", "orc", "m2b"):
+&gt;           assert TR.main(_run(tmp_path / name, argv_family(pack, name))) == 0
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_ego_dagger_compose.py:101: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+scripts\v8f_mini_train.py:3826: in main
+    store, J, wins, clips, info = build_data(a, cfg)
+                                  ^^^^^^^^^^^^^^^^^^
+scripts\v8f_mini_train.py:3643: in build_data
+    w = D.make_synthetic_world(root, n_train=6, n_eval=2, T=60, seed=a.seed)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_v8f_dagger_train.py:61: in &lt;lambda&gt;
+    mp.setattr(D, "make_synthetic_world", lambda root, n_train=6, n_eval=3, T=70, seed=0, **kw: orig(root, n_train=n_train, n_eval=n_eval, T=SYN_T, seed=seed, **kw))
+                                                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+root = WindowsPath('F:/TanitAD-scratch/n1dw/build/tmp/reg_new/test_v8f_ego_dagger_compose/bt/test_flag_off_reproduces_the_u0/orc/_synthetic')
+n_train = 6, n_eval = 2, T = 90, seed = 5, d_feat = 1024
+
+    def make_synthetic_world(root, n_train=6, n_eval=3, T=70, seed=0, d_feat=D_FEAT) -&gt; dict:
+        """A tiny world in the exact S4/v9 formats, for tests and the 30-step smoke. Real driving-like kinematics; the
+        features are random but ARE a function of (speed, curvature) so the model has something to learn."""
+        import torch
+        rng = np.random.default_rng(seed)
+        root = Path(root)
+        fk = _fk()
+        names = {"train": [f"syn-train-{i:03d}" for i in range(n_train)], "eval": [f"syn-eval-{i:03d}" for i in range(n_eval)]}
+        joins, windows, kin_eval, native = {}, {"order": names["eval"], "windows": {}}, [], {}
+        GY = {g: i for i, g in enumerate(GOAL22)}
+        for split, clips in names.items():
+            (root / split / "clips").mkdir(parents=True, exist_ok=True)
+            man = open(root / split / "manifest.jsonl", "w", encoding="utf-8")
+            entries = []
+            for cid in clips:
+                v = np.clip(8 + np.cumsum(rng.normal(0, 0.25, T)), 0.0, 25.0)
+                kap = np.cumsum(rng.normal(0, 0.004, T)) * 0.2
+                yaw = np.cumsum(v * kap * DT)
+                x = np.cumsum(v * np.cos(yaw) * DT)
+                y = np.cumsum(v * np.sin(yaw) * DT)
+                pose = np.stack([x, y, yaw, v], 1).astype(np.float32)
+                steer = np.arctan(2.9 * kap).astype(np.float32)
+                a = np.concatenate([(v[2:] - v[:-2]) / DT, [0.0, 0.0]]).astype(np.float32)
+                kin3 = np.full((T, 3), np.nan)
+                kin3[1:, 0] = v[1:]
+                kin3[1:, 1] = (v[1:] - v[:-1]) / DT
+                kin3[1:, 2] = steer[1:]
+                p10 = np.full((T, 8), np.nan, np.float32)
+                p10[1:] = fk.kin_features(kin3[1:]).astype(np.float32)
+&gt;               f = rng.normal(0, 1, (T, N_TOK, d_feat)).astype(np.float32)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               numpy._core._exceptions._ArrayMemoryError: Unable to allocate 14.1 MiB for an array with shape (90, 40, 1024) and data type float32
+
+tanitad\data\v8f_mini_data.py:1357: MemoryError</failure></testcase><testcase classname="tests.test_v8f_ego_dagger_compose" name="test_the_flag_parses_defaults_off_and_has_its_gdvb_entry" time="0.006" /><testcase classname="tests.test_v8f_ego_dagger_compose" name="test_without_the_flag_the_old_exclusivity_still_fires" time="2.647" /><testcase classname="tests.test_v8f_ego_dagger_compose" name="test_the_flag_with_either_lever_at_p_zero_is_refused_as_a_lever_declared_without_effect[&lt;lambda&gt;-msgs0]" time="2.629" /><testcase classname="tests.test_v8f_ego_dagger_compose" name="test_the_flag_with_either_lever_at_p_zero_is_refused_as_a_lever_declared_without_effect[&lt;lambda&gt;-msgs1]" time="3.112" /><testcase classname="tests.test_v8f_ego_dagger_compose" name="test_the_flag_with_either_lever_at_p_zero_is_refused_as_a_lever_declared_without_effect[&lt;lambda&gt;-msgs2]" time="3.390" /><testcase classname="tests.test_v8f_ego_dagger_compose" name="test_the_flag_with_either_lever_at_p_zero_is_refused_as_a_lever_declared_without_effect[&lt;lambda&gt;-msgs3]" time="2.761" /><testcase classname="tests.test_v8f_ego_dagger_compose" name="test_gdvb_the_control_reads_clean_and_the_flag_is_read_back_from_the_built_stage" time="5.981" /><testcase classname="tests.test_v8f_ego_dagger_compose" name="test_gdvb_deliberate_regression_a_stage_that_is_not_the_declared_one_is_refused[built_off_declared_on-True-&lt;lambda&gt;-declared True but built False]" time="2.728" /><testcase classname="tests.test_v8f_ego_dagger_compose" name="test_gdvb_deliberate_regression_a_stage_that_is_not_the_declared_one_is_refused[built_on_declared_off-False-&lt;lambda&gt;-declared False but built True]" time="2.698" /><testcase classname="tests.test_v8f_ego_dagger_compose" name="test_gdvb_deliberate_regression_a_stage_that_is_not_the_declared_one_is_refused[no_stage_built-True-&lt;lambda&gt;-no composed stage was built]" time="9.747" /><testcase classname="tests.test_v8f_ego_dagger_compose" name="test_gdvb_deliberate_regression_a_stage_that_is_not_the_declared_one_is_refused[another_perturber-True-&lt;lambda&gt;-does not hold the perturber and the swap]" time="5.316" /><testcase classname="tests.test_v8f_ego_dagger_compose" name="test_gdvb_a_flag_without_an_entry_is_refused_by_the_gate_itself" time="5.603" /><testcase classname="tests.test_v8f_ego_dagger_compose" name="test_glive_a_composed_argv_passes_the_gate_and_the_selfcheck_carries_the_composed_probe" time="13.111" /><testcase classname="tests.test_v8f_ego_dagger_compose" name="test_glive_a_flag_off_gate_runs_no_composed_probe" time="9.101" /><testcase classname="tests.test_v8f_ego_dagger_compose" name="test_glive_deliberate_regression_the_gate_refuses_a_composed_path_that_drops_a_rule[no_perturbation]" time="10.882" /><testcase classname="tests.test_v8f_ego_dagger_compose" name="test_glive_deliberate_regression_the_gate_refuses_a_composed_path_that_drops_a_rule[no_swap]" time="12.499" /><testcase classname="tests.test_v8f_ego_dagger_compose" name="test_glive_deliberate_regression_the_gate_refuses_a_composed_path_that_drops_a_rule[no_exclusion]" time="13.013" /><testcase classname="tests.test_v8f_ego_dagger_compose" name="test_ego_exclude_none_is_the_old_path_and_the_mask_changes_nothing_but_the_eligible_set" time="2.567" /><testcase classname="tests.test_v8f_ego_dagger_compose" name="test_composition_overlap_is_exactly_zero_the_shares_are_the_declared_p_and_the_rows_are_each_lever_alone" time="1.743" /><testcase classname="tests.test_v8f_ego_dagger_compose" name="test_the_overlap_guard_refuses_a_perturber_that_ignores_the_exclusion" time="0.585" /><testcase classname="tests.test_v8f_ego_dagger_compose" name="test_a_real_composed_run_feeds_the_loss_the_composed_batch_and_records_the_counts" time="38.710"><failure message="numpy._core._exceptions._ArrayMemoryError: Unable to allocate 20.0 MiB for an array with shape (16, 16, 40, 1024) and data type float16">pack = &lt;test_v8f_dagger_train.Pack object at 0x00000252E5769010&gt;
+tmp_path = WindowsPath('F:/TanitAD-scratch/n1dw/build/tmp/reg_new/test_v8f_ego_dagger_compose/bt/test_a_real_composed_run_feeds0')
+spy = [{'p10f': tensor([[[ 3.5124e+00, -5.3735e-01, -7.6913e-03,  ..., -2.7015e-02,
+          -9.4885e-02,  4.1329e-03],
+   ...e+00,  1.2978e+00, -6.6342e-03,  1.4504e+01,  4.9426e+00,
+         -2.5265e-02, -9.6220e-02, -8.6099e-03]]), ...}, ...]
+stage_calls = [{'step': 0, 'in': {'feats': tensor([[[[-0.0254, -1.2500, -0.3125,  ..., -0.6875, -0.6875, -1.2500],
+          [-1.250...alse, False, False,  True, False, False,  True,  True, False,
+         True,  True, False,  True, False,  True]), ...}]
+
+    def test_a_real_composed_run_feeds_the_loss_the_composed_batch_and_records_the_counts(pack, tmp_path, spy, stage_calls):
+        steps = 6
+        assert TR.main(_run(tmp_path / "ref", ["--steps", str(steps), "--init-ckpt", str(pack.ck)])) == 0               # the same data order with both levers off: the LOGGED batches
+        c0 = spy[-steps:]
+        spy.clear()
+&gt;       assert TR.main(_run(tmp_path / "c", ["--steps", str(steps), *COMPOSED(pack, 0.5, 0.5)])) == 0
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_ego_dagger_compose.py:361: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+scripts\v8f_mini_train.py:4190: in main
+    for b in pf:
+             ^^
+scripts\v8f_mini_train.py:3738: in __iter__
+    raise x
+scripts\v8f_mini_train.py:3727: in _run
+    self.q.put(self.fn(x))
+               ^^^^^^^^^^
+scripts\v8f_mini_train.py:4187: in &lt;lambda&gt;
+    pf = Prefetch(gen_batches, (lambda idx: WW.collate_wm([ds.item(*w) for w in idx])) if a.wm_windows == "wmonly" else (lambda idx: D.collate([ds.item(*w) for w in idx])), depth=3)
+                                                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tanitad\data\v8f_mini_data.py:910: in collate
+    out["feats"] = stack("feats", torch.float16)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tanitad\data\v8f_mini_data.py:908: in &lt;lambda&gt;
+    stack = lambda key, dt=None: torch.as_tensor(np.stack([np.asarray(it[key]) for it in items]), dtype=dt)
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+arrays = [array([[[-0.9375  , -1.125   ,  1.125   , ..., -1.875   ,  1.625   ,
+          0.625   ],
+        [ 1.      ,  0.3125... 1.5    , -0.1562 , -0.2344 , ..., -1.75   ,  0.5625 ,
+         -0.2188 ]]], shape=(16, 40, 1024), dtype=float16), ...]
+axis = 0, out = None, dtype = None, casting = 'same_kind'
+
+    @array_function_dispatch(_stack_dispatcher)
+    def stack(arrays, axis=0, out=None, *, dtype=None, casting="same_kind"):
+        """
+        Join a sequence of arrays along a new axis.
+    
+        The ``axis`` parameter specifies the index of the new axis in the
+        dimensions of the result. For example, if ``axis=0`` it will be the first
+        dimension and if ``axis=-1`` it will be the last dimension.
+    
+        Parameters
+        ----------
+        arrays : sequence of ndarrays
+            Each array must have the same shape. In the case of a single ndarray
+            array_like input, it will be treated as a sequence of arrays; i.e.,
+            each element along the zeroth axis is treated as a separate array.
+    
+        axis : int, optional
+            The axis in the result array along which the input arrays are stacked.
+    
+        out : ndarray, optional
+            If provided, the destination to place the result. The shape must be
+            correct, matching that of what stack would have returned if no
+            out argument were specified.
+    
+        dtype : str or dtype
+            If provided, the destination array will have this dtype. Cannot be
+            provided together with `out`.
+    
+            .. versionadded:: 1.24
+    
+        casting : {'no', 'equiv', 'safe', 'same_kind', 'unsafe'}, optional
+            Controls what kind of data casting may occur. Defaults to 'same_kind'.
+    
+            .. versionadded:: 1.24
+    
+    
+        Returns
+        -------
+        stacked : ndarray
+            The stacked array has one more dimension than the input arrays.
+    
+        See Also
+        --------
+        concatenate : Join a sequence of arrays along an existing axis.
+        block : Assemble an nd-array from nested lists of blocks.
+        split : Split array into a list of multiple sub-arrays of equal size.
+        unstack : Split an array into a tuple of sub-arrays along an axis.
+    
+        Examples
+        --------
+        &gt;&gt;&gt; import numpy as np
+        &gt;&gt;&gt; rng = np.random.default_rng()
+        &gt;&gt;&gt; arrays = [rng.normal(size=(3,4)) for _ in range(10)]
+        &gt;&gt;&gt; np.stack(arrays, axis=0).shape
+        (10, 3, 4)
+    
+        &gt;&gt;&gt; np.stack(arrays, axis=1).shape
+        (3, 10, 4)
+    
+        &gt;&gt;&gt; np.stack(arrays, axis=2).shape
+        (3, 4, 10)
+    
+        &gt;&gt;&gt; a = np.array([1, 2, 3])
+        &gt;&gt;&gt; b = np.array([4, 5, 6])
+        &gt;&gt;&gt; np.stack((a, b))
+        array([[1, 2, 3],
+               [4, 5, 6]])
+    
+        &gt;&gt;&gt; np.stack((a, b), axis=-1)
+        array([[1, 4],
+               [2, 5],
+               [3, 6]])
+    
+        """
+        arrays = [asanyarray(arr) for arr in arrays]
+        if not arrays:
+            raise ValueError('need at least one array to stack')
+    
+        shapes = {arr.shape for arr in arrays}
+        if len(shapes) != 1:
+            raise ValueError('all input arrays must have the same shape')
+    
+        result_ndim = arrays[0].ndim + 1
+        axis = normalize_axis_index(axis, result_ndim)
+    
+        sl = (slice(None),) * axis + (_nx.newaxis,)
+        expanded_arrays = [arr[sl] for arr in arrays]
+&gt;       return _nx.concatenate(expanded_arrays, axis=axis, out=out,
+                               dtype=dtype, casting=casting)
+E       numpy._core._exceptions._ArrayMemoryError: Unable to allocate 20.0 MiB for an array with shape (16, 16, 40, 1024) and data type float16
+
+C:\Users\Admin\venvs\tanitad\Lib\site-packages\numpy\_core\shape_base.py:465: MemoryError</failure></testcase><testcase classname="tests.test_v8f_ego_dagger_compose" name="test_the_check_that_the_loss_received_composed_tensors_can_see_a_dead_apply" time="54.637" /><testcase classname="tests.test_v8f_ego_dagger_compose" name="test_a_resumed_composed_run_draws_what_an_uninterrupted_run_drew_and_keeps_counting" time="120.612" /><testcase classname="tests.test_v8f_ego_dagger_compose" name="test_the_log_interval_overlap_counts_add_up_and_a_flag_off_log_has_no_overlap_key" time="29.586" /><testcase classname="tests.test_v8f_ego_dagger_compose" name="test_equal_seeds_every_sample_eligible_for_both_the_perturbed_share_of_the_not_swapped_is_its_own_p[0.5-0.5-0-30]" time="2.155" /><testcase classname="tests.test_v8f_ego_dagger_compose" name="test_equal_seeds_every_sample_eligible_for_both_the_perturbed_share_of_the_not_swapped_is_its_own_p[0.1-0.3-0-80]" time="1.080" /><testcase classname="tests.test_v8f_ego_dagger_compose" name="test_equal_seeds_every_sample_eligible_for_both_the_perturbed_share_of_the_not_swapped_is_its_own_p[0.1-0.3-3-80]" time="0.993" /><testcase classname="tests.test_v8f_ego_dagger_compose" name="test_the_swaps_and_the_perturbations_selection_uniforms_are_not_one_stream_on_the_composed_path" time="0.530" /><testcase classname="tests.test_v8f_ego_dagger_compose" name="test_seed_of_stream_zero_is_the_original_formula_and_a_stream_is_a_deterministic_separate_one" time="0.020" /><testcase classname="tests.test_v8f_ego_dagger_compose" name="test_the_trainer_run_at_the_box2_shape_equal_seeds_overlapping_eligibility_perturbs_its_declared_share" time="121.457" /><testcase classname="tests.test_v8f_ego_dagger_compose" name="test_the_run_record_names_the_perturbation_stream_and_a_flag_off_record_names_stream_zero" time="26.353" /><testcase classname="tests.test_v8f_ego_dagger_compose" name="test_gdvb_deliberate_regression_a_perturbation_that_is_not_on_the_declared_stream_is_refused[composed_without_separation-True-&lt;lambda&gt;-draws from stream 0 but the declaration needs 1]" time="2.339" /><testcase classname="tests.test_v8f_ego_dagger_compose" name="test_gdvb_deliberate_regression_a_perturbation_that_is_not_on_the_declared_stream_is_refused[separation_without_the_flag-False-&lt;lambda&gt;-draws from stream 1 but the declaration needs 0]" time="2.967" /><testcase classname="tests.test_v8f_ego_dagger_compose" name="test_a_composed_checkpoint_from_before_the_stream_separation_is_not_resumed_on_another_generator" time="22.699" /><testcase classname="tests.test_v8f_ego_dagger_compose" name="test_the_single_applying_lines_exist_exactly_once" time="0.118" /></testsuite></testsuites>

@@ -1,0 +1,169 @@
+# stack/tanitad/train/declared_vs_built_v6.py -- vs origin tip c36b6ddd (LF blobs) -- R1/R4 2026-09-27; apply from the repo root with: git apply <this file>
+--- /dev/null
++++ b/stack/tanitad/train/declared_vs_built_v6.py
+@@ -0,0 +1,165 @@
++"""G-DVB for ``train_v6_staged.py`` -- the R1 / R4 levers (PI directive 2026-09-27, v7F).
++
++⛔⛔ WHAT THIS IS, AND WHAT IT IS NOT. ``tanitad.train.declared_vs_built`` is the binding G-DVB
++check of SPEC_REFCV7 §2, and its REGISTRY is keyed by the argparse dests of ``refc_v3_train.py``
++with readers on the BUILT ``RefCV3Model``. ``scripts/launch_gate.py`` loads THAT trainer only
++(``_TRAINER_MOD = "refc_v3_train_gate"``): the v6/v7F trainer has NO launch-gate profile at the
++tip, so "a trainer flag without a G-DVB entry is refused" cannot yet be enforced for it.
++
++This module is therefore a SEPARATE, ADDITIVE registry for the v6 trainer, written in the
++refcv7 entries' style so it can be folded into the gate when a ``train_v6_staged`` profile
++lands (a PROPOSAL for that integration, not the integration):
++
++* the same ``Mismatch`` / ``Lever`` types and the same KINDS (imported, never re-declared);
++* ``built`` entries READ THE BUILT ``V6Stack`` -- the module object and the config the forward
++  branches on -- and compare with a LITERAL expectation taken from argv by a rule stated here,
++  never by calling ``build_stack_from_args`` (a cross-check derived from the code it checks
++  measures determinism, not correctness);
++* a separate REGISTRY on purpose: ``max_speed_input_v6`` is ALSO a ``refc_v3_train`` dest whose
++  reader looks for ``model.max_speed_1h_v6`` on a RefCV3Model. One registry for both trainers
++  would read the wrong model for one of them.
++
++It covers ONLY the four dests this change adds. The other ~232 v6 flags are the gate agent's
++inventory (``products/P4-training-pipelines/2026-09-27-v7f-refav1-state/raw/
++flag_inventory_train_v6_staged.*``) and are NOT claimed covered here.
++
++THE API mirrors the refcv7 module::
++
++    from tanitad.train import declared_vs_built_v6 as dvb6
++    dvb6.check(stack, args)                  # -> list[Mismatch]; [] == clean
++    dvb6.refuse_on_mismatch(stack, args)     # SystemExit naming every mismatch
++    dvb6.coverage(dests)                     # -> the given dests with no entry
++"""
++from __future__ import annotations
++
++from typing import Any, Callable
++
++from tanitad.train.declared_vs_built import KINDS, Lever, Mismatch
++
++__all__ = ["REGISTRY_V6", "R1R4_DESTS", "register", "check", "refuse_on_mismatch",
++           "coverage", "Mismatch"]
++
++REGISTRY_V6: dict[str, Lever] = {}
++
++#: The dests this change adds to ``train_v6_staged.build_parser`` -- every one MUST have an
++#: entry (pinned by tests/test_v7f_r1r4.py through the real parser).
++R1R4_DESTS: tuple[str, ...] = ("tac_op_cond", "max_speed_input_v6", "plan_vmax_cap",
++                               "speed_max_sidecar_v6")
++
++#: LITERALS, written here -- never read from the module under test. The refcv6 ladder has
++#: FOUR bins ({30, 50, 100, 120} km/h, PI 2026-09-16); the R4 port reads the LAT x LON
++#: behaviour pair, which is 2 x d_goal_embed wide, and writes one goal embedding.
++_N_VMAX_BINS = 4
++_TAC_OP_MODES = ("off", "detached", "e2e")
++
++
++def register(dest: str, kind: str, check: Callable | None = None, reason: str = "") -> None:
++    """Same contract as ``declared_vs_built.register``: ``built``/``loss`` need a check, every
++    other kind needs a reason a reader can verify."""
++    if kind not in KINDS or kind == "drivort":
++        raise ValueError(f"G-DVB-v6 kind {kind!r} not allowed")
++    if kind in ("built", "loss") and check is None:
++        raise ValueError(f"G-DVB-v6 `{dest}` is a {kind} lever and has no check")
++    if kind not in ("built", "loss") and not reason:
++        raise ValueError(f"G-DVB-v6 `{dest}` ({kind}) needs a reason a reader can verify")
++    REGISTRY_V6[dest] = Lever(dest, kind, check, reason)
++
++
++def _flag(dest: str) -> str:
++    return "--" + dest.replace("_", "-")
++
++
++def _eq(dest, declared, built, where, why="") -> list:
++    return [] if declared == built else [Mismatch(_flag(dest), declared, built, where, why)]
++
++
++def _a(args, name, default=None) -> Any:
++    return getattr(args, name, default)
++
++
++# ---------------------------------------------------------------------------
++# readers -- the BUILT side
++# ---------------------------------------------------------------------------
++
++def _c_tac_op_cond(m, a) -> list:
++    """R4: argv mode == the mode the forward branches on (``stack.cfg.tac_op_cond``), the port
++    is built iff the mode is not ``off``, and it has the LITERAL shape and group."""
++    want = str(_a(a, "tac_op_cond", "off") or "off")
++    if want not in _TAC_OP_MODES:
++        return [Mismatch("--tac-op-cond", f"one of {_TAC_OP_MODES}", want, "argv")]
++    out = _eq("tac_op_cond", want, str(getattr(m.cfg, "tac_op_cond", "<absent>")),
++              "stack.cfg.tac_op_cond (read by V6Stack.forward)")
++    port = getattr(m, "tac_op_port", None)
++    out += _eq("tac_op_cond", want != "off", port is not None, "stack.tac_op_port is not None",
++               "an R4 arm whose behaviours never reach the plan, or a control carrying the port")
++    if port is not None:
++        d = int(m.cfg.d_goal_embed)
++        out += _eq("tac_op_cond", (2 * d, d), (int(port.in_features), int(port.out_features)),
++                   "stack.tac_op_port (in, out)", "reads e_a_tac [2*d_goal_embed], writes e_g_tac")
++        out += _eq("tac_op_cond", "planner", m.group_of("tac_op_port.weight"),
++                   "stack.group_of('tac_op_port.weight')",
++                   "the consuming side of the seam trains with the planner (S-T)")
++    return out
++
++
++def _c_max_speed_input_v6(m, a) -> list:
++    """R1a: the port is built iff argv asks, with 4 input bins and the tactical width."""
++    want = bool(_a(a, "max_speed_input_v6", False))
++    out = _eq("max_speed_input_v6", want, bool(getattr(m.cfg, "max_speed_input_v6", False)),
++              "stack.cfg.max_speed_input_v6")
++    port = getattr(m, "vmax_tac", None)
++    out += _eq("max_speed_input_v6", want, port is not None, "stack.vmax_tac is not None",
++               "a max-speed arm whose tactical layer never sees the limit (or the mirror)")
++    if port is not None:
++        out += _eq("max_speed_input_v6", (_N_VMAX_BINS, int(m.cfg.d_tac)),
++                   (int(port.in_features), int(port.out_features)),
++                   "stack.vmax_tac (in, out)", "the refcv6 4-bin one-hot into z_tac_p [d_tac]")
++        out += _eq("max_speed_input_v6", "layer_tac", m.group_of("vmax_tac.weight"),
++                   "stack.group_of('vmax_tac.weight')")
++    return out
++
++
++def _c_plan_vmax_cap(m, a) -> list:
++    """R1b: holds no parameters, so the BUILT fact is the config field ``emit`` reads for its
++    eval-mode refusal -- argv and the model must agree, or an eval harness reading the
++    checkpoint's config would not know the arm requires the cap."""
++    want = bool(_a(a, "plan_vmax_cap", False))
++    return _eq("plan_vmax_cap", want, bool(getattr(m.cfg, "plan_vmax_cap", False)),
++               "stack.cfg.plan_vmax_cap (read by V6Stack.emit)")
++
++
++register("tac_op_cond", "built", _c_tac_op_cond)
++register("max_speed_input_v6", "built", _c_max_speed_input_v6)
++register("plan_vmax_cap", "built", _c_plan_vmax_cap)
++register("speed_max_sidecar_v6", "data", reason=(
++    "the refcv6 max-speed sidecar (RAW SPEED_BAND.v_hi_ms per clip, keyed by stable id): "
++    "read by train_v6_staged.build_vmax_join; refused by _preflight_r1_r4 when no lever "
++    "consumes it or when a lever needs it and it is absent"))
++
++
++def check(stack, args) -> list[Mismatch]:
++    """Every R1/R4 declared-vs-built mismatch on the BUILT ``stack``; ``[]`` == clean. A reader
++    that cannot read is itself a mismatch (the refcv7 rule)."""
++    out: list[Mismatch] = []
++    for lever in REGISTRY_V6.values():
++        if lever.kind in ("built", "loss") and lever.check is not None:
++            try:
++                out += list(lever.check(stack, args) or [])
++            except Exception as e:                           # noqa: BLE001
++                out.append(Mismatch(_flag(lever.dest), "readable", f"{type(e).__name__}: {e}",
++                                    "G-DVB-v6 reader", "the built value could not be read"))
++    return out
++
++
++def refuse_on_mismatch(stack, args, where: str = "train_v6_staged") -> None:
++    bad = check(stack, args)
++    if bad:
++        raise SystemExit(
++            f"[G-DVB-v6] ⛔⛔ {where}: {len(bad)} R1/R4 lever(s) DECLARED in argv are NOT what "
++            f"the stack BUILT -- refusing before the first step:\n  - "
++            + "\n  - ".join(str(b) for b in bad))
++
++
++def coverage(dests) -> list[str]:
++    """The given dests with NO entry here (``[]`` == all covered)."""
++    return [d for d in dests if d not in REGISTRY_V6]

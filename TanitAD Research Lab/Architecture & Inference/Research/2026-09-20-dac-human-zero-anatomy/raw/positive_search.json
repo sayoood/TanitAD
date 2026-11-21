@@ -1,0 +1,466 @@
+{
+ "_what": "the search for REAL over-boundary events, by routes independent of the rules",
+ "_evidence_class": "MEASURED (ours; CPU, read-only)",
+ "route_1_ego_dynamics": {
+  "source": "100 Hz egomotion (az, vz, z, quaternion) aligned to each window through semantic_map_gt.episode_frame_times_us \u2014 the corpus's own v2ep grid",
+  "windows_scored": 736,
+  "windows_without_egomotion_or_grid": 0,
+  "windows_without_a_usable_span": 0,
+  "statistic": "max |az - rolling median(az, 0.5 s)| over the window's 4 s",
+  "threshold_rule": "median + 6.0 x 1.4826 x MAD, fixed before any overlap was read",
+  "median_az_hf": 0.813,
+  "mad": 0.374,
+  "threshold": 4.14,
+  "distribution_m_s2": {
+   "50": 0.813,
+   "90": 2.126,
+   "99": 3.991,
+   "100": 4.455
+  },
+  "n_over_threshold": 6,
+  "hits": [
+   {
+    "sha12": "03cb55890588",
+    "t0": 57,
+    "az_hf_max": 4.454991154152272,
+    "vz_p2p": 0.2470812090900813,
+    "z_detrended_p2p": 0.031707501182704434,
+    "pitch_rate_max_deg_s": 5.9194913940203415,
+    "V0_fires": true,
+    "P1_fires": false,
+    "P2_fires": false
+   },
+   {
+    "sha12": "03cb55890588",
+    "t0": 45,
+    "az_hf_max": 4.454991154152272,
+    "vz_p2p": 0.3038572950078329,
+    "z_detrended_p2p": 0.030180262441601657,
+    "pitch_rate_max_deg_s": 5.9194913940203415,
+    "V0_fires": true,
+    "P1_fires": false,
+    "P2_fires": false
+   },
+   {
+    "sha12": "03cb55890588",
+    "t0": 53,
+    "az_hf_max": 4.454991154152272,
+    "vz_p2p": 0.2470812090900813,
+    "z_detrended_p2p": 0.03121828300856483,
+    "pitch_rate_max_deg_s": 5.9194913940203415,
+    "V0_fires": true,
+    "P1_fires": false,
+    "P2_fires": false
+   },
+   {
+    "sha12": "03cb55890588",
+    "t0": 42,
+    "az_hf_max": 4.454991154152272,
+    "vz_p2p": 0.31742808748965523,
+    "z_detrended_p2p": 0.031117929955242707,
+    "pitch_rate_max_deg_s": 5.9194913940203415,
+    "V0_fires": true,
+    "P1_fires": false,
+    "P2_fires": false
+   },
+   {
+    "sha12": "c23873899e31",
+    "t0": 58,
+    "az_hf_max": 4.3628112250080235,
+    "vz_p2p": 0.49669707552138587,
+    "z_detrended_p2p": 0.07057896387586005,
+    "pitch_rate_max_deg_s": 9.254480326770448,
+    "V0_fires": false,
+    "P1_fires": false,
+    "P2_fires": false
+   },
+   {
+    "sha12": "c23873899e31",
+    "t0": 70,
+    "az_hf_max": 4.3628112250080235,
+    "vz_p2p": 0.5342607149640233,
+    "z_detrended_p2p": 0.07139456705267955,
+    "pitch_rate_max_deg_s": 9.254480326770448,
+    "V0_fires": false,
+    "P1_fires": false,
+    "P2_fires": false
+   }
+  ],
+  "hits_clusters": 2,
+  "overlap_with_rules": {
+   "hits_where_V0_fires": 4,
+   "hits_where_P1_fires": 0,
+   "hits_where_P2_fires": 0
+  },
+  "top20_az_hf_max": [
+   {
+    "sha12": "03cb55890588",
+    "t0": 57,
+    "az_hf_max": 4.454991154152272,
+    "V0_fires": true,
+    "P1_fires": false,
+    "P2_fires": false
+   },
+   {
+    "sha12": "03cb55890588",
+    "t0": 45,
+    "az_hf_max": 4.454991154152272,
+    "V0_fires": true,
+    "P1_fires": false,
+    "P2_fires": false
+   },
+   {
+    "sha12": "03cb55890588",
+    "t0": 53,
+    "az_hf_max": 4.454991154152272,
+    "V0_fires": true,
+    "P1_fires": false,
+    "P2_fires": false
+   },
+   {
+    "sha12": "03cb55890588",
+    "t0": 42,
+    "az_hf_max": 4.454991154152272,
+    "V0_fires": true,
+    "P1_fires": false,
+    "P2_fires": false
+   },
+   {
+    "sha12": "c23873899e31",
+    "t0": 58,
+    "az_hf_max": 4.3628112250080235,
+    "V0_fires": false,
+    "P1_fires": false,
+    "P2_fires": false
+   },
+   {
+    "sha12": "c23873899e31",
+    "t0": 70,
+    "az_hf_max": 4.3628112250080235,
+    "V0_fires": false,
+    "P1_fires": false,
+    "P2_fires": false
+   },
+   {
+    "sha12": "d4c144f52747",
+    "t0": 84,
+    "az_hf_max": 3.9908202666395063,
+    "V0_fires": true,
+    "P1_fires": true,
+    "P2_fires": true
+   },
+   {
+    "sha12": "d4c144f52747",
+    "t0": 79,
+    "az_hf_max": 3.9908202666395063,
+    "V0_fires": true,
+    "P1_fires": true,
+    "P2_fires": true
+   },
+   {
+    "sha12": "d4c144f52747",
+    "t0": 80,
+    "az_hf_max": 3.9908202666395063,
+    "V0_fires": true,
+    "P1_fires": true,
+    "P2_fires": true
+   },
+   {
+    "sha12": "d4c144f52747",
+    "t0": 90,
+    "az_hf_max": 3.9908202666395063,
+    "V0_fires": true,
+    "P1_fires": true,
+    "P2_fires": true
+   },
+   {
+    "sha12": "9855363e1ac1",
+    "t0": 8,
+    "az_hf_max": 3.795988142345586,
+    "V0_fires": true,
+    "P1_fires": false,
+    "P2_fires": false
+   },
+   {
+    "sha12": "68b999cbd670",
+    "t0": 35,
+    "az_hf_max": 3.7727979948979318,
+    "V0_fires": true,
+    "P1_fires": false,
+    "P2_fires": false
+   },
+   {
+    "sha12": "68b999cbd670",
+    "t0": 11,
+    "az_hf_max": 3.7727979948979318,
+    "V0_fires": true,
+    "P1_fires": false,
+    "P2_fires": false
+   },
+   {
+    "sha12": "68b999cbd670",
+    "t0": 15,
+    "az_hf_max": 3.7727979948979318,
+    "V0_fires": true,
+    "P1_fires": false,
+    "P2_fires": false
+   },
+   {
+    "sha12": "feccf3ba3479",
+    "t0": 70,
+    "az_hf_max": 3.758155361256274,
+    "V0_fires": true,
+    "P1_fires": true,
+    "P2_fires": false
+   },
+   {
+    "sha12": "feccf3ba3479",
+    "t0": 83,
+    "az_hf_max": 3.758155361256274,
+    "V0_fires": true,
+    "P1_fires": false,
+    "P2_fires": false
+   },
+   {
+    "sha12": "feccf3ba3479",
+    "t0": 55,
+    "az_hf_max": 3.758155361256274,
+    "V0_fires": true,
+    "P1_fires": true,
+    "P2_fires": true
+   },
+   {
+    "sha12": "feccf3ba3479",
+    "t0": 75,
+    "az_hf_max": 3.758155361256274,
+    "V0_fires": true,
+    "P1_fires": true,
+    "P2_fires": true
+   },
+   {
+    "sha12": "28f6781136b1",
+    "t0": 64,
+    "az_hf_max": 3.7065424958968936,
+    "V0_fires": true,
+    "P1_fires": false,
+    "P2_fires": false
+   },
+   {
+    "sha12": "28f6781136b1",
+    "t0": 53,
+    "az_hf_max": 3.7065424958968936,
+    "V0_fires": false,
+    "P1_fires": false,
+    "P2_fires": false
+   }
+  ],
+  "injection_control": {
+   "az_hf_max_before": 0.0742608422432971,
+   "az_hf_max_after_10ms2_pulse": 10.044232925447485,
+   "threshold": 4.139609415978263,
+   "pass": true
+  },
+  "what_it_misses": "a smooth mount onto a flush driveway, a paved verge or a dropped kerb makes no shock; route 1 finds MOUNTING EVENTS, not departures"
+ },
+ "route_2_wide_margin": {
+  "windows_with_an_explicitly_off_road_corner": 33,
+  "clusters": 7,
+  "count_at_margin": {
+   "0.5 m": 10,
+   "0.8 m": 2,
+   "1.0 m": 1,
+   "1.2 m": 0,
+   "1.5 m": 0,
+   "2.0 m": 0
+  },
+  "max_margin_m": 1.047,
+  "not_independent": "this route uses the rules' own firing set; reported as a curve so the dependence is visible"
+ },
+ "route_3_stratum_D_sweep": {
+  "population": 408,
+  "clusters": 55,
+  "windows_per_clip": {
+   "9": 5,
+   "7": 7,
+   "8": 9,
+   "6": 3,
+   "14": 2,
+   "3": 3,
+   "15": 1,
+   "5": 6,
+   "4": 3,
+   "11": 1,
+   "13": 2,
+   "12": 2,
+   "10": 2,
+   "2": 5,
+   "16": 1,
+   "21": 1,
+   "1": 2
+  },
+  "draw_rule": "BY CLIP FIRST: shuffle clips (seed 20260921), one window per clip",
+  "drawn": 55,
+  "ids": [
+   {
+    "sha12": "bbd162dfe0eb",
+    "t0": 127
+   },
+   {
+    "sha12": "7f6670448ef6",
+    "t0": 56
+   },
+   {
+    "sha12": "d4c144f52747",
+    "t0": 133
+   },
+   {
+    "sha12": "d75f38babcda",
+    "t0": 46
+   },
+   {
+    "sha12": "729b5d29fa89",
+    "t0": 97
+   },
+   {
+    "sha12": "28f6781136b1",
+    "t0": 85
+   },
+   {
+    "sha12": "081b986f8888",
+    "t0": 10
+   },
+   {
+    "sha12": "209199ce8280",
+    "t0": 132
+   },
+   {
+    "sha12": "76fc5c466b2d",
+    "t0": 112
+   },
+   {
+    "sha12": "a4741056ff38",
+    "t0": 78
+   },
+   {
+    "sha12": "0191487845ef",
+    "t0": 52
+   },
+   {
+    "sha12": "83df0bab7763",
+    "t0": 82
+   },
+   {
+    "sha12": "356cc45b0224",
+    "t0": 85
+   },
+   {
+    "sha12": "2dc00f2fb95d",
+    "t0": 34
+   },
+   {
+    "sha12": "e1777e69be55",
+    "t0": 65
+   },
+   {
+    "sha12": "a78bf2711918",
+    "t0": 100
+   },
+   {
+    "sha12": "feccf3ba3479",
+    "t0": 114
+   },
+   {
+    "sha12": "c8cb0ad57519",
+    "t0": 55
+   },
+   {
+    "sha12": "264a78e8fad1",
+    "t0": 24
+   },
+   {
+    "sha12": "2b568af29b7d",
+    "t0": 60
+   },
+   {
+    "sha12": "68b999cbd670",
+    "t0": 110
+   },
+   {
+    "sha12": "3db625a5f941",
+    "t0": 124
+   },
+   {
+    "sha12": "547d1d68c1bd",
+    "t0": 135
+   },
+   {
+    "sha12": "b0d17a91f120",
+    "t0": 65
+   },
+   {
+    "sha12": "c0bb04e203cf",
+    "t0": 66
+   },
+   {
+    "sha12": "c8831556989f",
+    "t0": 113
+   },
+   {
+    "sha12": "47f22ccd6fbb",
+    "t0": 17
+   },
+   {
+    "sha12": "94aae24f02bf",
+    "t0": 24
+   },
+   {
+    "sha12": "c45d6a86ff06",
+    "t0": 71
+   },
+   {
+    "sha12": "4a7515667297",
+    "t0": 104
+   },
+   {
+    "sha12": "418a12591a39",
+    "t0": 115
+   },
+   {
+    "sha12": "c23873899e31",
+    "t0": 119
+   },
+   {
+    "sha12": "751cdd67811f",
+    "t0": 84
+   },
+   {
+    "sha12": "b9622e49a9ec",
+    "t0": 59
+   },
+   {
+    "sha12": "9d92cb2360a4",
+    "t0": 94
+   },
+   {
+    "sha12": "03cb55890588",
+    "t0": 14
+   },
+   {
+    "sha12": "e01bd05b8e43",
+    "t0": 104
+   },
+   {
+    "sha12": "b435685d40c8",
+    "t0": 49
+   },
+   {
+    "sha12": "6c5a21de8993",
+    "t0": 95
+   },
+   {
+    "sha12": "c5bb9c2618da",
+    "t0": 37
+   }
+  ]
+ }
+}

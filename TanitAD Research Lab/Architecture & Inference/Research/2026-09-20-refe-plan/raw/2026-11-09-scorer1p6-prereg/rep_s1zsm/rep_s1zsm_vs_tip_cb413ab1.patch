@@ -1,0 +1,458 @@
+diff --git a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/launch_gate.py b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/launch_gate.py
+index cc973a3..68febd3 100644
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/launch_gate.py	
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/launch_gate.py	
+@@ -693,8 +693,9 @@ REP_PKG = "/workspace/refe-plan-rep"
+ REP_ARMS = {      # replicate arm -> its parent arm, the parent's family and the replicate's data-order seed (it must differ from the parent's)
+     "C0r2": {"parent": "C0", "family": "p6", "seed": 2},
+     "S1E1": {"parent": "S1E", "family": "p6", "seed": 1},
+-    "S1Z1": {"parent": "S1Z", "family": "s1z", "seed": 1}}
+-REP_PARENT_SEEDS = {"p6": SCORER1P6_ARM_SEED, "s1z": S1Z_ARM_SEED}
++    "S1Z1": {"parent": "S1Z", "family": "s1z", "seed": 1},
++    "S1ZSM1": {"parent": "S1ZSM", "family": "s1zsm", "seed": 1}}          # PREREG_S1ZSM_P6 SM1 / SM2 / SM3 name "seed 1" as the next arm
++REP_PARENT_SEEDS = {"p6": SCORER1P6_ARM_SEED, "s1z": S1Z_ARM_SEED, "s1zsm": S1ZSM_ARM_SEED}
+ 
+ 
+ def rep_arm_refusals(table: dict) -> list:
+@@ -723,7 +724,7 @@ def rep_argv(arm: str, w=None) -> list:
+     bad = rep_arm_refusals({arm: sp})
+     if bad:
+         raise ValueError("; ".join(bad))
+-    toks = list(scorer1p6_argv(sp["parent"], w) if sp["family"] == "p6" else s1z_argv(sp["parent"], twin_w=w))
++    toks = list(scorer1p6_argv(sp["parent"], w) if sp["family"] == "p6" else s1zsm_argv(sp["parent"], twin_w=w) if sp["family"] == "s1zsm" else s1z_argv(sp["parent"], twin_w=w))
+     toks[toks.index("--seed") + 1] = str(sp["seed"])
+     toks[toks.index("--out") + 1] = REP_ROOT + "/" + arm.lower()
+     return toks
+@@ -735,6 +736,10 @@ PROFILES["refe_rep_p6"] = {**PROFILES["refe_scorer1p6"], "name": "refe_rep_p6",
+                            "pair_spec": {"S1E1": dict(SCORER1P6_PAIR_SPEC["S1E"])}}
+ PROFILES["refe_rep_s1z_p6"] = {**PROFILES["refe_s1z_p6"], "name": "refe_rep_s1z_p6", "argv_kind": "rep", "root": REP_ROOT, "suite": S1Z_SUITE + REP_SUITE_EXTRA,
+                                "rep_arms": {"S1Z1": dict(REP_ARMS["S1Z1"])}, "arm_seed": {"S1Z1": REP_ARMS["S1Z1"]["seed"]}}
++# S1ZSM1 = a THIRD replicate profile: the twin rules (and the speed-neutral rules, `sn_spec`) are profile-wide, so the S1ZSM family cannot ride on refe_rep_s1z_p6 (it would lose --twin-speed-neutral from the pin).
++# A deep copy of refe_s1zsm_p6 with the replicate root, the replicate table and the replicate suite; refe_s1zsm_p6 and every other profile are untouched (test_rep_gate.py R3 / test_s1zsm_gate.py G3 pin the digests).
++PROFILES["refe_rep_s1zsm_p6"] = {**copy.deepcopy(PROFILES["refe_s1zsm_p6"]), "name": "refe_rep_s1zsm_p6", "argv_kind": "rep", "root": REP_ROOT, "suite": S1ZSM_SUITE + REP_SUITE_EXTRA,
++                                 "rep_arms": {"S1ZSM1": dict(REP_ARMS["S1ZSM1"])}, "arm_seed": {"S1ZSM1": REP_ARMS["S1ZSM1"]["seed"]}}
+ 
+ # RL-S1b = refe_rls1 (same runner, checks, data flags, forbidden / required flags, recipe, G-DVB, G-PREFLIGHT) with ITS arm table and ONE registered value moved (epo_lam).
+ # rls1_refusals reads `arm_class` / `arm_seeds` / `epo_registered` from the profile; refe_rls1 carries none of them, so it keeps the module constants above.
+diff --git a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/rep_chain.sh b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/rep_chain.sh
+index 4c01cec..27a4b74 100644
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/rep_chain.sh	
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/rep_chain.sh	
+@@ -1,14 +1,14 @@
+ #!/bin/bash
+ # SEED-REPLICATE chain (PREREG_SCORER1P6 O5, PREREG_S1Z_P6 Z1/Z5): ONE replicate arm per invocation, from P6's model_final.pt, 400 updates, on the L40 pod.  NOT PLACED ON THE POD by its author; the Master Mind ships it with the landed tree.
+-#   bash /workspace/refe-plan-rep/refe/rep_chain.sh <C0r2|S1E1|S1Z1>        (REP_HF_TOKEN_FILE=<the pod's HF token file> in the environment; nohup setsid ... > /workspace/data/refe_rep/chain_<arm>.out 2>&1 < /dev/null &)
+-#   C0r2 = C0 with data-order seed 2, S1E1 = S1E with seed 1, S1Z1 = S1Z with seed 1.  Each differs from its parent in --seed and --out ONLY (rep_pod.sh derives the argv from the parent's pod script; test_rep_gate.py proves it).
++#   bash /workspace/refe-plan-rep/refe/rep_chain.sh <C0r2|S1E1|S1Z1|S1ZSM1>        (REP_HF_TOKEN_FILE=<the pod's HF token file> in the environment; nohup setsid ... > /workspace/data/refe_rep/chain_<arm>.out 2>&1 < /dev/null &)
++#   C0r2 = C0 with data-order seed 2, S1E1 = S1E with seed 1, S1Z1 = S1Z with seed 1, S1ZSM1 = S1ZSM (PREREG_S1ZSM_P6) with seed 1 (its speed-neutral generator seed 20261107 and its measured speed-neutral lambda_z stay the parent's).  Each differs from its parent in --seed and --out ONLY (rep_pod.sh derives the argv from the parent's pod script; test_rep_gate.py proves it).
+ # Pattern: refe/s1z_chain.sh / scorer1p6_chain.sh (same fail-closed stages and the SAME wait functions, markers keyed by the SHA-256 of SHIP_MANIFEST.json, REFUSED lines in the arm's log), with the replicate differences:
+ #  * OWN POD DIRECTORY: package $WS/refe-plan-rep, data $DATA/refe_rep.  gate_token.TREE_ROOTS = (refe, code, splits): shipping this refe/ over refe-plan-p6, -p7, -scorer1p6 or -s1z (a dir that holds a minted token) would VOID that token.
+ #  * THE PARENT'S INPUTS: the card (by bytes), the navtest lists, the checkpoint and the label dump are the parent's; the parent's measured lambda (S1E: refe_scorer1p6/calibrate_s1e, S1Z: refe_s1z/calibrate_s1z) is READ, never re-measured
+ #    (a re-measured lambda would move a second lever), so there is NO calibrate stage.  The data pin is launch_gate.SCORER1P6_DATA_PIN.  No lane, no human gate.
+ #  * NO PAUSING OR RESUMING OF P7 here (refe/rep_pause_p7.sh does that).  The chain waits for NO chain lock held (the parents' included) and the GPU idle on 3 consecutive polls.
+ #  * ORDER: precheck, inputs, G-EGR, dd, wait, the arm's preflight (G1-G16 / G1-G18 on the real bank), the parent's deliberate regressions (S1E1: nobalance epbalance droploss each failing the preflight and turning G16 RED;
+-#    S1Z1: noradius notopk droploss each turning G18 RED; C0r2: none, C0 has none), the LAUNCH GATE (a PASS token minted by launch_gate.py, never hand-written), the run, the run check (400 updates, the pinned set count,
++#    S1Z1: noradius notopk droploss each turning G18 RED; S1ZSM1: noband nosnbalance droploss noradius notopk each turning G18 RED; C0r2: none, C0 has none), the LAUNCH GATE (a PASS token minted by launch_gate.py, never hand-written), the run, the run check (400 updates, the pinned set count,
+ #    S1Z1 also every head's twin share > 0), the HF egress under the prefix rep/<arm>, ZZREP_CHAIN_DONE <arm>.
+ # Markers: $ROOT/stage_<arm>/<name>.ok = date + tree sha.  REP_STOP_AFTER=<stage> ends the chain after that stage (a dry run).
+ set -u
+@@ -17,7 +17,8 @@ case "$ARMN" in
+   C0r2) PARENT=C0;  PROOT_NAME=refe_scorer1p6; PCARD=PREREG_SCORER1P6.md; CARD_SHA=adb5aafd4fb8abdfd1a53d9cc5ff865a89bd20f9008c701cf5d308dac595abed; PROFILE=refe_rep_p6;     FAM=p6;  PPOD=scorer1p6_pod.sh ;;
+   S1E1) PARENT=S1E; PROOT_NAME=refe_scorer1p6; PCARD=PREREG_SCORER1P6.md; CARD_SHA=adb5aafd4fb8abdfd1a53d9cc5ff865a89bd20f9008c701cf5d308dac595abed; PROFILE=refe_rep_p6;     FAM=p6;  PPOD=scorer1p6_pod.sh ;;
+   S1Z1) PARENT=S1Z; PROOT_NAME=refe_s1z;      PCARD=PREREG_S1Z_P6.md;     CARD_SHA=8c7b6b697b94ccf1a4781a727ed28c10ed8b11878c33eeb2d016a507b36efa69; PROFILE=refe_rep_s1z_p6; FAM=s1z; PPOD=s1z_pod.sh ;;
+-  *) echo "REFUSED: unknown arm '$ARMN' (usage: rep_chain.sh C0r2 | S1E1 | S1Z1)"; exit 2 ;;
++  S1ZSM1) PARENT=S1ZSM; PROOT_NAME=refe_s1zsm; PCARD=PREREG_S1ZSM_P6.md; CARD_SHA=ac75b2891e794de800102a6d5a0f0353e8092e5f976f31b543ac7700811ad6b8; PROFILE=refe_rep_s1zsm_p6; FAM=s1zsm; PPOD=s1zsm_pod.sh ;;
++  *) echo "REFUSED: unknown arm '$ARMN' (usage: rep_chain.sh C0r2 | S1E1 | S1Z1 | S1ZSM1)"; exit 2 ;;
+ esac
+ LA=$(echo "$ARMN" | tr 'A-Z' 'a-z')
+ WS=${REP_WS:-/workspace}
+@@ -37,7 +38,8 @@ CKPT_SHA=968a469d5b9abdd279aff19b8031c53e9fec0e2683092bff12cfa93be6a4d3d1
+ CARD=$PROOT/$PCARD
+ NTL=$PROOT/navtest_ids/navtest_logs.json;  NTL_SHA=79daa3c2ba3fbf1c6d45d0e3b630f43bb26a073160a34ca5f9c98553c0bf43e0
+ NTT=$PROOT/navtest_ids/navtest_tokens.txt.gz; NTT_SHA=e61613ce129bb67dc654a5a575de2889a22fcfcbc64e4ec389a38295b8df9c7a
+-case "$ARMN" in S1E1) PW_FILE=$PROOT/calibrate_s1e/pair_weight.json ;; S1Z1) PW_FILE=$PROOT/calibrate_s1z/pair_weight.json ;; *) PW_FILE="" ;; esac
++case "$ARMN" in S1E1) PW_FILE=$PROOT/calibrate_s1e/pair_weight.json ;; S1Z1) PW_FILE=$PROOT/calibrate_s1z/pair_weight.json ;; S1ZSM1) PW_FILE=$PROOT/calibrate_s1zsm/pair_weight.json ;; *) PW_FILE="" ;; esac
++case "$FAM" in s1z|s1zsm) PWKEY=twin_w ;; *) PWKEY=pair_w ;; esac
+ export TANITAD_GATE_KEY_FILE=${TANITAD_GATE_KEY_FILE:-$ROOT/launch_gate.key}      # the HMAC key lives on the volume, OUTSIDE the shipped tree and anything the egress pushes
+ mkdir -p $ROOT $S
+ STAGE=start
+@@ -71,7 +73,7 @@ gpu_busy() {          # rc 0 = a process is on the GPU, OR the GPU cannot be ask
+ lock_held() { [ -e "$1/chain.lock" ] && ! ( flock -n 9 ) 9<> "$1/chain.lock"; }        # READ-WRITE fd: an exclusive flock on a read-only fd is EBADF on nfs4
+ others_hold() {
+   local c
+-  for c in refe_p2 refe_p2rep rls1 s1aux refe_p6 refe_p7 refe_scorer1p6 refe_s1z; do
++  for c in refe_p2 refe_p2rep rls1 s1aux refe_p6 refe_p7 refe_scorer1p6 refe_s1z refe_s1zsm; do
+     if lock_held "$DATA/$c"; then echo "the $c chain holds $DATA/$c/chain.lock"; return 2; fi
+   done
+   return 0
+@@ -120,7 +122,8 @@ PY_C="${DRIVERL_EVAL_PYTHON:-}"
+ HPY=${HF_PY:-$PY_C}
+ NEED="refe/scorer_finetune.py refe/launch_gate.py refe/gate_token.py refe/gate_checks.py refe/gate_fixture.py refe/hf_egress.py refe/pdm_label_complete.py refe/scorer1p6_pod.sh refe/rep_pod.sh refe/rep_chain.sh refe/test_rep_gate.py \
+       refe/test_pair_loss.py refe/test_pair_loss_p6.py refe/test_scorer1_gate.py refe/test_scorer1p6_gate.py refe/test_scorer1p6_preflight.py refe/test_scorer1_mutation.py refe/test_scorer1_layer.py refe/scorer1_layer.py refe/test_suite_nesting.py refe/test_launch_gate.py refe/train.py refe/model.py refe/ckpt_io.py refe/planner.py splits/navtrain.yaml SHIP_MANIFEST.json"
+-[ "$FAM" = s1z ] && NEED="$NEED refe/s1z_pod.sh refe/s1z_layer.py refe/test_s1z_loss.py refe/test_s1z_gate.py refe/test_s1z_preflight.py refe/test_s1z_layer.py"
++[ "$FAM" = s1z ] || [ "$FAM" = s1zsm ] && NEED="$NEED refe/s1z_pod.sh refe/s1z_layer.py refe/test_s1z_loss.py refe/test_s1z_gate.py refe/test_s1z_preflight.py refe/test_s1z_layer.py"
++[ "$FAM" = s1zsm ] && NEED="$NEED refe/s1zsm_pod.sh refe/s1zsm_layer.py refe/test_s1zsm_loss.py refe/test_s1zsm_gate.py refe/test_s1zsm_preflight.py refe/test_s1zsm_layer.py"
+ for f in $NEED; do
+   [ -f "$PKG/$f" ] || refuse "$PKG/$f is missing from the shipped package"
+ done
+@@ -149,9 +152,9 @@ if ! stage_done inputs; then
+   [ "$(sha256sum "$NTT" | cut -c1-64)" = "$NTT_SHA" ] || refuse "$NTT is not the registered navtest token list"
+   if [ -n "$PW_FILE" ]; then
+     # the parent's measured lambda must exist, finite and positive; it is the ONLY value read from the parent's run dir, and it is not re-measured
+-    python3 -c 'import json,math,sys; d=json.load(open(sys.argv[1])); w=d[sys.argv[2]]; assert w and math.isfinite(w) and w>0, d' "$PW_FILE" "$([ "$FAM" = s1z ] && echo twin_w || echo pair_w)" \
++    python3 -c 'import json,math,sys; d=json.load(open(sys.argv[1])); w=d[sys.argv[2]]; assert w and math.isfinite(w) and w>0, d; assert sys.argv[3] != "s1zsm" or (d.get("speed_neutral") is True and d.get("sn_dv")==0.15 and d.get("sn_balance") is True and d.get("sn_seed")==20261107 and d.get("lever")=="twin"), d' "$PW_FILE" "$PWKEY" "$FAM" \
+       || refuse "$PW_FILE is missing or holds no finite positive lambda: the parent $PARENT has not calibrated, so $ARMN is not a replicate of it"
+-    log "lambda (the parent's, not re-measured) = $(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))[sys.argv[2]])' "$PW_FILE" "$([ "$FAM" = s1z ] && echo twin_w || echo pair_w)") from $PW_FILE"
++    log "lambda (the parent's, not re-measured) = $(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))[sys.argv[2]])' "$PW_FILE" "$PWKEY") from $PW_FILE"
+   fi
+   PIN="$($PY_C -c 'import sys; sys.path.insert(0, sys.argv[1]); import launch_gate as L; p = L.SCORER1P6_DATA_PIN; print("UNSET" if p is None else "%d %d" % (p["train_sets"], p["heldout_sets"]))' "$RUN" 2> /dev/null)"
+   case "$PIN" in UNSET|"") refuse "launch_gate.SCORER1P6_DATA_PIN is unset: the exact P6 label counts are not pinned" ;; esac
+@@ -200,6 +203,7 @@ if ! stage_done "preflight_$LA"; then
+   MUTS=""; GATEK=""
+   [ "$ARMN" = "S1E1" ] && { MUTS="nobalance epbalance droploss"; GATEK=G16; }
+   [ "$ARMN" = "S1Z1" ] && { MUTS="noradius notopk droploss"; GATEK=G18; }
++  [ "$ARMN" = "S1ZSM1" ] && { MUTS="noband nosnbalance droploss noradius notopk"; GATEK=G18; }
+   for MUT in $MUTS; do
+     ARM=$ARMN MODE=mutate_$MUT bash $RUN/rep_pod.sh 200>&-
+     grep -q "^ZZSFT_PREFLIGHT_FAIL" $OUT/mutate_$MUT.log || refuse "the $MUT mutation did not fail the preflight"
+@@ -251,10 +255,15 @@ if len(start) != 1 or start[0].get("updates") != 400 or start[0].get("train_sets
+ for m in ("model_sft_A.pt", "model_sft_B.pt"):
+     if not os.path.isfile(os.path.join(out, m)):
+         bad.append("missing " + m)
+-if fam == "s1z":
++if fam in ("s1z", "s1zsm"):
+     ts = (done[0].get("twin_share") if done else None) or {}
+     if sorted(ts) != ["DAC", "NC", "TTC"] or not all(v.get("share_with_pair", 0) > 0 and v.get("sets", 0) > 0 for v in ts.values()):
+         bad.append("the done event's twin_share is %s: every head must have a share of sets with a kept pair > 0" % (ts,))
++    if fam == "s1zsm":      # PREREG_S1ZSM_P6: the speed-neutral loss ran as built (same check as s1zsm_chain.sh)
++        if ts and not all(v.get("kept_F", -1) == v.get("kept_S", -2) and v.get("kept_F", 0) > 0 and v.get("out_of_band", -1) == 0 and v.get("unbalanced_sets", -1) == 0 and v.get("pairs") == 2 * v.get("kept_F", 0) for v in ts.values()):
++            bad.append("the done event's twin_share is %s: every head must keep F == S pairs, none outside the speed band" % (ts,))
++        if not any(r.get("event") == "data" and (r.get("twin") or {}).get("speed_neutral") is True for r in rows):
++            bad.append("the data event does not say speed_neutral true")
+ if bad:
+     sys.exit("; ".join(bad))
+ print("ZZREP_RUN_OK updates 400")
+diff --git a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/rep_pause_p7.sh b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/rep_pause_p7.sh
+index b15d110..6948f38 100644
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/rep_pause_p7.sh	
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/rep_pause_p7.sh	
+@@ -1,8 +1,8 @@
+ #!/usr/bin/env bash
+-# Runs on the pod, detached.  Usage: rep_pause_p7.sh <p7_pod.sh pid> <train.py pid> <arm> [<arm> ...]      arms: C0r2 S1E1 S1Z1  (the order given is the order run)
++# Runs on the pod, detached.  Usage: rep_pause_p7.sh <p7_pod.sh pid> <train.py pid> <arm> [<arm> ...]      arms: C0r2 S1E1 S1Z1 S1ZSM1  (the order given is the order run)
+ # Style of s1z/pause_p7_s1z_b.sh.  Waits for P7's next ckpt_last.pt, stops P7 by explicit PID, confirms the GPU is empty, runs each replicate arm's chain IN SEQUENCE (rep_chain.sh <arm>; one arm per chain
+ # invocation, an arm that is refused or fails does not stop the next one), then ALWAYS resumes P7 (also when this script is killed or errors after P7 was stopped), unless /workspace/data/refe_rep/HOLD_P7 exists.
+-# Terminal lines in pause.log: PAUSE_STOPPED_EARLY (P7 not touched), P7_RESUMED or P7_HELD.  A parent arm's lambda (S1E, S1Z) must already be calibrated: rep_chain.sh refuses an arm whose parent has not.
++# Terminal lines in pause.log: PAUSE_STOPPED_EARLY (P7 not touched), P7_RESUMED or P7_HELD.  A parent arm's lambda (S1E, S1Z, S1ZSM) must already be calibrated: rep_chain.sh refuses an arm whose parent has not.
+ set -u
+ CHAIN=${1:-}; TR=${2:-}; shift 2 2>/dev/null || true
+ ARMS="$*"
+@@ -11,7 +11,7 @@ mkdir -p "$OUT"
+ say() { echo "$(date -u +%FT%TZ) $*" >> "$L"; }
+ early() { say "PAUSE_STOPPED_EARLY $*"; exit 1; }
+ [ -n "$CHAIN" ] && [ -n "$TR" ] && [ -n "$ARMS" ] || early "usage: rep_pause_p7.sh <p7_pod.sh pid> <train.py pid> <arm> [<arm> ...]"
+-for a in $ARMS; do case "$a" in C0r2|S1E1|S1Z1) ;; *) early "unknown arm $a (C0r2 | S1E1 | S1Z1)" ;; esac; done
++for a in $ARMS; do case "$a" in C0r2|S1E1|S1Z1|S1ZSM1) ;; *) early "unknown arm $a (C0r2 | S1E1 | S1Z1 | S1ZSM1)" ;; esac; done
+ TF=$(grep -o "/root/\.[A-Za-z0-9_.]*" /workspace/data/refe_scorer1p6/after_arms.sh | head -1); [ -f "$TF" ] || early "no token file"
+ tr '\0' ' ' < /proc/$CHAIN/cmdline | grep -q 'p7_pod.sh' || early "pid $CHAIN is not the launch script"
+ tr '\0' ' ' < /proc/$TR/cmdline | grep -q 'train.py' || early "pid $TR is not the trainer"
+diff --git a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/rep_pod.sh b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/rep_pod.sh
+index 6acfd81..c0f4be4 100644
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/rep_pod.sh	
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/rep_pod.sh	
+@@ -1,12 +1,12 @@
+ #!/bin/bash
+-# SEED REPLICATES of the P6 scorer arms.  ARM=C0r2|S1E1|S1Z1   MODE=argv | preflight | mutate_nobalance | mutate_epbalance | mutate_droploss | mutate_noradius | mutate_notopk | run
+-#   C0r2 = C0 (PREREG_SCORER1P6) with data-order seed 2      S1E1 = S1E with seed 1      S1Z1 = S1Z (PREREG_S1Z_P6) with seed 1
+-# THE ARGV IS THE PARENT'S, NOT A COPY: this script runs the parent's own pod script (scorer1p6_pod.sh / s1z_pod.sh) with MODE=argv and swaps exactly two values, --seed and --out.  Nothing else can differ
++# SEED REPLICATES of the P6 scorer arms.  ARM=C0r2|S1E1|S1Z1|S1ZSM1   MODE=argv | preflight | mutate_nobalance | mutate_epbalance | mutate_droploss | mutate_noradius | mutate_notopk | mutate_noband | mutate_nosnbalance | run
++#   C0r2 = C0 (PREREG_SCORER1P6) with data-order seed 2      S1E1 = S1E with seed 1      S1Z1 = S1Z (PREREG_S1Z_P6) with seed 1      S1ZSM1 = S1ZSM (PREREG_S1ZSM_P6) with seed 1 (the speed-neutral generator seed 20261107 stays)
++# THE ARGV IS THE PARENT'S, NOT A COPY: this script runs the parent's own pod script (scorer1p6_pod.sh / s1z_pod.sh / s1zsm_pod.sh) with MODE=argv and swaps exactly two values, --seed and --out.  Nothing else can differ
+ # (launch_gate.rep_argv builds the same argv from the parent's Python builder; refe/test_rep_gate.py diffs this script's output against it AND against the parent's, token by token).
+-# lambda_p (S1E1) and lambda_z (S1Z1) are the PARENT's measured values, read by the parent script from the parent's calibrate dir (/workspace/data/refe_scorer1p6/calibrate_s1e/pair_weight.json,
+-# /workspace/data/refe_s1z/calibrate_s1z/pair_weight.json).  They are NOT re-measured here: a re-measured weight would move a second lever.  A replicate of a pair/twin arm whose parent has not calibrated is refused (rc 3).
++# lambda_p (S1E1), lambda_z (S1Z1) and lambda_z of the speed-neutral loss (S1ZSM1) are the PARENT's measured values, read by the parent script from the parent's calibrate dir (/workspace/data/refe_scorer1p6/calibrate_s1e/pair_weight.json,
++# /workspace/data/refe_s1z/calibrate_s1z/pair_weight.json, /workspace/data/refe_s1zsm/calibrate_s1zsm/pair_weight.json; s1zsm_pod.sh REFUSES one that is not speed-neutral, rc 4, which fails here as rc 2).  They are NOT re-measured here: a re-measured weight would move a second lever.  A replicate of a pair/twin arm whose parent has not calibrated is refused (rc 3).
+ # Own dirs: $WS/data/refe_rep/<arm lower-case>.  Navtest lists, data pin, checkpoint, label dump = the parent's.  REP_WS (default /workspace) moves the layout (the sandbox of the tests).
+-# Mutants (the parent's own deliberate regressions, run on the replicate's argv): S1E1 nobalance / epbalance / droploss (G16), S1Z1 noradius / notopk / droploss (G18).  C0r2 has none (C0 has none).
++# Mutants (the parent's own deliberate regressions, run on the replicate's argv): S1E1 nobalance / epbalance / droploss (G16), S1Z1 noradius / notopk / droploss (G18), S1ZSM1 noband / nosnbalance / droploss / noradius / notopk (G18).  C0r2 has none (C0 has none).
+ set -u
+ WS=${REP_WS:-/workspace}
+ DATA=$WS/data
+@@ -17,11 +17,12 @@ case "$ARM" in
+   C0r2) PARENT=C0; SEED=2; PPOD=scorer1p6_pod.sh ;;
+   S1E1) PARENT=S1E; SEED=1; PPOD=scorer1p6_pod.sh ;;
+   S1Z1) PARENT=S1Z; SEED=1; PPOD=s1z_pod.sh ;;
+-  *) echo "unknown ARM=$ARM (C0r2 | S1E1 | S1Z1)" >&2; exit 2 ;;
++  S1ZSM1) PARENT=S1ZSM; SEED=1; PPOD=s1zsm_pod.sh ;;
++  *) echo "unknown ARM=$ARM (C0r2 | S1E1 | S1Z1 | S1ZSM1)" >&2; exit 2 ;;
+ esac
+ LARM=$(echo "$ARM" | tr 'A-Z' 'a-z')
+ OUT=$ROOT/$LARM
+-PARGS="$(ARM=$PARENT MODE=argv SCORER1P6_WS=$WS S1Z_WS=$WS bash "$HERE/$PPOD")" || { echo "the parent script $PPOD ARM=$PARENT MODE=argv failed" >&2; exit 2; }
++PARGS="$(ARM=$PARENT MODE=argv SCORER1P6_WS=$WS S1Z_WS=$WS S1ZSM_WS=$WS bash "$HERE/$PPOD")" || { echo "the parent script $PPOD ARM=$PARENT MODE=argv failed" >&2; exit 2; }
+ [ -n "$PARGS" ] || { echo "the parent script $PPOD printed no argv" >&2; exit 2; }
+ [ "$(echo "$PARGS" | grep -o -- ' --seed [0-9][0-9]*' | wc -l)" = 1 ] && [ "$(echo "$PARGS" | grep -o -- ' --out [^ ][^ ]*' | wc -l)" = 1 ] || { echo "the parent argv does not carry exactly one --seed and one --out" >&2; exit 2; }
+ PSEED="$(echo "$PARGS" | grep -o -- ' --seed [0-9][0-9]*' | cut -d' ' -f3)"
+@@ -32,6 +33,7 @@ if [ "${MODE:-}" = "argv" ]; then echo "$ARGS" | tr -s ' ' | sed 's/ $//'; exit
+ case "$ARM" in
+   S1E1) echo "$ARGS" | grep -q -- ' --pair-w ' || { echo "no --pair-w: the parent S1E has no calibrate_s1e/pair_weight.json under $DATA/refe_scorer1p6" >&2; exit 3; } ;;
+   S1Z1) echo "$ARGS" | grep -q -- ' --twin-w ' || { echo "no --twin-w: the parent S1Z has no calibrate_s1z/pair_weight.json under $DATA/refe_s1z" >&2; exit 3; } ;;
++  S1ZSM1) echo "$ARGS" | grep -q -- ' --twin-w ' || { echo "no --twin-w: the parent S1ZSM has no speed-neutral calibrate_s1zsm/pair_weight.json under $DATA/refe_s1zsm" >&2; exit 3; } ;;
+ esac
+ MENV=""
+ case "$ARM:${MODE:-}" in
+@@ -41,6 +43,11 @@ case "$ARM:${MODE:-}" in
+   S1Z1:mutate_noradius) MENV=REFE_TWIN_MUTATE_NORADIUS ;;
+   S1Z1:mutate_notopk) MENV=REFE_TWIN_MUTATE_NOTOPK ;;
+   S1Z1:mutate_droploss) MENV=REFE_TWIN_MUTATE_DROP_LOSS ;;
++  S1ZSM1:mutate_noband) MENV=REFE_TWIN_MUTATE_NOBAND ;;
++  S1ZSM1:mutate_nosnbalance) MENV=REFE_TWIN_MUTATE_NOSNBALANCE ;;
++  S1ZSM1:mutate_droploss) MENV=REFE_TWIN_MUTATE_DROP_LOSS ;;
++  S1ZSM1:mutate_noradius) MENV=REFE_TWIN_MUTATE_NORADIUS ;;
++  S1ZSM1:mutate_notopk) MENV=REFE_TWIN_MUTATE_NOTOPK ;;
+ esac
+ case "${MODE:-}" in
+   preflight|run) ;;
+diff --git a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_rep_gate.py b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_rep_gate.py
+index 50c837c..9a93193 100644
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_rep_gate.py	
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_rep_gate.py	
+@@ -1,7 +1,7 @@
+ #!/usr/bin/env python3
+ """Seed-replicate launch-gate tests (CPU, no data).  Prints ZZTEST_PASS.
+ 
+-  R1 ARGV DIFF: C0r2 vs C0, S1E1 vs S1E, S1Z1 vs S1Z differ in the VALUE of --seed and of --out and in nothing else (lambda included: the parent's measured weight is carried over)
++  R1 ARGV DIFF: C0r2 vs C0, S1E1 vs S1E, S1Z1 vs S1Z, S1ZSM1 vs S1ZSM differ in the VALUE of --seed and of --out and in nothing else (lambda included: the parent's measured weight is carried over)
+   R2 the legal argv of each replicate passes its profile; the parent's own argv, a replicate with the parent's seed, any other seed, a lane flag, a missing lambda, a calibrate flag: refused
+   R3 FINGERPRINTS: refe_s1z_p6 (5c3bff457aa3bf1e) and refe_scorer1p6 (e74d64617f514d35) unmoved, the old profile key sets unchanged, the two new profiles stable (no function / address in them)
+   R4 refusals: an unknown arm (rep_argv, the pod script, the chain); a replicate whose seed equals its parent's (the table, rep_argv, the gate, the pod script) -- each refused
+@@ -24,9 +24,9 @@ import torch  # noqa: E402,F401
+ import gate_token as GT  # noqa: E402
+ import launch_gate as L  # noqa: E402
+ 
+-PC, PZ = L.PROFILES["refe_rep_p6"], L.PROFILES["refe_rep_s1z_p6"]
++PC, PZ, PM = L.PROFILES["refe_rep_p6"], L.PROFILES["refe_rep_s1z_p6"], L.PROFILES["refe_rep_s1zsm_p6"]
+ SHA = {L.SCORER1P6_CKPT: L.SCORER1P6_CKPT_SHA256}
+-for _root in (L.SCORER1P6_ROOT, L.S1Z_ROOT):
++for _root in (L.SCORER1P6_ROOT, L.S1Z_ROOT, L.S1ZSM_ROOT):
+     for _k, _f in (("--navtest-logs", _root + "/navtest_ids/navtest_logs.json"), ("--navtest-tokens", _root + "/navtest_ids/navtest_tokens.txt.gz")):
+         SHA[_f] = L.SCORER1_NAVTEST_SHA256[_k]
+ 
+@@ -38,10 +38,12 @@ def fake_sha(path):
+ 
+ 
+ L.sha256_of_file = fake_sha
+-PROF_OF = {"C0r2": PC, "S1E1": PC, "S1Z1": PZ}
++PROF_OF = {"C0r2": PC, "S1E1": PC, "S1Z1": PZ, "S1ZSM1": PM}
+ WP, WZ = 0.37, 0.41                                       # stand-ins for the parents' measured lambdas
+-W_OF = {"C0": None, "C0r2": None, "S1E": WP, "S1E1": WP, "S1Z": WZ, "S1Z1": WZ}
+-PARENT_ARGV = {"C0": lambda: L.scorer1p6_argv("C0"), "S1E": lambda: L.scorer1p6_argv("S1E", WP), "S1Z": lambda: L.s1z_argv("S1Z", twin_w=WZ)}
++WM = 0.43                                                 # stand-in for S1ZSM's measured speed-neutral lambda_z
++W_OF = {"C0": None, "C0r2": None, "S1E": WP, "S1E1": WP, "S1Z": WZ, "S1Z1": WZ, "S1ZSM": WM, "S1ZSM1": WM}
++PARENT_ARGV = {"C0": lambda: L.scorer1p6_argv("C0"), "S1E": lambda: L.scorer1p6_argv("S1E", WP), "S1Z": lambda: L.s1z_argv("S1Z", twin_w=WZ),
++              "S1ZSM": lambda: L.s1zsm_argv("S1ZSM", twin_w=WM)}
+ 
+ 
+ def refusals(argv, prof):
+@@ -94,7 +96,7 @@ def differing_flags(a, b):
+ 
+ 
+ # ---- R1 the argv diff
+-PARENT_OF = {"C0r2": "C0", "S1E1": "S1E", "S1Z1": "S1Z"}
++PARENT_OF = {"C0r2": "C0", "S1E1": "S1E", "S1Z1": "S1Z", "S1ZSM1": "S1ZSM"}
+ for arm, parent in PARENT_OF.items():
+     ra, pa = L.rep_argv(arm, W_OF[arm]), PARENT_ARGV[parent]()
+     assert len(ra) == len(pa), (arm, len(ra), len(pa))
+@@ -107,9 +109,12 @@ for arm, parent in PARENT_OF.items():
+     assert "--max-updates" in ra and ra[ra.index("--max-updates") + 1] == "400"                        # the same 400 updates as the parent
+     assert ra[ra.index("--navtest-logs") + 1] == pa[pa.index("--navtest-logs") + 1] and ra[ra.index("--ckpt") + 1] == L.SCORER1P6_CKPT, "navtest lists and checkpoint are the parent's"
+     # without the lambda: still the same two-value diff
+-    pin = L.scorer1p6_argv(parent) if parent in ("C0", "S1E") else L.s1z_argv(parent)               # the pin without lambda
++    pin = L.scorer1p6_argv(parent) if parent in ("C0", "S1E") else L.s1zsm_argv(parent) if parent == "S1ZSM" else L.s1z_argv(parent)               # the pin without lambda
+     assert differing_flags(L.rep_argv(arm), pin) == {"--seed", "--out"}
+-print("R1 ok (the three replicates differ from their parents in --seed and --out only)")
++assert "--twin-speed-neutral" in L.rep_argv("S1ZSM1", WM) and "--twin-speed-neutral" not in L.rep_argv("S1Z1", WZ), "S1ZSM1 keeps the lever, S1Z1 does not have it"
++assert L.rep_argv("S1ZSM1", WM)[L.rep_argv("S1ZSM1", WM).index("--twin-w") + 1] == str(WM) and L.REP_ARMS["S1ZSM1"]["seed"] == 1 and L.S1ZSM_ARM_SEED["S1ZSM"] == 0
++assert L.S1ZSM_SN_SPEC == {"dv": 0.15, "seed": 20261107} and "--twin-speed-neutral" in L.PROFILES["refe_rep_s1zsm_p6"]["required_flags"] and L.PROFILES["refe_rep_s1zsm_p6"]["sn_spec"] == L.S1ZSM_SN_SPEC     # the generator seed is NOT a flag: it cannot differ
++print("R1 ok (the four replicates differ from their parents in --seed and --out only)")
+ 
+ # ---- R2 legal / refused argvs
+ for arm in L.REP_ARMS:
+@@ -135,6 +140,12 @@ assert refusals(swap(L.rep_argv("S1E1", WP), "--pair-heads", "NC,DAC,TTC"), PC),
+ assert refusals(L.rep_argv("C0r2", None) + ["--twin-w", "0.1"], PC), "a stray lever on the control is refused by the pin"
+ # the replicate arms are not arms of the parents' profiles (their out dirs are the parents' only)
+ assert refusals(L.rep_argv("S1E1", WP), L.PROFILES["refe_scorer1p6"]) and refusals(L.rep_argv("S1Z1", WZ), L.PROFILES["refe_s1z_p6"])
++assert has(refusals(drop(L.rep_argv("S1ZSM1", WM), "--twin-w"), PM), "--twin-w")
++nosn = drop(L.rep_argv("S1ZSM1", WM), "--twin-speed-neutral")
++assert has(refusals(nosn, PM), "--twin-speed-neutral"), "an S1ZSM1 argv without the lever is S1Z1 and is refused"
++assert refusals(L.rep_argv("S1ZSM1", WM), PZ) and refusals(L.rep_argv("S1Z1", WZ), PM), "the S1Z and S1ZSM replicate profiles do not accept each other's argv"
++assert refusals(L.rep_argv("S1ZSM1", WM), L.PROFILES["refe_s1zsm_p6"]) and refusals(L.rep_argv("S1ZSM1", WM), PC)
++assert refusals(drop(L.rep_argv("S1ZSM1", WM), "--twin-topk"), PM) and refusals(swap(L.rep_argv("S1ZSM1", WM), "--twin-heads", "NC,DAC"), PM)
+ print("R2 ok")
+ 
+ 
+@@ -144,19 +155,22 @@ def fp(n):
+ 
+ 
+ assert fp("refe_s1z_p6").startswith("5c3bff457aa3bf1e"), fp("refe_s1z_p6")[:16]
++assert fp("refe_s1zsm_p6").startswith("86380fbb786daa75") and fp("refe_rep_p6").startswith("dd348f44c9638f1a") and fp("refe_rep_s1z_p6").startswith("2356afd4efeeb52a"), "S1ZSM and the two older replicate profiles unmoved"
+ assert fp("refe_scorer1p6").startswith("e74d64617f514d35"), fp("refe_scorer1p6")[:16]
+-for n in ("refe_rep_p6", "refe_rep_s1z_p6"):
++for n in ("refe_rep_p6", "refe_rep_s1z_p6", "refe_rep_s1zsm_p6"):
+     r = repr(sorted(L.PROFILES[n].items()))
+     assert fp(n) == fp(n) and "function" not in r and "0x" not in r, n
+-assert fp("refe_rep_p6") != fp("refe_rep_s1z_p6") != fp("refe_s1z_p6") and fp("refe_rep_p6") != fp("refe_scorer1p6")
+-assert len(L.PROFILES) == 22 and len(set(L.PROFILES) - {"refe_rep_p6", "refe_rep_s1z_p6", "refe_s1zsm_p6"}) == 19, len(L.PROFILES)          # S1ZSM (PREREG_S1ZSM_P6) added refe_s1zsm_p6
+-assert PC["suite"][-1] == {"script": "test_rep_gate.py", "token": "ZZTEST_PASS"} and PZ["suite"][-1] == PC["suite"][-1] and PC["suite"][:-1] == L.SCORER1P6_SUITE and PZ["suite"][:-1] == L.S1Z_SUITE
++assert len({fp(n) for n in ("refe_rep_p6", "refe_rep_s1z_p6", "refe_rep_s1zsm_p6", "refe_s1zsm_p6")}) == 4 and fp("refe_rep_p6") != fp("refe_rep_s1z_p6") != fp("refe_s1z_p6") and fp("refe_rep_p6") != fp("refe_scorer1p6")
++assert len(L.PROFILES) == 23 and len(set(L.PROFILES) - {"refe_rep_p6", "refe_rep_s1z_p6", "refe_s1zsm_p6", "refe_rep_s1zsm_p6"}) == 19, len(L.PROFILES)          # S1ZSM (PREREG_S1ZSM_P6) added refe_s1zsm_p6
++assert PC["suite"][-1] == {"script": "test_rep_gate.py", "token": "ZZTEST_PASS"} and PZ["suite"][-1] == PC["suite"][-1] == PM["suite"][-1] and PC["suite"][:-1] == L.SCORER1P6_SUITE and PZ["suite"][:-1] == L.S1Z_SUITE and PM["suite"][:-1] == L.S1ZSM_SUITE
+ for k in ("data_pin", "data_expect", "ckpt_sha256", "navtest_sha256", "required_flags", "recipe", "forbidden_flags"):
+-    assert PC[k] == L.PROFILES["refe_scorer1p6"][k] and PZ[k] == L.PROFILES["refe_s1z_p6"][k], k      # data pin, checkpoint, navtest lists = the parents'
+-print("R3 ok (refe_s1z_p6 = %s..., refe_scorer1p6 = %s..., rep_p6 = %s..., rep_s1z_p6 = %s...)" % (fp("refe_s1z_p6")[:16], fp("refe_scorer1p6")[:16], fp("refe_rep_p6")[:16], fp("refe_rep_s1z_p6")[:16]))
++    assert PC[k] == L.PROFILES["refe_scorer1p6"][k] and PZ[k] == L.PROFILES["refe_s1z_p6"][k], k
++for k in ("data_pin", "data_expect", "ckpt_sha256", "navtest_sha256", "required_flags", "recipe", "forbidden_flags", "twin_spec", "sn_spec"):
++    assert PM[k] == L.PROFILES["refe_s1zsm_p6"][k], k      # data pin, checkpoint, navtest lists = the parents'
++print("R3 ok (refe_s1z_p6 = %s..., refe_scorer1p6 = %s..., refe_s1zsm_p6 = %s..., rep_p6 = %s..., rep_s1z_p6 = %s..., NEW rep_s1zsm_p6 = %s...)" % (fp("refe_s1z_p6")[:16], fp("refe_scorer1p6")[:16], fp("refe_s1zsm_p6")[:16], fp("refe_rep_p6")[:16], fp("refe_rep_s1z_p6")[:16], fp("refe_rep_s1zsm_p6")[:16]))
+ 
+ # ---- R4 refusals
+-for bad in ("C0", "C0r", "S1E", "S1Z", "S1", "C0r3", "", "c0r2"):
++for bad in ("C0", "C0r", "S1E", "S1Z", "S1", "C0r3", "", "c0r2", "S1ZSM", "S1ZSM2", "s1zsm1"):
+     try:
+         L.rep_argv(bad)
+     except KeyError:
+@@ -199,16 +213,20 @@ for f in (pod, chain, pause, chain_z, chain_old):
+ ctext = open(chain, "rb").read().decode("utf-8")
+ joined = "\n".join(ln for ln in ctext.split("\n") if not ln.lstrip().startswith("#"))
+ assert "STAGE0_READING" not in joined and "P6_SPEED_READING" not in joined and "lane" not in joined.lower(), "no human gate, no lane"
+-assert "refe-plan-p6" not in joined and "refe-plan-p7" not in joined and "refe-plan-scorer1p6" not in joined and "refe-plan-s1z" not in joined, "own package dir only"
+-assert "$DATA/refe_rep" in joined and 'ROOT=$DATA/refe_rep' in joined and "--profile $PROFILE" in joined and "PROFILE=refe_rep_p6" in joined and "PROFILE=refe_rep_s1z_p6" in joined
++assert "refe-plan-p6" not in joined and "refe-plan-p7" not in joined and "refe-plan-scorer1p6" not in joined and "refe-plan-s1z" not in joined and "refe-plan-s1zsm" not in joined, "own package dir only"
++assert "$DATA/refe_rep" in joined and 'ROOT=$DATA/refe_rep' in joined and "--profile $PROFILE" in joined and "PROFILE=refe_rep_p6" in joined and "PROFILE=refe_rep_s1z_p6" in joined and "PROFILE=refe_rep_s1zsm_p6" in joined
+ assert "--pair-calibrate" not in joined and "MODE=calibrate" not in joined and "calibrate_s1" in joined, "no calibrate stage; only the parent's lambda is READ"
+-assert '--prefix "rep/$LA"' in joined and "ZZREP_CHAIN_DONE" in joined and "adb5aafd4fb8abdfd1a53d9cc5ff865a89bd20f9008c701cf5d308dac595abed" in ctext and "8c7b6b697b94ccf1a4781a727ed28c10ed8b11878c33eeb2d016a507b36efa69" in ctext
++assert '--prefix "rep/$LA"' in joined and "ZZREP_CHAIN_DONE" in joined and "adb5aafd4fb8abdfd1a53d9cc5ff865a89bd20f9008c701cf5d308dac595abed" in ctext and "8c7b6b697b94ccf1a4781a727ed28c10ed8b11878c33eeb2d016a507b36efa69" in ctext and L.S1ZSM_CARD_SHA256 in ctext
+ assert not re.search(r"\bkill -|SIGSTOP|SIGCONT|pkill|taskkill|ZZP7|P7_PAUSE|pause_p7|resume_p7|lane_pause|lane_restart|refe_p7/", joined), "the chain neither pauses nor resumes P7 (it only READS the P7 chain lock)"
+ assert "--max-updates" not in joined and "--seed" not in joined, "the chain builds no argv of its own: rep_pod.sh does"
+ assert L.S1Z_CARD_SHA256 in ctext and L.SCORER1P6_CARD_SHA256 in ctext and L.SCORER1P6_CKPT_SHA256 in ctext
+-for g in ("nobalance epbalance droploss", "noradius notopk droploss", "GATEK=G16", "GATEK=G18"):
++for g in ("nobalance epbalance droploss", "noradius notopk droploss", "noband nosnbalance droploss noradius notopk", "GATEK=G16", "GATEK=G18"):
+     assert g in joined, g
+ assert "gate_is $OUT/mutate_$MUT.log $GATEK ok false" in joined
++assert '[ "$ARMN" = "S1ZSM1" ] && { MUTS="noband nosnbalance droploss noradius notopk"; GATEK=G18; }' in joined and "refe_s1zsm" in re.search(r"others_hold\(\) \{.*?^\}", joined, re.S | re.M).group(0)
++assert 'd.get("speed_neutral") is True and d.get("sn_dv")==0.15 and d.get("sn_balance") is True and d.get("sn_seed")==20261107' in joined, "the chain refuses a lambda_z that was not measured speed-neutral"
++assert "speed_neutral\") is True for r in rows" in joined and "kept_F" in joined and "out_of_band" in joined, "the run check reads the speed-neutral facts"
++assert "S1ZSM_WS=$WS" in open(pod, encoding="utf-8").read(), "rep_pod.sh points the parent script's workspace override at the sandbox too"
+ 
+ 
+ def fn_body(text, name):
+@@ -224,7 +242,7 @@ zt, old_text = open(chain_z, "rb").read().decode("utf-8"), open(chain_old, "rb")
+ norm = lambda t: t.replace("S1Z_", "REP_")          # noqa: E731
+ for name in ("gpu_busy", "lock_held", "wait_clear"):
+     assert norm(fn_body(zt, name)) == fn_body(ctext, name), name                           # the wait for no chain lock and an idle GPU is the existing function, byte for byte
+-assert norm(fn_body(zt, "others_hold")).replace("refe_p7 refe_scorer1p6; do", "refe_p7 refe_scorer1p6 refe_s1z; do") == fn_body(ctext, "others_hold"), "others_hold differs by exactly the one added lock"
++assert norm(fn_body(zt, "others_hold")).replace("refe_p7 refe_scorer1p6; do", "refe_p7 refe_scorer1p6 refe_s1z refe_s1zsm; do") == fn_body(ctext, "others_hold"), "others_hold differs by exactly the two added locks"
+ for name in ("gate_is", "stage_done", "stage_mark", "tree_sha"):
+     assert fn_body(zt, name).replace("S1Z_", "REP_") == fn_body(ctext, name) or name == "gate_is" and fn_body(old_text, name) == fn_body(ctext, name), name
+ ptext = open(pause, "rb").read().decode("utf-8")
+@@ -253,27 +271,40 @@ if bash:
+             assert pairs(out) == pairs(L.rep_argv(arm)), (arm, set(pairs(out)) ^ set(pairs(L.rep_argv(arm))))
+     with tempfile.TemporaryDirectory(dir=os.environ.get("SCORER1_TMP") or None) as td:
+         wsx = td.replace(chr(92), "/")
+-        for rel, key, val in (("data/refe_scorer1p6/calibrate_s1e", "pair_w", WP), ("data/refe_s1z/calibrate_s1z", "twin_w", WZ)):
++        SNPW = {"twin_w": WM, "speed_neutral": True, "sn_dv": 0.15, "sn_balance": True, "sn_seed": 20261107, "lever": "twin"}      # what scorer_finetune --pair-calibrate --twin-speed-neutral writes
++        for rel, pw in (("data/refe_scorer1p6/calibrate_s1e", {"pair_w": WP}), ("data/refe_s1z/calibrate_s1z", {"twin_w": WZ}), ("data/refe_s1zsm/calibrate_s1zsm", SNPW)):
+             os.makedirs(os.path.join(td, rel))
+-            json.dump({key: val}, open(os.path.join(td, rel, "pair_weight.json"), "w"))
++            json.dump(pw, open(os.path.join(td, rel, "pair_weight.json"), "w"))
+         for arm, parent in PARENT_OF.items():
+             r = run_pod(arm, wsx)
+             assert r.returncode == 0, (arm, r.stderr[:300])
+             out = [t.replace(wsx, "/workspace") for t in r.stdout.strip().split()]
+             assert pairs(out) == pairs(L.rep_argv(arm, W_OF[arm])), (arm, set(pairs(out)) ^ set(pairs(L.rep_argv(arm, W_OF[arm]))))
+-            ppod = os.path.join(HERE, "s1z_pod.sh" if parent == "S1Z" else "scorer1p6_pod.sh")
+-            pr = subprocess.run([bash, ppod], env=dict(os.environ, ARM=parent, MODE="argv", SCORER1P6_WS=wsx, S1Z_WS=wsx), capture_output=True, encoding="utf-8")
++            ppod = os.path.join(HERE, "s1zsm_pod.sh" if parent == "S1ZSM" else "s1z_pod.sh" if parent == "S1Z" else "scorer1p6_pod.sh")
++            pr = subprocess.run([bash, ppod], env=dict(os.environ, ARM=parent, MODE="argv", SCORER1P6_WS=wsx, S1Z_WS=wsx, S1ZSM_WS=wsx), capture_output=True, encoding="utf-8")
+             assert pr.returncode == 0, pr.stderr[:300]
+             pout = [t.replace(wsx, "/workspace") for t in pr.stdout.strip().split()]
+             assert differing_flags(out, pout) == {"--seed", "--out"}, (arm, differing_flags(out, pout))      # the pod scripts' own output: the seed and the out dir only
+             if W_OF[arm] is not None:
+                 assert out[out.index("--pair-w" if parent == "S1E" else "--twin-w") + 1] == str(W_OF[arm])
++            if parent == "S1ZSM":
++                assert "--twin-speed-neutral" in out and out[out.index("--seed") + 1] == "1" and "--twin-speed-neutral" in pout and pout[pout.index("--seed") + 1] == "0"
+         # the pair / twin replicate of an UNCALIBRATED parent is refused (rc 3) in every mode but argv
+         with tempfile.TemporaryDirectory(dir=os.environ.get("SCORER1_TMP") or None) as td2:
+             r = run_pod("S1E1", td2.replace(chr(92), "/"), mode="preflight")
+             assert r.returncode == 3 and "pair-w" in r.stderr, (r.returncode, r.stderr[:200])
+             r = run_pod("S1Z1", td2.replace(chr(92), "/"), mode="run")
+             assert r.returncode == 3 and "twin-w" in r.stderr, (r.returncode, r.stderr[:200])
++            r = run_pod("S1ZSM1", td2.replace(chr(92), "/"), mode="run")
++            assert r.returncode == 3 and "twin-w" in r.stderr and "speed-neutral" in r.stderr, (r.returncode, r.stderr[:200])
++        # S1ZSM1 with S1Z's lambda (a pair_weight.json that is NOT speed-neutral, or whose band / balancing / seed differ) is refused by the parent script (rc 4) -> rep_pod fails (rc 2), argv mode included
++        for i, pw in enumerate(({"twin_w": WZ}, dict(SNPW, speed_neutral=False), dict(SNPW, sn_dv=0.2), dict(SNPW, sn_balance=False), dict(SNPW, sn_seed=1))):
++            with tempfile.TemporaryDirectory(dir=os.environ.get("SCORER1_TMP") or None) as td3:
++                os.makedirs(os.path.join(td3, "data/refe_s1zsm/calibrate_s1zsm"))
++                json.dump(pw, open(os.path.join(td3, "data/refe_s1zsm/calibrate_s1zsm/pair_weight.json"), "w"))
++                for mode_ in ("argv", "run"):
++                    r = run_pod("S1ZSM1", td3.replace(chr(92), "/"), mode=mode_)
++                    assert r.returncode == 2 and "REFUSED" in r.stderr and not r.stdout.strip(), (i, mode_, r.returncode, r.stderr[:200], r.stdout[:100])
+         # RED arm: a copy of the pod script whose S1E1 seed equals S1E's is refused
+         os.makedirs(os.path.join(td, "red"))
+         for n in ("rep_pod.sh", "scorer1p6_pod.sh", "s1z_pod.sh"):
+@@ -285,19 +316,24 @@ if bash:
+         assert r.returncode == 2 and "equals its parent" in r.stderr, (r.returncode, r.stderr[:200])
+         r = run_pod("S1E1", wsx, script=os.path.join(td, "red", "rep_pod.sh"), mode="run")
+         assert r.returncode == 2
+-    for bad in ("C0", "C0r", "S1E", "S1Z", "", "c0r2"):
++    for bad in ("C0", "C0r", "S1E", "S1Z", "", "c0r2", "S1ZSM", "s1zsm1"):
+         r = run_pod(bad, "/workspace")
+         assert r.returncode == 2 and "unknown ARM" in r.stderr, (bad, r.returncode, r.stderr[:200])
+         r = subprocess.run([bash, chain] + ([bad] if bad else []), env=dict(os.environ, REP_WS="/nonexistent_ws"), capture_output=True, encoding="utf-8")
+         assert r.returncode == 2 and "REFUSED" in r.stdout and "unknown arm" in r.stdout, (bad, r.returncode, r.stdout[:200])
+     # a mutation the arm's parent does not have is refused (a calibrated sandbox, so the lambda check passes first)
+     td_ok = tempfile.mkdtemp(dir=os.environ.get("SCORER1_TMP") or None).replace(chr(92), "/")
+-    for rel, key, val in (("data/refe_scorer1p6/calibrate_s1e", "pair_w", WP), ("data/refe_s1z/calibrate_s1z", "twin_w", WZ)):
++    for rel, pw in (("data/refe_scorer1p6/calibrate_s1e", {"pair_w": WP}), ("data/refe_s1z/calibrate_s1z", {"twin_w": WZ}), ("data/refe_s1zsm/calibrate_s1zsm", SNPW)):
+         os.makedirs(os.path.join(td_ok, rel))
+-        json.dump({key: val}, open(os.path.join(td_ok, rel, "pair_weight.json"), "w"))
+-    for arm_, mode_ in (("C0r2", "mutate_droploss"), ("S1E1", "mutate_noradius"), ("S1Z1", "mutate_nobalance")):
++        json.dump(pw, open(os.path.join(td_ok, rel, "pair_weight.json"), "w"))
++    for arm_, mode_ in (("C0r2", "mutate_droploss"), ("S1E1", "mutate_noradius"), ("S1Z1", "mutate_nobalance"), ("S1Z1", "mutate_noband"), ("S1ZSM1", "mutate_nobalance"), ("S1ZSM1", "mutate_epbalance")):
+         r = run_pod(arm_, "/workspace", mode=mode_, extra={"REP_WS": td_ok})
+         assert r.returncode == 2 and "has no mutation" in r.stderr, (arm_, mode_, r.returncode, r.stderr[:200])
++    # S1ZSM1's mutants are the parent's own five, each a distinct env var named in the parent's script (the pod script and the chain agree)
++    ptxt = open(pod, encoding="utf-8").read()
++    ztxt = open(os.path.join(HERE, "s1zsm_pod.sh"), encoding="utf-8").read()
++    for mut, env in (("noband", "REFE_TWIN_MUTATE_NOBAND"), ("nosnbalance", "REFE_TWIN_MUTATE_NOSNBALANCE"), ("droploss", "REFE_TWIN_MUTATE_DROP_LOSS"), ("noradius", "REFE_TWIN_MUTATE_NORADIUS"), ("notopk", "REFE_TWIN_MUTATE_NOTOPK")):
++        assert "S1ZSM1:mutate_%s) MENV=%s ;;" % (mut, env) in ptxt and "mutate_%s) %s=1" % (mut, env) in ztxt, mut
+     print("R5 ok")
+ else:
+     print("R5 SKIPPED (no bash)")
+diff --git a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_s1zsm_gate.py b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_s1zsm_gate.py
+index 50c6b49..d6fe566 100644
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_s1zsm_gate.py	
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_s1zsm_gate.py	
+@@ -138,7 +138,7 @@ TIP_FP = {"refe_p2": "627341286aea3506", "refe_p6": "80fa4d7ec757ad46", "refe_fi
+           "refe_aux_s1c": "dcdf2dbd2a674f1c"}          # MEASURED at the tip 0c19b8fd (sha256 of repr(sorted(profile.items())), first 16 hex): the 21 profiles that exist before S1ZSM
+ moved = [n for n, want in TIP_FP.items() if not fp(n).startswith(want)]
+ assert not moved, f"existing profile fingerprints moved: {moved}"
+-assert set(L.PROFILES) - set(TIP_FP) == {"refe_s1zsm_p6"}, set(L.PROFILES) - set(TIP_FP)
++assert set(L.PROFILES) - set(TIP_FP) == {"refe_s1zsm_p6", "refe_rep_s1zsm_p6"}, set(L.PROFILES) - set(TIP_FP)          # the seed-1 replicate profile (rep_s1zsm) is the second new name
+ assert fp("refe_s1zsm_p6") == fp("refe_s1zsm_p6") and "function" not in repr(sorted(PROF.items())) and "0x" not in repr(sorted(PROF.items())), "the digest of the new profile must be stable"
+ base = L.PROFILES["refe_s1z_p6"]
+ assert PROF is not base and PROF["recipe"] is not base["recipe"] and PROF["required_flags"] is not base["required_flags"] and PROF["arm_seed"] is not base["arm_seed"] and PROF["twin_spec"] is not base["twin_spec"]
+diff --git a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_scorer1p6_gate.py b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_scorer1p6_gate.py
+index f0e3830..ceef58d 100644
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_scorer1p6_gate.py	
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_scorer1p6_gate.py	
+@@ -151,7 +151,7 @@ def fp(n):
+ 
+ moved = [n for n, want in PINNED_FP.items() if fp(n) != want]
+ assert not moved, f"existing profile fingerprints moved: {moved}"
+-assert set(L.PROFILES) - set(PINNED_FP) == {"refe_scorer1p6", "refe_s1z_p6", "refe_s1zsm_p6", "refe_rep_p6", "refe_rep_s1z_p6"}, set(L.PROFILES) - set(PINNED_FP)         # S1Z (PREREG_S1Z_P6) added a profile; the 17 older fingerprints above are unchanged
++assert set(L.PROFILES) - set(PINNED_FP) == {"refe_scorer1p6", "refe_s1z_p6", "refe_s1zsm_p6", "refe_rep_p6", "refe_rep_s1z_p6", "refe_rep_s1zsm_p6"}, set(L.PROFILES) - set(PINNED_FP)         # S1Z (PREREG_S1Z_P6) added a profile; the 17 older fingerprints above are unchanged
+ assert PROF is not L.PROFILES["refe_scorer1"] and PROF["recipe"] is not L.PROFILES["refe_scorer1"]["recipe"] and "lane_weight" not in PROF["recipe"] and "lane_weight" in L.PROFILES["refe_scorer1"]["recipe"]
+ assert "--lane-head" not in PROF["required_flags"] and "--lane-head" in L.PROFILES["refe_scorer1"]["required_flags"]
+ print(f"T4 ok ({len(PINNED_FP)} existing fingerprints unmoved; refe_scorer1p6 = {fp('refe_scorer1p6')[:16]}...)")

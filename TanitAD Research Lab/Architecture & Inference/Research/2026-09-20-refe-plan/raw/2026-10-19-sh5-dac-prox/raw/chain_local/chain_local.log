@@ -1,0 +1,73 @@
+[2026-10-19T15:59:54] finisher DONE; starting Q3
+[2026-10-19T15:59:54] RUN sh5_train_eval.py fit --data D:/Projects/TanitAD-artifacts/sh5_ctx_2026-10-19/data --ctx D:/Projects/TanitAD-artifacts/sh5_ctx_2026-10-19/ctx_local/ctx.npy --ctx-manifest D:/Projects/TanitAD-artifacts/sh5_ctx_2026-10-19/ctx_local/ctx_manifest.json --seed 0 --stage A1 --epochs 0 --out-dir D:/Projects/TanitAD-artifacts/sh5_ctx_2026-10-19/fits_local/cid
+ZZSH5FIT stage A1 seed 0: 20 learners, 1444 sets, 816 tokens, 38 logs; groups ['S_s0', 'Snoprox_s0', 'Sshuf_s0', 'plant_s0']
+ZZGPUWAIT chain_active present
+ZZGPUWAIT RAM available 3 GB < 4 GB (lock not taken)
+ZZGPUWAIT chain_active present
+ZZGPUWAIT RAM available 3 GB < 4 GB (lock not taken)
+ZZGPUWAIT chain_active present
+ZZGPUWAIT RAM available 3 GB < 4 GB (lock not taken)
+ZZGPUWAIT RAM available 2 GB < 4 GB (lock not taken)
+ZZGPUWAIT chain_active present
+ZZGPUWAIT RAM available 3 GB < 4 GB (lock not taken)
+ZZGPUWAIT chain_active present
+ZZGPUWAIT RAM available 3 GB < 4 GB (lock not taken)
+ZZGPUWAIT chain_active present
+ZZGPULOCKED
+ZZGLIVE ok=True
+  cycle 1 done
+ZZSH5FIT_OK 4 groups
+ZZGPURELEASED yes
+[2026-10-19T18:12:20] RC 0
+[2026-10-19T18:12:20] RUN sh5_train_eval.py fit --data D:/Projects/TanitAD-artifacts/sh5_ctx_2026-10-19/data --ctx D:/Projects/TanitAD-artifacts/sh5_ctx_2026-10-19/ctx_local/ctx.npy --ctx-manifest D:/Projects/TanitAD-artifacts/sh5_ctx_2026-10-19/ctx_local/ctx_manifest.json --seed 1 --stage A1 --epochs 0 --out-dir D:/Projects/TanitAD-artifacts/sh5_ctx_2026-10-19/fits_local/cid
+ZZSH5FIT stage A1 seed 1: 20 learners, 1444 sets, 816 tokens, 38 logs; groups ['S_s1', 'Snoprox_s1', 'Sshuf_s1', 'plant_s1']
+ZZGPULOCKED
+ZZGLIVE ok=True
+  cycle 1 done
+ZZSH5FIT_OK 4 groups
+ZZGPURELEASED yes
+[2026-10-19T18:12:54] RC 0
+[2026-10-19T18:12:54] RUN sh5_train_eval.py fit --data D:/Projects/TanitAD-artifacts/sh5_ctx_2026-10-19/data --ctx D:/Projects/TanitAD-artifacts/sh5_ctx_2026-10-19/ctx_local/ctx.npy --ctx-manifest D:/Projects/TanitAD-artifacts/sh5_ctx_2026-10-19/ctx_local/ctx_manifest.json --seed 0 --stage PRE --folds 0 --out-dir D:/Projects/TanitAD-artifacts/sh5_ctx_2026-10-19/fits_local/pre
+ZZSH5FIT stage PRE seed 0: 1 learners, 1444 sets, 816 tokens, 38 logs; groups ['plant_s0']
+ZZGPULOCKED
+ZZGLIVE ok=True
+  cycle 1/3 shard 1/2: 709 tokens loaded in 3 s
+ZZTHROUGHPUT 0.27 s/chunk-step (all 1 learners incl. the first shard load); projected training 0.09 h ESTIMATED
+    inner 1/4 done; mean last loss 0.5167
+    inner 2/4 done; mean last loss 0.3654
+    inner 3/4 done; mean last loss 0.2971
+    inner 4/4 done; mean last loss 0.4338
+  cycle 1/3 shard 2/2: 107 tokens loaded in 0 s
+    inner 1/4 done; mean last loss 0.5532
+    inner 2/4 done; mean last loss 0.6274
+    inner 3/4 done; mean last loss 0.0302
+    inner 4/4 done; mean last loss 0.0310
+  cycle 1 done
+  cycle 2/3 shard 1/2: 709 tokens loaded in 1 s
+    inner 1/4 done; mean last loss 0.1762
+    inner 2/4 done; mean last loss 0.3342
+    inner 3/4 done; mean last loss 0.3342
+    inner 4/4 done; mean last loss 0.5120
+  cycle 2/3 shard 2/2: 107 tokens loaded in 0 s
+    inner 1/4 done; mean last loss 0.5194
+    inner 2/4 done; mean last loss 0.3647
+    inner 3/4 done; mean last loss 0.1268
+    inner 4/4 done; mean last loss 0.6360
+  cycle 2 done
+  cycle 3/3 shard 1/2: 709 tokens loaded in 1 s
+    inner 1/4 done; mean last loss 0.2469
+    inner 2/4 done; mean last loss 0.5281
+    inner 3/4 done; mean last loss 0.6662
+    inner 4/4 done; mean last loss 0.7032
+  cycle 3/3 shard 2/2: 107 tokens loaded in 0 s
+    inner 1/4 done; mean last loss 0.2142
+    inner 2/4 done; mean last loss 0.0558
+    inner 3/4 done; mean last loss 0.3811
+    inner 4/4 done; mean last loss 0.1673
+  cycle 3 done
+ZZPREFLIGHT {"plant_s0": {"n_sets": 322, "auc_all_strata": 0.6336209902370991, "r2_reg": 0.47509813050555905}}
+ZZSH5FIT_OK 1 groups
+ZZGPURELEASED yes
+[2026-10-19T18:14:24] RC 0
+[2026-10-19T18:14:24] ZZCHAIN_PREFLIGHT ok=False {"plant_s0": {"n_sets": 322, "auc_all_strata": 0.6336209902370991, "r2_reg": 0.47509813050555905}}
+[2026-10-19T18:14:24] ZZCHAIN_STOP C-REACH pre-flight below the pre-stated rule (auc >= 0.95 and r2_reg >= 0.5 on every group)

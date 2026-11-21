@@ -1,0 +1,42 @@
+# PREREG_HISTSWAP_LF: H-HISTSWAP-LF-1, is HISTSWAP's closure inertia or level? (zero training; one deployable arm, one level-only oracle arm)
+
+Tier **T1-kin** (self-action open loop, plain causal bucket, nav dead-reckoned). Evidence class MEASURED (ours) once read; hypotheses are HYPOTHESES.
+Estimator of every interval: paired episode-cluster bootstrap, B = 2,000, seed 0 (`taniteval.ci` draw stream via `gapdecomp.decompose`) over the 141 episodes (2,399 windows); it answers *would another draw of EPISODES say this*.
+X and Y share the checkpoint (no training-seed variance inside X - Y); the planner is deterministic (KA1 reads the thread-order floor). The 4 cells (DAG-OACC, SOUP; s0, s1) are the rig's replicates, not a variance estimate.
+
+## 1. Question and arms
+Context (MEASURED, `dagland/histswap`): the LOGGED ego history, applied only to the network input and after the smoother S, closed 0.92-0.98 of Y's M1 crawl-share excess over P10 at 4/4 cells (separated-better) and moved ADE6 by about -1.25 m. That arm is an ORACLE.
+Two explanations remain: **(A) inertia**, O follows the TREND of its own executed history (a lag self-perpetuates); **(B) level**, O needs the human's speed LEVEL, which only the oracle supplies. Prior art on slowed-history training (ORC, DAG2, DAG-ORC) reads HARMS and does not clear M1.
+
+Both arms replace the network's ego-history input at EVERY tick by a **constant-twist history**: speed `v` and yaw rate `omega` held on every earlier row, **acceleration 0**, anchored at the EXECUTED pose of the tick, built through the programme's one spelling
+(`yaw_kin_from_track`, `ego_channels_native`, `kin_features`, `kdx_base` on a synthetic native track). The plan is still committed to the EXECUTED state; nav, camera, ages, S (`P + SG(plan - P)`, P = the prior the network computed in that call, so P now reads the CV history) and the P10 floor are untouched.
+* **HCV** (`--histswap cv_exec`, deployable): `v` = the EXECUTED measured speed at the tick. No trend, no human information.
+* **HLVL** (`--histswap cv_logged`, ORACLE, level only): `v` = the LOGGED measured speed at the tick (the human's level, no trend). `omega` is the executed yaw rate in both, so HCV and HLVL differ in exactly one number, the speed.
+* **Channels replaced** (exactly the set HISTSWAP's tool swaps; the model reads `p10f`, `base`, `pose_now`, `pose_t`, `pose_s` and the causal speed bucket `limit`; `kin3`, `p10_t`, `pose`, `act` are rebuilt too and not read): `p10f` (all 10 history rows), `base` (kd_x of (v, 0, kappa)), `kin3`, `p10_t`, `pose` rows (arc behind the executed pose; `pose_now` = the executed pose), `pose_t`, `pose_s`, `limit` (bucket of `v` alone), plus `a`, `ch1`, `v`.
+  **Not replaced: `nav`** (the draft recovery card's list named it; HISTSWAP's tool leaves it dead-reckoned from the executed motion, and so does this card).
+* Pinned choices: (i) `omega` is HELD at the executed value, not zeroed (zeroing is a lateral lever, which would put non-crawl rows at risk for a reason unrelated to the question); the straight-line variant is not run. (ii) The tick row's own acceleration is also 0, so HCV removes ALL acceleration information (the trend and the current value), stronger than "no trend". (iii) The causal bucket is rebuilt from the CV history (HISTSWAP's `swap_bucket_differs / swap_ticks` is counted again; the bucket's separate contribution is not attributed).
+* **Y** = KAPPA-T1's fresh S runs `SREP_*` (reused, pinned in `FROZEN_SHA.txt`). 8 rollouts `HCV_*` / `HLV_*` (4 cells each) plus one bit-identity rerun of a Y with the LF tool (`SREP5_DAGOACC_s0`, `--histswap off`).
+* Tick 0 is NOT identical to Y (the CV history differs from the logged one at t0); `v0` in the ticks file stays the EXECUTED speed, `v0_in` is the speed the network read.
+
+## 2. Pre-registered reading (committed before any HISTSWAP-LF number; rules in `code/histswap_lf_read.py`, tested in `tests/test_histswap_lf_read_rule.py`)
+1. **Outcome rule per arm and base** (the KAPPA / FEAS rule, `smooth_t1_read.arm_outcome`): precedence **DOMINANT, HARMS, MOVED, NO EFFECT**; Read A = D1 / D2 / D3 of X vs P10 on the 19 rows; HARMS guard = ADE6 X - Y > +0.0604 m or a non-crawl row X - Y separated-worse; MOVED = all four crawl rows separated-better and ADE6 X - Y <= +0.0604 m. If an arm is DOMINANT it is reported as such; nothing else changes the rule.
+2. **M1 reading per arm** (HISTSWAP's, over the 4 cells): **CLOSES** = M1 X - Y separated-better at all 4 cells AND mean share closed (X - Y over Y - P10, undefined = 0) >= 0.5; **NOT CLOSES** = separated-better at fewer than 3 cells; else **MIXED**.
+3. **Committed interpretation:** HCV CLOSES => **(A) inertia**, and HCV is a deployable inference lever. HCV does not close and HLVL CLOSES => **(B) level**: the speed level must come from perception or training, not from the history form. Neither CLOSES => **(C) interaction**: the trend-times-level structure of HISTSWAP's full history carries it. (MIXED counts as "does not close" and is flagged beside the reading.)
+Reported in full, not decisions: all 19 rows for X - P10, X - Y, Y - P10 per cell; `read_a` / `read_xy`; the M1 per-class split; the curvature partition; `swap_bucket_differs / swap_ticks`; O's own along-track residual (plan_raw - P at 6 s) and P's end point for X and Y (does the change come from the prior's anchor or from O's delta).
+
+## 3. Controls (computed before any row; a failure REFUSES the read)
+KY Y pins; **KA1** the fresh LF-tool `--histswap off` rerun equals the reused Y (bit-identical, else max dev <= 1e-4); **KC1** the flag reached the run, HCV `v0_in == v0` at every tick, HLVL `v0_in == v0` at tick 0 and differs by > 0.05 m/s on > 5 % of later ticks; **KC2** the tick-0 plan of each arm differs from Y's (> 1e-3 m); **KC3** tick 1's executed position equals the tick-0 pose composed with the tick-0 plan knot 10 (<= 5e-3 m on >= 99.9 % of windows); KF floor and windows equal Y's; K3 and KB1 as FEAS2.
+Tool tests (`logs/pytest_histswap_lf.log`, 9 passed): `off` and the flag absent bit-identical, and equal to the HISTSWAP tool's `off` and `logged`; the network reads p10f speed == v, acceleration == 0, curvature == omega / max(v, 2) (spelled independently), base == kd_x(v, 0, kappa), pose_now == the executed pose, pose_t / pose_s on the arc, bucket == bucket(v); `channels_from_track` equals `_finish`'s rows exactly; EXEC; three mutations go RED (cv_exec reading the logged speed, a ramp in the track, the item builder on the executed dict). Rule tests (`logs/pytest_read_rule.log`, 7 passed, 3 mutations RED). A 32-window smoke (<= 2 threads, mechanical only) runs after this freeze and before the chain.
+
+## 4. ESTIMATED prediction (not a result)
+HCV: CLOSES 0.10, MIXED 0.15, NOT CLOSES 0.75. HLVL: CLOSES 0.80, MIXED 0.12, NOT CLOSES 0.08. Reading: (A) 0.10, (B) 0.70, (C) 0.20.
+Basis: the plan is P + O's delta and the executor tracks it perfectly, so a prior anchored on the human's speed puts the executed speed near the human's at once. ⚠ Consequence for HLVL: its closure is near-mechanical and cannot alone tell "O needs the level" from "the prior's anchor is the input speed"; the descriptive P / O-residual block says which moved, and HCV is the discriminating arm.
+
+## 5. Committed next step (Rule Zero, chosen before the data)
+* **(A):** HCV is reported as a deployable inference lever (with its outcome-rule label); next arm = history-trend dropout training of O on box 2 (PI go requested with the HCV rows).
+* **(B):** the recovery fine-tune with re-expressed targets (`dagland/histswap/DRAFT_RECOVERY_CARD.md`) goes to the PI for a box-2 go, with the level source (perception or training) named as its unknown; no history-form lever is pursued.
+* **(C):** the 2 x 2 is completed by HTRND (the executed-level history carrying the LOGGED acceleration trend; zero training, its own card, a new tool value), then (A) or (B) is read from it.
+* **HARMS at either arm:** the named non-crawl rows are the next lever's target before any other reading is used.
+
+## 6. Disclosed scope
+Same windows, checkpoints and flags as Y except `--histswap`. One checkpoint per cell. HLVL's absolute rows are not performance. S-POS rows of both arms mix the CV pose the S head read with the executed pose the extractor frames them in: UNVERIFIED, outside the reading. Nothing here trains, touches box 2, or lands in git (the Master Mind lands).

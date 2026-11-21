@@ -101,12 +101,31 @@ def main() -> None:
     ap.add_argument("--shard", default="", help="i/K")
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--allow-lossy", action="store_true")
+    ap.add_argument("--corpus-role", default="",
+                    help="what the sliced corpus IS (parity.py §10c)")
+    ap.add_argument("--exclude-parity-overlap", action="store_true",
+                    help="drop the disqualifying clips instead of refusing")
+    ap.add_argument("--sanctioned-audit", default="",
+                    help="REASON for keeping a disqualifying overlap")
     ap.add_argument("--digest-n", type=int, default=16,
                     help="clips whose sliced pixels are hashed into the "
                          "manifest — the check a consumer can actually run")
     a = ap.parse_args()
 
     files = sorted(f for f in os.listdir(a.src) if f.endswith(".v2ep.pt"))
+    # ⛔ PARITY INGEST GATE (parity.py §10c). A slice EMITS A NEW CORPUS — it is
+    # a build that never touches the source video, so it bypasses
+    # v2_compressed.build entirely and would inherit any contamination in --src
+    # under a new name. The uid space here IS the clip id (`<clip>.v2ep.pt`).
+    from tanitad.data import parity                          # noqa: PLC0415
+    parity.require_ingest_gate("slice_v2_cache")
+    _keep, _gate = parity.guard_corpus_build(
+        [f[:-len(".v2ep.pt")] for f in files],
+        label=f"slice_v2_cache {a.src} -> {a.out}", role=a.corpus_role,
+        mode="exclude" if a.exclude_parity_overlap else "refuse",
+        sanctioned_audit=a.sanctioned_audit or None)
+    _keepset = set(_keep)
+    files = [f for f in files if f[:-len(".v2ep.pt")] in _keepset]
     if a.shard:
         i, k = (int(x) for x in a.shard.split("/"))
         files = [f for n, f in enumerate(files) if n % k == i]

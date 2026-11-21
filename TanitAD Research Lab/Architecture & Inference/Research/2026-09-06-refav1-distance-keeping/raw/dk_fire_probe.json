@@ -1,0 +1,132 @@
+{
+ "task": "D-REFAV1-DK-COST P1 -- does the distance-keeping term fire, and where does it point",
+ "evidence_class": "MEASURED (ours) -- re-pricing of the banked refav1-21109-openloop dump",
+ "tier": "NOT a driving number. This re-prices a BANKED T1 panel's candidate set; no rollout was run and no model was loaded. It answers whether the term is LIVE on this corpus, not whether it drives better.",
+ "gap_source": "ORACLE (b1 eval lead block label). A CEILING input, never a capability claim.",
+ "estimator_note": "counts and identities over the panel's own windows -- no bootstrap is quoted here because nothing compared is a trained-arm difference; the eval that WILL compare arms carries the paired episode-cluster CI.",
+ "spec": {
+  "w_dk": 1.0,
+  "tau_target_s": 1.5,
+  "d0_m": 5.0,
+  "lead_speed_closure": "steady_v0",
+  "gap_source": "oracle_label",
+  "gap_convention": "rig-origin to lead rear face (along - size_x/2); NOT bumper-to-bumper -- lead_metrics.per_step_gap",
+  "closure_note": "the lead's future speed is UNOBSERVABLE on this trunk (M84: closing rate R2_skill +0.0061 [-0.0406, +0.0513], every paired delta spans 0, the explicit temporal difference recovers nothing). assumed equal to the ego's measured v0 -- the predicted gap then depends ONLY on the candidate's excess displacement over constant velocity, and is EXACTLY gap0 for a == 0."
+ },
+ "panel": {
+  "n_windows": 282,
+  "n_episodes": 141,
+  "window_states": {
+   "LEAD": 90,
+   "NOT_STRAIGHT": 108,
+   "NO_LABEL": 21,
+   "NO_LEAD": 63
+  }
+ },
+ "Q1_fires": {
+  "n_lead_windows": 90,
+  "n_in_violation": 21,
+  "frac_of_lead_in_violation": 0.2333,
+  "n_episodes_in_violation": 17,
+  "violating": {
+   "name": "gap0 < d0 + tau*v0",
+   "n": 21,
+   "gap0_m": {
+    "mean": 20.5567,
+    "min": 4.7386,
+    "max": 44.4807
+   },
+   "v0_mps": {
+    "mean": 16.4403,
+    "max": 28.3308
+   },
+   "s_star_m_mean": 29.6604,
+   "shortfall_m": {
+    "mean": 9.1037,
+    "max": 27.4836
+   },
+   "gt_accel_mps2": {
+    "mean": -0.1037,
+    "frac_decelerating": 0.381
+   },
+   "shipped_accel_mps2": {
+    "mean": -0.2143,
+    "frac_exactly_zero": 0.8571
+   },
+   "n_episodes": 17
+  },
+  "adequate_CONTROL": {
+   "name": "gap0 >= d0 + tau*v0",
+   "n": 69,
+   "gap0_m": {
+    "mean": 31.1345,
+    "min": 5.2202,
+    "max": 77.6266
+   },
+   "v0_mps": {
+    "mean": 8.0049,
+    "max": 32.8142
+   },
+   "s_star_m_mean": 17.0073,
+   "shortfall_m": {
+    "mean": 0.0,
+    "max": 0.0
+   },
+   "gt_accel_mps2": {
+    "mean": 0.0979,
+    "frac_decelerating": 0.3043
+   },
+   "shipped_accel_mps2": {
+    "mean": -0.0217,
+    "frac_exactly_zero": 0.9855
+   },
+   "n_episodes": 48
+  }
+ },
+ "Q1_controls": {
+  "adequate_windows_cost_is_exactly_zero": true,
+  "violating_windows_cost_is_strictly_positive": true,
+  "unarmed_spec_is_exactly_zero": true
+ },
+ "Q2_rerank": {
+  "n_flipped_to_decel": 21,
+  "frac_of_violating": 1.0,
+  "note": "On a CONSTANT-acceleration baseline both existing regularisers are identically zero (mean(jerk^2) == 0 for any constant a; kappa == 0 for both baselines) and w_vend was never armed -- so on this comparison the DK term is the ONLY discriminator and any flip is attributable to it alone.",
+  "cost_zero_mean_on_violating": 143.373344,
+  "cost_decel_mean_on_violating": 100.033753
+ },
+ "Q3_direction": {
+  "_what": "the check that is NOT true by construction: does the human decelerate on the windows the term penalises?",
+  "violating_gt_accel_mean": -0.1037,
+  "adequate_gt_accel_mean": 0.0979,
+  "violating_gt_frac_decel": 0.381,
+  "adequate_gt_frac_decel": 0.3043
+ },
+ "weight_calibration": {
+  "_what": "w_dk that makes the DK term's mean on the VIOLATING windows equal W_KAPPA's own scale on this planner's candidate box, so the two are commensurable rather than guessed.",
+  "mean_shortfall_sq_m2_on_violating": 143.373344,
+  "measured_max_abs_kappa_in_panel": 0.0,
+  "w_kappa_cost_at_that_kappa": 0.0,
+  "w_dk_for_parity_with_w_kappa": 0.0
+ },
+ "provenance": {
+  "dump": "C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/f407bc82-7969-457c-a947-6be2014fee89/scratchpad/dk/dump/full",
+  "lead_block": "C:/Users/Admin/tanitad-wt/_lead_b1/b1_eval_lead_block.npz",
+  "lead_block_meta": {
+   "built": null,
+   "dt_s": 0.2,
+   "k": 10,
+   "n_clips": 147
+  },
+  "coverage_status": {
+   "n_windows": 282,
+   "n_episodes": 141,
+   "n_episodes_ok": 141,
+   "n_windows_labelled": 153,
+   "n_windows_lead": 90,
+   "n_windows_no_row": 0,
+   "join_key": "(clip_id from the dump manifest, RAW frame 2t from ws)",
+   "note": "NO_LABEL / no-row / refused-episode windows are counted here and NEVER scored as free flow; NOT_STRAIGHT is its own state (a bend hides the lead outside the corridor)"
+  }
+ }
+}

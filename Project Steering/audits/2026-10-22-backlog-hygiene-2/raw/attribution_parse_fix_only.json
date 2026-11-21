@@ -1,0 +1,2434 @@
+{
+  "backlog": "Project Steering/BACKLOG.md",
+  "rows": 199,
+  "counts": {
+    "CLOSED": 5,
+    "OPEN": 132,
+    "DONE-BUT-OPEN": 47,
+    "STALE-BLOCKER": 1,
+    "CLOSED-ELSEWHERE": 14
+  },
+  "git": {
+    "last_commit": null,
+    "last_date": null,
+    "commits_since": null
+  },
+  "heading_items": [
+    {
+      "line": 261,
+      "title": "?? BLOCKING INTEGRATION ITEM -- refcv5's model seams are NOT IN `HEAD` (raised 2026-09-06, TanitAD_TrainingFlyWheel)",
+      "closed": false
+    },
+    {
+      "line": 298,
+      "title": "? D-ROLL-1h -- CLOSED 2026-09-06: the `--tac-goal-tok-head` TRAINER FLAG IS WIRED",
+      "closed": true
+    }
+  ],
+  "verdicts": [
+    {
+      "id": "A1",
+      "line": 16,
+      "kind": "table",
+      "section": "A. 0-GPU -- ALWAYS EXECUTABLE, no excuse to idle",
+      "verdict": "CLOSED",
+      "occurrences": [
+        16
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| ~~A1~~ | ~~Build the emitters~~ ? **AUDITED `1ad18ea`/`9e09b54` -- NEITHER needs writing.** #2 needs an **EVAL** (re-emit `g_op_fwd_ade_m` from the checkpoint, needs a free GPU); #7 needs **ONE ARCH"
+    },
+    {
+      "id": "A2",
+      "line": 17,
+      "kind": "table",
+      "section": "A. 0-GPU -- ALWAYS EXECUTABLE, no excuse to idle",
+      "verdict": "CLOSED",
+      "occurrences": [
+        17
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| ~~A2~~ | ~~Wire the NC gate with filter_m~~ ? **CONTRACT RECORDED `8d4a138`** -- `filter_m` appeared NOWHERE in pseudosim (grep=0), so the gate would have shipped PDMS-v1 and over-penalised every ar"
+    },
+    {
+      "id": "A3",
+      "line": 18,
+      "kind": "table",
+      "section": "A. 0-GPU -- ALWAYS EXECUTABLE, no excuse to idle",
+      "verdict": "OPEN",
+      "occurrences": [
+        18
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| A3 | **C64 option B** -- build the clean v2-line val | ? **BUILT 2026-08-02** (`.../incoming/2026-08-02-v2-clean-val-selector/`, 27 ?). ? Column semantics are now a machine-checked contract (34/34 o"
+    },
+    {
+      "id": "A4",
+      "line": 19,
+      "kind": "table",
+      "section": "A. 0-GPU -- ALWAYS EXECUTABLE, no excuse to idle",
+      "verdict": "OPEN",
+      "occurrences": [
+        19
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| A4 | **Re-verify the factorised path x velocity vocabulary** (refuted 0-3 in the survey) | maps 1:1 onto our LAT+LON softmax mechanism and the 88.7 % longitudinal gap -- the single most valuable re-"
+    },
+    {
+      "id": "A5",
+      "line": 20,
+      "kind": "table",
+      "section": "A. 0-GPU -- ALWAYS EXECUTABLE, no excuse to idle",
+      "verdict": "OPEN",
+      "occurrences": [
+        20
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| A5 | **Confirm C64 at clip_id granularity** -- replay `discover_r0_clips` on pod2's raw root | ? **PARTLY ANSWERED 2026-08-02 with NO pod**, from the two selection parquets: **256 of v1's 600 parity"
+    },
+    {
+      "id": "A6",
+      "line": 21,
+      "kind": "table",
+      "section": "A. 0-GPU -- ALWAYS EXECUTABLE, no excuse to idle",
+      "verdict": "OPEN",
+      "occurrences": [
+        21
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| A6 | **Reconcile pod2's tree** -- 317 modified tracked files, untracked `taniteval`, **untracked running trainer on one disk** | ? **after v5 finishes, never during an incident** |"
+    },
+    {
+      "id": "A7",
+      "line": 22,
+      "kind": "table",
+      "section": "A. 0-GPU -- ALWAYS EXECUTABLE, no excuse to idle",
+      "verdict": "OPEN",
+      "occurrences": [
+        22
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| A7 | **Delta-JEPA one-liner**: IDM decoder takes latent **displacement** `z_{t+1}-z_t` instead of concatenated endpoints | HYPOTHESIS-class lead; bears on our smaller-IDM-is-better ladder (input for"
+    },
+    {
+      "id": "A8",
+      "line": 23,
+      "kind": "table",
+      "section": "A. 0-GPU -- ALWAYS EXECUTABLE, no excuse to idle",
+      "verdict": "OPEN",
+      "occurrences": [
+        23
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| A8 | **Sub-JEPA regulariser swap**: isotropic prior in random **low-dimensional subspaces** vs our ambient `SigRegConfig` (`n_slices=512`, w 0.1) | HYPOTHESIS-class lead, public code exists |"
+    },
+    {
+      "id": "A9",
+      "line": 24,
+      "kind": "table",
+      "section": "A. 0-GPU -- ALWAYS EXECUTABLE, no excuse to idle",
+      "verdict": "OPEN",
+      "occurrences": [
+        24
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| A9 | **Task-list hygiene** -- #37/#39 are marked completed but were falsified (pod1 still down; pod3 had drifted back) | a task list that lies is worse than none |"
+    },
+    {
+      "id": "A10",
+      "line": 25,
+      "kind": "table",
+      "section": "A. 0-GPU -- ALWAYS EXECUTABLE, no excuse to idle",
+      "verdict": "OPEN",
+      "occurrences": [
+        25
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| A10 | **Bank gen-1 `sc_train.py`'s remaining pod-only siblings** if any | stranding rule |"
+    },
+    {
+      "id": "A11",
+      "line": 26,
+      "kind": "table",
+      "section": "A. 0-GPU -- ALWAYS EXECUTABLE, no excuse to idle",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        26
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| A11 | ~~? **Rescue the 45 stranded files on Thor**~~ ? **DONE 2026-08-18, 0 GPU** (`.../incoming/2026-08-18-thor-stranded-rescue/`) | ? **It was 98, not 45.** `pod_git_drift.py` scans **`.py`/`.sh` "
+    },
+    {
+      "id": "A12",
+      "line": 27,
+      "kind": "table",
+      "section": "A. 0-GPU -- ALWAYS EXECUTABLE, no excuse to idle",
+      "verdict": "CLOSED",
+      "occurrences": [
+        27
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| ~~A12~~ | ~~Ship the 4 stale/absent files to Thor~~ ? **DONE 2026-09-02 -- 4/4 now on Thor.** `lf0_bev_lead.py`, `p8_bev_reel.py`, `refc_train.py` shipped **2026-08-15**; `sel_winners_curse_law.py` "
+    },
+    {
+      "id": "A14",
+      "line": 28,
+      "kind": "table",
+      "section": "A. 0-GPU -- ALWAYS EXECUTABLE, no excuse to idle",
+      "verdict": "OPEN",
+      "occurrences": [
+        28
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| A14 | **Decide on 24 un-pulled per-window rollout dumps on Thor** (`cl_out*`/`ol_out*`/`cutin_out` `rollouts_*.json`, `video_*_openloop.json`) -- **9,550,490 B**, mostly `long_*` re-runs | found by "
+    },
+    {
+      "id": "A15",
+      "line": 29,
+      "kind": "table",
+      "section": "A. 0-GPU -- ALWAYS EXECUTABLE, no excuse to idle",
+      "verdict": "CLOSED",
+      "occurrences": [
+        29
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| ~~A15~~ | ~~Adjudicate `thor_profile.py`~~ ? **DONE -- BOTH HALVES, verified 2026-09-02 (the row was stale, not open).** **(a) The adjudication landed 2026-08-18**: the package now carries `PROVENAN"
+    },
+    {
+      "id": "A13",
+      "line": 32,
+      "kind": "table",
+      "section": "A. 0-GPU -- ALWAYS EXECUTABLE, no excuse to idle",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        32
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| A13 | ~~**Adjudicate the 24 DRIFT rows in Thor's live `/home/nvidia/TanitAD` checkout**~~ ? **DONE 2026-09-07, 0 GPU** (`TanitAD Research Lab/Tools & DevEnv/Research/2026-09-07-thor-checkout-drift-a"
+    },
+    {
+      "id": "A13b",
+      "line": 33,
+      "kind": "table",
+      "section": "A. 0-GPU -- ALWAYS EXECUTABLE, no excuse to idle",
+      "verdict": "OPEN",
+      "occurrences": [
+        33
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| A13b | ? **Ship the import closure to Thor before the NEXT launch, and gate on it** -- **29 of 130 closure files differ and 13 are absent**; the checkout is 1,273 commits behind. ? Ship the **CLOSUR"
+    },
+    {
+      "id": "A13c",
+      "line": 34,
+      "kind": "table",
+      "section": "A. 0-GPU -- ALWAYS EXECUTABLE, no excuse to idle",
+      "verdict": "OPEN",
+      "occurrences": [
+        34
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| A13c | **Record the code provenance of `refav1-b1-v72-ep3-speed` in `MODEL_REGISTRY.md`** -- it was trained from Thor's OLDER stack, not from repo HEAD | flows from A13; a registry row that does not"
+    },
+    {
+      "id": "A16",
+      "line": 36,
+      "kind": "table",
+      "section": "A. 0-GPU -- ALWAYS EXECUTABLE, no excuse to idle",
+      "verdict": "OPEN",
+      "occurrences": [
+        36
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| **A16** | ? **TO THE MASTER MIND -- answer the six frozen-trunk questions for refcv6 ? v7f ? refav1** (`Project Steering/ADVISORY_FROZEN_TRUNK_DEFECT_CLASSES.md`, register row `D-TRUNK-ADVISORY-1`)."
+    },
+    {
+      "id": "B1",
+      "line": 42,
+      "kind": "table",
+      "section": "B. ONE GPU -- executable now (pod3; ? eval stays free for C64-A)",
+      "verdict": "OPEN",
+      "occurrences": [
+        42
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| B1 | ? **RR-FT** -- fine-tune v1 with `--rollout-k 20`, exactly one flag different, ~3-5 k steps | **IN PROGRESS.** Measure `step_s` over 200 steps and report before committing to full length |"
+    },
+    {
+      "id": "B2",
+      "line": 43,
+      "kind": "table",
+      "section": "B. ONE GPU -- executable now (pod3; ? eval stays free for C64-A)",
+      "verdict": "OPEN",
+      "occurrences": [
+        43
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| B2 | **E-ROLL** -- recursive k=1 rollout past 2 s on the deployed arm, measure ADE **and** CR to 4 s/6 s | ~2-4 GPU-h; divergence is the *expected* result and is informative |"
+    },
+    {
+      "id": "B3",
+      "line": 44,
+      "kind": "table",
+      "section": "B. ONE GPU -- executable now (pod3; ? eval stays free for C64-A)",
+      "verdict": "OPEN",
+      "occurrences": [
+        44
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| B3 | **Linear free/occupied probe** on frozen v1 latents from `obstacle.offline` | <0.5 GPU-day; depends on A2's chunk download |"
+    },
+    {
+      "id": "B4",
+      "line": 45,
+      "kind": "table",
+      "section": "B. ONE GPU -- executable now (pod3; ? eval stays free for C64-A)",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        45
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| B4 | ~~**Matched-capacity camera head** for sitclf~~ **DONE 2026-08-03, 0 pod GPU-h** (`.../incoming/2026-08-03-sitclf-matched-capacity/`) | ? **The curve PEAKS AT THE FLOOR.** On `intersection` (th"
+    },
+    {
+      "id": "B5",
+      "line": 46,
+      "kind": "table",
+      "section": "B. ONE GPU -- executable now (pod3; ? eval stays free for C64-A)",
+      "verdict": "OPEN",
+      "occurrences": [
+        46
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| B5 | **Frozen VIDEO-pretrained encoder** (V-JEPA 2 ViT-L) vs from-scratch, same corpus/steps | ? the one experiment nobody in the field has run; our frozen-encoder ceiling was measured on IMAGE-pret"
+    },
+    {
+      "id": "B6",
+      "line": 47,
+      "kind": "table",
+      "section": "B. ONE GPU -- executable now (pod3; ? eval stays free for C64-A)",
+      "verdict": "OPEN",
+      "occurrences": [
+        47
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| B6 | **REF-C-base canonical eval + v1.6 paired bootstrap** (task #31) | queued since pod3 freed |"
+    },
+    {
+      "id": "B7",
+      "line": 48,
+      "kind": "table",
+      "section": "B. ONE GPU -- executable now (pod3; ? eval stays free for C64-A)",
+      "verdict": "OPEN",
+      "occurrences": [
+        48
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| B7 | **Opponent SC-13 on our checkpoint** (task #10) | |"
+    },
+    {
+      "id": "B8",
+      "line": 49,
+      "kind": "table",
+      "section": "B. ONE GPU -- executable now (pod3; ? eval stays free for C64-A)",
+      "verdict": "OPEN",
+      "occurrences": [
+        49
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| B8 | **Cosmos Reason1 vs Reason2 head-to-head** (task #29) | VLM labeler choice |"
+    },
+    {
+      "id": "C1",
+      "line": 55,
+      "kind": "table",
+      "section": "C. GATED -- and on what, precisely",
+      "verdict": "OPEN",
+      "occurrences": [
+        55
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| C1 | **Rollout-recovery at scale / 8-GPU work** | ? **pod1 console stop/start (PI)** -- `/dev/nvidia*` empty, not fixable over SSH |"
+    },
+    {
+      "id": "C2",
+      "line": 56,
+      "kind": "table",
+      "section": "C. GATED -- and on what, precisely",
+      "verdict": "STALE-BLOCKER",
+      "occurrences": [
+        56
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| C2 | **C64 option A** -- score both arms on the 19 leak-free episodes, **v1 re-scored there** | ~~v2corpus reaching 30 k (~17:00 UTC 2026-07-29)~~ ?? **RE-PROBE 2026-08-16 -- the gating DATE passed "
+    },
+    {
+      "id": "C3",
+      "line": 57,
+      "kind": "table",
+      "section": "C. GATED -- and on what, precisely",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        57
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| C3 | **v5 gate verdict** | ~~v5 reaching step 2000; ?? first probe is the INCUMBENT and cannot stop the run~~ ? **CLOSED 2026-08-16 -- blocker CLEARED 2026-08-09.** `flagship-v5f-w120-30k` is ? **CO"
+    },
+    {
+      "id": "C4",
+      "line": 58,
+      "kind": "table",
+      "section": "C. GATED -- and on what, precisely",
+      "verdict": "OPEN",
+      "occurrences": [
+        58
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| C4 | **Old CPU pod release** (task #40) | ? deletion needs the PI |"
+    },
+    {
+      "id": "C5",
+      "line": 59,
+      "kind": "table",
+      "section": "C. GATED -- and on what, precisely",
+      "verdict": "OPEN",
+      "occurrences": [
+        59
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| C5 | **X2 verdict run (30 pod-days)** | ? NOT AUTHORISED without the PI |"
+    },
+    {
+      "id": "C6",
+      "line": 60,
+      "kind": "table",
+      "section": "C. GATED -- and on what, precisely",
+      "verdict": "OPEN",
+      "occurrences": [
+        60
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| C6 | **Wheelbase fix** | ? PI chose C = measure first; decision pending |"
+    },
+    {
+      "id": "D1",
+      "line": 66,
+      "kind": "table",
+      "section": "D. Standing / long-horizon",
+      "verdict": "OPEN",
+      "occurrences": [
+        66
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| D1 | **v3: DINO-WM proper** -- feature-prediction + CEM/diffusion/MPC, no head (task #26) |"
+    },
+    {
+      "id": "D2",
+      "line": 67,
+      "kind": "table",
+      "section": "D. Standing / long-horizon",
+      "verdict": "OPEN",
+      "occurrences": [
+        67
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| D2 | **TanitEval clickable interactive tool** (task #23) |"
+    },
+    {
+      "id": "D3",
+      "line": 68,
+      "kind": "table",
+      "section": "D. Standing / long-horizon",
+      "verdict": "OPEN",
+      "occurrences": [
+        68
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| D3 | **H26 hierarchical cross-alignment proof** (task #15, core goal) |"
+    },
+    {
+      "id": "D4",
+      "line": 69,
+      "kind": "table",
+      "section": "D. Standing / long-horizon",
+      "verdict": "OPEN",
+      "occurrences": [
+        69
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| D4 | **Own dataset / lake v0** -- ingest at scale + HF push (task #5) |"
+    },
+    {
+      "id": "D5",
+      "line": 70,
+      "kind": "table",
+      "section": "D. Standing / long-horizon",
+      "verdict": "OPEN",
+      "occurrences": [
+        70
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| D5 | **flagship-v2 10k gate** mechanism diagnostic (task #28) |"
+    },
+    {
+      "id": "E1",
+      "line": 81,
+      "kind": "table",
+      "section": "E. 2026-08-11 NIGHT -- the live pull-list (supersedes A/B where they conflict)",
+      "verdict": "OPEN",
+      "occurrences": [
+        81
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| E1 | **Four-families rescore on the banked v5.8f windows** -> completes registry ?1.14 | 0-GPU (banked windows) | nothing -- runnable the moment T1 lands |"
+    },
+    {
+      "id": "E2",
+      "line": 82,
+      "kind": "table",
+      "section": "E. 2026-08-11 NIGHT -- the live pull-list (supersedes A/B where they conflict)",
+      "verdict": "OPEN",
+      "occurrences": [
+        82
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| E2 | **HF release of the v5.8f artifact set** (ckpts, gates, windows, figures) | 0-GPU | the release row existing |"
+    },
+    {
+      "id": "E3",
+      "line": 83,
+      "kind": "table",
+      "section": "E. 2026-08-11 NIGHT -- the live pull-list (supersedes A/B where they conflict)",
+      "verdict": "OPEN",
+      "occurrences": [
+        83
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| E3 | **W5 / E-H1 6 s baseline for v5.8f** -- REQUIRED precursor now that 6 s is the v6 spec | 1 GPU | pod5 after T1 |"
+    },
+    {
+      "id": "E4",
+      "line": 84,
+      "kind": "table",
+      "section": "E. 2026-08-11 NIGHT -- the live pull-list (supersedes A/B where they conflict)",
+      "verdict": "OPEN",
+      "occurrences": [
+        84
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| E4 | **I4b** -- imagination ablation stratified by the P4/P8 occluded split | 1 GPU | p8c gate + the banked I4a arms |"
+    },
+    {
+      "id": "E5",
+      "line": 85,
+      "kind": "table",
+      "section": "E. 2026-08-11 NIGHT -- the live pull-list (supersedes A/B where they conflict)",
+      "verdict": "OPEN",
+      "occurrences": [
+        85
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| E5 | **LF0** -- probe PRE-POOL spatial tokens + BEV lead read-off (routing vs learning) | ~0.5 GPU-h | p8c head existing |"
+    },
+    {
+      "id": "E6",
+      "line": 86,
+      "kind": "table",
+      "section": "E. 2026-08-11 NIGHT -- the live pull-list (supersedes A/B where they conflict)",
+      "verdict": "OPEN",
+      "occurrences": [
+        86
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| E6 | **PERCEPTION-AGENTS head** (slot decoder on frozen latents: bbox+state+class) | ~1 GPU-day | prereg + v6 GO |"
+    },
+    {
+      "id": "E7",
+      "line": 87,
+      "kind": "table",
+      "section": "E. 2026-08-11 NIGHT -- the live pull-list (supersedes A/B where they conflict)",
+      "verdict": "OPEN",
+      "occurrences": [
+        87
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| E7 | **Alpamayo meta-action -> vocabulary mapping table + coverage measurement** | 0-GPU | records.parquet (present on pod4) |"
+    },
+    {
+      "id": "E8",
+      "line": 88,
+      "kind": "table",
+      "section": "E. 2026-08-11 NIGHT -- the live pull-list (supersedes A/B where they conflict)",
+      "verdict": "OPEN",
+      "occurrences": [
+        88
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| E8 | **E-ENC arm prereg** (shared encoder + adapters vs per-layer) incl. B5's frozen V-JEPA-2 control | 0-GPU to write | v6 GO |"
+    },
+    {
+      "id": "E9",
+      "line": 89,
+      "kind": "table",
+      "section": "E. 2026-08-11 NIGHT -- the live pull-list (supersedes A/B where they conflict)",
+      "verdict": "OPEN",
+      "occurrences": [
+        89
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| E9 | **Spectrum finding follow-up**: participation ratio ~ 4.5 of 2048 dims at 5k (top-8 = 99 % of variance) -- is this SIGReg working as designed or an anisotropy finding? | 0-GPU analysis | the fu"
+    },
+    {
+      "id": "E10",
+      "line": 90,
+      "kind": "table",
+      "section": "E. 2026-08-11 NIGHT -- the live pull-list (supersedes A/B where they conflict)",
+      "verdict": "CLOSED",
+      "occurrences": [
+        90
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| ~~E10~~ | ~~**Registry hygiene**: give the Alpamayo augmentation counts their own registry row (the paper carries them INHERITED)~~ ? **DONE 2026-10-18, 0 GPU** -- registry **?11.3**: 114 counts re-"
+    },
+    {
+      "id": "F1",
+      "line": 106,
+      "kind": "table",
+      "section": "F -- 2026-08-12 v6 launch pull-list",
+      "verdict": "OPEN",
+      "occurrences": [
+        106
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| **F1** | ? **S-S gate amendment (D6)** -- promote `S1_ade_8_30s` from `reported` to `required` for the PH2-pending case, keeping STRATEGIC `n/a` **with its reason and its n**. Pre-register **before*"
+    },
+    {
+      "id": "F2",
+      "line": 107,
+      "kind": "table",
+      "section": "F -- 2026-08-12 v6 launch pull-list",
+      "verdict": "OPEN",
+      "occurrences": [
+        107
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| **F2** | **S-W supervisor manifest** -- write `runs.d/v6-SW-30k.env` with the ?2.1 `TRAIN_CMD` verbatim, plus the R7/R8 discipline in the header (done-marker = off-switch; manifest sourced ONCE at s"
+    },
+    {
+      "id": "F3",
+      "line": 108,
+      "kind": "table",
+      "section": "F -- 2026-08-12 v6 launch pull-list",
+      "verdict": "OPEN",
+      "occurrences": [
+        108
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| **F3** | ? **Noise-robust selection rule prereg (R2)** -- sweep top-m rules and the **`--w-prog`** anti-degeneracy term off the **already-banked** `w7_eval_windows.pt`. Pre-register the rule **befor"
+    },
+    {
+      "id": "F4",
+      "line": 109,
+      "kind": "table",
+      "section": "F -- 2026-08-12 v6 launch pull-list",
+      "verdict": "OPEN",
+      "occurrences": [
+        109
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| **F4** | **Correct the cost basis name in `V6_TRAINER_DESIGN ?5`** -- \"v4.2\" -> **`flagship-v4-fromscratch`** (registry ?1.5.5). `flagship-v4.2-30k` (?1.5.3) is a different arm, killed at ~step 5 k "
+    },
+    {
+      "id": "F5",
+      "line": 110,
+      "kind": "table",
+      "section": "F -- 2026-08-12 v6 launch pull-list",
+      "verdict": "OPEN",
+      "occurrences": [
+        110
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| **F5** | **The 23 standing `pytest` failures** -- `onnx` absent (1), a Windows-basename assert in `test_resim.py` (2), a suite-order polluter in `test_rig_clean_fix.py` (20, all pass in isolation) |"
+    },
+    {
+      "id": "F6",
+      "line": 111,
+      "kind": "table",
+      "section": "F -- 2026-08-12 v6 launch pull-list",
+      "verdict": "OPEN",
+      "occurrences": [
+        111
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| **F6** | **E-ENC short-arm prereg (D5)** -- the matched pair at a **reduced, equal step count**: `--per-layer-encoders` (120 743 881) vs shared `--pred-dim 960` (118 105 417), **gap 2.19 %** quoted."
+    },
+    {
+      "id": "F7",
+      "line": 112,
+      "kind": "table",
+      "section": "F -- 2026-08-12 v6 launch pull-list",
+      "verdict": "OPEN",
+      "occurrences": [
+        112
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| **F7** | **Pod-side ship + STEP-ZERO runbook as a script** -- md5 + `grep -c assert_isolation` + cache `ls` + `dd` write test + `--dry-run`, one command, refusing loudly on any mismatch | ~1 h | **0"
+    },
+    {
+      "id": "F8",
+      "line": 113,
+      "kind": "table",
+      "section": "F -- 2026-08-12 v6 launch pull-list",
+      "verdict": "OPEN",
+      "occurrences": [
+        113
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| **F8** | **Verify `F` (frames per episode) on the pod** and record the realised window count per stage from the trainer's own `[v6] windowing:` line | ~15 min | **0-GPU** (rides F7) | `.../incoming/"
+    },
+    {
+      "id": "F9",
+      "line": 114,
+      "kind": "table",
+      "section": "F -- 2026-08-12 v6 launch pull-list",
+      "verdict": "OPEN",
+      "occurrences": [
+        114
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| **F9** | **Registry row skeleton for S-W** -- pre-write the ?1.15 row with every field the run must fill (parity key, skip-hash, derived `max_horizon`, realised window count, `step_s` MEASURED, gate"
+    },
+    {
+      "id": "R1",
+      "line": 124,
+      "kind": "table",
+      "section": "refav1 pull-list (2026-09-02, Master Mind) -- 0-GPU items that gate the first refav1 read",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        124
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| **R1** | ? **DONE 2026-09-02 (D-REFAV1-LEAD-BLOCK)** -- **Lead block for the 141-clip eval grid** -- nearest lead agent per window from `obstacle.offline` (headway / time-gap / TTC), so LONGITUDINAL"
+    },
+    {
+      "id": "R2",
+      "line": 125,
+      "kind": "table",
+      "section": "refav1 pull-list (2026-09-02, Master Mind) -- 0-GPU items that gate the first refav1 read",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        125
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| **R2** | ? **DONE 2026-09-02 (`3a6a48c`)** -- **Review the UNSTAGED `taniteval/tools/t1_eval.py` worktree diff** (2026-08-30, *\"window follows the checkpoint\"*, +18/-2) -- stage with provenance or r"
+    },
+    {
+      "id": "R3",
+      "line": 126,
+      "kind": "table",
+      "section": "refav1 pull-list (2026-09-02, Master Mind) -- 0-GPU items that gate the first refav1 read",
+      "verdict": "OPEN",
+      "occurrences": [
+        126
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| **R3** | **Run `cl_oraclegoal` (T0) beside `cl` (T1) at the step-1000 read** -- the cheapest search-vs-goal discriminator: if the oracle goal also returns baselines, the search budget is the ceiling"
+    },
+    {
+      "id": "R4",
+      "line": 127,
+      "kind": "table",
+      "section": "refav1 pull-list (2026-09-02, Master Mind) -- 0-GPU items that gate the first refav1 read",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        127
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| **R4** | ? **DONE 2026-09-02 19:26Z (switch step 16,500; D-REFCV3-NAV-SWITCHED)** -- **`--nav-from-v7` for refcv3** -- ship + relaunch at the next 500-step checkpoint ONLY on the PI's go (C-NAV-SOUR"
+    },
+    {
+      "id": "R5",
+      "line": 128,
+      "kind": "table",
+      "section": "refav1 pull-list (2026-09-02, Master Mind) -- 0-GPU items that gate the first refav1 read",
+      "verdict": "OPEN",
+      "occurrences": [
+        128
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| **R5** | ? **DIAGNOSED 2026-09-02 (cgroup OOM kill; D-REFCV3-EVAL-DEATH-DIAGNOSED) -- fix (save-before-eval) in progress** -- **Diagnose refcv3's silent deaths at eval boundaries** (2,000 / 4,500 / "
+    },
+    {
+      "id": "R6",
+      "line": 132,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 04:10 Berlin (from D-V7-WIRING)",
+      "verdict": "OPEN",
+      "occurrences": [
+        132
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R6 -- `--bptt-truncate` for the O1 stage-A rolls** (`stack/scripts/train_stage_a.py::stage_a_losses`, 6 of 8 `rollout_transitions` calls per step): one line + the same property test; owner needed "
+    },
+    {
+      "id": "R7",
+      "line": 133,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 04:10 Berlin (from D-V7-WIRING)",
+      "verdict": "OPEN",
+      "occurrences": [
+        133
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R7 -- tactical CE term on the v7.2 factored labels** (`tac_lat_id`/`tac_lon_id`/`tac_valid` already in the batch; `out[\"a_lat\"]`/`out[\"a_lon\"]`): a NEW loss term -> `TanitAD_ValidateAIDesign` pre-"
+    },
+    {
+      "id": "R8",
+      "line": 134,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 04:10 Berlin (from D-V7-WIRING)",
+      "verdict": "CLOSED-ELSEWHERE",
+      "occurrences": [
+        134,
+        153
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R8 -- v7f LAUNCH BLOCKER: eval-clip exclusion in the v7 trainer's B1 path.** The 141 eval clips with pixels sit inside the 4,713-clip cache; `build_train_episodes`/`build_v2_providers` need an exc"
+    },
+    {
+      "id": "R9",
+      "line": 135,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 04:10 Berlin (from D-V7-WIRING)",
+      "verdict": "OPEN",
+      "occurrences": [
+        135
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R9 -- strategic ARG encoder for v7.2 labels** (spec ?3.2, Data FlyWheel): a named dict today, no slot encoder; args unsupervised until it exists."
+    },
+    {
+      "id": "R10",
+      "line": 139,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 07:20 Berlin (from D-ACTDIV-ANCHORED-REFAV1)",
+      "verdict": "CLOSED-ELSEWHERE",
+      "occurrences": [
+        139,
+        172
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R10 -- the PLANNER COST-SURFACE probe** (the next refav1 read): evaluate `_cost_chunk`'s four terms SEPARATELY at h = 10 on the banked step-1,000 checkpoints, in BOTH conventions (raw ?, and `? ->"
+    },
+    {
+      "id": "R11",
+      "line": 140,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 07:20 Berlin (from D-ACTDIV-ANCHORED-REFAV1)",
+      "verdict": "OPEN",
+      "occurrences": [
+        140
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R11 -- wire the new diagnostics in**: `taniteval/tools/actdiv_anchored.py` and `transition_probe.py` are committed but called by nothing -- `mm_e19_read.py`'s actdiv stage still calls the banked `"
+    },
+    {
+      "id": "R12",
+      "line": 141,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 07:20 Berlin (from D-ACTDIV-ANCHORED-REFAV1)",
+      "verdict": "CLOSED-ELSEWHERE",
+      "occurrences": [
+        141,
+        252
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R12 -- read the banked GS-9 transition-probe JSON**: the rescued package's RESULT ?4 still says pending while its raw JSON exists and is unread."
+    },
+    {
+      "id": "R13",
+      "line": 142,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 07:20 Berlin (from D-ACTDIV-ANCHORED-REFAV1)",
+      "verdict": "CLOSED-ELSEWHERE",
+      "occurrences": [
+        142,
+        210
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R13 -- `t1_eval.DEFAULT_TIERS` needs `\"ha0\": \"T1\"`** (`taniteval/tools/t1_eval.py:145`); until then the standalone CLI needs `--tiers ha0=T1` (D-REFAV1-HA0-ARM's one-line integration)."
+    },
+    {
+      "id": "R14",
+      "line": 143,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 07:20 Berlin (from D-ACTDIV-ANCHORED-REFAV1)",
+      "verdict": "OPEN",
+      "occurrences": [
+        143
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R14 -- the anti-stranding rule, operational**: a completed run's artifacts lived only in `C:\\Users\\Admin\\tanitad-wt\\_gs89_pkg\\` until a later agent rescued 17 files. Every agent brief already says"
+    },
+    {
+      "id": "R15",
+      "line": 147,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 07:45 Berlin (from D-PREREG-V7F)",
+      "verdict": "CLOSED-ELSEWHERE",
+      "occurrences": [
+        147,
+        165
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R15 -- v7f LAUNCH BLOCKER: the DINOv3 -> seed-checkpoint converter.** No loader puts DINOv3 weights into `ViTEncoder`/`ViT5Encoder`; `--init-from` refuses a partial checkpoint (`train_v6_staged.py"
+    },
+    {
+      "id": "R16",
+      "line": 148,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 07:45 Berlin (from D-PREREG-V7F)",
+      "verdict": "OPEN",
+      "occurrences": [
+        148
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R16 -- sweep every retired threshold through the instruction documents** (`.claude/skills/`, `CLAUDE.md`, the PREREG templates), not only through the register: the 8.56 floor survived eleven days "
+    },
+    {
+      "id": "R17",
+      "line": 149,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 07:45 Berlin (from D-PREREG-V7F)",
+      "verdict": "OPEN",
+      "occurrences": [
+        149
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R17 -- rung R0 of the v7f ladder is 0 GPU and can refute the LDAD line before an arm is spent** (`PREREG_V7F.md`); run it before any v7f compute is scheduled."
+    },
+    {
+      "id": "R18",
+      "line": 154,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 08:15 Berlin",
+      "verdict": "OPEN",
+      "occurrences": [
+        154
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R18 -- gate the fp8 shipper** (`stack/scripts/dinov3_fp8_encode_ship.py`, C-FP8-SHIPPER-UNGATED): call `parity.guard_corpus_build` on the SOURCE split before encoding (preferred), or classify it i"
+    },
+    {
+      "id": "R19",
+      "line": 155,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 08:15 Berlin",
+      "verdict": "OPEN",
+      "occurrences": [
+        155
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R19 -- bound `_artifact_path_names`' two-hop closure** in `test_build_parity_guard.py`: it reached ~200 unrelated locals and produced a spurious ungated-writer entry; the owner of that suite shoul"
+    },
+    {
+      "id": "R20",
+      "line": 159,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 09:25 Berlin",
+      "verdict": "CLOSED-ELSEWHERE",
+      "occurrences": [
+        159,
+        232
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R20 -- refcv3 T1 adapter: triage the rescued draft** (`Benchmarks & Evals/Implementation/incoming/2026-09-03-refcv3-arm-UNVERIFIED/`). Re-derive the T1 definition for a supervised trajectory model"
+    },
+    {
+      "id": "R21",
+      "line": 160,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 09:25 Berlin",
+      "verdict": "OPEN",
+      "occurrences": [
+        160
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R21 -- decide when `--action-units steer` becomes the default** (D-STEER-INTERFACE-RESOLVED). Every banked refav1 lateral number was produced OFF; ON and OFF numbers are not comparable, so the fli"
+    },
+    {
+      "id": "R22",
+      "line": 161,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 09:25 Berlin",
+      "verdict": "CLOSED-ELSEWHERE",
+      "occurrences": [
+        161,
+        252
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R22 -- run `actdiv_anchored`'s `d(a)` in BOTH unit conventions** (~15 min CPU): the only admissible test of what the unit costs the imagination, and item (iii) of D-ACTDIV-ANCHORED-REFAV1's next-p"
+    },
+    {
+      "id": "R23",
+      "line": 166,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 10:05 Berlin (from D-V7-DINO-SEED)",
+      "verdict": "CLOSED-ELSEWHERE",
+      "occurrences": [
+        166,
+        226
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R23 -- wire `--w-trunk-anchor`** (v7f rung R3's `anchored` arm is blocked without it): a SECOND frozen forward of the seed's own ViT-B/16 plus the live encoder's patch tokens at the loss site. O7'"
+    },
+    {
+      "id": "R24",
+      "line": 167,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 10:05 Berlin (from D-V7-DINO-SEED)",
+      "verdict": "OPEN",
+      "occurrences": [
+        167
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R24 -- PI decision: authorise (or refuse) the DINOv3 ViT-B/16 pull.** Only ViT-L/16 and dinov2-base are on the box; the converter never downloads. Blocks the v7f seed at the prereg's chosen geomet"
+    },
+    {
+      "id": "R25",
+      "line": 168,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 10:05 Berlin (from D-V7-DINO-SEED)",
+      "verdict": "OPEN",
+      "occurrences": [
+        168
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R25 -- the `-k` selection in every v7 brief misses new test files by name.** `test_dinov3_seed.py` matches none of `v6|staged|parity|v7_labels|intrain|v7_wiring|eval_exclusion`; the agent correctl"
+    },
+    {
+      "id": "R26",
+      "line": 173,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 11:00 Berlin (from D-REFAV1-COST-SURFACE)",
+      "verdict": "CLOSED-ELSEWHERE",
+      "occurrences": [
+        173,
+        187
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R26 -- URGENT: complete the ?->steer conversion or remove the flag.** `as_command` is called at ONE site (`refa_v1.py:1832`); `_imagine_tactical_goal` (`:1680`) still rolls the goal in raw ?, so `"
+    },
+    {
+      "id": "R27",
+      "line": 174,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 11:00 Berlin (from D-REFAV1-COST-SURFACE)",
+      "verdict": "CLOSED-ELSEWHERE",
+      "occurrences": [
+        174,
+        188
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R27 -- the cost's TIME units**: `_cost_chunk` consumes the 2.0 s plan on the 0.6 s tactical clock and imagines 6.0 s, while the goal is subsampled correctly. Also: T4 (`target_speed`) is dead code"
+    },
+    {
+      "id": "R28",
+      "line": 175,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 11:00 Berlin (from D-REFAV1-COST-SURFACE)",
+      "verdict": "OPEN",
+      "occurrences": [
+        175
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R28 -- THE LEVER (training, not planning): the tactical decoder.** It asks for a turn on 0 of 27 human-turn windows (incumbent; ep2 0.333) and the goal it emits IS the cv rollout on 79-92 % of win"
+    },
+    {
+      "id": "R29",
+      "line": 176,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 11:00 Berlin (from D-REFAV1-COST-SURFACE)",
+      "verdict": "OPEN",
+      "occurrences": [
+        176,
+        198
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R29 -- the cosine cost is float32-saturated along ?** (2.00 ULPs median vs 167.5/19,804 along `a`; the shipped winning cost takes six distinct values over 140 windows, some negative). Package repa"
+    },
+    {
+      "id": "R30",
+      "line": 180,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 09:05 Berlin (from D-REFCV3-EPOCH-READ)",
+      "verdict": "OPEN",
+      "occurrences": [
+        180
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R30 -- PI/DOCTRINE RULING, blocks register decision 9**: does `EVAL_DOCTRINE.md` admit as T1 a model that consumes NO actions? refcv3 is one-shot with no rollout, so `roll_closed` cannot be ported"
+    },
+    {
+      "id": "R31",
+      "line": 181,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 09:05 Berlin (from D-REFCV3-EPOCH-READ)",
+      "verdict": "OPEN",
+      "occurrences": [
+        181
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R31 -- the in-training eval must dump PER-WINDOW values with episode ids.** Every number in `metrics.jsonl` is already a pooled mean, so no estimator can put an interval on it and the information "
+    },
+    {
+      "id": "R32",
+      "line": 182,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 09:05 Berlin (from D-REFCV3-EPOCH-READ)",
+      "verdict": "OPEN",
+      "occurrences": [
+        182
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R32 -- reconcile the leaked-eval count**: `C-REFCV3-EVAL-PRIOR-LEAK` says 34, the metrics file measures 40, and the file starts at step 550 so neither covers the whole run."
+    },
+    {
+      "id": "R33",
+      "line": 183,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 09:05 Berlin (from D-REFCV3-EPOCH-READ)",
+      "verdict": "CLOSED-ELSEWHERE",
+      "occurrences": [
+        183,
+        221
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R33 -- pick up `taniteval/tools/refcv3_metrics_read.py`**: a naive read of `metrics.jsonl` is wrong in three separate ways (era segmentation, the `elapsed_s` resets across 10 launches, and the ora"
+    },
+    {
+      "id": "R34",
+      "line": 189,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 09:30 Berlin (from D-STEER-CONVERSION-COMPLETE)",
+      "verdict": "OPEN",
+      "occurrences": [
+        189
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R34 -- DESIGN: the plan spans 2.0 s of a 6.0 s goal.** The planner's own canonical seed cannot reproduce its own goal, which sits directly beside the measurement that a correct turn buys one float"
+    },
+    {
+      "id": "R35",
+      "line": 190,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 09:30 Berlin (from D-STEER-CONVERSION-COMPLETE)",
+      "verdict": "OPEN",
+      "occurrences": [
+        190
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R35 -- decide T4 (`target_speed`) deliberately**: unused by production, exercised by two tests, so neither deletion nor wiring is free. Recommendation: KEEP until the cost is redesigned."
+    },
+    {
+      "id": "R36",
+      "line": 191,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 09:30 Berlin (from D-STEER-CONVERSION-COMPLETE)",
+      "verdict": "OPEN",
+      "occurrences": [
+        191
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R36 -- decide when `cost_time_grid=\"tactical\"` becomes the default.** The banked panel is provably unaffected (the winner is constant on 140/140), so the flip is safe for what is banked -- but it "
+    },
+    {
+      "id": "R37",
+      "line": 195,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 10:15 Berlin (from D-REFAV1-TAC-DECODER-PANEL)",
+      "verdict": "CLOSED-ELSEWHERE",
+      "occurrences": [
+        195,
+        203
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R37 -- L1, PREFLIGHT for every arm in `PREREG_TACTICAL_DECODER.md`: log the decoder's loss.** Four keys (`loss_lat_label`, `loss_lon_label`, `loss_route_label`, and their weighted share) in `refa_"
+    },
+    {
+      "id": "R38",
+      "line": 196,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 10:15 Berlin (from D-REFAV1-TAC-DECODER-PANEL)",
+      "verdict": "OPEN",
+      "occurrences": [
+        196,
+        204
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R38 -- L0: make the planner's canonical seed reproduce its own goal.** 62 of 64 token pairs differ, `TURN` over-rotates its goal by 82.5deg, and `4139203`'s time-grid repair does NOT close it (the"
+    },
+    {
+      "id": "R39",
+      "line": 197,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 10:15 Berlin (from D-REFAV1-TAC-DECODER-PANEL)",
+      "verdict": "CLOSED-ELSEWHERE",
+      "occurrences": [
+        197,
+        239
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R39 -- THE DEPLOYMENT QUESTION: the tactical decision is oracle nav, not scene.** Under `nav_zero` the ranking collapses to 0.520 and a nav-only predictor beats the model (0.684 > 0.650). nav will"
+    },
+    {
+      "id": "R40",
+      "line": 199,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 10:15 Berlin (from D-REFAV1-TAC-DECODER-PANEL)",
+      "verdict": "OPEN",
+      "occurrences": [
+        199
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R40 -- 5 of 16 tactical classes have ZERO support** in the training labels, and 8.13 % of batch-8 steps see no labelled row at all (~2.15 rows per step). A class-balanced loss cannot conjure suppo"
+    },
+    {
+      "id": "R41",
+      "line": 205,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 10:10 Berlin (from D-TACDEC-L0-L1-E0)",
+      "verdict": "CLOSED-ELSEWHERE",
+      "occurrences": [
+        205,
+        245
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R41 -- the cost repair is now the critical path, and the chord is NOT optional.** Only one configuration ranks a turn at shipped weights (L0 identity + chord + steer units) and it is 4 episodes of"
+    },
+    {
+      "id": "R42",
+      "line": 206,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 10:10 Berlin (from D-TACDEC-L0-L1-E0)",
+      "verdict": "OPEN",
+      "occurrences": [
+        206
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R42 -- scope note on `D-REFAV1-BOUNDARY-NULL`**: the steer conversion wins nothing under the SHIPPED cost but is NECESSARY under the only cost that ranks a turn. Any future statement of its value "
+    },
+    {
+      "id": "R43",
+      "line": 214,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 10:40 Berlin (from D-SOTA-DECODABILITY)",
+      "verdict": "OPEN",
+      "occurrences": [
+        214
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R43 -- MERGE `LAB-REP-2` into theme 1's `LAB-DRIFT-2` before either is scheduled.** The same lever (multi-horizon heads + a training-only cross-modal target) arrived from two independent primaries"
+    },
+    {
+      "id": "R44",
+      "line": 215,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 10:40 Berlin (from D-SOTA-DECODABILITY)",
+      "verdict": "OPEN",
+      "occurrences": [
+        215
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R44 -- adopt the three-gate ORDER for P5/L3** (capture -> real-effect resolvability -> propagation; `2608.29998`). ? `rdw8p30k` currently FAILS gate 1 (pooled cross-clip R? -0.05...-0.09), so no p"
+    },
+    {
+      "id": "R45",
+      "line": 216,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 10:40 Berlin (from D-SOTA-DECODABILITY)",
+      "verdict": "OPEN",
+      "occurrences": [
+        216
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R45 -- add the four controls we lack** to the criteria registry: a COUNTERFACTUAL input, a VALIDATED POSITIVE control (an engineered-leaky model that must fire), the PASSTHROUGH bound (an untraine"
+    },
+    {
+      "id": "R46",
+      "line": 217,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 10:40 Berlin (from D-SOTA-DECODABILITY)",
+      "verdict": "OPEN",
+      "occurrences": [
+        217
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R46 -- the oracle-input audit of refav1 as a PUBLISHABLE result** (LAB-REP-4): the field states it could not find a public-weights world model conditioning its predictor on language and calls demo"
+    },
+    {
+      "id": "R47",
+      "line": 222,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 11:00 Berlin",
+      "verdict": "OPEN",
+      "occurrences": [
+        222
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R47 -- the rule this earns**: when a number about to be published disagrees with a banked one, DIFF THE DEFINITIONS FIRST. Printing both and deferring is honest but is not the work."
+    },
+    {
+      "id": "R48",
+      "line": 227,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 11:30 Berlin (from D-V7-TRUNK-ANCHOR)",
+      "verdict": "OPEN",
+      "occurrences": [
+        227
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R48 -- rung R3's `lastk` arm has no flag**: `--trunk-lr-scale` is whole-trunk. A per-block LR policy is a separate, unowned change; either implement it or drop `lastk` from R3 and say so."
+    },
+    {
+      "id": "R49",
+      "line": 228,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 11:30 Berlin (from D-V7-TRUNK-ANCHOR)",
+      "verdict": "OPEN",
+      "occurrences": [
+        228
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R49 -- `dry_run()` does not seed the global RNG** (two identical default dry-runs read 4.0784 vs 4.1158). Pre-existing; a seeding fix would move every banked dry-run number, so it needs a stated c"
+    },
+    {
+      "id": "R50",
+      "line": 233,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 11:50 Berlin (from D-REFCV3-ARM)",
+      "verdict": "OPEN",
+      "occurrences": [
+        233
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R50 -- the SELECTION PROFILE gate, and it generalises.** A random-init anchor model picked ONE anchor on 42/42 windows while the trivial-profile gate read 0.0000: our degeneracy instrument asks wh"
+    },
+    {
+      "id": "R51",
+      "line": 234,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 11:50 Berlin (from D-REFCV3-ARM)",
+      "verdict": "OPEN",
+      "occurrences": [
+        234
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R51 -- `REFCV3_ARM.md` ?2 needs a human read before any refcv3 number is quoted** (GATE 2 is blocked on that, not on GPU)."
+    },
+    {
+      "id": "R52",
+      "line": 235,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 11:50 Berlin (from D-REFCV3-ARM)",
+      "verdict": "OPEN",
+      "occurrences": [
+        235
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R52 -- the lead-block join reaches only EVEN raw frames** (`_odd_raw_frames` prints the count); fix before the real read or state the coverage in the result."
+    },
+    {
+      "id": "R53",
+      "line": 240,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 12:40 Berlin (from D-REFCV3-NAVZERO)",
+      "verdict": "OPEN",
+      "occurrences": [
+        240
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R53 -- `trivial_profile.identity_to`'s 1e-9 m threshold is unresolvable for CROSS-CALL arms.** The batching floor alone is 5.96e-07 m (different batch sizes take different GEMM paths), so two arms"
+    },
+    {
+      "id": "R54",
+      "line": 241,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 12:40 Berlin (from D-REFCV3-NAVZERO)",
+      "verdict": "OPEN",
+      "occurrences": [
+        241
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R54 -- PI decision D3b: which margin leads the H-vs-F table**, the fed-nav one or the deployment (nav-zero) one. Quoting only the fed-nav margin overstates the system, since nav is an oracle input"
+    },
+    {
+      "id": "R55",
+      "line": 246,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 13:10 Berlin (from D-COST-CHORD)",
+      "verdict": "OPEN",
+      "occurrences": [
+        246
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R55 -- `chord` must NOT become the default.** Default-safe as a flag, but a 5,793x reweighting wearing a metric's clothes; any adoption needs the weight re-derived WITH it."
+    },
+    {
+      "id": "R56",
+      "line": 247,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 13:10 Berlin (from D-COST-CHORD)",
+      "verdict": "OPEN",
+      "occurrences": [
+        247
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R56 -- unreconciled: the ?? charge reads 3.20e-04 (cost-repair) vs 2.24e-04 (cost-surface), 1.43x.** Both MEASURED in different packages, neither withdrawn. Reconcile before either number is quote"
+    },
+    {
+      "id": "R57",
+      "line": 248,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 13:10 Berlin (from D-COST-CHORD)",
+      "verdict": "OPEN",
+      "occurrences": [
+        248
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R57 -- an unowned file appeared inside another stream's package dir**: `.../2026-09-03-cost-repair/PROPOSED_REGISTER_ROWS.md` (12,695 B) at 11:28, after the Master Mind's 11:15 listing; a file of "
+    },
+    {
+      "id": "R58",
+      "line": 253,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 13:45 Berlin (from H-GS9-1 / D-ACTDIV-UNITS-INVARIANCE)",
+      "verdict": "OPEN",
+      "occurrences": [
+        253
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R58 -- `v` leaks in at the MODEL BOUNDARY, not in a decode target.** `clip_features:521` lifts `v0` into the third channel while the zero-action arm zeroes only steer and accel; `v_t` alone scores"
+    },
+    {
+      "id": "R59",
+      "line": 254,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 13:45 Berlin (from H-GS9-1 / D-ACTDIV-UNITS-INVARIANCE)",
+      "verdict": "OPEN",
+      "occurrences": [
+        254
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R59 -- `run_panel()` silently skips unknown cells**, a false-negative generator: it would have dropped the `v_t` control that found R58 without a word. Two-line refusal needed (not the finding str"
+    },
+    {
+      "id": "R60",
+      "line": 255,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 13:45 Berlin (from H-GS9-1 / D-ACTDIV-UNITS-INVARIANCE)",
+      "verdict": "OPEN",
+      "occurrences": [
+        255
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R60 -- `transition_probe.py` is wired into nothing**; `mm_e19_read.py` still calls `actdiv_local.py`, which carries the H-LEAK-1 speed-scale defect. It is the ONLY instrument that answers L3's que"
+    },
+    {
+      "id": "R61",
+      "line": 256,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 13:45 Berlin (from H-GS9-1 / D-ACTDIV-UNITS-INVARIANCE)",
+      "verdict": "OPEN",
+      "occurrences": [
+        256
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R61 -- raw pixels carry 5-200x more transition-specific structure than the learned ?z** (RFF floor, point estimates, no CI). If that survives a CI it is a representation finding, not an instrument"
+    },
+    {
+      "id": "R62",
+      "line": 257,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 13:45 Berlin (from H-GS9-1 / D-ACTDIV-UNITS-INVARIANCE)",
+      "verdict": "OPEN",
+      "occurrences": [
+        257
+      ],
+      "closed_later_shape": null,
+      "excerpt": "- **R62 -- `MODEL_REGISTRY.md` has no row for `k8clip05p30k`** (0 hits, two probes)."
+    },
+    {
+      "id": "S4R-1",
+      "line": 530,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        530
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| S4R-1 | **DONE 2026-10-17** (`raw/2026-10-17-s4r-integration/`, TEST_TABLE.md: 22 full-form runs, 0 regressions): rebased onto the tip; root cause of the G-SUITE-only rc 1 = the test ran a stub suit"
+    },
+    {
+      "id": "S4R-2",
+      "line": 531,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "OPEN",
+      "occurrences": [
+        531
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| S4R-2 | **The nesting guard protects every profile, but its test runs only in `SFT4R_SUITE`.** Decide whether `test_suite_nesting.py` joins the common SUITE (+10 s per G-SUITE and a new suite bindin"
+    },
+    {
+      "id": "P2F-1",
+      "line": 532,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        532
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| P2F-1 | **DONE 2026-10-18** (`raw/2026-10-16-p2-full-table/RESULT.md`, `D-REFE-P2-FULLTABLE`; the SELRULE-DAC confirm read ADOPT, +0.02 PDMS, `D-REFE-SELRULE-DAC-CONFIRM`). **P2 full 64-proposal tab"
+    },
+    {
+      "id": "SEL-RANK",
+      "line": 533,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "OPEN",
+      "occurrences": [
+        533
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| SEL-RANK | **STEP 1 DONE 2026-10-18, 0 GPU** (`raw/2026-10-18-sel-rank/RESULT.md`, `D-REFE-SELRANK-1`): the 5.88 pool is EP 77 % in the swap; a perfect TTC head recovers +1.83 [1.57, 2.11] and a per"
+    },
+    {
+      "id": "EP-1",
+      "line": 534,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        534
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| EP-1 | **DONE 2026-10-18, 0 GPU** (`raw/2026-10-18-ep-selection/RESULT.md`, `D-REFE-EP-1`/`-2`): P2's EP loss is a safe-but-slow pick caused by a DOUBLE CHARGE (the EP head is an unconditional expec"
+    },
+    {
+      "id": "EP-R1",
+      "line": 535,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "OPEN",
+      "occurrences": [
+        535
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| EP-R1 | **BUILT + PRE-REGISTERED 2026-10-18, 0 GPU** (`raw/2026-10-18-ep-r1/`, `H-EPR1`): conditional-EP row + safe-pair ranking term, head-only on S0's bank. **Next:** after `S0_DONE`, `epr1_gate.p"
+    },
+    {
+      "id": "EP-R1UB",
+      "line": 536,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        536
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| EP-R1UB | **NEXT, CPU, ~10-20 min fit** (MM R7, `D-REFE-HEADFIT-F10`): E1 + D-LEAK fired at f = 10 %. Write the NEW registration PREREG_EPR1UB (hashed before any fit): lr {1e-3, 3e-3, 1e-2} x unsafe"
+    },
+    {
+      "id": "NAVTEST-HEADBANK",
+      "line": 537,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "OPEN",
+      "occurrences": [
+        537
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| NAVTEST-HEADBANK | **SCHEDULED (MM D4, 2026-10-19), dev-box GPU, 5.43 GPU-h**: the navtest P2 `score_head` input-feature bank for the ONE shared REFE head look. Plans and commands come from `raw/202"
+    },
+    {
+      "id": "SRTTC-DEV-APPLIER",
+      "line": 538,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        538
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| SRTTC-DEV-APPLIER | **DONE 2026-10-19** (`srttc_dev.py`, `navtest_c2.py`, `confirm_families.py`, `confirm_read.py`; `D-REFE-HEADFIT-F10`). **Next: SRTTC-C2-STAGE** -- a NEW gate-stage file for SR-TT"
+    },
+    {
+      "id": "HEADROW-PROBE",
+      "line": 539,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        539
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| HEADROW-PROBE | **NEXT, CPU, minutes** (the D-FLAT next arm of SR-TTC and, if EP-R1ub has no feasible config, the NC/DAC-resolution read of EP-R1): ONE pre-registered feature-vs-capacity probe over "
+    },
+    {
+      "id": "FASTNEG-CENSUS",
+      "line": 540,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        540
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| FASTNEG-CENSUS | **REGISTERED 2026-10-19 (`TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-19-fastneg-census/PREREG_FASTNEG_CENSUS.md`, sha256 `b6cece236d5aa7"
+    },
+    {
+      "id": "FASTNEG-F25-RERUN",
+      "line": 541,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "OPEN",
+      "occurrences": [
+        541
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| FASTNEG-F25-RERUN | **DEFERRED** (`MM_RULING_CENSUS.md`): the census's committed re-run at f = 25 % needs S0 at f = 25 % (14,984 new tokens / 292 logs, about 6.7 dev-box GPU-h EST, plus pod staging "
+    },
+    {
+      "id": "CENSUS-SLOT-REREAD",
+      "line": 542,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "OPEN",
+      "occurrences": [
+        542
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| CENSUS-SLOT-REREAD | 0 GPU, CPU minutes, DESCRIPTIVE (no decision authority): re-read FASTNEG-CENSUS's DAC fast-band deficit stratified by proposal SLOT as well as speed. The slot prior (`D-REFE-HEA"
+    },
+    {
+      "id": "PICKRULE-AUDIT-NC",
+      "line": 543,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        543
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| PICKRULE-AUDIT-NC | **NEXT, 0 GPU, CPU minutes; own PREREG before any number.** NC resolves the fast band, yet RL-1's head-wise composite lost NC on navtest. Test whether the NC loss arises in how `"
+    },
+    {
+      "id": "NC-FASTCAL",
+      "line": 544,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        544
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| NC-FASTCAL | **NEXT, CPU minutes; own PREREG** (the committed ROW-MISS arm): SPEED-CONDITIONAL NC calibration fitted OOF on S0, because a monotone transform of the NC logit cannot reorder confident "
+    },
+    {
+      "id": "EP-RELIAB-PICKS",
+      "line": 545,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        545
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| EP-RELIAB-PICKS | **NEXT, 0 GPU, CPU minutes; own PREREG with a pre-registered reliability-at-picks diagnostic (MM ruling 4).** R53's replacement HYPOTHESIS: does the EP-led composite's PREDICTED EP"
+    },
+    {
+      "id": "EP-ADMISSION",
+      "line": 546,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "OPEN",
+      "occurrences": [
+        546
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| EP-ADMISSION | **DRAFT, sealed per CANDIDATE** (`raw/2026-10-19-ep-reliab-picks/DRAFT_PREREG_EP_ADMISSION.md`). Before ANY EP-led change (P6 checkpoint, R0e-pick, an RL or head change) gets a navtes"
+    },
+    {
+      "id": "P6-READ-PREP",
+      "line": 547,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        547
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| P6-READ-PREP | **DONE 2026-10-19** (`raw/2026-10-19-p6-read-prep/`): `build_candidate_bank.py` (S0 candidate bank from a checkpoint; CPU smoke on 3 tokens max abs dlogit 1.28e-3; the A40 dump path U"
+    },
+    {
+      "id": "EP-ADMISSION-R1",
+      "line": 548,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        548
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| EP-ADMISSION-R1 | **NEXT, CPU** (before P6's read, about 25 Oct): implement the draft's Revision 1 in `ep_admission.py`, keeping the draft rules reproducible behind a flag. Add RED mutations for eac"
+    },
+    {
+      "id": "EP-ADMISSION-R2-CONFIRM",
+      "line": 549,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        549
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| EP-ADMISSION-R2-CONFIRM | **NEXT, CPU (about 15 min)**: re-run the EP-ADMISSION-R1 simulator with a NEW replicate seed (N >= 1,000 per condition) for A2 at margin 1.05. Bars committed in `MM_RULING_"
+    },
+    {
+      "id": "PRIVGEOM-SAFE",
+      "line": 550,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        550
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| PRIVGEOM-SAFE | **NEXT, CPU (budget about 16 CPU-h, sized by measured cost); own PREREG; supersedes PRIVGEOM-DAC.** Privileged per-proposal geometry as a DIAGNOSTIC only (never an inference input): "
+    },
+    {
+      "id": "SH5-DAC-PROX",
+      "line": 551,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "OPEN",
+      "occurrences": [
+        551
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| SH5-DAC-PROX | **BUILDING 2026-10-19** (agent; package `C:/Users/Admin/par18/sh5/` until landed). The committed next arm of PRIVGEOM-SAFE's DAC INFO-UPSTREAM: a scorer-branch DAC boundary-proximity "
+    },
+    {
+      "id": "SH5-CREACH-GRID6",
+      "line": 552,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "OPEN",
+      "occurrences": [
+        552
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| SH5-CREACH-GRID6 | **PARKED** (MM: SH5 behind the search line, D-REFE-PRIVGEOM-CLEAN-1). Visual-ctx dropout on ALL arms (base, BEST, cos16_k8o8, wd1) x seeds 0-2 x 120 ep + replicate + the F12 fp32 "
+    },
+    {
+      "id": "PRIVGEOM-CLEAN",
+      "line": 553,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        553
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| PRIVGEOM-CLEAN | **CONDITIONAL, BLOCKED (PI: nuPlan DB fetch for the 76 f10 logs without a local DB)**. A pre-registered sign-clean read (no column whose values or ORDER re-derive the verdict; plant"
+    },
+    {
+      "id": "D-SPACE",
+      "line": 554,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "OPEN",
+      "occurrences": [
+        554
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| D-SPACE | **BLOCKER (needs the PI: top-level D: deletions are refused to the agent's tools)**. D: (external exFAT, 1 MiB clusters, so EVERY small file costs 1 MiB) has about 20 GiB free, and the sta"
+    },
+    {
+      "id": "PRIVGEOM-DAC",
+      "line": 555,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "OPEN",
+      "occurrences": [
+        555
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| PRIVGEOM-DAC | **NEXT, CPU; own PREREG before any number** (D2 of the Lab report, restricted to DAC): privileged drivable-area geometry scalars (ego-box clearance to the drivable boundary at key poi"
+    },
+    {
+      "id": "FASTNEG-BANK",
+      "line": 556,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "OPEN",
+      "occurrences": [
+        556
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| FASTNEG-BANK | **BLOCKED on FASTNEG-CENSUS reading COVERAGE** (lever SH1, `2026-10-19-safety-head-lit/REPORT.md` ?4.3, ?4.5): fast and lead-ward candidates (24 per S0 token, EST 26.4 CPU-h) as a `fa"
+    },
+    {
+      "id": "PRIVGEOM-PROBE",
+      "line": 557,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "OPEN",
+      "occurrences": [
+        557
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| PRIVGEOM-PROBE | **CONDITIONAL on FASTNEG-CENSUS reading FEATURE** (D2 of the Lab report; CPU EST 13.5 h): privileged PDM-calculator geometry scalars added to the head-input token as a DIAGNOSTIC (n"
+    },
+    {
+      "id": "SCORER-ENS-S0S1",
+      "line": 558,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "OPEN",
+      "occurrences": [
+        558
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| SCORER-ENS-S0S1 | CANDIDATE (lever SH6, EST 3 dev-box GPU-h, selection tier): P2-s0 and P2-s1 each score a common fan on the dev table. Needs `visual_ctx` for both on the 1,705 tokens (neither exist"
+    },
+    {
+      "id": "SCORER-BRANCH-PERSTEP",
+      "line": 559,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "OPEN",
+      "occurrences": [
+        559
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| SCORER-BRANCH-PERSTEP | **CONDITIONAL** on PRIVGEOM-PROBE naming agent or lead scalars (SH3), or on SH5 failing (SH4): per-step / proposal-anchored scorer-branch reads of cached `visual_ctx` (EST 10"
+    },
+    {
+      "id": "EPR1UB-GATE-CACHE",
+      "line": 560,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        560
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| EPR1UB-GATE-CACHE | **FIX BEFORE ANY REUSE** (`D-REFE-EPR1UB-1`): `epr1ub_gate.load_verified_ub` caches the module by `epr1ub.py`'s sha alone, so a tampered parent in another code_dir is not re-veri"
+    },
+    {
+      "id": "C2-GATE-SIBLING-LEAK",
+      "line": 561,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        561
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| C2-GATE-SIBLING-LEAK | **FIX BEFORE ANY REUSE of the (VOID) C2 chain:** `srttc_c2.run_c2` resolves `srttc_r1` through a process-global module, so a later load uses an `srttc_r1` from another (delete"
+    },
+    {
+      "id": "SRTTC-R1-GATE-CACHE",
+      "line": 562,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "OPEN",
+      "occurrences": [
+        562
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| SRTTC-R1-GATE-CACHE | LOW, 0 GPU (limit L3 of `TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-19-c2-sibling-leak/RESULT.md`): `srttc_r1_gate.load_verified_mo"
+    },
+    {
+      "id": "NT-FIX1",
+      "line": 563,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "OPEN",
+      "occurrences": [
+        563
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| NT-FIX1 | **PARTLY DONE 2026-10-19:** `run_v1_fix1.py` (W3 navtest fixes A cross-drive relpath / B stale-CSV quarantine / C no summary on a count mismatch; 20 tests, RED arm per fix) is LANDED and A"
+    },
+    {
+      "id": "SRTTC-SUCCESSOR",
+      "line": 564,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "OPEN",
+      "occurrences": [
+        564
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| SRTTC-SUCCESSOR | **TO DRAFT (after HEADROW-PROBE):** a successor SR-TTC registration with a POWERED C2 (replicate shuffles, a one-sided rule on the interval, not a per-seed point <= 0; `RETRACTION_"
+    },
+    {
+      "id": "LIT-EP-RL",
+      "line": 565,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        565
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| LIT-EP-RL | **DONE 2026-10-18, 0 GPU** (`TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md`; GAC `D-RL-NAVSIM-PRIOR-2`, `D-LIT-EP-MECH-1`, `H-L1-TOAD-ADMIT`; 11 p"
+    },
+    {
+      "id": "L1-STEPA-RUN",
+      "line": 566,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        566
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| L1-STEPA-RUN | **LAUNCH-READY 2026-10-18** (`2026-10-18-ep-rl-lit/l1_stepA/`, Amendment 1 ADOPTED): the off-proposal admission test of CEM search on P2-s0's scorer. Needs the dev-box GPU lock (after"
+    },
+    {
+      "id": "L2-OFFPROP",
+      "line": 567,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        567
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| L2-OFFPROP | **BUILDING 2026-10-19** (agent; `C:/Users/Admin/par18/l2/`; draft prereg `TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-19-l2-offprop/DRAFT_PRE"
+    },
+    {
+      "id": "L2-FRESH-STEPA",
+      "line": 568,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "OPEN",
+      "occurrences": [
+        568
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| L2-FRESH-STEPA | **NEXT** (L2-ADMIT's committed arm): L1 Step A re-run on a FRESH carve of navtrain held-out logs DISJOINT from the 24 seen ones, with the FINAL L2 EP head (sealed recipe, fit on all"
+    },
+    {
+      "id": "UNSEEN-STRATUM-DATA",
+      "line": 569,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        569
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| UNSEEN-STRATUM-DATA | **O3 next arm of L2-FRESH (Amendment 2); its PRIORITY is set by the Step B diagnostic** (a NOT CLEARED Step B makes L2-BRANCH the lever and this moot for the head). The pool is"
+    },
+    {
+      "id": "L2-STEPB-GATE",
+      "line": 570,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "OPEN",
+      "occurrences": [
+        570
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| L2-STEPB-GATE | **BLOCKER for Step B** (MM ruling E7): integrating an L2 EP head into REFe's scorer for the search needs a `launch_gate.py` profile with G-HYG / G-DVB / G-LIVE entries for the new fl"
+    },
+    {
+      "id": "SEARCH-P2-CONFIRM",
+      "line": 571,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "OPEN",
+      "occurrences": [
+        571
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| SEARCH-P2-CONFIRM | **NEXT, pre-registration (CPU), then one locked GPU bundle** (MM ruling `TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-19-l2-stepB/MM_RU"
+    },
+    {
+      "id": "EPADM-SEARCHBANK",
+      "line": 572,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        572
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| EPADM-SEARCHBANK | **BUILDING 2026-10-19** (agent, CPU; `C:/Users/Admin/par18/epadm_search/`; SEARCH-P2-CONFIRM DQ6): an adapter from a search-output bank to `ep-admission-v1` (one set per token x s"
+    },
+    {
+      "id": "EPADM-SEARCHBANK-S0",
+      "line": 573,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        573
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| EPADM-SEARCHBANK-S0 | **NEXT (fallback (b) of `MM_RULING_SPC.md` DQ6)**: the search-output bank at S0's geometry (P2 + Step B's P2HEAD search on S0's in-sample navtrain tokens: 117 logs, 15,808 sets"
+    },
+    {
+      "id": "SEARCH-NAVTEST-PIPE",
+      "line": 574,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "OPEN",
+      "occurrences": [
+        574
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| SEARCH-NAVTEST-PIPE | **BUILDING 2026-10-19** (agent, CPU, no GPU, no navtest label; `C:/Users/Admin/par18/navpipe/`; a named BLOCKER of SEARCH-P2-CONFIRM READ C2): a chunked bundle -> search -> T1 "
+    },
+    {
+      "id": "SEARCH-THOR-LATENCY",
+      "line": 575,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "OPEN",
+      "occurrences": [
+        575
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| SEARCH-THOR-LATENCY | **NEXT, 0 GPU to write, a Thor slot to run** (`MM_RULING_C2AMEND.md` DQ3 / DQ4): write `thor_search_latency.py` per the C2 amendment's ?7 protocol (14 scorer set-scorings per t"
+    },
+    {
+      "id": "LATENCY-BUDGET",
+      "line": 576,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "OPEN",
+      "occurrences": [
+        576
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| LATENCY-BUDGET | **OPEN ARCHITECTURE DECISION (MM, may need the PI)**: no absolute planning-latency budget for the deployed stack exists anywhere in the programme (`MM_RULING_C2AMEND.md` DQ4). Witho"
+    },
+    {
+      "id": "THOR-PICK-TICK",
+      "line": 577,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "OPEN",
+      "occurrences": [
+        577
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| THOR-PICK-TICK | **NEXT, 0 GPU to write, a Thor slot to run** (M1 of `TanitAD Research Lab/Architecture & Inference/Research/2026-10-20-latency-budget/LATENCY_BUDGET_PROPOSAL.md`; it decides which L"
+    },
+    {
+      "id": "SEARCH-HOST-PORT",
+      "line": 578,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "OPEN",
+      "occurrences": [
+        578
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| SEARCH-HOST-PORT | **NEXT, CPU** (`LATENCY_BUDGET_PROPOSAL.md`): the search's latency is set by DEPENDENT calls, not rows: `tts_cem.py` issues the final re-scorings one by one (C8 14, O4 38 calls; b"
+    },
+    {
+      "id": "SEARCH-STALE-T1",
+      "line": 579,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        579
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| SEARCH-STALE-T1 | **PROPOSED, after the PI's LATENCY-BUDGET ruling** (M3 of the memo, selection tier): apply the searched plan 1-5 frames late (option (2) runs the search at 2 Hz on cached features)"
+    },
+    {
+      "id": "SEARCH-DOSE",
+      "line": 580,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        580
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| SEARCH-DOSE | **NEXT after `ZZSPC_DONE`** (CPU only, about 4 h ESTIMATED): the pinned O4 config (M = 256, `stepB_config_O4.json` sha256 `1ebd7196...`) on C1's B-REST bundle, everything else identica"
+    },
+    {
+      "id": "L2-BRANCH",
+      "line": 581,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "OPEN",
+      "occurrences": [
+        581
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| L2-BRANCH | **DEPRIORITISED 2026-10-19** (the sealed NOT CLEARED arm of `PREREG_L2_STEPB.md`): Step B measured that the L2 EP head drives the search to speed-ups that trade TTC (`D-REFE-L2-STEPB-1`)"
+    },
+    {
+      "id": "SEARCH-PESSIMISTIC",
+      "line": 582,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "OPEN",
+      "occurrences": [
+        582
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| SEARCH-PESSIMISTIC | **NAMED 2026-10-22 (C2's new lever, `TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-19-search-p2-confirm/c2/result/RESULT.md` item 5; no"
+    },
+    {
+      "id": "P7-SPEC",
+      "line": 583,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        583
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| P7-SPEC | **DONE 2026-10-22 (spec + reserve landed: `TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/SPEC_P7.md`, `TanitAD Research Lab/Architecture & Inference/Research/"
+    },
+    {
+      "id": "P7-WIRE-RESERVE",
+      "line": 584,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "OPEN",
+      "occurrences": [
+        584
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| P7-WIRE-RESERVE | **ACTIVE (0 GPU)**: exclude R-A by **session** from every log-keyed P7 input: bank rank-0 and rank-1 rows, D9 cache, aux label store, image zips, calibration rows. Gate that every "
+    },
+    {
+      "id": "P7-WIRE-HEAD",
+      "line": 585,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "OPEN",
+      "occurrences": [
+        585
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| P7-WIRE-HEAD | **ACTIVE (0 GPU)**: wire the P7.1 training-only drivable-area head (`PK/SPEC_AUX_DRIVABLE_HEAD.md`), working from the tip, not the stale anchors. Add the `launch_gate` G-DVB and G-LIV"
+    },
+    {
+      "id": "P7.2-ENSEMBLE",
+      "line": 586,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "OPEN",
+      "occurrences": [
+        586
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| P7.2-ENSEMBLE | **QUEUED behind P7** (plan S4): a scorer ensemble over training seeds plus pessimistic selection and calibration, FITTED on P7's reserved sessions and judged by one navtest look. It "
+    },
+    {
+      "id": "L1-UNSEEN-STRATUM",
+      "line": 587,
+      "kind": "named",
+      "section": "Added 2026-10-17 (Master Mind)",
+      "verdict": "OPEN",
+      "occurrences": [
+        587
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| L1-UNSEEN-STRATUM | **OPTION, 0 GPU to start** (`D-L1-G0-1`, Amendment 1 A1.5): build a scene-disjoint stratum so that Step A's O1 can be unconditional. Candidates: the 251 navtrain yaml tokens abse"
+    },
+    {
+      "id": "SO-A16",
+      "line": 593,
+      "kind": "named",
+      "section": "Added 2026-10-17 later (Master Mind)",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        593
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| SO-A16 | **DONE 2026-10-17**: `test_launch_gate.py` resolves a real POSIX bash by absolute path (skips the WSL launcher, loud skip if none); full form WITHOUT the shim `ZZLG_FULL_PASS 719`, with it "
+    },
+    {
+      "id": "TEST-RED-1",
+      "line": 594,
+      "kind": "named",
+      "section": "Added 2026-10-17 later (Master Mind)",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        594
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| TEST-RED-1 | **DONE 2026-10-18 -- none is a code defect** (`raw/2026-10-17-s4r-integration/TEST_RED_1_RESULT.md`): `test_aux_g12_bf16` = torch 2.7.1 needs `CUBLAS_WORKSPACE_CONFIG` at PROCESS START "
+    },
+    {
+      "id": "SO-G",
+      "line": 595,
+      "kind": "named",
+      "section": "Added 2026-10-17 later (Master Mind)",
+      "verdict": "OPEN",
+      "occurrences": [
+        595
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| SO-G | **R0d DONE 2026-10-18** (`raw/2026-10-18-r0d-outcome/`, O4). After EACH SAFEOBJ arm: the B - own-A `rl_val_eval.py --base A` read bar G needs (PREREG_SAFEOBJ addendum 1 R1; the chain does not"
+    },
+    {
+      "id": "SO-CARVE",
+      "line": 596,
+      "kind": "named",
+      "section": "Added 2026-10-17 later (Master Mind)",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        596
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| SO-CARVE | **DONE 2026-10-18** (`raw/2026-10-18-so-carve/`, `D-REFE-SAFEOBJ-CARVE`: CARVE-TRACKS-TRAIN [F1 in-sample carve, F2 unresolved]; A1 shows the constraint's soft quantity understates the pi"
+    },
+    {
+      "id": "SO-PICKCON",
+      "line": 597,
+      "kind": "named",
+      "section": "Added 2026-10-17 later (Master Mind)",
+      "verdict": "OPEN",
+      "occurrences": [
+        597
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| SO-PICKCON | **0-GPU part DONE 2026-10-18** (`raw/2026-10-18-so-pickcon/`, `D-REFE-SO-PICKCON-1`): `--epo-con-temp` built, gated (G-DVB) and tested; A2R UNDERPOWERED, A2R2 (post-hoc) ALIGNED at T* ="
+    },
+    {
+      "id": "R0E-PICK",
+      "line": 598,
+      "kind": "named",
+      "section": "Added 2026-10-17 later (Master Mind)",
+      "verdict": "OPEN",
+      "occurrences": [
+        598
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| R0E-PICK | **The pick-aligned SAFEOBJ arm, pre-registration, FROZEN 2026-10-18** (`raw/2026-10-18-r0e-pick/PREREG_R0E_PICK.md`, Opus draft 2026-10-18): one arm = R0d's argv + `--epo-con-temp 0.01` ("
+    },
+    {
+      "id": "R0E-B2B5",
+      "line": 599,
+      "kind": "named",
+      "section": "Added 2026-10-17 later (Master Mind)",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        599
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| R0E-B2B5 | **DONE 2026-10-19** (`D-REFE-R0E-B2B5`): launch-gate profile `refe_rls1e` + pod chain for R0e-id / R0e-pick / R1e-pick (B2 + B5); gate suite 1002 -> 1193; MM-verified on the staged bytes."
+    },
+    {
+      "id": "R0E-B9B10",
+      "line": 600,
+      "kind": "named",
+      "section": "Added 2026-10-17 later (Master Mind)",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        600
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| R0E-B9B10 | **BUILDING 2026-10-19** (agent; `C:/Users/Admin/par18/r0eb9/`): **B9** R0e-id runs K3 OBSERVE-ONLY (PREREG ?4; planted kill-monitor proof + RED arms); **B10** R0e-pick refuses unless R0e"
+    },
+    {
+      "id": "R0E-SHIP-MANIFEST",
+      "line": 601,
+      "kind": "named",
+      "section": "Added 2026-10-17 later (Master Mind)",
+      "verdict": "OPEN",
+      "occurrences": [
+        601
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| R0E-SHIP-MANIFEST | **BEFORE THE NEXT RLS1 POD STAGING** (0 GPU, minutes): regenerate `SHIP_MANIFEST.json` with `refe/launch_gate.py ship-manifest --pkg <refe-plan> --commit <the landed commit> --ou"
+    },
+    {
+      "id": "RL-1",
+      "line": 602,
+      "kind": "named",
+      "section": "Added 2026-10-17 later (Master Mind)",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        602
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| RL-1 | **DONE 2026-10-19, 0 GPU** (`raw/2026-10-18-rl-headwise/`, `D-REFE-RL1-HEADWISE`, `D-REFE-RL1-MECH`): the head-wise composite V1 reads **N-BOTH** on navtest (PDMS +0.095 [-0.074, +0.257], NC "
+    },
+    {
+      "id": "RL-2",
+      "line": 603,
+      "kind": "named",
+      "section": "Added 2026-10-17 later (Master Mind)",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        603
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| RL-2 | **DONE 2026-10-18, 0 GPU** (`raw/2026-10-19-rl-lanemix/`, `D-REFE-RL2-LANEDOSE`): the lane-dose composite L0.25 passes RL-val vs base0 (+0.308 [+0.003, +0.609]) but is NOT separable from V1 ("
+    },
+    {
+      "id": "LOCK-STEAL-2",
+      "line": 604,
+      "kind": "named",
+      "section": "Added 2026-10-17 later (Master Mind)",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        604
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| LOCK-STEAL-2 | ~~**Four more dev-box lock helpers can remove a live job's lock** (sweep 2026-10-18, `TRAPS.md` \"two lock schemas share devbox_gpu.lock\"): `c3_run.py:114`, `c3_run_p2.py:126`, `p2s1_a"
+    },
+    {
+      "id": "FP-POD-CLEAN",
+      "line": 605,
+      "kind": "named",
+      "section": "Added 2026-10-17 later (Master Mind)",
+      "verdict": "OPEN",
+      "occurrences": [
+        605
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| FP-POD-CLEAN | **Startup-check half CLOSED 2026-10-18 (INSTFIX)**: `taniteval/tools/chain_controls.py` (+34 tests) refuses a chain plan at startup when a gated control has no producer; on the REAL b"
+    },
+    {
+      "id": "P6-3C",
+      "line": 606,
+      "kind": "named",
+      "section": "Added 2026-10-17 later (Master Mind)",
+      "verdict": "OPEN",
+      "occurrences": [
+        606
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| P6-3C | **P6 on the 3-C twin bank.** The `P6_CBANK` knob + commands-stage guard are landed in `refe/p6_pod.sh` (this commit; full-form tests: test_p6_chain 341, test_p6_cpu_probe 111, test_rls1_chai"
+    },
+    {
+      "id": "P6-RESUME-BANK",
+      "line": 607,
+      "kind": "named",
+      "section": "Added 2026-10-17 later (Master Mind)",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        607
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| P6-RESUME-BANK | **DONE 2026-10-20, for the NEXT ship** (`raw/2026-10-20-p6-resume-bank/`; the pod still runs `bcc04b5`, untouched): `refe/p6_pod.sh` `resume_bank_check()` refuses a RESUME whose `CB"
+    },
+    {
+      "id": "P6-HN",
+      "line": 608,
+      "kind": "named",
+      "section": "Added 2026-10-17 later (Master Mind)",
+      "verdict": "OPEN",
+      "occurrences": [
+        608
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| P6-HN | **Step 0 DONE 2026-10-18** (`raw/2026-10-18-hn-census/`, `D-REFE-HN-CENSUS-1`: PARTIAL; expert-proximate hard negatives in 33.7 % [23.3, 46.7] of held-out sets at 0.5 m; reach ESTIMATED 0.29"
+    },
+    {
+      "id": "HNSCREEN-CACHE-CONTENT-FP",
+      "line": 609,
+      "kind": "named",
+      "section": "Added 2026-10-17 later (Master Mind)",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        609
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| HNSCREEN-CACHE-CONTENT-FP | 0 GPU: the `--ctx-cache` fingerprint used by the HN screen's gate is a SIZE LISTING (`GT.fingerprint` on a directory); a same-size flip inside a cache file passes (MEASUR"
+    },
+    {
+      "id": "HNSCREEN-FP-COST",
+      "line": 610,
+      "kind": "named",
+      "section": "Added 2026-10-17 later (Master Mind)",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        610
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| HNSCREEN-FP-COST | **DECIDE BEFORE THE HN SCREEN LAUNCHES** (0 GPU): the content fingerprint costs 17 full reads of the about 70 GiB ctx cache per 3-seed screen. That is about 8 h on D: (USB SSD, 44"
+    },
+    {
+      "id": "HNSCREEN-TOKEN-NAMES",
+      "line": 611,
+      "kind": "named",
+      "section": "Added 2026-10-17 later (Master Mind)",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        611
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| HNSCREEN-TOKEN-NAMES | **LAUNCH BLOCKER for the P6-HN screen, 0 GPU. MEASURED from source at tip `823c529` (it was an UNVERIFIED note in HNFP3's `RESULT.md` ?6):** the screen chain would read a REAL"
+    },
+    {
+      "id": "ZG-WIRE",
+      "line": 612,
+      "kind": "named",
+      "section": "Added 2026-10-17 later (Master Mind)",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        612
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| ZG-WIRE | **Wire the post-training zero-gradient gate into the chains** (landed 2026-10-18: `stack/scripts/zerograd_gate.py` + `stack/tests/test_zerograd_gate.py` 14 passed; acceptance `.../Implemen"
+    },
+    {
+      "id": "PAPER-720",
+      "line": 613,
+      "kind": "named",
+      "section": "Added 2026-10-17 later (Master Mind)",
+      "verdict": "OPEN",
+      "occurrences": [
+        613
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| PAPER-720 | Follow-ups from the ?7.20 draft (`raw/2026-10-17-paper-s720-recompute/CONFLICTS.md`). **C3, C4, C11 DONE 2026-10-17**: registry ?14.2 carries the P2-s0/P2-s1 rows, the marginal and gap-d"
+    },
+    {
+      "id": "LAB-D",
+      "line": 614,
+      "kind": "named",
+      "section": "Added 2026-10-17 later (Master Mind)",
+      "verdict": "OPEN",
+      "occurrences": [
+        614
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| LAB-D | **The daily Research Lab run lapsed after LAB-RUN-017 (2026-09-20)**: about four weeks with no Lab run. Restarted as LAB-RUN-018 on 2026-10-17 (constrained-RL levers for SAFEOBJ O4/O5, NAVSI"
+    },
+    {
+      "id": "HJ-UNITS",
+      "line": 615,
+      "kind": "named",
+      "section": "Added 2026-10-17 later (Master Mind)",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        615
+      ],
+      "closed_later_shape": null,
+      "excerpt": "| HJ-UNITS | **CLOSED 2026-10-18 (INSTFIX / HJ-UNITS-3, `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-18-instfix/`)**: the last silent unit defaults are gone -- `actdiv_anchored.py --action-units` "
+    }
+  ]
+}

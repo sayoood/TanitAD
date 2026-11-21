@@ -1,0 +1,532 @@
+{
+ "tool": "rbjoint.py",
+ "card": "PREREG_RBJOINT.md",
+ "card_sha256": "499860a2d6750db8e7a08ffecf54968da6c20889c1504682d361184a971f6ae6",
+ "smoke": true,
+ "evidence_class": "MEASURED (ours; frozen cached DINOv3 pooled features, small probe, 5-fold clip-grouped CV, CPU, zero model training)",
+ "tier": "T0 decodability (NOT driving performance)",
+ "estimator": "taniteval.ci.paired_episode_cluster_bootstrap on per-window correctness, B=2000, seed 0, episodes = train clips; answers 'another draw of EPISODES' only",
+ "margin": 0.0383,
+ "n_windows_oof": 300,
+ "n_episodes": 208,
+ "arms": {
+  "S": {
+   "accuracy": {
+    "point": 0.6766666666666666,
+    "lo": 0.6189,
+    "hi": 0.7354,
+    "n_windows": 300,
+    "n_episodes": 208
+   },
+   "timing3_accuracy": 0.6766666666666666,
+   "side_given_turn": {
+    "n": 97,
+    "accuracy": 0.0
+   },
+   "pred_counts": [
+    300,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "ED": {
+   "accuracy": {
+    "point": 0.7166666666666667,
+    "lo": 0.6667,
+    "hi": 0.7677,
+    "n_windows": 300,
+    "n_episodes": 208
+   },
+   "timing3_accuracy": 0.7266666666666667,
+   "side_given_turn": {
+    "n": 97,
+    "accuracy": 0.4845360824742268
+   },
+   "pred_counts": [
+    215,
+    63,
+    22,
+    0,
+    0
+   ]
+  },
+  "RAW4": {
+   "accuracy": {
+    "point": 0.6766666666666666,
+    "lo": 0.6189,
+    "hi": 0.7354,
+    "n_windows": 300,
+    "n_episodes": 208
+   },
+   "timing3_accuracy": 0.6766666666666666,
+   "side_given_turn": {
+    "n": 97,
+    "accuracy": 0.0
+   },
+   "pred_counts": [
+    300,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "RAW8": {
+   "accuracy": {
+    "point": 0.6766666666666666,
+    "lo": 0.6189,
+    "hi": 0.7354,
+    "n_windows": 300,
+    "n_episodes": 208
+   },
+   "timing3_accuracy": 0.6766666666666666,
+   "side_given_turn": {
+    "n": 97,
+    "accuracy": 0.0
+   },
+   "pred_counts": [
+    300,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "VED8": {
+   "accuracy": {
+    "point": 0.6766666666666666,
+    "lo": 0.6189,
+    "hi": 0.7354,
+    "n_windows": 300,
+    "n_episodes": 208
+   },
+   "timing3_accuracy": 0.6766666666666666,
+   "side_given_turn": {
+    "n": 97,
+    "accuracy": 0.0
+   },
+   "pred_counts": [
+    300,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "SHUF_ED": {
+   "accuracy": {
+    "point": 0.6733333333333333,
+    "lo": 0.6159,
+    "hi": 0.731,
+    "n_windows": 300,
+    "n_episodes": 208
+   },
+   "timing3_accuracy": 0.6733333333333333,
+   "side_given_turn": {
+    "n": 97,
+    "accuracy": 0.0
+   },
+   "pred_counts": [
+    299,
+    0,
+    1,
+    0,
+    0
+   ]
+  },
+  "SHUF_RAW4": {
+   "accuracy": {
+    "point": 0.6766666666666666,
+    "lo": 0.6189,
+    "hi": 0.7354,
+    "n_windows": 300,
+    "n_episodes": 208
+   },
+   "timing3_accuracy": 0.6766666666666666,
+   "side_given_turn": {
+    "n": 97,
+    "accuracy": 0.0
+   },
+   "pred_counts": [
+    300,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "SHUF_VED8": {
+   "accuracy": {
+    "point": 0.6766666666666666,
+    "lo": 0.6189,
+    "hi": 0.7354,
+    "n_windows": 300,
+    "n_episodes": 208
+   },
+   "timing3_accuracy": 0.6766666666666666,
+   "side_given_turn": {
+    "n": 97,
+    "accuracy": 0.0
+   },
+   "pred_counts": [
+    300,
+    0,
+    0,
+    0,
+    0
+   ]
+  }
+ },
+ "paired": {
+  "VED8-S": {
+   "delta": 0.0,
+   "lo": 0.0,
+   "hi": 0.0,
+   "separated": false,
+   "n_windows": 300,
+   "n_episodes": 208
+  },
+  "VED8-ED": {
+   "delta": -0.040000000000000036,
+   "lo": -0.1035,
+   "hi": 0.0233,
+   "separated": false,
+   "n_windows": 300,
+   "n_episodes": 208
+  },
+  "VED8-RAW8": {
+   "delta": 0.0,
+   "lo": 0.0,
+   "hi": 0.0,
+   "separated": false,
+   "n_windows": 300,
+   "n_episodes": 208
+  },
+  "RAW8-S": {
+   "delta": 0.0,
+   "lo": 0.0,
+   "hi": 0.0,
+   "separated": false,
+   "n_windows": 300,
+   "n_episodes": 208
+  },
+  "RAW8-RAW4": {
+   "delta": 0.0,
+   "lo": 0.0,
+   "hi": 0.0,
+   "separated": false,
+   "n_windows": 300,
+   "n_episodes": 208
+  },
+  "RAW4-S": {
+   "delta": 0.0,
+   "lo": 0.0,
+   "hi": 0.0,
+   "separated": false,
+   "n_windows": 300,
+   "n_episodes": 208
+  },
+  "ED-S": {
+   "delta": 0.040000000000000036,
+   "lo": -0.0233,
+   "hi": 0.1035,
+   "separated": false,
+   "n_windows": 300,
+   "n_episodes": 208
+  },
+  "RAW4-ED": {
+   "delta": -0.040000000000000036,
+   "lo": -0.1035,
+   "hi": 0.0233,
+   "separated": false,
+   "n_windows": 300,
+   "n_episodes": 208
+  },
+  "RAW8-ED": {
+   "delta": -0.040000000000000036,
+   "lo": -0.1035,
+   "hi": 0.0233,
+   "separated": false,
+   "n_windows": 300,
+   "n_episodes": 208
+  },
+  "VED8-RAW4": {
+   "delta": 0.0,
+   "lo": 0.0,
+   "hi": 0.0,
+   "separated": false,
+   "n_windows": 300,
+   "n_episodes": 208
+  }
+ },
+ "secondary": {
+  "ED": {
+   "timing_gain_over_S": 0.05,
+   "side_given_turn_acc": 0.4845360824742268
+  },
+  "RAW4": {
+   "timing_gain_over_S": 0.0,
+   "side_given_turn_acc": 0.0
+  },
+  "RAW8": {
+   "timing_gain_over_S": 0.0,
+   "side_given_turn_acc": 0.0
+  },
+  "VED8": {
+   "timing_gain_over_S": 0.0,
+   "side_given_turn_acc": 0.0
+  }
+ },
+ "validity": {
+  "POS-YAW": {
+   "pass": false,
+   "YAW4": {
+    "accuracy": {
+     "point": 0.58,
+     "lo": 0.5138,
+     "hi": 0.6441,
+     "n_windows": 300,
+     "n_episodes": 208
+    },
+    "majority_rate": 0.58,
+    "gain_over_majority": {
+     "delta": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "separated": false,
+     "n_windows": 300,
+     "n_episodes": 208
+    },
+    "pass": false,
+    "class_counts_LstraightR": [
+     174,
+     59,
+     67
+    ]
+   },
+   "YAW8": {
+    "accuracy": {
+     "point": 0.58,
+     "lo": 0.5138,
+     "hi": 0.6441,
+     "n_windows": 300,
+     "n_episodes": 208
+    },
+    "majority_rate": 0.58,
+    "gain_over_majority": {
+     "delta": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "separated": false,
+     "n_windows": 300,
+     "n_episodes": 208
+    },
+    "pass": false,
+    "class_counts_LstraightR": [
+     174,
+     59,
+     67
+    ]
+   }
+  },
+  "R-SHUF-TRAIN": {
+   "pass": true,
+   "SHUF_ED": {
+    "delta": -0.0033333333333332993,
+    "lo": -0.0104,
+    "hi": 0.0,
+    "separated": false,
+    "n_windows": 300,
+    "n_episodes": 208
+   },
+   "SHUF_RAW4": {
+    "delta": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "separated": false,
+    "n_windows": 300,
+    "n_episodes": 208
+   },
+   "SHUF_VED8": {
+    "delta": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "separated": false,
+    "n_windows": 300,
+    "n_episodes": 208
+   }
+  },
+  "K-CONST": {
+   "majority_class": 0,
+   "S_accuracy": 0.6766666666666666,
+   "oof_share_of_majority": 0.6766666666666666,
+   "folds": [
+    {
+     "fold": 0,
+     "train_majority": 0,
+     "S_pred_unique": [
+      0
+     ]
+    },
+    {
+     "fold": 1,
+     "train_majority": 0,
+     "S_pred_unique": [
+      0
+     ]
+    },
+    {
+     "fold": 2,
+     "train_majority": 0,
+     "S_pred_unique": [
+      0
+     ]
+    },
+    {
+     "fold": 3,
+     "train_majority": 0,
+     "S_pred_unique": [
+      0
+     ]
+    },
+    {
+     "fold": 4,
+     "train_majority": 0,
+     "S_pred_unique": [
+      0
+     ]
+    }
+   ],
+   "pass": true
+  },
+  "fold_clip_disjointness": {
+   "pass": true,
+   "overlaps": {
+    "fold0": 0,
+    "fold1": 0,
+    "fold2": 0,
+    "fold3": 0,
+    "fold4": 0
+   },
+   "clips_per_fold": {
+    "fold0": 78,
+    "fold1": 92,
+    "fold2": 89,
+    "fold3": 76,
+    "fold4": 91
+   }
+  }
+ },
+ "validity_ok": false,
+ "labels_held": [
+  "INVALID"
+ ],
+ "next_lever_from": "INVALID",
+ "eval202_beside_no_label": {
+  "S": {
+   "accuracy": {
+    "point": 1.0,
+    "lo": 1.0,
+    "hi": 1.0,
+    "n_windows": 20,
+    "n_episodes": 2
+   },
+   "timing3_accuracy": 1.0,
+   "side_given_turn": {
+    "n": 0,
+    "accuracy": null
+   }
+  },
+  "ED": {
+   "accuracy": {
+    "point": 1.0,
+    "lo": 1.0,
+    "hi": 1.0,
+    "n_windows": 20,
+    "n_episodes": 2
+   },
+   "timing3_accuracy": 1.0,
+   "side_given_turn": {
+    "n": 0,
+    "accuracy": null
+   },
+   "gain_over_S_paired": {
+    "delta": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "separated": false,
+    "n_windows": 20,
+    "n_episodes": 2
+   }
+  },
+  "RAW4": {
+   "accuracy": {
+    "point": 1.0,
+    "lo": 1.0,
+    "hi": 1.0,
+    "n_windows": 20,
+    "n_episodes": 2
+   },
+   "timing3_accuracy": 1.0,
+   "side_given_turn": {
+    "n": 0,
+    "accuracy": null
+   },
+   "gain_over_S_paired": {
+    "delta": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "separated": false,
+    "n_windows": 20,
+    "n_episodes": 2
+   }
+  },
+  "RAW8": {
+   "accuracy": {
+    "point": 1.0,
+    "lo": 1.0,
+    "hi": 1.0,
+    "n_windows": 20,
+    "n_episodes": 2
+   },
+   "timing3_accuracy": 1.0,
+   "side_given_turn": {
+    "n": 0,
+    "accuracy": null
+   },
+   "gain_over_S_paired": {
+    "delta": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "separated": false,
+    "n_windows": 20,
+    "n_episodes": 2
+   }
+  },
+  "VED8": {
+   "accuracy": {
+    "point": 1.0,
+    "lo": 1.0,
+    "hi": 1.0,
+    "n_windows": 20,
+    "n_episodes": 2
+   },
+   "timing3_accuracy": 1.0,
+   "side_given_turn": {
+    "n": 0,
+    "accuracy": null
+   },
+   "gain_over_S_paired": {
+    "delta": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "separated": false,
+    "n_windows": 20,
+    "n_episodes": 2
+   }
+  }
+ },
+ "elapsed_s": 166.4
+}

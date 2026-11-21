@@ -1,0 +1,39 @@
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from E:\refcv6_eval_kit\data\refcv6_train_eval139_extrinsics.json (4508 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[v2] E:\refcv6_eval_kit\data\refcv6-b1-416x1024-eval139: 139 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 139 distinct for 139 clips]
+[v2] 139 providers, 139 distinct episode ids
+[v3] nav_from_v7: follow 88 / left 13 / right 38, missing 0 (of 139 clips; md5=eefc38d1453bd1c73802d44d45affced)
+[v3] max_speed_input_v6 (4-way one-hot): 147/147 sidecar rows carry a ceiling, 23772/23772 windows fed (100.0 %), 1 clips ABOVE the 120 km/h top step (clamped, and on those the fed ceiling is one the ego demonstrably exceeded)
+[v3] agent join: 139/139 episodes (stable-63bit), 22663/23772 windows labelled (95.3 %), 776801 prefilter target boxes, pad 397
+[v3] SAM3 map GT at 10 cm (100 m x +-30 m): frac_ok 0.9856 of 23772 windows over 139 clips (verdict PASS)
+[p2] LAW-frame control: PASS on 2 windows
+[p2] ZZ1-4754ZZ windows (1 s; map 1; timing {'wait_decode': 0.1, 'forward': 0.5, 'stats_submit': 0.0}; peak 1.10 GiB)
+[p2] ZZ201-4754ZZ windows (122 s; map 201; timing {'wait_decode': 5.0, 'forward': 116.4, 'stats_submit': 0.0}; peak 1.12 GiB)
+[p2] ZZ401-4754ZZ windows (254 s; map 401; timing {'wait_decode': 10.2, 'forward': 243.8, 'stats_submit': 0.0}; peak 1.12 GiB)
+[p2] ZZ601-4754ZZ windows (359 s; map 601; timing {'wait_decode': 19.1, 'forward': 339.8, 'stats_submit': 0.0}; peak 1.12 GiB)
+[p2] ZZ801-4754ZZ windows (464 s; map 801; timing {'wait_decode': 28.0, 'forward': 435.0, 'stats_submit': 0.0}; peak 1.12 GiB)
+[p2] ZZ1001-4754ZZ windows (570 s; map 1001; timing {'wait_decode': 36.9, 'forward': 532.1, 'stats_submit': 0.0}; peak 1.12 GiB)
+[p2] ZZ1201-4754ZZ windows (673 s; map 1201; timing {'wait_decode': 45.6, 'forward': 626.3, 'stats_submit': 0.1}; peak 1.12 GiB)
+[p2] ZZ1401-4754ZZ windows (771 s; map 1401; timing {'wait_decode': 52.9, 'forward': 717.7, 'stats_submit': 0.1}; peak 1.12 GiB)
+[p2] ZZ1601-4754ZZ windows (871 s; map 1601; timing {'wait_decode': 60.4, 'forward': 809.9, 'stats_submit': 0.1}; peak 1.12 GiB)
+[p2] ZZ1801-4754ZZ windows (978 s; map 1801; timing {'wait_decode': 68.8, 'forward': 907.7, 'stats_submit': 0.1}; peak 1.12 GiB)
+[p2] ZZ2001-4754ZZ windows (1085 s; map 2001; timing {'wait_decode': 76.8, 'forward': 1006.8, 'stats_submit': 0.1}; peak 1.12 GiB)
+[p2] ZZ2201-4754ZZ windows (1190 s; map 2201; timing {'wait_decode': 85.0, 'forward': 1103.8, 'stats_submit': 0.1}; peak 1.12 GiB)
+[p2] ZZ2401-4754ZZ windows (1297 s; map 2401; timing {'wait_decode': 94.2, 'forward': 1201.3, 'stats_submit': 0.1}; peak 1.12 GiB)
+[p2] ZZ2601-4754ZZ windows (1400 s; map 2601; timing {'wait_decode': 101.3, 'forward': 1296.7, 'stats_submit': 0.1}; peak 1.12 GiB)
+[p2] ZZ2801-4754ZZ windows (1505 s; map 2801; timing {'wait_decode': 108.6, 'forward': 1394.3, 'stats_submit': 0.1}; peak 1.12 GiB)
+[p2] ZZ3001-4754ZZ windows (1607 s; map 3001; timing {'wait_decode': 116.1, 'forward': 1489.2, 'stats_submit': 0.1}; peak 1.12 GiB)
+[p2] ZZ3201-4754ZZ windows (1708 s; map 3167; timing {'wait_decode': 123.5, 'forward': 1582.5, 'stats_submit': 0.1}; peak 1.12 GiB)
+[p2] ZZ3401-4754ZZ windows (1812 s; map 3367; timing {'wait_decode': 131.2, 'forward': 1679.0, 'stats_submit': 0.1}; peak 1.12 GiB)
+[p2] ZZ3601-4754ZZ windows (1915 s; map 3567; timing {'wait_decode': 140.4, 'forward': 1772.8, 'stats_submit': 0.1}; peak 1.12 GiB)
+[p2] ZZ3801-4754ZZ windows (2018 s; map 3767; timing {'wait_decode': 149.0, 'forward': 1867.2, 'stats_submit': 0.2}; peak 1.12 GiB)
+[p2] ZZ4001-4754ZZ windows (2117 s; map 3967; timing {'wait_decode': 156.2, 'forward': 1958.9, 'stats_submit': 0.2}; peak 1.12 GiB)
+[p2] ZZ4201-4754ZZ windows (2218 s; map 4167; timing {'wait_decode': 164.6, 'forward': 2051.3, 'stats_submit': 0.2}; peak 1.12 GiB)
+[p2] ZZ4401-4754ZZ windows (2320 s; map 4367; timing {'wait_decode': 173.0, 'forward': 2144.0, 'stats_submit': 0.2}; peak 1.12 GiB)
+[p2] ZZ4601-4754ZZ windows (2421 s; map 4567; timing {'wait_decode': 181.0, 'forward': 2237.5, 'stats_submit': 0.2}; peak 1.12 GiB)
+[p2] done: {"arm": "refcv7_50400", "n_windows": 4754, "n_map_windows": 4686, "controls": {"law_frame": {"pass": true, "windows": [{"sha12": "0dfe63214bc2", "ws": 7, "perception_equal": {"map_hires_logits": true, "box_slots.presence_logit": true, "box_slots.box": true, "box_slots.cls_logits": true, "box_slots.cz": true}, "law_zero_frame": 0.0035411228891462088, "law_real_frame": 0.00021994352573528886, "law_differs": true}, {"sha12": "0dfe63214bc2", "ws": 12, "perception_equal": {"map_hires_logits": true, "box_slots.presence_logit": true, "box_slots.box": true, "box_slots.cls_logits": true, "box_slots.cz": true}, "law_zero_frame": 0.0037596896290779114, "law_real_frame": 0.000343031482771039, "law_differs": true}]}, "C4_cheb_k1_vs_EDT_0p2m": {"windows": 4686, "mismatching_cells": 0, "rule": "classes 2,3,5; tp_pred and tp_gt; every window; integer-exact"}, "C0_counts_vs_MH_window_stats": {"mismatching_arrays": 0, "rule": "inter/union/n_gt/n_pred of tol_stats == MH.window_stats, every window"}, "C1p_gt_as_pred": {"windows": 20, "all_pass": true}, "C2p_all_one_class": {"windows": 20, "all_pass": true}}, "timing_s": {"wait_decode": 187.5, "forward": 2310.2, "stats_submit": 0.2}, "build_s": 140.4, "loop_s": 2510.8}

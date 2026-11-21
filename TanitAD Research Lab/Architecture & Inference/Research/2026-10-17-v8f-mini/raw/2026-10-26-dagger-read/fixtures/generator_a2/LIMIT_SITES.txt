@@ -1,0 +1,11 @@
+# verbatim lines of E:/Projects/TanitAD-artifacts/dagt1_tree_b43c7a9a/stack/scripts/v8f_dagger_bank.py (read-only) that mention limit_clips / limit-clips / "partial"
+# source file sha256 893dd6547b361c34fd2307f9efaf0b9bf822a1476506d3aa65498d7dbba53da3 (29853 bytes)
+# format: <line number>	<line, byte for byte>
+254	    sel_clips = clips[:a.limit_clips] if a.limit_clips else list(clips)
+263	            "train_sha256": info["train_sha256"], "limit_clips": a.limit_clips, "partial": bool(a.limit_clips), "shard_clips": len(positions), "shard_windows": len(wins_shard),
+289	              "inputs_sha256": {k: v["sha256"] for k, v in inputs.items() if k != "ckpt"}, "limit_clips": a.limit_clips, "partial": bool(a.limit_clips),
+336	    want = common["limit_clips"] or common["train"]["n_clips"]
+340	    if not common["partial"] and n_win != common["train"]["n_windows"]:
+364	    man = {"schema": G.SCHEMA, "n_shards": n, "shards": sorted(shards, key=lambda s: s["k"]), "common": common, "partial": common["partial"], "n_records": sum(s["n_records"] for s in shards),
+368	                   "n_records": man["n_records"], "coverage": cov, "reasons_by_tick": by_tick, "partial": man["partial"], "controls": controls,
+399	    g.add_argument("--limit-clips", type=int, default=0, help="smoke: only the first N TRAIN clips (the bank is then marked PARTIAL)")

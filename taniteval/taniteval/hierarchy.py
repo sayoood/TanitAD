@@ -100,6 +100,11 @@ from tanitad.refs.refb import MANEUVER_CLASSES, ROUTE_CLASSES  # noqa: E402
 
 from taniteval import ci as _ci  # noqa: E402
 from taniteval import driving as _drv  # noqa: E402
+# ⛔ The coherence-verdict ladder is IMPORTED, never restated — see
+# four_families.KAPPA_VERDICT_LADDER for the published sources and for the
+# defect (a bare `κ >= 0.2` here) that this import closes.
+from taniteval.four_families import (KAPPA_VERDICT_LADDER,  # noqa: E402
+                                     kappa_band, kappa_verdict)
 
 SPEED_SCALE = 10.0
 DT = 0.1                              # 10 Hz
@@ -208,6 +213,115 @@ def _dir_of(net_yaw):
     d[net_yaw > DIR_YAW_RAD] = R_LEFT
     d[net_yaw < -DIR_YAW_RAD] = R_RIGHT
     return d
+
+
+#: Gates swept by :func:`_gate_sensitivity`. ``DIR_YAW_RAD`` is included so the
+#: published value is always visible inside its own sweep.
+GATE_SWEEP = (0.15, 0.10, 0.06, 0.04, 0.02, 0.01)
+
+
+def _gate_sensitivity(traj_net, gt_net, man_dir):
+    """⛔ THE DIRECTION GATE IS A FREE PARAMETER OF THE INSTRUMENT — publish its
+    sensitivity, never a single kappa.
+
+    MEASURED 2026-08-06 (RETRACTION_LOG R-2026-08-06-yawgate): ``DIR_YAW_RAD =
+    0.15`` is ~6.5x the typical 2 s turn on this corpus — the HUMAN's own median
+    |net yaw| is **0.023 rad**, p90 **0.185**, and only **17.9 %** of windows
+    exceed the gate — so nearly every window classifies as "straight" by
+    construction. A published coherence kappa at one gate is partly the gate's
+    opinion. On the Alpamayo comparison the ranking of two arms REVERSED between
+    0.15 and 0.10, and the substantive finding (one arm's declaration carries
+    fine lateral information, the other's only coarse) was invisible at 0.15.
+
+    ⇒ ``verdict_stable`` is the field that matters: if the coherence verdict
+    flips inside the swept range there is NO verdict, and quoting the 0.15 value
+    would be quoting a threshold as if it were a measurement.
+
+    ⛔ AND IT MUST TEST THE VERDICT THAT SHIPS. ``verdict_stable`` is evaluated
+    on :data:`~taniteval.four_families.KAPPA_VERDICT_LADDER` — the ladder that
+    produces ``maneuver_consistency_verdict`` and the adjective quoted in
+    ``MODEL_REGISTRY.md`` / the paper. It previously tested a private
+    ``kappa >= 0.2``, a boundary in no published ladder, which made it an
+    instrument that could not fail when the published claim was wrong.
+
+    ⚠️ Free to compute — it reads the RAW net yaw banked alongside the classes,
+    so it never costs a model re-run. That is the entire reason the raw value is
+    banked.
+    """
+    import numpy as _np
+    tn, gn = _np.asarray(traj_net, float), _np.asarray(gt_net, float)
+    md = _np.asarray(man_dir)
+    n = min(len(tn), len(gn), len(md))
+    tn, gn, md = tn[:n], gn[:n], md[:n]
+
+    def _cls(v, g):
+        return _np.where(v > g, R_LEFT, _np.where(v < -g, R_RIGHT, R_STRAIGHT))
+
+    def _k(x, y):
+        labs = sorted(set(x.tolist()) | set(y.tolist()))
+        po = float((x == y).mean())
+        pe = sum((x == c).mean() * (y == c).mean() for c in labs)
+        return None if abs(1.0 - pe) < 1e-9 else round((po - pe) / (1.0 - pe), 4)
+
+    def _row(g):
+        k = _k(md, _cls(tn, g))
+        return {
+            "maneuver_vs_trajectory_kappa": k,
+            # the PUBLISHED word at this gate, so the flip is visible in the
+            # artifact instead of having to be recomputed by a reader
+            "maneuver_consistency_band": kappa_band(k),
+            "maneuver_consistency_verdict": kappa_verdict(k),
+            "trajectory_vs_gt_kappa": _k(_cls(tn, g), _cls(gn, g)),
+            "frac_gt_turning": round(float((_np.abs(gn) > g).mean()), 4),
+        }
+    per_gate = {f"{g:.2f}": _row(g) for g in GATE_SWEEP}
+
+    ks = [v["maneuver_vs_trajectory_kappa"] for v in per_gate.values()
+          if v["maneuver_vs_trajectory_kappa"] is not None]
+    # ⛔ STABILITY IS TESTED ON THE PUBLISHED LADDER, NOT ON A PRIVATE CUT.
+    # Until 2026-08-16 this line read `{bool(k >= 0.2) for k in ks}` — a
+    # threshold that appears in no published ladder — so `verdict_stable` could
+    # report "stable" while the word the programme actually prints changed
+    # inside the sweep. MEASURED on the one swept panel
+    # (`hier_v1arch_gateswept.json.xz`, 880 windows / 40 episodes): κ runs
+    # 0.5787 -> 0.2038 across the sweep, which is SUBSTANTIAL at 0.15/0.10/
+    # 0.06/0.04 and WEAK at 0.02/0.01 -> the published verdict DOES flip, while
+    # the old predicate said `verdict_stable = true` because every κ cleared 0.2.
+    verdicts = {kappa_band(k) for k in ks}
+    return {
+        "published_gate_rad": DIR_YAW_RAD,
+        "gates": list(GATE_SWEEP),
+        "per_gate": per_gate,
+        "gt_turn_magnitude": {
+            "median_abs_net_yaw_rad": round(float(_np.median(_np.abs(gn))), 4),
+            "p90_abs_net_yaw_rad": round(float(_np.percentile(_np.abs(gn), 90)), 4),
+            "frac_above_published_gate": round(
+                float((_np.abs(gn) > DIR_YAW_RAD).mean()), 4),
+            "_read": ("the HUMAN's own net yaw. If the gate exceeds the bulk of "
+                      "it, every window is 'straight' by construction and the "
+                      "kappa is measuring the gate."),
+        },
+        "kappa_range": [min(ks), max(ks)] if ks else None,
+        "verdict_stable": len(verdicts) == 1,
+        "verdicts_across_sweep": sorted(v for v in verdicts if v is not None),
+        "verdict_ladder": [[hi, name] for hi, name in KAPPA_VERDICT_LADDER],
+        "_verdict_note": ("verdict = the PUBLISHED coherence ladder "
+                          "(four_families.KAPPA_VERDICT_LADDER: <0.1 "
+                          "DECORATIVE, <0.4 WEAK, >=0.4 SUBSTANTIAL) — the same "
+                          "ladder that produces `maneuver_consistency_verdict` "
+                          "and the adjective in MODEL_REGISTRY.md / the paper. "
+                          "verdict_stable False means the coherence call FLIPS "
+                          "inside the swept gate range -> there is no verdict, "
+                          "and the published-gate value must not be quoted "
+                          "alone. ⚠️ BEFORE 2026-08-16 this field tested a bare "
+                          "`kappa >= 0.2`, which is NOT a published boundary; a "
+                          "pre-2026-08-16 `verdict_stable` is therefore not a "
+                          "statement about the published verdict — recompute it "
+                          "from `per_gate` before quoting."),
+        "_provenance": ("R-2026-08-06-yawgate. Computed from the RAW net yaw "
+                        "banked per window, so it costs no GPU."),
+        "n_windows": n,
+    }
 
 
 # --------------------------------------------------------------------------- #
@@ -427,7 +541,10 @@ def _hist(vals):
 @torch.no_grad()
 def run(model, step_readout, episodes, device, speed_input=False, max_eps=40,
         stride=8, batch=16, yaw_input=False, dyn_input=False,
-        n_boot=N_BOOT, seed=0):
+        n_boot=N_BOOT, seed=0, labels_v2=False):
+    """``labels_v2`` MUST be the arm's OWN ``cfg.v2_labels`` — the same field the
+    trainer read when it built the manoeuvre targets this panel scores against.
+    Resolve it with :func:`taniteval.loaders.resolve_labels_v2`; never guess."""
     if getattr(model, "tactical_policy", None) is None or \
        getattr(model, "strategic_policy", None) is None:
         return {"skipped": "no trained tactical/strategic policy brains"}
@@ -475,8 +592,25 @@ def run(model, step_readout, episodes, device, speed_input=False, max_eps=40,
             fut = torch.stack([torch.as_tensor(ep.poses[t + WIN:t + WIN + GOAL_H])
                                for t in ch]).to(device).float()   # [b,GOAL_H,4]
             pl = ep.poses[last].to(device).float()                # [b,4]
-            man_tgt = rl.classify_maneuver(pl[:, 2], fut[:, GOAL_H - 1, 2],
-                                           pl[:, 3], fut[:, GOAL_H - 1, 3]).long()
+            # ⛔ THE LABEL FAMILY FOLLOWS THE ARM, and used not to. This line
+            # was `rl.classify_maneuver(...)` UNCONDITIONALLY — the v1 net-yaw
+            # classifier — so every `--v2` arm (which implies `--labels-v2`) had
+            # `seam_ctx_to_tactical.maneuver_acc` scored against labels its head
+            # was never trained to produce. v1 gates net yaw (rad), v2 gates path
+            # curvature (1/m): different physical quantities, so this was not a
+            # threshold disagreement and no gate choice could repair it. The
+            # flag->labeler mapping is NOT restated here — it is the trainer's
+            # own, via `refb_labels.window_maneuver_labels_for`.
+            man_tgt = rl.window_maneuver_labels_for(
+                pl, fut, horizon=GOAL_H, v2=bool(labels_v2)).long()
+            # ⛔ AND the OTHER family, banked beside it. MEASURED 2026-08-17:
+            # when this defect was found, correcting the one affected panel was
+            # IMPOSSIBLE from anything on disk — `man_pred` is banked nowhere and
+            # the val poses live on another machine, so a GPU re-run was the only
+            # path to a number we already had the ingredients for. One extra
+            # labeler call on tensors already in hand ends that permanently.
+            man_tgt_alt = rl.window_maneuver_labels_for(
+                pl, fut, horizon=GOAL_H, v2=not bool(labels_v2)).long()
             gtwp = gt_ego_waypoints(ep.poses.float(), last).to(device)  # [b,4,2]
             gt_net = rl.wrap_to_pi(fut[:, GOAL_H - 1, 2] - pl[:, 2])     # signed
 
@@ -521,8 +655,11 @@ def run(model, step_readout, episodes, device, speed_input=False, max_eps=40,
 
             rec["eid"] += [ep.episode_id] * b
             rec["man_tgt"] += man_tgt.tolist()
+            rec["man_tgt_alt"] += man_tgt_alt.tolist()
             rec["man_pred"] += man_pred.tolist()
             rec["man_corr_real"] += (man_pred == man_tgt).float().cpu().tolist()
+            rec["man_corr_real_alt"] += (
+                man_pred == man_tgt_alt).float().cpu().tolist()
             rec["route_tgt"] += rts
             rec["valid"] += valids
             rec["route_nav"] += sn["route_logits"].argmax(-1).tolist()
@@ -532,10 +669,21 @@ def run(model, step_readout, episodes, device, speed_input=False, max_eps=40,
                 wp_head - gtwp, dim=-1).mean(1).cpu().tolist()
             rec["goal_cos_real"] += goal_cos_real.cpu().tolist()
             rec["gt_dir"] += _dir_of(gt_net).cpu().tolist()
+            # ⛔ BANK THE RAW NET YAW, NOT ONLY THE CLASS. `_dir_of` applies
+            # DIR_YAW_RAD and the continuous quantity is then GONE, so a panel
+            # could never be re-read at another gate without re-running the
+            # model. MEASURED 2026-08-06 (R-2026-08-06-yawgate): 0.15 rad is
+            # ~6.5x the typical 2 s turn on this corpus -- the human's own
+            # median |net yaw| is 0.023 rad and only 17.9 % of windows exceed
+            # the gate -- so every published manoeuvre-coherence kappa was
+            # partly the gate's opinion. Keeping the raw value makes the sweep
+            # in `_gate_sensitivity` free instead of a GPU re-run.
+            rec["gt_net_yaw"] += gt_net.cpu().tolist()
 
             cache.append(dict(states=states.half().cpu(), aw=aw.cpu(),
                               fa=fa.cpu(), gtwp=gtwp.cpu(), z_goal=z_goal.cpu(),
                               man_tgt=man_tgt.cpu(),
+                              man_tgt_alt=man_tgt_alt.cpu(),
                               intent_real=intent_real.cpu(),
                               ztrue={h: ztrue_h[h].cpu() for h in OP_HORIZONS},
                               b=b))
@@ -552,14 +700,18 @@ def run(model, step_readout, episodes, device, speed_input=False, max_eps=40,
         aw, fa = c["aw"].to(device), c["fa"].to(device)
         gtwp, z_goal = c["gtwp"].to(device), c["z_goal"].to(device)
         man_tgt = c["man_tgt"].to(device)
+        man_tgt_alt = c["man_tgt_alt"].to(device)
         b = c["b"]
 
         # strategic ctx -> tactical ablation (mean / zero ctx)
         for tag, ctx in (("mean", mean_ctx), ("zero", zero_ctx)):
             ta = tac_pol(states, ctx[None].expand(b, -1))
             wp = torch.stack([ta["waypoints"][k] for k in WP_STEPS], 1)
-            rec[f"man_corr_{tag}ctx"] += (
-                ta["maneuver_logits"].argmax(-1) == man_tgt).float().cpu().tolist()
+            _mp = ta["maneuver_logits"].argmax(-1)
+            rec[f"man_pred_{tag}ctx"] += _mp.cpu().tolist()
+            rec[f"man_corr_{tag}ctx"] += (_mp == man_tgt).float().cpu().tolist()
+            rec[f"man_corr_{tag}ctx_alt"] += (
+                _mp == man_tgt_alt).float().cpu().tolist()
             rec[f"wp_ade_head_{tag}ctx"] += torch.linalg.norm(
                 wp - gtwp, dim=-1).mean(1).cpu().tolist()
             rec[f"goal_cos_{tag}ctx"] += F.cosine_similarity(
@@ -601,7 +753,9 @@ def run(model, step_readout, episodes, device, speed_input=False, max_eps=40,
             rec[f"ade_op_{tag}"] += torch.linalg.norm(
                 wp_op[:, IDX] - gtwp, dim=-1).mean(1).cpu().tolist()
             if tag == "none":     # canonical (intent-free) rollout = grounded traj
-                rec["traj_dir"] += _dir_of(dp[..., 2].sum(1)).cpu().tolist()
+                _tnet = dp[..., 2].sum(1)
+                rec["traj_dir"] += _dir_of(_tnet).cpu().tolist()
+                rec["traj_net_yaw"] += _tnet.cpu().tolist()   # see gt_net_yaw
 
     _trace.__exit__()
     # FAIL LOUD before assembly: a hierarchy panel whose scored pass skipped a
@@ -611,12 +765,63 @@ def run(model, step_readout, episodes, device, speed_input=False, max_eps=40,
     pc2 = _hg.assert_hierarchy_traversed(
         _trace, block="taniteval.hierarchy/run",
         claim="H26 seam ablations + H18 grounding dominance")
-    out = _assemble(rec, n_boot=n_boot, seed=seed)
+    out = _assemble(rec, n_boot=n_boot, seed=seed, labels_v2=bool(labels_v2))
     out["pc2"] = pc2
     return out
 
 
-def _assemble(rec, n_boot=N_BOOT, seed=0):
+#: The manoeuvre-label family this panel scored the tactical head against.
+#: ⛔ EVERY panel must carry it. A bare `maneuver_acc` is not interpretable
+#: without it: from 2026-07-24 to 2026-08-17 the panel hardcoded v1 while `--v2`
+#: arms were trained on v2, and nothing in the JSON said so.
+MANEUVER_LABEL_KEY = "maneuver_label_version"
+
+
+#: Per-window arrays the panel MUST persist. ⛔ THE INSTRUMENT GAP THIS CLOSES,
+#: MEASURED TWICE. (a) 2026-08-17: `hierarchy.py:592` scored every `--v2` arm
+#: against v1 labels, and the correction could not be computed from ANY banked
+#: artifact — `man_pred` was on disk nowhere across 1,929 JSONs and 60 window
+#: dumps, and the val poses were on another machine. (b) `DIRYAW_REREAD.md` §3.4:
+#: `gt_net_yaw`/`traj_net_yaw` were built in memory and dropped at write time, so
+#: **no Δκ in this programme has ever carried an interval**. Both were the same
+#: omission — the panel computing decision-grade arrays and persisting only their
+#: means. Cost of the fix: ~60 KB of JSON per panel. Cost of NOT having it,
+#: measured: one GPU re-run per question, plus every Δκ published bare.
+PER_WINDOW_KEYS = ("eid", "man_tgt", "man_tgt_alt", "man_pred",
+                   "man_pred_meanctx", "man_pred_zeroctx",
+                   "gt_dir", "traj_dir", "gt_net_yaw", "traj_net_yaw", "valid")
+
+
+def _per_window(A, eids, labels_v2):
+    """The arrays a future re-read needs, and the note that makes them usable.
+
+    ⚠️ ``man_tgt`` is the family the arm was TRAINED on; ``man_tgt_alt`` is the
+    other one. Which is which is stated in the block, never inferred."""
+    out = {"_note": (
+        "per-window arrays, aligned row-for-row, resampling unit = `eid`. "
+        "They exist so a label-family re-score, a direction-gate sweep and a "
+        "PAIRED episode-cluster bootstrap on any of them cost ZERO GPU. "
+        f"`man_tgt` is the arm's own family ({'v2' if labels_v2 else 'v1'}); "
+        f"`man_tgt_alt` is {'v1' if labels_v2 else 'v2'}."),
+        MANEUVER_LABEL_KEY: "v2" if labels_v2 else "v1"}
+    for k in PER_WINDOW_KEYS:
+        v = A.get(k)
+        if v is None or len(v) == 0:
+            continue
+        out[k] = [x.item() if hasattr(x, "item") else x for x in v]
+    missing = [k for k in PER_WINDOW_KEYS if k not in out]
+    # ⛔ SAY SO. A short block that looks complete is how a re-read discovers,
+    # months later, that the array it needs was never there.
+    out["complete"] = not missing
+    if missing:
+        out["missing_keys"] = missing
+        out["_warning"] = (
+            "⛔ INCOMPLETE — " + ", ".join(missing) + " were not recorded, so "
+            "any re-read needing them still costs a GPU pass.")
+    return out
+
+
+def _assemble(rec, n_boot=N_BOOT, seed=0, labels_v2=False):
     eids = rec["eid"]
     N = len(eids)
     A = {k: np.asarray(v) for k, v in rec.items()}
@@ -705,6 +910,61 @@ def _assemble(rec, n_boot=N_BOOT, seed=0):
         or _meaningful(seam_ctx["wp_ade_2s"]["delta_real_vs_mean"], MIN_ADE_M)
         or _meaningful(seam_ctx["goal_latent_cos"]["delta_real_vs_mean"], MIN_COS))
     seam_ctx["content_matters"] = seam_ctx["load_bearing"]
+    # ⛔ `maneuver_acc` is meaningless without the label family it was scored
+    # against, and every panel written before 2026-08-17 silently used v1. The
+    # stamp travels WITH the number, not in a sibling doc.
+    # ⛔ AND THE SAME NUMBER UNDER THE OTHER LABEL FAMILY, FOR FREE. When the
+    # 2026-08-17 hardcode was found, the ONE affected banked panel could not be
+    # corrected from anything on disk: `man_pred` was banked nowhere and the val
+    # poses were on another machine, so a metric we had every ingredient for
+    # needed a GPU re-run. Emitting both families here means the question
+    # "how much did the label definition move this?" is answered IN the artifact,
+    # by arithmetic, and never needs a second pass again.
+    _other = "v1" if labels_v2 else "v2"
+    _alt = ("man_corr_real_alt", "man_corr_meanctx_alt", "man_corr_zeroctx_alt",
+            "man_tgt", "man_tgt_alt")
+    if all(len(A.get(k, ())) for k in _alt):
+        seam_ctx["maneuver_acc_under_other_label_family"] = {
+            "label_version": _other,
+            "real": _mean(A["man_corr_real_alt"]),
+            "mean_ctx": _mean(A["man_corr_meanctx_alt"]),
+            "zero_ctx": _mean(A["man_corr_zeroctx_alt"]),
+            "delta_real_vs_mean": _paired(B, A["man_corr_real_alt"],
+                                          A["man_corr_meanctx_alt"]),
+            "label_disagreement_rate": _mean(
+                (np.asarray(A["man_tgt"]) != np.asarray(A["man_tgt_alt"])
+                 ).astype(float)),
+            "_note": ("the SAME predictions scored against the other family's "
+                      "targets. It is a DIAGNOSTIC, not the arm's number — the "
+                      "quotable one is the family the arm was TRAINED on "
+                      f"({'v2' if labels_v2 else 'v1'}). "
+                      "`label_disagreement_rate` is the share of windows on "
+                      "which the two families disagree AT ALL, and it bounds "
+                      "how far this arm's maneuver_acc could ever move with "
+                      "the family."),
+        }
+    else:
+        # ⛔ UNAVAILABLE, never silently absent — the same contract
+        # `gate_sensitivity` uses below, and for the same reason: a number that
+        # quietly vanishes reads as a number that was never needed.
+        seam_ctx["maneuver_acc_under_other_label_family"] = {
+            "status": "UNAVAILABLE", "label_version": _other,
+            "reason": ("this panel predates the 2026-08-17 dual-family banking "
+                       "(or was assembled from a partial record), so the other "
+                       "family's targets were never derived. ⛔ Its "
+                       "maneuver_acc therefore cannot be re-read under the "
+                       "other label family without re-running the model."),
+            "n": 0}
+    seam_ctx[MANEUVER_LABEL_KEY] = "v2" if labels_v2 else "v1"
+    _lab = ("window_maneuver_labels_v2 (curvature-gated, "
+            "|kappa| >= CURV_TURN_MAN_PER_M = 1/60 per m)" if labels_v2 else
+            "window_maneuver_labels (v1 net-yaw, |dyaw| > YAW_TURN_RAD = "
+            "0.15 rad)")
+    seam_ctx["_maneuver_label_note"] = (
+        "maneuver_acc scores the tactical head against refb_labels." + _lab
+        + ", selected by the ARM'S OWN cfg.v2_labels. ⛔ A panel with no such "
+        "stamp predates the 2026-08-17 fix and used v1 REGARDLESS of how the "
+        "arm was trained — for a --v2 arm that number is not admissible.")
 
     # ---- SEAM 3: tactical intent -> operative (IN-REGIME latent fidelity) ---
     # intent conditions the multi-horizon JEPA latent prediction (horizons
@@ -812,6 +1072,26 @@ def _assemble(rec, n_boot=N_BOOT, seed=0):
                   "cross-timescale disagreement is CORRECT, not incoherence. "
                   "maneuver_vs_trajectory is the same-timescale coherence test."),
     }
+    # ⛔ NEVER QUOTE A COHERENCE KAPPA WITHOUT ITS GATE. See _gate_sensitivity.
+    # ⚠️ `A` holds NUMPY ARRAYS (line 710), so `if A.get(k)` raises
+    # "truth value of an array ... is ambiguous" — it does NOT fall through to the
+    # UNAVAILABLE branch, it kills the whole panel AFTER the GPU pass has completed.
+    # MEASURED 2026-08-06: cost one full 40-episode pass. Test the KEY and the
+    # LENGTH, never the array's truthiness.
+    _has_yaw = all(len(A.get(k, ())) for k in ("traj_net_yaw", "gt_net_yaw"))
+    if _has_yaw:
+        consistency["gate_sensitivity"] = _gate_sensitivity(
+            A["traj_net_yaw"], A["gt_net_yaw"], man_dir)
+    else:
+        consistency["gate_sensitivity"] = {
+            "status": "UNAVAILABLE",
+            "reason": ("this panel predates the raw-net-yaw banking (2026-08-06) "
+                       "and stored only the THRESHOLDED classes, so it cannot be "
+                       "re-read at another gate without re-running the model. "
+                       "⛔ Its maneuver-coherence kappa is therefore quoted at a "
+                       "single unswept gate and is NOT decision-grade — see "
+                       "RETRACTION_LOG R-2026-08-06-yawgate."),
+            "n": 0}
 
     # ---- H18: grounded rollout vs ungrounded tactical head @ the goal ------
     # grounded = canonical intent-free operative rollout endpoint (the calibrated
@@ -828,6 +1108,7 @@ def _assemble(rec, n_boot=N_BOOT, seed=0):
     out = {
         "n_windows": N,
         "n_episodes": B.full.n_episodes if B.full is not None else len(set(B.eids)),
+        MANEUVER_LABEL_KEY: "v2" if labels_v2 else "v1",
         "protocol": {
             "cond_replaced": "FiLM conditioning tensor only; weights fixed",
             "ci": ("episode_cluster_bootstrap over the val EPISODES "
@@ -859,6 +1140,7 @@ def _assemble(rec, n_boot=N_BOOT, seed=0):
         "seam_intent_to_operative": seam_int,
         "consistency": consistency,
         "h18_grounded_vs_ungrounded": h18,
+        "per_window": _per_window(A, eids, labels_v2),
     }
     out["verdict"] = _verdict(out)
     out["thesis_read"] = _thesis(out)
@@ -1029,7 +1311,15 @@ def _thesis(o):
     int_beneficial = bool(itn["load_bearing"] and not itn["harmful_if_engaged"])
     n_help = sum((nav_beneficial, ctx_beneficial, int_beneficial))
     mt = con["maneuver_vs_trajectory"]
-    coherent = bool(mt["kappa"] is not None and mt["kappa"] >= 0.2)
+    # ⛔ SAME LADDER AS THE PUBLISHED WORD. This line also read a bare
+    # `kappa >= 0.2` until 2026-08-16, and it had already produced a CONTRADICTION
+    # on a real artifact: `hier_v1-lf19.json` emits κ 0.253 as
+    # "SUPPORTED — … cohere" while `V5_FLAGSHIP_DEEP_REVIEW.md:74` publishes the
+    # SAME κ 0.253 as **WEAK**. On the ladder 0.253 is WEAK, so routing this
+    # through `kappa_band` makes the emitted field AGREE with the published doc
+    # rather than contradict it. `SUPPORTED` == the top band only.
+    mt_band = kappa_band(mt["kappa"])
+    coherent = bool(mt_band == KAPPA_VERDICT_LADDER[-1][1])
     goal_d = ctx["goal_latent_cos"]["delta_real_vs_mean"]["mean"]
     return {
         "claim": ("operative->tactical->strategic hierarchy with cross-layer "
@@ -1074,10 +1364,15 @@ def _thesis(o):
         },
         "B_layers_mutually_consistent": {
             "maneuver_vs_trajectory_kappa": mt["kappa"],
+            # the published band NAME travels with the sentence, so this block
+            # can never again print a word that disagrees with the registry's
+            # adjective for the very same kappa
+            "maneuver_vs_trajectory_kappa_band": mt_band,
             "verdict": (("SUPPORTED" if coherent else "WEAK")
                         + " — same-timescale tactical maneuver & operative "
                         + ("trajectory cohere" if coherent
-                           else "trajectory do not clearly cohere")),
+                           else "trajectory do not clearly cohere")
+                        + f" (kappa band {mt_band} on the published ladder)"),
         },
         "C_grounding_dominant_H18": {
             "grounded_ade_2s": h18["grounded_op_rollout_ade_2s"],
@@ -1141,7 +1436,8 @@ def main():
     res = run(L["model"], L["step_readout"], eps, "cuda",
               speed_input=bool(e.get("speed_input")), max_eps=a.episodes,
               stride=a.stride, yaw_input=bool(e.get("yaw_input")),
-              dyn_input=bool(e.get("dyn_input")))
+              dyn_input=bool(e.get("dyn_input")),
+              labels_v2=bool(L["labels_v2"]))
     print(json.dumps(res, indent=2, default=str))
 
 

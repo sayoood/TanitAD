@@ -1,0 +1,63 @@
+--- a/stack/scripts/refc_v3_train.py
++++ b/stack/scripts/refc_v3_train.py
+@@ -2105,9 +2105,59 @@
+             {"pose_last": pose_last, "actions": batch["actions"]},
+             device=device)
+ 
++    # ⛔⛔ refcv5 WP-6 ORACLE: THE FORWARD-SIDE AGENT PLUMBING, WHICH WAS ABSENT.
++    # MEASURED 2026-09-09 on `tanitad-refcv3` by the WP-C oracle gate's 20-step
++    # smoke: `--agents oracle` reached `RefCV3Model.forward` with `agent_gt=None`
++    # and the model's own guard REFUSED the run (`refc_v3.py:1404`,
++    # `refc.py:3355`). The token `agent_gt` did not occur ANYWHERE in this file.
++    #
++    # The join was never the problem and the census proves it: 4427/4572 train
++    # episodes, 729,243/781,635 windows labelled (93.3 %), 24,166,608 prefilter
++    # target boxes. `refc.py:3346-3347` states the design exactly — *"The
++    # detection LABELS never enter here at all; they enter the LOSS, in the
++    # trainer, from `batch["agent_box"]`"* — which is true of the `head` path and
++    # leaves the ORACLE path with no supplier, because on that path the same
++    # tensors are the TOKENS rather than the targets.
++    #
++    # ⭐ Why this is a wiring gap and not a design choice: `--agents head` needs
++    # these tensors only in the loss (its tokens come from the image), so the
++    # loss-side block at `tgt_ag` below was sufficient for every arm that has
++    # ever run. The oracle rung is the first consumer of the forward side.
++    #
++    # ⛔ STRICTLY GATED ON THE ORACLE SEAM, in BOTH directions, because the model
++    # refuses both: supplying `agent_gt` to a build with no seam raises
++    # (`refc_v3.py:1398`), and withholding it from an oracle build raises
++    # (`:1404`). So `--agents off` and `--agents head` are bit-unchanged: the
++    # branch below cannot fire for them.
++    _ag_cfg = getattr(core, "agents", None)
++    agent_gt = None
++    if (_ag_cfg is not None and getattr(_ag_cfg, "enable", False)
++            and getattr(_ag_cfg, "oracle", False)):
++        if "agent_box" not in batch:
++            # A refusal, never a silent None: an oracle arm whose batch carries
++            # no boxes would read as "agent tokens do not help" while never
++            # having had any — the manufactured negative the model's own guard
++            # exists to prevent, one layer up where the cause is legible.
++            raise SystemExit(
++                "[v3] ⛔ --agents oracle but the batch carries no `agent_box`. "
++                "The oracle's tokens ARE the ground-truth boxes, so without "
++                "them the seam emits nothing and the arm would report as "
++                "+agents while running without them. Pass --agent-join <file>.")
++        # Mirrors the loss-side `tgt_ag` construction below key-for-key; the
++        # forward reads a strict SUBSET (`refc.py:3364-3365` takes box, yaw,
++        # cls, valid and an optional rates) and no `occ`/`rates_mask`.
++        agent_gt = {"box": batch["agent_box"].to(device),
++                    "yaw": batch["agent_yaw"].to(device),
++                    "cls": batch["agent_cls"].to(device),
++                    "valid": batch["agent_valid"].to(device),
++                    "rates": batch.get(
++                        "agent_rates",
++                        torch.zeros(*batch["agent_yaw"].shape, 3)).to(device)}
++
+     out = model(frames, nav_cmd=nav_cmd, v0=v0, steps=steps, lan=lan,
+                 ego_state=ego_state, nav_args=nav_args,
+-                v_max_ms=v_max_ms, v_max_valid=v_max_valid)
++                v_max_ms=v_max_ms, v_max_valid=v_max_valid,
++                agent_gt=agent_gt)
+ 
+     # ---- trajectory target over the 8-slot 6 s horizon, masked -------------
+     traj_tgt = refb_labels.waypoint_targets(pose_last, fut_ext,

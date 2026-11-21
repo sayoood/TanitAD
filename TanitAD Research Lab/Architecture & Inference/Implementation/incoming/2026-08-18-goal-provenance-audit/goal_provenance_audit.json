@@ -1,0 +1,1151 @@
+{
+  "_what": "goal-provenance audit \u2014 PI ruling 2026-08-03, both directions",
+  "tier": "T-NA (a structural/graph audit, not an eval tier)",
+  "arms": [
+    "default",
+    "factored-goal",
+    "goal-cat-args",
+    "planner-cut-off",
+    "tac-goal-cond",
+    "uplink-cut-off"
+  ],
+  "in_graph": {
+    "positive_control_panel": {
+      "n_arms": 6,
+      "verdict": "INADMISSIBLE",
+      "arms": {
+        "default": {
+          "arm": "default",
+          "status": "MEASURED",
+          "verdict": "INADMISSIBLE",
+          "reason": "a forward information path was measured between the goal path and the situation classifier's output",
+          "determinism": {
+            "deterministic": true,
+            "max_drift": 0.0,
+            "worst_node": null,
+            "nodes": [
+              "goal_cond_op",
+              "goal_cond_tac",
+              "goal_emission",
+              "goal_head_str",
+              "goal_head_tac",
+              "in_actions",
+              "in_frames",
+              "in_v0",
+              "situation_output"
+            ],
+            "_reads": "a non-deterministic forward makes every node look dependent on every other; no verdict is admissible until this is exactly 0.0"
+          },
+          "goal_roles": [
+            "goal_head_tac"
+          ],
+          "situation_roles": [
+            "situation_output"
+          ],
+          "forward_violations": [
+            {
+              "source": "situation_output",
+              "target": "goal_head_tac",
+              "relation": "DIRECT_PATH",
+              "direct": true,
+              "shares_ancestor": null,
+              "_reads": "target READS source \u2014 a forward information path."
+            }
+          ],
+          "reverse_violations": [],
+          "forward_edges": [
+            {
+              "source": "situation_output",
+              "target": "goal_head_tac",
+              "relation": "DIRECT_PATH",
+              "direct": true,
+              "shares_ancestor": null,
+              "_reads": "target READS source \u2014 a forward information path."
+            }
+          ],
+          "reverse_edges": [
+            {
+              "source": "goal_head_tac",
+              "target": "situation_output",
+              "relation": "INDEPENDENT",
+              "direct": false,
+              "shares_ancestor": null,
+              "_reads": "no path and no measured shared ancestor."
+            }
+          ],
+          "dead_goal_nodes": [],
+          "shared_trunk": null,
+          "positive_control": {
+            "fired": true,
+            "source": "situation_output",
+            "kinds": [
+              "noise",
+              "zero",
+              "sign",
+              "shuffle",
+              "offset"
+            ]
+          },
+          "matrix": {
+            "roles": [
+              "goal_head_tac",
+              "situation_output"
+            ],
+            "cells": {
+              "goal_head_tac": {
+                "source": "goal_head_tac",
+                "n_probes": 5,
+                "kinds": [
+                  "noise",
+                  "zero",
+                  "sign",
+                  "shuffle",
+                  "offset"
+                ],
+                "effective_kinds": [
+                  "noise",
+                  "zero",
+                  "sign",
+                  "shuffle",
+                  "offset"
+                ],
+                "source_was_perturbable": true,
+                "targets": {
+                  "situation_output": {
+                    "depends": false,
+                    "max_abs": 0.0,
+                    "rel": 0.0,
+                    "kinds_that_moved": []
+                  }
+                },
+                "any_dependence": false,
+                "_reads": "depends=True means the target's VALUE changed when the source's value was replaced mid-forward: a live forward information path, regardless of detach()."
+              },
+              "situation_output": {
+                "source": "situation_output",
+                "n_probes": 5,
+                "kinds": [
+                  "noise",
+                  "zero",
+                  "sign",
+                  "shuffle",
+                  "offset"
+                ],
+                "effective_kinds": [
+                  "noise",
+                  "zero",
+                  "sign",
+                  "shuffle",
+                  "offset"
+                ],
+                "source_was_perturbable": true,
+                "targets": {
+                  "goal_head_tac": {
+                    "depends": true,
+                    "max_abs": 0.6600586175918579,
+                    "rel": 5.592832462879092,
+                    "kinds_that_moved": [
+                      "noise",
+                      "zero",
+                      "sign",
+                      "shuffle",
+                      "offset"
+                    ]
+                  }
+                },
+                "any_dependence": true,
+                "_reads": "depends=True means the target's VALUE changed when the source's value was replaced mid-forward: a live forward information path, regardless of detach()."
+              }
+            },
+            "edges": [
+              [
+                "situation_output",
+                "goal_head_tac"
+              ]
+            ],
+            "n_edges": 1,
+            "unmoved_targets": [
+              "situation_output"
+            ],
+            "_unmoved_reads": "a node no probe could move is CONSTANT on this batch; disjointness cannot be established for it \u2014 typically a zero-init head on an untrained model"
+          },
+          "_note": "REVERSE DIRECTION IS INCLUDED. The ruling says information-disjoint, which is symmetric; every check written before 2026-08-18 asked only goal<-situation."
+        },
+        "planner-cut-off": {
+          "arm": "planner-cut-off",
+          "status": "MEASURED",
+          "verdict": "INADMISSIBLE",
+          "reason": "a forward information path was measured between the goal path and the situation classifier's output",
+          "determinism": {
+            "deterministic": true,
+            "max_drift": 0.0,
+            "worst_node": null,
+            "nodes": [
+              "goal_cond_op",
+              "goal_cond_tac",
+              "goal_emission",
+              "goal_head_str",
+              "goal_head_tac",
+              "in_actions",
+              "in_frames",
+              "in_v0",
+              "situation_output"
+            ],
+            "_reads": "a non-deterministic forward makes every node look dependent on every other; no verdict is admissible until this is exactly 0.0"
+          },
+          "goal_roles": [
+            "goal_head_tac"
+          ],
+          "situation_roles": [
+            "situation_output"
+          ],
+          "forward_violations": [
+            {
+              "source": "situation_output",
+              "target": "goal_head_tac",
+              "relation": "DIRECT_PATH",
+              "direct": true,
+              "shares_ancestor": null,
+              "_reads": "target READS source \u2014 a forward information path."
+            }
+          ],
+          "reverse_violations": [],
+          "forward_edges": [
+            {
+              "source": "situation_output",
+              "target": "goal_head_tac",
+              "relation": "DIRECT_PATH",
+              "direct": true,
+              "shares_ancestor": null,
+              "_reads": "target READS source \u2014 a forward information path."
+            }
+          ],
+          "reverse_edges": [
+            {
+              "source": "goal_head_tac",
+              "target": "situation_output",
+              "relation": "INDEPENDENT",
+              "direct": false,
+              "shares_ancestor": null,
+              "_reads": "no path and no measured shared ancestor."
+            }
+          ],
+          "dead_goal_nodes": [],
+          "shared_trunk": null,
+          "positive_control": {
+            "fired": true,
+            "source": "situation_output",
+            "kinds": [
+              "noise",
+              "zero",
+              "sign",
+              "shuffle",
+              "offset"
+            ]
+          },
+          "matrix": {
+            "roles": [
+              "goal_head_tac",
+              "situation_output"
+            ],
+            "cells": {
+              "goal_head_tac": {
+                "source": "goal_head_tac",
+                "n_probes": 5,
+                "kinds": [
+                  "noise",
+                  "zero",
+                  "sign",
+                  "shuffle",
+                  "offset"
+                ],
+                "effective_kinds": [
+                  "noise",
+                  "zero",
+                  "sign",
+                  "shuffle",
+                  "offset"
+                ],
+                "source_was_perturbable": true,
+                "targets": {
+                  "situation_output": {
+                    "depends": false,
+                    "max_abs": 0.0,
+                    "rel": 0.0,
+                    "kinds_that_moved": []
+                  }
+                },
+                "any_dependence": false,
+                "_reads": "depends=True means the target's VALUE changed when the source's value was replaced mid-forward: a live forward information path, regardless of detach()."
+              },
+              "situation_output": {
+                "source": "situation_output",
+                "n_probes": 5,
+                "kinds": [
+                  "noise",
+                  "zero",
+                  "sign",
+                  "shuffle",
+                  "offset"
+                ],
+                "effective_kinds": [
+                  "noise",
+                  "zero",
+                  "sign",
+                  "shuffle",
+                  "offset"
+                ],
+                "source_was_perturbable": true,
+                "targets": {
+                  "goal_head_tac": {
+                    "depends": true,
+                    "max_abs": 0.6600586175918579,
+                    "rel": 5.592832462879092,
+                    "kinds_that_moved": [
+                      "noise",
+                      "zero",
+                      "sign",
+                      "shuffle",
+                      "offset"
+                    ]
+                  }
+                },
+                "any_dependence": true,
+                "_reads": "depends=True means the target's VALUE changed when the source's value was replaced mid-forward: a live forward information path, regardless of detach()."
+              }
+            },
+            "edges": [
+              [
+                "situation_output",
+                "goal_head_tac"
+              ]
+            ],
+            "n_edges": 1,
+            "unmoved_targets": [
+              "situation_output"
+            ],
+            "_unmoved_reads": "a node no probe could move is CONSTANT on this batch; disjointness cannot be established for it \u2014 typically a zero-init head on an untrained model"
+          },
+          "_note": "REVERSE DIRECTION IS INCLUDED. The ruling says information-disjoint, which is symmetric; every check written before 2026-08-18 asked only goal<-situation."
+        },
+        "uplink-cut-off": {
+          "arm": "uplink-cut-off",
+          "status": "MEASURED",
+          "verdict": "INADMISSIBLE",
+          "reason": "a forward information path was measured between the goal path and the situation classifier's output",
+          "determinism": {
+            "deterministic": true,
+            "max_drift": 0.0,
+            "worst_node": null,
+            "nodes": [
+              "goal_cond_op",
+              "goal_cond_tac",
+              "goal_emission",
+              "goal_head_str",
+              "goal_head_tac",
+              "in_actions",
+              "in_frames",
+              "in_v0",
+              "situation_output"
+            ],
+            "_reads": "a non-deterministic forward makes every node look dependent on every other; no verdict is admissible until this is exactly 0.0"
+          },
+          "goal_roles": [
+            "goal_head_tac"
+          ],
+          "situation_roles": [
+            "situation_output"
+          ],
+          "forward_violations": [
+            {
+              "source": "situation_output",
+              "target": "goal_head_tac",
+              "relation": "DIRECT_PATH",
+              "direct": true,
+              "shares_ancestor": null,
+              "_reads": "target READS source \u2014 a forward information path."
+            }
+          ],
+          "reverse_violations": [],
+          "forward_edges": [
+            {
+              "source": "situation_output",
+              "target": "goal_head_tac",
+              "relation": "DIRECT_PATH",
+              "direct": true,
+              "shares_ancestor": null,
+              "_reads": "target READS source \u2014 a forward information path."
+            }
+          ],
+          "reverse_edges": [
+            {
+              "source": "goal_head_tac",
+              "target": "situation_output",
+              "relation": "INDEPENDENT",
+              "direct": false,
+              "shares_ancestor": null,
+              "_reads": "no path and no measured shared ancestor."
+            }
+          ],
+          "dead_goal_nodes": [],
+          "shared_trunk": null,
+          "positive_control": {
+            "fired": true,
+            "source": "situation_output",
+            "kinds": [
+              "noise",
+              "zero",
+              "sign",
+              "shuffle",
+              "offset"
+            ]
+          },
+          "matrix": {
+            "roles": [
+              "goal_head_tac",
+              "situation_output"
+            ],
+            "cells": {
+              "goal_head_tac": {
+                "source": "goal_head_tac",
+                "n_probes": 5,
+                "kinds": [
+                  "noise",
+                  "zero",
+                  "sign",
+                  "shuffle",
+                  "offset"
+                ],
+                "effective_kinds": [
+                  "noise",
+                  "zero",
+                  "sign",
+                  "shuffle",
+                  "offset"
+                ],
+                "source_was_perturbable": true,
+                "targets": {
+                  "situation_output": {
+                    "depends": false,
+                    "max_abs": 0.0,
+                    "rel": 0.0,
+                    "kinds_that_moved": []
+                  }
+                },
+                "any_dependence": false,
+                "_reads": "depends=True means the target's VALUE changed when the source's value was replaced mid-forward: a live forward information path, regardless of detach()."
+              },
+              "situation_output": {
+                "source": "situation_output",
+                "n_probes": 5,
+                "kinds": [
+                  "noise",
+                  "zero",
+                  "sign",
+                  "shuffle",
+                  "offset"
+                ],
+                "effective_kinds": [
+                  "noise",
+                  "zero",
+                  "sign",
+                  "shuffle",
+                  "offset"
+                ],
+                "source_was_perturbable": true,
+                "targets": {
+                  "goal_head_tac": {
+                    "depends": true,
+                    "max_abs": 0.6600586175918579,
+                    "rel": 5.592832462879092,
+                    "kinds_that_moved": [
+                      "noise",
+                      "zero",
+                      "sign",
+                      "shuffle",
+                      "offset"
+                    ]
+                  }
+                },
+                "any_dependence": true,
+                "_reads": "depends=True means the target's VALUE changed when the source's value was replaced mid-forward: a live forward information path, regardless of detach()."
+              }
+            },
+            "edges": [
+              [
+                "situation_output",
+                "goal_head_tac"
+              ]
+            ],
+            "n_edges": 1,
+            "unmoved_targets": [
+              "situation_output"
+            ],
+            "_unmoved_reads": "a node no probe could move is CONSTANT on this batch; disjointness cannot be established for it \u2014 typically a zero-init head on an untrained model"
+          },
+          "_note": "REVERSE DIRECTION IS INCLUDED. The ruling says information-disjoint, which is symmetric; every check written before 2026-08-18 asked only goal<-situation."
+        },
+        "factored-goal": {
+          "arm": "factored-goal",
+          "status": "MEASURED",
+          "verdict": "INADMISSIBLE",
+          "reason": "a forward information path was measured between the goal path and the situation classifier's output",
+          "determinism": {
+            "deterministic": true,
+            "max_drift": 0.0,
+            "worst_node": null,
+            "nodes": [
+              "goal_cond_op_lat",
+              "goal_cond_op_lon",
+              "goal_cond_tac",
+              "goal_emission",
+              "goal_head_str",
+              "goal_head_tac",
+              "goal_head_tac_lat",
+              "goal_head_tac_lon",
+              "in_actions",
+              "in_frames",
+              "in_v0",
+              "situation_output"
+            ],
+            "_reads": "a non-deterministic forward makes every node look dependent on every other; no verdict is admissible until this is exactly 0.0"
+          },
+          "goal_roles": [
+            "goal_head_tac"
+          ],
+          "situation_roles": [
+            "situation_output"
+          ],
+          "forward_violations": [
+            {
+              "source": "situation_output",
+              "target": "goal_head_tac",
+              "relation": "DIRECT_PATH",
+              "direct": true,
+              "shares_ancestor": null,
+              "_reads": "target READS source \u2014 a forward information path."
+            }
+          ],
+          "reverse_violations": [],
+          "forward_edges": [
+            {
+              "source": "situation_output",
+              "target": "goal_head_tac",
+              "relation": "DIRECT_PATH",
+              "direct": true,
+              "shares_ancestor": null,
+              "_reads": "target READS source \u2014 a forward information path."
+            }
+          ],
+          "reverse_edges": [
+            {
+              "source": "goal_head_tac",
+              "target": "situation_output",
+              "relation": "INDEPENDENT",
+              "direct": false,
+              "shares_ancestor": null,
+              "_reads": "no path and no measured shared ancestor."
+            }
+          ],
+          "dead_goal_nodes": [],
+          "shared_trunk": null,
+          "positive_control": {
+            "fired": true,
+            "source": "situation_output",
+            "kinds": [
+              "noise",
+              "zero",
+              "sign",
+              "shuffle",
+              "offset"
+            ]
+          },
+          "matrix": {
+            "roles": [
+              "goal_head_tac",
+              "situation_output"
+            ],
+            "cells": {
+              "goal_head_tac": {
+                "source": "goal_head_tac",
+                "n_probes": 5,
+                "kinds": [
+                  "noise",
+                  "zero",
+                  "sign",
+                  "shuffle",
+                  "offset"
+                ],
+                "effective_kinds": [
+                  "noise",
+                  "zero",
+                  "sign",
+                  "shuffle",
+                  "offset"
+                ],
+                "source_was_perturbable": true,
+                "targets": {
+                  "situation_output": {
+                    "depends": false,
+                    "max_abs": 0.0,
+                    "rel": 0.0,
+                    "kinds_that_moved": []
+                  }
+                },
+                "any_dependence": false,
+                "_reads": "depends=True means the target's VALUE changed when the source's value was replaced mid-forward: a live forward information path, regardless of detach()."
+              },
+              "situation_output": {
+                "source": "situation_output",
+                "n_probes": 5,
+                "kinds": [
+                  "noise",
+                  "zero",
+                  "sign",
+                  "shuffle",
+                  "offset"
+                ],
+                "effective_kinds": [
+                  "noise",
+                  "zero",
+                  "sign",
+                  "shuffle",
+                  "offset"
+                ],
+                "source_was_perturbable": true,
+                "targets": {
+                  "goal_head_tac": {
+                    "depends": true,
+                    "max_abs": 0.6618212834000587,
+                    "rel": 5.605390992845673,
+                    "kinds_that_moved": [
+                      "noise",
+                      "zero",
+                      "sign",
+                      "shuffle",
+                      "offset"
+                    ]
+                  }
+                },
+                "any_dependence": true,
+                "_reads": "depends=True means the target's VALUE changed when the source's value was replaced mid-forward: a live forward information path, regardless of detach()."
+              }
+            },
+            "edges": [
+              [
+                "situation_output",
+                "goal_head_tac"
+              ]
+            ],
+            "n_edges": 1,
+            "unmoved_targets": [
+              "situation_output"
+            ],
+            "_unmoved_reads": "a node no probe could move is CONSTANT on this batch; disjointness cannot be established for it \u2014 typically a zero-init head on an untrained model"
+          },
+          "_note": "REVERSE DIRECTION IS INCLUDED. The ruling says information-disjoint, which is symmetric; every check written before 2026-08-18 asked only goal<-situation."
+        },
+        "goal-cat-args": {
+          "arm": "goal-cat-args",
+          "status": "MEASURED",
+          "verdict": "INADMISSIBLE",
+          "reason": "a forward information path was measured between the goal path and the situation classifier's output",
+          "determinism": {
+            "deterministic": true,
+            "max_drift": 0.0,
+            "worst_node": null,
+            "nodes": [
+              "goal_cond_op",
+              "goal_cond_tac",
+              "goal_emission",
+              "goal_head_str",
+              "goal_head_tac",
+              "in_actions",
+              "in_frames",
+              "in_v0",
+              "situation_output"
+            ],
+            "_reads": "a non-deterministic forward makes every node look dependent on every other; no verdict is admissible until this is exactly 0.0"
+          },
+          "goal_roles": [
+            "goal_head_tac"
+          ],
+          "situation_roles": [
+            "situation_output"
+          ],
+          "forward_violations": [
+            {
+              "source": "situation_output",
+              "target": "goal_head_tac",
+              "relation": "DIRECT_PATH",
+              "direct": true,
+              "shares_ancestor": null,
+              "_reads": "target READS source \u2014 a forward information path."
+            }
+          ],
+          "reverse_violations": [],
+          "forward_edges": [
+            {
+              "source": "situation_output",
+              "target": "goal_head_tac",
+              "relation": "DIRECT_PATH",
+              "direct": true,
+              "shares_ancestor": null,
+              "_reads": "target READS source \u2014 a forward information path."
+            }
+          ],
+          "reverse_edges": [
+            {
+              "source": "goal_head_tac",
+              "target": "situation_output",
+              "relation": "INDEPENDENT",
+              "direct": false,
+              "shares_ancestor": null,
+              "_reads": "no path and no measured shared ancestor."
+            }
+          ],
+          "dead_goal_nodes": [],
+          "shared_trunk": null,
+          "positive_control": {
+            "fired": true,
+            "source": "situation_output",
+            "kinds": [
+              "noise",
+              "zero",
+              "sign",
+              "shuffle",
+              "offset"
+            ]
+          },
+          "matrix": {
+            "roles": [
+              "goal_head_tac",
+              "situation_output"
+            ],
+            "cells": {
+              "goal_head_tac": {
+                "source": "goal_head_tac",
+                "n_probes": 5,
+                "kinds": [
+                  "noise",
+                  "zero",
+                  "sign",
+                  "shuffle",
+                  "offset"
+                ],
+                "effective_kinds": [
+                  "noise",
+                  "zero",
+                  "sign",
+                  "shuffle",
+                  "offset"
+                ],
+                "source_was_perturbable": true,
+                "targets": {
+                  "situation_output": {
+                    "depends": false,
+                    "max_abs": 0.0,
+                    "rel": 0.0,
+                    "kinds_that_moved": []
+                  }
+                },
+                "any_dependence": false,
+                "_reads": "depends=True means the target's VALUE changed when the source's value was replaced mid-forward: a live forward information path, regardless of detach()."
+              },
+              "situation_output": {
+                "source": "situation_output",
+                "n_probes": 5,
+                "kinds": [
+                  "noise",
+                  "zero",
+                  "sign",
+                  "shuffle",
+                  "offset"
+                ],
+                "effective_kinds": [
+                  "noise",
+                  "zero",
+                  "sign",
+                  "shuffle",
+                  "offset"
+                ],
+                "source_was_perturbable": true,
+                "targets": {
+                  "goal_head_tac": {
+                    "depends": true,
+                    "max_abs": 0.7831889316439629,
+                    "rel": 2.8709707806076574,
+                    "kinds_that_moved": [
+                      "noise",
+                      "zero",
+                      "sign",
+                      "shuffle",
+                      "offset"
+                    ]
+                  }
+                },
+                "any_dependence": true,
+                "_reads": "depends=True means the target's VALUE changed when the source's value was replaced mid-forward: a live forward information path, regardless of detach()."
+              }
+            },
+            "edges": [
+              [
+                "situation_output",
+                "goal_head_tac"
+              ]
+            ],
+            "n_edges": 1,
+            "unmoved_targets": [
+              "situation_output"
+            ],
+            "_unmoved_reads": "a node no probe could move is CONSTANT on this batch; disjointness cannot be established for it \u2014 typically a zero-init head on an untrained model"
+          },
+          "_note": "REVERSE DIRECTION IS INCLUDED. The ruling says information-disjoint, which is symmetric; every check written before 2026-08-18 asked only goal<-situation."
+        },
+        "tac-goal-cond": {
+          "arm": "tac-goal-cond",
+          "status": "MEASURED",
+          "verdict": "INADMISSIBLE",
+          "reason": "a forward information path was measured between the goal path and the situation classifier's output",
+          "determinism": {
+            "deterministic": true,
+            "max_drift": 0.0,
+            "worst_node": null,
+            "nodes": [
+              "goal_cond_op",
+              "goal_cond_tac",
+              "goal_cond_tac_dyn",
+              "goal_emission",
+              "goal_head_str",
+              "goal_head_tac",
+              "in_actions",
+              "in_frames",
+              "in_v0",
+              "situation_output"
+            ],
+            "_reads": "a non-deterministic forward makes every node look dependent on every other; no verdict is admissible until this is exactly 0.0"
+          },
+          "goal_roles": [
+            "goal_head_tac"
+          ],
+          "situation_roles": [
+            "situation_output"
+          ],
+          "forward_violations": [
+            {
+              "source": "situation_output",
+              "target": "goal_head_tac",
+              "relation": "DIRECT_PATH",
+              "direct": true,
+              "shares_ancestor": null,
+              "_reads": "target READS source \u2014 a forward information path."
+            }
+          ],
+          "reverse_violations": [],
+          "forward_edges": [
+            {
+              "source": "situation_output",
+              "target": "goal_head_tac",
+              "relation": "DIRECT_PATH",
+              "direct": true,
+              "shares_ancestor": null,
+              "_reads": "target READS source \u2014 a forward information path."
+            }
+          ],
+          "reverse_edges": [
+            {
+              "source": "goal_head_tac",
+              "target": "situation_output",
+              "relation": "INDEPENDENT",
+              "direct": false,
+              "shares_ancestor": null,
+              "_reads": "no path and no measured shared ancestor."
+            }
+          ],
+          "dead_goal_nodes": [],
+          "shared_trunk": null,
+          "positive_control": {
+            "fired": true,
+            "source": "situation_output",
+            "kinds": [
+              "noise",
+              "zero",
+              "sign",
+              "shuffle",
+              "offset"
+            ]
+          },
+          "matrix": {
+            "roles": [
+              "goal_head_tac",
+              "situation_output"
+            ],
+            "cells": {
+              "goal_head_tac": {
+                "source": "goal_head_tac",
+                "n_probes": 5,
+                "kinds": [
+                  "noise",
+                  "zero",
+                  "sign",
+                  "shuffle",
+                  "offset"
+                ],
+                "effective_kinds": [
+                  "noise",
+                  "zero",
+                  "sign",
+                  "shuffle",
+                  "offset"
+                ],
+                "source_was_perturbable": true,
+                "targets": {
+                  "situation_output": {
+                    "depends": false,
+                    "max_abs": 0.0,
+                    "rel": 0.0,
+                    "kinds_that_moved": []
+                  }
+                },
+                "any_dependence": false,
+                "_reads": "depends=True means the target's VALUE changed when the source's value was replaced mid-forward: a live forward information path, regardless of detach()."
+              },
+              "situation_output": {
+                "source": "situation_output",
+                "n_probes": 5,
+                "kinds": [
+                  "noise",
+                  "zero",
+                  "sign",
+                  "shuffle",
+                  "offset"
+                ],
+                "effective_kinds": [
+                  "noise",
+                  "zero",
+                  "sign",
+                  "shuffle",
+                  "offset"
+                ],
+                "source_was_perturbable": true,
+                "targets": {
+                  "goal_head_tac": {
+                    "depends": true,
+                    "max_abs": 0.6620934903621674,
+                    "rel": 5.6073263688197095,
+                    "kinds_that_moved": [
+                      "noise",
+                      "zero",
+                      "sign",
+                      "shuffle",
+                      "offset"
+                    ]
+                  }
+                },
+                "any_dependence": true,
+                "_reads": "depends=True means the target's VALUE changed when the source's value was replaced mid-forward: a live forward information path, regardless of detach()."
+              }
+            },
+            "edges": [
+              [
+                "situation_output",
+                "goal_head_tac"
+              ]
+            ],
+            "n_edges": 1,
+            "unmoved_targets": [
+              "situation_output"
+            ],
+            "_unmoved_reads": "a node no probe could move is CONSTANT on this batch; disjointness cannot be established for it \u2014 typically a zero-init head on an untrained model"
+          },
+          "_note": "REVERSE DIRECTION IS INCLUDED. The ruling says information-disjoint, which is symmetric; every check written before 2026-08-18 asked only goal<-situation."
+        }
+      },
+      "unpowered": [],
+      "inadmissible": [
+        "default",
+        "planner-cut-off",
+        "uplink-cut-off",
+        "factored-goal",
+        "goal-cat-args",
+        "tac-goal-cond"
+      ],
+      "_note": "per-arm, never per-study: a control run once for a study left 33 of 165 rows with no control at all (C107)"
+    },
+    "input_dependency": {
+      "default": {
+        "in_frames": {
+          "goal_head_str": true,
+          "goal_cond_tac": true,
+          "goal_head_tac": true,
+          "goal_cond_op": true,
+          "goal_emission": false
+        },
+        "in_actions": {
+          "goal_head_str": false,
+          "goal_cond_tac": false,
+          "goal_head_tac": false,
+          "goal_cond_op": false,
+          "goal_emission": false
+        },
+        "in_v0": {
+          "goal_head_str": false,
+          "goal_cond_tac": false,
+          "goal_head_tac": false,
+          "goal_cond_op": false,
+          "goal_emission": true
+        }
+      },
+      "planner-cut-off": {
+        "in_frames": {
+          "goal_head_str": true,
+          "goal_cond_tac": true,
+          "goal_head_tac": true,
+          "goal_cond_op": true,
+          "goal_emission": false
+        },
+        "in_actions": {
+          "goal_head_str": false,
+          "goal_cond_tac": false,
+          "goal_head_tac": false,
+          "goal_cond_op": false,
+          "goal_emission": false
+        },
+        "in_v0": {
+          "goal_head_str": false,
+          "goal_cond_tac": false,
+          "goal_head_tac": false,
+          "goal_cond_op": false,
+          "goal_emission": true
+        }
+      },
+      "uplink-cut-off": {
+        "in_frames": {
+          "goal_head_str": true,
+          "goal_cond_tac": true,
+          "goal_head_tac": true,
+          "goal_cond_op": true,
+          "goal_emission": false
+        },
+        "in_actions": {
+          "goal_head_str": false,
+          "goal_cond_tac": false,
+          "goal_head_tac": false,
+          "goal_cond_op": false,
+          "goal_emission": false
+        },
+        "in_v0": {
+          "goal_head_str": false,
+          "goal_cond_tac": false,
+          "goal_head_tac": false,
+          "goal_cond_op": false,
+          "goal_emission": true
+        }
+      },
+      "factored-goal": {
+        "in_frames": {
+          "goal_head_str": true,
+          "goal_cond_tac": true,
+          "goal_head_tac": true,
+          "goal_emission": false,
+          "goal_cond_op_lat": true,
+          "goal_cond_op_lon": true,
+          "goal_head_tac_lat": true,
+          "goal_head_tac_lon": true
+        },
+        "in_actions": {
+          "goal_head_str": false,
+          "goal_cond_tac": false,
+          "goal_head_tac": false,
+          "goal_emission": false,
+          "goal_cond_op_lat": false,
+          "goal_cond_op_lon": false,
+          "goal_head_tac_lat": false,
+          "goal_head_tac_lon": false
+        },
+        "in_v0": {
+          "goal_head_str": false,
+          "goal_cond_tac": false,
+          "goal_head_tac": false,
+          "goal_emission": true,
+          "goal_cond_op_lat": false,
+          "goal_cond_op_lon": false,
+          "goal_head_tac_lat": false,
+          "goal_head_tac_lon": false
+        }
+      },
+      "goal-cat-args": {
+        "in_frames": {
+          "goal_head_str": true,
+          "goal_cond_tac": true,
+          "goal_head_tac": true,
+          "goal_cond_op": true,
+          "goal_emission": false
+        },
+        "in_actions": {
+          "goal_head_str": false,
+          "goal_cond_tac": false,
+          "goal_head_tac": false,
+          "goal_cond_op": false,
+          "goal_emission": false
+        },
+        "in_v0": {
+          "goal_head_str": false,
+          "goal_cond_tac": false,
+          "goal_head_tac": false,
+          "goal_cond_op": false,
+          "goal_emission": true
+        }
+      },
+      "tac-goal-cond": {
+        "in_frames": {
+          "goal_head_str": true,
+          "goal_cond_tac": true,
+          "goal_head_tac": true,
+          "goal_cond_op": true,
+          "goal_emission": false,
+          "goal_cond_tac_dyn": false
+        },
+        "in_actions": {
+          "goal_head_str": false,
+          "goal_cond_tac": false,
+          "goal_head_tac": false,
+          "goal_cond_op": false,
+          "goal_emission": false,
+          "goal_cond_tac_dyn": false
+        },
+        "in_v0": {
+          "goal_head_str": false,
+          "goal_cond_tac": false,
+          "goal_head_tac": false,
+          "goal_cond_op": false,
+          "goal_emission": true,
+          "goal_cond_tac_dyn": false
+        }
+      }
+    },
+    "dead_goal_nodes": {
+      "default": [],
+      "planner-cut-off": [],
+      "uplink-cut-off": [],
+      "factored-goal": [],
+      "goal-cat-args": [],
+      "tac-goal-cond": [
+        "goal_cond_tac_dyn"
+      ]
+    }
+  },
+  "structural": {
+    "n_model_and_trainer_sources_scanned": 39,
+    "sources_importing_situation_path": [],
+    "situation_sources_scanned": [
+      "tanitad\\eval\\sitclf.py",
+      "tanitad\\eval\\sitclf_deploy.py",
+      "scripts\\sitclf_train.py"
+    ],
+    "goal_symbols_in_situation_path": [],
+    "ok": true,
+    "_reads": "FORWARD: no model or trainer imports the situation path. REVERSE: no goal/route/nav symbol is assigned in the situation path. Both directions, at file scope, because the two paths do not meet in one graph."
+  },
+  "torch": "2.11.0+cu128"
+}

@@ -1,0 +1,485 @@
+{
+ "tool": "bank_battery_r8.py",
+ "tag": "step20000",
+ "written": "2026-10-17T23:45:25+0200",
+ "chain_status": "pass unc complete (corrected-clock pass pending)",
+ "tier": "T1 self-action OPEN LOOP on logged eval139 frames; EARLY READ at step 20,000 of 48,852, raw weights",
+ "stamps": [
+  "single training seed; training-seed floor at full scale unmeasured",
+  "no bar verdict: the SPEC bars apply to the final checkpoint; these are early reads (EARLY READ at step 20,000 of 48,852, raw weights)",
+  "numbers are PROVISIONAL unless G0 is PASS as coded or under the registered amendments (A7 + W-R8-1 [+ W-R8-2]): read passes.<pass>.paired_read.g0.G0_amended (SPEC_REFCV8 section 5)"
+ ],
+ "passes": {
+  "unc": {
+   "status": "COMPLETE",
+   "started": "2026-10-17T20:29:41",
+   "finished": "2026-10-17T23:44:49",
+   "tag": "step20000_unc",
+   "ckpt_md5": "eee65ba210933fc0462084e8b75517b6",
+   "step": 20000,
+   "S2": {
+    "n_clips": 139,
+    "n_windows": 4754,
+    "source": "D:\\Projects\\TanitAD-artifacts\\refcv5cmp\\out\\refcv4b_devbox_dump"
+   },
+   "SMOKE_RESTRICTED_S2": null,
+   "G0_NONBLOCKING": {
+    "G0_as_coded": "FAIL",
+    "reasons": [
+     "wrapper clause FAIL: ['merge defect: cascade wrapper 1.019e-01 > bar 5.377e-02', 'merge defect: lat_tac wrapper 1.065e-05 > bar 1.000e-05', 'merge defect: loss wrapper 1.756e-02 > bar 1.442e-03', 'merge defect: traj wrapper 1.404e-01 > bar 1.397e-02']"
+    ],
+    "stamp": "G0 did NOT pass as coded; the battery proceeded by explicit request (EARLY READ). SPEC_REFCV8 section 5: no refcv8 battery number counts unless its G0 passes -- every number in this run is PROVISIONAL and is not bar evidence."
+   },
+   "tanitad_file": "C:\\lgs\\Lfb47a58376\\stack\\tanitad\\__init__.py",
+   "r8": {
+    "pose_sync_policy": "OFF (R8_NO_POSE_SYNC): the standalone, refcv7-comparable clock",
+    "g0_nonblocking": true,
+    "no_baselines": false,
+    "smoke_cpu": false,
+    "wall_s": 11708.8
+   },
+   "child_rewrites": [
+    {
+     "from": "C:\\lgs\\Lfb47a58376\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-28-refcv7-standard-tests\\battery\\code\\roll_seed_r7.py",
+     "to": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\code\\roll_seed_r8.py",
+     "smoke_cpu": false,
+     "os_only_all": false
+    },
+    {
+     "from": "C:\\lgs\\Lfb47a58376\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-28-refcv7-standard-tests\\battery\\code\\roll_seed_r7.py",
+     "to": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\code\\roll_seed_r8.py",
+     "smoke_cpu": false,
+     "os_only_all": false
+    }
+   ],
+   "baselines_dropped": {},
+   "baselines_used": {
+    "b_refcv4b": "D:\\Projects\\TanitAD-artifacts\\refcv5cmp\\out\\refcv4b_devbox_dump",
+    "b_refcv5v2_s0": "D:\\Projects\\TanitAD-artifacts\\refcv5cmp\\out\\refcv5-v2_dump",
+    "b_refcv5v2_s1": "D:\\Projects\\TanitAD-artifacts\\refcv5cmp\\out\\refcv5-v2-seed1_dump",
+    "b_refcv7_50400_s0": "D:/refcv7_eval_kit/battery/step50400_a6text/dump_s0",
+    "b_refcv7_50400_s1": "D:/refcv7_eval_kit/battery/step50400_a6text/dump_s1"
+   },
+   "baselines_missing": [
+    "b_refcv6_38k_s0",
+    "b_refcv6_38k_s1"
+   ],
+   "rolls": {
+    "s0": {
+     "arm_set": "full (SPEC \u00a73.2)",
+     "wall_s": 8150.7,
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "skipped": 0,
+     "cuda_max_memory_allocated_gib": 3.037,
+     "device": "cuda",
+     "frame_memo": {
+      "hits": 355720,
+      "misses": 47540
+     },
+     "window_restriction": {
+      "n_requested": 4754,
+      "n_index_before": 23772,
+      "n_index_after": 4754,
+      "source": "banked baseline grid (clip, ws), kit clips"
+     }
+    },
+    "s1": {
+     "arm_set": "os + model-free controls (SPEC A3)",
+     "wall_s": 2669.3,
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "skipped": 0,
+     "cuda_max_memory_allocated_gib": 1.222,
+     "device": "cuda",
+     "frame_memo": {
+      "hits": 0,
+      "misses": 47540
+     },
+     "window_restriction": {
+      "n_requested": 4754,
+      "n_index_before": 23772,
+      "n_index_after": 4754,
+      "source": "banked baseline grid (clip, ws), kit clips"
+     }
+    }
+   },
+   "pairing": {
+    "s0": {
+     "b_refcv4b": {
+      "clips_missing": 0,
+      "ws_equal_clips": 139,
+      "g_bit_equal_windows": 4754,
+      "g_max_abs_diff": 0.0,
+      "model_free_bit_equal": {
+       "ha": 4754,
+       "ha0": 4754,
+       "ha0_ext": 4754
+      },
+      "model_free_max_abs_diff": {
+       "ha": 0.0,
+       "ha0": 0.0,
+       "ha0_ext": 0.0
+      },
+      "n_windows_paired": 4754
+     },
+     "b_refcv5v2_s0": {
+      "clips_missing": 0,
+      "ws_equal_clips": 139,
+      "g_bit_equal_windows": 4754,
+      "g_max_abs_diff": 0.0,
+      "model_free_bit_equal": {
+       "ha": 4754,
+       "ha0": 4754,
+       "ha0_ext": 4754
+      },
+      "model_free_max_abs_diff": {
+       "ha": 0.0,
+       "ha0": 0.0,
+       "ha0_ext": 0.0
+      },
+      "n_windows_paired": 4754
+     },
+     "b_refcv5v2_s1": {
+      "clips_missing": 0,
+      "ws_equal_clips": 139,
+      "g_bit_equal_windows": 4754,
+      "g_max_abs_diff": 0.0,
+      "model_free_bit_equal": {
+       "ha": 4754,
+       "ha0": 4754,
+       "ha0_ext": 4754
+      },
+      "model_free_max_abs_diff": {
+       "ha": 0.0,
+       "ha0": 0.0,
+       "ha0_ext": 0.0
+      },
+      "n_windows_paired": 4754
+     },
+     "b_refcv7_50400_s0": {
+      "clips_missing": 0,
+      "ws_equal_clips": 139,
+      "g_bit_equal_windows": 4754,
+      "g_max_abs_diff": 0.0,
+      "model_free_bit_equal": {
+       "ha": 4754,
+       "ha0": 4754,
+       "ha0_ext": 4754
+      },
+      "model_free_max_abs_diff": {
+       "ha": 0.0,
+       "ha0": 0.0,
+       "ha0_ext": 0.0
+      },
+      "n_windows_paired": 4754
+     },
+     "b_refcv7_50400_s1": {
+      "clips_missing": 0,
+      "ws_equal_clips": 139,
+      "g_bit_equal_windows": 4754,
+      "g_max_abs_diff": 0.0,
+      "model_free_bit_equal": {
+       "ha": 4754,
+       "ha0": 4754,
+       "ha0_ext": 4754
+      },
+      "model_free_max_abs_diff": {
+       "ha": 0.0,
+       "ha0": 0.0,
+       "ha0_ext": 0.0
+      },
+      "n_windows_paired": 4754
+     }
+    },
+    "s1": {
+     "b_refcv4b": {
+      "clips_missing": 0,
+      "ws_equal_clips": 139,
+      "g_bit_equal_windows": 4754,
+      "g_max_abs_diff": 0.0,
+      "model_free_bit_equal": {
+       "ha": 4754,
+       "ha0": 4754,
+       "ha0_ext": 4754
+      },
+      "model_free_max_abs_diff": {
+       "ha": 0.0,
+       "ha0": 0.0,
+       "ha0_ext": 0.0
+      },
+      "n_windows_paired": 4754
+     },
+     "b_refcv5v2_s0": {
+      "clips_missing": 0,
+      "ws_equal_clips": 139,
+      "g_bit_equal_windows": 4754,
+      "g_max_abs_diff": 0.0,
+      "model_free_bit_equal": {
+       "ha": 4754,
+       "ha0": 4754,
+       "ha0_ext": 4754
+      },
+      "model_free_max_abs_diff": {
+       "ha": 0.0,
+       "ha0": 0.0,
+       "ha0_ext": 0.0
+      },
+      "n_windows_paired": 4754
+     },
+     "b_refcv5v2_s1": {
+      "clips_missing": 0,
+      "ws_equal_clips": 139,
+      "g_bit_equal_windows": 4754,
+      "g_max_abs_diff": 0.0,
+      "model_free_bit_equal": {
+       "ha": 4754,
+       "ha0": 4754,
+       "ha0_ext": 4754
+      },
+      "model_free_max_abs_diff": {
+       "ha": 0.0,
+       "ha0": 0.0,
+       "ha0_ext": 0.0
+      },
+      "n_windows_paired": 4754
+     },
+     "b_refcv7_50400_s0": {
+      "clips_missing": 0,
+      "ws_equal_clips": 139,
+      "g_bit_equal_windows": 4754,
+      "g_max_abs_diff": 0.0,
+      "model_free_bit_equal": {
+       "ha": 4754,
+       "ha0": 4754,
+       "ha0_ext": 4754
+      },
+      "model_free_max_abs_diff": {
+       "ha": 0.0,
+       "ha0": 0.0,
+       "ha0_ext": 0.0
+      },
+      "n_windows_paired": 4754
+     },
+     "b_refcv7_50400_s1": {
+      "clips_missing": 0,
+      "ws_equal_clips": 139,
+      "g_bit_equal_windows": 4754,
+      "g_max_abs_diff": 0.0,
+      "model_free_bit_equal": {
+       "ha": 4754,
+       "ha0": 4754,
+       "ha0_ext": 4754
+      },
+      "model_free_max_abs_diff": {
+       "ha": 0.0,
+       "ha0": 0.0,
+       "ha0_ext": 0.0
+      },
+      "n_windows_paired": 4754
+     }
+    }
+   },
+   "void_gates_3_4": {
+    "s0": {
+     "pass": true,
+     "failures": []
+    },
+    "s1": {
+     "pass": true,
+     "failures": []
+    }
+   },
+   "inference_seed_replicate": {
+    "max_abs_path_diff_m": 4.396326065063477,
+    "floor_m": 0.0011,
+    "ade": {
+     "delta": 0.0011,
+     "lo": -0.0015,
+     "hi": 0.0039,
+     "ci95": 0.0027,
+     "p_delta_gt0": 0.7905,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    }
+   },
+   "bars_r7_form_informative": [
+    [
+     "BAR-R7-1",
+     "FAILED"
+    ],
+    [
+     "BAR-R7-2",
+     "PENDING (the refcv6@38k S2 rolls run LAST in the milestone chain; SPEC A4)"
+    ],
+    [
+     "BAR-R7-3",
+     "PASS (single training seed; training-seed floor unmeasured)"
+    ]
+   ],
+   "strategic": {
+    "status": "NOT APPLICABLE",
+    "n": 0,
+    "reason": "the strategic layer is OFF (--no-strategic); its route loss is gated off in training, so the route head is untrained"
+   },
+   "paired_read": {
+    "file": "PAIRED_READ_step20000_unc.json",
+    "clock": "standalone",
+    "g0": {
+     "G0": "FAIL",
+     "amendment": "A7",
+     "M1_detected": true,
+     "ckpt_md5": "eee65ba210933fc0462084e8b75517b6",
+     "G0_amended": "PASS",
+     "amendments": [
+      "A7",
+      "W-R8-1",
+      "W-R8-2"
+     ],
+     "amended_why": "fixed probe FAIL by fp32 noise (max rel 1.0646966230152142e-05); float64 re-check: every term <= 1e-9 (max 1.9831653266307828e-14), W1/W2 detected",
+     "wrapfix_json": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\raw\\step20000\\wrapper_clause_r8fix_gpu.json",
+     "fp64_json": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\raw\\step20000\\wrapper_fp64\\result.json",
+     "provisional": false,
+     "stamp": ""
+    },
+    "bars": {
+     "BAR-R8-E1": "FAILED",
+     "BAR-R8-E3": "PASS (single training seed; training-seed floor unmeasured)",
+     "BAR-R8-NR": {
+      "verdict": null,
+      "per_family": {
+       "ADE": "FAIL: S2:ade_m, S6:ade_m",
+       "LONGITUDINAL": "FAIL: S2:LON_speed_mae_mps, S2:LON_along_abs_final_m",
+       "LATERAL": "FAIL: S2:LAT_heading_mae_deg, S2:LAT_curvature_mae_1pm_valid, S2:LAT_yaw_rate_mae_radps_valid"
+      }
+     }
+    },
+    "inference_floor_ade": {
+     "S2": 0.0010942816734313965,
+     "S6": 0.002878904342651367
+    },
+    "strategic": {
+     "status": "NOT APPLICABLE",
+     "n": 0,
+     "reason": "the strategic layer is OFF (--no-strategic in the run's argv; PI ruling R5): its route loss is gated off in training, the route head is untrained and is not scored. Route-level decisions are measured inside LATERAL / TACTICAL, not relabelled strategic."
+    },
+    "controls_all_bit_identical": {
+     "S2_s0": true,
+     "S2_s1": true
+    },
+    "windows_check": {
+     "S2_s0": true,
+     "S2_s1": true,
+     "S6_s0": true,
+     "S6_s1": true
+    }
+   }
+  },
+  "corr": {
+   "status": "NOT RUN",
+   "work_dir": "E:\\refcv8_eval_kit\\battery\\step20000_corr"
+  }
+ },
+ "banked": {
+  "unc": {
+   "banked": [
+    "acceptance_s0.json",
+    "acceptance_s1.json",
+    "analysis_s0.json",
+    "analysis_s1.json",
+    "analysis_s6_s0.json",
+    "analysis_s6_s1.json",
+    "battery_summary.json",
+    "criteria_s0.json",
+    "criteria_s0.log",
+    "criteria_s1.json",
+    "criteria_s1.log",
+    "cross_paired_s0.json",
+    "cross_paired_s1.json",
+    "cross_paired_s6_s0.json",
+    "cross_paired_s6_s1.json",
+    "gate_roll_s0.json",
+    "gate_roll_s1.json",
+    "inference_seed_replicate.json",
+    "PAIRED_READ_step20000_unc.json",
+    "PAIRED_READ_step20000_unc.md",
+    "roll_s0.json",
+    "roll_s0.log",
+    "roll_s1.json",
+    "roll_s1.log",
+    "tactical_v6_s0.json",
+    "tactical_v6_s1.json",
+    "void_gates_s0.json",
+    "void_gates_s1.json"
+   ],
+   "left_on_E": []
+  }
+ },
+ "g0_gate": {
+  "g0_json": "E:/refcv8_eval_kit/battery/step20000/g0.json",
+  "require_pass": false,
+  "G0": "FAIL",
+  "amendment": "A7",
+  "M1_detected": true,
+  "ckpt_md5_in_g0": "eee65ba210933fc0462084e8b75517b6",
+  "result": "ok:FAIL"
+ },
+ "timings_raw": [
+  "1792244845 2026-10-17T15:47:25 armed",
+  "1792244848 2026-10-17T15:47:28 g0 chain ended",
+  "1792260253 2026-10-17T20:04:13 armed",
+  "1792260253 2026-10-17T20:04:13 g0 chain ended",
+  "1792261772 2026-10-17T20:29:32 lock acquired",
+  "1792261772 2026-10-17T20:29:32 pass unc start",
+  "1792273489 2026-10-17T23:44:49 pass unc battery end",
+  "1792273525 2026-10-17T23:45:25 pass unc paired read end"
+ ],
+ "chain_log_tail": [
+  "ZZR8BATTSTARTZZ 2026-10-17T15:47:25+0200 pid 150060 step 20000",
+  "ZZR8BATTG0ENDEDZZ 2026-10-17T15:47:28+0200 ended:CHAINEND:137308",
+  "ZZR8BATTSKIPZZ 2026-10-17T15:47:29+0200 skip:g0.json is missing or empty (G0 produced no artifact)",
+  "ZZR8BATTSTARTZZ 2026-10-17T20:04:13+0200 pid 434967 step 20000",
+  "ZZR8BATTG0ENDEDZZ 2026-10-17T20:04:13+0200 ended:CHAINEND:336161",
+  "ZZR8BATTGATEOKZZ 2026-10-17T20:04:14+0200 ok:FAIL",
+  "{\"met\": true, \"min_gb\": 6.0, \"waited_s\": 61.1, \"last\": {\"t\": \"2026-10-17T20:05:15+0200\", \"free_commit_gb\": 30.74, \"commit_limit_gb\": 67.31, \"free_phys_gb\": 14.27}}",
+  "[gpu_lock] WAIT job=refcv8-battery-step20000 holder={'pid': 56700, 'owner': 'p2full_table', 'job': 'p2full-main-c11', 'host': 'FREEDOM2035', 't': 1792260302.7401552, 'acquired': '2026-10-17T20:05:02+0200'} smi_ok=False python_compute=[(45240, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=2529MiB free_ram=14.27GB",
+  "[gpu_lock] WAIT job=refcv8-battery-step20000 holder={'pid': 56700, 'owner': 'p2full_table', 'job': 'p2full-main-c11', 'host': 'FREEDOM2035', 't': 1792260302.7401552, 'acquired': '2026-10-17T20:05:02+0200'} smi_ok=False python_compute=[(45240, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=4267MiB free_ram=13.47GB",
+  "[gpu_lock] WAIT job=refcv8-battery-step20000 holder={'pid': 56700, 'owner': 'p2full_table', 'job': 'p2full-main-c11', 'host': 'FREEDOM2035', 't': 1792260302.7401552, 'acquired': '2026-10-17T20:05:02+0200'} smi_ok=False python_compute=[(45240, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=4267MiB free_ram=13.44GB",
+  "[gpu_lock] WAIT job=refcv8-battery-step20000 holder={'pid': 56700, 'owner': 'p2full_table', 'job': 'p2full-main-c11', 'host': 'FREEDOM2035', 't': 1792260302.7401552, 'acquired': '2026-10-17T20:05:02+0200'} smi_ok=False python_compute=[(45240, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=4267MiB free_ram=13.4GB",
+  "[gpu_lock] WAIT job=refcv8-battery-step20000 holder={'pid': 56700, 'owner': 'p2full_table', 'job': 'p2full-main-c11', 'host': 'FREEDOM2035', 't': 1792260302.7401552, 'acquired': '2026-10-17T20:05:02+0200'} smi_ok=False python_compute=[(45240, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=4267MiB free_ram=13.17GB",
+  "[gpu_lock] WAIT job=refcv8-battery-step20000 holder={'pid': 56700, 'owner': 'p2full_table', 'job': 'p2full-main-c11', 'host': 'FREEDOM2035', 't': 1792260302.7401552, 'acquired': '2026-10-17T20:05:02+0200'} smi_ok=False python_compute=[(45240, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=4277MiB free_ram=13.07GB",
+  "[gpu_lock] WAIT job=refcv8-battery-step20000 holder={'pid': 56700, 'owner': 'p2full_table', 'job': 'p2full-main-c11', 'host': 'FREEDOM2035', 't': 1792260302.7401552, 'acquired': '2026-10-17T20:05:02+0200'} smi_ok=False python_compute=[(45240, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=4277MiB free_ram=13.03GB",
+  "[gpu_lock] WAIT job=refcv8-battery-step20000 holder={'pid': 56700, 'owner': 'p2full_table', 'job': 'p2full-main-c11', 'host': 'FREEDOM2035', 't': 1792260302.7401552, 'acquired': '2026-10-17T20:05:02+0200'} smi_ok=False python_compute=[(45240, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=4277MiB free_ram=12.67GB",
+  "[gpu_lock] WAIT job=refcv8-battery-step20000 holder={'pid': 56700, 'owner': 'p2full_table', 'job': 'p2full-main-c11', 'host': 'FREEDOM2035', 't': 1792260302.7401552, 'acquired': '2026-10-17T20:05:02+0200'} smi_ok=False python_compute=[(45240, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=4277MiB free_ram=12.82GB",
+  "[gpu_lock] WAIT job=refcv8-battery-step20000 holder={'pid': 56700, 'owner': 'p2full_table', 'job': 'p2full-main-c11', 'host': 'FREEDOM2035', 't': 1792260302.7401552, 'acquired': '2026-10-17T20:05:02+0200'} smi_ok=False python_compute=[(45240, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=4277MiB free_ram=12.65GB",
+  "[gpu_lock] WAIT job=refcv8-battery-step20000 holder={'pid': 56700, 'owner': 'p2full_table', 'job': 'p2full-main-c11', 'host': 'FREEDOM2035', 't': 1792260302.7401552, 'acquired': '2026-10-17T20:05:02+0200'} smi_ok=False python_compute=[(45240, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=4277MiB free_ram=12.65GB",
+  "[gpu_lock] WAIT job=refcv8-battery-step20000 holder={'pid': 56700, 'owner': 'p2full_table', 'job': 'p2full-main-c11', 'host': 'FREEDOM2035', 't': 1792260302.7401552, 'acquired': '2026-10-17T20:05:02+0200'} smi_ok=False python_compute=[(45240, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=4277MiB free_ram=12.81GB",
+  "[gpu_lock] WAIT job=refcv8-battery-step20000 holder={'pid': 56700, 'owner': 'p2full_table', 'job': 'p2full-main-c11', 'host': 'FREEDOM2035', 't': 1792260302.7401552, 'acquired': '2026-10-17T20:05:02+0200'} smi_ok=False python_compute=[(45240, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=4277MiB free_ram=12.58GB",
+  "[gpu_lock] WAIT job=refcv8-battery-step20000 holder={'pid': 56700, 'owner': 'p2full_table', 'job': 'p2full-main-c11', 'host': 'FREEDOM2035', 't': 1792260302.7401552, 'acquired': '2026-10-17T20:05:02+0200'} smi_ok=False python_compute=[(45240, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=4277MiB free_ram=12.75GB",
+  "[gpu_lock] WAIT job=refcv8-battery-step20000 holder={'pid': 56700, 'owner': 'p2full_table', 'job': 'p2full-main-c11', 'host': 'FREEDOM2035', 't': 1792260302.7401552, 'acquired': '2026-10-17T20:05:02+0200'} smi_ok=False python_compute=[(45240, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=4277MiB free_ram=12.44GB",
+  "[gpu_lock] WAIT job=refcv8-battery-step20000 holder={'pid': 56700, 'owner': 'p2full_table', 'job': 'p2full-main-c11', 'host': 'FREEDOM2035', 't': 1792260302.7401552, 'acquired': '2026-10-17T20:05:02+0200'} smi_ok=False python_compute=[(45240, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=4282MiB free_ram=12.47GB",
+  "[gpu_lock] WAIT job=refcv8-battery-step20000 holder={'pid': 56700, 'owner': 'p2full_table', 'job': 'p2full-main-c11', 'host': 'FREEDOM2035', 't': 1792260302.7401552, 'acquired': '2026-10-17T20:05:02+0200'} smi_ok=False python_compute=[(45240, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=4282MiB free_ram=12.43GB",
+  "[gpu_lock] WAIT job=refcv8-battery-step20000 holder={'pid': 56700, 'owner': 'p2full_table', 'job': 'p2full-main-c11', 'host': 'FREEDOM2035', 't': 1792260302.7401552, 'acquired': '2026-10-17T20:05:02+0200'} smi_ok=False python_compute=[(45240, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=4282MiB free_ram=12.58GB",
+  "[gpu_lock] WAIT job=refcv8-battery-step20000 holder={'pid': 56700, 'owner': 'p2full_table', 'job': 'p2full-main-c11', 'host': 'FREEDOM2035', 't': 1792260302.7401552, 'acquired': '2026-10-17T20:05:02+0200'} smi_ok=False python_compute=[(45240, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=4282MiB free_ram=12.77GB",
+  "[gpu_lock] WAIT job=refcv8-battery-step20000 holder={'pid': 56700, 'owner': 'p2full_table', 'job': 'p2full-main-c11', 'host': 'FREEDOM2035', 't': 1792260302.7401552, 'acquired': '2026-10-17T20:05:02+0200'} smi_ok=False python_compute=[(45240, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=4282MiB free_ram=12.42GB",
+  "[gpu_lock] WAIT job=refcv8-battery-step20000 holder={'pid': 56700, 'owner': 'p2full_table', 'job': 'p2full-main-c11', 'host': 'FREEDOM2035', 't': 1792260302.7401552, 'acquired': '2026-10-17T20:05:02+0200'} smi_ok=False python_compute=[(45240, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=4282MiB free_ram=12.68GB",
+  "[gpu_lock] WAIT job=refcv8-battery-step20000 holder={'pid': 56700, 'owner': 'p2full_table', 'job': 'p2full-main-c11', 'host': 'FREEDOM2035', 't': 1792260302.7401552, 'acquired': '2026-10-17T20:05:02+0200'} smi_ok=False python_compute=[(45240, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=4282MiB free_ram=12.47GB",
+  "[gpu_lock] WAIT job=refcv8-battery-step20000 holder={'pid': 56700, 'owner': 'p2full_table', 'job': 'p2full-main-c11', 'host': 'FREEDOM2035', 't': 1792260302.7401552, 'acquired': '2026-10-17T20:05:02+0200'} smi_ok=False python_compute=[(45240, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=4282MiB free_ram=12.55GB",
+  "[gpu_lock] WAIT job=refcv8-battery-step20000 holder={'pid': 56700, 'owner': 'p2full_table', 'job': 'p2full-main-c11', 'host': 'FREEDOM2035', 't': 1792260302.7401552, 'acquired': '2026-10-17T20:05:02+0200'} smi_ok=False python_compute=[(45240, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=4282MiB free_ram=12.68GB",
+  "{\"ok\": true, \"waited_s\": 1455.6, \"polls\": 25, \"gate\": {\"ok\": true, \"gpu_used_mib\": 1103, \"python_compute\": [], \"self_pids_excluded\": [59948, 434967], \"free_ram_gb\": 13.73, \"rule\": \"used<4300 MiB, no other python compute, free RAM>=8.0 GB\", \"t\": \"2026-10-17T20:29:31\", \"probe_ok\": true}, \"probe_failures\": 0, \"last_probe_error\": null, \"lock\": {\"job\": \"refcv8-battery-step20000\", \"pid\": 434967, \"win_pid_of_locker\": 59948, \"host\": \"FREEDOM2035\", \"acquired\": \"2026-10-17T20:29:31+0200\"}}",
+  "{\"created\": true}",
+  "ZZR8BATTLOCKEDZZ 2026-10-17T20:29:32+0200 ",
+  "ZZR8BATTPASSDONEZZ 2026-10-17T23:44:50+0200 unc (battery)",
+  "ZZR8BATTPAIREDZZ 2026-10-17T23:45:25+0200 unc"
+ ],
+ "restamped": {
+  "at": "2026-10-18T03:07:08",
+  "by": "restamp_banked_r8.py",
+  "what": "tier, stamps and passes.<p>.paired_read.g0 only (the PAIRED_READ files were re-stamped the same way); every number unchanged"
+ }
+}

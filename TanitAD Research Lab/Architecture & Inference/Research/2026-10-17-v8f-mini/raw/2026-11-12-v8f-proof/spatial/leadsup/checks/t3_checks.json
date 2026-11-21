@@ -1,0 +1,334 @@
+{
+ "tanitad_file": "C:\\Users\\Admin\\v8proof_c\\leadsup\\tree_patch\\stack\\tanitad\\__init__.py",
+ "l1": {
+  "n_rows": 192,
+  "n_gap": 140,
+  "n_clos": 59,
+  "gap_equal": true,
+  "clos_support_equal": true,
+  "clos_max_abs_diff": 1.192092913271381e-07,
+  "pres_equal": true,
+  "planted": {
+   "clip0_rows2_to_11_slope": [
+    NaN,
+    NaN,
+    -1.9999980926513672,
+    -2.0000009536743164,
+    -2.0000009536743164,
+    -2.0
+   ],
+   "clip1_first_rows": [
+    NaN,
+    NaN,
+    0.9999990463256836,
+    1.0000004768371582
+   ],
+   "clip2_around_the_jump": [
+    NaN,
+    NaN,
+    -0.5000019073486328,
+    -0.5,
+    -0.5000019073486328,
+    -3.3000011444091797,
+    NaN,
+    NaN,
+    NaN,
+    -0.5000019073486328
+   ]
+  },
+  "planted_ok": true,
+  "clip2_expected_first": true,
+  "clip2_row24_is_nan_or_short_after_break": true,
+  "PASS": true
+ },
+ "l2": {
+  "default_batch_has_no_lead_keys": true,
+  "lead_batch_extra_keys": [
+   "lead_clos",
+   "lead_gapm",
+   "lead_pres"
+  ],
+  "shapes": {
+   "lead_pres": [
+    8,
+    16
+   ],
+   "lead_gapm": [
+    8,
+    16
+   ],
+   "lead_clos": [
+    8,
+    16
+   ]
+  },
+  "n_gap_finite": 91,
+  "n_clos_finite": 83,
+  "n_pres": 91,
+  "labels_equal_join_rows": true,
+  "PASS": true
+ },
+ "l3": {
+  "term": 0.7279948592185974,
+  "parts": {
+   "lead_sup_bce": 0.6753365397453308,
+   "lead_sup_gap": 0.04868554696440697,
+   "lead_sup_clos": 0.00397278880700469
+  },
+  "counts": {
+   "lead_sup_n_pres": 80.0,
+   "lead_sup_n_gap": 74.0,
+   "lead_sup_n_clos": 69.0
+  },
+  "term_alone_grad": {
+   "head": 64.09242504835129,
+   "proj": 0.820107813924551,
+   "adapter": 30.14232301712036,
+   "pred_l1": 0.0,
+   "idm_l1": 0.0,
+   "act_embed_l1": 0.0,
+   "levels_2_3": 0.0,
+   "heads_TS_O": 0.0
+  },
+  "total_grad": {
+   "head": 64.09242504835129,
+   "proj": 5.836897566914558,
+   "adapter": 239.95667427778244,
+   "pred_l1": 15.44634966738522,
+   "idm_l1": 897.18601167202,
+   "act_embed_l1": 0.005528133595362306,
+   "levels_2_3": 108.32385776843876,
+   "heads_TS_O": 242.8695309390314
+  },
+  "term_alone_nonzero_outside_head": [
+   "adapter.0.bias",
+   "adapter.0.weight",
+   "adapter.1.bias",
+   "adapter.1.weight",
+   "pos",
+   "wm.proj.0.bias",
+   "wm.proj.0.weight",
+   "wm.proj.1.bias",
+   "wm.proj.1.weight"
+  ],
+  "PASS": true
+ },
+ "l4": {
+  "detach_on_head_grad": 64.09242504835129,
+  "detach_on_nonzero_params_outside_head": [],
+  "detach_on_term": 0.7279948592185974,
+  "detach_off_nonzero_params_outside_head": [
+   "adapter.0.bias",
+   "adapter.0.weight",
+   "adapter.1.bias",
+   "adapter.1.weight",
+   "pos",
+   "wm.proj.0.bias",
+   "wm.proj.0.weight",
+   "wm.proj.1.bias",
+   "wm.proj.1.weight"
+  ],
+  "term_equal_detach_on_off_at_same_init": true,
+  "detach_on_total_reaches_proj_via_other_terms": true,
+  "built_levers": {
+   "lead_sup": "on",
+   "lead_hist": 5,
+   "lead_sup_detach": "on",
+   "w_lead_sup": 1.0
+  },
+  "PASS": true
+ },
+ "l5": {
+  "term": 0.0,
+  "parts": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "head_grad": 0.0,
+  "n_counted": 0.0,
+  "gap_and_closing_masked_parts": [
+   0.6753365397453308,
+   0.0,
+   0.0
+  ],
+  "PASS": true
+ },
+ "l6": {
+  "ref_term": 0.7279948592185974,
+  "label_at_frame": {
+   "0": 0.0,
+   "1": 0.0,
+   "2": 0.0,
+   "3": 0.0,
+   "4": 0.0036377906799316406,
+   "5": 0.0029813647270202637,
+   "6": 0.00527191162109375,
+   "7": 0.0028113722801208496,
+   "8": 0.004236459732055664,
+   "9": 0.0053400397300720215,
+   "10": 0.0026006102561950684,
+   "11": 0.0041852593421936035,
+   "12": 0.0067174434661865234,
+   "13": 0.0030690431594848633,
+   "14": 0.005535423755645752,
+   "15": 0.004229903221130371
+  },
+  "non_end_frames_exact_zero": true,
+  "end_frames_moved": [
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15
+  ],
+  "frame_moves_end_frames": {
+   "0": [
+    4
+   ],
+   "1": [
+    4,
+    5
+   ],
+   "2": [
+    4,
+    5,
+    6
+   ],
+   "3": [
+    4,
+    5,
+    6,
+    7
+   ],
+   "4": [
+    4,
+    5,
+    6,
+    7,
+    8
+   ],
+   "5": [
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "6": [
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "7": [
+    7,
+    8,
+    9,
+    10,
+    11
+   ],
+   "8": [
+    8,
+    9,
+    10,
+    11,
+    12
+   ],
+   "9": [
+    9,
+    10,
+    11,
+    12,
+    13
+   ],
+   "10": [
+    10,
+    11,
+    12,
+    13,
+    14
+   ],
+   "11": [
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "12": [
+    12,
+    13,
+    14,
+    15
+   ],
+   "13": [
+    13,
+    14,
+    15
+   ],
+   "14": [
+    14,
+    15
+   ],
+   "15": [
+    15
+   ]
+  },
+  "causal_window_ok": true,
+  "PASS": true
+ },
+ "l7": {
+  "real": {
+   "tag": "real",
+   "term": 0.7279948592185974,
+   "total_W": 108.84404754638672,
+   "total_0": 108.11605072021484,
+   "total_W_minus_total_0": 0.727996826171875,
+   "abs_diff_to_W_x_term": 1.9669532775878906e-06,
+   "float32_rounding_bar": 0.00010380177302984804
+  },
+  "mut_total_line_deleted": {
+   "tag": "mut_total_line_deleted",
+   "term": 0.7279948592185974,
+   "total_W": 108.11605072021484,
+   "total_0": 108.11605072021484,
+   "total_W_minus_total_0": 0.0,
+   "abs_diff_to_W_x_term": 0.7279948592185974,
+   "float32_rounding_bar": 0.00010310750115168641
+  },
+  "real_ok": true,
+  "mut_total_red": true,
+  "mut_detach_removed_nonzero_outside_head": 9,
+  "mut_detach_red": true,
+  "mut_term_update_deleted_raised": "KeyError 'lead_sup'",
+  "mut_update_red": true,
+  "PASS": true
+ },
+ "l8": {
+  "extra_keys": [
+   "wm.lead_head.frame.weight",
+   "wm.lead_head.frame.bias",
+   "wm.lead_head.mlp.0.weight",
+   "wm.lead_head.mlp.0.bias",
+   "wm.lead_head.mlp.2.weight",
+   "wm.lead_head.mlp.2.bias"
+  ],
+  "keys_of_G_all_present": true,
+  "G_tensors_bit_identical": true,
+  "head_params": 82499,
+  "G_params": 3994751,
+  "L_params": 4077250,
+  "head_params_expected": 82499,
+  "PASS": true
+ },
+ "PASS": true
+}

@@ -1,0 +1,22 @@
+{
+  "MM_NOTE": "RECOMMENDATION: DO NOT APPEND AT FREEZE. PREREG_VDAC_P6.md section 6 and A2 section 5: 'S0 and S1 are navtrain reads and are not keyed ... The ledger is written by the reader at the real read only'. ledger_K.json holds no VDAC entry today (max n = 44, TF-N2-A1, at a01be4a4), and K is the count of NAVTEST selector reads that feeds the Bonferroni interval: an unread navtrain S1 entry would inflate K. Keys are written at S2. The object under 'entry' is the exact append IF the MM overrules this and wants the A5 pair registered in the ledger now (next free n = 45; key format nominee:sha256:SET as in the TF entries n = 41 to 44). Append ONLY the 'entry' object into the 'reads' array; the KEY below uses set S1, not E3, because these are not E3 reads. UNVERIFIED: whether selcore.Ledger accepts set 'S1' (read_selectors.py and read_s1z.py write set = stage.upper() / 'E3').",
+  "entry": {
+    "key": "VDAC-A5:<CARD_SHA256>:S1",
+    "n": 45,
+    "time": "<FREEZE_UTC>",
+    "nominee": "VDAC-A5",
+    "family": "VDAC",
+    "set": "S1",
+    "smoke": false,
+    "arms": [
+      "HB-s0 (PRIMARY pair member: LoRA trunk copy, --aux-drv-lora-lr 0.0002)",
+      "HC-s0 (PRIMARY pair member: 1 m cells + --aux-drv-bw 3.0)"
+    ],
+    "non_selection_reads": [
+      "HB-SHUF (deliberate regression, C-SHUF)",
+      "HC-SHUF (deliberate regression, C-SHUF)",
+      "HA-s0 (banked S1a comparator, paired delta)",
+      "Stage 0 in-sample IoU 0.7864 (S0-WEAK, selects the pair, decides nothing further)"
+    ]
+  }
+}

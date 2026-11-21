@@ -1,0 +1,74 @@
+{
+ "arm": "G_s0",
+ "tier": "T0 (a world-model diagnostic on logged frames, never driving performance)",
+ "families": "LONGITUDINAL, LATERAL, TACTICAL: not measured by this read; STRATEGIC: PAUSED (PI item 25)",
+ "card": "PREREG_V8F_PROOF_ADD17",
+ "start_frame": 4,
+ "steps": 10,
+ "context": 3,
+ "model": {
+  "ckpt_sha256": "40481794b113835f747eb2c2263a0ff2a2689d1de55ce9c627ae77c8ccec31b1",
+  "step": 19164,
+  "tanitad_file": "C:/Users/Admin/v8proof_c/latvis_gw/tree/stack/tanitad/__init__.py",
+  "wm_state": "grid",
+  "l1_width": 640,
+  "l1_pred_kind": "flat",
+  "l1_pred_class": "CausalPredictor",
+  "l1_pred_context": 3
+ },
+ "controls": {
+  "x1_reproduce_banked_rollout": {
+   "max_abs_diff": 0.0019526481628417969,
+   "tol": 0.004,
+   "pass": true
+  },
+  "x2_mapping": {
+   "windows": 1948,
+   "unmatched": 0,
+   "match_tol": 0.004,
+   "match_gap": 0.1,
+   "worst_match_diff": 0.0019526481628417969,
+   "windows_with_several_rows": 0,
+   "max_diff_between_those_rows": 0.0,
+   "frame10_vs_banked_true_2s_max_abs_diff": 0.0019526481628417969,
+   "tol": 0.004,
+   "pass": true
+  },
+  "x3_seeded_loop_context_1_equals_R1": {
+   "max_abs_diff": 6.67572021484375e-06,
+   "tol": 1e-05,
+   "pass": true
+  },
+  "x4_overlap": {
+   "pairs": 1809,
+   "state_max_abs_diff": 0.0019526481628417969,
+   "rollout_max_abs_diff": 0.0019526481628417969,
+   "tol": 0.004,
+   "pass": true
+  }
+ },
+ "controls_pass": true,
+ "one_step_mse": {
+  "copy": 0.08305675536394119,
+  "context_1": 0.10238569974899292,
+  "context_3": 0.10098379105329514,
+  "ratio_context_1_over_copy": 1.2327197143730866,
+  "ratio_context_3_over_copy": 1.2158407899610404
+ },
+ "latent_mse_at_2s": {
+  "copy": 0.4398680031299591,
+  "R1": 0.4057214558124542,
+  "R3h": 0.38955458998680115,
+  "R3g": 0.3906528353691101,
+  "skill_over_copy": {
+   "R1": 0.0776290775290065,
+   "R3h": 0.11438298031487604,
+   "R3g": 0.11188621907174356
+  }
+ },
+ "inputs": {
+  "latents": "C:/Users/Admin/v8proof_c/latvis_gw/LATENTS_GW_G_s0.npz",
+  "states_pt": "C:/Users/Admin/v8proof_c/latvis_gw/latents/G_s0.pt",
+  "ckpt": "F:/TanitAD-scratch/v8proof/spatial/ckpt/G_s0/ckpt_last.pt"
+ }
+}

@@ -1,0 +1,119 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "method": "autoregressive roll of the h=1 head; mean-centred cos vs a 200-draw permutation null at each rolled step",
+ "arms_missing": [],
+ "arms": {
+  "rdw8": {
+   "step": 2000,
+   "by_rolled_step": {
+    "1": {
+     "cos": 0.0428,
+     "z": 3.52,
+     "n": 144
+    },
+    "2": {
+     "cos": 0.0583,
+     "z": 4.3,
+     "n": 144
+    },
+    "3": {
+     "cos": 0.0663,
+     "z": 5.0,
+     "n": 144
+    },
+    "4": {
+     "cos": 0.0693,
+     "z": 5.61,
+     "n": 144
+    },
+    "5": {
+     "cos": 0.0684,
+     "z": 6.03,
+     "n": 144
+    },
+    "6": {
+     "cos": 0.0686,
+     "z": 5.69,
+     "n": 144
+    }
+   }
+  },
+  "o5k4": {
+   "step": 2000,
+   "by_rolled_step": {
+    "1": {
+     "cos": 0.114,
+     "z": 7.33,
+     "n": 144
+    },
+    "2": {
+     "cos": 0.1365,
+     "z": 8.63,
+     "n": 144
+    },
+    "3": {
+     "cos": 0.1574,
+     "z": 8.37,
+     "n": 144
+    },
+    "4": {
+     "cos": 0.1778,
+     "z": 10.27,
+     "n": 144
+    },
+    "5": {
+     "cos": 0.1929,
+     "z": 10.41,
+     "n": 144
+    },
+    "6": {
+     "cos": 0.1987,
+     "z": 10.69,
+     "n": 144
+    }
+   }
+  },
+  "o5k8": {
+   "step": 2000,
+   "by_rolled_step": {
+    "1": {
+     "cos": 0.1198,
+     "z": 6.08,
+     "n": 144
+    },
+    "2": {
+     "cos": 0.1494,
+     "z": 8.29,
+     "n": 144
+    },
+    "3": {
+     "cos": 0.1778,
+     "z": 9.49,
+     "n": 144
+    },
+    "4": {
+     "cos": 0.2051,
+     "z": 11.59,
+     "n": 144
+    },
+    "5": {
+     "cos": 0.2337,
+     "z": 11.4,
+     "n": 144
+    },
+    "6": {
+     "cos": 0.2468,
+     "z": 11.83,
+     "n": 144
+    }
+   }
+  }
+ },
+ "deepest_significant_rolled_step": {
+  "rdw8": 6,
+  "o5k4": 6,
+  "o5k8": 6
+ },
+ "verdict": "deepest rolled step with z>2: {'rdw8': 6, 'o5k4': 6, 'o5k8': 6}. No arm predicts deeper than the k_roll=1 control \u21d2 deepening the rollout did NOT buy multi-step competence, and the limit is real rather than configural."
+}

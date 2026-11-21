@@ -1,0 +1,32 @@
+...............F...                                                      [100%]
+================================== FAILURES ===================================
+_______________ test_mutation_turns_a_check_red[kinds_drop_s1d] _______________
+
+mname = 'kinds_drop_s1d'
+tmp_path = WindowsPath('F:/TanitAD-scratch/n1dw/build/tmp/reg_new/test_strat1_s1d/bt/test_mutation_turns_a_check_re3')
+
+    @pytest.mark.parametrize("mname", sorted(MUTATIONS))
+    def test_mutation_turns_a_check_red(mname, tmp_path):
+>       m = _mutant(tmp_path, mname, *MUTATIONS[mname])
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_strat1_s1d.py:172: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/n1dw/build/tmp/reg_new/test_strat1_s1d/bt/test_mutation_turns_a_check_re3')
+name = 'kinds_drop_s1d'
+old = 'KINDS = ("C0", "N1", "S1", "S1d", "N1R", "S1R", "S1dR", "N1Z", "N1D", "N1Dx")'
+new = 'KINDS = ("C0", "N1", "S1", "N1R", "S1R", "S1dR", "N1Z", "N1D", "N1Dx")'
+
+    def _mutant(tmp_path, name, old, new):
+        src = open(os.path.join(SCRIPTS, "strat1_check.py"), "rb").read().decode("utf-8")
+>       assert src.count(old) == 1, (name, src.count(old))
+E       AssertionError: ('kinds_drop_s1d', 0)
+E       assert 0 == 1
+E        +  where 0 = <built-in method count of str object at 0x0000019A7F6D4880>('KINDS = ("C0", "N1", "S1", "S1d", "N1R", "S1R", "S1dR", "N1Z", "N1D", "N1Dx")')
+E        +    where <built-in method count of str object at 0x0000019A7F6D4880> = '"""PREREG_V8F_STRAT1 study checker (BUILD_SPEC section 8; the pattern of ``obd_check.py``). It maps the seven launch-... "REFUSED: " + "; ".join(bad))\n    return 0 if not bad else 1\n\n\nif __name__ == "__main__":\n    sys.exit(main())\n'.count
+
+tests\test_strat1_s1d.py:147: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_strat1_s1d.py::test_mutation_turns_a_check_red[kinds_drop_s1d]
+1 failed, 18 passed in 4.33s

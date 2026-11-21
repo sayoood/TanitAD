@@ -1,0 +1,206 @@
+...................FF.................s................................. [ 83%]
+..............                                                           [100%]
+================================== FAILURES ===================================
+__________ test_P2_every_knob_is_recoverable_from_the_stamp_BY_VALUE __________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-3062/test_P2_every_knob_is_recovera0')
+
+    def test_P2_every_knob_is_recoverable_from_the_stamp_BY_VALUE(tmp_path):
+        """\u2b50 DERIVED FROM ARGPARSE, ASSERTED BY VALUE. Each knob is set to a
+        distinctive value and must be findable in the seam stamp � so the test
+        survives any renaming of the stamp's keys and cannot be satisfied by a
+        hand-written list that has rotted."""
+        p = t.build_parser()
+        # The enabling context, so a knob under test is never refused for a reason
+        # that has nothing to do with the knob.
+        # \u2b50 WP-D's seam is enabled here for exactly the reason `--agents oracle`
+        # is: `--w-bev-aux` REFUSES without `--bev-aux col|xcol` (a weight with no
+        # head is the `w_agent` defect verbatim � a term stamped into config.json
+        # and silently skipped), so without this the probe would have no admissible
+        # value and would report the knob unstampable for a reason that has nothing
+        # to do with the knob.
+        # \u2b50 WP-B's seam is enabled here for exactly the same reason WP-D's is:
+        # every `--wp-index-*` knob REFUSES under `--wp-index off` (a knob with no
+        # seam is the `w_agent` defect verbatim -- parsed, stamped into
+        # config.json, and silently inert), so without this the probe would find NO
+        # admissible value for `--wp-index-mode` and report the knob unstampable
+        # for a reason that has nothing to do with the knob.
+        base = ["--out", "x", "--arm", "hier", "--image-hw", "256", "640",
+                "--agents", "oracle", "--agent-rig-camera", "nominal",
+                "--agent-join", "j.jsonl",
+                "--bev-aux", "col", "--w-bev-aux", "0.1",
+                "--wp-index", "on"]
+        # \u2b50\u2b50 refcv6 \xa72/\xa76: a PER-KNOB seam, because these two CANNOT live in the
+        # shared `base`. `--w-map` needs `--map-gt-root`, and `--map-gt-root` with
+        # both perception weights at 0 fires the REVERSE refusal (an artifact
+        # named in config.json and read by nothing) -- so putting it in `base`
+        # would make EVERY OTHER knob's probe inadmissible. The requirement is
+        # mutual, and a shared prefix cannot express that.
+        # \u26d4 This is a SEAM table, not the per-knob VALUE table the docstring
+        # forbids: the probe VALUES still come from `cand`, derived from argparse.
+        # \u26a0\ufe0f A REAL per-clip table: `_pin_trainer_cfg` READS the file (that is
+        # `test_P1_extrinsics_source_needs_a_FILE`'s whole point), so a placeholder
+        # path would make this probe fail for a reason that has nothing to do with
+        # the knob -- exactly what `base` exists to prevent.
+        extr = tmp_path / "extr.json"
+        extr.write_text(json.dumps({"c0": {"qx": 0.4957, "qy": -0.5006,
+                                           "qz": 0.5045, "qw": -0.4992,
+                                           "x": 1.7795, "y": -0.0596,
+                                           "z": 1.2531}}), encoding="utf-8")
+        v7lab = tmp_path / "s2_labels_v7.2_probe.jsonl.gz"
+        v7lab.write_bytes(b"")
+        TACV6 = ["--tac-decoder-v6", "--v7-labels", str(v7lab)]
+        # \u26a0\ufe0f `--w-tac-v6` DEFAULTS TO 0.0, and `--tac-decoder-v6` with a zero weight
+        # is refused by name (a decoder built, stamped and given NO gradient � the
+        # `tac_goal_tok_head` defect, 40,284 steps at grad_abs_sum exactly 0.0).
+        # The rows above survive on `TACV6` alone only because the knob under test
+        # SUPPLIES that weight itself; a row whose knob does not must add it.
+        # \u26d4 It is a SEPARATE constant on purpose. Folding it into `TACV6` would put
+        # `--w-tac-v6` twice on the `w_tac_v6` row, where argparse silently keeps the
+        # LAST occurrence � so the probe would be checking whichever value happened
+        # to come second, and a reordering would change what the test asserts
+        # without changing what it reports.
+        TACV6_ON = TACV6 + ["--w-tac-v6", "1.0"]
+        seam = {
+            "w_map": ["--trunk", "timm", "--map-gt-root", "m",
+                      "--agent-rig-camera", "extrinsics",
+                      "--agent-rig-extrinsics", str(extr)],
+            "w_box3d": ["--trunk", "timm"],
+            # \u2b50\u2b50 refcv6 \xa74, same shape as \xa76's two above: `--w-tac-v6` REFUSES
+            # without `--tac-decoder-v6` ("a weight with no head is the `w_agent`
+            # defect verbatim"), and every other `--tac-decoder-*` knob is inert
+            # without it too. \u26d4 Without these rows the probe finds NO admissible
+            # value and reports the knob unstampable for a reason that has nothing
+            # to do with the knob -- which is exactly what this table prevents, and
+            # exactly what it did when the �4 wiring landed without them.
+            # \u26a0\ufe0f The chain is TWO deep: `--tac-decoder-v6` itself refuses under the
+            # kin3 vocabulary ("no 22-token tactical goal set, so the decoder's 22
+            # behaviour queries would have no label to learn from"), so the seam
+            # must also pin `--v7-labels`. \u2b50 Both refusals are CORRECT and this
+            # table is the right place to satisfy them � not a reason to weaken
+            # either.
+            "w_tac_v6": TACV6,
+            "tac_decoder_valid_threshold": TACV6,
+            "graft_behaviour_sel": TACV6,
+            # \u2b50\u2b50 refcv7 (`SPEC_REFCV7.md`), the same shape a third time \u2014 and this
+            # row is the one the table was MISSING: MEASURED 2026-09-21 that
+            # `--w-r7-wta` and `--w-r7-scorer` were the ONLY two knobs of 38 with no
+            # admissible probe value, so this test had been RED at the tip and the
+            # two weights were unverified as stampable.
+            # \u26d4 EVERY entry below satisfies a refusal that is CORRECT, and the fix
+            # is to satisfy them, never to weaken one. The chain
+            # (`refc_v3_train.py:644-695`) is FOUR deep: the weights refuse without
+            # `--refcv7`; `--refcv7` refuses without `--arm hier` (in `base`),
+            # without `--tac-decoder-v6` (which itself refuses without
+            # `--v7-labels`), and without `--trunk timm`.
+            # \u26a0\ufe0f `--r7-no-select` is required, not decoration: with the WTA weight
+            # under test the scorer weight is still 0, and selection from an
+            # UNTRAINED scorer is refused by name. Turning selection off is the
+            # refusal's own stated remedy.
+            "w_r7_wta": TACV6_ON + ["--refcv7", "--trunk", "timm", "--r7-no-select"],
+            # \u26a0\ufe0f The scorer row is longer because the scorer reads MORE ORACLES, and
+            # each one is its own refusal: `--w-r7-wta > 0` (a WTA decoder built and
+            # never supervised still feeds selection), `--r7-nav-tau-rad > 0` (no
+            # invented default tolerance � the PI's mandatory nav sub-score),
+            # `--agent-join` (else the NC/TTC oracle abstains on every window), and
+            # `--map-gt-root` WITH `--w-map > 0` (the DAC oracle). \u2b50 That last pair
+            # is mutual � `--map-gt-root` with both perception weights at 0 fires the
+            # REVERSE refusal � which is exactly why `w_map`'s own row above carries
+            # the rig extrinsics, and why this one must carry them too.
+            "w_r7_scorer": TACV6_ON + [
+                "--refcv7", "--trunk", "timm", "--w-r7-wta", "0.5",
+                "--r7-nav-tau-rad", "0.15", "--agent-join", "j",
+                "--map-gt-root", "m", "--w-map", "1.0",
+                "--agent-rig-camera", "extrinsics",
+                "--agent-rig-extrinsics", str(extr)],
+        }
+        # Candidates, tried in order: a knob with a DOMAIN (a mount height must be
+        # a plausible height) takes the first admissible one. A per-knob table of
+        # values would be the rotting list this test exists to avoid.
+        cand = {float: (0.137, 1.37), int: (61, 7)}
+        checked = 0
+        for a in p._actions:
+            if a.dest not in t.agent_knob_dests(p) or not a.option_strings:
+                continue
+            opt = a.option_strings[0]
+            vals: list = []
+            if a.type in cand and a.nargs is None:
+                vals = [a.type(v) for v in cand[a.type]]
+            elif a.choices:
+                # a choice that is NOT the default, so a stamp that ignores argv
+                # and echoes the default cannot pass
+                vals = [c for c in a.choices if c != a.default]
+            elif isinstance(a.const, bool) or a.nargs == 0:
+                vals = [True]
+            if not vals:
+                continue
+            last = None
+            for v in vals:
+                argv = (list(base) + seam.get(a.dest, [])
+                        + ([opt] if v is True else [opt, str(v)]))
+                try:
+                    args = p.parse_args(argv)
+                    cfg, _ = _cfg_at(args=args)
+                    stamp = t._seam_stamp(cfg, args)
+                except SystemExit as exc:          # inadmissible value, try next
+                    last = exc
+                    continue
+>               assert v in _leaf_values(stamp), (
+                    f"{opt} = {v!r} does not reach config.json by value; a run "
+                    f"cannot state the weight it trained at (M18).")
+E               AssertionError: --w-tac-goal = 0.137 does not reach config.json by value; a run cannot state the weight it trained at (M18).
+E               assert 0.137 in [True, True, False, False, True, True, ...]
+E                +  where [True, True, False, False, True, True, ...] = _leaf_values({'hier': True, 'hierarchy': True, 'no_strategic': False, 'goal_str_loss_applied': False, ...})
+
+tests\test_refc_v3_agent_provenance.py:550: AssertionError
+---------------------------- Captured stdout call -----------------------------
+[v3] WP-D BEV aux ON: kind=col grid=8x20 target=24x20 w=0.1 occlusion=mask detach=False pos_weight=30.61\n[v3] \u26a0\ufe0f a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.\n[v3] WP-B waypoint index ON: mode=geom detach=False radius_m=0 hidden=32 scale_m=10 -> 4 decoder layers
+_________ test_P2_assert_knobs_stamped_FAILS_a_stamp_that_lost_a_knob _________
+
+    def test_P2_assert_knobs_stamped_FAILS_a_stamp_that_lost_a_knob():
+        """\u26d4 DELIBERATE REGRESSION: a gate never shown to fail the defect
+        certifies nothing. Drop one knob from the stamp; the run must refuse."""
+        a = _args("--agents", "oracle", "--w-agent", "0.25")
+        cfg, a = _cfg_at(args=a)
+        stamp = t._seam_stamp(cfg, a)
+>       t.assert_knobs_stamped(a, stamp)                          # green first
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_refc_v3_agent_provenance.py:569: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+args = Namespace(size='small', arm='hier', data_root=None, v2_cache=None, prefetch_factor=1, u8_batches=False, eval_cache=Non...args=False, nav_from_v7=False, goal_point_inject=False, goal_point_geo_prior=False, goal_point_t=4.0, goal_point_w=0.0)
+stamp = {'hier': True, 'hierarchy': True, 'no_strategic': False, 'goal_str_loss_applied': False, ...}
+parser = None
+
+    def assert_knobs_stamped(args, stamp: dict,
+                             parser: argparse.ArgumentParser | None = None) -> None:
+        """REFUSE to start a run whose own record cannot state its knobs.
+    
+        Checked against the VALUE, not the key name: every knob's value must be
+        recoverable from ``stamp``. Called from :func:`train` immediately before
+        ``config.json`` is written, so the failure is a refusal at startup rather
+        than an unanswerable question months later.
+        """
+        want = agent_knob_stamp(args, parser)
+        got = (stamp or {}).get("agent_knobs")
+        if not isinstance(got, dict):
+            raise SystemExit(
+                "[v3] \u26d4 the seam stamp carries no `agent_knobs` block, so this "
+                "run's config.json could not state the weights it trained at "
+                "(mm-decisions M18). This is a code defect, not an argv one.")
+        missing = {k: v for k, v in want.items() if k not in got or got[k] != v}
+        if missing:
+>           raise SystemExit(
+                f"[v3] \u26d4 {len(missing)} --agent-*/--w-*/--bev-aux* knob(s) do NOT "
+                f"reach "
+                f"config.json: {sorted(missing)}. A run that cannot state its own "
+                "weights makes every later comparison between arms unfalsifiable "
+                "(mm-decisions M18).")
+E           SystemExit: [v3] \u26d4 42 --agent-*/--w-*/--bev-aux* knob(s) do NOT reach config.json: ['agent_cam_height', 'agent_cls_weight', 'agent_join', 'agent_join_allow_legacy_ids', 'agent_join_no_rates', 'agent_join_verify', 'agent_miss_rate', 'agent_pad', 'agent_presence_hard', 'agent_queries', 'agent_rig_camera', 'agent_rig_extrinsics', 'agent_rig_extrinsics_allow_partial', 'agent_sigma_range', 'agent_w_ground', 'agent_w_project', 'agents', 'bev_aux', 'bev_aux_detach', 'bev_aux_dtok', 'bev_aux_hidden', 'bev_aux_occlusion', 'bev_aux_pos_weight', 'bev_aux_rmax', 'bev_aux_rng', 'bev_aux_shuffle', 'w_agent', 'w_bev_aux', 'w_box3d', 'w_map', 'w_r7_scorer', 'w_r7_wta', 'w_tac_goal', 'w_tac_v6', 'w_u0', 'wp_index', 'wp_index_const_xy', 'wp_index_detach', 'wp_index_hidden', 'wp_index_mode', 'wp_index_radius_m', 'wp_index_scale_m']. A run that cannot state its own weights makes every later comparison between arms unfalsifiable (mm-decisions M18).
+
+scripts\refc_v3_train.py:5509: SystemExit
+=========================== short test summary info ===========================
+FAILED tests/test_refc_v3_agent_provenance.py::test_P2_every_knob_is_recoverable_from_the_stamp_BY_VALUE
+FAILED tests/test_refc_v3_agent_provenance.py::test_P2_assert_knobs_stamped_FAILS_a_stamp_that_lost_a_knob
+2 failed, 83 passed, 1 skipped in 6.80s

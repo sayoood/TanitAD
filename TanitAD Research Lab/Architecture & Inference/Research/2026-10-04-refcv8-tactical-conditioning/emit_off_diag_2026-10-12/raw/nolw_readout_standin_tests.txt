@@ -1,0 +1,19 @@
+# nolw_readout.py stand-in tests, 2026-10-12, BEFORE V-R8-noLW exists. floor stand-in = Thor V0r - V0 (V-R8r not yet evaluated).
+### mock1: V-R8d as noLW (expect not CONFIRMED)
+V-R8-noLW readout: NULL
+  s0 P1 cross_abs_6s GT turn: noLW 12.713 vs V-R8 14.984 d=-2.272 [-5.664,+0.840] ns; floor 0.834 R=2.72 -> FAIL
+  s0 P2 oraclebase cross GT turn: d=-0.011 [-0.491,+0.471] ns -> pass
+  s1 P1 cross_abs_6s GT turn: noLW 12.668 vs V-R8 15.141 d=-2.472 [-5.785,+0.543] ns; floor 0.832 R=2.97 -> FAIL
+  s1 P2 oraclebase cross GT turn: d=+0.007 [-0.487,+0.557] ns -> pass
+### mock2: V0 as noLW (P1 passes, P2 must FAIL: V0's bank is worse on turns)
+V-R8-noLW readout: PARTIAL
+  s0 P1 cross_abs_6s GT turn: noLW 10.539 vs V-R8 14.984 d=-4.445 [-8.115,-1.087] BETTER; floor 0.834 R=5.33 -> pass
+  s0 P2 oraclebase cross GT turn: d=+0.487 [+0.024,+0.971] WORSE -> FAIL
+  s1 P1 cross_abs_6s GT turn: noLW 10.554 vs V-R8 15.141 d=-4.586 [-8.119,-1.294] BETTER; floor 0.832 R=5.51 -> pass
+  s1 P2 oraclebase cross GT turn: d=+0.557 [+0.015,+1.087] WORSE -> FAIL
+### mock3: V-R8's own bank + the listwise-target pick as base (expect CONFIRMED)
+V-R8-noLW readout: CONFIRMED
+  s0 P1 cross_abs_6s GT turn: noLW 5.918 vs V-R8 14.984 d=-9.066 [-12.862,-5.351] BETTER; floor 0.834 R=10.87 -> pass
+  s0 P2 oraclebase cross GT turn: d=+0.000 [+0.000,+0.000] ns -> pass
+  s1 P1 cross_abs_6s GT turn: noLW 6.377 vs V-R8 15.141 d=-8.764 [-12.404,-5.114] BETTER; floor 0.832 R=10.53 -> pass
+  s1 P2 oraclebase cross GT turn: d=+0.000 [+0.000,+0.000] ns -> pass

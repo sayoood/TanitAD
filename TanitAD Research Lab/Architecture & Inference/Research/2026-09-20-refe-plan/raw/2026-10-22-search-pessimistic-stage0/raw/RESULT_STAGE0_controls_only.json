@@ -1,0 +1,261 @@
+{
+ "schema": "spess0-result-v1",
+ "constants_sha256": "c71c7dd71c97bea7179322e2af7f5f59bf528f4dd16a6531f8fdf2c67ffd811c",
+ "inputs": {
+  "table": {
+   "path": "D:/Projects/TanitAD-artifacts\\p2_heldout_table_full_2026-10-18/table_p2_heldout.npz",
+   "sha256": "8eacc19b35b12aee9b0ab047716c901399a711d22ddd3c25cd890ecf2f02004b",
+   "bytes": 13304426
+  },
+  "prehead": {
+   "path": "D:/Projects/TanitAD-artifacts\\p2_heldout_table_full_2026-10-18/prehead_features_p2_heldout.npz",
+   "sha256": "e37b9c554bf2c2546e958ff763dca23b71e0b77036a271d6a003c8ba2672f522",
+   "bytes": 51442644
+  },
+  "feats": {
+   "path": "D:/Projects/TanitAD-artifacts\\l2_offprop/feats.npz",
+   "sha256": "49f6a034464580ef6e14bae9dc397b898a360bc9d7051d6d0676acdba141e616",
+   "bytes": 67074052
+  },
+  "head": {
+   "path": "D:/Projects/TanitAD-artifacts\\l2_offprop/p2_score_head.npz",
+   "sha256": "4b64c3feb89ca571228ed8d4cfa795f3ec5143e71d06545e287e0b9b13ff55d0",
+   "bytes": 7142
+  },
+  "bundle": {
+   "path": "D:/Projects/TanitAD-artifacts\\l1_stepA_run/bundle/bundle.npz",
+   "sha256": "77e8584d8a02ee7a93b9239e1e33a16edade75689f36e1f32959960d0e2eb5c4",
+   "bytes": 8309154
+  },
+  "perts": {
+   "path": "D:/Projects/TanitAD-artifacts\\l1_stepA_run/perts.npz",
+   "sha256": "40ecafc88d401463767d74af5d41809d73b36009083e19d62e197f4bfd6bb8d5",
+   "bytes": 18972106
+  },
+  "labels": {
+   "path": "D:/Projects/TanitAD-artifacts\\l1_stepA_run/labels.npz",
+   "sha256": "7c986dcc736a6dcaf49dfaccd33f3ded9e9c4f2ec49b88f28bb728a71ebf9b27",
+   "bytes": 2151734
+  }
+ },
+ "seconds": 123.15577054023743,
+ "seal": {
+  "prereg_path": "C:/Users/Admin/par18/spess0/PREREG_STAGE0.md",
+  "prereg_sha256": "9cf8980d5cdc6133c72b6944975b992428b97e656db3245925aed48844675de9"
+ },
+ "code_sha256": {
+  "stage0.py": "71a9ccf5f7e369e8926d5de95b180ca816995d4473479004bf8c7d8e2161f5c0"
+ },
+ "env": {
+  "python": "3.13.5",
+  "numpy": "2.5.1",
+  "cuda_visible_devices": "-1",
+  "omp_num_threads": "1"
+ },
+ "decision": {
+  "outcome": "INVALID",
+  "failed_controls": [
+   "C-II-b"
+  ],
+  "routing": "fix the failed control(s) (see DRAFT_PREREG_STAGE0.md section 7) and re-seal; do not read the gap"
+ },
+ "controls": {
+  "C-STRUCT": {
+   "pass": true,
+   "note": "check_exclusion ran before every fit; a violation raises"
+  },
+  "C-II-a": {
+   "M1_seen_minus_oof": 0.02231469746658479,
+   "ci95_session_cluster": [
+    0.016150223397388613,
+    0.03088527318471865
+   ],
+   "token_level_z": 8.564969924550862,
+   "token_level_se": 0.0026053445211315146,
+   "strict_positive": true,
+   "rule": "non-reversal: token-level z > -Z_MAX",
+   "pass": true
+  },
+  "C-II-b": {
+   "per_kappa": {
+    "0.5": {
+     "M1_gap": 0.014131533593704771,
+     "M1_lo_bonf": 0.0018410752512297412,
+     "swap_null_M1": 0.005439744200649296,
+     "planted_gap_read": false,
+     "min_required": 0.02,
+     "seen_minus_oof_planted": 0.015558112475201358,
+     "seen_beats_oof_planted": true,
+     "collapse": {
+      "M1": {
+       "gap": 0.014131533593704771,
+       "gap_mutated": 0.0009964328816170936,
+       "swap_null": 0.005439744200649296,
+       "swap_null_mutated": 0.002964805322621587,
+       "se_mutated": 0.0009503436690603771,
+       "bound": 0.005439744200649296,
+       "pass": true,
+       "gating": true
+      },
+      "M2": {
+       "gap": 0.004640371229698376,
+       "gap_mutated": 0.0008188890405350075,
+       "swap_null": 0.00655111232428006,
+       "swap_null_mutated": 0.003002593148628361,
+       "se_mutated": 0.0014624033289596314,
+       "bound": 0.00655111232428006,
+       "pass": true,
+       "gating": false
+      },
+      "M3": {
+       "gap": 1.1062858935646842,
+       "gap_mutated": 1.0303335731784515,
+       "swap_null": 0.9509751706376072,
+       "swap_null_mutated": 0.886207373731855,
+       "se_mutated": 0.4500167641921639,
+       "bound": 0.9509751706376072,
+       "pass": false,
+       "gating": false
+      },
+      "pass": true
+     },
+     "pass": false
+    },
+    "1": {
+     "M1_gap": 0.01909465612335618,
+     "M1_lo_bonf": 0.0068545330286173675,
+     "swap_null_M1": 0.010170911690326434,
+     "planted_gap_read": false,
+     "min_required": 0.02,
+     "seen_minus_oof_planted": 0.024359300356530347,
+     "seen_beats_oof_planted": true,
+     "collapse": {
+      "M1": {
+       "gap": 0.01909465612335618,
+       "gap_mutated": 0.001574859762816994,
+       "swap_null": 0.010170911690326434,
+       "swap_null_mutated": 0.003303195762396663,
+       "se_mutated": 0.0011377927760602632,
+       "bound": 0.010170911690326434,
+       "pass": true,
+       "gating": true
+      },
+      "M2": {
+       "gap": 0.005023497002106627,
+       "gap_mutated": 0.005023497002106627,
+       "swap_null": 0.008912655971479501,
+       "swap_null_mutated": 0.0035650623885918,
+       "se_mutated": 0.0017656642403371169,
+       "bound": 0.008912655971479501,
+       "pass": true,
+       "gating": false
+      },
+      "M3": {
+       "gap": 2.1926821681295894,
+       "gap_mutated": -0.6801637617924895,
+       "swap_null": 1.5751158570237318,
+       "swap_null_mutated": 0.4088228450684363,
+       "se_mutated": 0.536717193938538,
+       "bound": 1.5751158570237318,
+       "pass": true,
+       "gating": false
+      },
+      "pass": true
+     },
+     "pass": false
+    },
+    "2": {
+     "M1_gap": 0.025114230111230908,
+     "M1_lo_bonf": 0.006539184665350221,
+     "swap_null_M1": 0.009333212465113767,
+     "planted_gap_read": false,
+     "min_required": 0.02,
+     "seen_minus_oof_planted": 0.03303345826084718,
+     "seen_beats_oof_planted": true,
+     "collapse": {
+      "M1": {
+       "gap": 0.025114230111230908,
+       "gap_mutated": 0.0011553201625548969,
+       "swap_null": 0.009333212465113767,
+       "swap_null_mutated": 0.004586563182897404,
+       "se_mutated": 0.0025160899009247406,
+       "bound": 0.009333212465113767,
+       "pass": true,
+       "gating": true
+      },
+      "M2": {
+       "gap": 0.017434917602101745,
+       "gap_mutated": 0.006926200143300693,
+       "swap_null": 0.0038213518032003822,
+       "swap_null_mutated": 0.0038213518032003822,
+       "se_mutated": 0.0037082978796651503,
+       "bound": 0.007416595759330301,
+       "pass": true,
+       "gating": false
+      },
+      "M3": {
+       "gap": 0.5347280910113297,
+       "gap_mutated": 0.6125992376390037,
+       "swap_null": 0.9616529156691388,
+       "swap_null_mutated": 0.18798655224241592,
+       "se_mutated": 0.46390687984035245,
+       "bound": 0.9616529156691388,
+       "pass": true,
+       "gating": false
+      },
+      "pass": true
+     },
+     "pass": false
+    },
+    "4": {
+     "M1_gap": 0.03484795629081154,
+     "M1_lo_bonf": 0.004309773807950085,
+     "swap_null_M1": 0.00823232298417409,
+     "planted_gap_read": false,
+     "min_required": 0.02,
+     "seen_minus_oof_planted": 0.02606414508330435,
+     "seen_beats_oof_planted": true,
+     "collapse": {
+      "M1": {
+       "gap": 0.03484795629081154,
+       "gap_mutated": 0.004439214453119242,
+       "swap_null": 0.00823232298417409,
+       "swap_null_mutated": 0.009369764208188594,
+       "se_mutated": 0.0030358996906535963,
+       "bound": 0.009369764208188594,
+       "pass": true,
+       "gating": true
+      },
+      "M2": {
+       "gap": 0.02900461437046803,
+       "gap_mutated": 0.003955174686882004,
+       "swap_null": 0.012195121951219513,
+       "swap_null_mutated": 0.006262359920896506,
+       "se_mutated": 0.0054877984648384155,
+       "bound": 0.012195121951219513,
+       "pass": true,
+       "gating": false
+      },
+      "M3": {
+       "gap": 1.4690053361338233,
+       "gap_mutated": -0.20415258688358415,
+       "swap_null": 1.7894082779554739,
+       "swap_null_mutated": 0.5202046883924084,
+       "se_mutated": 0.27212087703058824,
+       "bound": 1.7894082779554739,
+       "pass": true,
+       "gating": false
+      },
+      "pass": true
+     },
+     "pass": false
+    }
+   },
+   "kappas_read": [],
+   "kappas_passing": [],
+   "smallest_kappa_read": null,
+   "pass": false
+  }
+ },
+ "note": "CONTROLS-ONLY EXCERPT. The full RESULT_STAGE0.json carries the real-token gaps, which the sealed rule says are not read after INVALID; it is withheld (dev box only) until the amended read concludes, so that read stays blind."
+}

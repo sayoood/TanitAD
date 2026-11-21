@@ -1,0 +1,37 @@
+unmutated: 42 checks green
+mutation                         class    caught-by (failing checks)
+teacher_is_a_proposal            teacher  2  teacher_leaves_equal_independent_recompute
+yaw_column_zeroed                join     4  proposal_leaves_equal_independent_recompute_in_order
+proposals_reversed               join     4  proposal_leaves_equal_independent_recompute_in_order
+xy_swapped                       join     4  proposal_leaves_equal_independent_recompute_in_order
+repair_flag_not_required         repair   1  refuses_no_repair_flag
+repair_off_in_the_labeller       repair   15  run_exit_0_and_marker
+stride_one                       repair   1  labeller_initialised_rank0_stride2_repair
+rank_one_init                    repair   1  labeller_initialised_rank0_stride2_repair
+ckpt_step_unchecked              ckpt     2  refuses_wrong_expected_ckpt
+rank_unchecked                   ckpt     1  refuses_rank1_set
+duplicate_key_unchecked          keys     1  refuses_duplicate_set
+keys_not_enforced                keys     1  refuses_keys_outside_partition
+kind_unchecked                   format   1  refuses_not_an_onpolicy_set
+fan_size_unchecked               format   1  refuses_short_fan
+torn_line_skipped                format   1  refuses_torn_dump_line
+shard_unfiltered                 shard    4  shard_0_of_3_rows_are_its_logs
+shard_reads_every_dump_file      shard    1  shard_reads_only_its_own_dump_file_not_a_half_written_neighbour
+shard_by_token                   shard    4  shard_0_of_3_rows_are_its_logs
+shard_bounds_unchecked           shard    1  refuses_bad_shard
+missing_bank_row_ignored         bank     1  refuses_set_without_bank_row
+bank_duplicates_ignored          bank     1  refuses_bank_row_twice
+teacher_shape_unchecked          bank     1  refuses_teacher_of_wrong_length
+resume_ignores_done              resume   4  rerun_is_a_noop
+resume_ignores_ckpt_step         resume   2  foreign_rows_are_not_credited_and_the_sets_are_labelled
+resume_credits_invalid_rows      resume   1  foreign_rows_are_not_credited_and_the_sets_are_labelled
+valid_row_accepts_null_distance  resume   1  foreign_rows_are_not_credited_and_the_sets_are_labelled
+valid_row_ignores_repair_marker  resume   1  foreign_rows_are_not_credited_and_the_sets_are_labelled
+output_truncated_each_run        resume   1  suite raised IndexError
+torn_line_not_terminated         resume   2  resume_relabels_only_the_missing
+coverage_accepts_anything        gate     2  foreign_ckpt_row_does_not_cover_a_failed_set
+coverage_ignores_ckpt_step       gate     1  foreign_ckpt_row_does_not_cover_a_failed_set
+failure_exits_zero               gate     2  foreign_ckpt_row_does_not_cover_a_failed_set
+limit_ignored                    keys     1  limit_labels_the_first_n_in_log_token_order
+step_dropped_from_key            join     1  suite raised KeyError
+ZZTEST_PASS 36  (1 unmutated suite of 42 checks + 34 RED mutations + coverage)

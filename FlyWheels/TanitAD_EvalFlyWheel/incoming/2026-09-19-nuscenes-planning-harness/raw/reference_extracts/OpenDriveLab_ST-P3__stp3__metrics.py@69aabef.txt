@@ -1,0 +1,141 @@
+# PUBLISHED-CODE extract - OpenDriveLab/ST-P3 @ 69aabefd2610951d9e34238142776ed2228673be
+# path: stp3/metrics.py
+# git blob sha1 of the fetched file: 2829f448d21a0c531f88079405002606e9febd1f (16715 B); verified against the repo tree listing at the pinned commit: MATCH
+# fetched 2026-09-19T13:46:02Z from raw.githubusercontent.com (read-only source text; excerpts only, attribution retained)
+
+## lines 263-396: PlanningMetric
+  263  class PlanningMetric(Metric):
+  264      def __init__(
+  265          self,
+  266          cfg,
+  267          n_future=4,
+  268          compute_on_step: bool = False,
+  269      ):
+  270          super().__init__(compute_on_step=compute_on_step)
+  271          dx, bx, _ = gen_dx_bx(cfg.LIFT.X_BOUND, cfg.LIFT.Y_BOUND, cfg.LIFT.Z_BOUND)
+  272          dx, bx = dx[:2], bx[:2]
+  273          self.dx = nn.Parameter(dx, requires_grad=False)
+  274          self.bx = nn.Parameter(bx, requires_grad=False)
+  275  
+  276          _, _, self.bev_dimension = calculate_birds_eye_view_parameters(
+  277              cfg.LIFT.X_BOUND, cfg.LIFT.Y_BOUND, cfg.LIFT.Z_BOUND
+  278          )
+  279          self.bev_dimension = self.bev_dimension.numpy()
+  280  
+  281          self.W = cfg.EGO.WIDTH
+  282          self.H = cfg.EGO.HEIGHT
+  283  
+  284          self.n_future = n_future
+  285  
+  286          self.add_state("obj_col", default=torch.zeros(self.n_future), dist_reduce_fx="sum")
+  287          self.add_state("obj_box_col", default=torch.zeros(self.n_future), dist_reduce_fx="sum")
+  288          self.add_state("L2", default=torch.zeros(self.n_future),dist_reduce_fx="sum")
+  289          self.add_state("total", default=torch.tensor(0), dist_reduce_fx="sum")
+  290  
+  291  
+  292      def evaluate_single_coll(self, traj, segmentation):
+  293          '''
+  294          gt_segmentation
+  295          traj: torch.Tensor (n_future, 2)
+  296          segmentation: torch.Tensor (n_future, 200, 200)
+  297          '''
+  298          pts = np.array([
+  299              [-self.H / 2. + 0.5, self.W / 2.],
+  300              [self.H / 2. + 0.5, self.W / 2.],
+  301              [self.H / 2. + 0.5, -self.W / 2.],
+  302              [-self.H / 2. + 0.5, -self.W / 2.],
+  303          ])
+  304          pts = (pts - self.bx.cpu().numpy()) / (self.dx.cpu().numpy())
+  305          pts[:, [0, 1]] = pts[:, [1, 0]]
+  306          rr, cc = polygon(pts[:,1], pts[:,0])
+  307          rc = np.concatenate([rr[:,None], cc[:,None]], axis=-1)
+  308  
+  309          n_future, _ = traj.shape
+  310          trajs = traj.view(n_future, 1, 2)
+  311          trajs[:,:,[0,1]] = trajs[:,:,[1,0]] # can also change original tensor
+  312          trajs = trajs / self.dx
+  313          trajs = trajs.cpu().numpy() + rc # (n_future, 32, 2)
+  314  
+  315          r = trajs[:,:,0].astype(np.int32)
+  316          r = np.clip(r, 0, self.bev_dimension[0] - 1)
+  317  
+  318          c = trajs[:,:,1].astype(np.int32)
+  319          c = np.clip(c, 0, self.bev_dimension[1] - 1)
+  320  
+  321          collision = np.full(n_future, False)
+  322          for t in range(n_future):
+  323              rr = r[t]
+  324              cc = c[t]
+  325              I = np.logical_and(
+  326                  np.logical_and(rr >= 0, rr < self.bev_dimension[0]),
+  327                  np.logical_and(cc >= 0, cc < self.bev_dimension[1]),
+  328              )
+  329              collision[t] = np.any(segmentation[t, rr[I], cc[I]].cpu().numpy())
+  330  
+  331          return torch.from_numpy(collision).to(device=traj.device)
+  332  
+  333      def evaluate_coll(self, trajs, gt_trajs, segmentation):
+  334          '''
+  335          trajs: torch.Tensor (B, n_future, 2)
+  336          gt_trajs: torch.Tensor (B, n_future, 2)
+  337          segmentation: torch.Tensor (B, n_future, 200, 200)
+  338          '''
+  339          B, n_future, _ = trajs.shape
+  340          trajs = trajs * torch.tensor([-1, 1], device=trajs.device)
+  341          gt_trajs = gt_trajs * torch.tensor([-1, 1], device=gt_trajs.device)
+  342  
+  343          obj_coll_sum = torch.zeros(n_future, device=segmentation.device)
+  344          obj_box_coll_sum = torch.zeros(n_future, device=segmentation.device)
+  345  
+  346          for i in range(B):
+  347              gt_box_coll = self.evaluate_single_coll(gt_trajs[i], segmentation[i])
+  348  
+  349              xx, yy = trajs[i,:,0], trajs[i, :, 1]
+  350              yi = ((yy - self.bx[0]) / self.dx[0]).long()
+  351              xi = ((xx - self.bx[1]) / self.dx[1]).long()
+  352  
+  353              m1 = torch.logical_and(
+  354                  torch.logical_and(yi >= 0, yi < self.bev_dimension[0]),
+  355                  torch.logical_and(xi >= 0, xi < self.bev_dimension[1]),
+  356              )
+  357              m1 = torch.logical_and(m1, torch.logical_not(gt_box_coll))
+  358  
+  359              ti = torch.arange(n_future)
+  360              obj_coll_sum[ti[m1]] += segmentation[i, ti[m1], yi[m1], xi[m1]].long()
+  361  
+  362              m2 = torch.logical_not(gt_box_coll)
+  363              box_coll = self.evaluate_single_coll(trajs[i], segmentation[i])
+  364              obj_box_coll_sum[ti[m2]] += (box_coll[ti[m2]]).long()
+  365  
+  366          return obj_coll_sum, obj_box_coll_sum
+  367  
+  368      def compute_L2(self, trajs, gt_trajs):
+  369          '''
+  370          trajs: torch.Tensor (B, n_future, 3)
+  371          gt_trajs: torch.Tensor (B, n_future, 3)
+  372          '''
+  373  
+  374          return torch.sqrt(((trajs[:, :, :2] - gt_trajs[:, :, :2]) ** 2).sum(dim=-1))
+  375  
+  376      def update(self, trajs, gt_trajs, segmentation):
+  377          '''
+  378          trajs: torch.Tensor (B, n_future, 3)
+  379          gt_trajs: torch.Tensor (B, n_future, 3)
+  380          segmentation: torch.Tensor (B, n_future, 200, 200)
+  381          '''
+  382          assert trajs.shape == gt_trajs.shape
+  383          L2 = self.compute_L2(trajs, gt_trajs)
+  384          obj_coll_sum, obj_box_coll_sum = self.evaluate_coll(trajs[:,:,:2], gt_trajs[:,:,:2], segmentation)
+  385  
+  386          self.obj_col += obj_coll_sum
+  387          self.obj_box_col += obj_box_coll_sum
+  388          self.L2 += L2.sum(dim=0)
+  389          self.total +=len(trajs)
+  390  
+  391      def compute(self):
+  392          return {
+  393              'obj_col': self.obj_col / self.total,
+  394              'obj_box_col': self.obj_box_col / self.total,
+  395              'L2' : self.L2 / self.total
+  396          }
+

@@ -1,0 +1,25 @@
+Traceback:
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_v8f_mixo.py:84: in <module>
+    _P = _load("test_v8f_pgt_for_mixo", HERE_T / "test_v8f_pgt.py")                 # the batch, the spy and the synthetic world the other v8F-mini tests use
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_v8f_mixo.py:64: in _load
+    spec.loader.exec_module(m)
+tests\test_v8f_pgt.py:51: in <module>
+    _T = _load("test_v8f_mini_for_pgt", Path(__file__).resolve().parent / "test_v8f_mini.py")
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_v8f_pgt.py:47: in _load
+    spec.loader.exec_module(m)
+tests\test_v8f_mini.py:38: in <module>
+    from taniteval import floors_kin as fk  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'taniteval'
+=========================== short test summary info ===========================
+ERROR tests/test_v8f_flat.py
+ERROR tests/test_v8f_oacc.py
+ERROR tests/test_v8f_kind.py
+ERROR tests/test_v8f_mixo.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 4 errors during collection !!!!!!!!!!!!!!!!!!!
+4 errors in 4.51s

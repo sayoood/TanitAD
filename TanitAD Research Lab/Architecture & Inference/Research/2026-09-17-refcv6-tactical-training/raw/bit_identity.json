@@ -1,0 +1,112 @@
+{
+ "root": "<SCRATCH>\\bitid",
+ "tip": "<SCRATCH>\\bitid\\tip",
+ "patched": "<SCRATCH>\\bitid\\patched",
+ "metrics": {
+  "tip_sha256": "bad3062ea726e535efdf8b3198ad82b2ccbfd3c922d1055ff2cb26e7caf7bb35",
+  "patched_sha256": "65c7ce1e7e8bc4af85e7d98b7db057b2238f9063f1f907372e269ef47be0cf0a",
+  "tip_bytes": 1559,
+  "patched_bytes": 1559,
+  "tip_rows": 3,
+  "verdict": "DIFFERS",
+  "patched_key_count": 25,
+  "tactical_keys_present": [],
+  "has_loss_key": true
+ },
+ "ckpt": {
+  "tip_n_tensors": 193,
+  "patched_n_tensors": 193,
+  "keys_only_in_tip": [],
+  "keys_only_in_patched": [],
+  "n_elements_compared": 131977,
+  "n_tensors_bitwise_different": 0,
+  "diffs": [],
+  "verdict": "BITWISE-IDENTICAL",
+  "mutation_control": {
+   "mutation": "flip the low bit of byte 0 of each tensor",
+   "n_tensors_mutated": 193,
+   "n_detected": 193,
+   "verdict": "DETECTS-EVERY-ONE-BIT-FLIP"
+  }
+ },
+ "config": {
+  "keys_only_in_patched": [
+   "refcv6_max_speed",
+   "refcv6_tactical",
+   "speed_max_derivation_v6"
+  ],
+  "keys_only_in_tip": [],
+  "keys_with_changed_value": [
+   "argv",
+   "effective_weights",
+   "seams"
+  ],
+  "refcv6_tactical_in_patched": null,
+  "speed_max_derivation_v6_in_patched": null,
+  "trunk_pretrained_tip": null,
+  "trunk_pretrained_patched": null,
+  "n_keys_tip": 43,
+  "n_keys_patched": 46,
+  "verdict": "DIFFERS"
+ },
+ "metrics_field_control": {
+  "tip_vs_tip2_fields_differing": [
+   "elapsed_s"
+  ],
+  "tip_vs_patched_fields_differing": [
+   "elapsed_s"
+  ],
+  "n_fields_per_row": 24,
+  "verdict": "IDENTICAL-MODULO-WALLCLOCK"
+ },
+ "config_additivity": {
+  "n_leaves_tip": 342,
+  "n_leaves_patched": 376,
+  "n_added": 34,
+  "n_removed": 0,
+  "added": [
+   "effective_weights.terms[9].builds_graph",
+   "effective_weights.terms[9].declared",
+   "effective_weights.terms[9].effective",
+   "effective_weights.terms[9].explicit",
+   "effective_weights.terms[9].flag",
+   "effective_weights.terms[9].layer",
+   "effective_weights.terms[9].mask",
+   "effective_weights.terms[9].missing",
+   "effective_weights.terms[9].requested",
+   "effective_weights.terms[9].status",
+   "effective_weights.terms[9].term",
+   "refcv6_max_speed",
+   "refcv6_tactical",
+   "seams.agent_knobs.w_tac_v6",
+   "seams.max_speed_onehot_v6.built",
+   "seams.max_speed_onehot_v6.cfg",
+   "seams.max_speed_onehot_v6.ladder_kmh[0]",
+   "seams.max_speed_onehot_v6.ladder_kmh[1]",
+   "seams.max_speed_onehot_v6.ladder_kmh[2]",
+   "seams.max_speed_onehot_v6.ladder_kmh[3]",
+   "seams.max_speed_onehot_v6.provenance",
+   "seams.max_speed_onehot_v6.requested",
+   "seams.max_speed_onehot_v6.sidecar",
+   "seams.tac_decoder_v6.bev_blocked_by",
+   "seams.tac_decoder_v6.bev_tokens_reach_decoder",
+   "seams.tac_decoder_v6.built",
+   "seams.tac_decoder_v6.cfg",
+   "seams.tac_decoder_v6.decoder_cfg",
+   "seams.tac_decoder_v6.graft_behaviour_sel",
+   "seams.tac_decoder_v6.requested",
+   "seams.tac_decoder_v6.sources",
+   "seams.tac_decoder_v6.valid_threshold",
+   "seams.tac_decoder_v6.w",
+   "speed_max_derivation_v6"
+  ],
+  "removed": [],
+  "pre_existing_values_changed": [
+   "effective_weights.n_terms"
+  ],
+  "excluded_as_outdir": [
+   "argv[3]"
+  ],
+  "verdict": "CHANGES-A-PRE-EXISTING-VALUE"
+ }
+}

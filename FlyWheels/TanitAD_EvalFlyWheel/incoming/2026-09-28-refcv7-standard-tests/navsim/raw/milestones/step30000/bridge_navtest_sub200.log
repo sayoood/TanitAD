@@ -1,0 +1,36 @@
+CMD: C:/Users/Admin/venvs/tanitad/Scripts/python.exe D:\Projects\TanitAD\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-28-refcv7-standard-tests\navsim\code\run_bridge7.py --split navtest --arms R7_VMAXOFF,R7_FILTOFF,R7_VMAXORACLE --inputs D:/Archive/devbox-C/navsim/exp/w3_navtest_v1/inputs/navtest_inputs.json.gz --speed D:\Projects\TanitAD\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-28-refcv7-standard-tests\navsim\raw\inputs\speed_limits_navtest.json --road-plane C:/Users/Admin/ev7nav/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/raw/inputs/road_plane_navhard_warmup_logs.json --ckpt D:/refcv7_eval_kit/ckpt\ckpt_30000.pt --config D:/refcv7_eval_kit/ckpt/config.json --ckpt-md5 ac4e4fab87e35b20de24d8d94910d910 --device cpu --precision auto --threads 6 --label RESULT --out D:\Projects\TanitAD\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-28-refcv7-standard-tests\navsim\raw\milestones\step30000\bridge_navtest_sub200 --exact-dedup --bank1 D:/Archive/devbox-C/navsim/exp/refcv6_navtest416/frame_bank --bank1-kind navtest --logs-root D:/Archive/devbox-C/navsim/data/openscene/navsim_logs/test --speed-oracle C:/Users/Admin/ev7nav/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/raw/inputs/vmax_oracle_navtest.json --tokens-file C:/Users/Admin/ev7nav/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-v1-navtest/raw/A1_sub200_tokens.json
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from D:\refcv6_eval_kit\data\refcv6_train_eval139_extrinsics.json (4508 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[bridge7] step=30000 steps=2 precision=fp32 device=cpu load 6.4s md5=ac4e4fab87e35b20de24d8d94910d910 label=RESULT
+  [R7_VMAXOFF] 25/200 (25 new) 2.75 s/scene
+  [R7_VMAXOFF] 50/200 (50 new) 2.65 s/scene
+  [R7_VMAXOFF] 75/200 (75 new) 2.62 s/scene
+  [R7_VMAXOFF] 100/200 (100 new) 2.61 s/scene
+  [R7_VMAXOFF] 125/200 (125 new) 2.59 s/scene
+  [R7_VMAXOFF] 150/200 (150 new) 2.58 s/scene
+  [R7_VMAXOFF] 175/200 (175 new) 2.57 s/scene
+  [R7_VMAXOFF] 200/200 (200 new) 2.57 s/scene
+[bridge7] R7_VMAXOFF: 200 refcv7 rows, 0 stand-ins, missing 0, KPR PASS max 0.0
+  [R7_FILTOFF] 25/200 (25 new) 2.30 s/scene
+  [R7_FILTOFF] 50/200 (50 new) 2.30 s/scene
+  [R7_FILTOFF] 75/200 (75 new) 2.31 s/scene
+  [R7_FILTOFF] 100/200 (100 new) 2.31 s/scene
+  [R7_FILTOFF] 125/200 (125 new) 2.31 s/scene
+  [R7_FILTOFF] 150/200 (150 new) 2.31 s/scene
+  [R7_FILTOFF] 175/200 (175 new) 2.31 s/scene
+  [R7_FILTOFF] 200/200 (200 new) 2.31 s/scene
+[bridge7] R7_FILTOFF: 200 refcv7 rows, 0 stand-ins, missing 0, KPR PASS max 0.0
+  [R7_VMAXORACLE] 25/200 (25 new) 2.31 s/scene
+  [R7_VMAXORACLE] 50/200 (50 new) 2.30 s/scene
+  [R7_VMAXORACLE] 75/200 (75 new) 2.30 s/scene
+  [R7_VMAXORACLE] 100/200 (100 new) 2.31 s/scene
+  [R7_VMAXORACLE] 125/200 (125 new) 2.31 s/scene
+  [R7_VMAXORACLE] 150/200 (150 new) 2.31 s/scene
+  [R7_VMAXORACLE] 175/200 (175 new) 2.31 s/scene
+  [R7_VMAXORACLE] 200/200 (200 new) 2.31 s/scene
+[bridge7] R7_VMAXORACLE: 200 refcv7 rows, 0 stand-ins, missing 0, KPR PASS max 0.0

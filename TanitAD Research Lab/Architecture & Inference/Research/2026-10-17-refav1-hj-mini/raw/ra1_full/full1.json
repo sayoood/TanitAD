@@ -1,0 +1,460 @@
+{
+ "schema": "ra1-full1-v1",
+ "prereg": "PREREG_RA1_FULL.md",
+ "status": "OK",
+ "tier": "T1-class open-loop trajectory",
+ "estimator": "episode-cluster bootstrap per run (EPISODES); training-seed floor = |seed0 - seed1|",
+ "selection_basis": "seed-mean ADE@6s on the 60-clip Amendment-1 holdout; eval-141 NEVER selects",
+ "tie_rule": "budgets within 0.01 m of the minimum -> the shorter; arms within 0.01 m -> R0",
+ "holdout_clips_sha256": "f6a1dee02af0b96f815416bfef9bc11a04554702525135aa75a740942d7750f9",
+ "train_clips_sha256": "37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1",
+ "holdout_p10_ade6": 3.0289,
+ "S_star": {
+  "R0": 3000,
+  "A1": 3000
+ },
+ "edge": {
+  "R0": null,
+  "A1": null
+ },
+ "extension_budgets": {},
+ "K_arm": "A1",
+ "memorisation_R0_holdout_minus_p10_by_budget": {
+  "500": -0.15700000000000003,
+  "1000": -0.2096,
+  "3000": -0.30435000000000034,
+  "6000": -0.05830000000000002
+ },
+ "budgets": {
+  "R0": {
+   "500": {
+    "seed0": {
+     "path": "C:/Users/Admin/box2_ship/logs/ra1_full/runs\\st500\\R0_s0\\eval\\eval.json",
+     "holdout_ade6": 2.8782,
+     "holdout_p10_ade6": 3.0289,
+     "holdout_delta": {
+      "delta": -0.1508,
+      "lo": -0.2394,
+      "hi": -0.0773,
+      "separated": true,
+      "n_windows": 4076,
+      "n_episodes": 60,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "eval141_ade6_NON_DECIDING": 2.4052,
+     "eval141_delta_NON_DECIDING": {
+      "delta": -0.0818,
+      "lo": -0.1288,
+      "hi": -0.0379,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    },
+    "seed1": {
+     "path": "C:/Users/Admin/box2_ship/logs/ra1_full/runs\\st500\\R0_s1\\eval\\eval.json",
+     "holdout_ade6": 2.8656,
+     "holdout_p10_ade6": 3.0289,
+     "holdout_delta": {
+      "delta": -0.1633,
+      "lo": -0.2652,
+      "hi": -0.0778,
+      "separated": true,
+      "n_windows": 4076,
+      "n_episodes": 60,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "eval141_ade6_NON_DECIDING": 2.4282,
+     "eval141_delta_NON_DECIDING": {
+      "delta": -0.0588,
+      "lo": -0.1082,
+      "hi": -0.0092,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    },
+    "seed_mean_holdout_ade6": 2.8719,
+    "seed_mean_holdout_minus_p10": -0.15700000000000003,
+    "training_seed_floor_holdout_ade6": 0.012599999999999945
+   },
+   "1000": {
+    "seed0": {
+     "path": "C:/Users/Admin/box2_ship/logs/ra1_full/runs\\st1000\\R0_s0\\eval\\eval.json",
+     "holdout_ade6": 2.8029,
+     "holdout_p10_ade6": 3.0289,
+     "holdout_delta": {
+      "delta": -0.226,
+      "lo": -0.342,
+      "hi": -0.1152,
+      "separated": true,
+      "n_windows": 4076,
+      "n_episodes": 60,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "eval141_ade6_NON_DECIDING": 2.323,
+     "eval141_delta_NON_DECIDING": {
+      "delta": -0.164,
+      "lo": -0.2237,
+      "hi": -0.1083,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    },
+    "seed1": {
+     "path": "C:/Users/Admin/box2_ship/logs/ra1_full/runs\\st1000\\R0_s1\\eval\\eval.json",
+     "holdout_ade6": 2.8357,
+     "holdout_p10_ade6": 3.0289,
+     "holdout_delta": {
+      "delta": -0.1932,
+      "lo": -0.3047,
+      "hi": -0.0802,
+      "separated": true,
+      "n_windows": 4076,
+      "n_episodes": 60,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "eval141_ade6_NON_DECIDING": 2.3254,
+     "eval141_delta_NON_DECIDING": {
+      "delta": -0.1616,
+      "lo": -0.2207,
+      "hi": -0.1057,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    },
+    "seed_mean_holdout_ade6": 2.8193,
+    "seed_mean_holdout_minus_p10": -0.2096,
+    "training_seed_floor_holdout_ade6": 0.03279999999999994
+   },
+   "3000": {
+    "seed0": {
+     "path": "C:/Users/Admin/box2_ship/logs/ra1_full/runs\\st3000\\R0_s0\\eval\\eval.json",
+     "holdout_ade6": 2.7301,
+     "holdout_p10_ade6": 3.0289,
+     "holdout_delta": {
+      "delta": -0.2988,
+      "lo": -0.5027,
+      "hi": -0.0872,
+      "separated": true,
+      "n_windows": 4076,
+      "n_episodes": 60,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "eval141_ade6_NON_DECIDING": 2.2843,
+     "eval141_delta_NON_DECIDING": {
+      "delta": -0.2027,
+      "lo": -0.3258,
+      "hi": -0.0809,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    },
+    "seed1": {
+     "path": "C:/Users/Admin/box2_ship/logs/ra1_full/runs\\st3000\\R0_s1\\eval\\eval.json",
+     "holdout_ade6": 2.719,
+     "holdout_p10_ade6": 3.0289,
+     "holdout_delta": {
+      "delta": -0.31,
+      "lo": -0.5009,
+      "hi": -0.1001,
+      "separated": true,
+      "n_windows": 4076,
+      "n_episodes": 60,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "eval141_ade6_NON_DECIDING": 2.3302,
+     "eval141_delta_NON_DECIDING": {
+      "delta": -0.1568,
+      "lo": -0.2744,
+      "hi": -0.0413,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    },
+    "seed_mean_holdout_ade6": 2.72455,
+    "seed_mean_holdout_minus_p10": -0.30435000000000034,
+    "training_seed_floor_holdout_ade6": 0.011100000000000332
+   },
+   "6000": {
+    "seed0": {
+     "path": "C:/Users/Admin/box2_ship/logs/ra1_full/runs\\st6000\\R0_s0\\eval\\eval.json",
+     "holdout_ade6": 2.9719,
+     "holdout_p10_ade6": 3.0289,
+     "holdout_delta": {
+      "delta": -0.057,
+      "lo": -0.3203,
+      "hi": 0.2364,
+      "separated": false,
+      "n_windows": 4076,
+      "n_episodes": 60,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "eval141_ade6_NON_DECIDING": 2.5085,
+     "eval141_delta_NON_DECIDING": {
+      "delta": 0.0215,
+      "lo": -0.1368,
+      "hi": 0.1752,
+      "separated": false,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    },
+    "seed1": {
+     "path": "C:/Users/Admin/box2_ship/logs/ra1_full/runs\\st6000\\R0_s1\\eval\\eval.json",
+     "holdout_ade6": 2.9693,
+     "holdout_p10_ade6": 3.0289,
+     "holdout_delta": {
+      "delta": -0.0596,
+      "lo": -0.3299,
+      "hi": 0.2206,
+      "separated": false,
+      "n_windows": 4076,
+      "n_episodes": 60,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "eval141_ade6_NON_DECIDING": 2.502,
+     "eval141_delta_NON_DECIDING": {
+      "delta": 0.015,
+      "lo": -0.1213,
+      "hi": 0.1546,
+      "separated": false,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    },
+    "seed_mean_holdout_ade6": 2.9706,
+    "seed_mean_holdout_minus_p10": -0.05830000000000002,
+    "training_seed_floor_holdout_ade6": 0.0026000000000001577
+   }
+  },
+  "A1": {
+   "500": {
+    "seed0": {
+     "path": "C:/Users/Admin/box2_ship/logs/ra1_full/runs\\st500\\A1_b0.08g50_s0\\eval\\eval.json",
+     "holdout_ade6": 2.8657,
+     "holdout_p10_ade6": 3.0289,
+     "holdout_delta": {
+      "delta": -0.1632,
+      "lo": -0.2472,
+      "hi": -0.0876,
+      "separated": true,
+      "n_windows": 4076,
+      "n_episodes": 60,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "eval141_ade6_NON_DECIDING": 2.3821,
+     "eval141_delta_NON_DECIDING": {
+      "delta": -0.1049,
+      "lo": -0.1418,
+      "hi": -0.0693,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    },
+    "seed1": {
+     "path": "C:/Users/Admin/box2_ship/logs/ra1_full/runs\\st500\\A1_b0.08g50_s1\\eval\\eval.json",
+     "holdout_ade6": 2.8761,
+     "holdout_p10_ade6": 3.0289,
+     "holdout_delta": {
+      "delta": -0.1528,
+      "lo": -0.2442,
+      "hi": -0.0729,
+      "separated": true,
+      "n_windows": 4076,
+      "n_episodes": 60,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "eval141_ade6_NON_DECIDING": 2.3976,
+     "eval141_delta_NON_DECIDING": {
+      "delta": -0.0894,
+      "lo": -0.1244,
+      "hi": -0.0551,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    },
+    "seed_mean_holdout_ade6": 2.8709,
+    "seed_mean_holdout_minus_p10": -0.15800000000000036,
+    "training_seed_floor_holdout_ade6": 0.010400000000000187
+   },
+   "1000": {
+    "seed0": {
+     "path": "C:/Users/Admin/box2_ship/logs/ra1_full/runs\\st1000\\A1_b0.08g50_s0\\eval\\eval.json",
+     "holdout_ade6": 2.7731,
+     "holdout_p10_ade6": 3.0289,
+     "holdout_delta": {
+      "delta": -0.2559,
+      "lo": -0.3581,
+      "hi": -0.1597,
+      "separated": true,
+      "n_windows": 4076,
+      "n_episodes": 60,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "eval141_ade6_NON_DECIDING": 2.3026,
+     "eval141_delta_NON_DECIDING": {
+      "delta": -0.1843,
+      "lo": -0.2311,
+      "hi": -0.1384,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    },
+    "seed1": {
+     "path": "C:/Users/Admin/box2_ship/logs/ra1_full/runs\\st1000\\A1_b0.08g50_s1\\eval\\eval.json",
+     "holdout_ade6": 2.7852,
+     "holdout_p10_ade6": 3.0289,
+     "holdout_delta": {
+      "delta": -0.2437,
+      "lo": -0.3402,
+      "hi": -0.1528,
+      "separated": true,
+      "n_windows": 4076,
+      "n_episodes": 60,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "eval141_ade6_NON_DECIDING": 2.3095,
+     "eval141_delta_NON_DECIDING": {
+      "delta": -0.1775,
+      "lo": -0.2292,
+      "hi": -0.1264,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    },
+    "seed_mean_holdout_ade6": 2.77915,
+    "seed_mean_holdout_minus_p10": -0.24975000000000014,
+    "training_seed_floor_holdout_ade6": 0.012100000000000222
+   },
+   "3000": {
+    "seed0": {
+     "path": "C:/Users/Admin/box2_ship/logs/ra1_full/runs\\st3000\\A1_b0.08g50_s0\\eval\\eval.json",
+     "holdout_ade6": 2.6531,
+     "holdout_p10_ade6": 3.0289,
+     "holdout_delta": {
+      "delta": -0.3758,
+      "lo": -0.5587,
+      "hi": -0.2003,
+      "separated": true,
+      "n_windows": 4076,
+      "n_episodes": 60,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "eval141_ade6_NON_DECIDING": 2.2005,
+     "eval141_delta_NON_DECIDING": {
+      "delta": -0.2865,
+      "lo": -0.3936,
+      "hi": -0.179,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    },
+    "seed1": {
+     "path": "C:/Users/Admin/box2_ship/logs/ra1_full/runs\\st3000\\A1_b0.08g50_s1\\eval\\eval.json",
+     "holdout_ade6": 2.6463,
+     "holdout_p10_ade6": 3.0289,
+     "holdout_delta": {
+      "delta": -0.3826,
+      "lo": -0.5331,
+      "hi": -0.2306,
+      "separated": true,
+      "n_windows": 4076,
+      "n_episodes": 60,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "eval141_ade6_NON_DECIDING": 2.2111,
+     "eval141_delta_NON_DECIDING": {
+      "delta": -0.2758,
+      "lo": -0.3756,
+      "hi": -0.1799,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    },
+    "seed_mean_holdout_ade6": 2.6497,
+    "seed_mean_holdout_minus_p10": -0.3792,
+    "training_seed_floor_holdout_ade6": 0.006799999999999695
+   },
+   "6000": {
+    "seed0": {
+     "path": "C:/Users/Admin/box2_ship/logs/ra1_full/runs\\st6000\\A1_b0.08g50_s0\\eval\\eval.json",
+     "holdout_ade6": 2.9511,
+     "holdout_p10_ade6": 3.0289,
+     "holdout_delta": {
+      "delta": -0.0779,
+      "lo": -0.3947,
+      "hi": 0.2524,
+      "separated": false,
+      "n_windows": 4076,
+      "n_episodes": 60,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "eval141_ade6_NON_DECIDING": 2.529,
+     "eval141_delta_NON_DECIDING": {
+      "delta": 0.042,
+      "lo": -0.1405,
+      "hi": 0.2413,
+      "separated": false,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    },
+    "seed1": {
+     "path": "C:/Users/Admin/box2_ship/logs/ra1_full/runs\\st6000\\A1_b0.08g50_s1\\eval\\eval.json",
+     "holdout_ade6": 2.8763,
+     "holdout_p10_ade6": 3.0289,
+     "holdout_delta": {
+      "delta": -0.1526,
+      "lo": -0.3964,
+      "hi": 0.1091,
+      "separated": false,
+      "n_windows": 4076,
+      "n_episodes": 60,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "eval141_ade6_NON_DECIDING": 2.5342,
+     "eval141_delta_NON_DECIDING": {
+      "delta": 0.0472,
+      "lo": -0.1079,
+      "hi": 0.2061,
+      "separated": false,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    },
+    "seed_mean_holdout_ade6": 2.9137,
+    "seed_mean_holdout_minus_p10": -0.11520000000000019,
+    "training_seed_floor_holdout_ade6": 0.07479999999999976
+   }
+  }
+ },
+ "reading": "S*_A1 = 3000, S*_R0 = 3000; K arm = A1. Phase 2: A1x seed 0 at S*_A1, then the gate and K.",
+ "next": "full2 3000 3000 0.08 50"
+}

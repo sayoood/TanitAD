@@ -1,0 +1,36 @@
+..............................................F......................... [ 19%]
+........................................................................ [ 39%]
+................................................................s....... [ 59%]
+........................................................................ [ 79%]
+........................................................................ [ 99%]
+..                                                                       [100%]
+=================================== ERRORS ====================================
+_________________ ERROR collecting tests/test_dinov3_seed.py __________________
+ImportError while importing test module 'C:\Users\Admin\tanitad-wt\stack\tests\test_dinov3_seed.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+..\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tests\test_dinov3_seed.py:51: in <module>
+    from train_v6_staged import (build_lr_scheduler,                     # noqa: E402
+E   ImportError: cannot import name 'assert_trunk_anchor_unwired' from 'train_v6_staged' (C:\Users\Admin\tanitad-wt\stack\scripts\train_v6_staged.py). Did you mean: 'assert_trunk_anchor_preflight'?
+================================== FAILURES ===================================
+_____________________ test_refa_surfaces_the_measured_arm _____________________
+
+    def test_refa_surfaces_the_measured_arm():
+        """The '(b) half' of the rule: the arm that already tested it."""
+        hits = DC.search(["REF-A"], context=2, require_all=True)
+>       assert hits, "REF-A must be findable — it is the measured frozen arm"
+E       AssertionError: REF-A must be findable — it is the measured frozen arm
+E       assert []
+
+stack\tests\test_decision_check.py:45: AssertionError
+---------------------------- Captured stdout call -----------------------------
+  ⚠️  DECISION: DECISIONS_2026-07-20.md NOT FOUND — the record this tool checks is incomplete, and that is itself a finding
+  ⚠️  REGISTRY: MODEL_REGISTRY.md NOT FOUND — the record this tool checks is incomplete, and that is itself a finding
+  ⚠️  RETRACTION: RETRACTION_LOG.md NOT FOUND — the record this tool checks is incomplete, and that is itself a finding
+=========================== short test summary info ===========================
+FAILED stack\tests\test_decision_check.py::test_refa_surfaces_the_measured_arm
+ERROR stack\tests\test_dinov3_seed.py
+1 failed, 360 passed, 1 skipped, 5417 deselected, 1 error in 302.16s (0:05:02)

@@ -1,0 +1,85 @@
+{
+ "checks": {
+  "T1 covered-only loss == live masked formula (value)": {
+   "ok": true,
+   "detail": "live 0.38566574 proxy 0.38566574"
+  },
+  "T1 ... every scorer gradient": {
+   "ok": true,
+   "detail": "max rel diff 9.44e-07 over 78 tensors"
+  },
+  "T1 MUTATION (denominator from the covered count) goes RED": {
+   "ok": true,
+   "detail": "mutated 0.77133149"
+  },
+  "T2 uncovered micro-batch: zero-VALUED gradient on every scorer tensor": {
+   "ok": true,
+   "detail": "78/78 tensors carry a gradient, all exactly 0"
+  },
+  "T2 MUTATION (no zero term) goes RED: scorer gradients are None": {
+   "ok": true,
+   "detail": "78/78 None"
+  },
+  "T3 covered samples' visual rows read at vindex, exact bits; scene bits exact": {
+   "ok": true,
+   "detail": "visual rows 2"
+  },
+  "T3 an all-uncovered batch reads no visual_ctx": {
+   "ok": true,
+   "detail": ""
+  },
+  "T3 a LABELLED sample without a cached visual_ctx is REFUSED": {
+   "ok": true,
+   "detail": ""
+  },
+  "T3 MUTATION (reader uses index, not vindex) goes RED": {
+   "ok": true,
+   "detail": ""
+  },
+  "T4 prep_sets reads pod_extract_partN_part_XXXX names and keeps ckpt_step <= 4933": {
+   "ok": true,
+   "detail": "kept 1"
+  },
+  "T4 a sets dir with no parts is REFUSED": {
+   "ok": true,
+   "detail": ""
+  },
+  "T4 MUTATION (the old part_*.jsonl.gz glob) goes RED on the real sets dir": {
+   "ok": true,
+   "detail": "old glob 0 files, fixed glob 8"
+  },
+  "T5 G3: lr 0 -> 0 decoder/scorer tensors change (real snapshot 015, CPU)": {
+   "ok": true,
+   "detail": "rc 0 changed 0/159 covered 2"
+  },
+  "T5 MUTATION (lr 1e-3) goes RED: tensors change": {
+   "ok": true,
+   "detail": "rc 0 changed 159/159"
+  },
+  "T6 --init-from: lr 0 ends bit-identical to the INIT tensors (not the snapshot)": {
+   "ok": true,
+   "detail": "rc 0"
+  },
+  "T6 MUTATION (the flag ignored) goes RED: the run ends on the snapshot, not the init": {
+   "ok": true,
+   "detail": ""
+  },
+  "T7 --skip-samples N yields exactly samples N+1..N+K of the unskipped stream": {
+   "ok": true,
+   "detail": "[5, 106, 9, 100, 4, 2] vs [5, 106, 9, 100, 4, 2]"
+  },
+  "T7 MUTATION (restarting the stream instead of continuing it) goes RED": {
+   "ok": true,
+   "detail": ""
+  }
+ },
+ "n_checks": 18,
+ "failed": [],
+ "tested_sha256": {
+  "proxy_train.py": "576bc83dceda80defd472fe7f7513bf19ed86ccdec7986767a525e5e4d561c74",
+  "proxy_cache.py": "7aa052843c14fb7a168a0b90095d3d6b107ca84a6ccb936db2dfdf27090d5c55",
+  "measures.py": "890f3d95dc73673b9a757edf7883a4438bb347a3ad8664e9c501fb8f78ba4550",
+  "selftest_proxy_train.py": "8175c956bccb7cf154683622e2e2e5c370d0d4dd44a5de0fb0abc933aef0e1fb"
+ },
+ "snapshot": "D:/Projects/TanitAD/data/refe_runs_eval/snap_epoch015.pt"
+}

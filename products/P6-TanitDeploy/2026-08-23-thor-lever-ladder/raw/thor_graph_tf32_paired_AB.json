@@ -1,0 +1,65 @@
+{
+ "spec": "E-DEPLOY-4",
+ "controls": {
+  "state_dict_loads_clean": {
+   "n_missing": 0,
+   "n_unexpected": 0,
+   "pass": true
+  },
+  "tf32_switch_is_live": {
+   "max_abs_change": 0.07258796691894531,
+   "pass": true
+  },
+  "graph_outputs_not_clobbered": {
+   "expect": "deviation != the reference's own absmax (56.1321)",
+   "fp32_graph_dev": 0.0,
+   "tf32_graph_dev": 0.0,
+   "ref_absmax": 56.13212203979492,
+   "clobbered_arms": [],
+   "pass": true
+  }
+ },
+ "rounds": [
+  {
+   "round": 1,
+   "fp32_graph_ms": [
+    7.859149947762489,
+    7.868067012168467
+   ],
+   "tf32_graph_ms": [
+    6.101113453041762,
+    6.105030013713986
+   ],
+   "fp32_graph_median_ms": 7.863608479965478,
+   "tf32_graph_median_ms": 6.103071733377874,
+   "gain_frac": 0.22388407956385603,
+   "gain_pct": 22.39
+  },
+  {
+   "round": 2,
+   "fp32_graph_ms": [
+    7.865326479077339,
+    7.868614047765732
+   ],
+   "tf32_graph_ms": [
+    6.123733532149345,
+    6.118622550275177
+   ],
+   "fp32_graph_median_ms": 7.8669702634215355,
+   "tf32_graph_median_ms": 6.121178041212261,
+   "gain_frac": 0.221914175820208,
+   "gain_pct": 22.19
+  }
+ ],
+ "eager_fp32_highest": {
+  "n": 40,
+  "median_ms": 12.518519535660744,
+  "p90_ms": 12.551828986033797
+ },
+ "bit_identity": {
+  "graph_fp32_vs_eager_fp32_max_abs": 0.0,
+  "graph_tf32_vs_eager_fp32_max_abs": 0.0
+ },
+ "verdict": "H-DEPLOY-7 SUPPORTED \u2014 gains [22.39, 22.19] (bar 5 % in BOTH rounds), tf32-graph bit-identical to strict fp32 = True",
+ "_evidence_class": "MEASURED (ours; Thor, within-process paired A/B)"
+}

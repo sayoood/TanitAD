@@ -1,0 +1,32 @@
+[chain 2026-11-15T08:10:01Z] folded run ended: [lmerge 2026-11-15 08:09:53] ZZ LMERGE MERGED END ZZ rc 0 eval clips 141/141 wall 376.4 s
+[lmerge 2026-11-15 08:10:02] ckpt be8a63c8fdbd lora meta r 32 alpha 32.0 targets ['q', 'v'] blocks 24 tensors 96 mode lora-zero (B zeroed: 48)
+Loading weights:   0%|          | 0/415 [00:00<?, ?it/s]Loading weights:  86%|████████▋ | 358/415 [00:00<00:00, 3539.04it/s]Loading weights: 100%|██████████| 415/415 [00:00<00:00, 3587.75it/s]
+Loading weights:   0%|          | 0/415 [00:00<?, ?it/s]Loading weights:  86%|████████▌ | 356/415 [00:00<00:00, 3488.74it/s]Loading weights: 100%|██████████| 415/415 [00:00<00:00, 3593.39it/s]
+[lmerge 2026-11-15 08:10:08] c1 lora route: trained module's base weights == builder's: True
+[cache_pod 2026-11-15 08:10:09] ready: torch 2.11.0+cu128 NVIDIA RTX 4000 Ada Generation weights dcb2e45127cc out=/root/data/s0l_lorazero
+[cache_pod 2026-11-15 08:10:12] 1/4713 encoded (1 this launch, 3.36 s/clip, last 3.3s, ledger 4713, free 237 GB, eta_encode_only 264 min)
+[cache_pod 2026-11-15 08:10:15] 2/4713 encoded (2 this launch, 3.13 s/clip, last 2.9s, ledger 4713, free 237 GB, eta_encode_only 246 min)
+[cache_pod 2026-11-15 08:10:18] 3/4713 encoded (3 this launch, 3.04 s/clip, last 2.8s, ledger 4713, free 237 GB, eta_encode_only 238 min)
+[cache_pod 2026-11-15 08:10:18] smoke done: 3 encoded, 0 failed
+[lmerge 2026-11-15 08:10:20] c3 bitwise equal to cache_pod/eval on all 3 clips: True
+[lmerge 2026-11-15 08:10:20] ZZ LMERGE LORA-ZERO END ZZ rc 0 eval clips 3/3 wall 10.5 s
+[chain 2026-11-15T08:10:21Z] lora-zero control PASS (rc 0)
+[lmerge 2026-11-15 08:10:22] ckpt be8a63c8fdbd lora meta r 32 alpha 32.0 targets ['q', 'v'] blocks 24 tensors 96 mode lora (B zeroed: 0)
+Loading weights:   0%|          | 0/415 [00:00<?, ?it/s]Loading weights:  80%|████████  | 334/415 [00:00<00:00, 3339.61it/s]Loading weights: 100%|██████████| 415/415 [00:00<00:00, 3355.55it/s]
+Loading weights:   0%|          | 0/415 [00:00<?, ?it/s]Loading weights:  70%|██████▉   | 290/415 [00:00<00:00, 2882.04it/s]Loading weights: 100%|██████████| 415/415 [00:00<00:00, 3057.37it/s]
+[lmerge 2026-11-15 08:10:28] c1 lora route: trained module's base weights == builder's: True
+[lmerge 2026-11-15 08:10:29] c4 fp32 fold identity {'rel_l2_merged_vs_lora_fp32': 4.789443497718502e-06, 'max_abs': 1.3381242752075195e-05}
+[cache_pod 2026-11-15 08:10:30] ready: torch 2.11.0+cu128 NVIDIA RTX 4000 Ada Generation weights dcb2e45127cc out=/root/data/s0l_cache_L_s0_lora
+[cache_pod 2026-11-15 08:10:33] 1/4713 encoded (1 this launch, 2.96 s/clip, last 2.9s, ledger 4713, free 237 GB, eta_encode_only 233 min)
+[cache_pod 2026-11-15 08:10:36] 2/4713 encoded (2 this launch, 2.89 s/clip, last 2.8s, ledger 4713, free 237 GB, eta_encode_only 227 min)
+[cache_pod 2026-11-15 08:10:39] 3/4713 encoded (3 this launch, 2.87 s/clip, last 2.8s, ledger 4713, free 237 GB, eta_encode_only 225 min)
+[cache_pod 2026-11-15 08:11:42] 25/4713 encoded (25 this launch, 2.87 s/clip, last 2.9s, ledger 4713, free 236 GB, eta_encode_only 224 min)
+[cache_pod 2026-11-15 08:12:54] 50/4713 encoded (50 this launch, 2.86 s/clip, last 2.9s, ledger 4713, free 236 GB, eta_encode_only 223 min)
+[cache_pod 2026-11-15 08:14:05] 75/4713 encoded (75 this launch, 2.87 s/clip, last 2.9s, ledger 4713, free 235 GB, eta_encode_only 222 min)
+[cache_pod 2026-11-15 08:15:17] 100/4713 encoded (100 this launch, 2.87 s/clip, last 2.9s, ledger 4713, free 235 GB, eta_encode_only 221 min)
+[cache_pod 2026-11-15 08:16:30] 125/4713 encoded (125 this launch, 2.87 s/clip, last 2.9s, ledger 4713, free 234 GB, eta_encode_only 220 min)
+[cache_pod 2026-11-15 08:17:16] smoke done: 141 encoded, 0 failed
+[lmerge 2026-11-15 08:17:16] c2 route: cache rows == the trained module's pooled fp8 on the first 8 frames: {'clip': '01be5919-6e61-45ba-a193-5f447efb4b51', 'cache_first8_vs_module_pooled_bitwise': True, 'rel_l2': 0.0}
+[lmerge 2026-11-15 08:17:16] ZZ LMERGE LORA END ZZ rc 0 eval clips 141/141 wall 408.3 s
+[chain 2026-11-15T08:17:17Z] lora run rc 0
+[chain 2026-11-15T08:17:17Z] ZZ LORACHAIN DONE ZZ

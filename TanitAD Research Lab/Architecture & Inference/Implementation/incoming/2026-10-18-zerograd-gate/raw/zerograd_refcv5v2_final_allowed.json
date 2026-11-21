@@ -1,0 +1,170 @@
+{
+  "gate": "zerograd_gate",
+  "gate_version": "1",
+  "verdict": "PASS",
+  "model_key": "model",
+  "optimizer_key": "opt",
+  "optimizer": {
+    "n_groups": 1,
+    "n_registered": 357,
+    "n_with_state_entry": 351,
+    "n_trained": 351,
+    "n_case_a_no_state": 6,
+    "n_case_b_zero_state": 0,
+    "step_max": 40284,
+    "ckpt_step": 40284
+  },
+  "alignment": {
+    "mode": "global-shape-dp",
+    "unique": true,
+    "n_alignments": 1.0,
+    "n_model_float_entries": 361,
+    "n_entries_excluded": 132,
+    "exclude_entries": [
+      "(.*\\.)?(running_mean|running_var|num_batches_tracked)"
+    ],
+    "note": "",
+    "n_ids_name_ambiguous": 0,
+    "n_ids_unnamed": 0
+  },
+  "offenders": [],
+  "allowed": [
+    {
+      "id": 274,
+      "case": "a_no_state",
+      "names": [
+        "core.decoder.offset_head.weight"
+      ],
+      "ambiguous": false,
+      "state_shape": null,
+      "numel_lo": 6144,
+      "numel_hi": 6144,
+      "allowed_by": [
+        "core\\.decoder\\.offset_head\\..*"
+      ]
+    },
+    {
+      "id": 275,
+      "case": "a_no_state",
+      "names": [
+        "core.decoder.offset_head.bias"
+      ],
+      "ambiguous": false,
+      "state_shape": null,
+      "numel_lo": 16,
+      "numel_hi": 16,
+      "allowed_by": [
+        "core\\.decoder\\.offset_head\\..*"
+      ]
+    },
+    {
+      "id": 347,
+      "case": "a_no_state",
+      "names": [
+        "tac_goal_tok_head.net.weight"
+      ],
+      "ambiguous": false,
+      "state_shape": null,
+      "numel_lo": 11264,
+      "numel_hi": 11264,
+      "allowed_by": [
+        "tac_goal_tok_head\\..*"
+      ]
+    },
+    {
+      "id": 348,
+      "case": "a_no_state",
+      "names": [
+        "tac_goal_tok_head.net.bias"
+      ],
+      "ambiguous": false,
+      "state_shape": null,
+      "numel_lo": 22,
+      "numel_hi": 22,
+      "allowed_by": [
+        "tac_goal_tok_head\\..*"
+      ]
+    },
+    {
+      "id": 355,
+      "case": "a_no_state",
+      "names": [
+        "scorer.goal_point.weight"
+      ],
+      "ambiguous": false,
+      "state_shape": null,
+      "numel_lo": 1024,
+      "numel_hi": 1024,
+      "allowed_by": [
+        "scorer\\.goal_point\\..*"
+      ]
+    },
+    {
+      "id": 356,
+      "case": "a_no_state",
+      "names": [
+        "scorer.goal_point.bias"
+      ],
+      "ambiguous": false,
+      "state_shape": null,
+      "numel_lo": 2,
+      "numel_hi": 2,
+      "allowed_by": [
+        "scorer\\.goal_point\\..*"
+      ]
+    }
+  ],
+  "unused_allow": [
+    "nonexistent"
+  ],
+  "untrained_numel": {
+    "offending_lo": 0,
+    "offending_hi": 0,
+    "allowed_lo": 18472,
+    "allowed_hi": 18472
+  },
+  "controls": [],
+  "info": {
+    "partial_grad": [
+      {
+        "id": 343,
+        "step": 40134,
+        "fraction": 0.9963,
+        "names": [
+          "lat_head_tac.weight"
+        ]
+      },
+      {
+        "id": 344,
+        "step": 40134,
+        "fraction": 0.9963,
+        "names": [
+          "lat_head_tac.bias"
+        ]
+      },
+      {
+        "id": 345,
+        "step": 40134,
+        "fraction": 0.9963,
+        "names": [
+          "lon_head_tac.weight"
+        ]
+      },
+      {
+        "id": 346,
+        "step": 40134,
+        "fraction": 0.9963,
+        "names": [
+          "lon_head_tac.bias"
+        ]
+      }
+    ]
+  },
+  "ckpt": "D:/Projects/TanitAD-artifacts/refcv5v2_final/ckpt.pt",
+  "ckpt_size_bytes": 1299559201,
+  "load": {
+    "weights_only": true,
+    "mmap": true,
+    "earlier_load_failures": []
+  }
+}

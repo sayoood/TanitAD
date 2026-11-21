@@ -1,0 +1,43 @@
+# PREREG_V8F_MIXO suites RERUN (the 08:32 run died at ~46% on a full C:): CPU only, tree = the delivered export tree, started 2026-10-25 08:49
+# cmd: pytest -q -p no:cacheprovider -rs --basetemp C:/Users/Admin/pt_mixo2 stack/tests/test_v8f*.py stack/tests/test_launch_gate_v8f.py
+stack\tests\test_v8f_lora_ar2.py:306: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_lora_ar2.py:244: in _write_world
+    rows[split].append(_write_cache_clip(root / "cache", split, c, o, enc, perturb if c == perturb_clip else None, (row_kv or {}).get(c)))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tests\test_v8f_lora_ar2.py:215: in _write_cache_clip
+    pep, ship = E.load_builder()
+                ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\mixo\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\mixo\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\mixo\stack\scripts\dinov3_fp8_encode_ship.py
+
+stack\tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+============================== warnings summary ===============================
+tests/test_v8f_cz.py::test_eval_absmask_zeroes_only_the_gt_absent_constraint_slots
+  C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\mixo\stack\scripts\v8f_mini_train.py:851: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    "sec": time.time() - t0, **{k: float(v) for k, v in T.items()}}
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+SKIPPED [1] stack\tests\test_v8f_beta_box2.py:30: queue not in this checkout
+SKIPPED [1] stack\tests\test_v8f_beta_box2.py:53: the queue is a Windows batch file
+SKIPPED [2] stack\tests\test_v8f_lora.py:232: the cache builder (pull_encode_pooled.py + dinov3_fp8_encode_ship.py) is not in this checkout
+SKIPPED [1] stack\tests\test_v8f_lora.py:250: the cache builder (pull_encode_pooled.py + dinov3_fp8_encode_ship.py) is not in this checkout
+SKIPPED [1] stack\tests\test_v8f_lora.py:465: DINOv3-L weights are not in the local HF cache
+SKIPPED [1] stack\tests\test_v8f_lora.py:814: DINOv3-L weights are not in the local HF cache
+SKIPPED [2] stack\tests\test_v8f_lora.py:842: the cache builder (pull_encode_pooled.py + dinov3_fp8_encode_ship.py) is not in this checkout
+17 failed, 960 passed, 9 skipped, 1 warning, 14 errors in 741.93s (0:12:21)
+# ended 2026-10-25 09:01

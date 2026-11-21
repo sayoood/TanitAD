@@ -1,0 +1,235 @@
+{
+ "split": "eval",
+ "seed": 0,
+ "ckpt": "/home/nvidia/refcv7_run/runs/refcv7-r101-s0/ckpt.pt",
+ "step": 50400,
+ "n_windows": 3,
+ "selection_digest": "28606cf4b7449b0d903ed6abbfc1eb1ec068ddf938302038fe67317ef562de80",
+ "selection_counts": {
+  "sample": 3,
+  "cls_straight": 3
+ },
+ "W": 8,
+ "cpu_selection_gt_vs_tree_gt_maxabs_m": 0.0,
+ "identity": {
+  "n_windows": 3,
+  "x_maxabs_fan": 0.0,
+  "x_p99abs_fan": 0.0,
+  "x_maxabs_traj": 0.0,
+  "x_p99abs_traj": 0.0,
+  "x_maxabs_s_core": 0.0,
+  "x_p99abs_s_core": 0.0,
+  "x_maxabs_s_e9": 0.0,
+  "x_p99abs_s_e9": 0.0,
+  "x_maxabs_p_lat": 0.0,
+  "x_p99abs_p_lat": 0.0,
+  "x_maxabs_p_lon": 0.0,
+  "x_p99abs_p_lon": 0.0,
+  "x_maxabs_p_goal": 0.0,
+  "x_p99abs_p_goal": 0.0,
+  "x_maxabs_g_tac": 0.0,
+  "x_p99abs_g_tac": 0.0,
+  "x_maxabs_lat_tac": 0.0,
+  "x_p99abs_lat_tac": 0.0,
+  "x_maxabs_lon_tac": 0.0,
+  "x_p99abs_lon_tac": 0.0,
+  "x_n_sel_differ": 0,
+  "x_n_selbase_differ": 0,
+  "x_flip_e9_top2_margins": [],
+  "s_maxabs_fan": 0.00994873046875,
+  "s_p99abs_fan": 0.009917755126953125,
+  "s_maxabs_traj": 0.002158612012863159,
+  "s_p99abs_traj": 0.0021478331089019773,
+  "s_maxabs_s_core": 0.006304740905761719,
+  "s_p99abs_s_core": 0.006302680969238281,
+  "s_maxabs_s_e9": 0.00635528564453125,
+  "s_p99abs_s_e9": 0.0063524627685546875,
+  "s_maxabs_p_lat": 1.5550758689641953e-06,
+  "s_p99abs_p_lat": 1.5428708866238594e-06,
+  "s_maxabs_p_lon": 0.00014585256576538086,
+  "s_p99abs_p_lon": 0.00014440417289733886,
+  "s_maxabs_p_goal": 0.0003194957971572876,
+  "s_p99abs_p_goal": 0.00031849414110183714,
+  "s_maxabs_g_tac": 0.0009002685546875,
+  "s_p99abs_g_tac": 0.000894775390625,
+  "s_maxabs_lat_tac": 1.983344554901123e-05,
+  "s_p99abs_lat_tac": 1.971334218978882e-05,
+  "s_maxabs_lon_tac": 6.943941116333008e-06,
+  "s_p99abs_lon_tac": 6.895363330841065e-06,
+  "s_n_sel_differ": 0,
+  "s_n_selbase_differ": 0,
+  "s_flip_e9_top2_margins": [],
+  "e9_top2_margin_p01_p05_p50": [
+   0.5933725023269654,
+   0.5947311639785766,
+   0.6100161075592041
+  ]
+ },
+ "probe_shapes": {
+  "map_hires.lift": [
+   [
+    1,
+    64,
+    400,
+    240
+   ],
+   "torch.float32"
+  ],
+  "map_hires.encoder": [
+   [
+    1,
+    64,
+    400,
+    240
+   ],
+   "torch.float32"
+  ],
+  "map_hires.near": [
+   [
+    1,
+    32,
+    200,
+    600
+   ],
+   "torch.float32"
+  ],
+  "map_hires.refine": [
+   [
+    1,
+    8,
+    1000,
+    600
+   ],
+   "torch.float32"
+  ],
+  "map_hires._map_hires": {
+   "map_hires_logits": [
+    [
+     1,
+     8,
+     1000,
+     600
+    ],
+    "torch.float32"
+   ],
+   "map_hires_lift_valid": [
+    [
+     1,
+     400,
+     240
+    ],
+    "torch.bool"
+   ],
+   "map_hires_bev": [
+    [
+     1,
+     64,
+     400,
+     240
+    ],
+    "torch.float32"
+   ]
+  },
+  "perception.bev_pool": [
+   [
+    1,
+    96,
+    120,
+    64
+   ],
+   "torch.float32"
+  ],
+  "perception.box_mem": [
+   [
+    1,
+    2144,
+    256
+   ],
+   "torch.float32"
+  ],
+  "perception.box_refpts": [
+   [
+    1,
+    300,
+    2
+   ],
+   "torch.float32"
+  ],
+  "perception.box_qpos": [
+   [
+    1,
+    300,
+    256
+   ],
+   "torch.float32"
+  ]
+ },
+ "loader_departures": [
+  "argv --trunk-compile REMOVED: no Triton on Windows; torch.compile wraps the backbone CALL only -- module tree and state_dict identical (LAUNCH_READINESS_FIXES.md sec. 10b)",
+  "Thor data paths REMAPPED to the eval kit /home/nvidia for ['--agent-join', '--agent-rig-extrinsics', '--anchors', '--clip-clock-sidecar', '--eval-cache', '--eval-labels', '--join3d', '--map-gt-root', '--map-hires-class-weights', '--nav-compliance-tau-file', '--speed-max-sidecar-v6-eval', '--vis1-sidecar'] (per flag, basename-checked; recorded in argv_remap)",
+  "tactical-goal pos_weight / class mask from config.json tac_goal_stats (the TRAIN split's own constants; train():8483-8497 derives them from the loaded split)"
+ ],
+ "state_dict": {
+  "strict": true,
+  "missing": [],
+  "unexpected": [],
+  "step": 50400
+ },
+ "dataset": {
+  "labels": {
+   "path": "/home/nvidia/data/v8labels/labels/s2_labels_v8_eval.jsonl.gz",
+   "md5": "eefc38d1453bd1c73802d44d45affced",
+   "n_records": 147
+  },
+  "nav": {
+   "n_clips": 139,
+   "follow": 88,
+   "left": 13,
+   "right": 38,
+   "missing": 0,
+   "derivation": "v7.2 nav_command token (oracle, provenance ego-future; allow_oracle_nav=True)",
+   "unlabeled_default": "nav_cmd=0 ('follow') + nav_valid=False (refav1_loader convention)",
+   "label_md5": "eefc38d1453bd1c73802d44d45affced",
+   "allow_oracle_nav": true
+  },
+  "max_speed_v6": {
+   "sidecar": "refcv6_speed_max_v8_eval.jsonl",
+   "n_rows": 147,
+   "n_valid": 147,
+   "n_over_ceiling": 1,
+   "over_ceiling_frac": 0.006803,
+   "source_md5": "eefc38d1453bd1c73802d44d45affced",
+   "source_labels": "s2_labels_v8_eval.jsonl.gz",
+   "join_key": "sid = stable_episode_id(clip_id)",
+   "ladder_kmh": [
+    30,
+    50,
+    100,
+    120
+   ],
+   "quantized_by": "tanitad.refs.refcv6_max_speed.MaxSpeedOneHotEncoder (model side, ONCE); this reader ships the RAW v_hi_ms and only CHECKS the sidecar's own bin",
+   "_derivation": "refcv6 4-way one-hot set-speed, CONTAINING-WINDOW quantization over {30, 50, 100, 120} km/h: (0,30]->30, (30,50]->50, (50,100]->100, (100,120]->120, and > 120 CLAMPS to 120 (counted and reported). Source field v7.2/v8 g_tac.goals.SPEED_BAND.v_hi_ms (oracle, provenance ego-future: max of the ego's OWN REALISED speed over [t0+2 s, +6 s]); the PI authorised the future-ego derivation explicitly on 2026-09-16 provided the value lands in the containing window. It models a max SET speed - a limiter the driver sets - so the realised speed sits INSIDE the window and never above it. INPUT, never a training signal: no loss reaches this channel in refcv6.",
+   "channel": "refcv6 4-way one-hot (\u00a75)",
+   "label_md5": "eefc38d1453bd1c73802d44d45affced",
+   "n_windows": 23772,
+   "n_windows_fed": 23772,
+   "window_ceiling_frac": 1.0
+  },
+  "n_episodes": 139,
+  "n_windows": 23772
+ },
+ "compute": {
+  "gpu_s_all_shards": {
+   "full": 1.4673750400543213,
+   "exact": 0.18773818016052246,
+   "store": 0.1857161521911621
+  },
+  "wall_s_all_shards": 0,
+  "cache_bytes": 0,
+  "cuda_max_memory_allocated_gib_last_process": 1.101,
+  "device": "NVIDIA Thor"
+ },
+ "batch": 1,
+ "shard": 256,
+ "n_shards": 1
+}

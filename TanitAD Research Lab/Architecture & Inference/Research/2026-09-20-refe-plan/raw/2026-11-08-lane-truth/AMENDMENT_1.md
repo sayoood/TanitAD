@@ -1,0 +1,7 @@
+# AMENDMENT_1 to PREREG_LANE_SPEED (written 2026-11-08 before any lane-truth correlation was computed)
+
+PREREG sha256 `e99b2576662154438a2bd912349f971e18a3b4c3a8c7a69dee56a28d1d2a166f`.
+
+What happened: the 24-set control of G-L1 was run first (placeholder teacher, queue rows from `_tlane_work/smoke/oldq`, which equal the first-win held-out queue rows byte for byte on props). **Result: G-L1 FAILS on those 24 sets** (MEASURED, `lane_truth/logs/ctrl_ph.log`, `F:/scratch/lane_truth_work/run/out_ctrl_ph/`): only 21.9 % of 1,536 proposals have |delta d| <= 1e-3 m against the banked label, max |delta d| 1.673 m, though G-L2 holds (placeholder vs real teacher: identical, max 0.0). The three pre-existing smoke outputs of 2026-10-12 (`_tlane_work/smoke/out10`, `out20`, `out_old`) reproduce to the bit, and show the same disagreement with the banked file. They contradict `raw/rl_tlane/identity_labels_smoke24_hz10.json` (max |delta d| 0.0736 m); the reason is not yet known.
+
+Change (control only; the bar, the estimator, the outcomes and the population are NOT changed): G-L1 is run on 40 sets (16 logs) drawn from the held-out queue in the labeller's own read order (sorted filename, first row per key wins), with both a REAL and a PLACEHOLDER teacher arm. G-L1 and G-L2 are evaluated on that control. **If G-L1 fails there too, every outcome of PREREG section 6 is reported as INVALID (definition not reproduced) with the correlation shown as unlabelled diagnostic only, and the cause is the next lever.** The failure above stays on record either way.

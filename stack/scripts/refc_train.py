@@ -724,6 +724,40 @@ def train(args) -> dict:
     cfg.graft_prior_center = not args.no_graft_prior_center
     # E1 (gated BEFORE build — it widens measurement.0.weight by one column).
     cfg.nav_known_channel = bool(args.nav_known_channel)
+    # ⛔ E1 IS HALF-MERGED, AND IT FAILS *AFTER* THE BUILD. MEASURED 2026-08-16:
+    # this line reaches the config, the model widens correctly, and then the
+    # FIRST FORWARD PASS raises at ``refs/refc.py`` (search
+    # ``nav_known_channel is on and a nav_cmd was supplied``) — because the
+    # trainer's forward call passes ``nav_cmd=`` and NEVER ``nav_known=``.
+    #
+    # The model is behaving correctly: it fails loud in both directions by
+    # design, precisely so a companion bit can never be silently dropped. What
+    # was never finished is the TRAINER side — nothing threads the bit through.
+    #
+    # ⚠️ ``batch["nav_valid"]`` is NOT the companion bit and must not be
+    # substituted: it is the ROUTE-TARGET validity mask used to select windows
+    # for the route loss (see ``train/flagship_losses.py``), a different
+    # quantity. Passing it would assert a judgement the labeller never made —
+    # exactly what the model's own error message refuses.
+    #
+    # ⇒ REFUSE AT PREFLIGHT, not after the build. A flag that parses and then
+    # dies mid-run is the class that cost ~3.1 GPU-days elsewhere in this
+    # programme (a missing ``--gate-probes`` read only AFTER the training loop).
+    # Turning a late crash into an immediate, informative refusal costs nothing
+    # and is the whole lesson.
+    if cfg.nav_known_channel:
+        raise SystemExit(
+            "[refc] ⛔ --nav-known-channel is HALF-MERGED and would crash on the "
+            "first forward pass.\n"
+            "  The config and the model are fine; the TRAINER never passes "
+            "`nav_known=` to model(...), so refs/refc.py raises "
+            "'nav_known_channel is on and a nav_cmd was supplied'.\n"
+            "  To finish it: emit the companion bit from the label side "
+            "(`refb_labels.nav_input_v22` returns the (cmd, known) PAIR) into "
+            "the batch, then thread it into the model call here.\n"
+            "  ⚠️ Do NOT substitute batch['nav_valid'] — that is the "
+            "route-target validity mask, a DIFFERENT quantity, and using it "
+            "would assert a judgement the labeller never made.")
     # --man-prior-tau is the F3 DECISION lever and it acts on the per-axis
     # priors, which only exist with the factored seam — so it still requires it.
     # --tactical-speed-input (F1 INPUT) does NOT: it applies to the shipped 5-way
@@ -817,7 +851,7 @@ def train(args) -> dict:
         # softening the TARGET is +0.0909 m WORSE than the incumbent one-hot CE and
         # +0.1883 m worse than the metric-aware objective, separated, at every tau
         # in {0.1, 0.25, 0.5}.
-        print("[e-obj] ⚠️ --sel-ce-objective softce is the CONTROL arm, not the "
+        print("[e-obj] !! --sel-ce-objective softce is the CONTROL arm, not the "
               "candidate. MEASURED at frozen 30 k weights it is +0.0909 m WORSE "
               "than the incumbent CE and +0.1883 m worse than `softade`, "
               "separated, at every tau tested. It exists so a `softade` arm can "
@@ -827,7 +861,7 @@ def train(args) -> dict:
         # from NATS to METRES and REFINED_CLS_WEIGHT (1.0) was calibrated for the
         # former. This is not a detail: it silently re-weights the whole selection
         # term against LAW, maneuver and trajectory losses.
-        print(f"[e-obj] ⚠️ --sel-ce-objective softade changes `loss_rcls` from a "
+        print(f"[e-obj] !! --sel-ce-objective softade changes `loss_rcls` from a "
               f"cross-entropy in NATS to an expected error in METRES. "
               f"REFINED_CLS_WEIGHT is {REFINED_CLS_WEIGHT} and was calibrated for "
               f"the CE scale, so --sel-ce-weight (now "

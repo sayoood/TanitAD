@@ -1,0 +1,92 @@
+wrapper /workspace/v8proof/integ10k/build/v8f_t1_eval_reader_rule_rzgfhq.py 92a8034cc0f7b0d2
+ok   i  own == logged: the mapped path equals the pinned exec_in_ego bit for bit
+ok   i  own = rigid transform of logged: the analytic value to 1e-12 (err 7.11e-15)
+ok   planted wrong arm caught: i  own pose as the frame
+ok   i  the offset is large enough to tell the arms apart (73.20 m)
+ok   ii plan0 with own pose == logged pose: unchanged (err 2.66e-15)
+ok   ii plan0 mapped into the logged frame equals the analytic value to 1e-12 (err 3.55e-15)
+ok   planted wrong arm caught: ii plan0 left in the own frame
+ok   iii P = 30: clip a keeps 35..71 (10 starts)
+ok   iii P = 30: clip b keeps 35..67, clip c dropped
+ok   iii P = 30: counts and the other fields
+ok   iii P = 60: clip a keeps 63, 67, 71, clip b keeps 63, 67
+ok   iii 0 kept is refused
+ok   planted wrong arm caught: iii threshold 6 instead of 3
+ok   planted wrong arm caught: iii P ignored
+ok   R1 a_m0 +d ahead / -d behind along a straight logged path = +4 / -4 to 1e-9 ([ 4. -4.])
+ok   R1 a lateral offset of 0.7 m does not change it (0.00e+00)
+ok   R1 own at the logged pose (frame pose set) is exactly 0.0
+ok   R1 exactly 0.0 without a frame pose and for k above 0 (a state displaced by 4 m)
+ok   R1 path extension: RAY = 1000 m each side; 1500 m behind saturates at -1000, 1500 m ahead at 1030 ([-1000.  1030.    15.]), 15 m on the path is 15
+ok   planted wrong arm caught: R1 frames swapped (own pose as the frame)
+ok   planted wrong arm caught: R1 k above 0 not excluded
+ok   R1 shim: the first call after the adjustment gets g0 - a_m0, the second call gets g0 unchanged, the slot is cleared
+ok   R1 shim: stats count one consumed call, two non-zero entries, largest 4.0
+ok   planted wrong arm caught: R1 shim that does not clear (the second look would be corrected)
+ok   planted wrong arm caught: R1 shim with the wrong sign
+ok   R1 planner: tick-level call g0 = [10 - 4, 20, 30] (the re-based state only), the second look gets [10, 20, 30]
+ok   R1 planner: the next tick (k = 10) gets no adjustment, and nothing is left set
+ok   R1 P = 0: no adjustment code is reached (stub raises if it is), g0 unchanged, nothing written into STATE
+ok   R1 planner with the shim that does not clear: planner clears after the tick-level call itself, so the second look stays plain (the planner's own guard)
+ok   iv P = 0: rollout, make_states and the rule function are left as they are
+ok   iv P = 0: build_rollout returns the original function itself
+ok   iv P = 0: one call, H = 30, the caller's hook object itself
+ok   iv P = 0: nothing written
+ok   R2 P = 30: two calls (one segment + main), H = 30 each, t0 at the first call 36 / 40 without frame pose, at the main call 66 / 70 with it
+ok   R1 P = 60: R.distance_rule is the shim (not the original) while the run is installed
+ok   iv P = 60: windows are built at t0 - P
+ok   iv P = 60: a window with t0 - P below 3 is refused with a message
+ok   R2 P = 60: three calls (two segments, main), each with H = 30, the pre-roll calls with hook None and executor plan
+ok   R2 P = 60: a re-base after each segment: t0 at the calls = [6, 10], [36, 40], [66, 70]
+ok   R2 P = 60: the first segment has no frame pose; the later calls have the LOGGED pose at their t0
+ok   R2 P = 60: the main call gets the hook through HookFrame (wrapping the caller's hook), the same planner
+ok   iv P = 60: windows end at t0 + 30 with t0 restored
+ok   iv P = 60: the clipped count of the main phase only (3 ticks) and the pre-roll count kept for the log
+ok   iv executed_ego() is the executed path t0+1..t0+30 in the logged frame at t0 (err 7.11e-15)
+ok   iv the executed path returned by the rollout is the same (exe[1])
+ok   iv the plan0 returned has the dtype of the tool's plan0 and the shape [B, 30, 2]
+ok   R3 rows: 3 ticks x 2 windows; pose_w0 = the LOGGED pose[:3] at t0 (err 0.00e+00), the recorder itself wrote the own pose (offset 0.559 m)
+ok   R3 the mapping counters: 6 rows, largest shift 0.5590 m
+ok   iv --preroll-exec logged: both segments get executor logged and the logged tracks by ci, the main call executor plan
+ok   iv a raise in pre-roll segment 1 propagates, H is back at 30, the stores are as before
+ok   iv a raise in pre-roll segment 2 propagates, H is back at 30, the stores are as before
+ok   v  main-phase rule rows have the shapes and the k / tick / ci values of a P = 0 run (6 rows)
+ok   v  main-phase counters equal those of a P = 0 run
+wrote /tmp/tmpbazql72i/rule_log_pre_x.npz
+wrote /tmp/tmpbazql72i/preroll_offsets_x.npz
+wrote /tmp/tmpbazql72i/preroll_log_x.json
+ok   R1 finish_preroll puts the original rule function back
+ok   v  files written: rule_log_pre, preroll_log, preroll_offsets
+ok   R2 rule_log_pre: 2 segments x 3 ticks x 2 windows = 12 rows, tick 0..2 inside the segment, t0 = segment start {6, 10, 36, 40}, pre_segment {0, 1}
+ok   v  preroll_log keys and counts (windows counted once, ticks over both segments)
+ok   v  pre-roll hf counters over the two segments: calls = 6 ticks, max_dv from the pre-roll only
+ok   v  offsets at t0 (main-phase start): position 0.5590 (0.5590), heading 5.7296 deg, speed 1.0
+ok   R1 offsets file: a_m0_first_tick per main window = [0.234767 0.20191 ] (the arc of the own position on the logged path, err 0.0e+00); seg_* rows for the first re-base (t0 36, 40)
+ok   R1 preroll_log a_m0: the largest |a_m0| per run is reported for the main phase and for the segments
+ok   planted wrong arm caught: R2 st.t0 not advanced after a segment
+ok   planted wrong arm caught: v  stores not restored (main rows keep the pre-roll rows)
+ok   R2 P = 45 is refused (not a multiple of 30)
+ok   R2 P = 20 is refused (not a multiple of 30)
+ok   R2 P = 15 is refused (not a multiple of 30)
+ok   R2 P = 60 with --replan-steps 20 is refused (20 does not divide 30)
+ok   R2 PrerollRun itself refuses 45
+ok   R2 P = 30 is accepted
+ok   R2 P = 90 is accepted
+ok   R3 own == logged: the recorded pose_w0 rows are unchanged bit for bit (6 rows), no shift counted
+wrote /tmp/tmpbaa5nk75/rule_log_pre_zero.npz
+wrote /tmp/tmpbaa5nk75/preroll_offsets_zero.npz
+wrote /tmp/tmpbaa5nk75/preroll_log_zero.json
+ok   R1 own == logged: a_m0 is exactly 0.0 for every window and every re-base, the log says so (max 0.0)
+ok   R3 rigid offset: pose_w0 = the logged pose (err 0.0e+00); s_ckpt_w0 from it = the analytic expectation to 1e-12 (err 2.8e-14)
+ok   R3 the offset is large enough to tell the arms apart (own-frame arm differs by 4.48 m)
+ok   planted wrong arm caught: R3 the own pose left as pose_w0 (first-build behaviour)
+ok   planted wrong arm caught: R3 hook shim that does not write the rows
+ok   R3 a hook without a rows dict (or without pose_w0) is called and left alone
+ok   vi the shim passes through while frame_pose5 is not set
+ok   vi with frame_pose5 set it reads the own track in the logged frame
+ok   planted wrong arm caught: vi the shim not applied
+ok   vi a two-row array (the R1 call) passes through the shim
+ok   the wrapper builds no runner, no shim and no hook wrapper when P = 0: install_preroll returns first
+ok   P = 0 text path of ReaderPlanner: every g0_corr line sits inside `if pre:` (2 lines)
+ok   the pinned tool is not touched by this check (no import of it)
+ZZ CHECK-PREROLL-B PASS

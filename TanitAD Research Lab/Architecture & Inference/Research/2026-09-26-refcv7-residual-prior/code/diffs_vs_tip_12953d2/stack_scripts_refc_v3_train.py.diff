@@ -1,0 +1,112 @@
+--- a/stack/scripts/refc_v3_train.py
++++ b/stack/scripts/refc_v3_train.py
+@@ -121,6 +121,7 @@
+ from tanitad.refs import refc_wp_index as _refc_wp_index  # noqa: E402  (WP-B)
+ from tanitad.models import kinematic as kin  # noqa: E402
+ from tanitad.models import refcv6_diffusion as _rv6  # noqa: E402  (refcv6 §3)
++from tanitad.models import kinematic_prior as _kp  # noqa: E402  (refcv7 NEW-1)
+ from tanitad.train import grad_conflict as _gcf  # noqa: E402  (refcv6 §6)
+ # ⛔⛔ SPEC_REFCV7 §2 launch gate, 2026-09-26: G-HYG (config dataclasses refuse undeclared
+ # attributes) and G-DVB (every argv lever equals the BUILT model's value).
+@@ -475,6 +476,19 @@
+             hidden=int(getattr(args, "ego_history_hidden", 64)),
+             out_dim=int(getattr(args, "ego_history_out", 32)),
+             kind=str(getattr(args, "ego_history_kind", "gru")))
++    # ---- refcv7 NEW-1: the residual prior onto the DECODER config -------- #
++    # Pinned onto the CONFIG (a declared `DecoderConfig` field), never only
++    # onto `args`: `rebuild_config` rebuilds through this helper, so the eval
++    # loaders replay it from argv and build the identical decoder.
++    _rp_mode = str(getattr(args, "residual_prior", _kp.RESIDUAL_PRIOR_OFF)
++                   or _kp.RESIDUAL_PRIOR_OFF)
++    cfg.core.decoder.residual_prior = _kp.check_mode(_rp_mode)
++    if _rp_mode != _kp.RESIDUAL_PRIOR_OFF and not bool(
++            getattr(args, "ego_history", False)):
++        raise SystemExit(
++            "[v3] --residual-prior %s needs --ego-history: the prior reads "
++            "the observed pose window, which reaches the model only through "
++            "that channel." % _rp_mode)
+     # ---- refcv6 §3: the F1..F9 block onto the CORE config ----------------- #
+     # ⛔ Pinned onto the CONFIG, never only onto `args`: `rebuild_config`
+     # rebuilds through this same helper, so a block living on the Namespace
+@@ -3819,7 +3833,14 @@
+                 "the encoder would be stamped and fed nothing. Rebuild the "
+                 "dataset through V3Dataset, which emits it unconditionally.")
+         ph = batch["pose_hist"].to(device)
+-        model.core.set_ego_window(ph, int(ph.shape[1]))
++        # refcv7 NEW-1 (`ha0_ext` only): the observed window's RECORDED
++        # actions ride with the window; every other mode reads the poses.
++        _rpm = str(getattr(core.decoder, "residual_prior",
++                           _kp.RESIDUAL_PRIOR_OFF))
++        _acts = (batch["actions"].to(device)
++                 if (_rpm != _kp.RESIDUAL_PRIOR_OFF
++                     and _kp.needs_actions(_rpm)) else None)
++        model.core.set_ego_window(ph, int(ph.shape[1]), actions=_acts)
+     # ---- refcv6 §2/§6 + PI RULING 2026-09-17 R2: THIS BATCH'S LIFT GEOMETRY --
+     # ⛔ RESOLVED BEFORE THE FORWARD, because the BEV encoder now runs INSIDE
+     # it. Until tonight the branch ran after `model(...)` returned and could
+@@ -4265,13 +4286,19 @@
+             # would be wrong by a horizon-growing offset that still looks like
+             # a loss.
+             v_cas = v0.reshape(-1).to(torch.float32)
++            # refcv7 NEW-1: a residual build rolls every stage from the
++            # PRIOR's speed and composes it on the prior -- the fan's own roll.
++            _rp_cas = _kp.prior_from_out(out)
++            if _rp_cas is not None:
++                v_cas = _rp_cas[2]
+             l_cas = out["anchor_logits"].new_zeros(())
+             for u_i, c_i in zip(stages, stage_logits):
+                 # geometry: the stage's x0 in control units, rolled by the SAME
+                 # integrator the fan uses, then matched-anchor L1 in metres.
+                 p_i = model.core.decoder._state_to_path(
+                     u_i, v_cas,
+-                    str(core.decoder.sampler_space) == "metre")
++                    str(core.decoder.sampler_space) == "metre",
++                    prior=_rp_cas)
+                 r_i = p_i[ar, a_star]
+                 l_cas = l_cas + (((r_i - traj_tgt).abs().sum(-1) * sv).sum()
+                                  / denom)
+@@ -5274,6 +5301,10 @@
+         "refcv6": (_rv6.flag_stamp(core.decoder.refcv6)
+                    if getattr(core.decoder, "refcv6", None) is not None
+                    else None),
++        # refcv7 NEW-1 -- the full definition, not just the mode, so the run
++        # record says WHICH prior (and whether it IS the battery's echo).
++        "residual_prior": _kp.prior_stamp(str(getattr(
++            core.decoder, "residual_prior", _kp.RESIDUAL_PRIOR_OFF))),
+         # ⭐ STAGE 0. A run that does not stamp these cannot say whether its
+         # fan was projected -- and a projected fan reads `envelope 0.0000` as
+         # an IDENTITY, which is indistinguishable in a metrics table from a
+@@ -5892,6 +5923,14 @@
+         bad.append("decoder carries live refcv6 flags but the stamp says "
+                    "refcv6=null -- a live arm absent from the run record")
+ 
++    # --- refcv7 NEW-1: the residual prior, BOTH directions ---------------- #
++    _rp_st = (stamp.get("residual_prior") or {}).get("residual_prior",
++                                                     _kp.RESIDUAL_PRIOR_OFF)
++    _rp_built = str(getattr(dec, "residual_prior", _kp.RESIDUAL_PRIOR_OFF))
++    if _rp_st != _rp_built:
++        bad.append(f"stamp says residual_prior={_rp_st!r} but the decoder "
++                   f"was BUILT with {_rp_built!r} -- the record would name a "
++                   f"different plan space than the one that trains")
+     # --- WP-6: the agent seam --------------------------------------------- #
+     layers = list(getattr(dec, "layers", []))
+     if bool(stamp.get("cross_agent", False)):
+@@ -9828,6 +9867,18 @@
+                     default="gru")
+     ap.add_argument("--ego-history-hidden", type=int, default=64)
+     ap.add_argument("--ego-history-out", type=int, default=32)
++    # ---- refcv7 NEW-1: THE PLAN IS A RESIDUAL ON A CAUSAL KINEMATIC PRIOR -
++    ap.add_argument("--residual-prior", choices=_kp.RESIDUAL_PRIOR_MODES,
++                    default=_kp.RESIDUAL_PRIOR_OFF,
++                    help="refcv7 NEW-1 (SPEC_REFCV7 section 1). 'off' (default) "
++                         "is the refcv6 decoder bit for bit. Otherwise the "
++                         "sampler denoises a RESIDUAL on a causal kinematic "
++                         "prior P and the plan is P + Delta. 'ha0_ext' = the "
++                         "battery's echo exactly (reads the recorded steer "
++                         "at t0); 'ha0_ext_pose' = the same construction "
++                         "with the pose-track curvature; 'cv_yawrate' = "
++                         "constant speed + constant yaw rate. Definitions: "
++                         "tanitad/models/kinematic_prior.py.")
+     ap.add_argument("--opt", choices=("adam", "dd"), default="adam",
+                     help="refcv6 §2. `dd` is DiffusionDrive's optimiser "
+                          "(`diffusiondrivev2_rl_config.py:119-131`): AdamW, "

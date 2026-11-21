@@ -1,0 +1,122 @@
+{
+ "split_run": "smoke20",
+ "column": "score",
+ "published_source": "D:\\Projects\\TanitAD\\taniteval\\taniteval\\bench\\plugins\\navsim_v1.py",
+ "arms": {
+  "CV": {
+   "n": 20,
+   "x100": {
+    "NC": 85.0,
+    "DAC": 70.0,
+    "TTC": 80.0,
+    "C": 100.0,
+    "EP": 33.2949,
+    "PDMS": 37.6229,
+    "DDC": 75.0
+   },
+   "devkit_average_row_score": 0.37622869703756384
+  },
+  "HUMAN": {
+   "n": 20,
+   "x100": {
+    "NC": 100.0,
+    "DAC": 100.0,
+    "TTC": 100.0,
+    "C": 100.0,
+    "EP": 81.0965,
+    "PDMS": 92.1235,
+    "DDC": 100.0
+   },
+   "devkit_average_row_score": 0.9212354148089303
+  },
+  "STOP": {
+   "n": 20,
+   "x100": {
+    "NC": 95.0,
+    "DAC": 100.0,
+    "TTC": 100.0,
+    "C": 80.0,
+    "EP": 22.5602,
+    "PDMS": 61.4834,
+    "DDC": 100.0
+   },
+   "devkit_average_row_score": 0.6148342546378652
+  }
+ },
+ "estimator": {
+  "status": "UNAVAILABLE",
+  "reason": "log-cluster bootstrap not yet registered (build plan W2(c)); navtest's 136 logs clear RG-14's floor of 8, so it becomes admissible on registration",
+  "n": 20
+ },
+ "stamps": {
+  "tier": "T1-family",
+  "loop": {
+   "S1": "OPEN"
+  },
+  "background": "non-reactive (logged)",
+  "closed_loop": false
+ },
+ "C5_cv_above_0p8": {
+  "n": 0,
+  "tokens": [],
+  "n_total": 20
+ },
+ "C5_human_below_0p8": {
+  "n": 0,
+  "tokens": [],
+  "n_total": 20
+ },
+ "C6_stop_prediction": {
+  "NC_ge_98": false,
+  "DAC_ge_98": true,
+  "TTC_ge_95": true,
+  "values_x100": {
+   "NC": 95.0,
+   "DAC": 100.0,
+   "TTC": 100.0
+  }
+ },
+ "STOP_decomposition": {
+  "n_tokens_with_hooks": 20,
+  "n_max_compliant_progress_le_5m": 1,
+  "frac_max_compliant_progress_le_5m": 0.05,
+  "stop_mean_EP_x100_in_that_regime": 100.0,
+  "stop_mean_EP_x100_elsewhere": 18.484443276934382,
+  "stop_progress_m_median": 3.7430243140129944,
+  "pdm_closed_progress_m_median": 19.4135219288009,
+  "floor_5_over_12_x100": 41.6667,
+  "per_t0_speed_band": {
+   "0-1 m/s": {
+    "n": 4,
+    "STOP_x100": 56.063,
+    "STOP_C_x100": 100.0,
+    "CV_x100": 17.4721
+   },
+   "1-4 m/s": {
+    "n": 5,
+    "STOP_x100": 64.1099,
+    "STOP_C_x100": 100.0,
+    "CV_x100": 77.3781
+   },
+   "4-8 m/s": {
+    "n": 9,
+    "STOP_x100": 64.6037,
+    "STOP_C_x100": 77.7778,
+    "CV_x100": 27.1123
+   },
+   "8-100 m/s": {
+    "n": 2,
+    "STOP_x100": 51.7166,
+    "STOP_C_x100": 0.0,
+    "CV_x100": 25.8339
+   }
+  },
+  "paired_STOP_minus_CV": {
+   "n_common": 20,
+   "mean_delta_x100": 23.8606,
+   "W": 9,
+   "T": 1,
+   "L": 10
+  }
+ }
+}

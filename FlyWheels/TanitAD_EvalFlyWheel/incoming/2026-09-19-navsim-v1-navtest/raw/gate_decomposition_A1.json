@@ -1,0 +1,104 @@
+{
+ "arm": "A1",
+ "floor": "STOP",
+ "n": 12146,
+ "restricted": false,
+ "seam": "raw\\bridge_navtest\\seam_A1_ego_cmd.npz",
+ "evidence": "MEASURED",
+ "stamps": {
+  "tier": "T1-family",
+  "loop": "OPEN",
+  "background": "non-reactive (logged)"
+ },
+ "paired_vs_floor": {
+  "mean_delta_x100": -2.8464,
+  "median_delta_x100": 4.5319,
+  "W": 6680,
+  "T": 1312,
+  "L": 4154
+ },
+ "gate": {
+  "arm_mean_NCxDAC": 0.6821,
+  "floor_mean_NCxDAC": 0.9395,
+  "arm_zeroed": {
+   "NC": 903,
+   "DAC": 3224,
+   "either": 3828
+  },
+  "floor_zeroed_either": 732
+ },
+ "on_tokens_the_arm_does_not_zero": {
+  "n": 8318,
+  "arm_PDMS_x100": 86.114,
+  "floor_PDMS_x100": 64.5765
+ },
+ "by_t0_speed": {
+  "0-1 m/s": {
+   "n": 1439,
+   "DAC0_rate": 0.0202,
+   "NC0_rate": 0.0417,
+   "arm_PDMS_x100": 74.6009,
+   "floor_PDMS_x100": 59.9419,
+   "median_heading_err_deg_4s": 1.4822,
+   "median_xtrack_m_4s": 0.1148
+  },
+  "1-4 m/s": {
+   "n": 3212,
+   "DAC0_rate": 0.1765,
+   "NC0_rate": 0.0507,
+   "arm_PDMS_x100": 69.0091,
+   "floor_PDMS_x100": 71.5282,
+   "median_heading_err_deg_4s": 5.7101,
+   "median_xtrack_m_4s": 0.2184
+  },
+  "4-8 m/s": {
+   "n": 4906,
+   "DAC0_rate": 0.3353,
+   "NC0_rate": 0.0872,
+   "arm_PDMS_x100": 53.6299,
+   "floor_PDMS_x100": 63.1444,
+   "median_heading_err_deg_4s": 6.2413,
+   "median_xtrack_m_4s": 0.6001
+  },
+  "8-100 m/s": {
+   "n": 2589,
+   "DAC0_rate": 0.3797,
+   "NC0_rate": 0.0973,
+   "arm_PDMS_x100": 47.9643,
+   "floor_PDMS_x100": 48.311,
+   "median_heading_err_deg_4s": 2.9589,
+   "median_xtrack_m_4s": 0.8919
+  }
+ },
+ "DAC0_log_spread": {
+  "n_logs_with_DAC0": 119,
+  "n_logs_total": 136,
+  "max_DAC0_in_one_log": 202
+ },
+ "progress_median_m": {
+  "_columns": "progress_raw_m = [PDM-Closed, agent] (code/navsim_v1_win.py:199)",
+  "DAC0": {
+   "agent_m": 21.3038,
+   "pdm_closed_m": 30.1561
+  },
+  "DAC1": {
+   "agent_m": 14.2151,
+   "pdm_closed_m": 17.2546
+  }
+ },
+ "lateral_at_4s_vs_human": {
+  "_definition": "per token, ego frame: |heading(model[7]) \u2212 heading(human[7])| and the model's final position's lateral offset in the human's final pose frame. Computed here from the seam + export, independent of the suite adapter",
+  "DAC0": {
+   "n": 3224,
+   "median_heading_err_deg": 11.2092,
+   "median_xtrack_m": 1.5386,
+   "median_fde_m": 4.2222
+  },
+  "DAC1": {
+   "n": 8922,
+   "median_heading_err_deg": 2.9709,
+   "median_xtrack_m": 0.2831,
+   "median_fde_m": 2.8636
+  }
+ }
+}

@@ -1,0 +1,32 @@
+{
+ "n_windows": 20000,
+ "n_episodes": 2586,
+ "estimator": "episode-cluster bootstrap B 1,000 seed 0 of the OLS coefficient; s_gt ~ 1 + v0 + {a0 | a} + kappa0 on the P5 sample",
+ "target": "s_gt = (gt_x[knot 12] - gt_x[knot 8]) / 0.8 (GT future, ego frame at NOW)",
+ "data_optimal_ds_da0_given_v0_kappa0": {
+  "coef_on_a0": 1.3841197811663624,
+  "ci95": [
+   1.3599250205096065,
+   1.407712456876774
+  ],
+  "coef_on_v0": 0.9355087616601527,
+  "coef_on_v0_ci95": [
+   0.9194113453219057,
+   0.9521243915190775
+  ]
+ },
+ "data_optimal_ds_da_(SG_label)_given_v0_kappa0": {
+  "coef_on_a": 1.4871845783640198,
+  "ci95": [
+   1.4643569521009268,
+   1.508952555374983
+  ]
+ },
+ "reference": {
+  "base_kd_x_ds_da0": 1.899,
+  "model_total_ds_da0_s0": 1.265,
+  "model_total_ds_da0_s1": 1.112
+ },
+ "r2_of_s_gt_on_v0_a0_kappa0": 0.7830724224751522,
+ "note": "post hoc, decides nothing; the held-out (eval-141) gains of the model are WSP_READ.md's, this is the TRAIN-window data optimum."
+}

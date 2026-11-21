@@ -1,0 +1,652 @@
+[
+  {
+    "id": "A1-lr-constructor",
+    "file": "tanitad/models/timm_trunk.py",
+    "claim": "SPEC \u00a72: the encoder group runs at 0.5x the head lr (param_groups_dd builds it)",
+    "expect": "RED",
+    "note": "the CONSTRUCTOR half of the recipe.",
+    "anchor": "        {\"params\": enc, \"lr\": lr * float(encoder_lr_mult),",
+    "repl": "        {\"params\": enc, \"lr\": lr * 1.0,",
+    "site": {
+      "line": 914,
+      "crlf": true,
+      "sha_before": "3d8ee0f105627cb9",
+      "sha_after": "307ceb2c074b4eb1"
+    },
+    "baseline": {
+      "rc": 0,
+      "verdict": "GREEN",
+      "summary": "40 passed in 23.20s",
+      "passed": 40,
+      "failed": 0,
+      "errors": 0,
+      "absent": [],
+      "log": "raw\\mutation_logs\\A1-lr-constructor__baseline.log",
+      "n_files": 1,
+      "raw_counts": [
+        [
+          "40",
+          "passed"
+        ]
+      ]
+    },
+    "mutated": {
+      "rc": 1,
+      "verdict": "RED",
+      "summary": "1 failed, 39 passed in 23.59s",
+      "passed": 39,
+      "failed": 1,
+      "errors": 0,
+      "absent": [],
+      "log": "raw\\mutation_logs\\A1-lr-constructor__mutated.log",
+      "n_files": 1,
+      "raw_counts": [
+        [
+          "1",
+          "failed"
+        ]
+      ]
+    },
+    "RESULT": "CAUGHT"
+  },
+  {
+    "id": "A2-lr-consumer-ZEROED",
+    "file": "scripts/refc_v3_train.py",
+    "claim": "the learning rate the optimiser actually steps with is the one the recipe specifies",
+    "expect": "RED",
+    "note": "EVERY parameter group at lr 0.0 \u2014 the model cannot learn at all. If this is GREEN, no guard reads the trained learning rate.",
+    "anchor": "            g[\"lr\"] = args.lr * sched(step)",
+    "repl": "            g[\"lr\"] = 0.0",
+    "site": {
+      "line": 7439,
+      "crlf": true,
+      "sha_before": "c39091dc9f4bd746",
+      "sha_after": "8764fdb9c00fe535"
+    },
+    "baseline": {
+      "rc": 0,
+      "verdict": "GREEN",
+      "summary": "176 passed, 1 skipped, 1 warning in 88.48s (0:01:28)",
+      "passed": 176,
+      "failed": 0,
+      "errors": 0,
+      "absent": [],
+      "log": "raw\\mutation_logs\\A2-lr-consumer-ZEROED__baseline.log",
+      "n_files": 6,
+      "raw_counts": [
+        [
+          "176",
+          "passed"
+        ]
+      ]
+    },
+    "mutated": {
+      "rc": 0,
+      "verdict": "GREEN",
+      "summary": "176 passed, 1 skipped, 1 warning in 95.37s (0:01:35)",
+      "passed": 176,
+      "failed": 0,
+      "errors": 0,
+      "absent": [],
+      "log": "raw\\mutation_logs\\A2-lr-consumer-ZEROED__mutated.log",
+      "n_files": 6,
+      "raw_counts": [
+        [
+          "176",
+          "passed"
+        ]
+      ]
+    },
+    "RESULT": "NOT_CAUGHT"
+  },
+  {
+    "id": "A3-lr-consumer-NO-DECAY",
+    "file": "scripts/refc_v3_train.py",
+    "claim": "SPEC \u00a72: warm-up then cosine",
+    "expect": "RED",
+    "note": "the schedule is computed and thrown away \u2014 flat lr for 30k steps.",
+    "anchor": "            g[\"lr\"] = args.lr * sched(step)",
+    "repl": "            g[\"lr\"] = args.lr",
+    "site": {
+      "line": 7439,
+      "crlf": true,
+      "sha_before": "c39091dc9f4bd746",
+      "sha_after": "b976a53d9b7ab186"
+    },
+    "baseline": {
+      "rc": 0,
+      "verdict": "GREEN",
+      "summary": "92 passed in 77.18s (0:01:17)",
+      "passed": 92,
+      "failed": 0,
+      "errors": 0,
+      "absent": [],
+      "log": "raw\\mutation_logs\\A3-lr-consumer-NO-DECAY__baseline.log",
+      "n_files": 3,
+      "raw_counts": [
+        [
+          "92",
+          "passed"
+        ]
+      ]
+    },
+    "mutated": {
+      "rc": 0,
+      "verdict": "GREEN",
+      "summary": "92 passed in 68.34s (0:01:08)",
+      "passed": 92,
+      "failed": 0,
+      "errors": 0,
+      "absent": [],
+      "log": "raw\\mutation_logs\\A3-lr-consumer-NO-DECAY__mutated.log",
+      "n_files": 3,
+      "raw_counts": [
+        [
+          "92",
+          "passed"
+        ]
+      ]
+    },
+    "RESULT": "NOT_CAUGHT"
+  },
+  {
+    "id": "A4-weight-decay-torch-default",
+    "file": "scripts/refc_v3_train.py",
+    "claim": "SPEC \u00a72: weight decay 1e-4, NOT torch AdamW's 1e-2",
+    "expect": "RED",
+    "note": "exactly the trap the flag's own help text names.",
+    "anchor": "    ap.add_argument(\"--weight-decay\", type=float, default=1e-4,",
+    "repl": "    ap.add_argument(\"--weight-decay\", type=float, default=1e-2,",
+    "site": {
+      "line": 8754,
+      "crlf": true,
+      "sha_before": "c39091dc9f4bd746",
+      "sha_after": "38bd4a4504e538a7"
+    },
+    "baseline": {
+      "rc": 0,
+      "verdict": "GREEN",
+      "summary": "60 passed in 24.25s",
+      "passed": 60,
+      "failed": 0,
+      "errors": 0,
+      "absent": [],
+      "log": "raw\\mutation_logs\\A4-weight-decay-torch-default__baseline.log",
+      "n_files": 2,
+      "raw_counts": [
+        [
+          "60",
+          "passed"
+        ]
+      ]
+    },
+    "mutated": {
+      "rc": 0,
+      "verdict": "GREEN",
+      "summary": "60 passed in 27.72s",
+      "passed": 60,
+      "failed": 0,
+      "errors": 0,
+      "absent": [],
+      "log": "raw\\mutation_logs\\A4-weight-decay-torch-default__mutated.log",
+      "n_files": 2,
+      "raw_counts": [
+        [
+          "60",
+          "passed"
+        ]
+      ]
+    },
+    "RESULT": "NOT_CAUGHT"
+  },
+  {
+    "id": "A5-encoder-lr-mult-default",
+    "file": "scripts/refc_v3_train.py",
+    "claim": "SPEC \u00a72: encoder lr x0.5 of the heads",
+    "expect": "RED",
+    "note": "the launch default that decides the shipped arm.",
+    "anchor": "    ap.add_argument(\"--encoder-lr-mult\", type=float, default=0.5,",
+    "repl": "    ap.add_argument(\"--encoder-lr-mult\", type=float, default=1.0,",
+    "site": {
+      "line": 8757,
+      "crlf": true,
+      "sha_before": "c39091dc9f4bd746",
+      "sha_after": "5dfd0dacc49b8f5a"
+    },
+    "baseline": {
+      "rc": 0,
+      "verdict": "GREEN",
+      "summary": "60 passed in 25.67s",
+      "passed": 60,
+      "failed": 0,
+      "errors": 0,
+      "absent": [],
+      "log": "raw\\mutation_logs\\A5-encoder-lr-mult-default__baseline.log",
+      "n_files": 2,
+      "raw_counts": [
+        [
+          "60",
+          "passed"
+        ]
+      ]
+    },
+    "mutated": {
+      "rc": 0,
+      "verdict": "GREEN",
+      "summary": "60 passed in 29.32s",
+      "passed": 60,
+      "failed": 0,
+      "errors": 0,
+      "absent": [],
+      "log": "raw\\mutation_logs\\A5-encoder-lr-mult-default__mutated.log",
+      "n_files": 2,
+      "raw_counts": [
+        [
+          "60",
+          "passed"
+        ]
+      ]
+    },
+    "RESULT": "NOT_CAUGHT"
+  },
+  {
+    "id": "A6-il-grad-clip",
+    "file": "scripts/refc_v3_train.py",
+    "claim": "the IL trainer's gradient clip is a chosen value",
+    "expect": "RED",
+    "note": "max-norm 1e-8 annihilates every gradient. SPEC \u00a710.7 measured that a too-small clip is a real, shipped failure mode.",
+    "anchor": "        torch.nn.utils.clip_grad_norm_(model.parameters(), 10.0)",
+    "repl": "        torch.nn.utils.clip_grad_norm_(model.parameters(), 1e-08)",
+    "site": {
+      "line": 7549,
+      "crlf": true,
+      "sha_before": "c39091dc9f4bd746",
+      "sha_after": "fed80a4a51baf0a6"
+    },
+    "baseline": {
+      "rc": 0,
+      "verdict": "GREEN",
+      "summary": "111 passed in 34.51s",
+      "passed": 111,
+      "failed": 0,
+      "errors": 0,
+      "absent": [],
+      "log": "raw\\mutation_logs\\A6-il-grad-clip__baseline.log",
+      "n_files": 4,
+      "raw_counts": [
+        [
+          "111",
+          "passed"
+        ]
+      ]
+    },
+    "mutated": {
+      "rc": 0,
+      "verdict": "GREEN",
+      "summary": "111 passed in 32.21s",
+      "passed": 111,
+      "failed": 0,
+      "errors": 0,
+      "absent": [],
+      "log": "raw\\mutation_logs\\A6-il-grad-clip__mutated.log",
+      "n_files": 4,
+      "raw_counts": [
+        [
+          "111",
+          "passed"
+        ]
+      ]
+    },
+    "RESULT": "NOT_CAUGHT"
+  },
+  {
+    "id": "A7-knob-derivation-M18",
+    "file": "scripts/refc_v3_train.py",
+    "claim": "assert_knobs_stamped: every --agent-*/--w-* knob reaches config.json (mm-decisions M18)",
+    "expect": "RED",
+    "note": "THE ACTUAL M18 DEFECT: w_agent/w_u0 absent from config.json. Here every --w-* knob stops being derived, so none is stamped.",
+    "anchor": "        and any(o.startswith(\"--agent\") or o.startswith(\"--w-\")",
+    "repl": "        and any(o.startswith(\"--agent\") or o.startswith(\"--NOPE-\")",
+    "site": {
+      "line": 5018,
+      "crlf": true,
+      "sha_before": "c39091dc9f4bd746",
+      "sha_after": "a35fe14b9b66ac36"
+    },
+    "baseline": {
+      "rc": 0,
+      "verdict": "GREEN",
+      "summary": "107 passed, 1 skipped in 7.23s",
+      "passed": 107,
+      "failed": 0,
+      "errors": 0,
+      "absent": [],
+      "log": "raw\\mutation_logs\\A7-knob-derivation-M18__baseline.log",
+      "n_files": 5,
+      "raw_counts": [
+        [
+          "107",
+          "passed"
+        ]
+      ]
+    },
+    "mutated": {
+      "rc": 1,
+      "verdict": "RED",
+      "summary": "2 failed, 105 passed, 1 skipped in 7.03s",
+      "passed": 105,
+      "failed": 2,
+      "errors": 0,
+      "absent": [],
+      "log": "raw\\mutation_logs\\A7-knob-derivation-M18__mutated.log",
+      "n_files": 5,
+      "raw_counts": [
+        [
+          "2",
+          "failed"
+        ]
+      ]
+    },
+    "RESULT": "CAUGHT"
+  },
+  {
+    "id": "A7b-knob-derivation-M18-valid",
+    "file": "scripts/refc_v3_train.py",
+    "claim": "assert_knobs_stamped: --bev-aux*/--wp-index knobs reach config.json (the 2026-09-07 widening)",
+    "expect": "RED",
+    "note": "the WP-D half of M18: --bev-aux-occlusion is what separates the pre-registered arm from its deliberate-regression twin.",
+    "anchor": "                or o.startswith(\"--bev-aux\") or o.startswith(\"--wp-index\")",
+    "repl": "                or o.startswith(\"--NOPE-aux\") or o.startswith(\"--NOPE-index\")",
+    "site": {
+      "line": 5019,
+      "crlf": true,
+      "sha_before": "c39091dc9f4bd746",
+      "sha_after": "d0639f0043efebde"
+    },
+    "baseline": {
+      "rc": 0,
+      "verdict": "GREEN",
+      "summary": "85 passed, 1 skipped in 6.78s",
+      "passed": 85,
+      "failed": 0,
+      "errors": 0,
+      "absent": [],
+      "log": "raw\\mutation_logs\\A7b-knob-derivation-M18-valid__baseline.log",
+      "n_files": 4,
+      "raw_counts": [
+        [
+          "85",
+          "passed"
+        ]
+      ]
+    },
+    "mutated": {
+      "rc": 0,
+      "verdict": "GREEN",
+      "summary": "85 passed, 1 skipped in 7.18s",
+      "passed": 85,
+      "failed": 0,
+      "errors": 0,
+      "absent": [],
+      "log": "raw\\mutation_logs\\A7b-knob-derivation-M18-valid__mutated.log",
+      "n_files": 4,
+      "raw_counts": [
+        [
+          "85",
+          "passed"
+        ]
+      ]
+    },
+    "RESULT": "NOT_CAUGHT"
+  },
+  {
+    "id": "A8-knob-stamp-EMPTIED",
+    "file": "scripts/refc_v3_train.py",
+    "claim": "assert_knobs_stamped catches a stamp that does not carry the knobs",
+    "expect": "RED",
+    "note": "the CONTROL for A7: this half of the guard should work.",
+    "anchor": "        \"agent_knobs\": agent_knob_stamp(args),",
+    "repl": "        \"agent_knobs\": {},",
+    "site": {
+      "line": 4941,
+      "crlf": true,
+      "sha_before": "c39091dc9f4bd746",
+      "sha_after": "aa186658e05f46fa"
+    },
+    "baseline": {
+      "rc": 0,
+      "verdict": "GREEN",
+      "summary": "85 passed, 1 skipped in 6.66s",
+      "passed": 85,
+      "failed": 0,
+      "errors": 0,
+      "absent": [],
+      "log": "raw\\mutation_logs\\A8-knob-stamp-EMPTIED__baseline.log",
+      "n_files": 4,
+      "raw_counts": [
+        [
+          "85",
+          "passed"
+        ]
+      ]
+    },
+    "mutated": {
+      "rc": 1,
+      "verdict": "RED",
+      "summary": "2 failed, 83 passed, 1 skipped in 6.80s",
+      "passed": 83,
+      "failed": 2,
+      "errors": 0,
+      "absent": [],
+      "log": "raw\\mutation_logs\\A8-knob-stamp-EMPTIED__mutated.log",
+      "n_files": 4,
+      "raw_counts": [
+        [
+          "2",
+          "failed"
+        ]
+      ]
+    },
+    "RESULT": "CAUGHT"
+  },
+  {
+    "id": "A9-maneuver-budget-doubled",
+    "file": "scripts/refc_v3_train.py",
+    "claim": "the tactical aux pressure is held at EXACTLY MANEUVER_WEIGHT (the /2 that refc_v3_train.py:3636-3643 documents as 'the fix, not a typo')",
+    "expect": "RED",
+    "note": "restores the DOUBLE loss budget refcv3 shipped with.",
+    "anchor": "            + (LAT_WEIGHT / 2.0) * (loss_lat + loss_lat_tac)",
+    "repl": "            + LAT_WEIGHT * (loss_lat + loss_lat_tac)",
+    "site": {
+      "line": 3634,
+      "crlf": true,
+      "sha_before": "c39091dc9f4bd746",
+      "sha_after": "7219d369eacff536"
+    },
+    "baseline": {
+      "rc": 0,
+      "verdict": "GREEN",
+      "summary": "105 passed, 1 warning in 87.64s (0:01:27)",
+      "passed": 105,
+      "failed": 0,
+      "errors": 0,
+      "absent": [],
+      "log": "raw\\mutation_logs\\A9-maneuver-budget-doubled__baseline.log",
+      "n_files": 5,
+      "raw_counts": [
+        [
+          "105",
+          "passed"
+        ]
+      ]
+    },
+    "mutated": {
+      "rc": 0,
+      "verdict": "GREEN",
+      "summary": "105 passed, 1 warning in 59.43s",
+      "passed": 105,
+      "failed": 0,
+      "errors": 0,
+      "absent": [],
+      "log": "raw\\mutation_logs\\A9-maneuver-budget-doubled__mutated.log",
+      "n_files": 5,
+      "raw_counts": [
+        [
+          "105",
+          "passed"
+        ]
+      ]
+    },
+    "RESULT": "NOT_CAUGHT"
+  },
+  {
+    "id": "A10-rl-grad-clip-off",
+    "file": "tanitad/rl/config.py",
+    "claim": "the GRPO post-train library's gradient clip is a declared value",
+    "expect": "RED",
+    "note": "0.0 is falsy, so posttrain.py:454's `if cfg.grad_clip:` skips clipping entirely \u2014 the release behaviour, silently.",
+    "anchor": "    grad_clip: float = 1.0",
+    "repl": "    grad_clip: float = 0.0",
+    "site": {
+      "line": 225,
+      "crlf": true,
+      "sha_before": "8f5f2a416e9c98ba",
+      "sha_after": "98ca12ca84b1b6a7"
+    },
+    "baseline": {
+      "rc": 0,
+      "verdict": "GREEN",
+      "summary": "70 passed, 2 skipped in 2.77s",
+      "passed": 70,
+      "failed": 0,
+      "errors": 0,
+      "absent": [],
+      "log": "raw\\mutation_logs\\A10-rl-grad-clip-off__baseline.log",
+      "n_files": 3,
+      "raw_counts": [
+        [
+          "70",
+          "passed"
+        ]
+      ]
+    },
+    "mutated": {
+      "rc": 0,
+      "verdict": "GREEN",
+      "summary": "70 passed, 2 skipped in 2.74s",
+      "passed": 70,
+      "failed": 0,
+      "errors": 0,
+      "absent": [],
+      "log": "raw\\mutation_logs\\A10-rl-grad-clip-off__mutated.log",
+      "n_files": 3,
+      "raw_counts": [
+        [
+          "70",
+          "passed"
+        ]
+      ]
+    },
+    "RESULT": "NOT_CAUGHT"
+  },
+  {
+    "id": "A11-f6-w-u0-default",
+    "file": "scripts/refc_v3_train.py",
+    "claim": "SPEC \u00a73 F6: `--w-u0 0` \u2014 DD has ONE reconstruction loss and ours duplicated it",
+    "expect": "RED",
+    "note": "flips the F6 decision by changing a module constant.",
+    "anchor": "U0_WEIGHT_DEFAULT = 0.0           # WP-4: the x0 loss, in CONTROL space",
+    "repl": "U0_WEIGHT_DEFAULT = 1.0           # WP-4: the x0 loss, in CONTROL space",
+    "site": {
+      "line": 146,
+      "crlf": true,
+      "sha_before": "c39091dc9f4bd746",
+      "sha_after": "d950b81caee6cb9c"
+    },
+    "baseline": {
+      "rc": 0,
+      "verdict": "GREEN",
+      "summary": "123 passed, 1 skipped, 1 warning in 15.47s",
+      "passed": 123,
+      "failed": 0,
+      "errors": 0,
+      "absent": [],
+      "log": "raw\\mutation_logs\\A11-f6-w-u0-default__baseline.log",
+      "n_files": 4,
+      "raw_counts": [
+        [
+          "123",
+          "passed"
+        ]
+      ]
+    },
+    "mutated": {
+      "rc": 1,
+      "verdict": "RED",
+      "summary": "7 failed, 116 passed, 1 skipped, 1 warning in 16.05s",
+      "passed": 116,
+      "failed": 7,
+      "errors": 0,
+      "absent": [],
+      "log": "raw\\mutation_logs\\A11-f6-w-u0-default__mutated.log",
+      "n_files": 4,
+      "raw_counts": [
+        [
+          "7",
+          "failed"
+        ]
+      ]
+    },
+    "RESULT": "CAUGHT"
+  },
+  {
+    "id": "A12-warmup-default-zero",
+    "file": "scripts/refc_v3_train.py",
+    "claim": "SPEC \u00a72: warm-up then cosine",
+    "expect": "RED",
+    "note": "no warm-up at all \u2014 the ImageNet prior meets a full-rate step 0.",
+    "anchor": "    ap.add_argument(\"--warmup\", type=int, default=2000)",
+    "repl": "    ap.add_argument(\"--warmup\", type=int, default=0)",
+    "site": {
+      "line": 8423,
+      "crlf": true,
+      "sha_before": "c39091dc9f4bd746",
+      "sha_after": "1743783b19627d48"
+    },
+    "baseline": {
+      "rc": 0,
+      "verdict": "GREEN",
+      "summary": "92 passed in 59.55s",
+      "passed": 92,
+      "failed": 0,
+      "errors": 0,
+      "absent": [],
+      "log": "raw\\mutation_logs\\A12-warmup-default-zero__baseline.log",
+      "n_files": 3,
+      "raw_counts": [
+        [
+          "92",
+          "passed"
+        ]
+      ]
+    },
+    "mutated": {
+      "rc": 0,
+      "verdict": "GREEN",
+      "summary": "92 passed in 59.19s",
+      "passed": 92,
+      "failed": 0,
+      "errors": 0,
+      "absent": [],
+      "log": "raw\\mutation_logs\\A12-warmup-default-zero__mutated.log",
+      "n_files": 3,
+      "raw_counts": [
+        [
+          "92",
+          "passed"
+        ]
+      ]
+    },
+    "RESULT": "NOT_CAUGHT"
+  }
+]

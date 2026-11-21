@@ -1,0 +1,68 @@
+{
+ "tag": "smoke40kema_pf",
+ "finished": "2026-10-20T07:34:29",
+ "pf": {
+  "wrapper": "run_battery_r8_pf.py",
+  "wrapper_sha256": "a4b3648ff369d45e17789342728e33b549d7afc1a662d9f5c54fb19978197191",
+  "child": "C:\\Users\\Admin\\qland\\hold_r8pf\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-20-refcv8-perframe-final\\code\\roll_seed_r8_pf.py",
+  "child_sha256": "7248a50c5a74919239d6bef00be2da441c2ade4892c9319a424bf60cc63ae50d",
+  "overlay": {
+   "navfeed_overlay_sha256": "98293dd7411270160cb47d070bb1538babe1ff3a0f8ab85da61dcc84129ba72f",
+   "prereg_nav_feed_sha256": "e103a3b9d6fef39b1f7fc1e4937d9c2e6f12ac76d11c5afe8a03e92f4adde269"
+  },
+  "nav_feed": "perframe_full",
+  "per_seed": {
+   "0": {
+    "pf_ok": true,
+    "census": {
+     "ok": true,
+     "manifest_nav_feed": {
+      "mode": "perframe_full",
+      "spec": "PREREG_NAV_FEED.md",
+      "n_windows": 6,
+      "n_token_differs_from_clip": 3,
+      "n_args_known": 6,
+      "token_source": "v9 per-frame nav_token via ds.r8_join.item (refc_v3_train.py:4657-4668, refcv8_train.py:895-898)",
+      "args_fed": true,
+      "args_rule": "r8_nav = refcv8_train.scale_nav(item r8_nav_raw, item r8_nav_known) on the nav_true row; unknown (known=0) -> exactly zeros; shuffled / flipped rows carry the unknown row; nav-zero call carries none",
+      "other_conditions": "nav_shuffled / nav_flipped are derived from the SAME per-frame nav_true vector"
+     },
+     "n_decision_files": 2,
+     "n_windows": 6,
+     "n_args_known": 6,
+     "n_token_differs_from_clip": 3,
+     "missing_keys_first": [],
+     "n_missing": 0
+    }
+   },
+   "1": {
+    "pf_ok": true,
+    "census": {
+     "ok": true,
+     "manifest_nav_feed": {
+      "mode": "perframe_full",
+      "spec": "PREREG_NAV_FEED.md",
+      "n_windows": 6,
+      "n_token_differs_from_clip": 3,
+      "n_args_known": 6,
+      "token_source": "v9 per-frame nav_token via ds.r8_join.item (refc_v3_train.py:4657-4668, refcv8_train.py:895-898)",
+      "args_fed": true,
+      "args_rule": "r8_nav = refcv8_train.scale_nav(item r8_nav_raw, item r8_nav_known) on the nav_true row; unknown (known=0) -> exactly zeros; shuffled / flipped rows carry the unknown row; nav-zero call carries none",
+      "other_conditions": "nav_shuffled / nav_flipped are derived from the SAME per-frame nav_true vector"
+     },
+     "n_decision_files": 2,
+     "n_windows": 6,
+     "n_args_known": 6,
+     "n_token_differs_from_clip": 3,
+     "missing_keys_first": [],
+     "n_missing": 0
+    }
+   }
+  },
+  "all_seeds_fed": true,
+  "spec": "SHIP-R8 AMENDMENT 3 (i): every clause read on rolls fed perframe_full",
+  "pose_sync_env": "1"
+ },
+ "n_child_rewrites": 2,
+ "note": "CPU smoke (--smoke-cpu, 2 clips x 3 windows, EMA-40k, fp32 trunk): the full pf battery path ran to battery_summary + panels/analysis; pair_read_r8 also wrote a PAIRED_READ on this tree (numbers meaningless at 6 windows)"
+}

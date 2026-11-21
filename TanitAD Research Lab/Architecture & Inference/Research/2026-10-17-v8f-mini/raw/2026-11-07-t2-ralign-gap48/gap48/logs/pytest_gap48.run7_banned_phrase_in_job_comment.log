@@ -1,0 +1,18 @@
+...................F                                                     [100%]
+================================== FAILURES ===================================
+__________________ test_no_banned_word_in_the_packages_text ___________________
+
+    def test_no_banned_word_in_the_packages_text():
+        import re
+        pat = re.compile(BANNED_RE, re.I)
+        names = ("t2v8f_gap48.py", "make_gap48.py", "read_gap48.py", "scenes48.py", "gap48_chain.sh", "gap48_chain.cmd", "README.md", "HANDOFF_GAP48.md")
+        for f in [f"{G}/{n}" for n in names if os.path.isfile(f"{G}/{n}")]:
+            hit = pat.findall(open(f, encoding="utf-8").read())
+>           assert not hit, (f, hit)
+E           AssertionError: ('E:/Projects/TanitAD-artifacts/dagland/motion_c/t2v8f/gap48/t2v8f_gap48.py', [''])
+E           assert not ['']
+
+tests\test_gap48.py:514: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_gap48.py::test_no_banned_word_in_the_packages_text - Assert...
+1 failed, 19 passed in 51.65s

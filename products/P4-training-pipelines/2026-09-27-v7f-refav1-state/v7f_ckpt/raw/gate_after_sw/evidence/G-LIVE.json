@@ -1,0 +1,903 @@
+{
+ "schema": "tanitad.launch_gate/1",
+ "kind": "evidence",
+ "check": "G-LIVE",
+ "status": "PASS",
+ "reasons": [],
+ "binding": {
+  "profile": "v7f",
+  "commit": "7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f",
+  "tree_sha256": "97d223082760b3e863f41fa34d3f3afb96f539db0a9c9dba4f4b1d798fc93d90",
+  "argv_sha256": "1f3c344ac167b6526cf7b70f72103c5c7d6b1cb32dd00735138a03a1a1ae3b07"
+ },
+ "inputs_read": {
+  "--v2-cache": {
+   "kind": "missing"
+  },
+  "--nav-labels": {
+   "kind": "missing"
+  },
+  "gate:rehearsal": {
+   "kind": "rehearsal",
+   "why": "tiny config + synthetic corpus (CPU host)"
+  }
+ },
+ "host": {
+  "node": "FREEDOM2035",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.13.5",
+  "torch": "2.11.0+cu128",
+  "cuda": false
+ },
+ "arm": null,
+ "gate_sha256": "b232aeadaf977bd76c665937cac2e2b1cdf2e14b94c14104800bbff32abbe908",
+ "started_utc": "2026-09-27T16:17:09Z",
+ "details": {
+  "n_train_steps_seen": 100,
+  "expect_steps": 100,
+  "declared_terms": [
+   {
+    "term": "o1_ctrl",
+    "key": "o1",
+    "builds_graph": true,
+    "effective": 1.0,
+    "status": "TRAINS"
+   },
+   {
+    "term": "o1_fact",
+    "key": "o1",
+    "builds_graph": true,
+    "effective": 1.0,
+    "status": "TRAINS"
+   },
+   {
+    "term": "o1_scene",
+    "key": "o1",
+    "builds_graph": true,
+    "effective": 0.3,
+    "status": "TRAINS"
+   },
+   {
+    "term": "o2_nearfield",
+    "key": "o2",
+    "builds_graph": true,
+    "effective": 1.0,
+    "status": "TRAINS"
+   },
+   {
+    "term": "o3_masked",
+    "key": "o3",
+    "builds_graph": true,
+    "effective": 1.0,
+    "status": "TRAINS"
+   },
+   {
+    "term": "o5_rollout",
+    "key": "o5",
+    "builds_graph": true,
+    "effective": 1.0,
+    "status": "TRAINS"
+   },
+   {
+    "term": "o6_sigreg",
+    "key": "o6",
+    "builds_graph": true,
+    "effective": 0.1,
+    "status": "TRAINS"
+   },
+   {
+    "term": "o11_cf",
+    "key": "o11",
+    "builds_graph": false,
+    "effective": 0.0,
+    "status": "OFF_BY_DEFAULT"
+   },
+   {
+    "term": "o13_ego",
+    "key": "o13",
+    "builds_graph": false,
+    "effective": 0.0,
+    "status": "OFF_BY_DEFAULT"
+   },
+   {
+    "term": "o14_fut",
+    "key": "o14",
+    "builds_graph": false,
+    "effective": 0.0,
+    "status": "OFF_BY_DEFAULT"
+   },
+   {
+    "term": "t1_latent",
+    "key": "t1",
+    "builds_graph": false,
+    "effective": 0.0,
+    "status": "OFF_BY_LAYER"
+   },
+   {
+    "term": "s1_latent",
+    "key": "s1",
+    "builds_graph": false,
+    "effective": 0.0,
+    "status": "OFF_BY_LAYER"
+   },
+   {
+    "term": "lambda_plan",
+    "key": "plan",
+    "builds_graph": false,
+    "effective": 0.0,
+    "status": "OFF_BY_DEFAULT"
+   },
+   {
+    "term": "seam_op",
+    "key": "seam",
+    "builds_graph": false,
+    "effective": 0.0,
+    "status": "OFF_BY_LAYER"
+   },
+   {
+    "term": "w_select",
+    "key": "select",
+    "builds_graph": false,
+    "effective": 0.0,
+    "status": "OFF_BY_DEFAULT"
+   },
+   {
+    "term": "w_anchor",
+    "key": "anchor",
+    "builds_graph": false,
+    "effective": 0.0,
+    "status": "OFF_BY_DEFAULT"
+   },
+   {
+    "term": "w_s2_goal",
+    "key": "s2",
+    "builds_graph": false,
+    "effective": 0.0,
+    "status": "OFF_BY_DEFAULT"
+   },
+   {
+    "term": "w_t2_contrast",
+    "key": "t2",
+    "builds_graph": false,
+    "effective": 0.0,
+    "status": "OFF_BY_DEFAULT"
+   },
+   {
+    "term": "w_t5_consist",
+    "key": "t5",
+    "builds_graph": false,
+    "effective": 0.0,
+    "status": "OFF_BY_DEFAULT"
+   },
+   {
+    "term": "w_s1_multi",
+    "key": "s1_multi",
+    "builds_graph": false,
+    "effective": 0.0,
+    "status": "OFF_BY_DEFAULT"
+   },
+   {
+    "term": "w_tac_label_all",
+    "key": "tac_label_all",
+    "builds_graph": false,
+    "effective": 0.0,
+    "status": "OFF_BY_DEFAULT"
+   },
+   {
+    "term": "o10_psg",
+    "key": null,
+    "builds_graph": false,
+    "effective": 0.0,
+    "status": "OFF_BY_DEFAULT"
+   }
+  ],
+  "terms": [
+   {
+    "key": "o1",
+    "present_steps": 100,
+    "nonfinite_steps": 0
+   },
+   {
+    "key": "o2",
+    "present_steps": 100,
+    "nonfinite_steps": 0
+   },
+   {
+    "key": "o3",
+    "present_steps": 100,
+    "nonfinite_steps": 0
+   },
+   {
+    "key": "o5",
+    "present_steps": 100,
+    "nonfinite_steps": 0
+   },
+   {
+    "key": "o6",
+    "present_steps": 100,
+    "nonfinite_steps": 0
+   }
+  ],
+  "strategic_terms_seen": [],
+  "term_reach": {
+   "o1": {
+    "groups": [
+     "encoder",
+     "predictor_op",
+     "readout"
+    ],
+    "n_params": 46
+   },
+   "o5": {
+    "groups": [
+     "encoder",
+     "predictor_op",
+     "readout"
+    ],
+    "n_params": 40
+   },
+   "o2": {
+    "groups": [
+     "encoder",
+     "predictor_op",
+     "readout"
+    ],
+    "n_params": 40
+   },
+   "o3": {
+    "groups": [
+     "aux",
+     "encoder",
+     "predictor_op",
+     "readout"
+    ],
+    "n_params": 70
+   },
+   "o6": {
+    "groups": [
+     "encoder",
+     "readout"
+    ],
+    "n_params": 19
+   }
+  },
+  "grads": {
+   "n_trainable_tensors": 86,
+   "n_leaf_modules": 45,
+   "live_top_modules": [
+    "encoder",
+    "masked_cells",
+    "nav",
+    "predictor_op",
+    "readout",
+    "step_readout_op"
+   ],
+   "leaf_live": {
+    "encoder": [
+     1,
+     1
+    ],
+    "encoder.blocks.0.attn": [
+     2,
+     2
+    ],
+    "encoder.blocks.0.attn.out_proj": [
+     2,
+     2
+    ],
+    "encoder.blocks.0.mlp.0": [
+     2,
+     2
+    ],
+    "encoder.blocks.0.mlp.2": [
+     2,
+     2
+    ],
+    "encoder.blocks.0.norm1": [
+     2,
+     2
+    ],
+    "encoder.blocks.0.norm2": [
+     2,
+     2
+    ],
+    "encoder.norm": [
+     2,
+     2
+    ],
+    "encoder.patch": [
+     2,
+     2
+    ],
+    "masked_cells": [
+     2,
+     2
+    ],
+    "masked_cells.blocks.layers.0.linear1": [
+     2,
+     2
+    ],
+    "masked_cells.blocks.layers.0.linear2": [
+     2,
+     2
+    ],
+    "masked_cells.blocks.layers.0.norm1": [
+     2,
+     2
+    ],
+    "masked_cells.blocks.layers.0.norm2": [
+     2,
+     2
+    ],
+    "masked_cells.blocks.layers.0.self_attn": [
+     2,
+     2
+    ],
+    "masked_cells.blocks.layers.0.self_attn.out_proj": [
+     2,
+     2
+    ],
+    "masked_cells.blocks.layers.1.linear1": [
+     2,
+     2
+    ],
+    "masked_cells.blocks.layers.1.linear2": [
+     2,
+     2
+    ],
+    "masked_cells.blocks.layers.1.norm1": [
+     2,
+     2
+    ],
+    "masked_cells.blocks.layers.1.norm2": [
+     2,
+     2
+    ],
+    "masked_cells.blocks.layers.1.self_attn": [
+     2,
+     2
+    ],
+    "masked_cells.blocks.layers.1.self_attn.out_proj": [
+     2,
+     2
+    ],
+    "masked_cells.inp": [
+     2,
+     2
+    ],
+    "masked_cells.out": [
+     2,
+     2
+    ],
+    "nav.arg_proj": [
+     2,
+     2
+    ],
+    "nav.embed": [
+     1,
+     1
+    ],
+    "nav.gate": [
+     1,
+     1
+    ],
+    "nav.layer_proj.operative": [
+     2,
+     2
+    ],
+    "predictor_op": [
+     1,
+     1
+    ],
+    "predictor_op.act_emb.0": [
+     2,
+     2
+    ],
+    "predictor_op.act_emb.2": [
+     2,
+     2
+    ],
+    "predictor_op.blocks.0.attn": [
+     2,
+     2
+    ],
+    "predictor_op.blocks.0.attn.out_proj": [
+     2,
+     2
+    ],
+    "predictor_op.blocks.0.film.to_scale_shift": [
+     2,
+     2
+    ],
+    "predictor_op.blocks.0.mlp.0": [
+     2,
+     2
+    ],
+    "predictor_op.blocks.0.mlp.2": [
+     2,
+     2
+    ],
+    "predictor_op.blocks.0.norm1": [
+     2,
+     2
+    ],
+    "predictor_op.blocks.0.norm2": [
+     2,
+     2
+    ],
+    "predictor_op.heads.1": [
+     2,
+     2
+    ],
+    "predictor_op.in_proj": [
+     2,
+     2
+    ],
+    "predictor_op.norm": [
+     2,
+     2
+    ],
+    "readout.proj": [
+     2,
+     2
+    ],
+    "step_readout_op.net.0": [
+     2,
+     2
+    ],
+    "step_readout_op.net.1": [
+     2,
+     2
+    ],
+    "step_readout_op.net.3": [
+     2,
+     2
+    ]
+   },
+   "dead_leaves": [],
+   "acknowledged_by_allow_unreached": [],
+   "nonfinite": []
+  },
+  "control_trainer_grad_reach": {
+   "trainer_unreached": [],
+   "gate_never_reached": []
+  },
+  "r6": {
+   "n_layer_str_tensors": 57,
+   "moved_in_memory": [],
+   "differs_in_saved_ckpt": [],
+   "grad_populated_tensors": 0,
+   "grad_populated_nonzero": 0,
+   "grad_populated_sample": [],
+   "_read": "(a) decisive: bit-identity at optimizer construction vs end of smoke and vs the smoke's own ckpt.pt; (b) reported: .grad populated (not gated)"
+  },
+  "frozen_groups": {
+   "moved": [],
+   "ema_teacher_moved_reported": [],
+   "extra_frozen_by_flag": []
+  },
+  "loss_first_last": [
+   3.0244219303131104,
+   0.7612403631210327
+  ],
+  "final_row_present": true,
+  "loss_knobs_disagree": [],
+  "smoke_argv": [
+   "--stage",
+   "S-W",
+   "--out",
+   "C:\\Users\\Admin\\v7f_ckpt_gate\\runs\\after_sw\\smoke\\20260927T161709\\run",
+   "--steps",
+   "100",
+   "--batch",
+   "2",
+   "--lr",
+   "0.0001",
+   "--nav-labels",
+   "__gate_rehearsal_synthetic_nav__/nav.jsonl.gz",
+   "--nav-cond",
+   "--newest-frame-only",
+   "--in-channels",
+   "3",
+   "--enc-dim",
+   "32",
+   "--enc-depth",
+   "1",
+   "--enc-heads",
+   "2",
+   "--frame-h",
+   "64",
+   "--frame-w",
+   "128",
+   "--horizons",
+   "1",
+   "--strategic-off",
+   "--goal-multilabel",
+   "--save-every",
+   "250",
+   "--log-every",
+   "50",
+   "--patch",
+   "16",
+   "--pred-dim",
+   "32",
+   "--pred-depth",
+   "1",
+   "--pred-heads",
+   "2",
+   "--readout-dim",
+   "8",
+   "--d-tac",
+   "32",
+   "--d-str",
+   "16",
+   "--d-goal-embed",
+   "16",
+   "--adapter-hidden",
+   "32",
+   "--f-hidden-tac",
+   "32",
+   "--f-hidden-str",
+   "32",
+   "--window",
+   "3",
+   "--eps-per-batch",
+   "1",
+   "--device",
+   "cpu",
+   "--v2-cache",
+   "C:\\Users\\Admin\\v7f_ckpt_gate\\runs\\after_sw\\rehearsal_EMPTY_v2cache"
+  ],
+  "run_dir": "C:\\Users\\Admin\\v7f_ckpt_gate\\runs\\after_sw\\smoke\\20260927T161709\\run",
+  "departures_from_launch_argv": {
+   "--steps": "set by the gate",
+   "--out": "the smoke dir",
+   "rehearsal": {
+    "overlay": {
+     "--frame-h": {
+      "launch": [
+       "256"
+      ],
+      "rehearsal": [
+       "64"
+      ]
+     },
+     "--frame-w": {
+      "launch": [
+       "640"
+      ],
+      "rehearsal": [
+       "128"
+      ]
+     },
+     "--patch": {
+      "launch": null,
+      "rehearsal": [
+       "16"
+      ]
+     },
+     "--enc-dim": {
+      "launch": [
+       "768"
+      ],
+      "rehearsal": [
+       "32"
+      ]
+     },
+     "--enc-depth": {
+      "launch": [
+       "12"
+      ],
+      "rehearsal": [
+       "1"
+      ]
+     },
+     "--enc-heads": {
+      "launch": [
+       "12"
+      ],
+      "rehearsal": [
+       "2"
+      ]
+     },
+     "--pred-dim": {
+      "launch": null,
+      "rehearsal": [
+       "32"
+      ]
+     },
+     "--pred-depth": {
+      "launch": null,
+      "rehearsal": [
+       "1"
+      ]
+     },
+     "--pred-heads": {
+      "launch": null,
+      "rehearsal": [
+       "2"
+      ]
+     },
+     "--readout-dim": {
+      "launch": null,
+      "rehearsal": [
+       "8"
+      ]
+     },
+     "--d-tac": {
+      "launch": null,
+      "rehearsal": [
+       "32"
+      ]
+     },
+     "--d-str": {
+      "launch": null,
+      "rehearsal": [
+       "16"
+      ]
+     },
+     "--d-goal-embed": {
+      "launch": null,
+      "rehearsal": [
+       "16"
+      ]
+     },
+     "--adapter-hidden": {
+      "launch": null,
+      "rehearsal": [
+       "32"
+      ]
+     },
+     "--f-hidden-tac": {
+      "launch": null,
+      "rehearsal": [
+       "32"
+      ]
+     },
+     "--f-hidden-str": {
+      "launch": null,
+      "rehearsal": [
+       "32"
+      ]
+     },
+     "--window": {
+      "launch": null,
+      "rehearsal": [
+       "3"
+      ]
+     },
+     "--batch": {
+      "launch": [
+       "8"
+      ],
+      "rehearsal": [
+       "2"
+      ]
+     },
+     "--eps-per-batch": {
+      "launch": null,
+      "rehearsal": [
+       "1"
+      ]
+     },
+     "--device": {
+      "launch": null,
+      "rehearsal": [
+       "cpu"
+      ]
+     },
+     "--v2-cache": {
+      "launch": [
+       "/home/nvidia/data/physicalai-train-e438721ae894-w120-256x640cyl"
+      ],
+      "rehearsal": [
+       "C:\\Users\\Admin\\v7f_ckpt_gate\\runs\\after_sw\\rehearsal_EMPTY_v2cache"
+      ],
+      "why": "an EMPTY dir: the preflight requires the flag; the corpus comes from the synthetic seam"
+     }
+    },
+    "dropped": {
+     "--v2-cache": [
+      "/home/nvidia/data/physicalai-train-e438721ae894-w120-256x640cyl"
+     ],
+     "--require-parity": [],
+     "--nav-labels": [
+      "/home/nvidia/data/v72/nav.jsonl.gz"
+     ]
+    },
+    "note": "REHEARSAL: tiny geometry + synthetic corpus on a CPU host. Evidence produced under it NEVER counts toward a token (finalize refuses it by name)."
+   }
+  },
+  "synthetic_corpus": {
+   "synthetic_corpus": {
+    "n_episodes": 3,
+    "frames_per_episode": 87,
+    "frame_chw": [
+     3,
+     64,
+     128
+    ],
+    "parity_and_geometry_binding": "NOT exercised (rehearsal)"
+   },
+   "synthetic_nav": {
+    "n_records": 3,
+    "tokens": [
+     "NAV_FOLLOW_ROAD",
+     "NAV_TURN_L",
+     "NAV_TURN_R"
+    ],
+    "downstream": "REAL assert_cache_join / NavEmitter / oracle_nav / batch splat / conditioner"
+   }
+  },
+  "elapsed_s": 20.8,
+  "arm": null,
+  "cost": {
+   "n_intervals": 0,
+   "n_used": 0,
+   "s_per_step_mean": null,
+   "elapsed_s": 20.8,
+   "steps": 100
+  },
+  "child": {
+   "tanitad": "c:\\users\\admin\\v7f_ckpt\\stack\\tanitad\\__init__.py",
+   "torch": "2.11.0+cu128",
+   "cuda": false
+  }
+ },
+ "rehearsal": {
+  "overlay": {
+   "--frame-h": {
+    "launch": [
+     "256"
+    ],
+    "rehearsal": [
+     "64"
+    ]
+   },
+   "--frame-w": {
+    "launch": [
+     "640"
+    ],
+    "rehearsal": [
+     "128"
+    ]
+   },
+   "--patch": {
+    "launch": null,
+    "rehearsal": [
+     "16"
+    ]
+   },
+   "--enc-dim": {
+    "launch": [
+     "768"
+    ],
+    "rehearsal": [
+     "32"
+    ]
+   },
+   "--enc-depth": {
+    "launch": [
+     "12"
+    ],
+    "rehearsal": [
+     "1"
+    ]
+   },
+   "--enc-heads": {
+    "launch": [
+     "12"
+    ],
+    "rehearsal": [
+     "2"
+    ]
+   },
+   "--pred-dim": {
+    "launch": null,
+    "rehearsal": [
+     "32"
+    ]
+   },
+   "--pred-depth": {
+    "launch": null,
+    "rehearsal": [
+     "1"
+    ]
+   },
+   "--pred-heads": {
+    "launch": null,
+    "rehearsal": [
+     "2"
+    ]
+   },
+   "--readout-dim": {
+    "launch": null,
+    "rehearsal": [
+     "8"
+    ]
+   },
+   "--d-tac": {
+    "launch": null,
+    "rehearsal": [
+     "32"
+    ]
+   },
+   "--d-str": {
+    "launch": null,
+    "rehearsal": [
+     "16"
+    ]
+   },
+   "--d-goal-embed": {
+    "launch": null,
+    "rehearsal": [
+     "16"
+    ]
+   },
+   "--adapter-hidden": {
+    "launch": null,
+    "rehearsal": [
+     "32"
+    ]
+   },
+   "--f-hidden-tac": {
+    "launch": null,
+    "rehearsal": [
+     "32"
+    ]
+   },
+   "--f-hidden-str": {
+    "launch": null,
+    "rehearsal": [
+     "32"
+    ]
+   },
+   "--window": {
+    "launch": null,
+    "rehearsal": [
+     "3"
+    ]
+   },
+   "--batch": {
+    "launch": [
+     "8"
+    ],
+    "rehearsal": [
+     "2"
+    ]
+   },
+   "--eps-per-batch": {
+    "launch": null,
+    "rehearsal": [
+     "1"
+    ]
+   },
+   "--device": {
+    "launch": null,
+    "rehearsal": [
+     "cpu"
+    ]
+   },
+   "--v2-cache": {
+    "launch": [
+     "/home/nvidia/data/physicalai-train-e438721ae894-w120-256x640cyl"
+    ],
+    "rehearsal": [
+     "C:\\Users\\Admin\\v7f_ckpt_gate\\runs\\after_sw\\rehearsal_EMPTY_v2cache"
+    ],
+    "why": "an EMPTY dir: the preflight requires the flag; the corpus comes from the synthetic seam"
+   }
+  },
+  "dropped": {
+   "--v2-cache": [
+    "/home/nvidia/data/physicalai-train-e438721ae894-w120-256x640cyl"
+   ],
+   "--require-parity": [],
+   "--nav-labels": [
+    "/home/nvidia/data/v72/nav.jsonl.gz"
+   ]
+  },
+  "note": "REHEARSAL: tiny geometry + synthetic corpus on a CPU host. Evidence produced under it NEVER counts toward a token (finalize refuses it by name)."
+ },
+ "finished_utc": "2026-09-27T16:17:30Z"
+}

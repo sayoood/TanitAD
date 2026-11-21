@@ -1,0 +1,23 @@
+TIER: T1-kin (kinematic rollout on the model's own actions; the lead does not react); never driving performance
+Traceback (most recent call last):
+  File "F:\TanitAD-scratch\v8proof\ops\capmem.py", line 166, in <module>
+    main()
+    ~~~~^^
+  File "F:\TanitAD-scratch\v8proof\ops\capmem.py", line 162, in main
+    runpy.run_path(script, run_name="__main__")
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen runpy>", line 287, in run_path
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "F:/TanitAD-scratch/v8proof/integ10k/read_i10k_n2.py", line 233, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "F:/TanitAD-scratch/v8proof/integ10k/read_i10k_n2.py", line 210, in main
+    res = evaluate(inp)
+  File "F:/TanitAD-scratch/v8proof/integ10k/read_i10k_n2.py", line 171, in evaluate
+    res = {"card": "PREREG_V8F_PROOF_ADD46", "tier": TIER_LINE, "strategic": list(STRATEGIC_LINES), "controls": controls(inp), "names": None}
+                                                                                                                ~~~~~~~~^^^^^
+  File "F:/TanitAD-scratch/v8proof/integ10k/read_i10k_n2.py", line 112, in controls
+    m = j["intervals"]["metrics"]
+        ~^^^^^^^^^^^^^
+KeyError: 'intervals'

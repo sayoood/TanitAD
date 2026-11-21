@@ -1,0 +1,273 @@
+{
+ "what": "refcv6 SAM3 map head, drivable IoU under the TRAINER'S rule (refc_v3_train.py:4506-4521 @ 82c2331) on EVERY eval window of each rendered clip",
+ "caveat": "perception diagnostic, open loop \u2014 not driving performance; one clip = one episode: windows are correlated, no interval quoted",
+ "run": "refcv6-r101-s0",
+ "step": 35000,
+ "hybrid_note": "hybrid: F3 + true label clock from step 34,500",
+ "ckpt_md5": "68a4ef3bbb0a3ec707b04f0fb2b6b86f",
+ "config": {
+  "path": "C:/Users/Admin/ev6_battery/raw/thor_reads/config_resume34500_20260926.json",
+  "md5": "a3193a4685ce0d07a6ae6b89fdc994a8"
+ },
+ "inrun_eval_map_iou_drivable": {
+  "value": 0.67745,
+  "step": 35000,
+  "windows": 128,
+  "batches": 8,
+  "note": "a DIFFERENT window set -- a sanity range, not an identity"
+ },
+ "estimators": {
+  "iou_mean": "mean over windows of the per-window IoU",
+  "iou_pooled": "sum of intersections / sum of unions over the clip's windows",
+  "interval": "none -- windows of one episode are not independent"
+ },
+ "clips": [
+  {
+   "clip_rank": 1,
+   "clip_sha12": "693335b810c3",
+   "nav": "left",
+   "nav_token": "NAV_TURN_L",
+   "n_windows_rendered": 171,
+   "n_windows_clip": 171,
+   "n_labelled": 171,
+   "iou_mean": 0.7031505032390304,
+   "iou_pooled": 0.7033067194510838,
+   "iou_min": 0.4069010416666667,
+   "iou_median": 0.7770034843205574,
+   "iou_max": 0.8318523581681476,
+   "n_union_zero": 0,
+   "t_label_s_range": [
+    1.1288,
+    18.2138
+   ],
+   "v0_ms_range": [
+    4.3323,
+    6.8244
+   ],
+   "pred_drivable_frac_mean": 0.20276265497076026,
+   "gt_drivable_frac_mean": 0.18061129824561403,
+   "map_acc_argmax_mean": 0.8599600994152047,
+   "map_soft_ce_mean": 0.42072896491228073,
+   "camera": {
+    "frame": {
+     "height": 416,
+     "width": 1024,
+     "f_ref": 488.92398517830253,
+     "projection": "cylindrical"
+    },
+    "codec": "png",
+    "extrinsics_found": true,
+    "label": "416x1024 cylindrical f_ref 488.924 \u00b7 cam h 1.363 m, fwd 2.003 m, pitch-down +1.75\u00b0 (MEASURED per-clip)",
+    "R_vs_pai_extrinsics_table_max_abs": 0.0
+   },
+   "controls": {
+    "n": 171,
+    "consistent_iou_eq_1": 171,
+    "consistent_union0": 0,
+    "consistent_min_iou": 1.0,
+    "onehot_iou_min": 0.9866352201257862,
+    "onehot_iou_sum": 170.2356119438968,
+    "n_mixed_total": 1033,
+    "n_impossible_total": 0,
+    "panel_equal": 171,
+    "panel_checked": 171,
+    "consistent_panel_equal": 171,
+    "mut_flip_iou_max": 0.7462792345854005,
+    "mut_flip_red": 171,
+    "mut_chan_red": 171,
+    "cellcount_agree": 171,
+    "onehot_iou_mean": 0.9955298944087532,
+    "pixel_check_on_this_clip": true
+   },
+   "draw_independence": {
+    "seeds": [
+     0,
+     1
+    ],
+    "map_logits_max_abs_diff": 0.0,
+    "drivable_mask_identical": true,
+    "argmax_identical": true,
+    "iou_seed_a": 0.7770034843205574,
+    "iou_seed_b": 0.7770034843205574,
+    "traj_max_abs_diff_m": 0.3528919219970703
+   },
+   "wall_s": 70.3
+  },
+  {
+   "clip_rank": 2,
+   "clip_sha12": "0191487845ef",
+   "nav": "right",
+   "nav_token": "NAV_TURN_R",
+   "n_windows_rendered": 171,
+   "n_windows_clip": 171,
+   "n_labelled": 171,
+   "iou_mean": 0.6215717147009864,
+   "iou_pooled": 0.6094886640375823,
+   "iou_min": 0.43588317107093183,
+   "iou_median": 0.6438407145515445,
+   "iou_max": 0.7614720581553839,
+   "n_union_zero": 0,
+   "t_label_s_range": [
+    0.9855,
+    18.0988
+   ],
+   "v0_ms_range": [
+    0.1606,
+    9.3275
+   ],
+   "pred_drivable_frac_mean": 0.3100749122807018,
+   "gt_drivable_frac_mean": 0.40042074853801174,
+   "map_acc_argmax_mean": 0.6647153040935672,
+   "map_soft_ce_mean": 0.8511605146198831,
+   "camera": {
+    "frame": {
+     "height": 416,
+     "width": 1024,
+     "f_ref": 488.92398517830253,
+     "projection": "cylindrical"
+    },
+    "codec": "png",
+    "extrinsics_found": true,
+    "label": "416x1024 cylindrical f_ref 488.924 \u00b7 cam h 1.348 m, fwd 2.003 m, pitch-down +1.70\u00b0 (MEASURED per-clip)",
+    "R_vs_pai_extrinsics_table_max_abs": 0.0
+   },
+   "controls": {
+    "n": 171,
+    "consistent_iou_eq_1": 171,
+    "consistent_union0": 0,
+    "consistent_min_iou": 1.0,
+    "onehot_iou_min": 0.9791755206119847,
+    "onehot_iou_sum": 169.40090379203164,
+    "n_mixed_total": 4613,
+    "n_impossible_total": 0,
+    "panel_equal": 0,
+    "panel_checked": 0,
+    "consistent_panel_equal": 0,
+    "mut_flip_iou_max": 0.6175530369078757,
+    "mut_flip_red": 171,
+    "mut_chan_red": 171,
+    "cellcount_agree": 171,
+    "onehot_iou_mean": 0.9906485601873195,
+    "pixel_check_on_this_clip": false
+   },
+   "draw_independence": {
+    "seeds": [
+     0,
+     1
+    ],
+    "map_logits_max_abs_diff": 0.0,
+    "drivable_mask_identical": true,
+    "argmax_identical": true,
+    "iou_seed_a": 0.5409836065573771,
+    "iou_seed_b": 0.5409836065573771,
+    "traj_max_abs_diff_m": 1.434946060180664
+   },
+   "wall_s": 69.2
+  },
+  {
+   "clip_rank": 3,
+   "clip_sha12": "00213e99adca",
+   "nav": "follow",
+   "nav_token": "NAV_FOLLOW_ROAD",
+   "n_windows_rendered": 171,
+   "n_windows_clip": 171,
+   "n_labelled": 171,
+   "iou_mean": 0.7273857987634809,
+   "iou_pooled": 0.7240719131546113,
+   "iou_min": 0.6248210023866348,
+   "iou_median": 0.7285756069026031,
+   "iou_max": 0.8200786211067432,
+   "n_union_zero": 0,
+   "t_label_s_range": [
+    1.1,
+    18.2133
+   ],
+   "v0_ms_range": [
+    26.1342,
+    27.1944
+   ],
+   "pred_drivable_frac_mean": 0.4549678362573099,
+   "gt_drivable_frac_mean": 0.4213239064327486,
+   "map_acc_argmax_mean": 0.6822514736842106,
+   "map_soft_ce_mean": 0.8128004912280703,
+   "camera": {
+    "frame": {
+     "height": 416,
+     "width": 1024,
+     "f_ref": 488.92398517830253,
+     "projection": "cylindrical"
+    },
+    "codec": "png",
+    "extrinsics_found": true,
+    "label": "416x1024 cylindrical f_ref 488.924 \u00b7 cam h 1.353 m, fwd 2.018 m, pitch-down +1.46\u00b0 (MEASURED per-clip)",
+    "R_vs_pai_extrinsics_table_max_abs": 0.0
+   },
+   "controls": {
+    "n": 171,
+    "consistent_iou_eq_1": 171,
+    "consistent_union0": 0,
+    "consistent_min_iou": 1.0,
+    "onehot_iou_min": 0.9784589892294946,
+    "onehot_iou_sum": 169.68462567473674,
+    "n_mixed_total": 4131,
+    "n_impossible_total": 0,
+    "panel_equal": 0,
+    "panel_checked": 0,
+    "consistent_panel_equal": 0,
+    "mut_flip_iou_max": 0.8340508806262231,
+    "mut_flip_red": 171,
+    "mut_chan_red": 171,
+    "cellcount_agree": 171,
+    "onehot_iou_mean": 0.9923077524838405,
+    "pixel_check_on_this_clip": false
+   },
+   "draw_independence": {
+    "seeds": [
+     0,
+     1
+    ],
+    "map_logits_max_abs_diff": 0.0,
+    "drivable_mask_identical": true,
+    "argmax_identical": true,
+    "iou_seed_a": 0.6892268694550063,
+    "iou_seed_b": 0.6892268694550063,
+    "traj_max_abs_diff_m": 7.6043701171875
+   },
+   "wall_s": 66.2
+  }
+ ],
+ "selection": [
+  {
+   "sha12": "693335b810c3",
+   "episode_index": 127,
+   "nav": "left",
+   "n_windows": 171,
+   "n_ok": 171,
+   "n_no_file": 0,
+   "n_out_of_range": 0,
+   "n_inconclusive": 0
+  },
+  {
+   "sha12": "0191487845ef",
+   "episode_index": 116,
+   "nav": "right",
+   "n_windows": 171,
+   "n_ok": 171,
+   "n_no_file": 0,
+   "n_out_of_range": 0,
+   "n_inconclusive": 0
+  },
+  {
+   "sha12": "00213e99adca",
+   "episode_index": 112,
+   "nav": "follow",
+   "n_windows": 171,
+   "n_ok": 171,
+   "n_no_file": 0,
+   "n_out_of_range": 0,
+   "n_inconclusive": 0
+  }
+ ],
+ "device": "cuda",
+ "seed": 0
+}

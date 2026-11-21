@@ -1,0 +1,110 @@
+{
+ "tier": "T0 (a world-model diagnostic on logged frames, never driving performance)",
+ "families": "LONGITUDINAL, LATERAL, TACTICAL: not measured by this read; STRATEGIC: PAUSED (PI item 25)",
+ "B": 2000,
+ "arms": {
+  "ROLL_s0": {
+   "n_windows": 441,
+   "n_episodes_with_windows": 48,
+   "target_rms_m": 6.323833473863814,
+   "rollout": {
+    "skill": -0.11526658877612017,
+    "ci95": [
+     -0.3772929511071354,
+     0.08266430437721192
+    ],
+    "above_0": false
+   },
+   "ceiling": {
+    "skill": 0.10076659861911086,
+    "ci95": [
+     -0.0018649570918691598,
+     0.2345083331163923
+    ],
+    "above_0": false
+   },
+   "ceiling_minus_rollout": {
+    "diff": 0.21603318739523103,
+    "ci95": [
+     0.07332148850990641,
+     0.42585284507068266
+    ]
+   }
+  },
+  "G_s0": {
+   "n_windows": 441,
+   "n_episodes_with_windows": 48,
+   "target_rms_m": 6.323833473863814,
+   "rollout": {
+    "skill": -0.06255807555011406,
+    "ci95": [
+     -0.2654569733439443,
+     0.08441363287635224
+    ],
+    "above_0": false
+   },
+   "ceiling": {
+    "skill": 0.1341802281169293,
+    "ci95": [
+     0.016187914939367498,
+     0.25395240576915856
+    ],
+    "above_0": true
+   },
+   "ceiling_minus_rollout": {
+    "diff": 0.19673830366704337,
+    "ci95": [
+     0.0753982608068548,
+     0.3599463714700454
+    ]
+   }
+  }
+ },
+ "pairs": {
+  "ROLL_s0_minus_G_s0": {
+   "rollout_skill_diff": -0.052708513226006115,
+   "ci95": [
+    -0.28612407249279415,
+    0.1372748509944493
+   ],
+   "separated_pos": false,
+   "separated_neg": false,
+   "n_windows": 441
+  }
+ },
+ "controls": {
+  "ROLL_s0": {
+   "k1_copy_is_0": {
+    "pass": true,
+    "value": 0.0
+   },
+   "k2_shuffled_target": {
+    "pass": true,
+    "rollout": -0.3523426503908207,
+    "ceiling": -0.20024486983661283,
+    "bar": 0.02
+   },
+   "k3_identity_is_1": {
+    "pass": true,
+    "value": 1.0
+   }
+  },
+  "G_s0": {
+   "k1_copy_is_0": {
+    "pass": true,
+    "value": 0.0
+   },
+   "k2_shuffled_target": {
+    "pass": true,
+    "rollout": -0.27996015741266445,
+    "ceiling": -0.2577794276908336,
+    "bar": 0.02
+   },
+   "k3_identity_is_1": {
+    "pass": true,
+    "value": 1.0
+   }
+  }
+ },
+ "controls_pass": true
+}

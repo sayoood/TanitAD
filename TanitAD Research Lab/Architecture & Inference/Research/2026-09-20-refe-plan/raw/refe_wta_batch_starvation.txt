@@ -1,0 +1,40 @@
+WINNER-TAKES-ALL AT SMALL BATCH: a training pathology the dev box cannot avoid. 2026-09-20.
+
+CERTAIN (arithmetic, not inference):
+  WTA routes gradient to exactly ONE proposal per SAMPLE, so the number of distinct proposals
+  updated in a step is at most the BATCH SIZE. With M=64 proposals:
+      batch   2  ->  <= 2 of 64 proposals touched per step
+      batch   8  ->  <= 8 of 64
+      batch 256  ->  the regime their training actually used
+  MEASURED winner diversity:
+      synthetic, batch 8 : 1/8, 2/8, 3/8, 4/8, 5/8 across logged steps (proposals specialising)
+      real,      batch 2 : 1/2 on EVERY logged step -- both samples pick the SAME proposal
+  => at batch 2 the head is not learning 64 modes, it is learning roughly one.
+
+CORRECTION TO MY OWN FIRST READING (same session): I described the real-image run as having
+"plateaued at ~0.15". It had not -- it continued to 0.0811 by step 150. The trace is NOISY
+(0.17, 0.11, 0.19, 0.15, 0.08), which is what batch 2 produces, not a plateau. The starvation
+hypothesis below therefore has LESS motivating evidence than when I wrote it, and the arithmetic
+half is the only part that stands on its own.
+
+HYPOTHESIS, explicitly NOT established:
+  that this starvation is what makes the real-image run plateau at ~0.15 instead of reaching the
+  ~0.039 the earlier run did.
+
+!! THE COMPARISON IS CONFOUNDED AND MUST NOT BE READ AS "REAL IMAGES ARE HARDER".
+   Three variables changed between those two runs at once:
+       run                images      backbone   batch   final traj L1
+       refe_overfit       synthetic   ViT-S      8       0.0388
+       realimages         REAL        ViT-L      2       ~0.15 (plateau)
+   That is the programme's own ten-levers-on-two-axes error. Any of the three could carry it.
+
+THE CHEAP DISCRIMINATING EXPERIMENT (queued):
+  ViT-S + REAL images + batch 8, against ViT-S + synthetic + batch 8. That holds backbone and batch
+  fixed and moves ONLY the images, which is the variable the confound is actually about. ViT-S fits
+  at batch 8 on this card; ViT-L does not.
+
+CONSEQUENCE FOR THE POD -- this upgrades the case from "faster" to "necessary":
+  the dev box CANNOT train this head properly at any batch it can hold, because WTA specialisation
+  needs batch >> 1 and ViT-L at 512x960 peaks at 5.36 GB for batch 2 on an 8 GB card.
+  On a 48 GB A40 the first job should measure the largest batch that fits and report it, because
+  batch size here is not a throughput knob -- it is what decides whether the 64 proposals exist.

@@ -116,7 +116,7 @@ def build_engine(onnx_path, plan_path, *, window, state_dim, action_dim,
         cmd += [f"--minShapes={shp(min_batch)}", f"--optShapes={shp(opt_batch)}",
                 f"--maxShapes={shp(max_batch)}"]
     t0 = time.perf_counter()
-    r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout_s)
+    r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", timeout=timeout_s)
     ok = os.path.exists(plan_path)
     return {"ok": ok, "cmd": " ".join(cmd), "build_s": round(time.perf_counter() - t0, 1),
             "MB": round(os.path.getsize(plan_path) / 1e6, 1) if ok else None,

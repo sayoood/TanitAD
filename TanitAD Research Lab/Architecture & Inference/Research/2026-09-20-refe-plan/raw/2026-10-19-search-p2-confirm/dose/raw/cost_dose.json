@@ -1,0 +1,55 @@
+{
+ "evidence": "rates MEASURED (carve-B P2HEAD search file: 400 tokens x 3 seeds, 4 threads, shared box); the call-count model is checked against them below; the M = 256 call cost is ESTIMATED (FLOP model) and UNMEASURED",
+ "source": "C:/Users/Admin/par18/l2stepb/run/search_P2HEAD.npz",
+ "moved_share_carveB_P2HEAD": 0.265,
+ "measured_s_per_token_3_seeds": 3.9511068230867386,
+ "implied_seconds_per_64_call": {
+  "from_not_moved_seeds": 0.08579132643416355,
+  "from_moved_seeds": 0.0860322769832811,
+  "from_whole_token": 0.09021821721855779,
+  "moved_minus_not_moved_seed_s (should equal one call)": 0.08940558467092674
+ },
+ "C8_calls_per_token_of_64_equivalents": 43.795,
+ "FLOP_model": {
+  "MACs_per_call_M64": 5281611776,
+  "MACs_per_call_M256": 9147514880,
+  "fixed_share_at_M64": 0.7623680063530667,
+  "implied_GFLOPs_at_4_threads": 117.08526146565393,
+  "elite_rescoring_share_of_O4_work": 0.7950742221675038
+ },
+ "O4_search_cost": {
+  "lower: a 256-call costs the same as a 64-call (fixed cost dominates)": {
+   "c256_over_c64": 1.0,
+   "O4_over_C8_per_token": 2.644023290329946,
+   "s_per_token": 10.446818462822899,
+   "hours_905_tokens": 2.6262140857929785
+  },
+  "central: FLOP model": {
+   "c256_over_c64": 1.7319551810996265,
+   "O4_over_C8_per_token": 2.894721491414417,
+   "s_per_token": 11.437353835663322,
+   "hours_905_tokens": 2.875223672576474
+  },
+  "upper: a call is linear in M": {
+   "c256_over_c64": 4.0,
+   "O4_over_C8_per_token": 3.6715378467861632,
+   "s_per_token": 14.506638237658002,
+   "hours_905_tokens": 3.6468076680779147
+  }
+ },
+ "outlier_scaling": {
+  "worst_P2HEAD_shard_rate_hours": 4.082401596662657,
+  "worst_any_arm_rate_hours (shared-box outlier)": 11.694152167267184
+ },
+ "other_stages_minutes": {
+  "G-REACH on the O4 file (Step B budgets 1 min per arm at M=64; x ~2.9)": 3.0,
+  "labels, 5 plans per token (M-independent; spc cost.json 16.7-27.1)": [
+   16.7,
+   27.1
+  ],
+  "analysis incl. contrast, B = 10,000": 3.0,
+  "G-SUBID: 16 tokens x 3.95 s at M=64 plus the model load (MM_RULING_DOSE.md DQ5; the ruling says about 3)": 3.0,
+  "G-SELFREP: 8 tokens x 11.4 s at M=256 (the ruling says about 1.5)": 1.5
+ },
+ "total_hours_central": 3.4168903392431407
+}

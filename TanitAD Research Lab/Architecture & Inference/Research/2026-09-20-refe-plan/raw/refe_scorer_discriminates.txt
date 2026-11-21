@@ -1,0 +1,114 @@
+THE SCORER DISCRIMINATES. MEASURED 2026-09-20. This retires the "SCORER_INERT" finding.
+
+VERDICT
+  teacher path      OffRoad.info 0.0000   (clean -- required)
+  over-curb path    OffRoad.info 1.0000   reward -1.6994   (caught -- required)
+  differing signals endpoint 3  ->  step-wise rollout 10   of 28
+
+WHAT ACTUALLY FIXED IT -- AND THE NAMED FIX I HAD QUEUED WAS NOT AMONG THEM
+  1. READ EVERY LEAF OF THE NESTED DICT.  Each calculator writes {"reward":..., "info":..., ...}.
+     `reward` is the WEIGHTED, SATURATED training signal and is flat across candidates by design;
+     `info` is the raw event/offset channel and is where the discrimination lives. My readout
+     collapsed each dict to `reward` and threw `info` away. "0 of 9 signals differ" was therefore a
+     statement about MY READOUT, not about their calculators. This is the THIRD time in this file
+     that reading the wrong level of a nested dict produced a confident wrong conclusion.
+  2. SCORE STEP BY STEP, NOT AT THE ENDPOINT.  `extract_recent_agent_polygons` reads ONLY
+     timesteps -1 and -2, and OffRoad is a per-step CROSSING detector. A proposal that crosses a
+     curb at step 6 and ends 8 m beyond it scores CLEAN at its endpoint. MEASURED: the identical
+     over-curb path reads OffRoad.info 0.0000 endpoint-only and 1.0000 under the rollout.
+  3. USE A CONTROL THAT ACTUALLY COMMITS THE VIOLATION.  The old arm pushed the teacher's path
+     25 m sideways and expected off-road. MEASURED in this scene, +y moves the ego AWAY from the
+     nearest curb -- corner distance 10.66 m at 0 m, 19.06 m at +14 m, minimum 0.87 m at +40 m, and
+     it NEVER touches. OffRoad staying silent was CORRECT. I was one step from filing "their
+     off-road detector is broken" on the strength of a control that never violated anything.
+     The replacement is an ANALYTIC target: aim at the nearest curb measured from the map.
+  4. PIN DOMAIN RANDOMIZATION.  The builder's `domain_randomization` defaults to None and the
+     ScenarioData then DRAWS its reward weights: -1.0415 instead of the configured -1.0, giving
+     -1.5194 in one process and -1.7086 in the next for identical input. Within a process it is
+     stable 5/5, so one run looks perfectly deterministic. Their released yaml already carries the
+     deterministic values; we were not passing them. Now exactly -1.0 across processes.
+
+RETRACTED: "populate lanes_centers_groups / _ids / _next_groups and re-run" was my named next fix.
+  It is implemented (`score_proposals.enrich_lane_graph`, and the arrays ARE constructible offline
+  in one call -- 1,019 nonzero groups, 4,095 next-group links, 96 centre segments), which also
+  retires the older claim that obtaining them "is genuine reconstruction work".
+  ⛔ AND IT CHANGES NOTHING. The two arms below are byte-identical on all 28 signals. The lane
+  graph is NOT load-bearing for these six calculators. It is kept because the fields are genuinely
+  absent from a builder-produced ScenarioData, not because it fixed anything.
+  ⭐ The lesson is the one this file keeps teaching: I diagnosed from structure ("an array is
+  empty, that must be why") instead of from a control. The control was cheap and settled it.
+
+STILL OPEN
+  * these targets are not yet wired into train.py; proposal selection at inference stays arbitrary
+    until they are.
+  * cost: the rollout is T calculator passes per proposal (20x). 64 proposals => 1,280 passes per
+    frame. Use `stride` to subsample and STATE the stride with any number built from it.
+
+============================================================================================
+=== ARM 1: WITH lane-graph enrichment ===
+THE SCORER GATE -- can it tell a good path from one that drives over a curb?
+
+  engine config      OK  (41 values from driverl_teacher.yaml, domain randomization PINNED)
+  calculators        6/6   ScenarioData OK from 99ca544752f255ad.msgpack.xz step 40
+  lane graph         ENRICHED  (1, 1024) nonzero 1019  segments 96
+  nearest curb       7.59 m from the ego, 141 curb segments in range
+  endpoints (ego frame):  teacher [24.8,-0.5]  over-curb [-4.2,-15.8]  stopped [0.0,0.0]
+
+  signal                                   teacher  over-curb   stopped      teacher  over-curb   stopped
+                                          ------ ENDPOINT ONLY ------      ----- STEP-WISE ROLLOUT ----- 
+  center_line.CenterLine.info               0.0691    10.1458    0.0752       0.0720    10.1458    0.0752
+  center_line.CenterLine.reward             0.7500     1.0000    0.7500       0.7500     0.7500    0.7500
+  center_line.CurbClearance.info            0.0000     0.0000    0.0000       0.0000     1.0000    0.0000
+  center_line.CurbClearance.reward          1.0000     1.0000    1.0000       1.0000     0.3238    1.0000
+  collision.NuPlanCollision.info            0.0000     0.0000    0.0000       0.0000     1.0000    0.0000
+  collision.NuPlanCollision.reward         -0.0000    -0.0000   -0.0000      -0.0000    -1.0000   -0.0000
+  off_road.CrossLane.lane_change_info       1.0000     0.0000    0.0000       1.0000     1.0000    0.0000
+  off_road.OffRoad.info                     0.0000     0.0000    0.0000       0.0000     1.0000    0.0000
+  off_road.OffRoad.reward                  -0.0000    -0.0000   -0.0000      -0.0000    -1.6994   -0.0000
+  ttc.NuPlanTTC.reward                      1.0000     1.0000    1.0000       1.0000     0.0000    1.0000
+  ttc.NuPlanTTC.ttc_reward                  1.0000     1.0000    1.0000       1.0000     0.0000    1.0000
+
+  differing signals:  endpoint 3   rollout 10
+  OffRoad on the teacher path (must be 0):        0.0000
+  OffRoad on the over-curb path (must be 1):      1.0000
+  ... same path scored at its ENDPOINT only:      0.0000   <- 0 here is the POINT: the crossing happens mid-horizon
+  [PASS] teacher path is clean
+  [PASS] over-curb path is caught by the rollout
+  [PASS] rollout separates more signals than the endpoint
+
+SCORER_DISCRIMINATES
+GATE_EXIT=0
+
+=== ARM 2: regression arm, NO enrichment ===
+THE SCORER GATE -- can it tell a good path from one that drives over a curb?
+
+  engine config      OK  (41 values from driverl_teacher.yaml, domain randomization PINNED)
+  calculators        6/6   ScenarioData OK from 99ca544752f255ad.msgpack.xz step 40
+  lane graph         NOT ENRICHED (regression arm)
+  nearest curb       7.59 m from the ego, 141 curb segments in range
+  endpoints (ego frame):  teacher [24.8,-0.5]  over-curb [-4.2,-15.8]  stopped [0.0,0.0]
+
+  signal                                   teacher  over-curb   stopped      teacher  over-curb   stopped
+                                          ------ ENDPOINT ONLY ------      ----- STEP-WISE ROLLOUT ----- 
+  center_line.CenterLine.info               0.0691    10.1458    0.0752       0.0720    10.1458    0.0752
+  center_line.CenterLine.reward             0.7500     1.0000    0.7500       0.7500     0.7500    0.7500
+  center_line.CurbClearance.info            0.0000     0.0000    0.0000       0.0000     1.0000    0.0000
+  center_line.CurbClearance.reward          1.0000     1.0000    1.0000       1.0000     0.3238    1.0000
+  collision.NuPlanCollision.info            0.0000     0.0000    0.0000       0.0000     1.0000    0.0000
+  collision.NuPlanCollision.reward         -0.0000    -0.0000   -0.0000      -0.0000    -1.0000   -0.0000
+  off_road.CrossLane.lane_change_info       1.0000     0.0000    0.0000       1.0000     1.0000    0.0000
+  off_road.OffRoad.info                     0.0000     0.0000    0.0000       0.0000     1.0000    0.0000
+  off_road.OffRoad.reward                  -0.0000    -0.0000   -0.0000      -0.0000    -1.6994   -0.0000
+  ttc.NuPlanTTC.reward                      1.0000     1.0000    1.0000       1.0000     0.0000    1.0000
+  ttc.NuPlanTTC.ttc_reward                  1.0000     1.0000    1.0000       1.0000     0.0000    1.0000
+
+  differing signals:  endpoint 3   rollout 10
+  OffRoad on the teacher path (must be 0):        0.0000
+  OffRoad on the over-curb path (must be 1):      1.0000
+  ... same path scored at its ENDPOINT only:      0.0000   <- 0 here is the POINT: the crossing happens mid-horizon
+  [PASS] teacher path is clean
+  [PASS] over-curb path is caught by the rollout
+  [PASS] rollout separates more signals than the endpoint
+
+SCORER_DISCRIMINATES
+GATE_EXIT=0

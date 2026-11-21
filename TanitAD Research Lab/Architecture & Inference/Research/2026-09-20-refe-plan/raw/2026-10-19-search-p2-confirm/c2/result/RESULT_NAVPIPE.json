@@ -1,0 +1,159 @@
+{
+ "read": "C2",
+ "arm": "P2HEAD (no head substitution)",
+ "decision_rule_terms": {
+  "terms": {
+   "lower_ci_gt_0": false,
+   "point_ge_bar": false,
+   "point_gt_seed_range": false
+  },
+  "safety_terms": {
+   "nc": true,
+   "dac": true,
+   "ttc": true,
+   "c": true
+  },
+  "rule_met": false,
+  "bar_dpdms_points": 0.1,
+  "bar_safety_points": -0.25
+ },
+ "rule_met": false,
+ "outcome": "C2_FAIL_LOWER_CI",
+ "negative": false,
+ "safety_miss": {},
+ "endpoint_dPDMS_points": {
+  "point": -0.15498798725130608,
+  "lo": -0.35027172522082756,
+  "hi": 0.03656239012684927,
+  "n_valid_resamples": 10000,
+  "den": 12146.0
+ },
+ "per_seed_points": {
+  "points": [
+   -0.17180557442901567,
+   -0.13948059442426544,
+   -0.15367779290063718
+  ],
+  "range": 0.03232498000475023,
+  "std": 0.01620226959423491
+ },
+ "safety_points": {
+  "nc": -0.10565892749327627,
+  "dac": 0.1262418354465119,
+  "ttc": -0.23876173225753333,
+  "c": 0.0
+ },
+ "sub_score_deltas_points": {
+  "nc": {
+   "point": -0.10565892749327627,
+   "lo": -0.22861198196233132,
+   "hi": 0.0034342473668029323,
+   "n_valid_resamples": 10000,
+   "den": 12146.0
+  },
+  "dac": {
+   "point": 0.1262418354465119,
+   "lo": -0.016150909377301695,
+   "hi": 0.2819465352209874,
+   "n_valid_resamples": 10000,
+   "den": 12146.0
+  },
+  "ep": {
+   "point": -0.22331098532234528,
+   "lo": -0.4265261532264574,
+   "hi": -0.029879586330403003,
+   "n_valid_resamples": 10000,
+   "den": 12146.0
+  },
+  "ttc": {
+   "point": -0.23876173225753333,
+   "lo": -0.4936640412231675,
+   "hi": -0.01196597459153882,
+   "n_valid_resamples": 10000,
+   "den": 12146.0
+  },
+  "c": {
+   "point": 0.0,
+   "lo": 0.0,
+   "hi": 0.0,
+   "n_valid_resamples": 10000,
+   "den": 12146.0
+  },
+  "ddc": {
+   "point": -0.02332729568033372,
+   "lo": -0.11495559886028534,
+   "hi": 0.05506138099258349,
+   "n_valid_resamples": 10000,
+   "den": 12146.0
+  }
+ },
+ "inert": {
+  "inert": false,
+  "frac_moved": 0.19762336022833307,
+  "n": 36438,
+  "ade_median_m": 0.0,
+  "thr_m": 0.5,
+  "min_frac": 0.05,
+  "per_seed_frac_moved": [
+   0.19594928371480322,
+   0.1961139469784291,
+   0.20080684999176684
+  ]
+ },
+ "families": {
+  "LONGITUDINAL": {
+   "dEP_points": {
+    "point": -0.22331098532234528,
+    "lo": -0.4265261532264574,
+    "hi": -0.029879586330403003,
+    "n_valid_resamples": 10000,
+    "den": 12146.0
+   },
+   "dTTC_points": {
+    "point": -0.23876173225753333,
+    "lo": -0.4936640412231675,
+    "hi": -0.01196597459153882,
+    "n_valid_resamples": 10000,
+    "den": 12146.0
+   },
+   "share_outputs_speed_up": 0.12673582523738955,
+   "share_outputs_slow_down": 0.15799440144903673,
+   "dPDMS_points_given_speed_up (descriptive)": 0.25055384190409097,
+   "dPDMS_points_given_slow_down (descriptive)": -1.1819541291256181
+  },
+  "LATERAL": {
+   "dDAC_points": {
+    "point": 0.1262418354465119,
+    "lo": -0.016150909377301695,
+    "hi": 0.2819465352209874,
+    "n_valid_resamples": 10000,
+    "den": 12146.0
+   },
+   "dDDC_points": {
+    "point": -0.02332729568033372,
+    "lo": -0.11495559886028534,
+    "hi": 0.05506138099258349,
+    "n_valid_resamples": 10000,
+    "den": 12146.0
+   },
+   "mean_abs_offset_m_given_moved": 0.2500112804827616,
+   "heading_dev_end_rad_mean": 0.006676185214642517,
+   "yaw_rate_dev_max_rad_s_mean": 0.12373166497530041
+  },
+  "TACTICAL": {
+   "command_class_change_share (proxy, HYPOTHESIS: nav_command bearing rule on the end point)": 0.006860969317745211
+  },
+  "STRATEGIC": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE ITEM 25): reported as PAUSED, not as a pass"
+ },
+ "in_fan_decomposition_descriptive": {
+  "status": "NOT COMPUTABLE at T1 (the harness labels the executed plans only; no non-pick proposal has a label)",
+  "arm_argmax_equals_p2_pick_share": 0.9989296887864317
+ },
+ "moved_share": 0.2847302266864263,
+ "n_tokens": 12146,
+ "n_logs": 136,
+ "units": "PDMS points = 100 x the [0,1] difference",
+ "stamps": "T1 = NAVSIM v1.1 PDMS, pseudo-simulation of an open-loop plan against logged agents (the W3 harness, seam route; NOT closed loop); navtest, 12,146 tokens / 136 logs when complete; the interval is the paired log-cluster bootstrap (B = 10,000, seed 20260927) = 'another draw of LOGS' only; ONE training seed (H-ESTIM-SEED-1 open) and 3 search seeds (the spread is reported beside it); no head substitution; STRATEGIC PAUSED (PI ruling 2026-09-19, ITEM 25); the sealed C2 amendment sets the remaining stamps",
+ "STRATEGIC": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE ITEM 25): reported as PAUSED, not as a pass",
+ "outcome_names": "section 11 of the sealed C2 amendment (DQ5 precedence): `outcome`; a safety miss is in `safety_miss` under every name"
+}

@@ -1,0 +1,28 @@
+2026-11-06T04:15:59 ZZLFO-GATE0 pins, tests, mutations, known answers ok (LFO tool 6744d3e4, operator 2781e23a, model 5fd4baea)
+LFO PRECHECK PASS | absent: [] | failures: []
+2026-11-06T04:16:00 ZZLFO-GATE1 C0 and LLR checkpoints present, sha256 == the banked ones == SHA256SUMS.txt
+2026-11-06T04:16:00 ZZLFO-GATE2 reused arrays (10 base + 4 LF075), the CL card's rules, the A3 and A4 cards (8bfbc386) and the pinned readers match their pins
+2026-11-06T04:16:14 ZZLFO-PREFLIGHT-OK PRE_LFO_s0_ri
+2026-11-06T04:16:22 ZZLFO-PREFLIGHT-OK PRE_LFO_s1_ri_kbox
+2026-11-06T04:16:22 ZZLFO-START LFO tool 6744d3e4 threads=12 kappa=0.75 --floor-vhat-source logged (CEILING)
+2026-11-06T04:16:23 ZZLFO-RUN RILFO075_s0 flags=--smooth sg72 --scene reindexed --level-floor on --floor-kappa 0.75 --floor-ckpt E:/Projects/TanitAD-artifacts/v8f-recover/M2b_s0_recft_LLR/ckpt_last.pt --floor-vhat-source logged threads=12
+2026-11-06T04:20:26 ZZLFO-RUN-DONE RILFO075_s0 wall=243s
+LFO-ROLLOUT-CHECK RILFO075_s0 PASS {"level_floor": "on", "floor_kappa": 0.75, "floor_ckpt": "E:/Projects/TanitAD-artifacts/v8f-recover/M2b_s0_recft_LLR/ckpt_last.pt", "floor_ckpt_sha256": "5a52b28bcf3e2f153baeb0835f1e9dd44eb918319b51b1e804a5d686276817bc"}
+2026-11-06T04:20:26 ZZLFO-RUN RILFO075_s1 flags=--smooth sg72 --scene reindexed --level-floor on --floor-kappa 0.75 --floor-ckpt E:/Projects/TanitAD-artifacts/v8f-recover/M2b_s1_recft_LLR/ckpt_last.pt --floor-vhat-source logged threads=12
+2026-11-06T04:24:40 ZZLFO-RUN-DONE RILFO075_s1 wall=254s
+LFO-ROLLOUT-CHECK RILFO075_s1 PASS {"level_floor": "on", "floor_kappa": 0.75, "floor_ckpt": "E:/Projects/TanitAD-artifacts/v8f-recover/M2b_s1_recft_LLR/ckpt_last.pt", "floor_ckpt_sha256": "71ee9feab2683a66a80e6a1fcbd4bc23e8a961ee7ef702ed160b00835cbf40c6"}
+2026-11-06T04:24:40 ZZLFO-RUN RILFO075C_s0 flags=--smooth sg72 --scene reindexed --feasible kbox --level-floor on --floor-kappa 0.75 --floor-ckpt E:/Projects/TanitAD-artifacts/v8f-recover/M2b_s0_recft_LLR/ckpt_last.pt --floor-vhat-source logged threads=12
+2026-11-06T04:28:54 ZZLFO-RUN-DONE RILFO075C_s0 wall=254s
+LFO-ROLLOUT-CHECK RILFO075C_s0 PASS {"level_floor": "on", "floor_kappa": 0.75, "floor_ckpt": "E:/Projects/TanitAD-artifacts/v8f-recover/M2b_s0_recft_LLR/ckpt_last.pt", "floor_ckpt_sha256": "5a52b28bcf3e2f153baeb0835f1e9dd44eb918319b51b1e804a5d686276817bc"}
+2026-11-06T04:28:54 ZZLFO-RUN RILFO075C_s1 flags=--smooth sg72 --scene reindexed --feasible kbox --level-floor on --floor-kappa 0.75 --floor-ckpt E:/Projects/TanitAD-artifacts/v8f-recover/M2b_s1_recft_LLR/ckpt_last.pt --floor-vhat-source logged threads=12
+2026-11-06T04:33:08 ZZLFO-RUN-DONE RILFO075C_s1 wall=254s
+LFO-ROLLOUT-CHECK RILFO075C_s1 PASS {"level_floor": "on", "floor_kappa": 0.75, "floor_ckpt": "E:/Projects/TanitAD-artifacts/v8f-recover/M2b_s1_recft_LLR/ckpt_last.pt", "floor_ckpt_sha256": "71ee9feab2683a66a80e6a1fcbd4bc23e8a961ee7ef702ed160b00835cbf40c6"}
+2026-11-06T04:33:08 ZZLFO-ROLLOUTS-DONE nfail=0
+2026-11-06T04:33:08 ZZLFO-ROLLOUTS-OK
+2026-11-06T04:33:09 ZZLFO-READ start
+2026-11-06T04:34:40 ZZLFO-READ rc=0
+s0 M1 RILFO-RIC0 -0.0067 [-0.0106, -0.0032] sep True | share 0.12602666189641956 | ADE6 RILFO-RIC0 -0.0233 | RILFO-RILF075 M1 +0.0143 | RILFOC read A (ceiling of D) False
+s1 M1 RILFO-RIC0 -0.0079 [-0.0121, -0.0043] sep True | share 0.13198765116916425 | ADE6 RILFO-RIC0 -0.0246 | RILFO-RILF075 M1 +0.0155 | RILFOC read A (ceiling of D) False
+HEADLINE CEILING-SHORT (CEILING diagnostic): P_O fails (share closed s0 0.126, s1 0.132; bar 0.5), G_O fails (ADE6 s0 -0.0233 m, s1 -0.0246 m; guard +0.0604 m). CEILING: the level input is the human's logged route speed, a privileged channel that is NOT admissible at inference. This is not a driving result, not a capability claim and not a counted DOMINANT; it ranks levers (A4 card).
+2026-11-06T04:34:40 ZZLFO-READ-DONE
+2026-11-06T04:34:40 ZZLFO-CHAIN-DONE

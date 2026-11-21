@@ -1,0 +1,62 @@
+blob C:/Users/Admin/tanitad-wt/_s2build/release/v72/s2_labels_v7.2_train.jsonl.gz md5 0ff902130ce76886b8a925eceed9e3a5 pin 0ff902130ce76886b8a925eceed9e3a5 MATCH
+n records 4572 schema s2-geom-v7 vocab v7
+measured COT tokens ['CORRIDOR_OFFSET', 'EVADE_IN_CORRIDOR', 'GAP_TARGET', 'LANE_CHANGE_L', 'LANE_CHANGE_R', 'MERGE', 'OVERTAKE_VEHICLE', 'REACT_ON_ONCOMING', 'TAKE_EXIT_L', 'TAKE_EXIT_R', 'TRAFFIC_LIGHT_REACT', 'TRAFFIC_LIGHT_REACT_GREEN', 'TRAFFIC_LIGHT_REACT_RED', 'TRAFFIC_LIGHT_REACT_YELLOW', 'YIELD']
+measured GEOMETRY tokens ['FOLLOW_LANE', 'SPEED_BAND', 'STOP_POINT', 'TURN_L', 'TURN_R', 'YIELD_FOR_TURN_L', 'YIELD_FOR_TURN_R']
+tac_lat {'NUDGE_L': 488, 'LANE_KEEP': 2958, 'NUDGE_R': 592, 'TURN_R': 259, 'TURN_L': 275}
+tac_lon {'ACCELERATE': 998, 'BRAKE_TO': 905, 'CRUISE': 1243, 'ADAPT_SPEED_FOR_CURVE': 995, 'HOLD': 131, 'FOLLOW': 165, 'CREEP': 135}
+tac_lat effective_mask masked: {'LANE_CHANGE_L': 'absent', 'LANE_CHANGE_R': 'absent', 'ABORT_LC': 'both'}
+tac_lat class_weights(inverse): {'LANE_KEEP': 0.309, 'LANE_CHANGE_L': 0.0, 'LANE_CHANGE_R': 0.0, 'ABORT_LC': 0.0, 'NUDGE_L': 1.874, 'NUDGE_R': 1.545, 'TURN_L': 3.325, 'TURN_R': 3.531}
+tac_lon effective_mask masked: {'YIELD_MERGE': 'both'}
+tac_lon class_weights(inverse): {'FOLLOW': 3.958, 'CRUISE': 0.525, 'YIELD_MERGE': 0.0, 'BRAKE_TO': 0.722, 'CREEP': 4.838, 'HOLD': 4.986, 'ADAPT_SPEED_FOR_CURVE': 0.656, 'ACCELERATE': 0.654}
+goal-set size hist {2: 1871, 3: 2057, 4: 567, 5: 66, 6: 10, 7: 1} mean 2.751093613298338
+
+== negatives=measured: trainable 17/22
+  FOLLOW_LANE                  pos= 3629 neg=  943 ign=    0 prov=['geometry'] pos_weight=0.26 masked=no
+  TURN_L                       pos=  275 neg= 4297 ign=    0 prov=[] pos_weight=15.63 masked=no
+  TURN_R                       pos=  259 neg= 4313 ign=    0 prov=[] pos_weight=16.65 masked=no
+  YIELD_FOR_TURN_L             pos=   21 neg= 4551 ign=    0 prov=[] pos_weight=50.00 masked=no
+  YIELD_FOR_TURN_R             pos=   20 neg= 4552 ign=    0 prov=[] pos_weight=50.00 masked=no
+  YIELD                        pos=  609 neg=    0 ign= 3963 prov=['vlm-cot'] pos_weight=0.00 masked=YES: no supervised negative — the logit could only be pushed towards 1; needs an exclusion partner or a probed negative before it is trainable
+  STOP_POINT                   pos=  327 neg= 4245 ign=    0 prov=[] pos_weight=12.98 masked=no
+  SPEED_BAND                   pos= 4572 neg=    0 ign=    0 prov=[] pos_weight=0.00 masked=YES: no supervised negative — the logit could only be pushed towards 1; needs an exclusion partner or a probed negative before it is trainable
+  CORRIDOR_OFFSET              pos=  860 neg=    0 ign= 3712 prov=['vlm-cot'] pos_weight=0.00 masked=YES: no supervised negative — the logit could only be pushed towards 1; needs an exclusion partner or a probed negative before it is trainable
+  EVADE_IN_CORRIDOR            pos=  240 neg=   20 ign= 4312 prov=['alpamayo-structured', 'vlm-cot'] pos_weight=0.08 masked=no
+  OVERTAKE_VEHICLE             pos=   20 neg= 3635 ign=  917 prov=['vlm-cot'] pos_weight=50.00 masked=no
+  MERGE                        pos=   79 neg= 3629 ign=  864 prov=['vlm-cot'] pos_weight=45.94 masked=no
+  GAP_TARGET                   pos=  368 neg=    0 ign= 4204 prov=['vlm-cot'] pos_weight=0.00 masked=YES: no supervised negative — the logit could only be pushed towards 1; needs an exclusion partner or a probed negative before it is trainable
+  REACT_ON_ONCOMING            pos=  333 neg=    0 ign= 4239 prov=['vlm-cot'] pos_weight=0.00 masked=YES: no supervised negative — the logit could only be pushed towards 1; needs an exclusion partner or a probed negative before it is trainable
+  TAKE_EXIT_L                  pos=   21 neg=  369 ign= 4182 prov=['alpamayo-structured', 'vlm-cot'] pos_weight=17.57 masked=no
+  TAKE_EXIT_R                  pos=  128 neg=  290 ign= 4154 prov=['vlm-cot'] pos_weight=2.27 masked=no
+  TRAFFIC_LIGHT_REACT          pos=   18 neg=  761 ign= 3793 prov=['vlm-cot'] pos_weight=42.28 masked=no
+  TRAFFIC_LIGHT_REACT_RED      pos=  376 neg=  403 ign= 3793 prov=['vlm-cot'] pos_weight=1.07 masked=no
+  TRAFFIC_LIGHT_REACT_YELLOW   pos=   22 neg=  757 ign= 3793 prov=['vlm-cot'] pos_weight=34.41 masked=no
+  TRAFFIC_LIGHT_REACT_GREEN    pos=  363 neg=  416 ign= 3793 prov=['vlm-cot'] pos_weight=1.15 masked=no
+  LANE_CHANGE_L                pos=   23 neg=  290 ign= 4259 prov=['vlm-cot'] pos_weight=12.61 masked=no
+  LANE_CHANGE_R                pos=   15 neg=  282 ign= 4275 prov=['vlm-cot'] pos_weight=18.80 masked=no
+
+== negatives=all: trainable 21/22
+  FOLLOW_LANE                  pos= 3629 neg=  943 ign=    0 prov=['geometry'] pos_weight=0.26 masked=no
+  TURN_L                       pos=  275 neg= 4297 ign=    0 prov=[] pos_weight=15.63 masked=no
+  TURN_R                       pos=  259 neg= 4313 ign=    0 prov=[] pos_weight=16.65 masked=no
+  YIELD_FOR_TURN_L             pos=   21 neg= 4551 ign=    0 prov=[] pos_weight=50.00 masked=no
+  YIELD_FOR_TURN_R             pos=   20 neg= 4552 ign=    0 prov=[] pos_weight=50.00 masked=no
+  YIELD                        pos=  609 neg= 3963 ign=    0 prov=['vlm-cot'] pos_weight=6.51 masked=no
+  STOP_POINT                   pos=  327 neg= 4245 ign=    0 prov=[] pos_weight=12.98 masked=no
+  SPEED_BAND                   pos= 4572 neg=    0 ign=    0 prov=[] pos_weight=0.00 masked=YES: no supervised negative — the logit could only be pushed towards 1; needs an exclusion partner or a probed negative before it is trainable
+  CORRIDOR_OFFSET              pos=  860 neg= 3712 ign=    0 prov=['vlm-cot'] pos_weight=4.32 masked=no
+  EVADE_IN_CORRIDOR            pos=  240 neg= 4332 ign=    0 prov=['alpamayo-structured', 'vlm-cot'] pos_weight=18.05 masked=no
+  OVERTAKE_VEHICLE             pos=   20 neg= 4552 ign=    0 prov=['vlm-cot'] pos_weight=50.00 masked=no
+  MERGE                        pos=   79 neg= 4493 ign=    0 prov=['vlm-cot'] pos_weight=50.00 masked=no
+  GAP_TARGET                   pos=  368 neg= 4204 ign=    0 prov=['vlm-cot'] pos_weight=11.42 masked=no
+  REACT_ON_ONCOMING            pos=  333 neg= 4239 ign=    0 prov=['vlm-cot'] pos_weight=12.73 masked=no
+  TAKE_EXIT_L                  pos=   21 neg= 4551 ign=    0 prov=['alpamayo-structured', 'vlm-cot'] pos_weight=50.00 masked=no
+  TAKE_EXIT_R                  pos=  128 neg= 4444 ign=    0 prov=['vlm-cot'] pos_weight=34.72 masked=no
+  TRAFFIC_LIGHT_REACT          pos=   18 neg= 4554 ign=    0 prov=['vlm-cot'] pos_weight=50.00 masked=no
+  TRAFFIC_LIGHT_REACT_RED      pos=  376 neg= 4196 ign=    0 prov=['vlm-cot'] pos_weight=11.16 masked=no
+  TRAFFIC_LIGHT_REACT_YELLOW   pos=   22 neg= 4550 ign=    0 prov=['vlm-cot'] pos_weight=50.00 masked=no
+  TRAFFIC_LIGHT_REACT_GREEN    pos=  363 neg= 4209 ign=    0 prov=['vlm-cot'] pos_weight=11.60 masked=no
+  LANE_CHANGE_L                pos=   23 neg= 4549 ign=    0 prov=['vlm-cot'] pos_weight=50.00 masked=no
+  LANE_CHANGE_R                pos=   15 neg= 4557 ign=    0 prov=['vlm-cot'] pos_weight=50.00 masked=no
+
+SPEED_BAND present 4572 / 4572 v_lo n 4572 min/max 0.0 37.31 v_hi n 4572 min/max 0.0 37.8
+traffic-light positives {'TRAFFIC_LIGHT_REACT': 18, 'TRAFFIC_LIGHT_REACT_RED': 376, 'TRAFFIC_LIGHT_REACT_GREEN': 363, 'TRAFFIC_LIGHT_REACT_YELLOW': 22} any 779

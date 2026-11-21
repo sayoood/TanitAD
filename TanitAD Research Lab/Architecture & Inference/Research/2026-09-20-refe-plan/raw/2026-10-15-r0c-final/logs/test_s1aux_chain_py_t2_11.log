@@ -1,0 +1,17 @@
+Traceback (most recent call last):
+  File "C:\Users\Admin\AppData\Local\Temp\r0f\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_s1aux_chain.py", line 1255, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "C:\Users\Admin\AppData\Local\Temp\r0f\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_s1aux_chain.py", line 1243, in main
+    sandbox_runs(text, _mk(tmp, "s"))
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Temp\r0f\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_s1aux_chain.py", line 821, in sandbox_runs
+    rc, out, lg = sb.run(fresh=True, env_extra={"S1AUX_STOP_AFTER": "data"}); ok(rc == 1, out); refused(out, lg, "data", "navtest list")
+                                                                                                ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Temp\r0f\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_s1aux_chain.py", line 772, in refused
+    ok(f"ZZS1AUX_REFUSED stage={stage}:" in lg and frag in lg, (stage, frag, lg[-700:]))
+    ~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Temp\r0f\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_s1aux_chain.py", line 54, in ok
+    assert cond, msg
+           ^^^^
+AssertionError: ('data', 'navtest list', 'ZZS1AUX_PRECHECK_OK (tree ZZS1AUX_TREE_OK 38 files, commit None, tree d37f8e4d0408; upstream: over; the CPU stages run now, the GPU wait comes before the first arm)\n2026-10-15T20:20:27 ZZS1AUX_ENV_OK (cgroup cores 24, label workers 2)\n2026-10-15T20:20:27 u400 is not on the pod (or does not verify): fetching Sayood/tanitad-refe-rls1 base/model_sft4_B_u400.pt\n2026-10-15T20:20:28 ZZS1AUX_FETCH_OK u400 168 bytes md5 561c7eeb609d\n2026-10-15T20:20:28 heldout_lane restored from the repo: 3137 rows\n2026-10-15T20:20:30 ZZS1AUX_REFUSED stage=data: cannot restore heldout_teacher_lane from E:/tmp_r0cf/tmp63r8wmnu/s/work/refe-plan-s1aux/raw/2026-10-04-lane-discipline/heldout_teacher_lane_labels.jsonl.xz\n')

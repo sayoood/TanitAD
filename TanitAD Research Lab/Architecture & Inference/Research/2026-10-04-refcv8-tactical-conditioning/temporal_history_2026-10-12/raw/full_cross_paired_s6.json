@@ -1,0 +1,763 @@
+{
+ "n_windows": 3668,
+ "n_episodes": 139,
+ "dt_s": 1.0,
+ "pairs": {
+  "os_rep_minus_os": {
+   "direction": "os_rep - os",
+   "tier": "T1 minus T1",
+   "estimator": "paired_episode_cluster_bootstrap",
+   "yaw_rate_cell": "LAT_yaw_rate_mae_radps = per-window mean of |yaw_rate_pred - yaw_rate_gt| (rad/s) over the step PAIRS where pred.pair_valid AND gt.pair_valid (four_families' own mask, as in four_families.lateral); NaN for a window with no valid pair, dropped and counted as n_dropped_nonfinite. Masked since 2026-09-26; before that it averaged EVERY pair, including steps with no path tangent.",
+   "families": {
+    "ADE": {
+     "ade_m": {
+      "delta": -0.0095,
+      "lo": -0.0375,
+      "hi": 0.0179,
+      "ci95": 0.0277,
+      "p_delta_gt0": 0.2545,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     },
+     "fde_m": {
+      "delta": -0.0177,
+      "lo": -0.0866,
+      "hi": 0.0491,
+      "ci95": 0.0679,
+      "p_delta_gt0": 0.3125,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     }
+    },
+    "longitudinal": {
+     "LON_speed_mae_mps": {
+      "delta": -0.007,
+      "lo": -0.0172,
+      "hi": 0.0032,
+      "ci95": 0.0102,
+      "p_delta_gt0": 0.085,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     },
+     "LON_along_mae_m": {
+      "delta": -0.0188,
+      "lo": -0.0466,
+      "hi": 0.0075,
+      "ci95": 0.0271,
+      "p_delta_gt0": 0.0825,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     },
+     "LON_accel_mae_mps2": {
+      "delta": -0.0015,
+      "lo": -0.0048,
+      "hi": 0.0016,
+      "ci95": 0.0032,
+      "p_delta_gt0": 0.185,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     }
+    },
+    "lateral": {
+     "LAT_cross_mae_m": {
+      "delta": 0.0102,
+      "lo": -0.0068,
+      "hi": 0.0281,
+      "ci95": 0.0174,
+      "p_delta_gt0": 0.882,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     },
+     "LAT_heading_mae_deg": {
+      "delta": 0.0367,
+      "lo": -0.025,
+      "hi": 0.1082,
+      "ci95": 0.0666,
+      "p_delta_gt0": 0.8625,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3576,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 92
+     },
+     "LAT_yaw_rate_mae_radps": {
+      "delta": 0.0003,
+      "lo": -0.0001,
+      "hi": 0.0008,
+      "ci95": 0.0004,
+      "p_delta_gt0": 0.912,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3547,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 121
+     },
+     "LAT_yaw_rate_mae_radps_valid": {
+      "delta": 0.0003,
+      "lo": -0.0001,
+      "hi": 0.0008,
+      "ci95": 0.0004,
+      "p_delta_gt0": 0.912,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3547,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 121,
+      "amendment": "A3"
+     }
+    },
+    "tactical": {
+     "TAC_traj_lat_correct": {
+      "delta": -0.0027,
+      "lo": -0.0082,
+      "hi": 0.0027,
+      "ci95": 0.0055,
+      "p_delta_gt0": 0.1545,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     },
+     "TAC_traj_lon_correct": {
+      "delta": -0.0022,
+      "lo": -0.0109,
+      "hi": 0.006,
+      "ci95": 0.0084,
+      "p_delta_gt0": 0.293,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     }
+    }
+   },
+   "A3_note": "SPEC A3: `LAT_yaw_rate_mae_radps` (shared refav1_arm._components) is scored on steps with no path tangent and is DEFECTIVE -- quote `LAT_yaw_rate_mae_radps_valid` (four_families' own pred&gt pair_valid mask, per-window mean over valid steps)."
+  },
+  "os_hold_minus_os": {
+   "direction": "os_hold - os",
+   "tier": "T1 minus T1",
+   "estimator": "paired_episode_cluster_bootstrap",
+   "yaw_rate_cell": "LAT_yaw_rate_mae_radps = per-window mean of |yaw_rate_pred - yaw_rate_gt| (rad/s) over the step PAIRS where pred.pair_valid AND gt.pair_valid (four_families' own mask, as in four_families.lateral); NaN for a window with no valid pair, dropped and counted as n_dropped_nonfinite. Masked since 2026-09-26; before that it averaged EVERY pair, including steps with no path tangent.",
+   "families": {
+    "ADE": {
+     "ade_m": {
+      "delta": 0.0063,
+      "lo": -0.0257,
+      "hi": 0.0368,
+      "ci95": 0.0313,
+      "p_delta_gt0": 0.662,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     },
+     "fde_m": {
+      "delta": 0.0225,
+      "lo": -0.0499,
+      "hi": 0.0956,
+      "ci95": 0.0727,
+      "p_delta_gt0": 0.7405,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     }
+    },
+    "longitudinal": {
+     "LON_speed_mae_mps": {
+      "delta": 0.0041,
+      "lo": -0.0067,
+      "hi": 0.0143,
+      "ci95": 0.0105,
+      "p_delta_gt0": 0.7895,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     },
+     "LON_along_mae_m": {
+      "delta": 0.0094,
+      "lo": -0.019,
+      "hi": 0.037,
+      "ci95": 0.028,
+      "p_delta_gt0": 0.755,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     },
+     "LON_accel_mae_mps2": {
+      "delta": 0.002,
+      "lo": -0.0011,
+      "hi": 0.0051,
+      "ci95": 0.0031,
+      "p_delta_gt0": 0.9075,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     }
+    },
+    "lateral": {
+     "LAT_cross_mae_m": {
+      "delta": -0.0057,
+      "lo": -0.0228,
+      "hi": 0.0117,
+      "ci95": 0.0172,
+      "p_delta_gt0": 0.247,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     },
+     "LAT_heading_mae_deg": {
+      "delta": -0.0043,
+      "lo": -0.0809,
+      "hi": 0.0654,
+      "ci95": 0.0732,
+      "p_delta_gt0": 0.459,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3575,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 93
+     },
+     "LAT_yaw_rate_mae_radps": {
+      "delta": -0.0,
+      "lo": -0.0005,
+      "hi": 0.0004,
+      "ci95": 0.0005,
+      "p_delta_gt0": 0.4705,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3546,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 122
+     },
+     "LAT_yaw_rate_mae_radps_valid": {
+      "delta": -0.0,
+      "lo": -0.0005,
+      "hi": 0.0004,
+      "ci95": 0.0005,
+      "p_delta_gt0": 0.4705,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3546,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 122,
+      "amendment": "A3"
+     }
+    },
+    "tactical": {
+     "TAC_traj_lat_correct": {
+      "delta": -0.0005,
+      "lo": -0.0035,
+      "hi": 0.0025,
+      "ci95": 0.003,
+      "p_delta_gt0": 0.3375,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     },
+     "TAC_traj_lon_correct": {
+      "delta": -0.0016,
+      "lo": -0.0082,
+      "hi": 0.0049,
+      "ci95": 0.0065,
+      "p_delta_gt0": 0.28,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     }
+    }
+   },
+   "A3_note": "SPEC A3: `LAT_yaw_rate_mae_radps` (shared refav1_arm._components) is scored on steps with no path tangent and is DEFECTIVE -- quote `LAT_yaw_rate_mae_radps_valid` (four_families' own pred&gt pair_valid mask, per-window mean over valid steps)."
+  },
+  "os_st_minus_os": {
+   "direction": "os_st - os",
+   "tier": "T1 minus T1",
+   "estimator": "paired_episode_cluster_bootstrap",
+   "yaw_rate_cell": "LAT_yaw_rate_mae_radps = per-window mean of |yaw_rate_pred - yaw_rate_gt| (rad/s) over the step PAIRS where pred.pair_valid AND gt.pair_valid (four_families' own mask, as in four_families.lateral); NaN for a window with no valid pair, dropped and counted as n_dropped_nonfinite. Masked since 2026-09-26; before that it averaged EVERY pair, including steps with no path tangent.",
+   "families": {
+    "ADE": {
+     "ade_m": {
+      "delta": 0.014,
+      "lo": -0.0197,
+      "hi": 0.0464,
+      "ci95": 0.0331,
+      "p_delta_gt0": 0.788,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     },
+     "fde_m": {
+      "delta": 0.0496,
+      "lo": -0.027,
+      "hi": 0.1275,
+      "ci95": 0.0773,
+      "p_delta_gt0": 0.9,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     }
+    },
+    "longitudinal": {
+     "LON_speed_mae_mps": {
+      "delta": 0.0091,
+      "lo": -0.0021,
+      "hi": 0.0203,
+      "ci95": 0.0112,
+      "p_delta_gt0": 0.9475,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     },
+     "LON_along_mae_m": {
+      "delta": 0.0171,
+      "lo": -0.0122,
+      "hi": 0.0459,
+      "ci95": 0.029,
+      "p_delta_gt0": 0.8595,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     },
+     "LON_accel_mae_mps2": {
+      "delta": 0.0031,
+      "lo": -0.0001,
+      "hi": 0.0064,
+      "ci95": 0.0033,
+      "p_delta_gt0": 0.971,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     }
+    },
+    "lateral": {
+     "LAT_cross_mae_m": {
+      "delta": -0.0062,
+      "lo": -0.0255,
+      "hi": 0.0122,
+      "ci95": 0.0189,
+      "p_delta_gt0": 0.253,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     },
+     "LAT_heading_mae_deg": {
+      "delta": 0.0115,
+      "lo": -0.0537,
+      "hi": 0.0825,
+      "ci95": 0.0681,
+      "p_delta_gt0": 0.613,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3574,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 94
+     },
+     "LAT_yaw_rate_mae_radps": {
+      "delta": 0.0001,
+      "lo": -0.0003,
+      "hi": 0.0005,
+      "ci95": 0.0004,
+      "p_delta_gt0": 0.6395,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3546,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 122
+     },
+     "LAT_yaw_rate_mae_radps_valid": {
+      "delta": 0.0001,
+      "lo": -0.0003,
+      "hi": 0.0005,
+      "ci95": 0.0004,
+      "p_delta_gt0": 0.6395,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3546,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 122,
+      "amendment": "A3"
+     }
+    },
+    "tactical": {
+     "TAC_traj_lat_correct": {
+      "delta": -0.0011,
+      "lo": -0.0054,
+      "hi": 0.003,
+      "ci95": 0.0042,
+      "p_delta_gt0": 0.289,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     },
+     "TAC_traj_lon_correct": {
+      "delta": -0.0005,
+      "lo": -0.0082,
+      "hi": 0.0071,
+      "ci95": 0.0076,
+      "p_delta_gt0": 0.429,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     }
+    }
+   },
+   "A3_note": "SPEC A3: `LAT_yaw_rate_mae_radps` (shared refav1_arm._components) is scored on steps with no path tangent and is DEFECTIVE -- quote `LAT_yaw_rate_mae_radps_valid` (four_families' own pred&gt pair_valid mask, per-window mean over valid steps)."
+  },
+  "os_nt_minus_os": {
+   "direction": "os_nt - os",
+   "tier": "T1 minus T1",
+   "estimator": "paired_episode_cluster_bootstrap",
+   "yaw_rate_cell": "LAT_yaw_rate_mae_radps = per-window mean of |yaw_rate_pred - yaw_rate_gt| (rad/s) over the step PAIRS where pred.pair_valid AND gt.pair_valid (four_families' own mask, as in four_families.lateral); NaN for a window with no valid pair, dropped and counted as n_dropped_nonfinite. Masked since 2026-09-26; before that it averaged EVERY pair, including steps with no path tangent.",
+   "families": {
+    "ADE": {
+     "ade_m": {
+      "delta": 0.0028,
+      "lo": -0.0276,
+      "hi": 0.0326,
+      "ci95": 0.0301,
+      "p_delta_gt0": 0.581,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     },
+     "fde_m": {
+      "delta": 0.0173,
+      "lo": -0.0538,
+      "hi": 0.0896,
+      "ci95": 0.0717,
+      "p_delta_gt0": 0.68,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     }
+    },
+    "longitudinal": {
+     "LON_speed_mae_mps": {
+      "delta": 0.0018,
+      "lo": -0.0086,
+      "hi": 0.0119,
+      "ci95": 0.0103,
+      "p_delta_gt0": 0.6675,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     },
+     "LON_along_mae_m": {
+      "delta": 0.0057,
+      "lo": -0.0227,
+      "hi": 0.0333,
+      "ci95": 0.028,
+      "p_delta_gt0": 0.6615,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     },
+     "LON_accel_mae_mps2": {
+      "delta": 0.0012,
+      "lo": -0.002,
+      "hi": 0.0043,
+      "ci95": 0.0031,
+      "p_delta_gt0": 0.7865,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     }
+    },
+    "lateral": {
+     "LAT_cross_mae_m": {
+      "delta": -0.0047,
+      "lo": -0.0204,
+      "hi": 0.012,
+      "ci95": 0.0162,
+      "p_delta_gt0": 0.2765,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     },
+     "LAT_heading_mae_deg": {
+      "delta": 0.0092,
+      "lo": -0.0615,
+      "hi": 0.0745,
+      "ci95": 0.068,
+      "p_delta_gt0": 0.594,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3576,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 92
+     },
+     "LAT_yaw_rate_mae_radps": {
+      "delta": 0.0001,
+      "lo": -0.0004,
+      "hi": 0.0005,
+      "ci95": 0.0004,
+      "p_delta_gt0": 0.615,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3547,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 121
+     },
+     "LAT_yaw_rate_mae_radps_valid": {
+      "delta": 0.0001,
+      "lo": -0.0004,
+      "hi": 0.0005,
+      "ci95": 0.0004,
+      "p_delta_gt0": 0.615,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3547,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 121,
+      "amendment": "A3"
+     }
+    },
+    "tactical": {
+     "TAC_traj_lat_correct": {
+      "delta": 0.0003,
+      "lo": -0.003,
+      "hi": 0.0035,
+      "ci95": 0.0033,
+      "p_delta_gt0": 0.56,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     },
+     "TAC_traj_lon_correct": {
+      "delta": 0.0016,
+      "lo": -0.0046,
+      "hi": 0.0077,
+      "ci95": 0.0061,
+      "p_delta_gt0": 0.667,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 3668,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_dropped_nonfinite": 0
+     }
+    }
+   },
+   "A3_note": "SPEC A3: `LAT_yaw_rate_mae_radps` (shared refav1_arm._components) is scored on steps with no path tangent and is DEFECTIVE -- quote `LAT_yaw_rate_mae_radps_valid` (four_families' own pred&gt pair_valid mask, per-window mean over valid steps)."
+  }
+ },
+ "A3_note": "SPEC A3: `LAT_yaw_rate_mae_radps` (shared refav1_arm._components) is scored on steps with no path tangent and is DEFECTIVE -- quote `LAT_yaw_rate_mae_radps_valid` (four_families' own pred&gt pair_valid mask, per-window mean over valid steps).",
+ "means": {
+  "os": {
+   "ade_m": 2.6998887062072754,
+   "fde_m": 6.597283363342285,
+   "LON_speed_mae_mps": 0.9733719229698181,
+   "LON_along_mae_m": 2.3228249549865723,
+   "LON_accel_mae_mps2": 0.4425336420536041,
+   "LAT_cross_mae_m": 0.849163830280304,
+   "LAT_heading_mae_deg": 3.346930503845215,
+   "LAT_yaw_rate_mae_radps": 0.029374660924077034,
+   "TAC_traj_lat_correct": 0.8705016374588013,
+   "TAC_traj_lon_correct": 0.6052344441413879,
+   "LAT_yaw_rate_mae_radps_valid": 0.029374660924077034
+  },
+  "os_hold": {
+   "ade_m": 2.7061495780944824,
+   "fde_m": 6.619776725769043,
+   "LON_speed_mae_mps": 0.9774380326271057,
+   "LON_along_mae_m": 2.3322291374206543,
+   "LON_accel_mae_mps2": 0.44450369477272034,
+   "LAT_cross_mae_m": 0.8434471487998962,
+   "LAT_heading_mae_deg": 3.3638901710510254,
+   "LAT_yaw_rate_mae_radps": 0.029414255172014236,
+   "TAC_traj_lat_correct": 0.869956374168396,
+   "TAC_traj_lon_correct": 0.6035987138748169,
+   "LAT_yaw_rate_mae_radps_valid": 0.029414255172014236
+  },
+  "os_nt": {
+   "ade_m": 2.702653646469116,
+   "fde_m": 6.614628314971924,
+   "LON_speed_mae_mps": 0.9752117395401001,
+   "LON_along_mae_m": 2.3285202980041504,
+   "LON_accel_mae_mps2": 0.4437158703804016,
+   "LAT_cross_mae_m": 0.8444525599479675,
+   "LAT_heading_mae_deg": 3.3758628368377686,
+   "LAT_yaw_rate_mae_radps": 0.029496697708964348,
+   "TAC_traj_lat_correct": 0.8707742691040039,
+   "TAC_traj_lon_correct": 0.6068702340126038,
+   "LAT_yaw_rate_mae_radps_valid": 0.029496697708964348
+  },
+  "os_rep": {
+   "ade_m": 2.6903460025787354,
+   "fde_m": 6.579586982727051,
+   "LON_speed_mae_mps": 0.9663985967636108,
+   "LON_along_mae_m": 2.3040051460266113,
+   "LON_accel_mae_mps2": 0.44106972217559814,
+   "LAT_cross_mae_m": 0.8593558073043823,
+   "LAT_heading_mae_deg": 3.382422924041748,
+   "LAT_yaw_rate_mae_radps": 0.02962866798043251,
+   "TAC_traj_lat_correct": 0.8677753806114197,
+   "TAC_traj_lon_correct": 0.6030534505844116,
+   "LAT_yaw_rate_mae_radps_valid": 0.02962866798043251
+  },
+  "os_st": {
+   "ade_m": 2.713846445083618,
+   "fde_m": 6.6468634605407715,
+   "LON_speed_mae_mps": 0.9824564456939697,
+   "LON_along_mae_m": 2.339914560317993,
+   "LON_accel_mae_mps2": 0.4456655979156494,
+   "LAT_cross_mae_m": 0.842970609664917,
+   "LAT_heading_mae_deg": 3.3780369758605957,
+   "LAT_yaw_rate_mae_radps": 0.029497560113668442,
+   "TAC_traj_lat_correct": 0.8694111108779907,
+   "TAC_traj_lon_correct": 0.6046891808509827,
+   "LAT_yaw_rate_mae_radps_valid": 0.029497560113668442
+  }
+ }
+}

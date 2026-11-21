@@ -1,0 +1,175 @@
+--- tools/enumerate_cells_li.py (v1)
++++ tools/enumerate_cells_li.py (v2)
+@@ -1,10 +1,10 @@
+-"""PREREG_V8F_LAUNCH_INTENT (DRAFT): prove that the outcome table, the dose cascade and NEXT-LAUNCH are complete and exclusive, and that the table's cell mapping is DAG-ORC's.
++"""PREREG_V8F_LAUNCH_INTENT (DRAFT v2): prove that the outcome table, the dose cascade and NEXT-LAUNCH are complete and exclusive, that the table's cell mapping is DAG-ORC's, and that the v2 per-seed composition over the two pairs maps onto it.
+ 
+ python enumerate_cells_li.py > enumerate_cells_li.out     (exit 0 iff every check below passes)
+ 
+ It is `raw/2026-10-27-dag-orc-draft/enumerate_cells.py` with: section 1's `outcome_rows` UNCHANGED (the same eight literal predicates over the same 524,288 cells); the committed-next texts and the NEXT-CRAWL section
+-replaced by LAUNCH-INTENT's; and two added checks: (8) the per-row cell counts equal the counts DAG-ORC's own `enumerate_cells.out` registers (so the mapping from conditions to outcome rows is identical), and (9) the
+-dose rule and the K-SHARE band on hand-made edge cases.
++replaced by LAUNCH-INTENT's; and added checks: (8) the per-row cell counts equal the counts DAG-ORC's own `enumerate_cells.out` registers (so the mapping from conditions to outcome rows is identical), (9) the
++dose rule and the K-SHARE band on hand-made edge cases, and, v2 (MM_REDESIGN_2026-10-28): (7) the bar is 2 * max(F, RF0) and the four crawl bars are reachable, (9) arm B at the share 1/4, and (10) the per-seed AND over the seed's two pairs.
+ 
+ What it proves, each over EVERY cell (no sampling):
+   1. The 8 outcome rows of section 7, each coded as its own literal predicate, match EXACTLY ONE row in each of the 2 x 2^18 = 524,288 cells (controls x 5 guards x 2 seeds x R-CRAWL, R-MOVE, R-KEEP, R-NOBASE x 2 seeds).
+@@ -13,9 +13,10 @@
+   4. With adoption projected away, the (R-CRAWL, R-MOVE) x 2-seed guarded cells map exactly as PREREG_V8F_DAGGER2 Amendment 1 (FIXED 1 / PARTIAL 11 / NO EFFECT 4).
+   5. The A -> B dose cascade is total over A's 8 rows x B trained or not x B's 8 rows.
+   6. NEXT-LAUNCH is total over (M-LAUNCH moved at both seeds: 2) x (the outcome row sending it there: 4).
+-  7. The bar and clear / fire predicates on hand-made edge cases (inclusive bar, direction, structural zero).
++  7. The bar (v2: 2 * max(F, RF0), RF is not a term) and clear / fire predicates on hand-made edge cases (inclusive bar, direction, structural zero); the four crawl bars equal the registered values and lie below the CTRL - P10 gap at both seeds.
+   8. The cell counts per row equal DAG-ORC's registered counts.
+-  9. The dose rule gives the registered share at the measured f; the K-SHARE band is inclusive.
++  9. The dose rule gives the registered share at the measured f (A 1/3, B 1/4, HI 1/2); the K-SHARE band is inclusive.
++  10. (v2) A seed's predicate is the AND of its main-pair and replicate-pair values: all four combinations, every per-seed value reachable, and 200,000 seeded random pair-level assignments each match exactly one row.
+ """
+ import itertools
+ import sys
+@@ -178,9 +179,9 @@
+ 
+ 
+ # ---------------------------------------------------------------- 7. the bar and the clear / fire predicates (UNCHANGED from DAG-ORC's enumerate_cells.py)
+-def bar(row, rf0, rf):
+-    """bar_r = 2 * max(F_r, RF0_r, RF_r); F_r = F_ADE for ADE6, 0 for every other row (its row-equivalent is RF0_r)."""
+-    return 2.0 * max(F_ADE if row == "ADE6" else 0.0, abs(rf0), abs(rf))
++def bar(row, rf0):
++    """v2 (MM_REDESIGN_2026-10-28 section 3 item 2): bar_r = 2 * max(F_r, RF0_r); F_r = F_ADE for ADE6, 0 for every other row. RF is not a term (it is reported beside)."""
++    return 2.0 * max(F_ADE if row == "ADE6" else 0.0, abs(rf0))
+ 
+ 
+ def worse(point, lo, hi, higher_better):
+@@ -202,14 +203,28 @@
+     return worse(*arm_p10, higher_better) and worse(p, lo, hi, higher_better) and worsening >= b
+ 
+ 
+-check(bar("ADE6", 0.01, 0.02) == 2 * F_ADE, "ADE6 bar must not fall below 2F")
+-check(bar("M1", 0.004, 0.007) == 0.014, "non-ADE bar = 2 * max(RF0, RF)")
+-check(bar("M1", 0.0, 0.0) == 0.0, "two bit-identical floors give bar 0 (clears iff separated)")
++check(bar("ADE6", 0.01) == 2 * F_ADE, "ADE6 bar must not fall below 2F")
++check(bar("ADE6", 0.2) == 0.4, "ADE6 bar follows RF0 when RF0 exceeds F")
++check(bar("M1", 0.004) == 0.008, "non-ADE bar = 2 * RF0")
++check(bar("M1", -0.004) == 0.008, "the bar takes |RF0|")
++check(bar("M1", 0.0) == 0.0, "a floor of exactly 0 gives bar 0 (clears iff separated)")
++RF0_CRAWL = {"yaw-rate MAE": 0.5535, "curvature MAE": 0.0263, "L2 curvature MAE (GT>=5.2)": 0.0068, "M1 crawl share": 0.0048}       # P0_RF0.json (sha256 1608d70b...), RF0 of the four crawl rows
++RF_CRAWL = {"yaw-rate MAE": 15.8553, "curvature MAE": 0.1324, "L2 curvature MAE (GT>=5.2)": 0.0870, "M1 crawl share": 0.0388}         # RF_REP.json (sha256 64c9444d...): beside, never a bar term
++GAP_CTRL_P10 = {"yaw-rate MAE": (3.4726, 8.6844), "curvature MAE": (0.0854, 0.1352), "L2 curvature MAE (GT>=5.2)": (0.0443, 0.0529), "M1 crawl share": (0.0568, 0.0604)}   # DAGORC_READ.json read_a.CTRL_P10 (sha256 70a7a3a4...), s0 / s1
++CRAWL_BAR_V2 = {"yaw-rate MAE": 1.1070, "curvature MAE": 0.0526, "L2 curvature MAE (GT>=5.2)": 0.0136, "M1 crawl share": 0.0096}                # MM_REDESIGN_2026-10-28 section 3 item 2
++for lab, rf0v in RF0_CRAWL.items():
++    b2 = bar(lab, rf0v)
++    check(round(b2, 4) == CRAWL_BAR_V2[lab], f"{lab}: the v2 crawl bar is {b2}, registered {CRAWL_BAR_V2[lab]}")
++    check(all(b2 < g for g in GAP_CTRL_P10[lab]), f"{lab}: the v2 bar {b2} is not below the CTRL - P10 gap {GAP_CTRL_P10[lab]} at both seeds (the decisive condition would be unreachable)")
++    v1 = 2.0 * max(rf0v, RF_CRAWL[lab])                                  # the v1 bar, shown to sit above the gap
++    check(any(v1 > g for g in GAP_CTRL_P10[lab]), f"{lab}: the v1 bar {v1} was not above the gap at either seed (the registered defect is not reproduced)")
+ check(clears_better(-0.014, -0.02, -0.008, 0.014), "the bar is inclusive")
+ check(not clears_better(-0.0139, -0.02, -0.008, 0.014), "below the bar does not clear")
+ check(not clears_better(-0.05, -0.09, 0.001, 0.014), "not separated does not clear")
+ check(clears_better(+0.05, 0.02, 0.08, 0.04, higher_better=True), "direction: higher-is-better row clears upward")
+ check(fires_new((6.25, 3.27, 9.14), (7.0, 2.0, 12.0), 6.0), "fires: worse vs P10, worse vs control beyond the bar")
++check(fires_new((6.25, 3.27, 9.14), (6.0, 2.0, 12.0), 6.0), "the fire bar is inclusive")
++check(not fires_new((6.25, 3.27, 9.14), (5.9999, 2.0, 12.0), 6.0), "just below the fire bar does not fire")
+ check(not fires_new((6.25, 3.27, 9.14), (1.36, -1.0, 3.7), 0.0), "does not fire: arm - control not separated")
+ check(not fires_new((6.25, 3.27, 9.14), (5.0, 2.0, 8.0), 6.0), "does not fire: arm - control below the floor")
+ check(not fires_new((0.5, -0.2, 1.2), (7.0, 2.0, 12.0), 6.0), "does not fire: arm - P10 not separated-worse")
+@@ -235,15 +250,77 @@
+     return abs(share - target) <= tol + 1e-12
+ 
+ 
+-wa, wb, wh = (float(f"{dose_w(F_MEAS, s):.6g}") for s in (1 / 3, 1 / 6, 1 / 2))
+-check(wa == 1.58926 and wb == 0.0357048, f"dose at the measured f: {wa}, {wb}")
+-check(abs(share_of(F_MEAS, wa) - 1 / 3) < 1e-6 and abs(share_of(F_MEAS, wb) - 1 / 6) < 1e-6 and abs(share_of(F_MEAS, wh) - 1 / 2) < 1e-6, "the dose rule does not give its share")
++wa, wb, wh = (float(f"{dose_w(F_MEAS, s):.6g}") for s in (1 / 3, 1 / 4, 1 / 2))
++check(wa == 1.58926 and wb == 0.726175 and wh == 4.17852, f"dose at the measured f: {wa}, {wb}, {wh}")
++check(abs(share_of(F_MEAS, wa) - 1 / 3) < 1e-6 and abs(share_of(F_MEAS, wb) - 1 / 4) < 1e-6 and abs(share_of(F_MEAS, wh) - 1 / 2) < 1e-6, "the dose rule does not give its share")
++check(abs((1 - F_MEAS) / (3 * F_MEAS) - 1 - dose_w(F_MEAS, 1 / 4)) < 1e-12, "the closed form (1 - f) / (3 f) equals the general rule at 1/4 (arm B)")
+ check(abs((1 - F_MEAS) / (2 * F_MEAS) - 1 - dose_w(F_MEAS, 1 / 3)) < 1e-12, "the closed form (1 - f) / (2 f) equals the general rule at 1/3")
+ check(abs(dose_w(F_MEAS, F_MEAS)) < 1e-12, "a share equal to f is the unweighted run: W = 0")
+ check(k_share_ok(1 / 3 + 0.02, 1 / 3) and k_share_ok(1 / 3 - 0.02, 1 / 3) and not k_share_ok(1 / 3 + 0.0201, 1 / 3) and not k_share_ok(0.0, 1 / 3), "K-SHARE band is inclusive")
+ for s_ in (0.3314508172724677, 0.33072924299512985, 0.3255864741422861, 0.3280925644385709):          # the sampler simulation at seeds 0, 1, 10, 11 (tools/measure_f.py)
+     check(k_share_ok(s_, 1 / 3), f"simulated share {s_} outside K-SHARE")
+-check(abs(1 / 6 - F_MEAS) < 0.01, "arm B at one sixth sits within 0.01 of the UNWEIGHTED share f (the lever is nearly a no-op there)")
++check(F_MEAS + 0.05 < 1 / 4 < 1 / 3 - 0.05, "arm B at the share 1/4 sits strictly between the unweighted share f and A's 1/3, each by more than 0.05 (a real lower dose)")
++check(abs(1 / 6 - F_MEAS) < 0.01, "arm B at the v1 share 1/6 sat within 0.01 of the UNWEIGHTED share f (nearly a no-op): the reason B is 1/4")
++SIM_ROWS = {0: (191203, 30727), 1: (191396, 30674), 10: (191333, 30068), 11: (191391, 30367)}            # tools/measure_f.py sampler simulation (f_measure.json), rows / launch rows at trainer seeds 0, 1, 10, 11
++SIM_SHARE = {}
++for nm_, w_, tgt_ in (("A", wa, 1 / 3), ("B", wb, 1 / 4), ("HI", wh, 1 / 2)):
++    for sd_, (r_, n_) in SIM_ROWS.items():
++        sh_ = (1 + w_) * n_ / ((1 + w_) * n_ + r_ - n_)
++        SIM_SHARE[(nm_, sd_)] = sh_
++        check(k_share_ok(sh_, tgt_), f"simulated share of arm {nm_} at trainer seed {sd_} = {sh_:.4f} outside {tgt_} +- 0.02")
++check(round(SIM_SHARE[("B", 0)], 4) == 0.2484 and round(SIM_SHARE[("HI", 11)], 4) == 0.4941, "the simulated shares quoted in the PREREG (B 0.2484 ... HI ... 0.4941)")
++
++# ---------------------------------------------------------------- 10. v2: a seed's predicate is the AND over the seed's two pairs; the table is evaluated on the per-seed booleans
++import random
++
++PREDICATES = ("R-MOVE", "R-CRAWL", "R-TLAT", "R-TLON", "R-ADE", "R-T0", "R-NEW", "R-KEEP", "R-NOBASE")
++GUARDS_AS_PREDICATES = GUARDS
++
++
++def seed_bool(main_pair, replicate_pair):
++    """MM_REDESIGN_2026-10-28 section 3 item 3: each condition holds at seed s only when it holds on BOTH pairs of that seed."""
++    return bool(main_pair and replicate_pair)
++
++
++and_table = {(a, b): seed_bool(a, b) for a in (False, True) for b in (False, True)}
++check(and_table == {(False, False): False, (False, True): False, (True, False): False, (True, True): True}, "the per-seed AND is not the conjunction")
++check(set(and_table.values()) == {False, True}, "a per-seed value is unreachable")
++
++
++def row_from_pairs(ctrl, pair_bits):
++    """pair_bits[pred][s] = (main, replicate): the 9 predicates x 2 seeds x 2 pairs. -> {row: bool} (exactly one True)."""
++    seed_vals = {p: {s: seed_bool(*pair_bits[p][s]) for s in SEEDS} for p in PREDICATES}
++    held = {g: seed_vals[g] for g in GUARDS}
++    per_seed = lambda p: tuple(seed_vals[p][s] for s in SEEDS)      # noqa: E731  outcome_rows takes (s0, s1) tuples for these four
++    return outcome_rows(ctrl, held, per_seed("R-CRAWL"), per_seed("R-MOVE"), per_seed("R-KEEP"), per_seed("R-NOBASE"))
++
++
++rng = random.Random(20261028)
++and_count = Counter()
++N_AND = 200_000
++for _ in range(N_AND):
++    q = {p: (0.98 if p in GUARDS_AS_PREDICATES else 0.8) for p in PREDICATES}          # biased draws so that every row is reachable at 200,000 draws
++    pb = {p: {s: (rng.random() < q[p], rng.random() < q[p]) for s in SEEDS} for p in PREDICATES}
++    r_ = row_from_pairs(rng.random() < 0.9, pb)
++    hit_ = [k for k, v in r_.items() if v]
++    if len(hit_) != 1:
++        fails.append(f"pair-level assignment matches {hit_}")
++        continue
++    and_count[hit_[0]] += 1
++check(sum(and_count.values()) == N_AND, "a pair-level assignment is unplaced or double-placed")
++check(set(and_count) == set(ROWS), f"the random pair-level draw reached only {sorted(and_count)}")
++# a seed in which ONE pair misses is a miss
++pb0 = {p: {s: (True, True) for s in SEEDS} for p in PREDICATES}
++pb0["R-MOVE"][1] = (True, False)
++check([k for k, v in row_from_pairs(True, pb0).items() if v] == ["PARTIAL / ONE SEED"], "R-MOVE true in the main pair at both seeds but false in one replicate pair is not ONE SEED")
++pb1 = {p: {s: (True, True) for s in SEEDS} for p in PREDICATES}
++pb1["R-ADE"][0] = (True, False)
++check([k for k, v in row_from_pairs(True, pb1).items() if v] == ["HARMS"], "a guard failing in the replicate pair only is not HARMS")
++pb2 = {p: {s: (True, True) for s in SEEDS} for p in PREDICATES}
++check([k for k, v in row_from_pairs(True, pb2).items() if v] == ["FIXED / ADOPTED"], "all predicates true in both pairs at both seeds is not FIXED / ADOPTED")
++AND_LINE = (f"a seed's predicate is the AND of its main-pair and replicate-pair values (all four combinations checked, both per-seed values reachable); "
++            f"{N_AND:,} seeded random pair-level assignments (9 predicates x 2 seeds x 2 pairs, controls on or off) each matched exactly one of the 8 rows, and all 8 rows were reached; "
++            f"a miss in either pair is a miss at the seed (three hand-made cases)")
+ 
+ # ---------------------------------------------------------------- report
+ print(f"cells enumerated: {n_cells:,} (controls 1 bit x 5 guards x 2 seeds x R-CRAWL / R-MOVE / R-KEEP / R-NOBASE x 2 seeds)")
+@@ -265,13 +342,16 @@
+ print("launch routing (base is DAG-OACC x another lever adopted in front):")
+ for k, v in lr.items():
+     print(f"  base_is_dagoacc={k[0]!s:5s} other_adopted={k[1]!s:5s} -> {v.split(':')[0]}")
+-print(f"dose at the measured f = {F_MEAS:.6f}: W_A = {wa} (share 1/3), W_B = {wb} (share 1/6), W_HI = {wh} (share 1/2); share at W_A {share_of(F_MEAS, wa):.6f}, at W_B {share_of(F_MEAS, wb):.6f}; the UNWEIGHTED share is f = {F_MEAS:.6f}")
++print(f"dose at the measured f = {F_MEAS:.6f}: W_A = {wa} (share 1/3), W_B = {wb} (share 1/4), W_HI = {wh} (share 1/2); share at W_A {share_of(F_MEAS, wa):.6f}, at W_B {share_of(F_MEAS, wb):.6f}; the UNWEIGHTED share is f = {F_MEAS:.6f}")
+ print("committed next, arm A:")
+ for k in ROWS:
+     print(f"  {k:24s} {NEXT_A[k]}")
+ print("committed next, arm B (read only after A: HARMS or NOT ADOPTED):")
+ for k in ROWS:
+     print(f"  {k:24s} {NEXT_B[k]}")
+-print("bar / clear / fire predicate checks: 11; dose and K-SHARE checks: 8")
++print("v2 bar: 2 * max(F, RF0); crawl bars", {k: round(bar(k, v), 4) for k, v in RF0_CRAWL.items()}, "each below the CTRL - P10 gap at both seeds; the v1 bars", {k: round(2.0 * max(v, RF_CRAWL[k]), 4) for k, v in RF0_CRAWL.items()}, "sit above it at >= 1 seed")
++print("simulated realised shares (ESTIMATED, trainer seeds 0 / 1 / 10 / 11):", {nm: [round(SIM_SHARE[(nm, sd)], 4) for sd in SIM_ROWS] for nm in ("A", "B", "HI")})
++print("per-seed composition:", AND_LINE)
++print("pair-level random draw, rows reached:", dict(and_count))
+ print("FAILS:", fails if fails else "none")
+ sys.exit(1 if fails else 0)

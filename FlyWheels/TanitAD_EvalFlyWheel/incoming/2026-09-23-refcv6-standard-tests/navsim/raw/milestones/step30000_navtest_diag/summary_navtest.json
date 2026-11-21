@@ -1,0 +1,2387 @@
+{
+ "_label": "RESULT",
+ "protocol": "PDMS_v1_navtest",
+ "n_tokens": 200,
+ "model_as_trained": "\"F3 detach-only, F4 on the last layer only; tactical labels ~0.37 s early\" (steps <= 34,500: the F3 per-stage cascade loss never ran, decoder stages 0-2 frozen at init; Master Mind audit 2026-09-26, GOALS_AND_CLAIMS D-REFCV6-F3-WHITELIST / D-REFCV6-LABEL-CLOCK; INHERITED)",
+ "checkpoint_step": 30000,
+ "tokens_subset": "D:\\Projects\\TanitAD\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-v1-navtest\\raw\\A1_sub200_tokens.json",
+ "n_logs": 93,
+ "floors_source": {
+  "CV": "D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-v1-navtest/raw/CV_navtest/CV_navtest.csv",
+  "STOP": "D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-v1-navtest/raw/STOP_navtest/STOP_navtest.csv",
+  "HUMAN": "D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-v1-navtest/raw/HUMAN_navtest/HUMAN_navtest.csv",
+  "refcv4b_A1": "D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-v1-navtest/raw/A1_navtest/A1_navtest.csv"
+ },
+ "estimator": {
+  "name": "navsim_log_cluster_bootstrap",
+  "paired": "paired_navsim_log_cluster_bootstrap",
+  "unit": "log_name",
+  "aggregation": "single_stage_token_mean",
+  "module": "D:\\Projects\\TanitAD\\taniteval\\adapters\\navsim_ci.py"
+ },
+ "arms": {
+  "R6_A1": {
+   "NC": 87.25,
+   "DAC": 81.0,
+   "EP": 59.6469,
+   "TTC": 78.5,
+   "C": 100.0,
+   "DDC": 92.5,
+   "PDMS": 62.5653,
+   "zeroed_by_NC_or_DAC": 59,
+   "device": "cpu fp32",
+   "interval": {
+    "status": "OK",
+    "estimator": "navsim_log_cluster_bootstrap",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "point": 0.6257,
+    "mean": 0.6257,
+    "lo": 0.5713,
+    "hi": 0.6876,
+    "ci95": 0.0582,
+    "se": 0.0297,
+    "bootstrap_mean": 0.6269,
+    "n_clusters": 93,
+    "n_units": 200,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "n_boot": 2000,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official": {
+     "status": "OK",
+     "official_value": 0.6256527745773749,
+     "point": 0.6256527745773749,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 41,
+     "lo": 0.5616,
+     "hi": 0.6922,
+     "se": 0.0337
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna) \u2014 the SAME draws, cross-checked",
+    "_forbidden": "\u26d4 scene-token resampling (overlapping units), the episode-cluster bootstrap under any other unit, and overlapping_holdout_se (biases the point estimate) are NOT admissible for NavSim."
+   }
+  },
+  "R6_A1_s1": {
+   "NC": 90.0,
+   "DAC": 84.0,
+   "EP": 64.3007,
+   "TTC": 81.5,
+   "C": 99.5,
+   "DDC": 93.0,
+   "PDMS": 67.6253,
+   "zeroed_by_NC_or_DAC": 49,
+   "device": "cpu fp32",
+   "interval": {
+    "status": "OK",
+    "estimator": "navsim_log_cluster_bootstrap",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "point": 0.6763,
+    "mean": 0.6763,
+    "lo": 0.6258,
+    "hi": 0.7313,
+    "ci95": 0.0528,
+    "se": 0.0261,
+    "bootstrap_mean": 0.677,
+    "n_clusters": 93,
+    "n_units": 200,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "n_boot": 2000,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official": {
+     "status": "OK",
+     "official_value": 0.6762529626984878,
+     "point": 0.6762529626984878,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 41,
+     "lo": 0.6188,
+     "hi": 0.7336,
+     "se": 0.0295
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna) \u2014 the SAME draws, cross-checked",
+    "_forbidden": "\u26d4 scene-token resampling (overlapping units), the episode-cluster bootstrap under any other unit, and overlapping_holdout_se (biases the point estimate) are NOT admissible for NavSim."
+   }
+  },
+  "R6_VMAXOFF": {
+   "NC": 87.75,
+   "DAC": 81.0,
+   "EP": 60.1469,
+   "TTC": 79.0,
+   "C": 100.0,
+   "DDC": 92.75,
+   "PDMS": 63.0653,
+   "zeroed_by_NC_or_DAC": 58,
+   "device": "cpu fp32",
+   "interval": {
+    "status": "OK",
+    "estimator": "navsim_log_cluster_bootstrap",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "point": 0.6307,
+    "mean": 0.6307,
+    "lo": 0.5768,
+    "hi": 0.6919,
+    "ci95": 0.0575,
+    "se": 0.0297,
+    "bootstrap_mean": 0.6319,
+    "n_clusters": 93,
+    "n_units": 200,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "n_boot": 2000,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official": {
+     "status": "OK",
+     "official_value": 0.6306527745773749,
+     "point": 0.6306527745773749,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 41,
+     "lo": 0.5687,
+     "hi": 0.6969,
+     "se": 0.0334
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna) \u2014 the SAME draws, cross-checked",
+    "_forbidden": "\u26d4 scene-token resampling (overlapping units), the episode-cluster bootstrap under any other unit, and overlapping_holdout_se (biases the point estimate) are NOT admissible for NavSim."
+   }
+  },
+  "R6_VMAXORACLE": {
+   "NC": 87.25,
+   "DAC": 80.5,
+   "EP": 59.1313,
+   "TTC": 79.0,
+   "C": 100.0,
+   "DDC": 92.25,
+   "PDMS": 62.2671,
+   "zeroed_by_NC_or_DAC": 60,
+   "device": "cpu fp32",
+   "interval": {
+    "status": "OK",
+    "estimator": "navsim_log_cluster_bootstrap",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "point": 0.6227,
+    "mean": 0.6227,
+    "lo": 0.5692,
+    "hi": 0.6838,
+    "ci95": 0.0573,
+    "se": 0.0294,
+    "bootstrap_mean": 0.6239,
+    "n_clusters": 93,
+    "n_units": 200,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "n_boot": 2000,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official": {
+     "status": "OK",
+     "official_value": 0.6226713063887044,
+     "point": 0.6226713063887044,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 41,
+     "lo": 0.5628,
+     "hi": 0.6868,
+     "se": 0.0322
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna) \u2014 the SAME draws, cross-checked",
+    "_forbidden": "\u26d4 scene-token resampling (overlapping units), the episode-cluster bootstrap under any other unit, and overlapping_holdout_se (biases the point estimate) are NOT admissible for NavSim."
+   }
+  },
+  "CV": {
+   "NC": 68.5,
+   "DAC": 56.0,
+   "EP": 19.4521,
+   "TTC": 49.5,
+   "C": 100.0,
+   "DDC": 80.25,
+   "PDMS": 21.8222,
+   "zeroed_by_NC_or_DAC": 131,
+   "device": "banked floor (W3, model-free or log replay)",
+   "interval": {
+    "status": "OK",
+    "estimator": "navsim_log_cluster_bootstrap",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "point": 0.2182,
+    "mean": 0.2182,
+    "lo": 0.1788,
+    "hi": 0.2578,
+    "ci95": 0.0395,
+    "se": 0.0205,
+    "bootstrap_mean": 0.2179,
+    "n_clusters": 93,
+    "n_units": 200,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "n_boot": 2000,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official": {
+     "status": "OK",
+     "official_value": 0.21822225938257392,
+     "point": 0.21822225938257392,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 41,
+     "lo": 0.178,
+     "hi": 0.2704,
+     "se": 0.0234
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna) \u2014 the SAME draws, cross-checked",
+    "_forbidden": "\u26d4 scene-token resampling (overlapping units), the episode-cluster bootstrap under any other unit, and overlapping_holdout_se (biases the point estimate) are NOT admissible for NavSim."
+   }
+  },
+  "STOP": {
+   "NC": 97.0,
+   "DAC": 99.0,
+   "EP": 30.5948,
+   "TTC": 96.5,
+   "C": 66.0,
+   "DDC": 100.0,
+   "PDMS": 62.5812,
+   "zeroed_by_NC_or_DAC": 8,
+   "device": "banked floor (W3, model-free or log replay)",
+   "interval": {
+    "status": "OK",
+    "estimator": "navsim_log_cluster_bootstrap",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "point": 0.6258,
+    "mean": 0.6258,
+    "lo": 0.6006,
+    "hi": 0.6526,
+    "ci95": 0.026,
+    "se": 0.0131,
+    "bootstrap_mean": 0.6263,
+    "n_clusters": 93,
+    "n_units": 200,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "n_boot": 2000,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official": {
+     "status": "OK",
+     "official_value": 0.6258116334270853,
+     "point": 0.6258116334270853,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 41,
+     "lo": 0.6017,
+     "hi": 0.6495,
+     "se": 0.0123
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna) \u2014 the SAME draws, cross-checked",
+    "_forbidden": "\u26d4 scene-token resampling (overlapping units), the episode-cluster bootstrap under any other unit, and overlapping_holdout_se (biases the point estimate) are NOT admissible for NavSim."
+   }
+  },
+  "HUMAN": {
+   "NC": 100.0,
+   "DAC": 100.0,
+   "EP": 85.8869,
+   "TTC": 100.0,
+   "C": 100.0,
+   "DDC": 99.25,
+   "PDMS": 94.1195,
+   "zeroed_by_NC_or_DAC": 0,
+   "device": "banked floor (W3, model-free or log replay)",
+   "interval": {
+    "status": "OK",
+    "estimator": "navsim_log_cluster_bootstrap",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "point": 0.9412,
+    "mean": 0.9412,
+    "lo": 0.9276,
+    "hi": 0.9545,
+    "ci95": 0.0134,
+    "se": 0.007,
+    "bootstrap_mean": 0.9416,
+    "n_clusters": 93,
+    "n_units": 200,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "n_boot": 2000,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official": {
+     "status": "OK",
+     "official_value": 0.9411952739951959,
+     "point": 0.9411952739951959,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 41,
+     "lo": 0.9219,
+     "hi": 0.9602,
+     "se": 0.0099
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna) \u2014 the SAME draws, cross-checked",
+    "_forbidden": "\u26d4 scene-token resampling (overlapping units), the episode-cluster bootstrap under any other unit, and overlapping_holdout_se (biases the point estimate) are NOT admissible for NavSim."
+   }
+  },
+  "refcv4b_A1": {
+   "NC": 88.75,
+   "DAC": 74.5,
+   "EP": 51.205,
+   "TTC": 81.5,
+   "C": 100.0,
+   "DDC": 88.25,
+   "PDMS": 57.9689,
+   "zeroed_by_NC_or_DAC": 67,
+   "device": "banked floor (W3, model-free or log replay)",
+   "interval": {
+    "status": "OK",
+    "estimator": "navsim_log_cluster_bootstrap",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "point": 0.5797,
+    "mean": 0.5797,
+    "lo": 0.5211,
+    "hi": 0.6386,
+    "ci95": 0.0587,
+    "se": 0.03,
+    "bootstrap_mean": 0.5802,
+    "n_clusters": 93,
+    "n_units": 200,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "n_boot": 2000,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official": {
+     "status": "OK",
+     "official_value": 0.5796894050826451,
+     "point": 0.5796894050826451,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 41,
+     "lo": 0.52,
+     "hi": 0.6447,
+     "se": 0.0326
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna) \u2014 the SAME draws, cross-checked",
+    "_forbidden": "\u26d4 scene-token resampling (overlapping units), the episode-cluster bootstrap under any other unit, and overlapping_holdout_se (biases the point estimate) are NOT admissible for NavSim."
+   }
+  }
+ },
+ "pairs": {
+  "R6_A1__minus__STOP": {
+   "delta_x100": -0.0159,
+   "wins": 124,
+   "ties": 10,
+   "losses": 66,
+   "interval": {
+    "delta": -0.0002,
+    "lo": -0.0576,
+    "hi": 0.0614,
+    "ci95": 0.0595,
+    "p_delta_gt0": 0.506,
+    "separated": false,
+    "reducer": "nanmean_official_skipna",
+    "n_boot": 2000,
+    "estimator": "paired_navsim_log_cluster_bootstrap",
+    "separated_log_name": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 41,
+     "lo": -0.0653,
+     "hi": 0.0686,
+     "separated": false
+    },
+    "status": "OK",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "n_clusters": 93,
+    "n_units": 200,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official_a": {
+     "status": "OK",
+     "official_value": 0.6256527745773749,
+     "point": 0.6256527745773749,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "reproduces_official_b": {
+     "status": "OK",
+     "official_value": 0.6258116334270853,
+     "point": 0.6258116334270853,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+   }
+  },
+  "R6_A1__minus__CV": {
+   "delta_x100": 40.7431,
+   "wins": 128,
+   "ties": 58,
+   "losses": 14,
+   "interval": {
+    "delta": 0.4074,
+    "lo": 0.3474,
+    "hi": 0.4787,
+    "ci95": 0.0656,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "nanmean_official_skipna",
+    "n_boot": 2000,
+    "estimator": "paired_navsim_log_cluster_bootstrap",
+    "separated_log_name": true,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 41,
+     "lo": 0.3394,
+     "hi": 0.4738,
+     "separated": true
+    },
+    "status": "OK",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "n_clusters": 93,
+    "n_units": 200,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official_a": {
+     "status": "OK",
+     "official_value": 0.6256527745773749,
+     "point": 0.6256527745773749,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "reproduces_official_b": {
+     "status": "OK",
+     "official_value": 0.21822225938257392,
+     "point": 0.21822225938257392,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+   }
+  },
+  "R6_A1__minus__HUMAN": {
+   "delta_x100": -31.5542,
+   "wins": 48,
+   "ties": 26,
+   "losses": 126,
+   "interval": {
+    "delta": -0.3155,
+    "lo": -0.3687,
+    "hi": -0.2585,
+    "ci95": 0.0551,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "nanmean_official_skipna",
+    "n_boot": 2000,
+    "estimator": "paired_navsim_log_cluster_bootstrap",
+    "separated_log_name": true,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 41,
+     "lo": -0.375,
+     "hi": -0.2555,
+     "separated": true
+    },
+    "status": "OK",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "n_clusters": 93,
+    "n_units": 200,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official_a": {
+     "status": "OK",
+     "official_value": 0.6256527745773749,
+     "point": 0.6256527745773749,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "reproduces_official_b": {
+     "status": "OK",
+     "official_value": 0.9411952739951959,
+     "point": 0.9411952739951959,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+   }
+  },
+  "R6_A1__minus__refcv4b_A1": {
+   "delta_x100": 4.5963,
+   "wins": 94,
+   "ties": 50,
+   "losses": 56,
+   "interval": {
+    "delta": 0.046,
+    "lo": -0.0297,
+    "hi": 0.1214,
+    "ci95": 0.0756,
+    "p_delta_gt0": 0.8915,
+    "separated": false,
+    "reducer": "nanmean_official_skipna",
+    "n_boot": 2000,
+    "estimator": "paired_navsim_log_cluster_bootstrap",
+    "separated_log_name": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 41,
+     "lo": -0.0229,
+     "hi": 0.106,
+     "separated": false
+    },
+    "status": "OK",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "n_clusters": 93,
+    "n_units": 200,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official_a": {
+     "status": "OK",
+     "official_value": 0.6256527745773749,
+     "point": 0.6256527745773749,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "reproduces_official_b": {
+     "status": "OK",
+     "official_value": 0.5796894050826451,
+     "point": 0.5796894050826451,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+   }
+  },
+  "R6_A1__minus__R6_A1_s1": {
+   "delta_x100": -5.06,
+   "wins": 61,
+   "ties": 82,
+   "losses": 57,
+   "interval": {
+    "delta": -0.0506,
+    "lo": -0.0844,
+    "hi": -0.0176,
+    "ci95": 0.0334,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "nanmean_official_skipna",
+    "n_boot": 2000,
+    "estimator": "paired_navsim_log_cluster_bootstrap",
+    "separated_log_name": true,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 41,
+     "lo": -0.0752,
+     "hi": -0.0232,
+     "separated": true
+    },
+    "status": "OK",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "n_clusters": 93,
+    "n_units": 200,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official_a": {
+     "status": "OK",
+     "official_value": 0.6256527745773749,
+     "point": 0.6256527745773749,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "reproduces_official_b": {
+     "status": "OK",
+     "official_value": 0.6762529626984878,
+     "point": 0.6762529626984878,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+   }
+  },
+  "R6_A1__minus__R6_VMAXOFF": {
+   "delta_x100": -0.5,
+   "wins": 0,
+   "ties": 198,
+   "losses": 2,
+   "interval": {
+    "delta": -0.005,
+    "lo": -0.0136,
+    "hi": 0.0,
+    "ci95": 0.0068,
+    "p_delta_gt0": 0.0,
+    "separated": false,
+    "reducer": "nanmean_official_skipna",
+    "n_boot": 2000,
+    "estimator": "paired_navsim_log_cluster_bootstrap",
+    "separated_log_name": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 41,
+     "lo": -0.0137,
+     "hi": 0.0,
+     "separated": false
+    },
+    "status": "OK",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "n_clusters": 93,
+    "n_units": 200,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official_a": {
+     "status": "OK",
+     "official_value": 0.6256527745773749,
+     "point": 0.6256527745773749,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "reproduces_official_b": {
+     "status": "OK",
+     "official_value": 0.6306527745773749,
+     "point": 0.6306527745773749,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+   }
+  },
+  "R6_A1__minus__R6_VMAXORACLE": {
+   "delta_x100": 0.2981,
+   "wins": 3,
+   "ties": 195,
+   "losses": 2,
+   "interval": {
+    "delta": 0.003,
+    "lo": -0.0084,
+    "hi": 0.0163,
+    "ci95": 0.0124,
+    "p_delta_gt0": 0.673,
+    "separated": false,
+    "reducer": "nanmean_official_skipna",
+    "n_boot": 2000,
+    "estimator": "paired_navsim_log_cluster_bootstrap",
+    "separated_log_name": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 41,
+     "lo": -0.0084,
+     "hi": 0.0158,
+     "separated": false
+    },
+    "status": "OK",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "n_clusters": 93,
+    "n_units": 200,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official_a": {
+     "status": "OK",
+     "official_value": 0.6256527745773749,
+     "point": 0.6256527745773749,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "reproduces_official_b": {
+     "status": "OK",
+     "official_value": 0.6226713063887044,
+     "point": 0.6226713063887044,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+   }
+  },
+  "R6_A1_s1__minus__STOP": {
+   "delta_x100": 5.0441,
+   "wins": 133,
+   "ties": 10,
+   "losses": 57,
+   "interval": {
+    "delta": 0.0504,
+    "lo": -0.0089,
+    "hi": 0.1076,
+    "ci95": 0.0583,
+    "p_delta_gt0": 0.96,
+    "separated": false,
+    "reducer": "nanmean_official_skipna",
+    "n_boot": 2000,
+    "estimator": "paired_navsim_log_cluster_bootstrap",
+    "separated_log_name": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 41,
+     "lo": -0.0099,
+     "hi": 0.1124,
+     "separated": false
+    },
+    "status": "OK",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "n_clusters": 93,
+    "n_units": 200,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official_a": {
+     "status": "OK",
+     "official_value": 0.6762529626984878,
+     "point": 0.6762529626984878,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "reproduces_official_b": {
+     "status": "OK",
+     "official_value": 0.6258116334270853,
+     "point": 0.6258116334270853,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+   }
+  },
+  "R6_A1_s1__minus__CV": {
+   "delta_x100": 45.8031,
+   "wins": 141,
+   "ties": 46,
+   "losses": 13,
+   "interval": {
+    "delta": 0.458,
+    "lo": 0.4021,
+    "hi": 0.5201,
+    "ci95": 0.059,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "nanmean_official_skipna",
+    "n_boot": 2000,
+    "estimator": "paired_navsim_log_cluster_bootstrap",
+    "separated_log_name": true,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 41,
+     "lo": 0.3979,
+     "hi": 0.5136,
+     "separated": true
+    },
+    "status": "OK",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "n_clusters": 93,
+    "n_units": 200,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official_a": {
+     "status": "OK",
+     "official_value": 0.6762529626984878,
+     "point": 0.6762529626984878,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "reproduces_official_b": {
+     "status": "OK",
+     "official_value": 0.21822225938257392,
+     "point": 0.21822225938257392,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+   }
+  },
+  "R6_A1_s1__minus__HUMAN": {
+   "delta_x100": -26.4942,
+   "wins": 52,
+   "ties": 27,
+   "losses": 121,
+   "interval": {
+    "delta": -0.2649,
+    "lo": -0.3166,
+    "hi": -0.2145,
+    "ci95": 0.051,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "nanmean_official_skipna",
+    "n_boot": 2000,
+    "estimator": "paired_navsim_log_cluster_bootstrap",
+    "separated_log_name": true,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 41,
+     "lo": -0.3234,
+     "hi": -0.2148,
+     "separated": true
+    },
+    "status": "OK",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "n_clusters": 93,
+    "n_units": 200,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official_a": {
+     "status": "OK",
+     "official_value": 0.6762529626984878,
+     "point": 0.6762529626984878,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "reproduces_official_b": {
+     "status": "OK",
+     "official_value": 0.9411952739951959,
+     "point": 0.9411952739951959,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+   }
+  },
+  "R6_A1_s1__minus__refcv4b_A1": {
+   "delta_x100": 9.6564,
+   "wins": 101,
+   "ties": 45,
+   "losses": 54,
+   "interval": {
+    "delta": 0.0966,
+    "lo": 0.0293,
+    "hi": 0.1636,
+    "ci95": 0.0671,
+    "p_delta_gt0": 0.997,
+    "separated": true,
+    "reducer": "nanmean_official_skipna",
+    "n_boot": 2000,
+    "estimator": "paired_navsim_log_cluster_bootstrap",
+    "separated_log_name": true,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 41,
+     "lo": 0.029,
+     "hi": 0.154,
+     "separated": true
+    },
+    "status": "OK",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "n_clusters": 93,
+    "n_units": 200,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official_a": {
+     "status": "OK",
+     "official_value": 0.6762529626984878,
+     "point": 0.6762529626984878,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "reproduces_official_b": {
+     "status": "OK",
+     "official_value": 0.5796894050826451,
+     "point": 0.5796894050826451,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+   }
+  },
+  "R6_A1_s1__minus__R6_A1": {
+   "delta_x100": 5.06,
+   "wins": 57,
+   "ties": 82,
+   "losses": 61,
+   "interval": {
+    "delta": 0.0506,
+    "lo": 0.0176,
+    "hi": 0.0844,
+    "ci95": 0.0334,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "nanmean_official_skipna",
+    "n_boot": 2000,
+    "estimator": "paired_navsim_log_cluster_bootstrap",
+    "separated_log_name": true,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 41,
+     "lo": 0.0232,
+     "hi": 0.0752,
+     "separated": true
+    },
+    "status": "OK",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "n_clusters": 93,
+    "n_units": 200,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official_a": {
+     "status": "OK",
+     "official_value": 0.6762529626984878,
+     "point": 0.6762529626984878,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "reproduces_official_b": {
+     "status": "OK",
+     "official_value": 0.6256527745773749,
+     "point": 0.6256527745773749,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+   }
+  },
+  "R6_A1_s1__minus__R6_VMAXOFF": {
+   "delta_x100": 4.56,
+   "wins": 55,
+   "ties": 84,
+   "losses": 61,
+   "interval": {
+    "delta": 0.0456,
+    "lo": 0.0135,
+    "hi": 0.0795,
+    "ci95": 0.033,
+    "p_delta_gt0": 0.999,
+    "separated": true,
+    "reducer": "nanmean_official_skipna",
+    "n_boot": 2000,
+    "estimator": "paired_navsim_log_cluster_bootstrap",
+    "separated_log_name": true,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 41,
+     "lo": 0.0182,
+     "hi": 0.0707,
+     "separated": true
+    },
+    "status": "OK",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "n_clusters": 93,
+    "n_units": 200,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official_a": {
+     "status": "OK",
+     "official_value": 0.6762529626984878,
+     "point": 0.6762529626984878,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "reproduces_official_b": {
+     "status": "OK",
+     "official_value": 0.6306527745773749,
+     "point": 0.6306527745773749,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+   }
+  },
+  "R6_A1_s1__minus__R6_VMAXORACLE": {
+   "delta_x100": 5.3582,
+   "wins": 58,
+   "ties": 82,
+   "losses": 60,
+   "interval": {
+    "delta": 0.0536,
+    "lo": 0.0195,
+    "hi": 0.0886,
+    "ci95": 0.0346,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "nanmean_official_skipna",
+    "n_boot": 2000,
+    "estimator": "paired_navsim_log_cluster_bootstrap",
+    "separated_log_name": true,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 41,
+     "lo": 0.027,
+     "hi": 0.0776,
+     "separated": true
+    },
+    "status": "OK",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "n_clusters": 93,
+    "n_units": 200,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official_a": {
+     "status": "OK",
+     "official_value": 0.6762529626984878,
+     "point": 0.6762529626984878,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "reproduces_official_b": {
+     "status": "OK",
+     "official_value": 0.6226713063887044,
+     "point": 0.6226713063887044,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+   }
+  },
+  "R6_VMAXOFF__minus__STOP": {
+   "delta_x100": 0.4841,
+   "wins": 124,
+   "ties": 10,
+   "losses": 66,
+   "interval": {
+    "delta": 0.0048,
+    "lo": -0.0536,
+    "hi": 0.0669,
+    "ci95": 0.0602,
+    "p_delta_gt0": 0.5665,
+    "separated": false,
+    "reducer": "nanmean_official_skipna",
+    "n_boot": 2000,
+    "estimator": "paired_navsim_log_cluster_bootstrap",
+    "separated_log_name": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 41,
+     "lo": -0.0593,
+     "hi": 0.0734,
+     "separated": false
+    },
+    "status": "OK",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "n_clusters": 93,
+    "n_units": 200,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official_a": {
+     "status": "OK",
+     "official_value": 0.6306527745773749,
+     "point": 0.6306527745773749,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "reproduces_official_b": {
+     "status": "OK",
+     "official_value": 0.6258116334270853,
+     "point": 0.6258116334270853,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+   }
+  },
+  "R6_VMAXOFF__minus__CV": {
+   "delta_x100": 41.2431,
+   "wins": 129,
+   "ties": 57,
+   "losses": 14,
+   "interval": {
+    "delta": 0.4124,
+    "lo": 0.3517,
+    "hi": 0.4835,
+    "ci95": 0.0659,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "nanmean_official_skipna",
+    "n_boot": 2000,
+    "estimator": "paired_navsim_log_cluster_bootstrap",
+    "separated_log_name": true,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 41,
+     "lo": 0.3479,
+     "hi": 0.4765,
+     "separated": true
+    },
+    "status": "OK",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "n_clusters": 93,
+    "n_units": 200,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official_a": {
+     "status": "OK",
+     "official_value": 0.6306527745773749,
+     "point": 0.6306527745773749,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "reproduces_official_b": {
+     "status": "OK",
+     "official_value": 0.21822225938257392,
+     "point": 0.21822225938257392,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+   }
+  },
+  "R6_VMAXOFF__minus__HUMAN": {
+   "delta_x100": -31.0542,
+   "wins": 48,
+   "ties": 27,
+   "losses": 125,
+   "interval": {
+    "delta": -0.3105,
+    "lo": -0.3656,
+    "hi": -0.2521,
+    "ci95": 0.0568,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "nanmean_official_skipna",
+    "n_boot": 2000,
+    "estimator": "paired_navsim_log_cluster_bootstrap",
+    "separated_log_name": true,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 41,
+     "lo": -0.3686,
+     "hi": -0.2507,
+     "separated": true
+    },
+    "status": "OK",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "n_clusters": 93,
+    "n_units": 200,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official_a": {
+     "status": "OK",
+     "official_value": 0.6306527745773749,
+     "point": 0.6306527745773749,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "reproduces_official_b": {
+     "status": "OK",
+     "official_value": 0.9411952739951959,
+     "point": 0.9411952739951959,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+   }
+  },
+  "R6_VMAXOFF__minus__refcv4b_A1": {
+   "delta_x100": 5.0963,
+   "wins": 95,
+   "ties": 49,
+   "losses": 56,
+   "interval": {
+    "delta": 0.051,
+    "lo": -0.0236,
+    "hi": 0.125,
+    "ci95": 0.0743,
+    "p_delta_gt0": 0.9165,
+    "separated": false,
+    "reducer": "nanmean_official_skipna",
+    "n_boot": 2000,
+    "estimator": "paired_navsim_log_cluster_bootstrap",
+    "separated_log_name": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 41,
+     "lo": -0.014,
+     "hi": 0.1098,
+     "separated": false
+    },
+    "status": "OK",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "n_clusters": 93,
+    "n_units": 200,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official_a": {
+     "status": "OK",
+     "official_value": 0.6306527745773749,
+     "point": 0.6306527745773749,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "reproduces_official_b": {
+     "status": "OK",
+     "official_value": 0.5796894050826451,
+     "point": 0.5796894050826451,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+   }
+  },
+  "R6_VMAXOFF__minus__R6_A1": {
+   "delta_x100": 0.5,
+   "wins": 2,
+   "ties": 198,
+   "losses": 0,
+   "interval": {
+    "delta": 0.005,
+    "lo": 0.0,
+    "hi": 0.0136,
+    "ci95": 0.0068,
+    "p_delta_gt0": 0.8685,
+    "separated": false,
+    "reducer": "nanmean_official_skipna",
+    "n_boot": 2000,
+    "estimator": "paired_navsim_log_cluster_bootstrap",
+    "separated_log_name": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 41,
+     "lo": 0.0,
+     "hi": 0.0137,
+     "separated": false
+    },
+    "status": "OK",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "n_clusters": 93,
+    "n_units": 200,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official_a": {
+     "status": "OK",
+     "official_value": 0.6306527745773749,
+     "point": 0.6306527745773749,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "reproduces_official_b": {
+     "status": "OK",
+     "official_value": 0.6256527745773749,
+     "point": 0.6256527745773749,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+   }
+  },
+  "R6_VMAXOFF__minus__R6_A1_s1": {
+   "delta_x100": -4.56,
+   "wins": 61,
+   "ties": 84,
+   "losses": 55,
+   "interval": {
+    "delta": -0.0456,
+    "lo": -0.0795,
+    "hi": -0.0135,
+    "ci95": 0.033,
+    "p_delta_gt0": 0.001,
+    "separated": true,
+    "reducer": "nanmean_official_skipna",
+    "n_boot": 2000,
+    "estimator": "paired_navsim_log_cluster_bootstrap",
+    "separated_log_name": true,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 41,
+     "lo": -0.0707,
+     "hi": -0.0182,
+     "separated": true
+    },
+    "status": "OK",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "n_clusters": 93,
+    "n_units": 200,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official_a": {
+     "status": "OK",
+     "official_value": 0.6306527745773749,
+     "point": 0.6306527745773749,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "reproduces_official_b": {
+     "status": "OK",
+     "official_value": 0.6762529626984878,
+     "point": 0.6762529626984878,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+   }
+  },
+  "R6_VMAXOFF__minus__R6_VMAXORACLE": {
+   "delta_x100": 0.7981,
+   "wins": 4,
+   "ties": 195,
+   "losses": 1,
+   "interval": {
+    "delta": 0.008,
+    "lo": -0.0017,
+    "hi": 0.0217,
+    "ci95": 0.0117,
+    "p_delta_gt0": 0.936,
+    "separated": false,
+    "reducer": "nanmean_official_skipna",
+    "n_boot": 2000,
+    "estimator": "paired_navsim_log_cluster_bootstrap",
+    "separated_log_name": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 41,
+     "lo": -0.0019,
+     "hi": 0.0203,
+     "separated": false
+    },
+    "status": "OK",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "n_clusters": 93,
+    "n_units": 200,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official_a": {
+     "status": "OK",
+     "official_value": 0.6306527745773749,
+     "point": 0.6306527745773749,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "reproduces_official_b": {
+     "status": "OK",
+     "official_value": 0.6226713063887044,
+     "point": 0.6226713063887044,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+   }
+  },
+  "R6_VMAXORACLE__minus__STOP": {
+   "delta_x100": -0.314,
+   "wins": 124,
+   "ties": 10,
+   "losses": 66,
+   "interval": {
+    "delta": -0.0031,
+    "lo": -0.0606,
+    "hi": 0.0595,
+    "ci95": 0.0601,
+    "p_delta_gt0": 0.461,
+    "separated": false,
+    "reducer": "nanmean_official_skipna",
+    "n_boot": 2000,
+    "estimator": "paired_navsim_log_cluster_bootstrap",
+    "separated_log_name": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 41,
+     "lo": -0.0641,
+     "hi": 0.0622,
+     "separated": false
+    },
+    "status": "OK",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "n_clusters": 93,
+    "n_units": 200,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official_a": {
+     "status": "OK",
+     "official_value": 0.6226713063887044,
+     "point": 0.6226713063887044,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "reproduces_official_b": {
+     "status": "OK",
+     "official_value": 0.6258116334270853,
+     "point": 0.6258116334270853,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+   }
+  },
+  "R6_VMAXORACLE__minus__CV": {
+   "delta_x100": 40.4449,
+   "wins": 126,
+   "ties": 59,
+   "losses": 15,
+   "interval": {
+    "delta": 0.4044,
+    "lo": 0.3436,
+    "hi": 0.4762,
+    "ci95": 0.0663,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "nanmean_official_skipna",
+    "n_boot": 2000,
+    "estimator": "paired_navsim_log_cluster_bootstrap",
+    "separated_log_name": true,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 41,
+     "lo": 0.3395,
+     "hi": 0.4675,
+     "separated": true
+    },
+    "status": "OK",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "n_clusters": 93,
+    "n_units": 200,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official_a": {
+     "status": "OK",
+     "official_value": 0.6226713063887044,
+     "point": 0.6226713063887044,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "reproduces_official_b": {
+     "status": "OK",
+     "official_value": 0.21822225938257392,
+     "point": 0.21822225938257392,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+   }
+  },
+  "R6_VMAXORACLE__minus__HUMAN": {
+   "delta_x100": -31.8524,
+   "wins": 48,
+   "ties": 26,
+   "losses": 126,
+   "interval": {
+    "delta": -0.3185,
+    "lo": -0.3725,
+    "hi": -0.2609,
+    "ci95": 0.0558,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "nanmean_official_skipna",
+    "n_boot": 2000,
+    "estimator": "paired_navsim_log_cluster_bootstrap",
+    "separated_log_name": true,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 41,
+     "lo": -0.374,
+     "hi": -0.262,
+     "separated": true
+    },
+    "status": "OK",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "n_clusters": 93,
+    "n_units": 200,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official_a": {
+     "status": "OK",
+     "official_value": 0.6226713063887044,
+     "point": 0.6226713063887044,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "reproduces_official_b": {
+     "status": "OK",
+     "official_value": 0.9411952739951959,
+     "point": 0.9411952739951959,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+   }
+  },
+  "R6_VMAXORACLE__minus__refcv4b_A1": {
+   "delta_x100": 4.2982,
+   "wins": 91,
+   "ties": 52,
+   "losses": 57,
+   "interval": {
+    "delta": 0.043,
+    "lo": -0.0311,
+    "hi": 0.119,
+    "ci95": 0.075,
+    "p_delta_gt0": 0.877,
+    "separated": false,
+    "reducer": "nanmean_official_skipna",
+    "n_boot": 2000,
+    "estimator": "paired_navsim_log_cluster_bootstrap",
+    "separated_log_name": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 41,
+     "lo": -0.0199,
+     "hi": 0.1,
+     "separated": false
+    },
+    "status": "OK",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "n_clusters": 93,
+    "n_units": 200,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official_a": {
+     "status": "OK",
+     "official_value": 0.6226713063887044,
+     "point": 0.6226713063887044,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "reproduces_official_b": {
+     "status": "OK",
+     "official_value": 0.5796894050826451,
+     "point": 0.5796894050826451,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+   }
+  },
+  "R6_VMAXORACLE__minus__R6_A1": {
+   "delta_x100": -0.2981,
+   "wins": 2,
+   "ties": 195,
+   "losses": 3,
+   "interval": {
+    "delta": -0.003,
+    "lo": -0.0163,
+    "hi": 0.0084,
+    "ci95": 0.0124,
+    "p_delta_gt0": 0.322,
+    "separated": false,
+    "reducer": "nanmean_official_skipna",
+    "n_boot": 2000,
+    "estimator": "paired_navsim_log_cluster_bootstrap",
+    "separated_log_name": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 41,
+     "lo": -0.0158,
+     "hi": 0.0084,
+     "separated": false
+    },
+    "status": "OK",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "n_clusters": 93,
+    "n_units": 200,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official_a": {
+     "status": "OK",
+     "official_value": 0.6226713063887044,
+     "point": 0.6226713063887044,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "reproduces_official_b": {
+     "status": "OK",
+     "official_value": 0.6256527745773749,
+     "point": 0.6256527745773749,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+   }
+  },
+  "R6_VMAXORACLE__minus__R6_A1_s1": {
+   "delta_x100": -5.3582,
+   "wins": 60,
+   "ties": 82,
+   "losses": 58,
+   "interval": {
+    "delta": -0.0536,
+    "lo": -0.0886,
+    "hi": -0.0195,
+    "ci95": 0.0346,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "nanmean_official_skipna",
+    "n_boot": 2000,
+    "estimator": "paired_navsim_log_cluster_bootstrap",
+    "separated_log_name": true,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 41,
+     "lo": -0.0776,
+     "hi": -0.027,
+     "separated": true
+    },
+    "status": "OK",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "n_clusters": 93,
+    "n_units": 200,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official_a": {
+     "status": "OK",
+     "official_value": 0.6226713063887044,
+     "point": 0.6226713063887044,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "reproduces_official_b": {
+     "status": "OK",
+     "official_value": 0.6762529626984878,
+     "point": 0.6762529626984878,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+   }
+  },
+  "R6_VMAXORACLE__minus__R6_VMAXOFF": {
+   "delta_x100": -0.7981,
+   "wins": 1,
+   "ties": 195,
+   "losses": 4,
+   "interval": {
+    "delta": -0.008,
+    "lo": -0.0217,
+    "hi": 0.0017,
+    "ci95": 0.0117,
+    "p_delta_gt0": 0.0555,
+    "separated": false,
+    "reducer": "nanmean_official_skipna",
+    "n_boot": 2000,
+    "estimator": "paired_navsim_log_cluster_bootstrap",
+    "separated_log_name": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 41,
+     "lo": -0.0203,
+     "hi": 0.0019,
+     "separated": false
+    },
+    "status": "OK",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "n_clusters": 93,
+    "n_units": 200,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official_a": {
+     "status": "OK",
+     "official_value": 0.6226713063887044,
+     "point": 0.6226713063887044,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "reproduces_official_b": {
+     "status": "OK",
+     "official_value": 0.6306527745773749,
+     "point": 0.6306527745773749,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+   }
+  }
+ },
+ "census_groups": {
+  "map_above_oracle": 49,
+  "map_below_oracle": 3,
+  "map_equals_oracle": 49,
+  "no_map (A1 gets the all-zero 'unknown' row)": 99
+ },
+ "pairs_by_census_group": {
+  "R6_A1__minus__R6_A1_s1": {
+   "map_above_oracle": {
+    "n": 49,
+    "delta_x100": -3.105,
+    "wins": 11,
+    "ties": 21,
+    "losses": 17
+   },
+   "map_below_oracle": {
+    "n": 3,
+    "delta_x100": -13.8889,
+    "wins": 0,
+    "ties": 2,
+    "losses": 1
+   },
+   "map_equals_oracle": {
+    "n": 49,
+    "delta_x100": -5.3651,
+    "wins": 13,
+    "ties": 25,
+    "losses": 11
+   },
+   "no_map (A1 gets the all-zero 'unknown' row)": {
+    "n": 99,
+    "delta_x100": -5.6092,
+    "wins": 37,
+    "ties": 34,
+    "losses": 28
+   }
+  },
+  "R6_A1__minus__R6_VMAXOFF": {
+   "map_above_oracle": {
+    "n": 49,
+    "delta_x100": -1.1905,
+    "wins": 0,
+    "ties": 48,
+    "losses": 1
+   },
+   "map_below_oracle": {
+    "n": 3,
+    "delta_x100": 0.0,
+    "wins": 0,
+    "ties": 3,
+    "losses": 0
+   },
+   "map_equals_oracle": {
+    "n": 49,
+    "delta_x100": -0.8503,
+    "wins": 0,
+    "ties": 48,
+    "losses": 1
+   },
+   "no_map (A1 gets the all-zero 'unknown' row)": {
+    "n": 99,
+    "delta_x100": 0.0,
+    "wins": 0,
+    "ties": 99,
+    "losses": 0
+   }
+  },
+  "R6_A1__minus__R6_VMAXORACLE": {
+   "map_above_oracle": {
+    "n": 49,
+    "delta_x100": -0.1508,
+    "wins": 1,
+    "ties": 47,
+    "losses": 1
+   },
+   "map_below_oracle": {
+    "n": 3,
+    "delta_x100": 0.0,
+    "wins": 0,
+    "ties": 3,
+    "losses": 0
+   },
+   "map_equals_oracle": {
+    "n": 49,
+    "delta_x100": 0.0,
+    "wins": 0,
+    "ties": 49,
+    "losses": 0
+   },
+   "no_map (A1 gets the all-zero 'unknown' row)": {
+    "n": 99,
+    "delta_x100": 0.677,
+    "wins": 2,
+    "ties": 96,
+    "losses": 1
+   }
+  },
+  "R6_A1_s1__minus__R6_A1": {
+   "map_above_oracle": {
+    "n": 49,
+    "delta_x100": 3.105,
+    "wins": 17,
+    "ties": 21,
+    "losses": 11
+   },
+   "map_below_oracle": {
+    "n": 3,
+    "delta_x100": 13.8889,
+    "wins": 1,
+    "ties": 2,
+    "losses": 0
+   },
+   "map_equals_oracle": {
+    "n": 49,
+    "delta_x100": 5.3651,
+    "wins": 11,
+    "ties": 25,
+    "losses": 13
+   },
+   "no_map (A1 gets the all-zero 'unknown' row)": {
+    "n": 99,
+    "delta_x100": 5.6092,
+    "wins": 28,
+    "ties": 34,
+    "losses": 37
+   }
+  },
+  "R6_A1_s1__minus__R6_VMAXOFF": {
+   "map_above_oracle": {
+    "n": 49,
+    "delta_x100": 1.9145,
+    "wins": 16,
+    "ties": 22,
+    "losses": 11
+   },
+   "map_below_oracle": {
+    "n": 3,
+    "delta_x100": 13.8889,
+    "wins": 1,
+    "ties": 2,
+    "losses": 0
+   },
+   "map_equals_oracle": {
+    "n": 49,
+    "delta_x100": 4.5147,
+    "wins": 10,
+    "ties": 26,
+    "losses": 13
+   },
+   "no_map (A1 gets the all-zero 'unknown' row)": {
+    "n": 99,
+    "delta_x100": 5.6092,
+    "wins": 28,
+    "ties": 34,
+    "losses": 37
+   }
+  },
+  "R6_A1_s1__minus__R6_VMAXORACLE": {
+   "map_above_oracle": {
+    "n": 49,
+    "delta_x100": 2.9542,
+    "wins": 16,
+    "ties": 22,
+    "losses": 11
+   },
+   "map_below_oracle": {
+    "n": 3,
+    "delta_x100": 13.8889,
+    "wins": 1,
+    "ties": 2,
+    "losses": 0
+   },
+   "map_equals_oracle": {
+    "n": 49,
+    "delta_x100": 5.3651,
+    "wins": 11,
+    "ties": 25,
+    "losses": 13
+   },
+   "no_map (A1 gets the all-zero 'unknown' row)": {
+    "n": 99,
+    "delta_x100": 6.2861,
+    "wins": 30,
+    "ties": 33,
+    "losses": 36
+   }
+  },
+  "R6_VMAXOFF__minus__R6_A1": {
+   "map_above_oracle": {
+    "n": 49,
+    "delta_x100": 1.1905,
+    "wins": 1,
+    "ties": 48,
+    "losses": 0
+   },
+   "map_below_oracle": {
+    "n": 3,
+    "delta_x100": 0.0,
+    "wins": 0,
+    "ties": 3,
+    "losses": 0
+   },
+   "map_equals_oracle": {
+    "n": 49,
+    "delta_x100": 0.8503,
+    "wins": 1,
+    "ties": 48,
+    "losses": 0
+   },
+   "no_map (A1 gets the all-zero 'unknown' row)": {
+    "n": 99,
+    "delta_x100": 0.0,
+    "wins": 0,
+    "ties": 99,
+    "losses": 0
+   }
+  },
+  "R6_VMAXOFF__minus__R6_A1_s1": {
+   "map_above_oracle": {
+    "n": 49,
+    "delta_x100": -1.9145,
+    "wins": 11,
+    "ties": 22,
+    "losses": 16
+   },
+   "map_below_oracle": {
+    "n": 3,
+    "delta_x100": -13.8889,
+    "wins": 0,
+    "ties": 2,
+    "losses": 1
+   },
+   "map_equals_oracle": {
+    "n": 49,
+    "delta_x100": -4.5147,
+    "wins": 13,
+    "ties": 26,
+    "losses": 10
+   },
+   "no_map (A1 gets the all-zero 'unknown' row)": {
+    "n": 99,
+    "delta_x100": -5.6092,
+    "wins": 37,
+    "ties": 34,
+    "losses": 28
+   }
+  },
+  "R6_VMAXOFF__minus__R6_VMAXORACLE": {
+   "map_above_oracle": {
+    "n": 49,
+    "delta_x100": 1.0397,
+    "wins": 1,
+    "ties": 48,
+    "losses": 0
+   },
+   "map_below_oracle": {
+    "n": 3,
+    "delta_x100": 0.0,
+    "wins": 0,
+    "ties": 3,
+    "losses": 0
+   },
+   "map_equals_oracle": {
+    "n": 49,
+    "delta_x100": 0.8503,
+    "wins": 1,
+    "ties": 48,
+    "losses": 0
+   },
+   "no_map (A1 gets the all-zero 'unknown' row)": {
+    "n": 99,
+    "delta_x100": 0.677,
+    "wins": 2,
+    "ties": 96,
+    "losses": 1
+   }
+  },
+  "R6_VMAXORACLE__minus__R6_A1": {
+   "map_above_oracle": {
+    "n": 49,
+    "delta_x100": 0.1508,
+    "wins": 1,
+    "ties": 47,
+    "losses": 1
+   },
+   "map_below_oracle": {
+    "n": 3,
+    "delta_x100": 0.0,
+    "wins": 0,
+    "ties": 3,
+    "losses": 0
+   },
+   "map_equals_oracle": {
+    "n": 49,
+    "delta_x100": 0.0,
+    "wins": 0,
+    "ties": 49,
+    "losses": 0
+   },
+   "no_map (A1 gets the all-zero 'unknown' row)": {
+    "n": 99,
+    "delta_x100": -0.677,
+    "wins": 1,
+    "ties": 96,
+    "losses": 2
+   }
+  },
+  "R6_VMAXORACLE__minus__R6_A1_s1": {
+   "map_above_oracle": {
+    "n": 49,
+    "delta_x100": -2.9542,
+    "wins": 11,
+    "ties": 22,
+    "losses": 16
+   },
+   "map_below_oracle": {
+    "n": 3,
+    "delta_x100": -13.8889,
+    "wins": 0,
+    "ties": 2,
+    "losses": 1
+   },
+   "map_equals_oracle": {
+    "n": 49,
+    "delta_x100": -5.3651,
+    "wins": 13,
+    "ties": 25,
+    "losses": 11
+   },
+   "no_map (A1 gets the all-zero 'unknown' row)": {
+    "n": 99,
+    "delta_x100": -6.2861,
+    "wins": 36,
+    "ties": 33,
+    "losses": 30
+   }
+  },
+  "R6_VMAXORACLE__minus__R6_VMAXOFF": {
+   "map_above_oracle": {
+    "n": 49,
+    "delta_x100": -1.0397,
+    "wins": 0,
+    "ties": 48,
+    "losses": 1
+   },
+   "map_below_oracle": {
+    "n": 3,
+    "delta_x100": 0.0,
+    "wins": 0,
+    "ties": 3,
+    "losses": 0
+   },
+   "map_equals_oracle": {
+    "n": 49,
+    "delta_x100": -0.8503,
+    "wins": 0,
+    "ties": 48,
+    "losses": 1
+   },
+   "no_map (A1 gets the all-zero 'unknown' row)": {
+    "n": 99,
+    "delta_x100": -0.677,
+    "wins": 1,
+    "ties": 96,
+    "losses": 2
+   }
+  }
+ },
+ "census_file": "C:\\Users\\Admin\\ev6\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-23-refcv6-standard-tests\\navsim\\raw\\inputs\\vmax_oracle_navtest.json"
+}

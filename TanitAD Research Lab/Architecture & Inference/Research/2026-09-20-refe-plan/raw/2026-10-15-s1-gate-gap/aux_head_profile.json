@@ -1,0 +1,143 @@
+{
+ "what": "cProfile of test_aux_drivable_head.py (the longest G-SUITE script) on the dev box, run as: python -m cProfile -o aux_head_prof.out test_aux_drivable_head.py (AUX_LABEL_STORE / AUX_NAVTEST set, REFE_GATE_NESTED=1)",
+ "evidence_class": "MEASURED on the dev box under cProfile (about 2.2x slower than an unprofiled run: 586 s profiled vs 269 s sequential-timing run) while the box was shared with other agents' CPU jobs",
+ "total_profiled_s": 584.12,
+ "autograd_run_backward_s": 429.42,
+ "autograd_share_pct": 73.5,
+ "reading": "73 % of the script is torch autograd backward passes: the same model test (a_amp) is re-run in each of the script's 20 suite() repetitions (1 unmutated + 19 mutations of the shipped source text). It is real compute, not hashing or I/O; the whole-store re-hash + navtest check (E10, e_whole) is 1.65 s of it (verify_all 0.91 s). Not touched: shortening it would weaken a check.",
+ "top_by_cumulative": [
+  {
+   "func": "test_aux_drivable_head.py:857(main)",
+   "ncalls": 1,
+   "tottime_s": 0.0,
+   "cumtime_s": 584.12
+  },
+  {
+   "func": "test_aux_drivable_head.py:216(suite)",
+   "ncalls": 20,
+   "tottime_s": 0.0,
+   "cumtime_s": 583.92
+  },
+  {
+   "func": "test_aux_drivable_head.py:71(check)",
+   "ncalls": 904,
+   "tottime_s": 0.78,
+   "cumtime_s": 583.25
+  },
+  {
+   "func": "graph.py:860(_engine_run_backward)",
+   "ncalls": 233,
+   "tottime_s": 0.0,
+   "cumtime_s": 429.42
+  },
+  {
+   "func": "~:0(<method 'run_backward' of 'torch._C._EngineBase' objects>)",
+   "ncalls": 233,
+   "tottime_s": 429.41,
+   "cumtime_s": 429.41
+  },
+  {
+   "func": "_tensor.py:576(backward)",
+   "ncalls": 173,
+   "tottime_s": 0.0,
+   "cumtime_s": 427.18
+  },
+  {
+   "func": "__init__.py:253(backward)",
+   "ncalls": 173,
+   "tottime_s": 0.01,
+   "cumtime_s": 427.18
+  },
+  {
+   "func": "test_aux_drivable_head.py:303(a_amp)",
+   "ncalls": 20,
+   "tottime_s": 0.01,
+   "cumtime_s": 386.68
+  },
+  {
+   "func": "test_aux_drivable_head.py:153(run)",
+   "ncalls": 102,
+   "tottime_s": 0.04,
+   "cumtime_s": 113.66
+  },
+  {
+   "func": "module.py:1775(_wrapped_call_impl)",
+   "ncalls": 47968,
+   "tottime_s": 0.26,
+   "cumtime_s": 98.13
+  },
+  {
+   "func": "module.py:1783(_call_impl)",
+   "ncalls": 47968,
+   "tottime_s": 0.71,
+   "cumtime_s": 98.11
+  },
+  {
+   "func": "model.py:434(forward)",
+   "ncalls": 2464,
+   "tottime_s": 2.78,
+   "cumtime_s": 70.08
+  },
+  {
+   "func": "activation.py:1255(forward)",
+   "ncalls": 5031,
+   "tottime_s": 0.34,
+   "cumtime_s": 50.81
+  },
+  {
+   "func": "functional.py:6244(multi_head_attention_forward)",
+   "ncalls": 5031,
+   "tottime_s": 0.35,
+   "cumtime_s": 50.22
+  },
+  {
+   "func": "~:0(<built-in method torch._C._nn.linear>)",
+   "ncalls": 32903,
+   "tottime_s": 47.09,
+   "cumtime_s": 47.09
+  },
+  {
+   "func": "test_aux_drivable_head.py:124(fwd)",
+   "ncalls": 103,
+   "tottime_s": 0.0,
+   "cumtime_s": 31.66
+  },
+  {
+   "func": "model.py:711(forward)",
+   "ncalls": 103,
+   "tottime_s": 0.08,
+   "cumtime_s": 31.63
+  },
+  {
+   "func": "test_aux_drivable_head.py:506(c_zero)",
+   "ncalls": 20,
+   "tottime_s": 0.04,
+   "cumtime_s": 24.0
+  },
+  {
+   "func": "test_aux_drivable_head.py:535(c_scene)",
+   "ncalls": 20,
+   "tottime_s": 0.06,
+   "cumtime_s": 23.87
+  },
+  {
+   "func": "test_aux_drivable_head.py:528(c_paths)",
+   "ncalls": 20,
+   "tottime_s": 0.05,
+   "cumtime_s": 23.58
+  },
+  {
+   "func": "~:0(<built-in method torch._C._nn.scaled_dot_product_attention>)",
+   "ncalls": 6267,
+   "tottime_s": 22.61,
+   "cumtime_s": 22.61
+  },
+  {
+   "func": "functional.py:5798(_in_projection_packed)",
+   "ncalls": 5031,
+   "tottime_s": 0.45,
+   "cumtime_s": 22.23
+  }
+ ],
+ "e10_whole_store_s": 1.65
+}

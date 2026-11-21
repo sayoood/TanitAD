@@ -1,0 +1,164 @@
+CMD: C:/Users/Admin/venvs/tanitad/Scripts/python.exe C:\Users\Admin\ev6\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-23-refcv6-standard-tests\navsim\code\bars6.py --milestone C:/Users/Admin/ev6/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/raw/milestones/step5000_navtest_diag
+{
+ "step": 5000,
+ "label": "RESULT",
+ "spec": "SPEC.md \u00a75 (blob ab7f769a\u2026)",
+ "bars": {
+  "warmup": {
+   "status": "UNAVAILABLE",
+   "reason": "summary_warmup.json absent"
+  },
+  "navhard": {
+   "status": "UNAVAILABLE",
+   "reason": "summary_navhard.json absent"
+  },
+  "navtest": {
+   "bar": "BAR-R6-T1",
+   "rule": "PDMS(R6_A1) > max(STOP, CV), paired log-cluster interval vs STOP excludes 0",
+   "values_x100": {
+    "R6_A1": 49.0638,
+    "STOP": 62.5812,
+    "CV": 21.8222
+   },
+   "paired_vs_STOP": {
+    "delta": -0.1352,
+    "lo": -0.2133,
+    "hi": -0.0575,
+    "ci95": 0.0779,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "nanmean_official_skipna",
+    "n_boot": 2000,
+    "estimator": "paired_navsim_log_cluster_bootstrap",
+    "separated_log_name": true,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 41,
+     "lo": -0.2073,
+     "hi": -0.0642,
+     "separated": true
+    },
+    "status": "OK",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "n_clusters": 93,
+    "n_units": 200,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official_a": {
+     "status": "OK",
+     "official_value": 0.49063793146371704,
+     "point": 0.49063793146371704,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "reproduces_official_b": {
+     "status": "OK",
+     "official_value": 0.6258116334270853,
+     "point": 0.6258116334270853,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+   },
+   "n_tokens": 200,
+   "full_split": false,
+   "stretch_published": {
+    "Ego-Status-MLP": "65.6 / 66.4 (arXiv 2406.15349)",
+    "DiffusionDrive": "88.1 PDMS (arXiv 2411.15139, Tab. 1 p. 6; library sha256 6ad4f8a3...; CAMERA+LiDAR, trained on navtrain - refcv6 is camera-only and zero-shot)"
+   },
+   "verdict": "FAIL (SUBSET \u2014 not the published split)"
+  }
+ }
+}
+CMD: C:/Users/Admin/venvs/tanitad/Scripts/python.exe C:\Users\Admin\ev6\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-23-refcv6-standard-tests\navsim\code\bars6.py --milestone C:/Users/Admin/ev6/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/raw/milestones/step5000_navtest_diag
+{
+ "step": 5000,
+ "label": "RESULT",
+ "spec": "SPEC.md \u00a75 (blob ab7f769a\u2026)",
+ "bars": {
+  "warmup": {
+   "status": "UNAVAILABLE",
+   "reason": "summary_warmup.json absent"
+  },
+  "navhard": {
+   "status": "UNAVAILABLE",
+   "reason": "summary_navhard.json absent"
+  },
+  "navtest": {
+   "bar": "BAR-R6-T1",
+   "rule": "PDMS(R6_A1) > max(STOP, CV), paired log-cluster interval vs STOP excludes 0",
+   "values_x100": {
+    "R6_A1": 49.0638,
+    "STOP": 62.5812,
+    "CV": 21.8222
+   },
+   "paired_vs_STOP": {
+    "delta": -0.1352,
+    "lo": -0.2133,
+    "hi": -0.0575,
+    "ci95": 0.0779,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "nanmean_official_skipna",
+    "n_boot": 2000,
+    "estimator": "paired_navsim_log_cluster_bootstrap",
+    "separated_log_name": true,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 41,
+     "lo": -0.2073,
+     "hi": -0.0642,
+     "separated": true
+    },
+    "status": "OK",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "n_clusters": 93,
+    "n_units": 200,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official_a": {
+     "status": "OK",
+     "official_value": 0.49063793146371704,
+     "point": 0.49063793146371704,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "reproduces_official_b": {
+     "status": "OK",
+     "official_value": 0.6258116334270853,
+     "point": 0.6258116334270853,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+   },
+   "n_tokens": 200,
+   "full_split": false,
+   "stretch_published": {
+    "Ego-Status-MLP": "65.6 / 66.4 (arXiv 2406.15349)",
+    "DiffusionDrive": "88.1 PDMS (arXiv 2411.15139, Tab. 1 p. 6; library sha256 6ad4f8a3...; CAMERA+LiDAR, trained on navtrain - refcv6 is camera-only and zero-shot)"
+   },
+   "verdict": "FAIL (SUBSET \u2014 not the published split)"
+  }
+ }
+}

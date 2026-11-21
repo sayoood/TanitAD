@@ -1,0 +1,71 @@
+--- a/stack/tests/test_cost_surface_probe.py (b9890ad4bb)
++++ b/stack/tests/test_cost_surface_probe.py (c678b2272b)
+@@ -190,7 +190,7 @@
+     ctx = _ctx()
+     c = torch.zeros(1, 10, 2)
+     c[0, :, 0] = torch.tensor([0., 1., 0., 1., 0., 1., 0., 1., 0., 1.])
+-    s = ctx.score(c)
++    s = ctx.score(c, units="kappa")
+     d = (c[0, 1:, 0] - c[0, :-1, 0]) / 0.2
+     assert float(s["c_jerk"][0]) == pytest.approx(0.02 * float(d.pow(2).mean()))
+     assert P.W_JERK == 0.02                      # refa_v1.py:1815
+@@ -200,7 +200,7 @@
+     ctx = _ctx()
+     c = torch.zeros(1, 10, 2)
+     c[0, :, 1] = 0.08
+-    s = ctx.score(c)
++    s = ctx.score(c, units="kappa")
+     assert float(s["c_kappa"][0]) == pytest.approx(0.05 * 0.08 ** 2)
+     assert P.W_KAPPA == 0.05                     # refa_v1.py:1816
+ 
+@@ -221,15 +221,15 @@
+     """The structural fact the grid rests on: T2 cannot move the grid minimum."""
+     ctx = _ctx()
+     c = torch.full((3, 10, 2), 2.0)
+-    assert float(ctx.score(c)["c_jerk"].abs().max()) == 0.0
++    assert float(ctx.score(c, units="kappa")["c_jerk"].abs().max()) == 0.0
+ 
+ 
+ def test_target_speed_term_is_dead_unless_supplied_and_is_the_shipped_form():
+     ctx = _ctx(v0=10.0)
+     c = torch.zeros(1, 10, 2)
+     c[0, :, 0] = 1.0
+-    assert float(ctx.score(c)["c_vend"][0]) == 0.0
+-    s = ctx.score(c, target_speed=8.0)
++    assert float(ctx.score(c, units="kappa")["c_vend"][0]) == 0.0
++    s = ctx.score(c, target_speed=8.0, units="kappa")
+     v_end = 10.0 + 1.0 * 10 * 0.2
+     assert float(s["c_vend"][0]) == pytest.approx(0.10 * (v_end - 8.0) ** 2)
+     assert P.W_VEND == 0.10                      # refa_v1.py:1819
+@@ -238,7 +238,7 @@
+ def test_C0_decomposition_identity_holds_exactly():
+     ctx = _ctx()
+     c = torch.randn(11, 10, 2) * 0.1
+-    s = ctx.score(c, target_speed=7.0)
++    s = ctx.score(c, target_speed=7.0, units="kappa")
+     tot = s["c_goal"] + s["c_jerk"] + s["c_kappa"] + s["c_vend"]
+     assert float((tot - s["c_total"]).abs().max()) == 0.0
+ 
+@@ -252,7 +252,7 @@
+     ``total(k) - total(0)`` must be EXACTLY ``0.05 k^2``."""
+     ctx = _ctx()
+     grid, a_axis, k_axis = P.build_grid(10, 0.2, 4.0, 21, 9, "cpu", torch.float32)
+-    s = ctx.score(grid, zero_model=True, chunk=1024)
++    s = ctx.score(grid, zero_model=True, chunk=1024, units="kappa")
+     g = s["c_goal"].numpy()
+     assert float(g.max() - g.min()) == 0.0
+     n_k = k_axis.size
+@@ -555,11 +555,11 @@
+     v0 = 9.0
+     nav = torch.zeros(1, dtype=torch.long)
+     with torch.no_grad():
+-        res = model.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc)
++        res = model.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc, model_action_units="kappa")
+         ctx = P.WindowContext(model, cfg, feats, v0, nav, pc)
+         bcs = _baseline_controls(pc, v0, feats.device, ctx.proposal)
+         names = list(bcs)
+-        mine = ctx.score(torch.stack([bcs[n] for n in names]))["c_total"]
++        mine = ctx.score(torch.stack([bcs[n] for n in names]), units="kappa")["c_total"]
+     assert res.baseline_costs, "the planner must have injected its baselines"
+     for n, v in zip(names, mine.tolist()):
+         assert v == pytest.approx(float(res.baseline_costs[n]), abs=1e-6, rel=1e-6), \

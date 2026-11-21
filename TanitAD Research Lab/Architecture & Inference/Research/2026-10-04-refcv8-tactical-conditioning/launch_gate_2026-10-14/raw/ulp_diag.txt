@@ -1,0 +1,48 @@
+MEASURED 2026-10-14 ~23:00-23:20 Berlin, Thor CPU (aarch64, CUDA_VISIBLE_DEVICES=''), tree = /home/nvidia/gate_c95768b47b21/CAND
+(the launch-gate suite's CAND tree for c95768b), venv /home/nvidia/venvs/tanitad-train (torch 2.13.0+cu130), OMP 4 threads.
+Rig: stack/tests/_refcv8_rig.py, the batch and builds of test_refcv8_warm_start (refcv8: n_alloc=8, prior_free_group=True).
+
+== code/ulp_locate.py (spy on AnchoredDiffusionDecoder._apply_grafts) ==
+torch 2.13.0+cu130 threads 4 nb 20 N8 48
+calls7 [('conf', 2), ('refined', 2), ('rank', 0)] calls8 [('conf', 2), ('refined', 2), ('rank', 1)]
+OUT traj           equal=True maxabs=0.000e+00
+OUT sel_idx        equal=True maxabs=0.000e+00
+OUT anchor_traj    equal=True maxabs=0.000e+00
+OUT u0_hat         equal=True maxabs=0.000e+00
+OUT sel_score      equal=False maxabs=1.907e-06
+OUT sel_score_v3   equal=False maxabs=1.907e-06
+CALL 0 conf/conf base equal=False maxabs=1.431e-06 | out equal=False
+   term 0: equal=True maxabs=0.000e+00 absmax7=7.913e-02
+   term 1: equal=True maxabs=0.000e+00 absmax7=0.000e+00
+CALL 1 refined/refined base equal=False maxabs=1.907e-06 | out equal=False
+   term 0: equal=True maxabs=0.000e+00 absmax7=7.913e-02
+   term 1: equal=True maxabs=0.000e+00 absmax7=0.000e+00
+CALL 2 rank/rank base equal=False maxabs=1.907e-06 | out equal=False
+   term 0: only in r8; base-slice absmax=0.000e+00 exact-zero=True
+=> every graft term is bit-equal; the refcv8 rank term is exactly 0 on the base slice; the ulp is already in the
+   decoder's base confidence (conf0).
+
+== code/ulp_layers.py (forward hooks inside the decoder; base-pass calls only) ==
+calls7 10 calls8 base 10 r8_mod base calls 6
+0 traj_proj traj_proj (3, 20, 32) (3, 20, 32) DIFF 3.815e-06 in7 (True, (320, 16, 1)) in8 (False, (768, 16, 1))
+1 layer0 layer0 (3, 20, 32) (3, 20, 32) DIFF 3.815e-06 in7 (True, (640, 32, 1)) in8 (True, (640, 32, 1))
+2 layer1 layer1 (3, 20, 32) (3, 20, 32) DIFF 3.815e-06 in7 (True, (640, 32, 1)) in8 (True, (640, 32, 1))
+3 conf_head conf_head (3, 20, 1) (3, 20, 1) DIFF 1.431e-06 in7 (True, (640, 32, 1)) in8 (True, (640, 32, 1))
+4 traj_proj traj_proj (3, 20, 32) (3, 20, 32) DIFF 3.815e-06 in7 (True, (320, 16, 1)) in8 (False, (768, 16, 1))
+=> the FIRST op of the base pass diverges, and its only difference is the INPUT LAYOUT: refcv7 feeds a contiguous
+   [3, 20, 16] (batch stride 320 = 20*16); refcv8 feeds the reshape of the slice x[:, :20] of the [3, 48, 8, 2] fan,
+   a strided view (batch stride 768 = 48*16). Same values, same shape, different GEMM path on aarch64.
+
+== code/ulpfix_plugin.py (re-compiles _r8_split with x[:, sl].contiguous(); pytest -p) ==
+=== plugin: [-p ulpfix_plugin]
+ZZULPFIX-APPLIEDZZ
+20 passed in 10.59s
+=== plugin: []
+2 failed, 18 passed in 10.80s
+(files: tests/test_refcv8_warm_start.py tests/test_refcv8_emit_schedule.py; the 2 failures are the two suite failures)
+
+== the committed fix, on a copy of the CAND tree with refc.py + test_refcv8_warm_start.py replaced (md5 5e50294c…, 88d7a8cb…) ==
+Thor CPU: tests/test_refcv8_warm_start.py tests/test_refcv8_emit_schedule.py -> 22 passed in 12.52s (20 + the 2 new guard tests)
+dev box (x86, venvs/tanitad, archive of c95768b stack+taniteval + the 4 changed files):
+  test_refcv8_warm_start + test_refcv8_emit_schedule + test_text_encoding_is_explicit -> 25 passed in 16.80s
+  test_launch_gate_refcv8 -> 53 passed in 5.30s

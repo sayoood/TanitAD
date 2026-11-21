@@ -1,0 +1,50 @@
+{
+ "_what": "W3 (distance_keeping) needed NO CODE CHANGE. It was already wired and correct.",
+ "_evidence_class": "MEASURED (ours; refcv3_arm.py on a refcv6 ckpt, 35-clip splitB cache)",
+ "_NOT_A_CAPABILITY_CLAIM": "10 episodes, 144 windows, on a model trained for ONE STEP. The instrument's behaviour is the result, never these values.",
+ "the_audit_said": "'the only real work is passing --lead' -- read from the artifact's `unavailable` list WITHOUT reading the reason beside it.",
+ "what_was_actually_true": {
+  "flag_name": "--lead-block (not --lead), and it DEFAULTS to the banked block when present",
+  "default_exists": true,
+  "default": "TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-02-b1-eval-lead-block/raw/b1_eval_lead_block.npz (2,489,644 B, 147 v7.2 EVAL clips)",
+  "it_engaged_on_the_first_run": true,
+  "the_first_run_abstained_because": "'no lead agent inside the |lat| < 2.0 m corridor ahead of the predicted path in any of the 9 windows -- free-flow, not a failure', n=0. A 9-window sample."
+ },
+ "the_discriminating_test": "re-run with more windows: if the abstention is CONDITIONAL the metrics must populate. They do.",
+ "per_arm": {
+  "ha0": {
+   "status": "OK",
+   "n": 75,
+   "n_windows": 144,
+   "mean_headway_min_m": 25.2809,
+   "mean_min_ttc_s": 23.073,
+   "intervals": "19/19"
+  },
+  "ha0_ext": {
+   "status": "OK",
+   "n": 74,
+   "n_windows": 144,
+   "mean_headway_min_m": 25.0742,
+   "mean_min_ttc_s": 23.1324,
+   "intervals": "19/19"
+  },
+  "ha": {
+   "status": "OK",
+   "n": 74,
+   "n_windows": 144,
+   "mean_headway_min_m": 25.0736,
+   "mean_min_ttc_s": 23.1307,
+   "intervals": "19/19"
+  },
+  "os": {
+   "status": "NOT-APPLICABLE",
+   "n": 0,
+   "n_windows": 144,
+   "mean_headway_min_m": null,
+   "mean_min_ttc_s": null,
+   "intervals": "16/19"
+  }
+ },
+ "reading": "Longitudinal reaches 19/19 intervals on every arm with a REAL path. The `os` arm abstains at n=0/144 because the corridor is measured ahead of the PREDICTED path and this model was trained for ONE STEP -- its paired ADE delta is ~77 m, so nothing lands in its corridor. The instrument is right in BOTH directions, and states n either way.",
+ "_class": "an `unavailable` list read as a WIRING GAP when the entry beside it said NOT-APPLICABLE with a reason and an n. Same family as every wrong-scope probe in this programme: the field answered a different question than the one asked."
+}

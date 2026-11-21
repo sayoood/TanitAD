@@ -1,0 +1,38 @@
+## 2026-09-27 NEW-2 MAP-LIFT CLOSURE (SPEC_REFCV7 §23, A18; lands ONLY if the early A18 MAIN passes): the canonical argv carries the FINAL 154-token list (gate sha256 6402d33de75b7f1c6dbdeb9aeedd46a00a82e7325eec420fa179f366213bd5cd: the box A17 argv + --map-hires-near-lift-m 20 --map-hires-near-refine-blocks 1 after --map-hires-grad-ckpt on); launch_gate.py closes MAP-LIFT (both flags required values), binds G-MAP-OVERFIT to the A18 protocol (spec sha256, steps 3,000, lr 1e-3, batch 4, seed 0, lr_decay from 2,700, near lift 20 + 1 block, must-fail near_block_zeros) and reads sources utf-8-sig (import_closure + static_eager_own_files: tanitad/eval/__init__.py carries a BOM); the gate's tests; the A18 spec pin as a NEW test file. R5 (LANDING_READY.txt) lands with it. No change to the trainer, stack/tanitad/** or either harness (the binding closures).
+# Base blobs read at b711411d89e8ce62ac04a0097e415e7d06a7fba9 (b711411 = the box A17 landing; the three gate files' tip blobs are exactly the box A17 overlay's (2361732e / fe687adb / 5b465a9b), and 37086c3..b711411 changed no other code). Full files under code/fix_maplift/; line endings as each tip blob (EOL column). The unified diff (code/fix_maplift/NEW2_MAPLIFT_edits.diff) re-applies to the RAW tip blobs byte for byte (git apply, core.autocrlf=false).
+# If the tip moves: code/make_fix_bundle.py --set maplift --fix-dir code/fix_maplift regenerates this block (a 3-way is needed only if the tip changes one of the three gate files).
+# <package path>  ->  <repo path>     (comment above each: tip base blob | new blob = git hash-object --no-filters | EOL)
+# stack/scripts/launch_gate.py: base 2361732e592daabdfade80ed7752418e6cca1c32 | new ea55acc6268a3062c9c04617c298823598f40ad3 | LF
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix_maplift/stack/scripts/launch_gate.py  ->  stack/scripts/launch_gate.py
+# stack/tests/test_launch_gate.py: base fe687adb440c03308c1229b568c6d154e5d562cb | new 675cea50b45831a5b6beb86ff9550928ddd74ca7 | LF
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix_maplift/stack/tests/test_launch_gate.py  ->  stack/tests/test_launch_gate.py
+# stack/ops/runs.d/refcv7-r101-s0.argv.json: base 5b465a9b8d0fd02328e95ac583a1488b9e9cb564 | new 2e0461483cfe71fc831e970a6ad0ebb52c7d3d60 | LF
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix_maplift/stack/ops/runs.d/refcv7-r101-s0.argv.json  ->  stack/ops/runs.d/refcv7-r101-s0.argv.json
+# MAPLIFT NEW files
+# stack/tests/test_map_hires_a18_spec.py: base NEW | new 4ed6dfb76fb14bb07e76f5ddf370644ed6e740a0 | LF
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix_maplift/stack/tests/test_map_hires_a18_spec.py  ->  stack/tests/test_map_hires_a18_spec.py
+# package files NEW or CHANGED (all LF except the diff):
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/BUILD.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/LANDING_READY_MAPLIFT.txt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/raw/gmo_spec_A18.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/make_a18_arm.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/gmo_a18_main.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/gmo_a18_launch.sh
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/a18_tables.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/binding/run_gmo_binding.sh
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/raw/gmo_early/g_map_overfit_A171.EARLY_NONBINDING.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/raw/gmo_early/a171_launch.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/raw/gmo_early/a171_A171_DONE.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/make_block2_arm.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/raw/gmo_spec_BLOCK2_DRAFT.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/raw/gmo_spec_BLOCK2_A18_DRAFT.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/block2_cost.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/raw/gmo_early/block2_cost.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/make_fix_bundle.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/write_landing_ready_maplift.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix_maplift/NEW2_MAPLIFT_edits.diff
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix_maplift/BASE_BLOBS.txt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix_maplift/LANDING_BLOCKS.txt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/raw/gmo_early/g_map_overfit_A18_MAIN.EARLY_NONBINDING.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/raw/gmo_early/a18_launch.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/raw/gmo_early/a18_A18_DONE.json

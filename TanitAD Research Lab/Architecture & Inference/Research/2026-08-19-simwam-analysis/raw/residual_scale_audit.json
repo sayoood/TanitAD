@@ -1,0 +1,421 @@
+{
+ "_evidence_class": "MEASURED (ours; static census of residual seams across the frontier models)",
+ "defect": "residual delta whose init magnitude is orders above the quantity it is added to; v6 measured 580.5x worse than the hold baseline",
+ "models": {
+  "v6F": [
+   {
+    "file": "stack/tanitad/models/v6.py",
+    "class": "GoalVocabulary",
+    "method": "encode",
+    "line": 2126,
+    "form": "assign",
+    "base": "e",
+    "delta": "self.arg_proj",
+    "headish": true,
+    "class_has_zeros_init": false,
+    "class_has_scaled_init": false
+   },
+   {
+    "file": "stack/tanitad/models/v6.py",
+    "class": "GoalVocabulary",
+    "method": "encode",
+    "line": 2142,
+    "form": "assign",
+    "base": "e",
+    "delta": "self.cat_emb",
+    "headish": false,
+    "class_has_zeros_init": false,
+    "class_has_scaled_init": false
+   },
+   {
+    "file": "stack/tanitad/models/v6.py",
+    "class": "FallbackTrigger",
+    "method": "forward",
+    "line": 3178,
+    "form": "assign*",
+    "base": "self.calib_slope.to(signal.dtype) * sign",
+    "delta": "self.calib_intercept.to",
+    "headish": false,
+    "class_has_zeros_init": false,
+    "class_has_scaled_init": false
+   },
+   {
+    "file": "stack/tanitad/models/v6.py",
+    "class": "V6Stack",
+    "method": "forward",
+    "line": 5267,
+    "form": "assign*",
+    "base": "e_a_tac",
+    "delta": "self.cond_tac_dyn",
+    "headish": false,
+    "class_has_zeros_init": true,
+    "class_has_scaled_init": false
+   },
+   {
+    "file": "stack/tanitad/models/predictor.py",
+    "class": "CausalBlock",
+    "method": "forward",
+    "line": 52,
+    "form": "assign",
+    "base": "x",
+    "delta": "self.mlp",
+    "headish": false,
+    "class_has_zeros_init": false,
+    "class_has_scaled_init": false
+   },
+   {
+    "file": "stack/tanitad/models/predictor.py",
+    "class": "OperativePredictor",
+    "method": "forward",
+    "line": 189,
+    "form": "assign*",
+    "base": "self.pos[:, :w]",
+    "delta": "self.in_proj",
+    "headish": true,
+    "class_has_zeros_init": false,
+    "class_has_scaled_init": true
+   },
+   {
+    "file": "stack/tanitad/models/hierarchy.py",
+    "class": "RungBlock",
+    "method": "forward",
+    "line": 118,
+    "form": "return",
+    "base": "x",
+    "delta": "self.ff",
+    "headish": false,
+    "class_has_zeros_init": false,
+    "class_has_scaled_init": false
+   }
+  ],
+  "REF-A v1": [
+   {
+    "file": "stack/tanitad/refs/refa_v1.py",
+    "class": "_Block",
+    "method": "forward",
+    "line": 179,
+    "form": "return",
+    "base": "x",
+    "delta": "self.mlp",
+    "headish": false,
+    "class_has_zeros_init": false,
+    "class_has_scaled_init": false
+   },
+   {
+    "file": "stack/tanitad/refs/refa_v1.py",
+    "class": "WideAdapter",
+    "method": "forward",
+    "line": 230,
+    "form": "assign*",
+    "base": "self.pos",
+    "delta": "self.proj",
+    "headish": true,
+    "class_has_zeros_init": false,
+    "class_has_scaled_init": false
+   },
+   {
+    "file": "stack/tanitad/refs/refa_v1.py",
+    "class": "TokenFieldPredictor",
+    "method": "step",
+    "line": 301,
+    "form": "return",
+    "base": "field",
+    "delta": "self.head",
+    "headish": true,
+    "class_has_zeros_init": false,
+    "class_has_scaled_init": true
+   },
+   {
+    "file": "stack/tanitad/refs/refa_v1.py",
+    "class": "TokenFieldPredictor",
+    "method": "step",
+    "line": 296,
+    "form": "assign",
+    "base": "a",
+    "delta": "self.intent",
+    "headish": false,
+    "class_has_zeros_init": false,
+    "class_has_scaled_init": true
+   },
+   {
+    "file": "stack/tanitad/refs/refa_v1.py",
+    "class": "StrategicSubspacePredictor",
+    "method": "rollout",
+    "line": 369,
+    "form": "assign*",
+    "base": "s",
+    "delta": "self.act",
+    "headish": false,
+    "class_has_zeros_init": false,
+    "class_has_scaled_init": true
+   },
+   {
+    "file": "stack/tanitad/refs/refa_v1.py",
+    "class": "StrategicSubspacePredictor",
+    "method": "rollout",
+    "line": 372,
+    "form": "assign",
+    "base": "s",
+    "delta": "self.head",
+    "headish": true,
+    "class_has_zeros_init": false,
+    "class_has_scaled_init": true
+   },
+   {
+    "file": "stack/tanitad/refs/refa_v1p.py",
+    "class": "ActionStreamPredictor",
+    "method": "step",
+    "line": 175,
+    "form": "return",
+    "base": "field",
+    "delta": "self.head",
+    "headish": true,
+    "class_has_zeros_init": true,
+    "class_has_scaled_init": false
+   },
+   {
+    "file": "stack/tanitad/refs/refa_v1p.py",
+    "class": "ActionStreamPredictor",
+    "method": "step",
+    "line": 169,
+    "form": "assign",
+    "base": "a",
+    "delta": "self.intent",
+    "headish": false,
+    "class_has_zeros_init": true,
+    "class_has_scaled_init": false
+   }
+  ],
+  "flagship v1": [
+   {
+    "file": "stack/tanitad/models/flagship_v15.py",
+    "class": "V15Decoder",
+    "method": "forward",
+    "line": 250,
+    "form": "assign",
+    "base": "cond",
+    "delta": "self.ctx_to_cond",
+    "headish": false,
+    "class_has_zeros_init": false,
+    "class_has_scaled_init": false
+   },
+   {
+    "file": "stack/tanitad/models/flagship_v15.py",
+    "class": "V15Decoder",
+    "method": "forward",
+    "line": 261,
+    "form": "assign",
+    "base": "conf",
+    "delta": "self.maneuver_to_anchor",
+    "headish": false,
+    "class_has_zeros_init": false,
+    "class_has_scaled_init": false
+   },
+   {
+    "file": "stack/tanitad/models/flagship_v15.py",
+    "class": "FlagshipV15Head",
+    "method": "build_tokens",
+    "line": 400,
+    "form": "assign*",
+    "base": "self.state_pos[None]",
+    "delta": "self.state_proj",
+    "headish": true,
+    "class_has_zeros_init": false,
+    "class_has_scaled_init": false
+   },
+   {
+    "file": "stack/tanitad/models/flagship_v15.py",
+    "class": "FlagshipV15Head",
+    "method": "build_tokens",
+    "line": 408,
+    "form": "assign*",
+    "base": "self.imag_pos[None]",
+    "delta": "self.imag_proj",
+    "headish": true,
+    "class_has_zeros_init": false,
+    "class_has_scaled_init": false
+   },
+   {
+    "file": "stack/tanitad/models/fourbrain.py",
+    "class": "StrategicPolicy",
+    "method": "forward",
+    "line": 80,
+    "form": "assign*",
+    "base": "self.pos[:, :w]",
+    "delta": "self.in_proj",
+    "headish": true,
+    "class_has_zeros_init": false,
+    "class_has_scaled_init": false
+   },
+   {
+    "file": "stack/tanitad/models/fourbrain.py",
+    "class": "StrategicPolicy",
+    "method": "forward",
+    "line": 79,
+    "form": "assign",
+    "base": "cmd",
+    "delta": "self.ego_emb",
+    "headish": false,
+    "class_has_zeros_init": false,
+    "class_has_scaled_init": false
+   },
+   {
+    "file": "stack/tanitad/models/fourbrain.py",
+    "class": "_AnchorCrossAttnLayer",
+    "method": "forward",
+    "line": 186,
+    "form": "assign",
+    "base": "q",
+    "delta": "self.mlp",
+    "headish": false,
+    "class_has_zeros_init": false,
+    "class_has_scaled_init": false
+   },
+   {
+    "file": "stack/tanitad/models/fourbrain.py",
+    "class": "TacticalPolicy",
+    "method": "forward",
+    "line": 334,
+    "form": "assign*",
+    "base": "self.pos[:, :w]",
+    "delta": "self.in_proj",
+    "headish": true,
+    "class_has_zeros_init": false,
+    "class_has_scaled_init": false
+   },
+   {
+    "file": "stack/tanitad/models/fourbrain.py",
+    "class": "TacticalPolicy",
+    "method": "forward",
+    "line": 331,
+    "form": "assign",
+    "base": "ctx",
+    "delta": "self.ego_emb",
+    "headish": false,
+    "class_has_zeros_init": false,
+    "class_has_scaled_init": false
+   }
+  ],
+  "REF-C v3": [
+   {
+    "file": "stack/tanitad/refs/refc.py",
+    "class": "CrossAttnLayer",
+    "method": "forward",
+    "line": 1035,
+    "form": "assign",
+    "base": "q",
+    "delta": "self.mlp",
+    "headish": false,
+    "class_has_zeros_init": false,
+    "class_has_scaled_init": false
+   },
+   {
+    "file": "stack/tanitad/refs/refc.py",
+    "class": "AnchoredDiffusionDecoder",
+    "method": "forward",
+    "line": 1310,
+    "form": "assign",
+    "base": "cond",
+    "delta": "self.ctx_to_cond",
+    "headish": false,
+    "class_has_zeros_init": true,
+    "class_has_scaled_init": false
+   },
+   {
+    "file": "stack/tanitad/refs/refc.py",
+    "class": "AnchoredDiffusionDecoder",
+    "method": "forward",
+    "line": 1312,
+    "form": "assign",
+    "base": "cond",
+    "delta": "self.lan_to_cond",
+    "headish": false,
+    "class_has_zeros_init": true,
+    "class_has_scaled_init": false
+   },
+   {
+    "file": "stack/tanitad/refs/refc.py",
+    "class": "AnchoredDiffusionDecoder",
+    "method": "forward",
+    "line": 1461,
+    "form": "assign",
+    "base": "score",
+    "delta": "self._grounded_score",
+    "headish": false,
+    "class_has_zeros_init": true,
+    "class_has_scaled_init": false
+   },
+   {
+    "file": "stack/tanitad/refs/refc.py",
+    "class": "ImagBlock",
+    "method": "forward",
+    "line": 1560,
+    "form": "assign",
+    "base": "x",
+    "delta": "self.mlp",
+    "headish": false,
+    "class_has_zeros_init": false,
+    "class_has_scaled_init": false
+   },
+   {
+    "file": "stack/tanitad/models/refc_rescorer.py",
+    "class": "CandidateBlock",
+    "method": "forward",
+    "line": 385,
+    "form": "return",
+    "base": "x",
+    "delta": "self.mlp",
+    "headish": false,
+    "class_has_zeros_init": false,
+    "class_has_scaled_init": false
+   },
+   {
+    "file": "stack/tanitad/models/refc_rescorer.py",
+    "class": "RefCRescorer",
+    "method": "tokens",
+    "line": 447,
+    "form": "assign",
+    "base": "t",
+    "delta": "self.q_proj",
+    "headish": true,
+    "class_has_zeros_init": true,
+    "class_has_scaled_init": false
+   },
+   {
+    "file": "stack/tanitad/models/refc_rescorer.py",
+    "class": "RefCRescorer",
+    "method": "tokens",
+    "line": 449,
+    "form": "assign",
+    "base": "t",
+    "delta": "self.geom_proj",
+    "headish": true,
+    "class_has_zeros_init": true,
+    "class_has_scaled_init": false
+   }
+  ],
+  "REF-D": []
+ },
+ "instantiation": {
+  "OperativePredictor": [
+   "REF-A v1",
+   "flagship v1",
+   "v6F"
+  ],
+  "FTac": [
+   "v6F"
+  ],
+  "StrategicPolicy": [
+   "REF-A v1",
+   "REF-D",
+   "flagship v1"
+  ],
+  "TacticalPolicy": [
+   "REF-A v1",
+   "REF-D",
+   "flagship v1"
+  ]
+ },
+ "n_seams": 32,
+ "n_review": 6
+}

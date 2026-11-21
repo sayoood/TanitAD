@@ -1,0 +1,143 @@
+==========================================================================
+ROOT SET  (mode=ladder)  — the assumption this audit rests on
+==========================================================================
+  C105's original 7-entry hand-list, for reproducing that audit ONLY. It missed 3 stale files; do not decide on it.
+
+entry points (7):
+    stack/scripts/e_wc2_sigma_star.py
+    stack/scripts/gate_emitters.py
+    stack/scripts/run_gate.py
+    stack/scripts/train_v6_staged.py
+    stack/scripts/v6_chain.py
+    stack/scripts/v6_dump_sw_latents.py
+    stack/scripts/watch_gates.py
+
+sys.path roots: ['stack/scripts', 'stack', 'taniteval']
+executable dirs: ['stack/scripts', 'taniteval/tools', 'stack/ops']
+
+COVERAGE: closure 120 files · 24/158 launchable scripts covered · 134 NOT covered
+  ⚠️ uncovered scripts are launchable and unaudited by this run. They are not on the derived launch path; if one becomes so, add its launch source.  (--show-uncovered to list)
+==========================================================================
+
+closure: 120 files from 7 entry points over roots ['stack/scripts', 'stack', 'taniteval']
+  eager (imported at process start): 50   deferred-only (function-level, the C99 risk set): 70
+  stack/scripts/compare_arms.py
+  stack/scripts/d1_probe_capacity.py
+  stack/scripts/driving_diagnostic.py
+  stack/scripts/e_wc2_sigma_star.py
+  stack/scripts/eval_behavior.py
+  stack/scripts/eval_flagship_v4.py
+  stack/scripts/finetune_traj.py
+  stack/scripts/flagship_v4_data.py
+  stack/scripts/gate_emitters.py
+  stack/scripts/goal_modes.py
+  stack/scripts/goal_provenance.py
+  stack/scripts/lead_state_gate.py
+  stack/scripts/probe_latent_state.py
+  stack/scripts/refb_labels.py
+  stack/scripts/refb_train.py
+  stack/scripts/refc_dump_latents.py
+  stack/scripts/run_gate.py
+  stack/scripts/s2_labels.py
+  stack/scripts/stage_a_probes.py
+  stack/scripts/train_flagship4b.py
+  stack/scripts/train_flagship_v4.py
+  stack/scripts/train_p8_occupancy.py
+  stack/scripts/train_stage_a.py
+  stack/scripts/train_v58f_unicycle_head.py
+  stack/scripts/train_v6_staged.py
+  stack/scripts/v4_labels.py
+  stack/scripts/v6_chain.py
+  stack/scripts/v6_dump_sw_latents.py
+  stack/scripts/watch_gates.py
+  stack/tanitad/__init__.py
+  stack/tanitad/config.py
+  stack/tanitad/data/__init__.py
+  stack/tanitad/data/_contract.py
+  stack/tanitad/data/anchor_goal.py
+  stack/tanitad/data/bev_raster.py
+  stack/tanitad/data/calib.py
+  stack/tanitad/data/comma2k19.py
+  stack/tanitad/data/epcache.py
+  stack/tanitad/data/metadrive_env.py
+  stack/tanitad/data/mixing.py
+  stack/tanitad/data/parity.py
+  stack/tanitad/data/physicalai.py
+  stack/tanitad/data/stats.py
+  stack/tanitad/data/toy_driving.py
+  stack/tanitad/data/v2_dataset.py
+  stack/tanitad/ego_plan.py
+  stack/tanitad/eval/__init__.py
+  stack/tanitad/eval/ckpt_compat.py
+  stack/tanitad/eval/gates.py
+  stack/tanitad/eval/metrics.py
+  stack/tanitad/eval/spectral.py
+  stack/tanitad/eval/v6_probe_trunk.py
+  stack/tanitad/geometry.py
+  stack/tanitad/instruments/__init__.py
+  stack/tanitad/instruments/checks.py
+  stack/tanitad/instruments/numerics.py
+  stack/tanitad/keys.py
+  stack/tanitad/lake/__init__.py
+  stack/tanitad/lake/catalog.py
+  stack/tanitad/lake/curation.py
+  stack/tanitad/lake/dedup.py
+  stack/tanitad/lake/enrich.py
+  stack/tanitad/lake/filtering.py
+  stack/tanitad/lake/goal_labels.py
+  stack/tanitad/lake/schema.py
+  stack/tanitad/lake/shards.py
+  stack/tanitad/lake/vocab.py
+  stack/tanitad/lake/vtarget.py
+  stack/tanitad/models/__init__.py
+  stack/tanitad/models/_validate.py
+  stack/tanitad/models/agent_slots.py
+  stack/tanitad/models/encoder.py
+  stack/tanitad/models/flagship_v15.py
+  stack/tanitad/models/flagship_v4.py
+  stack/tanitad/models/fourbrain.py
+  stack/tanitad/models/imagination.py
+  stack/tanitad/models/inverse_dynamics.py
+  stack/tanitad/models/kinematic.py
+  stack/tanitad/models/metric_dynamics.py
+  stack/tanitad/models/predictor.py
+  stack/tanitad/models/readout.py
+  stack/tanitad/models/sigreg.py
+  stack/tanitad/models/strategic_goal.py
+  stack/tanitad/models/tactical.py
+  stack/tanitad/models/traj_head.py
+  stack/tanitad/models/v6.py
+  stack/tanitad/models/vision_rank.py
+  stack/tanitad/models/wm_reference_select.py
+  stack/tanitad/refs/__init__.py
+  stack/tanitad/refs/refa.py
+  stack/tanitad/refs/refb.py
+  stack/tanitad/refs/refc.py
+  stack/tanitad/refs/refc_select.py
+  stack/tanitad/refs/refc_tactical.py
+  stack/tanitad/train/__init__.py
+  stack/tanitad/train/ckpt_io.py
+  stack/tanitad/train/decorr.py
+  stack/tanitad/train/flagship_losses.py
+  stack/tanitad/train/heldout_gate.py
+  stack/tanitad/train/heldout_goal.py
+  stack/tanitad/train/train_worldmodel.py
+  stack/tanitad/train/v4_curriculum.py
+  taniteval/taniteval/__init__.py
+  taniteval/taniteval/bench.py
+  taniteval/taniteval/ci.py
+  taniteval/taniteval/clhorizon.py
+  taniteval/taniteval/corridor.py
+  taniteval/taniteval/data.py
+  taniteval/taniteval/driving.py
+  taniteval/taniteval/ego_guard.py
+  taniteval/taniteval/hierarchy_guard.py
+  taniteval/taniteval/loaders.py
+  taniteval/taniteval/ood.py
+  taniteval/taniteval/pseudosim.py
+  taniteval/taniteval/refc_eval.py
+  taniteval/taniteval/registry.py
+  taniteval/taniteval/rollout.py
+  taniteval/taniteval/seam_dump.py
+  taniteval/taniteval/stack_guard.py
+  taniteval/taniteval/tanitad_metrics.py

@@ -1,0 +1,20 @@
+# RECOVER-NEXT read pins (written 2026-11-03T06:06:32+0100); this package's pins. The chain refuses to start when the reader, the combiner, the known-answer tool or a test file differ from them (gate 0). Cards: dagland/recover_next/FROZEN_SHA.txt (RECOVER-NEXT), recover_read/FROZEN_SHA.txt (composite), recover_ft/FROZEN_SHA.txt. The reused instruments are pinned inside code/recover_read.py (PINS dict) and the tool by framefreeze/PINS.txt.
+code/recover_read.py sha256 de5cfbf572ba2184e5f85a942ac79a6a6fa4df422f83367bbd9fa0e6966e95d1
+code/recover_next_combine.py sha256 c6b4f31551a6cde651f00659dc8e4c6ea46e863ba863e5cb876adc6d28f1d6c8
+code/ka_rarm_r.py sha256 96adcb3e4f0eccaf8b348868c87098f0ef281240e120c1edb7ce0a086a025112
+tests/test_recover_read.py sha256 55ddd4a1960f7941d0136cad385ab3d1e96e6ee36a5acf3d0bdd7a28269b24fe
+tests/test_recover_read_arms.py sha256 7eccc6b07f8321b4a732e506bbffb4955480064a071d6f9583384602d02b1316
+tests/test_recover_next_combine.py sha256 50f600d975827497a82db2209deff0dd64829b8936b98acb3f7d5dd032d8e645
+rnext_read_chain.sh sha256 01e274b6eba1925857cefbc533d058be7ca88c6ba04f83723cf3c38afb2032a3
+code/precheck_pulled.py sha256 782d67b661d17be24f82a59c5a10f1a59d13a741bd9c1e3298989c118f76c91c
+rnext_read_chain_RAPR.cmd sha256 0857fb277b533990621cdf93126b72fe5ef4a35d02d7ee3fc16cc75de11731b1
+rnext_read_chain_RTL.cmd sha256 58aaeb3a214dba6711ed9f3fb275f86eb08c6ba0f5b486ca3d9d1e699c3c5737
+rnext_read_chain_RP01.cmd sha256 2aaa073ac440c2a9b8f3fe8f8f372f5dffd9124afa1092ae00a9bb8e8f6d829e
+rnext_read_chain_RAPRP01.cmd sha256 a5d1c3c1a2752dc0aa305783fbec85cc6b89f809d996304f268cdb1cbdcb234a
+rnext_read_chain_RPT.cmd sha256 565f2039b014f02ed9657aa141b9eaa549447e3ecf5f409c05d543f5353157a0
+logs/pytest_recover_read.log sha256 26e3abfe6af4f743de22927d93febbc2d7e3f577ff31616075711b9ba2951c58
+logs/pytest_recover_read_arms.log sha256 33f3657b06b0594009736e9c655825d8585b0ef6ebbf0ef4f8d89939dff81d54
+logs/pytest_recover_next_combine.log sha256 e19578070ae74cde6becbb85c020b349e3c698dcb56bfd11f8bcdc35d20f8092
+# 2026-11-03 Master Mind: gate 2b added (code/precheck_pulled.py: the reader's KP1 / KR1 / KR2-argv / KR3 on the pulled files before any rollout); chain sha was 3b0e8229..., PASS on arm R's existing runs
+# 2026-11-04 (RAPR-P01 instruments, prepared and not launched): code/recover_read.py gained ARM_SPEC["RAPRP01"] (a-priori law, p 0.1, KR1 band [0.0833, 0.1167]); tests/test_recover_read_arms.py gained the RAPRP01 cases; rnext_read_chain.sh accepts RAPRP01; the known answer was recomputed with the new reader (raw/KA_RARM_R.json PASS, 0 differences over 2,599 leaves, 15 of 15 arrays bit-identical; raw/RECOVER_READ_R.json carries the new reader sha256). The old copies of every changed file are in ../_pre_raprp01/ as <name>.pre_raprp01.
+# 2026-11-04 (RPT instruments, prepared and not launched): code/recover_read.py gained ARM_SPEC["RPT"] (empirical TRAIN-bank law, p 0.3, rejoin target, shape pertick; KR1 band [0.25, 0.35]) and the shape reads (argv audit: the shape flag is a lever flag of RPT only; KR3: built shape, build-record shape, per-tick table block, kept / dropped counts); tests/test_recover_read_arms.py gained the RPT cases; rnext_read_chain.sh accepts RPT; the known answer was recomputed with the new reader (raw/KA_RARM_R.json PASS, 0 differences over 2,599 leaves, 15 of 15 arrays bit-identical; raw/RECOVER_READ_R.json carries the new reader sha256). The old copies of every changed file are in ../_pre_rpt/ as <name>.pre_rpt.

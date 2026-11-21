@@ -1,0 +1,23 @@
+MEASURE 5 (label_version 4, slowed copies in the on-policy sets) -- raw evidence, 2026-09-27, dev box (CPU only)
+
+Produced by eval/validate_slow_labels_v4.py (stages prep / label / ref / mutate / reverify / wide / analyze) running the
+REAL labeller CLIs (refe/onpolicy_label_v4.py, refe/onpolicy_label.py) on W3's 200 navtest tokens
+(A1_sub200_tokens.json), snapshot 015 (snap_epoch015.pt md5 d7c59f4f2fbcbde3e2dec8f67d63a7e7), its own native proposals
+(proptable/sub200_ep015/stop_candidate_dump.npz `traj`) and the E-6 table's stored logits. EP reference on navtest =
+the HUMAN logged future (declared: no DriveRL teacher plan exists on navtest). Working data on the dev box:
+D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015/v4_labels/ (queue, sets, logs).
+
+Every .jsonl.gz below = the set lines of one arm, sorted by token, gzip mtime 0.
+  v4_sets_sub200_ep015.jsonl.gz      main arm: --slow-copies --slow-frac 1.0 (factors 0.75,0.5 + STOP, scorer_top), 200 sets
+  v4_slowaux_sub200_ep015.jsonl.gz   its side file: the replaced originals' labels (17 per set)
+  ref_v3_sets_chunk0.jsonl.gz        the REAL v3 worker (onpolicy_label.py) on chunk 0 (4 tokens)
+  ref_v4off_sets_chunk0.jsonl.gz     the v4 CLI with the flag OFF on chunk 0 -- identical to ref_v3 (timing excluded)
+  mut_nocheck_sets_chunk0.jsonl.gz   DELIBERATE REGRESSION: copy slots labelled with their SOURCE's trajectory, self-check off
+  v4ncaf_sets_sub200_ep015.jsonl.gz  arm sets_ncaf: + --nc-at-fault (the teacher's own at-fault collision rule), 200 sets
+  v4ncaf_slowaux_sub200_ep015.jsonl.gz
+  diag_slow_labels_v4_train.log/.json  refe/diag_slow_labels_v4_train.py: the real trainer reads/serves/learns the v4 sets
+  op_status_patch_test.txt           the patched code/op_status.py on the main arm's lines (existing keys unchanged)
+
+Summaries (the quotable numbers): eval/raw/e6_sub200_ep015/v4_label_validity.json (main arm),
+v4_label_validity_sets_ncaf.json (at-fault arm), v4_final_reverify.json (the final labeller file reproduces the validated
+lines), v4_nc_residual.json (plan vs NAVSIM-simulated ego). Design + decision rule: eval/PREREG_MEASURE5.md.

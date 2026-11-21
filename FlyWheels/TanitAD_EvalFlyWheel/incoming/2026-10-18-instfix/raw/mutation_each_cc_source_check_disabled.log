@@ -1,0 +1,52 @@
+### units (-k test_j or test_k or test_l or test_m)
+.......s....s.............                                               [100%]
+24 passed, 2 skipped, 121 deselected in 16.36s
+
+### internal_t1 (full)
+.....s...                                                                [100%]
+8 passed, 1 skipped in 0.90s
+
+### chain_controls (full)
+                                 [100%]
+================================== FAILURES ===================================
+_ test_a8_source_check_a_producer_script_that_never_names_the_file_is_refused _
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5399/test_a8_source_check_a_produce0')
+
+    def test_a8_source_check_a_producer_script_that_never_names_the_file_is_refused(tmp_path):
+        (tmp_path / "writes_it.py").write_text("import json\njson.dump({}, open(f'{w}/D3.json', 'w'))\n", encoding="utf-8")
+        (tmp_path / "silent.py").write_text("print('does something else entirely')\n", encoding="utf-8")
+        good = ChainPlan(stages=(Stage("smoke", produces=("D3.json",), script="writes_it.py"), Stage("checks", gates_on=("D3.json",))))
+        bad = ChainPlan(stages=(Stage("smoke", produces=("D3.json",), script="silent.py"), Stage("checks", gates_on=("D3.json",))))
+        gone = ChainPlan(stages=(Stage("smoke", produces=("D3.json",), script="nope.py"), Stage("checks", gates_on=("D3.json",))))
+        assert CC.check_plan(good, script_root=str(tmp_path)) == []
+>       assert _kinds(CC.check_plan(bad, script_root=str(tmp_path))) == ["SOURCE-SILENT"], CC.check_plan(bad, script_root=str(tmp_path))
+E       AssertionError: []
+E       assert [] == ['SOURCE-SILENT']
+E         
+E         Right contains one more item: 'SOURCE-SILENT'
+E         Use -v to get more diff
+
+tests\test_chain_controls.py:139: AssertionError
+_ test_d4_mutation_a_producer_script_that_does_not_name_the_file_turns_it_RED _
+
+fp_work = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5399/test_d4_mutation_a_producer_sc0')
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5399/test_d4_mutation_a_producer_sc0')
+
+    def test_d4_mutation_a_producer_script_that_does_not_name_the_file_turns_it_RED(fp_work, tmp_path):
+        """The label is declared but the code never writes the file -- the original bug with a label on it."""
+        _need_fp()
+        plan = _real_plan(fixed=True)
+        stages = tuple(Stage(s.name, produces=s.produces, gates_on=s.gates_on, script="fp_capture.py") if s.name == "d3_smoke" else s
+                       for s in plan.stages)                                        # fp_capture.py never mentions smoke_result.json
+        probs = CC.check_plan(ChainPlan(stages=stages, external=plan.external, arriving=plan.arriving), str(fp_work), script_root=str(_FP))
+>       assert [p for p in probs if p.startswith("SOURCE-SILENT") and "smoke_result.json" in p], probs
+E       AssertionError: []
+E       assert []
+
+tests\test_chain_controls.py:346: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_chain_controls.py::test_a8_source_check_a_producer_script_that_never_names_the_file_is_refused
+FAILED tests/test_chain_controls.py::test_d4_mutation_a_producer_script_that_does_not_name_the_file_turns_it_RED
+2 failed, 32 passed in 0.94s
+

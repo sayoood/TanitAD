@@ -1,0 +1,89 @@
+{
+ "_what": "mutation proof that test_occ_from_geometry.py can actually FAIL",
+ "_evidence_class": "MEASURED (ours), CPU",
+ "target": "stack\\tanitad\\models\\agent_slots.py",
+ "target_md5": "055a22c856856d3b0617b779cbc51518",
+ "arms": [
+  {
+   "arm": "M1_half_angle_drifts_from_fov_mask",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_half_angle_is_pinned_to_fov_mask_not_merely_documented",
+    "test_sign_matches_the_hand_computed_predicate[10.0-17.0-False]"
+   ],
+   "collection_died": false,
+   "_rule": "an arm counts only if a NAMED test failed -- red by syntax error exercises no assertion",
+   "tail": null
+  },
+  {
+   "arm": "M2_logit_sign_inverted",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_sign_matches_the_hand_computed_predicate[10.0-0.0-False]",
+    "test_sign_matches_the_hand_computed_predicate[10.0-5.0-False]",
+    "test_sign_matches_the_hand_computed_predicate[10.0-17.0-False]",
+    "test_sign_matches_the_hand_computed_predicate[10.0-17.4-True]",
+    "test_sign_matches_the_hand_computed_predicate[10.0--17.4-True]",
+    "test_sign_matches_the_hand_computed_predicate[1.0-100.0-True]",
+    "test_sign_matches_the_hand_computed_predicate[-10.0-1.0-True]",
+    "test_sign_matches_the_hand_computed_predicate[-10.0--1.0-True]"
+   ],
+   "collection_died": false,
+   "_rule": "an arm counts only if a NAMED test failed -- red by syntax error exercises no assertion",
+   "tail": null
+  },
+  {
+   "arm": "M3_abs_dropped_from_azimuth",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_sign_matches_the_hand_computed_predicate[10.0--17.4-True]",
+    "test_sign_matches_the_hand_computed_predicate[-10.0--1.0-True]"
+   ],
+   "collection_died": false,
+   "_rule": "an arm counts only if a NAMED test failed -- red by syntax error exercises no assertion",
+   "tail": null
+  },
+  {
+   "arm": "M4_reads_raw_slice_not_decoded_centre",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_opt_in_replaces_the_channel_with_the_geometric_read",
+    "test_it_reads_the_predicted_centre_not_the_raw_slice",
+    "test_box3d_inherits_the_option_without_forwarding"
+   ],
+   "collection_died": false,
+   "_rule": "an arm counts only if a NAMED test failed -- red by syntax error exercises no assertion",
+   "tail": null
+  },
+  {
+   "arm": "M5_opt_in_silently_defaults_on",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_default_is_off_so_the_emitted_contract_is_unchanged",
+    "test_opt_in_replaces_the_channel_with_the_geometric_read",
+    "test_box3d_inherits_the_option_without_forwarding"
+   ],
+   "collection_died": false,
+   "_rule": "an arm counts only if a NAMED test failed -- red by syntax error exercises no assertion",
+   "tail": null
+  }
+ ],
+ "baseline": {
+  "rc": 0,
+  "failed": []
+ },
+ "restored_md5": "055a22c856856d3b0617b779cbc51518",
+ "restored_ok": true,
+ "final_clean_run": {
+  "rc": 0,
+  "failed": []
+ },
+ "arms_caught": 5,
+ "arms_total": 5,
+ "_VERDICT": "⭐ MUTATION-PROVEN — all 5/5 reintroduced defects turn the suite RED, and the file is restored byte-identical."
+}

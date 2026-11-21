@@ -1,0 +1,175 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box CPU, GPU hidden)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "_spec": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-p2-probe-leak-audit/SPEC.md",
+ "_generated_local": "2026-09-03 01:47:29",
+ "torch": "2.11.0+cu128",
+ "cuda_available": false,
+ "cuda_visible_devices": "-1",
+ "subcommand": "drift (R3)",
+ "corpus": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\sp2\\cache\\physicalai-val130-heldout",
+ "K": 4,
+ "band": [
+  0,
+  8
+ ],
+ "helpers": {
+  "rangeprobe_rff": "3f3c4962bb9169198748ca96dc9494ae",
+  "panel_kfold": "53443ddc12fdc028fae249f255054b78"
+ },
+ "targets": {
+  "true": "dz = z_{t+K} - z_t (latentmotion.py:159)",
+  "endpoint_shuffled": "dz' = z_{pi(t)+K} - z_t, pi a within-clip permutation of the FUTURE endpoint only (start kept) \u2014 the class-(ii) arithmetic control",
+  "time_shuffled": "the banked control: rows of the projected target permuted within clip (latentmotion.py:272)"
+ },
+ "arms": {
+  "postrain30k": {
+   "per_direction": {
+    "0": {
+     "var_share": 0.092,
+     "r_true": 0.657,
+     "r_endpoint_shuffled": 0.6671,
+     "r_time_shuffled": 0.004
+    },
+    "1": {
+     "var_share": 0.0591,
+     "r_true": 0.6751,
+     "r_endpoint_shuffled": 0.6814,
+     "r_time_shuffled": 0.0083
+    },
+    "2": {
+     "var_share": 0.0544,
+     "r_true": 0.6565,
+     "r_endpoint_shuffled": 0.6802,
+     "r_time_shuffled": 0.012
+    },
+    "3": {
+     "var_share": 0.0518,
+     "r_true": 0.6737,
+     "r_endpoint_shuffled": 0.6805,
+     "r_time_shuffled": -0.0063
+    },
+    "4": {
+     "var_share": 0.0479,
+     "r_true": 0.6671,
+     "r_endpoint_shuffled": 0.674,
+     "r_time_shuffled": 0.0026
+    },
+    "5": {
+     "var_share": 0.0451,
+     "r_true": 0.6779,
+     "r_endpoint_shuffled": 0.6783,
+     "r_time_shuffled": -0.014
+    },
+    "6": {
+     "var_share": 0.0422,
+     "r_true": 0.6584,
+     "r_endpoint_shuffled": 0.6721,
+     "r_time_shuffled": -0.0046
+    },
+    "7": {
+     "var_share": 0.0394,
+     "r_true": 0.6713,
+     "r_endpoint_shuffled": 0.686,
+     "r_time_shuffled": -0.0226
+    }
+   },
+   "ckpt": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\v7tiny_postrain30k\\ckpt.pt",
+   "md5": "a58585883c279633c799a6f6968cc4b2",
+   "step": 30000,
+   "n_clips": 80,
+   "n_rows": 7680,
+   "drift_r_true_minus_timeshuf": 0.6697,
+   "t_true_vs_timeshuf_banked_form": 147.3,
+   "arithmetic_control_r_endpoint_shuffled": 0.6774,
+   "arithmetic_control_t_vs_timeshuf": 155.87,
+   "share_of_drift_that_is_arithmetic": 1.0154,
+   "t_true_vs_endpoint_shuffled": -3.8,
+   "banked_reference": {
+    "rdw8p30k_k4_band0_8": {
+     "r": 0.6718,
+     "t": 134.84
+    },
+    "postrain30k_k4_band0_8_reread_2026-09-02": {
+     "r": 0.6674,
+     "t": 146.85
+    }
+   }
+  },
+  "rdw8p30k": {
+   "per_direction": {
+    "0": {
+     "var_share": 0.0701,
+     "r_true": 0.6652,
+     "r_endpoint_shuffled": 0.6603,
+     "r_time_shuffled": -0.0296
+    },
+    "1": {
+     "var_share": 0.059,
+     "r_true": 0.6764,
+     "r_endpoint_shuffled": 0.677,
+     "r_time_shuffled": 0.0028
+    },
+    "2": {
+     "var_share": 0.0541,
+     "r_true": 0.6689,
+     "r_endpoint_shuffled": 0.6737,
+     "r_time_shuffled": -0.0378
+    },
+    "3": {
+     "var_share": 0.0493,
+     "r_true": 0.6824,
+     "r_endpoint_shuffled": 0.6732,
+     "r_time_shuffled": 0.0091
+    },
+    "4": {
+     "var_share": 0.0469,
+     "r_true": 0.654,
+     "r_endpoint_shuffled": 0.671,
+     "r_time_shuffled": 0.0095
+    },
+    "5": {
+     "var_share": 0.0418,
+     "r_true": 0.6786,
+     "r_endpoint_shuffled": 0.6746,
+     "r_time_shuffled": 0.012
+    },
+    "6": {
+     "var_share": 0.0395,
+     "r_true": 0.6815,
+     "r_endpoint_shuffled": 0.6742,
+     "r_time_shuffled": 0.006
+    },
+    "7": {
+     "var_share": 0.0386,
+     "r_true": 0.6645,
+     "r_endpoint_shuffled": 0.6777,
+     "r_time_shuffled": 0.0098
+    }
+   },
+   "ckpt": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\v7tiny_rdw8p30k\\ckpt.pt",
+   "md5": "6e382ebe721ba4b7df97e8305f695767",
+   "step": 30000,
+   "n_clips": 80,
+   "n_rows": 7680,
+   "drift_r_true_minus_timeshuf": 0.6737,
+   "t_true_vs_timeshuf_banked_form": 132.97,
+   "arithmetic_control_r_endpoint_shuffled": 0.6727,
+   "arithmetic_control_t_vs_timeshuf": 150.74,
+   "share_of_drift_that_is_arithmetic": 1.0019,
+   "t_true_vs_endpoint_shuffled": -0.43,
+   "banked_reference": {
+    "rdw8p30k_k4_band0_8": {
+     "r": 0.6718,
+     "t": 134.84
+    },
+    "postrain30k_k4_band0_8_reread_2026-09-02": {
+     "r": 0.6674,
+     "t": 146.85
+    }
+   }
+  }
+ },
+ "_tanitad_imported_from": "C:\\Users\\Admin\\tanitad-wt\\stack\\tanitad\\__init__.py",
+ "_seconds": 899.6
+}

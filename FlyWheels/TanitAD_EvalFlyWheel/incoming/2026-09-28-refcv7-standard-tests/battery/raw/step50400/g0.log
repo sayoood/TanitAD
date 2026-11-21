@@ -1,0 +1,257 @@
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from D:\refcv6_eval_kit\data\refcv6_train_eval139_extrinsics.json (4508 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[g0] model built in 7.1 s; strict missing=0 unexpected=0 step=50400; param_breakdown equal=True
+[v2] D:\refcv6_eval_kit\data\refcv6-b1-416x1024-eval139: 139 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 139 distinct for 139 clips]
+[v2] 139 providers, 139 distinct episode ids
+[v3] nav_from_v7: follow 88 / left 13 / right 38, missing 0 (of 139 clips; md5=eefc38d1453bd1c73802d44d45affced)
+[v3] max_speed_input_v6 (4-way one-hot): 147/147 sidecar rows carry a ceiling, 23772/23772 windows fed (100.0 %), 1 clips ABOVE the 120 km/h top step (clamped, and on those the fed ceiling is one the ego demonstrably exceeded)
+[v3] agent join: 139/139 episodes (stable-63bit), 22663/23772 windows labelled (95.3 %), 776801 prefilter target boxes, pad 397
+[v3] SAM3 map GT at 10 cm (100 m x +-30 m): frac_ok 0.9856 of 23772 windows over 139 clips (verdict PASS)
+[g0] eval dataset: 139 episodes -> 23772 windows (134s); subset 128; batches 8
+[g0] collated 8 batches in 371.1 s (disk cache C:\Users\Admin\g0cache\chain_50400)
+[g0] requires_grad control: 25 of 444 terms differ between trained and loader flags (dev box)
+[g0] seed 0: eval_loss 46.38481 eval_traj 0.53102 (113s, peak 5.85 GiB, buffers unchanged True)
+[g0] seed 1: eval_loss 46.40349 eval_traj 0.52697 (112s, peak 5.85 GiB, buffers unchanged True)
+[g0] seed 2: eval_loss 46.31449 eval_traj 0.52419 (113s, peak 5.85 GiB, buffers unchanged True)
+[g0] seed 3: eval_loss 46.33387 eval_traj 0.52362 (114s, peak 5.85 GiB, buffers unchanged True)
+[g0] seed 4: eval_loss 46.29803 eval_traj 0.52417 (140s, peak 5.85 GiB, buffers unchanged True)
+[g0] seed 5: eval_loss 46.31041 eval_traj 0.53201 (122s, peak 5.85 GiB, buffers unchanged True)
+[g0] seed 6: eval_loss 46.37238 eval_traj 0.52796 (116s, peak 5.85 GiB, buffers unchanged True)
+[g0] seed 7: eval_loss 46.33628 eval_traj 0.52578 (113s, peak 5.85 GiB, buffers unchanged True)
+[g0] seed 8: eval_loss 46.33691 eval_traj 0.52366 (126s, peak 5.85 GiB, buffers unchanged True)
+[g0] seed 9: eval_loss 46.26038 eval_traj 0.52461 (155s, peak 5.85 GiB, buffers unchanged True)
+[g0] seed 10: eval_loss 46.27153 eval_traj 0.52205 (150s, peak 5.85 GiB, buffers unchanged True)
+[g0] seed 11: eval_loss 46.4033 eval_traj 0.5358 (168s, peak 5.85 GiB, buffers unchanged True)
+[g0] seed 12: eval_loss 46.41119 eval_traj 0.53099 (177s, peak 5.85 GiB, buffers unchanged True)
+[g0] seed 13: eval_loss 46.28804 eval_traj 0.51882 (169s, peak 5.85 GiB, buffers unchanged True)
+[g0] seed 14: eval_loss 46.37541 eval_traj 0.53715 (205s, peak 5.85 GiB, buffers unchanged True)
+[g0] seed 15: eval_loss 46.13008 eval_traj 0.50668 (167s, peak 5.85 GiB, buffers unchanged True)
+[g0] seed 16: eval_loss 46.21396 eval_traj 0.51453 (159s, peak 5.85 GiB, buffers unchanged True)
+[g0] seed 17: eval_loss 46.40725 eval_traj 0.5287 (215s, peak 5.85 GiB, buffers unchanged True)
+[g0] seed 18: eval_loss 46.32747 eval_traj 0.51971 (212s, peak 5.85 GiB, buffers unchanged True)
+[g0] seed 19: eval_loss 46.42956 eval_traj 0.53448 (209s, peak 5.85 GiB, buffers unchanged True)
+[g0] seed 20: eval_loss 46.30212 eval_traj 0.52244 (212s, peak 5.85 GiB, buffers unchanged True)
+[g0] seed 21: eval_loss 46.33309 eval_traj 0.52358 (200s, peak 5.85 GiB, buffers unchanged True)
+[g0] seed 22: eval_loss 46.39934 eval_traj 0.53335 (198s, peak 5.85 GiB, buffers unchanged True)
+[g0] seed 23: eval_loss 46.39881 eval_traj 0.52428 (184s, peak 5.85 GiB, buffers unchanged True)
+[g0] mutation m1: ran (169.9 s)
+[g0] mutation m2: ran (142.9 s)
+[g0] mutation m4: ran (141.5 s)
+[g0] diagnostic eps0: eval_traj 0.51254 (in-run 0.52793)
+[g0] A6 arm fp32_s0: ran (197 s)
+[wrapper] P1_as_run: max wrapper rel 1.343e-02, max floor rel 1.208e-04, over bar 144
+[wrapper] P2_cudnn_det: max wrapper rel 1.341e-02, max floor rel 1.207e-04, over bar 103, W1 detected True, W2 detected True
+[wrapper] P3_fp32_det: max wrapper rel 2.773e-06, max floor rel 2.067e-07, over bar 0, W1 detected True, W2 detected True
+[g0] wrapper clause: PASS (P3_fp32_det)
+{
+ "G0_as_registered": "FAIL",
+ "reasons_as_registered": [
+  "eval_agent_det_ap0p5_heavy_truck_0_20 [DETECTION] in-run 0.0 vs seeds mean 0.03333 (sd 0)",
+  "eval_agent_det_ap1_heavy_truck_0_20 [DETECTION] in-run 0.07143 vs seeds mean 0.03333 (sd 0)",
+  "eval_agent_det_ap1_heavy_truck_all [DETECTION] in-run 0.03571 vs seeds mean 0.01515 (sd 0)",
+  "eval_agent_det_ap2_stroller_0_20 [DETECTION] in-run 0.33333 vs seeds mean 0.25 (sd 0)",
+  "eval_agent_det_ap2_stroller_all [DETECTION] in-run 0.16667 vs seeds mean 0.125 (sd 0)",
+  "eval_agent_det_ap4_bus_0_20 [DETECTION] in-run 0.09091 vs seeds mean 0.11111 (sd 0)",
+  "eval_box3d_det_ap1_bus_20_40 [DETECTION] in-run 0.16667 vs seeds mean 0.125 (sd 0)",
+  "eval_box3d_det_ap1_bus_40_60 [DETECTION] in-run 0.16667 vs seeds mean 0.11111 (sd 0)",
+  "eval_box3d_det_ap1_bus_all [DETECTION] in-run 0.08611 vs seeds mean 0.05897 (sd 0)",
+  "eval_box3d_det_ap2_bus_40_60 [DETECTION] in-run 0.16667 vs seeds mean 0.11111 (sd 0)"
+ ],
+ "G0": "FAIL",
+ "amendment": "A6",
+ "reasons": [
+  "eval_agent_det_ap0p5_heavy_truck_0_20 [DETECTION] in-run 0.0 vs seeds mean 0.03333 (sd 0)",
+  "eval_agent_det_ap1_heavy_truck_0_20 [DETECTION] in-run 0.07143 vs seeds mean 0.03333 (sd 0)",
+  "eval_agent_det_ap1_heavy_truck_all [DETECTION] in-run 0.03571 vs seeds mean 0.01515 (sd 0)",
+  "eval_agent_det_ap2_stroller_0_20 [DETECTION] in-run 0.33333 vs seeds mean 0.25 (sd 0)",
+  "eval_agent_det_ap2_stroller_all [DETECTION] in-run 0.16667 vs seeds mean 0.125 (sd 0)",
+  "eval_agent_det_ap4_bus_0_20 [DETECTION] in-run 0.09091 vs seeds mean 0.11111 (sd 0)",
+  "eval_box3d_det_ap1_bus_20_40 [DETECTION] in-run 0.16667 vs seeds mean 0.125 (sd 0)",
+  "eval_box3d_det_ap1_bus_40_60 [DETECTION] in-run 0.16667 vs seeds mean 0.11111 (sd 0)",
+  "eval_box3d_det_ap1_bus_all [DETECTION] in-run 0.08611 vs seeds mean 0.05897 (sd 0)",
+  "eval_box3d_det_ap2_bus_40_60 [DETECTION] in-run 0.16667 vs seeds mean 0.11111 (sd 0)",
+  "eval_box3d_det_ap2_bus_all [DETECTION] in-run 0.28333 vs seeds mean 0.2119 (sd 0)",
+  "eval_box3d_det_ap4_bus_40_60 [DETECTION] in-run 0.16667 vs seeds mean 0.11111 (sd 0)",
+  "eval_box3d_det_ap4_bus_all [DETECTION] in-run 0.28333 vs seeds mean 0.2119 (sd 0)"
+ ],
+ "n_terms": 1109,
+ "by_class_counts": {
+  "DETECTION": 338,
+  "EXCLUDED": 11,
+  "MATCHED": 29,
+  "UNDEFINED": 94,
+  "DERIVED": 2,
+  "COUNT": 210,
+  "SMOOTH": 179,
+  "STOCHASTIC": 5,
+  "MAP10_COUNTS": 160,
+  "MAP10_IOU": 80,
+  "THRESHOLD_TARGET": 1
+ },
+ "medians": {
+  "SMOOTH": 0.0017463692711396526,
+  "MATCHED": 0.001966931274188506,
+  "MAP10_COUNTS": 6.264216843010992e-05,
+  "DETECTION_abs01": 0.00012999999999999915,
+  "SMOOTH_phi_rel": 0.002933830830800721,
+  "SMOOTH_bar": 0.008801492492402162
+ },
+ "mutation_detection": {
+  "m1": {
+   "detected": true,
+   "n_terms_out": 22,
+   "first10": [
+    {
+     "term": "eval_agent_det_ap0p5_bus_0_20",
+     "class": "DETECTION",
+     "inrun": 0.0,
+     "mutated": 0.04762
+    },
+    {
+     "term": "eval_agent_det_ap0p5_bus_20_40",
+     "class": "DETECTION",
+     "inrun": 0.0,
+     "mutated": 0.0625
+    },
+    {
+     "term": "eval_agent_det_ap0p5_bus_all",
+     "class": "DETECTION",
+     "inrun": 0.0,
+     "mutated": 0.02362
+    },
+    {
+     "term": "eval_agent_det_ap1_bus_0_20",
+     "class": "DETECTION",
+     "inrun": 0.07143,
+     "mutated": 0.04762
+    },
+    {
+     "term": "eval_agent_det_ap1_person_0_20",
+     "class": "DETECTION",
+     "inrun": 0.03055,
+     "mutated": 0.07398
+    },
+    {
+     "term": "eval_agent_det_ap2_bus_0_20",
+     "class": "DETECTION",
+     "inrun": 0.07143,
+     "mutated": 0.04762
+    },
+    {
+     "term": "eval_agent_det_ap2_bus_20_40",
+     "class": "DETECTION",
+     "inrun": 0.14286,
+     "mutated": 0.07692
+    },
+    {
+     "term": "eval_agent_det_ap2_bus_all",
+     "class": "DETECTION",
+     "inrun": 0.06409,
+     "mutated": 0.03672
+    },
+    {
+     "term": "eval_agent_det_ap4_bus_20_40",
+     "class": "DETECTION",
+     "inrun": 0.25,
+     "mutated": 0.33333
+    },
+    {
+     "term": "eval_agent_det_ap4_bus_all",
+     "class": "DETECTION",
+     "inrun": 0.11478,
+     "mutated": 0.13597
+    }
+   ]
+  },
+  "m2": {
+   "detected": true,
+   "n_terms_out": 62,
+   "first10": [
+    {
+     "term": "eval_map_hires_inter_arrow_0_20",
+     "class": "MAP10_COUNTS",
+     "inrun": 77.25,
+     "mutated": 172.125
+    },
+    {
+     "term": "eval_map_hires_inter_crosswalk_0_20",
+     "class": "MAP10_COUNTS",
+     "inrun": 506.75,
+     "mutated": 1320.75
+    },
+    {
+     "term": "eval_map_hires_inter_crosswalk_20_40",
+     "class": "MAP10_COUNTS",
+     "inrun": 0.0,
+     "mutated": 35.0
+    },
+    {
+     "term": "eval_map_hires_inter_drivable_0_20",
+     "class": "MAP10_COUNTS",
+     "inrun": 251669.625,
+     "mutated": 244299.5
+    },
+    {
+     "term": "eval_map_hires_inter_drivable_40_60",
+     "class": "MAP10_COUNTS",
+     "inrun": 230597.375,
+     "mutated": 238937.625
+    },
+    {
+     "term": "eval_map_hires_inter_drivable_60_80",
+     "class": "MAP10_COUNTS",
+     "inrun": 188137.875,
+     "mutated": 194673.5
+    },
+    {
+     "term": "eval_map_hires_inter_drivable_80_100",
+     "class": "MAP10_COUNTS",
+     "inrun": 147380.375,
+     "mutated": 155787.5
+    },
+    {
+     "term": "eval_map_hires_inter_edge_0_20",
+     "class": "MAP10_COUNTS",
+     "inrun": 4.25,
+     "mutated": 878.25
+    },
+    {
+     "term": "eval_map_hires_inter_edge_20_40",
+     "class": "MAP10_COUNTS",
+     "inrun": 0.0,
+     "mutated": 262.875
+    },
+    {
+     "term": "eval_map_hires_inter_edge_40_60",
+     "class": "MAP10_COUNTS",
+     "inrun": 0.0,
+     "mutated": 45.0
+    }
+   ]
+  },
+  "m4": {
+   "detected": true,
+   "n_terms_out": 2,
+   "first10": [
+    {
+     "term": "eval_anchor_acc",
+     "class": "SMOOTH",
+     "inrun": 0.57812,
+     "mutated": 0.53125
+    },
+    {
+     "term": "eval_sel_v3",
+     "class": "STOCHASTIC",
+     "inrun": 1.83034,
+     "mutated": 1.98568
+    }
+   ]
+  }
+ }
+}
+[g0] wrote D:\refcv7_eval_kit\battery\step50400\g0.json (5304.8 s)

@@ -1,0 +1,16 @@
+zerograd_gate v1  ckpt=D:/Projects/TanitAD-artifacts/refcv5v2_final/ckpt.pt
+  registered=357  with-state-entry=351  trained=351  case(a) no-state=6  case(b) zero-state=0  opt-step-max=40284
+  naming: global-shape-dp  unique=True  n_alignments=1
+  UNTRAINED  id 274  a_no_state   core.decoder.offset_head.weight          numel=6144
+  UNTRAINED  id 275  a_no_state   core.decoder.offset_head.bias            numel=16
+  UNTRAINED  id 347  a_no_state   tac_goal_tok_head.net.weight             numel=11264
+  UNTRAINED  id 348  a_no_state   tac_goal_tok_head.net.bias               numel=22
+  UNTRAINED  id 355  a_no_state   scorer.goal_point.weight                 numel=1024
+  UNTRAINED  id 356  a_no_state   scorer.goal_point.bias                   numel=2
+  control 'str_goal_head\\..*'                     ok (2 trained matches)
+  control 'scorer\\.[^g].*'                        ok (2 trained matches)
+  control 'core\\.encoder\\..*'                    ok (198 trained matches)
+  control 'lat_head_tac\\..*'                      ok (2 trained matches)
+  untrained numel (not allowed): 18472..18472   allowed: 0..0
+  info: 4 trained parameters got grads in only part of the run (see --json-out info.partial_grad)
+VERDICT: FAIL

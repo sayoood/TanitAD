@@ -1,0 +1,34 @@
+{
+  "what": "Attributable-subset regression check: every stack/tests file that imports refc / refc_v3_train / param_breakdown / bev_raster / psg_targets / refc_agents / guard_mutation_audit / agent_knob*, run against (a) a PRISTINE tree whose 4 tracked changed files are restored from git HEAD and whose 3 new files are removed, and (b) the delivered tree. Same environment, one variable.",
+  "n_test_files": 70,
+  "pristine": {
+    "failed": 12,
+    "passed": 1188,
+    "skipped": 59,
+    "errors": 9
+  },
+  "delivered": {
+    "failed": 12,
+    "passed": 1224,
+    "skipped": 59,
+    "errors": 9
+  },
+  "new_failures_attributable_to_WP_D": [],
+  "failures_removed_by_WP_D": [],
+  "verdict": "NO NEW FAILURES. The failure sets are IDENTICAL; the +36 passed are test_bev_aux.py's own. The 12 failures and 9 collection errors are PRE-EXISTING in this off-Drive snapshot and are environment-shaped (`ModuleNotFoundError: No module named 'taniteval'`, absent data sidecars) \u2014 they reproduce on HEAD.",
+  "caveat": "\u26a0\ufe0f This is the ATTRIBUTABLE SUBSET, not the whole 7,370-test suite. The full run on the G: mount reached 85 % over ~2 h and was stopped under mount contention with another agent's live eval job; its stale in-memory copy of the trainer predates the P2 provenance fix, so its own tail is not quotable. The subset is the set of files that can be affected by these changes.",
+  "shared_failures": [
+    "FAILED tests/test_b1_agent_join.py::test_plain_was_never_a_valid_scope",
+    "FAILED tests/test_bev_consumer_fov.py::test_the_banked_p8_frame_is_recoverable_from_the_launch_chains",
+    "FAILED tests/test_nav_known_channel.py::test_driver_policies_declare_whether_they_consume_the_bit",
+    "FAILED tests/test_obstacle_join.py::test_registration_failure_is_loud",
+    "FAILED tests/test_refc_tactical.py::test_tactical_probe_runs_end_to_end",
+    "FAILED tests/test_refc_v4.py::test_T8b_functional_probe_says_the_healthy_arm_USES_both",
+    "FAILED tests/test_refc_v4.py::test_T9_THE_GATE_FAILS_THE_DELIBERATE_REGRESSION_ARM",
+    "FAILED tests/test_refc_v4.py::test_T9b_the_gate_raises_on_gate1_failure_too",
+    "FAILED tests/test_refc_v4.py::test_T9d_a_panel_missing_the_ha_control_is_REFUSED",
+    "FAILED tests/test_refc_v4.py::test_T9e_clearing_ha_while_tying_ha0_ext_is_ECHOING_HARDER",
+    "FAILED tests/test_rl_pilot_join.py::test_resolve_identity_picks_the_registering_candidate_and_refuses_the_other",
+    "FAILED tests/test_rl_pilot_join.py::test_resolve_identity_returns_none_when_nothing_registers"
+  ]
+}

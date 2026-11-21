@@ -1,0 +1,1314 @@
+{
+ "card": "PREREG_V8F_TSWAP.md",
+ "subset_rehearsal": false,
+ "tier": "T1-kin (logged cameras; reindexed = longitudinal-only approximate re-perception, not T2). TSWAP feeds the logged state (privileged): a diagnostic.",
+ "estimator": "paired episode-cluster bootstrap B=2000 seed 0 (gapdecomp.decompose) over the windows' episodes; answers another draw of EPISODES; inference is deterministic at a fixed thread count; the training-run question is answered by the two seeds",
+ "strategic_family": "PAUSED (PI item 25): rows listed beside, never decisive",
+ "controls_PASS": true,
+ "gates": {
+  "s0": {
+   "G-ID": {
+    "gate": "G-ID",
+    "own": "OWN_s0",
+    "bare": "BARE_s0",
+    "episode_files": 141,
+    "episode_files_in_other": 141,
+    "episode_files_unequal": [],
+    "max_abs_delta_tracks": 0.0,
+    "ticks_equal": true,
+    "ticks_keys_unequal": [],
+    "ticks_keys_only_in_one": [],
+    "PASS": true
+   },
+   "G-TICK0": {
+    "gate": "G-TICK0",
+    "PASS": true,
+    "tick0_rows": 2399,
+    "tick_file_keys_compared": 27,
+    "tick_file_keys_unequal_at_tick0": [],
+    "code_read_equals_own_at_tick0": true,
+    "swapped_inputs_bitwise_equal_at_tick0": true,
+    "side_rows_aligned_with_tick_file": true
+   },
+   "G-LIVE": {
+    "gate": "G-LIVE",
+    "PASS": true,
+    "later_rows": 4798,
+    "later_rows_code_O_reads_differs_from_T_own": 4798,
+    "later_rows_swapped_inputs_differ": 4798,
+    "logged_p10f_mismatch": 0,
+    "keep_key_not_same_object": 0,
+    "code_dim_bad": 0,
+    "per_tick": {
+     "0": {
+      "rows": 2399,
+      "code_differs": 0,
+      "plan_differs_from_OWN": 0
+     },
+     "1": {
+      "rows": 2399,
+      "code_differs": 2399,
+      "plan_differs_from_OWN": 2399
+     },
+     "2": {
+      "rows": 2399,
+      "code_differs": 2399,
+      "plan_differs_from_OWN": 2399
+     }
+    }
+   },
+   "G-MUT": {
+    "gate": "G-MUT",
+    "mutant": "MUT_s0",
+    "own": "OWN_s0",
+    "episode_files": 141,
+    "episode_files_in_other": 141,
+    "episode_files_unequal": [],
+    "max_abs_delta_tracks": 0.0,
+    "ticks_equal": true,
+    "ticks_keys_unequal": [],
+    "ticks_keys_only_in_one": [],
+    "PASS": true,
+    "nothing_swapped_at_any_tick": true
+   },
+   "PASS": true
+  },
+  "s1": {
+   "G-ID": {
+    "gate": "G-ID",
+    "own": "OWN_s1",
+    "bare": "BARE_s1",
+    "episode_files": 141,
+    "episode_files_in_other": 141,
+    "episode_files_unequal": [],
+    "max_abs_delta_tracks": 0.0,
+    "ticks_equal": true,
+    "ticks_keys_unequal": [],
+    "ticks_keys_only_in_one": [],
+    "PASS": true
+   },
+   "G-TICK0": {
+    "gate": "G-TICK0",
+    "PASS": true,
+    "tick0_rows": 2399,
+    "tick_file_keys_compared": 27,
+    "tick_file_keys_unequal_at_tick0": [],
+    "code_read_equals_own_at_tick0": true,
+    "swapped_inputs_bitwise_equal_at_tick0": true,
+    "side_rows_aligned_with_tick_file": true
+   },
+   "G-LIVE": {
+    "gate": "G-LIVE",
+    "PASS": true,
+    "later_rows": 4798,
+    "later_rows_code_O_reads_differs_from_T_own": 4798,
+    "later_rows_swapped_inputs_differ": 4798,
+    "logged_p10f_mismatch": 0,
+    "keep_key_not_same_object": 0,
+    "code_dim_bad": 0,
+    "per_tick": {
+     "0": {
+      "rows": 2399,
+      "code_differs": 0,
+      "plan_differs_from_OWN": 0
+     },
+     "1": {
+      "rows": 2399,
+      "code_differs": 2399,
+      "plan_differs_from_OWN": 2399
+     },
+     "2": {
+      "rows": 2399,
+      "code_differs": 2399,
+      "plan_differs_from_OWN": 2399
+     }
+    }
+   },
+   "G-MUT": {
+    "gate": "G-MUT",
+    "mutant": "MUT_s1",
+    "own": "OWN_s1",
+    "episode_files": 141,
+    "episode_files_in_other": 141,
+    "episode_files_unequal": [],
+    "max_abs_delta_tracks": 0.0,
+    "ticks_equal": true,
+    "ticks_keys_unequal": [],
+    "ticks_keys_only_in_one": [],
+    "PASS": true,
+    "nothing_swapped_at_any_tick": true
+   },
+   "PASS": true
+  }
+ },
+ "reader_sha256": "933484ac30b3fb9ccf9a56b92b77c19a5a723c0a57095af95b6a04bec3419094",
+ "lf_read_sha256": "862e4e6c357bc084c971eceebd3ead1576d2218b1296eb1b10799f76710050e8",
+ "seeds": {
+  "s0": {
+   "tags": {
+    "own": "OWN_s0",
+    "ts": "TSWAP_s0"
+   },
+   "rows": {
+    "TSWAP_minus_OWN": {
+     "ADE6": {
+      "delta": -0.046624384340108425,
+      "lo": -0.07422461787171623,
+      "hi": -0.02034553800814985,
+      "separated": true
+     },
+     "speed MAE": {
+      "delta": -0.051108752235513366,
+      "lo": -0.08061340005663793,
+      "hi": -0.02183596695572152,
+      "separated": true
+     },
+     "along-track MAE": {
+      "delta": -0.048426837541400515,
+      "lo": -0.0814361621388778,
+      "hi": -0.015890377858949208,
+      "separated": true
+     },
+     "accel MAE": {
+      "delta": -0.03984790832545396,
+      "lo": -0.07494287756718623,
+      "hi": -0.0036081751544486847,
+      "separated": true
+     },
+     "DK-VIOL": {
+      "delta": -0.0016806722689075631,
+      "lo": -0.010678069873340221,
+      "hi": 0.006473017273988145,
+      "separated": false
+     },
+     "DK-HW": {
+      "delta": 0.054926157640917246,
+      "lo": -0.044374155510535696,
+      "hi": 0.18864021317629015,
+      "separated": false
+     },
+     "DK-TG": {
+      "delta": -0.004595751105455279,
+      "lo": -0.02459446421038423,
+      "hi": 0.014995456331622532,
+      "separated": false
+     },
+     "heading MAE": {
+      "delta": 0.17273130198570627,
+      "lo": -0.030989732605258665,
+      "hi": 0.37700612983651544,
+      "separated": false
+     },
+     "yaw-rate MAE": {
+      "delta": 0.9219966905286815,
+      "lo": -0.32556737759284454,
+      "hi": 2.207334296110242,
+      "separated": false
+     },
+     "curvature MAE": {
+      "delta": 0.012616129062014866,
+      "lo": -0.0017398109922912523,
+      "hi": 0.026197176042794083,
+      "separated": false
+     },
+     "cross-track MAE": {
+      "delta": -0.00616463529842985,
+      "lo": -0.016490930647964985,
+      "hi": 0.004924965076110427,
+      "separated": false
+     },
+     "L1 lateral-accel MAE": {
+      "delta": 0.15013619833911696,
+      "lo": 0.008398638757377674,
+      "hi": 0.30839728943495576,
+      "separated": true
+     },
+     "L2 curvature MAE (GT>=5.2)": {
+      "delta": -0.007451430069084441,
+      "lo": -0.03378719132542307,
+      "hi": 0.010903928950684583,
+      "separated": false
+     },
+     "TAC-LAT": {
+      "delta": 0.005835764902042517,
+      "lo": -0.0058508682728410505,
+      "hi": 0.019166866402667775,
+      "separated": false
+     },
+     "TAC-LON": {
+      "delta": 0.06836181742392664,
+      "lo": 0.038291796766583404,
+      "hi": 0.09871092859564731,
+      "separated": true
+     },
+     "S-POS@30": {
+      "delta": 0.1293331524596472,
+      "lo": 0.030388856635313176,
+      "hi": 0.23687897676165048,
+      "separated": true
+     },
+     "S-POS@50": {
+      "delta": 0.19913624166011948,
+      "lo": 0.035319446024041135,
+      "hi": 0.38565255062336323,
+      "separated": true
+     },
+     "S-POS@80": {
+      "delta": 0.23307626599932507,
+      "lo": -0.03214522416401535,
+      "hi": 0.5375793884926974,
+      "separated": false
+     },
+     "M1 crawl share": {
+      "delta": 0.0031333765212379007,
+      "lo": -0.0003468897638038581,
+      "hi": 0.0072778019986895065,
+      "separated": false
+     }
+    },
+    "TSWAP_minus_P10": {
+     "ADE6": {
+      "delta": -1.1594020712461972,
+      "lo": -1.3488515858650565,
+      "hi": -0.9792620101250835,
+      "separated": true
+     },
+     "speed MAE": {
+      "delta": -0.7852193538285196,
+      "lo": -0.9740191332014699,
+      "hi": -0.6249325609638978,
+      "separated": true
+     },
+     "along-track MAE": {
+      "delta": -0.6970723743501731,
+      "lo": -0.8658504688538659,
+      "hi": -0.5380679425535309,
+      "separated": true
+     },
+     "accel MAE": {
+      "delta": -0.8373873044869077,
+      "lo": -1.173719175798442,
+      "hi": -0.5619571834799351,
+      "separated": true
+     },
+     "DK-VIOL": {
+      "delta": -0.011764705882352941,
+      "lo": -0.0353542407313357,
+      "hi": 0.008188103638761155,
+      "separated": false
+     },
+     "DK-HW": {
+      "delta": -0.3379804357850014,
+      "lo": -0.6985505188092339,
+      "hi": -0.02012959590441766,
+      "separated": true
+     },
+     "DK-TG": {
+      "delta": -0.12376324020155721,
+      "lo": -0.19471688217965696,
+      "hi": -0.06605163598037948,
+      "separated": true
+     },
+     "heading MAE": {
+      "delta": -1.6639204376837715,
+      "lo": -2.4386632757689677,
+      "hi": -0.9177659941325114,
+      "separated": true
+     },
+     "yaw-rate MAE": {
+      "delta": 3.4239864923307928,
+      "lo": 1.1083624693027154,
+      "hi": 5.877423237825768,
+      "separated": true
+     },
+     "curvature MAE": {
+      "delta": 0.09673411868671825,
+      "lo": 0.06541484608701302,
+      "hi": 0.13247580707435808,
+      "separated": true
+     },
+     "cross-track MAE": {
+      "delta": -0.8665133925084617,
+      "lo": -1.0016816262977384,
+      "hi": -0.7457351801397396,
+      "separated": true
+     },
+     "L1 lateral-accel MAE": {
+      "delta": -2.080347184331569,
+      "lo": -3.207303877582546,
+      "hi": -1.1711354242072933,
+      "separated": true
+     },
+     "L2 curvature MAE (GT>=5.2)": {
+      "delta": 0.03294764953770827,
+      "lo": 0.017441429387177763,
+      "hi": 0.05087321318740858,
+      "separated": true
+     },
+     "TAC-LAT": {
+      "delta": 0.18841183826594415,
+      "lo": 0.15165940366972477,
+      "hi": 0.2271827296278191,
+      "separated": true
+     },
+     "TAC-LON": {
+      "delta": 0.21634014172571905,
+      "lo": 0.16103294777354094,
+      "hi": 0.2733418856904463,
+      "separated": true
+     },
+     "S-POS@30": {
+      "delta": -1.0893932739092222,
+      "lo": -1.4968488753397988,
+      "hi": -0.7408691099927641,
+      "separated": true
+     },
+     "S-POS@50": {
+      "delta": -3.719329600940019,
+      "lo": -4.783527439787585,
+      "hi": -2.788933848205589,
+      "separated": true
+     },
+     "S-POS@80": {
+      "delta": -8.750770626265943,
+      "lo": -10.833585255090252,
+      "hi": -6.793864636143621,
+      "separated": true
+     },
+     "M1 crawl share": {
+      "delta": 0.056924755543558886,
+      "lo": 0.0379532682295026,
+      "hi": 0.0790195210050307,
+      "separated": true
+     }
+    },
+    "OWN_minus_P10": {
+     "ADE6": {
+      "delta": -1.112777686906089,
+      "lo": -1.3042875516148886,
+      "hi": -0.9322345974481557,
+      "separated": true
+     },
+     "speed MAE": {
+      "delta": -0.7341106015930067,
+      "lo": -0.9232940742142821,
+      "hi": -0.5679633674574396,
+      "separated": true
+     },
+     "along-track MAE": {
+      "delta": -0.6486455368087721,
+      "lo": -0.8151138256652088,
+      "hi": -0.49059928875063824,
+      "separated": true
+     },
+     "accel MAE": {
+      "delta": -0.7975393961614538,
+      "lo": -1.1391943829759286,
+      "hi": -0.5161588759050458,
+      "separated": true
+     },
+     "DK-VIOL": {
+      "delta": -0.010084033613445379,
+      "lo": -0.03249391775231517,
+      "hi": 0.008040213771646845,
+      "separated": false
+     },
+     "DK-HW": {
+      "delta": -0.39454354905192385,
+      "lo": -0.7935985846683982,
+      "hi": -0.07100646252452919,
+      "separated": true
+     },
+     "DK-TG": {
+      "delta": -0.11879998315357752,
+      "lo": -0.1845132896197196,
+      "hi": -0.06437978718205208,
+      "separated": true
+     },
+     "heading MAE": {
+      "delta": -1.8366517396694777,
+      "lo": -2.558387250820411,
+      "hi": -1.1630613292236878,
+      "separated": true
+     },
+     "yaw-rate MAE": {
+      "delta": 2.5015997862815826,
+      "lo": 0.33964147072247214,
+      "hi": 4.71425505129226,
+      "separated": true
+     },
+     "curvature MAE": {
+      "delta": 0.08411265285268055,
+      "lo": 0.05640831500093053,
+      "hi": 0.11614902469676257,
+      "separated": true
+     },
+     "cross-track MAE": {
+      "delta": -0.8603487572100318,
+      "lo": -0.9944970042586917,
+      "hi": -0.7381410836399814,
+      "separated": true
+     },
+     "L1 lateral-accel MAE": {
+      "delta": -2.2305468920608464,
+      "lo": -3.3524375634278862,
+      "hi": -1.279216080237326,
+      "separated": true
+     },
+     "L2 curvature MAE (GT>=5.2)": {
+      "delta": 0.040377147068979075,
+      "lo": 0.01942477623661874,
+      "hi": 0.06876609296780767,
+      "separated": true
+     },
+     "TAC-LAT": {
+      "delta": 0.18257607336390164,
+      "lo": 0.1416076634735527,
+      "hi": 0.2239389494374223,
+      "separated": true
+     },
+     "TAC-LON": {
+      "delta": 0.14797832430179242,
+      "lo": 0.08589538702638794,
+      "hi": 0.20916666666666667,
+      "separated": true
+     },
+     "S-POS@30": {
+      "delta": -1.2058322770408985,
+      "lo": -1.6550227690438852,
+      "hi": -0.8321686648024029,
+      "separated": true
+     },
+     "S-POS@50": {
+      "delta": -3.966338396485785,
+      "lo": -5.111256186581511,
+      "hi": -3.0091179258306227,
+      "separated": true
+     },
+     "S-POS@80": {
+      "delta": -8.961377636250987,
+      "lo": -11.06230062287801,
+      "hi": -6.957746016542998,
+      "separated": true
+     },
+     "M1 crawl share": {
+      "delta": 0.05334336227911129,
+      "lo": 0.03563721105881245,
+      "hi": 0.07441366852950922,
+      "separated": true
+     }
+    }
+   },
+   "status": {
+    "TSWAP_minus_OWN": {
+     "ADE6": "better",
+     "speed MAE": "better",
+     "along-track MAE": "better",
+     "accel MAE": "better",
+     "DK-VIOL": "n.s.",
+     "DK-HW": "n.s.",
+     "DK-TG": "n.s.",
+     "heading MAE": "n.s.",
+     "yaw-rate MAE": "n.s.",
+     "curvature MAE": "n.s.",
+     "cross-track MAE": "n.s.",
+     "L1 lateral-accel MAE": "worse",
+     "L2 curvature MAE (GT>=5.2)": "n.s.",
+     "TAC-LAT": "n.s.",
+     "TAC-LON": "better",
+     "S-POS@30": "worse",
+     "S-POS@50": "worse",
+     "S-POS@80": "n.s.",
+     "M1 crawl share": "n.s."
+    },
+    "TSWAP_minus_P10": {
+     "ADE6": "better",
+     "speed MAE": "better",
+     "along-track MAE": "better",
+     "accel MAE": "better",
+     "DK-VIOL": "n.s.",
+     "DK-HW": "better",
+     "DK-TG": "better",
+     "heading MAE": "better",
+     "yaw-rate MAE": "worse",
+     "curvature MAE": "worse",
+     "cross-track MAE": "better",
+     "L1 lateral-accel MAE": "better",
+     "L2 curvature MAE (GT>=5.2)": "worse",
+     "TAC-LAT": "better",
+     "TAC-LON": "better",
+     "S-POS@30": "better",
+     "S-POS@50": "better",
+     "S-POS@80": "better",
+     "M1 crawl share": "worse"
+    },
+    "OWN_minus_P10": {
+     "ADE6": "better",
+     "speed MAE": "better",
+     "along-track MAE": "better",
+     "accel MAE": "better",
+     "DK-VIOL": "n.s.",
+     "DK-HW": "better",
+     "DK-TG": "better",
+     "heading MAE": "better",
+     "yaw-rate MAE": "worse",
+     "curvature MAE": "worse",
+     "cross-track MAE": "better",
+     "L1 lateral-accel MAE": "better",
+     "L2 curvature MAE (GT>=5.2)": "worse",
+     "TAC-LAT": "better",
+     "TAC-LON": "better",
+     "S-POS@30": "better",
+     "S-POS@50": "better",
+     "S-POS@80": "better",
+     "M1 crawl share": "worse"
+    }
+   },
+   "M1_per_class_split_TSWAP_minus_OWN": {
+    "n_windows": 2105,
+    "n_episodes_pool": 135,
+    "pool": "masked",
+    "delta": 0.0031333765212379007,
+    "lo": -0.0003468897638038581,
+    "hi": 0.0072778019986895065,
+    "separated": false,
+    "classes": {
+     "L": {
+      "n": 254,
+      "n_episodes": 45,
+      "w": 0.12066508313539193,
+      "delta": 0.018210150178866326,
+      "delta_lo": -0.0025288922394362313,
+      "delta_hi": 0.04079262782259929,
+      "delta_n_nan_draws": 0,
+      "contribution": 0.002197329285240877,
+      "contribution_lo": -0.00029107051399625684,
+      "contribution_hi": 0.005051380508358249,
+      "share": 0.7012656379938598,
+      "share_lo": -0.12324106770912328,
+      "share_hi": 2.170927431209989,
+      "share_n_nan_draws": 0
+     },
+     "S": {
+      "n": 0,
+      "n_episodes": 0,
+      "w": 0.0,
+      "delta": null,
+      "delta_lo": null,
+      "delta_hi": null,
+      "delta_n_nan_draws": 2000,
+      "contribution": 0.0,
+      "contribution_lo": 0.0,
+      "contribution_hi": 0.0,
+      "share": 0.0,
+      "share_lo": 0.0,
+      "share_hi": 0.0,
+      "share_n_nan_draws": 0
+     },
+     "O": {
+      "n": 0,
+      "n_episodes": 0,
+      "w": 0.0,
+      "delta": null,
+      "delta_lo": null,
+      "delta_hi": null,
+      "delta_n_nan_draws": 2000,
+      "contribution": 0.0,
+      "contribution_lo": 0.0,
+      "contribution_hi": 0.0,
+      "share": 0.0,
+      "share_lo": 0.0,
+      "share_hi": 0.0,
+      "share_n_nan_draws": 0
+     },
+     "M": {
+      "n": 1851,
+      "n_episodes": 132,
+      "w": 0.8793349168646081,
+      "delta": 0.001064494560655718,
+      "delta_lo": -0.0010890547477005047,
+      "delta_hi": 0.003530371058358044,
+      "delta_n_nan_draws": 0,
+      "contribution": 0.0009360472359970233,
+      "contribution_lo": -0.0009524991140223745,
+      "contribution_hi": 0.003024770911417372,
+      "share": 0.29873436200614023,
+      "share_lo": -1.1709274312099898,
+      "share_hi": 1.1232410677091182,
+      "share_n_nan_draws": 0
+     }
+    },
+    "n_boot": 2000,
+    "seed": 0,
+    "trigger": {
+     "share": 0.7012656379938598,
+     "lo": -0.12324106770912328,
+     "hi": 2.170927431209989,
+     "n_nan_draws": 0,
+     "contribution": 0.002197329285240877,
+     "w": 0.12066508313539193
+    },
+    "trigger_zeroed": {
+     "delta": 0.0009360472359970233,
+     "lo": -0.0009524991140223745,
+     "hi": 0.003024770911417372,
+     "separated": false
+    },
+    "_share_sum_max_abs_dev_over_draws": 4.440892098500626e-16,
+    "_class_sum_identity_abs_dev": 0.0
+   },
+   "M1_facts": {
+    "ts_vs_own": {
+     "delta": 0.0031333765212379007,
+     "lo": -0.0003468897638038581,
+     "hi": 0.0072778019986895065,
+     "separated": false
+    },
+    "ts_vs_p10": {
+     "delta": 0.056924755543558886,
+     "lo": 0.0379532682295026,
+     "hi": 0.0790195210050307,
+     "separated": true
+    },
+    "own_vs_p10": {
+     "delta": 0.05334336227911129,
+     "lo": 0.03563721105881245,
+     "hi": 0.07441366852950922,
+     "separated": true
+    }
+   },
+   "OWN_excess_separated_above_0": true,
+   "p10_arrays_identical_in_both_arms": false,
+   "T_share": {
+    "share": -0.05873976418739731,
+    "lo": -0.15004135012119718,
+    "hi": 0.006450483119975814,
+    "numerator_mean_m1": -0.003133376521237901,
+    "denominator_mean_m1": 0.053343362279111274,
+    "n_windows": 2105,
+    "n_episodes": 135,
+    "n_draws_denominator_nonpositive": 0,
+    "n_boot": 2000,
+    "estimator": "episode-cluster bootstrap ratio, windows with all three arms finite"
+   },
+   "ts_separated_worse_rows": [
+    "L1 lateral-accel MAE",
+    "S-POS@30",
+    "S-POS@50"
+   ],
+   "ts_separated_better_rows": [
+    "ADE6",
+    "TAC-LON",
+    "accel MAE",
+    "along-track MAE",
+    "speed MAE"
+   ],
+   "family_of": {
+    "ADE6": "PRIMARY",
+    "speed MAE": "LONGITUDINAL",
+    "along-track MAE": "LONGITUDINAL",
+    "accel MAE": "LONGITUDINAL",
+    "DK-VIOL": "LONGITUDINAL",
+    "DK-HW": "LONGITUDINAL",
+    "DK-TG": "LONGITUDINAL",
+    "heading MAE": "LATERAL",
+    "yaw-rate MAE": "LATERAL",
+    "curvature MAE": "LATERAL",
+    "cross-track MAE": "LATERAL",
+    "L1 lateral-accel MAE": "LATERAL",
+    "L2 curvature MAE (GT>=5.2)": "LATERAL",
+    "TAC-LAT": "TACTICAL",
+    "TAC-LON": "TACTICAL",
+    "S-POS@30": "STRATEGIC",
+    "S-POS@50": "STRATEGIC",
+    "S-POS@80": "STRATEGIC",
+    "M1 crawl share": "crawl"
+   }
+  },
+  "s1": {
+   "tags": {
+    "own": "OWN_s1",
+    "ts": "TSWAP_s1"
+   },
+   "rows": {
+    "TSWAP_minus_OWN": {
+     "ADE6": {
+      "delta": -0.056344261888134385,
+      "lo": -0.08490285962510757,
+      "hi": -0.029808604305664097,
+      "separated": true
+     },
+     "speed MAE": {
+      "delta": -0.06985293028896847,
+      "lo": -0.0956233943808336,
+      "hi": -0.045866343429686415,
+      "separated": true
+     },
+     "along-track MAE": {
+      "delta": -0.07480534788608784,
+      "lo": -0.10435274962308926,
+      "hi": -0.04774324067553073,
+      "separated": true
+     },
+     "accel MAE": {
+      "delta": -0.012081926126367529,
+      "lo": -0.05206517096447538,
+      "hi": 0.04246495292577782,
+      "separated": false
+     },
+     "DK-VIOL": {
+      "delta": 0.0033613445378151263,
+      "lo": -0.0030404489127893383,
+      "hi": 0.01054481546572935,
+      "separated": false
+     },
+     "DK-HW": {
+      "delta": 0.04064341412124293,
+      "lo": -0.03381794887987891,
+      "hi": 0.13143280833176982,
+      "separated": false
+     },
+     "DK-TG": {
+      "delta": -0.003167267810687168,
+      "lo": -0.023983261662127185,
+      "hi": 0.01271838072787475,
+      "separated": false
+     },
+     "heading MAE": {
+      "delta": 0.22145104721308118,
+      "lo": -0.06589855175600001,
+      "hi": 0.4883711085819232,
+      "separated": false
+     },
+     "yaw-rate MAE": {
+      "delta": 0.2894858228873445,
+      "lo": -0.8416576977781692,
+      "hi": 1.4739127158409815,
+      "separated": false
+     },
+     "curvature MAE": {
+      "delta": 0.0015643831956082242,
+      "lo": -0.010055253862287623,
+      "hi": 0.013061063049080168,
+      "separated": false
+     },
+     "cross-track MAE": {
+      "delta": 0.019951031850948986,
+      "lo": 0.006813669825015822,
+      "hi": 0.036826597162604106,
+      "separated": true
+     },
+     "L1 lateral-accel MAE": {
+      "delta": 0.04469431021372377,
+      "lo": -0.04453677694811984,
+      "hi": 0.1303881280096178,
+      "separated": false
+     },
+     "L2 curvature MAE (GT>=5.2)": {
+      "delta": -0.01073319415999066,
+      "lo": -0.026864187350027952,
+      "hi": 0.0028770977556047015,
+      "separated": false
+     },
+     "TAC-LAT": {
+      "delta": -0.016673614005835766,
+      "lo": -0.02670906024287228,
+      "hi": -0.006672226855713094,
+      "separated": true
+     },
+     "TAC-LON": {
+      "delta": 0.07086285952480201,
+      "lo": 0.03874959652228238,
+      "hi": 0.1021756946212639,
+      "separated": true
+     },
+     "S-POS@30": {
+      "delta": 0.19289961204028547,
+      "lo": 0.06679961486926508,
+      "hi": 0.3463879210653464,
+      "separated": true
+     },
+     "S-POS@50": {
+      "delta": 0.32645167801725317,
+      "lo": 0.12825498436713534,
+      "hi": 0.5555634700485405,
+      "separated": true
+     },
+     "S-POS@80": {
+      "delta": 0.46333982325118483,
+      "lo": 0.16858487922862792,
+      "hi": 0.807063013385516,
+      "separated": true
+     },
+     "M1 crawl share": {
+      "delta": -0.0036515946738045644,
+      "lo": -0.008555048542397178,
+      "hi": 0.0006669897223832068,
+      "separated": false
+     }
+    },
+    "TSWAP_minus_P10": {
+     "ADE6": {
+      "delta": -1.1175409326978287,
+      "lo": -1.3124338967860116,
+      "hi": -0.9298405981131684,
+      "separated": true
+     },
+     "speed MAE": {
+      "delta": -0.8276693726754715,
+      "lo": -1.0232839263328686,
+      "hi": -0.6471557678315791,
+      "separated": true
+     },
+     "along-track MAE": {
+      "delta": -0.6573996621677708,
+      "lo": -0.8338344646955819,
+      "hi": -0.486886237828857,
+      "separated": true
+     },
+     "accel MAE": {
+      "delta": -0.9564214361979961,
+      "lo": -1.302002174526898,
+      "hi": -0.6653300855593272,
+      "separated": true
+     },
+     "DK-VIOL": {
+      "delta": -0.015126050420168067,
+      "lo": -0.03443014408288813,
+      "hi": 0.0018833280034111497,
+      "separated": false
+     },
+     "DK-HW": {
+      "delta": -0.3501133848473182,
+      "lo": -0.7312422051188343,
+      "hi": -0.017190375152471404,
+      "separated": true
+     },
+     "DK-TG": {
+      "delta": -0.08411293445282834,
+      "lo": -0.14915942847067815,
+      "hi": -0.024095151256810346,
+      "separated": true
+     },
+     "heading MAE": {
+      "delta": -1.619432931899409,
+      "lo": -2.3907058824585152,
+      "hi": -0.8466488850530247,
+      "separated": true
+     },
+     "yaw-rate MAE": {
+      "delta": 3.166537291004794,
+      "lo": 0.32709467159338096,
+      "hi": 6.28198961500581,
+      "separated": true
+     },
+     "curvature MAE": {
+      "delta": 0.10029008843967004,
+      "lo": 0.062167399438884725,
+      "hi": 0.14663851707851566,
+      "separated": true
+     },
+     "cross-track MAE": {
+      "delta": -0.8452203016903289,
+      "lo": -0.974060127410214,
+      "hi": -0.7290025446360542,
+      "separated": true
+     },
+     "L1 lateral-accel MAE": {
+      "delta": -2.507354444227482,
+      "lo": -3.710633945530268,
+      "hi": -1.4985550901785183,
+      "separated": true
+     },
+     "L2 curvature MAE (GT>=5.2)": {
+      "delta": 0.035096700815167914,
+      "lo": 0.014485290704798209,
+      "hi": 0.062468245298037635,
+      "separated": true
+     },
+     "TAC-LAT": {
+      "delta": 0.12088370154230929,
+      "lo": 0.07870923777589196,
+      "hi": 0.16639908256880728,
+      "separated": true
+     },
+     "TAC-LON": {
+      "delta": 0.21092121717382242,
+      "lo": 0.15428482068390326,
+      "hi": 0.2651132265633338,
+      "separated": true
+     },
+     "S-POS@30": {
+      "delta": -0.9815657924050617,
+      "lo": -1.3296075984905487,
+      "hi": -0.6533300084218614,
+      "separated": true
+     },
+     "S-POS@50": {
+      "delta": -3.531715623742297,
+      "lo": -4.458944430319779,
+      "hi": -2.646055510382509,
+      "separated": true
+     },
+     "S-POS@80": {
+      "delta": -8.880172767682089,
+      "lo": -10.891425494411598,
+      "hi": -7.0187130223465415,
+      "separated": true
+     },
+     "M1 crawl share": {
+      "delta": 0.0559344711470494,
+      "lo": 0.03479149563435917,
+      "hi": 0.08007341817634223,
+      "separated": true
+     }
+    },
+    "OWN_minus_P10": {
+     "ADE6": {
+      "delta": -1.061196670809695,
+      "lo": -1.254106213494713,
+      "hi": -0.8709280777140208,
+      "separated": true
+     },
+     "speed MAE": {
+      "delta": -0.757816442386503,
+      "lo": -0.9567504776380354,
+      "hi": -0.5776834060670173,
+      "separated": true
+     },
+     "along-track MAE": {
+      "delta": -0.5825943142816833,
+      "lo": -0.7588985180855752,
+      "hi": -0.4097844629307959,
+      "separated": true
+     },
+     "accel MAE": {
+      "delta": -0.944339510071629,
+      "lo": -1.319487221803338,
+      "hi": -0.6314916214448184,
+      "separated": true
+     },
+     "DK-VIOL": {
+      "delta": -0.018487394957983194,
+      "lo": -0.03709855837853268,
+      "hi": -0.001747948232323234,
+      "separated": true
+     },
+     "DK-HW": {
+      "delta": -0.3767421590067555,
+      "lo": -0.7477038850453962,
+      "hi": -0.06559178513824974,
+      "separated": true
+     },
+     "DK-TG": {
+      "delta": -0.0809359659750334,
+      "lo": -0.14920731291811515,
+      "hi": -0.01879166437693993,
+      "separated": true
+     },
+     "heading MAE": {
+      "delta": -1.8408839791124891,
+      "lo": -2.5950860538710856,
+      "hi": -1.0986638006513516,
+      "separated": true
+     },
+     "yaw-rate MAE": {
+      "delta": 2.8770514681174495,
+      "lo": 0.06675329129131934,
+      "hi": 6.015719536718969,
+      "separated": true
+     },
+     "curvature MAE": {
+      "delta": 0.09872570524406175,
+      "lo": 0.06118117384972756,
+      "hi": 0.1424832778804688,
+      "separated": true
+     },
+     "cross-track MAE": {
+      "delta": -0.865171333541278,
+      "lo": -0.9954034278997345,
+      "hi": -0.7469876593473875,
+      "separated": true
+     },
+     "L1 lateral-accel MAE": {
+      "delta": -2.5520487544412074,
+      "lo": -3.7652806846064126,
+      "hi": -1.5244656580049492,
+      "separated": true
+     },
+     "L2 curvature MAE (GT>=5.2)": {
+      "delta": 0.04582989497515859,
+      "lo": 0.018611674078001322,
+      "hi": 0.07712770210710304,
+      "separated": true
+     },
+     "TAC-LAT": {
+      "delta": 0.13755731554814507,
+      "lo": 0.09549525170516907,
+      "hi": 0.18175753392945082,
+      "separated": true
+     },
+     "TAC-LON": {
+      "delta": 0.14005835764902042,
+      "lo": 0.08050521415629479,
+      "hi": 0.19708963884263112,
+      "separated": true
+     },
+     "S-POS@30": {
+      "delta": -1.0478571321587566,
+      "lo": -1.4219529324545956,
+      "hi": -0.714719250735757,
+      "separated": true
+     },
+     "S-POS@50": {
+      "delta": -3.7521107768750293,
+      "lo": -4.732247806569729,
+      "hi": -2.8902386048686024,
+      "separated": true
+     },
+     "S-POS@80": {
+      "delta": -9.116843233641395,
+      "lo": -11.112049120221826,
+      "hi": -7.208515315058245,
+      "separated": true
+     },
+     "M1 crawl share": {
+      "delta": 0.05958606582085397,
+      "lo": 0.03679962438325291,
+      "hi": 0.08601298106669812,
+      "separated": true
+     }
+    }
+   },
+   "status": {
+    "TSWAP_minus_OWN": {
+     "ADE6": "better",
+     "speed MAE": "better",
+     "along-track MAE": "better",
+     "accel MAE": "n.s.",
+     "DK-VIOL": "n.s.",
+     "DK-HW": "n.s.",
+     "DK-TG": "n.s.",
+     "heading MAE": "n.s.",
+     "yaw-rate MAE": "n.s.",
+     "curvature MAE": "n.s.",
+     "cross-track MAE": "worse",
+     "L1 lateral-accel MAE": "n.s.",
+     "L2 curvature MAE (GT>=5.2)": "n.s.",
+     "TAC-LAT": "worse",
+     "TAC-LON": "better",
+     "S-POS@30": "worse",
+     "S-POS@50": "worse",
+     "S-POS@80": "worse",
+     "M1 crawl share": "n.s."
+    },
+    "TSWAP_minus_P10": {
+     "ADE6": "better",
+     "speed MAE": "better",
+     "along-track MAE": "better",
+     "accel MAE": "better",
+     "DK-VIOL": "n.s.",
+     "DK-HW": "better",
+     "DK-TG": "better",
+     "heading MAE": "better",
+     "yaw-rate MAE": "worse",
+     "curvature MAE": "worse",
+     "cross-track MAE": "better",
+     "L1 lateral-accel MAE": "better",
+     "L2 curvature MAE (GT>=5.2)": "worse",
+     "TAC-LAT": "better",
+     "TAC-LON": "better",
+     "S-POS@30": "better",
+     "S-POS@50": "better",
+     "S-POS@80": "better",
+     "M1 crawl share": "worse"
+    },
+    "OWN_minus_P10": {
+     "ADE6": "better",
+     "speed MAE": "better",
+     "along-track MAE": "better",
+     "accel MAE": "better",
+     "DK-VIOL": "better",
+     "DK-HW": "better",
+     "DK-TG": "better",
+     "heading MAE": "better",
+     "yaw-rate MAE": "worse",
+     "curvature MAE": "worse",
+     "cross-track MAE": "better",
+     "L1 lateral-accel MAE": "better",
+     "L2 curvature MAE (GT>=5.2)": "worse",
+     "TAC-LAT": "better",
+     "TAC-LON": "better",
+     "S-POS@30": "better",
+     "S-POS@50": "better",
+     "S-POS@80": "better",
+     "M1 crawl share": "worse"
+    }
+   },
+   "M1_per_class_split_TSWAP_minus_OWN": {
+    "n_windows": 2106,
+    "n_episodes_pool": 135,
+    "pool": "masked",
+    "delta": -0.0036515946738045644,
+    "lo": -0.008555048542397178,
+    "hi": 0.0006669897223832068,
+    "separated": false,
+    "classes": {
+     "L": {
+      "n": 255,
+      "n_episodes": 45,
+      "w": 0.12108262108262108,
+      "delta": -0.0051760648747318835,
+      "delta_lo": -0.03807113990578757,
+      "delta_hi": 0.027786477174824294,
+      "delta_n_nan_draws": 0,
+      "contribution": -0.0006267315019262252,
+      "contribution_lo": -0.004948610767506428,
+      "contribution_hi": 0.0031366989565832144,
+      "share": 0.1716322751871141,
+      "share_lo": -6.629515718997408,
+      "share_hi": 4.6148737216669575,
+      "share_n_nan_draws": 0
+     },
+     "S": {
+      "n": 0,
+      "n_episodes": 0,
+      "w": 0.0,
+      "delta": null,
+      "delta_lo": null,
+      "delta_hi": null,
+      "delta_n_nan_draws": 2000,
+      "contribution": 0.0,
+      "contribution_lo": 0.0,
+      "contribution_hi": 0.0,
+      "share": -0.0,
+      "share_lo": -0.0,
+      "share_hi": 0.0,
+      "share_n_nan_draws": 0
+     },
+     "O": {
+      "n": 0,
+      "n_episodes": 0,
+      "w": 0.0,
+      "delta": null,
+      "delta_lo": null,
+      "delta_hi": null,
+      "delta_n_nan_draws": 2000,
+      "contribution": 0.0,
+      "contribution_lo": 0.0,
+      "contribution_hi": 0.0,
+      "share": -0.0,
+      "share_lo": -0.0,
+      "share_hi": 0.0,
+      "share_n_nan_draws": 0
+     },
+     "M": {
+      "n": 1851,
+      "n_episodes": 132,
+      "w": 0.8789173789173789,
+      "delta": -0.0034415785197059873,
+      "delta_lo": -0.005351886340875552,
+      "delta_hi": -0.0017425066938455552,
+      "delta_n_nan_draws": 0,
+      "contribution": -0.0030248631718783393,
+      "contribution_lo": -0.004660127161817049,
+      "contribution_hi": -0.001545928064247021,
+      "share": 0.8283677248128858,
+      "share_lo": -3.614873721666958,
+      "share_hi": 7.6295157189973395,
+      "share_n_nan_draws": 0
+     }
+    },
+    "n_boot": 2000,
+    "seed": 0,
+    "trigger": {
+     "share": 0.1716322751871141,
+     "lo": -6.629515718997408,
+     "hi": 4.6148737216669575,
+     "n_nan_draws": 0,
+     "contribution": -0.0006267315019262252,
+     "w": 0.12108262108262108
+    },
+    "trigger_zeroed": {
+     "delta": -0.0030248631718783393,
+     "lo": -0.004660127161817049,
+     "hi": -0.001545928064247021,
+     "separated": true
+    },
+    "_share_sum_max_abs_dev_over_draws": 1.7763568394002505e-15,
+    "_class_sum_identity_abs_dev": 4.336808689942018e-19
+   },
+   "M1_facts": {
+    "ts_vs_own": {
+     "delta": -0.0036515946738045644,
+     "lo": -0.008555048542397178,
+     "hi": 0.0006669897223832068,
+     "separated": false
+    },
+    "ts_vs_p10": {
+     "delta": 0.0559344711470494,
+     "lo": 0.03479149563435917,
+     "hi": 0.08007341817634223,
+     "separated": true
+    },
+    "own_vs_p10": {
+     "delta": 0.05958606582085397,
+     "lo": 0.03679962438325291,
+     "hi": 0.08601298106669812,
+     "separated": true
+    }
+   },
+   "OWN_excess_separated_above_0": true,
+   "p10_arrays_identical_in_both_arms": false,
+   "T_share": {
+    "share": 0.06128269459479196,
+    "lo": -0.0135093204527593,
+    "hi": 0.13261746906144256,
+    "numerator_mean_m1": 0.003651594673804565,
+    "denominator_mean_m1": 0.05958606582085396,
+    "n_windows": 2106,
+    "n_episodes": 135,
+    "n_draws_denominator_nonpositive": 0,
+    "n_boot": 2000,
+    "estimator": "episode-cluster bootstrap ratio, windows with all three arms finite"
+   },
+   "ts_separated_worse_rows": [
+    "S-POS@30",
+    "S-POS@50",
+    "S-POS@80",
+    "TAC-LAT",
+    "cross-track MAE"
+   ],
+   "ts_separated_better_rows": [
+    "ADE6",
+    "TAC-LON",
+    "along-track MAE",
+    "speed MAE"
+   ],
+   "family_of": {
+    "ADE6": "PRIMARY",
+    "speed MAE": "LONGITUDINAL",
+    "along-track MAE": "LONGITUDINAL",
+    "accel MAE": "LONGITUDINAL",
+    "DK-VIOL": "LONGITUDINAL",
+    "DK-HW": "LONGITUDINAL",
+    "DK-TG": "LONGITUDINAL",
+    "heading MAE": "LATERAL",
+    "yaw-rate MAE": "LATERAL",
+    "curvature MAE": "LATERAL",
+    "cross-track MAE": "LATERAL",
+    "L1 lateral-accel MAE": "LATERAL",
+    "L2 curvature MAE (GT>=5.2)": "LATERAL",
+    "TAC-LAT": "TACTICAL",
+    "TAC-LON": "TACTICAL",
+    "S-POS@30": "STRATEGIC",
+    "S-POS@50": "STRATEGIC",
+    "S-POS@80": "STRATEGIC",
+    "M1 crawl share": "crawl"
+   }
+  }
+ },
+ "outcome": "T-NOT",
+ "next": "The crawl does not sit in T's own-state decision. Next: the twin read on O (O fed the logged ego history), under its own card.",
+ "wall_s": 458.85510420799255
+}

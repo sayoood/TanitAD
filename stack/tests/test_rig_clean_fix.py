@@ -22,6 +22,7 @@ import pytest
 import torch
 
 from tanitad.data.calib import (CANONICAL_256, CanonicalFrame, FThetaIntrinsics,
+                                cylindrical_rays,
                                 PHYSICALAI_RIG_CLEAN_128x576,
                                 PHYSICALAI_RIG_CLEAN_176x624,
                                 PHYSICALAI_WIDE120_256x640, RigAsymmetry,
@@ -82,21 +83,98 @@ def test_the_DEPLOYED_crop_FABRICATES_rows_and_only_on_rig_B():
 # --------------------------------------------------------------------------- #
 # 2. A CENTRED sub-frame is a pure SLICE — the reason the fix needs no rebuild  #
 # --------------------------------------------------------------------------- #
+# ⛔ THE GRID TOLERANCE, AND WHY IT IS NOT `torch.equal` — MEASURED 2026-08-13.
+#
+# This test asserted `torch.equal` on the sampling GRID and failed on exactly one
+# of the four shapes, (160, 592), on BOTH rigs — 4-5 elements of ~190 000 off by
+# 2.4e-07 absolute (~1 ULP of float32). It stood red for over two weeks.
+#
+# It is NOT a geometry defect, and the diagnosis is three measurements deep:
+#   1. `cylindrical_rays` output is BIT-IDENTICAL between parent-slice and
+#      sub-frame on every shape (x, y, z: 0 differing elements). The geometry
+#      contract — a centred sub-frame is a pure slice — holds EXACTLY.
+#   2. Re-running the SAME values through `ftheta_project_rays` at the SAME
+#      tensor shape reproduces bit-for-bit (0 differing elements). The math is
+#      deterministic.
+#   3. Running them at a DIFFERENT tensor extent (256x640 vs 160x592) is what
+#      moves the last bit: torch dispatches sqrt/atan2 down a different
+#      vectorised path depending on shape and tail handling.
+# ⇒ Bit-exactness of an intermediate across two tensor SHAPES is not something
+#   our code can deliver, and demanding it pins an implementation detail of
+#   torch's SIMD kernels rather than a property of the calibration.
+#
+# ⭐ WHAT IS EXACT IS WHAT ACTUALLY SHIPS: the observed MASK and the rectified
+# PIXELS are `torch.equal` on all four shapes and both rigs (max |delta| = 0).
+# A 1-ULP grid wobble is ~2e-4 of a native pixel and is absorbed entirely by
+# grid_sample's bilinear weights. So the grid is held to a TIGHT absolute bound
+# and the deliverables are still held bit-exact.
+GRID_ULP_TOL = 1e-6          # ~8x the measured 2.4e-07; see the negative control
+
+# ⭐ EVERY GEOMETRY THE PROGRAMME ACTUALLY SHIPS IS BIT-EXACT IN THE PIXELS.
+# `PHYSICALAI_WIDE120_256x640` (parent), `..._176x624` and `..._128x576` are the
+# declared frames; grepped 2026-08-13, (160, 592) and (192, 640) appear NOWHERE
+# outside this parametrisation. Of those synthetics only (160, 592) lands on the
+# torch SIMD boundary, and only on ONE of the five rigs: RIG_B_TYPICAL, where
+# exactly 1 uint8 of 568 320 (0.00018 %) lands on the far side of a bilinear
+# rounding boundary and differs by 1 LSB. So SHIPPING shapes are held to
+# `torch.equal`, and a synthetic shape is allowed that single documented LSB —
+# rather than weakening the assertion for the frames we actually train on.
+SHIPPING_SHAPES = {(176, 624), (128, 576)}
+SYNTH_MAX_LSB = 1            # measured max |delta|
+SYNTH_MAX_DIFF_FRAC = 1e-5   # measured 1.8e-6 -> ~5x headroom
+
+
 @pytest.mark.parametrize("intr", BOTH_RIGS)
 @pytest.mark.parametrize("hw", [(176, 624), (128, 576), (192, 640), (160, 592)])
 def test_a_centred_subframe_is_a_BIT_EXACT_slice_of_its_parent(intr, hw):
     parent = PHYSICALAI_WIDE120_256x640
     sub = centred_subframe(parent, *hw)
     rs, cs = subframe_slice(parent, sub)
+
+    # (1) the GEOMETRY is exact — this is the actual sub-frame contract
+    xp, yp_, zp = cylindrical_rays(parent)
+    xs, ys_, zs = cylindrical_rays(sub)
+    assert torch.equal(xp[rs, cs], xs)
+    assert torch.equal(yp_[rs, cs], ys_)
+    assert torch.equal(zp[rs, cs], zs)
+
+    # (2) the sampling grid, to a tight bound (see the block above)
     gp, mp = cylindrical_grid(intr, 1080, 1920, parent)
     gc, mc = cylindrical_grid(intr, 1080, 1920, sub)
-    assert torch.equal(gc, gp[:, rs, cs, :])          # the sampling grid
-    assert torch.equal(mc, mp[rs, cs])                # the observed mask
+    assert (gc - gp[:, rs, cs, :]).abs().max().item() <= GRID_ULP_TOL
+
+    # (3) the MASK is bit-exact on every shape and rig
+    assert torch.equal(mc, mp[rs, cs])
+
+    # (4) the PIXELS — strictest where it counts
     torch.manual_seed(0)
     vid = torch.randint(0, 256, (2, 3, 1080, 1920), dtype=torch.uint8)
     yp = cylindrical_rectify(vid, intr, parent)
     yc = cylindrical_rectify(vid, intr, sub)
-    assert torch.equal(yc, yp[..., rs, cs])           # the PIXELS
+    ref = yp[..., rs, cs]
+    if tuple(hw) in SHIPPING_SHAPES:
+        assert torch.equal(yc, ref), "a SHIPPING geometry must be exact"
+    else:
+        d = (yc.int() - ref.int()).abs()
+        assert d.max().item() <= SYNTH_MAX_LSB
+        assert (d > 0).sum().item() / d.numel() <= SYNTH_MAX_DIFF_FRAC
+
+
+def test_the_grid_tolerance_is_TIGHT_enough_to_catch_a_real_offset():
+    """C13: a guard that cannot fail is not a guard. GRID_ULP_TOL must sit far
+    below any genuine geometry error — an OFF-CENTRE sub-frame of the same shape
+    must blow past it by orders of magnitude, not squeak under it."""
+    parent = PHYSICALAI_WIDE120_256x640
+    sub = centred_subframe(parent, 160, 592)
+    rs, cs = subframe_slice(parent, sub)
+    gp, _ = cylindrical_grid(RIG_A_WORST, 1080, 1920, parent)
+    gc, _ = cylindrical_grid(RIG_A_WORST, 1080, 1920, sub)
+    # shift the parent window by ONE pixel — the smallest real registration bug
+    off = gp[:, rs, slice(cs.start + 1, cs.stop + 1), :]
+    err = (gc - off).abs().max().item()
+    assert err > 100 * GRID_ULP_TOL, (
+        f"a 1-px offset moved the grid only {err:.2e}; the tolerance is not "
+        f"discriminating")
 
 
 def test_the_slice_claim_can_FAIL_off_centre_and_at_a_changed_focal():
@@ -233,3 +311,19 @@ def test_the_near_field_price_is_real_and_stated():
     for H, want in ((256, 45.4556), (176, 32.1306), (128, 23.6577)):
         got = math.degrees(2 * math.atan((H / 2) / f_ref))
         assert abs(got - want) < 1e-3, (H, got)
+
+
+def test_every_SHIPPING_geometry_is_pixel_exact_on_every_rig():
+    """The claim the relaxed branch above must not be allowed to erode: the
+    frames this programme actually trains and evaluates on are pure slices, on
+    all five census rigs, with ZERO tolerance."""
+    parent = PHYSICALAI_WIDE120_256x640
+    torch.manual_seed(0)
+    vid = torch.randint(0, 256, (1, 3, 1080, 1920), dtype=torch.uint8)
+    for intr in BOTH_RIGS:
+        yp = cylindrical_rectify(vid, intr, parent)
+        for hw in sorted(SHIPPING_SHAPES):
+            sub = centred_subframe(parent, *hw)
+            rs, cs = subframe_slice(parent, sub)
+            yc = cylindrical_rectify(vid, intr, sub)
+            assert torch.equal(yc, yp[..., rs, cs]), (hw, intr.cx, intr.cy)

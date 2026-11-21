@@ -1,0 +1,17 @@
+n_fit=1918  d=128  (n/d=15.0)
+   target   fp16 MSE    fp8 MSE  med relD  max relD
+    speed    41.1744    40.8025   -0.0005   +0.0069
+ yaw_rate     0.0103     0.0104   +0.0083   +0.0344
+    accel     0.9887     0.9816   -0.0060   +0.0213
+
+GATE: PASS (criterion: per-ep relative MSE increase: median < 0.01, max < 0.05)
+
+EXTRA episode 16d325e9-dbfe-439c-a0ed-4ff8850ad2e2.fp16.pt: scored as a 6th VAL episode under the same 19-episode probe (n=101)
+   target   fp16 MSE    fp8 MSE      relD     bound
+    speed    30.3018    29.8947   -0.0134  <0.05 ok
+ yaw_rate     0.0066     0.0066   -0.0034  <0.05 ok
+    accel     1.2442     1.2736   +0.0237  <0.05 ok
+per-episode bound (max < 0.05 on every target): PASS
+GATE re-evaluated over val + extra (6 episodes): FAIL under sorted[n//2] (upper median), PASS under the standard median
+  speed: upper-med -0.0005 std-med -0.0062 max +0.0069  yaw_rate: upper-med +0.0083 std-med +0.0083 max +0.0344  accel: upper-med +0.0128 std-med +0.0034 max +0.0237
+banked -> C:\Users\Admin\refav1_probe\rebuild\fp8_l2_gate_extra.json

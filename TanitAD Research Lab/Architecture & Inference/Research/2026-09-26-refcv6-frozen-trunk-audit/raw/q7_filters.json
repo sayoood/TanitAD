@@ -1,0 +1,728 @@
+{
+ "what": "Q7: upstream filters on refcv6's data path -- counts and correlation",
+ "evidence_class": "MEASURED (ours) over the run's own view record, labels and log",
+ "clip_level_train": {
+  "stages": {
+   "cache": 4713,
+   "labels_v8_train": 4572,
+   "agent_join": 4427,
+   "map_gt": 4369
+  },
+  "removed_counts": {
+   "not_v8_train": 141,
+   "no_agent_join": 145,
+   "no_validated_map": 58
+  },
+  "n_train_labels": 4572,
+  "n_kept_with_label": 4369,
+  "removed_lists_in_labels": {
+   "no_agent_join": 145,
+   "no_validated_map": 58
+  },
+  "tests": {
+   "no_agent_join": {
+    "country": {
+     "stat": "TVD",
+     "largest_share_gaps_(removed,kept)": {
+      "France": [
+       0.0069,
+       0.0627
+      ],
+      "Belgium": [
+       0.1034,
+       0.0522
+      ],
+      "Germany": [
+       0.1103,
+       0.0607
+      ],
+      "Denmark": [
+       0.0207,
+       0.0636
+      ]
+     },
+     "n_removed": 145,
+     "n_kept": 4369,
+     "observed": 0.22333,
+     "p_perm": 0.0078,
+     "n_perm": 10000
+    },
+    "daynight": {
+     "stat": "TVD",
+     "largest_share_gaps_(removed,kept)": {
+      "day": [
+       0.4897,
+       0.5386
+      ],
+      "night": [
+       0.5103,
+       0.4614
+      ]
+     },
+     "n_removed": 145,
+     "n_kept": 4369,
+     "observed": 0.04891,
+     "p_perm": 0.27147,
+     "n_perm": 10000
+    },
+    "road_class": {
+     "stat": "TVD",
+     "largest_share_gaps_(removed,kept)": {
+      "highway": [
+       0.331,
+       0.1598
+      ],
+      "urban": [
+       0.5586,
+       0.6546
+      ],
+      "intersection": [
+       0.1103,
+       0.1856
+      ]
+     },
+     "n_removed": 145,
+     "n_kept": 4369,
+     "observed": 0.17127,
+     "p_perm": 0.0001,
+     "n_perm": 10000
+    },
+    "stop_launch": {
+     "stat": "TVD",
+     "largest_share_gaps_(removed,kept)": {
+      "False": [
+       0.9379,
+       0.8789
+      ],
+      "True": [
+       0.0621,
+       0.1211
+      ]
+     },
+     "n_removed": 145,
+     "n_kept": 4369,
+     "observed": 0.05901,
+     "p_perm": 0.0374,
+     "n_perm": 10000
+    },
+    "stopped_frac": {
+     "stat": "abs mean diff",
+     "mean_removed": 0.0665,
+     "mean_kept": 0.0633,
+     "n_removed": 145,
+     "n_kept": 4369,
+     "observed": 0.00323,
+     "p_perm": 0.79402,
+     "n_perm": 10000
+    },
+    "v_hi_ms": {
+     "stat": "abs mean diff",
+     "mean_removed": 14.9779,
+     "mean_kept": 11.5737,
+     "n_removed": 145,
+     "n_kept": 4369,
+     "observed": 3.40421,
+     "p_perm": 0.0001,
+     "n_perm": 10000
+    },
+    "nav": {
+     "stat": "TVD",
+     "largest_share_gaps_(removed,kept)": {
+      "NAV_FOLLOW_ROAD": [
+       0.8,
+       0.6299
+      ],
+      "NAV_TURN_R": [
+       0.0966,
+       0.1918
+      ],
+      "NAV_TURN_L": [
+       0.1034,
+       0.1783
+      ]
+     },
+     "n_removed": 145,
+     "n_kept": 4369,
+     "observed": 0.17011,
+     "p_perm": 0.0001,
+     "n_perm": 10000
+    },
+    "tac_lat": {
+     "stat": "TVD",
+     "largest_share_gaps_(removed,kept)": {
+      "TURN_L": [
+       0.0138,
+       0.0618
+      ],
+      "NUDGE_L": [
+       0.1448,
+       0.1062
+      ],
+      "NUDGE_R": [
+       0.1517,
+       0.1291
+      ],
+      "LANE_KEEP": [
+       0.6345,
+       0.6464
+      ]
+     },
+     "n_removed": 145,
+     "n_kept": 4369,
+     "observed": 0.06126,
+     "p_perm": 0.31737,
+     "n_perm": 10000
+    },
+    "tac_lon": {
+     "stat": "TVD",
+     "largest_share_gaps_(removed,kept)": {
+      "ACCELERATE": [
+       0.1379,
+       0.2229
+      ],
+      "HOLD": [
+       0.0483,
+       0.0231
+      ],
+      "CRUISE": [
+       0.2966,
+       0.274
+      ],
+      "FOLLOW": [
+       0.0552,
+       0.0359
+      ]
+     },
+     "n_removed": 145,
+     "n_kept": 4369,
+     "observed": 0.085,
+     "p_perm": 0.29217,
+     "n_perm": 10000
+    }
+   },
+   "no_validated_map": {
+    "country": {
+     "stat": "TVD",
+     "largest_share_gaps_(removed,kept)": {
+      "United States": [
+       0.2414,
+       0.0607
+      ],
+      "Denmark": [
+       0.0,
+       0.0636
+      ],
+      "Portugal": [
+       0.0,
+       0.0526
+      ],
+      "Poland": [
+       0.0,
+       0.0458
+      ]
+     },
+     "n_removed": 58,
+     "n_kept": 4369,
+     "observed": 0.36127,
+     "p_perm": 0.0025,
+     "n_perm": 10000
+    },
+    "daynight": {
+     "stat": "TVD",
+     "largest_share_gaps_(removed,kept)": {
+      "night": [
+       0.5172,
+       0.4614
+      ],
+      "day": [
+       0.4828,
+       0.5386
+      ]
+     },
+     "n_removed": 58,
+     "n_kept": 4369,
+     "observed": 0.05581,
+     "p_perm": 0.43306,
+     "n_perm": 10000
+    },
+    "road_class": {
+     "stat": "TVD",
+     "largest_share_gaps_(removed,kept)": {
+      "intersection": [
+       0.5862,
+       0.1856
+      ],
+      "urban": [
+       0.4138,
+       0.6546
+      ],
+      "highway": [
+       0.0,
+       0.1598
+      ]
+     },
+     "n_removed": 58,
+     "n_kept": 4369,
+     "observed": 0.40058,
+     "p_perm": 0.0001,
+     "n_perm": 10000
+    },
+    "stop_launch": {
+     "stat": "TVD",
+     "largest_share_gaps_(removed,kept)": {
+      "False": [
+       0.8966,
+       0.8789
+      ],
+      "True": [
+       0.1034,
+       0.1211
+      ]
+     },
+     "n_removed": 58,
+     "n_kept": 4369,
+     "observed": 0.01763,
+     "p_perm": 0.70003,
+     "n_perm": 10000
+    },
+    "stopped_frac": {
+     "stat": "abs mean diff",
+     "mean_removed": 0.4743,
+     "mean_kept": 0.0633,
+     "n_removed": 58,
+     "n_kept": 4369,
+     "observed": 0.41096,
+     "p_perm": 0.0001,
+     "n_perm": 10000
+    },
+    "v_hi_ms": {
+     "stat": "abs mean diff",
+     "mean_removed": 2.8957,
+     "mean_kept": 11.5737,
+     "n_removed": 58,
+     "n_kept": 4369,
+     "observed": 8.67796,
+     "p_perm": 0.0001,
+     "n_perm": 10000
+    },
+    "nav": {
+     "stat": "TVD",
+     "largest_share_gaps_(removed,kept)": {
+      "NAV_FOLLOW_ROAD": [
+       0.5,
+       0.6299
+      ],
+      "NAV_TURN_L": [
+       0.2931,
+       0.1783
+      ],
+      "NAV_TURN_R": [
+       0.2069,
+       0.1918
+      ]
+     },
+     "n_removed": 58,
+     "n_kept": 4369,
+     "observed": 0.12989,
+     "p_perm": 0.06959,
+     "n_perm": 10000
+    },
+    "tac_lat": {
+     "stat": "TVD",
+     "largest_share_gaps_(removed,kept)": {
+      "LANE_KEEP": [
+       0.7241,
+       0.6464
+      ],
+      "NUDGE_L": [
+       0.0517,
+       0.1062
+      ],
+      "NUDGE_R": [
+       0.1034,
+       0.1291
+      ],
+      "TURN_R": [
+       0.069,
+       0.0565
+      ]
+     },
+     "n_removed": 58,
+     "n_kept": 4369,
+     "observed": 0.0902,
+     "p_perm": 0.38876,
+     "n_perm": 10000
+    },
+    "tac_lon": {
+     "stat": "TVD",
+     "largest_share_gaps_(removed,kept)": {
+      "HOLD": [
+       0.3966,
+       0.0231
+      ],
+      "CRUISE": [
+       0.0517,
+       0.274
+      ],
+      "CREEP": [
+       0.2069,
+       0.0272
+      ],
+      "ACCELERATE": [
+       0.069,
+       0.2229
+      ]
+     },
+     "n_removed": 58,
+     "n_kept": 4369,
+     "observed": 0.55309,
+     "p_perm": 0.0001,
+     "n_perm": 10000
+    }
+   },
+   "both_filters": {
+    "country": {
+     "stat": "TVD",
+     "largest_share_gaps_(removed,kept)": {
+      "United States": [
+       0.1182,
+       0.0607
+      ],
+      "Denmark": [
+       0.0148,
+       0.0636
+      ],
+      "Germany": [
+       0.1084,
+       0.0607
+      ],
+      "Belgium": [
+       0.0887,
+       0.0522
+      ]
+     },
+     "n_removed": 203,
+     "n_kept": 4369,
+     "observed": 0.21101,
+     "p_perm": 0.0008,
+     "n_perm": 10000
+    },
+    "daynight": {
+     "stat": "TVD",
+     "largest_share_gaps_(removed,kept)": {
+      "night": [
+       0.5123,
+       0.4614
+      ],
+      "day": [
+       0.4877,
+       0.5386
+      ]
+     },
+     "n_removed": 203,
+     "n_kept": 4369,
+     "observed": 0.05088,
+     "p_perm": 0.16838,
+     "n_perm": 10000
+    },
+    "road_class": {
+     "stat": "TVD",
+     "largest_share_gaps_(removed,kept)": {
+      "urban": [
+       0.5172,
+       0.6546
+      ],
+      "highway": [
+       0.2365,
+       0.1598
+      ],
+      "intersection": [
+       0.2463,
+       0.1856
+      ]
+     },
+     "n_removed": 203,
+     "n_kept": 4369,
+     "observed": 0.13737,
+     "p_perm": 0.0001,
+     "n_perm": 10000
+    },
+    "stop_launch": {
+     "stat": "TVD",
+     "largest_share_gaps_(removed,kept)": {
+      "False": [
+       0.9261,
+       0.8789
+      ],
+      "True": [
+       0.0739,
+       0.1211
+      ]
+     },
+     "n_removed": 203,
+     "n_kept": 4369,
+     "observed": 0.04719,
+     "p_perm": 0.0454,
+     "n_perm": 10000
+    },
+    "stopped_frac": {
+     "stat": "abs mean diff",
+     "mean_removed": 0.183,
+     "mean_kept": 0.0633,
+     "n_removed": 203,
+     "n_kept": 4369,
+     "observed": 0.11972,
+     "p_perm": 0.0001,
+     "n_perm": 10000
+    },
+    "v_hi_ms": {
+     "stat": "abs mean diff",
+     "mean_removed": 11.5258,
+     "mean_kept": 11.5737,
+     "n_removed": 203,
+     "n_kept": 4369,
+     "observed": 0.04784,
+     "p_perm": 0.93011,
+     "n_perm": 10000
+    },
+    "nav": {
+     "stat": "TVD",
+     "largest_share_gaps_(removed,kept)": {
+      "NAV_FOLLOW_ROAD": [
+       0.7143,
+       0.6299
+      ],
+      "NAV_TURN_R": [
+       0.1281,
+       0.1918
+      ],
+      "NAV_TURN_L": [
+       0.1576,
+       0.1783
+      ]
+     },
+     "n_removed": 203,
+     "n_kept": 4369,
+     "observed": 0.08439,
+     "p_perm": 0.0219,
+     "n_perm": 10000
+    },
+    "tac_lat": {
+     "stat": "TVD",
+     "largest_share_gaps_(removed,kept)": {
+      "TURN_L": [
+       0.0246,
+       0.0618
+      ],
+      "LANE_KEEP": [
+       0.6601,
+       0.6464
+      ],
+      "NUDGE_L": [
+       0.1182,
+       0.1062
+      ],
+      "NUDGE_R": [
+       0.1379,
+       0.1291
+      ]
+     },
+     "n_removed": 203,
+     "n_kept": 4369,
+     "observed": 0.03717,
+     "p_perm": 0.64154,
+     "n_perm": 10000
+    },
+    "tac_lon": {
+     "stat": "TVD",
+     "largest_share_gaps_(removed,kept)": {
+      "HOLD": [
+       0.1478,
+       0.0231
+      ],
+      "ACCELERATE": [
+       0.1182,
+       0.2229
+      ],
+      "CREEP": [
+       0.0788,
+       0.0272
+      ],
+      "CRUISE": [
+       0.2266,
+       0.274
+      ]
+     },
+     "n_removed": 203,
+     "n_kept": 4369,
+     "observed": 0.18395,
+     "p_perm": 0.0001,
+     "n_perm": 10000
+    }
+   }
+  }
+ },
+ "clip_level_eval": {
+  "n_eval_labels": 147,
+  "n_eval_view": 139,
+  "n_removed": 8,
+  "removed_sha12": [
+   "7b7cd0636a33",
+   "843e4ee8d5d2",
+   "93489c4af0ab",
+   "a26c7f0ef877",
+   "a2bd72d90385",
+   "b8c8727d2474",
+   "ba9a53c67540",
+   "cde81aaedb2d"
+  ],
+  "tests": {
+   "country": {
+    "stat": "TVD",
+    "largest_share_gaps_(removed,kept)": {
+     "Spain": [
+      0.25,
+      0.0719
+     ],
+     "Luxembourg": [
+      0.125,
+      0.0072
+     ],
+     "Hungary": [
+      0.125,
+      0.0144
+     ],
+     "United States": [
+      0.0,
+      0.0935
+     ]
+    },
+    "n_removed": 8,
+    "n_kept": 139,
+    "observed": 0.66187,
+    "p_perm": 0.50595,
+    "n_perm": 10000
+   },
+   "daynight": {
+    "stat": "TVD",
+    "largest_share_gaps_(removed,kept)": {
+     "day": [
+      0.875,
+      0.5396
+     ],
+     "night": [
+      0.125,
+      0.4604
+     ]
+    },
+    "n_removed": 8,
+    "n_kept": 139,
+    "observed": 0.33543,
+    "p_perm": 0.07449,
+    "n_perm": 10000
+   },
+   "road_class": {
+    "stat": "TVD",
+    "largest_share_gaps_(removed,kept)": {
+     "highway": [
+      0.375,
+      0.1583
+     ],
+     "urban": [
+      0.5,
+      0.6547
+     ],
+     "intersection": [
+      0.125,
+      0.1871
+     ]
+    },
+    "n_removed": 8,
+    "n_kept": 139,
+    "observed": 0.21673,
+    "p_perm": 0.35866,
+    "n_perm": 10000
+   },
+   "v_hi_ms": {
+    "stat": "abs mean diff",
+    "mean_removed": 13.7287,
+    "mean_kept": 12.1027,
+    "n_removed": 8,
+    "n_kept": 139,
+    "observed": 1.62602,
+    "p_perm": 0.54965,
+    "n_perm": 10000
+   },
+   "nav": {
+    "stat": "TVD",
+    "largest_share_gaps_(removed,kept)": {
+     "NAV_FOLLOW_ROAD": [
+      1.0,
+      0.6331
+     ],
+     "NAV_TURN_R": [
+      0.0,
+      0.2734
+     ],
+     "NAV_TURN_L": [
+      0.0,
+      0.0935
+     ]
+    },
+    "n_removed": 8,
+    "n_kept": 139,
+    "observed": 0.36691,
+    "p_perm": 0.07059,
+    "n_perm": 10000
+   }
+  }
+ },
+ "window_level": {
+  "enumeration": {
+   "rule": "range(T - window - max_horizon), window 8, max_horizon 20",
+   "n_windows": 746946,
+   "config_n_windows": 746946,
+   "rows_per_clip": 199,
+   "now_rows_never_used_per_clip": 28,
+   "frac_rows_never_a_now": 0.14072828255172687
+  },
+  "future_mask_6s": {
+   "windows_with_masked_future_slots": 170391,
+   "frac": 0.2281168919841595,
+   "why": "enumeration keeps max_horizon 20 rows for REF-B parity; the 60-row (6 s) future is fetched per item and MASKED past the clip end"
+  },
+  "tactical_band": {
+   "windows_supervised_trainer_clock": 179129,
+   "frac": 0.23981519413719332,
+   "source": "raw/q4d_label_offset_true_clock.json (the trainer's own v7_labels)"
+  },
+  "agent_join_frames": {
+   "train": {
+    "n_windows": 746946,
+    "n_labelled": 719739,
+    "frac_unlabelled": 0.03639999999999999
+   },
+   "eval": {
+    "n_windows": 23772,
+    "n_labelled": 22663,
+    "frac_unlabelled": 0.046699999999999964
+   }
+  },
+  "box3d_visible_filter": {
+   "n_logged_batches": 668,
+   "targets_prefilter": 341183,
+   "targets_visible": 55837,
+   "frac_removed": 0.8363429596433586
+  },
+  "map_lift_valid_mask": {
+   "cells_seen": 77799213,
+   "cells_unobserved_excluded": 8570846,
+   "frac_excluded": 0.11016623008770024
+  },
+  "max_speed_clamp": 86,
+  "agent_class_out_of_vocab_boxes": {
+   "train_or_tram_car": 29206,
+   "_handling": "targets_from_join maps these to -1 and slot_set_loss masks ok = ct >= 0, so they are EXCLUDED from the cls term, never relabelled"
+  }
+ }
+}

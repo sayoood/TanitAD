@@ -1,0 +1,24 @@
+...................................F                                     [100%]
+================================== FAILURES ===================================
+_____________________________ test_selftests_run ______________________________
+
+    def test_selftests_run():
+        env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1")
+        for args, last in (([str(HERE / "read_visrule10k.py"), "--selftest"], "ZZ SELFTEST-READ-VISRULE10K ok: True"), ([str(HERE / "make_vis_gapfile.py"), "--selftest"], "ZZ MAKE-VIS-GAPFILE-SELFTEST PASS"),
+                           ([str(HERE / "check_wrapper_v.py"), "--selftest"], "ZZ CHECK-WRAPPER-V-SELFTEST PASS")):
+            r = subprocess.run([sys.executable] + args, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding="utf-8", errors="replace", timeout=300)
+>           assert r.stdout.strip().splitlines()[-1] == last, (args, r.stdout[-400:])
+E           AssertionError: (['F:\\TanitAD-scratch\\v8proof\\visrule\\read_visrule10k.py', '--selftest'], 'ZZ SELFTEST-READ-VISRULE10K ok: False
+E             ')
+E           assert 'ZZ SELFTEST-...10K ok: False' == 'ZZ SELFTEST-...E10K ok: True'
+E             
+E             - ZZ SELFTEST-READ-VISRULE10K ok: True
+E             ?                                 ^^^
+E             + ZZ SELFTEST-READ-VISRULE10K ok: False
+E             ?                                 ^^^^
+
+visrule\test_visrule.py:512: AssertionError
+=========================== short test summary info ===========================
+FAILED visrule/test_visrule.py::test_selftests_run - AssertionError: (['F:\\T...
+1 failed, 35 passed in 13.54s
+rc 1

@@ -1,0 +1,48 @@
+============================================================================================
+THE GOAL TERM'S OWN DECISION RANGE, per DECODED GOAL TOKEN (ccos, W_KAPPA=0)
+============================================================================================
+  goal         n |    dec med   dec mean    dec min | charge@15 med   ratio c/d
+  LANE_KEEP   18 |    0.00000    0.44988    0.00000 |     0.00000        0.00
+  TURN_L       9 |    0.98185    0.99780    0.90838 |     0.09672        0.10
+  TURN_R      13 |    0.97965    0.98537    0.92689 |     0.09672        0.10
+
+  ** TURN_L median goal decision = 0.98185 ; TURN_R = 0.97965  ->  RATIO 1.002 **
+     MWU p = 0.7894  (n_L=9 n_R=13; DESCRIPTIVE -- decision estimator is the episode-cluster bootstrap)
+     CONTROL that must differ: LANE_KEEP median = 0.00000
+
+============================================================================================
+PER-WINDOW: goal decision vs the charge wk15 would levy on the FULL 0.08 goal
+============================================================================================
+  a plan that fully tracks the goal (|kappa| = 0.08 over the horizon) pays
+  W_KAPPA * 0.08^2 = 0.09672 in curvature charge.
+   win goal       |    goal dec dec > charge? | k(ccos)    k(wk15)   
+    33 TURN_L     |     1.12127         YES |   +0.0800   +0.0306
+    12 TURN_R     |     1.07153         YES |   -0.0800   -0.0800
+    32 TURN_L     |     1.06257         YES |   +0.0800   +0.0247
+    38 TURN_R     |     1.05267         YES |   -0.0800   -0.0800
+     7 TURN_L     |     1.03593         YES |   +0.0800   +0.0180
+     3 TURN_R     |     1.01615         YES |   -0.0800   -0.0800
+    31 TURN_L     |     1.01146         YES |   +0.0800   +0.0282
+    39 TURN_R     |     1.00732         YES |   -0.0800   -0.0800
+     0 TURN_R     |     1.00138         YES |   -0.0800   -0.0327
+    10 TURN_R     |     0.99351         YES |   -0.0800   -0.0800
+    30 TURN_L     |     0.98185         YES |   +0.0800   +0.0207
+    13 TURN_R     |     0.97965         YES |   -0.0800   -0.0800
+     5 TURN_L     |     0.97695         YES |   +0.2000   +0.0115
+    11 TURN_R     |     0.96703         YES |   -0.0800   -0.0800
+    36 TURN_R     |     0.95871         YES |   -0.0800   -0.0444
+    34 TURN_L     |     0.95490         YES |   +0.0800   +0.0338
+    23 TURN_R     |     0.95277         YES |   -0.0800   -0.0800
+     4 TURN_R     |     0.94345         YES |   -0.0800   -0.0489
+    14 TURN_R     |     0.93873         YES |   -0.0800   -0.0800
+    35 TURN_R     |     0.92689         YES |   -0.0800   -0.0530
+     8 TURN_L     |     0.92686         YES |   +0.0800   +0.0120
+     6 TURN_L     |     0.90838         YES |   +0.0800   +0.0140
+
+============================================================================================
+THE PREDICTION THIS MAKES, AND ITS TEST
+============================================================================================
+  windows whose GOAL is TURN_L that wk15 tracks at full |kappa| > 0.06: 0/9
+  windows whose GOAL is TURN_R that wk15 tracks at full |kappa| > 0.06: 9/13
+  CONTROL (W_KAPPA = 0, same goals, same seed):
+    TURN_L 9/9   TURN_R 13/13  (must be near-equal, or the asymmetry predates the charge)

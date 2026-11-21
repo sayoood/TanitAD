@@ -1,0 +1,141 @@
+card sha256 OK 5594c2ae777a53ed4a8a873ca374c12943eadc74385cb07671c2ac90a3292ae4
+COUNTS BEFORE THE READ {"pack_sets": 8489, "pack_logs": 101, "sets_in_label_store": 8489, "logs_in_label_store": 101, "pack_has_pdm_all": true, "heldout_flagged_sets_in_population": 1705}
+d_k done 76.7s; footprint points outside the raster extent: 0.00000; proposals with no point inside: 0
+{
+ "counts": {
+  "pack_sets": 8489,
+  "pack_logs": 101,
+  "sets_in_label_store": 8489,
+  "logs_in_label_store": 101,
+  "pack_has_pdm_all": true,
+  "heldout_flagged_sets_in_population": 1705
+ },
+ "arms": {
+  "O-DAC": {
+   "gain": 0.5861387683640578,
+   "gain_ci": [
+    0.28253354620649684,
+    0.9985382165862279
+   ],
+   "n_changed": 54
+  },
+  "V0": {
+   "gain": 0.2037350695269986,
+   "gain_ci": [
+    0.02260320520299905,
+    0.4397944004437365
+   ],
+   "R": 0.34758845605048994,
+   "R_ci": [
+    0.06525535782916948,
+    0.512004616861685
+   ],
+   "n_changed": 123
+  },
+  "V25": {
+   "gain": 0.16419471981303826,
+   "gain_ci": [
+    0.055655246010427345,
+    0.3088490734140602
+   ],
+   "R": 0.2801294312459724,
+   "R_ci": [
+    0.1455113024664138,
+    0.3933103705331608
+   ],
+   "n_changed": 47
+  },
+  "Phi-GT0.5": {
+   "gain": 0.05635834948616913,
+   "gain_ci": [
+    -0.188694284236744,
+    0.35753247737394456
+   ],
+   "R": 0.09615188847423975,
+   "R_ci": [
+    -0.6157582444938721,
+    0.38523182021536906
+   ],
+   "n_changed": 3117
+  },
+  "Phi-GT1.0": {
+   "gain": -0.12666167727992902,
+   "gain_ci": [
+    -0.34776279011274525,
+    0.13446543536308997
+   ],
+   "R": -0.21609503434391145,
+   "R_ci": [
+    -1.1279690079678963,
+    0.1433700085267624
+   ],
+   "n_changed": 3816
+  },
+  "Phi-GT2.0": {
+   "gain": -0.2516728828829328,
+   "gain_ci": [
+    -0.4552995200308516,
+    -0.04268074110492148
+   ],
+   "R": -0.4293742309271988,
+   "R_ci": [
+    -1.3911634903071766,
+    -0.046798485957590216
+   ],
+   "n_changed": 4427
+  }
+ },
+ "R_max": 0.34758845605048994,
+ "R_max_arm": "V0",
+ "outcome": "S0-GO",
+ "valid": true
+}
+{
+ "zero_all_drivable": {
+  "ok": true,
+  "n_changed": {
+   "V0": 0,
+   "V25": 0,
+   "Phi-GT0.5": 0,
+   "Phi-GT1.0": 0,
+   "Phi-GT2.0": 0
+  },
+  "delta_sum": {
+   "V0": 0.0,
+   "V25": 0.0,
+   "Phi-GT0.5": 0.0,
+   "Phi-GT1.0": 0.0,
+   "Phi-GT2.0": 0.0
+  }
+ },
+ "pick_reproduces": {
+  "ok": true,
+  "n_sets": 8489,
+  "n_equal": 8489,
+  "note": "the pack records no pick; recomputed pick from the pack's logits via sel_common.pick_from_logits(torch, lane=False)"
+ },
+ "odac_ge_all": {
+  "ok": true,
+  "O-DAC": 0.5861387683640578,
+  "rules": {
+   "V0": 0.2037350695269986,
+   "V25": 0.16419471981303826,
+   "Phi-GT0.5": 0.05635834948616913,
+   "Phi-GT1.0": -0.12666167727992902,
+   "Phi-GT2.0": -0.2516728828829328
+  }
+ },
+ "yflip_below_true": {
+  "ok": true,
+  "R_max_true": 0.34758845605048994,
+  "R_max_flip": -5.487249894166709,
+  "per_rule_flip_below_true": {
+   "V0": true,
+   "Phi-GT0.5": true,
+   "Phi-GT1.0": true,
+   "Phi-GT2.0": true
+  }
+ }
+}
+IN-SAMPLE CAVEAT (card S0): the FIT sets are in-sample for P6, so P6 fails on them less often than on navtest (PDMS-0 picks 1.01 % in-sample vs 3.06 % on E1); R is a ratio of gains and is read as a CEILING ESTIMATE, not a navtest value.
+ZZS0_DONE outcome=S0-GO R_max=0.3476 valid=True

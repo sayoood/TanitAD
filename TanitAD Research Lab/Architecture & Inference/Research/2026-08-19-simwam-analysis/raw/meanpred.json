@@ -1,0 +1,55 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "method": "h=1 head, one step. cos_raw is UNCENTRED; cos_ctr is mean-centred with a 200-draw permutation null. nrmse_meanonly is the CONSTANT-DELTA control and nrmse_zero = 1.0 by construction.",
+ "arms": {
+  "splitfrz": {
+   "step": 2000,
+   "cos_raw": 0.1581,
+   "cos_centred": 0.1706,
+   "z_centred": 9.18,
+   "mean_fraction_of_prediction": 0.3912,
+   "nrmse": 0.9902,
+   "nrmse_meanonly_control": 0.9982,
+   "nrmse_zero_control": 1.0,
+   "n_windows": 190,
+   "verdict": "IS the mean predictor"
+  },
+  "splitfrz10k": {
+   "step": 10000,
+   "cos_raw": 0.0004,
+   "cos_centred": 0.0012,
+   "z_centred": 0.84,
+   "mean_fraction_of_prediction": 0.8174,
+   "nrmse": 4.8321,
+   "nrmse_meanonly_control": 0.9982,
+   "nrmse_zero_control": 1.0,
+   "n_windows": 190,
+   "verdict": "WORSE than the mean"
+  },
+  "rdw8p30k": {
+   "step": 30000,
+   "cos_raw": 0.6305,
+   "cos_centred": 0.6307,
+   "z_centred": 44.45,
+   "mean_fraction_of_prediction": 0.0719,
+   "nrmse": 0.7845,
+   "nrmse_meanonly_control": 0.9978,
+   "nrmse_zero_control": 1.0,
+   "n_windows": 190,
+   "verdict": "BEATS the mean predictor"
+  },
+  "o5k4": {
+   "step": 2000,
+   "cos_raw": 0.1031,
+   "cos_centred": 0.1072,
+   "z_centred": 7.58,
+   "mean_fraction_of_prediction": 0.3909,
+   "nrmse": 0.9988,
+   "nrmse_meanonly_control": 0.9981,
+   "nrmse_zero_control": 1.0,
+   "n_windows": 190,
+   "verdict": "IS the mean predictor"
+  }
+ }
+}

@@ -1,0 +1,37 @@
+# MANIFEST of E:/Projects/TanitAD-artifacts/dag2t1/ (2026-10-27). Every file: sha256, bytes, path, role. Nothing here is in git or on any other disk unless the role says so.
+# 31 files, 4651333 bytes apparent (limit 50 MB); ~75 MB ALLOCATED on exFAT. Scratch NOT listed (re-creatable by dag2t1_selftest.py): _mut/ _st/ _tmp/ __pycache__/ _mutant_chain.sh _scen_driver.py.
+# SINGLE-COPY / INTEGRATE: this whole directory lives on E: only (external exFAT). Read A's driver code (readA_code/) is not in the repo. Land dag2_read.py, dag2t1_manifest.py, dag2t1_pullcheck.py, dag2_t1_chain.sh, mk_dag2_helpers.py, dag2t1_selftest.py, inputs/PREREG_V8F_DAGGER2.md, inputs/enumerate_cells.py, AMEND1.md (the PREREG's Amendment 1 placed the 4 cells; see AMEND1.md).
+
+5b76251722f2472f0e7e56ad2ceddb5c126b9609bfae8798ad7e4f98a5d4e9e4       6174  AMEND1.md   [what changed for PREREG_V8F_DAGGER2 Amendment 1 (A1-2026-10-27, 1446333d), counts before/after, what was not run (blinding)]
+21457effd7b1be22a80691226dd430f4c99cfd1869ff6f1732dc8fc94644f922       2817  HANDOFF.md   [state and next steps]
+e0a3c1f7caafaeef501112629403878a350a6a0c87b0d29fa15683a7d6a4bbe7      12202  NOTES.md   [install, launch, MEASURED vs UNVERIFIED, PREREG issues]
+f5ae1149ac21e7ab413688d0ce1e81b257fed48fecd5feab805aba76401600c1      34527  chain.diff   [diff: chain vs dagt1/dag_t1_chain.sh]
+1425e8a3895c442b9841f3bcd6fd0893021d583e06485fde171b04bfa73fbc20      48165  dag2_read.py   [THE READER (composes dag_read.py + Read A; writes DAG2_READ.json)]
+9a61e3c082784e5b84c422c38ed873981ab3fc2ec90da517315e9488ba3c4850        868  dag2_t1_chain.cmd   [detached WMI launcher for the chain]
+42daecd7e2fa8786038312cabccd786a59a58a11429b8dfb72fabe19f33db5f2      39018  dag2_t1_chain.sh   [THE CHAIN (derived from dagt1/dag_t1_chain.sh by mk_dag2_helpers.py)]
+0bfb74c423a4018745b50c832aea83b13f3045a612d43047075577bc999fd897      19503  dag2t1_manifest.py   [manifest / initsha / dagbase / treetip / ids (imports dagt1_manifest.py + dagt1_pullcheck.py unchanged)]
+2fc1b042d3a2a3b78431370c6bcd10d9ab62112e51fea1c106b713124b3ffd44      24455  dag2t1_pullcheck.py   [content check of one pulled run / bank (derived)]
+314788aaedc38d44ce674f8e160da2c456521960150d58cb42deb0d8f6fcdee6      55579  dag2t1_selftest.py   [self-test + mutation proof (plain script, no pytest)]
+174e16a7df67e8a13aa8cae78951951b98f08afc92976f6e0004ac3aec8ef1fc      31228  dry_run_real_config.txt   [PRE-AMENDMENT evidence (PREREG pin 87d6c77d, dagland path), NOT regenerated in the A1 re-proof: a real-configuration dry run stream-hashes the pulled eval_M2b-dag2* files (blinding); bash dag2_t1_chain.sh --dry-run, DAG2T1_TEST_CFREE_MB=3000]
+c4239e4590ee26e30ce6f525987aca82e3fb8ff034b7264321e2d0faa724f1c6       9567  inputs/PREREG_V8F_DAGGER2.md   [sha-verified copy (c4239e45...) of the 1446333d blob of Project Steering/PREREG_V8F_DAGGER2.md (as amended); the reader and chain pin and read this copy]
+7a879baa2b6f4c140c2b64c9c098a38f84ecb04926da61fa8e96cfffc33073d9    4037009  inputs/b1_eval_lead_block_k30.npz   [sha-verified copy (7a879baa...) of repo blob 1d4f4fbb:<v8f-mini>/raw/2026-10-22-dk/b1_eval_lead_block_k30.npz]
+3a437ea88e87b56957f73e8613d655fe74e441f222354ab9abcab053a7661255       1197  inputs/enumerate_cells.py   [the PREREG Amendment 1 enumeration (blob of 1446333d, sha 3a437ea8...), executed by the self-test (checks E1-E6)]
+6a61ad6888498de55ab3ef0116cc0e8bdb45be314fb17073ae86321c12eb034f        462  logs/chain_scen.out   [run log of this build]
+b6daecfdc01c9aedd86f68e39b10cc469eb872e4335bc7893118a3740f716420      12905  logs/selftest_quick.out   [run log of this build]
+efd764bbe389a0e408a907760b16063d9f4c9aec8745c41febd610aaad0225d2      24880  mk_dag2_helpers.py   [derivation script (exact-count substitutions) for the chain and the pull check]
+f4078e5810e2786e1765ac2983e7df2a1d16d80ec7c7e6be9a063d8e6ed2db3e       4791  mk_manifest.py   [writes this file]
+97193405d51830eec6bfeef726a4875a6d5686742af6ba2f31b0ec4fc8eaea1e      18607  mutation.json   [per-mutant result of that run]
+0ce6053140b9a50c611cb4f87abb95fab5feaa40fba0fe87fde29a1b577d57f1      15018  preflight/PREFLIGHT.json   [preflight evidence (bank + run-record controls on the pulled iteration-2 runs; ids/ = clip-id lists)]
+407143403110823bbac8381f8bd119a72469214c4c256349b21f7e98cf331893       5640  preflight/ids/eval141_clip_ids.json   [preflight evidence (bank + run-record controls on the pulled iteration-2 runs; ids/ = clip-id lists)]
+a414a76123ac6c910a0da56552cb8fd1e302df6ee527d6a596291957e9636cd7     180480  preflight/ids/train_clip_ids.json   [preflight evidence (bank + run-record controls on the pulled iteration-2 runs; ids/ = clip-id lists)]
+592118a60a5f04141246506e46844750c8f342bbd4838b488b001d9fd8e90f00       7638  preflight/preflight.out   [preflight evidence (bank + run-record controls on the pulled iteration-2 runs; ids/ = clip-id lists)]
+1e18deb0ad7c70c1299d5573f3ba57d1327417fbcb57d788777a8688d626b1c5       6891  preflight/runs_dry.json   [preflight evidence (bank + run-record controls on the pulled iteration-2 runs; ids/ = clip-id lists)]
+40a2015372d275b0c98a53e6155b67a0c1cab72f2ee570e1804f7fa8a3d075e6       3295  pullcheck.diff   [diff: pull check vs dagt1/dagt1_pullcheck.py]
+c4e94920487381bfb22d06acdff2d79cbb7d97ba52ebb0707003c3e0968e820a       9801  readA_code/build_report.py   [SINGLE-COPY besides dagreread/code/ (NOT in the repo at 1d4f4fbb): Read A driver code, sha-verified copy]
+722913b785f20e0458daed322ecd486fbc2a33106b44b1294f6b59d08d936fa6       5598  readA_code/readA.py   [SINGLE-COPY besides dagreread/code/ (NOT in the repo at 1d4f4fbb): Read A driver code, sha-verified copy]
+c3800878cae80bf3018284528e68ed5f88dcebbab7d1125749942735e6cebc99       4358  readA_code/rr_lib.py   [SINGLE-COPY besides dagreread/code/ (NOT in the repo at 1d4f4fbb): Read A driver code, sha-verified copy]
+62f2762a6e26e306898820426c2302d366ba35f1861b89ef59e8e5bb5d3e36b0       5460  repro/REPRO_DAG_vs_READ_A.json   [RC-DAG evidence: layer A reproduces DAG's banked Read A table with zero differences]
+72a165593ee0a51155eca5c0a39691c10d0f13f9c378f00b833d66489ef09ba5        326  repro/repro.out   [RC-DAG evidence: layer A reproduces DAG's banked Read A table with zero differences]
+776b21f47ee883ef89e1bd41423edb2a9fea940a516978b044b655f7f3270273      22874  selftest_output.txt   [output of the last full self-test run]
+
+# READ IN PLACE, NOT OWNED (pinned by sha256 in dag2_read.py PINS / the chain): C:/Users/Admin/dagread/dag_read.py (sha 1cf56c7c..., byte-identical to the repo blob 1d4f4fbb:<v8f-mini>/raw/2026-10-26-dagger-read/dag_read.py); E:/Projects/TanitAD-artifacts/{dagreread/reader_src, dagt1_tree_b43c7a9a, dagt1, dagland/PREREG_V8F_DAGGER2.md, v8f-dagger, v8f-dagger-t1, v8f-dagger2, sfresh_inputs}.

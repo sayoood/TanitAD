@@ -92,7 +92,7 @@ DEFAULT_DOCS = [
     "Paper/TANITAD_PAPER.md",
     "Project Steering/GATE_PROTOCOL.md",
     "Project Steering/PROGRAM_OVERVIEW.md",
-    "TanitAD Research Hub/HYPOTHESIS_LEDGER.md",
+    "TanitAD Research Lab/HYPOTHESIS_LEDGER.md",
     "Benchmarks & Eval/LEADERBOARD.md",
 ]
 

@@ -1,0 +1,161 @@
+{
+ "tip": {
+  "trainer": "C:\\Users/Admin/tanitad-wt-perctrain-tip/stack/scripts\\refc_v3_train.py",
+  "cases": [
+   {
+    "flags": [
+     "--trunk-name",
+     "resnet34.a1_in1k"
+    ],
+    "field": "trunk_name",
+    "asked": "resnet34.a1_in1k",
+    "why": "the PI's SECOND COMPARISON RUN; 256 vs 1024 channels at stride 16",
+    "without_image_hw": "resnet34.a1_in1k",
+    "with_image_hw": "resnet101.a1_in1k",
+    "honoured_without_image_hw": true,
+    "honoured_with_image_hw": false,
+    "DROPPED_BY_image_hw": true
+   },
+   {
+    "flags": [
+     "--trunk-mode",
+     "inflate"
+    ],
+    "field": "trunk_mode",
+    "asked": "inflate",
+    "why": "the cheaper alternative arm (one pass, inflated stem)",
+    "without_image_hw": "inflate",
+    "with_image_hw": "shared",
+    "honoured_without_image_hw": true,
+    "honoured_with_image_hw": false,
+    "DROPPED_BY_image_hw": true
+   },
+   {
+    "flags": [
+     "--trunk-fuse",
+     "last"
+    ],
+    "field": "trunk_fuse",
+    "asked": "last",
+    "why": "\u26d4 THE SINGLE-FRAME CONTROL ARM",
+    "without_image_hw": "last",
+    "with_image_hw": "concat1x1",
+    "honoured_without_image_hw": true,
+    "honoured_with_image_hw": false,
+    "DROPPED_BY_image_hw": true
+   },
+   {
+    "flags": [
+     "--trunk-fuse-plain-init"
+    ],
+    "field": "trunk_fuse_identity",
+    "asked": false,
+    "why": "\u26d4 THE DELIBERATE REGRESSION of the identity init",
+    "without_image_hw": false,
+    "with_image_hw": true,
+    "honoured_without_image_hw": true,
+    "honoured_with_image_hw": false,
+    "DROPPED_BY_image_hw": true
+   },
+   {
+    "flags": [
+     "--no-trunk-pretrained"
+    ],
+    "field": "trunk_pretrained",
+    "asked": false,
+    "why": "\u26d4 THE IMAGENET KNOCKOUT ARM (this flag is new; absent on the tip)",
+    "without_image_hw": "<SystemExit: 2>",
+    "with_image_hw": "<SystemExit: 2>",
+    "honoured_without_image_hw": false,
+    "honoured_with_image_hw": false,
+    "DROPPED_BY_image_hw": false
+   }
+  ],
+  "n_dropped": 4
+ },
+ "patched": {
+  "trainer": "C:\\Users/Admin/tanitad-wt-perctrain/stack/scripts\\refc_v3_train.py",
+  "cases": [
+   {
+    "flags": [
+     "--trunk-name",
+     "resnet34.a1_in1k"
+    ],
+    "field": "trunk_name",
+    "asked": "resnet34.a1_in1k",
+    "why": "the PI's SECOND COMPARISON RUN; 256 vs 1024 channels at stride 16",
+    "without_image_hw": "resnet34.a1_in1k",
+    "with_image_hw": "resnet34.a1_in1k",
+    "honoured_without_image_hw": true,
+    "honoured_with_image_hw": true,
+    "DROPPED_BY_image_hw": false
+   },
+   {
+    "flags": [
+     "--trunk-mode",
+     "inflate"
+    ],
+    "field": "trunk_mode",
+    "asked": "inflate",
+    "why": "the cheaper alternative arm (one pass, inflated stem)",
+    "without_image_hw": "inflate",
+    "with_image_hw": "inflate",
+    "honoured_without_image_hw": true,
+    "honoured_with_image_hw": true,
+    "DROPPED_BY_image_hw": false
+   },
+   {
+    "flags": [
+     "--trunk-fuse",
+     "last"
+    ],
+    "field": "trunk_fuse",
+    "asked": "last",
+    "why": "\u26d4 THE SINGLE-FRAME CONTROL ARM",
+    "without_image_hw": "last",
+    "with_image_hw": "last",
+    "honoured_without_image_hw": true,
+    "honoured_with_image_hw": true,
+    "DROPPED_BY_image_hw": false
+   },
+   {
+    "flags": [
+     "--trunk-fuse-plain-init"
+    ],
+    "field": "trunk_fuse_identity",
+    "asked": false,
+    "why": "\u26d4 THE DELIBERATE REGRESSION of the identity init",
+    "without_image_hw": false,
+    "with_image_hw": false,
+    "honoured_without_image_hw": true,
+    "honoured_with_image_hw": true,
+    "DROPPED_BY_image_hw": false
+   },
+   {
+    "flags": [
+     "--no-trunk-pretrained"
+    ],
+    "field": "trunk_pretrained",
+    "asked": false,
+    "why": "\u26d4 THE IMAGENET KNOCKOUT ARM (this flag is new; absent on the tip)",
+    "without_image_hw": false,
+    "with_image_hw": false,
+    "honoured_without_image_hw": true,
+    "honoured_with_image_hw": true,
+    "DROPPED_BY_image_hw": false
+   }
+  ],
+  "n_dropped": 0
+ },
+ "verdict": {
+  "tip_fields_dropped_by_image_hw": [
+   "trunk_name",
+   "trunk_mode",
+   "trunk_fuse",
+   "trunk_fuse_identity"
+  ],
+  "patched_fields_dropped_by_image_hw": [],
+  "probe_detects_the_defect_on_the_tip": true,
+  "patched_is_clean": true
+ }
+}

@@ -1,0 +1,351 @@
+{
+  "tool": "prelaunch_gate.py",
+  "written_utc": "2026-09-10T20:33:37Z",
+  "trainer": "C:/Users/Admin/tanitad-agentgt-verify/stack/scripts/refc_v3_train.py",
+  "budget": "cut",
+  "steps": 12000,
+  "w_agent": 1.0,
+  "w_tac_goal": 0.05,
+  "checks": [
+    {
+      "check": "C1_base_provenance",
+      "detail": {
+        "verdict": "MATCH",
+        "ok": true,
+        "path": "C:\\Users\\Admin\\refcv5v2_final\\config.json",
+        "n_banked": 65,
+        "n_here": 65,
+        "first_difference": null
+      },
+      "verdict": "PASS",
+      "why": "BASE_V5V2 equals the banked refcv5-v2 config.json argv"
+    },
+    {
+      "check": "C2_one_variable",
+      "n_pairs": 9,
+      "n_refused": 0,
+      "arms_skipped": {},
+      "pairs": [
+        {
+          "arm": "A",
+          "base": "V0",
+          "role": "lever: --agents head",
+          "is_replicate": false,
+          "n_keys_differing": 3,
+          "classified": {
+            "agents": "LEVER",
+            "out": "BOOKKEEPING",
+            "w_agent": "CONSTITUTIVE"
+          },
+          "differences": {
+            "agents": {
+              "arm": "head",
+              "base": "off"
+            },
+            "out": {
+              "arm": "/workspace/experiments/refcv6-A",
+              "base": "/workspace/experiments/refcv6-V0"
+            },
+            "w_agent": {
+              "arm": 1.0,
+              "base": 0.0
+            }
+          },
+          "expected_lever_keys": [
+            "agents"
+          ],
+          "constitutive_keys": [
+            "w_agent"
+          ],
+          "constitutive_guards": {
+            "w_agent": "refc_v3_train.py:583 -- '--agents head with --w-agent 0 builds a detector that is never supervised ... a REFUTATION manufactured by a missing loss'"
+          },
+          "lever_move_check": {
+            "key": "agents",
+            "expected_from": "off",
+            "expected_to": "head",
+            "got_from": "off",
+            "got_to": "head",
+            "from_ok": true,
+            "to_ok": true
+          },
+          "problems": [],
+          "verdict": "PASS"
+        },
+        {
+          "arm": "Ab",
+          "base": "A",
+          "role": "replicate of A",
+          "is_replicate": true,
+          "n_keys_differing": 2,
+          "classified": {
+            "out": "BOOKKEEPING",
+            "seed": "BOOKKEEPING"
+          },
+          "differences": {
+            "out": {
+              "arm": "/workspace/experiments/refcv6-Ab",
+              "base": "/workspace/experiments/refcv6-A"
+            },
+            "seed": {
+              "arm": 1,
+              "base": 0
+            }
+          },
+          "expected_lever_keys": [],
+          "constitutive_keys": [],
+          "constitutive_guards": {},
+          "lever_move_check": null,
+          "problems": [],
+          "verdict": "PASS"
+        },
+        {
+          "arm": "B",
+          "base": "A",
+          "role": "lever: --wp-index on (on top of A)",
+          "is_replicate": false,
+          "n_keys_differing": 2,
+          "classified": {
+            "out": "BOOKKEEPING",
+            "wp_index": "LEVER"
+          },
+          "differences": {
+            "out": {
+              "arm": "/workspace/experiments/refcv6-B",
+              "base": "/workspace/experiments/refcv6-A"
+            },
+            "wp_index": {
+              "arm": "on",
+              "base": "off"
+            }
+          },
+          "expected_lever_keys": [
+            "wp_index"
+          ],
+          "constitutive_keys": [],
+          "constitutive_guards": {},
+          "lever_move_check": {
+            "key": "wp_index",
+            "expected_from": "off",
+            "expected_to": "on",
+            "got_from": "off",
+            "got_to": "on",
+            "from_ok": true,
+            "to_ok": true
+          },
+          "problems": [],
+          "verdict": "PASS"
+        },
+        {
+          "arm": "Bb",
+          "base": "B",
+          "role": "replicate of B",
+          "is_replicate": true,
+          "n_keys_differing": 2,
+          "classified": {
+            "out": "BOOKKEEPING",
+            "seed": "BOOKKEEPING"
+          },
+          "differences": {
+            "out": {
+              "arm": "/workspace/experiments/refcv6-Bb",
+              "base": "/workspace/experiments/refcv6-B"
+            },
+            "seed": {
+              "arm": 1,
+              "base": 0
+            }
+          },
+          "expected_lever_keys": [],
+          "constitutive_keys": [],
+          "constitutive_guards": {},
+          "lever_move_check": null,
+          "problems": [],
+          "verdict": "PASS"
+        },
+        {
+          "arm": "C",
+          "base": "V0",
+          "role": "lever: --w-tac-goal <PI>",
+          "is_replicate": false,
+          "n_keys_differing": 2,
+          "classified": {
+            "out": "BOOKKEEPING",
+            "w_tac_goal": "LEVER"
+          },
+          "differences": {
+            "out": {
+              "arm": "/workspace/experiments/refcv6-C",
+              "base": "/workspace/experiments/refcv6-V0"
+            },
+            "w_tac_goal": {
+              "arm": 0.05,
+              "base": 0.0
+            }
+          },
+          "expected_lever_keys": [
+            "w_tac_goal"
+          ],
+          "constitutive_keys": [],
+          "constitutive_guards": {},
+          "lever_move_check": {
+            "key": "w_tac_goal",
+            "expected_from": 0.0,
+            "expected_to": null,
+            "got_from": 0.0,
+            "got_to": 0.05,
+            "from_ok": true,
+            "to_ok": true
+          },
+          "problems": [],
+          "verdict": "PASS"
+        },
+        {
+          "arm": "Cb",
+          "base": "C",
+          "role": "replicate of C",
+          "is_replicate": true,
+          "n_keys_differing": 2,
+          "classified": {
+            "out": "BOOKKEEPING",
+            "seed": "BOOKKEEPING"
+          },
+          "differences": {
+            "out": {
+              "arm": "/workspace/experiments/refcv6-Cb",
+              "base": "/workspace/experiments/refcv6-C"
+            },
+            "seed": {
+              "arm": 1,
+              "base": 0
+            }
+          },
+          "expected_lever_keys": [],
+          "constitutive_keys": [],
+          "constitutive_guards": {},
+          "lever_move_check": null,
+          "problems": [],
+          "verdict": "PASS"
+        },
+        {
+          "arm": "D",
+          "base": "V0",
+          "role": "lever: --w-u0 0",
+          "is_replicate": false,
+          "n_keys_differing": 2,
+          "classified": {
+            "out": "BOOKKEEPING",
+            "w_u0": "LEVER"
+          },
+          "differences": {
+            "out": {
+              "arm": "/workspace/experiments/refcv6-D",
+              "base": "/workspace/experiments/refcv6-V0"
+            },
+            "w_u0": {
+              "arm": 0.0,
+              "base": 0.5
+            }
+          },
+          "expected_lever_keys": [
+            "w_u0"
+          ],
+          "constitutive_keys": [],
+          "constitutive_guards": {},
+          "lever_move_check": {
+            "key": "w_u0",
+            "expected_from": 0.5,
+            "expected_to": 0.0,
+            "got_from": 0.5,
+            "got_to": 0.0,
+            "from_ok": true,
+            "to_ok": true
+          },
+          "problems": [],
+          "verdict": "PASS"
+        },
+        {
+          "arm": "Db",
+          "base": "D",
+          "role": "replicate of D",
+          "is_replicate": true,
+          "n_keys_differing": 2,
+          "classified": {
+            "out": "BOOKKEEPING",
+            "seed": "BOOKKEEPING"
+          },
+          "differences": {
+            "out": {
+              "arm": "/workspace/experiments/refcv6-Db",
+              "base": "/workspace/experiments/refcv6-D"
+            },
+            "seed": {
+              "arm": 1,
+              "base": 0
+            }
+          },
+          "expected_lever_keys": [],
+          "constitutive_keys": [],
+          "constitutive_guards": {},
+          "lever_move_check": null,
+          "problems": [],
+          "verdict": "PASS"
+        },
+        {
+          "arm": "V0b",
+          "base": "V0",
+          "role": "replicate of V0",
+          "is_replicate": true,
+          "n_keys_differing": 2,
+          "classified": {
+            "out": "BOOKKEEPING",
+            "seed": "BOOKKEEPING"
+          },
+          "differences": {
+            "out": {
+              "arm": "/workspace/experiments/refcv6-V0b",
+              "base": "/workspace/experiments/refcv6-V0"
+            },
+            "seed": {
+              "arm": 1,
+              "base": 0
+            }
+          },
+          "expected_lever_keys": [],
+          "constitutive_keys": [],
+          "constitutive_guards": {},
+          "lever_move_check": null,
+          "problems": [],
+          "verdict": "PASS"
+        }
+      ],
+      "verdict": "PASS",
+      "why": "every checked pair moves exactly one lever key"
+    },
+    {
+      "check": "C3_import_closure",
+      "verdict": "INCONCLUSIVE",
+      "why": "no --host given; the closure is a property of the BOX and cannot be audited from here. ⛔ This is not a pass."
+    },
+    {
+      "check": "C4_label_join_coverage",
+      "verdict": "INCONCLUSIVE",
+      "why": "labels not found at None"
+    },
+    {
+      "check": "C6_anchor_parity",
+      "verdict": "INCONCLUSIVE",
+      "why": "anchors not found at '/root/data/refcv6/anchors.pt'"
+    },
+    {
+      "check": "C5_smoke",
+      "verdict": "INCONCLUSIVE",
+      "why": "--skip-smoke was passed. ⛔ NOT a pass."
+    }
+  ],
+  "n_pass": 2,
+  "n_fail": 0,
+  "n_inconclusive": 4,
+  "verdict": "INCONCLUSIVE",
+  "READ_THIS": "⛔ The verdict is THIS FILE's 'verdict' field. A missing file is a FAILED gate. Never read the exit code through a pipe -- `cmd | tail` reports tail's status."
+}

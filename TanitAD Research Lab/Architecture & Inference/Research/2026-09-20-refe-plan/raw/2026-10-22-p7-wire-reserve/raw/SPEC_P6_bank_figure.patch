@@ -1,0 +1,25 @@
+# PROPOSED patch (P7-WIRE-RESERVE, MM_RULINGS conflict (i)). NOT applied: SPEC_P6_PAPER_FAITHFUL.md is unedited.
+# Basis: 167,300 is pinned in launch_gate.P6_BANK_TUPLES (the gate and the trainer preflight read it; the comment there cites the pod's trainer bank event: INHERITED here, ruled authoritative by the MM); 189,888 is the pre-3C bank's figure.
+# Apply from the repo root:  patch -p1 < SPEC_P6_bank_figure.patch   (the names are tab-delimited because the path holds spaces)
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/SPEC_P6_PAPER_FAITHFUL.md	tip 1664143
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/SPEC_P6_PAPER_FAITHFUL.md	proposed
+@@ -62,3 +62,3 @@
+ |---|---|---|
+-| bank | 189,888 tuples over **103,037 scenes** | MEASURED, final run `bank` events, epochs 4–27 |
++| bank | **167,300** tuples (103,037 rank-0 + 64,263 rank-1; the 3-C commit-filtered bank `train_grow_cmd_3c`, `launch_gate.P6_BANK_TUPLES`) over **103,037 scenes** (the pre-3C bank `train_grow_cmd` was 189,888 (103,037 + 86,851); that figure is a PRE-BUILD figure and is not what P6 trained on) | 167,300: pinned in `launch_gate.P6_BANK_TUPLES["train_grow_cmd_3c"]` (its comment cites the trainer's own `bank` event on the pod, 2026-10-18: INHERITED here, ruled authoritative by MM_RULINGS conflict (i)); 189,888: MEASURED, the P2 final run's `bank` events, epochs 4–27 |
+ | work | 25 × 103,037 = **2,575,925 sample-passes = 10,075 optimiser steps** at 256 (25 × ⌈103,037 / 256⌉ = 25 × 403: the trainer rounds the partial last batch UP per epoch; corrected 2026-10-11 from 10,063 = the pooled ceiling, which the trainer never runs. The final run's 10,075 is MEASURED) | arithmetic |
+@@ -111,3 +111,3 @@
+ | init | not stated beyond the backbone | warm start from `model_final.pt` | **DINOv3 + fresh LoRA + fresh heads**, as the final run | = paper (a full run) |
+-| data | navtrain, no SimScale | the `train_grow` bank | the **same** bank: 189,888 tuples / 103,037 scenes, restored from HF `Sayood/tanitad-refe-navtrain-banks` | no re-selection. ⚠️ The parity rule's PhysicalAI corpus is not involved. |
++| data | navtrain, no SimScale | the `train_grow` bank | the 3-C commit-filtered derivative of that bank: **167,300 tuples** / 103,037 scenes (`train_grow_cmd_3c`; the pre-3C `train_grow_cmd` is 189,888), restored from HF `Sayood/tanitad-refe-navtrain-banks` (`refe_train_grow_cmd_3c.tar.zst`) | no re-selection. ⚠️ The parity rule's PhysicalAI corpus is not involved. |
+ | schedule | 25 epochs over the full set | 3 epochs | **25 epochs over scenes** (`--epoch-unit scenes`, `train.py:1784`), **full bank from step 0**, no `--grow` (`:1742`) | = paper. The final run's growing bank (epoch 0 = 7,536 scenes) was a departure. |
+@@ -148,3 +148,3 @@
+ | D7 | twin-route PDM labels | `metric_cache_parts(scenario)` `navsim_pdm_targets.py:87` always uses the scenario route; twin rows carry their parameter in `aug` (`augment_search.py`, docstring l. 34) | for lane-rank twins, build the cache under `route_lane_rank_patch.set_rank(aug)`; goal-horizon twins share the logged-route cache. Test: PDM-Closed's first centerline lane equals the twin's lane; **mutation:** no patch → logged lane → FAIL. ⚠️ Whether PDM-Closed honours the rank patch is UNVERIFIED. **Fallback** (declared): twin samples get trajectory loss only. |
+-| D8 | full bank from step 0 | `--grow` `:1742`, `--grow-scenes` `:1747` | G-CLOCK: the bank event at step 0 reads 189,888 / 103,037; realised epochs = 25; steps = 10,075; **mutation:** `--grow` → FAIL |
++| D8 | full bank from step 0 | `--grow` `:1742`, `--grow-scenes` `:1747` | G-CLOCK: the bank event at step 0 reads 167,300 / 103,037 (`P6_BANK_TUPLES["train_grow_cmd_3c"]`; 189,888 only for the pre-3C `train_grow_cmd`); realised epochs = 25; steps = 10,075; **mutation:** `--grow` → FAIL |
+ | D9 | metric-cache precompute (`refe/build_metric_cache.py`, new) | `metric_cache_parts` `navsim_pdm_targets.py:87` is deterministic per (token, route) | `score_plans(cached)` == `score_plans(fresh)` **exactly** on 300 tokens; **mutation:** perturb one cached field → FAIL |
+@@ -255,3 +255,3 @@
+ | **G-LIVE-MEM** | L1 peak ≤ 44 GB at the chosen micro-batch, over 200 micro-batches | – (a measurement; on failure, switch to micro-batch 2) |
+-| **G-CLOCK** | step 0 bank = 189,888 / 103,037; the trainer prints realised epochs = 25 and steps = 10,075; each label set is stamped with the micro-batch id whose forward produced its proposals | `--grow`; stamp mismatch |
++| **G-CLOCK** | step 0 bank = 167,300 / 103,037 (the bank's own entry in `launch_gate.P6_BANK_TUPLES`; 189,888 is the pre-3C bank's); the trainer prints realised epochs = 25 and steps = 10,075; each label set is stamped with the micro-batch id whose forward produced its proposals | `--grow`; stamp mismatch |
+ | **G-EVAL** | `planner.py` builds the identical model from `ckpt_last.pt`; trajectories and scores are bit-identical on real rows (p2_gate G1); labeller and planner use the identical plan transform (`executed_plans8`, repair on) | repair off in the planner only |

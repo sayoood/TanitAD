@@ -1,0 +1,25 @@
+  G-PREFLIGHT FAIL  profile refusal: scorer_finetune refuses this argv: --epo-con-* levers ['epo_con_temp'] are set but --epo-con is off: their weights would belong to a term that is OFF; profile refusal: refe_rls1e: R1o
+  G-SUITE   FAIL  profile refusal: scorer_finetune refuses this argv: --epo-con-* levers ['epo_con_temp'] are set but --epo-con is off: their weights would belong to a term that is OFF; profile refusal: refe_rls1e: R1o
+  G-CLOCK   FAIL  profile refusal: scorer_finetune refuses this argv: --epo-con-* levers ['epo_con_temp'] are set but --epo-con is off: their weights would belong to a term that is OFF; profile refusal: refe_rls1e: R1o
+  [timing] run: tree_manifest 0.4s, data_manifest 0.1s (--init-from 0.1s, --targets 0.0s, --scorer-targets 0.0s, --onpolicy-targets 0.0s)
+  G-HYG     PASS  
+  G-DVB     PASS  
+  G-LIVE    PASS  
+  G-CLOCK   NA    P2 has no label clock: its labels are the PDM relabel of a banked on-policy bank, stamped by the relabeller's ckpt_step
+  G-EVAL    PASS  
+  G-CKPT    PASS  
+  G-SUITE   FAIL  test_p2r_chain.py: rc 1, 'ZZTEST_PASS' NOT seen
+Traceback (most recent call last):
+  File "F:\scorer1_v3\t\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_launch_gate.py", line 2385, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "F:\scorer1_v3\t\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_launch_gate.py", line 2379, in main
+    full()
+    ~~~~^^
+  File "F:\scorer1_v3\t\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_launch_gate.py", line 2309, in full
+    ok(all(st[c] == "PASS" for c in prof["checks"]) and st["G-CLOCK"] == "NA", st)
+    ~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\scorer1_v3\t\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_launch_gate.py", line 40, in ok
+    assert cond, msg
+           ^^^^
+AssertionError: {'G-HYG': 'PASS', 'G-DVB': 'PASS', 'G-LIVE': 'PASS', 'G-CLOCK': 'NA', 'G-EVAL': 'PASS', 'G-CKPT': 'PASS', 'G-SUITE': 'FAIL'}

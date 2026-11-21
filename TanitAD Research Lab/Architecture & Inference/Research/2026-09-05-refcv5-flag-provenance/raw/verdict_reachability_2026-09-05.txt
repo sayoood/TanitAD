@@ -1,0 +1,73 @@
+# VERDICT REACHABILITY -- can the audit say anything but CAUGHT?
+# 9/9 CAUGHT is worthless from an instrument whose only reachable answer is CAUGHT.
+# Two SYNTHETIC mutations, deliberately NOT committed:
+#   1. an INERT edit (a comment reworded), declared guarded by a real test -> must read ESCAPED
+#   2. the REAL rig_camera_none defect, credited to a real test that will NOT fail -> must read MISCREDITED
+# The driver is reproduced verbatim at the end of this file.
+# 2026-09-05, dev box, repo HEAD 49c3aa5
+
+anchors: 2/2 present exactly once
+baseline: rc=0  77 passed, 2 skipped, 1 warning in 16.39s
+
+ESCAPED      synthetic_inert_expect_ESCAPED
+             77 passed, 2 skipped, 1 warning in 16.84s
+             !! the suite stayed GREEN with this defect installed. The guard is decorative.
+
+MISCREDITED  synthetic_miscredit_expect_MISCREDITED
+             2 failed, 75 passed, 2 skipped, 1 warning in 17.41s
+             tests/test_guard_mutation_audit.py::test_every_anchor_is_present_in_the_shipped_source_exactly_once 
+             tests/test_refc_v3_agent_provenance.py::test_P1_the_trainer_never_assigns_a_CONSTANT_None_rig_camera 
+             !! red, but not via tests/test_guard_mutation_audit.py::test_the_audit_runs_THIS_file_too -- the guard credited is not the guard holding.
+
+=== 0/2 defects CAUGHT by the named guard ===
+  ESCAPED: synthetic_inert_expect_ESCAPED - a comment reworded; nothing observable changes.
+  MISCREDITED: synthetic_miscredit_expect_MISCREDITED - the REAL rig_camera_none defect, credited to the wrong guard.
+tree restored and verified by sha256.
+
+audit exit code = 1  (must be NON-ZERO: neither verdict is CAUGHT)
+
+=== THE DRIVER (scratchpad only; committing a deliberately decorative guard would be worse) ===
+"""Can the audit return anything OTHER than CAUGHT?
+
+9/9 CAUGHT is worthless from an instrument whose only reachable answer is
+CAUGHT. Two synthetic mutations, neither committed:
+
+  ESCAPED     an INERT edit (a comment) that nothing can possibly catch,
+              declared as guarded by a real test.
+  MISCREDITED a REAL defect whose `caught_by` names a real test that will not
+              fail — the suite goes red via a different guard.
+"""
+import sys
+from pathlib import Path
+
+sys.path.insert(0, r"C:/Users/Admin/tanitad-wt/stack/scripts")
+import guard_mutation_audit as gma
+
+_PROV = "tests/test_refc_v3_agent_provenance.py"
+_SELF = "tests/test_guard_mutation_audit.py"
+
+SYNTHETIC = (
+    gma.Mutation(
+        key="synthetic_inert_expect_ESCAPED",
+        defect="a comment reworded; nothing observable changes",
+        path="tanitad/refs/refc_agents.py",
+        old="# The seam that did not exist: slots -> planner tokens",
+        new="# The seam that did not exist: slots -> planner tokens (INERT)",
+        caught_by=(f"{_PROV}::test_P1_the_camera_the_TRAINER_builds_makes_"
+                   "the_terms_COMPUTE",),
+    ),
+    gma.Mutation(
+        key="synthetic_miscredit_expect_MISCREDITED",
+        defect="the REAL rig_camera_none defect, credited to the wrong guard",
+        path="scripts/refc_v3_train.py",
+        old="    model._rig_camera, _cam_stamp = _build_rig_camera(cfg, args)",
+        new=("    model._rig_camera = None\n"
+             "    _cam_stamp = _build_rig_camera(cfg, args)[1]"),
+        caught_by=(f"{_SELF}::test_the_audit_runs_THIS_file_too",),
+    ),
+)
+
+gma.MUTATIONS = SYNTHETIC
+rc = gma.main([])
+print(f"\naudit exit code = {rc}  (must be NON-ZERO: neither verdict is CAUGHT)")
+sys.exit(0 if rc != 0 else 1)

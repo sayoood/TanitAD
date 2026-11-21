@@ -1,0 +1,329 @@
+{
+ "evidence_class": "MEASURED",
+ "worktree": "C:\\Users\\Admin\\tanitad-wt-e2e",
+ "git_head": "faecb29ae4c35bcce50000fdfa8c6a7b6aabbfa4",
+ "argv": [
+  "--arm",
+  "hier",
+  "--size",
+  "small",
+  "--trunk",
+  "timm",
+  "--trunk-name",
+  "resnet101.a1_in1k",
+  "--trunk-mode",
+  "shared",
+  "--trunk-fuse",
+  "concat1x1",
+  "--ego-history",
+  "--no-strategic",
+  "--image-hw",
+  "256",
+  "1024",
+  "--sampler",
+  "ddim",
+  "--f1-random-t",
+  "--f2-dd-step",
+  "--f3-per-layer",
+  "--f4-adaln",
+  "--f5-focal",
+  "--f6-w-u0-zero",
+  "--f9-assert-vocab",
+  "--v2-cache",
+  "D:/Projects/TanitAD-artifacts/v2ep-eval139-256x1024cyl",
+  "--out",
+  "C:\\Users\\Admin\\tanitad-wt-e2e\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-17-refcv6-e2e-1024\\_runout",
+  "--v7-labels",
+  "C:/Users/Admin/refcv5cmp/data/s2_labels_v7.2_eval.jsonl.gz",
+  "--anchors",
+  "D:/Projects/TanitAD-artifacts/hf-refcv5v2/anchors.pt",
+  "--anchor-v0-conditioned",
+  "--n-anchors",
+  "117"
+ ],
+ "payload_frame": {
+  "height": 256,
+  "width": 1024,
+  "f_ref": 488.92398517830253,
+  "projection": "cylindrical"
+ },
+ "encoder_image_hw": [
+  256,
+  1024
+ ],
+ "encoder_in_channels": 9,
+ "window": 8,
+ "trunk_provenance": {
+  "trunk": "timm",
+  "model_name": "resnet101.a1_in1k",
+  "timm_version": "1.0.29",
+  "pretrained": true,
+  "verified_pretrained": true,
+  "frames": 3,
+  "mode": "shared",
+  "fuse": "concat1x1",
+  "fuse_identity_init": true,
+  "in_channels": 9,
+  "imagenet_norm": true,
+  "image_hw": [
+   256,
+   1024
+  ],
+  "s16": [
+   1024,
+   16,
+   64
+  ],
+  "s32": [
+   2048,
+   8,
+   32
+  ],
+  "params": 58231872,
+  "backbone_params": 42500160
+ },
+ "trunk_spec_from_timm": {
+  "perception_stride": 16,
+  "perception_hw": [
+   16,
+   64
+  ],
+  "perception_channels": 1024,
+  "planner_stride": 32,
+  "planner_hw": [
+   8,
+   32
+  ],
+  "planner_channels": 2048
+ },
+ "seam_stamp": {
+  "hier": true,
+  "hierarchy": true,
+  "no_strategic": true,
+  "goal_str_loss_applied": false,
+  "graft_maneuver": true,
+  "factored_maneuver": true,
+  "graft_prior_center": true,
+  "graft_target_latent": true,
+  "grounded_selector": false,
+  "graft_imagination": false,
+  "bev_aux": null,
+  "tactical_speed_input": false,
+  "lan_enable": false,
+  "graft_lan": false,
+  "goal_str": false,
+  "withheld_bank": "fixed",
+  "withheld_bank_warmup": 0,
+  "withheld_speed_max_ms": 35.0,
+  "agents": null,
+  "cross_agent": false,
+  "wp_index": null,
+  "sampler": "ddim",
+  "sampler_space": "control",
+  "sampler_infer_t": 8,
+  "sampler_steps": 2,
+  "sampler_groups": 1,
+  "control_norm": [
+   4.0,
+   3.0
+  ],
+  "trunk": "timm",
+  "trunk_name": "resnet101.a1_in1k",
+  "trunk_mode": "shared",
+  "trunk_fuse": "concat1x1",
+  "trunk_fuse_identity": true,
+  "trunk_frames": 3,
+  "trunk_pretrained": true,
+  "trunk_imagenet_norm": true,
+  "trunk_in_channels": 9,
+  "ego_history": {
+   "enable": true,
+   "steps": 8,
+   "channels": 3,
+   "hidden": 64,
+   "out_dim": 32,
+   "kind": "gru",
+   "dt": 0.1,
+   "zero_init_out": true
+  },
+  "opt": "adam",
+  "weight_decay": 0.0001,
+  "encoder_lr_mult": 0.5,
+  "refcv6": {
+   "f1_random_t": true,
+   "f1_t_max": 50,
+   "f2_dd_step": true,
+   "f3_per_layer": true,
+   "f4_adaln": true,
+   "f4_zero_init": false,
+   "f5_emitting_conf": false,
+   "f5_focal": true,
+   "f6_w_u0_zero": true,
+   "f7_samples_per_anchor": 1,
+   "f7_ack_eval_join": false,
+   "f8_flat_waypoint_noise": false,
+   "f9_assert_vocab": true,
+   "any_on": true
+  },
+  "feasible_decode": false,
+  "feasible_mu": 0.7,
+  "feasible_entry": false,
+  "feasible_a_max": 4.0,
+  "feasible_kappa_max": 0.2,
+  "feasible_prefix_slots": 4,
+  "w_agent": 0.0,
+  "w_u0": 0.0,
+  "goal_point": null,
+  "tac_goal_tok_head": {
+   "requested": false,
+   "cfg": false,
+   "tac_vocab_version": "v7.0",
+   "built": null
+  },
+  "max_speed_input": {
+   "requested": false,
+   "cfg": false,
+   "mode": "quantized",
+   "d_speed": 32,
+   "meta": null,
+   "required_controls": [
+    "shuffled",
+    "withheld"
+   ],
+   "controls_note": "\u26d4 EVAL OBLIGATION, inseparable from this edge and identical to E13's: a max-speed-conditioned result carries a SHUFFLE control (serve another clip's ceiling) and a WITHHOLD control (valid = 0), or 'the arm improved' cannot be separated from 'the arm gained a parameter'.",
+   "built": null
+  },
+  "agent_rig_camera": {
+   "source": "off",
+   "reason": "not requested",
+   "mount_pose_scope": "NONE",
+   "n_clips": 0,
+   "w_project": 0.0,
+   "w_ground": 0.0
+  },
+  "agent_knobs": {
+   "agent_cam_height": 1.5,
+   "agent_join": null,
+   "agent_join_allow_legacy_ids": false,
+   "agent_join_no_rates": false,
+   "agent_join_verify": "auto",
+   "agent_miss_rate": 0.0,
+   "agent_pad": 0,
+   "agent_presence_hard": false,
+   "agent_queries": 100,
+   "agent_rig_camera": "off",
+   "agent_rig_extrinsics": null,
+   "agent_rig_extrinsics_allow_partial": false,
+   "agent_sigma_range": 0.0,
+   "agent_w_ground": 0.0,
+   "agent_w_project": 0.0,
+   "agents": "off",
+   "bev_aux": "off",
+   "bev_aux_detach": false,
+   "bev_aux_dtok": 64,
+   "bev_aux_hidden": 256,
+   "bev_aux_occlusion": "mask",
+   "bev_aux_pos_weight": 30.61,
+   "bev_aux_rmax": 60.0,
+   "bev_aux_rng": 24,
+   "bev_aux_shuffle": false,
+   "w_agent": 0.0,
+   "w_bev_aux": 0.0,
+   "w_tac_goal": 0.0,
+   "w_u0": 0.0,
+   "wp_index": "off",
+   "wp_index_const_xy": [
+    10.0,
+    0.0
+   ],
+   "wp_index_detach": false,
+   "wp_index_hidden": 32,
+   "wp_index_mode": "geom",
+   "wp_index_radius_m": 0.0,
+   "wp_index_scale_m": 10.0
+  }
+ },
+ "param_breakdown": {
+  "core": 83684300,
+  "phi_tac": 2101504,
+  "str_goal_head": 771,
+  "gstr_cond": 66816,
+  "tac_heads": 14364,
+  "tac_latent_proj": 262656,
+  "scorer": 1145,
+  "nav_inject": 50176,
+  "total": 86181732
+ },
+ "n_params_total": 86181732,
+ "spec_seam_cli_reachability": {
+  "S2_timm_trunk": {
+   "cli_flag": "--trunk / --trunk-name",
+   "reachable": true
+  },
+  "S2b_ego_history": {
+   "cli_flag": "--ego-history",
+   "reachable": true
+  },
+  "S3_F1_random_t": {
+   "cli_flag": "--f1-random-t",
+   "reachable": true
+  },
+  "S3_F2_dd_step": {
+   "cli_flag": "--f2-dd-step",
+   "reachable": true
+  },
+  "S3_F3_per_layer": {
+   "cli_flag": "--f3-per-layer",
+   "reachable": true
+  },
+  "S3_F4_adaln": {
+   "cli_flag": "--f4-adaln",
+   "reachable": true
+  },
+  "S3_F5_focal": {
+   "cli_flag": "--f5-focal",
+   "reachable": true
+  },
+  "S3_F6_w_u0_zero": {
+   "cli_flag": "--f6-w-u0-zero",
+   "reachable": true
+  },
+  "S3_F7_n_noise": {
+   "cli_flag": "--f7-samples-per-anchor",
+   "reachable": true
+  },
+  "S3_F8_waypoint_noise": {
+   "cli_flag": "--f8-flat-noise",
+   "reachable": true
+  },
+  "S4_tactical_behaviour_decoder": {
+   "cli_flag": null,
+   "reachable": false,
+   "config_field": "RefCV3Config.tac_decoder_v6",
+   "field_exists": true,
+   "arg_dest_present": false
+  },
+  "S5_max_speed_onehot_4value": {
+   "cli_flag": null,
+   "reachable": false,
+   "config_field": "RefCV3Config.max_speed_onehot_v6",
+   "field_exists": true,
+   "arg_dest_present": false
+  },
+  "S6_map_head": {
+   "cli_flag": null,
+   "reachable": false,
+   "in_built_model": false
+  },
+  "S6_box3d_head": {
+   "cli_flag": null,
+   "reachable": false,
+   "in_built_model": false
+  },
+  "S10_1_image_1024": {
+   "cli_flag": "--image-hw",
+   "reachable": true
+  }
+ },
+ "n_cli_dests": 139
+}

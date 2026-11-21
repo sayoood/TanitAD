@@ -1,0 +1,61 @@
+[06:12:45Z] actlevel_0=RUN;actlevel_1=RUN;AUTO=END;GPUJOBS=2;LAST [2026-11-19T03:44:06Z] auto end;
+[06:27:52Z] actlevel_0=RUN;actlevel_1=RUN;AUTO=END;GPUJOBS=3;LAST [2026-11-19T03:44:06Z] auto end;
+[06:42:59Z] actlevel_0=DONE;actlevel_1=RUN;AUTO=END;GPUJOBS=2;LAST [2026-11-19T03:44:06Z] auto end;
+[06:58:05Z] actlevel_0=DONE;actlevel_1=DONE;AUTO=END;GPUJOBS=3;LAST [2026-11-19T03:44:06Z] auto end;
+[06:58:05Z] actlevel_0=DONE;actlevel_1=DONE;AUTO=END;GPUJOBS=3;LAST [2026-11-19T03:44:06Z] auto end;
+[2026-11-19T02:00:44Z] pins hold: 15 files of /workspace/v8proof/tree_actlevel
+[2026-11-19T03:15:24Z] pins hold: 15 files of /workspace/v8proof/tree_actlevel
+[2026-11-19T03:16:09Z] slot free: GPU jobs 1, memory free 48 GB
+[2026-11-19T03:17:32Z] dry gate RLVa_s0 rc 0: ZZ DRY RLVa_s0 PASS (2026-11-19T03:17:32Z): selfcheck and every expectation string of the arms file
+[2026-11-19T03:18:55Z] dry gate RLVb_s0 rc 0: ZZ DRY RLVb_s0 PASS (2026-11-19T03:18:55Z): selfcheck and every expectation string of the arms file
+[2026-11-19T03:20:44Z] dry gate RLAh_s0 rc 0: ZZ DRY RLAh_s0 PASS (2026-11-19T03:20:44Z): selfcheck and every expectation string of the arms file
+SELFCHECK RLVa_s0 dvb PASS live True steps_total 6000 w_act_cons 0.001 w_act_level 0.001 roll_k 10 init {"path": "/workspace/v8proof/runs/imag_a/RL_s0/ckpt_last.pt", "sha256": "9f0196185385fcf8218e8f3a88ea2afaf9726017b9028251b4aeee2157e501d7", "applied": true, "skipped": null, "n_tensors": 282, "n_m
+SELFCHECK RLVb_s0 dvb PASS live True steps_total 6000 w_act_cons 0.001 w_act_level 0.01 roll_k 10 init {"path": "/workspace/v8proof/runs/imag_a/RL_s0/ckpt_last.pt", "sha256": "9f0196185385fcf8218e8f3a88ea2afaf9726017b9028251b4aeee2157e501d7", "applied": true, "skipped": null, "n_tensors": 282, "n_mi
+SELFCHECK RLAh_s0 dvb PASS live True steps_total 6000 w_act_cons 0.0003 w_act_level None roll_k 10 init {"path": "/workspace/v8proof/runs/imag_a/RL_s0/ckpt_last.pt", "sha256": "9f0196185385fcf8218e8f3a88ea2afaf9726017b9028251b4aeee2157e501d7", "applied": true, "skipped": null, "n_tensors": 282, "n_m
+[2026-11-19T03:21:29Z] slot free: GPU jobs 2, memory free 45 GB
+[2026-11-19T03:22:09Z] chain started: actlevel_0; [actlevel_0 2026-11-19T03:21:51Z] train RLVa_s0 (6000 steps)
+[2026-11-19T03:40:09Z] queue of card ADD42: /workspace/v8proof/qhead_run/QHEAD_DONE.txt 
+[2026-11-19T03:40:55Z] slot free: GPU jobs 2, memory free 43 GB
+[2026-11-19T03:42:41Z] dry gate RLVa_s1 rc 0: ZZ DRY RLVa_s1 PASS (2026-11-19T03:42:41Z): selfcheck and every expectation string of the arms file
+SELFCHECK RLVa_s1 dvb PASS live True steps_total 6000 w_act_cons 0.001 w_act_level 0.001 roll_k 10 init {"path": "/workspace/v8proof/runs/imag_a/RL_s1/ckpt_last.pt", "sha256": "446a28f6f980c48b2b7e95f4e0fb3ae523f80c1bd404746673b3fd41d58dbee2", "applied": true, "skipped": null, "n_tensors": 282, "n_m
+[2026-11-19T03:43:26Z] slot free: GPU jobs 2, memory free 42 GB
+[2026-11-19T03:44:06Z] chain started: actlevel_1; [actlevel_1 2026-11-19T03:43:48Z] train RLVa_s1 (6000 steps)
+chains/actlevel_0/chain.log:[actlevel_0 2026-11-19T04:34:06Z] ARM DONE RLVa_s0
+chains/actlevel_0/chain.log:[actlevel_0 2026-11-19T05:38:56Z] ARM DONE RLVb_s0
+chains/actlevel_0/chain.log:[actlevel_0 2026-11-19T06:37:45Z] ARM DONE RLAh_s0
+chains/actlevel_1/chain.log:[actlevel_1 2026-11-19T04:51:59Z] ARM DONE RLVa_s1
+chains/actlevel_1/chain.log:[actlevel_1 2026-11-19T05:55:00Z] ARM DONE RLVb_s1
+chains/actlevel_1/chain.log:[actlevel_1 2026-11-19T06:56:08Z] ARM DONE RLAh_s1
+RLVa_s0 n 534 with history 534 | c2b trainer units: logit 9.537e-07 gap 1.526e-07 closing 1.431e-07 -> PASS | same ckpt True same states True
+   c1 0.0 | c2a True roll 0.000e+00 head 7.153e-07 | c4 zero model 0.0 real model 7.7708 | facts ok {'wm_acc_scale': True, 'scale_actions_acc': True, 'lead_head': True, 'rollout': True, 'act_embed': True, 'roll_pairs': True} | cfg {'wm_state': 'grid', 'wm_l1_residual': 'on', 'wm_l1_roll_k': '10', 'w
+RLVb_s0 n 534 with history 534 | c2b trainer units: logit 1.431e-06 gap 1.526e-07 closing 1.192e-07 -> PASS | same ckpt True same states True
+   c1 0.0 | c2a True roll 0.000e+00 head 1.431e-06 | c4 zero model 0.0 real model 8.3883 | facts ok {'wm_acc_scale': True, 'scale_actions_acc': True, 'lead_head': True, 'rollout': True, 'act_embed': True, 'roll_pairs': True} | cfg {'wm_state': 'grid', 'wm_l1_residual': 'on', 'wm_l1_roll_k': '10', 'w
+RLAh_s0 n 534 with history 534 | c2b trainer units: logit 1.431e-06 gap 1.526e-07 closing 1.267e-07 -> PASS | same ckpt True same states True
+   c1 0.0 | c2a True roll 0.000e+00 head 9.537e-07 | c4 zero model 0.0 real model 10.5048 | facts ok {'wm_acc_scale': True, 'scale_actions_acc': True, 'lead_head': True, 'rollout': True, 'act_embed': True, 'roll_pairs': True} | cfg {'wm_state': 'grid', 'wm_l1_residual': 'on', 'wm_l1_roll_k': '10', '
+RLVa_s1 n 534 with history 534 | c2b trainer units: logit 1.907e-06 gap 1.526e-07 closing 1.490e-07 -> PASS | same ckpt True same states True
+   c1 0.0 | c2a True roll 0.000e+00 head 9.537e-07 | c4 zero model 0.0 real model 8.7424 | facts ok {'wm_acc_scale': True, 'scale_actions_acc': True, 'lead_head': True, 'rollout': True, 'act_embed': True, 'roll_pairs': True} | cfg {'wm_state': 'grid', 'wm_l1_residual': 'on', 'wm_l1_roll_k': '10', 'w
+RLVb_s1 n 534 with history 534 | c2b trainer units: logit 1.192e-06 gap 2.289e-07 closing 1.490e-07 -> PASS | same ckpt True same states True
+   c1 0.0 | c2a True roll 0.000e+00 head 1.431e-06 | c4 zero model 0.0 real model 16.1146 | facts ok {'wm_acc_scale': True, 'scale_actions_acc': True, 'lead_head': True, 'rollout': True, 'act_embed': True, 'roll_pairs': True} | cfg {'wm_state': 'grid', 'wm_l1_residual': 'on', 'wm_l1_roll_k': '10', '
+RLAh_s1 n 534 with history 534 | c2b trainer units: logit 1.669e-06 gap 1.526e-07 closing 1.788e-07 -> PASS | same ckpt True same states True
+   c1 0.0 | c2a True roll 0.000e+00 head 1.431e-06 | c4 zero model 0.0 real model 7.8943 | facts ok {'wm_acc_scale': True, 'scale_actions_acc': True, 'lead_head': True, 'rollout': True, 'act_embed': True, 'roll_pairs': True} | cfg {'wm_state': 'grid', 'wm_l1_residual': 'on', 'wm_l1_roll_k': '10', 'w
+[06:58:15Z] read RLVa rc 0 : ZZ IMAG DONE RLVa controls PASS names {'H1': 'IMAG-HEAD-FLAT', 'H2': 'IMAG-RESPONDS', 'H2_overshoot_seeds': []}
+[06:58:16Z] read RLVb rc 0 : ZZ IMAG DONE RLVb controls PASS names {'H1': 'IMAG-HEAD-FLAT', 'H2': 'IMAG-DEAF', 'H2_overshoot_seeds': []}
+[06:58:17Z] read RLAh rc 0 : ZZ IMAG DONE RLAh controls PASS names {'H1': 'IMAG-HEAD-FLAT', 'H2': 'IMAG-RESPONDS', 'H2_overshoot_seeds': []}
+[06:58:18Z] pair RLVa minus RLFT rc 0 : ["RL-RESPONDS-BETTER"]
+[06:58:19Z] pair RLVa minus RLAm rc 0 : ["RL-RESPONDS-BETTER"]
+[06:58:21Z] pair RLVa minus RLA3 rc 0 : "nothing is named for the pair"
+[06:58:22Z] pair RLVb minus RLFT rc 0 : ["RL-RESPONDS-BETTER"]
+[06:58:23Z] pair RLVb minus RLAm rc 0 : "nothing is named for the pair"
+[06:58:24Z] pair RLVb minus RLA3 rc 0 : "nothing is named for the pair"
+[06:58:25Z] pair RLAh minus RLFT rc 0 : ["RL-RESPONDS-BETTER"]
+[06:58:26Z] pair RLAh minus RLAm rc 0 : ["RL-RESPONDS-BETTER"]
+[06:58:27Z] pair RLAh minus RLA3 rc 0 : "nothing is named for the pair"
+ZZ PULL-SPATIAL DONE
+ZZ PULL-SPATIAL DONE
+ZZ PULL-SPATIAL DONE
+ZZ PULL-SPATIAL DONE
+ZZ PULL-SPATIAL DONE
+ZZ PULL-SPATIAL DONE
+[07:00:37Z] headway r2 rc 0 : controls PASS | counts {'PASS': True, 'n_lead_windows': 642, 'n_episodes_with_lead': 56, 'enough': True, 'min_windows': 200, 'min_episodes': 20, 'n_windows_total': 2399, 'n_episodes_total': 141} | spr
+[07:00:45Z] families r2 rc 0 : controls PASS | spread seeds [0, 1, 2, 3, 4, 5] | missing []
+ZZ ACTLEVEL READS DONE 07:00:45Z pairs RLVa:RLFT,RLVa:RLAm,RLVb:RLFT,RLVb:RLAm,RLAh:RLFT,RLAh:RLAm

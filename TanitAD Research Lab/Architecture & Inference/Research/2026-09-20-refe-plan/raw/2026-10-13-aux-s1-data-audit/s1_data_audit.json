@@ -1,0 +1,365 @@
+{
+ "task": "S1 input audit for the auxiliary drivable-area head (9 scorer fine-tune runs: arms N, H1, H2 x seeds 0,1,2)",
+ "audited_at_local": "2026-10-13 ~11:00 (Europe/Berlin)",
+ "package": "raw/2026-10-13-aux-s1-data-audit",
+ "unresolved_launch_blockers": [
+  "$D/train_teacher_lane (no copy anywhere)",
+  "$D/heldout_pdm (no copy anywhere)",
+  "$PIX has no dev-box copy (pod only)"
+ ],
+ "rows": [
+  {
+   "id": "I1",
+   "input": "init checkpoint model_sft4_B_u400.pt",
+   "argv_flag": "--ckpt $U400",
+   "code_reads": "refe/scorer_finetune.py:578 ckpt_io.config_for_checkpoint(.., a.ckpt); refe/scorer_finetune.py:581 load_for_inference(model, a.ckpt); refe/scorer_finetune.py:937 save_full re-reads torch.load(a.ckpt) once per saved arm",
+   "dev_box": "FOUND D:/Projects/TanitAD/data/refe_runs_eval/sft4_peek/model_sft4_B_u400.pt (E:/ is the same volume: identical Used/Free)",
+   "pod": "MISSING (/workspace/data/rls1/base absent; refe_runs/vitl16_navtrain10_grow_tau0.3/ holds only model_final.pt 1,288,484,600 B)",
+   "hf": "FOUND Sayood/tanitad-refe-rls1 base/model_sft4_B_u400.pt 1,288,489,838 B (private; size equals the dev file; md5 not recomputed from HF)",
+   "bytes": 1288489838,
+   "status": "RESOLVED on dev; pod needs an HF fetch (rls1_pod.sh stage 'ckpts' does it)",
+   "evidence": "md5sum of the dev file = 8e382eebb35b3e155862453617e5786e (== eval/RESULT_SFT4.md 8e382eeb); ls size 1,288,489,838; HF API siblings listing (evidence/hf_files.json); ssh ls of /workspace/data/rls1 (after_p2.* only)",
+   "evidence_class": "MEASURED"
+  },
+  {
+   "id": "I2",
+   "input": "target bank targets_rank0/1.jsonl",
+   "argv_flag": "--targets $TR",
+   "code_reads": "refe/train.py:641 glob('targets_rank*.jsonl') = rank0 103,037 rows + rank1 86,851 rows = 189,888 rows; refe/train.py:656 refuses any other targets_*.jsonl. scorer_targets*.jsonl (5.68 GB of the same tarball) is NOT read (refe/train.py:204 serves only a scorer bank, and refe/scorer_finetune.py:625 passes none)",
+   "dev_box": "ONLY INSIDE a tarball: D:/Projects/TanitAD-artifacts/refe-onpolicy-2026-10-01/refe_train_grow.tar.zst 1,043,549,966 B (the two target files + calib are 654,626,179 B once extracted; I extracted them to a scratch dir to measure, nothing persistent)",
+   "pod": "FOUND /workspace/data/refe_navtrain/train_grow/ (targets_rank0 350,447,321 B, targets_rank1 301,842,199 B: byte-equal to the tarball members)",
+   "hf": "FOUND Sayood/tanitad-refe-navtrain-banks refe_train_grow.tar.zst 1,043,549,966 B",
+   "bytes": 652289520,
+   "status": "AVAILABLE after extraction on dev (0.65 GB, no transfer)",
+   "evidence": "evidence/tarlist.py member listing (8 members, 194 s cold); ssh stat on the pod; hf_files.json; row counts from evidence/sim_draws.py",
+   "evidence_class": "MEASURED"
+  },
+  {
+   "id": "I3",
+   "input": "per-log camera calibration table",
+   "argv_flag": "--calib $TR/calib_table.json",
+   "code_reads": "refe/train.py TargetBank(calib=...) -> CT.load; a row whose log has no entry is dropped (>0.1 % refuses)",
+   "dev_box": "ONLY INSIDE the same tarball (2,336,659 B)",
+   "pod": "FOUND (2,336,659 B)",
+   "hf": "inside the same tarball",
+   "bytes": 2336659,
+   "status": "AVAILABLE after extraction",
+   "evidence": "tarball member size == pod stat size",
+   "evidence_class": "MEASURED"
+  },
+  {
+   "id": "I4",
+   "input": "camera pixels (4 cameras CAM_F0/L0/R0/B0, ONE frame per sample, no history)",
+   "argv_flag": "--images $PIX",
+   "code_reads": "refe/train.py:42 CAMERAS; refe/train.py:692-713 TargetBank.__init__ calls resolvable() on EVERY row of the bank at load (name lookup, no pixel read) and raises SystemExit if >0.1 % of tuples miss a camera; refe/train.py:799-806 __getitem__ reads the 4 JPEGs of ONLY the drawn row (refe/scorer_finetune.py:673 train draw, refe/scorer_finetune.py:785 held-out eval loader, read at step0 and update400). The model takes one frame per camera (no history frames).",
+   "dev_box": "MISSING. Probed: D:/Projects/TanitAD/data/openscene_probe/navtrain_current_25.tgz (4,496,159,137 B = 1 of 32 shards; holds 6,044 of the bank's 412,148 images = 1.47 %); data/refe_navtest/frames (546 per-log/camera zips, 10,060,039,745 B, 138 navtest logs, ZERO of the 1,191 bank logs or 24 held-out logs); data/nuplan-camera, refe_trunk_cache, refe_targets_4cam hold no navtrain pixels; D:/Archive/devbox-C has none",
+   "pod": "FOUND /workspace/data/navtrain_pixels/navtrain_current_{1..32}/<log>/<CAM>/<hash>.jpg, 4 cameras only; 464 of 464 sampled files present (40 logs x 3 frames x 4 cameras); pix stage logged 32/32 shards",
+   "hf": "MISSING (no Sayood repo holds pixels). Public source = the 32 navtrain shards (the pod pulled them in ~3.3 h, pix.log 20:48Z -> 00:09Z); not tested from the dev box",
+   "bytes": {
+    "mean_jpeg_bytes": 210312,
+    "cluster_se_bytes": 3039,
+    "n_files": 464,
+    "n_logs": 40,
+    "per_camera_mean": {
+     "CAM_F0": 213392,
+     "CAM_L0": 208030,
+     "CAM_R0": 216927,
+     "CAM_B0": 202897
+    },
+    "one_run_incl_heldout_images": {
+     "0": 102564,
+     "1": 102636,
+     "2": 102708
+    },
+    "one_run_GB": {
+     "images": 102564,
+     "GB_mean": 21.57040106441379,
+     "GB_lo": 20.95954220202003,
+     "GB_hi": 22.181259926807552
+    },
+    "all_nine_runs_union_images": 227876,
+    "all_nine_runs_GB": {
+     "images": 227876,
+     "GB_mean": 47.92497087627586,
+     "GB_lo": 46.567768796337084,
+     "GB_hi": 49.28217295621463
+    },
+    "heldout_only_images": 6820,
+    "heldout_only_GB": {
+     "images": 6820,
+     "GB_mean": 1.434325253103448,
+     "GB_lo": 1.3937061524294743,
+     "GB_hi": 1.474944353777422
+    },
+    "whole_bank_images": 412148,
+    "whole_bank_GB": {
+     "images": 412148,
+     "GB_mean": 86.679513844,
+     "GB_lo": 84.22480986972185,
+     "GB_hi": 89.13421781827813
+    }
+   },
+   "status": "LAUNCH BLOCKER on dev (pixels exist only on the pod). Needs a pod-side pack + HF relay, AND the all-rows-must-resolve rule",
+   "evidence": "evidence/sim_draws.py (exact draw emulation, torch 2.11.0+cu128 = the dev venv), evidence/pod_stat_script.sh + pod_stat_out.txt (464 stat calls), evidence/byte_stats.json, evidence/shard25.json, evidence/navtest_frames_overlap.json",
+   "evidence_class": "MEASURED (counts by emulating the trainer's own DataLoader draw on the banked rows; bytes = 464-file cluster sample, projection ESTIMATED)"
+  },
+  {
+   "id": "I5",
+   "input": "on-policy training sets (64 proposals + labels per sample)",
+   "argv_flag": "--onpolicy $ONP",
+   "code_reads": "refe/scorer_finetune.py:617 OnPolicyBank(a.onpolicy,..): refe/train.py:395 globs onpolicy_*.jsonl and loads EVERY line into float32 arrays (~16,896 B per set: 64 x (20 x 3 + 6) x 4)",
+   "dev_box": "ONLY INSIDE a tarball: D:/Projects/TanitAD-artifacts/refe-pod-final-2026-10-04/onpolicy_sets_logs_full.tar.zst 2,070,541,308 B (190,696 sets, uncompressed ~11.27 GB; held-out-log sets inside are excluded from training by the ho_logs filter at scorer_finetune.py:629 but still occupy RAM)",
+   "pod": "FOUND /workspace/data/refe_navtrain/onpolicy/sets (carved: 8 files, 11,088,393,052 B; P2's 174,912 sets) and sets_full (11,273,447,245 B)",
+   "hf": "FOUND Sayood/tanitad-refe-navtrain-banks onpolicy_sets_logs_full.tar.zst 2,070,541,308 B",
+   "bytes": 11273447245,
+   "status": "AVAILABLE after extraction on dev (11.3 GB of disk); resident RAM ~3.0-3.2 GB (ESTIMATED)",
+   "evidence": "ls + MD5SUMS.txt (4fc979939c5f9b5140ba59a952da77fb) == pod hf_dl/extracted/onpolicy_sets_logs_full.md5; pod ls sizes",
+   "evidence_class": "MEASURED (size/md5 record); RAM ESTIMATED"
+  },
+  {
+   "id": "I6",
+   "input": "held-out on-policy sets (3,137 sets, 24 logs)",
+   "argv_flag": "--heldout $HO",
+   "code_reads": "refe/scorer_finetune.py:619 OnPolicyBank(a.heldout); refe/scorer_finetune.py:633 ho_idx; every one of the 3,137 sets has a bank row (0 without)",
+   "dev_box": "FOUND, extracted: D:/Projects/TanitAD-artifacts/_tlane_work/ho/refe_heldout/sets (7 files, 186,272,504 B, 3,137 sets) + the tarball refe_heldout_v5.tar.zst 65,517,846 B",
+   "pod": "TARBALL ONLY /workspace/data/hf_dl/heldout/refe_heldout_v5.tar.zst (65,517,846 B); NOT extracted (/workspace/data/refe_heldout does not exist)",
+   "hf": "FOUND Sayood/tanitad-refe-navtrain-banks refe_heldout_v5.tar.zst",
+   "bytes": 186272504,
+   "status": "RESOLVED on dev; pod needs a 65 MB extraction",
+   "evidence": "evidence/sim_draws.py parsed the 7 files: 3,137 keys; ssh ls",
+   "evidence_class": "MEASURED"
+  },
+  {
+   "id": "I7",
+   "input": "held-out log list (24 logs)",
+   "argv_flag": "--heldout-logs $HOLOGS",
+   "code_reads": "refe/scorer_finetune.py:628 set(open(..).read().split())",
+   "dev_box": "FOUND D:/Projects/TanitAD-artifacts/_tlane_work/ho/refe_heldout/heldout_logs.txt (936 B)",
+   "pod": "inside the held-out tarball only",
+   "hf": "inside the held-out tarball",
+   "bytes": 936,
+   "status": "RESOLVED on dev",
+   "evidence": "cat; 24 names",
+   "evidence_class": "MEASURED"
+  },
+  {
+   "id": "I8",
+   "input": "PDM labels, train (174,912 sets)",
+   "argv_flag": "--pdm-labels-train $D/train_pdm (with --require-pdm)",
+   "code_reads": "refe/train.py:503 _apply_pdm_labels globs pdm_*.jsonl; refe/scorer_finetune.py:629 tr_idx keeps only sets with a PDM label",
+   "dev_box": "MISSING",
+   "pod": "FOUND /workspace/data/refe_sft2/train_pdm (8 files, 478,323,318 B; pdm_complete.json verdict COMPLETE, 174,912 rows). These are P2's recompute, not SFT-4's lost arming-time snapshot (146,185)",
+   "hf": "FOUND Sayood/tanitad-refe-p2-joint-pdm pdm_labels/pdm_train_labels.tar.gz 51,468,428 B (tar_sha256 22bc22fe)",
+   "bytes": 478323318,
+   "status": "AVAILABLE (51.5 MB HF fetch to dev, or already on the pod)",
+   "evidence": "ssh ls + cat pdm_complete.json + MANIFEST.json; hf_files.json",
+   "evidence_class": "MEASURED"
+  },
+  {
+   "id": "I9",
+   "input": "PDM labels, held-out (3,137 sets)",
+   "argv_flag": "--pdm-labels-heldout $D/heldout_pdm (with --require-pdm)",
+   "code_reads": "refe/scorer_finetune.py:633 ho_idx keeps only held-out sets with a PDM label: with the dir absent ho_idx is EMPTY and every evaluation has n = 0",
+   "dev_box": "MISSING",
+   "pod": "MISSING (refe_sft2 holds only train_pdm + pdm_train.log; the only PDM file under refe_p2 is a 63 kB gate sample)",
+   "hf": "MISSING (not in the p2 repo or the banks repo)",
+   "bytes": null,
+   "status": "UNRESOLVED -> LAUNCH BLOCKER. Recompute: onpolicy_relabel_pdm.py --sets $HSETS --served-only (refe/sft4r_relabel.sh step 2), 3,137 sets x 0.357 s/set = ~19 min single stream (pod log rate, ESTIMATED); needs the 24 logs' nuPlan DBs (dev box has 5 of 24 = 209,084,416 B; the pod has navtrain_dbs) and the teacher env",
+   "evidence": "ssh ls of refe_sft2, refe_p2/gate_pdm; hf_files.json; evidence/dbcheck.py (5/24 DBs)",
+   "evidence_class": "MEASURED (absence at 3 places + repo docs: STOP_CONSEQUENCES says it lived only on the lost pod)"
+  },
+  {
+   "id": "I10",
+   "input": "teacher-lane labels, train",
+   "argv_flag": "--teacher-lane-train $D/train_teacher_lane",
+   "code_reads": "refe/train.py:536-566 globs teacher_lane_r*.jsonl; a missing or empty dir yields ZERO labels with NO error and n_cols is still 7, so the lane loss is silently fully masked on the train side (the launch-gate defect class)",
+   "dev_box": "MISSING (only 24-row smoke outputs under _tlane_work/smoke)",
+   "pod": "MISSING",
+   "hf": "MISSING",
+   "bytes": null,
+   "status": "UNRESOLVED -> LAUNCH BLOCKER (the 'NAMED GAP' of eval/PREREG_SFT4R.md: the --queue source of SFT-4's seeded 15,000-set subset was never banked; the lost run had 2,109 rows). Recompute: teacher simulator on CPU, 13.6 s/set wall on one dev-box worker (24-set smoke) = 2,109 sets 8.0 CPU-h, 15,000 sets 56.7 CPU-h; needs LANE_QUEUE_SRC",
+   "evidence": "find over D:/Projects, D:/Archive, C:/Users/Admin (depth 7) found no train_teacher_lane; ssh ls; hf_files.json; _tlane_work/smoke/run10.log",
+   "evidence_class": "MEASURED (absence at 4 places); recompute cost ESTIMATED from a 24-set smoke"
+  },
+  {
+   "id": "I11",
+   "input": "teacher-lane labels, held-out",
+   "argv_flag": "--teacher-lane-heldout $D/heldout_teacher_lane",
+   "code_reads": "refe/train.py:542 teacher_lane_r*.jsonl",
+   "dev_box": "IN THE REPO as xz: raw/2026-10-04-lane-discipline/heldout_teacher_lane_labels.jsonl.xz 2,687,804 B (not expanded into a directory)",
+   "pod": "MISSING",
+   "hf": "MISSING",
+   "bytes": 2687804,
+   "status": "RESTORABLE (xz -d to <dir>/teacher_lane_r0_restored.jsonl, as refe/sft4r_relabel.sh step 1 does)",
+   "evidence": "ls; sft4r_relabel.sh:30-40",
+   "evidence_class": "MEASURED"
+  },
+  {
+   "id": "I12",
+   "input": "NAVSIM lane labels, held-out",
+   "argv_flag": "--lane-labels-heldout $D/heldout_lane",
+   "code_reads": "refe/train.py:568 lane_*.jsonl",
+   "dev_box": "IN THE REPO as xz: raw/2026-10-04-lane-discipline/heldout_navsim_lane_labels.jsonl.xz 54,760 B",
+   "pod": "MISSING",
+   "hf": "MISSING",
+   "bytes": 54760,
+   "status": "RESTORABLE (xz -d to <dir>/lane_heldout_restored.jsonl)",
+   "evidence": "ls",
+   "evidence_class": "MEASURED"
+  },
+  {
+   "id": "I13",
+   "input": "aux drivable-area label store (H1, H2 arms only)",
+   "argv_flag": "--aux-drv-labels D:/Projects/TanitAD-artifacts/aux_drivable/label_store",
+   "code_reads": "refe/scorer_finetune.py:611-612 AuxLabelSource",
+   "dev_box": "FOUND 1,196 files, 351,647,342 B, 103,139 stored keys (bank 103,037 + db 102), store_sha256 4a17db67..f287a",
+   "pod": "MISSING",
+   "hf": "MISSING",
+   "bytes": 351647342,
+   "status": "RESOLVED on dev; pod needs a 352 MB ship",
+   "evidence": "os.walk + manifest.json",
+   "evidence_class": "MEASURED"
+  },
+  {
+   "id": "I14",
+   "input": "code package (refe/ with aux_drivable_head.py and the 1,358-line scorer_finetune.py)",
+   "argv_flag": "(the trainer itself)",
+   "code_reads": "-",
+   "dev_box": "FOUND (repo working tree)",
+   "pod": "STALE: /workspace/refe-plan and /workspace/refe-plan-rls1 both carry a 982-line scorer_finetune.py with 0 mentions of aux_drv and no aux_drivable_head.py",
+   "hf": "-",
+   "bytes": null,
+   "status": "pod needs a package ship (and a launch-gate re-mint)",
+   "evidence": "ssh grep -c / wc -l on both pod copies",
+   "evidence_class": "MEASURED"
+  }
+ ],
+ "draw_emulation": {
+  "method": "torch.Generator().manual_seed(seed) + DataLoader(shuffle=True, batch 8, drop_last) over len(tr_idx), first 3,200 batches (= 400 updates x 8 micro-batches x 8), mirroring scorer_finetune.py:672-673; tr_idx rebuilt from the banked bank rows, raw/rl_pool/served_keys.tsv.gz (the 174,912 PDM-labelled keys) and heldout_logs.txt",
+  "caveat": "exact for a run in the same torch build (2.11.0+cu128, the dev venv); a pod with another torch may draw a different (equal-sized) subset. The raw sim_draws.json field union3_frame_tuples=1 is a placeholder defect of the first run; the value is union3_images/4 = 55,264 (script fixed in the evidence copy)",
+  "result": {
+   "torch": "2.11.0+cu128",
+   "bank_rows": 189888,
+   "tr_idx": 174912,
+   "ho_sets": 3137,
+   "ho_rows": 3137,
+   "per_seed": {
+    "0": {
+     "draws": 25600,
+     "distinct_rows": 25600,
+     "distinct_frame_tuples": 23936,
+     "distinct_images": 95744,
+     "logs": 1133,
+     "first5_rows": [
+      98258,
+      15818,
+      6976,
+      46598,
+      176167
+     ]
+    },
+    "1": {
+     "draws": 25600,
+     "distinct_rows": 25600,
+     "distinct_frame_tuples": 23954,
+     "distinct_images": 95816,
+     "logs": 1143,
+     "first5_rows": [
+      115214,
+      18694,
+      155819,
+      30806,
+      181307
+     ]
+    },
+    "2": {
+     "draws": 25600,
+     "distinct_rows": 25600,
+     "distinct_frame_tuples": 23972,
+     "distinct_images": 95888,
+     "logs": 1145,
+     "first5_rows": [
+      122109,
+      26886,
+      25201,
+      179528,
+      117468
+     ]
+    }
+   },
+   "union3_images": 221056,
+   "union3_frame_tuples": 1,
+   "ho_images": 6820,
+   "ho_logs": 24,
+   "union3_plus_ho_images": 227876,
+   "one_seed_plus_ho_images": {
+    "0": 102564,
+    "1": 102636,
+    "2": 102708
+   },
+   "bank_distinct_images_all_rows": 412148,
+   "bank_logs": 1191,
+   "overlap_seed_pairs_images": {
+    "0&1": 24132,
+    "0&2": 23936,
+    "1&2": 24528
+   }
+  }
+ },
+ "sizes": {
+  "per_run_distinct_frame_tuples": [
+   23936,
+   23954,
+   23972
+  ],
+  "per_run_distinct_images_train": [
+   95744,
+   95816,
+   95888
+  ],
+  "heldout_images": 6820,
+  "heldout_frame_tuples": 1705,
+  "bank_rows": 189888,
+  "bank_frames": 103037,
+  "bank_images": 412148,
+  "bank_logs": 1191,
+  "tr_idx": 174912
+ },
+ "measurements": {
+  "dev_downlink_HF_ranged_2x24MiB_discarded": [
+   {
+    "range_bytes": 25165824,
+    "got": 25165824,
+    "status": 206,
+    "ttfb_s": 0.67,
+    "total_s": 2.58,
+    "MBps": 13.16,
+    "MBps_incl_ttfb": 9.74
+   },
+   {
+    "range_bytes": 25165824,
+    "got": 25165824,
+    "status": 206,
+    "ttfb_s": 0.57,
+    "total_s": 3.19,
+    "MBps": 9.6,
+    "MBps_incl_ttfb": 7.89
+   }
+  ],
+  "pod_uplink_to_HF_from_pod_log_INHERITED_MBps": 4.68,
+  "dev_free_D_bytes_at_10_37": 47982837760,
+  "dev_free_C_bytes_at_10_37": 31018676224,
+  "dev_ram_total_GB": 31.84,
+  "dev_ram_free_GB_at_10_37": 10.78,
+  "dev_logical_cpus": 24,
+  "pod_workspace_stat_f_free_MiB": 80674,
+  "pod_status": "P2 training step 935, GPU 100 %, 23.9 GB used (read-only ssh, nothing run)"
+ },
+ "md5": {
+  "refe_train_grow.tar.zst (dev)": "e07c7d6a5c0156f31a5de3af0843c325 == the pod's recorded hf_dl/extracted/refe_train_grow.md5",
+  "onpolicy_sets_logs_full.tar.zst (dev)": "4fc979939c5f9b5140ba59a952da77fb == MD5SUMS.txt == the pod's recorded onpolicy_sets_logs_full.md5",
+  "refe_heldout_v5.tar.zst (dev)": "1f43409ba8ea2a8909e5035236c73676 == MD5SUMS.txt",
+  "extracted held-out sets (dev), 2 of 7 files re-hashed": "onpolicy_r0_hw0 e15a00fd.. and onpolicy_r1_hw6 e45d88c4.. == the directory's own MD5SUMS.txt",
+  "model_sft4_B_u400.pt (dev)": "8e382eebb35b3e155862453617e5786e == eval/RESULT_SFT4.md 8e382eeb"
+ }
+}

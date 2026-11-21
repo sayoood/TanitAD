@@ -1,0 +1,172 @@
+{
+  "schema": "untrained-params-gate-v1",
+  "status": "FAIL",
+  "reasons": [
+    "2 parameter(s) totalling 1026 never received a gradient and are NOT allow-listed: scorer.goal_point.weight, scorer.goal_point.bias"
+  ],
+  "generated_utc": "2026-09-11T00:14:52Z",
+  "argv": [
+    "D:/Projects/TanitAD-artifacts/refcv3_final/ckpt_40284_FINAL.pt",
+    "--config",
+    "D:/Projects/TanitAD-artifacts/refcv3_final/config.json",
+    "--control",
+    "core.decoder.offset_head",
+    "--control",
+    "core.decoder.conf_head",
+    "--control",
+    "str_goal_head",
+    "--out",
+    "TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-09-11-untrained-param-gate/raw/refcv3_final_gate.json",
+    "--quiet"
+  ],
+  "checkpoint": {
+    "path": "D:\\Projects\\TanitAD-artifacts\\refcv3_final\\ckpt_40284_FINAL.pt",
+    "bytes": 1284991701,
+    "model_key": "model",
+    "optimizer_key": "opt",
+    "step": 40284
+  },
+  "optimizer": {
+    "n_groups": 1,
+    "n_registered": 343,
+    "n_with_state": 341,
+    "duplicate_ids": 0,
+    "state_entry_keys": [
+      "exp_avg",
+      "exp_avg_sq",
+      "step"
+    ],
+    "shape_source_key": "exp_avg",
+    "lazy_state_supported": true
+  },
+  "alignment": {
+    "method": "order-preserving shape embedding; leftmost+rightmost uniqueness",
+    "n_state_dict_tensors": 544,
+    "n_non_floating_excluded": 66,
+    "buffer_name_filter": [
+      "running_mean",
+      "running_var",
+      "num_batches_tracked",
+      "pos_emb_cache",
+      ".anchors"
+    ],
+    "n_candidates": 345,
+    "slack": 2,
+    "forced": true,
+    "n_ambiguous": 0,
+    "ambiguous": [],
+    "unconsumed_candidates": [
+      {
+        "name": "core.lat_log_prior",
+        "shape": [
+          3
+        ],
+        "numel": 3
+      },
+      {
+        "name": "core.lon_log_prior",
+        "shape": [
+          3
+        ],
+        "numel": 3
+      }
+    ]
+  },
+  "cross_checks": {
+    "shape_match": {
+      "matched": 341,
+      "total": 341,
+      "ok": true,
+      "mismatches": []
+    },
+    "param_total": {
+      "mapped": 107032901,
+      "reference": 107032901,
+      "source": "D:\\Projects\\TanitAD-artifacts\\refcv3_final\\config.json:param_breakdown.total",
+      "waived": false,
+      "ok": true
+    },
+    "controls": {
+      "auto": {
+        "n_with_state": 341,
+        "n_nonzero_optimizer_moment": 341,
+        "n_zero_optimizer_moment": 0,
+        "moment_key": "exp_avg",
+        "ok": true,
+        "note": "at least one trained parameter must carry a NONZERO optimizer moment; a count of zero untrained params from a probe that read nothing would otherwise be indistinguishable from a genuine zero"
+      },
+      "named": [
+        {
+          "name": "core.decoder.offset_head",
+          "found": true,
+          "resolved": "core.decoder.offset_head.weight",
+          "has_state": true,
+          "optimizer_moment_abs_sum": 55.81752395629883,
+          "ok": true
+        },
+        {
+          "name": "core.decoder.conf_head",
+          "found": true,
+          "resolved": "core.decoder.conf_head.weight",
+          "has_state": true,
+          "optimizer_moment_abs_sum": 21.952804565429688,
+          "ok": true
+        },
+        {
+          "name": "str_goal_head",
+          "found": true,
+          "resolved": "str_goal_head.weight",
+          "has_state": true,
+          "optimizer_moment_abs_sum": 3.354421377182007,
+          "ok": true
+        }
+      ]
+    }
+  },
+  "untrained": {
+    "count_params": 2,
+    "count_numel": 1026,
+    "params": [
+      {
+        "name": "scorer.goal_point.weight",
+        "optimizer_id": 341,
+        "shape": [
+          2,
+          512
+        ],
+        "numel": 1024,
+        "exactly_zero": true,
+        "absmax": 0.0,
+        "n_nonzero": 0,
+        "allowed": false,
+        "allowlist_entry": null
+      },
+      {
+        "name": "scorer.goal_point.bias",
+        "optimizer_id": 342,
+        "shape": [
+          2
+        ],
+        "numel": 2,
+        "exactly_zero": true,
+        "absmax": 0.0,
+        "n_nonzero": 0,
+        "allowed": false,
+        "allowlist_entry": null
+      }
+    ]
+  },
+  "allowlist": {
+    "entries": [],
+    "unmatched": [],
+    "strict": false
+  },
+  "unexpected_untrained": {
+    "count_params": 2,
+    "count_numel": 1026,
+    "names": [
+      "scorer.goal_point.weight",
+      "scorer.goal_point.bias"
+    ]
+  }
+}

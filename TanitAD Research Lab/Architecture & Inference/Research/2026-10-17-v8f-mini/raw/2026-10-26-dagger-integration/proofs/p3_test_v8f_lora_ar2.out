@@ -1,0 +1,548 @@
+............................EFFEEEEEEEEEEEE........E............         [100%]
+=================================== ERRORS ====================================
+_ ERROR at setup of test_driver_run_identity_passes_on_a_cache_the_builders_own_functions_made _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur'), _trace=<pluggy._tracing.TagTra...0088A0>, _basetemp=WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def world(tmp_path_factory):
+>       return _write_world(tmp_path_factory.mktemp("ar2w"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_lora_ar2.py:253: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_lora_ar2.py:244: in _write_world
+    rows[split].append(_write_cache_clip(root / "cache", split, c, o, enc, perturb if c == perturb_clip else None, (row_kv or {}).get(c)))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tests\test_v8f_lora_ar2.py:215: in _write_cache_clip
+    pep, ship = E.load_builder()
+                ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and E:\Projects\TanitAD-artifacts\di\tree\stack\scripts\dinov3_fp8_encode_ship.py
+
+stack\tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+_ ERROR at setup of test_driver_run_refuses_a_stored_file_that_is_not_the_one_the_row_describes _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur'), _trace=<pluggy._tracing.TagTra...0088A0>, _basetemp=WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def world(tmp_path_factory):
+>       return _write_world(tmp_path_factory.mktemp("ar2w"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_lora_ar2.py:253: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_lora_ar2.py:244: in _write_world
+    rows[split].append(_write_cache_clip(root / "cache", split, c, o, enc, perturb if c == perturb_clip else None, (row_kv or {}).get(c)))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tests\test_v8f_lora_ar2.py:215: in _write_cache_clip
+    pep, ship = E.load_builder()
+                ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and E:\Projects\TanitAD-artifacts\di\tree\stack\scripts\dinov3_fp8_encode_ship.py
+
+stack\tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+_ ERROR at setup of test_driver_run_refuses_frames_that_are_not_the_ones_the_cache_was_encoded_from _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur'), _trace=<pluggy._tracing.TagTra...0088A0>, _basetemp=WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def world(tmp_path_factory):
+>       return _write_world(tmp_path_factory.mktemp("ar2w"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_lora_ar2.py:253: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_lora_ar2.py:244: in _write_world
+    rows[split].append(_write_cache_clip(root / "cache", split, c, o, enc, perturb if c == perturb_clip else None, (row_kv or {}).get(c)))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tests\test_v8f_lora_ar2.py:215: in _write_cache_clip
+    pep, ship = E.load_builder()
+                ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and E:\Projects\TanitAD-artifacts\di\tree\stack\scripts\dinov3_fp8_encode_ship.py
+
+stack\tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+_ ERROR at setup of test_driver_run_on_cpu_is_refused_unless_labelled_and_then_never_qualifies _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur'), _trace=<pluggy._tracing.TagTra...0088A0>, _basetemp=WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def world(tmp_path_factory):
+>       return _write_world(tmp_path_factory.mktemp("ar2w"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_lora_ar2.py:253: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_lora_ar2.py:244: in _write_world
+    rows[split].append(_write_cache_clip(root / "cache", split, c, o, enc, perturb if c == perturb_clip else None, (row_kv or {}).get(c)))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tests\test_v8f_lora_ar2.py:215: in _write_cache_clip
+    pep, ship = E.load_builder()
+                ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and E:\Projects\TanitAD-artifacts\di\tree\stack\scripts\dinov3_fp8_encode_ship.py
+
+stack\tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+______ ERROR at setup of test_driver_run_a_frame_subset_never_qualifies _______
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur'), _trace=<pluggy._tracing.TagTra...0088A0>, _basetemp=WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def world(tmp_path_factory):
+>       return _write_world(tmp_path_factory.mktemp("ar2w"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_lora_ar2.py:253: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_lora_ar2.py:244: in _write_world
+    rows[split].append(_write_cache_clip(root / "cache", split, c, o, enc, perturb if c == perturb_clip else None, (row_kv or {}).get(c)))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tests\test_v8f_lora_ar2.py:215: in _write_cache_clip
+    pep, ship = E.load_builder()
+                ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and E:\Projects\TanitAD-artifacts\di\tree\stack\scripts\dinov3_fp8_encode_ship.py
+
+stack\tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+_ ERROR at setup of test_driver_run_with_fewer_than_two_and_two_clips_never_qualifies _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur'), _trace=<pluggy._tracing.TagTra...0088A0>, _basetemp=WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def world(tmp_path_factory):
+>       return _write_world(tmp_path_factory.mktemp("ar2w"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_lora_ar2.py:253: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_lora_ar2.py:244: in _write_world
+    rows[split].append(_write_cache_clip(root / "cache", split, c, o, enc, perturb if c == perturb_clip else None, (row_kv or {}).get(c)))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tests\test_v8f_lora_ar2.py:215: in _write_cache_clip
+    pep, ship = E.load_builder()
+                ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and E:\Projects\TanitAD-artifacts\di\tree\stack\scripts\dinov3_fp8_encode_ship.py
+
+stack\tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+_ ERROR at setup of test_driver_mutant_a_changed_preprocessing_constant_fails_and_is_restored[IMAGE_MEAN0_0.485_to_0.486] _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur'), _trace=<pluggy._tracing.TagTra...0088A0>, _basetemp=WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def world(tmp_path_factory):
+>       return _write_world(tmp_path_factory.mktemp("ar2w"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_lora_ar2.py:253: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_lora_ar2.py:244: in _write_world
+    rows[split].append(_write_cache_clip(root / "cache", split, c, o, enc, perturb if c == perturb_clip else None, (row_kv or {}).get(c)))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tests\test_v8f_lora_ar2.py:215: in _write_cache_clip
+    pep, ship = E.load_builder()
+                ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and E:\Projects\TanitAD-artifacts\di\tree\stack\scripts\dinov3_fp8_encode_ship.py
+
+stack\tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+_ ERROR at setup of test_driver_mutant_a_changed_preprocessing_constant_fails_and_is_restored[IMAGE_STD2_0.225_to_0.226] _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur'), _trace=<pluggy._tracing.TagTra...0088A0>, _basetemp=WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def world(tmp_path_factory):
+>       return _write_world(tmp_path_factory.mktemp("ar2w"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_lora_ar2.py:253: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_lora_ar2.py:244: in _write_world
+    rows[split].append(_write_cache_clip(root / "cache", split, c, o, enc, perturb if c == perturb_clip else None, (row_kv or {}).get(c)))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tests\test_v8f_lora_ar2.py:215: in _write_cache_clip
+    pep, ship = E.load_builder()
+                ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and E:\Projects\TanitAD-artifacts\di\tree\stack\scripts\dinov3_fp8_encode_ship.py
+
+stack\tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+_ ERROR at setup of test_driver_mutant_a_changed_preprocessing_constant_fails_and_is_restored[PIXEL_SCALE_255_to_256] _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur'), _trace=<pluggy._tracing.TagTra...0088A0>, _basetemp=WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def world(tmp_path_factory):
+>       return _write_world(tmp_path_factory.mktemp("ar2w"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_lora_ar2.py:253: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_lora_ar2.py:244: in _write_world
+    rows[split].append(_write_cache_clip(root / "cache", split, c, o, enc, perturb if c == perturb_clip else None, (row_kv or {}).get(c)))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tests\test_v8f_lora_ar2.py:215: in _write_cache_clip
+    pep, ship = E.load_builder()
+                ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and E:\Projects\TanitAD-artifacts\di\tree\stack\scripts\dinov3_fp8_encode_ship.py
+
+stack\tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+___ ERROR at setup of test_driver_mutant_that_changes_nothing_is_not_caught ___
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur'), _trace=<pluggy._tracing.TagTra...0088A0>, _basetemp=WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def world(tmp_path_factory):
+>       return _write_world(tmp_path_factory.mktemp("ar2w"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_lora_ar2.py:253: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_lora_ar2.py:244: in _write_world
+    rows[split].append(_write_cache_clip(root / "cache", split, c, o, enc, perturb if c == perturb_clip else None, (row_kv or {}).get(c)))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tests\test_v8f_lora_ar2.py:215: in _write_cache_clip
+    pep, ship = E.load_builder()
+                ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and E:\Projects\TanitAD-artifacts\di\tree\stack\scripts\dinov3_fp8_encode_ship.py
+
+stack\tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+_ ERROR at setup of test_driver_mutant_caught_on_a_non_qualifying_device_proves_nothing _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur'), _trace=<pluggy._tracing.TagTra...0088A0>, _basetemp=WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def world(tmp_path_factory):
+>       return _write_world(tmp_path_factory.mktemp("ar2w"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_lora_ar2.py:253: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_lora_ar2.py:244: in _write_world
+    rows[split].append(_write_cache_clip(root / "cache", split, c, o, enc, perturb if c == perturb_clip else None, (row_kv or {}).get(c)))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tests\test_v8f_lora_ar2.py:215: in _write_cache_clip
+    pep, ship = E.load_builder()
+                ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and E:\Projects\TanitAD-artifacts\di\tree\stack\scripts\dinov3_fp8_encode_ship.py
+
+stack\tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+_ ERROR at setup of test_driver_manifest_only_asserts_the_rows_and_never_builds_a_model _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur'), _trace=<pluggy._tracing.TagTra...0088A0>, _basetemp=WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def world(tmp_path_factory):
+>       return _write_world(tmp_path_factory.mktemp("ar2w"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_lora_ar2.py:253: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_lora_ar2.py:244: in _write_world
+    rows[split].append(_write_cache_clip(root / "cache", split, c, o, enc, perturb if c == perturb_clip else None, (row_kv or {}).get(c)))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tests\test_v8f_lora_ar2.py:215: in _write_cache_clip
+    pep, ship = E.load_builder()
+                ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and E:\Projects\TanitAD-artifacts\di\tree\stack\scripts\dinov3_fp8_encode_ship.py
+
+stack\tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+____ ERROR at setup of test_driver_main_writes_its_json_even_on_a_refusal _____
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur'), _trace=<pluggy._tracing.TagTra...0088A0>, _basetemp=WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def world(tmp_path_factory):
+>       return _write_world(tmp_path_factory.mktemp("ar2w"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_lora_ar2.py:253: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_lora_ar2.py:244: in _write_world
+    rows[split].append(_write_cache_clip(root / "cache", split, c, o, enc, perturb if c == perturb_clip else None, (row_kv or {}).get(c)))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tests\test_v8f_lora_ar2.py:215: in _write_cache_clip
+    pep, ship = E.load_builder()
+                ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and E:\Projects\TanitAD-artifacts\di\tree\stack\scripts\dinov3_fp8_encode_ship.py
+
+stack\tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+_ ERROR at setup of test_smoke_amp_is_off_by_default_the_census_uses_the_whole_clip_list_and_the_report_carries_tau_device _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000219C24EFE30>
+
+    @pytest.fixture
+    def smoke_env(monkeypatch):
+        H = lora_helpers()
+        if not SMOKE_P.is_file():
+            pytest.skip("the smoke script is not in this checkout")
+>       pep, _ = E.load_builder()
+                 ^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_lora_ar2.py:629: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and E:\Projects\TanitAD-artifacts\di\tree\stack\scripts\dinov3_fp8_encode_ship.py
+
+stack\tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+================================== FAILURES ===================================
+____ test_driver_run_a_perturbed_stored_cache_with_a_consistent_row_fails _____
+
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_driver_run_a_perturbed_st0')
+cpu_is_qualifying = None
+
+    @needs_pkg
+    def test_driver_run_a_perturbed_stored_cache_with_a_consistent_row_fails(tmp_path, cpu_is_qualifying):
+        """The stored tokens differ by ~5 % (the size of a device / route gap) and the row describes them faithfully (md5 and all): the control must FAIL on that clip, name it, and exit 1."""
+>       w = _write_world(tmp_path / "w", perturb_clip="syn-ev-b", perturb=lambda p: (p.float() * 1.05).to(torch.float8_e4m3fn))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_lora_ar2.py:296: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_lora_ar2.py:244: in _write_world
+    rows[split].append(_write_cache_clip(root / "cache", split, c, o, enc, perturb if c == perturb_clip else None, (row_kv or {}).get(c)))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tests\test_v8f_lora_ar2.py:215: in _write_cache_clip
+    pep, ship = E.load_builder()
+                ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and E:\Projects\TanitAD-artifacts\di\tree\stack\scripts\dinov3_fp8_encode_ship.py
+
+stack\tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+_ test_driver_run_refuses_a_row_that_is_not_a_production_row_before_the_model_is_built _
+
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_driver_run_refuses_a_row_0')
+cpu_is_qualifying = None
+
+    @needs_pkg
+    def test_driver_run_refuses_a_row_that_is_not_a_production_row_before_the_model_is_built(tmp_path, cpu_is_qualifying):
+>       w = _write_world(tmp_path / "w", row_kv={"syn-tr-b": {"source": "thor416-resize", "enc_dtype": "fp32"}})
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_lora_ar2.py:306: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_lora_ar2.py:244: in _write_world
+    rows[split].append(_write_cache_clip(root / "cache", split, c, o, enc, perturb if c == perturb_clip else None, (row_kv or {}).get(c)))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tests\test_v8f_lora_ar2.py:215: in _write_cache_clip
+    pep, ship = E.load_builder()
+                ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and E:\Projects\TanitAD-artifacts\di\tree\stack\scripts\dinov3_fp8_encode_ship.py
+
+stack\tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+=========================== short test summary info ===========================
+FAILED stack\tests\test_v8f_lora_ar2.py::test_driver_run_a_perturbed_stored_cache_with_a_consistent_row_fails
+FAILED stack\tests\test_v8f_lora_ar2.py::test_driver_run_refuses_a_row_that_is_not_a_production_row_before_the_model_is_built
+ERROR stack\tests\test_v8f_lora_ar2.py::test_driver_run_identity_passes_on_a_cache_the_builders_own_functions_made
+ERROR stack\tests\test_v8f_lora_ar2.py::test_driver_run_refuses_a_stored_file_that_is_not_the_one_the_row_describes
+ERROR stack\tests\test_v8f_lora_ar2.py::test_driver_run_refuses_frames_that_are_not_the_ones_the_cache_was_encoded_from
+ERROR stack\tests\test_v8f_lora_ar2.py::test_driver_run_on_cpu_is_refused_unless_labelled_and_then_never_qualifies
+ERROR stack\tests\test_v8f_lora_ar2.py::test_driver_run_a_frame_subset_never_qualifies
+ERROR stack\tests\test_v8f_lora_ar2.py::test_driver_run_with_fewer_than_two_and_two_clips_never_qualifies
+ERROR stack\tests\test_v8f_lora_ar2.py::test_driver_mutant_a_changed_preprocessing_constant_fails_and_is_restored[IMAGE_MEAN0_0.485_to_0.486]
+ERROR stack\tests\test_v8f_lora_ar2.py::test_driver_mutant_a_changed_preprocessing_constant_fails_and_is_restored[IMAGE_STD2_0.225_to_0.226]
+ERROR stack\tests\test_v8f_lora_ar2.py::test_driver_mutant_a_changed_preprocessing_constant_fails_and_is_restored[PIXEL_SCALE_255_to_256]
+ERROR stack\tests\test_v8f_lora_ar2.py::test_driver_mutant_that_changes_nothing_is_not_caught
+ERROR stack\tests\test_v8f_lora_ar2.py::test_driver_mutant_caught_on_a_non_qualifying_device_proves_nothing
+ERROR stack\tests\test_v8f_lora_ar2.py::test_driver_manifest_only_asserts_the_rows_and_never_builds_a_model
+ERROR stack\tests\test_v8f_lora_ar2.py::test_driver_main_writes_its_json_even_on_a_refusal
+ERROR stack\tests\test_v8f_lora_ar2.py::test_smoke_amp_is_off_by_default_the_census_uses_the_whole_clip_list_and_the_report_carries_tau_device
+2 failed, 48 passed, 14 errors in 23.30s

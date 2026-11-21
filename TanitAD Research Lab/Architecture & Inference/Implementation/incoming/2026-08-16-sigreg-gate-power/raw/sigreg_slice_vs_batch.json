@@ -1,0 +1,51 @@
+{
+ "meta": {
+  "d_op": 512,
+  "rows_per_reading": 48,
+  "rank_ceiling": 47,
+  "reps": 24,
+  "seed": 0,
+  "torch": "2.11.0+cu128",
+  "sigreg_slices": 512
+ },
+ "premise_under_test": "that holding SigReg's slice directions fixed removes part of the effective_rank spread the O6 monitor shows",
+ "slice_component_effective_rank": {
+  "n": 24,
+  "mean": 45.943311,
+  "sd": 0.0,
+  "min": 45.943311,
+  "max": 45.943311,
+  "range": 0.0
+ },
+ "batch_component_effective_rank": {
+  "n": 24,
+  "mean": 45.869716,
+  "sd": 0.045668,
+  "min": 45.783893,
+  "max": 45.943089,
+  "range": 0.159196
+ },
+ "slice_component_o6_loss": {
+  "n": 24,
+  "mean": 5.342605,
+  "sd": 0.019896,
+  "min": 5.295517,
+  "max": 5.379196,
+  "range": 0.083679
+ },
+ "batch_component_o6_loss": {
+  "n": 24,
+  "mean": 5.362873,
+  "sd": 0.040259,
+  "min": 5.289309,
+  "max": 5.435464,
+  "range": 0.146155
+ },
+ "verdict": {
+  "slice_moves_effective_rank": false,
+  "slice_moves_o6_loss": true,
+  "batch_moves_effective_rank": true,
+  "share_of_ER_variance_attributable_to_slices": 0.0,
+  "reading": "spectrum_report takes the latent tensor and nothing else; SigReg's directions are internal to o6_sigreg_loss. A fixed sigreg_generator makes the LOSS reproducible and leaves the SPECTRUM reading untouched."
+ }
+}

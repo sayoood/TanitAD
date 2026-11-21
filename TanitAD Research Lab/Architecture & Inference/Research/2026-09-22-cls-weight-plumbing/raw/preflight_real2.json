@@ -1,0 +1,109 @@
+{
+  "verdict": "NO-GO",
+  "n_pass": 8,
+  "n_fail": 3,
+  "n_inconclusive": 6,
+  "checks": [
+    {
+      "state": "FAIL",
+      "check": "refcv5 modules import",
+      "detail": "11/12 import; FAILED: taniteval.ci (ModuleNotFoundError: No module named 'taniteval')"
+    },
+    {
+      "state": "PASS",
+      "check": "trainer imports",
+      "detail": "refc_v3_train loaded from D:\\Projects\\TanitAD\\stack\\scripts\\refc_v3_train.py"
+    },
+    {
+      "state": "PASS",
+      "check": "class enum is the corpus enum",
+      "detail": "n=10 identical=True fabricated=none; control: 'automobile' in enum=True"
+    },
+    {
+      "state": "PASS",
+      "check": "query budget covers the train corpus",
+      "detail": "--agent-queries default 100 (train max 94, val40 max 24). Upstream N_QUERIES_DEFAULT is 100 (ruled M17; 16 was REFUTED at 11.17 pct of boxes dropped, nearest sacrificed target 7.3 m) and covers the train max: True. refcv5 is NOT exposed either way (build_agent_head always passes n_queries explicitly). Second spellings found: none",
+      "agent_queries": 100,
+      "upstream_default": 100,
+      "upstream_covers_train_max": true,
+      "duplicate_spellings": []
+    },
+    {
+      "state": "FAIL",
+      "check": "every weighted term has a gradient",
+      "detail": "agent_w_ground grad=1.164e-10 n=64; agent_w_project grad=1.462e-03 n=64 | DEAD: ['agent_w_ground'] -- the weight would be stamped into config.json and add exactly 0 to the total | control: 1 of 2 terms are live",
+      "grads": {
+        "agent_w_project": 0.0014618588611483574,
+        "agent_w_ground": 1.1641532182693481e-10
+      },
+      "dead_terms": [
+        "agent_w_ground"
+      ]
+    },
+    {
+      "state": "PASS",
+      "check": "the seam guards refuse their defects",
+      "detail": "4/4 guards fired; control (legal config) passed"
+    },
+    {
+      "state": "PASS",
+      "check": "every knob reaches config.json",
+      "detail": "42 knobs derived from argparse, 0 missing from the stamp; control: n_knobs > 12 = True",
+      "n_knobs": 42
+    },
+    {
+      "state": "INCONCLUSIVE",
+      "check": "the camera scope is stated",
+      "detail": "no --rig-extrinsics given, so the PER-CLIP path is UNCHECKED. The default stamp carries mount_pose_scope=NONE (key present: True). A parity arm training the projection term needs a per-clip table -- one camera for the corpus is C28."
+    },
+    {
+      "state": "FAIL",
+      "check": "v2 cache present with stable ids",
+      "detail": "139 *.v2ep.pt (control: 141 entries in the dir), manifest present, path names the parity key: False",
+      "n_v2ep": 139,
+      "parity_in_path": false
+    },
+    {
+      "state": "PASS",
+      "check": "episode ids are collision-free",
+      "detail": "139 distinct stable ids for 139 files (control: a 16-bit legacy key collides on 34/2308 train clips)"
+    },
+    {
+      "state": "INCONCLUSIVE",
+      "check": "the corpus clip list is the PARITY set",
+      "detail": "no --clip-ids given, so coverage below is measured against whatever the local cache holds (139 episodes) -- which is a denominator, not the corpus"
+    },
+    {
+      "state": "PASS",
+      "check": "agent join joins to the cache",
+      "detail": "139/139 episodes join on the STABLE id (1.0000); 0 only on the COLLIDING 16-bit legacy key; join carries 875657 records / 4566 clips",
+      "stable_join_frac": 1.0,
+      "n_legacy_only": 0
+    },
+    {
+      "state": "PASS",
+      "check": "join digest declares its scope",
+      "detail": "declared scope: {'algo': 'md5', 'digest': '0c31a3a63d7205e9fa50e8ac4204ef46', 'scope': 'compressed', 'filename': 'b1_train_plus_eval_agents.jsonl.xz', 'declared_by': 'builder-backfill-MEASURED', 'note': 'scope is `compressed`: the md5 above is of the .xz itself. Only the .xz exists for this join -- there is no decompressed sibling on this box -- so the other candidate scope is not merely unlikely, it is unavailable.', 'schema': 'tanitad.join_digest_scope/1'}"
+    },
+    {
+      "state": "INCONCLUSIVE",
+      "check": "v7.2 tactical labels cover the corpus",
+      "detail": "no --v7-labels given. The trainer refuses --v7-labels below 50 % coverage; MEASURED on parity it is 7.92 %, so a parity arm either drops --nav-from-v7 and the 8x8 vocabulary, or waits for a parity v7.2 build."
+    },
+    {
+      "state": "INCONCLUSIVE",
+      "check": "per-clip cameras cover the corpus",
+      "detail": "no per-clip camera bank was built, so coverage is UNCHECKED"
+    },
+    {
+      "state": "INCONCLUSIVE",
+      "check": "anchor vocabulary declares its units",
+      "detail": "no --anchors given. A run without one silently falls back to the SYNTHETIC default, whose oracle-in-vocabulary ADE is 1.0882 m against 0.3796 m -- the ceiling below the floor."
+    },
+    {
+      "state": "INCONCLUSIVE",
+      "check": "a 2-step run states every weight",
+      "detail": "--smoke not passed, so the end-to-end record was NOT checked"
+    }
+  ]
+}

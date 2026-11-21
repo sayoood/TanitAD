@@ -1,0 +1,45 @@
+{
+ "schema": "tanitad.det_presence_gates/1",
+ "definition": "gate g on sigmoid(presence_logit) at the P = R point of the pooled greedy 2 m rows (detection_metrics.pr_equal_gate) on TRAIN-DIAG; a slot is a detection iff sigmoid(presence_logit) >= g",
+ "gates": {
+  "box3d": 0.2567453384399414,
+  "agent": 0.23066936433315277
+ },
+ "provenance": {
+  "run": "refcv7-r101-s0",
+  "checkpoint_step": 50400,
+  "checkpoint_md5": "d5f104ee54ba6b2861e38030b4f6fcf1",
+  "fit_split": "TRAIN",
+  "fit_set": "TRAIN-DIAG: 139 TRAIN episodes x 8 windows (the map fit pass), 1,074 windows carry VIS-1 labels",
+  "n_windows": 1112,
+  "n_windows_vis1_labelled": 1074,
+  "n_episodes": 139,
+  "source_file": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv7-map-box-diagnostics/raw/B_box.json",
+  "source_md5": "9cde687bcf52897936011565db79cce1",
+  "source_keys": [
+   "box3d.fit_train_diag.T3_gate",
+   "agent.fit_train_diag.T3_gate"
+  ],
+  "fit_code": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv7-map-box-diagnostics/code/analyze_box.py (fit_transforms)",
+  "result_doc": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv7-map-box-diagnostics/RESULT.md (sec. 2.3, fix F4)",
+  "train_precision_recall_at_gate": {
+   "box3d": [
+    0.3116308470290771,
+    0.3116308470290771
+   ],
+   "agent": [
+    0.2054361567635904,
+    0.2054361567635904
+   ]
+  },
+  "train_n_pos": {
+   "box3d": 3164,
+   "agent": 3164
+  },
+  "sensitivity_gate_from_train_calib256": {
+   "box3d": 0.2597883343696594,
+   "agent": 0.23583702743053436
+  },
+  "caveat": "fitted on ONE checkpoint (step 50,400) of ONE run; the planner consumes the raw presence probability as a soft scale and is NOT re-gated by these values"
+ }
+}

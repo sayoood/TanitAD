@@ -1,0 +1,73 @@
+# FINAL_INDEX -- refcv8 step 48852  (generated 2026-10-21T08:42:58)
+
+Reads artifacts and quotes their own status; computes no result. UNREADABLE = exists but does not parse; ABSENT = not there.
+
+## Weights (md5 chain)
+
+* `thor_ckpt_pt_md5_as_pulled`: 904e237658bc26e6473a6b891bd43169
+* `ckpt_full_local_md5`: 904e237658bc26e6473a6b891bd43169
+* `step_inside_file_per_extractor`: 48852
+* `extract_ok`: True
+* `extract_src_md5`: 904e237658bc26e6473a6b891bd43169
+* `ckpt_48852.pt_md5`: ba49eab9411e21b1376ae52dde802036
+* `ckpt_ema_48852.pt_md5`: b4364029b68f29a33eeb4aebbbbd002b
+* `trainer_model_ema_md5`: b14e2b0af5c0b41c66e266070066d35d
+* `xcheck_ok`: True
+* `xcheck_n_tensors`: 1165
+* `ema_gate_ok`: True
+* `summary_json_copy`: {'done': True, 'step': 48852, 'final_step': 'MISSING', 'note': 'evidence of completion, never the proof of the step'}
+
+## Stages (last marker after the chain's last START)
+
+* **PULL**: `ZZCFNPULLSEENZZ 2026-10-20T22:56:14+0200 pull_final state already`
+* **MD5**: `ZZCFNMD5OKZZ 2026-10-20T22:56:16+0200 ckpt_full_48852.pt md5 904e237658bc26e6473a6b891bd43169 (local == sidecar == provenance == DONE marker)`
+* **SUMMARY.JSON**: `ZZCFNSUMJSONOKZZ 2026-10-20T22:56:16+0200 summary.json done@48852`
+* **EXTRACT**: `ZZCFNEXTRACTHAVEZZ 2026-10-20T22:56:17+0200 pair already derived from this pull`
+* **EMA GATE**: `ZZCFNEMAGATEOKZZ 2026-10-20T22:56:32+0200 strict load clean, weights differ from raw`
+* **XCHECK**: `ZZCFNXCHECKHAVEZZ 2026-10-20T22:56:48+0200 pinned to these two md5s`
+* **EMA BATTERY**: `ZZCFNEMADONEZZ 2026-10-21T01:31:37+0200 banked: C:/Users/Admin/qland/hold_r8batt/stage/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-15-refcv8-milestone-battery/raw/step48852ema/BATTERY_SUMMARY_step48852ema.json`
+* **K-DRAW ROLLS**: `ZZCFNKDDONEZZ 2026-10-21T04:48:23+0200 seeds 2..7 verified + control written under /e/refcv8_eval_kit/kdraw/step48852ema_unc`
+* **K-DRAW READ**: `ZZCFNKDANALYSISZZ 2026-10-21T04:49:50+0200 overall={'overall': 'VOID (controls failed: C-K1, C-K2)', 'per_arm': {'ENS-4': 'FAIL', 'MEDOID-4': 'FAIL'}, 'would_have_been': 'FAIL'} void=['C-K1', 'C-K2']`
+* **RAW BATTERY**: `ZZCFNRAWDONEZZ 2026-10-21T08:09:19+0200 banked: C:/Users/Admin/qland/hold_r8batt/stage/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-15-refcv8-milestone-battery/raw/step48852/BATTERY_SUMMARY_step48852.json`
+* **RAW G0**: `ZZCFNRAWG0OKZZ 2026-10-21T05:34:28+0200 G0 FAIL M1 True`
+* **WRAPPER PROBE**: `ZZCFNWRAPFIXOKZZ 2026-10-21T05:39:10+0200 CLAUSE=PASS`
+* **TRAIN-FIT**: `ZZCFNTFOKZZ 2026-10-21T08:38:59+0200 step48852_unc -> /c/Users/Admin/qland/hold_r8batt/stage/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-15-refcv8-milestone-battery/raw/retime_trainfit/FORWARD_TRAINFIT_step48852_unc.json (its 'role' tex`
+* **COMBO**: `ZZCFNCOMBODONEZZ 2026-10-21T08:41:49+0200 status=REGISTERED READ (final checkpoint, train-fitted gains) void=['C-K1']`
+* **LANE**: `ZZCFNLANEENDZZ 2026-10-21T08:40:04+0200 `
+* **SUMMARY**: `ZZCFNSUMMARYOKZZ 2026-10-21T08:40:04+0200 C:/Users/Admin/qland/hold_r8batt/stage/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-15-refcv8-milestone-battery/raw/step48852/READ_FINAL.md (summarize_40k_r8.py names its output READ_40K.*; copie`
+* **CHAIN**: `ZZCFNENDZZ 2026-10-21T08:42:54+0200 ema=ok kd=ok raw=ok combo=rc 0`
+
+## Trees
+
+### step48852ema_unc
+* battery_summary: finished 2026-10-21T01:31:10
+* ckpt_md5: b4364029b68f29a33eeb4aebbbbd002b
+* paired_read: present (90121 B)
+* clamp_posthoc: present (183307 B)
+* compliant_reread: {'controls_ALL_PASS': True, 'bars_status': 'WRITTEN (all controls passed)'}
+* forward_a0k0: {'controls_ALL_PASS': True}
+* forward_lon: {'controls_ALL_PASS': True}
+* forward_retime: {'controls_ALL_PASS': True}
+* forward_trainfit: {'controls_ALL_PASS': True, 'const/ALL_PASS': True}
+* heading_drift: present (5699303 B)
+
+### step48852_unc
+* battery_summary: finished 2026-10-21T08:08:51
+* ckpt_md5: ba49eab9411e21b1376ae52dde802036
+* paired_read: present (91126 B)
+* clamp_posthoc: present (184160 B)
+* compliant_reread: {'controls_ALL_PASS': True, 'bars_status': 'WRITTEN (all controls passed)'}
+* forward_a0k0: {'controls_ALL_PASS': True}
+* forward_lon: {'controls_ALL_PASS': True}
+* forward_retime: {'controls_ALL_PASS': True}
+* forward_trainfit: {'controls_ALL_PASS': True, 'const/ALL_PASS': True}
+* heading_drift: present (4815761 B)
+
+## K-draw / combo / train-fit gains
+
+* kdraw_rolls: {'dump_s2': 'ok', 'dump_s3': 'ok', 'dump_s4': 'ok', 'dump_s5': 'ok', 'dump_s6': 'ok', 'dump_s7': 'ok'}
+* kdraw_control: present (9272 B)
+* kdraw_E1: {'overall': {'overall': 'VOID (controls failed: C-K1, C-K2)', 'per_arm': {'ENS-4': 'FAIL', 'MEDOID-4': 'FAIL'}, 'would_have_been': 'FAIL'}, 'void_controls_failed': ['C-K1', 'C-K2'], 'status': 'EXPLORATORY read of a banked milestone (EMA step in the tree name); the registered read is the FINAL checkpoint (48,852)'}
+* combo: {'status': 'REGISTERED READ (final checkpoint, train-fitted gains)', 'void_controls_failed': ['C-K1']}
+* READ_FINAL: present (27511 B)
+* trainfit_gains: present (9329 B)

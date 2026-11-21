@@ -1,0 +1,28 @@
+{
+ "_what": "fold precision vs strict-fp32 REF (unfolded, TF32 off), resnet101 416x1024",
+ "_evidence_class": "MEASURED (ours), Thor",
+ "torch": "2.13.0+cu130",
+ "default_cudnn_allow_tf32": true,
+ "rel_err_vs_REF_per_level": {
+  "folded_fp32_strict": [
+   1.446865553589305e-06,
+   4.23600567955873e-06
+  ],
+  "unfolded_fp32_tf32": [
+   0.0018975134007632732,
+   0.00605449452996254
+  ],
+  "folded_fp32_tf32": [
+   0.001827120315283537,
+   0.00537954131141305
+  ],
+  "unfolded_bf16_cl": [
+   0.01852044090628624,
+   0.04721313714981079
+  ],
+  "folded_bf16_cl": [
+   0.02099761739373207,
+   0.05806877464056015
+  ]
+ }
+}

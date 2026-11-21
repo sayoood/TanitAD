@@ -1,0 +1,84 @@
+Fs..........F..s......FF................................................ [ 58%]
+...................................s...............                      [100%]
+================================== FAILURES ===================================
+_____________________ test_constants_are_the_prereg_text ______________________
+
+    def test_constants_are_the_prereg_text():
+        t = PREREG.read_text(encoding="utf-8") if PREREG.exists() else ""
+>       assert t, "PREREG_V8F_KSCORE.md must be in the tree"
+E       AssertionError: PREREG_V8F_KSCORE.md must be in the tree
+E       assert ''
+
+tests\test_v8f_kscore.py:144: AssertionError
+_______________ test_every_outcome_quotes_the_prereg_next_step ________________
+
+    def test_every_outcome_quotes_the_prereg_next_step():
+>       t = PREREG.read_text(encoding="utf-8")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_kscore.py:450: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('F:/TanitAD-scratch/ladder_tree/Project Steering/PREREG_V8F_KSCORE.md')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'F:\\TanitAD-scratch\\ladder_tree\\Project Steering\\PREREG_V8F_KSCORE.md'
+
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+__________ test_read_end_to_end_applies_the_table_and_controls_pass ___________
+
+pipe = {'run': WindowsPath('F:/TanitAD-scratch/hwm_bands/b/regress_tmp/bt_base_test_v8f_kscore/kscore0/run'), 'cks': {0: Wind..., 'base': WindowsPath('F:/TanitAD-scratch/hwm_bands/b/regress_tmp/bt_base_test_v8f_kscore/kscore0'), 'rc_read': 2, ...}
+
+    def test_read_end_to_end_applies_the_table_and_controls_pass(pipe):
+>       assert pipe["rc_read"] == 0
+E       assert 2 == 0
+
+tests\test_v8f_kscore.py:631: AssertionError
+_ test_read_refuses_with_rc2_on_a_stop_control_a_missing_block_and_an_unmapped_state _
+
+world = {'root': WindowsPath('F:/TanitAD-scratch/hwm_bands/b/regress_tmp/bt_base_test_v8f_kscore/syn0'), 'joins': {'train': {'...in-001', 'syn-train-002', 'syn-train-003', 'syn-train-004'], 'eval': ['syn-eval-000', 'syn-eval-001', 'syn-eval-002']}}
+pipe = {'run': WindowsPath('F:/TanitAD-scratch/hwm_bands/b/regress_tmp/bt_base_test_v8f_kscore/kscore0/run'), 'cks': {0: Wind..., 'base': WindowsPath('F:/TanitAD-scratch/hwm_bands/b/regress_tmp/bt_base_test_v8f_kscore/kscore0'), 'rc_read': 2, ...}
+tmp_path = WindowsPath('F:/TanitAD-scratch/hwm_bands/b/regress_tmp/bt_base_test_v8f_kscore/test_read_refuses_with_rc2_on_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001648C0CEC60>
+
+    def test_read_refuses_with_rc2_on_a_stop_control_a_missing_block_and_an_unmapped_state(world, pipe, tmp_path, monkeypatch):
+        run = pipe["run"]
+        argv = ["read", "--smoke", "--no-banked", "--n-boot", "20", "--dk-reader", str(DKR_P)] + common(world, run)
+        assert K.main(argv + ["--lead-block", str(tmp_path / "missing.npz")]) == 2                    # LEAD-VIOL cannot be read: the table maps no state without it
+        assert json.load(open(run / "READ.json", encoding="utf-8"))["status"] == "STOPPED"
+        lb = str(pipe["lead_block"])
+        monkeypatch.setattr(K, "decide", lambda per: (_ for _ in ()).throw(K.Unmapped("test: a state with no row")))
+        assert K.main(argv + ["--lead-block", lb]) == 2
+>       assert json.load(open(run / "READ.json", encoding="utf-8"))["status"] == "UNMAPPED"
+E       AssertionError: assert 'STOPPED' == 'UNMAPPED'
+E         
+E         - UNMAPPED
+E         + STOPPED
+
+tests\test_v8f_kscore.py:657: AssertionError
+---------------------------- Captured stdout call -----------------------------
+STOPPED: the programme's distance-keeping reader F:\TanitAD-scratch\ladder_tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-v8f-mini\code\v8f_dk_read.py is missing: LEAD-VIOL cannot be read (the table maps no state without it)
+STOPPED: the programme's distance-keeping reader F:\TanitAD-scratch\ladder_tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-v8f-mini\code\v8f_dk_read.py is missing: LEAD-VIOL cannot be read (the table maps no state without it)
+=========================== short test summary info ===========================
+FAILED tests/test_v8f_kscore.py::test_constants_are_the_prereg_text - Asserti...
+FAILED tests/test_v8f_kscore.py::test_every_outcome_quotes_the_prereg_next_step
+FAILED tests/test_v8f_kscore.py::test_read_end_to_end_applies_the_table_and_controls_pass
+FAILED tests/test_v8f_kscore.py::test_read_refuses_with_rc2_on_a_stop_control_a_missing_block_and_an_unmapped_state
+4 failed, 116 passed, 3 skipped in 447.77s (0:07:27)

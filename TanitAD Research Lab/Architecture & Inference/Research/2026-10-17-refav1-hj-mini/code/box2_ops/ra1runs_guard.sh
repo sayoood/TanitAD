@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Box 2 USB-HDD temperature guard for the RA-1 full RUNS (PREREG_RA1_FULL phases 1-3), 2026-10-19 06:41: temp_guard.sh covered only the
+# build and exited with it, so the runs' 6-10 h of cache reads would have been unguarded. Same rule, unchanged:
+#   STOP if >= 4 of the last 20 telemetry samples (15 s apart) read >= 61 C, or any one sample reads >= 63 C.
+# Stop = Stop-Process on OUR job's python processes only (ra1_hjepa_train / ra1_hjepa_eval) and their workers. The chain then sees a
+# nonzero rc and stops, and the v8F-mini and beta chains stop behind it (box 2 is left for a human). Exits when the runs chain ends.
+# 2026-10-19: the chain log is a parameter (RA1_CHAIN_OUT; default = the phases 1-3 chain, unchanged) so the same guard watches
+# PREREG_RA1_FULL Amendment 1's chain (chain_ra1_full4.sh, markers ZZRA1A1-DONE / ZZRA1A1-STOP).
+# 2026-10-20: and Amendment 2's (chain_ra1_full5.sh, IDM at gamma 200, markers ZZRA1A2-DONE / ZZRA1A2-STOP).
+# 2026-10-20 22:43 FIX: the end test is ANCHORED (^MARKER). Unanchored, it matched chain_ra1_full5.sh's own first line "waiting for
+# ZZRA1A1-DONE in ..." and switched the guard off one minute into training (stack/tests/test_ra1_box2_guard.py pins it).
+B=/c/Users/Admin/box2_ship; L=$B/logs
+CHAIN_OUT=${RA1_CHAIN_OUT:-$L/chain_ra1_full_runs.out}
+SSH="ssh -o BatchMode=yes -o ConnectTimeout=20 tanitad-box2"
+echo "$(date '+%m-%d %H:%M') RA-1 runs temp guard armed (>=4/20 samples >= 61 C, or one >= 63 C), watching $CHAIN_OUT"
+hi=0
+while :; do
+  grep -q -E '^(ZZRA1FULLRUNS|ZZRA1A1|ZZRA1A2)-(DONE|STOP)' $CHAIN_OUT 2>/dev/null && { echo "$(date '+%m-%d %H:%M') runs chain ended; guard off (max USB ${hi} C)"; exit 0; }
+  t=$($SSH "powershell -NoProfile -Command \"Get-Content D:/tanitad/logs/telemetry_full.csv -Tail 20\"" 2>/dev/null | tr -d '\r' | grep -E '^20' | cut -d, -f11 | grep -E '^[0-9]+$')
+  if [ -n "$t" ]; then
+    n61=$(echo "$t" | awk '$1 >= 61' | wc -l); m=$(echo "$t" | sort -n | tail -1)
+    [ "$m" -gt "$hi" ] && { hi=$m; echo "$(date '+%m-%d %H:%M') new max USB temp $m C"; }
+    if [ "$n61" -ge 4 ] || [ "$m" -ge 63 ]; then
+      echo "ZZTEMP-STOP $(date '+%m-%d %H:%M') USB HDD: $n61 of the last 20 samples >= 61 C, max $m C -- stopping the RA-1 runs' python processes"
+      $SSH "powershell -NoProfile -Command \"\$p = @(Get-CimInstance Win32_Process -Filter \\\"Name = 'python.exe'\\\"); \$ours = @(\$p | Where-Object { \$_.CommandLine -match 'ra1_hjepa_train|ra1_hjepa_eval' }); \$ids = @(\$ours | ForEach-Object { \$_.ProcessId }); \$kids = @(\$p | Where-Object { \$ids -contains \$_.ParentProcessId }); (\$ours + \$kids) | ForEach-Object { Stop-Process -Id \$_.ProcessId -Force -ErrorAction SilentlyContinue; 'stopped ' + \$_.ProcessId }\"" 2>/dev/null | tr -d '\r'
+      exit 0
+    fi
+  fi
+  sleep 60
+done

@@ -1,0 +1,20 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+_____________ test_pace_is_judged_against_the_PI_approved_ceiling _____________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4367/test_pace_is_judged_against_th0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001E61334D940>
+
+    def test_pace_is_judged_against_the_PI_approved_ceiling(tmp_path, monkeypatch):
+        """SPEC_REFCV7 sec. 25 (2026-09-27): the PI approved ~9.9 s/step with a 10.5 s/step ceiling. Above the
+        pre-approval 8.0 line but within 10.5 is GOOD (the decision was taken); only above 10.5 is amber."""
+        mod = _load(monkeypatch)
+        page, s = mod.build(watch_dir=str(_run_dir(tmp_path, s_per_step=8.5)), arm=ARM)
+>       assert s["pace_s"] == 8.5 and s["pace_above_pi_line"] is True and s["pace_over_pi_approval"] is False
+                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'pace_over_pi_approval'
+
+taniteval\tests\test_build_watch_refcv7.py:493: KeyError
+=========================== short test summary info ===========================
+FAILED taniteval/tests/test_build_watch_refcv7.py::test_pace_is_judged_against_the_PI_approved_ceiling
+1 failed, 44 deselected in 0.25s

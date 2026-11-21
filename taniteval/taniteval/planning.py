@@ -112,7 +112,7 @@ def _behavior_probe(feats, labels, eid, n_classes):
 
 @torch.no_grad()
 def run(model, episodes, device, max_eps=20, stride=8,
-        pose_scale=_eg.POSE_SCALE_DEFAULT):
+        pose_scale=_eg.POSE_SCALE_DEFAULT, labels_v2=False):
     if getattr(model, "tactical_policy", None) is None:
         return {"skipped": "no trained tactical/strategic policy brains"}
     model.eval()
@@ -142,9 +142,11 @@ def run(model, episodes, device, max_eps=20, stride=8,
             eid_all.extend([ep.episode_id] * len(ch))
 
             # --- labels (exactly the trainer's refb_labels derivations) ------
-            man_tgt = rl.classify_maneuver(
-                pl[:, 2], fut[:, GOAL_H - 1, 2], pl[:, 3],
-                fut[:, GOAL_H - 1, 3]).long().to(device)
+            # ⛔ was `rl.classify_maneuver(...)` UNCONDITIONALLY — the same
+            # defect fixed in hierarchy.py:592 on 2026-08-17. `labels_v2` must
+            # be the arm's own cfg.v2_labels (loaders.resolve_labels_v2).
+            man_tgt = rl.window_maneuver_labels_for(
+                pl, fut, horizon=GOAL_H, v2=bool(labels_v2)).long().to(device)
             man_all.append(man_tgt.detach().cpu())
             navs, rts, valids = [], [], []
             for t in ch:

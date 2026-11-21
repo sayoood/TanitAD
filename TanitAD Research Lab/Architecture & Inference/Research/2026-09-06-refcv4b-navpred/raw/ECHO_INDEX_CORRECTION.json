@@ -1,0 +1,51 @@
+{
+  "_is": "INSTRUMENT CORRECTION to the refcv4b landing STRATEGIC block, zero GPU, from the banked dump.",
+  "evidence_class": "MEASURED (ours)",
+  "tier": "T1",
+  "n_windows": 4823,
+  "n_episodes": 141,
+  "reproduction_control": {
+    "n_changed": 1736,
+    "landing_n_changed": 1736,
+    "follows_label": 0.7437,
+    "landing_follows_label": 0.7437,
+    "follows_shuffled_nav_AS_SHIPPED": 0.2264,
+    "landing_value": 0.2264,
+    "note": "all three reproduce the landing read exactly, so this is the same object being re-read."
+  },
+  "DEFECT": {
+    "what": "refcv3_arm.py compares route_pred (a ROUTE_CLASSES index, 3-wide) DIRECTLY against a NAV_COMMANDS index (4-wide) in TWO places: strategic.conditionings[*].nav_echo_index and strategic.changed_subset.route_follows_SHUFFLED_NAV_under_shuffle.",
+    "why_it_is_wrong": "refb.py:64 NAV_COMMANDS=('follow','left','right','straight'); refb.py:68 ROUTE_CLASSES=('route_left','route_straight','route_right'); refb_labels.py:77-78 _NAV_TO_ROUTE={0:1,1:0,2:2} and :483-484 _ROUTE_TO_NAV={0:1,1:0,2:2}. NOT the identity.",
+    "the_comment_that_asserted_otherwise": "'NAV_COMMANDS and ROUTE_CLASSES are both 3-wide and index-aligned in refb' -- refuted by refb.py:64.",
+    "SCOPE": "It is a REGRESSION against the sibling harness: taniteval/tools/refav1_arm.py:2341 does it CORRECTLY (maps nav->route with n2r, then compares in ROUTE space). Every refav1 strategic number is unaffected. The defect is refcv3_arm.py only, and therefore touches the refcv3 and refcv4b records."
+  },
+  "CORRECTIONS": {
+    "nav_echo_index": {
+      "published": 0.1621,
+      "corrected": 0.6405,
+      "n": 3622
+    },
+    "route_follows_SHUFFLED_NAV_under_shuffle": {
+      "published": 0.2264,
+      "corrected": 0.337,
+      "n": 1736
+    }
+  },
+  "THIRD_DEFECT_mutual_exclusivity": {
+    "claim_in_the_tool": "'on windows whose nav token CHANGED, the label route and the shuffled-nav route are different classes BY CONSTRUCTION, so the two rates are mutually exclusive'",
+    "MEASURED": "FALSE",
+    "why": "route_label is a PER-WINDOW target from route_from_future; nav_cmd is a PER-CLIP token from a 25 s horizon. They are different derivations, so the label can equal the implied route of a DIFFERENT nav token.",
+    "n_changed": 1736,
+    "n_where_label_equals_implied_shuffled_route": 425,
+    "frac": 0.2448,
+    "rates_sum_to": 1.0806
+  },
+  "THE_CLEAN_ANTI_ECHO_READ": {
+    "_is": "the changed subset RESTRICTED to windows where the label and the shuffled nav's implied route really are different classes -- there the two hypotheses ARE exclusive and the comparison means what the tool says it means",
+    "n": 1311,
+    "route_follows_LABEL": 0.7124,
+    "route_follows_SHUFFLED_NAV": 0.1739,
+    "verdict": "the anti-echo verdict STANDS and is sharper here than in the published form"
+  },
+  "WHY_THE_VERDICT_IS_ROBUST_ANYWAY": "the head's output is IDENTICAL under nav_true / nav_shuffled (4823/4823) and nav_zero (4822/4823) -- a function that does not read the nav input cannot echo it, whatever index arithmetic is applied downstream. The index defect changes the NUMBERS, not the finding."
+}

@@ -1,0 +1,100 @@
+{
+  "tool": "tools/backlog_drift.py",
+  "baseline_md5": "e9f66a46ed82644a42e32bb35d0661e2",
+  "baseline": {
+    "returncode": 0,
+    "tail": "................................                                         [100%]\n32 passed in 2.06s"
+  },
+  "mutations": [
+    {
+      "name": "M1_no_zero_row_guard",
+      "defect": "the central anti-silent-pass guard: an unparseable file reports CLEAN",
+      "returncode": 1,
+      "went_red": true,
+      "tail": "=========================== short test summary info ===========================\nFAILED tools/tests/test_backlog_drift.py::test_ZERO_ROWS_REFUSES_rather_than_reporting_clean\n1 failed, 31 passed in 2.21s"
+    },
+    {
+      "name": "M2_substring_done_words",
+      "defect": "the ORIGINAL defect: done-words matched as substrings, so `closed-loop`, `done-marker`, `roll_closed` and `-RESOLVED` all read as closures",
+      "returncode": 1,
+      "went_red": true,
+      "tail": "FAILED tools/tests/test_backlog_drift.py::test_the_bullet_bold_PREFIX_is_restored_or_spans_mis_pair\nFAILED tools/tests/test_backlog_drift.py::test_the_bold_PREFIX_is_applied_AT_THE_CALL_SITE_in_parse\n8 failed, 24 passed in 2.17s"
+    },
+    {
+      "name": "M3_bullet_bold_prefix_dropped",
+      "defect": "a bullet's consumed opening `**` is not restored, so spans mis-pair and a phantom span beginning with a closure verb reads as DONE -- a FALSE closure, which silently removes work from the list",
+      "returncode": 1,
+      "went_red": true,
+      "tail": "=========================== short test summary info ===========================\nFAILED tools/tests/test_backlog_drift.py::test_the_bold_PREFIX_is_applied_AT_THE_CALL_SITE_in_parse\n1 failed, 31 passed in 2.10s"
+    },
+    {
+      "name": "M9_no_min_bytes_guard",
+      "defect": "a truncated read on a flaky mount is accepted as a short file",
+      "returncode": 1,
+      "went_red": true,
+      "tail": "=========================== short test summary info ===========================\nFAILED tools/tests/test_backlog_drift.py::test_a_SHORT_read_REFUSES - Asserti...\n1 failed, 31 passed in 2.00s"
+    },
+    {
+      "name": "M10_no_min_rows_floor",
+      "defect": "a parser regression that drops a whole row family reads as a tidy backlog",
+      "returncode": 1,
+      "went_red": true,
+      "tail": "=========================== short test summary info ===========================\nFAILED tools/tests/test_backlog_drift.py::test_BELOW_THE_ROW_FLOOR_REFUSES - ...\n1 failed, 31 passed in 2.08s"
+    },
+    {
+      "name": "M11_no_zero_closed_guard",
+      "defect": "a close-detector finding nothing reports no problems instead of refusing",
+      "returncode": 1,
+      "went_red": true,
+      "tail": "=========================== short test summary info ===========================\nFAILED tools/tests/test_backlog_drift.py::test_ZERO_CLOSED_ROWS_REFUSES - ass...\n1 failed, 31 passed in 2.08s"
+    },
+    {
+      "name": "M12_heading_items_unanchored",
+      "defect": "an unanchored heading match also catches the SECTION CONTAINER whose blocker glyph is a note inside the heading, not a status on it",
+      "returncode": 1,
+      "went_red": true,
+      "tail": "=========================== short test summary info ===========================\nFAILED tools/tests/test_backlog_drift.py::test_heading_items_are_ANCHORED_not_substring_matched\n1 failed, 31 passed in 2.04s"
+    },
+    {
+      "name": "M4_gate_never_fails",
+      "defect": "the gate prints its findings and exits 0 -- a check nobody has to read",
+      "returncode": 1,
+      "went_red": true,
+      "tail": "FAILED tools/tests/test_backlog_drift.py::test_a_row_that_declares_itself_done_with_an_UNSTRUCK_id_FIRES\nFAILED tools/tests/test_backlog_drift.py::test_a_STRUCK_BLOCKER_on_an_open_row_is_its_own_class\n3 failed, 29 passed in 2.03s"
+    },
+    {
+      "name": "M5_no_id_aggregation",
+      "defect": "per-OCCURRENCE verdicts instead of per-ID: every bullet later closed by a separate `-- STRUCK` line is reported stale, and the gate cries wolf",
+      "returncode": 1,
+      "went_red": true,
+      "tail": "FAILED tools/tests/test_backlog_drift.py::test_a_LATER_line_closes_an_earlier_bullet_and_the_gate_stays_quiet\nFAILED tools/tests/test_backlog_drift.py::test_a_MULTI_ID_bullet_closes_EVERY_id_it_names\n2 failed, 30 passed in 2.16s"
+    },
+    {
+      "name": "M6_blocker_includes_item_cell",
+      "defect": "`cells[2:]` instead of `cells[3:]`: a struck ITEM is reported as a cleared BLOCKER -- a wrong reason attached to a right row",
+      "returncode": 1,
+      "went_red": true,
+      "tail": "=========================== short test summary info ===========================\nFAILED tools/tests/test_backlog_drift.py::test_a_struck_ITEM_is_not_reported_as_a_cleared_BLOCKER\n1 failed, 31 passed in 2.20s"
+    },
+    {
+      "name": "M7_no_all_closed_guard",
+      "defect": "a strike-detector broken the SILENT way (everything reads closed) reports no problems instead of refusing",
+      "returncode": 1,
+      "went_red": true,
+      "tail": "=========================== short test summary info ===========================\nFAILED tools/tests/test_backlog_drift.py::test_ALL_ROWS_CLOSED_REFUSES - asse...\n1 failed, 31 passed in 2.10s"
+    },
+    {
+      "name": "M8_non_ascii_to_stdout",
+      "defect": "row excerpts reach stdout un-transliterated -- on the cp1252 console this is a crash in a guard, i.e. it fails closed for the wrong reason",
+      "returncode": 1,
+      "went_red": true,
+      "tail": "=========================== short test summary info ===========================\nFAILED tools/tests/test_backlog_drift.py::test_the_live_backlog_is_CURRENTLY_DRIFTED_and_the_gate_says_so\n1 failed, 31 passed in 2.09s"
+    }
+  ],
+  "after_restore": {
+    "returncode": 0,
+    "tail": "................................                                         [100%]\n32 passed in 2.11s",
+    "md5_matches_baseline": true
+  },
+  "verdict": "ALL MUTATIONS CAUGHT"
+}

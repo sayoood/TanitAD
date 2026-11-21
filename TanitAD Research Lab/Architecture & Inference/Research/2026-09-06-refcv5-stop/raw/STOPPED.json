@@ -1,0 +1,87 @@
+{
+  "done": false,
+  "stopped": true,
+  "stop_kind": "DELIBERATE_PI_ORDERED_STOP",
+  "NOT_A_COMPLETION_MARKER": "This run did NOT reach its 40284-step target. It was stopped on purpose. summary.json was deliberately NOT written, because {'done': true} would falsely mark a 40284-step run complete. Do not resume, do not relaunch, and do not read this file as a done-marker.",
+  "run": "refcv5-ddim-b1-v72-40k",
+  "arm": "REF-C v5 / WP-4 DDIM sampler in control space",
+  "levers": "--sampler ddim --w-u0 0.5 --agents off",
+  "target_steps": 40284,
+  "final_step": 5950,
+  "pct_of_target": 14.77,
+  "final_train_loss": 9.19979,
+  "final_train_traj": 0.88517,
+  "final_eval_step": 5500,
+  "final_eval_loss": 8.4054,
+  "final_eval_traj": 0.7762,
+  "final_eval_lat_tac": 1.0158,
+  "checkpoint_step_in_ckpt_pt": 5500,
+  "metrics_rows": {
+    "total": 130,
+    "train": 119,
+    "eval": 11
+  },
+  "wall_clock_s": 24082.7,
+  "wall_clock_h": 6.69,
+  "s_per_step_observed": 4.048,
+  "launched_utc": "2026-09-06T10:13:52Z",
+  "stopped_utc": "2026-09-06T16:57Z",
+  "reason": "PI directive 2026-09-06: this arm implements ONE lever, not the instructed design. Stopped cleanly to free the A40 for the replacement arm.",
+  "stop_procedure": {
+    "order": "supervisor FIRST, then trainer (reverse order would let the supervisor relaunch the trainer)",
+    "killed_pids_in_order": [
+      {
+        "pid": 2530709,
+        "what": "supervisor bash /workspace/sup_refcv5.sh",
+        "signal": "SIGKILL",
+        "verified": "GONE"
+      },
+      {
+        "pid": 2530708,
+        "what": "orphaned launch wrapper (held no lock)",
+        "signal": "already exited when supervisor died",
+        "verified": "GONE"
+      },
+      {
+        "pid": 2538212,
+        "what": "supervisor's orphaned `sleep 120` child",
+        "signal": "SIGKILL",
+        "verified": "GONE"
+      },
+      {
+        "pid": 2530863,
+        "what": "trainer refc_v3_train.py",
+        "signal": "SIGTERM (sufficient; no signal handlers)",
+        "verified": "GONE"
+      },
+      {
+        "pid": "2530978-2530983",
+        "what": "6 dataloader workers",
+        "signal": "died with parent",
+        "verified": "GONE"
+      }
+    ],
+    "lock_scan": {
+      "path": "/workspace/.sup_refcv5.lock",
+      "holders_before": 1,
+      "holders_after": 0,
+      "note": "the supervisor's `200>&-` on trainer AND sleeps worked; no child ever inherited fd 200"
+    },
+    "supervisor_script": "renamed to a tombstone so a stale relaunch fails loudly"
+  },
+  "preserved_at": "/workspace/experiments/refcv5-ddim-b1-v72-40k-STOPPED-SAFE",
+  "preserved_md5": {
+    "ckpt.pt": "1f24ad3a53e5a66b27656c4cceb599f0",
+    "ckpt_5000.pt": "6bf675bf4068e5ee31d89560bcdb019e",
+    "config.json": "faf054b4f618959d7d5376fa9b3d1de1",
+    "metrics.jsonl": "cdf1f875d885f31d9b4af52a00b1e5aa",
+    "train.log": "f5fb6a6c08ed83ed54ed1ca12397fd0d",
+    "supervisor.log": "a9cbec671be2a677b932207a156a484f",
+    "anchors.pt": "297f6f1db52f6a56094846b0d7f71ed9"
+  },
+  "content_assertions": {
+    "md5_match_src_vs_dst": "7/7",
+    "not_all_NUL": "PASS (nonzero bytes in first 4096B; all-NUL control read 0)",
+    "torch_load": "PASS - step 5500, 557 model tensors, 351 opt state entries, 40/40 sampled float tensors non-zero (sum-norm 255.648)"
+  }
+}

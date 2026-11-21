@@ -1,0 +1,63 @@
+[v3] rig camera = PER-CLIP EXTRINSICS from /home/nvidia/data/refcv6_train_eval139_extrinsics.json (4508 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v2] /home/nvidia/data/refcv6-b1-416x1024-train: 4369 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 4246 distinct for 4369 clips]
+[v2] 4369 providers, 4369 distinct episode ids
+[v3] nav_from_v7: follow 11 / left 3 / right 2, missing 0 (of 16 clips; md5=b45377a1f25263b5c0f3d318c126b1ac)
+[v3] max_speed_input_v6 (4-way one-hot): 4572/4572 sidecar rows carry a ceiling, 2737/2737 windows fed (100.0 %), 86 clips ABOVE the 120 km/h top step (clamped, and on those the fed ceiling is one the ego demonstrably exceeded)
+[v3] agent join: 16/16 episodes (stable-63bit), 2737/2737 windows labelled (100.0 %), 112229 prefilter target boxes, pad 400
+[v3] SAM3 map GT: 2737/2737 windows covered (1.0000, floor 0.90, verdict PASS) over 16 clips; states {'ok': 2737, 'no_file': 0, 'frame_out_of_range': 0, 'inconclusive': 0}; layouts ['canonical']
+[diag 09:32:45] C3 PASS: [113, 77]
+[diag 09:32:45] part audit starts
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[diag 09:32:52] audit step 1: npos 23 |g| matched 0.023790651932358742 unmatched 2.1714577087550424e-06 mem-grad 0.7313411235809326 logit m/u -3.830413341522217/-3.7863707542419434 loss 130.960
+[diag 09:33:32] audit step 20: npos 23 |g| matched 0.023560399189591408 unmatched 1.5022033039713278e-06 mem-grad 0.08450300246477127 logit m/u -4.056918144226074/-3.946342706680298 loss 59.008
+[diag 09:34:12] audit step 40: npos 22 |g| matched 0.02545897103846073 unmatched 0.00014665826165582985 mem-grad 0.24687865376472473 logit m/u -2.4857170581817627/-2.3232498168945312 loss 48.618
+[diag 09:34:51] audit step 60: npos 29 |g| matched 0.01677333191037178 unmatched 0.0006058198632672429 mem-grad 0.10434704273939133 logit m/u -1.555167317390442/-1.679147481918335 loss 49.039
+[diag 09:35:30] audit step 80: npos 28 |g| matched 0.018762905150651932 unmatched 0.0003569912805687636 mem-grad 0.09171483665704727 logit m/u -1.870025396347046/-1.8968298435211182 loss 40.638
+[diag 09:36:10] audit step 100: npos 24 |g| matched 0.021470841020345688 unmatched 0.0005157880368642509 mem-grad 0.18038752675056458 logit m/u -1.7836750745773315/-1.8272634744644165 loss 36.059
+[diag 09:36:50] audit step 120: npos 24 |g| matched 0.0217629075050354 unmatched 0.000679228687658906 mem-grad 0.11504506319761276 logit m/u -1.8386948108673096/-1.7056373357772827 loss 31.185
+[diag 09:37:29] audit step 140: npos 20 |g| matched 0.024949509650468826 unmatched 0.000718050345312804 mem-grad 0.10528682917356491 logit m/u -1.6525253057479858/-1.806571125984192 loss 28.987
+[diag 09:38:08] audit step 160: npos 33 |g| matched 0.015754753723740578 unmatched 0.00038282060995697975 mem-grad 0.1720525175333023 logit m/u -1.8041976690292358/-1.8000224828720093 loss 31.117
+[diag 09:38:48] audit step 180: npos 15 |g| matched 0.03465638309717178 unmatched 0.0005147122428752482 mem-grad 0.1585465669631958 logit m/u -1.8045600652694702/-2.0074141025543213 loss 32.044
+[diag 09:39:27] audit step 200: npos 38 |g| matched 0.011643610894680023 unmatched 0.00035723959445022047 mem-grad 0.13133643567562103 logit m/u -1.305477499961853/-1.8722800016403198 loss 36.829
+[diag 09:39:27] part audit done (401.7 s)
+[diag 09:39:27] part oneframe starts
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file+cli), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[diag 09:39:31] oneframe step 1: p_matched median 0.020600443705916405 max 0.022157058119773865 | unmatched max 0.02293030545115471 | assign stable None | loss 140.033
+[diag 09:39:46] oneframe step 25: p_matched median 0.02902296744287014 max 0.03565656766295433 | unmatched max 0.037389617413282394 | assign stable 0.0 | loss 45.492
+[diag 09:40:00] oneframe step 50: p_matched median 0.1291639506816864 max 0.15135644376277924 | unmatched max 0.17317569255828857 | assign stable 0.0 | loss 30.491
+[diag 09:40:15] oneframe step 75: p_matched median 0.2100493311882019 max 0.2642726004123688 | unmatched max 0.23561599850654602 | assign stable 0.0 | loss 31.475
+[diag 09:40:30] oneframe step 100: p_matched median 0.1650679111480713 max 0.2260337471961975 | unmatched max 0.22404047846794128 | assign stable 0.07692307692307693 | loss 23.322
+[diag 09:40:31] oneframe eval 100: AP 0.106 P nan R 0.000 conf 0/13 p_matched median 0.17553762505888412
+[diag 09:40:45] oneframe step 125: p_matched median 0.1964935064315796 max 0.20815721154212952 | unmatched max 0.22189058363437653 | assign stable 0.07692307692307693 | loss 36.238
+[diag 09:41:00] oneframe step 150: p_matched median 0.18845058977603912 max 0.21420559287071228 | unmatched max 0.22782209515571594 | assign stable 0.07692307692307693 | loss 45.261
+[diag 09:41:15] oneframe step 175: p_matched median 0.13639789819717407 max 0.17143657803535461 | unmatched max 0.18435655534267426 | assign stable 0.0 | loss 22.905
+[diag 09:41:30] oneframe step 200: p_matched median 0.15132808685302734 max 0.22935104370117188 | unmatched max 0.2860209047794342 | assign stable 0.15384615384615385 | loss 16.864
+[diag 09:41:30] oneframe eval 200: AP 0.037 P nan R 0.000 conf 0/13 p_matched median 0.1493858405904109
+[diag 09:41:45] oneframe step 225: p_matched median 0.19279499351978302 max 0.21707598865032196 | unmatched max 0.29123300313949585 | assign stable 0.0 | loss 23.570
+[diag 09:41:59] oneframe step 250: p_matched median 0.2146148532629013 max 0.23209773004055023 | unmatched max 0.2787300646305084 | assign stable 0.07692307692307693 | loss 11.542
+[diag 09:42:14] oneframe step 275: p_matched median 0.21859318017959595 max 0.22502973675727844 | unmatched max 0.2762424051761627 | assign stable 0.07692307692307693 | loss 12.830
+[diag 09:42:29] oneframe step 300: p_matched median 0.20323319733142853 max 0.2112046182155609 | unmatched max 0.2614913284778595 | assign stable 0.0 | loss 9.345
+[diag 09:42:29] oneframe eval 300: AP 0.080 P nan R 0.000 conf 0/13 p_matched median 0.20326480056621268
+[diag 09:42:44] oneframe step 325: p_matched median 0.2080262154340744 max 0.28518080711364746 | unmatched max 0.28377649188041687 | assign stable 0.0 | loss 10.817
+[diag 09:43:00] oneframe step 350: p_matched median 0.21954083442687988 max 0.22987942397594452 | unmatched max 0.29648295044898987 | assign stable 0.0 | loss 10.423
+[diag 09:43:15] oneframe step 375: p_matched median 0.22283443808555603 max 0.24226659536361694 | unmatched max 0.26396796107292175 | assign stable 0.0 | loss 11.074
+[diag 09:43:29] oneframe step 400: p_matched median 0.2456771731376648 max 0.251659631729126 | unmatched max 0.31404608488082886 | assign stable 0.07692307692307693 | loss 10.698
+[diag 09:43:30] oneframe eval 400: AP 0.171 P nan R 0.000 conf 0/13 p_matched median 0.24131016286558704
+[diag 09:43:44] oneframe step 425: p_matched median 0.17492233216762543 max 0.22254110872745514 | unmatched max 0.286454975605011 | assign stable 0.0 | loss 16.126
+[diag 09:44:00] oneframe step 450: p_matched median 0.21207457780838013 max 0.22406317293643951 | unmatched max 0.27491432428359985 | assign stable 0.0 | loss 9.432
+[diag 09:44:14] oneframe step 475: p_matched median 0.16421081125736237 max 0.21218164265155792 | unmatched max 0.2123573124408722 | assign stable 0.0 | loss 15.729
+[diag 09:44:29] oneframe step 500: p_matched median 0.2152440845966339 max 0.220571830868721 | unmatched max 0.23365549743175507 | assign stable 0.0 | loss 16.347
+[diag 09:44:30] oneframe eval 500: AP 0.008 P nan R 0.000 conf 0/13 p_matched median 0.20930817397408802
+[diag 09:44:30] part oneframe done (302.8 s)
+[diag 09:44:30] part control starts
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file+cli), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[gbo 09:47:50] targets_filter_only step 100: AP 0.006 P nan R 0.000 conf 0 centre 3.046 pres 0.1508
+[gbo 09:51:02] targets_filter_only step 200: AP 0.012 P 0.028 R 0.389 conf 1573 centre 2.630 pres 0.1415

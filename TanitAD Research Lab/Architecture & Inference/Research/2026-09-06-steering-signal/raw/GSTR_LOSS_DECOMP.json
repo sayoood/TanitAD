@@ -1,0 +1,89 @@
+{
+ "tool": "D-GSTR-1 P1b strategic_goal_loss decomposition",
+ "dump": "/home/nvidia/navpred/navflip_dump/decisions",
+ "evidence_class": "MEASURED (ours)",
+ "tier": "T1 for the model output; the target is a LABEL",
+ "estimator": "paired episode-cluster bootstrap, 2000 resamples, seed 0",
+ "n_windows": 4823,
+ "n_valid_label": 3970,
+ "SHAPE_ASSERTION": {
+  "rule": "gstr_nav_true[:, :2] must be a UNIT vector (refc_v3.py:981) or it is not the model's bearing",
+  "norm_min": 1.0,
+  "norm_max": 1.0,
+  "PASS": true,
+  "model_cos_frac_positive": 1.0,
+  "model_cos_min": 0.2386,
+  "model_cos_median": 0.8475,
+  "model_dist_pref_median": 0.0838,
+  "model_dist_pref_min": -0.8802,
+  "model_dist_pref_max": 0.9827
+ },
+ "LOSS_DECOMPOSITION": {
+  "_definition": "strategic_goal_loss = l_bear + l_dist; l_bear = 1 - cos(model, target) in [0, 2]; l_dist = |tanh(g2) - dist_target| in [0, 2]; masked by label validity",
+  "l_bear_MODEL": {
+   "mean": 0.15,
+   "lo": 0.1313,
+   "hi": 0.1689,
+   "n": 3970,
+   "n_ep": 137
+  },
+  "l_bear_FLOOR_const_straight_(1,0)": {
+   "mean": 0.0119,
+   "lo": 0.008,
+   "hi": 0.0164,
+   "n": 3970,
+   "n_ep": 137
+  },
+  "l_bear_FLOOR_const_best": {
+   "mean": 0.0117,
+   "lo": 0.0079,
+   "hi": 0.0162,
+   "n": 3970,
+   "n_ep": 137
+  },
+  "_best_const_bearing": [
+   0.9998,
+   -0.0182
+  ],
+  "l_dist_MODEL": {
+   "mean": 0.5046,
+   "lo": 0.4715,
+   "hi": 0.5361,
+   "n": 3970,
+   "n_ep": 137
+  },
+  "l_dist_FLOOR_const_median": {
+   "mean": 0.3266,
+   "lo": 0.2757,
+   "hi": 0.3732,
+   "n": 3970,
+   "n_ep": 137
+  },
+  "_dist_median_target": -0.33333333333333337,
+  "TOTAL_MODEL": 0.6546,
+  "TOTAL_FLOOR_const": 0.3385
+ },
+ "MODEL_MINUS_FLOOR_bearing": {
+  "mean": 0.1381,
+  "lo": 0.1197,
+  "hi": 0.1558,
+  "n": 3970,
+  "n_ep": 137
+ },
+ "VERDICT": "WORSE THAN A CONSTANT STRAIGHT-AHEAD PREDICTOR",
+ "ANGLES_deg": {
+  "model": {
+   "p5": -48.233,
+   "median": -29.995,
+   "p95": -11.311,
+   "frac_positive_LEFT": 0.0
+  },
+  "target": {
+   "p5": -15.949,
+   "median": -0.144,
+   "p95": 8.676,
+   "frac_positive_LEFT": 0.4139
+  },
+  "mean_signed_offset_model_minus_target": -29.008
+ }
+}

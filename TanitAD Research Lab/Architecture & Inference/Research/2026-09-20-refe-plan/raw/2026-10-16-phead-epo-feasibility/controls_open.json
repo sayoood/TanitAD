@@ -1,0 +1,99 @@
+{
+ "tool": "phead_controls/1",
+ "a1_open_loop_FULL_vs_banked": {
+  "max_abs_diff_vs_adam_sim_run": 0.0,
+  "tolerance_abs": 1e-07,
+  "pass_state": true,
+  "stats": {
+   "S_C80": {
+    "mine": 0.31756827805479626,
+    "banked_adam_sim.json": 0.31756827805479626,
+    "rel_diff": 0.0,
+    "pass": true
+   },
+   "S_all": {
+    "mine": 0.31525623089433596,
+    "banked_adam_sim.json": 0.31525623089433596,
+    "rel_diff": 0.0,
+    "pass": true
+   },
+   "cos_C80": {
+    "mine": 0.9225451350212097,
+    "banked_adam_sim.json": 0.9225451350212097,
+    "rel_diff": 0.0,
+    "pass": true
+   },
+   "U_full_norm_ratio": {
+    "mine": 1.0441588163375854,
+    "banked_adam_sim.json": 1.0441588163375854,
+    "rel_diff": 0.0,
+    "pass": true
+   },
+   "cos_full": {
+    "mine": 0.9506930112838745,
+    "banked_adam_sim.json": 0.9506930112838745,
+    "rel_diff": 0.0,
+    "pass": true
+   }
+  },
+  "pass": true
+ },
+ "a2_J_theta0_vs_late_probe": {
+  "mine_J_256_sets": 0.8391432438920674,
+  "late_probe_base_mean_J": 0.8391432501375675,
+  "abs_diff": 6.245500117074698e-09,
+  "tolerance_abs": 1e-05,
+  "pass": true
+ },
+ "b_empty_group_open_loop": {
+  "P": {
+   "max_abs_theta_minus_theta0": 0.0,
+   "delta_J": {
+    "train": 0.0,
+    "val": 0.0
+   },
+   "J_bitwise_equal_to_theta0": {
+    "train": true,
+    "val": true
+   },
+   "pass": true
+  },
+  "T": {
+   "max_abs_theta_minus_theta0": 0.0,
+   "delta_J": {
+    "train": 0.0,
+    "val": 0.0
+   },
+   "J_bitwise_equal_to_theta0": {
+    "train": true,
+    "val": true
+   },
+   "pass": true
+  },
+  "sensitivity_masked_gradient_with_weight_decay": {
+   "max_abs_theta_minus_theta0_after_50_steps": 7.748603820800781e-05,
+   "note": "AdamW decays zero-gradient entries: a mask-the-gradient implementation would break (b); Restricted does not hand frozen entries to AdamW"
+  },
+  "pass": true
+ },
+ "c_mutation_open_loop": {
+  "unmutated": {
+   "outside_group_max_abs_displacement": 0.0,
+   "check_outside_eq_0.0": true,
+   "delta_J_epo": {
+    "train": 0.004236787002509003,
+    "val": 0.004242892812697157
+   }
+  },
+  "mutated": {
+   "outside_group_max_abs_displacement": 0.005126264877617359,
+   "check_outside_eq_0.0": false,
+   "delta_J_epo": {
+    "train": 0.036213767017848446,
+    "val": 0.054109487261983655
+   }
+  },
+  "restricted_result_changes_under_mutation": true,
+  "pass": true
+ }
+}

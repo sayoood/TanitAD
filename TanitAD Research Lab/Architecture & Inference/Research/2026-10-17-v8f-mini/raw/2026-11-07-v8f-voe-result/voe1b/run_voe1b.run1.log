@@ -1,0 +1,72 @@
+[    12s] models built (34 tags); untrained hashes equal the bank build's; every wm.* parameter re-initialised
+[    12s] windows 1976, episodes 141; donors and bootstrap weights equal the repo helpers
+[    12s] qualifying windows equal the label-only counts frozen in IMPL_CHOICES (incl. ACTION-SWAP-M n)
+[    17s] event cells of the deciding tags: 18 (pool of 5)
+[    33s] M2b_s0: rows done (16s)
+[    45s] M2b_s1: rows done (11s)
+[    56s] UT0_100: rows done (12s)
+[    69s] UT0_101: rows done (12s)
+[    79s] UT0_102: rows done (10s)
+[    90s] UT0_103: rows done (11s)
+[   100s] UT0_104: rows done (10s)
+[   111s] UT0_105: rows done (11s)
+[   119s] UT0_106: rows done (9s)
+[   124s] UT0_107: rows done (4s)
+[   128s] UT0_108: rows done (4s)
+[   132s] UT0_109: rows done (4s)
+[   136s] UT0_110: rows done (4s)
+[   140s] UT0_111: rows done (4s)
+[   144s] UT0_112: rows done (4s)
+[   148s] UT0_113: rows done (4s)
+[   152s] UT0_114: rows done (4s)
+[   157s] UT0_115: rows done (4s)
+[   161s] UT1_100: rows done (4s)
+[   165s] UT1_101: rows done (4s)
+[   169s] UT1_102: rows done (4s)
+[   173s] UT1_103: rows done (4s)
+[   178s] UT1_104: rows done (4s)
+[   182s] UT1_105: rows done (4s)
+[   186s] UT1_106: rows done (4s)
+[   190s] UT1_107: rows done (4s)
+[   194s] UT1_108: rows done (4s)
+[   198s] UT1_109: rows done (4s)
+[   202s] UT1_110: rows done (4s)
+[   206s] UT1_111: rows done (4s)
+[   210s] UT1_112: rows done (4s)
+[   215s] UT1_113: rows done (4s)
+[   219s] UT1_114: rows done (4s)
+[   223s] UT1_115: rows done (4s)
+[   245s] untrained event AP done
+multiprocessing.pool.RemoteTraceback: 
+"""
+Traceback (most recent call last):
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\multiprocessing\pool.py", line 125, in worker
+    result = (True, func(*args, **kwds))
+                    ~~~~^^^^^^^^^^^^^^^
+  File "E:\Projects\TanitAD-artifacts\dagland\motion_c\theory\voe1b\run_voe1b.py", line 38, in ap_task
+    r = C.ap_cell(sm, sn, Y, ep_w, n_ep, key, with_boot=with_boot, cal_seeds=C.CAL_SEEDS if with_boot else ())
+  File "E:\Projects\TanitAD-artifacts\dagland\motion_c\theory\voe1b\voe1b_core.py", line 461, in ap_cell
+    bm, bn, pv = boots(ident)
+                 ~~~~~^^^^^^^
+  File "E:\Projects\TanitAD-artifacts\dagland\motion_c\theory\voe1b\voe1b_core.py", line 454, in boots
+    bm, pv = ap_boot(yf[om].astype(np.float32), ep_pt[om], W)
+             ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Projects\TanitAD-artifacts\dagland\motion_c\theory\voe1b\voe1b_core.py", line 401, in ap_boot
+    w = W[c0:c0 + chunk][:, ep_sorted].astype(np.float32)
+numpy._core._exceptions._ArrayMemoryError: Unable to allocate 28.3 MiB for an array with shape (250, 29640) and data type float32
+"""
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "E:\Projects\TanitAD-artifacts\dagland\motion_c\theory\voe1b\run_voe1b.py", line 208, in <module>
+    main(nw, out_dir, max_ep, n_ut)
+    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Projects\TanitAD-artifacts\dagland\motion_c\theory\voe1b\run_voe1b.py", line 183, in main
+    out = dict(f.get() for f in futs)
+  File "E:\Projects\TanitAD-artifacts\dagland\motion_c\theory\voe1b\run_voe1b.py", line 183, in <genexpr>
+    out = dict(f.get() for f in futs)
+               ~~~~~^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\multiprocessing\pool.py", line 774, in get
+    raise self._value
+numpy._core._exceptions._ArrayMemoryError: Unable to allocate 28.3 MiB for an array with shape (250, 29640) and data type float32

@@ -1,0 +1,3209 @@
+[
+ {
+  "dest": "stage",
+  "options": [
+   "--stage"
+  ],
+  "default": null,
+  "type": null,
+  "choices": [
+   "S-W",
+   "S-T",
+   "S-S",
+   "S-J"
+  ],
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": true,
+  "help": ""
+ },
+ {
+  "dest": "out",
+  "options": [
+   "--out"
+  ],
+  "default": null,
+  "type": null,
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": true,
+  "help": ""
+ },
+ {
+  "dest": "prev_gate",
+  "options": [
+   "--prev-gate"
+  ],
+  "default": null,
+  "type": null,
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "path to the PREVIOUS stage's stage_gate.json (X5)"
+ },
+ {
+  "dest": "allow_inconclusive_gate",
+  "options": [
+   "--allow-inconclusive-gate"
+  ],
+  "default": false,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": "proceed on an INCONCLUSIVE (never a FAILED) previous gate; requires --gate-off-reason"
+ },
+ {
+  "dest": "gate_off_reason",
+  "options": [
+   "--gate-off-reason"
+  ],
+  "default": "",
+  "type": null,
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "why the inconclusive gate is being overridden \u2014 recorded in config.json and printed as a banner"
+ },
+ {
+  "dest": "resume",
+  "options": [
+   "--resume"
+  ],
+  "default": "auto",
+  "type": null,
+  "choices": [
+   "auto",
+   "off"
+  ],
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "auto = continue from <out>/ckpt.pt when present (a supervisor replays its captured command, so a relaunch MUST NOT restart at step 0)"
+ },
+ {
+  "dest": "force_rerun",
+  "options": [
+   "--force-rerun"
+  ],
+  "default": false,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": "\u26d4 discard a DONE run or overwrite a live ckpt.pt. The done-marker is the remote off-switch; this is the only way past it."
+ },
+ {
+  "dest": "init_from",
+  "options": [
+   "--init-from"
+  ],
+  "default": null,
+  "type": null,
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "previous stage's ckpt.pt \u2014 S-T/S-S/S-J MUST start from the stage below, or the ladder is four unrelated models with a gate between them"
+ },
+ {
+  "dest": "init_encoder_from",
+  "options": [
+   "--init-encoder-from",
+   "--enc-init-from"
+  ],
+  "default": null,
+  "type": null,
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "ENCODER-ONLY seed built by stack/scripts/dinov3_seed_checkpoint.py (the PI's 'DINO as init'). \u26d4 Refuses without a provenance stamp, on a geometry disagreement, "
+ },
+ {
+  "dest": "trunk_lr_scale",
+  "options": [
+   "--trunk-lr-scale"
+  ],
+  "default": 1.0,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "multiply the TRUNK group's LR by this (V6Stack.group_of == 'encoder'; the readout keeps the full LR). \u26d4 1.0 = today: ONE flat AdamW group, not two equal ones \u2014 "
+ },
+ {
+  "dest": "trunk_lr_warmup_steps",
+  "options": [
+   "--trunk-lr-warmup-steps"
+  ],
+  "default": 0,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "steps during which the trunk LR is EXACTLY 0, so the heads learn against a stationary trunk first (PREREG_V7F D7: 2000). A hard gate, not a ramp \u2014 a ramp would "
+ },
+ {
+  "dest": "w_trunk_anchor",
+  "options": [
+   "--w-trunk-anchor"
+  ],
+  "default": 0.0,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "\u2b50 WIRED (D-V7-TRUNK-ANCHOR). L2 (MSE) pull of the LIVE trunk's per-patch tokens toward a FROZEN copy of the SEED's own weights, on the NEWEST frame of each wind"
+ },
+ {
+  "dest": "trunk_anchor_model",
+  "options": [
+   "--trunk-anchor-model"
+  ],
+  "default": "facebook/dinov3-vitb16-pretrain-lvd1689m",
+  "type": "str",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "\u2b50 NO LONGER INERT \u2014 CROSS-CHECKED against the seed's own provenance stamp and REFUSES on disagreement. The teacher IS the seed (a frozen copy of those weights),"
+ },
+ {
+  "dest": "obs_monitor_every",
+  "options": [
+   "--obs-monitor-every"
+  ],
+  "default": 0,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "read the Observer-Effect probe every N steps (0 = OFF = today, byte-identical). A LINEAR ridge on the trunk's patch tokens against DYNAMIC targets (speed/steer/"
+ },
+ {
+  "dest": "obs_monitor_window",
+  "options": [
+   "--obs-monitor-window"
+  ],
+  "default": 256,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "rows of the monitor's ring buffer. The read needs n >= 4*d or it emits UNDERPOWERED rather than a number (n << d is the 2026-08-22 failure #4)"
+ },
+ {
+  "dest": "obs_monitor_dims",
+  "options": [
+   "--obs-monitor-dims"
+  ],
+  "default": 32,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "dimension of the FIXED seeded random projection the probe fits in. Fixed at construction so readings are comparable across steps AND across arms"
+ },
+ {
+  "dest": "gate_probes",
+  "options": [
+   "--gate-probes"
+  ],
+  "default": null,
+  "type": null,
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "JSON of externally-run battery probes to fold into this stage's gate"
+ },
+ {
+  "dest": "in_channels",
+  "options": [
+   "--in-channels"
+  ],
+  "default": 9,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "predates_nav",
+  "options": [
+   "--i-know-this-arm-predates-nav"
+  ],
+  "default": false,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": "reproduce a PRE-DIRECTIVE arm without nav; the choice is RECORDED in config.json rather than left silent"
+ },
+ {
+  "dest": "no_step_ckpts",
+  "options": [
+   "--no-step-ckpts"
+  ],
+  "default": false,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": "do NOT keep ckpt_step<N>.pt copies (default: keep). Only for disk-constrained hosts \u2014 the trajectory is unrecoverable afterwards."
+ },
+ {
+  "dest": "nav_cond",
+  "options": [
+   "--nav-cond"
+  ],
+  "default": false,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": "condition all three layers on the nav command token (PI directive 2026-08-30). MANDATORY for v7-line arms; the preflight REFUSES a v7 stage without it."
+ },
+ {
+  "dest": "newest_frame_only",
+  "options": [
+   "--newest-frame-only"
+  ],
+  "default": false,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "frame_h",
+  "options": [
+   "--frame-h"
+  ],
+  "default": 256,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "frame_w",
+  "options": [
+   "--frame-w"
+  ],
+  "default": 640,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "patch",
+  "options": [
+   "--patch"
+  ],
+  "default": 16,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "enc_dim",
+  "options": [
+   "--enc-dim"
+  ],
+  "default": 384,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "enc_depth",
+  "options": [
+   "--enc-depth"
+  ],
+  "default": 8,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "enc_heads",
+  "options": [
+   "--enc-heads"
+  ],
+  "default": 6,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "grad_checkpoint",
+  "options": [
+   "--grad-checkpoint"
+  ],
+  "default": false,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": "master switch: checkpoint the ENCODER blocks and (unless --rollout-grad-checkpoint overrides) the k-step rollout"
+ },
+ {
+  "dest": "enc_grad_checkpoint",
+  "options": [
+   "--enc-grad-checkpoint"
+  ],
+  "default": "auto",
+  "type": null,
+  "choices": [
+   "auto",
+   "on",
+   "off"
+  ],
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "override checkpointing for the ENCODER only"
+ },
+ {
+  "dest": "rollout_grad_checkpoint",
+  "options": [
+   "--rollout-grad-checkpoint"
+  ],
+  "default": "auto",
+  "type": null,
+  "choices": [
+   "auto",
+   "on",
+   "off"
+  ],
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "override checkpointing for the k-step ROLLOUT only; turning this off at k=60 restores a measured OOM"
+ },
+ {
+  "dest": "bptt_truncate",
+  "options": [
+   "--bptt-truncate"
+  ],
+  "default": 0,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "truncated-BPTT depth for the k-step ROLLOUT (metric_dynamics.rollout_transitions): detach the CARRIED latent window every N steps so the back-prop chain through"
+ },
+ {
+  "dest": "readout_grid",
+  "options": [
+   "--readout-grid"
+  ],
+  "default": 4,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "readout_grid_w",
+  "options": [
+   "--readout-grid-w"
+  ],
+  "default": null,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "readout_dim",
+  "options": [
+   "--readout-dim"
+  ],
+  "default": 128,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "pred_modern",
+  "options": [
+   "--pred-modern"
+  ],
+  "default": false,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": "ViT-5-recipe predictor blocks (RMSNorm + QK-Norm + LayerScale + bias-free attention). CHANGES THE STATE-DICT KEYS: a declared arm; strict load refuses legacy ch"
+ },
+ {
+  "dest": "pred_dim",
+  "options": [
+   "--pred-dim"
+  ],
+  "default": 768,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "pred_depth",
+  "options": [
+   "--pred-depth"
+  ],
+  "default": 6,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "pred_heads",
+  "options": [
+   "--pred-heads"
+  ],
+  "default": 12,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "window",
+  "options": [
+   "--window"
+  ],
+  "default": 6,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "horizons",
+  "options": [
+   "--horizons"
+  ],
+  "default": [
+   1,
+   2,
+   4
+  ],
+  "type": "int",
+  "choices": null,
+  "nargs": "+",
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "d_tac",
+  "options": [
+   "--d-tac"
+  ],
+  "default": 512,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "d_str",
+  "options": [
+   "--d-str"
+  ],
+  "default": 256,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "d_goal_embed",
+  "options": [
+   "--d-goal-embed"
+  ],
+  "default": 128,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "adapter_hidden",
+  "options": [
+   "--adapter-hidden"
+  ],
+  "default": 512,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "n_candidates",
+  "options": [
+   "--n-candidates"
+  ],
+  "default": 8,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "param_budget",
+  "options": [
+   "--param-budget"
+  ],
+  "default": 300000000,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "selector",
+  "options": [
+   "--selector"
+  ],
+  "default": "none",
+  "type": null,
+  "choices": [
+   "none",
+   "goal",
+   "mlp"
+  ],
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "'none' (default) builds NO scorer and leaves the state_dict byte-identical. 'goal' builds the +267 GoalDistanceScorer \u2014 the mechanism E-WC measured. 'mlp' build"
+ },
+ {
+  "dest": "selector_tau_m",
+  "options": [
+   "--selector-tau-m"
+  ],
+  "default": 1.0,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "selection temperature in metres (goal scorer only)"
+ },
+ {
+  "dest": "selector_mlp_hidden",
+  "options": [
+   "--selector-mlp-hidden"
+  ],
+  "default": 256,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "hidden width of the 'mlp' capacity control (ignored for every other --selector)"
+ },
+ {
+  "dest": "plan_wta_eps",
+  "options": [
+   "--plan-wta-eps"
+  ],
+  "default": 0.0,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "epsilon-relaxed WTA: weight on the LOSING candidates' mean error. 0.0 (default) is the incumbent pure WTA, under which N-1 candidates get ZERO gradient and noth"
+ },
+ {
+  "dest": "proposals",
+  "options": [
+   "--proposals"
+  ],
+  "default": "query",
+  "type": null,
+  "choices": [
+   "query",
+   "diffusion"
+  ],
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "\u2b50 candidate-fan GENERATOR. 'diffusion' = F-15: diffuse the full 6 s CONTROL sequence (60 x (a,\u03ba)) with temporally correlated OU noise, truncated-DDIM denoised; "
+ },
+ {
+  "dest": "diffusion_steps",
+  "options": [
+   "--diffusion-steps"
+  ],
+  "default": 4,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "truncated denoise steps (DiffusionDrive's regime)"
+ },
+ {
+  "dest": "diffusion_noise_rho",
+  "options": [
+   "--diffusion-noise-rho"
+  ],
+  "default": 0.9,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "lag-1 autocorrelation of the OU control-noise. The DRAWN noise's autocorrelation is MEASURED per forward and logged (prop_noise_lag1_autocorr) \u2014 never asserted "
+ },
+ {
+  "dest": "diffusion_hidden",
+  "options": [
+   "--diffusion-hidden"
+  ],
+  "default": 256,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "diffusion_sigma_a",
+  "options": [
+   "--diffusion-sigma-a"
+  ],
+  "default": 2.0,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "raw-space noise scale, accel channel (a_max 4.0)"
+ },
+ {
+  "dest": "diffusion_sigma_k",
+  "options": [
+   "--diffusion-sigma-k"
+  ],
+  "default": 0.1,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "raw-space noise scale, kappa channel (kappa_max 0.2)"
+ },
+ {
+  "dest": "mpc_refine",
+  "options": [
+   "--mpc-refine"
+  ],
+  "default": false,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": "\u2b50 MPC top-K refinement (selection cell, per the D-1 re-read): the trained selector's scores warm-start the top-K, cost descent refines the CONTROLS on a COMPOSE"
+ },
+ {
+  "dest": "mpc_topk",
+  "options": [
+   "--mpc-topk"
+  ],
+  "default": 2,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "mpc_steps",
+  "options": [
+   "--mpc-steps"
+  ],
+  "default": 3,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "cost-descent iterations (CEM is a possible later arm)"
+ },
+ {
+  "dest": "mpc_lr",
+  "options": [
+   "--mpc-lr"
+  ],
+  "default": 0.05,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "mpc_roll_k",
+  "options": [
+   "--mpc-roll-k"
+  ],
+  "default": 0,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "P_O roll depth for the imagined-consistency REGULARIZER; 0 = no roll (and --mpc-w-consist must be 0)"
+ },
+ {
+  "dest": "mpc_w_goal",
+  "options": [
+   "--mpc-w-goal"
+  ],
+  "default": 1.0,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "PRIMARY term weight; must stay > 0 \u2014 a regularizer-led refinement is the refuted roll-cost rule wearing MPC's name"
+ },
+ {
+  "dest": "mpc_w_kin",
+  "options": [
+   "--mpc-w-kin"
+  ],
+  "default": 0.1,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "kinematic smoothness REGULARIZER (the \u00a71.14 tie-breaker); zero-weight ablation always available"
+ },
+ {
+  "dest": "mpc_w_consist",
+  "options": [
+   "--mpc-w-consist"
+  ],
+  "default": 0.0,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "imagined-consistency REGULARIZER \u2014 the ONE place roll-consistency may enter a cost, never the primary and never the re-score"
+ },
+ {
+  "dest": "fallback_trigger",
+  "options": [
+   "--fallback-trigger"
+  ],
+  "default": false,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": "\u2b50 context-brain fallback cell (F-17): fan spread + roll-cost VARIANCE -> P7-calibrated uncertainty; fires when the band is exceeded; fallback action = hold-v0/C"
+ },
+ {
+  "dest": "fallback_roll_k",
+  "options": [
+   "--fallback-roll-k"
+  ],
+  "default": 10,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "P_O roll depth for the roll-cost-variance half of the signal; 0 = spread-only (logged as such)"
+ },
+ {
+  "dest": "fallback_calibration",
+  "options": [
+   "--fallback-calibration"
+  ],
+  "default": null,
+  "type": null,
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "P7 calibration artifact (JSON: spearman_rho, rho_ci, slope, intercept, threshold, w_spread, w_rollvar). load_calibration REFUSES rho < 0.3 or a CI including 0 ("
+ },
+ {
+  "dest": "agent_slots",
+  "options": [
+   "--agent-slots"
+  ],
+  "default": false,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": "\u2b50 build the DETR-style perception agent-slot decoder (F-18, DIAGRAM_CONFORMANCE.md \u00a74.2 \u2014 the LAST unbuilt PERCEPTION cell): bbox cx,cy,yaw,l,w \u00b7 state v_rel,ya"
+ },
+ {
+  "dest": "n_slot_queries",
+  "options": [
+   "--n-slot-queries"
+  ],
+  "default": 100,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "slot count. \u2b50 RULED 100 (mm-decisions M17), MEASURED on the 2,308-clip train join: mean 4.39, p99 30, MAX 94 per frame over 433,040 frames / 12,122,129 boxes, s"
+ },
+ {
+  "dest": "slot_hidden",
+  "options": [
+   "--slot-hidden"
+  ],
+  "default": 256,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "slot_depth",
+  "options": [
+   "--slot-depth"
+  ],
+  "default": 3,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "slot_heads",
+  "options": [
+   "--slot-heads"
+  ],
+  "default": 8,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "slot_src",
+  "options": [
+   "--slot-src"
+  ],
+  "default": "cells",
+  "type": null,
+  "choices": [
+   "cells",
+   "tokens"
+  ],
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "the memory the slots cross-attend into. 'cells' = the readout's spatial latent (the surface whose content is the open question, RC1); 'tokens' = the encoder's r"
+ },
+ {
+  "dest": "no_isolate_interp",
+  "options": [
+   "--no-isolate-interp"
+  ],
+  "default": false,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": "\u26d4 THE DELIBERATELY MIS-WIRED ARM. Lets the slot decoder's PERCEPTION-LABEL gradient reach the encoder \u2014 which the diagram's header row forbids in any trunk loss"
+ },
+ {
+  "dest": "goal_factored",
+  "options": [
+   "--goal-factored"
+  ],
+  "default": false,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": "factor g_tac LAT x LON (the same factoring a_tac already carries). The MIXED head is KEPT and still emitted -- it is this arm's CONTROL. +470,939 params MEASURE"
+ },
+ {
+  "dest": "goal_multilabel",
+  "options": [
+   "--goal-multilabel"
+  ],
+  "default": false,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": "independent per-token gates on the UN-factored head (0 params, 0 keys). The factored pair is the structured form of the same fix and is strictly better attribut"
+ },
+ {
+  "dest": "goal_cat_args",
+  "options": [
+   "--goal-cat-args"
+  ],
+  "default": false,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": "the TYPED categorical arg channel. Without it 7 of the 9 g_tac tokens are inexpressible even given perfect labels. REQUIRED by --anchor-goal."
+ },
+ {
+  "dest": "strategic_off",
+  "options": [
+   "--strategic-off"
+  ],
+  "default": false,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": "\u2b50 R6 (PI 2026-09-27): the strategic layer is OFF -- the tactical goal heads receive a ZERO strategic conditioning instead of the untrained strategic head's embe"
+ },
+ {
+  "dest": "tac_goal_cond",
+  "options": [
+   "--tac-goal-cond"
+  ],
+  "default": false,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": "\u2b50 build the g_str->P_T conditioning port (F-1, DIAGRAM_CONFORMANCE.md 2026-08-16): a ZERO-INIT cond_tac_dyn Linear whose output is added to the tactical action-"
+ },
+ {
+  "dest": "tac_op_cond",
+  "options": [
+   "--tac-op-cond"
+  ],
+  "default": "off",
+  "type": null,
+  "choices": [
+   "off",
+   "detached",
+   "e2e"
+  ],
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "\u2b50 R4 (PI 2026-09-27): the tactical layer's chosen BEHAVIOURS condition the operative plan. MEASURED at the tip: the tactical GOAL already reaches the emission, "
+ },
+ {
+  "dest": "max_speed_input_v6",
+  "options": [
+   "--max-speed-input-v6"
+  ],
+  "default": false,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": "\u2b50 R1a (PI 2026-09-27): the clip's MAX SPEED as a TACTICAL INPUT -- the refcv6 4-way one-hot {30, 50, 100, 120} km/h (containing window, invalid row = all-zero) "
+ },
+ {
+  "dest": "speed_max_sidecar_v6",
+  "options": [
+   "--speed-max-sidecar-v6"
+  ],
+  "default": null,
+  "type": null,
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "the refcv6 sidecar (`scripts/build_refcv6_speed_max_window.py`): RAW v_hi_ms per clip keyed by `sid` = stable_episode_id(clip_id). Its source_md5 must equal the"
+ },
+ {
+  "dest": "plan_vmax_cap",
+  "options": [
+   "--plan-vmax-cap"
+  ],
+  "default": false,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": "\u2b50 R1b (PI 2026-09-27: the max speed \"must not be exceeded\"): the emitted plan is HARD-CAPPED at INFERENCE (refav1 _cap_speed semantics; every candidate, before "
+ },
+ {
+  "dest": "anchor_goal",
+  "options": [
+   "--anchor-goal"
+  ],
+  "default": "none",
+  "type": null,
+  "choices": [
+   "none",
+   "snap_lat",
+   "snap_xy",
+   "onehot"
+  ],
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "'none' (default) builds NO anchor head and leaves the state_dict byte-identical. 'snap_lat' is the FACTORED regress-then-snap default the measurement prescribes"
+ },
+ {
+  "dest": "anchor_table",
+  "options": [
+   "--anchor-table"
+  ],
+  "default": null,
+  "type": null,
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "a build_refc_anchors.py .pt. \u26d4 REQUIRED by --anchor-goal: the head refuses to run without one, because a zero table would snap every goal to the origin and stil"
+ },
+ {
+  "dest": "n_anchors",
+  "options": [
+   "--n-anchors"
+  ],
+  "default": 256,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "K of the anchor vocabulary (the shipped refc_anchors_full_REBUILD.pt is 256)"
+ },
+ {
+  "dest": "n_lat_bins",
+  "options": [
+   "--n-lat-bins"
+  ],
+  "default": 16,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "resolution of the FACTORED lateral sub-vocabulary ('snap_lat' only)"
+ },
+ {
+  "dest": "n_agent_slots",
+  "options": [
+   "--n-agent-slots"
+  ],
+  "default": 8,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "w_anchor",
+  "options": [
+   "--w-anchor"
+  ],
+  "default": 0.0,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "weight on the ANCHOR_GOAL objective. 0.0 = the term is absent. \u26a0\ufe0f in METRES for metric/softanchor (NATS for the ce control) while the other terms are not, so it"
+ },
+ {
+  "dest": "anchor_objective",
+  "options": [
+   "--anchor-objective"
+  ],
+  "default": "metric",
+  "type": null,
+  "choices": [
+   "metric",
+   "softanchor",
+   "ce"
+  ],
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "'metric' (DEFAULT) = endpoint distance on the straight-through emitted point -- the half E-AG2 EXONERATED (snap is NOT separated from the ridge: -0.0002 [-0.103"
+ },
+ {
+  "dest": "anchor_axis_w",
+  "options": [
+   "--anchor-axis-w"
+  ],
+  "default": [
+   1.0,
+   1.0
+  ],
+  "type": "float",
+  "choices": null,
+  "nargs": 2,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "per-axis weights. Default 1 1 = RAW METRES, which is the EVIDENCE-weighted choice, not the symmetric one: the residual is 97.4 % longitudinal in squared error, "
+ },
+ {
+  "dest": "w_select",
+  "options": [
+   "--w-select"
+  ],
+  "default": 0.0,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "weight on the softade selection loss. 0.0 = the term is absent. \u26a0\ufe0f in METRES while the other terms are not \u2014 a declared decision, never a default."
+ },
+ {
+  "dest": "t2_contrastive",
+  "options": [
+   "--t2-contrastive"
+  ],
+  "default": false,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": "build the T2 manoeuvre-contrastive projector on z_tac (+164,225 params / +5 keys at d_tac=512, MEASURED). Introduced in S-T; OFF = the incumbent build, 87,893,4"
+ },
+ {
+  "dest": "d_t2_proj",
+  "options": [
+   "--d-t2-proj"
+  ],
+  "default": 128,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "d_t2_hidden",
+  "options": [
+   "--d-t2-hidden"
+  ],
+  "default": 256,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "t2_tau",
+  "options": [
+   "--t2-tau"
+  ],
+  "default": 0.1,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "InfoNCE temperature at init (learnable thereafter)"
+ },
+ {
+  "dest": "w_t2_contrast",
+  "options": [
+   "--w-t2-contrast"
+  ],
+  "default": 0.0,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "weight on the T2 contrastive loss. 0.0 = the term is absent. \u26a0\ufe0f in NATS \u2014 not commensurate with --w-select/--w-anchor's metres."
+ },
+ {
+  "dest": "t2_positive",
+  "options": [
+   "--t2-positive"
+  ],
+  "default": "photometric",
+  "type": null,
+  "choices": [
+   "photometric"
+  ],
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "the manoeuvre-PRESERVING view. \u26a0\ufe0f DECLARED ASSUMPTION: the catalog names only the negatives and a contrastive loss needs a positive."
+ },
+ {
+  "dest": "t2_negative",
+  "options": [
+   "--t2-negative"
+  ],
+  "default": "lane_mirror",
+  "type": null,
+  "choices": [
+   "lane_mirror",
+   "time_reverse"
+  ],
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "the manoeuvre-REVERSING HARD negative. \u26a0\ufe0f 'time_reverse' is NOT the catalog's manoeuvre reversal on this architecture \u2014 z_tac reads the LAST FRAME ONLY, so it i"
+ },
+ {
+  "dest": "w_t5_consist",
+  "options": [
+   "--w-t5-consist"
+  ],
+  "default": 0.0,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "weight on the T5 temporal-consistency loss. 0.0 = absent. ZERO new parameters. \u26d4 REFUSED with --lambda-plan 0: a flat plan scores exactly 0."
+ },
+ {
+  "dest": "t5_pairs",
+  "options": [
+   "--t5-pairs"
+  ],
+  "default": false,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": "draw CONSECUTIVE-WINDOW pairs (the second half of each batch is the same episode's window --t5-lag steps later). Required by --w-t5-consist; the default sampler"
+ },
+ {
+  "dest": "t5_lag",
+  "options": [
+   "--t5-lag"
+  ],
+  "default": 0,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "pair offset in OPERATIVE steps; 0 = cfg.stride_tac (5 = 0.5 s at the default clocks)"
+ },
+ {
+  "dest": "t5_w_kappa",
+  "options": [
+   "--t5-w-kappa"
+  ],
+  "default": 1.0,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "relative weight of the curvature half vs accel"
+ },
+ {
+  "dest": "w_s1_multi",
+  "options": [
+   "--w-s1-multi"
+  ],
+  "default": 0.0,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "weight on the F-11 multi-tick strategic rollout. 0.0 = absent. ZERO new parameters (it re-rolls predictor_str/act_head_str, both already layer_str). In force in"
+ },
+ {
+  "dest": "s1_multi_k",
+  "options": [
+   "--s1-multi-k"
+  ],
+  "default": 2,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "strategic ticks to roll (K). K=1 IS `--w-s1` and is REFUSED. A K-tick roll needs max_horizon = K*stride_str, so windows/episode is frames-window-K*stride_str. \u2b50"
+ },
+ {
+  "dest": "allow_discarded_weights",
+  "options": [
+   "--allow-discarded-weights"
+  ],
+  "default": false,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": "acknowledge that an EXPLICITLY PASSED weight is zeroed by `V6LossWeights.for_stage(stage)` and run anyway. \u26d4 The refusal ships WITH this flag on purpose: `--ref"
+ },
+ {
+  "dest": "t3_scores",
+  "options": [
+   "--t3-scores"
+  ],
+  "default": "",
+  "type": "str",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "path to the per-window T3 score artifact (a torch .pt holding {'scores': [n_windows], 'provenance': {...}}), produced by scoring the corpus with the P8 occupanc"
+ },
+ {
+  "dest": "t3_alpha_start",
+  "options": [
+   "--t3-alpha-start"
+  ],
+  "default": -1.0,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "curriculum exponent at step 0. NEGATIVE = biased towards FREE FLOW, which is what 'free-flow -> dense' means; 0 = uniform."
+ },
+ {
+  "dest": "t3_alpha_end",
+  "options": [
+   "--t3-alpha-end"
+  ],
+  "default": 1.0,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "curriculum exponent after warmup (biased towards dense interaction). Must be >= --t3-alpha-start."
+ },
+ {
+  "dest": "t3_warmup_frac",
+  "options": [
+   "--t3-warmup-frac"
+  ],
+  "default": 0.5,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "fraction of training over which alpha ramps start -> end; held at end afterwards"
+ },
+ {
+  "dest": "t3_floor",
+  "options": [
+   "--t3-floor"
+  ],
+  "default": 0.25,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "weight floor; MUST be > 0 (a negative exponent on a zero floor is infinite, and floor>0 is what keeps every window reachable = the parity invariant)"
+ },
+ {
+  "dest": "domain_strata",
+  "options": [
+   "--domain-strata"
+  ],
+  "default": "",
+  "type": "str",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "path to the per-EPISODE domain-strata-v1 artifact (JSON: schema/provenance/strata, keyed by tanitad.data.v2_dataset.stable_episode_id). Unset = the incumbent un"
+ },
+ {
+  "dest": "domain_tau",
+  "options": [
+   "--domain-tau"
+  ],
+  "default": 1.0,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "mix temperature. 0 = PROPORTIONAL (every episode equally likely \u2014 the matched control, same code path and same RNG as a live mix); 1 = BALANCED (every stratum a"
+ },
+ {
+  "dest": "domain_max_amp",
+  "options": [
+   "--domain-max-amp"
+  ],
+  "default": 20.0,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "\u26d4 ceiling on how much more often the MOST up-weighted episode may be drawn than under a uniform draw. MEASURED at N=2376: a fully balanced 6-stratum mix amplifi"
+ },
+ {
+  "dest": "domain_min_stratum",
+  "options": [
+   "--domain-min-stratum"
+  ],
+  "default": 8,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "\u26d4 refuse a stratum holding fewer episodes than this: at tau=1 it still receives 1/S of EVERY batch, which turns it into a memorisation target."
+ },
+ {
+  "dest": "f_hidden_tac",
+  "options": [
+   "--f-hidden-tac"
+  ],
+  "default": 512,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "FTac residual-MLP hidden width, tactical layer"
+ },
+ {
+  "dest": "f_hidden_str",
+  "options": [
+   "--f-hidden-str"
+  ],
+  "default": 512,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "FTac residual-MLP hidden width, strategic layer"
+ },
+ {
+  "dest": "f_blocks",
+  "options": [
+   "--f-blocks"
+  ],
+  "default": 3,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "FTac residual blocks per layer predictor"
+ },
+ {
+  "dest": "vit5_encoder",
+  "options": [
+   "--vit5-encoder"
+  ],
+  "default": false,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": "ViT-5 recipe encoder (arXiv 2602.08071): RMSNorm + LayerScale + QK-Norm + register tokens + joint APE/2D-axial-RoPE, GeLU MLP (ViT-5 REJECTS SwiGLU). CHANGES TH"
+ },
+ {
+  "dest": "n_registers",
+  "options": [
+   "--n-registers"
+  ],
+  "default": 4,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "register tokens; consumed internally and STRIPPED before the readout (they are not at a place in the image)"
+ },
+ {
+  "dest": "per_layer_encoders",
+  "options": [
+   "--per-layer-encoders"
+  ],
+  "default": false,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": "E-ENC arm (b): per-layer encoders instead of one common encoder + adapters. Decide at MATCHED TOTAL PARAMS; a tie goes to the common encoder."
+ },
+ {
+  "dest": "plan_steps",
+  "options": [
+   "--plan-steps"
+  ],
+  "default": 60,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "dt",
+  "options": [
+   "--dt"
+  ],
+  "default": 0.1,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "a_max",
+  "options": [
+   "--a-max"
+  ],
+  "default": 4.0,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "kappa_max",
+  "options": [
+   "--kappa-max"
+  ],
+  "default": 0.2,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "no_isolate_planner",
+  "options": [
+   "--no-isolate-planner"
+  ],
+  "default": false,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": "\u26d4 MIS-WIRED ARM: let planner/goal heads backprop into the encoder. Pre-registered control only."
+ },
+ {
+  "dest": "no_isolate_uplink",
+  "options": [
+   "--no-isolate-uplink"
+  ],
+  "default": false,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": "\u26d4 co-trained control arm: no stop-grad on the higher->lower latent path"
+ },
+ {
+  "dest": "uplink",
+  "options": [
+   "--uplink"
+  ],
+  "default": "stopgrad",
+  "type": null,
+  "choices": [
+   "stopgrad",
+   "ema"
+  ],
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "ema_decay",
+  "options": [
+   "--ema-decay"
+  ],
+  "default": 0.996,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "ema_decay_ramp",
+  "options": [
+   "--ema-decay-ramp"
+  ],
+  "default": "off",
+  "type": null,
+  "choices": [
+   "off",
+   "cosine"
+  ],
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "tau schedule for the O5-EMA TEACHER only (--o5-target ema). off = the incumbent FIXED --ema-decay, bit-identical. cosine = BYOL's ramp (2006.07733, banked): tau"
+ },
+ {
+  "dest": "ema_decay_start",
+  "options": [
+   "--ema-decay-start"
+  ],
+  "default": 0.99,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "tau at step 0 of the ramp (BYOL's tau_base). Read only when --ema-decay-ramp is not off."
+ },
+ {
+  "dest": "ema_decay_end",
+  "options": [
+   "--ema-decay-end"
+  ],
+  "default": null,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "tau the ramp ENDS at, at --steps. Default = --ema-decay, so the ramp LANDS exactly where the fixed arm sat for its whole run \u2014 which is what makes the ramped/fi"
+ },
+ {
+  "dest": "o5_target",
+  "options": [
+   "--o5-target"
+  ],
+  "default": "live",
+  "type": null,
+  "choices": [
+   "live",
+   "ema",
+   "frozen"
+  ],
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "O5's target-latent source. live = the incumbent (stop-grad only). ema = EMA-slow encoder+readout copies (the Drive-JEPA teacher core; P0 bake-off, PI-approved 2"
+ },
+ {
+  "dest": "o5_target_crop",
+  "options": [
+   "--o5-target-crop"
+  ],
+  "default": 0.0,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "MM-E4 L4 (PREREG_DRIFT_ATTACK_LADDER Amendment A): crop the O5 TARGET frames only to a random contiguous azimuthal window of this fraction of full width (unifor"
+ },
+ {
+  "dest": "o1_k",
+  "options": [
+   "--o1-k"
+  ],
+  "default": 10,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "O1/L_ctrl roll horizon (the W3 probe's k)"
+ },
+ {
+  "dest": "w_o1_ctrl",
+  "options": [
+   "--w-o1-ctrl"
+  ],
+  "default": 1.0,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "w_o1_fact",
+  "options": [
+   "--w-o1-fact"
+  ],
+  "default": 1.0,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "w_o1_scene",
+  "options": [
+   "--w-o1-scene"
+  ],
+  "default": 0.3,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "w_o7_distill",
+  "options": [
+   "--w-o7-distill"
+  ],
+  "default": 0.0,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "weight for O7 frozen-teacher distillation (E-DEC-9); 0 disables it entirely"
+ },
+ {
+  "dest": "o7_model",
+  "options": [
+   "--o7-model"
+  ],
+  "default": "facebook/dinov3-vitl16-pretrain-lvd1689m",
+  "type": "str",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "frozen teacher for O7"
+ },
+ {
+  "dest": "w_o9_ema",
+  "options": [
+   "--w-o9-ema"
+  ],
+  "default": 0.0,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "weight for O9 EMA-target masked-latent (E-DEC-13)"
+ },
+ {
+  "dest": "o9_momentum",
+  "options": [
+   "--o9-momentum"
+  ],
+  "default": 0.996,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "o9_mask_frac",
+  "options": [
+   "--o9-mask-frac"
+  ],
+  "default": 0.5,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "o9_neighbour_k",
+  "options": [
+   "--o9-neighbour-k"
+  ],
+  "default": 0,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "DMT-JEPA neighbour-aggregated targets; 0 = own cell"
+ },
+ {
+  "dest": "w_o10_psg",
+  "options": [
+   "--w-o10-psg"
+  ],
+  "default": 0.0,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "O10 PSG (E-DEC-18): a SHARED physical-state head on the ENCODED and the PREDICTED latent, supervised by our own banked 3D cuboids. Training-time only; the plann"
+ },
+ {
+  "dest": "psg_labels",
+  "options": [
+   "--psg-labels"
+  ],
+  "default": null,
+  "type": "str",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "jsonl of per-frame ego-frame cuboids (obstacle.offline)."
+ },
+ {
+  "dest": "freeze_readout",
+  "options": [
+   "--freeze-readout"
+  ],
+  "default": false,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": "E-DEC-20c: freeze the readout too, so the PREDICTOR is the only trainable party. Separates which module goes degenerate on a frozen feature field."
+ },
+ {
+  "dest": "psg_enc_only",
+  "options": [
+   "--psg-enc-only"
+  ],
+  "default": false,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": "E-DEC-18c: apply PSG to the ENCODED latent ONLY, so no gradient reaches the predictor. PhyLatent's mechanism IS the shared head on BOTH branches, so this is the"
+ },
+ {
+  "dest": "psg_eval_every",
+  "options": [
+   "--psg-eval-every"
+  ],
+  "default": 3,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "\u26d4 LEAK GUARD: every Nth sorted clip is HELD OUT of PSG supervision. The PSG target DETERMINES n_agents and lead_gap_m, so an arm supervised on all clips cannot "
+ },
+ {
+  "dest": "w_o8_pixel",
+  "options": [
+   "--w-o8-pixel"
+  ],
+  "default": 0.0,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "weight for O8 raw-pixel distillation (E-DEC-10); 0 disables it entirely"
+ },
+ {
+  "dest": "o1_stopgrad_factual",
+  "options": [
+   "--o1-stopgrad-factual"
+  ],
+  "default": false,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": "LIT-3: treat the factual prediction as a stop-gradient reference in O1's separation term"
+ },
+ {
+  "dest": "freeze_encoder",
+  "options": [
+   "--freeze-encoder"
+  ],
+  "default": false,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": "freeze the encoder; train readout+predictor only (E-DEC-14 split-encoder probe)"
+ },
+ {
+  "dest": "refuse_unreached",
+  "options": [
+   "--refuse-unreached"
+  ],
+  "default": false,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": "REFUSE the launch if any parameter in the optimizer receives no gradient at this run's loss weights. Default OFF: the census is written to config.json / grad_re"
+ },
+ {
+  "dest": "allow_unreached",
+  "options": [
+   "--allow-unreached"
+  ],
+  "default": [],
+  "type": null,
+  "choices": null,
+  "nargs": "*",
+  "action": "_StoreAction",
+  "required": false,
+  "help": "module prefixes this run KNOWINGLY leaves at initialisation (e.g. step_readout_op masked_cells). Only meaningful with --refuse-unreached; recorded in config.jso"
+ },
+ {
+  "dest": "expect_n_trainable",
+  "options": [
+   "--expect-n-trainable"
+  ],
+  "default": null,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "REFUSE the launch unless the post-freeze trainable parameter count equals this exactly. Checked by assert_declared_freezes_hold before step 1. v7f at PREREG_V7F"
+ },
+ {
+  "dest": "o1_detach_encoder",
+  "options": [
+   "--o1-detach-encoder"
+  ],
+  "default": false,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": "confine O1 to the predictor: detach encoder states for the O1 term only (H-RANK-22)"
+ },
+ {
+  "dest": "dkappa",
+  "options": [
+   "--dkappa"
+  ],
+  "default": 0.02,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "daccel",
+  "options": [
+   "--daccel"
+  ],
+  "default": 2.0,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "rand_dkappa_max",
+  "options": [
+   "--rand-dkappa-max"
+  ],
+  "default": 0.05,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "rand_daccel_max",
+  "options": [
+   "--rand-daccel-max"
+  ],
+  "default": 3.0,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "w_o2",
+  "options": [
+   "--w-o2"
+  ],
+  "default": 1.0,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "o2_tau_s",
+  "options": [
+   "--o2-tau-s"
+  ],
+  "default": 2.0,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "O2 time-to-reach decay constant, SECONDS (never metres \u2014 HIERARCHY_VOCABULARY \u00a72)"
+ },
+ {
+  "dest": "w_o3",
+  "options": [
+   "--w-o3"
+  ],
+  "default": 1.0,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "o3_mode",
+  "options": [
+   "--o3-mode"
+  ],
+  "default": "action",
+  "type": null,
+  "choices": [
+   "action",
+   "static"
+  ],
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "o3_blocks",
+  "options": [
+   "--o3-blocks"
+  ],
+  "default": 2,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "o3_block_h",
+  "options": [
+   "--o3-block-h"
+  ],
+  "default": 2,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "o3_block_w",
+  "options": [
+   "--o3-block-w"
+  ],
+  "default": 2,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "o3_band_rows",
+  "options": [
+   "--o3-band-rows"
+  ],
+  "default": 0,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "also mask the bottom N near-field readout rows"
+ },
+ {
+  "dest": "o4_alpha",
+  "options": [
+   "--o4-alpha"
+  ],
+  "default": 1.0,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "O4 saliency exponent; 0 = uniform (control arm)"
+ },
+ {
+  "dest": "o4_floor",
+  "options": [
+   "--o4-floor"
+  ],
+  "default": 0.25,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "w_o5",
+  "options": [
+   "--w-o5"
+  ],
+  "default": 1.0,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "cond_param",
+  "options": [
+   "--cond-param"
+  ],
+  "default": "steer_accel_v",
+  "type": "str",
+  "choices": [
+   "steer_accel_v",
+   "omega_accel_v"
+  ],
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "conditioning parameterisation. DEFAULT is the incumbent [atan(L*kappa), a_long, v]. 'omega_accel_v' feeds the MEASURED EGO STATE [yaw_rate, a_long, v] instead ("
+ },
+ {
+  "dest": "w_o13_ego",
+  "options": [
+   "--w-o13-ego"
+  ],
+  "default": 0.0,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "O13-EGO: predict delta(speed, yaw) at t+k from the PREDICTED LATENT ALONE, through a FROZEN random readout. The action is NOT an input to the readout (E-DEC-51 "
+ },
+ {
+  "dest": "o13_k",
+  "options": [
+   "--o13-k"
+  ],
+  "default": 4,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "O13 horizon in operative steps (default 4 = the horizon at which E-DEC-50 measured the action's effect on ego dynamics: dv t 2.56, dyaw t 4.57)."
+ },
+ {
+  "dest": "o13_seed",
+  "options": [
+   "--o13-seed"
+  ],
+  "default": 1300,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "seed for O13's FROZEN readout. Changing it changes the target direction -- never compare o13_loss across different seeds."
+ },
+ {
+  "dest": "tac_vocab_version",
+  "options": [
+   "--tac-vocab-version"
+  ],
+  "default": "v7.0",
+  "type": null,
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "vocabulary version for ALL six surfaces (v7.0 = the frozen FlyWheel vocabulary, MANDATORY default for new runs; recorded-args resumes of old runs resolve v6.0)."
+ },
+ {
+  "dest": "w_o14",
+  "options": [
+   "--w-o14"
+  ],
+  "default": 0.0,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "O14 future-observation aux (PREREG_O14_FUTURE_OBS; R2, PI-approved 2026-08-27). 0 = bit-identical trainer."
+ },
+ {
+  "dest": "o14_mode",
+  "options": [
+   "--o14-mode"
+  ],
+  "default": "fut",
+  "type": null,
+  "choices": [
+   "fut",
+   "rec",
+   "fut_diff"
+  ],
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "fut: grey pixels at t+k. rec: at t (the R1 contrast). fut_diff: pix(t+k)-pix(t)."
+ },
+ {
+  "dest": "o14_k",
+  "options": [
+   "--o14-k"
+  ],
+  "default": 4,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "horizon of the pixel target, in ticks (E-DEC-63 measured at k=4)."
+ },
+ {
+  "dest": "o14_shuffle_targets",
+  "options": [
+   "--o14-shuffle-targets"
+  ],
+  "default": false,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": "DELIBERATE-REGRESSION arm: cyclic-shift the targets across the batch (a derangement \u2014 randperm fixes points, the o11 lesson). The absorption gate MUST NOT move "
+ },
+ {
+  "dest": "w_o11_cf",
+  "options": [
+   "--w-o11-cf"
+  ],
+  "default": 0.0,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "O11-CF counterfactual action contrastive (E-DEC-30). 0.0 => incumbent loss bit-identical. ADDS to O5, never replaces it: O11 alone is minimised by zhat = f(z) +"
+ },
+ {
+  "dest": "o11_k",
+  "options": [
+   "--o11-k"
+  ],
+  "default": 6,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "rollout step the contrastive is taken at (clamped to --o5-k). Short is deliberate: the action's influence on the scene is largest early and is swamped by autoco"
+ },
+ {
+  "dest": "o11_tau",
+  "options": [
+   "--o11-tau"
+  ],
+  "default": 1.0,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "InfoNCE temperature over squared latent distance."
+ },
+ {
+  "dest": "o11_negs",
+  "options": [
+   "--o11-negs"
+  ],
+  "default": 1,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "counterfactual action sequences per window. The no-information floor is ln(1+n) EXACTLY, so this changes the floor -- never compare o11_loss across different va"
+ },
+ {
+  "dest": "o5_k",
+  "options": [
+   "--o5-k"
+  ],
+  "default": 20,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "O5 rollout length in 10 Hz steps (60 = the \u00a74b 6 s horizon; needs a cache with max_horizon >= 60)"
+ },
+ {
+  "dest": "sigreg_accum",
+  "options": [
+   "--sigreg-accum"
+  ],
+  "default": 1,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "sigreg_subspaces",
+  "options": [
+   "--sigreg-subspaces"
+  ],
+  "default": 1,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "o5_form",
+  "options": [
+   "--o5-form"
+  ],
+  "default": "l1",
+  "type": null,
+  "choices": [
+   "l1",
+   "mse"
+  ],
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "o5_mode",
+  "options": [
+   "--o5-mode"
+  ],
+  "default": "uniform",
+  "type": null,
+  "choices": [
+   "uniform",
+   "linear-decay",
+   "endpoint"
+  ],
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "w_o6",
+  "options": [
+   "--w-o6"
+  ],
+  "default": 0.1,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "o6_innovation",
+  "options": [
+   "--o6-innovation"
+  ],
+  "default": false,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": "MM-E4 L1 (PREREG_DRIFT_ATTACK_LADDER): O6's sketched test runs on the dynamics INNOVATIONS dz - g(z_t) instead of the states. g = per-batch closed-form ridge, f"
+ },
+ {
+  "dest": "o6_innovation_shuffle",
+  "options": [
+   "--o6-innovation-shuffle"
+  ],
+  "default": false,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": "deliberate-regression arm OF --o6-innovation (instrument validity, prereg-committed): permute z_t across rows before fitting g, so g carries no dynamics and the"
+ },
+ {
+  "dest": "sigreg_slices",
+  "options": [
+   "--sigreg-slices"
+  ],
+  "default": 512,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "sigreg_free_dims",
+  "options": [
+   "--sigreg-free-dims"
+  ],
+  "default": 0,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "spectrum_every",
+  "options": [
+   "--spectrum-every"
+  ],
+  "default": 200,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "spectrum_accum",
+  "options": [
+   "--spectrum-accum"
+  ],
+  "default": 1,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "pool this many CONSECUTIVE steps into the O6 spectrum reading (1 = off, the incumbent path)"
+ },
+ {
+  "dest": "spectrum_ci_reps",
+  "options": [
+   "--spectrum-ci-reps"
+  ],
+  "default": 0,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "0 = no interval. >0 emits the cluster JACKKNIFE interval on effective_rank plus this many bootstrap reps as a diagnostic; blocks are --window rows"
+ },
+ {
+  "dest": "x4_spectrum_layers",
+  "options": [
+   "--x4-spectrum-layers"
+  ],
+  "default": "tac,str",
+  "type": null,
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "comma list from {tac,str} for the X4 per-layer spectrum records, or 'none' to disable. 'op' is refused: the O6 z_op monitor is the incumbent block and cannot be"
+ },
+ {
+  "dest": "w_t1",
+  "options": [
+   "--w-t1"
+  ],
+  "default": 1.0,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "w_s1",
+  "options": [
+   "--w-s1"
+  ],
+  "default": 1.0,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "w_s2_goal",
+  "options": [
+   "--w-s2-goal"
+  ],
+  "default": 0.0,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "weight on the S2 strategic-goal supervision (CE on g_str/a_str + masked arg L1 vs s2-strategic-v1 labels). 0.0 = the term is absent and the loss is bit-identica"
+ },
+ {
+  "dest": "nav_labels",
+  "options": [
+   "--nav-labels"
+  ],
+  "default": null,
+  "type": null,
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "v7 label blob (s2-geom-v7) supplying the NAV COMMAND per clip. \u2b50 PI 2026-08-31: the nav command combines Alpamayo CoT and ego data and is PI-reviewed; the recor"
+ },
+ {
+  "dest": "nav_semantics",
+  "options": [
+   "--nav-semantics"
+  ],
+  "default": "t0_constant",
+  "type": null,
+  "choices": [
+   "t0_constant",
+   "decremented"
+  ],
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "how nav args age across a clip. 't0_constant': every window carries the t0 values (simple; the window 15 s later still says 'turn right in 106.5 m'). 'decrement"
+ },
+ {
+  "dest": "s2_labels",
+  "options": [
+   "--s2-labels"
+  ],
+  "default": null,
+  "type": null,
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "strategic/tactical label artifact \u2014 TWO schemas, SNIFFED from the FIRST RECORD, never from the name (SPEC_V7_LABEL_TRAINER_WIRING.md \u00a72). (a) s2-geom-v7 = the v"
+ },
+ {
+  "dest": "allow_any_labels",
+  "options": [
+   "--allow-any-labels"
+  ],
+  "default": false,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": "waive the v7.2 md5 pin on --s2-labels (the two canonical blobs are intrain_eval.V72). The md5 is printed and recorded EITHER way; a non-canonical blob is stampe"
+ },
+ {
+  "dest": "w_tac_label_all",
+  "options": [
+   "--w-tac-label-all"
+  ],
+  "default": 0.0,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "\u2b50 R3 (PI 2026-09-27, BINDING): weight on the ALL-TACTICAL-LABELS term \u2014 CE on a_lat/a_lon (a_tac.lat/.lon) + multi-label BCE on the 22-token g_tac goal SET (eve"
+ },
+ {
+  "dest": "tac_goal_negatives",
+  "options": [
+   "--tac-goal-negatives"
+  ],
+  "default": "measured",
+  "type": null,
+  "choices": [
+   "measured",
+   "geometry",
+   "all",
+   "cot-absence-negative"
+  ],
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "the goal-SET NEGATIVE policy for --w-tac-label-all (v7_labels.tactical_goal_targets; the refcv3 flag, same name). 'measured' (DEFAULT) supervises absence only f"
+ },
+ {
+  "dest": "cot_negative_sidecar",
+  "options": [
+   "--cot-negative-sidecar"
+  ],
+  "default": null,
+  "type": null,
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "the PI 2026-09-16 absence-as-negative SIDECAR (tanitad.cot_absence_negative/1) \u2014 the permission token for --tac-goal-negatives cot-absence-negative. \u26d4 v7_labels"
+ },
+ {
+  "dest": "dump_seam_plan",
+  "options": [
+   "--dump-seam-plan"
+  ],
+  "default": null,
+  "type": null,
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "DIR to bank the emitted 60-step plan into, one seam_<step>.pt per checkpoint save, for taniteval/tools/seam_probe.py. Unset = nothing is banked and the module i"
+ },
+ {
+  "dest": "dump_seam_plan_degenerate",
+  "options": [
+   "--dump-seam-plan-degenerate"
+  ],
+  "default": false,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": "bank the plan even when every control is exactly zero (the S-W zero-init case). Only for keeping the degenerate artifact deliberately \u2014 a dump banked this way C"
+ },
+ {
+  "dest": "lambda_plan",
+  "options": [
+   "--lambda-plan"
+  ],
+  "default": null,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "planner gradient scale; unset = the STAGE default ({'S-W': 0.0, 'S-T': 1.0, 'S-S': 0.0, 'S-J': 1.0}). 0 in S-W BY CONSTRUCTION."
+ },
+ {
+  "dest": "v2_cache",
+  "options": [
+   "--v2-cache"
+  ],
+  "default": [],
+  "type": null,
+  "choices": null,
+  "nargs": "+",
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "exclude_eval_clips",
+  "options": [
+   "--exclude-eval-clips"
+  ],
+  "default": "auto",
+  "type": null,
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "\u26d4 D-V7-EVAL-EXCLUSION (BACKLOG R8). Drop the v7.2 EVAL split's clips from the TRAINING corpus before the dataset is built. 'auto' (DEFAULT) resolves the canonic"
+ },
+ {
+  "dest": "allow_eval_clips_in_train",
+  "options": [
+   "--allow-eval-clips-in-train"
+  ],
+  "default": false,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": "\u26d4 THE STAMPED OVERRIDE: keep the v7.2 EVAL clips IN the training set. Printed as a banner and recorded in config.json under `eval_exclusion`, so no eval number "
+ },
+ {
+  "dest": "v2_val_cache",
+  "options": [
+   "--v2-val-cache"
+  ],
+  "default": [],
+  "type": null,
+  "choices": null,
+  "nargs": "+",
+  "action": "_StoreAction",
+  "required": false,
+  "help": "\u26d4 NOT SUPPORTED in v6 \u2014 refused at startup. Use train_flagship_v4.py for a held-out gate."
+ },
+ {
+  "dest": "v2_lru",
+  "options": [
+   "--v2-lru"
+  ],
+  "default": 64,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "v2_subframe",
+  "options": [
+   "--v2-subframe"
+  ],
+  "default": null,
+  "type": null,
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "frame_hfov",
+  "options": [
+   "--frame-hfov"
+  ],
+  "default": 120.0,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "projection",
+  "options": [
+   "--projection"
+  ],
+  "default": "cylindrical",
+  "type": null,
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "require_parity",
+  "options": [
+   "--require-parity"
+  ],
+  "default": true,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "require_parity",
+  "options": [
+   "--no-require-parity"
+  ],
+  "default": true,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreFalseAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "eps_per_batch",
+  "options": [
+   "--eps-per-batch"
+  ],
+  "default": 4,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "max_horizon",
+  "options": [
+   "--max-horizon"
+  ],
+  "default": null,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": "future steps each window carries. Unset = derived from the stage's own needs (o1_k, o5_k, stride_tac, stride_str, plan_steps). \u26a0\ufe0f NOT inherited from the v4 hori"
+ },
+ {
+  "dest": "steps",
+  "options": [
+   "--steps"
+  ],
+  "default": 30000,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "batch",
+  "options": [
+   "--batch"
+  ],
+  "default": 16,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "lr",
+  "options": [
+   "--lr"
+  ],
+  "default": 0.0001,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "wd",
+  "options": [
+   "--wd"
+  ],
+  "default": 0.05,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "clip",
+  "options": [
+   "--clip"
+  ],
+  "default": 1.0,
+  "type": "float",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "log_every",
+  "options": [
+   "--log-every"
+  ],
+  "default": 50,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "save_every",
+  "options": [
+   "--save-every"
+  ],
+  "default": 1000,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "device",
+  "options": [
+   "--device"
+  ],
+  "default": "cuda",
+  "type": null,
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "no_amp",
+  "options": [
+   "--no-amp"
+  ],
+  "default": false,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "seed",
+  "options": [
+   "--seed"
+  ],
+  "default": 0,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "dry_run",
+  "options": [
+   "--dry-run"
+  ],
+  "default": false,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": "build everything, run --dry-steps synthetic CPU steps, write config.json + dry_run.json, exit"
+ },
+ {
+  "dest": "dry_steps",
+  "options": [
+   "--dry-steps"
+  ],
+  "default": 2,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "dry_batch",
+  "options": [
+   "--dry-batch"
+  ],
+  "default": 2,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "dry_k",
+  "options": [
+   "--dry-k"
+  ],
+  "default": 12,
+  "type": "int",
+  "choices": null,
+  "nargs": null,
+  "action": "_StoreAction",
+  "required": false,
+  "help": ""
+ },
+ {
+  "dest": "print_launch",
+  "options": [
+   "--print-launch"
+  ],
+  "default": false,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": "print the PYTHONPATH-correct pod launch line and exit"
+ },
+ {
+  "dest": "control_arm_ack",
+  "options": [
+   "--i-know-this-is-the-control-arm"
+  ],
+  "default": false,
+  "type": null,
+  "choices": null,
+  "nargs": 0,
+  "action": "_StoreTrueAction",
+  "required": false,
+  "help": "SUPPRESS"
+ }
+]

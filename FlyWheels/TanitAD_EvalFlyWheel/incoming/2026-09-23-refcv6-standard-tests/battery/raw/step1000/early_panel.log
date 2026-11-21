@@ -1,0 +1,99 @@
+[early] panel 4754 {'pass': True, 'failures': []}
+[trivial-profile] 4754 windows — arm SHAPE before any family row (straight |y|<1e-06 m, const-speed spread<0.0001 m)
+  os             n=4754 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000  identical_to: oracle_sel=1249/4754
+  ha             n=4754 straight=0.0408 const_speed=0.0324 CONSTANT-VELOCITY=0.0316  identical_to: ha0=149/4754, ha0_ext=214/4754, oracle_sel=112/4754, stop=149/4754
+  ha0            n=4754 straight=1.0000 const_speed=1.0000 CONSTANT-VELOCITY=1.0000  identical_to: ha=149/4754, ha0_ext=149/4754, oracle_sel=107/4754, stop=149/4754
+  ha0_ext        n=4754 straight=0.0391 const_speed=0.0322 CONSTANT-VELOCITY=0.0316  identical_to: ha=214/4754, ha0=149/4754, oracle_sel=112/4754, stop=149/4754
+  os_navshuf     n=4754 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000
+  os_navzero     n=4754 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000
+  oracle_sel     n=4754 straight=0.0250 const_speed=0.0227 CONSTANT-VELOCITY=0.0227  identical_to: ha=112/4754, ha0=107/4754, ha0_ext=112/4754, os=1249/4754, stop=107/4754
+  os_navflip     n=4754 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000
+  stop           n=4754 straight=1.0000 const_speed=1.0000 CONSTANT-VELOCITY=1.0000  identical_to: ha=149/4754, ha0=149/4754, ha0_ext=149/4754, oracle_sel=107/4754
+  b_refcv4b      n=4754 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000
+  b_refcv5v2_s0  n=4754 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000
+  b_refcv5v2_s1  n=4754 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000
+  os_vmaxzero    n=4754 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000
+  ⚠️ CONSTANT-VELOCITY on > 50 % of windows: ['ha0', 'stop'] — read their LATERAL rows as a control, never as planning skill
+  ha0_ext ≡ ha0 on 149/4754 windows (3.13%) — on those the echo control adds nothing beyond the constant-velocity floor, and 'beat BOTH' collapses to 'beat ha0'.
+  ⛔ VOID-RISK: ['stop'] are the CONSTANT-VELOCITY plan on > 50 % of windows. A read whose arm is the baseline, or bit-identical to another arm, is stamped VOID — never reported as 'no difference'.
+  ⚠️ cross-call arms ['os_navzero']: produced by a SEPARATE forward (nav_cmd=None gates E13 for the whole call), so a float32 batching floor of ~6e-7 m sits under them — `identical_to` at 1e-09 m cannot resolve them and must not be read as nav evidence. A REAL nav difference measured ~4.7e4x that.
+[selection-profile] 4754 windows over 117 anchors — the model's OWN choice, before any family row
+  n_distinct=  44  modal=#76 (0.4544)  entropy=1.4758/4.7622 nats (ratio 0.3099)  agrees_with_oracle=0.2627
+[lead] b1_eval_lead_block.npz: 4754 windows / 139 eps · OK eps 139 · LEAD 1489 NO_LEAD 1145 NOT_STRAIGHT 1889 NO_LABEL 231 · speed-check max 2.6e-05 m/s · PRESENT
+[out] C:\Users\Admin\ev6_battery\raw\step1000_s0_early\analysis.json
+  os           tier=T1*  ADE=0.9015 [0.8385, 0.9716]  families_unavailable=['strategic']  distance_keeping=OK
+  ha           tier=T1   ADE=0.301 [0.2761, 0.3298]  families_unavailable=['strategic']  distance_keeping=OK
+  ha0          tier=T1   ADE=0.6764 [0.6033, 0.7529]  families_unavailable=['strategic']  distance_keeping=OK
+  ha0_ext      tier=T1   ADE=0.2886 [0.2652, 0.3158]  families_unavailable=['strategic']  distance_keeping=OK
+  os_navshuf   tier=T1*  ADE=0.8982 [0.8387, 0.9665]  families_unavailable=['strategic']  distance_keeping=OK
+  os_navzero   tier=T1*  ADE=0.9119 [0.8504, 0.9811]  families_unavailable=['strategic']  distance_keeping=OK
+  oracle_sel   tier=T0   ADE=0.6153 [0.5805, 0.6508]  families_unavailable=['strategic']  distance_keeping=OK
+  os_navflip   tier=T1*  ADE=0.9137 [0.848, 0.9851]  families_unavailable=['strategic']  distance_keeping=OK
+  stop         tier=T1   ADE=14.118 [12.5982, 15.7166]  families_unavailable=['strategic']  distance_keeping=OK
+  b_refcv4b    tier=T1   ADE=0.2974 [0.2689, 0.3303]  families_unavailable=['strategic']  distance_keeping=OK
+  b_refcv5v2_s0 tier=T1   ADE=0.309 [0.2797, 0.3427]  families_unavailable=['strategic']  distance_keeping=OK
+  b_refcv5v2_s1 tier=T1   ADE=0.3091 [0.2793, 0.3429]  families_unavailable=['strategic']  distance_keeping=OK
+  os_vmaxzero  tier=T1*  ADE=0.9049 [0.8427, 0.9753]  families_unavailable=['strategic']  distance_keeping=OK
+  * = tier stamped T1 with the ruling OPEN (does EVAL_DOCTRINE admit as T1 a model that consumes NO acti…)
+  paired_os_minus_ha0          ADE delta=0.2251 [0.1723, 0.2816] separated=True n_win=4754 n_ep=139
+  paired_os_minus_ha           ADE delta=0.6005 [0.5414, 0.6641] separated=True n_win=4754 n_ep=139
+  paired_os_minus_navshuf      ADE delta=0.0033 [-0.0127, 0.0202] separated=False n_win=4754 n_ep=139
+  paired_os_navzero_minus_ha0  ADE delta=0.2356 [0.1842, 0.2908] separated=True n_win=4754 n_ep=139
+  paired_os_minus_navzero      ADE delta=-0.0104 [-0.0252, 0.0037] separated=False n_win=4754 n_ep=139
+  paired_ha_minus_ha0          ADE delta=-0.3754 [-0.4378, -0.3179] separated=True n_win=4754 n_ep=139
+  paired_os_minus_ha0ext       ADE delta=0.6129 [0.5532, 0.6769] separated=True n_win=4754 n_ep=139
+  paired_os_navzero_minus_ha0ext ADE delta=0.6233 [0.5667, 0.6849] separated=True n_win=4754 n_ep=139
+  paired_oraclesel_minus_os    ADE delta=-0.2862 [-0.3407, -0.24] separated=True n_win=4754 n_ep=139
+  nav controls: os_navshuf (pairing broken, marginal preserved) AND os_navzero (signal removed; E13 tactical+strategic OFF, core collapsed to 'follow') — BACKLOG R39 binds both; the nav-zero margin over ha0 is the DEPLOYMENT-relevant number
+  ABSENT: ol — `ol` is 'the RECORDED future (a, steer) integrated from v0'. refcv3 CONSUMES NO ACTIONS (r…
+  strategic nav_valid_frac=1.0 n_labeled=3553 changed_subset_n=1778
+  tactical anchor_acc=0.0427 (chance 0.008547) n_distinct_selected=44
+C:\Users\Admin\ev6_battery\code\refcv6_panel.py:197: RuntimeWarning: Mean of empty slice
+  "means": {x: {k: float(np.nanmean(v)) for k, v in comps[x].items()} for x in comps}}
+[trivial-profile] 3668 windows — arm SHAPE before any family row (straight |y|<1e-06 m, const-speed spread<0.0001 m)
+  os             n=3668 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000
+  os_navshuf     n=3668 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000
+  os_navzero     n=3668 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000
+  os_navflip     n=3668 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000
+  ha             n=3668 straight=0.0330 const_speed=0.0237 CONSTANT-VELOCITY=0.0234  identical_to: ha0=86/3668, ha0_ext=130/3668, stop=86/3668
+  ha0            n=3668 straight=1.0000 const_speed=1.0000 CONSTANT-VELOCITY=1.0000  identical_to: ha=86/3668, ha0_ext=86/3668, stop=86/3668
+  ha0_ext        n=3668 straight=0.0303 const_speed=0.0237 CONSTANT-VELOCITY=0.0234  identical_to: ha=130/3668, ha0=86/3668, stop=86/3668
+  stop           n=3668 straight=1.0000 const_speed=1.0000 CONSTANT-VELOCITY=1.0000  identical_to: ha=86/3668, ha0=86/3668, ha0_ext=86/3668
+  b_refcv4b      n=3668 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000
+  b_refcv5v2_s0  n=3668 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000
+  b_refcv5v2_s1  n=3668 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000
+  ⚠️ CONSTANT-VELOCITY on > 50 % of windows: ['ha0', 'stop'] — read their LATERAL rows as a control, never as planning skill
+  ha0_ext ≡ ha0 on 86/3668 windows (2.34%) — on those the echo control adds nothing beyond the constant-velocity floor, and 'beat BOTH' collapses to 'beat ha0'.
+  ⛔ VOID-RISK: ['stop'] are the CONSTANT-VELOCITY plan on > 50 % of windows. A read whose arm is the baseline, or bit-identical to another arm, is stamped VOID — never reported as 'no difference'.
+  ⚠️ cross-call arms ['os_navzero']: produced by a SEPARATE forward (nav_cmd=None gates E13 for the whole call), so a float32 batching floor of ~6e-7 m sits under them — `identical_to` at 1e-09 m cannot resolve them and must not be read as nav evidence. A REAL nav difference measured ~4.7e4x that.
+[selection-profile] 3668 windows over 117 anchors — the model's OWN choice, before any family row
+  n_distinct=  41  modal=#76 (0.4537)  entropy=1.4521/4.7622 nats (ratio 0.3049)  agrees_with_oracle=0.2631
+[lead] b1_eval_lead_block.npz: 3668 windows / 139 eps · OK eps 139 · LEAD 1153 NO_LEAD 877 NOT_STRAIGHT 1454 NO_LABEL 184 · speed-check max 2.6e-05 m/s · PRESENT
+[out] C:\Users\Admin\ev6_battery\raw\step1000_s0_early\analysis_s6.json
+  os           tier=T1*  ADE=5.9991 [5.461, 6.6337]  families_unavailable=['strategic']  distance_keeping=OK
+  os_navshuf   tier=T1*  ADE=6.0063 [5.4765, 6.6177]  families_unavailable=['strategic']  distance_keeping=OK
+  os_navzero   tier=T1*  ADE=6.0792 [5.5581, 6.7074]  families_unavailable=['strategic']  distance_keeping=OK
+  os_navflip   tier=T1*  ADE=6.0993 [5.5499, 6.7474]  families_unavailable=['strategic']  distance_keeping=OK
+  ha           tier=T1   ADE=3.6158 [3.2069, 4.0256]  families_unavailable=['strategic']  distance_keeping=OK
+  ha0          tier=T1   ADE=4.9926 [4.3774, 5.6601]  families_unavailable=['strategic']  distance_keeping=OK
+  ha0_ext      tier=T1   ADE=3.5479 [3.151, 3.9432]  families_unavailable=['strategic']  distance_keeping=OK
+  stop         tier=T1   ADE=39.2767 [35.004, 43.7743]  families_unavailable=['strategic']  distance_keeping=OK
+  b_refcv4b    tier=T1   ADE=2.7225 [2.4832, 2.9711]  families_unavailable=['strategic']  distance_keeping=OK
+  b_refcv5v2_s0 tier=T1   ADE=2.714 [2.4798, 2.9674]  families_unavailable=['strategic']  distance_keeping=OK
+  b_refcv5v2_s1 tier=T1   ADE=2.7096 [2.4726, 2.9634]  families_unavailable=['strategic']  distance_keeping=OK
+  * = tier stamped T1 with the ruling OPEN (does EVAL_DOCTRINE admit as T1 a model that consumes NO acti…)
+  paired_os_minus_ha0          ADE delta=1.0066 [0.6973, 1.3506] separated=True n_win=3668 n_ep=139
+  paired_os_minus_ha           ADE delta=2.3833 [1.8874, 2.9692] separated=True n_win=3668 n_ep=139
+  paired_os_minus_navshuf      ADE delta=-0.0071 [-0.1238, 0.1181] separated=False n_win=3668 n_ep=139
+  paired_os_navzero_minus_ha0  ADE delta=1.0867 [0.7867, 1.4133] separated=True n_win=3668 n_ep=139
+  paired_os_minus_navzero      ADE delta=-0.0801 [-0.1785, 0.0143] separated=False n_win=3668 n_ep=139
+  paired_ha_minus_ha0          ADE delta=-1.3767 [-1.8807, -0.9353] separated=True n_win=3668 n_ep=139
+  paired_os_minus_ha0ext       ADE delta=2.4513 [1.9581, 3.0374] separated=True n_win=3668 n_ep=139
+  paired_os_navzero_minus_ha0ext ADE delta=2.5314 [2.07, 3.0748] separated=True n_win=3668 n_ep=139
+  nav controls: os_navshuf (pairing broken, marginal preserved) AND os_navzero (signal removed; E13 tactical+strategic OFF, core collapsed to 'follow') — BACKLOG R39 binds both; the nav-zero margin over ha0 is the DEPLOYMENT-relevant number
+  ABSENT: ol — `ol` is 'the RECORDED future (a, steer) integrated from v0'. refcv3 CONSUMES NO ACTIONS (r…
+  strategic nav_valid_frac=1.0 n_labeled=2873 changed_subset_n=1451
+  tactical anchor_acc=0.0442 (chance 0.008547) n_distinct_selected=41
+C:\Users\Admin\ev6_battery\code\refcv6_panel.py:197: RuntimeWarning: Mean of empty slice
+  "means": {x: {k: float(np.nanmean(v)) for k, v in comps[x].items()} for x in comps}}
+[early] DONE {"void": true, "s6": 3668, "tflip": "FAIL", "obedience": "FAIL"}

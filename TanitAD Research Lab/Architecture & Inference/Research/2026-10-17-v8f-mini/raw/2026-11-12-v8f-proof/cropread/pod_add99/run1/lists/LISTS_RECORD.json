@@ -1,0 +1,46 @@
+{
+ "card": "PREREG_V8F_PROOF_ADD99",
+ "what": "the two list records of the data kit put together for the fit kit, with the sha256 of the list files as on disk; written before the first fit",
+ "written_utc": "2026-11-21T08:46:23Z",
+ "train_final_sha256": "ec395b5bf8361f5f8c309d2361a7d7f315a5b9f400f823878a338c199fbe9a4d",
+ "eval141_sha256": "e837dc87e3ca98fdf0b68837148300a100beab8f908866b8342ef6609658510d",
+ "sources": {
+  "LISTS_RECORD.json": "6969f64b3d01c3173981491ecdc7f5225492a734048f0313cf3f708925e30117",
+  "TRAIN_FINAL_RECORD.json": "b3272be033d671bc7cf3d32f366b427e98d2349395e4220e5db1f240a11c774e"
+ },
+ "lists_record": {
+  "schema": "cropread_lists/1",
+  "n_join_clips": 4572,
+  "n_held_out": 438,
+  "n_not_held_out_few_valid_lead": 2455,
+  "n_eligible": 1679,
+  "expect_eligible": 1679,
+  "eligible_matches_expectation": true,
+  "n_eval": 141,
+  "n_eval_unique": 141,
+  "n_train_order_written": 520,
+  "rule": {
+   "held_out": "int(sha256(clip)[:8],16) % 10 == 0",
+   "min_valid_lead_frames": 10,
+   "valid_lead": "lead_valid==1 & finite(lead_gap) & 0<=lead_gap<=60",
+   "order": "ascending sha256 hex of the clip id",
+   "position_base": 1
+  },
+  "overlap_eval_vs_train_join": 0,
+  "overlap_eval_vs_train_eligible": 0,
+  "overlap_eval_vs_train_order_520": 0,
+  "sha256": {
+   "eval141.txt": "e837dc87e3ca98fdf0b68837148300a100beab8f908866b8342ef6609658510d",
+   "train_order.txt": "be00d016f536f9a1c1f241b5827abebfabb82a4b1508e1784d543a118c149269",
+   "train_eligible.txt": "c03445e93a95a13c8889cbfc524025ef652a8394134d31e2c6ab323092ae27dd"
+  }
+ },
+ "train_final_record": {
+  "n_final": 500,
+  "n_fit": 450,
+  "n_sel": 50,
+  "shortfall": 0,
+  "max_position_used": 500,
+  "skipped": []
+ }
+}

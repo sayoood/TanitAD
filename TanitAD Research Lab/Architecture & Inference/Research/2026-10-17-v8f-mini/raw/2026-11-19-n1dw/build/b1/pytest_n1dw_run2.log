@@ -1,0 +1,30 @@
+....................F
+================================== FAILURES ===================================
+________ test_mask_no_future_row_garbage_after_now_leaves_it_unchanged ________
+
+world = {'root': 'F:\\TanitAD-scratch\\n1dw\\build\\tmp\\run2\\bt\\n1dwworld0', 'rbd': WindowsPath('F:/TanitAD-scratch/n1dw/bu...  True,
+        True,  True,  True,  True,  True,  True,  True,  True,  True,
+        True,  True,  True]), ...}}, ...}
+
+    def test_mask_no_future_row_garbage_after_now_leaves_it_unchanged(world):
+        """Per sample (clip, NOW t): every table row of that clip AFTER t is replaced by garbage (ones in every column, a value the loader would refuse), the item is rebuilt; the mask must not move."""
+        J = load_J(world)
+        ds, wins = make_ds(world, J)
+        rng = np.random.default_rng(7)
+        sel = [wins[i] for i in rng.choice(len(wins), 30, replace=False)]
+>       clean = D.collate([ds.item(ci, t, 1, 3) for ci, t in sel])
+                                                    ^^^^^
+E       ValueError: too many values to unpack (expected 2)
+
+tests\test_v8f_n1dw.py:376: ValueError
+============================== warnings summary ===============================
+tests/test_v8f_n1dw.py::test_z1_w4_vs_w1_every_existing_term_and_output_bit_equal_total_moves_by_exactly_the_term
+  F:\TanitAD-scratch\n1dw\build\tree\stack\tests\test_v8f_n1dw.py:242: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    rb_term = float(o4["terms"]["rb_traj"])
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_v8f_n1dw.py::test_mask_no_future_row_garbage_after_now_leaves_it_unchanged
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 20 passed, 1 warning in 10.48s

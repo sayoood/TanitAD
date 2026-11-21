@@ -1,0 +1,260 @@
+{
+ "tool": "bha_dump.py",
+ "set": "clipgrid",
+ "started_utc": "2026-09-26T22:38:34Z",
+ "argv": [
+  "--tree",
+  "/home/nvidia/bha_2325/tree",
+  "--code",
+  "/home/nvidia/bha_2325/code",
+  "--ckpt",
+  "/home/nvidia/refcv6_run/runs/refcv6-r101-s0/ckpt.pt",
+  "--config",
+  "/home/nvidia/refcv6_run/runs/refcv6-r101-s0/config.json",
+  "--expect-ckpt-md5",
+  "5a2e7222a9f5f8c7aa7bf38ef4698d8a",
+  "--expect-step",
+  "38000",
+  "--set",
+  "clipgrid",
+  "--out-dir",
+  "/home/nvidia/bha_2325/out",
+  "--per-clip",
+  "4"
+ ],
+ "departures": [],
+ "tanitad_file": "/home/nvidia/bha_2325/tree/stack/tanitad/__init__.py",
+ "torch": "2.13.0+cu130",
+ "threads": 4,
+ "loader_md5": "5f43cd8180ed7036fb5abbb461b031fa",
+ "ckpt": {
+  "path": "/home/nvidia/refcv6_run/runs/refcv6-r101-s0/ckpt.pt",
+  "md5": "5a2e7222a9f5f8c7aa7bf38ef4698d8a",
+  "bytes": 1177897033
+ },
+ "config": {
+  "path": "/home/nvidia/refcv6_run/runs/refcv6-r101-s0/config.json",
+  "md5": "a3193a4685ce0d07a6ae6b89fdc994a8"
+ },
+ "model": {
+  "step": 38000,
+  "strict": "0 missing / 0 unexpected",
+  "build_s": 3.2,
+  "argv_remap": {
+   "remapped": {},
+   "dropped": {
+    "--trunk-compile": "no Triton on Windows; torch.compile wraps the backbone CALL only -- module tree and state_dict identical (LAUNCH_READINESS_FIXES.md \u00a710b)"
+   },
+   "train_only_kept_unread": {
+    "--v2-cache": "/home/nvidia/data/refcv6-b1-416x1024-train",
+    "--v7-labels": "/home/nvidia/data/v8labels/labels/s2_labels_v8_train.jsonl.gz",
+    "--speed-max-sidecar-v6": "/home/nvidia/data/refcv6_speed_max_v8_train.jsonl",
+    "--out": "/home/nvidia/refcv6_run/runs/refcv6-r101-s0"
+   }
+  },
+  "departures": [
+   "train():6946 `assert_ground_prior_is_supervised` (a startup gradient probe) is NOT run: it measures a training property and writes nothing the forward or the loss reads"
+  ],
+  "trunk_equalize_as_trained": {
+   "status": "set as trained",
+   "declared_by_pin": 43,
+   "as_trained": 0,
+   "why": "DROPPED: pre-fix record, argv --equalize-bottom-rows 43 with --image-hw (D-REFCV6-EQUALIZE-DROPPED) -- the trunk trained with 0 rows"
+  },
+  "perception": {
+   "cfg": {
+    "w_map": 1.0,
+    "w_box3d": 1.0,
+    "d_bev": 128,
+    "n_queries": 100,
+    "d_model": 256,
+    "bev_tokens_hw": [
+     30,
+     16
+    ],
+    "heights_m": [
+     0.0,
+     0.5,
+     1.5,
+     2.5
+    ],
+    "stride": 16,
+    "use_bev_in_box_head": true,
+    "occ_from_geometry": false,
+    "bev_encoder": {
+     "d_in": 128,
+     "d_model": 96,
+     "d_out": 96,
+     "dilations": [
+      1,
+      2,
+      4,
+      8
+     ]
+    }
+   },
+   "branch_params": {
+    "lift": 524544,
+    "bev_encoder": 785280,
+    "map_head": 873,
+    "box_memory": 287744,
+    "box_decoder": 3806999,
+    "total": 5405440
+   },
+   "lift_bank_n_clips": 4508,
+   "equalize_bottom_rows": 43,
+   "frame": {
+    "height": 416,
+    "width": 1024,
+    "projection": "cylindrical",
+    "f_ref": 488.92398517830253
+   }
+  },
+  "presence_gate": 0.5,
+  "presence_hard": false,
+  "queries": 100,
+  "box3d_visible_filter": true,
+  "cls_weight": {
+   "mode": "b1",
+   "digest": "c9dbc340acf7d27e",
+   "corpus_line": "v7-b1-physicalai-b1-w120-256x640cyl"
+  },
+  "cls_class_weight": [
+   0.004277000203728676,
+   0.21418100595474243,
+   0.4798260033130646,
+   1.5317260026931763,
+   0.3403419852256775,
+   0.011533999815583229,
+   0.09700199961662292,
+   1.245445966720581,
+   5.553512096405029,
+   0.5221560001373291
+  ]
+ },
+ "dataset": {
+  "label_clock": {
+   "rule": "t_now = grid_start_s + (t + w - 1 + n_stack - 1) * dt_s (tanitad/data/clip_clock.py; A16 2026-09-26)",
+   "sidecar": "/home/nvidia/data/refcv6_clip_clock_sidecar.jsonl",
+   "sidecar_rows": 4483,
+   "n_clips": 139,
+   "n_from_sidecar": 136,
+   "n_pose_dt_grid_start_0": 0,
+   "n_nominal_dt_grid_start_0": 3,
+   "raw_offsets": [
+    2
+   ],
+   "dt_s_median": 0.10066662995966351,
+   "dt_s_min": 0.1,
+   "dt_s_max": 0.10100496421012953
+  },
+  "labels": {
+   "path": "/home/nvidia/data/v8labels/labels/s2_labels_v8_eval.jsonl.gz",
+   "md5": "eefc38d1453bd1c73802d44d45affced",
+   "n_records": 147
+  },
+  "nav": {
+   "n_clips": 139,
+   "follow": 88,
+   "left": 13,
+   "right": 38,
+   "missing": 0,
+   "derivation": "v7.2 nav_command token (oracle, provenance ego-future; allow_oracle_nav=True)",
+   "unlabeled_default": "nav_cmd=0 ('follow') + nav_valid=False (refav1_loader convention)",
+   "label_md5": "eefc38d1453bd1c73802d44d45affced",
+   "allow_oracle_nav": true
+  },
+  "max_speed_v6": {
+   "sidecar": "refcv6_speed_max_v8_eval.jsonl",
+   "n_rows": 147,
+   "n_valid": 147,
+   "n_over_ceiling": 1,
+   "over_ceiling_frac": 0.006803,
+   "source_md5": "eefc38d1453bd1c73802d44d45affced",
+   "source_labels": "s2_labels_v8_eval.jsonl.gz",
+   "join_key": "sid = stable_episode_id(clip_id)",
+   "ladder_kmh": [
+    30,
+    50,
+    100,
+    120
+   ],
+   "quantized_by": "tanitad.refs.refcv6_max_speed.MaxSpeedOneHotEncoder (model side, ONCE); this reader ships the RAW v_hi_ms and only CHECKS the sidecar's own bin",
+   "_derivation": "refcv6 4-way one-hot set-speed, CONTAINING-WINDOW quantization over {30, 50, 100, 120} km/h: (0,30]->30, (30,50]->50, (50,100]->100, (100,120]->120, and > 120 CLAMPS to 120 (counted and reported). Source field v7.2/v8 g_tac.goals.SPEED_BAND.v_hi_ms (oracle, provenance ego-future: max of the ego's OWN REALISED speed over [t0+2 s, +6 s]); the PI authorised the future-ego derivation explicitly on 2026-09-16 provided the value lands in the containing window. It models a max SET speed - a limiter the driver sets - so the realised speed sits INSIDE the window and never above it. INPUT, never a training signal: no loss reaches this channel in refcv6.",
+   "channel": "refcv6 4-way one-hot (\u00a75)",
+   "label_md5": "eefc38d1453bd1c73802d44d45affced",
+   "n_windows": 23772,
+   "n_windows_fed": 23772,
+   "window_ceiling_frac": 1.0
+  },
+  "agent_join": {
+   "path": "/home/nvidia/data/joins/b1_train_plus_eval_agents.jsonl.xz",
+   "n_episodes": 139,
+   "n_episodes_joined_stable_id": 139,
+   "n_episodes_joined_legacy_id": 0,
+   "n_ambiguous_legacy_ids_in_join": 0,
+   "id_space": "stable-63bit",
+   "allow_legacy_ids": false,
+   "n_windows": 23772,
+   "n_windows_labelled": 22663,
+   "frac_windows_labelled": 0.9533,
+   "n_windows_labelled_clear": 582,
+   "n_target_boxes_prefilter": 776801,
+   "agent_pad": 397,
+   "reader_max_agents_per_frame": 395,
+   "reader_n_records": 26394,
+   "reader_n_clips": 139,
+   "reader_has_classes": true,
+   "reader_has_occlusion_flags": true,
+   "reader_with_rates": true,
+   "pad_source": "config.json agent_join_stats.train.agent_pad",
+   "load_s": 56.2
+  },
+  "map_gt": {
+   "root": "/home/nvidia/data/sam3_corpus",
+   "n_windows": 23772,
+   "n_clips": 139,
+   "frac_ok": 0.9856133266027259,
+   "frac_ok_upper": 0.9856133266027259,
+   "verdict": "PASS",
+   "min_coverage": 0.9,
+   "states": {
+    "ok": 23430,
+    "no_file": 342,
+    "frame_out_of_range": 0,
+    "inconclusive": 0
+   },
+   "reasons": {
+    "081b986f8888": "FileNotFoundError errno 2",
+    "2aa810802777": "FileNotFoundError errno 2"
+   },
+   "n_stack": 3,
+   "layouts": [
+    "canonical"
+   ]
+  },
+  "join3d": {
+   "path": "/home/nvidia/data/join3d/b1_train_plus_eval_agents_3d.jsonl.xz",
+   "n_lines": 26394,
+   "n_agents": 905512,
+   "n_clips": 139,
+   "load_s": 66.0
+  },
+  "n_episodes": 139,
+  "n_windows": 23772,
+  "build_s": 122.7
+ },
+ "selection": {
+  "rule": "per clip (sorted by sha12): 4 windows evenly spaced over the clip's AGENT-LABELLED windows (join lookup at NOW = t + W - 1 is not None)",
+  "n_clips": 139,
+  "n_clips_without_labelled_window": 0
+ },
+ "n_windows_selected": 556,
+ "n_chunks": 18,
+ "s_per_window": {
+  "median": 5.550369024276733,
+  "max": 8.918741941452026,
+  "n": 556
+ },
+ "wall_s": 3280.5
+}

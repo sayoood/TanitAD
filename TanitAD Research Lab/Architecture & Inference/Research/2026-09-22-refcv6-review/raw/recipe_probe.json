@@ -1,0 +1,185 @@
+{
+  "spec_literals": {
+    "optimiser": "AdamW",
+    "weight_decay": 0.0001,
+    "encoder_lr_mult": 0.5,
+    "schedule": "warmup then cosine"
+  },
+  "recovered": {
+    "sched_src": "sched = lambda s: (s + 1) / max(1, args.warmup) if s < args.warmup else \\\n        0.5 * (1.0 + math.cos(math.pi * (s - args.warmup)\n                              / max(1, args.steps - args.warmup)))",
+    "sched_line": 7050,
+    "lr_apply_src": "for g in opt.param_groups:\n            g[\"lr\"] = args.lr * sched(step)",
+    "lr_apply_line": 7438
+  },
+  "arms": {
+    "adam": {
+      "opt_class": "Adam",
+      "args_lr": 0.0001,
+      "groups_at_build": [
+        {
+          "name": "g0",
+          "lr": 0.0001,
+          "weight_decay": 0.0,
+          "n_tensors": 153,
+          "n_params": 130879
+        }
+      ],
+      "after_live_schedule": [
+        {
+          "step": 0,
+          "sched": 0.0005,
+          "lrs": [
+            5.0000000000000004e-08
+          ]
+        },
+        {
+          "step": 1,
+          "sched": 0.001,
+          "lrs": [
+            1.0000000000000001e-07
+          ]
+        },
+        {
+          "step": 1999,
+          "sched": 1.0,
+          "lrs": [
+            0.0001
+          ]
+        },
+        {
+          "step": 2000,
+          "sched": 1.0,
+          "lrs": [
+            0.0001
+          ]
+        },
+        {
+          "step": 2001,
+          "sched": 0.9999999968528047,
+          "lrs": [
+            9.999999968528048e-05
+          ]
+        },
+        {
+          "step": 15000,
+          "sched": 0.5559822380516539,
+          "lrs": [
+            5.559822380516539e-05
+          ]
+        },
+        {
+          "step": 29999,
+          "sched": 3.147195282160453e-09,
+          "lrs": [
+            3.1471952821604533e-13
+          ]
+        }
+      ],
+      "ratio_after": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "dd": {
+      "opt_class": "AdamW",
+      "args_lr": 0.0001,
+      "groups_at_build": [
+        {
+          "name": "encoder",
+          "lr": 5e-05,
+          "weight_decay": 0.0001,
+          "n_tensors": 108,
+          "n_params": 21284672
+        },
+        {
+          "name": "head",
+          "lr": 0.0001,
+          "weight_decay": 0.0001,
+          "n_tensors": 117,
+          "n_params": 141159
+        }
+      ],
+      "after_live_schedule": [
+        {
+          "step": 0,
+          "sched": 0.0005,
+          "lrs": [
+            5.0000000000000004e-08,
+            5.0000000000000004e-08
+          ]
+        },
+        {
+          "step": 1,
+          "sched": 0.001,
+          "lrs": [
+            1.0000000000000001e-07,
+            1.0000000000000001e-07
+          ]
+        },
+        {
+          "step": 1999,
+          "sched": 1.0,
+          "lrs": [
+            0.0001,
+            0.0001
+          ]
+        },
+        {
+          "step": 2000,
+          "sched": 1.0,
+          "lrs": [
+            0.0001,
+            0.0001
+          ]
+        },
+        {
+          "step": 2001,
+          "sched": 0.9999999968528047,
+          "lrs": [
+            9.999999968528048e-05,
+            9.999999968528048e-05
+          ]
+        },
+        {
+          "step": 15000,
+          "sched": 0.5559822380516539,
+          "lrs": [
+            5.559822380516539e-05,
+            5.559822380516539e-05
+          ]
+        },
+        {
+          "step": 29999,
+          "sched": 3.147195282160453e-09,
+          "lrs": [
+            3.1471952821604533e-13,
+            3.1471952821604533e-13
+          ]
+        }
+      ],
+      "ratio_at_build": 0.5,
+      "ratio_after": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    }
+  },
+  "verdicts": {
+    "AdamW": true,
+    "weight_decay_1e-4": true,
+    "encoder_lr_x0.5_AT_BUILD": true,
+    "encoder_lr_x0.5_SURVIVES_THE_SCHEDULE": false,
+    "warmup_present": true,
+    "cosine_present": true
+  }
+}

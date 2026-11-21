@@ -1,0 +1,1338 @@
+#!/usr/bin/env python
+"""G-MAP-OVERFIT -- can the 10 cm map path learn EVERY SAM3 class? (refcv7 NEW-2)
+
+``SPEC_REFCV7.md`` §8 (A3) item 3, protocol and literals pre-registered by the
+map-signal audit: ``TanitAD Research Lab/Architecture & Inference/Research/
+2026-09-26-map-signal-audit/raw/PREREG_G_MAP_OVERFIT.md`` (machine-readable:
+``raw/gmo_spec.json``). This harness implements it; it invents no number.
+
+WHAT RUNS (the prereg's §3, literal): the refcv7 LAUNCH map path -- the resnet101
+trunk (frozen BN, the launch levers, the C26 equalisation), its stride-8 tap, the NEW-2
+branch with the launch ``MapHiresConfig`` -- trained ONLY on the 10 cm loss
+(``hires_map_ce``: hard CE, ignore 255, the lift-valid narrowing, the FROZEN launch
+class weights) over the 16 fixed TRAIN frames, AdamW (lr 1e-3 constant, betas 0.9 /
+0.999, eps 1e-8, weight decay from the spec), batch 4, N steps, seed 0. Scored cells
+(§4) = ``fine_codes != 255`` AND lift-valid AND rig x in the GATED band; IoU POOLED
+over the frames; the verdict uses the DECLARED decision rule (§5) and both rules are
+reported.
+
+ARMS (all from ONE shared init):
+
+* ``healthy``      -- the MAIN arm (branch + the trunk's stem..stride-8 stage);
+* ``lane_w0``      -- R1: the lane weight 0 in the LOSS (the decision keeps the launch
+                      weights: R1 tests the learning signal, not the decision rule);
+                      must FAIL on lane;
+* ``s8_zeros``     -- R2: ``zeros_like(fmap_s8)`` enters the branch (the F3-whitelist
+                      class); the trunk stays in the optimiser and gets no map gradient;
+                      must FAIL on ALL FIVE thin classes (``must_fail_all``);
+* ``s8_detached``  -- informative: ``fmap_s8.detach()`` (ImageNet stride-8 features can
+                      still memorise 16 frames, so it may PASS -- not gated);
+* ``frozen_trunk`` -- informative: the branch alone trains (identical to
+                      ``s8_detached`` here, since the trunk has no other loss).
+* ``near_zeros``   -- NEW-2 R2 (SPEC_REFCV7 A12): the 0.1 m near lift samples
+                      ``zeros_like(fmap_s8)`` while the 0.25 m path reads the real map,
+                      i.e. the NEW-2 arm plus a skip that can only learn constants; gated
+                      by an A12 spec's ``must_fail`` row (non-drivable edge). Needs
+                      ``--near-lift-m > 0``.
+
+THE NEAR LIFT (``--near-lift-m``, NEW-2 R2 / A12): 0 (default) = the NEW-2 branch as landed
+(the prereg's MAIN); > 0 = the branch built with ``MapHiresConfig.near_lift_x_m``, every
+other literal unchanged. Its zero-initialised skip is built LAST, so the record also carries
+the branch fingerprint WITHOUT it (``branch_init_sha256_without_near``), which must equal the
+NEW-2 MAIN's for the same seed.
+
+THE NEAR REFINE BLOCK (``--near-refine-blocks``, NEW-2 R3 / A15): stacked on the near lift;
+its regression arm ``near_block_zeros`` feeds the block's residual branch zeros (the A12
+function). The record's ``branch_init_sha256_without_near_refine`` must equal R2's branch
+fingerprint for the same seed.
+* ``edge_w0``      -- NEW-2 R4 (§9 lever 4, the weights): the non-drivable-edge weight 0 in
+                      the LOSS (the decision keeps the launch weights, as ``lane_w0``); gated by
+                      a lever-4 spec's ``must_fail`` row (edge): an edge pass must come from
+                      edge's own weighted loss term.
+* ``near_block_zeros`` -- NEW-2 R3 (SPEC_REFCV7 §20, A15): the near refine block reads zeros;
+                      gated by an A15 spec's ``must_fail`` row (edge). Needs
+                      ``--near-refine-blocks > 0``.
+
+CONTROLS on the same scored cells (§7): C1 drivable everywhere (IoU_drivable =
+n_drivable / n_scored to 1e-9, every other class 0, and it FAILS §6); C2 logits =
+20 · one-hot(label) (IoU 1.0 for every class, under the declared rule); C3 uniform
+weights (the prior-corrected and raw decisions bit-identical on the MAIN arm's logits).
+
+VERDICT (§8): PASS iff the MAIN arm passes §6 (presence >= min_cells for all 8
+classes -- else INCONCLUSIVE => FAIL; the IoU bars; each class's per-cell CE final <=
+ratio x step 0; a finite loss at every step), every gated regression arm fails as
+required, and C1-C3 reproduce. Anything else is FAIL. Exit 0 = PASS, 2 = FAIL.
+
+THE FRAME AXIS: v2ep payloads carry no per-frame timestamps (MEASURED 2026-09-26: the
+payload's ``frame`` dict holds height / width / f_ref / projection only). With
+``--cam-ts-dir`` (the corpus's ``<clip_id>[.camera_front_wide_120fov].timestamps.parquet``)
+each label is time-checked at 1 ms (``ClipMapGT.check_times`` on
+``episode_frame_times_us``, the prereg's §2 / §9a.6 guard); without it only the
+reader's POSE-CONTENT check runs (``check_pose_alignment``: the GT pose must follow the
+v2ep pose on the same frame index within 5 cm; INCONCLUSIVE refuses) -- and then the
+verdict CANNOT be PASS (``time_guard_1ms`` is a gate condition). The record names the
+guard that ran. Clip ids never printed or written: sha12 only.
+
+THE EXTENT (SPEC_REFCV7 §11.2 / §12, A6/A7): the LAUNCH map is 100 m x +-30 m (1000 x
+600 at 0.1 m; ``--x-max-m`` / ``--y-half-m``), read through the fine reader at that
+extent (``/3`` GT; a ``/2`` file is refused outside 60 m x +-16 m). The gated band stays
+the prereg's (``0_20``); every other 20 m band is reported. The launch decoder
+recomputes in backward (``--grad-ckpt on``, §12 item 4). ``refcv6_head_05m`` (R3,
+informative) is NOT RUN: A6 removed the 0.5 m head (§8: "if R3 was run").
+"""
+from __future__ import annotations
+
+import argparse
+import copy
+import hashlib
+import json
+import math
+import sys
+import time
+from pathlib import Path
+
+import torch
+
+HERE = Path(__file__).resolve()
+sys.path.insert(0, str(HERE.parents[1]))                        # stack/
+
+from tanitad.data import semantic_map_gt_fine as F              # noqa: E402
+from tanitad.data.semantic_map_gt_fine import EXTENT_REFCV7, MapExtent  # noqa: E402
+from tanitad.models import map_head_hires as H                  # noqa: E402
+
+ARMS = ("healthy", "lane_w0", "s8_zeros", "s8_detached", "frozen_trunk", "near_zeros",
+        "near_block_zeros", "edge_w0")
+INFORMATIVE_KNOWN = ("s8_detached", "frozen_trunk", "refcv6_head_05m", "near_zeros")
+LANE = 2
+DRIVABLE = 1
+EDGE = 5                                   # H.CLASS_KEYS[5] == "edge" (asserted in the tests)
+THIN = ("lane", "crosswalk", "arrow", "edge", "hatched")
+#: R3 of the prereg: informative, and NOT buildable in refcv7 (A6 removed the head)
+NOT_RUN_WHY = {"refcv6_head_05m": "refcv7 A6 (SPEC_REFCV7 §11.1) removed the 0.5 m "
+                                  "map head; PREREG §8 gates R3 only 'if R3 was run'"}
+
+
+# --------------------------------------------------------------------------- #
+# the spec                                                                     #
+# --------------------------------------------------------------------------- #
+def _expand_frames(frames) -> list:
+    """``{"clip_sha12", "raw_frame"}`` rows, or the audit frame-set entries
+    ``{"clip_sha12", "raw_v2ep_frames": [...]}``. Anything else is refused."""
+    rows = []
+    for e in frames:
+        if "raw_frame" in e:
+            rows.append({"clip_sha12": str(e["clip_sha12"]), "raw_frame": int(e["raw_frame"])})
+        elif "raw_v2ep_frames" in e:
+            rows += [{"clip_sha12": str(e["clip_sha12"]), "raw_frame": int(f)}
+                     for f in e["raw_v2ep_frames"]]
+        else:
+            raise SystemExit(f"⛔ frame entry without raw_frame / raw_v2ep_frames: "
+                             f"{sorted(e)}")
+    if not rows:
+        raise SystemExit("⛔ the spec names no frame")
+    return rows
+
+
+def _placeholder(v) -> bool:
+    return isinstance(v, str) and v.strip().startswith("<")
+
+
+def load_spec(path, *, class_weights: str | None = None,
+              decision_rule: str | None = None, band_keys=H.BAND_KEYS) -> dict:
+    """Read + validate the spec. The prereg's placeholders (``class_weights``,
+    ``thresholds.decision_rule``) MUST be filled by the caller (``--class-weights``,
+    ``--decision-rule``); nothing is defaulted."""
+    s = json.loads(Path(path).read_text(encoding="utf-8"))
+    for k in ("frames", "steps", "thresholds"):
+        if k not in s:
+            raise SystemExit(f"⛔ spec has no {k!r}: the prereg supplies it, this "
+                             f"harness does not invent it")
+    s["frames"] = _expand_frames(s["frames"])
+    th = s["thresholds"]
+    if not isinstance(th, dict) or not th.get("iou"):
+        raise SystemExit("⛔ spec.thresholds.iou is empty: no literal per-class bar")
+    for cls in th["iou"]:
+        if cls not in H.CLASS_KEYS:
+            raise SystemExit(f"⛔ threshold class {cls!r} not in {H.CLASS_KEYS}")
+    if th.get("band", "0_20") not in tuple(band_keys) + ("all",):
+        raise SystemExit(f"⛔ thresholds.band {th.get('band')!r}")
+    if "min_cells" not in th:
+        raise SystemExit("⛔ thresholds.min_cells missing: the presence floor is the "
+                         "prereg's §6.1, never waived")
+    rule = decision_rule if decision_rule is not None else th.get("decision_rule")
+    if rule is None or _placeholder(rule):
+        raise SystemExit("⛔ no declared decision rule: pass --decision-rule (the launch "
+                         "config's MapHiresConfig.decision_rule)")
+    if rule not in H.DECISION_RULES:
+        raise SystemExit(f"⛔ decision rule {rule!r} not in {H.DECISION_RULES}")
+    th["decision_rule"] = rule
+    cw = class_weights if class_weights is not None else s.get("class_weights", "uniform")
+    if cw is None or _placeholder(cw):
+        raise SystemExit("⛔ no class weights: pass --class-weights <the LAUNCH weights "
+                         "json> (a dry-run file is refused)")
+    s["class_weights"] = cw
+    for arm, must in (s.get("must_fail") or {}).items():
+        if arm not in ARMS or arm == "healthy":
+            raise SystemExit(f"⛔ must_fail names {arm!r}")
+        for cls in must:
+            if cls not in th["iou"]:
+                raise SystemExit(f"⛔ {arm} must fail {cls!r}, which has no threshold")
+    for arm in (s.get("must_fail_all") or {}):
+        if arm not in (s.get("must_fail") or {}):
+            raise SystemExit(f"⛔ must_fail_all names {arm!r}, which has no must_fail row")
+    for arm in s.get("informative_arms") or []:
+        if arm not in INFORMATIVE_KNOWN:
+            raise SystemExit(f"⛔ unknown informative arm {arm!r}")
+    return s
+
+
+LR_DECAY_KINDS = ("cosine_to_zero",)
+
+
+def lr_multiplier(spec: dict):
+    """NEW-2 R5 (the map twin of SPEC_REFCV7 A17): the spec's ``lr_decay`` as a function of the
+    1-indexed optimiser step -> lr multiplier, or ``None`` (no key: the constant-lr path, which
+    then never touches the optimiser's lr). ``cosine_to_zero``: 1.0 for steps <= start_step,
+    then 0.5 * (1 + cos(pi * (step - start) / (steps - start))) -- 0.5 half-way, 0.0 at the
+    final step. REFUSES an unknown kind and a start outside (0, steps)."""
+    d = spec.get("lr_decay")
+    if d is None:
+        return None
+    kind, steps = d.get("kind"), int(spec["steps"])
+    if kind not in LR_DECAY_KINDS:
+        raise SystemExit(f"⛔ lr_decay kind {kind!r} not in {LR_DECAY_KINDS}")
+    start = d.get("start_step")
+    if isinstance(start, bool) or not isinstance(start, int) or not 0 < start < steps:
+        raise SystemExit(f"⛔ lr_decay start_step {start!r} must be an integer in (0, {steps})")
+
+    def m(step: int) -> float:
+        if step <= start:
+            return 1.0
+        return 0.5 * (1.0 + math.cos(math.pi * (step - start) / (steps - start)))
+    return m
+
+
+def class_weights_of(spec: dict, extent: MapExtent | None = None
+                     ) -> tuple[torch.Tensor, dict]:
+    if spec["class_weights"] == "uniform":
+        return torch.ones(8), {"uniform": True, "sha256": None}
+    # refuses a dry run, and weights counted on another extent
+    return H.load_class_weights(spec["class_weights"], extent=extent)
+
+
+# --------------------------------------------------------------------------- #
+# the data                                                                     #
+# --------------------------------------------------------------------------- #
+def load_frames(spec: dict, v2_cache: Path, gt_root: Path, extrinsics: Path,
+                frame, cfg: H.MapHiresConfig, equalize_bottom_rows: int,
+                cam_ts_dir: Path | None = None) -> dict:
+    """-> ``{"x": uint8 [N, 9, H, W], "codes": uint8 [N, *cfg.out_hw], "grid",
+    "valid", "sha12", "raw_frame", "axis_guard"}``. READ-ONLY on every input; the GT is
+    read at the branch config's DECLARED extent."""
+    import torchvision.io as tvio
+    from tanitad.data.v2_dataset import MANIFEST_NAME, _list_clips, stable_episode_id
+    man = torch.load(Path(v2_cache) / MANIFEST_NAME, map_location="cpu",
+                     weights_only=False)
+    if man.get("files") != _list_clips(str(v2_cache)):
+        raise SystemExit("⛔ the v2 manifest is stale: the clip set is not the cache's")
+    by12 = {F.sha12(c): str(c) for c in man.get("clip_id") or []}
+    sys.path.insert(0, str(HERE.parent))
+    import refc_v3_train as T                                   # noqa: E402
+    _single, table = T._read_rig_extrinsics(str(extrinsics))
+    if table is None:
+        raise SystemExit("⛔ the extrinsics file is not a per-clip table")
+    store = F.FineMapGTStore(Path(gt_root), max_open=2, extent=cfg.extent)
+    xs, cs, s12s, rfs, cids, guards = [], [], [], [], [], {}
+    for row in spec["frames"]:
+        s12, rf = str(row["clip_sha12"]), int(row["raw_frame"])
+        if s12 not in by12:
+            raise SystemExit(f"⛔ frame clip sha12 {s12} is not in the v2 cache")
+        cid = by12[s12]
+        gt = store.open(cid)
+        d = torch.load(Path(v2_cache) / f"{cid}.v2ep.pt", map_location="cpu",
+                       weights_only=False)
+        if s12 not in guards:
+            guards[s12] = _axis_guard(gt, d, cid, cam_ts_dir)
+        if guards[s12]["kind"] == "time_1ms":
+            gt.check_times([rf], [guards[s12]["t_img_us"][rf]])
+        codes = gt.read([rf]).codes[0]
+        offs = torch.cat([torch.zeros(1, dtype=torch.int64),
+                          torch.cumsum(d["jpeg_len"].to(torch.int64), 0)])
+        if rf < 2 or rf >= int(d["jpeg_len"].shape[0]):
+            raise SystemExit(f"⛔ raw frame {rf} of {s12}: no full 3-frame stack")
+        ims = [tvio.decode_image(d["jpeg_buf"][int(offs[i]):int(offs[i + 1])],
+                                 mode=tvio.ImageReadMode.RGB) for i in (rf - 2, rf - 1, rf)]
+        xs.append(torch.cat(ims, 0))
+        cs.append(torch.from_numpy(codes.copy()))
+        s12s.append(s12)
+        rfs.append(rf)
+        cids.append(cid)
+    bank = H.HiresLiftGeometryBank({c: table[c] for c in set(cids)}, frame=frame,
+                                   cfg=cfg, equalize_bottom_rows=equalize_bottom_rows)
+    grid, valid = bank.for_episodes([int(stable_episode_id(c)) for c in cids])
+    return {"x": torch.stack(xs), "codes": torch.stack(cs), "grid": grid,
+            "valid": valid, "sha12": s12s, "raw_frame": rfs,
+            "axis_guard": {k: {kk: vv for kk, vv in v.items() if kk != "t_img_us"}
+                           for k, v in guards.items()}}
+
+
+def _axis_guard(gt, payload, cid: str, cam_ts_dir) -> dict:
+    """The frame-axis guard for one clip: 1 ms time check when camera timestamps are
+    available, else the pose-content check (must be ALIGNED)."""
+    if cam_ts_dir is not None:
+        import pandas as pd
+        from tanitad.data.semantic_map_gt import episode_frame_times_us
+        cands = [Path(cam_ts_dir) / f"{cid}.timestamps.parquet",
+                 Path(cam_ts_dir) / f"{cid}.camera_front_wide_120fov.timestamps.parquet"]
+        hit = next((c for c in cands if c.is_file()), None)
+        if hit is None:
+            raise SystemExit(f"⛔ [{gt.clip_sha12}] no camera timestamps parquet under "
+                             f"--cam-ts-dir: the 1 ms guard cannot run")
+        ts = pd.read_parquet(hit)
+        tcol = next(k for k in ts.columns if "time" in k.lower())
+        g = episode_frame_times_us(ts[tcol].to_numpy())
+        if len(g["t_img_us"]) != gt.n_frames:
+            raise SystemExit(f"⛔ [{gt.clip_sha12}] episode grid {len(g['t_img_us'])} "
+                             f"frames vs GT {gt.n_frames}")
+        return {"kind": "time_1ms", "t_img_us": g["t_img_us"]}
+    rep = gt.check_pose_alignment(payload["poses"].numpy())     # raises when off
+    if rep["verdict"] != "ALIGNED":
+        raise SystemExit(f"⛔ [{gt.clip_sha12}] the pose-content frame-axis check is "
+                         f"{rep['verdict']} (a near-stationary clip cannot identify the "
+                         f"axis): pass --cam-ts-dir for the 1 ms time check")
+    return {"kind": "pose_content_5cm", "aligned_max_m": rep["aligned_max_m"],
+            "shift_median_m": rep["shift_median_m"]}
+
+
+# --------------------------------------------------------------------------- #
+# statistics                                                                   #
+# --------------------------------------------------------------------------- #
+def _band_slice(band: str, band_keys=H.BAND_KEYS):
+    if band == "all":
+        return slice(None)
+    b = tuple(band_keys).index(band)
+    return slice(b, b + 1)
+
+
+def summarise(tot: dict, band: str, band_keys=H.BAND_KEYS) -> dict:
+    """Per-class pooled IoU (declared + raw), n and mean CE in the gated band, plus
+    every band of the extent for the record."""
+    sl = _band_slice(band, band_keys)
+    out = {"iou": {}, "iou_raw": {}, "n": {}, "ce_mean": {}, "by_band": {}}
+    for c, name in enumerate(H.CLASS_KEYS):
+        n = float(tot["n"][c, sl].sum())
+        u = float(tot["union"][c, sl].sum())
+        ur = float(tot["unionraw"][c, sl].sum())
+        out["n"][name] = int(n)
+        out["iou"][name] = float(tot["inter"][c, sl].sum()) / u if u > 0 else None
+        out["iou_raw"][name] = float(tot["interraw"][c, sl].sum()) / ur if ur > 0 else None
+        out["ce_mean"][name] = float(tot["ce"][c, sl].sum()) / n if n > 0 else None
+        out["by_band"][name] = {
+            bk: {"n": int(tot["n"][c, b]),
+                 "iou": (float(tot["inter"][c, b]) / float(tot["union"][c, b])
+                         if float(tot["union"][c, b]) > 0 else None),
+                 "iou_raw": (float(tot["interraw"][c, b]) / float(tot["unionraw"][c, b])
+                             if float(tot["unionraw"][c, b]) > 0 else None)}
+            for b, bk in enumerate(band_keys)}
+    return out
+
+
+def _signal_totals(batches, class_weight, rule) -> dict:
+    tot = None
+    for logits, codes, lv in batches:
+        sig = H.per_class_signal(logits, codes, class_weight=class_weight,
+                                 lift_valid=lv, decision_rule=rule)
+        part = {k: sig[k].cpu() for k in ("n", "inter", "union", "interraw",
+                                          "unionraw", "ce")}
+        tot = part if tot is None else {k: tot[k] + part[k] for k in part}
+    return tot
+
+
+def _s8_params(trunk) -> list:
+    names = []
+    for n, _m in trunk.net.items():
+        names.append(n)
+        if n == trunk.s8_module:
+            break
+    return [p for n in names for p in trunk.net[n].parameters()]
+
+
+def _forward(trunk, branch, data, idx, device, arm):
+    x = data["x"][idx].to(device).float() / 255.0
+    xn = trunk.normalise(x)
+    s8 = trunk.s8_from_normalised(xn, torch.arange(x.shape[0]))
+    if arm == "s8_zeros":
+        s8 = torch.zeros_like(s8)                   # BOTH lifts (the near lift reads s8 too)
+    elif arm in ("s8_detached", "frozen_trunk"):
+        s8 = s8.detach()
+    kw = {}
+    if arm == "near_zeros":                         # NEW-2 R2: only the near lift sees zeros
+        kw["near_source"] = torch.zeros_like(s8)
+    if arm == "near_block_zeros":                   # NEW-2 R3: only the near block sees zeros
+        kw["near_block_zeros"] = True
+    out = branch(s8, data["grid"][idx].to(device), data["valid"][idx].to(device), **kw)
+    return out["map_hires_logits"], H.lift_valid_to_fine(out["map_hires_lift_valid"])
+
+
+def evaluate(trunk, branch, data, class_weight, rule, device, batch, arm,
+             keep_logits: bool = False):
+    trunk.eval()
+    branch.eval()
+    kept = []
+
+    def batches():
+        with torch.no_grad():
+            for i in range(0, data["x"].shape[0], batch):
+                idx = torch.arange(i, min(i + batch, data["x"].shape[0]))
+                lg, lv = _forward(trunk, branch, data, idx, device, arm)
+                if keep_logits:
+                    kept.append((lg.cpu(), lv.cpu()))
+                yield lg, data["codes"][idx].to(device), lv
+    tot = _signal_totals(batches(), class_weight, rule)
+    return tot, kept
+
+
+def run_arm(arm: str, trunk0, branch0, data: dict, spec: dict, class_weight,
+            device) -> dict:
+    """Train one arm from the SHARED init; return step-0 and final statistics."""
+    rule = spec["thresholds"]["decision_rule"]
+    band = spec["thresholds"].get("band", "0_20")
+    bks = tuple(branch0.cfg.band_keys)
+    trunk = copy.deepcopy(trunk0).to(device)
+    branch = copy.deepcopy(branch0).to(device)
+    w_eval = class_weight.clone().to(device)          # the DECISION keeps launch weights
+    w_loss = class_weight.clone().to(device)
+    if arm == "lane_w0":
+        w_loss[LANE] = 0.0
+    elif arm == "edge_w0":                    # NEW-2 R4 (lever 4): edge's LOSS weight only
+        w_loss[EDGE] = 0.0
+    trunk_trains = arm in ("healthy", "lane_w0", "s8_zeros", "near_zeros",
+                           "near_block_zeros", "edge_w0")
+    params = list(branch.parameters()) + (_s8_params(trunk) if trunk_trains else [])
+    trunk_before = [p.detach().clone() for p in _s8_params(trunk)]
+    opt = torch.optim.AdamW(params, lr=float(spec.get("lr", 1e-3)), betas=(0.9, 0.999),
+                            eps=1e-8, weight_decay=float(spec.get("weight_decay", 0.0)))
+    steps, bs = int(spec["steps"]), int(spec.get("batch", 4))
+    lr_at = lr_multiplier(spec)                  # NEW-2 R5: None = constant lr (untouched)
+    base_lrs = [float(g_["lr"]) for g_ in opt.param_groups]
+    every = int(spec.get("eval_every", max(1, steps // 10)))
+    n = data["x"].shape[0]
+    g = torch.Generator().manual_seed(int(spec.get("seed", 0)))
+    tot0, _ = evaluate(trunk, branch, data, w_eval, rule, device, bs, arm)
+    step0 = summarise(tot0, band, bks)
+    curve, finite, t0 = [], True, time.time()
+    on_cuda = torch.cuda.is_available() and str(device).startswith("cuda")
+    if on_cuda:
+        torch.cuda.reset_peak_memory_stats()
+    for step in range(1, steps + 1):
+        trunk.train()
+        branch.train()
+        idx = torch.randperm(n, generator=g)[:bs]
+        if lr_at is not None:                    # the lr THIS step's opt.step() applies
+            for g_, b_ in zip(opt.param_groups, base_lrs):
+                g_["lr"] = b_ * lr_at(step)
+        lg, lv = _forward(trunk, branch, data, idx, device, arm)
+        r = H.hires_map_ce(lg, data["codes"][idx].to(device), class_weight=w_loss,
+                           lift_valid=lv)
+        if not bool(torch.isfinite(r["loss"].detach())):
+            finite = False
+        opt.zero_grad(set_to_none=True)
+        r["loss"].backward()
+        opt.step()
+        if step % every == 0 or step == steps:
+            tot, _ = evaluate(trunk, branch, data, w_eval, rule, device, bs, arm)
+            sm = summarise(tot, band, bks)
+            curve.append({"step": step, "train_loss": float(r["loss"].detach()),
+                          "iou": sm["iou"], "iou_raw": sm["iou_raw"],
+                          "ce_mean": sm["ce_mean"],
+                          "s_per_step": round((time.time() - t0) / step, 4)})
+            if lr_at is not None:
+                curve[-1]["lr"] = float(opt.param_groups[0]["lr"])
+            print(json.dumps({"arm": arm, "step": step,
+                              "train_loss": curve[-1]["train_loss"],
+                              "iou": sm["iou"]}), flush=True)
+    totf, logits = evaluate(trunk, branch, data, w_eval, rule, device, bs, arm,
+                            keep_logits=(arm == "healthy"))
+    final = summarise(totf, band, bks)
+    moved = sum(float((p.detach().cpu() - q.cpu()).abs().sum())
+                for p, q in zip(_s8_params(trunk), trunk_before))
+    peak = torch.cuda.max_memory_allocated() / 2 ** 30 if on_cuda else None
+    return {"arm": arm, "step0": step0, "final": final, "curve": curve,
+            "loss_finite_every_step": finite, "trunk_s8_abs_change": moved,
+            "w_loss": w_loss.cpu().tolist(), "w_decision": w_eval.cpu().tolist(),
+            "s_per_step": round((time.time() - t0) / max(steps, 1), 4),
+            "peak_mem_GiB": None if peak is None else round(peak, 3),
+            "_logits": logits}
+
+
+# --------------------------------------------------------------------------- #
+# controls (on the SAME scored cells)                                          #
+# --------------------------------------------------------------------------- #
+def controls(data: dict, healthy_logits, class_weight, rule, band,
+             band_keys=H.BAND_KEYS) -> dict:
+    """C1 / C2 / C3 of the prereg §7, each reproducing a KNOWN value."""
+    sl = _band_slice(band, band_keys)
+    lv_all = torch.cat([lv for _lg, lv in healthy_logits])
+    codes = data["codes"]
+    sup = (codes != 255) & lv_all
+    sup_b = torch.zeros_like(sup)
+    rows = {bk: (i * 200, min((i + 1) * 200, int(codes.shape[1])))
+            for i, bk in enumerate(band_keys)}
+    for bk in ([band] if band != "all" else list(rows)):
+        a, b = rows[bk]
+        sup_b[:, a:b] = sup[:, a:b]
+    # C1: drivable everywhere -- a decision-level control (no logits involved)
+    n_sc = int(sup_b.sum())
+    n_drv = int(((codes == DRIVABLE) & sup_b).sum())
+    c1_iou = {}
+    for c, name in enumerate(H.CLASS_KEYS):
+        gc = (codes == c) & sup_b
+        pc = sup_b if c == DRIVABLE else torch.zeros_like(sup_b)
+        u = int((gc | pc).sum())
+        c1_iou[name] = (int((gc & pc).sum()) / u) if u else None
+    c1_ok = (n_sc > 0 and abs((c1_iou["drivable"] or 0.0) - n_drv / n_sc) <= 1e-9
+             and all(v in (None, 0.0) for k, v in c1_iou.items() if k != "drivable"))
+    # C2: logits = 20 * one-hot(label), decided under the DECLARED rule
+    lab = torch.where(codes == 255, torch.zeros_like(codes), codes).long()
+    z = 20.0 * torch.nn.functional.one_hot(lab, 8).permute(0, 3, 1, 2).float()
+    sig = H.per_class_signal(z, codes, class_weight=class_weight, lift_valid=lv_all,
+                             decision_rule=rule)
+    c2 = {}
+    for c, name in enumerate(H.CLASS_KEYS):
+        u = float(sig["union"][c, sl].sum())
+        c2[name] = float(sig["inter"][c, sl].sum()) / u if u else None
+    c2_ok = (all(v in (None, 1.0) for v in c2.values())
+             and any(v == 1.0 for v in c2.values()))
+    # C3: uniform weights => the two decision rules are bit-identical (MAIN's logits)
+    c3_ok = bool(healthy_logits) and all(
+        torch.equal(H.decide(lg, "prior_corrected", torch.ones(8)), H.decide(lg, "raw"))
+        for lg, _lv in healthy_logits)
+    return {"C1_constant_drivable": {"iou": c1_iou, "n_scored": n_sc, "n_drivable": n_drv,
+                                     "expected_iou_drivable": (n_drv / n_sc) if n_sc else None,
+                                     "reproduced": bool(c1_ok)},
+            "C2_gt_as_logits": {"iou": c2, "reproduced": bool(c2_ok)},
+            "C3_rule_identity_w_ones": {"reproduced": bool(c3_ok)}}
+
+
+# --------------------------------------------------------------------------- #
+# the verdict                                                                  #
+# --------------------------------------------------------------------------- #
+def _passes_bars(final: dict, th: dict) -> dict:
+    return {cls: (final["iou"].get(cls) is not None
+                  and final["iou"][cls] >= float(bar))
+            for cls, bar in th["iou"].items()}
+
+
+def verdict(results: dict, spec: dict, ctrl: dict | None,
+            axis_guard: dict | None = None) -> dict:
+    th = spec["thresholds"]
+    min_cells = int(th["min_cells"])
+    ce_max = th.get("per_class_ce_final_over_step0_max")
+    main = results.get("healthy")
+    out = {"band": th.get("band", "0_20"), "decision_rule": th["decision_rule"]}
+    if main is None:
+        out.update(MAIN={"verdict": "NOT RUN"}, regression_arms={},
+                   controls_reproduced=False, G_MAP_OVERFIT="FAIL")
+        return out
+    n = main["final"]["n"]
+    short = {c: v for c, v in n.items() if v < min_cells}
+    bars = _passes_bars(main["final"], th)
+    ce_ok = {}
+    if ce_max is not None:
+        for c in H.CLASS_KEYS:
+            a, b = main["step0"]["ce_mean"].get(c), main["final"]["ce_mean"].get(c)
+            ce_ok[c] = bool(a is not None and b is not None and a > 0
+                            and b <= float(ce_max) * a)
+    main_ok = (not short and all(bars.values()) and all(ce_ok.values())
+               and main["loss_finite_every_step"])
+    out["MAIN"] = {"presence_short": short, "inconclusive": bool(short),
+                   "bars": bars, "ce_ratio_ok": ce_ok,
+                   "loss_finite_every_step": main["loss_finite_every_step"],
+                   "verdict": ("INCONCLUSIVE" if short else "PASS" if main_ok else "FAIL")}
+    reg = {}
+    for arm, classes in (spec.get("must_fail") or {}).items():
+        if arm not in results:
+            reg[arm] = {"ran": False, "failed_as_required": False}
+            continue
+        passed = _passes_bars(results[arm]["final"], th)
+        failed = [c for c in classes if not passed[c]]
+        need_all = bool((spec.get("must_fail_all") or {}).get(arm, False))
+        ok = (len(failed) == len(classes)) if need_all else bool(failed)
+        reg[arm] = {"ran": True, "must_fail": list(classes), "failed": failed,
+                    "rule": "all" if need_all else "any", "failed_as_required": ok}
+    out["regression_arms"] = reg
+    out["informative"] = {a: ({"ran": True, "bars": _passes_bars(results[a]["final"], th)}
+                              if a in results else
+                              {"ran": False, "why": NOT_RUN_WHY.get(a, "not in --arms")})
+                          for a in (spec.get("informative_arms") or [])}
+    # ⛔ PREREG §2 / §9a.6: every label time-checked at 1 ms. The pose-content check is
+    # a weaker guard (5 cm on the GT pose); a run that only had it cannot PASS.
+    kinds = sorted({str(g.get("kind")) for g in (axis_guard or {}).values()})
+    out["time_guard"] = {"kinds": kinds,
+                         "time_1ms_on_every_clip": bool(axis_guard) and kinds == ["time_1ms"]}
+    c_ok = ctrl is not None and all(v["reproduced"] for v in ctrl.values())
+    c1_fails = ctrl is not None and not all(
+        (ctrl["C1_constant_drivable"]["iou"].get(c) or 0.0) >= float(bar)
+        for c, bar in th["iou"].items())
+    out["controls"] = ctrl
+    out["controls_reproduced"] = bool(c_ok and c1_fails)
+    gate = (out["MAIN"]["verdict"] == "PASS"
+            and all(r["failed_as_required"] for r in reg.values())
+            and out["controls_reproduced"]
+            and out["time_guard"]["time_1ms_on_every_clip"])
+    out["G_MAP_OVERFIT"] = "PASS" if gate else "FAIL"
+    return out
+
+
+def _fingerprint(module) -> str:
+    h = hashlib.sha256()
+    for k, v in sorted(module.state_dict().items()):
+        h.update(k.encode())
+        h.update(v.detach().cpu().contiguous().numpy().tobytes())
+    return h.hexdigest()
+
+
+def _fingerprint_without(module, *prefixes: str) -> str:
+    """:func:`_fingerprint` over the state_dict minus the keys under any of ``prefixes`` -- a
+    lever branch's shared parameters, comparable with the fingerprint of the branch it was
+    stacked on (R2 without ``near.`` = NEW-2; R3 without ``near_refine.`` = R2)."""
+    h = hashlib.sha256()
+    for k, v in sorted(module.state_dict().items()):
+        if any(k.startswith(p) for p in prefixes):
+            continue
+        h.update(k.encode())
+        h.update(v.detach().cpu().contiguous().numpy().tobytes())
+    return h.hexdigest()
+
+
+# --------------------------------------------------------------------------- #
+# refcv9 M-GATE: ``--banded`` -- the BANDED, CHANNELLED map head's OWN overfit #
+# record (schema ``tanitad.g_map_overfit_record/2-banded``)                    #
+# --------------------------------------------------------------------------- #
+# ``E1-MAP-OWN-RECORD`` (launch_gate.py, profile ``refcv9-e1rig``): the INHERITED /1 record covers refcv8's 8-code CE head, not
+# C1's banded head (``tanitad/models/map_banded.py``). This is the SAME pre-registered protocol (PREREG_G_MAP_OVERFIT + the A18
+# spec: the 16 FIXED TRAIN frames, init, optimiser, batch, steps, seed, lr decay, the gated x band 0-20 m, the presence floor,
+# the CE ratio, the 1 ms time guard) run on the banded head, trained ONLY on ``banded_map_loss`` (the trainer's own loss).
+# ⛔ NO new free literal. The ONLY new mapping is channel <-> inherited class (REFCV9_DESIGN 2.1's code sets); each channel's
+# bar is the inherited bar of its class. Everything the module needs is imported LAZILY, so the OFF path (no ``--banded``)
+# imports, builds, trains and writes exactly what it did before (pinned by an AST digest test).
+BANDED_SCHEMA = "tanitad.g_map_overfit_record/2-banded"
+#: refcv9 E1-REC2 (arm M3): the argv flag that makes the banded head read the map's OWN 128-channel BEV encoder (C2's ``map_own_enc_flag.FLAG``;
+#: a test pins the two). ``--launch-argv`` lets the harness build from the argv the record is bound to, ``--own-enc`` is the manual form.
+OWN_ENC_FLAG = "--r9-map-own-enc"
+#: refcv9 E1-M3N20L64 (PREREG_M3N20L64): the argv flag that gives the banded head its OWN 64-channel encoder on the UNWIDENED lift (``map_own_enc_lift64_flag.FLAG``;
+#: a test pins the two). ARGV-ONLY: the harness has no manual form of it (the record must be built from the argv it is bound to).
+OWN_ENC_L64_FLAG = "--r9-map-own-enc-lift64"
+BANDED_FLAG = "--r9-map-banded"
+
+
+def launch_argv_facts(path, argv_sha256: str = "") -> dict:
+    """``--launch-argv`` (the CANONICAL ``runs.d/<run>.argv.json`` object with ``argv``, or a plain list): -> the argv, its sha256 (the launch
+    gate's form: an ORDERED compact JSON array) and whether it carries the own-encoder / banded flags. REFUSES a file whose sha256 is not the
+    ``--launch-argv-sha256`` it is bound to (a record cannot be built from one argv and bound to another)."""
+    obj = json.loads(Path(path).read_bytes().decode("utf-8"))
+    argv = obj["argv"] if isinstance(obj, dict) and "argv" in obj else obj
+    if not isinstance(argv, list) or not all(isinstance(x, str) for x in argv):
+        raise SystemExit(f"⛔ --launch-argv {path}: the argv must be a list of strings (or an object with an 'argv' list)")
+    sha = hashlib.sha256(json.dumps(argv, ensure_ascii=False, separators=(",", ":")).encode("utf-8")).hexdigest()
+    if argv_sha256 and sha != argv_sha256:
+        raise SystemExit(f"⛔ --launch-argv {path} hashes to {sha[:12]}, --launch-argv-sha256 is {argv_sha256[:12]}: the record would be "
+                         f"built from one argv and bound to another")
+    flags = {t.split("=", 1)[0] for t in argv if t.startswith("--")}
+    return {"argv": argv, "sha256": sha, "own_enc": OWN_ENC_FLAG in flags, "banded": BANDED_FLAG in flags, "own_enc_lift64": OWN_ENC_L64_FLAG in flags}
+
+
+def resolve_own_enc_lift64(facts: dict | None) -> bool:
+    """E1-M3N20L64: does the launch argv carry ``--r9-map-own-enc-lift64``? (No argv -> False: there is no manual form.) REFUSES it without
+    ``--r9-map-banded`` and together with ``--r9-map-own-enc`` (the trainer refuses both too)."""
+    if facts is None or not facts.get("own_enc_lift64"):
+        return False
+    if not facts["banded"]:
+        raise SystemExit(f"⛔ the launch argv carries {OWN_ENC_L64_FLAG} without {BANDED_FLAG}: the own encoder feeds ONLY the banded head")
+    if facts["own_enc"]:
+        raise SystemExit(f"⛔ the launch argv carries {OWN_ENC_L64_FLAG} together with {OWN_ENC_FLAG}: they are exclusive")
+    return True
+
+
+def resolve_own_enc(own_enc_flag: bool, facts: dict | None) -> tuple:
+    """-> ``(own_enc, source)``. With a ``--launch-argv`` the ARGV decides (M3 carries ``--r9-map-own-enc``, M1 / M2 do not); a ``--own-enc``
+    that the argv does not carry is a conflict and REFUSES; an argv with the own-encoder flag but no ``--r9-map-banded`` REFUSES."""
+    if facts is None:
+        return bool(own_enc_flag), ("--own-enc" if own_enc_flag else "off")
+    if facts["own_enc"] and not facts["banded"]:
+        raise SystemExit(f"⛔ the launch argv carries {OWN_ENC_FLAG} without {BANDED_FLAG}: the own encoder feeds ONLY the banded head")
+    if own_enc_flag and not facts["own_enc"]:
+        raise SystemExit(f"⛔ --own-enc is given but the launch argv does not carry {OWN_ENC_FLAG}: the record would not be this argv's")
+    return bool(facts["own_enc"]), ("launch_argv" if facts["own_enc"] else "off")
+
+
+#: E1-NEAR20: the trainer flag that sets the banded head's near-band end (`tanitad.train.map_banded_flag.NEAR_M_FLAG`, pinned by a test).
+NEAR_M_FLAG = "--r9-map-banded-near-m"
+
+
+def argv_banded_near_m(argv) -> float:
+    """The banded near-band end an argv builds: ``--r9-map-banded-near-m`` (or ``--r9-map-banded-near-m=V``), else 10 (the trainer's default)."""
+    for i, t in enumerate(argv):
+        if t == NEAR_M_FLAG and i + 1 < len(argv):
+            return float(argv[i + 1])
+        if t.startswith(NEAR_M_FLAG + "="):
+            return float(t.split("=", 1)[1])
+    return 10.0
+
+
+def check_near_vs_argv(near_m: float, facts: dict | None) -> None:
+    """E1-NEAR20 (MM 2026-11-07): this harness builds its head BY HAND from ``--near-lift-m``, so with a ``--launch-argv`` the record's near band must be
+    the one the argv trains. The bind template once carried a literal 10, which would have built M1N20's record at 10 m and bound it to its 20 m argv.
+    REFUSES that mismatch; no argv / a non-banded argv -> nothing to check."""
+    if facts is None or not facts["banded"]:
+        return
+    want = argv_banded_near_m(facts["argv"])
+    if abs(want - float(near_m)) > 1e-9:
+        raise SystemExit(f"⛔ --near-lift-m {float(near_m):g} but the launch argv builds the banded near band to {want:g} m ({NEAR_M_FLAG}): "
+                         f"the record would certify a head this argv does not train")
+
+
+#: refcv9 E1-REC4 (MM 207ebd, PINNED): T1, the TEMPORAL BEV WARP (``--r9-bev-warp`` + lags + shuffle control), changes the heads' INPUT, not their structure.
+#: This harness builds the map head on FROZEN frames with no staged history, so a T1 flag in the launch argv is NOT built (it never was: the trunk + branch are
+#: built by hand here) and the record STAMPS ``bev_warp_not_certified`` (+ a one-line reason) == the argv's T1 flag set, which the launch gate's judges
+#: (``launch_gate.bev_warp_stamp_reasons``) require. Both the /1 record (a C0 base) and the /2-banded record (a banded base) stamp it; ``--launch-argv`` is how
+#: the harness learns the argv (admitted WITHOUT ``--banded`` only for an argv that builds the 8-code head). Pinned to ``launch_gate.E1_T1_FLAGS`` by a test.
+T1_FLAGS = ("--r9-bev-warp", "--r9-bev-warp-lags", "--r9-bev-warp-shuffle", "--r9-bev-warp-supervise-hist", "--r9-bev-warp-fuse-init", "--r9-bev-warp-fill-only", "--r9-hist-supervise-geom")
+T1_STAMP = "bev_warp_not_certified"
+T1_STAMP_WHY = "bev_warp_not_certified_why"
+T1_WHY = ("temporal BEV warp (T1): changes the heads' INPUT, not their structure; not built by this harness (frozen frames, no staged history) -- this "
+          "record certifies the base head as built without it; T1's liveness is G-LIVE's and the post-run zero-gradient gate's")
+
+
+def t1_flags_of(argv) -> list:
+    """The T1 flags the argv carries, in ``T1_FLAGS`` order (a ``--flag=value`` token counts as its flag)."""
+    have = {str(t).split("=", 1)[0] for t in argv if str(t).startswith("--")}
+    return [f for f in T1_FLAGS if f in have]
+
+
+def t1_stamp_fields(facts) -> dict:
+    """``{}`` for no argv / an argv with no T1 flag (the record is then byte-for-byte what it was); else the stamp + its reason."""
+    t1 = t1_flags_of(facts["argv"]) if facts else []
+    return {T1_STAMP: t1, T1_STAMP_WHY: T1_WHY} if t1 else {}
+
+
+def t1_record_fields(path, argv_sha256: str = "") -> dict:
+    """The /1 (8-code head) harness's stamp: ``--launch-argv`` (None -> ``{}``) is verified against ``--launch-argv-sha256`` and REFUSED when it builds the
+    banded head (a banded argv needs ``--banded``: its record is the /2-banded one)."""
+    if path is None:
+        return {}
+    facts = launch_argv_facts(path, argv_sha256)
+    if facts["banded"] or facts["own_enc"] or facts["own_enc_lift64"]:
+        raise SystemExit(f"⛔ the launch argv carries {BANDED_FLAG} / {OWN_ENC_FLAG} / {OWN_ENC_L64_FLAG}: it builds the BANDED head, whose record is the /2-banded one (--banded)")
+    return t1_stamp_fields(facts)
+#: channel -> the inherited class whose bar it carries: drv = codes {1,2,3,4,6} (the area rule, drivable's bar), sdw = 7,
+#: lane = 2, edge_h = 5, xwalk / arrow / hatch = their codes. ``nocls`` has no banded channel (disclosed in the record).
+BANDED_CHANNEL_CLASS = {"drv": "drivable", "sdw": "sidewalk", "lane": "lane", "edge_h": "edge",
+                        "xwalk": "crosswalk", "arrow": "arrow", "hatch": "hatched"}
+BANDED_CHANNELS = tuple(BANDED_CHANNEL_CLASS)
+BANDED_THIN = ("lane", "xwalk", "arrow", "edge_h", "hatch")
+#: the gated arms (the brief): R1 lane channel weight 0 in the loss -> lane FAILS; R2 s8 zeros -> EVERY thin channel FAILS
+BANDED_MUST_FAIL = {"lane_w0": ("lane",), "s8_zeros": BANDED_THIN}
+BANDED_MUST_FAIL_ALL = ("s8_zeros",)
+BANDED_GATED_BANDS = ("near", "mid")
+BANDED_DEFAULT_ARMS = ("healthy", "lane_w0", "s8_zeros")
+#: informative arms (reported, never gated: no inherited bar for a verdict on them)
+BANDED_INFORMATIVE_ARMS = ("s8_detached", "frozen_trunk", "near_block_zeros")
+BANDED_INFORMATIVE_CHANNELS = ("drv_sdf", "lane_ox", "lane_oy")
+
+
+def banded_gate_rows(g, hi_m: float) -> int:
+    """Rows of band ``g`` that lie inside the inherited gated x band (``x < hi_m``): near (0-10 m) all of it, mid (10-40 m) its
+    first (hi_m - 10) / 0.25 rows, far (40-100 m) none. 0 = the band is INFORMATIVE (it does not overlap the gated band)."""
+    if g.x0 >= hi_m - 1e-9:
+        return 0
+    return int(round((min(g.x1, hi_m) - g.x0) / g.cell))
+
+
+def banded_hi_m(band: str, band_keys=H.BAND_KEYS) -> float:
+    """The upper x of the inherited gated band key (``0_20`` -> 20.0); ``all`` -> +inf."""
+    if band == "all":
+        return float("inf")
+    if band not in tuple(band_keys):
+        raise SystemExit(f"⛔ thresholds.band {band!r} not in {tuple(band_keys)}")
+    return float(band.split("_")[1])
+
+
+def _banded_forward(trunk, branch, data, idx, device, arm):
+    """The banded twin of :func:`_forward`: -> ``(logits [near, mid, far], unobs [near, mid, far])`` (the head's own output)."""
+    x = data["x"][idx].to(device).float() / 255.0
+    xn = trunk.normalise(x)
+    s8 = trunk.s8_from_normalised(xn, torch.arange(x.shape[0]))
+    if arm == "s8_zeros":
+        s8 = torch.zeros_like(s8)                   # BOTH the lift and the near lift (R2: no image information)
+    elif arm in ("s8_detached", "frozen_trunk"):
+        s8 = s8.detach()
+    kw = {"near_block_zeros": True} if arm == "near_block_zeros" else {}
+    out = branch(s8, data["grid"][idx].to(device), data["valid"][idx].to(device), **kw)
+    mb = out["map_banded"]
+    return list(mb["logits"]), list(mb["unobs"])
+
+
+def _band_targets(data, idx, device, extent):
+    from tanitad.models import map_banded as MB
+    return MB.build_banded_targets(data["codes"][idx].to(device), x_max_m=float(extent.x_max_m),
+                                   y_half_m=float(extent.y_half_m), near_m=float(data.get("near_m", MB.NEAR_M_DEFAULT)))   # E1-NEAR20
+
+
+def banded_loss(logits, unobs, targets, zero_channels=()):
+    """-> ``(loss, row)``: the trainer's own ``banded_map_loss`` and its telemetry row. ``zero_channels`` (R1): the loss with those
+    channels' TERM weight 0 -- the exact term (sigmoid focal + soft Dice per band, band-weighted) recomputed with the module's
+    own primitives and SUBTRACTED, so every other term (the other channels, the L1 channels, the max-entropy term) is
+    byte-for-byte the trainer's. ``()`` returns the trainer's loss unchanged."""
+    from tanitad.models import map_banded as MB
+    row = MB.banded_map_loss({"logits": logits, "unobs": unobs}, targets, with_metrics=False)
+    loss = row["loss"]
+    for ch in zero_channels:
+        i = MB.CHANNELS.index(ch)
+        for b in range(len(MB.BAND_NAMES)):
+            t, z = targets[b], logits[b].float()[:, i]
+            sup = MB.supervised_mask(t["seen"], unobs[b]).float()
+            focal = (MB.sigmoid_focal(z, t[ch]) * sup).sum() / sup.sum().clamp_min(1.0)
+            loss = loss - float(MB.BAND_WEIGHTS[b]) * (focal + MB.soft_dice(torch.sigmoid(z), t[ch], sup > 0.5))
+    return loss, row
+
+
+def _new_acc(geom):
+    return {ch: {g.name: {"gate": [0.0, 0.0, 0.0, 0.0], "band": [0.0, 0.0, 0.0, 0.0]} for g in geom}
+            for ch in BANDED_CHANNELS}
+
+
+def _acc_add(acc, preds, targets, unobs, geom, hi_m):
+    """Pool, per channel x band, ``[inter, union, n_pos, n_scored]`` over the SCORED cells (``seen & ~unobs`` = the GT saw it AND
+    the lift observed it) for the gated slice (rows with x < hi_m) and the whole band. ``preds[ch][b]`` is the bool decision
+    (sigmoid > 0.5) of channel ``ch`` in band ``b``; the label is the channel's own training target."""
+    from tanitad.models import map_banded as MB
+    for b, g in enumerate(geom):
+        sup = MB.supervised_mask(targets[b]["seen"], unobs[b])
+        gr = banded_gate_rows(g, hi_m)
+        for ch in BANDED_CHANNELS:
+            y = targets[b][ch] > 0.5
+            p = preds[ch][b]
+            for key, sl in (("gate", slice(0, gr)), ("band", slice(None))):
+                if key == "gate" and gr == 0:
+                    continue
+                m, pp, yy = sup[:, sl], p[:, sl], y[:, sl]
+                a = acc[ch][g.name][key]
+                a[0] += float((pp & yy & m).sum())
+                a[1] += float(((pp | yy) & m).sum())
+                a[2] += float((yy & m).sum())
+                a[3] += float(m.sum())
+
+
+def _acc_summary(acc, geom, hi_m):
+    cells = {}
+    for ch in BANDED_CHANNELS:
+        cells[ch] = {}
+        for g in geom:
+            d = {"gated": banded_gate_rows(g, hi_m) > 0}
+            for key in ("gate", "band"):
+                i_, u_, n_, s_ = acc[ch][g.name][key]
+                d[key] = {"iou": (i_ / u_) if u_ > 0 else None, "n_pos": int(n_), "n_scored": int(s_)}
+            cells[ch][g.name] = d
+    return cells
+
+
+def evaluate_banded(trunk, branch, data, device, batch, arm, extent, geom, hi_m, keep_unobs=False):
+    from tanitad.models import map_banded as MB
+    trunk.eval()
+    branch.eval()
+    acc, terms, nb, kept = _new_acc(geom), {}, 0, []
+    ch_i = {c: i for i, c in enumerate(MB.CHANNELS)}
+    with torch.no_grad():
+        for i in range(0, data["x"].shape[0], batch):
+            idx = torch.arange(i, min(i + batch, data["x"].shape[0]))
+            lg, un = _banded_forward(trunk, branch, data, idx, device, arm)
+            tg = _band_targets(data, idx, device, extent)
+            preds = {ch: [torch.sigmoid(z.float()[:, ch_i[ch]]) > 0.5 for z in lg] for ch in BANDED_CHANNELS}
+            _acc_add(acc, preds, tg, un, geom, hi_m)
+            _l, row = banded_loss(lg, un, tg)
+            for ch in MB.CHANNELS:
+                for bn in MB.BAND_NAMES:
+                    k = f"{ch}_{bn}"
+                    terms[k] = terms.get(k, 0.0) + float(row[f"map_banded_loss_{k}"])
+            nb += 1
+            if keep_unobs:
+                kept.append((idx, [u.cpu() for u in un]))
+    return {"cells": _acc_summary(acc, geom, hi_m), "loss": {k: v / max(nb, 1) for k, v in terms.items()}}, kept
+
+
+def run_arm_banded(arm, trunk0, branch0, data, spec, device, extent, geom, hi_m):
+    """Train one arm from the SHARED init on the banded loss ONLY (the inherited optimiser, batch, steps, seed, lr decay)."""
+    trunk = copy.deepcopy(trunk0).to(device)
+    branch = copy.deepcopy(branch0).to(device)
+    trunk_trains = arm in ("healthy", "lane_w0", "s8_zeros", "near_block_zeros")
+    params = list(branch.parameters()) + (_s8_params(trunk) if trunk_trains else [])
+    trunk_before = [p.detach().clone() for p in _s8_params(trunk)]
+    opt = torch.optim.AdamW(params, lr=float(spec.get("lr", 1e-3)), betas=(0.9, 0.999), eps=1e-8,
+                            weight_decay=float(spec.get("weight_decay", 0.0)))
+    steps, bs = int(spec["steps"]), int(spec.get("batch", 4))
+    lr_at = lr_multiplier(spec)
+    base_lrs = [float(g_["lr"]) for g_ in opt.param_groups]
+    every = int(spec.get("eval_every", max(1, steps // 10)))
+    n = data["x"].shape[0]
+    g = torch.Generator().manual_seed(int(spec.get("seed", 0)))
+    zero = ("lane",) if arm == "lane_w0" else ()
+    step0, _ = evaluate_banded(trunk, branch, data, device, bs, arm, extent, geom, hi_m)
+    curve, finite, t0 = [], True, time.time()
+    for step in range(1, steps + 1):
+        trunk.train()
+        branch.train()
+        idx = torch.randperm(n, generator=g)[:bs]
+        if lr_at is not None:
+            for g_, b_ in zip(opt.param_groups, base_lrs):
+                g_["lr"] = b_ * lr_at(step)
+        lg, un = _banded_forward(trunk, branch, data, idx, device, arm)
+        loss, _row = banded_loss(lg, un, _band_targets(data, idx, device, extent), zero_channels=zero)
+        if not bool(torch.isfinite(loss.detach())):
+            finite = False
+        opt.zero_grad(set_to_none=True)
+        loss.backward()
+        opt.step()
+        if step % every == 0 or step == steps:
+            ev, _ = evaluate_banded(trunk, branch, data, device, bs, arm, extent, geom, hi_m)
+            curve.append({"step": step, "train_loss": float(loss.detach()),
+                          "iou_gate": {ch: {bn: ev["cells"][ch][bn]["gate"]["iou"] for bn in BANDED_GATED_BANDS}
+                                       for ch in BANDED_CHANNELS},
+                          "s_per_step": round((time.time() - t0) / step, 4)})
+            print(json.dumps({"arm": arm, "step": step, "train_loss": curve[-1]["train_loss"]}), flush=True)
+    final, kept = evaluate_banded(trunk, branch, data, device, bs, arm, extent, geom, hi_m, keep_unobs=(arm == "healthy"))
+    moved = sum(float((p.detach().cpu() - q.cpu()).abs().sum()) for p, q in zip(_s8_params(trunk), trunk_before))
+    return {"arm": arm, "step0": step0, "final": final, "curve": curve, "loss_finite_every_step": finite,
+            "trunk_s8_abs_change": moved, "zero_channels": list(zero),
+            "s_per_step": round((time.time() - t0) / max(steps, 1), 4), "_kept": kept}
+
+
+def controls_banded(data, kept, extent, geom, hi_m, device):
+    """C1 / C2 on the SAME scored cells and the SAME accumulator as every arm. C1: ``drv`` predicted everywhere, nothing else
+    -> IoU_drv == n_pos / n_scored (1e-9), every other channel 0, and it FAILS the bars. C2: logits = +-20 from the channel's
+    own target -> IoU 1.0 on every channel with a positive. C3 (the decision-rule identity) has no banded analogue: the head
+    has no class weights and no decision rule (sigmoid > 0.5 per channel) -- recorded as null."""
+    acc1, acc2 = _new_acc(geom), _new_acc(geom)
+    for idx, un in kept:
+        un = [u.to(device) for u in un]
+        tg = _band_targets(data, idx, device, extent)
+        ones = [torch.ones_like(t["seen"]) for t in tg]
+        zeros = [torch.zeros_like(t["seen"]) for t in tg]
+        _acc_add(acc1, {ch: (ones if ch == "drv" else zeros) for ch in BANDED_CHANNELS}, tg, un, geom, hi_m)
+        _acc_add(acc2, {ch: [t[ch] > 0.5 for t in tg] for ch in BANDED_CHANNELS}, tg, un, geom, hi_m)
+    c1, c2 = _acc_summary(acc1, geom, hi_m), _acc_summary(acc2, geom, hi_m)
+    c1_ok, c2_ok = True, True
+    for g in geom:
+        for key in ("gate", "band"):
+            if key == "gate" and not c1["drv"][g.name]["gated"]:
+                continue
+            d = c1["drv"][g.name][key]
+            c1_ok &= d["n_scored"] > 0 and abs((d["iou"] or 0.0) - d["n_pos"] / d["n_scored"]) <= 1e-9
+            for ch in BANDED_CHANNELS:
+                if ch != "drv":
+                    c1_ok &= c1[ch][g.name][key]["iou"] in (None, 0.0)
+            c2_ok &= all(c2[ch][g.name][key]["iou"] in (None, 1.0) for ch in BANDED_CHANNELS)
+    c2_ok &= any(c2[ch][bn]["gate"]["iou"] == 1.0 for ch in BANDED_CHANNELS for bn in BANDED_GATED_BANDS
+                 if c2[ch][bn]["gated"])
+    return {"C1_constant_drv": {"cells": c1, "reproduced": bool(c1_ok)},
+            "C2_gt_as_logits": {"cells": c2, "reproduced": bool(c2_ok)},
+            "C3_rule_identity_w_ones": {"reproduced": None,
+                                        "why": "no decision rule / class weights in the banded head (sigmoid > 0.5 per channel)"}}
+
+
+def banded_bar(spec, ch) -> float:
+    return float(spec["thresholds"]["iou"][BANDED_CHANNEL_CLASS[ch]])
+
+
+def banded_clears(final, spec, geom, hi_m, ch) -> bool:
+    """The channel clears its inherited bar on EVERY gated band (a channel passes only if all its gated cells do)."""
+    bar = banded_bar(spec, ch)
+    cs = [final["cells"][ch][g.name]["gate"]["iou"] for g in geom if banded_gate_rows(g, hi_m) > 0]
+    return bool(cs) and all(c is not None and c >= bar for c in cs)
+
+
+def verdict_banded(results, spec, ctrl, axis_guard, geom, hi_m):
+    th = spec["thresholds"]
+    min_area = int(th["min_cells"]) * (F.FINE_CELL_M ** 2)       # the inherited floor in AREA (1,000 x 0.1 m cells = 10 m^2)
+    ce_max = th.get("per_class_ce_final_over_step0_max")
+    out = {"band": th.get("band", "0_20"), "decision_rule": "sigmoid>0.5 per channel (banded)"}
+    main = results.get("healthy")
+    if main is None:
+        out.update(MAIN={"verdict": "NOT RUN"}, regression_arms={}, controls_reproduced=False,
+                   G_MAP_OVERFIT_BANDED="FAIL")
+        return out
+    gated = [(ch, g) for ch in BANDED_CHANNELS for g in geom if banded_gate_rows(g, hi_m) > 0]
+    short, bars, ce_ok = {}, {}, {}
+    for ch, g in gated:
+        c = main["final"]["cells"][ch][g.name]["gate"]
+        k = f"{ch}_{g.name}"
+        if c["n_pos"] * g.cell * g.cell < min_area - 1e-9:        # float slack: 160 x 0.25^2 IS the 10 m^2 floor
+            short[k] = c["n_pos"]
+        bars[k] = c["iou"] is not None and c["iou"] >= banded_bar(spec, ch)
+        a, b_ = main["step0"]["loss"].get(k), main["final"]["loss"].get(k)
+        ce_ok[k] = bool(ce_max is not None and a is not None and b_ is not None and a > 0 and b_ <= float(ce_max) * a)
+    main_ok = not short and all(bars.values()) and all(ce_ok.values()) and main["loss_finite_every_step"]
+    out["MAIN"] = {"presence_short": short, "inconclusive": bool(short), "min_area_m2": min_area, "bars": bars,
+                   "loss_ratio_ok": ce_ok, "loss_finite_every_step": main["loss_finite_every_step"],
+                   "verdict": "INCONCLUSIVE" if short else "PASS" if main_ok else "FAIL"}
+    reg = {}
+    for arm, chans in BANDED_MUST_FAIL.items():
+        if arm not in results:
+            reg[arm] = {"ran": False, "failed_as_required": False}
+            continue
+        failed = [c for c in chans if not banded_clears(results[arm]["final"], spec, geom, hi_m, c)]
+        need_all = arm in BANDED_MUST_FAIL_ALL
+        ok = (len(failed) == len(chans)) if need_all else bool(failed)
+        reg[arm] = {"ran": True, "must_fail": list(chans), "failed": failed, "rule": "all" if need_all else "any",
+                    "failed_as_required": ok}
+    out["regression_arms"] = reg
+    out["informative"] = {a: ({"ran": True, "clears": {c: banded_clears(results[a]["final"], spec, geom, hi_m, c)
+                                                      for c in BANDED_CHANNELS}} if a in results else {"ran": False})
+                          for a in BANDED_INFORMATIVE_ARMS}
+    out["informative_not_gated"] = {"bands": [g.name for g in geom if banded_gate_rows(g, hi_m) == 0],
+                                    "channels": list(BANDED_INFORMATIVE_CHANNELS),
+                                    "why": "no inherited bar exists (far lies outside the gated x band; the L1 channels have "
+                                           "no IoU)"}
+    kinds = sorted({str(g_.get("kind")) for g_ in (axis_guard or {}).values()})
+    out["time_guard"] = {"kinds": kinds, "time_1ms_on_every_clip": bool(axis_guard) and kinds == ["time_1ms"]}
+    c1_fails = ctrl is not None and not all(
+        (ctrl["C1_constant_drv"]["cells"][ch][g.name]["gate"]["iou"] or 0.0) >= banded_bar(spec, ch) for ch, g in gated)
+    out["controls"] = ctrl
+    out["controls_reproduced"] = bool(ctrl is not None and ctrl["C1_constant_drv"]["reproduced"]
+                                      and ctrl["C2_gt_as_logits"]["reproduced"] and c1_fails)
+    gate = (out["MAIN"]["verdict"] == "PASS" and all(r["failed_as_required"] for r in reg.values())
+            and out["controls_reproduced"] and out["time_guard"]["time_1ms_on_every_clip"])
+    out["G_MAP_OVERFIT_BANDED"] = "PASS" if gate else "FAIL"
+    return out
+
+
+def main_banded(a) -> int:
+    """``--banded``: the banded head's overfit run (everything below the arg parse of :func:`main`, for the banded head)."""
+    from tanitad.models import map_banded as MB
+    extent = MapExtent(float(a.x_max_m), float(a.y_half_m))
+    spec = load_spec(a.spec, class_weights=(a.class_weights or "uniform"), decision_rule=a.decision_rule,
+                     band_keys=extent.band_keys)
+    if a.frameset is not None:
+        md5 = hashlib.md5(a.frameset.read_bytes()).hexdigest()
+        if spec.get("frameset_md5") and md5 != spec["frameset_md5"]:
+            raise SystemExit(f"⛔ frameset md5 {md5} != the spec's {spec['frameset_md5']}")
+    arms = [x for x in (a.arms or ",".join(BANDED_DEFAULT_ARMS)).split(",") if x]
+    for x in arms:
+        if x not in BANDED_DEFAULT_ARMS + BANDED_INFORMATIVE_ARMS:
+            raise SystemExit(f"⛔ unknown --banded arm {x!r} (gated: {BANDED_DEFAULT_ARMS}; informative: "
+                             f"{BANDED_INFORMATIVE_ARMS})")
+    for x in BANDED_DEFAULT_ARMS:
+        if x not in arms:
+            raise SystemExit(f"⛔ the gated arm {x!r} is not in --arms")
+    try:               # E1-NEAR20: the near lift IS the banded head's near-band end -- one of the pre-registered {10, 20} m (10 = M1, 20 = M1N20)
+        near_m = MB.check_near_m(a.near_lift_m)
+    except ValueError:
+        raise SystemExit(f"⛔ --banded needs --near-lift-m in {MB.NEAR_M_ADMITTED} (the near band is 0-<near-lift> m @ 0.10 m: "
+                         f"MapHiresConfig(banded) refuses any other); got {a.near_lift_m}; the spec's near_lift_m "
+                         f"{spec.get('near_lift_m')} belongs to the 8-code head") from None
+    if "near_block_zeros" in arms and not int(a.near_refine_blocks) > 0:
+        raise SystemExit("⛔ the near_block_zeros arm needs --near-refine-blocks > 0")
+    if spec.get("near_refine_blocks") is not None and int(spec["near_refine_blocks"]) != int(a.near_refine_blocks):
+        raise SystemExit(f"⛔ the spec registers near_refine_blocks {spec['near_refine_blocks']}, --near-refine-blocks is "
+                         f"{a.near_refine_blocks}")
+    lr_multiplier(spec)
+    # E1-REC2: the argv (when given) decides the own encoder -- resolved BEFORE the trunk is built so a conflict refuses in seconds
+    facts = launch_argv_facts(a.launch_argv, a.launch_argv_sha256) if a.launch_argv is not None else None
+    own_enc, own_enc_source = resolve_own_enc(bool(a.own_enc), facts)
+    own_enc_l64 = resolve_own_enc_lift64(facts)             # E1-M3N20L64: the argv decides (no manual form)
+    check_near_vs_argv(near_m, facts)                        # E1-NEAR20: the record's near band = the argv's (refuses in seconds, before the trunk)
+    from tanitad.models import timm_trunk as TT
+    from tanitad.models.trunk_shapes import frame_for_width
+    tsp = spec.get("trunk") or {}
+    hw = tuple(tsp.get("image_hw", (416, 1024)))
+    eq = int(tsp.get("equalize_bottom_rows", 43))
+    torch.manual_seed(int(spec.get("seed", 0)))
+    trunk = TT.TimmResNetTrunk(TT.TimmTrunkConfig(
+        model_name=str(tsp.get("model", "resnet101.a1_in1k")), pretrained=bool(tsp.get("pretrained", True)), frames=3,
+        image_hw=hw, frozen_bn=True, equalize_bottom_rows=eq, chunk_ckpt=int(tsp.get("chunk_ckpt", 0) or 0),
+        bf16=bool(tsp.get("bf16", False)), channels_last=bool(tsp.get("channels_last", False)),
+        fold_bn=bool(tsp.get("fold_bn", False))))
+    tap = trunk.enable_s8_tap()
+    hcfg = H.MapHiresConfig(w_map_hires=1.0, x_max_m=float(extent.x_max_m), y_half_m=float(extent.y_half_m),
+                            grad_ckpt=(a.grad_ckpt == "on"), near_lift_x_m=float(a.near_lift_m),
+                            near_refine_blocks=int(a.near_refine_blocks), decision_rule=spec["thresholds"]["decision_rule"],
+                            class_weights_sha256="", banded=True, banded_near_m=near_m, **({"own_enc": True} if own_enc else {}),
+                            **({"own_enc_lift64": True} if own_enc_l64 else {}))
+    branch = H.MapHiresBranch(hcfg, d_image=trunk.s8_dim, image_hw=trunk.s8_shape)
+    geom = MB.band_geometry(extent.x_max_m, extent.y_half_m, near_m)
+    hi_m = banded_hi_m(spec["thresholds"].get("band", "0_20"), extent.band_keys)
+    fp = {"trunk_init_sha256": _fingerprint(trunk), "branch_init_sha256": _fingerprint(branch)}
+    frame = frame_for_width(int(hw[1]), int(hw[0]))
+    data = load_frames(spec, a.v2_cache, a.gt_root, a.extrinsics, frame, hcfg, eq, cam_ts_dir=a.cam_ts_dir)
+    if abs(near_m - MB.NEAR_M_DEFAULT) > 1e-9:
+        data["near_m"] = near_m                       # E1-NEAR20: read by `_band_targets` (absent = the default 10 m)
+    results = {arm: run_arm_banded(arm, trunk, branch, data, spec, a.device, extent, geom, hi_m) for arm in arms}
+    ctrl = controls_banded(data, results["healthy"].pop("_kept"), extent, geom, hi_m, a.device)
+    for r in results.values():
+        r.pop("_kept", None)
+    v = verdict_banded(results, spec, ctrl, data["axis_guard"], geom, hi_m)
+    a.out.mkdir(parents=True, exist_ok=True)
+    rec = {"schema": BANDED_SCHEMA, "tool": "map_hires_overfit.py --banded",
+           "spec_sha256": hashlib.sha256(a.spec.read_bytes()).hexdigest(), "frameset_md5": spec.get("frameset_md5"),
+           "script_sha256": hashlib.sha256(HERE.read_bytes()).hexdigest(),
+           "launch_commit": a.launch_commit, "launch_argv_sha256": a.launch_argv_sha256 or (facts or {}).get("sha256", ""),
+           #: E1-REC2: what the harness was asked to build (the gate also reads `branch_config`, which is what it BUILT)
+           "own_enc": own_enc, "own_enc_source": own_enc_source,
+           **({"own_enc_lift64": True} if own_enc_l64 else {}),         # E1-M3N20L64: absent for every other record (byte-for-byte what it was)
+           "extent": extent.as_dict(), "branch_config": hcfg.as_dict(), "near_lift_m": float(a.near_lift_m),
+           "near_refine_blocks": int(a.near_refine_blocks), "tap": tap,
+           "trunk_levers": {k: tsp.get(k) for k in ("chunk_ckpt", "bf16", "channels_last", "fold_bn")},
+           "fingerprints": fp, "branch_params": branch.param_breakdown(), "n_frames": len(data["sha12"]),
+           "frames_sha12": data["sha12"], "raw_frames": data["raw_frame"], "axis_guard": data["axis_guard"],
+           "optimiser": {"name": "AdamW", "lr": float(spec.get("lr", 1e-3)), "betas": [0.9, 0.999], "eps": 1e-8,
+                         "weight_decay": float(spec.get("weight_decay", 0.0)), "batch": int(spec.get("batch", 4)),
+                         "steps": int(spec["steps"]), "seed": int(spec.get("seed", 0)), "lr_decay": spec.get("lr_decay")},
+           "channel_class": dict(BANDED_CHANNEL_CLASS),
+           "bars": {ch: banded_bar(spec, ch) for ch in BANDED_CHANNELS},
+           "bands": [{"name": g.name, "x0": g.x0, "x1": g.x1, "cell_m": g.cell, "gate_rows": banded_gate_rows(g, hi_m)}
+                     for g in geom],
+           "disclosure": {"nocls": "no banded channel carries the `nocls` class (inherited bar 0.85): not scored",
+                          "score_target": "each channel's own training target (build_banded_targets; lane / edge_h are the "
+                                          "dilated ~0.5 m targets the head is trained on)",
+                          "min_cells": "the inherited presence floor is 1,000 cells of 0.1 m = 10 m^2 of positive target, "
+                                       "applied per channel x gated band in area (a coarser band's cell counts for more area)",
+                          "ce_ratio": "the inherited 0.5 applies to the channel x band training-loss term "
+                                      "(focal + Dice) in place of the 8-way per-class CE",
+                          "informative_not_gated": ["far band", "drv_sdf", "lane_ox", "lane_oy"],
+                          "loss_weight": "w_map_hires is not applied (AdamW, weight decay 0: scale-invariant), as in /1",
+                          "near_lift_m": ("10 = the banded head's own requirement (the spec's 20 belongs to the 8-code head)" if near_m == 10.0 else
+                                          f"{near_m:g} = the banded near-band end of the launch argv (E1-NEAR20, {NEAR_M_FLAG}); the near lift "
+                                          f"covers exactly the near band")},
+           "device": a.device, "verdict": v, "results": results}
+    rec.update(t1_stamp_fields(facts))                       # E1-REC4: a banded base + T1: the record says T1's history is NOT certified ({} otherwise)
+    (a.out / "g_map_overfit.json").write_text(json.dumps(rec, indent=1, default=float), encoding="utf-8")
+    print(json.dumps({k: v[k] for k in ("MAIN", "regression_arms", "controls_reproduced", "time_guard",
+                                         "G_MAP_OVERFIT_BANDED")}, indent=1, default=str))
+    return 0 if v["G_MAP_OVERFIT_BANDED"] == "PASS" else 2
+
+
+#: refcv9 E1-REUSE (MM 207ebd, PINNED): the GPU-FREE IDENTITY of this harness invocation (`--identity-only OUT.json`; see g_box_overfit.IDENTITY_SCHEMA for
+#: the contract). This harness builds its head BY HAND from its own arguments: the launch argv reaches it only through `launch_argv_facts` (does it build the
+#: banded head / the own encoder) and the T1 STAMP (reported next to the hash, never in it). So two launch argvs with the same build facts under the same
+#: harness arguments are ONE computation -- the `--launch-argv` / `--launch-argv-sha256` references and the record location `--out` are not hashed.
+IDENTITY_SCHEMA = "tanitad.overfit_identity/1"
+IDENTITY_KEYS = ("schema", "tool", "effective_build_argv", "build_facts", "data_roots", "other_args", "audit_inputs")
+
+
+def identity_sha256(core: dict) -> str:
+    """sha256 of the canonical JSON of the IDENTITY_KEYS (ONE formula with launch_gate.overfit_identity_sha256; a test pins the two)."""
+    return hashlib.sha256(json.dumps({k: core[k] for k in IDENTITY_KEYS}, sort_keys=True, separators=(",", ":"),
+                                     ensure_ascii=True).encode("utf-8")).hexdigest()
+
+
+def identity_block(launch_argv, harness: dict) -> dict:
+    """The identity of (this harness's non-argv inputs `harness` = {other_args, own_enc_manual, roots}) x (the launch argv list, or None when the invocation
+    carries no `--launch-argv`). Pure: no file, no GPU. Refuses (SystemExit) what the real run refuses."""
+    oa = dict(harness["other_args"])
+    banded, manual = bool(oa["banded"]), bool(harness.get("own_enc_manual"))
+    facts = None
+    if launch_argv is not None:
+        flags = {str(t).split("=", 1)[0] for t in launch_argv if str(t).startswith("--")}
+        facts = {"argv": list(launch_argv), "own_enc": OWN_ENC_FLAG in flags, "banded": BANDED_FLAG in flags, "own_enc_lift64": OWN_ENC_L64_FLAG in flags}
+        if not banded and (facts["banded"] or facts["own_enc"] or facts["own_enc_lift64"]):
+            raise SystemExit(f"⛔ the launch argv carries {BANDED_FLAG} / {OWN_ENC_FLAG} / {OWN_ENC_L64_FLAG}: it builds the BANDED head, whose record is the /2-banded one (--banded)")
+    own_enc = bool(resolve_own_enc(manual, facts)[0]) if banded else False
+    own_enc_l64 = bool(resolve_own_enc_lift64(facts)) if banded else False
+    core = {"schema": IDENTITY_SCHEMA, "tool": "map_hires_overfit.py", "effective_build_argv": [],
+            "build_facts": {"banded": banded, "own_enc": own_enc, **({"own_enc_lift64": True} if own_enc_l64 else {})}, "data_roots": dict(harness.get("roots") or {}),
+            "other_args": oa, "audit_inputs": {}}
+    return dict(core, identity_sha256=identity_sha256(core),
+                launch_argv_sha256=(hashlib.sha256(json.dumps(list(launch_argv), ensure_ascii=False, separators=(",", ":")).encode("utf-8")).hexdigest()
+                                    if launch_argv is not None else None),
+                stamps={T1_STAMP: (t1_flags_of(launch_argv) if launch_argv is not None else [])}, harness=harness)
+
+
+def identity_harness_part(a) -> dict:
+    """The harness arguments that are NOT the launch argv (the data paths are `roots`; `--out` and the launch-argv references are not inputs)."""
+    return {"other_args": {"banded": bool(a.banded), "arms": a.arms, "decision_rule": a.decision_rule, "near_lift_m": float(a.near_lift_m),
+                           "near_refine_blocks": int(a.near_refine_blocks), "x_max_m": float(a.x_max_m), "y_half_m": float(a.y_half_m),
+                           "grad_ckpt": a.grad_ckpt, "device": a.device, "launch_commit": a.launch_commit},
+            "own_enc_manual": bool(a.own_enc),
+            "roots": {k: (str(v) if v is not None else None) for k, v in (
+                ("spec", a.spec), ("frameset", a.frameset), ("class_weights", a.class_weights), ("v2_cache", a.v2_cache), ("gt_root", a.gt_root),
+                ("extrinsics", a.extrinsics), ("cam_ts_dir", a.cam_ts_dir))}}
+
+
+def main_identity(a, argv) -> int:
+    """``--identity-only``: the same launch-argv checks the real run makes (`launch_argv_facts` vs `--launch-argv-sha256`, the own-encoder rules), then the
+    identity block; nothing is built."""
+    facts = launch_argv_facts(a.launch_argv, a.launch_argv_sha256) if a.launch_argv is not None else None
+    blk = identity_block(facts["argv"] if facts else None, identity_harness_part(a))
+    toks = [str(t) for t in (argv if argv is not None else sys.argv[1:])]
+    if "--identity-only" in toks:
+        i = toks.index("--identity-only")
+        del toks[i:i + 2]
+    blk["harness_tokens"] = toks
+    a.identity_only.write_text(json.dumps(blk, indent=1, sort_keys=True), encoding="utf-8")
+    print(f"identity-only: {blk['identity_sha256']} (nothing built)")
+    return 0
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap.add_argument("--spec", required=True, type=Path)
+    ap.add_argument("--v2-cache", required=True, type=Path)
+    ap.add_argument("--gt-root", required=True, type=Path)
+    ap.add_argument("--extrinsics", required=True, type=Path)
+    ap.add_argument("--out", required=True, type=Path, help="output DIRECTORY")
+    ap.add_argument("--class-weights", default=None,
+                    help="the LAUNCH weights json (fills the spec's placeholder)")
+    ap.add_argument("--decision-rule", default=None, choices=H.DECISION_RULES,
+                    help="the launch config's declared rule (fills the placeholder)")
+    ap.add_argument("--frameset", type=Path, default=None,
+                    help="the prereg's gmo_frameset.json: its md5 must equal the spec's")
+    ap.add_argument("--cam-ts-dir", type=Path, default=None)
+    ap.add_argument("--launch-commit", default="")
+    ap.add_argument("--launch-argv-sha256", default="")
+    ap.add_argument("--arms", default="healthy,lane_w0,s8_zeros,s8_detached")
+    ap.add_argument("--x-max-m", type=float, default=EXTENT_REFCV7.x_max_m,
+                    help="the LAUNCH map extent ahead (SPEC_REFCV7 §12: 100)")
+    ap.add_argument("--y-half-m", type=float, default=EXTENT_REFCV7.y_half_m,
+                    help="the LAUNCH map extent to each side (SPEC_REFCV7 §12: 30)")
+    ap.add_argument("--near-lift-m", type=float, default=0.0,
+                    help="NEW-2 R2 (SPEC_REFCV7 A12): the 0.1 m near lift over x in [0, M) m "
+                         "(MapHiresConfig.near_lift_x_m); 0 = the NEW-2 branch as landed")
+    ap.add_argument("--near-refine-blocks", type=int, default=0,
+                    help="NEW-2 R3 (SPEC_REFCV7 §20, A15): the near refine blocks "
+                         "(MapHiresConfig.near_refine_blocks); 0 = R2 as landed")
+    ap.add_argument("--grad-ckpt", choices=("on", "off"), default="on",
+                    help="the launch decoder's checkpointing (SPEC_REFCV7 §12 item 4)")
+    ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
+    ap.add_argument("--launch-argv", type=Path, default=None,
+                    help="refcv9 E1-REC2 / E1-REC4: the launch argv (runs.d/<run>.argv.json) the record is bound to; its sha256 must equal "
+                         "--launch-argv-sha256. With --banded the argv DECIDES whether the map's own encoder (--r9-map-own-enc, arm M3) is built; "
+                         "without --banded it is admitted for an argv that builds the 8-code head only, and feeds the T1 stamp (bev_warp_not_certified)")
+    ap.add_argument("--own-enc", action="store_true",
+                    help="refcv9 E1-REC2 (--banded only): build the map's OWN 128-channel BEV encoder by hand (M3's head); a binding run "
+                         "passes --launch-argv instead and the argv decides")
+    ap.add_argument("--banded", action="store_true",
+                    help="refcv9 M-GATE: the BANDED map head's OWN overfit record (schema /2-banded; the same pre-registered "
+                         "protocol on tanitad/models/map_banded.py, near lift 10 m). OFF = the 8-code head, unchanged")
+    ap.add_argument("--identity-only", type=Path, default=None, metavar="OUT.json",
+                    help="refcv9 E1-REUSE: write this invocation's GPU-free identity ({build_facts, data_roots, other_args, identity_sha256, ...}) and "
+                         "exit BEFORE any model / data / GPU; every other argument is the real run's")
+    a = ap.parse_args(argv)
+    if a.own_enc and not a.banded:
+        raise SystemExit("⛔ --own-enc is one of the --banded options (the 8-code head has no own encoder); --launch-argv is admitted without --banded "
+                         "only for an argv that builds the 8-code head")
+    if a.identity_only is not None:
+        return main_identity(a, argv)
+    if a.banded:
+        return main_banded(a)
+    extent = MapExtent(float(a.x_max_m), float(a.y_half_m))
+    spec = load_spec(a.spec, class_weights=a.class_weights, decision_rule=a.decision_rule,
+                     band_keys=extent.band_keys)
+    if a.frameset is not None:
+        md5 = hashlib.md5(a.frameset.read_bytes()).hexdigest()
+        if spec.get("frameset_md5") and md5 != spec["frameset_md5"]:
+            raise SystemExit(f"⛔ frameset md5 {md5} != the spec's {spec['frameset_md5']}")
+    arms = [x for x in a.arms.split(",") if x]
+    for x in arms:
+        if x not in ARMS:
+            raise SystemExit(f"⛔ unknown arm {x!r}")
+    for x in list(spec.get("must_fail") or {}) + ["healthy"]:
+        if x not in arms:
+            raise SystemExit(f"⛔ the gated arm {x!r} is not in --arms")
+    if "near_zeros" in arms and not float(a.near_lift_m) > 0.0:
+        raise SystemExit("⛔ the near_zeros arm needs --near-lift-m > 0: without a near lift "
+                         "it is MAIN itself and cannot be a regression arm")
+    if "near_block_zeros" in arms and not int(a.near_refine_blocks) > 0:
+        raise SystemExit("⛔ the near_block_zeros arm needs --near-refine-blocks > 0: without "
+                         "the block it is MAIN itself and cannot be a regression arm")
+    if spec.get("near_refine_blocks") is not None \
+            and int(spec["near_refine_blocks"]) != int(a.near_refine_blocks):
+        raise SystemExit(f"⛔ the spec registers near_refine_blocks "
+                         f"{spec['near_refine_blocks']}, --near-refine-blocks is "
+                         f"{a.near_refine_blocks}")
+    if spec.get("near_lift_m") is not None \
+            and float(spec["near_lift_m"]) != float(a.near_lift_m):
+        raise SystemExit(f"⛔ the spec registers near_lift_m {spec['near_lift_m']}, "
+                         f"--near-lift-m is {a.near_lift_m}")
+    lr_multiplier(spec)                          # NEW-2 R5: a malformed lr_decay refuses here
+    # NEW-2 R4 (lever 4): a spec that REGISTERS a weights definition refuses another file --
+    # checked BEFORE any trunk is built (the file is a small JSON)
+    want_def = spec.get("class_weights_definition")
+    if want_def is not None:
+        _cw, _st = class_weights_of(spec, extent)
+        if _st.get("definition_id") != want_def:
+            raise SystemExit(f"⛔ the spec registers class weights {want_def!r}; the file given "
+                             f"is {_st.get('definition_id')!r}")
+    from tanitad.models import timm_trunk as TT
+    from tanitad.models.trunk_shapes import frame_for_width
+    tsp = spec.get("trunk") or {}
+    hw = tuple(tsp.get("image_hw", (416, 1024)))
+    eq = int(tsp.get("equalize_bottom_rows", 43))
+    torch.manual_seed(int(spec.get("seed", 0)))
+    trunk = TT.TimmResNetTrunk(TT.TimmTrunkConfig(
+        model_name=str(tsp.get("model", "resnet101.a1_in1k")),
+        pretrained=bool(tsp.get("pretrained", True)), frames=3, image_hw=hw,
+        frozen_bn=True, equalize_bottom_rows=eq,
+        chunk_ckpt=int(tsp.get("chunk_ckpt", 0) or 0), bf16=bool(tsp.get("bf16", False)),
+        channels_last=bool(tsp.get("channels_last", False)),
+        fold_bn=bool(tsp.get("fold_bn", False))))
+    tap = trunk.enable_s8_tap()
+    cw, cw_stamp = class_weights_of(spec, extent)
+    hcfg = H.MapHiresConfig(w_map_hires=1.0, x_max_m=float(extent.x_max_m),
+                            y_half_m=float(extent.y_half_m),
+                            grad_ckpt=(a.grad_ckpt == "on"),
+                            near_lift_x_m=float(a.near_lift_m),
+                            near_refine_blocks=int(a.near_refine_blocks),
+                            decision_rule=spec["thresholds"]["decision_rule"],
+                            class_weights_sha256=cw_stamp.get("sha256") or "")
+    branch = H.MapHiresBranch(hcfg, d_image=trunk.s8_dim, image_hw=trunk.s8_shape)
+    fp = {"trunk_init_sha256": _fingerprint(trunk),
+          "branch_init_sha256": _fingerprint(branch)}
+    if getattr(branch, "near", None) is not None:
+        fp["branch_init_sha256_without_near"] = _fingerprint_without(branch, "near.",
+                                                                     "near_refine.")
+    if getattr(branch, "near_refine", None) is not None:
+        fp["branch_init_sha256_without_near_refine"] = _fingerprint_without(branch,
+                                                                            "near_refine.")
+    frame = frame_for_width(int(hw[1]), int(hw[0]))
+    data = load_frames(spec, a.v2_cache, a.gt_root, a.extrinsics, frame, hcfg, eq,
+                       cam_ts_dir=a.cam_ts_dir)
+    results = {arm: run_arm(arm, trunk, branch, data, spec, cw, a.device) for arm in arms}
+    ctrl = controls(data, results["healthy"]["_logits"], cw,
+                    spec["thresholds"]["decision_rule"],
+                    spec["thresholds"].get("band", "0_20"), extent.band_keys)
+    v = verdict(results, spec, ctrl, data["axis_guard"])
+    for r in results.values():
+        r.pop("_logits", None)
+    a.out.mkdir(parents=True, exist_ok=True)
+    rec = {"schema": "tanitad.g_map_overfit_record/1",
+           "spec_sha256": hashlib.sha256(a.spec.read_bytes()).hexdigest(),
+           "frameset_md5": spec.get("frameset_md5"),
+           "script_sha256": hashlib.sha256(HERE.read_bytes()).hexdigest(),
+           "launch_commit": a.launch_commit, "launch_argv_sha256": a.launch_argv_sha256,
+           "class_weights": cw_stamp, "decision_rule": spec["thresholds"]["decision_rule"],
+           "extent": extent.as_dict(), "branch_config": hcfg.as_dict(),
+           "near_lift_m": float(a.near_lift_m),
+           "near_refine_blocks": int(a.near_refine_blocks),
+           "tap": tap, "trunk_levers": {k: tsp.get(k) for k in
+                                        ("chunk_ckpt", "bf16", "channels_last", "fold_bn")},
+           "fingerprints": fp, "branch_params": branch.param_breakdown(),
+           "n_frames": len(data["sha12"]), "frames_sha12": data["sha12"],
+           "raw_frames": data["raw_frame"], "axis_guard": data["axis_guard"],
+           "optimiser": {"name": "AdamW", "lr": float(spec.get("lr", 1e-3)),
+                         "betas": [0.9, 0.999], "eps": 1e-8,
+                         "weight_decay": float(spec.get("weight_decay", 0.0)),
+                         "batch": int(spec.get("batch", 4)), "steps": int(spec["steps"]),
+                         "seed": int(spec.get("seed", 0)),
+                         "lr_decay": spec.get("lr_decay")},
+           "device": a.device, "verdict": v, "results": results}
+    rec.update(t1_record_fields(a.launch_argv, a.launch_argv_sha256))        # E1-REC4: the T1 stamp ({} unless --launch-argv carries a T1 flag)
+    (a.out / "g_map_overfit.json").write_text(json.dumps(rec, indent=1, default=float),
+                                              encoding="utf-8")
+    print(json.dumps({k: v[k] for k in ("MAIN", "regression_arms", "controls_reproduced",
+                                         "time_guard", "G_MAP_OVERFIT")},
+                     indent=1, default=str))
+    return 0 if v["G_MAP_OVERFIT"] == "PASS" else 2
+
+
+if __name__ == "__main__":                                   # pragma: no cover
+    raise SystemExit(main())

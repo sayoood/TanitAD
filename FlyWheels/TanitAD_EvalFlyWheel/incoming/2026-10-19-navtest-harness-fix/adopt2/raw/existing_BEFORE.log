@@ -1,0 +1,174 @@
+.........................................................s.............. [ 61%]
+..........................F.............F.....                           [100%]
+================================== FAILURES ===================================
+____________________ test_forward_kwargs_are_the_trainers _____________________
+
+    def test_forward_kwargs_are_the_trainers():
+        src = open(TRAINER, encoding="utf-8").read()
+>       assert _model_call_kwargs(src) == LITERAL_KWARGS
+E       AssertionError: assert (None,) == ('nav_cmd', '...av_args', ...)
+E         
+E         At index 0 diff: None != 'nav_cmd'
+E         Right contains 10 more items, first extra item: 'v0'
+E         Use -v to get more diff
+
+FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-28-refcv7-standard-tests\navsim\tests\test_inputs7.py:268: AssertionError
+________________________ test_unmutated_suite_is_green ________________________
+
+    def test_unmutated_suite_is_green():
+        r = _run("")
+>       assert r.returncode == 0, r.stdout[-2000:]
+E       AssertionError: ..................................F........                              [100%]
+E         ================================== FAILURES ===================================
+E         ____________________ test_forward_kwargs_are_the_trainers _____________________
+E         
+E             def test_forward_kwargs_are_the_trainers():
+E                 src = open(TRAINER, encoding="utf-8").read()
+E         >       assert _model_call_kwargs(src) == LITERAL_KWARGS
+E         E       AssertionError: assert (None,) == ('nav_cmd', '...av_args', ...)
+E         E         
+E         E         At index 0 diff: None != 'nav_cmd'
+E         E         Right contains 10 more items, first extra item: 'v0'
+E         E         Use -v to get more diff
+E         
+E         tests\test_inputs7.py:268: AssertionError
+E         =========================== short test summary info ===========================
+E         FAILED tests/test_inputs7.py::test_forward_kwargs_are_the_trainers - Assertio...
+E         1 failed, 42 passed in 15.31s
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['C:\\Users\\Admin\\venvs\\tanitad\\Scripts\\python.exe', '-m', 'pytest', '-q', '-rf', '-p', 'no...tests/test_inputs7.py::test_forward_kwargs_are_the_trainers - Assertio...\n1 failed, 42 passed in 15.31s\n', stderr='').returncode
+
+FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-28-refcv7-standard-tests\navsim\tests\test_mutation7.py:44: AssertionError
+============================== warnings summary ===============================
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_frames_lift6.py::test_virtual_rotation_equals_build_map_M
+  C:\Users\Admin\par18\ntfix2\before\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-19-navsim-refcv4b-bridge\code\build_frames.py:62: DeprecationWarning: numpy.core.numeric is deprecated and has been renamed to numpy._core.numeric. The numpy._core namespace contains private NumPy internals and its use is discouraged, as NumPy internals can change without warning in any release. In practice, most real-world usage of numpy.core is to access functionality in the public NumPy API. If that is the case, use the public NumPy API. If not, you are using NumPy internals. If you would still like to access an internal attribute, use numpy._core.numeric._frombuffer.
+    return super().find_class(mod, name)
+
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_frames_lift6.py::test_virtual_rotation_equals_build_map_M
+  C:\Users\Admin\par18\ntfix2\before\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-19-navsim-refcv4b-bridge\code\build_frames.py:137: RuntimeWarning: overflow encountered in cast
+    return np.stack(grids).astype(np.float32), src, M
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=================================== PASSES ====================================
+=========================== short test summary info ===========================
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_hist_constant_speed_straight
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_hist_constant_acceleration_reads_2_mps2
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_hist_constant_yaw_rate
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_hist_yaw_unwrap_across_pi
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_hist_refuses_non_2hz_times
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_hist_dropped_frame_is_interpolated_at_actual_times[times0]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_hist_dropped_frame_is_interpolated_at_actual_times[times1]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_hist_dropped_frame_is_interpolated_at_actual_times[times2]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_hist_refuses_gaps_extrapolation_and_bad_t0[times0]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_hist_refuses_gaps_extrapolation_and_bad_t0[times1]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_hist_refuses_gaps_extrapolation_and_bad_t0[times2]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_REGRESSION_hist_on_the_wrong_grid_goes_red
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_undeclared_fields_are_invisible[R6_A1]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_undeclared_fields_are_invisible[R6_NAVOFF]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_undeclared_fields_are_invisible[R6_VMAXOFF]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_undeclared_fields_are_invisible[R6_BLIND]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_REGRESSION_declared_field_mutation_changes_inputs
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_nav_map_literal[cmd0-left-1]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_nav_map_literal[cmd1-follow-0]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_nav_map_literal[cmd2-right-2]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_nav_map_literal[cmd3-follow-0]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_nav_refuses_non_one_hot
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_nav_indices_match_the_trainer_vocabulary
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_vmax_bins_literal[11.17568-50]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_vmax_bins_literal[15.64579-100]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_vmax_bins_literal[6.70561-30]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_vmax_bins_literal[20.11689-100]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_vmax_bins_literal[13.88-50]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_vmax_unknown_is_valid_zero[None]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_vmax_unknown_is_valid_zero[rec1]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_vmax_unknown_is_valid_zero[rec2]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_vmax_withheld_arm_ignores_the_map
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_oracle_is_the_max_over_t0_plus_2_to_6_literal
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_REGRESSION_oracle_with_the_wrong_window_goes_red
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_oracle_refuses_an_uncovered_window[drop0]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_oracle_refuses_an_uncovered_window[drop1]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_oracle_refuses_an_uncovered_window[drop2]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_oracle_arm_bins_literal[12.0-50]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_oracle_arm_bins_literal[0.0-30]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_oracle_arm_bins_literal[27.0-100]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_oracle_arm_bins_literal[8.3-30]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_oracle_arm_refuses_a_map_record
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_oracle_arm_shares_A1s_seed_and_declaration
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_vmax_unknown_is_an_all_zero_one_hot_in_the_model_encoder
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_conversion_constant_velocity_line
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_conversion_circle_arc_heading
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_REGRESSION_conversion_with_wrong_knot_times_goes_red
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_inputs6.py::test_knot_times_are_refcv6s_horizons
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_model_stamp6.py::test_pre_switch_steps
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_model_stamp6.py::test_post_switch_steps
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_model_stamp6.py::test_unknown_step_is_never_silently_pre_or_post
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_model_stamp6.py::test_switch_warning_only_when_straddling
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_model_stamp6.py::test_REGRESSION_an_off_by_one_switch_goes_red
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_frames_lift6.py::test_frame_is_the_models_literal
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_frames_lift6.py::test_KG416_configured_rays_are_cylindrical_416
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_frames_lift6.py::test_REGRESSION_pinhole_frame_goes_red
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_frames_lift6.py::test_assert_frame_refuses_anything_else
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_frames_lift6.py::test_lift_road_point_projects_to_the_analytic_row
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_frames_lift6.py::test_REGRESSION_road_plane_offset_ignored_goes_red
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_frames_lift6.py::test_lift_geometry_shapes_and_mask
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_frames_lift6.py::test_road_plane_from_synthetic_log
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_frames_lift6.py::test_road_plane_refuses_non_identity_lidar2ego
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_frames_lift6.py::test_virtual_rotation_equals_build_map_M
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_the_tree_is_the_clean_archive
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_arm_specs_are_the_literal[R7_A1]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_arm_specs_are_the_literal[R7_A1NT]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_arm_specs_are_the_literal[R7_A1_s1]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_arm_specs_are_the_literal[R7_BLIND]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_arm_specs_are_the_literal[R7_FILTOFF]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_arm_specs_are_the_literal[R7_NAVOFF]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_arm_specs_are_the_literal[R7_VMAXOFF]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_arm_specs_are_the_literal[R7_VMAXORACLE]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_no_arm_declares_acceleration
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_REGRESSION_a_mismatched_template_is_refused
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_K5_undeclared_fields_are_invisible[R7_A1]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_K5_undeclared_fields_are_invisible[R7_NAVOFF]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_K5_undeclared_fields_are_invisible[R7_VMAXOFF]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_K5_undeclared_fields_are_invisible[R7_BLIND]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_K5_undeclared_fields_are_invisible[R7_FILTOFF]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_K6_declared_fields_are_visible[ego_pose[2]]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_K6_declared_fields_are_visible[ego_velocity[3]]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_K6_declared_fields_are_visible[driving_command[3]]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_hist_constant_acceleration_reads_2_mps2
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_hist_dropped_frame_amendment_A1[times0]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_hist_dropped_frame_amendment_A1[times1]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_hist_refuses_extrapolation
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_prior_constant_acceleration_a0_is_2
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_prior_path_constant_acceleration_is_the_euler_sum
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_prior_path_constant_speed_is_the_cv_line
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_prior_constant_yaw_rate_kappa_is_omega_over_v
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_prior_speed_floor_and_cap
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_prior_is_frame_invariant
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_REGRESSION_prior_on_the_wrong_grid_goes_red
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_ceiling_of_the_map_limit[11.17568-13.88888888888889]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_ceiling_of_the_map_limit[15.6464-27.77777777777778]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_ceiling_of_the_map_limit[6.7056-8.333333333333334]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_ceiling_unknown_and_withheld_are_infinite
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_forward_kwargs7_emits_exactly_the_contract
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_REGRESSION_a_trainer_that_adds_a_keyword_goes_red
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_bank_params_are_the_runs
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_KL_lift_navsim_camera_through_the_banks_own_call
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_lift_bottom_43_rows_are_unobserved_analytic
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_REGRESSION_lift_without_the_43_row_mask_goes_red
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_REGRESSION_the_stride16_lift_goes_red
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_REGRESSION_road_offset_ignored_goes_red
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_pytest_control7.py::test_absolute_windows_node_id_reads_PASS_and_its_failed_twin_reads_FAIL
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_pytest_control7.py::test_relative_and_bare_node_ids_read_PASS
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_pytest_control7.py::test_a_FAILED_or_ERROR_line_or_a_mention_never_counts
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_pytest_control7.py::test_another_modules_test_does_not_count
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_pytest_control7.py::test_the_OLD_literal_match_was_blind_to_the_real_log
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_mutation7.py::test_mutation_goes_red[drop_mask]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_mutation7.py::test_mutation_goes_red[kw_drop]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_mutation7.py::test_mutation_goes_red[stride16]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_mutation7.py::test_mutation_goes_red[wrong_grid]
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_mutation7.py::test_the_runner_refuses_a_mutated_environment
+SKIPPED [1] FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-23-refcv6-standard-tests\navsim\tests\test_frames_lift6.py:73: NO_TREE: DataFlyWheel 256x640 bank absent
+FAILED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_inputs7.py::test_forward_kwargs_are_the_trainers
+FAILED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_mutation7.py::test_unmutated_suite_is_green
+2 failed, 115 passed, 1 skipped, 2 warnings in 123.22s (0:02:03)
+rc=1

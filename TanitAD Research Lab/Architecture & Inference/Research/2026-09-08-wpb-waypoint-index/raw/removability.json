@@ -1,0 +1,67 @@
+{
+  "agent_gate_sweep": {
+    "gate_0_CORRUPTED_bias": {
+      "bitwise_equal": true,
+      "keys_equal": true,
+      "max_abs_diff_over_all_tensors": 0.0,
+      "max_abs_diff_traj": 0.0,
+      "n_tensor_keys": 15
+    },
+    "gate_0_zero_init_bias": {
+      "bitwise_equal": true,
+      "keys_equal": true,
+      "max_abs_diff_over_all_tensors": 0.0,
+      "max_abs_diff_traj": 0.0,
+      "n_tensor_keys": 15
+    },
+    "gate_1_CORRUPTED_bias": {
+      "bitwise_equal": false,
+      "keys_equal": true,
+      "max_abs_diff_over_all_tensors": 0.009172439575195312,
+      "max_abs_diff_traj": 0.005391120910644531,
+      "n_tensor_keys": 15
+    },
+    "gate_1_zero_init_bias": {
+      "bitwise_equal": false,
+      "keys_equal": true,
+      "max_abs_diff_over_all_tensors": 1.9073486328125e-06,
+      "max_abs_diff_traj": 1.9073486328125e-06,
+      "n_tensor_keys": 15
+    }
+  },
+  "device": "cpu",
+  "dtype": "float32",
+  "param_cost": {
+    "analytic_per_layer_8h_h_hH_H": 420,
+    "decoder_line_unchanged": true,
+    "layers": 2,
+    "n_heads": 4,
+    "note": "smoke config: hidden 32, n_heads 4, layers 2 -> 420*2 = 840. At refcv5's n_heads 8 / layers 4 the same formula gives 552*4 = 2208.",
+    "total_delta": 840,
+    "wp_index_off": 0,
+    "wp_index_on": 840
+  },
+  "reading": "gate_0_CORRUPTED_bias being bitwise-equal is the CONFOUND: with agent_gate at its zero init the whole agent branch is multiplied away, so the shipped-init removability proof passes even on a corrupted head. The load-bearing number is gate_1_zero_init_bias, which is NOT bitwise equal - it is float32 kernel rounding from supplying an attn_mask at all - and gate_1_CORRUPTED_bias is what a real lever looks like on the same rig.",
+  "required_flag_off_vs_no_field": {
+    "all_params_bitwise_equal": true,
+    "any_wp_index_key_in_state_dict": false,
+    "bitwise_equal": true,
+    "keys_equal": true,
+    "max_abs_diff_over_all_tensors": 0.0,
+    "max_abs_diff_traj": 0.0,
+    "n_params_compared": 182,
+    "n_tensor_keys": 15,
+    "state_dict_keys_identical": true
+  },
+  "rig": "refc_smoke_config + AgentSeamConfig(queries=6, d_model=32)",
+  "seed": 1234,
+  "shared_params_off_vs_on": {
+    "differing": [],
+    "n_extra_keys_on": 8,
+    "n_off": 182,
+    "n_on": 190,
+    "n_shared": 182,
+    "shared_all_bitwise_equal": true
+  },
+  "torch": "2.11.0+cu128"
+}

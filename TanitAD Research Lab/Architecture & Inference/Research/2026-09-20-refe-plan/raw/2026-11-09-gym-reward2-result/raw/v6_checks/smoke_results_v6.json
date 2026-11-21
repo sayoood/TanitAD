@@ -1,0 +1,272 @@
+{
+ "prereg": "PREREG_REWARD_2.md",
+ "seed": 20261111,
+ "floor": 0.2,
+ "curve_min_seg_m": 0.05,
+ "tier": "ENVIRONMENT (simulator) validity only",
+ "B3": {
+  "verdict": "CONTINUE",
+  "n_eligible": 2,
+  "n_known": 2,
+  "eligible_idx": [
+   0,
+   20
+  ],
+  "not_known_idx": [],
+  "n_states_reached": 21,
+  "at_cap": false,
+  "n_informative": 2,
+  "informative_rate": 1.0,
+  "ineligible_informative_reported_not_judged": [],
+  "build_or_run_failures_ladder_only": [],
+  "build_or_run_failures_full_arm_states": [],
+  "n_build_or_run_failures": 0,
+  "per_state": [
+   {
+    "idx": 0,
+    "tier": "full",
+    "sampler": "junction",
+    "log": "2021.05.25.14.16.10_veh-35_04561_05104",
+    "limit": 13.410818059901654,
+    "v0": 10.466938589516303,
+    "informative": true,
+    "known": true,
+    "free": true,
+    "agent_in_window": false,
+    "kin_crawl_over_best": 0.06457717500496786,
+    "crawl_over_limit": 0.11185,
+    "crawl_over_best": 0.02825529369120461
+   },
+   {
+    "idx": 20,
+    "tier": "ladder",
+    "sampler": "junction",
+    "log": "2021.05.25.14.16.10_veh-35_04561_05104",
+    "limit": 13.410818059901654,
+    "v0": 10.466938589516303,
+    "informative": true,
+    "known": true,
+    "free": true,
+    "agent_in_window": false,
+    "kin_crawl_over_best": 0.06457717500496786,
+    "crawl_over_limit": 0.11185,
+    "crawl_over_best": 0.02825529369120461
+   }
+  ],
+  "eligible_detail": [
+   {
+    "idx": 0,
+    "limit": 13.410818059901654,
+    "known": true,
+    "crawl_over_best": 0.02825529369120461,
+    "rets": {
+     "crawl1.5": 0.01673760741782785,
+     "f0.3": 0.016744715131337608,
+     "f0.5": 0.030493863518982315,
+     "f0.7": 0.2284265744097977,
+     "f0.9": 0.48137104896421407,
+     "f1.0": 0.592370675766077
+    }
+   },
+   {
+    "idx": 20,
+    "limit": 13.410818059901654,
+    "known": true,
+    "crawl_over_best": 0.02825529369120461,
+    "rets": {
+     "crawl1.5": 0.01673760741782785,
+     "f0.3": 0.016744715131337608,
+     "f0.5": 0.030493863518982315,
+     "f0.7": 0.2284265744097977,
+     "f0.9": 0.48137104896421407,
+     "f1.0": 0.592370675766077
+    }
+   }
+  ]
+ },
+ "B3_F": {
+  "verdict": "UNDETERMINED_LT5",
+  "n_eligible": 2,
+  "n_known": 2,
+  "eligible_idx": [
+   0,
+   20
+  ],
+  "not_known_idx": [],
+  "n_free_eligible": 2,
+  "definition": "free = launch speed >= 1.0 m/s AND no lead/conflict agent in any cycle of any of the six rungs (state metadata, no return used)",
+  "free_idx_all_states": [
+   0,
+   20
+  ]
+ },
+ "kinematic_crawl_share": {
+  "n": 2,
+  "n_kin_above_bar": 0,
+  "share_above_bar": 0.0,
+  "mean": 0.06457717500496786,
+  "min": 0.06457717500496786,
+  "max": 0.06457717500496786,
+  "bar": 0.1,
+  "per_eligible_state": [
+   {
+    "idx": 0,
+    "v0": 10.466938589516303,
+    "limit": 13.410818059901654,
+    "kin_crawl_over_best": 0.06457717500496786,
+    "observed_crawl_over_best": 0.02825529369120461,
+    "known": true
+   },
+   {
+    "idx": 20,
+    "v0": 10.466938589516303,
+    "limit": 13.410818059901654,
+    "kin_crawl_over_best": 0.06457717500496786,
+    "observed_crawl_over_best": 0.02825529369120461,
+    "known": true
+   }
+  ]
+ },
+ "floor_reached_in_fresh_data": {
+  "min_q_free_over_all_ladder_cycles": 0.3794139824477951,
+  "n_ladder_cycles_with_q_free_below_0p30": 0,
+  "ok": false
+ },
+ "retained": {
+  "B1_oracle": "PASS",
+  "B1_detail": {
+   "lex_hard_in_avoidable_cells": [],
+   "unavoidable_fraction": 0.0,
+   "unavoidable_cells": []
+  },
+  "B2_ttc": "UNDETERMINED_n<10",
+  "B2_detail": {
+   "real_flagged_by_legacy": 0,
+   "real_flagged_by_corridor": 0,
+   "retention": null,
+   "n_distinct_real_collision_states": 0,
+   "collision_states": [],
+   "n_shadow_vs_live_mismatches": 0,
+   "M_GYM_4_distinct_collision_states": 1
+  },
+  "B4_always_slowest": {
+   "mean_q_free_applicable": 0.8050225567839774,
+   "n_applicable": 3,
+   "mean_return": 0.027696041383411252,
+   "mean_return_pdm": 0.4272178606709772,
+   "known": false
+  },
+  "B4_always_fastest": [
+   {
+    "fail_count_fastest": 0,
+    "fail_count_pdm": 0,
+    "known": false
+   },
+   {
+    "fail_count_fastest": 0,
+    "fail_count_pdm": 0,
+    "known": false
+   }
+  ],
+  "B4_do_nothing": {
+   "n_moving_states": 1,
+   "mean_reward_per_cycle": 0.0,
+   "known": true,
+   "POST_HOC_mean_reward_on_cycles_with_v_lt_0.05": null,
+   "POST_HOC_n_cycles_v_lt_0.05": 0
+  },
+  "B4_determinism_bit_identical": true,
+  "B5_cost": {
+   "single_worker_s_mean": 51.949729999978445,
+   "single_worker_s_median": 51.949729999978445,
+   "single_worker_s_max": 51.949729999978445,
+   "eff12_mean": 4.329144166664871,
+   "verdict_PREREG_M_GYM_1": "GO",
+   "measured_wall_s_per_state": 58.26731789999758,
+   "workers": 1,
+   "states_per_3_days_at_measured_wall": 4448.46286635086,
+   "states_per_3_days_at_12_workers_ESTIMATED": 59873.265943851686,
+   "note": "single_worker/eff12 follow the PREREG_M_GYM_1 definition: scene+map build + proposals + 24 arms x {log, idm}; regression policies and the ladder are extra",
+   "task_wall_s_mean_incl_regression_and_ladder": 58.26731789999758,
+   "ladder_wall_s_mean": 2.98759780000546,
+   "states_per_3_days_labelling_only_ESTIMATED": 4989.438828654308
+  },
+  "B6_prescreen": "UNDETERMINED",
+  "B6_states_all_arms_offdrivable": [],
+  "B7_activation": {
+   "q_free": {
+    "fired": 0.3333333333333333,
+    "applicable": 1.0,
+    "mean_q": 0.9391409432786522,
+    "sparse": false
+   },
+   "q_gap": {
+    "fired": 0.0,
+    "applicable": 0.0,
+    "mean_q": 1.0,
+    "sparse": true
+   },
+   "q_stall": {
+    "fired": 0.0,
+    "applicable": null,
+    "mean_q": 1.0,
+    "sparse": true
+   },
+   "q_yield": {
+    "fired": 0.0,
+    "applicable": null,
+    "mean_q": 1.0,
+    "sparse": true
+   },
+   "q_comf": {
+    "fired": 0.3194444444444444,
+    "applicable": null,
+    "mean_q": 0.9041666666666666,
+    "sparse": false
+   },
+   "q_osc": {
+    "fired": 0.0,
+    "applicable": null,
+    "mean_q": 1.0,
+    "sparse": true
+   },
+   "q_lane": {
+    "fired": 0.0,
+    "applicable": null,
+    "mean_q": 1.0,
+    "sparse": true
+   },
+   "q_cons": {
+    "fired": 0.16666666666666666,
+    "applicable": null,
+    "mean_q": 0.9833333333333335,
+    "sparse": false
+   },
+   "n_cycle_records": 144
+  },
+  "base_hard_event_rates": {
+   "log": {
+    "n_episodes": 24,
+    "collision": 0.0,
+    "off_drivable": 0.0,
+    "wrong_way": 0.0,
+    "ttc": 0.0,
+    "any": 0.0
+   },
+   "idm": {
+    "n_episodes": 24,
+    "collision": 0.0,
+    "off_drivable": 0.0,
+    "wrong_way": 0.0,
+    "ttc": 0.0,
+    "any": 0.0
+   }
+  },
+  "old_M_GYM_4_B3_text_on_full_arm_states_informational": "UNDETERMINED_n<2",
+  "any_arm_not_known": [
+   "always_slowest",
+   "always_fastest_log",
+   "always_fastest_idm"
+  ]
+ }
+}

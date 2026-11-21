@@ -1,0 +1,22 @@
+{
+ "_what": "detection half of D-S1-DEP-BOX: does the box head know HOW MANY agents?",
+ "_evidence_class": "MEASURED (ours), CPU, no GPU, A8 ckpt_5000",
+ "_matcher_free": "counts only -- no Hungarian, so presence cannot score its own cost",
+ "n_windows": 40,
+ "n_episodes": 27,
+ "n_queries": 100,
+ "mean_true_targets": 25.15,
+ "mean_pred_confident_slots": 96.55,
+ "mean_presence_prob": 0.7524,
+ "max_presence_prob": 0.8551,
+ "MAE_head": 71.4,
+ "MAE_constant_control": 8.498,
+ "improvement_over_constant": -62.903,
+ "CI95_improvement_episode_clustered": [
+  -66.395,
+  -58.64
+ ],
+ "beats_constant": false,
+ "_prior_bias_note": "presence carries logit(0.05); an untrained head would sit near 5 of 100 confident slots",
+ "_VERDICT": "\u26d4 the head's count does NOT beat a constant predictor at this n"
+}

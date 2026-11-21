@@ -1,0 +1,84 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "prereg": "TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-08-26-residual-ceiling/SPEC.md (+AMENDMENT A1)",
+ "arm": "rdw8p30k",
+ "step": 30000,
+ "n_clips": 80,
+ "n_rows": 7280,
+ "k": 4,
+ "pca_band": [
+  0,
+  8
+ ],
+ "k_folds": 10,
+ "oracle_form": "tokens 4x10x128 + grey 32x80 + z_t (AMENDMENT A1 pooling; token d_model read from the bank, NOT assumed)",
+ "columns": {
+  "constant (A0)": {
+   "d": 1,
+   "r": 0.0,
+   "shuf": 0.0
+  },
+  "z_t (A1 DRIFT/POSITIVE CTRL)": {
+   "d": 2048,
+   "r": 0.6722,
+   "shuf": -0.0056
+  },
+  "z_t + noise3 (A6 DELIB-REGRESS)": {
+   "d": 2051,
+   "r": 0.67,
+   "shuf": -0.004
+  },
+  "z_t + zhat_k4 (A2 OUR PREDICTOR)": {
+   "d": 4096,
+   "r": 0.6699,
+   "shuf": -0.0053
+  },
+  "z_t + pixels (A3 RAW FLOOR)": {
+   "d": 4608,
+   "r": 0.6818,
+   "shuf": -0.0029
+  },
+  "z_t + tokens4x10 + pixels (A4 ORACLE-t)": {
+   "d": 9728,
+   "r": 0.6682,
+   "shuf": 0.0007
+  }
+ },
+ "marginals_over_drift": {
+  "z_t + noise3 (A6 DELIB-REGRESS)": {
+   "delta": -0.0021,
+   "t": -1.47,
+   "verdict": "INSIDE_NULL"
+  },
+  "z_t + zhat_k4 (A2 OUR PREDICTOR)": {
+   "delta": -0.0023,
+   "t": -1.84,
+   "verdict": "INSIDE_NULL"
+  },
+  "z_t + pixels (A3 RAW FLOOR)": {
+   "delta": 0.0096,
+   "t": 5.11,
+   "verdict": "SURVIVES"
+  },
+  "z_t + tokens4x10 + pixels (A4 ORACLE-t)": {
+   "delta": -0.004,
+   "t": -2.52,
+   "verdict": "INSIDE_NULL"
+  }
+ },
+ "rig_checks": {
+  "A0_constant_reads_zero": true,
+  "A1_drift_in_known_band": true,
+  "A1_banked_value": {
+   "expected_r": 0.6718,
+   "expected_t": 134.84,
+   "got_r": 0.6722,
+   "got_t": 126.43
+  },
+  "A6_deliberate_regression_failed_as_required": true,
+  "all_shuffle_controls_near_zero": true
+ },
+ "rig_valid": true,
+ "verdict": "H-A: the post-drift residual is NOT predictable from 4x10-pooled time-t observation \u2014 stop optimising the predictor; the work is representational"
+}

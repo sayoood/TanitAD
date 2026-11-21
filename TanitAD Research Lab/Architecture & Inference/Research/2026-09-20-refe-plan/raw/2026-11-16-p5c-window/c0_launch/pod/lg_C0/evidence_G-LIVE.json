@@ -1,0 +1,239 @@
+{
+ "arm": null,
+ "binding": {
+  "argv_sha256": "cad9cc4a02a7bdfcee6b41c4108ba60fe3b87d128ed3110c6cbc84ffd84bb37c",
+  "commit": "33824420cc5e73471d74d669bd260ff76c00e3f8",
+  "profile": "refe_p5c_c0",
+  "tree_sha256": "945f405c87f5be56ec6be86c88b9168a8a70193d4970cb360a73c74c2fd7b39d"
+ },
+ "check": "G-LIVE",
+ "details": {
+  "ego_yaw_live": {
+   "col4_grad_abs_sum_max": 0.12337252160752143,
+   "ego4_abs_max_received": 2.377187728881836,
+   "finite": true,
+   "flag": true,
+   "other_cols_grad_abs_sum_max": 14.866969272567047,
+   "probe": {
+    "one": 31417.22799062729,
+    "ran": true,
+    "zero": 0.0
+   },
+   "steps_observed": 2
+  },
+  "frozen_control_exact_zero": true,
+  "groups": {
+   "backbone": {
+    "finite": true,
+    "grad_seen": 0,
+    "max_abs_sum": 0.0,
+    "n": 366,
+    "n_req": 0,
+    "numel": 303079424
+   },
+   "backbone.lora": {
+    "finite": true,
+    "grad_seen": 192,
+    "max_abs_sum": 4.247829034939273,
+    "n": 96,
+    "n_req": 96,
+    "numel": 3145728
+   },
+   "cmd_embed": {
+    "finite": true,
+    "grad_seen": 2,
+    "max_abs_sum": 0.2959756364689383,
+    "n": 1,
+    "n_req": 1,
+    "numel": 256
+   },
+   "dec": {
+    "finite": true,
+    "grad_seen": 144,
+    "max_abs_sum": 217.59744174957405,
+    "n": 72,
+    "n_req": 72,
+    "numel": 4213760
+   },
+   "ego_enc": {
+    "finite": true,
+    "grad_seen": 8,
+    "max_abs_sum": 57.191770321851294,
+    "n": 4,
+    "n_req": 4,
+    "numel": 84224
+   },
+   "pos3d_mlp": {
+    "finite": true,
+    "grad_seen": 8,
+    "max_abs_sum": 19.809652691324796,
+    "n": 4,
+    "n_req": 4,
+    "numel": 528896
+   },
+   "queries": {
+    "finite": true,
+    "grad_seen": 2,
+    "max_abs_sum": 4.327603434729561,
+    "n": 1,
+    "n_req": 1,
+    "numel": 16384
+   },
+   "reg_compress": {
+    "finite": true,
+    "grad_seen": 28,
+    "max_abs_sum": 152.5431197032182,
+    "n": 14,
+    "n_req": 14,
+    "numel": 6303744
+   },
+   "registers": {
+    "finite": true,
+    "grad_seen": 2,
+    "max_abs_sum": 2.3167404773473748,
+    "n": 1,
+    "n_req": 1,
+    "numel": 65536
+   },
+   "scene_proj": {
+    "finite": true,
+    "grad_seen": 4,
+    "max_abs_sum": 23.07910650142164,
+    "n": 2,
+    "n_req": 2,
+    "numel": 262400
+   },
+   "score_dec": {
+    "finite": true,
+    "grad_seen": 144,
+    "max_abs_sum": 4.0060267540999455,
+    "n": 72,
+    "n_req": 72,
+    "numel": 4213760
+   },
+   "score_head": {
+    "finite": true,
+    "grad_seen": 4,
+    "max_abs_sum": 0.03240594606334002,
+    "n": 2,
+    "n_req": 2,
+    "numel": 1542
+   },
+   "score_q_mlp": {
+    "finite": true,
+    "grad_seen": 8,
+    "max_abs_sum": 0.8766560450722727,
+    "n": 4,
+    "n_req": 4,
+    "numel": 81408
+   },
+   "traj_head": {
+    "finite": true,
+    "grad_seen": 8,
+    "max_abs_sum": 77.2819106151969,
+    "n": 4,
+    "n_req": 4,
+    "numel": 81212
+   }
+  },
+  "logged_step_rows": 2,
+  "p5c": {
+   "isolation": "no table (control arm)",
+   "warm": {
+    "base_sha256": "2613fc17b9e5d63342c9f42120c5612a6ec7061fda72f83dac46ddd2e70fd3fe",
+    "opt_state_entries": 0,
+    "tensors": 643
+   }
+  },
+  "scorer_cov_last": 1.0,
+  "terms_checked": [
+   "traj_L1",
+   "score",
+   "pos_L1",
+   "yaw_L1",
+   "bce_nc",
+   "bce_dac",
+   "bce_ep",
+   "bce_ttc",
+   "bce_c",
+   "bce_ddc"
+  ],
+  "zero_loss_control": {
+   "ran": true,
+   "real": 36308750.023152605,
+   "zero": 0.0
+  }
+ },
+ "finished_utc": "2026-11-16T18:36:21Z",
+ "inputs_read": {
+  "--calib": {
+   "bytes": 2108538,
+   "kind": "file",
+   "method": "sha256-v1",
+   "path": "/workspace/data/refe_p7/p7_reserve/calib/calib_table.json",
+   "sha256": "cfa287b8c76ca3cd657392d56cdfbb23458d0a72c406db50022ffb8cc841138a"
+  },
+  "--ego-yaw-table": {
+   "bytes": 2018782,
+   "kind": "file",
+   "method": "sha256-v1",
+   "path": "/workspace/data/refe_navtrain/ego_yaw_navtrain.json.gz",
+   "sha256": "3a0873cc1302afa45a960235a063d20699608236669eced5d8074fae69215a55"
+  },
+  "--images": {
+   "bytes": 77507226902,
+   "kind": "dir",
+   "listing_sha256": "05231a36178681691eb689d374e6163626ad83fa4eda8a6e2986a0c2ab4a6538",
+   "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; _v2manifest.pt excluded -- a cache rewrites it on first use)",
+   "n_files": 372552,
+   "path": "/workspace/data/navtrain_pixels"
+  },
+  "--init-from": {
+   "bytes": 1298292047,
+   "kind": "file",
+   "method": "sha256-v1",
+   "path": "/workspace/data/refe_runs/p7_reserve_head/model_final.pt",
+   "sha256": "2613fc17b9e5d63342c9f42120c5612a6ec7061fda72f83dac46ddd2e70fd3fe"
+  },
+  "--metric-cache": {
+   "bytes": 41047312372,
+   "kind": "dir",
+   "listing_sha256": "79c7ba964ccc3a7a1494112362dc7a9e928c3da033b27de9f15f04086186d100",
+   "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; _v2manifest.pt excluded -- a cache rewrites it on first use)",
+   "n_files": 112589,
+   "path": "/workspace/data/refe_navtrain/metric_cache"
+  },
+  "--targets": {
+   "bytes": 519051148,
+   "kind": "dir",
+   "listing_sha256": "804c80a42cb1b9a0d6697c535a9dec3ba8ca72116ceae91a6a4ff696ee7c40fc",
+   "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; _v2manifest.pt excluded -- a cache rewrites it on first use)",
+   "n_files": 3,
+   "path": "/workspace/data/refe_navtrain/train_grow_cmd_3c_p7"
+  },
+  "gate:egr_json": {
+   "bytes": 715,
+   "kind": "file",
+   "method": "sha256-v1",
+   "path": "/workspace/data/refe_p5c/evidence_c0/egr/g_egr_result.json",
+   "sha256": "cdd16b9887f27155b13da180aeb61d2ac007ce9d291414df26695155ef6daac9"
+  },
+  "gate:lab_json": {
+   "bytes": 370,
+   "kind": "file",
+   "method": "sha256-v1",
+   "path": "/workspace/data/refe_p5c/evidence_c0/lab.json",
+   "sha256": "d6bd6bbfb9d4b0f7b9d2fdf39cf44008243270ade5cca76876db0006d5adf81e"
+  },
+  "gate:mem_metrics": {
+   "bytes": 4603,
+   "kind": "file",
+   "method": "sha256-v1",
+   "path": "/workspace/data/refe_p5c/evidence_c0/mem_metrics.jsonl",
+   "sha256": "cb01f6f8810de3727b563a71493f136d636c5aadfe93a489231b5ca81d7abeac"
+  }
+ },
+ "reasons": [],
+ "rehearsal": false,
+ "status": "PASS"
+}

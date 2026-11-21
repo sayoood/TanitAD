@@ -1,0 +1,539 @@
+TREE C:\lgt\i3mut\stack\tanitad\__init__.py C:\lgt\i3mut\taniteval\taniteval\__init__.py
+=== CONTROL_unmutated ===
+.................                                                        [100%]
+17 passed in 8.13s
+PYTEST_EXIT_CONTROL_unmutated=0
+M1 apply: stack/scripts/refc_v3_train.py git-blob 61b626994a379894ae5cd157657c20d629550a2b (line endings CRLF)
+=== M1_agent_rule_removed ===
+FF......FF.F...F.                                                        [100%]
+================================== FAILURES ===================================
+_ test_a_PRE_A9_record_rebuilds_at_100_and_loads_STRICT[refcv3_arm.load_model] _
+
+records = {'pre': WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4139/i3_records0/pre/ckpt.pt'), 'pre_nop... 'pre_nobq': WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4139/i3_records0/pre_nobq/ckpt.pt')}
+entry = 'refcv3_arm.load_model'
+
+    @pytest.mark.parametrize("entry", list(ENTRIES))
+    def test_a_PRE_A9_record_rebuilds_at_100_and_loads_STRICT(records, entry):
+>       model, prov = ENTRIES[entry](records["pre"])
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_loader_stamped_queries.py:174: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_loader_stamped_queries.py:144: in via_refcv3_arm
+    model, _cfg, _targs, prov = _arm().load_model(str(ck), None, "cpu", False)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+taniteval\tools\refcv3_arm.py:1319: in load_model
+    checks = cross_check_config(config, cfg, model)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+config = {'argv': ['--arm', 'hier', '--smoke', '--trunk', 'timm', '--trunk-name', ...], 'arm': 'hier', 'image_hw': [256, 640], 'horizons': [5, 10, 15, 20, 30, 40, ...], ...}
+cfg = RefCV3Config(tac_vocab_version='kin3', core=RefCConfig(encoder=CNNEncoderConfig(in_channels=9, image_size=256, image_w...se, max_speed_onehot_v6=False, u0_absent_under_ddim=None, nav_compliance_tau_file=None, nav_compliance_tau_sha256=None)
+model = RefCV3Model(
+  (core): RefCModel(
+    (encoder): TimmResNetTrunk(
+      (net): FeatureListNet(
+        (conv1): Conv2d...56,), eps=1e-05, elementwise_affine=True)
+      (head): Linear(in_features=256, out_features=23, bias=True)
+    )
+  )
+)
+
+    def cross_check_config(config: dict, cfg, model) -> dict:
+        """Every fact ``config.json`` states about the model must hold for the rebuilt
+        one. A contradiction is a REFUSAL naming BOTH values (the
+        ``adopt_ckpt_geometry`` lesson in ``t1_eval``) — never a silent override in
+        either direction. *(Harvested from the rescued draft.)*"""
+        from tanitad.refs import refc_v3 as v3
+        checks, conflict = {}, []
+    
+        def _chk(name, have, want):
+            checks[name] = {"config_json": want, "rebuilt": have}
+            if want is not None and have != want:
+                conflict.append(f"{name}: config.json {want!r} vs rebuilt {have!r}")
+    
+        if "arm" in config:
+            _chk("arm", "hier" if cfg.hier else "flat", config["arm"])
+        if "image_hw" in config:
+            _chk("image_hw", list(cfg.core.encoder.image_hw()), list(config["image_hw"]))
+        if "tac_vocab_version" in config:
+            _chk("tac_vocab_version", cfg.tac_vocab_version, config["tac_vocab_version"])
+        if "horizons" in config:
+            _chk("horizons", list(cfg.core.trajectory.horizons), list(config["horizons"]))
+        if "goal_tau_steps" in config:
+            _chk("goal_tau_steps", list(cfg.goal_tau_steps), list(config["goal_tau_steps"]))
+        if isinstance(config.get("param_breakdown"), dict):
+            bd = v3.param_breakdown_v3(model)
+            _chk("param_breakdown", {k: int(v) for k, v in bd.items()},
+                 {k: int(v) for k, v in config["param_breakdown"].items()})
+        if conflict:
+>           raise SystemExit("[refcv3_arm] ⛔ config.json CONTRADICTS the rebuilt "
+                             "model — refusing rather than guessing which describes "
+                             "the weights:\n  " + "\n  ".join(conflict))
+E           SystemExit: [refcv3_arm] ⛔ config.json CONTRADICTS the rebuilt model — refusing rather than guessing which describes the weights:
+E             param_breakdown: config.json {'core': 15669281, 'phi_tac': 14608, 'str_goal_head': 27, 'gstr_cond': 608, 'tac_heads': 594, 'tac_latent_proj': 1056, 'scorer': 88, 'nav_inject': 2856, 'total': 19177397} vs rebuilt {'core': 15720481, 'phi_tac': 14608, 'str_goal_head': 27, 'gstr_cond': 608, 'tac_heads': 594, 'tac_latent_proj': 1056, 'scorer': 88, 'nav_inject': 2856, 'total': 19228597}
+
+taniteval\tools\refcv3_arm.py:1265: SystemExit
+---------------------------- Captured stdout setup ----------------------------
+[v3] ⚠️ --w-box3d > 0 with NO --join3d: `zh_mask` is all-False, so `loss_z`/`loss_h` are 0.0 over n=0 items and the total is EXACTLY the 2-D set loss. This is the 2-D rung, not a 3-D arm.
+[v3] ⚠️ --w-box3d > 0 with NO --join3d: `zh_mask` is all-False, so `loss_z`/`loss_h` are 0.0 over n=0 items and the total is EXACTLY the 2-D set loss. This is the 2-D rung, not a 3-D arm.
+[v3] ⚠️ --w-box3d > 0 with NO --join3d: `zh_mask` is all-False, so `loss_z`/`loss_h` are 0.0 over n=0 items and the total is EXACTLY the 2-D set loss. This is the 2-D rung, not a 3-D arm.
+---------------------------- Captured stdout call -----------------------------
+[v3] ⚠️ --w-box3d > 0 with NO --join3d: `zh_mask` is all-False, so `loss_z`/`loss_h` are 0.0 over n=0 items and the total is EXACTLY the 2-D set loss. This is the 2-D rung, not a 3-D arm.
+_ test_a_PRE_A9_record_rebuilds_at_100_and_loads_STRICT[closedloop_drive.RefCV3Policy] _
+
+records = {'pre': WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4139/i3_records0/pre/ckpt.pt'), 'pre_nop... 'pre_nobq': WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4139/i3_records0/pre_nobq/ckpt.pt')}
+entry = 'closedloop_drive.RefCV3Policy'
+
+    @pytest.mark.parametrize("entry", list(ENTRIES))
+    def test_a_PRE_A9_record_rebuilds_at_100_and_loads_STRICT(records, entry):
+>       model, prov = ENTRIES[entry](records["pre"])
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_loader_stamped_queries.py:174: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_loader_stamped_queries.py:150: in via_closedloop
+    pol = cd.RefCV3Policy(str(ck), device="cpu")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\experiments\alpasim-gsplat\closedloop_drive.py:395: in __init__
+    self.model, self.cfg, self.targs, self.prov = refcv3_arm.load_model(
+taniteval\tools\refcv3_arm.py:1319: in load_model
+    checks = cross_check_config(config, cfg, model)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+config = {'argv': ['--arm', 'hier', '--smoke', '--trunk', 'timm', '--trunk-name', ...], 'arm': 'hier', 'image_hw': [256, 640], 'horizons': [5, 10, 15, 20, 30, 40, ...], ...}
+cfg = RefCV3Config(tac_vocab_version='kin3', core=RefCConfig(encoder=CNNEncoderConfig(in_channels=9, image_size=256, image_w...se, max_speed_onehot_v6=False, u0_absent_under_ddim=None, nav_compliance_tau_file=None, nav_compliance_tau_sha256=None)
+model = RefCV3Model(
+  (core): RefCModel(
+    (encoder): TimmResNetTrunk(
+      (net): FeatureListNet(
+        (conv1): Conv2d...56,), eps=1e-05, elementwise_affine=True)
+      (head): Linear(in_features=256, out_features=23, bias=True)
+    )
+  )
+)
+
+    def cross_check_config(config: dict, cfg, model) -> dict:
+        """Every fact ``config.json`` states about the model must hold for the rebuilt
+        one. A contradiction is a REFUSAL naming BOTH values (the
+        ``adopt_ckpt_geometry`` lesson in ``t1_eval``) — never a silent override in
+        either direction. *(Harvested from the rescued draft.)*"""
+        from tanitad.refs import refc_v3 as v3
+        checks, conflict = {}, []
+    
+        def _chk(name, have, want):
+            checks[name] = {"config_json": want, "rebuilt": have}
+            if want is not None and have != want:
+                conflict.append(f"{name}: config.json {want!r} vs rebuilt {have!r}")
+    
+        if "arm" in config:
+            _chk("arm", "hier" if cfg.hier else "flat", config["arm"])
+        if "image_hw" in config:
+            _chk("image_hw", list(cfg.core.encoder.image_hw()), list(config["image_hw"]))
+        if "tac_vocab_version" in config:
+            _chk("tac_vocab_version", cfg.tac_vocab_version, config["tac_vocab_version"])
+        if "horizons" in config:
+            _chk("horizons", list(cfg.core.trajectory.horizons), list(config["horizons"]))
+        if "goal_tau_steps" in config:
+            _chk("goal_tau_steps", list(cfg.goal_tau_steps), list(config["goal_tau_steps"]))
+        if isinstance(config.get("param_breakdown"), dict):
+            bd = v3.param_breakdown_v3(model)
+            _chk("param_breakdown", {k: int(v) for k, v in bd.items()},
+                 {k: int(v) for k, v in config["param_breakdown"].items()})
+        if conflict:
+>           raise SystemExit("[refcv3_arm] ⛔ config.json CONTRADICTS the rebuilt "
+                             "model — refusing rather than guessing which describes "
+                             "the weights:\n  " + "\n  ".join(conflict))
+E           SystemExit: [refcv3_arm] ⛔ config.json CONTRADICTS the rebuilt model — refusing rather than guessing which describes the weights:
+E             param_breakdown: config.json {'core': 15669281, 'phi_tac': 14608, 'str_goal_head': 27, 'gstr_cond': 608, 'tac_heads': 594, 'tac_latent_proj': 1056, 'scorer': 88, 'nav_inject': 2856, 'total': 19177397} vs rebuilt {'core': 15720481, 'phi_tac': 14608, 'str_goal_head': 27, 'gstr_cond': 608, 'tac_heads': 594, 'tac_latent_proj': 1056, 'scorer': 88, 'nav_inject': 2856, 'total': 19228597}
+
+taniteval\tools\refcv3_arm.py:1265: SystemExit
+---------------------------- Captured stdout call -----------------------------
+[v3] ⚠️ --w-box3d > 0 with NO --join3d: `zh_mask` is all-False, so `loss_z`/`loss_h` are 0.0 over n=0 items and the total is EXACTLY the 2-D set loss. This is the 2-D rung, not a 3-D arm.
+_ test_RED_ARM_a_box_stamp_without_n_queries_rebuilds_300_and_is_REFUSED[refcv3_arm.load_model] _
+
+records = {'pre': WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4139/i3_records0/pre/ckpt.pt'), 'pre_nop... 'pre_nobq': WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4139/i3_records0/pre_nobq/ckpt.pt')}
+entry = 'refcv3_arm.load_model'
+
+    @pytest.mark.parametrize("entry", list(ENTRIES))
+    def test_RED_ARM_a_box_stamp_without_n_queries_rebuilds_300_and_is_REFUSED(records, entry):
+        """The box head's half: ``rebuild_perception_branch`` reads the count from the STAMP. Without it the
+        branch is rebuilt at the dataclass default and the strict load refuses. The agent head (stamped)
+        is not the mismatch."""
+        with pytest.raises(SystemExit) as ei:
+            ENTRIES[entry](records["pre_nobq"])
+        msg = str(ei.value)
+        assert "DISAGREE ON SHAPE" in msg and "size mismatch for _perception.box_dec.queries" in msg
+>       assert "core.agent_head" not in msg
+E       AssertionError: assert 'core.agent_head' not in '[refcv3_arm... 300, 256]).'
+E         
+E         'core.agent_head' is contained here:
+E           match for core.agent_head.queries: copying a param with shape torch.Size([1, 100, 256]) from checkpoint, the shape in current model is torch.Size([1, 300, 256]).
+E         ?           +++++++++++++++
+E           	size mismatch for _perception.box_dec.queries: copying a param with shape torch.Size([1, 100, 256]) from checkpoint, the shape in current model is torch.Size([1, 300, 256]).
+
+stack\tests\test_loader_stamped_queries.py:262: AssertionError
+---------------------------- Captured stdout call -----------------------------
+[v3] ⚠️ --w-box3d > 0 with NO --join3d: `zh_mask` is all-False, so `loss_z`/`loss_h` are 0.0 over n=0 items and the total is EXACTLY the 2-D set loss. This is the 2-D rung, not a 3-D arm.
+_ test_RED_ARM_a_box_stamp_without_n_queries_rebuilds_300_and_is_REFUSED[closedloop_drive.RefCV3Policy] _
+
+records = {'pre': WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4139/i3_records0/pre/ckpt.pt'), 'pre_nop... 'pre_nobq': WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4139/i3_records0/pre_nobq/ckpt.pt')}
+entry = 'closedloop_drive.RefCV3Policy'
+
+    @pytest.mark.parametrize("entry", list(ENTRIES))
+    def test_RED_ARM_a_box_stamp_without_n_queries_rebuilds_300_and_is_REFUSED(records, entry):
+        """The box head's half: ``rebuild_perception_branch`` reads the count from the STAMP. Without it the
+        branch is rebuilt at the dataclass default and the strict load refuses. The agent head (stamped)
+        is not the mismatch."""
+        with pytest.raises(SystemExit) as ei:
+            ENTRIES[entry](records["pre_nobq"])
+        msg = str(ei.value)
+        assert "DISAGREE ON SHAPE" in msg and "size mismatch for _perception.box_dec.queries" in msg
+>       assert "core.agent_head" not in msg
+E       AssertionError: assert 'core.agent_head' not in '[refcv3_arm... 300, 256]).'
+E         
+E         'core.agent_head' is contained here:
+E           match for core.agent_head.queries: copying a param with shape torch.Size([1, 100, 256]) from checkpoint, the shape in current model is torch.Size([1, 300, 256]).
+E         ?           +++++++++++++++
+E           	size mismatch for _perception.box_dec.queries: copying a param with shape torch.Size([1, 100, 256]) from checkpoint, the shape in current model is torch.Size([1, 300, 256]).
+
+stack\tests\test_loader_stamped_queries.py:262: AssertionError
+---------------------------- Captured stdout call -----------------------------
+[v3] ⚠️ --w-box3d > 0 with NO --join3d: `zh_mask` is all-False, so `loss_z`/`loss_h` are 0.0 over n=0 items and the total is EXACTLY the 2-D set loss. This is the 2-D rung, not a 3-D arm.
+___ test_the_bench_loader_rebuilds_a_PRE_A9_record_at_100_and_loads_STRICT ____
+
+records = {'pre': WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4139/i3_bench_records0/pre/ckpt.pt'), 'p...nobq': WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4139/i3_bench_records0/pre_nobq/ckpt.pt')}
+
+    def test_the_bench_loader_rebuilds_a_PRE_A9_record_at_100_and_loads_STRICT(records):
+>       model, prov = via_bench(records["pre"])
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+taniteval\tests\test_bench_stamped_queries.py:138: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+taniteval\tests\test_bench_stamped_queries.py:120: in via_bench
+    model, _cfg, _targs, prov, _mod = B.load_refcv4b(str(ck))
+                                      ^^^^^^^^^^^^^^^^^^^^^^^
+taniteval\taniteval\bench\navsim\bridge.py:255: in load_refcv4b
+    model, cfg, targs, prov = mod.load_model(ckpt, config, "cpu", False)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+taniteval\tools\refcv3_arm.py:1319: in load_model
+    checks = cross_check_config(config, cfg, model)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+config = {'argv': ['--arm', 'hier', '--smoke', '--trunk', 'timm', '--trunk-name', ...], 'arm': 'hier', 'image_hw': [256, 640], 'horizons': [5, 10, 15, 20, 30, 40, ...], ...}
+cfg = RefCV3Config(tac_vocab_version='kin3', core=RefCConfig(encoder=CNNEncoderConfig(in_channels=9, image_size=256, image_w...se, max_speed_onehot_v6=False, u0_absent_under_ddim=None, nav_compliance_tau_file=None, nav_compliance_tau_sha256=None)
+model = RefCV3Model(
+  (core): RefCModel(
+    (encoder): TimmResNetTrunk(
+      (net): FeatureListNet(
+        (conv1): Conv2d...56,), eps=1e-05, elementwise_affine=True)
+      (head): Linear(in_features=256, out_features=23, bias=True)
+    )
+  )
+)
+
+    def cross_check_config(config: dict, cfg, model) -> dict:
+        """Every fact ``config.json`` states about the model must hold for the rebuilt
+        one. A contradiction is a REFUSAL naming BOTH values (the
+        ``adopt_ckpt_geometry`` lesson in ``t1_eval``) — never a silent override in
+        either direction. *(Harvested from the rescued draft.)*"""
+        from tanitad.refs import refc_v3 as v3
+        checks, conflict = {}, []
+    
+        def _chk(name, have, want):
+            checks[name] = {"config_json": want, "rebuilt": have}
+            if want is not None and have != want:
+                conflict.append(f"{name}: config.json {want!r} vs rebuilt {have!r}")
+    
+        if "arm" in config:
+            _chk("arm", "hier" if cfg.hier else "flat", config["arm"])
+        if "image_hw" in config:
+            _chk("image_hw", list(cfg.core.encoder.image_hw()), list(config["image_hw"]))
+        if "tac_vocab_version" in config:
+            _chk("tac_vocab_version", cfg.tac_vocab_version, config["tac_vocab_version"])
+        if "horizons" in config:
+            _chk("horizons", list(cfg.core.trajectory.horizons), list(config["horizons"]))
+        if "goal_tau_steps" in config:
+            _chk("goal_tau_steps", list(cfg.goal_tau_steps), list(config["goal_tau_steps"]))
+        if isinstance(config.get("param_breakdown"), dict):
+            bd = v3.param_breakdown_v3(model)
+            _chk("param_breakdown", {k: int(v) for k, v in bd.items()},
+                 {k: int(v) for k, v in config["param_breakdown"].items()})
+        if conflict:
+>           raise SystemExit("[refcv3_arm] ⛔ config.json CONTRADICTS the rebuilt "
+                             "model — refusing rather than guessing which describes "
+                             "the weights:\n  " + "\n  ".join(conflict))
+E           SystemExit: [refcv3_arm] ⛔ config.json CONTRADICTS the rebuilt model — refusing rather than guessing which describes the weights:
+E             param_breakdown: config.json {'core': 15669281, 'phi_tac': 14608, 'str_goal_head': 27, 'gstr_cond': 608, 'tac_heads': 594, 'tac_latent_proj': 1056, 'scorer': 88, 'nav_inject': 2856, 'total': 19177397} vs rebuilt {'core': 15720481, 'phi_tac': 14608, 'str_goal_head': 27, 'gstr_cond': 608, 'tac_heads': 594, 'tac_latent_proj': 1056, 'scorer': 88, 'nav_inject': 2856, 'total': 19228597}
+
+taniteval\tools\refcv3_arm.py:1265: SystemExit
+---------------------------- Captured stdout setup ----------------------------
+[v3] ⚠️ --w-box3d > 0 with NO --join3d: `zh_mask` is all-False, so `loss_z`/`loss_h` are 0.0 over n=0 items and the total is EXACTLY the 2-D set loss. This is the 2-D rung, not a 3-D arm.
+[v3] ⚠️ --w-box3d > 0 with NO --join3d: `zh_mask` is all-False, so `loss_z`/`loss_h` are 0.0 over n=0 items and the total is EXACTLY the 2-D set loss. This is the 2-D rung, not a 3-D arm.
+[v3] ⚠️ --w-box3d > 0 with NO --join3d: `zh_mask` is all-False, so `loss_z`/`loss_h` are 0.0 over n=0 items and the total is EXACTLY the 2-D set loss. This is the 2-D rung, not a 3-D arm.
+---------------------------- Captured stdout call -----------------------------
+[v3] ⚠️ --w-box3d > 0 with NO --join3d: `zh_mask` is all-False, so `loss_z`/`loss_h` are 0.0 over n=0 items and the total is EXACTLY the 2-D set loss. This is the 2-D rung, not a 3-D arm.
+___ test_RED_ARM_a_box_stamp_without_n_queries_rebuilds_300_and_is_REFUSED ____
+
+records = {'pre': WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4139/i3_bench_records0/pre/ckpt.pt'), 'p...nobq': WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4139/i3_bench_records0/pre_nobq/ckpt.pt')}
+
+    def test_RED_ARM_a_box_stamp_without_n_queries_rebuilds_300_and_is_REFUSED(records):
+        with pytest.raises(SystemExit) as ei:
+            via_bench(records["pre_nobq"])
+        msg = str(ei.value)
+        assert "DISAGREE ON SHAPE" in msg and "size mismatch for _perception.box_dec.queries" in msg
+>       assert "core.agent_head" not in msg
+E       AssertionError: assert 'core.agent_head' not in '[refcv3_arm... 300, 256]).'
+E         
+E         'core.agent_head' is contained here:
+E           match for core.agent_head.queries: copying a param with shape torch.Size([1, 100, 256]) from checkpoint, the shape in current model is torch.Size([1, 300, 256]).
+E         ?           +++++++++++++++
+E           	size mismatch for _perception.box_dec.queries: copying a param with shape torch.Size([1, 100, 256]) from checkpoint, the shape in current model is torch.Size([1, 300, 256]).
+
+taniteval\tests\test_bench_stamped_queries.py:206: AssertionError
+---------------------------- Captured stdout call -----------------------------
+[v3] ⚠️ --w-box3d > 0 with NO --join3d: `zh_mask` is all-False, so `loss_z`/`loss_h` are 0.0 over n=0 items and the total is EXACTLY the 2-D set loss. This is the 2-D rung, not a 3-D arm.
+=========================== short test summary info ===========================
+FAILED stack\tests\test_loader_stamped_queries.py::test_a_PRE_A9_record_rebuilds_at_100_and_loads_STRICT[refcv3_arm.load_model]
+FAILED stack\tests\test_loader_stamped_queries.py::test_a_PRE_A9_record_rebuilds_at_100_and_loads_STRICT[closedloop_drive.RefCV3Policy]
+FAILED stack\tests\test_loader_stamped_queries.py::test_RED_ARM_a_box_stamp_without_n_queries_rebuilds_300_and_is_REFUSED[refcv3_arm.load_model]
+FAILED stack\tests\test_loader_stamped_queries.py::test_RED_ARM_a_box_stamp_without_n_queries_rebuilds_300_and_is_REFUSED[closedloop_drive.RefCV3Policy]
+FAILED stack::test_the_bench_loader_rebuilds_a_PRE_A9_record_at_100_and_loads_STRICT
+FAILED stack::test_RED_ARM_a_box_stamp_without_n_queries_rebuilds_300_and_is_REFUSED
+6 failed, 11 passed in 8.92s
+PYTEST_EXIT_M1_agent_rule_removed=1
+M1 revert: stack/scripts/refc_v3_train.py git-blob 203b437f0d0d86e97949cba3a8dedb810dc4d620 (line endings CRLF)
+M1 REVERTED byte-identical
+M2 apply: taniteval/tools/refcv3_arm.py git-blob 778656efa2f7ebf7e883b8f7650b1393706052b1 (line endings CRLF)
+=== M2_box_stamp_ignored ===
+FF.........F.....                                                        [100%]
+================================== FAILURES ===================================
+_ test_a_PRE_A9_record_rebuilds_at_100_and_loads_STRICT[refcv3_arm.load_model] _
+
+records = {'pre': WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4140/i3_records0/pre/ckpt.pt'), 'pre_nop... 'pre_nobq': WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4140/i3_records0/pre_nobq/ckpt.pt')}
+entry = 'refcv3_arm.load_model'
+
+    @pytest.mark.parametrize("entry", list(ENTRIES))
+    def test_a_PRE_A9_record_rebuilds_at_100_and_loads_STRICT(records, entry):
+>       model, prov = ENTRIES[entry](records["pre"])
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_loader_stamped_queries.py:174: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_loader_stamped_queries.py:144: in via_refcv3_arm
+    model, _cfg, _targs, prov = _arm().load_model(str(ck), None, "cpu", False)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+taniteval\tools\refcv3_arm.py:1319: in load_model
+    checks = cross_check_config(config, cfg, model)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+config = {'argv': ['--arm', 'hier', '--smoke', '--trunk', 'timm', '--trunk-name', ...], 'arm': 'hier', 'image_hw': [256, 640], 'horizons': [5, 10, 15, 20, 30, 40, ...], ...}
+cfg = RefCV3Config(tac_vocab_version='kin3', core=RefCConfig(encoder=CNNEncoderConfig(in_channels=9, image_size=256, image_w...se, max_speed_onehot_v6=False, u0_absent_under_ddim=None, nav_compliance_tau_file=None, nav_compliance_tau_sha256=None)
+model = RefCV3Model(
+  (core): RefCModel(
+    (encoder): TimmResNetTrunk(
+      (net): FeatureListNet(
+        (conv1): Conv2d...56,), eps=1e-05, elementwise_affine=True)
+      (head): Linear(in_features=256, out_features=23, bias=True)
+    )
+  )
+)
+
+    def cross_check_config(config: dict, cfg, model) -> dict:
+        """Every fact ``config.json`` states about the model must hold for the rebuilt
+        one. A contradiction is a REFUSAL naming BOTH values (the
+        ``adopt_ckpt_geometry`` lesson in ``t1_eval``) — never a silent override in
+        either direction. *(Harvested from the rescued draft.)*"""
+        from tanitad.refs import refc_v3 as v3
+        checks, conflict = {}, []
+    
+        def _chk(name, have, want):
+            checks[name] = {"config_json": want, "rebuilt": have}
+            if want is not None and have != want:
+                conflict.append(f"{name}: config.json {want!r} vs rebuilt {have!r}")
+    
+        if "arm" in config:
+            _chk("arm", "hier" if cfg.hier else "flat", config["arm"])
+        if "image_hw" in config:
+            _chk("image_hw", list(cfg.core.encoder.image_hw()), list(config["image_hw"]))
+        if "tac_vocab_version" in config:
+            _chk("tac_vocab_version", cfg.tac_vocab_version, config["tac_vocab_version"])
+        if "horizons" in config:
+            _chk("horizons", list(cfg.core.trajectory.horizons), list(config["horizons"]))
+        if "goal_tau_steps" in config:
+            _chk("goal_tau_steps", list(cfg.goal_tau_steps), list(config["goal_tau_steps"]))
+        if isinstance(config.get("param_breakdown"), dict):
+            bd = v3.param_breakdown_v3(model)
+            _chk("param_breakdown", {k: int(v) for k, v in bd.items()},
+                 {k: int(v) for k, v in config["param_breakdown"].items()})
+        if conflict:
+>           raise SystemExit("[refcv3_arm] ⛔ config.json CONTRADICTS the rebuilt "
+                             "model — refusing rather than guessing which describes "
+                             "the weights:\n  " + "\n  ".join(conflict))
+E           SystemExit: [refcv3_arm] ⛔ config.json CONTRADICTS the rebuilt model — refusing rather than guessing which describes the weights:
+E             param_breakdown: config.json {'core': 15669281, 'phi_tac': 14608, 'str_goal_head': 27, 'gstr_cond': 608, 'tac_heads': 594, 'tac_latent_proj': 1056, 'scorer': 88, 'nav_inject': 2856, 'total': 19177397} vs rebuilt {'core': 15669281, 'phi_tac': 14608, 'str_goal_head': 27, 'gstr_cond': 608, 'tac_heads': 594, 'tac_latent_proj': 1056, 'scorer': 88, 'nav_inject': 2856, 'total': 19228597}
+
+taniteval\tools\refcv3_arm.py:1265: SystemExit
+---------------------------- Captured stdout setup ----------------------------
+[v3] ⚠️ --w-box3d > 0 with NO --join3d: `zh_mask` is all-False, so `loss_z`/`loss_h` are 0.0 over n=0 items and the total is EXACTLY the 2-D set loss. This is the 2-D rung, not a 3-D arm.
+[v3] ⚠️ --w-box3d > 0 with NO --join3d: `zh_mask` is all-False, so `loss_z`/`loss_h` are 0.0 over n=0 items and the total is EXACTLY the 2-D set loss. This is the 2-D rung, not a 3-D arm.
+[v3] ⚠️ --w-box3d > 0 with NO --join3d: `zh_mask` is all-False, so `loss_z`/`loss_h` are 0.0 over n=0 items and the total is EXACTLY the 2-D set loss. This is the 2-D rung, not a 3-D arm.
+---------------------------- Captured stdout call -----------------------------
+[v3] ⚠️ --w-box3d > 0 with NO --join3d: `zh_mask` is all-False, so `loss_z`/`loss_h` are 0.0 over n=0 items and the total is EXACTLY the 2-D set loss. This is the 2-D rung, not a 3-D arm.
+_ test_a_PRE_A9_record_rebuilds_at_100_and_loads_STRICT[closedloop_drive.RefCV3Policy] _
+
+records = {'pre': WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4140/i3_records0/pre/ckpt.pt'), 'pre_nop... 'pre_nobq': WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4140/i3_records0/pre_nobq/ckpt.pt')}
+entry = 'closedloop_drive.RefCV3Policy'
+
+    @pytest.mark.parametrize("entry", list(ENTRIES))
+    def test_a_PRE_A9_record_rebuilds_at_100_and_loads_STRICT(records, entry):
+>       model, prov = ENTRIES[entry](records["pre"])
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_loader_stamped_queries.py:174: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_loader_stamped_queries.py:150: in via_closedloop
+    pol = cd.RefCV3Policy(str(ck), device="cpu")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\experiments\alpasim-gsplat\closedloop_drive.py:395: in __init__
+    self.model, self.cfg, self.targs, self.prov = refcv3_arm.load_model(
+taniteval\tools\refcv3_arm.py:1319: in load_model
+    checks = cross_check_config(config, cfg, model)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+config = {'argv': ['--arm', 'hier', '--smoke', '--trunk', 'timm', '--trunk-name', ...], 'arm': 'hier', 'image_hw': [256, 640], 'horizons': [5, 10, 15, 20, 30, 40, ...], ...}
+cfg = RefCV3Config(tac_vocab_version='kin3', core=RefCConfig(encoder=CNNEncoderConfig(in_channels=9, image_size=256, image_w...se, max_speed_onehot_v6=False, u0_absent_under_ddim=None, nav_compliance_tau_file=None, nav_compliance_tau_sha256=None)
+model = RefCV3Model(
+  (core): RefCModel(
+    (encoder): TimmResNetTrunk(
+      (net): FeatureListNet(
+        (conv1): Conv2d...56,), eps=1e-05, elementwise_affine=True)
+      (head): Linear(in_features=256, out_features=23, bias=True)
+    )
+  )
+)
+
+    def cross_check_config(config: dict, cfg, model) -> dict:
+        """Every fact ``config.json`` states about the model must hold for the rebuilt
+        one. A contradiction is a REFUSAL naming BOTH values (the
+        ``adopt_ckpt_geometry`` lesson in ``t1_eval``) — never a silent override in
+        either direction. *(Harvested from the rescued draft.)*"""
+        from tanitad.refs import refc_v3 as v3
+        checks, conflict = {}, []
+    
+        def _chk(name, have, want):
+            checks[name] = {"config_json": want, "rebuilt": have}
+            if want is not None and have != want:
+                conflict.append(f"{name}: config.json {want!r} vs rebuilt {have!r}")
+    
+        if "arm" in config:
+            _chk("arm", "hier" if cfg.hier else "flat", config["arm"])
+        if "image_hw" in config:
+            _chk("image_hw", list(cfg.core.encoder.image_hw()), list(config["image_hw"]))
+        if "tac_vocab_version" in config:
+            _chk("tac_vocab_version", cfg.tac_vocab_version, config["tac_vocab_version"])
+        if "horizons" in config:
+            _chk("horizons", list(cfg.core.trajectory.horizons), list(config["horizons"]))
+        if "goal_tau_steps" in config:
+            _chk("goal_tau_steps", list(cfg.goal_tau_steps), list(config["goal_tau_steps"]))
+        if isinstance(config.get("param_breakdown"), dict):
+            bd = v3.param_breakdown_v3(model)
+            _chk("param_breakdown", {k: int(v) for k, v in bd.items()},
+                 {k: int(v) for k, v in config["param_breakdown"].items()})
+        if conflict:
+>           raise SystemExit("[refcv3_arm] ⛔ config.json CONTRADICTS the rebuilt "
+                             "model — refusing rather than guessing which describes "
+                             "the weights:\n  " + "\n  ".join(conflict))
+E           SystemExit: [refcv3_arm] ⛔ config.json CONTRADICTS the rebuilt model — refusing rather than guessing which describes the weights:
+E             param_breakdown: config.json {'core': 15669281, 'phi_tac': 14608, 'str_goal_head': 27, 'gstr_cond': 608, 'tac_heads': 594, 'tac_latent_proj': 1056, 'scorer': 88, 'nav_inject': 2856, 'total': 19177397} vs rebuilt {'core': 15669281, 'phi_tac': 14608, 'str_goal_head': 27, 'gstr_cond': 608, 'tac_heads': 594, 'tac_latent_proj': 1056, 'scorer': 88, 'nav_inject': 2856, 'total': 19228597}
+
+taniteval\tools\refcv3_arm.py:1265: SystemExit
+---------------------------- Captured stdout call -----------------------------
+[v3] ⚠️ --w-box3d > 0 with NO --join3d: `zh_mask` is all-False, so `loss_z`/`loss_h` are 0.0 over n=0 items and the total is EXACTLY the 2-D set loss. This is the 2-D rung, not a 3-D arm.
+___ test_the_bench_loader_rebuilds_a_PRE_A9_record_at_100_and_loads_STRICT ____
+
+records = {'pre': WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4140/i3_bench_records0/pre/ckpt.pt'), 'p...nobq': WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4140/i3_bench_records0/pre_nobq/ckpt.pt')}
+
+    def test_the_bench_loader_rebuilds_a_PRE_A9_record_at_100_and_loads_STRICT(records):
+>       model, prov = via_bench(records["pre"])
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+taniteval\tests\test_bench_stamped_queries.py:138: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+taniteval\tests\test_bench_stamped_queries.py:120: in via_bench
+    model, _cfg, _targs, prov, _mod = B.load_refcv4b(str(ck))
+                                      ^^^^^^^^^^^^^^^^^^^^^^^
+taniteval\taniteval\bench\navsim\bridge.py:255: in load_refcv4b
+    model, cfg, targs, prov = mod.load_model(ckpt, config, "cpu", False)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+taniteval\tools\refcv3_arm.py:1319: in load_model
+    checks = cross_check_config(config, cfg, model)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+config = {'argv': ['--arm', 'hier', '--smoke', '--trunk', 'timm', '--trunk-name', ...], 'arm': 'hier', 'image_hw': [256, 640], 'horizons': [5, 10, 15, 20, 30, 40, ...], ...}
+cfg = RefCV3Config(tac_vocab_version='kin3', core=RefCConfig(encoder=CNNEncoderConfig(in_channels=9, image_size=256, image_w...se, max_speed_onehot_v6=False, u0_absent_under_ddim=None, nav_compliance_tau_file=None, nav_compliance_tau_sha256=None)
+model = RefCV3Model(
+  (core): RefCModel(
+    (encoder): TimmResNetTrunk(
+      (net): FeatureListNet(
+        (conv1): Conv2d...56,), eps=1e-05, elementwise_affine=True)
+      (head): Linear(in_features=256, out_features=23, bias=True)
+    )
+  )
+)
+
+    def cross_check_config(config: dict, cfg, model) -> dict:
+        """Every fact ``config.json`` states about the model must hold for the rebuilt
+        one. A contradiction is a REFUSAL naming BOTH values (the
+        ``adopt_ckpt_geometry`` lesson in ``t1_eval``) — never a silent override in
+        either direction. *(Harvested from the rescued draft.)*"""
+        from tanitad.refs import refc_v3 as v3
+        checks, conflict = {}, []
+    
+        def _chk(name, have, want):
+            checks[name] = {"config_json": want, "rebuilt": have}
+            if want is not None and have != want:
+                conflict.append(f"{name}: config.json {want!r} vs rebuilt {have!r}")
+    
+        if "arm" in config:
+            _chk("arm", "hier" if cfg.hier else "flat", config["arm"])
+        if "image_hw" in config:
+            _chk("image_hw", list(cfg.core.encoder.image_hw()), list(config["image_hw"]))
+        if "tac_vocab_version" in config:
+            _chk("tac_vocab_version", cfg.tac_vocab_version, config["tac_vocab_version"])
+        if "horizons" in config:
+            _chk("horizons", list(cfg.core.trajectory.horizons), list(config["horizons"]))
+        if "goal_tau_steps" in config:
+            _chk("goal_tau_steps", list(cfg.goal_tau_steps), list(config["goal_tau_steps"]))
+        if isinstance(config.get("param_breakdown"), dict):
+            bd = v3.param_breakdown_v3(model)
+            _chk("param_breakdown", {k: int(v) for k, v in bd.items()},
+                 {k: int(v) for k, v in config["param_breakdown"].items()})
+        if conflict:
+>           raise SystemExit("[refcv3_arm] ⛔ config.json CONTRADICTS the rebuilt "
+                             "model — refusing rather than guessing which describes "
+                             "the weights:\n  " + "\n  ".join(conflict))
+E           SystemExit: [refcv3_arm] ⛔ config.json CONTRADICTS the rebuilt model — refusing rather than guessing which describes the weights:
+E             param_breakdown: config.json {'core': 15669281, 'phi_tac': 14608, 'str_goal_head': 27, 'gstr_cond': 608, 'tac_heads': 594, 'tac_latent_proj': 1056, 'scorer': 88, 'nav_inject': 2856, 'total': 19177397} vs rebuilt {'core': 15669281, 'phi_tac': 14608, 'str_goal_head': 27, 'gstr_cond': 608, 'tac_heads': 594, 'tac_latent_proj': 1056, 'scorer': 88, 'nav_inject': 2856, 'total': 19228597}
+
+taniteval\tools\refcv3_arm.py:1265: SystemExit
+---------------------------- Captured stdout setup ----------------------------
+[v3] ⚠️ --w-box3d > 0 with NO --join3d: `zh_mask` is all-False, so `loss_z`/`loss_h` are 0.0 over n=0 items and the total is EXACTLY the 2-D set loss. This is the 2-D rung, not a 3-D arm.
+[v3] ⚠️ --w-box3d > 0 with NO --join3d: `zh_mask` is all-False, so `loss_z`/`loss_h` are 0.0 over n=0 items and the total is EXACTLY the 2-D set loss. This is the 2-D rung, not a 3-D arm.
+[v3] ⚠️ --w-box3d > 0 with NO --join3d: `zh_mask` is all-False, so `loss_z`/`loss_h` are 0.0 over n=0 items and the total is EXACTLY the 2-D set loss. This is the 2-D rung, not a 3-D arm.
+---------------------------- Captured stdout call -----------------------------
+[v3] ⚠️ --w-box3d > 0 with NO --join3d: `zh_mask` is all-False, so `loss_z`/`loss_h` are 0.0 over n=0 items and the total is EXACTLY the 2-D set loss. This is the 2-D rung, not a 3-D arm.
+=========================== short test summary info ===========================
+FAILED stack\tests\test_loader_stamped_queries.py::test_a_PRE_A9_record_rebuilds_at_100_and_loads_STRICT[refcv3_arm.load_model]
+FAILED stack\tests\test_loader_stamped_queries.py::test_a_PRE_A9_record_rebuilds_at_100_and_loads_STRICT[closedloop_drive.RefCV3Policy]
+FAILED stack::test_the_bench_loader_rebuilds_a_PRE_A9_record_at_100_and_loads_STRICT
+3 failed, 14 passed in 8.58s
+PYTEST_EXIT_M2_box_stamp_ignored=1
+M2 revert: taniteval/tools/refcv3_arm.py git-blob c5862e7180f643463e6443ec8d3431ab54ac948f (line endings CRLF)
+M2 REVERTED byte-identical
+ALL_MUTATIONS_DONE

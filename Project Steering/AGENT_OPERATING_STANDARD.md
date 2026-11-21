@@ -46,6 +46,31 @@ and reliably stranded the work. This standard replaces it.
    guessing. A flagged gap is far better than a confident wrong answer. If you could not do
    part of the task, say so plainly — do not quietly narrow the scope.
 
+6. TOKEN BUDGET (PI, 2026-10-11 — the weekly limit was burned in 1.5 days, twice; see
+   Project Steering/TOKEN_BURN_ANALYSIS_2026-10-11.md).
+   a. NEVER WAIT ON A LONG JOB WHILE ALIVE. If a job will run > ~4 min, write a <= 2k-token
+      HANDOFF.md in your package (state, artifact paths, exact next step, how to check the job)
+      and END your turn with it. A fresh agent continues from the handoff. Your prompt cache
+      expires after 5 min; every longer wait re-buys your whole context.
+   b. STAY SMALL. You own ONE deliverable. When your context approaches ~200k tokens, write the
+      handoff and end. Do not read whole large files or logs: grep/head/tail the part you need.
+   c. POLL WITH SCRIPTS, NOT TURNS. Use one background command or Monitor that wakes on the
+      event; never a loop of check-in tool calls.
+   d. HAND-BACK <= 300 WORDS + file paths. The full report lives in your package.
+
+7. DELETE YOUR OWN TEMP DATA (PI, 2026-11-07, binding). When your job ends, delete the temporary
+   files and copies YOU created that nothing needs: scratch exports, test folders, pulled copies
+   whose source still exists, mid-run checkpoints. NEVER delete the only copy of anything (bank it
+   first), anything another agent or a running job uses, or anything you did not create. Delete by
+   literal absolute path, and list each deletion (path, size) in your manifest.
+
+## ⛔ Research banking (binding, 2026-08-18)
+
+**Cite a paper ⇒ bank the paper.** `python tools/kb_add.py <arxiv-id> --tag <topic> --cited-by
+"<your report>"` files the PDF into `TanitAD Research Hub/Library/`, records a sha256, and reindexes.
+A citation you did not bank is `PUBLISHED-SECONDARY` and is **inadmissible for `MODEL_REGISTRY.md`
+or the paper**. Verify with `--verify` (content, not presence). Full rationale in `CLAUDE.md`.
+
 ## Traps preflight (each has cost hours more than once)
 - `pgrep -f`/`pkill -f <trainer>` SELF-MATCHES your ssh command and kills your own session.
   Kill by explicit PID only.
@@ -68,9 +93,19 @@ and reliably stranded the work. This standard replaces it.
 - **Weekly audit pair.** Run the *model-registry* and *repo-triage* agents every week. In one
   run they found a live bug, 4 reproducibility gaps, 3 lineage errors and an 80% val leak —
   the highest return of any agents in the program. They are cheap relative to what they catch.
-- **Nightly pod drift check.** `stack/scripts/pod_git_drift.py` reports any code that exists on
-  a pod but not in git. **A pod is not storage:** nothing that took more than an hour to produce
-  may live only on a pod.
+- **Nightly drift check — TWO tools, they are converses and both are required.**
+  - `stack/scripts/pod_git_drift.py` — **box → repo.** Reports code that exists on a box but not
+    in git. **A box is not storage:** nothing that took more than an hour to produce may live only
+    on one. ⚠️ **Repaired 2026-08-18** (defaults named four dead pods; index walked
+    `.claude/worktrees/`; basename-wide matching; no CRLF normalisation). On the live fleet it
+    would have printed **361 DRIFTED of which 293 = 81.2 % were artifacts**.
+  - `stack/scripts/launch_closure_audit.py` — **repo → box.** *Is the box running the repo?*
+    ⛔ **`pod_git_drift.py` cannot answer this, by construction** — a repo file missing or stale on
+    the box is invisible to a box→repo scan. That gap is C99/C102/C105: a 2.6×-stale
+    `refc_dump_latents.py` with three green md5s, and a `train_v6_staged.py` that still exported the
+    symbol its caller imports while missing all six `probe_applies` references.
+  ⚠️ **Do not substitute one for the other**, and note the third rung: presence proves transfer,
+  md5 proves bytes, a successful import proves loading — **none of them proves currency.**
 - **Registry refresh** whenever a model version is created, retired, or re-measured.
 
 ## Reviewing agent output — the checklist

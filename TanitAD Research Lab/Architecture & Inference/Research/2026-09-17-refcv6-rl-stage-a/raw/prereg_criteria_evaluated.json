@@ -1,0 +1,50 @@
+{
+ "_what": "The PRE-REGISTERED criteria of PREREG_DDV2_RL_VALIDATION.md section 13, evaluated.",
+ "_evidence_class": "MEASURED (ours)",
+ "_tier": "T0",
+ "_estimator": "taniteval.ci.paired_episode_cluster_bootstrap, n_boot 2000, seed 0",
+ "_thresholds_are_literals_from_the_prereg": {
+  "F1_ci_lower_floor_m": -15.01,
+  "F1_mean_spread_bar_m": 22.51,
+  "cold_start_spread_m": 37.5199
+ },
+ "F1_gate": {
+  "L1-RL-s0": {
+   "delta": -8.9872,
+   "lo": -11.3541,
+   "hi": -6.5142,
+   "ci95": 2.42,
+   "p_delta_gt0": 0.0,
+   "separated": true,
+   "mean_spread_m": 28.5327,
+   "retained_frac_of_cold_start": 0.7605,
+   "F1": "PASS"
+  },
+  "L1-NORL-s0": {
+   "delta": -2.1583,
+   "lo": -3.9559,
+   "hi": -0.3553,
+   "ci95": 1.8003,
+   "p_delta_gt0": 0.0095,
+   "separated": true,
+   "mean_spread_m": 35.3616,
+   "retained_frac_of_cold_start": 0.9425,
+   "F1": "PASS"
+  }
+ },
+ "primary_endpoint_dfan": {
+  "L1-RL-s0": {
+   "delta": 0.0363,
+   "lo": 0.0243,
+   "hi": 0.0475,
+   "ci95": 0.0116,
+   "p_delta_gt0": 1.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 493,
+   "n_episodes": 40,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  }
+ }
+}

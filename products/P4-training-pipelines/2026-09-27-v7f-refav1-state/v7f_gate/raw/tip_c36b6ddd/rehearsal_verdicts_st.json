@@ -1,0 +1,61 @@
+{
+ "_read": "a SUMMARY of a dev-box REHEARSAL token (the token itself is NOT banked: tokens stay in the agent's scratch copy). Signed with a throwaway test key, fake commit 7f7f..., never verifiable.",
+ "verdict": "INCOMPLETE",
+ "profile": "v7f",
+ "checks_in_token": {
+  "G-HYG": "MISSING",
+  "G-DVB": "MISSING",
+  "G-LIVE": "MISSING",
+  "G-CLOCK": "MISSING",
+  "G-EVAL": "MISSING",
+  "G-CKPT": "MISSING",
+  "G-SUITE": "MISSING"
+ },
+ "token_reasons": [
+  "no usable evidence yet for: ['G-HYG', 'G-DVB', 'G-LIVE', 'G-CLOCK', 'G-EVAL', 'G-CKPT', 'G-SUITE']",
+  "OPEN ITEM R2-NAV-NOT-BUILT: R2 (nav -> tactical + operative): --nav-cond is REQUIRED by the trainer's preflight and by this profile, but NOT BUILT at the tip -- build_stack_from_args never maps it into V6Config, so stack.nav is None and a nav-declared run trains WITHOUT the nav command (MEASURED c36b6ddd: raw/probe_navcond_tip.out.txt). Once mapped, the two R2 defects the R1/R4 builder found bite (synthetic_batch has no nav keys -> assert_isolation raises; the batch dict's nav_token literal overrides the NavEmitter splat, :7314/:7336) (owner: UNASSIGNED (the Master Mind assigns: map nav_cond + the two R2 defects, sibling D4))",
+  "OPEN ITEM R1-MAX-SPEED: R1 (max speed: tactical INPUT + plan cap): not in this tree; the R1/R4 builder proposes --max-speed-input-v6, --speed-max-sidecar-v6, --plan-vmax-cap (v7f_r1r4/RESULT.md). On landing: their G-DVB entries (declared_vs_built_v6) + required_on_v6 rows here (owner: the R1/R4 builder lands; the Master Mind closes)",
+  "OPEN ITEM R3-TACTICAL-LABELS: R3 (all tactical labels train the tactical layer): no tactical-label loss in this tree (train_v6_staged.py:2413-2415, :2584-2587). On landing: its weight's G-DVB entry, its V6_TERM_KEYS row in G-LIVE, and a required_positive row here; G-CLOCK becomes load-bearing (labels read at a window time) (owner: the R3 builder lands; the Master Mind closes)",
+  "OPEN ITEM R4-TAC-OP-COND-MODE: R4 (tactical conditions the operative plan): --tac-op-cond (R1/R4 builder) and its MODE -- PI decision D1 (detached vs e2e). Until ruled the flag goes in pi_pending_values (owner: the PI rules D1; the Master Mind lands the ruling as a required_values row)",
+  "OPEN ITEM R6-LITERALLY-OFF: R6 (strategic layer OFF): the tactical goal head reads cond=e_g_str from the UNTRAINED strategic head (v6.py:5938) -- 'off' is 'frozen at init', not 'absent'. PI decision D3: zero/bypass e_g_str, or accept the frozen random conditioning. G-LIVE holds every layer_str parameter bit-identical either way (owner: the PI rules D3)"
+ ],
+ "rehearsal": {
+  "notes": [
+   "data input --init-from (/home/nvidia/experiments/v7f-sw/ckpt.pt) is missing on this host",
+   "data input --nav-labels (/home/nvidia/data/v72/labels/s2_labels_v7.2_train.jsonl.gz) is missing on this host",
+   "data input --prev-gate (/home/nvidia/experiments/v7f-sw/stage_gate.json) is missing on this host",
+   "data input --v2-cache (/home/nvidia/data/physicalai-train-e438721ae894-w120-256x640cyl) is missing on this host"
+  ],
+  "checks": {
+   "G-CKPT": {
+    "status": "FAIL",
+    "reasons": [
+     "resume: the batches drawn after the resume are NOT the ones an uninterrupted run draws at the same steps -- they are the uninterrupted run's FIRST batches: the sampler/RNG stream restarts at every launch (seeded from --seed at train_v6_staged.py:6475-6478; the checkpoint carries no RNG state or data position, :7914)",
+     "resumed_final_vs_uninterrupted_final: key sets or tensors differ (96 differ, 0/0 one-sided)"
+    ]
+   },
+   "G-DVB": {
+    "status": "FAIL",
+    "reasons": [
+     "declared_vs_built_v6: 2 mismatch(es): --nav-cond: declared True but BUILT False (read from stack.cfg.nav_cond (read by V6Stack.forward/__init__)) -- a nav-declared arm whose model never sees the nav command | --nav-cond: declared True but BUILT False (read from stack.nav is not None) -- the NavConditioner that feeds all three layers",
+     "G-DVB behaviour probe: --nav-cond is declared but a forward WITHOUT a nav token RAN: the BUILT model does not consume the nav command (the channel is mandatory once built -- V6Stack.forward raises NavTokenMissing)"
+    ]
+   },
+   "G-EVAL": {
+    "status": "PASS",
+    "reasons": []
+   },
+   "G-HYG": {
+    "status": "FAIL",
+    "reasons": [
+     "4 config dataclass(es) do NOT refuse undeclared attributes at assignment: tanitad.config.EncoderConfig, tanitad.config.PredictorConfig, tanitad.config.ReadoutConfig, tanitad.models.v6.V6Config",
+     "setting an undeclared attribute SUCCEEDED on 4 config object(s) (the D-REFCV6-EQUALIZE-DROPPED mechanism): ['cfg (V6Config)', 'cfg.encoder (EncoderConfig)', 'cfg.predictor (PredictorConfig)', 'cfg.readout (ReadoutConfig)']"
+    ]
+   },
+   "G-LIVE": {
+    "status": "PASS",
+    "reasons": []
+   }
+  }
+ }
+}

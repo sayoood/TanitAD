@@ -1,0 +1,320 @@
+{
+ "tool": "taniteval/tools/refav1_arm.py",
+ "model": {
+  "ckpt": "C:/Users/Admin/refav1_eval_slice/ckpt_ep3/ckpt.pt",
+  "step": 21109,
+  "config_source": "C:/Users/Admin/refav1_eval_slice/ckpt_ep3/config.json",
+  "state_dict_load": {
+   "missing_keys": [],
+   "unexpected_keys": []
+  },
+  "eval_time_cfg_overrides": {},
+  "cfg": {
+   "tac_vocab_version": "v7.0",
+   "d_enc": 1024,
+   "n_tokens": 640,
+   "d_state": 1024,
+   "op_dt": 0.2,
+   "op_steps": 30,
+   "op_layers": 6,
+   "op_heads": 8,
+   "op_window": 4,
+   "tac_dt": 0.6,
+   "tac_steps": 10,
+   "tac_queries": 64,
+   "tac_layers": 4,
+   "str_dt": 3.0,
+   "str_steps": 2,
+   "str_dim": 256,
+   "str_layers": 2,
+   "str_horizon_s": 12.0,
+   "w_feat_str_ext": 0.25,
+   "a_dim": 2,
+   "speed_channel": true,
+   "tmix_groups": null,
+   "plan_horizon_s": 2.0,
+   "goal_times_s": [
+    2.0,
+    4.0,
+    6.0
+   ],
+   "plan_level": "tactical",
+   "verify_on_operative": true,
+   "tactical_cfg": {
+    "d_model": 512,
+    "depth": 6,
+    "n_heads": 8,
+    "n_maneuvers": 5,
+    "waypoint_horizons": [
+     5,
+     10,
+     15,
+     20
+    ],
+    "d_intent": 256,
+    "cadence": 5
+   },
+   "strategic_cfg": {
+    "n_commands": 4,
+    "d_cmd": 128,
+    "d_model": 384,
+    "depth": 4,
+    "n_heads": 6,
+    "d_ctx": 256,
+    "n_route": 3,
+    "cadence": 20
+   },
+   "w_feat_op": 1.0,
+   "w_feat_tac": 0.5,
+   "w_feat_str": 0.25,
+   "w_aux_head": 0.0,
+   "proposal_k": 1,
+   "w_cf": 0.0,
+   "cf_negs": 3,
+   "cf_tau": 1.0,
+   "cf_at_step": 4,
+   "motion_inject": false,
+   "w_tac_label": 0.1,
+   "w_str_label": 0.1,
+   "nav_inject": true,
+   "target_space": "frozen",
+   "detach_aux_targets": true,
+   "ema_targets": true,
+   "ema_decay": 0.996,
+   "ema_decay_end": 0.999,
+   "w_sigreg": 0.0,
+   "sigreg_slices": 512,
+   "var_floor": 0.0,
+   "min_participation": 0.0,
+   "bptt_truncate": 15
+  },
+  "trainable_parameters": 0,
+  "a_dim": 2,
+  "target_space": "frozen",
+  "tac_vocab_version": "v7.0"
+ },
+ "grid": {
+  "dt_s": 0.2,
+  "horizon_k": 10,
+  "wm_k": 30,
+  "window": 4,
+  "window_stride": 16,
+  "n_windows": 40,
+  "n_episodes": 8,
+  "n_episodes_available": 8
+ },
+ "arms": [
+  "cl",
+  "ha",
+  "ha0",
+  "ha0_ext",
+  "ol"
+ ],
+ "tiers": {
+  "cl": "T1",
+  "ha": "T1",
+  "ha0": "T1",
+  "ha0_ext": "T1",
+  "ol": "T0"
+ },
+ "arm_meaning": {
+  "cl": "T1 \u2014 plan() at t0, TRUE nav; predictor consumes the planner's own actions; trajectory = unicycle(controls, measured v0)",
+  "ha": "T1 \u2014 hold the last OBSERVED (a, kappa) (closes at t0) for K steps; consumes no recorded future",
+  "ha0": "T1 \u2014 CONSTANT VELOCITY: a = 0, kappa = 0 at the measured v0, i.e. a straight line at constant speed. The STRONGEST TRIVIAL BASELINE and the echo test's real bar; consumes strictly less than ha (not even the last observed action)",
+  "ha0_ext": "T1 \u2014 THE ECHO CONTROL (stack/tanitad/eval/echo_gate.py::ha0_ext, refav1 form): constant (a0, kappa0) from the MEASURED t0 state held for K steps. a0 = (v[2t] - v[2t-2]) / 0.2 is the SAME backward difference ha holds (the forward one reads v[2t+2], the future); kappa0 = actions[2t, 0], the recorded curvature AT t0, where ha reads it at t0-1 (echo_gate's named weakness #2, closed). Same unicycle as every other arm. \u26a0\ufe0f NOT the corpus-ax form (echo_gate's weakness #1): the v2ep carries no measured ax, so the sharper variant is not constructible from these inputs \u2014 a WORK ITEM, stated, not hidden",
+  "ol": "T0 \u2014 the RECORDED future (a, kappa) integrated from v0: the kinematic-contract control (must reproduce GT), NOT a WM diagnostic"
+ },
+ "plan_cfg": {
+  "n_samples": 300,
+  "n_iters": 30,
+  "n_elites": 30,
+  "init_var": 1.0,
+  "horizon": 10,
+  "dt": 0.2,
+  "a_max": 4.0,
+  "kappa_max": 0.2,
+  "beta": 2.5,
+  "decay": 1.25,
+  "min_samples": 32,
+  "elite_memory": 0.3,
+  "shift_init": true,
+  "alpha": 0.1,
+  "inject_baselines": true,
+  "seed": 0
+ },
+ "goal_rule": {
+  "lat_logit_bias": null,
+  "source": "plain argmax (legacy path)",
+  "goal_kappa_turn": null,
+  "goal_kappa_turn_source": "shipped GOAL_KAPPA_TURN",
+  "site": "refa_v1._imagine_tactical_goal -> lat_head(intent).argmax",
+  "why_it_matters": "the decoded token's canonical profile is the planner's ONLY curvature-carrying candidate; a LANE_KEEP decode forces curvature EXACTLY 0 (MEASURED 244/244 windows, step 21109)"
+ },
+ "cost": {
+  "metric": "cos",
+  "weights": {
+   "W_JERK": 0.0,
+   "W_KAPPA": 0.0,
+   "W_VEND": 64.2971504241507
+  },
+  "weights_source": "CLI override (--cost-weights)",
+  "shipped_weights": {
+   "W_JERK": 0.02,
+   "W_KAPPA": 0.05,
+   "W_VEND": 0.1
+  },
+  "cost_metrics_available": [
+   "cos",
+   "chord",
+   "ccos"
+  ],
+  "rule": "cost_metric selects the goal term's form (refa_v1.COST_METRICS: cos = 1-cos(z,g), the shipped default; chord = ||z^-g^||, monotone-equivalent; ccos = 1-cos(z-z_ref, g-z_ref) centred on the window's own zero-action terminal field). Neither non-default form is weight-neutral, so the weight triple is banked beside the metric, never assumed"
+ },
+ "plan_source_names": [
+  "cem",
+  "baseline:cv",
+  "baseline:hold_v0",
+  "baseline:proposal",
+  "baseline:decel_1.5"
+ ],
+ "nav_shuffle": {
+  "seed": 0,
+  "n_windows": 40,
+  "n_valid": 40,
+  "n_changed": 23,
+  "changed_frac": 0.575,
+  "rule": "permutation among nav_valid windows; invalid rows keep nav_cmd=0 / nav_valid=False and are EXCLUDED from route accuracy"
+ },
+ "speed_channel": {
+  "enabled": true,
+  "rule": "derived by RefAV1.augment_actions in forward() AND plan(): v_k = v0 + sum_{j<k} a_j dt, scaled by SPEED_SCALE_MPS; this adapter passes 2-wide (a, kappa) + measured v0 and never widens actions (the model refuses a 3-wide input)"
+ },
+ "hold_action_rule": "The last OBSERVED action \u2014 the (a, kappa) that CLOSES at t0.\n\n``loader._kin_actions(v, kap, t-1, 1)`` reads ``v[2t-2]``, ``v[2t]`` and\n``kap[2t-2]``: every frame is <= 2t, so NOTHING recorded after t0 enters.\n(The action OPENING at t would need ``v[2t+2]`` \u2014 a future value \u2014 which is\nwhy it is not the one held.)\n",
+ "hold_v0_rule": "\u2b50 THE STRONGEST TRIVIAL BASELINE: ``a = 0, kappa = 0`` for K steps.\n\nIntegrated from the measured ``v0`` this is a CONSTANT-VELOCITY STRAIGHT LINE \u2014 the\ncontrol C101 measured our CEM planner 35.8 % worse than, and the one the echo test\nmust actually be run against.\n\n\u26d4 WHY IT EXISTS (MEASURED 2026-09-03, and it voided a read): at step 1,000 the\nclosed-loop arm ``cl`` was a straight constant-speed line on **140/140** windows, so\nthe whole \"lateral planning beats holding\" reading was a straight line beating the\nhold-action control's held, NOISY kappa (which drifts 0.12 m even where the human\ndrives straight). Against ``ha`` alone that reads as lateral SKILL. Against ``ha0``\nit reads as what it is: nothing. ``ha`` is NOT the trivial floor \u2014 it is a control\nthat can be WORSE than trivial, and comparing only to it manufactures a win.\n\nConsumes strictly less than ``hold_action_controls``: no recorded action at all,\nonly the measured ``v0`` the PI ruling of 2026-09-02 admits.\n",
+ "action_units": {
+  "recorded": "kappa",
+  "planner_search": "kappa",
+  "planner_to_model": "kappa",
+  "L_enc_m": 2.9,
+  "rule": "v2ep actions[:,0] is a road-wheel angle (physicalai.signals_at: steer = arctan(L_enc*curvature), L_enc MEASURED = 2.9 exactly). 'kappa' = the LEGACY reading (integrate it unconverted, hand it to the model unconverted); 'steer' = the repaired contract (kappa = tan(steer)/L_enc before any integration, steer = arctan(L_enc*kappa) at the model boundary). The two are NOT comparable."
+ },
+ "goal": {
+  "source_names": [
+   "none",
+   "supplied",
+   "tactical_imagined"
+  ],
+  "space": [
+   "tactical_query_field"
+  ],
+  "rule": "per window from PlanResult.goal_source / goal_space / goal_action (refa_v1.plan, e609a98): goal_source_<arm> indexes source_names, goal_{lat,lon}_<arm> index the tac vocabulary (-1 = no decoded action). An absent attribute reads 'none' \u2014 never inferred."
+ },
+ "corpus": {
+  "cache": "C:/Users/Admin/refav1_margin/p4/fp8",
+  "episodes": "C:/Users/Admin/refav1_margin/p4/eps",
+  "labels": "C:/Users/Admin/navcomp/data/s2_labels_v7.2_eval.jsonl.gz",
+  "nav": "C:/Users/Admin/navcomp/data/s2_labels_v7.2_eval.jsonl.gz",
+  "cache_index": null,
+  "join_report": {
+   "rule": "in-band iff |t_now - t0| <= (tac_hi - tac_lo)/2; t_now = t * 0.2 s (RAW timeline, no n_stack offset \u2014 see module docstring)",
+   "labels": {
+    "n_episodes": 8,
+    "n_labeled": 8,
+    "n_missing": 0,
+    "missing_episodes": [],
+    "n_windows": 535,
+    "n_windows_in_band": 168,
+    "band_tol_s": [
+     2.0
+    ],
+    "tac_vocab_version": "v7.0",
+    "path": "C:\\Users\\Admin\\navcomp\\data\\s2_labels_v7.2_eval.jsonl.gz",
+    "md5": "aa12c948f062181c3297265b51526ec5",
+    "n_records": 147,
+    "schema_version": "s2-geom-v7",
+    "vocab": "v7",
+    "allow_oracle_nav": true,
+    "divergences": [],
+    "_read": "md5 is the identity \u2014 six copies of this blob exist under three roots and their md5s differ."
+   },
+   "nav": {
+    "n_episodes": 8,
+    "n_labeled": 8,
+    "n_missing": 0,
+    "missing_episodes": [],
+    "unlabeled_default": "nav_cmd=0 ('follow', refb.py:60) + nav_valid=False",
+    "nav_arg_semantics": "t0_constant",
+    "n_clips_mapped": 8,
+    "n_label_records": 147,
+    "path": "C:\\Users\\Admin\\navcomp\\data\\s2_labels_v7.2_eval.jsonl.gz",
+    "md5": "aa12c948f062181c3297265b51526ec5",
+    "n_records": 147,
+    "schema_version": "s2-geom-v7",
+    "vocab": "v7",
+    "allow_oracle_nav": true,
+    "divergences": [],
+    "_read": "md5 is the identity \u2014 six copies of this blob exist under three roots and their md5s differ."
+   }
+  }
+ },
+ "episodes": [
+  {
+   "file_index": 0,
+   "episode_index": 0,
+   "name": "18b72291-84f4-45e0-a736-908fc303020e",
+   "clip_id": "18b72291-84f4-45e0-a736-908fc303020e",
+   "n_windows": 5
+  },
+  {
+   "file_index": 1,
+   "episode_index": 1,
+   "name": "24fee8a5-9ccc-4610-b27b-560f08fd46c8",
+   "clip_id": "24fee8a5-9ccc-4610-b27b-560f08fd46c8",
+   "n_windows": 5
+  },
+  {
+   "file_index": 2,
+   "episode_index": 2,
+   "name": "af6f5964-2634-46e3-bbb1-ac2b194aec5f",
+   "clip_id": "af6f5964-2634-46e3-bbb1-ac2b194aec5f",
+   "n_windows": 5
+  },
+  {
+   "file_index": 3,
+   "episode_index": 3,
+   "name": "dbad28c2-dfc1-4860-8c45-bd51760bc969",
+   "clip_id": "dbad28c2-dfc1-4860-8c45-bd51760bc969",
+   "n_windows": 5
+  },
+  {
+   "file_index": 4,
+   "episode_index": 4,
+   "name": "ebd51f52-29f6-4422-b9da-1a90cbbb48f2",
+   "clip_id": "ebd51f52-29f6-4422-b9da-1a90cbbb48f2",
+   "n_windows": 5
+  },
+  {
+   "file_index": 5,
+   "episode_index": 5,
+   "name": "f1e1536b-1e23-4d73-bbf9-492a54358d10",
+   "clip_id": "f1e1536b-1e23-4d73-bbf9-492a54358d10",
+   "n_windows": 5
+  },
+  {
+   "file_index": 6,
+   "episode_index": 6,
+   "name": "fe764229-15df-4506-b7e4-2977fd78e834",
+   "clip_id": "fe764229-15df-4506-b7e4-2977fd78e834",
+   "n_windows": 5
+  },
+  {
+   "file_index": 7,
+   "episode_index": 7,
+   "name": "fe83e06e-3c2c-46a6-8b08-9f1a547cba1f",
+   "clip_id": "fe83e06e-3c2c-46a6-8b08-9f1a547cba1f",
+   "n_windows": 5
+  }
+ ],
+ "wallclock_s": 1695.4,
+ "first_plan_s": 43.32391023635864
+}

@@ -1,0 +1,69 @@
+{
+ "logits": "C:/Users/Admin/refav1_drive/logits_stride40.npz",
+ "n_windows_with_gt": 282,
+ "n_gt_turn": 132,
+ "n_gt_straight": 150,
+ "score": "max(TURN_/NUDGE_/LANE_CHANGE_ logits) - LANE_KEEP logit",
+ "AUC": 0.712020202020202,
+ "CONTROL_AUC_shuffled_labels": {
+  "mean": 0.5055361111111111,
+  "sd": 0.03355664054427061,
+  "expect": 0.5,
+  "n_shuffles": 200
+ },
+ "argmax_operating_point": {
+  "turn_recall": 0.20454545454545456,
+  "false_turn_on_straight": 0.07333333333333333,
+  "best_threshold_recall_at_same_false_rate": 0.2196969696969697
+ },
+ "frontier": {
+  "false_turn<=0.05": {
+   "max_turn_recall": 0.17424242424242425,
+   "threshold": 0.48547011613845825
+  },
+  "false_turn<=0.1": {
+   "max_turn_recall": 0.26515151515151514,
+   "threshold": -0.8182159513235092
+  },
+  "false_turn<=0.15": {
+   "max_turn_recall": 0.3484848484848485,
+   "threshold": -1.0852623581886292
+  },
+  "false_turn<=0.2": {
+   "max_turn_recall": 0.4696969696969697,
+   "threshold": -1.201526403427124
+  },
+  "false_turn<=0.3": {
+   "max_turn_recall": 0.6439393939393939,
+   "threshold": -1.2759461402893066
+  },
+  "false_turn<=0.5": {
+   "max_turn_recall": 0.8181818181818182,
+   "threshold": -1.52312433719635
+  }
+ },
+ "missed_turn_margins": {
+  "n_missed_turns": 105,
+  "lane_keep_won_by_p10": 1.063181710243225,
+  "lane_keep_won_by_p50": 1.251526117324829,
+  "lane_keep_won_by_p90": 1.6522774219512941,
+  "frac_missed_within_1_logit": 0.0761904761904762,
+  "frac_missed_within_2_logits": 1.0,
+  "frac_missed_beyond_4_logits": 0.0,
+  "CONTROL_correctly_held": {
+   "n": 139,
+   "lane_keep_won_by_p10": 1.117104697227478,
+   "lane_keep_won_by_p50": 1.5488380193710327,
+   "lane_keep_won_by_p90": 1.7597341258078814,
+   "median_gap_vs_missed_turns": 0.2973119020462036,
+   "note": "must be LARGER than the missed-turn margin, else the score is flat and no threshold separates them"
+  }
+ },
+ "control_passes": true,
+ "separation_summary": {
+  "auc": 0.712020202020202,
+  "median_margin_gap_logits": 0.2973119020462036,
+  "recall_cost_per_true_turn": 0.4888888888888888
+ },
+ "verdict": "STEP 1 IS REAL BUT WEAK AND EXPENSIVE: the head DOES separate (AUC 0.712 vs shuffled 0.506), but the margin distributions overlap heavily \u2014 LANE_KEEP wins by a median 0.297 logits MORE where it is right than where it is wrong. A uniform threshold shift therefore flips holds and turns nearly together, and recall is bought at a steep false-turn price. \u21d2 Step 1 helps but is UNLIKELY TO BE SUFFICIENT; Step 2 (fine-tune the goal head to SHARPEN this separation) is indicated \u2014 and note the separation, not the capability, is what is missing: the information is present."
+}

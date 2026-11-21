@@ -1,0 +1,109 @@
+{
+  "verdict": "NO-GO",
+  "n_pass": 11,
+  "n_fail": 1,
+  "n_inconclusive": 4,
+  "checks": [
+    {
+      "state": "PASS",
+      "check": "refcv5 modules import",
+      "detail": "12/12 import"
+    },
+    {
+      "state": "PASS",
+      "check": "trainer imports",
+      "detail": "refc_v3_train loaded from C:\\Users\\Admin\\tanitad-review-20260906\\stack\\scripts\\refc_v3_train.py"
+    },
+    {
+      "state": "PASS",
+      "check": "class enum is the corpus enum",
+      "detail": "n=10 identical=True fabricated=none; control: 'automobile' in enum=True"
+    },
+    {
+      "state": "PASS",
+      "check": "query budget covers the train corpus",
+      "detail": "--agent-queries default 100 (train max 94, val40 max 24). Upstream N_QUERIES_DEFAULT is 100 (ruled M17; 16 was REFUTED at 11.17 pct of boxes dropped, nearest sacrificed target 7.3 m) and covers the train max: True. refcv5 is NOT exposed either way (build_agent_head always passes n_queries explicitly). Second spellings found: none",
+      "agent_queries": 100,
+      "upstream_default": 100,
+      "upstream_covers_train_max": true,
+      "duplicate_spellings": []
+    },
+    {
+      "state": "FAIL",
+      "check": "every weighted term has a gradient",
+      "detail": "agent_w_ground grad=1.164e-10 n=64; agent_w_project grad=1.462e-03 n=64 | DEAD: ['agent_w_ground'] -- the weight would be stamped into config.json and add exactly 0 to the total | control: 1 of 2 terms are live",
+      "grads": {
+        "agent_w_project": 0.0014618588611483574,
+        "agent_w_ground": 1.1641532182693481e-10
+      },
+      "dead_terms": [
+        "agent_w_ground"
+      ]
+    },
+    {
+      "state": "PASS",
+      "check": "the seam guards refuse their defects",
+      "detail": "4/4 guards fired; control (legal config) passed"
+    },
+    {
+      "state": "PASS",
+      "check": "every knob reaches config.json",
+      "detail": "18 knobs derived from argparse, 0 missing from the stamp; control: n_knobs > 12 = True",
+      "n_knobs": 18
+    },
+    {
+      "state": "PASS",
+      "check": "the camera scope is stated",
+      "detail": "mount_pose_scope=PER-CLIP n_clips=2400 per_clip_bank=True",
+      "mount_pose_scope": "PER-CLIP",
+      "n_clips": 2400
+    },
+    {
+      "state": "INCONCLUSIVE",
+      "check": "v2 cache present with stable ids",
+      "detail": "no --v2-cache given. Parity is physicalai-train-e438721ae894 (2,376 eps, skip-hash f09e44db); without a cache no real arm can start."
+    },
+    {
+      "state": "PASS",
+      "check": "the corpus clip list is the PARITY set",
+      "detail": "2400 clip_ids, sha256 e61a04553df5b9d5 vs committed e61a04553df5b9d5 -> MATCH (control: the manifest names 2376 episodes after the 24-clip skip)",
+      "n_clips": 2400,
+      "parity_digest_match": true
+    },
+    {
+      "state": "INCONCLUSIVE",
+      "check": "agent join joins to the cache",
+      "detail": "no --agent-join given; --agents head REFUSES without it, so E-AGT-HEAD cannot train"
+    },
+    {
+      "state": "INCONCLUSIVE",
+      "check": "join digest declares its scope",
+      "detail": "no --agent-join"
+    },
+    {
+      "state": "PASS",
+      "check": "v7.2 tactical labels cover the corpus",
+      "detail": "2400/2400 episodes labelled (1.0000); the trainer's floor is 0.50 (control: 2400 labelled clips read from the file)",
+      "v7_coverage": 1.0
+    },
+    {
+      "state": "PASS",
+      "check": "per-clip cameras cover the corpus",
+      "detail": "2400/2400 episodes have their own camera (1.0000); bank holds 2400 clips",
+      "camera_coverage": 1.0
+    },
+    {
+      "state": "PASS",
+      "check": "anchor vocabulary declares its units",
+      "detail": "controls present: True; declared control_units: 'alat' (source 'file'); declared meta {'control_units': 'alat', 'horizon_s': 6.0, 'dt': 0.1, 'ref_speed_ms': 10.0, 'kappa_cap': 0.12, 'alat_v_floor': 4.0}; deliberate-regression control (units stripped) REFUSED (good). A controls-carrying file that declares nothing must be REFUSED unless --anchor-control-units is passed by name.",
+      "control_units": "alat",
+      "control_units_source": "file",
+      "regression_refused": true
+    },
+    {
+      "state": "INCONCLUSIVE",
+      "check": "a 2-step run states every weight",
+      "detail": "--smoke not passed, so the end-to-end record was NOT checked"
+    }
+  ]
+}

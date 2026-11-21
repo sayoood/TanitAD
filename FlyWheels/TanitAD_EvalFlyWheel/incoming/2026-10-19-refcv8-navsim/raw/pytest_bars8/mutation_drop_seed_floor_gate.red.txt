@@ -1,0 +1,57 @@
+................................FF..F...........F........                [100%]
+================================== FAILURES ===================================
+____________________ test_n1_inside_2x_floor_is_not_proven ____________________
+
+    def test_n1_inside_2x_floor_is_not_proven():
+        # LEGAL .60 / s1 .54 -> floor 6.0 ; margin 10.0 <= 2 x 6.0 = 12.0 -> NOT PROVEN even though the interval is separated
+        r = ev({"R8_LEGAL": 0.60, "R8_LEGAL_s1": 0.54, "STOP": 0.50})
+        n1 = r["bars"]["BAR-R8-N1"]
+>       assert n1["seed_floor_x100"] == 6.0 and n1["verdict"].startswith("NOT PROVEN")
+E       AssertionError: assert (6.0 == 6.0 and False)
+E        +  where False = <built-in method startswith of str object at 0x0000020EB283F480>('NOT PROVEN')
+E        +    where <built-in method startswith of str object at 0x0000020EB283F480> = 'PASS'.startswith
+
+tests\test_navsim_bars8.py:196: AssertionError
+_____________________ test_n4_inside_floor_is_not_proven ______________________
+
+    def test_n4_inside_floor_is_not_proven():
+        # LEGAL .60 / s1 .585 -> floor 1.5 ; R7 .575 : seed-0 margin 2.5 clears the floor, seed-1 margin 1.0 does not
+        r = ev({"R8_LEGAL": 0.60, "R8_LEGAL_s1": 0.585, "STOP": 0.40, B.R7_ARM: 0.575})
+        n4 = r["bars"]["BAR-R8-N4"]
+>       assert n4["per_arm_verdict"]["R8_LEGAL"] == "PASS" and n4["per_arm_verdict"]["R8_LEGAL_s1"].startswith("NOT PROVEN")
+E       AssertionError: assert ('PASS' == 'PASS'
+E         
+E           PASS and False)
+E        +  where False = <built-in method startswith of str object at 0x0000020EB283F480>('NOT PROVEN')
+E        +    where <built-in method startswith of str object at 0x0000020EB283F480> = 'PASS'.startswith
+
+tests\test_navsim_bars8.py:204: AssertionError
+_____________________ test_n1_needs_the_floor_arm_to_pass _____________________
+
+    def test_n1_needs_the_floor_arm_to_pass():
+        r = ev({"R8_LEGAL": 0.60, "STOP": 0.50})
+>       assert r["bars"]["BAR-R8-N1"]["verdict"].startswith("NOT PROVEN (inference-seed floor not measured")
+E       AssertionError: assert False
+E        +  where False = <built-in method startswith of str object at 0x0000020EB283F480>('NOT PROVEN (inference-seed floor not measured')
+E        +    where <built-in method startswith of str object at 0x0000020EB283F480> = 'PASS'.startswith
+
+tests\test_navsim_bars8.py:225: AssertionError
+_______________________ test_n2_literal[kw1-NOT PROVEN] _______________________
+
+kw = {'sf': 0.001}, expect = 'NOT PROVEN'
+
+    @pytest.mark.parametrize("kw,expect", [({}, "PASS"), ({"sf": 0.001}, "NOT PROVEN"), ({"lo": -0.001}, "FAILED"), ({"legal": 0.2269}, "FAILED")])
+    def test_n2_literal(kw, expect):
+        # margin = 0.30 - max(0.10, 0.2985, 0.20) = 0.0015 ; floor 0.0004 -> 0.0015 > 0.0008 PASS ; floor 0.001 -> 0.0015 <= 0.002 NOT PROVEN
+>       assert B.navhard_bar(_nh(**kw), ELIGIBLE, B.DEFAULT_CFG)["verdict"].startswith(expect)
+E       AssertionError: assert False
+E        +  where False = <built-in method startswith of str object at 0x0000020EB283F480>('NOT PROVEN')
+E        +    where <built-in method startswith of str object at 0x0000020EB283F480> = 'PASS'.startswith
+
+tests\test_navsim_bars8.py:320: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_navsim_bars8.py::test_n1_inside_2x_floor_is_not_proven - As...
+FAILED tests/test_navsim_bars8.py::test_n4_inside_floor_is_not_proven - Asser...
+FAILED tests/test_navsim_bars8.py::test_n1_needs_the_floor_arm_to_pass - Asse...
+FAILED tests/test_navsim_bars8.py::test_n2_literal[kw1-NOT PROVEN] - Assertio...
+4 failed, 53 passed, 2 deselected in 26.95s

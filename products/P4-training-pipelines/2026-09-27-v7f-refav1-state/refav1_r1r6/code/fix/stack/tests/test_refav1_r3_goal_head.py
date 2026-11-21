@@ -1,0 +1,257 @@
+"""R3 (PI 2026-09-27): ALL tactical labels train the tactical layer -- the v7.2 goal vocabulary.
+
+WHAT IS BUILT: the 22-token tactical goal SET as 22 independent sigmoids (multi-label BCE) on
+the tactical INTENT (the same vector the lat/lon decision reads), per-cell evidence weights from
+the ONE projection (`v7_labels.tactical_goal_targets`), `pos_weight` + class mask FITTED FROM
+THE LOADED SPLIT; plus SPEED_BAND's ARGUMENTS (v_lo, v_hi) regressed from the same intent.
+
+WHY MULTI-LABEL AND NOT A FACTORED CE (the brief asks for the justification):
+  * the set is a SET -- MEASURED 2-7 goals per record (mean 2.751) -- so a softmax would turn a
+    set into a choice (the 5-way manoeuvre-softmax defect one layer up);
+  * the negatives are PER CELL: a CoT-backed token's absence means "the caption did not say
+    so", so under the provenance policy it must be IGNORED, not trained as "none". A factored CE
+    with a "none" class would have to supervise exactly those unknowable cells;
+  * mutual exclusion (e.g. the four traffic-light colours) enters as ENTAILED negatives, which
+    a per-cell BCE consumes directly.
+
+THE GOAL FAMILY REACH CHECK (`_reach`): a family is GREEN iff it has >= 1 supervised cell, its
+term is finite, and back-propagating THAT term ALONE gives a non-zero gradient on its own head
+row AND on the tactical policy (i.e. it really trains the tactical LAYER). SPEED_BAND's family
+is its argument regression: its presence bit is 1 on every record, a constant, and the split-
+fitted mask switches that bit off. Deliberate-regression arms must go RED.
+"""
+import gzip
+import hashlib
+import importlib.util
+import json
+import os
+import sys
+from pathlib import Path
+
+import pytest
+import torch
+
+from tanitad.config import StrategicPolicyConfig, TacticalPolicyConfig
+from tanitad.data import v7_labels as v7l
+from tanitad.refs.refa_v1 import RefAV1, RefAV1Config
+
+TOKENS = v7l.TAC_GOAL_TOKENS
+TL = ("TRAFFIC_LIGHT_REACT", "TRAFFIC_LIGHT_REACT_RED", "TRAFFIC_LIGHT_REACT_YELLOW",
+      "TRAFFIC_LIGHT_REACT_GREEN")
+FAMILIES = tuple(t for t in TOKENS if t != "SPEED_BAND") + ("SPEED_BAND(args)",)
+
+
+def _cfg(**kw) -> RefAV1Config:
+    base = dict(d_enc=16, d_state=16, n_tokens=8, op_layers=1, op_heads=2, op_window=2,
+                tac_queries=4, tac_layers=1, str_dim=8, str_layers=1, w_goal=0.1,
+                w_speed_band=0.1,
+                strategic_cfg=StrategicPolicyConfig(d_model=16, depth=1, n_heads=2, d_ctx=8,
+                                                    d_cmd=8),
+                tactical_cfg=TacticalPolicyConfig(d_model=16, depth=1, n_heads=2, d_intent=8))
+    base.update(kw)
+    return RefAV1Config(**base)
+
+
+def _model(seed=0, fit=True, **kw):
+    torch.manual_seed(seed)
+    m = RefAV1(_cfg(**kw))
+    with torch.no_grad():
+        m.std.fit(torch.randn(64, 16, generator=torch.Generator().manual_seed(9)))
+    if fit and m.goal_head is not None:
+        m.set_goal_supervision(torch.ones(len(TOKENS)), torch.ones(len(TOKENS)))
+    return m
+
+
+def _batch(n=6):
+    """Every token POSITIVE on row i % n-ish and NEGATIVE elsewhere, every cell supervised."""
+    g = torch.Generator().manual_seed(2)
+    y = torch.zeros(n, len(TOKENS))
+    for i in range(len(TOKENS)):
+        y[i % n, i] = 1.0
+    return dict(feats=torch.randn(n, 2, 8, 16, generator=g),
+                actions=torch.randn(n, 30, 2, generator=g) * 0.1,
+                future_feats=torch.randn(n, 30, 8, 16, generator=g),
+                v0=torch.rand(n, generator=g) * 20, nav_cmd=torch.arange(n) % 3,
+                goal_y=y, goal_w=torch.ones(n, len(TOKENS)),
+                speed_band=torch.stack([torch.arange(n) * 2.0, torch.arange(n) * 2.0 + 1.5], -1),
+                speed_band_mask=torch.ones(n, dtype=torch.bool))
+
+
+def _reach(m, b, detach_intent=False) -> dict:
+    """family -> {"n_sup", "finite", "g_head", "g_tactical", "green"}."""
+    rep = {}
+    kw = {k: v for k, v in b.items() if k not in ("feats", "actions", "future_feats")}
+    if m.goal_head is None and m.speed_band_head is None:
+        return {f: {"green": False, "why": "no R3 head built"} for f in FAMILIES}
+    orig = m.goal_head.forward if m.goal_head is not None else None
+    if detach_intent and m.goal_head is not None:     # the regression arm: a detached intent
+        m.goal_head.forward = lambda x: orig(x.detach())
+    try:
+        for fam in FAMILIES:
+            m.zero_grad(set_to_none=True)
+            out = m(b["feats"], b["actions"], future_feats=b["future_feats"], **kw)
+            if fam == "SPEED_BAND(args)":
+                if m.speed_band_head is None:
+                    rep[fam] = {"green": False, "why": "no speed-band head"}
+                    continue
+                term, n_sup = out["loss_speed_band"], out["n_speed_band"]
+                head_w = m.speed_band_head[-1].weight
+                row = None
+            else:
+                if m.goal_head is None:
+                    rep[fam] = {"green": False, "why": "no goal head"}
+                    continue
+                i = TOKENS.index(fam)
+                term, n_sup = out["goal_loss_tok"][i], out["goal_n_sup_tok"][i]
+                head_w, row = m.goal_head[-1].weight, i
+            term.backward()
+            gh = head_w.grad
+            gh = 0.0 if gh is None else float((gh if row is None else gh[row]).abs().sum())
+            gt = m.tactical_policy.intent_proj.weight.grad
+            gt = 0.0 if gt is None else float(gt.abs().sum())
+            fin = bool(torch.isfinite(term))
+            rep[fam] = {"n_sup": int(n_sup), "finite": fin, "g_head": gh, "g_tactical": gt,
+                        "green": bool(n_sup > 0 and fin and gh > 0 and gt > 0)}
+    finally:
+        if detach_intent and orig is not None:
+            m.goal_head.forward = orig
+    return rep
+
+
+def test_a_EVERY_goal_family_incl_each_traffic_light_colour_trains_the_tactical_layer():
+    m = _model()
+    rep = _reach(m, _batch())
+    red = {f: r for f, r in rep.items() if not r["green"]}
+    assert not red, red
+    for t in TL:                                   # named explicitly, never pooled
+        assert rep[t]["green"] and rep[t]["g_tactical"] > 0, (t, rep[t])
+    assert rep["SPEED_BAND(args)"]["green"]
+
+
+@pytest.mark.parametrize("arm", ["mask_red", "loader_drops_yellow", "detached_intent",
+                                 "no_goal_head", "speed_band_unsupervised"])
+def test_b_every_deliberate_regression_arm_goes_RED(arm):
+    b = _batch()
+    if arm == "mask_red":
+        m = _model()
+        cm = torch.ones(len(TOKENS))
+        cm[TOKENS.index("TRAFFIC_LIGHT_REACT_RED")] = 0.0
+        m.set_goal_supervision(torch.ones(len(TOKENS)), cm)
+        want_red = {"TRAFFIC_LIGHT_REACT_RED"}
+        rep = _reach(m, b)
+    elif arm == "loader_drops_yellow":
+        m = _model()
+        b["goal_w"][:, TOKENS.index("TRAFFIC_LIGHT_REACT_YELLOW")] = 0.0
+        want_red = {"TRAFFIC_LIGHT_REACT_YELLOW"}
+        rep = _reach(m, b)
+    elif arm == "detached_intent":
+        m = _model()
+        want_red = set(FAMILIES) - {"SPEED_BAND(args)"}
+        rep = _reach(m, b, detach_intent=True)
+    elif arm == "no_goal_head":                   # the PRE-DIRECTIVE model
+        m = _model(w_goal=0.0, w_speed_band=0.0)
+        for k in ("goal_y", "goal_w", "speed_band", "speed_band_mask"):
+            b.pop(k)
+        want_red = set(FAMILIES)
+        rep = _reach(m, b)
+    else:
+        m = _model()
+        b["speed_band_mask"][:] = False
+        want_red = {"SPEED_BAND(args)"}
+        rep = _reach(m, b)
+    red = {f for f, r in rep.items() if not r["green"]}
+    assert red == want_red, (arm, sorted(red ^ want_red))
+
+
+def test_c_the_loss_refuses_unfitted_split_constants_and_never_nans_on_empty_supervision():
+    m = _model(fit=False)
+    b = _batch()
+    kw = {k: v for k, v in b.items() if k not in ("feats", "actions", "future_feats")}
+    with pytest.raises(RuntimeError, match="never fitted"):
+        m(b["feats"], b["actions"], future_feats=b["future_feats"], **kw)
+    m.set_goal_supervision(torch.ones(len(TOKENS)), torch.ones(len(TOKENS)))
+    kw["goal_w"] = torch.zeros_like(kw["goal_w"])
+    kw["speed_band_mask"] = torch.zeros_like(kw["speed_band_mask"])
+    out = m(b["feats"], b["actions"], future_feats=b["future_feats"], **kw)
+    assert out["n_goal_sup"] == 0 and float(out["loss_goal"].detach()) == 0.0
+    assert out["n_speed_band"] == 0 and float(out["loss_speed_band"].detach()) == 0.0
+    out["loss"].backward()                       # a real zero, in the graph: no NaN anywhere
+    assert all(torch.isfinite(p.grad).all() for p in m.parameters() if p.grad is not None)
+    assert m.goal_head[-1].weight.grad is not None
+
+
+def test_d_the_pooled_term_is_the_shared_audited_function_and_the_per_token_split_sums_to_it():
+    from tanitad.refs.tac_goal_head import tac_goal_loss
+    m = _model()
+    pw = torch.linspace(0.5, 3.0, len(TOKENS))
+    cm = torch.ones(len(TOKENS))
+    cm[3] = 0.0
+    m.set_goal_supervision(pw, cm)
+    b = _batch()
+    kw = {k: v for k, v in b.items() if k not in ("feats", "actions", "future_feats")}
+    out = m(b["feats"], b["actions"], future_feats=b["future_feats"], **kw)
+    ref, n = tac_goal_loss(out["goal_logits"], kw["goal_y"], kw["goal_w"], pos_weight=pw,
+                           class_mask=cm)
+    assert torch.equal(out["loss_goal"], ref) and out["n_goal_sup"] == n
+    assert torch.allclose(out["goal_loss_tok"].sum(), ref, rtol=1e-5, atol=1e-7)
+    assert float(out["goal_loss_tok"][3].detach()) == 0.0 and out["goal_n_sup_tok"][3] == 0
+
+
+def test_e_vocabulary_guard_and_hierarchy_guard():
+    with pytest.raises(ValueError, match="v7 tactical vocabulary"):
+        RefAV1(_cfg(tac_vocab_version="v6.0"))
+    with pytest.raises(ValueError, match="need the hierarchy"):
+        RefAV1(_cfg(strategic_cfg=None, tactical_cfg=None))
+
+
+# --------------------------------------------------------------------------- real blobs
+#: the canonical v7.2 train blob (md5 pinned below); an absolute path only as an env default
+_REPO = Path(__file__).resolve().parents[2]
+_TRAIN = Path(os.environ.get(
+    "TANITAD_V72_TRAIN_LABELS",
+    str(_REPO / "TanitAD Research Lab" / "Data Engineering" / "Implementation" / "incoming"
+        / "2026-09-04-v72-label-release" / "raw" / "s2_labels_v7.2_train.jsonl.gz")))
+_TRAIN_MD5 = "0ff902130ce76886b8a925eceed9e3a5"
+
+
+def _blob_ok() -> bool:
+    return _TRAIN.is_file() and hashlib.md5(_TRAIN.read_bytes()).hexdigest() == _TRAIN_MD5
+
+
+@pytest.mark.skipif(not _blob_ok(), reason="the canonical v7.2 TRAIN blob is not on this host "
+                                           "(set TANITAD_V72_TRAIN_LABELS)")
+def test_f_on_the_real_train_blob_R3_all_needs_the_PI_cot_absence_policy(tmp_path):
+    """MEASURED on the canonical blob, and the reason `--goal-negatives` exists:
+    * 'measured' (default): 17/22 BCE classes trainable -- YIELD, CORRIDOR_OFFSET, GAP_TARGET,
+      REACT_ON_ONCOMING carry NO supervised negative (and SPEED_BAND is a constant), so they are
+      masked and take NO gradient: R3's "ALL" is NOT met under the default policy;
+    * 'cot-absence-negative' (PI 2026-09-16) with a sidecar built over THIS blob: 21/22
+      trainable, every traffic-light colour included; SPEED_BAND alone is masked -- and its
+      arguments train through the regression head. => every family has a trainable term."""
+    from tanitad.refs.tac_goal_head import mask_report
+    labels, man = v7l.load_v7_labels(_TRAIN, allow_oracle_nav=True)
+    meas = mask_report(v7l.goal_supervision_census(labels))
+    assert set(meas["masked_why"]) == {"YIELD", "SPEED_BAND", "CORRIDOR_OFFSET", "GAP_TARGET",
+                                       "REACT_ON_ONCOMING"}
+    assert all(t in meas["trainable"] for t in TL)
+    # build the sidecar with the UNCHANGED builder, over THIS blob, into tmp
+    b_path = Path(__file__).resolve().parents[1] / "scripts" / "build_cot_negative_sidecar.py"
+    spec = importlib.util.spec_from_file_location("_build_cotneg_r3", b_path)
+    B = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = B
+    spec.loader.exec_module(B)
+    out = tmp_path / "cot_absence_negative_v7.2_train.json.gz"
+    argv0 = sys.argv
+    try:
+        sys.argv = ["build", "--labels", str(_TRAIN), "--out", str(out)]
+        assert B.main() == 0
+    finally:
+        sys.argv = argv0
+    sc, _ = v7l.load_cot_negative_sidecar(out, man)
+    cot = mask_report(v7l.goal_supervision_census(labels, negatives="cot-absence-negative",
+                                                  sidecar=sc))
+    assert set(cot["masked_why"]) == {"SPEED_BAND"}, cot["masked_why"]
+    assert cot["n_trainable"] == 21
+    # and SPEED_BAND's arguments exist on every record (the regression family's target)
+    assert all(isinstance((x.tac_goal_meta.get("SPEED_BAND") or {}).get("v_hi_ms"), float)
+               for x in labels)

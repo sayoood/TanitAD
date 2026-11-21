@@ -1,0 +1,11 @@
+--- a/tanitad/models/v8f_mini.py (after SPATIAL.patch, sha256 bbc627a0845086a3)
++++ b/tanitad/models/v8f_mini.py (sha256 687a41030e8dc193)
+@@ -730,7 +730,7 @@
+         """What ``z1`` BUILT does (the G-DVB 'built' side): the output width on a fixed random [1, 2, n_tok, d] input and whether swapping two cells of one frame moves it
+         (a state that keeps location moves; a mean does not). Fixed generator: the global RNG stream is not touched."""
+         g = torch.Generator().manual_seed(1234)
+-        x = torch.randn(1, 2, self.n_tok, d, generator=g)
++        x = torch.randn(1, 2, self.n_tok, d, generator=g).to(next(self.proj.parameters()).device)    # the probe runs where the model is (cuda in a real launch)
+         y = x.clone()
+         y[:, 0, 0], y[:, 0, self.n_tok - 1] = x[:, 0, self.n_tok - 1].clone(), x[:, 0, 0].clone()
+         was = self.training

@@ -1,0 +1,209 @@
+{
+ "schema": "v8f-dagger-bank-v1",
+ "kind": "shard",
+ "created_unix": 1793043052.5340502,
+ "argv": [
+  "stack\\scripts\\v8f_dagger_bank.py",
+  "gen",
+  "--ckpt",
+  "C:/Users/Admin/box2_ship/logs/v8f_mini/runs/M2b_s0/ckpt_last.pt",
+  "--m2b-argv",
+  "C:/Users/Admin/box2_ship/logs/v8f_mini/runs/M2b_s0/argv.json",
+  "--cache-dir",
+  "E:/Projects/TanitAD-artifacts/dg/smoke_world",
+  "--tracks",
+  "E:/Projects/TanitAD-artifacts/dg/smoke_world/native_tracks.pt",
+  "--join-train",
+  "E:/Projects/TanitAD-artifacts/dg/smoke_world/join_train.npz",
+  "--eval-grid",
+  "TanitAD Research Lab\\Architecture & Inference\\Research\\2026-10-17-v8f-mini\\raw\\eval_grid_windows.json",
+  "--out-dir",
+  "TanitAD Research Lab\\Architecture & Inference\\Research\\2026-10-17-v8f-mini\\raw\\2026-10-26-dagger-build\\smoke_kb45",
+  "--limit-clips",
+  "12",
+  "--batch",
+  "32",
+  "--threads",
+  "4",
+  "--device",
+  "cpu",
+  "--replay-frac",
+  "0.1",
+  "--thresholds-file",
+  "TanitAD Research Lab\\Architecture & Inference\\Research\\2026-10-17-v8f-mini\\raw\\2026-10-26-dagger-draft\\probe\\THRESHOLDS_FIXED.txt"
+ ],
+ "plan": {
+  "mode": "gen",
+  "shard": [
+   0,
+   1
+  ],
+  "n_train_clips": 12,
+  "n_train_windows": 804,
+  "window_list_sha256": "f3c89c591782187cafdc1bf999431b520bda5a22c8e61bc1ddcdce82acf0d77b",
+  "train_sha256": "5f9d709630d5ebd65b527ef31a27a0320370de80e6bd1113a195bca929598f61",
+  "limit_clips": 12,
+  "partial": true,
+  "shard_clips": 12,
+  "shard_windows": 804,
+  "chunks": 26,
+  "batch": 32,
+  "est_records": 1608,
+  "est_shard_bytes": 1762368,
+  "replay_chunks": 3,
+  "eval_clips": 141,
+  "eval_overlap": 0,
+  "ckpt_sha256": null,
+  "hmax": 16,
+  "readable_rows": {
+   "j_min": 13,
+   "first_row_read": 4
+  },
+  "device": "cpu"
+ },
+ "inputs": {
+  "ckpt": {
+   "path": "C:/Users/Admin/box2_ship/logs/v8f_mini/runs/M2b_s0/ckpt_last.pt",
+   "sha256": "601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8",
+   "bytes": 86969109
+  },
+  "m2b_argv": {
+   "path": "C:/Users/Admin/box2_ship/logs/v8f_mini/runs/M2b_s0/argv.json",
+   "sha256": "8a90dcac36e149d459212df66b1532280adf1dc349537ba720085d4515b77642",
+   "bytes": 727
+  },
+  "tracks": {
+   "path": "E:/Projects/TanitAD-artifacts/dg/smoke_world/native_tracks.pt",
+   "sha256": "e4130517b06cfc8a154da713e9348fe4b92212d56ae6229b61a9b042d484e205",
+   "bytes": 52532
+  },
+  "join_train": {
+   "path": "E:/Projects/TanitAD-artifacts/dg/smoke_world/join_train.npz",
+   "sha256": "f7a8c2d2c963cee069548f665edbf6a3be39cbb8daf202ea0ee2dedd9c6b6d8a",
+   "bytes": 39375
+  },
+  "eval_grid": {
+   "path": "TanitAD Research Lab\\Architecture & Inference\\Research\\2026-10-17-v8f-mini\\raw\\eval_grid_windows.json",
+   "sha256": "659c3b65e364ea5de87a4e17d076eba5645df95cdcf39d8abc08caab1b2d594c",
+   "bytes": 21050
+  }
+ },
+ "tool_sha256": {
+  "stack/tanitad/data/v8f_dagger.py": "b20cc058b17e1029ddb138dc84f434333bf6b0b2746c5b76e996cef17c176bd3",
+  "stack/scripts/v8f_dagger_bank.py": "893dd6547b361c34fd2307f9efaf0b9bf822a1476506d3aa65498d7dbba53da3",
+  "stack/scripts/v8f_t1_eval.py": "61e140edb9da01acbbba4eef81e74bbb68b57e2ff31842e05958759446d97397",
+  "stack/tanitad/data/v8f_mini_data.py": "0e4a8cea438532424addb14d3c28a8f0b34f6c1ca33562384c3e389141f49588",
+  "stack/tanitad/models/v8f_mini.py": "8ec5e19037b681242a13f3642818b2a82e84395b0b5436bc5ff17f39822c5b3a"
+ },
+ "versions": {
+  "torch": "2.11.0+cu128",
+  "numpy": "2.5.1",
+  "python": "3.13.5"
+ },
+ "device": "cpu",
+ "threads": 4,
+ "n_records": 1608,
+ "reasons_by_tick": {
+  "1": {
+   "ok": 683,
+   "off_lat": 0,
+   "off_head": 2,
+   "end_edge": 119,
+   "nonfinite": 0
+  },
+  "2": {
+   "ok": 437,
+   "off_lat": 179,
+   "off_head": 24,
+   "end_edge": 164,
+   "nonfinite": 0
+  }
+ },
+ "coverage": {
+  "n_windows": 804,
+  "n_eligible": 580,
+  "fraction": 0.7213930348258707,
+  "min": 0.5,
+  "blocked": false
+ },
+ "kb0_tick0_identity": {
+  "checked": 804,
+  "mismatch": 0
+ },
+ "kb1_replay": {
+  "chunks": 3,
+  "windows": 96,
+  "mismatch_chunks": 0,
+  "frac": 0.1,
+  "seed": 0
+ },
+ "kb3_eval_disjoint": {
+  "n_eval_clips": 141,
+  "overlap": 0
+ },
+ "controls": {
+  "K-B4": {
+   "PASS": true,
+   "cases": {
+    "straight": true,
+    "stationary_tie": true,
+    "lateral_cut": true,
+    "heading_cut": true,
+    "end_edge": true,
+    "loop": true
+   }
+  },
+  "K-B5": {
+   "PASS": true,
+   "max_pose_now_err_m": 0.0,
+   "max_pose_now_yaw_err_rad": 0.0,
+   "max_reanchor_vs_pose_now_m": 0.0,
+   "max_rel_transform_err_m": 1.504511633759493e-05,
+   "max_rel_transform_yaw_err_rad": 1.7350965286766495e-07,
+   "max_rel_transform_err_float64_m": 5.114577690390551e-14,
+   "tol_m": 0.0001,
+   "n_records": 1608,
+   "n_skipped_nonfinite": 0,
+   "n_pairs": 410556,
+   "sample": "all records with a finite own pose and a logged row at r' (reason != nonfinite); no sampling, no seed",
+   "measured_on": "the float32 tensors the swap emits (reanchor_rows, cast to float32), against the logged float64 poses",
+   "log_pose_sha256": "8193481de2b180fa570f648e46874b44778adc28752364133d43f9594126df2f"
+  }
+ },
+ "causal_bucket_stats": {
+  "ticks": 2700,
+  "confusion_logged_x_causal": [
+   [
+    0,
+    0,
+    0,
+    0
+   ],
+   [
+    683,
+    1968,
+    49,
+    0
+   ],
+   [
+    0,
+    0,
+    0,
+    0
+   ],
+   [
+    0,
+    0,
+    0,
+    0
+   ]
+  ]
+ },
+ "file_sha256": "8250fe281e88ff39e21b4a102706e4ea15b1612cc5871822ca078703571785e9",
+ "content_sha256": "3512977c4694a9d0134c190587360360c79471330982946d2196cbe903f1362e",
+ "seconds": {
+  "rollout": 68.07862496376038,
+  "total": 69.96571683883667
+ },
+ "warnings": []
+}

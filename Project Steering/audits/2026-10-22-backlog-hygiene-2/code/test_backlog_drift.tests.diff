@@ -1,0 +1,345 @@
+diff --git a/../tree_before/tools/tests/test_backlog_drift.py b/../code/tools/tests/test_backlog_drift.py
+index a519ddb..f75deee 100644
+--- a/../tree_before/tools/tests/test_backlog_drift.py
++++ b/../code/tools/tests/test_backlog_drift.py
+@@ -92,18 +92,32 @@ def test_reads_the_LIVE_backlog_and_clears_the_row_floor():
+     assert d["counts"].get("CLOSED", 0) > 0, "the live list has struck ids"
+ 
+ 
+-def test_the_live_backlog_is_CURRENTLY_DRIFTED_and_the_gate_says_so():
+-    """⭐ The finding this tool was written for, pinned. If someone sweeps the
+-    list, this test goes red -- and that is the correct time to update it, with
+-    the sweep's commit."""
+-    r = subprocess.run([sys.executable, str(TOOL), "--repo", str(REPO)],
++def test_the_live_backlog_reads_the_NAMED_ID_family_and_the_gate_runs():
++    """⭐ REPLACES `..._is_CURRENTLY_DRIFTED_and_the_gate_says_so` (BACKLOG-HYGIENE-2,
++    2026-10-22). That test pinned rc == 1 and the ids A11 ... R4 on the LIVE file,
++    and said itself: *"If someone sweeps the list, this test goes red -- and that
++    is the correct time to update it, with the sweep's commit."* The sweep landed,
++    so the pin moves to where it cannot rot: the old drift shapes are now pinned on
++    VERBATIM FIXTURE rows (section 7), and the live file is held to STRUCTURE.
++
++    What the live file must still prove: (1) the gate RUNS (rc 0 or 1, never a
++    refusal), (2) it READS the named-id table family -- ids like `EP-R1UB` that
++    `TABLE_ROW` never matched, which is how ~80 rows went unread for five days --
++    and (3) it reports no UNPARSED item-table row. A live drift COUNT is
++    deliberately not pinned: a red suite every time a row goes stale would make
++    `pytest` the backlog's gate, and the gate is this tool's exit code."""
++    import json
++    r = subprocess.run([sys.executable, str(TOOL), "--repo", str(REPO), "--json"],
+                        capture_output=True, text=True, encoding="utf-8")
+-    assert r.returncode == 1, (
+-        "expected drift on the live list; if it was genuinely swept, update this "
+-        "test IN THE SAME COMMIT as the sweep\n" + r.stdout)
+-    for rid in ("A11", "A13", "B4", "C3", "R1", "R2", "R4"):
+-        assert rid in r.stdout, f"{rid} declares DONE with an unstruck id"
+-    assert "STALE-BLOCKER  C2" in r.stdout
++    assert r.returncode in (0, 1), r.stdout + r.stderr
++    d = json.loads(r.stdout)
++    named = [v for v in d["verdicts"] if v["kind"] == "named"]
++    assert len(named) >= 30, (
++        "the named-id family (`| EP-R1UB | ...`) is unread: %d rows" % len(named))
++    r2 = subprocess.run([sys.executable, str(TOOL), "--repo", str(REPO)],
++                        capture_output=True, text=True, encoding="utf-8")
++    assert "UNPARSED" not in r2.stdout, (
++        "an item-table row no id regex reads: " + r2.stdout)
+ 
+ 
+ # --------------------------------------------------------------------------
+@@ -395,3 +409,296 @@ def test_a_bullet_the_parser_CANNOT_SEE_is_reported_not_swallowed(tmp_path):
+     rows, sections, blocks, missed = m.parse(
+         "- **R99 :: a separator this parser does not accept\n")
+     assert rows == [] and missed == [1]
++
++
++# --------------------------------------------------------------------------
++# 7. BACKLOG-HYGIENE-2 (2026-10-22): the named-id family and CLOSED-LATER
++# --------------------------------------------------------------------------
++# ⛔ WHY THIS SECTION EXISTS. On 2026-10-22 the Master Mind measured 12 rows that
++# LEAD `**NEXT ...**` and later record their own closure (`**DONE 2026-10-19 ...**`)
++# while the tool read 91 OPEN rows. The diagnosis in the brief was "the tool reads
++# only the leading verdict". ⭐ THE MEASURED CAUSE WAS ONE LAYER DOWN: none of those
++# 12 rows was PARSED. `TABLE_ROW` took only `[A-Z]\d+` ids (`A11`, `R4`); the 80-odd
++# rows added from 2026-10-17 on carry ids like `EP-R1UB`, so the tool did not read
++# them as open and miss their closure -- it never saw them. The row family was
++# invisible, and the one guard against invisible rows (`UNPARSED`) covered BULLETS
++# only. Two fixes, two groups of tests: the FAMILY is read, and CLOSED-LATER fires.
++import json  # noqa: E402
++
++FIXTURE = Path(__file__).resolve().parent / "fixtures" / "backlog_rows_2026-10-22.md"
++
++
++@pytest.fixture(scope="module")
++def live_rows():
++    """{id: verdict-dict} over the VERBATIM live rows in the fixture."""
++    rows, _s, _b, missed = m.parse(FIXTURE.read_text(encoding="utf-8"))
++    assert missed == [], "the fixture's own rows must all parse: %s" % missed
++    return {v["id"]: v for v in m.classify(rows)}
++
++
++def _verdict(text: str) -> dict:
++    """Parse a one-row inline backlog and return that row's verdict dict."""
++    rows, _s, _b, _missed = m.parse(
++        "## S\n\n| # | item | why |\n|---|---|---|\n" + text + "\n")
++    out = m.classify(rows)
++    assert len(out) == 1, out
++    return out[0]
++
++
++#: the 12 rows the Master Mind listed, with the shape each must fire by.
++MM_LIST = [
++    ("EP-R1UB", "dated"), ("HEADROW-PROBE", "dated"),
++    ("PICKRULE-AUDIT-NC", "dated"), ("NC-FASTCAL", "dated"),
++    ("EP-RELIAB-PICKS", "dated"), ("EP-ADMISSION-R1", "dated"),
++    ("EP-ADMISSION-R2-CONFIRM", "dated"), ("PRIVGEOM-SAFE", "dated"),
++    ("SEARCH-DOSE", "dated"), ("EPADM-SEARCHBANK-S0", "dated"),
++    ("PRIVGEOM-DAC", "update"), ("L2-FRESH-STEPA", "qualified"),
++]
++
++
++@pytest.mark.parametrize("rid,shape", MM_LIST)
++def test_every_row_the_MM_LISTED_fires_as_CLOSED_LATER(live_rows, rid, shape):
++    """⭐ THE ACCEPTANCE LIST. Verbatim live rows; each leads open-type and closes
++    itself later in a dated bold span. `shape` pins WHICH grammar branch fired, so
++    a regression that fires for the wrong reason is red too."""
++    v = live_rows[rid]
++    assert v["verdict"] == "CLOSED-LATER", (rid, v["verdict"])
++    assert v["closed_later_shape"] == shape, (rid, v["closed_later_shape"])
++    assert v["kind"] == "named"
++
++
++def test_the_NAMED_ID_family_is_PARSED_not_just_classified(tmp_path):
++    """⛔ The root cause, end to end through the subprocess: an item table whose ids
++    are `EP-R1UB`-shaped yields rows, a CLOSED-LATER verdict, and a failing gate."""
++    write_backlog(tmp_path, CLEAN + """
++## named
++
++| # | item | unblocked by / GPU |
++|---|---|---|
++| EP-R1UB | **NEXT, CPU** fit the head **DONE 2026-10-19: NONE-FEASIBLE** (`D-X`). | 0 GPU |
++""")
++    r = run(tmp_path, "--min-rows", "1", "--json")
++    d = json.loads(r.stdout)
++    v = {x["id"]: x for x in d["verdicts"]}
++    assert v["EP-R1UB"]["kind"] == "named", "the family is not being read"
++    assert v["EP-R1UB"]["verdict"] == "CLOSED-LATER"
++    assert r.returncode == 1, "CLOSED-LATER must FAIL the gate"
++    txt = run(tmp_path, "--min-rows", "1").stdout
++    assert "CLOSED-LATER" in txt and "EP-R1UB" in txt
++
++
++@pytest.mark.parametrize("hdr", ["| step | time (Z) |", "| symbol | HEAD | worktree |"])
++def test_a_NON_item_table_is_not_read_as_backlog_rows(hdr):
++    """⛔ CONTROL for the table gate. BACKLOG.md carries an indented timing table
++    whose first cells are `G-LIVE`, `G-EVAL` and `**G-SUITE**` -- named-id-shaped
++    words that are NOT backlog items. Reading them would invent open rows. The gate
++    is the table HEADER (`#` / `id`), not the id's shape."""
++    rows, _s, _b, missed = m.parse(
++        "## S\n\n  %s\n  |---|---|\n  | G-LIVE | 15:38:48 |\n"
++        "  | **G-SUITE** | **16:03:26 (22 min)** |\n" % hdr)
++    assert rows == [] and missed == [], (rows, missed)
++
++
++def test_an_UNREADABLE_row_in_an_ITEM_table_is_REPORTED_not_swallowed():
++    """⛔ The guard the table family LACKED. `UNPARSED` covered bullets only, so a
++    table row whose id no regex reads was invisible -- which is precisely how the
++    named family went unread. Same-breath control: the readable row beside it
++    parses, so the report is about the bad row and not about the table."""
++    rows, _s, _b, missed = m.parse(
++        "## S\n\n| # | item | why |\n|---|---|---|\n"
++        "| EP-R1UB | **NEXT** x | y |\n"
++        "| ??? | an id nothing reads | y |\n")
++    assert [r.rid for r in rows] == ["EP-R1UB"]
++    assert missed == [6], missed
++
++
++def test_the_gate_PRINTS_unparsed_item_table_rows(tmp_path):
++    write_backlog(tmp_path, CLEAN + "| ??? | an id nothing reads | y |\n")
++    out = run(tmp_path, "--min-rows", "1").stdout
++    assert "UNPARSED" in out, out
++
++
++# ---- controls: shapes that must NOT fire -------------------------------------
++def test_CONTROL_a_NEXT_row_that_mentions_done_in_PROSE_does_not_fire():
++    """The MM's first control. `done` in running text is not a closure."""
++    v = _verdict("| X-1 | **NEXT, CPU** once the DONE-marker discipline is done, "
++                 "re-run the probe; the loop is done when the gate is green. | y |")
++    assert v["verdict"] == "OPEN", v
++    assert v["closed_later_shape"] is None
++
++
++def test_CONTROL_a_BOLD_compound_is_not_a_dated_closure():
++    """`**DONE-marker discipline**` is live row F2's phrase. The tool's OLD
++    first-word reading still calls such a span a closure (a latent false positive
++    pinned by `test_the_bullet_bold_PREFIX_is_restored_or_spans_mis_pair`, so NOT
++    touched here); the NEW branch must not add to it, because it needs a DATE and
++    refuses the compound outright."""
++    assert m.later_closure(
++        "**NEXT, CPU** wire it **DONE-marker discipline 2026-10-19** applies") is None
++    assert m.later_closure(
++        "**NEXT, CPU** wire it **DONE-marker discipline** applies") is None
++
++
++def test_CONTROL_UPDATE_with_no_closure_word_is_progress_not_closure():
++    """The MM's second control: `**UPDATE <date>: SEALED**` records progress."""
++    assert m.later_closure(
++        "**NEXT** run it **UPDATE 2026-10-19: SEALED** (sha `5006ed84`)") is None
++    v = _verdict("| X-2 | **NEXT** run it **UPDATE 2026-10-19: SEALED** | y |")
++    assert v["verdict"] == "OPEN", v
++
++
++def test_CONTROL_UPDATE_with_a_closure_word_DOES_fire():
++    """The positive pair of the control above -- without it the control could be
++    satisfied by a branch that never fires."""
++    assert m.later_closure(
++        "**NEXT** run it **UPDATE 2026-10-19: superseded by Y**") == "update"
++    assert m.later_closure(
++        "**NEXT** run it **UPDATE 2026-10-19 16:00: CLOSED, not needed**") == "update"
++
++
++@pytest.mark.parametrize("rid", ["P7-WIRE-RESERVE", "P7-WIRE-HEAD"])
++def test_CONTROL_the_P7_WIRE_rows_AS_THEY_STAND_do_not_fire(live_rows, rid):
++    """The MM's third control, verbatim: both lead `**ACTIVE (0 GPU)**` and carry no
++    dated closure. They are the live rows nearest the firing shape."""
++    assert live_rows[rid]["verdict"] == "OPEN", live_rows[rid]
++
++
++@pytest.mark.parametrize("rid", ["SEL-RANK", "P6-HN", "PAPER-720", "R0E-PICK",
++                                 "SH5-DAC-PROX", "EP-ADMISSION", "P6-3C",
++                                 "SEARCH-PESSIMISTIC", "FASTNEG-F25-RERUN"])
++def test_CONTROL_live_multi_step_rows_with_PARTIAL_done_markers_stay_OPEN(
++        live_rows, rid):
++    """⛔ Verbatim live rows that carry `STEP 1 DONE`, `S1 DONE`, `Step 0 DONE`,
++    `B3, B6, B7 DONE`, `C3, C4, C11 DONE`, `grids 3-4 DONE`: PARTIAL-PROGRESS
++    markers on rows with work left. Counting any of them as a closure would strike
++    nine live rows that are still open."""
++    assert live_rows[rid]["verdict"] == "OPEN", live_rows[rid]
++
++
++def test_a_QUALIFIED_done_closes_only_as_the_rows_LAST_emphasised_span():
++    """THE L2-FRESH-STEPA JUDGEMENT CALL (brief: *"the read closed, but did the
++    row's work?"*). DECIDED: a qualified DONE (`READ 1 DONE <date>`) is a partial
++    marker everywhere in this file, so it is NOT a closure -- EXCEPT as the LAST
++    bold span of a row that LEADS open-type. Rows are append-only, so a qualified
++    DONE that nothing emphasised follows, under a lead still saying NEXT, is the
++    row's final word. A later open marker keeps the row open."""
++    last = "**NEXT** run both reads **READ 1 DONE 2026-10-19 20:12: O3** (A1 0.840)"
++    assert m.later_closure(last) == "qualified"
++    then_more = last + " then **READ 2 NEXT** on the second carve"
++    assert m.later_closure(then_more) is None
++    # a NEXT lead with an EARLIER qualified DONE and a later plain step: open
++    mid = "**NEXT** two steps **STEP 1 DONE 2026-10-18** and **Step 2: build it**"
++    assert m.later_closure(mid) is None
++
++
++def test_the_QUALIFIED_decision_is_pinned_on_the_VERBATIM_row(live_rows):
++    v = live_rows["L2-FRESH-STEPA"]
++    assert v["verdict"] == "CLOSED-LATER" and v["closed_later_shape"] == "qualified"
++
++
++def test_an_UNDATED_closure_word_is_not_CLOSED_LATER():
++    """`CLOSED` / `DONE` with no date: the old DONE-BUT-OPEN path may still read it
++    (live row SEARCH-STALE-T1), but the NEW verdict requires the date -- it is what
++    separates a verdict from prose."""
++    assert m.later_closure("**PROPOSED** x **CLOSED, NOT NEEDED** (D-Y)") is None
++    v = _verdict("| X-3 | **PROPOSED** x **CLOSED, NOT NEEDED** (D-Y) | y |")
++    assert v["verdict"] == "DONE-BUT-OPEN", v
++
++
++def test_the_verdict_splits_on_the_LEAD_not_on_the_closure():
++    """CLOSED-LATER = the lead LIES (open-type, closure later). DONE-BUT-OPEN = the
++    row is honest but its id is not struck. A row that OPENS with the verdict, or
++    with a struck/plain title, is the second kind -- as it always was."""
++    lead_lies = _verdict("| X-4 | **NEXT** do it **DONE 2026-10-19** | y |")
++    honest = _verdict("| X-5 | **DONE 2026-10-19** did it. **NEXT: X-4** | y |")
++    plain = _verdict("| X-6 | do it **DONE 2026-10-19** | y |")
++    struck_title = _verdict("| X-7 | ~~do it~~ **DONE 2026-10-19** | y |")
++    assert lead_lies["verdict"] == "CLOSED-LATER"
++    assert honest["verdict"] == "DONE-BUT-OPEN"
++    assert plain["verdict"] == "DONE-BUT-OPEN"
++    assert struck_title["verdict"] == "DONE-BUT-OPEN"
++
++
++def test_a_STRUCK_id_with_a_later_closure_is_CLOSED_and_quiet():
++    """The sweep's own output shape must satisfy the tool: strike the id, keep the
++    evidence, and the row reads CLOSED."""
++    v = _verdict("| ~~X-8~~ | **NEXT** do it **DONE 2026-10-19** | y |")
++    assert v["verdict"] == "CLOSED"
++
++
++def test_RESOLVED_closes_a_BLOCKER_row_and_nothing_else():
++    """`D-SPACE` and `L2-STEPB-GATE` lead `**BLOCKER ...**` and later say
++    `**RESOLVED <date>**`. Under any other lead `resolved` is a sub-blocker's end or
++    a decision id (`D-STEER-INTERFACE-RESOLVED`), never the row's closure."""
++    assert m.later_closure(
++        "**BLOCKER (needs the PI)** D: is full **RESOLVED 2026-10-19 19:15:** deleted"
++    ) == "resolved"
++    assert m.later_closure(
++        "**NEXT** wire it **RESOLVED 2026-10-19:** one sub-blocker; wiring continues"
++    ) is None
++    assert m.later_closure(
++        "**BLOCKER** wait on the pod **RESOLVED, see D-STEER-INTERFACE-RESOLVED**") is None
++
++
++@pytest.mark.parametrize("rid", ["D-SPACE", "L2-STEPB-GATE"])
++def test_the_two_live_BLOCKER_rows_fire_by_the_resolved_shape(live_rows, rid):
++    assert live_rows[rid]["closed_later_shape"] == "resolved", live_rows[rid]
++
++
++@pytest.mark.parametrize("word", ["DONE", "CLOSED", "SUPERSEDED", "STRUCK",
++                                  "DISCHARGED", "WITHDRAWN", "CANCELLED"])
++def test_every_closure_word_the_MM_named_fires_when_dated(word):
++    assert m.later_closure("**NEXT** x **%s 2026-10-20: why**" % word) == "dated"
++
++
++def test_the_lead_span_itself_is_never_its_own_later_closure():
++    """`spans[0]` IS the lead: `**DONE 2026-10-19**` leading a row is the row's
++    verdict (DONE-BUT-OPEN territory), not a 'later' closure."""
++    assert m.later_closure("**DONE 2026-10-19** did it **NEXT: other**") is None
++    assert m.lead_status("**DONE 2026-10-19** did it") == "done"
++    assert m.lead_status("~~old~~ **NEXT** x") == ""        # no lead span
++    assert m.lead_status("plain **NEXT** x") == ""
++
++
++# ---- the old drift shapes, pinned on verbatim rows ---------------------------
++@pytest.mark.parametrize("rid", ["A11", "A13", "B4", "C3", "R1", "R2", "R4"])
++def test_the_OLD_DONE_BUT_OPEN_shapes_still_fire_on_verbatim_rows(live_rows, rid):
++    """MOVED here from the live-file pin (section 1): the seven rows the tool was
++    written to catch, as they stood before the 2026-10-22 sweep struck them."""
++    assert live_rows[rid]["verdict"] == "DONE-BUT-OPEN", live_rows[rid]
++
++
++def test_the_OLD_STALE_BLOCKER_shape_still_fires_on_verbatim_C2(live_rows):
++    assert live_rows["C2"]["verdict"] == "STALE-BLOCKER", live_rows["C2"]
++
++
++def test_the_gate_prints_the_CLOSED_LATER_advice_and_fails_on_the_FIXTURE(tmp_path):
++    """End to end on the verbatim fixture, through the subprocess boundary."""
++    # ⚠️ the fixture holds NO struck id, and the tool REFUSES a list with zero closed
++    # rows (the silent direction) -- so one properly-struck row is appended.
++    tail = "\n## closed\n\n| # | item |\n|---|---|\n| ~~Z-1~~ | ~~x~~ **DONE 2026-10-01** |\n"
++    (tmp_path / "BACKLOG.md").write_bytes(
++        FIXTURE.read_bytes() + tail.encode("utf-8"))
++    r = subprocess.run([sys.executable, str(TOOL), "--repo", str(tmp_path),
++                        "--backlog", "BACKLOG.md", "--min-rows", "1", "--max", "200"],
++                       capture_output=True, text=True, encoding="utf-8")
++    assert r.returncode == 1, r.stdout
++    assert r.stdout.isascii()
++    assert "CLOSED-LATER" in r.stdout and "EP-R1UB" in r.stdout
++    assert "reads the lead" in r.stdout
++
++
++@pytest.mark.parametrize("rid", ["UNSEEN-STRATUM-DATA", "S4R-1", "SEARCH-STALE-T1"])
++def test_the_LABEL_stays_DONE_BUT_OPEN_when_the_lead_is_not_open_type(live_rows, rid):
++    """Verbatim rows whose lead is a verdict (`S4R-1`), a title (`UNSEEN-STRATUM-DATA`
++    leads `O3 next arm`, then closes with a dated CLOSED) or an UNDATED closure
++    (`SEARCH-STALE-T1`). They fire, but as the OLD class -- the lead gate is what
++    keeps the two labels apart."""
++    assert live_rows[rid]["verdict"] == "DONE-BUT-OPEN", live_rows[rid]
++    assert live_rows[rid]["closed_later_shape"] is None
++
++
++def test_a_dated_closure_under_a_NON_open_lead_is_not_CLOSED_LATER():
++    v = _verdict("| X-9 | **O3 next arm** of Y **S1 DONE 2026-10-19** and then "
++                 "**CLOSED 2026-10-19: the route does not exist** | y |")
++    assert v["verdict"] == "DONE-BUT-OPEN", v

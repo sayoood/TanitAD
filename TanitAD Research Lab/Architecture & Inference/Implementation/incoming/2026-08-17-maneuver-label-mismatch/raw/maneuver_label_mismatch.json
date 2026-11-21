@@ -1,0 +1,567 @@
+{
+  "title": "hierarchy.py:592 hardcoded the v1 manoeuvre labeler \u2014 blast radius, fix, and why no re-score is possible offline",
+  "date": "2026-08-17",
+  "gpu_used": false,
+  "evidence_class": "MEASURED (ours)",
+  "defect": {
+    "site_at_HEAD": "taniteval/taniteval/hierarchy.py:592",
+    "call_at_HEAD": "rl.classify_maneuver(pl[:,2], fut[:,GOAL_H-1,2], pl[:,3], fut[:,GOAL_H-1,3])",
+    "conditional_on_arm_label_family": false,
+    "feeds": [
+      "rec.man_corr_real",
+      "rec.man_corr_meanctx",
+      "rec.man_corr_zeroctx",
+      "seam_ctx_to_tactical.maneuver_acc",
+      "seam_ctx_to_tactical.load_bearing / content_matters",
+      "verdict",
+      "legacy_overlapping_holdout_se.ctx_maneuver_acc"
+    ],
+    "why_not_a_threshold_issue": "v1 gates net yaw in rad (YAW_TURN_RAD=0.15); v2 gates path curvature in 1/m (CURV_TURN_MAN_PER_M=1/60). Different physical quantities \u2014 no gate choice makes them commensurable.",
+    "does_NOT_feed": [
+      "consistency.maneuver_vs_trajectory.kappa \u2014 built from man_pred via MAN2DIR, never from man_tgt. That is the SEPARATE rater mismatch in DIRYAW_REREAD.md 1.3, and this fix does not resolve it."
+    ]
+  },
+  "v2_labelled_arms_per_MODEL_REGISTRY": [
+    {
+      "arm": "flagship4b-v2-30k",
+      "section": "1.3",
+      "evidence": "Exact command row: identical to 1.2 plus --v2 'which implies --speed-input, --labels-v2'; lever table 'v2_labels true'",
+      "banked_hierarchy_panel": null
+    },
+    {
+      "arm": "flagship4b-v3enc-30k",
+      "section": "1.4",
+      "evidence": "Exact command read live from ps: '--speed-input --v2 --staged-levers'; 'every decode-side lever (\u2026 labels-v2 \u2026)' unchanged from v2",
+      "banked_hierarchy_panel": null
+    },
+    {
+      "arm": "flagship-v2corpus-30k",
+      "section": "1.7",
+      "evidence": "Exact command carries --v2; Levers row 'v2_labels true \u2026 read from BOTH config.jsons and confirmed equal to 1.3'",
+      "banked_hierarchy_panel": "hier_v2corpus-lf19.json"
+    }
+  ],
+  "v1_labelled_arms_confirmed_UNAFFECTED": [
+    {
+      "arm": "flagship4b-speedjerk-30k (THE DEPLOYED v1)",
+      "section": "1.2",
+      "evidence": "Exact command row carries no --v2 and no --labels-v2"
+    },
+    {
+      "arm": "flagship-v1arch-v2bal-30k",
+      "section": "1.9",
+      "evidence": "'Every v2_* lever in its own config.json is false' \u2014 v2_labels named in that list"
+    },
+    {
+      "arm": "refb-refbpatch-v2-30k",
+      "section": "3.5",
+      "evidence": "--arch-v2 is an ARCHITECTURE flag, not --labels-v2"
+    },
+    {
+      "arm": "REF-C line",
+      "section": "4.3",
+      "evidence": "'labels_v2 was never set in refc_train.py'"
+    }
+  ],
+  "affected_banked_panels": [
+    {
+      "path": "TanitAD Research Hub/Evaluation/Implementation/incoming/2026-08-02-four-family-panel/hier_v2corpus-lf19.json",
+      "md5": "a1b12be962bfb28a19f1512c42b85eed",
+      "arm_key": "v2corpus-lf19",
+      "arch": "flagship-worldmodel-v2",
+      "ckpt_step": 29999,
+      "n_windows": 418,
+      "n_episodes": 19,
+      "maneuver_label_version_stamp_present": false,
+      "members": {
+        "maneuver_acc": {
+          "real": 0.0239,
+          "mean_ctx": 0.0239,
+          "zero_ctx": 0.0526,
+          "delta_real_vs_mean": {
+            "delta": 0.0,
+            "lo": 0.0,
+            "hi": 0.0,
+            "ci95": 0.0,
+            "p_delta_gt0": 0.0,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 418,
+            "n_episodes": 19,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap",
+            "mean": 0.0,
+            "n": 418,
+            "separated_positive": false
+          },
+          "delta_real_vs_zero": {
+            "delta": -0.0287,
+            "lo": -0.0622,
+            "hi": -0.0024,
+            "ci95": 0.0299,
+            "p_delta_gt0": 0.0075,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 418,
+            "n_episodes": 19,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap",
+            "mean": -0.0287,
+            "n": 418,
+            "separated_positive": false
+          }
+        },
+        "wp_ade_2s": {
+          "real": 19.603,
+          "mean_ctx": 19.4487,
+          "zero_ctx": 16.5923,
+          "delta_real_vs_mean": {
+            "delta": -0.1542,
+            "lo": -0.9281,
+            "hi": 0.5089,
+            "ci95": 0.7185,
+            "p_delta_gt0": 0.3345,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 418,
+            "n_episodes": 19,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap",
+            "mean": -0.1542,
+            "n": 418,
+            "separated_positive": false
+          },
+          "delta_real_vs_zero": {
+            "delta": -3.0107,
+            "lo": -6.0606,
+            "hi": 0.1007,
+            "ci95": 3.0806,
+            "p_delta_gt0": 0.029,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 418,
+            "n_episodes": 19,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap",
+            "mean": -3.0107,
+            "n": 418,
+            "separated_positive": false
+          }
+        },
+        "goal_latent_cos": {
+          "real": 0.4609,
+          "mean_ctx": 0.4616,
+          "zero_ctx": 0.6913,
+          "delta_real_vs_mean": {
+            "delta": -0.0007,
+            "lo": -0.0029,
+            "hi": 0.0015,
+            "ci95": 0.0022,
+            "p_delta_gt0": 0.27,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 418,
+            "n_episodes": 19,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap",
+            "mean": -0.0007,
+            "n": 418,
+            "separated_positive": false
+          },
+          "delta_real_vs_zero": {
+            "delta": -0.2305,
+            "lo": -0.2862,
+            "hi": -0.1809,
+            "ci95": 0.0526,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 418,
+            "n_episodes": 19,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap",
+            "mean": -0.2305,
+            "n": 418,
+            "separated_positive": false
+          }
+        }
+      },
+      "load_bearing": false,
+      "maneuver_dir_distribution": {
+        "route_left": 8,
+        "route_straight": 6,
+        "route_right": 404
+      },
+      "maneuver_vs_trajectory_kappa": 0.0072
+    },
+    {
+      "path": "stack/experiments/pod-rescue-20260802/eval/root/taniteval/results/hier_v2corpus-lf19.json",
+      "md5": "a1b12be962bfb28a19f1512c42b85eed",
+      "arm_key": "v2corpus-lf19",
+      "arch": "flagship-worldmodel-v2",
+      "ckpt_step": 29999,
+      "n_windows": 418,
+      "n_episodes": 19,
+      "maneuver_label_version_stamp_present": false,
+      "members": {
+        "maneuver_acc": {
+          "real": 0.0239,
+          "mean_ctx": 0.0239,
+          "zero_ctx": 0.0526,
+          "delta_real_vs_mean": {
+            "delta": 0.0,
+            "lo": 0.0,
+            "hi": 0.0,
+            "ci95": 0.0,
+            "p_delta_gt0": 0.0,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 418,
+            "n_episodes": 19,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap",
+            "mean": 0.0,
+            "n": 418,
+            "separated_positive": false
+          },
+          "delta_real_vs_zero": {
+            "delta": -0.0287,
+            "lo": -0.0622,
+            "hi": -0.0024,
+            "ci95": 0.0299,
+            "p_delta_gt0": 0.0075,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 418,
+            "n_episodes": 19,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap",
+            "mean": -0.0287,
+            "n": 418,
+            "separated_positive": false
+          }
+        },
+        "wp_ade_2s": {
+          "real": 19.603,
+          "mean_ctx": 19.4487,
+          "zero_ctx": 16.5923,
+          "delta_real_vs_mean": {
+            "delta": -0.1542,
+            "lo": -0.9281,
+            "hi": 0.5089,
+            "ci95": 0.7185,
+            "p_delta_gt0": 0.3345,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 418,
+            "n_episodes": 19,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap",
+            "mean": -0.1542,
+            "n": 418,
+            "separated_positive": false
+          },
+          "delta_real_vs_zero": {
+            "delta": -3.0107,
+            "lo": -6.0606,
+            "hi": 0.1007,
+            "ci95": 3.0806,
+            "p_delta_gt0": 0.029,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 418,
+            "n_episodes": 19,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap",
+            "mean": -3.0107,
+            "n": 418,
+            "separated_positive": false
+          }
+        },
+        "goal_latent_cos": {
+          "real": 0.4609,
+          "mean_ctx": 0.4616,
+          "zero_ctx": 0.6913,
+          "delta_real_vs_mean": {
+            "delta": -0.0007,
+            "lo": -0.0029,
+            "hi": 0.0015,
+            "ci95": 0.0022,
+            "p_delta_gt0": 0.27,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 418,
+            "n_episodes": 19,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap",
+            "mean": -0.0007,
+            "n": 418,
+            "separated_positive": false
+          },
+          "delta_real_vs_zero": {
+            "delta": -0.2305,
+            "lo": -0.2862,
+            "hi": -0.1809,
+            "ci95": 0.0526,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 418,
+            "n_episodes": 19,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap",
+            "mean": -0.2305,
+            "n": 418,
+            "separated_positive": false
+          }
+        }
+      },
+      "load_bearing": false,
+      "maneuver_dir_distribution": {
+        "route_left": 8,
+        "route_straight": 6,
+        "route_right": 404
+      },
+      "maneuver_vs_trajectory_kappa": 0.0072
+    }
+  ],
+  "unaffected_reference_panel_same_grid": {
+    "path": "TanitAD Research Hub/Evaluation/Implementation/incoming/2026-08-02-four-family-panel/hier_v1-lf19.json",
+    "md5": "3884d11bd64951f0be16333e28dac8f4",
+    "arm_key": "v1-lf19",
+    "arch": "flagship-worldmodel",
+    "ckpt_step": 30000,
+    "n_windows": 418,
+    "n_episodes": 19,
+    "maneuver_label_version_stamp_present": false,
+    "members": {
+      "maneuver_acc": {
+        "real": 0.6746,
+        "mean_ctx": 0.6818,
+        "zero_ctx": 0.8134,
+        "delta_real_vs_mean": {
+          "delta": -0.0072,
+          "lo": -0.0766,
+          "hi": 0.0622,
+          "ci95": 0.0694,
+          "p_delta_gt0": 0.4035,
+          "separated": false,
+          "reducer": "mean",
+          "n_windows": 418,
+          "n_episodes": 19,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "mean": -0.0072,
+          "n": 418,
+          "separated_positive": false
+        },
+        "delta_real_vs_zero": {
+          "delta": -0.1388,
+          "lo": -0.2344,
+          "hi": -0.0526,
+          "ci95": 0.0909,
+          "p_delta_gt0": 0.0,
+          "separated": true,
+          "reducer": "mean",
+          "n_windows": 418,
+          "n_episodes": 19,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "mean": -0.1388,
+          "n": 418,
+          "separated_positive": false
+        }
+      },
+      "wp_ade_2s": {
+        "real": 3.3204,
+        "mean_ctx": 3.5293,
+        "zero_ctx": 9.5214,
+        "delta_real_vs_mean": {
+          "delta": 0.2089,
+          "lo": -0.0555,
+          "hi": 0.4996,
+          "ci95": 0.2776,
+          "p_delta_gt0": 0.9405,
+          "separated": false,
+          "reducer": "mean",
+          "n_windows": 418,
+          "n_episodes": 19,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "mean": 0.2089,
+          "n": 418,
+          "separated_positive": false
+        },
+        "delta_real_vs_zero": {
+          "delta": 6.201,
+          "lo": 2.6902,
+          "hi": 10.281,
+          "ci95": 3.7954,
+          "p_delta_gt0": 1.0,
+          "separated": true,
+          "reducer": "mean",
+          "n_windows": 418,
+          "n_episodes": 19,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "mean": 6.201,
+          "n": 418,
+          "separated_positive": true
+        }
+      },
+      "goal_latent_cos": {
+        "real": 0.8878,
+        "mean_ctx": 0.8914,
+        "zero_ctx": 0.8639,
+        "delta_real_vs_mean": {
+          "delta": -0.0036,
+          "lo": -0.0083,
+          "hi": 0.0008,
+          "ci95": 0.0045,
+          "p_delta_gt0": 0.057,
+          "separated": false,
+          "reducer": "mean",
+          "n_windows": 418,
+          "n_episodes": 19,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "mean": -0.0036,
+          "n": 418,
+          "separated_positive": false
+        },
+        "delta_real_vs_zero": {
+          "delta": 0.0238,
+          "lo": 0.0114,
+          "hi": 0.0351,
+          "ci95": 0.0118,
+          "p_delta_gt0": 1.0,
+          "separated": true,
+          "reducer": "mean",
+          "n_windows": 418,
+          "n_episodes": 19,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "mean": 0.0238,
+          "n": 418,
+          "separated_positive": true
+        }
+      }
+    },
+    "load_bearing": false,
+    "maneuver_dir_distribution": {
+      "route_left": 21,
+      "route_straight": 388,
+      "route_right": 9
+    },
+    "maneuver_vs_trajectory_kappa": 0.253
+  },
+  "label_family_gap_MEASURED_by_the_registry": {
+    "source": "MODEL_REGISTRY.md 1.7 note",
+    "corpus": "physicalai-v2bal-4b7eeeac222d, 9,000 clips \u2014 the TRAIN corpus, NOT the lf19 val grid",
+    "turn_share_v1_labeler": 0.2804,
+    "turn_share_v2_labeler": 0.1883,
+    "caveat": "quantifies that the two families disagree materially; it does NOT transfer to the 418-window lf19 val grid, and the shift is not even signed per-window \u2014 v2 can also ADD a turn that v1 misses, at low speed where a short arc gives high curvature under a small net yaw."
+  },
+  "rescore_verdict": {
+    "possible_offline": false,
+    "reason": "maneuver_acc = mean(man_pred == man_tgt). man_tgt is recomputable from poses at zero GPU; man_pred (the tactical head's 5-way argmax) is on disk NOWHERE, and the lf19 episode poses are not in this repo either.",
+    "probes": [
+      {
+        "probe": "recursive key walk over all 1,929 JSON files under the 8 content roots for list-valued man_pred / maneuver_pred / man_tgt / man_corr_real / maneuver_gt / man_corr_meanctx",
+        "result": "0 hits"
+      },
+      {
+        "probe": "all 60 rollout window dumps (taniteval/results/windows_*.pt and every incoming/**/*.pt)",
+        "result": "keys are pred/gt/cv/eid/speed/head_deg/wp_steps (+pred_dense/gt_dense on 2); no manoeuvre or route key on any file"
+      },
+      {
+        "probe": "repo-local search for ep_*.pt episode caches (the poses)",
+        "result": "none in the repo \u2014 the val40 cache lives on Thor"
+      },
+      {
+        "probe": "the repo's own prior findings: recompute_hierarchy_seams.py:16-19 and DIRYAW_REREAD.md 3.4",
+        "result": "independently concluded the hierarchy panel does not persist per-window arrays"
+      }
+    ],
+    "what_must_be_banked_to_make_this_recomputable": [
+      "man_pred (5-way argmax) per window, under real / mean-ctx / zero-ctx",
+      "eid per window",
+      "pose_last [b,4] and future_poses [b,GOAL_H,4] (or episode id + frame index) so ANY label family can be re-derived offline",
+      "gt_net_yaw / traj_net_yaw per window \u2014 already flagged by DIRYAW_REREAD 4 item 1; same writer, same one-line fix"
+    ],
+    "only_path_to_the_corrected_number": "re-run taniteval.hierarchy.run on flagship-v2corpus-30k with labels_v2=True \u2014 one GPU pass over the 19 leak-free (or 40 canonical) val episodes. The harness now resolves labels_v2 from the arm's own config.json, so the re-run needs no flag beyond --run-config."
+  },
+  "what_this_fix_does_NOT_resolve": [
+    "The paper's kappa collapse 0.253 (v1) -> 0.0072 (v2corpus), TANITAD_PAPER.md:1867-1868. It is built from man_pred vs traj_dir and never touches man_tgt, so this fix leaves it exactly where DIRYAW_REREAD 1.3 left it: CONFOUNDED with the label-definition change, and stacked on a genuinely degenerate head (maneuver_dir = 8 left / 6 straight / 404 right = 96.65 % one class, MEASURED from the banked panel).",
+    "The nav/route label family. hierarchy.py's rl.nav_command / rl.route_target are still unconditional v1 while THREE route label versions exist (v1, v2 via cfg.v2_labels, v2.1 via cfg.v21_route_labels). Deliberately NOT fixed: one boolean cannot express three versions and guessing would be a new defect.",
+    "four_families.tactical's factor_from_kinematics call omits kappa, which selects refc_tactical's v1 branch. Both raters share that gate so it is self-consistent \u2014 a label-DEFINITION question, not a head-scored-against-labels-it-never-saw defect. Reported, not changed."
+  ],
+  "refactor_inertness_proof": {
+    "claim": "no v1 arm's number and no training target can move",
+    "trainer_v1_branch_mismatches": "0 / 2000 random draws",
+    "trainer_v2_branch_mismatches": "0 / 2000 random draws",
+    "hierarchy_v1_path_mismatches": "0 / 500 batched draws",
+    "rollout_man_gt_v1_path_mismatches": "0 / 500 draws including episode-tail clamping"
+  },
+  "instrument_gap_CLOSED_in_this_change": {
+    "per_window_block": {
+      "keys": [
+        "eid",
+        "man_tgt",
+        "man_tgt_alt",
+        "man_pred",
+        "man_pred_meanctx",
+        "man_pred_zeroctx",
+        "gt_dir",
+        "traj_dir",
+        "gt_net_yaw",
+        "traj_net_yaw",
+        "valid"
+      ],
+      "why": "the panel built all of these and persisted only their means; that is why no Delta-kappa in this programme has ever carried an interval (DIRYAW_REREAD 3.4) AND why this defect could not be corrected offline",
+      "carries": "complete true/false + missing_keys, so a short block cannot look finished"
+    },
+    "cross_family_diagnostic": {
+      "key": "seam_ctx_to_tactical.maneuver_acc_under_other_label_family",
+      "contents": [
+        "label_version",
+        "real",
+        "mean_ctx",
+        "zero_ctx",
+        "delta_real_vs_mean (paired episode-cluster bootstrap)",
+        "label_disagreement_rate"
+      ],
+      "proof": "test_the_other_familys_number_is_banked_so_a_rescore_costs_no_gpu asserts it is bit-equal to an ACTUAL re-run under the other family",
+      "cost": "one extra labeler call on tensors already in hand"
+    },
+    "backcompat": "a pre-2026-08-17 record assembles to {status: UNAVAILABLE, reason}, never a silent omission",
+    "size_cost_per_panel_bytes_approx": 60000,
+    "still_NOT_banked": "raw pose_last/future_poses (~1.5 MB/panel). Banking man_tgt_alt removes the need for them for the v1<->v2 question specifically; a THIRD label family would still need a re-run.",
+    "does_NOT_fix_retroactively": "hier_v2corpus-lf19.json predates all of it \u2014 that number still needs one GPU pass"
+  },
+  "closes_DIRYAW_REREAD_work_items": [
+    "item 1 (persist the per-window gate inputs) \u2014 CLOSED",
+    "item 3 (branch man_tgt on the label version) \u2014 CLOSED"
+  ],
+  "still_open_DIRYAW_REREAD_work_items": [
+    "item 2 (sweep kappa_turn_subset)",
+    "item 4 (GPU re-score of v2corpus under v2 labels)"
+  ],
+  "suite": {
+    "stack": {
+      "invocation": "cd stack && PYTHONUTF8=1 OMP_NUM_THREADS=6 pytest -q (project venv pytest on PATH)",
+      "baseline": "3750 passed / 0 failed / 7 skipped / 2 xfailed",
+      "final": "3765 passed / 0 failed / 7 skipped / 2 xfailed (= 3750 + 15 new pin tests)"
+    },
+    "taniteval": {
+      "invocation": "cd taniteval && pytest -q tests (stack, stack/scripts, taniteval on PYTHONPATH)",
+      "result": "1092 passed / 0 failed",
+      "note": "NOT in the 3750 \u2014 stack/pyproject.toml testpaths=[\"tests\"]. run_all.py is the pod fallback and reports ~160 spurious fixture TypeErrors regardless of correctness."
+    }
+  },
+  "pin": {
+    "file": "stack/tests/test_maneuver_label_family.py",
+    "n_tests": 15,
+    "non_vacuity": "the 8 fixed files were restored to HEAD content in place (no git operation) and 12 of the 13 tests then present FAILED; restored from a scratch copy afterwards"
+  }
+}

@@ -1,0 +1,195 @@
+{
+ "binding": {
+  "argv": [
+   "--backbone",
+   "vitl16",
+   "--targets",
+   "/workspace/data/refe_navtrain/train_grow_cmd",
+   "--images",
+   "/workspace/data/navtrain_pixels",
+   "--calib",
+   "/workspace/data/refe_navtrain/train_grow/calib_table.json",
+   "--metric-cache",
+   "/workspace/data/refe_navtrain/metric_cache",
+   "--scorer-sees-trunk",
+   "--yaw-wrap",
+   "off",
+   "--nav-mode",
+   "command",
+   "--labeller",
+   "online",
+   "--label-workers",
+   "7",
+   "--epochs",
+   "25",
+   "--epoch-unit",
+   "scenes",
+   "--batch",
+   "4",
+   "--accum",
+   "64",
+   "--lr",
+   "2e-4",
+   "--weight-decay",
+   "0.01",
+   "--amp",
+   "bf16",
+   "--score-w",
+   "0.1",
+   "--tf32",
+   "--compile",
+   "--workers",
+   "2",
+   "--log-every",
+   "1",
+   "--ckpt-every-min",
+   "20",
+   "--out",
+   "/workspace/data/refe_runs/p6_paper_faithful",
+   "--resume"
+  ],
+  "argv_sha256": "271a46826cb33a7f71b5587c0ca816f7673c3b5c9557c0554af15bfd88dfcc94",
+  "commit": "c1dc5d33233259a8f5f876ecd89f2f4f2c3c9573",
+  "data": {
+   "--calib": {
+    "bytes": 2336659,
+    "kind": "file",
+    "method": "sha256-v1",
+    "path": "/workspace/data/refe_navtrain/train_grow/calib_table.json",
+    "sha256": "772c00abfd5070f7f6ecb648e45e7d422a3aeb3c5112ab12c43bbe5eb4a8ab6f"
+   },
+   "--images": {
+    "bytes": 85872932604,
+    "kind": "dir",
+    "listing_sha256": "95155321fc232cbd371cafc9be0f868654fa6baf90b3cf0fc93989b55a85182b",
+    "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; _v2manifest.pt excluded -- a cache rewrites it on first use)",
+    "n_files": 413184,
+    "path": "/workspace/data/navtrain_pixels"
+   },
+   "--metric-cache": {
+    "bytes": 36203076344,
+    "kind": "dir",
+    "listing_sha256": "d10d5bf756d2cdce2d117baa19e811cfb8ff23d61edaba47a2a2d0a441e24c69",
+    "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; _v2manifest.pt excluded -- a cache rewrites it on first use)",
+    "n_files": 103037,
+    "path": "/workspace/data/refe_navtrain/metric_cache"
+   },
+   "--targets": {
+    "bytes": 653732038,
+    "kind": "dir",
+    "listing_sha256": "5613ba89d88210065832602ffdb02cf4e3539e5c4f7d531e11de64c537f3a381",
+    "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; _v2manifest.pt excluded -- a cache rewrites it on first use)",
+    "n_files": 2,
+    "path": "/workspace/data/refe_navtrain/train_grow_cmd"
+   },
+   "gate:egr_json": {
+    "bytes": 729,
+    "kind": "file",
+    "method": "sha256-v1",
+    "path": "/workspace/data/refe_p6/egr/g_egr_result.json",
+    "sha256": "c24c078aa1733a1290e4467aaeecea7c1d936abf635f21fb0abbc08cc294ac58"
+   },
+   "gate:lab_json": {
+    "bytes": 355,
+    "kind": "file",
+    "method": "sha256-v1",
+    "path": "/workspace/data/refe_p6/lab.json",
+    "sha256": "cd183f60a9b825dc9c9380a62a1253826eeeb20d6e29762b02c2d602f864bdbd"
+   },
+   "gate:mem_metrics": {
+    "bytes": 4581,
+    "kind": "file",
+    "method": "sha256-v1",
+    "path": "/workspace/data/refe_p6/mem_metrics.jsonl",
+    "sha256": "56026529e0959bf46a78d304e0888dc670f9ddc857395ec843f0ce5f5b2110fa"
+   }
+  },
+  "data_sha256": "71a33b2764296a6043147d63ebcf1e3db8534e674a286f7d36ab0ac1787c44b1",
+  "gate_inputs": {
+   "gate:egr_json": "/workspace/data/refe_p6/egr/g_egr_result.json",
+   "gate:lab_json": "/workspace/data/refe_p6/lab.json",
+   "gate:mem_metrics": "/workspace/data/refe_p6/mem_metrics.jsonl"
+  },
+  "profile": "refe_p6",
+  "trainer": "refe/train.py",
+  "tree_sha256": "1f7d8ff27b7d711604abe150fffbf62f6ca547dfa36477d80b7d793db81b6255"
+ },
+ "checks": {
+  "G-CKPT": {
+   "evidence_sha256": "b0afdc5a91821f3d6bcae7888262cf59fc7fe3392fa585e778aef5e46079c0f9",
+   "finished_utc": "2026-10-16T18:16:31Z",
+   "reasons": [
+    "setup failed: U rc 1, H1 rc 1, checkpoint exists False"
+   ],
+   "status": "FAIL"
+  },
+  "G-CLOCK": {
+   "evidence_sha256": "5bff005511dfd4ddeee1c8bf757a55cac6f3dc7331663a4147a5dadb0b8d1e62",
+   "finished_utc": "2026-10-16T18:15:05Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-DVB": {
+   "evidence_sha256": "b4984952a14f9a7fec26ed1a44e8d6b826e83a51ff1629989655b5762956c829",
+   "finished_utc": "2026-10-16T18:14:57Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-EGR": {
+   "evidence_sha256": "9637e7d76c3aae17b15d9a01e4a427dc1e830778685634abd193665e47f5844a",
+   "finished_utc": "2026-10-16T18:46:00Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-EVAL": {
+   "evidence_sha256": "7ecfcf390a19182b911983f5c71d3aeb532e69fb049c69729f1ccdfadd5385f0",
+   "finished_utc": "2026-10-16T18:15:19Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-HYG": {
+   "evidence_sha256": "4566072ed255bd2daa105f271c2c31d79df6c1658e8708ae7942cadec4e5886a",
+   "finished_utc": "2026-10-16T18:14:57Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-LIVE": {
+   "evidence_sha256": "fcabacd8cd2acb817dd2ae759b7e9424a903a320666c145efa1f6be4f4fd3998",
+   "finished_utc": "2026-10-16T18:15:05Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-LIVE-LAB": {
+   "evidence_sha256": "8728509241cd4198ef4c65c3b523aa597fdd025ea658944473e45b1c9c172227",
+   "finished_utc": "2026-10-16T18:46:00Z",
+   "reasons": [
+    "GPU stall 33.1 % of a window > 5 %"
+   ],
+   "status": "FAIL"
+  },
+  "G-LIVE-MEM": {
+   "evidence_sha256": "f494d62ac5e1311a026de274c02bf6be37b82fffb55f824627c8e712074ea93e",
+   "finished_utc": "2026-10-16T18:46:00Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-SUITE": {
+   "evidence_sha256": "a8c5c440a22b56f4156ead51547c1c157652a4404ade3cee3ac0f5a1e008582c",
+   "finished_utc": "2026-10-16T18:46:00Z",
+   "reasons": [],
+   "status": "PASS"
+  }
+ },
+ "created_utc": "2026-10-16T18:50:26Z",
+ "gate_sha256": "90d04cbfe7bb17e75595c130c8b3612f54a00f0c8b695c5c40e60a63c3240a3b",
+ "hmac_sha256": "3227f08370ea861b8816a194068034ef0e238053ce55a9afa5fd2a9908c1852a",
+ "key_id": "2bb54d5b741c0d79",
+ "kind": "launch-gate-token",
+ "reasons": [
+  "G-CKPT FAIL: setup failed: U rc 1, H1 rc 1, checkpoint exists False",
+  "G-LIVE-LAB FAIL: GPU stall 33.1 % of a window > 5 %",
+  "checks not PASS: ['G-CKPT', 'G-LIVE-LAB']"
+ ],
+ "schema": "tanitad.launch_gate/1",
+ "verdict": "FAIL"
+}

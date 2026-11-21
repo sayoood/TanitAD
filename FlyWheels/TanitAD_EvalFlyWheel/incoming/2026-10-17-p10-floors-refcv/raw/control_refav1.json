@@ -1,0 +1,115 @@
+{
+ "tool": "run_control_refav1.py",
+ "grid": "refav1 operative 0.2 s; 2 s = 10 x 0.2 s, 6 s = 30 x 0.2 s",
+ "tier": "T1-equivalent (t0 state only; no future input)",
+ "rebuild_vs_banked_eval": {
+  "episodes_compared": 139,
+  "episodes_with_identical_ws": 139,
+  "windows": 2365,
+  "max_abs_diff": {
+   "kin": 1.1920928955078125e-07,
+   "g": 6.669549364346494e-06,
+   "g6": 2.3924652850837447e-05,
+   "ha0": 7.629394538355427e-06,
+   "ha0_ext": 8.7639199222167e-06,
+   "ha0_6": 8.392333984375e-05,
+   "ha0_ext_6": 9.572652915323943e-05
+  },
+  "note": "rebuilt from the refcv eval139 manifest (raw = manifest + 2 frames) vs feat_s4 (float32)"
+ },
+ "train": {
+  "episodes": 600,
+  "windows": 5398,
+  "windows_6s_valid": 5398,
+  "expected_windows_from_extract_train_log": 5398
+ },
+ "kdx_vs_original_P_kdx": {
+  "max_abs_6s": 0.000225067138671875,
+  "max_abs_2s": 8.58306884765625e-06
+ },
+ "fit_p10_vs_original": {
+  "2s": {
+   "max_abs_pred_diff_vs_original_fit_mlp_kin": 0.0,
+   "sel_mine": [
+    0,
+    0.01,
+    59
+   ],
+   "sel_original": [
+    0,
+    0.01,
+    59
+   ]
+  },
+  "6s": {
+   "max_abs_pred_diff_vs_original_fit_mlp_kin": 0.0,
+   "sel_mine": [
+    0,
+    0.0001,
+    59
+   ],
+   "sel_original": [
+    0,
+    0.0001,
+    59
+   ]
+  }
+ },
+ "known_value": {
+  "P10_6s_ade_m": 2.9257164449018296,
+  "target_6s_ade_m": 2.9257,
+  "tolerance_m": 0.02,
+  "abs_error_m": 1.6444901829615333e-05,
+  "PASS": true,
+  "P10_2s_ade_m": 0.22286984724157322,
+  "banked_2s_ade_m": 0.22286986876142748,
+  "banked_6s_ade_m_recomputed": 2.9257291105052934,
+  "P10_6s_fde_m": 9.350708966575764,
+  "n_eval_windows": 2399,
+  "n_eval_6s": 2399,
+  "n_eval_episodes": 141,
+  "paired_ours_minus_banked_P10_6s_ade": {
+   "delta": -1e-05,
+   "lo": -2e-05,
+   "hi": -1e-05,
+   "ci95": 1e-05,
+   "p_delta_gt0": 0.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 2399,
+   "n_episodes": 141,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "display_dp": 5,
+   "display_note": "rendered at 5 dp, not the usual 4: at 4 dp the printed interval would have contradicted separated=True. The extra digits are a RENDERING fix, not extra precision \u2014 the estimator and the separation test are unchanged."
+  },
+  "paired_ours_minus_banked_P10_2s_ade": {
+   "delta": -2e-08,
+   "lo": -3e-08,
+   "hi": -1e-08,
+   "ci95": 1e-08,
+   "p_delta_gt0": 0.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 2399,
+   "n_episodes": 141,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "display_dp": 8,
+   "display_note": "rendered at 8 dp, not the usual 4: at 4 dp the printed interval would have contradicted separated=True. The extra digits are a RENDERING fix, not extra precision \u2014 the estimator and the separation test are unchanged."
+  },
+  "paired_P10_minus_P10_6s_ade": {
+   "delta": 0.0,
+   "lo": 0.0,
+   "hi": 0.0,
+   "ci95": 0.0,
+   "p_delta_gt0": 0.0,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 2399,
+   "n_episodes": 141,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  }
+ }
+}

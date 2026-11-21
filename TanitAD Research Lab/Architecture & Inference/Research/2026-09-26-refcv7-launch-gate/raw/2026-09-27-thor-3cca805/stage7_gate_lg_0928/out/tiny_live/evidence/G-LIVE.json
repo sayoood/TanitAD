@@ -1,0 +1,864 @@
+{
+ "schema": "tanitad.launch_gate/1",
+ "kind": "evidence",
+ "check": "G-LIVE",
+ "status": "PASS",
+ "reasons": [],
+ "binding": {
+  "profile": "refc",
+  "commit": "0000000000000000000000000000000000000000",
+  "tree_sha256": "c8ff26fede7464986d78c69568f536b9b89171b3a9b3603ff3d0a1eb148cd210",
+  "argv_sha256": "446b7796be1d2d8f56beadd899bf594d2c646cd8b4ffea5bc029bff06c90676f"
+ },
+ "inputs_read": {
+  "--anchors": {
+   "kind": "file",
+   "bytes": 4317,
+   "sha256": "d9d6e5d60c33dc542eab0de0cb357880211cc9cd67b30ec00e84365dc95f1df6",
+   "method": "sha256-v1"
+  }
+ },
+ "host": {
+  "node": "thor6",
+  "platform": "Linux-6.8.12-tegra-aarch64-with-glibc2.39",
+  "python": "3.12.3",
+  "torch": "2.13.0+cu130",
+  "cuda": false
+ },
+ "arm": null,
+ "gate_sha256": "8a059346cc2a45ec8d744a6bdd833bdc6be9af28d50c75d32ea26e54c8af0aa4",
+ "started_utc": "2026-09-27T07:29:48Z",
+ "details": {
+  "n_train_steps_seen": 100,
+  "expect_steps": 100,
+  "terms": [
+   {
+    "rule": "planner",
+    "key": "loss",
+    "present_steps": 100,
+    "frac": 1.0,
+    "min_frac": 1.0,
+    "nonfinite_steps": 0,
+    "why": "the planner objective and the anchor classifier"
+   },
+   {
+    "rule": "planner",
+    "key": "traj",
+    "present_steps": 100,
+    "frac": 1.0,
+    "min_frac": 1.0,
+    "nonfinite_steps": 0,
+    "why": "the planner objective and the anchor classifier"
+   },
+   {
+    "rule": "planner",
+    "key": "cls",
+    "present_steps": 100,
+    "frac": 1.0,
+    "min_frac": 1.0,
+    "nonfinite_steps": 0,
+    "why": "the planner objective and the anchor classifier"
+   },
+   {
+    "rule": "f3_per_layer",
+    "key": "cascade",
+    "present_steps": 100,
+    "frac": 1.0,
+    "min_frac": 1.0,
+    "nonfinite_steps": 0,
+    "why": "F3 per-stage cascade loss (D-REFCV6-F3-WHITELIST)"
+   }
+  ],
+  "nonfinite_keys_any": [],
+  "loss_first_last": [
+   20.906455993652344,
+   18.97201156616211
+  ],
+  "final_train_row_present": true,
+  "final_row_keys": [
+   "anchor_acc",
+   "cascade",
+   "cls",
+   "data_batch",
+   "data_epoch",
+   "ego_injected",
+   "elapsed_s",
+   "goal2s_err_m",
+   "goal_gate",
+   "goal_gate_grad",
+   "goal_score_absmean",
+   "goal_tac",
+   "lat",
+   "lat_tac",
+   "law",
+   "lon",
+   "lon_tac",
+   "loss",
+   "lr",
+   "nav_injected",
+   "route",
+   "sel_v3",
+   "slot_valid_frac",
+   "step",
+   "tac_label_rows",
+   "tac_label_v7",
+   "traj",
+   "withheld_bank_active"
+  ],
+  "grads": {
+   "groups": [
+    {
+     "group": "core.decoder.adaln.0.scale_shift_mlp.1",
+     "numel": 2112,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.decoder.adaln.1.scale_shift_mlp.1",
+     "numel": 2112,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.decoder.cascade.conf_heads.0",
+     "numel": 33,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.decoder.cascade.conf_heads.1",
+     "numel": 33,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.decoder.cascade.control_heads.0",
+     "numel": 528,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.decoder.cascade.control_heads.1",
+     "numel": 528,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.decoder.cond_proj",
+     "numel": 544,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.decoder.conf_head",
+     "numel": 33,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.decoder.ctx_to_cond",
+     "numel": 288,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.decoder.feat_proj",
+     "numel": 2080,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.decoder.lat_to_anchor",
+     "numel": 60,
+     "params": 1,
+     "nz_params": 1
+    },
+    {
+     "group": "core.decoder.layers.0.cross",
+     "numel": 3168,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.decoder.layers.0.cross.out_proj",
+     "numel": 1056,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.decoder.layers.0.film.to_scale_shift",
+     "numel": 2112,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.decoder.layers.0.mlp.0",
+     "numel": 2112,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.decoder.layers.0.mlp.2",
+     "numel": 2080,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.decoder.layers.0.norm_f",
+     "numel": 64,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.decoder.layers.0.norm_q",
+     "numel": 64,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.decoder.layers.1.cross",
+     "numel": 3168,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.decoder.layers.1.cross.out_proj",
+     "numel": 1056,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.decoder.layers.1.film.to_scale_shift",
+     "numel": 2112,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.decoder.layers.1.mlp.0",
+     "numel": 2112,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.decoder.layers.1.mlp.2",
+     "numel": 2080,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.decoder.layers.1.norm_f",
+     "numel": 64,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.decoder.layers.1.norm_q",
+     "numel": 64,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.decoder.lon_to_anchor",
+     "numel": 60,
+     "params": 1,
+     "nz_params": 1
+    },
+    {
+     "group": "core.decoder.tgt_film.to_scale_shift",
+     "numel": 2112,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.decoder.tgt_proj",
+     "numel": 1056,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.decoder.time_embed",
+     "numel": 96,
+     "params": 1,
+     "nz_params": 1
+    },
+    {
+     "group": "core.decoder.time_mlp.1",
+     "numel": 4224,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.decoder.time_mlp.3",
+     "numel": 4128,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.decoder.traj_proj",
+     "numel": 544,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.encoder.stages.0.0.bn1",
+     "numel": 16,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.encoder.stages.0.0.bn2",
+     "numel": 16,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.encoder.stages.0.0.conv1",
+     "numel": 576,
+     "params": 1,
+     "nz_params": 1
+    },
+    {
+     "group": "core.encoder.stages.0.0.conv2",
+     "numel": 576,
+     "params": 1,
+     "nz_params": 1
+    },
+    {
+     "group": "core.encoder.stages.1.0.bn1",
+     "numel": 32,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.encoder.stages.1.0.bn2",
+     "numel": 32,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.encoder.stages.1.0.conv1",
+     "numel": 1152,
+     "params": 1,
+     "nz_params": 1
+    },
+    {
+     "group": "core.encoder.stages.1.0.conv2",
+     "numel": 2304,
+     "params": 1,
+     "nz_params": 1
+    },
+    {
+     "group": "core.encoder.stages.1.0.down.0",
+     "numel": 128,
+     "params": 1,
+     "nz_params": 1
+    },
+    {
+     "group": "core.encoder.stages.1.0.down.1",
+     "numel": 32,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.encoder.stages.2.0.bn1",
+     "numel": 64,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.encoder.stages.2.0.bn2",
+     "numel": 64,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.encoder.stages.2.0.conv1",
+     "numel": 4608,
+     "params": 1,
+     "nz_params": 1
+    },
+    {
+     "group": "core.encoder.stages.2.0.conv2",
+     "numel": 9216,
+     "params": 1,
+     "nz_params": 1
+    },
+    {
+     "group": "core.encoder.stages.2.0.down.0",
+     "numel": 512,
+     "params": 1,
+     "nz_params": 1
+    },
+    {
+     "group": "core.encoder.stages.2.0.down.1",
+     "numel": 64,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.encoder.stages.3.0.bn1",
+     "numel": 128,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.encoder.stages.3.0.bn2",
+     "numel": 128,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.encoder.stages.3.0.conv1",
+     "numel": 18432,
+     "params": 1,
+     "nz_params": 1
+    },
+    {
+     "group": "core.encoder.stages.3.0.conv2",
+     "numel": 36864,
+     "params": 1,
+     "nz_params": 1
+    },
+    {
+     "group": "core.encoder.stages.3.0.down.0",
+     "numel": 2048,
+     "params": 1,
+     "nz_params": 1
+    },
+    {
+     "group": "core.encoder.stages.3.0.down.1",
+     "numel": 128,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.encoder.stem.0",
+     "numel": 392,
+     "params": 1,
+     "nz_params": 1
+    },
+    {
+     "group": "core.encoder.stem.1",
+     "numel": 16,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.lat_head",
+     "numel": 99,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.law_head.0",
+     "numel": 2592,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.law_head.2",
+     "numel": 2112,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.lon_head",
+     "numel": 99,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.measurement.0",
+     "numel": 192,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.measurement.2",
+     "numel": 528,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.route_head",
+     "numel": 195,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.strategic.gru",
+     "numel": 3936,
+     "params": 4,
+     "nz_params": 4
+    },
+    {
+     "group": "core.strategic.proj",
+     "numel": 136,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "core.tactical_trunk.0",
+     "numel": 2080,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "goal_gate",
+     "numel": 1,
+     "params": 1,
+     "nz_params": 1
+    },
+    {
+     "group": "gstr_embed",
+     "numel": 32,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "gstr_film",
+     "numel": 576,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "lat_head_tac",
+     "numel": 99,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "lon_head_tac",
+     "numel": 99,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "nav_inj",
+     "numel": 256,
+     "params": 1,
+     "nz_params": 1
+    },
+    {
+     "group": "nav_to_str",
+     "numel": 520,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "nav_to_tac",
+     "numel": 2080,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "phi_tac.blocks.0.conv1",
+     "numel": 784,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "phi_tac.blocks.0.conv2",
+     "numel": 784,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "phi_tac.blocks.1.conv1",
+     "numel": 784,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "phi_tac.blocks.1.conv2",
+     "numel": 784,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "phi_tac.blocks.2.conv1",
+     "numel": 784,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "phi_tac.blocks.2.conv2",
+     "numel": 784,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "phi_tac.in_proj",
+     "numel": 1040,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "phi_tac.norms.0",
+     "numel": 32,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "phi_tac.norms.1",
+     "numel": 32,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "phi_tac.norms.2",
+     "numel": 32,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "phi_tac.out.0",
+     "numel": 544,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "phi_tac.out.2",
+     "numel": 1056,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "scorer",
+     "numel": 21,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "str_goal_head",
+     "numel": 27,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "tac_goal_head",
+     "numel": 396,
+     "params": 2,
+     "nz_params": 2
+    },
+    {
+     "group": "tac_latent_proj",
+     "numel": 1056,
+     "params": 2,
+     "nz_params": 2
+    }
+   ],
+   "n_trainable_params": 165,
+   "n_trainable_numel": 143983,
+   "n_leaf_groups": 90,
+   "dead_groups": [],
+   "n_dead_params": 0,
+   "dead_params_sample": [],
+   "nonfinite_params": [],
+   "frozen_in_optimizer": [
+    "core.decoder.control_head.bias",
+    "core.decoder.control_head.weight",
+    "core.decoder.offset_head.bias",
+    "core.decoder.offset_head.weight",
+    "scorer.goal_point.bias",
+    "scorer.goal_point.weight"
+   ],
+   "not_in_optimizer_but_requires_grad": []
+  },
+  "smoke_argv": [
+   "--arm",
+   "hier",
+   "--smoke",
+   "--synth-episodes",
+   "4",
+   "--device",
+   "cpu",
+   "--sampler",
+   "ddim",
+   "--anchor-v0-conditioned",
+   "--n-anchors",
+   "20",
+   "--f1-random-t",
+   "--f2-dd-step",
+   "--f3-per-layer",
+   "--f4-adaln",
+   "--f5-focal",
+   "--f5-emitting-conf",
+   "--f6-w-u0-zero",
+   "--seed",
+   "0",
+   "--save-every",
+   "500",
+   "--log-every",
+   "50",
+   "--batch",
+   "2",
+   "--steps",
+   "100",
+   "--anchors",
+   "/home/nvidia/gate_lg_0928/rig/anchors_v0cond_alat_20.pt",
+   "--out",
+   "/home/nvidia/gate_lg_0928/out/tiny_live/smoke/20260927T072948"
+  ],
+  "run_dir": "/home/nvidia/gate_lg_0928/out/tiny_live/smoke/20260927T072948",
+  "elapsed_s": 7.2,
+  "declared_terms": [
+   {
+    "id": "planner",
+    "keys": [
+     "loss",
+     "traj",
+     "cls"
+    ],
+    "min_frac": 1.0,
+    "why": "the planner objective and the anchor classifier"
+   },
+   {
+    "id": "f3_per_layer",
+    "keys": [
+     "cascade"
+    ],
+    "min_frac": 1.0,
+    "why": "F3 per-stage cascade loss (D-REFCV6-F3-WHITELIST)"
+   }
+  ],
+  "eval_calls": 0,
+  "out_keys": [
+   "anchor_bank",
+   "anchor_logits",
+   "anchor_traj",
+   "bank_speed_pred",
+   "ctx",
+   "ego_injected",
+   "fmap_s16",
+   "fmap_s8",
+   "g_str",
+   "g_str_raw",
+   "g_tac",
+   "g_tac_delta",
+   "goal_dist",
+   "goal_gate_value",
+   "goal_point",
+   "goal_point_free",
+   "goal_point_injected",
+   "goal_point_tac",
+   "goal_score_absmean",
+   "h19_tactical_feed",
+   "lat_decision",
+   "lat_logits",
+   "lat_logits_tac",
+   "law_pred",
+   "layer_logits",
+   "layer_u0_hat",
+   "lon_decision",
+   "lon_logits",
+   "lon_logits_tac",
+   "maneuver_decision",
+   "maneuver_logits",
+   "max_speed_injected",
+   "measurement",
+   "nav_injected",
+   "offset",
+   "perception",
+   "pooled",
+   "reach_keep",
+   "refined_logits",
+   "route_logits",
+   "seam_goal_sel_bound_frac",
+   "seam_goal_sel_ratio_max",
+   "seam_goal_sel_ratio_preclamp_max",
+   "seam_goal_sel_ratio_preclamp_mean",
+   "seam_goal_sel_sat_steps",
+   "sel_idx",
+   "sel_idx_base",
+   "sel_score",
+   "sel_score_v3",
+   "sel_tele",
+   "traj",
+   "traj_base",
+   "u0_hat",
+   "waypoints",
+   "wp_seq",
+   "z_tac"
+  ],
+  "departures_from_launch_argv": {
+   "--steps": 100,
+   "--out": "smoke dir",
+   "--trunk-compile": "dropped on a CPU host"
+  },
+  "cost": {
+   "n_intervals": 99,
+   "n_used": 89,
+   "warmup_skipped": 10,
+   "s_per_step_mean": 0.0604,
+   "s_per_step_median": 0.0601,
+   "s_per_step_max": 0.0787,
+   "cuda_max_mem_gb": null,
+   "batch": 2
+  },
+  "ceiling_filter": {
+   "on": false
+  },
+  "map_hires": {
+   "on": false
+  },
+  "ga_reach": {
+   "ga_on": false,
+   "log_every": 50,
+   "final_step": 100,
+   "note": "inert: the arm builds neither the perception branch nor the tactical decoder",
+   "groups": {
+    "trunk": {
+     "exists": true,
+     "path": "core.encoder",
+     "params": 77528,
+     "trainable_params": 77528
+    },
+    "planner": {
+     "exists": true,
+     "path": "core.decoder",
+     "params": 42939,
+     "trainable_params": 41883
+    },
+    "tac_decoder": {
+     "exists": false,
+     "path": "tac_decoder_v6"
+    },
+    "lift": {
+     "exists": false,
+     "path": "_perception.lift"
+    },
+    "bev_encoder": {
+     "exists": false,
+     "path": "_perception.map_branch.encoder"
+    },
+    "map_head": {
+     "exists": false,
+     "path": "_perception.map_branch.head"
+    },
+    "box_memory": {
+     "exists": false,
+     "path": "_perception.box_mem"
+    },
+    "box_decoder": {
+     "exists": false,
+     "path": "_perception.box_dec"
+    }
+   }
+  },
+  "d3_logged_rows": [],
+  "live_pres": {},
+  "grad_unreachable_probe": {
+   "probe": {
+    "present": true,
+    "result": []
+   }
+  },
+  "child": {
+   "tanitad": "/home/nvidia/gate_lg_0928/cab/stack/tanitad/__init__.py",
+   "torch": "2.13.0+cu130",
+   "cuda": false
+  }
+ },
+ "finished_utc": "2026-09-27T07:29:55Z"
+}

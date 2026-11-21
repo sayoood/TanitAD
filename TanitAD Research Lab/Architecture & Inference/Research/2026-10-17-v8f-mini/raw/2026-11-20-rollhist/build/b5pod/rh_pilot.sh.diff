@@ -1,0 +1,13 @@
+--- ../b2/rh_pilot.sh	2026-11-20 18:46:03.634818200 +0100
++++ rh_pilot.sh	2026-11-21 01:00:19.565392200 +0100
+@@ -2,8 +2,8 @@
+ # rh_pilot.sh -- HANDOFF_B1 step 3: the bank pilot (the part CPU cannot show). Called by rh_chain.sh, which HOLDS /root/gpu_queue.lock on fd 9: this script takes no lock.
+ # usage: RH_READOUT=causal_g1x|causal_g1 bash rh_pilot.sh        Writes $R/pilot/PILOT_RH.json ; last line `ZZ RH PILOT PASS ZZ` or `ZZ RH PILOT FAIL ZZ <why>` (exit 0 / 1).
+ # Pilots (UE_s0.A as the generator, union TRAIN windows, --limit-clips 200, 4 shards at the same time as bank4.sh does, then merge; about 111 s each, measured on DSCALE10K):
+-#   rh        = the RH generator flags (from RH_READOUT)            tree = $R/tree
+-#   default   = no new flags (the identity config)                  tree = $R/tree
++#   rh        = the RH generator flags (from RH_READOUT)            tree = $R/tree_cdb
++#   default   = no new flags (the identity config)                  tree = $R/tree_cdb
+ #   unpatched = no new flags                                        tree = /root/dscale10k/tree (cdbff971: v8f_dagger_bank.py + v8f_dagger.py are byte-identical to the build base 7b26a8ac)
+ #   unpatched2 only if check (a) reads a nonzero diff (the GPU's own run-to-run floor)
+ # Checks (a)-(d): rh_pilot_check.py. The pilot shard dirs' npz files are deleted at the end (own temp, re-creatable; logged in $R/deletions.log); the json records stay.

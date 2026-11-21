@@ -1,0 +1,358 @@
+{
+ "cases": [
+  {
+   "name": "R0 DAG_s0: the banked checkpoint hashes to the pinned sha256 (SHA256SUMS.txt)",
+   "ok": true,
+   "detail": "d186fd0bcfa7ee9f"
+  },
+  {
+   "name": "R0 DAG_s0: a v8f_mini_train checkpoint (model + cfg dicts); records whether its cfg carries `o_interface` (the F1 hunk reads that key only when present)",
+   "ok": true,
+   "detail": "o_interface in cfg: True ('full'); arm M2b seed 0 step 3000; 276 tensors"
+  },
+  {
+   "name": "R0 DAG_s1: the banked checkpoint hashes to the pinned sha256 (SHA256SUMS.txt)",
+   "ok": true,
+   "detail": "1d12ec2eb825990d"
+  },
+  {
+   "name": "R0 DAG_s1: a v8f_mini_train checkpoint (model + cfg dicts); records whether its cfg carries `o_interface` (the F1 hunk reads that key only when present)",
+   "ok": true,
+   "detail": "o_interface in cfg: True ('full'); arm M2b seed 1 step 3000; 276 tensors"
+  },
+  {
+   "name": "R1 dagorc s0: the production training argv parses with the tip trainer's own parser",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "R1 dagorc s0: the parsed namespace carries the registered levers (ego_perturb_p 0.3, dagger_p 0, init-ckpt tail M2b_s0_dag, no bank)",
+   "ok": true,
+   "detail": "{'ego_perturb_p': 0.3, 'dagger_p': 0.0, 'init_ckpt': 'D:\\\\tanitad\\\\runs\\\\v8f_mini_full\\\\M2b_s0_dag\\\\ckpt_last.pt', 'steps': 3000, 'seed': 0}"
+  },
+  {
+   "name": "R2 dagorc s0: load_init_ckpt(DAG_s0) into the model this argv builds: strict load, every tensor read back equal, sha256 = the pin",
+   "ok": true,
+   "detail": "{'applied': True, 'n_mismatch_after_load': 0, 'n_tensors': 276, 'source_arm': 'M2b', 'source_step': 3000, 'sec': 0.1}"
+  },
+  {
+   "name": "R1 dagorcrep s0: the production training argv parses with the tip trainer's own parser",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "R1 dagorcrep s0: the parsed namespace carries the registered levers (ego_perturb_p 0.0, dagger_p 0, init-ckpt tail M2b_s0_dag, no bank)",
+   "ok": true,
+   "detail": "{'ego_perturb_p': 0.0, 'dagger_p': 0.0, 'init_ckpt': 'D:\\\\tanitad\\\\runs\\\\v8f_mini_full\\\\M2b_s0_dag\\\\ckpt_last.pt', 'steps': 3000, 'seed': 10}"
+  },
+  {
+   "name": "R2 dagorcrep s0: load_init_ckpt(DAG_s0) into the model this argv builds: strict load, every tensor read back equal, sha256 = the pin",
+   "ok": true,
+   "detail": "{'applied': True, 'n_mismatch_after_load': 0, 'n_tensors': 276, 'source_arm': 'M2b', 'source_step': 3000, 'sec': 0.2}"
+  },
+  {
+   "name": "R1 dagorc01 s0: the production training argv parses with the tip trainer's own parser",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "R1 dagorc01 s0: the parsed namespace carries the registered levers (ego_perturb_p 0.1, dagger_p 0, init-ckpt tail M2b_s0_dag, no bank)",
+   "ok": true,
+   "detail": "{'ego_perturb_p': 0.1, 'dagger_p': 0.0, 'init_ckpt': 'D:\\\\tanitad\\\\runs\\\\v8f_mini_full\\\\M2b_s0_dag\\\\ckpt_last.pt', 'steps': 3000, 'seed': 0}"
+  },
+  {
+   "name": "R2 dagorc01 s0: load_init_ckpt(DAG_s0) into the model this argv builds: strict load, every tensor read back equal, sha256 = the pin",
+   "ok": true,
+   "detail": "{'applied': True, 'n_mismatch_after_load': 0, 'n_tensors': 276, 'source_arm': 'M2b', 'source_step': 3000, 'sec': 0.1}"
+  },
+  {
+   "name": "R1 dagorc s1: the production training argv parses with the tip trainer's own parser",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "R1 dagorc s1: the parsed namespace carries the registered levers (ego_perturb_p 0.3, dagger_p 0, init-ckpt tail M2b_s1_dag, no bank)",
+   "ok": true,
+   "detail": "{'ego_perturb_p': 0.3, 'dagger_p': 0.0, 'init_ckpt': 'D:\\\\tanitad\\\\runs\\\\v8f_mini_full\\\\M2b_s1_dag\\\\ckpt_last.pt', 'steps': 3000, 'seed': 1}"
+  },
+  {
+   "name": "R2 dagorc s1: load_init_ckpt(DAG_s1) into the model this argv builds: strict load, every tensor read back equal, sha256 = the pin",
+   "ok": true,
+   "detail": "{'applied': True, 'n_mismatch_after_load': 0, 'n_tensors': 276, 'source_arm': 'M2b', 'source_step': 3000, 'sec': 0.2}"
+  },
+  {
+   "name": "R1 dagorcrep s1: the production training argv parses with the tip trainer's own parser",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "R1 dagorcrep s1: the parsed namespace carries the registered levers (ego_perturb_p 0.0, dagger_p 0, init-ckpt tail M2b_s1_dag, no bank)",
+   "ok": true,
+   "detail": "{'ego_perturb_p': 0.0, 'dagger_p': 0.0, 'init_ckpt': 'D:\\\\tanitad\\\\runs\\\\v8f_mini_full\\\\M2b_s1_dag\\\\ckpt_last.pt', 'steps': 3000, 'seed': 11}"
+  },
+  {
+   "name": "R2 dagorcrep s1: load_init_ckpt(DAG_s1) into the model this argv builds: strict load, every tensor read back equal, sha256 = the pin",
+   "ok": true,
+   "detail": "{'applied': True, 'n_mismatch_after_load': 0, 'n_tensors': 276, 'source_arm': 'M2b', 'source_step': 3000, 'sec': 0.2}"
+  },
+  {
+   "name": "R1 dagorc01 s1: the production training argv parses with the tip trainer's own parser",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "R1 dagorc01 s1: the parsed namespace carries the registered levers (ego_perturb_p 0.1, dagger_p 0, init-ckpt tail M2b_s1_dag, no bank)",
+   "ok": true,
+   "detail": "{'ego_perturb_p': 0.1, 'dagger_p': 0.0, 'init_ckpt': 'D:\\\\tanitad\\\\runs\\\\v8f_mini_full\\\\M2b_s1_dag\\\\ckpt_last.pt', 'steps': 3000, 'seed': 1}"
+  },
+  {
+   "name": "R2 dagorc01 s1: load_init_ckpt(DAG_s1) into the model this argv builds: strict load, every tensor read back equal, sha256 = the pin",
+   "ok": true,
+   "detail": "{'applied': True, 'n_mismatch_after_load': 0, 'n_tensors': 276, 'source_arm': 'M2b', 'source_step': 3000, 'sec': 0.2}"
+  },
+  {
+   "name": "R5 every one of the 30 flags the six production argv use is a parser flag WITH a FLAG_CHECKS (G-DVB) entry",
+   "ok": true,
+   "detail": "['--arm', '--batch', '--cache-dir', '--dagger-p', '--device', '--ego-perturb-adrop', '--ego-perturb-p', '--ego-perturb-seed', '--ego-perturb-vmax', '--ego-perturb-vscale', '--ego-perturb-yawrate-std', '--exclude', '--grid', '--init-ckpt', '--join-train', '--kin-mode', '--lead-train', '--lr', '--out', '--p-gt-end', '--p-gt-start', '--p10', '--seed', '--speed-train', '--steps', '--steps-mult', '--tracks', '--v9-train', '--v9-train-md5', '--warmup']"
+  },
+  {
+   "name": "R5 the DAG-ORC levers' entries are the ones traced: ego_perturb_{p,vscale,vmax,adrop,yawrate_std,seed} -> ego:, init_ckpt -> data:init_ckpt, dagger_p -> dagger:dagger_p (read back from the BUILT objects)",
+   "ok": true,
+   "detail": "{}"
+  },
+  {
+   "name": "R3 deliberate regression: DAG_s0 into a different width (--d 48): REFUSED",
+   "ok": true,
+   "detail": "ValueError: config mismatch between the checkpoint and the model this argv builds (checkpoint vs built): d: 256 != 48; ff: 512 != 96"
+  },
+  {
+   "name": "R3 deliberate regression: DAG_s0 into a different grid (--grid pool8x20): REFUSED",
+   "ok": true,
+   "detail": "ValueError: config mismatch between the checkpoint and the model this argv builds (checkpoint vs built): n_tok: 40 != 160"
+  },
+  {
+   "name": "R3 deliberate regression: DAG_s0 into a different history (--hist 6): REFUSED",
+   "ok": true,
+   "detail": "ValueError: config mismatch between the checkpoint and the model this argv builds (checkpoint vs built): hist: 4 != 6"
+  },
+  {
+   "name": "R3 deliberate regression: a checkpoint whose cfg.n_q is doctored (+1) is REFUSED with a ValueError",
+   "ok": true,
+   "detail": "ValueError: config mismatch between the checkpoint and the model this argv builds (checkpoint vs built): n_q: 5 != 4"
+  },
+  {
+   "name": "R4 F1 hunk on the REAL file: DAG_s0 carries cfg.o_interface; a 'cut' model is refused",
+   "ok": true,
+   "detail": "o_interface in cfg True; cut-model load refused: True"
+  }
+ ],
+ "t0": 1793119916.2580771,
+ "o_interface_in_cfg": {
+  "0": true,
+  "1": true
+ },
+ "config_fields": {
+  "dagorc_s0": {
+   "compared": [
+    "d",
+    "heads",
+    "ff",
+    "d_feat",
+    "n_tok",
+    "hist",
+    "hmax",
+    "n_q",
+    "depth_s",
+    "depth_t",
+    "depth_o",
+    "nb",
+    "res_scale_m",
+    "navonly",
+    "wm",
+    "wm_dim",
+    "wm_strides",
+    "wm_beta",
+    "wm_gamma",
+    "kin_mode",
+    "max_age_t",
+    "max_age_s",
+    "o_interface"
+   ],
+   "absent_in_checkpoint": []
+  },
+  "dagorcrep_s0": {
+   "compared": [
+    "d",
+    "heads",
+    "ff",
+    "d_feat",
+    "n_tok",
+    "hist",
+    "hmax",
+    "n_q",
+    "depth_s",
+    "depth_t",
+    "depth_o",
+    "nb",
+    "res_scale_m",
+    "navonly",
+    "wm",
+    "wm_dim",
+    "wm_strides",
+    "wm_beta",
+    "wm_gamma",
+    "kin_mode",
+    "max_age_t",
+    "max_age_s",
+    "o_interface"
+   ],
+   "absent_in_checkpoint": []
+  },
+  "dagorc01_s0": {
+   "compared": [
+    "d",
+    "heads",
+    "ff",
+    "d_feat",
+    "n_tok",
+    "hist",
+    "hmax",
+    "n_q",
+    "depth_s",
+    "depth_t",
+    "depth_o",
+    "nb",
+    "res_scale_m",
+    "navonly",
+    "wm",
+    "wm_dim",
+    "wm_strides",
+    "wm_beta",
+    "wm_gamma",
+    "kin_mode",
+    "max_age_t",
+    "max_age_s",
+    "o_interface"
+   ],
+   "absent_in_checkpoint": []
+  },
+  "dagorc_s1": {
+   "compared": [
+    "d",
+    "heads",
+    "ff",
+    "d_feat",
+    "n_tok",
+    "hist",
+    "hmax",
+    "n_q",
+    "depth_s",
+    "depth_t",
+    "depth_o",
+    "nb",
+    "res_scale_m",
+    "navonly",
+    "wm",
+    "wm_dim",
+    "wm_strides",
+    "wm_beta",
+    "wm_gamma",
+    "kin_mode",
+    "max_age_t",
+    "max_age_s",
+    "o_interface"
+   ],
+   "absent_in_checkpoint": []
+  },
+  "dagorcrep_s1": {
+   "compared": [
+    "d",
+    "heads",
+    "ff",
+    "d_feat",
+    "n_tok",
+    "hist",
+    "hmax",
+    "n_q",
+    "depth_s",
+    "depth_t",
+    "depth_o",
+    "nb",
+    "res_scale_m",
+    "navonly",
+    "wm",
+    "wm_dim",
+    "wm_strides",
+    "wm_beta",
+    "wm_gamma",
+    "kin_mode",
+    "max_age_t",
+    "max_age_s",
+    "o_interface"
+   ],
+   "absent_in_checkpoint": []
+  },
+  "dagorc01_s1": {
+   "compared": [
+    "d",
+    "heads",
+    "ff",
+    "d_feat",
+    "n_tok",
+    "hist",
+    "hmax",
+    "n_q",
+    "depth_s",
+    "depth_t",
+    "depth_o",
+    "nb",
+    "res_scale_m",
+    "navonly",
+    "wm",
+    "wm_dim",
+    "wm_strides",
+    "wm_beta",
+    "wm_gamma",
+    "kin_mode",
+    "max_age_t",
+    "max_age_s",
+    "o_interface"
+   ],
+   "absent_in_checkpoint": []
+  }
+ },
+ "flags_used": {
+  "--arm": "arm",
+  "--batch": "batch",
+  "--cache-dir": "cache_dir",
+  "--dagger-p": "dagger_p",
+  "--device": "device",
+  "--ego-perturb-adrop": "ego_perturb_adrop",
+  "--ego-perturb-p": "ego_perturb_p",
+  "--ego-perturb-seed": "ego_perturb_seed",
+  "--ego-perturb-vmax": "ego_perturb_vmax",
+  "--ego-perturb-vscale": "ego_perturb_vscale",
+  "--ego-perturb-yawrate-std": "ego_perturb_yawrate_std",
+  "--exclude": "exclude",
+  "--grid": "grid",
+  "--init-ckpt": "init_ckpt",
+  "--join-train": "join_train",
+  "--kin-mode": "kin_mode",
+  "--lead-train": "lead_train",
+  "--lr": "lr",
+  "--out": "out",
+  "--p-gt-end": "p_gt_end",
+  "--p-gt-start": "p_gt_start",
+  "--p10": "p10",
+  "--seed": "seed",
+  "--speed-train": "speed_train",
+  "--steps": "steps",
+  "--steps-mult": "steps_mult",
+  "--tracks": "tracks",
+  "--v9-train": "v9_train",
+  "--v9-train-md5": "v9_train_md5",
+  "--warmup": "warmup"
+ },
+ "passed": true,
+ "sec": 5
+}

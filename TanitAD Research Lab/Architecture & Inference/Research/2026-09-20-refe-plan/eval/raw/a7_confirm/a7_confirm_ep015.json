@@ -1,0 +1,230 @@
+{
+ "_label": "SPEC_NAVTEST AMENDMENT 7 confirmation, run as registered (eval/SPEC_NAVTEST.md)",
+ "repair": "on the planner's native [20, 3] output, heading[19] := heading[18] for the executed plan, before the NAVSIM conversion; nothing else changes",
+ "snapshot": {
+  "ckpt": "D:/Projects/TanitAD/data/refe_runs_eval/snap_epoch015.pt",
+  "md5": "d7c59f4f2fbcbde3e2dec8f67d63a7e7",
+  "registered_md5": "d7c59f4f2fbcbde3e2dec8f67d63a7e7"
+ },
+ "tokens": {
+  "file": "D:\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\eval\\raw\\a5_confirm\\a5_confirm_tokens.json",
+  "md5": "3098d1784a9b99ba9d5a1a0a672a7ed6",
+  "n": 923,
+  "n_logs": 43
+ },
+ "pipeline": {
+  "seam": "D:/Projects/TanitAD/data/refe_navtest/seams/refe_a7confirm_ep015.npz",
+  "proposal_dump": "D:/Projects/TanitAD/data/refe_navtest/proptable/a7confirm_ep015/proposals.npz",
+  "native_record": "D:/Projects/TanitAD/data/refe_navtest/proptable/a7confirm_ep015/native_executed.npz",
+  "repaired_seam": "D:/Projects/TanitAD/data/refe_navtest/seams/refe_a7confirm_ep015_repaired.npz",
+  "dump_meta": {
+   "seam_rc": 0,
+   "gpu_seconds": 1555.4,
+   "finished_local": "2026-09-27T14:16:48",
+   "argv_to_pipeline": [
+    "refe_navtest_seam.py",
+    "--ckpt",
+    "D:/Projects/TanitAD/data/refe_runs_eval/snap_epoch015.pt",
+    "--frames",
+    "D:/Projects/TanitAD/data/refe_navtest/frames",
+    "--tokens",
+    "D:\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\eval\\raw\\a5_confirm\\a5_confirm_tokens.json",
+    "--out",
+    "D:/Projects/TanitAD/data/refe_navtest/seams/refe_a7confirm_ep015.npz",
+    "--arm",
+    "REFe_a7confirm_ep015",
+    "--dump-proposals",
+    "D:/Projects/TanitAD/data/refe_navtest/proptable/a7confirm_ep015/proposals.npz"
+   ],
+   "python": "C:\\Users\\Admin\\venvs\\driverl-eval\\Scripts\\python.exe",
+   "env": {
+    "REFE_SIM_HZ": "10",
+    "NUPLAN_MAPS_ROOT": "D:/Projects/TanitAD/data/nuplan-maps/nuplan-maps-v1.0",
+    "REFE_BACKBONE_ROOT": "D:/Projects/TanitAD/data/backbones"
+   }
+  }
+ },
+ "registration": {
+  "spec": "D:\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\eval\\SPEC_NAVTEST.md",
+  "git_blob": "71fc61b5300eaaadeda5727fd803e437b8f7f9dd",
+  "registered_blob_prefix": "71fc61b5",
+  "blob_matches": true,
+  "spec_mtime_local": "2026-09-27T13:46:24",
+  "amendment_7_present": true,
+  "native_record_mtime_local": "2026-09-27T14:16:50"
+ },
+ "gates": {
+  "a_only_the_4s_heading_differs": {
+   "token_order_identical": true,
+   "x_y_bit_identical_all_8_poses": true,
+   "heading_bit_identical_at_0.5..3.5s": true,
+   "repaired_4s_heading_equals_native_heading18_bitwise": true,
+   "tokens_whose_4s_heading_changed": 923,
+   "n": 923,
+   "pass": true
+  },
+  "b_shipped_seam_reproduces_the_pipeline": {
+   "pipeline_seam_equals_to_navsim_of_recorded_native_bitwise": true,
+   "pipeline_dump_pick_equals_recorded_pick": "923/923",
+   "pipeline_dump_pick_equals_v1_aggregate_argmax_of_its_logits_float64": "923/923",
+   "pipeline_dump_proposal_at_pick_equals_seam_bitwise": true,
+   "shipped_seam_scored_by_the_pipeline_scorer": "PASS",
+   "shipped_seam_harness_C1_max_abs_delta": 0.0,
+   "note": "the shipped seam IS the pipeline's (refe_navtest_seam.main wrote it) and its score is the pipeline's step 2 (score_navtest_refe.py, unchanged); these checks tie the native record the repair is built from to that seam, and the pick to the pipeline's dump and to the v1 rule on its own logits",
+   "pass": true
+  },
+  "c_every_harness_run_PASS_every_token_valid": {
+   "runs": {
+    "shipped": {
+     "label": "refe_a7confirm_ep015",
+     "status": "PASS",
+     "csv_valid_rows": 923,
+     "tokens_valid": "923/923",
+     "failures": []
+    },
+    "repaired": {
+     "label": "refe_a7confirm_ep015_repaired",
+     "status": "PASS",
+     "csv_valid_rows": 923,
+     "tokens_valid": "923/923",
+     "failures": []
+    },
+    "tangent": {
+     "label": "refe_a7confirm_ep015_repaired_tangent",
+     "status": "PASS",
+     "csv_valid_rows": 923,
+     "tokens_valid": "923/923",
+     "failures": []
+    }
+   },
+   "pass": true
+  },
+  "all_gates_pass": true
+ },
+ "statistic": {
+  "what": "per-token PDMS(repaired) - PDMS(shipped), mean over the tokens, x100",
+  "estimator": "paired log-cluster bootstrap over the 43 logs, 10000 resamples, percentile 95 %, seed 20260927 (eval/snapshot_pair_under_rule.py's estimator)",
+  "variance_answered": "EPISODES (another draw of logs) only: one checkpoint, one deterministic forward",
+  "shipped_pdms": 60.76,
+  "repaired_pdms": 76.96,
+  "delta": 16.2,
+  "ci95": [
+   12.83,
+   19.52
+  ],
+  "helped": 511,
+  "hurt": 99,
+  "tied": 313,
+  "tokens_with_unchanged_pose_max_abs_score_diff": null,
+  "n_tokens_with_unchanged_pose": 0
+ },
+ "decision": "ADOPT",
+ "decision_rule": "ADOPT iff lower bound > 0; REFUTED iff upper bound < 0; else NOT PROVEN (Amendment 7)",
+ "reported_not_gating": {
+  "subscore_deltas_x100_repaired_minus_shipped": {
+   "NC": 3.9,
+   "DAC": 9.97,
+   "EP": 12.05,
+   "TTC": 9.1,
+   "C": 32.39,
+   "DDC": -0.16
+  },
+  "subscores_x100": {
+   "shipped": {
+    "NC": 88.3,
+    "DAC": 81.8,
+    "EP": 61.34,
+    "TTC": 74.54,
+    "C": 64.79,
+    "DDC": 92.96
+   },
+   "repaired": {
+    "NC": 92.2,
+    "DAC": 91.77,
+    "EP": 73.39,
+    "TTC": 83.64,
+    "C": 97.18,
+    "DDC": 92.8
+   },
+   "tangent": {
+    "NC": 92.31,
+    "DAC": 90.57,
+    "EP": 72.78,
+    "TTC": 83.42,
+    "C": 96.42,
+    "DDC": 91.66
+   }
+  },
+  "tangent_variant": {
+   "pdms": 76.07,
+   "delta_vs_shipped": 15.31,
+   "ci95": [
+    12.12,
+    18.51
+   ],
+   "what": "heading[19] := direction of the last path segment (heading[18] if < 5 cm)"
+  },
+  "same_repair_on_the_latest_snapshots_200_tokens": {
+   "source": "eval/raw/e6_sub200_ep015/slow_copies.json -> repair_last_heading_shipped_pick.hold",
+   "value": "61.18 -> 77.94, +16.76 [+11.72, +22.13] (snapshot 015, W3's 200 tokens; the exploration that motivated the amendment)"
+  },
+  "defect_on_these_tokens_executed_plan": {
+   "share_abs_heading19_above_pi": 0.5872,
+   "median_abs_heading_minus_tangent_rad_at_18": 0.0376,
+   "median_abs_heading_minus_tangent_rad_at_19": 1.0567
+  },
+  "stop_floor_on_these_tokens": 62.17
+ },
+ "four_families": {
+  "what": "families6.py (TANITAD venv, unchanged) on the shipped and the repaired seam. The NAVSIM family adapter reads positions only (it drops the heading column; its heading_mae_deg is the path tangent), so the blocks are identical by construction -- shown, not assumed.",
+  "headline_numbers_identical": true,
+  "full_blocks_identical_apart_from_run_labels": true,
+  "shipped_summary": {
+   "n": 923,
+   "tier": "T1-family (stage-1 loop OPEN; the plan is the model's single query)",
+   "longitudinal": {
+    "speed_mae_mps": 1.2652,
+    "speed_bias_mps": 0.4888,
+    "along_mae_m": 2.0183,
+    "along_final_bias_m": 2.0008,
+    "accel_mae_mps2": 0.8357,
+    "target_speed_within_1mps": 0.6314,
+    "progress_ratio_mean": 1.2047,
+    "under_progress_rate": 0.4448,
+    "distance_keeping": "UNAVAILABLE"
+   },
+   "lateral": {
+    "heading_mae_deg": 3.0,
+    "yaw_rate_mae_degps": 4.0465,
+    "curvature_mae_1pm": 0.027855,
+    "cross_mae_m": 0.4667,
+    "cross_final_mae_m": 1.0503
+   },
+   "tactical": {
+    "lateral_decision_kappa": 0.7505,
+    "longitudinal_decision_kappa": 0.4919,
+    "maneuver_5way_kappa": 0.5903,
+    "goal_point_error_m": 5.0501
+   },
+   "strategic": "UNAVAILABLE"
+  },
+  "files": {
+   "shipped": "D:/Projects/TanitAD/data/refe_navtest/proptable/a7confirm_ep015\\families_shipped.json",
+   "repaired": "D:/Projects/TanitAD/data/refe_navtest/proptable/a7confirm_ep015\\families_repaired.json"
+  }
+ },
+ "provenance": {
+  "script": "D:\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\eval\\a7_confirm.py",
+  "script_sha256": "843c50af2699ecd8892fe7037d2b0687b877165765acf62b0fe13d5cab3e6179",
+  "shipped_seam_sha256": "208f5ff441d6710a6539470b42dcfc848a2dc13ed611e758dad3b5f54943da01",
+  "repaired_seam_sha256": "268b0b6850e90e37e418d99d6c29e841222f93b5381b2391470e5f187fb75aa3",
+  "tangent_seam_sha256": "f586f25964af441bcce2f2879885618ff75ad5b35ab4be736d2304428fe3922a",
+  "native_record_sha256": "eed73cb57bee18cbc2898316de792a3750ecb6eff2ea61d3c3bf77b7a85d1d44",
+  "proposal_dump_sha256": "8b073e6631f2b31a06c052258d2c9acfc893901fb6b0935640bb5d8bf8fb97a5",
+  "csv_sha256": {
+   "shipped": "d4e8bd24bf30038003b16cd58ea633c162aa881689890ddc44c423b24d0e56d6",
+   "repaired": "37831c8d6aea2f94863cd3cf3ee0e434261c088a1dc8ace13ae53f3017298837",
+   "tangent": "5c8dc6016c0a4df7990ff38ff53129af03541f446ac3b6eb6c9a9bbd10580177"
+  }
+ }
+}

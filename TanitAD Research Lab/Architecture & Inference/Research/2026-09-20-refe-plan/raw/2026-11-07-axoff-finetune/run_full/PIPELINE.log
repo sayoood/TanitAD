@@ -1,0 +1,137 @@
+[2026-11-07T02:28:30] stage pins: start
+[2026-11-07T02:29:00] stage pins: done in 30.4 s
+[2026-11-07T02:29:01] stage gates_real: start
+[2026-11-07T02:30:55] stage gates_real: done in 114.8 s
+[2026-11-07T02:30:55] stage g8_mini: start
+[2026-11-07T02:31:19] stage g8_mini: done in 23.6 s
+[2026-11-07T02:31:19] stage a0_banked: start
+[2026-11-07T02:31:25] stage a0_banked: done in 5.8 s
+[2026-11-07T02:31:25] stage select: start
+[2026-11-07T03:02:54] select: {'val_final_loss': {'K1': 0.1856604619272824, 'K2': 0.18566810005697712}, 'chosen_X1': 'K1', 'other_X2': 'K2', 'rule': 'lower cache-VAL loss, relative gap < 1 % -> K1 (PREREG section 2)'}
+[2026-11-07T03:02:54] stage select: done in 1889.3 s
+[2026-11-07T03:02:54] stage cpu_X1_AXOFF_s0: start
+[2026-11-07T03:06:29] stage cpu_X1_AXOFF_s0: done in 211.1 s
+[2026-11-07T03:06:30] stage cpu_X1_AXON_s0: start
+[2026-11-07T03:23:48] stage cpu_X1_AXON_s0: done in 1038.0 s
+[2026-11-07T03:23:48] stage cpu_X1_AXOFF_s1: start
+[2026-11-07T03:42:42] stage cpu_X1_AXOFF_s1: done in 1133.2 s
+[2026-11-07T03:42:42] stage cpu_X1_AXON_s1: start
+[2026-11-07T03:55:56] stage cpu_X1_AXON_s1: done in 793.2 s
+[2026-11-07T04:48:20] FAILED: Traceback (most recent call last):
+  File "E:\Projects\TanitAD-artifacts\yawrate_wp\YAX\ax_pipeline.py", line 300, in main
+    p.run()
+  File "E:\Projects\TanitAD-artifacts\yawrate_wp\YAX\ax_pipeline.py", line 261, in run
+    v = self.run_rung(rung, cand)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Projects\TanitAD-artifacts\yawrate_wp\YAX\ax_pipeline.py", line 241, in run_rung
+    raise RuntimeError("; ".join(f"{w}: {m[-1800:]}" for w, m in errs))
+RuntimeError: gpu: -artifacts\yawrate_wp\YAX\ax_pipeline.py", line 77, in sh
+    raise RuntimeError(f"{name}: rc={rc} (want {expect_rc}) token {token!r} {'present' if token and token in txt else 'ABSENT'}; tail: {txt[-1500:]}")
+RuntimeError: eval_X1_AXON_s0: rc=1 (want 0) token 'ZZAXEVAL X1_AXON_s0 OK' ABSENT; tail: ^^^^^^^^^^^^^^^^^^^^
+
+  File "C:\Users\Admin\venvs\driverl-eval\Lib\site-packages\torch\nn\modules\module.py", line 1751, in _wrapped_call_impl
+
+    return self._call_impl(*args, **kwargs)
+
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  File "C:\Users\Admin\venvs\driverl-eval\Lib\site-packages\torch\nn\modules\module.py", line 1762, in _call_impl
+
+    return forward_call(*args, **kwargs)
+
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  File "E:\Projects\TanitAD\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\model.py", line 319, in forward
+
+    v = self.v(x).view(B, N, self.h, self.dh).transpose(1, 2)
+
+        ^^^^^^^^^
+
+  File "C:\Users\Admin\venvs\driverl-eval\Lib\site-packages\torch\nn\modules\module.py", line 1751, in _wrapped_call_impl
+
+    return self._call_impl(*args, **kwargs)
+
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  File "C:\Users\Admin\venvs\driverl-eval\Lib\site-packages\torch\nn\modules\module.py", line 1762, in _call_impl
+
+    return forward_call(*args, **kwargs)
+
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  File "E:\Projects\TanitAD\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\model.py", line 231, in forward
+
+    return self.base(x) + F.linear(F.linear(x, self.A), self.B) * self.scale
+
+                                   ^^^^^^^^^^^^^^^^^^^
+
+RuntimeError: CUDA error: CUBLAS_STATUS_EXECUTION_FAILED when calling `cublasSgemm( handle, opa, opb, m, n, k, &alpha, a, lda, b, ldb, &beta, c, ldc)`
+
+
+
+
+
+
+[2026-11-07T07:09:10] ZZAXVERDICT X1 REFUTED  (AXOFF-AXON PDMS CI (-5.114477284899745, -2.4036890473758303) entirely below -0.5)
+[2026-11-07T07:09:10] X1: REFUTED -> next recipe rung if any (Rule Zero)
+[2026-11-07T07:09:10] stage cpu_X2_AXOFF_s0: start
+[2026-11-07T07:35:02] stage cpu_X2_AXOFF_s0: done in 1551.9 s
+[2026-11-07T07:35:02] stage cpu_X2_AXON_s0: start
+[2026-11-07T08:50:43] stage cpu_X2_AXON_s0: done in 4540.8 s
+[2026-11-07T08:50:43] stage cpu_X2_AXOFF_s1: start
+[2026-11-07T09:42:01] stage cpu_X2_AXOFF_s1: done in 3077.8 s
+[2026-11-07T09:42:01] stage cpu_X2_AXON_s1: start
+[2026-11-07T10:00:57] stage cpu_X2_AXON_s1: done in 1136.1 s
+[2026-11-07T14:20:28] FAILED: Traceback (most recent call last):
+  File "E:\Projects\TanitAD-artifacts\yawrate_wp\YAX\ax_pipeline.py", line 300, in main
+    p.run()
+  File "E:\Projects\TanitAD-artifacts\yawrate_wp\YAX\ax_pipeline.py", line 261, in run
+    v = self.run_rung(rung, cand)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Projects\TanitAD-artifacts\yawrate_wp\YAX\ax_pipeline.py", line 241, in run_rung
+    raise RuntimeError("; ".join(f"{w}: {m[-1800:]}" for w, m in errs))
+RuntimeError: gpu: -artifacts\yawrate_wp\YAX\ax_pipeline.py", line 77, in sh
+    raise RuntimeError(f"{name}: rc={rc} (want {expect_rc}) token {token!r} {'present' if token and token in txt else 'ABSENT'}; tail: {txt[-1500:]}")
+RuntimeError: eval_X2_AXON_s1: rc=1 (want 0) token 'ZZAXEVAL X2_AXON_s1 OK' ABSENT; tail: red in cast
+
+  return elements.iloc[np.where(elements[column_label].to_numpy().astype(int) == int(desired_value))]
+
+C:\Users\Admin\dz\DriveZero\DriveRL\nuplan-devkit\nuplan\common\maps\nuplan_map\utils.py:413: RuntimeWarning: invalid value encountered in cast
+
+  return elements.iloc[np.where(elements[column_label].to_numpy().astype(int) == int(desired_value))]
+
+C:\Users\Admin\dz\DriveZero\DriveRL\nuplan-devkit\nuplan\common\maps\nuplan_map\utils.py:413: RuntimeWarning: invalid value encountered in cast
+
+  return elements.iloc[np.where(elements[column_label].to_numpy().astype(int) == int(desired_value))]
+
+Traceback (most recent call last):
+
+  File "E:\Projects\TanitAD\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\eval\refe_navtest_seam.py", line 370, in <module>
+
+    sys.exit(main())
+
+             ^^^^^^
+
+  File "E:\Projects\TanitAD\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\eval\refe_navtest_seam.py", line 244, in main
+
+    img = planner._image_for(ego)
+
+          ^^^^^^^^^^^^^^^^^^^^^^^
+
+  File "E:\Projects\TanitAD\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\planner.py", line 616, in _image_for
+
+    frames.append(np.ascontiguousarray(im.astype(np.float32).transpose(2, 0, 1)) / 255.0)
+
+                                       ^^^^^^^^^^^^^^^^^^^^^
+
+numpy.core._exceptions._ArrayMemoryError: Unable to allocate 5.62 MiB for an array with shape (512, 960, 3) and data type float32
+
+
+
+
+
+
+[2026-11-07T14:28:27] ZZAXVERDICT X1 REFUTED  (AXOFF-AXON PDMS CI (-5.114477284899745, -2.4036890473758303) entirely below -0.5)
+[2026-11-07T14:28:27] X1: REFUTED -> next recipe rung if any (Rule Zero)
+[2026-11-07T16:00:52] ZZAXVERDICT X2 REFUTED  (AXOFF-AXON PDMS CI (-3.1976042097729227, -0.7765302269541746) entirely below -0.5)
+[2026-11-07T16:00:52] X2: REFUTED -> next recipe rung if any (Rule Zero)

@@ -1,0 +1,29 @@
+wrapper /workspace/v8proof/integ10k/build/v8f_t1_eval_reader_rule_rzgfhqetjv.py 28bc31f21ecb4ccb
+PASS A1 flag --vis-gap-file exists
+PASS A2 switch --vis-closing exists and is off by default
+PASS A3 both belong to form RR only (refusal text)
+PASS A4 the state is None when both are off
+PASS A5 the tick-level gap is replaced after feed() and before the log columns
+PASS A6 the later look replaces the gap after feed()
+PASS A7 the closing source is the head slot only with --vis-closing
+PASS A8 the namespace of the pinned tool keeps --eval-join (no assignment to a.eval_join)
+PASS A9 the run record has the four new keys
+PASS A10 the label source is not read by the variant's helpers
+PASS A11 none of the banned words in the text
+PASS I1 head_values_reader with the new arguments off returns and logs what the old one does
+PASS I2 a gap table with no output on any row: the rule receives the old gap and the closing input is the old zero
+PASS I3 on a frame the reader marks and the file has an output for, the rule receives the file's gap; elsewhere the reader's own
+PASS I4 the reader's presence output and the full-history flag are those of the old wrapper
+PASS I5 the closing input equals the closing of LabelSource on the same gaps (40 non-zero rows) -- []
+PASS I6 the counters are consistent -- {'present': 93, 'from_head': 93, 'no_head_output': 0, 'key_missing': 0, 'closing_nonzero': 40, 'closing_rows': 108}
+PASS I7 a missing, duplicated, non-finite or incomplete gap file is refused -- []
+RUN jv_old rc=0
+RUN jv_new rc=0
+RUN jv_nogap rc=0
+RUN jv_vis rc=0
+PASS V2A jv_new equals jv_old: largest difference 0 over 16 files
+PASS V2B jv_nogap equals jv_old: largest difference 0 over 16 files
+PASS V2C the gap the rule received equals the file's gap on lead rows with an output, the old gap on lead rows without -- lead rows with a file output 151 (off by more than 1e-3 m: 0), without output 0 (compared with jv_old 0, differing 0), non-zero closing on lead rows 127, on rows without a lead 0
+PASS V2D the closing input is not zero on some lead row and is zero on every row without a lead -- lead rows with a file output 151 (off by more than 1e-3 m: 0), without output 0 (compared with jv_old 0, differing 0), non-zero closing on lead rows 127, on rows without a lead 0
+PASS V2E a missing gap file is refused, and --vis-closing with form RLc is refused -- {'jv_ref1': True, 'jv_ref2': True}
+ZZ CHECK-WRAPPER-V PASS

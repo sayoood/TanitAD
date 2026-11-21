@@ -1,0 +1,156 @@
+{
+ "tool": "taniteval/tools/ff_rescore.py",
+ "arms": {
+  "flagship-30k": {
+   "tier": "T0",
+   "file": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-08-07-hierarchical-wm-redesign/ff_rescore_val40_demo/ff_flagship-30k.json",
+   "grid": {
+    "n_windows": 881,
+    "horizon_steps": 4,
+    "dt_s": 0.5,
+    "wp_steps": [
+     5,
+     10,
+     15,
+     20
+    ],
+    "n_episodes": 40,
+    "eid_sha1": "6b5b086136e7fdef",
+    "gt_sha1": "16d4588e72ccbe21"
+   }
+  },
+  "flagship-nospeed": {
+   "tier": "T0",
+   "file": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-08-07-hierarchical-wm-redesign/ff_rescore_val40_demo/ff_flagship-nospeed.json",
+   "grid": {
+    "n_windows": 881,
+    "horizon_steps": 4,
+    "dt_s": 0.5,
+    "wp_steps": [
+     5,
+     10,
+     15,
+     20
+    ],
+    "n_episodes": 40,
+    "eid_sha1": "6b5b086136e7fdef",
+    "gt_sha1": "16d4588e72ccbe21"
+   }
+  }
+ },
+ "_estimator": "paired_episode_cluster_bootstrap on the SAME resampled episodes",
+ "_binding": "per-family, never pooled; every number carries its tier and its n",
+ "status": "OK",
+ "paired": {
+  "flagship-nospeed_minus_flagship-30k": {
+   "direction": "flagship-nospeed - flagship-30k",
+   "tier": "T0",
+   "estimator": "paired_episode_cluster_bootstrap",
+   "sign_convention": "these are ERROR metrics \u2014 NEGATIVE = the second arm is BETTER",
+   "LAT_cross_mae_m": {
+    "delta": 0.2084,
+    "lo": 0.1415,
+    "hi": 0.2823,
+    "ci95": 0.0704,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "LON_along_mae_m": {
+    "delta": 2.5625,
+    "lo": 2.082,
+    "hi": 3.0953,
+    "ci95": 0.5067,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "LON_speed_mae_mps": {
+    "delta": 2.0503,
+    "lo": 1.6581,
+    "hi": 2.488,
+    "ci95": 0.4149,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "TAC_goal_point_error_m": {
+    "delta": 4.1207,
+    "lo": 3.3557,
+    "hi": 4.9992,
+    "ci95": 0.8217,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "TAC_lat_decision_correct": {
+    "delta": -0.0749,
+    "lo": -0.1148,
+    "hi": -0.0364,
+    "ci95": 0.0392,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "TAC_lon_decision_correct": {
+    "delta": -0.2327,
+    "lo": -0.3261,
+    "hi": -0.1409,
+    "ci95": 0.0926,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "ade_dense_m": {
+    "delta": 2.5904,
+    "lo": 2.117,
+    "hi": 3.1252,
+    "ci95": 0.5041,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fde_last_m": {
+    "delta": 4.1207,
+    "lo": 3.3557,
+    "hi": 4.9992,
+    "ci95": 0.8217,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   }
+  }
+ }
+}

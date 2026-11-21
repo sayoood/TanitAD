@@ -1,0 +1,32 @@
+P5CL start 2026-11-16T12:53:04Z label=p5r-rj5 nshard=15 ship=/workspace/data/p5c_ship work=/workspace/data/p5c_label_a33 a31_sha256=cda1567b52aaf531 join_sha256=4670f88ac409e71a
+ZZP5CL_REUSE shards from the manifest /workspace/data/p5c_a33_check/SHARDS_run3.sha256 (sha256 614562c2206722ec): the labelling passes are not re-run
+ZZPROBE thread_pin=env (threadpoolctl absent; OPENBLAS/MKL/OMP_NUM_THREADS=1 required and exported)
+{"n_bank_rows": 150603, "n_rj5": 92896, "rj5_coverage_rank0": 1.0, "counts": {"bank_fallback|rank1|rank1": 57707, "rj5|None|rank0": 92896}, "feed_map_sha256": "38a94869962da5c4de9d21b97399c3981bdcb21b486aa6b78f8f5263115d8fbc"}
+ZZRJ5_FEED_OK
+ZZP5CL_FEED map_sha256=38a94869962da5c4de9d21b97399c3981bdcb21b486aa6b78f8f5263115d8fbc join_sha256=4670f88ac409e71a1f7e1bf02328d93229fb3e153ad63f4127f08d53bbfed739
+ZZCTL_BANK 2400 rows {'targets_rank0.jsonl': '1c07ec0425776898e7e89536d579dad1a3fd9b02356c71c2b9007073dcd2c25c', 'targets_rank1.jsonl': '1b2ecef2017169baddd343a82e14882c359dafc061c107f2a63e2a4c355283fc'}
+ZZP5CL_REUSED control 15 shards verified against the sha manifest
+ZZP5CL_GATES control (informational, the ZZTB line is never read): ZZTB_ALL_PASS
+ZZP5CL_GATE control TB-0 PASS
+ZZP5CL_GATE control TB-1 PASS
+ZZP5CL_REUSED rj5 15 shards verified against the sha manifest
+ZZP5CL_FALLBACK {"n_records": 150603, "n_fallback": 1, "n_unlisted_s2_candidates": 0, "out_sha256": "5bd17ddce53adb05aa99f1c68932d80d950b5f71b1c592673b61b8e87a5e1860"}
+ZZP5CL_GATES main (informational, the ZZTB line is never read): ZZTB_FAIL TB-0 TB-1
+ZZP5CL_GATE main TB-2 PASS
+ZZP5CL_GATE main TB-3 PASS
+ZZP5CL_GATE main TB-4 PASS
+ZZP5CL_GATE main TB-5 PASS
+ZZP5CL_GATE main TB-7 PASS
+ZZP5CL_GATE main TB-0 NOT_RUN (judged on the control pass: an RJ5 label differs from the bank-traj EVAL labels by construction)
+ZZP5CL_GATE main TB-1 NOT_RUN (judged on the control pass: an RJ5 label differs from the bank-traj EVAL labels by construction)
+ZZP5CL_GATE main TB-6 PASS rank0=True rank1=True (rank 1 is reported and decides nothing under the forced rank0 policy)
+ZZP5CL_GATE main RK0 no-stop decision=all
+ZZP5CL_GATE main TB-0r PASS
+ZZP5CL_GATE main TB-9 PASS
+ZZP5CL_GATE main LABEL-FALLBACK OK n=1 unlisted_s2_candidates=0 reason=tb5_s2_tc20s
+ZZP5CL_CLASS rj5=pass
+ZZP5CL_GATE table TB-9 PASS sidecar keys 150603, table keys 150603 (expected 150603), equal=True
+ZZP5CL_TABLE p5r-rj5 rank_policy=rank0 sha256=3b198314721fc7e75e6bd0ca9b569b5b0a56ba25178e4fb63a94b215995637a2 table=/workspace/data/p5c_label_a33/P5C_label_table_p5r-rj5_rank0.json.gz
+P5C_LABEL_TABLE_SHA256=3b198314721fc7e75e6bd0ca9b569b5b0a56ba25178e4fb63a94b215995637a2  label=p5r-rj5
+ZZP5CL_NOTE the C1 table is built; the MM writes LABEL_SELECTION.md (label p5r-rj5, the two gates.json, tb0r.json, the join sha) and fills P5C_LABEL_TABLE_SHA256 (A3 section 4)
+ZZP5CL_DONE

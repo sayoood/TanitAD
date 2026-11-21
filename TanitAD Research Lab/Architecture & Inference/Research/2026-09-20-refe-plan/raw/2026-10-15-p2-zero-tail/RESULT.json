@@ -1,0 +1,1437 @@
+{
+ "meta": {
+  "p2_csv": {
+   "path": "D:/Projects/TanitAD/data/refe_navtest/score/refe_stage2_p2_full/refe_stage2_p2_full.csv",
+   "sha256": "61073a61e44a3dcf41fad6dc8c5b261ce97eb8f8d8b49c1adc077dd7c04b61e6",
+   "expected_sha256_original": "61073a61e44a3dcf41fad6dc8c5b261ce97eb8f8d8b49c1adc077dd7c04b61e6",
+   "is_the_banked_original": true
+  },
+  "final_census": {
+   "zero_picks": 983,
+   "zero_picks_reviewed_in_REVIEW_7": 983,
+   "mean_x100": 83.23633938020811,
+   "note": "pre-route-fix final model; informational check, not a hard gate"
+  },
+  "when": "2026-10-15T21:44:04+0200",
+  "seconds": 3.7,
+  "python": "3.11.13",
+  "numpy": "1.26.4",
+  "bootstrap": {
+   "B": 10000,
+   "seed": 20260927,
+   "n_logs": 136,
+   "estimand": "another draw of LOGS only"
+  },
+  "inputs": {
+   "u400_csv_repo": {
+    "path": "C:\\Users\\Admin\\AppData\\Local\\Temp\\zt\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\raw\\p2_r2_instrument\\baseline\\u400_navtest_full.csv",
+    "sha256": "41d2468cff39dc808c09570079550b8594fb59b14cd78c42a1ece1b748421bad"
+   },
+   "tokens": {
+    "path": "C:\\Users\\Admin\\AppData\\Local\\Temp\\zt\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\raw\\p2_r2_instrument\\baseline\\navtest_full_tokens.json",
+    "sha256": "927bbe3838dd70af5fa27eadceb09f55acc9c1cfd04cf0a6b520f1519175a955"
+   },
+   "p2_seam": {
+    "path": "C:\\Users\\Admin\\AppData\\Local\\Temp\\zt\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\raw\\p2_readout\\p2_full\\arm\\stage2_p2_full.npz",
+    "sha256": "a0401350c66480a98ae25a6e6e278a002db82ff9be951baee6e1646e4d04f163"
+   },
+   "c3_table": {
+    "path": "C:\\Users\\Admin\\AppData\\Local\\Temp\\zt\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\raw\\2026-10-11-c3-selection-headroom\\table.npz",
+    "sha256": "cf30519051bea03b5a950975477806ce9b1ef141ac270dbe5781ea53f6dbc7c0"
+   },
+   "c3_tokens": {
+    "path": "C:\\Users\\Admin\\AppData\\Local\\Temp\\zt\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\raw\\2026-10-11-c3-selection-headroom\\tokens.json",
+    "sha256": "5de1b78ef262a4db78de62738c01b52910ce54d9d96164831a769e6e6271feda"
+   },
+   "c3_props": {
+    "path": "C:\\Users\\Admin\\AppData\\Local\\Temp\\zt\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\raw\\2026-10-11-c3-selection-headroom\\proposals.npz",
+    "sha256": "4678233b8e70d1859fbd2ee283b66aa362376a5cecc7dbe1947b351f26e16a05"
+   },
+   "census": {
+    "path": "C:\\Users\\Admin\\AppData\\Local\\Temp\\zt\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\raw\\2026-10-04-lane-discipline\\lane_census.jsonl.xz",
+    "sha256": "f3f2b63dca0225b1fd40f2d61404cbdfe9f8994484a9cd31fc462aa1939aa610"
+   }
+  },
+  "tier": "T1"
+ },
+ "gates": {
+  "G2_tokens_logs": {
+   "n_tokens": 12146,
+   "n_logs": 136,
+   "pass": true
+  },
+  "G1_p2_mean": {
+   "recomputed_x100": 88.8184088897293,
+   "expected": 88.82,
+   "csv_average_row_x100": 88.81840888972931,
+   "pass": true
+  },
+  "G2_u400_mean": {
+   "recomputed_x100": 88.24694109622521,
+   "expected": 88.25,
+   "pass": true
+  },
+  "G3_zero_counts": {
+   "p2": 509,
+   "p2_expected": 509,
+   "u400": 529,
+   "u400_expected": 529,
+   "pass": true
+  },
+  "G4_u400_table_at_pick": {
+   "max_abs_diff": 0.0,
+   "n": 1058,
+   "all_valid": true,
+   "pass": true
+  },
+  "G5_census": {
+   "records": 12146,
+   "max_abs_pick_vs_csv_pdms": 4.9998403387596646e-05,
+   "tolerance": 5.0001000000000005e-05,
+   "zero_status_agrees": true,
+   "proposals_ncdac_pos_but_pdms0": 0,
+   "pick_ok_all": true,
+   "pass": true
+  }
+ },
+ "ddc_gate_test": {
+  "p2_rows_ddc0_and_score_gt0": 125,
+  "p2_rows_ddc0": 141,
+  "reading": "> 0 means DDC does not gate the score (NAVSIM v1.1 driving_direction_weight = 0.0)"
+ },
+ "Q1a_u400_own": {
+  "evidence": "MEASURED on u400 (table.npz, all 529 zero tokens are in the table)",
+  "SEL_def": {
+   "n_zero": 529,
+   "n_SEL": 455,
+   "n_PROP": 74,
+   "SEL_share": {
+    "point": 0.8601134215500945,
+    "lo": 0.8010554397815464,
+    "hi": 0.917415563811763,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "PROP_share": {
+    "point": 0.13988657844990549,
+    "lo": 0.08258443618823705,
+    "hi": 0.19894456021845358,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "oracle_on_SEL_gain_pdms_pts": {
+    "point": 3.620096975439955,
+    "lo": 2.8454981258219543,
+    "hi": 4.554106031885331,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "verdict": "SELECTION"
+  },
+  "SAFE_sensitivity": {
+   "n_SAFE": 455,
+   "n_zero": 529
+  },
+  "Q2_cause": {
+   "all": {
+    "DAC_only": {
+     "n": 413,
+     "share": {
+      "point": 0.780718336483932,
+      "lo": 0.7075875758555511,
+      "hi": 0.8365899882747653,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "NC_only": {
+     "n": 113,
+     "share": {
+      "point": 0.21361058601134217,
+      "lo": 0.15848099463550852,
+      "hi": 0.2857207910486598,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "both": {
+     "n": 3,
+     "share": {
+      "point": 0.005671077504725898,
+      "lo": 0.0,
+      "hi": 0.012638730577719111,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "neither": {
+     "n": 0,
+     "share": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "B": 10000,
+      "n_nan": 0
+     }
+    }
+   },
+   "SEL": {
+    "DAC_only": {
+     "n": 343
+    },
+    "NC_only": {
+     "n": 111
+    },
+    "both": {
+     "n": 1
+    },
+    "neither": {
+     "n": 0
+    },
+    "n_total": 455
+   },
+   "PROP": {
+    "DAC_only": {
+     "n": 70
+    },
+    "NC_only": {
+     "n": 2
+    },
+    "both": {
+     "n": 2
+    },
+    "neither": {
+     "n": 0
+    },
+    "n_total": 74
+   }
+  },
+  "fan_cleanliness_POSTHOC": {
+   "n": 455,
+   "exactly_1_of_64": 21,
+   "2_to_4_of_64": 52,
+   "5_to_31_of_64": 221,
+   "32_or_more_of_64": 161,
+   "median_nonzero_of_64": 21.0,
+   "mean_nonzero_share": 0.3871565934065934
+  },
+  "PROP_failure_kinds": {
+   "all_DAC0": 68,
+   "all_NC0": 0,
+   "all_both": 0,
+   "mixed": 6,
+   "other": 0
+  }
+ },
+ "Q1b_final_own": {
+  "evidence": "MEASURED on the pre-SFT final model (lane_census, all 12,146 tokens)",
+  "SEL_def": {
+   "n_zero": 983,
+   "n_SEL": 795,
+   "n_PROP": 188,
+   "SEL_share": {
+    "point": 0.8087487283825026,
+    "lo": 0.7323151292219159,
+    "hi": 0.8782245806648368,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "PROP_share": {
+    "point": 0.19125127161749747,
+    "lo": 0.12177541933516316,
+    "hi": 0.26768487077808406,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "oracle_on_SEL_gain_pdms_pts": {
+    "point": 6.365635600197596,
+    "lo": 5.5198233907495355,
+    "hi": 7.273672954517408,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "verdict": "SELECTION"
+  },
+  "SAFE_sensitivity": {
+   "n_SAFE": 793,
+   "n_zero": 983
+  },
+  "Q2_cause": {
+   "all": {
+    "DAC_only": {
+     "n": 721,
+     "share": {
+      "point": 0.7334689725330621,
+      "lo": 0.6662326978559419,
+      "hi": 0.7964694821474885,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "NC_only": {
+     "n": 220,
+     "share": {
+      "point": 0.22380467955239064,
+      "lo": 0.16712032498345913,
+      "hi": 0.28484574704126525,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "both": {
+     "n": 42,
+     "share": {
+      "point": 0.042726347914547304,
+      "lo": 0.01803806245748355,
+      "hi": 0.07798523509174307,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "neither": {
+     "n": 0,
+     "share": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "B": 10000,
+      "n_nan": 0
+     }
+    }
+   },
+   "SEL": {
+    "DAC_only": {
+     "n": 575
+    },
+    "NC_only": {
+     "n": 205
+    },
+    "both": {
+     "n": 15
+    },
+    "neither": {
+     "n": 0
+    },
+    "n_total": 795
+   },
+   "PROP": {
+    "DAC_only": {
+     "n": 146
+    },
+    "NC_only": {
+     "n": 15
+    },
+    "both": {
+     "n": 27
+    },
+    "neither": {
+     "n": 0
+    },
+    "n_total": 188
+   }
+  },
+  "fan_cleanliness_POSTHOC": {
+   "n": 795,
+   "exactly_1_of_64": 23,
+   "2_to_4_of_64": 72,
+   "5_to_31_of_64": 420,
+   "32_or_more_of_64": 280,
+   "median_nonzero_of_64": 24.0,
+   "mean_nonzero_share": 0.40562106918238994
+  },
+  "PROP_failure_kinds": {
+   "all_DAC0": 150,
+   "all_NC0": 13,
+   "all_both": 19,
+   "mixed": 6,
+   "other": 0
+  }
+ },
+ "bridge": {
+  "evidence": "INFERRED: P2 has no all-64 table; classification comes from other models' fans",
+  "tier1_coverage": {
+   "P2_zero_in_u400_table": 343,
+   "P2_zero": 509,
+   "share": 0.6738703339882122,
+   "strength": "partial"
+  },
+  "persistence": {
+   "P2z_and_u400z": 331,
+   "P2z_only": 178,
+   "u400z_only": 198,
+   "P2z_and_finalz": 315,
+   "share_of_P2z_also_u400z": 0.650294695481336,
+   "share_of_P2z_also_finalz": 0.618860510805501
+  },
+  "T1b_label_agreement_u400_table_vs_final_census": {
+   "tokens_both": 1058,
+   "agreement_all": 0.9924385633270322,
+   "agreement_on_u400_zero_tokens": 0.9886578449905482,
+   "contingency_all": {
+    "u400_SEL__final_SEL": 976,
+    "u400_SEL__final_PROP": 8,
+    "u400_PROP__final_SEL": 0,
+    "u400_PROP__final_PROP": 74
+   },
+   "contingency_u400_zero": {
+    "u400_SEL__final_SEL": 449,
+    "u400_SEL__final_PROP": 6,
+    "u400_PROP__final_SEL": 0,
+    "u400_PROP__final_PROP": 74
+   }
+  },
+  "T2_P2_pick_vs_u400_fan_on_C3_tokens": {
+   "n": 1058,
+   "share_within_1e-3_m": 0.0,
+   "share_within_0.5_m": 0.8733459357277883,
+   "median_min_dist_m": 0.218422532081604,
+   "on_u400_zero_tokens": {
+    "n": 529,
+    "share_within_1e-3_m": 0.0
+   }
+  },
+  "persistence_detail_POSTHOC": {
+   "persistent_zeros": 331,
+   "persistent_SEL_under_u400_fan": 261,
+   "persistent_PROP_under_u400_fan": 70,
+   "P2_only_zeros": 178,
+   "P2_only_zeros_in_u400_table": 12,
+   "P2_only_zeros_where_u400_PICK_scored_gt0": 178,
+   "reading": "on a P2-only zero token u400's own pick scored > 0, so u400's fan contains a non-zero plan BY CONSTRUCTION (MEASURED on u400); that it transfers to P2's fan is the bridge assumption (T2 reports how close the fans are)",
+   "u400_only_zeros_rescued_by_P2": 198
+  }
+ },
+ "Q1c_P2_bridged": {
+  "evidence": "INFERRED from proxy fans (never MEASURED on P2)",
+  "variants": {
+   "V1_hierarchy": {
+    "SEL_def": {
+     "n_zero": 509,
+     "n_SEL": 439,
+     "n_PROP": 70,
+     "SEL_share": {
+      "point": 0.862475442043222,
+      "lo": 0.8044420289855072,
+      "hi": 0.9184551929272033,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "PROP_share": {
+      "point": 0.137524557956778,
+      "lo": 0.0815448070727967,
+      "hi": 0.19555797101449274,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "oracle_on_SEL_gain_pdms_pts": {
+      "point": 3.4913143008425456,
+      "lo": 2.8619020562076765,
+      "hi": 4.1784818712131555,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "verdict": "SELECTION"
+    },
+    "Q2_cause": {
+     "all": {
+      "DAC_only": {
+       "n": 376,
+       "share": {
+        "point": 0.7387033398821218,
+        "lo": 0.6673860442629025,
+        "hi": 0.8025374017327129,
+        "B": 10000,
+        "n_nan": 0
+       }
+      },
+      "NC_only": {
+       "n": 129,
+       "share": {
+        "point": 0.25343811394891946,
+        "lo": 0.19047619047619047,
+        "hi": 0.3240949194912139,
+        "B": 10000,
+        "n_nan": 0
+       }
+      },
+      "both": {
+       "n": 4,
+       "share": {
+        "point": 0.007858546168958742,
+        "lo": 0.0,
+        "hi": 0.018867924528301886,
+        "B": 10000,
+        "n_nan": 0
+       }
+      },
+      "neither": {
+       "n": 0,
+       "share": {
+        "point": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "B": 10000,
+        "n_nan": 0
+       }
+      }
+     },
+     "SEL": {
+      "DAC_only": {
+       "n": 309
+      },
+      "NC_only": {
+       "n": 127
+      },
+      "both": {
+       "n": 3
+      },
+      "neither": {
+       "n": 0
+      },
+      "n_total": 439
+     },
+     "PROP": {
+      "DAC_only": {
+       "n": 67
+      },
+      "NC_only": {
+       "n": 2
+      },
+      "both": {
+       "n": 1
+      },
+      "neither": {
+       "n": 0
+      },
+      "n_total": 70
+     }
+    },
+    "gain_by_cause_pdms_pts": {
+     "DAC_only": {
+      "point": 2.457876181286557,
+      "lo": 1.8500890179009175,
+      "hi": 3.1501396933592067,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "NC_only": {
+      "point": 1.012784009231361,
+      "lo": 0.7691494102151138,
+      "hi": 1.2633139034648706,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "both": {
+      "point": 0.020654110324627953,
+      "lo": 0.0,
+      "hi": 0.05506841810905519,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "SAFE_sensitivity_n": 439,
+    "fan_cleanliness_POSTHOC": {
+     "n": 439,
+     "exactly_1_of_64": 21,
+     "2_to_4_of_64": 45,
+     "5_to_31_of_64": 223,
+     "32_or_more_of_64": 150,
+     "median_nonzero_of_64": 22.0,
+     "mean_nonzero_share": 0.38706577448747154
+    },
+    "PROP_failure_kinds": {
+     "all_DAC0": 64,
+     "all_NC0": 0,
+     "all_both": 0,
+     "mixed": 6,
+     "other": 0
+    },
+    "by_tier": {
+     "tier1": {
+      "n": 343,
+      "n_SEL": 273
+     },
+     "tier2": {
+      "n": 166,
+      "n_SEL": 166
+     }
+    }
+   },
+   "V2_final_census_only": {
+    "SEL_def": {
+     "n_zero": 509,
+     "n_SEL": 435,
+     "n_PROP": 74,
+     "SEL_share": {
+      "point": 0.8546168958742633,
+      "lo": 0.7979746444032159,
+      "hi": 0.9097345132743363,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "PROP_share": {
+      "point": 0.14538310412573674,
+      "lo": 0.09026548672566372,
+      "hi": 0.20202535559678408,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "oracle_on_SEL_gain_pdms_pts": {
+      "point": 3.4586398814424504,
+      "lo": 2.842942168624591,
+      "hi": 4.118404507776314,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "verdict": "SELECTION"
+    },
+    "Q2_cause": {
+     "all": {
+      "DAC_only": {
+       "n": 376,
+       "share": {
+        "point": 0.7387033398821218,
+        "lo": 0.6673860442629025,
+        "hi": 0.8025374017327129,
+        "B": 10000,
+        "n_nan": 0
+       }
+      },
+      "NC_only": {
+       "n": 129,
+       "share": {
+        "point": 0.25343811394891946,
+        "lo": 0.19047619047619047,
+        "hi": 0.3240949194912139,
+        "B": 10000,
+        "n_nan": 0
+       }
+      },
+      "both": {
+       "n": 4,
+       "share": {
+        "point": 0.007858546168958742,
+        "lo": 0.0,
+        "hi": 0.018867924528301886,
+        "B": 10000,
+        "n_nan": 0
+       }
+      },
+      "neither": {
+       "n": 0,
+       "share": {
+        "point": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "B": 10000,
+        "n_nan": 0
+       }
+      }
+     },
+     "SEL": {
+      "DAC_only": {
+       "n": 305
+      },
+      "NC_only": {
+       "n": 127
+      },
+      "both": {
+       "n": 3
+      },
+      "neither": {
+       "n": 0
+      },
+      "n_total": 435
+     },
+     "PROP": {
+      "DAC_only": {
+       "n": 71
+      },
+      "NC_only": {
+       "n": 2
+      },
+      "both": {
+       "n": 1
+      },
+      "neither": {
+       "n": 0
+      },
+      "n_total": 74
+     }
+    },
+    "gain_by_cause_pdms_pts": {
+     "DAC_only": {
+      "point": 2.427022888193644,
+      "lo": 1.8274086625509178,
+      "hi": 3.1053751369469325,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "NC_only": {
+      "point": 1.0109632800922115,
+      "lo": 0.767183765959045,
+      "hi": 1.2624318629854432,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "both": {
+      "point": 0.020653713156594762,
+      "lo": 0.0,
+      "hi": 0.05506718966303777,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "SAFE_sensitivity_n": 435,
+    "PROP_failure_kinds": {
+     "all_DAC0": 64,
+     "all_NC0": 0,
+     "all_both": 0,
+     "mixed": 10,
+     "other": 0
+    }
+   },
+   "V3_lo_u400_uncovered_as_PROP": {
+    "SEL_def": {
+     "n_zero": 509,
+     "n_SEL": 273,
+     "n_PROP": 236,
+     "SEL_share": {
+      "point": 0.5363457760314342,
+      "lo": 0.4739663180079619,
+      "hi": 0.6016286558969486,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "PROP_share": {
+      "point": 0.4636542239685658,
+      "lo": 0.3983713441030514,
+      "hi": 0.526033681992038,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "oracle_on_SEL_gain_pdms_pts": {
+      "point": 2.152285814097939,
+      "lo": 1.6983979927247084,
+      "hi": 2.6581793054060947,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "verdict": "SELECTION"
+    },
+    "Q2_cause": {
+     "all": {
+      "DAC_only": {
+       "n": 376,
+       "share": {
+        "point": 0.7387033398821218,
+        "lo": 0.6673860442629025,
+        "hi": 0.8025374017327129,
+        "B": 10000,
+        "n_nan": 0
+       }
+      },
+      "NC_only": {
+       "n": 129,
+       "share": {
+        "point": 0.25343811394891946,
+        "lo": 0.19047619047619047,
+        "hi": 0.3240949194912139,
+        "B": 10000,
+        "n_nan": 0
+       }
+      },
+      "both": {
+       "n": 4,
+       "share": {
+        "point": 0.007858546168958742,
+        "lo": 0.0,
+        "hi": 0.018867924528301886,
+        "B": 10000,
+        "n_nan": 0
+       }
+      },
+      "neither": {
+       "n": 0,
+       "share": {
+        "point": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "B": 10000,
+        "n_nan": 0
+       }
+      }
+     },
+     "SEL": {
+      "DAC_only": {
+       "n": 197
+      },
+      "NC_only": {
+       "n": 73
+      },
+      "both": {
+       "n": 3
+      },
+      "neither": {
+       "n": 0
+      },
+      "n_total": 273
+     },
+     "PROP": {
+      "DAC_only": {
+       "n": 179
+      },
+      "NC_only": {
+       "n": 56
+      },
+      "both": {
+       "n": 1
+      },
+      "neither": {
+       "n": 0
+      },
+      "n_total": 236
+     }
+    },
+    "gain_by_cause_pdms_pts": {
+     "DAC_only": {
+      "point": 1.5539234396432173,
+      "lo": 1.1438638992288568,
+      "hi": 2.0320347714830223,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "NC_only": {
+      "point": 0.577708264130093,
+      "lo": 0.42359426448999715,
+      "hi": 0.734862960981789,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "both": {
+      "point": 0.020654110324627953,
+      "lo": 0.0,
+      "hi": 0.05506841810905519,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "PROP_failure_kinds": null
+   },
+   "V3_hi_u400_uncovered_as_SEL": {
+    "SEL_def": {
+     "n_zero": 509,
+     "n_SEL": 439,
+     "n_PROP": 70,
+     "SEL_share": {
+      "point": 0.862475442043222,
+      "lo": 0.8044420289855072,
+      "hi": 0.9184551929272033,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "PROP_share": {
+      "point": 0.137524557956778,
+      "lo": 0.0815448070727967,
+      "hi": 0.19555797101449274,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "oracle_on_SEL_gain_pdms_pts": {
+      "point": 3.4913143008425456,
+      "lo": 2.8619020562076765,
+      "hi": 4.1784818712131555,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "verdict": "SELECTION"
+    },
+    "Q2_cause": {
+     "all": {
+      "DAC_only": {
+       "n": 376,
+       "share": {
+        "point": 0.7387033398821218,
+        "lo": 0.6673860442629025,
+        "hi": 0.8025374017327129,
+        "B": 10000,
+        "n_nan": 0
+       }
+      },
+      "NC_only": {
+       "n": 129,
+       "share": {
+        "point": 0.25343811394891946,
+        "lo": 0.19047619047619047,
+        "hi": 0.3240949194912139,
+        "B": 10000,
+        "n_nan": 0
+       }
+      },
+      "both": {
+       "n": 4,
+       "share": {
+        "point": 0.007858546168958742,
+        "lo": 0.0,
+        "hi": 0.018867924528301886,
+        "B": 10000,
+        "n_nan": 0
+       }
+      },
+      "neither": {
+       "n": 0,
+       "share": {
+        "point": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "B": 10000,
+        "n_nan": 0
+       }
+      }
+     },
+     "SEL": {
+      "DAC_only": {
+       "n": 309
+      },
+      "NC_only": {
+       "n": 127
+      },
+      "both": {
+       "n": 3
+      },
+      "neither": {
+       "n": 0
+      },
+      "n_total": 439
+     },
+     "PROP": {
+      "DAC_only": {
+       "n": 67
+      },
+      "NC_only": {
+       "n": 2
+      },
+      "both": {
+       "n": 1
+      },
+      "neither": {
+       "n": 0
+      },
+      "n_total": 70
+     }
+    },
+    "gain_by_cause_pdms_pts": {
+     "DAC_only": {
+      "point": 2.457876181286557,
+      "lo": 1.8500890179009175,
+      "hi": 3.1501396933592067,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "NC_only": {
+      "point": 1.012784009231361,
+      "lo": 0.7691494102151138,
+      "hi": 1.2633139034648706,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "both": {
+      "point": 0.020654110324627953,
+      "lo": 0.0,
+      "hi": 0.05506841810905519,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "PROP_failure_kinds": null
+   }
+  },
+  "verdicts": {
+   "V1_hierarchy": "SELECTION",
+   "V2_final_census_only": "SELECTION",
+   "V3_lo_u400_uncovered_as_PROP": "SELECTION",
+   "V3_hi_u400_uncovered_as_SEL": "SELECTION"
+  },
+  "robust": true,
+  "reading_if_bridge_weak": null
+ },
+ "Q2_P2_pick_level": {
+  "evidence": "MEASURED on P2 (per-token csv)",
+  "cause": {
+   "DAC_only": {
+    "n": 376,
+    "share": {
+     "point": 0.7387033398821218,
+     "lo": 0.6673860442629025,
+     "hi": 0.8025374017327129,
+     "B": 10000,
+     "n_nan": 0
+    }
+   },
+   "NC_only": {
+    "n": 129,
+    "share": {
+     "point": 0.25343811394891946,
+     "lo": 0.19047619047619047,
+     "hi": 0.3240949194912139,
+     "B": 10000,
+     "n_nan": 0
+    }
+   },
+   "both": {
+    "n": 4,
+    "share": {
+     "point": 0.007858546168958742,
+     "lo": 0.0,
+     "hi": 0.018867924528301886,
+     "B": 10000,
+     "n_nan": 0
+    }
+   },
+   "neither": {
+    "n": 0,
+    "share": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "B": 10000,
+     "n_nan": 0
+    }
+   }
+  },
+  "NC_values_among_zero": {
+   "0.0": 133,
+   "0.5": 9,
+   "1.0": 367
+  },
+  "u400_cause": {
+   "DAC_only": 413,
+   "NC_only": 113,
+   "both": 3,
+   "neither": 0
+  },
+  "final_cause": {
+   "DAC_only": 721,
+   "NC_only": 220,
+   "both": 42,
+   "neither": 0
+  }
+ },
+ "Q3_concentration": {
+  "evidence": "MEASURED (counts exact); null = permutation of the zero labels, B=10000, seed 20260927",
+  "P2": {
+   "n_zero": 509,
+   "n_logs_with_zero": 86,
+   "k50": 16,
+   "top10": [
+    {
+     "log": "2021.09.16.19.27.01_veh-45_01749_03230",
+     "zero": 36,
+     "tokens": 546,
+     "zero_rate": 0.06593406593406594
+    },
+    {
+     "log": "2021.10.06.07.26.10_veh-52_01245_02064",
+     "zero": 33,
+     "tokens": 398,
+     "zero_rate": 0.0829145728643216
+    },
+    {
+     "log": "2021.09.16.19.49.00_veh-42_00990_01609",
+     "zero": 23,
+     "tokens": 284,
+     "zero_rate": 0.08098591549295775
+    },
+    {
+     "log": "2021.10.06.07.26.10_veh-52_02208_02394",
+     "zero": 21,
+     "tokens": 146,
+     "zero_rate": 0.14383561643835616
+    },
+    {
+     "log": "2021.09.16.13.53.10_veh-42_00180_00342",
+     "zero": 19,
+     "tokens": 140,
+     "zero_rate": 0.1357142857142857
+    },
+    {
+     "log": "2021.10.06.07.26.10_veh-52_00006_00398",
+     "zero": 19,
+     "tokens": 196,
+     "zero_rate": 0.09693877551020408
+    },
+    {
+     "log": "2021.10.06.08.16.17_veh-52_01949_02501",
+     "zero": 15,
+     "tokens": 341,
+     "zero_rate": 0.04398826979472141
+    },
+    {
+     "log": "2021.06.28.20.24.43_veh-38_03385_04952",
+     "zero": 12,
+     "tokens": 568,
+     "zero_rate": 0.02112676056338028
+    },
+    {
+     "log": "2021.09.16.19.12.04_veh-42_00289_00398",
+     "zero": 12,
+     "tokens": 67,
+     "zero_rate": 0.1791044776119403
+    },
+    {
+     "log": "2021.06.03.13.55.17_veh-35_02866_03582",
+     "zero": 11,
+     "tokens": 179,
+     "zero_rate": 0.061452513966480445
+    }
+   ],
+   "top10_share_of_zeros": 0.3948919449901768
+  },
+  "u400": {
+   "n_zero": 529,
+   "n_logs_with_zero": 89,
+   "k50": 13,
+   "top10": [
+    {
+     "log": "2021.10.06.07.26.10_veh-52_00006_00398",
+     "zero": 45,
+     "tokens": 196,
+     "zero_rate": 0.22959183673469388
+    },
+    {
+     "log": "2021.09.16.19.27.01_veh-45_01749_03230",
+     "zero": 35,
+     "tokens": 546,
+     "zero_rate": 0.0641025641025641
+    },
+    {
+     "log": "2021.09.16.19.49.00_veh-42_00990_01609",
+     "zero": 33,
+     "tokens": 284,
+     "zero_rate": 0.11619718309859155
+    },
+    {
+     "log": "2021.10.06.07.26.10_veh-52_01245_02064",
+     "zero": 33,
+     "tokens": 398,
+     "zero_rate": 0.0829145728643216
+    },
+    {
+     "log": "2021.10.06.07.26.10_veh-52_02208_02394",
+     "zero": 25,
+     "tokens": 146,
+     "zero_rate": 0.17123287671232876
+    },
+    {
+     "log": "2021.10.06.08.16.17_veh-52_01949_02501",
+     "zero": 15,
+     "tokens": 341,
+     "zero_rate": 0.04398826979472141
+    },
+    {
+     "log": "2021.09.16.13.53.10_veh-42_00180_00342",
+     "zero": 14,
+     "tokens": 140,
+     "zero_rate": 0.1
+    },
+    {
+     "log": "2021.09.16.14.39.34_veh-42_00032_00186",
+     "zero": 14,
+     "tokens": 97,
+     "zero_rate": 0.14432989690721648
+    },
+    {
+     "log": "2021.06.28.20.24.43_veh-38_03385_04952",
+     "zero": 13,
+     "tokens": 568,
+     "zero_rate": 0.022887323943661973
+    },
+    {
+     "log": "2021.09.29.19.02.14_veh-28_00964_01689",
+     "zero": 11,
+     "tokens": 226,
+     "zero_rate": 0.048672566371681415
+    }
+   ],
+   "top10_share_of_zeros": 0.4499054820415879
+  },
+  "null_k50": {
+   "B": 10000,
+   "k50_median": 26.0,
+   "k50_lo": 23.0,
+   "k50_hi": 29.0,
+   "top10_share_median": 0.2829076620825147,
+   "top10_share_lo": 0.25147347740667975,
+   "top10_share_hi": 0.3163064833005894
+  },
+  "P2_k50_percentile_in_null": 0.0,
+  "top10_overlap_P2_u400": 8,
+  "logs_total": 136,
+  "logs_with_zero_P2": 86
+ },
+ "Q3_tags": {
+  "available": true,
+  "source": "D:/Archive/devbox-C/navsim/exp/w3_navtest_v1/inputs/navtest_inputs.json.gz",
+  "sha256": "b0dc05f3037d0daf4a3a3844f8f1a4c897aa788176b022eddf31abdf3139a990",
+  "evidence": "MEASURED; tags come from the navtest input export joined by token, NOT from the P2 dump",
+  "by_command": {
+   "left": {
+    "tokens": 2501,
+    "P2_zero": 156,
+    "P2_zero_rate": {
+     "point": 0.062375049980008,
+     "lo": 0.04420326803243026,
+     "hi": 0.0836067630716967,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "u400_zero": 160
+   },
+   "straight": {
+    "tokens": 8070,
+    "P2_zero": 230,
+    "P2_zero_rate": {
+     "point": 0.028500619578686492,
+     "lo": 0.022415003143784248,
+     "hi": 0.03524612909407014,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "u400_zero": 252
+   },
+   "right": {
+    "tokens": 1575,
+    "P2_zero": 123,
+    "P2_zero_rate": {
+     "point": 0.07809523809523809,
+     "lo": 0.056708050496188156,
+     "hi": 0.0987223047282324,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "u400_zero": 117
+   }
+  },
+  "by_v0_mps": {
+   "[0.0,0.5)": {
+    "tokens": 848,
+    "P2_zero": 12,
+    "P2_zero_rate": {
+     "point": 0.014150943396226415,
+     "lo": 0.0057553956834532375,
+     "hi": 0.024367066039081432,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "u400_zero": 10
+   },
+   "[0.5,3.0)": {
+    "tokens": 2605,
+    "P2_zero": 67,
+    "P2_zero_rate": {
+     "point": 0.025719769673704415,
+     "lo": 0.01539725156104199,
+     "hi": 0.037340754997166804,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "u400_zero": 64
+   },
+   "[3.0,8.0)": {
+    "tokens": 6104,
+    "P2_zero": 276,
+    "P2_zero_rate": {
+     "point": 0.045216251638269984,
+     "lo": 0.035799830378326,
+     "hi": 0.0546904462854395,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "u400_zero": 329
+   },
+   "[8.0,14.0)": {
+    "tokens": 2534,
+    "P2_zero": 151,
+    "P2_zero_rate": {
+     "point": 0.059589581689029204,
+     "lo": 0.04111986001749781,
+     "hi": 0.07988345776567564,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "u400_zero": 125
+   },
+   "[14.0,99.0)": {
+    "tokens": 55,
+    "P2_zero": 3,
+    "P2_zero_rate": {
+     "point": 0.05454545454545454,
+     "lo": 0.0,
+     "hi": 0.1935483870967742,
+     "B": 10000,
+     "n_nan": 8
+    },
+    "u400_zero": 1
+   }
+  }
+ },
+ "Q4_TTC": {
+  "evidence": "see per-block labels",
+  "P2_pick_level": {
+   "evidence": "MEASURED on P2",
+   "n_TTC_tokens": 394,
+   "also_zeroed_and_TTC0": 175,
+   "TTC_token_rate": {
+    "point": 0.03243866293429936,
+    "lo": 0.026596874254101028,
+    "hi": 0.03853489916159099,
+    "B": 10000,
+    "n_nan": 0
+   }
+  },
+  "P2_bridged_V1": {
+   "evidence": "INFERRED",
+   "n_TTC_tokens": 394,
+   "n_SEL_TTC": 381,
+   "n_PROP_TTC": 13,
+   "SEL_TTC_share": {
+    "point": 0.9670050761421319,
+    "lo": 0.9418604651162791,
+    "hi": 0.9879527117478925,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "headroom_pdms_pts": {
+    "point": 1.437235585348524,
+    "lo": 1.173814403643245,
+    "hi": 1.718809273588343,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "by_tier": {
+    "tier1": {
+     "n": 33,
+     "n_SEL_TTC": 33
+    },
+    "tier2": {
+     "n": 361,
+     "n_SEL_TTC": 348
+    }
+   }
+  },
+  "P2_bridged_V2_final_census": {
+   "evidence": "INFERRED",
+   "n_TTC_tokens": 394,
+   "n_SEL_TTC": 381,
+   "n_PROP_TTC": 13,
+   "SEL_TTC_share": {
+    "point": 0.9670050761421319,
+    "lo": 0.9418604651162791,
+    "hi": 0.9879527117478925,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "headroom_pdms_pts": {
+    "point": 1.4371812184815365,
+    "lo": 1.1737633717664053,
+    "hi": 1.7188070471395305,
+    "B": 10000,
+    "n_nan": 0
+   }
+  },
+  "final_own": {
+   "evidence": "MEASURED on the final model (full census)",
+   "n_TTC_tokens": 517,
+   "n_SEL_TTC": 502,
+   "n_PROP_TTC": 15,
+   "SEL_TTC_share": {
+    "point": 0.9709864603481625,
+    "lo": 0.9415584415584416,
+    "hi": 0.990791896869245,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "headroom_pdms_pts": {
+    "point": 1.8792244341328714,
+    "lo": 1.583074616981517,
+    "hi": 2.199671100729815,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "also_zeroed_and_TTC0": 334
+  },
+  "u400_own": {
+   "evidence": "ESTIMATED: the SEL_TTC share comes from the C3 random stratum (a uniform 529 of 11,617 non-zeroed tokens); the TTC token COUNT is exact from the full csv",
+   "n_TTC_tokens_exact": 390,
+   "n_TTC_tokens_in_sample": 20,
+   "n_SEL_TTC_in_sample": 20,
+   "SEL_TTC_share": {
+    "point": 1.0,
+    "lo": 1.0,
+    "hi": 1.0,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "headroom_pdms_pts": {
+    "point": 1.5744649695341884,
+    "lo": 0.9340085922490462,
+    "hi": 2.3056855618693484,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "also_zeroed_and_TTC0_exact": 141
+  }
+ },
+ "context": {
+  "evidence": "DESCRIPTIVE arithmetic on the P2 csv; 94.55 is PUBLISHED (DriveZero Table A13, per the brief)",
+  "P2_pdms_x100": 88.8184088897293,
+  "paper_bar": 94.55,
+  "gap_to_paper": 5.731591110270699,
+  "zero_rate": 0.04190680059278775,
+  "mean_pdms_of_nonzero_tokens_x100": 92.70330792941927,
+  "zero_tail_cost_pts": 3.8848990396899725,
+  "cost_def": "zero tokens at the mean of the non-zero tokens instead of 0: n_zero / N * mean_nonzero",
+  "u400_zero_tail_cost_pts": 4.018475668408637,
+  "proposal_side_ceiling_pts_ESTIMATED": 0.5342690231400749,
+  "proposal_side_ceiling_def": "V1 n_PROP / N * mean non-zero PDMS: what fixing every PROP token to a typical score would add; an ESTIMATE, not a measurement",
+  "selection_side_ceiling_pts_INFERRED": 3.4913143008425456
+ },
+ "reading": {
+  "u400_MEASURED": {
+   "verdict": "SELECTION",
+   "SEL_share": 0.8601134215500945,
+   "gain": 3.620096975439955
+  },
+  "final_MEASURED": {
+   "verdict": "SELECTION",
+   "SEL_share": 0.8087487283825026,
+   "gain": 6.365635600197596
+  },
+  "P2_INFERRED": {
+   "V1_verdict": "SELECTION",
+   "variants": {
+    "V1_hierarchy": "SELECTION",
+    "V2_final_census_only": "SELECTION",
+    "V3_lo_u400_uncovered_as_PROP": "SELECTION",
+    "V3_hi_u400_uncovered_as_SEL": "SELECTION"
+   },
+   "robust_across_variants": true,
+   "bridge_strength": "partial",
+   "V1_SEL_share": {
+    "point": 0.862475442043222,
+    "lo": 0.8044420289855072,
+    "hi": 0.9184551929272033,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "V1_gain_pts": {
+    "point": 3.4913143008425456,
+    "lo": 2.8619020562076765,
+    "hi": 4.1784818712131555,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "T1b_agreement_ok_ge_80pct": true
+  }
+ }
+}

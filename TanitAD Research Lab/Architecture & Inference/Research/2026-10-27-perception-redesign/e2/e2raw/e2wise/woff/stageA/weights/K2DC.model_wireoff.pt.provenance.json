@@ -1,0 +1,107 @@
+{
+ "tool": "wire_off.py",
+ "prereg": "e2/e2raw/PREREG_E2WISE_2026-11-17_ADDENDUM4.md (81d409d9)",
+ "run": "runs/r9e2-K2DC/model_ema_tail5k6k.pt",
+ "out": "runs/r9e2-K2DC/model_wireoff.pt",
+ "how": "torch.save of the run dict with 8 tensors zeroed",
+ "n_zeroed": 8,
+ "zeroed": {
+  "_perception.bev_pool.map_chan_proj.proj.bias": {
+   "shape": [
+    96
+   ],
+   "max_abs": 0.006186538375914097,
+   "values": [
+    -0.0004603093839250505,
+    0.00014116440434008837,
+    0.00046092428965494037,
+    0.005249185487627983,
+    0.003285671817138791,
+    0.0016492013819515705,
+    -0.0024252356961369514,
+    0.0003009942010976374
+   ]
+  },
+  "_perception.bev_pool.map_chan_proj.proj.weight": {
+   "shape": [
+    96,
+    5,
+    1,
+    1
+   ],
+   "max_abs": 0.017694158479571342,
+   "values": [
+    0.001387847471050918,
+    0.004106402397155762,
+    -0.005671568680554628,
+    0.0024451278150081635,
+    -0.002526215510442853,
+    0.0011732717975974083,
+    -0.00010477612522663549,
+    0.004694614093750715
+   ]
+  },
+  "core.decoder.layers.0.box_gate": {
+   "shape": [
+    1
+   ],
+   "max_abs": 0.025194810703396797,
+   "values": [
+    -0.025194810703396797
+   ]
+  },
+  "core.decoder.layers.1.box_gate": {
+   "shape": [
+    1
+   ],
+   "max_abs": 0.007740612607449293,
+   "values": [
+    -0.007740612607449293
+   ]
+  },
+  "core.decoder.layers.2.box_gate": {
+   "shape": [
+    1
+   ],
+   "max_abs": 0.006265153177082539,
+   "values": [
+    0.006265153177082539
+   ]
+  },
+  "core.decoder.layers.3.box_gate": {
+   "shape": [
+    1
+   ],
+   "max_abs": 0.003851702669635415,
+   "values": [
+    -0.003851702669635415
+   ]
+  },
+  "tac_decoder_v6.layers.0.box_gate": {
+   "shape": [
+    1
+   ],
+   "max_abs": 0.0055791414342820644,
+   "values": [
+    -0.0055791414342820644
+   ]
+  },
+  "tac_decoder_v6.layers.1.box_gate": {
+   "shape": [
+    1
+   ],
+   "max_abs": 0.007125136908143759,
+   "values": [
+    -0.007125136908143759
+   ]
+  }
+ },
+ "n_untouched_bit_equal": 1193,
+ "all_others_bit_equal": true,
+ "md5_run": "893c790e1a722b1d40d76fbfbbaa9de4",
+ "md5_out": "ec11ab226390f528effcb7afa6d15266",
+ "sha256_run": "ff066691e11ad1ee97e2aa0ecdbc76da787017584bd92dc6bf1a5151afaa467e",
+ "sha256_out": "c6f3265408186af455e93530f900e7a06f95d9f3b1752901496aeffdf25da82c",
+ "step": 6000,
+ "kind": "ema_model_only"
+}

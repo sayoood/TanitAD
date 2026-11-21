@@ -1,0 +1,143 @@
+[
+ {
+  "mutant": "acc_line",
+  "arm": "arm1_s0",
+  "script": "arm1_dag_oacc.py",
+  "rc": 1,
+  "went_RED": true,
+  "n_failed_cases": 2,
+  "first_failed": [
+   [
+    "REAL gate accepts DAG-OACC (rc 0, declared_vs_built PASS)",
+    "rc ZZDVB-REFUSEDZZ declared-vs-built: acc probe: the total moved by 0.0 when the weight went from 0 to 49.6969, the term is 0.008410710841417313 (w x acc = 0.41798625561483205): the term does not reach the loss with its weight"
+   ],
+   [
+    "REAL gate accepts the control (DAG, no --w-acc) (rc 0, declared_vs_built PASS)",
+    "rc ZZDVB-REFUSEDZZ declared-vs-built: acc probe: the total moved by 0.0 when the weight went from 0 to 1.0, the term is 0.008410710841417313 (w x acc = 0.008410710841417313): the term does not reach the loss with its weight"
+   ]
+  ],
+  "applied": {
+   "mutant": "acc_line",
+   "module": "tanitad.models.v8f_mini",
+   "file": "stack/tanitad/models/v8f_mini.py",
+   "deleted_or_replaced": "total = total + cfg.w_acc * T[\"acc\"] if cfg.w_acc > 0.0 else total"
+  },
+  "seconds": 25
+ },
+ {
+  "mutant": "swap_apply",
+  "arm": "arm1_s0",
+  "script": "arm1_dag_oacc.py",
+  "rc": 1,
+  "went_RED": true,
+  "n_failed_cases": 2,
+  "first_failed": [
+   [
+    "REAL gate accepts DAG-OACC (rc 0, declared_vs_built PASS)",
+    "rc ZZDVB-REFUSEDZZ dagger: dagger probe: the swapped kin3 of a selected row is not the bank record's own kin3: the swap does not write the bank's state into the batch"
+   ],
+   [
+    "REAL gate accepts the control (DAG, no --w-acc) (rc 0, declared_vs_built PASS)",
+    "rc ZZDVB-REFUSEDZZ dagger: dagger probe: the swapped kin3 of a selected row is not the bank record's own kin3: the swap does not write the bank's state into the batch"
+   ]
+  ],
+  "applied": {
+   "mutant": "swap_apply",
+   "module": "tanitad.data.v8f_dagger",
+   "file": "stack/tanitad/data/v8f_dagger.py",
+   "deleted_or_replaced": "out.update(upd)                                                           # the "
+  },
+  "seconds": 25
+ },
+ {
+  "mutant": "swap_apply",
+  "arm": "arm2_s0",
+  "script": "arm2_flat_dag.py",
+  "rc": 1,
+  "went_RED": true,
+  "n_failed_cases": 2,
+  "first_failed": [
+   [
+    "REAL gate accepts FLAT-DAG (rc 0, declared_vs_built PASS)",
+    "rc ZZDVB-REFUSEDZZ dagger: dagger probe: the swapped kin3 of a selected row is not the bank record's own kin3: the swap does not write the bank's state into the batch"
+   ],
+   [
+    "CONTROL for the cut reading: the SAME argv WITHOUT `--o-interface cut` builds `full` and the gradient readings",
+    "{'traj_loss_only': True, 'e_code.weight': 86.79270935058594, 'e_code.bias': 3.9805333614349365, 'e_ck.weight': 34.15521240234375, 'e_ck.bias': 3.935331344604492, 'S_groups(read_s,head_s)': 349.3380432128906, 'T_groups(read_t,trunk_t,h_goal)': 366.60595703125, "
+   ]
+  ],
+  "applied": {
+   "mutant": "swap_apply",
+   "module": "tanitad.data.v8f_dagger",
+   "file": "stack/tanitad/data/v8f_dagger.py",
+   "deleted_or_replaced": "out.update(upd)                                                           # the "
+  },
+  "seconds": 48
+ },
+ {
+  "mutant": "cut_ck",
+  "arm": "arm2_s0",
+  "script": "arm2_flat_dag.py",
+  "rc": 1,
+  "went_RED": true,
+  "n_failed_cases": 2,
+  "first_failed": [
+   [
+    "REAL gate accepts FLAT-DAG (rc 0, declared_vs_built PASS)",
+    "rc ZZDVB-REFUSEDZZ declared-vs-built: o_interface probe: cut is declared but O was handed a non-constant under donor_code: {'max_abs_dtraj60': 0.0, 'o_read_code_abs_max': 0.0, 'o_read_ck_minus_nominal_abs_max': 61.33235168457031, 'o_read_ck_ok_abs_max': 0.0}"
+   ],
+   [
+    "FLAT-DAG-0 (--dagger-p 0, no bank flags): REAL gate accepts; cut live; dagger off",
+    "{'rc': \"ZZDVB-REFUSEDZZ declared-vs-built: o_interface probe: cut is declared but O was handed a non-constant under donor_code: {'max_abs_dtraj60': 0.0, 'o_read_code_abs_max': 0.0, 'o_read_ck_minus_nominal_ab\", 'dagger_probe': None}"
+   ]
+  ],
+  "applied": {
+   "mutant": "cut_ck",
+   "module": "tanitad.models.v8f_mini",
+   "file": "stack/tanitad/models/v8f_mini.py",
+   "deleted_or_replaced": "ck_for_o = self.ck_nom[None].expand(B, -1, -1)               # S's checkpoints f"
+  },
+  "seconds": 40
+ },
+ {
+  "mutant": "cut_code",
+  "arm": "arm2_s0",
+  "script": "arm2_flat_dag.py",
+  "rc": 1,
+  "went_RED": true,
+  "n_failed_cases": 2,
+  "first_failed": [
+   [
+    "REAL gate accepts FLAT-DAG (rc 0, declared_vs_built PASS)",
+    "rc EXC AssertionError: G-LIVE failed: {\"terms\": {\"ckpt\": 0.5312656760215759, \"goal\": 0.01071398425847292, \"lat\": 0.015777066349983215, \"lon\": 0.19580574333667755, \"cons\": 0.03362032398581505, \"ade\": 3.401315927505493, \"fde\": 8.801920890808105, \"acc\": 0.0167554"
+   ],
+   [
+    "FLAT-DAG-0 (--dagger-p 0, no bank flags): REAL gate accepts; cut live; dagger off",
+    "{'rc': 'EXC AssertionError: G-LIVE failed: {\"terms\": {\"ckpt\": 0.5312656760215759, \"goal\": 0.01071398425847292, \"lat\": 0.015777066349983215, \"lon\": 0.19580574333667755, \"cons\": 0.03362032398581505, \"ade\": 3.40', 'dagger_probe': None}"
+   ]
+  ],
+  "applied": {
+   "mutant": "cut_code",
+   "module": "tanitad.models.v8f_mini",
+   "file": "stack/tanitad/models/v8f_mini.py",
+   "deleted_or_replaced": "code = torch.zeros_like(code)                                # T's code = zeros,"
+  },
+  "seconds": 44
+ },
+ {
+  "mutant": "loop_dag_apply",
+  "arm": "arm1_s0",
+  "script": "arm1_dag_oacc.py",
+  "rc": 0,
+  "went_RED": false,
+  "n_failed_cases": 0,
+  "first_failed": [],
+  "applied": {
+   "mutant": "loop_dag_apply",
+   "module": "v8f_mini_train",
+   "file": "stack/scripts/v8f_mini_train.py",
+   "deleted_or_replaced": "b = dag.apply(b, step)                                 # PREREG_V8F_DAGGER: the "
+  },
+  "seconds": 48
+ }
+]

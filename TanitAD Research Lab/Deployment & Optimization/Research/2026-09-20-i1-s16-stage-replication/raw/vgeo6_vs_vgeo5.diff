@@ -1,0 +1,82 @@
+--- ../2026-09-18-i1-collinearity-screen/code/vgeo5_screened.py	2026-09-18 21:19:06.000000000 +0200
++++ code/vgeo6_s16.py	2026-09-20 08:43:54.000000000 +0200
+@@ -1,4 +1,10 @@
+-"""E-DEP-VGEO-5 -- VGEO-4 + the PRE-REGISTERED collinearity screen (LR14-1 / DP17-1). See ../SPEC.md (pinned).
++"""E-DEP-VGEO-6 -- the VGEO-5 panel, UNCHANGED, on the s16 trunk stage (LR15-1 / DP18-1). See ../SPEC.md (pinned).
++
++GENERATED from vgeo5_screened.py by code/make_vgeo6.py through enumerated substitutions; the
++derivation is the audit trail. The ONLY change is the encoder STAGE the latent arms read:
++s32 (704ch, 8x20) -> s16 (352ch, 16x40), pooled to the SAME 2x5 readout geometry. Split seed,
++screen, estimator, pixel control and P2 triplets are byte-identical, so pixel_1440 MUST
++reproduce the landed numbers exactly -- that is this run's harness control.
+ 
+ The ONLY change vs vgeo4_position_null.py (sha256 645f14a0...): every (clip, Delta) cell whose
+ |Spearman(pathlen, start frame)| >= R_LP_MAX is dropped BEFORE any distance or statistic is
+@@ -16,7 +22,7 @@
+ 
+ ROOT = "C:/Users/Admin/tanitad-caches/bevhead-20260913"
+ BANK, GT = ROOT + "/tokens", ROOT + "/bev_gt"
+-OUT = sys.argv[1] if len(sys.argv) > 1 else "raw/vgeo5_step4.json"
++OUT = sys.argv[1] if len(sys.argv) > 1 else "raw/vgeo6_step4.json"
+ STEP = int(sys.argv[2]) if len(sys.argv) > 2 else 4
+ NBOOT, SEED, P2TOL, P2MIN = 2000, 20260913, 0.02, 20
+ DELTAS = list(range(12, 61, 4))
+@@ -31,7 +37,7 @@
+ t0 = time.time()
+ idx = np.load(os.path.join(BANK, "index.npz"), allow_pickle=True)
+ clip, rawf, sha = idx["clip_ordinal"], idx["raw_frame"], idx["clip_sha12"]
+-tok = np.load(os.path.join(BANK, "tokens_s32_fp16.npy"), mmap_mode="r")
++tok = np.load(os.path.join(BANK, "tokens_s16_fp16.npy"), mmap_mode="r")
+ pix = np.load(os.path.join(BANK, "pix64_u8.npy"), mmap_mode="r")
+ 
+ speed, excluded = {}, {"no_bev_gt": [], "no_egomotion": []}
+@@ -57,14 +63,14 @@
+ for c in keep_clips:
+     r = np.where(clip == c)[0]; r = r[np.argsort(rawf[r])]; rows.extend(r[::STEP].tolist())
+ rows = np.array(sorted(rows))
+-feats = {"latent_704": np.empty((len(rows), 704), np.float32),
+-         "latent_7040": np.empty((len(rows), 7040), np.float32),
++feats = {"latent_352": np.empty((len(rows), 352), np.float32),
++         "latent_3520": np.empty((len(rows), 3520), np.float32),
+          "pixel_1440": np.empty((len(rows), 1440), np.float32)}
+ for i in range(0, len(rows), 256):
+     rr = rows[i:i + 256]; n = len(rr)
+     t = np.asarray(tok[rr], dtype=np.float32)
+-    feats["latent_704"][i:i + n] = t.mean(axis=(2, 3))
+-    feats["latent_7040"][i:i + n] = t.reshape(n, 704, 2, 4, 5, 4).mean(axis=(3, 5)).reshape(n, -1)
++    feats["latent_352"][i:i + n] = t.mean(axis=(2, 3))
++    feats["latent_3520"][i:i + n] = t.reshape(n, 352, 2, 8, 5, 8).mean(axis=(3, 5)).reshape(n, -1)
+     p = np.asarray(pix[rr], dtype=np.float32) / 255.0
+     feats["pixel_1440"][i:i + n] = p.reshape(n, 9, 8, 8, 20, 8).mean(axis=(3, 5)).reshape(n, -1)
+ content = {k: {"std": float(v.std()), "finite": bool(np.isfinite(v).all())} for k, v in feats.items()}
+@@ -244,17 +250,17 @@
+         a1, nd = p1r(fn)
+         arms[name + "|" + mname] = {"P1r": a1, "P2": p2(fn), "P3": p3(fn)}
+         meta[name + "|" + mname] = {"P1r_defined_clips": nd}
+-    if name == "latent_7040":
++    if name == "latent_3520":
+         cnt, ncl = p1r(diag, "real_count")
+         meta["screen"] = {"r_lp_max": R_LP_MAX, "cells_kept": SCREEN["kept"], "cells_dropped": SCREEN["dropped"],
+                           "surviving_scored_clips": int(ncl)}
+         arms["C_const"] = {"P1r": p1r(diag, "const")[0], "P2": p2(diag, "const")}
+-        arms["C_presid|latent_7040_diag"] = {"P1r": p1r(diag, "presid")[0]}
+-        arms["C_mut|latent_7040_diag"] = {"P1r": p1r(diag, "mut")[0]}
++        arms["C_presid|latent_3520_diag"] = {"P1r": p1r(diag, "presid")[0]}
++        arms["C_mut|latent_3520_diag"] = {"P1r": p1r(diag, "mut")[0]}
+         arms["C_oracle"] = {"P1r": p1r(diag, "oracle")[0]}
+     print(name, "done", round(time.time() - t0, 1), flush=True)
+ 
+-res = {"spec": "SPEC.md E-DEP-VGEO-5 (VGEO-4 + pre-registered |r_lp|>=0.80 collinearity screen)",
++res = {"spec": "SPEC.md E-DEP-VGEO-6 (the VGEO-5 screened panel, unchanged, on the s16 stage)",
+        "bank": BANK, "speed_source": GT, "clips_kept": int(len(keep_clips)), "excluded": excluded,
+        "interp_frames": n_interp, "rows": int(len(rows)), "fit_clips": int(len(fit_clips)),
+        "scored_clips": int(len(sc_clips)), "scored_clip_ordinals": sc_clips.tolist(),
+@@ -263,7 +269,7 @@
+        "degenerate_partial_cells": DEGEN["n"],
+        "estimator": "clip-cluster bootstrap over SCORED clips (NaN clips dropped per arm), 95pct percentile; answers a draw of CLIPS only (H-ESTIM-SEED-1)",
+        "arms": {k: {s: boot(v) for s, v in d.items()} for k, d in arms.items()}, "paired": {}}
+-for lat in ("latent_704", "latent_7040"):
++for lat in ("latent_352", "latent_3520"):
+     for m in ("raw", "diag"):
+         res["paired"][lat + "|" + m + "_minus_pixel_1440|" + m] = {
+             s: boot(arms[lat + "|" + m][s], arms["pixel_1440|" + m][s]) for s in ("P1r", "P2", "P3")}

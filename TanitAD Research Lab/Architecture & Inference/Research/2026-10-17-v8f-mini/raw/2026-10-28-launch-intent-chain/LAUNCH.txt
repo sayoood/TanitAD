@@ -1,0 +1,101 @@
+LAUNCH.txt - PREREG_V8F_LAUNCH_INTENT arm A, FOUR runs on box 2 (A_0, A_1, A_rep,0, A_rep,1)
+Package: E:/Projects/TanitAD-artifacts/dagland/launch_intent_chain/   (built 2026-10-28; BUILT, DRY-RUN AND SELF-TESTED, NOT INSTALLED, NOT LAUNCHED)
+For: the Master Mind. Nothing below has been done for you. This package touched no git ref, no box 2, and nothing under C:/Users/Admin/box2_ship/.
+
+==========================================================================================================================================
+0. PRECONDITIONS - ALL FIVE must hold before step 5; each is a human or Master Mind act, none is the chain's to set
+==========================================================================================================================================
+ P1. THE PI'S GO FOR BOX-2 TIME. The chain occupies box 2 for about 4 x (3,000-step fine-tune + standard T0 eval), one job at a time. Ask it with the verdict (PI rule: ask the next box-2 go with the verdict).
+ P2. THE QUEUE STAGE IS LANDED (step 2). The landed commit b09ac89f carries the trainer, model and tests; it does NOT carry the queue stage (its queue blob is byte-identical to the pre-lever tip's, a45dedf2).
+     A real run REFUSES a tip whose queue lacks :launchintentarm, and a tip that does not DESCEND from b09ac89f.
+ P3. PREREG_V8F_LAUNCH_INTENT v2 (the redesign) IS LANDED, and the READER is landed. Their sha256 go into the chain (step 3). Another agent is writing both; their shas do not exist yet.
+     The chain REFUSES a real run while PREREG_SHA or READER_SHA is still the placeholder `<<UNSET ...>>`, before it waits for, takes or ships anything.
+ P4. BOX 2 IS FREE AND KNOWN. The DAG-ORC r2 predecessor ended in its DONE marker (07:44 on 2026-10-28, INHERITED from the previous build agent's HANDOFF, re-verified by the chain itself at launch: it GOes only if the predecessor log
+     ENDED in DONE with BOX2_BUSY released). BUT read section 6 first: the 2026-10-28 05:56 self-test incident replaced three repo files on box 2 and left stray files; judge r2's provenance before you trust anything built on that tree.
+ P5. E: HAS ROOM. The chain refuses to start unless E: stays above its floor after 0.8 GB (4 runs x ~0.2 GB, ESTIMATED).
+
+THE PINS the chain carries (render-time values; the chain re-checks every one):
+   LAUNCH_COMMIT      b09ac89fc9d6e81baf3977954ae638919b979e71     (branch agent/arch-inf-20260803; coordinator-verified with ls-remote, re-measured here against the mirror's blobs)
+   LAUNCH_TRAINER_SHA 0d708b3cb841bc1f1832b09fe61e3d8421a4d3f59769f4435c0b22bb77e268ce   stack/scripts/v8f_mini_train.py   <- THE TRAINER SHA TO PIN
+   LAUNCH_MODEL_SHA   b337ccecd3abfa4250a77e233502d9d3464a280dbafdc86b1e94ecbeef682721   stack/tanitad/models/v8f_mini.py
+   PREREG_SHA         <<UNSET>>  (fill: step 3)
+   READER_SHA         <<UNSET>>  (fill: step 3)
+   Evidence class: the first three came from the coordinator (INHERITED), and gen/make_chain_li.py re-measures them against the mirror's `git show` blobs on every render and aborts on a mismatch (MEASURED, this build).
+   If the tip you launch from has a DIFFERENT trainer or model (a later commit changed either file), the real run STOPs on the sha: re-review, then re-render with --trainer-sha / --model-sha / --commit.
+
+==========================================================================================================================================
+1. INSTALL THE SEVEN SHIPPED FILES (a copy; they are not installed by this package)
+==========================================================================================================================================
+   cp E:/Projects/TanitAD-artifacts/dagland/launch_intent_chain/box2_ship/*  C:/Users/Admin/box2_ship/
+   Files: chain_v8f_launchintent.sh, gate_launchintent_assert.py, oaf_launchintent_lib.sh, v8f_guard_launchintent.sh, v8f_launchintent_chain_checks.py, wake_v8flaunchintent.sh, run_chain_v8f_launchintent.cmd
+   Every name is this chain's own (launchintent): nothing of DAG-OACC, DAG-ORC r2 or any sibling is overwritten. The chain also sources the INSTALLED oaf_lib.sh and v8f_oaf_chain_checks.py, which it sha-checks (OAF_LIB_SHA, OAF_CHECKS_SHA); do not change them.
+   After step 3 (the pins), copy the REGENERATED chain over the installed one again. Verify with:  sha256sum C:/Users/Admin/box2_ship/*launchintent* against MANIFEST.txt (the chain's own line changes when the pins are filled).
+   .sh / .py are LF; the .cmd is CRLF. Do not open and re-save them in an editor.
+
+==========================================================================================================================================
+2. LAND THE QUEUE STAGE (you land; I staged nothing in git)
+==========================================================================================================================================
+   File:   queue_stage/v8f_mini_box2_queue.cmd   (117,875 bytes, sha256 195db471625359f344f6e4a02406a46b07925205c06ac3da725854b1084e0d9e, CRLF)
+   To:     TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_mini_box2_queue.cmd
+   Base:   the landed commit's blob of that path (a45dedf2); the change is queue_stage/queue.diff = 4 added lines (2 in :dagname, 2 in :dagarm) + the appended :launchintentarm stage; nothing else differs (the self-test compares every other label block and twelve stage lines under real cmd.exe). Land with the coordinated lander passing base=<that blob>, so a wholesale replacement cannot revert a newer queue.
+   Check before landing:  git show <tip>:<that path> | sha256sum   must equal  sha256sum queue_stage/queue_tip_b09ac89f.cmd  (the landed commit's blob, kept for this comparison). If the tip's queue has MOVED since b09ac89f, the staged file is stale: re-apply the same three edits to the new blob
+   (gen/make_queue_stage.py::derive(blob) takes any blob and asserts every anchor occurs exactly once; its main() reads the landed commit only) and re-run the self-test before landing.
+   Then:   git ls-remote origin agent/arch-inf-20260803  must show the commit that carries it (assert on the remote ref, not on the push's exit text).
+
+==========================================================================================================================================
+3. FILL THE TWO PINS (after PREREG v2 and the reader are landed)
+==========================================================================================================================================
+   cd E:/Projects/TanitAD-artifacts/dagland/launch_intent_chain
+   python gen/make_chain_li.py --prereg-sha <64 hex: sha256 of the landed PREREG_V8F_LAUNCH_INTENT v2 file> --reader-sha <64 hex: sha256 of the landed reader>
+   python gen/make_chain_li.py --check                  # prints "== a fresh regeneration: True"
+   bash -n box2_ship/chain_v8f_launchintent.sh
+   cp box2_ship/chain_v8f_launchintent.sh C:/Users/Admin/box2_ship/
+   Both values end up in every run's launch-gate TOKEN (prereg_sha256, reader_sha256), so a result is bound to the exact pre-registration and reader it was read with. Use LF bytes of the files as landed.
+   The two flags may be passed in one call or one at a time; a later call keeps what an earlier one set. Any other pin can be re-set the same way (--commit, --trainer-sha, --model-sha).
+
+==========================================================================================================================================
+4. OFFLINE CHECKS (all touch nothing; run them, in this order, after steps 1-3)
+==========================================================================================================================================
+   B=C:/Users/Admin/box2_ship; C="C:/Program Files/Git/bin/bash.exe"
+   a) "$C" -c "bash $B/chain_v8f_launchintent.sh --dry-run"
+        Prints five pins, the plan of all FOUR runs labelled A_0, A_1, A_rep,0, A_rep,1 (trainer --seed 0 / 1 / 10 / 11), each run SAME and ONE-LEVER against ITS pair control (DAG-OACC_s for A_s, REP_s for A_rep,s), the K-SHARE / K-MASK bands.
+        It runs against the queue file at the remote tip: if step 2 is not done it STOPs, correctly. After step 3 there must be no UNSET in its output.
+   b) "$C" -c "bash $B/chain_v8f_launchintent.sh --check-tree <a checkout of the tip>"      # the lever greps + the trainer/model sha256 on a directory
+   c) "$C" -c "AFTER_OUT=$B/logs/chain_v8f_dagoaccorc_r2.out bash $B/chain_v8f_launchintent.sh --wait-only"     # must print ZZOAF-WAIT-GO
+   d) "$C" -c "bash $B/chain_v8f_launchintent.sh --rep-licence"                                                   # must print ZZLAUNCHINTENT-REP-LICENCE-OK (conditions 1 and 2 only; 3 and 4 are NOT checked here: NOTES.md)
+
+==========================================================================================================================================
+5. LAUNCH (only when P1-P5 hold)
+==========================================================================================================================================
+   Launch it detached the way the predecessor was (it must not hang on a console and must not lose stdin):
+     WMI Win32_Process Create:  cmd /c "C:\Users\Admin\box2_ship\run_chain_v8f_launchintent.cmd" < NUL
+   The launcher runs `AFTER_OUT=<DAG-ORC r2 log> bash chain_v8f_launchintent.sh` with its output in logs/chain_v8f_launchintent.out. AFTER_OUT has NO default: a run without it STOPs.
+   Then start the waker (script polling, not model turns; it exits on the chain's end/stop, the guard's stop, a named stop, the FOUR gates passing, or each pull):
+     bash C:/Users/Admin/box2_ship/wake_v8flaunchintent.sh
+   The order inside the chain: wait for the predecessor -> pins -> REP licence (offline) -> tip checks (nothing shipped, BOX2_BUSY not yet taken) -> take BOX2_BUSY atomically -> refresh box 2 from the tip (repo_v8flaunchintent_tip.tar)
+   -> K-BUILD / K-INIT / bank / w_acc checks -> the FOUR gates (trainer's own launch gate, pulled and asserted here, then the gate token) -> A_0, A_1, A_rep,0, A_rep,1: traindag (3,000 steps) -> evaldag -> pull to E:/Projects/TanitAD-artifacts/v8f-launch-intent/<run>/
+   -> run record + K-SHARE / K-MASK after each pull. It writes $ART/PINS.txt (the pins it ran with) first. Logs: C:/Users/Admin/box2_ship/logs/chain_v8f_launchintent.out, its guard in v8flaunchintent_guard.out.
+   Markers: ZZV8FMINI-DONE / ZZV8FMINI-STOP end it; ZZLAUNCHINTENT-CONTROL-FAIL (a run's K-SHARE/K-MASK/run-record check failed) and ZZDISK-FLOOR-STOP are named stops. A stopped run resumes from ckpt_last.pt on the same argv.
+   NOT in this chain: the T1-kin rollouts and the reader (dev-box CPU). The chain produces the four T0 pulls; reading them is the reader's job under PREREG v2.
+
+==========================================================================================================================================
+6. THE 2026-10-28 05:56 INCIDENT: WHAT YOU MUST DO ABOUT IT (INHERITED from the previous build agent's HANDOFF; I was forbidden to contact box 2 and did not verify it)
+==========================================================================================================================================
+   The previous self-test harness put a stub ssh/scp on the ENV path only; Git bash re-prepends /usr/bin, so the stubs were never used and the self-test reached REAL box 2 (alias tanitad-box2). It replaced box 2's trainer, model and queue
+   (three repo files) in the middle of the DAG-ORC r2 run, and left stray files, e.g. C:/Users/Admin/box2_ship/logs/v8flaunchintent10280556_refresh.log (and its scratch files).
+   TO DO, by you, on box 2 / the ship dir, BEFORE trusting r2 or launching:
+     a) restore the three files from the archive the r2 chain itself built:  repo_v8fdagoaccorc_r2_tip.tar (in C:/Users/Admin/box2_ship/ or its logs; extract only stack/scripts/v8f_mini_train.py, stack/tanitad/models/v8f_mini.py and the queue .cmd);
+     b) judge r2's provenance: r2 ENDED DONE at 07:44, after the replacement at 05:56. Whether its runs were trained with the replaced or the restored files decides if its pulls are admissible as the REP controls (REP is REUSED here).
+        The chain's REP licence checks conditions 1 and 2 on the pulled records (finished, run record passes, composition flag absent, zero ego-perturb stream, train-window list equal to DAG-OACC's); it CANNOT see which trainer produced them.
+     c) look at C:/Users/Admin/box2_ship/logs/ for v8flaunchintent* and chain_v8f_launchintent* files left by the incident and archive them (do not delete) BEFORE launching: this chain's waker reads logs/v8flaunchintent_guard.out, and a stale ZZGUARD-STOP in it would wake the waker at once
+      (the launcher truncates chain_v8f_launchintent.out and the chain truncates the guard output only when it reaches its guard start, i.e. after the waker is already running).
+   THE FIX in this package: gen/sealed.py. Every bash step the self-test runs starts with a guard IN THE SAME SHELL that asserts (1) `command -v ssh` and `command -v scp` are the world's stubs, (2) `/usr/bin/ssh -G tanitad-box2` shows the alias UNRESOLVED
+   (HOME is an empty scratch dir), (3) every write path resolves inside the scratch world and not inside C:/Users/Admin/box2_ship; else exit 97 with nothing run. Its deliberate-regression arms and mutants are in the self-test (logs/).
+
+==========================================================================================================================================
+7. IF IT GOES WRONG
+==========================================================================================================================================
+   - STOP before BOX2_BUSY is taken (a pin, the tip, the REP licence, the predecessor): nothing was shipped; fix and relaunch. After BOX2_BUSY: the chain's stop releases it; check C:/Users/Admin/box2_ship/BOX2_BUSY.txt is gone.
+   - A held BOX2_BUSY from another chain: the chain re-checks 3 times then STOPs and leaves the other chain's file intact. It never removes a lock it did not take.
+   - REP-LICENCE failed: REP must be trained anew (2 runs, about 1.4 h) before any LAUNCH-INTENT row is read; PREREG v2 section 4 says what that costs the claim.
+   - Re-run the whole offline self-test (CPU only): cd gen && python selftest_chain.py --quiet   (about 17 min, 979 s measured on 2026-10-28; detach it: it runs real bash and real cmd.exe in F:/TanitAD-scratch/launch_intent_chain/).

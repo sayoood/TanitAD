@@ -1,0 +1,132 @@
+{
+ "ckpt": "D:/Projects/TanitAD-artifacts/p6dry/hf/run/ckpt_last.pt",
+ "torch": "2.7.1+cu128",
+ "gates": {
+  "params_equal_run_config": true,
+  "frozen_sha256_meta_equals_run_config_identity": true,
+  "partial_keys_exactly_trainable_plus_buffers": true,
+  "planner_loader_accepts_partial": true,
+  "per_sample_calib_read_from_meta": true,
+  "every_partial_tensor_landed_bit_equal": true,
+  "fingerprint_equals_meta": true,
+  "no_unexpected_keys": true,
+  "missing_keys_are_exactly_the_frozen_trunk": true,
+  "all_negative_controls_raise": true,
+  "full_format_strict_load_ok": true,
+  "full_format_into_goal_mode_raises": true
+ },
+ "ckpt_bytes": 228324493,
+ "ckpt_sha256": "eda651447f31846aa1581c521b4acbc16f7ccb2d004d7d4dea38ae39c76e7887",
+ "cfg_changed_by_ckpt_meta": {
+  "nav_mode": [
+   "goal",
+   "command"
+  ]
+ },
+ "cfg_key_fields": {
+  "img_h": 512,
+  "img_w": 960,
+  "n_cameras": 4,
+  "cameras": [
+   "CAM_F0",
+   "CAM_L0",
+   "CAM_R0",
+   "CAM_B0"
+  ],
+  "n_proposals": 64,
+  "n_score_components": 6,
+  "ego_dim": 7,
+  "nav_mode": "command",
+  "n_goal_points": 2,
+  "detach_scorer_context": true,
+  "undistort": true
+ },
+ "params": {
+  "total": 322078274,
+  "trainable": 18998850
+ },
+ "file_format": "refe-partial-v1",
+ "file_meta": {
+  "backbone": "vitl16",
+  "weights_dir": "/workspace/data/backbones/dinov3-vitl16",
+  "frozen_sha256": "b0fc28856aa5a8b0b714fec8feaa997b2966bdaae318ea05aaf89791dcbeedf6",
+  "per_sample_calib": true,
+  "n_cameras": 4,
+  "cameras": [
+   "CAM_F0",
+   "CAM_L0",
+   "CAM_R0",
+   "CAM_B0"
+  ],
+  "nav_mode": "command"
+ },
+ "run_config_params": {
+  "total": 322078274,
+  "trainable": 18998850
+ },
+ "key_audit": {
+  "partial_keys": 277,
+  "expected_trainable_plus_buffers": 277,
+  "in_file_not_in_model": [],
+  "expected_but_absent_in_file": [],
+  "shape_or_dtype_mismatch": [],
+  "n_frozen_params_not_in_file": 366,
+  "partial_numel": 18998850,
+  "non_persistent_buffers_never_in_a_state_dict": [
+   "backbone.img_mean",
+   "backbone.img_std"
+  ]
+ },
+ "load_for_inference": {
+  "format": "refe-partial-v1",
+  "seconds": 33.9,
+  "meta_out_keys": [
+   "backbone",
+   "cameras",
+   "frozen_sha256",
+   "n_cameras",
+   "nav_mode",
+   "per_sample_calib",
+   "weights_dir"
+  ]
+ },
+ "frozen_fingerprint": "b0fc28856aa5a8b0b714fec8feaa997b2966bdaae318ea05aaf89791dcbeedf6",
+ "strict_false_audit": {
+  "missing": 366,
+  "unexpected": [],
+  "missing_equals_frozen_set": true,
+  "missing_not_frozen": []
+ },
+ "negative_controls": {
+  "partial_missing_a_trained_key": {
+   "raised": true,
+   "msg": "ValueError: partial checkpoint refused: 1 TRAINED key(s) absent from the file, e.g. ['cmd_embed.weight']; frozen-trunk fingerprint bfe602f0e1a7 != recorded b0fc28856aa5 -- this partial was trained on a DIFFERENT "
+  },
+  "partial_with_an_unexpected_key": {
+   "raised": true,
+   "msg": "ValueError: partial checkpoint refused: 1 key(s) the model does not have, e.g. ['bogus.weight']; frozen-trunk fingerprint b88a37cf5b88 != recorded b0fc28856aa5 -- this partial was trained on a DIFFERENT trunk"
+  },
+  "partial_with_wrong_trunk_fingerprint": {
+   "raised": true,
+   "msg": "ValueError: partial checkpoint refused: frozen-trunk fingerprint b0fc28856aa5 != recorded 000000000000 -- this partial was trained on a DIFFERENT trunk"
+  },
+  "command_partial_into_a_goal_mode_model": {
+   "raised": true,
+   "msg": "RuntimeError: Error(s) in loading state_dict for REFe:\n\tsize mismatch for ego_enc.0.weight: copying a param with shape torch.Size([256, 71]) from checkpoint, the shape in current model is torch.Size([256, 43])."
+  }
+ },
+ "sim_final": {
+  "path": "D:/Projects/TanitAD-artifacts/p6dry/sim_final/model_final_sim.pt",
+  "bytes": 1288516956,
+  "write_s": 34.3,
+  "format_loaded": "refe-full-v1",
+  "nav_mode_from_meta": "command",
+  "bit_equal_to_partial_built_model": true,
+  "goal_mode_strict_load_raises": {
+   "raised": true,
+   "msg": "RuntimeError: Error(s) in loading state_dict for REFe:\n\tMissing key(s) in state_dict: \"goal_freqs\". \n\tUnexpected key(s) in state_dict: \"cmd_embed.weight\". \n\tsize mismatch for ego_enc.0.weight: copying a param with "
+  }
+ },
+ "seconds": 115.8,
+ "ALL_GATES_PASS": true
+}

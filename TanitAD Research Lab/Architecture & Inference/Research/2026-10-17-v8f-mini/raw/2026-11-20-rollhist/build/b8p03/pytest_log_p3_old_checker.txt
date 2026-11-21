@@ -1,0 +1,1037 @@
+................................F.......FFFFFFFFFFFFFFFFFFFFFFFF.FFFFFFF [ 98%]
+F                                                                        [100%]
+================================== FAILURES ===================================
+_ test_identity_argv_diff_and_required_checks_unchanged_for_every_original_arm _
+
+    def test_identity_argv_diff_and_required_checks_unchanged_for_every_original_arm():
+        base, tmpl = fx("B_s0.B.tmpl.json"), fx("U_s0.B.tmpl.json")
+        for arm in sorted(set(ORIG.ARMS)):
+            for stage in ("A", "B"):
+                assert ORIG.required_checks(arm, stage) == NEW.required_checks(arm, stage), (arm, stage)
+                assert ORIG.argv_diff_problems(base, tmpl, arm, stage, 76656) == NEW.argv_diff_problems(base, tmpl, arm, stage, 76656), (arm, stage)
+>       assert set(NEW.ARMS) - set(ORIG.ARMS) == {"RH_s0", "RH_s1", "B0_s0", "B0_s1", "RHp3_s0", "RHp3_s1"}
+E       AssertionError: assert {'B0_s0', 'B0..._s0', 'RH_s1'} == {'B0_s0', 'B0...0', 'RHp3_s1'}
+E         
+E         Extra items in the right set:
+E         'RHp3_s0'
+E         'RHp3_s1'
+E         Use -v to get more diff
+
+test_dscale10k_check_rhp3.py:446: AssertionError
+_________ test_p3_the_arms_exist_and_the_original_kinds_are_unchanged _________
+
+    def test_p3_the_arms_exist_and_the_original_kinds_are_unchanged():
+>       assert NEW.RH_ARMS["RHp3_s0"] == ("RHp3", 0) and NEW.RH_ARMS["RHp3_s1"] == ("RHp3", 1)
+               ^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'RHp3_s0'
+
+test_dscale10k_check_rhp3.py:552: KeyError
+________________ test_p3_rhp3_mints_pass_and_binds_the_pair[0] ________________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rollhist/build/b8p03/tmp/bt3/test_p3_rhp3_mints_pass_and_bi0')
+seed = 0
+
+    @pytest.mark.parametrize("seed", [0, 1])
+    def test_p3_rhp3_mints_pass_and_binds_the_pair(tmp_path, seed):
+        r = Rig(tmp_path / f"p3s{seed}", seed=seed)
+        toks = p3_toks(r)
+        # the argv differs from the RH argv in EXACTLY --dagger-p and --out (the card's one lever for this arm)
+        a, b = NEW.parse_argv(toks), NEW.parse_argv(r.rh_toks)
+        assert {k for k in set(a) | set(b) if a.get(k) != b.get(k)} == {"--dagger-p", "--out"}
+        assert a["--dagger-p"] == ["0.3"] and b["--dagger-p"] == ["0.1"]
+>       pr, gd = mint_p3(r, toks)
+                 ^^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhp3.py:566: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhp3.py:548: in mint_p3
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHp3_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b8p03\\tmp\\bt3\\test_p3_rhp3_mints_pa...-scratch\\rollhist\\build\\b8p03\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g1x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHp3_s0'
+
+..\pod_ro\dscale10k_check_rh.py:1108: KeyError
+________________ test_p3_rhp3_mints_pass_and_binds_the_pair[1] ________________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rollhist/build/b8p03/tmp/bt3/test_p3_rhp3_mints_pass_and_bi1')
+seed = 1
+
+    @pytest.mark.parametrize("seed", [0, 1])
+    def test_p3_rhp3_mints_pass_and_binds_the_pair(tmp_path, seed):
+        r = Rig(tmp_path / f"p3s{seed}", seed=seed)
+        toks = p3_toks(r)
+        # the argv differs from the RH argv in EXACTLY --dagger-p and --out (the card's one lever for this arm)
+        a, b = NEW.parse_argv(toks), NEW.parse_argv(r.rh_toks)
+        assert {k for k in set(a) | set(b) if a.get(k) != b.get(k)} == {"--dagger-p", "--out"}
+        assert a["--dagger-p"] == ["0.3"] and b["--dagger-p"] == ["0.1"]
+>       pr, gd = mint_p3(r, toks)
+                 ^^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhp3.py:566: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhp3.py:548: in mint_p3
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHp3_s1', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b8p03\\tmp\\bt3\\test_p3_rhp3_mints_pa...-scratch\\rollhist\\build\\b8p03\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g1x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHp3_s1'
+
+..\pod_ro\dscale10k_check_rh.py:1108: KeyError
+___________________ test_p3_any_other_dose_is_refused[0.5] ____________________
+
+rig = <test_dscale10k_check_rhp3.Rig object at 0x000002996B947750>, p = '0.5'
+
+    @pytest.mark.parametrize("p", ["0.5", "0.1", "0.25", "1.0", "0.30", "0", "0.0", "-0.3", "abc"])
+    def test_p3_any_other_dose_is_refused(rig, p):                      # mutation arm: p = 0.5 (and every other value) is refused; the dose is the literal 0.3
+>       pr, _ = mint_p3(rig, p3_toks(rig, p))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhp3.py:580: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhp3.py:548: in mint_p3
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHp3_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b8p03\\tmp\\bt3\\test_p3_any_other_dos...-scratch\\rollhist\\build\\b8p03\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g1x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHp3_s0'
+
+..\pod_ro\dscale10k_check_rh.py:1108: KeyError
+___________________ test_p3_any_other_dose_is_refused[0.1] ____________________
+
+rig = <test_dscale10k_check_rhp3.Rig object at 0x000002996BACC450>, p = '0.1'
+
+    @pytest.mark.parametrize("p", ["0.5", "0.1", "0.25", "1.0", "0.30", "0", "0.0", "-0.3", "abc"])
+    def test_p3_any_other_dose_is_refused(rig, p):                      # mutation arm: p = 0.5 (and every other value) is refused; the dose is the literal 0.3
+>       pr, _ = mint_p3(rig, p3_toks(rig, p))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhp3.py:580: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhp3.py:548: in mint_p3
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHp3_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b8p03\\tmp\\bt3\\test_p3_any_other_dos...-scratch\\rollhist\\build\\b8p03\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g1x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHp3_s0'
+
+..\pod_ro\dscale10k_check_rh.py:1108: KeyError
+___________________ test_p3_any_other_dose_is_refused[0.25] ___________________
+
+rig = <test_dscale10k_check_rhp3.Rig object at 0x000002996BACC250>, p = '0.25'
+
+    @pytest.mark.parametrize("p", ["0.5", "0.1", "0.25", "1.0", "0.30", "0", "0.0", "-0.3", "abc"])
+    def test_p3_any_other_dose_is_refused(rig, p):                      # mutation arm: p = 0.5 (and every other value) is refused; the dose is the literal 0.3
+>       pr, _ = mint_p3(rig, p3_toks(rig, p))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhp3.py:580: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhp3.py:548: in mint_p3
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHp3_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b8p03\\tmp\\bt3\\test_p3_any_other_dos...-scratch\\rollhist\\build\\b8p03\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g1x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHp3_s0'
+
+..\pod_ro\dscale10k_check_rh.py:1108: KeyError
+___________________ test_p3_any_other_dose_is_refused[1.0] ____________________
+
+rig = <test_dscale10k_check_rhp3.Rig object at 0x000002996BACDB50>, p = '1.0'
+
+    @pytest.mark.parametrize("p", ["0.5", "0.1", "0.25", "1.0", "0.30", "0", "0.0", "-0.3", "abc"])
+    def test_p3_any_other_dose_is_refused(rig, p):                      # mutation arm: p = 0.5 (and every other value) is refused; the dose is the literal 0.3
+>       pr, _ = mint_p3(rig, p3_toks(rig, p))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhp3.py:580: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhp3.py:548: in mint_p3
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHp3_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b8p03\\tmp\\bt3\\test_p3_any_other_dos...-scratch\\rollhist\\build\\b8p03\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g1x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHp3_s0'
+
+..\pod_ro\dscale10k_check_rh.py:1108: KeyError
+___________________ test_p3_any_other_dose_is_refused[0.30] ___________________
+
+rig = <test_dscale10k_check_rhp3.Rig object at 0x000002996BACDF50>, p = '0.30'
+
+    @pytest.mark.parametrize("p", ["0.5", "0.1", "0.25", "1.0", "0.30", "0", "0.0", "-0.3", "abc"])
+    def test_p3_any_other_dose_is_refused(rig, p):                      # mutation arm: p = 0.5 (and every other value) is refused; the dose is the literal 0.3
+>       pr, _ = mint_p3(rig, p3_toks(rig, p))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhp3.py:580: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhp3.py:548: in mint_p3
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHp3_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b8p03\\tmp\\bt3\\test_p3_any_other_dos...-scratch\\rollhist\\build\\b8p03\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g1x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHp3_s0'
+
+..\pod_ro\dscale10k_check_rh.py:1108: KeyError
+____________________ test_p3_any_other_dose_is_refused[0] _____________________
+
+rig = <test_dscale10k_check_rhp3.Rig object at 0x000002996BACC650>, p = '0'
+
+    @pytest.mark.parametrize("p", ["0.5", "0.1", "0.25", "1.0", "0.30", "0", "0.0", "-0.3", "abc"])
+    def test_p3_any_other_dose_is_refused(rig, p):                      # mutation arm: p = 0.5 (and every other value) is refused; the dose is the literal 0.3
+>       pr, _ = mint_p3(rig, p3_toks(rig, p))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhp3.py:580: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhp3.py:548: in mint_p3
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHp3_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b8p03\\tmp\\bt3\\test_p3_any_other_dos...-scratch\\rollhist\\build\\b8p03\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g1x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHp3_s0'
+
+..\pod_ro\dscale10k_check_rh.py:1108: KeyError
+___________________ test_p3_any_other_dose_is_refused[0.0] ____________________
+
+rig = <test_dscale10k_check_rhp3.Rig object at 0x000002996BACD550>, p = '0.0'
+
+    @pytest.mark.parametrize("p", ["0.5", "0.1", "0.25", "1.0", "0.30", "0", "0.0", "-0.3", "abc"])
+    def test_p3_any_other_dose_is_refused(rig, p):                      # mutation arm: p = 0.5 (and every other value) is refused; the dose is the literal 0.3
+>       pr, _ = mint_p3(rig, p3_toks(rig, p))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhp3.py:580: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhp3.py:548: in mint_p3
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHp3_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b8p03\\tmp\\bt3\\test_p3_any_other_dos...-scratch\\rollhist\\build\\b8p03\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g1x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHp3_s0'
+
+..\pod_ro\dscale10k_check_rh.py:1108: KeyError
+___________________ test_p3_any_other_dose_is_refused[-0.3] ___________________
+
+rig = <test_dscale10k_check_rhp3.Rig object at 0x000002996BACE550>, p = '-0.3'
+
+    @pytest.mark.parametrize("p", ["0.5", "0.1", "0.25", "1.0", "0.30", "0", "0.0", "-0.3", "abc"])
+    def test_p3_any_other_dose_is_refused(rig, p):                      # mutation arm: p = 0.5 (and every other value) is refused; the dose is the literal 0.3
+>       pr, _ = mint_p3(rig, p3_toks(rig, p))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhp3.py:580: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhp3.py:548: in mint_p3
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHp3_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b8p03\\tmp\\bt3\\test_p3_any_other_dos...-scratch\\rollhist\\build\\b8p03\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g1x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHp3_s0'
+
+..\pod_ro\dscale10k_check_rh.py:1108: KeyError
+___________________ test_p3_any_other_dose_is_refused[abc] ____________________
+
+rig = <test_dscale10k_check_rhp3.Rig object at 0x000002996BACDD50>, p = 'abc'
+
+    @pytest.mark.parametrize("p", ["0.5", "0.1", "0.25", "1.0", "0.30", "0", "0.0", "-0.3", "abc"])
+    def test_p3_any_other_dose_is_refused(rig, p):                      # mutation arm: p = 0.5 (and every other value) is refused; the dose is the literal 0.3
+>       pr, _ = mint_p3(rig, p3_toks(rig, p))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhp3.py:580: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhp3.py:548: in mint_p3
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHp3_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b8p03\\tmp\\bt3\\test_p3_any_other_dos...-scratch\\rollhist\\build\\b8p03\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g1x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHp3_s0'
+
+..\pod_ro\dscale10k_check_rh.py:1108: KeyError
+________________ test_p3_a_second_changed_flag_is_refused[lr] _________________
+
+rig = <test_dscale10k_check_rhp3.Rig object at 0x000002996BACD750>, how = 'lr'
+
+    @pytest.mark.parametrize("how", ["lr", "steps", "added", "removed", "batch", "data_path", "kin", "seed", "wacc", "dagger_seed", "p_gt", "ego_perturb"])
+    def test_p3_a_second_changed_flag_is_refused(rig, how):             # mutation arm: p = 0.3 plus ONE more changed flag is refused (the "fifth changed flag" rule, at the RHp3 kind)
+        t = p3_toks(rig)
+        t = {"lr": lambda: rig.setf(t, "--lr", "2e-4"), "steps": lambda: rig.setf(t, "--steps", "3001"), "added": lambda: t + ["--foo", "1"], "removed": lambda: rig.dropf(t, "--detach-upper"),
+             "batch": lambda: rig.setf(t, "--batch", "32"), "data_path": lambda: rig.setf(t, "--tracks", rig.files["lead"]), "kin": lambda: rig.setf(t, "--kin-mode", "xy"),
+             "seed": lambda: rig.setf(t, "--seed", "7"), "wacc": lambda: rig.setf(t, "--w-acc", "10"), "dagger_seed": lambda: rig.setf(t, "--dagger-seed", "5"),
+             "p_gt": lambda: rig.setf(t, "--p-gt-end", "0.5"), "ego_perturb": lambda: rig.setf(t, "--ego-perturb-p", "0.1")}[how]()
+>       pr, _ = mint_p3(rig, t)
+                ^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhp3.py:591: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhp3.py:548: in mint_p3
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHp3_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b8p03\\tmp\\bt3\\test_p3_a_second_chan...-scratch\\rollhist\\build\\b8p03\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g1x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHp3_s0'
+
+..\pod_ro\dscale10k_check_rh.py:1108: KeyError
+_______________ test_p3_a_second_changed_flag_is_refused[steps] _______________
+
+rig = <test_dscale10k_check_rhp3.Rig object at 0x000002996BACC450>
+how = 'steps'
+
+    @pytest.mark.parametrize("how", ["lr", "steps", "added", "removed", "batch", "data_path", "kin", "seed", "wacc", "dagger_seed", "p_gt", "ego_perturb"])
+    def test_p3_a_second_changed_flag_is_refused(rig, how):             # mutation arm: p = 0.3 plus ONE more changed flag is refused (the "fifth changed flag" rule, at the RHp3 kind)
+        t = p3_toks(rig)
+        t = {"lr": lambda: rig.setf(t, "--lr", "2e-4"), "steps": lambda: rig.setf(t, "--steps", "3001"), "added": lambda: t + ["--foo", "1"], "removed": lambda: rig.dropf(t, "--detach-upper"),
+             "batch": lambda: rig.setf(t, "--batch", "32"), "data_path": lambda: rig.setf(t, "--tracks", rig.files["lead"]), "kin": lambda: rig.setf(t, "--kin-mode", "xy"),
+             "seed": lambda: rig.setf(t, "--seed", "7"), "wacc": lambda: rig.setf(t, "--w-acc", "10"), "dagger_seed": lambda: rig.setf(t, "--dagger-seed", "5"),
+             "p_gt": lambda: rig.setf(t, "--p-gt-end", "0.5"), "ego_perturb": lambda: rig.setf(t, "--ego-perturb-p", "0.1")}[how]()
+>       pr, _ = mint_p3(rig, t)
+                ^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhp3.py:591: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhp3.py:548: in mint_p3
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHp3_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b8p03\\tmp\\bt3\\test_p3_a_second_chan...-scratch\\rollhist\\build\\b8p03\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g1x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHp3_s0'
+
+..\pod_ro\dscale10k_check_rh.py:1108: KeyError
+_______________ test_p3_a_second_changed_flag_is_refused[added] _______________
+
+rig = <test_dscale10k_check_rhp3.Rig object at 0x000002996BACE950>
+how = 'added'
+
+    @pytest.mark.parametrize("how", ["lr", "steps", "added", "removed", "batch", "data_path", "kin", "seed", "wacc", "dagger_seed", "p_gt", "ego_perturb"])
+    def test_p3_a_second_changed_flag_is_refused(rig, how):             # mutation arm: p = 0.3 plus ONE more changed flag is refused (the "fifth changed flag" rule, at the RHp3 kind)
+        t = p3_toks(rig)
+        t = {"lr": lambda: rig.setf(t, "--lr", "2e-4"), "steps": lambda: rig.setf(t, "--steps", "3001"), "added": lambda: t + ["--foo", "1"], "removed": lambda: rig.dropf(t, "--detach-upper"),
+             "batch": lambda: rig.setf(t, "--batch", "32"), "data_path": lambda: rig.setf(t, "--tracks", rig.files["lead"]), "kin": lambda: rig.setf(t, "--kin-mode", "xy"),
+             "seed": lambda: rig.setf(t, "--seed", "7"), "wacc": lambda: rig.setf(t, "--w-acc", "10"), "dagger_seed": lambda: rig.setf(t, "--dagger-seed", "5"),
+             "p_gt": lambda: rig.setf(t, "--p-gt-end", "0.5"), "ego_perturb": lambda: rig.setf(t, "--ego-perturb-p", "0.1")}[how]()
+>       pr, _ = mint_p3(rig, t)
+                ^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhp3.py:591: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhp3.py:548: in mint_p3
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHp3_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b8p03\\tmp\\bt3\\test_p3_a_second_chan...-scratch\\rollhist\\build\\b8p03\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g1x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHp3_s0'
+
+..\pod_ro\dscale10k_check_rh.py:1108: KeyError
+______________ test_p3_a_second_changed_flag_is_refused[removed] ______________
+
+rig = <test_dscale10k_check_rhp3.Rig object at 0x000002996BACE750>
+how = 'removed'
+
+    @pytest.mark.parametrize("how", ["lr", "steps", "added", "removed", "batch", "data_path", "kin", "seed", "wacc", "dagger_seed", "p_gt", "ego_perturb"])
+    def test_p3_a_second_changed_flag_is_refused(rig, how):             # mutation arm: p = 0.3 plus ONE more changed flag is refused (the "fifth changed flag" rule, at the RHp3 kind)
+        t = p3_toks(rig)
+        t = {"lr": lambda: rig.setf(t, "--lr", "2e-4"), "steps": lambda: rig.setf(t, "--steps", "3001"), "added": lambda: t + ["--foo", "1"], "removed": lambda: rig.dropf(t, "--detach-upper"),
+             "batch": lambda: rig.setf(t, "--batch", "32"), "data_path": lambda: rig.setf(t, "--tracks", rig.files["lead"]), "kin": lambda: rig.setf(t, "--kin-mode", "xy"),
+             "seed": lambda: rig.setf(t, "--seed", "7"), "wacc": lambda: rig.setf(t, "--w-acc", "10"), "dagger_seed": lambda: rig.setf(t, "--dagger-seed", "5"),
+             "p_gt": lambda: rig.setf(t, "--p-gt-end", "0.5"), "ego_perturb": lambda: rig.setf(t, "--ego-perturb-p", "0.1")}[how]()
+>       pr, _ = mint_p3(rig, t)
+                ^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhp3.py:591: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhp3.py:548: in mint_p3
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHp3_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b8p03\\tmp\\bt3\\test_p3_a_second_chan...-scratch\\rollhist\\build\\b8p03\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g1x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHp3_s0'
+
+..\pod_ro\dscale10k_check_rh.py:1108: KeyError
+_______________ test_p3_a_second_changed_flag_is_refused[batch] _______________
+
+rig = <test_dscale10k_check_rhp3.Rig object at 0x000002996BACC750>
+how = 'batch'
+
+    @pytest.mark.parametrize("how", ["lr", "steps", "added", "removed", "batch", "data_path", "kin", "seed", "wacc", "dagger_seed", "p_gt", "ego_perturb"])
+    def test_p3_a_second_changed_flag_is_refused(rig, how):             # mutation arm: p = 0.3 plus ONE more changed flag is refused (the "fifth changed flag" rule, at the RHp3 kind)
+        t = p3_toks(rig)
+        t = {"lr": lambda: rig.setf(t, "--lr", "2e-4"), "steps": lambda: rig.setf(t, "--steps", "3001"), "added": lambda: t + ["--foo", "1"], "removed": lambda: rig.dropf(t, "--detach-upper"),
+             "batch": lambda: rig.setf(t, "--batch", "32"), "data_path": lambda: rig.setf(t, "--tracks", rig.files["lead"]), "kin": lambda: rig.setf(t, "--kin-mode", "xy"),
+             "seed": lambda: rig.setf(t, "--seed", "7"), "wacc": lambda: rig.setf(t, "--w-acc", "10"), "dagger_seed": lambda: rig.setf(t, "--dagger-seed", "5"),
+             "p_gt": lambda: rig.setf(t, "--p-gt-end", "0.5"), "ego_perturb": lambda: rig.setf(t, "--ego-perturb-p", "0.1")}[how]()
+>       pr, _ = mint_p3(rig, t)
+                ^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhp3.py:591: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhp3.py:548: in mint_p3
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHp3_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b8p03\\tmp\\bt3\\test_p3_a_second_chan...-scratch\\rollhist\\build\\b8p03\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g1x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHp3_s0'
+
+..\pod_ro\dscale10k_check_rh.py:1108: KeyError
+_____________ test_p3_a_second_changed_flag_is_refused[data_path] _____________
+
+rig = <test_dscale10k_check_rhp3.Rig object at 0x000002996BACC050>
+how = 'data_path'
+
+    @pytest.mark.parametrize("how", ["lr", "steps", "added", "removed", "batch", "data_path", "kin", "seed", "wacc", "dagger_seed", "p_gt", "ego_perturb"])
+    def test_p3_a_second_changed_flag_is_refused(rig, how):             # mutation arm: p = 0.3 plus ONE more changed flag is refused (the "fifth changed flag" rule, at the RHp3 kind)
+        t = p3_toks(rig)
+        t = {"lr": lambda: rig.setf(t, "--lr", "2e-4"), "steps": lambda: rig.setf(t, "--steps", "3001"), "added": lambda: t + ["--foo", "1"], "removed": lambda: rig.dropf(t, "--detach-upper"),
+             "batch": lambda: rig.setf(t, "--batch", "32"), "data_path": lambda: rig.setf(t, "--tracks", rig.files["lead"]), "kin": lambda: rig.setf(t, "--kin-mode", "xy"),
+             "seed": lambda: rig.setf(t, "--seed", "7"), "wacc": lambda: rig.setf(t, "--w-acc", "10"), "dagger_seed": lambda: rig.setf(t, "--dagger-seed", "5"),
+             "p_gt": lambda: rig.setf(t, "--p-gt-end", "0.5"), "ego_perturb": lambda: rig.setf(t, "--ego-perturb-p", "0.1")}[how]()
+>       pr, _ = mint_p3(rig, t)
+                ^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhp3.py:591: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhp3.py:548: in mint_p3
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHp3_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b8p03\\tmp\\bt3\\test_p3_a_second_chan...-scratch\\rollhist\\build\\b8p03\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g1x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHp3_s0'
+
+..\pod_ro\dscale10k_check_rh.py:1108: KeyError
+________________ test_p3_a_second_changed_flag_is_refused[kin] ________________
+
+rig = <test_dscale10k_check_rhp3.Rig object at 0x000002996BACDD50>, how = 'kin'
+
+    @pytest.mark.parametrize("how", ["lr", "steps", "added", "removed", "batch", "data_path", "kin", "seed", "wacc", "dagger_seed", "p_gt", "ego_perturb"])
+    def test_p3_a_second_changed_flag_is_refused(rig, how):             # mutation arm: p = 0.3 plus ONE more changed flag is refused (the "fifth changed flag" rule, at the RHp3 kind)
+        t = p3_toks(rig)
+        t = {"lr": lambda: rig.setf(t, "--lr", "2e-4"), "steps": lambda: rig.setf(t, "--steps", "3001"), "added": lambda: t + ["--foo", "1"], "removed": lambda: rig.dropf(t, "--detach-upper"),
+             "batch": lambda: rig.setf(t, "--batch", "32"), "data_path": lambda: rig.setf(t, "--tracks", rig.files["lead"]), "kin": lambda: rig.setf(t, "--kin-mode", "xy"),
+             "seed": lambda: rig.setf(t, "--seed", "7"), "wacc": lambda: rig.setf(t, "--w-acc", "10"), "dagger_seed": lambda: rig.setf(t, "--dagger-seed", "5"),
+             "p_gt": lambda: rig.setf(t, "--p-gt-end", "0.5"), "ego_perturb": lambda: rig.setf(t, "--ego-perturb-p", "0.1")}[how]()
+>       pr, _ = mint_p3(rig, t)
+                ^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhp3.py:591: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhp3.py:548: in mint_p3
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHp3_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b8p03\\tmp\\bt3\\test_p3_a_second_chan...-scratch\\rollhist\\build\\b8p03\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g1x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHp3_s0'
+
+..\pod_ro\dscale10k_check_rh.py:1108: KeyError
+_______________ test_p3_a_second_changed_flag_is_refused[seed] ________________
+
+rig = <test_dscale10k_check_rhp3.Rig object at 0x000002996BACE550>, how = 'seed'
+
+    @pytest.mark.parametrize("how", ["lr", "steps", "added", "removed", "batch", "data_path", "kin", "seed", "wacc", "dagger_seed", "p_gt", "ego_perturb"])
+    def test_p3_a_second_changed_flag_is_refused(rig, how):             # mutation arm: p = 0.3 plus ONE more changed flag is refused (the "fifth changed flag" rule, at the RHp3 kind)
+        t = p3_toks(rig)
+        t = {"lr": lambda: rig.setf(t, "--lr", "2e-4"), "steps": lambda: rig.setf(t, "--steps", "3001"), "added": lambda: t + ["--foo", "1"], "removed": lambda: rig.dropf(t, "--detach-upper"),
+             "batch": lambda: rig.setf(t, "--batch", "32"), "data_path": lambda: rig.setf(t, "--tracks", rig.files["lead"]), "kin": lambda: rig.setf(t, "--kin-mode", "xy"),
+             "seed": lambda: rig.setf(t, "--seed", "7"), "wacc": lambda: rig.setf(t, "--w-acc", "10"), "dagger_seed": lambda: rig.setf(t, "--dagger-seed", "5"),
+             "p_gt": lambda: rig.setf(t, "--p-gt-end", "0.5"), "ego_perturb": lambda: rig.setf(t, "--ego-perturb-p", "0.1")}[how]()
+>       pr, _ = mint_p3(rig, t)
+                ^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhp3.py:591: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhp3.py:548: in mint_p3
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHp3_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b8p03\\tmp\\bt3\\test_p3_a_second_chan...-scratch\\rollhist\\build\\b8p03\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g1x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHp3_s0'
+
+..\pod_ro\dscale10k_check_rh.py:1108: KeyError
+_______________ test_p3_a_second_changed_flag_is_refused[wacc] ________________
+
+rig = <test_dscale10k_check_rhp3.Rig object at 0x000002996BACD850>, how = 'wacc'
+
+    @pytest.mark.parametrize("how", ["lr", "steps", "added", "removed", "batch", "data_path", "kin", "seed", "wacc", "dagger_seed", "p_gt", "ego_perturb"])
+    def test_p3_a_second_changed_flag_is_refused(rig, how):             # mutation arm: p = 0.3 plus ONE more changed flag is refused (the "fifth changed flag" rule, at the RHp3 kind)
+        t = p3_toks(rig)
+        t = {"lr": lambda: rig.setf(t, "--lr", "2e-4"), "steps": lambda: rig.setf(t, "--steps", "3001"), "added": lambda: t + ["--foo", "1"], "removed": lambda: rig.dropf(t, "--detach-upper"),
+             "batch": lambda: rig.setf(t, "--batch", "32"), "data_path": lambda: rig.setf(t, "--tracks", rig.files["lead"]), "kin": lambda: rig.setf(t, "--kin-mode", "xy"),
+             "seed": lambda: rig.setf(t, "--seed", "7"), "wacc": lambda: rig.setf(t, "--w-acc", "10"), "dagger_seed": lambda: rig.setf(t, "--dagger-seed", "5"),
+             "p_gt": lambda: rig.setf(t, "--p-gt-end", "0.5"), "ego_perturb": lambda: rig.setf(t, "--ego-perturb-p", "0.1")}[how]()
+>       pr, _ = mint_p3(rig, t)
+                ^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhp3.py:591: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhp3.py:548: in mint_p3
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHp3_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b8p03\\tmp\\bt3\\test_p3_a_second_chan...-scratch\\rollhist\\build\\b8p03\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g1x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHp3_s0'
+
+..\pod_ro\dscale10k_check_rh.py:1108: KeyError
+____________ test_p3_a_second_changed_flag_is_refused[dagger_seed] ____________
+
+rig = <test_dscale10k_check_rhp3.Rig object at 0x000002996BACEA50>
+how = 'dagger_seed'
+
+    @pytest.mark.parametrize("how", ["lr", "steps", "added", "removed", "batch", "data_path", "kin", "seed", "wacc", "dagger_seed", "p_gt", "ego_perturb"])
+    def test_p3_a_second_changed_flag_is_refused(rig, how):             # mutation arm: p = 0.3 plus ONE more changed flag is refused (the "fifth changed flag" rule, at the RHp3 kind)
+        t = p3_toks(rig)
+        t = {"lr": lambda: rig.setf(t, "--lr", "2e-4"), "steps": lambda: rig.setf(t, "--steps", "3001"), "added": lambda: t + ["--foo", "1"], "removed": lambda: rig.dropf(t, "--detach-upper"),
+             "batch": lambda: rig.setf(t, "--batch", "32"), "data_path": lambda: rig.setf(t, "--tracks", rig.files["lead"]), "kin": lambda: rig.setf(t, "--kin-mode", "xy"),
+             "seed": lambda: rig.setf(t, "--seed", "7"), "wacc": lambda: rig.setf(t, "--w-acc", "10"), "dagger_seed": lambda: rig.setf(t, "--dagger-seed", "5"),
+             "p_gt": lambda: rig.setf(t, "--p-gt-end", "0.5"), "ego_perturb": lambda: rig.setf(t, "--ego-perturb-p", "0.1")}[how]()
+>       pr, _ = mint_p3(rig, t)
+                ^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhp3.py:591: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhp3.py:548: in mint_p3
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHp3_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b8p03\\tmp\\bt3\\test_p3_a_second_chan...-scratch\\rollhist\\build\\b8p03\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g1x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHp3_s0'
+
+..\pod_ro\dscale10k_check_rh.py:1108: KeyError
+_______________ test_p3_a_second_changed_flag_is_refused[p_gt] ________________
+
+rig = <test_dscale10k_check_rhp3.Rig object at 0x000002996BACDA50>, how = 'p_gt'
+
+    @pytest.mark.parametrize("how", ["lr", "steps", "added", "removed", "batch", "data_path", "kin", "seed", "wacc", "dagger_seed", "p_gt", "ego_perturb"])
+    def test_p3_a_second_changed_flag_is_refused(rig, how):             # mutation arm: p = 0.3 plus ONE more changed flag is refused (the "fifth changed flag" rule, at the RHp3 kind)
+        t = p3_toks(rig)
+        t = {"lr": lambda: rig.setf(t, "--lr", "2e-4"), "steps": lambda: rig.setf(t, "--steps", "3001"), "added": lambda: t + ["--foo", "1"], "removed": lambda: rig.dropf(t, "--detach-upper"),
+             "batch": lambda: rig.setf(t, "--batch", "32"), "data_path": lambda: rig.setf(t, "--tracks", rig.files["lead"]), "kin": lambda: rig.setf(t, "--kin-mode", "xy"),
+             "seed": lambda: rig.setf(t, "--seed", "7"), "wacc": lambda: rig.setf(t, "--w-acc", "10"), "dagger_seed": lambda: rig.setf(t, "--dagger-seed", "5"),
+             "p_gt": lambda: rig.setf(t, "--p-gt-end", "0.5"), "ego_perturb": lambda: rig.setf(t, "--ego-perturb-p", "0.1")}[how]()
+>       pr, _ = mint_p3(rig, t)
+                ^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhp3.py:591: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhp3.py:548: in mint_p3
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHp3_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b8p03\\tmp\\bt3\\test_p3_a_second_chan...-scratch\\rollhist\\build\\b8p03\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g1x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHp3_s0'
+
+..\pod_ro\dscale10k_check_rh.py:1108: KeyError
+____________ test_p3_a_second_changed_flag_is_refused[ego_perturb] ____________
+
+rig = <test_dscale10k_check_rhp3.Rig object at 0x000002996BACE150>
+how = 'ego_perturb'
+
+    @pytest.mark.parametrize("how", ["lr", "steps", "added", "removed", "batch", "data_path", "kin", "seed", "wacc", "dagger_seed", "p_gt", "ego_perturb"])
+    def test_p3_a_second_changed_flag_is_refused(rig, how):             # mutation arm: p = 0.3 plus ONE more changed flag is refused (the "fifth changed flag" rule, at the RHp3 kind)
+        t = p3_toks(rig)
+        t = {"lr": lambda: rig.setf(t, "--lr", "2e-4"), "steps": lambda: rig.setf(t, "--steps", "3001"), "added": lambda: t + ["--foo", "1"], "removed": lambda: rig.dropf(t, "--detach-upper"),
+             "batch": lambda: rig.setf(t, "--batch", "32"), "data_path": lambda: rig.setf(t, "--tracks", rig.files["lead"]), "kin": lambda: rig.setf(t, "--kin-mode", "xy"),
+             "seed": lambda: rig.setf(t, "--seed", "7"), "wacc": lambda: rig.setf(t, "--w-acc", "10"), "dagger_seed": lambda: rig.setf(t, "--dagger-seed", "5"),
+             "p_gt": lambda: rig.setf(t, "--p-gt-end", "0.5"), "ego_perturb": lambda: rig.setf(t, "--ego-perturb-p", "0.1")}[how]()
+>       pr, _ = mint_p3(rig, t)
+                ^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhp3.py:591: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhp3.py:548: in mint_p3
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHp3_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b8p03\\tmp\\bt3\\test_p3_a_second_chan...-scratch\\rollhist\\build\\b8p03\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g1x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHp3_s0'
+
+..\pod_ro\dscale10k_check_rh.py:1108: KeyError
+_______________ test_p3_rh_dose_under_the_rhp3_name_is_refused ________________
+
+rig = <test_dscale10k_check_rhp3.Rig object at 0x000002996BACD750>
+
+    def test_p3_rh_dose_under_the_rhp3_name_is_refused(rig):            # RH's p = 0.1 under the RHp3 arm name: refused (the dose is the arm's identity)
+>       pr, _ = mint_p3(rig, rig.setf(list(rig.rh_toks), "--out", os.path.join(rig.tmp, "runs", "RHp3_s0", "train")))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhp3.py:602: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhp3.py:548: in mint_p3
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHp3_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b8p03\\tmp\\bt3\\test_p3_rh_dose_under...-scratch\\rollhist\\build\\b8p03\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g1x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHp3_s0'
+
+..\pod_ro\dscale10k_check_rh.py:1108: KeyError
+________________________ test_p3_out_must_name_the_arm ________________________
+
+rig = <test_dscale10k_check_rhp3.Rig object at 0x000002996BACDD50>
+
+    def test_p3_out_must_name_the_arm(rig):
+>       pr, _ = mint_p3(rig, rig.setf(p3_toks(rig), "--out", os.path.join(rig.tmp, "runs", "RH_s0", "train")))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhp3.py:607: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhp3.py:548: in mint_p3
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHp3_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b8p03\\tmp\\bt3\\test_p3_out_must_name...-scratch\\rollhist\\build\\b8p03\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g1x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHp3_s0'
+
+..\pod_ro\dscale10k_check_rh.py:1108: KeyError
+________ test_p3_the_pair_is_the_existing_b0_and_a_moved_b0_is_refused ________
+
+rig = <test_dscale10k_check_rhp3.Rig object at 0x000002996BACF050>
+
+    def test_p3_the_pair_is_the_existing_b0_and_a_moved_b0_is_refused(rig):
+>       pr, _ = mint_p3(rig, pair_toks=rig.setf(rig.b0_toks, "--lr", "2e-4"))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhp3.py:612: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhp3.py:548: in mint_p3
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHp3_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b8p03\\tmp\\bt3\\test_p3_the_pair_is_t...-scratch\\rollhist\\build\\b8p03\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g1x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHp3_s0'
+
+..\pod_ro\dscale10k_check_rh.py:1108: KeyError
+____________ test_p3_needs_the_declaration_token_and_the_right_one ____________
+
+rig = <test_dscale10k_check_rhp3.Rig object at 0x000002996BACD350>
+
+    def test_p3_needs_the_declaration_token_and_the_right_one(rig):
+>       pr, _ = mint_p3(rig, token="")
+                ^^^^^^^^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhp3.py:619: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhp3.py:548: in mint_p3
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHp3_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b8p03\\tmp\\bt3\\test_p3_needs_the_dec...:\\TanitAD-scratch\\rollhist\\build\\b8p03\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHp3_s0'
+
+..\pod_ro\dscale10k_check_rh.py:1108: KeyError
+__________________ test_p3_bank_checks_apply_to_the_new_kind __________________
+
+rig = <test_dscale10k_check_rhp3.Rig object at 0x000002996BACC550>
+
+    def test_p3_bank_checks_apply_to_the_new_kind(rig):
+        t = rig.setf(p3_toks(rig), "--dagger-bank-sha256", "0" * 64)
+>       pr, _ = mint_p3(rig, t)
+                ^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhp3.py:627: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhp3.py:548: in mint_p3
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHp3_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b8p03\\tmp\\bt3\\test_p3_bank_checks_a...-scratch\\rollhist\\build\\b8p03\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g1x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHp3_s0'
+
+..\pod_ro\dscale10k_check_rh.py:1108: KeyError
+_____ test_p3_the_selfcheck_must_carry_the_declaration_and_pass_the_probe _____
+
+rig = <test_dscale10k_check_rhp3.Rig object at 0x000002996BACC150>
+
+    def test_p3_the_selfcheck_must_carry_the_declaration_and_pass_the_probe(rig):
+        sc = json.load(open(rig.sc_rh))
+        sc["levers"]["dagger"]["dagger_bank_readout"] = "pinned"
+>       pr, _ = mint_p3(rig, sc=put_json(os.path.join(rig.tmp, "sc3_bad.json"), sc))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhp3.py:638: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhp3.py:548: in mint_p3
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHp3_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b8p03\\tmp\\bt3\\test_p3_the_selfcheck...-scratch\\rollhist\\build\\b8p03\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g1x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHp3_s0'
+
+..\pod_ro\dscale10k_check_rh.py:1108: KeyError
+___________________________ test_p3_stage_a_refused ___________________________
+
+rig = <test_dscale10k_check_rhp3.Rig object at 0x000002996BACE150>
+
+    def test_p3_stage_a_refused(rig):
+        rig.patch_heavy(NEW)
+        a = rig.mint_ns("RHp3_s0", rig.argv_file("RHp3_s0", p3_toks(rig)), "RHp3_A", pair=rig.argv_file("B0_s0", rig.b0_toks), token="causal_g1x", selfcheck=rig.sc_rh, stage="A")
+>       assert NEW.mint(a)
+               ^^^^^^^^^^^
+
+test_dscale10k_check_rhp3.py:649: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHp3_s0', stage='A', argv='F:\\TanitAD-scratch\\rollhist\\build\\b8p03\\tmp\\bt3\\test_p3_stage_a_refus...-scratch\\rollhist\\build\\b8p03\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g1x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHp3_s0'
+
+..\pod_ro\dscale10k_check_rh.py:1108: KeyError
+_________________ test_p3_cli_mint_then_run_only_on_the_token _________________
+
+self = ArgumentParser(prog='__main__.py mint', usage=None, description=None, formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)
+args = ['--arm', 'RHp3_s0', '--stage', 'B', '--argv', 'F:\\TanitAD-scratch\\rollhist\\build\\b8p03\\tmp\\bt3\\test_p3_cli_mint_then_run_only0\\w0\\RHp3_cli.argv.json', ...]
+namespace = Namespace(arm=None, stage='A', argv=None, root=None, commit=None, gate_dir=None, py='C:\\Users\\Admin\\venvs\\tanitad\...argv='', b_dry='', template='', pair_argv='', pair_check='', readout_token='', holdout_manifest='', holdout=(540, 600))
+intermixed = False
+
+    def _parse_known_args2(self, args, namespace, intermixed):
+        if args is None:
+            # args default to the system args
+            args = _sys.argv[1:]
+        else:
+            # make sure that args are mutable
+            args = list(args)
+    
+        # default Namespace built from parser defaults
+        if namespace is None:
+            namespace = Namespace()
+    
+        # add any action defaults that aren't present
+        for action in self._actions:
+            if action.dest is not SUPPRESS:
+                if not hasattr(namespace, action.dest):
+                    if action.default is not SUPPRESS:
+                        setattr(namespace, action.dest, action.default)
+    
+        # add any parser defaults that aren't present
+        for dest in self._defaults:
+            if not hasattr(namespace, dest):
+                setattr(namespace, dest, self._defaults[dest])
+    
+        # parse the arguments and exit if there are any errors
+        if self.exit_on_error:
+            try:
+>               namespace, args = self._parse_known_args(args, namespace, intermixed)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:1937: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:2188: in _parse_known_args
+    start_index = consume_optional(start_index)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:2112: in consume_optional
+    take_action(action, args, option_string)
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:1998: in take_action
+    argument_values = self._get_values(action, argument_strings)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:2519: in _get_values
+    self._check_value(action, value)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = ArgumentParser(prog='__main__.py mint', usage=None, description=None, formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)
+action = _StoreAction(option_strings=['--arm'], dest='arm', nargs=None, const=None, default=None, type=None, choices=['B0_s0', ...', 'UM_s0', 'UM_s1', 'U_s0', 'U_s1', 'U_s3', 'U_s4', 'X_s0'], required=True, help=None, metavar=None, deprecated=False)
+value = 'RHp3_s0'
+
+    def _check_value(self, action, value):
+        # converted value must be one of the choices (if specified)
+        choices = action.choices
+        if choices is not None:
+            if isinstance(choices, str):
+                choices = iter(choices)
+            if value not in choices:
+                args = {'value': str(value),
+                        'choices': ', '.join(map(str, action.choices))}
+                msg = _('invalid choice: %(value)r (choose from %(choices)s)')
+>               raise ArgumentError(action, msg % args)
+E               argparse.ArgumentError: argument --arm: invalid choice: 'RHp3_s0' (choose from B0_s0, B0_s1, BL_s0, B_rep, B_s0, B_s1, B_s3, B_s4, RH_s0, RH_s1, R_s0, UE_s0, UE_s1, UM_s0, UM_s1, U_s0, U_s1, U_s3, U_s4, X_s0)
+
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:2578: ArgumentError
+
+During handling of the above exception, another exception occurred:
+
+rig = <test_dscale10k_check_rhp3.Rig object at 0x000002996BACDA50>
+capsys = <_pytest.capture.CaptureFixture object at 0x000002996B96E0D0>
+
+    def test_p3_cli_mint_then_run_only_on_the_token(rig, capsys):
+        rig.patch_heavy(NEW)
+        open(os.path.join(rig.root, "stack", "scripts", "v8f_mini_train.py"), "w").write("import sys, os\nopen(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'STARTED'), 'w').write(' '.join(sys.argv[1:4]))\n")
+        toks = p3_toks(rig)
+        rp, bp = rig.argv_file("RHp3_cli", toks), rig.argv_file("B0_cli3", rig.b0_toks)
+        gate = os.path.join(rig.tmp, "gate", "RHp3_cli")
+        started = os.path.join(rig.root, "stack", "scripts", "STARTED")
+>       assert NEW.main(_cli(rig, "mint", "RHp3_s0", rp, bp, gate, "causal_g1x", rig.sc_rh)) == 0
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhp3.py:659: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\pod_ro\dscale10k_check_rh.py:1306: in main
+    a = ap.parse_args(argv)
+        ^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:1898: in parse_args
+    args, argv = self.parse_known_args(args, namespace)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:1908: in parse_known_args
+    return self._parse_known_args2(args, namespace, intermixed=False)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:1937: in _parse_known_args2
+    namespace, args = self._parse_known_args(args, namespace, intermixed)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:2169: in _parse_known_args
+    positionals_end_index = consume_positionals(start_index)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:2144: in consume_positionals
+    take_action(action, args)
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:2013: in take_action
+    action(self, namespace, argument_values, option_string)
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:1258: in __call__
+    subnamespace, arg_strings = subparser.parse_known_args(arg_strings, None)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:1908: in parse_known_args
+    return self._parse_known_args2(args, namespace, intermixed=False)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:1939: in _parse_known_args2
+    self.error(str(err))
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:2658: in error
+    self.exit(2, _('%(prog)s: error: %(message)s\n') % args)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = ArgumentParser(prog='__main__.py mint', usage=None, description=None, formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)
+status = 2
+message = "__main__.py mint: error: argument --arm: invalid choice: 'RHp3_s0' (choose from B0_s0, B0_s1, BL_s0, B_rep, B_s0, B_s1, B_s3, B_s4, RH_s0, RH_s1, R_s0, UE_s0, UE_s1, UM_s0, UM_s1, U_s0, U_s1, U_s3, U_s4, X_s0)\n"
+
+    def exit(self, status=0, message=None):
+        if message:
+            self._print_message(message, _sys.stderr)
+>       _sys.exit(status)
+E       SystemExit: 2
+
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:2645: SystemExit
+---------------------------- Captured stderr call -----------------------------
+usage: __main__.py mint [-h]
+                        --arm {B0_s0,B0_s1,BL_s0,B_rep,B_s0,B_s1,B_s3,B_s4,RH_s0,RH_s1,R_s0,UE_s0,UE_s1,UM_s0,UM_s1,U_s0,U_s1,U_s3,U_s4,X_s0}
+                        [--stage {A,B}] --argv ARGV --root ROOT
+                        --commit COMMIT --gate-dir GATE_DIR [--py PY]
+                        [--gpu GPU] --base-argv BASE_ARGV
+                        [--evidence EVIDENCE] [--dry DRY]
+                        [--merge-record MERGE_RECORD]
+                        [--union-release UNION_RELEASE] [--tenk-v9 TENK_V9]
+                        [--r-release R_RELEASE] [--corpus-join CORPUS_JOIN]
+                        [--union-join UNION_JOIN] [--eval-ids EVAL_IDS]
+                        [--digest-json [DIGEST_JSON ...]] [--ue-dry UE_DRY]
+                        [--selfcheck SELFCHECK] [--tacsrc-list TACSRC_LIST]
+                        [--ue-argv UE_ARGV] [--b-dry B_DRY]
+                        [--template TEMPLATE] [--pair-argv PAIR_ARGV]
+                        [--pair-check PAIR_CHECK]
+                        [--readout-token READOUT_TOKEN]
+                        [--holdout-manifest HOLDOUT_MANIFEST]
+                        [--holdout HOLDOUT]
+__main__.py mint: error: argument --arm: invalid choice: 'RHp3_s0' (choose from B0_s0, B0_s1, BL_s0, B_rep, B_s0, B_s1, B_s3, B_s4, RH_s0, RH_s1, R_s0, UE_s0, UE_s1, UM_s0, UM_s1, U_s0, U_s1, U_s3, U_s4, X_s0)
+=========================== short test summary info ===========================
+FAILED test_dscale10k_check_rhp3.py::test_identity_argv_diff_and_required_checks_unchanged_for_every_original_arm
+FAILED test_dscale10k_check_rhp3.py::test_p3_the_arms_exist_and_the_original_kinds_are_unchanged
+FAILED test_dscale10k_check_rhp3.py::test_p3_rhp3_mints_pass_and_binds_the_pair[0]
+FAILED test_dscale10k_check_rhp3.py::test_p3_rhp3_mints_pass_and_binds_the_pair[1]
+FAILED test_dscale10k_check_rhp3.py::test_p3_any_other_dose_is_refused[0.5]
+FAILED test_dscale10k_check_rhp3.py::test_p3_any_other_dose_is_refused[0.1]
+FAILED test_dscale10k_check_rhp3.py::test_p3_any_other_dose_is_refused[0.25]
+FAILED test_dscale10k_check_rhp3.py::test_p3_any_other_dose_is_refused[1.0]
+FAILED test_dscale10k_check_rhp3.py::test_p3_any_other_dose_is_refused[0.30]
+FAILED test_dscale10k_check_rhp3.py::test_p3_any_other_dose_is_refused[0] - K...
+FAILED test_dscale10k_check_rhp3.py::test_p3_any_other_dose_is_refused[0.0]
+FAILED test_dscale10k_check_rhp3.py::test_p3_any_other_dose_is_refused[-0.3]
+FAILED test_dscale10k_check_rhp3.py::test_p3_any_other_dose_is_refused[abc]
+FAILED test_dscale10k_check_rhp3.py::test_p3_a_second_changed_flag_is_refused[lr]
+FAILED test_dscale10k_check_rhp3.py::test_p3_a_second_changed_flag_is_refused[steps]
+FAILED test_dscale10k_check_rhp3.py::test_p3_a_second_changed_flag_is_refused[added]
+FAILED test_dscale10k_check_rhp3.py::test_p3_a_second_changed_flag_is_refused[removed]
+FAILED test_dscale10k_check_rhp3.py::test_p3_a_second_changed_flag_is_refused[batch]
+FAILED test_dscale10k_check_rhp3.py::test_p3_a_second_changed_flag_is_refused[data_path]
+FAILED test_dscale10k_check_rhp3.py::test_p3_a_second_changed_flag_is_refused[kin]
+FAILED test_dscale10k_check_rhp3.py::test_p3_a_second_changed_flag_is_refused[seed]
+FAILED test_dscale10k_check_rhp3.py::test_p3_a_second_changed_flag_is_refused[wacc]
+FAILED test_dscale10k_check_rhp3.py::test_p3_a_second_changed_flag_is_refused[dagger_seed]
+FAILED test_dscale10k_check_rhp3.py::test_p3_a_second_changed_flag_is_refused[p_gt]
+FAILED test_dscale10k_check_rhp3.py::test_p3_a_second_changed_flag_is_refused[ego_perturb]
+FAILED test_dscale10k_check_rhp3.py::test_p3_rh_dose_under_the_rhp3_name_is_refused
+FAILED test_dscale10k_check_rhp3.py::test_p3_out_must_name_the_arm - KeyError...
+FAILED test_dscale10k_check_rhp3.py::test_p3_the_pair_is_the_existing_b0_and_a_moved_b0_is_refused
+FAILED test_dscale10k_check_rhp3.py::test_p3_needs_the_declaration_token_and_the_right_one
+FAILED test_dscale10k_check_rhp3.py::test_p3_bank_checks_apply_to_the_new_kind
+FAILED test_dscale10k_check_rhp3.py::test_p3_the_selfcheck_must_carry_the_declaration_and_pass_the_probe
+FAILED test_dscale10k_check_rhp3.py::test_p3_stage_a_refused - KeyError: 'RHp...
+FAILED test_dscale10k_check_rhp3.py::test_p3_cli_mint_then_run_only_on_the_token
+33 failed, 40 passed in 375.74s (0:06:15)

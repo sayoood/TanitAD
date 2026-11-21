@@ -1,0 +1,14 @@
+  [PASS] 0 the unpatched side IS the pod's live bytes; the patched side IS the shipped kit (md5)
+  [PASS] A1 pod trainer start halts (rc 7)
+  [PASS] A2 pod on-policy switch replayed (rc 7, scorer_mode onpolicy in the checkpoint)
+  [PASS] A3 KIT preflight OK; ONLY the declared yaw_loss differs (no tan_w line); nothing written
+  [PASS] A4 KIT without --declare-change yaw_loss: REFUSED (rc 4), no new declared change
+  [PASS] A5 KIT switch resumes (rc 7), MEASURE M6 names plain_tangent, the new declared change is ONLY yaw_loss
+  [PASS] A5 the switched checkpoint: meta measures.yaw_loss plain_tangent, identity tan_w 0.1
+  [PASS] A6 MUTATION: an undeclared --tan-w 0.2 is REFUSED (rc 4) and writes nothing
+  [PASS] A7 resume again needs no declare, completes (rc 0), final meta plain_tangent
+  [PASS] B1-B3 pod start, on-policy replay, M6 plain switch (rc 7 each; checkpoint yaw_loss plain)
+  [PASS] B4 KIT from a v3 (plain) checkpoint: rc 7, the new declared change is exactly plain -> plain_tangent
+  [PASS] B5 resume again completes (rc 0), final meta plain_tangent
+  (route A declared changes: [["--scorer-mode: 'fixed' -> 'onpolicy'"], ["--yaw-loss: 'wrapped' -> 'plain_tangent'"]]; route B: [["--scorer-mode: 'fixed' -> 'onpolicy'"], ["--yaw-loss: 'wrapped' -> 'plain'"], ["--yaw-loss: 'plain' -> 'plain_tangent'"]]; rcs {'A1': 7, 'A2': 7, 'A3': 0, 'A4': 4, 'A5': 7, 'A6': 4, 'A7': 0, 'B1': 7, 'B2': 7, 'B3': 7, 'B4': 7, 'B5': 0}; temp C:\Users\Admin\AppData\Local\Temp\switch_resume_m6b_xhsmgf7s)
+ZZSWITCH_RESUME_M6B_OK

@@ -1,0 +1,84 @@
+[20:53:40Z] queue DONE on the pod; the pod read starts
+[20:53:42Z] container free 43 GB
+[20:54:00Z] e1 headway rc 0
+[20:54:08Z] e1 families rc 0
+e1 hw/RESULT_HEADWAY.json     PASS leaves 1836 / 1836 differing 0 only-bank 0 only-got 0 max abs diff 0
+e1 q3/RESULT_Q3.json          PASS leaves 1897 / 1897 differing 0 only-bank 0 only-got 0 max abs diff 1.44e-15
+ZZ ENV-E1 PASS
+[20:54:24Z] headway rc 0
+[20:54:31Z] families rc 0
+[20:54:32Z] read rc 0
+TIER: T1-kin (kinematic rollout on the model's own actions; the lead does not react); never driving performance
+== controls (b1 to b10)
+   b1_rerun_equals_banked PASS {"line": "CMP files=141 differing=0", "PASS": true}
+   b2_braking_limit_applied PASS {"per_run": {"I10RLc_s0": {"B_MAX": 6.0, "kwargs": "{}", "PASS": true}, "I10RLc_s1": {"B_MAX": 6.0, "kwargs": "{}", "PASS": true}, "I10RQ50_s0": {"B_MAX": 6.0, "kwargs": "{}", "PASS": true}, "I10RQ50_s1": {"B_MAX": 6.0, "kwargs": "{}", "PASS": true}, "I10RLcB6_s0": {"B_MAX": 6.0, "kwargs_b_max": 6.0, "TAU": 1.2, "replan_steps": 10, "PASS": true}, "I10RLcB8_s0": {"B_MAX": 8.0, "kwargs_b_max": 8.
+   b3_first_tick_inputs_equal PASS {"per_run": {"I10RLcB6_s0": {"max_abs_first_tick_inputs": 0.0, "same_ticks": true, "n_first_ticks": 2399, "PASS": true}, "I10RLcB8_s0": {"max_abs_first_tick_inputs": 0.0, "same_ticks": true, "n_first_ticks": 2399, "PASS": true}, "I10RLcB8_s1": {"max_abs_first_tick_inputs": 0.0, "same_ticks": true, "n_first_ticks": 2399, "PASS": true}, "I10RQ50B8_s0": {"max_abs_first_tick_inputs": 0.0, "same_t
+   b4_same_read PASS {"per_run": {"0": {"same_reader_reads": true, "PASS": true}, "1": {"same_reader_reads": true, "PASS": true}}, "PASS": true}
+   b5_limit_is_live PASS {"per_run": {"I10RLcB6_s0": {"first_tick_saturated_steps_6.0": 813, "run": 813, "PASS": true}, "I10RLcB8_s0": {"first_tick_saturated_steps_6.0": 813, "run": 744, "PASS": true}, "I10RLcB8_s1": {"first_tick_saturated_steps_6.0": 817, "run": 744, "PASS": true}, "I10RQ50B8_s0": {"first_tick_saturated_steps_6.0": 973, "run": 904, "PASS": true}, "I10RQ50B8_s1": {"first_tick_saturated_steps_6.0": 738, "run": 
+   b6_counts PASS {"n_runs": 7, "not_141": [], "n_windows_total": 2399, "n_lead_windows": 642, "PASS": true}
+   b7_reused_dumps PASS {"n_files": 10, "differing": [], "PASS": true}
+   b8_reader_controls PASS {"headway": true, "family": true, "PASS": true}
+   b9_model PASS {"n_runs": 7, "not_equal": [], "PASS": true}
+   b10_wrapper PASS {"wrapper_sha256": "31da3c553eef1b8f", "card": "31da3c553eef1b8f", "PASS": true}
+== reported without a bar
+   r1_saturated_steps {"I10RLcB6_s0": {"first_tick_sum_6.0": 813, "first_tick_sum_run": 813, "first_tick_rows_6.0": 140, "first_tick_rows_run": 140, "first_tick_rows_where_run_is_above_6.0": 0, "all_ticks_rows_6.0": 433, "all_ticks_rows_run": 433}, "I10RLcB8_s0": {"first_tick_sum_6.0": 813, "first_tick_sum_run": 744, "first_tick_rows_6.0": 140, "first_tick_rows_run": 134, "first_tick_rows_where_run_is_above_6.0": 3, "all_ticks
+== names
+   BRAKE10K-LABEL-HARDER-BRAKING-RAISES-UNSAFE
+   BRAKE10K-READER-NO-U-CHANGE
+== levels per braking limit (per model seed; 562 scored windows, 642 lead windows)
+   LABEL   I10RLc     U [0.0463, 0.0302]  C [0.0, 0.0031]  F [0.1838, 0.2523]
+   LABEL   I10RLcB8   U [0.0534, 0.0427]  C [0.0, 0.0]  F [0.1854, 0.2601]
+   LABEL   I10RLcB10  U [0.0552, 0.0445]  C [0.0016, 0.0016]  F [0.1822, 0.2586]
+   READER  I10RQ50    U [0.0872, 0.073]  C [0.0312, 0.0218]  F [0.2274, 0.2913]
+   READER  I10RQ50B8  U [0.0836, 0.0783]  C [0.0312, 0.0218]  F [0.2305, 0.2913]
+== BR: limit 8.0 minus limit 6.0, per form (pooled [interval], per seed)
+   LABEL   U +0.0098 [+0.0011, +0.0208] [0.0071, 0.0125]  C -0.0016 [-0.0051, +0.0000] [0.0, -0.0031]  F +0.0047 [-0.0046, +0.0159] [0.0016, 0.0078]
+   READER  U +0.0009 [-0.0084, +0.0136] [-0.0036, 0.0053]  C +0.0000 [+0.0000, +0.0000] [0.0, 0.0]  F +0.0016 [-0.0124, +0.0155] [0.0031, 0.0]
+== dose (label-fed, names nothing)
+   B10_minus_6.0  U +0.0116 [+0.0015, +0.0245] [0.0089, 0.0142]  C +0.0000 [-0.0029, +0.0030] [0.0016, -0.0016]  F +0.0023 [-0.0089, +0.0179] [-0.0016, 0.0062]
+   B10_minus_B8   U +0.0018 [-0.0052, +0.0090] [0.0018, 0.0018]  C +0.0016 [+0.0000, +0.0040] [0.0016, 0.0016]  F -0.0023 [-0.0130, +0.0075] [-0.0031, -0.0016]
+== beside
+   I10RLcB8 against no rule: U -0.0819 [-0.1257, -0.0442] [-0.0925, -0.0712]  C -0.0592 [-0.0966, -0.0288] [-0.0763, -0.0421]  F +0.0826 [+0.0378, +0.1321] [0.0903, 0.0748]
+   I10RQ50B8 against no rule: U -0.0489 [-0.0886, -0.0130] [-0.0623, -0.0356]  C -0.0327 [-0.0577, -0.0128] [-0.0452, -0.0202]  F +0.1207 [+0.0723, +0.1744] [0.1355, 0.1059]
+   reader-fed minus label-fed, both at 8.0: U +0.0329 [+0.0134, +0.0554] [0.0302, 0.0356]  C +0.0265 [+0.0102, +0.0465] [0.0312, 0.0218]  F +0.0382 [+0.0104, +0.0701] [0.0452, 0.0312]
+== families (limit 8.0 minus 6.0; label-fed 10.0 minus 6.0)
+   LABEL 8.0   LONGITUDINAL:speed_mae_mps         D  +0.0506 [+0.0192, +0.0861] [0.0549, 0.0462] INSIDE-SPREAD
+   LABEL 8.0   LONGITUDINAL:along_mae_m           D  +0.0922 [+0.0160, +0.1822] [0.0877, 0.0967] WORSE
+   LABEL 8.0   LATERAL:cross_mae_m                D  -0.0045 [-0.0182, +0.0074] [-0.0109, 0.0019] OPEN
+   LABEL 8.0   LATERAL:heading_mae_deg            D  +0.1158 [+0.0174, +0.2316] [0.1402, 0.0915] INSIDE-SPREAD
+   LABEL 8.0   LATERAL:curvature_mae_1pm          D  +0.0011 [-0.0021, +0.0043] [-0.0005, 0.0028] OPEN
+   LABEL 8.0   LATERAL:yaw_rate_mae_degps         D  +0.7568 [+0.3185, +1.3764] [0.8916, 0.6221] INSIDE-SPREAD
+   LABEL 8.0   TACTICAL:lon_err_rate              D  -0.0015 [-0.0052, +0.0027] [0.0, -0.0029] OPEN
+   LABEL 8.0   TACTICAL:lat_err_rate              D  +0.0006 [-0.0038, +0.0054] [0.0004, 0.0008] OPEN
+   LABEL 8.0   TACTICAL:joint_err_rate            D  +0.0000 [-0.0035, +0.0042] [0.0017, -0.0017] OPEN
+   LABEL 8.0   TACTICAL:ade_tac_m                 D  +0.1318 [+0.0223, +0.2641] [0.1235, 0.1402] WORSE
+   READER 8.0  LONGITUDINAL:speed_mae_mps         D  +0.0515 [+0.0161, +0.0960] [0.0716, 0.0315] WORSE
+   READER 8.0  LONGITUDINAL:along_mae_m           D  +0.0675 [-0.0073, +0.1539] [0.1153, 0.0197] OPEN
+   READER 8.0  LATERAL:cross_mae_m                D  -0.0077 [-0.0199, +0.0043] [-0.0142, -0.0013] OPEN
+   READER 8.0  LATERAL:heading_mae_deg            D  +0.1770 [-0.0077, +0.3756] [0.291, 0.0631] OPEN
+   READER 8.0  LATERAL:curvature_mae_1pm          D  +0.0057 [+0.0001, +0.0125] [0.0095, 0.0019] INSIDE-SPREAD
+   READER 8.0  LATERAL:yaw_rate_mae_degps         D  +1.2526 [+0.2296, +2.4901] [1.9668, 0.5384] INSIDE-SPREAD
+   READER 8.0  TACTICAL:lon_err_rate              D  -0.0017 [-0.0062, +0.0031] [-0.0008, -0.0025] OPEN
+   READER 8.0  TACTICAL:lat_err_rate              D  +0.0013 [-0.0048, +0.0073] [0.0033, -0.0008] OPEN
+   READER 8.0  TACTICAL:joint_err_rate            D  +0.0008 [-0.0025, +0.0042] [0.0008, 0.0008] OPEN
+   READER 8.0  TACTICAL:ade_tac_m                 D  +0.0903 [-0.0098, +0.2082] [0.1544, 0.0263] OPEN
+   LABEL 10.0  LONGITUDINAL:speed_mae_mps         D  +0.0499 [+0.0164, +0.0899] [0.0515, 0.0484] INSIDE-SPREAD
+   LABEL 10.0  LONGITUDINAL:along_mae_m           D  +0.0356 [-0.0265, +0.1111] [0.0181, 0.0531] OPEN
+   LABEL 10.0  LATERAL:cross_mae_m                D  +0.0045 [-0.0070, +0.0196] [-0.0029, 0.012] OPEN
+   LABEL 10.0  LATERAL:heading_mae_deg            D  +0.2224 [+0.0840, +0.3803] [0.2346, 0.2101] INSIDE-SPREAD
+   LABEL 10.0  LATERAL:curvature_mae_1pm          D  +0.0031 [-0.0007, +0.0066] [0.0024, 0.0038] OPEN
+   LABEL 10.0  LATERAL:yaw_rate_mae_degps         D  +1.2438 [+0.5276, +2.0752] [1.3173, 1.1704] INSIDE-SPREAD
+   LABEL 10.0  TACTICAL:lon_err_rate              D  -0.0002 [-0.0052, +0.0048] [0.0, -0.0004] OPEN
+   LABEL 10.0  TACTICAL:lat_err_rate              D  +0.0035 [-0.0010, +0.0085] [0.0029, 0.0042] OPEN
+   LABEL 10.0  TACTICAL:joint_err_rate            D  -0.0010 [-0.0048, +0.0033] [0.0008, -0.0029] OPEN
+   LABEL 10.0  TACTICAL:ade_tac_m                 D  +0.0544 [-0.0359, +0.1664] [0.0274, 0.0813] OPEN
+STRATEGIC: as note N1 of card ADD46 (T0 first tick: the banked read of the two models without the rule; along the rule-driven rollout NOT COMPUTED, n = 0, no instrument)
+ZZ PODREAD-BRAKE DONE 20:54:32Z
+[20:54:35Z] pulled READ_BRAKE10K.json sha256 11fdb76ef1635c88
+[20:54:39Z] pulled ENV_E1.json sha256 9d46f9baade8d3c8
+[20:54:42Z] pulled RESULT_HEADWAY.json sha256 24d4186a31ead705
+[20:54:46Z] pulled RESULT_Q3.json sha256 99a44ded640925fc
+[20:54:49Z] pulled VERDICT_HEADWAY.md sha256 833554823db71f66
+[20:54:52Z] pulled VERDICT_Q3.md sha256 167bc82bbdf8bdbf
+[20:54:56Z] pulled podread_brake.out sha256 d32f4907b6762a8d
+ZZ WAIT-PODREAD-BRAKE DONE 20:54:56Z

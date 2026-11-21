@@ -1,0 +1,35 @@
+SCENARIODATA CAN BE REBUILT OFFLINE FROM A SIMULATION LOG -- AND IT IS EGO-CENTRIC. 2026-09-20.
+
+WHY THIS MATTERS: REFe's scorer needs per-proposal PDM targets, the calculators need a ScenarioData,
+and I assumed that meant a live simulation. It does not.
+
+MEASURED: `DriveRLNuPlanFeatureBuilder.build(current_input, initialization)` reads only
+`current_input.history` (its .ego_states and .observations). A SimulationLog sample carries
+ego_state, observation, traffic_light_status and trajectory, so a plain namespace over a window of
+banked samples is enough:
+
+    hist = SimpleNamespace(ego_states=[s.ego_state for s in window],
+                           observations=[s.observation for s in window])
+    ci   = SimpleNamespace(history=hist, traffic_light_data=window[-1].traffic_light_status)
+    init = SimpleNamespace(map_api=..., route_roadblock_ids=..., mission_goal=...)
+    sd   = DriveRLNuPlanFeatureBuilder().build(ci, init)
+
+RESULT on a real banked log:
+    agent_positions_all   (1, 128, 5, 2)     128 agents, 5 history steps
+    lanes_centers_points  (1, 1024, 2, 4)
+    route_points_array    (1, 100, 2)
+
+!! THE FRAME, AND IT WOULD HAVE POISONED EVERY TARGET SILENTLY:
+    ego (agent 0) last position : [0.0, 0.0]
+    true world pose at that step: [664433.28, 3998238.98]
+   => ScenarioData is EGO-CENTRIC. Injecting a world-coordinate proposal would place the candidate
+      ~660 km from the scene, and the calculators would return confident, meaningless numbers --
+      not an error. Off-road would read "off road", collision "no collision", and the target bank
+      would look entirely plausible.
+   => build_targets.py already stores trajectories in the ego frame, so the bank and the scorer
+      agree WITHOUT conversion. That is luck confirmed by measurement, not design, and the frame is
+      now stated in inject_proposal's docstring rather than assumed.
+
+CONSEQUENCE: the scorer's targets can be PRECOMPUTED offline into the bank from rollouts we already
+have, rather than requiring a live simulation per proposal. That is a materially cheaper design than
+the one in POD_HANDOFF gap #1.

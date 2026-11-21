@@ -1,0 +1,24 @@
++ export PATH=/home/nvidia/venvs/tanitad-edge/bin:/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
++ PATH=/home/nvidia/venvs/tanitad-edge/bin:/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
++ export CPATH=/home/nvidia/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/include/python3.12:
++ CPATH=/home/nvidia/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/include/python3.12:
++ export OMP_NUM_THREADS=6
++ OMP_NUM_THREADS=6
++ SC=/home/nvidia/nurec_scenes/sample_set/26.04_release/00040136-e651-4abd-991d-0655ccda9430
++ AG=/home/nvidia/tanitad_cl/stack/experiments/alpasim-gsplat
++ L=/home/nvidia/rq_out/logs
++ ST=/home/nvidia/rq_out/logs/status3.txt
++ cd /home/nvidia/tanitad_cl/stack/experiments/alpasim-gsplat
++ python3 rs_frame_offset.py --scene-dir /home/nvidia/nurec_scenes/sample_set/26.04_release/00040136-e651-4abd-991d-0655ccda9430 --out /home/nvidia/rq_out/rs_frame_offset_k10.json --config chosen --k 10 --loader-dir /home/nvidia/nurec-gsplat
++ echo 'EXIT frameoffset_k10 = 0'
++ python3 /home/nvidia/rq_out/rs_regression_check.py
++ echo 'EXIT regression = 0'
++ cd /home/nvidia/nurec-gsplat
++ python3 render_probe.py --scene-dir /home/nvidia/nurec_scenes/sample_set/26.04_release/00040136-e651-4abd-991d-0655ccda9430 --frame 0 --layers background,road --rolling-shutter --out /home/nvidia/rq_out/rp_rs_check
++ echo 'EXIT render_probe_rs = 0'
++ cd /home/nvidia/tanitad_cl/stack/experiments/alpasim-gsplat
++ python3 rs_seam_control.py --scene-dir /home/nvidia/nurec_scenes/sample_set/26.04_release/00040136-e651-4abd-991d-0655ccda9430 --out /home/nvidia/rq_out/rs_seam_control.json --config chosen --loader-dir /home/nvidia/nurec-gsplat
++ echo 'EXIT seam = 0'
++ python3 rs_sweep.py --scene-dir /home/nvidia/nurec_scenes/sample_set/26.04_release/00040136-e651-4abd-991d-0655ccda9430 --out /home/nvidia/rq_out/rs_batch_chosen --config chosen --panel batch --n-frames-auto 12 --png-frame 0 --loader-dir /home/nvidia/nurec-gsplat --repo /home/nvidia/tanitad_cl
++ echo 'EXIT batch = 0'
++ echo RSE3_ALLDONE

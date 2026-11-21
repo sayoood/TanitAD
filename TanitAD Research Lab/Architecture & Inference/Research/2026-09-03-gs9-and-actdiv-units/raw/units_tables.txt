@@ -1,0 +1,79 @@
+====================================================================================================
+units provenance: {
+ "kappa": {
+  "action_units": "kappa",
+  "wheelbase_m": null,
+  "note": "LEGACY: the swept level is fed unchanged (identity pass-through)"
+ },
+ "steer": {
+  "action_units": "steer",
+  "wheelbase_m": 2.9,
+  "wheelbase_source": "tanitad.models.kinematic.STEER_WHEELBASE_M (the ENCODING constant physicalai.signals_at used: steer = arctan(L*curv))",
+  "map": "fed = arctan(L_enc * level) via tanitad.models.kinematic.as_command",
+  "note": "the swept level is a TRUE CURVATURE in rad/m; level/abs_level keep the nominal curvature, fed_value is what the model received"
+ }
+}
+banked 2026-09-03T03:56:22Z | kappa 2026-09-03T08:26:21Z | steer 2026-09-03T08:26:21Z
+
+====================================================================================================
+B0  REPRODUCTION - the kappa pass vs the banked run, at 6 significant figures
+  incumbent_fp32         51 statistics compared, 0 mismatch | verdict LAT-INSENSITIVE-REFUTED (banked LAT-INSENSITIVE-REFUTED)
+  clean_epoch_ema_bf16   51 statistics compared, 0 mismatch | verdict LAT-INSENSITIVE-REFUTED (banked LAT-INSENSITIVE-REFUTED)
+  => B0 HOLDS - the flag is a true pass-through and the read is deterministic
+
+====================================================================================================
+B1  VERDICT INVARIANCE - three spaces, both arms, both conventions
+  incumbent_fp32         kappa  {'tac': 'LAT-INSENSITIVE-REFUTED', 'pooled': 'LAT-INSENSITIVE-REFUTED', 'full_subsample': 'LAT-INSENSITIVE-REFUTED'}
+  incumbent_fp32         steer  {'tac': 'LAT-INSENSITIVE-REFUTED', 'pooled': 'LAT-INSENSITIVE-REFUTED', 'full_subsample': 'LAT-INSENSITIVE-REFUTED'}
+  clean_epoch_ema_bf16   kappa  {'tac': 'LAT-INSENSITIVE-REFUTED', 'pooled': 'LAT-INSENSITIVE-REFUTED', 'full_subsample': 'LAT-INSENSITIVE-REFUTED'}
+  clean_epoch_ema_bf16   steer  {'tac': 'LAT-INSENSITIVE-REFUTED', 'pooled': 'LAT-INSENSITIVE-REFUTED', 'full_subsample': 'LAT-INSENSITIVE-REFUTED'}
+  => B1 HOLDS (0 non-REFUTED)
+
+====================================================================================================
+B2  SEPARATION-RATIO - kappa axis F_sep/null_p95 (tac); band |log(c/r)| <= log(1.25)
+  incumbent_fp32         kappa: raw     2297.751  steer     2217.604  x0.965  within-band=True
+                         accel: raw     1036.481  steer     1036.481  x1.0000  (untouched axis)
+  clean_epoch_ema_bf16   kappa: raw       11.755  steer       11.787  x1.003  within-band=True
+                         accel: raw       31.617  steer       31.617  x1.0000  (untouched axis)
+  => B2 INVARIANT
+
+====================================================================================================
+B3  LINEARITY vs THE SWEPT LEVELS - full-field ||m|| ratios to level 0.02
+     arctan prediction (linear in the FED value): 0.02:1.0000 0.05:2.4855 0.1:4.8720
+  incumbent_fp32         kappa  norms 0.02:2.959014e-03 0.05:7.398814e-03 0.1:1.480878e-02 | ratios 0.02:1.0000 0.05:2.5004 0.1:5.0046 | rho=1.0
+  incumbent_fp32         steer  norms 0.02:8.573758e-03 0.05:2.134744e-02 0.1:4.210819e-02 | ratios 0.02:1.0000 0.05:2.4899 0.1:4.9113 | rho=1.0
+      -> top-level ratio  steer 4.9113  vs arctan-linear 4.8720 (dev +0.0393)  vs raw 5.0046
+      -> per-level gain steer/raw: 0.02:x2.8975 0.05:x2.8853 0.1:x2.8435
+  clean_epoch_ema_bf16   kappa  norms 0.02:1.367376e-02 0.05:3.415854e-02 0.1:6.809413e-02 | ratios 0.02:1.0000 0.05:2.4981 0.1:4.9799 | rho=1.0
+  clean_epoch_ema_bf16   steer  norms 0.02:3.956455e-02 0.05:9.759760e-02 0.1:1.886525e-01 | ratios 0.02:1.0000 0.05:2.4668 0.1:4.7682 | rho=1.0
+      -> top-level ratio  steer 4.7682  vs arctan-linear 4.8720 (dev -0.1037)  vs raw 4.9799
+      -> per-level gain steer/raw: 0.02:x2.8935 0.05:x2.8572 0.1:x2.7705
+
+====================================================================================================
+B4  ANTISYMMETRY - cos(m(+L), m(-L)) per level (bar <= -0.99 on kappa)
+  incumbent_fp32         kappa  kappa  0.02:-0.9998 0.05:-0.9989 0.1:-0.9956
+  incumbent_fp32         kappa  accel  0.5:-0.9695 1.5:-0.7972
+  incumbent_fp32         steer  kappa  0.02:-0.9985 0.05:-0.9907 0.1:-0.9615
+  incumbent_fp32         steer  accel  0.5:-0.9695 1.5:-0.7972
+  clean_epoch_ema_bf16   kappa  kappa  0.02:-0.9999 0.05:-0.9995 0.1:-0.9980
+  clean_epoch_ema_bf16   kappa  accel  0.5:-0.9916 1.5:-0.9293
+  clean_epoch_ema_bf16   steer  kappa  0.02:-0.9993 0.05:-0.9960 0.1:-0.9856
+  clean_epoch_ema_bf16   steer  accel  0.5:-0.9916 1.5:-0.9293
+
+====================================================================================================
+B5  ||m(kappa=0.1)|| / ||m(a=1.5)||, and whether 'matched sigma' survives
+  incumbent_fp32         full-field raw 0.003287  steer 0.009348  moves x2.843
+                         tac raw 0.002244 steer 0.006360 x2.834 | pooled raw 0.003287 steer 0.009347 x2.843
+                         sigma(ch0 accel)=0.742635 m/s2 | sigma(ch1 AS FED = steer)=0.047565 rad = 0.0164140 rad/m
+                         a=1.5 -> 2.020 sigma_a | RAW level 0.1 fed 0.100000 rad = 2.102 sigma_steer
+                         CONVERTED level 0.1 fed 0.282257 rad = 5.934 sigma_steer ; 0.1 rad/m = 6.092 sigma_kappa
+                         the level that IS 2 sigma in curvature: 0.0328279 rad/m -> fed 0.094915 rad = 1.9955 sigma_steer
+  clean_epoch_ema_bf16   full-field raw 0.025144  steer 0.069661  moves x2.770
+                         tac raw 0.026194 steer 0.072188 x2.756 | pooled raw 0.025028 steer 0.069302 x2.769
+                         sigma(ch0 accel)=0.742635 m/s2 | sigma(ch1 AS FED = steer)=0.047565 rad = 0.0164140 rad/m
+                         a=1.5 -> 2.020 sigma_a | RAW level 0.1 fed 0.100000 rad = 2.102 sigma_steer
+                         CONVERTED level 0.1 fed 0.282257 rad = 5.934 sigma_steer ; 0.1 rad/m = 6.092 sigma_kappa
+                         the level that IS 2 sigma in curvature: 0.0328279 rad/m -> fed 0.094915 rad = 1.9955 sigma_steer
+
+====================================================================================================
+CONTROLS / material bar / n, both conventions

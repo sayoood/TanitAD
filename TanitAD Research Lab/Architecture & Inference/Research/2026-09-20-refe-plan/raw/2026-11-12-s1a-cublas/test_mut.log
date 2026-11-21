@@ -1,0 +1,19 @@
+V1 ok (sha256 refusal; empty / repeating list; the audit measures through the train set's lookup; 3 mutants refused; unlabelled rows are not counted; filter OFF = the old class)
+ZZAUXEXCL {"sha256": "e145a3be8a5d34078526f7acc510aa83d4f2d9fe58f130bff885931842dcfe96", "logs": 2, "excluded_rows": 12, "excluded_frames": 6, "excluded_labelled_frames": 6, "reached_loss_rows": 0, "reached_loss_frames": 0, "filter_logs": 2, "filter_equals_file": true}
+ZZAUXEXCL {"sha256": "e145a3be8a5d34078526f7acc510aa83d4f2d9fe58f130bff885931842dcfe96", "logs": 2, "excluded_rows": 12, "excluded_frames": 6, "excluded_labelled_frames": 6, "reached_loss_rows": 12, "reached_loss_frames": 6, "filter_logs": 0, "filter_equals_file": false}
+REFUSED: aux-excl: 12 training rows of the excluded (H48) logs still reach the head's loss with a label (the exclusion filter is missing or wrong)
+REFUSED: aux-excl: the filter holds 0 logs and they are not the file's 2
+ZZAUXEXCL {"sha256": "dafbc2c301ac75705d933e1a04f87de7439336f9a4debee53c82c6c40fbe3970", "logs": 1, "excluded_rows": 0, "excluded_frames": 0, "excluded_labelled_frames": 0, "reached_loss_rows": 0, "reached_loss_frames": 0, "filter_logs": 1, "filter_equals_file": true}
+REFUSED: aux-excl: 0 labelled frames were excluded: the list names no log of this training index (a lever with nothing to act on)
+V2 ok (main() builds the filter, audits the SAME train set, refuses rc 4, writes aux_excl; the class and make_train_set carry it; wired() RED on 6 mutants; the dead-lever check sees both reads)
+V3 ok (both flags default OFF; the pair is named together, needs --aux-drv, and the file must hash to the declared sha256)
+   G-DVB verdict on a good HA-s0 data event: PASS ; reasons: []
+V4 ok (7 rows green on all 3 arms; 8 mutated data events + a block under flag OFF RED; 4 derangement mutants RED; tables without either flag refused; an older profile's G-DVB unchanged)
+V5 ok (3 arms legal; argv diff vs C0 = budget / seed / --out + the head tail; 14 dropped-flag cases + ~25 moved-lever cases refused; --epochs 2 reaches 10,000 / 2,000 updates, 1.0 would stop at 7,500)
+V6 ok (the 25 older digests unmoved; NEW refe_vdac_p6 = 69a35d1846f171d7...)
+V7 ok (peel -> the tip blob e8b86260; DIV's d665ed99 and S1ZSM's 6a16d35c unchanged; every reversal refuses a drifted trainer)
+Traceback (most recent call last):
+  File "F:\tanitad_scratch\s1a_cublas\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_vdac_gate.py", line 574, in <module>
+    assert cublas_ok(SCRIPTS["vdac_pod.sh"]), "PREFLIGHT_NO_CUBLAS_ENV"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: PREFLIGHT_NO_CUBLAS_ENV

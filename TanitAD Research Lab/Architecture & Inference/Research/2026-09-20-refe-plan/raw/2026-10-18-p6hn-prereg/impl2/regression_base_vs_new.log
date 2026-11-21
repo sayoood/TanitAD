@@ -1,0 +1,8 @@
+taniteval regression, tip tree vs tip + this change (pytest, interpreter venvs/tanitad, 8 test files that name adapters/navsim.py or four_families_block):
+  tests/test_navsim_adapter.py test_navsim_ci.py test_four_families_lateral_undefined.py test_strategic_na_per_corpus.py test_bench_navsim_navtest_single_stage.py test_bench_suite_navsim_offline.py test_bench_navsim_reuse_floors.py test_bench_navsim_reuse_seams.py
+  base (tip)               : 181 passed in 68.17s (0:01:08)
+  tip + change (+ the new test_per_window_export.py, 20 tests): 201 passed in 54.83s
+  FlyWheels/.../2026-09-19-navsim-refcv4b-bridge/tests/test_gt_roundtrip.py (names adapters.navsim): base 4 failed in 20.38s ; tip + change 4 failed in 23.61s
+     (all 4 fail identically on both, FileNotFoundError on an external navsim sidecar parquet that is not in the repo: environmental, not caused by this change)
+taniteval/tests/test_per_window_export.py: see test_per_window_export.log (20 passed)
+eval/test_hn_screen_read.py: tip ZZTEST_PASS 18 (impl1/test_hn_screen_read.log) ; tip + change ZZTEST_PASS 31 (test_hn_screen_read.log)

@@ -1,0 +1,1122 @@
+diff --git a/pristine/stack/tanitad/refs/refc_v3.py b/tree/stack/tanitad/refs/refc_v3.py
+index 335103c..5a749e1 100644
+--- a/pristine/stack/tanitad/refs/refc_v3.py
++++ b/tree/stack/tanitad/refs/refc_v3.py
+@@ -109,6 +109,7 @@ from tanitad.refs import refcv6_max_speed as v6ms
+ from tanitad.refs import refcv6_selection as v6sel
+ from tanitad.refs import refcv6_tactical as v6tac
+ from tanitad.refs import refcv8_conditioning as r8c
++from tanitad.refs import refcv9_progress as r9p  # refcv9 R9-PF (--r9-progress-head; OFF builds nothing)
+ # ⭐ refcv7 (PI 2026-09-19): DrivoR's proven planning heads on the refcv6 build.
+ # Module scope for the same reason as the three above.
+ from tanitad.refs import refcv7_heads as r7h
+@@ -652,6 +653,9 @@ class RefCV3Config:
+     # ⭐ refcv8 WP-B (DESIGN.md sec. 3): the tactical-conditioning switches. `enable=False` (the default) builds
+     # nothing -- a refcv7 config is unchanged, field for field, in everything it builds.
+     refcv8: "r8c.R8Config" = field(default_factory=lambda: r8c.R8Config())
++    # ⭐ refcv9 R9-PF (REFCV9_INMODEL_DESIGN.md): the clean-split, regime-factored progress head. `enable=False`
++    # (the default) builds nothing and enters no code path -- a refcv8 config is unchanged in everything it builds.
++    refcv9: "r9p.R9Config" = field(default_factory=lambda: r9p.R9Config())
+ 
+     @property
+     def n_goal_taus(self) -> int:
+@@ -1510,6 +1514,12 @@ class RefCV3Model(nn.Module):
+         _r8 = getattr(cfg, "refcv8", None)
+         if _r8 is not None and _r8.enable:
+             self.enable_refcv8(_r8)
++        # ⭐ refcv9 R9-PF -- built AFTER refcv8, from a DEDICATED stream inside a forked RNG (the refcv8 lesson): an OFF
++        # build, and every module the trainer builds after the model, are byte-identical to refcv8's.
++        self.r9_prog = None
++        _r9 = getattr(cfg, "refcv9", None)
++        if _r9 is not None and _r9.enable:
++            self.enable_refcv9(_r9)
+         # ⛔⛔ refcv7 RESTART FREEZE: LAST, after every module exists (BYPASS_DECLARATIONS).
+         # Consumes no RNG, so every parameter's init is exactly what it was before.
+         self._bypass_declared = declare_bypassed_by_flag(self)
+@@ -2091,6 +2101,53 @@ class RefCV3Model(nn.Module):
+         self.r8_enabled = True
+         return self.r8_n_params
+ 
++    def enable_refcv9(self, r9cfg) -> int:
++        """Build the R9-PF progress head on THIS model -- at construction or POST HOC on a loaded checkpoint (the
++        calibration stage). It reads only `z_tac` (detached), the observed pose window's t0 scalars, the fed ceiling and
++        the residual prior's path; refused on a build that lacks any of them. Returns the new-parameter count."""
++        from tanitad.models import kinematic_prior as _kp9
++        if self.r9_prog is not None:
++            raise ValueError("[refcv9] the progress head is already built")
++        if getattr(self.core, "ego_hist", None) is None:
++            raise ValueError("[refcv9] the progress head reads the OBSERVED pose window's t0 scalars; this build has no "
++                             "ego-history encoder (--ego-history)")
++        if getattr(self.core.decoder, "residual_prior", _kp9.RESIDUAL_PRIOR_OFF) == _kp9.RESIDUAL_PRIOR_OFF:
++            raise ValueError("[refcv9] the progress target is the residual over the PRIOR's arc; this build has no "
++                             "residual prior (--residual-prior)")
++        hz = [int(h) for h in self.core.decoder.anchor_horizons]
++        if 50 not in hz or 60 not in hz:
++            raise ValueError(f"[refcv9] the decision needs the 5.0 s and 6.0 s slots; the plan's horizons are {hz}")
++        if r9cfg.decision not in r9p.DECISIONS:
++            raise ValueError(f"[refcv9] unknown decision {r9cfg.decision!r}")
++        self.cfg.refcv9 = r9cfg
++        r9cfg.enable = True
++        with torch.random.fork_rng(devices=[]):
++            torch.manual_seed(int(r9cfg.seed) + r9p.R9_INIT_SEED_OFFSET)
++            self.r9_prog = r9p.R9ProgressHead(int(self.cfg.d_tac), len(hz), int(r9cfg.hidden))
++        return r9p.count_params(self.r9_prog)
++
++    def _r9_forward(self, out: dict, cache: dict, traj: Tensor, v_max_ms: Tensor | None,
++                    v_max_valid: Tensor | None, win: tuple) -> Tensor:
++        """R9-PF in the E9 block: head outputs always (the calibration loss reads them); the RE-TIMING of the selected
++        path only in eval(), BEFORE the ceiling clamp. The path's vertices are detached; lateral is untouched."""
++        c = self.cfg.refcv9
++        if "z_tac" not in cache:
++            raise ValueError("[refcv9] the progress head reads z_tac; this forward produced none (hierarchy arm only)")
++        if "residual_prior_path" not in out:
++            raise ValueError("[refcv9] the forward exported no residual_prior_path: the target progress is undefined")
++        poses, n_past = win
++        n_past = int(self.core.cfg.window if n_past is None else n_past)
++        v0w, a0, om = r9p.ego_t0(poses, n_past, float(self.core.ego_hist.cfg.dt))
++        x = r9p.admissible_scalars(v0w, a0, om, v_max_ms, v_max_valid).to(traj.device)
++        s_p = r9p.arc_at_slots(out["residual_prior_path"].to(torch.float32))
++        lon = cache.get("tacv6_lon_logits", cache.get("lon_logits_tac"))
++        r9o = r9p.head_forward(self.r9_prog, c, cache["z_tac"].to(torch.float32), x, s_p, lon)
++        out.update(r9o)
++        if not self.training:
++            out["traj_preretime"] = traj
++            traj = r9p.retime(traj, r9o["r9_s_target"]).to(traj.dtype)
++        return traj
++
+     def set_r8_teacher(self, hyp: Tensor, cons: Tensor, tf: Tensor) -> None:
+         """TRAINING: the window's GT hypothesis (joint id, -1 = none) [B], its normalised constraint [B, 4] and the
+         scheduled-sampling coin [B] (True = teacher-force the GT constraint). Consumed by the next forward."""
+@@ -2551,6 +2608,13 @@ class RefCV3Model(nn.Module):
+                 f"with d_bev 0 and report the arm as agent-only.")
+         if _bh is not None:
+             _core_kw["bev_hook"] = _bh
++        # refcv9 R9-PF: the observed pose window, read BEFORE the core pops it (OFF: nothing is read)
++        _r9_win = None
++        if self.r9_prog is not None:
++            _r9_win = ((ego_poses, ego_n_past) if ego_poses is not None
++                       else getattr(self.core, "_ego_window", None))
++            if _r9_win is None:
++                raise ValueError("[refcv9] the progress head is built but no observed pose window reached the forward")
+         out = self.core(frames, nav_cmd, v0, steps=steps, lan=lan,
+                         nav_known=nav_known, ego_keep=ego_keep,
+                         hierarchy_hook=self._hook(cache, nav_cmd, ego_state,
+@@ -2653,6 +2717,10 @@ class RefCV3Model(nn.Module):
+         out.update(e9_tele)
+         idx = rank.argmax(dim=1)
+         traj = fan[torch.arange(b, device=fan.device), idx]
++        if self.r9_prog is not None:
++            # ⭐ refcv9 R9-PF: the PATH is the selection's; the SPEED is the clean-split head's decision profile.
++            # Before the clamp, so the fed ceiling stays the last word.
++            traj = self._r9_forward(out, cache, traj, v_max_ms, v_max_valid, _r9_win)
+         if bool(getattr(self.cfg, "plan_vmax_clamp", False)) and not self.training:
+             # ⛔ v7F R1 EQUIVALENT. The argmax filter above CHOOSES; this CLAMPS. A row with no compliant
+             # candidate keeps its whole fan (counted in `e9_ceil_dead_frac`), so without this the emitted plan
+diff --git a/pristine/stack/scripts/refc_v3_train.py b/tree/stack/scripts/refc_v3_train.py
+index c5f903f..9823b6d 100644
+--- a/pristine/stack/scripts/refc_v3_train.py
++++ b/tree/stack/scripts/refc_v3_train.py
+@@ -101,6 +101,7 @@ from tanitad.train import refcv8_train as r8train  # noqa: E402  refcv8 WP-B (tr
+ from tanitad.train import grad_share as _gshare  # noqa: E402  refcv8 X4: the in-run P-GRAD statistic
+ from tanitad.train import weight_ema as _wema  # noqa: E402  refcv8 R8-WARMUP: weight EMA + the B1 guard
+ from tanitad.train import map_only_ft as _mof  # noqa: E402  PI D-R9-MAPHEAD-PRECISION: --r8-train-only-map
++from tanitad.refs import refcv9_progress as _r9p  # noqa: E402  refcv9 R9-PF: --r9-progress-head (OFF: nothing)
+ # ⛔⛔ refcv7's two modules are NOT ON THIS BRANCH (MEASURED 2026-09-23 on a clean
+ # `git archive` of the tip: `refcv7_heads.py` / `refcv7_oracle.py` / `refcv7_toad.py`
+ # absent). Its trainer integration arrived in d014414, swept in from a worktree that
+@@ -161,6 +162,8 @@ from tanitad.models import map_head_hires as _mhr  # noqa: E402
+ _mhr.register_dvb_levers(_dvb.register)
+ # PI D-R9-MAPHEAD-PRECISION (2026-10-26): --r8-train-only-map is a `built` lever (the trainable set read off the model)
+ _mof.register_dvb_levers(_dvb.register)
++# refcv9 R9-PF (REFCV9_INMODEL_DESIGN.md): the progress head is a `built` lever, its weights `loss` levers
++_r9p.register_dvb_levers(_dvb.register)
+ import numpy as _np  # noqa: E402
+ 
+ # --- v3-only loss weights (everything shared is imported above) --------------
+@@ -785,6 +788,10 @@ def _pin_trainer_cfg(cfg: v3.RefCV3Config, args) -> v3.RefCV3Config:
+     _pin_refcv6_tactical(cfg, args)
+     _pin_refcv7(cfg, args)
+     _pin_refcv8(cfg, args)
++    # refcv9 R9-PF: argv -> cfg.refcv9 (OFF: the default R9Config, which builds nothing)
++    _r9p.pin_args(args)
++    if _r9p.is_on(args):
++        cfg.refcv9 = _r9p.config_from_args(args)
+     # ⛔⛔ G-HYG: the strict config classes refuse an undeclared attribute AT ASSIGNMENT; this
+     # walk catches the two routes that bypass `__setattr__` (a `__dict__` write, and a config
+     # class of another module that is not decorated) before any model is built from it.
+@@ -2971,6 +2978,23 @@ REFC_WEIGHT_GATES: dict[str, dict] = {
+         "mask": None,
+         "already": "_pin_refcv8 (dead without --refcv8; critic <-> weight both ways) + G-DVB `r8_critic_drivable`",
+     },
++    "w_r9_prog": {
++        "flag": "--w-r9-prog",
++        "term": "refcv9 R9-PF progress L1 (teacher-forced decision profile vs the human's arc over the prior)",
++        "gate": lambda a: (bool(getattr(a, "r9_progress_head", False)) and bool(getattr(a, "r9_calib_stage", False)),
++                           "--w-r9-prog needs --r9-progress-head AND --r9-calib-stage (no head => no `r9_profiles`)"),
++        "mask": None,
++        "already": "refcv9_progress.pin_args (head without stage refused; weight 0 with the head refused) + G-DVB",
++    },
++    "w_r9_regime": {
++        "flag": "--w-r9-regime",
++        "term": "refcv9 R9-PF decision CE (decel / cruise / accel, the MD/FD metric's GT definition)",
++        "gate": lambda a: (bool(getattr(a, "r9_progress_head", False)) and bool(getattr(a, "r9_calib_stage", False)),
++                           "--w-r9-regime needs --r9-progress-head AND --r9-calib-stage (no head => no "
++                           "`r9_regime_logits`)"),
++        "mask": None,
++        "already": "refcv9_progress.pin_args (weight 0 refused under --r9-decision regime) + G-DVB",
++    },
+     "w_r8_v9_cons": {
+         "flag": "--w-r8-v9-cons",
+         "term": "refcv8 v9 CONSTRAINT vectors (MM ruling Q2): Huber on the GT-active action query, masked where the "
+@@ -5342,6 +5366,17 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
+                       mode: str = "diffusion",
+                       ablate_frames: bool = False,
+                       log_metrics: bool = True) -> dict:
++    # ⭐ refcv9 R9-PF CALIBRATION STAGE: the frozen model runs its INFERENCE path (eval: no ego / prior / conditioning
++    # dropout, no teacher) so the head is fitted on the features it will read at deployment; only the head's own
++    # BatchNorm accumulates its standardisation statistics. OFF (or not training): this block is not entered.
++    if model.training and _r9p.calib_stage_active(model):
++        model.eval()
++        model.r9_prog.train()
++        try:
++            return compute_losses_v3(model, batch, device, mode=mode, ablate_frames=ablate_frames,
++                                     log_metrics=log_metrics)
++        finally:
++            model.train()
+     cfg = model.cfg
+     core = cfg.core
+     # refcv8 SPEC_WPB_LADDER: the information control of a regression arm (training only; roll-by-one, no RNG)
+@@ -6695,6 +6730,15 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
+         extra["r8_total"] = _l8.detach()
+         extra["r8"] = _l8                       # attached, ALREADY weighted (grad_share enters it at 1.0)
+         extra.update(_t8)
++    # ---- refcv9 R9-PF: the progress + decision loss (calibration rows; in the calibration stage it IS the loss) ---- #
++    if getattr(model, "r9_prog", None) is not None:
++        if "r9_profiles" not in out:
++            raise SystemExit("[refcv9] the progress head is built but the forward emitted no r9_profiles")
++        _l9, _t9 = _r9p.r9_losses(cfg.refcv9, out, traj_tgt, slot_valid, v0, core.trajectory.horizons)
++        extra.update(_t9)
++        extra["r9_total"] = _l9.detach()
++        if _r9p.calib_stage_active(model):
++            loss = _l9
+     return {"loss": loss, "traj": loss_traj, "cls": loss_cls, "law": loss_law,
+             "route": loss_route, "lat": loss_lat, "lon": loss_lon,
+             "lat_tac": loss_lat_tac, "lon_tac": loss_lon_tac,
+@@ -9437,6 +9481,12 @@ def train(args) -> dict:
+     # which captures the model at the first data read) sees the build this run trains, and build_optimizer collects
+     # exactly the map-only parameters. OFF: None, nothing runs.
+     _mof_rec = _mof.apply_freeze(model) if _mof.is_on(args) else None
++    # refcv9 R9-PF calibration stage: every tensor outside the progress head frozen (OFF: None, nothing runs)
++    _r9_rec = (_r9p.apply_calib_freeze(model) if (_r9p.is_on(args) and bool(getattr(args, "r9_calib_stage", False)))
++               else None)
++    if _r9_rec is not None:
++        print("[refcv9] calibration stage: %d params trainable (the progress head), %d frozen"
++              % (_r9_rec["n_trainable"], _r9_rec["n_frozen"]), flush=True)
+     if _mof_rec is not None:
+         print("[map-only] FROZEN all but %s: %d tensors / %d params trainable, %d tensors / %d params frozen, "
+               "%d running-stat norms pinned" % (list(_mof.MAP_ONLY_MODULES), _mof_rec["n_trainable_tensors"],
+@@ -10576,6 +10626,8 @@ def train(args) -> dict:
+         "refcv6_tactical": _refcv6_tactical_block(args, model, tac_goal_stats),
+         # ⭐ refcv8 WP-B: every switch + the dedicated seed + the new-parameter count (None on a refcv7 arm)
+         "init_from": _init_stamp,
++        "refcv9": (None if getattr(model, "r9_prog", None) is None else
++                   dict(model.cfg.refcv9.to_dict(), n_params=_r9p.count_params(model.r9_prog), calib_stage=_r9_rec)),
+         "refcv8": (dict(model.cfg.refcv8.to_dict(), n_params=int(getattr(model, "r8_n_params", 0)),
+                          rc_dropout=float(args.r8_rc_dropout), nav_args_dropout=float(args.r8_nav_args_dropout),
+                          v7_policy_scope=(ds._v7_scope.to_dict() if getattr(ds, "_v7_scope", None) else None),
+@@ -12586,6 +12638,28 @@ def build_parser() -> argparse.ArgumentParser:
+                          "--conflict-detector off and --init-from = the SHIPPED EMA model (kind ema_model_only); "
+                          "refuses the B1 guard, the gradient-share instrument, BN recalibration and the drivable critic. "
+                          "One AdamW group `map_only` at --lr. config.json['map_only_ft'] records the trainable list.")
++    g9 = ap.add_argument_group("refcv9 R9-PF (clean-split, regime-factored progress head; REFCV9_INMODEL_DESIGN.md)")
++    g9.add_argument("--r9-progress-head", action="store_true",
++                    help="build the R9-PF head: [z_tac.detach(); 9 t0 scalars] -> a 3-way lon decision + one arc-length "
++                         "profile per decision; at eval the SELECTED path is re-timed to the decided profile before the "
++                         "ceiling clamp (path from the planner, speed from the head). Trains ONLY with --r9-calib-stage.")
++    g9.add_argument("--r9-calib-stage", action="store_true",
++                    help="stage 2: freeze every tensor outside the head, run the model's inference path, loss = R9 only. "
++                         "Run on a CLEAN split (clips the trunk never trained on), from --init-from = the final EMA model.")
++    g9.add_argument("--r9-decision", default="regime", choices=_r9p.DECISIONS,
++                    help="the speed decision: the head's own clean-split regime (default) or the trunk lon head's "
++                         "argmax grouped into regimes (the in-model SELFSHARP control)")
++    g9.add_argument("--r9-hidden", type=int, default=128, help="the head's hidden width (H2cn: 128)")
++    g9.add_argument("--r9-decel-tau", type=float, default=None,
++                    help="operating point: decide decel iff p_decel >= tau (fixed on the calibration split); "
++                         "default argmax")
++    g9.add_argument("--r9-seed", type=int, default=20261026, help="the head's dedicated init stream")
++    g9.add_argument("--w-r9-prog", type=float, default=0.0,
++                    help="weight of the masked-mean L1 progress loss; REQUIRED > 0 with --r9-progress-head (design: "
++                         "1.0). Default 0.0 = the REFC_WEIGHT_GATES zero-default invariant")
++    g9.add_argument("--w-r9-regime", type=float, default=0.0,
++                    help="weight of the decision cross-entropy; REQUIRED > 0 with --r9-decision regime (design: 1.0). "
++                         "Default 0.0 = the REFC_WEIGHT_GATES zero-default invariant")
+     g8.add_argument("--r8-derange-feed", action="store_true",
+                     help="DELIBERATE-REGRESSION arm (training only): the planner reads ANOTHER window's tactical "
+                          "output (roll by one row); the tactical loss still trains on the window's own outputs")
+diff --git a/pristine/stack/scripts/launch_gate.py b/tree/stack/scripts/launch_gate.py
+index 261f05d..d0ff347 100644
+--- a/pristine/stack/scripts/launch_gate.py
++++ b/tree/stack/scripts/launch_gate.py
+@@ -3656,6 +3656,11 @@ LIVE_WEIGHT_RULES: dict[str, tuple[Callable, tuple[str, ...], float, str]] = {
+     "w_r8_v9_cons": (lambda a: bool(getattr(a, "refcv8", False)) and _w(a, "w_r8_v9_cons") > 0
+                      and bool(getattr(a, "r8_v9_labels", None)), ("r8_v9_cons",), 1.0,
+                      "refcv8 v9 constraint vectors (MM ruling Q2)"),
++    # refcv9 R9-PF (REFCV9_INMODEL_DESIGN.md): live only in the calibration stage, where the R9 loss IS the loss
++    "w_r9_prog": (lambda a: bool(getattr(a, "r9_progress_head", False)) and bool(getattr(a, "r9_calib_stage", False))
++                  and _w(a, "w_r9_prog") > 0, ("r9_l_prog",), 1.0, "refcv9 R9-PF progress L1"),
++    "w_r9_regime": (lambda a: bool(getattr(a, "r9_progress_head", False)) and bool(getattr(a, "r9_calib_stage", False))
++                    and _w(a, "w_r9_regime") > 0, ("r9_l_regime",), 1.0, "refcv9 R9-PF decision CE"),
+ }
+ #: every field of `refcv6_diffusion.DiffusionFlags` -> the loss keys it declares ( () = none,
+ #: with the reason). ⛔ EXHAUSTIVE for the same reason.
+diff --git a/pristine/stack/tanitad/train/refcv8_train.py b/tree/stack/tanitad/train/refcv8_train.py
+index e392dea..7e6c0d4 100644
+--- a/pristine/stack/tanitad/train/refcv8_train.py
++++ b/tree/stack/tanitad/train/refcv8_train.py
+@@ -943,7 +943,8 @@ def warm_start_from(model, path: str) -> dict:
+     if unexpected:
+         raise SystemExit(f"[refcv8] --init-from {path}: {len(unexpected)} source key(s) the build does not have, "
+                          f"e.g. {sorted(unexpected)[:3]} -- the build is not a superset of the source")
+-    undeclared = [k for k in missing if not is_refcv8_key(k)]
++    from tanitad.refs.refcv9_progress import is_refcv9_key   # refcv9 R9-PF: the progress head is a new seam too
++    undeclared = [k for k in missing if not is_refcv8_key(k) and not is_refcv9_key(k)]
+     if undeclared:
+         raise SystemExit(f"[refcv8] --init-from {path}: {len(undeclared)} key(s) missing from the source are NOT "
+                          f"refcv8 seams, e.g. {sorted(undeclared)[:3]} -- they would start from random init")
+diff --git a/pristine/stack/tanitad/train/declared_vs_built.py b/tree/stack/tanitad/train/declared_vs_built.py
+index 529e3b0..6826608 100644
+--- a/pristine/stack/tanitad/train/declared_vs_built.py
++++ b/tree/stack/tanitad/train/declared_vs_built.py
+@@ -1416,6 +1416,10 @@ _FROZEN_EXTERNAL_ATTR = "_tanitad_frozen_external"
+ #: every parameter outside them is frozen BY THAT DECLARATION. The trainable set itself is held against argv by the
+ #: flag's own ``built`` lever (``map_only_ft.dvb_check``).
+ _MAP_ONLY_ATTR = "_tanitad_map_only_ft"
++#: ``--r9-calib-stage`` (refcv9 R9-PF, REFCV9_INMODEL_DESIGN.md): the same shape of ROOT record
++#: (``refcv9_progress.CALIB_MARKER_ATTR``) -- its ``modules`` (the progress head) are the ONLY trainable subtrees; the
++#: trainable set is held against argv by the flag's own ``built`` lever (``refcv9_progress.register_dvb_levers``).
++_R9_CALIB_ATTR = "_tanitad_r9_calib"
+ 
+ 
+ def expected_grad_unreachable(args) -> dict[str, str]:
+@@ -1510,8 +1514,11 @@ def check_grad_unreachable(model, args) -> list[Mismatch]:
+     # still undeclared (a map-only module frozen too trains nothing -- the flag's red arm)
+     _mo = getattr(model, _MAP_ONLY_ATTR, None)
+     _mo_mods = tuple((_mo or {}).get("modules") or ()) if isinstance(_mo, dict) else ()
++    _r9 = getattr(model, _R9_CALIB_ATTR, None)
++    _r9_mods = tuple((_r9 or {}).get("modules") or ()) if isinstance(_r9, dict) else ()
+     stray = [n for n, t in params if not t.requires_grad and not any(_under(n, p) for p in decl)
+-             and not (_mo_mods and not any(_under(n, m) for m in _mo_mods))]
++             and not (_mo_mods and not any(_under(n, m) for m in _mo_mods))
++             and not (_r9_mods and not any(_under(n, m) for m in _r9_mods))]
+     if stray:
+         out.append(Mismatch("frozen parameters", "declared (grad-unreachable / frozen-external)",
+                             f"{len(stray)} undeclared", "model.named_parameters()",
+diff --git a/pristine/stack/tests/test_declared_vs_built.py b/tree/stack/tests/test_declared_vs_built.py
+index 7c1539b..602de91 100644
+--- a/pristine/stack/tests/test_declared_vs_built.py
++++ b/tree/stack/tests/test_declared_vs_built.py
+@@ -292,7 +292,10 @@ def test_GDVB_every_trainer_flag_has_an_entry_and_every_entry_is_well_formed():
+     #   --nt-token-table / --r8-speed-unknown-always ("data") and --snapshot-steps ("runtime") (279 -> 285)
+     # + PI D-R9-MAPHEAD-PRECISION (2026-10-26): --r8-train-only-map ("built": the trainable set read off the model,
+     #   map_only_ft.dvb_check) (285 -> 286)
+-    assert len(dvb.REGISTRY) == 286
++    # + refcv9 R9-PF (REFCV9_INMODEL_DESIGN.md, 2026-10-26): --r9-progress-head / --r9-calib-stage / --r9-decision /
++    #   --r9-hidden / --r9-decel-tau / --r9-seed ("built") and --w-r9-prog / --w-r9-regime ("loss"), registered by
++    #   refcv9_progress.register_dvb_levers (286 -> 294)
++    assert len(dvb.REGISTRY) == 294
+     assert dvb.REGISTRY["r8_train_only_map"].kind == "built"
+     for _d, _k in (("window_starts", "data"), ("nt_heldout", "data"), ("nt_heldout_sha256", "data"),
+                    ("nt_token_table", "data"), ("r8_speed_unknown_always", "data"), ("snapshot_steps", "runtime")):
+diff --git a/tree/stack/tanitad/refs/refcv9_progress.py b/tree/stack/tanitad/refs/refcv9_progress.py
+new file mode 100644
+index 0000000..9a8a302
+--- /dev/null
++++ b/tree/stack/tanitad/refs/refcv9_progress.py
+@@ -0,0 +1,379 @@
++"""refcv9 R9-PF -- the clean-split, regime-factored PROGRESS head and the in-forward re-timing layer.
++
++Design memo: `REFCV9_INMODEL_DESIGN.md` (Architecture FlyWheel, 2026-10-26). What this moves into the model:
++
++* SHIP-R8 A4 (H2cn): a progress head fitted ONLY on clips the trunk never saw beats the shipped re-timing stage
++  (E3 -1.198 vs -0.868; false decel 0.137 -> 0.060 separated) -- MEASURED post-hoc on refcv8.
++* SHIP-R8 A5 (FACTORED): the lon DECISION applied to the SPEED only, the PATH from the planner (missed decel -0.08
++  separated) -- MEASURED post-hoc on refcv8.
++
++The head (``R9ProgressHead``) reads ``z_tac.detach()`` plus nine IMU-measurable t0 scalars (H2cn's exact set,
++``progress_scalar.feats``) and emits a 3-way longitudinal decision (decel / cruise / accel -- the MD/FD metric's own
++GT definition) and ONE arc-length profile per decision. Inference takes the decision's profile and re-times the
++SELECTED path to it (every point stays on the selected polyline or its end ray: lateral is untouched by construction),
++BEFORE ``plan_vmax_clamp``.
++
++⛔ The head never trains the trunk (every input is detached) and is fitted only in the calibration stage
++(``--r9-calib-stage``) on an external clean split; ``--r9-progress-head`` without it is refused in training.
++⛔ Curvature at t0 is NOT an input (PI 10-18); nothing here reads ``ego_state[:, 3]``.
++⛔ The head's output feeds the re-timing only -- never the goal / nav input, selection, or the cap's limit.
++"""
++from __future__ import annotations
++
++from dataclasses import asdict, dataclass
++from typing import Any, Mapping
++
++import torch
++import torch.nn.functional as F
++from torch import Tensor, nn
++
++from tanitad.train.config_hygiene import strict_fields
++
++#: decision classes, in this order everywhere (``l2_common.CLS``)
++REGIMES: tuple[str, ...] = ("decel", "cruise", "accel")
++N_REGIMES = len(REGIMES)
++#: the MD/FD metric's GT threshold on dv = v(5-6 s chord) - v0  (``l2_common``: +-1.5 m/s, dt 1.0 s)
++DV_THRESHOLD_MS = 1.5
++#: the scalar set (``progress_scalar.feats`` without the leading 1): H2cn's MEASURED inputs
++SCALAR_NAMES: tuple[str, ...] = ("v0", "a0", "omega0", "v0_omega0", "v0_sq", "a0_v0", "ceiling", "ceiling_minus_v0",
++                                 "ceiling_valid")
++N_SCALARS = len(SCALAR_NAMES)
++CEILING_CAP_MS = 40.0
++#: LON6 group -> regime (``l2_common``: decel = BRAKE_TO, CREEP, HOLD; cruise = FOLLOW, CRUISE; accel = ACCELERATE)
++LON6_TO_REGIME: tuple[int, ...] = (1, 1, 0, 0, 0, 2)
++DECISIONS: tuple[str, ...] = ("regime", "trunk_lon")
++R9_INIT_SEED_OFFSET = 9_091
++KEY_PREFIX = "r9_prog"
++#: the root-model freeze record G-DVB reads BY NAME (``declared_vs_built._R9_CALIB_ATTR``)
++CALIB_MARKER_ATTR = "_tanitad_r9_calib"
++
++
++@strict_fields
++@dataclass
++class R9Config:
++    """``enable=False`` (the default) builds NOTHING: a refcv8 config is unchanged in everything it builds."""
++    enable: bool = False
++    decision: str = "regime"
++    hidden: int = 128
++    decel_tau: float | None = None
++    w_prog: float = 1.0
++    w_regime: float = 1.0
++    calib_stage: bool = False
++    seed: int = 20261026
++
++    def to_dict(self) -> dict:
++        return asdict(self)
++
++
++def is_refcv9_key(key: str) -> bool:
++    return any(part == KEY_PREFIX or part.startswith(KEY_PREFIX + ".") for part in key.split("."))
++
++
++# ------------------------------------------------------------------------------------------------ geometry (torch)
++def polyline_geometry(O: Tensor) -> dict:
++    """Torch port of ``tanitad.retime_stage.polyline_geometry``: vertices V_0 = (0, 0), V_k = O[:, k-1]; cumulative arc
++    length L [B, S+1]; unit directions u [B, S, 2] (0 on a zero-length segment); u_end = direction of the LAST
++    positive-length segment, +x if the whole polyline has zero length."""
++    if O.dim() != 3 or O.shape[-1] != 2:
++        raise ValueError(f"[refcv9] plans must be [B, S, 2], got {tuple(O.shape)}")
++    if not bool(torch.isfinite(O).all()):
++        raise ValueError("[refcv9] non-finite plan position: the re-timing is undefined")
++    b, s, _ = O.shape
++    V = torch.cat([O.new_zeros(b, 1, 2), O], dim=1)
++    seg = V[:, 1:] - V[:, :-1]
++    ln = torch.hypot(seg[..., 0], seg[..., 1])
++    L = torch.cat([O.new_zeros(b, 1), torch.cumsum(ln, dim=1)], dim=1)
++    pos = ln > 0
++    u = torch.where(pos[..., None], seg / torch.where(pos, ln, torch.ones_like(ln))[..., None], torch.zeros_like(seg))
++    anyp = pos.any(dim=1)
++    last = torch.where(anyp, s - 1 - torch.argmax(torch.flip(pos, dims=[1]).to(torch.int32), dim=1),
++                       torch.zeros(b, dtype=torch.long, device=O.device))
++    u_end = u[torch.arange(b, device=O.device), last].clone()
++    u_end[~anyp] = torch.tensor([1.0, 0.0], dtype=O.dtype, device=O.device)
++    return {"V": V, "L": L, "u": u, "u_end": u_end, "fallback": ~anyp}
++
++
++def eval_polyline(geo: Mapping[str, Tensor], s: Tensor) -> Tensor:
++    """C(s) at arc length ``s`` [B, m] (s >= 0): linear along the polyline, beyond L_S along the end ray from V_S
++    (``retime_stage.eval_polyline``). Differentiable in ``s``; the geometry is whatever the caller passed."""
++    V, L, u, u_end = geo["V"], geo["L"], geo["u"], geo["u_end"]
++    n_seg = u.shape[1]
++    idx = torch.zeros(s.shape, dtype=torch.long, device=s.device)
++    for j in range(1, n_seg):
++        idx = idx + (s >= L[:, j:j + 1]).to(torch.long)
++    rows = torch.arange(s.shape[0], device=s.device)[:, None]
++    P = V[rows, idx] + (s - L[rows, idx])[..., None] * u[rows, idx]
++    beyond = s >= L[:, n_seg:n_seg + 1]
++    Pe = V[:, n_seg:n_seg + 1] + (s - L[:, n_seg:n_seg + 1])[..., None] * u_end[:, None, :]
++    return torch.where(beyond[..., None], Pe, P)
++
++
++def arc_at_slots(O: Tensor) -> Tensor:
++    """Cumulative chord arc length through (0, 0) and the S slot points [B, S] (``retime_stage.prior_arc``)."""
++    return polyline_geometry(O)["L"][:, 1:]
++
++
++def monotone_progress(s: Tensor) -> Tensor:
++    """Clip at 0, then a running max over slots: a progress profile never runs backwards."""
++    return torch.cummax(s.clamp_min(0.0), dim=1).values
++
++
++def retime(path: Tensor, s_target: Tensor) -> Tensor:
++    """Re-time the SELECTED path to ``s_target`` [B, S]. The path's vertices are DETACHED (no gradient reaches
++    selection); every returned point lies on the path's polyline or its end ray."""
++    geo = polyline_geometry(path.detach())
++    return eval_polyline(geo, s_target.to(path.dtype))
++
++
++# ------------------------------------------------------------------------------------------------ admissible inputs
++def ego_t0(poses: Tensor, n_past: int, dt: float) -> tuple[Tensor, Tensor, Tensor]:
++    """(v0, a0, omega0) [B] at the LAST OBSERVED frame -- H2cn's feature builder (``progress_scalar.feats``):
++    v0 / omega0 from ``ego_channels_from_poses``, a0 from ``prior_controls("ha0_ext_pose")``. IMU-measurable;
++    reads ``poses[:, :n_past]`` only."""
++    from tanitad.models import kinematic_prior as KP
++    from tanitad.models.ego_history import ego_channels_from_poses
++    pw = poses[:, :int(n_past)].to(torch.float32)
++    ch = ego_channels_from_poses(pw, int(n_past), dt=float(dt))
++    a0, _k0 = KP.prior_controls("ha0_ext_pose", pw, int(n_past), None, dt=float(dt))
++    if a0.dim() == 2:
++        a0 = a0[:, 0]
++    return ch[:, -1, 0], a0.reshape(-1).to(torch.float32), ch[:, -1, 2]
++
++
++def admissible_scalars(v0: Tensor, a0: Tensor, om: Tensor, v_lim: Tensor | None, v_lim_valid: Tensor | None) -> Tensor:
++    """[B, 9] in ``SCALAR_NAMES`` order. The ceiling is the FED speed-limit label (an admissible input); absent or
++    invalid -> 40 m/s and valid 0, exactly as ``progress_scalar.feats``."""
++    v0, a0, om = (t.reshape(-1).to(torch.float32) for t in (v0, a0, om))
++    if v_lim is None:
++        valid = torch.zeros_like(v0, dtype=torch.bool)
++        vl = torch.full_like(v0, CEILING_CAP_MS)
++    else:
++        lim = v_lim.reshape(-1).to(torch.float32)
++        valid = torch.isfinite(lim)
++        if v_lim_valid is not None:
++            valid = valid & (v_lim_valid.reshape(-1).to(torch.float32) > 0.5)
++        vl = torch.where(valid, lim.clamp_max(CEILING_CAP_MS), torch.full_like(lim, CEILING_CAP_MS))
++    return torch.stack([v0, a0, om, v0 * om, v0 ** 2, a0 * v0, vl, vl - v0, valid.to(torch.float32)], dim=1)
++
++
++# ------------------------------------------------------------------------------------------------ the head
++class R9ProgressHead(nn.Module):
++    """[z_tac.detach() ; 9 scalars] -> per-feature standardisation (running statistics, set in the calibration stage)
++    -> Linear(d + 9, hidden) -> GELU -> {regime logits [B, 3], profiles [B, 3, S]} (arc-length residual over the
++    prior, metres). H2cn's body (one GELU hidden layer of 128), with a decision head and one profile per decision."""
++
++    def __init__(self, d_lat: int, n_slots: int, hidden: int = 128):
++        super().__init__()
++        self.d_lat, self.n_slots = int(d_lat), int(n_slots)
++        d_in = self.d_lat + N_SCALARS
++        self.norm = nn.BatchNorm1d(d_in, affine=False, momentum=None)
++        self.body = nn.Sequential(nn.Linear(d_in, int(hidden)), nn.GELU())
++        self.regime = nn.Linear(int(hidden), N_REGIMES)
++        self.profile = nn.Linear(int(hidden), N_REGIMES * self.n_slots)
++        with torch.no_grad():                    # start at the PRIOR's progress (dS = 0) and a flat decision
++            self.profile.weight.mul_(0.01)
++            self.profile.bias.zero_()
++            self.regime.bias.zero_()
++
++    def forward(self, z: Tensor, x: Tensor) -> dict:
++        if z.shape[-1] != self.d_lat or x.shape[-1] != N_SCALARS:
++            raise ValueError(f"[refcv9] head expects z [B, {self.d_lat}] and x [B, {N_SCALARS}], got "
++                             f"{tuple(z.shape)} / {tuple(x.shape)}")
++        h = self.body(self.norm(torch.cat([x.to(z.dtype), z], dim=-1)))
++        return {"regime_logits": self.regime(h),
++                "profiles": self.profile(h).reshape(-1, N_REGIMES, self.n_slots)}
++
++
++def count_params(head: nn.Module) -> int:
++    return int(sum(p.numel() for p in head.parameters()))
++
++
++def trunk_lon_regime(lon_logits_v7: Tensor) -> Tensor:
++    """The trunk lon head's OWN argmax over the six LON6 v7 columns, mapped to a regime (the SELFSHARP decision)."""
++    from tanitad.refs import refcv8_conditioning as r8c
++    cols = torch.as_tensor(r8c.LON6_V7_IDS, device=lon_logits_v7.device)
++    a6 = lon_logits_v7.detach().index_select(-1, cols).argmax(dim=-1)
++    return torch.as_tensor(LON6_TO_REGIME, device=a6.device)[a6]
++
++
++def decide(regime_logits: Tensor, decel_tau: float | None = None) -> Tensor:
++    """The HARD decision (the in-model 'self-sharpened' lon): argmax, or decel iff p_decel >= tau (tau fixed on the
++    calibration split, never on eval)."""
++    if decel_tau is None:
++        return regime_logits.argmax(dim=-1)
++    p = regime_logits.softmax(dim=-1)
++    rest = 1 + p[:, 1:].argmax(dim=-1)
++    return torch.where(p[:, 0] >= float(decel_tau), torch.zeros_like(rest), rest)
++
++
++def select_profile(profiles: Tensor, r: Tensor) -> Tensor:
++    return profiles[torch.arange(profiles.shape[0], device=profiles.device), r.to(torch.long)]
++
++
++def head_forward(head: R9ProgressHead, cfg: R9Config, z_tac: Tensor, x: Tensor, s_prior: Tensor,
++                 lon_logits_v7: Tensor | None) -> dict:
++    """Everything the forward emits. ``z_tac`` is DETACHED here -- the stop-gradient is part of the function."""
++    ho = head(z_tac.detach(), x.detach())
++    if cfg.decision == "regime":
++        r_hat = decide(ho["regime_logits"].detach(), cfg.decel_tau)
++    elif cfg.decision == "trunk_lon":
++        if lon_logits_v7 is None:
++            raise ValueError("[refcv9] --r9-decision trunk_lon but the forward exported no lon logits")
++        r_hat = trunk_lon_regime(lon_logits_v7)
++    else:
++        raise ValueError(f"[refcv9] unknown decision {cfg.decision!r} (one of {DECISIONS})")
++    d_s = select_profile(ho["profiles"], r_hat)
++    s_t = monotone_progress(s_prior.detach() + d_s)
++    return {"r9_regime_logits": ho["regime_logits"], "r9_profiles": ho["profiles"], "r9_decision": r_hat,
++            "r9_s_prior": s_prior.detach(), "r9_s_target": s_t, "r9_x": x.detach()}
++
++
++# ------------------------------------------------------------------------------------------------ targets + loss
++def gt_regime(traj_tgt: Tensor, slot_valid: Tensor, v0: Tensor, horizons) -> tuple[Tensor, Tensor]:
++    """GT decision: dv = |p(6.0 s) - p(5.0 s)| / 1.0 s - v0, decel <= -1.5, accel >= +1.5 (``l2_common``).
++    ``horizons`` are the plan's tick indices; slots 50 and 60 must exist. Returns (r* [B], ok [B])."""
++    h = [int(t) for t in horizons]
++    if 50 not in h or 60 not in h:
++        raise ValueError(f"[refcv9] the GT decision needs the 5.0 s and 6.0 s slots; horizons are {h}")
++    i5, i6 = h.index(50), h.index(60)
++    v_end = (traj_tgt[:, i6] - traj_tgt[:, i5]).norm(dim=-1) / 1.0
++    dv = v_end - v0.reshape(-1).to(v_end.dtype)
++    r = torch.where(dv <= -DV_THRESHOLD_MS, torch.zeros_like(dv, dtype=torch.long),
++                    torch.where(dv >= DV_THRESHOLD_MS, torch.full_like(dv, 2, dtype=torch.long),
++                                torch.ones_like(dv, dtype=torch.long)))
++    ok = slot_valid[:, i5].to(torch.bool) & slot_valid[:, i6].to(torch.bool)
++    return r, ok
++
++
++def r9_losses(cfg: R9Config, out: Mapping[str, Any], traj_tgt: Tensor, slot_valid: Tensor, v0: Tensor, horizons,
++              calib_mask: Tensor | None = None) -> tuple[Tensor, dict]:
++    """L = w_prog * masked-mean |s_P + dS[r*] - s_H|  +  w_regime * CE(regime, r*), on CALIBRATION rows only.
++    The profile is TEACHER-FORCED on the GT decision r*. Neither weight guards the term (a zero weight multiplies)."""
++    prof, logits, s_p = out["r9_profiles"], out["r9_regime_logits"], out["r9_s_prior"]
++    s_h = arc_at_slots(traj_tgt.detach().to(prof.dtype))
++    r_star, ok = gt_regime(traj_tgt.detach(), slot_valid, v0, horizons)
++    cal = (torch.ones_like(ok) if calib_mask is None else calib_mask.to(torch.bool).reshape(-1))
++    sv = slot_valid.to(torch.bool) & cal[:, None]
++    d_s = select_profile(prof, r_star)
++    err = (s_p + d_s - s_h).abs()
++    w = sv.to(err.dtype)
++    l_prog = (err * w).sum() / w.sum().clamp_min(1.0)
++    m = ok & cal
++    if bool(m.any()):
++        l_reg = F.cross_entropy(logits[m], r_star[m])
++    else:
++        l_reg = logits.sum() * 0.0
++    total = float(cfg.w_prog) * l_prog + float(cfg.w_regime) * l_reg
++    with torch.no_grad():
++        acc = (logits[m].argmax(-1) == r_star[m]).float().mean() if bool(m.any()) else logits.new_zeros(())
++    tele = {"r9_l_prog": l_prog.detach(), "r9_l_regime": l_reg.detach(), "r9_regime_acc": acc,
++            "r9_calib_rows": float(cal.sum()), "r9_decel_rows": float(((r_star == 0) & m).sum())}
++    return total, tele
++
++
++# ------------------------------------------------------------------------------------------------ trainer helpers
++def is_on(args) -> bool:
++    return bool(getattr(args, "r9_progress_head", False))
++
++
++def config_from_args(args) -> R9Config:
++    return R9Config(enable=True, decision=str(args.r9_decision), hidden=int(args.r9_hidden),
++                    decel_tau=(None if args.r9_decel_tau is None else float(args.r9_decel_tau)),
++                    w_prog=float(args.w_r9_prog), w_regime=float(args.w_r9_regime),
++                    calib_stage=bool(args.r9_calib_stage), seed=int(args.r9_seed))
++
++
++def pin_args(args) -> None:
++    """The refusals. ⛔ A built head with no clean rows in training is the dead-seam class (J3, the joint external
++    stream, is NOT built), so --r9-progress-head trains ONLY under --r9-calib-stage."""
++    on, cal = is_on(args), bool(getattr(args, "r9_calib_stage", False))
++    if cal and not on:
++        raise SystemExit("[refcv9] --r9-calib-stage without --r9-progress-head: there is nothing to calibrate")
++    if not on:
++        return
++    if not cal:
++        raise SystemExit("[refcv9] --r9-progress-head trains ONLY in the calibration stage (--r9-calib-stage, on a "
++                         "split the trunk never saw): fitted on the trunk's own clips it learns the memorised relation "
++                         "(L1 O2). The joint external-stream form (J3) is not built.")
++    if str(getattr(args, "r9_decision", "regime")) not in DECISIONS:
++        raise SystemExit(f"[refcv9] --r9-decision must be one of {DECISIONS}")
++    tau = getattr(args, "r9_decel_tau", None)
++    if tau is not None and not (0.0 < float(tau) < 1.0):
++        raise SystemExit(f"[refcv9] --r9-decel-tau {tau}: must lie in (0, 1)")
++    if float(getattr(args, "w_r9_prog", 0.0) or 0.0) <= 0.0:
++        raise SystemExit("[refcv9] --r9-progress-head with --w-r9-prog 0: the profiles would never train (design: 1.0)")
++    if str(getattr(args, "r9_decision", "regime")) == "regime" and float(getattr(args, "w_r9_regime", 0.0) or 0.0) <= 0.0:
++        raise SystemExit("[refcv9] --r9-decision regime with --w-r9-regime 0: the decision would never train "
++                         "(design: 1.0)")
++
++
++def apply_calib_freeze(model) -> dict:
++    """Stage 2: EVERY tensor outside the R9 head is frozen (requires_grad False). Returns the record."""
++    n_tr, n_fr = 0, 0
++    for name, p in model.named_parameters():
++        keep = is_refcv9_key(name)
++        p.requires_grad_(keep)
++        n_tr += p.numel() if keep else 0
++        n_fr += 0 if keep else p.numel()
++    if n_tr == 0:
++        raise SystemExit("[refcv9] --r9-calib-stage: the R9 head is not built (nothing would train)")
++    rec = {"schema": "refcv9_calib_stage/1", "modules": [KEY_PREFIX], "n_trainable": int(n_tr), "n_frozen": int(n_fr),
++           "forward_mode": "eval (inference path; the head's BatchNorm statistics in train mode)"}
++    setattr(model, CALIB_MARKER_ATTR, dict(rec))      # the DECLARATION G-DVB reads: everything outside `modules` frozen
++    return rec
++
++
++def calib_stage_active(model) -> bool:
++    c = getattr(getattr(model, "cfg", None), "refcv9", None)
++    return bool(c is not None and c.enable and c.calib_stage and getattr(model, "r9_prog", None) is not None)
++
++
++def frozen_grad_leak(model) -> float:
++    """max |grad| over every NON-R9 parameter (None counts as 0) -- the stop-gradient's check."""
++    m = 0.0
++    for name, p in model.named_parameters():
++        if not is_refcv9_key(name) and p.grad is not None:
++            m = max(m, float(p.grad.detach().abs().max()))
++    return m
++
++
++def register_dvb_levers(register) -> None:
++    from tanitad.train import declared_vs_built as dvb
++
++    def _built(m, a):
++        want = bool(dvb._a(a, "r9_progress_head", False))
++        return dvb._eq("r9_progress_head", want, getattr(m, "r9_prog", None) is not None, "model.r9_prog is not None")
++
++    def _field(dest, attr, conv, default):
++        def chk(m, a):
++            on = bool(dvb._a(a, "r9_progress_head", False))
++            raw = dvb._a(a, dest, default)
++            want = None if raw is None else conv(raw)
++            if not on:
++                return dvb._eq(dest, None if default is None else conv(default), want,
++                               "argv (refcv9 off: must hold the default)")
++            c = getattr(getattr(m, "cfg", None), "refcv9", None)
++            got = None if c is None else getattr(c, attr, None)
++            if isinstance(want, float):
++                return dvb._near(dest, want, got, f"cfg.refcv9.{attr}")
++            return dvb._eq(dest, want, got, f"cfg.refcv9.{attr}")
++        return chk
++
++    def _calib(m, a):
++        want = bool(dvb._a(a, "r9_calib_stage", False))
++        if not want:
++            return dvb._eq("r9_calib_stage", False, want, "argv (calibration stage off)")
++        n_open = sum(1 for n, p in m.named_parameters() if p.requires_grad and not is_refcv9_key(n))
++        n_head = sum(1 for n, p in m.named_parameters() if p.requires_grad and is_refcv9_key(n))
++        return (dvb._eq("r9_calib_stage", 0, n_open, "trainable tensors OUTSIDE the progress head")
++                + dvb._eq("r9_calib_stage", True, n_head > 0, "the progress head is trainable"))
++
++    register("r9_progress_head", "built", _built)
++    register("r9_calib_stage", "built", _calib)
++    for dest, attr, conv, dflt, kind in (("r9_decision", "decision", str, "regime", "built"),
++                                         ("r9_hidden", "hidden", int, 128, "built"),
++                                         ("r9_decel_tau", "decel_tau", float, None, "built"),
++                                         ("r9_seed", "seed", int, 20261026, "built"),
++                                         ("w_r9_prog", "w_prog", float, 0.0, "loss"),
++                                         ("w_r9_regime", "w_regime", float, 0.0, "loss")):
++        register(dest, kind, _field(dest, attr, conv, dflt))
+diff --git a/tree/stack/tests/test_refcv9_progress.py b/tree/stack/tests/test_refcv9_progress.py
+new file mode 100644
+index 0000000..9035045
+--- /dev/null
++++ b/tree/stack/tests/test_refcv9_progress.py
+@@ -0,0 +1,402 @@
++"""refcv9 R9-PF -- the clean-split, regime-factored progress head (REFCV9_INMODEL_DESIGN.md, 2026-10-26).
++
++Pins, each with a deliberate-regression arm that must go RED:
++
++1. GEOMETRY: the torch re-timing equals ``tanitad.retime_stage`` (an independent numpy implementation) in float64;
++   analytic targets (straight line, circle of radius 20 m); the identity ``s' = own arc`` returns the plan bit for bit.
++   RED: the end-ray extension dropped.
++2. LATERAL: every re-timed point lies on the selected polyline / its end ray. RED: a position re-scale (RS_LON-style).
++3. FACTORED DECISION: the speed is the argmax decision's profile. RED: the soft (expected) profile.
++4. GT DECISION: the MD/FD metric's own definition, on literal trajectories.
++5. FLAGS OFF / ON: ON leaves every non-R9 state tensor and every forward output bit-identical (train AND eval; at eval
++   only ``traj`` / ``wp_seq`` change, and ``traj_preretime`` IS the OFF plan). RED: the head built from the GLOBAL RNG.
++6. STOP-GRADIENT: the calibration loss reaches the head and NO other tensor. RED: ``z_tac`` not detached.
++7. TRAINER: the pin refusals, the DVB entries, the warm start that admits only R9 keys as new.
++
++Every expectation is a LITERAL. CPU only.
++"""
++from __future__ import annotations
++
++import contextlib
++import math
++import os
++
++import numpy as np
++import pytest
++import torch
++
++os.environ.setdefault("HF_HUB_OFFLINE", "1")
++
++import _refcv8_rig as R  # noqa: E402
++from tanitad import retime_stage as RS  # noqa: E402
++from tanitad.refs import refcv9_progress as r9p  # noqa: E402
++
++HZ = (5, 10, 15, 20, 30, 40, 50, 60)
++
++
++# ------------------------------------------------------------------------------------------------ helpers
++def _dist_to_polyline(path: np.ndarray, pts: np.ndarray) -> np.ndarray:
++    """Independent of the code under test: min distance of each point to the segments (0,0)->p1->...->pS and to the
++    end ray beyond pS (direction of the last positive-length segment, +x if none)."""
++    V = np.concatenate([np.zeros((1, 2)), path], 0)
++    segs = [(V[i], V[i + 1]) for i in range(len(V) - 1)]
++    d_end = np.array([1.0, 0.0])
++    for a, b in reversed(segs):
++        if np.linalg.norm(b - a) > 0:
++            d_end = (b - a) / np.linalg.norm(b - a)
++            break
++    out = []
++    for p in pts:
++        best = np.inf
++        for a, b in segs:
++            ab = b - a
++            L2 = float(ab @ ab)
++            t = 0.0 if L2 == 0 else min(max(float((p - a) @ ab) / L2, 0.0), 1.0)
++            best = min(best, float(np.linalg.norm(p - (a + t * ab))))
++        t = max(float((p - V[-1]) @ d_end), 0.0)
++        best = min(best, float(np.linalg.norm(p - (V[-1] + t * d_end))))
++        out.append(best)
++    return np.asarray(out)
++
++
++def _circle_plan(R_m: float = 20.0, ds: float = 3.0, n: int = 8) -> np.ndarray:
++    """Points on a circle of radius R through the origin, heading +x, centre (0, R), every ds metres of ARC."""
++    th = np.arange(1, n + 1) * ds / R_m
++    return np.stack([R_m * np.sin(th), R_m * (1 - np.cos(th))], 1)
++
++
++def _retime_np(O, s):
++    return RS.eval_polyline(RS.polyline_geometry(O), s)
++
++
++# ------------------------------------------------------------------------------------------------ 1. geometry
++def test_GEOM_straight_line_lands_exactly_on_the_x_axis_and_extends_along_the_end_ray():
++    O = torch.tensor([[[1.0, 0.0], [2.0, 0.0], [3.0, 0.0], [4.0, 0.0], [5.0, 0.0], [6.0, 0.0], [7.0, 0.0], [8.0, 0.0]]],
++                     dtype=torch.float64)
++    s = torch.tensor([[0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 8.0, 9.5]], dtype=torch.float64)
++    P = r9p.retime(O, s)
++    assert P[0, :, 0].tolist() == [0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 8.0, 9.5]
++    assert P[0, :, 1].tolist() == [0.0] * 8
++
++
++def test_GEOM_own_arc_returns_the_plan_BIT_FOR_BIT():
++    O = torch.from_numpy(_circle_plan())[None]
++    P = r9p.retime(O, r9p.arc_at_slots(O))
++    assert torch.equal(P, O)
++
++
++def test_GEOM_circle_vertices_stay_on_the_radius_20_circle():
++    O = torch.from_numpy(_circle_plan())[None]
++    L = r9p.arc_at_slots(O)
++    P = r9p.retime(O, L[:, [3, 1, 6, 0, 7, 2, 5, 4]])           # the vertices, re-ordered by progress
++    r = torch.hypot(P[0, :, 0] - 0.0, P[0, :, 1] - 20.0)
++    assert float((r - 20.0).abs().max()) < 1e-9
++
++
++def test_GEOM_torch_port_equals_retime_stage_numpy_in_float64():
++    g = np.random.default_rng(7)
++    O = np.cumsum(g.normal(1.0, 0.8, (64, 8, 2)), axis=1)
++    O[3] = 0.0                                                    # an all-zero plan: the +x fallback
++    O[5, 2:4] = O[5, 1]                                           # zero-length segments inside a plan
++    s = np.abs(g.normal(5.0, 6.0, (64, 8)))                       # incl. far beyond the end (the end ray)
++    ref = _retime_np(O, s)
++    got = r9p.retime(torch.from_numpy(O), torch.from_numpy(s)).numpy()
++    assert float(np.abs(got - ref).max()) < 1e-12
++
++
++def test_GEOM_MUTATION_no_end_ray_goes_RED(monkeypatch):
++    O = torch.tensor([[[1.0, 0.0], [2.0, 0.0], [3.0, 0.0], [4.0, 0.0], [5.0, 0.0], [6.0, 0.0], [7.0, 0.0], [8.0, 0.0]]],
++                     dtype=torch.float64)
++    s = torch.full((1, 8), 9.5, dtype=torch.float64)
++
++    real = r9p.eval_polyline
++
++    def no_ray(geo, ss):                                          # clamps at the last vertex instead of extending
++        return real(geo, torch.minimum(ss, geo["L"][:, -1:]))
++    monkeypatch.setattr(r9p, "eval_polyline", no_ray)
++    P = r9p.retime(O, s)
++    assert P[0, 0, 0].item() != 9.5                               # the analytic target is missed -> the pin is RED
++
++
++# ------------------------------------------------------------------------------------------------ 2. lateral
++def test_LATERAL_every_retimed_point_is_on_the_selected_polyline():
++    O = _circle_plan()
++    s = np.array([0.7, 2.9, 5.0, 9.1, 13.3, 17.0, 23.9, 31.0])    # incl. beyond the 24 m arc
++    P = r9p.retime(torch.from_numpy(O)[None], torch.from_numpy(s)[None])[0].numpy()
++    assert float(_dist_to_polyline(O, P).max()) < 1e-9
++
++
++def test_LATERAL_MUTATION_a_position_rescale_leaves_the_path_RED():
++    O = _circle_plan()
++    L = r9p.arc_at_slots(torch.from_numpy(O)[None])[0].numpy()
++    s = 0.6 * L                                                   # a decel-like shrink
++    P_bad = O * (s / L)[:, None]                                  # RS_LON-style: scale the POSITIONS, not the timing
++    assert float(_dist_to_polyline(O, P_bad).max()) > 0.05
++
++
++# ------------------------------------------------------------------------------------------------ 3. factored decision
++def _crafted():
++    logits = torch.tensor([[4.0, 0.0, -1.0], [0.0, 3.0, 0.0], [-2.0, 0.0, 5.0]])
++    prof = torch.tensor([[[-1.0] * 8, [0.0] * 8, [1.0] * 8]] * 3)
++    return logits, prof
++
++
++def _is_hard(fn) -> bool:
++    logits, prof = _crafted()
++    return fn(prof, logits)[:, 0].tolist() == [-1.0, 0.0, 1.0]
++
++
++def test_FACTORED_the_speed_is_the_ARGMAX_decision_profile():
++    assert _is_hard(lambda prof, lg: r9p.select_profile(prof, r9p.decide(lg)))
++
++
++def test_FACTORED_MUTATION_the_soft_expected_profile_goes_RED():
++    assert not _is_hard(lambda prof, lg: (lg.softmax(-1)[..., None] * prof).sum(1))
++
++
++def test_FACTORED_tau_moves_the_operating_point_to_decel():
++    lg = torch.log(torch.tensor([[0.4, 0.5, 0.1]]))
++    assert r9p.decide(lg).tolist() == [1]
++    assert r9p.decide(lg, 0.3).tolist() == [0]
++    assert r9p.decide(lg, 0.45).tolist() == [1]
++
++
++def test_FACTORED_trunk_lon_argmax_maps_LON6_groups_to_regimes():
++    lon = torch.full((6, 8), -5.0)
++    for i, c in enumerate((0, 1, 3, 4, 5, 7)):                    # FOLLOW CRUISE BRAKE_TO CREEP HOLD ACCELERATE
++        lon[i, c] = 5.0
++    lon[:, 2] = 9.0                                               # a NON-LON6 column must be ignored
++    assert r9p.trunk_lon_regime(lon).tolist() == [1, 1, 0, 0, 0, 2]
++
++
++# ------------------------------------------------------------------------------------------------ 4. GT decision
++def test_GT_regime_is_the_metric_definition_on_literal_trajectories():
++    t = torch.tensor([h * 0.1 for h in HZ])
++    tgt = torch.zeros(3, 8, 2)
++    tgt[0, :, 0] = 10.0 * t                                       # constant 10 m/s, v0 10 -> cruise
++    tgt[1, :, 0] = 10.0 * t
++    tgt[1, 7, 0] = tgt[1, 6, 0] + 5.0                             # last chord 5 m/s, v0 10 -> dv -5 -> decel
++    tgt[2, :, 0] = 5.0 * t
++    tgt[2, 7, 0] = tgt[2, 6, 0] + 7.0                             # 7 m/s vs v0 5 -> dv +2 -> accel
++    sv = torch.ones(3, 8, dtype=torch.bool)
++    sv[2, 7] = False
++    r, ok = r9p.gt_regime(tgt, sv, torch.tensor([10.0, 10.0, 5.0]), HZ)
++    assert r.tolist() == [1, 0, 2]
++    assert ok.tolist() == [True, True, False]
++
++
++def test_ADMISSIBLE_the_scalar_set_is_H2cns_and_carries_no_curvature():
++    assert r9p.SCALAR_NAMES == ("v0", "a0", "omega0", "v0_omega0", "v0_sq", "a0_v0", "ceiling", "ceiling_minus_v0",
++                                "ceiling_valid")
++    x = r9p.admissible_scalars(torch.tensor([10.0, 4.0]), torch.tensor([0.5, -1.0]), torch.tensor([0.1, 0.0]),
++                               torch.tensor([13.89, 50.0]), torch.tensor([1.0, 0.0]))
++    assert x[0].tolist() == pytest.approx([10.0, 0.5, 0.1, 1.0, 100.0, 5.0, 13.89, 3.89, 1.0], abs=1e-5)
++    assert x[1].tolist() == pytest.approx([4.0, -1.0, 0.0, 0.0, 16.0, -4.0, 40.0, 36.0, 0.0], abs=1e-5)
++
++
++def test_PARAMS_literal_count_at_d_tac_512():
++    assert r9p.count_params(r9p.R9ProgressHead(512, 8, 128)) == 70299
++
++
++# ------------------------------------------------------------------------------------------------ 5./6. the model
++@pytest.fixture(scope="module")
++def T():
++    return R.trainer()
++
++
++def _build(T, r9: bool):
++    cfg, m = R.build(T, True, seed=0)
++    if r9:
++        import copy
++        cfgr = copy.deepcopy(cfg)          # the rig's own cfg, + the R9 switch; the SAME seed and build order
++        cfgr.refcv9 = r9p.R9Config(enable=True, calib_stage=True)
++        torch.manual_seed(0)
++        m2 = T.v3.RefCV3Model(cfgr)
++        m2._perception = R.FakeBranch(R.D_BEV)
++        with torch.no_grad():
++            m2.core.decoder.anchor_controls.copy_(R.grid())
++        return cfgr, m2
++    return cfg, m
++
++
++def test_FLAGS_OFF_builds_nothing_and_ON_leaves_every_other_tensor_BIT_IDENTICAL(T):
++    _c0, m0 = _build(T, False)
++    _c1, m1 = _build(T, True)
++    assert m0.r9_prog is None and m1.r9_prog is not None
++    s0, s1 = m0.state_dict(), m1.state_dict()
++    assert not [k for k in s0 if r9p.is_refcv9_key(k)]
++    assert sorted(set(s1) - set(s0)) == sorted(k for k in s1 if r9p.is_refcv9_key(k))
++    assert [k for k in s0 if not torch.equal(s0[k], s1[k])] == []
++
++
++def _outs(cfg, m, train):
++    bt = R.batch(cfg, b=3, seed=1)
++    return R.forward(cfg, m, bt, seed=2, train=train)
++
++
++def _diff_keys(o0, o1):
++    bad = []
++    for k, v in o0.items():
++        if torch.is_tensor(v) and not torch.equal(v, o1[k]):
++            bad.append(k)
++    return sorted(bad)
++
++
++def test_FLAGS_ON_forward_changes_ONLY_the_emitted_plan_and_only_at_eval(T):
++    c0, m0 = _build(T, False)
++    c1, m1 = _build(T, True)
++    tr0, tr1 = _outs(c0, m0, True), _outs(c1, m1, True)
++    assert _diff_keys(tr0, tr1) == []                             # training: no output moves at all
++    ev0, ev1 = _outs(c0, m0, False), _outs(c1, m1, False)
++    assert _diff_keys(ev0, ev1) == ["traj", "wp_seq"]
++    assert torch.equal(ev1["traj_preretime"], ev0["traj"])
++    P, O = ev1["traj"].double().numpy(), ev1["traj_preretime"].double().numpy()
++    for i in range(P.shape[0]):                                   # the speed moved, the PATH did not
++        assert float(_dist_to_polyline(O[i], P[i]).max()) < 1e-4
++    assert torch.allclose(ev1["traj"], r9p.retime(ev1["traj_preretime"], ev1["r9_s_target"]).to(ev1["traj"].dtype))
++
++
++def test_FLAGS_MUTATION_a_head_built_from_the_GLOBAL_RNG_goes_RED(T, monkeypatch):
++    monkeypatch.setattr(torch.random, "fork_rng", lambda *a, **k: contextlib.nullcontext())
++    _c0, m0 = _build(T, False)
++    _c1, m1 = _build(T, True)
++    s0, s1 = m0.state_dict(), m1.state_dict()
++    assert [k for k in s0 if not torch.equal(s0[k], s1[k])] != []    # the module built after the model moved
++
++
++def _calib_loss(cfg, m, fwd_fn=None):
++    bt = R.batch(cfg, b=3, seed=1)
++    m.eval()
++    m.r9_prog.train()
++    torch.manual_seed(2)
++    ph = bt["pose_hist"]
++    m.core.set_ego_window(ph, int(ph.shape[1]))
++    out = m(bt["frames"], nav_cmd=bt["nav_cmd"], v0=bt["v0"], steps=cfg.core.decoder.diffusion_steps)
++    t = torch.tensor([h * 0.1 for h in HZ])
++    tgt = bt["v0"][:, None, None] * torch.stack([t, torch.zeros_like(t)], -1)[None]
++    sv = torch.ones(3, 8, dtype=torch.bool)
++    loss, tele = r9p.r9_losses(cfg.refcv9, out, tgt, sv, bt["v0"], HZ)
++    return loss, tele
++
++
++def test_STOPGRAD_the_calibration_loss_reaches_the_head_and_NOTHING_else(T):
++    cfg, m = _build(T, True)
++    m.zero_grad(set_to_none=True)
++    loss, tele = _calib_loss(cfg, m)
++    assert math.isfinite(float(loss.detach()))
++    loss.backward()
++    assert r9p.frozen_grad_leak(m) == 0.0
++    g = [float(p.grad.abs().sum()) for n, p in m.named_parameters() if r9p.is_refcv9_key(n) and p.grad is not None]
++    assert len(g) == 6 and min(g) > 0.0                           # body W/b, regime W/b, profile W/b all receive it
++
++
++def test_STOPGRAD_MUTATION_an_undetached_z_tac_leaks_into_the_trunk_RED(T, monkeypatch):
++    cfg, m = _build(T, True)
++    real = r9p.head_forward
++
++    def leaky(head, c, z, x, s_prior, lon):
++        o = real(head, c, z, x, s_prior, lon)
++        h2 = head(z, x)                                           # the same head WITHOUT the detach
++        o["r9_profiles"] = h2["profiles"]
++        o["r9_regime_logits"] = h2["regime_logits"]
++        return o
++    monkeypatch.setattr(r9p, "head_forward", leaky)
++    m.zero_grad(set_to_none=True)
++    loss, _ = _calib_loss(cfg, m)
++    loss.backward()
++    assert r9p.frozen_grad_leak(m) > 0.0
++
++
++def test_CALIB_FREEZE_leaves_only_the_head_trainable(T):
++    _cfg, m = _build(T, True)
++    rec = r9p.apply_calib_freeze(m)
++    assert rec["n_trainable"] == r9p.count_params(m.r9_prog)
++    assert [n for n, p in m.named_parameters() if p.requires_grad and not r9p.is_refcv9_key(n)] == []
++
++
++# ------------------------------------------------------------------------------------------------ 7. trainer
++_BASE = ["--arm", "hier", "--out", "_r9_unused"]
++
++
++_W = ["--w-r9-prog", "1.0", "--w-r9-regime", "1.0"]
++
++
++@pytest.mark.parametrize("extra, msg", [(["--r9-progress-head"] + _W, "trains ONLY in the calibration stage"),
++                                        (["--r9-calib-stage"], "nothing to calibrate"),
++                                        (["--r9-progress-head", "--r9-calib-stage", "--r9-decel-tau", "1.5"] + _W,
++                                         "must lie in (0, 1)"),
++                                        (["--r9-progress-head", "--r9-calib-stage"], "--w-r9-prog 0"),
++                                        (["--r9-progress-head", "--r9-calib-stage", "--w-r9-prog", "1.0"],
++                                         "--w-r9-regime 0")])
++def test_PIN_refusals(T, extra, msg):
++    args = T.build_parser().parse_args(_BASE + extra)
++    with pytest.raises(SystemExit, match=None) as ei:
++        r9p.pin_args(args)
++    assert msg in str(ei.value)
++
++
++def test_PIN_on_sets_the_declared_config(T):
++    args = T.build_parser().parse_args(_BASE + ["--r9-progress-head", "--r9-calib-stage", "--r9-decision", "trunk_lon",
++                                                "--w-r9-prog", "0.5"])
++    r9p.pin_args(args)                       # trunk_lon: the regime CE may be 0 (the decision is not the head's)
++    c = r9p.config_from_args(args)
++    assert (c.enable, c.calib_stage, c.decision, c.hidden, c.decel_tau, c.w_prog, c.w_regime) == \
++        (True, True, "trunk_lon", 128, None, 0.5, 0.0)
++
++
++def test_DVB_the_eight_r9_flags_are_registered_with_their_kinds(T):
++    from tanitad.train import declared_vs_built as dvb
++    got = {d: dvb.REGISTRY[d].kind for d in ("r9_progress_head", "r9_calib_stage", "r9_decision", "r9_hidden",
++                                             "r9_decel_tau", "r9_seed", "w_r9_prog", "w_r9_regime")}
++    assert got == {"r9_progress_head": "built", "r9_calib_stage": "built", "r9_decision": "built",
++                   "r9_hidden": "built", "r9_decel_tau": "built", "r9_seed": "built", "w_r9_prog": "loss",
++                   "w_r9_regime": "loss"}
++
++
++def test_DVB_declared_but_not_built_is_NAMED(T):
++    from tanitad.train import declared_vs_built as dvb
++    _c, m = _build(T, False)
++    args = T.build_parser().parse_args(_BASE + ["--r9-progress-head", "--r9-calib-stage"])
++    got = dvb.REGISTRY["r9_progress_head"].check(m, args)
++    assert [g.lever for g in got] == ["--r9-progress-head"]
++
++
++def test_WARM_START_admits_only_R9_keys_as_new(T, tmp_path):
++    from tanitad.train import refcv8_train as r8train
++    _c0, m0 = _build(T, False)
++    p = tmp_path / "src.pt"
++    torch.save({"model": m0.state_dict(), "step": 7}, str(p))
++    _c1, m1 = _build(T, True)
++    rec = r8train.warm_start_from(m1, str(p))
++    # 6 params (body / regime / profile W, b) + BN running_mean / running_var; BatchNorm back-fills a missing
++    # num_batches_tracked itself, so torch does not report it missing (9 R9 state keys, 8 reported)
++    assert len([k for k in m1.state_dict() if r9p.is_refcv9_key(k)]) == 9
++    assert rec["n_new_refcv8_keys"] == 8
++
++
++def test_DVB_the_calibration_freeze_is_DECLARED_and_an_undeclared_one_goes_RED(T):
++    from tanitad.train import declared_vs_built as dvb
++    _c, m = _build(T, True)
++    args = T.build_parser().parse_args(["--arm", "hier", "--sampler", "ddim", "--anchor-v0-conditioned",
++                                        "--anchor-control-units", "alat", "--n-anchors", "20", "--ego-history",
++                                        "--residual-prior", "ha0_ext_pose", "--r9-progress-head", "--r9-calib-stage",
++                                        "--out", "_r9_unused"] + R.F1_F6)
++    r9p.apply_calib_freeze(m)
++
++    def frozen_rows():
++        return [x for x in dvb.check_grad_unreachable(m, args) if x.lever == "frozen parameters"]
++    assert frozen_rows() == []
++    assert dvb.REGISTRY["r9_calib_stage"].check(m, args) == []
++    delattr(m, r9p.CALIB_MARKER_ATTR)                             # the SAME freeze, no declaration
++    assert len(frozen_rows()) == 1
++    next(p for n, p in m.named_parameters() if not r9p.is_refcv9_key(n)).requires_grad_(True)
++    assert [x.lever for x in dvb.REGISTRY["r9_calib_stage"].check(m, args)] == ["--r9-calib-stage"]
++
++
++def test_WEIGHTS_default_ZERO_and_are_GATED_on_head_plus_stage(T):
++    args = T.build_parser().parse_args(_BASE)
++    assert (args.w_r9_prog, args.w_r9_regime) == (0.0, 0.0)
++    on = T.build_parser().parse_args(_BASE + ["--r9-progress-head", "--r9-calib-stage"] + _W)
++    for d in ("w_r9_prog", "w_r9_regime"):
++        assert T.REFC_WEIGHT_GATES[d]["gate"](args)[0] is False
++        assert T.REFC_WEIGHT_GATES[d]["gate"](on)[0] is True

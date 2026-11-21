@@ -1,0 +1,208 @@
+[20:22:43Z] queue DONE on the pod; the pod read starts
+[20:22:45Z] container free 43 GB
+[20:22:59Z] e1 headway rc 0
+[20:23:06Z] e1 families rc 0
+e1 hw/RESULT_HEADWAY.json     PASS leaves 1836 / 1836 differing 0 only-bank 0 only-got 0 max abs diff 0
+e1 q3/RESULT_Q3.json          PASS leaves 1897 / 1897 differing 0 only-bank 0 only-got 0 max abs diff 1.44e-15
+ZZ ENV-E1 PASS
+[20:23:32Z] headway rc 0
+[20:23:43Z] families rc 0
+[20:23:45Z] read rc 0
+TIER: T1-kin (kinematic rollout on the model's own actions; the lead does not react); never driving performance
+== controls (f1 to f10)
+   f1_rerun_equals_banked PASS {"line": "CMP files=141 differing=0", "PASS": true}
+   f2_parameters_applied PASS {"per_run": {"I10R0EID_s0": {"a_max": 1000000000.0, "b_lim": 1000000000.0, "log_steps": 10, "result_file_steps": 10, "alim_form": "chord", "PASS": true}, "I10R0E5_s0": {"a_max": 3.0, "b_lim": 8.0, "log_steps": 5, "result_file_steps": 5, "alim_form": "chord", "PASS": true}, "I10R0E5_s1": {"a_max": 3.0, "b_lim": 8.0, "log_steps": 5, "result_file_steps": 5, "alim_form": "chord", "PASS": true}, "I10RL
+   f3_limit_holds_in_the_log PASS {"per_run": {"I10R0EID_s0": {"largest_excess_mps": 0.0, "PASS": true}, "I10R0E5_s0": {"largest_excess_mps": 3.552713678800501e-15, "PASS": true}, "I10R0E5_s1": {"largest_excess_mps": 3.552713678800501e-15, "PASS": true}, "I10RLcE5_s0": {"largest_excess_mps": 3.552713678800501e-15, "PASS": true}, "I10RLcE5_s1": {"largest_excess_mps": 3.552713678800501e-15, "PASS": true}, "I10RQ50E5_s0": {"large
+   f4_rows_are_windows PASS {"per_run": {"I10R0EID_s0": {"rows_per_tick_2399": true, "first_tick_v0_max_abs_diff": 0.0, "PASS": true}, "I10R0E5_s0": {"rows_per_tick_2399": true, "first_tick_v0_max_abs_diff": 0.0, "PASS": true}, "I10R0E5_s1": {"rows_per_tick_2399": true, "first_tick_v0_max_abs_diff": 0.0, "PASS": true}, "I10RLcE5_s0": {"rows_per_tick_2399": true, "first_tick_v0_max_abs_diff": 0.0, "PASS": true}, "I10RLcE5_s1": 
+   f5_executed_track_obeys_limit PASS {"per_run": {"I10R0E5_s0": {"share": 0.0, "PASS": true}, "I10R0E5_s1": {"share": 0.0, "PASS": true}, "I10R0E10_s0": {"share": 0.0, "PASS": true}, "I10R0E10_s1": {"share": 0.0, "PASS": true}, "I10R0E5L_s0": {"share": 0.0, "PASS": true}, "I10R0E5L_s1": {"share": 0.0, "PASS": true}}, "PASS": true, "n_runs": 6}
+   f6_counts PASS {"dump_files": {"I10R0EID_s0": 141, "I10R0E5_s0": 141, "I10R0E5_s1": 141, "I10RLcE5_s0": 141, "I10RLcE5_s1": 141, "I10RQ50E5_s0": 141, "I10RQ50E5_s1": 141, "I10R0E10_s0": 141, "I10R0E10_s1": 141, "I10R0E5L_s0": 141, "I10R0E5L_s1": 141}, "n_windows_total": 2399, "n_lead_windows": 642, "PASS": true}
+   f7_reused_dumps PASS {"n_files": 12, "differing": [], "rs_known_values": {"I10R0": {"got": [0.0884, 0.0863], "card": [0.0884, 0.0863], "PASS": true}, "I10RLc": {"got": [0.0767, 0.0721], "card": [0.0767, 0.0721], "PASS": true}, "I10RQ50": {"got": [0.0642, 0.0621], "card": [0.0642, 0.0621], "PASS": true}, "I10R0M5": {"got": [0.9075, 0.9825], "card": [0.9075, 0.9825], "PASS": true}, "I10RLcM5": {"got": [0.7078, 0.7874], "card"
+   f8_reader_controls PASS {"headway": true, "family": true, "PASS": true}
+   f9_model PASS {"per_run": {"I10R0EID_s0": true, "I10R0E5_s0": true, "I10R0E5_s1": true, "I10RLcE5_s0": true, "I10RLcE5_s1": true, "I10RQ50E5_s0": true, "I10RQ50E5_s1": true, "I10R0E10_s0": true, "I10R0E10_s1": true, "I10R0E5L_s0": true, "I10R0E5L_s1": true}, "PASS": true}
+   f10_unit_test PASS {"wrapper_sha256": "23a40394f8e63fc0", "test_wrapper_sha256": "23a40394f8e63fc0", "test_line": "ZZ TEST-ACCEL-LIMIT-CHORD PASS 24/24", "PASS": true}
+== reported, no bar
+   r1_tick_speed_against_last_executed {"I10R0E5_s0": {"median": 0.2996, "p99": 0.5859, "n": 11995}, "I10R0E5_s1": {"median": 0.2999, "p99": 0.4647, "n": 11995}, "I10RLcE5_s0": {"median": 0.2996, "p99": 4.1795, "n": 11995}, "I10RLcE5_s1": {"median": 0.2999, "p99": 4.077, "n": 11995}, "I10RQ50E5_s0": {"median": 0.2996, "p99": 4.7206, "n": 11995}, "I10RQ50E5_s1": {"median": 0.2999, "p99": 4.2039, "n": 11995}, "I10R0E10_s0": {"me
+   r2_rule_forms_block_share {"I10RLcE5_s0": {"share": 0.01061}, "I10RLcE5_s1": {"share": 0.00964}, "I10RQ50E5_s0": {"share": 0.01494}, "I10RQ50E5_s1": {"share": 0.01447}}
+   r3_lower_bound_not_reached_steps {"I10R0EID_s0": {"m": 0, "f": 0}, "I10R0E5_s0": {"m": 0, "f": 0}, "I10R0E5_s1": {"m": 0, "f": 0}, "I10RLcE5_s0": {"m": 0, "f": 0}, "I10RLcE5_s1": {"m": 0, "f": 0}, "I10RQ50E5_s0": {"m": 0, "f": 0}, "I10RQ50E5_s1": {"m": 0, "f": 0}, "I10R0E10_s0": {"m": 0, "f": 0}, "I10R0E10_s1": {"m": 0, "f": 0}, "I10R0E5L_s0": {"m": 0, "f": 0}, "I10R0E5L_s1": {"m": 0, "f": 0}}
+== names
+   limit_NORULE   FEAS10K-NORULE-LIMIT-SLOWS-CLIMB
+   u_NORULE       FEAS10K-NORULE-U-ABOVE-2S
+   limit_LABEL    FEAS10K-LABEL-LIMIT-SLOWS-CLIMB
+   u_LABEL        FEAS10K-LABEL-U-ABOVE-2S
+   limit_READER   FEAS10K-READER-LIMIT-SLOWS-CLIMB
+   u_READER       FEAS10K-READER-U-ABOVE-2S
+   cycle_2s       FEAS10K-LIMIT-COSTS-AT-2S
+   rule_LABEL     FEAS10K-LABEL-RULE-CUTS-UNSAFE-AT-1S-LIMITED
+   rule_READER    FEAS10K-READER-RULE-CUTS-UNSAFE-AT-1S-LIMITED
+== levels (per model seed)
+   I10R0       U [0.1459, 0.1139]  C [0.0763, 0.0421]  F [0.095, 0.1854]
+   I10R0M5     U [0.8505, 0.8968]  C [0.6495, 0.7321]  F [0.0701, 0.0607]
+   I10R0E5     U [0.5979, 0.5747]  C [0.2617, 0.257]  F [0.0514, 0.0421]
+   I10RLc      U [0.0463, 0.0302]  C [0.0, 0.0031]  F [0.1838, 0.2523]
+   I10RLcM5    U [0.4698, 0.5036]  C [0.0171, 0.0202]  F [0.2305, 0.2212]
+   I10RLcE5    U [0.1406, 0.1352]  C [0.0, 0.0]  F [0.1994, 0.1636]
+   I10RQ50     U [0.0872, 0.073]  C [0.0312, 0.0218]  F [0.2274, 0.2913]
+   I10RQ50M5   U [0.5445, 0.6068]  C [0.1075, 0.1262]  F [0.2804, 0.215]
+   I10RQ50E5   U [0.2278, 0.2527]  C [0.0467, 0.0545]  F [0.2632, 0.19]
+   I10R0E10    U [0.1032, 0.0694]  C [0.0561, 0.0296]  F [0.1168, 0.2196]
+   I10R0E5L    U [0.4164, 0.3594]  C [0.1651, 0.1589]  F [0.0374, 0.0265]
+== RS: share of windows with last-step speed more than 5 m/s above logged (model rollout / prior alone), per model seed
+   I10R0E10_s0    model 0.0325  prior 0.2318
+   I10R0E10_s1    model 0.0271  prior 0.2318
+   I10R0E5L_s0    model 0.3597  prior 0.1776
+   I10R0E5L_s1    model 0.3889  prior 0.1776
+   I10R0E5_s0     model 0.7036  prior 0.2530
+   I10R0E5_s1     model 0.6974  prior 0.2530
+   I10R0M5_s0     model 0.9075  prior 0.4185
+   I10R0M5_s1     model 0.9825  prior 0.4185
+   I10R0_s0       model 0.0884  prior 0.3014
+   I10R0_s1       model 0.0863  prior 0.3014
+   I10RLcE5_s0    model 0.5069  prior 0.2530
+   I10RLcE5_s1    model 0.5356  prior 0.2530
+   I10RLcM5_s0    model 0.7078  prior 0.4185
+   I10RLcM5_s1    model 0.7874  prior 0.4185
+   I10RLc_s0      model 0.0767  prior 0.3014
+   I10RLc_s1      model 0.0721  prior 0.3014
+   I10RQ50E5_s0   model 0.4331  prior 0.2530
+   I10RQ50E5_s1   model 0.4610  prior 0.2530
+   I10RQ50M5_s0   model 0.6294  prior 0.4185
+   I10RQ50M5_s1   model 0.6886  prior 0.4185
+   I10RQ50_s0     model 0.0642  prior 0.3014
+   I10RQ50_s1     model 0.0621  prior 0.3014
+== SP: the limit at 1.0 s (E5 minus M5), per form
+   NORULE  speed error -9.5569 [-10.8976, -8.1861] [-8.5948, -10.519] BETTER | RS E5 [0.7036, 0.6974] bar [0.1768, 0.1726] (M5 [0.9075, 0.9825], 2.0 s [0.0884, 0.0863]) | U -0.2874 [-0.3697, -0.2154] [-0.2527, -0.3221]  C -0.4315 [-0.5164, -0.3522] [-0.3879, -0.4751]  F -0.0187 [-0.0373, -0.0022] [-0.0187, -0.0187]
+   LABEL   speed error -6.8533 [-7.9133, -5.8037] [-6.1825, -7.5242] BETTER | RS E5 [0.5069, 0.5356] bar [0.1534, 0.1442] (M5 [0.7078, 0.7874], 2.0 s [0.0767, 0.0721]) | U -0.3488 [-0.4011, -0.2921] [-0.3292, -0.3683]  C -0.0187 [-0.0273, -0.0108] [-0.0171, -0.0202]  F -0.0444 [-0.0751, -0.0152] [-0.0312, -0.0576]
+   READER  speed error -5.5821 [-6.3572, -4.8046] [-5.1516, -6.0125] BETTER | RS E5 [0.4331, 0.461] bar [0.1284, 0.1242] (M5 [0.6294, 0.6886], 2.0 s [0.0642, 0.0621]) | U -0.3354 [-0.3966, -0.2775] [-0.3167, -0.3541]  C -0.0662 [-0.0989, -0.0384] [-0.0607, -0.0717]  F -0.0210 [-0.0430, -0.0022] [-0.0171, -0.0249]
+== GC: E5 against the banked 2.0 s run of the same form
+   NORULE  U +0.4564 [+0.3786, +0.5304] [0.452, 0.4609]  C +0.2002 [+0.1342, +0.2644] [0.1854, 0.215]  F -0.0935 [-0.1791, -0.0182] [-0.0436, -0.1433]
+   LABEL   U +0.0996 [+0.0643, +0.1403] [0.0943, 0.105]  C -0.0016 [-0.0051, +0.0000] [0.0, -0.0031]  F -0.0366 [-0.1237, +0.0401] [0.0156, -0.0888]
+   READER  U +0.1601 [+0.1087, +0.2145] [0.1406, 0.1797]  C +0.0241 [+0.0029, +0.0457] [0.0156, 0.0327]  F -0.0327 [-0.1321, +0.0568] [0.0358, -0.1012]
+== PR: the limit at the programme's cycle (R0E10 minus R0)
+   U -0.0436 [-0.0680, -0.0226] [-0.0427, -0.0445]  C -0.0164 [-0.0287, -0.0070] [-0.0202, -0.0125]  F +0.0280 [+0.0142, +0.0437] [0.0218, 0.0343]
+== RU: the rule against no rule at 1.0 s under the limit
+   LABEL   U -0.4484 [-0.5097, -0.3845] [-0.4573, -0.4395]  C -0.2593 [-0.3263, -0.1913] [-0.2617, -0.257]  F +0.1347 [+0.0727, +0.1972] [0.148, 0.1215]
+   READER  U -0.3461 [-0.4210, -0.2752] [-0.3701, -0.3221]  C -0.2087 [-0.2676, -0.1502] [-0.215, -0.2025]  F +0.1799 [+0.1056, +0.2530] [0.2118, 0.148]
+== dose (acceleration limit 1.5 m/s2, no rule; names nothing)
+   E5L_minus_E5  speed error -0.9333 [-1.0091, -0.8624] [-0.963, -0.9037] | U -0.1984 [-0.2494, -0.1509] [-0.1815, -0.2153]  C -0.0974 [-0.1364, -0.0621] [-0.0966, -0.0981]  F -0.0148 [-0.0331, -0.0002] [-0.014, -0.0156]
+   E5L_minus_M5  speed error -10.4902 [-11.8201, -9.1234] [-9.5577, -11.4227] | U -0.4858 [-0.5881, -0.3910] [-0.4342, -0.5374]  C -0.5288 [-0.6093, -0.4474] [-0.4844, -0.5732]  F -0.0335 [-0.0551, -0.0143] [-0.0327, -0.0343]
+== families
+   SP_NORULE          LONGITUDINAL:speed_mae_mps         D  -9.5569 [-10.8976, -8.1861] [-8.5948, -10.519] BETTER
+   SP_NORULE          LONGITUDINAL:along_mae_m           D  -9.7549 [-11.5171, -7.9623] [-8.3582, -11.1517] BETTER
+   SP_NORULE          LATERAL:cross_mae_m                D  -3.8246 [-4.4222, -3.2810] [-3.5565, -4.0928] BETTER
+   SP_NORULE          LATERAL:heading_mae_deg            D  -4.7365 [-5.6156, -3.9938] [-5.0215, -4.4515] BETTER
+   SP_NORULE          LATERAL:curvature_mae_1pm          D  +0.0175 [+0.0058, +0.0340] [0.0097, 0.0254] INSIDE-SPREAD
+   SP_NORULE          LATERAL:yaw_rate_mae_degps         D -26.9004 [-33.7283, -21.1376] [-30.0612, -23.7396] BETTER
+   SP_NORULE          TACTICAL:lon_err_rate              D  -0.0106 [-0.0225, -0.0017] [-0.0096, -0.0117] INSIDE-SPREAD
+   SP_NORULE          TACTICAL:lat_err_rate              D  -0.3729 [-0.4577, -0.2865] [-0.311, -0.4348] BETTER
+   SP_NORULE          TACTICAL:joint_err_rate            D  -0.0686 [-0.0863, -0.0513] [-0.0638, -0.0734] BETTER
+   SP_NORULE          TACTICAL:ade_tac_m                 D -16.7110 [-19.6308, -13.7480] [-14.4826, -18.9393] BETTER
+   SP_LABEL           LONGITUDINAL:speed_mae_mps         D  -6.8533 [-7.9133, -5.8037] [-6.1825, -7.5242] BETTER
+   SP_LABEL           LONGITUDINAL:along_mae_m           D  -6.8523 [-8.2388, -5.4802] [-5.8806, -7.824] BETTER
+   SP_LABEL           LATERAL:cross_mae_m                D  -2.7430 [-3.1972, -2.3478] [-2.6289, -2.8571] BETTER
+   SP_LABEL           LATERAL:heading_mae_deg            D  -4.9288 [-5.6826, -4.1923] [-4.622, -5.2357] BETTER
+   SP_LABEL           LATERAL:curvature_mae_1pm          D  +0.0138 [+0.0017, +0.0283] [0.0096, 0.0179] INSIDE-SPREAD
+   SP_LABEL           LATERAL:yaw_rate_mae_degps         D -31.2954 [-36.5642, -26.9534] [-32.65, -29.9407] BETTER
+   SP_LABEL           TACTICAL:lon_err_rate              D  -0.0163 [-0.0336, +0.0002] [-0.0208, -0.0117] OPEN
+   SP_LABEL           TACTICAL:lat_err_rate              D  -0.3112 [-0.3945, -0.2298] [-0.2514, -0.371] BETTER
+   SP_LABEL           TACTICAL:joint_err_rate            D  -0.0704 [-0.0917, -0.0498] [-0.0617, -0.0792] BETTER
+   SP_LABEL           TACTICAL:ade_tac_m                 D -11.8115 [-14.0799, -9.5398] [-10.2987, -13.3244] BETTER
+   SP_READER          LONGITUDINAL:speed_mae_mps         D  -5.5821 [-6.3572, -4.8046] [-5.1516, -6.0125] BETTER
+   SP_READER          LONGITUDINAL:along_mae_m           D  -5.7045 [-6.7414, -4.6556] [-5.0525, -6.3565] BETTER
+   SP_READER          LATERAL:cross_mae_m                D  -2.2726 [-2.6685, -1.9266] [-2.2294, -2.3159] BETTER
+   SP_READER          LATERAL:heading_mae_deg            D  -4.8575 [-5.5133, -4.1825] [-4.6155, -5.0995] BETTER
+   SP_READER          LATERAL:curvature_mae_1pm          D  +0.0056 [-0.0071, +0.0200] [0.001, 0.0102] OPEN
+   SP_READER          LATERAL:yaw_rate_mae_degps         D -31.4629 [-36.1267, -27.1655] [-33.405, -29.5208] BETTER
+   SP_READER          TACTICAL:lon_err_rate              D  -0.0248 [-0.0421, -0.0079] [-0.0246, -0.025] INSIDE-SPREAD
+   SP_READER          TACTICAL:lat_err_rate              D  -0.2770 [-0.3528, -0.2015] [-0.2218, -0.3322] BETTER
+   SP_READER          TACTICAL:joint_err_rate            D  -0.0729 [-0.1025, -0.0444] [-0.0542, -0.0917] BETTER
+   SP_READER          TACTICAL:ade_tac_m                 D  -9.8294 [-11.5501, -8.0946] [-8.8296, -10.8292] BETTER
+   GC_NORULE          LONGITUDINAL:speed_mae_mps         D  +1.4554 [+1.2861, +1.6163] [1.4755, 1.4353] WORSE
+   GC_NORULE          LONGITUDINAL:along_mae_m           D  +3.4254 [+3.1310, +3.7015] [3.3354, 3.5154] WORSE
+   GC_NORULE          LATERAL:cross_mae_m                D  +0.2328 [+0.1313, +0.3349] [0.2688, 0.1968] WORSE
+   GC_NORULE          LATERAL:heading_mae_deg            D  +0.1749 [-0.5785, +1.0243] [0.4513, -0.1015] OPEN
+   GC_NORULE          LATERAL:curvature_mae_1pm          D  -0.0629 [-0.0861, -0.0434] [-0.0549, -0.0709] BETTER
+   GC_NORULE          LATERAL:yaw_rate_mae_degps         D -10.2559 [-13.2468, -7.6351] [-9.7776, -10.7341] BETTER
+   GC_NORULE          TACTICAL:lon_err_rate              D  +0.2530 [+0.2022, +0.3005] [0.2659, 0.2401] WORSE
+   GC_NORULE          TACTICAL:lat_err_rate              D  -0.1259 [-0.1753, -0.0830] [-0.1538, -0.098] BETTER
+   GC_NORULE          TACTICAL:joint_err_rate            D  +0.1957 [+0.1530, +0.2363] [0.2013, 0.1901] WORSE
+   GC_NORULE          TACTICAL:ade_tac_m                 D  +4.9677 [+4.5642, +5.3730] [4.8524, 5.0831] WORSE
+   GC_LABEL           LONGITUDINAL:speed_mae_mps         D  +1.1429 [+0.9759, +1.3110] [1.1442, 1.1416] WORSE
+   GC_LABEL           LONGITUDINAL:along_mae_m           D  +2.9371 [+2.6364, +3.2275] [2.8511, 3.023] WORSE
+   GC_LABEL           LATERAL:cross_mae_m                D  +0.4019 [+0.2752, +0.5402] [0.4348, 0.3691] WORSE
+   GC_LABEL           LATERAL:heading_mae_deg            D  +1.9823 [+1.0858, +3.0009] [2.4867, 1.478] WORSE
+   GC_LABEL           LATERAL:curvature_mae_1pm          D  -0.0185 [-0.0467, +0.0091] [-0.0029, -0.034] OPEN
+   GC_LABEL           LATERAL:yaw_rate_mae_degps         D  -1.6512 [-4.7474, +1.2853] [-0.6482, -2.6542] OPEN
+   GC_LABEL           TACTICAL:lon_err_rate              D  +0.1882 [+0.1385, +0.2365] [0.1992, 0.1772] WORSE
+   GC_LABEL           TACTICAL:lat_err_rate              D  -0.0484 [-0.0898, -0.0136] [-0.0642, -0.0325] INSIDE-SPREAD
+   GC_LABEL           TACTICAL:joint_err_rate            D  +0.1707 [+0.1280, +0.2102] [0.1809, 0.1605] WORSE
+   GC_LABEL           TACTICAL:ade_tac_m                 D  +4.3975 [+3.9499, +4.8162] [4.2827, 4.5124] WORSE
+   GC_READER          LONGITUDINAL:speed_mae_mps         D  +1.0593 [+0.9000, +1.2194] [1.0636, 1.0549] WORSE
+   GC_READER          LONGITUDINAL:along_mae_m           D  +2.8759 [+2.6058, +3.1496] [2.8479, 2.9039] WORSE
+   GC_READER          LATERAL:cross_mae_m                D  +0.4414 [+0.3102, +0.5703] [0.4744, 0.4084] WORSE
+   GC_READER          LATERAL:heading_mae_deg            D  +2.3734 [+1.3181, +3.5875] [3.0318, 1.715] WORSE
+   GC_READER          LATERAL:curvature_mae_1pm          D  -0.0046 [-0.0327, +0.0242] [0.0125, -0.0217] OPEN
+   GC_READER          LATERAL:yaw_rate_mae_degps         D  +1.1345 [-1.3585, +3.7024] [2.2315, 0.0375] OPEN
+   GC_READER          TACTICAL:lon_err_rate              D  +0.1574 [+0.1025, +0.2084] [0.1784, 0.1363] WORSE
+   GC_READER          TACTICAL:lat_err_rate              D  -0.0252 [-0.0596, +0.0062] [-0.0363, -0.0142] OPEN
+   GC_READER          TACTICAL:joint_err_rate            D  +0.1588 [+0.1135, +0.2006] [0.173, 0.1446] WORSE
+   GC_READER          TACTICAL:ade_tac_m                 D  +4.3276 [+3.9259, +4.7193] [4.2797, 4.3756] WORSE
+   PR                 LONGITUDINAL:speed_mae_mps         D  -0.2972 [-0.3721, -0.2337] [-0.2995, -0.2949] BETTER
+   PR                 LONGITUDINAL:along_mae_m           D  +0.0026 [-0.0230, +0.0288] [-0.0023, 0.0075] OPEN
+   PR                 LATERAL:cross_mae_m                D  -0.1491 [-0.2126, -0.1015] [-0.1326, -0.1655] BETTER
+   PR                 LATERAL:heading_mae_deg            D  -0.3073 [-0.5923, +0.0011] [-0.4458, -0.1688] OPEN
+   PR                 LATERAL:curvature_mae_1pm          D  +0.0215 [+0.0121, +0.0353] [0.0157, 0.0273] INSIDE-SPREAD
+   PR                 LATERAL:yaw_rate_mae_degps         D  -5.4062 [-7.2368, -3.8370] [-5.1594, -5.6531] BETTER
+   PR                 TACTICAL:lon_err_rate              D  -0.0217 [-0.0390, -0.0069] [-0.0192, -0.0242] INSIDE-SPREAD
+   PR                 TACTICAL:lat_err_rate              D  -0.0242 [-0.0456, -0.0044] [-0.0371, -0.0113] INSIDE-SPREAD
+   PR                 TACTICAL:joint_err_rate            D  -0.0208 [-0.0344, -0.0083] [-0.0246, -0.0171] INSIDE-SPREAD
+   PR                 TACTICAL:ade_tac_m                 D  -0.1124 [-0.1707, -0.0617] [-0.1072, -0.1176] BETTER
+   RU_LABEL           LONGITUDINAL:speed_mae_mps         D  -0.2624 [-0.3731, -0.1564] [-0.277, -0.2479] BETTER
+   RU_LABEL           LONGITUDINAL:along_mae_m           D  -0.2539 [-0.5322, +0.0538] [-0.232, -0.2758] OPEN
+   RU_LABEL           LATERAL:cross_mae_m                D  +0.1430 [+0.0363, +0.2606] [0.1388, 0.1473] WORSE
+   RU_LABEL           LATERAL:heading_mae_deg            D  +2.2866 [+1.5334, +3.0628] [2.6267, 1.9464] WORSE
+   RU_LABEL           LATERAL:curvature_mae_1pm          D  +0.0620 [+0.0415, +0.0849] [0.0685, 0.0555] WORSE
+   RU_LABEL           LATERAL:yaw_rate_mae_degps         D  +8.8586 [+6.3629, +11.4425] [9.7825, 7.9346] WORSE
+   RU_LABEL           TACTICAL:lon_err_rate              D  -0.0650 [-0.0867, -0.0440] [-0.07, -0.06] BETTER
+   RU_LABEL           TACTICAL:lat_err_rate              D  +0.0836 [+0.0550, +0.1122] [0.095, 0.0721] WORSE
+   RU_LABEL           TACTICAL:joint_err_rate            D  -0.0206 [-0.0340, -0.0065] [-0.0192, -0.0221] INSIDE-SPREAD
+   RU_LABEL           TACTICAL:ade_tac_m                 D  -0.2981 [-0.7269, +0.1738] [-0.278, -0.3182] OPEN
+   RU_READER          LONGITUDINAL:speed_mae_mps         D  -0.3389 [-0.4613, -0.2220] [-0.354, -0.3238] BETTER
+   RU_READER          LONGITUDINAL:along_mae_m           D  -0.2156 [-0.5099, +0.1177] [-0.1542, -0.2771] OPEN
+   RU_READER          LATERAL:cross_mae_m                D  +0.1765 [+0.0541, +0.3029] [0.1654, 0.1876] WORSE
+   RU_READER          LATERAL:heading_mae_deg            D  +2.8908 [+1.9137, +3.9284] [3.4021, 2.3795] WORSE
+   RU_READER          LATERAL:curvature_mae_1pm          D  +0.0817 [+0.0562, +0.1112] [0.0917, 0.0716] WORSE
+   RU_READER          LATERAL:yaw_rate_mae_degps         D +11.7455 [+8.7452, +15.0231] [13.0774, 10.4136] WORSE
+   RU_READER          TACTICAL:lon_err_rate              D  -0.0984 [-0.1238, -0.0728] [-0.093, -0.1038] BETTER
+   RU_READER          TACTICAL:lat_err_rate              D  +0.1138 [+0.0819, +0.1453] [0.1276, 0.1] WORSE
+   RU_READER          TACTICAL:joint_err_rate            D  -0.0306 [-0.0488, -0.0117] [-0.0221, -0.0392] BETTER
+   RU_READER          TACTICAL:ade_tac_m                 D  -0.2413 [-0.6984, +0.2536] [-0.1839, -0.2987] OPEN
+   dose_E5L_minus_E5  LONGITUDINAL:speed_mae_mps         D  -0.9333 [-1.0091, -0.8624] [-0.963, -0.9037] BETTER
+   dose_E5L_minus_E5  LONGITUDINAL:along_mae_m           D  -1.5670 [-1.6865, -1.4516] [-1.5669, -1.5672] BETTER
+   dose_E5L_minus_E5  LATERAL:cross_mae_m                D  -0.2504 [-0.3064, -0.1941] [-0.2424, -0.2584] BETTER
+   dose_E5L_minus_E5  LATERAL:heading_mae_deg            D  -0.6117 [-1.1022, -0.0786] [-0.4833, -0.7402] BETTER
+   dose_E5L_minus_E5  LATERAL:curvature_mae_1pm          D  +0.0434 [+0.0232, +0.0683] [0.0514, 0.0354] WORSE
+   dose_E5L_minus_E5  LATERAL:yaw_rate_mae_degps         D  -0.2284 [-1.5734, +1.3801] [0.398, -0.8549] OPEN
+   dose_E5L_minus_E5  TACTICAL:lon_err_rate              D  -0.0083 [-0.0263, +0.0094] [0.0017, -0.0183] OPEN
+   dose_E5L_minus_E5  TACTICAL:lat_err_rate              D  -0.0083 [-0.0196, +0.0023] [-0.0046, -0.0121] OPEN
+   dose_E5L_minus_E5  TACTICAL:joint_err_rate            D  -0.0150 [-0.0325, +0.0017] [-0.005, -0.025] OPEN
+   dose_E5L_minus_E5  TACTICAL:ade_tac_m                 D  -2.4393 [-2.6266, -2.2625] [-2.4544, -2.4241] BETTER
+   dose_E5L_minus_M5  LONGITUDINAL:speed_mae_mps         D -10.4902 [-11.8201, -9.1234] [-9.5577, -11.4227] BETTER
+   dose_E5L_minus_M5  LONGITUDINAL:along_mae_m           D -11.3220 [-13.1185, -9.4770] [-9.925, -12.7189] BETTER
+   dose_E5L_minus_M5  LATERAL:cross_mae_m                D  -4.0750 [-4.6917, -3.5017] [-3.7989, -4.3511] BETTER
+   dose_E5L_minus_M5  LATERAL:heading_mae_deg            D  -5.3483 [-6.0052, -4.7223] [-5.5048, -5.1917] BETTER
+   dose_E5L_minus_M5  LATERAL:curvature_mae_1pm          D  +0.0609 [+0.0383, +0.0878] [0.0611, 0.0608] WORSE
+   dose_E5L_minus_M5  LATERAL:yaw_rate_mae_degps         D -27.1289 [-33.0382, -21.7912] [-29.6632, -24.5945] BETTER
+   dose_E5L_minus_M5  TACTICAL:lon_err_rate              D  -0.0190 [-0.0417, -0.0029] [-0.0079, -0.03] INSIDE-SPREAD
+   dose_E5L_minus_M5  TACTICAL:lat_err_rate              D  -0.3812 [-0.4693, -0.2911] [-0.3155, -0.4469] BETTER
+   dose_E5L_minus_M5  TACTICAL:joint_err_rate            D  -0.0836 [-0.1112, -0.0598] [-0.0688, -0.0984] BETTER
+   dose_E5L_minus_M5  TACTICAL:ade_tac_m                 D -19.1502 [-22.0841, -16.1481] [-16.937, -21.3635] BETTER
+STRATEGIC: as note N1 of card ADD46 (T0 first tick: the banked read of the two models without the rule; along the rollout NOT COMPUTED, n = 0, no instrument)
+ZZ PODREAD-FEASC DONE 20:23:45Z
+[20:23:49Z] pulled READ_FEASC10K.json sha256 9d417b494da34f9b
+[20:23:52Z] pulled ENV_E1.json sha256 9d46f9baade8d3c8
+[20:23:56Z] pulled RESULT_HEADWAY.json sha256 9a82d1352e25f494
+[20:23:59Z] pulled RESULT_Q3.json sha256 25664ca93cbd6f7a
+[20:24:03Z] pulled VERDICT_HEADWAY.md sha256 ba59a869520b6cfb
+[20:24:07Z] pulled VERDICT_Q3.md sha256 9d02065bca2e261e
+[20:24:10Z] pulled podread_feasc.out sha256 ed8ee046582e24e5
+ZZ WAIT-PODREAD-FEASC DONE 20:24:10Z

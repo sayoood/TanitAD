@@ -1,0 +1,43 @@
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from D:\refcv6_eval_kit\data\refcv6_train_eval139_extrinsics.json (4508 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\nn\modules\module.py:1370: UserWarning: expandable_segments not supported on this platform (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\c10/cuda/CUDAAllocatorConfig.h:39.)
+  return t.to(
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[g0] model built in 10.2 s; strict missing=0 unexpected=0 step=1000; param_breakdown equal=True; levers={'chunk_ckpt': 8, 'frozen_bn': True, 'bn_pinned': 104, 'relu_out_of_place': 100, 'bf16': True, 'channels_last': True, 'bn_folded': 104, 'dedup_frames': True}
+[v2] D:\refcv6_eval_kit\data\refcv6-b1-416x1024-eval139: 139 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 139 distinct for 139 clips]
+[v2] 139 providers, 139 distinct episode ids
+[v3] nav_from_v7: follow 88 / left 13 / right 38, missing 0 (of 139 clips; md5=eefc38d1453bd1c73802d44d45affced)
+[v3] max_speed_input_v6 (4-way one-hot): 147/147 sidecar rows carry a ceiling, 23772/23772 windows fed (100.0 %), 1 clips ABOVE the 120 km/h top step (clamped, and on those the fed ceiling is one the ego demonstrably exceeded)
+[v3] agent join: 139/139 episodes (stable-63bit), 22663/23772 windows labelled (95.3 %), 776801 prefilter target boxes, pad 397
+[v3] SAM3 map GT: 23430/23772 windows covered (0.9856, floor 0.90, verdict PASS) over 139 clips; states {'ok': 23430, 'no_file': 342, 'frame_out_of_range': 0, 'inconclusive': 0}; layouts ['flat_sha12']
+[g0] eval dataset: 139 episodes -> 23772 windows (291s); subset 128
+[g0] wrapper control: max rel diff 8.443e-04 over 81 terms -> PASS; flagged merge rules {'out.sel_tele.reach_frac_candidates_clipped': 'wmean', 'out.sel_tele.reach_frac_windows_empty': 'wmean', 'out.goal_gate_value': 'wmean', 'out.goal_score_absmean': 'wmean', 'out.vmax_over_ceiling_frac': 'wmean', 'out.tacv6_valid_frac': 'wmean', 'out.seam_goal_sel_ratio_preclamp_mean': 'wmean', 'out.seam_goal_sel_ratio_preclamp_max': 'wmean', 'out.seam_goal_sel_ratio_max': 'wmean', 'out.seam_goal_sel_bound_frac': 'wmean'}
+[g0] seed 0: eval_loss 34.23464 eval_traj 1.21419 lat_tac 0.9666 (244s, peak 5.34 GiB)
+[g0] seed 1: eval_loss 34.23325 eval_traj 1.19876 lat_tac 0.9666 (382s, peak 5.34 GiB)
+[g0] seed 2: eval_loss 34.23376 eval_traj 1.21095 lat_tac 0.9666 (360s, peak 5.34 GiB)
+[g0] seed 3: eval_loss 34.26012 eval_traj 1.21114 lat_tac 0.9666 (539s, peak 5.34 GiB)
+[g0] seed 4: eval_loss 34.2643 eval_traj 1.22089 lat_tac 0.9666 (845s, peak 5.34 GiB)
+[g0] seed 5: eval_loss 34.21023 eval_traj 1.2073 lat_tac 0.9666 (594s, peak 5.34 GiB)
+[g0] seed 6: eval_loss 34.27209 eval_traj 1.21406 lat_tac 0.9666 (282s, peak 5.34 GiB)
+[g0] seed 7: eval_loss 34.21101 eval_traj 1.22965 lat_tac 0.9666 (244s, peak 5.34 GiB)
+[g0] M1: eval_loss 34.2367 map 0.88927
+{
+ "G0": "FAIL",
+ "reasons": [
+  "eval_lon_tac [COUNT] in-run 1.48022 vs seeds mean 1.47915 (sd 0)",
+  "eval_tacv6_lon_ce [COUNT] in-run 1.70872 vs seeds mean 1.70848 (sd 0)",
+  "M1 (no equalize) stayed inside the SMOOTH tolerance: the gate has no power -> VOID"
+ ],
+ "n_terms": 83,
+ "by_class_counts": {
+  "MATCHED": 15,
+  "COUNT": 44,
+  "SMOOTH": 18,
+  "EXCLUDED": 1,
+  "STOCHASTIC": 5
+ }
+}
+[g0] wrote C:/Users/Admin/ev6_battery/raw/g0_step1000.json (4115.8 s)
+ZZG0DONEZZ

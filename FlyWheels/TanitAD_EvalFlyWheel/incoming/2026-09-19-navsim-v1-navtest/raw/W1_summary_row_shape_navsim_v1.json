@@ -1,0 +1,83 @@
+{
+ "protocol": "PDMS_v1_navtest",
+ "devkit": "autonomousvision/navsim v1.1 @ 3e8291bfa89ff247231e0227778840cd0a036896",
+ "files": [
+  {
+   "file": "raw/CV_smoke20/CV_smoke20.csv",
+   "sha256": "ba8a6bcb97882367f2e47108dd13d70ab8d82a5bfaeab26b8b85c14e6c32473b",
+   "header_verbatim": ",token,valid,no_at_fault_collisions,drivable_area_compliance,ego_progress,time_to_collision_within_bound,comfort,driving_direction_compliance,score",
+   "last_line_verbatim": "20,average,True,0.85,0.7,0.3329488728901532,0.8,1.0,0.75,0.37622869703756384",
+   "n_data_rows": 21,
+   "n_hex_token_rows": 20,
+   "non_hex_token_rows_repr": [
+    "'average'"
+   ],
+   "summary_row_token_repr": "'average'",
+   "summary_row_valid_cell_repr": "'True'"
+  },
+  {
+   "file": "raw/HUMAN_smoke20/HUMAN_smoke20.csv",
+   "sha256": "3dc17bc8421eeaa00f75d4ab62fc5a2d23756f90d01006cce68a5ef4d3435b6c",
+   "header_verbatim": ",token,valid,no_at_fault_collisions,drivable_area_compliance,ego_progress,time_to_collision_within_bound,comfort,driving_direction_compliance,score",
+   "last_line_verbatim": "20,average,True,1.0,1.0,0.810964995541433,1.0,1.0,1.0,0.9212354148089303",
+   "n_data_rows": 21,
+   "n_hex_token_rows": 20,
+   "non_hex_token_rows_repr": [
+    "'average'"
+   ],
+   "summary_row_token_repr": "'average'",
+   "summary_row_valid_cell_repr": "'True'"
+  },
+  {
+   "file": "raw/STOP_smoke20/STOP_smoke20.csv",
+   "sha256": "61cccd6a3e9f6189d40193043448a2a2e1f3b895489974b4ff668cc309dedfb1",
+   "header_verbatim": ",token,valid,no_at_fault_collisions,drivable_area_compliance,ego_progress,time_to_collision_within_bound,comfort,driving_direction_compliance,score",
+   "last_line_verbatim": "20,average,True,0.95,1.0,0.22560221113087658,1.0,0.8,1.0,0.6148342546378652",
+   "n_data_rows": 21,
+   "n_hex_token_rows": 20,
+   "non_hex_token_rows_repr": [
+    "'average'"
+   ],
+   "summary_row_token_repr": "'average'",
+   "summary_row_valid_cell_repr": "'True'"
+  },
+  {
+   "file": "raw/CV_smoke20_hs2/CV_smoke20_hs2.csv",
+   "sha256": "76a5aac4a00de0865a480568c321c2e97d44127d94e1a90ec0e0f648f603a56f",
+   "header_verbatim": ",token,valid,no_at_fault_collisions,drivable_area_compliance,ego_progress,time_to_collision_within_bound,comfort,driving_direction_compliance,score",
+   "last_line_verbatim": "20,average,True,0.85,0.7,0.3329488728901531,0.8,1.0,0.75,0.3762286970375638",
+   "n_data_rows": 21,
+   "n_hex_token_rows": 20,
+   "non_hex_token_rows_repr": [
+    "'average'"
+   ],
+   "summary_row_token_repr": "'average'",
+   "summary_row_valid_cell_repr": "'True'"
+  }
+ ],
+ "verdict": {
+  "protocol": "PDMS_v1_navtest",
+  "n_summary_rows": 1,
+  "summary_row_token_verbatim": "average",
+  "summary_row_token_repr": "'average'",
+  "headline_row": "average",
+  "evidence_class": "MEASURED (W3, 2026-09-20)",
+  "measured_on": "4 independent real v1.1 CSVs produced by the unmodified devkit on this box (CV, HUMAN, STOP, and a CV replicate under a different PYTHONHASHSEED); each has 20 hex token rows + exactly 1 non-hex row, whose token cell is 'average' with no surrounding whitespace",
+  "source_cross_check": {
+   "file": "navsim/planning/script/run_pdm_score.py (v1.1 @ 3e8291bfa89ff247231e0227778840cd0a036896)",
+   "sha256_16": "7299fa4617e4d511",
+   "lines": {
+    "144": "average_row = pdm_score_df.drop(columns=[\"token\", \"valid\"]).mean(skipna=True)",
+    "145": "average_row[\"token\"] = \"average\"",
+    "146": "average_row[\"valid\"] = pdm_score_df[\"valid\"].all()",
+    "147": "pdm_score_df.loc[len(pdm_score_df)] = average_row"
+   },
+   "note": "the literal is in the code, not only in the artifact: line 145 assigns the string"
+  },
+  "two_details_W1_may_want": [
+   "the CSV's FIRST column is the unnamed pandas index ('' as a DictReader key), so the header is ',token,valid,no_at_fault_collisions,drivable_area_compliance,ego_progress,time_to_collision_within_bound,comfort,driving_direction_compliance,score'",
+   "the summary row's `valid` cell is the AND over all token rows (line 146), so a run with ANY invalid token writes valid=False there - it is a guard signal, not decoration"
+  ],
+  "still_to_come": "the same read will be repeated on the FULL-SPLIT CSVs (12,146 tokens) when the chain lands them; if the token ever differed there, W3 reports it - but the source line makes that impossible short of a devkit change"
+ }
+}

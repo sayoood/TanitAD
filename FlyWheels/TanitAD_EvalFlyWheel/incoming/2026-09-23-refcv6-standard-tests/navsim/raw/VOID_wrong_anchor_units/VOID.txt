@@ -1,0 +1,14 @@
+VOID -- DO NOT QUOTE ANY NUMBER IN THIS DIRECTORY.
+
+Everything here was produced 2026-09-23 (22:09Z-23:10Z) by a refcv6 model rebuilt through
+taniteval/tools/refcv3_arm.load_model WITHOUT the trainer's _read_anchor_artifact call, so
+core.decoder.anchor_control_units = 'kappa' for an 'alat' anchor vocabulary (lateral acceleration
+rolled as curvature; anchor bank off by up to 108 m; every plan changes).
+
+Found by control KL (tests/test_loader_crosscheck.py; raw/controls/KL_loader_crosscheck.json):
+3/3 selections differed from the battery stream's trainer-exact loader; after replaying train()'s
+order in code/refcv6_bridge.load_refcv6 the two loaders give BIT-IDENTICAL plans (3/3, max |d| 0.0).
+
+SPEC.md amendment A2 records the voiding. The corrected outputs live in raw/bridge_*_s1000/ and
+raw/scores_*_s1000/ (re-run after the fix). The runner-check and determinism evidence in here is
+still valid as PLUMBING evidence only (re-run CSV identical, max |d| 0.0) -- never as scores.

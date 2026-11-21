@@ -1,0 +1,113 @@
+{
+ "tag": "cal256_final",
+ "split": "train_calib256",
+ "ckpt": "/home/nvidia/refcv7_run/runs/refcv7-r101-s0/ckpt.pt",
+ "step": 50400,
+ "n_windows": 256,
+ "n_windows_done": 256,
+ "n_batches_done": 32,
+ "batch": 8,
+ "n_episodes": 64,
+ "window_sha12_t_sha256": "5d8a853959348472292126452f0ff7f59b32fd2afca7cb9327d9e8c85b1c2a71",
+ "decisions": {
+  "pc": [
+   "argmax",
+   [
+    1.9589046239852905,
+    1.5800600051879883,
+    0.062495484948158264,
+    -0.07143783569335938,
+    -1.0842341184616089,
+    -0.4518289566040039,
+    -0.7668453454971313,
+    1.802188754081726
+   ]
+  ],
+  "raw": [
+   "argmax",
+   [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  ]
+ },
+ "fit": null,
+ "control_C1": {
+  "max_abs_diff": 0.0,
+  "n_batches": 32,
+  "n_compared": 5120
+ },
+ "n_packs": {
+  "box3d": 256,
+  "agent": 256
+ },
+ "loader_departures": [
+  "argv --trunk-compile REMOVED: no Triton on Windows; torch.compile wraps the backbone CALL only -- module tree and state_dict identical (LAUNCH_READINESS_FIXES.md sec. 10b)",
+  "Thor data paths REMAPPED to the eval kit /home/nvidia for ['--agent-join', '--agent-rig-extrinsics', '--anchors', '--clip-clock-sidecar', '--eval-cache', '--eval-labels', '--join3d', '--map-gt-root', '--map-hires-class-weights', '--nav-compliance-tau-file', '--speed-max-sidecar-v6-eval', '--vis1-sidecar'] (per flag, basename-checked; recorded in argv_remap)",
+  "tactical-goal pos_weight / class mask from config.json tac_goal_stats (the TRAIN split's own constants; train():8483-8497 derives them from the loaded split)"
+ ],
+ "dvb": {
+  "mismatches": [],
+  "registry_entries": 221
+ },
+ "state_dict": {
+  "strict": true,
+  "missing": [],
+  "unexpected": [],
+  "step": 50400
+ },
+ "dataset": {
+  "n_episodes": 64,
+  "n_windows": 10931,
+  "map_fine": {
+   "root": "/home/nvidia/data/sam3_gt_v3",
+   "n_windows": 10931,
+   "n_clips": 64,
+   "frac_ok": 1.0,
+   "frac_ok_upper": 1.0,
+   "verdict": "PASS",
+   "states": {
+    "ok": 10931,
+    "no_file": 0,
+    "frame_out_of_range": 0,
+    "inconclusive": 0
+   },
+   "reasons": {},
+   "n_stack": 3,
+   "extent": {
+    "x_max_m": 100.0,
+    "y_half_m": 30.0,
+    "fine_shape": [
+     1000,
+     600
+    ],
+    "band_keys": [
+     "0_20",
+     "20_40",
+     "40_60",
+     "60_80",
+     "80_100"
+    ]
+   },
+   "fine_spec": {
+    "x_max_m": 100.0,
+    "y_half_m": 30.0,
+    "cell_m": 0.1,
+    "shape": [
+     1000,
+     600
+    ],
+    "codes": "0-7 class, 255 not seen"
+   }
+  }
+ },
+ "cuda_max_mem_gb": 8.109763584,
+ "wall_s": 226.8101029396057,
+ "loop_s": 102.03839588165283
+}

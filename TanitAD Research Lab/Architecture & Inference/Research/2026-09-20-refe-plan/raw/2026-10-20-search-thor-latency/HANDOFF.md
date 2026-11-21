@@ -1,0 +1,10 @@
+# HANDOFF SEARCH-THOR-LATENCY (2026-10-20 ~04:50 Berlin). BUILT AND CPU-TESTED; NOT RUN ON THOR. No agent waits on anything.
+
+**Done (staged in `out/`, manifest `out/paths.json`, repo dir `TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-20-search-thor-latency/`).**
+`thor_search_latency.py` (sha in `MANIFEST.sha256`) times, per token at batch 1, (a) the scorer-only pick, (b) Step B's CEM search C8 (14 scorer calls), (c) O4 (38 calls), on carve-B tokens (fan + banked ctx, never a label); p50/p95/p99, ratio to (a), added ms, call/row counts, scorer-vs-host split, no pass/fail. Controls: warm-up excluded and stated, timed==untimed identity on every sample, device determinism floor, call counts, n=0 returns the pick, no-op timer floor, timer sees the work. Device/clocks/power mode recorded; refuses on missing fields (exit 4), on a busy Thor (exit 3, four reads, no memory probes), on any pin (exit 5); RED control = exit 6 with the JSON still written.
+**Tests:** `test_thor_search_latency.py` 117 passed (`raw/pytest_final.log`); `mutation_check.py` 50 of 50 guard mutations caught (`raw/mutations.json`). Real-data CPU run, 5 tokens: `raw/devbox5/` (controls green, `is_thor_number false`).
+
+**Exact next step (Master Mind).** Land `out/`, then follow `RUN_ON_THOR.md`: copy about 2.87 GB to Thor, `preflight`, capture `nvpmodel -q` / `jetson_clocks --show`, smoke, then the bf16 and fp32 runs (about 62 min each if the GPU were no faster than the dev-box CPU; ESTIMATE). Then fill the C2 amendment's section 7 from the JSON and keep DQ4 wording (no deployability claim without a budget).
+
+**Not mine / blocked.** A Thor slot (nothing else running; the script refuses otherwise); a latency budget (open architecture decision, DQ4).
+**UNVERIFIED:** anything on Thor (disk, venv path, aarch64 import of `refe/model.py`, `nvidia-smi` utilisation format, sudo, hostname `thor6`, ARM host-numpy factor). (a) excludes the trunk and proposal generator by construction.

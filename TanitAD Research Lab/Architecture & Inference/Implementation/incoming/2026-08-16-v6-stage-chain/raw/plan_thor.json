@@ -1,0 +1,156 @@
+{
+ "root": "/root/experiments",
+ "config": {
+  "root": "/root/experiments",
+  "sw_dir": "v6F-SW-30k",
+  "train_cache": "/root/data/tr",
+  "val_cache": "/root/data/va",
+  "workdir": "/root/TanitAD/stack",
+  "python": "python3",
+  "batch": 8,
+  "v2_lru": 6,
+  "lr": 0.0001,
+  "sj_lr": 3e-05,
+  "sw_steps": 30000,
+  "st_steps": 10000,
+  "ss_steps": 8000,
+  "sj_steps": 3000,
+  "st_arms": [],
+  "st_winner": null,
+  "w_select": 1.0,
+  "n_candidates": 8,
+  "selector_tau_m": 1.0,
+  "selector_mlp_hidden": 256,
+  "plan_wta_eps": 0.05,
+  "s_per_step": 27.18,
+  "tiny": false,
+  "dry": false,
+  "dry_steps": 2,
+  "extra_common": []
+ },
+ "steps": [
+  {
+   "key": "S-W",
+   "stage": "S-W",
+   "arm": null,
+   "out": "/root/experiments/v6F-SW-30k",
+   "steps": 30000,
+   "lr": 0.0001,
+   "selector": "none",
+   "w_select": 0.0,
+   "init_from_key": null,
+   "prev_gate_key": null,
+   "max_horizon": null,
+   "pair_with": [],
+   "extra": [],
+   "note": "THE WORLD STAGE. Live on Thor. lambda_plan == 0 by construction and the trainer REFUSES --selector here: a scorer built in S-W would be untrainable dead weight AND would change the state_dict, breaking the live run's strict resume.",
+   "needs_st_winner": false,
+   "gate": "/root/experiments/v6F-SW-30k/stage_gate.json",
+   "ckpt": "/root/experiments/v6F-SW-30k/ckpt.pt",
+   "wallclock": {
+    "steps": 30000,
+    "s_per_step": 27.18,
+    "hours": 226.5,
+    "days": 9.44
+   }
+  },
+  {
+   "key": "S-T",
+   "stage": "S-T",
+   "arm": null,
+   "out": "/root/experiments/v6F-ST-10k",
+   "steps": 10000,
+   "lr": 0.0001,
+   "selector": "none",
+   "w_select": 0.0,
+   "init_from_key": "S-W",
+   "prev_gate_key": "S-W",
+   "max_horizon": 60,
+   "pair_with": [],
+   "extra": [
+    "--plan-wta-eps",
+    "0.05",
+    "--w-t1",
+    "1.0"
+   ],
+   "note": "THE PLANNER STAGE, WITHOUT A SELECTOR. \u26d4 SEL-1 is REFUSED: E-WC2 measured \u03c3/ADE 9.9915 [7.4492, 13.5119] against a pre-registered refusal line of 3.0 \u2014 the CI's LOWER bound is 2.48x the threshold. \u2b50 The reading is that these LATENTS are the wrong surface, not that a 6 s goal is unpredictable (a 0-param constant-yaw-rate goal is 3.96x better and still not funded). The committed branch is ANCHOR_GOAL supervision. Selector arms stay reachable via --st-arms, gated on the E-WC2-SW dump.",
+   "needs_st_winner": false,
+   "gate": "/root/experiments/v6F-ST-10k/stage_gate.json",
+   "ckpt": "/root/experiments/v6F-ST-10k/ckpt.pt",
+   "wallclock": {
+    "steps": 10000,
+    "s_per_step": 27.18,
+    "hours": 75.5,
+    "days": 3.15
+   }
+  },
+  {
+   "key": "S-S",
+   "stage": "S-S",
+   "arm": null,
+   "out": "/root/experiments/v6F-SS-8k",
+   "steps": 8000,
+   "lr": 0.0001,
+   "selector": "none",
+   "w_select": 0.0,
+   "init_from_key": "S-T",
+   "prev_gate_key": "S-T",
+   "max_horizon": null,
+   "pair_with": [],
+   "extra": [
+    "--w-s1",
+    "1.0"
+   ],
+   "note": "Trains layer_str ONLY; the planner is FROZEN and w_select is 0 (for_stage('S-S') zeroes it, so a non-zero flag would advertise a loss that is not in force). \u26d4 Its gate REQUIRES sel_gap_revalidated + TACTICAL_revalidated: S-S moves e_g_str -> e_g_tac, which is the frozen selector's ONLY input, so S-T's certificate stops applying the moment S-S starts.",
+   "needs_st_winner": false,
+   "gate": "/root/experiments/v6F-SS-8k/stage_gate.json",
+   "ckpt": "/root/experiments/v6F-SS-8k/ckpt.pt",
+   "wallclock": {
+    "steps": 8000,
+    "s_per_step": 27.18,
+    "hours": 60.4,
+    "days": 2.52
+   }
+  },
+  {
+   "key": "S-J",
+   "stage": "S-J",
+   "arm": null,
+   "out": "/root/experiments/v6F-SJ-3k",
+   "steps": 3000,
+   "lr": 3e-05,
+   "selector": "none",
+   "w_select": 0.0,
+   "init_from_key": "S-S",
+   "prev_gate_key": "S-S",
+   "max_horizon": 60,
+   "pair_with": [],
+   "extra": [
+    "--w-t1",
+    "1.0",
+    "--w-s1",
+    "1.0",
+    "--plan-wta-eps",
+    "0.05"
+   ],
+   "note": "OPTIONAL. Run only if S-T/S-S plateau. Trains everything with isolation still ON; the gate is the frozen battery FLAT across the joint phase (H-COTRAIN) plus zero live forbidden X3 edges.",
+   "needs_st_winner": false,
+   "gate": "/root/experiments/v6F-SJ-3k/stage_gate.json",
+   "ckpt": "/root/experiments/v6F-SJ-3k/ckpt.pt",
+   "wallclock": {
+    "steps": 3000,
+    "s_per_step": 27.18,
+    "hours": 22.65,
+    "days": 0.94
+   }
+  }
+ ],
+ "thor": {
+  "s_per_step": 27.18,
+  "batch": 8,
+  "memory_probe": "torch.cuda.max_memory_allocated()",
+  "_read": "MEASURED 2026-08-16 (marginal, steps 6300->6400 of the live S-W run). Thor saturates at batch 8; a bigger batch buys nothing and costs memory."
+ },
+ "total_wallclock_days": 6.61,
+ "_evidence_class": "MEASURED (s/step) + ESTIMATED (wall-clock, S-W's rate applied to stages that have never run)"
+}

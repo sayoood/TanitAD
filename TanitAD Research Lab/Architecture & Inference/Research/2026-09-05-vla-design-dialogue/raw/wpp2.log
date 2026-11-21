@@ -1,0 +1,38 @@
+[wpp] n=1360  K=128  episodes=34
+[wpp] sd[S0] 17.9073   sd_a[E] 1.4571   shipped scale 8.1 %
+
+  beta   scale% INF flip    INF kl  CON rank CON top1        ADE   ADE cross
+   0.0      0.0   0.0000    0.0000     75.80   0.0000     0.6636      0.6636
+   1.0      8.1   0.2324    0.1878     64.40   0.0000     0.6521      0.6774
+   2.0     16.3   0.4044    0.7224     53.66   0.0037     0.6583      0.7325
+   5.0     40.7   0.8287    6.5586     14.33   0.2890     1.4864      1.3288
+  10.0     81.4   0.9596   11.4725      4.00   0.5044     2.2410      2.3904
+  20.0    162.7   0.9963   17.1296      1.67   0.6713     3.6993      3.6024
+  40.0    325.5   0.9985   19.3362      1.42   0.7287     4.6373      5.0664
+  80.0    651.0   1.0000   24.2284      1.18   0.8515     7.3042      7.1542
+ 160.0   1301.9   1.0000   24.9104      1.15   0.8647     7.6221      7.6612
+
+  chance CON rank = 64.5  (K=128).  Lower is more consistent.
+
+  CONSISTENCY BECOMES MEASURABLE at beta = 2.0 (scale 16.3 %, ADE 0.6583 m)
+  BEST ADE in the sweep: beta 1.0 (scale 8.1 %) -> 0.6521 m  [shipped beta=1.0 -> 0.6521 m]
+
+  THE CONTROL THAT DECIDES WHETHER THE FRONTIER IS WORTH CLIMBING:
+  real-vs-cross gap must GROW with beta; if it collapses, the extra
+  authority is buying obedience, not understanding.
+    beta    0.0  gap +0.0000 m
+    beta    1.0  gap +0.0252 m
+    beta    2.0  gap +0.0742 m
+    beta    5.0  gap -0.1576 m
+    beta   10.0  gap +0.1494 m
+    beta   20.0  gap -0.0970 m
+    beta   40.0  gap +0.4290 m
+    beta   80.0  gap -0.1500 m
+    beta  160.0  gap +0.0392 m
+  usable regime (ADE <= base): beta 1.0, 2.0
+  gap sign above beta=5 oscillates: YES -> no trend is readable there
+  gap at shipped beta=1: +0.0252 m | largest gap +0.0742 m at beta 2.0
+
+  => IN THE USABLE REGIME the gap GROWS with authority (+0.0252 at beta 1 -> +0.0742 at beta 2.0), but ADE collapses before consistency becomes good, so raising beta ALONE cannot deliver both -- the energy must get BETTER, not louder
+
+-> wpp_frontier.json

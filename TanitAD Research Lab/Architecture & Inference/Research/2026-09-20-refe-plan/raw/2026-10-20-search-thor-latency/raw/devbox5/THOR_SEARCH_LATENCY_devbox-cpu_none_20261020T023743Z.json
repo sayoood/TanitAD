@@ -1,0 +1,538 @@
+{
+ "schema": "tanitad.thor_search_latency/1",
+ "no_pass_fail": true,
+ "verdict": null,
+ "is_thor_number": false,
+ "evidence_class": "MEASURED (ours, this device)",
+ "statements": [
+  "NO PASS / FAIL (MM_RULING_C2AMEND DQ4): this reports ms per token and ratios. An absolute latency budget is an open architecture decision; until it exists there is NO claim of deployability.",
+  "Evidence class: MEASURED on the device named in `device`. A record whose target is not `thor` is NOT a Thor number.",
+  "(a) is the scorer-only pick (one set-scoring + aggregate + argmax) on the banked post-trunk ctx; the trunk and the proposal generator are NOT included. ratio_to_a is vs that narrow baseline; added_ms is the safe quantity.",
+  "ONE search seed (the first of the config's three) = the deployed configuration. Tokens: the first N sorted tokens of carve B; the fan and ctx are banked inputs; no label array is read.",
+  "Warm-up tokens are excluded from every statistic; the untimed reference phase (two runs of every arm on every token) precedes the warm-up.",
+  "Excluded from timing: bind(n) (ctx H2D), reference runs, identity comparison, JSON writing, trunk, proposal generation. Included: set H2D, forward, logits D2H, host numpy (composite, aggregate, argsort).",
+  "Python GC is left enabled (part of the deployed cost); the percentiles are over repeats x tokens samples (linear interpolation)."
+ ],
+ "device": {
+  "schema": "tanitad.thor_search_latency/1",
+  "time_utc": "2026-10-20T02:37:43Z",
+  "target": "devbox-cpu",
+  "hostname": "FREEDOM2035",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "machine": "AMD64",
+  "cpu_name": "Intel64 Family 6 Model 151 Stepping 2, GenuineIntel",
+  "python": "3.13.5",
+  "numpy": "2.5.1",
+  "torch": "2.11.0+cu128",
+  "torch_cuda": "12.8",
+  "torch_threads": 4,
+  "omp_num_threads": "8",
+  "cuda_visible_devices": "-1",
+  "thermal_start_read": {}
+ },
+ "args": {
+  "cmd": "run",
+  "target": "devbox-cpu",
+  "expect_hostname": null,
+  "env_dir": null,
+  "gpu_lock": "/home/nvidia/refcv7_post/thor_gpu.lock",
+  "bundle": "D:/Projects/TanitAD-artifacts/l2_fresh_stepA/B_token_disjoint/bundle/bundle.npz",
+  "ctx": "D:/Projects/TanitAD-artifacts/l2_fresh_stepA/B_token_disjoint/bundle/ctx.npy",
+  "ckpt": "D:/Projects/TanitAD/data/refe_runs_eval/p2/model_final.pt",
+  "refe_dir": "C:/Users/Admin/par18/l1run/tree_hybrid/refe",
+  "c8": "C:/Users/Admin/par18/l2stepb/raw/stepB_config.json",
+  "o4": "C:/Users/Admin/par18/l2stepb/raw/stepB_config_O4.json",
+  "out_dir": "C:/Users/Admin/par18/thorlat/raw/devbox5",
+  "autocast": "none",
+  "n_tokens": 5,
+  "warmup": 1,
+  "repeats": 1,
+  "threads": 4,
+  "seed_index": 0
+ },
+ "pins_seen": {
+  "stepB_files": {
+   "stepB.py": "74e60d3de6f16aa1bcb3a9503cba54d81bc6e79fa55e4fe6ecb9efc60e390ea8",
+   "l2_scorer.py": "8584bb1e91a04f247e79552910651330d2e4dff1f3c7248bf8c8a0fdb97be286"
+  },
+  "l1_files": {
+   "stepA.py": "05d182c7cf1b9e44665b5f9928a35dfa2dd218e89bf7846bdee8a230456313f8",
+   "tts_cem.py": "9dea96038d18ae0b7f7a5d522939cb50c5424b372a6de4282ab49c02977bbedb",
+   "real_scorer.py": "05c4b4fb771ac924cbbf291b4e019f854411c318dc57e80ae09b02f3312ffbfa",
+   "label_perturbations.py": "9e2caca122d1230ff920a3d4722bbb9591d39426134d03af01684fc130c471e5"
+  },
+  "code_dirs": {
+   "stepB_dir": "C:\\Users\\Admin\\par18\\l2stepb\\code",
+   "l1_dir": "C:\\Users\\Admin\\par18\\l1run\\code",
+   "this_file": "cf5cdfd1686adfd4f591ba851d2eeb7b99d48dba146aa7c30f0a8aa796f5729d"
+  }
+ },
+ "inputs": {
+  "bundle": {
+   "path": "D:\\Projects\\TanitAD-artifacts\\l2_fresh_stepA\\B_token_disjoint\\bundle\\bundle.npz",
+   "sha256": "580b6cc395aa9074c75eb7a62fe99e8b493abd9ea5671be1a5765d8ae4fd673f",
+   "keys_read": [
+    "token",
+    "traj_raw",
+    "pick",
+    "logits"
+   ],
+   "label_keys_never_read": [
+    "sub",
+    "pdms",
+    "valid"
+   ]
+  },
+  "ctx": {
+   "path": "D:\\Projects\\TanitAD-artifacts\\l2_fresh_stepA\\B_token_disjoint\\bundle\\ctx.npy",
+   "sha256": "c8c287cf6bdb6b1b91785d6251b1027897cc16d11d13857b524f1731a23bd03b"
+  },
+  "checkpoint": {
+   "path": "D:\\Projects\\TanitAD\\data\\refe_runs_eval\\p2\\model_final.pt",
+   "sha256": "ea31db2296210b6a35dbf32ad95f1813edfa259ab330002b3ca7564aac727e51"
+  },
+  "refe_model_py_sha256": "e6011cd83c846dfbd9756301ae731f4b84541b7b8e07a139a2c2c2b663a8a46d",
+  "carve_b_tokens_sha256": "0629811ff5d05879eb62abc5726005ccc4924f03539423003503a099ba29577c",
+  "n_tokens": 5,
+  "timed_tokens_sha256": "a0a37ccfe3b057f2d79e0155941274ff5dce112a136984eab1ba7f9c3fb58248",
+  "first_token": "0266adddeefb584b",
+  "last_token": "0499657bbca05d5e",
+  "search_seed": 20260927,
+  "autocast": "none",
+  "scorer_info": {
+   "depth": 4,
+   "dec_heads": 8,
+   "dec_width": 256,
+   "n_scorer_tensors": 78,
+   "meta_step": 1209
+  }
+ },
+ "configs": {
+  "b": {
+   "path": "C:\\Users\\Admin\\par18\\l2stepb\\raw\\stepB_config.json",
+   "sha256": "299c6e63dd3016100149f88b6ca498529d79f8a5fbcfc6845753c8121d62c441",
+   "k_iters": 5,
+   "m_pop": 64,
+   "n_elite": 8,
+   "sigma0_u": 0.08125946474888747,
+   "sigma0_d": 0.15,
+   "u_lo": -0.16251892949777494,
+   "u_hi": 0.13976194237515863,
+   "d_lo": -0.3,
+   "d_hi": 0.3,
+   "widen": 1.0,
+   "profile": "ramp",
+   "seeds": [
+    20260927,
+    20260928,
+    20260929
+   ]
+  },
+  "c": {
+   "path": "C:\\Users\\Admin\\par18\\l2stepb\\raw\\stepB_config_O4.json",
+   "sha256": "1ebd719617e8978a03cea0254edd6f531504c1d070792d066736130ceb929013",
+   "k_iters": 5,
+   "m_pop": 256,
+   "n_elite": 32,
+   "sigma0_u": 0.08125946474888747,
+   "sigma0_d": 0.15,
+   "u_lo": -0.16251892949777494,
+   "u_hi": 0.13976194237515863,
+   "d_lo": -0.3,
+   "d_hi": 0.3,
+   "widen": 2.0,
+   "profile": "ramp",
+   "seeds": [
+    20260927,
+    20260928,
+    20260929
+   ]
+  }
+ },
+ "preflight": null,
+ "preflight_end": null,
+ "thermal_end": null,
+ "arms": {
+  "a": {
+   "label": "P2 pick-only scoring",
+   "ms": {
+    "n": 5,
+    "mean": 59.153819999999996,
+    "p50": 61.0617,
+    "p95": 72.68723999999999,
+    "p99": 74.895208,
+    "min": 40.1581,
+    "max": 75.4472
+   },
+   "per_repeat_ms": [
+    {
+     "n": 5,
+     "mean": 59.153819999999996,
+     "p50": 61.0617,
+     "p95": 72.68723999999999,
+     "p99": 74.895208,
+     "min": 40.1581,
+     "max": 75.4472
+    }
+   ],
+   "scorer_calls_ms": {
+    "n": 5,
+    "mean": 59.07252,
+    "p50": 60.9858,
+    "p95": 72.59003999999999,
+    "p99": 74.793528,
+    "min": 40.0834,
+    "max": 75.3444
+   },
+   "host_rest_ms": {
+    "n": 5,
+    "mean": 0.08130000000000166,
+    "p50": 0.0759000000000043,
+    "p95": 0.09790000000000276,
+    "p99": 0.10182000000000216,
+    "min": 0.07469999999999999,
+    "max": 0.102800000000002
+   },
+   "scorer_calls_per_token": [
+    1
+   ],
+   "scorer_rows_per_token": [
+    64
+   ],
+   "expected": {
+    "calls": 1,
+    "rows": 64
+   },
+   "samples_ms": [
+    [
+     40.1581,
+     61.6474,
+     75.4472,
+     61.0617,
+     57.4547
+    ]
+   ]
+  },
+  "b": {
+   "label": "search C8 (M=64)",
+   "ms": {
+    "n": 5,
+    "mean": 867.8210999999999,
+    "p50": 870.2949,
+    "p95": 930.59534,
+    "p99": 930.760028,
+    "min": 745.1595,
+    "max": 930.8012
+   },
+   "per_repeat_ms": [
+    {
+     "n": 5,
+     "mean": 867.8210999999999,
+     "p50": 870.2949,
+     "p95": 930.59534,
+     "p99": 930.760028,
+     "min": 745.1595,
+     "max": 930.8012
+    }
+   ],
+   "scorer_calls_ms": {
+    "n": 5,
+    "mean": 814.9373800000001,
+    "p50": 823.7505,
+    "p95": 873.80764,
+    "p99": 874.146888,
+    "min": 689.8129,
+    "max": 874.2317
+   },
+   "host_rest_ms": {
+    "n": 5,
+    "mean": 52.88371999999997,
+    "p50": 55.5145,
+    "p95": 57.44229999999995,
+    "p99": 57.61685999999995,
+    "min": 39.327499999999986,
+    "max": 57.660499999999956
+   },
+   "scorer_calls_per_token": [
+    14
+   ],
+   "scorer_rows_per_token": [
+    896
+   ],
+   "expected": {
+    "calls": 14,
+    "rows": 896
+   },
+   "samples_ms": [
+    [
+     870.2949,
+     863.078,
+     930.8012,
+     929.7719,
+     745.1595
+    ]
+   ],
+   "ratio_to_a": {
+    "p50": 14.252713239231793,
+    "p95": 12.802733189484153,
+    "p99": 12.427497737906009
+   },
+   "added_ms_vs_a": {
+    "p50": 809.2332,
+    "p95": 857.9081,
+    "p99": 855.86482
+   }
+  },
+  "c": {
+   "label": "search O4 (M=256)",
+   "ms": {
+    "n": 5,
+    "mean": 2590.88688,
+    "p50": 2703.2978,
+    "p95": 2790.03366,
+    "p99": 2800.759932,
+    "min": 2314.0813,
+    "max": 2803.4415
+   },
+   "per_repeat_ms": [
+    {
+     "n": 5,
+     "mean": 2590.88688,
+     "p50": 2703.2978,
+     "p95": 2790.03366,
+     "p99": 2800.759932,
+     "min": 2314.0813,
+     "max": 2803.4415
+    }
+   ],
+   "scorer_calls_ms": {
+    "n": 5,
+    "mean": 2376.77812,
+    "p50": 2479.7571,
+    "p95": 2571.72854,
+    "p99": 2585.4773880000002,
+    "min": 2122.4492,
+    "max": 2588.9146
+   },
+   "host_rest_ms": {
+    "n": 5,
+    "mean": 214.1087599999999,
+    "p50": 214.52689999999984,
+    "p95": 231.4425400000001,
+    "p99": 233.02290800000011,
+    "min": 191.6320999999998,
+    "max": 233.41800000000012
+   },
+   "scorer_calls_per_token": [
+    38
+   ],
+   "scorer_rows_per_token": [
+    3392
+   ],
+   "expected": {
+    "calls": 38,
+    "rows": 3392
+   },
+   "samples_ms": [
+    [
+     2803.4415,
+     2736.4023,
+     2703.2978,
+     2397.2115,
+     2314.0813
+    ]
+   ],
+   "ratio_to_a": {
+    "p50": 44.27157776478545,
+    "p95": 38.384091348082556,
+    "p99": 37.39571605168651
+   },
+   "added_ms_vs_a": {
+    "p50": 2642.2360999999996,
+    "p95": 2717.34642,
+    "p99": 2725.864724
+   },
+   "ratio_to_b": {
+    "p50": 3.106185960643915,
+    "p95": 2.998116947372636,
+    "p99": 3.009110670575552
+   }
+  }
+ },
+ "controls": {
+  "identity_a": {
+   "ok": true,
+   "mismatched_samples": 0,
+   "of": 5,
+   "first": []
+  },
+  "determinism_a": {
+   "ok": true,
+   "nondeterministic_tokens": 0
+  },
+  "call_counts_a": {
+   "ok": true,
+   "samples_off": 0,
+   "expected": {
+    "calls": 1,
+    "rows": 64
+   },
+   "observed_calls": [
+    1
+   ],
+   "observed_rows": [
+    64
+   ]
+  },
+  "identity_b": {
+   "ok": true,
+   "mismatched_samples": 0,
+   "of": 5,
+   "first": []
+  },
+  "determinism_b": {
+   "ok": true,
+   "nondeterministic_tokens": 0
+  },
+  "call_counts_b": {
+   "ok": true,
+   "samples_off": 0,
+   "expected": {
+    "calls": 14,
+    "rows": 896
+   },
+   "observed_calls": [
+    14
+   ],
+   "observed_rows": [
+    896
+   ]
+  },
+  "identity_c": {
+   "ok": true,
+   "mismatched_samples": 0,
+   "of": 5,
+   "first": []
+  },
+  "determinism_c": {
+   "ok": true,
+   "nondeterministic_tokens": 0
+  },
+  "call_counts_c": {
+   "ok": true,
+   "samples_off": 0,
+   "expected": {
+    "calls": 38,
+    "rows": 3392
+   },
+   "observed_calls": [
+    38
+   ],
+   "observed_rows": [
+    3392
+   ]
+  },
+  "n0_pick": {
+   "ok": true,
+   "tokens": 5
+  },
+  "timer_floor": {
+   "ok": true,
+   "floor_p99_ms": 0.0001,
+   "a_p50_ms": 61.0617,
+   "rule": "floor p99 <= 5 % of p50(a)"
+  },
+  "sees_work": {
+   "ok": true,
+   "p50_a_b_c_ms": [
+    61.0617,
+    870.2949,
+    2703.2978
+   ]
+  }
+ },
+ "controls_ok": true,
+ "informative": {
+  "noop_scorer_search_ms": {
+   "b": {
+    "ms": {
+     "n": 5,
+     "mean": 50.151799999999994,
+     "p50": 52.9862,
+     "p95": 58.353500000000004,
+     "p99": 58.74318,
+     "min": 38.257,
+     "max": 58.8406
+    },
+    "calls_per_token": [
+     14
+    ]
+   },
+   "c": {
+    "ms": {
+     "n": 5,
+     "mean": 170.9459,
+     "p50": 159.281,
+     "p95": 227.10557999999997,
+     "p99": 240.02351599999997,
+     "min": 133.8602,
+     "max": 243.253
+    },
+    "calls_per_token": [
+     38
+    ]
+   }
+  },
+  "noop_timer_floor_ns": {
+   "reps": 5000,
+   "ns": {
+    "n": 5000,
+    "mean": 86.84,
+    "p50": 100.0,
+    "p95": 100.0,
+    "p99": 100.0,
+    "min": 0.0,
+    "max": 600.0
+   }
+  },
+  "per_call_ms_by_population": {
+   "64": {
+    "n": 10,
+    "mean": 52.38118999999999,
+    "p50": 53.55605,
+    "p95": 62.060005000000004,
+    "p99": 64.677601,
+    "min": 42.0029,
+    "max": 65.332
+   },
+   "256": {
+    "n": 10,
+    "mean": 80.42319,
+    "p50": 82.10405,
+    "p95": 91.05767,
+    "p99": 93.021614,
+    "min": 62.2608,
+    "max": 93.5126
+   }
+  },
+  "row_scaling_visible_256_vs_64": 1.5330490206055152,
+  "pick_agreement_with_banked_pick": {
+   "a": 1.0
+  },
+  "search_moved_fraction": {
+   "b": 0.2,
+   "c": 0.2
+  },
+  "scorer_parity_vs_banked_logits": {
+   "tokens": 3,
+   "max_abs_logit_diff_vs_banked": 0.0019087791442871094,
+   "per_token": [
+    0.0019087791442871094,
+    0.0016684532165527344,
+    0.0013990402221679688
+   ],
+   "note": "INFORMATIVE: banked logits come from a different device / precision; no tolerance is gated"
+  }
+ },
+ "wall_seconds": 56.214139461517334
+}

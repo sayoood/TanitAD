@@ -79,7 +79,7 @@ def v4_loss_step(world, grounding, head: FlagshipV4Head, batch: dict,
                  plan, cfg, step: int, phases: CurriculumPhases,
                  lw: V4LossWeights, lam_mode: str = "sched",
                  lam_mult: float = 1.0, device: str = "cpu",
-                 goal_head=None, probes=None) -> tuple:
+                 goal_head=None, probes=None, kin_weights: dict | None = None) -> tuple:
     """One joint step's TOTAL loss = WM stack + planner + factorised + smoothness
     (+ the strategic goal-scalar regression when a ``goal_head`` is supplied).
 
@@ -113,7 +113,16 @@ def v4_loss_step(world, grounding, head: FlagshipV4Head, batch: dict,
     imag = _imagination_inputs(world, head.cfg, batch, states, probes)
     out = head(states, v0, lambda_plan=lam, **goal, **imag)
     from tanitad.models.flagship_v15 import v15_losses
-    plan_l = v15_losses(out, head.decoder.anchors, traj_tgt)
+    # ⛔ `kin_weights` defaults to None -> every weight 0.0 -> the loss is
+    # BIT-IDENTICAL to every arm trained before 2026-08-06. Parity is sacred; a
+    # silent loss change would invalidate every cross-arm number in the registry.
+    # ⛔ dt is the HEAD'S HORIZON SPACING (0.5 s for the default (5,10,15,20)), NOT
+    # the 0.1 s tick. Accel scales as 1/dt^2 -- passing 0.1 would inflate it 25x and
+    # the barriers would fire on ordinary driving. Derived, never assumed.
+    kin_dt = ((horizons[1] - horizons[0]) * 0.1 if len(horizons) > 1
+              else horizons[0] * 0.1)
+    plan_l = v15_losses(out, head.decoder.anchors, traj_tgt,
+                        kin_weights=kin_weights, kin_dt=kin_dt)
 
     # --- (3) factorised LAT×LON×DIST CE (masked; §6.2) --------------------------
     fac_loss = torch.zeros((), device=states.device)
@@ -954,7 +963,7 @@ def _training_loop(*, out_dir: Path, device, amp: bool, world, grounding, head,
                    eval_episodes: int, batch: int, milestones,
                    accum: int = 1, canary_override=None,
                    heldout_gate=None, heldout_episodes=None,
-                   probes=None) -> dict:
+                   probes=None, kin_weights: dict | None = None) -> dict:
     """Run the joint WM + planner training loop. Auto-resumes from ``ckpt.pt`` if
     present (pod-restart safe). Returns a result dict (final step, canary trace,
     controller multiplier trace, milestone archives) for the smoke proof.
@@ -1038,7 +1047,8 @@ def _training_loop(*, out_dir: Path, device, amp: bool, world, grounding, head,
                 total, log = v4_loss_step(
                     world, grounding, head, batch_d, plan, cfg, step, phases, lw,
                     lam_mode=lam_mode, lam_mult=float(controller._mult),
-                    device=str(device), goal_head=goal_head, probes=probes)
+                    device=str(device), goal_head=goal_head, probes=probes,
+                    kin_weights=kin_weights)
             if not torch.isfinite(total):
                 raise SystemExit(f"[v4] non-finite loss at step {step} "
                                  f"(micro {_micro}/{accum}): {log}")
@@ -1256,6 +1266,18 @@ def train(a) -> dict:
     and runs the loop; a launch is Sayed's go (§17), executed by the orchestrator,
     NOT from an agent."""
     import dataclasses
+
+    # ⛔ ALL ZERO unless flagged, so an unflagged run reproduces v1arch's loss
+    # bit-for-bit. Parity is sacred: a silent loss change would invalidate every
+    # cross-arm number in MODEL_REGISTRY.md. Logged into the run config so an arm
+    # that used them can never be mistaken for one that did not.
+    kin_weights = {"heading": float(getattr(a, "kin_heading", 0.0)),
+                   "net_yaw": float(getattr(a, "kin_net_yaw", 0.0)),
+                   "accel": float(getattr(a, "kin_accel", 0.0)),
+                   "jerk": float(getattr(a, "kin_jerk", 0.0))}
+    if any(w > 0.0 for w in kin_weights.values()):
+        print(f"[v4] KINEMATIC LOSS TERMS ACTIVE: {kin_weights} — this arm is NOT "
+              f"loss-comparable to arms trained without them", flush=True)
 
     from tanitad.config import flagship4b_config
     from tanitad.data.mixing import load_episode
@@ -1527,7 +1549,7 @@ def train(a) -> dict:
         canary_horizons=(5, 10, 15, 20), canary_kmax=20,
         eval_episodes=a.eval_episodes, batch=a.batch, accum=a.accum,
         milestones=milestones, heldout_gate=hgate, heldout_episodes=hg_eps,
-        probes=probes)
+        probes=probes, kin_weights=kin_weights)
 
 
 def _is_from_scratch(a) -> bool:
@@ -1976,6 +1998,27 @@ def build_parser() -> argparse.ArgumentParser:
                          "controller cut 3/4 if the WM is threatened. Must be in (0, 1].")
     # --- loop cadence (mirrors train_flagship_v16) ---
     ap.add_argument("--warmup", type=int, default=2000, help="cosine LR warmup steps")
+    # ---- KINEMATIC LOSS TERMS (2026-08-06) ---------------------------------
+    # ⭐ WHY: `v15_losses` supervises trajectories with PURE POSITION L1, so
+    # heading, curvature, acceleration and jerk are unconstrained -- and every
+    # defect measured on flagship v1 follows (accel RMS 4.21x human, jerk 30.6x,
+    # 6,834 windows, 2026-08-06). A term that is not in the loss is not learned.
+    # ⛔ ALL DEFAULT TO 0.0 so an unflagged run is bit-identical to v1arch.
+    # ⚠️ --kin-accel/--kin-jerk are BARRIERS above the human's p99, not shrinkage:
+    # a plain quadratic would also flatten legitimate emergency braking.
+    ap.add_argument("--kin-heading", type=float, default=0.0,
+                    help="weight on per-step heading error (rad). The term ADE "
+                         "cannot see: two paths can match to centimetres in "
+                         "position and differ every step in tangent.")
+    ap.add_argument("--kin-net-yaw", type=float, default=0.0,
+                    help="weight on net-yaw error over the window. SAMPLING-"
+                         "INDEPENDENT -- this is the quantity that regressed 62 % "
+                         "under inference-time re-timing while cross-track "
+                         "improved, so it is the honest 'fix the heading' target.")
+    ap.add_argument("--kin-accel", type=float, default=0.0,
+                    help="barrier weight above the human p99 accel (2.689 m/s^2)")
+    ap.add_argument("--kin-jerk", type=float, default=0.0,
+                    help="barrier weight above the human p99 jerk (6.369 m/s^3)")
     ap.add_argument("--workers", type=int, default=4, help="DataLoader workers")
     ap.add_argument("--log-every", type=int, default=50)
     ap.add_argument("--eval-every", type=int, default=500,

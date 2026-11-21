@@ -1,0 +1,108 @@
+{
+ "n": 21,
+ "groups": [
+  {
+   "message": "TypeError: capture_sampler_inputs.<locals>.hook() got an unexpected keyword argument 'prior'",
+   "n": 8,
+   "tests": [
+    "test_ddv2_refc_chain.py::test_REGRESSION_a_binding_without_the_residual_breaks_parity",
+    "test_ddv2_refc_chain.py::test_REGRESSION_a_layer_that_mixes_queries_is_caught",
+    "test_ddv2_refc_chain.py::test_REGRESSION_the_release_input_clamp_is_a_different_pass_outside_the_box",
+    "test_ddv2_refc_chain.py::test_REGRESSION_the_wrong_speed_breaks_parity",
+    "test_ddv2_refc_chain.py::test_capture_restores_the_bound_method",
+    "test_ddv2_refc_chain.py::test_groups_are_independent_queries",
+    "test_ddv2_refc_chain.py::test_one_chain_update_moves_only_the_sampler_path",
+    "test_ddv2_refc_chain.py::test_parity_the_binding_reproduces_the_deployed_sampler_bitwise"
+   ],
+   "frames": [
+    "tests/test_ddv2_refc_chain.py:74:",
+    "tests/test_ddv2_refc_chain.py:47: in _captured",
+    "../../../venvs/tanitad-train/lib/python3.12/site-packages/torch/nn/modules/module.py:1778: in _wrapped_call_impl",
+    "../../../venvs/tanitad-train/lib/python3.12/site-packages/torch/nn/modules/module.py:1789: in _call_impl",
+    "tanitad/refs/refc.py:3356: TypeError"
+   ]
+  },
+  {
+   "message": "AssertionError: the live adapter is blind to ['ego_actions'] -- see test_rl_forward_keys_cover_signature.py",
+   "n": 1,
+   "tests": [
+    "test_rl_channel_guard.py::test_the_LIVE_pair_PASSES_and_the_verdict_is_reproduced_independently"
+   ],
+   "frames": [
+    "tests/test_rl_channel_guard.py:283: AssertionError"
+   ]
+  },
+  {
+   "message": "AssertionError: a channel in NEITHER the adapter nor any seam's declaration was not flagged. got missing=['ego_actions', 'brand_new_channel']",
+   "n": 1,
+   "tests": [
+    "test_rl_forward_keys_cover_signature.py::test_MUTATION_a_channel_in_NEITHER_place_is_RED"
+   ],
+   "frames": [
+    "tests/test_rl_forward_keys_cover_signature.py:428: AssertionError"
+   ]
+  },
+  {
+   "message": "AssertionError: FORWARD_KEYS is missing 1 channel(s) that RefCV3Model.forward accepts and that NO seam has declared must-not-be-plumbed: ['ego_actions'].",
+   "n": 1,
+   "tests": [
+    "test_rl_forward_keys_cover_signature.py::test_forward_keys_covers_every_required_channel"
+   ],
+   "frames": [
+    "tests/test_rl_forward_keys_cover_signature.py:139: AssertionError"
+   ]
+  },
+  {
+   "message": "AssertionError: FORWARD_KEYS ['agent_gt', 'ego_n_past', 'ego_poses', 'ego_state', 'lan', 'nav_cmd', 'nav_known', 'v0', 'withheld_speed'] != the REQUIRED channels ['agent_gt', 'ego_actions', 'ego_n_pas",
+   "n": 1,
+   "tests": [
+    "test_rl_refc_adapter_robust.py::test_forward_kwargs_plumbs_every_channel_the_forward_accepts"
+   ],
+   "frames": [
+    "tests/test_rl_refc_adapter_robust.py:256: AssertionError"
+   ]
+  },
+  {
+   "message": "tanitad.rl.refc_adapter.RequirementDeclarationError: RefCV3Model.forward accepts ['ego_actions'] but refc_channel_requirements() does not declare them. ⛔ REFUSING rather than ignoring them: an undecla",
+   "n": 3,
+   "tests": [
+    "test_rl_refcv3_integration.py::test_end_to_end_posttrain_step_on_the_real_model",
+    "test_rl_refcv3_used_path_guard.py::test_a_required_channel_this_adapter_never_PLUMBS_is_REFUSED",
+    "test_rl_refcv3_used_path_guard.py::test_the_v3_family_derives_a_DIFFERENT_set_through_the_SAME_adapter"
+   ],
+   "frames": [
+    "tanitad/rl/posttrain.py:443: in run_posttrain",
+    "tanitad/rl/refcv3_adapter.py:952: in sample_fn",
+    "tanitad/rl/refcv3_adapter.py:814: in check",
+    "tanitad/rl/refcv3_adapter.py:721: in conditioning_requirements",
+    "tanitad/rl/refcv3_adapter.py:648: RequirementDeclarationError"
+   ]
+  },
+  {
+   "message": "tanitad.rl.refc_adapter.RequirementDeclarationError: RefCModel.forward accepts ['ego_actions'] but refc_channel_requirements() does not declare them. ⛔ REFUSING rather than ignoring them: an undeclare",
+   "n": 5,
+   "tests": [
+    "test_rl_refcv3_used_path_guard.py::test_a_build_NOT_trained_with_v0_does_NOT_require_it",
+    "test_rl_refcv3_used_path_guard.py::test_a_measured_zero_speed_is_NOT_a_missing_channel",
+    "test_rl_refcv3_used_path_guard.py::test_the_channel_set_is_derived_from_the_handed_models_OWN_signature",
+    "test_rl_refcv3_used_path_guard.py::test_the_contract_refuses_on_the_SECOND_batch_not_only_the_first",
+    "test_rl_refcv3_used_path_guard.py::test_the_map_is_resolved_ONCE_while_batches_grows"
+   ],
+   "frames": [
+    "tests/test_rl_refcv3_used_path_guard.py:291:",
+    "tanitad/rl/refcv3_adapter.py:721: in conditioning_requirements",
+    "tanitad/rl/refcv3_adapter.py:648: RequirementDeclarationError"
+   ]
+  },
+  {
+   "message": "AssertionError: assert {'agent_gt', ...go_keep', ...} == {'agent_gt', ...actions', ...}",
+   "n": 1,
+   "tests": [
+    "test_rl_refcv3_used_path_guard.py::test_every_declaration_is_reviewable_and_covers_both_families"
+   ],
+   "frames": [
+    "tests/test_rl_refcv3_used_path_guard.py:468: AssertionError"
+   ]
+  }
+ ]
+}

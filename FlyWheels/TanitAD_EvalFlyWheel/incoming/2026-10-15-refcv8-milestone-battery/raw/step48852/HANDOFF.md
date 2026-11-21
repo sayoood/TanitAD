@@ -1,0 +1,19 @@
+# HANDOFF -- final-checkpoint chain (step 48,852), armed 2026-10-19 09:25 Berlin, EvalFlyWheel
+
+PKG = `C:/Users/Admin/qland/hold_r8batt/stage/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-15-refcv8-milestone-battery` (unlanded qland hold, NOT git-added; the Master Mind lands it). Full plan + trainer-source facts + input status: `raw/step48852/PLAN.md`.
+
+## State
+* `sh code/chain_final_r8.sh` is running detached: MSYS pid **1290566**, pidfile `E:/refcv8_eval_kit/chain/chain_final.pid`, out `chain/chain_final.out`, markers (opaque `ZZCFN...ZZ`) `chain/chain_final.log`. Its stage-a child `code/pull_final_r8.sh` (pid 1290588, log `chain/pull_final.log`, markers `ZZPFN...ZZ`) polls Thor every 300 s read-only. Thor was at step ~36,250 at 08:35; ETA of step 48,852 = 10-20 ~18:00-23:00 (ESTIMATED).
+* It does NOTHING until the trainer is done: wait for summary.json done@48852 **and** train.log's `ckpt step 48852 -> ckpt.pt` line **and** a stat settle -> pull -> md5 both ends -> extract (`--expect-step 48852`) -> EMA gate -> xcheck vs the trainer's model_ema.pt -> EMA battery -> K-draw rolls (+ read) -> raw (G0, wrapper probe, battery) ; CPU lane: clamp_posthoc -> compliant_reread -> 3 frozen-gain forwards -> heading -> train-fit forward -> render -> summarize; tail: combo -> `FINAL_INDEX`.
+* Done = `ZZCFNENDZZ` in chain_final.log (line lists `ema= kd= raw= combo=`) or `ZZCFNABORTZZ` (stage a/b). One-page result: `raw/step48852/FINAL_INDEX.md` (+ `READ_FINAL.md`).
+* Check: `tail chain/chain_final.log chain/pull_final.log`; alive: `kill -0 $(cat /e/refcv8_eval_kit/chain/chain_final.pid)`.
+* Failure markers (pull): `ZZPFNHOLE` (done-marker but the final save never happened: **resume the trainer**), `WRONGSTEP`, `SUPDEAD` (supervisor gave up), `MD5MISMATCH`, `CHANGED`, `BADSIZE`, `SSHDEAD` (12 h of failed probes). Chain: `PULLFAIL`, `MD5BAD`, `SUMJSONBAD`, `EXTRACTFAIL` (step inside file != 48852), `EMAGATEFAIL`, `XCHECKFAIL` (re-run with `CFN_XCHECK=warn` only after a human read `raw/step48852ema/XCHECK_MODEL_EMA_step48852.json`), `EMAFAIL`, `KDSKIP|KDFAIL`, `RAWINCOMPLETE`, `LANESKIP`, `TFSKIP`, `COMBOSKIP`.
+* Resume = re-run `nohup sh code/chain_final_r8.sh < /dev/null > /e/refcv8_eval_kit/chain/chain_final.out 2>&1 &` (stages with a done artifact are skipped). **Do not edit `chain_final_r8.sh`, `pull_final_r8.sh` or any `.py` they call while it runs.**
+
+## Needs the Master Mind (integration / decisions)
+1. **URGENT (before ~20:00 on 10-19): the live `snap40k_r8.sh` (pid 1027887) will abort at 40,000.** It tests the remote `ckpt.pt` size for EQUALITY with 1560403737 (the size at step 10,500); Thor's file is 1,560,412,761 B at step 36,000 -> `ZZS40BADSIZEZZ` -> the 40k chain prints `SNAPFAIL` and the 40,000 weights are gone at 40,500. Fix, tested: `kill 1027887` (explicit pid), then `nohup sh code/snap40k_fix_r8.sh < /dev/null >> /e/refcv8_eval_kit/chain/snap40k.out 2>&1 &` (same dest/log; only the size gate differs; chain_40k follows the new START line).
+2. GPU priority: no mechanism exists; the queue is estimated to drain ~6-8 h before the final (PLAN section 4). To make the final outrank later-launched jobs, source `code/yield48852_r8.sh` in any chain that has NOT started yet (`acquire_y48` = drop-in for `acquire_y40`). The running chains cannot be edited.
+3. `FROZEN_GAINS_RETIME_train.json` does not exist yet (train-fit chain is queued): the final chain waits <= 4 h for it, then skips the train-fit forward and the combo (re-run later).
+
+## Tests
+`code/test_chain_final_r8.py` (61 tests; `raw/step48852/pytest_run3.log`: 60 passed + 1 test-sync bug, fixed; `pytest_run4.log`: the 7 tests touched by the last edits, 7 passed). Mutation arms: step-inside-file 48,500 (REAL extract guard), md5 flip, HOLE guard deleted, md5 compare deleted, differ-clause deleted, clamp call deleted, perturbed tensor (REAL xcheck), predicate deleted (yield).

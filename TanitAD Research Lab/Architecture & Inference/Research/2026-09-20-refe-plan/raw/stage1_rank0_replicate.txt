@@ -1,0 +1,19 @@
+parquets in m-nr-n: 2
+   closed_loop_nonreactive_agents_weighted_average_metrics_2026.09.20.12.02.56.parquet
+   closed_loop_nonreactive_agents_weighted_average_metrics_2026.09.20.14.36.47.parquet
+
+REPLICATE: same run id, same flags, two independent LAUNCHES (12:02 vs 14:36)
+scenario type                                launch 1  launch 2      diff
+accelerating_at_traffic_light_without_lead    99.7388   99.7388 +0.000000
+changing_lane_to_left                         87.4620   87.4620 +0.000000
+following_lane_with_lead                      99.9604   99.9604 +0.000000
+near_multiple_vehicles                        99.9234   99.9234 +0.000000
+starting_left_turn                            96.6120   96.6120 +0.000000
+starting_protected_noncross_turn              99.2296   99.2296 +0.000000
+starting_unprotected_cross_turn               94.6138   94.6138 +0.000000
+stopping_at_stop_sign_with_lead              100.0000  100.0000 +0.000000
+
+  max |diff| = 0.000e+00   mean |diff| = 0.000e+00
+  => the eval is BIT-DETERMINISTIC across launches.
+     The run-to-run noise floor is EXACTLY ZERO, so ANY difference at rank 1 is
+     attributable to the route override and not to inference variance.

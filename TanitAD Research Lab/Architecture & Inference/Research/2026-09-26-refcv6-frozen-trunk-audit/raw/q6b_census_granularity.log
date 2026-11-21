@@ -1,0 +1,68 @@
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+{
+ "what": "the gradient-reach guard's granularity vs the F3 defect",
+ "evidence_class": "MEASURED (ours, CPU, smoke width, the run's 117-anchor file)",
+ "as_shipped": {
+  "cascade_in_losses": false,
+  "guard_granularity_named_children": {
+   "core": "GRADIENT_REACHES",
+   "phi_tac": "GRADIENT_REACHES",
+   "str_goal_head": "ZERO_GRAD",
+   "gstr_embed": "ZERO_GRAD",
+   "gstr_film": "GRADIENT_REACHES",
+   "nav_inj": "ZERO_GRAD",
+   "nav_to_tac": "GRADIENT_REACHES",
+   "nav_to_str": "ZERO_GRAD",
+   "lat_head_tac": "GRADIENT_REACHES",
+   "lon_head_tac": "GRADIENT_REACHES",
+   "tac_goal_head": "GRADIENT_REACHES",
+   "tac_latent_proj": "ZERO_GRAD",
+   "scorer": "ZERO_GRAD"
+  },
+  "leaf": {
+   "core.decoder.offset_head": "NOT_WIRED",
+   "core.decoder.control_head": "NOT_WIRED",
+   "core.decoder.cascade.control_heads.0": "NOT_WIRED",
+   "core.decoder.cascade.control_heads.1": "GRADIENT_REACHES",
+   "core.decoder.cascade.conf_heads.0": "NOT_WIRED",
+   "core.decoder.cascade.conf_heads.1": "GRADIENT_REACHES",
+   "core.decoder.adaln.0.scale_shift_mlp.1": "NOT_WIRED",
+   "core.decoder.adaln.1.scale_shift_mlp.1": "GRADIENT_REACHES"
+  }
+ },
+ "passthrough_fix": {
+  "cascade_in_losses": true,
+  "guard_granularity_named_children": {
+   "core": "GRADIENT_REACHES",
+   "phi_tac": "GRADIENT_REACHES",
+   "str_goal_head": "ZERO_GRAD",
+   "gstr_embed": "ZERO_GRAD",
+   "gstr_film": "GRADIENT_REACHES",
+   "nav_inj": "ZERO_GRAD",
+   "nav_to_tac": "GRADIENT_REACHES",
+   "nav_to_str": "ZERO_GRAD",
+   "lat_head_tac": "GRADIENT_REACHES",
+   "lon_head_tac": "GRADIENT_REACHES",
+   "tac_goal_head": "GRADIENT_REACHES",
+   "tac_latent_proj": "ZERO_GRAD",
+   "scorer": "ZERO_GRAD"
+  },
+  "leaf": {
+   "core.decoder.offset_head": "NOT_WIRED",
+   "core.decoder.control_head": "NOT_WIRED",
+   "core.decoder.cascade.control_heads.0": "GRADIENT_REACHES",
+   "core.decoder.cascade.control_heads.1": "GRADIENT_REACHES",
+   "core.decoder.cascade.conf_heads.0": "GRADIENT_REACHES",
+   "core.decoder.cascade.conf_heads.1": "GRADIENT_REACHES",
+   "core.decoder.adaln.0.scale_shift_mlp.1": "GRADIENT_REACHES",
+   "core.decoder.adaln.1.scale_shift_mlp.1": "GRADIENT_REACHES"
+  }
+ },
+ "verdict": {
+  "guard_green_over_defect": true,
+  "leaf_stage0_not_wired_as_shipped": true,
+  "leaf_stage0_reached_with_fix": true
+ }
+}
+[audit] wrote D:\Projects\TanitAD\TanitAD Research Lab\Architecture & Inference\Research\2026-09-26-refcv6-frozen-trunk-audit\raw\q6b_census_granularity.json (2296 B)

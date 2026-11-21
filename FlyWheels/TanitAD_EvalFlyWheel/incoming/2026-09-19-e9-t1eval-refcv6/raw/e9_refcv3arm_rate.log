@@ -1,0 +1,37 @@
+[v3] rig camera = PER-CLIP EXTRINSICS from D:/Projects/TanitAD-artifacts/refcv5v2_final/extrinsics141.json (141 clips, z 1.213-1.662 m, pitch -0.0461..+0.0426 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[model] C:/Users/Admin/tanitad-caches/a3-heldout-20260919/run/ckpt.pt step=2000 arm=hier anchors=128 horizons=[5, 10, 15, 20, 30, 40, 50, 60] window=8 decoder=diffusion/2 config<-config.json[argv] -> refc_v3_train.build_parser + _pin_trainer_cfg (the trainer's own build path)
+[grid] 2s: dt=0.5 s K=4 instants=[0.5, 1.0, 1.5, 2.0] s <- model slots [5, 10, 15, 20] (indices [0, 1, 2, 3]); dropped [30, 40, 50, 60]
+[units] action_units=steer — the RECORDED channel 1 is a road-wheel STEER angle (physicalai.py:621). kappa = tan(steer)/2.9 is applied before integration; `ha` is NOT comparable to a kappa-unit refav1 run (`ha0` is, it is zero).
+[nav] nav source 'none': the true-nav forward ALREADY passes nav_cmd=None, so `os` IS the nav-zero arm — os_navshuf and os_navzero would be bit-identical to it and are NOT emitted; the STRATEGIC family will be REFUSED with that reason
+[roll] 9 windows / 2 episodes · arms=['os', 'ha', 'ha0', 'ha0_ext'] · fed conditionings=['nav_true'] · nav_shuffle changed 0/9
+[cost] first forward (1 fed row(s), 1 rows total) took 13.51 s -> ESTIMATED 0.03 h for 9 windows (forward only; IO/analysis extra)
+  [1/2] 01be5919-6e6 5 windows 89s
+  [2/2] 11e40da1-3d9 4 windows 142s
+[dump] 9 windows over 2 episodes (0 skipped: none)
+[provenance] REAL_CHECKPOINT_ON_SMOKE_CORPUS - ckpt=TRAINED corpus=SMOKE step=2000 eps=2 windows=9 anchors=128
+REFCV3_DUMP_DONE
+[trivial-profile] 9 windows — arm SHAPE before any family row (straight |y|<1e-06 m, const-speed spread<0.0001 m)
+  os             n=   9 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000
+  ha             n=   9 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000
+  ha0            n=   9 straight=1.0000 const_speed=1.0000 CONSTANT-VELOCITY=1.0000
+  ha0_ext        n=   9 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000
+  ⚠️ CONSTANT-VELOCITY on > 50 % of windows: ['ha0'] — read their LATERAL rows as a control, never as planning skill
+[selection-profile] 9 windows over 128 anchors — the model's OWN choice, before any family row
+  n_distinct=   5  modal=#19 (0.3333)  entropy=1.5230/4.8520 nats (ratio 0.3139)  agrees_with_oracle=0.4444
+[lead] b1_eval_lead_block.npz: 9 windows / 2 eps · OK eps 2 · LEAD 0 NO_LEAD 1 NOT_STRAIGHT 7 NO_LABEL 1 · speed-check max 7e-06 m/s · PRESENT
+[out] C:/Users/Admin/AppData/Local/Temp/claude/D--Projects-TanitAD/bbcd6d8b-6831-4ca4-8774-3051e3caa1c6/scratchpad/e9_refcv3arm.json
+  os           tier=T1*  ADE=2.9098 [2.0877, 3.5675]  families_unavailable=['strategic']  distance_keeping=NOT-APPLICABLE
+  ha           tier=T1   ADE=0.1946 [0.194, 0.195]  families_unavailable=['strategic']  distance_keeping=NOT-APPLICABLE
+  ha0          tier=T1   ADE=0.5417 [0.2099, 0.807]  families_unavailable=['strategic']  distance_keeping=NOT-APPLICABLE
+  ha0_ext      tier=T1   ADE=0.1884 [0.1858, 0.1904]  families_unavailable=['strategic']  distance_keeping=NOT-APPLICABLE
+  * = tier stamped T1 with the ruling OPEN (does EVAL_DOCTRINE admit as T1 a model that consumes NO acti…)
+  paired_os_minus_ha0          ADE delta=2.3682 [1.8778, 2.7605] separated=True n_win=9 n_ep=2
+  paired_os_minus_ha           ADE delta=2.7153 [1.8937, 3.3725] separated=True n_win=9 n_ep=2
+  paired_ha_minus_ha0          ADE delta=-0.3471 [-0.612, -0.0159] separated=True n_win=9 n_ep=2
+  paired_os_minus_ha0ext       ADE delta=2.7215 [1.9019, 3.3771] separated=True n_win=9 n_ep=2
+  ⚠️ nav-zero arm ABSENT: --no-navzero, or nav source 'none' (in which case `os` already IS the nav-zero arm) — ⛔ BACKLOG R39 requires it beside the shuffle for any nav-conditioned claim
+  ABSENT: ol — `ol` is 'the RECORDED future (a, steer) integrated from v0'. refcv3 CONSUMES NO ACTIONS (r…
+  strategic nav_valid_frac=0.0 n_labeled=9 changed_subset_n=None
+  tactical anchor_acc=0.4444 (chance 0.007812) n_distinct_selected=5
+E9B_RC=0 wall=173s

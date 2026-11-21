@@ -1,0 +1,440 @@
+{
+ "schema": "tanitad.launch_gate/1",
+ "kind": "evidence",
+ "check": "G-HYG",
+ "status": "FAIL",
+ "reasons": [
+  "4 config dataclass(es) do NOT refuse undeclared attributes at assignment: tanitad.config.EncoderConfig, tanitad.config.PredictorConfig, tanitad.config.ReadoutConfig, tanitad.models.v6.V6Config",
+  "setting an undeclared attribute SUCCEEDED on 4 config object(s) (the D-REFCV6-EQUALIZE-DROPPED mechanism): ['cfg (V6Config)', 'cfg.encoder (EncoderConfig)', 'cfg.predictor (PredictorConfig)', 'cfg.readout (ReadoutConfig)']"
+ ],
+ "binding": {
+  "profile": "v7f",
+  "commit": "7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f",
+  "tree_sha256": "c38a9f1e684c70bf0eba2e84300daf9b66fa4bb48cc01cf57f0fea0d278a5040",
+  "argv_sha256": "1f3c344ac167b6526cf7b70f72103c5c7d6b1cb32dd00735138a03a1a1ae3b07"
+ },
+ "inputs_read": {
+  "gate:rehearsal": {
+   "kind": "rehearsal",
+   "why": "tiny config + synthetic corpus (CPU host)"
+  }
+ },
+ "host": {
+  "node": "FREEDOM2035",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.13.5",
+  "torch": "2.11.0+cu128",
+  "cuda": false
+ },
+ "arm": null,
+ "gate_sha256": "f1534182a874e082d6b079415b3118e97f690e8651ebe2244b95de3868bd7cd3",
+ "started_utc": "2026-09-27T15:29:06Z",
+ "details": {
+  "argv_local": {
+   "kept": {
+    "--v2-cache": "/home/nvidia/data/physicalai-train-e438721ae894-w120-256x640cyl",
+    "--nav-labels": "/home/nvidia/data/v72/nav.jsonl.gz"
+   },
+   "sentinel": {},
+   "rehearsal": {
+    "overlay": {
+     "--frame-h": {
+      "launch": [
+       "256"
+      ],
+      "rehearsal": [
+       "64"
+      ]
+     },
+     "--frame-w": {
+      "launch": [
+       "640"
+      ],
+      "rehearsal": [
+       "128"
+      ]
+     },
+     "--patch": {
+      "launch": null,
+      "rehearsal": [
+       "16"
+      ]
+     },
+     "--enc-dim": {
+      "launch": [
+       "768"
+      ],
+      "rehearsal": [
+       "32"
+      ]
+     },
+     "--enc-depth": {
+      "launch": [
+       "12"
+      ],
+      "rehearsal": [
+       "1"
+      ]
+     },
+     "--enc-heads": {
+      "launch": [
+       "12"
+      ],
+      "rehearsal": [
+       "2"
+      ]
+     },
+     "--pred-dim": {
+      "launch": null,
+      "rehearsal": [
+       "32"
+      ]
+     },
+     "--pred-depth": {
+      "launch": null,
+      "rehearsal": [
+       "1"
+      ]
+     },
+     "--pred-heads": {
+      "launch": null,
+      "rehearsal": [
+       "2"
+      ]
+     },
+     "--readout-dim": {
+      "launch": null,
+      "rehearsal": [
+       "8"
+      ]
+     },
+     "--d-tac": {
+      "launch": null,
+      "rehearsal": [
+       "32"
+      ]
+     },
+     "--d-str": {
+      "launch": null,
+      "rehearsal": [
+       "16"
+      ]
+     },
+     "--d-goal-embed": {
+      "launch": null,
+      "rehearsal": [
+       "16"
+      ]
+     },
+     "--adapter-hidden": {
+      "launch": null,
+      "rehearsal": [
+       "32"
+      ]
+     },
+     "--f-hidden-tac": {
+      "launch": null,
+      "rehearsal": [
+       "32"
+      ]
+     },
+     "--f-hidden-str": {
+      "launch": null,
+      "rehearsal": [
+       "32"
+      ]
+     },
+     "--window": {
+      "launch": null,
+      "rehearsal": [
+       "3"
+      ]
+     },
+     "--batch": {
+      "launch": [
+       "8"
+      ],
+      "rehearsal": [
+       "2"
+      ]
+     },
+     "--eps-per-batch": {
+      "launch": null,
+      "rehearsal": [
+       "1"
+      ]
+     },
+     "--device": {
+      "launch": null,
+      "rehearsal": [
+       "cpu"
+      ]
+     },
+     "--v2-cache": {
+      "launch": [
+       "/home/nvidia/data/physicalai-train-e438721ae894-w120-256x640cyl"
+      ],
+      "rehearsal": [
+       "C:\\Users\\Admin\\v7f_gate\\gate_runs\\m_sw_devbox_nav\\rehearsal_EMPTY_v2cache"
+      ],
+      "why": "an EMPTY dir: the preflight requires the flag; the corpus comes from the synthetic seam"
+     }
+    },
+    "dropped": {
+     "--v2-cache": [
+      "/home/nvidia/data/physicalai-train-e438721ae894-w120-256x640cyl"
+     ],
+     "--require-parity": [],
+     "--nav-labels": [
+      "/home/nvidia/data/v72/nav.jsonl.gz"
+     ]
+    },
+    "note": "REHEARSAL: tiny geometry + synthetic corpus on a CPU host. Evidence produced under it NEVER counts toward a token (finalize refuses it by name)."
+   },
+   "rehearsal_preflight_expected": []
+  },
+  "build_s": 0.3,
+  "stage": "S-W",
+  "model_params": 2358459,
+  "freeze": {
+   "trainable_groups": [
+    "aux",
+    "encoder",
+    "predictor_op",
+    "readout"
+   ],
+   "n_trainable": 1786292,
+   "n_frozen": 572167
+  },
+  "undeclared_attributes": [],
+  "n_config_dataclass_instances": 4,
+  "config_classes": [
+   "tanitad.config.EncoderConfig",
+   "tanitad.config.PredictorConfig",
+   "tanitad.config.ReadoutConfig",
+   "tanitad.models.v6.V6Config"
+  ],
+  "not_strict": [
+   "tanitad.config.EncoderConfig",
+   "tanitad.config.PredictorConfig",
+   "tanitad.config.ReadoutConfig",
+   "tanitad.models.v6.V6Config"
+  ],
+  "probe_assignments_accepted": [
+   "cfg (V6Config)",
+   "cfg.encoder (EncoderConfig)",
+   "cfg.predictor (PredictorConfig)",
+   "cfg.readout (ReadoutConfig)"
+  ],
+  "probe_assignments_tried": 4,
+  "import_closure": {
+   "venv": "C:\\Users\\Admin\\venvs\\tanitad\\Scripts\\python.exe",
+   "n_files": 149,
+   "third_party": [
+    "av",
+    "diffusers",
+    "huggingface_hub",
+    "metadrive",
+    "numpy",
+    "pandas",
+    "pyarrow",
+    "refa_plus",
+    "timm",
+    "torch",
+    "torchvision",
+    "transformers",
+    "truststore"
+   ],
+   "strict": [
+    "scipy"
+   ],
+   "missing_fail": {},
+   "missing_lazy_only": {
+    "metadrive": [
+     {
+      "file": "stack/tanitad/data/metadrive_env.py",
+      "line": 142,
+      "guarded": false,
+      "function_level": true
+     },
+     {
+      "file": "stack/tanitad/data/metadrive_env.py",
+      "line": 143,
+      "guarded": false,
+      "function_level": true
+     }
+    ],
+    "refa_plus": [
+     {
+      "file": "taniteval/taniteval/loaders.py",
+      "line": 118,
+      "guarded": false,
+      "function_level": true
+     }
+    ]
+   },
+   "missing_guarded_only": {}
+  },
+  "child": {
+   "tanitad": "c:\\users\\admin\\v7f_gate\\tree_m\\stack\\tanitad\\__init__.py",
+   "torch": "2.11.0+cu128",
+   "cuda": false
+  }
+ },
+ "rehearsal": {
+  "overlay": {
+   "--frame-h": {
+    "launch": [
+     "256"
+    ],
+    "rehearsal": [
+     "64"
+    ]
+   },
+   "--frame-w": {
+    "launch": [
+     "640"
+    ],
+    "rehearsal": [
+     "128"
+    ]
+   },
+   "--patch": {
+    "launch": null,
+    "rehearsal": [
+     "16"
+    ]
+   },
+   "--enc-dim": {
+    "launch": [
+     "768"
+    ],
+    "rehearsal": [
+     "32"
+    ]
+   },
+   "--enc-depth": {
+    "launch": [
+     "12"
+    ],
+    "rehearsal": [
+     "1"
+    ]
+   },
+   "--enc-heads": {
+    "launch": [
+     "12"
+    ],
+    "rehearsal": [
+     "2"
+    ]
+   },
+   "--pred-dim": {
+    "launch": null,
+    "rehearsal": [
+     "32"
+    ]
+   },
+   "--pred-depth": {
+    "launch": null,
+    "rehearsal": [
+     "1"
+    ]
+   },
+   "--pred-heads": {
+    "launch": null,
+    "rehearsal": [
+     "2"
+    ]
+   },
+   "--readout-dim": {
+    "launch": null,
+    "rehearsal": [
+     "8"
+    ]
+   },
+   "--d-tac": {
+    "launch": null,
+    "rehearsal": [
+     "32"
+    ]
+   },
+   "--d-str": {
+    "launch": null,
+    "rehearsal": [
+     "16"
+    ]
+   },
+   "--d-goal-embed": {
+    "launch": null,
+    "rehearsal": [
+     "16"
+    ]
+   },
+   "--adapter-hidden": {
+    "launch": null,
+    "rehearsal": [
+     "32"
+    ]
+   },
+   "--f-hidden-tac": {
+    "launch": null,
+    "rehearsal": [
+     "32"
+    ]
+   },
+   "--f-hidden-str": {
+    "launch": null,
+    "rehearsal": [
+     "32"
+    ]
+   },
+   "--window": {
+    "launch": null,
+    "rehearsal": [
+     "3"
+    ]
+   },
+   "--batch": {
+    "launch": [
+     "8"
+    ],
+    "rehearsal": [
+     "2"
+    ]
+   },
+   "--eps-per-batch": {
+    "launch": null,
+    "rehearsal": [
+     "1"
+    ]
+   },
+   "--device": {
+    "launch": null,
+    "rehearsal": [
+     "cpu"
+    ]
+   },
+   "--v2-cache": {
+    "launch": [
+     "/home/nvidia/data/physicalai-train-e438721ae894-w120-256x640cyl"
+    ],
+    "rehearsal": [
+     "C:\\Users\\Admin\\v7f_gate\\gate_runs\\m_sw_devbox_nav\\rehearsal_EMPTY_v2cache"
+    ],
+    "why": "an EMPTY dir: the preflight requires the flag; the corpus comes from the synthetic seam"
+   }
+  },
+  "dropped": {
+   "--v2-cache": [
+    "/home/nvidia/data/physicalai-train-e438721ae894-w120-256x640cyl"
+   ],
+   "--require-parity": [],
+   "--nav-labels": [
+    "/home/nvidia/data/v72/nav.jsonl.gz"
+   ]
+  },
+  "note": "REHEARSAL: tiny geometry + synthetic corpus on a CPU host. Evidence produced under it NEVER counts toward a token (finalize refuses it by name)."
+ },
+ "finished_utc": "2026-09-27T15:29:08Z"
+}

@@ -1,0 +1,104 @@
+{
+ "arm": null,
+ "binding": {
+  "argv_sha256": "d7474190962564592f10024f74790a0eef170c42427ed875fb5815391ebfc8f6",
+  "commit": "867984990a4505efed345fa1dda7e3f45e81e0f3",
+  "profile": "refe_p2rep",
+  "tree_sha256": "2b7c8ffa62ff36418dca83ed224866753462dd49a14dfca9c277486b89a6ba37"
+ },
+ "check": "G-SUITE",
+ "details": {
+  "scripts": [
+   {
+    "rc": 0,
+    "script": "test_p2r_chain.py",
+    "skips": [],
+    "token": "ZZTEST_PASS",
+    "token_seen": true
+   },
+   {
+    "rc": 0,
+    "script": "test_launch_gate.py",
+    "skips": [],
+    "token": "ZZLG_STATIC_PASS",
+    "token_seen": true
+   },
+   {
+    "rc": 1,
+    "script": "test_p2rep_chain.py",
+    "skips": [],
+    "token": "ZZTEST_PASS",
+    "token_seen": false
+   }
+  ]
+ },
+ "finished_utc": "2026-10-15T00:36:40Z",
+ "inputs_read": {
+  "--calib": {
+   "bytes": 2336659,
+   "kind": "file",
+   "method": "sha256-v1",
+   "path": "/workspace/data/refe_navtrain/train_grow/calib_table.json",
+   "sha256": "772c00abfd5070f7f6ecb648e45e7d422a3aeb3c5112ab12c43bbe5eb4a8ab6f"
+  },
+  "--images": {
+   "bytes": 85872932604,
+   "kind": "dir",
+   "listing_sha256": "95155321fc232cbd371cafc9be0f868654fa6baf90b3cf0fc93989b55a85182b",
+   "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; _v2manifest.pt excluded -- a cache rewrites it on first use)",
+   "n_files": 413184,
+   "path": "/workspace/data/navtrain_pixels"
+  },
+  "--init-from": {
+   "bytes": 1288484600,
+   "kind": "file",
+   "method": "sha256-v1",
+   "path": "/workspace/data/refe_runs/vitl16_navtrain10_grow_tau0.3/model_final.pt",
+   "sha256": "4246a320be71ad0e315f8f298b7dadab3dbbba2c24f4fc30706e0129f5057e66"
+  },
+  "--onpolicy-targets": {
+   "bytes": 11088393052,
+   "kind": "dir",
+   "listing_sha256": "d03977fb0da31992d70e807f13dc165271e4605c168961cf1d0688e00a1ffcc5",
+   "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; _v2manifest.pt excluded -- a cache rewrites it on first use)",
+   "n_files": 8,
+   "path": "/workspace/data/refe_navtrain/onpolicy/sets"
+  },
+  "--pdm-labels": {
+   "bytes": 478323318,
+   "kind": "dir",
+   "listing_sha256": "8127c2dec85057c28bbfcaddd98214113ca6a7a2432291393295100cfa9884a8",
+   "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; _v2manifest.pt excluded -- a cache rewrites it on first use)",
+   "n_files": 8,
+   "path": "/workspace/data/refe_sft2/train_pdm"
+  },
+  "--scorer-targets": {
+   "bytes": 6330899550,
+   "kind": "dir",
+   "listing_sha256": "10d953183a62ddd17def37d0a60a20fe9578890e5f7f46bd3511f38608a724c6",
+   "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; _v2manifest.pt excluded -- a cache rewrites it on first use)",
+   "n_files": 7,
+   "path": "/workspace/data/refe_navtrain/train_grow"
+  },
+  "--targets": {
+   "bytes": 6330899550,
+   "kind": "dir",
+   "listing_sha256": "10d953183a62ddd17def37d0a60a20fe9578890e5f7f46bd3511f38608a724c6",
+   "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; _v2manifest.pt excluded -- a cache rewrites it on first use)",
+   "n_files": 7,
+   "path": "/workspace/data/refe_navtrain/train_grow"
+  },
+  "gate:p2_gate_json": {
+   "bytes": 1006,
+   "kind": "file",
+   "method": "sha256-v1",
+   "path": "/workspace/data/refe_p2rep/gate/gate.json",
+   "sha256": "68a67e06a22fa78859d9ace877b8d62c5766655d5faa0624cc6f7c1f588ead07"
+  }
+ },
+ "reasons": [
+  "test_p2rep_chain.py: rc 1, 'ZZTEST_PASS' NOT seen"
+ ],
+ "rehearsal": false,
+ "status": "FAIL"
+}

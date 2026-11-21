@@ -46,7 +46,7 @@ import run_gate as rg                                              # noqa: E402
 
 _REPO = Path(__file__).resolve().parents[2]
 _CARD_30K = _REPO / "Project Steering" / "Gates" / "flagship-v4-30k.card.json"
-_GATE_DIR = (_REPO / "TanitAD Research Hub" / "Benchmarks & Eval"
+_GATE_DIR = (_REPO / "TanitAD Research Lab" / "Benchmarks & Eval"
              / "Implementation" / "incoming" / "2026-07-26-v4-30k-gate")
 _EVAL_ORACLE = _GATE_DIR / "raw" / "flagship-v4-fromscratch-30k-oracle.json"
 _CORRIDOR = _GATE_DIR / "coprimary" / "corridor_v4_30k_K185.json"

@@ -1,0 +1,32 @@
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[e2e] CONFIG OVERRIDES (the CLI has no flag for these): {'tac_decoder_v6': [False, True], 'max_speed_onehot_v6': [False, True]}
+[parity] ⚠ NON-PARITY v2 corpus for e2e-1024: ['D:/Projects/TanitAD-artifacts/v2ep-eval139-256x1024cyl'] reference no registered parity key. Results off it are NOT cross-arm comparable with the parity arms.
+[v2] D:/Projects/TanitAD-artifacts/v2ep-eval139-256x1024cyl: 139 providers (channels 9, 256x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 139 distinct for 139 clips]
+[v2] 139 providers, 139 distinct episode ids
+[v3] agent join: 139/139 episodes (stable-63bit), 22663/23772 windows labelled (95.3 %), 776801 prefilter target boxes, pad 395
+[e2e] v7 join: {"n_records": 147, "joined": 139, "n_episodes": 139, "frac": 1.0, "release": null, "agent_join": {"n_records": 26394, "n_clips": 139, "filtered_out": 0, "max_agents_per_frame": 395}, "agent_join_census": {"path": "C:/Users/Admin/tanitad-wt-e2e/TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-06-b1-agent-join/raw/b1eval_agents.jsonl.xz", "n_episodes": 139, "n_episodes_joined_stable_id": 139, "n_episodes_joined_legacy_id": 0, "n_ambiguous_legacy_ids_in_join": 0, "id_space": "stable-63bit", "allow_legacy_ids": false, "n_windows": 23772, "n_windows_labelled": 22663, "frac_windows_labelled": 0.9533, "n_windows_labelled_clear": 582, "n_target_boxes_prefilter": 776801, "agent_pad": 395, "reader_max_agents_per_frame": 395, "reader_n_records": 26394, "reader_n_clips": 139, "reader_has_classes": true, "reader_has_occlusion_flags": true, "reader_with_rates": true}}
+[e2e] 139 episodes, 23772 windows total, running 5 clips
+Traceback (most recent call last):
+  File "C:\Users\Admin\tanitad-wt-e2e\TanitAD Research Lab\Architecture & Inference\Research\2026-09-17-refcv6-e2e-1024\code\e2e_1024.py", line 949, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "C:\Users\Admin\tanitad-wt-e2e\TanitAD Research Lab\Architecture & Inference\Research\2026-09-17-refcv6-e2e-1024\code\e2e_1024.py", line 925, in main
+    r = arm_forward(trainer, args, cfg, model, ds, pairs, raw, log)
+  File "C:\Users\Admin\tanitad-wt-e2e\TanitAD Research Lab\Architecture & Inference\Research\2026-09-17-refcv6-e2e-1024\code\e2e_1024.py", line 558, in arm_forward
+    losses = trainer.compute_losses_v3(model, batch, "cpu",
+                                       mode="diffusion")
+  File "C:\Users\Admin\tanitad-wt-e2e\stack\scripts\refc_v3_train.py", line 2447, in compute_losses_v3
+    out = model(frames, nav_cmd=nav_cmd, v0=v0, steps=steps, lan=lan,
+                ego_state=ego_state, nav_args=nav_args,
+                v_max_ms=v_max_ms, v_max_valid=v_max_valid,
+                agent_gt=agent_gt)
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\nn\modules\module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\nn\modules\module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\Users\Admin\tanitad-wt-e2e\stack\tanitad\refs\refc_v3.py", line 1834, in forward
+    raise ValueError(
+    ...<4 lines>...
+        "value. Pass v_max_valid=0 for 'no limit known'.")
+ValueError: this build is --max-speed-input but no v_max_ms reached the forward while a nav token did. Refusing rather than defaulting: a silent 0.0 in the value channel reads as 'the limit here is 0 m/s - stop', which is a LIE, not a missing value. Pass v_max_valid=0 for 'no limit known'.

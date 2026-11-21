@@ -1,0 +1,63 @@
+### units (-k test_a_ or test_a2_ or test_g_omitted or test_g2_unit or test_h_cli)
+................F                                                        [100%]
+================================== FAILURES ===================================
+____ test_h_cli_rollout_without_units_is_refused_naming_both_legal_values _____
+
+arm = <module '_hj_units_arm_live' from 'C:\\Users\\Admin\\hjunits2\\mut\\cli_action_units\\taniteval\\tools\\refav1_arm.py'>
+capsys = <_pytest.capture.CaptureFixture object at 0x0000028387A0A120>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000028387ACD220>
+
+    def test_h_cli_rollout_without_units_is_refused_naming_both_legal_values(arm, capsys, monkeypatch):
+>       assert _cli_gate(arm, list(_ROLLOUT), monkeypatch) == 2
+E       AssertionError: assert 'REACHED' == 2
+E        +  where 'REACHED' = _cli_gate(<module '_hj_units_arm_live' from 'C:\\Users\\Admin\\hjunits2\\mut\\cli_action_units\\taniteval\\tools\\refav1_arm.py'>, ['--ckpt', 'c.pt', '--cache', 'x', '--episodes', 'x', ...], <_pytest.monkeypatch.MonkeyPatch object at 0x0000028387ACD220>)
+E        +    where ['--ckpt', 'c.pt', '--cache', 'x', '--episodes', 'x', ...] = list(['--ckpt', 'c.pt', '--cache', 'x', '--episodes', 'x', ...])
+
+tests\test_refav1_units_required.py:906: AssertionError
+---------------------------- Captured stdout call -----------------------------
+[lead] no lead block (banked default absent: C:\Users\Admin\hjunits2\mut\cli_action_units\TanitAD Research Lab\Benchmarks & Evals\Research\2026-09-02-b1-eval-lead-block\raw\b1_eval_lead_block.npz); distance-keeping will be UNAVAILABLE with its reason
+=========================== short test summary info ===========================
+FAILED tests/test_refav1_units_required.py::test_h_cli_rollout_without_units_is_refused_naming_both_legal_values
+1 failed, 16 passed, 104 deselected in 4.70s
+
+### pinned files (full)
+.........F............................                                   [100%]
+================================== FAILURES ===================================
+_ test_B4_the_arm_CLI_has_NO_default_unit_and_a_rollout_without_it_is_refused _
+
+capsys = <_pytest.capture.CaptureFixture object at 0x0000025A85FB5FD0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000025A860BAFD0>
+
+    def test_B4_the_arm_CLI_has_NO_default_unit_and_a_rollout_without_it_is_refused(capsys, monkeypatch):
+        """HJ-UNITS-2 (2026-10-18). This test used to pin ``default="kappa"`` ("a default that
+        silently repaired a live eval would make every banked number incomparable"). The converse
+        turned out to be the live hazard: a launch line that FORGOT the flag silently integrated the
+        recorded road-wheel angle as a curvature (R46). The banked reading is still reproducible --
+        by STATING ``--action-units kappa`` -- so incomparability is now visible in the command line.
+    
+        A rollout without the flag exits 2 BEFORE any heavy import, and the message names BOTH legal
+        values. ``--analyze-only`` never reads the unit (it comes from the dump manifest), so it is
+        not blocked: proved by reaching the analysis stage, replaced here by a sentinel."""
+        arm = _arm()
+        src = _ARM_PATH.read_text(encoding="utf-8", errors="replace")
+        flag_decl = src.split('"--action-units"', 1)[1].split("ap.add_argument", 1)[0]
+>       assert 'default="kappa"' not in flag_decl and 'default=None' in flag_decl, flag_decl[:200]
+E       AssertionError: , choices=("kappa", "steer"), default="kappa",
+E                             help="REQUIRED for a rollout (no default; ignored by --analyze-only): "
+E                                  "the unit of v2ep actions[:,0] as th
+E       assert ('default="kappa"' not in ', choices=(...her.")\n    '
+E         
+E         'default="kappa"' is contained here:
+E           , choices=("kappa", "steer"), default="kappa",
+E         ?                               +++++++++++++++
+E                               help="REQUIRED for a rollout (no default; ignored by --analyze-only): "
+E                                    "the unit of v2ep actions[:,0] as this run READS it. "
+E                                    "'steer' = the repaired contract and the true unit of the "...
+E         
+E         ...Full output truncated (6 lines hidden), use '-vv' to show)
+
+tests\test_steer_curvature_interface.py:252: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_steer_curvature_interface.py::test_B4_the_arm_CLI_has_NO_default_unit_and_a_rollout_without_it_is_refused
+1 failed, 37 passed in 8.42s
+

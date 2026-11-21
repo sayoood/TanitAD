@@ -1,0 +1,87 @@
+{
+ "pristine": "/workspace/v8proof/mutlists/distrule/tree_pristine",
+ "work": "/workspace/v8proof/mutlists/distrule/tree_work",
+ "env": {
+  "DISTRULE_TREE": "/workspace/v8proof/tree_leadsup",
+  "DISTRULE_SRC": "/workspace/v8proof/mutlists/distrule/tree_work/src"
+ },
+ "test_files": [
+  "src/test_dist_rule_gaps.py"
+ ],
+ "ignore_failed": [],
+ "ignore_reason": "environment-bound on the pod: the first imports headway_read (a dev-box file), the second drives the pod script with a fake python and fake cgroup files",
+ "mutations": [
+  {
+   "id": "w1_progress_offset_dropped_from_the_source_gap",
+   "file": "src/v8f_t1_eval_rule.py",
+   "old": "g0 = g_src + a_l - a_m",
+   "new": "g0 = g_src",
+   "expect": [
+    "test_w1"
+   ],
+   "test_files": [
+    "src/test_dist_rule_gaps.py"
+   ]
+  },
+  {
+   "id": "w5_head_presence_threshold_0_5_to_0_0",
+   "file": "src/v8f_t1_eval_rule.py",
+   "old": "present = (p >= HEAD_P_MIN) & ok",
+   "new": "present = (p >= 0.0) & ok",
+   "expect": [
+    "test_w5"
+   ],
+   "test_files": [
+    "src/test_dist_rule_gaps.py"
+   ]
+  },
+  {
+   "id": "w8_source_bad_ticks_stay_present",
+   "file": "src/v8f_t1_eval_rule.py",
+   "old": "present = present & ~src_bad",
+   "new": "present = present",
+   "expect": [
+    "test_w8"
+   ],
+   "test_files": [
+    "src/test_dist_rule_gaps.py"
+   ]
+  },
+  {
+   "id": "w9_rule_flag_accepted_for_a_non_run_mode",
+   "file": "src/v8f_t1_eval_rule.py",
+   "old": "if mine.dist_rule != \"off\":",
+   "new": "if False:",
+   "expect": [
+    "test_w9"
+   ],
+   "test_files": [
+    "src/test_dist_rule_gaps.py"
+   ]
+  },
+  {
+   "id": "q5_fit_pav_removed",
+   "file": "src/qcal_fit.py",
+   "old": "ys = np.minimum(pav(q, n), xs)",
+   "new": "ys = np.minimum(q, xs)",
+   "expect": [
+    "test_q5"
+   ],
+   "test_files": [
+    "src/test_dist_rule_gaps.py"
+   ]
+  },
+  {
+   "id": "q8_calib_percentile_95_to_90",
+   "file": "src/margin_calib.py",
+   "old": "(50, 80, 95))",
+   "new": "(50, 80, 90))",
+   "expect": [
+    "test_q8"
+   ],
+   "test_files": [
+    "src/test_dist_rule_gaps.py"
+   ]
+  }
+ ]
+}

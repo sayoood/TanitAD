@@ -1,0 +1,15 @@
+source sha256       99662d0b2a2517716dba310c52fd855a07bc3b4f09761bd5ccc2f7567ed22997
+oracle sha256       f9931330b2cdc1e1b27a3bfebae976f2e602f7987efeb7211621e37f849150d3
+gated / carried     42 / 1
+day / night         25 / 17
+value hist          {'20': 2, '30': 13, '40': 3, '50': 8, '60': 6, '70': 5, '80': 1, '100': 3, '120': 1}
+countries           {'Austria': 5, 'Belgium': 3, 'Denmark': 4, 'Estonia': 2, 'Finland': 2, 'France': 7, 'Greece': 3, 'Italy': 3, 'Latvia': 2, 'Netherlands': 1, 'Portugal': 6, 'Slovenia': 1, 'Spain': 2, 'Sweden': 1}
+
+GATE reduces to     k >= 34 of 42 correct
+Wilson clause binds? False | 5..36 (29 values in 5..400)
+P(pass | p=0.80)    0.5309
+p for 80% power     0.8438
+OC                  [(0.5, 0.0), (0.6, 0.0033), (0.65, 0.019), (0.7, 0.0798), (0.75, 0.2429), (0.8, 0.5309), (0.85, 0.8311), (0.9, 0.9789), (0.95, 0.9998), (0.99, 1.0)]
+null floors         {"majority_class": {"rule": "answer the plurality value on every clip", "value": "30", "expected_k": 13, "accuracy": 0.3095, "passes_gate": false}, "marginal_guesser": {"rule": "sample from the oracle's own value marginal", "expected_accuracy": 0.1803, "expected_k": 7.57, "passes_gate": false}, "n_distinct_values": 9}
+subgroups           {"day": 25, "night": 17, "min_detectable_day_night_gap_95pct": 0.2465, "note": "normal-approximation SE of a difference of proportions at p=0.80 in both arms; a night-vs-day gap smaller than this is invisible here"}
+k table (k>=30)     [(30, 0.7143, 0.5643, False), (31, 0.7381, 0.5893, False), (32, 0.7619, 0.6147, False), (33, 0.7857, 0.6406, False), (34, 0.8095, 0.667, True), (35, 0.8333, 0.694, True), (36, 0.8571, 0.7216, True), (37, 0.881, 0.75, True), (38, 0.9048, 0.7793, True), (39, 0.9286, 0.8099, True), (40, 0.9524, 0.8421, True), (41, 0.9762, 0.8768, True), (42, 1.0, 0.9162, True)]

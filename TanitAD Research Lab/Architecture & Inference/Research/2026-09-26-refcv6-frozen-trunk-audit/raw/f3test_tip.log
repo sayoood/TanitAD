@@ -1,0 +1,42 @@
+FFF                                                                      [100%]
+================================== FAILURES ===================================
+___________ test_the_F3_per_stage_loss_is_IN_the_trainers_loss_dict ___________
+
+    def test_the_F3_per_stage_loss_is_IN_the_trainers_loss_dict():
+        T = _trainer()
+        _m, losses = _build_and_loss(T)
+>       assert "cascade" in losses, (
+            "F3 is built but compute_losses_v3 returned no `cascade` term: the per-stage loss was "
+            "skipped (the refcv6-r101-s0 defect, A16 2026-09-26)")
+E       AssertionError: F3 is built but compute_losses_v3 returned no `cascade` term: the per-stage loss was skipped (the refcv6-r101-s0 defect, A16 2026-09-26)
+E       assert 'cascade' in {'loss': tensor(16.9285, grad_fn=<AddBackward0>), 'traj': tensor(4.6411, grad_fn=<DivBackward0>), 'cls': tensor(0.8834, grad_fn=<MeanBackward0>), 'law': tensor(0.9469, grad_fn=<MseLossBackward0>), ...}
+
+test_refcv6_f3_cascade_reaches_loss.py:94: AssertionError
+_________ test_stage0_heads_and_adaln_RECEIVE_gradient_at_leaf_level __________
+
+    def test_stage0_heads_and_adaln_RECEIVE_gradient_at_leaf_level():
+        T = _trainer()
+        model, losses = _build_and_loss(T)
+        losses["loss"].backward()
+        mods = dict(model.named_modules())
+        dead = [nm for nm in STAGE0_LEAVES
+                if all(p.grad is None for p in mods[nm].parameters(recurse=False))]
+>       assert not dead, f"stage-0 leaves took NO gradient (never in the graph): {dead}"
+E       AssertionError: stage-0 leaves took NO gradient (never in the graph): ['core.decoder.cascade.control_heads.0', 'core.decoder.cascade.conf_heads.0', 'core.decoder.adaln.0.scale_shift_mlp.1']
+E       assert not ['core.decoder.cascade.control_heads.0', 'core.decoder.cascade.conf_heads.0', 'core.decoder.adaln.0.scale_shift_mlp.1']
+
+test_refcv6_f3_cascade_reaches_loss.py:107: AssertionError
+_____ test_DELIBERATE_REGRESSION_dropping_the_keys_is_REFUSED_not_skipped _____
+
+    def test_DELIBERATE_REGRESSION_dropping_the_keys_is_REFUSED_not_skipped():
+        T = _trainer()
+>       with pytest.raises(SystemExit, match="layer_u0_hat"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE SystemExit
+
+test_refcv6_f3_cascade_reaches_loss.py:112: Failed
+=========================== short test summary info ===========================
+FAILED test_refcv6_f3_cascade_reaches_loss.py::test_the_F3_per_stage_loss_is_IN_the_trainers_loss_dict
+FAILED test_refcv6_f3_cascade_reaches_loss.py::test_stage0_heads_and_adaln_RECEIVE_gradient_at_leaf_level
+FAILED test_refcv6_f3_cascade_reaches_loss.py::test_DELIBERATE_REGRESSION_dropping_the_keys_is_REFUSED_not_skipped
+3 failed in 7.83s

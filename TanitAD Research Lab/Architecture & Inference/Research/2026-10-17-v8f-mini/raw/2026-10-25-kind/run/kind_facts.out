@@ -1,0 +1,53 @@
+outcome INTERACTIVE | A [-0.299, -0.547] | per-seed row {'s0': 'ONE KIND (speed)', 's1': 'INTERACTIVE'}
+speed side-read {"read": "NEITHER", "gain_speed_m": [0.27041999612536594, 0.1852761971018968], "bars_m": {"association_right_at_least": 0.2, "dose_model_right_at_most": 0.05}, "reading": "gain_speed is between 0.05 m and 0.20 m at one or both seeds: neither estimator is confirmed for speed", "decides": "nothing alone"}
+identity {'s0': {'own_vs_banked_eval': (0.0, True), 'all_vs_banked_tacorc': (0.0, True)}, 's1': {'own_vs_banked_eval': (0.0, True), 'all_vs_banked_tacorc': (0.0, True)}}
+
+== s0: keys ['ade6', 'gain', 'necessity', 'gain_union', 'gain_all', 'sum_gain', 'A', 'A_defined', 'A_interval']
+  gain      speed     +0.270 [+0.220, +0.323] sep
+  gain      angle     +0.075 [+0.033, +0.130] sep
+  gain      tte       -0.237 [-0.340, -0.140] sep
+  gain      timegap   +0.001 [-0.004, +0.005] ns
+  gain      geom      -0.434 [-0.580, -0.305] sep
+  gain      leadgap   +0.005 [-0.002, +0.012] ns
+  necessity speed     +1.985 [+1.772, +2.193] sep
+  necessity angle     +0.124 [+0.079, +0.180] sep
+  necessity tte       +0.457 [+0.385, +0.534] sep
+  necessity timegap   +0.010 [+0.002, +0.018] sep
+  necessity geom      +0.444 [+0.388, +0.500] sep
+  necessity leadgap   +0.008 [+0.001, +0.016] sep
+  gain_union: {"delta": 1.0756, "lo": 0.9656, "hi": 1.1946, "ci95": 0.1145, "p_delta_gt0": 1.0, "separated": true, "reducer": "mean", "n_windows": 2399, "n_episodes": 141, "n_boot": 2000, "estimator": "paired_episode_cluster_bootstrap", "point": 1.0755647439340001}
+  ade6: {"own": 2.175306138079546, "all": 0.9708546096447362, "union": 1.0997413941455458}
+
+== s1: keys ['ade6', 'gain', 'necessity', 'gain_union', 'gain_all', 'sum_gain', 'A', 'A_defined', 'A_interval']
+  gain      speed     +0.185 [+0.145, +0.226] sep
+  gain      angle     +0.043 [+0.011, +0.081] sep
+  gain      tte       -0.315 [-0.434, -0.210] sep
+  gain      timegap   -0.000 [-0.004, +0.003] ns
+  gain      geom      -0.421 [-0.577, -0.286] sep
+  gain      leadgap   +0.002 [-0.003, +0.006] ns
+  necessity speed     +1.765 [+1.582, +1.962] sep
+  necessity angle     +0.154 [+0.101, +0.211] sep
+  necessity tte       +0.460 [+0.397, +0.526] sep
+  necessity timegap   +0.006 [+0.002, +0.011] sep
+  necessity geom      +0.611 [+0.535, +0.687] sep
+  necessity leadgap   +0.017 [+0.010, +0.025] sep
+  gain_union: {"delta": 0.9231, "lo": 0.8113, "hi": 1.0347, "ci95": 0.1117, "p_delta_gt0": 1.0, "separated": true, "reducer": "mean", "n_windows": 2399, "n_episodes": 141, "n_boot": 2000, "estimator": "paired_episode_cluster_bootstrap", "point": 0.9231115917871964}
+  ade6: {"own": 2.0545660167647672, "all": 1.003719323844205, "union": 1.1314544249775709}
+
+== stratum JUNCTION: 298 windows / 34 episodes
+  s0 speed +0.401 [+0.256, +0.569] sep | angle +0.085 [+0.020, +0.196] sep | tte -0.447 [-0.724, -0.182] sep | timegap -0.003 [-0.018, +0.013] ns | geom +0.016 [-0.049, +0.079] ns | leadgap +0.029 [+0.006, +0.061] sep
+  s1 speed +0.162 [+0.065, +0.255] sep | angle +0.088 [+0.021, +0.187] sep | tte -0.277 [-0.435, -0.125] sep | timegap -0.005 [-0.018, +0.006] ns | geom +0.004 [-0.156, +0.169] ns | leadgap +0.009 [-0.007, +0.028] ns
+
+== stratum CURVE: 140 windows / 17 episodes
+  s0 speed +0.167 [+0.041, +0.338] sep | angle +0.770 [+0.118, +1.398] sep | tte -0.141 [-0.405, +0.126] ns | timegap -0.003 [-0.010, +0.006] ns | geom +0.055 [-0.280, +0.393] ns | leadgap -0.015 [-0.034, +0.006] ns
+  s1 speed +0.111 [-0.052, +0.282] ns | angle +0.552 [+0.203, +0.887] sep | tte -0.246 [-0.478, -0.012] sep | timegap +0.006 [-0.001, +0.015] ns | geom -0.124 [-0.636, +0.332] ns | leadgap -0.008 [-0.021, +0.006] ns
+
+== stratum NO-TURN: 1961 windows / 140 episodes
+  s0 speed +0.258 [+0.208, +0.314] sep | angle +0.023 [+0.006, +0.043] sep | tte -0.213 [-0.321, -0.110] sep | timegap +0.002 [-0.003, +0.007] ns | geom -0.538 [-0.714, -0.387] sep | leadgap +0.002 [-0.004, +0.009] ns
+  s1 speed +0.194 [+0.153, +0.240] sep | angle -0.000 [-0.020, +0.018] ns | tte -0.325 [-0.466, -0.203] sep | timegap +0.000 [-0.004, +0.003] ns | geom -0.506 [-0.678, -0.350] sep | leadgap +0.002 [-0.003, +0.006] ns
+
+contribution to pooled gain (m): {"seeds": {"s0": {"speed": {"JUNCTION": 0.049843364380484353, "CURVE": 0.009715868938226213, "NO-TURN": 0.21086076280665508, "pooled_gain": 0.27041999612536566}, "angle": {"JUNCTION": 0.010606116126670924, "CURVE": 0.044955310399461434, "NO-TURN": 0.01900919413981546, "pooled_gain": 0.07457062066594783}, "tte": {"JUNCTION": -0.05552562451090071, "CURVE": -0.00821139928068465, "NO-TURN": -0.1738032729454864, "pooled_gain": -0.23754029673707172}, "timegap": {"JUNCTION": -0.0003482853607231635, "CURVE": -0.00014860546534873215, "NO-TURN": 0.001644882833908989, "pooled_gain": 0.0011479920078370936}, "geom": {"JUNCTION": 0.0019359763666733983, "CURVE": 0.003222445253269595, "NO-TURN": -0.4396374854157554, "pooled_gain": -0.4344790637958123}, "leadgap": {"JUNCTION": 0.003662018575871118, "CURVE": -0.000850471256249383, "NO-TURN": 0.0018709174455947264, "pooled_gain": 0.004682464765216463}, "union": {"JUNCTION": 0.1720793992434363, "CURVE": 0.10812255403495613, "NO-TURN": 0.7953627906556076, "pooled_gain": 1.075564743934}}, "s1": {"speed": {"JUNCTION": 0.02016116500903065, "CURVE": 0.006501593353948123, "NO-TURN": 0.15861343873891834, "pooled_gain": 0.18527619710189713}, "angle": {"JUNCTION": 0.010979215468447675, "CURVE": 0.03223531855213289, "NO-TURN": -0.0002702305551570651, "pooled_gain": 0.04294430346542349}, "tte": {"JUNCTION": -0.03445461535186825, "CURVE": -0.014353317753553835, "NO-TURN": -0.2656966338439794, "pooled_gain": -0.3145045669494015}, "timegap": {"JUNCTION": -0.0
+
+beside keys {'s0': ['kind-own', 'kind-all', 'kind-only-speed', 'kind-only-angle', 'kind-only-tte', 'kind-only-timegap', 'kind-only-geom', 'kind-only-leadgap', 'kind-loo-speed', 'kind-loo-angle', 'kind-loo-tte', 'kind-loo-timegap', 'kind-loo-geom', 'kind-loo-leadgap', 'kind-union'], 's1': ['kind-own', 'kind-all', 'kind-only-speed', 'kind-only-angle', 'kind-only-tte', 'kind-only-timegap', 'kind-only-geom', 'kind-only-leadgap', 'kind-loo-speed', 'kind-loo-angle', 'kind-loo-tte', 'kind-loo-timegap', 'kind-loo-geom', 'kind-loo-leadgap', 'kind-union']}
+families_skipped false
+strategic_family "NOT PAUSED: un-paused for v8F-mini (PI ruling 2026-10-17); read from each arm's eval json (beside.*.*.strategic)"

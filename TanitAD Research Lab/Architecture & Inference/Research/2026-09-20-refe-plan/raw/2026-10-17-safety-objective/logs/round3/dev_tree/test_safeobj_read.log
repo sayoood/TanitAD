@@ -1,0 +1,28 @@
+  RED  g3 is not judged (flags forced true)  ->  5 check(s): scenario:g3_pick_u250, scenario:g3_share_u1000, scenario:flag_lies, boundary:edge_pick_just_below_breaches ...
+  RED  the producer's g3 flags are trusted instead of its raw numbers  ->  1 check(s): scenario:flag_lies
+  RED  pick/fan-mean bound is strict (>) instead of >=  ->  1 check(s): boundary:edge_pick_exactly_on_bound_holds
+  RED  shortest-bin share bound is strict (<) instead of <=  ->  1 check(s): boundary:edge_share_exactly_on_bound_holds
+  RED  only the LAST check is judged  ->  6 check(s): scenario:single_ttc_u500, scenario:nc_u750, scenario:g3_pick_u250, scenario:missing_u750 ...
+  RED  NC is not judged  ->  2 check(s): scenario:nc_u750, boundary:edge_nc_flag_false_breaches
+  RED  TTC is not judged  ->  3 check(s): scenario:single_ttc_u500, scenario:ttc_u1000_only, boundary:edge_ttc_flag_false_breaches
+  RED  a missing check is not a problem  ->  1 check(s): scenario:missing_u750
+  RED  a duplicated tag is not a problem  ->  1 check(s): scenario:duplicate_tag
+  RED  a non-K3 kill is not a problem  ->  1 check(s): scenario:killed_k6_clean
+  RED  a K3 kill marker is not a breach  ->  2 check(s): scenario:two_consec_live_kill, scenario:killed_k3_marker_only
+  RED  a retroactive K3 is not a breach  ->  1 check(s): scenario:retro_k3_marker_only
+  RED  the live monitor's rows are not compared with the replay  ->  1 check(s): scenario:monitor_conflict
+  RED  the u1000 numeric read is not used  ->  3 check(s): scenario:ttc_u1000_only, scenario:g3_share_u1000, scenario:rlval_disagrees
+  RED  a moved g5 bound is accepted  ->  1 check(s): scenario:bound_moved
+  RED  the u1000 control is not tied to the arm's own A  ->  1 check(s): scenario:own_A_hash
+  RED  the replay of another arm is accepted  ->  1 check(s): scenario:wrong_arm_dir
+  RED  an observe-only replay is accepted  ->  1 check(s): scenario:observe_only
+  RED  a NOT_READ arm is written as PASS (fail open)  ->  16 check(s): scenario:killed_k6_clean, scenario:missing_u750, scenario:duplicate_tag, scenario:monitor_conflict ...
+  RED  a KILLED.json of the wrong shape is not a problem  ->  1 check(s): scenario:garbage_files
+  RED  an rlval_vs_A0.json of the wrong shape is not a problem  ->  1 check(s): scenario:garbage_files
+  RED  an unexpected shape raises instead of reading NOT_READ  ->  1 check(s): scenario:garbage_unhashable_tag
+  RED  the registered g5 bound is 0.6  ->  8 check(s): scenario:pass, scenario:pass_g3_edge, boundary:edge_pick_exactly_on_bound_holds, boundary:edge_pick_just_below_breaches ...
+  RED  the registered g3 share bound is 0.6  ->  9 check(s): scenario:pass, scenario:pass_g3_edge, scenario:g3_share_u1000, boundary:edge_pick_exactly_on_bound_holds ...
+  RED  the file is never written  ->  7 check(s): e2e:cli_pass_writes_the_file, e2e:cli_pass_real_gate_opens, e2e:cli_pass_real_gate_cli_rc_0, e2e:cli_single_ttc_u500_writes_the_file ...
+  RED  the file is written under another name  ->  8 check(s): pin_chain_reads_the_file_name_the_reader_writes, e2e:cli_pass_writes_the_file, e2e:cli_pass_real_gate_opens, e2e:cli_pass_real_gate_cli_rc_0 ...
+ZZTEST_PASS 34  (1 unmutated suite of 26 scenarios + boundary + end-to-end + pins, 26 RED mutations, 7 fixture-sanity checks)
+rc=0

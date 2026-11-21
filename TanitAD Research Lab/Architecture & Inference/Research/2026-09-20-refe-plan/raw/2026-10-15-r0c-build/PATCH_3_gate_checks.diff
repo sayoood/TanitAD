@@ -1,0 +1,19 @@
+--- a/refe/gate_checks.py
++++ b/refe/gate_checks.py
+@@ -643,6 +643,7 @@
+     "teacher_lane_train": "data", "teacher_lane_heldout": "data", "epo_terms_train": "data", "epo_terms_heldout": "data",
+     "b_mode": "built", "b_compw": "built", "epo": "built", "epo_temp": "built", "epo_beta": "built", "epo_ramp": "built", "epo_lam": "built",
+     "epo_lam_d": "built", "epo_w_prog": "built", "epo_k": "built", "epo_lam_k": "built", "epo_l": "built", "epo_lam_l": "built",
++    "epo_ref": "built",                # R0c: the KL anchor's reference policy; observed through the data event's epo.ref = scorer_finetune.epo_reference_built (what the selector RETURNS)
+     "backbone": "consumed", "batch": "consumed", "accum": "consumed", "lr": "consumed", "warmup": "consumed", "epochs": "consumed",
+     "lam": "consumed", "tau_t": "consumed", "tau_s": "consumed", "seed": "consumed", "max_updates": "consumed", "require_pdm": "consumed",
+     "lane_head": "consumed", "lane_weight": "consumed",
+@@ -654,7 +655,7 @@
+     "dump_scores": "run",              # the per-proposal score .npz rl_val_eval.py reads; observational (bit-identical on/off, test_dump_scores.py)
+     "preflight": "control",
+ }
+-SCORER_EPO_KEYS = ("temp", "beta", "ramp", "lam", "lam_d", "w_prog", "k", "lam_k", "l", "lam_l")     # the keys of the data event's `epo` block
++SCORER_EPO_KEYS = ("temp", "beta", "ramp", "lam", "lam_d", "w_prog", "k", "lam_k", "l", "lam_l", "ref")     # the keys of the data event's `epo` block
+ SCORER_NAMESPACE_FUNCS = ("main", "epo_refusals", "_g_probe", "aux_s1_refusals")      # scorer_finetune.py: the functions whose parameter `a` IS the argparse namespace
+ SCORER_AUX_DESTS = ("w_aux_drv", "aux_drv_tap", "aux_drv_depth", "aux_drv_feed", "aux_drv_shuffle_seed", "aux_drv_lr")          # the head's levers: observed only when --aux-drv is on
+ # the preflight's gates (scorer_finetune.py `gates[...]`).  There is NO G6 -- the trainer numbers 1-5 and 7-11; test_launch_gate pins this table to the source.

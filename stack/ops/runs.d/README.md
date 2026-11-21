@@ -12,8 +12,20 @@ failure class as an artifact that exists on one disk.
 
 ## The contract
 
-Required: `RUN_ID` `OUT` `WORKDIR` `TRAIN_CMD`. Optional: `TRAIN_MATCH` `DONE_TOKEN` `HEARTBEAT`
-`HB_PERIOD` `MAX_BACKOFF` `TRAIN_LOG`.
+⚠️ **CORRECTED 2026-08-16 against `scripts/supervise_run.sh` itself — the old line here was wrong
+in both directions.**
+
+Required: **`RUN_ID` `OUT` `TRAIN_CMD`** (`supervise_run.sh:24-26`). ⚠️ **`WORKDIR` is NOT
+required** — it defaults to `.` (`:27`), so a manifest that omits it runs the trainer from wherever
+the supervisor was launched, which is a `ModuleNotFound` waiting to happen. **Set it anyway.**
+
+Optional: `TRAIN_MATCH` `DONE_TOKEN` `HEARTBEAT` `HB_PERIOD` `MAX_BACKOFF` `TRAIN_LOG`
+`INIT_BACKOFF` (`:30`) and ⛔ **`OPS_DIR`, which defaults to `/workspace/ops` (`:32`)**.
+
+⛔ **`OPS_DIR` is the one that bites off a RunPod.** The heartbeat file and the single-instance
+`flock` both live under it, so on **Thor** (where there is no `/workspace`) an unset `OPS_DIR`
+silently puts the lock and the heartbeat on a path that does not belong to the box — the lock then
+guards nothing and the heartbeat is invisible. **Set `OPS_DIR` explicitly on any non-RunPod host.**
 
 ⛔ **Always set `TRAIN_MATCH`** when a trainer may already be running hand-launched. The
 single-instance `flock` only stops two *supervisors*; it cannot see a trainer started with `ssh -f`
@@ -34,8 +46,14 @@ python3 -c "import shlex; print(' '.join(shlex.quote(c) for c in \
 
 ## Launch
 
+⚠️ **Copy the manifest out of the repo FIRST.** The launch line below points at
+`/workspace/ops/runs.d/`, and *that directory being empty is the exact failure this README was
+written about* (see "Why these live in the repo"). The repo copies are in **`stack/ops/runs.d/`**.
+
 ```bash
-setsid nohup bash scripts/supervise_run.sh /workspace/ops/runs.d/<run>.env \
+mkdir -p "${OPS_DIR:-/workspace/ops}/runs.d" && \
+cp stack/ops/runs.d/<run>.env "${OPS_DIR:-/workspace/ops}/runs.d/" && \
+setsid nohup bash scripts/supervise_run.sh "${OPS_DIR:-/workspace/ops}/runs.d/<run>.env" \
   > /tmp/superv_<run>.log 2>&1 < /dev/null &
 ```
 
@@ -45,4 +63,39 @@ at all** — a logger writing to the failing filesystem cannot report that the f
 This single mechanism explained three separate "mysterious" deaths on 2026-08-03.
 
 Verify after launch: the log must say **"trainer ALREADY RUNNING … NOT launching; waiting"**, and
-`pgrep -f <trainer>` must return the *same* PID set as before.
+the trainer's PID set must be *unchanged*.
+
+⛔ **DO NOT VERIFY WITH `pgrep -f <trainer>` — corrected 2026-08-16.** This README used to say
+exactly that, and it is the self-matching trap the rest of the programme bans: `pgrep -f` /
+`ps | grep` put the searched token into the *searching* process's own command line, so the probe
+matches itself. Measured three times here, most recently as a monitor that reported
+`Traceback CUDA out of memory` for a run that was **healthy and three minutes in**. Read
+`/proc/*/cmdline` instead, or use the ready-made probe:
+
+```bash
+python3 scripts/v6_chain.py verify --step S-T --root <experiments root>
+```
+
+## ⚠️ The v6 ladder generates its own manifests — do not hand-write them
+
+```bash
+python3 scripts/v6_chain.py manifests --dest stack/ops/runs.d \
+  --root <experiments root> --workdir <stack path>
+```
+
+⛔ **One manifest PER STAGE, and every `TRAIN_CMD` is the TRAINER, never `v6_chain.py`** — a
+supervised *chain* would replay stage 1 after a mid-ladder crash. Each manifest gets a run-scoped
+`TRAIN_MATCH='train_v6_staged\.py.*<run_id>'`, so a supervisor waits for **its own** stage's trainer
+and can never adopt a sibling's.
+
+🟥 **KNOWN GAP (2026-08-16): the live `v6F-SW-30k` run on Thor has no manifest here.** Generating one
+from this box would guess Thor's `$HOME` and a guessed manifest is worse than none — it is the
+"lies about what is running" failure in a new costume. ⇒ It must be generated **on Thor**, with the
+`TRAIN_CMD` read **verbatim from `/proc/25477/cmdline`** using the snippet above, and only while
+that is safe to do. The three downstream stages' manifests come from `v6_chain.py manifests`.
+
+⚠️ **Editing a manifest under a live supervisor changes NOTHING** — `supervise_run.sh` sources it
+**once, at startup**, and replays the `TRAIN_CMD` it captured. To change a supervised run: edit →
+kill the **SUPERVISOR** first → kill the trainer → start a fresh supervisor. And do not restart
+immediately: the new supervisor races the old one's `flock`, prints *"another supervisor holds
+…lock"* and dies, leaving **nothing running**.

@@ -1,0 +1,2636 @@
+{
+ "tool": "n1dw_ho_read.py",
+ "card": "PREREG_V8F_N1DW.md sha256 59f2b7f9 + AMENDMENT_N1DW_1 (D1-HO part only)",
+ "evidence_class": "MEASURED (ours; T1-kin dumps, zero training)",
+ "estimator": "taniteval.ci.paired_episode_cluster_bootstrap B=2000 seed 0 (/root/strat1/n1dw/tree/taniteval/taniteval/ci.py); answers 'another draw of EPISODES' only; training-run variance is carried by F_HO and the within-arm seed draws; inference variance does not apply (deterministic planner)",
+ "tier": "T1-kin (m=10 causal bucket, self-action open loop)",
+ "limit": "optimistic by construction: route supplied along the driven path",
+ "controls": {
+  "K-RE": {
+   "acc": {
+    "N1R_s0": {
+     "live": 0.5904811715481172,
+     "banked": 0.5904811715481172,
+     "equal": true
+    },
+    "N1R_s1": {
+     "live": 0.6328451882845189,
+     "banked": 0.6328451882845189,
+     "equal": true
+    },
+    "N1D_s0": {
+     "live": 0.6195955369595537,
+     "banked": 0.6195955369595537,
+     "equal": true
+    },
+    "N1D_s1": {
+     "live": 0.6499302649930265,
+     "banked": 0.6499302649930265,
+     "equal": true
+    },
+    "N1D_s0Z": {
+     "live": 0.5732217573221757,
+     "banked": 0.5732217573221757,
+     "equal": true
+    },
+    "N1D_s1Z": {
+     "live": 0.6297071129707112,
+     "banked": 0.6297071129707112,
+     "equal": true
+    }
+   },
+   "delta": {
+    "N1D_s0-N1R_s0": {
+     "live": [
+      0.029114365411436527,
+      0.0174,
+      0.0409
+     ],
+     "banked": [
+      0.029114365411436527,
+      0.0174,
+      0.0409
+     ],
+     "equal": true
+    },
+    "N1D_s1-N1R_s1": {
+     "live": [
+      0.017085076708507674,
+      0.0044,
+      0.03
+     ],
+     "banked": [
+      0.017085076708507674,
+      0.0044,
+      0.03
+     ],
+     "equal": true
+    }
+   },
+   "pass": true
+  },
+  "K1_self_pair_N1R_s0": {
+   "delta": 0.0,
+   "lo": 0.0,
+   "hi": 0.0,
+   "pass": true
+  },
+  "K-CONST": {
+   "majority_class": "turn_right",
+   "majority_share": 0.3382147838214784,
+   "constant_accuracy": 0.3382147838214784,
+   "must_read": 0.338215,
+   "pass": true
+  }
+ },
+ "problems": [],
+ "grid_sha256": "ca289d0f40a8f71043796fe626b26ecaa141853f843acdb1eecbf5648b9ab148",
+ "dump_dirs": {
+  "N1R_s0": "/root/strat1/navrbd_step0/out/t1/dump_NAVRBD-HO-N1R_s0_m10_causal_heads",
+  "N1R_s1": "/root/strat1/navrbd_step0/out/t1/dump_NAVRBD-HO-N1R_s1_m10_causal_heads",
+  "N1D_s0": "/root/strat1/navrbd/out/t1/dump_NAVRBD-HO-N1D_s0_m10_causal_heads",
+  "N1D_s1": "/root/strat1/navrbd/out/t1/dump_NAVRBD-HO-N1D_s1_m10_causal_heads",
+  "N1D_s0Z": "/root/strat1/navrbd/out/t1_zero/dump_NAVRBD-HO-N1D_s0_zero_m10_causal_heads",
+  "N1D_s1Z": "/root/strat1/navrbd/out/t1_zero/dump_NAVRBD-HO-N1D_s1_zero_m10_causal_heads",
+  "N1DW2_s0": "/root/strat1/n1dw/out/t1/dump_N1DW-HO-N1DW2_s0_m10_causal_heads",
+  "N1DW2_s0Z": "/root/strat1/n1dw/out/t1_zero/dump_N1DW-HO-N1DW2_s0_zero_m10_causal_heads",
+  "N1DW2_s1": "/root/strat1/n1dw/out/t1/dump_N1DW-HO-N1DW2_s1_m10_causal_heads",
+  "N1DW2_s1Z": "/root/strat1/n1dw/out/t1_zero/dump_N1DW-HO-N1DW2_s1_zero_m10_causal_heads",
+  "N1DW4_s0": "/root/strat1/n1dw/out/t1/dump_N1DW-HO-N1DW4_s0_m10_causal_heads",
+  "N1DW4_s0Z": "/root/strat1/n1dw/out/t1_zero/dump_N1DW-HO-N1DW4_s0_zero_m10_causal_heads",
+  "N1DW4_s1": "/root/strat1/n1dw/out/t1/dump_N1DW-HO-N1DW4_s1_m10_causal_heads",
+  "N1DW4_s1Z": "/root/strat1/n1dw/out/t1_zero/dump_N1DW-HO-N1DW4_s1_zero_m10_causal_heads"
+ },
+ "floor": {
+  "F_HO_banked": 0.042364016736401666,
+  "F_HO_live": 0.042364016736401666,
+  "F_HO_used": 0.042364016736401666,
+  "seed_draws": {
+   "N1D": 0.030334728033472813,
+   "N1DW2": 0.022140864714086494,
+   "N1DW4": 0.011331938633193928
+  },
+  "bar_rule": "max(0.0383, F_HO, |N1D_s1-N1D_s0|, |N1DW_w_s1-N1DW_w_s0|)",
+  "bar_by_weight": {
+   "w2": 0.042364016736401666,
+   "w4": 0.042364016736401666
+  },
+  "N1D_seed_draw_note": "card estimated ~0.0303 from rounded levels; recomputed exactly here from the banked dumps"
+ },
+ "D1_HO_deciding_N1DW-N1R": {
+  "N1DW2_s0": {
+   "status": "OK",
+   "delta": 0.04480474198047413,
+   "lo": 0.0321,
+   "hi": 0.0574,
+   "separated": true,
+   "n_windows": 5736,
+   "n_episodes": 497,
+   "bar": 0.042364016736401666,
+   "gain": true,
+   "cost": false,
+   "acc_arm": 0.6352859135285913,
+   "acc_ref": 0.5904811715481172
+  },
+  "N1DW2_s1": {
+   "status": "OK",
+   "delta": 0.024581589958158956,
+   "lo": 0.0127,
+   "hi": 0.0367,
+   "separated": true,
+   "n_windows": 5736,
+   "n_episodes": 497,
+   "bar": 0.042364016736401666,
+   "gain": false,
+   "cost": false,
+   "acc_arm": 0.6574267782426778,
+   "acc_ref": 0.6328451882845189
+  },
+  "N1DW4_s0": {
+   "status": "OK",
+   "delta": 0.04532775453277538,
+   "lo": 0.0336,
+   "hi": 0.0569,
+   "separated": true,
+   "n_windows": 5736,
+   "n_episodes": 497,
+   "bar": 0.042364016736401666,
+   "gain": true,
+   "cost": false,
+   "acc_arm": 0.6358089260808926,
+   "acc_ref": 0.5904811715481172
+  },
+  "N1DW4_s1": {
+   "status": "OK",
+   "delta": 0.014295676429567639,
+   "lo": 0.0012,
+   "hi": 0.0283,
+   "separated": true,
+   "n_windows": 5736,
+   "n_episodes": 497,
+   "bar": 0.042364016736401666,
+   "gain": false,
+   "cost": false,
+   "acc_arm": 0.6471408647140865,
+   "acc_ref": 0.6328451882845189
+  }
+ },
+ "D1_HO_beside_N1DW-N1D": {
+  "N1DW2_s0": {
+   "status": "OK",
+   "delta": 0.0156903765690376,
+   "lo": 0.0061,
+   "hi": 0.0252,
+   "separated": true,
+   "n_windows": 5736,
+   "n_episodes": 497,
+   "bar": 0.042364016736401666,
+   "gain": false,
+   "cost": false,
+   "acc_arm": 0.6352859135285913,
+   "acc_ref": 0.6195955369595537
+  },
+  "N1DW2_s1": {
+   "status": "OK",
+   "delta": 0.007496513249651282,
+   "lo": -0.0032,
+   "hi": 0.0178,
+   "separated": false,
+   "n_windows": 5736,
+   "n_episodes": 497,
+   "bar": 0.042364016736401666,
+   "gain": false,
+   "cost": false,
+   "acc_arm": 0.6574267782426778,
+   "acc_ref": 0.6499302649930265
+  },
+  "N1DW4_s0": {
+   "status": "OK",
+   "delta": 0.01621338912133885,
+   "lo": 0.0061,
+   "hi": 0.0264,
+   "separated": true,
+   "n_windows": 5736,
+   "n_episodes": 497,
+   "bar": 0.042364016736401666,
+   "gain": false,
+   "cost": false,
+   "acc_arm": 0.6358089260808926,
+   "acc_ref": 0.6195955369595537
+  },
+  "N1DW4_s1": {
+   "status": "OK",
+   "delta": -0.002789400278940035,
+   "lo": -0.0142,
+   "hi": 0.0082,
+   "separated": false,
+   "n_windows": 5736,
+   "n_episodes": 497,
+   "bar": 0.042364016736401666,
+   "gain": false,
+   "cost": false,
+   "acc_arm": 0.6471408647140865,
+   "acc_ref": 0.6499302649930265
+  }
+ },
+ "D2_HO_beside": {
+  "N1DW2_s0": {
+   "vs_N1R": {
+    "turn_recall": {
+     "arm": 0.8813782219884272,
+     "ref": 0.8855865334034718,
+     "delta": -0.00420831141504463,
+     "lo": -0.0155,
+     "hi": 0.0085,
+     "separated": false
+    },
+    "false_turn_share": {
+     "arm": 0.44415718717683556,
+     "ref": 0.4560496380558428,
+     "delta": -0.011892450879007255,
+     "lo": -0.0291,
+     "hi": 0.0054,
+     "separated": false
+    },
+    "side_given_turn_arm": {
+     "value": 0.7666368248284094,
+     "n_windows": 3351
+    },
+    "side_given_turn_ref": {
+     "value": 0.6934956934956935,
+     "n_windows": 3367
+    }
+   },
+   "vs_N1D": {
+    "turn_recall": {
+     "arm": 0.8813782219884272,
+     "ref": 0.8824302998421883,
+     "delta": -0.0010520778537611575,
+     "lo": -0.0118,
+     "hi": 0.0095,
+     "separated": false
+    },
+    "false_turn_share": {
+     "arm": 0.44415718717683556,
+     "ref": 0.4612202688728025,
+     "delta": -0.01706308169596693,
+     "lo": -0.0346,
+     "hi": 0.0,
+     "separated": false
+    },
+    "side_given_turn_arm": {
+     "value": 0.7666368248284094,
+     "n_windows": 3351
+    },
+    "side_given_turn_ref": {
+     "value": 0.7487332339791356,
+     "n_windows": 3355
+    }
+   }
+  },
+  "N1DW2_s1": {
+   "vs_N1R": {
+    "turn_recall": {
+     "arm": 0.8637559179379274,
+     "ref": 0.8458705944239874,
+     "delta": 0.01788532351394001,
+     "lo": 0.005,
+     "hi": 0.0315,
+     "separated": true
+    },
+    "false_turn_share": {
+     "arm": 0.43588417786970013,
+     "ref": 0.4250258531540848,
+     "delta": 0.01085832471561532,
+     "lo": -0.0082,
+     "hi": 0.0299,
+     "separated": false
+    },
+    "side_given_turn_arm": {
+     "value": 0.8160779537149817,
+     "n_windows": 3284
+    },
+    "side_given_turn_ref": {
+     "value": 0.7829601990049752,
+     "n_windows": 3216
+    }
+   },
+   "vs_N1D": {
+    "turn_recall": {
+     "arm": 0.8637559179379274,
+     "ref": 0.8548132561809574,
+     "delta": 0.008942661756970005,
+     "lo": -0.0043,
+     "hi": 0.0216,
+     "separated": false
+    },
+    "false_turn_share": {
+     "arm": 0.43588417786970013,
+     "ref": 0.43071354705274045,
+     "delta": 0.005170630816959676,
+     "lo": -0.0143,
+     "hi": 0.0252,
+     "separated": false
+    },
+    "side_given_turn_arm": {
+     "value": 0.8160779537149817,
+     "n_windows": 3284
+    },
+    "side_given_turn_ref": {
+     "value": 0.8083076923076923,
+     "n_windows": 3250
+    }
+   }
+  },
+  "N1DW4_s0": {
+   "vs_N1R": {
+    "turn_recall": {
+     "arm": 0.8650710152551289,
+     "ref": 0.8855865334034718,
+     "delta": -0.02051551814834296,
+     "lo": -0.033,
+     "hi": -0.0088,
+     "separated": true
+    },
+    "false_turn_share": {
+     "arm": 0.40692864529472594,
+     "ref": 0.4560496380558428,
+     "delta": -0.049120992761116866,
+     "lo": -0.0691,
+     "hi": -0.0296,
+     "separated": true
+    },
+    "side_given_turn_arm": {
+     "value": 0.7601094557616297,
+     "n_windows": 3289
+    },
+    "side_given_turn_ref": {
+     "value": 0.6934956934956935,
+     "n_windows": 3367
+    }
+   },
+   "vs_N1D": {
+    "turn_recall": {
+     "arm": 0.8650710152551289,
+     "ref": 0.8824302998421883,
+     "delta": -0.017359284587059487,
+     "lo": -0.0291,
+     "hi": -0.0057,
+     "separated": true
+    },
+    "false_turn_share": {
+     "arm": 0.40692864529472594,
+     "ref": 0.4612202688728025,
+     "delta": -0.05429162357807654,
+     "lo": -0.0738,
+     "hi": -0.0346,
+     "separated": true
+    },
+    "side_given_turn_arm": {
+     "value": 0.7601094557616297,
+     "n_windows": 3289
+    },
+    "side_given_turn_ref": {
+     "value": 0.7487332339791356,
+     "n_windows": 3355
+    }
+   }
+  },
+  "N1DW4_s1": {
+   "vs_N1R": {
+    "turn_recall": {
+     "arm": 0.8600736454497633,
+     "ref": 0.8458705944239874,
+     "delta": 0.014203051025775904,
+     "lo": 0.0005,
+     "hi": 0.0287,
+     "separated": true
+    },
+    "false_turn_share": {
+     "arm": 0.4451913133402275,
+     "ref": 0.4250258531540848,
+     "delta": 0.02016546018614268,
+     "lo": 0.0005,
+     "hi": 0.0392,
+     "separated": true
+    },
+    "side_given_turn_arm": {
+     "value": 0.8070336391437309,
+     "n_windows": 3270
+    },
+    "side_given_turn_ref": {
+     "value": 0.7829601990049752,
+     "n_windows": 3216
+    }
+   },
+   "vs_N1D": {
+    "turn_recall": {
+     "arm": 0.8600736454497633,
+     "ref": 0.8548132561809574,
+     "delta": 0.005260389268805898,
+     "lo": -0.0057,
+     "hi": 0.017,
+     "separated": false
+    },
+    "false_turn_share": {
+     "arm": 0.4451913133402275,
+     "ref": 0.43071354705274045,
+     "delta": 0.014477766287487037,
+     "lo": -0.0083,
+     "hi": 0.0354,
+     "separated": false
+    },
+    "side_given_turn_arm": {
+     "value": 0.8070336391437309,
+     "n_windows": 3270
+    },
+    "side_given_turn_ref": {
+     "value": 0.8083076923076923,
+     "n_windows": 3250
+    }
+   }
+  }
+ },
+ "D1_HO_each_acc": {
+  "N1R_s0": 0.5904811715481172,
+  "N1R_s1": 0.6328451882845189,
+  "N1D_s0": 0.6195955369595537,
+  "N1D_s1": 0.6499302649930265,
+  "N1D_s0Z": 0.5732217573221757,
+  "N1D_s1Z": 0.6297071129707112,
+  "N1DW2_s0": 0.6352859135285913,
+  "N1DW2_s0Z": 0.5871687587168759,
+  "N1DW2_s1": 0.6574267782426778,
+  "N1DW2_s1Z": 0.6429567642956764,
+  "N1DW4_s0": 0.6358089260808926,
+  "N1DW4_s0Z": 0.5904811715481172,
+  "N1DW4_s1": 0.6471408647140865,
+  "N1DW4_s1Z": 0.624302649930265
+ },
+ "gt_class_share": {
+  "lane_keep": 0.33716875871687585,
+  "turn_left": 0.32461645746164575,
+  "turn_right": 0.3382147838214784
+ },
+ "R1_LON_LAT_HO_beside_no_bar": {
+  "N1DW2_s0": {
+   "N1DW-N1R": {
+    "operative_0_2s:ade_m": {
+     "status": "OK",
+     "delta": -0.008512079311846388,
+     "lo": -0.0116,
+     "hi": -0.0055,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "PRIMARY",
+     "higher_is_better": false
+    },
+    "operative_0_2s:fde_m": {
+     "status": "OK",
+     "delta": -0.03628433791420471,
+     "lo": -0.0463,
+     "hi": -0.0267,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "PRIMARY",
+     "higher_is_better": false
+    },
+    "operative_0_2s:speed_mae_mps": {
+     "status": "OK",
+     "delta": -0.0022651420127222655,
+     "lo": -0.005,
+     "hi": 0.0005,
+     "separated": false,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:along_mae_m": {
+     "status": "OK",
+     "delta": 0.0022154368483559006,
+     "lo": 0.0002,
+     "hi": 0.0043,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:accel_mae_mps2": {
+     "status": "OK",
+     "delta": -0.007719185179075327,
+     "lo": -0.0112,
+     "hi": -0.004,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:cross_mae_m": {
+     "status": "OK",
+     "delta": -0.013235192511025617,
+     "lo": -0.016,
+     "hi": -0.0104,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:heading_mae_deg": {
+     "status": "OK",
+     "delta": -0.24492429357294476,
+     "lo": -0.2928,
+     "hi": -0.2006,
+     "separated": true,
+     "n_windows": 5533,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:yaw_rate_mae_degps": {
+     "status": "OK",
+     "delta": -0.5089491512069717,
+     "lo": -0.6101,
+     "hi": -0.4169,
+     "separated": true,
+     "n_windows": 5517,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:curvature_mae_1pm": {
+     "status": "OK",
+     "delta": -0.00867159997932472,
+     "lo": -0.0118,
+     "hi": -0.0061,
+     "separated": true,
+     "n_windows": 5517,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:dk_hw_abs_err_m": {
+     "status": "NOT-COMPUTABLE",
+     "n_windows": 0,
+     "n_episodes": 0,
+     "reason": "no lead block exists for held-out clips (b1_eval_lead_block / join_eval141 cover eval-141 only); n = 0",
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:dk_tg_abs_err_s": {
+     "status": "NOT-COMPUTABLE",
+     "n_windows": 0,
+     "n_episodes": 0,
+     "reason": "no lead block exists for held-out clips (b1_eval_lead_block / join_eval141 cover eval-141 only); n = 0",
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:ade_m": {
+     "status": "OK",
+     "delta": -0.5787779589524646,
+     "lo": -0.6514,
+     "hi": -0.5018,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "PRIMARY",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:fde_m": {
+     "status": "OK",
+     "delta": -1.3951896238508557,
+     "lo": -1.5732,
+     "hi": -1.2173,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "PRIMARY",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:speed_mae_mps": {
+     "status": "OK",
+     "delta": -0.15373342693624803,
+     "lo": -0.1868,
+     "hi": -0.1215,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:along_mae_m": {
+     "status": "OK",
+     "delta": -0.2720259044903792,
+     "lo": -0.3215,
+     "hi": -0.2229,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:accel_mae_mps2": {
+     "status": "OK",
+     "delta": -0.3319582075312191,
+     "lo": -0.4386,
+     "hi": -0.2238,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:cross_mae_m": {
+     "status": "OK",
+     "delta": -0.4518348898526212,
+     "lo": -0.5249,
+     "hi": -0.3794,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:heading_mae_deg": {
+     "status": "OK",
+     "delta": -3.9289413444635457,
+     "lo": -4.3905,
+     "hi": -3.4472,
+     "separated": true,
+     "n_windows": 5666,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:yaw_rate_mae_degps": {
+     "status": "OK",
+     "delta": -6.612014136649449,
+     "lo": -7.8514,
+     "hi": -5.3185,
+     "separated": true,
+     "n_windows": 5658,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:curvature_mae_1pm": {
+     "status": "OK",
+     "delta": -0.04539468995455312,
+     "lo": -0.0574,
+     "hi": -0.0339,
+     "separated": true,
+     "n_windows": 5658,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:dk_hw_abs_err_m": {
+     "status": "NOT-COMPUTABLE",
+     "n_windows": 0,
+     "n_episodes": 0,
+     "reason": "no lead block exists for held-out clips (b1_eval_lead_block / join_eval141 cover eval-141 only); n = 0",
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:dk_tg_abs_err_s": {
+     "status": "NOT-COMPUTABLE",
+     "n_windows": 0,
+     "n_episodes": 0,
+     "reason": "no lead block exists for held-out clips (b1_eval_lead_block / join_eval141 cover eval-141 only); n = 0",
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "TAC-LAT": {
+     "status": "OK",
+     "delta": 0.04480474198047413,
+     "lo": 0.0321,
+     "hi": 0.0574,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "TACTICAL",
+     "higher_is_better": true
+    },
+    "TAC-LON": {
+     "status": "OK",
+     "delta": 0.02649930264993028,
+     "lo": 0.0152,
+     "hi": 0.0368,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "TACTICAL",
+     "higher_is_better": true
+    }
+   },
+   "N1DW-N1D": {
+    "operative_0_2s:ade_m": {
+     "status": "OK",
+     "delta": 0.0010386743518955854,
+     "lo": -0.0008,
+     "hi": 0.0029,
+     "separated": false,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "PRIMARY",
+     "higher_is_better": false
+    },
+    "operative_0_2s:fde_m": {
+     "status": "OK",
+     "delta": 0.0013207151713001686,
+     "lo": -0.0041,
+     "hi": 0.0068,
+     "separated": false,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "PRIMARY",
+     "higher_is_better": false
+    },
+    "operative_0_2s:speed_mae_mps": {
+     "status": "OK",
+     "delta": -0.0010813071399341512,
+     "lo": -0.003,
+     "hi": 0.0009,
+     "separated": false,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:along_mae_m": {
+     "status": "OK",
+     "delta": 0.0038241037166613923,
+     "lo": 0.0026,
+     "hi": 0.0052,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:accel_mae_mps2": {
+     "status": "OK",
+     "delta": -0.009933808143597123,
+     "lo": -0.0123,
+     "hi": -0.0075,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:cross_mae_m": {
+     "status": "OK",
+     "delta": -0.002891752509202705,
+     "lo": -0.0045,
+     "hi": -0.0013,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:heading_mae_deg": {
+     "status": "OK",
+     "delta": -0.05869067744088996,
+     "lo": -0.0887,
+     "hi": -0.033,
+     "separated": true,
+     "n_windows": 5537,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:yaw_rate_mae_degps": {
+     "status": "OK",
+     "delta": -0.18434235820366318,
+     "lo": -0.2537,
+     "hi": -0.1259,
+     "separated": true,
+     "n_windows": 5523,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:curvature_mae_1pm": {
+     "status": "OK",
+     "delta": -0.003282219013422752,
+     "lo": -0.0052,
+     "hi": -0.0015,
+     "separated": true,
+     "n_windows": 5523,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:dk_hw_abs_err_m": {
+     "status": "NOT-COMPUTABLE",
+     "n_windows": 0,
+     "n_episodes": 0,
+     "reason": "no lead block exists for held-out clips (b1_eval_lead_block / join_eval141 cover eval-141 only); n = 0",
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:dk_tg_abs_err_s": {
+     "status": "NOT-COMPUTABLE",
+     "n_windows": 0,
+     "n_episodes": 0,
+     "reason": "no lead block exists for held-out clips (b1_eval_lead_block / join_eval141 cover eval-141 only); n = 0",
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:ade_m": {
+     "status": "OK",
+     "delta": -0.12311195318509505,
+     "lo": -0.1669,
+     "hi": -0.0805,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "PRIMARY",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:fde_m": {
+     "status": "OK",
+     "delta": -0.3113844552993861,
+     "lo": -0.4283,
+     "hi": -0.2024,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "PRIMARY",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:speed_mae_mps": {
+     "status": "OK",
+     "delta": -0.06210656293273242,
+     "lo": -0.0868,
+     "hi": -0.0368,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:along_mae_m": {
+     "status": "OK",
+     "delta": -0.07175351584449174,
+     "lo": -0.1034,
+     "hi": -0.0374,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:accel_mae_mps2": {
+     "status": "OK",
+     "delta": -0.15406128562957022,
+     "lo": -0.2348,
+     "hi": -0.0794,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:cross_mae_m": {
+     "status": "OK",
+     "delta": -0.10569309753938683,
+     "lo": -0.1471,
+     "hi": -0.0677,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:heading_mae_deg": {
+     "status": "OK",
+     "delta": -1.1803481467128059,
+     "lo": -1.431,
+     "hi": -0.9437,
+     "separated": true,
+     "n_windows": 5666,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:yaw_rate_mae_degps": {
+     "status": "OK",
+     "delta": -3.6470905697581557,
+     "lo": -4.5396,
+     "hi": -2.7338,
+     "separated": true,
+     "n_windows": 5659,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:curvature_mae_1pm": {
+     "status": "OK",
+     "delta": -0.02854975030829332,
+     "lo": -0.0367,
+     "hi": -0.0205,
+     "separated": true,
+     "n_windows": 5659,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:dk_hw_abs_err_m": {
+     "status": "NOT-COMPUTABLE",
+     "n_windows": 0,
+     "n_episodes": 0,
+     "reason": "no lead block exists for held-out clips (b1_eval_lead_block / join_eval141 cover eval-141 only); n = 0",
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:dk_tg_abs_err_s": {
+     "status": "NOT-COMPUTABLE",
+     "n_windows": 0,
+     "n_episodes": 0,
+     "reason": "no lead block exists for held-out clips (b1_eval_lead_block / join_eval141 cover eval-141 only); n = 0",
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "TAC-LAT": {
+     "status": "OK",
+     "delta": 0.0156903765690376,
+     "lo": 0.0061,
+     "hi": 0.0252,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "TACTICAL",
+     "higher_is_better": true
+    },
+    "TAC-LON": {
+     "status": "OK",
+     "delta": 0.01882845188284521,
+     "lo": 0.0094,
+     "hi": 0.0278,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "TACTICAL",
+     "higher_is_better": true
+    }
+   }
+  },
+  "N1DW2_s1": {
+   "N1DW-N1R": {
+    "operative_0_2s:ade_m": {
+     "status": "OK",
+     "delta": -0.0035021298489340547,
+     "lo": -0.0069,
+     "hi": -0.0002,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "PRIMARY",
+     "higher_is_better": false
+    },
+    "operative_0_2s:fde_m": {
+     "status": "OK",
+     "delta": -0.02206137725641122,
+     "lo": -0.0324,
+     "hi": -0.012,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "PRIMARY",
+     "higher_is_better": false
+    },
+    "operative_0_2s:speed_mae_mps": {
+     "status": "OK",
+     "delta": -0.0015992264094776276,
+     "lo": -0.0051,
+     "hi": 0.0019,
+     "separated": false,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:along_mae_m": {
+     "status": "OK",
+     "delta": 0.0036720518797152824,
+     "lo": 0.0012,
+     "hi": 0.0062,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:accel_mae_mps2": {
+     "status": "OK",
+     "delta": 0.0009621300977301628,
+     "lo": -0.0037,
+     "hi": 0.0054,
+     "separated": false,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:cross_mae_m": {
+     "status": "OK",
+     "delta": -0.0063702187895861295,
+     "lo": -0.0092,
+     "hi": -0.0033,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:heading_mae_deg": {
+     "status": "OK",
+     "delta": -0.1202204009085488,
+     "lo": -0.1627,
+     "hi": -0.0775,
+     "separated": true,
+     "n_windows": 5529,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:yaw_rate_mae_degps": {
+     "status": "OK",
+     "delta": -0.27229909912769124,
+     "lo": -0.3485,
+     "hi": -0.1957,
+     "separated": true,
+     "n_windows": 5514,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:curvature_mae_1pm": {
+     "status": "OK",
+     "delta": -0.004247954117248612,
+     "lo": -0.0064,
+     "hi": -0.0022,
+     "separated": true,
+     "n_windows": 5514,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:dk_hw_abs_err_m": {
+     "status": "NOT-COMPUTABLE",
+     "n_windows": 0,
+     "n_episodes": 0,
+     "reason": "no lead block exists for held-out clips (b1_eval_lead_block / join_eval141 cover eval-141 only); n = 0",
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:dk_tg_abs_err_s": {
+     "status": "NOT-COMPUTABLE",
+     "n_windows": 0,
+     "n_episodes": 0,
+     "reason": "no lead block exists for held-out clips (b1_eval_lead_block / join_eval141 cover eval-141 only); n = 0",
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:ade_m": {
+     "status": "OK",
+     "delta": -0.44523578247242934,
+     "lo": -0.5194,
+     "hi": -0.3724,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "PRIMARY",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:fde_m": {
+     "status": "OK",
+     "delta": -1.1255099756343618,
+     "lo": -1.3094,
+     "hi": -0.9413,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "PRIMARY",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:speed_mae_mps": {
+     "status": "OK",
+     "delta": -0.19206566918559442,
+     "lo": -0.2279,
+     "hi": -0.1559,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:along_mae_m": {
+     "status": "OK",
+     "delta": -0.2415218869361655,
+     "lo": -0.299,
+     "hi": -0.1838,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:accel_mae_mps2": {
+     "status": "OK",
+     "delta": -0.3712724826262179,
+     "lo": -0.5001,
+     "hi": -0.2542,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:cross_mae_m": {
+     "status": "OK",
+     "delta": -0.2934634538412526,
+     "lo": -0.3568,
+     "hi": -0.228,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:heading_mae_deg": {
+     "status": "OK",
+     "delta": -2.6958224679625644,
+     "lo": -3.1219,
+     "hi": -2.2679,
+     "separated": true,
+     "n_windows": 5667,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:yaw_rate_mae_degps": {
+     "status": "OK",
+     "delta": -8.475411089874214,
+     "lo": -10.0169,
+     "hi": -7.0525,
+     "separated": true,
+     "n_windows": 5658,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:curvature_mae_1pm": {
+     "status": "OK",
+     "delta": -0.04983104413581241,
+     "lo": -0.07,
+     "hi": -0.0312,
+     "separated": true,
+     "n_windows": 5658,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:dk_hw_abs_err_m": {
+     "status": "NOT-COMPUTABLE",
+     "n_windows": 0,
+     "n_episodes": 0,
+     "reason": "no lead block exists for held-out clips (b1_eval_lead_block / join_eval141 cover eval-141 only); n = 0",
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:dk_tg_abs_err_s": {
+     "status": "NOT-COMPUTABLE",
+     "n_windows": 0,
+     "n_episodes": 0,
+     "reason": "no lead block exists for held-out clips (b1_eval_lead_block / join_eval141 cover eval-141 only); n = 0",
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "TAC-LAT": {
+     "status": "OK",
+     "delta": 0.024581589958158956,
+     "lo": 0.0127,
+     "hi": 0.0367,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "TACTICAL",
+     "higher_is_better": true
+    },
+    "TAC-LON": {
+     "status": "OK",
+     "delta": 0.025801952580195298,
+     "lo": 0.0136,
+     "hi": 0.0374,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "TACTICAL",
+     "higher_is_better": true
+    }
+   },
+   "N1DW-N1D": {
+    "operative_0_2s:ade_m": {
+     "status": "OK",
+     "delta": 0.0035884998969253346,
+     "lo": 0.001,
+     "hi": 0.0062,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "PRIMARY",
+     "higher_is_better": false
+    },
+    "operative_0_2s:fde_m": {
+     "status": "OK",
+     "delta": 0.003981533770673229,
+     "lo": -0.004,
+     "hi": 0.0121,
+     "separated": false,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "PRIMARY",
+     "higher_is_better": false
+    },
+    "operative_0_2s:speed_mae_mps": {
+     "status": "OK",
+     "delta": -0.0029617109834255695,
+     "lo": -0.0059,
+     "hi": 0.0,
+     "separated": false,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:along_mae_m": {
+     "status": "OK",
+     "delta": 0.006000415845876822,
+     "lo": 0.0041,
+     "hi": 0.008,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:accel_mae_mps2": {
+     "status": "OK",
+     "delta": -0.01358135718114939,
+     "lo": -0.0172,
+     "hi": -0.0099,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:cross_mae_m": {
+     "status": "OK",
+     "delta": -0.0006831982357836663,
+     "lo": -0.003,
+     "hi": 0.0016,
+     "separated": false,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:heading_mae_deg": {
+     "status": "OK",
+     "delta": -0.03396956662508721,
+     "lo": -0.0632,
+     "hi": -0.0046,
+     "separated": true,
+     "n_windows": 5530,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:yaw_rate_mae_degps": {
+     "status": "OK",
+     "delta": -0.15911256026109477,
+     "lo": -0.2286,
+     "hi": -0.0942,
+     "separated": true,
+     "n_windows": 5513,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:curvature_mae_1pm": {
+     "status": "OK",
+     "delta": -0.0034757366109875454,
+     "lo": -0.0054,
+     "hi": -0.0018,
+     "separated": true,
+     "n_windows": 5513,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:dk_hw_abs_err_m": {
+     "status": "NOT-COMPUTABLE",
+     "n_windows": 0,
+     "n_episodes": 0,
+     "reason": "no lead block exists for held-out clips (b1_eval_lead_block / join_eval141 cover eval-141 only); n = 0",
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:dk_tg_abs_err_s": {
+     "status": "NOT-COMPUTABLE",
+     "n_windows": 0,
+     "n_episodes": 0,
+     "reason": "no lead block exists for held-out clips (b1_eval_lead_block / join_eval141 cover eval-141 only); n = 0",
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:ade_m": {
+     "status": "OK",
+     "delta": -0.18395671224725074,
+     "lo": -0.24,
+     "hi": -0.1303,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "PRIMARY",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:fde_m": {
+     "status": "OK",
+     "delta": -0.5011342413732116,
+     "lo": -0.64,
+     "hi": -0.364,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "PRIMARY",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:speed_mae_mps": {
+     "status": "OK",
+     "delta": -0.10016475262274183,
+     "lo": -0.134,
+     "hi": -0.065,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:along_mae_m": {
+     "status": "OK",
+     "delta": -0.1319904793614981,
+     "lo": -0.1747,
+     "hi": -0.0874,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:accel_mae_mps2": {
+     "status": "OK",
+     "delta": -0.20320165557468517,
+     "lo": -0.3218,
+     "hi": -0.0844,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:cross_mae_m": {
+     "status": "OK",
+     "delta": -0.09437627662870307,
+     "lo": -0.1394,
+     "hi": -0.0477,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:heading_mae_deg": {
+     "status": "OK",
+     "delta": -1.0333355961562312,
+     "lo": -1.3487,
+     "hi": -0.7404,
+     "separated": true,
+     "n_windows": 5668,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:yaw_rate_mae_degps": {
+     "status": "OK",
+     "delta": -4.541862745182023,
+     "lo": -5.8862,
+     "hi": -3.228,
+     "separated": true,
+     "n_windows": 5659,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:curvature_mae_1pm": {
+     "status": "OK",
+     "delta": -0.01410385016585719,
+     "lo": -0.0301,
+     "hi": 0.0022,
+     "separated": false,
+     "n_windows": 5659,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:dk_hw_abs_err_m": {
+     "status": "NOT-COMPUTABLE",
+     "n_windows": 0,
+     "n_episodes": 0,
+     "reason": "no lead block exists for held-out clips (b1_eval_lead_block / join_eval141 cover eval-141 only); n = 0",
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:dk_tg_abs_err_s": {
+     "status": "NOT-COMPUTABLE",
+     "n_windows": 0,
+     "n_episodes": 0,
+     "reason": "no lead block exists for held-out clips (b1_eval_lead_block / join_eval141 cover eval-141 only); n = 0",
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "TAC-LAT": {
+     "status": "OK",
+     "delta": 0.007496513249651282,
+     "lo": -0.0032,
+     "hi": 0.0178,
+     "separated": false,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "TACTICAL",
+     "higher_is_better": true
+    },
+    "TAC-LON": {
+     "status": "OK",
+     "delta": 0.009414225941422605,
+     "lo": -0.0002,
+     "hi": 0.0192,
+     "separated": false,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "TACTICAL",
+     "higher_is_better": true
+    }
+   }
+  },
+  "N1DW4_s0": {
+   "N1DW-N1R": {
+    "operative_0_2s:ade_m": {
+     "status": "OK",
+     "delta": -0.012889887169469927,
+     "lo": -0.016,
+     "hi": -0.0099,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "PRIMARY",
+     "higher_is_better": false
+    },
+    "operative_0_2s:fde_m": {
+     "status": "OK",
+     "delta": -0.040400446327030104,
+     "lo": -0.0497,
+     "hi": -0.0311,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "PRIMARY",
+     "higher_is_better": false
+    },
+    "operative_0_2s:speed_mae_mps": {
+     "status": "OK",
+     "delta": -0.007269196126616584,
+     "lo": -0.0099,
+     "hi": -0.0045,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:along_mae_m": {
+     "status": "OK",
+     "delta": -0.0019671718660853876,
+     "lo": -0.004,
+     "hi": 0.0001,
+     "separated": false,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:accel_mae_mps2": {
+     "status": "OK",
+     "delta": -0.008686591359366003,
+     "lo": -0.0121,
+     "hi": -0.0051,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:cross_mae_m": {
+     "status": "OK",
+     "delta": -0.014898467204683241,
+     "lo": -0.0177,
+     "hi": -0.0123,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:heading_mae_deg": {
+     "status": "OK",
+     "delta": -0.24309980952505184,
+     "lo": -0.2885,
+     "hi": -0.2003,
+     "separated": true,
+     "n_windows": 5533,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:yaw_rate_mae_degps": {
+     "status": "OK",
+     "delta": -0.5475968730196215,
+     "lo": -0.6623,
+     "hi": -0.438,
+     "separated": true,
+     "n_windows": 5517,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:curvature_mae_1pm": {
+     "status": "OK",
+     "delta": -0.009950145787135059,
+     "lo": -0.0135,
+     "hi": -0.0069,
+     "separated": true,
+     "n_windows": 5517,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:dk_hw_abs_err_m": {
+     "status": "NOT-COMPUTABLE",
+     "n_windows": 0,
+     "n_episodes": 0,
+     "reason": "no lead block exists for held-out clips (b1_eval_lead_block / join_eval141 cover eval-141 only); n = 0",
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:dk_tg_abs_err_s": {
+     "status": "NOT-COMPUTABLE",
+     "n_windows": 0,
+     "n_episodes": 0,
+     "reason": "no lead block exists for held-out clips (b1_eval_lead_block / join_eval141 cover eval-141 only); n = 0",
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:ade_m": {
+     "status": "OK",
+     "delta": -0.5166573499285372,
+     "lo": -0.5868,
+     "hi": -0.4437,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "PRIMARY",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:fde_m": {
+     "status": "OK",
+     "delta": -1.212164209412899,
+     "lo": -1.3912,
+     "hi": -1.028,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "PRIMARY",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:speed_mae_mps": {
+     "status": "OK",
+     "delta": -0.13963780895874156,
+     "lo": -0.1758,
+     "hi": -0.1017,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:along_mae_m": {
+     "status": "OK",
+     "delta": -0.25047070092873014,
+     "lo": -0.3041,
+     "hi": -0.1952,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:accel_mae_mps2": {
+     "status": "OK",
+     "delta": -0.31362497145012247,
+     "lo": -0.4247,
+     "hi": -0.1945,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:cross_mae_m": {
+     "status": "OK",
+     "delta": -0.3887904981777286,
+     "lo": -0.4575,
+     "hi": -0.3201,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:heading_mae_deg": {
+     "status": "OK",
+     "delta": -3.9482056277770354,
+     "lo": -4.4012,
+     "hi": -3.471,
+     "separated": true,
+     "n_windows": 5668,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:yaw_rate_mae_degps": {
+     "status": "OK",
+     "delta": -8.458013440475078,
+     "lo": -10.0159,
+     "hi": -6.8952,
+     "separated": true,
+     "n_windows": 5659,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:curvature_mae_1pm": {
+     "status": "OK",
+     "delta": -0.061554559027219985,
+     "lo": -0.0741,
+     "hi": -0.0487,
+     "separated": true,
+     "n_windows": 5659,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:dk_hw_abs_err_m": {
+     "status": "NOT-COMPUTABLE",
+     "n_windows": 0,
+     "n_episodes": 0,
+     "reason": "no lead block exists for held-out clips (b1_eval_lead_block / join_eval141 cover eval-141 only); n = 0",
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:dk_tg_abs_err_s": {
+     "status": "NOT-COMPUTABLE",
+     "n_windows": 0,
+     "n_episodes": 0,
+     "reason": "no lead block exists for held-out clips (b1_eval_lead_block / join_eval141 cover eval-141 only); n = 0",
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "TAC-LAT": {
+     "status": "OK",
+     "delta": 0.04532775453277538,
+     "lo": 0.0336,
+     "hi": 0.0569,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "TACTICAL",
+     "higher_is_better": true
+    },
+    "TAC-LON": {
+     "status": "OK",
+     "delta": 0.025278940027893992,
+     "lo": 0.0148,
+     "hi": 0.0357,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "TACTICAL",
+     "higher_is_better": true
+    }
+   },
+   "N1DW-N1D": {
+    "operative_0_2s:ade_m": {
+     "status": "OK",
+     "delta": -0.0033391335057279536,
+     "lo": -0.0055,
+     "hi": -0.0012,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "PRIMARY",
+     "higher_is_better": false
+    },
+    "operative_0_2s:fde_m": {
+     "status": "OK",
+     "delta": -0.0027953932415252236,
+     "lo": -0.0088,
+     "hi": 0.0036,
+     "separated": false,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "PRIMARY",
+     "higher_is_better": false
+    },
+    "operative_0_2s:speed_mae_mps": {
+     "status": "OK",
+     "delta": -0.00608536125382847,
+     "lo": -0.0083,
+     "hi": -0.0038,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:along_mae_m": {
+     "status": "OK",
+     "delta": -0.000358504997779896,
+     "lo": -0.0019,
+     "hi": 0.0013,
+     "separated": false,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:accel_mae_mps2": {
+     "status": "OK",
+     "delta": -0.010901214323887798,
+     "lo": -0.0141,
+     "hi": -0.0078,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:cross_mae_m": {
+     "status": "OK",
+     "delta": -0.004555027202860329,
+     "lo": -0.0063,
+     "hi": -0.0027,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:heading_mae_deg": {
+     "status": "OK",
+     "delta": -0.05861725136296325,
+     "lo": -0.0887,
+     "hi": -0.0284,
+     "separated": true,
+     "n_windows": 5537,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:yaw_rate_mae_degps": {
+     "status": "OK",
+     "delta": -0.2360486023607411,
+     "lo": -0.3163,
+     "hi": -0.1636,
+     "separated": true,
+     "n_windows": 5523,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:curvature_mae_1pm": {
+     "status": "OK",
+     "delta": -0.005161976110682906,
+     "lo": -0.0075,
+     "hi": -0.003,
+     "separated": true,
+     "n_windows": 5523,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:dk_hw_abs_err_m": {
+     "status": "NOT-COMPUTABLE",
+     "n_windows": 0,
+     "n_episodes": 0,
+     "reason": "no lead block exists for held-out clips (b1_eval_lead_block / join_eval141 cover eval-141 only); n = 0",
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:dk_tg_abs_err_s": {
+     "status": "NOT-COMPUTABLE",
+     "n_windows": 0,
+     "n_episodes": 0,
+     "reason": "no lead block exists for held-out clips (b1_eval_lead_block / join_eval141 cover eval-141 only); n = 0",
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:ade_m": {
+     "status": "OK",
+     "delta": -0.06099134416116758,
+     "lo": -0.1127,
+     "hi": -0.0109,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "PRIMARY",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:fde_m": {
+     "status": "OK",
+     "delta": -0.12835904086142946,
+     "lo": -0.2637,
+     "hi": 0.0083,
+     "separated": false,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "PRIMARY",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:speed_mae_mps": {
+     "status": "OK",
+     "delta": -0.048010944955225954,
+     "lo": -0.0793,
+     "hi": -0.0154,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:along_mae_m": {
+     "status": "OK",
+     "delta": -0.05019831228284266,
+     "lo": -0.0942,
+     "hi": -0.004,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:accel_mae_mps2": {
+     "status": "OK",
+     "delta": -0.13572804954847362,
+     "lo": -0.2198,
+     "hi": -0.0516,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:cross_mae_m": {
+     "status": "OK",
+     "delta": -0.04264870586449421,
+     "lo": -0.0823,
+     "hi": 0.0005,
+     "separated": false,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:heading_mae_deg": {
+     "status": "OK",
+     "delta": -1.188115731543455,
+     "lo": -1.4909,
+     "hi": -0.8704,
+     "separated": true,
+     "n_windows": 5668,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:yaw_rate_mae_degps": {
+     "status": "OK",
+     "delta": -5.55510595337276,
+     "lo": -6.7504,
+     "hi": -4.3602,
+     "separated": true,
+     "n_windows": 5660,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:curvature_mae_1pm": {
+     "status": "OK",
+     "delta": -0.044467629482843274,
+     "lo": -0.0549,
+     "hi": -0.0342,
+     "separated": true,
+     "n_windows": 5660,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:dk_hw_abs_err_m": {
+     "status": "NOT-COMPUTABLE",
+     "n_windows": 0,
+     "n_episodes": 0,
+     "reason": "no lead block exists for held-out clips (b1_eval_lead_block / join_eval141 cover eval-141 only); n = 0",
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:dk_tg_abs_err_s": {
+     "status": "NOT-COMPUTABLE",
+     "n_windows": 0,
+     "n_episodes": 0,
+     "reason": "no lead block exists for held-out clips (b1_eval_lead_block / join_eval141 cover eval-141 only); n = 0",
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "TAC-LAT": {
+     "status": "OK",
+     "delta": 0.01621338912133885,
+     "lo": 0.0061,
+     "hi": 0.0264,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "TACTICAL",
+     "higher_is_better": true
+    },
+    "TAC-LON": {
+     "status": "OK",
+     "delta": 0.017608089260808923,
+     "lo": 0.0072,
+     "hi": 0.0281,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "TACTICAL",
+     "higher_is_better": true
+    }
+   }
+  },
+  "N1DW4_s1": {
+   "N1DW-N1R": {
+    "operative_0_2s:ade_m": {
+     "status": "OK",
+     "delta": -0.007458133687252733,
+     "lo": -0.0111,
+     "hi": -0.0039,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "PRIMARY",
+     "higher_is_better": false
+    },
+    "operative_0_2s:fde_m": {
+     "status": "OK",
+     "delta": -0.020598005414087406,
+     "lo": -0.0322,
+     "hi": -0.01,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "PRIMARY",
+     "higher_is_better": false
+    },
+    "operative_0_2s:speed_mae_mps": {
+     "status": "OK",
+     "delta": -0.006680229633502066,
+     "lo": -0.0108,
+     "hi": -0.0027,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:along_mae_m": {
+     "status": "OK",
+     "delta": 0.00016846674123399685,
+     "lo": -0.0027,
+     "hi": 0.003,
+     "separated": false,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:accel_mae_mps2": {
+     "status": "OK",
+     "delta": -0.009876941006186413,
+     "lo": -0.015,
+     "hi": -0.005,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:cross_mae_m": {
+     "status": "OK",
+     "delta": -0.008664615831622757,
+     "lo": -0.0118,
+     "hi": -0.0056,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:heading_mae_deg": {
+     "status": "OK",
+     "delta": -0.15659844322974203,
+     "lo": -0.2036,
+     "hi": -0.1111,
+     "separated": true,
+     "n_windows": 5530,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:yaw_rate_mae_degps": {
+     "status": "OK",
+     "delta": -0.43199553834153903,
+     "lo": -0.5254,
+     "hi": -0.347,
+     "separated": true,
+     "n_windows": 5514,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:curvature_mae_1pm": {
+     "status": "OK",
+     "delta": -0.008242210580492362,
+     "lo": -0.0112,
+     "hi": -0.0057,
+     "separated": true,
+     "n_windows": 5514,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:dk_hw_abs_err_m": {
+     "status": "NOT-COMPUTABLE",
+     "n_windows": 0,
+     "n_episodes": 0,
+     "reason": "no lead block exists for held-out clips (b1_eval_lead_block / join_eval141 cover eval-141 only); n = 0",
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:dk_tg_abs_err_s": {
+     "status": "NOT-COMPUTABLE",
+     "n_windows": 0,
+     "n_episodes": 0,
+     "reason": "no lead block exists for held-out clips (b1_eval_lead_block / join_eval141 cover eval-141 only); n = 0",
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:ade_m": {
+     "status": "OK",
+     "delta": -0.41197925521795575,
+     "lo": -0.4899,
+     "hi": -0.336,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "PRIMARY",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:fde_m": {
+     "status": "OK",
+     "delta": -1.073495253440436,
+     "lo": -1.2566,
+     "hi": -0.8887,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "PRIMARY",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:speed_mae_mps": {
+     "status": "OK",
+     "delta": -0.22364176982000172,
+     "lo": -0.265,
+     "hi": -0.1817,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:along_mae_m": {
+     "status": "OK",
+     "delta": -0.21612166146416856,
+     "lo": -0.2769,
+     "hi": -0.1535,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:accel_mae_mps2": {
+     "status": "OK",
+     "delta": -0.4930648506869195,
+     "lo": -0.6341,
+     "hi": -0.357,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:cross_mae_m": {
+     "status": "OK",
+     "delta": -0.28316769005322806,
+     "lo": -0.3479,
+     "hi": -0.2175,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:heading_mae_deg": {
+     "status": "OK",
+     "delta": -2.7479744705575584,
+     "lo": -3.2384,
+     "hi": -2.2967,
+     "separated": true,
+     "n_windows": 5667,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:yaw_rate_mae_degps": {
+     "status": "OK",
+     "delta": -10.052179624455334,
+     "lo": -11.9603,
+     "hi": -8.1945,
+     "separated": true,
+     "n_windows": 5658,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:curvature_mae_1pm": {
+     "status": "OK",
+     "delta": -0.06903672690499824,
+     "lo": -0.0909,
+     "hi": -0.0482,
+     "separated": true,
+     "n_windows": 5658,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:dk_hw_abs_err_m": {
+     "status": "NOT-COMPUTABLE",
+     "n_windows": 0,
+     "n_episodes": 0,
+     "reason": "no lead block exists for held-out clips (b1_eval_lead_block / join_eval141 cover eval-141 only); n = 0",
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:dk_tg_abs_err_s": {
+     "status": "NOT-COMPUTABLE",
+     "n_windows": 0,
+     "n_episodes": 0,
+     "reason": "no lead block exists for held-out clips (b1_eval_lead_block / join_eval141 cover eval-141 only); n = 0",
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "TAC-LAT": {
+     "status": "OK",
+     "delta": 0.014295676429567639,
+     "lo": 0.0012,
+     "hi": 0.0283,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "TACTICAL",
+     "higher_is_better": true
+    },
+    "TAC-LON": {
+     "status": "OK",
+     "delta": 0.024930264993026474,
+     "lo": 0.0117,
+     "hi": 0.0375,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "TACTICAL",
+     "higher_is_better": true
+    }
+   },
+   "N1DW-N1D": {
+    "operative_0_2s:ade_m": {
+     "status": "OK",
+     "delta": -0.0003675039413933434,
+     "lo": -0.0032,
+     "hi": 0.0024,
+     "separated": false,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "PRIMARY",
+     "higher_is_better": false
+    },
+    "operative_0_2s:fde_m": {
+     "status": "OK",
+     "delta": 0.005444905612997042,
+     "lo": -0.0036,
+     "hi": 0.0147,
+     "separated": false,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "PRIMARY",
+     "higher_is_better": false
+    },
+    "operative_0_2s:speed_mae_mps": {
+     "status": "OK",
+     "delta": -0.008042714207450008,
+     "lo": -0.0118,
+     "hi": -0.0044,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:along_mae_m": {
+     "status": "OK",
+     "delta": 0.0024968307073955365,
+     "lo": 0.0002,
+     "hi": 0.0048,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:accel_mae_mps2": {
+     "status": "OK",
+     "delta": -0.024420428285065965,
+     "lo": -0.0293,
+     "hi": -0.0195,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:cross_mae_m": {
+     "status": "OK",
+     "delta": -0.002977595277820294,
+     "lo": -0.0053,
+     "hi": -0.0007,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:heading_mae_deg": {
+     "status": "OK",
+     "delta": -0.06910098392930397,
+     "lo": -0.1053,
+     "hi": -0.0334,
+     "separated": true,
+     "n_windows": 5530,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:yaw_rate_mae_degps": {
+     "status": "OK",
+     "delta": -0.3088564572831718,
+     "lo": -0.406,
+     "hi": -0.2266,
+     "separated": true,
+     "n_windows": 5513,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:curvature_mae_1pm": {
+     "status": "OK",
+     "delta": -0.007216939907176367,
+     "lo": -0.0099,
+     "hi": -0.0049,
+     "separated": true,
+     "n_windows": 5513,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:dk_hw_abs_err_m": {
+     "status": "NOT-COMPUTABLE",
+     "n_windows": 0,
+     "n_episodes": 0,
+     "reason": "no lead block exists for held-out clips (b1_eval_lead_block / join_eval141 cover eval-141 only); n = 0",
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "operative_0_2s:dk_tg_abs_err_s": {
+     "status": "NOT-COMPUTABLE",
+     "n_windows": 0,
+     "n_episodes": 0,
+     "reason": "no lead block exists for held-out clips (b1_eval_lead_block / join_eval141 cover eval-141 only); n = 0",
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:ade_m": {
+     "status": "OK",
+     "delta": -0.15070018499277715,
+     "lo": -0.2155,
+     "hi": -0.0816,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "PRIMARY",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:fde_m": {
+     "status": "OK",
+     "delta": -0.44911951917928583,
+     "lo": -0.6051,
+     "hi": -0.2761,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "PRIMARY",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:speed_mae_mps": {
+     "status": "OK",
+     "delta": -0.13174085325714913,
+     "lo": -0.1741,
+     "hi": -0.0891,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:along_mae_m": {
+     "status": "OK",
+     "delta": -0.10659025388950116,
+     "lo": -0.1648,
+     "hi": -0.0445,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:accel_mae_mps2": {
+     "status": "OK",
+     "delta": -0.32499402363538676,
+     "lo": -0.4651,
+     "hi": -0.1846,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:cross_mae_m": {
+     "status": "OK",
+     "delta": -0.08408051284067852,
+     "lo": -0.1328,
+     "hi": -0.0374,
+     "separated": true,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:heading_mae_deg": {
+     "status": "OK",
+     "delta": -1.0858753231711376,
+     "lo": -1.4228,
+     "hi": -0.735,
+     "separated": true,
+     "n_windows": 5668,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:yaw_rate_mae_degps": {
+     "status": "OK",
+     "delta": -6.122328217669512,
+     "lo": -7.7216,
+     "hi": -4.5769,
+     "separated": true,
+     "n_windows": 5659,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:curvature_mae_1pm": {
+     "status": "OK",
+     "delta": -0.033376263068369216,
+     "lo": -0.0532,
+     "hi": -0.014,
+     "separated": true,
+     "n_windows": 5659,
+     "n_episodes": 497,
+     "family": "LATERAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:dk_hw_abs_err_m": {
+     "status": "NOT-COMPUTABLE",
+     "n_windows": 0,
+     "n_episodes": 0,
+     "reason": "no lead block exists for held-out clips (b1_eval_lead_block / join_eval141 cover eval-141 only); n = 0",
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "tactical_2_6s:dk_tg_abs_err_s": {
+     "status": "NOT-COMPUTABLE",
+     "n_windows": 0,
+     "n_episodes": 0,
+     "reason": "no lead block exists for held-out clips (b1_eval_lead_block / join_eval141 cover eval-141 only); n = 0",
+     "family": "LONGITUDINAL",
+     "higher_is_better": false
+    },
+    "TAC-LAT": {
+     "status": "OK",
+     "delta": -0.002789400278940035,
+     "lo": -0.0142,
+     "hi": 0.0082,
+     "separated": false,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "TACTICAL",
+     "higher_is_better": true
+    },
+    "TAC-LON": {
+     "status": "OK",
+     "delta": 0.008542538354253781,
+     "lo": -0.0035,
+     "hi": 0.0201,
+     "separated": false,
+     "n_windows": 5736,
+     "n_episodes": 497,
+     "family": "TACTICAL",
+     "higher_is_better": true
+    }
+   }
+  }
+ },
+ "Z_USE_HO_real_minus_zero": {
+  "N1DW2_s0": {
+   "status": "OK",
+   "delta": 0.04811715481171541,
+   "lo": 0.0351,
+   "hi": 0.0617,
+   "separated": true,
+   "n_windows": 5736,
+   "n_episodes": 497
+  },
+  "N1DW2_s1": {
+   "status": "OK",
+   "delta": 0.014470013947001426,
+   "lo": 0.0017,
+   "hi": 0.0265,
+   "separated": true,
+   "n_windows": 5736,
+   "n_episodes": 497
+  },
+  "N1DW4_s0": {
+   "status": "OK",
+   "delta": 0.04532775453277538,
+   "lo": 0.0338,
+   "hi": 0.0568,
+   "separated": true,
+   "n_windows": 5736,
+   "n_episodes": 497
+  },
+  "N1DW4_s1": {
+   "status": "OK",
+   "delta": 0.02283821478382153,
+   "lo": 0.0099,
+   "hi": 0.0359,
+   "separated": true,
+   "n_windows": 5736,
+   "n_episodes": 497
+  },
+  "N1D_s0": {
+   "status": "OK",
+   "delta": 0.04637377963737799,
+   "lo": 0.0334,
+   "hi": 0.0592,
+   "separated": true,
+   "n_windows": 5736,
+   "n_episodes": 497
+  },
+  "N1D_s1": {
+   "status": "OK",
+   "delta": 0.020223152022315283,
+   "lo": 0.0064,
+   "hi": 0.0331,
+   "separated": true,
+   "n_windows": 5736,
+   "n_episodes": 497
+  }
+ },
+ "K-CLIP": {
+  "N1DW2_s0": {
+   "logged_steps": 60,
+   "clipped_steps": 60,
+   "share": 1.0,
+   "path": "/root/strat1/n1dw/runs/N1DW2_s0/train/train_log.jsonl"
+  },
+  "N1DW2_s1": {
+   "logged_steps": 60,
+   "clipped_steps": 60,
+   "share": 1.0,
+   "path": "/root/strat1/n1dw/runs/N1DW2_s1/train/train_log.jsonl"
+  },
+  "N1DW4_s0": {
+   "logged_steps": 60,
+   "clipped_steps": 60,
+   "share": 1.0,
+   "path": "/root/strat1/n1dw/runs/N1DW4_s0/train/train_log.jsonl"
+  },
+  "N1DW4_s1": {
+   "logged_steps": 60,
+   "clipped_steps": 60,
+   "share": 1.0,
+   "path": "/root/strat1/n1dw/runs/N1DW4_s1/train/train_log.jsonl"
+  },
+  "N1D_s0": {
+   "logged_steps": 60,
+   "clipped_steps": 60,
+   "share": 1.0,
+   "path": "/root/strat1/navrbd/runs/N1D_s0/train/train_log.jsonl"
+  },
+  "N1D_s1": {
+   "logged_steps": 60,
+   "clipped_steps": 60,
+   "share": 1.0,
+   "path": "/root/strat1/navrbd/runs/N1D_s1/train/train_log.jsonl"
+  }
+ },
+ "mean_two_seed_N1DW-N1R": {
+  "w2": 0.03469316596931654,
+  "w4": 0.029811715481171508
+ },
+ "outcome_D1HO_alone": {
+  "labels": {
+   "RBW-GAIN / RBW-GAIN-ONE-COST (D1-HO gain at both seeds at a weight)": "not fired: no weight gains at both seeds on D1-HO",
+   "RBW-ONE-SEED (gain at exactly one seed at a weight, guard holds)": "PENDING-GUARD (D1-HO part holds at weight(s) [2, 4])",
+   "RBW-SPLIT (no weight gains at both seeds; w4 gains at one seed and w2 at the other)": "not fired",
+   "RBW-DOSE (no gain at either weight; N1DW4-N1D separated >0 at both seeds and >= N1DW2-N1D at both seeds)": "not fired",
+   "RBW-NO-GAIN (no gain at either weight and RBW-DOSE does not hold)": "not fired",
+   "RBW-COSTS": "PENDING-GUARD (D1-HO shows no cost at both seeds at any weight; the guard-cell part needs eval-141)",
+   "RBW-FLOOR-HIGH (bar above 0.0383 and above every observed N1DW - N1R)": "not fired (per weight: {'w2': False, 'w4': False})"
+  },
+  "gain_by_arm": {
+   "N1DW2_s0": true,
+   "N1DW2_s1": false,
+   "N1DW4_s0": true,
+   "N1DW4_s1": false
+  },
+  "attribution_notes": [],
+  "N1DWx_read": "NOT-APPLICABLE (no N1DWx arm exists; R4 read fires only after a provisional RBW-GAIN)",
+  "strategic_and_guard": "PENDING-GUARD"
+ },
+ "wall_s": 194.1
+}

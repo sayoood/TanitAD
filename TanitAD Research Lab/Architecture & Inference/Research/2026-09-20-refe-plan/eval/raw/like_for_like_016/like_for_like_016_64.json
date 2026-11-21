@@ -1,0 +1,1575 @@
+{
+ "_label": "like-for-like 016 EXTENSION: all 64 ep015 proposals re-read with Amendment 7's repair, as an E-6 table, and the ceiling compared with ep016 (whose 64 were executed with the repair) by eval/oracle_trend.py UNCHANGED",
+ "analyzed_local": "2026-09-27T17:55:56",
+ "table": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired/table.npz",
+ "gates": {
+  "a64_unrepaired_rebuild_equals_pipeline_E6_poses": {
+   "what": "the unrepaired rebuild of EVERY proposal, to_navsim(traj[token, j]) as float32, equals the pipeline's own ep015 E-6 poses (proptable/sub200_ep015/table.npz `proposals` [200, 64, 8, 3], the table proposal_table.py built from the landed eval's proposals.npz) bit-for-bit",
+   "proposals_bit_identical": "12800/12800",
+   "tokens_with_any_mismatch": [],
+   "M": 64,
+   "pass": true,
+   "table": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015/table.npz",
+   "table_sha256": "732969ea14bf48f248f67d40509e7d039c11ddd74cba8ba5d2d1ded45d0bd87a",
+   "table_poses_equal_pipeline_proposals_npz": true
+  },
+  "b64_only_the_4s_heading_differs": {
+   "what": "every repaired proposal vs the pipeline's E-6 pose: x, y bit-identical on all 8 poses; headings 0.5-3.5 s bit-identical; the 4.0 s heading bit-identical to the native heading[18] -- only it differs",
+   "x_y_bit_identical_all_8_poses": true,
+   "heading_bit_identical_0.5_to_3.5s": true,
+   "heading_4.0s_bit_identical_to_native_heading18": true,
+   "proposals_whose_4.0s_heading_changed": "12800/12800",
+   "pass": true,
+   "planner_fn_equals_independent_literal_bitwise": true
+  },
+  "tie_to_pick_readout": {
+   "what": "this build's column at the pipeline's pick equals the pick readout's repaired seam bit-for-bit, and the table's pick equals the pick recovered by exact match",
+   "pick_column_equals_repaired_pick_seam": true,
+   "table_pick_equals_recovered_pick": "200/200",
+   "pass": true
+  },
+  "seams64_on_disk_equal_rebuild": {
+   "seams_equal": "64/64",
+   "pass": true
+  },
+  "G3_every_run_PASS_every_token_valid": {
+   "what": "all 64 harness runs PASS (guards C1-C3) with every token valid, each tied by the harness's call log to its seam file, unmodified since scored",
+   "runs_pass": "64/64",
+   "failed": [],
+   "pass": true
+  },
+  "c64_pick_column_reproduces_pick_readout": {
+   "what": "at the pick, the 64-run table must equal the pick readout's own repaired harness scores token-for-token (bit-identical poses through the same harness twice)",
+   "max_abs_pdms_diff": 0.0,
+   "max_abs_subscore_diff": 0.0,
+   "pick_column_pdms_x100": 77.9381,
+   "pass": true
+  },
+  "all_gates_pass": true
+ },
+ "harness_runs": {
+  "refe_sub200_ep015_repaired_p00": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 114.2,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p00.log",
+   "csv_sha256": "5dd8a299a24abeef7469649f9986828cd2b2ad951dd1dd76af5ab3e3c5170104",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p00/refe_sub200_ep015_repaired_p00.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p00.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p00",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:34:14",
+    "seam_mtime_local": "2026-09-27T17:32:52",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p01": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 114.3,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p01.log",
+   "csv_sha256": "5b484d900a8d81949db69b729d49edaed3c36e1c4fa22541d826f387566f1b41",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p01/refe_sub200_ep015_repaired_p01.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p01.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p01",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:34:14",
+    "seam_mtime_local": "2026-09-27T17:32:52",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p02": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 44.0,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p02.log",
+   "csv_sha256": "46445b09bae4b30e2e1cebfd83e858ed425728b6af31da59ec80bc699dda4ef2",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p02/refe_sub200_ep015_repaired_p02.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p02.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p02",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:35:16",
+    "seam_mtime_local": "2026-09-27T17:32:52",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p03": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 43.8,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p03.log",
+   "csv_sha256": "5fd0f6a3fb25cbfd6bb7abf7176803314ced1358b6dc3110771386988fb3db87",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p03/refe_sub200_ep015_repaired_p03.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p03.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p03",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:35:16",
+    "seam_mtime_local": "2026-09-27T17:32:52",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p04": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 35.4,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p04.log",
+   "csv_sha256": "de8cfa019262ae9dc64ede0ea45236aacd9b33c8ed6b0027ce8b7275a451ece3",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p04/refe_sub200_ep015_repaired_p04.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p04.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p04",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:35:59",
+    "seam_mtime_local": "2026-09-27T17:32:52",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p05": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 35.3,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p05.log",
+   "csv_sha256": "e33b63ea4d89e173479b441f09d91f945be4f9c0dd608c888dcdfa67a6d6a93c",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p05/refe_sub200_ep015_repaired_p05.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p05.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p05",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:35:59",
+    "seam_mtime_local": "2026-09-27T17:32:52",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p06": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 51.2,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p06.log",
+   "csv_sha256": "4db161b3eb67f9b1864a44afb4b86c43e1d37f2b6861c90b3dea543a969184e1",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p06/refe_sub200_ep015_repaired_p06.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p06.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p06",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:36:35",
+    "seam_mtime_local": "2026-09-27T17:32:52",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p07": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 50.4,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p07.log",
+   "csv_sha256": "89c426ea52507cd13d93b15a9b0313cb2552506792a1cf4002e39fc198e1a9f8",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p07/refe_sub200_ep015_repaired_p07.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p07.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p07",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:36:35",
+    "seam_mtime_local": "2026-09-27T17:32:52",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p08": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 30.8,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p08.log",
+   "csv_sha256": "fe2adc7356e08570089015b792d47a81e3a58a015495ce096de225b080363aef",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p08/refe_sub200_ep015_repaired_p08.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p08.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p08",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:37:26",
+    "seam_mtime_local": "2026-09-27T17:32:52",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p09": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 30.2,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p09.log",
+   "csv_sha256": "1c2b445d9313a0c828445c3814dbbe41ce2cf5709524782231dc97fd4a14af73",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p09/refe_sub200_ep015_repaired_p09.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p09.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p09",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:37:26",
+    "seam_mtime_local": "2026-09-27T17:32:52",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p10": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 29.3,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p10.log",
+   "csv_sha256": "85472c95f1941a7cfd3843c00210c3abcdefa77ff5ff37308bc22b7517cbda4b",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p10/refe_sub200_ep015_repaired_p10.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p10.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p10",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:37:56",
+    "seam_mtime_local": "2026-09-27T17:32:52",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p11": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 29.4,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p11.log",
+   "csv_sha256": "8b936e3e3175c93ea81b17eeddfe04158f29e3ef1441db0bced521b7f8a987e2",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p11/refe_sub200_ep015_repaired_p11.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p11.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p11",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:37:56",
+    "seam_mtime_local": "2026-09-27T17:32:52",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p12": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 40.2,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p12.log",
+   "csv_sha256": "66ce3070800b21f946a59cc71d4ac2b84b780beebfbd999810074c8b68e145b7",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p12/refe_sub200_ep015_repaired_p12.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p12.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p12",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:38:26",
+    "seam_mtime_local": "2026-09-27T17:32:52",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p13": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 39.8,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p13.log",
+   "csv_sha256": "bf3d9e2ef64608e49bf25f57ef1222f094a7907cb93cafd506a0702121a98702",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p13/refe_sub200_ep015_repaired_p13.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p13.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p13",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:38:26",
+    "seam_mtime_local": "2026-09-27T17:32:52",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p14": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 29.8,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p14.log",
+   "csv_sha256": "e328957947f5d41c80e359757307622ce8f34a4eb6a626ee5645fcd70df39feb",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p14/refe_sub200_ep015_repaired_p14.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p14.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p14",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:39:06",
+    "seam_mtime_local": "2026-09-27T17:32:52",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p15": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 29.5,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p15.log",
+   "csv_sha256": "6a5e84979ebb9cedb2e48f77fd7d387870c776b358da9d47d6f5a882d9fd750d",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p15/refe_sub200_ep015_repaired_p15.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p15.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p15",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:39:06",
+    "seam_mtime_local": "2026-09-27T17:32:52",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p16": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 29.4,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p16.log",
+   "csv_sha256": "a4742a01202224000cb6a9a64f9234f421dde7f9413ec4c7f02f06644dc81e41",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p16/refe_sub200_ep015_repaired_p16.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p16.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p16",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:39:36",
+    "seam_mtime_local": "2026-09-27T17:32:52",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p17": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 29.3,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p17.log",
+   "csv_sha256": "df14c7165b82b9146d15bb6b39c7f48c43150c03f7c63b8d0f60bbf7aeb4b543",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p17/refe_sub200_ep015_repaired_p17.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p17.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p17",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:39:36",
+    "seam_mtime_local": "2026-09-27T17:32:52",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p18": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 33.1,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p18.log",
+   "csv_sha256": "647e83da0e20c9bcc582a470a133f88c66d5ba2c07d15b39f533b40329587010",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p18/refe_sub200_ep015_repaired_p18.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p18.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p18",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:40:08",
+    "seam_mtime_local": "2026-09-27T17:32:52",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p19": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 32.9,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p19.log",
+   "csv_sha256": "7c6c5160bc2d28af54234cb657c7670ce3ad61a29ef333d4307454b6a4271d17",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p19/refe_sub200_ep015_repaired_p19.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p19.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p19",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:40:08",
+    "seam_mtime_local": "2026-09-27T17:32:52",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p20": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 33.1,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p20.log",
+   "csv_sha256": "48fb459eee637a625d496a7d6552c958966293b3bcbf9cc61f3e54fc05d0a8e6",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p20/refe_sub200_ep015_repaired_p20.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p20.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p20",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:40:41",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p21": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 33.1,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p21.log",
+   "csv_sha256": "f6298b668da1e76482ed978c50e1d7a53aaf00a8d6ed202096b791be101766c5",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p21/refe_sub200_ep015_repaired_p21.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p21.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p21",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:40:41",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p22": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 29.9,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p22.log",
+   "csv_sha256": "25e5c665307004bc42f7649c47951aebc2cadf92f715673557caf7e0a9e5bb9d",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p22/refe_sub200_ep015_repaired_p22.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p22.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p22",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:41:13",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p23": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 29.7,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p23.log",
+   "csv_sha256": "71e7c1228eba48f7099c8deefadc80ed3a20a201c7064da17cc8a4c5934502f0",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p23/refe_sub200_ep015_repaired_p23.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p23.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p23",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:41:13",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p24": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 30.4,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p24.log",
+   "csv_sha256": "7e5ab76ef50c8ca28d45d17bfbc8a5c4c674fb95fea06aeb23922dc2831d8c65",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p24/refe_sub200_ep015_repaired_p24.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p24.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p24",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:41:44",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p25": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 30.2,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p25.log",
+   "csv_sha256": "afdd188ef5feef894d4c5a100e1cb4b5d366fa7249567146ccdab9f000fa8255",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p25/refe_sub200_ep015_repaired_p25.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p25.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p25",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:41:44",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p26": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 50.3,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p26.log",
+   "csv_sha256": "2c727fd72354bd7bc504295c1668e08d05bb06628cb1ac8263f45f982336bd00",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p26/refe_sub200_ep015_repaired_p26.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p26.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p26",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:42:15",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p27": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 50.0,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p27.log",
+   "csv_sha256": "79898481885b3ff36521e18f4f08c8afe156c91c502ee4a56fbe0b2b57f53d8d",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p27/refe_sub200_ep015_repaired_p27.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p27.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p27",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:42:15",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p28": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 32.4,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p28.log",
+   "csv_sha256": "3f5f6e2174a8ee26d1f0017b1ec0bcacbb83a7c5606d3c55de6709ec8c11c609",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p28/refe_sub200_ep015_repaired_p28.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p28.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p28",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:43:06",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p29": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 32.5,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p29.log",
+   "csv_sha256": "dd9878b7070f2dabbfb97fd521abe69810a2dd21b5dd2012d8818ebf20d3d56b",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p29/refe_sub200_ep015_repaired_p29.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p29.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p29",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:43:06",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p30": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 33.6,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p30.log",
+   "csv_sha256": "e7fd7b532c6cb8a50bc16ae389e5da0f6eab59d017e81a67539b5afbf237ca3e",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p30/refe_sub200_ep015_repaired_p30.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p30.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p30",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:43:39",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p31": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 33.3,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p31.log",
+   "csv_sha256": "c7756225294436a8c191faa09492a1eb9a4204a3caa162af104816d8ecbb417a",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p31/refe_sub200_ep015_repaired_p31.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p31.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p31",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:43:39",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p32": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 42.6,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p32.log",
+   "csv_sha256": "60fd984a21ba1054cded4723974b2967f78bccd91fd4b2f20e4d9f37036b88a1",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p32/refe_sub200_ep015_repaired_p32.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p32.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p32",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:44:14",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p33": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 41.9,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p33.log",
+   "csv_sha256": "4048279e022bffad25c20e4cdb0b9bb54ea43f5eb70d98e7244d799e0764505e",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p33/refe_sub200_ep015_repaired_p33.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p33.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p33",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:44:14",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p34": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 31.2,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p34.log",
+   "csv_sha256": "8d58e087170f267a2be71f40504299b15007d5cabcbf2133cb01e54fc9495d30",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p34/refe_sub200_ep015_repaired_p34.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p34.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p34",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:44:56",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p35": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 30.9,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p35.log",
+   "csv_sha256": "7cfb9a80ea01b6824644d7e8630b8649ad35f78d3181e7a4372ab5c5e960a7a6",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p35/refe_sub200_ep015_repaired_p35.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p35.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p35",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:44:56",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p36": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 29.2,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p36.log",
+   "csv_sha256": "739a26ac599b27714c0279f0cd0a479a129c64528b214df7033fe106a0ccea2d",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p36/refe_sub200_ep015_repaired_p36.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p36.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p36",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:45:26",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p37": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 29.1,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p37.log",
+   "csv_sha256": "18a222ec6487bec202a3a5855eb8fb7cf5fb5283a287a9d56397b08c66b88e5e",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p37/refe_sub200_ep015_repaired_p37.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p37.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p37",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:45:26",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p38": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 29.4,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p38.log",
+   "csv_sha256": "e3d2423f5611d32c3b6674d4e288b904cd12a246cf2ac50d0bc405cefe94f7af",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p38/refe_sub200_ep015_repaired_p38.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p38.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p38",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:45:55",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p39": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 29.3,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p39.log",
+   "csv_sha256": "e84b383a5589fe8f8e444d6a66e350f919b8a395935cc75ba7735354a5ad804f",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p39/refe_sub200_ep015_repaired_p39.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p39.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p39",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:45:55",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p40": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 41.7,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p40.log",
+   "csv_sha256": "ba3bbae31da8f1ff7e3b8e81df29e349800eccec651d41acc5572ef6d58bfca8",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p40/refe_sub200_ep015_repaired_p40.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p40.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p40",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:46:25",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p41": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 40.9,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p41.log",
+   "csv_sha256": "7fd25401e4b311429e997ef93aa1900527d7a394f615ac004ee7ad3314aedcf1",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p41/refe_sub200_ep015_repaired_p41.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p41.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p41",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:46:25",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p42": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 42.4,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p42.log",
+   "csv_sha256": "7b1f5471c475118b3e6e5177ff3fcd888a22619a819e20ff72e4105cca202a6d",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p42/refe_sub200_ep015_repaired_p42.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p42.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p42",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:47:11",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p43": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 42.1,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p43.log",
+   "csv_sha256": "c6a801f3d7927fcd030dacaf6d88bb8d1101f52af0067bb8549c9d274c1499c5",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p43/refe_sub200_ep015_repaired_p43.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p43.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p43",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:47:11",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p44": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 49.5,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p44.log",
+   "csv_sha256": "4f112589bc2b7fe8cb8f7ac73d2389d68d4967b7aa18a60d6e36901bb0bdd17b",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p44/refe_sub200_ep015_repaired_p44.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p44.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p44",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:47:57",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p45": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 48.5,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p45.log",
+   "csv_sha256": "ffd73b91a052a8f14b20f93b8095ac1af6e2e7f7f71ace857e7f66dbf80492d5",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p45/refe_sub200_ep015_repaired_p45.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p45.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p45",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:47:57",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p46": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 35.7,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p46.log",
+   "csv_sha256": "24c07363f764eef0f43b936ca6e239f81e44524022ddde52716ba156be2f8259",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p46/refe_sub200_ep015_repaired_p46.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p46.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p46",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:48:42",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p47": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 35.5,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p47.log",
+   "csv_sha256": "7bd08d1c1ea9ccb4a9bbefbd2e38e7991eb28d7b0419f75f0e2e8213d656cb74",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p47/refe_sub200_ep015_repaired_p47.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p47.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p47",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:48:42",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p48": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 39.2,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p48.log",
+   "csv_sha256": "0a9b886c6177dc670cde1f5b5fceb48ceb3641ae5c6474ad4589542605e304a8",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p48/refe_sub200_ep015_repaired_p48.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p48.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p48",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:49:20",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p49": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 39.0,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p49.log",
+   "csv_sha256": "e002b6510b891b84edf29d3e1e06fb21dcfaf2084bff7c0e0fb06ba1553f6be7",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p49/refe_sub200_ep015_repaired_p49.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p49.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p49",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:49:20",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p50": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 36.4,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p50.log",
+   "csv_sha256": "f16a75aab521d202cf207221becd8f67531cc52ae1f832d744a974e1fc77d7a0",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p50/refe_sub200_ep015_repaired_p50.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p50.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p50",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:50:00",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p51": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 35.7,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p51.log",
+   "csv_sha256": "fb62abfebf5b417363ecfc5976e6a3ac5f1a68337d76f5ba7e3e20966f53cc73",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p51/refe_sub200_ep015_repaired_p51.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p51.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p51",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:50:00",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p52": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 42.8,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p52.log",
+   "csv_sha256": "0fcfe807b0fc77173952118aa195853c9e92ee5b9250ad35de6008e23db36b85",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p52/refe_sub200_ep015_repaired_p52.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p52.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p52",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:50:39",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p53": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 42.5,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p53.log",
+   "csv_sha256": "463bbcd95ae6e76a98c54364e44efc572300c51ecac101b5b7071026b8f2980d",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p53/refe_sub200_ep015_repaired_p53.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p53.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p53",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:50:39",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p54": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 32.8,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p54.log",
+   "csv_sha256": "efd5d1bac00293e0fc0ef482bdc05e69e2341232861270bdfb10d287e1a86ca0",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p54/refe_sub200_ep015_repaired_p54.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p54.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p54",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:51:20",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p55": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 32.5,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p55.log",
+   "csv_sha256": "d2f1a96f1746b0b1968883daf3e8bcdb73241dceb6c3a50d3bd768980ad950b5",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p55/refe_sub200_ep015_repaired_p55.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p55.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p55",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:51:20",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p56": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 57.2,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p56.log",
+   "csv_sha256": "5e379b32a8bcd8c1a721d85e95abe2d76c66feb42caa53b77d747172f0d4b1ea",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p56/refe_sub200_ep015_repaired_p56.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p56.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p56",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:51:55",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p57": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 58.1,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p57.log",
+   "csv_sha256": "45dd825c781e802d604713ff890e8f13d4a9b978e5c7f35cb272c5e6f3224cc6",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p57/refe_sub200_ep015_repaired_p57.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p57.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p57",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:51:56",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p58": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 44.2,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p58.log",
+   "csv_sha256": "0969a00f4110eb495b4099a4feb52d00ce398327b2013cf8344809191711d70d",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p58/refe_sub200_ep015_repaired_p58.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p58.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p58",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:52:58",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p59": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 42.8,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p59.log",
+   "csv_sha256": "3463f6554c5ac1ad26a38234cf7ffc46b66ca33bcbfec6c482cd99c415cd3602",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p59/refe_sub200_ep015_repaired_p59.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p59.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p59",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:52:58",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p60": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 33.7,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p60.log",
+   "csv_sha256": "84b9dc5eead62b262eb565f47a609325efce5cba00f8559e2f9efba769da3e32",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p60/refe_sub200_ep015_repaired_p60.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p60.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p60",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:53:38",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p61": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 32.0,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p61.log",
+   "csv_sha256": "b8deecfcb875104f8c1d637e80677a68dc75ecc5c019c4f8a650f7457ebd3bc2",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p61/refe_sub200_ep015_repaired_p61.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p61.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p61",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:53:38",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p62": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 33.7,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p62.log",
+   "csv_sha256": "f600d08876dd6ec1aca6a0b57c019d7aa5f206a865266178bb73f6f181b70172",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p62/refe_sub200_ep015_repaired_p62.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p62.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p62",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:54:12",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  },
+  "refe_sub200_ep015_repaired_p63": {
+   "status": "PASS",
+   "csv_valid_rows": 200,
+   "tokens_valid": "200/200",
+   "C1_max_abs_delta": 0.0,
+   "wall_s": 33.4,
+   "log": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015_repaired\\logs\\p63.log",
+   "csv_sha256": "b1955551c900a96bc0237d34801e567ed38bb605b97f2062ba2335855044b5be",
+   "tie": {
+    "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_repaired_p63/refe_sub200_ep015_repaired_p63.calls.jsonl",
+    "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_repaired/refe_sub200_ep015_repaired_p63.npz",
+    "arm_served": "REFe_sub200_ep015_repaired_p63",
+    "is_this_seam": true,
+    "seam_calls": 200,
+    "scored_local": "2026-09-27T17:54:12",
+    "seam_mtime_local": "2026-09-27T17:32:54",
+    "seam_unmodified_since_scored": true,
+    "pass": true
+   }
+  }
+ },
+ "readers_snapshot_pair_under_rule_load": {
+  "sub200_ep015": {
+   "loads": true,
+   "shipped_rule": "navsim_v1",
+   "n_tokens": 200,
+   "same_token_order_as_seams": true
+  },
+  "sub200_ep015_repaired": {
+   "loads": true,
+   "shipped_rule": "navsim_v1",
+   "n_tokens": 200,
+   "same_token_order_as_seams": true
+  },
+  "sub200_ep016": {
+   "loads": true,
+   "shipped_rule": "navsim_v1",
+   "n_tokens": 200,
+   "same_token_order_as_seams": true
+  }
+ },
+ "ep016_table": {
+  "what": "the ep016 E-6 table the comparison reads: complete (its own gates), and its 64 proposals are the EXECUTED (repaired) ones -- its dump says so and its 4.0 s headings carry the repaired signature",
+  "table": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep016/table.npz",
+  "table_sha256": "5c2cd22944fc60628b36ea762a78327ea4e90db3a861fe4929746bb75b4bc002",
+  "table_written_local": "2026-09-27T17:11:40",
+  "own_gates": {
+   "G1": true,
+   "G3": true,
+   "G2": true
+  },
+  "dump_repair_last_heading": true,
+  "pick_column_equals_ep016_seam": true,
+  "share_abs_heading_4.0s_above_pi_all_64": 0.0,
+  "ep015_unrepaired_table_same_share": 0.6012,
+  "ep015_repaired_table_same_share": 0.0,
+  "pass": true
+ },
+ "trend": {
+  "script": "D:\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\eval\\oracle_trend.py",
+  "script_sha256": "ff8253735991d4bc60553263b1958d185a08b94ab05910edb890e7cb0341ca76",
+  "argv_pairs": [
+   "015:016",
+   "015_repaired:016",
+   "015:015_repaired"
+  ],
+  "boot": 10000,
+  "rc": 0,
+  "log": "D:\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\eval\\raw\\like_for_like_016\\logs\\oracle_trend.log",
+  "json": "D:\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\eval\\raw\\like_for_like_016\\oracle_trend_ep015rep_ep016.json",
+  "result": {
+   "015:016": {
+    "best_of_64": {
+     "a": 84.19,
+     "b": 96.23,
+     "b_minus_a": 12.03,
+     "ci95": [
+      7.7,
+      16.58
+     ],
+     "separated": true
+    },
+    "mean_of_64": {
+     "a": 44.13,
+     "b": 60.25,
+     "b_minus_a": 16.12,
+     "ci95": [
+      11.76,
+      20.53
+     ],
+     "separated": true
+    },
+    "share_ge_80": {
+     "a": 34.39,
+     "b": 56.5,
+     "b_minus_a": 22.11,
+     "ci95": [
+      17.15,
+      27.06
+     ],
+     "separated": true
+    }
+   },
+   "015_repaired:016": {
+    "best_of_64": {
+     "a": 98.42,
+     "b": 96.23,
+     "b_minus_a": -2.19,
+     "ci95": [
+      -4.9,
+      -0.02
+     ],
+     "separated": true
+    },
+    "mean_of_64": {
+     "a": 63.05,
+     "b": 60.25,
+     "b_minus_a": -2.81,
+     "ci95": [
+      -6.59,
+      0.66
+     ],
+     "separated": false
+    },
+    "share_ge_80": {
+     "a": 58.91,
+     "b": 56.5,
+     "b_minus_a": -2.41,
+     "ci95": [
+      -6.29,
+      1.29
+     ],
+     "separated": false
+    }
+   },
+   "015:015_repaired": {
+    "best_of_64": {
+     "a": 84.19,
+     "b": 98.42,
+     "b_minus_a": 14.22,
+     "ci95": [
+      10.2,
+      18.54
+     ],
+     "separated": true
+    },
+    "mean_of_64": {
+     "a": 44.13,
+     "b": 63.05,
+     "b_minus_a": 18.93,
+     "ci95": [
+      15.12,
+      23.0
+     ],
+     "separated": true
+    },
+    "share_ge_80": {
+     "a": 34.39,
+     "b": 58.91,
+     "b_minus_a": 24.52,
+     "ci95": [
+      19.99,
+      29.22
+     ],
+     "separated": true
+    }
+   }
+  },
+  "estimator": "paired log-cluster bootstrap over the logs, percentile 95 %, seed 20260927 (oracle_trend.py, unchanged; snapshot_pair_under_rule.py's estimator)",
+  "variance_answered": "EPISODES only (another draw of logs); one checkpoint each, deterministic forward"
+ },
+ "oracle_ade_position_only": {
+  "what": "the seam reports' open-loop ADE of the 64 proposals vs the logged human future, computed from x, y ONLY (refe_navtest_seam.py: `to_navsim(traj[j])[:, :2]`). Gate b64 proves the repair leaves every x, y bit-identical, so it needs no re-read: 015's value IS 015-repaired's.",
+  "values": {
+   "sub200_ep015": {
+    "ade_oracle_m": 0.4189,
+    "ade_selected_m": 1.9107,
+    "ade_random_m": 2.3094,
+    "n": 200,
+    "M": 64
+   },
+   "sub200_ep016": {
+    "ade_oracle_m": 0.3241,
+    "ade_selected_m": 1.8716,
+    "ade_random_m": 1.8502,
+    "n": 200,
+    "M": 64
+   }
+  }
+ },
+ "table_sha256": "b9c7b589ec98113c3e995ad39723038a73527810df703c775f881f4718932cd7",
+ "scores_copy": "D:\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\eval\\raw\\like_for_like_016\\table_sub200_ep015_repaired_scores.npz",
+ "scores_copy_sha256": "e6924aeccd52dbf80f244ef9fb7905efacfaed802fb5042ea2fa59fcb0430d03",
+ "seams_md5": {
+  "refe_sub200_ep015_repaired_p00": "39d92904a7b31e8e873d6c63475ee163",
+  "refe_sub200_ep015_repaired_p01": "da633c36af1a1fb242e20a758e109c5d",
+  "refe_sub200_ep015_repaired_p02": "0185c24bad01eb1c64cb083f8f369a77",
+  "refe_sub200_ep015_repaired_p03": "0e532cda73232edbea061a2a0623fbf6",
+  "refe_sub200_ep015_repaired_p04": "4fa871ab9d8ee212cd0e9e1c1852b47b",
+  "refe_sub200_ep015_repaired_p05": "0d64e160d4d8d24342323e995fff49b5",
+  "refe_sub200_ep015_repaired_p06": "88d12010ce62c017c12d29d7a155409d",
+  "refe_sub200_ep015_repaired_p07": "4c1b9e8f38a441292f05ecc77b948887",
+  "refe_sub200_ep015_repaired_p08": "6dd913a1ebc04f87229b9524a4360668",
+  "refe_sub200_ep015_repaired_p09": "f1709d595c64103a34ea1ac308d661e5",
+  "refe_sub200_ep015_repaired_p10": "eab41d49e7191740dc0589748b78502e",
+  "refe_sub200_ep015_repaired_p11": "804a78009fba26315dd127aa4b563c01",
+  "refe_sub200_ep015_repaired_p12": "75841a6475e22733a787044e666d7158",
+  "refe_sub200_ep015_repaired_p13": "95cb96b1d90606728bdac4669e2a3e3d",
+  "refe_sub200_ep015_repaired_p14": "b4aa46ddb708f0cecb2e31ebd08db6f0",
+  "refe_sub200_ep015_repaired_p15": "ba91060978f31803f27dbb8efa454b5b",
+  "refe_sub200_ep015_repaired_p16": "d3a3c336593c623188212f8604cf3526",
+  "refe_sub200_ep015_repaired_p17": "2af59a8b97320b9ff166959c9deb1603",
+  "refe_sub200_ep015_repaired_p18": "47dc7317a0f1929a472ed336ff38d59a",
+  "refe_sub200_ep015_repaired_p19": "e4c0db517db994d99f65eb5f9a9d8795",
+  "refe_sub200_ep015_repaired_p20": "87ab6df8466a1760666604ceb866f92b",
+  "refe_sub200_ep015_repaired_p21": "9a2190347c65f80071bb4391586673d5",
+  "refe_sub200_ep015_repaired_p22": "73675828fa423cef9bc4749a2521ea7a",
+  "refe_sub200_ep015_repaired_p23": "fcf6e0b31c72dc9f3f8d0117ecd7b867",
+  "refe_sub200_ep015_repaired_p24": "a927c9ac89c3f884462b81465211bf64",
+  "refe_sub200_ep015_repaired_p25": "dde16a98533e092f2287fcefd0739c08",
+  "refe_sub200_ep015_repaired_p26": "813cafeadf92089c2cf7c0fa6c873d77",
+  "refe_sub200_ep015_repaired_p27": "cdc3249e7d8c16bd2266833523b7a13f",
+  "refe_sub200_ep015_repaired_p28": "7f853d63b0abd563e7ebc16a0f004e14",
+  "refe_sub200_ep015_repaired_p29": "e7cb8ab78c5ed94dec39598deace2ad9",
+  "refe_sub200_ep015_repaired_p30": "9cfb3afc7ded4f77e1aec2310a31505f",
+  "refe_sub200_ep015_repaired_p31": "778ba7b9b51833adb1dc5b56358b507a",
+  "refe_sub200_ep015_repaired_p32": "aad03037d8b4f1130c8f69d0a0226d6b",
+  "refe_sub200_ep015_repaired_p33": "770bb3dc8cbb11291ee111ca3ddca405",
+  "refe_sub200_ep015_repaired_p34": "8b8f17426838e9f601755ea4750c80d8",
+  "refe_sub200_ep015_repaired_p35": "28ae7697e0d23ec86b89b5f0746f2887",
+  "refe_sub200_ep015_repaired_p36": "63940eaeacaa2aa50abb3ad7cf29c860",
+  "refe_sub200_ep015_repaired_p37": "0779ec5115af237302316020847b0135",
+  "refe_sub200_ep015_repaired_p38": "66a2ad4073f8d63052764362f743ce6b",
+  "refe_sub200_ep015_repaired_p39": "3534d897007b3d640cb0d8d3c82d9a30",
+  "refe_sub200_ep015_repaired_p40": "8714c923372fd2a3e971b116effc20c0",
+  "refe_sub200_ep015_repaired_p41": "db6cff3f543bb3fc06a263541d147f46",
+  "refe_sub200_ep015_repaired_p42": "5495e6369799bea9d106abd892804a33",
+  "refe_sub200_ep015_repaired_p43": "0de824d71b7916da3427dc877143a66e",
+  "refe_sub200_ep015_repaired_p44": "dc1d462f64beb5e05f7409ae3e4c5d48",
+  "refe_sub200_ep015_repaired_p45": "f5f319556304b2152686a26cc4ca5361",
+  "refe_sub200_ep015_repaired_p46": "0f67e3bf330156dd1661cc2e6614e6be",
+  "refe_sub200_ep015_repaired_p47": "5e4e9c443285326a1d00d4a53618a15d",
+  "refe_sub200_ep015_repaired_p48": "94ae78f901e7f80567a330d388bd776d",
+  "refe_sub200_ep015_repaired_p49": "920ef6f9d5d4fbc72e54c8612321c6bf",
+  "refe_sub200_ep015_repaired_p50": "ff8cd34dcff65cf80d2d2829484f8397",
+  "refe_sub200_ep015_repaired_p51": "e034fe2485e259ef4d3ff2fbb187d9e5",
+  "refe_sub200_ep015_repaired_p52": "f9d3b277b9c068a8e2aa338805443463",
+  "refe_sub200_ep015_repaired_p53": "b3a6699d03032940b137adc42faefb1d",
+  "refe_sub200_ep015_repaired_p54": "1bebcce080eb186290bf01b2112f38b1",
+  "refe_sub200_ep015_repaired_p55": "6c94a6374ff3c6b069ce786486466f89",
+  "refe_sub200_ep015_repaired_p56": "9a27208c4d2b0b1d7c162ada6b659964",
+  "refe_sub200_ep015_repaired_p57": "9f2570551a31770a7f1773d1fb781900",
+  "refe_sub200_ep015_repaired_p58": "6b9263c1fb0528df0e91dfd2dbd2ecf9",
+  "refe_sub200_ep015_repaired_p59": "6c7583c67e79845eb83ef86629a1aa2a",
+  "refe_sub200_ep015_repaired_p60": "e6d5fa22a05d90ca74a21e12d7b4d4e5",
+  "refe_sub200_ep015_repaired_p61": "6afb8810baf6529679b440811275cec1",
+  "refe_sub200_ep015_repaired_p62": "6a52e64dbcc97b51366d8a1db9b91dd8",
+  "refe_sub200_ep015_repaired_p63": "868ab955dcd93800b187159511fd7440"
+ },
+ "cpu_only": {
+  "torch_imported": false,
+  "python": "C:\\Users\\Admin\\venvs\\driverl-eval\\Scripts\\python.exe",
+  "CUDA_VISIBLE_DEVICES": "-1"
+ }
+}

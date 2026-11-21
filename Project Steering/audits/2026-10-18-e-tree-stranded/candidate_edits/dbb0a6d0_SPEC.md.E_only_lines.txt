@@ -1,0 +1,46 @@
+# E-only lines of FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/battery/SPEC.md  (E lines absent from the tip blob; CR-normalised; E line numbers)
+# tip blob last changed in 51a4443; E mtime 2026-09-26 14:26; verdict: NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)
+328: ## AMENDMENT A6: registered 2026-09-26 ~14:40 Europe/Berlin. The DEPLOYABLE form of lever L2: weights fit on TRAIN episodes, eval scored with no refit. Written BEFORE any A6 number existed (the Master Mind's RULE ZERO request)
+329: 
+330: **Why it exists.** A4's L2 fits its per-instant weights `w_k` on one episode fold of the EVAL set and scores the other fold. That is honest cross-fitting, but a deployed planner cannot choose `w` on the evaluation set. A6 asks whether the step-5000 L2 gain survives weights chosen WITHOUT touching the 139 eval episodes. If it does not, the A4 gain was an eval-fold artifact of choosing `w`.
+331: 
+332: **The train episodes (a fixed rule, applied before any roll).**
+333: * **Source:** the run's own train cache, `/home/nvidia/data/refcv6-b1-416x1024-train`, listed read-only (`ssh -n ls`).
+334: * **Candidates:** every clip there that (i) is not one of the 139 eval clips, (ii) has a record in the run's train label file (`s2_labels_v8_train.jsonl.gz`), and (iii) has a row in the run's train max-speed sidecar (`refcv6_speed_max_v8_train.jsonl`). Both files are pulled read-only.
+335: * **Selection:** the **139 candidates with the smallest `sha12(clip_id)`**. The list is written as sha12s to `raw/a6/train_clips_sha12.json` before any roll. The clip files are pulled read-only and md5-checked against Thor.
+336: * **Windows:** the trainer's own V3Dataset index over those clips, restricted to `t ≡ 0 (mod 5)`. That is the eval S2 grid's stride; the eval grid's per-clip phase came from the banked baseline dumps, and no baseline dump exists for train clips.
+337: 
+338: **The roll.**
+339: * Checkpoint: step 5000 (`ckpt_5000.pt`, md5 `8a1e4da0…`).
+340: * Roll code: the battery's own (`refcv3_arm.run_dump` through `refcv6_roll`), GPU bf16 as rolled for the battery, behind the dev-box gate.
+341: * Inference seeds 0 and 1.
+342: * The only differences from the eval roll are the three inputs above: train cache, train labels, train max-speed sidecar. They are passed through a recorded `PATH_REMAP` override.
+343: 
+344: **The fit (train only).** For each inference seed `s` and instant `k ∈ {0.5, 1, 1.5, 2}` s: `w_{s,k}` = the value in {0.00, 0.05, …, 1.00} minimising the mean L2 error of `w·os_s + (1−w)·ha` over ALL A6 train windows of seed `s`.
+345: 
+346: **The score (eval, no refit).**
+347: * The step-5000 battery's own eval panels are used: 4,754 windows / 139 episodes, seed `s`.
+348: * The blend is `blend_s = w_s·os_s + (1−w_s)·ha`.
+349: * Cells: `blend − ha0_ext` (PRIMARY), `blend − ha` and `blend − os`, all by the paired episode-cluster bootstrap (n_boot 2000, seed 0, cluster = clip).
+350: 
+351: **Verdicts, committed now.**
+352: * **SUCCESS:** `blend − ha0_ext` < 0 and separated at BOTH inference seeds. ⇒ The L2 composite is deployable as fitted, and the residual-on-kinematic-prior lever stands on a non-eval fit.
+353: * **FAILURE:** not separated at either seed. ⇒ The A4 cross-fitted gain was an eval-fold artifact of choosing `w`, and the lever claim is withdrawn to that extent.
+354: * **Mixed** (separated at one seed only): reported as NOT PROVEN.
+355: 
+356: **Controls (literals).**
+357: * **Shuffled plan:** train `os` is replaced by the `os` of the train window N/2 positions later. Its fitted `w` must be **0.00** at every `k`, and the resulting eval blend must read `blend − ha` = **0.0000, CI [0, 0]**.
+358: * **Identity:** `w ≡ 0` must read `blend − ha` = **0.0000, CI [0, 0]**.
+359: 
+360: **Reported with no pass/fail.**
+361: * The train-fit `w` beside A4's eval cross-fit `w`.
+362: * The cross-seed application (seed-0 weights on the seed-1 eval panel).
+363: * The train ADE of `os`, `ha` and the blend.
+364: 
+365: **Known bias, stated in advance.** The model trained on these clips, so its `os` is likely better on them than on eval. A train-fit `w` may therefore over-weight `os`, which can only hurt the eval blend. A6 is **conservative**: a SUCCESS is robust to this bias, and a FAILURE may partly be it.
+366: 
+367: **Scope.**
+368: * Step 5000 first (the Master Mind's priority order: step 30000 → A6 → L3 → 15k/20k → FINAL).
+369: * The same rule, the same clips and the same code are applied at step 30000 if compute allows.
+370: * At the FINAL it runs on the 82c2331 tree with the post-switch config, as A5 requires.
+371: 

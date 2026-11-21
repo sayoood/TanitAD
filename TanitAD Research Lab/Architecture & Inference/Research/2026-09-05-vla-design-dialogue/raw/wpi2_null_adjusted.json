@@ -1,0 +1,220 @@
+{
+ "_tier": "T0; NON-PARITY pilot; leave-one-episode-out; permutation null (global + within-episode); paired episode-cluster bootstrap for arm differences",
+ "_source": "C:/Users/Admin/tanitad-data/rl-pilot/wpi2_semantic_floor.json",
+ "n": 1800,
+ "episodes": 15,
+ "n_perm": 200,
+ "_note": "adj = AUC minus that arm's own within-episode permutation null mean; the raw AUC column is NOT comparable across arms because the four ridges have different null centres (d = 72 / 5632 / 5632 / 24576 on ~1700 rows).",
+ "targets": {
+  "vru<20m IN-FOV": {
+   "base_rate": 0.03833333333333333,
+   "n_pos": 69,
+   "within_null_power": "USABLE",
+   "arms": {
+    "pixels": {
+     "auc": 0.633034435988245,
+     "null_within": 0.6725576235567948,
+     "adj": -0.03952318756854978,
+     "p_within": 0.805,
+     "p_global": 0.005
+    },
+    "rand": {
+     "auc": 0.5270054169911,
+     "null_within": 0.6622051423739315,
+     "adj": -0.13519972538283143,
+     "p_within": 0.985,
+     "p_global": 0.24
+    },
+    "trunk": {
+     "auc": 0.5553546161638996,
+     "null_within": 0.54941204296754,
+     "adj": 0.005942573196359602,
+     "p_within": 0.475,
+     "p_global": 0.085
+    },
+    "dinov3": {
+     "auc": 0.6176039652039953,
+     "null_within": 0.5810182603672167,
+     "adj": 0.03658570483677859,
+     "p_within": 0.3,
+     "p_global": 0.0
+    }
+   }
+  },
+  "vru<60m IN-FOV": {
+   "base_rate": 0.12666666666666668,
+   "n_pos": 228,
+   "within_null_power": "USABLE",
+   "arms": {
+    "pixels": {
+     "auc": 0.5323981072273559,
+     "null_within": 0.4758340168965671,
+     "adj": 0.0565640903307888,
+     "p_within": 0.035,
+     "p_global": 0.09
+    },
+    "rand": {
+     "auc": 0.4551861524039105,
+     "null_within": 0.5256475854872551,
+     "adj": -0.07046143308334457,
+     "p_within": 0.955,
+     "p_global": 0.975
+    },
+    "trunk": {
+     "auc": 0.4917302798982188,
+     "null_within": 0.5785742823981073,
+     "adj": -0.08684400249988844,
+     "p_within": 0.915,
+     "p_global": 0.68
+    },
+    "dinov3": {
+     "auc": 0.6771516896567118,
+     "null_within": 0.4832636098834874,
+     "adj": 0.19388807977322442,
+     "p_within": 0.0,
+     "p_global": 0.0
+    }
+   }
+  },
+  "crowd: >=3 agents in FOV": {
+   "base_rate": 0.5683333333333334,
+   "n_pos": 1023,
+   "within_null_power": "USABLE",
+   "arms": {
+    "pixels": {
+     "auc": 0.617013326690746,
+     "null_within": 0.6161070915909626,
+     "adj": 0.0009062350997834923,
+     "p_within": 0.495,
+     "p_global": 0.0
+    },
+    "rand": {
+     "auc": 0.6214832343864602,
+     "null_within": 0.6674339358210326,
+     "adj": -0.04595070143457236,
+     "p_within": 0.845,
+     "p_global": 0.0
+    },
+    "trunk": {
+     "auc": 0.6934785644463064,
+     "null_within": 0.6578635275409468,
+     "adj": 0.03561503690535961,
+     "p_within": 0.13,
+     "p_global": 0.0
+    },
+    "dinov3": {
+     "auc": 0.7402345789442564,
+     "null_within": 0.6586179392631005,
+     "adj": 0.08161663968115584,
+     "p_within": 0.0,
+     "p_global": 0.0
+    }
+   }
+  },
+  "lead < 25 m": {
+   "base_rate": 0.19833333333333333,
+   "n_pos": 357,
+   "within_null_power": "USABLE",
+   "arms": {
+    "pixels": {
+     "auc": 0.715528068469245,
+     "null_within": 0.6376388282270635,
+     "adj": 0.07788924024218147,
+     "p_within": 0.0,
+     "p_global": 0.0
+    },
+    "rand": {
+     "auc": 0.5069193304487423,
+     "null_within": 0.6843452114040349,
+     "adj": -0.17742588095529266,
+     "p_within": 1.0,
+     "p_global": 0.355
+    },
+    "trunk": {
+     "auc": 0.5834813481872305,
+     "null_within": 0.717042828219299,
+     "adj": -0.13356148003206847,
+     "p_within": 0.995,
+     "p_global": 0.0
+    },
+    "dinov3": {
+     "auc": 0.7539226362755774,
+     "null_within": 0.750474783121842,
+     "adj": 0.003447853153735414,
+     "p_within": 0.495,
+     "p_global": 0.0
+    }
+   }
+  },
+  "PC-PIXEL brightness": {
+   "base_rate": 0.5,
+   "n_pos": 900,
+   "within_null_power": "?",
+   "arms": {
+    "pixels": {
+     "auc": 0.9970234567901235,
+     "null_within": 0.6896845185185185,
+     "adj": 0.30733893827160497,
+     "p_within": 0.0,
+     "p_global": 0.0
+    },
+    "rand": {
+     "auc": 0.9736604938271605,
+     "null_within": 0.5407094938271605,
+     "adj": 0.432951,
+     "p_within": 0.0,
+     "p_global": 0.0
+    },
+    "trunk": {
+     "auc": 0.7709037037037038,
+     "null_within": 0.5614125740740742,
+     "adj": 0.20949112962962957,
+     "p_within": 0.0,
+     "p_global": 0.0
+    },
+    "dinov3": {
+     "auc": 0.7372530864197531,
+     "null_within": 0.458673487654321,
+     "adj": 0.2785795987654321,
+     "p_within": 0.0,
+     "p_global": 0.0
+    }
+   }
+  },
+  "PC-TRUNK sel lateral>0": {
+   "base_rate": 0.5411111111111111,
+   "n_pos": 974,
+   "within_null_power": "?",
+   "arms": {
+    "pixels": {
+     "auc": 0.3786524702805634,
+     "null_within": 0.4379106341140849,
+     "adj": -0.05925816383352145,
+     "p_within": 1.0,
+     "p_global": 1.0
+    },
+    "rand": {
+     "auc": 0.5770617159960424,
+     "null_within": 0.4784457393440096,
+     "adj": 0.09861597665203281,
+     "p_within": 0.015,
+     "p_global": 0.0
+    },
+    "trunk": {
+     "auc": 0.9400353500952116,
+     "null_within": 0.559462694711407,
+     "adj": 0.3805726553838046,
+     "p_within": 0.0,
+     "p_global": 0.0
+    },
+    "dinov3": {
+     "auc": 0.7865731786745952,
+     "null_within": 0.556497581178436,
+     "adj": 0.23007559749615925,
+     "p_within": 0.0,
+     "p_global": 0.0
+    }
+   }
+  }
+ }
+}

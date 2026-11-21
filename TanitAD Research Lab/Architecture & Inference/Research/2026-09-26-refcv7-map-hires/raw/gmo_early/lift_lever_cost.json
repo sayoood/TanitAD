@@ -1,0 +1,69 @@
+{
+ "method": "A12 design input: the ANALYTIC cost at b16 of the three pre-listed lift levers, against",
+ "rows": [
+  {
+   "arm": "baseline_A7",
+   "params_branch": 559048,
+   "saved_bytes_b1": 93348420,
+   "saved_GiB_b16": 1.391,
+   "fwd_GFLOPs_b1": 102.51,
+   "cpu_fwd_bwd_s_b1_median": 2.194
+  },
+  {
+   "arm": "b_near_0p1m_0_20m",
+   "params_branch": 624648,
+   "saved_bytes_b1": 93348420,
+   "saved_GiB_b16": 1.391,
+   "fwd_GFLOPs_b1": 103.39,
+   "cpu_fwd_bwd_s_b1_median": 2.32
+  },
+  {
+   "arm": "a_z0_channel",
+   "params_branch": 593928,
+   "saved_bytes_b1": 108024388,
+   "saved_GiB_b16": 1.61,
+   "fwd_GFLOPs_b1": 106.27,
+   "cpu_fwd_bwd_s_b1_median": 2.304
+  },
+  {
+   "arm": "c_stride4",
+   "params_branch": 493512,
+   "saved_bytes_b1": 113533508,
+   "saved_GiB_b16": 1.692,
+   "fwd_GFLOPs_b1": 104.26,
+   "cpu_fwd_bwd_s_b1_median": 2.119
+  }
+ ],
+ "trunk_tap": {
+  "stride4_layer1": {
+   "out_shape": [
+    1,
+    256,
+    104,
+    256
+   ],
+   "out_MiB_b16": 416.0,
+   "note": "flops counted for stem..layer2 (both outputs) -- see below"
+  },
+  "stride8_layer2": {
+   "out_shape": [
+    1,
+    512,
+    52,
+    128
+   ],
+   "out_MiB_b16": 208.0,
+   "note": "flops counted for stem..layer2 (both outputs) -- see below"
+  },
+  "stem_to_layer2_fwd_GFLOPs_b1": 30.79,
+  "stem_to_layer1_fwd_GFLOPs_b1": 13.35
+ },
+ "grid_sample_outputs_b1": {
+  "main_lift": 24576000,
+  "b_near": 15360000,
+  "a_z0": 3072000,
+  "c_stride4": 24576000
+ },
+ "torch": "2.11.0+cu128",
+ "measured": "2026-09-27 ~09:32 Berlin, dev-box CPU (no GPU), candidate cef9709 == nb2_tree_4797ffb stack"
+}

@@ -1,0 +1,25 @@
+ZZPM START 2026-10-17T16:12:38Z from=d to=e dry=0 probe=0 logs=/c/Users/Admin/bank3c/raw/2026-10-17-twin-bank-3c/post_merge/rehearsal/transcripts/F6_run
+ZZPM 0 OK pod reachable; frozen 3-C code == MANIFEST.json; pod paths present
+ZZPM_INFO facts: kept=23 K1=17 K2=4 K3=2 out_sha=fd4ff8ea389f2135
+ZZPM_INFO d plan: state=plan_ok rows=23 distinct=23 to_place=23 present_same_inode=0 present_identical=0 missing_src=0 missing_logged=0 conflict=0 bytes_to_place=3956 first_bad=-
+ZZPM_INFO d launched the parts placement (mode=auto, 23 files, 3956 bytes if copied; ~0 bytes if hard-linked)
+ZZPM_INFO d apply: rows=23 distinct=23 to_place=23 present_same_inode=0 present_identical=0 missing_src=0 missing_logged=0 conflict=0 bytes_to_place=3956 first_bad=- state=ok linked=23 copied=0 errors=0 err_first=- dst_missing_after=0 mode=link logged_parts_in_dst=224 twin_parts_in_dst=23 extras_in_dst=0 wall_s=0.0
+ZZPM_INFO d P6's D7 acceptance K=1: ZZD7_DISTINCT_OK k=1 sampled=17 differ=17 frac=1.0
+ZZPM_INFO d P6's D7 acceptance K=2: ZZD7_DISTINCT_OK k=2 sampled=4 differ=4 frac=1.0
+ZZPM_INFO d P6's D7 acceptance K=3: ZZD7_DISTINCT_OK k=3 sampled=2 differ=2 frac=1.0
+ZZPM d OK kept twins' parts placed (23 distinct, mode=auto, present=23, 0 missing, 0 conflicts) and P6's D7 acceptance passes for ranks [1 2 3]
+ZZPM_INFO e p6tree: state=ok commit=1111111111111111111111111111111111111111 tree_sha256=2222222222222222 p6_pod_md5=38bdf475a631 cbank_knob=1 cbank_commands_guard=1 r43_expandable_segments=1 stop_after_launch_gate=1 build_has_pdm_route_rank=0
+ZZPM_INFO e pod is FREE (no GPU compute process, no other chain lock, no rls1_pod.sh)
+ZZPM_INFO e launching the gate dry run: P6_STOP_AFTER=launch_gate P6_D7_FALLBACK=0 P6_CBANK=/tmp/p6mock/workspace/data/refe_navtrain/train_grow_cmd_3c P6_OVERLAP=0 P6_DD_GB=16 (chain.log offset 0); polling every 2s
+ZZPM e OK P6 launch-gate DRY RUN PASS: token PASS_mock0001.json commit=111111111111 argv_sha=aaaaaaaaaaaaaaaa tree_sha=bbbbbbbbbbbbbbbb --targets=/tmp/p6mock/workspace/data/refe_navtrain/train_grow_cmd_3c (23 kept twins, 23 twin parts in the cache, 0 written during the run); chain stopped BEFORE train.py
+ZZPM DONE result=OK through=e exit=0 dry=0 logs=/c/Users/Admin/bank3c/raw/2026-10-17-twin-bank-3c/post_merge/rehearsal/transcripts/F6_run
+ZZPM P6_LAUNCH_SKIPPED (--no-launch / --to e): the gate token is minted and verified; P6 was NOT launched. To launch: re-run with --from f.
+ZZPM START 2026-10-17T16:12:58Z from=f to=f dry=0 probe=0 logs=/c/Users/Admin/bank3c/raw/2026-10-17-twin-bank-3c/post_merge/rehearsal/transcripts/F6_run
+ZZPM 0 OK pod reachable; frozen 3-C code == MANIFEST.json; pod paths present
+ZZPM_INFO facts: kept=23 K1=17 K2=4 K3=2 out_sha=fd4ff8ea389f2135
+ZZPM_INFO f dry-run evidence re-judged from the pod: token PASS_mock0001.json
+ZZPM_INFO f pod is FREE (no GPU compute process, no other chain lock, no rls1_pod.sh)
+ZZPM_INFO f LAUNCHING P6's real run (no P6_STOP_AFTER; P6_CBANK=/tmp/p6mock/workspace/data/refe_navtrain/train_grow_cmd_3c P6_D7_FALLBACK=0 P6_OVERLAP=0 P6_DD_GB=16; chain.log offset 8, metrics lines before: 0)
+ZZPM f OK P6 LAUNCHED and training started: first step line step=0 traj_L1=12.487878799438477; chain alive=1
+ZZPM P6_TRAINING step=0 traj_L1=12.487878799438477 chain_alive=1 -- watch: /tmp/p6mock/workspace/data/refe_p6/chain.log, /tmp/p6mock/workspace/data/refe_runs/p6_paper_faithful/metrics.jsonl, the private HF repo (P6_POD_RUNBOOK section 4)
+ZZPM DONE result=OK through=f exit=0 dry=0 logs=/c/Users/Admin/bank3c/raw/2026-10-17-twin-bank-3c/post_merge/rehearsal/transcripts/F6_run

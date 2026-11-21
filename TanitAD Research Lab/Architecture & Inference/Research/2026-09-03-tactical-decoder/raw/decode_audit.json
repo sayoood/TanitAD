@@ -1,0 +1,2652 @@
+{
+ "tool": "decode_audit.py",
+ "tier": "T0",
+ "tier_note": "banked open-loop step-1,000 dumps; no simulator, no training. A re-read of artifacts, not a new measurement of the world.",
+ "evidence_class": "MEASURED",
+ "written_utc": "2026-09-03T06:38:15Z",
+ "vocabulary": {
+  "source": "stack-verified",
+  "lat": [
+   "LANE_KEEP",
+   "LANE_CHANGE_L",
+   "LANE_CHANGE_R",
+   "ABORT_LC",
+   "NUDGE_L",
+   "NUDGE_R",
+   "TURN_L",
+   "TURN_R"
+  ],
+  "lon": [
+   "FOLLOW",
+   "CRUISE",
+   "YIELD_MERGE",
+   "BRAKE_TO",
+   "CREEP",
+   "HOLD",
+   "ADAPT_SPEED_FOR_CURVE",
+   "ACCELERATE"
+  ]
+ },
+ "inputs": {
+  "dumps": {
+   "incumbent": "C:/Users/Admin/refav1_eval_slice/t1_dump",
+   "ep2": "C:/Users/Admin/refav1_eval_slice/t1_dump_ep2"
+  },
+  "costs": {
+   "incumbent": "G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-refav1-cost-surface/raw/cost_surface_incumbent.json",
+   "ep2": "G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-refav1-cost-surface/raw/cost_surface_ep2.json"
+  },
+  "labels": "C:/Users/Admin/tanitad-wt/_s2build/release/v72/s2_labels_v7.2_eval.jsonl.gz",
+  "train_labels": "C:/Users/Admin/tanitad-wt/_s2build/release/v72/s2_labels_v7.2_train.jsonl.gz"
+ },
+ "estimators": {
+  "interval": "episode-cluster bootstrap, percentile, full-set point",
+  "null": "label permutation within the in-band panel"
+ },
+ "arms": {
+  "incumbent": {
+   "n_windows": 140,
+   "n_episodes": 20,
+   "window_index_values": [
+    3,
+    13,
+    23,
+    33,
+    43,
+    53,
+    63
+   ],
+   "nav_valid_frac": 1.0,
+   "labelled": {
+    "n_in_band": 40,
+    "frac_in_band": 0.285714,
+    "in_band_window_indices": [
+     33,
+     43
+    ],
+    "lat_and_lon_masks_identical": true
+   },
+   "lat": {
+    "nav_true": {
+     "prediction_histogram_ALL_windows": {
+      "LANE_KEEP": 140
+     },
+     "n_distinct_predictions_ALL": 1,
+     "in_band": {
+      "n": 40,
+      "n_classes_present": 5,
+      "classes_present": [
+       "LANE_KEEP",
+       "NUDGE_L",
+       "NUDGE_R",
+       "TURN_L",
+       "TURN_R"
+      ],
+      "support": {
+       "LANE_KEEP": 26,
+       "LANE_CHANGE_L": 0,
+       "LANE_CHANGE_R": 0,
+       "ABORT_LC": 0,
+       "NUDGE_L": 6,
+       "NUDGE_R": 2,
+       "TURN_L": 2,
+       "TURN_R": 4
+      },
+      "predicted": {
+       "LANE_KEEP": 40,
+       "LANE_CHANGE_L": 0,
+       "LANE_CHANGE_R": 0,
+       "ABORT_LC": 0,
+       "NUDGE_L": 0,
+       "NUDGE_R": 0,
+       "TURN_L": 0,
+       "TURN_R": 0
+      },
+      "recall": {
+       "LANE_KEEP": 1.0,
+       "LANE_CHANGE_L": null,
+       "LANE_CHANGE_R": null,
+       "ABORT_LC": null,
+       "NUDGE_L": 0.0,
+       "NUDGE_R": 0.0,
+       "TURN_L": 0.0,
+       "TURN_R": 0.0
+      },
+      "precision": {
+       "LANE_KEEP": 0.65,
+       "LANE_CHANGE_L": null,
+       "LANE_CHANGE_R": null,
+       "ABORT_LC": null,
+       "NUDGE_L": null,
+       "NUDGE_R": null,
+       "TURN_L": null,
+       "TURN_R": null
+      },
+      "accuracy": 0.65,
+      "macro_recall_over_present": 0.2,
+      "confusion": [
+       [
+        26,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        6,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        4,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ]
+      ]
+     },
+     "controls": {
+      "constant_only": {
+       "n": 40,
+       "n_classes_present": 5,
+       "classes_present": [
+        "LANE_KEEP",
+        "NUDGE_L",
+        "NUDGE_R",
+        "TURN_L",
+        "TURN_R"
+       ],
+       "support": {
+        "LANE_KEEP": 26,
+        "LANE_CHANGE_L": 0,
+        "LANE_CHANGE_R": 0,
+        "ABORT_LC": 0,
+        "NUDGE_L": 6,
+        "NUDGE_R": 2,
+        "TURN_L": 2,
+        "TURN_R": 4
+       },
+       "predicted": {
+        "LANE_KEEP": 40,
+        "LANE_CHANGE_L": 0,
+        "LANE_CHANGE_R": 0,
+        "ABORT_LC": 0,
+        "NUDGE_L": 0,
+        "NUDGE_R": 0,
+        "TURN_L": 0,
+        "TURN_R": 0
+       },
+       "recall": {
+        "LANE_KEEP": 1.0,
+        "LANE_CHANGE_L": null,
+        "LANE_CHANGE_R": null,
+        "ABORT_LC": null,
+        "NUDGE_L": 0.0,
+        "NUDGE_R": 0.0,
+        "TURN_L": 0.0,
+        "TURN_R": 0.0
+       },
+       "precision": {
+        "LANE_KEEP": 0.65,
+        "LANE_CHANGE_L": null,
+        "LANE_CHANGE_R": null,
+        "ABORT_LC": null,
+        "NUDGE_L": null,
+        "NUDGE_R": null,
+        "TURN_L": null,
+        "TURN_R": null
+       },
+       "accuracy": 0.65,
+       "macro_recall_over_present": 0.2,
+       "confusion": [
+        [
+         26,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        [
+         6,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        [
+         2,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        [
+         2,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        [
+         4,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ]
+       ],
+       "majority_class": "LANE_KEEP",
+       "base_rate": 0.65,
+       "expected_macro_recall_1_over_K": 0.2,
+       "reads_known_value_exactly": true
+      },
+      "shuffled_label": {
+       "n_perm": 10000,
+       "n_episode_blocks": 20,
+       "observed_accuracy": 0.65,
+       "observed_macro": 0.2,
+       "free": {
+        "null_accuracy_mean": 0.65,
+        "null_accuracy_p95": 0.65,
+        "null_macro_mean": 0.2,
+        "null_macro_p95": 0.2,
+        "p_accuracy_ge_observed": 1.0,
+        "p_macro_ge_observed": 1.0
+       },
+       "clustered": {
+        "null_accuracy_mean": 0.65,
+        "null_accuracy_p95": 0.65,
+        "null_macro_mean": 0.2,
+        "null_macro_p95": 0.2,
+        "p_accuracy_ge_observed": 1.0,
+        "p_macro_ge_observed": 1.0
+       },
+       "quote": "clustered"
+      }
+     },
+     "is_constant_predictor_ALL_windows": true,
+     "constant_value": "LANE_KEEP"
+    },
+    "nav_shuffled": {
+     "prediction_histogram_ALL_windows": {
+      "LANE_KEEP": 140
+     },
+     "n_distinct_predictions_ALL": 1,
+     "in_band": {
+      "n": 40,
+      "n_classes_present": 5,
+      "classes_present": [
+       "LANE_KEEP",
+       "NUDGE_L",
+       "NUDGE_R",
+       "TURN_L",
+       "TURN_R"
+      ],
+      "support": {
+       "LANE_KEEP": 26,
+       "LANE_CHANGE_L": 0,
+       "LANE_CHANGE_R": 0,
+       "ABORT_LC": 0,
+       "NUDGE_L": 6,
+       "NUDGE_R": 2,
+       "TURN_L": 2,
+       "TURN_R": 4
+      },
+      "predicted": {
+       "LANE_KEEP": 40,
+       "LANE_CHANGE_L": 0,
+       "LANE_CHANGE_R": 0,
+       "ABORT_LC": 0,
+       "NUDGE_L": 0,
+       "NUDGE_R": 0,
+       "TURN_L": 0,
+       "TURN_R": 0
+      },
+      "recall": {
+       "LANE_KEEP": 1.0,
+       "LANE_CHANGE_L": null,
+       "LANE_CHANGE_R": null,
+       "ABORT_LC": null,
+       "NUDGE_L": 0.0,
+       "NUDGE_R": 0.0,
+       "TURN_L": 0.0,
+       "TURN_R": 0.0
+      },
+      "precision": {
+       "LANE_KEEP": 0.65,
+       "LANE_CHANGE_L": null,
+       "LANE_CHANGE_R": null,
+       "ABORT_LC": null,
+       "NUDGE_L": null,
+       "NUDGE_R": null,
+       "TURN_L": null,
+       "TURN_R": null
+      },
+      "accuracy": 0.65,
+      "macro_recall_over_present": 0.2,
+      "confusion": [
+       [
+        26,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        6,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        4,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ]
+      ]
+     }
+    },
+    "nav_zero": {
+     "prediction_histogram_ALL_windows": {
+      "LANE_KEEP": 140
+     },
+     "n_distinct_predictions_ALL": 1,
+     "in_band": {
+      "n": 40,
+      "n_classes_present": 5,
+      "classes_present": [
+       "LANE_KEEP",
+       "NUDGE_L",
+       "NUDGE_R",
+       "TURN_L",
+       "TURN_R"
+      ],
+      "support": {
+       "LANE_KEEP": 26,
+       "LANE_CHANGE_L": 0,
+       "LANE_CHANGE_R": 0,
+       "ABORT_LC": 0,
+       "NUDGE_L": 6,
+       "NUDGE_R": 2,
+       "TURN_L": 2,
+       "TURN_R": 4
+      },
+      "predicted": {
+       "LANE_KEEP": 40,
+       "LANE_CHANGE_L": 0,
+       "LANE_CHANGE_R": 0,
+       "ABORT_LC": 0,
+       "NUDGE_L": 0,
+       "NUDGE_R": 0,
+       "TURN_L": 0,
+       "TURN_R": 0
+      },
+      "recall": {
+       "LANE_KEEP": 1.0,
+       "LANE_CHANGE_L": null,
+       "LANE_CHANGE_R": null,
+       "ABORT_LC": null,
+       "NUDGE_L": 0.0,
+       "NUDGE_R": 0.0,
+       "TURN_L": 0.0,
+       "TURN_R": 0.0
+      },
+      "precision": {
+       "LANE_KEEP": 0.65,
+       "LANE_CHANGE_L": null,
+       "LANE_CHANGE_R": null,
+       "ABORT_LC": null,
+       "NUDGE_L": null,
+       "NUDGE_R": null,
+       "TURN_L": null,
+       "TURN_R": null
+      },
+      "accuracy": 0.65,
+      "macro_recall_over_present": 0.2,
+      "confusion": [
+       [
+        26,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        6,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        4,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ]
+      ]
+     }
+    }
+   },
+   "lon": {
+    "nav_true": {
+     "prediction_histogram_ALL_windows": {
+      "CRUISE": 98,
+      "ADAPT_SPEED_FOR_CURVE": 42
+     },
+     "n_distinct_predictions_ALL": 2,
+     "in_band": {
+      "n": 40,
+      "n_classes_present": 5,
+      "classes_present": [
+       "FOLLOW",
+       "CRUISE",
+       "CREEP",
+       "ADAPT_SPEED_FOR_CURVE",
+       "ACCELERATE"
+      ],
+      "support": {
+       "FOLLOW": 2,
+       "CRUISE": 18,
+       "YIELD_MERGE": 0,
+       "BRAKE_TO": 0,
+       "CREEP": 2,
+       "HOLD": 0,
+       "ADAPT_SPEED_FOR_CURVE": 6,
+       "ACCELERATE": 12
+      },
+      "predicted": {
+       "FOLLOW": 0,
+       "CRUISE": 28,
+       "YIELD_MERGE": 0,
+       "BRAKE_TO": 0,
+       "CREEP": 0,
+       "HOLD": 0,
+       "ADAPT_SPEED_FOR_CURVE": 12,
+       "ACCELERATE": 0
+      },
+      "recall": {
+       "FOLLOW": 0.0,
+       "CRUISE": 0.888889,
+       "YIELD_MERGE": null,
+       "BRAKE_TO": null,
+       "CREEP": 0.0,
+       "HOLD": null,
+       "ADAPT_SPEED_FOR_CURVE": 1.0,
+       "ACCELERATE": 0.0
+      },
+      "precision": {
+       "FOLLOW": null,
+       "CRUISE": 0.571429,
+       "YIELD_MERGE": null,
+       "BRAKE_TO": null,
+       "CREEP": null,
+       "HOLD": null,
+       "ADAPT_SPEED_FOR_CURVE": 0.5,
+       "ACCELERATE": null
+      },
+      "accuracy": 0.55,
+      "macro_recall_over_present": 0.377778,
+      "confusion": [
+       [
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        16,
+        0,
+        0,
+        0,
+        0,
+        2,
+        0
+       ],
+       [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2,
+        0
+       ],
+       [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        6,
+        0
+       ],
+       [
+        0,
+        10,
+        0,
+        0,
+        0,
+        0,
+        2,
+        0
+       ]
+      ]
+     },
+     "controls": {
+      "constant_only": {
+       "n": 40,
+       "n_classes_present": 5,
+       "classes_present": [
+        "FOLLOW",
+        "CRUISE",
+        "CREEP",
+        "ADAPT_SPEED_FOR_CURVE",
+        "ACCELERATE"
+       ],
+       "support": {
+        "FOLLOW": 2,
+        "CRUISE": 18,
+        "YIELD_MERGE": 0,
+        "BRAKE_TO": 0,
+        "CREEP": 2,
+        "HOLD": 0,
+        "ADAPT_SPEED_FOR_CURVE": 6,
+        "ACCELERATE": 12
+       },
+       "predicted": {
+        "FOLLOW": 0,
+        "CRUISE": 40,
+        "YIELD_MERGE": 0,
+        "BRAKE_TO": 0,
+        "CREEP": 0,
+        "HOLD": 0,
+        "ADAPT_SPEED_FOR_CURVE": 0,
+        "ACCELERATE": 0
+       },
+       "recall": {
+        "FOLLOW": 0.0,
+        "CRUISE": 1.0,
+        "YIELD_MERGE": null,
+        "BRAKE_TO": null,
+        "CREEP": 0.0,
+        "HOLD": null,
+        "ADAPT_SPEED_FOR_CURVE": 0.0,
+        "ACCELERATE": 0.0
+       },
+       "precision": {
+        "FOLLOW": null,
+        "CRUISE": 0.45,
+        "YIELD_MERGE": null,
+        "BRAKE_TO": null,
+        "CREEP": null,
+        "HOLD": null,
+        "ADAPT_SPEED_FOR_CURVE": null,
+        "ACCELERATE": null
+       },
+       "accuracy": 0.45,
+       "macro_recall_over_present": 0.2,
+       "confusion": [
+        [
+         0,
+         2,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        [
+         0,
+         18,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        [
+         0,
+         2,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        [
+         0,
+         6,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        [
+         0,
+         12,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ]
+       ],
+       "majority_class": "CRUISE",
+       "base_rate": 0.45,
+       "expected_macro_recall_1_over_K": 0.2,
+       "reads_known_value_exactly": true
+      },
+      "shuffled_label": {
+       "n_perm": 10000,
+       "n_episode_blocks": 20,
+       "observed_accuracy": 0.55,
+       "observed_macro": 0.377778,
+       "free": {
+        "null_accuracy_mean": 0.359718,
+        "null_accuracy_p95": 0.45,
+        "null_macro_mean": 0.199654,
+        "null_macro_p95": 0.277778,
+        "p_accuracy_ge_observed": 0.0006,
+        "p_macro_ge_observed": 0.0001
+       },
+       "clustered": {
+        "null_accuracy_mean": 0.359405,
+        "null_accuracy_p95": 0.5,
+        "null_macro_mean": 0.199429,
+        "null_macro_p95": 0.311111,
+        "p_accuracy_ge_observed": 0.014,
+        "p_macro_ge_observed": 0.0098
+       },
+       "quote": "clustered"
+      }
+     },
+     "is_constant_predictor_ALL_windows": false,
+     "constant_value": null
+    },
+    "nav_shuffled": {
+     "prediction_histogram_ALL_windows": {
+      "CRUISE": 98,
+      "ADAPT_SPEED_FOR_CURVE": 42
+     },
+     "n_distinct_predictions_ALL": 2,
+     "in_band": {
+      "n": 40,
+      "n_classes_present": 5,
+      "classes_present": [
+       "FOLLOW",
+       "CRUISE",
+       "CREEP",
+       "ADAPT_SPEED_FOR_CURVE",
+       "ACCELERATE"
+      ],
+      "support": {
+       "FOLLOW": 2,
+       "CRUISE": 18,
+       "YIELD_MERGE": 0,
+       "BRAKE_TO": 0,
+       "CREEP": 2,
+       "HOLD": 0,
+       "ADAPT_SPEED_FOR_CURVE": 6,
+       "ACCELERATE": 12
+      },
+      "predicted": {
+       "FOLLOW": 0,
+       "CRUISE": 34,
+       "YIELD_MERGE": 0,
+       "BRAKE_TO": 0,
+       "CREEP": 0,
+       "HOLD": 0,
+       "ADAPT_SPEED_FOR_CURVE": 6,
+       "ACCELERATE": 0
+      },
+      "recall": {
+       "FOLLOW": 0.0,
+       "CRUISE": 0.888889,
+       "YIELD_MERGE": null,
+       "BRAKE_TO": null,
+       "CREEP": 0.0,
+       "HOLD": null,
+       "ADAPT_SPEED_FOR_CURVE": 0.166667,
+       "ACCELERATE": 0.0
+      },
+      "precision": {
+       "FOLLOW": null,
+       "CRUISE": 0.470588,
+       "YIELD_MERGE": null,
+       "BRAKE_TO": null,
+       "CREEP": null,
+       "HOLD": null,
+       "ADAPT_SPEED_FOR_CURVE": 0.166667,
+       "ACCELERATE": null
+      },
+      "accuracy": 0.425,
+      "macro_recall_over_present": 0.211111,
+      "confusion": [
+       [
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        16,
+        0,
+        0,
+        0,
+        0,
+        2,
+        0
+       ],
+       [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0
+       ],
+       [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        5,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0
+       ],
+       [
+        0,
+        10,
+        0,
+        0,
+        0,
+        0,
+        2,
+        0
+       ]
+      ]
+     }
+    },
+    "nav_zero": {
+     "prediction_histogram_ALL_windows": {
+      "CRUISE": 140
+     },
+     "n_distinct_predictions_ALL": 1,
+     "in_band": {
+      "n": 40,
+      "n_classes_present": 5,
+      "classes_present": [
+       "FOLLOW",
+       "CRUISE",
+       "CREEP",
+       "ADAPT_SPEED_FOR_CURVE",
+       "ACCELERATE"
+      ],
+      "support": {
+       "FOLLOW": 2,
+       "CRUISE": 18,
+       "YIELD_MERGE": 0,
+       "BRAKE_TO": 0,
+       "CREEP": 2,
+       "HOLD": 0,
+       "ADAPT_SPEED_FOR_CURVE": 6,
+       "ACCELERATE": 12
+      },
+      "predicted": {
+       "FOLLOW": 0,
+       "CRUISE": 40,
+       "YIELD_MERGE": 0,
+       "BRAKE_TO": 0,
+       "CREEP": 0,
+       "HOLD": 0,
+       "ADAPT_SPEED_FOR_CURVE": 0,
+       "ACCELERATE": 0
+      },
+      "recall": {
+       "FOLLOW": 0.0,
+       "CRUISE": 1.0,
+       "YIELD_MERGE": null,
+       "BRAKE_TO": null,
+       "CREEP": 0.0,
+       "HOLD": null,
+       "ADAPT_SPEED_FOR_CURVE": 0.0,
+       "ACCELERATE": 0.0
+      },
+      "precision": {
+       "FOLLOW": null,
+       "CRUISE": 0.45,
+       "YIELD_MERGE": null,
+       "BRAKE_TO": null,
+       "CREEP": null,
+       "HOLD": null,
+       "ADAPT_SPEED_FOR_CURVE": null,
+       "ACCELERATE": null
+      },
+      "accuracy": 0.45,
+      "macro_recall_over_present": 0.2,
+      "confusion": [
+       [
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        18,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        6,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        12,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ]
+      ]
+     }
+    }
+   },
+   "plumbing": {
+    "cl": {
+     "n_with_goal_action": 140,
+     "goal_source_histogram": {
+      "2": 140
+     },
+     "goal_lat_histogram": {
+      "LANE_KEEP": 140
+     },
+     "goal_lon_histogram": {
+      "CRUISE": 98,
+      "ADAPT_SPEED_FOR_CURVE": 42
+     },
+     "goal_lat_equals_head_argmax": 1.0,
+     "goal_lon_equals_head_argmax": 1.0
+    },
+    "cl_navshuf": {
+     "n_with_goal_action": 140,
+     "goal_source_histogram": {
+      "2": 140
+     },
+     "goal_lat_histogram": {
+      "LANE_KEEP": 140
+     },
+     "goal_lon_histogram": {
+      "CRUISE": 98,
+      "ADAPT_SPEED_FOR_CURVE": 42
+     },
+     "goal_lat_equals_head_argmax": 1.0,
+     "goal_lon_equals_head_argmax": 1.0
+    }
+   },
+   "human_turn_stratum": {
+    "gt_turn_deg_threshold": 5.0,
+    "n_human_turns": 27,
+    "n_total": 140,
+    "head_asks_TURN_on_human_turns": 0,
+    "head_asks_ANY_non_LANE_KEEP_on_human_turns": 0,
+    "recall_TURN_on_geometric_turns": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n": 27,
+     "n_episodes": 10,
+     "n_boot": 10000,
+     "estimator": "episode-cluster bootstrap (percentile, full-set point)"
+    },
+    "label_says_TURN_on_geometric_turns": 3,
+    "n_geometric_turns_that_are_in_band": 8
+   }
+  },
+  "ep2": {
+   "n_windows": 140,
+   "n_episodes": 20,
+   "window_index_values": [
+    3,
+    13,
+    23,
+    33,
+    43,
+    53,
+    63
+   ],
+   "nav_valid_frac": 1.0,
+   "labelled": {
+    "n_in_band": 40,
+    "frac_in_band": 0.285714,
+    "in_band_window_indices": [
+     33,
+     43
+    ],
+    "lat_and_lon_masks_identical": true
+   },
+   "lat": {
+    "nav_true": {
+     "prediction_histogram_ALL_windows": {
+      "LANE_KEEP": 115,
+      "TURN_R": 25
+     },
+     "n_distinct_predictions_ALL": 2,
+     "in_band": {
+      "n": 40,
+      "n_classes_present": 5,
+      "classes_present": [
+       "LANE_KEEP",
+       "NUDGE_L",
+       "NUDGE_R",
+       "TURN_L",
+       "TURN_R"
+      ],
+      "support": {
+       "LANE_KEEP": 26,
+       "LANE_CHANGE_L": 0,
+       "LANE_CHANGE_R": 0,
+       "ABORT_LC": 0,
+       "NUDGE_L": 6,
+       "NUDGE_R": 2,
+       "TURN_L": 2,
+       "TURN_R": 4
+      },
+      "predicted": {
+       "LANE_KEEP": 33,
+       "LANE_CHANGE_L": 0,
+       "LANE_CHANGE_R": 0,
+       "ABORT_LC": 0,
+       "NUDGE_L": 0,
+       "NUDGE_R": 0,
+       "TURN_L": 0,
+       "TURN_R": 7
+      },
+      "recall": {
+       "LANE_KEEP": 0.884615,
+       "LANE_CHANGE_L": null,
+       "LANE_CHANGE_R": null,
+       "ABORT_LC": null,
+       "NUDGE_L": 0.0,
+       "NUDGE_R": 0.0,
+       "TURN_L": 0.0,
+       "TURN_R": 1.0
+      },
+      "precision": {
+       "LANE_KEEP": 0.69697,
+       "LANE_CHANGE_L": null,
+       "LANE_CHANGE_R": null,
+       "ABORT_LC": null,
+       "NUDGE_L": null,
+       "NUDGE_R": null,
+       "TURN_L": null,
+       "TURN_R": 0.571429
+      },
+      "accuracy": 0.675,
+      "macro_recall_over_present": 0.376923,
+      "confusion": [
+       [
+        23,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        3
+       ],
+       [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        6,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        4
+       ]
+      ]
+     },
+     "controls": {
+      "constant_only": {
+       "n": 40,
+       "n_classes_present": 5,
+       "classes_present": [
+        "LANE_KEEP",
+        "NUDGE_L",
+        "NUDGE_R",
+        "TURN_L",
+        "TURN_R"
+       ],
+       "support": {
+        "LANE_KEEP": 26,
+        "LANE_CHANGE_L": 0,
+        "LANE_CHANGE_R": 0,
+        "ABORT_LC": 0,
+        "NUDGE_L": 6,
+        "NUDGE_R": 2,
+        "TURN_L": 2,
+        "TURN_R": 4
+       },
+       "predicted": {
+        "LANE_KEEP": 40,
+        "LANE_CHANGE_L": 0,
+        "LANE_CHANGE_R": 0,
+        "ABORT_LC": 0,
+        "NUDGE_L": 0,
+        "NUDGE_R": 0,
+        "TURN_L": 0,
+        "TURN_R": 0
+       },
+       "recall": {
+        "LANE_KEEP": 1.0,
+        "LANE_CHANGE_L": null,
+        "LANE_CHANGE_R": null,
+        "ABORT_LC": null,
+        "NUDGE_L": 0.0,
+        "NUDGE_R": 0.0,
+        "TURN_L": 0.0,
+        "TURN_R": 0.0
+       },
+       "precision": {
+        "LANE_KEEP": 0.65,
+        "LANE_CHANGE_L": null,
+        "LANE_CHANGE_R": null,
+        "ABORT_LC": null,
+        "NUDGE_L": null,
+        "NUDGE_R": null,
+        "TURN_L": null,
+        "TURN_R": null
+       },
+       "accuracy": 0.65,
+       "macro_recall_over_present": 0.2,
+       "confusion": [
+        [
+         26,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        [
+         6,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        [
+         2,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        [
+         2,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        [
+         4,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ]
+       ],
+       "majority_class": "LANE_KEEP",
+       "base_rate": 0.65,
+       "expected_macro_recall_1_over_K": 0.2,
+       "reads_known_value_exactly": true
+      },
+      "shuffled_label": {
+       "n_perm": 10000,
+       "n_episode_blocks": 20,
+       "observed_accuracy": 0.675,
+       "observed_macro": 0.376923,
+       "free": {
+        "null_accuracy_mean": 0.553683,
+        "null_accuracy_p95": 0.625,
+        "null_macro_mean": 0.199861,
+        "null_macro_p95": 0.276923,
+        "p_accuracy_ge_observed": 0.0062,
+        "p_macro_ge_observed": 0.0003
+       },
+       "clustered": {
+        "null_accuracy_mean": 0.552965,
+        "null_accuracy_p95": 0.65,
+        "null_macro_mean": 0.19983,
+        "null_macro_p95": 0.292308,
+        "p_accuracy_ge_observed": 0.0427,
+        "p_macro_ge_observed": 0.0168
+       },
+       "quote": "clustered"
+      }
+     },
+     "is_constant_predictor_ALL_windows": false,
+     "constant_value": null
+    },
+    "nav_shuffled": {
+     "prediction_histogram_ALL_windows": {
+      "LANE_KEEP": 120,
+      "TURN_R": 20
+     },
+     "n_distinct_predictions_ALL": 2,
+     "in_band": {
+      "n": 40,
+      "n_classes_present": 5,
+      "classes_present": [
+       "LANE_KEEP",
+       "NUDGE_L",
+       "NUDGE_R",
+       "TURN_L",
+       "TURN_R"
+      ],
+      "support": {
+       "LANE_KEEP": 26,
+       "LANE_CHANGE_L": 0,
+       "LANE_CHANGE_R": 0,
+       "ABORT_LC": 0,
+       "NUDGE_L": 6,
+       "NUDGE_R": 2,
+       "TURN_L": 2,
+       "TURN_R": 4
+      },
+      "predicted": {
+       "LANE_KEEP": 35,
+       "LANE_CHANGE_L": 0,
+       "LANE_CHANGE_R": 0,
+       "ABORT_LC": 0,
+       "NUDGE_L": 0,
+       "NUDGE_R": 0,
+       "TURN_L": 0,
+       "TURN_R": 5
+      },
+      "recall": {
+       "LANE_KEEP": 0.884615,
+       "LANE_CHANGE_L": null,
+       "LANE_CHANGE_R": null,
+       "ABORT_LC": null,
+       "NUDGE_L": 0.0,
+       "NUDGE_R": 0.0,
+       "TURN_L": 0.0,
+       "TURN_R": 0.0
+      },
+      "precision": {
+       "LANE_KEEP": 0.657143,
+       "LANE_CHANGE_L": null,
+       "LANE_CHANGE_R": null,
+       "ABORT_LC": null,
+       "NUDGE_L": null,
+       "NUDGE_R": null,
+       "TURN_L": null,
+       "TURN_R": 0.0
+      },
+      "accuracy": 0.575,
+      "macro_recall_over_present": 0.176923,
+      "confusion": [
+       [
+        23,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        3
+       ],
+       [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        4,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2
+       ],
+       [
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        4,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ]
+      ]
+     }
+    },
+    "nav_zero": {
+     "prediction_histogram_ALL_windows": {
+      "LANE_KEEP": 140
+     },
+     "n_distinct_predictions_ALL": 1,
+     "in_band": {
+      "n": 40,
+      "n_classes_present": 5,
+      "classes_present": [
+       "LANE_KEEP",
+       "NUDGE_L",
+       "NUDGE_R",
+       "TURN_L",
+       "TURN_R"
+      ],
+      "support": {
+       "LANE_KEEP": 26,
+       "LANE_CHANGE_L": 0,
+       "LANE_CHANGE_R": 0,
+       "ABORT_LC": 0,
+       "NUDGE_L": 6,
+       "NUDGE_R": 2,
+       "TURN_L": 2,
+       "TURN_R": 4
+      },
+      "predicted": {
+       "LANE_KEEP": 40,
+       "LANE_CHANGE_L": 0,
+       "LANE_CHANGE_R": 0,
+       "ABORT_LC": 0,
+       "NUDGE_L": 0,
+       "NUDGE_R": 0,
+       "TURN_L": 0,
+       "TURN_R": 0
+      },
+      "recall": {
+       "LANE_KEEP": 1.0,
+       "LANE_CHANGE_L": null,
+       "LANE_CHANGE_R": null,
+       "ABORT_LC": null,
+       "NUDGE_L": 0.0,
+       "NUDGE_R": 0.0,
+       "TURN_L": 0.0,
+       "TURN_R": 0.0
+      },
+      "precision": {
+       "LANE_KEEP": 0.65,
+       "LANE_CHANGE_L": null,
+       "LANE_CHANGE_R": null,
+       "ABORT_LC": null,
+       "NUDGE_L": null,
+       "NUDGE_R": null,
+       "TURN_L": null,
+       "TURN_R": null
+      },
+      "accuracy": 0.65,
+      "macro_recall_over_present": 0.2,
+      "confusion": [
+       [
+        26,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        6,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        4,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ]
+      ]
+     }
+    }
+   },
+   "lon": {
+    "nav_true": {
+     "prediction_histogram_ALL_windows": {
+      "CRUISE": 98,
+      "ADAPT_SPEED_FOR_CURVE": 42
+     },
+     "n_distinct_predictions_ALL": 2,
+     "in_band": {
+      "n": 40,
+      "n_classes_present": 5,
+      "classes_present": [
+       "FOLLOW",
+       "CRUISE",
+       "CREEP",
+       "ADAPT_SPEED_FOR_CURVE",
+       "ACCELERATE"
+      ],
+      "support": {
+       "FOLLOW": 2,
+       "CRUISE": 18,
+       "YIELD_MERGE": 0,
+       "BRAKE_TO": 0,
+       "CREEP": 2,
+       "HOLD": 0,
+       "ADAPT_SPEED_FOR_CURVE": 6,
+       "ACCELERATE": 12
+      },
+      "predicted": {
+       "FOLLOW": 0,
+       "CRUISE": 28,
+       "YIELD_MERGE": 0,
+       "BRAKE_TO": 0,
+       "CREEP": 0,
+       "HOLD": 0,
+       "ADAPT_SPEED_FOR_CURVE": 12,
+       "ACCELERATE": 0
+      },
+      "recall": {
+       "FOLLOW": 0.0,
+       "CRUISE": 0.888889,
+       "YIELD_MERGE": null,
+       "BRAKE_TO": null,
+       "CREEP": 0.0,
+       "HOLD": null,
+       "ADAPT_SPEED_FOR_CURVE": 1.0,
+       "ACCELERATE": 0.0
+      },
+      "precision": {
+       "FOLLOW": null,
+       "CRUISE": 0.571429,
+       "YIELD_MERGE": null,
+       "BRAKE_TO": null,
+       "CREEP": null,
+       "HOLD": null,
+       "ADAPT_SPEED_FOR_CURVE": 0.5,
+       "ACCELERATE": null
+      },
+      "accuracy": 0.55,
+      "macro_recall_over_present": 0.377778,
+      "confusion": [
+       [
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        16,
+        0,
+        0,
+        0,
+        0,
+        2,
+        0
+       ],
+       [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2,
+        0
+       ],
+       [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        6,
+        0
+       ],
+       [
+        0,
+        10,
+        0,
+        0,
+        0,
+        0,
+        2,
+        0
+       ]
+      ]
+     },
+     "controls": {
+      "constant_only": {
+       "n": 40,
+       "n_classes_present": 5,
+       "classes_present": [
+        "FOLLOW",
+        "CRUISE",
+        "CREEP",
+        "ADAPT_SPEED_FOR_CURVE",
+        "ACCELERATE"
+       ],
+       "support": {
+        "FOLLOW": 2,
+        "CRUISE": 18,
+        "YIELD_MERGE": 0,
+        "BRAKE_TO": 0,
+        "CREEP": 2,
+        "HOLD": 0,
+        "ADAPT_SPEED_FOR_CURVE": 6,
+        "ACCELERATE": 12
+       },
+       "predicted": {
+        "FOLLOW": 0,
+        "CRUISE": 40,
+        "YIELD_MERGE": 0,
+        "BRAKE_TO": 0,
+        "CREEP": 0,
+        "HOLD": 0,
+        "ADAPT_SPEED_FOR_CURVE": 0,
+        "ACCELERATE": 0
+       },
+       "recall": {
+        "FOLLOW": 0.0,
+        "CRUISE": 1.0,
+        "YIELD_MERGE": null,
+        "BRAKE_TO": null,
+        "CREEP": 0.0,
+        "HOLD": null,
+        "ADAPT_SPEED_FOR_CURVE": 0.0,
+        "ACCELERATE": 0.0
+       },
+       "precision": {
+        "FOLLOW": null,
+        "CRUISE": 0.45,
+        "YIELD_MERGE": null,
+        "BRAKE_TO": null,
+        "CREEP": null,
+        "HOLD": null,
+        "ADAPT_SPEED_FOR_CURVE": null,
+        "ACCELERATE": null
+       },
+       "accuracy": 0.45,
+       "macro_recall_over_present": 0.2,
+       "confusion": [
+        [
+         0,
+         2,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        [
+         0,
+         18,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        [
+         0,
+         2,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        [
+         0,
+         6,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        [
+         0,
+         12,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ]
+       ],
+       "majority_class": "CRUISE",
+       "base_rate": 0.45,
+       "expected_macro_recall_1_over_K": 0.2,
+       "reads_known_value_exactly": true
+      },
+      "shuffled_label": {
+       "n_perm": 10000,
+       "n_episode_blocks": 20,
+       "observed_accuracy": 0.55,
+       "observed_macro": 0.377778,
+       "free": {
+        "null_accuracy_mean": 0.359718,
+        "null_accuracy_p95": 0.45,
+        "null_macro_mean": 0.199654,
+        "null_macro_p95": 0.277778,
+        "p_accuracy_ge_observed": 0.0006,
+        "p_macro_ge_observed": 0.0001
+       },
+       "clustered": {
+        "null_accuracy_mean": 0.359405,
+        "null_accuracy_p95": 0.5,
+        "null_macro_mean": 0.199429,
+        "null_macro_p95": 0.311111,
+        "p_accuracy_ge_observed": 0.014,
+        "p_macro_ge_observed": 0.0098
+       },
+       "quote": "clustered"
+      }
+     },
+     "is_constant_predictor_ALL_windows": false,
+     "constant_value": null
+    },
+    "nav_shuffled": {
+     "prediction_histogram_ALL_windows": {
+      "CRUISE": 98,
+      "ADAPT_SPEED_FOR_CURVE": 42
+     },
+     "n_distinct_predictions_ALL": 2,
+     "in_band": {
+      "n": 40,
+      "n_classes_present": 5,
+      "classes_present": [
+       "FOLLOW",
+       "CRUISE",
+       "CREEP",
+       "ADAPT_SPEED_FOR_CURVE",
+       "ACCELERATE"
+      ],
+      "support": {
+       "FOLLOW": 2,
+       "CRUISE": 18,
+       "YIELD_MERGE": 0,
+       "BRAKE_TO": 0,
+       "CREEP": 2,
+       "HOLD": 0,
+       "ADAPT_SPEED_FOR_CURVE": 6,
+       "ACCELERATE": 12
+      },
+      "predicted": {
+       "FOLLOW": 0,
+       "CRUISE": 34,
+       "YIELD_MERGE": 0,
+       "BRAKE_TO": 0,
+       "CREEP": 0,
+       "HOLD": 0,
+       "ADAPT_SPEED_FOR_CURVE": 6,
+       "ACCELERATE": 0
+      },
+      "recall": {
+       "FOLLOW": 0.0,
+       "CRUISE": 0.888889,
+       "YIELD_MERGE": null,
+       "BRAKE_TO": null,
+       "CREEP": 0.0,
+       "HOLD": null,
+       "ADAPT_SPEED_FOR_CURVE": 0.166667,
+       "ACCELERATE": 0.0
+      },
+      "precision": {
+       "FOLLOW": null,
+       "CRUISE": 0.470588,
+       "YIELD_MERGE": null,
+       "BRAKE_TO": null,
+       "CREEP": null,
+       "HOLD": null,
+       "ADAPT_SPEED_FOR_CURVE": 0.166667,
+       "ACCELERATE": null
+      },
+      "accuracy": 0.425,
+      "macro_recall_over_present": 0.211111,
+      "confusion": [
+       [
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        16,
+        0,
+        0,
+        0,
+        0,
+        2,
+        0
+       ],
+       [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0
+       ],
+       [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        5,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0
+       ],
+       [
+        0,
+        10,
+        0,
+        0,
+        0,
+        0,
+        2,
+        0
+       ]
+      ]
+     }
+    },
+    "nav_zero": {
+     "prediction_histogram_ALL_windows": {
+      "CRUISE": 140
+     },
+     "n_distinct_predictions_ALL": 1,
+     "in_band": {
+      "n": 40,
+      "n_classes_present": 5,
+      "classes_present": [
+       "FOLLOW",
+       "CRUISE",
+       "CREEP",
+       "ADAPT_SPEED_FOR_CURVE",
+       "ACCELERATE"
+      ],
+      "support": {
+       "FOLLOW": 2,
+       "CRUISE": 18,
+       "YIELD_MERGE": 0,
+       "BRAKE_TO": 0,
+       "CREEP": 2,
+       "HOLD": 0,
+       "ADAPT_SPEED_FOR_CURVE": 6,
+       "ACCELERATE": 12
+      },
+      "predicted": {
+       "FOLLOW": 0,
+       "CRUISE": 40,
+       "YIELD_MERGE": 0,
+       "BRAKE_TO": 0,
+       "CREEP": 0,
+       "HOLD": 0,
+       "ADAPT_SPEED_FOR_CURVE": 0,
+       "ACCELERATE": 0
+      },
+      "recall": {
+       "FOLLOW": 0.0,
+       "CRUISE": 1.0,
+       "YIELD_MERGE": null,
+       "BRAKE_TO": null,
+       "CREEP": 0.0,
+       "HOLD": null,
+       "ADAPT_SPEED_FOR_CURVE": 0.0,
+       "ACCELERATE": 0.0
+      },
+      "precision": {
+       "FOLLOW": null,
+       "CRUISE": 0.45,
+       "YIELD_MERGE": null,
+       "BRAKE_TO": null,
+       "CREEP": null,
+       "HOLD": null,
+       "ADAPT_SPEED_FOR_CURVE": null,
+       "ACCELERATE": null
+      },
+      "accuracy": 0.45,
+      "macro_recall_over_present": 0.2,
+      "confusion": [
+       [
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        18,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        6,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        12,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ]
+      ]
+     }
+    }
+   },
+   "plumbing": {
+    "cl": {
+     "n_with_goal_action": 140,
+     "goal_source_histogram": {
+      "2": 140
+     },
+     "goal_lat_histogram": {
+      "LANE_KEEP": 115,
+      "TURN_R": 25
+     },
+     "goal_lon_histogram": {
+      "CRUISE": 98,
+      "ADAPT_SPEED_FOR_CURVE": 42
+     },
+     "goal_lat_equals_head_argmax": 1.0,
+     "goal_lon_equals_head_argmax": 1.0
+    },
+    "cl_navshuf": {
+     "n_with_goal_action": 140,
+     "goal_source_histogram": {
+      "2": 140
+     },
+     "goal_lat_histogram": {
+      "LANE_KEEP": 120,
+      "TURN_R": 20
+     },
+     "goal_lon_histogram": {
+      "CRUISE": 98,
+      "ADAPT_SPEED_FOR_CURVE": 42
+     },
+     "goal_lat_equals_head_argmax": 1.0,
+     "goal_lon_equals_head_argmax": 1.0
+    }
+   },
+   "human_turn_stratum": {
+    "gt_turn_deg_threshold": 5.0,
+    "n_human_turns": 27,
+    "n_total": 140,
+    "head_asks_TURN_on_human_turns": 9,
+    "head_asks_ANY_non_LANE_KEEP_on_human_turns": 9,
+    "recall_TURN_on_geometric_turns": {
+     "point": 0.333333,
+     "lo": 0.0,
+     "hi": 0.666667,
+     "n": 27,
+     "n_episodes": 10,
+     "n_boot": 10000,
+     "estimator": "episode-cluster bootstrap (percentile, full-set point)"
+    },
+    "label_says_TURN_on_geometric_turns": 3,
+    "n_geometric_turns_that_are_in_band": 8
+   }
+  }
+ },
+ "label_census_eval": {
+  "path": "C:/Users/Admin/tanitad-wt/_s2build/release/v72/s2_labels_v7.2_eval.jsonl.gz",
+  "md5": "aa12c948f062181c3297265b51526ec5",
+  "n_records": 147,
+  "lat_counts": {
+   "NUDGE_R": 21,
+   "TURN_R": 8,
+   "LANE_KEEP": 99,
+   "NUDGE_L": 14,
+   "TURN_L": 5
+  },
+  "lon_counts": {
+   "CRUISE": 44,
+   "ADAPT_SPEED_FOR_CURVE": 23,
+   "ACCELERATE": 40,
+   "CREEP": 6,
+   "FOLLOW": 10,
+   "BRAKE_TO": 22,
+   "HOLD": 2
+  },
+  "lat_fracs": {
+   "NUDGE_R": 0.142857,
+   "TURN_R": 0.054422,
+   "LANE_KEEP": 0.673469,
+   "NUDGE_L": 0.095238,
+   "TURN_L": 0.034014
+  },
+  "lon_fracs": {
+   "CRUISE": 0.29932,
+   "ADAPT_SPEED_FOR_CURVE": 0.156463,
+   "ACCELERATE": 0.272109,
+   "CREEP": 0.040816,
+   "FOLLOW": 0.068027,
+   "BRAKE_TO": 0.14966,
+   "HOLD": 0.013605
+  },
+  "tactical_bands": {
+   "(2.0, 6.0)": 147
+  },
+  "t0_s": {
+   "8.0": 147
+  }
+ },
+ "label_census_train": {
+  "path": "C:/Users/Admin/tanitad-wt/_s2build/release/v72/s2_labels_v7.2_train.jsonl.gz",
+  "md5": "0ff902130ce76886b8a925eceed9e3a5",
+  "n_records": 4572,
+  "lat_counts": {
+   "NUDGE_L": 488,
+   "LANE_KEEP": 2958,
+   "NUDGE_R": 592,
+   "TURN_R": 259,
+   "TURN_L": 275
+  },
+  "lon_counts": {
+   "ACCELERATE": 998,
+   "BRAKE_TO": 905,
+   "CRUISE": 1243,
+   "ADAPT_SPEED_FOR_CURVE": 995,
+   "HOLD": 131,
+   "FOLLOW": 165,
+   "CREEP": 135
+  },
+  "lat_fracs": {
+   "NUDGE_L": 0.106737,
+   "LANE_KEEP": 0.646982,
+   "NUDGE_R": 0.129484,
+   "TURN_R": 0.056649,
+   "TURN_L": 0.060149
+  },
+  "lon_fracs": {
+   "ACCELERATE": 0.218285,
+   "BRAKE_TO": 0.197944,
+   "CRUISE": 0.271872,
+   "ADAPT_SPEED_FOR_CURVE": 0.217629,
+   "HOLD": 0.028653,
+   "FOLLOW": 0.036089,
+   "CREEP": 0.029528
+  },
+  "tactical_bands": {
+   "(2.0, 6.0)": 4572
+  },
+  "t0_s": {
+   "8.0": 4572
+  }
+ }
+}

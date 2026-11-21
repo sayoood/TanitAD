@@ -1,0 +1,475 @@
+--- a/refe/test_p6_chain.py
++++ b/refe/test_p6_chain.py
+@@ -44,11 +44,11 @@
+ FETCH_RX = re.compile(r'bash +"\$PKG/code/pod_dataprep\.sh"|p2r_sync\.py restore|\bcurl +-|apt-get install|uv pip install')
+ TOKEN_OK_RX = re.compile(r"^token_ok\(\) \{\n.*?^\}\n", re.S | re.M)
+ ORDER = ['source "$WORK/teacher_env.sh"', '"$PY" p2r_sync.py watch', "STAGES=weights", "p2r_sync.py recover", "p6_prep.py command-table", "annotate_commands.py --bank",
+-         "ZZD9_PASS", "p6_prep.py lane-ranks", "\nARGS=", "diag_p6_labeller_identity.py --cache", "train.py $MEM_ARGS", "hf_egress.py gate",
++         "ZZD9_PASS", "p6_prep.py lane-ranks", "\nARGS=", "\nlab_stage() {", "\nwait_clear\n", "train.py $MEM_ARGS", "hf_egress.py gate",
+          "launch_gate.py run --profile refe_p6", "train.py $ARGS --preflight", "train.py $ARGS >>", "p2r_sync.py final"]
+ STAGE_DONE = ("weights", "recover", "commands", "cache", "lanes", "launch_gate")
+ KEY_DONE = ("lab", "mem", "egr")
+-STOPS = ("env", "weights", "recover", "inputs", "commands", "cache", "lanes", "lab", "mem", "egr", "launch_gate")
++STOPS = ("env", "weights", "recover", "inputs", "commands", "cache", "lanes", "lab", "wait", "earlylab", "mem", "egr", "launch_gate")
+ TOKEN = "hf_" + "Q" * 24                      # built at runtime: no token-shaped literal in the repo
+ 
+ 
+@@ -90,6 +90,10 @@
+         v.append("ARGS_DEFINED_TWICE")
+     elif am[0] != ref_args:
+         v.append("ARGS_CHANGED")
++    # the stage-0 write test is sized for P6's disk need (P6_ON_11VCPU section 5): a default far below it proves nothing about the volume
++    dd = re.findall(r'DDGB="\$\{P6_DD_GB:-\$\(\[ "\$\{P6_FREE_NAVLOGS:-0\}" = 1 \] && echo (\d+) \|\| echo (\d+)\)\}"', text)
++    if len(dd) != 1 or int(dd[0][0]) < 72 or int(dd[0][1]) < 96:
++        v.append("DD_TEST_UNDERSIZED")
+     # the NAVSIM metadata is pinned to a REVISION with its size and sha256, and a mismatch refuses (MEASURED 2026-10-12)
+     if "/resolve/main/" in text or not re.search(r"/resolve/[0-9a-f]{40}/openscene-v1\.1/openscene_metadata_trainval\.tgz", text):
+         v.append("NAVLOGS_NOT_PINNED")
+@@ -126,8 +130,35 @@
+     elif code.find("\nyaw_check\n", code.find("\nyaw_check\n") + 1) > code.find("\nARGS="):
+         v.append("YAW_CHECKED_AFTER_ARGS")
+     # ---- P2 is over, and P6 is not shipped over P2's tree
+-    if not re.search(r'\[ -e "\$P2DIR/chain\.lock" \] && ! \( flock -n 9 \) 9> "\$P2DIR/chain\.lock"', text):
++    # the lock probe is READ-WRITE (`9<>`; EBADF on nfs4 otherwise), over P2, RL-S1 and S1, each REFUSED; only the P2 seed replicate may run beside P6's CPU-only stages
++    if not re.search(r'^lock_held\(\) \{ \[ -e "\$1/chain\.lock" \] && ! \( flock -n 9 \) 9<> "\$1/chain\.lock"; \}$', text, re.M) \
++            or not re.search(r'for u in "\$P2DIR" "\$DATA/rls1" "\$DATA/s1aux"; do\n  if lock_held "\$u"; then refuse ', text):
+         v.append("P2_GUARD_MISSING")
++    if not re.search(r'if lock_held "\$P2REPD"; then\n  \[ "\$\{P6_OVERLAP:-1\}" = 1 \] \|\| refuse .*\n  grep -q "ZZP2REP_TRAIN_START" "\$P2REPD/chain\.log" 2> /dev/null \\\n    \|\| refuse ', text):
++        v.append("OVERLAP_NOT_GATED_ON_TRAINING")
++    # ---- OVERLAP: hidden CUDA until the wait, restored after it, before the first GPU stage; the wait names the replicate's DONE marker; pools capped, niced, guarded
++    code = code_of(text)
++    i_hide, i_wait, i_restore, i_mem = (code.find('export CUDA_VISIBLE_DEVICES=""'), code.find("\nwait_clear\n"), code.find('export CUDA_VISIBLE_DEVICES="$CVD_SAVED"'),
++                                        code.find("train.py $MEM_ARGS"))
++    if i_hide < 0:
++        v.append("CUDA_NOT_HIDDEN_BESIDE_TRAINER")
++    if i_restore < 0 or not (i_wait < i_restore < i_mem):
++        v.append("CUDA_NOT_RESTORED_BEFORE_GPU_STAGE")
++    if i_wait < 0:
++        v.append("WAIT_BEFORE_GPU_STAGE_MISSING")
++    elif not (0 <= i_hide < i_wait < i_mem):
++        v.append("WAIT_ORDER")
++    wb = re.search(r"^wait_clear\(\) \{\n.*?^\}\n", code, re.S | re.M)
++    if not wb or 'grep -q "ZZP2REP_DONE"' not in wb.group(0) or "gpu_busy" not in wb.group(0) or 'lock_held "$u"' not in wb.group(0) or '"$P2REPD"' not in wb.group(0):
++        v.append("WAIT_CONDITIONS_INCOMPLETE")
++    if len(re.findall(r'--workers "\$CWX"', code)) != 3 or '--workers "$CW"' in code:
++        v.append("POOLS_NOT_CAPPED_BESIDE_TRAINER")
++    if len(re.findall(r'nice -n "\$NICEX"', code)) != 2 or "nice -n 10" in code:
++        v.append("NOT_NICED_BESIDE_TRAINER")
++    if len(re.findall(r"guard_watch \$!", code)) != 3:
++        v.append("NO_STEP_TIME_GUARD")
++    if 'REFE_PAUSE_FILE="$PAUSE_FILE"' not in code:
++        v.append("PAUSE_FILE_NOT_PASSED")
+     if not re.search(r'^PKG="\$\{P6_PKG:-\$WORK/refe-plan-p6\}"$', text, re.M) or re.search(r"refe-plan(/|\")", code):
+         v.append("P6_PKG_IS_P2_DIR")
+     # ---- a NEW private repo, on every HF call; the watcher on the 30-minute cadence
+@@ -250,6 +281,8 @@
+     out = [
+         ("delete the final push", d(text, "p2r_sync.py final"), "NO_FINAL_EGRESS"),
+         ("metadata from main", text.replace("/resolve/a76f840b65e972bc45e56c2adced897498e9a026/", "/resolve/main/"), "NAVLOGS_NOT_PINNED"),
++        ("dd test back to 8 GB", text.replace("echo 96", "echo 8"), "DD_TEST_UNDERSIZED"),
++        ("dd test undersized when the metadata is freed", text.replace("echo 72", "echo 8"), "DD_TEST_UNDERSIZED"),
+         ("metadata sha256 unchecked", d(text, '= "$NAVLOGS_SHA256" ] ||'), "NAVLOGS_NOT_VERIFIED"),
+         ("metadata size unchecked", d(text, '= "$NAVLOGS_BYTES" ] ||'), "NAVLOGS_NOT_VERIFIED"),
+         ("delete the periodic watcher", re.sub(r'"\$PY" p2r_sync\.py watch.*?200>&- &\n', "", text, flags=re.S), "NO_PERIODIC_EGRESS"),
+@@ -288,6 +321,18 @@
+         ("reinstate a re-fetch (bank)", text.replace("have_bank || fetch_bank ||", "fetch_bank ||"), "REFETCH_UNGUARDED:bank"),
+         ("a download in the main body", text.replace('log "inputs ok', 'curl -sSL -o /dev/null http://x 200>&-\nlog "inputs ok', 1), "FETCH_OUTSIDE_FETCH_FUNCTION"),
+         ("no P2 guard", text.replace("! ( flock -n 9 )", "! ( true )"), "P2_GUARD_MISSING"),
++        ("read-only lock probe (EBADF on nfs4)", text.replace('9<> "$1/chain.lock"', '9< "$1/chain.lock"'), "P2_GUARD_MISSING"),
++        ("RL-S1 and S1 not guarded", text.replace('for u in "$P2DIR" "$DATA/rls1" "$DATA/s1aux"; do', 'for u in "$P2DIR"; do'), "P2_GUARD_MISSING"),
++        ("beside a replicate that is not training yet", d(text, 'grep -q "ZZP2REP_TRAIN_START"'), "OVERLAP_NOT_GATED_ON_TRAINING"),
++        ("CUDA not hidden", d(text, '  export CUDA_VISIBLE_DEVICES=""'), "CUDA_NOT_HIDDEN_BESIDE_TRAINER"),
++        ("CUDA never restored", d(text, 'export CUDA_VISIBLE_DEVICES="$CVD_SAVED"'), "CUDA_NOT_RESTORED_BEFORE_GPU_STAGE"),
++        ("no wait before the first GPU stage", text.replace("\nwait_clear\nif [", "\n: no wait\nif [", 1), "WAIT_BEFORE_GPU_STAGE_MISSING"),
++        ("the wait forgets the replicate's DONE marker", text.replace('! grep -q "ZZP2REP_DONE" "$P2REPD/chain.log"', "false"), "WAIT_CONDITIONS_INCOMPLETE"),
++        ("the wait forgets the GPU", text.replace('if [ "$rc" = 0 ] && gpu_busy; then', 'if [ "$rc" = 0 ] && false; then'), "WAIT_CONDITIONS_INCOMPLETE"),
++        ("the pools are not capped", text.replace('--workers "$CWX"', '--workers "$CW"'), "POOLS_NOT_CAPPED_BESIDE_TRAINER"),
++        ("not niced beside the trainer", text.replace('nice -n "$NICEX"', "nice -n 10"), "NOT_NICED_BESIDE_TRAINER"),
++        ("no step-time guard", text.replace("guard_watch $!", "wait $!"), "NO_STEP_TIME_GUARD"),
++        ("the pause file is not passed to the builder", text.replace(' REFE_PAUSE_FILE="$PAUSE_FILE"', ""), "PAUSE_FILE_NOT_PASSED"),
+         ("shipped over P2's tree", text.replace("refe-plan-p6", "refe-plan"), "P6_PKG_IS_P2_DIR"),
+         ("workers from nproc", re.sub(r"^LW=.*$", 'LW="$(nproc)"', text, flags=re.M), "WORKERS_NOT_FROM_CGROUP"),
+         ("D7 never refuses", text.replace('refuse "D7: rank-$k twins are NOT', 'log "D7: rank-$k twins are NOT'), "D6_D7_NOT_ENFORCED"),
+@@ -316,6 +361,8 @@
+ rest = argv[1:]
+ with open(os.environ["STUB_CALLS"], "a", encoding="utf-8") as f:
+     f.write(script + " " + " ".join(rest) + "\n")
++with open(os.environ["STUB_CALLS"] + ".cvd", "a", encoding="utf-8") as f:
++    f.write(script + " CVD=" + repr(os.environ.get("CUDA_VISIBLE_DEVICES")) + "\n")
+ def opt(name, default=None):
+     return rest[rest.index(name) + 1] if name in rest else default
+ def rows(bank):
+@@ -327,7 +374,7 @@
+     path.parent.mkdir(parents=True, exist_ok=True)
+     parts = (np.zeros((3, 3)), "ego", "obs", centerline, ["lane"], "dam")
+     path.write_bytes(lzma.compress(pickle.dumps({"format": "tanitad.p6parts/1", "parts": parts}, protocol=4), preset=1))
+-if script in ("p6_prep.py", "annotate_commands.py"):
++if script in ("p6_prep.py", "annotate_commands.py", "p6_overlap.py"):
+     sys.path.insert(0, str(REAL))
+     sys.argv = [str(REAL / script)] + rest
+     runpy.run_path(str(REAL / script), run_name="__main__")
+@@ -350,6 +397,28 @@
+     if rest[0] == "verify":
+         print("ZZD9_PASS")
+     else:
++        if os.environ.get("STUB_SLOW_TRAINER") and not os.path.exists(os.environ["STUB_CALLS"] + ".slowed"):    # the build 'slows' the replicate: slow step rows, then it waits for the chain's pause
++            open(os.environ["STUB_CALLS"] + ".slowed", "w").write("1")
++            mf = Path(os.environ["STUB_METRICS"]); el = max(json.loads(x)["elapsed_s"] for x in mf.read_text().splitlines() if '"traj_L1"' in x)
++            st = max(json.loads(x)["step"] for x in mf.read_text().splitlines() if '"traj_L1"' in x)
++            import time as _t
++            with open(mf, "a") as fh:
++                for i in range(8):
++                    el += 72.0; st += 1
++                    fh.write(json.dumps({"step": st, "traj_L1": 1.0, "elapsed_s": el}) + "\n")
++            for _ in range(40):
++                if os.path.exists(os.environ["REFE_PAUSE_FILE"]):
++                    open(os.environ["STUB_CALLS"], "a").write("PAUSE_SEEN\n")
++                    break
++                _t.sleep(0.5)
++            with open(mf, "a") as fh:
++                for i in range(8):
++                    el += 60.0; st += 1
++                    fh.write(json.dumps({"step": st, "traj_L1": 1.0, "elapsed_s": el}) + "\n")
++            for _ in range(40):                                    # the chain removes the pause when its pause is over
++                if not os.path.exists(os.environ["REFE_PAUSE_FILE"]):
++                    break
++                _t.sleep(0.5)
+         k = opt("--lane-rank"); out = Path(opt("--out")); n = 0; seen = set(); logs = set()
+         for r in rows(opt("--targets")):
+             aug = r.get("aug"); lane = isinstance(aug, dict) and aug.get("kind") == "lane_rank"
+@@ -370,9 +439,11 @@
+         print("ZZMETRIC_CACHE_DONE built=%d skipped_5s_guard=0 failed=0 logs=%d 1s" % (n, len(logs)))
+ elif script == "diag_p6_labeller_identity.py":
+     out = Path(opt("--out"))
+-    out.write_text(json.dumps({"identity_ok": True, "n_sets": 64, "identity_equal_sets": 64, "stale_refused": True, "throughput_sets_s": 9.9,
++    thr = float(os.environ.get("STUB_LAB_THR", "9.9"))
++    bad = bool(os.environ.get("STUB_LAB_IDENTITY_FAIL"))
++    out.write_text(json.dumps({"identity_ok": not bad, "n_sets": 64, "identity_equal_sets": 63 if bad else 64, "stale_refused": True, "throughput_sets_s": thr,
+                                "workers": int(opt("--workers"))}), encoding="utf-8")
+-    print("ZZLAB_IDENTITY_PASS"); print("ZZLAB_THROUGHPUT 9.9")
++    print("ZZLAB_IDENTITY_FAIL" if bad else "ZZLAB_IDENTITY_PASS"); print("ZZLAB_THROUGHPUT " + str(thr))
+ elif script == "hf_egress.py":
+     out = Path(opt("--out")); out.mkdir(parents=True, exist_ok=True)
+     sz = Path(opt("--ckpt")).stat().st_size
+@@ -419,7 +490,7 @@
+        echo "ZZOK pix $P6_EXPECT_PIX_SHARDS/$P6_EXPECT_PIX_SHARDS shards ZZ" ;;
+ esac
+ '''
+-REQUIRED = ["refe/train.py", "refe/p2r_sync.py", "refe/hf_egress.py", "refe/p6_prep.py", "refe/build_metric_cache.py", "refe/annotate_commands.py",
++REQUIRED = ["refe/train.py", "refe/p2r_sync.py", "refe/hf_egress.py", "refe/p6_prep.py", "refe/p6_overlap.py", "refe/p6_cpu_probe.py", "refe/build_metric_cache.py", "refe/annotate_commands.py",
+             "refe/diag_p6_labeller_identity.py", "refe/launch_gate.py", "refe/gate_token.py", "refe/gate_checks.py", "refe/gate_fixture.py", "refe/test_launch_gate.py",
+             "refe/test_p2r_chain.py", "refe/test_p6_levers.py", "refe/test_p6_chain.py", "SHIP_MANIFEST.json", "code/pod_teacher_env.sh", "code/pod_train.sh",
+             "code/pod_dataprep.sh", "splits/navtrain.yaml"]
+@@ -456,7 +527,14 @@
+         (self.stub / "fakepy.py").write_text(FAKEPY, encoding="utf-8")
+         py = posix(sys.executable)
+         (self.stub / "fakepy").write_text(f'#!/bin/bash\nexec "{py}" "{posix(self.stub / "fakepy.py")}" "$@"\n', encoding="utf-8", newline="\n")
+-        (self.stub / "bash_env.sh").write_text("flock() { return 0; }\n", encoding="utf-8", newline="\n")
++        # a path-aware flock: a lock is HELD when its directory name is in STUB_HELD (or in the file STUB_HELD_FILE names, re-read on every probe so a test can release it mid-run)
++        (self.stub / "bash_env.sh").write_text(
++            'flock() {\n  local fd="${@: -1}" tgt who held\n  tgt="$(readlink /dev/fd/$fd 2> /dev/null)"\n  who="$(basename "$(dirname "$tgt")")"\n'
++            '  held="${STUB_HELD:-}"; [ -n "${STUB_HELD_FILE:-}" ] && [ -f "$STUB_HELD_FILE" ] && held="$held $(cat "$STUB_HELD_FILE")"\n'
++            '  case " $held " in *" $who "*) return 1 ;; esac\n  return 0\n}\n', encoding="utf-8", newline="\n")
++        (self.stub / "nice").write_text('#!/bin/bash\necho "NICE $2" >> "$STUB_CALLS.nice"\nshift 2\nexec "$@"\n', encoding="utf-8", newline="\n")
++        (self.stub / "nvidia-smi").write_text('#!/bin/bash\n[ -f "$STUB_GPU_BUSY_FILE" ] && echo 4242\nexit 0\n', encoding="utf-8", newline="\n")
++        subprocess.run([shutil.which("bash"), "-c", f"chmod +x '{posix(self.stub / 'nice')}' '{posix(self.stub / 'nvidia-smi')}'"], check=True)
+         subprocess.run([shutil.which("bash"), "-c", f"chmod +x '{posix(self.stub / 'fakepy')}'"], check=True)
+         maps = self.data / "nuplan-maps" / "v"
+         for c in ("a", "b", "c", "d"):
+@@ -494,9 +572,14 @@
+         env.update({"WORK": posix(self.ws), "HF_TOKEN": TOKEN, "P6_DD_GB": "0", "P6_EXPECT_DBS": "3", "P6_EXPECT_PIX_SHARDS": "2", "P6_ATTEMPT_SLEEP": "0",
+                     "STUB_CALLS": posix(self.calls), "STUB_REAL_REFE": posix(HERE), "STUB_TRAIN_COUNT": posix(self.root / "train_count"),
+                     "STUB_FORCE_TOKEN_FAIL": posix(self.root / "force_token_fail"), "BASH_ENV": posix(self.stub / "bash_env.sh"), "P6_CACHE_WORKERS": "2",
++                    "P6_NVSMI": posix(self.stub / "nvidia-smi"), "STUB_GPU_BUSY_FILE": posix(self.root / "gpu_busy"), "P6_POLL_S": "0", "P6_OVERLAP_DD_PAUSE_S": "0",
++                    "P6_OVERLAP_BASELINE_TRIES": "1", "P6_OVERLAP_BASELINE_SLEEP_S": "0", "P6_OVERLAP_WORKERS": "2", "P6_GUARD_TICK_S": "1", "P6_GUARD_POLL_S": "2",
++                    "P6_GUARD_PAUSE_S": "2", "STUB_METRICS": posix(self.data / "refe_runs" / "p2_joint_pdm_s1" / "metrics.jsonl"),
+                     "P6_LABEL_WORKERS": "2", "PYTHONIOENCODING": "utf-8"})
+-        for k in ("P6_YAW_WRAP", "P6_STOP_AFTER", "P6_D7_FALLBACK", "P6_NAVSIM_LOGS_URL", "STUB_TWIN_SAME", "STUB_PATCH_MISSING", "STUB_TRAIN_CRASH_FIRST"):
++        for k in ("P6_YAW_WRAP", "P6_STOP_AFTER", "P6_D7_FALLBACK", "P6_NAVSIM_LOGS_URL", "STUB_TWIN_SAME", "STUB_PATCH_MISSING", "STUB_TRAIN_CRASH_FIRST", "P6_OVERLAP", "STUB_HELD",
++                  "STUB_HELD_FILE", "P6_OVERLAP_UNGUARDED", "P6_P2REP_ABANDONED", "P6_WAIT_MAX_S", "STUB_SLOW_TRAINER", "STUB_LAB_THR", "STUB_LAB_IDENTITY_FAIL", "P6_EARLY_LAB", "P6_FREE_NAVLOGS", "P6_NAVSIM_LOGS", "CUDA_VISIBLE_DEVICES"):
+             env.pop(k, None)
++        env["PATH"] = str(self.stub) + os.pathsep + env.get("PATH", "")
+         env.update(extra_env or {})
+         r = subprocess.run([shutil.which("bash"), posix(self.script)], capture_output=True, text=True, env=env, timeout=timeout, encoding="utf-8", errors="replace")
+         return r.returncode, r.stdout + r.stderr
+@@ -853,6 +936,280 @@
+         sb.add_navlogs()
+         rc, out = sb.run({**py_env, "P6_STOP_AFTER": "commands"})
+         assert rc == 0 and sb.stage("commands"); n += 2
++    # ---- 4k2. P6_FREE_NAVLOGS (P6_ON_11VCPU section 5): off by default; on, the default metadata tree + the download dir go AFTER the command table exists; a custom P6_NAVSIM_LOGS is never touched
++    with tempfile.TemporaryDirectory() as tmp:
++        sb = Sandbox(tmp)
++        (sb.data / "navsim_logs_dl").mkdir()
++        (sb.data / "navsim_logs_dl" / "junk.bin").write_bytes(b"x")
++        rc, out = sb.run({**py_env, "P6_STOP_AFTER": "commands"})
++        assert rc == 0 and sb.stage("commands") and (sb.data / "navsim_logs" / "trainval" / "L0.pkl").exists() and (sb.data / "navsim_logs_dl" / "junk.bin").exists(); n += 3   # default: nothing deleted
++    with tempfile.TemporaryDirectory() as tmp:
++        sb = Sandbox(tmp)
++        (sb.data / "navsim_logs_dl").mkdir()
++        (sb.data / "navsim_logs_dl" / "junk.bin").write_bytes(b"x")
++        rc, out = sb.run({**py_env, "P6_STOP_AFTER": "commands", "P6_FREE_NAVLOGS": "1"})
++        assert rc == 0 and sb.stage("commands") and not (sb.data / "navsim_logs").exists() and not (sb.data / "navsim_logs_dl").exists(), sb.chain_log()[-400:]; n += 3
++        assert "NAVSIM metadata deleted" in sb.chain_log() and (sb.data / "refe_p6" / "commands.json").exists() and list((sb.data / "refe_navtrain" / "train_grow_cmd").glob("targets_rank*.jsonl")); n += 3
++        rc, out = sb.run({**py_env, "P6_STOP_AFTER": "lanes", "P6_FREE_NAVLOGS": "1"})                     # the rest of the chain does not need the metadata again
++        assert rc == 0 and sb.stage("lanes") and not (sb.data / "navsim_logs").exists(); n += 2
++    with tempfile.TemporaryDirectory() as tmp:
++        sb = Sandbox(tmp, navlogs=False)
++        custom = Path(tmp) / "shared_meta"
++        custom.mkdir()
++        for lg in LOGS3:
++            with open(custom / f"{lg}.pkl", "wb") as fh:
++                pickle.dump([{"token": t, "log_name": lg, "driving_command": np.array([0, 1, 0, 0])} for t in TOKS2], fh)
++        rc, out = sb.run({**py_env, "P6_STOP_AFTER": "commands", "P6_FREE_NAVLOGS": "1", "P6_NAVSIM_LOGS": posix(custom)})
++        assert rc == 0 and sb.stage("commands") and (custom / "L0.pkl").exists(); n += 2                      # somebody else's directory is never deleted
++    with tempfile.TemporaryDirectory() as tmp:
++        sb = Sandbox(tmp, navlogs=False)
++        rc, out = sb.run({**py_env, "P6_STOP_AFTER": "commands", "P6_FREE_NAVLOGS": "1"})                 # a refused commands stage deletes nothing and marks nothing
++        assert rc != 0 and not sb.stage("commands"); n += 2
++    # ---- 4n. OVERLAP (eval/P6_ON_11VCPU.md section 9): P6's CPU-only stages beside the P2 seed replicate's trainer, and the wait before the first GPU stage
++    def overlap_fixture(sb, train_start=True, done=False, metrics=True, steps=12, dt=60.0):
++        d = sb.data / "refe_p2rep"
++        d.mkdir(parents=True, exist_ok=True)
++        (d / "chain.lock").write_text("")
++        lines = ["2026-10-14T05:00:00 ZZP2REP_START chain"] + (["2026-10-14T05:20:00 ZZP2REP_TRAIN_START (train.py preflight OK; seed 1; launching)"] if train_start else []) \
++            + (["2026-10-14T23:00:00 ZZP2REP_DONE"] if done else [])
++        (d / "chain.log").write_text("\n".join(lines) + "\n", encoding="utf-8")
++        mp = sb.data / "refe_runs" / "p2_joint_pdm_s1"
++        mp.mkdir(parents=True, exist_ok=True)
++        if metrics:
++            el = 1000.0
++            rows = [json.dumps({"event": "start"})]
++            for i in range(1, steps + 1):
++                el += dt
++                rows.append(json.dumps({"step": i, "traj_L1": 1.0, "elapsed_s": el}))
++            (mp / "metrics.jsonl").write_text("\n".join(rows) + "\n", encoding="utf-8")
++
++    def calls_file(sb, suffix):
++        fp = Path(str(sb.calls) + suffix)
++        return fp.read_text(encoding="utf-8").splitlines() if fp.exists() else []
++
++    # 4n-a. P2, RL-S1 and S1 must be OVER (each refused on its own lock); the replicate may run only once it TRAINS, and P6_OVERLAP=0 restores the refusal
++    for held_dir, rel in (("refe_p2", "refe_p2"), ("rls1", "rls1"), ("s1aux", "s1aux")):
++        with tempfile.TemporaryDirectory() as tmp:
++            sb = Sandbox(tmp)
++            (sb.data / rel).mkdir(parents=True, exist_ok=True)
++            (sb.data / rel / "chain.lock").write_text("")
++            rc, out = sb.run({**py_env, "STUB_HELD": held_dir, "P6_STOP_AFTER": "env"})
++            assert rc != 0 and f"REFUSED: the chain at {sb.data / rel}".replace("\\", "/") in sb.chain_log().replace("\\", "/") and not sb.stage("env"), (held_dir, sb.chain_log()[-300:]); n += 2
++            assert sb.calls_list() == [], sb.calls_list(); n += 1
++    with tempfile.TemporaryDirectory() as tmp:
++        sb = Sandbox(tmp)
++        overlap_fixture(sb, train_start=False)
++        rc, out = sb.run({**py_env, "STUB_HELD": "refe_p2rep", "P6_STOP_AFTER": "env"})
++        assert rc != 0 and "is not TRAINING yet" in sb.chain_log() and not sb.stage("env"); n += 2                  # its own gates measure this pod: P6 starts beside it only once it trains
++        overlap_fixture(sb)
++        rc, out = sb.run({**py_env, "STUB_HELD": "refe_p2rep", "P6_OVERLAP": "0", "P6_STOP_AFTER": "env"})
++        assert rc != 0 and "P6_OVERLAP=0" in sb.chain_log() and not sb.stage("env"); n += 2
++    # 4n-b. beside a training replicate: the CPU-only stages up to the lab, with CUDA hidden, nice 19, pools capped, a trainer baseline; and the contrast run without it
++    with tempfile.TemporaryDirectory() as tmp:
++        sb = Sandbox(tmp)
++        overlap_fixture(sb)
++        rc, out = sb.run({**py_env, "STUB_HELD": "refe_p2rep", "P6_CACHE_WORKERS": "5", "P6_STOP_AFTER": "lab"})
++        log_ = sb.chain_log()
++        assert rc == 0 and sb.stage("lanes") and "ZZP6_OVERLAP on" in log_ and "ZZP6_OVERLAP_BASELINE trainer step 60.0" in log_, (rc, log_[-500:]); n += 3
++        c = sb.calls_list()
++        assert n_calls(c, "build_metric_cache.py build") == 3 and n_calls(c, "build_metric_cache.py build", "--workers 2") == 3 and n_calls(c, "build_metric_cache.py build", "--workers 5") == 0; n += 3   # 5 capped to 2
++        assert n_calls(c, "build_metric_cache.py build", "--limit 3") == 1 and "ZZP6_EARLY_LAB ZZLAB_BAR ok thr=9.9" in log_ and (sb.data / "refe_p6" / "lab_early.json").exists() and sb.stage("earlylab"); n += 4
++        assert n_calls(c, "diag_p6_labeller_identity.py") == 2 and n_calls(c, "diag_p6_labeller_identity.py", "lab_early.json") == 1 and n_calls(c, "diag_p6_labeller_identity.py", "lab.json") == 1; n += 3
++
++        nice = calls_file(sb, ".nice")
++        assert len(nice) >= 5 and set(nice) == {"NICE 19"}, nice; n += 2                                                    # command table, annotate, early slice, both builds: nice 19, never 10
++        cvd = calls_file(sb, ".cvd")
++        assert cvd and all(x.endswith("CVD=''") for x in cvd if x.startswith(("build_metric_cache.py", "annotate_commands.py", "p6_prep.py", "p6_overlap.py", "diag_p6"))), cvd; n += 1
++        assert any(x.startswith("diag_p6_labeller_identity.py") and x.endswith("CVD=''") for x in cvd) and n_calls(c, "diag_p6_labeller_identity.py") == 2; n += 2
++        assert (sb.data / "refe_p6" / "lab_beside_trainer").exists() and "BESIDE the P2 seed replicate" in log_; n += 2
++        assert not (sb.data / "refe_p6" / "overlap.pause").exists(); n += 1
++    with tempfile.TemporaryDirectory() as tmp:                                                                           # the contrast: nothing beside it -> unconstrained, nice 10, CUDA untouched
++        sb = Sandbox(tmp)
++        rc, out = sb.run({**py_env, "P6_CACHE_WORKERS": "5", "P6_STOP_AFTER": "lab"})
++        c = sb.calls_list()
++        assert rc == 0 and n_calls(c, "build_metric_cache.py build", "--workers 5") == 2 and "ZZP6_OVERLAP" not in sb.chain_log(); n += 3
++        assert set(calls_file(sb, ".nice")) == {"NICE 10"} and all(x.endswith("CVD=None") for x in calls_file(sb, ".cvd")); n += 2
++        assert not (sb.data / "refe_p6" / "lab_beside_trainer").exists() and n_calls(c, "diag_p6_labeller_identity.py") == 1 and not sb.stage("earlylab") and "ZZP6_EARLY_LAB" not in sb.chain_log(); n += 3
++    with tempfile.TemporaryDirectory() as tmp:                                                                           # P6_EARLY_LAB=0 skips the early reading, and an identity failure in it REFUSES
++        sb = Sandbox(tmp)
++        overlap_fixture(sb)
++        rc, out = sb.run({**py_env, "STUB_HELD": "refe_p2rep", "P6_EARLY_LAB": "0", "P6_STOP_AFTER": "earlylab"})
++        assert rc == 0 and not sb.stage("earlylab") and n_calls(sb.calls_list(), "build_metric_cache.py build") == 0; n += 2
++        rc, out = sb.run({**py_env, "STUB_HELD": "refe_p2rep", "STUB_LAB_IDENTITY_FAIL": "1", "P6_STOP_AFTER": "earlylab"})
++        assert rc != 0 and "REFUSED: EARLY G-LIVE-LAB: identity" in sb.chain_log() and not sb.stage("earlylab"); n += 2
++    # 4n-c. no readable trainer baseline -> REFUSED (the guard could not protect the replicate); the unguarded run is the Master Mind's word
++    with tempfile.TemporaryDirectory() as tmp:
++        sb = Sandbox(tmp)
++        overlap_fixture(sb, metrics=False)
++        rc, out = sb.run({**py_env, "STUB_HELD": "refe_p2rep", "P6_STOP_AFTER": "env"})
++        assert rc != 0 and "no trainer baseline readable" in sb.chain_log() and not sb.stage("env"); n += 2
++        rc, out = sb.run({**py_env, "STUB_HELD": "refe_p2rep", "P6_STOP_AFTER": "env", "P6_OVERLAP_UNGUARDED": "1"})
++        assert rc == 0 and "ZZP6_OVERLAP_UNGUARDED" in sb.chain_log() and sb.stage("env"); n += 2
++    # 4n-d. the step-time guard: the build slows the trainer by 20 % -> two slow reads -> the stage is PAUSED (the builder sees the pause file) -> it resumes; a quiet trainer is never paused
++    with tempfile.TemporaryDirectory() as tmp:
++        sb = Sandbox(tmp)
++        overlap_fixture(sb)
++        rc, out = sb.run({**py_env, "STUB_HELD": "refe_p2rep", "STUB_SLOW_TRAINER": "1", "P6_STOP_AFTER": "cache"}, timeout=120)
++        log_ = sb.chain_log()
++        assert rc == 0 and sb.stage("cache"), (rc, log_[-600:]); n += 2
++        assert "PAUSE_SEEN" in sb.calls_list() and log_.count("ZZP6_OVERLAP_SLOW") >= 2 and "ZZP6_OVERLAP_BACKOFF" in log_, log_[-800:]; n += 3
++        assert not (sb.data / "refe_p6" / "overlap.pause").exists(); n += 1
++    with tempfile.TemporaryDirectory() as tmp:
++        sb = Sandbox(tmp)
++        overlap_fixture(sb)
++        rc, out = sb.run({**py_env, "STUB_HELD": "refe_p2rep", "P6_STOP_AFTER": "cache"})
++        assert rc == 0 and "ZZP6_OVERLAP_BACKOFF" not in sb.chain_log() and "PAUSE_SEEN" not in sb.calls_list(); n += 2
++    # 4n-e. the WAIT before the first GPU stage, end to end: the replicate holds its lock and the GPU; P6 does its CPU stages, then WAITS; the lock is released but the GPU is busy -> still waiting;
++    #       the GPU goes idle -> the GPU stages start, with CUDA visible again.  mem must not have started before.
++    with tempfile.TemporaryDirectory() as tmp:
++        import threading
++        import time as _time
++        sb = Sandbox(tmp)
++        overlap_fixture(sb)
++        held, gpu = sb.root / "held.txt", sb.root / "gpu_busy"
++        held.write_text("refe_p2rep")
++        gpu.write_text("1")
++        res = {}
++
++        def go():
++            res["r"] = sb.run({**py_env, "STUB_HELD_FILE": posix(held), "P6_POLL_S": "1", "P6_IDLE_POLLS": "3"}, timeout=240)
++        th = threading.Thread(target=go)
++        th.start()
++        for _ in range(240):
++            if "ZZP6_WAITING" in sb.chain_log():
++                break
++            _time.sleep(0.5)
++        assert "ZZP6_WAITING" in sb.chain_log() and "lock" in sb.chain_log().split("ZZP6_WAITING")[1].split("\n")[0], sb.chain_log()[-500:]; n += 1
++        assert n_calls(sb.calls_list(), "train.py") == 0 and sb.stage("lanes") and not sb.stage("launch_gate"); n += 2        # CPU stages done, no GPU stage started
++        (sb.data / "refe_p2rep" / "chain.log").write_text((sb.data / "refe_p2rep" / "chain.log").read_text() + "2026-10-14T23:00:00 ZZP2REP_DONE\n")
++        held.write_text("")                                                                                                # the lock is free and DONE is logged, but the GPU is still busy
++        _time.sleep(4)
++        assert th.is_alive() and n_calls(sb.calls_list(), "train.py") == 0 and "ZZP6_WAIT_OK" not in sb.chain_log(); n += 2
++        gpu.unlink()                                                                                                       # idle: 3 consecutive polls, then the GPU stages
++        th.join(timeout=240)
++        rc, out = res["r"]
++        log_ = sb.chain_log()
++        assert not th.is_alive() and rc == 0 and "ZZP6_WAIT_OK" in log_ and "ZZP6_DONE" in log_, (rc, log_[-600:]); n += 3
++        c = sb.calls_list()
++        assert n_calls(c, "train.py", "--steps") == 1 and n_calls(c, "launch_gate.py run") == 1; n += 2
++        cvd = calls_file(sb, ".cvd")
++        assert all(x.endswith("CVD=''") for x in cvd if x.startswith("build_metric_cache.py")) and all(x.endswith("CVD=None") for x in cvd if x.startswith(("train.py", "launch_gate.py", "hf_egress.py"))); n += 2
++        assert log_.index("ZZP6_WAIT_OK") < log_.index("mem ok"); n += 1
++    # 4n-f. the wait's other doors: the replicate is gone without ZZP2REP_DONE -> REFUSED; a bounded wait gives up; the Master Mind's word (P6_P2REP_ABANDONED=1) passes
++    with tempfile.TemporaryDirectory() as tmp:
++        sb = Sandbox(tmp)
++        overlap_fixture(sb)
++        rc, out = sb.run({**py_env, "STUB_HELD": "refe_p2rep", "P6_STOP_AFTER": "lab"})
++        assert rc == 0; n += 1
++        rc, out = sb.run({**py_env, "P6_STOP_AFTER": "mem"})                                                               # lock free, chain.log without DONE
++        assert rc != 0 and "neither running nor finished" in sb.chain_log() and n_calls(sb.calls_list(), "train.py") == 0; n += 2
++        rc, out = sb.run({**py_env, "P6_STOP_AFTER": "mem", "P6_P2REP_ABANDONED": "1"})
++        assert rc == 0 and sb.stage("lanes") and n_calls(sb.calls_list(), "train.py", "--steps") == 1; n += 2
++    with tempfile.TemporaryDirectory() as tmp:
++        sb = Sandbox(tmp)
++        (sb.root / "gpu_busy").write_text("1")                                                                             # no replicate at all, but somebody's process is on the GPU
++        rc, out = sb.run({**py_env, "P6_STOP_AFTER": "mem", "P6_WAIT_MAX_S": "2", "P6_POLL_S": "1"})
++        assert rc != 0 and "waited" in sb.chain_log() and "a process is on the GPU" in sb.chain_log() and n_calls(sb.calls_list(), "train.py") == 0; n += 3
++        (sb.root / "gpu_busy").unlink()
++        rc, out = sb.run({**py_env, "P6_STOP_AFTER": "mem"})
++        assert rc == 0 and "ZZP6_WAIT_OK" in sb.chain_log() and n_calls(sb.calls_list(), "train.py", "--steps") == 1; n += 2
++    # 4n-g. G-LIVE-LAB beside the replicate is a LOWER bound: below the bar -> re-measured after the wait; already above it -> kept
++    for thr, want_runs, want_log in (("5.0", 3, "below the bar"), ("9.9", 2, "already clears")):
++        with tempfile.TemporaryDirectory() as tmp:
++            sb = Sandbox(tmp)
++            overlap_fixture(sb)
++            rc, out = sb.run({**py_env, "STUB_HELD": "refe_p2rep", "STUB_LAB_THR": thr, "P6_STOP_AFTER": "lab"})
++            assert rc == 0 and (sb.data / "refe_p6" / "lab_beside_trainer").exists(); n += 2
++            overlap_fixture(sb, done=True)
++            rc, out = sb.run({**py_env, "STUB_LAB_THR": "9.9", "P6_STOP_AFTER": "mem"})
++            assert rc == 0 and n_calls(sb.calls_list(), "diag_p6_labeller_identity.py") == want_runs and want_log in sb.chain_log(), (thr, sb.chain_log()[-600:]); n += 2
++            assert not (sb.data / "refe_p6" / "lab_beside_trainer").exists(); n += 1
++            assert json.loads((sb.data / "refe_p6" / "lab.json").read_text())["throughput_sets_s"] == (9.9 if want_runs == 3 else float(thr)); n += 1
++    # 4n-h. the write test beside a trainer is chunked (1 GiB, paused), still exact, and leaves no file
++    with tempfile.TemporaryDirectory() as tmp:
++        sb = Sandbox(tmp)
++        overlap_fixture(sb)
++        rc, out = sb.run({**py_env, "STUB_HELD": "refe_p2rep", "P6_DD_GB": "2", "P6_STOP_AFTER": "env"})
++        assert rc == 0 and "dd write test 2 GB ok" in sb.chain_log() and not (sb.data / ".dd_test").exists(); n += 3
++    # ---- 4n-m. behavioural mutants of the overlap: each detector above must go RED when its mechanism is removed
++    with tempfile.TemporaryDirectory() as tmp:                                                                           # the guard never pauses
++        sb = Sandbox(tmp, text.replace(': > "$PAUSE_FILE"; log "ZZP6_OVERLAP_BACKOFF', 'log "ZZP6_OVERLAP_BACKOFF'))
++        overlap_fixture(sb)
++        rc, out = sb.run({**py_env, "STUB_HELD": "refe_p2rep", "STUB_SLOW_TRAINER": "1", "P6_STOP_AFTER": "cache"}, timeout=180)
++        assert "PAUSE_SEEN" not in sb.calls_list() and "ZZP6_OVERLAP_BACKOFF" in sb.chain_log(); n += 1
++    with tempfile.TemporaryDirectory() as tmp:                                                                           # the wait ignores the GPU
++        sb = Sandbox(tmp, text.replace('if [ "$rc" = 0 ] && gpu_busy; then', 'if [ "$rc" = 0 ] && false; then'))
++        (sb.root / "gpu_busy").write_text("1")
++        rc, out = sb.run({**py_env, "P6_STOP_AFTER": "mem", "P6_WAIT_MAX_S": "2", "P6_POLL_S": "1"})
++        assert rc == 0 and n_calls(sb.calls_list(), "train.py", "--steps") == 1 and "waited" not in sb.chain_log(); n += 1
++    with tempfile.TemporaryDirectory() as tmp:                                                                           # the pools are not capped
++        sb = Sandbox(tmp, text.replace('--workers "$CWX"', '--workers "$CW"'))
++        overlap_fixture(sb)
++        rc, out = sb.run({**py_env, "STUB_HELD": "refe_p2rep", "P6_CACHE_WORKERS": "5", "P6_STOP_AFTER": "cache"})
++        assert n_calls(sb.calls_list(), "build_metric_cache.py build", "--workers 5") == 2; n += 1
++    with tempfile.TemporaryDirectory() as tmp:                                                                           # CUDA is never given back
++        sb = Sandbox(tmp, text.replace('if [ "$CVD_SAVED" = "__unset__" ]; then unset CUDA_VISIBLE_DEVICES; else export CUDA_VISIBLE_DEVICES="$CVD_SAVED"; fi', ': keep CUDA hidden'))
++        overlap_fixture(sb)
++        held2 = sb.root / "held.txt"
++        held2.write_text("refe_p2rep")
++        res2 = {}
++        th2 = threading.Thread(target=lambda: res2.__setitem__("r", sb.run({**py_env, "STUB_HELD_FILE": posix(held2), "P6_STOP_AFTER": "mem", "P6_POLL_S": "1"}, timeout=240)))
++        th2.start()
++        for _ in range(240):
++            if "ZZP6_WAITING" in sb.chain_log():
++                break
++            _time.sleep(0.5)
++        (sb.data / "refe_p2rep" / "chain.log").write_text((sb.data / "refe_p2rep" / "chain.log").read_text() + "ZZP2REP_DONE" + chr(10))
++        held2.write_text("")
++        th2.join(timeout=240)
++        assert res2["r"][0] == 0 and any(x.startswith("train.py") and x.endswith("CVD=''") for x in calls_file(sb, ".cvd")); n += 1
++    with tempfile.TemporaryDirectory() as tmp:                                                                           # the replicate's DONE marker is not required
++        sb = Sandbox(tmp, text.replace('! grep -q "ZZP2REP_DONE" "$P2REPD/chain.log"', "false"))
++        overlap_fixture(sb)
++        sb.run({**py_env, "STUB_HELD": "refe_p2rep", "P6_STOP_AFTER": "lab"})
++        rc, out = sb.run({**py_env, "P6_STOP_AFTER": "mem"})
++        assert rc == 0 and "neither running nor finished" not in sb.chain_log(); n += 1
++    # ---- 4o. the D9 builder honours REFE_PAUSE_FILE (the guard's back-off), and ignores it when unset
++    import threading as _th
++    import time as _tm
++    import types
++    import build_metric_cache as BM
++    with tempfile.TemporaryDirectory() as tmp:
++        tmp = Path(tmp)
++        stub = types.ModuleType("navsim_pdm_targets")
++        stub.metric_cache_parts = lambda sc: (np.zeros((2, 2)), "ego", "obs", np.array([[0.0, 0.0], [1.0, 0.0]]), ["lane"], "dam")
++        saved = sys.modules.get("navsim_pdm_targets")
++        sys.modules["navsim_pdm_targets"] = stub
++        old_sc = BM._scenarios
++        BM._scenarios = lambda db_root, map_root, log, tokens: {t: object() for t in tokens}
++        try:
++            items = [("t0", "null"), ("t1", "null"), ("t2", "null")]
++            pf = tmp / "pause"
++            pf.write_text("")
++            os.environ["REFE_PAUSE_FILE"] = str(pf)
++            os.environ["REFE_PAUSE_POLL_S"] = "0.05"
++            out = tmp / "out"
++            box = {}
++            tt = _th.Thread(target=lambda: box.__setitem__("r", BM._build_log(("LX", items, str(out), None, None, None))))
++            tt.start()
++            _tm.sleep(0.6)
++            assert tt.is_alive() and not list(out.glob("*/*.pkl.xz")); n += 2                                              # paused: nothing built, nothing lost
++            pf.unlink()
++            tt.join(timeout=20)
++            assert not tt.is_alive() and box["r"][0] == 3 and box["r"][2] == 0 and len(list(out.glob("LX/*.pkl.xz"))) == 3; n += 3
++            os.environ.pop("REFE_PAUSE_FILE")                                                                              # unset: no effect, even with a stale file on disk
++            pf.write_text("")
++            out2 = tmp / "out2"
++            r2 = BM._build_log(("LY", items, str(out2), None, None, None))
++            assert r2[0] == 3 and len(list(out2.glob("LY/*.pkl.xz"))) == 3; n += 2
++        finally:
++            os.environ.pop("REFE_PAUSE_FILE", None)
++            os.environ.pop("REFE_PAUSE_POLL_S", None)
++            BM._scenarios = old_sc
++            if saved is None:
++                sys.modules.pop("navsim_pdm_targets", None)
++            else:
++                sys.modules["navsim_pdm_targets"] = saved
+     # ---- 4l. P2's inputs absent -> they ARE fetched (once), by the fetch function, and only then
+     with tempfile.TemporaryDirectory() as tmp:
+         sb = Sandbox(tmp, dbs=False, pix=False)

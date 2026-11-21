@@ -1,0 +1,1069 @@
+{
+ "tool": "ship_r8_verdict_pf.py",
+ "generated": "2026-10-20T13:17:09+0200",
+ "tree": "step40000ema_pf",
+ "condition_tree": "step48852ema_pf",
+ "orientation_only": true,
+ "label": "SHIP-R8 (AMENDMENT 3) on step40000ema_pf: PASS -- ORIENTATION ONLY (the condition's tree is step48852ema_pf)",
+ "overall": "PASS",
+ "clauses": [
+  {
+   "id": 1,
+   "text": "(1) FORWARD_TRAINFIT controls ALL_PASS",
+   "status": "PASS",
+   "reason": "FORWARD_TRAINFIT and FORWARD_DEPLOY8 controls ALL_PASS; the frozen gains hash is the pinned one; seeds 0 and 1; B 2000 | the per-frame table's sha256 was registered before every pf roll of the tree (Amendment 3 (ii))",
+   "evidence": {
+    "forward_trainfit_present": true,
+    "forward_deploy8_present": true,
+    "trainfit_controls_ALL_PASS": true,
+    "deploy8_controls_ALL_PASS": true,
+    "trainfit_frozen_gains_sha256": "2aacc9ff32d3d2a5a18dda2d72ab5ce6c42d1c1268e9186912c5151bbe4d6d80",
+    "deploy8_recorded_gain_hashes": [
+     "2aacc9ff32d3d2a5a18dda2d72ab5ce6c42d1c1268e9186912c5151bbe4d6d80"
+    ],
+    "deploy8_n_boot_ok": true,
+    "trainfit_n_boot_ok": true,
+    "trainfit_seeds": [
+     "0",
+     "1"
+    ],
+    "deploy8_seeds": [
+     "0",
+     "1"
+    ],
+    "amendment3_registration": {
+     "ok": true,
+     "bad": [],
+     "unknown": [],
+     "evidence": {
+      "registered": "2aacc9ff32d3d2a5a18dda2d72ab5ce6c42d1c1268e9186912c5151bbe4d6d80",
+      "frozen_file_sha256": "2aacc9ff32d3d2a5a18dda2d72ab5ce6c42d1c1268e9186912c5151bbe4d6d80",
+      "provenance_sha256": "2aacc9ff32d3d2a5a18dda2d72ab5ce6c42d1c1268e9186912c5151bbe4d6d80",
+      "gate_registered_sha256": "2aacc9ff32d3d2a5a18dda2d72ab5ce6c42d1c1268e9186912c5151bbe4d6d80",
+      "gate_passed_epoch": 1792484361.7785516,
+      "forward_trainfit_frozen_gains_sha256": "2aacc9ff32d3d2a5a18dda2d72ab5ce6c42d1c1268e9186912c5151bbe4d6d80",
+      "roll_artifact_mtimes_epoch": {
+       "0": 1792491363.3069844,
+       "1": 1792493279.2091224
+      }
+     }
+    }
+   }
+  },
+  {
+   "id": "1b",
+   "text": "(1b) FEED PARITY: on the tree's own roll artifacts, both seeds, every window: the fed token equals the v9 per-frame token, `nav_cmd_clip` equals the per-clip token, and `r8_nav` is non-zero exactly where `r8_nav_known`; fails or cannot be shown -> SHIP-R8 INCOMPLETE",
+   "status": "PASS",
+   "reason": "both seeds, every window of the tree's dumps: fed token == v9 per-frame token, nav_cmd_clip == per-clip token, r8_nav non-zero exactly where known",
+   "evidence": {
+    "seeds": {
+     "0": {
+      "file_status": "PASS",
+      "checks": {
+       "T_fed_token_equals_v9_per_frame_token": true,
+       "C_nav_cmd_clip_equals_clip_fed_reference": true,
+       "C_reference_constant_within_every_clip": true,
+       "C_same_window_set_as_clip_fed_reference": true,
+       "K_known_equals_release_args_valid": true,
+       "A_r8_nav_nonzero_exactly_where_known_and_equals_independent_scaling": true,
+       "I_clip_identity_sha12_matches_release": true,
+       "manifest_mode_is_perframe_full": true
+      },
+      "n_windows": 4754,
+      "n_windows_expected_from_tree_manifest": 4754,
+      "n_windows_only_in_pf": 0,
+      "n_windows_only_in_reference": 0,
+      "n_token_differs_from_clip": 1157,
+      "n_args_known": 2802,
+      "subset_ok_smoke_only": false,
+      "pf_dump": "C:/Users/Admin/refcv8_pf/battery40k_pf/step40000ema_pf/dump_s0",
+      "clip_dump": "C:/Users/Admin/refcv8_eval_archive/battery/step40000ema_unc/dump_s0",
+      "first_failures": {}
+     },
+     "1": {
+      "file_status": "PASS",
+      "checks": {
+       "T_fed_token_equals_v9_per_frame_token": true,
+       "C_nav_cmd_clip_equals_clip_fed_reference": true,
+       "C_reference_constant_within_every_clip": true,
+       "C_same_window_set_as_clip_fed_reference": true,
+       "K_known_equals_release_args_valid": true,
+       "A_r8_nav_nonzero_exactly_where_known_and_equals_independent_scaling": true,
+       "I_clip_identity_sha12_matches_release": true,
+       "manifest_mode_is_perframe_full": true
+      },
+      "n_windows": 4754,
+      "n_windows_expected_from_tree_manifest": 4754,
+      "n_windows_only_in_pf": 0,
+      "n_windows_only_in_reference": 0,
+      "n_token_differs_from_clip": 1157,
+      "n_args_known": 2802,
+      "subset_ok_smoke_only": false,
+      "pf_dump": "C:/Users/Admin/refcv8_pf/battery40k_pf/step40000ema_pf/dump_s1",
+      "clip_dump": "C:/Users/Admin/refcv8_eval_archive/battery/step40000ema_unc/dump_s1",
+      "first_failures": {}
+     }
+    }
+   }
+  },
+  {
+   "id": 2,
+   "text": "(2) E1 S2 ADE \u2212 `ha0_ext_pose` separated below 0 at both seeds",
+   "status": "PASS",
+   "reason": "E1: RETIME_DEPLOY8 - ha0_ext_pose ADE on S2 is separated below 0 at both inference seeds",
+   "evidence": {
+    "surface": "S2",
+    "reference": "ha0_ext_pose",
+    "arm": "RETIME_DEPLOY8",
+    "cells": {
+     "s0": {
+      "delta": -0.039,
+      "lo": -0.0507,
+      "hi": -0.0278,
+      "separated": true,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.24679586077910856,
+      "mean_ref": 0.28581937894529424
+     },
+     "s1": {
+      "delta": -0.0377,
+      "lo": -0.0491,
+      "hi": -0.0264,
+      "separated": true,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.24808618913125613,
+      "mean_ref": 0.28581937894529424
+     }
+    },
+    "separated_below_0": {
+     "s0": true,
+     "s1": true
+    }
+   }
+  },
+  {
+   "id": 3,
+   "text": "(3) E3 S6 ADE \u2212 `ha0_ext_pose` separated below 0 at both seeds",
+   "status": "PASS",
+   "reason": "E3: RETIME_DEPLOY8 - ha0_ext_pose ADE on S6 is separated below 0 at both inference seeds",
+   "evidence": {
+    "surface": "S6",
+    "reference": "ha0_ext_pose",
+    "arm": "RETIME_DEPLOY8",
+    "cells": {
+     "s0": {
+      "delta": -1.0046,
+      "lo": -1.3211,
+      "hi": -0.6989,
+      "separated": true,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 2.405229413324064,
+      "mean_ref": 3.4097815215823526
+     },
+     "s1": {
+      "delta": -0.9993,
+      "lo": -1.3097,
+      "hi": -0.6967,
+      "separated": true,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 2.410515537391732,
+      "mean_ref": 3.4097815215823526
+     }
+    },
+    "separated_below_0": {
+     "s0": true,
+     "s1": true
+    }
+   }
+  },
+  {
+   "id": 4,
+   "text": "(4) LONGITUDINAL / LATERAL / ADE no row separated worse than refcv7-50,400 at both seeds (FZR-NR), and S6 lateral HOLDS (FZR-LAT)",
+   "status": "PASS",
+   "reason": "FZR-NR ADE / LONGITUDINAL / LATERAL all PASS (no headline row separated worse than refcv7-50,400 at either seed) and FZR-LAT HOLDS",
+   "evidence": {
+    "FZR-NR_per_family": {
+     "ADE": "PASS",
+     "LONGITUDINAL": "PASS",
+     "LATERAL": "PASS"
+    },
+    "FZR-LAT_HOLDS": true,
+    "FZR-LAT_separated_worse_at_any_seed": []
+   }
+  },
+  {
+   "id": 5,
+   "text": "(5) TACTICAL `TAC_traj_lat_correct` and `TAC_traj_lon_correct` of the RE-TIMED plan not separated worse than refcv7-50,400 at both seeds (instrument being built 2026-10-19; if it cannot be computed, SHIP-R8 reads INCOMPLETE, not PASS)",
+   "status": "PASS",
+   "reason": "no TAC_traj_lat / TAC_traj_lon cell (S2, S6 x seeds 0, 1) of RETIME_DEPLOY8 is separated worse than refcv7-50,400",
+   "evidence": {
+    "n_cells": 8,
+    "separated_worse_cells": [],
+    "missing": [],
+    "tac_file_status": "PASS",
+    "deploy8_load_status": {
+     "S2|s0": "ok",
+     "S6|s0": "ok",
+     "S2|s1": "ok",
+     "S6|s1": "ok"
+    },
+    "cells": {
+     "S2|TAC_traj_lat_correct|s0": {
+      "delta": 0.0048,
+      "lo": 0.0005,
+      "hi": 0.0093,
+      "separated": true,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.9648954075498918,
+      "mean_ref": 0.9600865592690551
+     },
+     "S2|TAC_traj_lat_correct|s1": {
+      "delta": 0.0043,
+      "lo": 0.0005,
+      "hi": 0.0083,
+      "separated": true,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.9644145227218082,
+      "mean_ref": 0.9600865592690551
+     },
+     "S2|TAC_traj_lon_correct|s0": {
+      "delta": 0.0245,
+      "lo": 0.0116,
+      "hi": 0.0382,
+      "separated": true,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8593411877855254,
+      "mean_ref": 0.834816061553258
+     },
+     "S2|TAC_traj_lon_correct|s1": {
+      "delta": 0.0156,
+      "lo": 0.0029,
+      "hi": 0.0287,
+      "separated": true,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.856936763645107,
+      "mean_ref": 0.8413080067323876
+     },
+     "S6|TAC_traj_lat_correct|s0": {
+      "delta": 0.0123,
+      "lo": 0.0009,
+      "hi": 0.0235,
+      "separated": true,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8926484158720394,
+      "mean_ref": 0.8803445093817287
+     },
+     "S6|TAC_traj_lat_correct|s1": {
+      "delta": 0.0102,
+      "lo": -0.001,
+      "hi": 0.0209,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.891725622885266,
+      "mean_ref": 0.8815749000307598
+     },
+     "S6|TAC_traj_lon_correct|s0": {
+      "delta": 0.0111,
+      "lo": -0.0118,
+      "hi": 0.0327,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.610888957243925,
+      "mean_ref": 0.5998154414026453
+     },
+     "S6|TAC_traj_lon_correct|s1": {
+      "delta": 0.0046,
+      "lo": -0.0181,
+      "hi": 0.0261,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.6028914180252231,
+      "mean_ref": 0.5982774530913565
+     }
+    }
+   }
+  },
+  {
+   "id": 6,
+   "text": "(6) STRATEGIC not applicable, n = 0, `--no-strategic`",
+   "status": "N/A",
+   "reason": "the battery's strategic block reads NOT APPLICABLE, n = 0 (--no-strategic): satisfied as the condition states",
+   "evidence": {
+    "strategic": {
+     "status": "NOT APPLICABLE",
+     "n": 0
+    }
+   }
+  },
+  {
+   "id": 7,
+   "text": "(7) PRIOR PARITY: the prior the eval rebuilds from banked poses must equal the model's emitted `residual_prior_path` (built in `RefCModel.forward` via `kinematic_prior.prior_controls('ha0_ext_pose')`) to \u2264 1e-3 m at all 8 slots on \u2265 200 eval windows; if it cannot be shown, SHIP-R8 reads INCOMPLETE",
+   "status": "PASS",
+   "reason": "max |delta| <= 0.001 m at all 8 slots on >= 200 windows (smallest panel 4754; 2 panel(s))",
+   "evidence": {
+    "panels": [
+     {
+      "panel": "step40000ema_pf|s0",
+      "n_windows": 4754,
+      "per_slot_max_m": [
+       0.0,
+       0.0,
+       0.0,
+       0.0,
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ]
+     },
+     {
+      "panel": "step40000ema_pf|s1",
+      "n_windows": 4754,
+      "per_slot_max_m": [
+       0.0,
+       0.0,
+       0.0,
+       0.0,
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ]
+     }
+    ],
+    "file_reading": "PASS (model-path parity)",
+    "known_values_ok": true,
+    "source_trace_all_verified": true,
+    "min_windows_per_panel": 4754,
+    "slot_max_abs_m": {
+     "values": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    }
+   }
+  }
+ ],
+ "arm": "RETIME_DEPLOY8",
+ "registered_pf_table_sha256": "2aacc9ff32d3d2a5a18dda2d72ab5ce6c42d1c1268e9186912c5151bbe4d6d80",
+ "condition_text": "SHIP-R8 holds iff, on tree `step48852ema_unc` (EMA weights), ceiling-compliant windows, arm `RETIME_TRAINFIT` with the frozen gains UNCHANGED (sha256 b208c9c1e4236075\u2026), both inference seeds 0 and 1, paired episode-cluster bootstrap B 2000: ... Any failed clause = the stage does NOT ship and refcv8 is reported failing that bar.",
+ "amendment_text": "AMENDMENT 1: SHIP-R8 clauses (1)\u2013(6) are evaluated on `RETIME_DEPLOY`; `RETIME_TRAINFIT` (per-surface) is printed beside. If `RETIME_DEPLOY` cannot be computed for 48,852, SHIP-R8 reads INCOMPLETE.  AMENDMENT 2: `RETIME_DEPLOY` = ONE call per window on all 8 model slots with Amendment 1's table, prior = `ha0_ext_pose` at the same 8 slots; each surface is scored on that call's outputs at its own instants; the per-surface form is printed beside.  New clause (7) PRIOR PARITY.  AMENDMENT 3: (i) every SHIP-R8 clause and every refcv8 bar is read on rolls fed `perframe_full` (tree step 48,852 EMA, tag `step48852ema_pf`, inference seeds 0 and 1, paired episode-cluster bootstrap B 2000); (ii) the RETIME table is re-fitted by the unchanged H-R8-RETIME-TRAINFIT-1 procedure on per-frame-fed train rolls (30k EMA, A6 train139, seeds 0+1 pooled, prior ha0_ext_pose), its sha256 registered BEFORE any 48,852 pf eval roll; the clip-fed table b208c9c1... is printed beside only; (iii) new clause (1b) FEED PARITY asserted on the roll artifacts -- if it fails or cannot be shown, SHIP-R8 reads INCOMPLETE; (iv) the per-clip reads (`step48852ema_unc`) are printed beside as the deliberate-regression arm, never binding; (v) a missing clause means INCOMPLETE, never PASS.  Amendments 1 and 2 still apply.",
+ "per_clause": {
+  "1": "PASS",
+  "1b": "PASS",
+  "2": "PASS",
+  "3": "PASS",
+  "4": "PASS",
+  "5": "PASS",
+  "6": "N/A",
+  "7": "PASS"
+ },
+ "caveats": [
+  "single training seed",
+  "T1 open loop (not driving performance)",
+  "the stage was found post-hoc",
+  "the E1/E3 reference was switched after the 30k reads (D-R8-E1-REF)",
+  "the bootstrap answers 'another draw of EPISODES' only (not another training or inference run)",
+  "the speed-obedience / vmax-zero proxy arms of the battery carry no r8_nav (unknown row); they enter no SHIP-R8 clause"
+ ],
+ "beside": {
+  "pre_ruling_ha0_ext": {
+   "E1_S2": {
+    "s0": {
+     "delta": -0.0339,
+     "lo": -0.0449,
+     "hi": -0.0232,
+     "separated": true,
+     "n_windows": 4159,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 0.24679586077910856,
+     "mean_ref": 0.2806968202410624
+    },
+    "s1": {
+     "delta": -0.0326,
+     "lo": -0.0436,
+     "hi": -0.0216,
+     "separated": true,
+     "n_windows": 4159,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 0.24808618913125613,
+     "mean_ref": 0.2806968202410624
+    }
+   },
+   "E3_S6": {
+    "s0": {
+     "delta": -0.9758,
+     "lo": -1.2892,
+     "hi": -0.6764,
+     "separated": true,
+     "n_windows": 3251,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 2.405229413324064,
+     "mean_ref": 3.3810287398475665
+    },
+    "s1": {
+     "delta": -0.9705,
+     "lo": -1.2788,
+     "hi": -0.6756,
+     "separated": true,
+     "n_windows": 3251,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 2.410515537391732,
+     "mean_ref": 3.3810287398475665
+    }
+   }
+  },
+  "flat_0p5_CONST_G05": {
+   "E1_S2_vs_pose": {
+    "s0": {
+     "delta": -0.0387,
+     "lo": -0.0497,
+     "hi": -0.0285,
+     "separated": true,
+     "n_windows": 4159,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 0.24708630774798296,
+     "mean_ref": 0.28581937894529424
+    },
+    "s1": {
+     "delta": -0.0378,
+     "lo": -0.0484,
+     "hi": -0.0274,
+     "separated": true,
+     "n_windows": 4159,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 0.24803421550937796,
+     "mean_ref": 0.28581937894529424
+    }
+   },
+   "E3_S6_vs_pose": {
+    "s0": {
+     "delta": -1.1044,
+     "lo": -1.3812,
+     "hi": -0.8466,
+     "separated": true,
+     "n_windows": 3251,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 2.3053916279451134,
+     "mean_ref": 3.4097815215823526
+    },
+    "s1": {
+     "delta": -1.1061,
+     "lo": -1.3771,
+     "hi": -0.854,
+     "separated": true,
+     "n_windows": 3251,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 2.30372258839239,
+     "mean_ref": 3.4097815215823526
+    }
+   }
+  },
+  "per_surface_RETIME_DEPLOY_amendment1": {
+   "E1_S2_vs_pose": {
+    "s0": {
+     "delta": -0.0391,
+     "lo": -0.0507,
+     "hi": -0.0279,
+     "separated": true,
+     "n_windows": 4159,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 0.2467682015352119,
+     "mean_ref": 0.28581937894529424
+    },
+    "s1": {
+     "delta": -0.0378,
+     "lo": -0.0491,
+     "hi": -0.0264,
+     "separated": true,
+     "n_windows": 4159,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 0.24805830294762782,
+     "mean_ref": 0.28581937894529424
+    }
+   },
+   "E3_S6_vs_pose": {
+    "s0": {
+     "delta": -1.0045,
+     "lo": -1.3211,
+     "hi": -0.6989,
+     "separated": true,
+     "n_windows": 3251,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 2.4053194695276243,
+     "mean_ref": 3.4097815215823526
+    },
+    "s1": {
+     "delta": -0.9992,
+     "lo": -1.3095,
+     "hi": -0.6966,
+     "separated": true,
+     "n_windows": 3251,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 2.410601001017077,
+     "mean_ref": 3.4097815215823526
+    }
+   },
+   "clause2_on_this_arm": "PASS",
+   "clause3_on_this_arm": "PASS"
+  },
+  "RETIME_TRAINFIT_per_surface": {
+   "E1_S2_vs_pose": {
+    "s0": {
+     "delta": -0.0391,
+     "lo": -0.0507,
+     "hi": -0.0279,
+     "separated": true,
+     "n_windows": 4159,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 0.2467682015352119,
+     "mean_ref": 0.28581937894529424
+    },
+    "s1": {
+     "delta": -0.0378,
+     "lo": -0.0491,
+     "hi": -0.0264,
+     "separated": true,
+     "n_windows": 4159,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 0.24805830294762782,
+     "mean_ref": 0.28581937894529424
+    }
+   },
+   "E3_S6_vs_pose": {
+    "s0": {
+     "delta": -1.0036,
+     "lo": -1.3203,
+     "hi": -0.6974,
+     "separated": true,
+     "n_windows": 3251,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 2.4061640145173895,
+     "mean_ref": 3.4097815215823526
+    },
+    "s1": {
+     "delta": -0.9983,
+     "lo": -1.3087,
+     "hi": -0.6957,
+     "separated": true,
+     "n_windows": 3251,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 2.4115300903575063,
+     "mean_ref": 3.4097815215823526
+    }
+   },
+   "clause2_on_this_arm": "PASS",
+   "clause3_on_this_arm": "PASS"
+  },
+  "raw_weights_tree": null,
+  "tactical_per_surface_form": {
+   "status": "PASS",
+   "separated_worse_cells": [],
+   "arm": "RETIME_DEPLOY"
+  },
+  "tactical_beside": {
+   "S2|s0": {
+    "TAC_traj_lat_correct": {
+     "os_minus_refcv7": {
+      "delta": 0.0041,
+      "lo": -0.0002,
+      "hi": 0.0086,
+      "separated": false,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.9641740803077663,
+      "mean_ref": 0.9600865592690551
+     },
+     "TRAINFIT_minus_refcv7": {
+      "delta": 0.005,
+      "lo": 0.0007,
+      "hi": 0.0096,
+      "separated": true,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.9651358499639336,
+      "mean_ref": 0.9600865592690551
+     },
+     "per_surface_DEPLOY_minus_refcv7": {
+      "delta": 0.005,
+      "lo": 0.0007,
+      "hi": 0.0096,
+      "separated": true,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.9651358499639336,
+      "mean_ref": 0.9600865592690551
+     },
+     "DEPLOY8_minus_os": {
+      "delta": 0.0007,
+      "lo": -0.0002,
+      "hi": 0.0019,
+      "separated": false,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.9648954075498918,
+      "mean_ref": 0.9641740803077663
+     }
+    },
+    "TAC_traj_lon_correct": {
+     "os_minus_refcv7": {
+      "delta": 0.0053,
+      "lo": -0.0084,
+      "hi": 0.0185,
+      "separated": false,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8401057946621784,
+      "mean_ref": 0.834816061553258
+     },
+     "TRAINFIT_minus_refcv7": {
+      "delta": 0.0245,
+      "lo": 0.0116,
+      "hi": 0.0382,
+      "separated": true,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8593411877855254,
+      "mean_ref": 0.834816061553258
+     },
+     "per_surface_DEPLOY_minus_refcv7": {
+      "delta": 0.0245,
+      "lo": 0.0116,
+      "hi": 0.0382,
+      "separated": true,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8593411877855254,
+      "mean_ref": 0.834816061553258
+     },
+     "DEPLOY8_minus_os": {
+      "delta": 0.0192,
+      "lo": 0.0108,
+      "hi": 0.0287,
+      "separated": true,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8593411877855254,
+      "mean_ref": 0.8401057946621784
+     }
+    }
+   },
+   "S2|s1": {
+    "TAC_traj_lat_correct": {
+     "os_minus_refcv7": {
+      "delta": 0.0034,
+      "lo": -0.0007,
+      "hi": 0.0075,
+      "separated": false,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.9634527530656408,
+      "mean_ref": 0.9600865592690551
+     },
+     "TRAINFIT_minus_refcv7": {
+      "delta": 0.0043,
+      "lo": 0.0005,
+      "hi": 0.0083,
+      "separated": true,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.9644145227218082,
+      "mean_ref": 0.9600865592690551
+     },
+     "per_surface_DEPLOY_minus_refcv7": {
+      "delta": 0.0043,
+      "lo": 0.0005,
+      "hi": 0.0083,
+      "separated": true,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.9644145227218082,
+      "mean_ref": 0.9600865592690551
+     },
+     "DEPLOY8_minus_os": {
+      "delta": 0.001,
+      "lo": 0.0,
+      "hi": 0.0022,
+      "separated": false,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.9644145227218082,
+      "mean_ref": 0.9634527530656408
+     }
+    },
+    "TAC_traj_lon_correct": {
+     "os_minus_refcv7": {
+      "delta": -0.0017,
+      "lo": -0.0153,
+      "hi": 0.0121,
+      "separated": false,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8396249098340948,
+      "mean_ref": 0.8413080067323876
+     },
+     "TRAINFIT_minus_refcv7": {
+      "delta": 0.0156,
+      "lo": 0.0029,
+      "hi": 0.0287,
+      "separated": true,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.856936763645107,
+      "mean_ref": 0.8413080067323876
+     },
+     "per_surface_DEPLOY_minus_refcv7": {
+      "delta": 0.0156,
+      "lo": 0.0029,
+      "hi": 0.0287,
+      "separated": true,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.856936763645107,
+      "mean_ref": 0.8413080067323876
+     },
+     "DEPLOY8_minus_os": {
+      "delta": 0.0173,
+      "lo": 0.0074,
+      "hi": 0.028,
+      "separated": true,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.856936763645107,
+      "mean_ref": 0.8396249098340948
+     }
+    }
+   },
+   "S6|s0": {
+    "TAC_traj_lat_correct": {
+     "os_minus_refcv7": {
+      "delta": 0.0111,
+      "lo": -0.0003,
+      "hi": 0.0225,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8914180252230083,
+      "mean_ref": 0.8803445093817287
+     },
+     "TRAINFIT_minus_refcv7": {
+      "delta": 0.0123,
+      "lo": 0.0009,
+      "hi": 0.0235,
+      "separated": true,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8926484158720394,
+      "mean_ref": 0.8803445093817287
+     },
+     "per_surface_DEPLOY_minus_refcv7": {
+      "delta": 0.0123,
+      "lo": 0.0009,
+      "hi": 0.0235,
+      "separated": true,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8926484158720394,
+      "mean_ref": 0.8803445093817287
+     },
+     "DEPLOY8_minus_os": {
+      "delta": 0.0012,
+      "lo": 0.0003,
+      "hi": 0.0025,
+      "separated": true,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8926484158720394,
+      "mean_ref": 0.8914180252230083
+     }
+    },
+    "TAC_traj_lon_correct": {
+     "os_minus_refcv7": {
+      "delta": 0.0058,
+      "lo": -0.0169,
+      "hi": 0.0275,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.605659796985543,
+      "mean_ref": 0.5998154414026453
+     },
+     "TRAINFIT_minus_refcv7": {
+      "delta": 0.0105,
+      "lo": -0.0123,
+      "hi": 0.032,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.6102737619194094,
+      "mean_ref": 0.5998154414026453
+     },
+     "per_surface_DEPLOY_minus_refcv7": {
+      "delta": 0.0111,
+      "lo": -0.0118,
+      "hi": 0.0327,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.610888957243925,
+      "mean_ref": 0.5998154414026453
+     },
+     "DEPLOY8_minus_os": {
+      "delta": 0.0052,
+      "lo": -0.0009,
+      "hi": 0.0116,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.610888957243925,
+      "mean_ref": 0.605659796985543
+     }
+    }
+   },
+   "S6|s1": {
+    "TAC_traj_lat_correct": {
+     "os_minus_refcv7": {
+      "delta": 0.0092,
+      "lo": -0.0022,
+      "hi": 0.02,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8908028298984928,
+      "mean_ref": 0.8815749000307598
+     },
+     "TRAINFIT_minus_refcv7": {
+      "delta": 0.0102,
+      "lo": -0.001,
+      "hi": 0.0209,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.891725622885266,
+      "mean_ref": 0.8815749000307598
+     },
+     "per_surface_DEPLOY_minus_refcv7": {
+      "delta": 0.0102,
+      "lo": -0.001,
+      "hi": 0.0209,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.891725622885266,
+      "mean_ref": 0.8815749000307598
+     },
+     "DEPLOY8_minus_os": {
+      "delta": 0.0009,
+      "lo": -0.0003,
+      "hi": 0.0022,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.891725622885266,
+      "mean_ref": 0.8908028298984928
+     }
+    },
+    "TAC_traj_lon_correct": {
+     "os_minus_refcv7": {
+      "delta": 0.0062,
+      "lo": -0.0167,
+      "hi": 0.0283,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.6044294063365119,
+      "mean_ref": 0.5982774530913565
+     },
+     "TRAINFIT_minus_refcv7": {
+      "delta": 0.0052,
+      "lo": -0.0171,
+      "hi": 0.0264,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.6035066133497385,
+      "mean_ref": 0.5982774530913565
+     },
+     "per_surface_DEPLOY_minus_refcv7": {
+      "delta": 0.0049,
+      "lo": -0.0175,
+      "hi": 0.0263,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.6031990156874808,
+      "mean_ref": 0.5982774530913565
+     },
+     "DEPLOY8_minus_os": {
+      "delta": -0.0015,
+      "lo": -0.0064,
+      "hi": 0.0033,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.6028914180252231,
+      "mean_ref": 0.6044294063365119
+     }
+    }
+   }
+  },
+  "clip_fed_table_beside": {
+   "sha256": "b208c9c1e4236075de107ef49eaef39c1dddddba257f6e594bf6b84f8a24b1ee",
+   "gains": {
+    "S2": {
+     "instants_s": [
+      0.5,
+      1.0,
+      1.5,
+      2.0
+     ],
+     "RETIME": [
+      0.9673903790217738,
+      0.6192916835387219,
+      0.5511341845460037,
+      0.530539399347386
+     ]
+    },
+    "S6": {
+     "instants_s": [
+      1.0,
+      2.0,
+      3.0,
+      4.0,
+      5.0,
+      6.0
+     ],
+     "RETIME": [
+      0.6393548580383511,
+      0.5969720822621201,
+      0.6546139969520486,
+      0.6994940271226132,
+      0.7222699235551424,
+      0.7453601677670005
+     ]
+    }
+   },
+   "note": "Amendment 3 (ii): printed beside only"
+  },
+  "per_clip_verdict_deliberate_regression_arm": {
+   "file": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\raw\\ship_r8\\SHIP_R8_step48852ema_unc.json",
+   "status": "NOT YET COMPUTED (the per-clip chain runs after the pf GPU stage)",
+   "binding": false
+  }
+ },
+ "base_verdict_copy": {
+  "file": "C:\\Users\\Admin\\qland\\hold_r8pf\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-20-refcv8-perframe-final\\code\\_ship_r8_verdict_base.py",
+  "sha256": "7543c585d9cc099942862c7f644c5fcae797272cd9b4dfec93708450224660f2"
+ },
+ "inputs": {
+  "tf": "C:\\Users\\Admin\\refcv8_pf\\rehearsal40k\\pfpkg\\raw\\retime_trainfit\\FORWARD_TRAINFIT_step40000ema_pf.json",
+  "fd8": "C:\\Users\\Admin\\refcv8_pf\\rehearsal40k\\pfpkg\\raw\\retime_deploy\\FORWARD_DEPLOY8_step40000ema_pf.json",
+  "tac": "C:\\Users\\Admin\\refcv8_pf\\rehearsal40k\\pfpkg\\raw\\retime_deploy\\TAC_step40000ema_pf.json",
+  "pp": "C:\\Users\\Admin\\refcv8_pf\\rehearsal40k\\pfpkg\\raw\\retime_deploy\\PRIOR_PARITY.json",
+  "fd_ps": "C:\\Users\\Admin\\refcv8_pf\\rehearsal40k\\pfpkg\\raw\\retime_deploy\\FORWARD_DEPLOY_step40000ema_pf.json",
+  "pr": "C:\\Users\\Admin\\refcv8_pf\\battery40k_pf\\step40000ema_pf\\PAIRED_READ_step40000ema_pf.json",
+  "deploy_sha": "C:\\Users\\Admin\\refcv8_pf\\rehearsal40k\\pfpkg\\raw\\retime_deploy\\FROZEN_GAINS_RETIME_deploy.sha256",
+  "frozen": "C:\\Users\\Admin\\qland\\hold_r8pf\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-20-refcv8-perframe-final\\raw\\retime_trainfit_pf\\FROZEN_GAINS_RETIME_train_pf.json",
+  "provenance": "C:\\Users\\Admin\\qland\\hold_r8pf\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-20-refcv8-perframe-final\\raw\\retime_trainfit_pf\\FROZEN_GAINS_RETIME_train_pf.provenance.json",
+  "gate": "C:\\Users\\Admin\\refcv8_pf\\rehearsal40k\\REGISTRATION_GATE.json",
+  "registered": "C:\\Users\\Admin\\qland\\hold_r8pf\\REGISTERED_PF_TABLE.sha256",
+  "parity_s0": "C:\\Users\\Admin\\refcv8_pf\\rehearsal40k\\feed_parity\\FEED_PARITY_step40000ema_pf_s0.json",
+  "parity_s1": "C:\\Users\\Admin\\refcv8_pf\\rehearsal40k\\feed_parity\\FEED_PARITY_step40000ema_pf_s1.json",
+  "perclip": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\raw\\ship_r8\\SHIP_R8_step48852ema_unc.json"
+ },
+ "inputs_sha256": {
+  "tf": "59c1078fa52e3e6c59e3521412de72af7112517abd3cd7393647f15d69b7c57a",
+  "fd8": "1bff54db1ba836190ea5129c5b9dcdbb8dcf6c30232b5c67dae27f71b33b7bbf",
+  "tac": "1f257d50e2dd868e5562a9ebac792b5fe0dcf3cc1cf76e584936c158962033ee",
+  "pp": "45de03f40494ccd5be7a58be5c4136fd10db5da311818a3bee8e7bebf64e82f9",
+  "fd_ps": "e9556d74d3def8a288d52adaa63cfb8137ad6e64beb1ed65a0e28822da3f7729",
+  "pr": "ee9d08fdf0b1c5af8c9d434ab31364c6226f014360ea20622bcfe5376e199d7d",
+  "deploy_sha": "d39c367cd0c13bba9e0ad22c3869e5bb8ce75c610fc83293ab500b1afe2d2a75",
+  "frozen": "2aacc9ff32d3d2a5a18dda2d72ab5ce6c42d1c1268e9186912c5151bbe4d6d80",
+  "provenance": "a1645f88dc01c5e316579e2e22310e62a2426fc9159a8adde7120d424a5d7269",
+  "gate": "93cf17a52962a51ff350ad48b68032e00309833658b9931c746d0b1c8579d966",
+  "registered": "3e77cd12e2e584e8be5da469da9e5bb4e51e4eda02ec048c7d3470eb7310b7ae",
+  "parity_s0": "d620cd4b8cbe0d3bc232672b1310aea01d908690228464618dc8bdcc4d1cd769",
+  "parity_s1": "6479644194203aadf80b9bae4889948118ea2f5e1b888503c60aa84e7a270ba9",
+  "perclip": null
+ },
+ "script_sha256": "61095bc603adf1db4ae1b295c7e7f73962e62903974976c2444bf186d8b1e769"
+}

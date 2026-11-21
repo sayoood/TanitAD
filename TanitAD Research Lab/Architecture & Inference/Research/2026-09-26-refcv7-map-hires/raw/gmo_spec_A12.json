@@ -1,0 +1,143 @@
+{
+ "schema": "tanitad.g_map_overfit_spec/1",
+ "registered": "2026-09-27 ~10:05 Berlin: SPEC_REFCV7 §17 (A12, landed ab1fb45) -- the NEW-2 R2 lift lever's arm, registered BEFORE any A12-arm number",
+ "amends": {
+  "spec": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-map-signal-audit/raw/gmo_spec.json",
+  "spec_md5": "d3a41b92918d9623f4719fe2ae548815",
+  "amendment": "Project Steering/SPEC_REFCV7.md §17 (A12)",
+  "what_changes": "MAIN = the NEW-2 branch WITH the 0.1 m near-range lift (near_lift_m, MapHiresConfig.near_lift_x_m); + its must-fail arm near_zeros (edge); every other literal unchanged"
+ },
+ "prereg": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-map-signal-audit/raw/PREREG_G_MAP_OVERFIT.md",
+ "frameset_md5": "4eafa03c2b6a6e6d6336be1d78acb91d",
+ "near_lift_m": 20.0,
+ "frames": [
+  {
+   "clip_sha12": "10497f0d664b",
+   "raw_frame": 10
+  },
+  {
+   "clip_sha12": "10497f0d664b",
+   "raw_frame": 110
+  },
+  {
+   "clip_sha12": "10497f0d664b",
+   "raw_frame": 130
+  },
+  {
+   "clip_sha12": "10497f0d664b",
+   "raw_frame": 150
+  },
+  {
+   "clip_sha12": "05c575ed45be",
+   "raw_frame": 50
+  },
+  {
+   "clip_sha12": "05c575ed45be",
+   "raw_frame": 85
+  },
+  {
+   "clip_sha12": "05c575ed45be",
+   "raw_frame": 105
+  },
+  {
+   "clip_sha12": "05c575ed45be",
+   "raw_frame": 130
+  },
+  {
+   "clip_sha12": "104d79ae052d",
+   "raw_frame": 10
+  },
+  {
+   "clip_sha12": "104d79ae052d",
+   "raw_frame": 90
+  },
+  {
+   "clip_sha12": "104d79ae052d",
+   "raw_frame": 115
+  },
+  {
+   "clip_sha12": "104d79ae052d",
+   "raw_frame": 135
+  },
+  {
+   "clip_sha12": "0dbd6c9cd776",
+   "raw_frame": 15
+  },
+  {
+   "clip_sha12": "0dbd6c9cd776",
+   "raw_frame": 35
+  },
+  {
+   "clip_sha12": "0dbd6c9cd776",
+   "raw_frame": 60
+  },
+  {
+   "clip_sha12": "0dbd6c9cd776",
+   "raw_frame": 90
+  }
+ ],
+ "steps": 1000,
+ "batch": 4,
+ "lr": 0.001,
+ "weight_decay": 0.0,
+ "seed": 0,
+ "eval_every": 100,
+ "class_weights": "<the LAUNCH weights json (compute_map_class_weights.py on the TRAIN split); a dry_run file is REFUSED>",
+ "trunk": {
+  "model": "resnet101.a1_in1k",
+  "pretrained": true,
+  "image_hw": [
+   416,
+   1024
+  ],
+  "equalize_bottom_rows": 43
+ },
+ "thresholds": {
+  "band": "0_20",
+  "min_cells": 1000,
+  "decision_rule": "<the launch config's declared inference rule: 'prior_corrected' = argmax(z - log w) or 'raw' = argmax(z)>",
+  "iou": {
+   "nocls": 0.85,
+   "drivable": 0.85,
+   "sidewalk": 0.85,
+   "lane": 0.5,
+   "crosswalk": 0.5,
+   "arrow": 0.5,
+   "edge": 0.5,
+   "hatched": 0.5
+  },
+  "per_class_ce_final_over_step0_max": 0.5
+ },
+ "must_fail": {
+  "lane_w0": [
+   "lane"
+  ],
+  "s8_zeros": [
+   "lane",
+   "crosswalk",
+   "arrow",
+   "edge",
+   "hatched"
+  ],
+  "near_zeros": [
+   "edge"
+  ]
+ },
+ "must_fail_all": {
+  "s8_zeros": true
+ },
+ "informative_arms": [
+  "s8_detached",
+  "frozen_trunk",
+  "refcv6_head_05m"
+ ],
+ "controls": {
+  "C1_constant_drivable": "IoU_drivable == n_drivable/n_scored (1e-9), others 0",
+  "C2_gt_as_logits": "IoU == 1.0 all 8",
+  "C3_rule_identity_w_ones": "prior_corrected == raw bitwise"
+ },
+ "report_bands_not_gated": [
+  "20_40",
+  "40_60"
+ ]
+}

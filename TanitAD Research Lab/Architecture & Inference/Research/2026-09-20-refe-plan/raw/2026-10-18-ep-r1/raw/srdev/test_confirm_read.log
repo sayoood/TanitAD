@@ -1,0 +1,157 @@
+test_every_flag_reaches_its_config (__main__.Cli.test_every_flag_reaches_its_config) ... usage: test_confirm_read.py [-h] --bank-dir BANK_DIR [--out-dir OUT_DIR]
+                            [--ep-run-dir EP_RUN_DIR]
+                            [--ep-registered-result-sha256 EP_REGISTERED_RESULT_SHA256]
+                            [--ep-dev-result EP_DEV_RESULT]
+                            [--ep-abandon EP_ABANDON]
+                            [--ttc-run-dir TTC_RUN_DIR]
+                            [--ttc-registered-result-sha256 TTC_REGISTERED_RESULT_SHA256]
+                            [--ttc-dev-result TTC_DEV_RESULT]
+                            [--ttc-abandon TTC_ABANDON] [--table TABLE]
+                            [--p2-ckpt P2_CKPT]
+                            [--banked-p2-seam BANKED_P2_SEAM]
+                            [--look-ledger LOOK_LEDGER] [--c2-out C2_OUT]
+                            [--families6 FAMILIES6] [--inputs INPUTS]
+                            [--python PYTHON] [--n-boot N_BOOT]
+                            [--runner {inprocess,subprocess}]
+                            {read,post,verify}
+test_confirm_read.py: error: argument cmd: invalid choice: 'picks' (choose from read, post, verify)
+ok
+test_exit_codes_read_refused_post_ledger_failure_and_verify (__main__.Cli.test_exit_codes_read_refused_post_ledger_failure_and_verify) ... {
+ "checks": {
+  "ledger": false,
+  "landed_read_result": false,
+  "navtest_c2_picks_report": false,
+  "navtest_c2_result": false,
+  "families_report": false,
+  "final_report": false
+ },
+ "missing": [
+  "ledger",
+  "landed_read_result",
+  "navtest_c2_picks_report",
+  "navtest_c2_result",
+  "families_report",
+  "final_report"
+ ],
+ "final_bound_to_these_files": null,
+ "complete": false,
+ "next": "run `confirm_read.py read`"
+}
+REFUSED: C:\Users\Admin\AppData\Local\Temp\crd_b19zg7ei\pw1\look\NAVTEST_LOOK_SPENT.json does not exist: the look is not spent, so there is nothing to finish
+[01:16:14] navtest C2 picks done: arms ['EP-R1', 'SR-TTC'], C:\Users\Admin\AppData\Local\Temp\crd_b19zg7ei\pw1\out1\navtest_c2
+[01:16:14] LOOK SPENT; read stage done: C:\Users\Admin\AppData\Local\Temp\crd_b19zg7ei\pw1\out1/confirm_read_result.json
+[01:16:15] navtest C2 score: pass_all=True red_arms=[]
+FAILED AFTER THE LOOK WAS SPENT: THE LOOK IS SPENT (C:\Users\Admin\AppData\Local\Temp\crd_b19zg7ei\pw1\look\NAVTEST_LOOK_SPENT.json) but a later step failed: RuntimeError: boom.  Fix the cause and run `confirm_read.py post` with the same flags; do not read again.
+REFUSED: C:\Users\Admin\AppData\Local\Temp\crd_b19zg7ei\pw1\look\NAVTEST_LOOK_SPENT.json exists: the navtest look is SPENT.  `confirm_read.py post` finishes the C2 score and the families on a spent look; `verify` lists what is missing.
+{
+ "checks": {
+  "ledger": true,
+  "landed_read_result": true,
+  "navtest_c2_picks_report": true,
+  "navtest_c2_result": true,
+  "families_report": false,
+  "final_report": false
+ },
+ "missing": [
+  "families_report",
+  "final_report"
+ ],
+ "final_bound_to_these_files": null,
+ "complete": false,
+ "next": "run `confirm_read.py post` with the same flags: the look is spent but the C2 score / families / final report are missing"
+}
+[01:16:15] navtest C2 score: pass_all=True red_arms=[]
+[01:16:20] families: 7 readings, all_complete=True, not_computed=[]
+[01:16:20] FINAL: EP-R1: DOES_NOT_CLEAR; SR-TTC: DOES_NOT_CLEAR; complete=True
+{
+ "checks": {
+  "ledger": true,
+  "landed_read_result": true,
+  "navtest_c2_picks_report": true,
+  "navtest_c2_result": true,
+  "families_report": true,
+  "final_report": true
+ },
+ "missing": [],
+ "final_bound_to_these_files": {
+  "look_ledger_sha256": true,
+  "confirm_read_result_sha256": true,
+  "navtest_c2_result_sha256": true,
+  "navtest_c2_picks_report_sha256": true,
+  "families_report_sha256": true
+ },
+ "complete": true,
+ "next": null
+}
+REFUSED: C:\Users\Admin\AppData\Local\Temp\crd_b19zg7ei\pw1\out1/confirm_final_report.json exists: the final report is created once
+ok
+test_the_production_subprocess_runner_runs_the_real_tool_and_agrees_with_the_inprocess_runner (__main__.Cli.test_the_production_subprocess_runner_runs_the_real_tool_and_agrees_with_the_inprocess_runner) ... skipped 'set SRDEV_SUBPROCESS=1 to run the real tool through the production SUBPROCESS runner (adds a second live process)'
+test_a_failure_after_the_look_is_loud_resumable_and_the_final_report_is_created_once (__main__.Run.test_a_failure_after_the_look_is_loud_resumable_and_the_final_report_is_created_once) ... [01:16:20] navtest C2 picks done: arms ['EP-R1', 'SR-TTC'], C:\Users\Admin\AppData\Local\Temp\crd_hm0dhka2\pw1\out1\navtest_c2
+[01:16:21] LOOK SPENT; read stage done: C:\Users\Admin\AppData\Local\Temp\crd_hm0dhka2\pw1\out1/confirm_read_result.json
+[01:16:21] navtest C2 score: pass_all=True red_arms=[]
+[01:16:21] navtest C2 score: pass_all=True red_arms=[]
+[01:16:25] families: 7 readings, all_complete=True, not_computed=[]
+[01:16:25] FINAL: EP-R1: DOES_NOT_CLEAR; SR-TTC: DOES_NOT_CLEAR; complete=True
+[01:16:25] navtest C2 score: pass_all=True red_arms=[]
+[01:16:30] families: 7 readings, all_complete=True, not_computed=[]
+ok
+test_a_red_c2_control_refuses_before_the_look_and_the_landed_read_never_runs (__main__.Run.test_a_red_c2_control_refuses_before_the_look_and_the_landed_read_never_runs) ... ok
+test_a_red_c2_in_the_final_report_is_control_red_not_a_clear (__main__.Run.test_a_red_c2_in_the_final_report_is_control_red_not_a_clear) ... [01:16:31] navtest C2 picks done: arms ['EP-R1', 'SR-TTC'], C:\Users\Admin\AppData\Local\Temp\crd_g9jmetdn\pw1\out1\navtest_c2
+[01:16:32] LOOK SPENT; read stage done: C:\Users\Admin\AppData\Local\Temp\crd_g9jmetdn\pw1\out1/confirm_read_result.json
+[01:16:32] navtest C2 score: pass_all=False red_arms=['EP-R1']
+[01:16:37] families: 7 readings, all_complete=True, not_computed=[]
+[01:16:37] FINAL: EP-R1: CONTROL_RED_RULING_NEEDED; SR-TTC: DOES_NOT_CLEAR; complete=True
+ok
+test_a_spent_look_refuses_the_read_and_points_at_post_and_verify (__main__.Run.test_a_spent_look_refuses_the_read_and_points_at_post_and_verify) ... ok
+test_an_unrunnable_families_tool_refuses_before_the_look_is_spent (__main__.Run.test_an_unrunnable_families_tool_refuses_before_the_look_is_spent) ... [01:16:38] navtest C2 picks done: arms ['EP-R1', 'SR-TTC'], C:\Users\Admin\AppData\Local\Temp\crd_oq7rkpz3\pw1\out2\navtest_c2
+ok
+test_preflight_needs_a_ledger_path_and_a_fresh_out_dir (__main__.Run.test_preflight_needs_a_ledger_path_and_a_fresh_out_dir) ... ok
+test_the_c2_picks_are_what_puts_c2_in_the_final_report (__main__.Run.test_the_c2_picks_are_what_puts_c2_in_the_final_report) ... [01:16:38] navtest C2 picks done: arms ['EP-R1', 'SR-TTC'], C:\Users\Admin\AppData\Local\Temp\crd_7xayni1d\pw1\out1\navtest_c2
+[01:16:39] LOOK SPENT; read stage done: C:\Users\Admin\AppData\Local\Temp\crd_7xayni1d\pw1\out1/confirm_read_result.json
+[01:16:39] navtest C2 score: pass_all=True red_arms=[]
+[01:16:43] families: 7 readings, all_complete=True, not_computed=[]
+[01:16:43] FINAL: EP-R1: DOES_NOT_CLEAR; SR-TTC: DOES_NOT_CLEAR; complete=True
+[01:16:44] LOOK SPENT; read stage done: C:\Users\Admin\AppData\Local\Temp\crd_7xayni1d\pw2\out1/confirm_read_result.json
+[01:16:44] navtest C2 picks done: arms ['EP-R1', 'SR-TTC'], C:\Users\Admin\AppData\Local\Temp\crd_7xayni1d\pw2\out1\navtest_c2
+[01:16:44] navtest C2 score: pass_all=True red_arms=[]
+[01:16:49] families: 7 readings, all_complete=True, not_computed=[]
+[01:16:49] FINAL: EP-R1: DOES_NOT_CLEAR; SR-TTC: DOES_NOT_CLEAR; complete=True
+ok
+test_the_final_report_is_created_exclusively_even_if_the_pre_check_is_raced (__main__.Run.test_the_final_report_is_created_exclusively_even_if_the_pre_check_is_raced) ... [01:16:50] navtest C2 picks done: arms ['EP-R1', 'SR-TTC'], C:\Users\Admin\AppData\Local\Temp\crd_91taxs3l\pw1\out1\navtest_c2
+[01:16:51] LOOK SPENT; read stage done: C:\Users\Admin\AppData\Local\Temp\crd_91taxs3l\pw1\out1/confirm_read_result.json
+[01:16:51] navtest C2 score: pass_all=True red_arms=[]
+[01:16:51] navtest C2 score: pass_all=True red_arms=[]
+[01:16:55] families: 7 readings, all_complete=True, not_computed=[]
+[01:16:55] navtest C2 score: pass_all=True red_arms=[]
+[01:17:00] families: 7 readings, all_complete=True, not_computed=[]
+[01:17:00] FINAL: EP-R1: DOES_NOT_CLEAR; SR-TTC: DOES_NOT_CLEAR; complete=True
+ok
+test_the_full_run_in_order_and_the_final_report_is_complete_and_bound (__main__.Run.test_the_full_run_in_order_and_the_final_report_is_complete_and_bound) ... [01:17:00] navtest C2 picks done: arms ['EP-R1', 'SR-TTC'], C:\Users\Admin\AppData\Local\Temp\crd_q02cl18m\pw1\out1\navtest_c2
+[01:17:01] LOOK SPENT; read stage done: C:\Users\Admin\AppData\Local\Temp\crd_q02cl18m\pw1\out1/confirm_read_result.json
+[01:17:01] navtest C2 score: pass_all=True red_arms=[]
+[01:17:06] families: 7 readings, all_complete=True, not_computed=[]
+[01:17:06] FINAL: EP-R1: DOES_NOT_CLEAR; SR-TTC: DOES_NOT_CLEAR; complete=True
+ok
+test_the_landed_cli_run_directly_leaves_a_look_that_post_can_finish_and_discloses_it (__main__.Run.test_the_landed_cli_run_directly_leaves_a_look_that_post_can_finish_and_discloses_it) ... [01:17:07] LOOK SPENT; read stage done: C:\Users\Admin\AppData\Local\Temp\crd_b1mh3f4w\pw1\out1/confirm_read_result.json
+[01:17:07] navtest C2 picks done: arms ['EP-R1', 'SR-TTC'], C:\Users\Admin\AppData\Local\Temp\crd_b1mh3f4w\pw1\out1\navtest_c2
+[01:17:07] navtest C2 score: pass_all=True red_arms=[]
+[01:17:11] families: 7 readings, all_complete=True, not_computed=[]
+[01:17:11] FINAL: EP-R1: DOES_NOT_CLEAR; SR-TTC: DOES_NOT_CLEAR; complete=True
+ok
+test_verify_before_anything_says_to_run_read (__main__.Run.test_verify_before_anything_says_to_run_read) ... ok
+test_verify_notices_a_piece_edited_after_the_final_report (__main__.Run.test_verify_notices_a_piece_edited_after_the_final_report) ... [01:17:12] navtest C2 picks done: arms ['EP-R1', 'SR-TTC'], C:\Users\Admin\AppData\Local\Temp\crd_oyvntxap\pw1\out1\navtest_c2
+[01:17:12] LOOK SPENT; read stage done: C:\Users\Admin\AppData\Local\Temp\crd_oyvntxap\pw1\out1/confirm_read_result.json
+[01:17:12] navtest C2 score: pass_all=True red_arms=[]
+[01:17:17] families: 7 readings, all_complete=True, not_computed=[]
+[01:17:17] FINAL: EP-R1: DOES_NOT_CLEAR; SR-TTC: DOES_NOT_CLEAR; complete=True
+ok
+test_assemble_final_completeness_and_the_pieces (__main__.Verdict.test_assemble_final_completeness_and_the_pieces) ... ok
+test_each_branch_has_a_regression_arm (__main__.Verdict.test_each_branch_has_a_regression_arm) ... ok
+test_reasons_name_the_failing_clause (__main__.Verdict.test_reasons_name_the_failing_clause) ... ok
+test_the_matrix (__main__.Verdict.test_the_matrix) ... ok
+test_every_marker_in_the_source_was_mutated_by_a_test_in_this_run (__main__.ZZCoverage.test_every_marker_in_the_source_was_mutated_by_a_test_in_this_run) ... ok
+
+----------------------------------------------------------------------
+Ran 20 tests in 63.462s
+
+OK (skipped=1)

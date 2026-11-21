@@ -1,0 +1,1113 @@
+{
+ "first_line": "Latency proxy on the pod GPU (not Thor, not a product latency; the image encoder is not included). Tier: none (a cost measurement, not a driving metric).",
+ "family_line": "LONGITUDINAL, LATERAL, TACTICAL, STRATEGIC: not applicable (a cost measurement)",
+ "tier": "none (a cost measurement, not a driving metric)",
+ "generated_utc": "2026-11-19T09:14:04Z",
+ "tool": "/workspace/v8proof/latency/latency_proxy.py",
+ "tool_sha256": "d1a5a743de1c3071661cfceff95e77f9d5b30ce96d875ef829526ed447150239",
+ "argv": [
+  "--tree",
+  "/workspace/v8proof/tree_leadsup",
+  "--ckpt",
+  "/workspace/v8proof/runs/actcons_c0/RLAm_s0/ckpt_last.pt",
+  "--out-dir",
+  "/workspace/v8proof/runs/latency_proxy/actcons_c0_RLAm_s0",
+  "--tracks",
+  "/workspace/v8proof/data/inputs/native_tracks.pt",
+  "--eval-cache",
+  "/workspace/v8proof/data/cache_pod",
+  "--eval-grid",
+  "/workspace/v8proof/hierrep/pins/eval_grid_windows.json",
+  "--eval-join",
+  "/workspace/v8proof/hierrep/pins/join_eval141.npz",
+  "--device",
+  "cuda",
+  "--lib-dirs",
+  "/workspace/v8proof/latency:/workspace/v8proof/latency/../distrule"
+ ],
+ "args": {
+  "n": 200,
+  "warmup": 20,
+  "k_list": [
+   1,
+   8,
+   16,
+   32
+  ],
+  "horizon_steps": 10,
+  "horizons_timed": [
+   10,
+   30
+  ],
+  "device": "cuda",
+  "n_windows": 80,
+  "variants": [
+   "eager",
+   "fp16",
+   "compile"
+  ]
+ },
+ "planner_horizon_steps": 10,
+ "planner_horizon_source": "imag_plan.N_ROLL (imag_plan.py:41): 10 rollout steps of 0.2 s = 2.0 s, the horizon the planner rolls",
+ "ckpt_sha256": "51a280fedb5a8226fc9768f8dcf540d37694cbe1e2ed8a4f93c5e89626963bf3",
+ "info": {
+  "subject": "real",
+  "variant": "eager",
+  "torch": "2.8.0+cu128",
+  "torch_cuda": "12.8",
+  "python": "3.12.3",
+  "device": "cuda",
+  "torch_threads": 48,
+  "gpu_name": "NVIDIA A40",
+  "cudnn": 91002,
+  "ckpt": "/workspace/v8proof/runs/actcons_c0/RLAm_s0/ckpt_last.pt",
+  "ckpt_sha256": "51a280fedb5a8226fc9768f8dcf540d37694cbe1e2ed8a4f93c5e89626963bf3",
+  "pinned_tool_sha256": "61e140edb9da01acbbba4eef81e74bbb68b57e2ff31842e05958759446d97397",
+  "pinned_tool_expected_sha256": "61e140edb9da01acbbba4eef81e74bbb68b57e2ff31842e05958759446d97397",
+  "state_dim_D": 640,
+  "state_shape_batch1": [
+   1,
+   640
+  ],
+  "predictor_context": 3,
+  "cached_tokens_batch1_shape": [
+   1,
+   16,
+   40,
+   1024
+  ],
+  "tokens_per_frame": 40,
+  "frames_in_batch": 16,
+  "d_feat": 1024,
+  "lead_head_hist": 5,
+  "n_grid_windows": 2399,
+  "n_windows_used": 80,
+  "cfg": {
+   "kin_mode": "yaw",
+   "wm": "b",
+   "wm_state": "grid",
+   "wm_dim": "128",
+   "hist": "4",
+   "hmax": "16",
+   "d": "256",
+   "d_feat": "1024",
+   "n_tok": "40",
+   "lead_sup": "on",
+   "lead_hist": "5"
+  },
+  "params_total": 9191726,
+  "params_top_level": {
+   "prior": 17724,
+   "adapter": 264448,
+   "e_ego": 2304,
+   "e_nav": 1536,
+   "e_lim": 1536,
+   "e_age": 768,
+   "e_ck": 3328,
+   "e_code": 15616,
+   "read_s": 792320,
+   "read_t": 792320,
+   "read_o": 1583104,
+   "head_s": 529417,
+   "trunk_t": 656128,
+   "h_goal": 5654,
+   "h_lat": 1285,
+   "h_lon": 1799,
+   "h_cons": 6682,
+   "head_o": 537112,
+   "wm": 3967381,
+   "(direct parameters, e.g. pos, time)": 11264
+  },
+  "params_wm": {
+   "stack": 3880258,
+   "proj": 4624,
+   "lead_head": 82499
+  },
+  "params_wm_stack": {
+   "act_embed": 1152,
+   "encoders": 131584,
+   "macro_encoders": 6400,
+   "predictors": 3067264,
+   "idm_heads": 673858,
+   "sigreg": 0
+  },
+  "planner_candidates": {
+   "cand-imag/scale (card default set)": 11,
+   "cand-imagkin/decel (note ADD40_N3, N4)": 8
+  }
+ },
+ "checks": [
+  {
+   "id": "s1",
+   "name": "timer measures a known 50 ms sleep",
+   "pass": true,
+   "value_p50_ms": 50.27670149866026,
+   "bar": "|p50 - 50| <= 5.0 ms"
+  },
+  {
+   "id": "s1a",
+   "name": "timer waits for an asynchronous device (50 ms of async work)",
+   "pass": true,
+   "value_p50_ms": 50.09225249523297,
+   "bar": "|p50 - 50| <= 5.0 ms"
+  },
+  {
+   "id": "s2",
+   "name": "batched and sequential rollouts give the same states",
+   "pass": true,
+   "value_max_abs_diff": 9.5367431640625e-07,
+   "max_abs_state": 4.625880718231201,
+   "K": 32,
+   "H": 10,
+   "bar": "max abs diff <= 0.0001 and states not all zero"
+  },
+  {
+   "id": "s3",
+   "name": "a doubled horizon takes between 1.6 and 2.4 times as long",
+   "pass": true,
+   "value_ratio": 2.089567373922049,
+   "p50_ms_H": 11.488870994071476,
+   "p50_ms_2H": 24.006769992411137,
+   "K": 8,
+   "H": 10,
+   "bar": "1.6 <= ratio <= 2.4"
+  },
+  {
+   "id": "s4",
+   "name": "counted predictor calls per tick",
+   "pass": true,
+   "value": [
+    10,
+    10
+   ],
+   "input_index": 1,
+   "bar": "calls > 0 and equal on two ticks of one input"
+  },
+  {
+   "id": "s5",
+   "name": "statistics of two known lists (1..100 ms; 1,1,1,1,100 ms)",
+   "pass": true,
+   "value": {
+    "p50": 50.5,
+    "p95": 95.05,
+    "mean": 50.5,
+    "n": 100
+   },
+   "value_skewed": {
+    "p50": 1.0,
+    "p95": 80.19999999999999,
+    "mean": 20.8,
+    "max": 100.0
+   },
+   "bar": "p50 50.5, p95 95.05, mean 50.5, n 100; skewed list p50 1, p95 80.2, mean 20.8, max 100"
+  }
+ ],
+ "variants": {
+  "eager": {
+   "a_predictor_step_batch1": {
+    "p50": 1.2444504973245785,
+    "p95": 1.4858028880553318,
+    "mean": 1.2868276446533855,
+    "min": 1.0970050061587244,
+    "max": 2.506043005269021,
+    "n": 200,
+    "first_call_ms": 1.3900600024499
+   },
+   "b_rollout": {
+    "H10_K1": {
+     "H_steps": 10,
+     "horizon_s": 2.0,
+     "K": 1,
+     "batch": {
+      "p50": 11.822806496638805,
+      "p95": 13.190432953706473,
+      "mean": 11.987975819647545,
+      "min": 11.071526998421177,
+      "max": 16.760188998887315,
+      "n": 200,
+      "first_call_ms": 11.537911021150649
+     },
+     "seq_total": {
+      "p50": 11.293408009805717,
+      "p95": 14.718652851297518,
+      "mean": 11.649131119047524,
+      "min": 10.83752399426885,
+      "max": 17.210702993907034,
+      "n": 200,
+      "first_call_ms": 12.31026102323085
+     },
+     "seq_mean_per_rollout_ms": 11.649131119047524,
+     "rtf_batch_p50": 169.1645719287206,
+     "rtf_seq_p50": 177.09446061485266,
+     "seq_over_batch_p50": 0.9552222657975841,
+     "is_planner_horizon": true
+    },
+    "H10_K8": {
+     "H_steps": 10,
+     "horizon_s": 2.0,
+     "K": 8,
+     "batch": {
+      "p50": 11.767925505409949,
+      "p95": 12.82764664501883,
+      "mean": 11.908032708743121,
+      "min": 11.413359985454008,
+      "max": 13.85220600059256,
+      "n": 200,
+      "first_call_ms": 11.925384984351695
+     },
+     "seq_total": {
+      "p50": 90.09238050202839,
+      "p95": 103.54193699604366,
+      "mean": 92.88851938428706,
+      "min": 86.13720501307398,
+      "max": 232.20552600105293,
+      "n": 200,
+      "first_call_ms": 90.50906001357362
+     },
+     "seq_mean_per_rollout_ms": 11.611064923035883,
+     "rtf_batch_p50": 169.95348917534875,
+     "rtf_seq_p50": 22.199435611038947,
+     "seq_over_batch_p50": 7.655757207216441,
+     "is_planner_horizon": true
+    },
+    "H10_K16": {
+     "H_steps": 10,
+     "horizon_s": 2.0,
+     "K": 16,
+     "batch": {
+      "p50": 11.542603504494764,
+      "p95": 12.314366064674687,
+      "mean": 11.548557165369857,
+      "min": 9.610030014300719,
+      "max": 13.61881400225684,
+      "n": 200,
+      "first_call_ms": 11.914528993656859
+     },
+     "seq_total": {
+      "p50": 151.62220850470476,
+      "p95": 183.7879729559063,
+      "mean": 160.8950568639557,
+      "min": 146.56589200603776,
+      "max": 217.2990349936299,
+      "n": 200,
+      "first_call_ms": 177.65175600652583
+     },
+     "seq_mean_per_rollout_ms": 10.05594105399723,
+     "rtf_batch_p50": 173.2711341268187,
+     "rtf_seq_p50": 13.190679780514746,
+     "seq_over_batch_p50": 13.135876013211586,
+     "is_planner_horizon": true
+    },
+    "H10_K32": {
+     "H_steps": 10,
+     "horizon_s": 2.0,
+     "K": 32,
+     "batch": {
+      "p50": 9.7112660005223,
+      "p95": 10.7620541122742,
+      "mean": 9.85132291491027,
+      "min": 9.4211169925984,
+      "max": 11.510857992107049,
+      "n": 200,
+      "first_call_ms": 10.614672006340697
+     },
+     "seq_total": {
+      "p50": 295.9611749975011,
+      "p95": 306.0690598387736,
+      "mean": 297.0716469801846,
+      "min": 288.9015919936355,
+      "max": 350.2284419955686,
+      "n": 200,
+      "first_call_ms": 297.2820370050613
+     },
+     "seq_mean_per_rollout_ms": 9.283488968130769,
+     "rtf_batch_p50": 205.94637196555362,
+     "rtf_seq_p50": 6.757643126727304,
+     "seq_over_batch_p50": 30.476065116698834,
+     "is_planner_horizon": true
+    },
+    "H30_K1": {
+     "H_steps": 30,
+     "horizon_s": 6.0,
+     "K": 1,
+     "batch": {
+      "p50": 27.521704498212785,
+      "p95": 28.16237098450074,
+      "mean": 27.531020560854813,
+      "min": 26.726120006060228,
+      "max": 29.31738499319181,
+      "n": 200,
+      "first_call_ms": 27.606190007645637
+     },
+     "seq_total": {
+      "p50": 28.054806505679153,
+      "p95": 28.8508616227773,
+      "mean": 28.151619445270626,
+      "min": 27.52769397920929,
+      "max": 30.243903020163998,
+      "n": 200,
+      "first_call_ms": 27.316895982949063
+     },
+     "seq_mean_per_rollout_ms": 28.151619445270626,
+     "rtf_batch_p50": 218.009753007472,
+     "rtf_seq_p50": 213.86709613503896,
+     "seq_over_batch_p50": 1.0193702394959216,
+     "is_planner_horizon": false
+    },
+    "H30_K8": {
+     "H_steps": 30,
+     "horizon_s": 6.0,
+     "K": 8,
+     "batch": {
+      "p50": 29.31573249225039,
+      "p95": 30.23938883561641,
+      "mean": 29.421717699005967,
+      "min": 28.777587023796514,
+      "max": 33.30738501972519,
+      "n": 200,
+      "first_call_ms": 29.76053999736905
+     },
+     "seq_total": {
+      "p50": 221.69105950160883,
+      "p95": 261.4702478982508,
+      "mean": 229.9086710602569,
+      "min": 210.77646897174418,
+      "max": 312.8822789876722,
+      "n": 200,
+      "first_call_ms": 222.94507201877423
+     },
+     "seq_mean_per_rollout_ms": 28.73858388253211,
+     "rtf_batch_p50": 204.66826137078783,
+     "rtf_seq_p50": 27.064690896821922,
+     "seq_over_batch_p50": 7.562187284940359,
+     "is_planner_horizon": false
+    },
+    "H30_K16": {
+     "H_steps": 30,
+     "horizon_s": 6.0,
+     "K": 16,
+     "batch": {
+      "p50": 29.470777983078733,
+      "p95": 30.6422278037644,
+      "mean": 29.617649125430034,
+      "min": 28.469067008700222,
+      "max": 31.499356002314016,
+      "n": 200,
+      "first_call_ms": 29.57973600132391
+     },
+     "seq_total": {
+      "p50": 500.71345749893226,
+      "p95": 541.2244319944875,
+      "mean": 482.07689206610667,
+      "min": 429.2834269872401,
+      "max": 615.4474620125256,
+      "n": 200,
+      "first_call_ms": 458.88989299419336
+     },
+     "seq_mean_per_rollout_ms": 30.129805754131667,
+     "rtf_batch_p50": 203.59150353767473,
+     "rtf_seq_p50": 11.98290141824837,
+     "seq_over_batch_p50": 16.9901676089592,
+     "is_planner_horizon": false
+    },
+    "H30_K32": {
+     "H_steps": 30,
+     "horizon_s": 6.0,
+     "K": 32,
+     "batch": {
+      "p50": 28.32758449949324,
+      "p95": 28.928574404562823,
+      "mean": 28.389712411299115,
+      "min": 27.750984008889645,
+      "max": 30.075115006184205,
+      "n": 200,
+      "first_call_ms": 29.560841008787975
+     },
+     "seq_total": {
+      "p50": 859.909394508577,
+      "p95": 1021.0123103039223,
+      "mean": 885.3728781933023,
+      "min": 845.9870200022124,
+      "max": 1214.4824170100037,
+      "n": 200,
+      "first_call_ms": 859.8509500152431
+     },
+     "seq_mean_per_rollout_ms": 27.667902443540697,
+     "rtf_batch_p50": 211.80768166475102,
+     "rtf_seq_p50": 6.977479299931238,
+     "seq_over_batch_p50": 30.355902548766913,
+     "is_planner_horizon": false
+    }
+   },
+   "c_heads": {
+    "c1_lead_head_one_state": {
+     "p50": 0.10569251026026905,
+     "p95": 0.11680115130729972,
+     "mean": 0.10684914435842074,
+     "min": 0.10281297727487981,
+     "max": 0.12245998368598521,
+     "n": 200,
+     "first_call_ms": 0.2788000274449587
+    },
+    "c2_lead_head_at_1s_2s_on_rolled_state (2 head calls)": {
+     "p50": 0.3595335001591593,
+     "p95": 0.37113340804353356,
+     "mean": 0.3612698054348584,
+     "min": 0.3453519893810153,
+     "max": 0.4438740143086761,
+     "n": 200,
+     "first_call_ms": 0.738450005883351
+    },
+    "c3_lead_head_on_cached_tokens (head_values: adapter, z1, head, host copy)": {
+     "p50": 0.39557600393891335,
+     "p95": 0.4083038424141705,
+     "mean": 0.39639892987906933,
+     "min": 0.37953699938952923,
+     "max": 0.43186498805880547,
+     "n": 200,
+     "first_call_ms": 0.7933910237625241
+    },
+    "c4_trajectory_heads (forward_infer, S+T+O readers and all heads, batch 1)": {
+     "p50": 5.773066513938829,
+     "p95": 5.958902103884611,
+     "mean": 5.788615893543465,
+     "min": 5.611139989923686,
+     "max": 6.147409992991015,
+     "n": 200,
+     "first_call_ms": 7.744374015601352
+    }
+   },
+   "d_planning_tick": {
+    "cand-imag/scale (card default set)": {
+     "n_inputs": 80,
+     "n_candidates": 11,
+     "n_inputs_with_rollout": 23,
+     "fraction_with_rollout": 0.2875,
+     "predictor_calls_per_tick_values": [
+      0,
+      10
+     ],
+     "predictor_calls_per_tick_counted": {
+      "0": 57,
+      "10": 23
+     },
+     "rollout_calls_per_tick_values": [
+      0,
+      1
+     ],
+     "head_calls_per_tick_values": [
+      1,
+      3
+     ],
+     "predictor_rows_per_call_on_a_rolling_tick": [
+      11,
+      11,
+      11,
+      11,
+      11,
+      11,
+      11,
+      11,
+      11,
+      11
+     ],
+     "count_method": "wrapper on the predictor's forward, on stack.rollout and on the lead head's forward, installed only for an untimed pass (never during the timed pass)",
+     "tick_all_inputs": {
+      "p50": 7.234531993162818,
+      "p95": 24.404100808897056,
+      "mean": 12.011304610205116,
+      "min": 6.79948998731561,
+      "max": 25.241675990400836,
+      "n": 200,
+      "first_call_ms": 7.434197003021836
+     },
+     "tick_inputs_with_rollout": {
+      "p50": 24.436529507511295,
+      "p95": 24.93709275004221,
+      "mean": 24.448092851089314,
+      "min": 23.72335601830855,
+      "max": 25.943941989680752,
+      "n": 200,
+      "first_call_ms": 24.053732020547614
+     }
+    },
+    "cand-imagkin/decel (note ADD40_N3, N4)": {
+     "n_inputs": 80,
+     "n_candidates": 8,
+     "n_inputs_with_rollout": 23,
+     "fraction_with_rollout": 0.2875,
+     "predictor_calls_per_tick_values": [
+      0,
+      10
+     ],
+     "predictor_calls_per_tick_counted": {
+      "0": 57,
+      "10": 23
+     },
+     "rollout_calls_per_tick_values": [
+      0,
+      1
+     ],
+     "head_calls_per_tick_values": [
+      1,
+      3
+     ],
+     "predictor_rows_per_call_on_a_rolling_tick": [
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8
+     ],
+     "count_method": "wrapper on the predictor's forward, on stack.rollout and on the lead head's forward, installed only for an untimed pass (never during the timed pass)",
+     "tick_all_inputs": {
+      "p50": 7.50552250246983,
+      "p95": 21.23960023454856,
+      "mean": 11.242340238241013,
+      "min": 6.856727006379515,
+      "max": 21.853372018085793,
+      "n": 200,
+      "first_call_ms": 7.67075500334613
+     },
+     "tick_inputs_with_rollout": {
+      "p50": 20.972350481315516,
+      "p95": 29.601600130263236,
+      "mean": 21.762353954982245,
+      "min": 20.011034997878596,
+      "max": 40.745234000496566,
+      "n": 200,
+      "first_call_ms": 20.969008997781202
+     }
+    }
+   }
+  },
+  "fp16": {
+   "a_predictor_step_batch1": {
+    "p50": 1.5706409903941676,
+    "p95": 2.6516541664022952,
+    "mean": 1.9830359153274912,
+    "min": 1.5206690004561096,
+    "max": 3.7230039888527244,
+    "n": 200,
+    "first_call_ms": 163.37508399738
+   },
+   "b_rollout": {
+    "H10_K1": {
+     "H_steps": 10,
+     "horizon_s": 2.0,
+     "K": 1,
+     "batch": {
+      "p50": 13.90753650048282,
+      "p95": 15.831843021442175,
+      "mean": 13.941141060786322,
+      "min": 12.732210976537317,
+      "max": 21.42865999485366,
+      "n": 200,
+      "first_call_ms": 44.999503006692976
+     },
+     "seq_total": {
+      "p50": 13.18456549779512,
+      "p95": 14.017057357705198,
+      "mean": 13.07606738017057,
+      "min": 11.033546994440258,
+      "max": 17.694651993224397,
+      "n": 200,
+      "first_call_ms": 13.764989998890087
+     },
+     "seq_mean_per_rollout_ms": 13.07606738017057,
+     "rtf_batch_p50": 143.8069207965456,
+     "rtf_seq_p50": 151.6925226193054,
+     "seq_over_batch_p50": 0.9480158831391454,
+     "is_planner_horizon": true
+    },
+    "H10_K8": {
+     "H_steps": 10,
+     "horizon_s": 2.0,
+     "K": 8,
+     "batch": {
+      "p50": 11.753168510040268,
+      "p95": 14.01480655913474,
+      "mean": 12.355024729040451,
+      "min": 11.334649985656142,
+      "max": 16.46752402302809,
+      "n": 200,
+      "first_call_ms": 26.422524999361485
+     },
+     "seq_total": {
+      "p50": 101.49757549515925,
+      "p95": 109.16882219898979,
+      "mean": 101.24848208506592,
+      "min": 83.54522398440167,
+      "max": 249.88141198991798,
+      "n": 200,
+      "first_call_ms": 90.17862498876639
+     },
+     "seq_mean_per_rollout_ms": 12.65606026063324,
+     "rtf_batch_p50": 170.1668786839463,
+     "rtf_seq_p50": 19.70490418360177,
+     "seq_over_batch_p50": 8.635762807999722,
+     "is_planner_horizon": true
+    },
+    "H10_K16": {
+     "H_steps": 10,
+     "horizon_s": 2.0,
+     "K": 16,
+     "batch": {
+      "p50": 13.99210600357037,
+      "p95": 16.338728510891087,
+      "mean": 14.342744046152802,
+      "min": 11.639256990747526,
+      "max": 19.50957000372,
+      "n": 200,
+      "first_call_ms": 16.246536979451776
+     },
+     "seq_total": {
+      "p50": 183.22049798734952,
+      "p95": 211.16852446575646,
+      "mean": 186.8207087412884,
+      "min": 172.5454319966957,
+      "max": 230.20738500053994,
+      "n": 200,
+      "first_call_ms": 183.545709005557
+     },
+     "seq_mean_per_rollout_ms": 11.676294296330525,
+     "rtf_batch_p50": 142.9377392859702,
+     "rtf_seq_p50": 10.915809213323339,
+     "seq_over_batch_p50": 13.094561886580696,
+     "is_planner_horizon": true
+    },
+    "H10_K32": {
+     "H_steps": 10,
+     "horizon_s": 2.0,
+     "K": 32,
+     "batch": {
+      "p50": 14.073979982640594,
+      "p95": 16.458307183347642,
+      "mean": 13.94055873475736,
+      "min": 11.712111008819193,
+      "max": 18.860588024836034,
+      "n": 200,
+      "first_call_ms": 14.238895004382357
+     },
+     "seq_total": {
+      "p50": 348.4887565136887,
+      "p95": 372.844867342792,
+      "mean": 351.7734543289407,
+      "min": 338.5054410027806,
+      "max": 417.3073100100737,
+      "n": 200,
+      "first_call_ms": 362.9148740146775
+     },
+     "seq_mean_per_rollout_ms": 10.992920447779397,
+     "rtf_batch_p50": 142.10621320101913,
+     "rtf_seq_p50": 5.739066074923538,
+     "seq_over_batch_p50": 24.76120876564615,
+     "is_planner_horizon": true
+    },
+    "H30_K1": {
+     "H_steps": 30,
+     "horizon_s": 6.0,
+     "K": 1,
+     "batch": {
+      "p50": 32.35971550748218,
+      "p95": 34.83510350197321,
+      "mean": 33.120740565354936,
+      "min": 31.7895759944804,
+      "max": 37.11804500198923,
+      "n": 200,
+      "first_call_ms": 34.4298779964447
+     },
+     "seq_total": {
+      "p50": 32.30645650182851,
+      "p95": 34.72230648767436,
+      "mean": 32.99306224405882,
+      "min": 31.36715598520823,
+      "max": 39.33291099383496,
+      "n": 200,
+      "first_call_ms": 32.28437900543213
+     },
+     "seq_mean_per_rollout_ms": 32.99306224405882,
+     "rtf_batch_p50": 185.41572155084882,
+     "rtf_seq_p50": 185.72138976803004,
+     "seq_over_batch_p50": 0.9983541571729406,
+     "is_planner_horizon": false
+    },
+    "H30_K8": {
+     "H_steps": 30,
+     "horizon_s": 6.0,
+     "K": 8,
+     "batch": {
+      "p50": 34.74579700559843,
+      "p95": 37.39317634172039,
+      "mean": 35.4630858382734,
+      "min": 33.727842004736885,
+      "max": 40.13940700679086,
+      "n": 200,
+      "first_call_ms": 36.15914998226799
+     },
+     "seq_total": {
+      "p50": 262.4836309987586,
+      "p95": 277.16634840035107,
+      "mean": 263.7969648352009,
+      "min": 252.36698301159777,
+      "max": 303.9368270256091,
+      "n": 200,
+      "first_call_ms": 259.4601070159115
+     },
+     "seq_mean_per_rollout_ms": 32.974620604400116,
+     "rtf_batch_p50": 172.68275639304653,
+     "rtf_seq_p50": 22.858568274028396,
+     "seq_over_batch_p50": 7.554399484820158,
+     "is_planner_horizon": false
+    },
+    "H30_K16": {
+     "H_steps": 30,
+     "horizon_s": 6.0,
+     "K": 16,
+     "batch": {
+      "p50": 35.369989011087455,
+      "p95": 39.48643540061312,
+      "mean": 36.13021476412541,
+      "min": 33.292398002231494,
+      "max": 50.48281300696544,
+      "n": 200,
+      "first_call_ms": 36.857525003142655
+     },
+     "seq_total": {
+      "p50": 511.9931200024439,
+      "p95": 522.076409914007,
+      "mean": 512.7467954640451,
+      "min": 502.3850970028434,
+      "max": 580.4324360215105,
+      "n": 200,
+      "first_call_ms": 508.13237598049454
+     },
+     "seq_mean_per_rollout_ms": 32.04667471650282,
+     "rtf_batch_p50": 169.63533684217927,
+     "rtf_seq_p50": 11.718907472763227,
+     "seq_over_batch_p50": 14.475354228748815,
+     "is_planner_horizon": false
+    },
+    "H30_K32": {
+     "H_steps": 30,
+     "horizon_s": 6.0,
+     "K": 32,
+     "batch": {
+      "p50": 35.37589499319438,
+      "p95": 37.53825711173704,
+      "mean": 36.061494229361415,
+      "min": 34.59814499365166,
+      "max": 39.81205099262297,
+      "n": 200,
+      "first_call_ms": 36.051584989763796
+     },
+     "seq_total": {
+      "p50": 1036.6168574983021,
+      "p95": 1217.3360892687922,
+      "mean": 1072.7760975749698,
+      "min": 990.5802049906924,
+      "max": 1273.1441789946984,
+      "n": 200,
+      "first_call_ms": 1057.501717004925
+     },
+     "seq_mean_per_rollout_ms": 33.524253049217805,
+     "rtf_batch_p50": 169.60701633567945,
+     "rtf_seq_p50": 5.788059451859558,
+     "seq_over_batch_p50": 29.302915380592538,
+     "is_planner_horizon": false
+    }
+   },
+   "c_heads": {
+    "c1_lead_head_one_state": {
+     "p50": 0.21755450870841742,
+     "p95": 2.3917126178275794,
+     "mean": 0.7534985593520105,
+     "min": 0.20675102132372558,
+     "max": 2.5679870159365237,
+     "n": 200,
+     "first_call_ms": 0.663607002934441
+    },
+    "c2_lead_head_at_1s_2s_on_rolled_state (2 head calls)": {
+     "p50": 0.5525650049094111,
+     "p95": 2.4310180422617123,
+     "mean": 1.3900467299390584,
+     "min": 0.5118359986227006,
+     "max": 2.5983610248658806,
+     "n": 200,
+     "first_call_ms": 2.335922996280715
+    },
+    "c3_lead_head_on_cached_tokens (head_values: adapter, z1, head, host copy)": {
+     "p50": 0.6044845067663118,
+     "p95": 4.801265802234411,
+     "mean": 1.6188791663444135,
+     "min": 0.5793510063085705,
+     "max": 4.902775021037087,
+     "n": 200,
+     "first_call_ms": 4.814296000404283
+    },
+    "c4_trajectory_heads (forward_infer, S+T+O readers and all heads, batch 1)": {
+     "p50": 8.19361349567771,
+     "p95": 10.637842159485444,
+     "mean": 8.347823500516824,
+     "min": 7.398994988761842,
+     "max": 11.129202990559861,
+     "n": 200,
+     "first_call_ms": 22.643104020971805
+    }
+   },
+   "d_planning_tick": {
+    "cand-imag/scale (card default set)": {
+     "n_inputs": 80,
+     "n_candidates": 11,
+     "n_inputs_with_rollout": 23,
+     "fraction_with_rollout": 0.2875,
+     "predictor_calls_per_tick_values": [
+      0,
+      10
+     ],
+     "predictor_calls_per_tick_counted": {
+      "0": 57,
+      "10": 23
+     },
+     "rollout_calls_per_tick_values": [
+      0,
+      1
+     ],
+     "head_calls_per_tick_values": [
+      1,
+      3
+     ],
+     "predictor_rows_per_call_on_a_rolling_tick": [
+      11,
+      11,
+      11,
+      11,
+      11,
+      11,
+      11,
+      11,
+      11,
+      11
+     ],
+     "count_method": "wrapper on the predictor's forward, on stack.rollout and on the lead head's forward, installed only for an untimed pass (never during the timed pass)",
+     "tick_all_inputs": {
+      "p50": 17.67977050621994,
+      "p95": 41.12059328908798,
+      "mean": 21.396035613579443,
+      "min": 9.066928992979228,
+      "max": 49.41471098572947,
+      "n": 200,
+      "first_call_ms": 16.665554023347795
+     },
+     "tick_inputs_with_rollout": {
+      "p50": 35.80794449953828,
+      "p95": 42.8584708890412,
+      "mean": 35.14784481638344,
+      "min": 27.628402021946386,
+      "max": 44.81371201109141,
+      "n": 200,
+      "first_call_ms": 28.06258702185005
+     }
+    },
+    "cand-imagkin/decel (note ADD40_N3, N4)": {
+     "n_inputs": 80,
+     "n_candidates": 8,
+     "n_inputs_with_rollout": 23,
+     "fraction_with_rollout": 0.2875,
+     "predictor_calls_per_tick_values": [
+      0,
+      10
+     ],
+     "predictor_calls_per_tick_counted": {
+      "0": 57,
+      "10": 23
+     },
+     "rollout_calls_per_tick_values": [
+      0,
+      1
+     ],
+     "head_calls_per_tick_values": [
+      1,
+      3
+     ],
+     "predictor_rows_per_call_on_a_rolling_tick": [
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8
+     ],
+     "count_method": "wrapper on the predictor's forward, on stack.rollout and on the lead head's forward, installed only for an untimed pass (never during the timed pass)",
+     "tick_all_inputs": {
+      "p50": 11.599083009059541,
+      "p95": 38.66330069722608,
+      "mean": 17.4327538414218,
+      "min": 8.91451901406981,
+      "max": 40.98913699272089,
+      "n": 200,
+      "first_call_ms": 17.553888988913968
+     },
+     "tick_inputs_with_rollout": {
+      "p50": 34.62204600509722,
+      "p95": 38.87663775676628,
+      "mean": 32.746593940246385,
+      "min": 24.75155398133211,
+      "max": 43.312852998496965,
+      "n": 200,
+      "first_call_ms": 38.715408998541534
+     }
+    }
+   },
+   "variant_notes": {
+    "max_abs_state_diff_vs_eager_K8_H10": 0.001595478504896164
+   }
+  },
+  "compile": {
+   "a_predictor_step_batch1": {
+    "p50": 0.6674614851363003,
+    "p95": 2.488561200152617,
+    "mean": 1.2855325132841244,
+    "min": 0.6457330018747598,
+    "max": 2.685588988242671,
+    "n": 200,
+    "first_call_ms": 3657.1404580026865
+   },
+   "b_rollout": {
+    "H10_K1": {
+     "H_steps": 10,
+     "horizon_s": 2.0,
+     "K": 1,
+     "batch": {
+      "p50": 5.867072002729401,
+      "p95": 5.93723264610162,
+      "mean": 5.739523420197656,
+      "min": 4.9903389881365,
+      "max": 8.249079983215779,
+      "n": 200,
+      "first_call_ms": 15460.613884002669
+     },
+     "seq_total": {
+      "p50": 5.858893506228924,
+      "p95": 6.574312951124737,
+      "mean": 5.7017071852169465,
+      "min": 4.186945006949827,
+      "max": 8.71118699433282,
+      "n": 200,
+      "first_call_ms": 5.602810007985681
+     },
+     "seq_mean_per_rollout_ms": 5.7017071852169465,
+     "rtf_batch_p50": 340.88553865873587,
+     "rtf_seq_p50": 341.3613846835902,
+     "seq_over_batch_p50": 0.9986060344075082,
+     "is_planner_horizon": true
+    },
+    "H10_K8": {
+     "H_steps": 10,
+     "horizon_s": 2.0,
+     "K": 8,
+     "batch": {
+      "p50": 6.288489996222779,
+      "p95": 6.345493117987644,
+      "mean": 5.906412945478223,
+      "min": 4.3308730237185955,
+      "max": 8.696017001057044,
+      "n": 200,
+      "first_call_ms": 22843.4585579962
+     },
+     "seq_total": {
+      "p50": 41.33435650146566,
+      "p95": 52.474932571931255,
+      "mean": 42.44902636419283,
+      "min": 38.175664987647906,
+      "max": 62.59043500176631,
+      "n": 200,
+      "first_call_ms": 14471.1206429929
+     },
+     "seq_mean_per_rollout_ms": 5.306128295524104,
+     "rtf_batch_p50": 318.0413741933775,
+     "rtf_seq_p50": 48.38589902637247,
+     "seq_over_batch_p50": 6.5730177715625535,
+     "is_planner_horizon": true
+    },
+    "H10_K16": {
+     "H_steps": 10,
+     "horizon_s": 2.0,
+     "K": 16,
+     "batch": {
+      "p50": 6.38460750633385,
+      "p95": 8.834368447423897,
+      "mean": 6.792031834484078,
+      "min": 5.357082991395146,
+      "max": 11.047342006349936,
+      "n": 200,
+      "first_call_ms": 8.554227999411523
+     },
+     "seq_total": {
+      "p50": 77.473685509176,
+      "p95": 82.68431237811454,
+      "mean": 75.38739985393477,
+      "min": 65.37508699693717,
+      "max": 96.51842000312172,
+      "n": 200,
+      "first_call_ms": 84.34714100440033
+     },
+     "seq_mean_per_rollout_ms": 4.711712490870923,
+     "rtf_batch_p50": 313.25339858650665,
+     "rtf_seq_p50": 25.815216958577757,
+     "seq_over_batch_p50": 12.134447643385787,
+     "is_planner_horizon": true
+    },
+    "H10_K32": {
+     "H_steps": 10,
+     "horizon_s": 2.0,
+     "K": 32,
+     "batch": {
+      "p50": 6.627762486459687,
+      "p95": 6.699893090990372,
+      "mean": 6.067061994253891,
+      "min": 4.303325986256823,
+      "max": 6.825589982327074,
+      "n": 200,
+      "first_call_ms": 6.474123016232625
+     },
+     "seq_total": {
+      "p50": 134.14357049623504,
+      "p95": 176.60810055676848,
+      "mean": 139.78643394104438,
+      "min": 128.0534469988197,
+      "max": 178.92137699527666,
+      "n": 200,
+      "first_call_ms": 137.22065498586744
+     },
+     "seq_mean_per_rollout_ms": 4.368326060657637,
+     "rtf_batch_p50": 301.7609644410067,
+     "rtf_seq_p50": 14.909398882118866,
+     "seq_over_batch_p50": 20.23964660325203,
+     "is_planner_horizon": true
+    }
+   },
+   "c_heads": {
+    "status": "NOT RUN",
+    "error": "the compile variant covers (a) and (b) only"
+   },
+   "d_planning_tick": {
+    "status": "NOT RUN",
+    "error": "the planning tick has host-side numpy work and is not compiled"
+   },
+   "variant_notes": {
+    "max_abs_state_diff_vs_eager_K8_H10": 5.960464477539062e-07
+   }
+  }
+ },
+ "seconds_total": 1312.2
+}

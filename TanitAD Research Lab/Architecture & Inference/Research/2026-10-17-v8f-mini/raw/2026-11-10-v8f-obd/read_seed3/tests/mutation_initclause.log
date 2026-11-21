@@ -1,0 +1,410 @@
+===== mutation flipped (rc 1) =====
+....FFFFFFFFFF......F..FFF.........                                      [100%]
+================================== FAILURES ===================================
+_________ test_every_one_of_the_81_label_patterns_matches_the_oracle __________
+
+    def test_every_one_of_the_81_label_patterns_matches_the_oracle():
+        for pat in itertools.product(LABS, repeat=4):
+            lab = dict(zip(S.SEEDS, pat))
+            r = run(lab)
+            assert r["labels"] == lab
+>           assert r["outcome"] == oracle([(lab[s], C.SEED_LABELS[s]) for s in S.SEEDS]), pat
+E           AssertionError: ('BAND-ADDS', 'BAND-ADDS', 'BAND-ADDS', 'BAND-ADDS')
+E           assert 'BAND-UNSETTLED' == 'BAND-ADDS'
+E             
+E             - BAND-ADDS
+E             + BAND-UNSETTLED
+
+test_obd_read_seed3.py:112: AssertionError
+_____________________ test_named_outcomes[pat0-BAND-ADDS] _____________________
+
+pat = ('BAND-ADDS', 'BAND-ADDS', 'BAND-ADDS', 'BAND-ADDS'), want = 'BAND-ADDS'
+
+    @pytest.mark.parametrize("pat,want", [
+        (("BAND-ADDS",) * 4, "BAND-ADDS"), (("BAND-NEUTRAL",) * 4, "BAND-NEUTRAL"), (("BAND-COSTS",) * 4, "BAND-COSTS"),
+        # 3-1 with both inits among the three (always the case with two seeds per init)
+        (("BAND-ADDS", "BAND-ADDS", "BAND-ADDS", "BAND-COSTS"), "BAND-ADDS"),
+        (("BAND-ADDS", "BAND-COSTS", "BAND-ADDS", "BAND-ADDS"), "BAND-ADDS"),
+        (("BAND-COSTS", "BAND-ADDS", "BAND-ADDS", "BAND-ADDS"), "BAND-ADDS"),
+        (("BAND-ADDS", "BAND-ADDS", "BAND-COSTS", "BAND-ADDS"), "BAND-ADDS"),
+        (("BAND-COSTS", "BAND-COSTS", "BAND-COSTS", "BAND-NEUTRAL"), "BAND-COSTS"),
+        (("BAND-NEUTRAL", "BAND-NEUTRAL", "BAND-ADDS", "BAND-NEUTRAL"), "BAND-NEUTRAL"),
+        # 2-2 splits
+        (("BAND-ADDS", "BAND-COSTS", "BAND-ADDS", "BAND-COSTS"), "BAND-UNSETTLED"),         # the existing pair split, repeated: the smoke layout
+        (("BAND-ADDS", "BAND-ADDS", "BAND-COSTS", "BAND-COSTS"), "BAND-UNSETTLED"),
+        (("BAND-ADDS", "BAND-COSTS", "BAND-COSTS", "BAND-ADDS"), "BAND-UNSETTLED"),
+        (("BAND-ADDS", "BAND-NEUTRAL", "BAND-NEUTRAL", "BAND-ADDS"), "BAND-UNSETTLED"),
+        # 2-1-1
+        (("BAND-ADDS", "BAND-ADDS", "BAND-COSTS", "BAND-NEUTRAL"), "BAND-UNSETTLED"),
+        (("BAND-ADDS", "BAND-COSTS", "BAND-NEUTRAL", "BAND-ADDS"), "BAND-UNSETTLED"),
+    ])
+    def test_named_outcomes(pat, want):
+        r = run(dict(zip(S.SEEDS, pat)))
+>       assert r["outcome"] == want
+E       AssertionError: assert 'BAND-UNSETTLED' == 'BAND-ADDS'
+E         
+E         - BAND-ADDS
+E         + BAND-UNSETTLED
+
+test_obd_read_seed3.py:135: AssertionError
+___________________ test_named_outcomes[pat1-BAND-NEUTRAL] ____________________
+
+pat = ('BAND-NEUTRAL', 'BAND-NEUTRAL', 'BAND-NEUTRAL', 'BAND-NEUTRAL')
+want = 'BAND-NEUTRAL'
+
+    @pytest.mark.parametrize("pat,want", [
+        (("BAND-ADDS",) * 4, "BAND-ADDS"), (("BAND-NEUTRAL",) * 4, "BAND-NEUTRAL"), (("BAND-COSTS",) * 4, "BAND-COSTS"),
+        # 3-1 with both inits among the three (always the case with two seeds per init)
+        (("BAND-ADDS", "BAND-ADDS", "BAND-ADDS", "BAND-COSTS"), "BAND-ADDS"),
+        (("BAND-ADDS", "BAND-COSTS", "BAND-ADDS", "BAND-ADDS"), "BAND-ADDS"),
+        (("BAND-COSTS", "BAND-ADDS", "BAND-ADDS", "BAND-ADDS"), "BAND-ADDS"),
+        (("BAND-ADDS", "BAND-ADDS", "BAND-COSTS", "BAND-ADDS"), "BAND-ADDS"),
+        (("BAND-COSTS", "BAND-COSTS", "BAND-COSTS", "BAND-NEUTRAL"), "BAND-COSTS"),
+        (("BAND-NEUTRAL", "BAND-NEUTRAL", "BAND-ADDS", "BAND-NEUTRAL"), "BAND-NEUTRAL"),
+        # 2-2 splits
+        (("BAND-ADDS", "BAND-COSTS", "BAND-ADDS", "BAND-COSTS"), "BAND-UNSETTLED"),         # the existing pair split, repeated: the smoke layout
+        (("BAND-ADDS", "BAND-ADDS", "BAND-COSTS", "BAND-COSTS"), "BAND-UNSETTLED"),
+        (("BAND-ADDS", "BAND-COSTS", "BAND-COSTS", "BAND-ADDS"), "BAND-UNSETTLED"),
+        (("BAND-ADDS", "BAND-NEUTRAL", "BAND-NEUTRAL", "BAND-ADDS"), "BAND-UNSETTLED"),
+        # 2-1-1
+        (("BAND-ADDS", "BAND-ADDS", "BAND-COSTS", "BAND-NEUTRAL"), "BAND-UNSETTLED"),
+        (("BAND-ADDS", "BAND-COSTS", "BAND-NEUTRAL", "BAND-ADDS"), "BAND-UNSETTLED"),
+    ])
+    def test_named_outcomes(pat, want):
+        r = run(dict(zip(S.SEEDS, pat)))
+>       assert r["outcome"] == want
+E       AssertionError: assert 'BAND-UNSETTLED' == 'BAND-NEUTRAL'
+E         
+E         - BAND-NEUTRAL
+E         + BAND-UNSETTLED
+
+test_obd_read_seed3.py:135: AssertionError
+____________________ test_named_outcomes[pat2-BAND-COSTS] _____________________
+
+pat = ('BAND-COSTS', 'BAND-COSTS', 'BAND-COSTS', 'BAND-COSTS')
+want = 'BAND-COSTS'
+
+    @pytest.mark.parametrize("pat,want", [
+        (("BAND-ADDS",) * 4, "BAND-ADDS"), (("BAND-NEUTRAL",) * 4, "BAND-NEUTRAL"), (("BAND-COSTS",) * 4, "BAND-COSTS"),
+        # 3-1 with both inits among the three (always the case with two seeds per init)
+        (("BAND-ADDS", "BAND-ADDS", "BAND-ADDS", "BAND-COSTS"), "BAND-ADDS"),
+        (("BAND-ADDS", "BAND-COSTS", "BAND-ADDS", "BAND-ADDS"), "BAND-ADDS"),
+        (("BAND-COSTS", "BAND-ADDS", "BAND-ADDS", "BAND-ADDS"), "BAND-ADDS"),
+        (("BAND-ADDS", "BAND-ADDS", "BAND-COSTS", "BAND-ADDS"), "BAND-ADDS"),
+        (("BAND-COSTS", "BAND-COSTS", "BAND-COSTS", "BAND-NEUTRAL"), "BAND-COSTS"),
+        (("BAND-NEUTRAL", "BAND-NEUTRAL", "BAND-ADDS", "BAND-NEUTRAL"), "BAND-NEUTRAL"),
+        # 2-2 splits
+        (("BAND-ADDS", "BAND-COSTS", "BAND-ADDS", "BAND-COSTS"), "BAND-UNSETTLED"),         # the existing pair split, repeated: the smoke layout
+        (("BAND-ADDS", "BAND-ADDS", "BAND-COSTS", "BAND-COSTS"), "BAND-UNSETTLED"),
+        (("BAND-ADDS", "BAND-COSTS", "BAND-COSTS", "BAND-ADDS"), "BAND-UNSETTLED"),
+        (("BAND-ADDS", "BAND-NEUTRAL", "BAND-NEUTRAL", "BAND-ADDS"), "BAND-UNSETTLED"),
+        # 2-1-1
+        (("BAND-ADDS", "BAND-ADDS", "BAND-COSTS", "BAND-NEUTRAL"), "BAND-UNSETTLED"),
+        (("BAND-ADDS", "BAND-COSTS", "BAND-NEUTRAL", "BAND-ADDS"), "BAND-UNSETTLED"),
+    ])
+    def test_named_outcomes(pat, want):
+        r = run(dict(zip(S.SEEDS, pat)))
+>       assert r["outcome"] == want
+E       AssertionError: assert 'BAND-UNSETTLED' == 'BAND-COSTS'
+E         
+E         - BAND-COSTS
+E         + BAND-UNSETTLED
+
+test_obd_read_seed3.py:135: AssertionError
+_____________________ test_named_outcomes[pat3-BAND-ADDS] _____________________
+
+pat = ('BAND-ADDS', 'BAND-ADDS', 'BAND-ADDS', 'BAND-COSTS'), want = 'BAND-ADDS'
+
+    @pytest.mark.parametrize("pat,want", [
+        (("BAND-ADDS",) * 4, "BAND-ADDS"), (("BAND-NEUTRAL",) * 4, "BAND-NEUTRAL"), (("BAND-COSTS",) * 4, "BAND-COSTS"),
+        # 3-1 with both inits among the three (always the case with two seeds per init)
+        (("BAND-ADDS", "BAND-ADDS", "BAND-ADDS", "BAND-COSTS"), "BAND-ADDS"),
+        (("BAND-ADDS", "BAND-COSTS", "BAND-ADDS", "BAND-ADDS"), "BAND-ADDS"),
+        (("BAND-COSTS", "BAND-ADDS", "BAND-ADDS", "BAND-ADDS"), "BAND-ADDS"),
+        (("BAND-ADDS", "BAND-ADDS", "BAND-COSTS", "BAND-ADDS"), "BAND-ADDS"),
+        (("BAND-COSTS", "BAND-COSTS", "BAND-COSTS", "BAND-NEUTRAL"), "BAND-COSTS"),
+        (("BAND-NEUTRAL", "BAND-NEUTRAL", "BAND-ADDS", "BAND-NEUTRAL"), "BAND-NEUTRAL"),
+        # 2-2 splits
+        (("BAND-ADDS", "BAND-COSTS", "BAND-ADDS", "BAND-COSTS"), "BAND-UNSETTLED"),         # the existing pair split, repeated: the smoke layout
+        (("BAND-ADDS", "BAND-ADDS", "BAND-COSTS", "BAND-COSTS"), "BAND-UNSETTLED"),
+        (("BAND-ADDS", "BAND-COSTS", "BAND-COSTS", "BAND-ADDS"), "BAND-UNSETTLED"),
+        (("BAND-ADDS", "BAND-NEUTRAL", "BAND-NEUTRAL", "BAND-ADDS"), "BAND-UNSETTLED"),
+        # 2-1-1
+        (("BAND-ADDS", "BAND-ADDS", "BAND-COSTS", "BAND-NEUTRAL"), "BAND-UNSETTLED"),
+        (("BAND-ADDS", "BAND-COSTS", "BAND-NEUTRAL", "BAND-ADDS"), "BAND-UNSETTLED"),
+    ])
+    def test_named_outcomes(pat, want):
+        r = run(dict(zip(S.SEEDS, pat)))
+>       assert r["outcome"] == want
+E       AssertionError: assert 'BAND-UNSETTLED' == 'BAND-ADDS'
+E         
+E         - BAND-ADDS
+E         + BAND-UNSETTLED
+
+test_obd_read_seed3.py:135: AssertionError
+_____________________ test_named_outcomes[pat4-BAND-ADDS] _____________________
+
+pat = ('BAND-ADDS', 'BAND-COSTS', 'BAND-ADDS', 'BAND-ADDS'), want = 'BAND-ADDS'
+
+    @pytest.mark.parametrize("pat,want", [
+        (("BAND-ADDS",) * 4, "BAND-ADDS"), (("BAND-NEUTRAL",) * 4, "BAND-NEUTRAL"), (("BAND-COSTS",) * 4, "BAND-COSTS"),
+        # 3-1 with both inits among the three (always the case with two seeds per init)
+        (("BAND-ADDS", "BAND-ADDS", "BAND-ADDS", "BAND-COSTS"), "BAND-ADDS"),
+        (("BAND-ADDS", "BAND-COSTS", "BAND-ADDS", "BAND-ADDS"), "BAND-ADDS"),
+        (("BAND-COSTS", "BAND-ADDS", "BAND-ADDS", "BAND-ADDS"), "BAND-ADDS"),
+        (("BAND-ADDS", "BAND-ADDS", "BAND-COSTS", "BAND-ADDS"), "BAND-ADDS"),
+        (("BAND-COSTS", "BAND-COSTS", "BAND-COSTS", "BAND-NEUTRAL"), "BAND-COSTS"),
+        (("BAND-NEUTRAL", "BAND-NEUTRAL", "BAND-ADDS", "BAND-NEUTRAL"), "BAND-NEUTRAL"),
+        # 2-2 splits
+        (("BAND-ADDS", "BAND-COSTS", "BAND-ADDS", "BAND-COSTS"), "BAND-UNSETTLED"),         # the existing pair split, repeated: the smoke layout
+        (("BAND-ADDS", "BAND-ADDS", "BAND-COSTS", "BAND-COSTS"), "BAND-UNSETTLED"),
+        (("BAND-ADDS", "BAND-COSTS", "BAND-COSTS", "BAND-ADDS"), "BAND-UNSETTLED"),
+        (("BAND-ADDS", "BAND-NEUTRAL", "BAND-NEUTRAL", "BAND-ADDS"), "BAND-UNSETTLED"),
+        # 2-1-1
+        (("BAND-ADDS", "BAND-ADDS", "BAND-COSTS", "BAND-NEUTRAL"), "BAND-UNSETTLED"),
+        (("BAND-ADDS", "BAND-COSTS", "BAND-NEUTRAL", "BAND-ADDS"), "BAND-UNSETTLED"),
+    ])
+    def test_named_outcomes(pat, want):
+        r = run(dict(zip(S.SEEDS, pat)))
+>       assert r["outcome"] == want
+E       AssertionError: assert 'BAND-UNSETTLED' == 'BAND-ADDS'
+E         
+E         - BAND-ADDS
+E         + BAND-UNSETTLED
+
+test_obd_read_seed3.py:135: AssertionError
+_____________________ test_named_outcomes[pat5-BAND-ADDS] _____________________
+
+pat = ('BAND-COSTS', 'BAND-ADDS', 'BAND-ADDS', 'BAND-ADDS'), want = 'BAND-ADDS'
+
+    @pytest.mark.parametrize("pat,want", [
+        (("BAND-ADDS",) * 4, "BAND-ADDS"), (("BAND-NEUTRAL",) * 4, "BAND-NEUTRAL"), (("BAND-COSTS",) * 4, "BAND-COSTS"),
+        # 3-1 with both inits among the three (always the case with two seeds per init)
+        (("BAND-ADDS", "BAND-ADDS", "BAND-ADDS", "BAND-COSTS"), "BAND-ADDS"),
+        (("BAND-ADDS", "BAND-COSTS", "BAND-ADDS", "BAND-ADDS"), "BAND-ADDS"),
+        (("BAND-COSTS", "BAND-ADDS", "BAND-ADDS", "BAND-ADDS"), "BAND-ADDS"),
+        (("BAND-ADDS", "BAND-ADDS", "BAND-COSTS", "BAND-ADDS"), "BAND-ADDS"),
+        (("BAND-COSTS", "BAND-COSTS", "BAND-COSTS", "BAND-NEUTRAL"), "BAND-COSTS"),
+        (("BAND-NEUTRAL", "BAND-NEUTRAL", "BAND-ADDS", "BAND-NEUTRAL"), "BAND-NEUTRAL"),
+        # 2-2 splits
+        (("BAND-ADDS", "BAND-COSTS", "BAND-ADDS", "BAND-COSTS"), "BAND-UNSETTLED"),         # the existing pair split, repeated: the smoke layout
+        (("BAND-ADDS", "BAND-ADDS", "BAND-COSTS", "BAND-COSTS"), "BAND-UNSETTLED"),
+        (("BAND-ADDS", "BAND-COSTS", "BAND-COSTS", "BAND-ADDS"), "BAND-UNSETTLED"),
+        (("BAND-ADDS", "BAND-NEUTRAL", "BAND-NEUTRAL", "BAND-ADDS"), "BAND-UNSETTLED"),
+        # 2-1-1
+        (("BAND-ADDS", "BAND-ADDS", "BAND-COSTS", "BAND-NEUTRAL"), "BAND-UNSETTLED"),
+        (("BAND-ADDS", "BAND-COSTS", "BAND-NEUTRAL", "BAND-ADDS"), "BAND-UNSETTLED"),
+    ])
+    def test_named_outcomes(pat, want):
+        r = run(dict(zip(S.SEEDS, pat)))
+>       assert r["outcome"] == want
+E       AssertionError: assert 'BAND-UNSETTLED' == 'BAND-ADDS'
+E         
+E         - BAND-ADDS
+E         + BAND-UNSETTLED
+
+test_obd_read_seed3.py:135: AssertionError
+_____________________ test_named_outcomes[pat6-BAND-ADDS] _____________________
+
+pat = ('BAND-ADDS', 'BAND-ADDS', 'BAND-COSTS', 'BAND-ADDS'), want = 'BAND-ADDS'
+
+    @pytest.mark.parametrize("pat,want", [
+        (("BAND-ADDS",) * 4, "BAND-ADDS"), (("BAND-NEUTRAL",) * 4, "BAND-NEUTRAL"), (("BAND-COSTS",) * 4, "BAND-COSTS"),
+        # 3-1 with both inits among the three (always the case with two seeds per init)
+        (("BAND-ADDS", "BAND-ADDS", "BAND-ADDS", "BAND-COSTS"), "BAND-ADDS"),
+        (("BAND-ADDS", "BAND-COSTS", "BAND-ADDS", "BAND-ADDS"), "BAND-ADDS"),
+        (("BAND-COSTS", "BAND-ADDS", "BAND-ADDS", "BAND-ADDS"), "BAND-ADDS"),
+        (("BAND-ADDS", "BAND-ADDS", "BAND-COSTS", "BAND-ADDS"), "BAND-ADDS"),
+        (("BAND-COSTS", "BAND-COSTS", "BAND-COSTS", "BAND-NEUTRAL"), "BAND-COSTS"),
+        (("BAND-NEUTRAL", "BAND-NEUTRAL", "BAND-ADDS", "BAND-NEUTRAL"), "BAND-NEUTRAL"),
+        # 2-2 splits
+        (("BAND-ADDS", "BAND-COSTS", "BAND-ADDS", "BAND-COSTS"), "BAND-UNSETTLED"),         # the existing pair split, repeated: the smoke layout
+        (("BAND-ADDS", "BAND-ADDS", "BAND-COSTS", "BAND-COSTS"), "BAND-UNSETTLED"),
+        (("BAND-ADDS", "BAND-COSTS", "BAND-COSTS", "BAND-ADDS"), "BAND-UNSETTLED"),
+        (("BAND-ADDS", "BAND-NEUTRAL", "BAND-NEUTRAL", "BAND-ADDS"), "BAND-UNSETTLED"),
+        # 2-1-1
+        (("BAND-ADDS", "BAND-ADDS", "BAND-COSTS", "BAND-NEUTRAL"), "BAND-UNSETTLED"),
+        (("BAND-ADDS", "BAND-COSTS", "BAND-NEUTRAL", "BAND-ADDS"), "BAND-UNSETTLED"),
+    ])
+    def test_named_outcomes(pat, want):
+        r = run(dict(zip(S.SEEDS, pat)))
+>       assert r["outcome"] == want
+E       AssertionError: assert 'BAND-UNSETTLED' == 'BAND-ADDS'
+E         
+E         - BAND-ADDS
+E         + BAND-UNSETTLED
+
+test_obd_read_seed3.py:135: AssertionError
+____________________ test_named_outcomes[pat7-BAND-COSTS] _____________________
+
+pat = ('BAND-COSTS', 'BAND-COSTS', 'BAND-COSTS', 'BAND-NEUTRAL')
+want = 'BAND-COSTS'
+
+    @pytest.mark.parametrize("pat,want", [
+        (("BAND-ADDS",) * 4, "BAND-ADDS"), (("BAND-NEUTRAL",) * 4, "BAND-NEUTRAL"), (("BAND-COSTS",) * 4, "BAND-COSTS"),
+        # 3-1 with both inits among the three (always the case with two seeds per init)
+        (("BAND-ADDS", "BAND-ADDS", "BAND-ADDS", "BAND-COSTS"), "BAND-ADDS"),
+        (("BAND-ADDS", "BAND-COSTS", "BAND-ADDS", "BAND-ADDS"), "BAND-ADDS"),
+        (("BAND-COSTS", "BAND-ADDS", "BAND-ADDS", "BAND-ADDS"), "BAND-ADDS"),
+        (("BAND-ADDS", "BAND-ADDS", "BAND-COSTS", "BAND-ADDS"), "BAND-ADDS"),
+        (("BAND-COSTS", "BAND-COSTS", "BAND-COSTS", "BAND-NEUTRAL"), "BAND-COSTS"),
+        (("BAND-NEUTRAL", "BAND-NEUTRAL", "BAND-ADDS", "BAND-NEUTRAL"), "BAND-NEUTRAL"),
+        # 2-2 splits
+        (("BAND-ADDS", "BAND-COSTS", "BAND-ADDS", "BAND-COSTS"), "BAND-UNSETTLED"),         # the existing pair split, repeated: the smoke layout
+        (("BAND-ADDS", "BAND-ADDS", "BAND-COSTS", "BAND-COSTS"), "BAND-UNSETTLED"),
+        (("BAND-ADDS", "BAND-COSTS", "BAND-COSTS", "BAND-ADDS"), "BAND-UNSETTLED"),
+        (("BAND-ADDS", "BAND-NEUTRAL", "BAND-NEUTRAL", "BAND-ADDS"), "BAND-UNSETTLED"),
+        # 2-1-1
+        (("BAND-ADDS", "BAND-ADDS", "BAND-COSTS", "BAND-NEUTRAL"), "BAND-UNSETTLED"),
+        (("BAND-ADDS", "BAND-COSTS", "BAND-NEUTRAL", "BAND-ADDS"), "BAND-UNSETTLED"),
+    ])
+    def test_named_outcomes(pat, want):
+        r = run(dict(zip(S.SEEDS, pat)))
+>       assert r["outcome"] == want
+E       AssertionError: assert 'BAND-UNSETTLED' == 'BAND-COSTS'
+E         
+E         - BAND-COSTS
+E         + BAND-UNSETTLED
+
+test_obd_read_seed3.py:135: AssertionError
+___________________ test_named_outcomes[pat8-BAND-NEUTRAL] ____________________
+
+pat = ('BAND-NEUTRAL', 'BAND-NEUTRAL', 'BAND-ADDS', 'BAND-NEUTRAL')
+want = 'BAND-NEUTRAL'
+
+    @pytest.mark.parametrize("pat,want", [
+        (("BAND-ADDS",) * 4, "BAND-ADDS"), (("BAND-NEUTRAL",) * 4, "BAND-NEUTRAL"), (("BAND-COSTS",) * 4, "BAND-COSTS"),
+        # 3-1 with both inits among the three (always the case with two seeds per init)
+        (("BAND-ADDS", "BAND-ADDS", "BAND-ADDS", "BAND-COSTS"), "BAND-ADDS"),
+        (("BAND-ADDS", "BAND-COSTS", "BAND-ADDS", "BAND-ADDS"), "BAND-ADDS"),
+        (("BAND-COSTS", "BAND-ADDS", "BAND-ADDS", "BAND-ADDS"), "BAND-ADDS"),
+        (("BAND-ADDS", "BAND-ADDS", "BAND-COSTS", "BAND-ADDS"), "BAND-ADDS"),
+        (("BAND-COSTS", "BAND-COSTS", "BAND-COSTS", "BAND-NEUTRAL"), "BAND-COSTS"),
+        (("BAND-NEUTRAL", "BAND-NEUTRAL", "BAND-ADDS", "BAND-NEUTRAL"), "BAND-NEUTRAL"),
+        # 2-2 splits
+        (("BAND-ADDS", "BAND-COSTS", "BAND-ADDS", "BAND-COSTS"), "BAND-UNSETTLED"),         # the existing pair split, repeated: the smoke layout
+        (("BAND-ADDS", "BAND-ADDS", "BAND-COSTS", "BAND-COSTS"), "BAND-UNSETTLED"),
+        (("BAND-ADDS", "BAND-COSTS", "BAND-COSTS", "BAND-ADDS"), "BAND-UNSETTLED"),
+        (("BAND-ADDS", "BAND-NEUTRAL", "BAND-NEUTRAL", "BAND-ADDS"), "BAND-UNSETTLED"),
+        # 2-1-1
+        (("BAND-ADDS", "BAND-ADDS", "BAND-COSTS", "BAND-NEUTRAL"), "BAND-UNSETTLED"),
+        (("BAND-ADDS", "BAND-COSTS", "BAND-NEUTRAL", "BAND-ADDS"), "BAND-UNSETTLED"),
+    ])
+    def test_named_outcomes(pat, want):
+        r = run(dict(zip(S.SEEDS, pat)))
+>       assert r["outcome"] == want
+E       AssertionError: assert 'BAND-UNSETTLED' == 'BAND-NEUTRAL'
+E         
+E         - BAND-NEUTRAL
+E         + BAND-UNSETTLED
+
+test_obd_read_seed3.py:135: AssertionError
+__________ test_at_least_one_per_init_clause_on_an_unbalanced_layout __________
+
+    def test_at_least_one_per_init_clause_on_an_unbalanced_layout():
+        """Three equal labels at ONE init is not a majority across inits.  With two seeds per init the clause is met by every 3-of-4 majority (see README), so the clause is exercised
+        on the generic rule with a planted unbalanced layout; this is the test that goes RED when the clause is dropped."""
+        A, X = "BAND-ADDS", "BAND-COSTS"
+>       assert S.combine4([(A, 0), (A, 0), (A, 0), (X, 1)]) == "BAND-UNSETTLED"          # 3 of 4 but all at init 0
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert 'BAND-ADDS' == 'BAND-UNSETTLED'
+E         
+E         - BAND-UNSETTLED
+E         + BAND-ADDS
+
+test_obd_read_seed3.py:142: AssertionError
+__________ test_triggered_recipe[pat0-OBD-BAND-O/T recipe of record] __________
+
+pat = ('BAND-ADDS', 'BAND-ADDS', 'BAND-ADDS', 'BAND-ADDS'), recipe = 'OBD-BAND'
+phrase = 'O/T recipe of record'
+
+    @pytest.mark.parametrize("pat,recipe,phrase", [
+        (("BAND-ADDS",) * 4, "OBD-BAND", "O/T recipe of record"),
+        (("BAND-NEUTRAL",) * 4, "OBD-CTL", "not carried"),
+        (("BAND-COSTS",) * 4, "OBD-CTL", "not carried"),
+        (("BAND-ADDS", "BAND-COSTS", "BAND-ADDS", "BAND-COSTS"), "OBD-CTL", "conservative branch"),
+    ])
+    def test_triggered_recipe(pat, recipe, phrase):
+        r = run(dict(zip(S.SEEDS, pat)))
+>       assert r["recipe_of_record"] == recipe and phrase in r["trigger"]
+E       AssertionError: assert ('OBD-CTL' == 'OBD-BAND'
+E         
+E         - OBD-BAND
+E         + OBD-CTL)
+
+test_obd_read_seed3.py:169: AssertionError
+_______________ test_triggered_recipe[pat1-OBD-CTL-not carried] _______________
+
+pat = ('BAND-NEUTRAL', 'BAND-NEUTRAL', 'BAND-NEUTRAL', 'BAND-NEUTRAL')
+recipe = 'OBD-CTL', phrase = 'not carried'
+
+    @pytest.mark.parametrize("pat,recipe,phrase", [
+        (("BAND-ADDS",) * 4, "OBD-BAND", "O/T recipe of record"),
+        (("BAND-NEUTRAL",) * 4, "OBD-CTL", "not carried"),
+        (("BAND-COSTS",) * 4, "OBD-CTL", "not carried"),
+        (("BAND-ADDS", "BAND-COSTS", "BAND-ADDS", "BAND-COSTS"), "OBD-CTL", "conservative branch"),
+    ])
+    def test_triggered_recipe(pat, recipe, phrase):
+        r = run(dict(zip(S.SEEDS, pat)))
+>       assert r["recipe_of_record"] == recipe and phrase in r["trigger"]
+E       assert ('OBD-CTL' == 'OBD-CTL'
+E         
+E           OBD-CTL and 'not carried' in "OBD-CTL's argv becomes the recipe of record, the conservative branch: four training runs could not show the band loss...istently. The band's operative-only gain stays recorded beside, with the code-drift caveat (VERDICT_OBD.md section 3).")
+
+test_obd_read_seed3.py:169: AssertionError
+_______________ test_triggered_recipe[pat2-OBD-CTL-not carried] _______________
+
+pat = ('BAND-COSTS', 'BAND-COSTS', 'BAND-COSTS', 'BAND-COSTS')
+recipe = 'OBD-CTL', phrase = 'not carried'
+
+    @pytest.mark.parametrize("pat,recipe,phrase", [
+        (("BAND-ADDS",) * 4, "OBD-BAND", "O/T recipe of record"),
+        (("BAND-NEUTRAL",) * 4, "OBD-CTL", "not carried"),
+        (("BAND-COSTS",) * 4, "OBD-CTL", "not carried"),
+        (("BAND-ADDS", "BAND-COSTS", "BAND-ADDS", "BAND-COSTS"), "OBD-CTL", "conservative branch"),
+    ])
+    def test_triggered_recipe(pat, recipe, phrase):
+        r = run(dict(zip(S.SEEDS, pat)))
+>       assert r["recipe_of_record"] == recipe and phrase in r["trigger"]
+E       assert ('OBD-CTL' == 'OBD-CTL'
+E         
+E           OBD-CTL and 'not carried' in "OBD-CTL's argv becomes the recipe of record, the conservative branch: four training runs could not show the band loss...istently. The band's operative-only gain stays recorded beside, with the code-drift caveat (VERDICT_OBD.md section 3).")
+
+test_obd_read_seed3.py:169: AssertionError
+=========================== short test summary info ===========================
+FAILED test_obd_read_seed3.py::test_every_one_of_the_81_label_patterns_matches_the_oracle
+FAILED test_obd_read_seed3.py::test_named_outcomes[pat0-BAND-ADDS] - Assertio...
+FAILED test_obd_read_seed3.py::test_named_outcomes[pat1-BAND-NEUTRAL] - Asser...
+FAILED test_obd_read_seed3.py::test_named_outcomes[pat2-BAND-COSTS] - Asserti...
+FAILED test_obd_read_seed3.py::test_named_outcomes[pat3-BAND-ADDS] - Assertio...
+FAILED test_obd_read_seed3.py::test_named_outcomes[pat4-BAND-ADDS] - Assertio...
+FAILED test_obd_read_seed3.py::test_named_outcomes[pat5-BAND-ADDS] - Assertio...
+FAILED test_obd_read_seed3.py::test_named_outcomes[pat6-BAND-ADDS] - Assertio...
+FAILED test_obd_read_seed3.py::test_named_outcomes[pat7-BAND-COSTS] - Asserti...
+FAILED test_obd_read_seed3.py::test_named_outcomes[pat8-BAND-NEUTRAL] - Asser...
+FAILED test_obd_read_seed3.py::test_at_least_one_per_init_clause_on_an_unbalanced_layout
+FAILED test_obd_read_seed3.py::test_triggered_recipe[pat0-OBD-BAND-O/T recipe of record]
+FAILED test_obd_read_seed3.py::test_triggered_recipe[pat1-OBD-CTL-not carried]
+FAILED test_obd_read_seed3.py::test_triggered_recipe[pat2-OBD-CTL-not carried]
+14 failed, 21 passed in 6.79s
+
+===== mutation dropped (rc 1) =====
+....................F..............                                      [100%]
+================================== FAILURES ===================================
+__________ test_at_least_one_per_init_clause_on_an_unbalanced_layout __________
+
+    def test_at_least_one_per_init_clause_on_an_unbalanced_layout():
+        """Three equal labels at ONE init is not a majority across inits.  With two seeds per init the clause is met by every 3-of-4 majority (see README), so the clause is exercised
+        on the generic rule with a planted unbalanced layout; this is the test that goes RED when the clause is dropped."""
+        A, X = "BAND-ADDS", "BAND-COSTS"
+>       assert S.combine4([(A, 0), (A, 0), (A, 0), (X, 1)]) == "BAND-UNSETTLED"          # 3 of 4 but all at init 0
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert 'BAND-ADDS' == 'BAND-UNSETTLED'
+E         
+E         - BAND-UNSETTLED
+E         + BAND-ADDS
+
+test_obd_read_seed3.py:142: AssertionError
+=========================== short test summary info ===========================
+FAILED test_obd_read_seed3.py::test_at_least_one_per_init_clause_on_an_unbalanced_layout
+1 failed, 34 passed in 28.45s

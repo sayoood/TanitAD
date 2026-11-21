@@ -1,0 +1,459 @@
+{
+ "_evidence": "MEASURED. compliance = gt_max_speed_6s <= candidate ceiling (strict). eval gt = dump extras (battery's own); train gt = v9 v_now max [NOW, NOW+6]. leak = D4 'recovered' (5-fold clip-grouped OOF OLS, target max v [NOW+2, NOW+6], base [1, v0]).",
+ "eval139": {
+  "n_windows": 4754,
+  "n_clips": 139,
+  "rows": {
+   "C0_current_4way_snapup_clip_anchor": {
+    "compliance": 0.8748,
+    "n_exceed": 595,
+    "n_compliant": 4159,
+    "compliant_episodes": 138,
+    "class_hist_kmh": {
+     "30": 1612,
+     "50": 1673,
+     "100": 1231,
+     "120": 238
+    },
+    "windows_changed_vs_C0": 0,
+    "leak_recovered": 0.0295,
+    "r2_v0_only": 0.9212
+   },
+   "C1_no_snap_raw_v_hi": {
+    "compliance": 0.4098,
+    "n_exceed": 2806,
+    "n_compliant": 1948,
+    "compliant_episodes": 125,
+    "class_hist_kmh": "continuous",
+    "windows_changed_vs_C0": 4754,
+    "leak_recovered": 0.1827,
+    "r2_v0_only": 0.9212
+   },
+   "C2_8step_roadlaw_snapup": {
+    "compliance": 0.8189,
+    "n_exceed": 861,
+    "n_compliant": 3893,
+    "compliant_episodes": 139,
+    "class_hist_kmh": {
+     "20": 755,
+     "30": 857,
+     "50": 1673,
+     "70": 821,
+     "80": 136,
+     "100": 274,
+     "120": 204,
+     "130": 34
+    },
+    "windows_changed_vs_C0": 1746,
+    "leak_recovered": 0.0653,
+    "r2_v0_only": 0.9212
+   },
+   "C3_drop_30_step_{50,100,120}": {
+    "compliance": 0.9512,
+    "n_exceed": 232,
+    "n_compliant": 4522,
+    "compliant_episodes": 138,
+    "class_hist_kmh": {
+     "50": 3285,
+     "100": 1231,
+     "120": 238
+    },
+    "windows_changed_vs_C0": 1612,
+    "leak_recovered": 0.025,
+    "r2_v0_only": 0.9212
+   },
+   "C4_5step_add_140_no_clamp": {
+    "compliance": 0.882,
+    "n_exceed": 561,
+    "n_compliant": 4193,
+    "compliant_episodes": 139,
+    "class_hist_kmh": {
+     "30": 1612,
+     "50": 1673,
+     "100": 1231,
+     "120": 204,
+     "140": 34
+    },
+    "windows_changed_vs_C0": 34,
+    "leak_recovered": 0.0145,
+    "r2_v0_only": 0.9212
+   },
+   "C5_per_window_own_[2,6]s_snapup": {
+    "compliance": 0.9411,
+    "n_exceed": 280,
+    "n_compliant": 4474,
+    "compliant_episodes": 138,
+    "class_hist_kmh": {
+     "30": 1622,
+     "50": 1681,
+     "100": 1197,
+     "120": 254
+    },
+    "windows_changed_vs_C0": 870,
+    "leak_recovered": 0.3021,
+    "r2_v0_only": 0.9212
+   },
+   "C6_clip_span_max_snapup": {
+    "compliance": 0.991,
+    "n_exceed": 43,
+    "n_compliant": 4711,
+    "compliant_episodes": 138,
+    "class_hist_kmh": {
+     "30": 685,
+     "50": 2157,
+     "100": 1606,
+     "120": 306
+    },
+    "windows_changed_vs_C0": 1403,
+    "leak_recovered": 0.0453,
+    "r2_v0_only": 0.9212
+   },
+   "C7_past_only_N2_4way": {
+    "compliance": 0.9687,
+    "n_exceed": 149,
+    "n_compliant": 4605,
+    "compliant_episodes": 139,
+    "class_hist_kmh": {
+     "50": 3020,
+     "100": 1491,
+     "120": 209,
+     "130": 34
+    },
+    "windows_changed_vs_C0": 2048,
+    "leak_recovered": -0.0085,
+    "r2_v0_only": 0.9212
+   },
+   "C8_max(C0,C7)_hybrid": {
+    "compliance": 0.9821,
+    "n_exceed": 85,
+    "n_compliant": 4669,
+    "compliant_episodes": 139,
+    "class_hist_kmh": {
+     "50": 2974,
+     "100": 1501,
+     "120": 245,
+     "130": 34
+    },
+    "windows_changed_vs_C0": 1966,
+    "leak_recovered": 0.0081,
+    "r2_v0_only": 0.9212
+   },
+   "C5b_ECHO_per_window_[0,6]s_snapup (target identity)": {
+    "compliance": 0.991,
+    "n_exceed": 43,
+    "n_compliant": 4711,
+    "compliant_episodes": 138,
+    "class_hist_kmh": {
+     "30": 1461,
+     "50": 1770,
+     "100": 1265,
+     "120": 258
+    },
+    "windows_changed_vs_C0": 865,
+    "leak_recovered": 0.1826,
+    "r2_v0_only": 0.9212
+   }
+  },
+  "leak_fit": {
+   "n": 4754,
+   "target": "max v over [NOW+2, NOW+6] s (D4)",
+   "folds": "5, clip-grouped by sha12 % 5",
+   "base": "[1, v0]"
+  },
+  "tolerance_on_C0": {
+   "+3 km/h": {
+    "compliance": 0.9283,
+    "n_exceed": 341,
+    "per_class_compliance": {
+     "30": 0.866,
+     "50": 0.9629,
+     "100": 0.9764,
+     "120": 0.8571
+    }
+   },
+   "+5 km/h": {
+    "compliance": 0.9529,
+    "n_exceed": 224,
+    "per_class_compliance": {
+     "30": 0.9181,
+     "50": 0.9809,
+     "100": 0.9789,
+     "120": 0.8571
+    }
+   },
+   "+10 km/h": {
+    "compliance": 0.9802,
+    "n_exceed": 94,
+    "per_class_compliance": {
+     "30": 0.969,
+     "50": 0.9922,
+     "100": 0.9854,
+     "120": 0.9454
+    }
+   },
+   "+10 %": {
+    "compliance": 0.944,
+    "n_exceed": 266,
+    "per_class_compliance": {
+     "30": 0.866,
+     "50": 0.9809,
+     "100": 0.9854,
+     "120": 1.0
+    }
+   },
+   "+20 %": {
+    "compliance": 0.9731,
+    "n_exceed": 128,
+    "per_class_compliance": {
+     "30": 0.9287,
+     "50": 0.9922,
+     "100": 1.0,
+     "120": 1.0
+    }
+   },
+   "next ladder step": {
+    "compliance": 0.9886,
+    "n_exceed": 54,
+    "per_class_compliance": {
+     "30": 0.9932,
+     "50": 1.0,
+     "100": 1.0,
+     "120": 0.8193
+    }
+   }
+  },
+  "leak_controls": {
+   "N0_constant (must be 0)": -0.0,
+   "N2_8step_onehot (D4 banked 0.0346, INHERITED)": 0.0218,
+   "shuffled_C0 (clip-mispaired, must be ~0)": -0.0022
+  }
+ },
+ "train": {
+  "n_windows": 607899,
+  "n_clips": 4572,
+  "rows": {
+   "C0_current_4way_snapup_clip_anchor": {
+    "compliance": 0.8765,
+    "n_exceed": 75082,
+    "n_compliant": 532817,
+    "compliant_episodes": 4495,
+    "class_hist_kmh": {
+     "30": 231491,
+     "50": 211867,
+     "100": 134815,
+     "120": 29726
+    },
+    "windows_changed_vs_C0": 0,
+    "leak_recovered": 0.2241,
+    "r2_v0_only": 0.8967
+   },
+   "C1_no_snap_raw_v_hi": {
+    "compliance": 0.4077,
+    "n_exceed": 360068,
+    "n_compliant": 247831,
+    "compliant_episodes": 4193,
+    "class_hist_kmh": "continuous",
+    "windows_changed_vs_C0": 607899,
+    "leak_recovered": 0.4654,
+    "r2_v0_only": 0.8967
+   },
+   "C2_8step_roadlaw_snapup": {
+    "compliance": 0.8347,
+    "n_exceed": 100464,
+    "n_compliant": 507435,
+    "compliant_episodes": 4524,
+    "class_hist_kmh": {
+     "20": 107548,
+     "30": 123943,
+     "50": 211867,
+     "70": 82428,
+     "80": 21944,
+     "100": 30443,
+     "120": 18309,
+     "130": 11417
+    },
+    "windows_changed_vs_C0": 223337,
+    "leak_recovered": 0.3627,
+    "r2_v0_only": 0.8967
+   },
+   "C3_drop_30_step_{50,100,120}": {
+    "compliance": 0.9463,
+    "n_exceed": 32626,
+    "n_compliant": 575273,
+    "compliant_episodes": 4503,
+    "class_hist_kmh": {
+     "50": 443358,
+     "100": 134815,
+     "120": 29726
+    },
+    "windows_changed_vs_C0": 231491,
+    "leak_recovered": 0.1307,
+    "r2_v0_only": 0.8967
+   },
+   "C4_5step_add_140_no_clamp": {
+    "compliance": 0.8942,
+    "n_exceed": 64309,
+    "n_compliant": 543590,
+    "compliant_episodes": 4562,
+    "class_hist_kmh": {
+     "30": 231491,
+     "50": 211867,
+     "100": 134815,
+     "120": 18309,
+     "140": 11417
+    },
+    "windows_changed_vs_C0": 11417,
+    "leak_recovered": 0.2301,
+    "r2_v0_only": 0.8967
+   },
+   "C5_per_window_own_[2,6]s_snapup": {
+    "compliance": 0.9338,
+    "n_exceed": 40246,
+    "n_compliant": 567653,
+    "compliant_episodes": 4505,
+    "class_hist_kmh": {
+     "30": 228902,
+     "50": 211335,
+     "100": 138540,
+     "120": 29122
+    },
+    "windows_changed_vs_C0": 91918,
+    "leak_recovered": 0.397,
+    "r2_v0_only": 0.8967
+   },
+   "C6_clip_span_max_snapup": {
+    "compliance": 0.9808,
+    "n_exceed": 11664,
+    "n_compliant": 596235,
+    "compliant_episodes": 4505,
+    "class_hist_kmh": {
+     "30": 119101,
+     "50": 268133,
+     "100": 185363,
+     "120": 35302
+    },
+    "windows_changed_vs_C0": 163323,
+    "leak_recovered": 0.1412,
+    "r2_v0_only": 0.8967
+   },
+   "C7_past_only_N2_4way": {
+    "compliance": 0.9552,
+    "n_exceed": 27239,
+    "n_compliant": 580660,
+    "compliant_episodes": 4550,
+    "class_hist_kmh": {
+     "50": 425821,
+     "100": 151901,
+     "120": 19243,
+     "130": 10934
+    },
+    "windows_changed_vs_C0": 294671,
+    "leak_recovered": 0.0167,
+    "r2_v0_only": 0.8967
+   },
+   "C8_max(C0,C7)_hybrid": {
+    "compliance": 0.9792,
+    "n_exceed": 12621,
+    "n_compliant": 595278,
+    "compliant_episodes": 4550,
+    "class_hist_kmh": {
+     "50": 407353,
+     "100": 167412,
+     "120": 22200,
+     "130": 10934
+    },
+    "windows_changed_vs_C0": 273246,
+    "leak_recovered": 0.0632,
+    "r2_v0_only": 0.8967
+   },
+   "C5b_ECHO_per_window_[0,6]s_snapup (target identity)": {
+    "compliance": 0.9808,
+    "n_exceed": 11664,
+    "n_compliant": 596235,
+    "compliant_episodes": 4505,
+    "class_hist_kmh": {
+     "30": 208952,
+     "50": 223466,
+     "100": 145449,
+     "120": 30032
+    },
+    "windows_changed_vs_C0": 94180,
+    "leak_recovered": 0.2822,
+    "r2_v0_only": 0.8967
+   }
+  },
+  "leak_fit": {
+   "n": 607899,
+   "target": "max v over [NOW+2, NOW+6] s (D4)",
+   "folds": "5, clip-grouped by sha12 % 5",
+   "base": "[1, v0]"
+  },
+  "tolerance_on_C0": {
+   "+3 km/h": {
+    "compliance": 0.9193,
+    "n_exceed": 49051,
+    "per_class_compliance": {
+     "30": 0.8768,
+     "50": 0.9554,
+     "100": 0.9944,
+     "120": 0.6527
+    }
+   },
+   "+5 km/h": {
+    "compliance": 0.9371,
+    "n_exceed": 38231,
+    "per_class_compliance": {
+     "30": 0.9069,
+     "50": 0.9682,
+     "100": 0.9966,
+     "120": 0.6804
+    }
+   },
+   "+10 km/h": {
+    "compliance": 0.9719,
+    "n_exceed": 17052,
+    "per_class_compliance": {
+     "30": 0.9583,
+     "50": 0.9846,
+     "100": 0.9989,
+     "120": 0.8663
+    }
+   },
+   "+10 %": {
+    "compliance": 0.941,
+    "n_exceed": 35843,
+    "per_class_compliance": {
+     "30": 0.8768,
+     "50": 0.9682,
+     "100": 0.9989,
+     "120": 0.9851
+    }
+   },
+   "+20 %": {
+    "compliance": 0.9635,
+    "n_exceed": 22169,
+    "per_class_compliance": {
+     "30": 0.9184,
+     "50": 0.9846,
+     "100": 1.0,
+     "120": 0.9993
+    }
+   },
+   "next ladder step": {
+    "compliance": 0.978,
+    "n_exceed": 13395,
+    "per_class_compliance": {
+     "30": 0.9925,
+     "50": 1.0,
+     "100": 1.0,
+     "120": 0.6076
+    }
+   }
+  },
+  "leak_controls": {
+   "N0_constant (must be 0)": 0.0,
+   "N2_8step_onehot (D4 banked 0.0346, INHERITED)": 0.0301,
+   "shuffled_C0 (clip-mispaired, must be ~0)": -0.0
+  }
+ }
+}

@@ -1,0 +1,12 @@
+PASS keys / ckpt_step untouched
+PASS no record keeps its own payload (derangement inside logs, cyclic over singleton logs)
+PASS multi-record logs: the payload multiset of each log is preserved (permutation inside the log)
+PASS marginals (activation rate, mean q on active) preserved EXACTLY
+PASS deterministic for a seed, different for another
+PASS a single record overall stays and is COUNTED as a fixed point
+{"seed": 7, "records": 13, "logs": 5, "singleton_logs": 2, "fixed_points": 0, "marginals_equal": true}
+ZZMSHUF_PASS
+PASS CLI: rc 0, manifest says marginals_equal and 0 fixed points, the shuffled set joins load_beh_terms exactly like the true one, every record moved
+PASS --out == --in is refused
+PASS rho_report: q_free (== PDMS) flagged, an independent term is not, q_prod is reported
+ZZTEST_PASS 0

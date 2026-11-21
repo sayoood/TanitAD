@@ -1,0 +1,68 @@
+{
+ "_what": "A0 reward-coverage probe on real held-out windows",
+ "_corpus": "physicalai-val130-heldout",
+ "_evidence_class": "MEASURED (ours; rule-based over real scene facts)",
+ "_tier": "N/A \u2014 instrument coverage, not a capability claim",
+ "_fan": "anchor vocabulary (synth_anchor_pool + FPS, n=64) \u2014 checkpoint-independent; a trained fan is TIGHTER, so these spreads are an UPPER BOUND",
+ "n_windows": 240,
+ "n_windows_with_obstacles": 184,
+ "n_windows_with_lead": 68,
+ "components": {
+  "collision": {
+   "weight": 1.0,
+   "applicable_frac": 0.5416666666666666,
+   "spread_median_ALL": 1.0,
+   "spread_median_WHEN_APPLICABLE": 1.0,
+   "spread_max": 1.0,
+   "value_mean": -0.190234375,
+   "n_windows": 240,
+   "n_applicable": 130
+  },
+  "comfort": {
+   "weight": 0.2,
+   "applicable_frac": 1.0,
+   "spread_median_ALL": 0.9895649552345276,
+   "spread_median_WHEN_APPLICABLE": 0.9895649552345276,
+   "spread_max": 0.9895649552345276,
+   "value_mean": 0.4171764850616455,
+   "n_windows": 240,
+   "n_applicable": 240
+  },
+  "feasibility": {
+   "weight": 0.5,
+   "applicable_frac": 1.0,
+   "spread_median_ALL": 1.0,
+   "spread_median_WHEN_APPLICABLE": 1.0,
+   "spread_max": 1.0,
+   "value_mean": 0.9782982468605042,
+   "n_windows": 240,
+   "n_applicable": 240
+  },
+  "headway": {
+   "weight": 0.3,
+   "applicable_frac": 0.2833333333333333,
+   "spread_median_ALL": 0.0,
+   "spread_median_WHEN_APPLICABLE": 0.9209102094173431,
+   "spread_max": 0.999538004398346,
+   "value_mean": 0.7453677524414767,
+   "n_windows": 240,
+   "n_applicable": 68
+  },
+  "progress": {
+   "weight": 0.3,
+   "applicable_frac": 1.0,
+   "spread_median_ALL": 1.5,
+   "spread_median_WHEN_APPLICABLE": 1.5,
+   "spread_max": 1.5,
+   "value_mean": 1.3191711612045764,
+   "n_windows": 240,
+   "n_applicable": 240
+  }
+ },
+ "dead": [],
+ "inert": [],
+ "rare": [
+  "headway"
+ ],
+ "verdict": "PASS \u2014 every weighted component ranks the fan wherever it applies \u2014 \u26a0\ufe0f ['headway'] apply on <50 % of windows; that is a BASE RATE of the situation they score, not a defect, and it belongs in the launch record"
+}

@@ -1,0 +1,125 @@
+{
+ "_what": "human-future flag rates under the RL reward's scene context, static vs track lead",
+ "_evidence_class": "MEASURED (ours)",
+ "_tier": "instrument probe, T0, NON-PARITY RL-fit clips",
+ "active_lead_mode": "track",
+ "human_flag_max": 0.15,
+ "n_scoreable_windows": 20511,
+ "n_lead_windows_scored": 6089,
+ "n_episodes": 73,
+ "reward_weights": {
+  "progress": 0.3,
+  "collision": 1.0,
+  "headway": 0.3,
+  "feasibility": 0.5,
+  "comfort": 0.2
+ },
+ "dt_s": 0.5,
+ "grid_s": [
+  0.0,
+  0.5,
+  1.0,
+  1.5,
+  2.0
+ ],
+ "summary": {
+  "static": {
+   "collision_fires_on_human": {
+    "rate": 0.1184102479881754,
+    "n": 6089
+   },
+   "ttc_veto_fires_on_human": {
+    "rate": 0.5048448021021514,
+    "n": 6089
+   },
+   "headway_below_0.5_on_human": {
+    "rate": 0.5966496961734274,
+    "n": 6089
+   },
+   "headway_mean_on_human": 0.37601840252705304,
+   "composed_mean": {
+    "human": 0.9127195957411215,
+    "hold_v0": 0.9236386239205622,
+    "frozen": 0.22500000894069672
+   },
+   "hold_v0_scores_at_least_human": {
+    "rate": 0.7350960748891444,
+    "n": 6089
+   },
+   "frozen_scores_at_least_human": {
+    "rate": 0.16143865987846936,
+    "n": 6089
+   }
+  },
+  "track": {
+   "collision_fires_on_human": {
+    "rate": 0.0006569223189357859,
+    "n": 6089
+   },
+   "ttc_veto_fires_on_human": {
+    "rate": 0.03301034652652324,
+    "n": 6089
+   },
+   "headway_below_0.5_on_human": {
+    "rate": 0.20364591887009362,
+    "n": 6089
+   },
+   "headway_mean_on_human": 0.7097418713543232,
+   "composed_mean": {
+    "human": 1.1305899664864867,
+    "hold_v0": 1.1395113033346989,
+    "frozen": 0.22448027858276673
+   },
+   "hold_v0_scores_at_least_human": {
+    "rate": 0.7249137789456397,
+    "n": 6089
+   },
+   "frozen_scores_at_least_human": {
+    "rate": 0.04368533420922976,
+    "n": 6089
+   }
+  }
+ },
+ "by_human_time_gap": {
+  "[0,1.0)": {
+   "n": 89,
+   "static_collision": 0.47191011235955055,
+   "static_ttc_veto": 1.0,
+   "track_collision": 0.0,
+   "track_ttc_veto": 0.0449438202247191
+  },
+  "[1.0,2.0)": {
+   "n": 1487,
+   "static_collision": 0.44115669132481505,
+   "static_ttc_veto": 0.948890383322125,
+   "track_collision": 0.0026899798251513113,
+   "track_ttc_veto": 0.03093476798924008
+  },
+  "[2.0,3.0)": {
+   "n": 1545,
+   "static_collision": 0.012944983818770227,
+   "static_ttc_veto": 0.8135922330097087,
+   "track_collision": 0.0,
+   "track_ttc_veto": 0.0343042071197411
+  },
+  "[3.0,5.0)": {
+   "n": 1521,
+   "static_collision": 0.0,
+   "static_ttc_veto": 0.13543721236028927,
+   "track_collision": 0.0,
+   "track_ttc_veto": 0.026298487836949377
+  },
+  "[5.0,inf)": {
+   "n": 909,
+   "static_collision": 0.0,
+   "static_ttc_veto": 0.025302530253025302,
+   "track_collision": 0.0,
+   "track_ttc_veto": 0.0121012101210121
+  }
+ },
+ "PASS": true,
+ "_per_window": {
+  "n_rows": 6089,
+  "where": "C:/Users/Admin/rl_rescope/run/humanflag_fit120.json (dev box)"
+ }
+}

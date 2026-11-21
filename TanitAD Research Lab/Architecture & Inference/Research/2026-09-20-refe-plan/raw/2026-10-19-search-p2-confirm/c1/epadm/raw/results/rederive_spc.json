@@ -1,0 +1,295 @@
+{
+ "read": "C1",
+ "arm": "P2HEAD (no head substitution)",
+ "outcome": "O1_CONFIRMED",
+ "classification": {
+  "outcome": "O1_CONFIRMED",
+  "dpdms_terms": {
+   "point_ge_bar": true,
+   "lower_ci_gt_0": true,
+   "point_gt_seed_range": true
+  },
+  "safety_terms": {
+   "nc": true,
+   "dac": true,
+   "ttc": true,
+   "c": true
+  },
+  "safety_fail_beside_directional": false
+ },
+ "next_arm": "(i) build the search-output EP-ADMISSION bank from this read (candidate block in the sealed text; DQ6 adapter and 24-log error-rate re-simulation first), (ii) the navtest look C2 only after admission and its own amendment, and in the same turn the SEARCH-DOSE arm (stepB_config_O4.json, M = 256) on the SAME bundle, CPU only, under its own amendment.",
+ "endpoint_dPDMS_points": {
+  "point": 0.5575390355752244,
+  "lo": 0.1058424023905148,
+  "hi": 0.9253400262950227,
+  "n_valid_resamples": 10000,
+  "den": 905.0
+ },
+ "per_seed_points": {
+  "points": [
+   0.6324679406154508,
+   0.5353762230409188,
+   0.5047729430693041
+  ],
+  "range": 0.12769499754614666,
+  "std": 0.06667005170352491
+ },
+ "safety_points": {
+  "nc": 0.0,
+  "dac": 0.3314917127071823,
+  "ttc": 0.25782688766114176,
+  "c": 0.0
+ },
+ "sub_score_deltas_points": {
+  "nc": {
+   "point": 0.0,
+   "lo": 0.0,
+   "hi": 0.0,
+   "n_valid_resamples": 10000,
+   "den": 905.0
+  },
+  "dac": {
+   "point": 0.3314917127071823,
+   "lo": 0.0,
+   "hi": 0.7339593942836238,
+   "n_valid_resamples": 10000,
+   "den": 905.0
+  },
+  "ep": {
+   "point": 0.5056811623602812,
+   "lo": 0.0477953012271997,
+   "hi": 0.949267324570375,
+   "n_valid_resamples": 10000,
+   "den": 905.0
+  },
+  "ttc": {
+   "point": 0.25782688766114176,
+   "lo": -0.30972238220020926,
+   "hi": 0.7667171826109365,
+   "n_valid_resamples": 10000,
+   "den": 905.0
+  },
+  "c": {
+   "point": 0.0,
+   "lo": 0.0,
+   "hi": 0.0,
+   "n_valid_resamples": 10000,
+   "den": 905.0
+  },
+  "ddc": {
+   "point": 0.0,
+   "lo": 0.0,
+   "hi": 0.0,
+   "n_valid_resamples": 10000,
+   "den": 905.0
+  }
+ },
+ "inert": {
+  "inert": false,
+  "frac_moved": 0.1731123388581952,
+  "n": 2715,
+  "ade_median_m": 0.0,
+  "thr_m": 0.5,
+  "min_frac": 0.05,
+  "per_seed_frac_moved": [
+   0.17458563535911603,
+   0.16685082872928178,
+   0.17790055248618786
+  ]
+ },
+ "families": {
+  "LONGITUDINAL": {
+   "dEP_points": {
+    "point": 0.5056811623602812,
+    "lo": 0.0477953012271997,
+    "hi": 0.949267324570375,
+    "n_valid_resamples": 10000,
+    "den": 905.0
+   },
+   "dTTC_points": {
+    "point": 0.25782688766114176,
+    "lo": -0.30972238220020926,
+    "hi": 0.7667171826109365,
+    "n_valid_resamples": 10000,
+    "den": 905.0
+   },
+   "share_outputs_speed_up": 0.14990791896869246,
+   "share_outputs_slow_down": 0.10681399631675875,
+   "dPDMS_points_given_speed_up (descriptive)": 1.9629259943056834,
+   "dPDMS_points_given_slow_down (descriptive)": 2.4648537996700743
+  },
+  "LATERAL": {
+   "dDAC_points": {
+    "point": 0.3314917127071823,
+    "lo": 0.0,
+    "hi": 0.7339593942836238,
+    "n_valid_resamples": 10000,
+    "den": 905.0
+   },
+   "dDDC_points": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n_valid_resamples": 10000,
+    "den": 905.0
+   },
+   "mean_abs_offset_m_given_moved": 0.24536287892916042,
+   "heading_dev_end_rad_mean": 0.004736770524747985,
+   "yaw_rate_dev_max_rad_s_mean": 0.10250272898517038
+  },
+  "TACTICAL": {
+   "command_class_change_share (proxy, HYPOTHESIS: nav_command bearing rule on the end point)": 0.0066298342541436465
+  },
+  "STRATEGIC": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE ITEM 25): reported as PAUSED, not as a pass"
+ },
+ "sealed_step_b_rule_for_reference": {
+  "outcome": "O1_PASS",
+  "dpdms_terms": {
+   "point_ge_bar": true,
+   "lower_ci_gt_0": true,
+   "point_gt_seed_range": true
+  },
+  "safety_terms": {
+   "nc": true,
+   "dac": true,
+   "ttc": true,
+   "c": true
+  }
+ },
+ "moved_share": 0.2567219152854512,
+ "n_tokens": 905,
+ "n_logs": 24,
+ "units": "PDMS points = 100 x the [0,1] difference",
+ "stamps": "MEASURED; SEEN-SCENE (all of B-REST is inside M-SCENE; M-PDM overlap 0); TOKEN-FRESH to the search and LOG-SHARED with Step A and carve B (the same 24 logs): NOT a fresh-log test; SELECTION tier, label-only (not T1, not navtest); ONE training seed, no head substitution (H-ESTIM-SEED-1 open); the interval is the paired log-cluster bootstrap (B = 10,000, seed 20260927) = 'another draw of LOGS' only, the 3-search-seed spread beside it; READ C1 alone, never pooled with carve B; no capability claim; STRATEGIC PAUSED",
+ "STRATEGIC": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE ITEM 25): reported as PAUSED, not as a pass",
+ "not_computable_families": {
+  "LONGITUDINAL.headway": "n = 0: the label-only tier carries no lead-agent headway row beyond TTC",
+  "LATERAL.curvature_and_cross_track": "n = 0: no closed-loop rollout at the selection tier",
+  "TACTICAL.manoeuvre_decision_quality": "n = 0: no manoeuvre decision is scored at this tier"
+ },
+ "concordance_reported_only": {
+  "pooled": {
+   "A3": {
+    "point": 0.8717948717948718,
+    "lo": 0.5882352941176471,
+    "hi": 1.0,
+    "n_valid_resamples": 10000,
+    "den": 39.0,
+    "num": 34.0
+   },
+   "A4": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n_valid_resamples": 10000,
+    "den": 149.0,
+    "num": 0.0
+   },
+   "A5": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n_valid_resamples": 10000,
+    "den": 149.0,
+    "num": 0.0
+   }
+  },
+  "per_seed": [
+   {
+    "A3": {
+     "point": 0.9230769230769231,
+     "lo": 0.6666666666666666,
+     "hi": 1.0,
+     "n_valid_resamples": 9996,
+     "den": 13.0,
+     "num": 12.0
+    },
+    "A4": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n_valid_resamples": 10000,
+     "den": 51.0,
+     "num": 0.0
+    },
+    "A5": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n_valid_resamples": 10000,
+     "den": 51.0,
+     "num": 0.0
+    }
+   },
+   {
+    "A3": {
+     "point": 0.8571428571428571,
+     "lo": 0.5714285714285714,
+     "hi": 1.0,
+     "n_valid_resamples": 10000,
+     "den": 14.0,
+     "num": 12.0
+    },
+    "A4": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n_valid_resamples": 10000,
+     "den": 50.0,
+     "num": 0.0
+    },
+    "A5": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n_valid_resamples": 10000,
+     "den": 50.0,
+     "num": 0.0
+    }
+   },
+   {
+    "A3": {
+     "point": 0.8333333333333334,
+     "lo": 0.5,
+     "hi": 1.0,
+     "n_valid_resamples": 9999,
+     "den": 12.0,
+     "num": 10.0
+    },
+    "A4": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n_valid_resamples": 10000,
+     "den": 48.0,
+     "num": 0.0
+    },
+    "A5": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n_valid_resamples": 10000,
+     "den": 48.0,
+     "num": 0.0
+    }
+   }
+  ],
+  "pair_counts": {
+   "A3_counted": 39.0,
+   "A3_concordant_weight": 34.0,
+   "A4_rise": 149.0,
+   "A4_rise_and_fall": 0.0,
+   "A5_rise_and_flip": 0.0
+  },
+  "counts": {
+   "n_tokens": 905,
+   "n_seeds": 3,
+   "n_pairs_total": 2715,
+   "n_identical_excluded": 2018,
+   "n_dropped_invalid_anchor": 0,
+   "n_pairs": 697
+  },
+  "status": "REPORTED ONLY, ungated; model identity NOT RUN here (Step B Amendment 1 ran it on 16 tokens)",
+  "hypothesis": "H-SEARCH-ADMIT-A3 (one scorer here: n = 1, so the relation is stated, not tested)"
+ }
+}

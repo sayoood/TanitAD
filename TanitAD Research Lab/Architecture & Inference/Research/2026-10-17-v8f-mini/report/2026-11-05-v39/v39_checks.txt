@@ -1,0 +1,34 @@
+# report v39 checks, tip c9d0688e92f32dc8df20017367539a7b5dbecde4
+
+PASS v38 inputs are the landed deliverables (sha256)
+PASS html = page template with the v39 md
+PASS LF only, no BOM (md and html)
+PASS removed lines from v38: exactly the 5 edited lines, each key matched once (status line, abstract recovery bullet, abstract next bullet, the 7.36.6 Recommendation bullet, row 1at) (5 removed; unexpected []; hits [1, 1, 1, 1, 1])
+PASS order: 7.36.7 < 7.37 (.1 to .4) < 7.38 (.1 to .7) < 7.39 (.1 to .5) < 7.39.6 (or its placeholder) < 7.39.7 < 7.39.8 < section 8, each heading once (7.39.6 filled)
+PASS every table line of 7.37 to 7.39 is a line of a 2026-11-05 source file (a bare pipe inside a cell escaped); the only other added table lines are rows 1au to 1ay and the changed row 1at (279 table lines in the sections = 279 expanded directive lines; 313 source files)
+PASS every table of 7.37 to 7.39 and of rows 1au to 1ay has one cell count (strict, escaped pipes aside)
+PASS italic quotations of 25+ characters in the added lines verbatim in a source (2026-11-05 files, register, v38) (78 quotations)
+PASS each of the four metric families named in 7.37 to 7.39 at least 3 times (STRATEGIC active for v8F) [169, 119, 48, 71]
+PASS T1-kin in 7.37, 7.38 and 7.39; the paired episode-cluster bootstrap, B = 2,000 and H-ESTIM-SEED-1 stated in 7.37 and 7.39
+PASS evidence classes: [M] in each of 7.37, 7.38, 7.39; [E] in 7.37 and 7.38; [H] in 7.37, 7.38 and 7.39
+PASS the forbidden two-word T2 wording (either separator) is absent from every added line and every part file; the occurrences of the carried v38 text are untouched (v38 15, v39 15) (occurrences in added lines 1 against 1 in the 5 edited lines they replace, part files 0)
+PASS banned-word scan: none new in the added lines (net of the 5 edited lines they replace) or in the part files; per-word counts of the whole report unchanged against v38 (v38 [0, 0, 7, 0, 0, 8, 0], v39 [0, 0, 7, 0, 0, 8, 0])
+PASS no dollar sign added; math span counts as in v38 (688 dollar signs)
+PASS 8.3 has Update (v39) before Update (v38) before Update (v37) before Update (v36), each once
+PASS 8.1 ends with item 29: the v38 items (ending at 25) are untouched and items 26 to 29 follow; item 25 is the v38 text
+PASS section 9 ends with item 17 (v39 reads and their limits), after item 16
+PASS 8.4 has rows 1au to 1ay once each, in order, after row 1at and before row 2; row 1at points to them
+PASS status line names v39 of 2026-11-05, the tip, 7.36, 7.37, 7.39, RPT, CL, CLR and LLR; no date after 2026-11-05 anywhere
+PASS no stale pointer: the row 1at 'PI's go |' ending and 'v38 of 2026-11-04, results' are gone; v38 is named as the previous version
+PASS added numbers agree with the raw RPT JSON and the result files (RPT share closed, frame-freeze, ADE6; CRAWL-LEAD, RI, CL, CLR headline numbers) (JSON label HARMS, controls_failed [])
+PASS every placeholder left in out/ is a documented {{LLR_...}} row of PLACEHOLDERS.md ()
+PASS LF only for every .py, .md, .sh and .js file of the package (CR counted in python) (38 files; with CR: [])
+PASS patch_v39.py re-run reproduces both deliverables byte for byte 89b', 'CLR_': 'c6f80b3', 'CLRR': '1c6e88f', 'LLR': 'a6553a8', 'A3P': 'c9d0688'} placeholders left []
+PASS PLACEHOLDERS: no `{{` remains in out/ (md and html) (0 occurrences of `{{` in md + html; distinct: none)
+
+RESULT: PASS (25 checks, 0 failed)
+
+== numbers audit (audit_v39.py): added non-table lines: 105; sources scanned: 717 files (+ register, + v38 text); tokens found in a source (first match, by file): 2026-11-02-feas2-t1/HANDOFF.md 189, 2026-11-02-feas2-t1/RESULTS.md 133, 2026-11-02-feas2-t1/RESULTS_FEAS3.md 81, 2026-11-02-feas2-t1/PREREG_FEAS3_FROZEN.md 79, 2026-11-02-gapdecomp-m/RESULTS.md 76, register 60, 2026-11-02-feas2-t1/FROZEN_SHA.txt 35, 2026-11-02-gapdecomp/raw/CLASS_SPLIT.json 21, 2026-11-02-histswap-lf/RESULTS.md 19, 2026-11-02-gapdecomp/RESULTS.md 18, 2026-11-02-recover-ft-launch/HANDOFF.md 16, 2026-11-05-motion-c-crawllead/C_STATUS.md 15 ...; structural (integers below 100, years, ids): 13; unmatched: 0
+== offline render (the template's own pre-processing + local marked; v38 baseline: see report_v38/v38_render_check.txt):
+   {"file":"v8f_report.html","tables":226,"h3":55,"math":323,"tables_with_ragged_rows":0,"pre_blocks":0,"slots_rendered":0,"stray_placeholders":0,"unfilled_braces":0}
+   {"file":"V8F_SCIENTIFIC_REPORT.md","tables":226,"h3":55,"math":323,"tables_with_ragged_rows":0,"pre_blocks":0,"slots_rendered":0,"stray_placeholders":0,"unfilled_braces":0}

@@ -1,0 +1,48 @@
+{
+ "arm": "C",
+ "adjudicator": "arch-inf agent (Claude), 2026-08-17 — a SECOND READER of G1's own evidence",
+ "evidence_class": "MEASURED (human visual adjudication of the exact JPEG tiles G1 read). Not INHERITED, not inferred from scores.",
+ "protocol": "BLIND — the 54 banked tiles were SHUFFLED under seed 20260817 and re-indexed 3000+k before rendering, so G1's own row ordering (and, through `G1_SIGN_OCR_GRADING_SHEET.md`, its claimed OCR text and clip) could not reach the eye. The row->index map lives in `adjudication_sample_C_g1tiles.json` and was joined only after every verdict below was fixed.",
+ "what_is_held_fixed": "corpus, selection rule, rendering protocol AND the exact pixels. The ONLY variable is the adjudicator.",
+ "question_asked": "Does this tile contain a traffic sign AT ALL? — `G1_RESULT.md:17`'s own subclass 1, `no sign visible in the crop at all: sky, foliage, building walls, clouds`.",
+ "charity_note": "⚠️ G1's selection was 'the largest-area sign/LIGHT detection', so some tiles were produced by a `traffic light` box, and the tile alone does not say which. Scored CHARITABLY: `wrong` means NO traffic infrastructure of either kind is visible, not merely 'no sign'. This can only move the number in G1's favour.",
+ "verdict_scheme": {
+  "correct": "a traffic sign (or traffic light) is visibly present in the tile",
+  "wrong": "no traffic sign or light in the tile at all — sky, cloud, foliage, wall, facade, plain road, a whole unresolved scene",
+  "unclear": "a sign-shaped or sign-mounted structure may be present but cannot be resolved at this fidelity. ⚠️ NOT a soft `wrong` — reported as its own arm."
+ },
+ "escalation_note": "Every cell scored `unclear` or borderline on the 320-px contact sheet was RE-RENDERED at 620 px and looked at again (`crops/zoomC_1.png`, `crops/zoomC_2.png`) before its verdict was fixed. #3001 was promoted from `unclear` to `correct` by that step, so the escalation demonstrably works in the detector's favour and is not a formality.",
+ "verdicts": {
+  "3000": "unclear", "3001": "correct", "3002": "wrong", "3003": "wrong",
+  "3004": "wrong", "3005": "wrong", "3006": "wrong", "3007": "wrong",
+  "3008": "wrong", "3009": "wrong", "3010": "wrong", "3011": "wrong",
+  "3012": "wrong", "3013": "wrong", "3014": "wrong", "3015": "wrong",
+  "3016": "wrong", "3017": "wrong", "3018": "wrong", "3019": "wrong",
+  "3020": "wrong", "3021": "wrong", "3022": "unclear", "3023": "wrong",
+  "3024": "wrong", "3025": "wrong", "3026": "wrong", "3027": "wrong",
+  "3028": "wrong", "3029": "wrong", "3030": "wrong", "3031": "wrong",
+  "3032": "wrong", "3033": "unclear", "3034": "wrong", "3035": "wrong",
+  "3036": "wrong", "3037": "unclear", "3038": "wrong", "3039": "wrong",
+  "3040": "wrong", "3041": "wrong", "3042": "wrong", "3043": "wrong",
+  "3044": "wrong", "3045": "wrong", "3046": "wrong", "3047": "wrong",
+  "3048": "wrong", "3049": "wrong", "3050": "unclear", "3051": "wrong",
+  "3052": "wrong", "3053": "wrong"
+ },
+ "notes": {
+  "3001": "⭐ THE ONE CLEAR SIGN IN 54 TILES. At 620 px a horizontal direction board with white lettering is unmistakable, mounted over the roadside among trees, with a second smaller board below. Scored `unclear` on the contact sheet and PROMOTED to `correct` by the zoom.",
+  "3000": "nested orange/yellow rectangles low in an olive field. Consistent with an orange diversion/roadworks board AND with a vehicle or a hedge marker. Not resolvable either way — `unclear`, never a soft `wrong`.",
+  "3022": "night scene, blown-out lights and one large pale vertical rectangle. Could be an illuminated sign or the side of a van. `unclear`.",
+  "3033": "a street through trees with a white vehicle and a magenta compression band. Small red/white objects at the lower right could be signage or shopfront. `unclear`.",
+  "3037": "a dark post with a short horizontal crossbar below foliage. Post-and-bar geometry is consistent with a signpost seen edge-on and with a barrier. `unclear`.",
+  "3050": "a tall bright vertical structure with a horizontal top among dark foliage — an illuminated pylon sign or a lit pole. `unclear`.",
+  "_shape_of_the_48_wrong": "The dominant content is exactly G1's own list: plain SKY or cloud (#3016, #3029, #3030, #3034, #3035, #3042, #3045, #3028), uniform WALL or facade (#3006, #3009, #3011, #3012, #3024, #3027, #3031, #3038, #3043, #3044, #3052, #3032, #3039), FOLIAGE (#3008, #3017, #3025, #3049, #3051, #3023), night-time DARKNESS with no discernible object (#3002, #3005, #3013, #3020, #3047, #3048, #3053, #3003, #3010, #3014, #3015, #3018, #3007, #3026, #3041), and — the most telling class — SIX tiles that are essentially the WHOLE FRAME (#3004, #3019, #3021, #3036, #3040, #3046): a road, a treeline, a night street. A tight crop of a detection box cannot be the whole scene unless the BOX was the whole scene."
+ },
+ "the_measurement": {
+  "n_tiles": 54,
+  "n_correct": 1,
+  "n_wrong": 48,
+  "n_unclear": 5,
+  "no_sign_at_all_rate_over_all_tiles": 0.8889,
+  "comparison": "G1_RESULT.md reports ~22 of 31 ROWS (~71 %) in this subclass. Per TILE this second reader gets 48/54 = 88.9 %. ⇒ G1's reading is REPRODUCED and is if anything CONSERVATIVE. The adjudicator is NOT the variable."
+ }
+}

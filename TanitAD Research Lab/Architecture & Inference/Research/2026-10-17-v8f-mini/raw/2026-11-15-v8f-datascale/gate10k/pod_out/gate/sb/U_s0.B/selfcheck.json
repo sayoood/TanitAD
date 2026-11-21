@@ -1,0 +1,535 @@
+{
+ "declared_vs_built": "PASS",
+ "live": {
+  "terms": {
+   "ckpt": 1.9433990716934204,
+   "goal": 0.1058415025472641,
+   "lat": 0.15028522908687592,
+   "lon": 0.8269428014755249,
+   "cons": 0.22267785668373108,
+   "ade": 2.301466464996338,
+   "fde": 7.463244915008545,
+   "acc": 0.02287648431956768,
+   "pen_SPEED": 0.6999752521514893,
+   "pens_SPEED": 0.27592724561691284,
+   "pen_STOP": 0.5594527721405029,
+   "pens_STOP": 0.0,
+   "pen_TURN": 0.06000235676765442,
+   "pens_TURN": 0.9048003554344177,
+   "pen_LEAD": 0.2759937644004822,
+   "pens_LEAD": 0.006115909665822983,
+   "wm": 200.93380737304688,
+   "total": 26.36298179626465
+  },
+  "missing_terms": [],
+  "unexpected_terms": [],
+  "dead_params": [],
+  "declared_dead": [],
+  "unexpected_dead": [],
+  "declared_dead_but_alive": [],
+  "control_prior_grad_sum": 0.0,
+  "head_o_grad_step0": 1169.519059419632,
+  "n_trainable": 252,
+  "groups_grad": {
+   "adapter": 25480.549125671387,
+   "S": 3337.7517578303814,
+   "T": 2688.147024951875,
+   "O": 26574.555106185377,
+   "head_s": 3468.2106242775917,
+   "head_o": 48058.32648897171,
+   "wm": 14559.499167805829
+  },
+  "pass": true
+ },
+ "code_mix_probe": {
+  "code_mix": "whole",
+  "p_gt": 0.5,
+  "n_labelled": 64,
+  "n_draws_samples": 256,
+  "n_partial": 0,
+  "n_all_gt": 118,
+  "n_all_own": 138,
+  "unit_gt_rate": {
+   "decisions": 0.4609375,
+   "speed": 0.4609375,
+   "angle": 0.4609375,
+   "tte": 0.4609375,
+   "timegap": 0.4609375,
+   "geom": 0.4609375,
+   "leadgap": 0.4609375
+  },
+  "pass": true
+ },
+ "o_interface_probe": {
+  "o_interface": "full",
+  "shift": 2.5,
+  "n_windows": 64,
+  "perturbations": {
+   "donor_code": {
+    "max_abs_dtraj60": 18.374366760253906,
+    "o_read_code_abs_max": 2.7786643505096436,
+    "o_read_ck_minus_nominal_abs_max": 69.09522247314453,
+    "o_read_ck_ok_abs_max": 1.0
+   },
+   "gt_code": {
+    "max_abs_dtraj60": 16.157329559326172,
+    "o_read_code_abs_max": 12.155121803283691,
+    "o_read_ck_minus_nominal_abs_max": 69.09522247314453,
+    "o_read_ck_ok_abs_max": 1.0
+   },
+   "random_code": {
+    "max_abs_dtraj60": 9.821197509765625,
+    "o_read_code_abs_max": 0.9999334216117859,
+    "o_read_ck_minus_nominal_abs_max": 69.09522247314453,
+    "o_read_ck_ok_abs_max": 1.0
+   },
+   "shifted_checkpoints": {
+    "max_abs_dtraj60": 12.262907028198242,
+    "o_read_code_abs_max": 2.5753414630889893,
+    "o_read_ck_minus_nominal_abs_max": 70.36077880859375,
+    "o_read_ck_ok_abs_max": 1.0,
+    "max_abs_d_ckpt": 2.5000038146972656,
+    "t_reads_s_max_abs_dgoal_logits": 5.83289098739624
+   }
+  },
+  "pass": true
+ },
+ "acc_probe": {
+  "w_acc_declared": 49.6969,
+  "w_probe": 49.6969,
+  "acc": 0.014237022027373314,
+  "acc_at_zero_weight": 0.014237022027373314,
+  "total_w": 23.752153396606445,
+  "total_0": 23.04461669921875,
+  "contribution": 0.7075366973876953,
+  "w_x_acc": 0.7075358599921688,
+  "head_o_grad_diff": 822.015869140625,
+  "read_o_grad_diff": 727.6158447265625,
+  "control_repeat_total_diff": 0.0,
+  "control_repeat_grad_diff": 0.0,
+  "control_prior_grad_diff": 0.0,
+  "control_wm_grad_diff": 0.0,
+  "pass": true
+ },
+ "admissibility": {
+  "allowed": [
+   "a_s",
+   "a_t",
+   "act",
+   "base",
+   "feats",
+   "frame_ok",
+   "limit",
+   "limit_ok",
+   "nav",
+   "p10f",
+   "pose",
+   "pose_now",
+   "pose_s",
+   "pose_t"
+  ],
+  "read": [
+   "a_s",
+   "a_t",
+   "base",
+   "feats",
+   "frame_ok",
+   "limit",
+   "limit_ok",
+   "nav",
+   "p10f",
+   "pose_now",
+   "pose_s",
+   "pose_t"
+  ]
+ },
+ "levers": {
+  "navonly": false,
+  "consistency": true,
+  "wm": "b",
+  "cons_absent": "mask",
+  "code_mix": "whole",
+  "o_interface": "full",
+  "w_acc": 49.6969,
+  "launch_intent_w": 0.0,
+  "wm_idm_gamma": 100.0,
+  "kin_mode": "yaw",
+  "wm_ch1_scale": 0.4,
+  "p_gt_start": 0.2,
+  "p_gt_end": 0.2,
+  "hist": 4,
+  "hmax": 16,
+  "window_start": 3,
+  "prior_frozen": true,
+  "residual_zero_init": false,
+  "params": {
+   "adapter": 275712,
+   "cond": 25088,
+   "S": 1321737,
+   "T": 1463868,
+   "O": 2120216,
+   "WM": 2007874
+  },
+  "n_params_trainable": 7214495,
+  "w": {
+   "w_pen": 0.5,
+   "w_pen_self": 0.25,
+   "w_wm": 0.1,
+   "w_tac": 1.0,
+   "w_cons": 0.5
+  },
+  "ego_perturb": {
+   "ego_perturb_p": 0.0,
+   "ego_perturb_vscale": [
+    0.5,
+    1.0
+   ],
+   "ego_perturb_vmax": 8.0,
+   "ego_perturb_adrop": 1.5,
+   "ego_perturb_yawrate_std": 0.0,
+   "ego_perturb_seed": 0,
+   "kin_mode": "yaw",
+   "rebuilt": [
+    "p10f",
+    "base",
+    "kin3",
+    "p10_t",
+    "pose",
+    "pose_t",
+    "pose_s",
+    "nav"
+   ],
+   "kept": [
+    "feats",
+    "frame_ok",
+    "limit",
+    "limit_ok",
+    "a_t",
+    "a_s",
+    "pose_now"
+   ],
+   "record": [
+    "act"
+   ]
+  },
+  "dagger": {
+   "dagger_p": 0.1,
+   "dagger_seed": 0,
+   "dagger_bank": "/root/dscale10k/gate/sb/U_smoke_bank/bank.json",
+   "dagger_bank_sha256": "146fca91a639a006fdbce4c9778662bce8df3836f2725b22b500ae619b909235",
+   "kin_mode": "yaw",
+   "bank_hmax": 16,
+   "rebuilt": [
+    "p10f",
+    "base",
+    "kin3",
+    "p10_t",
+    "pose",
+    "pose_t",
+    "pose_s",
+    "nav"
+   ],
+   "kept": [
+    "feats",
+    "frame_ok",
+    "limit",
+    "limit_ok",
+    "a_t",
+    "a_s",
+    "pose_now"
+   ],
+   "record": [
+    "act"
+   ],
+   "labels_re_expressed": [
+    "lab_s.rc"
+   ],
+   "nav_rebuild_invalid": false,
+   "constants_sha256": "8f94b3b5e35f4457be51d695842457a340d1228ab48c5862f4db1e5063f3ffaf"
+  },
+  "dagger_p": 0.1,
+  "dagger_bank_sha256": "146fca91a639a006fdbce4c9778662bce8df3836f2725b22b500ae619b909235",
+  "dagger_bank_sha256_declared": "146fca91a639a006fdbce4c9778662bce8df3836f2725b22b500ae619b909235",
+  "recover": {
+   "recover_p": 0.0,
+   "recover_dev_law": "empirical",
+   "recover_dev_shape": "constant",
+   "recover_dev_bank": null,
+   "recover_dev_bank_sha256": null,
+   "recover_target": "rejoin",
+   "recover_rejoin_steps": 10,
+   "recover_seed": 0,
+   "kin_mode": "yaw",
+   "rebuilt": [
+    "p10f",
+    "base",
+    "kin3",
+    "p10_t",
+    "pose",
+    "pose_t",
+    "pose_s",
+    "nav",
+    "pose_now"
+   ],
+   "retargeted": [
+    "gt",
+    "lab_s.rc"
+   ]
+  },
+  "recover_table": null,
+  "ego_perturb_with_dagger": false,
+  "ego_perturb_stream": 0,
+  "ego_dagger_overlap_n": 0,
+  "launch_intent": {
+   "launch_intent_w": 0.0,
+   "v0_max": 6.0,
+   "dv": 1.0,
+   "dt": 0.2,
+   "knots": [
+    1,
+    12
+   ],
+   "axis": "along (x of the ego frame at NOW)",
+   "mask_from": "the LOGGED kin3[:, 0] and the GT future, taken before any ego stage"
+  },
+  "launch_n": 0,
+  "launch_eligible": 0,
+  "init_ckpt": {
+   "path": "/root/dscale10k/pilot/pU/ckpt_last.pt",
+   "sha256": "04c8e73a259dfbf2d2006b787651d05f1f0cc8b014391c0805e9892e69d23da0",
+   "applied": true,
+   "skipped": null,
+   "n_tensors": 276,
+   "n_mismatch_after_load": 0,
+   "source_step": 600,
+   "source_arm": "M2b",
+   "source_seed": 0,
+   "source_argv_sha": "3199ab0a43a5bf55"
+  },
+  "lr_schedule": {
+   "lr": 0.0001,
+   "warmup": 100,
+   "total": 3000
+  }
+ },
+ "steps_total": 3000,
+ "S_steps_per_epoch_100pct": 15392,
+ "info": {
+  "batch": 64,
+  "md5_overridden": false,
+  "n_clips": 200,
+  "n_clips_expected": 200,
+  "n_clips_all": 14512,
+  "n_excluded": 0,
+  "n_excluded_declared": 0,
+  "excluded_in_train": 0,
+  "excluded_sha256": null,
+  "train_sha256": "fe29f629b05ac901dee51fd3813878132c5b6d22c4a6e007e284b159d3653e5c",
+  "lru": 174,
+  "kin_mode": "yaw",
+  "n_windows_all_clips": 985048,
+  "n_windows": 13565,
+  "window_start": 3,
+  "window_t_min": 3,
+  "train_window_list_sha256": "67e3f0c7867bc885ab6e160b2a2b1782aaf79860769f41e8797c6979b407da80",
+  "p10_units": "pose_kappa",
+  "ds_window_start": 3,
+  "init_ckpt": {
+   "path": "/root/dscale10k/pilot/pU/ckpt_last.pt",
+   "sha256": "04c8e73a259dfbf2d2006b787651d05f1f0cc8b014391c0805e9892e69d23da0",
+   "applied": true,
+   "skipped": null,
+   "n_tensors": 276,
+   "n_mismatch_after_load": 0,
+   "source_step": 600,
+   "source_arm": "M2b",
+   "source_seed": 0,
+   "source_argv_sha": "3199ab0a43a5bf55"
+  },
+  "dagger": {
+   "bank_path": "/root/dscale10k/gate/sb/U_smoke_bank/bank.json",
+   "bank_sha256": "146fca91a639a006fdbce4c9778662bce8df3836f2725b22b500ae619b909235",
+   "n_records": 27130,
+   "reason_counts": {
+    "ok": 16328,
+    "off_lat": 2926,
+    "off_head": 3490,
+    "end_edge": 4386,
+    "nonfinite": 0
+   },
+   "coverage": {
+    "n_windows": 13565,
+    "n_eligible": 9739,
+    "fraction": 0.7179506081828234,
+    "min": 0.5,
+    "blocked": false
+   },
+   "kb2": {
+    "ckpt_sha256": "04c8e73a259dfbf2d2006b787651d05f1f0cc8b014391c0805e9892e69d23da0",
+    "init_ckpt_sha256": "04c8e73a259dfbf2d2006b787651d05f1f0cc8b014391c0805e9892e69d23da0"
+   },
+   "kb3": {
+    "n_bank_clips": 200,
+    "n_train_clips": 200,
+    "n_eval_clips": 141,
+    "overlap_with_eval": 0,
+    "window_list_sha256": "67e3f0c7867bc885ab6e160b2a2b1782aaf79860769f41e8797c6979b407da80",
+    "eval_sources": {
+     "grid": 141,
+     "bank_header": 141
+    },
+    "n_eval_clips_checked": 141
+   }
+  }
+ },
+ "argv_sha": "215f37eee04a1dd7",
+ "ego_perturb_probe": {
+  "ego_perturb": "off",
+  "pass": true,
+  "skipped": "--ego-perturb-p 0: the perturbation is not applied; the default run is the pre-change run"
+ },
+ "dagger_probe": {
+  "p_declared": 0.1,
+  "n_rows": 64,
+  "n_eligible": 39,
+  "n_selected_at_p1": 39,
+  "keys_read": [
+   "a_s",
+   "a_t",
+   "base",
+   "feats",
+   "frame_ok",
+   "limit",
+   "limit_ok",
+   "nav",
+   "p10f",
+   "pose_now",
+   "pose_s",
+   "pose_t"
+  ],
+  "rows_changed": {
+   "p10f": 39,
+   "base": 39,
+   "kin3": 39,
+   "p10_t": 39,
+   "pose": 39,
+   "pose_t": 20,
+   "pose_s": 33,
+   "nav": 19
+  },
+  "selected_rows_bit_identical_exempt": 0,
+  "base_rows_at_rest_exempt": 0,
+  "rc_max_abs_err": 0.0,
+  "live_swapped": {
+   "pass": true,
+   "terms": {
+    "ckpt": 1.8008657693862915,
+    "goal": 0.1174011379480362,
+    "lat": 0.20011760294437408,
+    "lon": 0.7148594260215759,
+    "cons": 0.23632094264030457,
+    "ade": 7.756094932556152,
+    "fde": 20.29189109802246,
+    "acc": 0.1239589974284172,
+    "pen_SPEED": 2.1646790504455566,
+    "pens_SPEED": 2.0583508014678955,
+    "pen_STOP": 0.41446971893310547,
+    "pens_STOP": 0.0,
+    "pen_TURN": 0.4101628065109253,
+    "pens_TURN": 1.2317863702774048,
+    "pen_LEAD": 0.2563459575176239,
+    "pens_LEAD": 0.014682717621326447,
+    "wm": 206.22024536132812,
+    "total": 36.001708984375
+   },
+   "control_prior_grad_sum": 0.0,
+   "groups_grad": {
+    "adapter": 22500.586443901062,
+    "S": 2754.7434353604913,
+    "T": 2533.2810004875064,
+    "O": 7911.681844629347,
+    "head_s": 2542.602499306202,
+    "head_o": 11665.226222038269,
+    "wm": 15305.119550545991
+   }
+  },
+  "total_logged": 23.88797950744629,
+  "total_swapped": 35.32231903076172,
+  "loss_diff": 11.43433952331543,
+  "grad_diff_all": 7823.3330078125,
+  "grad_diff_by_group": {
+   "adapter": 795.554443359375,
+   "e_ego": 31.703205108642578,
+   "read_s": 1069.656982421875,
+   "read_t": 663.6424560546875,
+   "read_o": 1910.7332763671875,
+   "head_s": 745.3597412109375,
+   "head_o": 2067.013916015625,
+   "wm.": 0.0
+  },
+  "control_repeat_loss_diff": 0.0,
+  "control_repeat_grad_diff": 0.0,
+  "control_p0_same_object": true,
+  "control_p0_loss_diff": 0.0,
+  "control_p0_grad_diff": 0.0,
+  "control_prior_grad_diff": 0.0,
+  "control_wm_grad_diff": 0.0,
+  "loss_diff_replacing_only": {
+   "p10f": 8.151845932006836,
+   "base": 6.847635269165039,
+   "pose_t": -0.00154876708984375,
+   "pose_s": -0.0010166168212890625,
+   "kin3": 0.0,
+   "p10_t": 0.0
+  },
+  "pass": true
+ },
+ "ego_dagger_compose_probe": {
+  "ego_dagger_compose": "off",
+  "pass": true,
+  "overlap": 0,
+  "skipped": "--ego-perturb-with-dagger not named: the two levers are not composed (the default run is the pre-change run)"
+ },
+ "recover_probe": {
+  "recover": "off",
+  "pass": true,
+  "skipped": "--recover-p 0: the perturbation is not applied; the default run is the pre-change run"
+ },
+ "t2bank_probe": {
+  "t2_bank": "off",
+  "pass": true,
+  "skipped": "--t2-bank-p 0: no row is swapped; the default run is the pre-change run"
+ },
+ "launch_intent_probe": {
+  "launch_intent": "off",
+  "pass": true,
+  "launch_n": 0,
+  "launch_eligible": 0,
+  "skipped": "--launch-intent-w not named: the term is not in the loss (the default run is the pre-change run)"
+ },
+ "otband_probe": {
+  "otband": "detach-only",
+  "stok_dim": 0,
+  "detach_upper": true,
+  "purity": {
+   "upper_grad_abs_sum": 0.0,
+   "head_o": 16.54058552812785,
+   "by_term": {
+    "ade": {
+     "upper_grad_abs_sum": 0.0,
+     "head_o": 416.92749509215355
+    },
+    "fde": {
+     "upper_grad_abs_sum": 0.0,
+     "head_o": 2135.0809457302094
+    },
+    "acc": {
+     "upper_grad_abs_sum": 0.0,
+     "head_o": 16.54058552812785
+    }
+   }
+  },
+  "code_edge_max_dknot": 6.339149475097656,
+  "pass": true
+ }
+}

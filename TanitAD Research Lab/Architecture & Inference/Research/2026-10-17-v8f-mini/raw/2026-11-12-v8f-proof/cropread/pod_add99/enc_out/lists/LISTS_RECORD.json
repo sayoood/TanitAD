@@ -1,0 +1,27 @@
+{
+ "schema": "cropread_lists/1",
+ "n_join_clips": 4572,
+ "n_held_out": 438,
+ "n_not_held_out_few_valid_lead": 2455,
+ "n_eligible": 1679,
+ "expect_eligible": 1679,
+ "eligible_matches_expectation": true,
+ "n_eval": 141,
+ "n_eval_unique": 141,
+ "n_train_order_written": 520,
+ "rule": {
+  "held_out": "int(sha256(clip)[:8],16) % 10 == 0",
+  "min_valid_lead_frames": 10,
+  "valid_lead": "lead_valid==1 & finite(lead_gap) & 0<=lead_gap<=60",
+  "order": "ascending sha256 hex of the clip id",
+  "position_base": 1
+ },
+ "overlap_eval_vs_train_join": 0,
+ "overlap_eval_vs_train_eligible": 0,
+ "overlap_eval_vs_train_order_520": 0,
+ "sha256": {
+  "eval141.txt": "e837dc87e3ca98fdf0b68837148300a100beab8f908866b8342ef6609658510d",
+  "train_order.txt": "be00d016f536f9a1c1f241b5827abebfabb82a4b1508e1784d543a118c149269",
+  "train_eligible.txt": "c03445e93a95a13c8889cbfc524025ef652a8394134d31e2c6ab323092ae27dd"
+ }
+}

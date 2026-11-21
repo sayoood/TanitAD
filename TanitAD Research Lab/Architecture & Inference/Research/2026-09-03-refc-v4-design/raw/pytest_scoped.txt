@@ -1,0 +1,62 @@
+# Scoped-suite evidence for the REF-C v4 change — PAIRED, so a clone-environment
+# failure cannot be mistaken for a regression.
+#
+# Scope: every test file under stack/tests that imports refc_v3 / refc /
+# refc_v3_train / echo_gate / goal_provenance (34 files) — i.e. everything the
+# v4 change can reach.
+#
+# READING:
+#   WITH     608 passed / 5 failed / 22 skipped
+#   BASELINE 575 passed / 5 failed / 22 skipped
+#   => +33 passing tests (the new test_refc_v4.py), and the FAILURE SETS ARE
+#      IDENTICAL. The change introduces no failure.
+#
+# The 5 failures are pre-existing CLONE-ENVIRONMENT artefacts, reproduced on the
+# baseline: 4 in test_openloop_suite.py read repo artifacts that live outside
+# stack/ (the criteria registry / banked arm JSON) and are absent from this
+# off-Drive clone; test_refc_select.py's trainer test dies inside
+# torch.backends.cudnn under CUDA_VISIBLE_DEVICES="" ("min() iterable argument is
+# empty"), which is the CPU-only harness, not the code.
+#
+# ⚠️ HONEST NOTE ON ORDERING: the WITH half ran immediately BEFORE a final
+# message-string correction to the X15 raise in refc_v3.py (the "a_long = 0 is
+# the MODE" retraction). tests/test_refc_v4.py + tests/test_refc_v3.py were
+# re-run after that edit: 53 passed. An earlier capture of this file recorded a
+# 6th failure (test_refc_v3_nav_and_uplink::test_CAVEAT_A...) which was a RACE —
+# the suite read refc_v3.py while it was being rewritten. It passes in isolation
+# and does not appear in this clean run. Recorded rather than deleted, because
+# "a suite run concurrent with an edit is not evidence" is the lesson.
+#
+# BASELINE construction: the same clone with `git show HEAD:<path>` restored for
+# stack/tanitad/refs/refc_v3.py, stack/tanitad/refs/refc.py and
+# stack/scripts/refc_v3_train.py, and stack/tanitad/eval/echo_gate.py +
+# stack/tests/test_refc_v4.py removed.
+#
+=== WITH the v4 changes ===
+  C:\Users\Admin\run_refcv4\repo\stack\tests\test_flagship_v4.py:242: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    assert float(cos.min()) > 0.999, float(cos.min())
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_openloop_suite.py::test_criteria_checker_reports_zero_violations
+FAILED tests/test_openloop_suite.py::test_forbidden_estimator_is_never_a_decision_grade_interval
+FAILED tests/test_openloop_suite.py::test_all_four_families_present_and_never_pooled
+FAILED tests/test_openloop_suite.py::test_arm_json_roundtrip_is_the_contract_with_another_stream
+FAILED tests/test_refc_select.py::test_trainer_runs_every_lever_and_reports_the_selection_family
+5 failed, 608 passed, 22 skipped, 1 warning in 199.98s (0:03:19)
+
+=== BASELINE (HEAD versions of the 3 modified files, the 2 new files removed) ===
+  C:\Users\Admin\run_refcv4\base\stack\tests\test_flagship_v4.py:242: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    assert float(cos.min()) > 0.999, float(cos.min())
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_openloop_suite.py::test_criteria_checker_reports_zero_violations
+FAILED tests/test_openloop_suite.py::test_forbidden_estimator_is_never_a_decision_grade_interval
+FAILED tests/test_openloop_suite.py::test_all_four_families_present_and_never_pooled
+FAILED tests/test_openloop_suite.py::test_arm_json_roundtrip_is_the_contract_with_another_stream
+FAILED tests/test_refc_select.py::test_trainer_runs_every_lever_and_reports_the_selection_family
+5 failed, 575 passed, 22 skipped, 1 warning in 174.01s (0:02:54)
+ZZSUITE-DONE-ZZ

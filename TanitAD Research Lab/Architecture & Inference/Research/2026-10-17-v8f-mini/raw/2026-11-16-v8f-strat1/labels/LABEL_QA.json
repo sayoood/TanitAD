@@ -1,0 +1,491 @@
+{
+ "class_counts_steps": {
+  "train": {
+   "country": {
+    "Austria": 25033,
+    "Belgium": 24625,
+    "Bulgaria": 7058,
+    "Croatia": 9189,
+    "Czechia": 15443,
+    "Denmark": 28056,
+    "Estonia": 9482,
+    "Finland": 22103,
+    "France": 27764,
+    "Germany": 28438,
+    "Greece": 11102,
+    "Hungary": 10098,
+    "Italy": 27745,
+    "Latvia": 12513,
+    "Lithuania": 8483,
+    "Luxembourg": 13938,
+    "Netherlands": 21506,
+    "Poland": 20786,
+    "Portugal": 23814,
+    "Romania": 11615,
+    "Slovakia": 7171,
+    "Slovenia": 7170,
+    "Spain": 25737,
+    "Sweden": 27669,
+    "United States": 28804
+   },
+   "weather": {
+    "clear": 391495,
+    "fog": 10362,
+    "rain": 20784,
+    "snow": 32658
+   },
+   "surface": {
+    "dry": 361015,
+    "snow_ice": 35581,
+    "wet": 58733
+   },
+   "visibility": {
+    "good": 293025,
+    "reduced": 162317
+   },
+   "illumination": {
+    "dark": 75849,
+    "day": 259188,
+    "lit_night": 113539,
+    "twilight": 6753
+   },
+   "period_of_day": {
+    "afternoon": 64087,
+    "evening": 95868,
+    "midday": 98096,
+    "morning": 84165,
+    "night": 113126
+   }
+  },
+  "eval": {
+   "country": {
+    "Austria": 909,
+    "Belgium": 808,
+    "Bulgaria": 101,
+    "Croatia": 303,
+    "Czechia": 101,
+    "Denmark": 706,
+    "Estonia": 403,
+    "Finland": 707,
+    "France": 808,
+    "Germany": 908,
+    "Greece": 504,
+    "Hungary": 202,
+    "Italy": 808,
+    "Latvia": 606,
+    "Lithuania": 303,
+    "Luxembourg": 101,
+    "Netherlands": 1109,
+    "Poland": 707,
+    "Portugal": 605,
+    "Romania": 101,
+    "Slovakia": 0,
+    "Slovenia": 0,
+    "Spain": 1010,
+    "Sweden": 1111,
+    "United States": 1310
+   },
+   "weather": {
+    "clear": 12046,
+    "fog": 390,
+    "rain": 755,
+    "snow": 1040
+   },
+   "surface": {
+    "dry": 11175,
+    "snow_ice": 1277,
+    "wet": 1778
+   },
+   "visibility": {
+    "good": 9200,
+    "reduced": 5031
+   },
+   "illumination": {
+    "dark": 2590,
+    "day": 8463,
+    "lit_night": 2938,
+    "twilight": 240
+   },
+   "period_of_day": {
+    "afternoon": 1818,
+    "evening": 3230,
+    "midday": 3329,
+    "morning": 2420,
+    "night": 3434
+   }
+  }
+ },
+ "constant_baseline_eval": {
+  "country": {
+   "eval_majority": "United States",
+   "acc_eval_majority": 0.0920525613098166,
+   "train_majority": "United States",
+   "acc_eval_when_predicting_train_majority": 0.0920525613098166,
+   "n_eval_valid_steps": 14231,
+   "n_classes": 25,
+   "uniform_chance": 0.04
+  },
+  "weather": {
+   "eval_majority": "clear",
+   "acc_eval_majority": 0.8464619492656876,
+   "train_majority": "clear",
+   "acc_eval_when_predicting_train_majority": 0.8464619492656876,
+   "n_eval_valid_steps": 14231,
+   "n_classes": 4,
+   "uniform_chance": 0.25
+  },
+  "surface": {
+   "eval_majority": "dry",
+   "acc_eval_majority": 0.7853127196064652,
+   "train_majority": "dry",
+   "acc_eval_when_predicting_train_majority": 0.7853127196064652,
+   "n_eval_valid_steps": 14230,
+   "n_classes": 3,
+   "uniform_chance": 0.3333333333333333
+  },
+  "visibility": {
+   "eval_majority": "good",
+   "acc_eval_majority": 0.6464760030918417,
+   "train_majority": "good",
+   "acc_eval_when_predicting_train_majority": 0.6464760030918417,
+   "n_eval_valid_steps": 14231,
+   "n_classes": 2,
+   "uniform_chance": 0.5
+  },
+  "illumination": {
+   "eval_majority": "day",
+   "acc_eval_majority": 0.5946876537137236,
+   "train_majority": "day",
+   "acc_eval_when_predicting_train_majority": 0.5946876537137236,
+   "n_eval_valid_steps": 14231,
+   "n_classes": 4,
+   "uniform_chance": 0.25
+  },
+  "period_of_day": {
+   "eval_majority": "night",
+   "acc_eval_majority": 0.241304195067107,
+   "train_majority": "night",
+   "acc_eval_when_predicting_train_majority": 0.241304195067107,
+   "n_eval_valid_steps": 14231,
+   "n_classes": 5,
+   "uniform_chance": 0.2
+  }
+ },
+ "coverage": {
+  "train": {
+   "clips": 4572,
+   "clips_in_release": 4512,
+   "clips_absent": 60,
+   "steps": 461518,
+   "steps_ok": 455342,
+   "steps_clip_absent": 6056,
+   "steps_out_of_tol": 120,
+   "step_coverage_all": 0.9866180734012541,
+   "step_coverage_clips_in_release": 0.9997365312583706,
+   "per_episode_coverage_in_release_pct_quantiles_min_5_50_max": [
+    0.9619047619047619,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "episodes_with_coverage_lt_1_in_release": 41
+  },
+  "eval": {
+   "clips": 141,
+   "clips_in_release": 141,
+   "clips_absent": 0,
+   "steps": 14237,
+   "steps_ok": 14231,
+   "steps_clip_absent": 0,
+   "steps_out_of_tol": 6,
+   "step_coverage_all": 0.9995785628994872,
+   "step_coverage_clips_in_release": 0.9995785628994872,
+   "per_episode_coverage_in_release_pct_quantiles_min_5_50_max": [
+    0.9711538461538461,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "episodes_with_coverage_lt_1_in_release": 2
+  }
+ },
+ "eval_label_change_fraction_under_time_shift_s": {
+  "0.2": {
+   "country": 0.0,
+   "weather": 0.01028368794326241,
+   "surface": 0.006099290780141844,
+   "visibility": 0.0045390070921985815,
+   "illumination": 0.0012056737588652482,
+   "period_of_day": 0.0
+  },
+  "-0.2": {
+   "country": 0.0,
+   "weather": 0.010118754831002741,
+   "surface": 0.005972876115522451,
+   "visibility": 0.004356686107792847,
+   "illumination": 0.0011945752231044902,
+   "period_of_day": 0.0
+  },
+  "0.4": {
+   "country": 0.0,
+   "weather": 0.016117478510028652,
+   "surface": 0.010458452722063038,
+   "visibility": 0.008739255014326647,
+   "illumination": 0.0024355300859598855,
+   "period_of_day": 0.0
+  }
+ },
+ "country_x_platform_class": {
+  "train4572": {
+   "cramers_v": 0.28806528319533437,
+   "cramers_v_bias_corrected": 0.27883350613854063,
+   "n_clips": 4572,
+   "n_countries": 25,
+   "n_platform_classes": 2
+  },
+  "eval141": {
+   "cramers_v": 0.429763416992017,
+   "cramers_v_bias_corrected": 0.16658921264210513,
+   "n_clips": 141,
+   "n_countries": 23,
+   "n_platform_classes": 2
+  },
+  "train+eval": {
+   "cramers_v": 0.2840712221954802,
+   "cramers_v_bias_corrected": 0.27498932501834844,
+   "n_clips": 4713,
+   "n_countries": 25,
+   "n_platform_classes": 2
+  },
+  "platform_class_counts_ours": {
+   "hyperion_8.1": 2721,
+   "hyperion_8": 1992
+  },
+  "platform_class_counts_full_metadata": {
+   "hyperion_8.1": 218588,
+   "hyperion_8": 87563
+  },
+  "crosstab_ours": {
+   "Austria": {
+    "hyperion_8": 117,
+    "hyperion_8.1": 144
+   },
+   "Belgium": {
+    "hyperion_8": 143,
+    "hyperion_8.1": 111
+   },
+   "Bulgaria": {
+    "hyperion_8": 10,
+    "hyperion_8.1": 62
+   },
+   "Croatia": {
+    "hyperion_8": 28,
+    "hyperion_8.1": 67
+   },
+   "Czechia": {
+    "hyperion_8": 83,
+    "hyperion_8.1": 73
+   },
+   "Denmark": {
+    "hyperion_8": 144,
+    "hyperion_8.1": 144
+   },
+   "Estonia": {
+    "hyperion_8": 11,
+    "hyperion_8.1": 89
+   },
+   "Finland": {
+    "hyperion_8": 108,
+    "hyperion_8.1": 119
+   },
+   "France": {
+    "hyperion_8": 144,
+    "hyperion_8.1": 145
+   },
+   "Germany": {
+    "hyperion_8": 144,
+    "hyperion_8.1": 152
+   },
+   "Greece": {
+    "hyperion_8": 14,
+    "hyperion_8.1": 103
+   },
+   "Hungary": {
+    "hyperion_8": 14,
+    "hyperion_8.1": 90
+   },
+   "Italy": {
+    "hyperion_8": 140,
+    "hyperion_8.1": 146
+   },
+   "Latvia": {
+    "hyperion_8": 18,
+    "hyperion_8.1": 113
+   },
+   "Lithuania": {
+    "hyperion_8": 16,
+    "hyperion_8.1": 72
+   },
+   "Luxembourg": {
+    "hyperion_8": 72,
+    "hyperion_8.1": 71
+   },
+   "Netherlands": {
+    "hyperion_8": 82,
+    "hyperion_8.1": 145
+   },
+   "Poland": {
+    "hyperion_8": 108,
+    "hyperion_8.1": 108
+   },
+   "Portugal": {
+    "hyperion_8": 108,
+    "hyperion_8.1": 137
+   },
+   "Romania": {
+    "hyperion_8": 8,
+    "hyperion_8.1": 108
+   },
+   "Slovakia": {
+    "hyperion_8": 18,
+    "hyperion_8.1": 55
+   },
+   "Slovenia": {
+    "hyperion_8": 25,
+    "hyperion_8.1": 46
+   },
+   "Spain": {
+    "hyperion_8": 143,
+    "hyperion_8.1": 124
+   },
+   "Sweden": {
+    "hyperion_8": 144,
+    "hyperion_8.1": 145
+   },
+   "United States": {
+    "hyperion_8": 150,
+    "hyperion_8.1": 152
+   }
+  },
+  "countries_single_platform_class": []
+ },
+ "eval_country_clips": {
+  "United States": 13,
+  "Sweden": 11,
+  "Netherlands": 11,
+  "Spain": 10,
+  "Austria": 9,
+  "Germany": 9,
+  "France": 8,
+  "Italy": 8,
+  "Belgium": 8,
+  "Denmark": 7,
+  "Poland": 7,
+  "Finland": 7,
+  "Latvia": 6,
+  "Portugal": 6,
+  "Greece": 5,
+  "Estonia": 4,
+  "Lithuania": 3,
+  "Croatia": 3,
+  "Hungary": 2,
+  "Czechia": 1,
+  "Luxembourg": 1,
+  "Bulgaria": 1,
+  "Romania": 1
+ },
+ "train_country_clips": {
+  "United States": 289,
+  "Germany": 287,
+  "France": 281,
+  "Denmark": 281,
+  "Italy": 278,
+  "Sweden": 278,
+  "Spain": 257,
+  "Austria": 252,
+  "Belgium": 246,
+  "Portugal": 239,
+  "Finland": 220,
+  "Netherlands": 216,
+  "Poland": 209,
+  "Czechia": 155,
+  "Luxembourg": 142,
+  "Latvia": 125,
+  "Romania": 115,
+  "Greece": 112,
+  "Hungary": 102,
+  "Estonia": 96,
+  "Croatia": 92,
+  "Lithuania": 85,
+  "Slovakia": 73,
+  "Bulgaria": 71,
+  "Slovenia": 71
+ },
+ "countries_only_in_eval": [],
+ "countries_in_train_not_eval": [
+  "Slovakia",
+  "Slovenia"
+ ],
+ "eval_countries_with_train_clips_lt_20": {},
+ "eval_clip_level_mode_counts": {
+  "weather_mode": {
+   "clear": 122,
+   "snow": 9,
+   "rain": 7,
+   "fog": 3
+  },
+  "surface_mode": {
+   "dry": 114,
+   "wet": 15,
+   "snow_ice": 12
+  },
+  "visibility_mode": {
+   "good": 92,
+   "reduced": 49
+  },
+  "illumination_mode": {
+   "day": 84,
+   "lit_night": 30,
+   "dark": 26,
+   "twilight": 1
+  },
+  "period_of_day": {
+   "night": 34,
+   "midday": 33,
+   "evening": 32,
+   "morning": 24,
+   "afternoon": 18
+  }
+ },
+ "train_clip_level_mode_counts": {
+  "weather_mode": {
+   "clear": 3904,
+   "snow": 319,
+   "rain": 197,
+   "fog": 92
+  },
+  "surface_mode": {
+   "dry": 3612,
+   "wet": 543,
+   "snow_ice": 357
+  },
+  "visibility_mode": {
+   "good": 2915,
+   "reduced": 1597
+  },
+  "illumination_mode": {
+   "day": 2564,
+   "lit_night": 1135,
+   "dark": 747,
+   "twilight": 66
+  },
+  "period_of_day": {
+   "night": 1121,
+   "midday": 972,
+   "evening": 950,
+   "morning": 834,
+   "afternoon": 635
+  }
+ },
+ "country_agrees_with_nvidia_metadata": 1.0
+}

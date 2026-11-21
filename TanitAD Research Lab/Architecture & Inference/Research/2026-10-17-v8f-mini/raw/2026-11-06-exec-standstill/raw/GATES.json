@@ -1,0 +1,213 @@
+{
+ "subset": {
+  "n_windows": 123,
+  "class_counts": {
+   "L": 77,
+   "S": 10,
+   "O": 8,
+   "M": 28
+  },
+  "n_launch_from_stop": 61,
+  "n_stopped": 79
+ },
+ "G-ID": {
+  "PASS": true,
+  "same_session_unpatched_vs_exec_default": {
+   "cl": {
+    "all_equal": true,
+    "n_unequal": 0,
+    "n_unequal_launch": 0,
+    "max_abs_dev_m": 0.0
+   },
+   "fl": {
+    "all_equal": true,
+    "n_unequal": 0,
+    "n_unequal_launch": 0,
+    "max_abs_dev_m": 0.0
+   },
+   "identical": true
+  },
+  "same_session_unpatched_vs_exec_eps1e-3": {
+   "cl": {
+    "all_equal": true,
+    "n_unequal": 0,
+    "n_unequal_launch": 0,
+    "max_abs_dev_m": 0.0
+   },
+   "fl": {
+    "all_equal": true,
+    "n_unequal": 0,
+    "n_unequal_launch": 0,
+    "max_abs_dev_m": 0.0
+   },
+   "identical": true
+  },
+  "ticks_fields_equal": {
+   "tau": true,
+   "P": true,
+   "plan": true,
+   "gt": true,
+   "gt_ok": true,
+   "v0": true,
+   "pose": true,
+   "fired": true,
+   "win": true,
+   "ci": true,
+   "t0": true,
+   "tick": true,
+   "j": true,
+   "age_t": true,
+   "age_s": true,
+   "s_ckpt": true,
+   "s_pose": true,
+   "t_goal_prob": true,
+   "t_lat_logits": true,
+   "t_lon_logits": true,
+   "t_cons_pred": true,
+   "t_pose": true,
+   "pose_w0": true,
+   "plan_raw": true,
+   "s_ckpt_now": true,
+   "s_ckpt_w0": true,
+   "clip": true,
+   "split": true,
+   "replan_steps": true,
+   "n_windows": true,
+   "smooth": true
+  },
+  "ol_equal": true,
+  "exec_ch_default_vs_eps1e-3_equal": {
+   "cl_track": true,
+   "cl_ch1": true,
+   "fl_track": true,
+   "fl_ch1": true,
+   "ci": true,
+   "t0": true
+  },
+  "vs_banked_C0_s0_rollout_on_the_subset": {
+   "cl": {
+    "all_equal": false,
+    "n_unequal": 123,
+    "n_unequal_launch": 61,
+    "max_abs_dev_m": 0.022570251439745448
+   },
+   "fl": {
+    "all_equal": false,
+    "n_unequal": 123,
+    "n_unequal_launch": 61,
+    "max_abs_dev_m": 0.004003865110155047
+   },
+   "identical": false,
+   "ol_equal": false
+  },
+  "banked_note": "different session, tool 0721fc01 on 16 threads vs 949c4b7a-derived on 12; reported, not the gate (thread-order float noise is a known property, see recover_read.EXEC_TOL_M)",
+  "RED_eps0.1_vs_base": {
+   "cl": {
+    "all_equal": false,
+    "n_unequal": 69,
+    "n_unequal_launch": 52,
+    "max_abs_dev_m": 19.163636310386753
+   },
+   "fl": {
+    "all_equal": false,
+    "n_unequal": 55,
+    "n_unequal_launch": 44,
+    "max_abs_dev_m": 38.30537432422353
+   },
+   "identical": false,
+   "differs_on_launch_windows_cl_and_fl": true
+  }
+ },
+ "G-MOV": {
+  "PASS": true,
+  "n_moving_model": 44,
+  "n_moving_floor": 44,
+  "n_moving_both": 44,
+  "non_vacuous_ge20": true,
+  "hold_eps0.1_vs_base": {
+   "cl": {
+    "n_moving_windows": 44,
+    "n_equal_on_moving": 44,
+    "n_unequal_on_moving": 0
+   },
+   "fl": {
+    "n_moving_windows": 44,
+    "n_equal_on_moving": 44,
+    "n_unequal_on_moving": 0
+   },
+   "all_equal_on_moving": true
+  },
+  "RED_over_aggressive_hold_eps2.0_vs_base": {
+   "cl": {
+    "n_moving_windows": 44,
+    "n_equal_on_moving": 13,
+    "n_unequal_on_moving": 31
+   },
+   "fl": {
+    "n_moving_windows": 44,
+    "n_equal_on_moving": 15,
+    "n_unequal_on_moving": 29
+   },
+   "all_equal_on_moving": false,
+   "differs_on_moving_windows": true
+  }
+ },
+ "G-PHYS": {
+  "PASS": true,
+  "hold_eps0.1": {
+   "cl": {
+    "n_frames": 7380,
+    "n_below": 3832,
+    "n_windows_below": 79,
+    "n_violations": 0,
+    "n_windows_violating": 0,
+    "n_tie": 0
+   },
+   "fl": {
+    "n_frames": 7380,
+    "n_below": 1368,
+    "n_windows_below": 79,
+    "n_violations": 0,
+    "n_windows_violating": 0,
+    "n_tie": 0
+   }
+  },
+  "non_vacuous": true,
+  "RED_hold_disabled": {
+   "cl": {
+    "n_frames": 7380,
+    "n_below": 1580,
+    "n_windows_below": 79,
+    "n_violations": 1579,
+    "n_windows_violating": 79,
+    "n_tie": 0
+   },
+   "fl": {
+    "n_frames": 7380,
+    "n_below": 1313,
+    "n_windows_below": 79,
+    "n_violations": 1313,
+    "n_windows_violating": 79,
+    "n_tie": 0
+   },
+   "violates": true
+  }
+ },
+ "G-P10": {
+  "PASS": true,
+  "floor_planner_source_sha256_unpatched": "0de701b34950a9d51f7e88fc2a9da0ecdff5678305180990f6b8a265c4493535",
+  "floor_planner_source_sha256_exec": "0de701b34950a9d51f7e88fc2a9da0ecdff5678305180990f6b8a265c4493535",
+  "floor_planner_source_identical": true,
+  "tick0_plan_identical_all_windows": true,
+  "n_windows_tick0_unequal": 0,
+  "n_windows_later_knots_differ_under_hold": 55,
+  "n_stopped_windows_later_knots_differ": 55,
+  "non_vacuous": true,
+  "RED_mutated_floor": {
+   "n_windows_tick0_unequal": 123,
+   "breaks_tick0_identity": true,
+   "mutation": "floor_planner returns the prior output + 1e-3 m (harness monkeypatch, gate_p10_red.py)"
+  }
+ },
+ "ALL_GATES_PASS": true
+}

@@ -1,0 +1,60 @@
+== timing (s/frame)
+  spd0     build 11.2s 73495082f98b: 3.417 (sam3 3.340 cpu 0.073)  4fbd97b6a4b7: 3.601 (sam3 3.522 cpu 0.080)
+  spdA     build 11.2s 73495082f98b: 2.650 (sam3 2.458 cpu 0.188)  4fbd97b6a4b7: 2.832 (sam3 2.484 cpu 0.346)
+  spdF1    build 11.2s 73495082f98b: 1.690 (sam3 1.500 cpu 0.186)  4fbd97b6a4b7: 1.868 (sam3 1.526 cpu 0.342)
+  spdF2    build 11.2s 73495082f98b: 1.286 (sam3 1.097 cpu 0.185)  4fbd97b6a4b7: 1.470 (sam3 1.128 cpu 0.342)
+  spdREG   build 10.9s 73495082f98b: 2.525 (sam3 2.337 cpu 0.185)  4fbd97b6a4b7: 2.709 (sam3 2.365 cpu 0.343)
+  spdF2a   build 12.1s 73495082f98b: 1.189 (sam3 1.181 cpu 0.002)  4fbd97b6a4b7: 1.292 (sam3 1.284 cpu 0.005)
+  spdF3    build 11.0s 73495082f98b: 1.230 (sam3 1.036 cpu 0.189)  4fbd97b6a4b7: 1.434 (sam3 1.085 cpu 0.349)
+  spdF3a   build 11.0s 73495082f98b: 1.056 (sam3 1.048 cpu 0.002)  4fbd97b6a4b7: 1.093 (sam3 1.086 cpu 0.005)
+  spdF1a   build 10.9s 73495082f98b: 1.646 (sam3 1.639 cpu 0.002)  4fbd97b6a4b7: 1.548 (sam3 1.540 cpu 0.004)
+  spdF4a   build 10.9s 73495082f98b: 1.306 (sam3 1.299 cpu 0.002)  4fbd97b6a4b7: 1.342 (sam3 1.334 cpu 0.004)
+  spdF5a   build 10.9s 73495082f98b: 1.177 (sam3 1.169 cpu 0.002)  4fbd97b6a4b7: 1.213 (sam3 1.206 cpu 0.004)
+  spdP3a   build 10.9s 73495082f98b: 1.164 (sam3 1.156 cpu 0.002)  4fbd97b6a4b7: 1.200 (sam3 1.193 cpu 0.004)
+  spdP5a   build 10.9s 73495082f98b: 1.062 (sam3 1.054 cpu 0.002)  4fbd97b6a4b7: 1.088 (sam3 1.081 cpu 0.004)
+  spdP2a   build 10.9s 73495082f98b: 1.235 (sam3 1.226 cpu 0.002)  4fbd97b6a4b7: 1.248 (sam3 1.241 cpu 0.004)
+== controls
+  C-REPRO 73495082f98b: raw 96/96 bit-identical, map identical True (differ 0) -> PASS
+  C-REPRO 4fbd97b6a4b7: raw 96/96 bit-identical, map identical True (differ 0) -> PASS
+  C-REG spdREG must fail: PASS
+== arms vs spd0
+  spdA: EXACT
+    73495082f98b: raw bit-identical 96/96 map identical True differ 0 | N1 1.0 ok | N2 {0: 1.0, 1: 1.0, 2: 1.0, 3: 1.0, 5: 1.0, 7: 1.0} ok | N3 {'fragments_pe': 0.0, 'crosswalk_co': 0.0, 'curb_recall_': 0.0, 'edge_precisi': 0.0} ok | N4 1.0 ok | lidar {'MAP_A': 0.0, 'MAP_A2': 0.0, 'MAP_C': 0.0, 'MAP_E': 0.0, 'MAP_B': 0.0}
+    4fbd97b6a4b7: raw bit-identical 96/96 map identical True differ 0 | N1 1.0 ok | N2 {0: 1.0, 1: 1.0, 2: 1.0, 3: 1.0, 5: 1.0, 7: 1.0} ok | N3 {'fragments_pe': 0.0, 'crosswalk_co': 0.0, 'curb_recall_': 0.0, 'edge_precisi': 0.0} ok | N4 1.0 ok | lidar {'MAP_A': 0.0, 'MAP_A2': 0.0, 'MAP_C': 0.0, 'MAP_E': 0.0, 'MAP_B': 0.0}
+  spdF1: NUMERICAL-PASS
+    73495082f98b: raw bit-identical 3/96 map identical False differ 88 | N1 0.99986 ok | N2 {0: 1.0, 1: 0.9998, 2: 1.0, 3: 1.0, 5: 0.9837, 7: 0.9997} ok | N3 {'fragments_pe': 0.39, 'crosswalk_co': 0.0, 'curb_recall_': 0.0, 'edge_precisi': -0.003} ok | N4 0.99975 ok | lidar {'MAP_A': 0.0, 'MAP_A2': 0.0, 'MAP_C': 0.0, 'MAP_E': -0.0017, 'MAP_B': 0.0}
+    4fbd97b6a4b7: raw bit-identical 1/96 map identical False differ 62 | N1 0.9999 ok | N2 {0: 0.9999, 1: 0.9998, 2: 1.0, 3: 0.9998, 5: 0.9875, 7: 0.9999} ok | N3 {'fragments_pe': 0.0, 'crosswalk_co': 0.0, 'curb_recall_': 0.0, 'edge_precisi': 0.0} ok | N4 0.99987 ok | lidar {'MAP_A': 0.0, 'MAP_A2': 0.0, 'MAP_C': 0.0, 'MAP_E': -0.0003, 'MAP_B': 0.0}
+  spdF2: FAIL
+    73495082f98b: raw bit-identical 0/96 map identical False differ 412 | N1 0.99933 ok | N2 {0: 0.9997, 1: 0.9985, 2: 0.9978, 3: 0.9978, 5: 0.9432, 7: 0.9986} FAIL | N3 {'fragments_pe': -0.19, 'crosswalk_co': -0.001, 'curb_recall_': 0.0, 'edge_precisi': 0.005} ok | N4 0.99958 ok | lidar {'MAP_A': -0.0013, 'MAP_A2': -0.002, 'MAP_C': 0.0, 'MAP_E': 0.0011, 'MAP_B': 0.0}
+    4fbd97b6a4b7: raw bit-identical 0/96 map identical False differ 658 | N1 0.99893 ok | N2 {0: 0.998, 1: 0.9989, 2: 0.9969, 3: 0.9948, 5: 0.9313, 7: 0.9981} FAIL | N3 {'fragments_pe': 0.0, 'crosswalk_co': -0.001, 'curb_recall_': 0.004, 'edge_precisi': 0.004} ok | N4 0.99938 ok | lidar {'MAP_A': 0.0, 'MAP_A2': 0.0, 'MAP_C': 0.0, 'MAP_E': 0.0019, 'MAP_B': 0.0}
+  spdREG: FAIL
+    73495082f98b: raw bit-identical 0/96 map identical False differ 6746 | N1 0.98907 FAIL | N2 {0: 0.9916, 1: 0.9731, 2: 0.5511, 3: 0.9666, 5: 0.4596, 7: 0.9848} FAIL | N3 {'fragments_pe': -2.88, 'crosswalk_co': -0.003, 'curb_recall_': 0.038, 'edge_precisi': 0.047} FAIL | N4 0.96588 FAIL | lidar {'MAP_A': -0.0047, 'MAP_A2': -0.0079, 'MAP_C': 0.0, 'MAP_E': 0.003, 'MAP_B': 0.0}
+    4fbd97b6a4b7: raw bit-identical 0/96 map identical False differ 9416 | N1 0.98473 FAIL | N2 {0: 0.9798, 1: 0.9751, 2: 0.5405, 3: 0.9591, 5: 0.3158, 7: 0.9819} FAIL | N3 {'fragments_pe': -14.41, 'crosswalk_co': -0.004, 'curb_recall_': 0.004, 'edge_precisi': -0.026} FAIL | N4 0.96569 FAIL | lidar {'MAP_A': -0.0013, 'MAP_A2': -0.0013, 'MAP_C': 0.0, 'MAP_E': 0.0285, 'MAP_B': 0.0}
+  spdF2a: FAIL  |  EXACT vs spdF2
+    73495082f98b: raw bit-identical 0/96 map identical False differ 412 | N1 0.99933 ok | N2 {0: 0.9997, 1: 0.9985, 2: 0.9978, 3: 0.9978, 5: 0.9432, 7: 0.9986} FAIL | N3 {'fragments_pe': -0.19, 'crosswalk_co': -0.001, 'curb_recall_': 0.0, 'edge_precisi': 0.005} ok | N4 0.99958 ok | lidar None
+    4fbd97b6a4b7: raw bit-identical 0/96 map identical False differ 658 | N1 0.99893 ok | N2 {0: 0.998, 1: 0.9989, 2: 0.9969, 3: 0.9948, 5: 0.9313, 7: 0.9981} FAIL | N3 {'fragments_pe': 0.0, 'crosswalk_co': -0.001, 'curb_recall_': 0.004, 'edge_precisi': 0.004} ok | N4 0.99938 ok | lidar None
+  spdF3: FAIL
+    73495082f98b: raw bit-identical 0/96 map identical False differ 512 | N1 0.99917 ok | N2 {0: 0.9997, 1: 0.9981, 2: 0.9972, 3: 0.9968, 5: 0.926, 7: 0.9983} FAIL | N3 {'fragments_pe': -0.38, 'crosswalk_co': 0.0, 'curb_recall_': 0.0, 'edge_precisi': 0.005} ok | N4 0.99949 ok | lidar {'MAP_A': -0.0002, 'MAP_A2': -0.0005, 'MAP_C': 0.0, 'MAP_E': 0.0009, 'MAP_B': 0.0}
+    4fbd97b6a4b7: raw bit-identical 0/96 map identical False differ 706 | N1 0.99885 ok | N2 {0: 0.9978, 1: 0.9987, 2: 0.9871, 3: 0.9953, 5: 0.9313, 7: 0.998} FAIL | N3 {'fragments_pe': -0.77, 'crosswalk_co': -0.002, 'curb_recall_': 0.003, 'edge_precisi': 0.004} ok | N4 0.99935 ok | lidar {'MAP_A': 0.0, 'MAP_A2': 0.0, 'MAP_C': 0.0, 'MAP_E': 0.0016, 'MAP_B': 0.0}
+  spdF3a: FAIL  |  EXACT vs spdF3
+    73495082f98b: raw bit-identical 0/96 map identical False differ 512 | N1 0.99917 ok | N2 {0: 0.9997, 1: 0.9981, 2: 0.9972, 3: 0.9968, 5: 0.926, 7: 0.9983} FAIL | N3 {'fragments_pe': -0.38, 'crosswalk_co': 0.0, 'curb_recall_': 0.0, 'edge_precisi': 0.005} ok | N4 0.99949 ok | lidar None
+    4fbd97b6a4b7: raw bit-identical 0/96 map identical False differ 706 | N1 0.99885 ok | N2 {0: 0.9978, 1: 0.9987, 2: 0.9871, 3: 0.9953, 5: 0.9313, 7: 0.998} FAIL | N3 {'fragments_pe': -0.77, 'crosswalk_co': -0.002, 'curb_recall_': 0.003, 'edge_precisi': 0.004} ok | N4 0.99935 ok | lidar None
+  spdF1a: NUMERICAL-PASS  |  EXACT vs spdF1
+    73495082f98b: raw bit-identical 3/96 map identical False differ 88 | N1 0.99986 ok | N2 {0: 1.0, 1: 0.9998, 2: 1.0, 3: 1.0, 5: 0.9837, 7: 0.9997} ok | N3 {'fragments_pe': 0.39, 'crosswalk_co': 0.0, 'curb_recall_': 0.0, 'edge_precisi': -0.003} ok | N4 0.99975 ok | lidar None
+    4fbd97b6a4b7: raw bit-identical 1/96 map identical False differ 62 | N1 0.9999 ok | N2 {0: 0.9999, 1: 0.9998, 2: 1.0, 3: 0.9998, 5: 0.9875, 7: 0.9999} ok | N3 {'fragments_pe': 0.0, 'crosswalk_co': 0.0, 'curb_recall_': 0.0, 'edge_precisi': 0.0} ok | N4 0.99987 ok | lidar None
+  spdF4a: NUMERICAL-PASS
+    73495082f98b: raw bit-identical 0/96 map identical False differ 87 | N1 0.99986 ok | N2 {0: 0.9999, 1: 0.9998, 2: 0.9989, 3: 0.9995, 5: 0.989, 7: 0.9997} ok | N3 {'fragments_pe': 0.0, 'crosswalk_co': -0.001, 'curb_recall_': 0.0, 'edge_precisi': -0.002} ok | N4 0.99986 ok | lidar {'MAP_A': 0.0, 'MAP_A2': 0.0, 'MAP_C': 0.0, 'MAP_E': -0.001, 'MAP_B': 0.0}
+    4fbd97b6a4b7: raw bit-identical 0/96 map identical False differ 204 | N1 0.99967 ok | N2 {0: 0.9992, 1: 0.9994, 2: 0.9987, 3: 0.9994, 5: 0.9814, 7: 0.9996} ok | N3 {'fragments_pe': 0.0, 'crosswalk_co': 0.0, 'curb_recall_': 0.0, 'edge_precisi': 0.0} ok | N4 0.99978 ok | lidar {'MAP_A': 0.0001, 'MAP_A2': 0.0001, 'MAP_C': 0.0, 'MAP_E': 0.0, 'MAP_B': 0.0}
+  spdF5a: NUMERICAL-PASS
+    73495082f98b: raw bit-identical 0/96 map identical False differ 307 | N1 0.9995 ok | N2 {0: 0.9999, 1: 0.9989, 2: 0.9978, 3: 0.9981, 5: 0.9534, 7: 0.9989} ok | N3 {'fragments_pe': -0.19, 'crosswalk_co': 0.001, 'curb_recall_': 0.0, 'edge_precisi': 0.001} ok | N4 0.99917 ok | lidar {'MAP_A': 0.0, 'MAP_A2': 0.0, 'MAP_C': 0.0, 'MAP_E': -0.0001, 'MAP_B': 0.0}
+    4fbd97b6a4b7: raw bit-identical 0/96 map identical False differ 458 | N1 0.99926 ok | N2 {0: 0.9988, 1: 0.9986, 2: 0.9849, 3: 0.9976, 5: 0.9548, 7: 0.999} ok | N3 {'fragments_pe': -0.58, 'crosswalk_co': -0.002, 'curb_recall_': 0.0, 'edge_precisi': 0.004} ok | N4 0.99958 ok | lidar {'MAP_A': 0.0001, 'MAP_A2': 0.0001, 'MAP_C': 0.0, 'MAP_E': 0.0018, 'MAP_B': 0.0}
+  spdP3a: FAIL
+    73495082f98b: raw bit-identical 0/96 map identical False differ 3563 | N1 0.99423 ok | N2 {0: 0.9976, 1: 0.9816, 2: 0.9749, 3: 0.9622, 5: 0.6805, 7: 0.9896} FAIL | N3 {'fragments_pe': -4.03, 'crosswalk_co': 0.016, 'curb_recall_': 0.013, 'edge_precisi': 0.025} FAIL | N4 0.99345 ok | lidar None
+    4fbd97b6a4b7: raw bit-identical 0/96 map identical False differ 1965 | N1 0.99681 ok | N2 {0: 0.9954, 1: 0.9932, 2: 0.9538, 3: 0.9795, 5: 0.8397, 7: 0.9964} FAIL | N3 {'fragments_pe': -1.73, 'crosswalk_co': 0.001, 'curb_recall_': 0.003, 'edge_precisi': -0.004} ok | N4 0.99784 ok | lidar None
+  spdP5a: FAIL
+    73495082f98b: raw bit-identical 0/96 map identical False differ 4745 | N1 0.99231 ok | N2 {0: 0.9976, 1: 0.9787, 2: 0.8582, 3: 0.7759, 5: 0.6793, 7: 0.9896} FAIL | N3 {'fragments_pe': -2.88, 'crosswalk_co': 0.098, 'curb_recall_': 0.013, 'edge_precisi': 0.025} FAIL | N4 0.99226 ok | lidar None
+    4fbd97b6a4b7: raw bit-identical 0/96 map identical False differ 2172 | N1 0.99648 ok | N2 {0: 0.9954, 1: 0.9924, 2: 0.9203, 3: 0.975, 5: 0.8275, 7: 0.9963} FAIL | N3 {'fragments_pe': -1.73, 'crosswalk_co': 0.001, 'curb_recall_': 0.002, 'edge_precisi': -0.003} ok | N4 0.99646 ok | lidar None
+  spdP2a: NUMERICAL-PASS
+    73495082f98b: raw bit-identical 0/96 map identical False differ 101 | N1 0.99984 ok | N2 {0: 0.9999, 1: 0.9998, 2: 0.9989, 3: 0.9993, 5: 0.9861, 7: 0.9996} ok | N3 {'fragments_pe': -0.19, 'crosswalk_co': -0.001, 'curb_recall_': 0.0, 'edge_precisi': -0.002} ok | N4 0.99984 ok | lidar None
+    4fbd97b6a4b7: raw bit-identical 0/96 map identical False differ 354 | N1 0.99943 ok | N2 {0: 0.9991, 1: 0.999, 2: 0.9991, 3: 0.9971, 5: 0.9542, 7: 0.9994} ok | N3 {'fragments_pe': -0.77, 'crosswalk_co': 0.001, 'curb_recall_': 0.001, 'edge_precisi': -0.001} ok | N4 0.9997 ok | lidar None
+ZZSPDEVAL-DONEZZ

@@ -1,0 +1,742 @@
+diff -ruN '--exclude=__pycache__' '--exclude=*.pyc' base/stack/scripts/v8f_mini_train.py tree/stack/scripts/v8f_mini_train.py
+--- base/stack/scripts/v8f_mini_train.py	2026-11-08 15:52:23.000000000 +0100
++++ tree/stack/scripts/v8f_mini_train.py	2026-11-11 13:17:52.180331000 +0100
+@@ -118,6 +118,9 @@
+     # PREREG_V8F_MRATE: `lever:wm_k` = equals built_levers().get("wm_k", 1) (the BUILT modules' window / dilation / causal pad, WMAux.built_k); `lever:wm_only` = the record the WM-only loader read back (bad_wm_only: non-WM tensors bit-equal to the checkpoint,
+     # NO WM tensor loaded, the WM re-initialised under --seed, trainable == the WM's parameters exactly, every other lever at its default) -> wm_only_live_check (G-LIVE) + planner_identity_probe -> `model.wm_only_loss(b)` in the loop.
+     "wm_k": "lever:wm_k", "wm_only": "lever:wm_only",
++    # PREREG_V8F_SLOWWM: `lever:wm_basis` = equals the mode WMAux.built_basis() MEASURES on the BUILT module (the mean path and the live-token path refused, the basis path accepted and equal to the proj tail, proj takes 256 inputs), the config, the BUILT dataset's record
++    # (data_info["wm_windows"]["basis"], the kind / basis sha / dim of its manifest and the first real item's shape) AND the cache manifest on disk (kind, 256, float32, the basis file's sha) -> bad_wm_basis. Default adapter: no key, no batch key.
++    "wm_basis": "lever:wm_basis",
+     # PREREG_V8F_LFS: `lever:wm_strides` = equals built_levers().get("wm_strides", [2, 2]) AND the BUILT modules (WMAux.built_strides: the LevelConfig strides the loss reads, the macro encoders' stride and the stride their parameter SHAPES carry) -> bad_wm_strides
+     # (the gate also refuses a stride that leaves a level fewer than 2 transitions: the arm is NOT RUN, with the count) -> `selfcheck.json levers.wm_strides_readback` (written when the argv NAMES the flag).
+     "wm_strides": "lever:wm_strides",
+@@ -312,6 +315,9 @@
+     ap.add_argument("--wm-k", dest="wm_k", type=int, default=1,
+                     help="PREREG_V8F_MRATE: how many past states each world-model level reads, spaced at that level's own step. 1 (default) = W0 = every earlier arm, bit for bit (no module and no state-dict key is added). "
+                          "K > 1 (W1: 3): L1 reads the adapter tokens of frames t, t-1, .., t-K+1; L2 / L3 read K states of the level below, 0.4 s / 0.8 s apart. Needs --wm b")
++    ap.add_argument("--wm-basis", dest="wm_basis", choices=("adapter", "slow", "pca"), default="adapter",
++                    help="PREREG_V8F_SLOWWM: what the world model's z1 reads of the frozen DINOv3 features. adapter (default) = the M2b adapter token mean, every earlier arm bit for bit (no state-dict key). slow / pca = the 256-d whitened closed-form basis of the "
++                         "token mean nm (SLOW: temporal CCA at lag 1.0 s; PCA-B: PCA), then proj. Needs --wm-only --wm-windows wmonly and --wm-zcache = a BASIS cache (slow_basis.py cache; BASIS_MANIFEST.json of this kind); refused otherwise")
+     ap.add_argument("--wm-only", dest="wm_only", action="store_true", default=False,
+                     help="PREREG_V8F_MRATE: WM-only training. Needs --init-ckpt (a plain M2b s{k}): its adapter, readers and planner load strictly and bit-equal and are FROZEN; its world-model parameters are NOT loaded -- the WM is "
+                          "re-initialised under --seed (hmax is not compared: M2b trained at 16, this arm at 28); only the WM loss terms are trained. Every other lever must be at its default (a lever that is declared and does nothing is refused). Default off")
+@@ -409,6 +415,7 @@
+                            w_cons=a.w_cons, w_traj=a.w_traj, w_pen=a.w_pen, w_pen_self=a.w_pen_self, w_wm=a.w_wm, wm_k=a.wm_k,
+                            wm_rollout_k=declared_wm_ladder(a)["wm_rollout_k"], wm_rollout_stride=declared_wm_ladder(a)["wm_rollout_stride"],       # PREREG_V8F_LADDER: the lines that apply the ladder levers (a mutation deletes them)
+                            wm_rollout_w=declared_wm_ladder(a)["wm_rollout_w"], wm_ctx=declared_wm_ladder(a)["wm_ctx"],
++                           wm_basis=a.wm_basis,                                                           # PREREG_V8F_SLOWWM: the ONE line that applies --wm-basis (a mutation deletes it)
+                            detach_upper=a.detach_upper, kin_mode=a.kin_mode, cons_absent=lv["cons_absent"], code_mix=a.code_mix, o_interface=a.o_interface, w_acc=a.w_acc, launch_intent_w=a.launch_intent_w,
+                            level_head=a.level_head, w_level=a.w_level,
+                            lead_head=a.lead_head, w_lead=a.w_lead, aux_cond=a.aux_cond)
+@@ -1008,6 +1015,78 @@
+     return bad
+ 
+ 
++def basis_sha256_of_file(path: str) -> str:
++    """PREREG_V8F_SLOWWM: the basis matrices' sha256 = ``slow_basis.py basis_sha256``: sha256 over name + shape + dtype + bytes of the arrays ``kind``, ``mean``, ``proj`` (sorted), read from the ``.npz`` WITHOUT pickle."""
++    h = hashlib.sha256()
++    with np.load(path, allow_pickle=False) as z:
++        for k in sorted(("kind", "mean", "proj")):
++            t = np.ascontiguousarray(z[k])
++            h.update(k.encode() + str(tuple(t.shape)).encode() + str(t.dtype).encode() + t.tobytes())
++    return h.hexdigest()
++
++
++def basis_cache_problems(a) -> list:
++    """PREREG_V8F_SLOWWM: why ``--wm-basis`` cannot run (empty = fine), from the arguments and the cache manifest on disk (no model needed): the windows kind, a cache directory with a ``BASIS_MANIFEST.json`` of THIS kind (256-d float32),
++    and the basis file named by the manifest (when present beside the cache) hashing to the manifest's sha. An adapter run refuses a basis cache (a lever that is declared and does nothing)."""
++    bm = os.path.join(a.wm_zcache, WW.BASIS_MANIFEST) if a.wm_zcache else ""
++    if a.wm_basis == "adapter":
++        return [f"--wm-basis adapter with a BASIS cache in --wm-zcache ({bm}): the arm would read the wrong cache"] if bm and os.path.exists(bm) else []
++    bad = []
++    if not a.wm_only or a.wm_windows != "wmonly":
++        bad.append(f"--wm-basis {a.wm_basis} needs --wm-only --wm-windows wmonly (the only path that reads the cache): a lever that is declared and builds nothing")
++    if not a.wm_zcache:
++        bad.append(f"--wm-basis {a.wm_basis} needs --wm-zcache = a BASIS cache directory (slow_basis.py cache): none given")
++        return bad
++    try:
++        man = WW.read_basis_manifest(a.wm_zcache, a.wm_basis)
++    except ValueError as e:
++        return bad + [f"--wm-basis {a.wm_basis}: {e}"]
++    bf = man.get("basis_file")
++    if bf:
++        bp = os.path.join(a.wm_zcache, bf)
++        if os.path.exists(bp):
++            got = basis_sha256_of_file(bp)
++            if got != man["basis_sha256"]:
++                bad.append(f"--wm-basis {a.wm_basis}: {bp} hashes to {got[:12]}, the manifest says {man['basis_sha256'][:12]}")
++    return bad
++
++
++def bad_wm_basis(a, cfg, model, data_info) -> list:
++    """G-DVB for ``--wm-basis`` (PREREG_V8F_SLOWWM). Empty = pass. Read back from what was BUILT: the module's behaviour (:meth:`WMAux.built_basis`), the config, the BUILT dataset's record and the cache manifest on disk."""
++    bad = []
++    want = a.wm_basis
++    if model.wm is None:
++        return [f"lever wm_basis: {want} declared but no world model was built (--wm off)"] if want != "adapter" else []
++    bb = model.wm.built_basis()
++    if bb["mode"] != want:
++        bad.append(f"lever wm_basis: declared {want} but the built module says {bb['mode']!r}")
++    if model.cfg.wm_basis != want:
++        bad.append(f"lever wm_basis: declared {want} but the built config says {model.cfg.wm_basis}")
++    rec = data_info.get("wm_windows") or {}
++    if want == "adapter":
++        if bb["basis_path_refused"] is not True or bb["mean_path_refused"] or bb["token_path_refused"]:
++            bad.append(f"lever wm_basis: adapter declared but the built module reads {bb}")
++        if rec.get("basis", "adapter") != "adapter":
++            bad.append(f"lever wm_basis: adapter declared but the built dataset serves {rec.get('basis')!r}")
++        return bad + basis_cache_problems(a)
++    if bb["in_dim"] != 256 or bb["basis_path_refused"] or not bb["mean_path_refused"] or not bb["token_path_refused"] or bb["basis_path_is_proj_tail"] is not True:
++        bad.append(f"lever wm_basis: the built module is {bb}: the 256-d basis path (proj tail) accepted, the token-mean and live-token paths refused were declared")
++    if rec.get("basis") != want:
++        bad.append(f"lever wm_basis: {want} declared but the built dataset serves {rec.get('basis')!r}")
++    if rec.get("basis_manifest_kind") != want:
++        bad.append(f"lever wm_basis: {want} declared but the built dataset's manifest kind is {rec.get('basis_manifest_kind')!r}")
++    if rec.get("zbasis_shape") != [cfg.hmax, 256]:
++        bad.append(f"lever wm_basis: the built dataset's first item has basis shape {rec.get('zbasis_shape')}, expected {[cfg.hmax, 256]}")
++    return bad + basis_cache_problems(a)
++
++
++def wm_basis_readback(a, cfg, model, data_info) -> dict:
++    """PREREG_V8F_SLOWWM: the record ``selfcheck.json`` carries (``levers.wm_basis_readback``) when the argv NAMES the flag: declared vs the BUILT measurements, the kind and the basis sha the BUILT dataset read from the manifest, dim 256, the cache problems."""
++    rec = data_info.get("wm_windows") or {}
++    return {"declared": a.wm_basis, "built": None if model.wm is None else model.wm.built_basis(), "config": cfg.wm_basis, "dataset_basis": rec.get("basis"), "kind": rec.get("basis_manifest_kind"),
++            "basis_sha256": rec.get("basis_sha256"), "dim": rec.get("basis_dim"), "dataset_zbasis_shape": rec.get("zbasis_shape"), "zcache": a.wm_zcache, "cache_problems": basis_cache_problems(a)}
++
++
+ def wm_ladder_readback(a, cfg, model, data_info) -> dict:
+     """PREREG_V8F_LADDER: the record ``selfcheck.json`` carries (``levers.wm_ladder_readback``) when the argv NAMES a ladder flag: declared vs the BUILT measurements."""
+     decl = declared_wm_ladder(a)
+@@ -1073,9 +1152,9 @@
+             yield from _tensors_of(o[k], f"{prefix}/{k}")
+ 
+ 
+-def planner_identity_probe(model, batch, cfg, steps: int = 3, lr: float = 1e-3) -> dict:
++def planner_identity_probe(model, batch, cfg, steps: int = 3, lr: float = 1e-3, wm_batch=None) -> dict:
+     """PREREG_V8F_MRATE control 1 (planner identity), the in-trainer form: ``forward_infer`` on a fixed batch (eval, CPU, a COPY) is compared tensor by tensor with ``torch.equal`` before and after ``steps`` WM-only optimiser steps. The WM must
+-    have MOVED (the control: the steps did something) and every planner output must be bit-equal."""
++    have MOVED (the control: the steps did something) and every planner output must be bit-equal. ``wm_batch`` (PREREG_V8F_SLOWWM): the batch the WM-only steps read when it is not ``batch`` (a basis model's loss reads the cached ``zbasis``, which a labelled feature batch does not carry); None = ``batch``."""
+     m = copy.deepcopy(model)
+     m.eval()
+     with torch.no_grad():
+@@ -1086,7 +1165,7 @@
+     for s in range(steps):
+         opt.zero_grad(set_to_none=True)
+         torch.manual_seed(s)
+-        m.wm_only_loss(batch)["terms"]["total"].backward()
++        m.wm_only_loss(batch if wm_batch is None else wm_batch)["terms"]["total"].backward()
+         opt.step()
+     m.eval()
+     with torch.no_grad():
+@@ -1418,6 +1497,7 @@
+     bad += bad_recover(a, rec, data_info)                                                        # PREREG_RECOVER_FT: the eight --recover-* flags read back from the BUILT perturber (and the LOADED bank's sha256)
+     bad += bad_ego_perturb(a, ego) + bad_init_ckpt(a, data_info) + bad_schedule(a, sched)          # O-RECOVER (PREREG_V8F_HACC_MC section 7); bad_schedule: --warmup read back from the built schedule
+     bad += bad_level(a, model, data_info)                                                        # PREREG_V8F_LEVEL: --level-head / --w-level read back from the BUILT model
++    bad += bad_wm_basis(a, cfg, model, data_info)                                                # PREREG_V8F_SLOWWM: --wm-basis read back from the BUILT module, the BUILT dataset and the cache manifest
+     bad += bad_wm_only(a, cfg, model, data_info)                                                 # PREREG_V8F_MRATE: --wm-k read back from the BUILT WM modules, --wm-only from the loader's record and the frozen set
+     bad += bad_wm_ladder(a, cfg, model, data_info)                                               # PREREG_V8F_LADDER: the seven ladder flags read back from the BUILT loss / predictor shapes / dataset
+     bad += bad_wm_strides(a, cfg, model)                                                         # PREREG_V8F_LFS: --wm-strides read back from the BUILT WM modules (and the >= 2 transitions per level rule)
+@@ -3002,6 +3082,9 @@
+ def main(argv=None):
+     argv = list(sys.argv[1:] if argv is None else argv)
+     a = build_parser().parse_args(argv)
++    _bp = basis_cache_problems(a)                                    # PREREG_V8F_SLOWWM: refuse before anything is built (the BUILT-model half runs in G-DVB)
++    if _bp:
++        raise SystemExit("ZZDVB-REFUSEDZZ " + "; ".join(_bp))
+     if a.p10 is None:
+         a.p10 = os.path.join(PKG, "raw", "p10_yaw" if a.kin_mode == "yaw" else "p10", "p10_prior.pt")
+     if a.threads:
+@@ -3029,7 +3112,7 @@
+         ds = D.V8FMiniFrameWindows(store, J, wins, hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s,
+                                    window_start=cfg.window_start)
+     elif a.wm_windows == "wmonly":                                   # PREREG_V8F_LADDER: the world-model-only dataset (pooled path = the token mean; off = the cached tokens)
+-        ds = WW.V8FMiniWMWindows(store, J, wins, F=cfg.hmax, pooled=(a.wm_pooled == "on"), lru=info["lru"], zcache=a.wm_zcache)
++        ds = WW.V8FMiniWMWindows(store, J, wins, F=cfg.hmax, pooled=(a.wm_pooled == "on"), lru=info["lru"], zcache=a.wm_zcache, basis=a.wm_basis)
+         info["wm_windows"]["zcache"] = ds.zcache
+         info["wm_windows"]["zcache_missing"] = len(ds.zcache_missing(clips)) if ds.zcache else 0
+         if ds.zcache and not info["wm_windows"]["zcache_missing"]:    # windows holding a frame the cache marks not ok are dropped here, the same list for every arm
+@@ -3041,6 +3124,11 @@
+         if ds.zcache and not a.selfcheck_only:                        # the action arrays go to RAM at start-up, so no clip file is read during training
+             info["wm_windows"]["prewarm_clips"] = ds.prewarm()
+         info["wm_windows"]["pooled"] = ds.pooled                     # read back from the BUILT dataset (bad_wm_ladder compares it)
++        info["wm_windows"]["basis"] = ds.basis                       # PREREG_V8F_SLOWWM: read back from the BUILT dataset (bad_wm_basis compares it)
++        if ds.basis != "adapter":
++            info["wm_windows"].update({"basis_manifest_kind": ds.basis_manifest["kind"], "basis_sha256": ds.basis_manifest["basis_sha256"], "basis_dim": ds.basis_manifest["dim"]})
++            if ds.windows and not info["wm_windows"]["zcache_missing"]:
++                info["wm_windows"]["zbasis_shape"] = list(ds.item(*ds.windows[0])["zbasis"].shape)       # the first REAL item's shape
+         info["wm_windows"]["F"] = ds.F
+     else:
+         ds = D.V8FMiniWindows(store, J, wins, hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s,
+@@ -3105,7 +3193,7 @@
+             probe["lead_y"], probe["lead_has"], probe["lead_near"] = lead_stage(probe, LL)
+         if a.wm_only:                                    # PREREG_V8F_MRATE: G-LIVE of the WM-only mode + the planner identity (the other probes need gradients on the frozen readers and are not run)
+             live = wm_only_live_check(model.cpu(), probe if probe_wm is None else probe_wm, cfg)
+-            pid = planner_identity_probe(model.cpu(), probe, cfg)
++            pid = planner_identity_probe(model.cpu(), probe, cfg, wm_batch=probe_wm if a.wm_basis != "adapter" else None)      # PREREG_V8F_SLOWWM: a basis model's WM steps read the cached zbasis batch
+         else:
+             live = live_check(model.cpu(), probe, cfg)
+     else:
+@@ -3192,6 +3280,8 @@
+                                "mask_from": "the LOGGED kin3[:, 0] and the GT future, taken before any ego stage"}   # PREREG_V8F_LAUNCH_INTENT: what was BUILT (the definition the mask uses) ...
+     levers["launch_n"], levers["launch_eligible"] = lip["launch_n"], lip["launch_eligible"]          # ... and the probe batch's natural launch / GT-valid row counts (0 / 0 when off; the run totals are summary.json's launch_n / launch_eligible, present when the lever is on)
+     levers["init_ckpt"] = info.get("init_ckpt")
++    if a.wm_basis != build_parser().get_default("wm_basis"):          # PREREG_V8F_SLOWWM: lever-NAMED launches only
++        levers["wm_basis_readback"] = wm_basis_readback(a, cfg, model, info)
+     if a.wm_strides is not None:                                         # PREREG_V8F_LFS: lever-NAMED launches only (a flag-off selfcheck.json keeps its key set): declared vs the BUILT strides and the transitions per level
+         levers["wm_strides_readback"] = wm_strides_readback(a, cfg, model)
+     if wm_ladder_named(a):                                              # PREREG_V8F_LADDER: lever-NAMED launches only (a flag-off selfcheck.json keeps its key set): declared vs the BUILT measurements
+diff -ruN '--exclude=__pycache__' '--exclude=*.pyc' base/stack/tanitad/data/v8f_wm_windows.py tree/stack/tanitad/data/v8f_wm_windows.py
+--- base/stack/tanitad/data/v8f_wm_windows.py	2026-11-08 15:52:23.000000000 +0100
++++ tree/stack/tanitad/data/v8f_wm_windows.py	2026-11-11 13:09:47.770360900 +0100
+@@ -11,11 +11,33 @@
+ 
+ import numpy as np
+ 
+-__all__ = ["norm_mean_tokens", "wm_windows", "V8FMiniWMWindows", "collate_wm", "WM_BATCH_KEYS_POOLED", "WM_BATCH_KEYS_FEATS"]
++__all__ = ["norm_mean_tokens", "wm_windows", "V8FMiniWMWindows", "collate_wm", "WM_BATCH_KEYS_POOLED", "WM_BATCH_KEYS_FEATS", "WM_BATCH_KEYS_ZBASIS", "read_basis_manifest"]
+ 
+ WM_BATCH_KEYS_POOLED = ("pool", "act", "t", "ci")
+ WM_BATCH_KEYS_ZCACHE = ("zmean", "act", "t", "ci")
++WM_BATCH_KEYS_ZBASIS = ("zbasis", "act", "t", "ci")      # PREREG_V8F_SLOWWM: the SLOW / PCA-B basis cache
+ WM_BATCH_KEYS_FEATS = ("feats", "act", "t", "ci")
++BASIS_MANIFEST = "BASIS_MANIFEST.json"                   # PREREG_V8F_SLOWWM: beside the per-clip files; kind, basis sha, dim, dtype
++BASIS_KINDS = ("slow", "pca")
++BASIS_DIM = 256
++
++
++def read_basis_manifest(zcache: str, kind: str) -> dict:
++    """PREREG_V8F_SLOWWM: the basis cache's manifest, refused unless it names ``kind``, the 256-d float32 ``zbasis`` layout and a sha256 of the basis matrices. Raises ValueError with the reason."""
++    import json
++    import os
++    mp = os.path.join(zcache, BASIS_MANIFEST)
++    if not os.path.exists(mp):
++        raise ValueError(f"{mp} does not exist (an adapter zmean cache is not a basis cache)")
++    with open(mp, encoding="utf-8") as fh:
++        man = json.load(fh)
++    for k, v in (("format", "zbasis-v1"), ("kind", kind), ("dim", BASIS_DIM), ("dtype", "float32")):
++        if man.get(k) != v:
++            raise ValueError(f"{mp}: {k} is {man.get(k)!r}, expected {v!r}")
++    sha = man.get("basis_sha256")
++    if not (isinstance(sha, str) and len(sha) == 64 and all(c in "0123456789abcdef" for c in sha)):
++        raise ValueError(f"{mp}: basis_sha256 is {sha!r}, expected 64 hex characters")
++    return man
+ 
+ 
+ def norm_mean_tokens(feats, eps: float = 1e-5):
+@@ -45,13 +67,19 @@
+     """Dataset over ``wm_windows``. ``item(ci, t, ..)`` -> numpy dict. ``pooled`` True = ``pool`` (the token-mean path); False = ``feats``. The per-clip pooled table (all frames) is computed once per clip and kept in a
+     small LRU, so the ~11 windows of a clip share it."""
+ 
+-    def __init__(self, store, J: dict, windows, *, F: int, pooled: bool = True, lru: int = 64, zcache: str = ""):
++    def __init__(self, store, J: dict, windows, *, F: int, pooled: bool = True, lru: int = 64, zcache: str = "", basis: str = "adapter"):
+         self.store, self.J, self.windows = store, J, list(windows)
+         self.F, self.pooled, self.lru = int(F), bool(pooled), int(lru)
+         self.zcache = str(zcache or "")                    # a directory of per-clip ``<clip>.npz`` with ``zmean`` [T, D] (the frozen adapter's mean token), ``ok`` [T], ``t_s`` [T]; "" = not used
+         self._nm: dict = {}
+         self._z: dict = {}
+         self._small: dict = {}                             # zcache runs: clip -> the action arrays and the frame count, held in RAM (see ``prewarm``)
++        if basis not in ("adapter",) + BASIS_KINDS:
++            raise ValueError(f"basis must be 'adapter', 'slow' or 'pca', got {basis!r}")
++        if basis != "adapter" and not self.zcache:
++            raise ValueError(f"basis {basis} needs a basis cache directory (--wm-zcache): a lever that is declared and builds nothing")
++        self.basis = basis                                 # PREREG_V8F_SLOWWM: "slow" / "pca" = the per-clip files in ``zcache`` hold ``zbasis`` float32 [T, 256] (and ``basis_sha``) instead of ``zmean``; items return ``zbasis``
++        self.basis_manifest = read_basis_manifest(self.zcache, basis) if basis != "adapter" else None
+         self.window_start = self.F - 1                     # the first t a window can have (read back by the gate)
+ 
+     def __len__(self):
+@@ -78,7 +106,14 @@
+             return self._z[clip]
+         import os
+         with np.load(os.path.join(self.zcache, f"{clip}.npz")) as f:
+-            zm, ok = np.asarray(f["zmean"], np.float32), np.asarray(f["ok"], bool)
++            if self.basis != "adapter":                    # PREREG_V8F_SLOWWM: an adapter cache has no ``zbasis`` key -> KeyError (loud); every file must carry the manifest's basis sha
++                zm, ok = np.asarray(f["zbasis"], np.float32), np.asarray(f["ok"], bool)
++                if str(f["basis_sha"]) != self.basis_manifest["basis_sha256"]:
++                    raise ValueError(f"{clip}.npz was built from basis {str(f['basis_sha'])[:12]}, the manifest says {self.basis_manifest['basis_sha256'][:12]}")
++                if zm.ndim != 2 or zm.shape[1] != BASIS_DIM:
++                    raise ValueError(f"{clip}.npz zbasis has shape {zm.shape}, expected [T, {BASIS_DIM}]")
++            else:
++                zm, ok = np.asarray(f["zmean"], np.float32), np.asarray(f["ok"], bool)
+         self._z[clip] = (zm, ok)
+         while len(self._z) > self.lru:
+             self._z.pop(next(iter(self._z)))
+@@ -120,7 +155,7 @@
+             zm, ok = self._zmean(clip)
+             if len(zm) <= idx[-1] or not ok[idx].all():
+                 raise IndexError(f"{clip}: zcache holds {len(zm)} frames / ok={bool(ok[idx].all()) if len(ok) > idx[-1] else None} for window t={t} F={self.F}")
+-            it["zmean"] = zm[idx]
++            it["zbasis" if self.basis != "adapter" else "zmean"] = zm[idx]
+         elif self.pooled:
+             it["pool"] = self._table(clip, d)[idx]
+         else:
+@@ -136,7 +171,9 @@
+     """numpy items -> a dict of torch tensors (``pool`` float32, ``feats`` float16, ``act`` float32, ``t`` / ``ci`` long)."""
+     import torch
+     out = {"act": torch.as_tensor(np.stack([it["act"] for it in items]), dtype=torch.float32)}
+-    if "zmean" in items[0]:
++    if "zbasis" in items[0]:                           # PREREG_V8F_SLOWWM
++        out["zbasis"] = torch.as_tensor(np.stack([it["zbasis"] for it in items]), dtype=torch.float32)
++    elif "zmean" in items[0]:
+         out["zmean"] = torch.as_tensor(np.stack([it["zmean"] for it in items]), dtype=torch.float32)
+     elif "pool" in items[0]:
+         out["pool"] = torch.as_tensor(np.stack([it["pool"] for it in items]), dtype=torch.float32)
+diff -ruN '--exclude=__pycache__' '--exclude=*.pyc' base/stack/tanitad/models/v8f_mini.py tree/stack/tanitad/models/v8f_mini.py
+--- base/stack/tanitad/models/v8f_mini.py	2026-11-08 15:52:23.000000000 +0100
++++ tree/stack/tanitad/models/v8f_mini.py	2026-11-11 13:09:31.173161500 +0100
+@@ -164,6 +164,8 @@
+ CH1_SCALE = {"steer": 0.3, "yaw": 0.4}
+ #: the scale the WM auxiliary divides action channel 0 (longitudinal acceleration, m/s^2) by.
+ WM_ACC_SCALE = 2.0
++WM_BASIS_KINDS = ("adapter", "slow", "pca")      # PREREG_V8F_SLOWWM (`--wm-basis`)
++WM_BASIS_DIM = 256                          # PREREG_V8F_SLOWWM: width of the SLOW / PCA-B basis = cfg.d = the input width of WMAux.proj
+ #: EXACTLY the batch keys the inference path may read. Everything else (``lab*``, ``gt``, ``s_h``, ``lead_gap_h`` ...)
+ #: is a label or an evaluator-side quantity and is never touched by ``forward_infer``.
+ INFERENCE_INPUT_KEYS = frozenset({"feats", "frame_ok", "p10f", "act", "nav", "pose", "limit", "limit_ok", "base",
+@@ -198,6 +200,7 @@
+     wm_rollout_k: tuple = (1, 1, 1)    # PREREG_V8F_LADDER (`--wm-rollout-k`): free-run steps of the k-step loss per WM level. (1, 1, 1) = every earlier arm, bit for bit (no term, no key added)
+     wm_rollout_stride: tuple = (1, 1, 1)   # PREREG_V8F_LADDER (`--wm-rollout-stride`): the free run starts at every n-th state of the level (used only where the level's k > 1)
+     wm_rollout_w: float = 1.0          # PREREG_V8F_LADDER (`--wm-rollout-w`): weight of every level's k-step term (constant over training; used only where k > 1)
++    wm_basis: str = "adapter"          # PREREG_V8F_SLOWWM (`--wm-basis`): what z1 reads of the frozen DINOv3 features. "adapter" = the M2b adapter token mean (R35H, every earlier arm, bit for bit: no state-dict key, no batch key). "slow" / "pca" = the 256-d whitened closed-form basis of the token mean `nm` (SLOW: temporal CCA at lag 1.0 s; PCA-B: PCA), cached per frame, then `proj`
+     wm_ctx: tuple = (3, 3, 3)          # PREREG_V8F_LADDER (`--wm-ctx`): each WM level's predictor context (states). (3, 3, 3) = every earlier arm (the LevelConfig default); changing it changes the predictor's parameter shape
+     w_ckpt: float = 1.0
+     w_tac: float = 1.0
+@@ -277,6 +280,10 @@
+             raise ValueError(f"wm_k must be an int >= 1, got {self.wm_k!r}")
+         if self.wm_k > 1 and self.wm == "off":
+             raise ValueError("wm_k > 1 needs a world model (wm a or b): a lever that is declared and builds nothing")
++        if self.wm_basis not in WM_BASIS_KINDS:                                   # PREREG_V8F_SLOWWM
++            raise ValueError(f"wm_basis must be one of {WM_BASIS_KINDS}, got {self.wm_basis!r}")
++        if self.wm_basis != "adapter" and (self.wm == "off" or self.d != WM_BASIS_DIM):
++            raise ValueError(f"wm_basis {self.wm_basis} needs a world model and d == {WM_BASIS_DIM} (the basis is {WM_BASIS_DIM}-d and enters proj): a lever that is declared and builds nothing")
+         for nm in ("wm_rollout_k", "wm_rollout_stride", "wm_ctx"):               # PREREG_V8F_LADDER: three ints >= 1 (one per WM level)
+             v = getattr(self, nm)
+             if not (isinstance(v, (tuple, list)) and len(v) == 3 and all(isinstance(x, int) and not isinstance(x, bool) and x >= 1 for x in v)):
+@@ -694,6 +701,7 @@
+               mk(action_dim=32, stride=cfg.wm_strides[0], **up(0), **lad(1)), mk(action_dim=32, stride=cfg.wm_strides[1], **up(1), **lad(2))]
+         self.stack = HJEPAStack(lv, sigreg_projections=256)
+         self.proj = nn.Sequential(nn.LayerNorm(cfg.d), nn.Linear(cfg.d, cfg.wm_dim))
++        self.wm_basis = cfg.wm_basis                                            # PREREG_V8F_SLOWWM: a plain string, no parameter and no RNG: z1 reads the cached basis `u` ("slow" / "pca") instead of the adapter token mean
+         self.gamma = gamma
+         self.ch1_scale = CH1_SCALE[cfg.kin_mode]
+         self.enc1 = None
+@@ -740,10 +748,17 @@
+         """Level-1 latent of every cached frame: the mean-pooled adapter token, projected. ``adapt`` [B, F, n_tok, d] -> [B, F, D].
+         ONE spelling: ``forward`` (training) and rung beta's planner (``tanitad.models.v8f_beta``) both call it.
+         With ``wm_k`` K > 1 (PREREG_V8F_MRATE) frame j's latent is ``enc1`` of the projections of frames j-K+1 .. j (oldest first); frames before the window's first are the first frame's projection."""
++        if self.wm_basis != "adapter":                                          # PREREG_V8F_SLOWWM: the live tokens carry no `nm`; refused rather than silently reading the adapter
++            raise ValueError(f"wm_basis {self.wm_basis}: z1 is built from the cached basis u (z1_from_basis), not from adapter tokens")
+         return self.z1_from_mean(adapt.mean(2))
+ 
+     def z1_from_mean(self, am: Tensor) -> Tensor:
+         """PREREG_V8F_LADDER: ``z1`` from the adapter tokens already mean-pooled over the token axis (``am`` [B, F, d]) -- the ONLY thing the WM reads of the adapter. ``z1(adapt)`` is this applied to ``adapt.mean(2)``."""
++        if self.wm_basis != "adapter":                                          # PREREG_V8F_SLOWWM: a token mean handed to a basis model would silently run the adapter arm
++            raise ValueError(f"wm_basis {self.wm_basis}: z1 is built from the cached basis u (z1_from_basis), not from a token mean")
++        return self._z1_post(am)
++
++    def _z1_post(self, am: Tensor) -> Tensor:
+         p = self.proj(am)
+         if self.enc1 is None:
+             return p
+@@ -761,6 +776,34 @@
+         a = self.scale_actions(act)[:, :-1]                                     # action of the transition j -> j+1
+         return self.stack.loss(z1, a)
+ 
++    def z1_from_basis(self, u: Tensor) -> Tensor:
++        """PREREG_V8F_SLOWWM: ``z1`` from the cached basis ``u`` [B, F, 256] (``slow_basis.py``: the whitened SLOW / PCA-B coordinates of the token mean ``nm`` of the frozen DINOv3 features): ``proj`` then the same tail as :meth:`z1_from_mean` (the ONE ``_z1_post``)."""
++        if self.wm_basis == "adapter":
++            raise ValueError("z1_from_basis needs wm_basis slow or pca")
++        return self._z1_post(u)
++
++    def forward_basis(self, u: Tensor, act: Tensor) -> dict:
++        """PREREG_V8F_SLOWWM: :meth:`forward` from the cached basis ``u`` [B, F, 256]."""
++        return self.stack.loss(self.z1_from_basis(u), self.scale_actions(act)[:, :-1])
++
++    def built_basis(self) -> dict:
++        """PREREG_V8F_SLOWWM, the G-DVB reader: what the BUILT module DOES, measured on a planted ``u``: the mean path and the live-token path must be refused and the basis path accepted for slow / pca, the reverse for adapter; ``in_dim`` is the width ``proj`` takes."""
++        d = int(self.proj[0].normalized_shape[0])
++        u = torch.randn(1, 4, d, generator=torch.Generator().manual_seed(0))
++
++        def refused(fn):
++            try:
++                fn()
++            except ValueError:
++                return True
++            return False
++        with torch.no_grad():
++            mean_refused = refused(lambda: self.z1_from_mean(u))
++            tok_refused = refused(lambda: self.z1(u[:, :, None, :].expand(-1, -1, 40, -1)))
++            basis_refused = refused(lambda: self.z1_from_basis(u))
++            same = None if basis_refused else bool(torch.equal(self.z1_from_basis(u), self._z1_post(u)))
++        return {"mode": self.wm_basis, "in_dim": d, "mean_path_refused": mean_refused, "token_path_refused": tok_refused, "basis_path_refused": basis_refused, "basis_path_is_proj_tail": same}
++
+     def forward_mean(self, am: Tensor, act: Tensor) -> dict:
+         """PREREG_V8F_LADDER: :meth:`forward` from the token-pooled adapter output ``am`` [B, F, d] (the frozen-adapter pooled path); the same ops after the pooling."""
+         return self.stack.loss(self.z1_from_mean(am), self.scale_actions(act)[:, :-1])
+@@ -1184,7 +1227,9 @@
+         the heads and the planner are never run. ``terms``: ``wm`` (the stack's total), ``wm/<stack term>`` per level, ``total`` = ``w_wm`` x ``wm``."""
+         if self.wm is None:
+             raise ValueError("wm_only_loss needs a world model (wm a or b)")
+-        if "zmean" in batch:                                                    # PREREG_V8F_LADDER: the cached mean adapter token (box-2 zcache): exactly ``_encode(b).mean(2)``, read from disk
++        if "zbasis" in batch:                                                   # PREREG_V8F_SLOWWM: the cached SLOW / PCA-B coordinates; detached cache data, `proj` and the stack are what trains
++            wm = self.wm.forward_basis(batch["zbasis"].float().detach(), batch["act"])
++        elif "zmean" in batch:                                                    # PREREG_V8F_LADDER: the cached mean adapter token (box-2 zcache): exactly ``_encode(b).mean(2)``, read from disk
+             wm = self.wm.forward_mean(batch["zmean"].float().detach(), batch["act"])
+         elif "pool" in batch:                                                   # PREREG_V8F_LADDER: a world-model-only batch with the frozen adapter's pooled path (no [B, F, n_tok, d] tensor is ever built)
+             wm = self.wm.forward_mean(self.pooled_adapt_mean(batch["pool"].float()).detach(), batch["act"])
+@@ -1253,6 +1298,8 @@
+                 lv["wm_rollout_k"], lv["wm_rollout_stride"], lv["wm_rollout_w"] = [c.rollout_k for c in cf], [c.rollout_stride for c in cf], cf[0].rollout_w
+             if any(int(p.pos.shape[0]) != 3 for p in self.wm.stack.predictors):
+                 lv["wm_ctx"] = [int(p.pos.shape[0]) for p in self.wm.stack.predictors]
++        if self.wm is not None and self.wm.wm_basis != "adapter":          # PREREG_V8F_SLOWWM: present ONLY with a basis model (an adapter model keeps its key set)
++            lv["wm_basis"] = self.wm.wm_basis
+         if self.lvl_head is not None:                                     # PREREG_V8F_LEVEL: present ONLY with the head built (a flag-off model keeps its key set); the gate reads built.get("level_head", "off")
+             lv["level_head"], lv["w_level"] = "on", cfg.w_level
+             if self.e_level is not None:                                   # PREREG_LEVELHEAD_A2: absent under --aux-cond token (the additive path is not built)
+diff -ruN '--exclude=__pycache__' '--exclude=*.pyc' base/stack/tests/test_v8f_slowwm.py tree/stack/tests/test_v8f_slowwm.py
+--- base/stack/tests/test_v8f_slowwm.py	1970-01-01 01:00:00.000000000 +0100
++++ tree/stack/tests/test_v8f_slowwm.py	2026-11-11 13:16:44.397710100 +0100
+@@ -0,0 +1,343 @@
++"""PREREG_V8F_SLOWWM: the world-model lever ``--wm-basis {adapter, slow, pca}`` (z1 reads a cached 256-d whitened closed-form basis of the frozen features' token mean instead of the adapter token mean).
++
++Controls of the card (each has a deliberate-regression mutation in ``theory/slowwm/controls_slowwm.py`` that must make the named tests go RED):
++1. Off identity: default ``adapter``; the model, its state dict and the loss are the earlier ones (``test_off_*``).
++2. Reachability: argparse -> namespace -> config -> model -> z1 -> loss, a non-zero gradient on ``wm.proj`` and an exact zero on the frozen adapter, a cache of the wrong kind refused (``test_reach_*``, ``test_refuses_*``).
++4. Echo guard (structural half): the dataset's basis item is a function of the cache file alone and carries no label key (``test_basis_item_*``).
++The G-DVB read-back of the BUILT lever is pinned by ``test_gate_*``.
++"""
++from __future__ import annotations
++
++import dataclasses
++import hashlib
++import json
++import sys
++from pathlib import Path
++
++import numpy as np
++import pytest
++import torch
++
++REPO = Path(__file__).resolve().parents[2]
++for p in (REPO / "stack", REPO / "taniteval", REPO / "stack" / "scripts"):
++    if str(p) not in sys.path:
++        sys.path.insert(0, str(p))
++from tanitad.data import v8f_mini_data as D  # noqa: E402
++from tanitad.data import v8f_wm_windows as WW  # noqa: E402
++from tanitad.models import v8f_mini as M  # noqa: E402
++import v8f_mini_train as TR  # noqa: E402
++
++torch.set_num_threads(1)
++BASE = ["--synthetic", "--batch", "8", "--d", "256", "--n-q", "2", "--kin-mode", "yaw", "--seed", "5", "--arm", "M2b", "--threads", "1", "--warmup", "2"]
++LADDER = ["--hmax", "25", "--wm-only", "--wm-strides", "2", "3", "--wm-rollout-k", "4", "3", "2", "--wm-rollout-stride", "2", "2", "1", "--wm-rollout-w", "1.0", "--wm-ctx", "3", "3", "3", "--wm-windows", "wmonly"]
++F = 25
++
++
++# ------------------------------------------------------------------------------------------------ a planted basis cache for the synthetic world
++def write_basis_file(path, kind, seed=0):
++    g = np.random.default_rng(seed)
++    arr = {"kind": np.array(kind), "mean": g.standard_normal(1024).astype(np.float32), "proj": g.standard_normal((1024, 256)).astype(np.float32) / 32}
++    h = hashlib.sha256()
++    for k in sorted(arr):
++        t = np.ascontiguousarray(arr[k])
++        h.update(k.encode() + str(tuple(t.shape)).encode() + str(t.dtype).encode() + t.tobytes())
++    np.savez(path, spectrum=np.zeros(256), **arr)
++    return h.hexdigest()
++
++
++def write_cache(root, names, T, kind="slow", seed=0, ok=None, dim=256, sha=None, manifest=True, basis_file=True):
++    """Per-clip files in the zbasis format + BASIS_MANIFEST.json (+ basis.npz). Returns the basis sha256."""
++    root = Path(root)
++    root.mkdir(parents=True, exist_ok=True)
++    bsha = write_basis_file(root / "basis.npz", kind, seed) if basis_file else hashlib.sha256(b"planted").hexdigest()
++    g = np.random.default_rng(seed + 1)
++    for c in names:
++        n = T[c]
++        np.savez(root / f"{c}.npz", zbasis=g.standard_normal((n, dim)).astype(np.float32), ok=np.ones(n, bool) if ok is None else ok, t_s=np.arange(n, dtype=np.float32) * 0.2, basis_sha=np.array(sha or bsha))
++    if manifest:
++        man = {"format": "zbasis-v1", "kind": kind, "dim": 256, "dtype": "float32", "key": "zbasis", "basis_sha256": bsha}
++        if basis_file:
++            man["basis_file"] = "basis.npz"
++        (root / WW.BASIS_MANIFEST).write_text(json.dumps(man), encoding="utf-8")
++    return bsha
++
++
++@pytest.fixture(scope="module")
++def world(tmp_path_factory):
++    root = tmp_path_factory.mktemp("synb")
++    w = D.make_synthetic_world(root, n_train=6, n_eval=2, T=60, seed=5)
++    J = D.load_join(Path(root) / "join_train.npz")
++    store = D.ClipStore(root, "train", lru=8)
++    names = w["names"]["train"]
++    return {"root": root, "J": J, "store": store, "clips": names, "T": {c: len(store.get(c)["pose"]) for c in names}}
++
++
++def cfg_of(extra=()):
++    a = TR.build_parser().parse_args(["--out", "x", *BASE, *LADDER, *extra])
++    return a, TR.make_config(a)
++
++
++def model_of(extra=(), seed=0):
++    a, cfg = cfg_of(extra)
++    torch.manual_seed(seed)
++    return a, cfg, M.V8FMini(cfg, M.P10Prior.synthetic(0), None, None)
++
++
++# ------------------------------------------------------------------------------------------------ control 1: off identity
++def test_off_default_is_adapter_everywhere():
++    assert TR.build_parser().get_default("wm_basis") == "adapter"
++    assert M.V8FMiniConfig.__dataclass_fields__["wm_basis"].default == "adapter"
++    assert M.WM_BASIS_KINDS == ("adapter", "slow", "pca") and M.WM_BASIS_DIM == 256
++    a = TR.build_parser().parse_args(["--out", "x"])
++    assert a.wm_basis == "adapter" and TR.basis_cache_problems(a) == []
++    assert TR.FLAG_CHECKS["wm_basis"] == "lever:wm_basis"
++    assert {act.dest for act in TR.build_parser()._actions if act.dest != "help"} == set(TR.FLAG_CHECKS)
++
++
++def test_off_build_adds_no_parameter_no_key_and_the_loss_is_the_earlier_one():
++    _, cfg0, m0 = model_of()
++    _, cfg1, m1 = model_of(["--wm-basis", "slow"])
++    assert cfg0.wm_basis == "adapter" and cfg1.wm_basis == "slow"
++    s0, s1 = m0.state_dict(), m1.state_dict()
++    assert list(s0) == list(s1) and all(torch.equal(s0[k], s1[k]) for k in s0)          # the lever adds no parameter and consumes no RNG
++    assert "wm_basis" not in m0.built_levers() and m1.built_levers()["wm_basis"] == "slow"
++    g = torch.Generator().manual_seed(3)
++    zm, act = torch.randn(2, F, 256, generator=g), torch.randn(2, F, 2, generator=g)
++    torch.manual_seed(9)
++    t_new = m0.wm_only_loss({"zmean": zm, "act": act})["terms"]
++    torch.manual_seed(9)
++    ref = m0.wm.stack.loss(m0.wm._z1_post(zm), m0.wm.scale_actions(act)[:, :-1])           # the earlier spelling: proj of the token mean, then the stack
++    assert float(t_new["wm"]) == float(ref["total"])
++    for k, v in ref.items():
++        if k != "total":
++            assert float(t_new[f"wm/{k}"]) == float(v), k
++
++
++def test_off_adapter_model_refuses_a_basis_batch_and_a_basis_model_refuses_the_adapter_paths():
++    _, _, m0 = model_of()
++    _, _, m1 = model_of(["--wm-basis", "slow"])
++    u = torch.randn(2, F, 256)
++    act = torch.randn(2, F, 2)
++    with pytest.raises(ValueError):
++        m0.wm.z1_from_basis(u)
++    with pytest.raises(ValueError):
++        m1.wm.z1_from_mean(u)
++    with pytest.raises(ValueError):
++        m1.wm.z1(u[:, :, None, :].expand(-1, -1, 40, -1))
++    with pytest.raises(ValueError):
++        m1.wm_only_loss({"zmean": u, "act": act})
++    with pytest.raises(ValueError):
++        m1.wm_only_loss({"pool": torch.randn(2, F, 1024), "act": act})
++    assert m0.wm.built_basis()["basis_path_refused"] is True and m1.wm.built_basis()["mean_path_refused"] is True
++
++
++def test_config_validation_refuses_a_lever_that_builds_nothing():
++    with pytest.raises(ValueError):
++        dataclasses.replace(cfg_of()[1], wm_basis="nope")
++    with pytest.raises(ValueError):
++        dataclasses.replace(cfg_of()[1], wm="off", wm_basis="slow", wm_rollout_k=(1, 1, 1), wm_ctx=(3, 3, 3), wm_k=1)
++    a, cfg = cfg_of()
++    with pytest.raises(ValueError):
++        dataclasses.replace(cfg, d=32, wm_basis="pca")
++
++
++# ------------------------------------------------------------------------------------------------ control 2: reachability
++@pytest.mark.parametrize("kind", ["slow", "pca"])
++def test_reach_argparse_to_namespace_to_config_to_model(kind):
++    a, cfg, m = model_of(["--wm-basis", kind])
++    assert a.wm_basis == kind and cfg.wm_basis == kind and m.cfg.wm_basis == kind and m.wm.wm_basis == kind
++    bb = m.wm.built_basis()
++    assert bb == {"mode": kind, "in_dim": 256, "mean_path_refused": True, "token_path_refused": True, "basis_path_refused": False, "basis_path_is_proj_tail": True}
++
++
++@pytest.mark.parametrize("kind", ["slow", "pca"])
++def test_reach_z1_to_loss_and_a_nonzero_gradient_on_proj_with_exact_zero_on_the_frozen_adapter(kind):
++    _, _, m = model_of(["--wm-basis", kind])
++    g = torch.Generator().manual_seed(4)
++    u, act = torch.randn(2, F, 256, generator=g), torch.randn(2, F, 2, generator=g)
++    z1 = m.wm.z1_from_basis(u)
++    assert z1.shape[:2] == (2, F)
++    torch.manual_seed(1)
++    out = m.wm_only_loss({"zbasis": u, "act": act})
++    out["terms"]["total"].backward()
++    gp = sum(float(p.grad.abs().sum()) for n, p in m.named_parameters() if n.startswith("wm.proj.") and p.grad is not None)
++    assert gp > 0.0, "no gradient reached wm.proj"
++    gw = float(m.wm.proj[1].weight.grad.abs().sum())
++    assert gw > 0.0
++    ctrl = sum(float(p.grad.abs().sum()) for n, p in m.named_parameters() if p.grad is not None and not n.startswith("wm."))
++    assert ctrl == 0.0                                                      # the control reads exactly zero: nothing outside the WM receives a gradient
++    # the batch key decides the input: a different u gives a different loss (not u * 2: proj starts with a LayerNorm over the 256 coordinates, which removes a frame's overall scale)
++    torch.manual_seed(1)
++    out2 = m.wm_only_loss({"zbasis": u.flip(-1), "act": act})
++    assert float(out2["terms"]["wm"]) != float(out["terms"]["wm"])
++
++
++def test_reach_the_zbasis_key_is_what_the_loss_reads_not_zmean():
++    _, _, m = model_of(["--wm-basis", "slow"])
++    u, act = torch.randn(2, F, 256), torch.randn(2, F, 2)
++    torch.manual_seed(1)
++    a_ = float(m.wm_only_loss({"zbasis": u, "act": act})["terms"]["wm"])
++    torch.manual_seed(1)
++    b_ = float(m.wm_only_loss({"zbasis": u, "zmean": torch.zeros_like(u), "act": act})["terms"]["wm"])
++    assert a_ == b_                                                         # zbasis has priority; a stray zmean cannot reroute a basis model
++
++
++# ------------------------------------------------------------------------------------------------ the dataset: manifest checks
++def test_dataset_serves_zbasis_and_collates_float32(world, tmp_path):
++    J, store, names, T = world["J"], world["store"], world["clips"], world["T"]
++    wins = WW.wm_windows(store, J, names, F=F)
++    sha = write_cache(tmp_path / "c", names, T, "slow")
++    ds = WW.V8FMiniWMWindows(store, J, wins, F=F, zcache=str(tmp_path / "c"), basis="slow")
++    assert ds.basis == "slow" and ds.basis_manifest["basis_sha256"] == sha and ds.zcache_missing(names) == []
++    it = ds.item(*wins[5])
++    assert "zbasis" in it and "zmean" not in it and it["zbasis"].shape == (F, 256) and it["zbasis"].dtype == np.float32
++    b = WW.collate_wm([ds.item(*wins[3]), ds.item(*wins[40])])
++    assert b["zbasis"].shape == (2, F, 256) and b["zbasis"].dtype == torch.float32 and "zmean" not in b and "pool" not in b
++    assert len(ds.ok_windows()) == len(wins)
++
++
++def test_refuses_a_cache_of_the_wrong_kind_missing_manifest_wrong_dim_or_wrong_sha(world, tmp_path):
++    J, store, names, T = world["J"], world["store"], world["clips"], world["T"]
++    wins = WW.wm_windows(store, J, names, F=F)
++    write_cache(tmp_path / "pca", names, T, "pca")
++    with pytest.raises(ValueError, match="kind"):
++        WW.V8FMiniWMWindows(store, J, wins, F=F, zcache=str(tmp_path / "pca"), basis="slow")
++    write_cache(tmp_path / "nomf", names, T, "slow", manifest=False)
++    with pytest.raises(ValueError, match="does not exist"):
++        WW.V8FMiniWMWindows(store, J, wins, F=F, zcache=str(tmp_path / "nomf"), basis="slow")
++    write_cache(tmp_path / "sha", names, T, "slow", sha="0" * 64)
++    ds = WW.V8FMiniWMWindows(store, J, wins, F=F, zcache=str(tmp_path / "sha"), basis="slow")
++    with pytest.raises(ValueError, match="built from basis"):
++        ds.item(*wins[0])
++    write_cache(tmp_path / "dim", names, T, "slow", dim=128)
++    ds = WW.V8FMiniWMWindows(store, J, wins, F=F, zcache=str(tmp_path / "dim"), basis="slow")
++    with pytest.raises(ValueError, match="shape"):
++        ds.item(*wins[0])
++    with pytest.raises(ValueError):
++        WW.V8FMiniWMWindows(store, J, wins, F=F, basis="slow")              # no cache directory at all
++    # an ADAPTER zmean cache under --wm-basis slow: no manifest, refused
++    (tmp_path / "mean").mkdir()
++    for c in names:
++        np.savez(tmp_path / "mean" / f"{c}.npz", zmean=np.zeros((T[c], 256), np.float32), ok=np.ones(T[c], bool), t_s=np.zeros(T[c], np.float32))
++    with pytest.raises(ValueError, match="does not exist"):
++        WW.V8FMiniWMWindows(store, J, wins, F=F, zcache=str(tmp_path / "mean"), basis="slow")
++    # a BASIS cache handed to the adapter dataset: a loud KeyError on zmean
++    ds = WW.V8FMiniWMWindows(store, J, wins, F=F, zcache=str(tmp_path / "pca"), basis="adapter")
++    with pytest.raises(KeyError):
++        ds.item(*wins[0])
++
++
++def test_basis_item_is_a_function_of_the_cache_file_alone_and_carries_no_label_key(world, tmp_path):
++    J, store, names, T = world["J"], world["store"], world["clips"], world["T"]
++    wins = WW.wm_windows(store, J, names, F=F)
++    write_cache(tmp_path / "c", names, T, "slow")
++    ds = WW.V8FMiniWMWindows(store, J, wins, F=F, zcache=str(tmp_path / "c"), basis="slow")
++    it = ds.item(*wins[7])
++    assert set(it) == {"zbasis", "act", "t", "ci"} and set(WW.WM_BATCH_KEYS_ZBASIS) == set(it)
++    with np.load(tmp_path / "c" / f"{names[0]}.npz") as z:
++        assert set(z.files) == {"zbasis", "ok", "t_s", "basis_sha"}
++
++
++# ------------------------------------------------------------------------------------------------ the trainer: static refusals and the G-DVB read-back
++def parse(extra):
++    return TR.build_parser().parse_args(["--out", "x", *BASE, *LADDER, *extra])
++
++
++def test_trainer_refuses_before_any_build(world, tmp_path):
++    names, T = world["clips"], world["T"]
++    write_cache(tmp_path / "pca", names, T, "pca")
++    write_cache(tmp_path / "slow", names, T, "slow")
++    assert TR.basis_cache_problems(parse(["--wm-basis", "slow", "--wm-zcache", str(tmp_path / "slow")])) == []
++    bad = TR.basis_cache_problems(parse(["--wm-basis", "slow", "--wm-zcache", str(tmp_path / "pca")]))           # control 2's mutation: the wrong cache under slow
++    assert bad and "kind" in bad[0]
++    assert TR.basis_cache_problems(parse(["--wm-basis", "slow"]))                                                  # no cache directory
++    a = parse(["--wm-basis", "slow", "--wm-zcache", str(tmp_path / "slow")])
++    a.wm_windows = "train"
++    assert TR.basis_cache_problems(a)                                                                              # declared without wmonly windows
++    assert TR.basis_cache_problems(parse(["--wm-zcache", str(tmp_path / "slow")]))                                 # adapter + a basis cache
++    with pytest.raises(SystemExit) as e:
++        TR.main(["--out", str(tmp_path / "o"), *BASE, *LADDER, "--wm-basis", "slow", "--wm-zcache", str(tmp_path / "pca")])
++    assert "ZZDVB-REFUSEDZZ" in str(e.value.code)
++    # a basis.npz that does not hash to the manifest's sha
++    write_basis_file(tmp_path / "slow" / "basis.npz", "slow", seed=99)
++    assert any("hashes to" in p for p in TR.basis_cache_problems(parse(["--wm-basis", "slow", "--wm-zcache", str(tmp_path / "slow")])))
++
++
++def test_the_sha_formula_of_the_trainer_is_the_documented_one(tmp_path):
++    sha = write_basis_file(tmp_path / "b.npz", "pca", seed=3)
++    assert TR.basis_sha256_of_file(str(tmp_path / "b.npz")) == sha
++
++
++@pytest.fixture(scope="module")
++def init(tmp_path_factory):
++    root = tmp_path_factory.mktemp("slowwm")
++    assert TR.main(["--out", str(root / "m2b"), *BASE, "--log-every", "1", "--ckpt-every", "100", "--steps", "2"]) == 0
++    w = D.make_synthetic_world(root / "w", n_train=6, n_eval=2, T=60, seed=5)
++    names = w["names"]["train"]
++    st = D.ClipStore(root / "w", "train", lru=8)
++    T = {c: len(st.get(c)["pose"]) for c in names}
++    sha = {k: write_cache(root / f"zb_{k}", names, T, k, seed=i) for i, k in enumerate(("slow", "pca"))}
++    return {"root": root, "ck": root / "m2b" / "ckpt_last.pt", "sha": sha}
++
++
++def gate(init, name, kind, extra=(), cache=None, ck=True):
++    argv = ["--out", str(init["root"] / name), *BASE, *(["--init-ckpt", str(init["ck"])] if ck else []), *LADDER, "--wm-basis", kind, "--wm-zcache", cache or str(init["root"] / f"zb_{kind}"), *extra, "--selfcheck-only"]
++    try:
++        return TR.main(argv)
++    except SystemExit as e:
++        return e.code
++
++
++def sc_of(init, name):
++    return json.loads((init["root"] / name / "selfcheck.json").read_text(encoding="utf-8"))
++
++
++@pytest.mark.parametrize("kind", ["slow", "pca"])
++def test_gate_passes_and_reads_the_built_lever_back(init, kind):
++    assert gate(init, f"g_{kind}", kind) == 0
++    rb = sc_of(init, f"g_{kind}")["levers"]["wm_basis_readback"]
++    assert rb["declared"] == kind == rb["config"] == rb["dataset_basis"] == rb["kind"] == rb["built"]["mode"]
++    assert rb["basis_sha256"] == init["sha"][kind] and rb["dim"] == 256 and rb["dataset_zbasis_shape"] == [25, 256] and rb["cache_problems"] == []
++    assert rb["built"]["in_dim"] == 256 and rb["built"]["mean_path_refused"] is True and rb["built"]["basis_path_is_proj_tail"] is True
++
++
++def test_gate_default_argv_records_no_basis_key(init):
++    assert TR.main(["--out", str(init["root"] / "dflt"), *BASE, "--selfcheck-only"]) == 0
++    assert "wm_basis_readback" not in sc_of(init, "dflt")["levers"]
++
++
++def test_gate_refuses_a_lever_the_built_model_does_not_carry(init, monkeypatch):
++    real = TR.make_config
++    monkeypatch.setattr(TR, "make_config", lambda a, *r, **k: dataclasses.replace(real(a, *r, **k), wm_basis="adapter"))     # the ONE line that applies --wm-basis is deleted
++    rc = gate(init, "g_unbuilt", "slow")
++    assert rc != 0
++
++
++def test_gate_refuses_a_cache_of_the_other_kind(init):
++    rc = gate(init, "g_wrong", "slow", cache=str(init["root"] / "zb_pca"))
++    assert rc != 0 and "ZZDVB-REFUSEDZZ" in str(rc)
++
++
++def test_gate_refuses_a_basis_declared_without_the_windows_that_read_it(init):
++    argv = ["--out", str(init["root"] / "g_nowin"), *BASE, "--init-ckpt", str(init["ck"]), "--wm-basis", "slow", "--wm-zcache", str(init["root"] / "zb_slow"), "--selfcheck-only"]
++    with pytest.raises(SystemExit) as e:
++        TR.main(argv)
++    assert "ZZDVB-REFUSEDZZ" in str(e.value.code)
++
++
++def test_a_wmonly_run_on_a_basis_cache_trains_proj_and_leaves_everything_else_bit_equal(init):
++    out = init["root"] / "run_slow"
++    argv = ["--out", str(out), *BASE, "--init-ckpt", str(init["ck"]), *LADDER, "--wm-basis", "slow", "--wm-zcache", str(init["root"] / "zb_slow"), "--steps", "3", "--log-every", "1", "--ckpt-every", "100"]
++    assert TR.main(argv) == 0
++    s = json.loads((out / "summary.json").read_text(encoding="utf-8"))
++    assert s["done"] is True and s["wm_only"] is True
++    log = [json.loads(ln) for ln in (out / "train_log.jsonl").read_text(encoding="utf-8").splitlines()]
++    assert log and all(np.isfinite(r["wm"]) for r in log)
++    a = torch.load(init["ck"], map_location="cpu", weights_only=False)["model"]
++    ck1 = torch.load(out / "ckpt_last.pt", map_location="cpu", weights_only=False)
++    b = ck1["model"]
++    assert ck1["cfg"]["wm_basis"] == "slow"
++    rest = [n for n in a if not n.startswith("wm.")]
++    assert rest and all(torch.equal(a[n], b[n]) for n in rest)                                  # the adapter, readers, heads and planner are bit-equal
++    sc = sc_of(init, "run_slow")
++    assert sc["planner_identity_probe"]["pass"] is True and sc["levers"]["wm_basis_readback"]["cache_problems"] == []

@@ -1,0 +1,235 @@
+{
+ "tool": "r0c_read/1",
+ "prereg": {
+  "path": "C:\\Users\\Admin\\AppData\\Local\\Temp\\rrd\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\eval\\PREREG_R0C.md",
+  "sha256": "cab2bb1c56f90c3eec74a4e541a15e04d7e15108b5763fa895e7d7c7bcea92cd",
+  "matches_pinned": true
+ },
+ "arm_dir": "C:\\Users\\Admin\\AppData\\Local\\Temp\\rrd\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\raw\\2026-10-15-r0c-reader\\realdata\\R0b_banked",
+ "tier": "RL-val selection tier: the true NAVSIM v1.1 PDMS of the scorer's pick on 3,000 RL-val sets of a frozen fan (open-loop 4 s plan, table lookup); NOT T1, NOT an endpoint. One training seed per arm: a separated interval is NECESSARY, not sufficient (H-ESTIM-SEED-1).",
+ "estimator": "paired log-cluster bootstrap, 10,000 resamples, 95 %, seed 20260927 (proxy_eval.boot) when a CI is shown; 'point' = a difference of means with NO interval",
+ "outcome": "AMBIGUOUS",
+ "ambiguity_kind": "missing_input",
+ "reason": "labels across the readings: ['MISSING']. MISSING: g5 breached at (250, 500) but the logged epo_kl is not A-to-B (data.epo.ref = None); O3/O4 need epo_kl (A to B)",
+ "candidate_labels": [
+  "MISSING"
+ ],
+ "meaning": null,
+ "next_lever": null,
+ "prereg_row": null,
+ "readings": {
+  "policy_sha256": null,
+  "policy_amendment": null,
+  "answered": {},
+  "unanswered": [
+   "Q1",
+   "Q2",
+   "Q3",
+   "Q4",
+   "Q5",
+   "Q6",
+   "Q7",
+   "Q8"
+  ],
+  "split_by": [],
+  "questions": {
+   "Q1": {
+    "what": "g4 on RL-val",
+    "options": [
+     "vacuous",
+     "blocking"
+    ],
+    "text": "O1 says g3-g5 hold, but rl_val_eval lists g4 (longitudinal bias rows) under not_computed: nothing on RL-val can show g4 holds. vacuous = treat g4 as holding; blocking = O1 cannot be certified."
+   },
+   "Q2": {
+    "what": "which epo_kl is 'the mean at the breach'",
+    "options": [
+     "second_breach_window",
+     "first_breach_window",
+     "both_breach_windows",
+     "row_at_second_breach",
+     "row_at_first_breach"
+    ],
+    "text": "epo_kl is logged every 25 updates as a window mean. second/first_breach_window = mean of the rows in (previous check, that check]; both = (check before the first breach, second breach]; row_at_* = the single row at that update."
+   },
+   "Q3": {
+    "what": "an NC fall inside a g5 breach",
+    "options": [
+     "g5",
+     "O5"
+    ],
+    "text": "g5 = NC and TTC; O5 lists 'an NC / DAC bound', which section 5 never defines. g5 = an NC-involved breach is still O3/O4; O5 = it is the O5 NC bound."
+   },
+   "Q4": {
+    "what": "O2's 'PDMS B - A lower bound <= 0' (which check)",
+    "options": [
+     "both_le0",
+     "final_le0",
+     "either_le0"
+    ],
+    "text": "O1 needs LB > 0 at u500 AND u1000; O2 names no check. both = LB <= 0 at u500 and u1000; final = at u1000; either = at u500 or u1000."
+   },
+   "Q5": {
+    "what": "does O2 ('safe') need g3",
+    "options": [
+     "as_written",
+     "g3_also"
+    ],
+    "text": "O2's condition names g5 only. as_written = g3 is not required; g3_also = O2 also needs g3 to hold at every check."
+   },
+   "Q6": {
+    "what": "the +0.25 floor of section 4 (1) on RL-val",
+    "options": [
+     "applies",
+     "not_applicable"
+    ],
+    "text": "O1 cites 'the section 4 bar', defined on full navtest with two pairs. applies = B - A PDMS point >= +0.25 at u1000; not_applicable = RL-val needs only LB > 0."
+   },
+   "Q7": {
+    "what": "scope of 'no longitudinal / lateral component separates adversely'",
+    "options": [
+     "narrow",
+     "longlat",
+     "all"
+    ],
+    "text": "adverse = the B - A interval lies entirely below 0 at u1000. narrow = EP, DAC; longlat = EP, TTC, DAC, DDC; all = all six sub-scores."
+   },
+   "Q8": {
+    "what": "a K-MON stop (the monitor died)",
+    "options": [
+     "O5",
+     "not_O5"
+    ],
+    "text": "O5 lists K0-K2 and K4-K6; K-MON is the chain's fail-closed stop of a dead monitor and is not listed. O5 = count it as 'other kill'; not_O5 = it is no outcome."
+   }
+  }
+ },
+ "evidence": {
+  "checks": {
+   "update250": {
+    "g3_ok": true,
+    "g5_ok": false,
+    "nc_ok": true,
+    "ttc_ok": false,
+    "k4": false,
+    "pdms_delta_x100": 0.5324359027777779,
+    "k3_enabled": true,
+    "source": "kill_checks.jsonl",
+    "n_sets": 3000
+   },
+   "update500": {
+    "g3_ok": true,
+    "g5_ok": false,
+    "nc_ok": true,
+    "ttc_ok": false,
+    "k4": false,
+    "pdms_delta_x100": 0.8986615277777777,
+    "k3_enabled": true,
+    "source": "kill_checks.jsonl",
+    "n_sets": 3000
+   }
+  },
+  "terminal_kill_derived": {
+   "code": "K3",
+   "checks": [
+    250,
+    500
+   ]
+  },
+  "first_g5_pair": [
+   250,
+   500
+  ],
+  "recorded_kill": "K3",
+  "recorded_kill_reproduced": true,
+  "recorded_kill_sources": {
+   "kill_checks.jsonl": "K3",
+   "KILLED.json": "K3",
+   "monitor.log": "K3"
+  },
+  "monitor_log": {
+   "present": true,
+   "bytes": 773,
+   "ready": true,
+   "k3_state": "LIVE",
+   "check_errors": 0,
+   "kill": "K3"
+  },
+  "monitor_control": "C0",
+  "sft": {
+   "present": true,
+   "epo_ref": null,
+   "epo_lam": 0.25,
+   "epo_beta": 0.1,
+   "has_data_event": true,
+   "score_dump_tags": [
+    "step0",
+    "update250",
+    "update500"
+   ],
+   "done": false,
+   "train_rows": 20
+  },
+  "epo_kl": {
+   "logged_reference": null,
+   "is_A_to_B": false,
+   "candidate_windows_for_first_g5_pair": {
+    "second_breach_window": 0.1973964253552258,
+    "first_breach_window": 0.19860632734255707,
+    "both_breach_windows": 0.19800137634889142,
+    "row_at_second_breach": 0.20019757749512793,
+    "row_at_first_breach": 0.16861141378059982
+   },
+   "split": 0.2,
+   "note": "values are labelled A-to-B only when sft.jsonl data.epo.ref == 'armA'; otherwise they are base-to-B (R0 / R0b) and decide nothing"
+  },
+  "b_minus_a_reads": {},
+  "b_minus_a_reads_errors": {},
+  "g5_from_b_minus_a_reads": {},
+  "chain_u1000_read_rlval_vs_A0": null,
+  "second_control": {
+   "present": false
+  }
+ },
+ "families": {
+  "tier": "RL-val selection tier: the true NAVSIM v1.1 PDMS of the scorer's pick on 3,000 RL-val sets of a frozen fan (open-loop 4 s plan, table lookup); NOT T1, NOT an endpoint. One training seed per arm: a separated interval is NECESSARY, not sufficient (H-ESTIM-SEED-1).",
+  "estimator": "paired log-cluster bootstrap, 10,000 resamples, 95 %, seed 20260927 (proxy_eval.boot) when a CI is shown; 'point' = a difference of means with NO interval",
+  "LONGITUDINAL": {
+   "EP_progress": "NOT AVAILABLE in the arm dir",
+   "progress_telemetry_g3": {
+    "update250": {
+     "pick_over_fan_mean_path": 0.9644239659600702,
+     "shortest_bin_share": 0.3416666666666667
+    },
+    "update500": {
+     "pick_over_fan_mean_path": 0.9721425907325472,
+     "shortest_bin_share": 0.3453333333333333
+    }
+   },
+   "g4_longitudinal_bias": "NOT COMPUTED on RL-val (rl_val_eval not_computed)"
+  },
+  "LATERAL": {
+   "DAC": "NOT AVAILABLE in the arm dir",
+   "DDC": "NOT AVAILABLE in the arm dir"
+  },
+  "SUBSCORES": {
+   "TTC": "NOT AVAILABLE in the arm dir",
+   "NC": "NOT AVAILABLE in the arm dir",
+   "comfort_C": "NOT AVAILABLE in the arm dir",
+   "PDMS": "NOT AVAILABLE in the arm dir"
+  },
+  "TACTICAL": "N/A on this scorer-only arm: R0c trains the scorer heads on a FROZEN fan and picks among its proposals; no tactical-decision output exists to score (decision kappa and lane-change precision/recall are full-navtest endpoints, R2 only: PREREG_RL_S1 section 4).",
+  "STRATEGIC": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE ITEM 25): reported as paused, not as a pass, not omitted."
+ },
+ "notes": [
+  "the monitor records were taken against 'C0', NOT against the arm's own A: they are not R0c's control (PREREG_R0C section 2 guards)"
+ ],
+ "conflicts": [],
+ "inputs_sha256": {
+  "arm_meta.json": "1547b6175227b45f832f23b4a2ac039dab8e2971f9f14f42cb038b6f7c3ec68e",
+  "kill_checks.jsonl": "e531d5aa72de9496ad522ecd420c77c7dd9cd18742638edc7b11f65c06486e2b",
+  "KILLED.json": "dc97c72bd96f5c572d8f19ad1015d05ee7bf6ddeeb92db7c3a72d74373871754",
+  "monitor.log": "53e3987e8f2b89c9f05d3ddb9053e0c10d724a38985d660b8ada77756882d4a7",
+  "sft.jsonl": "3e68f02e999eb8e4036ee09430025657707d2abea15e967d087344c72cccc2f4"
+ }
+}

@@ -1,0 +1,223 @@
+{
+ "arms": {
+  "H1-s0": {
+   "c3": {
+    "ci95": [
+     0.4553356453624093,
+     0.5394611154889457
+    ],
+    "est": 0.4957035913034702,
+    "n_nan_resamples": 0,
+    "n_union_weighted": 287333.0
+   },
+   "input_sha256": null,
+   "natural": {
+    "ci95": [
+     0.5217250702163019,
+     0.5988074388868257
+    ],
+    "est": 0.5608520369346314,
+    "n_nan_resamples": 0,
+    "n_union_weighted": 298361.625654323,
+    "sensitivity_rerake": {
+     "ci95": [
+      0.5450713727042402,
+      0.5790181472885021
+     ],
+     "n_nan_resamples": 0
+    }
+   },
+   "per_city": {
+    "BOS": {
+     "n_frames": 310,
+     "n_logs": 45,
+     "p1_natural_weighted": 0.49342390881181875,
+     "p1_unweighted": 0.485395692621384
+    },
+    "LV": {
+     "n_frames": 233,
+     "n_logs": 44,
+     "p1_natural_weighted": 0.6940076854937035,
+     "p1_unweighted": 0.671558770817852
+    },
+    "PIT": {
+     "n_frames": 276,
+     "n_logs": 21,
+     "p1_natural_weighted": 0.4610834366301537,
+     "p1_unweighted": 0.4070315876505628
+    },
+    "SG": {
+     "n_frames": 239,
+     "n_logs": 13,
+     "p1_natural_weighted": 0.3592260871374433,
+     "p1_unweighted": 0.33098942904362466
+    }
+   }
+  },
+  "H1u10k-s0": {
+   "c3": {
+    "ci95": [
+     0.6864910699855699,
+     0.7590647994935203
+    ],
+    "est": 0.7230426654540467,
+    "n_nan_resamples": 0,
+    "n_union_weighted": 277086.0
+   },
+   "input_sha256": null,
+   "natural": {
+    "ci95": [
+     0.7340957424016226,
+     0.7910357570731341
+    ],
+    "est": 0.7637782661308423,
+    "n_nan_resamples": 0,
+    "n_union_weighted": 285320.98658622993,
+    "sensitivity_rerake": {
+     "ci95": [
+      0.7516129932815159,
+      0.778904799467495
+     ],
+     "n_nan_resamples": 0
+    }
+   },
+   "per_city": {
+    "BOS": {
+     "n_frames": 310,
+     "n_logs": 45,
+     "p1_natural_weighted": 0.7134711614044209,
+     "p1_unweighted": 0.7023167124993515
+    },
+    "LV": {
+     "n_frames": 233,
+     "n_logs": 44,
+     "p1_natural_weighted": 0.860421228991068,
+     "p1_unweighted": 0.8606376674173284
+    },
+    "PIT": {
+     "n_frames": 276,
+     "n_logs": 21,
+     "p1_natural_weighted": 0.7034967580496542,
+     "p1_unweighted": 0.664340772350691
+    },
+    "SG": {
+     "n_frames": 239,
+     "n_logs": 13,
+     "p1_natural_weighted": 0.6319570740647699,
+     "p1_unweighted": 0.6136538733667709
+    }
+   }
+  }
+ },
+ "band_m": [
+  0.0,
+  40.0
+ ],
+ "contrasts": {
+  "H1u10k-s0-minus-H1-s0": {
+   "c3": {
+    "ci95": [
+     0.20982759118503444,
+     0.24510455772140377
+    ],
+    "est": 0.22733907415057653,
+    "n_nan_resamples": 0
+   },
+   "natural": {
+    "ci95": [
+     0.18692282957774242,
+     0.21933684074917878
+    ],
+    "est": 0.20292622919621095,
+    "n_nan_resamples": 0,
+    "sensitivity_rerake": {
+     "ci95": [
+      0.18992346758943518,
+      0.21682536627130392
+     ],
+     "n_nan_resamples": 0
+    }
+   }
+  }
+ },
+ "estimator": "paired log-cluster bootstrap, 10000 resamples, 95 %, seed 20260927; aux_s1_readout.boot_weights / ratio_read / diff_read (the harness's own); weights FIXED at their point-estimate values (PRIMARY); sensitivity re-fits them inside every resample. Answers 'another draw of LOGS' ONLY",
+ "identity": {
+  "H1-s0": {
+   "abs_diff_c3": 0.0,
+   "abs_diff_ess": 1.1368683772161603e-13,
+   "abs_diff_natural": 2.220446049250313e-16,
+   "arm": "H1-s0",
+   "banked_c3": 0.4957035913034702,
+   "banked_ess": 575.3679059904473,
+   "banked_natural": 0.5608520369346311,
+   "c3": 0.4957035913034702,
+   "ess": 575.3679059904472,
+   "natural": 0.5608520369346314,
+   "ok": true,
+   "source": "raw/2026-10-16-aux-shift-locate/SHIFT_LOCATE.json (b1_decompose.json S5_standardisation, R0_navtest_repro), MEASURED",
+   "tolerance": 1e-09
+  }
+ },
+ "identity_ok": true,
+ "population": {
+  "definition": "the 1,058 C3 frames re-weighted by IPF (200 it.) to navtest's own city mix (all 12,146 keys) x the failure stratum (529 / 12,146)",
+  "ess": 575.3679059904472,
+  "n_by_cell": {
+   "BOS|random": 164,
+   "BOS|zero": 146,
+   "LV|random": 171,
+   "LV|zero": 62,
+   "PIT|random": 114,
+   "PIT|zero": 162,
+   "SG|random": 80,
+   "SG|zero": 159
+  },
+  "n_frames": 1058,
+  "n_logs": 123,
+  "sources": {
+   "label_store": "985a3bc77f3ab7a96b0dceace48e73b80e5b69b70710958635060939bce0d7c1",
+   "navtest_store_shards": 136,
+   "tokens_json_sha256": "5de1b78ef262a4db78de62738c01b52910ce54d9d96164831a769e6e6271feda"
+  },
+  "spec": {
+   "count_by_map": {
+    "BOS": 3731,
+    "LV": 4064,
+    "PIT": 2437,
+    "SG": 1914
+   },
+   "n_population": 12146,
+   "n_zero": 529,
+   "share_map": {
+    "BOS": 0.30717931829408857,
+    "LV": 0.3345957516877984,
+    "PIT": 0.20064218672814096,
+    "SG": 0.15758274328997202
+   },
+   "share_stratum": {
+    "random": 0.9564465667709534,
+    "zero": 0.0435534332290466
+   }
+  },
+  "weight_by_cell": {
+   "BOS|random": 1.9028576386131062,
+   "BOS|zero": 0.08854154809997507,
+   "LV|random": 2.0358425703955456,
+   "LV|zero": 0.09472944754923132,
+   "PIT|random": 1.7466096432204017,
+   "PIT|zero": 0.08127119895831726,
+   "SG|random": 1.9076154505794398,
+   "SG|zero": 0.08876293304676224
+  },
+  "weight_max": 2.035842570395546,
+  "weight_min": 0.08127119895831726
+ },
+ "sensitivity": {
+  "gating": false,
+  "max_margin_residual": 1.1102230246251565e-15,
+  "resamples_with_an_absent_group": 0,
+  "scheme": "weights re-fitted in every resample (60 IPF iterations from the resample's frame multiplicities) to the SAME population margins"
+ },
+ "tier": "T0-like: head perception on teacher-forced navtest frames, re-weighted to the natural navtest population; never driving performance",
+ "tool": "nat_p1/1"
+}

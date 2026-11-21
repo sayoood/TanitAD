@@ -1,0 +1,17 @@
+874c874
+<     if res["control_prior_grad_diff"] != 0.0:
+---
+>     if 0.0 != res["control_prior_grad_diff"]:                   # the same test as the acc probe's, spelled differently: mutate_oacc.py anchors that line once
+876c876
+<     if res["control_wm_grad_diff"] not in (None, 0.0):
+---
+>     if res["control_wm_grad_diff"] not in (0.0, None):          # the same test as the acc probe's, spelled differently: mutate_oacc.py anchors that line once
+1203c1203,1205
+<     try:
+---
+>     adm = M.assert_no_situation_classifier_input(model.cpu().eval(), probe)
+>     model.to(dev).train()
+>     try:                                                  # after the model is back on its device in train mode: the probe sees the state the acc probe saw
+1207,1208d1208
+<     adm = M.assert_no_situation_classifier_input(model.cpu().eval(), probe)
+<     model.to(dev).train()

@@ -1,0 +1,160 @@
+{
+ "_evidence_class": "MEASURED (ours)",
+ "reader": {
+  "n_records": 2382,
+  "n_clips": 12,
+  "n_filtered_out": 430658,
+  "max_agents_per_frame": 161,
+  "has_classes": true,
+  "has_occlusion_flags": true,
+  "n_episodes_offered": 40
+ },
+ "enable_agent_join_stats": {
+  "path": "C:\\Users\\Admin\\tanitad-data\\joins\\joins\\train2400_agents.jsonl",
+  "n_episodes": 40,
+  "n_episodes_joined_stable_id": 0,
+  "n_episodes_joined_legacy_id": 12,
+  "n_ambiguous_legacy_ids_in_join": 0,
+  "id_space": "legacy-16bit-COLLIDING",
+  "allow_legacy_ids": true,
+  "n_windows": 6991,
+  "n_windows_labelled": 2098,
+  "frac_windows_labelled": 0.3001,
+  "n_windows_labelled_clear": 0,
+  "n_target_boxes_prefilter": 85488,
+  "agent_pad": 161,
+  "reader_max_agents_per_frame": 161,
+  "reader_n_records": 2382,
+  "reader_n_clips": 12,
+  "reader_has_classes": true,
+  "reader_has_occlusion_flags": true,
+  "reader_with_rates": true
+ },
+ "K1_contract": {
+  "agent_box": {
+   "present": true,
+   "dtype": "torch.float32",
+   "shape": [
+    64,
+    161,
+    4
+   ],
+   "ok": true
+  },
+  "agent_yaw": {
+   "present": true,
+   "dtype": "torch.float32",
+   "shape": [
+    64,
+    161
+   ],
+   "ok": true
+  },
+  "agent_cls": {
+   "present": true,
+   "dtype": "torch.int64",
+   "shape": [
+    64,
+    161
+   ],
+   "ok": true
+  },
+  "agent_valid": {
+   "present": true,
+   "dtype": "torch.bool",
+   "shape": [
+    64,
+    161
+   ],
+   "ok": true
+  },
+  "agent_occ": {
+   "present": true,
+   "dtype": "torch.float32",
+   "shape": [
+    64,
+    161
+   ],
+   "ok": true
+  },
+  "agent_rates": {
+   "present": true,
+   "dtype": "torch.float32",
+   "shape": [
+    64,
+    161,
+    3
+   ],
+   "ok": true
+  },
+  "agent_rates_mask": {
+   "present": true,
+   "dtype": "torch.bool",
+   "shape": [
+    64,
+    161
+   ],
+   "ok": true
+  },
+  "agent_label": {
+   "present": true,
+   "dtype": "torch.bool",
+   "shape": [
+    64
+   ],
+   "ok": true
+  }
+ },
+ "K2_filter": {
+  "n_windows": 64,
+  "n_windows_labelled": 24,
+  "n_target_prefilter": 898,
+  "n_target_infield_only": 428,
+  "frac_infield_only": 0.4766,
+  "n_target_occ0_from_join_flag": 428,
+  "frac_occ0_from_join_flag": 0.4766,
+  "n_target_infield_and_decodebox": 158,
+  "frac_infield_and_decodebox": 0.1759,
+  "corpus_visible_frac_reference": 0.4106,
+  "corpus_infield_bevbox_frac_reference": 0.1567,
+  "decode_box": {
+   "x_fwd_m": 60.0,
+   "y_half_m": 16.0
+  }
+ },
+ "K3_states": {
+  "n_NO_LABEL": 40,
+  "n_labelled_clear": 0,
+  "distinguishable": true,
+  "NO_LABEL_rows_all_invalid": true
+ },
+ "K4_loss": {
+  "loss_presence": 0.546092689037323,
+  "loss_cls": 2.622129201889038,
+  "loss_centre": 24.232458114624023,
+  "loss_size": 3.449876308441162,
+  "loss_yaw": 1.0012640953063965,
+  "loss_rates": 8.024688720703125,
+  "loss_occ": 0.6290313005447388,
+  "total": 36.178680419921875,
+  "n": {
+   "matched": 158,
+   "target": 158,
+   "dropped": 0,
+   "cls": 158,
+   "centre": 158,
+   "size": 158,
+   "yaw": 158,
+   "rates": 158,
+   "occ": 158,
+   "target_prefilter": 898,
+   "target_visible": 158
+  },
+  "n_dropped": 0,
+  "n_target": 158,
+  "filter_visible": true
+ },
+ "K5_withheld": {
+  "agent_keys_left": []
+ }
+}

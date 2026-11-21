@@ -1,0 +1,7 @@
+# Fix: `job_stopdec_s1.cmd` refused every run (cmd parenthesis bug), run by `job_stopdec_s1_fixed.cmd`
+
+**What happened (2026-11-13).** Step 2 (dumps) ended `rc=0 finished=13.11.2026 21:58:15` (six arms). Step 3 was launched at 21:58:15 and wrote `rc=2 finished=13.11.2026 21:58:45` with NO `run_stopdec_s1.log`, about 30 s in. That is the time of the `stopperc_s1_read.py tags` call, which printed the six tags.
+
+**Cause.** In the refusal branch, `if "%TAGS%"=="" ( ... )`, the echo text `no tags (the NULL reuse state is not clean)` has an unescaped `)`. cmd closes the `if` block at that `)`. So the branch's `(echo rc=2 ...)> STOPDEC_S1.done` and `exit /b 2` ran UNCONDITIONALLY, with the tags present. MEASURED with a reproduction (`set "TAGS=NULL_s0 A_s0"`, the same block): exit 2, `rc=2`, no log. With the parentheses escaped (`^(` `^)`) the same file reaches the main command (exit 0, `reached-main`). The step-2 job has no such construct, which is why it ran. The unit tests and the stand-in smoke did not run the .cmd launchers through cmd.exe.
+
+**Fix.** `job_stopdec_s1_fixed.cmd` = `job_stopdec_s1.cmd` with exactly those two characters escaped (one line differs; CRLF kept). sha256 `1b9dbaa0...` against the pinned original `a319d197...`. The pinned original is left unchanged, and `READ_PINS_S1.sha256` still holds 18/18. The STOPDEC instrument (`theory/stopbal/read/stopdec_arm.py`), its arguments, the tree, the dumps and every reading choice are unchanged. No stage-1 metric existed when this was found: STOPDEC never ran and `read` was not called.

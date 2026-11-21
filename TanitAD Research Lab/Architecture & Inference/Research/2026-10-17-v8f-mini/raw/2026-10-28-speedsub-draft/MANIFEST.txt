@@ -1,0 +1,31 @@
+MANIFEST: E:/Projects/TanitAD-artifacts/dagland/speedsub/  (2026-10-28; nothing staged in git, committed or pushed)
+path | bytes | sha256 | note
+
+PREREG_V8F_SPEEDSUB.md | 29236 | 58e77f47195f4ed11ba87e563afb9706c90cf1f3b2585f4f28d9e0f17b989f19 | DRAFT prereg, both outcomes committed. Promote to Project Steering/. Only copy.
+RESULTS.md | 7759 | f5927f0e838abd35d0e93bc40305597b24bca8922f1e9757c2d814cfd720641a | build results, flags, hand-off. Only copy.
+logs/mutation_results.json | 4172 | d4bf5bb5015b9b97210342be1e0c0a95f1731878419db0c13edf365ebbb29afd | 28 mutants, 28 killed. Only copy.
+logs/mutation_run.txt | 2142 | 4bbe1f467782817935e1a53ccaca7613f4545b64f37adb7c7e99da807c272ce7 | console output of the mutation run.
+logs/pytest_RED_on_original.txt | 2401 | 273fc3a1ca624ce06fd594282d9cc76d613bc5acc9d62e52a0eb9cdb551eda58 | new tests vs the pinned original: 31 failed, 8 passed.
+logs/pytest_staged_green.txt | 6239 | d2ce79cd91bddea955c11ee7e23870e4fe9ed0ccb01a23254b1f35e8fbc337c8 | 66 passed (39 new + 27 SPEEDREAD).
+logs/real_speedavg_base_check.txt | 345 | 1978ef21e5c658e2aeaafec077cd8614f5956669527aea0bb48ac4e295c4e210 | staged hook on the REAL SPEEDAVG base class.
+logs/smoke/longlat_smoke_speedread_s0.json | 17803 | fdaed7bda1cd40755b79dd9ac5fccc063c104655034b1fe743efd83cb7f9f01b | families_longlat_sub.py on SPEEDREAD's banked s0 dumps.
+logs/smoke/smoke_vs_banked.txt | 173 | b08850993584e997d4ef9575caca3cc972dc167fa7ded89fdbb7c3f0d95b93d1 | smoke equals the banked longlat_s0.json (36 numbers, max diff 0).
+reference/instrument_01f3d34e.py | 42837 | fd5ce0bea37c3e0e608144e041f54a337fd4378b38fb312df65787bc864be4fe | export of the SPEEDREAD instrument blob (git 01f3d34e); duplicate of the golden copy; reference only.
+reference/test_01f3d34e.py | 20583 | c1505e895bdbe1f719fcf8ebe42f9ae243a86d065790b7eac22f75709b0c743a | export of the SPEEDREAD test blob (git 01f3d34e); duplicate of stage/.../test_v8f_speedread.py; reference only.
+run/make_tree.sh | 923 | cd036bb8120eb5a417dfc1dc1b88fe74e8d20dfd107c965aa9a4223205cf5e2f | overlay-tree builder (executed once; built F:/TanitAD-scratch/speedsub_tmp/tree). Only copy.
+run/run_speedsub.sh | 5742 | 8255f69f7e094abe609083ab69fa23dd1b2359da8570243122b14e435c3413c0 | run script (NOT executed). Only copy.
+stage/stack/scripts/families_longlat_sub.py | 10795 | f981ea7a44d86ee12528e29ca2e0ea67947c557e2a8aee0bf1cd16d935a316a8 | LAND: parametrised copy of SPEEDREAD's families_longlat.py. Only copy.
+stage/stack/scripts/v8f_mini_eval_speedread.py | 60688 | a95f4fb14da3fd8f6f89e55dfcb23d5d26a81b09dd24285aba394f36546634ca | LAND: instrument (SPEEDREAD base + ego/egoshuf/subevals/subread). Only copy.
+stage/stack/tests/golden/golden_speedread_modes.json | 131663 | 8942331b18d870fe3bf9dc42ac6295a35dc0316167073e81d8d64a1131385f83 | LAND: golden produced from the pinned original. Only copy.
+stage/stack/tests/golden/v8f_mini_eval_speedread_fd5ce0be.py | 42837 | fd5ce0bea37c3e0e608144e041f54a337fd4378b38fb312df65787bc864be4fe | LAND: byte-identical to the SPEEDREAD instrument blob (sha fd5ce0be); reference for RED / differential tests. Also in git at 01f3d34e (stack/scripts/v8f_mini_eval_speedread.py).
+stage/stack/tests/make_golden_speedread.py | 880 | 3f22b51066ee1b979fb1b54ba5fedb82d890d70c37bb0835ffc376a3f3eaf298 | LAND: golden generator (runs the pinned original). Only copy.
+stage/stack/tests/test_v8f_speedread.py | 20583 | c1505e895bdbe1f719fcf8ebe42f9ae243a86d065790b7eac22f75709b0c743a | NO-OP: byte-identical to the repo blob c1505e89...; present so the 66-test log can be re-run from stage/. Also in git at 01f3d34e.
+stage/stack/tests/test_v8f_speedsub.py | 41472 | d32063a6303e16ac6d31275d73df80366a6bdf4bc9470fabde170be289917fd7 | LAND: 39 new tests. Only copy.
+tools/mutate_speedsub.py | 7759 | bc59366ab84437fe6e8464be0aac173a041c6bc8136b5112c681ddfc706acf9f | mutation harness. Only copy.
+
+OUTSIDE THE PACKAGE (written by this work, not read-only inputs):
+F:/TanitAD-scratch/speedsub_tmp/tree  | 477 MB overlay tree (copy of F:/TanitAD-scratch/speedread/tree_f3971165 + the two staged scripts); rebuildable with run/make_tree.sh; delete after use (kept for the run).
+F:/TanitAD-scratch/speedsub_tmp/       | small scratch helpers (patch scripts, real_sa_check.py, wrap.py, longlat_s0_banked.json); safe to delete.
+
+SINGLE-LOCATION INPUTS the run depends on (not in the repo): F:/TanitAD-scratch/speedread/{fit/readout.pt (a205609a...), eval_s0|s1/eval_*-speedread-{own,gt}.npz, eval_s0|s1/speedread_cells_*-identity.npz}.
+NOT PRODUCED: any SPEEDSUB eval number, SUBREAD.json, family table for ego, a distance-keeping adapter, the PREREG_V8F_SPEEDCELL instrument (named in PREREG section 7), a real-data smoke.

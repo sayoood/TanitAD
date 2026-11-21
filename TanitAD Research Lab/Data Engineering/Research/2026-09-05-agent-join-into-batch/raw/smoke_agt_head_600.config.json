@@ -1,0 +1,280 @@
+{
+ "arm": "hier",
+ "seed": 0,
+ "argv": [
+  "--arm",
+  "hier",
+  "--out",
+  "C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/f407bc82-7969-457c-a947-6be2014fee89/scratchpad/smoke_agt_head_600",
+  "--smoke",
+  "--steps",
+  "600",
+  "--device",
+  "cpu",
+  "--data-root",
+  "C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/f407bc82-7969-457c-a947-6be2014fee89/scratchpad/tiny_epcache",
+  "--anchors",
+  "C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/f407bc82-7969-457c-a947-6be2014fee89/scratchpad/anchors20.pt",
+  "--anchor-v0-conditioned",
+  "--anchor-control-units",
+  "alat",
+  "--sampler",
+  "ddim",
+  "--w-u0",
+  "0.5",
+  "--agents",
+  "head",
+  "--w-agent",
+  "1.0",
+  "--agent-queries",
+  "32",
+  "--agent-join",
+  "C:/Users/Admin/tanitad-data/joins/joins/train2400_agents.jsonl",
+  "--agent-join-allow-legacy-ids",
+  "--log-every",
+  "50"
+ ],
+ "registered_delta": {
+  "core.graft_target_latent": [
+   "True",
+   "False"
+  ],
+  "hier": [
+   "True",
+   "False"
+  ]
+ },
+ "param_breakdown": {
+  "core": 3342697,
+  "phi_tac": 7440,
+  "str_goal_head": 27,
+  "gstr_cond": 608,
+  "tac_heads": 594,
+  "tac_latent_proj": 1056,
+  "scorer": 88,
+  "nav_inject": 2856,
+  "total": 3355366
+ },
+ "goal_provenance": {
+  "inference_inputs": [
+   "pooled (mean-pooled conv features, last frame)"
+  ],
+  "contains_situation_classifier_output": false,
+  "situation_classifier_in_graph": false,
+  "shared_trunk_with": [
+   "route_head",
+   "maneuver_head/tactical_trunk"
+  ],
+  "shared_trunk_justification": "shared ENCODER, not a shared signal; attributability comes from the zero-init gates, and a shared trunk cannot launder a signal that is absent from the graph",
+  "form": "geometric (bearing + signed along-track preference)",
+  "supplied_or_predicted": "predicted",
+  "label_source": "tanitad.data.lan.lan_window_features (ego future path, arc-length resampled, leak-guarded) \u2014 TRAIN ONLY; never read at inference",
+  "admissibility_check": "could this goal have been computed from the situation classifier's output? NO \u2014 that output is not in the graph, is not a batch field, and is not a label source here."
+ },
+ "provenance_roles": {
+  "goal": [
+   "g_str",
+   "g_tac",
+   "goal_point_tac"
+  ],
+  "situation_output": [],
+  "inference_inputs_of_goals": [
+   "frames (via pooled_seq/ctx only)"
+  ],
+  "required_live_edges": [
+   "frames -> every goal"
+  ],
+  "refused_edges": [
+   "lan -> inference (E12; label-only)",
+   "situation classifier output -> any goal node (PI 2026-08-03, UNCHANGED)",
+   "v0 -> any goal node (E11)"
+  ],
+  "shared_trunk": "encoder (common ancestor, declared; zero-init gates carry attributability)",
+  "_reads": "`required_live_edges` is not decoration: an arm where the SCENE edge does not fire is ECHOING, and an arm where the EGO edge does not fire is v3 wearing a v4 config. Both are failures and both are measured."
+ },
+ "horizons": [
+  5,
+  10,
+  15,
+  20,
+  30,
+  40,
+  50,
+  60
+ ],
+ "anchors": {
+  "path": "C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/f407bc82-7969-457c-a947-6be2014fee89/scratchpad/anchors20.pt",
+  "shape": [
+   20,
+   8,
+   2
+  ],
+  "sha256_installed": "d2881d2ee17b93bd446563b1984a70f3645d965b279905174e0d106a7c65ed12",
+  "source": "file",
+  "controls_shape": [
+   20,
+   2
+  ],
+  "controls_sha256_installed": "6c7301c5dd6867469078ad103aaefd2ee3c5ca533f2aaedf108623ab0a4f2511",
+  "v0_conditioned": true,
+  "control_units": "alat",
+  "straight_ahead_control_present": true,
+  "control_units_source": "file+cli",
+  "artifact_schema": "tanitad.anchor_artifact/1",
+  "artifact_declared": {
+   "control_units": "alat",
+   "horizon_s": 6.0,
+   "dt": 0.1,
+   "ref_speed_ms": 10.0,
+   "kappa_cap": 0.12,
+   "alat_v_floor": 4.0
+  },
+  "artifact_provenance": {
+   "builder": "make_smoke_anchors.py",
+   "builder_path": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\\f407bc82-7969-457c-a947-6be2014fee89\\scratchpad\\make_smoke_anchors.py",
+   "builder_sha256": "c1cf1a5d1d0c369edd5db2a5707dc2f2fb8ae345f2e5dc143ab8fe2ec31bc95e",
+   "argv": [
+    "C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/f407bc82-7969-457c-a947-6be2014fee89/scratchpad/anchors20.pt",
+    "--n-lon",
+    "5",
+    "--n-lat",
+    "4"
+   ],
+   "created_utc": "2026-09-05T13:40:41+00:00",
+   "torch_version": "2.11.0+cu128",
+   "schema": "tanitad.anchor_artifact/1"
+  },
+  "file_sha256": "f871aaa2c988e97b6df70a8262b48d8d8e116bb76bf5dfdb2fbe1b017b5280ad"
+ },
+ "seams": {
+  "hier": true,
+  "hierarchy": true,
+  "graft_maneuver": true,
+  "factored_maneuver": true,
+  "graft_prior_center": true,
+  "graft_target_latent": true,
+  "grounded_selector": false,
+  "graft_imagination": false,
+  "tactical_speed_input": false,
+  "lan_enable": false,
+  "graft_lan": false,
+  "goal_str": false,
+  "withheld_bank": "fixed",
+  "withheld_bank_warmup": 0,
+  "withheld_speed_max_ms": 35.0,
+  "agents": {
+   "enable": true,
+   "oracle": false,
+   "oracle_sigma_range_m": 0.0,
+   "oracle_miss_rate": 0.0,
+   "queries": 32,
+   "d_model": 256,
+   "depth": 3,
+   "n_heads": 8,
+   "enforce_band": true,
+   "w_project": 0.0,
+   "w_ground": 0.0,
+   "presence_gate": 0.5,
+   "presence_hard": false,
+   "n_classes": 10,
+   "classes": [
+    "automobile",
+    "heavy_truck",
+    "bus",
+    "other_vehicle",
+    "trailer",
+    "person",
+    "rider",
+    "stroller",
+    "animal",
+    "protruding_object"
+   ],
+   "n_queries_default_upstream": 16
+  },
+  "cross_agent": true,
+  "sampler": "ddim",
+  "sampler_space": "control",
+  "sampler_infer_t": 8,
+  "sampler_steps": 2,
+  "sampler_groups": 1,
+  "control_norm": [
+   4.0,
+   3.0
+  ],
+  "w_agent": 1.0,
+  "w_u0": 0.5
+ },
+ "withheld_bank": {
+  "mode": "fixed",
+  "warmup_steps": 0,
+  "speed_max_ms": 35.0,
+  "random_pool": null
+ },
+ "selection": {
+  "sel_reach_clamp": true,
+  "sel_accel_max": 2.5,
+  "horizon_s": 6.0,
+  "band_ms": 15.0,
+  "note": "horizon_s is DERIVED from max(horizons); the 72.08 % / 77.28 % kill statistics quoted elsewhere are 2 s numbers and do NOT hold here (re-derived 2026-09-04)."
+ },
+ "goal_tau_steps": [
+  20,
+  40,
+  60
+ ],
+ "admission_sigma_m": 0.8,
+ "ego": {
+  "ego_state_inject": false,
+  "echo_base": false,
+  "ego_valid_channel": false,
+  "ego_dropout": 0.5,
+  "tactical_speed_input": false,
+  "channels": [
+   "v0"
+  ],
+  "derivation": "t0 = last OBSERVED frame; a_long = corpus ax (actions[:,-1,1]); curvature = tan(steer)/2.9 (actions[:,-1,0]); yaw_rate = v0*curvature. NO finite differencing, NO future read.",
+  "wheelbase_mode": "const2p9"
+ },
+ "size": "small",
+ "rig_rung": false,
+ "ablate_frames": false,
+ "image_hw": [
+  64,
+  64
+ ],
+ "tac_vocab_version": "kin3",
+ "v2_cache": null,
+ "require_parity": false,
+ "v2_parity": null,
+ "u8_batches": false,
+ "frame_batch_bytes_est": 7864320,
+ "nav_from_v7": false,
+ "nav_cmd_derivation": "refb_labels.nav_command (v1, unchanged)",
+ "nav_from_v7_stats": null,
+ "v7_labels": null,
+ "agent_join": "C:/Users/Admin/tanitad-data/joins/joins/train2400_agents.jsonl",
+ "agent_join_stats": {
+  "train": {
+   "path": "C:/Users/Admin/tanitad-data/joins/joins/train2400_agents.jsonl",
+   "n_episodes": 16,
+   "n_episodes_joined_stable_id": 0,
+   "n_episodes_joined_legacy_id": 16,
+   "n_ambiguous_legacy_ids_in_join": 0,
+   "id_space": "legacy-16bit-COLLIDING",
+   "allow_legacy_ids": true,
+   "n_windows": 2797,
+   "n_windows_labelled": 2728,
+   "frac_windows_labelled": 0.9753,
+   "n_windows_labelled_clear": 0,
+   "n_target_boxes_prefilter": 100475,
+   "agent_pad": 161,
+   "reader_max_agents_per_frame": 161,
+   "reader_n_records": 3081,
+   "reader_n_clips": 16,
+   "reader_has_classes": true,
+   "reader_has_occlusion_flags": true,
+   "reader_with_rates": true
+  },
+  "eval": null
+ }
+}

@@ -1,0 +1,607 @@
+{
+ "label": "step50400_R7_CEILDECL_d",
+ "script": "pdm_score_one_stage",
+ "module": "navsim.planning.script.run_pdm_score_one_stage",
+ "overrides": [
+  "train_test_split=navtest",
+  "experiment_name=tanitad_bench_navtest_single_stage_step50400_R7_CEILDECL_d",
+  "metric_cache_path=C:/Users/Admin/navsim-crun/exp/metric_cache_navtest_v2",
+  "navsim_log_path=D:/Archive/devbox-C/navsim/data/openscene/navsim_logs/test",
+  "traffic_agents=non_reactive",
+  "worker=sequential",
+  "agent=constant_velocity_agent",
+  "agent._target_=tanitad_seam_agent.TanitADSeamAgent",
+  "+agent.seam_file=E:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step50400/bridge_navtest/seam_R7_CEILDECL_d.npz",
+  "+agent.call_log=C:/Users/Admin/navsim-crun/exp/tanitad_bench/runs/epdms7/step50400/R7_CEILDECL_d/raw/step50400_R7_CEILDECL_d.calls.jsonl",
+  "output_dir=C:/Users/Admin/navsim-crun/exp/tanitad_bench/runs/epdms7/step50400/R7_CEILDECL_d/exp/step50400_R7_CEILDECL_d"
+ ],
+ "argv": [
+  "E:\\Projects\\TanitAD\\taniteval\\taniteval\\bench\\navsim\\devkit_side\\navsim_win.py",
+  "--script",
+  "pdm_score_one_stage",
+  "--label",
+  "step50400_R7_CEILDECL_d",
+  "--out-dir",
+  "C:\\Users\\Admin\\navsim-crun\\exp\\tanitad_bench\\runs\\epdms7\\step50400\\R7_CEILDECL_d\\raw",
+  "--patch-loader",
+  "--ram-floor-mb",
+  "4000.0",
+  "--dump-final-scores",
+  "C:\\Users\\Admin\\navsim-crun\\exp\\tanitad_bench\\runs\\epdms7\\step50400\\R7_CEILDECL_d\\raw\\step50400_R7_CEILDECL_d_final_scores_frame.csv",
+  "--dump-preaggregation",
+  "C:\\Users\\Admin\\navsim-crun\\exp\\tanitad_bench\\runs\\epdms7\\step50400\\R7_CEILDECL_d\\raw\\step50400_R7_CEILDECL_d_preaggregation.csv",
+  "--",
+  "train_test_split=navtest",
+  "experiment_name=tanitad_bench_navtest_single_stage_step50400_R7_CEILDECL_d",
+  "metric_cache_path=C:/Users/Admin/navsim-crun/exp/metric_cache_navtest_v2",
+  "navsim_log_path=D:/Archive/devbox-C/navsim/data/openscene/navsim_logs/test",
+  "traffic_agents=non_reactive",
+  "worker=sequential",
+  "agent=constant_velocity_agent",
+  "agent._target_=tanitad_seam_agent.TanitADSeamAgent",
+  "+agent.seam_file=E:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step50400/bridge_navtest/seam_R7_CEILDECL_d.npz",
+  "+agent.call_log=C:/Users/Admin/navsim-crun/exp/tanitad_bench/runs/epdms7/step50400/R7_CEILDECL_d/raw/step50400_R7_CEILDECL_d.calls.jsonl",
+  "output_dir=C:/Users/Admin/navsim-crun/exp/tanitad_bench/runs/epdms7/step50400/R7_CEILDECL_d/exp/step50400_R7_CEILDECL_d"
+ ],
+ "python": "3.9.25 (main, Oct 31 2025, 22:56:13) [MSC v.1929 64 bit (AMD64)]",
+ "cwd": "C:\\Users\\Admin\\navsim-crun\\exp\\tanitad_bench\\runs\\epdms7\\step50400\\R7_CEILDECL_d\\exp",
+ "PYTHONHASHSEED": "1",
+ "hash_randomization_flag": 1,
+ "env": {
+  "NUPLAN_MAP_VERSION": "nuplan-maps-v1.0",
+  "NUPLAN_MAPS_ROOT": "C:/Users/Admin/navsim-crun/data/maps",
+  "NAVSIM_EXP_ROOT": "C:/Users/Admin/navsim-crun/exp/tanitad_bench/runs/epdms7/step50400/R7_CEILDECL_d/exp",
+  "NAVSIM_DEVKIT_ROOT": "C:/Users/Admin/navsim-crun/devkit",
+  "OPENSCENE_DATA_ROOT": "C:/Users/Admin/navsim-crun/data/openscene"
+ },
+ "env_defaults_applied_by_wrapper": {},
+ "navsim_devkit_root_used": "C:/Users/Admin/navsim-crun/devkit",
+ "navsim_devkit_sha": "0a380a9063d7162ec93d0f51e9990ebac585f720",
+ "nuplan_devkit_sha": "ce3c323af01c0d7ec5672f7832ef53f9c679aab0",
+ "imported_from": {
+  "navsim": "C:\\Users\\Admin\\navsim-crun\\devkit\\navsim\\__init__.py",
+  "nuplan": "C:\\Users\\Admin\\navsim-crun\\nuplan-devkit\\nuplan\\__init__.py",
+  "script": "C:\\Users\\Admin\\navsim-crun\\devkit\\navsim\\planning\\script\\run_pdm_score_one_stage.py",
+  "fcntl": "C:\\Users\\Admin\\navsim-crun\\venv\\lib\\site-packages\\fcntl.py"
+ },
+ "patches": [
+  {
+   "name": "MetricCacheLoader._load_metric_cache_paths: token = re.split(r'[\\\\/]', p)[-2]",
+   "target": "navsim/common/dataloader.py:306-317",
+   "original_source_sha16": "f064e9ab9dcb841d",
+   "patched_source_sha16": "e6f60f85ea15ed16",
+   "why": "save_cache_metadata writes str(WindowsPath) (backslashes); the original split('/')[-2] raises IndexError on Windows"
+  }
+ ],
+ "hooks": [
+  "navsim.planning.script.run_pdm_score_one_stage.pdm_score (observation only)",
+  "navsim.planning.script.run_pdm_score_one_stage.create_scene_aggregators (PRE-AGGREGATION dump)",
+  "navsim.planning.script.run_pdm_score_one_stage.compute_final_scores (dump only)",
+  "navsim.planning.script.run_pdm_score_one_stage.worker_map (W1: pre-aggregation dump)"
+ ],
+ "started_local": "2026-10-05 16:00:28",
+ "status": "OK",
+ "ended_local": "2026-10-05 16:34:53",
+ "resources": {
+  "wall_s": 2065.52,
+  "peak_rss_mb": 2804.3,
+  "peak_process_tree_rss_mb": 2804.3,
+  "min_system_available_mb": 7496.1,
+  "n_samples": 948,
+  "n_samples_below_floor": 0,
+  "sample_interval_s": 2.0,
+  "ram_floor_mb": 4000.0,
+  "abort_policy": "available<4000MB for 60 consecutive samples, or <2000MB once",
+  "trace_every_10th_sample__t_rss_avail": [
+   [
+    0.0,
+    20.6,
+    10266.4
+   ],
+   [
+    20.5,
+    2106.7,
+    8141.3
+   ],
+   [
+    41.9,
+    2233.8,
+    8167.1
+   ],
+   [
+    63.5,
+    2237.0,
+    8171.3
+   ],
+   [
+    85.0,
+    2250.1,
+    8138.2
+   ],
+   [
+    106.8,
+    2254.9,
+    8138.2
+   ],
+   [
+    127.2,
+    2266.6,
+    8133.8
+   ],
+   [
+    148.7,
+    2269.7,
+    8109.6
+   ],
+   [
+    169.8,
+    2280.9,
+    8100.2
+   ],
+   [
+    190.6,
+    2280.9,
+    8112.5
+   ],
+   [
+    211.9,
+    2285.2,
+    8089.4
+   ],
+   [
+    233.1,
+    2294.5,
+    8095.6
+   ],
+   [
+    254.1,
+    2293.4,
+    8094.1
+   ],
+   [
+    275.6,
+    2301.1,
+    8075.4
+   ],
+   [
+    296.6,
+    2308.5,
+    8103.4
+   ],
+   [
+    317.8,
+    2311.2,
+    8084.2
+   ],
+   [
+    339.3,
+    2316.8,
+    8072.5
+   ],
+   [
+    360.8,
+    2331.4,
+    8063.0
+   ],
+   [
+    381.9,
+    2337.1,
+    8037.5
+   ],
+   [
+    403.0,
+    2360.6,
+    8024.4
+   ],
+   [
+    424.6,
+    2353.5,
+    8007.6
+   ],
+   [
+    445.1,
+    2356.3,
+    8122.9
+   ],
+   [
+    466.1,
+    2364.6,
+    8056.3
+   ],
+   [
+    487.1,
+    2370.3,
+    8049.7
+   ],
+   [
+    507.8,
+    2372.3,
+    8029.3
+   ],
+   [
+    528.3,
+    2411.9,
+    8002.9
+   ],
+   [
+    548.7,
+    2391.5,
+    8016.2
+   ],
+   [
+    568.9,
+    2392.9,
+    7993.5
+   ],
+   [
+    589.0,
+    2394.6,
+    7990.2
+   ],
+   [
+    610.4,
+    2405.0,
+    7955.6
+   ],
+   [
+    630.8,
+    2408.3,
+    7957.2
+   ],
+   [
+    651.8,
+    2409.1,
+    7961.2
+   ],
+   [
+    673.6,
+    2411.4,
+    7966.2
+   ],
+   [
+    694.9,
+    2422.9,
+    7927.3
+   ],
+   [
+    717.3,
+    2428.7,
+    7911.2
+   ],
+   [
+    738.9,
+    2435.4,
+    7918.8
+   ],
+   [
+    761.1,
+    2448.1,
+    7908.6
+   ],
+   [
+    781.9,
+    2452.1,
+    7915.1
+   ],
+   [
+    804.9,
+    2461.2,
+    7875.1
+   ],
+   [
+    828.5,
+    2465.4,
+    7886.8
+   ],
+   [
+    852.6,
+    2468.6,
+    7887.8
+   ],
+   [
+    876.9,
+    2469.9,
+    7863.3
+   ],
+   [
+    899.2,
+    2474.9,
+    7812.5
+   ],
+   [
+    922.4,
+    2487.9,
+    7856.9
+   ],
+   [
+    947.3,
+    2491.7,
+    7823.8
+   ],
+   [
+    971.6,
+    2500.5,
+    7844.9
+   ],
+   [
+    995.8,
+    2511.8,
+    7835.0
+   ],
+   [
+    1018.9,
+    2512.9,
+    7829.4
+   ],
+   [
+    1039.1,
+    2524.8,
+    7812.3
+   ],
+   [
+    1063.0,
+    2529.1,
+    7825.0
+   ],
+   [
+    1086.6,
+    2534.6,
+    7816.8
+   ],
+   [
+    1108.4,
+    2543.1,
+    7916.6
+   ],
+   [
+    1131.1,
+    2548.2,
+    7898.5
+   ],
+   [
+    1156.0,
+    2556.4,
+    7897.8
+   ],
+   [
+    1178.7,
+    2561.0,
+    7871.5
+   ],
+   [
+    1201.2,
+    2570.4,
+    7876.8
+   ],
+   [
+    1222.5,
+    2569.5,
+    7866.9
+   ],
+   [
+    1244.2,
+    2580.8,
+    7846.8
+   ],
+   [
+    1265.7,
+    2586.7,
+    7854.0
+   ],
+   [
+    1288.6,
+    2590.4,
+    7808.7
+   ],
+   [
+    1310.2,
+    2597.0,
+    7813.0
+   ],
+   [
+    1332.5,
+    2604.1,
+    7802.1
+   ],
+   [
+    1355.9,
+    2611.9,
+    7774.4
+   ],
+   [
+    1378.1,
+    2620.5,
+    7780.0
+   ],
+   [
+    1399.3,
+    2623.5,
+    7771.5
+   ],
+   [
+    1421.1,
+    2634.4,
+    7754.8
+   ],
+   [
+    1443.2,
+    2641.5,
+    7754.8
+   ],
+   [
+    1466.3,
+    2653.4,
+    7745.8
+   ],
+   [
+    1489.1,
+    2655.3,
+    7769.4
+   ],
+   [
+    1511.8,
+    2663.3,
+    7740.3
+   ],
+   [
+    1533.2,
+    2668.0,
+    7687.0
+   ],
+   [
+    1555.4,
+    2678.4,
+    7699.2
+   ],
+   [
+    1577.0,
+    2678.9,
+    7690.0
+   ],
+   [
+    1599.7,
+    2686.7,
+    7655.4
+   ],
+   [
+    1620.8,
+    2693.2,
+    7632.3
+   ],
+   [
+    1643.0,
+    2699.7,
+    7682.9
+   ],
+   [
+    1665.5,
+    2707.3,
+    7612.6
+   ],
+   [
+    1687.0,
+    2705.4,
+    7629.9
+   ],
+   [
+    1710.1,
+    2714.9,
+    7621.5
+   ],
+   [
+    1731.2,
+    2716.3,
+    7629.6
+   ],
+   [
+    1753.5,
+    2720.9,
+    7631.7
+   ],
+   [
+    1774.5,
+    2729.2,
+    7606.2
+   ],
+   [
+    1795.4,
+    2733.8,
+    7604.1
+   ],
+   [
+    1816.8,
+    2744.2,
+    7592.8
+   ],
+   [
+    1838.6,
+    2755.2,
+    7580.5
+   ],
+   [
+    1860.1,
+    2756.2,
+    7580.7
+   ],
+   [
+    1880.3,
+    2758.2,
+    7564.4
+   ],
+   [
+    1901.5,
+    2764.6,
+    7546.6
+   ],
+   [
+    1922.8,
+    2767.6,
+    7561.9
+   ],
+   [
+    1945.0,
+    2778.9,
+    7544.5
+   ],
+   [
+    1966.9,
+    2794.5,
+    7508.9
+   ],
+   [
+    1988.3,
+    2794.9,
+    7537.3
+   ],
+   [
+    2008.8,
+    2799.8,
+    7513.1
+   ],
+   [
+    2029.4,
+    2138.6,
+    8152.5
+   ],
+   [
+    2050.4,
+    2162.3,
+    7794.6
+   ]
+  ]
+ },
+ "preaggregation_dump": {
+  "path": "C:\\Users\\Admin\\navsim-crun\\exp\\tanitad_bench\\runs\\epdms7\\step50400\\R7_CEILDECL_d\\raw\\step50400_R7_CEILDECL_d_preaggregation.csv",
+  "pickle": "C:\\Users\\Admin\\navsim-crun\\exp\\tanitad_bench\\runs\\epdms7\\step50400\\R7_CEILDECL_d\\raw\\step50400_R7_CEILDECL_d_preaggregation.pkl",
+  "n_rows": 12146,
+  "columns": [
+   "no_at_fault_collisions",
+   "drivable_area_compliance",
+   "driving_direction_compliance",
+   "traffic_light_compliance",
+   "ego_progress",
+   "time_to_collision_within_bound",
+   "lane_keeping",
+   "history_comfort",
+   "multiplicative_metrics_prod",
+   "weighted_metrics",
+   "weighted_metrics_array",
+   "pdm_score",
+   "valid",
+   "log_name",
+   "frame_type",
+   "start_time",
+   "endpoint_x",
+   "endpoint_y",
+   "start_point_x",
+   "start_point_y",
+   "ego_simulated_states",
+   "token"
+  ]
+ },
+ "pre_aggregation_dump": {
+  "path": "C:\\Users\\Admin\\navsim-crun\\exp\\tanitad_bench\\runs\\epdms7\\step50400\\R7_CEILDECL_d\\raw\\step50400_R7_CEILDECL_d_final_scores_frame_PRE_AGGREGATION.csv",
+  "rows": 12146
+ },
+ "final_scores_dump": "C:\\Users\\Admin\\navsim-crun\\exp\\tanitad_bench\\runs\\epdms7\\step50400\\R7_CEILDECL_d\\raw\\step50400_R7_CEILDECL_d_final_scores_frame.csv"
+}

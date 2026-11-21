@@ -1,0 +1,205 @@
+{
+ "_evidence_class": "MEASURED (ours)",
+ "_probe_date": "2026-08-16",
+ "P1_parquet": {
+  "path": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\\8fc25020-a1d5-4e1b-a9e2-aeccf845c5a2\\scratchpad\\a2dl\\records.parquet",
+  "file_size_bytes": 25970018,
+  "num_rows": 23644,
+  "num_columns": 12,
+  "schema": {
+   "clip_id": "large_string",
+   "t0_us": "int64",
+   "task": "large_string",
+   "model_id": "large_string",
+   "quantisation": "large_string",
+   "seed": "int64",
+   "wall_s": "double",
+   "error": "null",
+   "vqa_qid": "large_string",
+   "vqa_category": "large_string",
+   "question": "large_string",
+   "raw_json": "large_string"
+  },
+  "local_sha256": "ecae276db9969de115abb3caa1e87d97eae0535544be8f5edcc33ec45d925ed2",
+  "n_unique_clip_id": 4729,
+  "rows_by_task": {
+   "trajectory": 4729,
+   "meta_action": 4729,
+   "auto_labeling": 4729,
+   "vqa": 4729,
+   "grounding_via_vqa": 4728
+  },
+  "rows_by_quantisation": {
+   "NF4-backbone-4bit-UNVALIDATED": 23644
+  },
+  "rows_by_model_id": {
+   "nvidia/Alpamayo2-Super": 23644
+  },
+  "rows_by_seed": {
+   "42": 23644
+  },
+  "distinct_t0_us": [
+   5100000
+  ],
+  "n_distinct_t0_us": 1,
+  "error_non_null_rows": 0,
+  "clips_by_n_task_rows": {
+   "4": 1,
+   "5": 4728
+  },
+  "clips_with_fewer_than_5_rows": [
+   "8e01852e-f327-49d8-bd7f-1b4a73f0cbc4"
+  ],
+  "reconcile": {
+   "clips_x_tasks": 23645,
+   "actual_rows": 23644,
+   "shortfall_vs_clips_x_tasks": 1,
+   "short_tasks": {
+    "grounding_via_vqa": 4728
+   }
+  },
+  "wall_s_per_task": {
+   "auto_labeling": {
+    "n_rows": 4729,
+    "mean_s": 17.4,
+    "median_s": 18.1,
+    "sum_hours": 22.85
+   },
+   "grounding_via_vqa": {
+    "n_rows": 4728,
+    "mean_s": 10.45,
+    "median_s": 10.1,
+    "sum_hours": 13.73
+   },
+   "meta_action": {
+    "n_rows": 4729,
+    "mean_s": 11.74,
+    "median_s": 10.0,
+    "sum_hours": 15.42
+   },
+   "trajectory": {
+    "n_rows": 4729,
+    "mean_s": 11.47,
+    "median_s": 9.5,
+    "sum_hours": 15.07
+   },
+   "vqa": {
+    "n_rows": 4729,
+    "mean_s": 8.59,
+    "median_s": 8.2,
+    "sum_hours": 11.29
+   }
+  },
+  "wall_hours_total": 78.36,
+  "s_per_clip_full_battery": 59.65,
+  "raw_json_key_row_counts": {
+   "min_ade_m": 255,
+   "min_fde_m": 255,
+   "pred_xyz_shape": 255,
+   "num_trajectory_samples": 255
+  },
+  "trajectory_rows": 4729,
+  "trajectory_pred_xyz_shapes": {
+   "[1, 1, 1, 64, 3]": 255
+  },
+  "min_ade_m": {
+   "n": 255,
+   "mean": 2.3469,
+   "median": 1.5233
+  },
+  "min_fde_m": {
+   "n": 255,
+   "mean": 6.8726,
+   "median": 4.6711
+  }
+ },
+ "P2_manifest": {
+  "farside_files": [
+   {
+    "path": ".gitattributes",
+    "size": 2504,
+    "oid": null
+   },
+   {
+    "path": "README.md",
+    "size": 1746,
+    "oid": null
+   },
+   {
+    "path": "records.parquet",
+    "size": 25970018,
+    "oid": "ecae276db9969de115abb3caa1e87d97eae0535544be8f5edcc33ec45d925ed2"
+   },
+   {
+    "path": "selection_manifest.json",
+    "size": 340800,
+    "oid": null
+   },
+   {
+    "path": "vqa_bank_500.json",
+    "size": 71642,
+    "oid": null
+   }
+  ],
+  "parquet_size_match": true,
+  "parquet_sha256_match": true,
+  "manifest_type": "list",
+  "manifest_list_key": "<root list>",
+  "manifest_n_entries": 4800,
+  "manifest_entry_keys": [
+   "clip_id",
+   "t0_us"
+  ],
+  "manifest_unique_clip_ids": 4800,
+  "delivered_unique_clip_ids": 4729,
+  "selected_but_zero_rows": 81,
+  "delivered_not_in_manifest": 10,
+  "intersection": 4719,
+  "accounting": {
+   "selected_rows_at_5_tasks": 24000,
+   "minus_zero_row_clips": -405,
+   "plus_unmanifested_clips": 50,
+   "minus_missing_task_rows": -1,
+   "computed_delivered_rows": 23644,
+   "actual_delivered_rows": 23644,
+   "closes": true
+  },
+  "rows_missing_vs_selected_x5": 356
+ },
+ "P3_aug120": {
+  "summary": {
+   "corroborated": 88,
+   "conflicts": 10,
+   "with_alpamayo": 201,
+   "sam3_missing": 115,
+   "n_fused": 201,
+   "n_v2": 201,
+   "n_sam3": 86,
+   "missing_sam3_reason": "AUG120_SAM3_STAGE_GAP"
+  },
+  "coverage_sizes": {
+   "todo": 201,
+   "v2_union_ids": 201,
+   "s3_union_ids": 86,
+   "no_v2": 0,
+   "no_s3": 115,
+   "no_ego": 0,
+   "b184": 8
+  },
+  "batch_accounting_n_tags": 25,
+  "batch_accounting_column_sums": {
+   "v2_records_in": 353,
+   "sam3_records_in": 93,
+   "clips_attributed_here": 201,
+   "sam3_attributed_here": 86,
+   "corroborated": 88,
+   "conflicts": 10,
+   "with_alpamayo": 201,
+   "sam3_absent": 115
+  },
+  "label_sources_n_records": 3,
+  "label_sources_sam3_value_counts": {
+   "None": 1
+  }
+ }
+}

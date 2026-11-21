@@ -1,0 +1,22 @@
+--- a/refe/test_rl_epo.py
++++ b/refe/test_rl_epo.py
+@@ -747,7 +747,8 @@
+         base = dict(lam=0.0, epo=True, epo_lam=1.0, epo_ramp=2, epo_temp=0.1, epo_beta=0.1, accum=2, epo_ref="base")
+         base.update(kw)
+         an = a_ns("listnet", lane, **base)
+-        return an, C.ns(CL + ["epo_probe"], a=an, compw=torch.tensor(COMPW), rcfg=RW.RewardCfg(), terms_train=TERMS, ds=DS, epo_last={}, fwd=None)
++        return an, C.ns(CL + ["epo_probe"], a=an, compw=torch.tensor(COMPW), rcfg=RW.RewardCfg(), terms_train=TERMS, ds=DS, epo_last={}, fwd=None,
++                                         dual=C.mod.EpoDual((), 0.0, 4.0, 10.0, 0.0), con_last={})          # SAFEOBJ: train_losses reads `dual` (OFF = the pre-SAFEOBJ assembly)
+ 
+     def one_microbatch(n_out):
+         A, B = Tiny(0, n_out), Tiny(0, n_out)
+@@ -854,7 +855,8 @@
+     # ---- main()'s wiring, hop by hop (static)
+     def hop_refusals():
+         for i, n in enumerate(C.main.body):
+-            if isinstance(n, ast.Assign) and getattr(n.value, "func", None) is not None and getattr(n.value.func, "id", "") == "epo_refusals":
++            v = n.value.left if isinstance(n, ast.Assign) and isinstance(n.value, ast.BinOp) else getattr(n, "value", None)          # SAFEOBJ: `bad_cli = epo_refusals(a, ap) + epo_con_refusals(a, ap)`
++            if isinstance(n, ast.Assign) and getattr(v, "func", None) is not None and getattr(v.func, "id", "") == "epo_refusals":
+                 nxt = C.main.body[i + 1]
+                 return isinstance(nxt, ast.If) and any(isinstance(m, ast.Return) and getattr(m.value, "value", None) == 4 for m in ast.walk(nxt))
+         return False

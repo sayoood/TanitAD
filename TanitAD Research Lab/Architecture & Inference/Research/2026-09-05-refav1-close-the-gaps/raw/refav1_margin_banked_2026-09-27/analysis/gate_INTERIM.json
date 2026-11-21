@@ -1,0 +1,77 @@
+{
+ "dump": "C:/Users/Admin/refav1_margin/p4out/dump_cos_argmax",
+ "arm": "cos_argmax_INTERIM",
+ "n_windows_total": 15,
+ "n_windows_scored": 10,
+ "kappa_turn_threshold": 0.04,
+ "exec_nonzero_eps": 0.001,
+ "gt_source": "computed from the dump's own `g` (no join)",
+ "panel_note": "episodes selected for real-turn DENSITY; these are CONDITIONAL rates on a turn-rich panel, NOT corpus marginals",
+ "GT_TURN_windows": {
+  "name": "GT TURN (|kappa|>thr)",
+  "n": 4,
+  "UNDERPOWERED_n_lt_10": true,
+  "frac_executed_nonzero_curvature": 1.0,
+  "kappa_absmax_mean": 0.12284505367279053,
+  "kappa_absmax_p50": 0.11432573944330215,
+  "kappa_absmax_max": 0.18272876739501953,
+  "n_exactly_zero": 0,
+  "decode_curv_frac": 1.0,
+  "plan_source_hist": {
+   "0": 4
+  },
+  "frac_executed_nonzero_AND_correct_direction": 0.75
+ },
+ "GT_STRAIGHT_windows": {
+  "name": "GT STRAIGHT",
+  "n": 6,
+  "UNDERPOWERED_n_lt_10": true,
+  "frac_executed_nonzero_curvature": 0.8333333333333334,
+  "kappa_absmax_mean": 0.11131065338850021,
+  "kappa_absmax_p50": 0.13067643344402313,
+  "kappa_absmax_max": 0.20000000298023224,
+  "n_exactly_zero": 1,
+  "decode_curv_frac": 0.5,
+  "plan_source_hist": {
+   "0": 5,
+   "2": 1
+  }
+ },
+ "decoded_lat_hist": {
+  "LANE_KEEP": 3,
+  "TURN_L": 3,
+  "TURN_R": 4
+ },
+ "controls": {
+  "CONTROL_ha0_ext_curvature_MUST_BE_NONZERO": {
+   "frac_nonzero": 1.0,
+   "absmax": 0.6030507683753967,
+   "n": 15,
+   "passes": true,
+   "note": "the NON-planner integrator banked in the SAME npz. If this reads zero the curvature column is dead and every zero above is a READ ERROR, not a measurement."
+  },
+  "low_speed_excluded": {
+   "n_excluded": 5,
+   "n_kept": 10,
+   "min_v0": 1.0,
+   "passes": true
+  },
+  "CONTROL_bank_join_agrees_after_name_remap": {
+   "n_matched": 15,
+   "n_windows": 15,
+   "max_abs_diff": 0.0,
+   "remap_is_injective": true,
+   "passes": true,
+   "note": "\u26d4 the arm's clip_index is SUBSET-relative (0..7 here) while the bank's is 0..140; a raw (clip_index, ws) join would silently hit the WRONG episodes"
+  },
+  "CONTROL_reproduces_banked_decode_prediction": {
+   "predicted": 0.8235294117647058,
+   "measured": 1.0,
+   "n_turn": 4,
+   "UNDERPOWERED_not_evaluated": true,
+   "passes": true
+  }
+ },
+ "controls_failed": [],
+ "verdict": "GATE OPEN: executed curvature non-zero on 1.0000 of GT-turn windows"
+}

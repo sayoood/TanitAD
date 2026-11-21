@@ -1,0 +1,22 @@
+.......F
+================================== FAILURES ===================================
+_ test_mutant_render_equals_real_gives_cosine_1_and_the_reader_flags_identity _
+
+    def test_mutant_render_equals_real_gives_cosine_1_and_the_reader_flags_identity():
+        k = package()
+        m = mutant()
+        assert m["rc"] == 0, open(f"{m['pull']}.stdout.txt", encoding="utf-8").read()[-3000:]
+        r = res_of(m["pull"])
+        assert r["test_hook"] is True
+        for sid, sr in r["scenes"].items():
+>           assert all(c == 1.0 for c in sr["cosine"]) and all(x == 0.0 for x in sr["rel_l2"]), sid
+E           AssertionError: aaaaaaaa-1111-4111-8111-000000000001
+E           assert (False)
+E            +  where False = all(<generator object test_mutant_render_equals_real_gives_cosine_1_and_the_reader_flags_identity.<locals>.<genexpr> at 0x000002720B5D5FF0>)
+
+tests\test_gap48.py:300: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_gap48.py::test_mutant_render_equals_real_gives_cosine_1_and_the_reader_flags_identity
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 7 passed in 47.80s
+EXIT 1

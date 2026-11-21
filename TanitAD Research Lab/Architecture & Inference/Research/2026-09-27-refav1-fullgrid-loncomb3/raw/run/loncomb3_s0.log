@@ -1,0 +1,168 @@
+[preflight] 11 analysis imports OK  (this probe exists because a 3.0 h rollout once died in analyze())
+[refav1-labels] v7.2 join: labels 141/141 eps (0 missing), 2961/9443 windows in-band +-[2.0]s, md5=aa12c948f062181c3297265b51526ec5 | nav 141/141 eps (0 missing -> nav_cmd=0+nav_valid=False), md5=aa12c948f062181c3297265b51526ec5, allow_oracle_nav=True
+[model] C:/Users/Admin/refav1_eval_slice/ckpt_ep3/ckpt.pt step=21109 params=0 a_dim=2 target_space=frozen vocab=v7.0 config<-C:/Users/Admin/refav1_eval_slice/ckpt_ep3/config.json
+[loader] 9443 windows over 141 episodes (W=4, K_loader=30, grid 0.2 s); labels=ON nav=ON
+[cost] metric=ccos weights={'W_JERK': 0.02, 'W_KAPPA': 15.11245, 'W_VEND': 64.2971504241507} (CLI override); COST_METRICS=('cos', 'chord', 'ccos', 'ccosh') from C:\Users\Admin\tipsnap\b3f7ea6f\stack\tanitad\refs\refa_v1.py
+[goal-rule] lat_logit_bias=None -> plain argmax (the legacy path, bit-identical to pre-2026-09-05 arms)
+[goal-vocab] goal_kappa_turn=None -> shipped GOAL_KAPPA_TURN=0.08 (bit-identical to pre-2026-09-05 arms)
+[grid] K=10 (2.0 s) K_wm=30 stride=40 windows=282 arms=['cl', 'ha', 'ha0', 'ha0_ext', 'ol'] plan={samples 300, iters 30, elites 30, seed 0} nav_shuffle=153/282 changed
+[seed-pool] seed_kappa_ladder=None -> the SHIPPED pool (proposal modes + the decoded goal's canonical controls), bit-identical to every arm banked before 2026-09-05
+[cost] first plan() took 43.39 s -> ESTIMATED 3.40 h for 282 windows x 1 planning arms (plan only; forward()/IO extra)
+  [1/141] 0dfe63214bc2 2 windows 95s
+  [2/141] c64f0103aece 2 windows 153s
+  [3/141] 54e3dc4b3ae4 2 windows 228s
+  [4/141] d0c6db065fa0 2 windows 304s
+  [5/141] c8831556989f 2 windows 394s
+  [6/141] bfc3a203bd06 2 windows 481s
+  [7/141] b435685d40c8 2 windows 569s
+  [8/141] 47f22ccd6fbb 2 windows 640s
+  [9/141] ea6d261f6c62 2 windows 693s
+  [10/141] 42cc086733d8 2 windows 756s
+  [11/141] d4c144f52747 2 windows 804s
+  [12/141] 7f6670448ef6 2 windows 852s
+  [13/141] 7e5dc4ad4e52 2 windows 899s
+  [14/141] d75f38babcda 2 windows 947s
+  [15/141] bb62d9b15ef0 2 windows 993s
+  [16/141] 93489c4af0ab 2 windows 1039s
+  [17/141] 37616735658b 2 windows 1087s
+  [18/141] c45d6a86ff06 2 windows 1134s
+  [19/141] 5a393f328725 2 windows 1181s
+  [20/141] c167e6ce11a3 2 windows 1229s
+  [21/141] af59c57f6c77 2 windows 1276s
+  [22/141] e01bd05b8e43 2 windows 1323s
+  [23/141] 209199ce8280 2 windows 1368s
+  [24/141] f81131bdf928 2 windows 1414s
+  [25/141] ac6745ace7ec 2 windows 1461s
+  [26/141] 6ad168dc58db 2 windows 1509s
+  [27/141] 418a12591a39 2 windows 1556s
+  [28/141] 2ccc9a947611 2 windows 1603s
+  [29/141] 09f53befdab2 2 windows 1651s
+  [30/141] 34765c024267 2 windows 1700s
+  [31/141] 843e4ee8d5d2 2 windows 1748s
+  [32/141] 50da1e13e4db 2 windows 1794s
+  [33/141] fcc9209b8e83 2 windows 1842s
+  [34/141] f2c6a9c84795 2 windows 1889s
+  [35/141] 9d92cb2360a4 2 windows 1935s
+  [36/141] 67e3568c2eda 2 windows 1980s
+  [37/141] 53dea87e5f81 2 windows 2026s
+  [38/141] 4888dcd27dc8 2 windows 2073s
+  [39/141] e0f97cf3262a 2 windows 2120s
+  [40/141] 59d98b34ae8b 2 windows 2167s
+  [41/141] 062d0d6e9791 2 windows 2214s
+  [42/141] 6adc10f58460 2 windows 2261s
+  [43/141] 9546f6d574e2 2 windows 2309s
+  [44/141] 6b0744922620 2 windows 2357s
+  [45/141] c8cb0ad57519 2 windows 2406s
+  [46/141] c5bb9c2618da 2 windows 2454s
+  [47/141] 98f1cf98cc38 2 windows 2501s
+  [48/141] dd55afb71c3d 2 windows 2548s
+  [49/141] f732a885f432 2 windows 2595s
+  [50/141] 76fc5c466b2d 2 windows 2639s
+  [51/141] feccf3ba3479 2 windows 2684s
+  [52/141] 2efcfdb9c913 2 windows 2745s
+  [53/141] a4741056ff38 2 windows 2816s
+  [54/141] 356568701781 2 windows 2891s
+  [55/141] a699b49d4563 2 windows 2940s
+  [56/141] c0bb04e203cf 2 windows 2986s
+  [57/141] 198bb4517e28 2 windows 3033s
+  [58/141] d36583cfa3d6 2 windows 3079s
+  [59/141] c7e31db0a5c5 2 windows 3126s
+  [60/141] 49f68312b36e 2 windows 3173s
+  [61/141] 22ecc807b84c 2 windows 3219s
+  [62/141] 2dc00f2fb95d 2 windows 3266s
+  [63/141] b2ee18d21dff 2 windows 3313s
+  [64/141] 439646d62f3a 2 windows 3359s
+  [65/141] a21feba2f8b1 2 windows 3406s
+  [66/141] c448fac4e230 2 windows 3453s
+  [67/141] 68b999cbd670 2 windows 3499s
+  [68/141] 04ed850dca64 2 windows 3546s
+  [69/141] 9f8bedcfb9de 2 windows 3594s
+  [70/141] 43ac3253c6a3 2 windows 3641s
+  [71/141] b6ba8d3b06f3 2 windows 3689s
+  [72/141] 5c1eb051b96f 2 windows 3737s
+  [73/141] 2b568af29b7d 2 windows 3786s
+  [74/141] 3c1ab43d104a 2 windows 3835s
+  [75/141] 58f07fdb342a 2 windows 3883s
+  [76/141] b9622e49a9ec 2 windows 3931s
+  [77/141] b88f64c81aec 2 windows 3979s
+  [78/141] e1777e69be55 2 windows 4027s
+  [79/141] 60f8d13ff2e2 2 windows 4074s
+  [80/141] 5b74d23ac873 2 windows 4122s
+  [81/141] e902aba7fb9a 2 windows 4169s
+  [82/141] 029d8d52075c 2 windows 4228s
+  [83/141] b5f66e3e7af0 2 windows 4276s
+  [84/141] 43e797856f84 2 windows 4323s
+  [85/141] 22d47ae7e052 2 windows 4384s
+  [86/141] 28b54692a103 2 windows 4481s
+  [87/141] 9855363e1ac1 2 windows 4568s
+  [88/141] c16543c621dc 2 windows 4650s
+  [89/141] 071957186302 2 windows 4738s
+  [90/141] 6d3b8ff6b7b2 2 windows 4811s
+  [91/141] c23873899e31 2 windows 4869s
+  [92/141] 3fc7f2025d61 2 windows 4945s
+  [93/141] 4de594141ae4 2 windows 5035s
+  [94/141] 94aae24f02bf 2 windows 5122s
+  [95/141] 081b986f8888 2 windows 5211s
+  [96/141] 729b5d29fa89 2 windows 5300s
+  [97/141] 39cd356553d5 2 windows 5385s
+  [98/141] 6c5a21de8993 2 windows 5488s
+  [99/141] c0d4ac1d8f62 2 windows 5596s
+  [100/141] ff9d2a66d2a2 2 windows 5703s
+  [101/141] 83df0bab7763 2 windows 5808s
+  [102/141] 252bc8e77e06 2 windows 5908s
+  [103/141] a78bf2711918 2 windows 5972s
+  [104/141] 732422c717f1 2 windows 6017s
+  [105/141] 77d93cd24266 2 windows 6064s
+  [106/141] 28f6781136b1 2 windows 6111s
+  [107/141] f6cfd0a20340 2 windows 6158s
+  [108/141] 356cc45b0224 2 windows 6203s
+  [109/141] c4f46701b8ae 2 windows 6247s
+  [110/141] 101ef2cf05dc 2 windows 6292s
+  [111/141] 03cb55890588 2 windows 6336s
+  [112/141] c8c6aa11d792 2 windows 6381s
+  [113/141] 751cdd67811f 2 windows 6425s
+  [114/141] 4b5c891e90e6 2 windows 6469s
+  [115/141] 00213e99adca 2 windows 6514s
+  [116/141] 3db625a5f941 2 windows 6558s
+  [117/141] 85ee873a6f81 2 windows 6602s
+  [118/141] 7695875eaea9 2 windows 6647s
+  [119/141] 0191487845ef 2 windows 6691s
+  [120/141] 264a78e8fad1 2 windows 6736s
+  [121/141] d5a67435ec19 2 windows 6780s
+  [122/141] eaf5c5ae236c 2 windows 6824s
+  [123/141] 1655838298f8 2 windows 6869s
+  [124/141] bbd162dfe0eb 2 windows 6913s
+  [125/141] d32340bd0ad0 2 windows 6957s
+  [126/141] cd79a917d8c4 2 windows 7002s
+  [127/141] 547d1d68c1bd 2 windows 7046s
+  [128/141] e81566637c0e 2 windows 7091s
+  [129/141] 1721df8c70b6 2 windows 7136s
+  [130/141] 693335b810c3 2 windows 7181s
+  [131/141] cf8839a4e491 2 windows 7226s
+  [132/141] b0d17a91f120 2 windows 7271s
+  [133/141] 4a7515667297 2 windows 7322s
+  [134/141] 07fac416bccf 2 windows 7388s
+  [135/141] 7be92e6870d8 2 windows 7460s
+  [136/141] 8323b0dfdd3b 2 windows 7509s
+  [137/141] 8d2cdffe0da7 2 windows 7555s
+  [138/141] 8bc0a83f65f9 2 windows 7614s
+  [139/141] 2aa810802777 2 windows 7673s
+  [140/141] 570b47ad7408 2 windows 7718s
+  [141/141] fb5c61fbd0d2 2 windows 7769s
+REFAV1_DUMP_DONE
+[trivial-profile] 282 windows — arm SHAPE before any family row (straight |y|<1e-06 m, const-speed spread<0.0001 m)
+  cl             n= 282 straight=0.5638 const_speed=0.0177 CONSTANT-VELOCITY=0.0177  identical_to: ha=5/282, ha0=5/282, ha0_ext=5/282, ol=5/282
+  ha             n= 282 straight=0.0248 const_speed=0.0177 CONSTANT-VELOCITY=0.0177  identical_to: cl=5/282, ha0=5/282, ha0_ext=8/282, ol=5/282
+  ha0            n= 282 straight=1.0000 const_speed=1.0000 CONSTANT-VELOCITY=1.0000  identical_to: cl=5/282, ha=5/282, ha0_ext=5/282, ol=5/282
+  ha0_ext        n= 282 straight=0.0319 const_speed=0.0177 CONSTANT-VELOCITY=0.0177  identical_to: cl=5/282, ha=8/282, ha0=5/282, ol=5/282
+  ol             n= 282 straight=0.0248 const_speed=0.0177 CONSTANT-VELOCITY=0.0177  identical_to: cl=5/282, ha=5/282, ha0=5/282, ha0_ext=5/282
+  ⚠️ CONSTANT-VELOCITY on > 50 % of windows: ['ha0'] — read their LATERAL rows as a control, never as planning skill
+[out] C:/Users/Admin/refav1_fullgrid/rec_loncomb3_s0.json
+  cl             tier=T1  ADE=0.6103 [0.5183, 0.71]  families_unavailable=['strategic']  distance_keeping=REFUSED n=None headway=None time_gap=None min_ttc=None
+  ha             tier=T1  ADE=0.5391 [0.4544, 0.6301]  families_unavailable=['strategic']  distance_keeping=REFUSED n=None headway=None time_gap=None min_ttc=None
+  ha0            tier=T1  ADE=0.5316 [0.471, 0.5939]  families_unavailable=['strategic']  distance_keeping=REFUSED n=None headway=None time_gap=None min_ttc=None
+  ha0_ext        tier=T1  ADE=0.5207 [0.4421, 0.6081]  families_unavailable=['strategic']  distance_keeping=REFUSED n=None headway=None time_gap=None min_ttc=None
+  ol             tier=T0  ADE=0.4237 [0.3466, 0.507]  families_unavailable=['strategic']  distance_keeping=REFUSED n=None headway=None time_gap=None min_ttc=None
+  distance_keeping: REFUSED — no lead block passed (--lead-block); the banked B1 EVAL block is C:\Users\Admin\tipsnap\b3f7ea6f\TanitAD Research Lab\Benchmarks & Evals\Research\2026-09-02-b1-
+  planner[cl] baseline_won_frac=0.0284 sources={'cem': 0.9716, 'baseline:hold_v0': 0.0071, 'baseline:decel_1.5': 0.0213} goal={'tactical_imagined': 1.0} goal_action_lon={'CRUISE': 0.4113, 'BRAKE_TO': 0.117, 'ADAPT_SPEED_FOR_CURVE': 0.2766, 'ACCELERATE': 0.195}
+  strategic nav_valid_frac=1.0 n_labeled=141

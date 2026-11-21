@@ -1,0 +1,487 @@
+{
+ "controls": {
+  "C0_gain_zero": {
+   "changed_picks": 0,
+   "gain_hi": 0.0,
+   "gain_lo": 0.0,
+   "gain_point": 0.0,
+   "pass": true
+  },
+  "C0_pick_identity": {
+   "logits_bit_identical_ttc_row_is_p2": true,
+   "n_tokens": 1705,
+   "pass": true,
+   "picks_equal_banked_p2_pick": 1705,
+   "picks_equal_banked_p2_pick_all": true,
+   "picks_identity_ttc_row": 1705
+  },
+  "C1_reach": {
+   "applier_reach": {
+    "pass": true,
+    "per_seed": {
+     "0": {
+      "max_abs_delta_ttc_logit": 5.671246528625488,
+      "other_five_columns_bit_identical": true,
+      "ttc_column_entries_changed": 109120
+     },
+     "1": {
+      "max_abs_delta_ttc_logit": 5.522516250610352,
+      "other_five_columns_bit_identical": true,
+      "ttc_column_entries_changed": 109120
+     }
+    },
+    "positive_control_negated_p2_row_changed_picks": 1319
+   },
+   "launch_gate_token": {
+    "bound": {
+     "argv_sha256": "7bd0c34b17966e71d62b0f61800d7e15d020c6b87a87423fe4b6cd93d482495c",
+     "bank_manifest_sha256": "6296dfc0b03905038fbf132f82009f6b6d7e8d61fa9abfb65c9164f487a5f2a1",
+     "commit": "d58990cfc2fd3ddebeaf2a96197ca56ea5b73bf0",
+     "fraction": 10,
+     "profile": "srttc-r1",
+     "srttc_r1_sha256": "b841347d90c298ec597f10afbbd284d68258df55c98cbac8cbd9a0a444cc5d0b",
+     "stage": "run"
+    },
+    "created_utc": "2026-10-18T22:45:48Z",
+    "pass": true,
+    "reasons": [],
+    "required": true,
+    "token_path": "C:/Users/Admin/srttc_r1/gate/f10_run/r1_gate_token.json",
+    "token_sha256": "eda3d290081351b24c986b65539f9a514ce373d2c1e48c7bb78378f11218ecc2"
+   },
+   "pass": true,
+   "recorded_training_gradients": {
+    "pass": true,
+    "reasons": [],
+    "recorded": {
+     "n_pairs_in_probe_batch": 5818,
+     "update_moved_ttc_row_max_abs": 0.0010000001639127731
+    }
+   }
+  },
+  "C2_negative": {
+   "pass": false,
+   "per_seed_changed_picks": {
+    "0": 766,
+    "1": 795
+   },
+   "per_seed_gain_x100": {
+    "0": {
+     "B": 10000,
+     "hi": 0.45239860417688876,
+     "lo": -0.34151177277775807,
+     "n_nan": 0,
+     "point": 0.07785087897275167
+    },
+    "1": {
+     "B": 10000,
+     "hi": 0.5079186593041085,
+     "lo": -0.27666989765142075,
+     "n_nan": 0,
+     "point": 0.13650618298399753
+    }
+   },
+   "rule": "the shuffled-label rows must give a dev gain <= 0 on each seed, no tolerance (PREREG_SELRANK_ARM.md:71; MM_DECISIONS_EPR1B.md D7)",
+   "shuffle_seed": 20261018,
+   "vacuous_seeds_zero_changed_picks": []
+  },
+  "C4_fan_frozen": {
+   "logs_aligned": true,
+   "n_tokens_bit_identical": 1705,
+   "negative_control_next_token_min_max_abs_m": 0.8244590759277344,
+   "negative_control_reads_FAIL": true,
+   "pass": true,
+   "picks_equal": true,
+   "proposals_max_abs_m": 0.0,
+   "tokens_aligned": true
+  },
+  "integrity_featcheck": {
+   "max_abs_featcheck": 0.0014505386352539062,
+   "negative_control_next_token_max_abs": 15.24641227722168,
+   "negative_control_reads_mismatch": true,
+   "pass": true,
+   "tol": 0.002
+  }
+ },
+ "dev_gate": {
+  "bar_x100": 0.3,
+  "both_seeds_meet_bar": false,
+  "controls_all_pass": false,
+  "strategic_family": "PAUSED (PI 2026-09-19, item 25): never a pass",
+  "verdict": "VOID"
+ },
+ "estimator": {
+  "B": 10000,
+  "answers": "another draw of 24 LOGS only. The two fit seeds answer head-fit noise (H-ESTIM-SEED-1); inference is deterministic. 24 logs support no lower-bound rule: intervals are reported, never a bar.",
+  "n_logs": 24,
+  "n_tokens": 1705,
+  "name": "paired log-cluster bootstrap (srttc_r1.boot_draws / paired_delta == zero_tail.Boot draws)",
+  "seed": 20260927
+ },
+ "inputs": {
+  "c2_result_sha256": "d23aa0cb7f4d0674ab5e8c4d258a1a3164a99a49c1be38a75a20aa1efde43424",
+  "c2_rows_sha256": {
+   "0": "df2830c459f047c95e7be506c1edb44931f59c21067c70eaaa6029d7d78818ed",
+   "1": "7a19d5a1ceb7184d747c95fb4a7955a580686fcc0dda93c6ee3e163ee0dcf3e8"
+  },
+  "c_star": {
+   "anchor": 0.3,
+   "by_fold_mean": "lr0.001_anchor0.3",
+   "by_pooled_oof": "lr0.001_anchor0.3",
+   "config_sha256": "85e521220bd2475500770e9990b83277686017a2c01f2d4cc31dd8933cbe629b",
+   "criteria_agree": true,
+   "criterion": "pooled_oof",
+   "id": "lr0.001_anchor0.3",
+   "lr": 0.001,
+   "score": 0.7000716986051363,
+   "tie_break": "first in grid order (lr ascending, anchor ascending)",
+   "tied_at_max": [
+    "lr0.001_anchor0.3"
+   ]
+  },
+  "c_star_at_grid_edge": {
+   "anchor_lower": false,
+   "anchor_upper": true,
+   "lr_lower": false,
+   "lr_upper": true
+  },
+  "dev": {
+   "dev_dir": "D:/Projects/TanitAD-artifacts/p2_heldout_table_full_2026-10-18",
+   "n_logs": 24,
+   "n_tokens": 1705,
+   "sha256": {
+    "prehead_features_p2_heldout.npz": "e37b9c554bf2c2546e958ff763dca23b71e0b77036a271d6a003c8ba2672f522",
+    "proposals.npz": "a37422102add66ca386fdadfafa670b121cca1c67ed9dde997232982bb36de4b",
+    "table_p2_heldout.npz": "8eacc19b35b12aee9b0ab047716c901399a711d22ddd3c25cd890ecf2f02004b"
+   }
+  },
+  "dev_formula_check": {
+   "ddc_in_product_control_max_abs_diff": 1.0,
+   "max_abs_diff": 0.0,
+   "tol": 1e-06
+  },
+  "fraction_pct": 10,
+  "gate_set_admissibility_a210": {
+   "all_four": true,
+   "dir": "C:/Users/Admin/par18/src2/p2ho",
+   "manifest_sha256": "7406ee6c5c68665e08f5e5cdb6afd04a767d33d6b7caa8104ce126f85b6216d6",
+   "n_logs": 24,
+   "n_sets": 3137,
+   "n_tokens": 1705,
+   "p2ho_done_sha256": "73ac0a459e66896527ea8eb47625773d664b7adb5d10bb86da29a6a876e1ab6a",
+   "recompute_check_333_sha256": "d3adb586bd180d935944c8783b40517109de56fe4ba653e0ca19cc036533170a"
+  },
+  "lc": {
+   "call": "FLAT",
+   "f_max": 100,
+   "flat": true,
+   "fraction_pct": 10,
+   "rising": false,
+   "sha256": "25138a9ff1ca8f1ef7c82f527b2854c9aa483be23d509927093c4637ceaf8b06"
+  },
+  "p2_ckpt": "D:/Projects/TanitAD/data/refe_runs_eval/p2/model_final.pt",
+  "p2_ttc_row_sha256": "79cc80e68c1184d16abcc8c43a6e1487c2cf56eddcac894e1b0de738bbe7c122",
+  "pins_overridden": [],
+  "r1_result_sha256": "f447e71530e2fcc2a232ff47c06225efdd31d4200e6938d77d1d73a08ea2f37f",
+  "registered_result_sha256": "f447e71530e2fcc2a232ff47c06225efdd31d4200e6938d77d1d73a08ea2f37f",
+  "rows_sha256": {
+   "0": "efc84d6a2ba286869376ce2878e743dbfc8e8b868af435dc63a614d7f8df6670",
+   "1": "7dc2d1b39b45e73cbd7803c2af04b38094d45ddaa46ab041296e2f4a6aec7702"
+  },
+  "run_dir": "C:/Users/Admin/srttc_r1/run/f10",
+  "srttc_r1_sha256": "b841347d90c298ec597f10afbbd284d68258df55c98cbac8cbd9a0a444cc5d0b"
+ },
+ "outcome_rows": {
+  "fired": [
+   "VOID"
+  ],
+  "next_arm": {
+   "VOID": "fix the instrument and re-gate: G3 (registration silent) means the MM decides whether the one dev read was consumed; no number from this run is read"
+  },
+  "notes": {}
+ },
+ "primary": {
+  "bar": {
+   "bar_x100": 0.3,
+   "both_seeds": false,
+   "per_seed_meets": {
+    "0": false,
+    "1": false
+   },
+   "seed_floor_range": [
+    0.33,
+    0.44
+   ],
+   "seed_gap_abs": 0.02198773333080828,
+   "seed_gap_vs_0_44_floor": "DISCLOSURE (amendment2.md:197), not a bar: gap 0.022 vs the training-seed floor range [0.33, 0.44]"
+  },
+  "per_seed": {
+   "0": {
+    "base_pdms_x100": 90.63654791739476,
+    "changed_picks": 548,
+    "components": {
+     "c": {
+      "base_x100": 99.94134897360703,
+      "delta_x100": {
+       "B": 10000,
+       "hi": 0.0,
+       "lo": 0.0,
+       "n_nan": 0,
+       "point": 0.0
+      },
+      "new_x100": 99.94134897360703
+     },
+     "dac": {
+      "base_x100": 97.41935483870968,
+      "delta_x100": {
+       "B": 10000,
+       "hi": 0.0,
+       "lo": -0.3109557621854402,
+       "n_nan": 0,
+       "point": -0.11730205278592809
+      },
+      "new_x100": 97.30205278592375
+     },
+     "ddc": {
+      "base_x100": 97.15542521994135,
+      "delta_x100": {
+       "B": 10000,
+       "hi": 0.30994029182508076,
+       "lo": 0.0,
+       "n_nan": 0,
+       "point": 0.11730205278592809
+      },
+      "new_x100": 97.27272727272728
+     },
+     "ep": {
+      "base_x100": 84.78871206919612,
+      "delta_x100": {
+       "B": 10000,
+       "hi": 0.801388092530167,
+       "lo": 0.05028891872496798,
+       "n_nan": 0,
+       "point": 0.46362632116785374
+      },
+      "new_x100": 85.25233839036397
+     },
+     "nc": {
+      "base_x100": 99.29618768328446,
+      "delta_x100": {
+       "B": 10000,
+       "hi": 0.0,
+       "lo": 0.0,
+       "n_nan": 0,
+       "point": 0.0
+      },
+      "new_x100": 99.29618768328446
+     },
+     "ttc": {
+      "base_x100": 96.53958944281526,
+      "delta_x100": {
+       "B": 10000,
+       "hi": 0.48309827363439645,
+       "lo": -0.6253501682439423,
+       "n_nan": 0,
+       "point": -0.058651026392964045
+      },
+      "new_x100": 96.48093841642229
+     }
+    },
+    "gain_x100": {
+     "B": 10000,
+     "hi": 0.3254132426222866,
+     "lo": -0.16636552300122215,
+     "n_nan": 0,
+     "point": 0.10031350869779132
+    },
+    "n_tokens": 1705,
+    "new_pdms_x100": 90.73686142609252,
+    "pool_gain_x100": {
+     "B": 10000,
+     "hi": 0.3254132426222866,
+     "lo": -0.16636552300122215,
+     "n_nan": 0,
+     "point": 0.10031350869779132
+    },
+    "unsafe_pick_rate": {
+     "base": 0.03284457478005865,
+     "delta": {
+      "B": 10000,
+      "hi": 0.0031095576218544006,
+      "lo": 0.0,
+      "n_nan": 0,
+      "point": 0.0011730205278592393
+     },
+     "new": 0.03401759530791789
+    },
+    "zero_pdms_pick_rate": {
+     "base": 0.03284457478005865,
+     "delta": {
+      "B": 10000,
+      "hi": 0.0031095576218544006,
+      "lo": 0.0,
+      "n_nan": 0,
+      "point": 0.0011730205278592393
+     },
+     "new": 0.03401759530791789
+    }
+   },
+   "1": {
+    "base_pdms_x100": 90.63654791739476,
+    "changed_picks": 541,
+    "components": {
+     "c": {
+      "base_x100": 99.94134897360703,
+      "delta_x100": {
+       "B": 10000,
+       "hi": 0.0,
+       "lo": 0.0,
+       "n_nan": 0,
+       "point": 0.0
+      },
+      "new_x100": 99.94134897360703
+     },
+     "dac": {
+      "base_x100": 97.41935483870968,
+      "delta_x100": {
+       "B": 10000,
+       "hi": 0.0,
+       "lo": -0.3109557621854402,
+       "n_nan": 0,
+       "point": -0.11730205278592809
+      },
+      "new_x100": 97.30205278592375
+     },
+     "ddc": {
+      "base_x100": 97.15542521994135,
+      "delta_x100": {
+       "B": 10000,
+       "hi": 0.34319231372611053,
+       "lo": 0.02751750821752511,
+       "n_nan": 0,
+       "point": 0.14662756598240456
+      },
+      "new_x100": 97.30205278592375
+     },
+     "ep": {
+      "base_x100": 84.78871206919612,
+      "delta_x100": {
+       "B": 10000,
+       "hi": 0.8358452236576595,
+       "lo": 0.14557970167529244,
+       "n_nan": 0,
+       "point": 0.5281578139598953
+      },
+      "new_x100": 85.31686988315602
+     },
+     "nc": {
+      "base_x100": 99.29618768328446,
+      "delta_x100": {
+       "B": 10000,
+       "hi": 0.0,
+       "lo": 0.0,
+       "n_nan": 0,
+       "point": 0.0
+      },
+      "new_x100": 99.29618768328446
+     },
+     "ttc": {
+      "base_x100": 96.53958944281526,
+      "delta_x100": {
+       "B": 10000,
+       "hi": 0.3944812093983364,
+       "lo": -0.753015198870797,
+       "n_nan": 0,
+       "point": -0.17595307917889214
+      },
+      "new_x100": 96.36363636363636
+     }
+    },
+    "gain_x100": {
+     "B": 10000,
+     "hi": 0.30946063992660805,
+     "lo": -0.19927187611459107,
+     "n_nan": 0,
+     "point": 0.07832577536698304
+    },
+    "n_tokens": 1705,
+    "new_pdms_x100": 90.71487369276173,
+    "pool_gain_x100": {
+     "B": 10000,
+     "hi": 0.30946063992660805,
+     "lo": -0.19927187611459107,
+     "n_nan": 0,
+     "point": 0.07832577536698304
+    },
+    "unsafe_pick_rate": {
+     "base": 0.03284457478005865,
+     "delta": {
+      "B": 10000,
+      "hi": 0.0031095576218544006,
+      "lo": 0.0,
+      "n_nan": 0,
+      "point": 0.0011730205278592393
+     },
+     "new": 0.03401759530791789
+    },
+    "zero_pdms_pick_rate": {
+     "base": 0.03284457478005865,
+     "delta": {
+      "B": 10000,
+      "hi": 0.0031095576218544006,
+      "lo": 0.0,
+      "n_nan": 0,
+      "point": 0.0011730205278592393
+     },
+     "new": 0.03401759530791789
+    }
+   }
+  }
+ },
+ "registration_gaps": {
+  "G1": "C2 shuffle seed is not registered for SR-TTC (srttc_c2.py: 20261018, EP-R1's value, chosen before any data)",
+  "G2": "C2 has no tolerance and no replicate; a null shuffled fit has a gain of random sign, so C2 can read RED by chance (MM D7: no tolerance)",
+  "G3": "the registration does not say whether a VOID that arises after the outcomes were opened consumes the one dev read (this applier: the attempt consumes it)",
+  "G4": "amendment2.md:207 says non-FLAT + DEV-FAIL is 'only reachable when f_max < 100 %'; with f_max = 100 % it is reachable at f = 100 % and unregistered",
+  "G5": "the launch-gate token's commit binding is not re-checked here (needs git); HMAC, verdict, profile, stage, fraction, srttc_r1.py and bank-manifest bindings are",
+  "G6": "no grid-edge rule exists in the SR-TTC documents; c_star_at_grid_edge is reported only"
+ },
+ "registration_trace": {
+  "C0": "PREREG_SELRANK_ARM.md:69",
+  "C1": "PREREG_SELRANK_ARM.md:70 ; launch-gate token MM_DECISIONS_R1.md:24",
+  "C2": "PREREG_SELRANK_ARM.md:71, :93 (no tolerance: MM_DECISIONS_EPR1B.md D7)",
+  "C3": "PREREG_SELRANK_ARM.md:72",
+  "C4": "PREREG_SELRANK_ARM.md:73",
+  "C5": "PREREG_SELRANK_ARM.md:74",
+  "bar_gain_both_seeds": "PREREG_SELRANK_ARM.md:93 (>= +0.30 PDMS x100 on BOTH seeds)",
+  "c_star_written_first": "PREREG_SELRANK_ARM.md:8-10",
+  "fit_set_size": "PREREG_SELRANK_ARM.amendment2.md:98-101",
+  "gate_set": "PREREG_SELRANK_ARM.amendment2.md:245-248",
+  "grid": "PREREG_SELRANK_ARM.md:6, :39",
+  "lc_before_gate": "PREREG_SELRANK_ARM.amendment2.md:169-177, :182",
+  "no_lower_bound_rule": "PREREG_SELRANK_ARM.md:93 (24 logs cannot support a lower-bound rule: interval reported, never a bar)",
+  "outcome_rows": "PREREG_SELRANK_ARM.md:98-103 ; PREREG_SELRANK_ARM.amendment2.md:206-207",
+  "r1_params": "MM_DECISIONS_R1.md:14-16, :20",
+  "seed_gap_disclosure": "PREREG_SELRANK_ARM.amendment2.md:197",
+  "void_means": "PREREG_SELRANK_ARM.md:67 ('each is a gate; a miss voids the arm')"
+ },
+ "replicate_c3": {
+  "rows_distinct": true,
+  "rule": "C3 (PREREG_SELRANK_ARM.md:72): two seeds, same flags (refused earlier if not); the claim needs BOTH seeds to clear the bar (the bar below). rows_distinct is a DISCLOSURE, not a gate",
+  "seeds": [
+   0,
+   1
+  ]
+ },
+ "run_meta": {
+  "chunk": 512,
+  "elapsed_s": 8.4,
+  "finished": "2026-10-19T06:14:06+0200",
+  "numpy": "1.26.4",
+  "threads": 8,
+  "torch": "2.7.1+cu128"
+ },
+ "schema": "srttc-dev-v1",
+ "stage": "DEV",
+ "tier": "SELECTION (dev gate; not a claim: MM_DECISIONS_EPR1 D3)"
+}

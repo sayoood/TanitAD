@@ -1,0 +1,25 @@
+  G-DVB     FAIL  profile refusal: refe_rls1e: arm R1e-pick is R0d's registered argv + the lever and NOTHING ELSE, token for token (PREREG_R0E_PICK 2.1); it ADDS --lane-weight 0.5 (a second lever)
+  G-PREFLIGHT FAIL  profile refusal: refe_rls1e: arm R1e-pick is R0d's registered argv + the lever and NOTHING ELSE, token for token (PREREG_R0E_PICK 2.1); it ADDS --lane-weight 0.5 (a second lever)
+  G-SUITE   FAIL  profile refusal: refe_rls1e: arm R1e-pick is R0d's registered argv + the lever and NOTHING ELSE, token for token (PREREG_R0E_PICK 2.1); it ADDS --lane-weight 0.5 (a second lever)
+  G-CLOCK   FAIL  profile refusal: refe_rls1e: arm R1e-pick is R0d's registered argv + the lever and NOTHING ELSE, token for token (PREREG_R0E_PICK 2.1); it ADDS --lane-weight 0.5 (a second lever)
+  [timing] run: tree_manifest 1.3s, data_manifest 0.0s (--ckpt 0.0s, --targets 0.0s, --images 0.0s, --calib 0.0s)
+  G-HYG     FAIL  profile refusal: scorer_finetune refuses this argv: --epo-con-* levers ['epo_con_temp'] are set but --epo-con is off: their weights would belong to a term that is OFF; profile refusal: refe_rls1e: R1o
+  G-DVB     FAIL  profile refusal: scorer_finetune refuses this argv: --epo-con-* levers ['epo_con_temp'] are set but --epo-con is off: their weights would belong to a term that is OFF; profile refusal: refe_rls1e: R1o
+  G-PREFLIGHT FAIL  profile refusal: scorer_finetune refuses this argv: --epo-con-* levers ['epo_con_temp'] are set but --epo-con is off: their weights would belong to a term that is OFF; profile refusal: refe_rls1e: R1o
+  G-SUITE   FAIL  profile refusal: scorer_finetune refuses this argv: --epo-con-* levers ['epo_con_temp'] are set but --epo-con is off: their weights would belong to a term that is OFF; profile refusal: refe_rls1e: R1o
+  G-CLOCK   FAIL  profile refusal: scorer_finetune refuses this argv: --epo-con-* levers ['epo_con_temp'] are set but --epo-con is off: their weights would belong to a term that is OFF; profile refusal: refe_rls1e: R1o
+Traceback (most recent call last):
+  File "F:\scorer1_v2_base\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_launch_gate.py", line 2385, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "F:\scorer1_v2_base\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_launch_gate.py", line 2379, in main
+    full()
+    ~~~~^^
+  File "F:\scorer1_v2_base\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_launch_gate.py", line 2302, in full
+    fx = F.tiny_p2_fixture(str(root))
+  File "F:\scorer1_v2_base\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\gate_fixture.py", line 50, in tiny_p2_fixture
+    keys = D.carve(Path(src_bank), bank)
+  File "F:\scorer1_v2_base\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\diag_onpolicy_train.py", line 66, in carve
+    with open(src / "targets_rank1.jsonl", encoding="utf-8") as f:
+         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'D:\\Projects\\TanitAD\\data\\refe_consistent\\targets_rank1.jsonl'

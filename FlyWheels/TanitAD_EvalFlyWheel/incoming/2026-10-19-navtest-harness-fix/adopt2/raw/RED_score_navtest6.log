@@ -1,0 +1,70 @@
+FFFF                                                                     [100%]
+================================== FAILURES ===================================
+_______________________ test_caller_scores_through_fix1 _______________________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5811/test_caller_scores_through_fix0')
+
+    def test_caller_scores_through_fix1(tmp_path):
+        mod = _caller(_w3(tmp_path))
+        out = tmp_path / "out"
+        seam = tmp_path / "seam.npz"
+        seam.write_bytes(b"")
+        rc = mod.main(["--label", "r6_nt_fix1_probe", "--seam", str(seam), "--out", str(out)])
+        assert rc == 0
+        who = json.load(open(out / "WHO.json", encoding="utf-8"))
+>       assert who["who"] == "FIX1", f"caller scored through {who['who']}, not run_v1_fix1.load()"
+E       AssertionError: caller scored through UNFIXED, not run_v1_fix1.load()
+E       assert 'UNFIXED' == 'FIX1'
+E         
+E         - FIX1
+E         + UNFIXED
+
+FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-23-refcv6-standard-tests\navsim\tests\test_score_navtest6_fix1.py:73: AssertionError
+_____________ test_official_control_path_also_scores_through_fix1 _____________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5811/test_official_control_path_als0')
+
+    def test_official_control_path_also_scores_through_fix1(tmp_path):
+        """KH-navtest's ``--official STOP`` path (no seam) goes through the same loader."""
+        mod = _caller(_w3(tmp_path))
+        out = tmp_path / "out"
+        rc = mod.main(["--label", "r6_nt_fix1_probe", "--official", "STOP", "--out", str(out)])
+        assert rc == 0
+        who = json.load(open(out / "WHO.json", encoding="utf-8"))
+>       assert who["who"] == "FIX1" and who["arm"] == "STOP"
+E       AssertionError: assert ('UNFIXED' == 'FIX1'
+E         
+E         - FIX1
+E         + UNFIXED)
+
+FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-23-refcv6-standard-tests\navsim\tests\test_score_navtest6_fix1.py:84: AssertionError
+_______________ test_missing_fix1_is_loud_not_a_silent_fallback _______________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5811/test_missing_fix1_is_loud_not_0')
+
+    def test_missing_fix1_is_loud_not_a_silent_fallback(tmp_path):
+        mod = _caller(_w3(tmp_path, with_fix1=False))
+        seam = tmp_path / "seam.npz"
+        seam.write_bytes(b"")
+>       with pytest.raises(SystemExit) as e:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE SystemExit
+
+FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-23-refcv6-standard-tests\navsim\tests\test_score_navtest6_fix1.py:91: Failed
+________ test_caller_source_names_fix1_once_and_no_direct_run_v1_exec _________
+
+    def test_caller_source_names_fix1_once_and_no_direct_run_v1_exec():
+        src = open(CALLER, encoding="utf-8").read()
+>       assert src.count('"run_v1_fix1.py"') == 1
+E       assert 0 == 1
+E        +  where 0 = <built-in method count of str object at 0x00000260F4502850>('"run_v1_fix1.py"')
+E        +    where <built-in method count of str object at 0x00000260F4502850> = '#!/usr/bin/env python3\n"""Score ONE refcv6 seam on NAVSIM v1.1 ``navtest`` with W3\'s harness, IMPORTED (any python)...rd_poses=True, patch_loader=True)\n    return w3.cmd_score(ns)\n\n\nif __name__ == "__main__":\n    sys.exit(main())\n'.count
+
+FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-23-refcv6-standard-tests\navsim\tests\test_score_navtest6_fix1.py:99: AssertionError
+=========================== short test summary info ===========================
+FAILED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_score_navtest6_fix1.py::test_caller_scores_through_fix1
+FAILED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_score_navtest6_fix1.py::test_official_control_path_also_scores_through_fix1
+FAILED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_score_navtest6_fix1.py::test_missing_fix1_is_loud_not_a_silent_fallback
+FAILED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_score_navtest6_fix1.py::test_caller_source_names_fix1_once_and_no_direct_run_v1_exec
+4 failed in 0.33s
+rc=1

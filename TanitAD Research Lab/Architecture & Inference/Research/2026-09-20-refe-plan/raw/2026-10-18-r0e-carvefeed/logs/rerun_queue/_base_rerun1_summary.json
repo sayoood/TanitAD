@@ -1,0 +1,13 @@
+{
+ "test_rls1_queue.py": {
+  "rc": 1,
+  "secs": 69.8,
+  "tokens": [],
+  "tail": [
+   "    assert r[\"rc\"] == 0 and \"BLOCK_END\" in r[\"out\"] and r[\"killed\"] is None and \"train_R0.ok\" in r[\"stages\"] and \"arm_R0_killed\" not in r[\"stages\"], r",
+   "           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+   "AssertionError: {'rc': 1, 'out': \"ps: unknown option -- o\\nTry `ps --help' for more information.\\n\", 'seconds': 1.1998465061187744, 'timed_out': False, 'log': '2026-10-18T13:34:33 REFUSED: the trainer of R0 is not its own process group (pgid , pid 896843)\\n', 'killed': None, 'stages': [], 'marker': '', 'trainer_alive': False, 'trainer_child_alive': False, 'monitor_alive': False}"
+  ]
+ },
+ "_done": true
+}

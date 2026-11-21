@@ -1,0 +1,76 @@
+........................................................................ [ 32%]
+......................ss................................................ [ 64%]
+................................ss.FF.......................sssss.s..... [ 96%]
+........                                                                 [100%]
+================================== FAILURES ===================================
+_ test_queue_is_crlf_every_older_label_is_byte_identical_and_only_the_four_orc_labels_are_added _
+
+    @needs_queue
+    def test_queue_is_crlf_every_older_label_is_byte_identical_and_only_the_four_orc_labels_are_added():
+        raw = QUEUE.read_bytes()
+        assert raw.count(b"\r\n") == raw.count(b"\n") > 1000 and raw.count(b"\r") == raw.count(b"\r\n") and raw.endswith(b"\r\n"), "every line CRLF, no bare CR"
+        q, blocks = _queue_text(), _blocks()
+        assert len(PRE_LABELS) == 79
+        for label, h in PRE_LABELS.items():
+            assert label in blocks, f"the stage {label} was removed"
+            assert _sha16("\n" + blocks[label]) == h, f"the stage {label} was edited"
+>       assert set(blocks) == set(PRE_LABELS) | ORC_LABELS and len(ORC_LABELS) == 4, "the only new labels are the four of this edit"
+E       AssertionError: the only new labels are the four of this edit
+E       assert ({'bankdag', '...arm_dry', ...} == {'compare', '...scale_1', ...}
+E         
+E         Extra items in the left set:
+E         'dagarm'
+E         'evaldag'
+E         'dagarm_dry'
+E         'dagname'
+E         'dagarm_have'...
+E         
+E         ...Full output truncated (5 lines hidden), use '-vv' to show)
+
+stack\tests\test_v8f_orc_chain.py:199: AssertionError
+_ test_queue_orc_stages_are_one_flat_command_string_each_that_the_dry_run_prints_and_the_real_run_executes _
+
+    @needs_queue
+    def test_queue_orc_stages_are_one_flat_command_string_each_that_the_dry_run_prints_and_the_real_run_executes():
+        """A dry run can only print: the real line is checked statically -- the trainer / eval appear ONCE per stage, inside the one string, the dry-run echo comes BEFORE any skip, and the real run executes that string."""
+        for label, var, want in (("gateorc", "GX", 'set "GX="%PY%" "%TRAIN%" --arm M2b --seed %ORCSEED% --grid pool4x10 --out "%RUNSM%\\gate_M2b-%ORCS%_s%ORCSEED%" %A% %ORCF% --selfcheck-only"'),
+                                 ("trainorc", "TX", 'set "TX="%PY%" "%TRAIN%" --arm M2b --seed %ORCSEED% --grid pool4x10 --out "%OUT%" %A% %ORCF%"')):
+            code = _code(_block(label))
+            assert [x for x in code if "%TRAIN%" in x] == [want], label
+            assert f"if defined V8F_DRYRUN (echo %{var}% & exit /b 0)" in code and sum(x.startswith(f"%{var}% ") for x in code) == 1, label
+            assert code.index(f"if defined V8F_DRYRUN (echo %{var}% & exit /b 0)") < min([k for k, x in enumerate(code) if x.startswith(("if exist", f"%{var}% ", "if not exist"))]), "the dry run prints before it skips or runs"
+            assert "call :orcarm %~2 %~3 || exit /b 2" in code and code.index("call :orcarm %~2 %~3 || exit /b 2") < code.index(next(x for x in code if x.startswith(f'set "{var}='))), "the arm is decided before the string is built"
+            assert not any(("pool8x20" in x or "--hist" in x or "--w-" in x or "--hmax" in x or "--window-start" in x or "--code-mix" in x or "--o-interface" in x or "--ego-perturb" in x) for x in code), \
+                f"{label}: the levers live in ORCF (one place), not in the stage"
+        code = _code(_block("evalorc"))
+        assert [x for x in code if "%EVAL%" in x] == ['set "E0="%PY%" "%EVAL%" run --ckpt "%OUT%\\ckpt_last.pt" --tag %TG% %EC% %ER% --project --families"']
+        assert "if defined V8F_DRYRUN (echo %E0% & exit /b 0)" in code and sum(x.strip().startswith("%E0% >> ") for x in code) == 1
+        assert 'set "OUT=%RUNSM%\\M2b_s%ORCSEED%_%ORCS%"' in code and 'set "TG=M2b-%ORCS%_s%ORCSEED%"' in code and "--tac" not in " ".join(code)
+        arm = [x for x in _code(_block("orcarm"))]
+        f = next(x for x in arm if x.startswith('set "ORCF='))
+        assert f == ('set "ORCF=--init-ckpt "%RUNSM%\\M2b_s%~2\\ckpt_last.pt" --steps 3000 --lr 1e-4 --warmup 100 --p-gt-start 0.2 --p-gt-end 0.2 --ego-perturb-p %ORCP%%ORCL%"'), \
+            "the fine-tune's levers are written ONCE, here: --ego-perturb-p, then %ORCL% (the five law flags for ORC, NOTHING for ORC-0: Amendment 3)"
+        lw = 'if /i "%~1"=="orc" set "ORCL= --ego-perturb-vscale 0.5 1.0 --ego-perturb-vmax 8.0 --ego-perturb-adrop 1.5 --ego-perturb-yawrate-std 2.0 --ego-perturb-seed %~2"'
+        assert arm.count('set "ORCL="') == 1 and arm.count(lw) == 1 and arm.index('set "ORCL="') < arm.index(lw) < arm.index(f), "ORCL is emptied, then set for ORC ONLY, then read by ORCF"
+        assert all(sum(x.count(fl) for x in _code(_queue_text().split("\n:orcarm\n")[1].split("\n"))) == 1 for fl in LAW), "each law flag is written once in the whole new region, inside ORC's ORCL"
+        assert not any(fl in x for fl in LAW for x in arm if x != lw), "no other line of the helper names a law flag (ORC-0 reaches none)"
+        assert '(set "ORCP=0.3" & set "ORCS=orc")' in " ".join(x.split("if /i \"%~1\"==\"orc\" ")[-1] for x in arm if x.startswith('if /i "%~1"=="orc" '))
+        assert 'if /i "%~1"=="orc0" (set "ORCP=0" & set "ORCS=orc0")' in arm, "p differs between the arms HERE and nowhere else"
+>       assert sum(x.count("--ego-perturb-p") for x in _code(_queue_text().split("\n:orcarm\n")[1].split("\n"))) == 1, "--ego-perturb-p appears once in the CODE of the whole new region"
+E       AssertionError: --ego-perturb-p appears once in the CODE of the whole new region
+E       assert 2 == 1
+E        +  where 2 = sum(<generator object test_queue_orc_stages_are_one_flat_command_string_each_that_the_dry_run_prints_and_the_real_run_executes.<locals>.<genexpr> at 0x000001E7926A9B10>)
+
+stack\tests\test_v8f_orc_chain.py:245: AssertionError
+============================== warnings summary ===============================
+tests/test_v8f_dagger_train.py::test_a_flag_without_an_entry_is_refused[dagger_p]
+  E:/Projects/TanitAD-artifacts/oaccflat_check/stage/stack/scripts/v8f_mini_train.py:1641: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    "sec": time.time() - t0, **{k: float(v) for k, v in T.items()}}
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED stack\tests\test_v8f_orc_chain.py::test_queue_is_crlf_every_older_label_is_byte_identical_and_only_the_four_orc_labels_are_added
+FAILED stack\tests\test_v8f_orc_chain.py::test_queue_orc_stages_are_one_flat_command_string_each_that_the_dry_run_prints_and_the_real_run_executes
+2 failed, 212 passed, 10 skipped, 1 warning in 503.25s (0:08:23)
+done

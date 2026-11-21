@@ -1,0 +1,62 @@
+# E-only lines of taniteval/taniteval/leaderboard/build.py  (E lines absent from the tip blob; CR-normalised; E line numbers)
+# tip blob last changed in 24d5ce2; E mtime 2026-09-26 22:27; verdict: NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)
+11: import re
+23:     runs, _ = sources.load_bench_runs(root, cfg)
+24:     # ⛔ a WITHDRAWN run (TOMBSTONE.json beside its summary) is never a result: it is kept out of every table and of
+25:     # the legacy-supersession map, and listed on its own with what superseded it and why
+26:     w1 = [r for r in runs if not r.get("tombstone")]
+27:     withdrawn = [r for r in runs if r.get("tombstone")]
+32:     return {"published": pub, "internal": internal, "navsim": w1 + legacy, "withdrawn": withdrawn, "notes": notes,
+85: def section_state(host: str, cfg: dict) -> tuple:
+86:     """-> (state, the on-disk section's lines). state: ``no-section`` · ``fingerprint-ok`` · ``hand-edited`` (the
+87:     recorded SECTION-SHA256 no longer matches) · ``legacy-unfingerprinted`` (built before fingerprints existed)."""
+88:     b, e = cfg["markers"]["begin"], cfg["markers"]["end"]
+89:     text = host.replace("\r\n", "\n")
+90:     if b not in text or e not in text:
+91:         return "no-section", []
+92:     i = text.rfind("\n", 0, text.index(b)) + 1
+93:     j = text.rfind("\n", 0, text.index(e, i)) + 1                   # start of the END marker's line
+94:     lines = text[i:j].split("\n")
+95:     if lines and lines[-1] == "":
+96:         lines = lines[:-1]
+97:     fp = [k for k, ln in enumerate(lines) if ln.startswith(render.FP_PREFIX)]
+98:     if not fp:
+99:         return "legacy-unfingerprinted", lines
+100:     k = fp[-1]
+101:     recorded = lines[k][len(render.FP_PREFIX):].split()[0]
+102:     ok = render.section_fingerprint("\n".join(lines[:k])) == recorded
+103:     return ("fingerprint-ok" if ok else "hand-edited"), lines
+104: 
+105: 
+106: _RISKY = re.compile(r"RETR-|RETRACT|CORRECT|[Mm]ask")
+107: 
+108: 
+109: def dropped_lines(old: list, new_section: str) -> list:
+110:     """Lines the rebuild would remove from the on-disk section — corrections and retractions FIRST, because a hand
+111:     edit that carries one is the most expensive thing to lose silently."""
+112:     keep = set(new_section.split("\n"))
+113:     gone = [ln for ln in old if ln.strip() and ln not in keep and not ln.startswith(render.FP_PREFIX)]
+114:     return sorted(gone, key=lambda ln: (not _RISKY.search(ln), old.index(ln)))
+115: 
+116: 
+118:           md_path: Path | None = None, html_path: Path | None = None, cfg: dict | None = None,
+119:           discard_hand_edits: bool = False) -> dict:
+121:     configuration (tests run the acceptance round-trip on a temporary copy of the page).
+122: 
+123:     ⛔ A hand edit INSIDE the markers is overwritten by design — so it is REFUSED, never overwritten silently: a
+124:     section whose recorded SECTION-SHA256 no longer matches, or one built before fingerprints existed, is only
+125:     replaced with ``discard_hand_edits=True`` (CLI ``--discard-hand-edits``), after the lines it would drop have
+126:     been read. MEASURED 2026-09-26: a retraction (RETR-2026-09-26-YAWMASK) lived only as such a hand edit."""
+151:     state, old_lines = section_state(host, cfg)
+153:         return {"md_up_to_date": not changed_md, "html_up_to_date": not changed_html, "digest": render.canonical_digest(model),
+154:                 "section_state": state}
+155:     gone = dropped_lines(old_lines, section) if state in ("hand-edited", "legacy-unfingerprinted") else []
+156:     # the guard protects CONTENT: a rebuild that drops nothing (an emptied section, a pure addition) loses nothing
+157:     if changed_md and gone and not discard_hand_edits:
+158:         why = ("was EDITED BY HAND after it was built (its SECTION-SHA256 no longer matches)" if state == "hand-edited"
+159:                else "predates section fingerprints, so a hand edit inside it cannot be ruled out")
+160:         raise SourceError(
+161:             f"the generated section of {md_path.name} {why}. A rebuild would DROP {len(gone)} line(s) from it — "
+162:             "corrections and retractions first: " + " || ".join(ln[:160] for ln in gone[:8]) + ". "
+163:             "Move any correction into the INPUTS (a hand edit between the markers never survives a build), then re-run "
+164:             "with --discard-hand-edits.")

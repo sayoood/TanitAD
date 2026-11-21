@@ -1,0 +1,183 @@
+{
+ "_what": "G-REWARD precondition: does the reward prefer the human to hold-v0?",
+ "_evidence_class": "MEASURED (ours) -- arithmetic re-weighting of banked rows",
+ "_tier": "T0 instrument probe, NON-PARITY RL-fit windows",
+ "_rule": "D-REFCV5-PLAN-6: hold-v0 must beat the human on <= 30 % of lead windows; a reward that fails G-REWARD may not train anything",
+ "source_rows": "C:\\Users\\Admin\\rl_rescope\\run\\humanflag_fit120.json",
+ "n_windows": 6089,
+ "n_episodes": 73,
+ "lead_mode": "track",
+ "g_reward_ceiling": 0.3,
+ "channel_control": {
+  "recomputed": 0.7249137789456397,
+  "banked": 0.7249137789456397,
+  "abs_err": 0.0,
+  "PASS": true
+ },
+ "panel": {
+  "default": {
+   "weights": {
+    "progress": 0.3,
+    "collision": 1.0,
+    "headway": 0.3,
+    "feasibility": 0.5,
+    "comfort": 0.2
+   },
+   "n": 6089,
+   "hold_v0_scores_at_least_human": 0.7249137789456397,
+   "hold_v0_ge_human_ci": [
+    0.6665603719180483,
+    0.7840388258206997
+   ],
+   "frozen_scores_at_least_human": 0.04368533420922976,
+   "composed_mean": {
+    "human": 1.130589939484824,
+    "hold_v0": 1.139511289885966,
+    "frozen": 0.2244802696622578
+   },
+   "mean_gap_hold_minus_human": 0.00892135040114223,
+   "attribution_mean_gap_by_component": {
+    "progress": -0.005600006649620928,
+    "collision": -0.0008211528986697323,
+    "headway": -0.004818220053430259,
+    "feasibility": -0.000675453284967732,
+    "comfort": 0.020836183287830875
+   },
+   "attribution_sum": 0.008921350401142223,
+   "PASSES_G_REWARD": false
+  },
+  "veto_feas_comfort": {
+   "weights": {
+    "progress": 0.3,
+    "collision": 1.0,
+    "headway": 0.3
+   },
+   "n": 6089,
+   "hold_v0_scores_at_least_human": 0.441780259484316,
+   "hold_v0_ge_human_ci": [
+    0.3682482307693703,
+    0.5187244165813486
+   ],
+   "frozen_scores_at_least_human": 0.04549187058630317,
+   "composed_mean": {
+    "human": 0.4922721145242039,
+    "hold_v0": 0.481032734922483,
+    "frozen": 0.2244802696622578
+   },
+   "mean_gap_hold_minus_human": -0.011239379601720929,
+   "attribution_mean_gap_by_component": {
+    "progress": -0.005600006649620928,
+    "collision": -0.0008211528986697323,
+    "headway": -0.004818220053430259
+   },
+   "attribution_sum": -0.011239379601720919,
+   "PASSES_G_REWARD": false
+  },
+  "veto_comfort_only": {
+   "weights": {
+    "progress": 0.3,
+    "collision": 1.0,
+    "headway": 0.3,
+    "feasibility": 0.5
+   },
+   "n": 6089,
+   "hold_v0_scores_at_least_human": 0.4419444900640499,
+   "hold_v0_ge_human_ci": [
+    0.3684415770815185,
+    0.5188823135563901
+   ],
+   "frozen_scores_at_least_human": 0.04368533420922976,
+   "composed_mean": {
+    "human": 0.9632895264366068,
+    "hold_v0": 0.951374693549918,
+    "frozen": 0.2244802696622578
+   },
+   "mean_gap_hold_minus_human": -0.011914832886688655,
+   "attribution_mean_gap_by_component": {
+    "progress": -0.005600006649620928,
+    "collision": -0.0008211528986697323,
+    "headway": -0.004818220053430259,
+    "feasibility": -0.000675453284967732
+   },
+   "attribution_sum": -0.011914832886688652,
+   "PASSES_G_REWARD": false
+  },
+  "veto_feas_only": {
+   "weights": {
+    "progress": 0.3,
+    "collision": 1.0,
+    "headway": 0.3,
+    "comfort": 0.2
+   },
+   "n": 6089,
+   "hold_v0_scores_at_least_human": 0.7247495483659058,
+   "hold_v0_ge_human_ci": [
+    0.6662598734048647,
+    0.7836222602114052
+   ],
+   "frozen_scores_at_least_human": 0.04368533420922976,
+   "composed_mean": {
+    "human": 0.659572527572421,
+    "hold_v0": 0.6691693312585311,
+    "frozen": 0.2244802696622578
+   },
+   "mean_gap_hold_minus_human": 0.009596803686109955,
+   "attribution_mean_gap_by_component": {
+    "progress": -0.005600006649620928,
+    "collision": -0.0008211528986697323,
+    "headway": -0.004818220053430259,
+    "comfort": 0.020836183287830875
+   },
+   "attribution_sum": 0.009596803686109956,
+   "PASSES_G_REWARD": false
+  },
+  "veto_fc_no_headway": {
+   "weights": {
+    "progress": 0.3,
+    "collision": 1.0
+   },
+   "n": 6089,
+   "hold_v0_scores_at_least_human": 0.4099195270159304,
+   "hold_v0_ge_human_ci": [
+    0.32393375602602037,
+    0.49527125648660014
+   ],
+   "frozen_scores_at_least_human": 0.04368533420922976,
+   "composed_mean": {
+    "human": 0.279349553117907,
+    "hold_v0": 0.27292839356961623,
+    "frozen": 0.0
+   },
+   "mean_gap_hold_minus_human": -0.006421159548290659,
+   "attribution_mean_gap_by_component": {
+    "progress": -0.005600006649620928,
+    "collision": -0.0008211528986697323
+   },
+   "attribution_sum": -0.00642115954829066,
+   "PASSES_G_REWARD": false
+  },
+  "hackable_progress_only": {
+   "weights": {
+    "progress": 1.0
+   },
+   "n": 6089,
+   "hold_v0_scores_at_least_human": 0.4099195270159304,
+   "hold_v0_ge_human_ci": [
+    0.32393375602602037,
+    0.49527125648660014
+   ],
+   "frozen_scores_at_least_human": 0.04302841189029397,
+   "composed_mean": {
+    "human": 0.9333549181228092,
+    "hold_v0": 0.9146882292907395,
+    "frozen": 0.0
+   },
+   "mean_gap_hold_minus_human": -0.018666688832069758,
+   "attribution_mean_gap_by_component": {
+    "progress": -0.018666688832069758
+   },
+   "attribution_sum": -0.018666688832069758,
+   "PASSES_G_REWARD": false
+  }
+ }
+}

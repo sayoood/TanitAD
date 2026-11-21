@@ -1,0 +1,291 @@
+{
+ "n_tokens": 7,
+ "n_rows": 7,
+ "n_error_lines": 0,
+ "n_duplicate_lines": 0,
+ "controls": {
+  "C-COVB": {
+   "pass": true,
+   "missing": 0,
+   "extra": 0,
+   "error_lines": 0,
+   "duplicate_lines": 0
+  },
+  "C-DACMAP": {
+   "pass": true,
+   "tokens": 7,
+   "mismatches": 0,
+   "examples": [],
+   "what": "builder tracked DAC of the unmodified N2-R plan == harness DAC, all tokens",
+   "reference": "n2r.csv"
+  },
+  "C-DERIV": {
+   "pass": true,
+   "n": 7,
+   "expected_n": 7,
+   "max_dev_m": 0.0,
+   "bar_m": 1e-09
+  },
+  "C-LABELEGO": {
+   "pass": true,
+   "label_rows": 7,
+   "db": 7,
+   "not_db": 0,
+   "examples": [],
+   "what": "every row that built labels (C-DERIV tokens + builder DAC-0 tokens x up to 5 iterations) used the nuPlan-DB ego"
+  },
+  "C-DET": {
+   "pass": true,
+   "checked": 7,
+   "equal": 7,
+   "dac0": 7,
+   "n5a_equals_n5r_on_l1_set": "5/5",
+   "what": "the repair run twice on EVERY builder DAC-0 token (card: every L1-repaired + 20 of the remaining) gives bit-identical plans"
+  },
+  "C-SET": {
+   "pass": true,
+   "builder_dac0": 7,
+   "banked_dac0": 7,
+   "l1_run": 5,
+   "banked_l1_set": 5,
+   "residual_split_matches": true,
+   "residual_split": {
+    "guard_blocked": 1,
+    "non_guard": 4
+   },
+   "what": "builder DAC-0 set == banked N4-D build's (repaired + unrepaired); L1-run set == its unrepaired_dac0 == the card's residual split"
+  },
+  "C-CERT-B": {
+   "pass": false,
+   "violations": {
+    "N5A": 5,
+    "N5X": 5,
+    "N5R": 7
+   },
+   "examples": {
+    "N5A": [
+     "634f20124fa3558c",
+     "7a2ceb0a94785813",
+     "85772c23190d5fd1"
+    ],
+    "N5X": [
+     "634f20124fa3558c",
+     "7a2ceb0a94785813",
+     "85772c23190d5fd1"
+    ],
+    "N5R": [
+     "634f20124fa3558c",
+     "7a2ceb0a94785813",
+     "85772c23190d5fd1"
+    ]
+   },
+   "what": "every applied plan, re-scored by a separate scorer call, has DAC 1 and passes the certificate against the N2-R base"
+  },
+  "C-SEAMFN": {
+   "pass": true,
+   "tokens": 7,
+   "mismatches": 0,
+   "examples": []
+  },
+  "C-UNCH": {
+   "pass": false,
+   "arms": {
+    "N5A": {
+     "changed_plan20": 0,
+     "applied": 5,
+     "tokens": 7,
+     "unflagged_changed": [],
+     "flagged_unchanged": [
+      "634f20124fa3558c",
+      "7a2ceb0a94785813",
+      "85772c23190d5fd1",
+      "a7b14cd05a655a18",
+      "cee7cb3572da53b2"
+     ],
+     "changed_seam": 0,
+     "seam_tokens": 7,
+     "pass": false
+    },
+    "N5X": {
+     "changed_plan20": 0,
+     "applied": 5,
+     "tokens": 7,
+     "unflagged_changed": [],
+     "flagged_unchanged": [
+      "634f20124fa3558c",
+      "7a2ceb0a94785813",
+      "85772c23190d5fd1",
+      "a7b14cd05a655a18",
+      "cee7cb3572da53b2"
+     ],
+     "changed_seam": 0,
+     "seam_tokens": 7,
+     "pass": false
+    },
+    "N5R": {
+     "changed_plan20": 0,
+     "applied": 7,
+     "tokens": 7,
+     "unflagged_changed": [],
+     "flagged_unchanged": [
+      "634f20124fa3558c",
+      "7a2ceb0a94785813",
+      "85772c23190d5fd1",
+      "a7b14cd05a655a18",
+      "cee7cb3572da53b2"
+     ],
+     "pass": false
+    }
+   },
+   "n_l1_run": 5,
+   "n_l1_expected": 5,
+   "l1_run_count_ok": true,
+   "spurious_applied_on_dac1_tokens": 0
+  },
+  "C-REACH": {
+   "pass": true,
+   "arms_ok": {
+    "N5A": true,
+    "N5X": true,
+    "N5R": true
+   },
+   "real": {
+    "easy": true,
+    "multi_iter": true
+   }
+  }
+ },
+ "diagnostics": {
+  "status_counts": {
+   "N5A": {
+    "PASSED_AT_0": 5,
+    "CERTIFIED": 0,
+    "CERT_BLOCKED": 0,
+    "INFEASIBLE": 0,
+    "CAP_EXHAUSTED": 0
+   },
+   "N5X": {
+    "PASSED_AT_0": 5,
+    "CERTIFIED": 0,
+    "CERT_BLOCKED": 0,
+    "INFEASIBLE": 0,
+    "CAP_EXHAUSTED": 0
+   },
+   "N5R": {
+    "PASSED_AT_0": 7,
+    "CERTIFIED": 0,
+    "CERT_BLOCKED": 0,
+    "INFEASIBLE": 0,
+    "CAP_EXHAUSTED": 0
+   }
+  },
+  "l1_set_status": {
+   "634f20124fa3558c": {
+    "status": "PASSED_AT_0",
+    "n_flips": 0,
+    "n_iters": 0,
+    "infeasible": false,
+    "relaxed_steps_total": 0,
+    "window_conflicts_total": 0,
+    "ext_max_m_seq": []
+   },
+   "7a2ceb0a94785813": {
+    "status": "PASSED_AT_0",
+    "n_flips": 0,
+    "n_iters": 0,
+    "infeasible": false,
+    "relaxed_steps_total": 0,
+    "window_conflicts_total": 0,
+    "ext_max_m_seq": []
+   },
+   "85772c23190d5fd1": {
+    "status": "PASSED_AT_0",
+    "n_flips": 0,
+    "n_iters": 0,
+    "infeasible": false,
+    "relaxed_steps_total": 0,
+    "window_conflicts_total": 0,
+    "ext_max_m_seq": []
+   },
+   "a7b14cd05a655a18": {
+    "status": "PASSED_AT_0",
+    "n_flips": 0,
+    "n_iters": 0,
+    "infeasible": false,
+    "relaxed_steps_total": 0,
+    "window_conflicts_total": 0,
+    "ext_max_m_seq": []
+   },
+   "cee7cb3572da53b2": {
+    "status": "PASSED_AT_0",
+    "n_flips": 0,
+    "n_iters": 0,
+    "infeasible": false,
+    "relaxed_steps_total": 0,
+    "window_conflicts_total": 0,
+    "ext_max_m_seq": []
+   }
+  }
+ },
+ "files": {
+  "n5_plans_N5A.npz": "1f14c69a752d23ce5c604c4cd190f53d087fe2c14f5472a8edb8f4ef6386a43d",
+  "n5_plans_N5X.npz": "a139ca37a4d413df9130507e635828ec004fbd7069217bd08ee59fe676327115",
+  "n5_plans_N5R.npz": "7e0156830dbda270ab7ba3c487abd06f28c8a27ad9fb6569dcf2b46c49149ac9",
+  "refe_tfn5_n5a.npz": "db1f28157df7c3d3ec4c4affab9ac6ca91105d08a4d1380f211670dfe0cf313b",
+  "refe_tfn5_n5x.npz": "619717191a22aabbe8ae721730e92ab36bf8186f0c5ffeff669b94189e74f63d"
+ },
+ "dac0_tokens_builder": 7,
+ "l1_run": [
+  "634f20124fa3558c",
+  "7a2ceb0a94785813",
+  "85772c23190d5fd1",
+  "a7b14cd05a655a18",
+  "cee7cb3572da53b2"
+ ],
+ "repaired": {
+  "N5A": [
+   "634f20124fa3558c",
+   "7a2ceb0a94785813",
+   "85772c23190d5fd1",
+   "a7b14cd05a655a18",
+   "cee7cb3572da53b2"
+  ],
+  "N5X": [
+   "634f20124fa3558c",
+   "7a2ceb0a94785813",
+   "85772c23190d5fd1",
+   "a7b14cd05a655a18",
+   "cee7cb3572da53b2"
+  ],
+  "N5R": [
+   "634f20124fa3558c",
+   "7a2ceb0a94785813",
+   "85772c23190d5fd1",
+   "a7b14cd05a655a18",
+   "cee7cb3572da53b2",
+   "d7587000e0675895",
+   "f2c6dba4b37b5650"
+  ]
+ },
+ "unrepaired_l1": {
+  "N5A": [],
+  "N5X": []
+ },
+ "unrepaired_dac0": {
+  "N5A": [
+   "d7587000e0675895",
+   "f2c6dba4b37b5650"
+  ],
+  "N5X": [
+   "d7587000e0675895",
+   "f2c6dba4b37b5650"
+  ],
+  "N5R": []
+ },
+ "timing": {
+  "n": 7,
+  "t_s_mean": 2.3355714285714284,
+  "cpu_h_sum": 0.004541388888888889
+ },
+ "verdict": "FAIL"
+}

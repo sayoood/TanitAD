@@ -1,0 +1,251 @@
+{
+ "tool": "detres_pack_analysis.py",
+ "packs": "E:/refcv8_eval_kit/battery/step5000/g0.packs.npz",
+ "smoke": false,
+ "class": "automobile",
+ "band": "0_20",
+ "thr_m": 2.0,
+ "evidence": "MEASURED on banked packs (P1-P3); SIMULATED perturbation (P4)",
+ "started": "2026-10-16T13:04:45",
+ "P1": {
+  "s0": {
+   "ap": 0.3145286069169251,
+   "ap5": 0.31453,
+   "n_gt": 97,
+   "n_rows": 1606,
+   "n_tp": 74
+  },
+  "fp32_s0": {
+   "ap": 0.31911604479993066,
+   "ap5": 0.31912,
+   "n_gt": 97,
+   "n_rows": 1602,
+   "n_tp": 75
+  },
+  "banked_expected": {
+   "s0": 0.31453,
+   "fp32_s0": 0.31912
+  },
+  "reproduces": true
+ },
+ "P2": {
+  "s0": {
+   "n_windows": 121,
+   "n_gt_automobile_all_bands": 265,
+   "n_gt_automobile_0_20": 97,
+   "n_ignore_rows": 170,
+   "n_slots_argmax_automobile": 6973,
+   "n_slots_automobile_at_gate_0p5": 1,
+   "slots_per_window": 300
+  },
+  "fp32_s0": {
+   "n_windows": 121,
+   "n_gt_automobile_all_bands": 265,
+   "n_gt_automobile_0_20": 97,
+   "n_ignore_rows": 170,
+   "n_slots_argmax_automobile": 6993,
+   "n_slots_automobile_at_gate_0p5": 1,
+   "slots_per_window": 300
+  }
+ },
+ "P3": {
+  "ap_tp_vs_threshold": {
+   "1.8": {
+    "s0": {
+     "ap": 0.2896261002712766,
+     "ap5": 0.28963,
+     "n_gt": 97,
+     "n_rows": 1607,
+     "n_tp": 72
+    },
+    "fp32_s0": {
+     "ap": 0.2909442848769033,
+     "ap5": 0.29094,
+     "n_gt": 97,
+     "n_rows": 1602,
+     "n_tp": 72
+    }
+   },
+   "1.9": {
+    "s0": {
+     "ap": 0.3044156118438786,
+     "ap5": 0.30442,
+     "n_gt": 97,
+     "n_rows": 1606,
+     "n_tp": 73
+    },
+    "fp32_s0": {
+     "ap": 0.30888752418389026,
+     "ap5": 0.30889,
+     "n_gt": 97,
+     "n_rows": 1602,
+     "n_tp": 74
+    }
+   },
+   "1.95": {
+    "s0": {
+     "ap": 0.31015755899909714,
+     "ap5": 0.31016,
+     "n_gt": 97,
+     "n_rows": 1606,
+     "n_tp": 74
+    },
+    "fp32_s0": {
+     "ap": 0.31626557374061304,
+     "ap5": 0.31627,
+     "n_gt": 97,
+     "n_rows": 1602,
+     "n_tp": 75
+    }
+   },
+   "2.0": {
+    "s0": {
+     "ap": 0.3145286069169251,
+     "ap5": 0.31453,
+     "n_gt": 97,
+     "n_rows": 1606,
+     "n_tp": 74
+    },
+    "fp32_s0": {
+     "ap": 0.31911604479993066,
+     "ap5": 0.31912,
+     "n_gt": 97,
+     "n_rows": 1602,
+     "n_tp": 75
+    }
+   },
+   "2.05": {
+    "s0": {
+     "ap": 0.3342078171313271,
+     "ap5": 0.33421,
+     "n_gt": 97,
+     "n_rows": 1606,
+     "n_tp": 74
+    },
+    "fp32_s0": {
+     "ap": 0.3358255533394275,
+     "ap5": 0.33583,
+     "n_gt": 97,
+     "n_rows": 1602,
+     "n_tp": 75
+    }
+   },
+   "2.1": {
+    "s0": {
+     "ap": 0.334497825935171,
+     "ap5": 0.3345,
+     "n_gt": 97,
+     "n_rows": 1604,
+     "n_tp": 74
+    },
+    "fp32_s0": {
+     "ap": 0.3368761143345981,
+     "ap5": 0.33688,
+     "n_gt": 97,
+     "n_rows": 1602,
+     "n_tp": 75
+    }
+   },
+   "2.2": {
+    "s0": {
+     "ap": 0.34587971840535614,
+     "ap5": 0.34588,
+     "n_gt": 97,
+     "n_rows": 1604,
+     "n_tp": 76
+    },
+    "fp32_s0": {
+     "ap": 0.34820890968306006,
+     "ap5": 0.34821,
+     "n_gt": 97,
+     "n_rows": 1600,
+     "n_tp": 77
+    }
+   }
+  },
+  "edge20": {
+   "half_m": 0.1,
+   "gt_automobile_within_edge_20m": 3,
+   "det_automobile_logit_gt_-6_within_edge_20m": 27
+  },
+  "summary": {
+   "tp_gained_between_1.9_and_2.1_s0": 1,
+   "ap_2.1_minus_1.9_s0": 0.03008,
+   "tp_gained_between_1.9_and_2.1_fp32": 1,
+   "note": "a centre shift of <= 0.1 m moves AP by about the 2.1-1.9 spread; the gap to explain is 0.02382"
+  }
+ },
+ "P4_pool": {
+  "n_slots": 6973,
+  "xy_norm_m": {
+   "p50": 0.029558410868048668,
+   "p90": 0.08328163623809814,
+   "p99": 0.23660239577293396,
+   "max": 1.022718906402588
+  },
+  "dlogit_abs": {
+   "p50": 0.009650707244873047,
+   "p90": 0.032723285257816315,
+   "p99": 0.08843961358070374,
+   "max": 0.48062801361083984
+  }
+ },
+ "P4": {
+  "base_s0": 0.3145286069169251,
+  "dose_response": {
+   "0.5": {
+    "n_draws": 200,
+    "mean": 0.31847,
+    "sd": 0.00591,
+    "min": 0.31041,
+    "max": 0.34344,
+    "mean_abs_delta": 0.00452,
+    "frac_abs_delta_ge_0.02382": 0.01,
+    "frac_delta_ge_+0.02382": 0.01
+   },
+   "1.0": {
+    "n_draws": 200,
+    "mean": 0.32081,
+    "sd": 0.00862,
+    "min": 0.30337,
+    "max": 0.34659,
+    "mean_abs_delta": 0.00784,
+    "frac_abs_delta_ge_0.02382": 0.05,
+    "frac_delta_ge_+0.02382": 0.05
+   },
+   "2.0": {
+    "n_draws": 200,
+    "mean": 0.32402,
+    "sd": 0.01245,
+    "min": 0.28546,
+    "max": 0.35771,
+    "mean_abs_delta": 0.01243,
+    "frac_abs_delta_ge_0.02382": 0.155,
+    "frac_delta_ge_+0.02382": 0.145
+   },
+   "4.0": {
+    "n_draws": 200,
+    "mean": 0.31919,
+    "sd": 0.01894,
+    "min": 0.26714,
+    "max": 0.37598,
+    "mean_abs_delta": 0.0156,
+    "frac_abs_delta_ge_0.02382": 0.23,
+    "frac_delta_ge_+0.02382": 0.15
+   },
+   "8.0": {
+    "n_draws": 200,
+    "mean": 0.29666,
+    "sd": 0.02921,
+    "min": 0.21976,
+    "max": 0.36663,
+    "mean_abs_delta": 0.02785,
+    "frac_abs_delta_ge_0.02382": 0.475,
+    "frac_delta_ge_+0.02382": 0.08
+   }
+  },
+  "model": "per slot (automobile argmax, p>=0.01 pool) draw one empirical (dx,dy,dlogit) of s0->fp32_s0, random sign per component, scale f; all slots of every window",
+  "caveat": "SIMULATION: the pool is bf16-vs-fp32 displacement, not Thor-compiled-vs-eager displacement, and independent per-slot draws ignore the correlation real numerics have"
+ },
+ "wall_s": 341.9
+}

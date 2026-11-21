@@ -1,0 +1,185 @@
+{
+ "tree": "/home/nvidia/gate_lg_0928/cab",
+ "tree_sha256": "c8ff26fede7464986d78c69568f536b9b89171b3a9b3603ff3d0a1eb148cd210",
+ "argv_file": "/home/nvidia/gate_lg_0928/in/argv_refcv7_canon_thor.json",
+ "argv_sha256": "4e576b44d4276663920d2f69158a8530cf72b17dbd9ea69ea3edb6b216cbb6fe",
+ "started_utc": "2026-09-27T07:30:10Z",
+ "arms": {
+  "unwire_selection_term": {
+   "verdict": "CAUGHT",
+   "why": "[unwired core.decoder.navc_gate] G-DVB FAIL: declared_vs_built: 1 mismatch(es): --graft-nav-compliance: declared True but BUILT False (read from selection mechanism `nav_compliance` (built)) -- a selection mechanism the ranked score does not have (D-REFCV6-CONFIG-BUILD)",
+   "doc": "SPEC_REFCV7 2 (G-DVB's own arm, 'unwire one selection term'): the model is BORN without its built nav-compliance gate while the argv still declares --graft-nav-compliance -- D-REFCV6-CONFIG-BUILD re-installed",
+   "checks": [
+    "G-DVB"
+   ],
+   "profile": "refcv7",
+   "elapsed_s": 10.4,
+   "status": {
+    "G-DVB": "FAIL"
+   }
+  },
+  "required_on_missing": {
+   "verdict": "CAUGHT",
+   "why": "G-DVB FAIL: --speed-ceiling-filter is REQUIRED ON for a refcv7 launch (SPEC_REFCV7 7, PI ruling E1) and the argv does not pass it",
+   "doc": "SPEC_REFCV7 7: a refcv7 argv missing one of the three selection mechanisms",
+   "checks": [
+    "G-DVB"
+   ],
+   "profile": "refcv7",
+   "elapsed_s": 10.2,
+   "status": {
+    "G-DVB": "FAIL"
+   }
+  },
+  "tau_differs": {
+   "verdict": "CAUGHT",
+   "why": "G-DVB FAIL: --nav-compliance-tau-rad ['0.27095612257719043'] is not the recorded tau 0.18063741505146028",
+   "doc": "SPEC_REFCV7 7: --nav-compliance-tau-rad differs from the banked derivation",
+   "checks": [
+    "G-DVB"
+   ],
+   "profile": "refcv7",
+   "elapsed_s": 8.1,
+   "status": {
+    "G-DVB": "FAIL"
+   }
+  },
+  "tau_file_missing": {
+   "verdict": "CAUGHT",
+   "why": "G-DVB FAIL: FIX-4: --nav-tau-record /home/nvidia/gate_lg_0928/out/arms_r7c/__gate_arm_missing_tau__.json does not exist",
+   "doc": "SPEC_REFCV7 7: the banked tau file is missing",
+   "checks": [
+    "G-DVB"
+   ],
+   "profile": "refcv7",
+   "elapsed_s": 10.2,
+   "status": {
+    "G-DVB": "FAIL"
+   }
+  },
+  "drivort_flag": {
+   "verdict": "CAUGHT",
+   "why": "G-DVB FAIL: --refcv7 is passed, but it is DrivoR-T's switch (SPEC_DRIVORT.md; SPEC_REFCV7 6.1): it must be OFF for a refcv7 launch (pass none of ['--refcv7', '--drivort'])",
+   "doc": "SPEC_REFCV7 6.1: a refcv7 launch passing DrivoR-T's --refcv7",
+   "checks": [
+    "G-DVB"
+   ],
+   "profile": "refcv7",
+   "elapsed_s": 8.1,
+   "status": {
+    "G-DVB": "FAIL"
+   }
+  },
+  "residual_prior_ha0_ext": {
+   "verdict": "CAUGHT",
+   "why": "G-DVB FAIL: --residual-prior ['ha0_ext'] is REFUSED for a refcv7 launch (refused values: ['off', 'ha0_ext', 'cv_yawrate']; SPEC_REFCV7 10 (A5): refcv7's prior is ha0_ext_pose; `off` is the refcv6 decoder, `ha0_ext` reads the steer channel, `cv_yawrate` drops the acceleration)",
+   "doc": "SPEC_REFCV7 10 (A5): refcv7's prior is ha0_ext_pose; the echo's steer-read `ha0_ext` must be REFUSED",
+   "checks": [
+    "G-DVB"
+   ],
+   "profile": "refcv7",
+   "elapsed_s": 10.2,
+   "status": {
+    "G-DVB": "FAIL"
+   }
+  },
+  "residual_prior_cv_yawrate": {
+   "verdict": "CAUGHT",
+   "why": "G-DVB FAIL: --residual-prior ['cv_yawrate'] is REFUSED for a refcv7 launch (refused values: ['off', 'ha0_ext', 'cv_yawrate']; SPEC_REFCV7 10 (A5): refcv7's prior is ha0_ext_pose; `off` is the refcv6 decoder, `ha0_ext` reads the steer channel, `cv_yawrate` drops the acceleration)",
+   "doc": "SPEC_REFCV7 10 (A5): `cv_yawrate` (no acceleration) must be REFUSED",
+   "checks": [
+    "G-DVB"
+   ],
+   "profile": "refcv7",
+   "elapsed_s": 10.2,
+   "status": {
+    "G-DVB": "FAIL"
+   }
+  },
+  "map_drivable_only_static": {
+   "verdict": "CAUGHT",
+   "why": "G-DVB FAIL: G-MAP: the trainer's eval-row builder omits 70 of the 80 per-class x band 10 cm keys (first: ['map_hires_iou_arrow_0_20', 'map_hires_iou_arrow_20_40', 'map_hires_iou_arrow_40_60', 'map_hires_iou_arrow_60_80'])",
+   "doc": "G-MAP (static half, no smoke): the trainer's eval-row builder / declared list carries map IoU for drivable only -- run on the REAL trainer and the BUILT model",
+   "checks": [
+    "G-DVB"
+   ],
+   "profile": "refcv7",
+   "elapsed_s": 10.3,
+   "status": {
+    "G-DVB": "FAIL"
+   }
+  }
+ },
+ "controls": {
+  "refcv7:G-DVB:argv_refcv7_canon_thor.json": {
+   "reused_from": {
+    "G-DVB": "/home/nvidia/gate_lg_0928/out/model_r7/evidence"
+   },
+   "status": {
+    "G-DVB": "PASS"
+   },
+   "reasons": {
+    "G-DVB": []
+   }
+  },
+  "refcv7:G-DVB:argv_required_on_missing.json": {
+   "reused_from": {
+    "G-DVB": "/home/nvidia/gate_lg_0928/out/model_r7/evidence"
+   },
+   "status": {
+    "G-DVB": "PASS"
+   },
+   "reasons": {
+    "G-DVB": []
+   }
+  },
+  "refcv7:G-DVB:argv_tau_differs.json": {
+   "reused_from": {
+    "G-DVB": "/home/nvidia/gate_lg_0928/out/model_r7/evidence"
+   },
+   "status": {
+    "G-DVB": "PASS"
+   },
+   "reasons": {
+    "G-DVB": []
+   }
+  },
+  "refcv7:G-DVB:argv_drivort_flag.json": {
+   "reused_from": {
+    "G-DVB": "/home/nvidia/gate_lg_0928/out/model_r7/evidence"
+   },
+   "status": {
+    "G-DVB": "PASS"
+   },
+   "reasons": {
+    "G-DVB": []
+   }
+  },
+  "refcv7:G-DVB:argv_residual_prior_ha0_ext.json": {
+   "reused_from": {
+    "G-DVB": "/home/nvidia/gate_lg_0928/out/model_r7/evidence"
+   },
+   "status": {
+    "G-DVB": "PASS"
+   },
+   "reasons": {
+    "G-DVB": []
+   }
+  },
+  "refcv7:G-DVB:argv_residual_prior_cv_yawrate.json": {
+   "reused_from": {
+    "G-DVB": "/home/nvidia/gate_lg_0928/out/model_r7/evidence"
+   },
+   "status": {
+    "G-DVB": "PASS"
+   },
+   "reasons": {
+    "G-DVB": []
+   }
+  }
+ },
+ "finished_utc": "2026-09-27T07:31:28Z",
+ "counts": {
+  "CAUGHT": 8
+ }
+}

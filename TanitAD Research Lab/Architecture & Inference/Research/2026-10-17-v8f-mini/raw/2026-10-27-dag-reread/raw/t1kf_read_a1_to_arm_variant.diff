@@ -1,0 +1,95 @@
+--- reader_src/t1kf_read_a1.py	2026-10-27 07:18:12.000000000 +0100
++++ reader_src/t1kf_read_a1_arm.py	2026-10-27 07:18:12.000000000 +0100
+@@ -36,8 +36,11 @@
+ DT = 0.2
+ K = 30
+ LEAD_BLOCK_SHA = "7a879baa2b6f4c140c2b64c9c098a38f84ecb04926da61fa8e96cfffc33073d9"
+-BANKED_ADE6 = {0: -0.7680, 1: -0.7336}                 # PREREG C5 (HACC - P10, the causal-bucket headline)
+-BESIDE_BANKED_ADE6 = {"logged": {0: -0.8291, 1: -0.7945}, "strict": {0: -0.7278, 1: -0.6413}}   # t1kin-hacc/read4, t1kin-strict/read (informational)
++import json as _json
++def _run_ade6(path):
++    return float(_json.load(open(path, encoding="utf-8"))["paired_decision_grade"]["paired_model_minus_floor_t1"]["ade_m"]["delta"])
++BANKED_ADE6 = {s: _run_ade6(os.environ["T1KF_RUNJSON_DECISIVE_S%d" % s]) for s in (0, 1)}      # ARM variant: the arm's own analyze() delta (no HACC number applies)
++BESIDE_BANKED_ADE6 = {c: {s: _run_ade6(os.environ["T1KF_RUNJSON_%s_S%d" % (c.upper(), s)]) for s in (0, 1)} for c in ("logged", "strict")}   # ARM variant (informational)
+ C5_TOL = 1e-3
+ TIER = ("T1 (T1-kin: a self-action OPEN loop; ego state = own executed motion; cameras logged) -- never 'closed loop'. "
+         "The lead's logged future does not react to the ego: a track that closes on the lead is scored against where the lead WAS. "
+@@ -373,7 +376,7 @@
+         for s in (0, 1):
+             d = dumps[(c, s)]
+             t0 = time.time()
+-            prepared[(c, s)] = {"arm": prep(f"HACC_s{s}", d["cl"], cx), "p10": prep("P10", d["fl"], cx)}
++            prepared[(c, s)] = {"arm": prep(f"DAG0_s{s}", d["cl"], cx), "p10": prep("P10", d["fl"], cx)}
+             print(f"[prep] {c} s{s} {time.time() - t0:.0f}s", flush=True)
+     # ---- C5: the dumps reproduce the banked ADE6 delta ----
+     c5 = {"what": "ADE6 (HACC - P10) read from the dumps, via t1k_read.comps/paired, vs the banked causal-bucket numbers", "tol": C5_TOL, "per_seed": {}}
+@@ -401,12 +404,12 @@
+             Pm, Pf = prepared[(c, s)]["arm"], prepared[(c, s)]["p10"]
+             t0 = time.time()
+             rw = rows(Pm, Pf, eid)
+-            cfgs[c]["seeds"][f"s{s}"] = {"rows_HACC_minus_P10": rw}
++            cfgs[c]["seeds"][f"s{s}"] = {"rows_DAG0_minus_P10": rw}
+             print(f"[rows] {c} s{s} {time.time() - t0:.0f}s", flush=True)
+         F = row_floor(prepared[(c, 0)]["arm"], prepared[(c, 1)]["arm"])
+         cfgs[c]["seed_floor_F"] = F
+         for s in (0, 1):
+-            for r, v in cfgs[c]["seeds"][f"s{s}"]["rows_HACC_minus_P10"].items():
++            for r, v in cfgs[c]["seeds"][f"s{s}"]["rows_DAG0_minus_P10"].items():
+                 Fv = F[r]["F"]
+                 v["seed_floor_F"] = Fv
+                 v["abs_delta_over_F"] = (abs(v["delta"]) / Fv if v.get("status") == "OK" and Fv else None)
+@@ -429,10 +432,10 @@
+           "per_seed": {}}
+     for s in (0, 1):
+         d = dumps[("decisive", s)]
+-        Pr = prep(f"HACC_s{s}_rolled", np.roll(d["cl"], -1, axis=0), cx)
++        Pr = prep(f"DAG0_s{s}_rolled", np.roll(d["cl"], -1, axis=0), cx)
+         rw = rows(Pr, prepared[("decisive", s)]["p10"], eid)
+         Pu, Pp = prepared[("decisive", s)]["arm"], prepared[("decisive", s)]["p10"]
+-        means = {r: {"HACC": float(Pu["ind"][r].mean()), "HACC_rolled": float(Pr["ind"][r].mean()), "P10": float(Pp["ind"][r].mean())} for r in TAC_ROWS}
++        means = {r: {"DAG0": float(Pu["ind"][r].mean()), "DAG0_rolled": float(Pr["ind"][r].mean()), "P10": float(Pp["ind"][r].mean())} for r in TAC_ROWS}
+         means.update({r: {"HACC": float(np.nanmean(Pu["abs"][r])), "HACC_rolled": float(np.nanmean(Pr["abs"][r])), "P10": float(np.nanmean(Pp["abs"][r]))}
+                       for r in ("DK-HW", "DK-TG")})
+         means["DK-VIOL"] = {"HACC": Pu["lv"].get("share_of_at_risk"), "HACC_rolled": Pr["lv"].get("share_of_at_risk"), "P10": Pp["lv"].get("share_of_at_risk")}
+@@ -455,10 +458,10 @@
+             cost = np.where(eidd != eidd[i], np.abs(v0d - v0d[i]), np.inf)
+             donor[i] = int(np.argmin(cost))                    # argmin returns the lowest index on ties
+         assert (eidd[donor] != eidd).all(), "a donor from the same episode"
+-        Pd = prep(f"HACC_s{s}_xepisode", np.asarray(d["cl"])[donor], cx)
++        Pd = prep(f"DAG0_s{s}_xepisode", np.asarray(d["cl"])[donor], cx)
+         Pu = prepared[("decisive", s)]["arm"]
+         rw = rows(Pd, Pu, eid)
+-        c6a["per_seed"][f"s{s}"] = {"rows_donor_minus_HACC": rw, "gating": s == 0,
++        c6a["per_seed"][f"s{s}"] = {"rows_donor_minus_DAG0": rw, "gating": s == 0,
+                                     "must_be_separated_worse": {r: rw[r]["separated_worse"] for r in ("TAC-LAT", "TAC-LON", "DK-HW")},
+                                     "donor_v0_abs_diff_mps": {"median": float(np.median(np.abs(v0d[donor] - v0d))), "max": float(np.abs(v0d[donor] - v0d).max())},
+                                     "n_distinct_donors": int(len(set(donor.tolist()))),
+@@ -495,7 +498,7 @@
+                 "P10": {kk: np.abs(np.asarray(Pf["dk"][kk], np.float64) - np.asarray(hdk[kk], np.float64)) for kk in DK.DK_KEYS}}
+         pb = DK.pair_block(Pm["name"], "P10", dkS, lvS, absE, Jd, eid, {}, NB, SEED)
+         pairblocks[(c, s)] = pb
+-        mine = cfgs[c]["seeds"][f"s{s}"]["rows_HACC_minus_P10"]
++        mine = cfgs[c]["seeds"][f"s{s}"]["rows_DAG0_minus_P10"]
+         e = {}
+         for r, kk in (("DK-HW", "headway_min_m"), ("DK-TG", "time_gap_min_s")):
+             theirs = pb["abs_error_vs_human"][kk]
+@@ -542,8 +545,8 @@
+                              "reason": "a control failed (PREREG: 'Each must pass, or the read is REFUSED ... The family is then reported REFUSED, never as a pass')"}
+     else:
+         dec = cfgs["decisive"]["seeds"]
+-        tac_w = {f"s{s}": [r for r in TAC_ROWS if dec[f"s{s}"]["rows_HACC_minus_P10"][r]["separated_worse"]] for s in (0, 1)}
+-        dk_w = {f"s{s}": [r for r in DK_ROWS if dec[f"s{s}"]["rows_HACC_minus_P10"][r]["separated_worse"]] for s in (0, 1)}
++        tac_w = {f"s{s}": [r for r in TAC_ROWS if dec[f"s{s}"]["rows_DAG0_minus_P10"][r]["separated_worse"]] for s in (0, 1)}
++        dk_w = {f"s{s}": [r for r in DK_ROWS if dec[f"s{s}"]["rows_DAG0_minus_P10"][r]["separated_worse"]] for s in (0, 1)}
+         report["OUTCOME"] = {"TACTICAL": "DEFICIT" if any(tac_w.values()) else "NO WORSE", "DISTANCE_KEEPING": "DEFICIT" if any(dk_w.values()) else "NO WORSE",
+                              "STRATEGIC": "NOT COMPUTED: the dumps carry no per-tick S checkpoints (PREREG 'Not covered here')",
+                              "TACTICAL_T_CODE": "NOT COMPUTED: the dumps carry no per-tick T logits (PREREG 'Not covered here')",
+@@ -566,7 +569,7 @@
+     for s in (0, 1):
+         print(f" seed {s}  (F per row: " + ", ".join(f"{r}={cfgs['decisive']['seed_floor_F'][r]['F']:.4g}" for r in ALL_ROWS if cfgs['decisive']['seed_floor_F'][r]['F'] is not None) + ")")
+         for r in ALL_ROWS:
+-            v = cfgs["decisive"]["seeds"][f"s{s}"]["rows_HACC_minus_P10"][r]
++            v = cfgs["decisive"]["seeds"][f"s{s}"]["rows_DAG0_minus_P10"][r]
+             print(f"   {r:8s} delta {v.get('delta')} [{v.get('lo')}, {v.get('hi')}] sep={v.get('separated')} worse={v.get('separated_worse')} n={v.get('n_windows')}"
+                   + (f" n_at_risk={v.get('n_at_risk')}" if r == "DK-VIOL" else ""))
+     print("\nwindow states:", Jd["counts"])

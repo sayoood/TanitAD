@@ -1,0 +1,11 @@
+unmutated: 15 checks green
+mutation                     class    caught-by
+drops_by_log_not_token       filter   5  filter: exactly the listed tokens are dropped; header, columns and row order kep
+keeps_the_unavailable        filter   2  filter
+drops_everything_after       filter   2  filter
+header_dropped               filter   4  filter: exactly the listed tokens are dropped; header, columns and row order kep
+rows_sorted                  filter   3  filter: exactly the listed tokens are dropped; header, columns and row order kep
+unknown_token_allowed        refuse   1  an unavailable token that is NOT in the pool -> exit 4, nothing written
+empty_list_rewrites          filter   3  filter: exactly the listed tokens are dropped; header, columns and row order kep
+no_token_column_accepted     refuse   1  an unavailable file with no 'token' column -> exit 4
+ZZTEST_PASS 10  (1 unmutated suite of 15 checks + 8 RED mutations + coverage)

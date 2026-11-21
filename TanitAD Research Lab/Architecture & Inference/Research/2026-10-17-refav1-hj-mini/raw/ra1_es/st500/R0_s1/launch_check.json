@@ -1,0 +1,129 @@
+{
+ "cfg": {
+  "arm": "R0",
+  "d_feat": 1024,
+  "n_tok": 40,
+  "grid": "4x10",
+  "d_tok": 64,
+  "adapter_hidden": 512,
+  "d1": 128,
+  "d_up": 128,
+  "macro_dim": 16,
+  "enc_hidden": 384,
+  "macro_hidden": 64,
+  "pred_width": 192,
+  "pred_depth": 4,
+  "pred_heads": 6,
+  "context": 3,
+  "stride": 3,
+  "t1": 19,
+  "readout_hidden": 256,
+  "sigreg_proj": 1024,
+  "beta": null,
+  "gamma": null,
+  "beta_up": 0.16,
+  "gamma_up": 50.0,
+  "act_sigreg": 0.005,
+  "w_traj": 10.0,
+  "hist_drop": 0.0,
+  "kin_mode": "yaw"
+ },
+ "cfg_sha12": "bd90eadf4f3f",
+ "args_hash": "d3f1b4a6d9454ca6",
+ "G_DVB": [
+  {
+   "lever": "act_channels",
+   "declared": [
+    "a",
+    "yaw_rate",
+    "v"
+   ],
+   "built": [
+    "a",
+    "yaw_rate",
+    "v"
+   ],
+   "ok": true
+  },
+  {
+   "lever": "act_dim",
+   "declared": 3,
+   "built": 3,
+   "ok": true
+  },
+  {
+   "lever": "d1",
+   "declared": 128,
+   "built": 128,
+   "ok": true
+  },
+  {
+   "lever": "n_tok*d_tok",
+   "declared": 2560,
+   "built": 2560,
+   "ok": true
+  },
+  {
+   "lever": "w_traj",
+   "declared": 10.0,
+   "built": 10.0,
+   "ok": true
+  },
+  {
+   "lever": "n_wm_levels",
+   "declared": 0,
+   "built": 0,
+   "ok": true
+  },
+  {
+   "lever": "readout_in",
+   "declared": 128,
+   "built": 128,
+   "ok": true
+  },
+  {
+   "lever": "kin_mode_bank",
+   "declared": "yaw",
+   "built": "yaw",
+   "ok": true
+  },
+  {
+   "lever": "p10_units",
+   "declared": "pose_kappa",
+   "built": "pose_kappa",
+   "ok": true
+  },
+  {
+   "lever": "act_ch1_name",
+   "declared": "yaw_rate",
+   "built": "yaw_rate",
+   "ok": true
+  }
+ ],
+ "G_LIVE": {
+  "ok": true,
+  "shuffle_nonidentity_frac": null,
+  "shuffle_ok": true,
+  "missing": [],
+  "nonfinite": [],
+  "unexpected_dead": [],
+  "expected_dead": [],
+  "idm_term_grad_into_adapter": null,
+  "idm_ok": true,
+  "terms": {
+   "traj": 2.6005964279174805,
+   "ade_m": 2.6005964279174805,
+   "total": 26.005964279174805
+  }
+ },
+ "vram_estimate": {
+  "params": 1561084,
+  "params_gb": 0.023261964321136475,
+  "activations_gb": 0.43889808654785156,
+  "token_buffers_gb": 0.556640625,
+  "slack": 1.25,
+  "estimate_gb": 1.273500844836235,
+  "kind": "ESTIMATE"
+ },
+ "ok": true
+}

@@ -1,0 +1,20 @@
+
+  E-DEC-58 — EGO-MOTION STATE vs GEOMETRIC scene change
+  channels: [yaw_rate, a_long, v] as MEASURED STATE (PI directive)
+  124 held-out clips, k=4 (0.4 s)
+
+  NULL MODE - inputs are Gaussian noise; every t below is a null draw
+
+  76 clips, 5747 rows
+
+  target         column                              r     shuf   t-shuf      t
+  --------------------------------------------------------------------------------
+  d_bearing      scene_t (POSITIVE CONTROL)    -0.0148  -0.0041  -0.0107  -0.55
+  d_bearing      ego_state [w, a, v]           -0.0128  +0.0119  -0.0247  -1.20
+  d_bearing      scene_t + ego_state           -0.0316  -0.0021  -0.0295  -1.54
+  d_bearing      CLOSED FORM (kinematics)      +0.0055  -0.0007  +0.0061   0.31
+  d_bearing      constant (control)            +0.0000  +0.0000  +0.0000   0.00
+                 -> EGO-STATE's marginal given the scene: -0.0168 (t -1.06)
+
+  d_range        scene_t (POSITIVE CONTROL)    +0.0098  +0.0048  +0.0050   0.23
+  d_range        ego_state [w, a, v]           -0.0115  +0.0544  -0.0660  -3.01

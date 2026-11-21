@@ -1,0 +1,254 @@
+{
+ "_what": "constraint panel on the B1 EVAL split: two-sided speed envelope + clearance, with two deliberate-regression arms",
+ "_evidence_class": "MEASURED (ours; artifact = this json)",
+ "_no_model_was_run": true,
+ "_arms_are_trajectory_arms": "gt_x2speed and gt_creep hold gt's PATH fixed, so the ceilings are identical and only the speed channel moves",
+ "clearance_datum": "rig-origin to box EDGE (oriented BEV rectangle); the ego footprint is NOT subtracted unless ego_half_l/ego_half_w are passed. This matches lead_source's 'gap = along - size_x/2' convention and is NOT the bumper-to-bumper convention of alpasim-gsplat/cl_metrics.py (EGO_LEN = 4.7 m) -- the two differ by 4.7 m and must never be mixed",
+ "params": {
+  "dt_s": 0.1007,
+  "band_steps": [
+   20,
+   60
+  ],
+  "band_s": [
+   2.01,
+   6.04
+  ],
+  "stride": 10,
+  "max_range_m": 60.0,
+  "turn_dyaw_rad_REPORTING_ONLY": 0.2
+ },
+ "corpus": {
+  "eps_dir": "C:\\Users\\Admin\\tanitad-data\\refav1-eval141\\eps",
+  "n_episodes_on_disk": 141,
+  "n_clips_with_join": 139,
+  "n_clips_without_join": 2,
+  "n_windows": 1951
+ },
+ "class_histogram_seen": {
+  "automobile": 676084,
+  "person": 164275,
+  "rider": 22977,
+  "heavy_truck": 18300,
+  "bus": 8440,
+  "trailer": 7514,
+  "protruding_object": 3534,
+  "other_vehicle": 3136,
+  "stroller": 723,
+  "animal": 460,
+  "train_or_tram_car": 69
+ },
+ "n_classes_seen": 11,
+ "vacuity_gate": {
+  "manoeuvre_rate": 0.201948,
+  "n_turning_windows": 394,
+  "n_windows": 1951,
+  "_reads": "report this beside every constraint number: a zero bought by declining the manoeuvre is not a safety result"
+ },
+ "censoring": {
+  "steps_total": 79991,
+  "steps_no_kin": 39735,
+  "steps_no_clr": 52066,
+  "steps_no_ceiling": 26561,
+  "no_ceiling_at_all": 299
+ },
+ "censoring_fractions": {
+  "steps_without_kinematic_ceiling": 0.4967,
+  "steps_without_clearance_ceiling": 0.6509,
+  "steps_without_ANY_ceiling": 0.332
+ },
+ "distributions": {
+  "clearance_m": {
+   "n": 68977,
+   "mean": 12.0661,
+   "p05": 1.9904,
+   "p50": 8.0632,
+   "p95": 37.2642,
+   "min": 1.1907,
+   "max": 59.6535
+  },
+  "kinematic_ceiling_ms": {
+   "n": 40256,
+   "mean": 27.9671,
+   "p05": 6.5406,
+   "p50": 26.274,
+   "p95": 54.2215,
+   "min": 4.1231,
+   "max": 58.3094
+  },
+  "clearance_ceiling_ms": {
+   "n": 27925,
+   "mean": 14.537,
+   "p05": 2.0991,
+   "p50": 13.0187,
+   "p95": 30.5363,
+   "min": 0.0,
+   "max": 35.4239
+  }
+ },
+ "arms": {
+  "gt": {
+   "windows_scored": 1652,
+   "windows_censored": 299,
+   "n_steps_scored": 53430,
+   "frac_over_ceiling": 0.122852,
+   "n_over": 6564,
+   "mean_overshoot_ms": 5.229,
+   "n_situation_allows": 43298,
+   "frac_under_when_allowed": 0.796041,
+   "n_under": 34467,
+   "mean_shortfall_ms": 17.5917
+  },
+  "gt_x2speed": {
+   "windows_scored": 1652,
+   "windows_censored": 299,
+   "n_steps_scored": 53430,
+   "frac_over_ceiling": 0.475501,
+   "n_over": 25406,
+   "mean_overshoot_ms": 10.0781,
+   "n_situation_allows": 43298,
+   "frac_under_when_allowed": 0.450229,
+   "n_under": 19494,
+   "mean_shortfall_ms": 17.3692
+  },
+  "gt_creep": {
+   "windows_scored": 1652,
+   "windows_censored": 299,
+   "n_steps_scored": 53430,
+   "frac_over_ceiling": 0.004118,
+   "n_over": 220,
+   "mean_overshoot_ms": 0.7514,
+   "n_situation_allows": 43298,
+   "frac_under_when_allowed": 1.0,
+   "n_under": 43298,
+   "mean_shortfall_ms": 23.2586
+  }
+ },
+ "under_side_sensitivity": {
+  "_reads": "GT is competent human driving. A high GT under-rate is evidence the CEILING is uninformative, not that the driver is slow.",
+  "n_steps": 53430,
+  "grid": [
+   {
+    "allows_ms": 8.0,
+    "margin_ms": 3.0,
+    "n_allows": 43298,
+    "gt_under_rate": 0.796,
+    "gt_under_rate_LEAD": 0.671,
+    "n_lead": 19764,
+    "gt_under_rate_NO_LEAD": 0.9011,
+    "n_no_lead": 23534
+   },
+   {
+    "allows_ms": 8.0,
+    "margin_ms": 5.0,
+    "n_allows": 43298,
+    "gt_under_rate": 0.7123,
+    "gt_under_rate_LEAD": 0.5563,
+    "n_lead": 19764,
+    "gt_under_rate_NO_LEAD": 0.8432,
+    "n_no_lead": 23534
+   },
+   {
+    "allows_ms": 8.0,
+    "margin_ms": 10.0,
+    "n_allows": 43298,
+    "gt_under_rate": 0.5088,
+    "gt_under_rate_LEAD": 0.2889,
+    "n_lead": 19764,
+    "gt_under_rate_NO_LEAD": 0.6935,
+    "n_no_lead": 23534
+   },
+   {
+    "allows_ms": 12.0,
+    "margin_ms": 3.0,
+    "n_allows": 35797,
+    "gt_under_rate": 0.8641,
+    "gt_under_rate_LEAD": 0.7577,
+    "n_lead": 14362,
+    "gt_under_rate_NO_LEAD": 0.9354,
+    "n_no_lead": 21435
+   },
+   {
+    "allows_ms": 12.0,
+    "margin_ms": 5.0,
+    "n_allows": 35797,
+    "gt_under_rate": 0.8091,
+    "gt_under_rate_LEAD": 0.6823,
+    "n_lead": 14362,
+    "gt_under_rate_NO_LEAD": 0.8941,
+    "n_no_lead": 21435
+   },
+   {
+    "allows_ms": 12.0,
+    "margin_ms": 10.0,
+    "n_allows": 35797,
+    "gt_under_rate": 0.6127,
+    "gt_under_rate_LEAD": 0.3925,
+    "n_lead": 14362,
+    "gt_under_rate_NO_LEAD": 0.7602,
+    "n_no_lead": 21435
+   },
+   {
+    "allows_ms": 16.0,
+    "margin_ms": 3.0,
+    "n_allows": 29089,
+    "gt_under_rate": 0.9087,
+    "gt_under_rate_LEAD": 0.7687,
+    "n_lead": 10336,
+    "gt_under_rate_NO_LEAD": 0.9858,
+    "n_no_lead": 18753
+   },
+   {
+    "allows_ms": 16.0,
+    "margin_ms": 5.0,
+    "n_allows": 29089,
+    "gt_under_rate": 0.8773,
+    "gt_under_rate_LEAD": 0.7269,
+    "n_lead": 10336,
+    "gt_under_rate_NO_LEAD": 0.9602,
+    "n_no_lead": 18753
+   },
+   {
+    "allows_ms": 16.0,
+    "margin_ms": 10.0,
+    "n_allows": 29089,
+    "gt_under_rate": 0.7267,
+    "gt_under_rate_LEAD": 0.4943,
+    "n_lead": 10336,
+    "gt_under_rate_NO_LEAD": 0.8548,
+    "n_no_lead": 18753
+   },
+   {
+    "allows_ms": 20.0,
+    "margin_ms": 3.0,
+    "n_allows": 22932,
+    "gt_under_rate": 0.9276,
+    "gt_under_rate_LEAD": 0.7605,
+    "n_lead": 6848,
+    "gt_under_rate_NO_LEAD": 0.9987,
+    "n_no_lead": 16084
+   },
+   {
+    "allows_ms": 20.0,
+    "margin_ms": 5.0,
+    "n_allows": 22932,
+    "gt_under_rate": 0.9168,
+    "gt_under_rate_LEAD": 0.7373,
+    "n_lead": 6848,
+    "gt_under_rate_NO_LEAD": 0.9932,
+    "n_no_lead": 16084
+   },
+   {
+    "allows_ms": 20.0,
+    "margin_ms": 10.0,
+    "n_allows": 22932,
+    "gt_under_rate": 0.8451,
+    "gt_under_rate_LEAD": 0.6361,
+    "n_lead": 6848,
+    "gt_under_rate_NO_LEAD": 0.934,
+    "n_no_lead": 16084
+   }
+  ]
+ },
+ "_runtime_s": 10.0
+}

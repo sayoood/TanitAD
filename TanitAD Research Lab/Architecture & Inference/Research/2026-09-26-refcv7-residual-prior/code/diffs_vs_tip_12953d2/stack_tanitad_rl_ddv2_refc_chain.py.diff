@@ -1,0 +1,162 @@
+--- a/stack/tanitad/rl/ddv2_refc_chain.py
++++ b/stack/tanitad/rl/ddv2_refc_chain.py
+@@ -36,6 +36,14 @@
+ query INDEPENDENTLY — there is no self-attention across anchors (``refc.py:1357-1372``) — so a
+ query's output does not depend on which other queries share the call. Pinned in the tests.
+ 
++⭐ refcv7 NEW-1 (2026-09-27): ON A RESIDUAL BUILD THE SAMPLER'S STATE IS Delta, NOT THE PLAN.
++``_sample`` then takes ``prior=(a0, kappa0, v)`` and rolls every state as ``P + Delta``
++(``kinematic_prior.roll_plan``). The capture forwards that prior VERBATIM and RECORDS it
++(:attr:`SamplerInputs.prior`), and every roll here composes on it the way ``_sample`` does:
++:func:`state_to_path` REFUSES a residual build without it, an off build with it, and a speed
++that is not the prior's. On an off build nothing here changes: ``prior`` is ``None`` and every
++call is the pre-NEW-1 call.
++
+ Tier: T0 machinery. Evidence class: MEASURED (``tests/test_ddv2_refc_chain.py``).
+ """
+ from __future__ import annotations
+@@ -46,6 +54,7 @@
+ import torch
+ from torch import Tensor
+ 
++from tanitad.models import kinematic_prior as _kp
+ from tanitad.rl import ddv2_rl as D
+ 
+ __all__ = ["SamplerInputs", "capture_sampler_inputs", "anchor_state", "make_x0_fn",
+@@ -55,7 +64,12 @@
+ @dataclass
+ class SamplerInputs:
+     """What ``_sample`` was called with. ``v`` is the speed ``_sample`` itself derives
+-    (``refc.py:2085-2086``): ``v_ms`` when given, else the anchor reference speed."""
++    (``refc.py:2085-2086``): ``v_ms`` when given, else the anchor reference speed.
++
++    ``prior`` (refcv7 NEW-1) is ``_sample``'s ``prior=`` VERBATIM: ``(a0 [B], kappa0 [B],
++    v [B])`` on a residual build, ``None`` on every other build. When it is set ``v`` IS
++    ``prior[2]`` -- ``_sample``'s own rule: the fan is rolled from the prior's speed, the one
++    ``roll_bank`` rolled the bank from, which on a WITHHELD row is not ``v_ms``."""
+     kv: Tensor          # [B, P, d]
+     cond: Tensor        # [B, d]
+     bank: Tensor        # [B, N, S, 2]
+@@ -67,6 +81,8 @@
+     #: anchored-Gaussian ``eps`` (``refc.py:2105``), so a parity check can reproduce it exactly
+     rng_cpu: Tensor | None = None
+     rng_cuda: Tensor | None = None
++    #: refcv7 NEW-1: the prior ``_sample`` composed on (see the class docstring)
++    prior: tuple | None = None
+ 
+     def replay_eps(self, decoder) -> Tensor:
+         """Re-draw the ``eps`` ``_sample`` drew, from the recorded RNG state (state restored)."""
+@@ -101,7 +117,7 @@
+     orig = decoder._sample
+ 
+     def hook(kv, cond, bank, v_ms, steps, agents=None, agent_pad=None, agent_pos=None,
+-             bev=None):
++             bev=None, prior=None):
+         if agents is not None:
+             raise D.Ddv2ConfigError("agent tokens reached the sampler; the binding is for an "
+                                     "agent-free build (refcv5-v2 ran --agents off)")
+@@ -118,13 +134,25 @@
+                                     "`bev_coupling`")
+         rng_cpu = torch.get_rng_state()
+         rng_cuda = torch.cuda.get_rng_state(bank.device) if bank.is_cuda else None
+-        out = orig(kv, cond, bank, v_ms, steps, agents, agent_pad, agent_pos, bev)
++        # ⛔ refcv7 NEW-1, 2026-09-27. `_sample` gained a TENTH parameter, `prior`, and the
++        # Thor full-suite gate caught this fixed-arity hook on it (8 TypeErrors). It is
++        # accepted, forwarded VERBATIM and RECORDED -- never refused like `agents`/`bev`: it
++        # is not a coupling the refcv5-v2 build lacks, it is the reference frame of the
++        # sampler's state on a residual build, and a chain that dropped it would roll Delta
++        # as if it were the plan. Forwarded only when given, so an off build's call is the
++        # pre-NEW-1 call byte for byte (the decoder passes it only then, too).
++        out = (orig(kv, cond, bank, v_ms, steps, agents, agent_pad, agent_pos, bev)
++               if prior is None else
++               orig(kv, cond, bank, v_ms, steps, agents, agent_pad, agent_pos, bev,
++                    prior=prior))
+         b = bank.shape[0]
+         v = (bank.new_full((b,), decoder.anchor_ref_speed) if v_ms is None
+              else v_ms.reshape(-1).to(torch.float32))
++        if prior is not None:
++            v = prior[2]              # `_sample`'s own rule on a residual build
+         records.append(SamplerInputs(kv=kv, cond=cond, bank=bank, v_ms=v_ms, v=v,
+                                      steps=int(steps), out=out,
+-                                     rng_cpu=rng_cpu, rng_cuda=rng_cuda))
++                                     rng_cpu=rng_cpu, rng_cuda=rng_cuda, prior=prior))
+         return out
+ 
+     decoder._sample = hook
+@@ -144,11 +172,38 @@
+     return decoder.anchor_control_seq(batch, dtype) / norm
+ 
+ 
+-def state_to_path(decoder, x_n: Tensor, v: Tensor) -> Tensor:
++def state_to_path(decoder, x_n: Tensor, v: Tensor, prior: tuple | None = None) -> Tensor:
+     """Normalised control state ``[B, M, S, 2]`` -> metres ``[B, M, S, 2]`` through the decoder's
+-    own integrator (``refc.py:2025-2040``)."""
++    own integrator (``refc.py:2025-2040``).
++
++    refcv7 NEW-1: on a RESIDUAL build the chain's state is the sampler's INTERNAL residual
++    Delta, and its path is ``decoder._roll_state(Delta, v, False, prior)`` -- the roll
++    ``_sample`` itself makes (``kinematic_prior.roll_plan(Delta, P)``) -- never
++    ``decoder._state_to_path``, which takes EXPORTED absolute controls. ``prior``
++    (:attr:`SamplerInputs.prior`) is therefore REQUIRED there, REFUSED on an off build, and
++    ``v`` must be the prior's own roll speed. Each mismatch raises rather than rolling Delta as
++    if it were the plan. Off build, ``prior=None``: the pre-NEW-1 call, unchanged.
++    """
+     norm = x_n.new_tensor(tuple(decoder.cfg.control_norm))
+-    return decoder._state_to_path(x_n * norm, v, False)
++    mode = str(getattr(decoder, "residual_prior", _kp.RESIDUAL_PRIOR_OFF))
++    if prior is None:
++        if mode != _kp.RESIDUAL_PRIOR_OFF:
++            raise D.Ddv2ConfigError(
++                f"refcv7 NEW-1: this decoder was built with residual_prior={mode!r}, so the "
++                "chain's state is the RESIDUAL Delta; rolling it without the prior would hand "
++                "back Delta as the plan. Pass the captured `SamplerInputs.prior`.")
++        return decoder._state_to_path(x_n * norm, v, False)
++    if mode == _kp.RESIDUAL_PRIOR_OFF:
++        raise D.Ddv2ConfigError(
++            "refcv7 NEW-1: a prior was handed to a decoder built with residual_prior='off'; "
++            "composing it would roll a plan this model never emits.")
++    if not torch.equal(v.reshape(-1).to(torch.float32),
++                       prior[2].reshape(-1).to(torch.float32)):
++        raise D.Ddv2ConfigError(
++            "refcv7 NEW-1: the speed handed to the chain is not the prior's roll speed. "
++            "`_sample` rolls a residual build's fan from `prior[2]`, which on a WITHHELD row "
++            "is not the raw v0. Pass `SamplerInputs.v`.")
++    return decoder._roll_state(x_n * norm, v, False, prior)
+ 
+ 
+ def make_x0_fn(decoder, inputs: SamplerInputs, *, input_clamp: bool):
+@@ -157,14 +212,16 @@
+     ``input_clamp=False`` is the deployed pass exactly (``refc.py:2111-2118``);
+     ``input_clamp=True`` is the release's (``rl.py:826-827``, ``:477``).
+     ``M`` may be any multiple of ``N`` (groups): see the module docstring for why that is exact.
+-    """
+-    kv, cond, v = inputs.kv, inputs.cond, inputs.v
++    On a residual build (refcv7 NEW-1) the state is Delta and is rolled on ``inputs.prior``
++    (:func:`state_to_path`), exactly as ``_sample`` rolls it.
++    """
++    kv, cond, v, prior = inputs.kv, inputs.cond, inputs.v, inputs.prior
+ 
+     def x0_fn(x_n: Tensor, t: int) -> Tensor:
+         if x_n.dim() != 4 or x_n.shape[0] != kv.shape[0]:
+             raise D.Ddv2ConfigError(f"state {tuple(x_n.shape)} vs captured batch {kv.shape[0]}")
+         x_in = x_n.clamp(-1.0, 1.0) if input_clamp else x_n
+-        x_path = state_to_path(decoder, x_in, v)
++        x_path = state_to_path(decoder, x_in, v, prior)
+         tt = torch.full((x_n.shape[0],), float(t), device=x_n.device, dtype=torch.float32)
+         _, du = decoder._decode_ctrl(kv, cond, x_path, tt, None, None, None)
+         return x_in + du
+@@ -196,7 +253,13 @@
+                                  torch.tensor(t_prev, device=dev))
+     norm = x0_hat_n.new_tensor(tuple(cfg.control_norm))
+     u0_hat = x0_hat_n * norm
+-    return decoder._state_to_path(u0_hat, inputs.v, False), u0_hat
++    if inputs.prior is None:
++        return decoder._state_to_path(u0_hat, inputs.v, False), u0_hat
++    # refcv7 NEW-1: `_sample`'s own tail on a residual build -- the fan is Delta rolled on P
++    # (`_roll_state`) and `u0_hat` leaves ABSOLUTE (`_export_controls`), so parity is checked
++    # against what the decoder EMITS, never against its internal residual.
++    return (state_to_path(decoder, x0_hat_n, inputs.v, inputs.prior),
++            decoder._export_controls(u0_hat, inputs.prior))
+ 
+ 
+ @dataclass(frozen=True)

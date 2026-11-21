@@ -1,0 +1,39 @@
+{
+ "mode": "merged",
+ "ckpt": "/root/runs/lora/L_s0/ckpt_last.pt",
+ "ckpt_sha256": "be8a63c8fdbdcf53f398f10839e73514869a783a70e59b96c12c29bec5887ab3",
+ "lora_meta": {
+  "r": 32,
+  "alpha": 32.0,
+  "targets": [
+   "q",
+   "v"
+  ],
+  "blocks": 24,
+  "dropout": 0.0,
+  "seed": 0,
+  "weights_sha256": "dcb2e45127cccbf1601e5f42fef165eea275c8e5213197e8dcf3f48822718179"
+ },
+ "merged_weights_sha256": "5398438a054667363f2aa822f15adc1a20095ba92d18b124ad0e3cd0a2c2bb60",
+ "c1": {
+  "n_changed": 48,
+  "changed_first": [
+   "model.layer.0.attention.q_proj.weight",
+   "model.layer.0.attention.v_proj.weight",
+   "model.layer.1.attention.q_proj.weight",
+   "model.layer.1.attention.v_proj.weight"
+  ],
+  "loaded_equals_merged": true,
+  "all_changed_are_q_or_v": true
+ },
+ "c2": {
+  "clip": "01be5919-6e61-45ba-a193-5f447efb4b51",
+  "frames": 8,
+  "rel_l2_merged_vs_lora": 0.04974317474410044,
+  "max_abs_merged_vs_lora": 0.13922119140625,
+  "rel_l2_lora_vs_frozen": 1.4039610418493675,
+  "rel_l2_merged_vs_frozen": 1.4043648143595804
+ },
+ "cache_pod_rc": 0,
+ "wall_s": 376.4
+}

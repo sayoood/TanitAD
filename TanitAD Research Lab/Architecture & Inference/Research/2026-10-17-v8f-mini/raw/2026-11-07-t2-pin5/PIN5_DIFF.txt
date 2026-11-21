@@ -1,0 +1,313 @@
+--- code/read_t2_dominance.py	2026-11-07 00:35:44.000000000 +0100
++++ pin5/read_t2_dominance_pin5.py	2026-11-07 03:31:56.000000000 +0100
+@@ -5,6 +5,15 @@
+            [--exclusions2 EXCLUSIONS2.json --exclusions3 EXCLUSIONS3.json --exclusions4 EXCLUSIONS4.json]       (rule R-SCN: all three or none)
+            [--arm NAME] [--arm-stage N --arm-root R --arm-result STAGEN_RESULT.json --arm-exclusions EXCLUSIONSN.json --arm-overlay TAR::pkg/MANIFESTN.json --arm-gate-log LOG]   (AGENT Q: another arm in C0C's place)
+ 
++FIFTH PIN (2026-11-07, a copy of the fourth pin, `code/read_t2_dominance.py` sha256 7fd65ffd... untouched; this file lives in `pin5/` and finds its siblings in `code/`). `--arm-seeds {0,1 | 0}` (default 0,1).
++  Default (0,1): the fourth pin's read, field for field (JSON keys, md lines, decision, gates, both seeds' 19 rows, seed gap, r_scn): the identity is checked on the real pulls against the read of record.
++  `0`: a SEED-0-ONLY read of an arm. Cells `<tc>|NAME_s0` only; the rows, bars, estimator and gates are the fourth pin's for seed 0. The outcome is `SEED0-ONLY` and NEVER `DOMINANT-T2` (the card's DOMINANT needs both seeds):
++  `decision` carries `n_seeds: 1`, `counted_dominant: false`, `statement: "seed 0 only, not a counted DOMINANT"` and `seed0_block` (what the seed-0 block alone reads: DOMINANT / NOT-DOMINANT / UNDERPOWERED, not an outcome);
++  the seed gap of card section 7 is reported as not computable (its reason is named); a failed gate is still `GATE-FAIL` (no row was read). Which cells a stage ran: stage 4 is the C0C stage and ran BOTH seeds whatever is read
++  (R-SCN checks its four cells per scene); a stage beyond 4 under `--arm-seeds 0` is expected to have run seed 0 only (T2 and RR x NAME_s0: 124 cells planned for 62 scenes), a two-seed stage there is refused by R-SCN
++  (RSCN_CELLS_PLANNED). No seed-1 cell of the arm is loaded, paired or scored under `--arm-seeds 0`; the G4 control (the banked C0C arrays of the T1-kin reader, both seeds) is not an arm cell and is unchanged.
++  Refusals before anything is read: ARM_SEEDS_FORM (only `0,1` and `0` are forms).
++
+ ARM (AGENT Q, re-pinned 2026-11-07 before any LoRA or weight-edited row was read). `--arm NAME` (default C0C) names the arm whose cells `<tc>|<NAME>_s0` and `<tc>|<NAME>_s1` are read against the floor P10 in
+ C0C's place; `--arm-stage N` (default 4) says which stage holds them. With the defaults the read is the previous pin's, field for field (`logs/q_identity.json` compares a fresh read of the real pulls
+ with the read of record). Stage 4 holds C0C: any other arm lives in a stage beyond 4, read with `--arm-root` (its rollouts dir), `--arm-result` (its STAGE<N>_RESULT.json, default beside the root) and
+@@ -58,7 +67,8 @@
+ 
+ os.environ.setdefault("CUDA_VISIBLE_DEVICES", "-1")
+ sys.dont_write_bytecode = True
+-HERE = os.path.dirname(os.path.abspath(__file__)).replace("\\", "/")
++PIN5_DIR = os.path.dirname(os.path.abspath(__file__)).replace("\\", "/")
++HERE = os.path.dirname(PIN5_DIR) + "/code"                           # the instruments and sibling modules of the pinned read live in code/
+ sys.path.insert(0, HERE)
+ import numpy as np  # noqa: E402
+ 
+@@ -77,7 +87,11 @@
+ FAMILIES = ("LONGITUDINAL", "LATERAL", "TACTICAL", "STRATEGIC")
+ EXPECT = {"scenes_launch": 42, "scenes_guard": 20, "starts_launch": 81, "starts_guard": 40}
+ RED_ARMS = ("smooth_off", "feasible_off", "prior_zeros")
+-OUTCOMES = ("DOMINANT-T2", "NOT-DOMINANT", "UNDERPOWERED", "GATE-FAIL")
++OUTCOMES = ("DOMINANT-T2", "NOT-DOMINANT", "UNDERPOWERED", "GATE-FAIL", "SEED0-ONLY")
++SEED0_ONLY = "SEED0-ONLY"
++SEED0_STATEMENT = "seed 0 only, not a counted DOMINANT"
++SEED_GAP_NOT_COMPUTABLE = "seed 0 only: the seed gap |X_s1 - X_s0| of card section 7 needs both seeds"
++ARM_SEEDS_FORMS = {"0,1": SEEDS, "0": (0,)}                           # `--arm-seeds`: the only two forms
+ STATE = {}
+ ARM_DEFAULT, ARM_STAGE_DEFAULT = "C0C", 4
+ STAGE4_ARM = "C0C"                                                    # stage 4 ran the C0C composite; an arm of another name lives in a stage beyond 4
+@@ -127,14 +141,19 @@
+     return int(sum(bool(r["separated"]) for r in rows.values()))
+ 
+ 
+-def decide(gates_ok, blocks):
++def decide(gates_ok, blocks, arm_seeds=SEEDS):
+     """Card section 5. `blocks` = {seed: {"rows": {label: {delta, lo, hi, separated}}, "read_a": read_a_block}} for both seeds (None when a gate failed: no row was read).
+-    -> {outcome, reading_underpowered_first, per_seed, failing_terms}."""
++    -> {outcome, reading_underpowered_first, per_seed, failing_terms}.
++    `arm_seeds` (0,1) by default. (0,) = a SEED-0-ONLY read: `blocks` holds seed 0 alone and the outcome is SEED0-ONLY whatever the seed-0 block reads (the card's DOMINANT-T2 needs both seeds); the keys `n_seeds`,
++    `counted_dominant`, `statement` and `seed0_block` are added. A failed gate is GATE-FAIL under either."""
+     note = "UNDERPOWERED is tested before NOT-DOMINANT: with the card's literal order it would be unreachable (no separated row => D1 fails => NOT-DOMINANT)"
+     if not gates_ok or blocks is None:
+         return {"outcome": "GATE-FAIL", "reading_underpowered_first": note, "per_seed": None, "failing_terms": None}
+-    if sorted(blocks) != list(SEEDS):
+-        raise ValueError(f"decide(): need both seeds {SEEDS}, got {sorted(blocks)}")
++    arm_seeds = tuple(arm_seeds)
++    if arm_seeds not in (SEEDS, (0,)):
++        raise ValueError(f"decide(): arm_seeds {arm_seeds} is not one of {SEEDS}, (0,)")
++    if sorted(blocks) != list(arm_seeds):
++        raise ValueError(f"decide(): need {'both seeds' if arm_seeds == SEEDS else 'seeds'} {arm_seeds}, got {sorted(blocks)}")
+     per = {f"s{s}": {"DOMINANT": bool(b["read_a"]["DOMINANT"]), "D1": bool(b["read_a"]["D1"]), "D2": bool(b["read_a"]["D2"]), "D3": bool(b["read_a"]["D3"]),
+                      "DOMINANT_three_families_strategic_paused": bool(b["read_a"]["DOMINANT_three_families_strategic_paused"]), "n_rows_separated": n_separated(b["rows"])} for s, b in blocks.items()}
+     ft = {f"s{s}": list(b["read_a"]["failing_terms"]) for s, b in blocks.items()}
+@@ -144,7 +163,10 @@
+         name = "UNDERPOWERED"
+     else:
+         name = "NOT-DOMINANT"
+-    return {"outcome": name, "reading_underpowered_first": note, "per_seed": per, "failing_terms": ft}
++    out = {"outcome": name, "reading_underpowered_first": note, "per_seed": per, "failing_terms": ft}
++    if arm_seeds != SEEDS:                                           # one seed read: the card's DOMINANT-T2 needs both, so this read can never name it
++        out.update(outcome=SEED0_ONLY, n_seeds=len(arm_seeds), counted_dominant=False, statement=SEED0_STATEMENT, seed0_block="DOMINANT" if name == "DOMINANT-T2" else name)
++    return out
+ 
+ 
+ # ------------------------------------------------------------------------------------------------ gates
+@@ -383,7 +405,7 @@
+     parts = {"a": g2a_check(getattr(a, "result1", None) or DEFAULT_RESULT1, results, getattr(a, "manifest1", None) or DEFAULT_MANIFEST1, overlays),
+              "b": g2b_check(logs=logs), "c": g2_check(results),
+              "d": g2d_check({2: a.root2, 3: a.root3}),
+-             "e": g2e_check([("stage2", a.root2, "P10"), ("stage3", a.root3, "P10"), (STAGE_LABEL[st_a], root_a, f"{arm}_s0"), (STAGE_LABEL[st_a], root_a, f"{arm}_s1")], excluded=excluded)}
++             "e": g2e_check([("stage2", a.root2, "P10"), ("stage3", a.root3, "P10")] + [(STAGE_LABEL[st_a], root_a, f"{arm}_s{s}") for s in sp["seeds"]], excluded=excluded)}
+     why = [f"({k}) {w}" for k, p in parts.items() for w in p.get("why", [])]
+     return {"PASS": not why, "why": why, "parts": parts}
+ 
+@@ -433,20 +455,39 @@
+ STAGE_CELLS[3] = STAGE_CELLS[2]
+ 
+ 
+-def arm_cells(arm):
+-    """The cells of the stage that holds `arm`, laid out as stage 4's: T2 x {arm_s0, arm_s1} deciding, RR x {arm_s0, arm_s1} beside. arm_cells('C0C') == STAGE_CELLS[4]."""
+-    return {"deciding": frozenset(f"T2|{arm}_s{s}" for s in SEEDS), "beside": frozenset(f"RR|{arm}_s{s}" for s in SEEDS)}
++def arm_cells(arm, seeds=SEEDS):
++    """The cells of the stage that holds `arm`, laid out as stage 4's: T2 x {arm_s0, arm_s1} deciding, RR x {arm_s0, arm_s1} beside (`seeds` (0,): arm_s0 only). arm_cells('C0C') == STAGE_CELLS[4]."""
++    return {"deciding": frozenset(f"T2|{arm}_s{s}" for s in seeds), "beside": frozenset(f"RR|{arm}_s{s}" for s in seeds)}
++
+ 
++def stage_ran_seeds(arm_stage, arm_seeds=SEEDS):
++    """The seeds the arm's stage RAN, which is the cell layout R-SCN checks: stage 4 is the C0C stage and ran both seeds whatever seeds are read; a stage beyond 4 ran exactly the seeds that are read
++    (a `--seeds 0` driver: T2 and RR x {NAME_s0})."""
++    return SEEDS if arm_stage <= 4 else tuple(arm_seeds)
+ 
+-def stage_cells(st, arm_name=ARM_DEFAULT, arm_stage=ARM_STAGE_DEFAULT):
++
++def stage_cells(st, arm_name=ARM_DEFAULT, arm_stage=ARM_STAGE_DEFAULT, arm_seeds=SEEDS):
+     """The planned cells of one scene in stage `st`: the arm's layout in the arm's stage, the drivers' layout in every other stage (stage 4 stays the C0C stage when the arm is read from a later one)."""
+     if st == arm_stage:
+-        return arm_cells(arm_name)
++        return arm_cells(arm_name, stage_ran_seeds(arm_stage, arm_seeds))
+     return STAGE_CELLS[st]
+ 
+ 
++def parse_arm_seeds(x):
++    """`--arm-seeds` -> (0, 1) or (0,); None for anything else (the caller refuses by name). None (absent) is both seeds."""
++    if x is None:
++        return SEEDS
++    if isinstance(x, str):
++        return ARM_SEEDS_FORMS.get(x)
++    try:
++        t = tuple(x)
++    except TypeError:
++        return None
++    return t if t in (SEEDS, (0,)) and all(type(v) is int for v in t) else None
++
++
+ def arm_spec(a):
+-    """The arm under read and where it lives, from the parsed args (any attribute may be absent: the previous pin's tests hand over a bare namespace) -> {arm, stage, root, result, exclusions, overlay, gate_log}.
++    """The arm under read and where it lives, from the parsed args (any attribute may be absent: the previous pin's tests hand over a bare namespace) -> {arm, stage, root, result, exclusions, overlay, gate_log, seeds}.
+     REFUSED (SystemExit, a named error each, before anything is read): the name is not a plain name (ARM_NAME_FORM), carries a seed suffix (ARM_NAME_SEED_SUFFIX: the read appends `_s0` / `_s1`), is the floor or
+     a stage-2/3 arm (ARM_NAME_RESERVED); the stage is below 4 (ARM_STAGE_BELOW_4); stage 4 with an arm other than C0C (ARM_STAGE4_IS_C0C) or with the extra `--arm-*` inputs, which would name a second
+     source for stage 4 (ARM_STAGE4_EXTRA_INPUTS); a stage beyond 4 without `--arm-root` (ARM_ROOT_REQUIRED)."""
+@@ -455,7 +496,10 @@
+     st = getattr(a, "arm_stage", None)
+     st = ARM_STAGE_DEFAULT if st is None else st
+     paths = {k: getattr(a, "arm_" + k, None) for k in ("root", "result", "exclusions", "overlay", "gate_log")}
++    seeds = parse_arm_seeds(getattr(a, "arm_seeds", None))
+     why = []
++    if seeds is None:
++        why.append(f"ARM_SEEDS_FORM {getattr(a, 'arm_seeds', None)!r}: --arm-seeds is '0,1' (both seeds, the default) or '0' (a seed-0-only read, outcome SEED0-ONLY)")
+     if not isinstance(arm, str) or not ARM_NAME_RE.fullmatch(arm):
+         why.append(f"ARM_NAME_FORM {arm!r}: an arm name is letters, digits, '-' and '_' and starts with a letter")
+     else:
+@@ -475,13 +519,13 @@
+         why.append(f"ARM_ROOT_REQUIRED stage {st}: an arm in a stage beyond 4 needs --arm-root (and --arm-result, --arm-exclusions, --arm-overlay, --arm-gate-log)")
+     if why:
+         raise SystemExit("REFUSED: " + "; ".join(why))
+-    return {"arm": arm, "stage": st, **paths}
++    return {"arm": arm, "stage": st, **paths, "seeds": seeds}
+ 
+ 
+-def arm_absent(root, arm):
++def arm_absent(root, arm, seeds=SEEDS):
+     """-> [problems]: the pull under `root` holds no cell directory `<scene8>/objects/T2/<arm>_s<seed>` for a seed (a mistyped arm); the T2 cells that ARE there are named."""
+     why = []
+-    for s in SEEDS:
++    for s in seeds:
+         if not glob.glob(f"{root}/*/objects/T2/{arm}_s{s}"):
+             present = sorted({os.path.basename(d) for d in glob.glob(f"{root}/*/objects/T2/*")})
+             why.append(f"ARM_ABSENT_IN_PULL {arm}_s{s}: no cell directory {root}/<scene8>/objects/T2/{arm}_s{s}; T2 cells present under that root: {present[:12]}")
+@@ -637,7 +681,7 @@
+     return why, info
+ 
+ 
+-def rscn_check(roots, results, scene_ids, exclusions, expect=EXPECT, arm_name=ARM_DEFAULT, arm_stage=ARM_STAGE_DEFAULT):
++def rscn_check(roots, results, scene_ids, exclusions, expect=EXPECT, arm_name=ARM_DEFAULT, arm_stage=ARM_STAGE_DEFAULT, arm_seeds=SEEDS):
+     """Rule R-SCN as G3 reads it (AMENDMENT_T2_SCENE_REFUSAL.md rules 1 to 4): the per-stage conditions of `rscn_stage_check` for stages 2, 3 and 4 (and the arm's stage `arm_stage` when it is beyond 4, laid
+     out as `arm_cells(arm_name)`), then the UNION of the excluded scenes over every stage read.
+     `exclusions` {stage: EXCLUSIONS*.json path or parsed dict}: all of them or none (a partial set is refused). `results` {stage: STAGE*_RESULT.json path or dict}, `roots` {stage: rollouts dir}.
+@@ -663,7 +707,7 @@
+             probs.append(f"RSCN_FILE_UNREADABLE stage {st}: {type(e).__name__}: {str(e)[:120]}")
+             continue
+         why, info = rscn_stage_check(st, exc, res, roots[st], scene_ids, rng[st], exclusions[st] if isinstance(exclusions[st], str) else None, results[st] if isinstance(results[st], str) else None,
+-                                     cells=stage_cells(st, arm_name, arm_stage))
++                                     cells=stage_cells(st, arm_name, arm_stage, arm_seeds))
+         probs += why
+         out["per_stage"][str(st)] = info
+         ex_by[st] = exc.get("excluded") or {}
+@@ -709,7 +753,7 @@
+     return out
+ 
+ 
+-def g3_check(roots, results, scene_ids, expect=EXPECT, exclusions=None, rscn=None, arm_name=ARM_DEFAULT, arm_stage=ARM_STAGE_DEFAULT):
++def g3_check(roots, results, scene_ids, expect=EXPECT, exclusions=None, rscn=None, arm_name=ARM_DEFAULT, arm_stage=ARM_STAGE_DEFAULT, arm_seeds=SEEDS):
+     """roots {2, 3, 4}: rollouts dirs; results {2, 3, 4}: STAGE*_RESULT.json; scene_ids {idx: scene id} (all 62). P10 comes from stages 2 and 3 (idx 0..41 / 42..61), C0C_s0/_s1 from stage 4.
+     The arm: `<arm_name>_s0` / `_s1` from stage `arm_stage` (roots and results then also carry that stage when it is beyond 4); the defaults are C0C at stage 4. The returned records are keyed by cell name.
+     Rule R-SCN: with `exclusions` {2, 3, 4} (or a ready `rscn` from `rscn_check`) the stage conditions of `rscn_check` replace the plain `overall` COMPLETE test, and the UNION of the excluded scenes is removed from
+@@ -722,7 +766,7 @@
+     why, per_arm = [], {}
+     union8, rs = frozenset(), None
+     if exclusions is not None or rscn is not None:
+-        rs = rscn if rscn is not None else rscn_check(roots, results, scene_ids, exclusions, expect, arm_name=arm_name, arm_stage=arm_stage)
++        rs = rscn if rscn is not None else rscn_check(roots, results, scene_ids, exclusions, expect, arm_name=arm_name, arm_stage=arm_stage, arm_seeds=arm_seeds)
+         if rs["problems"]:
+             return {"PASS": False, "why": list(rs["problems"]), "pairing": None, "n_starts": None, "r_scn": rs}, None
+         union8 = frozenset(rs["union"])
+@@ -732,7 +776,7 @@
+             o = json.load(open(p, encoding="utf-8")).get("overall") if p and os.path.isfile(p) else None
+             if o != "COMPLETE":
+                 why.append(f"G3_OVERALL_NOT_COMPLETE stage {st}: {o!r}")
+-    plan = (("P10", 2, range(0, n_l)), ("P10", 3, range(n_l, n_l + n_g)), (f"{arm_name}_s0", arm_stage, range(n_l + n_g)), (f"{arm_name}_s1", arm_stage, range(n_l + n_g)))
++    plan = (("P10", 2, range(0, n_l)), ("P10", 3, range(n_l, n_l + n_g))) + tuple((f"{arm_name}_s{s}", arm_stage, range(n_l + n_g)) for s in arm_seeds)
+     for arm, st, idxs in plan:
+         want = {scene_ids[i][:8] for i in idxs} - union8
+         cells = [(d, recs) for d, recs in load_cells(roots[st], arm) if scene_of_cell(d) not in union8]
+@@ -758,7 +802,7 @@
+     if rs is not None:
+         why += rscn_pairs_on_excluded(out_recs, {u["idx"] for u in rs["union"].values()})
+     pairing = {}
+-    for s in SEEDS:
++    for s in arm_seeds:
+         try:
+             S.pair_check(L.pair_keys(out_recs.get(f"{arm_name}_s{s}", [])), L.pair_keys(out_recs.get("P10", [])))
+             pairing[f"s{s}"] = "PAIRED"
+@@ -864,6 +908,8 @@
+ def seed_gap_table(blocks):
+     """Section 7: for each row, both seeds' points and the gap |X_s1 - X_s0|; a row separated-better at both seeds also carries `margin_lt_gap` (the nearer CI bound's distance from 0 is below
+     the gap). 'margin' is this script's spelling of a word the card leaves open; it decides nothing."""
++    if sorted(blocks) != list(SEEDS):                                 # a seed-0-only read has no second seed to differ from
++        return {"computable": False, "reason": SEED_GAP_NOT_COMPUTABLE}
+     rr = STATE["rr"]
+     GD, SR = rr.GD, rr.SR
+     t = {}
+@@ -881,11 +927,13 @@
+ def run(a):
+     """The whole read. Never raises past a gate: a failed gate gives GATE-FAIL with no row read. (A malformed arm or stage argument is refused before anything is read: `arm_spec`.)"""
+     spec = arm_spec(a)
+-    arm, arm_st = spec["arm"], spec["stage"]
++    arm, arm_st, arm_seeds = spec["arm"], spec["stage"], spec["seeds"]
+     card_ok = card_frozen_ok()
+     res = {"card": "PREREG_T2_DOMINANCE", "card_sha256_expected": CARD_SHA, "card_sha_ok": card_ok, "card_sha256_now": sha256_file(CARD) if os.path.isfile(CARD) else None, "card_frozen_bytes": CARD_FROZEN_BYTES, "script_sha256": sha256_file(os.path.abspath(__file__)), "reader_sha256": RR_SHA,
+            "tier": "T2 re-perception (agents replayed at log time; not a reactive-traffic result)", "estimator": "paired scene-cluster bootstrap, B 2000, seed 0 (answers another draw of SCENES only)", "gates": {}}
+     res.update(arm=arm, arm_stage=arm_st, floor="P10 (stages 2 and 3)", argv=getattr(a, "argv", None))
++    if arm_seeds != SEEDS:                                           # the default read adds no key: the fourth pin's output, field for field
++        res.update(arm_seeds=list(arm_seeds), n_seeds=len(arm_seeds), counted_dominant=False, seed_statement=SEED0_STATEMENT)
+     rr = init()
+     G = res["gates"]
+     G["G4"] = g4_check()
+@@ -904,13 +952,13 @@
+         results[arm_st] = spec["result"] or f"{os.path.dirname(spec['root'])}/STAGE{arm_st}_RESULT.json"
+     rscn_on = any(flags.values())
+     complete_sids = len(sids) == sum(EXPECT[k] for k in ("scenes_launch", "scenes_guard"))
+-    rs = rscn_check(roots, results, sids, flags, EXPECT, arm_name=arm, arm_stage=arm_st) if rscn_on and complete_sids else None
++    rs = rscn_check(roots, results, sids, flags, EXPECT, arm_name=arm, arm_stage=arm_st, arm_seeds=arm_seeds) if rscn_on and complete_sids else None
+     G["G2"] = g2_full(a, results, excluded=rscn_labels(rs))
+-    G["G3"], recs = g3_check(roots, results, sids, EXPECT, arm_name=arm, arm_stage=arm_st, exclusions=flags if rscn_on else None, rscn=rs) if complete_sids else (
++    G["G3"], recs = g3_check(roots, results, sids, EXPECT, arm_name=arm, arm_stage=arm_st, arm_seeds=arm_seeds, exclusions=flags if rscn_on else None, rscn=rs) if complete_sids else (
+         {"PASS": False, "why": [f"G3_SCENE_SOURCES {len(sids)} scenes, need 62"]}, None)
+     if rs is not None:
+         res["r_scn"] = rs
+-    absent = arm_absent(roots[arm_st], arm)
++    absent = arm_absent(roots[arm_st], arm, arm_seeds)
+     if absent:                                                       # a mistyped arm: named here, so it is not buried under the cell-by-cell refusals
+         G["ARM"] = {"PASS": False, "why": absent}
+     ok = card_ok and all(g["PASS"] for g in G.values())
+@@ -920,12 +968,12 @@
+     if ok:
+         scenes = scenes_from(recs, srcs, roots, skip={u["idx"] for u in rs["union"].values()} if rs is not None else ())
+         kw = {} if arm == ARM_DEFAULT else {"arm_name": arm}          # the default arm: the previous pin's call, unchanged
+-        arrays = {s: arrays_for_seed(recs[f"{arm}_s{s}"], recs["P10"], scenes, s, **kw) for s in SEEDS}
++        arrays = {s: arrays_for_seed(recs[f"{arm}_s{s}"], recs["P10"], scenes, s, **kw) for s in arm_seeds}
+         blocks = read_blocks(arrays)
+         res["by_seed"] = {f"s{s}": {"classes": b["classes"], "rows": b["rows"], "read_a": b["read_a"], "family_table": family_table(b["rows"])} for s, b in blocks.items()}
+         res["seed_gap_beside"] = seed_gap_table(blocks)
+         res["three_family_form_beside"] = {f"s{s}": {"D3": b["read_a"]["D3_three_families_strategic_paused"], "DOMINANT": b["read_a"]["DOMINANT_three_families_strategic_paused"]} for s, b in blocks.items()}
+-    res["decision"] = decide(ok, blocks)
++    res["decision"] = decide(ok, blocks, arm_seeds)
+     res["outcome"] = res["decision"]["outcome"]
+     return res
+ 
+@@ -937,9 +985,13 @@
+ 
+ 
+ def write_md(res, path):
++    seed0 = res.get("arm_seeds") == [0]
++    cells_txt = f"{res.get('arm')}_s0 only (seed 0 only)" if seed0 else f"{res.get('arm')}_s0 and {res.get('arm')}_s1"
+     L = [f"# DOMINANCE_T2: {res['outcome']}", "", f"Card PREREG_T2_DOMINANCE (sha256 {res['card_sha256_expected'][:8]}..., card sha ok: {res['card_sha_ok']}); script sha256 {res['script_sha256']}.",
+-         f"Arm read: **{res.get('arm')}** (stage {res.get('arm_stage')}, cells {res.get('arm')}_s0 and {res.get('arm')}_s1) against the floor {res.get('floor')}. argv: `{' '.join(res.get('argv') or [])}`",
++         f"Arm read: **{res.get('arm')}** (stage {res.get('arm_stage')}, cells {cells_txt}) against the floor {res.get('floor')}. argv: `{' '.join(res.get('argv') or [])}`",
+          f"Tier: {res['tier']}. Estimator: {res['estimator']}.", "", "## Gates", ""]
++    if seed0:
++        L[4:4] = [f"Seed 0 only: {SEED0_STATEMENT}. Only the seed-0 cells of the arm were read; the seed gap is not computable."]
+     for k, g in sorted(res["gates"].items()):
+         L.append(f"* {k}: {'PASS' if g['PASS'] else 'FAIL'} {'; '.join(g.get('why', []))[:600]}")
+     rsd = res.get("r_scn")
+@@ -969,7 +1021,7 @@
+         if g2.get("non_accepted"):
+             L += ["", "Not ACCEPTED: " + "; ".join(g2["non_accepted"])]
+     d = res["decision"]
+-    L += ["", "## Decision", "", f"Outcome: **{d['outcome']}**. {d['reading_underpowered_first']}", ""]
++    L += ["", "## Decision", "", f"Outcome: **{d['outcome']}**. " + (f"{d['statement']}: the seed-0 block alone reads {d['seed0_block']}, which is not an outcome. " if d.get("statement") else "") + f"{d['reading_underpowered_first']}", ""]
+     if d["per_seed"]:
+         for s, p in d["per_seed"].items():
+             L.append(f"* {s}: DOMINANT {p['DOMINANT']} (D1 {p['D1']}, D2 {p['D2']}, D3 {p['D3']}), three-family form {p['DOMINANT_three_families_strategic_paused']}, rows separated {p['n_rows_separated']} of 19; failing_terms: {d['failing_terms'][s]}")
+@@ -978,8 +1030,8 @@
+             for fam, rs in sorted(b["family_table"].items()):
+                 for r in rs:
+                     L.append(f"| {fam} | {r['row']} | {r['delta']:+.4f} | {r['lo']:+.4f} | {r['hi']:+.4f} | {r['verdict']} |")
+-        L += ["", "## Seed gap beside (section 7)", ""] + [f"* {k}: s0 {v['delta_s0']:+.4f}, s1 {v['delta_s1']:+.4f}, gap {v['gap']:.4f}" + (f", margin {v['clear_margin']:.4f}, margin < gap: {v['margin_lt_gap']}" if "clear_margin" in v else "")
+-                                                   for k, v in res["seed_gap_beside"].items() if v["separated_better_both_seeds"]]
++        L += ["", "## Seed gap beside (section 7)", ""] + ([f"Not computable: {res['seed_gap_beside']['reason']}."] if seed0 else []) + [f"* {k}: s0 {v['delta_s0']:+.4f}, s1 {v['delta_s1']:+.4f}, gap {v['gap']:.4f}" + (f", margin {v['clear_margin']:.4f}, margin < gap: {v['margin_lt_gap']}" if "clear_margin" in v else "")
++                                                   for k, v in res["seed_gap_beside"].items() if not seed0 and v["separated_better_both_seeds"]]
+     if rsd and rsd.get("scenes") and rsd.get("starts"):
+         L += ["", f"Rule R-SCN applied: this read is on the {rsd['scenes']['read_on']} refusal-surviving scenes of the 62 ({rsd['starts']['read_on']['total']} of {rsd['starts']['expected_before']['total']} starts)."]
+     L += ["", "Disclosure: 62 scenes selected on the human's logs only, launch scenes over-represented (42 of 62); a result here is a result on these scenes at T2, never on PhysicalAI-AV at large.",
+@@ -997,6 +1049,7 @@
+         ap.add_argument("--" + k, default=None, help="EXCLUSIONS*.json of scene_exclusions.py for that stage (rule R-SCN: all three or none)")
+     ap.add_argument("--arm", default=ARM_DEFAULT, help="the arm read against P10 in C0C's place: its cells are <NAME>_s0 and <NAME>_s1 (default C0C; give the name without its seed)")
+     ap.add_argument("--arm-stage", type=int, default=ARM_STAGE_DEFAULT, help="the stage that holds the arm's cells (default 4, the C0C stage; another arm lives in a stage beyond 4)")
++    ap.add_argument("--arm-seeds", default="0,1", help="the seeds of the arm that are read: '0,1' (default, the fourth pin's read) or '0' (a seed-0-only read: outcome SEED0-ONLY, never DOMINANT-T2)")
+     for k in ("arm-root", "arm-result", "arm-exclusions", "arm-overlay", "arm-gate-log"):
+         ap.add_argument("--" + k, default=None, help="for an arm in a stage beyond 4: its rollouts dir / STAGE<N>_RESULT.json / EXCLUSIONS*.json (rule R-SCN) / overlay '<tar>::pkg/MANIFEST<N>.json' (G2 a) / green pytest log (G2 b)")
+     a = ap.parse_args(argv)

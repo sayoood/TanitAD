@@ -1,0 +1,253 @@
+{
+ "suite": "read",
+ "tool": "read_estclose10k.py",
+ "control_before": {
+  "rc": 0,
+  "failed": [],
+  "seconds": 0.3,
+  "tail": [
+   "   text of the tool holds none of the banned words                                                                      True",
+   "ZZ SELFTEST-ESTCLOSE10K ok: True (32 of 32)"
+  ]
+ },
+ "mutations": {
+  "r1_e2_tolerance_wide": {
+   "rc": 1,
+   "failed": [
+    "e2 fails on a planted difference of 0.01 m/s and passes one of 0.0005                               "
+   ],
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-ESTCLOSE10K ok: False (31 of 32)"
+   ],
+   "what": "e2 accepts 0.1 m/s",
+   "red": true
+  },
+  "r2_coverage_bar_low": {
+   "rc": 1,
+   "failed": [
+    "e3 gate is False for the estimator below 0.90 in the logs (L25 at 0.50) and still True for the other",
+    "e3 gate is False when the run text scored share is below 0.90 although the logs hold 0.95           "
+   ],
+   "seconds": 0.3,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-ESTCLOSE10K ok: False (30 of 32)"
+   ],
+   "what": "the AGE coverage bar is 0.40",
+   "red": true
+  },
+  "r3_e2_first_tick_not_required": {
+   "rc": 1,
+   "failed": [
+    "e2 fails when no compared row is a first-tick row (k == 0)                                          "
+   ],
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-ESTCLOSE10K ok: False (31 of 32)"
+   ],
+   "what": "e2 does not need a compared first-tick row",
+   "red": true
+  },
+  "r4_age_c_not_lower": {
+   "rc": 1,
+   "failed": [
+    "verdict: N10 SUPPORTED (AGE C LOWER, FRESH C not HIGHER, MIXED is not WORSE), L25 NOT-SUPPORTED, and",
+    "verdict: NOT-SUPPORTED when AGE C is not LOWER, FRESH C HIGHER, AGE U HIGHER, FRESH U HIGHER, a fami"
+   ],
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-ESTCLOSE10K ok: False (30 of 32)"
+   ],
+   "what": "the verdict accepts an AGE C that is not LOWER",
+   "red": true
+  },
+  "r5_fresh_c_unchecked": {
+   "rc": 1,
+   "failed": [
+    "verdict: NOT-SUPPORTED when AGE C is not LOWER, FRESH C HIGHER, AGE U HIGHER, FRESH U HIGHER, a fami"
+   ],
+   "seconds": 0.3,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-ESTCLOSE10K ok: False (31 of 32)"
+   ],
+   "what": "the verdict ignores FRESH C",
+   "red": true
+  },
+  "r6_one_of_two_always": {
+   "rc": 1,
+   "failed": [
+    "verdict: both SUPPORTED names both and no one-of-two mark; L25 alone SUPPORTED is marked for L25    "
+   ],
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-ESTCLOSE10K ok: False (31 of 32)"
+   ],
+   "what": "the one-of-two mark is written when both are SUPPORTED",
+   "red": true
+  },
+  "r7_wrapper_unchecked": {
+   "rc": 1,
+   "failed": [
+    "run text accepted: form RRe, cycle 10, rule every 5, readout, bound, pre-roll, wrapper, return code "
+   ],
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-ESTCLOSE10K ok: False (31 of 32)"
+   ],
+   "what": "r1 does not check the wrapper hash",
+   "red": true
+  },
+  "r8_rule_every_ten": {
+   "rc": 1,
+   "failed": [
+    "run text accepted: form RRe, cycle 10, rule every 5, readout, bound, pre-roll, wrapper, return code ",
+    "run text not accepted with the rule every 10, another form, a return code 1 or another readout      ",
+    "r1 passes at AGE and (pre-roll 0) FRESH and fails on a missing dump file or a pre-roll mismatch     "
+   ],
+   "seconds": 0.3,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-ESTCLOSE10K ok: False (29 of 32)"
+   ],
+   "what": "r1 asks the rule every 10 steps",
+   "red": true
+  },
+  "r9_fallback_zero_unchecked": {
+   "rc": 1,
+   "failed": [
+    "x1 fails when RRe feeds 0 everywhere, feeds a non-zero closing without a full history, names another"
+   ],
+   "seconds": 0.3,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-ESTCLOSE10K ok: False (31 of 32)"
+   ],
+   "what": "x1 does not check the 0.0 fallback",
+   "red": true
+  },
+  "r10_m1_counts_unchecked": {
+   "rc": 1,
+   "failed": [
+    "m1 passes on equal later-look row counts and fails on a different count or an empty log             "
+   ],
+   "seconds": 0.3,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-ESTCLOSE10K ok: False (31 of 32)"
+   ],
+   "what": "m1 does not compare the row counts",
+   "red": true
+  },
+  "r11_i1_tolerance_wide": {
+   "rc": 1,
+   "failed": [
+    "i1 holds on a triple that adds up and fails when off by 1e-6                                        "
+   ],
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-ESTCLOSE10K ok: False (31 of 32)"
+   ],
+   "what": "i1 accepts 1e-3",
+   "red": true
+  },
+  "r12_a1_tolerance_wide": {
+   "rc": 1,
+   "failed": [
+    "a1: equal levels pass, 1e-6 off fails, a run missing fails, an unqualified banked setting fails, an "
+   ],
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-ESTCLOSE10K ok: False (31 of 32)"
+   ],
+   "what": "a1 accepts 1e-3",
+   "red": true
+  },
+  "r13_share_sign": {
+   "rc": 1,
+   "failed": [
+    "share of gap: removed 0.02 of a gap of 0.08 is 0.25; no share when the label closing does not lower "
+   ],
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-ESTCLOSE10K ok: False (31 of 32)"
+   ],
+   "what": "the share of the gap has the wrong sign",
+   "red": true
+  },
+  "r14_failed_control_prints_names": {
+   "rc": 1,
+   "failed": [],
+   "seconds": 0.3,
+   "tail": [
+    "                ^^^^^^^^^^^^^^^^^^",
+    "AttributeError: 'NoneType' object has no attribute 'items'"
+   ],
+   "what": "a failed control still prints names and values",
+   "red": true
+  },
+  "r15_age_gate_ignored": {
+   "rc": 1,
+   "failed": [
+    "names: AGE names of an estimator below the coverage bar are not written, its FRESH names are        "
+   ],
+   "seconds": 0.3,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-ESTCLOSE10K ok: False (31 of 32)"
+   ],
+   "what": "AGE names are written below the coverage bar",
+   "red": true
+  },
+  "r16_e2_nan_unchecked": {
+   "rc": 1,
+   "failed": [
+    "e2 fails when c_est is not NaN where est_ok is False, when the table has no entry, and when a log or"
+   ],
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-ESTCLOSE10K ok: False (31 of 32)"
+   ],
+   "what": "e2 does not check NaN where there is no full history",
+   "red": true
+  },
+  "r17_gate_text_share_dropped": {
+   "rc": 1,
+   "failed": [
+    "e3 gate is False when the run text scored share is below 0.90 although the logs hold 0.95           "
+   ],
+   "seconds": 0.3,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-ESTCLOSE10K ok: False (31 of 32)"
+   ],
+   "what": "the gate ignores the run-text share",
+   "red": true
+  }
+ },
+ "control_after": {
+  "rc": 0,
+  "failed": [],
+  "seconds": 0.3,
+  "tail": [
+   "   text of the tool holds none of the banned words                                                                      True",
+   "ZZ SELFTEST-ESTCLOSE10K ok: True (32 of 32)"
+  ]
+ },
+ "counts": {
+  "red": 17,
+  "total": 17,
+  "control_before_green": true,
+  "control_after_green": true
+ }
+}

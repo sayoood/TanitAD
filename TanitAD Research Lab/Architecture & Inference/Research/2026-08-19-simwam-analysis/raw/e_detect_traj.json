@@ -1,0 +1,135 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "question": "is v6's encoder IMPROVING between step 11,250 and 20,000 on the validated detection probe?",
+ "warning": "MATCHED SUBSET of 2,809-ish rows (stride-8 keys). Absolute AP is NOT comparable to E-DETECT-1's 5,617-row table \u2014 the head is data-limited. Only the WITHIN-TABLE comparison is valid.",
+ "n_matched": 2809,
+ "n_episodes": 130,
+ "base_rate": 0.056711,
+ "arms": {
+  "prior": {
+   "n_tok": 0,
+   "d": 0,
+   "ap": 0.1239,
+   "ap_ci95": [
+    0.1122,
+    0.1362
+   ],
+   "auc": 0.6961,
+   "auc_ci95": [
+    0.6801,
+    0.7142
+   ],
+   "topk_loc_err_m": 5.772
+  },
+  "pixel": {
+   "n_tok": 640,
+   "d": 768,
+   "ap": 0.0945,
+   "ap_ci95": [
+    0.084,
+    0.106
+   ],
+   "auc": 0.6373,
+   "auc_ci95": [
+    0.6182,
+    0.658
+   ],
+   "topk_loc_err_m": 7.111,
+   "train_ap_mean": 0.3627,
+   "train_s": 356.5
+  },
+  "v6@11250": {
+   "n_tok": 640,
+   "d": 768,
+   "ap": 0.0931,
+   "ap_ci95": [
+    0.0838,
+    0.1031
+   ],
+   "auc": 0.6221,
+   "auc_ci95": [
+    0.602,
+    0.6455
+   ],
+   "topk_loc_err_m": 7.327,
+   "train_ap_mean": 0.3804,
+   "train_s": 620.9
+  },
+  "v6@20000": {
+   "n_tok": 640,
+   "d": 768,
+   "ap": 0.0899,
+   "ap_ci95": [
+    0.0806,
+    0.1004
+   ],
+   "auc": 0.6194,
+   "auc_ci95": [
+    0.5992,
+    0.6414
+   ],
+   "topk_loc_err_m": 7.401,
+   "train_ap_mean": 0.3893,
+   "train_s": 708.9
+  }
+ },
+ "paired": {
+  "v6@20000_vs_v6@11250": {
+   "d_ap": -0.0032,
+   "d_ap_ci95": [
+    -0.0074,
+    0.0013
+   ],
+   "d_ap_p_le0": 0.9195,
+   "d_auc": -0.0027,
+   "d_auc_ci95": [
+    -0.0143,
+    0.0094
+   ],
+   "d_auc_p_le0": 0.675
+  },
+  "v6@20000_vs_pixel": {
+   "d_ap": -0.0046,
+   "d_ap_ci95": [
+    -0.0109,
+    0.0014
+   ],
+   "d_ap_p_le0": 0.9345,
+   "d_auc": -0.0179,
+   "d_auc_ci95": [
+    -0.0326,
+    -0.0036
+   ],
+   "d_auc_p_le0": 0.9935
+  },
+  "v6@11250_vs_pixel": {
+   "d_ap": -0.0014,
+   "d_ap_ci95": [
+    -0.0069,
+    0.0039
+   ],
+   "d_ap_p_le0": 0.7005,
+   "d_auc": -0.0152,
+   "d_auc_ci95": [
+    -0.0285,
+    -0.0031
+   ],
+   "d_auc_p_le0": 0.992
+  },
+  "v6@20000_vs_prior": {
+   "d_ap": -0.034,
+   "d_ap_ci95": [
+    -0.0416,
+    -0.0268
+   ],
+   "d_ap_p_le0": 1.0,
+   "d_auc": -0.0767,
+   "d_auc_ci95": [
+    -0.0943,
+    -0.0593
+   ],
+   "d_auc_p_le0": 1.0
+  }
+ }
+}

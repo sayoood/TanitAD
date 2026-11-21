@@ -1,0 +1,279 @@
+{
+ "done": true,
+ "steps": 3000,
+ "arm": "M2b",
+ "seed": 0,
+ "data_frac": 1.0,
+ "steps_mult": 4,
+ "S": 4791,
+ "n_clips": 4512,
+ "n_windows": 306566,
+ "exclude": "540:600",
+ "excluded_sha256": "f6a1dee02af0b96f815416bfef9bc11a04554702525135aa75a740942d7750f9",
+ "train_sha256": "37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1",
+ "train_window_list_sha256": "e144adcd9b6273f2b44ad7dfa162931b90e159f7b3911e0893b25777b2ae8168",
+ "seconds": 2249.3080472946167,
+ "argv_sha": "6174f8895bdcf157",
+ "levers": {
+  "navonly": false,
+  "consistency": true,
+  "wm": "b",
+  "cons_absent": "mask",
+  "code_mix": "whole",
+  "o_interface": "full",
+  "w_acc": 49.6969,
+  "launch_intent_w": 0.0,
+  "wm_idm_gamma": 100.0,
+  "kin_mode": "yaw",
+  "wm_ch1_scale": 0.4,
+  "p_gt_start": 0.2,
+  "p_gt_end": 0.2,
+  "hist": 4,
+  "hmax": 16,
+  "window_start": 3,
+  "prior_frozen": true,
+  "residual_zero_init": false,
+  "params": {
+   "adapter": 275712,
+   "cond": 25088,
+   "S": 1321737,
+   "T": 1463868,
+   "O": 2120216,
+   "WM": 2007874
+  },
+  "n_params_trainable": 7214495,
+  "w": {
+   "w_pen": 0.5,
+   "w_pen_self": 0.25,
+   "w_wm": 0.1,
+   "w_tac": 1.0,
+   "w_cons": 0.5
+  },
+  "ego_perturb": {
+   "ego_perturb_p": 0.0,
+   "ego_perturb_vscale": [
+    0.5,
+    1.0
+   ],
+   "ego_perturb_vmax": 8.0,
+   "ego_perturb_adrop": 1.5,
+   "ego_perturb_yawrate_std": 0.0,
+   "ego_perturb_seed": 0,
+   "kin_mode": "yaw",
+   "rebuilt": [
+    "p10f",
+    "base",
+    "kin3",
+    "p10_t",
+    "pose",
+    "pose_t",
+    "pose_s",
+    "nav"
+   ],
+   "kept": [
+    "feats",
+    "frame_ok",
+    "limit",
+    "limit_ok",
+    "a_t",
+    "a_s",
+    "pose_now"
+   ],
+   "record": [
+    "act"
+   ]
+  },
+  "dagger": {
+   "dagger_p": 0.0,
+   "dagger_seed": 0,
+   "dagger_bank": null,
+   "dagger_bank_sha256": null,
+   "kin_mode": "yaw",
+   "bank_hmax": null,
+   "rebuilt": [
+    "p10f",
+    "base",
+    "kin3",
+    "p10_t",
+    "pose",
+    "pose_t",
+    "pose_s",
+    "nav"
+   ],
+   "kept": [
+    "feats",
+    "frame_ok",
+    "limit",
+    "limit_ok",
+    "a_t",
+    "a_s",
+    "pose_now"
+   ],
+   "record": [
+    "act"
+   ],
+   "labels_re_expressed": [
+    "lab_s.rc"
+   ],
+   "nav_rebuild_invalid": false,
+   "constants_sha256": "8f94b3b5e35f4457be51d695842457a340d1228ab48c5862f4db1e5063f3ffaf"
+  },
+  "dagger_p": 0.0,
+  "dagger_bank_sha256": null,
+  "dagger_bank_sha256_declared": null,
+  "recover": {
+   "recover_p": 0.3,
+   "recover_dev_law": "empirical",
+   "recover_dev_shape": "pertick",
+   "recover_dev_bank": "D:\\tanitad\\runs\\v8f_mini_full\\dagger_bank_dag2\\s0\\bank.json",
+   "recover_dev_bank_sha256": "90c43c66f52f250d41ff23e837d5fb31d1592cf2aad14afacd7ded011734b589",
+   "recover_target": "rejoin",
+   "recover_rejoin_steps": 10,
+   "recover_seed": 0,
+   "kin_mode": "yaw",
+   "rebuilt": [
+    "p10f",
+    "base",
+    "kin3",
+    "p10_t",
+    "pose",
+    "pose_t",
+    "pose_s",
+    "nav",
+    "pose_now"
+   ],
+   "retargeted": [
+    "gt",
+    "lab_s.rc"
+   ]
+  },
+  "recover_table": {
+   "n": 416254,
+   "content_sha256": "67316820d9c35e42246092d810837f58e278fa458d57acf3536787decb72f69c",
+   "source_sha256": "90c43c66f52f250d41ff23e837d5fb31d1592cf2aad14afacd7ded011734b589",
+   "mean_dv": -0.4319468644223505,
+   "mean_da": -0.3333935383243801,
+   "mean_dom": -0.1446347750732297,
+   "mean_dy": 0.10014706132578988,
+   "mean_dpsi": -0.010599148922194964,
+   "mean_abs_dv": 1.0086664051316856,
+   "mean_abs_da": 0.8806818542013986,
+   "mean_abs_dom": 0.1910511282893478,
+   "mean_abs_dy": 0.48589888324736014,
+   "mean_abs_dpsi": 0.06013854300079901,
+   "counts": {
+    "records_ok": 433301,
+    "kept": 416254,
+    "dropped_logged_row_unreal": 0,
+    "dropped_per_tick_row_unreal": 17047
+   },
+   "share_logged_v_3_8": 0.3035262123607221,
+   "per_tick": {
+    "ticks": 16,
+    "mean_abs_dv_t": [
+     0.26924041122452225,
+     0.38356026242783287,
+     0.35094565143796946,
+     0.23825574796864266,
+     0.22661113485182055,
+     0.29532025924287836,
+     0.3902182068375147,
+     0.48373672744440666,
+     0.5447538083872857,
+     0.5091448506243178,
+     0.8947436497912296,
+     1.2485232954147185,
+     1.2273073118324391,
+     0.95499223243655,
+     0.859869188266854,
+     1.0086664051316434
+    ],
+    "mean_abs_da_t": [
+     0.9209972405159618,
+     0.40287012977990405,
+     1.0109145757645128,
+     1.2582277950736658,
+     0.8704626536343271,
+     0.3024393925502089,
+     2.0291527805473293,
+     1.2231056155208062,
+     1.4998892605783356,
+     4.079485068960189,
+     3.265940763445748,
+     1.2476547493284933,
+     2.7527255387343437,
+     3.689562901557477,
+     2.671947718546696,
+     0.8806818542013811
+    ],
+    "mean_abs_dom_t": [
+     0.11462171757575006,
+     0.11462171757575006,
+     0.22333460655985637,
+     0.2525481647188136,
+     0.06109076481623378,
+     0.1807131900836826,
+     0.5505194047829042,
+     0.3139010462176552,
+     0.19020313015948276,
+     0.2595813178796831,
+     0.43494945011925734,
+     0.3286154850893443,
+     0.18615609654680654,
+     0.18622847759206898,
+     0.12134101228166304,
+     0.1910511282893461
+    ]
+   }
+  },
+  "ego_perturb_with_dagger": false,
+  "ego_perturb_stream": 0,
+  "ego_dagger_overlap_n": 0,
+  "launch_intent": {
+   "launch_intent_w": 0.0,
+   "v0_max": 6.0,
+   "dv": 1.0,
+   "dt": 0.2,
+   "knots": [
+    1,
+    12
+   ],
+   "axis": "along (x of the ego frame at NOW)",
+   "mask_from": "the LOGGED kin3[:, 0] and the GT future, taken before any ego stage"
+  },
+  "launch_n": 0,
+  "launch_eligible": 0,
+  "init_ckpt": {
+   "path": "D:\\tanitad\\runs\\v8f_mini_full\\M2b_s0_dagoacc\\ckpt_last.pt",
+   "sha256": "67265ec1666fae3a6d51e924ee06dfb68b2cd0630afc62e42f3a46182b8bc45f",
+   "applied": true,
+   "skipped": null,
+   "n_tensors": 276,
+   "n_mismatch_after_load": 0,
+   "source_step": 3000,
+   "source_arm": "M2b",
+   "source_seed": 0,
+   "source_argv_sha": "0ee46fc1a9a0493b"
+  },
+  "lr_schedule": {
+   "lr": 0.0001,
+   "warmup": 100,
+   "total": 3000
+  }
+ },
+ "selfcheck": "selfcheck.json",
+ "ego_perturb_n": 0,
+ "ego_perturb_eligible": 82457,
+ "ego_perturb_rows": 191203,
+ "ego_perturb_nav_kept": 0,
+ "dagger_n": 0,
+ "dagger_eligible": 0,
+ "dagger_rows": 191203,
+ "dagger_nav_kept": 0,
+ "recover_p": 0.3,
+ "recover_n": 57481,
+ "recover_eligible": 191203,
+ "recover_rows": 191203,
+ "recover_changed": 57481,
+ "recover_share": 0.3006281282197455
+}

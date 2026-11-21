@@ -1,0 +1,192 @@
+{
+ "tree": "C:/Users/Admin/ev7nav",
+ "commit": "0c444082a08efdcbeef36585f1b3baabbfafc1fc",
+ "files": {
+  "score_arm7.py": {
+   "src": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/code/score_arm6.py",
+   "src_blob": "3bb5dbf9a11c5046f74b96d7522f4abc99fe0c5a",
+   "substitutions": [
+    {
+     "old": "ap.add_argument(\"--exp-tag\", default=\"e6\")",
+     "new": "ap.add_argument(\"--exp-tag\", default=\"e7\")",
+     "count": 1
+    }
+   ],
+   "sha256": "d645ce6655b2c4106477f30a3f25e4b79aaaa6b9bf7430fa79905c9685329e5d"
+  },
+  "score_navtest7.py": {
+   "src": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/code/score_navtest6.py",
+   "src_blob": "376474105b3b6c48a76b1adef066f58662e86e78",
+   "substitutions": [
+    {
+     "old": "if not a.label.startswith(\"r6\"):",
+     "new": "if not a.label.startswith(\"r7\"):",
+     "count": 1
+    },
+    {
+     "old": "⛔ labels must start with 'r6'",
+     "new": "⛔ labels must start with 'r7'",
+     "count": 1
+    }
+   ],
+   "sha256": "f881a0f719693a294257e0fd283203c01c69509692c94a9a77a33f4c773cf2a7"
+  },
+  "check_harness_repro7.py": {
+   "src": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/code/check_harness_repro.py",
+   "src_blob": "f5198dbca17bd2973f2408c0b86e928714ef2b99",
+   "substitutions": [],
+   "sha256": "181bbe72fa9808b052f541a1d51cc65877e81256f0152c6cb11e1e5880acb084"
+  },
+  "import_floors7.py": {
+   "src": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/code/import_floors.py",
+   "src_blob": "eb9fac7672a5c7db04caed0b7f1c9028e0e21cec",
+   "substitutions": [
+    {
+     "old": "es = os.path.join(PKG, \"raw\", \"scores_warmup_s1000\")",
+     "new": "es = os.path.join(PKG, \"raw\", \"harness_repro\")   # refcv7: ECHO is re-scored with CV/STOP",
+     "count": 1
+    }
+   ],
+   "sha256": "3d8f278e0e69174968ec95a12ab4ccb6b6c3dde4a54bcd0bf96426cc08699e44"
+  },
+  "score_queue7.sh": {
+   "src": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/code/score_queue6.sh",
+   "src_blob": "06e3ee9fc578cc880e438989508bb47af844e5f9",
+   "substitutions": [
+    {
+     "old": "code/score_arm6.py",
+     "new": "code/score_arm7.py",
+     "count": 2
+    }
+   ],
+   "sha256": "79011d6f4ee575b2e5c5bed77095356207dade97bf281c5e5cd40a75e7b5db93"
+  },
+  "parse7.py": {
+   "src": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/code/parse6.py",
+   "src_blob": "25f8fca0b969140b7b47f1d5c7e86bc0b7069588",
+   "substitutions": [
+    {
+     "old": "import model_stamp6 as M6",
+     "new": "import model_stamp7 as M6",
+     "count": 1
+    },
+    {
+     "old": "MODEL_ARMS = (\"R6_A1\", \"R6_A1_s1\", \"R6_A1NT\", \"R6_BLIND\", \"R6_NAVOFF\", \"R6_VMAXOFF\")",
+     "new": "MODEL_ARMS = (\"R7_A1\", \"R7_A1_s1\", \"R7_A1NT\", \"R7_BLIND\", \"R7_NAVOFF\", \"R7_VMAXOFF\",\n              \"R7_FILTOFF\", \"R7_CEILDECL_d\", \"PRIOR_ha0p\")",
+     "count": 1
+    },
+    {
+     "old": "         (\"R6_A1\", \"R6_A1NT\", \"time construction (ST - NT)\"),",
+     "new": "         (\"R6_A1\", \"R6_A1NT\", \"time construction (ST - NT)\"),\n         (\"R6_A1\", \"R7_FILTOFF\", \"SPEC_REFCV7 A2: ceiling filter ON - OFF (real forward; SPEC A1: the emitted plan never sees the filter)\"),\n         (\"R6_A1\", \"R7_CEILDECL_d\", \"DIAGNOSTIC (SPEC A1): as built - the ceiling as DECLARED on the emitted pick\"),\n         (\"R6_A1\", \"PRIOR_ha0p\", \"the residual: A1 - its own prior P alone\"),\n         (\"PRIOR_ha0p\", \"STOP_zero\", \"the prior vs doing nothing\"),\n         (\"PRIOR_ha0p\", \"CV_official\", \"the prior vs CV\"),\n         (\"PRIOR_ha0p\", \"ECHO_ha0_ext\", \"the prior (pose-derived) vs the echo (EgoStatus a, ay)\"),",
+     "count": 1
+    },
+    {
+     "old": "R6_",
+     "new": "R7_",
+     "count": 25
+    }
+   ],
+   "sha256": "6a83b4af7a3b57858360791cb9f7cc583ff898089cabc34910abc400fbace08e"
+  },
+  "parse_navtest7.py": {
+   "src": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/code/parse_navtest6.py",
+   "src_blob": "60d347cf1f34284378ab1ced6fc28d044edb5a8a",
+   "substitutions": [
+    {
+     "old": "import model_stamp6 as M6",
+     "new": "import model_stamp7 as M6",
+     "count": 1
+    },
+    {
+     "old": "k.startswith(\"R6_\")",
+     "new": "k.startswith((\"R7_\", \"PRIOR_\"))",
+     "count": 4
+    },
+    {
+     "old": "k.split(\"__minus__\")[1].startswith(\"R6_\")",
+     "new": "k.split(\"__minus__\")[1].startswith((\"R7_\", \"PRIOR_\"))",
+     "count": 1
+    },
+    {
+     "old": "R6_A1",
+     "new": "R7_A1",
+     "count": 11
+    }
+   ],
+   "sha256": "f836e71e168224f1aa1a6177e42f6cbd23fd6e5521cb8c45c47260dcfa2175e8"
+  },
+  "decompose7.py": {
+   "src": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/code/decompose6.py",
+   "src_blob": "3168ea255fd6755adbe4324185fb3ac25e1de3a0",
+   "substitutions": [
+    {
+     "old": "ap.add_argument(\"--arm\", default=\"R6_A1\")",
+     "new": "ap.add_argument(\"--arm\", default=\"R7_A1\")",
+     "count": 1
+    },
+    {
+     "old": "n.startswith(\"R6_\")",
+     "new": "n.startswith((\"R7_\", \"PRIOR_\"))",
+     "count": 1
+    }
+   ],
+   "sha256": "351672f58874072aa15316a061654b95a17d15c1cb47286d0dcdb317d739a927"
+  },
+  "families7.py": {
+   "src": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/code/families6.py",
+   "src_blob": "ac075f2c91a57efceda9b4ed252785f7607ad859",
+   "substitutions": [
+    {
+     "old": "preds = {\"refcv6\": np.asarray",
+     "new": "preds = {str(z[\"arm\"]): np.asarray",
+     "count": 1
+    }
+   ],
+   "sha256": "a5582323da56d6e5fe8f84ecbd737d5255fe7d5299b4a1c62ec5da55a69b8516"
+  },
+  "plan_deltas7.py": {
+   "src": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/code/plan_deltas.py",
+   "src_blob": "b0bfa2f7db1560f57002f32489e77e2c8d4697c4",
+   "substitutions": [
+    {
+     "old": "X[t][\"source\"] == \"refcv6\"",
+     "new": "X[t][\"source\"] == \"refcv7\"",
+     "count": 1
+    },
+    {
+     "old": "r[\"source\"] == \"refcv6\"",
+     "new": "r[\"source\"] == \"refcv7\"",
+     "count": 1
+    },
+    {
+     "old": "R6_",
+     "new": "R7_",
+     "count": 27
+    }
+   ],
+   "sha256": "0514366305dc8dee1027dfab6c232588e5f07e268b28e3911b600b970833079a"
+  },
+  "step_compare7.py": {
+   "src": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/code/step_compare.py",
+   "src_blob": "78553513a519894d1c75a37624fb0c22dea8e824",
+   "substitutions": [
+    {
+     "old": "import model_stamp6 as M6",
+     "new": "import model_stamp7 as M6",
+     "count": 1
+    },
+    {
+     "old": "lab = f\"r6s{step}_{arm}\"",
+     "new": "lab = f\"r7s{step}_{arm}\"",
+     "count": 1
+    },
+    {
+     "old": "R6_A1",
+     "new": "R7_A1",
+     "count": 17
+    }
+   ],
+   "sha256": "4074538c41d26f4b40278a9d79e843d04085f070aca21b07aa1b5c19c7912e9f"
+  }
+ }
+}

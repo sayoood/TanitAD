@@ -1,0 +1,21 @@
+   h1 planted name rule through the stand-in engine: [('lower', 'LOWER'), ('higher', 'HIGHER'), ('opposite_seeds', 'NOT-SEPARATED'), ('no_effect', 'NOT-SEPARATED')] True
+   run text parsed and accepted: form, cycle 10, rule every 5, readout, bound, pre-roll 30, wrapper, return code 0      True
+   run text with the rule every 10, another wrapper hash, a return code 1 or another readout is not accepted            True
+   r1 passes on four good run texts (AGE and, with pre-roll 0, FRESH) and fails on a dump with a clip missing or a FRESH text with pre-roll 30 True
+   x1 passes: RRh and RRc feed a closing in both logs, RRh equals its c_read with difference 0, RR feeds 0 on every row of both logs True
+   x1 fails when c_src differs from c_read for RRh, when RR was fed a closing in the rule log, when RRc fed none at a later look True
+   x1 fails when RR fed a non-zero closing on an absent row of the later-look log and when a log is missing             True
+   m1 passes on equal later-look row counts and fails on a different count or an empty log                              True
+   i1 holds on a triple that adds up and fails when off by 1e-6                                                         True
+   verdict: RRH-CHANGE-SUPPORTED (AGE C LOWER, FRESH C not HIGHER, MIXED is not WORSE); REACHES-LABEL-FED; LABEL-CLOSING-LOWERS-CONTACT True
+   verdict: NOT-SUPPORTED when AGE C is not LOWER, when FRESH C is HIGHER, when U is HIGHER, when a family is WORSE at AGE or at FRESH True
+   verdict: LABEL-CLOSING-DOES-NOT-LOWER-CONTACT, RRH-GAP-TO-LABEL-FED on C or U HIGHER, and no third name when neither condition holds True
+   verdict: a setting that is not qualified writes no name that needs its C or U and says why; a failing family condition still decides RRH-CHANGE True
+   names: pattern MIDLOOK10K-<PAIR>-<SETTING>-C-<word>, U and the four families per pair and setting                    True
+   names: with no qualified setting no C or U name is written and the output says why                                   True
+   a failed control leaves no name                                                                                      True
+   a1 by levels where the banked file holds no such pair: equal passes, off by 1e-6 fails, a run missing fails          True
+   a1 by the pair where the banked file holds it: equal passes, a cell off by 1e-6 fails                                True
+   qualification by the instrument's own bar (200 windows with a lead, 20 episodes)                                     True
+   text of the tool holds none of the banned words                                                                      True
+ZZ SELFTEST-MIDLOOK10K ok: True (20 of 20)

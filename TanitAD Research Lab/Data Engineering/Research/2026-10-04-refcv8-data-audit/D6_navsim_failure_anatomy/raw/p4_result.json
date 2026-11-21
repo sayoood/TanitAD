@@ -1,0 +1,651 @@
+{
+ "tag": "MEASURED",
+ "spec": "SPEC_P4_DRIVABLE_GATE.md sha256 f613a15088062726a3340a8dd92fd59b3cd9c08a3c8f99754d078e2f88291a5c",
+ "impl_choices": "raw/p4_impl_choices.md",
+ "tier": "NavSim navhard two-stage, LOCAL devkit scoring (T2-class closed-loop metric per SPEC s5)",
+ "estimator": "P2 paired log-cluster bootstrap (d6_p2_analyze.paired_boot), B 2000, seed 0; question answered: another draw of LOGS",
+ "arms": {
+  "G0": {
+   "EPDMS": 0.20217405794751053,
+   "EPDMS_from_key_contributions": 0.20217405794751053,
+   "DAC0_rate": 0.2642083897158322,
+   "NC0_rate": 0.15460081190798375,
+   "DDC0_rate": 0.11400541271989174,
+   "TLC0_rate": 0.015054127198917456,
+   "EP_mean_tokens": 0.8388018735766599,
+   "EP_stage1_devkit": 0.8529067953142205,
+   "EP_stage2_devkit": 0.8827384942889643,
+   "changed_share": 0.0,
+   "n_changed": 0,
+   "strata": {
+    "S1": {
+     "n": 1140,
+     "DAC0": 1.0,
+     "NC0": 0.15350877192982457,
+     "EP_mean": 0.8761148302690777,
+     "score_mean": 0.0,
+     "changed_share": 0.0
+    },
+    "S1b": {
+     "n": 422,
+     "DAC0": 1.0,
+     "NC0": 0.15402843601895735,
+     "EP_mean": 1.0,
+     "score_mean": 0.0,
+     "changed_share": 0.0
+    },
+    "S2": {
+     "n": 914,
+     "DAC0": 0.26258205689277897,
+     "NC0": 1.0,
+     "EP_mean": 0.9800386100391114,
+     "score_mean": 0.0,
+     "changed_share": 0.0
+    },
+    "rest": {
+     "n": 3676,
+     "DAC0": 0.0,
+     "NC0": 0.0,
+     "EP_mean": 0.782634405513641,
+     "score_mean": 0.7051782897263086,
+     "changed_share": 0.0
+    }
+   }
+  },
+  "G1": {
+   "EPDMS": 0.22878085656392994,
+   "EPDMS_from_key_contributions": 0.22878085656392996,
+   "DAC0_rate": 0.22665764546684708,
+   "NC0_rate": 0.13971583220568334,
+   "DDC0_rate": 0.08930987821380243,
+   "TLC0_rate": 0.015223274695534507,
+   "EP_mean_tokens": 0.7738016449135082,
+   "EP_stage1_devkit": 0.7772856749813799,
+   "EP_stage2_devkit": 0.7989175928732339,
+   "changed_share": 0.39242219215155616,
+   "n_changed": 2320,
+   "gate_summary": {
+    "arm": "G1",
+    "n": 5912,
+    "n_changed": 2320,
+    "changed_share": 0.39242219215155616,
+    "n_fallback_none_pass": 379,
+    "n_fallback_but_some_pass_outside_reach_keep": 0,
+    "deployed_pick_passes_share": 0.5434709066305818,
+    "unchecked_share_all_candidates_points": 0.09545264303806252,
+    "unchecked_share_picked_plan_points": 0.06745179296346415,
+    "t": "2026-10-05T03:14:39"
+   },
+   "dEPDMS_vs_G0": {
+    "delta": 0.026606798616419403,
+    "delta_keymean": 0.02660679861641943,
+    "ci95": [
+     0.00022885151707075128,
+     0.05438696618792872
+    ]
+   },
+   "dEPDMS_vs_G0_navsim_ci": {
+    "status": "OK",
+    "delta": 0.0266,
+    "lo": 0.0002,
+    "hi": 0.0544,
+    "separated": true,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "n_clusters": 76,
+    "n_units": 225
+   },
+   "dDAC0_vs_G0": {
+    "delta": -0.037550744248985114,
+    "ci95": [
+     -0.05268071491991941,
+     -0.02446597634363785
+    ]
+   },
+   "dNC0_vs_G0": {
+    "delta": -0.014884979702300407,
+    "ci95": [
+     -0.022710954011441027,
+     -0.006912933145293395
+    ]
+   },
+   "dEP_mean_vs_G0": {
+    "delta": -0.06500022866315154,
+    "ci95": [
+     -0.07536666124475022,
+     -0.05438141769169937
+    ]
+   },
+   "strata": {
+    "S1": {
+     "n": 1140,
+     "DAC0": 0.6973684210526315,
+     "NC0": 0.1307017543859649,
+     "EP_mean": 0.7683549069935113,
+     "score_mean": 0.18250074031139982,
+     "changed_share": 0.5561403508771929,
+     "dDAC0_vs_G0": {
+      "delta": -0.3026315789473684,
+      "ci95": [
+       -0.3433749057322878,
+       -0.2623752748502541
+      ]
+     }
+    },
+    "S1b": {
+     "n": 422,
+     "DAC0": 0.9170616113744076,
+     "NC0": 0.11848341232227488,
+     "EP_mean": 1.0,
+     "score_mean": 0.0659063981042654,
+     "changed_share": 0.5616113744075829,
+     "dDAC0_vs_G0": {
+      "delta": -0.08293838862559241,
+      "ci95": [
+       -0.11389140759930916,
+       -0.0564115967853377
+      ]
+     }
+    },
+    "S2": {
+     "n": 914,
+     "DAC0": 0.22538293216630198,
+     "NC0": 0.8402625820568927,
+     "EP_mean": 0.955968157608791,
+     "score_mean": 0.07552406028973296,
+     "changed_share": 0.4179431072210066,
+     "dDAC0_vs_G0": {
+      "delta": -0.037199124726477024,
+      "ci95": [
+       -0.06200445264384398,
+       -0.01290198192221578
+      ]
+     }
+    },
+    "rest": {
+     "n": 3676,
+     "DAC0": 0.03781284004352557,
+     "NC0": 0.010337323177366704,
+     "EP_mean": 0.715586985852674,
+     "score_mean": 0.6518187444862311,
+     "changed_share": 0.32861806311207836,
+     "dDAC0_vs_G0": {
+      "delta": 0.03781284004352557,
+      "ci95": [
+       0.02736875786191562,
+       0.0483982726905847
+      ]
+     }
+    }
+   }
+  },
+  "G1DER": {
+   "EPDMS": 0.1753364469902278,
+   "EPDMS_from_key_contributions": 0.1753364469902278,
+   "DAC0_rate": 0.35385656292286877,
+   "NC0_rate": 0.1310893098782138,
+   "DDC0_rate": 0.11468200270635995,
+   "TLC0_rate": 0.010994587280108254,
+   "EP_mean_tokens": 0.6942823232603703,
+   "EP_stage1_devkit": 0.6755304671145307,
+   "EP_stage2_devkit": 0.7014349843177448,
+   "changed_share": 0.6576454668470907,
+   "n_changed": 3888,
+   "gate_summary": {
+    "arm": "G1DER",
+    "n": 5912,
+    "n_changed": 3888,
+    "changed_share": 0.6576454668470907,
+    "n_fallback_none_pass": 532,
+    "n_fallback_but_some_pass_outside_reach_keep": 0,
+    "deployed_pick_passes_share": 0.2523680649526387,
+    "unchecked_share_all_candidates_points": 0.09545264303806252,
+    "unchecked_share_picked_plan_points": 0.07011163734776725,
+    "t": "2026-10-05T03:15:07"
+   },
+   "dEPDMS_vs_G0": {
+    "delta": -0.026837610957282737,
+    "delta_keymean": -0.026837610957282747,
+    "ci95": [
+     -0.06044118835261144,
+     0.007896416171846778
+    ]
+   },
+   "dEPDMS_vs_G0_navsim_ci": {
+    "status": "OK",
+    "delta": -0.0268,
+    "lo": -0.0604,
+    "hi": 0.0079,
+    "separated": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "n_clusters": 76,
+    "n_units": 225
+   },
+   "dDAC0_vs_G0": {
+    "delta": 0.08964817320703654,
+    "ci95": [
+     0.07071668195281783,
+     0.10908647296144236
+    ]
+   },
+   "dNC0_vs_G0": {
+    "delta": -0.02351150202976996,
+    "ci95": [
+     -0.0354050919148147,
+     -0.012467653331760838
+    ]
+   },
+   "dEP_mean_vs_G0": {
+    "delta": -0.14451955031628957,
+    "ci95": [
+     -0.15496967875245993,
+     -0.13370860045526267
+    ]
+   },
+   "strata": {
+    "S1": {
+     "n": 1140,
+     "DAC0": 0.7017543859649122,
+     "NC0": 0.11842105263157894,
+     "EP_mean": 0.6939551125132104,
+     "score_mean": 0.1744425970818587,
+     "changed_share": 0.7491228070175439,
+     "dDAC0_vs_G0": {
+      "delta": -0.2982456140350877,
+      "ci95": [
+       -0.328982312109402,
+       -0.2668436797536208
+      ]
+     }
+    },
+    "S1b": {
+     "n": 422,
+     "DAC0": 0.9454976303317536,
+     "NC0": 0.11137440758293839,
+     "EP_mean": 1.0,
+     "score_mean": 0.043394549763033176,
+     "changed_share": 0.7440758293838863,
+     "dDAC0_vs_G0": {
+      "delta": -0.054502369668246446,
+      "ci95": [
+       -0.07317200734768854,
+       -0.03542121870340857
+      ]
+     }
+    },
+    "S2": {
+     "n": 914,
+     "DAC0": 0.36433260393873085,
+     "NC0": 0.6859956236323851,
+     "EP_mean": 0.9223364999941603,
+     "score_mean": 0.1177945687187291,
+     "changed_share": 0.6969365426695843,
+     "dDAC0_vs_G0": {
+      "delta": 0.10175054704595186,
+      "ci95": [
+       0.06604438139425246,
+       0.14029926222238995
+      ]
+     }
+    },
+    "rest": {
+     "n": 3676,
+     "DAC0": 0.20538628944504897,
+     "NC0": 0.032100108813928184,
+     "EP_mean": 0.6178330291639117,
+     "score_mean": 0.5175296103311231,
+     "changed_share": 0.6164309031556039,
+     "dDAC0_vs_G0": {
+      "delta": 0.20538628944504897,
+      "ci95": [
+       0.17833844809178223,
+       0.23268693974028817
+      ]
+     }
+    }
+   }
+  },
+  "GORC": {
+   "EPDMS": 0.3162295657288188,
+   "EPDMS_from_key_contributions": 0.3162295657288188,
+   "DAC0_rate": 0.14445196211096076,
+   "NC0_rate": 0.14783491204330176,
+   "DDC0_rate": 0.08981732070365359,
+   "TLC0_rate": 0.014546684709066306,
+   "EP_mean_tokens": 0.820149219797392,
+   "EP_stage1_devkit": 0.8365709675622982,
+   "EP_stage2_devkit": 0.8677389330103927,
+   "changed_share": 0.2242895805142084,
+   "n_changed": 1326,
+   "gate_summary": {
+    "arm": "GORC",
+    "n": 5912,
+    "n_changed": 1326,
+    "changed_share": 0.2242895805142084,
+    "n_fallback_none_pass": 100,
+    "n_fallback_but_some_pass_outside_reach_keep": 0,
+    "deployed_pick_passes_share": 0.7587956698240866,
+    "unchecked_share_all_candidates_points": 0.09545264303806252,
+    "unchecked_share_picked_plan_points": 0.04810131935047361,
+    "t": "2026-10-05T00:31:08"
+   },
+   "dEPDMS_vs_G0": {
+    "delta": 0.11405550778130824,
+    "delta_keymean": 0.1140555077813083,
+    "ci95": [
+     0.08426277884757756,
+     0.143672971224341
+    ]
+   },
+   "dEPDMS_vs_G0_navsim_ci": {
+    "status": "OK",
+    "delta": 0.1141,
+    "lo": 0.0843,
+    "hi": 0.1437,
+    "separated": true,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "n_clusters": 76,
+    "n_units": 225
+   },
+   "dDAC0_vs_G0": {
+    "delta": -0.11975642760487144,
+    "ci95": [
+     -0.13344080652987997,
+     -0.10520267772149317
+    ]
+   },
+   "dNC0_vs_G0": {
+    "delta": -0.006765899864682003,
+    "ci95": [
+     -0.011757080169340132,
+     -0.0016861861541343673
+    ]
+   },
+   "dEP_mean_vs_G0": {
+    "delta": -0.018652653779268034,
+    "ci95": [
+     -0.023167702509170652,
+     -0.014011527506965915
+    ]
+   },
+   "strata": {
+    "S1": {
+     "n": 1140,
+     "DAC0": 0.4245614035087719,
+     "NC0": 0.12982456140350876,
+     "EP_mean": 0.7892148936801833,
+     "score_mean": 0.3596052087317318,
+     "changed_share": 0.8184210526315789,
+     "dDAC0_vs_G0": {
+      "delta": -0.5754385964912281,
+      "ci95": [
+       -0.6156447695448166,
+       -0.5364482423795754
+      ]
+     }
+    },
+    "S1b": {
+     "n": 422,
+     "DAC0": 0.8696682464454977,
+     "NC0": 0.11848341232227488,
+     "EP_mean": 1.0,
+     "score_mean": 0.09300947867298578,
+     "changed_share": 0.6540284360189573,
+     "dDAC0_vs_G0": {
+      "delta": -0.13033175355450238,
+      "ci95": [
+       -0.16952634544942238,
+       -0.08970976253298153
+      ]
+     }
+    },
+    "S2": {
+     "n": 914,
+     "DAC0": 0.15426695842450766,
+     "NC0": 0.912472647702407,
+     "EP_mean": 0.9749097438055511,
+     "score_mean": 0.027184393216425982,
+     "changed_share": 0.2188183807439825,
+     "dDAC0_vs_G0": {
+      "delta": -0.10831509846827134,
+      "ci95": [
+       -0.13689279086366882,
+       -0.07870488262052261
+      ]
+     }
+    },
+    "rest": {
+     "n": 3676,
+     "DAC0": 0.0008161044613710555,
+     "NC0": 0.0013601741022850925,
+     "EP_mean": 0.7795852865169891,
+     "score_mean": 0.705289032656892,
+     "changed_share": 0.029379760609358,
+     "dDAC0_vs_G0": {
+      "delta": 0.0008161044613710555,
+      "ci95": [
+       0.0,
+       0.002309499549304584
+      ]
+     }
+    }
+   }
+  }
+ },
+ "controls": {
+  "G0_identity": {
+   "PASS": true,
+   "max_abs_diff_any_column": 0.0,
+   "EPDMS_rebuilt": 0.20217405794751053,
+   "EPDMS_banked": 0.2021740579475105,
+   "columns": {
+    "index": {
+     "max_abs_diff": 0.0,
+     "nan_pattern_equal": true
+    },
+    "no_at_fault_collisions": {
+     "max_abs_diff": 0.0,
+     "nan_pattern_equal": true
+    },
+    "drivable_area_compliance": {
+     "max_abs_diff": 0.0,
+     "nan_pattern_equal": true
+    },
+    "driving_direction_compliance": {
+     "max_abs_diff": 0.0,
+     "nan_pattern_equal": true
+    },
+    "traffic_light_compliance": {
+     "max_abs_diff": 0.0,
+     "nan_pattern_equal": true
+    },
+    "ego_progress": {
+     "max_abs_diff": 0.0,
+     "nan_pattern_equal": true
+    },
+    "time_to_collision_within_bound": {
+     "max_abs_diff": 0.0,
+     "nan_pattern_equal": true
+    },
+    "lane_keeping": {
+     "max_abs_diff": 0.0,
+     "nan_pattern_equal": true
+    },
+    "history_comfort": {
+     "max_abs_diff": 0.0,
+     "nan_pattern_equal": true
+    },
+    "pdm_score": {
+     "max_abs_diff": 0.0,
+     "nan_pattern_equal": true
+    },
+    "valid": {
+     "max_abs_diff": 0.0,
+     "nan_pattern_equal": true
+    },
+    "log_name": {
+     "all_equal": true
+    },
+    "frame_type": {
+     "max_abs_diff": 0.0,
+     "nan_pattern_equal": true
+    },
+    "start_time": {
+     "max_abs_diff": 0.0,
+     "nan_pattern_equal": true
+    },
+    "endpoint_x": {
+     "max_abs_diff": 0.0,
+     "nan_pattern_equal": true
+    },
+    "endpoint_y": {
+     "max_abs_diff": 0.0,
+     "nan_pattern_equal": true
+    },
+    "start_point_x": {
+     "max_abs_diff": 0.0,
+     "nan_pattern_equal": true
+    },
+    "start_point_y": {
+     "max_abs_diff": 0.0,
+     "nan_pattern_equal": true
+    },
+    "two_frame_extended_comfort": {
+     "max_abs_diff": 0.0,
+     "nan_pattern_equal": true
+    },
+    "weight": {
+     "max_abs_diff": 0.0,
+     "nan_pattern_equal": true
+    },
+    "score": {
+     "max_abs_diff": 0.0,
+     "nan_pattern_equal": true
+    }
+   }
+  },
+  "D0": {
+   "D0_deployed_rule_reproduces_sel_idx": {
+    "n": 5912,
+    "mismatches": 0
+   },
+   "D0_fan_pick_vs_official_seam_plan": {
+    "max_abs_m": 0.0,
+    "share_le_1e-4": 1.0
+   },
+   "D0_checkpoints_numpy_vs_devkit_max_abs_m_on_200": 1.4210854715202004e-14
+  },
+  "KFRAME": {
+   "agreement": {
+    "identity": 0.902933456975004,
+    "mirror_y": 0.8160849326857329
+   },
+   "n_points": {
+    "identity": 25027161,
+    "mirror_y": 25027161
+   },
+   "per_token_identity_minus_mirror": {
+    "mean": 0.08195203411174545,
+    "share_positive": 0.9083220568335588,
+    "share_negative": 0.08880243572395129
+   },
+   "pred_nondrivable_but_gt_drivable_by_pred_class": {
+    "nocls": 283340,
+    "drivable": 450859,
+    "lane": 100627,
+    "crosswalk": 57182,
+    "arrow": 4422,
+    "edge": 25,
+    "hatched": 0,
+    "sidewalk": 418887
+   },
+   "by_x_band_m": {
+    "<5": {
+     "recall_drivable": 0.9520556203718903,
+     "n_gt_drivable": 8169237,
+     "recall_nondrivable": 0.8468129606267845,
+     "n_gt_nondrivable": 301220
+    },
+    "5-10": {
+     "recall_drivable": 0.9554064949136317,
+     "n_gt_drivable": 6694069,
+     "recall_nondrivable": 0.5995901005886519,
+     "n_gt_nondrivable": 1145159
+    },
+    "10-20": {
+     "recall_drivable": 0.904633784964723,
+     "n_gt_drivable": 3922668,
+     "recall_nondrivable": 0.7462812901251247,
+     "n_gt_nondrivable": 1672892
+    },
+    "20-40": {
+     "recall_drivable": 0.8530915640322985,
+     "n_gt_drivable": 1420252,
+     "recall_nondrivable": 0.870252405864194,
+     "n_gt_nondrivable": 1280517
+    },
+    ">=40": {
+     "recall_drivable": 0.76058690744921,
+     "n_gt_drivable": 177200,
+     "recall_nondrivable": 0.9233686005566782,
+     "n_gt_nondrivable": 243947
+    }
+   },
+   "PASS": true
+  },
+  "EXPORT": {
+   "n_old": 5912,
+   "n_new": 5912,
+   "n_mask": 5912,
+   "mask_torn_lines": 0,
+   "n_equal": {
+    "poses_bitwise": 5912,
+    "s9_bitwise": 5912,
+    "rk_bitwise": 5912,
+    "sel_idx": 5912,
+    "emitted_vs_seam_bitwise": 5912,
+    "mask_sel_idx": 5912,
+    "order_equal": 5912
+   },
+   "max_abs": {
+    "poses": 0.0,
+    "s9": 0.0
+   },
+   "PASS_exact": true
+  },
+  "P1prime_tierC_crosscheck": {
+   "n_compared": 747,
+   "n_equal": 632,
+   "max_abs": 1.1102230246251565e-16
+  }
+ },
+ "seed_floor": {
+  "EPDMS_R7_A1": 0.2021740579475105,
+  "EPDMS_R7_A1_s1": 0.2087032755687502,
+  "abs_delta": 0.006529217621239702,
+  "two_x": 0.013058435242479405,
+  "DAC0_abs_delta": 0.0,
+  "source": "banked step-50,400 navhard summary CSVs (extended_pdm_score_combined), same 5,912 tokens"
+ },
+ "verdict": {
+  "G0_reproduces": true,
+  "G1DER_delta": -0.026837610957282737,
+  "G1DER_behaves(delta<=seed_floor)": true,
+  "G1_clauses": {
+   "dEPDMS_ge_0.020": true,
+   "dEPDMS_ci_excludes_0": true,
+   "dEPDMS_gt_2x_seed_floor": true,
+   "DAC0_falls_ge_3pp": true,
+   "DAC0_ci_excludes_0": true
+  },
+  "GORC_clauses_same_literals": {
+   "dEPDMS_ge_0.020": true,
+   "dEPDMS_ci_excludes_0": true,
+   "dEPDMS_gt_2x_seed_floor": true,
+   "DAC0_falls_ge_3pp": true,
+   "DAC0_ci_excludes_0": true
+  },
+  "GORC_passes_same_literals": true,
+  "verdict": "PASS",
+  "committed_meaning": "PASS => the model's own map knows where it may drive and the selector ignores it: the gate enters refcv8's evaluation as an opt-in inference row on BOTH NavSim rows; a trained DAC-aware selector term becomes a named refcv8 lever."
+ }
+}

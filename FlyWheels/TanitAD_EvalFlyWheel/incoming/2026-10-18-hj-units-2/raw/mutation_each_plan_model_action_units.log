@@ -1,0 +1,75 @@
+### units (-k test_a_ or test_a2_ or test_g_omitted or test_g2_unit or test_h_cli)
+.......F....F....                                                        [100%]
+================================== FAILURES ===================================
+_____________ test_g_omitted_units_raises_TypeError[RefAV1.plan] ______________
+
+new_live = {'refa_v1_plan.unicycle_paths': (<function _new_surfaces.<locals>.<lambda> at 0x000001486E8604A0>, <function unicycle_...urfaces.<locals>.<lambda> at 0x000001486E860680>, <function RefAV1._imagine_tactical_goal at 0x000001486E6CE0C0>), ...}
+name = 'RefAV1.plan'
+
+    @pytest.mark.parametrize("name", _NEW_NAMES)
+    def test_g_omitted_units_raises_TypeError(new_live, name):
+        call, _ = new_live[name]
+>       assert _omission_rejected_for(call, _NEW_PARAM[name]), (
+            name + ": a call without " + _NEW_PARAM[name] + " must raise TypeError")
+E       AssertionError: RefAV1.plan: a call without model_action_units must raise TypeError
+E       assert False
+E        +  where False = _omission_rejected_for(<function _new_surfaces.<locals>.<lambda> at 0x000001486E860540>, 'model_action_units')
+
+tests\test_refav1_units_required.py:686: AssertionError
+_____ test_g2_unit_parameter_is_keyword_only_with_no_default[RefAV1.plan] _____
+
+new_live = {'refa_v1_plan.unicycle_paths': (<function _new_surfaces.<locals>.<lambda> at 0x000001486E8604A0>, <function unicycle_...urfaces.<locals>.<lambda> at 0x000001486E860680>, <function RefAV1._imagine_tactical_goal at 0x000001486E6CE0C0>), ...}
+name = 'RefAV1.plan'
+
+    @pytest.mark.parametrize("name", _NEW_NAMES)
+    def test_g2_unit_parameter_is_keyword_only_with_no_default(new_live, name):
+        _, fn = new_live[name]
+        prm = inspect.signature(fn).parameters[_NEW_PARAM[name]]
+>       assert prm.default is inspect.Parameter.empty, (name, prm.default)
+E       AssertionError: ('RefAV1.plan', 'kappa')
+E       assert 'kappa' is <class 'inspect._empty'>
+E        +  where 'kappa' = <Parameter "model_action_units: 'str' = 'kappa'">.default
+E        +  and   <class 'inspect._empty'> = <class 'inspect.Parameter'>.empty
+E        +    where <class 'inspect.Parameter'> = inspect.Parameter
+
+tests\test_refav1_units_required.py:694: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_refav1_units_required.py::test_g_omitted_units_raises_TypeError[RefAV1.plan]
+FAILED tests/test_refav1_units_required.py::test_g2_unit_parameter_is_keyword_only_with_no_default[RefAV1.plan]
+2 failed, 15 passed, 104 deselected in 4.77s
+
+### pinned files (full)
+...............F........F.............                                   [100%]
+================================== FAILURES ===================================
+_ test_D1_plan_REQUIRES_model_action_units_and_stated_kappa_is_the_legacy_call _
+
+    def test_D1_plan_REQUIRES_model_action_units_and_stated_kappa_is_the_legacy_call():
+        """HJ-UNITS-2 (2026-10-18): ``plan``'s ``"kappa"`` default is gone -- it conditioned a
+        steer-trained predictor on a curvature whenever a caller forgot the flag. Omitting the unit
+        raises TypeError; the STATED legacy value is deterministic and is what it always was."""
+        import inspect
+        m, cfg, feats = _tiny_model()
+>       with pytest.raises(TypeError, match="model_action_units"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE TypeError
+
+tests\test_steer_curvature_interface.py:373: Failed
+___________ test_A1_legacy_OFF_is_byte_identical_on_a_real_rollout ____________
+
+    def test_A1_legacy_OFF_is_byte_identical_on_a_real_rollout():
+        """HJ-UNITS-2 (2026-10-18): ``model_action_units`` has NO default, so the three spellings
+        of "do nothing" are now TWO -- the legacy ``"kappa"`` stated, and ``"kappa"`` stated with
+        the (still defaulted) time grid spelled out. They must agree bit for bit. The third
+        spelling, OMITTING the unit, is refused (see below)."""
+        m, cfg, feats = _tiny_model()
+        _force_turn(m, cfg)
+>       with pytest.raises(TypeError, match="model_action_units"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE TypeError
+
+tests\test_steer_conversion_complete.py:165: Failed
+=========================== short test summary info ===========================
+FAILED tests/test_steer_curvature_interface.py::test_D1_plan_REQUIRES_model_action_units_and_stated_kappa_is_the_legacy_call
+FAILED tests/test_steer_conversion_complete.py::test_A1_legacy_OFF_is_byte_identical_on_a_real_rollout
+2 failed, 36 passed in 8.02s
+

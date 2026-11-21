@@ -1,0 +1,173 @@
+{
+ "tool": "D-GSTR-1 P1c str_goal_head audit",
+ "ckpt": "/home/nvidia/refcv4b/ckpt_40284_FINAL.pt",
+ "evidence_class": "MEASURED (ours)",
+ "ckpt_top_keys": [
+  "model",
+  "opt",
+  "step"
+ ],
+ "state_dict_key": "model",
+ "str_goal_head_params": [
+  "str_goal_head.weight",
+  "str_goal_head.bias"
+ ],
+ "Q2_bias_and_weight": {
+  "d_ctx": 256,
+  "bias": [
+   -0.00336,
+   0.000341,
+   0.033871
+  ],
+  "bias_angle_deg_atan2_b1_b0": 174.1999,
+  "bias_xy_l2": 0.003377,
+  "weight_row0_l2": 0.687907,
+  "weight_row1_l2": 0.47976,
+  "weight_row2_l2": 0.450095,
+  "_reads": "if the bearing offset lives in the BIAS, bias_angle_deg is near the measured -29.0 deg AND bias_xy_l2 is large next to the weight rows"
+ },
+ "Q3_controls": {
+  "route_head": {
+   "shape": [
+    3,
+    704
+   ],
+   "absmean": 0.021186,
+   "std": 0.025114,
+   "max_abs": 0.074836,
+   "l2": 1.15387
+  },
+  "route_head.bias": {
+   "shape": [
+    3
+   ],
+   "absmean": 0.026053,
+   "std": 0.029607,
+   "max_abs": 0.031185,
+   "l2": 0.045562
+  },
+  "lat_head_tac": {
+   "shape": [
+    8,
+    512
+   ],
+   "absmean": 0.03804,
+   "std": 0.050071,
+   "max_abs": 0.238379,
+   "l2": 3.204195
+  },
+  "lat_head_tac.bias": {
+   "shape": [
+    8
+   ],
+   "absmean": 0.074021,
+   "std": 0.060909,
+   "max_abs": 0.140467,
+   "l2": 0.240916
+  },
+  "lon_head_tac": {
+   "shape": [
+    8,
+    512
+   ],
+   "absmean": 0.028851,
+   "std": 0.037479,
+   "max_abs": 0.204299,
+   "l2": 2.398501
+  },
+  "lon_head_tac.bias": {
+   "shape": [
+    8
+   ],
+   "absmean": 0.02659,
+   "std": 0.034908,
+   "max_abs": 0.071303,
+   "l2": 0.102944
+  },
+  "goal_head": {
+   "shape": [
+    3,
+    256
+   ],
+   "absmean": 0.02808,
+   "std": 0.034287,
+   "max_abs": 0.088709,
+   "l2": 0.951825
+  },
+  "goal_head.bias": {
+   "shape": [
+    3
+   ],
+   "absmean": 0.012524,
+   "std": 0.02051,
+   "max_abs": 0.033871,
+   "l2": 0.034039
+  },
+  "tac_goal_head": {
+   "shape": [
+    12,
+    512
+   ],
+   "absmean": 0.026993,
+   "std": 0.034181,
+   "max_abs": 0.223662,
+   "l2": 2.679039
+  },
+  "tac_goal_head.bias": {
+   "shape": [
+    12
+   ],
+   "absmean": 0.020611,
+   "std": 0.026605,
+   "max_abs": 0.052402,
+   "l2": 0.089805
+  },
+  "FRESH_INIT_Linear(d_ctx,3).weight": {
+   "shape": [
+    3,
+    256
+   ],
+   "absmean": 0.032004,
+   "std": 0.03671,
+   "max_abs": 0.06248,
+   "l2": 1.016697
+  },
+  "FRESH_INIT_Linear(d_ctx,3).bias": {
+   "shape": [
+    3
+   ],
+   "absmean": 0.028906,
+   "std": 0.034326,
+   "max_abs": 0.047952,
+   "l2": 0.055257
+  },
+  "_init_bound_1_over_sqrt_d": 0.0625,
+  "str_goal_head.weight": {
+   "shape": [
+    3,
+    256
+   ],
+   "absmean": 0.02808,
+   "std": 0.034287,
+   "max_abs": 0.088709,
+   "l2": 0.951825
+  },
+  "str_goal_head.bias": {
+   "shape": [
+    3
+   ],
+   "absmean": 0.012524,
+   "std": 0.02051,
+   "max_abs": 0.033871,
+   "l2": 0.034039
+  }
+ },
+ "Q1_optimizer": {
+  "optimizer_state_present": true,
+  "key": "opt",
+  "n_params_with_state": 347,
+  "adam_step_min": 40127.0,
+  "adam_step_max": 40284.0,
+  "_note": "Adam state is keyed by param INDEX, not name; a param with no entry was never stepped"
+ }
+}

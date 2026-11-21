@@ -1,0 +1,499 @@
+{
+ "schema": "tanitad.launch_gate/1",
+ "kind": "evidence",
+ "check": "G-EVAL",
+ "status": "FAIL",
+ "reasons": [
+  "control: the trainer model's own forward is NOT reproducible on the fixed batch under a forked RNG (18 outputs differ between two identical calls) -- the trainer-vs-loader comparison is blind",
+  "forward outputs differ on the fixed batch: 1 of 214 (first: ['out.r8_emit_keep'])"
+ ],
+ "binding": {
+  "profile": "refcv8",
+  "commit": "d014ff2fd695c306abf769af0572a17e8d713991",
+  "tree_sha256": "a88a01986eac321c1ac7a7132e4fd0314dc1b0495f3955e092b6e3761e2b419b",
+  "argv_sha256": "d1fa48b2654d33cd7af7f5077076b0f7b807efc359fe6549919ddb16e721d600"
+ },
+ "inputs_read": {
+  "--anchors": {
+   "kind": "file",
+   "bytes": 13477,
+   "sha256": "897099148d1b16eb109ad24516d1a1b9cc7d60d7a3ce71cd3f14beef33c1d63d",
+   "method": "sha256-v1"
+  },
+  "--agent-rig-extrinsics": {
+   "kind": "file",
+   "bytes": 3519480,
+   "sha256": "933c779b52a0fbb20e37445a933d49d8fa7a630307d3b5eceaeb1a751cc3eb1a",
+   "method": "sha256-v1"
+  },
+  "--nav-compliance-tau-file": {
+   "kind": "file",
+   "bytes": 2566,
+   "sha256": "9fa7ca38b529bacfe79209c4bb9ccad039c7af284e5080f1c4f856ea46ebb5a3",
+   "method": "sha256-v1"
+  },
+  "--map-hires-class-weights": {
+   "kind": "file",
+   "bytes": 3046,
+   "sha256": "d70dec8087ed73ee6d4129b6fc6e0a97a350f826907462b6b251413ede488b67",
+   "method": "sha256-v1"
+  },
+  "--join-defect-masks": {
+   "kind": "file",
+   "bytes": 151824,
+   "sha256": "dde7a4cb862d11acf0a86535c12ca7039e27cfa6e036454a16c50790993a6149",
+   "method": "sha256-v1"
+  }
+ },
+ "host": {
+  "node": "thor6",
+  "platform": "Linux-6.8.12-tegra-aarch64-with-glibc2.39",
+  "python": "3.12.3",
+  "torch": "2.13.0+cu130",
+  "cuda": false
+ },
+ "arm": null,
+ "gate_sha256": "e7b47e3dde5059cd00023f9563ce838754a1dbb9cd62d9de4f0db0b3a189ea50",
+ "started_utc": "2026-10-12T00:20:39Z",
+ "details": {
+  "argv_local": {
+   "kept": {
+    "--anchors": "/home/nvidia/data/anchors/refc_anchors_6s_v0cond_alat_117.pt",
+    "--agent-rig-extrinsics": "/home/nvidia/data/refcv8_train4572_eval139_extrinsics.json",
+    "--nav-compliance-tau-file": "/home/nvidia/data/refcv8/nav_compliance_tau_train4572.json",
+    "--map-hires-class-weights": "/home/nvidia/data/refcv7/map_hires_class_weights_train_100x30.json",
+    "--join-defect-masks": "/home/nvidia/refcv6_run/d014ff2fd6/stack/tanitad/configs/refcv8_join_label_defects_train4572.json"
+   },
+   "sentinel": {
+    "--v2-cache": "/home/nvidia/pregate_d014ff2/gate_out_diag_d7/scratch/__gate_unread__/v2-cache",
+    "--v7-labels": "/home/nvidia/pregate_d014ff2/gate_out_diag_d7/scratch/__gate_unread__/v7-labels",
+    "--eval-cache": "/home/nvidia/pregate_d014ff2/gate_out_diag_d7/scratch/__gate_unread__/eval-cache",
+    "--eval-labels": "/home/nvidia/pregate_d014ff2/gate_out_diag_d7/scratch/__gate_unread__/eval-labels",
+    "--speed-max-sidecar-v6-eval": "/home/nvidia/pregate_d014ff2/gate_out_diag_d7/scratch/__gate_unread__/speed-max-sidecar-v6-eval",
+    "--speed-max-sidecar-v6": "/home/nvidia/pregate_d014ff2/gate_out_diag_d7/scratch/__gate_unread__/speed-max-sidecar-v6",
+    "--agent-join": "/home/nvidia/pregate_d014ff2/gate_out_diag_d7/scratch/__gate_unread__/agent-join",
+    "--map-gt-root": "/home/nvidia/pregate_d014ff2/gate_out_diag_d7/scratch/__gate_unread__/map-gt-root",
+    "--join3d": "/home/nvidia/pregate_d014ff2/gate_out_diag_d7/scratch/__gate_unread__/join3d",
+    "--vis1-sidecar": "/home/nvidia/pregate_d014ff2/gate_out_diag_d7/scratch/__gate_unread__/vis1-sidecar",
+    "--clip-clock-sidecar": "/home/nvidia/pregate_d014ff2/gate_out_diag_d7/scratch/__gate_unread__/clip-clock-sidecar",
+    "--init-from": "/home/nvidia/pregate_d014ff2/gate_out_diag_d7/scratch/__gate_unread__/init-from",
+    "--r8-v9-labels": "/home/nvidia/pregate_d014ff2/gate_out_diag_d7/scratch/__gate_unread__/r8-v9-labels",
+    "--r8-v9-labels-eval": "/home/nvidia/pregate_d014ff2/gate_out_diag_d7/scratch/__gate_unread__/r8-v9-labels-eval",
+    "--pose-sync-sidecar": "/home/nvidia/pregate_d014ff2/gate_out_diag_d7/scratch/__gate_unread__/pose-sync-sidecar"
+   },
+   "dropped": {
+    "--trunk-compile": "the model job is CPU-only on every host; torch.compile wraps the backbone CALL only (module tree and state_dict unchanged) -- the eval loader drops it too"
+   }
+  },
+  "build_s": 4.4,
+  "model_params": 100598182,
+  "eval_loader": {
+   "path": "/home/nvidia/refcv6_run/d014ff2fd6/stack/tanitad/eval/refcv7_loader.py",
+   "sha256": "bb6ef27f80def92165d481f4051447997de0f176cf3fc50da0ae70dfa07b2b22"
+  },
+  "eval_stamps": {
+   "path": "/home/nvidia/pregate_d014ff2/work/stamps/config_DIAG_PATCHED.json",
+   "sha256": "a0b2b6ea2acf2d06195cbabbe26d14a94653a013e7213f6c0254a0d7ccd84a8c",
+   "source": "--eval-stamps",
+   "written_for_this_argv": true,
+   "used_keys": [
+    "ablate_frames",
+    "admission_sigma_m",
+    "agent_join",
+    "agent_join_digest",
+    "agent_join_stats",
+    "anchors",
+    "arm",
+    "conflict_detector",
+    "cudnn_benchmark",
+    "data_order",
+    "declared_vs_built",
+    "effective_weights",
+    "ego",
+    "ema",
+    "frame_batch_bytes_est",
+    "goal_provenance",
+    "goal_tau_steps",
+    "grad_reach_logging",
+    "horizons",
+    "image_hw",
+    "init_from",
+    "label_clock",
+    "map_hires",
+    "max_speed_input",
+    "max_speed_mode",
+    "max_speed_stats",
+    "nav_args",
+    "nav_args_stats",
+    "nav_cmd_derivation",
+    "nav_from_v7",
+    "nav_from_v7_stats",
+    "param_breakdown",
+    "pose_sync",
+    "provenance_roles",
+    "r8_speed_derivation",
+    "refcv6_max_speed",
+    "refcv6_perception",
+    "refcv6_tactical",
+    "refcv8",
+    "registered_delta",
+    "require_parity",
+    "rig_rung",
+    "seams",
+    "seed",
+    "selection",
+    "size",
+    "slot_refine",
+    "speed_max_derivation",
+    "speed_max_derivation_v6",
+    "synth_clip_ids_from_labels",
+    "tac_goal_stats",
+    "tac_vocab_version",
+    "trunk_bn_recalib",
+    "trunk_memory_levers",
+    "u8_batches",
+    "v2_cache",
+    "v2_parity",
+    "v7_labels",
+    "vis1",
+    "w_tac_goal",
+    "withheld_bank"
+   ]
+  },
+  "strict_load": {
+   "missing": [],
+   "unexpected": [],
+   "n_keys": 1165
+  },
+  "loader_departures": [
+   "argv --trunk-compile REMOVED: no Triton on Windows; torch.compile wraps the backbone CALL only -- module tree and state_dict identical (LAUNCH_READINESS_FIXES.md sec. 10b)",
+   "Thor data paths REMAPPED to the eval kit /home/nvidia for ['--agent-join', '--agent-rig-extrinsics', '--anchors', '--clip-clock-sidecar', '--eval-cache', '--eval-labels', '--join3d', '--map-gt-root', '--map-hires-class-weights', '--nav-compliance-tau-file', '--speed-max-sidecar-v6-eval', '--vis1-sidecar'] (per flag, basename-checked; recorded in argv_remap)",
+   "tactical-goal pos_weight / class mask from config.json tac_goal_stats (the TRAIN split's own constants; train():8483-8497 derives them from the loaded split)"
+  ],
+  "loader_argv_remap": {
+   "remapped": {
+    "--anchors": {
+     "thor": "/home/nvidia/data/anchors/refc_anchors_6s_v0cond_alat_117.pt",
+     "local": "/home/nvidia/data/anchors/refc_anchors_6s_v0cond_alat_117.pt",
+     "source": "kit default",
+     "basename_expected": "refc_anchors_6s_v0cond_alat_117.pt"
+    },
+    "--eval-cache": {
+     "thor": "/home/nvidia/data/refcv6-b1-416x1024-eval139",
+     "local": "/home/nvidia/data/refcv6-b1-416x1024-eval139",
+     "source": "kit default",
+     "basename_expected": "refcv6-b1-416x1024-eval139"
+    },
+    "--eval-labels": {
+     "thor": "/home/nvidia/data/v8labels/labels/s2_labels_v8_eval.jsonl.gz",
+     "local": "/home/nvidia/data/v8labels/labels/s2_labels_v8_eval.jsonl.gz",
+     "source": "kit default",
+     "basename_expected": "s2_labels_v8_eval.jsonl.gz"
+    },
+    "--speed-max-sidecar-v6-eval": {
+     "thor": "/home/nvidia/data/refcv6_speed_max_v8_eval.jsonl",
+     "local": "/home/nvidia/data/refcv6_speed_max_v8_eval.jsonl",
+     "source": "kit default",
+     "basename_expected": "refcv6_speed_max_v8_eval.jsonl"
+    },
+    "--agent-join": {
+     "thor": "/home/nvidia/data/joins/b1_train_plus_eval_agents.jsonl.xz",
+     "local": "/home/nvidia/data/joins/b1_train_plus_eval_agents.jsonl.xz",
+     "source": "kit default",
+     "basename_expected": "b1_train_plus_eval_agents.jsonl.xz"
+    },
+    "--agent-rig-extrinsics": {
+     "thor": "/home/nvidia/data/refcv8_train4572_eval139_extrinsics.json",
+     "local": "/home/nvidia/data/refcv8_train4572_eval139_extrinsics.json",
+     "source": "recorded override"
+    },
+    "--map-gt-root": {
+     "thor": "/home/nvidia/data/sam3_gt_v3",
+     "local": "/home/nvidia/data/sam3_gt_v3",
+     "source": "kit default",
+     "basename_expected": "sam3_gt_v3"
+    },
+    "--join3d": {
+     "thor": "/home/nvidia/data/join3d/b1_train_plus_eval_agents_3d.jsonl.xz",
+     "local": "/home/nvidia/data/join3d/b1_train_plus_eval_agents_3d.jsonl.xz",
+     "source": "kit default",
+     "basename_expected": "b1_train_plus_eval_agents_3d.jsonl.xz"
+    },
+    "--vis1-sidecar": {
+     "thor": "/home/nvidia/data/refcv8/vis1_sidecar_refcv8b1_train4572_eval139.npz",
+     "local": "/home/nvidia/data/refcv8/vis1_sidecar_refcv8b1_train4572_eval139.npz",
+     "source": "recorded override"
+    },
+    "--nav-compliance-tau-file": {
+     "thor": "/home/nvidia/data/refcv8/nav_compliance_tau_train4572.json",
+     "local": "/home/nvidia/data/refcv8/nav_compliance_tau_train4572.json",
+     "source": "recorded override"
+    },
+    "--map-hires-class-weights": {
+     "thor": "/home/nvidia/data/refcv7/map_hires_class_weights_train_100x30.json",
+     "local": "/home/nvidia/data/refcv7/map_hires_class_weights_train_100x30.json",
+     "source": "kit default",
+     "basename_expected": "map_hires_class_weights_train_100x30.json"
+    },
+    "--clip-clock-sidecar": {
+     "thor": "/home/nvidia/data/refcv8_clip_clock_sidecar_ts33.jsonl",
+     "local": "/home/nvidia/data/refcv8_clip_clock_sidecar_ts33.jsonl",
+     "source": "recorded override"
+    }
+   },
+   "dropped": {
+    "--trunk-compile": "no Triton on Windows; torch.compile wraps the backbone CALL only -- module tree and state_dict identical (LAUNCH_READINESS_FIXES.md sec. 10b)"
+   },
+   "train_only_kept_unread": {
+    "--v2-cache": "/home/nvidia/data/refcv8-b1-416x1024-train-4572",
+    "--v7-labels": "/home/nvidia/data/v8labels/labels/s2_labels_v8_train.jsonl.gz",
+    "--speed-max-sidecar-v6": "/home/nvidia/data/refcv6_speed_max_v8_train.jsonl",
+    "--out": "/home/nvidia/pregate_d014ff2/run_never_launched"
+   },
+   "kit": "/home/nvidia",
+   "overrides_file": "/home/nvidia/pregate_d014ff2/work/remap_overrides_A2_DIAG.json"
+  },
+  "state_dict": {
+   "n_trainer": 1165,
+   "n_loader": 1165,
+   "n_differ": 0,
+   "differ": [],
+   "only_trainer": [],
+   "only_loader": []
+  },
+  "map_hires_state_keys": {
+   "trainer": 54,
+   "loader": 54
+  },
+  "model_attributes": {
+   "_bev_shuffle": {
+    "trainer": "False",
+    "loader": "False",
+    "same": true
+   },
+   "_box3d_visible_filter": {
+    "trainer": "True",
+    "loader": "True",
+    "same": true
+   },
+   "_cls_class_weight": {
+    "trainer": "tensor([4.2770e-03, 2.1418e-01, 4.7983e-01, 1.5317e+00, 3.4034e-01, 1.1534e-02,\n",
+    "loader": "tensor([4.2770e-03, 2.1418e-01, 4.7983e-01, 1.5317e+00, 3.4034e-01, 1.1534e-02,\n",
+    "same": true
+   },
+   "_map_lift_valid_mask": {
+    "trainer": "True",
+    "loader": "True",
+    "same": true
+   },
+   "_w_agent": {
+    "trainer": "1.0",
+    "loader": "1.0",
+    "same": true
+   },
+   "_w_bev_aux": {
+    "trainer": "0.0",
+    "loader": "0.0",
+    "same": true
+   },
+   "_w_box3d": {
+    "trainer": "1.0",
+    "loader": "1.0",
+    "same": true
+   },
+   "_w_goal_point": {
+    "trainer": "0.0",
+    "loader": "0.0",
+    "same": true
+   },
+   "_w_map": {
+    "trainer": "0.0",
+    "loader": "0.0",
+    "same": true
+   },
+   "_w_map_hires": {
+    "trainer": "1.0",
+    "loader": "1.0",
+    "same": true
+   },
+   "_w_r7_scorer": {
+    "trainer": "0.0",
+    "loader": "0.0",
+    "same": true
+   },
+   "_w_r7_wta": {
+    "trainer": "0.0",
+    "loader": "0.0",
+    "same": true
+   },
+   "_w_tac_goal": {
+    "trainer": "0.0",
+    "loader": "0.0",
+    "same": true
+   },
+   "_w_tac_v6": {
+    "trainer": "1.0",
+    "loader": "1.0",
+    "same": true
+   },
+   "_w_u0": {
+    "trainer": "0.0",
+    "loader": "0.0",
+    "same": true
+   }
+  },
+  "param_breakdown": {
+   "trainer": {
+    "core": 90897767,
+    "phi_tac": 2101504,
+    "str_goal_head": 771,
+    "gstr_cond": 66816,
+    "tac_heads": 14364,
+    "tac_latent_proj": 262656,
+    "scorer": 1145,
+    "nav_inject": 50176,
+    "tac_decoder_v6": 2272802,
+    "tac_behaviour_gate_v6": 2574,
+    "total": 100598182
+   },
+   "loader": {
+    "core": 90897767,
+    "phi_tac": 2101504,
+    "str_goal_head": 771,
+    "gstr_cond": 66816,
+    "tac_heads": 14364,
+    "tac_latent_proj": 262656,
+    "scorer": 1145,
+    "nav_inject": 50176,
+    "tac_decoder_v6": 2272802,
+    "tac_behaviour_gate_v6": 2574,
+    "total": 100598182
+   }
+  },
+  "probe": {
+   "window_index": 20658,
+   "episode_sid": 4105169087547256295,
+   "t": 136,
+   "n_eval_windows": 23772,
+   "inputs": {
+    "label_clock": {
+     "rule": "t_now = grid_start_s + (t + w - 1 + n_stack - 1) * dt_s (tanitad/data/clip_clock.py; A16 2026-09-26)",
+     "sidecar": "/home/nvidia/data/refcv8_clip_clock_sidecar_ts33.jsonl",
+     "sidecar_rows": 4686,
+     "n_clips": 139,
+     "n_from_sidecar": 136,
+     "n_pose_dt_grid_start_0": 0,
+     "n_nominal_dt_grid_start_0": 3,
+     "raw_offsets": [
+      2
+     ],
+     "dt_s_median": 0.10066662995966351,
+     "dt_s_min": 0.1,
+     "dt_s_max": 0.10100496421012953,
+     "g3": {
+      "g3": "PASS",
+      "split": "eval",
+      "tol_s": 0.05,
+      "n_clips": 139,
+      "n_reads_checked": 408,
+      "worst_abs_err_s": 0.0,
+      "n_unverified_clips": 3,
+      "tactical_scored_on_clips": 136,
+      "tactical_excluded_clips": 3,
+      "tactical_excluded_sids": [
+       1131054092343061790,
+       6479814750558219472,
+       8549884407071846968
+      ],
+      "tactical_excluded_reason": "no MEASURED label clock (absent from the clip-clock sidecar): their tactical targets cannot be shown within tol_s of the truth",
+      "families_on_all_clips": [
+       "longitudinal",
+       "lateral",
+       "strategic"
+      ],
+      "mode": "per-family: TACTICAL on verified clips only (E2(b))",
+      "rule": "t_true = grid_start_s + (t + w - 1 + n_stack - 1) * dt_s (sidecar)",
+      "tactical_excluded_sha12": [
+       "081b986f8888",
+       "2aa810802777",
+       "3db625a5f941"
+      ]
+     }
+    },
+    "labels": {
+     "path": "/home/nvidia/data/v8labels/labels/s2_labels_v8_eval.jsonl.gz",
+     "md5": "eefc38d1453bd1c73802d44d45affced",
+     "n_records": 147
+    },
+    "n_episodes": 139,
+    "n_windows": 23772
+   },
+   "seed": 1234,
+   "forward_s_each": 33.9
+  },
+  "determinism_control_outputs_differing": 18,
+  "forward": {
+   "n_outputs": 214,
+   "n_differ": 1,
+   "differ": [
+    "out.r8_emit_keep"
+   ]
+  },
+  "negative_control_outputs_moved": 20,
+  "trainer_requires_grad_matched_to_loader": true,
+  "map_hires_outputs": {
+   "hires_paths": [
+    [
+     "out.perception.map_hires_logits",
+     [
+      1,
+      8,
+      1000,
+      600
+     ]
+    ],
+    [
+     "out.perception.map_hires_lift_valid",
+     [
+      1,
+      400,
+      240
+     ]
+    ]
+   ],
+   "fmap_s8": [
+    1,
+    512,
+    52,
+    128
+   ],
+   "logits": [
+    [
+     "out.perception.map_hires_logits",
+     [
+      1,
+      8,
+      1000,
+      600
+     ]
+    ]
+   ],
+   "lift": [
+    [
+     "out.perception.map_hires_lift_valid",
+     [
+      1,
+      400,
+      240
+     ]
+    ]
+   ]
+  },
+  "child": {
+   "tanitad": "/home/nvidia/refcv6_run/d014ff2fd6/stack/tanitad/__init__.py",
+   "torch": "2.13.0+cu130",
+   "cuda": false
+  }
+ },
+ "finished_utc": "2026-10-12T00:22:18Z"
+}

@@ -1,0 +1,84 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "split": "HELD-OUT, LEAD-MATCHED",
+ "readable": "(scene+action) MINUS scene = the action's MARGINAL contribution given the scene",
+ "arms": {
+  "rdw8p30k": {
+   "step": 30000,
+   "n_clips": 20,
+   "columns": {
+    "scene": {
+     "mean_r": -0.0056,
+     "shuffled": 0.0012,
+     "true_minus_shuffled": -0.0067,
+     "t": -0.64
+    },
+    "action": {
+     "mean_r": 0.0105,
+     "shuffled": -0.0086,
+     "true_minus_shuffled": 0.019,
+     "t": 1.88
+    },
+    "scene+action": {
+     "mean_r": -0.0004,
+     "shuffled": 0.0207,
+     "true_minus_shuffled": -0.0211,
+     "t": -2.19
+    },
+    "constant (control)": {
+     "mean_r": 0.0,
+     "shuffled": 0.0,
+     "true_minus_shuffled": 0.0,
+     "t": 0.0
+    }
+   },
+   "action_marginal_given_scene": {
+    "delta": 0.0051,
+    "t": 0.98
+   },
+   "scene_marginal_given_action": {
+    "delta": -0.0109,
+    "t": -1.61
+   }
+  },
+  "postrain10k": {
+   "step": 10000,
+   "n_clips": 20,
+   "columns": {
+    "scene": {
+     "mean_r": 0.0289,
+     "shuffled": 0.023,
+     "true_minus_shuffled": 0.0058,
+     "t": 0.4
+    },
+    "action": {
+     "mean_r": -0.0054,
+     "shuffled": 0.0108,
+     "true_minus_shuffled": -0.0162,
+     "t": -1.14
+    },
+    "scene+action": {
+     "mean_r": 0.0181,
+     "shuffled": 0.0155,
+     "true_minus_shuffled": 0.0025,
+     "t": 0.18
+    },
+    "constant (control)": {
+     "mean_r": 0.0,
+     "shuffled": 0.0,
+     "true_minus_shuffled": 0.0,
+     "t": 0.0
+    }
+   },
+   "action_marginal_given_scene": {
+    "delta": -0.0108,
+    "t": -0.97
+   },
+   "scene_marginal_given_action": {
+    "delta": 0.0235,
+    "t": 1.66
+   }
+  }
+ }
+}

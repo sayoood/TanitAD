@@ -41,6 +41,13 @@ dense tensor was already being produced and thrown away.
 **Optional, not guaranteed.** ``refb_eval.collect`` and ``refc_eval.collect``
 build their own window dicts for direct-trajectory arms and do not emit the
 dense keys; anything downstream must treat them as ``win.get("pred_dense")``.
+
+⚠️ Scoring the dense path against a ``win["lead"]`` block from
+``taniteval.dump_lead_join.attach_lead``: the block emits ``wp_steps`` but
+``four_families._distance_keeping`` consumes ``path_steps`` — set
+``win["lead"]["path_steps"] = [4, 9, 14, 19]`` (the dense tensor indices of
+the 5/10/15/20 ticks) or the shape join refuses; details and the wrong-"fix"
+warning live in ``attach_lead``'s docstring.
 """
 from __future__ import annotations
 
@@ -98,10 +105,40 @@ def append_ego(aw, fa, poses, last, speed_input, yaw_input, dyn_input, device):
     return aw, fa
 
 
+def _man_gt(poses, last, horizon: int = None, labels_v2: bool = False):
+    """GT manoeuvre class for each window, from the ego's OWN FUTURE poses.
+
+    ⚠️ LABELS MAY USE EGO; INFERENCE IS VISION-ONLY (binding, 2026-08-03). This
+    is a LABEL, computed offline from future kinematics, so privileged signals
+    are fine here — the guard applies to what the model is FED, not to how the
+    target is derived. It re-uses ``refb_labels`` rather than re-deriving the
+    rule, so the eval label and the training label cannot drift.
+
+    ⛔ ``labels_v2`` MUST be the arm's own ``cfg.v2_labels``
+    (:func:`taniteval.loaders.resolve_labels_v2`). Until 2026-08-17 this
+    hardcoded the v1 net-yaw classifier, exactly as ``hierarchy.py:592`` did, so
+    a ``--v2`` arm's TACTICAL family would have been scored against labels its
+    head never saw. It stays defaulted to v1 only because every arm scored
+    through this path so far is v1-labelled — a v2 arm MUST pass the flag.
+
+    ``poses`` [T, 4] (x, y, yaw, v) · ``last`` [B] index of each window's final
+    frame. The label reads frame ``last`` through ``last + horizon``; windows
+    whose future is short are clamped to the last available frame, which is the
+    same degradation ``maneuver_labels`` applies at the tail of an episode.
+    """
+    h = int(getattr(rl, "LABEL_HORIZON", 20) if horizon is None else horizon)
+    last = torch.as_tensor(last).to(poses.device).long()
+    idx = torch.clamp(last[:, None] + torch.arange(1, h + 1, device=poses.device
+                                                   )[None, :],
+                      max=poses.shape[0] - 1)                    # [B, h]
+    return rl.window_maneuver_labels_for(poses[last], poses[idx], horizon=h,
+                                         v2=bool(labels_v2)).cpu()
+
+
 @torch.no_grad()
 def collect(model, step_readout, episodes, device, window=8, fwd_k=K_MAX,
             stride=8, batch=8, speed_input=False, yaw_input=False,
-            dyn_input=False):
+            dyn_input=False, decision_fn=None, labels_v2=False):
     """Predict WP_STEPS waypoints for every window of every episode.
 
     Returns dict of tensors: pred/gt/cv [N, 4, 2] + eid/speed/head_deg [N],
@@ -124,6 +161,7 @@ def collect(model, step_readout, episodes, device, window=8, fwd_k=K_MAX,
     from taniteval import hierarchy_guard as _hg
     _trace = _hg.HierarchyTrace(model)
     S_wp, GT, CV, CT, EID, SPD, HDG = [], [], [], [], [], [], []
+    MAN_P, MAN_G, RTE_P = [], [], []       # decision capture (optional)
     S_dense, GT_dense = [], []
     dense_steps = tuple(range(1, fwd_k + 1))     # every 0.1 s tick, 1..fwd_k
     wp_idx = torch.tensor([k - 1 for k in WP_STEPS])
@@ -171,6 +209,29 @@ def collect(model, step_readout, episodes, device, window=8, fwd_k=K_MAX,
                 EID.extend([ep.episode_id] * len(ch))
                 SPD.append(ep.poses[last, 3])
                 HDG.append(net_heading_change_deg(ep.poses, last))
+                # --- TACTICAL/STRATEGIC decision capture (optional) --------- #
+                # ⛔ THE FOUR-FAMILY HOLE THIS CLOSES. `four_families.tactical`
+                # /`strategic` return status UNAVAILABLE unless the window dict
+                # carries the model's DECODED DECISIONS, and this rollout is a
+                # world-model FIDELITY pass that never traverses the decision
+                # heads — so an eval built on it comes back TWO FAMILIES SHORT
+                # and is inadmissible under the binding rule.
+                # `decision_fn` is the seam: a loader that can expose its
+                # maneuver/route heads supplies one, everything else is
+                # unchanged and still reports UNAVAILABLE *with its reason*.
+                if decision_fn is not None:
+                    dec = decision_fn(fw, aw, ep, last) or {}
+                    if "maneuver_pred" in dec:
+                        MAN_P.append(torch.as_tensor(
+                            dec["maneuver_pred"]).reshape(-1).cpu())
+                    if "route_pred" in dec:
+                        RTE_P.append(torch.as_tensor(
+                            dec["route_pred"]).reshape(-1).cpu())
+                    # GT from the ego's own future kinematics — a pure function
+                    # of the trajectory (labels MAY use ego; only INFERENCE is
+                    # vision-only), computed here so pred and label are on
+                    # EXACTLY the same windows and cannot drift apart.
+                    MAN_G.append(_man_gt(ep.poses, last, labels_v2=labels_v2))
     # PC2 record. NON-strict: this block is a legitimate WM-fidelity diagnostic
     # and must stay runnable — what it may not do is be quoted as a hierarchy
     # (or a driving) number. `pc2_pass` will be False here BY CONSTRUCTION.
@@ -193,7 +254,13 @@ def collect(model, step_readout, episodes, device, window=8, fwd_k=K_MAX,
             # --- dense 10 Hz path (tier-1 behavioural metrics) -------------- #
             "pred_dense": torch.cat(S_dense).float(),
             "gt_dense": torch.cat(GT_dense).float(),
-            "dense_steps": list(dense_steps), "dt_s": DT}
+            "dense_steps": list(dense_steps), "dt_s": DT,
+            # TACTICAL/STRATEGIC: present ONLY when a decision_fn was supplied.
+            # Absent keys make four_families report UNAVAILABLE *with a reason*,
+            # which is the contract — never a silent omission.
+            **({"maneuver_pred": torch.cat(MAN_P)} if MAN_P else {}),
+            **({"maneuver_gt": torch.cat(MAN_G)} if MAN_G else {}),
+            **({"route_pred": torch.cat(RTE_P)} if RTE_P else {})}
 
 
 def dense_speed_profile(path_dense, dt: float = DT):

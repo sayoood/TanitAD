@@ -1,0 +1,79 @@
+{
+  "instrument": "RAW PIXELS, 8x16 average pool, NO network",
+  "n": 139,
+  "n_positive": 74,
+  "n_negative": 65,
+  "d": 384,
+  "chance_balanced_accuracy": 0.5,
+  "max_black_rows_in_corpus": 37,
+  "positives_with_more_than_32_black_rows": 20,
+  "arms": {
+    "CONSTANT_ONLY": {
+      "mean": 0.5,
+      "sd": 0.0,
+      "min": 0.5,
+      "max": 0.5
+    },
+    "CROP_BOTTOM_0": {
+      "mean": 0.9786,
+      "sd": 0.0181,
+      "min": 0.9542,
+      "max": 1.0
+    },
+    "CROP_BOTTOM_32": {
+      "mean": 0.9417,
+      "sd": 0.0328,
+      "min": 0.8714,
+      "max": 0.9778
+    },
+    "CROP_BOTTOM_48": {
+      "mean": 0.9412,
+      "sd": 0.0267,
+      "min": 0.8987,
+      "max": 0.9865
+    },
+    "CROP_BOTTOM_64": {
+      "mean": 0.9051,
+      "sd": 0.0261,
+      "min": 0.8448,
+      "max": 0.9324
+    },
+    "CROP_BOTTOM_96": {
+      "mean": 0.8854,
+      "sd": 0.0268,
+      "min": 0.8407,
+      "max": 0.9231
+    },
+    "CROP_TOP_32": {
+      "mean": 0.9688,
+      "sd": 0.0232,
+      "min": 0.9161,
+      "max": 1.0
+    },
+    "CROP_TOP_48": {
+      "mean": 0.9705,
+      "sd": 0.0191,
+      "min": 0.9411,
+      "max": 1.0
+    },
+    "CROP_TOP_64": {
+      "mean": 0.9776,
+      "sd": 0.0122,
+      "min": 0.9667,
+      "max": 1.0
+    },
+    "CROP_TOP_96": {
+      "mean": 0.9836,
+      "sd": 0.0171,
+      "min": 0.9531,
+      "max": 1.0
+    },
+    "CROP_BOTTOM_0_LABELS_PERMUTED": {
+      "mean": 0.5062,
+      "sd": 0.0307,
+      "min": 0.4539,
+      "max": 0.5655
+    }
+  },
+  "reading_key": "CROP_BOTTOM_k removes the strip; CROP_TOP_k removes the same k rows from the other end and KEEPS it. If CROP_BOTTOM falls with k while CROP_TOP does not, the strip is the carrier. If both stay high, the two groups differ in SCENE CONTENT and the strip is not needed to tell them apart."
+}

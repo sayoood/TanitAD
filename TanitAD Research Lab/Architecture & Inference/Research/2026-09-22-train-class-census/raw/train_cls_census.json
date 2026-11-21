@@ -1,0 +1,115 @@
+{
+ "_what": "the TRAIN class census and the inverse-frequency weight vector for H-BOXCLS-1",
+ "_evidence_class": "MEASURED (ours), CPU, read-only over the canonical train join",
+ "_source": "C:\\Users\\Admin\\tanitad-data\\joins\\joins\\train2400_agents.jsonl.xz",
+ "_source_built": "2026-09-05",
+ "_control": {
+  "meta_summary": [
+   2308,
+   433040,
+   12122129
+  ],
+  "counted": [
+   2308,
+   433040,
+   12122129
+  ],
+  "match": true,
+  "_why": "a partial read would produce a plausible weight vector from a partial corpus"
+ },
+ "n_episodes": 2308,
+ "n_frames": 433040,
+ "n_boxes": 12112052,
+ "boxes_without_cls": 0,
+ "unknown_classes": {
+  "train_or_tram_car": 10077
+ },
+ "counts": {
+  "automobile": 9274706,
+  "heavy_truck": 357048,
+  "bus": 89781,
+  "other_vehicle": 35543,
+  "trailer": 164688,
+  "person": 1926364,
+  "rider": 190793,
+  "stroller": 13346,
+  "animal": 8659,
+  "protruding_object": 51124
+ },
+ "share": {
+  "automobile": 0.765742,
+  "heavy_truck": 0.029479,
+  "bus": 0.007413,
+  "other_vehicle": 0.002935,
+  "trailer": 0.013597,
+  "person": 0.159045,
+  "rider": 0.015752,
+  "stroller": 0.001102,
+  "animal": 0.000715,
+  "protruding_object": 0.004221
+ },
+ "imbalance_majority_to_rarest": 1071.1,
+ "majority": "automobile",
+ "rarest": "animal",
+ "WEIGHT_VECTOR_inv_freq_mean1": {
+  "animal": 4.374664,
+  "automobile": 0.004084,
+  "bus": 0.421918,
+  "heavy_truck": 0.106093,
+  "other_vehicle": 1.065757,
+  "person": 0.019664,
+  "protruding_object": 0.740948,
+  "rider": 0.198541,
+  "stroller": 2.838319,
+  "trailer": 0.230012
+ },
+ "classes_absent_in_train": [],
+ "eval_vs_train": {
+  "_question": "would a held-out EVAL split have been an acceptable proxy after all?",
+  "ratios": {
+   "animal": {
+    "eval_halfA/train": 1.082,
+    "eval_halfB/train": 1.066
+   },
+   "automobile": {
+    "eval_halfA/train": 0.7,
+    "eval_halfB/train": 1.051
+   },
+   "bus": {
+    "eval_halfA/train": 0.605,
+    "eval_halfB/train": 0.63
+   },
+   "heavy_truck": {
+    "eval_halfA/train": 0.759,
+    "eval_halfB/train": 1.714
+   },
+   "other_vehicle": {
+    "eval_halfA/train": 0.506,
+    "eval_halfB/train": 0.835
+   },
+   "person": {
+    "eval_halfA/train": 0.691,
+    "eval_halfB/train": 0.657
+   },
+   "protruding_object": {
+    "eval_halfA/train": 0.693,
+    "eval_halfB/train": 1.185
+   },
+   "rider": {
+    "eval_halfA/train": 0.461,
+    "eval_halfB/train": 0.515
+   },
+   "stroller": {
+    "eval_halfA/train": 1.24,
+    "eval_halfB/train": 0.944
+   },
+   "trailer": {
+    "eval_halfA/train": 1.075,
+    "eval_halfB/train": 1.395
+   }
+  },
+  "worst_class": "rider",
+  "max_ratio": 2.167
+ },
+ "_VERDICT": "TRAIN weight vector MEASURED on 12,112,052 boxes over 2,308 episodes; imbalance 1071.1:1 (automobile : animal). Eval-vs-train disagreement reaches 2.167x on rider — reported, not assumed."
+}

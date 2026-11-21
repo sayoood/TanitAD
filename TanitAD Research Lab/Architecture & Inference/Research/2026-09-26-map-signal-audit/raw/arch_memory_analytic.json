@@ -1,0 +1,107 @@
+{
+ "batch": 16,
+ "frame": [
+  416,
+  1024
+ ],
+ "reference_refcv6_peak_cuda_GB": 21.63,
+ "reference_refcv6_s_per_step": 6.63,
+ "note_reference": "metrics.jsonl cuda_max_mem_gb max 21.63; median s/step 6.63 over 762 log gaps",
+ "trunk_fwd_GFLOP_per_frame_approx": 66.2,
+ "trunk_fwd_TFLOP_per_step_approx (16 windows x 10 computed frames)": 10.6,
+ "refcv6_lift_0p5m_s16_Z4": {
+  "c_in": 1024,
+  "grid": [
+   120,
+   64
+  ],
+  "heights": 4,
+  "d_out": 128,
+  "sampled_tensor_GB_fp32": 1.875,
+  "saved_for_backward_GB_fp32 (1x1 conv input)": 1.875,
+  "transient_forward_peak_GB_fp32 (sample + mask + reshape copy)": 5.625,
+  "output_GB_fp32": 0.059,
+  "proj_GFLOP_fwd": 128.8,
+  "per_height_accumulated_saved_GB_fp32 (sum_h W_h s_h, recompute per height)": 0.469
+ },
+ "new2_lift_0p25m_s8_Z4": {
+  "c_in": 512,
+  "grid": [
+   240,
+   128
+  ],
+  "heights": 4,
+  "d_out": 128,
+  "sampled_tensor_GB_fp32": 3.75,
+  "saved_for_backward_GB_fp32 (1x1 conv input)": 3.75,
+  "transient_forward_peak_GB_fp32 (sample + mask + reshape copy)": 11.25,
+  "output_GB_fp32": 0.234,
+  "proj_GFLOP_fwd": 257.7,
+  "per_height_accumulated_saved_GB_fp32 (sum_h W_h s_h, recompute per height)": 0.938
+ },
+ "new2_lift_0p25m_s8_Z1_road_plane": {
+  "c_in": 512,
+  "grid": [
+   240,
+   128
+  ],
+  "heights": 1,
+  "d_out": 128,
+  "sampled_tensor_GB_fp32": 0.938,
+  "saved_for_backward_GB_fp32 (1x1 conv input)": 0.938,
+  "transient_forward_peak_GB_fp32 (sample + mask + reshape copy)": 2.812,
+  "output_GB_fp32": 0.234,
+  "proj_GFLOP_fwd": 64.4,
+  "per_height_accumulated_saved_GB_fp32 (sum_h W_h s_h, recompute per height)": 0.938
+ },
+ "new2_lift_0p25m_s8_plus_s16_Z1": {
+  "c_in": 1536,
+  "grid": [
+   240,
+   128
+  ],
+  "heights": 1,
+  "d_out": 128,
+  "sampled_tensor_GB_fp32": 2.812,
+  "saved_for_backward_GB_fp32 (1x1 conv input)": 2.812,
+  "transient_forward_peak_GB_fp32 (sample + mask + reshape copy)": 8.438,
+  "output_GB_fp32": 0.234,
+  "proj_GFLOP_fwd": 193.3,
+  "per_height_accumulated_saved_GB_fp32 (sum_h W_h s_h, recompute per height)": 2.812
+ },
+ "decoder_10cm_assumed": {
+  "ASSUMED": true,
+  "c_dec": 64,
+  "c_up": 32,
+  "saved_GB_fp32 (2 convs at 240x128 + 2 at 600x320 + norms/acts ~x2)": 1.934,
+  "logits_GB_fp32": 0.092,
+  "log_softmax+grad_GB_fp32": 0.183,
+  "GFLOP_fwd": 187.3
+ },
+ "options": {
+  "a_keep_0p5m_aux (refcv6 lift + NEW-2 lift + decoder)": {
+   "added_saved_GB_vs_refcv6 (Z4 / Z1 map lift)": [
+    5.87,
+    3.05
+   ],
+   "added_proj_GFLOP_fwd (Z4 / Z1)": [
+    257.7,
+    64.4
+   ]
+  },
+  "b_remove_0p5m (NEW-2 lift + decoder; the 0.5 m lift stays for box3d/planner unless also removed)": {
+   "added_saved_GB_vs_refcv6 (Z4 / Z1)": [
+    5.87,
+    3.05
+   ],
+   "note": "removing only the 0.5 m LOSS saves nothing: the 0.5 m lift + BEV encoder still feed box3d, the 30x16 BEV tokens and the planner's cross-attention"
+  },
+  "c_one_0p25m_lift_feeding_both (pooled 120x64 for planner/box3d/tokens)": {
+   "added_saved_GB_vs_refcv6 (Z4 / Z1)": [
+    3.99,
+    1.18
+   ],
+   "note": "the stride-16 0.5 m lift is removed; the planner-facing BEV then comes from the stride-8 map (512 ch, layer2) instead of the stride-16 map (1024 ch, layer3)"
+  }
+ }
+}

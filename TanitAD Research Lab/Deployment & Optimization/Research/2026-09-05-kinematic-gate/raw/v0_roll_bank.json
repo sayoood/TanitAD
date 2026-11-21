@@ -1,0 +1,279 @@
+{
+  "tool": "2026-09-05-kinematic-gate/raw/v0_roll_bank_probe.py",
+  "tier": "T0",
+  "purpose": "RULE ZERO next arm #2 for D-DECODE-DISP-FRONTIER-1",
+  "operation": "constant-speed re-integration of each anchor's heading-vs-arc profile at the window's own v0 -- a stand-in for roll_bank's control-space roll on a bank that stores WAYPOINTS",
+  "anchors_key": "core.decoder.anchors",
+  "n_windows": 400,
+  "n_candidates": 128,
+  "dt_s": 0.5,
+  "v0_mean_ms": 11.425098419189453,
+  "anchor_own_speed_mean_ms": 20.684297561645508,
+  "anchor_own_speed_min_ms": 1.731564998626709,
+  "anchor_own_speed_max_ms": 32.80714416503906,
+  "controls": {
+    "C1_lambda1": {
+      "fixed": 4.178901195526123,
+      "rolled": 4.178901195526123,
+      "PASS": true
+    },
+    "C2_object": {
+      "peak_g_ours": 0.48078182339668274,
+      "peak_g_ref": 0.4807818531990051,
+      "envelope_ours": 0.015625,
+      "envelope_ref": 0.015625,
+      "reference_artifact": "C:/Users/Admin/veto_run/raw/bank_vs_fan_feasibility.json",
+      "PASS": true
+    },
+    "C3_roll_is_noop_at_own_speed": {
+      "all_anchors_mean_node_error_m": 0.8541361689567566,
+      "all_anchors_max_node_error_m": 6.762371063232422,
+      "C3a_near_constant_speed_subset": {
+        "n_anchors": 34,
+        "of": 128,
+        "criterion": "per-anchor step-length coefficient of variation < 0.05",
+        "mean_node_error_m": 0.7544722557067871,
+        "max_node_error_m": 2.8331503868103027,
+        "PASS": false
+      },
+      "C3b_synthetic_constant_speed_arc": {
+        "max_node_error_m": 0.03173535317182541,
+        "PASS": false,
+        "why": "a known-answer case: C3a on a subset could pass by luck, this cannot"
+      },
+      "C3c_diagnostic": {
+        "speed_cv_mean": 0.0980922058224678,
+        "speed_cv_max": 0.6563695669174194,
+        "note": "a CONSTANT-speed roll cannot reproduce a VARIABLE-speed anchor; the all-anchor error is a function of speed variation, not of the integrator, which is why C3a/C3b are the admissible controls"
+      },
+      "PASS": false,
+      "gates_the_rolled_sweep": true,
+      "why": "re-integrating a CONSTANT-speed path at its own speed must return that path; without it a broken integrator would look like a finding"
+    }
+  },
+  "rolled_sweep_admissible": false,
+  "sweep_fixed_bank": [
+    {
+      "lambda": 0.0,
+      "mean_abs_disp_m": 0.0,
+      "fan_envelope": 0.015625,
+      "fan_off_reach": 0.7821875214576721,
+      "fan_peak_g": 0.48078182339668274,
+      "fan_infeasible": 0.8070117235183716,
+      "oracle_ade_m": 1.0984961986541748,
+      "sel_ade_m": 3.9824187755584717
+    },
+    {
+      "lambda": 0.1,
+      "mean_abs_disp_m": 0.6882988214492798,
+      "fan_envelope": 0.2284570336341858,
+      "fan_off_reach": 0.76123046875,
+      "fan_peak_g": 0.550640344619751,
+      "fan_infeasible": 0.7878515720367432,
+      "oracle_ade_m": 1.0000011920928955,
+      "sel_ade_m": 3.590463638305664
+    },
+    {
+      "lambda": 0.2,
+      "mean_abs_disp_m": 1.3765976428985596,
+      "fan_envelope": 0.5425390601158142,
+      "fan_off_reach": 0.7346289157867432,
+      "fan_peak_g": 0.7274207472801208,
+      "fan_infeasible": 0.7706054449081421,
+      "oracle_ade_m": 0.901017427444458,
+      "sel_ade_m": 3.1999006271362305
+    },
+    {
+      "lambda": 0.3,
+      "mean_abs_disp_m": 2.06489634513855,
+      "fan_envelope": 0.6781836152076721,
+      "fan_off_reach": 0.6983984112739563,
+      "fan_peak_g": 0.9564013481140137,
+      "fan_infeasible": 0.7652148604393005,
+      "oracle_ade_m": 0.8015748858451843,
+      "sel_ade_m": 2.811033248901367
+    },
+    {
+      "lambda": 0.4,
+      "mean_abs_disp_m": 2.753195285797119,
+      "fan_envelope": 0.7433007955551147,
+      "fan_off_reach": 0.6510546803474426,
+      "fan_peak_g": 1.2165406942367554,
+      "fan_infeasible": 0.7847851514816284,
+      "oracle_ade_m": 0.7021318674087524,
+      "sel_ade_m": 2.42463755607605
+    },
+    {
+      "lambda": 0.5,
+      "mean_abs_disp_m": 3.441493511199951,
+      "fan_envelope": 0.787109375,
+      "fan_off_reach": 0.5862500071525574,
+      "fan_peak_g": 1.5234490633010864,
+      "fan_infeasible": 0.8101757764816284,
+      "oracle_ade_m": 0.6027944684028625,
+      "sel_ade_m": 2.041971445083618
+    },
+    {
+      "lambda": 0.6,
+      "mean_abs_disp_m": 4.1297926902771,
+      "fan_envelope": 0.8179687261581421,
+      "fan_off_reach": 0.5053906440734863,
+      "fan_peak_g": 1.9625805616378784,
+      "fan_infeasible": 0.8318945169448853,
+      "oracle_ade_m": 0.5048737525939941,
+      "sel_ade_m": 1.6657620668411255
+    },
+    {
+      "lambda": 0.7,
+      "mean_abs_disp_m": 4.81809139251709,
+      "fan_envelope": 0.8417382836341858,
+      "fan_off_reach": 0.40345704555511475,
+      "fan_peak_g": 2.5965569019317627,
+      "fan_infeasible": 0.8504101634025574,
+      "oracle_ade_m": 0.41190850734710693,
+      "sel_ade_m": 1.298493504524231
+    },
+    {
+      "lambda": 0.8,
+      "mean_abs_disp_m": 5.506390571594238,
+      "fan_envelope": 0.8610742092132568,
+      "fan_off_reach": 0.2878125011920929,
+      "fan_peak_g": 3.301729679107666,
+      "fan_infeasible": 0.8674023151397705,
+      "oracle_ade_m": 0.32260552048683167,
+      "sel_ade_m": 0.948579728603363
+    },
+    {
+      "lambda": 0.9,
+      "mean_abs_disp_m": 6.194688320159912,
+      "fan_envelope": 0.8755664229393005,
+      "fan_off_reach": 0.1838085949420929,
+      "fan_peak_g": 3.900716781616211,
+      "fan_infeasible": 0.8803320527076721,
+      "oracle_ade_m": 0.24931852519512177,
+      "sel_ade_m": 0.6347216963768005
+    },
+    {
+      "lambda": 1.0,
+      "mean_abs_disp_m": 6.882987022399902,
+      "fan_envelope": 0.8878710865974426,
+      "fan_off_reach": 0.10941406339406967,
+      "fan_peak_g": 4.178901195526123,
+      "fan_infeasible": 0.8916015625,
+      "oracle_ade_m": 0.20633918046951294,
+      "sel_ade_m": 0.4486265480518341
+    }
+  ],
+  "sweep_v0_rolled_bank": [
+    {
+      "lambda": 0.0,
+      "mean_abs_disp_m": 0.0,
+      "fan_envelope": 0.0009179687476716936,
+      "fan_off_reach": 0.0,
+      "fan_peak_g": 0.24807137250900269,
+      "fan_infeasible": 0.08560547232627869,
+      "oracle_ade_m": 0.4714607000350952,
+      "sel_ade_m": 0.6925495862960815
+    },
+    {
+      "lambda": 0.1,
+      "mean_abs_disp_m": 0.28595879673957825,
+      "fan_envelope": 0.267578125,
+      "fan_off_reach": 0.0,
+      "fan_peak_g": 0.4529811143875122,
+      "fan_infeasible": 0.33921873569488525,
+      "oracle_ade_m": 0.3546968698501587,
+      "sel_ade_m": 0.6454774737358093
+    },
+    {
+      "lambda": 0.2,
+      "mean_abs_disp_m": 0.5719175934791565,
+      "fan_envelope": 0.5766991972923279,
+      "fan_off_reach": 0.0001367187505820766,
+      "fan_peak_g": 0.728422224521637,
+      "fan_infeasible": 0.6270312666893005,
+      "oracle_ade_m": 0.33924487233161926,
+      "sel_ade_m": 0.6007463932037354
+    },
+    {
+      "lambda": 0.3,
+      "mean_abs_disp_m": 0.8578764200210571,
+      "fan_envelope": 0.6798242330551147,
+      "fan_off_reach": 0.003535156138241291,
+      "fan_peak_g": 1.0707532167434692,
+      "fan_infeasible": 0.713574230670929,
+      "oracle_ade_m": 0.3212529718875885,
+      "sel_ade_m": 0.5590634346008301
+    },
+    {
+      "lambda": 0.4,
+      "mean_abs_disp_m": 1.143835186958313,
+      "fan_envelope": 0.7381445169448853,
+      "fan_off_reach": 0.008671875111758709,
+      "fan_peak_g": 1.4646992683410645,
+      "fan_infeasible": 0.7638086080551147,
+      "oracle_ade_m": 0.29854971170425415,
+      "sel_ade_m": 0.5220283269882202
+    },
+    {
+      "lambda": 0.5,
+      "mean_abs_disp_m": 1.4297939538955688,
+      "fan_envelope": 0.7816406488418579,
+      "fan_off_reach": 0.01953125,
+      "fan_peak_g": 1.8956025838851929,
+      "fan_infeasible": 0.80078125,
+      "oracle_ade_m": 0.27630379796028137,
+      "sel_ade_m": 0.49075430631637573
+    },
+    {
+      "lambda": 0.6,
+      "mean_abs_disp_m": 1.7157528400421143,
+      "fan_envelope": 0.8149804472923279,
+      "fan_off_reach": 0.03505859524011612,
+      "fan_peak_g": 2.372070074081421,
+      "fan_infeasible": 0.8274609446525574,
+      "oracle_ade_m": 0.25590845942497253,
+      "sel_ade_m": 0.46570464968681335
+    },
+    {
+      "lambda": 0.7,
+      "mean_abs_disp_m": 2.001711368560791,
+      "fan_envelope": 0.8413281440734863,
+      "fan_off_reach": 0.052519530057907104,
+      "fan_peak_g": 2.8594183921813965,
+      "fan_infeasible": 0.8496484160423279,
+      "oracle_ade_m": 0.2371421605348587,
+      "sel_ade_m": 0.44791221618652344
+    },
+    {
+      "lambda": 0.8,
+      "mean_abs_disp_m": 2.287670373916626,
+      "fan_envelope": 0.8608202934265137,
+      "fan_off_reach": 0.07146484404802322,
+      "fan_peak_g": 3.3271656036376953,
+      "fan_infeasible": 0.8670117259025574,
+      "oracle_ade_m": 0.2189638465642929,
+      "sel_ade_m": 0.4380265176296234
+    },
+    {
+      "lambda": 0.9,
+      "mean_abs_disp_m": 2.573629140853882,
+      "fan_envelope": 0.8759179711341858,
+      "fan_off_reach": 0.09154296666383743,
+      "fan_peak_g": 3.766758441925049,
+      "fan_infeasible": 0.8806445598602295,
+      "oracle_ade_m": 0.2082798033952713,
+      "sel_ade_m": 0.4381316006183624
+    },
+    {
+      "lambda": 1.0,
+      "mean_abs_disp_m": 2.8595879077911377,
+      "fan_envelope": 0.8878710865974426,
+      "fan_off_reach": 0.10941406339406967,
+      "fan_peak_g": 4.178901195526123,
+      "fan_infeasible": 0.8916015625,
+      "oracle_ade_m": 0.20633918046951294,
+      "sel_ade_m": 0.4486265480518341
+    }
+  ]
+}

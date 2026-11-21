@@ -1,0 +1,46 @@
+============================= test session starts =============================
+platform win32 -- Python 3.14.5, pytest-9.2.0, pluggy-1.7.0
+rootdir: F:\TanitAD-scratch\rollhist\build\b3gate
+collected 37 items
+
+test_dscale10k_check_rh.py .F.F.................................         [100%]
+
+================================== FAILURES ===================================
+______________________ test_wrong_declared_token_refused ______________________
+
+rig = <test_dscale10k_check_rh.Rig object at 0x000001FBE0EE91D0>
+
+    def test_wrong_declared_token_refused(rig):
+        pr, _ = rig.mint("RH", token="causal_g1")                       # CLI token disagrees with the argv's declaration
+        assert pr and refused_by(pr, "C-ARGV"), pr
+        pr, _ = rig.mint("RH", token="causal_g2x")                      # not one of the two readouts
+        assert pr and refused_by(pr, "C-ARGV"), pr
+        wrong = rig.setf(rig.rh_toks, "--dagger-bank-readout", "causal_g0.5")         # argv declares a readout the bank was not generated under
+        pr, _ = rig.mint("RH", rh_toks=wrong, token="causal_g0.5")
+        assert pr and refused_by(pr, "C-ARGV"), pr
+        # the argv and the CLI both say causal_g1x but the bank was generated WITHOUT --path-exec (causal_g1): the bank's record decides
+        rig.make_bank("causal_g1")
+        rh = rig.make_rh("causal_g1x")
+        pr, _ = rig.mint("RH", rh_toks=rh, token="causal_g1x")
+>       assert pr and refused_by(pr, "C-RH-BANKGEN"), pr
+E       AssertionError: []
+E       assert ([])
+
+test_dscale10k_check_rh.py:279: AssertionError
+______________ test_bank_header_without_generator_record_refused ______________
+
+rig = <test_dscale10k_check_rh.Rig object at 0x000001FBE0ECC510>
+
+    def test_bank_header_without_generator_record_refused(rig):
+        rig.make_bank("causal_g1x", with_generator=False)
+        rh = rig.make_rh("causal_g1x")
+        pr, _ = rig.mint("RH", rh_toks=rh)
+>       assert pr and refused_by(pr, "C-RH-BANKGEN"), pr
+E       AssertionError: []
+E       assert ([])
+
+test_dscale10k_check_rh.py:297: AssertionError
+=========================== short test summary info ===========================
+FAILED test_dscale10k_check_rh.py::test_wrong_declared_token_refused - Assert...
+FAILED test_dscale10k_check_rh.py::test_bank_header_without_generator_record_refused
+======================== 2 failed, 35 passed in 10.38s ========================

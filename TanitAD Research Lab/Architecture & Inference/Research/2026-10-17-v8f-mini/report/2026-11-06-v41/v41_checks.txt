@@ -1,0 +1,35 @@
+# report v41 checks, tip bd98063d3067018a3bbf5710541be516f35eb490
+
+PASS v40 inputs are the landed deliverables (sha256)
+PASS html = page template with the v41 md
+PASS LF only, no BOM (md and html)
+PASS removed lines from v40: exactly the 4 edited lines, each key matched once (status line, abstract recovery bullet, abstract next bullet, the 7.40.6 A4 pointer) (4 removed; unexpected []; hits [1, 1, 1, 1])
+PASS order: 7.40.7 < 7.41 < 7.41.1 to 7.41.7 < section 8, each heading once
+PASS every table line of 7.41 is a line of a level-floor source file (a bare pipe inside a cell escaped); the only other added table lines are rows 1ba, 1bb and 1bc (413 table lines in 7.41 = 413 expanded directive lines; 169 source files)
+PASS every table of 7.41 has one cell count; rows 1ba, 1bb and 1bc have the cell count of row 1az
+PASS italic quotations of 25+ characters in the added lines verbatim in a source (level-floor files, register, v40) (198 quotations)
+PASS each of the four metric families named in 7.41 at least 3 times [242, 201, 72, 102]
+PASS T1-kin, the paired episode-cluster bootstrap, B = 2,000, eval-141 and H-ESTIM-SEED-1 stated in 7.41
+PASS evidence classes [M], [E] and [H] in 7.41
+PASS the forbidden two-word T2 wording (either separator) is absent from every added line and every part file; the count of the carried v40 text is untouched (v40 15, v41 15)
+PASS banned-word scan: none new in the added lines (net of the 4 edited lines) or in the part files; per-word counts of the whole report unchanged against v40 (v40 [0, 0, 7, 0, 0, 8, 0], v41 [0, 0, 7, 0, 0, 8, 0])
+PASS exactly one display equation added (the operator F_B), no other dollar sign; math span counts as in v40 plus that one equation (692 dollar signs)
+PASS 8.3 has Update (v41) before Update (v40) before Update (v39) before Update (v38) before Update (v37), each once
+PASS 8.1 ends with item 31: the v40 items (ending at 30) are untouched and item 31 follows
+PASS section 9 ends with item 19 (v41 reads and their limits), after item 18
+PASS 8.4 has rows 1ba, 1bb and 1bc once each, after row 1az and before row 2
+PASS status line names v41 of 2026-11-06, the tip, §7.41, A4 to A6; no date after 2026-11-06 anywhere
+PASS no stale pointer: 'A4's result is not in v40.' is gone and 7.40.6 points to 7.41.1; v40 is named as the previous version
+PASS added numbers agree with the raw LFO, LF5 and LF6 JSON (shares closed, ADE6 deltas), the labels and joint readings are the JSON's, and no counted DOMINANT or estimator signal in either joint reading (0.126 / 0.132; 0.738 / 0.739; 0.710 / 0.660; 0.712 / 0.638; 0.899 / 0.783)
+PASS the ceiling arms are disclosed as inadmissible everywhere they are named: 7.41 says CEILING, inadmissible at inference and never a driving result; the shared v41 sentence says ceiling diagnostic, inadmissible at inference and never driving results; it occurs 5 times
+PASS LF only for every .py, .md, .sh, .js and .txt file of the package (CR counted in python) (15 files; with CR: [])
+PASS patch_v41.py re-run reproduces both deliverables byte for byte ', 'A6D': 'd080896a', 'A6R1': 'c59e7b85', 'LF6': 'c59e7b85', 'T2S': 'bd98063d'} placeholders left []
+PASS each family-count line of 7.41 (9 lines) equals an independent recount of the table above it (mismatch: [])
+PASS PLACEHOLDERS: no `{{` remains in out/ (md and html) (0 occurrences)
+
+RESULT: PASS (26 checks, 0 failed)
+
+== numbers audit (audit_v41.py): added non-table lines: 190; sources scanned: 883 files (+ register, + v40 text); tokens found in a source (first match, by file): 2026-11-02-feas2-t1/HANDOFF.md 302, 2026-11-02-feas2-t1/PREREG_FEAS3_FROZEN.md 190, 2026-11-02-feas2-t1/RESULTS.md 106, 2026-11-02-gapdecomp-m/RESULTS.md 75, 2026-11-02-feas2-t1/PREREG_FROZEN.md 59, 2026-11-02-feas2-t1/RESULTS_FEAS3.md 36, 2026-11-06-levelfloor-a5-lf5-result/lf5_read/RESULTS.md 29, 2026-11-06-levelfloor-a6-lf6-result/lf6_read/RESULTS.md 27, 2026-11-02-histswap-lf/RESULTS.md 26, 2026-11-02-feas2-t1/raw/PRECHECK_ATTRIBUTION.json 25, 2026-11-02-feas2-t1/FROZEN_SHA.txt 24, register 24 ...; structural (integers below 100, years, ids): 0; unmatched: 0
+== offline render (the template's own pre-processing + local marked; v40 baseline: see report_v40/v40_render_check.txt):
+   {"file":"v8f_report.html","tables":259,"h3":57,"math":324,"tables_with_ragged_rows":0,"pre_blocks":0,"slots_rendered":0,"stray_placeholders":0,"unfilled_braces":0}
+   {"file":"V8F_SCIENTIFIC_REPORT.md","tables":259,"h3":57,"math":324,"tables_with_ragged_rows":0,"pre_blocks":0,"slots_rendered":0,"stray_placeholders":0,"unfilled_braces":0}

@@ -1,0 +1,1335 @@
+{
+ "task": "B1 EVAL agent join -> 3-D (center_z, size_z) for refcv6 SPEC v2 section 6",
+ "_evidence_class": "MEASURED (ours; artifact = the jsonl + this meta)",
+ "builder": "stack/scripts/build_b1_agent_join_3d.py",
+ "derived_from": {
+  "join_2d": "b1eval_agents.jsonl.xz",
+  "join_2d_md5": "3ddb42ecbd3926066795a94587af2aed",
+  "relation": "ANNOTATION, not rebuild: every line, key, field, agent and byte of the 2-D join is carried; cz and h are APPENDED to each agent dict"
+ },
+ "key": {
+  "fields": [
+   "clip_id",
+   "frame"
+  ],
+  "frame_index_space": "RAW v2ep index -- UNCHANGED from the 2-D join (this builder never computes a frame)",
+  "also_emitted": "frame_idx (post-n_stack-trim), carried through"
+ },
+ "added_fields": {
+  "cz": "cuboid CENTRE height in the rig frame, metres, +z UP, z = 0 is the road plane (see convention below)",
+  "h": "cuboid height = obstacle.offline size_z, metres",
+  "rounding": {
+   "cz": 4,
+   "h": 3
+  },
+  "base_face": "cz - h/2  (NOT cz)"
+ },
+ "convention_verdict": {
+  "center_z_is": "the cuboid CENTRE",
+  "frame": "rig, +x fwd +y LEFT +z UP, origin rear axle on the road plane (bev-lidar-gt-b1eval meta.frame_convention)",
+  "verified_against": "the banked LiDAR BEV GT's own per-clip ground_peak_z_m -- an independent sensor and pipeline, VERIFICATION ONLY",
+  "retraction_addressed": "RETRACTION_LOG.md:15278"
+ },
+ "args": {
+  "obstacle_dir": "<obstacle_dir>",
+  "tol_s": 0.06,
+  "bevgt_dir": "<bevgt_dir>",
+  "eps_dir": "<eps_dir>",
+  "ego_dir": "<ego_dir>",
+  "lead_block": "<lead_block>",
+  "mutate": "<mutate>",
+  "limit_lines": null
+ },
+ "time_base": {
+  "mode": "exact (register_poses_to_time re-run)",
+  "why": "MEASURED on the first smoke run: the rounded t_s leaves 19 picks per 400 lines within 1e-4 s of a tie, worst case two candidate samples 101 ms apart with 0.714 m between their z",
+  "sources": {
+   "register_poses_to_time": 138,
+   "lead_block_t0_s": 1
+  }
+ },
+ "summary": {
+  "n_lines": 26394,
+  "n_clips": 139,
+  "n_agents": 905512,
+  "n_agents_with_zh": 905512,
+  "n_agents_without_zh": 0,
+  "zh_coverage": 1.0,
+  "n_clip_loads": 139,
+  "wall_s": 78.8,
+  "md5": "ff0e68fd41e86f6a30180ff6173b0685"
+ },
+ "per_clip": {
+  "0dfe63214bc2": {
+   "n_lines": 200,
+   "n_agents": 2394,
+   "n_zh": 2394,
+   "n_rows": 2417,
+   "time_source": "register_poses_to_time"
+  },
+  "c64f0103aece": {
+   "n_lines": 200,
+   "n_agents": 10924,
+   "n_zh": 10924,
+   "n_rows": 11034,
+   "time_source": "register_poses_to_time"
+  },
+  "54e3dc4b3ae4": {
+   "n_lines": 200,
+   "n_agents": 1829,
+   "n_zh": 1829,
+   "n_rows": 1845,
+   "time_source": "register_poses_to_time"
+  },
+  "d0c6db065fa0": {
+   "n_lines": 199,
+   "n_agents": 3598,
+   "n_zh": 3598,
+   "n_rows": 3639,
+   "time_source": "register_poses_to_time"
+  },
+  "c8831556989f": {
+   "n_lines": 133,
+   "n_agents": 548,
+   "n_zh": 548,
+   "n_rows": 550,
+   "time_source": "register_poses_to_time"
+  },
+  "bfc3a203bd06": {
+   "n_lines": 200,
+   "n_agents": 2785,
+   "n_zh": 2785,
+   "n_rows": 2849,
+   "time_source": "register_poses_to_time"
+  },
+  "b435685d40c8": {
+   "n_lines": 200,
+   "n_agents": 30989,
+   "n_zh": 30989,
+   "n_rows": 31189,
+   "time_source": "register_poses_to_time"
+  },
+  "47f22ccd6fbb": {
+   "n_lines": 198,
+   "n_agents": 478,
+   "n_zh": 478,
+   "n_rows": 478,
+   "time_source": "register_poses_to_time"
+  },
+  "ea6d261f6c62": {
+   "n_lines": 199,
+   "n_agents": 410,
+   "n_zh": 410,
+   "n_rows": 413,
+   "time_source": "register_poses_to_time"
+  },
+  "42cc086733d8": {
+   "n_lines": 195,
+   "n_agents": 260,
+   "n_zh": 260,
+   "n_rows": 260,
+   "time_source": "register_poses_to_time"
+  },
+  "d4c144f52747": {
+   "n_lines": 199,
+   "n_agents": 546,
+   "n_zh": 546,
+   "n_rows": 546,
+   "time_source": "register_poses_to_time"
+  },
+  "7f6670448ef6": {
+   "n_lines": 201,
+   "n_agents": 18054,
+   "n_zh": 18054,
+   "n_rows": 18174,
+   "time_source": "register_poses_to_time"
+  },
+  "7e5dc4ad4e52": {
+   "n_lines": 200,
+   "n_agents": 7430,
+   "n_zh": 7430,
+   "n_rows": 7496,
+   "time_source": "register_poses_to_time"
+  },
+  "d75f38babcda": {
+   "n_lines": 200,
+   "n_agents": 6074,
+   "n_zh": 6074,
+   "n_rows": 6101,
+   "time_source": "register_poses_to_time"
+  },
+  "bb62d9b15ef0": {
+   "n_lines": 199,
+   "n_agents": 9502,
+   "n_zh": 9502,
+   "n_rows": 9616,
+   "time_source": "register_poses_to_time"
+  },
+  "37616735658b": {
+   "n_lines": 200,
+   "n_agents": 6141,
+   "n_zh": 6141,
+   "n_rows": 6259,
+   "time_source": "register_poses_to_time"
+  },
+  "c45d6a86ff06": {
+   "n_lines": 200,
+   "n_agents": 3845,
+   "n_zh": 3845,
+   "n_rows": 3876,
+   "time_source": "register_poses_to_time"
+  },
+  "5a393f328725": {
+   "n_lines": 200,
+   "n_agents": 5609,
+   "n_zh": 5609,
+   "n_rows": 5641,
+   "time_source": "register_poses_to_time"
+  },
+  "c167e6ce11a3": {
+   "n_lines": 200,
+   "n_agents": 3711,
+   "n_zh": 3711,
+   "n_rows": 3745,
+   "time_source": "register_poses_to_time"
+  },
+  "af59c57f6c77": {
+   "n_lines": 200,
+   "n_agents": 19382,
+   "n_zh": 19382,
+   "n_rows": 19581,
+   "time_source": "register_poses_to_time"
+  },
+  "e01bd05b8e43": {
+   "n_lines": 200,
+   "n_agents": 14052,
+   "n_zh": 14052,
+   "n_rows": 14219,
+   "time_source": "register_poses_to_time"
+  },
+  "209199ce8280": {
+   "n_lines": 200,
+   "n_agents": 5626,
+   "n_zh": 5626,
+   "n_rows": 5724,
+   "time_source": "register_poses_to_time"
+  },
+  "f81131bdf928": {
+   "n_lines": 200,
+   "n_agents": 5893,
+   "n_zh": 5893,
+   "n_rows": 6023,
+   "time_source": "register_poses_to_time"
+  },
+  "ac6745ace7ec": {
+   "n_lines": 200,
+   "n_agents": 2541,
+   "n_zh": 2541,
+   "n_rows": 2565,
+   "time_source": "register_poses_to_time"
+  },
+  "6ad168dc58db": {
+   "n_lines": 200,
+   "n_agents": 23678,
+   "n_zh": 23678,
+   "n_rows": 23792,
+   "time_source": "register_poses_to_time"
+  },
+  "418a12591a39": {
+   "n_lines": 199,
+   "n_agents": 835,
+   "n_zh": 835,
+   "n_rows": 858,
+   "time_source": "register_poses_to_time"
+  },
+  "2ccc9a947611": {
+   "n_lines": 199,
+   "n_agents": 5873,
+   "n_zh": 5873,
+   "n_rows": 5914,
+   "time_source": "register_poses_to_time"
+  },
+  "09f53befdab2": {
+   "n_lines": 200,
+   "n_agents": 17665,
+   "n_zh": 17665,
+   "n_rows": 17878,
+   "time_source": "register_poses_to_time"
+  },
+  "34765c024267": {
+   "n_lines": 200,
+   "n_agents": 14895,
+   "n_zh": 14895,
+   "n_rows": 15155,
+   "time_source": "register_poses_to_time"
+  },
+  "50da1e13e4db": {
+   "n_lines": 200,
+   "n_agents": 20277,
+   "n_zh": 20277,
+   "n_rows": 20384,
+   "time_source": "register_poses_to_time"
+  },
+  "fcc9209b8e83": {
+   "n_lines": 199,
+   "n_agents": 4436,
+   "n_zh": 4436,
+   "n_rows": 4528,
+   "time_source": "register_poses_to_time"
+  },
+  "f2c6a9c84795": {
+   "n_lines": 199,
+   "n_agents": 1691,
+   "n_zh": 1691,
+   "n_rows": 1724,
+   "time_source": "register_poses_to_time"
+  },
+  "9d92cb2360a4": {
+   "n_lines": 200,
+   "n_agents": 3387,
+   "n_zh": 3387,
+   "n_rows": 3410,
+   "time_source": "register_poses_to_time"
+  },
+  "67e3568c2eda": {
+   "n_lines": 200,
+   "n_agents": 5281,
+   "n_zh": 5281,
+   "n_rows": 5325,
+   "time_source": "register_poses_to_time"
+  },
+  "53dea87e5f81": {
+   "n_lines": 199,
+   "n_agents": 1264,
+   "n_zh": 1264,
+   "n_rows": 1276,
+   "time_source": "register_poses_to_time"
+  },
+  "4888dcd27dc8": {
+   "n_lines": 200,
+   "n_agents": 6302,
+   "n_zh": 6302,
+   "n_rows": 6288,
+   "time_source": "register_poses_to_time"
+  },
+  "e0f97cf3262a": {
+   "n_lines": 198,
+   "n_agents": 996,
+   "n_zh": 996,
+   "n_rows": 997,
+   "time_source": "register_poses_to_time"
+  },
+  "59d98b34ae8b": {
+   "n_lines": 200,
+   "n_agents": 1774,
+   "n_zh": 1774,
+   "n_rows": 1784,
+   "time_source": "register_poses_to_time"
+  },
+  "062d0d6e9791": {
+   "n_lines": 140,
+   "n_agents": 79,
+   "n_zh": 79,
+   "n_rows": 78,
+   "time_source": "register_poses_to_time"
+  },
+  "6adc10f58460": {
+   "n_lines": 200,
+   "n_agents": 2065,
+   "n_zh": 2065,
+   "n_rows": 2081,
+   "time_source": "register_poses_to_time"
+  },
+  "9546f6d574e2": {
+   "n_lines": 200,
+   "n_agents": 438,
+   "n_zh": 438,
+   "n_rows": 460,
+   "time_source": "register_poses_to_time"
+  },
+  "6b0744922620": {
+   "n_lines": 199,
+   "n_agents": 1385,
+   "n_zh": 1385,
+   "n_rows": 1413,
+   "time_source": "register_poses_to_time"
+  },
+  "c8cb0ad57519": {
+   "n_lines": 200,
+   "n_agents": 1057,
+   "n_zh": 1057,
+   "n_rows": 1083,
+   "time_source": "register_poses_to_time"
+  },
+  "c5bb9c2618da": {
+   "n_lines": 200,
+   "n_agents": 7431,
+   "n_zh": 7431,
+   "n_rows": 7466,
+   "time_source": "register_poses_to_time"
+  },
+  "98f1cf98cc38": {
+   "n_lines": 200,
+   "n_agents": 1133,
+   "n_zh": 1133,
+   "n_rows": 1148,
+   "time_source": "register_poses_to_time"
+  },
+  "dd55afb71c3d": {
+   "n_lines": 199,
+   "n_agents": 2455,
+   "n_zh": 2455,
+   "n_rows": 2464,
+   "time_source": "register_poses_to_time"
+  },
+  "f732a885f432": {
+   "n_lines": 5,
+   "n_agents": 5,
+   "n_zh": 5,
+   "n_rows": 5,
+   "time_source": "register_poses_to_time"
+  },
+  "76fc5c466b2d": {
+   "n_lines": 199,
+   "n_agents": 359,
+   "n_zh": 359,
+   "n_rows": 360,
+   "time_source": "register_poses_to_time"
+  },
+  "feccf3ba3479": {
+   "n_lines": 199,
+   "n_agents": 547,
+   "n_zh": 547,
+   "n_rows": 546,
+   "time_source": "register_poses_to_time"
+  },
+  "2efcfdb9c913": {
+   "n_lines": 200,
+   "n_agents": 5089,
+   "n_zh": 5089,
+   "n_rows": 5127,
+   "time_source": "register_poses_to_time"
+  },
+  "a4741056ff38": {
+   "n_lines": 199,
+   "n_agents": 1105,
+   "n_zh": 1105,
+   "n_rows": 1131,
+   "time_source": "register_poses_to_time"
+  },
+  "356568701781": {
+   "n_lines": 139,
+   "n_agents": 308,
+   "n_zh": 308,
+   "n_rows": 308,
+   "time_source": "register_poses_to_time"
+  },
+  "a699b49d4563": {
+   "n_lines": 199,
+   "n_agents": 19167,
+   "n_zh": 19167,
+   "n_rows": 19369,
+   "time_source": "register_poses_to_time"
+  },
+  "c0bb04e203cf": {
+   "n_lines": 199,
+   "n_agents": 97,
+   "n_zh": 97,
+   "n_rows": 94,
+   "time_source": "register_poses_to_time"
+  },
+  "198bb4517e28": {
+   "n_lines": 200,
+   "n_agents": 13788,
+   "n_zh": 13788,
+   "n_rows": 14015,
+   "time_source": "register_poses_to_time"
+  },
+  "d36583cfa3d6": {
+   "n_lines": 199,
+   "n_agents": 1197,
+   "n_zh": 1197,
+   "n_rows": 1229,
+   "time_source": "register_poses_to_time"
+  },
+  "c7e31db0a5c5": {
+   "n_lines": 200,
+   "n_agents": 17324,
+   "n_zh": 17324,
+   "n_rows": 17731,
+   "time_source": "register_poses_to_time"
+  },
+  "49f68312b36e": {
+   "n_lines": 200,
+   "n_agents": 17722,
+   "n_zh": 17722,
+   "n_rows": 18006,
+   "time_source": "register_poses_to_time"
+  },
+  "22ecc807b84c": {
+   "n_lines": 81,
+   "n_agents": 96,
+   "n_zh": 96,
+   "n_rows": 97,
+   "time_source": "register_poses_to_time"
+  },
+  "2dc00f2fb95d": {
+   "n_lines": 200,
+   "n_agents": 4523,
+   "n_zh": 4523,
+   "n_rows": 4562,
+   "time_source": "register_poses_to_time"
+  },
+  "b2ee18d21dff": {
+   "n_lines": 122,
+   "n_agents": 512,
+   "n_zh": 512,
+   "n_rows": 518,
+   "time_source": "register_poses_to_time"
+  },
+  "439646d62f3a": {
+   "n_lines": 200,
+   "n_agents": 2968,
+   "n_zh": 2968,
+   "n_rows": 2999,
+   "time_source": "register_poses_to_time"
+  },
+  "a21feba2f8b1": {
+   "n_lines": 199,
+   "n_agents": 558,
+   "n_zh": 558,
+   "n_rows": 558,
+   "time_source": "register_poses_to_time"
+  },
+  "c448fac4e230": {
+   "n_lines": 200,
+   "n_agents": 5308,
+   "n_zh": 5308,
+   "n_rows": 5342,
+   "time_source": "register_poses_to_time"
+  },
+  "68b999cbd670": {
+   "n_lines": 199,
+   "n_agents": 5545,
+   "n_zh": 5545,
+   "n_rows": 5584,
+   "time_source": "register_poses_to_time"
+  },
+  "04ed850dca64": {
+   "n_lines": 200,
+   "n_agents": 11002,
+   "n_zh": 11002,
+   "n_rows": 11195,
+   "time_source": "register_poses_to_time"
+  },
+  "9f8bedcfb9de": {
+   "n_lines": 200,
+   "n_agents": 18357,
+   "n_zh": 18357,
+   "n_rows": 18480,
+   "time_source": "register_poses_to_time"
+  },
+  "43ac3253c6a3": {
+   "n_lines": 200,
+   "n_agents": 20670,
+   "n_zh": 20670,
+   "n_rows": 20874,
+   "time_source": "register_poses_to_time"
+  },
+  "b6ba8d3b06f3": {
+   "n_lines": 200,
+   "n_agents": 8220,
+   "n_zh": 8220,
+   "n_rows": 8445,
+   "time_source": "register_poses_to_time"
+  },
+  "5c1eb051b96f": {
+   "n_lines": 199,
+   "n_agents": 5524,
+   "n_zh": 5524,
+   "n_rows": 5552,
+   "time_source": "register_poses_to_time"
+  },
+  "2b568af29b7d": {
+   "n_lines": 200,
+   "n_agents": 3921,
+   "n_zh": 3921,
+   "n_rows": 3968,
+   "time_source": "register_poses_to_time"
+  },
+  "3c1ab43d104a": {
+   "n_lines": 194,
+   "n_agents": 354,
+   "n_zh": 354,
+   "n_rows": 357,
+   "time_source": "register_poses_to_time"
+  },
+  "58f07fdb342a": {
+   "n_lines": 200,
+   "n_agents": 3522,
+   "n_zh": 3522,
+   "n_rows": 3551,
+   "time_source": "register_poses_to_time"
+  },
+  "b9622e49a9ec": {
+   "n_lines": 200,
+   "n_agents": 6644,
+   "n_zh": 6644,
+   "n_rows": 6736,
+   "time_source": "register_poses_to_time"
+  },
+  "b88f64c81aec": {
+   "n_lines": 199,
+   "n_agents": 14390,
+   "n_zh": 14390,
+   "n_rows": 14703,
+   "time_source": "register_poses_to_time"
+  },
+  "e1777e69be55": {
+   "n_lines": 199,
+   "n_agents": 3797,
+   "n_zh": 3797,
+   "n_rows": 3833,
+   "time_source": "register_poses_to_time"
+  },
+  "60f8d13ff2e2": {
+   "n_lines": 200,
+   "n_agents": 9040,
+   "n_zh": 9040,
+   "n_rows": 9186,
+   "time_source": "register_poses_to_time"
+  },
+  "5b74d23ac873": {
+   "n_lines": 200,
+   "n_agents": 2412,
+   "n_zh": 2412,
+   "n_rows": 2442,
+   "time_source": "register_poses_to_time"
+  },
+  "e902aba7fb9a": {
+   "n_lines": 200,
+   "n_agents": 16004,
+   "n_zh": 16004,
+   "n_rows": 16334,
+   "time_source": "register_poses_to_time"
+  },
+  "029d8d52075c": {
+   "n_lines": 199,
+   "n_agents": 11979,
+   "n_zh": 11979,
+   "n_rows": 12096,
+   "time_source": "register_poses_to_time"
+  },
+  "b5f66e3e7af0": {
+   "n_lines": 200,
+   "n_agents": 1728,
+   "n_zh": 1728,
+   "n_rows": 1747,
+   "time_source": "register_poses_to_time"
+  },
+  "43e797856f84": {
+   "n_lines": 199,
+   "n_agents": 255,
+   "n_zh": 255,
+   "n_rows": 258,
+   "time_source": "register_poses_to_time"
+  },
+  "22d47ae7e052": {
+   "n_lines": 200,
+   "n_agents": 5829,
+   "n_zh": 5829,
+   "n_rows": 5871,
+   "time_source": "register_poses_to_time"
+  },
+  "28b54692a103": {
+   "n_lines": 200,
+   "n_agents": 2588,
+   "n_zh": 2588,
+   "n_rows": 2609,
+   "time_source": "register_poses_to_time"
+  },
+  "9855363e1ac1": {
+   "n_lines": 199,
+   "n_agents": 11068,
+   "n_zh": 11068,
+   "n_rows": 11190,
+   "time_source": "register_poses_to_time"
+  },
+  "c16543c621dc": {
+   "n_lines": 20,
+   "n_agents": 31,
+   "n_zh": 31,
+   "n_rows": 31,
+   "time_source": "register_poses_to_time"
+  },
+  "071957186302": {
+   "n_lines": 200,
+   "n_agents": 3484,
+   "n_zh": 3484,
+   "n_rows": 3547,
+   "time_source": "register_poses_to_time"
+  },
+  "6d3b8ff6b7b2": {
+   "n_lines": 200,
+   "n_agents": 16818,
+   "n_zh": 16818,
+   "n_rows": 16873,
+   "time_source": "register_poses_to_time"
+  },
+  "c23873899e31": {
+   "n_lines": 200,
+   "n_agents": 8009,
+   "n_zh": 8009,
+   "n_rows": 8042,
+   "time_source": "register_poses_to_time"
+  },
+  "3fc7f2025d61": {
+   "n_lines": 90,
+   "n_agents": 197,
+   "n_zh": 197,
+   "n_rows": 197,
+   "time_source": "register_poses_to_time"
+  },
+  "4de594141ae4": {
+   "n_lines": 116,
+   "n_agents": 145,
+   "n_zh": 145,
+   "n_rows": 148,
+   "time_source": "register_poses_to_time"
+  },
+  "94aae24f02bf": {
+   "n_lines": 199,
+   "n_agents": 1493,
+   "n_zh": 1493,
+   "n_rows": 1535,
+   "time_source": "register_poses_to_time"
+  },
+  "081b986f8888": {
+   "n_lines": 200,
+   "n_agents": 16594,
+   "n_zh": 16594,
+   "n_rows": 16697,
+   "time_source": "lead_block_t0_s"
+  },
+  "729b5d29fa89": {
+   "n_lines": 199,
+   "n_agents": 3008,
+   "n_zh": 3008,
+   "n_rows": 3030,
+   "time_source": "register_poses_to_time"
+  },
+  "39cd356553d5": {
+   "n_lines": 199,
+   "n_agents": 3350,
+   "n_zh": 3350,
+   "n_rows": 3435,
+   "time_source": "register_poses_to_time"
+  },
+  "6c5a21de8993": {
+   "n_lines": 200,
+   "n_agents": 11006,
+   "n_zh": 11006,
+   "n_rows": 11348,
+   "time_source": "register_poses_to_time"
+  },
+  "c0d4ac1d8f62": {
+   "n_lines": 200,
+   "n_agents": 10054,
+   "n_zh": 10054,
+   "n_rows": 10184,
+   "time_source": "register_poses_to_time"
+  },
+  "ff9d2a66d2a2": {
+   "n_lines": 192,
+   "n_agents": 130,
+   "n_zh": 130,
+   "n_rows": 129,
+   "time_source": "register_poses_to_time"
+  },
+  "83df0bab7763": {
+   "n_lines": 200,
+   "n_agents": 12009,
+   "n_zh": 12009,
+   "n_rows": 12130,
+   "time_source": "register_poses_to_time"
+  },
+  "252bc8e77e06": {
+   "n_lines": 16,
+   "n_agents": 115,
+   "n_zh": 115,
+   "n_rows": 115,
+   "time_source": "register_poses_to_time"
+  },
+  "a78bf2711918": {
+   "n_lines": 200,
+   "n_agents": 14741,
+   "n_zh": 14741,
+   "n_rows": 14882,
+   "time_source": "register_poses_to_time"
+  },
+  "732422c717f1": {
+   "n_lines": 199,
+   "n_agents": 2878,
+   "n_zh": 2878,
+   "n_rows": 2911,
+   "time_source": "register_poses_to_time"
+  },
+  "77d93cd24266": {
+   "n_lines": 200,
+   "n_agents": 11665,
+   "n_zh": 11665,
+   "n_rows": 11682,
+   "time_source": "register_poses_to_time"
+  },
+  "28f6781136b1": {
+   "n_lines": 199,
+   "n_agents": 8397,
+   "n_zh": 8397,
+   "n_rows": 8452,
+   "time_source": "register_poses_to_time"
+  },
+  "f6cfd0a20340": {
+   "n_lines": 200,
+   "n_agents": 15746,
+   "n_zh": 15746,
+   "n_rows": 15980,
+   "time_source": "register_poses_to_time"
+  },
+  "356cc45b0224": {
+   "n_lines": 153,
+   "n_agents": 204,
+   "n_zh": 204,
+   "n_rows": 204,
+   "time_source": "register_poses_to_time"
+  },
+  "c4f46701b8ae": {
+   "n_lines": 199,
+   "n_agents": 3205,
+   "n_zh": 3205,
+   "n_rows": 3247,
+   "time_source": "register_poses_to_time"
+  },
+  "101ef2cf05dc": {
+   "n_lines": 200,
+   "n_agents": 349,
+   "n_zh": 349,
+   "n_rows": 353,
+   "time_source": "register_poses_to_time"
+  },
+  "03cb55890588": {
+   "n_lines": 200,
+   "n_agents": 10876,
+   "n_zh": 10876,
+   "n_rows": 10963,
+   "time_source": "register_poses_to_time"
+  },
+  "c8c6aa11d792": {
+   "n_lines": 200,
+   "n_agents": 9616,
+   "n_zh": 9616,
+   "n_rows": 9743,
+   "time_source": "register_poses_to_time"
+  },
+  "751cdd67811f": {
+   "n_lines": 200,
+   "n_agents": 27143,
+   "n_zh": 27143,
+   "n_rows": 27424,
+   "time_source": "register_poses_to_time"
+  },
+  "4b5c891e90e6": {
+   "n_lines": 179,
+   "n_agents": 148,
+   "n_zh": 148,
+   "n_rows": 146,
+   "time_source": "register_poses_to_time"
+  },
+  "00213e99adca": {
+   "n_lines": 200,
+   "n_agents": 4569,
+   "n_zh": 4569,
+   "n_rows": 4594,
+   "time_source": "register_poses_to_time"
+  },
+  "3db625a5f941": {
+   "n_lines": 199,
+   "n_agents": 9747,
+   "n_zh": 9747,
+   "n_rows": 9850,
+   "time_source": "register_poses_to_time"
+  },
+  "85ee873a6f81": {
+   "n_lines": 200,
+   "n_agents": 593,
+   "n_zh": 593,
+   "n_rows": 626,
+   "time_source": "register_poses_to_time"
+  },
+  "7695875eaea9": {
+   "n_lines": 200,
+   "n_agents": 4529,
+   "n_zh": 4529,
+   "n_rows": 4616,
+   "time_source": "register_poses_to_time"
+  },
+  "0191487845ef": {
+   "n_lines": 200,
+   "n_agents": 45084,
+   "n_zh": 45084,
+   "n_rows": 45244,
+   "time_source": "register_poses_to_time"
+  },
+  "264a78e8fad1": {
+   "n_lines": 200,
+   "n_agents": 10156,
+   "n_zh": 10156,
+   "n_rows": 10248,
+   "time_source": "register_poses_to_time"
+  },
+  "d5a67435ec19": {
+   "n_lines": 199,
+   "n_agents": 2053,
+   "n_zh": 2053,
+   "n_rows": 2069,
+   "time_source": "register_poses_to_time"
+  },
+  "eaf5c5ae236c": {
+   "n_lines": 199,
+   "n_agents": 199,
+   "n_zh": 199,
+   "n_rows": 200,
+   "time_source": "register_poses_to_time"
+  },
+  "1655838298f8": {
+   "n_lines": 199,
+   "n_agents": 3592,
+   "n_zh": 3592,
+   "n_rows": 3645,
+   "time_source": "register_poses_to_time"
+  },
+  "bbd162dfe0eb": {
+   "n_lines": 199,
+   "n_agents": 4409,
+   "n_zh": 4409,
+   "n_rows": 4425,
+   "time_source": "register_poses_to_time"
+  },
+  "d32340bd0ad0": {
+   "n_lines": 199,
+   "n_agents": 1525,
+   "n_zh": 1525,
+   "n_rows": 1530,
+   "time_source": "register_poses_to_time"
+  },
+  "cd79a917d8c4": {
+   "n_lines": 200,
+   "n_agents": 6052,
+   "n_zh": 6052,
+   "n_rows": 6176,
+   "time_source": "register_poses_to_time"
+  },
+  "547d1d68c1bd": {
+   "n_lines": 199,
+   "n_agents": 1120,
+   "n_zh": 1120,
+   "n_rows": 1134,
+   "time_source": "register_poses_to_time"
+  },
+  "e81566637c0e": {
+   "n_lines": 200,
+   "n_agents": 8110,
+   "n_zh": 8110,
+   "n_rows": 8157,
+   "time_source": "register_poses_to_time"
+  },
+  "1721df8c70b6": {
+   "n_lines": 199,
+   "n_agents": 1590,
+   "n_zh": 1590,
+   "n_rows": 1676,
+   "time_source": "register_poses_to_time"
+  },
+  "693335b810c3": {
+   "n_lines": 200,
+   "n_agents": 9121,
+   "n_zh": 9121,
+   "n_rows": 9316,
+   "time_source": "register_poses_to_time"
+  },
+  "cf8839a4e491": {
+   "n_lines": 199,
+   "n_agents": 15662,
+   "n_zh": 15662,
+   "n_rows": 15921,
+   "time_source": "register_poses_to_time"
+  },
+  "b0d17a91f120": {
+   "n_lines": 200,
+   "n_agents": 3637,
+   "n_zh": 3637,
+   "n_rows": 3663,
+   "time_source": "register_poses_to_time"
+  },
+  "4a7515667297": {
+   "n_lines": 200,
+   "n_agents": 11395,
+   "n_zh": 11395,
+   "n_rows": 11522,
+   "time_source": "register_poses_to_time"
+  },
+  "07fac416bccf": {
+   "n_lines": 199,
+   "n_agents": 3381,
+   "n_zh": 3381,
+   "n_rows": 3393,
+   "time_source": "register_poses_to_time"
+  },
+  "7be92e6870d8": {
+   "n_lines": 200,
+   "n_agents": 7154,
+   "n_zh": 7154,
+   "n_rows": 7327,
+   "time_source": "register_poses_to_time"
+  },
+  "8323b0dfdd3b": {
+   "n_lines": 199,
+   "n_agents": 981,
+   "n_zh": 981,
+   "n_rows": 1007,
+   "time_source": "register_poses_to_time"
+  },
+  "8d2cdffe0da7": {
+   "n_lines": 199,
+   "n_agents": 1456,
+   "n_zh": 1456,
+   "n_rows": 1459,
+   "time_source": "register_poses_to_time"
+  },
+  "8bc0a83f65f9": {
+   "n_lines": 66,
+   "n_agents": 480,
+   "n_zh": 480,
+   "n_rows": 480,
+   "time_source": "register_poses_to_time"
+  },
+  "2aa810802777": {
+   "n_lines": 200,
+   "n_agents": 13914,
+   "n_zh": 13914,
+   "n_rows": 14025,
+   "time_source": "register_poses_to_time"
+  },
+  "570b47ad7408": {
+   "n_lines": 199,
+   "n_agents": 1381,
+   "n_zh": 1381,
+   "n_rows": 1397,
+   "time_source": "register_poses_to_time"
+  },
+  "fb5c61fbd0d2": {
+   "n_lines": 200,
+   "n_agents": 1671,
+   "n_zh": 1671,
+   "n_rows": 1699,
+   "time_source": "register_poses_to_time"
+  }
+ },
+ "census_by_class": {
+  "animal": {
+   "n": 460,
+   "cz_median_m": 0.8046,
+   "h_median_m": 1.3325,
+   "h_p10_m": 0.7195,
+   "h_p90_m": 1.45,
+   "base_median_m": 0.2091,
+   "base_p10_m": -0.6338,
+   "base_p90_m": 2.219,
+   "ground_standing_class": false
+  },
+  "automobile": {
+   "n": 676084,
+   "cz_median_m": 0.7675,
+   "h_median_m": 1.5111,
+   "h_p10_m": 1.4595,
+   "h_p90_m": 1.7881,
+   "base_median_m": -0.0129,
+   "base_p10_m": -1.1603,
+   "base_p90_m": 1.189,
+   "ground_standing_class": true
+  },
+  "bus": {
+   "n": 8440,
+   "cz_median_m": 1.6019,
+   "h_median_m": 3.3225,
+   "h_p10_m": 3.1939,
+   "h_p90_m": 3.564,
+   "base_median_m": -0.0857,
+   "base_p10_m": -1.2107,
+   "base_p90_m": 0.9229,
+   "ground_standing_class": true
+  },
+  "heavy_truck": {
+   "n": 18300,
+   "cz_median_m": 1.7452,
+   "h_median_m": 3.5445,
+   "h_p10_m": 3.0579,
+   "h_p90_m": 4.0009,
+   "base_median_m": -0.0744,
+   "base_p10_m": -1.2416,
+   "base_p90_m": 1.058,
+   "ground_standing_class": true
+  },
+  "other_vehicle": {
+   "n": 3136,
+   "cz_median_m": 1.4043,
+   "h_median_m": 2.7011,
+   "h_p10_m": 2.2126,
+   "h_p90_m": 3.5325,
+   "base_median_m": -0.0384,
+   "base_p10_m": -0.7996,
+   "base_p90_m": 0.8794,
+   "ground_standing_class": true
+  },
+  "person": {
+   "n": 164275,
+   "cz_median_m": 0.8392,
+   "h_median_m": 1.6611,
+   "h_p10_m": 1.5904,
+   "h_p90_m": 1.7377,
+   "base_median_m": 0.0086,
+   "base_p10_m": -0.8372,
+   "base_p90_m": 0.7553,
+   "ground_standing_class": false
+  },
+  "protruding_object": {
+   "n": 3534,
+   "cz_median_m": 1.7928,
+   "h_median_m": 1.5993,
+   "h_p10_m": 0.4652,
+   "h_p90_m": 4.3538,
+   "base_median_m": 0.8671,
+   "base_p10_m": -0.1782,
+   "base_p90_m": 1.7554,
+   "ground_standing_class": false
+  },
+  "rider": {
+   "n": 22977,
+   "cz_median_m": 0.8852,
+   "h_median_m": 1.7042,
+   "h_p10_m": 1.6244,
+   "h_p90_m": 1.8095,
+   "base_median_m": 0.0468,
+   "base_p10_m": -1.1164,
+   "base_p90_m": 0.7453,
+   "ground_standing_class": false
+  },
+  "stroller": {
+   "n": 723,
+   "cz_median_m": 0.7239,
+   "h_median_m": 1.109,
+   "h_p10_m": 1.0669,
+   "h_p90_m": 1.1675,
+   "base_median_m": 0.1561,
+   "base_p10_m": -0.3332,
+   "base_p90_m": 0.4626,
+   "ground_standing_class": false
+  },
+  "trailer": {
+   "n": 7514,
+   "cz_median_m": 1.6133,
+   "h_median_m": 3.2305,
+   "h_p10_m": 1.7035,
+   "h_p90_m": 4.062,
+   "base_median_m": 0.0304,
+   "base_p10_m": -1.1761,
+   "base_p90_m": 1.4045,
+   "ground_standing_class": true
+  },
+  "train_or_tram_car": {
+   "n": 69,
+   "cz_median_m": 1.6555,
+   "h_median_m": 3.5274,
+   "h_p10_m": 3.3032,
+   "h_p90_m": 3.5868,
+   "base_median_m": -0.1082,
+   "base_p10_m": -1.7784,
+   "base_p90_m": 1.6157,
+   "ground_standing_class": true
+  }
+ },
+ "census_by_range": {
+  "note": "ground-standing vehicle BASE (cz - h/2) by ego range. rig z=0 is a FLAT plane and a road is not: read the near bins for the convention and the far bins for what grade does to it",
+  "bins": {
+   "0-20 m": {
+    "n": 86068,
+    "base_median_m": -0.0064,
+    "base_p10_m": -0.278,
+    "base_p90_m": 0.22,
+    "frac_within_0.2m": 0.7425
+   },
+   "20-40 m": {
+    "n": 145795,
+    "base_median_m": 0.0035,
+    "base_p10_m": -0.6444,
+    "base_p90_m": 0.686,
+    "frac_within_0.2m": 0.3887
+   },
+   "40-60 m": {
+    "n": 151154,
+    "base_median_m": -0.0332,
+    "base_p10_m": -1.0764,
+    "base_p90_m": 1.0749,
+    "frac_within_0.2m": 0.2458
+   },
+   "60-inf m": {
+    "n": 330526,
+    "base_median_m": -0.0434,
+    "base_p10_m": -1.6103,
+    "base_p90_m": 1.6639,
+    "frac_within_0.2m": 0.1578
+   }
+  }
+ },
+ "controls": {
+  "C1_serializer_roundtrips_the_banked_bytes": {
+   "n_lines": 26394,
+   "n_fail": 0,
+   "example": null,
+   "passed": true,
+   "gated": true
+  },
+  "C2_strip_zh_is_byte_identical_to_the_2d_line": {
+   "n_lines": 26394,
+   "n_fail": 0,
+   "example": null,
+   "scope": "ALL lines, not a sample",
+   "passed": true,
+   "gated": true
+  },
+  "C5_track_sequence_equals_the_line": {
+   "n_lines": 26394,
+   "n_fail": 0,
+   "example": null,
+   "scope": "ALL lines, membership AND order",
+   "passed": true,
+   "gated": true
+  },
+  "C6_picked_row_sizes_equal_the_line": {
+   "n_agents": 905512,
+   "n_fail": 0,
+   "example": null,
+   "passed": true,
+   "gated": true
+  },
+  "C7_a_t_s_rounding_flip_cannot_change_zh": {
+   "reach_s": 0.0001,
+   "min_tie_margin_s": 2.69e-07,
+   "n_picks_inside_reach": 924,
+   "n_picks_inside_reach_unresolved": 0,
+   "n_single_sample_tracks": 0,
+   "max_abs_dcz_over_ties_m": 1.22330379,
+   "max_abs_dh_over_ties_m": 0.0,
+   "bound_cz_m": 0.0001,
+   "bound_h_m": 0.001,
+   "example": {
+    "clip_sha12": "0dfe63214bc2",
+    "frame": 103,
+    "margin_s": 7.5618e-05,
+    "sample_gap_us": 99661,
+    "abs_dcz_m": 0.06477714,
+    "abs_dh_m": 0.0
+   },
+   "max_dt_s": 0.06,
+   "tol_s": 0.06,
+   "passed": false,
+   "gated": false,
+   "role": "DIAGNOSTIC, NOT A GATE. The rounded t_s was NOT used -- the frame time was recovered exactly (C9) -- so this control prices the route NOT taken: how far the heights could have moved had the build read the line's 4-decimal t_s instead. `passed` here is the verdict on THAT hypothetical, and it is false on purpose."
+  },
+  "C3_road_plane": {
+   "control": "C3 ground-standing base on the road plane",
+   "statistic": "median(cz - h/2) over ('automobile', 'bus', 'heavy_truck', 'other_vehicle', 'trailer', 'train_or_tram_car')",
+   "reference": "rig z = 0 IS the road plane (bev-lidar-gt-b1eval meta.ground_plane, reproduced from LiDAR returns at -0.035 m)",
+   "tol_m": 0.2,
+   "tol_source": "bev-lidar-gt-b1eval meta.content_checks.bands.ground_peak_z_m = [-0.2, +0.2] (adopted verbatim)",
+   "n": 713543,
+   "median_m": -0.01462,
+   "p10_m": -1.16082,
+   "p90_m": 1.1823,
+   "passed": true,
+   "gated": true
+  },
+  "C4_lidar_cross_check": {
+   "control": "C4 label base vs LiDAR-measured road plane (per clip)",
+   "binding": "VERIFICATION ONLY -- LiDAR is not a training target (PI)",
+   "reference": "bev-lidar-gt-b1eval-20260913 stats.ground_peak_z_m",
+   "tol_m": 0.2,
+   "available": true,
+   "n_bevgt_clips": 134,
+   "n_clips_paired": 133,
+   "n_clips_unpaired": 5,
+   "statistic": "|median(base of ground-standing vehicles) - LiDAR ground_peak_z| per clip",
+   "median_abs_m": 0.16733,
+   "p90_abs_m": 0.70448,
+   "max_abs_m": 2.9233,
+   "worst_clip_sha12": "c16543c621dc",
+   "worst_clip_delta_m": -2.9233,
+   "frac_clips_within_tol": 0.5639,
+   "near_field": {
+    "radius_m": 30.0,
+    "min_boxes_per_clip": 5,
+    "n_clips": 127,
+    "median_abs_m": 0.07724,
+    "p90_abs_m": 0.44046,
+    "max_abs_m": 3.43686,
+    "frac_clips_within_tol": 0.748
+   },
+   "passed": true,
+   "gated": true
+  },
+  "C8_rival_convention": {
+   "control": "C8 the rival convention, computed",
+   "n": 713543,
+   "if_centre_base_is_cz_minus_h2_median_m": -0.01462,
+   "if_base_then_base_is_cz_median_m": 0.78878,
+   "h_median_m": 1.51652,
+   "verdict": "CENTRE",
+   "separation_m": 0.77416,
+   "retraction_reproduced_m": -0.77287,
+   "retraction_note": "RETRACTION_LOG.md:15278 reports boxes 'about 1 m under the LiDAR ground'; that is what the BASE reading produces when a consumer subtracts h/2 from an already-base z",
+   "gated": false
+  },
+  "C9_recovered_time_is_the_banked_builders": {
+   "exact_mode": true,
+   "n_lines_on_exact_time": 26394,
+   "n_lines": 26394,
+   "time_sources": {
+    "register_poses_to_time": 138,
+    "lead_block_t0_s": 1
+   },
+   "statistic": "round(recovered t_s, 4) == the banked line's t_s",
+   "n_fail": 0,
+   "example": null,
+   "max_abs_dt_s": 0.0,
+   "passed": true,
+   "gated": true
+  }
+ },
+ "all_controls_passed": true,
+ "content_assertion": {
+  "n_lines": 26394,
+  "n_agent_boxes": 905512,
+  "n_with_zh": 905512,
+  "reread_strip_mismatches": 0,
+  "z_mean_m": 0.8261,
+  "z_std_m": 1.0289
+ },
+ "digest_scope": {
+  "algo": "md5",
+  "digest": "ff0e68fd41e86f6a30180ff6173b0685",
+  "scope": "compressed",
+  "filename": "b1eval_agents_3d.jsonl.xz",
+  "declared_by": "builder",
+  "schema": "tanitad.join_digest_scope/1"
+ },
+ "_repo_copy_note": "Sanitised copy of the artifact sidecar at TanitAD-artifacts/b1-agent-join-3d-20260917/. Only args[] paths were replaced by role placeholders; every measured number is the builders own. Clip ids appear as sha12 only."
+}

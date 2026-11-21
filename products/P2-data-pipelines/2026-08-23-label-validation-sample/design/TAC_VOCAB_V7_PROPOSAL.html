@@ -1,0 +1,314 @@
+<title>Tactical Vocabulary v7</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{
+ --ground:#F5F7FA;--panel:#FFF;--panel-2:#EDF1F6;
+ --ink:#0E1620;--ink-2:#43525F;--ink-3:#70818F;
+ --line:#D6E0E9;--line-2:#BECBD8;
+ --accent:#0057D9;--accent-soft:#E2ECFC;
+ --band:#7A3DBD;--band-soft:#F0E7FA;
+ --ok:#0F7A50;--ok-bg:#E2F3EA;--flag:#B4400C;--flag-bg:#FBE8DF;
+ --shadow:0 1px 2px rgba(14,22,32,.06),0 10px 28px -14px rgba(14,22,32,.2);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+ --ground:#0A0F14;--panel:#121A22;--panel-2:#19232D;
+ --ink:#E6EDF4;--ink-2:#A3B3C1;--ink-3:#798A98;
+ --line:#212D37;--line-2:#2F3E4B;
+ --accent:#5C9BFF;--accent-soft:#14233A;
+ --band:#B489EE;--band-soft:#1D1530;
+ --ok:#4FC08A;--ok-bg:#11281E;--flag:#FF8A5B;--flag-bg:#2D1710;
+ --shadow:0 1px 2px rgba(0,0,0,.45),0 12px 32px -16px rgba(0,0,0,.75);
+}}
+:root[data-theme="dark"]{
+ --ground:#0A0F14;--panel:#121A22;--panel-2:#19232D;
+ --ink:#E6EDF4;--ink-2:#A3B3C1;--ink-3:#798A98;
+ --line:#212D37;--line-2:#2F3E4B;
+ --accent:#5C9BFF;--accent-soft:#14233A;
+ --band:#B489EE;--band-soft:#1D1530;
+ --ok:#4FC08A;--ok-bg:#11281E;--flag:#FF8A5B;--flag-bg:#2D1710;
+ --shadow:0 1px 2px rgba(0,0,0,.45),0 12px 32px -16px rgba(0,0,0,.75);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);
+ font-family:"Source Sans 3",ui-sans-serif,system-ui,sans-serif;font-size:16px;
+ line-height:1.62;-webkit-font-smoothing:antialiased}
+.mono{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;
+ font-variant-numeric:tabular-nums}
+.wrap{max-width:1080px;margin:0 auto;padding:48px 24px 96px}
+h1,h2,h3{font-family:Archivo,ui-sans-serif,system-ui,sans-serif;text-wrap:balance;
+ margin:0;line-height:1.15;letter-spacing:-.012em}
+h1{font-size:clamp(30px,4.2vw,44px);font-weight:700}
+h2{font-size:24px;font-weight:600}
+p{margin:0}
+.eyebrow{font-family:Archivo,sans-serif;font-size:11.5px;font-weight:600;
+ letter-spacing:.16em;text-transform:uppercase;color:var(--accent)}
+.lede{max-width:70ch;color:var(--ink-2);margin-top:14px;font-size:17px}
+header.top{border-bottom:1px solid var(--line);padding-bottom:30px;
+ display:flex;flex-direction:column;gap:6px}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.mtag{font-size:12.5px;padding:4px 10px;border:1px solid var(--line-2);
+ border-radius:2px;color:var(--ink-2);background:var(--panel)}
+.mtag.warn{border-color:var(--flag);color:var(--flag);background:var(--flag-bg)}
+.mtag.ask{border-color:var(--band);color:var(--band);background:var(--band-soft)}
+section{margin-top:48px}
+.sechead{display:flex;flex-direction:column;gap:6px;margin-bottom:20px}
+.sechead p{color:var(--ink-2);max-width:78ch}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:3px;
+ padding:20px 22px;box-shadow:var(--shadow)}
+.box h3{font-size:12px;letter-spacing:.1em;text-transform:uppercase;
+ color:var(--ink-3);margin-bottom:12px;font-weight:600}
+.box p{color:var(--ink-2);font-size:14.7px}.box p+p{margin-top:9px}
+.box b{color:var(--ink)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+table{width:100%;border-collapse:collapse;font-size:14.2px}
+.tw{overflow-x:auto;background:var(--panel);border:1px solid var(--line);
+ border-radius:3px;box-shadow:var(--shadow)}
+th,td{text-align:left;padding:10px 13px;border-bottom:1px solid var(--line);
+ vertical-align:top}
+th{font-family:Archivo,sans-serif;font-size:10.5px;text-transform:uppercase;
+ letter-spacing:.08em;color:var(--ink-3);font-weight:600;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+td.n{font-family:"JetBrains Mono",monospace;font-variant-numeric:tabular-nums}
+.tok{font-family:"JetBrains Mono",monospace;font-size:12.6px;font-weight:600;
+ padding:2px 8px;border-radius:2px;white-space:nowrap;display:inline-block;
+ border:1px solid var(--line-2);background:var(--panel-2)}
+.tok.new{color:var(--ok);border-color:var(--ok);background:var(--ok-bg)}
+.tok.keep{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
+.tok.gone{color:var(--ink-3);text-decoration:line-through;opacity:.75}
+.arg{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--ink-2);
+ background:var(--panel-2);border:1px dashed var(--line-2);padding:1px 6px;
+ border-radius:2px;margin:0 3px 3px 0;display:inline-block}
+.layer{display:grid;grid-template-columns:150px 1fr;gap:14px;padding:14px 0;
+ border-bottom:1px solid var(--line)}
+.layer:last-child{border-bottom:none}
+.lname{font-family:Archivo,sans-serif;font-weight:600;font-size:14px}
+.lname span{display:block;font-family:"JetBrains Mono",monospace;font-size:10.5px;
+ color:var(--ink-3);font-weight:400;margin-top:3px}
+.ldesc{color:var(--ink-2);font-size:14.5px}
+.alert{background:var(--flag-bg);border:1px solid var(--flag);border-left-width:3px;
+ border-radius:3px;padding:20px 22px}
+.alert h3{font-size:17px;margin-bottom:10px;color:var(--ink)}
+.alert p{color:var(--ink-2);max-width:80ch}.alert p+p{margin-top:9px}
+.alert b{color:var(--ink)}
+.ask{background:var(--band-soft);border:1px solid var(--band);border-left-width:3px;
+ border-radius:3px;padding:20px 22px}
+.ask h3{font-size:17px;margin-bottom:10px}
+.ask ol{margin:10px 0 0;padding-left:22px;display:flex;flex-direction:column;gap:11px}
+.ask li{color:var(--ink-2);max-width:80ch}.ask li b{color:var(--ink)}
+.bign{font-family:Archivo,sans-serif;font-size:36px;font-weight:700;
+ font-variant-numeric:tabular-nums;line-height:1;letter-spacing:-.02em}
+footer{margin-top:48px;padding-top:22px;border-top:1px solid var(--line);
+ color:var(--ink-3);font-size:13px;max-width:84ch}
+@media (max-width:860px){.grid2{grid-template-columns:1fr}.layer{grid-template-columns:1fr}}
+</style>
+<div class="wrap">
+<header class="top">
+ <p class="eyebrow">TanitAD · DataFlyWheel · 2026-08-23 · FOR PI REVIEW</p>
+ <h1>Tactical Vocabulary v7</h1>
+ <p class="lede">A proposal, not an implementation. It unifies the tactical goal into one
+  token, moves speed-for-turning to the action layer, and defines the strategic goal as the
+  <b>overnext</b> manoeuvre — so a head can tell "turn now" from "turn after the next one".</p>
+ <div class="meta">
+  <span class="mtag ask">AWAITING YOUR REVIEW</span>
+  <span class="mtag mono">3 tensor-sizing tuples affected</span>
+  <span class="mtag warn">reverses one earlier decision — see §4</span>
+ </div>
+</header>
+
+<section>
+ <div class="sechead"><p class="eyebrow">Why</p>
+  <h2>The four things you found, and what they share</h2>
+  <p>All four come from one root: <b>the layers are separated by TIME, and they should be
+   separated by ORDINAL POSITION in the manoeuvre sequence.</b> "What happens in 8–30 s"
+   is not the same question as "what comes after the next thing I do".</p></div>
+ <div class="tw"><table>
+  <thead><tr><th>What you saw</th><th>Root cause</th></tr></thead>
+  <tbody>
+  <tr><td><span class="mono">01b24287</span>: strategic goal <span class="mono">TURN_LEFT</span>,
+   should be follow-route</td>
+   <td>The clip has <b>exactly one</b> manoeuvre (+97° at t+5.9–11.9 s). It straddles the 6 s/8 s
+    boundary, so a time-split assigns it to whichever band it happens to land in. There is no
+    <i>overnext</i> manoeuvre, so the strategic slot should say so.</td></tr>
+  <tr><td><span class="mono">01bee851</span>: strategic args missing — "important for overnext
+   manoeuvre to avoid confusion in training"</td>
+   <td>This clip has <b>three</b> manoeuvres: +76° (1.0 s), <b>−43° (8.8 s)</b>, +69° (28.8 s).
+    The emitted <span class="mono">TURN_RIGHT</span> is the overnext one and is <i>correct</i> —
+    but with no <span class="mono">within_m</span>/<span class="mono">by_time_s</span> a head
+    cannot tell which manoeuvre it names.</td></tr>
+  <tr><td>Lateral tactical actions carry no args</td>
+   <td>Only the goal layer was given the constraint slots. An action needs its extent too
+    (<span class="mono">within_m</span>).</td></tr>
+  <tr><td><span class="mono">CRUISE</span> while decelerating 11.1 → 4.5 m/s</td>
+   <td>The longitudinal action used <span class="mono">|dv| &lt; 1.0 m/s ⇒ CRUISE</span> measured
+    endpoint-to-endpoint over 6 s. A dip and partial recovery nets out near zero. <b>A real bug,
+    independent of the redesign.</b></td></tr>
+  </tbody></table></div>
+</section>
+
+<section>
+ <div class="sechead"><p class="eyebrow">The proposal</p>
+  <h2>Four layers, defined by ordinal position</h2></div>
+ <div class="box">
+  <div class="layer"><div class="lname">STRATEGIC GOAL<span>g_str</span></div>
+   <div class="ldesc">The <b>OVERNEXT</b> manoeuvre — the one after the one being planned —
+    <b>with args</b>. <span class="mono">FOLLOW_ROUTE</span> when there is none.
+    <i>This is the change that makes the layer meaningful:</i> it answers "and then what",
+    which is exactly what a 6 s plan cannot see.</div></div>
+  <div class="layer"><div class="lname">STRATEGIC ACTION<span>a_str</span></div>
+   <div class="ldesc">What the ego does <b>about</b> the overnext manoeuvre:
+    <span class="tok keep">PREPARE_TURN_L/R</span> <span class="tok keep">PREPARE_STOP</span>
+    <span class="tok keep">PREPARE_LANE_CHANGE</span> <span class="tok keep">HOLD_CORRIDOR</span>
+    <span class="tok keep">REDUCE_TO</span> <span class="tok keep">RESUME_CRUISE</span>
+    <span class="tok keep">PREPARE_EXIT</span> — with <span class="mono">within_m</span> /
+    <span class="mono">by_time_s</span>.</div></div>
+  <div class="layer"><div class="lname">TACTICAL GOAL<span>g_tac — ONE token</span></div>
+   <div class="ldesc"><b>The NEXT manoeuvre</b>, as a single semantic intent with continuous
+    args. <b>No longer split into LAT and LON.</b> A goal is one decision; splitting it forced
+    two half-answers that could disagree with each other.</div></div>
+  <div class="layer"><div class="lname">TACTICAL ACTIONS<span>a_tac — lat × lon</span></div>
+   <div class="ldesc"><b>Stays split</b>, because steering and speed are genuinely two
+    independent control axes. This is where the factoring earns its keep.</div></div>
+ </div>
+</section>
+
+<section>
+ <div class="sechead"><p class="eyebrow">The vocabulary</p>
+  <h2>Tactical goal — one token, with args</h2>
+  <p>Merged from the current LAT and LON goal tuples, plus your yield-before-turn idea.</p></div>
+ <div class="tw"><table>
+  <thead><tr><th>Token</th><th>Args</th><th>Means</th><th>Derived from</th></tr></thead>
+  <tbody>
+  <tr><td><span class="tok keep">TURN_L</span> <span class="tok keep">TURN_R</span></td>
+   <td><span class="arg">within_m</span><span class="arg">by_time_s</span><span class="arg">goal_x_m</span><span class="arg">goal_y_m</span><span class="arg">radius_m</span></td>
+   <td>the next junction traversal</td><td>ego arc detection</td></tr>
+  <tr><td><span class="tok new">YIELD_FOR_TURN_L</span> <span class="tok new">YIELD_FOR_TURN_R</span></td>
+   <td><span class="arg">within_m</span><span class="arg">by_time_s</span><span class="arg">hold_for_s</span></td>
+   <td><b>your addition</b> — a turn preceded by a yield/hold</td>
+   <td>ego hold + arc; VLM "yield" term corroborates</td></tr>
+  <tr><td><span class="tok new">YIELD</span></td>
+   <td><span class="arg">within_m</span><span class="arg">hold_for_s</span></td>
+   <td>yield with no turn following</td><td>ego brief hold; VLM yield term</td></tr>
+  <tr><td><span class="tok keep">STOP_POINT</span></td>
+   <td><span class="arg">within_m</span><span class="arg">hold_for_s</span><span class="arg">reason</span></td>
+   <td>come to and hold a stop</td><td>ego stop; VLM supplies <i>reason</i> only</td></tr>
+  <tr><td><span class="tok keep">ANCHOR_GOAL</span></td>
+   <td><span class="arg">goal_x_m</span><span class="arg">goal_y_m</span><span class="arg">t_reach_s</span></td>
+   <td>the default: reach this point — always derivable</td><td>ego pose at band end</td></tr>
+  <tr><td><span class="tok keep">CORRIDOR_OFFSET</span></td>
+   <td><span class="arg">lat_offset_m</span><span class="arg">arc_m</span></td>
+   <td>hold an offset inside the corridor</td><td>ego lateral offset</td></tr>
+  <tr><td><span class="tok keep">EVADE_IN_CORRIDOR</span></td>
+   <td><span class="arg">lat_offset_m</span><span class="arg">obstacle_slot</span></td>
+   <td>out-and-back around an obstacle</td><td>ego excursion + heading return</td></tr>
+  <tr><td><span class="tok keep">GAP_TARGET</span> <span class="tok keep">WAIT_FOR_ONCOMING</span>
+   <span class="tok keep">TRAFFIC_LIGHT_REACT</span></td>
+   <td><span class="arg">agent_slot</span><span class="arg">time_gap_s</span><span class="arg">state</span></td>
+   <td>agent- and signal-relative goals</td><td>⛔ need perception — not emittable today</td></tr>
+  <tr><td><span class="tok keep">ABSTAIN</span></td><td>—</td>
+   <td>the band constrains nothing nameable</td><td>explicit refusal</td></tr>
+  </tbody></table></div>
+
+ <div class="sechead" style="margin-top:26px"><h2>Tactical actions — split lat × lon</h2></div>
+ <div class="grid2">
+  <div class="box"><h3>a_tac · lateral</h3>
+   <p><span class="tok keep">LANE_KEEP</span> <span class="tok keep">LANE_CHANGE_L</span>
+    <span class="tok keep">LANE_CHANGE_R</span> <span class="tok keep">ABORT_LC</span>
+    <span class="tok keep">NUDGE_L</span> <span class="tok keep">NUDGE_R</span>
+    <span class="tok keep">TURN_L</span> <span class="tok keep">TURN_R</span></p>
+   <p><b>Now with args</b> (your point 3): <span class="arg">within_m</span> — the extent over
+    which the action runs. Unchanged token set; v6.1 already carries TURN_L/R.</p>
+  </div>
+  <div class="box"><h3>a_tac · longitudinal</h3>
+   <p><span class="tok keep">FOLLOW</span> <span class="tok keep">CRUISE</span>
+    <span class="tok keep">YIELD_MERGE</span> <span class="tok keep">BRAKE_TO</span>
+    <span class="tok keep">CREEP</span> <span class="tok keep">HOLD</span>
+    <span class="tok new">ADAPT_SPEED_FOR_TURNING</span></p>
+   <p><b>Moved here from the goal layer</b> (was <span class="mono">ADAPT_SPEED_FOR_CURVE</span>
+    as a LON goal). You are right that it is an <i>action</i>: the goal is "turn left", the
+    actions are "steer left" and "adapt speed for the turn".</p>
+   <p>Args: <span class="arg">v_target_ms</span><span class="arg">within_m</span>.</p>
+  </div>
+ </div>
+</section>
+
+<section>
+ <div class="sechead"><p class="eyebrow">§4 — the one objection I owe you</p>
+  <h2>Unifying the goal reverses an earlier decision</h2></div>
+ <div class="alert">
+  <h3>The LAT×LON goal split exists to retire the 5-way mixed softmax</h3>
+  <p>The current split was introduced deliberately: E-AG1 measured that a K-way
+   <span class="mono">anchor_id</span> classifier is <b>near-adequate laterally (1.331 vs a
+   0.680 floor) and hopeless longitudinally (13.350 vs 0.895, 14.9×)</b>, because the 2 s goal
+   point's variance is <b>98.8 % longitudinal</b>. One categorical carrying both axes is the
+   programme's single largest known defect, one level up.</p>
+  <p><b>Why unifying is nonetheless safe here — and I want you to check this reasoning.</b>
+   That failure is about <i>quantising a continuous position into a categorical index</i>. The
+   proposal keeps the token <b>semantic</b> (TURN_L, YIELD, STOP_POINT) and puts all geometry
+   in <b>continuous args</b> (<span class="mono">goal_x_m</span>,
+   <span class="mono">within_m</span>, <span class="mono">v_target_ms</span>). Nothing forces
+   one softmax to encode both axes — so the defect the split guards against cannot occur.</p>
+  <p>⇒ <b>The split was the right fix for the wrong-shaped token.</b> With a semantic token and
+   metric args, the split costs consistency (two halves that can disagree) and buys nothing.</p>
+ </div>
+</section>
+
+<section>
+ <div class="sechead"><p class="eyebrow">Sizing</p>
+  <h2>How much of the corpus this actually touches</h2></div>
+ <div class="grid2">
+  <div class="box"><h3>Manoeuvre sequence depth (801 clips)</h3>
+   <p><span class="bign">16.4%</span></p>
+   <p><b>131 clips have an overnext manoeuvre</b> — only these can carry a meaningful strategic
+    goal token. 214 (26.7 %) have exactly one manoeuvre ⇒ strategic becomes
+    <span class="mono">FOLLOW_ROUTE</span>. <b>456 (56.9 %) have none</b> ⇒ both layers are
+    follow-route/lane.</p>
+   <p>⚠️ Consequence worth deciding on: under this design the strategic goal is a <b>turn token
+    on ~16 % of clips and FOLLOW_ROUTE on ~84 %</b>. That is a heavily skewed target — honest,
+    but it will need class weighting or it teaches the head to always say follow-route.</p>
+  </div>
+  <div class="box"><h3>Yield coverage</h3>
+   <p><span class="bign">5.8%</span></p>
+   <p><b>15 of 257</b> Alpamayo-covered clips mention a yield. So
+    <span class="mono">YIELD_FOR_TURN_*</span> is emittable but rare, and per the existing rule
+    (<span class="mono">n &lt; 200</span>) it will be <b>representable, not scoreable</b>.</p>
+   <p>Geometry can supply the hold; the VLM term corroborates. I would emit it from
+    <b>geometry (brief hold immediately before an arc)</b> and let the VLM term raise
+    confidence — never the reverse, given the measured hallucination rate.</p>
+  </div>
+ </div>
+</section>
+
+<section>
+ <div class="sechead"><p class="eyebrow">Decisions I need from you</p>
+  <h2>Before I implement</h2></div>
+ <div class="ask">
+  <h3>Five questions</h3>
+  <ol>
+   <li><b>Is the ordinal definition right?</b> tactical goal = NEXT manoeuvre, strategic goal =
+    OVERNEXT. That is my reading of "important for overnext manoeuvre" — confirm before I
+    rebuild both layers on it.</li>
+   <li><b>Does §4 convince you</b> that unifying the tactical goal does not re-open the
+    mixed-softmax defect? If not, I keep the split and only add the args.</li>
+   <li><b>Should <span class="mono">ANCHOR_GOAL</span> remain in the unified tuple</b> as the
+    always-derivable default, or become a separate always-present continuous field alongside
+    the token? The second is cleaner (every clip has a goal point; not every clip has a named
+    manoeuvre) but changes the head's shape.</li>
+   <li><b>Name check:</b> <span class="mono">ADAPT_SPEED_FOR_TURNING</span> as the LON action —
+    or keep <span class="mono">ADAPT_SPEED_FOR_CURVE</span> so it also covers sharp bends that
+    are not junction turns?</li>
+   <li><b>The ~84 % FOLLOW_ROUTE skew</b> — accept it and weight the loss, or restrict the
+    strategic layer to the 16 % that carry an overnext manoeuvre and abstain elsewhere?</li>
+  </ol>
+ </div>
+</section>
+
+<footer><p><strong>Status.</strong> Nothing here is implemented. The current pipeline still emits
+ the split LAT/LON tactical goal with <span class="mono">ADAPT_SPEED_FOR_CURVE</span> as a LON
+ goal. Three tuples would change if this is accepted — <span class="mono">TACTICAL_GOAL_TOKENS_LAT/LON</span>
+ (merged) and <span class="mono">TACTICAL_LON_ACTIONS</span> (one append) — all under the same
+ append-behind-a-version-switch contract, so no live checkpoint is disturbed. The
+ <span class="mono">CRUISE</span>-while-decelerating bug is independent of this decision and I
+ will fix it regardless.</p></footer>
+</div>

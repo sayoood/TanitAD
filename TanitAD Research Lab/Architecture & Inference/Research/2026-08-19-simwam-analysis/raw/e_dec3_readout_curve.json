@@ -1,0 +1,164 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "arm": "champ30k",
+ "step": 30000,
+ "n_episodes": 12,
+ "token_grid": [
+  16,
+  40
+ ],
+ "deg_per_column": 3.0,
+ "estimator": "leave-one-episode-out, paired against the 4x4 incumbent",
+ "targets": {
+  "speed": {
+   "4x4": {
+    "r2": 0.1721,
+    "delta_vs_4x4": 0.0,
+    "t": 0.0,
+    "n_favouring": 0,
+    "az_bins": 4,
+    "deg_per_bin": 30.0
+   },
+   "4x8": {
+    "r2": 0.2193,
+    "delta_vs_4x4": 0.0472,
+    "t": 2.54,
+    "n_favouring": 7,
+    "az_bins": 8,
+    "deg_per_bin": 15.0
+   },
+   "4x10": {
+    "r2": 0.232,
+    "delta_vs_4x4": 0.06,
+    "t": 2.85,
+    "n_favouring": 7,
+    "az_bins": 10,
+    "deg_per_bin": 12.0
+   },
+   "4x20": {
+    "r2": 0.3147,
+    "delta_vs_4x4": 0.1426,
+    "t": 3.61,
+    "n_favouring": 9,
+    "az_bins": 20,
+    "deg_per_bin": 6.0
+   },
+   "4x40": {
+    "r2": 0.2271,
+    "delta_vs_4x4": 0.0551,
+    "t": 1.33,
+    "n_favouring": 6,
+    "az_bins": 40,
+    "deg_per_bin": 3.0
+   },
+   "16x40": {
+    "r2": 0.1938,
+    "delta_vs_4x4": 0.0217,
+    "t": 0.45,
+    "n_favouring": 7,
+    "az_bins": 40,
+    "deg_per_bin": 3.0
+   },
+   "pixel (floor)": {
+    "r2": 0.1076,
+    "delta_vs_4x4": -0.0644,
+    "t": -0.77,
+    "n_favouring": 6,
+    "az_bins": null,
+    "deg_per_bin": null
+   },
+   "frozen DINOv3": {
+    "r2": 0.4166,
+    "delta_vs_4x4": 0.2446,
+    "t": 5.45,
+    "n_favouring": 12,
+    "az_bins": null,
+    "deg_per_bin": null
+   },
+   "constant (control)": {
+    "r2": 0.0,
+    "delta_vs_4x4": -0.1721,
+    "t": -5.94,
+    "n_favouring": 0,
+    "az_bins": null,
+    "deg_per_bin": null
+   }
+  },
+  "d_ego": {
+   "4x4": {
+    "r2": -0.0304,
+    "delta_vs_4x4": 0.0,
+    "t": 0.0,
+    "n_favouring": 0,
+    "az_bins": 4,
+    "deg_per_bin": 30.0
+   },
+   "4x8": {
+    "r2": 0.0502,
+    "delta_vs_4x4": 0.0807,
+    "t": 3.39,
+    "n_favouring": 9,
+    "az_bins": 8,
+    "deg_per_bin": 15.0
+   },
+   "4x10": {
+    "r2": 0.1336,
+    "delta_vs_4x4": 0.164,
+    "t": 4.07,
+    "n_favouring": 9,
+    "az_bins": 10,
+    "deg_per_bin": 12.0
+   },
+   "4x20": {
+    "r2": 0.123,
+    "delta_vs_4x4": 0.1534,
+    "t": 3.37,
+    "n_favouring": 9,
+    "az_bins": 20,
+    "deg_per_bin": 6.0
+   },
+   "4x40": {
+    "r2": 0.0933,
+    "delta_vs_4x4": 0.1237,
+    "t": 3.02,
+    "n_favouring": 9,
+    "az_bins": 40,
+    "deg_per_bin": 3.0
+   },
+   "16x40": {
+    "r2": 0.0831,
+    "delta_vs_4x4": 0.1136,
+    "t": 3.09,
+    "n_favouring": 9,
+    "az_bins": 40,
+    "deg_per_bin": 3.0
+   },
+   "pixel (floor)": {
+    "r2": -0.1492,
+    "delta_vs_4x4": -0.1188,
+    "t": -1.04,
+    "n_favouring": 7,
+    "az_bins": null,
+    "deg_per_bin": null
+   },
+   "frozen DINOv3": {
+    "r2": 0.3393,
+    "delta_vs_4x4": 0.3697,
+    "t": 7.18,
+    "n_favouring": 12,
+    "az_bins": null,
+    "deg_per_bin": null
+   },
+   "constant (control)": {
+    "r2": 0.0,
+    "delta_vs_4x4": 0.0304,
+    "t": 0.76,
+    "n_favouring": 5,
+    "az_bins": null,
+    "deg_per_bin": null
+   }
+  }
+ },
+ "verdict": "\u2b50 AZIMUTH RESOLUTION IS THE LEVER \u2014 decodability rises above the 4x4 incumbent from 8 bins (15 deg/bin) onward; best 20 bins (+0.1426, t 3.61). The readout geometry can be fixed WITHOUT retraining the encoder."
+}

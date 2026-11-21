@@ -1,0 +1,379 @@
+520 # - **Lever:** G-SUITE is CPU-only and depends only on the commit and tree. Run it during the chain's WAIT stage (nice 19, beside the previous
+521 #   - Deliberate-regression arms: a different tree, a different profile, stale evidence, and evidence with one failing test must each FAIL the
+522 #   - Expected saving: ~22 of the 40 min per arm (ESTIMATED from the table).
+523 #   - Also measure the ~5 min before G-HYG and the 7 min `train.py` preflight.
+524 # - **Sequencing:** start after the S1c build lands. The S1c agent edits the gate profiles, so running both at once would race on `launch_gate
+525 # 
+526 # ## Added 2026-10-17 (Master Mind)
+527 # 
+528 # LEN 33
+529 --- LEN 13
+530 S4R-1 LEN 1084
+    ** DONE 2026-10-17
+    ** Integrate SFT-4R readiness
+531 S4R-2 LEN 239
+    ** The nesting guard protects every profile, but its test runs only in `SFT4R_SUITE`.
+532 P2F-1 LEN 485
+    ** DONE 2026-10-18
+    ** P2 full 64-proposal table is GPU-starved on the dev box
+533 SEL-RANK LEN 3770
+    ** STEP 1 DONE 2026-10-18, 0 GPU
+    ** NEXT: SR-TTC, prereg REGISTERED 2026-10-18
+    ** Amendment 1: the fit set is 174,912 sets / 99,495 tokens, so S0 alone is ESTIMATED ~40 GPU
+    ** Amendment 2 DRAFT 2026-10-18
+    ** PI 2026-10-18: option (b), Amendment 2 REGISTERED
+    ** First gate COMPLETE 2026-10-18 10:25
+    ** S0 RUNNING 2026-10-18 11:49 (PI approved the launch; it reads pod inputs beside P6 under t
+534 EP-1 LEN 659
+    ** DONE 2026-10-18, 0 GPU
+    ** NEXT: EP-R1
+535 EP-R1 LEN 518
+    ** BUILT + PRE-REGISTERED 2026-10-18, 0 GPU
+    ** Next:
+    ** To build first (CPU):
+536 EP-R1UB LEN 659
+    ** NEXT, CPU, ~10-20 min fit
+    ** DONE 2026-10-19: outcome N, NONE-FEASIBLE
+537 NAVTEST-HEADBANK LEN 618
+    ** SCHEDULED (MM D4, 2026-10-19), dev-box GPU, 5.43 GPU-h
+    ** FIRST
+    ** CANCELLED 2026-10-19:
+538 SRTTC-DEV-APPLIER LEN 409
+    ** DONE 2026-10-19
+    ** Next: SRTTC-C2-STAGE
+    ** UPDATE 2026-10-19: C2 gate stage BUILT; SR-TTC dev read DONE = VOID (C2 RED), consumed
+539 HEADROW-PROBE LEN 1223
+    ** NEXT, CPU, minutes
+    ** RUNNING 2026-10-19
+    ** ADDENDUM 2026-10-19 (sent before its outcome was read):
+    ** DONE 2026-10-19: MIXED
+540 FASTNEG-CENSUS LEN 957
+    ** REGISTERED 2026-10-19 (`TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-
+    ** DONE 2026-10-19: INCONCLUSIVE
+541 FASTNEG-F25-RERUN LEN 505
+    ** DEFERRED
+    ** UPDATE 2026-10-19:
+542 CENSUS-SLOT-REREAD LEN 319
+543 PICKRULE-AUDIT-NC LEN 481
+    ** NEXT, 0 GPU, CPU minutes; own PREREG before any number.
+    ** DONE 2026-10-19: ROW-MISS
+544 NC-FASTCAL LEN 464
+    ** NEXT, CPU minutes; own PREREG
+    ** DONE 2026-10-19: NO-RECOVER; the NC-calibration line CLOSES
+545 EP-RELIAB-PICKS LEN 720
+    ** NEXT, 0 GPU, CPU minutes; own PREREG with a pre-registered reliability-at-picks diagnostic
+    ** DONE 2026-10-19: EP-OVERPREDICTED
+546 EP-ADMISSION LEN 1246
+    ** DRAFT, sealed per CANDIDATE
+    ** REVISED 2026-10-19 (pre-seal, Revision 1 in the draft):
+    ** RULES FROZEN 2026-10-19
+547 P6-READ-PREP LEN 365
+    ** DONE 2026-10-19
+548 EP-ADMISSION-R1 LEN 566
+    ** NEXT, CPU
+    ** DONE 2026-10-19
+549 EP-ADMISSION-R2-CONFIRM LEN 531
+    ** NEXT, CPU (about 15 min)
+    ** DONE 2026-10-19: SEAL AT 1.05
+550 PRIVGEOM-SAFE LEN 803
+    ** NEXT, CPU (budget about 16 CPU-h, sized by measured cost); own PREREG; supersedes PRIVGEOM
+    ** DONE 2026-10-19: DAC INFO-UPSTREAM (primary + companion), NC INCONCLUSIVE/underpowered
+551 SH5-DAC-PROX LEN 5814
+    ** BUILDING 2026-10-19
+    ** UPDATE 2026-10-19 16:00: LANDED
+    ** LOCAL chain RUNNING
+    ** FULL is BLOCKED on D: space
+    ** UPDATE 2026-10-19 18:14: the LOCAL chain STOPPED at the C-REACH pre-flight
+    ** 0.634
+    ** 0.475
+    ** UPDATE 19:42: FULL inputs are COMPLETE.
+    ** C-REACH DIAGNOSIS, interim 2026-10-19 ~23:45
+    ** Grid 3 RUNNING
+    ** C-REACH, grids 3-4 DONE (2026-10-20 ~01:30; MEASURED, fold 0, one run per seed; package re
+    ** cosine attention at 60 epochs reads F 0.846 / ALLQ 0.842 / R? 0.868 on seed 0, and it is P
+    ** Grid 5 RUNNING
+    ** 2026-10-20: UNSUPPORTED by PRIVGEOM-CLEAN
+    ** UPDATE 2026-10-20 ~04:
+552 SH5-CREACH-GRID6 LEN 444
+    ** PARKED
+553 PRIVGEOM-CLEAN LEN 2539
+    ** CONDITIONAL, BLOCKED (PI: nuPlan DB fetch for the 76 f10 logs without a local DB)
+    ** UPDATE 2026-10-19: the PI APPROVED the DB fetch.
+    ** 11,324,555,264 B = 11.32 GB
+    ** 0 transferred, BLOCKED on D: space
+    ** UNBLOCKED 2026-10-19 19:42: DBs 76/76 staged and verified
+    ** SEALED 2026-10-19 21:28
+    ** READ RUNNING
+    ** DONE 2026-10-20 01:37: INCONCLUSIVE
+554 D-SPACE LEN 917
+    ** BLOCKER (needs the PI: top-level D: deletions are refused to the agent's tools)
+    ** RESOLVED 2026-10-19 19:15:
+555 PRIVGEOM-DAC LEN 679
+    ** NEXT, CPU; own PREREG before any number
+    ** UPDATE 2026-10-19: superseded by PRIVGEOM-SAFE
+556 FASTNEG-BANK LEN 543
+    ** BLOCKED on FASTNEG-CENSUS reading COVERAGE
+    ** UPDATE 2026-10-19: stays BLOCKED
+557 PRIVGEOM-PROBE LEN 467
+    ** CONDITIONAL on FASTNEG-CENSUS reading FEATURE
+    ** UPDATE 2026-10-19: superseded by PRIVGEOM-DAC
+558 SCORER-ENS-S0S1 LEN 298
+559 SCORER-BRANCH-PERSTEP LEN 351
+    ** CONDITIONAL
+560 EPR1UB-GATE-CACHE LEN 635
+    ** FIX BEFORE ANY REUSE
+    ** DONE 2026-10-19
+561 C2-GATE-SIBLING-LEAK LEN 767
+    ** FIX BEFORE ANY REUSE of the (VOID) C2 chain:
+    ** DONE 2026-10-19
+562 SRTTC-R1-GATE-CACHE LEN 477
+563 NT-FIX1 LEN 1672
+    ** PARTLY DONE 2026-10-19:
+    ** Remaining (0 GPU):
+    ** UPDATE 2026-10-19 (NT-FIX1-B): `score_navtest6.py`, `score_navtest7.py`, `colab/navtest/li
+    ** Remaining:
+564 SRTTC-SUCCESSOR LEN 267
+    ** TO DRAFT (after HEADROW-PROBE):
+565 LIT-EP-RL LEN 579
+    ** DONE 2026-10-18, 0 GPU
+    ** NEXT: L1 Step A
+566 L1-STEPA-RUN LEN 871
+    ** LAUNCH-READY 2026-10-18
+    ** DONE 2026-10-19: O2 NOT ADMITTED
+567 L2-OFFPROP LEN 695
+    ** BUILDING 2026-10-19
+    ** DONE 2026-10-19: L2-ADMIT
+568 L2-FRESH-STEPA LEN 1610
+    ** NEXT
+    ** UPDATE 2026-10-19 16:50: SEALED
+    ** UPDATE 17:15: Amendment 2 SEALED
+    ** READ 1 DONE 2026-10-19 20:12: O3
+569 UNSEEN-STRATUM-DATA LEN 4232
+    ** O3 next arm of L2-FRESH (Amendment 2); its PRIORITY is set by the Step B diagnostic
+    ** PI yes
+    ** PI yes
+    ** S1 DONE 2026-10-19
+    ** S1b DONE 2026-10-19
+    ** recall 0.9954 [0.987, 0.999], precision 0.9792 [0.956, 0.996]
+    ** 1,944 jpgs, about 400 MB ESTIMATED
+    ** PI yes
+    ** PRIORITY RESET 2026-10-19 by Step B (NOT CLEARED):
+    ** S2 + S4 APPROVED by the PI 2026-10-19 ~23:05
+    ** FETCH RUNNING
+    ** CLOSED 2026-10-19 ~23:40: THE ROUTE DOES NOT EXIST
+570 L2-STEPB-GATE LEN 2113
+    ** BLOCKER for Step B
+    ** RESOLVED 2026-10-19 (`TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-re
+    ** UPDATE 2026-10-19: Step B SEALED
+    ** UPDATE 20:15: Step B Amendment 1 SEALED
+    ** STEP B READ 2026-10-19 ~22:20: NOT CLEARED
+571 SEARCH-P2-CONFIRM LEN 4604
+    ** NEXT, pre-registration (CPU), then one locked GPU bundle
+    ** B-REST
+    ** UPDATE 2026-10-19: READ C3 (U) DROPPED
+    ** SEALED 2026-10-19 23:07
+    ** C1 chain RUNNING
+    ** C1 STOPPED 2026-10-20 ~00:05 at the GPU stage
+    ** RELAUNCH (resumable) once C: and D: have headroom
+    ** 2026-10-20, C2 licence changed (sealed `MM_RULING_C2_LICENCE.md`, before any C1 output):
+    ** 2026-10-20: C1 DONE, O1_CONFIRMED
+    ** 2026-10-20: next arm (i) DONE
+    ** 2026-10-22 07:53 Berlin, C2 READ (the ONE navtest look): `C2_FAIL_LOWER_CI`
+    ** -0.155 [-0.350, +0.037]
+    ** -0.223 [-0.427, -0.030]
+    ** -0.239 [-0.494, -0.012]
+    ** The search is CLOSED for P2's unchanged scorer on T1 at one training seed
+    ** +2.46
+    ** -1.18
+572 EPADM-SEARCHBANK LEN 846
+    ** BUILDING 2026-10-19
+    ** DONE 2026-10-19 ~23:55: ALL THREE DQ6 BARS MISSED at C1's geometry
+573 EPADM-SEARCHBANK-S0 LEN 3026
+    ** NEXT (fallback (b) of `MM_RULING_SPC.md` DQ6)
+    ** BLOCKER FOUND 2026-10-20 ~00:20
+    ** PI yes
+    ** CORRECTED 2026-10-20 ~00:55 by a second and third probe
+    ** MEASURED:
+    ** 76 logs / 6,140 tokens have no frames, 4.911 GB from the pod (MEASURED pod sizes)
+    ** Unblock = a PI yes for a 4.9 GB pod -> dev-box frame read under the P6 overlap rule, plus 
+    ** 2026-10-20: DRAFT amendment + simulation landed; the gate is INSTRUMENT-LIMITED at 41 AND 
+    ** N1 RUNNING
+    ** CLOSED 2026-10-20, NOT BUILT.
+574 SEARCH-NAVTEST-PIPE LEN 4973
+    ** BUILDING 2026-10-19
+    ** BUILT 2026-10-20
+    ** 2026-10-20: BUILT + LANDED, not yet proven on real data.
+    ** Open before the C2 seal (`MM_RULING_C2AMEND.md`):
+    ** 2026-10-20, FINAL CODE LANDED
+    ** 2026-10-20:
+    ** 2026-10-20, BOUND TO DOSE R1
+    ** 2026-10-20: C2 IS LICENSED
+    ** 2026-10-20: FIXTURE IDENTICAL, MUTATION 121 / 121, C2 SEALED
+    ** Left before the single navtest run:
+    ** 2026-10-20: the dose chose C8.
+    ** NEXT: the single C2 navtest run with C8
+    ** 2026-10-20 09:41Z: C2 RUNNING, the single navtest look
+575 SEARCH-THOR-LATENCY LEN 1372
+    ** NEXT, 0 GPU to write, a Thor slot to run
+    ** 2026-10-20: INSTRUMENT BUILT, CPU-tested, NOT yet run on Thor
+    ** Dev-box CPU reference (MEASURED, NOT a Thor number, n = 5 tokens, fp32, 4 threads, about 1
+576 LATENCY-BUDGET LEN 1553
+    ** OPEN ARCHITECTURE DECISION (MM, may need the PI)
+    ** 2026-10-20: PROPOSAL WRITTEN, AWAITING THE PI
+    ** Nothing is MEASURED for REFe / P2 on Thor
+    ** DECIDED (PI, 2026-10-20 ~11:32 Berlin): max 100 ms end to end on Thor with the 4 cameras; 
+577 THOR-PICK-TICK LEN 1173
+    ** NEXT, 0 GPU to write, a Thor slot to run
+    ** RE-SCOPED by D-LATENCY-BUDGET:
+578 SEARCH-HOST-PORT LEN 670
+    ** NEXT, CPU
+    ** DEFERRED to the optimisation phase
+579 SEARCH-STALE-T1 LEN 473
+    ** PROPOSED, after the PI's LATENCY-BUDGET ruling
+    ** CLOSED, NOT NEEDED
+580 SEARCH-DOSE LEN 1825
+    ** NEXT after `ZZSPC_DONE`
+    ** 2026-10-20 04:12: AMENDMENT SEALED
+    ** 2026-10-20: REVISION 1 SEALED
+    ** 2026-10-20: RUNNING
+    ** DONE 2026-10-20: O1_CONFIRMED
+581 L2-BRANCH LEN 759
+    ** DEPRIORITISED 2026-10-19
+    ** 2026-10-22, after C2 (`TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-r
+582 SEARCH-PESSIMISTIC LEN 3490
+    ** NAMED 2026-10-22 (C2's new lever, `TanitAD Research Lab/Architecture & Inference/Research/
+    ** Data route (corrected 2026-10-22, R64):
+    ** no public unseen-scene pool outside navtest
+    ** scorer
+    ** FEASIBILITY 2026-10-22
+    ** Stage 0 NEXT
+    ** Stage 0 first sealed read, 2026-10-22: INVALID (C-II-b)
+    ** Stage 0 amended read A1 (S = 3), 2026-10-22: NULL-UNDERPOWERED
+    ** +0.0122
+    ** +0.0256
+    ** +0.25
+    ** MM decision: the decoder variant is DEFERRED; the line is PARKED behind P6 and D-SESSION-R
+583 P7-SPEC LEN 815
+    ** DONE 2026-10-22 (spec + reserve landed: `TanitAD Research Lab/Architecture & Inference/Res
+584 P7-WIRE-RESERVE LEN 409
+    ** ACTIVE (0 GPU)
+    ** session
+585 P7-WIRE-HEAD LEN 303
+    ** ACTIVE (0 GPU)
+586 P7.2-ENSEMBLE LEN 355
+    ** QUEUED behind P7
+587 L1-UNSEEN-STRATUM LEN 423
+    ** OPTION, 0 GPU to start
+588 # 
+589 # ## Added 2026-10-17 later (Master Mind)
+590 # 
+591 # LEN 33
+592 --- LEN 13
+593 SO-A16 LEN 671
+    ** DONE 2026-10-17
+594 TEST-RED-1 LEN 1252
+    ** DONE 2026-10-18 -- none is a code defect
+    ** Three refe tests are NOT clean on the tip, independent of S4R-1
+595 SO-G LEN 289
+    ** R0d DONE 2026-10-18
+596 SO-CARVE LEN 786
+    ** DONE 2026-10-18
+    ** The O4 next lever, its 0-A40 first step
+597 SO-PICKCON LEN 1271
+    ** 0-GPU part DONE 2026-10-18
+    ** The SAFEOBJ constraint measures the wrong quantity
+598 R0E-PICK LEN 2633
+    ** The pick-aligned SAFEOBJ arm, pre-registration, FROZEN 2026-10-18
+    ** PI decisions TAKEN 2026-10-18 ~17:30 Berlin (`PI_DECISION_QUEUE.md`; registered in `raw/20
+    ** B4 (stop-after-u250) is DROPPED
+    ** Remaining launch blockers (0 GPU): B2 profile/arms and B5 gate dirs
+    ** B3, B6, B7 DONE 2026-10-18
+    ** PI 2026-10-18: carve size m = 13
+    ** B8 (carve feed) LANDED 2026-10-18
+    ** UPDATE 2026-10-19: committed next arm of RL-1 (N-BOTH); BLOCKED on A40 (P6) + PI grant.
+599 R0E-B2B5 LEN 369
+    ** DONE 2026-10-19
+600 R0E-B9B10 LEN 724
+    ** BUILDING 2026-10-19
+    ** B9
+    ** B10
+    ** DONE 2026-10-19
+601 R0E-SHIP-MANIFEST LEN 550
+    ** BEFORE THE NEXT RLS1 POD STAGING
+602 RL-1 LEN 502
+    ** DONE 2026-10-19, 0 GPU
+    ** N-BOTH
+    ** Next:
+    ** Also:
+603 RL-2 LEN 451
+    ** DONE 2026-10-18, 0 GPU
+    ** Next:
+    ** Anchored RL arm: BLOCKED on the A40
+604 LOCK-STEAL-2 LEN 1761
+    ** Four more dev-box lock helpers can remove a live job's lock
+    ** DONE 2026-10-18, 0 GPU.
+605 FP-POD-CLEAN LEN 1187
+    ** Startup-check half CLOSED 2026-10-18 (INSTFIX)
+    ** LEFT (needs pod access, not done by this agent):
+    ** Free-point navtest read DONE 2026-10-18
+606 P6-3C LEN 6092
+    ** P6 on the 3-C twin bank.
+    ** 2026-10-17 ~20:50 CEST: the PI MIGRATED the pod to a new machine; the volume copy was stil
+    **  Keep this pod; in P6's first half hour read the chain's early labeller-throughput reading
+    ** 2026-10-18: the launch-gate FAIL (G-CLOCK, G-SUITE, G-LIVE-LAB) is FIXED and landed
+    ** P6 LAUNCHED 2026-10-18 ~11:45 Berlin
+    ** 2026-10-20, INTERRUPTED BY A POD REBOOT, RESUMED (MEASURED, pod logs):
+    ** 20:45:56Z on 10-19
+    ** No watcher caught it: the A40 sat idle ~9.2 h
+    ** Relaunch #1 (04:49Z) was WRONG:
+    ** REFUSED TO RESUME
+    ** Relaunch #2 (05:21Z), with `P6_CBANK=.../train_grow_cmd_3c` now PINNED in `p6_start.env`:
+    ** step 2167 at 05:52Z
+    ** 2026-10-20 ~13:00Z: POD STOPPED, the RunPod credit balance ran out (PI, with a console scr
+    ** 2026-10-22: NEW POD (2026-10-21), REBUILD RUNNING
+    ** PASSED
+607 P6-RESUME-BANK LEN 1258
+    ** DONE 2026-10-20, for the NEXT ship
+    ** At ship:
+608 P6-HN LEN 4603
+    ** Step 0 DONE 2026-10-18
+    ** Expert-proximate hard negatives, the published form of ZT3's near-twin grazes
+    ** Arm prereg DRAFT 2026-10-18
+    ** PI 2026-10-18: screen first
+    ** Screen prereg REGISTERED 2026-10-18
+    ** PI 2026-10-18 later: disk freed on D: (197 GB free, MEASURED) -> S0-S3 UNBLOCKED, cache on
+    ** Screen implementation part 1 LANDED 2026-10-18
+    ** Amendment B
+    ** Part 2 LANDED 2026-10-18
+    ** UPDATE 2026-10-19: screen checklist items 3 + 4 LANDED
+    ** Next:
+    ** UPDATE 2026-10-19: MM rulings on AMBIGUITIES 1-12 (11 accepted; #6 was a launch blocker, n
+609 HNSCREEN-CACHE-CONTENT-FP LEN 908
+    ** DONE 2026-10-19
+610 HNSCREEN-FP-COST LEN 1679
+    ** DECIDE BEFORE THE HN SCREEN LAUNCHES
+    ** DECIDED 2026-10-19 ~22:55: option (b?)
+    ** IMPLEMENTING
+    ** DONE 2026-10-20, (b') LANDED
+611 HNSCREEN-TOKEN-NAMES LEN 3311
+    ** LAUNCH BLOCKER for the P6-HN screen, 0 GPU. MEASURED from source at tip `823c529` (it was 
+    ** Fix, after HNFP3 lands (it edits the same file):
+    ** UNBLOCKED 2026-10-20: HNFP3 landed.
+    ** DONE 2026-10-20
+    ** Follow-up before the screen launches (0 GPU, small):
+    ** 2026-10-20, MINT-STAGE GUARD LANDED
+    ** Limit:
+    ** Next (0 GPU, small):
+    ** 2026-10-20, CONFIG-LOAD CHECK LANDED
+    ** Row CLOSED.
+612 ZG-WIRE LEN 1970
+    ** Wire the post-training zero-gradient gate into the chains
+    ** DONE 2026-10-18
+613 PAPER-720 LEN 883
+    ** C3, C4, C11 DONE 2026-10-17
+    ** Open:
+614 LAB-D LEN 561
+    ** The daily Research Lab run lapsed after LAB-RUN-017 (2026-09-20)
+    ** LAB-RUN 2026-10-19 DONE (SAFE-HEAD-LIT):
+615 HJ-UNITS LEN 2386
+    ** CLOSED 2026-10-18 (INSTFIX / HJ-UNITS-3, `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-

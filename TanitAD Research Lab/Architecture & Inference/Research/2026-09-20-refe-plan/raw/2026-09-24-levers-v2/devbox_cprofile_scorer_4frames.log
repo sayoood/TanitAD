@@ -1,0 +1,132 @@
+C:\Users\Admin\dz\DriveZero\DriveRL\nuplan-devkit\nuplan\common\maps\nuplan_map\utils.py:413: RuntimeWarning: invalid value encountered in cast
+  return elements.iloc[np.where(elements[column_label].to_numpy().astype(int) == int(desired_value))]
+C:\Users\Admin\dz\DriveZero\DriveRL\nuplan-devkit\nuplan\common\maps\nuplan_map\utils.py:413: RuntimeWarning: invalid value encountered in cast
+  return elements.iloc[np.where(elements[column_label].to_numpy().astype(int) == int(desired_value))]
+C:\Users\Admin\dz\DriveZero\DriveRL\nuplan-devkit\nuplan\common\maps\nuplan_map\utils.py:413: RuntimeWarning: invalid value encountered in cast
+  return elements.iloc[np.where(elements[column_label].to_numpy().astype(int) == int(desired_value))]
+C:\Users\Admin\dz\DriveZero\DriveRL\nuplan-devkit\nuplan\common\maps\nuplan_map\utils.py:413: RuntimeWarning: invalid value encountered in cast
+  return elements.iloc[np.where(elements[column_label].to_numpy().astype(int) == int(desired_value))]
+C:\Users\Admin\dz\DriveZero\DriveRL\nuplan-devkit\nuplan\common\maps\nuplan_map\utils.py:413: RuntimeWarning: invalid value encountered in cast
+  return elements.iloc[np.where(elements[column_label].to_numpy().astype(int) == int(desired_value))]
+bank: 4 rows of 2021.09.14.15.03.51_veh-45_00178_00336
+  route rank 0: THEIR unpatched route (byte-identical to Stage 0 by construction)
+  map-feature cache: ON (exact; REFE_MAP_CACHE=0 disables)
+  query cache: ON (exact; REFE_QUERY_CACHE=0 disables)
+  PER-FRAME mode: 4 teacher rollouts from C:\Users\Admin\AppData\Local\Temp\claude\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\bd7d00af-b98e-42f1-a53c-cb4113059b0f\scratchpad\prof_bank
+  log order: SHUFFLED (seed 20260924)
+  1 navtrain logs, 4 banked frames
+  stride 2  frame-stride 1  candidates all
+  4 navtrain scenarios (one per frame)
+      cost: log load  0.24 s | ScenarioData  16632 ms | 11 candidates scored in 14.86 s
+    [1/4] 2021.09.14.15.03.51_veh-45_00178_0 frames   1/  1  rows     11  aborted   0    31.9 s
+      cost: log load  0.03 s | ScenarioData   1554 ms | 11 candidates scored in 14.81 s
+    [2/4] 2021.09.14.15.03.51_veh-45_00178_0 frames   1/  1  rows     22  aborted   0    16.4 s
+      cost: log load  0.03 s | ScenarioData  10445 ms | 11 candidates scored in 11.67 s
+    [3/4] 2021.09.14.15.03.51_veh-45_00178_0 frames   1/  1  rows     33  aborted   0    22.2 s
+      cost: log load  0.60 s | ScenarioData   5207 ms | 11 candidates scored in 13.71 s
+    [4/4] 2021.09.14.15.03.51_veh-45_00178_0 frames   1/  1  rows     44  aborted   0    19.5 s
+
+  wrote 44 rows over 4 frames to C:\Users\Admin\AppData\Local\Temp\claude\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\bd7d00af-b98e-42f1-a53c-cb4113059b0f\scratchpad\prof_out\scorer_targets.jsonl
+  aborted frames (scorer could not tell candidates apart): 0
+    all aborts are ndiff < 3 (the DISCRIMINATION rule): 0  histogram {}
+  DIAGNOSTIC (not a gate): frames whose over-curb candidate stayed ON-road: 2  -- these are KEPT; on navtrain this was 8/18, and gating on it discarded frames with 19-20 separating signals
+  frames where the TEACHER ITSELF reads off-road: 1 (25.0 %) -- BANKED and flagged, not discarded
+  wall clock 1.5 min  =>  22.70 s/frame
+SCORER_TARGETS_OK
+rc 0
+         10106204 function calls (9567752 primitive calls) in 100.360 seconds
+
+   Ordered by: internal time
+   List reduced from 8716 to 35 due to restriction <35>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+     2204   16.281    0.007   25.810    0.012 C:\Users\Admin\dz\DriveZero\DriveRL\src\driverl\utils\geometry.py:327(project_points_to_segments)
+       32   14.133    0.442   14.136    0.442 C:\Users\Admin\AppData\Local\Temp\claude\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\bd7d00af-b98e-42f1-a53c-cb4113059b0f\scratchpad\driverl-venv\Lib\site-packages\pyogrio\raw.py:39(read)
+      147   13.520    0.092   13.520    0.092 {method 'execute' of 'sqlite3.Cursor' objects}
+     7548   10.883    0.001   10.883    0.001 {method 'sum' of 'torch._C.TensorBase' objects}
+      440    5.037    0.011    9.096    0.021 C:\Users\Admin\dz\DriveZero\DriveRL\src\driverl\env\engine\reward_calculator\center_line.py:385(_squared_distance_points_to_segments)
+     4941    3.703    0.001   17.227    0.003 D:\Projects\TanitAD\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\query_cache.py:81(_run)
+     9360    2.711    0.000    2.711    0.000 {built-in method torch._C._linalg.linalg_norm}
+     6685    1.439    0.000    1.440    0.000 {built-in method nt.stat}
+390150/873    0.910    0.000    5.256    0.006 C:\Users\Admin\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\copy.py:128(deepcopy)
+     3194    0.877    0.000    2.119    0.001 C:\Users\Admin\dz\DriveZero\DriveRL\src\driverl\utils\geometry.py:520(segment_polygons_intersection2)
+     1362    0.795    0.001    0.795    0.001 {built-in method marshal.loads}
+     1328    0.714    0.001    0.714    0.001 {method 'argmin' of 'torch._C.TensorBase' objects}
+    19164    0.700    0.000    0.700    0.000 C:\Users\Admin\dz\DriveZero\DriveRL\src\driverl\utils\geometry.py:540(cross)
+    35076    0.689    0.000    3.814    0.000 C:\Users\Admin\AppData\Local\Temp\claude\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\bd7d00af-b98e-42f1-a53c-cb4113059b0f\scratchpad\driverl-venv\Lib\site-packages\torch\_tensor.py:132(__deepcopy__)
+     1370    0.674    0.000    0.674    0.000 {method 'read' of '_io.BufferedReader' objects}
+    25545    0.670    0.000    0.670    0.000 {built-in method torch.where}
+  157/156    0.595    0.004    0.713    0.005 {built-in method _imp.create_dynamic}
+     1376    0.582    0.000    0.582    0.000 {built-in method io.open_code}
+      440    0.558    0.001   10.118    0.023 C:\Users\Admin\dz\DriveZero\DriveRL\src\driverl\env\engine\reward_calculator\off_road.py:345(detect_cross_line_knn)
+    35076    0.449    0.000    0.449    0.000 {method 'copy_' of 'torch._C.StorageBase' objects}
+      440    0.389    0.001   10.040    0.023 C:\Users\Admin\dz\DriveZero\DriveRL\src\driverl\env\engine\reward_calculator\center_line.py:310(_calculate_lane_speed_limit_and_proximity)
+  1668/25    0.372    0.000    9.260    0.370 {built-in method builtins.exec}
+      440    0.341    0.001    1.608    0.004 C:\Users\Admin\dz\DriveZero\DriveRL\src\driverl\env\engine\reward_calculator\nuplan_ttc.py:190(compute_time_to_collision)
+     8006    0.335    0.000    0.527    0.000 C:\Users\Admin\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\inspect.py:863(cleandoc)
+    10125    0.333    0.000    0.337    0.000 C:\Users\Admin\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\glob.py:142(_iterdir)
+     1320    0.321    0.000    0.456    0.000 C:\Users\Admin\dz\DriveZero\DriveRL\src\driverl\utils\geometry.py:893(expand_polygon_with_buffer)
+    15294    0.319    0.000    0.319    0.000 {built-in method torch.stack}
+    15072    0.315    0.000    0.315    0.000 {built-in method torch.cat}
+    60196    0.315    0.000    0.315    0.000 {method 'unsqueeze' of 'torch._C.TensorBase' objects}
+     1320    0.313    0.000   11.471    0.009 C:\Users\Admin\dz\DriveZero\DriveRL\src\driverl\env\engine\reward_calculator\center_line.py:662(calculate_baseline_progress)
+    37798    0.287    0.000    0.287    0.000 {method 'reshape' of 'torch._C.TensorBase' objects}
+      440    0.285    0.001   29.263    0.067 C:\Users\Admin\dz\DriveZero\DriveRL\src\driverl\env\engine\reward_calculator\center_line.py:34(forward)
+    13499    0.284    0.000    0.358    0.000 <frozen importlib._bootstrap_external>:96(_path_join)
+      440    0.281    0.001    0.792    0.002 C:\Users\Admin\dz\DriveZero\DriveRL\src\driverl\env\engine\reward_calculator\comfort.py:389(data_preprocessing)
+      880    0.276    0.000    0.276    0.000 {built-in method torch.cdist}
+
+
+         10106204 function calls (9567752 primitive calls) in 100.360 seconds
+
+   Ordered by: cumulative time
+   List reduced from 8716 to 45 due to restriction <45>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.008    0.008  100.425  100.425 D:\Projects/TanitAD/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan\refe\build_scorer_targets.py:205(main)
+        4    0.001    0.000   55.039   13.760 D:\Projects/TanitAD/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan\refe\build_scorer_targets.py:492(<listcomp>)
+       44    0.079    0.002   55.038    1.251 D:\Projects\TanitAD\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\score_proposals.py:618(score_proposal_rollout)
+      440    0.128    0.000   54.943    0.125 D:\Projects\TanitAD\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\score_proposals.py:535(score_proposal)
+        4    0.005    0.001   33.828    8.457 D:\Projects/TanitAD/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan\refe\build_scorer_targets.py:94(scenario_data)
+      440    0.285    0.001   29.263    0.067 C:\Users\Admin\dz\DriveZero\DriveRL\src\driverl\env\engine\reward_calculator\center_line.py:34(forward)
+     2204   16.281    0.007   25.810    0.012 C:\Users\Admin\dz\DriveZero\DriveRL\src\driverl\utils\geometry.py:327(project_points_to_segments)
+     4941    3.703    0.001   17.227    0.003 D:\Projects\TanitAD\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\query_cache.py:81(_run)
+     5121    0.029    0.000   17.126    0.003 D:\Projects\TanitAD\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\query_cache.py:109(execute_many)
+       16    0.004    0.000   14.714    0.920 C:\Users\Admin\dz\DriveZero\DriveRL\nuplan-devkit\nuplan\database\maps_db\gpkg_mapsdb.py:240(load_vector_layer)
+       32    0.003    0.000   14.306    0.447 C:\Users\Admin\AppData\Local\Temp\claude\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\bd7d00af-b98e-42f1-a53c-cb4113059b0f\scratchpad\driverl-venv\Lib\site-packages\pyogrio\geopandas.py:138(read_dataframe)
+       32   14.133    0.442   14.136    0.442 C:\Users\Admin\AppData\Local\Temp\claude\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\bd7d00af-b98e-42f1-a53c-cb4113059b0f\scratchpad\driverl-venv\Lib\site-packages\pyogrio\raw.py:39(read)
+      116    0.026    0.000   13.716    0.118 C:\Users\Admin\dz\DriveZero\DriveRL\nuplan-devkit\nuplan\planning\scenario_builder\nuplan_db\nuplan_scenario_utils.py:333(extract_tracked_objects)
+     4072    0.023    0.000   13.651    0.003 C:\Users\Admin\dz\DriveZero\DriveRL\nuplan-devkit\nuplan\database\nuplan_db\nuplan_scenario_queries.py:691(get_tracked_objects_for_lidarpc_token_from_db)
+      147   13.520    0.092   13.520    0.092 {method 'execute' of 'sqlite3.Cursor' objects}
+     1320    0.313    0.000   11.471    0.009 C:\Users\Admin\dz\DriveZero\DriveRL\src\driverl\env\engine\reward_calculator\center_line.py:662(calculate_baseline_progress)
+      440    0.206    0.000   11.087    0.025 C:\Users\Admin\dz\DriveZero\DriveRL\src\driverl\env\engine\reward_calculator\off_road.py:92(forward)
+        4    0.032    0.008   10.961    2.740 C:\Users\Admin\dz\DriveZero\DriveRL\src\driverl\nuplan\feature_builder.py:282(build_log_scenario_data)
+     7548   10.883    0.001   10.883    0.001 {method 'sum' of 'torch._C.TensorBase' objects}
+      440    0.558    0.001   10.118    0.023 C:\Users\Admin\dz\DriveZero\DriveRL\src\driverl\env\engine\reward_calculator\off_road.py:345(detect_cross_line_knn)
+      440    0.389    0.001   10.040    0.023 C:\Users\Admin\dz\DriveZero\DriveRL\src\driverl\env\engine\reward_calculator\center_line.py:310(_calculate_lane_speed_limit_and_proximity)
+        8    0.000    0.000    9.858    1.232 C:\Users\Admin\dz\DriveZero\DriveRL\nuplan-devkit\nuplan\planning\scenario_builder\nuplan_db\nuplan_scenario.py:200(map_api)
+        1    0.000    0.000    9.858    9.858 C:\Users\Admin\dz\DriveZero\DriveRL\nuplan-devkit\nuplan\common\maps\nuplan_map\map_factory.py:51(get_maps_api)
+        1    0.000    0.000    9.858    9.858 C:\Users\Admin\dz\DriveZero\DriveRL\nuplan-devkit\nuplan\common\maps\nuplan_map\map_factory.py:40(get_maps_db)
+        1    0.000    0.000    9.858    9.858 C:\Users\Admin\dz\DriveZero\DriveRL\nuplan-devkit\nuplan\database\maps_db\gpkg_mapsdb.py:63(__init__)
+        1    0.003    0.003    9.847    9.847 C:\Users\Admin\dz\DriveZero\DriveRL\nuplan-devkit\nuplan\database\maps_db\gpkg_mapsdb.py:97(_load_map_data)
+  2080/17    0.043    0.000    9.646    0.567 <frozen importlib._bootstrap>:1165(_find_and_load)
+  1615/17    0.025    0.000    9.645    0.567 <frozen importlib._bootstrap>:1120(_find_and_load_unlocked)
+  3664/36    0.006    0.000    9.573    0.266 <frozen importlib._bootstrap>:233(_call_with_frames_removed)
+  1561/25    0.020    0.000    9.329    0.373 <frozen importlib._bootstrap>:666(_load_unlocked)
+  1369/25    0.013    0.000    9.327    0.373 <frozen importlib._bootstrap_external>:934(exec_module)
+  1668/25    0.372    0.000    9.260    0.370 {built-in method builtins.exec}
+      440    5.037    0.011    9.096    0.021 C:\Users\Admin\dz\DriveZero\DriveRL\src\driverl\env\engine\reward_calculator\center_line.py:385(_squared_distance_points_to_segments)
+       84    0.004    0.000    8.773    0.104 C:\Users\Admin\dz\DriveZero\DriveRL\nuplan-devkit\nuplan\planning\scenario_builder\nuplan_db\nuplan_scenario.py:358(get_future_tracked_objects)
+   387/71    0.003    0.000    8.584    0.121 {built-in method builtins.__import__}
+      440    0.095    0.000    8.272    0.019 C:\Users\Admin\dz\DriveZero\DriveRL\src\driverl\env\engine\reward_calculator\center_line.py:629(calculate_nearest_line)
+ 2105/943    0.011    0.000    8.032    0.009 <frozen importlib._bootstrap>:1207(_handle_fromlist)
+      440    0.161    0.000    6.342    0.014 D:\Projects\TanitAD\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\score_proposals.py:160(inject_proposal)
+        4    0.000    0.000    5.714    1.429 C:\Users\Admin\dz\DriveZero\DriveRL\src\driverl\nuplan\feature_builder.py:77(build)
+        4    0.003    0.001    5.712    1.428 C:\Users\Admin\dz\DriveZero\DriveRL\src\driverl\nuplan\feature_builder.py:93(_build_on_current_device)
+        4    0.002    0.001    5.665    1.416 C:\Users\Admin\dz\DriveZero\DriveRL\src\driverl\nuplan\feature_builder.py:383(_build_map_features)
+390150/873    0.910    0.000    5.256    0.006 C:\Users\Admin\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\copy.py:128(deepcopy)
+51918/873    0.263    0.000    5.221    0.006 C:\Users\Admin\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\copy.py:227(_deepcopy_dict)
+16429/889    0.091    0.000    5.176    0.006 C:\Users\Admin\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\copy.py:259(_reconstruct)
+       36    0.001    0.000    4.960    0.138 C:\Users\Admin\dz\DriveZero\DriveRL\nuplan-devkit\nuplan\planning\scenario_builder\nuplan_db\nuplan_scenario.py:346(get_past_tracked_objects)
+
+

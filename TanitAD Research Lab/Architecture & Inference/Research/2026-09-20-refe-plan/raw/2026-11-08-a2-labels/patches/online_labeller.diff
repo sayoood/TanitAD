@@ -1,0 +1,140 @@
+--- a/refe/online_labeller.py	2026-11-08 09:24:40.000000000 +0100
++++ b/refe/online_labeller.py	2026-11-08 09:38:40.000000000 +0100
+@@ -94,7 +94,7 @@
+ 
+ 
+ # ------------------------------------------------------------------------------------------------ worker side
+-def _pdm_init(metric_cache: str, lru: int = 8):
++def _pdm_init(metric_cache: str, lru: int = 8, behaviour: bool = False):
+     import sys
+     here = str(Path(__file__).resolve().parent)
+     for q in (here, str(Path(here).parent / "code")):
+@@ -102,7 +102,7 @@
+             sys.path.insert(0, q)
+     import navsim_pdm_targets as PT
+     PT._setup()
+-    _W.update(PT=PT, root=metric_cache, lru=OrderedDict(), lru_n=int(lru))
++    _W.update(PT=PT, root=metric_cache, lru=OrderedDict(), lru_n=int(lru), behaviour=bool(behaviour))
+ 
+ 
+ def _synth_init(*_a):
+@@ -118,6 +118,9 @@
+             return {"labels": None, "sha": sha, "reason": "no_parts", "cpu_s": time.process_time() - t0}
+         return {"labels": synthetic_labels(props), "sha": sha, "reason": None, "cpu_s": time.process_time() - t0}
+     PT = _W["PT"]
++    if _W.get("behaviour"):                                     # A2 (default OFF): the navtest quarantine is checked BEFORE a behaviour label is computed
++        import behaviour_gate as BG
++        BG.assert_not_navtest(meta.get("log_name"), meta.get("token"))
+     path = parts_path(_W["root"], meta["log_name"], meta["token"], meta.get("aug"))
+     key = str(path)
+     parts = _W["lru"].get(key)
+@@ -130,6 +133,11 @@
+             _W["lru"].popitem(last=False)
+     else:
+         _W["lru"].move_to_end(key)
++    if _W.get("behaviour"):
++        t = PT.score_plans(parts, PT.executed_plans8(props, repair=True), behaviour=True)
++        import behaviour_terms as BT
++        bq, bact = BT.pack(t["behaviour"])
++        return {"labels": labels_from_targets(t), "behaviour": bq, "behaviour_act": bact, "sha": sha, "reason": None, "cpu_s": time.process_time() - t0}
+     labels = labels_from_targets(PT.score_plans(parts, PT.executed_plans8(props, repair=True)))
+     return {"labels": labels, "sha": sha, "reason": None, "cpu_s": time.process_time() - t0}
+ 
+@@ -138,13 +146,13 @@
+ class _SubprocPool:
+     """N `label_worker.py` subprocesses under `python`, each a blocking request/response; a thread pool of the same size borrows one per job."""
+ 
+-    def __init__(self, python: str, workers: int, metric_cache: str):
++    def __init__(self, python: str, workers: int, metric_cache: str, behaviour: bool = False):
+         import queue
+         import subprocess
+         import sys
+         self._procs, self._free = [], queue.Queue()
+         for _ in range(max(int(workers), 1)):
+-            p = subprocess.Popen([python, "-u", str(Path(__file__).resolve().parent / "label_worker.py"), metric_cache], stdin=subprocess.PIPE,
++            p = subprocess.Popen([python, "-u", str(Path(__file__).resolve().parent / "label_worker.py"), metric_cache] + (["--behaviour"] if behaviour else []), stdin=subprocess.PIPE,
+                                  stdout=subprocess.PIPE, stderr=sys.stderr)
+             self._procs.append(p)
+             self._free.put(p)
+@@ -164,6 +172,9 @@
+                 raise RuntimeError("label worker: " + res["error"])
+             if res.get("labels") is not None:
+                 res["labels"] = np.frombuffer(res["labels"], dtype=np.float32).reshape(res["labels_shape"]).copy()
++            if res.get("behaviour") is not None:
++                res["behaviour"] = np.frombuffer(res["behaviour"], dtype=np.float32).reshape(res["behaviour_shape"]).copy()
++                res["behaviour_act"] = np.frombuffer(res["behaviour_act"], dtype=np.uint8).reshape(res["behaviour_shape"]).astype(bool)
+             return res
+         return self._ex.submit(run)
+ 
+@@ -180,7 +191,8 @@
+ # ------------------------------------------------------------------------------------------------ trainer side
+ class OnlineLabeller:
+     def __init__(self, backend: str = "pdm", workers: int = 12, metric_cache: str | None = None, timeout_s: float = 900.0, python: str | None = None,
+-                 n_prop: int = 64, horizon: int = 20, max_fail_frac: float = 0.02, min_sets_for_fail_check: int = 200, chunks: int = 1):
++                 n_prop: int = 64, horizon: int = 20, max_fail_frac: float = 0.02, min_sets_for_fail_check: int = 200, chunks: int = 1,
++                 behaviour: bool = False):
+         if backend not in BACKENDS:
+             raise ValueError(f"backend must be one of {BACKENDS}")
+         # SPEC_P6 3.1 "a set may be split into proposal chunks across workers for latency": `chunks` k > 1 scores each sample's M proposals as k jobs of M/k
+@@ -191,6 +203,9 @@
+         if int(chunks) < 1 or int(n_prop) % int(chunks):
+             raise ValueError(f"chunks must be >= 1 and divide n_prop ({n_prop}); got {chunks}")
+         self.chunks = int(chunks)
++        self.behaviour = bool(behaviour)                          # A2: also return the behaviour-term labels in info["behaviour"] / info["behaviour_act"]; default OFF
++        if self.behaviour and backend != "pdm":
++            raise ValueError("behaviour terms exist only on the pdm backend (the synthetic control has none)")
+         if backend == "pdm" and not metric_cache:
+             raise ValueError("the pdm backend needs --metric-cache (the D9 parts directory)")
+         self.backend, self.workers, self.metric_cache = backend, int(workers), metric_cache
+@@ -211,10 +226,10 @@
+             if self.backend == "synthetic":
+                 self._ex = cf.ThreadPoolExecutor(n)
+             elif self.python:
+-                self._ex = _SubprocPool(self.python, n, self.metric_cache)       # the NAVSIM stack lives in another interpreter than the trainer's
++                self._ex = _SubprocPool(self.python, n, self.metric_cache, self.behaviour)       # the NAVSIM stack lives in another interpreter than the trainer's
+             else:
+                 import multiprocessing as mp
+-                self._ex = cf.ProcessPoolExecutor(n, mp_context=mp.get_context("spawn"), initializer=_pdm_init, initargs=(self.metric_cache,))
++                self._ex = cf.ProcessPoolExecutor(n, mp_context=mp.get_context("spawn"), initializer=_pdm_init, initargs=(self.metric_cache, 8, self.behaviour))
+         return self._ex
+ 
+     def close(self):
+@@ -252,6 +267,8 @@
+         labels = np.zeros((B, self.n_prop, len(COMPONENTS)), np.float32)
+         mask = np.zeros(B, np.float32)
+         reasons = []
++        bq = np.ones((B, self.n_prop, 5), np.float32) if self.behaviour else None
++        bact = np.zeros((B, self.n_prop, 5), bool) if self.behaviour else None
+         try:
+             for i, fs in enumerate(h["futs"]):
+                 failed = missing = None
+@@ -273,6 +290,8 @@
+                         missing = missing or r["reason"]
+                         continue
+                     labels[i, h["cuts"][c]] = r["labels"]
++                    if self.behaviour:
++                        bq[i, h["cuts"][c]], bact[i, h["cuts"][c]] = r["behaviour"], r["behaviour_act"]
+                 if failed is not None:
+                     self.stats["n_failed"] += 1
+                     self.tot_failed += 1
+@@ -283,6 +302,8 @@
+                 else:
+                     mask[i] = 1.0
+                 if mask[i] == 0.0:
++                    if self.behaviour:
++                        bq[i], bact[i] = 1.0, False                      # masked sample: neutral q, nothing applicable
+                     labels[i] = 0.0                                      # a sample with ANY unlabelled chunk carries no label at all (never a partial set)
+         finally:
+             self._inflight.pop(h["stamp"], None)
+@@ -295,7 +316,10 @@
+         bad = self.tot_failed
+         if self.tot_sets >= self.min_sets and bad / self.tot_sets > self.max_fail_frac:
+             raise RuntimeError(f"the online labeller failed on {bad} of {self.tot_sets} sets (> {100 * self.max_fail_frac:.1f} %); last: {reasons[-1:]}")
+-        return labels, mask, {"stamp": h["stamp"], "lag_steps": lag, "reasons": reasons, "latency_s": time.perf_counter() - h["t_submit"]}
++        info = {"stamp": h["stamp"], "lag_steps": lag, "reasons": reasons, "latency_s": time.perf_counter() - h["t_submit"]}
++        if self.behaviour:
++            info["behaviour"], info["behaviour_act"] = bq, bact      # [B, M, 5] q in behaviour_terms.ORDER, [B, M, 5] applicable; masked samples: q = 1, act = False
++        return labels, mask, info
+ 
+     def take_stats(self, reset: bool = True) -> dict:
+         s = dict(self.stats)

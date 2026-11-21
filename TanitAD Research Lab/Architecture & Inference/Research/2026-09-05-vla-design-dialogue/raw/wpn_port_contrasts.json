@@ -1,0 +1,64 @@
+{
+ "n": 1360,
+ "K": 128,
+ "episodes": 34,
+ "n_draw": 20,
+ "port_l2": 6.367541313171387,
+ "roll1_same_episode_frac": 0.975,
+ "ade": {
+  "base": 0.6636495590209961,
+  "real": 0.6521487236022949,
+  "roll1": 0.6533722281455994,
+  "cross_episode": 0.6776444911956787,
+  "norm_matched": 0.7473795413970947
+ },
+ "contrasts": {
+  "real - base": {
+   "delta": -0.011291474872778736,
+   "ci": [
+    -0.041591988503932954,
+    0.017528955964371564
+   ],
+   "separated": false
+  },
+  "cross-episode - base": {
+   "delta": 0.014083800113076904,
+   "ci": [
+    -0.009741859114728867,
+    0.03625313043594361
+   ],
+   "separated": false
+  },
+  "real - cross-episode  [SCENE-SPECIFIC]": {
+   "delta": -0.025375275245693045,
+   "ci": [
+    -0.04253898579627275,
+    -0.009340317151509214
+   ],
+   "separated": true
+  },
+  "real - roll-1  [WP-M's number]": {
+   "delta": -0.0012365968328269955,
+   "ci": [
+    -0.009753436036407947,
+    0.006807904120068998
+   ],
+   "separated": false
+  },
+  "norm-matched - base": {
+   "delta": 0.08376648047845811,
+   "ci": [
+    0.06001223139464855,
+    0.10865483209490778
+   ],
+   "separated": true
+  }
+ },
+ "generic_share": -1.2168622248020233,
+ "influence": {
+  "flip": 0.23235294222831726,
+  "kl": 0.18778850138187408
+ },
+ "_tier": "T0; NON-PARITY pilot; paired episode-cluster bootstrap, 4000 iters; cross-episode control averaged over 20 draws",
+ "_supersedes": "wpm permuted-prior control (roll-1, mostly same episode)"
+}

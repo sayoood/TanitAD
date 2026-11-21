@@ -1,0 +1,27 @@
+# report v37 checks, tip cd6ce52d1c331b0d39163006fccfa062bb18202c
+
+PASS v36 inputs are the landed deliverables (sha256)
+PASS html = page template with the v37 md
+PASS LF only, no BOM
+PASS removed lines from v36: only the edited lines (status, abstract 7.35 bullet and next, 7.35 pointers, the Update (v36) bullet, row 1ao, items 13 and 14, the 7.34 pointer) (10 removed; unexpected [])
+PASS order: 7.35 < 7.35.4 < 7.36 < section 8, one 7.36
+PASS every table line of 7.35.4 and 7.36 is a line of a source RESULTS file (75 table lines)
+PASS italic quotations of 25+ characters verbatim in a source (RESULTS, cards, register, v36) (4 quotations)
+PASS each of the four metric families named in 7.35.4 + 7.36 at least 3 times [74, 33, 13, 18]
+PASS T1-kin and the estimator stated in 7.35.4 and in 7.36
+PASS no 'closed loop' or driving wording in the added sections
+PASS no banned word in the added lines
+PASS 8.3 has Update (v37) before Update (v36)
+PASS 8.1 ends with item 24
+PASS section 9 ends with item 15 (v37 reads and their limits)
+PASS 8.4 has rows 1ap to 1as, once each, before row 2
+PASS status line names v37 of 2026-11-04, the tip, 7.35 and 7.36; no 2026-11-05 anywhere
+PASS no stale pointer about the recovery reads
+PASS patch_v37.py re-run reproduces both deliverables byte for byte table lines 75 quotations 4 landed {'RF': '47472d2', 'RT': '55cd7f4', 'RP': '584954d', 'RA': 'cd6ce52', 'LP': '7ec821c'}
+
+RESULT: PASS (18 checks, 0 failed)
+
+== numbers audit (audit_v37.py): added non-table lines: 72; tokens found in a source (first match) FT card 11, LP RESULTS 27, LP amend 16, LP freeze 1, LP2 RESULTS 11, LP2 freeze 1, NX card 4, RA RESULTS 51, RF RESULTS 288, RP RESULTS 19, RT RESULTS 74, register 56, v36 text 18; structural (integers below 100, years, ids): 0; unmatched: 0
+== offline render (the template's own pre-processing + local marked; v36 baseline: see report_v36/v36_render_check.txt):
+   {"file":"v8f_report.html","tables":201,"h3":52,"math":323,"tables_with_ragged_rows":0,"pre_blocks":0,"slots_rendered":0,"stray_placeholders":0}
+   {"file":"V8F_SCIENTIFIC_REPORT.md","tables":201,"h3":52,"math":323,"tables_with_ragged_rows":0,"pre_blocks":0,"slots_rendered":0,"stray_placeholders":0}

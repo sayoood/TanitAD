@@ -1,0 +1,4422 @@
+{
+ "S2_s0": {
+  "n_windows": 4754,
+  "n_episodes": 139,
+  "arms": {
+   "os": {
+    "tier": "T1",
+    "LON": {
+     "speed_mae_mps": {
+      "mean": 0.2588,
+      "lo": 0.2379,
+      "hi": 0.2788,
+      "n": 4754,
+      "n_ep": 139
+     },
+     "along_mae_m": {
+      "mean": 0.226,
+      "lo": 0.2034,
+      "hi": 0.2532,
+      "n": 4754,
+      "n_ep": 139
+     },
+     "target_speed_acc.within_0.5_mps": {
+      "mean": 0.8534,
+      "lo": 0.8361,
+      "hi": 0.8711,
+      "n": 4754,
+      "n_ep": 139
+     },
+     "accel_mae_mps2": {
+      "mean": 0.3715,
+      "lo": 0.3445,
+      "hi": 0.3974,
+      "n": 4754,
+      "n_ep": 139
+     }
+    },
+    "LAT": {
+     "heading_mae_deg": {
+      "mean": 1.3478,
+      "lo": 0.7344,
+      "hi": 2.52,
+      "n": 4538,
+      "n_ep": 139
+     },
+     "curvature_mae_1pm": {
+      "mean": 0.003662,
+      "lo": 0.002893,
+      "hi": 0.004558,
+      "n": 4500,
+      "n_ep": 139
+     },
+     "yaw_rate_mae_degps": {
+      "mean": 1.08,
+      "lo": 0.9315,
+      "hi": 1.2365,
+      "n": 4500,
+      "n_ep": 139
+     },
+     "cross_mae_m": {
+      "mean": 0.103,
+      "lo": 0.0903,
+      "hi": 0.1169,
+      "n": 4754,
+      "n_ep": 139
+     }
+    },
+    "LON_ego_progress": {
+     "status": "OK",
+     "convention": "human_dir",
+     "progress_ratio_mean": 1.0149,
+     "progress_ratio_median": 1.0009,
+     "progress_error_mean": 0.0668,
+     "under_progress_rate": 0.4768,
+     "gt_progress_mean_m": 23.599,
+     "n": 4545,
+     "n_windows": 4754,
+     "n_excluded_low_gt_progress": 209,
+     "min_progress_m": 0.5,
+     "t0_axis_gt_self_ratio": 0.989,
+     "t0_axis_gt_self_ratio_note": "what the GROUND TRUTH scores under pseudosim's published t0-axis reading. 1.0 means the windows are straight; below 1.0 is the CURVATURE CONFOUND \u2014 the human charged for under-progress it did not commit, and an arm that drives straighter than the human rewarded for it.",
+     "definition": "along-track distance covered / the human's, both projected on the human's own final-displacement direction; dt-invariant; <1 = under-drives, >1 = over-drives; GT scores exactly 1.0 by construction",
+     "published_motivation": "arXiv 2605.00066 \u2014 Ego Progress alone rho=0.83 vs closed-loop Driving Score while traditional L2 gives rho=-0.36 (p=0.43, n=8, NO CI). Direction only; those magnitudes are NOT a target."
+    },
+    "LON_dk": {
+     "status": "OK",
+     "n": 1108,
+     "n_windows": 4754,
+     "mean_headway_min_m": 27.9613,
+     "mean_time_gap_min_s": 4.2308,
+     "n_time_gap": 1008,
+     "mean_min_ttc_s": 23.6164,
+     "n_closing": 488,
+     "instants_s": [
+      0.5,
+      1.0,
+      1.5,
+      2.0
+     ]
+    },
+    "TAC": {
+     "status": "OK",
+     "n": 4754,
+     "lateral_decision": {
+      "status": "OK",
+      "n": 4754,
+      "n_windows": 4754,
+      "classes": [
+       "lane_keep",
+       "turn_left",
+       "turn_right"
+      ],
+      "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+      "tier": "T1",
+      "per_class": {
+       "lane_keep": {
+        "n_true": 4107,
+        "n_pred": 4118,
+        "recall": 0.9798,
+        "precision": 0.9772
+       },
+       "turn_left": {
+        "n_true": 251,
+        "n_pred": 227,
+        "recall": 0.8008,
+        "precision": 0.8855
+       },
+       "turn_right": {
+        "n_true": 396,
+        "n_pred": 409,
+        "recall": 0.8763,
+        "precision": 0.8484
+       }
+      },
+      "confusion_gt_rows_pred_cols": [
+       [
+        4024,
+        23,
+        60
+       ],
+       [
+        48,
+        201,
+        2
+       ],
+       [
+        46,
+        3,
+        347
+       ]
+      ],
+      "class_order": [
+       "lane_keep",
+       "turn_left",
+       "turn_right"
+      ],
+      "never_predicted": [],
+      "accuracy": 0.9617,
+      "kappa": 0.8418,
+      "kappa_undefined_reason": null,
+      "ci": {
+       "accuracy": {
+        "mean": 0.9617,
+        "lo": 0.9495,
+        "hi": 0.9725,
+        "ci95": 0.0115,
+        "se": 0.0058,
+        "reducer": "_acc",
+        "n_windows": 4754,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "kappa": {
+        "mean": 0.8418,
+        "lo": 0.792,
+        "hi": 0.8807,
+        "ci95": 0.0443,
+        "se": 0.0228,
+        "reducer": "_kap",
+        "n_windows": 4754,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       }
+      }
+     },
+     "longitudinal_decision": {
+      "status": "OK",
+      "n": 4754,
+      "n_windows": 4754,
+      "classes": [
+       "brake_stop",
+       "steady",
+       "accelerate"
+      ],
+      "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+      "tier": "T1",
+      "per_class": {
+       "brake_stop": {
+        "n_true": 629,
+        "n_pred": 437,
+        "recall": 0.5231,
+        "precision": 0.7529
+       },
+       "steady": {
+        "n_true": 3599,
+        "n_pred": 3744,
+        "recall": 0.9094,
+        "precision": 0.8742
+       },
+       "accelerate": {
+        "n_true": 526,
+        "n_pred": 573,
+        "recall": 0.6578,
+        "precision": 0.6038
+       }
+      },
+      "confusion_gt_rows_pred_cols": [
+       [
+        329,
+        294,
+        6
+       ],
+       [
+        105,
+        3273,
+        221
+       ],
+       [
+        3,
+        177,
+        346
+       ]
+      ],
+      "class_order": [
+       "brake_stop",
+       "steady",
+       "accelerate"
+      ],
+      "never_predicted": [],
+      "accuracy": 0.8305,
+      "kappa": 0.5518,
+      "kappa_undefined_reason": null,
+      "ci": {
+       "accuracy": {
+        "mean": 0.8305,
+        "lo": 0.8063,
+        "hi": 0.8537,
+        "ci95": 0.0237,
+        "se": 0.0122,
+        "reducer": "_acc",
+        "n_windows": 4754,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "kappa": {
+        "mean": 0.5518,
+        "lo": 0.5039,
+        "hi": 0.5957,
+        "ci95": 0.0459,
+        "se": 0.0235,
+        "reducer": "_kap",
+        "n_windows": 4754,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       }
+      }
+     }
+    },
+    "STRAT": {
+     "status": "UNAVAILABLE",
+     "reason": "strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+     "n": 0
+    }
+   },
+   "ha0_ext": {
+    "tier": "T1",
+    "LON": {
+     "speed_mae_mps": {
+      "mean": 0.2548,
+      "lo": 0.2364,
+      "hi": 0.2737,
+      "n": 4754,
+      "n_ep": 139
+     },
+     "along_mae_m": {
+      "mean": 0.2347,
+      "lo": 0.216,
+      "hi": 0.2583,
+      "n": 4754,
+      "n_ep": 139
+     },
+     "target_speed_acc.within_0.5_mps": {
+      "mean": 0.8655,
+      "lo": 0.8497,
+      "hi": 0.8822,
+      "n": 4754,
+      "n_ep": 139
+     },
+     "accel_mae_mps2": {
+      "mean": 0.3181,
+      "lo": 0.2873,
+      "hi": 0.3483,
+      "n": 4754,
+      "n_ep": 139
+     }
+    },
+    "LAT": {
+     "heading_mae_deg": {
+      "mean": 1.4522,
+      "lo": 0.8259,
+      "hi": 2.6235,
+      "n": 4513,
+      "n_ep": 139
+     },
+     "curvature_mae_1pm": {
+      "mean": 0.003767,
+      "lo": 0.003024,
+      "hi": 0.00457,
+      "n": 4475,
+      "n_ep": 139
+     },
+     "yaw_rate_mae_degps": {
+      "mean": 1.3575,
+      "lo": 1.1279,
+      "hi": 1.6089,
+      "n": 4475,
+      "n_ep": 139
+     },
+     "cross_mae_m": {
+      "mean": 0.1079,
+      "lo": 0.0918,
+      "hi": 0.1252,
+      "n": 4754,
+      "n_ep": 139
+     }
+    },
+    "LON_ego_progress": {
+     "status": "OK",
+     "convention": "human_dir",
+     "progress_ratio_mean": 0.9749,
+     "progress_ratio_median": 0.9941,
+     "progress_error_mean": 0.0548,
+     "under_progress_rate": 0.64,
+     "gt_progress_mean_m": 23.599,
+     "n": 4545,
+     "n_windows": 4754,
+     "n_excluded_low_gt_progress": 209,
+     "min_progress_m": 0.5,
+     "t0_axis_gt_self_ratio": 0.989,
+     "t0_axis_gt_self_ratio_note": "what the GROUND TRUTH scores under pseudosim's published t0-axis reading. 1.0 means the windows are straight; below 1.0 is the CURVATURE CONFOUND \u2014 the human charged for under-progress it did not commit, and an arm that drives straighter than the human rewarded for it.",
+     "definition": "along-track distance covered / the human's, both projected on the human's own final-displacement direction; dt-invariant; <1 = under-drives, >1 = over-drives; GT scores exactly 1.0 by construction",
+     "published_motivation": "arXiv 2605.00066 \u2014 Ego Progress alone rho=0.83 vs closed-loop Driving Score while traditional L2 gives rho=-0.36 (p=0.43, n=8, NO CI). Direction only; those magnitudes are NOT a target."
+    },
+    "LON_dk": {
+     "status": "OK",
+     "n": 1102,
+     "n_windows": 4754,
+     "mean_headway_min_m": 28.0379,
+     "mean_time_gap_min_s": 4.2497,
+     "n_time_gap": 1003,
+     "mean_min_ttc_s": 23.9701,
+     "n_closing": 452,
+     "instants_s": [
+      0.5,
+      1.0,
+      1.5,
+      2.0
+     ]
+    },
+    "TAC": {
+     "status": "OK",
+     "n": 4754,
+     "lateral_decision": {
+      "status": "OK",
+      "n": 4754,
+      "n_windows": 4754,
+      "classes": [
+       "lane_keep",
+       "turn_left",
+       "turn_right"
+      ],
+      "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+      "tier": "T1",
+      "per_class": {
+       "lane_keep": {
+        "n_true": 4107,
+        "n_pred": 4132,
+        "recall": 0.9691,
+        "precision": 0.9632
+       },
+       "turn_left": {
+        "n_true": 251,
+        "n_pred": 249,
+        "recall": 0.753,
+        "precision": 0.759
+       },
+       "turn_right": {
+        "n_true": 396,
+        "n_pred": 373,
+        "recall": 0.7702,
+        "precision": 0.8177
+       }
+      },
+      "confusion_gt_rows_pred_cols": [
+       [
+        3980,
+        59,
+        68
+       ],
+       [
+        62,
+        189,
+        0
+       ],
+       [
+        90,
+        1,
+        305
+       ]
+      ],
+      "class_order": [
+       "lane_keep",
+       "turn_left",
+       "turn_right"
+      ],
+      "never_predicted": [],
+      "accuracy": 0.9411,
+      "kappa": 0.7544,
+      "kappa_undefined_reason": null,
+      "ci": {
+       "accuracy": {
+        "mean": 0.9411,
+        "lo": 0.9256,
+        "hi": 0.955,
+        "ci95": 0.0147,
+        "se": 0.0076,
+        "reducer": "_acc",
+        "n_windows": 4754,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "kappa": {
+        "mean": 0.7544,
+        "lo": 0.7054,
+        "hi": 0.796,
+        "ci95": 0.0453,
+        "se": 0.0233,
+        "reducer": "_kap",
+        "n_windows": 4754,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       }
+      }
+     },
+     "longitudinal_decision": {
+      "status": "OK",
+      "n": 4754,
+      "n_windows": 4754,
+      "classes": [
+       "brake_stop",
+       "steady",
+       "accelerate"
+      ],
+      "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+      "tier": "T1",
+      "per_class": {
+       "brake_stop": {
+        "n_true": 629,
+        "n_pred": 589,
+        "recall": 0.6963,
+        "precision": 0.7436
+       },
+       "steady": {
+        "n_true": 3599,
+        "n_pred": 3599,
+        "recall": 0.8977,
+        "precision": 0.8977
+       },
+       "accelerate": {
+        "n_true": 526,
+        "n_pred": 566,
+        "recall": 0.6502,
+        "precision": 0.6042
+       }
+      },
+      "confusion_gt_rows_pred_cols": [
+       [
+        438,
+        186,
+        5
+       ],
+       [
+        149,
+        3231,
+        219
+       ],
+       [
+        2,
+        182,
+        342
+       ]
+      ],
+      "class_order": [
+       "brake_stop",
+       "steady",
+       "accelerate"
+      ],
+      "never_predicted": [],
+      "accuracy": 0.8437,
+      "kappa": 0.6066,
+      "kappa_undefined_reason": null,
+      "ci": {
+       "accuracy": {
+        "mean": 0.8437,
+        "lo": 0.8218,
+        "hi": 0.8652,
+        "ci95": 0.0217,
+        "se": 0.0113,
+        "reducer": "_acc",
+        "n_windows": 4754,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "kappa": {
+        "mean": 0.6066,
+        "lo": 0.5654,
+        "hi": 0.6433,
+        "ci95": 0.0389,
+        "se": 0.0198,
+        "reducer": "_kap",
+        "n_windows": 4754,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       }
+      }
+     }
+    },
+    "STRAT": {
+     "status": "UNAVAILABLE",
+     "reason": "strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+     "n": 0
+    }
+   },
+   "ha0": {
+    "tier": "T1",
+    "LON": {
+     "speed_mae_mps": {
+      "mean": 0.4891,
+      "lo": 0.444,
+      "hi": 0.5368,
+      "n": 4754,
+      "n_ep": 139
+     },
+     "along_mae_m": {
+      "mean": 0.4718,
+      "lo": 0.4293,
+      "hi": 0.5186,
+      "n": 4754,
+      "n_ep": 139
+     },
+     "target_speed_acc.within_0.5_mps": {
+      "mean": 0.7046,
+      "lo": 0.6714,
+      "hi": 0.7358,
+      "n": 4754,
+      "n_ep": 139
+     },
+     "accel_mae_mps2": {
+      "mean": 0.4795,
+      "lo": 0.4308,
+      "hi": 0.53,
+      "n": 4754,
+      "n_ep": 139
+     }
+    },
+    "LAT": {
+     "heading_mae_deg": {
+      "mean": 2.82,
+      "lo": 1.9861,
+      "hi": 4.1764,
+      "n": 4490,
+      "n_ep": 139
+     },
+     "curvature_mae_1pm": {
+      "mean": 0.006903,
+      "lo": 0.005386,
+      "hi": 0.008524,
+      "n": 4463,
+      "n_ep": 139
+     },
+     "yaw_rate_mae_degps": {
+      "mean": 2.4052,
+      "lo": 1.9584,
+      "hi": 2.8812,
+      "n": 4463,
+      "n_ep": 139
+     },
+     "cross_mae_m": {
+      "mean": 0.317,
+      "lo": 0.2503,
+      "hi": 0.3925,
+      "n": 4754,
+      "n_ep": 139
+     }
+    },
+    "LON_ego_progress": {
+     "status": "OK",
+     "convention": "human_dir",
+     "progress_ratio_mean": 1.0078,
+     "progress_ratio_median": 0.9925,
+     "progress_error_mean": 0.1172,
+     "under_progress_rate": 0.635,
+     "gt_progress_mean_m": 23.599,
+     "n": 4545,
+     "n_windows": 4754,
+     "n_excluded_low_gt_progress": 209,
+     "min_progress_m": 0.5,
+     "t0_axis_gt_self_ratio": 0.989,
+     "t0_axis_gt_self_ratio_note": "what the GROUND TRUTH scores under pseudosim's published t0-axis reading. 1.0 means the windows are straight; below 1.0 is the CURVATURE CONFOUND \u2014 the human charged for under-progress it did not commit, and an arm that drives straighter than the human rewarded for it.",
+     "definition": "along-track distance covered / the human's, both projected on the human's own final-displacement direction; dt-invariant; <1 = under-drives, >1 = over-drives; GT scores exactly 1.0 by construction",
+     "published_motivation": "arXiv 2605.00066 \u2014 Ego Progress alone rho=0.83 vs closed-loop Driving Score while traditional L2 gives rho=-0.36 (p=0.43, n=8, NO CI). Direction only; those magnitudes are NOT a target."
+    },
+    "LON_dk": {
+     "status": "OK",
+     "n": 1109,
+     "n_windows": 4754,
+     "mean_headway_min_m": 27.4044,
+     "mean_time_gap_min_s": 4.1951,
+     "n_time_gap": 1010,
+     "mean_min_ttc_s": 22.8197,
+     "n_closing": 492,
+     "instants_s": [
+      0.5,
+      1.0,
+      1.5,
+      2.0
+     ]
+    },
+    "TAC": {
+     "status": "OK",
+     "n": 4754,
+     "lateral_decision": {
+      "status": "OK",
+      "n": 4754,
+      "n_windows": 4754,
+      "classes": [
+       "lane_keep",
+       "turn_left",
+       "turn_right"
+      ],
+      "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+      "tier": "T1",
+      "per_class": {
+       "lane_keep": {
+        "n_true": 4107,
+        "n_pred": 4754,
+        "recall": 1.0,
+        "precision": 0.8639
+       },
+       "turn_left": {
+        "n_true": 251,
+        "n_pred": 0,
+        "recall": 0.0,
+        "precision": null
+       },
+       "turn_right": {
+        "n_true": 396,
+        "n_pred": 0,
+        "recall": 0.0,
+        "precision": null
+       }
+      },
+      "confusion_gt_rows_pred_cols": [
+       [
+        4107,
+        0,
+        0
+       ],
+       [
+        251,
+        0,
+        0
+       ],
+       [
+        396,
+        0,
+        0
+       ]
+      ],
+      "class_order": [
+       "lane_keep",
+       "turn_left",
+       "turn_right"
+      ],
+      "never_predicted": [
+       "turn_left",
+       "turn_right"
+      ],
+      "accuracy": 0.8639,
+      "kappa": 0.0,
+      "kappa_undefined_reason": null,
+      "ci": {
+       "accuracy": {
+        "mean": 0.8639,
+        "lo": 0.8252,
+        "hi": 0.9,
+        "ci95": 0.0374,
+        "se": 0.0192,
+        "reducer": "_acc",
+        "n_windows": 4754,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "kappa": {
+        "mean": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "ci95": 0.0,
+        "se": 0.0,
+        "reducer": "_kap",
+        "n_windows": 4754,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       }
+      }
+     },
+     "longitudinal_decision": {
+      "status": "OK",
+      "n": 4754,
+      "n_windows": 4754,
+      "classes": [
+       "brake_stop",
+       "steady",
+       "accelerate"
+      ],
+      "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+      "tier": "T1",
+      "per_class": {
+       "brake_stop": {
+        "n_true": 629,
+        "n_pred": 0,
+        "recall": 0.0,
+        "precision": null
+       },
+       "steady": {
+        "n_true": 3599,
+        "n_pred": 4754,
+        "recall": 1.0,
+        "precision": 0.757
+       },
+       "accelerate": {
+        "n_true": 526,
+        "n_pred": 0,
+        "recall": 0.0,
+        "precision": null
+       }
+      },
+      "confusion_gt_rows_pred_cols": [
+       [
+        0,
+        629,
+        0
+       ],
+       [
+        0,
+        3599,
+        0
+       ],
+       [
+        0,
+        526,
+        0
+       ]
+      ],
+      "class_order": [
+       "brake_stop",
+       "steady",
+       "accelerate"
+      ],
+      "never_predicted": [
+       "brake_stop",
+       "accelerate"
+      ],
+      "accuracy": 0.757,
+      "kappa": 0.0,
+      "kappa_undefined_reason": null,
+      "ci": {
+       "accuracy": {
+        "mean": 0.757,
+        "lo": 0.7185,
+        "hi": 0.793,
+        "ci95": 0.0372,
+        "se": 0.0186,
+        "reducer": "_acc",
+        "n_windows": 4754,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "kappa": {
+        "mean": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "ci95": 0.0,
+        "se": 0.0,
+        "reducer": "_kap",
+        "n_windows": 4754,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       }
+      }
+     }
+    },
+    "STRAT": {
+     "status": "UNAVAILABLE",
+     "reason": "strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+     "n": 0
+    }
+   },
+   "stop": {
+    "tier": "T1",
+    "LON": {
+     "speed_mae_mps": {
+      "mean": 11.2911,
+      "lo": 10.0746,
+      "hi": 12.5745,
+      "n": 4754,
+      "n_ep": 139
+     },
+     "along_mae_m": {
+      "mean": 14.0984,
+      "lo": 12.5755,
+      "hi": 15.6958,
+      "n": 4754,
+      "n_ep": 139
+     },
+     "target_speed_acc.within_0.5_mps": {
+      "mean": 0.0557,
+      "lo": 0.0347,
+      "hi": 0.0789,
+      "n": 4754,
+      "n_ep": 139
+     },
+     "accel_mae_mps2": {
+      "mean": 0.4795,
+      "lo": 0.4308,
+      "hi": 0.53,
+      "n": 4754,
+      "n_ep": 139
+     }
+    },
+    "LAT": {
+     "heading_mae_deg": null,
+     "curvature_mae_1pm": null,
+     "yaw_rate_mae_degps": null,
+     "cross_mae_m": {
+      "mean": 0.317,
+      "lo": 0.2503,
+      "hi": 0.3925,
+      "n": 4754,
+      "n_ep": 139
+     }
+    },
+    "LON_ego_progress": {
+     "status": "OK",
+     "convention": "human_dir",
+     "progress_ratio_mean": 0.0,
+     "progress_ratio_median": 0.0,
+     "progress_error_mean": 1.0,
+     "under_progress_rate": 1.0,
+     "gt_progress_mean_m": 23.599,
+     "n": 4545,
+     "n_windows": 4754,
+     "n_excluded_low_gt_progress": 209,
+     "min_progress_m": 0.5,
+     "t0_axis_gt_self_ratio": 0.989,
+     "t0_axis_gt_self_ratio_note": "what the GROUND TRUTH scores under pseudosim's published t0-axis reading. 1.0 means the windows are straight; below 1.0 is the CURVATURE CONFOUND \u2014 the human charged for under-progress it did not commit, and an arm that drives straighter than the human rewarded for it.",
+     "definition": "along-track distance covered / the human's, both projected on the human's own final-displacement direction; dt-invariant; <1 = under-drives, >1 = over-drives; GT scores exactly 1.0 by construction",
+     "published_motivation": "arXiv 2605.00066 \u2014 Ego Progress alone rho=0.83 vs closed-loop Driving Score while traditional L2 gives rho=-0.36 (p=0.43, n=8, NO CI). Direction only; those magnitudes are NOT a target."
+    },
+    "LON_dk": {
+     "status": "OK",
+     "n": 1109,
+     "n_windows": 4754,
+     "mean_headway_min_m": 34.1344,
+     "mean_time_gap_min_s": 4.9819,
+     "n_time_gap": 1010,
+     "mean_min_ttc_s": 29.836,
+     "n_closing": 52,
+     "instants_s": [
+      0.5,
+      1.0,
+      1.5,
+      2.0
+     ]
+    },
+    "TAC": {
+     "status": "OK",
+     "n": 4754,
+     "lateral_decision": {
+      "status": "OK",
+      "n": 4754,
+      "n_windows": 4754,
+      "classes": [
+       "lane_keep",
+       "turn_left",
+       "turn_right"
+      ],
+      "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+      "tier": "T1",
+      "per_class": {
+       "lane_keep": {
+        "n_true": 4107,
+        "n_pred": 4754,
+        "recall": 1.0,
+        "precision": 0.8639
+       },
+       "turn_left": {
+        "n_true": 251,
+        "n_pred": 0,
+        "recall": 0.0,
+        "precision": null
+       },
+       "turn_right": {
+        "n_true": 396,
+        "n_pred": 0,
+        "recall": 0.0,
+        "precision": null
+       }
+      },
+      "confusion_gt_rows_pred_cols": [
+       [
+        4107,
+        0,
+        0
+       ],
+       [
+        251,
+        0,
+        0
+       ],
+       [
+        396,
+        0,
+        0
+       ]
+      ],
+      "class_order": [
+       "lane_keep",
+       "turn_left",
+       "turn_right"
+      ],
+      "never_predicted": [
+       "turn_left",
+       "turn_right"
+      ],
+      "accuracy": 0.8639,
+      "kappa": 0.0,
+      "kappa_undefined_reason": null,
+      "ci": {
+       "accuracy": {
+        "mean": 0.8639,
+        "lo": 0.8252,
+        "hi": 0.9,
+        "ci95": 0.0374,
+        "se": 0.0192,
+        "reducer": "_acc",
+        "n_windows": 4754,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "kappa": {
+        "mean": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "ci95": 0.0,
+        "se": 0.0,
+        "reducer": "_kap",
+        "n_windows": 4754,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       }
+      }
+     },
+     "longitudinal_decision": {
+      "status": "OK",
+      "n": 4754,
+      "n_windows": 4754,
+      "classes": [
+       "brake_stop",
+       "steady",
+       "accelerate"
+      ],
+      "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+      "tier": "T1",
+      "per_class": {
+       "brake_stop": {
+        "n_true": 629,
+        "n_pred": 0,
+        "recall": 0.0,
+        "precision": null
+       },
+       "steady": {
+        "n_true": 3599,
+        "n_pred": 4754,
+        "recall": 1.0,
+        "precision": 0.757
+       },
+       "accelerate": {
+        "n_true": 526,
+        "n_pred": 0,
+        "recall": 0.0,
+        "precision": null
+       }
+      },
+      "confusion_gt_rows_pred_cols": [
+       [
+        0,
+        629,
+        0
+       ],
+       [
+        0,
+        3599,
+        0
+       ],
+       [
+        0,
+        526,
+        0
+       ]
+      ],
+      "class_order": [
+       "brake_stop",
+       "steady",
+       "accelerate"
+      ],
+      "never_predicted": [
+       "brake_stop",
+       "accelerate"
+      ],
+      "accuracy": 0.757,
+      "kappa": 0.0,
+      "kappa_undefined_reason": null,
+      "ci": {
+       "accuracy": {
+        "mean": 0.757,
+        "lo": 0.7185,
+        "hi": 0.793,
+        "ci95": 0.0372,
+        "se": 0.0186,
+        "reducer": "_acc",
+        "n_windows": 4754,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "kappa": {
+        "mean": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "ci95": 0.0,
+        "se": 0.0,
+        "reducer": "_kap",
+        "n_windows": 4754,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       }
+      }
+     }
+    },
+    "STRAT": {
+     "status": "UNAVAILABLE",
+     "reason": "strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+     "n": 0
+    }
+   }
+  },
+  "paired_os_minus_ha0_ext": {},
+  "paired_raw_keys": [
+   "n_windows",
+   "n_episodes",
+   "dt_s",
+   "pairs",
+   "A3_note",
+   "means"
+  ]
+ },
+ "S2_s1": {
+  "n_windows": 4754,
+  "n_episodes": 139,
+  "arms": {
+   "os": {
+    "tier": "T1",
+    "LON": {
+     "speed_mae_mps": {
+      "mean": 0.2595,
+      "lo": 0.2388,
+      "hi": 0.2797,
+      "n": 4754,
+      "n_ep": 139
+     },
+     "along_mae_m": {
+      "mean": 0.2266,
+      "lo": 0.2046,
+      "hi": 0.2532,
+      "n": 4754,
+      "n_ep": 139
+     },
+     "target_speed_acc.within_0.5_mps": {
+      "mean": 0.8519,
+      "lo": 0.8343,
+      "hi": 0.8693,
+      "n": 4754,
+      "n_ep": 139
+     },
+     "accel_mae_mps2": {
+      "mean": 0.3723,
+      "lo": 0.3451,
+      "hi": 0.3993,
+      "n": 4754,
+      "n_ep": 139
+     }
+    },
+    "LAT": {
+     "heading_mae_deg": {
+      "mean": 1.3369,
+      "lo": 0.7296,
+      "hi": 2.4929,
+      "n": 4538,
+      "n_ep": 139
+     },
+     "curvature_mae_1pm": {
+      "mean": 0.003529,
+      "lo": 0.002821,
+      "hi": 0.004337,
+      "n": 4499,
+      "n_ep": 139
+     },
+     "yaw_rate_mae_degps": {
+      "mean": 1.0642,
+      "lo": 0.9207,
+      "hi": 1.2139,
+      "n": 4499,
+      "n_ep": 139
+     },
+     "cross_mae_m": {
+      "mean": 0.1031,
+      "lo": 0.0905,
+      "hi": 0.1167,
+      "n": 4754,
+      "n_ep": 139
+     }
+    },
+    "LON_ego_progress": {
+     "status": "OK",
+     "convention": "human_dir",
+     "progress_ratio_mean": 1.0149,
+     "progress_ratio_median": 1.0008,
+     "progress_error_mean": 0.0671,
+     "under_progress_rate": 0.4757,
+     "gt_progress_mean_m": 23.599,
+     "n": 4545,
+     "n_windows": 4754,
+     "n_excluded_low_gt_progress": 209,
+     "min_progress_m": 0.5,
+     "t0_axis_gt_self_ratio": 0.989,
+     "t0_axis_gt_self_ratio_note": "what the GROUND TRUTH scores under pseudosim's published t0-axis reading. 1.0 means the windows are straight; below 1.0 is the CURVATURE CONFOUND \u2014 the human charged for under-progress it did not commit, and an arm that drives straighter than the human rewarded for it.",
+     "definition": "along-track distance covered / the human's, both projected on the human's own final-displacement direction; dt-invariant; <1 = under-drives, >1 = over-drives; GT scores exactly 1.0 by construction",
+     "published_motivation": "arXiv 2605.00066 \u2014 Ego Progress alone rho=0.83 vs closed-loop Driving Score while traditional L2 gives rho=-0.36 (p=0.43, n=8, NO CI). Direction only; those magnitudes are NOT a target."
+    },
+    "LON_dk": {
+     "status": "OK",
+     "n": 1104,
+     "n_windows": 4754,
+     "mean_headway_min_m": 27.9704,
+     "mean_time_gap_min_s": 4.209,
+     "n_time_gap": 1005,
+     "mean_min_ttc_s": 23.5836,
+     "n_closing": 495,
+     "instants_s": [
+      0.5,
+      1.0,
+      1.5,
+      2.0
+     ]
+    },
+    "TAC": {
+     "status": "OK",
+     "n": 4754,
+     "lateral_decision": {
+      "status": "OK",
+      "n": 4754,
+      "n_windows": 4754,
+      "classes": [
+       "lane_keep",
+       "turn_left",
+       "turn_right"
+      ],
+      "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+      "tier": "T1",
+      "per_class": {
+       "lane_keep": {
+        "n_true": 4107,
+        "n_pred": 4126,
+        "recall": 0.981,
+        "precision": 0.9765
+       },
+       "turn_left": {
+        "n_true": 251,
+        "n_pred": 225,
+        "recall": 0.7928,
+        "precision": 0.8844
+       },
+       "turn_right": {
+        "n_true": 396,
+        "n_pred": 403,
+        "recall": 0.8737,
+        "precision": 0.8586
+       }
+      },
+      "confusion_gt_rows_pred_cols": [
+       [
+        4029,
+        24,
+        54
+       ],
+       [
+        49,
+        199,
+        3
+       ],
+       [
+        48,
+        2,
+        346
+       ]
+      ],
+      "class_order": [
+       "lane_keep",
+       "turn_left",
+       "turn_right"
+      ],
+      "never_predicted": [],
+      "accuracy": 0.9621,
+      "kappa": 0.8427,
+      "kappa_undefined_reason": null,
+      "ci": {
+       "accuracy": {
+        "mean": 0.9621,
+        "lo": 0.9499,
+        "hi": 0.9722,
+        "ci95": 0.0112,
+        "se": 0.0056,
+        "reducer": "_acc",
+        "n_windows": 4754,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "kappa": {
+        "mean": 0.8427,
+        "lo": 0.792,
+        "hi": 0.8812,
+        "ci95": 0.0446,
+        "se": 0.0227,
+        "reducer": "_kap",
+        "n_windows": 4754,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       }
+      }
+     },
+     "longitudinal_decision": {
+      "status": "OK",
+      "n": 4754,
+      "n_windows": 4754,
+      "classes": [
+       "brake_stop",
+       "steady",
+       "accelerate"
+      ],
+      "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+      "tier": "T1",
+      "per_class": {
+       "brake_stop": {
+        "n_true": 629,
+        "n_pred": 444,
+        "recall": 0.5278,
+        "precision": 0.7477
+       },
+       "steady": {
+        "n_true": 3599,
+        "n_pred": 3757,
+        "recall": 0.9147,
+        "precision": 0.8762
+       },
+       "accelerate": {
+        "n_true": 526,
+        "n_pred": 553,
+        "recall": 0.6635,
+        "precision": 0.6311
+       }
+      },
+      "confusion_gt_rows_pred_cols": [
+       [
+        332,
+        292,
+        5
+       ],
+       [
+        108,
+        3292,
+        199
+       ],
+       [
+        4,
+        173,
+        349
+       ]
+      ],
+      "class_order": [
+       "brake_stop",
+       "steady",
+       "accelerate"
+      ],
+      "never_predicted": [],
+      "accuracy": 0.8357,
+      "kappa": 0.5636,
+      "kappa_undefined_reason": null,
+      "ci": {
+       "accuracy": {
+        "mean": 0.8357,
+        "lo": 0.8113,
+        "hi": 0.858,
+        "ci95": 0.0234,
+        "se": 0.012,
+        "reducer": "_acc",
+        "n_windows": 4754,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "kappa": {
+        "mean": 0.5636,
+        "lo": 0.5164,
+        "hi": 0.6074,
+        "ci95": 0.0455,
+        "se": 0.0229,
+        "reducer": "_kap",
+        "n_windows": 4754,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       }
+      }
+     }
+    },
+    "STRAT": {
+     "status": "UNAVAILABLE",
+     "reason": "strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+     "n": 0
+    }
+   },
+   "ha0_ext": {
+    "tier": "T1",
+    "LON": {
+     "speed_mae_mps": {
+      "mean": 0.2548,
+      "lo": 0.2364,
+      "hi": 0.2737,
+      "n": 4754,
+      "n_ep": 139
+     },
+     "along_mae_m": {
+      "mean": 0.2347,
+      "lo": 0.216,
+      "hi": 0.2583,
+      "n": 4754,
+      "n_ep": 139
+     },
+     "target_speed_acc.within_0.5_mps": {
+      "mean": 0.8655,
+      "lo": 0.8497,
+      "hi": 0.8822,
+      "n": 4754,
+      "n_ep": 139
+     },
+     "accel_mae_mps2": {
+      "mean": 0.3181,
+      "lo": 0.2873,
+      "hi": 0.3483,
+      "n": 4754,
+      "n_ep": 139
+     }
+    },
+    "LAT": {
+     "heading_mae_deg": {
+      "mean": 1.4522,
+      "lo": 0.8259,
+      "hi": 2.6235,
+      "n": 4513,
+      "n_ep": 139
+     },
+     "curvature_mae_1pm": {
+      "mean": 0.003767,
+      "lo": 0.003024,
+      "hi": 0.00457,
+      "n": 4475,
+      "n_ep": 139
+     },
+     "yaw_rate_mae_degps": {
+      "mean": 1.3575,
+      "lo": 1.1279,
+      "hi": 1.6089,
+      "n": 4475,
+      "n_ep": 139
+     },
+     "cross_mae_m": {
+      "mean": 0.1079,
+      "lo": 0.0918,
+      "hi": 0.1252,
+      "n": 4754,
+      "n_ep": 139
+     }
+    },
+    "LON_ego_progress": {
+     "status": "OK",
+     "convention": "human_dir",
+     "progress_ratio_mean": 0.9749,
+     "progress_ratio_median": 0.9941,
+     "progress_error_mean": 0.0548,
+     "under_progress_rate": 0.64,
+     "gt_progress_mean_m": 23.599,
+     "n": 4545,
+     "n_windows": 4754,
+     "n_excluded_low_gt_progress": 209,
+     "min_progress_m": 0.5,
+     "t0_axis_gt_self_ratio": 0.989,
+     "t0_axis_gt_self_ratio_note": "what the GROUND TRUTH scores under pseudosim's published t0-axis reading. 1.0 means the windows are straight; below 1.0 is the CURVATURE CONFOUND \u2014 the human charged for under-progress it did not commit, and an arm that drives straighter than the human rewarded for it.",
+     "definition": "along-track distance covered / the human's, both projected on the human's own final-displacement direction; dt-invariant; <1 = under-drives, >1 = over-drives; GT scores exactly 1.0 by construction",
+     "published_motivation": "arXiv 2605.00066 \u2014 Ego Progress alone rho=0.83 vs closed-loop Driving Score while traditional L2 gives rho=-0.36 (p=0.43, n=8, NO CI). Direction only; those magnitudes are NOT a target."
+    },
+    "LON_dk": {
+     "status": "OK",
+     "n": 1102,
+     "n_windows": 4754,
+     "mean_headway_min_m": 28.0379,
+     "mean_time_gap_min_s": 4.2497,
+     "n_time_gap": 1003,
+     "mean_min_ttc_s": 23.9701,
+     "n_closing": 452,
+     "instants_s": [
+      0.5,
+      1.0,
+      1.5,
+      2.0
+     ]
+    },
+    "TAC": {
+     "status": "OK",
+     "n": 4754,
+     "lateral_decision": {
+      "status": "OK",
+      "n": 4754,
+      "n_windows": 4754,
+      "classes": [
+       "lane_keep",
+       "turn_left",
+       "turn_right"
+      ],
+      "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+      "tier": "T1",
+      "per_class": {
+       "lane_keep": {
+        "n_true": 4107,
+        "n_pred": 4132,
+        "recall": 0.9691,
+        "precision": 0.9632
+       },
+       "turn_left": {
+        "n_true": 251,
+        "n_pred": 249,
+        "recall": 0.753,
+        "precision": 0.759
+       },
+       "turn_right": {
+        "n_true": 396,
+        "n_pred": 373,
+        "recall": 0.7702,
+        "precision": 0.8177
+       }
+      },
+      "confusion_gt_rows_pred_cols": [
+       [
+        3980,
+        59,
+        68
+       ],
+       [
+        62,
+        189,
+        0
+       ],
+       [
+        90,
+        1,
+        305
+       ]
+      ],
+      "class_order": [
+       "lane_keep",
+       "turn_left",
+       "turn_right"
+      ],
+      "never_predicted": [],
+      "accuracy": 0.9411,
+      "kappa": 0.7544,
+      "kappa_undefined_reason": null,
+      "ci": {
+       "accuracy": {
+        "mean": 0.9411,
+        "lo": 0.9256,
+        "hi": 0.955,
+        "ci95": 0.0147,
+        "se": 0.0076,
+        "reducer": "_acc",
+        "n_windows": 4754,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "kappa": {
+        "mean": 0.7544,
+        "lo": 0.7054,
+        "hi": 0.796,
+        "ci95": 0.0453,
+        "se": 0.0233,
+        "reducer": "_kap",
+        "n_windows": 4754,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       }
+      }
+     },
+     "longitudinal_decision": {
+      "status": "OK",
+      "n": 4754,
+      "n_windows": 4754,
+      "classes": [
+       "brake_stop",
+       "steady",
+       "accelerate"
+      ],
+      "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+      "tier": "T1",
+      "per_class": {
+       "brake_stop": {
+        "n_true": 629,
+        "n_pred": 589,
+        "recall": 0.6963,
+        "precision": 0.7436
+       },
+       "steady": {
+        "n_true": 3599,
+        "n_pred": 3599,
+        "recall": 0.8977,
+        "precision": 0.8977
+       },
+       "accelerate": {
+        "n_true": 526,
+        "n_pred": 566,
+        "recall": 0.6502,
+        "precision": 0.6042
+       }
+      },
+      "confusion_gt_rows_pred_cols": [
+       [
+        438,
+        186,
+        5
+       ],
+       [
+        149,
+        3231,
+        219
+       ],
+       [
+        2,
+        182,
+        342
+       ]
+      ],
+      "class_order": [
+       "brake_stop",
+       "steady",
+       "accelerate"
+      ],
+      "never_predicted": [],
+      "accuracy": 0.8437,
+      "kappa": 0.6066,
+      "kappa_undefined_reason": null,
+      "ci": {
+       "accuracy": {
+        "mean": 0.8437,
+        "lo": 0.8218,
+        "hi": 0.8652,
+        "ci95": 0.0217,
+        "se": 0.0113,
+        "reducer": "_acc",
+        "n_windows": 4754,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "kappa": {
+        "mean": 0.6066,
+        "lo": 0.5654,
+        "hi": 0.6433,
+        "ci95": 0.0389,
+        "se": 0.0198,
+        "reducer": "_kap",
+        "n_windows": 4754,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       }
+      }
+     }
+    },
+    "STRAT": {
+     "status": "UNAVAILABLE",
+     "reason": "strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+     "n": 0
+    }
+   },
+   "ha0": {
+    "tier": "T1",
+    "LON": {
+     "speed_mae_mps": {
+      "mean": 0.4891,
+      "lo": 0.444,
+      "hi": 0.5368,
+      "n": 4754,
+      "n_ep": 139
+     },
+     "along_mae_m": {
+      "mean": 0.4718,
+      "lo": 0.4293,
+      "hi": 0.5186,
+      "n": 4754,
+      "n_ep": 139
+     },
+     "target_speed_acc.within_0.5_mps": {
+      "mean": 0.7046,
+      "lo": 0.6714,
+      "hi": 0.7358,
+      "n": 4754,
+      "n_ep": 139
+     },
+     "accel_mae_mps2": {
+      "mean": 0.4795,
+      "lo": 0.4308,
+      "hi": 0.53,
+      "n": 4754,
+      "n_ep": 139
+     }
+    },
+    "LAT": {
+     "heading_mae_deg": {
+      "mean": 2.82,
+      "lo": 1.9861,
+      "hi": 4.1764,
+      "n": 4490,
+      "n_ep": 139
+     },
+     "curvature_mae_1pm": {
+      "mean": 0.006903,
+      "lo": 0.005386,
+      "hi": 0.008524,
+      "n": 4463,
+      "n_ep": 139
+     },
+     "yaw_rate_mae_degps": {
+      "mean": 2.4052,
+      "lo": 1.9584,
+      "hi": 2.8812,
+      "n": 4463,
+      "n_ep": 139
+     },
+     "cross_mae_m": {
+      "mean": 0.317,
+      "lo": 0.2503,
+      "hi": 0.3925,
+      "n": 4754,
+      "n_ep": 139
+     }
+    },
+    "LON_ego_progress": {
+     "status": "OK",
+     "convention": "human_dir",
+     "progress_ratio_mean": 1.0078,
+     "progress_ratio_median": 0.9925,
+     "progress_error_mean": 0.1172,
+     "under_progress_rate": 0.635,
+     "gt_progress_mean_m": 23.599,
+     "n": 4545,
+     "n_windows": 4754,
+     "n_excluded_low_gt_progress": 209,
+     "min_progress_m": 0.5,
+     "t0_axis_gt_self_ratio": 0.989,
+     "t0_axis_gt_self_ratio_note": "what the GROUND TRUTH scores under pseudosim's published t0-axis reading. 1.0 means the windows are straight; below 1.0 is the CURVATURE CONFOUND \u2014 the human charged for under-progress it did not commit, and an arm that drives straighter than the human rewarded for it.",
+     "definition": "along-track distance covered / the human's, both projected on the human's own final-displacement direction; dt-invariant; <1 = under-drives, >1 = over-drives; GT scores exactly 1.0 by construction",
+     "published_motivation": "arXiv 2605.00066 \u2014 Ego Progress alone rho=0.83 vs closed-loop Driving Score while traditional L2 gives rho=-0.36 (p=0.43, n=8, NO CI). Direction only; those magnitudes are NOT a target."
+    },
+    "LON_dk": {
+     "status": "OK",
+     "n": 1109,
+     "n_windows": 4754,
+     "mean_headway_min_m": 27.4044,
+     "mean_time_gap_min_s": 4.1951,
+     "n_time_gap": 1010,
+     "mean_min_ttc_s": 22.8197,
+     "n_closing": 492,
+     "instants_s": [
+      0.5,
+      1.0,
+      1.5,
+      2.0
+     ]
+    },
+    "TAC": {
+     "status": "OK",
+     "n": 4754,
+     "lateral_decision": {
+      "status": "OK",
+      "n": 4754,
+      "n_windows": 4754,
+      "classes": [
+       "lane_keep",
+       "turn_left",
+       "turn_right"
+      ],
+      "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+      "tier": "T1",
+      "per_class": {
+       "lane_keep": {
+        "n_true": 4107,
+        "n_pred": 4754,
+        "recall": 1.0,
+        "precision": 0.8639
+       },
+       "turn_left": {
+        "n_true": 251,
+        "n_pred": 0,
+        "recall": 0.0,
+        "precision": null
+       },
+       "turn_right": {
+        "n_true": 396,
+        "n_pred": 0,
+        "recall": 0.0,
+        "precision": null
+       }
+      },
+      "confusion_gt_rows_pred_cols": [
+       [
+        4107,
+        0,
+        0
+       ],
+       [
+        251,
+        0,
+        0
+       ],
+       [
+        396,
+        0,
+        0
+       ]
+      ],
+      "class_order": [
+       "lane_keep",
+       "turn_left",
+       "turn_right"
+      ],
+      "never_predicted": [
+       "turn_left",
+       "turn_right"
+      ],
+      "accuracy": 0.8639,
+      "kappa": 0.0,
+      "kappa_undefined_reason": null,
+      "ci": {
+       "accuracy": {
+        "mean": 0.8639,
+        "lo": 0.8252,
+        "hi": 0.9,
+        "ci95": 0.0374,
+        "se": 0.0192,
+        "reducer": "_acc",
+        "n_windows": 4754,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "kappa": {
+        "mean": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "ci95": 0.0,
+        "se": 0.0,
+        "reducer": "_kap",
+        "n_windows": 4754,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       }
+      }
+     },
+     "longitudinal_decision": {
+      "status": "OK",
+      "n": 4754,
+      "n_windows": 4754,
+      "classes": [
+       "brake_stop",
+       "steady",
+       "accelerate"
+      ],
+      "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+      "tier": "T1",
+      "per_class": {
+       "brake_stop": {
+        "n_true": 629,
+        "n_pred": 0,
+        "recall": 0.0,
+        "precision": null
+       },
+       "steady": {
+        "n_true": 3599,
+        "n_pred": 4754,
+        "recall": 1.0,
+        "precision": 0.757
+       },
+       "accelerate": {
+        "n_true": 526,
+        "n_pred": 0,
+        "recall": 0.0,
+        "precision": null
+       }
+      },
+      "confusion_gt_rows_pred_cols": [
+       [
+        0,
+        629,
+        0
+       ],
+       [
+        0,
+        3599,
+        0
+       ],
+       [
+        0,
+        526,
+        0
+       ]
+      ],
+      "class_order": [
+       "brake_stop",
+       "steady",
+       "accelerate"
+      ],
+      "never_predicted": [
+       "brake_stop",
+       "accelerate"
+      ],
+      "accuracy": 0.757,
+      "kappa": 0.0,
+      "kappa_undefined_reason": null,
+      "ci": {
+       "accuracy": {
+        "mean": 0.757,
+        "lo": 0.7185,
+        "hi": 0.793,
+        "ci95": 0.0372,
+        "se": 0.0186,
+        "reducer": "_acc",
+        "n_windows": 4754,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "kappa": {
+        "mean": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "ci95": 0.0,
+        "se": 0.0,
+        "reducer": "_kap",
+        "n_windows": 4754,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       }
+      }
+     }
+    },
+    "STRAT": {
+     "status": "UNAVAILABLE",
+     "reason": "strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+     "n": 0
+    }
+   },
+   "stop": {
+    "tier": "T1",
+    "LON": {
+     "speed_mae_mps": {
+      "mean": 11.2911,
+      "lo": 10.0746,
+      "hi": 12.5745,
+      "n": 4754,
+      "n_ep": 139
+     },
+     "along_mae_m": {
+      "mean": 14.0984,
+      "lo": 12.5755,
+      "hi": 15.6958,
+      "n": 4754,
+      "n_ep": 139
+     },
+     "target_speed_acc.within_0.5_mps": {
+      "mean": 0.0557,
+      "lo": 0.0347,
+      "hi": 0.0789,
+      "n": 4754,
+      "n_ep": 139
+     },
+     "accel_mae_mps2": {
+      "mean": 0.4795,
+      "lo": 0.4308,
+      "hi": 0.53,
+      "n": 4754,
+      "n_ep": 139
+     }
+    },
+    "LAT": {
+     "heading_mae_deg": null,
+     "curvature_mae_1pm": null,
+     "yaw_rate_mae_degps": null,
+     "cross_mae_m": {
+      "mean": 0.317,
+      "lo": 0.2503,
+      "hi": 0.3925,
+      "n": 4754,
+      "n_ep": 139
+     }
+    },
+    "LON_ego_progress": {
+     "status": "OK",
+     "convention": "human_dir",
+     "progress_ratio_mean": 0.0,
+     "progress_ratio_median": 0.0,
+     "progress_error_mean": 1.0,
+     "under_progress_rate": 1.0,
+     "gt_progress_mean_m": 23.599,
+     "n": 4545,
+     "n_windows": 4754,
+     "n_excluded_low_gt_progress": 209,
+     "min_progress_m": 0.5,
+     "t0_axis_gt_self_ratio": 0.989,
+     "t0_axis_gt_self_ratio_note": "what the GROUND TRUTH scores under pseudosim's published t0-axis reading. 1.0 means the windows are straight; below 1.0 is the CURVATURE CONFOUND \u2014 the human charged for under-progress it did not commit, and an arm that drives straighter than the human rewarded for it.",
+     "definition": "along-track distance covered / the human's, both projected on the human's own final-displacement direction; dt-invariant; <1 = under-drives, >1 = over-drives; GT scores exactly 1.0 by construction",
+     "published_motivation": "arXiv 2605.00066 \u2014 Ego Progress alone rho=0.83 vs closed-loop Driving Score while traditional L2 gives rho=-0.36 (p=0.43, n=8, NO CI). Direction only; those magnitudes are NOT a target."
+    },
+    "LON_dk": {
+     "status": "OK",
+     "n": 1109,
+     "n_windows": 4754,
+     "mean_headway_min_m": 34.1344,
+     "mean_time_gap_min_s": 4.9819,
+     "n_time_gap": 1010,
+     "mean_min_ttc_s": 29.836,
+     "n_closing": 52,
+     "instants_s": [
+      0.5,
+      1.0,
+      1.5,
+      2.0
+     ]
+    },
+    "TAC": {
+     "status": "OK",
+     "n": 4754,
+     "lateral_decision": {
+      "status": "OK",
+      "n": 4754,
+      "n_windows": 4754,
+      "classes": [
+       "lane_keep",
+       "turn_left",
+       "turn_right"
+      ],
+      "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+      "tier": "T1",
+      "per_class": {
+       "lane_keep": {
+        "n_true": 4107,
+        "n_pred": 4754,
+        "recall": 1.0,
+        "precision": 0.8639
+       },
+       "turn_left": {
+        "n_true": 251,
+        "n_pred": 0,
+        "recall": 0.0,
+        "precision": null
+       },
+       "turn_right": {
+        "n_true": 396,
+        "n_pred": 0,
+        "recall": 0.0,
+        "precision": null
+       }
+      },
+      "confusion_gt_rows_pred_cols": [
+       [
+        4107,
+        0,
+        0
+       ],
+       [
+        251,
+        0,
+        0
+       ],
+       [
+        396,
+        0,
+        0
+       ]
+      ],
+      "class_order": [
+       "lane_keep",
+       "turn_left",
+       "turn_right"
+      ],
+      "never_predicted": [
+       "turn_left",
+       "turn_right"
+      ],
+      "accuracy": 0.8639,
+      "kappa": 0.0,
+      "kappa_undefined_reason": null,
+      "ci": {
+       "accuracy": {
+        "mean": 0.8639,
+        "lo": 0.8252,
+        "hi": 0.9,
+        "ci95": 0.0374,
+        "se": 0.0192,
+        "reducer": "_acc",
+        "n_windows": 4754,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "kappa": {
+        "mean": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "ci95": 0.0,
+        "se": 0.0,
+        "reducer": "_kap",
+        "n_windows": 4754,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       }
+      }
+     },
+     "longitudinal_decision": {
+      "status": "OK",
+      "n": 4754,
+      "n_windows": 4754,
+      "classes": [
+       "brake_stop",
+       "steady",
+       "accelerate"
+      ],
+      "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+      "tier": "T1",
+      "per_class": {
+       "brake_stop": {
+        "n_true": 629,
+        "n_pred": 0,
+        "recall": 0.0,
+        "precision": null
+       },
+       "steady": {
+        "n_true": 3599,
+        "n_pred": 4754,
+        "recall": 1.0,
+        "precision": 0.757
+       },
+       "accelerate": {
+        "n_true": 526,
+        "n_pred": 0,
+        "recall": 0.0,
+        "precision": null
+       }
+      },
+      "confusion_gt_rows_pred_cols": [
+       [
+        0,
+        629,
+        0
+       ],
+       [
+        0,
+        3599,
+        0
+       ],
+       [
+        0,
+        526,
+        0
+       ]
+      ],
+      "class_order": [
+       "brake_stop",
+       "steady",
+       "accelerate"
+      ],
+      "never_predicted": [
+       "brake_stop",
+       "accelerate"
+      ],
+      "accuracy": 0.757,
+      "kappa": 0.0,
+      "kappa_undefined_reason": null,
+      "ci": {
+       "accuracy": {
+        "mean": 0.757,
+        "lo": 0.7185,
+        "hi": 0.793,
+        "ci95": 0.0372,
+        "se": 0.0186,
+        "reducer": "_acc",
+        "n_windows": 4754,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "kappa": {
+        "mean": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "ci95": 0.0,
+        "se": 0.0,
+        "reducer": "_kap",
+        "n_windows": 4754,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       }
+      }
+     }
+    },
+    "STRAT": {
+     "status": "UNAVAILABLE",
+     "reason": "strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+     "n": 0
+    }
+   }
+  },
+  "paired_os_minus_ha0_ext": {},
+  "paired_raw_keys": [
+   "n_windows",
+   "n_episodes",
+   "dt_s",
+   "pairs",
+   "A3_note",
+   "means"
+  ]
+ },
+ "S6_s0": {
+  "n_windows": 3668,
+  "n_episodes": 139,
+  "arms": {
+   "os": {
+    "tier": "T1",
+    "LON": {
+     "speed_mae_mps": {
+      "mean": 0.9329,
+      "lo": 0.8486,
+      "hi": 1.0167,
+      "n": 3668,
+      "n_ep": 139
+     },
+     "along_mae_m": {
+      "mean": 2.19,
+      "lo": 1.9985,
+      "hi": 2.3886,
+      "n": 3668,
+      "n_ep": 139
+     },
+     "target_speed_acc.within_0.5_mps": {
+      "mean": 0.5368,
+      "lo": 0.5077,
+      "hi": 0.5667,
+      "n": 3668,
+      "n_ep": 139
+     },
+     "accel_mae_mps2": {
+      "mean": 0.4306,
+      "lo": 0.3934,
+      "hi": 0.4668,
+      "n": 3668,
+      "n_ep": 139
+     }
+    },
+    "LAT": {
+     "heading_mae_deg": {
+      "mean": 3.1626,
+      "lo": 2.3183,
+      "hi": 4.5024,
+      "n": 3579,
+      "n_ep": 139
+     },
+     "curvature_mae_1pm": {
+      "mean": 0.005002,
+      "lo": 0.003871,
+      "hi": 0.006244,
+      "n": 3552,
+      "n_ep": 139
+     },
+     "yaw_rate_mae_degps": {
+      "mean": 1.6318,
+      "lo": 1.3781,
+      "hi": 1.8992,
+      "n": 3552,
+      "n_ep": 139
+     },
+     "cross_mae_m": {
+      "mean": 0.8412,
+      "lo": 0.7119,
+      "hi": 0.9792,
+      "n": 3668,
+      "n_ep": 139
+     }
+    },
+    "LON_ego_progress": {
+     "status": "OK",
+     "convention": "human_dir",
+     "progress_ratio_mean": 1.104,
+     "progress_ratio_median": 1.0041,
+     "progress_error_mean": 0.2391,
+     "under_progress_rate": 0.4693,
+     "gt_progress_mean_m": 67.9353,
+     "n": 3616,
+     "n_windows": 3668,
+     "n_excluded_low_gt_progress": 52,
+     "min_progress_m": 0.5,
+     "t0_axis_gt_self_ratio": 0.9699,
+     "t0_axis_gt_self_ratio_note": "what the GROUND TRUTH scores under pseudosim's published t0-axis reading. 1.0 means the windows are straight; below 1.0 is the CURVATURE CONFOUND \u2014 the human charged for under-progress it did not commit, and an arm that drives straighter than the human rewarded for it.",
+     "definition": "along-track distance covered / the human's, both projected on the human's own final-displacement direction; dt-invariant; <1 = under-drives, >1 = over-drives; GT scores exactly 1.0 by construction",
+     "published_motivation": "arXiv 2605.00066 \u2014 Ego Progress alone rho=0.83 vs closed-loop Driving Score while traditional L2 gives rho=-0.36 (p=0.43, n=8, NO CI). Direction only; those magnitudes are NOT a target."
+    },
+    "LON_dk": {
+     "status": "OK",
+     "n": 1020,
+     "n_windows": 3668,
+     "mean_headway_min_m": 25.7674,
+     "mean_time_gap_min_s": 3.8779,
+     "n_time_gap": 925,
+     "mean_min_ttc_s": 22.3313,
+     "n_closing": 475,
+     "instants_s": [
+      1.0,
+      2.0,
+      3.0,
+      4.0,
+      5.0,
+      6.0
+     ]
+    },
+    "TAC": {
+     "status": "OK",
+     "n": 3668,
+     "lateral_decision": {
+      "status": "OK",
+      "n": 3668,
+      "n_windows": 3668,
+      "classes": [
+       "lane_keep",
+       "turn_left",
+       "turn_right"
+      ],
+      "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+      "tier": "T1",
+      "per_class": {
+       "lane_keep": {
+        "n_true": 2601,
+        "n_pred": 2774,
+        "recall": 0.9535,
+        "precision": 0.894
+       },
+       "turn_left": {
+        "n_true": 371,
+        "n_pred": 315,
+        "recall": 0.6792,
+        "precision": 0.8
+       },
+       "turn_right": {
+        "n_true": 696,
+        "n_pred": 579,
+        "recall": 0.6968,
+        "precision": 0.8377
+       }
+      },
+      "confusion_gt_rows_pred_cols": [
+       [
+        2480,
+        38,
+        83
+       ],
+       [
+        108,
+        252,
+        11
+       ],
+       [
+        186,
+        25,
+        485
+       ]
+      ],
+      "class_order": [
+       "lane_keep",
+       "turn_left",
+       "turn_right"
+      ],
+      "never_predicted": [],
+      "accuracy": 0.877,
+      "kappa": 0.7108,
+      "kappa_undefined_reason": null,
+      "ci": {
+       "accuracy": {
+        "mean": 0.877,
+        "lo": 0.8499,
+        "hi": 0.9019,
+        "ci95": 0.026,
+        "se": 0.0132,
+        "reducer": "_acc",
+        "n_windows": 3668,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "kappa": {
+        "mean": 0.7108,
+        "lo": 0.6572,
+        "hi": 0.76,
+        "ci95": 0.0514,
+        "se": 0.0264,
+        "reducer": "_kap",
+        "n_windows": 3668,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       }
+      }
+     },
+     "longitudinal_decision": {
+      "status": "OK",
+      "n": 3668,
+      "n_windows": 3668,
+      "classes": [
+       "brake_stop",
+       "steady",
+       "accelerate"
+      ],
+      "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+      "tier": "T1",
+      "per_class": {
+       "brake_stop": {
+        "n_true": 1014,
+        "n_pred": 815,
+        "recall": 0.4684,
+        "precision": 0.5828
+       },
+       "steady": {
+        "n_true": 1608,
+        "n_pred": 1836,
+        "recall": 0.6748,
+        "precision": 0.591
+       },
+       "accelerate": {
+        "n_true": 1046,
+        "n_pred": 1017,
+        "recall": 0.6262,
+        "precision": 0.6441
+       }
+      },
+      "confusion_gt_rows_pred_cols": [
+       [
+        475,
+        448,
+        91
+       ],
+       [
+        252,
+        1085,
+        271
+       ],
+       [
+        88,
+        303,
+        655
+       ]
+      ],
+      "class_order": [
+       "brake_stop",
+       "steady",
+       "accelerate"
+      ],
+      "never_predicted": [],
+      "accuracy": 0.6039,
+      "kappa": 0.3811,
+      "kappa_undefined_reason": null,
+      "ci": {
+       "accuracy": {
+        "mean": 0.6039,
+        "lo": 0.5639,
+        "hi": 0.6424,
+        "ci95": 0.0393,
+        "se": 0.0202,
+        "reducer": "_acc",
+        "n_windows": 3668,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "kappa": {
+        "mean": 0.3811,
+        "lo": 0.3224,
+        "hi": 0.4364,
+        "ci95": 0.057,
+        "se": 0.0296,
+        "reducer": "_kap",
+        "n_windows": 3668,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       }
+      }
+     }
+    },
+    "STRAT": {
+     "status": "UNAVAILABLE",
+     "reason": "strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+     "n": 0
+    }
+   },
+   "ha0_ext": {
+    "tier": "T1",
+    "LON": {
+     "speed_mae_mps": {
+      "mean": 1.0957,
+      "lo": 0.9889,
+      "hi": 1.1994,
+      "n": 3668,
+      "n_ep": 139
+     },
+     "along_mae_m": {
+      "mean": 2.646,
+      "lo": 2.3757,
+      "hi": 2.9116,
+      "n": 3668,
+      "n_ep": 139
+     },
+     "target_speed_acc.within_0.5_mps": {
+      "mean": 0.5249,
+      "lo": 0.4978,
+      "hi": 0.5544,
+      "n": 3668,
+      "n_ep": 139
+     },
+     "accel_mae_mps2": {
+      "mean": 0.5055,
+      "lo": 0.4541,
+      "hi": 0.5552,
+      "n": 3668,
+      "n_ep": 139
+     }
+    },
+    "LAT": {
+     "heading_mae_deg": {
+      "mean": 5.9407,
+      "lo": 4.5997,
+      "hi": 7.5297,
+      "n": 3521,
+      "n_ep": 139
+     },
+     "curvature_mae_1pm": {
+      "mean": 0.00685,
+      "lo": 0.005367,
+      "hi": 0.008462,
+      "n": 3472,
+      "n_ep": 139
+     },
+     "yaw_rate_mae_degps": {
+      "mean": 2.7751,
+      "lo": 2.1986,
+      "hi": 3.3891,
+      "n": 3472,
+      "n_ep": 139
+     },
+     "cross_mae_m": {
+      "mean": 1.668,
+      "lo": 1.3796,
+      "hi": 1.974,
+      "n": 3668,
+      "n_ep": 139
+     }
+    },
+    "LON_ego_progress": {
+     "status": "OK",
+     "convention": "human_dir",
+     "progress_ratio_mean": 0.9523,
+     "progress_ratio_median": 0.9931,
+     "progress_error_mean": 0.2051,
+     "under_progress_rate": 0.5431,
+     "gt_progress_mean_m": 67.9353,
+     "n": 3616,
+     "n_windows": 3668,
+     "n_excluded_low_gt_progress": 52,
+     "min_progress_m": 0.5,
+     "t0_axis_gt_self_ratio": 0.9699,
+     "t0_axis_gt_self_ratio_note": "what the GROUND TRUTH scores under pseudosim's published t0-axis reading. 1.0 means the windows are straight; below 1.0 is the CURVATURE CONFOUND \u2014 the human charged for under-progress it did not commit, and an arm that drives straighter than the human rewarded for it.",
+     "definition": "along-track distance covered / the human's, both projected on the human's own final-displacement direction; dt-invariant; <1 = under-drives, >1 = over-drives; GT scores exactly 1.0 by construction",
+     "published_motivation": "arXiv 2605.00066 \u2014 Ego Progress alone rho=0.83 vs closed-loop Driving Score while traditional L2 gives rho=-0.36 (p=0.43, n=8, NO CI). Direction only; those magnitudes are NOT a target."
+    },
+    "LON_dk": {
+     "status": "OK",
+     "n": 1004,
+     "n_windows": 3668,
+     "mean_headway_min_m": 25.8236,
+     "mean_time_gap_min_s": 3.9976,
+     "n_time_gap": 909,
+     "mean_min_ttc_s": 22.8596,
+     "n_closing": 464,
+     "instants_s": [
+      1.0,
+      2.0,
+      3.0,
+      4.0,
+      5.0,
+      6.0
+     ]
+    },
+    "TAC": {
+     "status": "OK",
+     "n": 3668,
+     "lateral_decision": {
+      "status": "OK",
+      "n": 3668,
+      "n_windows": 3668,
+      "classes": [
+       "lane_keep",
+       "turn_left",
+       "turn_right"
+      ],
+      "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+      "tier": "T1",
+      "per_class": {
+       "lane_keep": {
+        "n_true": 2601,
+        "n_pred": 2709,
+        "recall": 0.885,
+        "precision": 0.8498
+       },
+       "turn_left": {
+        "n_true": 371,
+        "n_pred": 361,
+        "recall": 0.4825,
+        "precision": 0.4958
+       },
+       "turn_right": {
+        "n_true": 696,
+        "n_pred": 598,
+        "recall": 0.5575,
+        "precision": 0.6488
+       }
+      },
+      "confusion_gt_rows_pred_cols": [
+       [
+        2302,
+        144,
+        155
+       ],
+       [
+        137,
+        179,
+        55
+       ],
+       [
+        270,
+        38,
+        388
+       ]
+      ],
+      "class_order": [
+       "lane_keep",
+       "turn_left",
+       "turn_right"
+      ],
+      "never_predicted": [],
+      "accuracy": 0.7822,
+      "kappa": 0.4997,
+      "kappa_undefined_reason": null,
+      "ci": {
+       "accuracy": {
+        "mean": 0.7822,
+        "lo": 0.7482,
+        "hi": 0.8164,
+        "ci95": 0.0341,
+        "se": 0.0173,
+        "reducer": "_acc",
+        "n_windows": 3668,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "kappa": {
+        "mean": 0.4997,
+        "lo": 0.4386,
+        "hi": 0.5572,
+        "ci95": 0.0593,
+        "se": 0.0305,
+        "reducer": "_kap",
+        "n_windows": 3668,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       }
+      }
+     },
+     "longitudinal_decision": {
+      "status": "OK",
+      "n": 3668,
+      "n_windows": 3668,
+      "classes": [
+       "brake_stop",
+       "steady",
+       "accelerate"
+      ],
+      "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+      "tier": "T1",
+      "per_class": {
+       "brake_stop": {
+        "n_true": 1014,
+        "n_pred": 1070,
+        "recall": 0.5394,
+        "precision": 0.5112
+       },
+       "steady": {
+        "n_true": 1608,
+        "n_pred": 1460,
+        "recall": 0.5522,
+        "precision": 0.6082
+       },
+       "accelerate": {
+        "n_true": 1046,
+        "n_pred": 1138,
+        "recall": 0.5631,
+        "precision": 0.5176
+       }
+      },
+      "confusion_gt_rows_pred_cols": [
+       [
+        547,
+        298,
+        169
+       ],
+       [
+        340,
+        888,
+        380
+       ],
+       [
+        183,
+        274,
+        589
+       ]
+      ],
+      "class_order": [
+       "brake_stop",
+       "steady",
+       "accelerate"
+      ],
+      "never_predicted": [],
+      "accuracy": 0.5518,
+      "kappa": 0.3172,
+      "kappa_undefined_reason": null,
+      "ci": {
+       "accuracy": {
+        "mean": 0.5518,
+        "lo": 0.5178,
+        "hi": 0.5868,
+        "ci95": 0.0345,
+        "se": 0.0174,
+        "reducer": "_acc",
+        "n_windows": 3668,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "kappa": {
+        "mean": 0.3172,
+        "lo": 0.2672,
+        "hi": 0.3655,
+        "ci95": 0.0491,
+        "se": 0.0245,
+        "reducer": "_kap",
+        "n_windows": 3668,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       }
+      }
+     }
+    },
+    "STRAT": {
+     "status": "UNAVAILABLE",
+     "reason": "strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+     "n": 0
+    }
+   },
+   "ha0": {
+    "tier": "T1",
+    "LON": {
+     "speed_mae_mps": {
+      "mean": 1.2903,
+      "lo": 1.1407,
+      "hi": 1.4411,
+      "n": 3668,
+      "n_ep": 139
+     },
+     "along_mae_m": {
+      "mean": 3.4452,
+      "lo": 3.0744,
+      "hi": 3.8267,
+      "n": 3668,
+      "n_ep": 139
+     },
+     "target_speed_acc.within_0.5_mps": {
+      "mean": 0.447,
+      "lo": 0.4075,
+      "hi": 0.4858,
+      "n": 3668,
+      "n_ep": 139
+     },
+     "accel_mae_mps2": {
+      "mean": 0.4825,
+      "lo": 0.4296,
+      "hi": 0.5365,
+      "n": 3668,
+      "n_ep": 139
+     }
+    },
+    "LAT": {
+     "heading_mae_deg": {
+      "mean": 6.9005,
+      "lo": 5.3569,
+      "hi": 8.7189,
+      "n": 3504,
+      "n_ep": 139
+     },
+     "curvature_mae_1pm": {
+      "mean": 0.006519,
+      "lo": 0.005111,
+      "hi": 0.008129,
+      "n": 3480,
+      "n_ep": 139
+     },
+     "yaw_rate_mae_degps": {
+      "mean": 2.4079,
+      "lo": 1.9338,
+      "hi": 2.9437,
+      "n": 3480,
+      "n_ep": 139
+     },
+     "cross_mae_m": {
+      "mean": 2.4322,
+      "lo": 1.8819,
+      "hi": 3.0503,
+      "n": 3668,
+      "n_ep": 139
+     }
+    },
+    "LON_ego_progress": {
+     "status": "OK",
+     "convention": "human_dir",
+     "progress_ratio_mean": 1.0925,
+     "progress_ratio_median": 0.991,
+     "progress_error_mean": 0.328,
+     "under_progress_rate": 0.5747,
+     "gt_progress_mean_m": 67.9353,
+     "n": 3616,
+     "n_windows": 3668,
+     "n_excluded_low_gt_progress": 52,
+     "min_progress_m": 0.5,
+     "t0_axis_gt_self_ratio": 0.9699,
+     "t0_axis_gt_self_ratio_note": "what the GROUND TRUTH scores under pseudosim's published t0-axis reading. 1.0 means the windows are straight; below 1.0 is the CURVATURE CONFOUND \u2014 the human charged for under-progress it did not commit, and an arm that drives straighter than the human rewarded for it.",
+     "definition": "along-track distance covered / the human's, both projected on the human's own final-displacement direction; dt-invariant; <1 = under-drives, >1 = over-drives; GT scores exactly 1.0 by construction",
+     "published_motivation": "arXiv 2605.00066 \u2014 Ego Progress alone rho=0.83 vs closed-loop Driving Score while traditional L2 gives rho=-0.36 (p=0.43, n=8, NO CI). Direction only; those magnitudes are NOT a target."
+    },
+    "LON_dk": {
+     "status": "OK",
+     "n": 1017,
+     "n_windows": 3668,
+     "mean_headway_min_m": 25.0375,
+     "mean_time_gap_min_s": 3.9187,
+     "n_time_gap": 922,
+     "mean_min_ttc_s": 22.4674,
+     "n_closing": 437,
+     "instants_s": [
+      1.0,
+      2.0,
+      3.0,
+      4.0,
+      5.0,
+      6.0
+     ]
+    },
+    "TAC": {
+     "status": "OK",
+     "n": 3668,
+     "lateral_decision": {
+      "status": "OK",
+      "n": 3668,
+      "n_windows": 3668,
+      "classes": [
+       "lane_keep",
+       "turn_left",
+       "turn_right"
+      ],
+      "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+      "tier": "T1",
+      "per_class": {
+       "lane_keep": {
+        "n_true": 2601,
+        "n_pred": 3668,
+        "recall": 1.0,
+        "precision": 0.7091
+       },
+       "turn_left": {
+        "n_true": 371,
+        "n_pred": 0,
+        "recall": 0.0,
+        "precision": null
+       },
+       "turn_right": {
+        "n_true": 696,
+        "n_pred": 0,
+        "recall": 0.0,
+        "precision": null
+       }
+      },
+      "confusion_gt_rows_pred_cols": [
+       [
+        2601,
+        0,
+        0
+       ],
+       [
+        371,
+        0,
+        0
+       ],
+       [
+        696,
+        0,
+        0
+       ]
+      ],
+      "class_order": [
+       "lane_keep",
+       "turn_left",
+       "turn_right"
+      ],
+      "never_predicted": [
+       "turn_left",
+       "turn_right"
+      ],
+      "accuracy": 0.7091,
+      "kappa": 0.0,
+      "kappa_undefined_reason": null,
+      "ci": {
+       "accuracy": {
+        "mean": 0.7091,
+        "lo": 0.6498,
+        "hi": 0.7638,
+        "ci95": 0.057,
+        "se": 0.0296,
+        "reducer": "_acc",
+        "n_windows": 3668,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "kappa": {
+        "mean": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "ci95": 0.0,
+        "se": 0.0,
+        "reducer": "_kap",
+        "n_windows": 3668,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       }
+      }
+     },
+     "longitudinal_decision": {
+      "status": "OK",
+      "n": 3668,
+      "n_windows": 3668,
+      "classes": [
+       "brake_stop",
+       "steady",
+       "accelerate"
+      ],
+      "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+      "tier": "T1",
+      "per_class": {
+       "brake_stop": {
+        "n_true": 1014,
+        "n_pred": 0,
+        "recall": 0.0,
+        "precision": null
+       },
+       "steady": {
+        "n_true": 1608,
+        "n_pred": 3668,
+        "recall": 1.0,
+        "precision": 0.4384
+       },
+       "accelerate": {
+        "n_true": 1046,
+        "n_pred": 0,
+        "recall": 0.0,
+        "precision": null
+       }
+      },
+      "confusion_gt_rows_pred_cols": [
+       [
+        0,
+        1014,
+        0
+       ],
+       [
+        0,
+        1608,
+        0
+       ],
+       [
+        0,
+        1046,
+        0
+       ]
+      ],
+      "class_order": [
+       "brake_stop",
+       "steady",
+       "accelerate"
+      ],
+      "never_predicted": [
+       "brake_stop",
+       "accelerate"
+      ],
+      "accuracy": 0.4384,
+      "kappa": 0.0,
+      "kappa_undefined_reason": null,
+      "ci": {
+       "accuracy": {
+        "mean": 0.4384,
+        "lo": 0.383,
+        "hi": 0.4934,
+        "ci95": 0.0552,
+        "se": 0.0282,
+        "reducer": "_acc",
+        "n_windows": 3668,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "kappa": {
+        "mean": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "ci95": 0.0,
+        "se": 0.0,
+        "reducer": "_kap",
+        "n_windows": 3668,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       }
+      }
+     }
+    },
+    "STRAT": {
+     "status": "UNAVAILABLE",
+     "reason": "strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+     "n": 0
+    }
+   },
+   "stop": {
+    "tier": "T1",
+    "LON": {
+     "speed_mae_mps": {
+      "mean": 11.2321,
+      "lo": 10.0101,
+      "hi": 12.5313,
+      "n": 3668,
+      "n_ep": 139
+     },
+     "along_mae_m": {
+      "mean": 38.859,
+      "lo": 34.5543,
+      "hi": 43.3673,
+      "n": 3668,
+      "n_ep": 139
+     },
+     "target_speed_acc.within_0.5_mps": {
+      "mean": 0.0498,
+      "lo": 0.0299,
+      "hi": 0.0731,
+      "n": 3668,
+      "n_ep": 139
+     },
+     "accel_mae_mps2": {
+      "mean": 0.4825,
+      "lo": 0.4296,
+      "hi": 0.5365,
+      "n": 3668,
+      "n_ep": 139
+     }
+    },
+    "LAT": {
+     "heading_mae_deg": null,
+     "curvature_mae_1pm": null,
+     "yaw_rate_mae_degps": null,
+     "cross_mae_m": {
+      "mean": 2.4322,
+      "lo": 1.8819,
+      "hi": 3.0503,
+      "n": 3668,
+      "n_ep": 139
+     }
+    },
+    "LON_ego_progress": {
+     "status": "OK",
+     "convention": "human_dir",
+     "progress_ratio_mean": 0.0,
+     "progress_ratio_median": 0.0,
+     "progress_error_mean": 1.0,
+     "under_progress_rate": 1.0,
+     "gt_progress_mean_m": 67.9353,
+     "n": 3616,
+     "n_windows": 3668,
+     "n_excluded_low_gt_progress": 52,
+     "min_progress_m": 0.5,
+     "t0_axis_gt_self_ratio": 0.9699,
+     "t0_axis_gt_self_ratio_note": "what the GROUND TRUTH scores under pseudosim's published t0-axis reading. 1.0 means the windows are straight; below 1.0 is the CURVATURE CONFOUND \u2014 the human charged for under-progress it did not commit, and an arm that drives straighter than the human rewarded for it.",
+     "definition": "along-track distance covered / the human's, both projected on the human's own final-displacement direction; dt-invariant; <1 = under-drives, >1 = over-drives; GT scores exactly 1.0 by construction",
+     "published_motivation": "arXiv 2605.00066 \u2014 Ego Progress alone rho=0.83 vs closed-loop Driving Score while traditional L2 gives rho=-0.36 (p=0.43, n=8, NO CI). Direction only; those magnitudes are NOT a target."
+    },
+    "LON_dk": {
+     "status": "OK",
+     "n": 1019,
+     "n_windows": 3668,
+     "mean_headway_min_m": 38.823,
+     "mean_time_gap_min_s": 5.5628,
+     "n_time_gap": 924,
+     "mean_min_ttc_s": 29.8265,
+     "n_closing": 45,
+     "instants_s": [
+      1.0,
+      2.0,
+      3.0,
+      4.0,
+      5.0,
+      6.0
+     ]
+    },
+    "TAC": {
+     "status": "OK",
+     "n": 3668,
+     "lateral_decision": {
+      "status": "OK",
+      "n": 3668,
+      "n_windows": 3668,
+      "classes": [
+       "lane_keep",
+       "turn_left",
+       "turn_right"
+      ],
+      "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+      "tier": "T1",
+      "per_class": {
+       "lane_keep": {
+        "n_true": 2601,
+        "n_pred": 3668,
+        "recall": 1.0,
+        "precision": 0.7091
+       },
+       "turn_left": {
+        "n_true": 371,
+        "n_pred": 0,
+        "recall": 0.0,
+        "precision": null
+       },
+       "turn_right": {
+        "n_true": 696,
+        "n_pred": 0,
+        "recall": 0.0,
+        "precision": null
+       }
+      },
+      "confusion_gt_rows_pred_cols": [
+       [
+        2601,
+        0,
+        0
+       ],
+       [
+        371,
+        0,
+        0
+       ],
+       [
+        696,
+        0,
+        0
+       ]
+      ],
+      "class_order": [
+       "lane_keep",
+       "turn_left",
+       "turn_right"
+      ],
+      "never_predicted": [
+       "turn_left",
+       "turn_right"
+      ],
+      "accuracy": 0.7091,
+      "kappa": 0.0,
+      "kappa_undefined_reason": null,
+      "ci": {
+       "accuracy": {
+        "mean": 0.7091,
+        "lo": 0.6498,
+        "hi": 0.7638,
+        "ci95": 0.057,
+        "se": 0.0296,
+        "reducer": "_acc",
+        "n_windows": 3668,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "kappa": {
+        "mean": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "ci95": 0.0,
+        "se": 0.0,
+        "reducer": "_kap",
+        "n_windows": 3668,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       }
+      }
+     },
+     "longitudinal_decision": {
+      "status": "OK",
+      "n": 3668,
+      "n_windows": 3668,
+      "classes": [
+       "brake_stop",
+       "steady",
+       "accelerate"
+      ],
+      "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+      "tier": "T1",
+      "per_class": {
+       "brake_stop": {
+        "n_true": 1014,
+        "n_pred": 0,
+        "recall": 0.0,
+        "precision": null
+       },
+       "steady": {
+        "n_true": 1608,
+        "n_pred": 3668,
+        "recall": 1.0,
+        "precision": 0.4384
+       },
+       "accelerate": {
+        "n_true": 1046,
+        "n_pred": 0,
+        "recall": 0.0,
+        "precision": null
+       }
+      },
+      "confusion_gt_rows_pred_cols": [
+       [
+        0,
+        1014,
+        0
+       ],
+       [
+        0,
+        1608,
+        0
+       ],
+       [
+        0,
+        1046,
+        0
+       ]
+      ],
+      "class_order": [
+       "brake_stop",
+       "steady",
+       "accelerate"
+      ],
+      "never_predicted": [
+       "brake_stop",
+       "accelerate"
+      ],
+      "accuracy": 0.4384,
+      "kappa": 0.0,
+      "kappa_undefined_reason": null,
+      "ci": {
+       "accuracy": {
+        "mean": 0.4384,
+        "lo": 0.383,
+        "hi": 0.4934,
+        "ci95": 0.0552,
+        "se": 0.0282,
+        "reducer": "_acc",
+        "n_windows": 3668,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "kappa": {
+        "mean": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "ci95": 0.0,
+        "se": 0.0,
+        "reducer": "_kap",
+        "n_windows": 3668,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       }
+      }
+     }
+    },
+    "STRAT": {
+     "status": "UNAVAILABLE",
+     "reason": "strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+     "n": 0
+    }
+   }
+  },
+  "paired_os_minus_ha0_ext": {},
+  "paired_raw_keys": [
+   "n_windows",
+   "n_episodes",
+   "dt_s",
+   "pairs",
+   "A3_note",
+   "means"
+  ]
+ },
+ "S6_s1": {
+  "n_windows": 3668,
+  "n_episodes": 139,
+  "arms": {
+   "os": {
+    "tier": "T1",
+    "LON": {
+     "speed_mae_mps": {
+      "mean": 0.9357,
+      "lo": 0.8503,
+      "hi": 1.0212,
+      "n": 3668,
+      "n_ep": 139
+     },
+     "along_mae_m": {
+      "mean": 2.1892,
+      "lo": 2.0002,
+      "hi": 2.3904,
+      "n": 3668,
+      "n_ep": 139
+     },
+     "target_speed_acc.within_0.5_mps": {
+      "mean": 0.5338,
+      "lo": 0.5057,
+      "hi": 0.5629,
+      "n": 3668,
+      "n_ep": 139
+     },
+     "accel_mae_mps2": {
+      "mean": 0.4322,
+      "lo": 0.3946,
+      "hi": 0.4684,
+      "n": 3668,
+      "n_ep": 139
+     }
+    },
+    "LAT": {
+     "heading_mae_deg": {
+      "mean": 3.1512,
+      "lo": 2.3125,
+      "hi": 4.4805,
+      "n": 3581,
+      "n_ep": 139
+     },
+     "curvature_mae_1pm": {
+      "mean": 0.004961,
+      "lo": 0.003876,
+      "hi": 0.006171,
+      "n": 3551,
+      "n_ep": 139
+     },
+     "yaw_rate_mae_degps": {
+      "mean": 1.6279,
+      "lo": 1.3738,
+      "hi": 1.8964,
+      "n": 3551,
+      "n_ep": 139
+     },
+     "cross_mae_m": {
+      "mean": 0.8471,
+      "lo": 0.7164,
+      "hi": 0.9862,
+      "n": 3668,
+      "n_ep": 139
+     }
+    },
+    "LON_ego_progress": {
+     "status": "OK",
+     "convention": "human_dir",
+     "progress_ratio_mean": 1.1016,
+     "progress_ratio_median": 1.0052,
+     "progress_error_mean": 0.2375,
+     "under_progress_rate": 0.4674,
+     "gt_progress_mean_m": 67.9353,
+     "n": 3616,
+     "n_windows": 3668,
+     "n_excluded_low_gt_progress": 52,
+     "min_progress_m": 0.5,
+     "t0_axis_gt_self_ratio": 0.9699,
+     "t0_axis_gt_self_ratio_note": "what the GROUND TRUTH scores under pseudosim's published t0-axis reading. 1.0 means the windows are straight; below 1.0 is the CURVATURE CONFOUND \u2014 the human charged for under-progress it did not commit, and an arm that drives straighter than the human rewarded for it.",
+     "definition": "along-track distance covered / the human's, both projected on the human's own final-displacement direction; dt-invariant; <1 = under-drives, >1 = over-drives; GT scores exactly 1.0 by construction",
+     "published_motivation": "arXiv 2605.00066 \u2014 Ego Progress alone rho=0.83 vs closed-loop Driving Score while traditional L2 gives rho=-0.36 (p=0.43, n=8, NO CI). Direction only; those magnitudes are NOT a target."
+    },
+    "LON_dk": {
+     "status": "OK",
+     "n": 1020,
+     "n_windows": 3668,
+     "mean_headway_min_m": 25.7122,
+     "mean_time_gap_min_s": 3.877,
+     "n_time_gap": 925,
+     "mean_min_ttc_s": 22.5395,
+     "n_closing": 475,
+     "instants_s": [
+      1.0,
+      2.0,
+      3.0,
+      4.0,
+      5.0,
+      6.0
+     ]
+    },
+    "TAC": {
+     "status": "OK",
+     "n": 3668,
+     "lateral_decision": {
+      "status": "OK",
+      "n": 3668,
+      "n_windows": 3668,
+      "classes": [
+       "lane_keep",
+       "turn_left",
+       "turn_right"
+      ],
+      "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+      "tier": "T1",
+      "per_class": {
+       "lane_keep": {
+        "n_true": 2601,
+        "n_pred": 2764,
+        "recall": 0.9508,
+        "precision": 0.8947
+       },
+       "turn_left": {
+        "n_true": 371,
+        "n_pred": 317,
+        "recall": 0.6819,
+        "precision": 0.7981
+       },
+       "turn_right": {
+        "n_true": 696,
+        "n_pred": 587,
+        "recall": 0.704,
+        "precision": 0.8348
+       }
+      },
+      "confusion_gt_rows_pred_cols": [
+       [
+        2473,
+        41,
+        87
+       ],
+       [
+        108,
+        253,
+        10
+       ],
+       [
+        183,
+        23,
+        490
+       ]
+      ],
+      "class_order": [
+       "lane_keep",
+       "turn_left",
+       "turn_right"
+      ],
+      "never_predicted": [],
+      "accuracy": 0.8768,
+      "kappa": 0.7111,
+      "kappa_undefined_reason": null,
+      "ci": {
+       "accuracy": {
+        "mean": 0.8768,
+        "lo": 0.8501,
+        "hi": 0.9013,
+        "ci95": 0.0256,
+        "se": 0.0129,
+        "reducer": "_acc",
+        "n_windows": 3668,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "kappa": {
+        "mean": 0.7111,
+        "lo": 0.6586,
+        "hi": 0.7604,
+        "ci95": 0.0509,
+        "se": 0.026,
+        "reducer": "_kap",
+        "n_windows": 3668,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       }
+      }
+     },
+     "longitudinal_decision": {
+      "status": "OK",
+      "n": 3668,
+      "n_windows": 3668,
+      "classes": [
+       "brake_stop",
+       "steady",
+       "accelerate"
+      ],
+      "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+      "tier": "T1",
+      "per_class": {
+       "brake_stop": {
+        "n_true": 1014,
+        "n_pred": 817,
+        "recall": 0.4655,
+        "precision": 0.5777
+       },
+       "steady": {
+        "n_true": 1608,
+        "n_pred": 1832,
+        "recall": 0.6698,
+        "precision": 0.5879
+       },
+       "accelerate": {
+        "n_true": 1046,
+        "n_pred": 1019,
+        "recall": 0.6262,
+        "precision": 0.6428
+       }
+      },
+      "confusion_gt_rows_pred_cols": [
+       [
+        472,
+        447,
+        95
+       ],
+       [
+        262,
+        1077,
+        269
+       ],
+       [
+        83,
+        308,
+        655
+       ]
+      ],
+      "class_order": [
+       "brake_stop",
+       "steady",
+       "accelerate"
+      ],
+      "never_predicted": [],
+      "accuracy": 0.6009,
+      "kappa": 0.3766,
+      "kappa_undefined_reason": null,
+      "ci": {
+       "accuracy": {
+        "mean": 0.6009,
+        "lo": 0.5615,
+        "hi": 0.6404,
+        "ci95": 0.0394,
+        "se": 0.0202,
+        "reducer": "_acc",
+        "n_windows": 3668,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "kappa": {
+        "mean": 0.3766,
+        "lo": 0.3168,
+        "hi": 0.4336,
+        "ci95": 0.0584,
+        "se": 0.0299,
+        "reducer": "_kap",
+        "n_windows": 3668,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       }
+      }
+     }
+    },
+    "STRAT": {
+     "status": "UNAVAILABLE",
+     "reason": "strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+     "n": 0
+    }
+   },
+   "ha0_ext": {
+    "tier": "T1",
+    "LON": {
+     "speed_mae_mps": {
+      "mean": 1.0957,
+      "lo": 0.9889,
+      "hi": 1.1994,
+      "n": 3668,
+      "n_ep": 139
+     },
+     "along_mae_m": {
+      "mean": 2.646,
+      "lo": 2.3757,
+      "hi": 2.9116,
+      "n": 3668,
+      "n_ep": 139
+     },
+     "target_speed_acc.within_0.5_mps": {
+      "mean": 0.5249,
+      "lo": 0.4978,
+      "hi": 0.5544,
+      "n": 3668,
+      "n_ep": 139
+     },
+     "accel_mae_mps2": {
+      "mean": 0.5055,
+      "lo": 0.4541,
+      "hi": 0.5552,
+      "n": 3668,
+      "n_ep": 139
+     }
+    },
+    "LAT": {
+     "heading_mae_deg": {
+      "mean": 5.9407,
+      "lo": 4.5997,
+      "hi": 7.5297,
+      "n": 3521,
+      "n_ep": 139
+     },
+     "curvature_mae_1pm": {
+      "mean": 0.00685,
+      "lo": 0.005367,
+      "hi": 0.008462,
+      "n": 3472,
+      "n_ep": 139
+     },
+     "yaw_rate_mae_degps": {
+      "mean": 2.7751,
+      "lo": 2.1986,
+      "hi": 3.3891,
+      "n": 3472,
+      "n_ep": 139
+     },
+     "cross_mae_m": {
+      "mean": 1.668,
+      "lo": 1.3796,
+      "hi": 1.974,
+      "n": 3668,
+      "n_ep": 139
+     }
+    },
+    "LON_ego_progress": {
+     "status": "OK",
+     "convention": "human_dir",
+     "progress_ratio_mean": 0.9523,
+     "progress_ratio_median": 0.9931,
+     "progress_error_mean": 0.2051,
+     "under_progress_rate": 0.5431,
+     "gt_progress_mean_m": 67.9353,
+     "n": 3616,
+     "n_windows": 3668,
+     "n_excluded_low_gt_progress": 52,
+     "min_progress_m": 0.5,
+     "t0_axis_gt_self_ratio": 0.9699,
+     "t0_axis_gt_self_ratio_note": "what the GROUND TRUTH scores under pseudosim's published t0-axis reading. 1.0 means the windows are straight; below 1.0 is the CURVATURE CONFOUND \u2014 the human charged for under-progress it did not commit, and an arm that drives straighter than the human rewarded for it.",
+     "definition": "along-track distance covered / the human's, both projected on the human's own final-displacement direction; dt-invariant; <1 = under-drives, >1 = over-drives; GT scores exactly 1.0 by construction",
+     "published_motivation": "arXiv 2605.00066 \u2014 Ego Progress alone rho=0.83 vs closed-loop Driving Score while traditional L2 gives rho=-0.36 (p=0.43, n=8, NO CI). Direction only; those magnitudes are NOT a target."
+    },
+    "LON_dk": {
+     "status": "OK",
+     "n": 1004,
+     "n_windows": 3668,
+     "mean_headway_min_m": 25.8236,
+     "mean_time_gap_min_s": 3.9976,
+     "n_time_gap": 909,
+     "mean_min_ttc_s": 22.8596,
+     "n_closing": 464,
+     "instants_s": [
+      1.0,
+      2.0,
+      3.0,
+      4.0,
+      5.0,
+      6.0
+     ]
+    },
+    "TAC": {
+     "status": "OK",
+     "n": 3668,
+     "lateral_decision": {
+      "status": "OK",
+      "n": 3668,
+      "n_windows": 3668,
+      "classes": [
+       "lane_keep",
+       "turn_left",
+       "turn_right"
+      ],
+      "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+      "tier": "T1",
+      "per_class": {
+       "lane_keep": {
+        "n_true": 2601,
+        "n_pred": 2709,
+        "recall": 0.885,
+        "precision": 0.8498
+       },
+       "turn_left": {
+        "n_true": 371,
+        "n_pred": 361,
+        "recall": 0.4825,
+        "precision": 0.4958
+       },
+       "turn_right": {
+        "n_true": 696,
+        "n_pred": 598,
+        "recall": 0.5575,
+        "precision": 0.6488
+       }
+      },
+      "confusion_gt_rows_pred_cols": [
+       [
+        2302,
+        144,
+        155
+       ],
+       [
+        137,
+        179,
+        55
+       ],
+       [
+        270,
+        38,
+        388
+       ]
+      ],
+      "class_order": [
+       "lane_keep",
+       "turn_left",
+       "turn_right"
+      ],
+      "never_predicted": [],
+      "accuracy": 0.7822,
+      "kappa": 0.4997,
+      "kappa_undefined_reason": null,
+      "ci": {
+       "accuracy": {
+        "mean": 0.7822,
+        "lo": 0.7482,
+        "hi": 0.8164,
+        "ci95": 0.0341,
+        "se": 0.0173,
+        "reducer": "_acc",
+        "n_windows": 3668,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "kappa": {
+        "mean": 0.4997,
+        "lo": 0.4386,
+        "hi": 0.5572,
+        "ci95": 0.0593,
+        "se": 0.0305,
+        "reducer": "_kap",
+        "n_windows": 3668,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       }
+      }
+     },
+     "longitudinal_decision": {
+      "status": "OK",
+      "n": 3668,
+      "n_windows": 3668,
+      "classes": [
+       "brake_stop",
+       "steady",
+       "accelerate"
+      ],
+      "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+      "tier": "T1",
+      "per_class": {
+       "brake_stop": {
+        "n_true": 1014,
+        "n_pred": 1070,
+        "recall": 0.5394,
+        "precision": 0.5112
+       },
+       "steady": {
+        "n_true": 1608,
+        "n_pred": 1460,
+        "recall": 0.5522,
+        "precision": 0.6082
+       },
+       "accelerate": {
+        "n_true": 1046,
+        "n_pred": 1138,
+        "recall": 0.5631,
+        "precision": 0.5176
+       }
+      },
+      "confusion_gt_rows_pred_cols": [
+       [
+        547,
+        298,
+        169
+       ],
+       [
+        340,
+        888,
+        380
+       ],
+       [
+        183,
+        274,
+        589
+       ]
+      ],
+      "class_order": [
+       "brake_stop",
+       "steady",
+       "accelerate"
+      ],
+      "never_predicted": [],
+      "accuracy": 0.5518,
+      "kappa": 0.3172,
+      "kappa_undefined_reason": null,
+      "ci": {
+       "accuracy": {
+        "mean": 0.5518,
+        "lo": 0.5178,
+        "hi": 0.5868,
+        "ci95": 0.0345,
+        "se": 0.0174,
+        "reducer": "_acc",
+        "n_windows": 3668,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "kappa": {
+        "mean": 0.3172,
+        "lo": 0.2672,
+        "hi": 0.3655,
+        "ci95": 0.0491,
+        "se": 0.0245,
+        "reducer": "_kap",
+        "n_windows": 3668,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       }
+      }
+     }
+    },
+    "STRAT": {
+     "status": "UNAVAILABLE",
+     "reason": "strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+     "n": 0
+    }
+   },
+   "ha0": {
+    "tier": "T1",
+    "LON": {
+     "speed_mae_mps": {
+      "mean": 1.2903,
+      "lo": 1.1407,
+      "hi": 1.4411,
+      "n": 3668,
+      "n_ep": 139
+     },
+     "along_mae_m": {
+      "mean": 3.4452,
+      "lo": 3.0744,
+      "hi": 3.8267,
+      "n": 3668,
+      "n_ep": 139
+     },
+     "target_speed_acc.within_0.5_mps": {
+      "mean": 0.447,
+      "lo": 0.4075,
+      "hi": 0.4858,
+      "n": 3668,
+      "n_ep": 139
+     },
+     "accel_mae_mps2": {
+      "mean": 0.4825,
+      "lo": 0.4296,
+      "hi": 0.5365,
+      "n": 3668,
+      "n_ep": 139
+     }
+    },
+    "LAT": {
+     "heading_mae_deg": {
+      "mean": 6.9005,
+      "lo": 5.3569,
+      "hi": 8.7189,
+      "n": 3504,
+      "n_ep": 139
+     },
+     "curvature_mae_1pm": {
+      "mean": 0.006519,
+      "lo": 0.005111,
+      "hi": 0.008129,
+      "n": 3480,
+      "n_ep": 139
+     },
+     "yaw_rate_mae_degps": {
+      "mean": 2.4079,
+      "lo": 1.9338,
+      "hi": 2.9437,
+      "n": 3480,
+      "n_ep": 139
+     },
+     "cross_mae_m": {
+      "mean": 2.4322,
+      "lo": 1.8819,
+      "hi": 3.0503,
+      "n": 3668,
+      "n_ep": 139
+     }
+    },
+    "LON_ego_progress": {
+     "status": "OK",
+     "convention": "human_dir",
+     "progress_ratio_mean": 1.0925,
+     "progress_ratio_median": 0.991,
+     "progress_error_mean": 0.328,
+     "under_progress_rate": 0.5747,
+     "gt_progress_mean_m": 67.9353,
+     "n": 3616,
+     "n_windows": 3668,
+     "n_excluded_low_gt_progress": 52,
+     "min_progress_m": 0.5,
+     "t0_axis_gt_self_ratio": 0.9699,
+     "t0_axis_gt_self_ratio_note": "what the GROUND TRUTH scores under pseudosim's published t0-axis reading. 1.0 means the windows are straight; below 1.0 is the CURVATURE CONFOUND \u2014 the human charged for under-progress it did not commit, and an arm that drives straighter than the human rewarded for it.",
+     "definition": "along-track distance covered / the human's, both projected on the human's own final-displacement direction; dt-invariant; <1 = under-drives, >1 = over-drives; GT scores exactly 1.0 by construction",
+     "published_motivation": "arXiv 2605.00066 \u2014 Ego Progress alone rho=0.83 vs closed-loop Driving Score while traditional L2 gives rho=-0.36 (p=0.43, n=8, NO CI). Direction only; those magnitudes are NOT a target."
+    },
+    "LON_dk": {
+     "status": "OK",
+     "n": 1017,
+     "n_windows": 3668,
+     "mean_headway_min_m": 25.0375,
+     "mean_time_gap_min_s": 3.9187,
+     "n_time_gap": 922,
+     "mean_min_ttc_s": 22.4674,
+     "n_closing": 437,
+     "instants_s": [
+      1.0,
+      2.0,
+      3.0,
+      4.0,
+      5.0,
+      6.0
+     ]
+    },
+    "TAC": {
+     "status": "OK",
+     "n": 3668,
+     "lateral_decision": {
+      "status": "OK",
+      "n": 3668,
+      "n_windows": 3668,
+      "classes": [
+       "lane_keep",
+       "turn_left",
+       "turn_right"
+      ],
+      "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+      "tier": "T1",
+      "per_class": {
+       "lane_keep": {
+        "n_true": 2601,
+        "n_pred": 3668,
+        "recall": 1.0,
+        "precision": 0.7091
+       },
+       "turn_left": {
+        "n_true": 371,
+        "n_pred": 0,
+        "recall": 0.0,
+        "precision": null
+       },
+       "turn_right": {
+        "n_true": 696,
+        "n_pred": 0,
+        "recall": 0.0,
+        "precision": null
+       }
+      },
+      "confusion_gt_rows_pred_cols": [
+       [
+        2601,
+        0,
+        0
+       ],
+       [
+        371,
+        0,
+        0
+       ],
+       [
+        696,
+        0,
+        0
+       ]
+      ],
+      "class_order": [
+       "lane_keep",
+       "turn_left",
+       "turn_right"
+      ],
+      "never_predicted": [
+       "turn_left",
+       "turn_right"
+      ],
+      "accuracy": 0.7091,
+      "kappa": 0.0,
+      "kappa_undefined_reason": null,
+      "ci": {
+       "accuracy": {
+        "mean": 0.7091,
+        "lo": 0.6498,
+        "hi": 0.7638,
+        "ci95": 0.057,
+        "se": 0.0296,
+        "reducer": "_acc",
+        "n_windows": 3668,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "kappa": {
+        "mean": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "ci95": 0.0,
+        "se": 0.0,
+        "reducer": "_kap",
+        "n_windows": 3668,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       }
+      }
+     },
+     "longitudinal_decision": {
+      "status": "OK",
+      "n": 3668,
+      "n_windows": 3668,
+      "classes": [
+       "brake_stop",
+       "steady",
+       "accelerate"
+      ],
+      "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+      "tier": "T1",
+      "per_class": {
+       "brake_stop": {
+        "n_true": 1014,
+        "n_pred": 0,
+        "recall": 0.0,
+        "precision": null
+       },
+       "steady": {
+        "n_true": 1608,
+        "n_pred": 3668,
+        "recall": 1.0,
+        "precision": 0.4384
+       },
+       "accelerate": {
+        "n_true": 1046,
+        "n_pred": 0,
+        "recall": 0.0,
+        "precision": null
+       }
+      },
+      "confusion_gt_rows_pred_cols": [
+       [
+        0,
+        1014,
+        0
+       ],
+       [
+        0,
+        1608,
+        0
+       ],
+       [
+        0,
+        1046,
+        0
+       ]
+      ],
+      "class_order": [
+       "brake_stop",
+       "steady",
+       "accelerate"
+      ],
+      "never_predicted": [
+       "brake_stop",
+       "accelerate"
+      ],
+      "accuracy": 0.4384,
+      "kappa": 0.0,
+      "kappa_undefined_reason": null,
+      "ci": {
+       "accuracy": {
+        "mean": 0.4384,
+        "lo": 0.383,
+        "hi": 0.4934,
+        "ci95": 0.0552,
+        "se": 0.0282,
+        "reducer": "_acc",
+        "n_windows": 3668,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "kappa": {
+        "mean": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "ci95": 0.0,
+        "se": 0.0,
+        "reducer": "_kap",
+        "n_windows": 3668,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       }
+      }
+     }
+    },
+    "STRAT": {
+     "status": "UNAVAILABLE",
+     "reason": "strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+     "n": 0
+    }
+   },
+   "stop": {
+    "tier": "T1",
+    "LON": {
+     "speed_mae_mps": {
+      "mean": 11.2321,
+      "lo": 10.0101,
+      "hi": 12.5313,
+      "n": 3668,
+      "n_ep": 139
+     },
+     "along_mae_m": {
+      "mean": 38.859,
+      "lo": 34.5543,
+      "hi": 43.3673,
+      "n": 3668,
+      "n_ep": 139
+     },
+     "target_speed_acc.within_0.5_mps": {
+      "mean": 0.0498,
+      "lo": 0.0299,
+      "hi": 0.0731,
+      "n": 3668,
+      "n_ep": 139
+     },
+     "accel_mae_mps2": {
+      "mean": 0.4825,
+      "lo": 0.4296,
+      "hi": 0.5365,
+      "n": 3668,
+      "n_ep": 139
+     }
+    },
+    "LAT": {
+     "heading_mae_deg": null,
+     "curvature_mae_1pm": null,
+     "yaw_rate_mae_degps": null,
+     "cross_mae_m": {
+      "mean": 2.4322,
+      "lo": 1.8819,
+      "hi": 3.0503,
+      "n": 3668,
+      "n_ep": 139
+     }
+    },
+    "LON_ego_progress": {
+     "status": "OK",
+     "convention": "human_dir",
+     "progress_ratio_mean": 0.0,
+     "progress_ratio_median": 0.0,
+     "progress_error_mean": 1.0,
+     "under_progress_rate": 1.0,
+     "gt_progress_mean_m": 67.9353,
+     "n": 3616,
+     "n_windows": 3668,
+     "n_excluded_low_gt_progress": 52,
+     "min_progress_m": 0.5,
+     "t0_axis_gt_self_ratio": 0.9699,
+     "t0_axis_gt_self_ratio_note": "what the GROUND TRUTH scores under pseudosim's published t0-axis reading. 1.0 means the windows are straight; below 1.0 is the CURVATURE CONFOUND \u2014 the human charged for under-progress it did not commit, and an arm that drives straighter than the human rewarded for it.",
+     "definition": "along-track distance covered / the human's, both projected on the human's own final-displacement direction; dt-invariant; <1 = under-drives, >1 = over-drives; GT scores exactly 1.0 by construction",
+     "published_motivation": "arXiv 2605.00066 \u2014 Ego Progress alone rho=0.83 vs closed-loop Driving Score while traditional L2 gives rho=-0.36 (p=0.43, n=8, NO CI). Direction only; those magnitudes are NOT a target."
+    },
+    "LON_dk": {
+     "status": "OK",
+     "n": 1019,
+     "n_windows": 3668,
+     "mean_headway_min_m": 38.823,
+     "mean_time_gap_min_s": 5.5628,
+     "n_time_gap": 924,
+     "mean_min_ttc_s": 29.8265,
+     "n_closing": 45,
+     "instants_s": [
+      1.0,
+      2.0,
+      3.0,
+      4.0,
+      5.0,
+      6.0
+     ]
+    },
+    "TAC": {
+     "status": "OK",
+     "n": 3668,
+     "lateral_decision": {
+      "status": "OK",
+      "n": 3668,
+      "n_windows": 3668,
+      "classes": [
+       "lane_keep",
+       "turn_left",
+       "turn_right"
+      ],
+      "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+      "tier": "T1",
+      "per_class": {
+       "lane_keep": {
+        "n_true": 2601,
+        "n_pred": 3668,
+        "recall": 1.0,
+        "precision": 0.7091
+       },
+       "turn_left": {
+        "n_true": 371,
+        "n_pred": 0,
+        "recall": 0.0,
+        "precision": null
+       },
+       "turn_right": {
+        "n_true": 696,
+        "n_pred": 0,
+        "recall": 0.0,
+        "precision": null
+       }
+      },
+      "confusion_gt_rows_pred_cols": [
+       [
+        2601,
+        0,
+        0
+       ],
+       [
+        371,
+        0,
+        0
+       ],
+       [
+        696,
+        0,
+        0
+       ]
+      ],
+      "class_order": [
+       "lane_keep",
+       "turn_left",
+       "turn_right"
+      ],
+      "never_predicted": [
+       "turn_left",
+       "turn_right"
+      ],
+      "accuracy": 0.7091,
+      "kappa": 0.0,
+      "kappa_undefined_reason": null,
+      "ci": {
+       "accuracy": {
+        "mean": 0.7091,
+        "lo": 0.6498,
+        "hi": 0.7638,
+        "ci95": 0.057,
+        "se": 0.0296,
+        "reducer": "_acc",
+        "n_windows": 3668,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "kappa": {
+        "mean": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "ci95": 0.0,
+        "se": 0.0,
+        "reducer": "_kap",
+        "n_windows": 3668,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       }
+      }
+     },
+     "longitudinal_decision": {
+      "status": "OK",
+      "n": 3668,
+      "n_windows": 3668,
+      "classes": [
+       "brake_stop",
+       "steady",
+       "accelerate"
+      ],
+      "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+      "tier": "T1",
+      "per_class": {
+       "brake_stop": {
+        "n_true": 1014,
+        "n_pred": 0,
+        "recall": 0.0,
+        "precision": null
+       },
+       "steady": {
+        "n_true": 1608,
+        "n_pred": 3668,
+        "recall": 1.0,
+        "precision": 0.4384
+       },
+       "accelerate": {
+        "n_true": 1046,
+        "n_pred": 0,
+        "recall": 0.0,
+        "precision": null
+       }
+      },
+      "confusion_gt_rows_pred_cols": [
+       [
+        0,
+        1014,
+        0
+       ],
+       [
+        0,
+        1608,
+        0
+       ],
+       [
+        0,
+        1046,
+        0
+       ]
+      ],
+      "class_order": [
+       "brake_stop",
+       "steady",
+       "accelerate"
+      ],
+      "never_predicted": [
+       "brake_stop",
+       "accelerate"
+      ],
+      "accuracy": 0.4384,
+      "kappa": 0.0,
+      "kappa_undefined_reason": null,
+      "ci": {
+       "accuracy": {
+        "mean": 0.4384,
+        "lo": 0.383,
+        "hi": 0.4934,
+        "ci95": 0.0552,
+        "se": 0.0282,
+        "reducer": "_acc",
+        "n_windows": 3668,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "kappa": {
+        "mean": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "ci95": 0.0,
+        "se": 0.0,
+        "reducer": "_kap",
+        "n_windows": 3668,
+        "n_episodes": 139,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       }
+      }
+     }
+    },
+    "STRAT": {
+     "status": "UNAVAILABLE",
+     "reason": "strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+     "n": 0
+    }
+   }
+  },
+  "paired_os_minus_ha0_ext": {},
+  "paired_raw_keys": [
+   "n_windows",
+   "n_episodes",
+   "dt_s",
+   "pairs",
+   "A3_note",
+   "means"
+  ]
+ }
+}

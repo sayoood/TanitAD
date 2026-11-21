@@ -1,0 +1,66 @@
+## 2026-10-04 REFCV7-INFER-FIXES
+
+LANDING_READY_FIXES -- refcv7 INFERENCE-TIME fixes F1 / F2 / F4 (Architecture & Inference, 2026-10-04)
+Hand-over: NOTHING staged or committed by this agent. The Master Mind lands these paths (stage BY PATH, in one commit).
+Spec + measurements: TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv7-map-box-diagnostics/{SPEC,RESULT}.md
+BASE = branch tip ae580182f400e58d80455879f0d928dda2787923 (refs/heads/agent/arch-inf-20260803). Every MODIFIED file below is
+the tip blob PLUS the change (descendant-checked: only the lines named in "what" were replaced; all other tip lines survive).
+
+!! D:/Projects/TanitAD is a STALE checkout (HEAD 37645fc, ~300 lines behind the tip in map_head_hires.py; detection_metrics.py and
+!! refcv7_loader.py do not exist there). The D: copies listed here are FULL FILES = tip + changes, md5-verified src==dst. Do NOT merge them
+!! against the D: working tree: take them whole, by path, onto the tip.
+!! stack/scripts/refc_v3_train.py is a CRLF blob in the tip (all 11,382 lines). The D: copy is CRLF; write it byte-for-byte (no EOL
+!! normalisation), or the commit shows a whole-file diff. The other MODIFIED files are LF blobs and LF here.
+
+kind      eol  tip_blob     new_blob     md5                                path  --  what
+MODIFIED  LF   e2d8b1d77b64 720fdcecd2d3 1eba00dcf1d24142a5cb346acf5ae04f   stack/tanitad/models/map_head_hires.py  --  F1 + F2: decide(rule="class_threshold"), decide_masks, load_class_thresholds, per_class_signal/map_hires_loss_row(class_thresholds=), the thresholded + 2-cell tolerant stats, derived iouthr/iou2thr
+MODIFIED  LF   6d492de8c87f 175b5e1724f4 a34c0c428a34f54b6198b11beea665d5   stack/tanitad/eval/detection_metrics.py  --  F4: GATES_SCHEMA, load_head_gates, resolve_gate, gated_census_keys (summarise/_census/train_row_keys UNTOUCHED; they already took a scalar gate=)
+MODIFIED  CRLF fd874293e6ca ce448f3d7d56 d0b9709d014730f62e15c93f52c8e9b8   stack/scripts/refc_v3_train.py  --  wiring: --map-hires-class-thresholds, --det-presence-gates, decision-rule choices, pins, _map_hires_class_thresholds(), model carriers, config.json stamps (only when configured), loss-row kwarg, F4 eval call
+MODIFIED  LF   a8eb3e7ea25c fa1e7e61a25c eeb42c127117092f417d285c246de464   stack/tanitad/eval/refcv7_loader.py  --  eval loader: the same two carriers, filled only when the argv names the thresholds file
+MODIFIED  LF   d314cd1384e5 3a810a2593ce a31ba5302e50f9f5ba9d7d420dd91a7a   stack/tanitad/train/declared_vs_built.py  --  G-DVB: --map-hires-class-thresholds ("built", value-by-value) and --det-presence-gates ("data") entries (the registry refuses a flag without one)
+MODIFIED  LF   00775e1d31cf 1166422bf1c6 99fb13772870030ad10df25a386b8edb   stack/tests/test_declared_vs_built.py  --  registry pin 221 -> 223 (+2 flags), and the two new kinds
+NEW       LF   -            8cf66c15f177 8969119636915b0449bf1f4f685ed864   stack/tanitad/configs/refcv7_map_hires_class_thresholds_train.json  --  F1 thresholds (raw/fit_map.json values, provenance)
+NEW       LF   -            289f066280df 30a5cfe9108c0adcf84f7dbc4d1605e4   stack/tanitad/configs/refcv7_det_presence_gates_train.json  --  F4 gates (raw/B_box.json T3_gate values, provenance)
+NEW       LF   -            388e4d161156 449437be3521bffc6ce387158d8c5821   stack/tests/test_refcv7_map_class_threshold.py  --  F1+F2 tests (18 passed)
+NEW       LF   -            4fe388288f77 858c90dbd3448162a2e0daab0b6313bd   stack/tests/test_refcv7_det_presence_gates.py  --  F4 tests (11 passed)
+NEW       LF   -            6c3aa999a913 0d8d92022263da6dce0abaf7195bb77c   stack/tests/test_refcv7_infer_fixes_wiring.py  --  trainer wiring tests, real train() + eval loader (20 passed)
+NEW       LF   -            7c0118e354e1 5bcaa4ac8df42f12ea591d3a15cae2ff   stack/tests/test_refcv7_infer_fixes_acceptance_full.py  --  full-set acceptance, SKIPPED without the D: binary evidence (4 passed; 4 skipped without the D: evidence)
+NEW       LF   -            8aad5de0976d cb7a8e3dd66b4ab2c2ee75b27b66e0e1   stack/tests/fixtures/refcv7_infer_fixes/refcv7_map_cells_train_subsample.npz  --  fixture: 40,000 real TRAIN cells (z fp16 + GT), 0.57 MB
+NEW       LF   -            7ad62bbf0f46 2358dd5d680599282ad46fe49d4a17b2   stack/tests/fixtures/refcv7_infer_fixes/refcv7_box_packs_eval_every9th.npz  --  fixture: 118 real EVAL-DIAG windows x 2 heads, 0.88 MB
+(blob ids = `git hash-object --no-filters`, i.e. the raw bytes on D:)
+
+Also created: this file.  Prefix of this file: TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv7-map-box-diagnostics/
+
+### Opt-in surface (a run launched with the OLD argv is bit-identical -- proof below)
+  --map-hires-decision-rule class_threshold --map-hires-class-thresholds stack/tanitad/configs/refcv7_map_hires_class_thresholds_train.json
+  --map-hires-class-thresholds <json>   (rule unchanged: ONLY adds the thresholded + 0.2 m-tolerant monitor keys)
+  --det-presence-gates stack/tanitad/configs/refcv7_det_presence_gates_train.json   (needs --slot-vis1; adds eval_<head>_gated_* keys)
+New log keys: map_hires_{interthr,unionthr,predthr,tppthr2,tpgthr2}_<cls>_<band> (raw counts, exact), map_hires_{iouthr,iou2thr}_<cls>_<band>
+  (+ eval_ prefix on the eval row); eval_{box3d,agent}_gated_{gate,n_conf,tp,n_pos,prec,rec,f1,conf_ratio,conf_ratio_alarm}.
+
+### Verification record (see the final report for the full narrative)
+  Tree: git archive of ae580182 -> C:/Users/Admin/fixtree (edited) and C:/Users/Admin/fixtree_tip (pristine). Env: PYTHONUTF8=1, OMP_NUM_THREADS=6, venv C:/Users/Admin/venvs/tanitad, tanitad.__file__ checked to point into the tree under test.
+  NEW tests: 53 passed (map 18, det 11, wiring 20, full-set acceptance 4). Touched existing test: test_declared_vs_built.py 40 passed (registry 221 -> 223).
+  RELEVANT existing suite (all 91 test files importing refc_v3_train / map_head_hires / detection_metrics / refcv7_loader / slot_presence, + the 4 new files = 95):
+     PRISTINE TIP: 13 failed, 1816 passed, 12 skipped.   EDITED: 12 failed, 1870 passed, 12 skipped.
+     The 12 failures are the SAME 12 tests with the same error text in both trees (test_g_box_overfit x2, test_launch_gate x2, test_openloop_suite x4,
+     test_refcv6_diffusion x3, test_refcv6_loader_stamped_queries::test_4) = PRE-EXISTING on the untouched tip tree. The vendored-blob pins (g_box_overfit x2, loader_stamped_queries::test_4) are CRLF-vs-LF effects of `git archive` under core.autocrlf=true; I did not root-cause the other 7 (launch_gate git reads, openloop_suite, refcv6_diffusion baseline pins).
+     test_worker_collate_ships_uint8_bit_exact_through_shared_memory) is TRANSIENT: it passes on the pristine tip on re-run (and in the edited tree); the disks were near-full while it ran.
+  taniteval relevant tests (test_map_hires_metrics, _rebuild, render_refcv6_map_video, bench_*, refcv3_arm_*, render_refcv3_video): 124 passed in BOTH trees.
+  DEFAULT UNCHANGED: (a) goldens computed from the TIP's ORIGINAL map_head_hires.py / detection_metrics.py pinned in the new tests (decision-code sha256, the 131 row keys, every integer count, 48 derived keys; summarise: 274 keys + a hash over every value);
+     (b) trainer-level dump, tip tree vs edited tree, default argv: state_dict sha256, the 10 cm loss-row extras, the eval row (269 keys) and the train row (270 keys), all float reprs -- IDENTICAL;
+     (c) through the REAL train() (launch_gate.run_trainer_until): the opt-in argv builds a model whose state_dict is bit-identical to the default argv's.
+     The ONLY default-run-visible change: config.json['declared_vs_built']['registry_entries'] 221 -> 223 (two new flags need G-DVB entries; the registry refuses a flag without one).
+  ACCEPTANCE (real data, no GPU): BOX, all 1061 EVAL-DIAG windows: box3d n_conf/tp 28/27 -> 3299/1014 (conf_ratio 0.00826 -> 0.97316, F1 0.0158 -> 0.30318); agent 0/0 -> 3373/699 (0.0 -> 0.99499, F1 -> 0.20671) == raw/B_box.json EXACTLY.
+     MAP, all 4,599,016 real TRAIN cells: 0 cells differ from the diagnostics' own thr_phat mask; pred fractions agree with the 460 M-cell histogram to <= 1.35 SE; sample IoU at tau reproduces fit_map train IoU.
+     MAP EVAL IoU from the banked EVAL histograms at the SHIPPED thresholds: lane 0.164, crosswalk 0.105, arrow 0.059, edge 0.042, hatched 0.062, drivable 0.576, sidewalk 0.500, nocls 0.608 == RESULT.md M-c.
+     Tests: stack/tests/test_refcv7_infer_fixes_acceptance_full.py (needs REFCV7_DIAG_BIN or D:/refcv7_diag_bin/2026-10-04, and the research package's code/ or REFCV7_DIAG_PKG).
+
+### Not done / for the Master Mind
+  1. The diagnostics' thr_phat is MULTI-LABEL (a cell may be in several classes or none; it never resolved ties). `class_threshold` is therefore multi-label in the monitor (inter/union/IoU are of those masks, = the measured 0.164 / 0.042 / 0.062). decide() returns ONE code per cell for partition consumers by argmax_c(logit p_hat_c - tau_c) -- MY resolution, not the diagnostics'; the brief's 'resolve exactly as the diagnostics did' has no referent. If a different partition is wanted, change decide() only.
+  2. F2(b) the 0.2 m tolerant IoU is emitted ONLY with --map-hires-class-thresholds and is of the THRESHOLDED rule (RESULT.md M-b is IoU_k under thr_phat). It is not emitted under the declared rule or in a default run (no new keys, no extra compute).
+  3. F4: detection_metrics.summarise/_census/train_row_keys ALREADY took a scalar gate= (default None -> 0.5). What was missing was per-head gates + a place to read them: new eval_<head>_gated_* keys. The declared eval_<head>_conf_ratio / alarm keep their meaning (a run's Watch contract is unchanged).
+  4. NOT touched, would fail LOUDLY if handed a class_threshold run: taniteval/tools/render_refcv7_video.py:693 (mhr.decide(lg, rule, cw) -- needs class_thresholds=model._map_hires_class_thresholds) and taniteval/tools/refcv3_arm.py (rebuild does not restore the thresholds carrier). refcv7-r101-s0 itself was trained with prior_corrected, so neither is hit by its own config.
+  5. scripts/launch_gate.py pins --map-hires-decision-rule prior_corrected in the refcv7 launch profile: a launch argv using the new flags is refused by the gate until the profile is amended (a Master Mind / PI call; not done here).
+  6. The thresholds and gates are fitted on ONE checkpoint (step 50,400) of ONE run, one seed, and bound to that run's class weights (the loader refuses other weights). A different/retrained model needs its own fit.
+  7. Tests that import binary evidence from D: skip cleanly elsewhere (4 skips). The D: working copy is STALE (HEAD 37645fc): take the listed files whole onto the tip.

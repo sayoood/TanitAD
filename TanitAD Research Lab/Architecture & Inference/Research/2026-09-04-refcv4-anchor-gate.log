@@ -1,0 +1,33 @@
+[cfg] horizons (5, 10, 15, 20, 30, 40, 50, 60) (=[0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 5.0, 6.0] s)  n_anchors 128  gate slots 0..3 (0-2 s)
+[split] train 4572 clips · eval 141 clips · INTERSECTION 0 -> []
+[pool:train] 4572 clips -> 635331 windows
+[pool:eval] 141 clips -> 19602 windows
+[fps] pool (200000, 8, 2) (subsampled from (635331, 8, 2))
+
+=== GATE: oracle-in-vocabulary over 0-2 s, HELD-OUT EVAL CLIPS (n=19602 windows / 141 clips) ===
+                                               (metres, lower = better)
+  CONTROL: zero path (no information)          ADE 14.3264  ALONG 14.3064  LAT  0.3160  p50 12.7836  p90 27.7522
+  CONTROL: constant-velocity straight line     ADE  0.6843  ALONG  0.4783  LAT  0.3160  p50  0.4287  p90  1.6625
+  INCUMBENT: SYNTHETIC 128 (refcv3's actual)   ADE  1.0882  ALONG  0.9087  LAT  0.4135  p50  1.0244  p90  1.5277
+
+  DATA 128  FPS      metric=raw                ADE  0.8144  ALONG  0.6429  LAT  0.3499  p50  0.7928  p90  1.2906  | 0-6s ADE  3.5758  | uses  95/128
+  DATA 128  FPS      metric=slotnorm           ADE  0.8188  ALONG  0.6409  LAT  0.3500  p50  0.8062  p90  1.2181  | 0-6s ADE  3.7404  | uses  89/128
+  DATA 128  FPS      metric=slotaxis           ADE  0.8575  ALONG  0.6347  LAT  0.4228  p50  0.7923  p90  1.3377  | 0-6s ADE  3.5470  | uses  91/128
+  DATA 128  FPS      metric=slotaxis_along0.5  ADE  0.8125  ALONG  0.5716  LAT  0.4288  p50  0.7995  p90  1.2593  | 0-6s ADE  3.6827  | uses  92/128
+  DATA 128  FPS      metric=slotaxis_along0.25 ADE  0.7666  ALONG  0.5478  LAT  0.3988  p50  0.7497  p90  1.1657  | 0-6s ADE  3.7595  | uses  98/128
+  DATA 128  KMEANS   metric=raw                ADE  0.3867  ALONG  0.3068  LAT  0.1570  p50  0.3403  p90  0.6795  | 0-6s ADE  1.4783  | uses 123/128
+  DATA 128  KMEDOID  metric=raw                ADE  0.3904  ALONG  0.3078  LAT  0.1633  p50  0.3460  p90  0.6899  | 0-6s ADE  1.4893  | uses 123/128
+  DATA 128  KMEANS   metric=slotnorm           ADE  0.3796  ALONG  0.3066  LAT  0.1496  p50  0.3339  p90  0.7037  | 0-6s ADE  1.4838  | uses 121/128
+  DATA 128  KMEDOID  metric=slotnorm           ADE  0.3831  ALONG  0.3072  LAT  0.1553  p50  0.3385  p90  0.7012  | 0-6s ADE  1.4878  | uses 122/128
+
+=== VERDICT ===
+  winner                       : kmeans:slotnorm
+  ADE 0-2 s                    : 0.3796 m (ALONG 0.3066 / LAT 0.1496)
+  vs straight-line control     : 0.6843 m  (BEATS it, +0.3047 m)
+  vs published floor 0.6780   : BEATS
+  vs refc-base target 0.4369  : 0.87x
+  vs SYNTHETIC incumbent       : 1.0882 m -> 2.87x better, +0.7086 m
+  GATE                         : ✅ PASS
+
+[saved] /workspace/refc_anchors_6s_b1train_128.pt  shape (128, 8, 2)  (16 s)
+[saved] /workspace/refc_anchors_6s_b1train_128.pt.json

@@ -1,0 +1,76 @@
+{
+ "_what": "mutation proof that test_trunk_speed_levers.py can FAIL",
+ "_evidence_class": "MEASURED (ours), CPU",
+ "targets": {
+  "stack\\tanitad\\refs\\refc.py": "d0313ebb20940c9cc471e3d5abd41d3c",
+  "stack\\tests\\test_trunk_speed_levers.py": "b950ac6dca24e15fd6af13a24578b387",
+  "stack\\scripts\\refc_v3_train.py": "6f161013231d07c1d6b784ad35bf6a35",
+  "stack\\tanitad\\models\\timm_trunk.py": "0bb9f26196cfeea979e49f8eb6ce772c"
+ },
+ "arms": [
+  {
+   "arm": "L1_autocast_ignores_the_flag",
+   "file": "stack\\tanitad\\models\\timm_trunk.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_bf16_RUNS_the_backbone_in_bf16_and_hands_back_float32"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "L2_nhwc_conversion_removed",
+   "file": "stack\\tanitad\\models\\timm_trunk.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_channels_last_weights_ARE_nhwc_and_outputs_match"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "L3_outputs_not_returned_to_fp32",
+   "file": "stack\\tanitad\\models\\timm_trunk.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_bf16_RUNS_the_backbone_in_bf16_and_hands_back_float32",
+    "test_channels_last_weights_ARE_nhwc_and_outputs_match"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "L4_trainer_does_not_pin_the_flag",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_the_trainer_flags_reach_the_BUILT_trunk_and_are_stamped",
+    "test_the_levers_REFUSE_the_refc_trunk"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "L5_build_encoder_drops_the_flag",
+   "file": "stack\\tanitad\\refs\\refc.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_the_trainer_flags_reach_the_BUILT_trunk_and_are_stamped"
+   ],
+   "tail": null
+  }
+ ],
+ "baseline": {
+  "rc": 0,
+  "failed": []
+ },
+ "restored_ok": true,
+ "final_clean_run": {
+  "rc": 0,
+  "failed": []
+ },
+ "arms_caught": 5,
+ "arms_total": 5,
+ "_VERDICT": "⭐ MUTATION-PROVEN — all 5/5 arms RED, including the a lever stamped but not run; all files restored byte-identical and the final clean run is green."
+}

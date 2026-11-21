@@ -1,0 +1,84 @@
+{
+ "tree": "F:/TanitAD-scratch/actsens/tree",
+ "py": "C:/Users/Admin/venvs/tanitad/Scripts/python.exe",
+ "basetemp": "F:/TanitAD-scratch/actsens/bt",
+ "muts": {
+  "D1": {
+   "file": "stack/scripts/v8f_mini_train.py",
+   "old": "return D.DiversitySampler(wins, a.batch, D.window_act_means(store, J, wins, cfg.hmax), **kw)",
+   "new": "return D.ChunkedSampler(wins, a.batch, **kw)",
+   "tests": "stack/tests/test_v8f_divrs.py",
+   "must_fail": [
+    "test_the_gate_passes_with_divrs_reads_the_built_sampler_back_and_runs_control_1",
+    "test_a_whole_wm_only_run_reaches_the_loss_through_the_diversity_sampler",
+    "test_the_flag_reaches_a_full_m2b_run_through_the_loss"
+   ],
+   "id_full": "D1_sampler_built_uniform"
+  },
+  "D2": {
+   "file": "stack/tanitad/data/v8f_mini_data.py",
+   "old": "self.p = self.W[\"weight\"]",
+   "new": "self.p = np.ones(len(self.windows))",
+   "tests": "stack/tests/test_v8f_divrs.py",
+   "must_fail": [
+    "test_control_1_realised_cell_shares_over_2000_batches",
+    "test_the_chunk_allocation_makes_the_expected_draws_exact",
+    "test_the_control_1_probe_refuses"
+   ],
+   "id_full": "D2_weights_not_applied"
+  },
+  "D3": {
+   "file": "stack/tanitad/data/v8f_mini_data.py",
+   "old": "cap = float(cap_mult) * med",
+   "new": "cap = float('inf')",
+   "tests": "stack/tests/test_v8f_divrs.py",
+   "must_fail": [
+    "test_weights_follow_the_card_rule_by_hand",
+    "test_the_gate_passes_with_divrs_reads_the_built_sampler_back_and_runs_control_1"
+   ],
+   "id_full": "D3_cap_deleted"
+  },
+  "D4": {
+   "file": "stack/tanitad/data/v8f_mini_data.py",
+   "old": "DIVRS_YAW_EDGES = (0.02, 0.05, 0.10, 0.20)",
+   "new": "DIVRS_YAW_EDGES = (0.02, 0.05, 0.10, 0.25)",
+   "tests": "stack/tests/test_v8f_divrs.py",
+   "must_fail": [
+    "test_bin_edges_put_a_value_on_an_edge_into_the_upper_bin",
+    "test_the_gate_passes_with_divrs_reads_the_built_sampler_back_and_runs_control_1"
+   ],
+   "id_full": "D4_bin_edge_drifted"
+  },
+  "D5": {
+   "file": "stack/tanitad/data/v8f_mini_data.py",
+   "old": "cum = np.cumsum(mass) / mass.sum() * n_epoch",
+   "new": "cum = np.cumsum([len(ch) for ch in chunks]) / sum(len(ch) for ch in chunks) * n_epoch",
+   "tests": "stack/tests/test_v8f_divrs.py",
+   "must_fail": [
+    "test_control_1_fails_for_a_chunk_allocation_by_size"
+   ],
+   "id_full": "D5_chunk_allocation_by_size"
+  },
+  "D6": {
+   "file": "stack/scripts/v8f_mini_train.py",
+   "old": "bad += bad_wm_sampler(a, cfg, model, data_info)",
+   "new": "bad += []",
+   "tests": "stack/tests/test_v8f_divrs.py",
+   "must_fail": [
+    "test_the_gate_refuses_every_lie"
+   ],
+   "id_full": "D6_gate_clause_deleted"
+  },
+  "D7": {
+   "file": "stack/scripts/v8f_mini_train.py",
+   "old": "smp_probe = wm_sampler_probe(sampler, wins)",
+   "new": "smp_probe = {'pass': True}",
+   "tests": "stack/tests/test_v8f_divrs.py",
+   "must_fail": [
+    "test_the_control_1_probe_refuses_a_sampler_whose_record_says_divrs",
+    "test_the_gate_passes_with_divrs_reads_the_built_sampler_back_and_runs_control_1"
+   ],
+   "id_full": "D7_control_1_probe_deleted"
+  }
+ }
+}

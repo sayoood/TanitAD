@@ -1,0 +1,58 @@
+{
+  "cache_key": "physicalai-train-e438721ae894-w120-256x640cyl",
+  "d_episodes": 2400,
+  "stride": 5,
+  "arms": {
+    "circle_past": {
+      "p50": 2.011852842582229,
+      "p75": 6.077099280671954,
+      "p90": 14.269342934818058,
+      "mean": 5.193098436612931,
+      "n": 63016
+    },
+    "clothoid_past": {
+      "p50": 3.3065499807448235,
+      "p75": 8.11193490801395,
+      "p90": 15.817094513875404,
+      "mean": 6.25656052634504,
+      "n": 63016
+    },
+    "circle_oracle": {
+      "p50": 0.687096361199747,
+      "p75": 2.3304939487948206,
+      "p90": 6.267792167925488,
+      "mean": 2.124014411909643,
+      "n": 63016
+    },
+    "clothoid_oracle": {
+      "p50": 0.08537959475929727,
+      "p75": 0.1926212794319728,
+      "p90": 0.3802981454729081,
+      "mean": 0.17051166796243714,
+      "n": 63016
+    }
+  },
+  "prereg": {
+    "win_ratio": 0.75,
+    "deployable_ratio_clothoid_over_circle": 1.643534711266874,
+    "VERDICT": "CLOTHOID LOSES \u2014 extrapolation refuted as a family; go to road OBSERVATION (agent tracks / Engine C)"
+  },
+  "controls": {
+    "control_synthetic_bend": {
+      "circle_past": 0.00011,
+      "clothoid_past": 0.00011,
+      "circle_oracle": 0.00011,
+      "clothoid_oracle": 0.00011,
+      "PASS": true,
+      "NOTE": "constant-radius bend: BOTH oracles must read ~0; a clothoid that cannot represent a circle is a broken implementation"
+    },
+    "control_synthetic_clothoid": {
+      "circle_past": 12.0355,
+      "clothoid_past": 4.68328,
+      "circle_oracle": 4.46031,
+      "clothoid_oracle": 0.00014,
+      "PASS": true,
+      "NOTE": "kappa genuinely linear in arc: the clothoid oracle MUST beat the circle oracle here, or the two arms are not different and the whole comparison is void"
+    }
+  }
+}

@@ -1,0 +1,27 @@
+ANCHOR RE-VALIDATION against the CURRENT repo tree
+written 2026-09-23T00:17:38
+reason: a sibling landed a route-gating edit in refc_v3_train.py at 00:02:50,
+        AFTER the mutation harness took its snapshot. Every arm's anchor is
+        therefore re-checked against the live file; a stale anchor would make
+        that arm's result inadmissible.
+
+  md5 repo=5d21613e12cca323d2a312701281b81f  snapshot=1b87d6a61abe998c8ccdc135d90c5f1b  DIFFER  scripts/refc_v3_train.py
+  md5 repo=d01415e10ed6ef11111abc32e6bc7ddd  snapshot=d01415e10ed6ef11111abc32e6bc7ddd  MATCH  tanitad/models/timm_trunk.py
+  md5 repo=3665b46fe24cb875bebe2f58d218b2eb  snapshot=3665b46fe24cb875bebe2f58d218b2eb  MATCH  tanitad/rl/config.py
+
+  OK     A1-lr-constructor              tanitad/models/timm_trunk.py       matches=1 at [914]
+  OK     A2-lr-consumer-ZEROED          scripts/refc_v3_train.py           matches=1 at [7459]
+  OK     A3-lr-consumer-NO-DECAY        scripts/refc_v3_train.py           matches=1 at [7459]
+  OK     A4-weight-decay-torch-default  scripts/refc_v3_train.py           matches=1 at [8774]
+  OK     A5-encoder-lr-mult-default     scripts/refc_v3_train.py           matches=1 at [8777]
+  OK     A6-il-grad-clip                scripts/refc_v3_train.py           matches=1 at [7569]
+  OK     A7-knob-derivation-M18         scripts/refc_v3_train.py           matches=1 at [5038]
+  OK     A7b-knob-derivation-M18-valid  scripts/refc_v3_train.py           matches=1 at [5039]
+  OK     A8-knob-stamp-EMPTIED          scripts/refc_v3_train.py           matches=1 at [4961]
+  OK     A9-maneuver-budget-doubled     scripts/refc_v3_train.py           matches=1 at [3650]
+  OK     A10-rl-grad-clip-off           tanitad/rl/config.py               matches=1 at [225]
+  OK     A11-f6-w-u0-default            scripts/refc_v3_train.py           matches=1 at [146]
+  OK     A12-warmup-default-zero        scripts/refc_v3_train.py           matches=1 at [8443]
+
+  anchors still uniquely present in the CURRENT repo: 13/13
+  => every arm's result in TRAINING_GUARDS_REVIEW.md F-5 applies to the live tree.

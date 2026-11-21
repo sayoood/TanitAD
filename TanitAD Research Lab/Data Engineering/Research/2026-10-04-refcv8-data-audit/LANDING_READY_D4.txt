@@ -1,0 +1,26 @@
+## D4
+# refcv8 data audit, stream D4: usage audit + refcv8 label design (revision 2, folds in D2 and route A5/A6)
+# Repo root = D:/Projects/TanitAD ; package = TanitAD Research Lab/Data Engineering/Research/2026-10-04-refcv8-data-audit
+# Nothing staged, nothing committed (the Master Mind lands). UUID scan over all 14 files: 0 hits (positive control 1).
+TanitAD Research Lab/Data Engineering/Research/2026-10-04-refcv8-data-audit/D4_usage_and_design/USAGE_AUDIT.md 2ac44ab6e92d016393ec0c35713ad140 job A: channel table (argv walk), WRONG/SUBOPTIMAL rows ranked by measured consequence
+TanitAD Research Lab/Data Engineering/Research/2026-10-04-refcv8-data-audit/D4_usage_and_design/REFCV8_LABEL_DESIGN.md e2c1ad17fb2ad7d61c1a9b0301050d8a job B: L1 dense tactical, L2 announced nav, L3 non-oracle max speed, VLM re-timing/propagation, goal negatives
+TanitAD Research Lab/Data Engineering/Research/2026-10-04-refcv8-data-audit/D4_usage_and_design/code/d4_lib.py 619db3e65c655edbcb3c61fd203f2d65 literal-threshold label rules (dense tactical, nav path/entry rules, ladders, synthetic tracks)
+TanitAD Research Lab/Data Engineering/Research/2026-10-04-refcv8-data-audit/D4_usage_and_design/code/d4_controls.py 8beb20073cd1d4a5f7ffd8f3012a342b analytic controls + 2 mutations (all PASS / RED as required)
+TanitAD Research Lab/Data Engineering/Research/2026-10-04-refcv8-data-audit/D4_usage_and_design/code/d4_measure.py 118ee6783c4f38e9518b799f8393bcdc EVAL-DIAG reproduction, nav, dense labels, max-speed leak test, TL RED propagation (needs env D4_SCRATCH = dir holding train_v2manifest.pt)
+TanitAD Research Lab/Data Engineering/Research/2026-10-04-refcv8-data-audit/D4_usage_and_design/code/d4_lanechange.py 79fa99cd9f88e0d01445fa604448f800 lane-change rules vs the Alpamayo lane-change text referee (both rules FAIL)
+TanitAD Research Lab/Data Engineering/Research/2026-10-04-refcv8-data-audit/D4_usage_and_design/code/d4_nav_announced.py 5233a53c0e308058df9a69862bc58b60 announced-entry nav: K-A5 reproduction, G1, EVAL-DIAG + TRAIN predicate
+TanitAD Research Lab/Data Engineering/Research/2026-10-04-refcv8-data-audit/D4_usage_and_design/code/d4_vmax_nonoracle.py 4da275a2fbff5c1a9d8acd10ec3977a3 oracle vs non-oracle max-speed leak + ceiling violations
+TanitAD Research Lab/Data Engineering/Research/2026-10-04-refcv8-data-audit/D4_usage_and_design/raw/controls.json dafa8ece9c4308d13b0cbd2276ba27f3 ALL_CONTROLS_PASS true
+TanitAD Research Lab/Data Engineering/Research/2026-10-04-refcv8-data-audit/D4_usage_and_design/raw/d4_measure.json 8af056cd34695f3297f498908ac24f19 main measurements (input md5s inside)
+TanitAD Research Lab/Data Engineering/Research/2026-10-04-refcv8-data-audit/D4_usage_and_design/raw/d4_lanechange.json d538923715a15a37efb674acf002b581 LC referee (lateral only; computed before the lon threshold change, lat unaffected)
+TanitAD Research Lab/Data Engineering/Research/2026-10-04-refcv8-data-audit/D4_usage_and_design/raw/d4_nav_announced.json ccbd85864740b5ca67645bb849fe32dd announced nav numbers
+TanitAD Research Lab/Data Engineering/Research/2026-10-04-refcv8-data-audit/D4_usage_and_design/raw/d4_vmax_nonoracle.json 7b290ab55560aa5e2e63fd5c9a49003f N0-N3 / O1 leak table
+TanitAD Research Lab/Data Engineering/Research/2026-10-04-refcv8-data-audit/D4_usage_and_design/raw/loss_shares.json 82dc76ab70038f170fb4d6afc2b83282 loss-value composition from metrics_final_50400.jsonl (md5 cfcbba41...)
+TanitAD Research Lab/Data Engineering/Research/2026-10-04-refcv8-data-audit/LANDING_READY_D4.txt (this file)
+
+## NOT for git
+C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/7c618562-39eb-4a61-af81-755048086a13/scratchpad/train_v2manifest.pt 23,777,677 B md5 3c9f8bc8583938ff60c57d4d97fcd8c0 - read-only copy of Thor /home/nvidia/data/refcv6-b1-416x1024-train/_v2manifest.pt (identical md5; carries raw clip ids -> never into git)
+C:/Users/Admin/AppData/Local/Temp/claude/.../scratchpad/d4_measure.log, nav_ann.log, patch_d4.py, section_f.py.txt - run logs / one-off patch helpers (scratch)
+
+## Thor-only state
+none. D4 started NO process on Thor. Thor contact: one read-only `ls/md5sum/pgrep -a` listing and one `scp` read of the train manifest, both ended by ~12:07 local (10:07Z) 2026-10-04. No D4 file under /home/nvidia/refcv8_audit/.

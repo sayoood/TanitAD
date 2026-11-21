@@ -1,0 +1,58 @@
+{
+ "task": "D-REFAV1-DK-DECODED BAR-4 -- the ARM-LEVEL head-loader guards",
+ "evidence_class": "MEASURED (ours)",
+ "bundle": "C:\\Users\\Admin\\dkhead_run\\head\\gap_head_bundle_recal.pt",
+ "n_guards": 8,
+ "ALL_PASS": true,
+ "note": "each guard is a PAIR: the mutated bundle is REFUSED and the unmutated one ACCEPTED in the same breath, so a refusal cannot be an unrelated error on the way past the guard",
+ "cases": [
+  {
+   "guard": "wrong ckpt_sha256 (another trunk)",
+   "refused_the_bad_bundle": true,
+   "message": "[refav1_arm] \u26d4 the gap head was fit against checkpoint 0000000000000000 but this arm is running 37bdf89c8e6a6a67. A head decodes ONE trunk's latent; a",
+   "accepted_the_good_bundle": true
+  },
+  {
+   "guard": "wrong ckpt_step",
+   "refused_the_bad_bundle": true,
+   "message": "[refav1_arm] \u26d4 gap head ckpt_step 12345 != running checkpoint step 21109",
+   "accepted_the_good_bundle": true
+  },
+  {
+   "guard": "wrong d_state",
+   "refused_the_bad_bundle": true,
+   "message": "[refav1_arm] \u26d4 gap head d_state 512 != model d_state 1024",
+   "accepted_the_good_bundle": true
+  },
+  {
+   "guard": "wrong pooling geometry",
+   "refused_the_bad_bundle": true,
+   "message": "[refav1_arm] \u26d4 gap head geometry grid=[16, 40] pool=[16, 20] != (16, 40)/(8, 20)",
+   "accepted_the_good_bundle": true
+  },
+  {
+   "guard": "wrong token grid",
+   "refused_the_bad_bundle": true,
+   "message": "[refav1_arm] \u26d4 gap head geometry grid=[8, 20] pool=[8, 20] != (16, 40)/(8, 20)",
+   "accepted_the_good_bundle": true
+  },
+  {
+   "guard": "not a head bundle (kind)",
+   "refused_the_bad_bundle": true,
+   "message": "[refav1_arm] C:\\Users\\Admin\\dkhead_run\\guard_tmp.pt is not a decoded-gap head bundle (kind=something_else)",
+   "accepted_the_good_bundle": true
+  },
+  {
+   "guard": "missing the `present` target",
+   "refused_the_bad_bundle": true,
+   "message": "[refav1_arm] \u26d4 gap head bundle has no 'present' target (has ['gap_all_lead', 'gap_le30m'])",
+   "accepted_the_good_bundle": true
+  },
+  {
+   "guard": "clip absent from the fold map (leak guard)",
+   "refused_the_bad_bundle": true,
+   "accepted_the_good_bundle": true,
+   "message": "an unknown clip has no OUT-OF-FOLD head; guessing one would leak that clip's own labels into its prediction"
+  }
+ ]
+}

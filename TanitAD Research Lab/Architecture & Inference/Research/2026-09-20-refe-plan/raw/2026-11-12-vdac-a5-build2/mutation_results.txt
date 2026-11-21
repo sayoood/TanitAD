@@ -1,0 +1,10 @@
+mutation arms of vdac_stage0_forward.py (each must make its check fail or the tool refuse); CPU, synthetic fixtures
+clean run                    check passes (no mutation)
+skip_head_load               RED: SystemExit: REFUSED: the loaded head is bit-identical to a freshly built seed-0 head in ALL 43 tensors: the weig
+skip_head_load,no_guard      RED: AssertionError: 3 != 0 : PLAN {"tool": "vdac_stage0_forward/1", "mode": "head", "run_dir": "C:\\Users\\Admin\\AppDat
+y_flip_output                RED: AssertionError: 1.6872552633285522 not less than 0.0001 : preds_insample.npz
+misalign_keys                RED: AssertionError: 1.9482275247573853 not less than 0.0001 : preds_insample.npz
+init_seed1                   RED: AssertionError: rc 3
+skip_list_sha                RED: AssertionError: a wrong frame-list sha256 was accepted
+skip_gpu_guard               RED: AssertionError: a busy GPU was accepted
+ALL ARMS RED

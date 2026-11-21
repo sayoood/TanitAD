@@ -1,0 +1,186 @@
+{
+ "checks": [
+  {
+   "name": "UNREGISTERED profile refuses the real-bank argv (the pre-patch state)",
+   "ok": true
+  },
+  {
+   "name": "G-CLOCK has no number for the real bank (FAIL)",
+   "ok": true
+  }
+ ],
+ "g_clock_one_byte_changed_bank": {
+  "bank_content": {
+   "registered": null,
+   "registration": "--targets 'mut_base\\\\train_grow_cmd_3c_p7' names bank 'train_grow_cmd_3c_p7', which has no registered targets_sha256 (registered: [])",
+   "targets_sha256": "ccbd716f6de14dcf88d4805f3ce6c55bb6cbe655d73c7b766d58431482d7b0bb"
+  },
+  "reasons": [
+   "step-0 bank: --targets 'mut_base\\\\train_grow_cmd_3c_p7' names bank 'train_grow_cmd_3c_p7', which has no registered tuple count (registered: [])",
+   "step-0 bank content: --targets 'mut_base\\\\train_grow_cmd_3c_p7' names bank 'train_grow_cmd_3c_p7', which has no registered targets_sha256 (registered: [])"
+  ],
+  "status": "FAIL"
+ },
+ "g_clock_real_bank": {
+  "bank_content": {
+   "registered": null,
+   "registration": "--targets 'rank1_measure\\\\train_grow_cmd_3c_p7' names bank 'train_grow_cmd_3c_p7', which has no registered targets_sha256 (registered: [])",
+   "targets_sha256": "92af8d663ecdd04a1fe7a2ed5ec0995499ca87d48a01052da4868503a92d385f"
+  },
+  "reasons": [
+   "step-0 bank: --targets 'rank1_measure\\\\train_grow_cmd_3c_p7' names bank 'train_grow_cmd_3c_p7', which has no registered tuple count (registered: [])",
+   "step-0 bank content: --targets 'rank1_measure\\\\train_grow_cmd_3c_p7' names bank 'train_grow_cmd_3c_p7', which has no registered targets_sha256 (registered: [])"
+  ],
+  "status": "FAIL"
+ },
+ "g_clock_real_bank_count_off_by_one": {
+  "bank_content": {
+   "registered": null,
+   "registration": "--targets 'rank1_measure\\\\train_grow_cmd_3c_p7' names bank 'train_grow_cmd_3c_p7', which has no registered targets_sha256 (registered: [])",
+   "targets_sha256": "92af8d663ecdd04a1fe7a2ed5ec0995499ca87d48a01052da4868503a92d385f"
+  },
+  "reasons": [
+   "step-0 bank: --targets 'rank1_measure\\\\train_grow_cmd_3c_p7' names bank 'train_grow_cmd_3c_p7', which has no registered tuple count (registered: [])",
+   "step-0 bank content: --targets 'rank1_measure\\\\train_grow_cmd_3c_p7' names bank 'train_grow_cmd_3c_p7', which has no registered targets_sha256 (registered: [])"
+  ],
+  "status": "FAIL"
+ },
+ "g_clock_unfiltered_3c_bank": {
+  "bank_content": {
+   "registered": null,
+   "registration": "--targets 'rank1_measure\\\\train_grow_cmd_3c' names bank 'train_grow_cmd_3c', which has no registered targets_sha256 (registered: [])",
+   "targets_sha256": "8775e73ee948588c6db6b18e3f5a65f6686b313405d6b28e439f85114d5f87a4"
+  },
+  "reasons": [
+   "step-0 bank: --targets 'rank1_measure\\\\train_grow_cmd_3c' names bank 'train_grow_cmd_3c', which has no registered tuple count (registered: [])",
+   "step-0 bank content: --targets 'rank1_measure\\\\train_grow_cmd_3c' names bank 'train_grow_cmd_3c', which has no registered targets_sha256 (registered: [])"
+  ],
+  "status": "FAIL"
+ },
+ "g_dvb_FULL_store_with_reserve_keys": {
+  "event": {
+   "rows": 150603,
+   "rows_labelled": 150603,
+   "store_keys": 103139,
+   "store_sha256": "4a17db673b1548ba35724ab848a7dc551e4b0bc1e49c57ae93e6357454bf287a"
+  },
+  "not_ok_rows": [
+   {
+    "flag": "--aux-drv-labels",
+    "how": "the profile registers NO pins for this run's label store (refe_p7: P7_AUX_STORE_PINS, from the filter's report, BEFORE s"
+   }
+  ]
+ },
+ "g_dvb_training_store": {
+  "event": {
+   "rows": 150603,
+   "rows_labelled": 150603,
+   "store_keys": 92993,
+   "store_sha256": "df2ddd1ba2aa16a27ecea4251178038ffadaa65693be4adbe1796d74cf78e997"
+  },
+  "not_ok_rows": [
+   {
+    "flag": "--aux-drv-labels",
+    "how": "the profile registers NO pins for this run's label store (refe_p7: P7_AUX_STORE_PINS, from the filter's report, BEFORE s"
+   }
+  ]
+ },
+ "label": "base",
+ "live_pins": {
+  "P7_AUX_STORE_PINS": {
+   "keys": null,
+   "sha256": null
+  },
+  "P7_BANK_TUPLES": {},
+  "P7_TARGETS_SHA256": {}
+ },
+ "mutated_bank_same_size_same_rows": {
+  "bytes_equal_len": true
+ },
+ "negative_controls": {
+  "another bank name (digest)": {
+   "fragment": "no registered targets_sha256",
+   "n_reasons": 3,
+   "refused": true
+  },
+  "another bank name in --targets": {
+   "fragment": "no registered tuple count",
+   "n_reasons": 3,
+   "refused": true
+  },
+  "count and digest name different banks": {
+   "fragment": "DIFFERENT banks",
+   "n_reasons": 3,
+   "refused": false
+  },
+  "digest malformed": {
+   "fragment": "not a sha256",
+   "n_reasons": 3,
+   "refused": true
+  },
+  "forbidden --grow": {
+   "fragment": "FORBIDS",
+   "n_reasons": 4,
+   "refused": true
+  },
+  "no digest key": {
+   "fragment": "carries no targets_sha256_by_bank",
+   "n_reasons": 3,
+   "refused": true
+  },
+  "required --aux-drv dropped": {
+   "fragment": "aux-drv",
+   "n_reasons": 4,
+   "refused": true
+  },
+  "reserve sha removed": {
+   "fragment": "no reserve sha256",
+   "n_reasons": 4,
+   "refused": true
+  },
+  "schedule steps changed": {
+   "fragment": "is not SPEC_P7's",
+   "n_reasons": 4,
+   "refused": true
+  },
+  "store keys None": {
+   "fragment": "label store's pins",
+   "n_reasons": 3,
+   "refused": true
+  },
+  "store pins removed": {
+   "fragment": "label store's pins",
+   "n_reasons": 3,
+   "refused": true
+  },
+  "store sha short": {
+   "fragment": "not a registration",
+   "n_reasons": 3,
+   "refused": true
+  },
+  "tuple count 0": {
+   "fragment": "not a positive int",
+   "n_reasons": 3,
+   "refused": true
+  }
+ },
+ "p7_refusals_real_bank_argv": [
+  "refe_p7: the P7 label store's pins (manifest sha256 + key count) are not registered (P7_AUX_STORE_PINS): the training store exists only after the chain's reserve stage re-finalises it (PROCEDURE_P7_PINS.md); an unregistered store is never vouched for by another store's number",
+  "refe_p7: --targets 'rank1_measure\\\\train_grow_cmd_3c_p7' names bank 'train_grow_cmd_3c_p7', which has no registered tuple count (P7_BANK_TUPLES holds []): register it in the pre-registration before any training data exists",
+  "refe_p7: --targets 'rank1_measure\\\\train_grow_cmd_3c_p7' names bank 'train_grow_cmd_3c_p7', which has no registered targets_sha256 (P7_TARGETS_SHA256 holds []): paste what p7_pins.py printed, never a typed value -- the digest exists only once the reserve filter has produced the bank"
+ ],
+ "p7_refusals_unfiltered_3c_bank": [
+  "refe_p7: the P7 label store's pins (manifest sha256 + key count) are not registered (P7_AUX_STORE_PINS): the training store exists only after the chain's reserve stage re-finalises it (PROCEDURE_P7_PINS.md); an unregistered store is never vouched for by another store's number",
+  "refe_p7: --targets 'rank1_measure\\\\train_grow_cmd_3c' names bank 'train_grow_cmd_3c', which has no registered tuple count (P7_BANK_TUPLES holds []): register it in the pre-registration before any training data exists",
+  "refe_p7: --targets 'rank1_measure\\\\train_grow_cmd_3c' names bank 'train_grow_cmd_3c', which has no registered targets_sha256 (P7_TARGETS_SHA256 holds []): paste what p7_pins.py printed, never a typed value -- the digest exists only once the reserve filter has produced the bank"
+ ],
+ "profile_refusals_real_bank_argv": [
+  "refe_p7: the P7 label store's pins (manifest sha256 + key count) are not registered (P7_AUX_STORE_PINS): the training store exists only after the chain's reserve stage re-finalises it (PROCEDURE_P7_PINS.md); an unregistered store is never vouched for by another store's number",
+  "refe_p7: --targets 'rank1_measure\\\\train_grow_cmd_3c_p7' names bank 'train_grow_cmd_3c_p7', which has no registered tuple count (P7_BANK_TUPLES holds []): register it in the pre-registration before any training data exists",
+  "refe_p7: --targets 'rank1_measure\\\\train_grow_cmd_3c_p7' names bank 'train_grow_cmd_3c_p7', which has no registered targets_sha256 (P7_TARGETS_SHA256 holds []): paste what p7_pins.py printed, never a typed value -- the digest exists only once the reserve filter has produced the bank"
+ ],
+ "refe": "C:\\Users\\Admin\\par18\\p7pins\\work\\base\\refe",
+ "refe_p6_profile_sha256": "80fa4d7ec757ad4658df04b1ecfd453ae98653e729e2ee24458769d851cdf9c3",
+ "refe_p6_refusals_on_its_own_argv": [],
+ "verdict": "ALL_OK"
+}

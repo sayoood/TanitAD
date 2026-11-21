@@ -1,0 +1,100 @@
+  RED  G floor raised to 0.65  ->  4 check(s): G:frontier_vertices_and_flat_ends, G:boundary_arms_equal_to_the_bar_pass_just_below_fails, G:IMPL_PLAN_selftest_alpha_0.25_sits_BELOW_the_bar_not_on_it ...
+  RED  G floor lowered to 0.50 (an equivalent mutation: the pin must see it)  ->  2 check(s): G:IMPL_PLAN_selftest_alpha_0.25_sits_BELOW_the_bar_not_on_it, pin:G_vertices_floor_lower_bound_and_point_rule_against_the_prereg_text
+  RED  a G vertex moved (0.71 -> 0.70)  ->  8 check(s): outcome:o1_ttc->O1, G:frontier_vertices_and_flat_ends, G:boundary_arms_equal_to_the_bar_pass_just_below_fails ...
+  RED  G point rule strict (> for >=)  ->  1 check(s): G:boundary_arms_equal_to_the_bar_pass_just_below_fails
+  RED  G lower bound >= 0 passes  ->  7 check(s): outcome:o3_flat->O3, outcome:o3_same->O3, outcome:o3_last_step_nc->O3 ...
+  RED  G passes on the lower bound OR the point  ->  7 check(s): outcome:o2->O2, outcome:o2_ttc->O2, G:boundary_arms_equal_to_the_bar_pass_just_below_fails ...
+  RED  G ignores the arm's TTC delta  ->  5 check(s): outcome:o1_ttc->O1, outcome:o2_ttc->O2, G:boundary_arms_equal_to_the_bar_pass_just_below_fails ...
+  RED  the BA read is not tied to the chain's dumps  ->  2 check(s): notread:n_ba_other_dumps, notread:n_ba_other_B
+  RED  the BA read is not tied to the dumps on disk  ->  1 check(s): notread:n_ba_wrong_both
+  RED  the BA read is not cross-checked with the chain's u1000 read  ->  2 check(s): notread:n_ba_disagrees, notread:n_ba_ttc_disagrees
+  RED  the BA read's set count is not compared  ->  1 check(s): notread:n_ba_sets
+  RED  the BA estimator is not pinned  ->  1 check(s): notread:n_ba_estimator
+  RED  the BA base arm is not checked  ->  1 check(s): notread:n_ba_base
+  RED  a killed arm gets a u1000 read  ->  1 check(s): G:killed_arm_has_no_u1000_so_G_is_NOT_READ_and_not_pending
+  RED  A-G1's alternative vertices are the printed ones  ->  2 check(s): G:IMPL_PLAN_selftest_alpha_0.25_sits_BELOW_the_bar_not_on_it, G:alpha_0.375_FAILS_on_the_printed_vertices_PASSES_on_dose_json_and_the_flip_is_listed
+  RED  O4 and O5 swapped  ->  18 check(s): outcome:o4->O4, outcome:o4_k3->O4, outcome:o5_k3->O5 ...
+  RED  O5 drops the cap clause  ->  3 check(s): outcome:o5_cap_o4_tie->AMBIGUOUS, outcome:flip_cap_window->AMBIGUOUS, table:truth_table_of_section_6
+  RED  O5 drops the violation clause  ->  5 check(s): outcome:o5_lag_k3->O5, outcome:win_edge->O5, outcome:viol_over->O5 ...
+  RED  O4 drops the lambda-share clause  ->  8 check(s): outcome:o6_k3->O6, outcome:o6_breach->O6, outcome:o7_g3->O7 ...
+  RED  O4 drops the violation clause  ->  8 check(s): outcome:o5_k3->O5, outcome:o5_viol_cap->O5, outcome:o5_lag_k3->O5 ...
+  RED  O6 never matches  ->  13 check(s): outcome:o6_k3->O6, outcome:o6_breach->O6, outcome:o3_o6_tie->AMBIGUOUS ...
+  RED  O7 loses K6  ->  3 check(s): outcome:o7_k6->O7, pin:O_table_thresholds_against_the_prereg_text, pin:kill_codes_and_file_names_against_the_chain
+  RED  O7 loses 'g3 alone'  ->  3 check(s): outcome:o7_g3->O7, outcome:o7_g3_o4->AMBIGUOUS, table:truth_table_of_section_6
+  RED  'g3 alone' counts a g3 breach beside a g5 breach  ->  1 check(s): outcome:o7_g3g5->O4
+  RED  a tie is broken by taking the first candidate  ->  6 check(s): outcome:o3_o6_tie->AMBIGUOUS, outcome:o1_inert->AMBIGUOUS, outcome:o5_cap_o4_tie->AMBIGUOUS ...
+  RED  the gap is filled with O7  ->  5 check(s): outcome:gap->NO_ROW, outcome:gap_k3->NO_ROW, outcome:gap_share_below->NO_ROW ...
+  RED  an unreadable row is ignored  ->  20 check(s): notread:n_S_notread, notread:n_log_cols, notread:n_log_lam0 ...
+  RED  an unlisted kill code is ignored  ->  1 check(s): outcome:unlisted_kill->NO_ROW
+  RED  S status ignored (always PASS)  ->  27 check(s): outcome:o4->O4, outcome:o4_k3->O4, outcome:o5_k3->O5 ...
+  RED  Kleene AND returns True beside an unknown  ->  12 check(s): notread:n_S_notread, notread:n_ba_missing, notread:n_ba_other_dumps ...
+  RED  Kleene OR returns False beside an unknown  ->  1 check(s): table:truth_table_of_section_6
+  RED  violation threshold 0.001 -> 0.01  ->  6 check(s): outcome:o5_lag_k3->O5, outcome:o5_nc_viol->O5, outcome:win_edge->O5 ...
+  RED  violation strict (< for <=)  ->  1 check(s): outcome:viol_exact->O4
+  RED  only the TTC term is judged  ->  1 check(s): outcome:o5_nc_viol->O5
+  RED  the window is 50 updates  ->  2 check(s): outcome:win_edge->O5, pin:O_table_thresholds_against_the_prereg_text
+  RED  the window ends at the last check, not the first breached one  ->  11 check(s): outcome:o4_k3->O4, outcome:o5_k3->O5, outcome:o5_lag_k3->O5 ...
+  RED  the first breached check is the LAST one  ->  1 check(s): outcome:o4_k3->O4
+  RED  the monitor's rows are not used to find the breach  ->  5 check(s): outcome:o4_k3->O4, outcome:o5_k3->O5, outcome:o5_lag_k3->O5 ...
+  RED  the window is read without a first breached check  ->  23 check(s): outcome:o4->O4, outcome:o4_k3->O4, outcome:o5_k3->O5 ...
+  RED  lambda share threshold 0.5 -> 0.6  ->  2 check(s): outcome:o4_share_exact->O4, pin:O_table_thresholds_against_the_prereg_text
+  RED  lambda share strict (> for >=)  ->  1 check(s): outcome:o4_share_exact->O4
+  RED  the share counts from update 0, not from the ramp end  ->  2 check(s): outcome:o4_share_exact->O4, outcome:gap_share_below->NO_ROW
+  RED  O6 reads only pos_updates  ->  2 check(s): outcome:o3_last_step_nc->O3, outcome:o3_last_step->O3
+  RED  O6 reads only the TTC maximum  ->  1 check(s): outcome:o3_last_step_nc->O3
+  RED  the cap is never seen  ->  3 check(s): outcome:o5_k3->O5, outcome:o5_cap_o4_tie->AMBIGUOUS, outcome:flip_cap_window->AMBIGUOUS
+  RED  a MISSING log column is read as zero  ->  1 check(s): notread:n_log_cols
+  RED  the BUILT dual is not compared with the registered one  ->  3 check(s): notread:n_log_lam0, notread:n_log_eta, real_main:the_real_run_is_refused_under_the_registered_values
+  RED  the BUILT ramp is not compared with the registered one  ->  2 check(s): notread:n_log_ramp, real_main:the_real_run_is_refused_under_the_registered_values
+  RED  the train rows need not be contiguous  ->  1 check(s): notread:n_log_gap
+  RED  the cumulative columns may decrease  ->  1 check(s): notread:n_log_decreasing
+  RED  cap_hits and lam_seen_max may disagree  ->  1 check(s): notread:n_log_cap_inconsistent
+  RED  the done event is not cross-checked  ->  2 check(s): notread:n_log_done, real_main:the_real_done_events_state_matches_the_last_row_and_a_tampered_one_is_caught
+  RED  a half-written final line is a problem  ->  1 check(s): tolerated:a_half_written_final_log_line_is_a_note_not_a_problem
+  RED  the trainer's cadence is 50  ->  52 check(s): outcome:o1->O1, outcome:o1_ttc->O1, outcome:o2->O2 ...
+  RED  a stale S file is accepted  ->  1 check(s): notread:n_S_stale
+  RED  a hand-edited S file is accepted  ->  1 check(s): notread:n_S_handedit
+  RED  a missing S file is accepted  ->  1 check(s): notread:n_S_missing
+  RED  a run with reads but no end is PENDING  ->  2 check(s): notread:n_k4_replay_unfinished, notread:n_log_missing_is_not_pending_when_the_chain_already_read_the_arm
+  RED  an unfinished arm reads O1  ->  2 check(s): pending:an_unfinished_arm_is_PENDING_and_never_an_outcome, pending:PENDING_arm_gives_a_PENDING_joint
+  RED  a replay-only kill is ignored  ->  1 check(s): outcome:o7_k4_retro->O7
+  RED  a breach at the FINAL check is not located  ->  1 check(s): outcome:o4_u1000->O4
+  RED  an unfinished log with reads is taken as complete  ->  2 check(s): notread:n_k4_replay_unfinished, notread:n_log_missing_is_not_pending_when_the_chain_already_read_the_arm
+  RED  --navtest-e is dropped by run()  ->  1 check(s): e2e:navtest_e_file_is_read_end_to_end_ADOPT
+  RED  L floor multiple 2 -> 1  ->  4 check(s): L:a_large_seed_floor_fails_a_positive_effect, L:exact_tie_effect_equal_2xF_is_not_a_pass_SYNTHETIC_dyadic, L:the_PDMS_numbers_never_move_the_verdict_SYNTHETIC ...
+  RED  L seed-0 tie passes (>= for >)  ->  2 check(s): L:exact_tie_effect_equal_2xF_is_not_a_pass_SYNTHETIC_dyadic, L:the_PDMS_numbers_never_move_the_verdict_SYNTHETIC
+  RED  F_seed is the smaller term  ->  6 check(s): L:pass_real_producer_both_seeds_clear_2xF_seed, L:seed1_fails_alone_SYNTHETIC_dyadic, L:seed0_fails_alone_SYNTHETIC_dyadic ...
+  RED  F_seed uses only the unconstrained pair  ->  5 check(s): L:pass_real_producer_both_seeds_clear_2xF_seed, L:seed1_fails_alone_SYNTHETIC_dyadic, L:seed0_fails_alone_SYNTHETIC_dyadic ...
+  RED  L needs only seed 0  ->  1 check(s): L:seed1_fails_alone_SYNTHETIC_dyadic
+  RED  L effect has the wrong sign  ->  6 check(s): L:pass_real_producer_both_seeds_clear_2xF_seed, L:seed1_fails_alone_SYNTHETIC_dyadic, L:seed0_fails_alone_SYNTHETIC_dyadic ...
+  RED  L is PENDING never: R1o is not required  ->  1 check(s): L:PENDING_until_R1o_exists_and_never_PASS
+  RED  L PENDING written as PASS  ->  1 check(s): L:PENDING_until_R1o_exists_and_never_PASS
+  RED  L controls are not tied to their own dumps  ->  1 check(s): L:NOT_READ_without_the_banked_R0_or_a_control_read_or_with_another_dump
+  RED  E PENDING written as ADOPT  ->  1 check(s): E:PENDING_when_no_navtest_read_exists_and_never_ADOPT
+  RED  E: each pair >= 0.125  ->  2 check(s): E:one_pair_below_025_mean_ok->NOT_PROVEN, pin:L_E_floors_thresholds_and_estimator_against_the_prereg_text
+  RED  E: mean >= 0.3  ->  2 check(s): E:mean_below_05->NOT_PROVEN, pin:L_E_floors_thresholds_and_estimator_against_the_prereg_text
+  RED  E: pooled lower bound >= 0  ->  1 check(s): E:pooled_lower_exactly_zero->NOT_PROVEN
+  RED  E: floor multiple 2 -> 1  ->  3 check(s): E:floor_tie_irep->NOT_PROVEN, E:floor_tie_seed->NOT_PROVEN, pin:L_E_floors_thresholds_and_estimator_against_the_prereg_text
+  RED  E: floor tie passes (>= for >)  ->  2 check(s): E:floor_tie_irep->NOT_PROVEN, E:floor_tie_seed->NOT_PROVEN
+  RED  E: the floor is the smaller of the two  ->  2 check(s): E:floor_tie_irep->NOT_PROVEN, E:floor_tie_seed->NOT_PROVEN
+  RED  E: clause 4 dropped  ->  2 check(s): E:ttc_upper_adverse_in_one_pair->NOT_PROVEN, E:nc_upper_adverse_in_one_pair->NOT_PROVEN
+  RED  E: clause 4 strict  ->  1 check(s): E:nc_upper_exactly_zero_is_not_adverse->ADOPT
+  RED  E: clause 4 checks one pair only  ->  1 check(s): E:ttc_upper_adverse_in_one_pair->NOT_PROVEN
+  RED  E: refuted threshold 0.3  ->  2 check(s): E:pooled_upper_exactly_025_is_not_refuted->NOT_PROVEN, pin:L_E_floors_thresholds_and_estimator_against_the_prereg_text
+  RED  E: refuted at <=  ->  1 check(s): E:pooled_upper_exactly_025_is_not_refuted->NOT_PROVEN
+  RED  E: ADOPT and REFUTED together accepted  ->  1 check(s): E:adopt_and_refuted_both_is_inconsistent->NOT_READ
+  RED  E: a missing sub-score is accepted  ->  2 check(s): E:subscore_missing_clause5->NOT_READ, E:malformed_interval->NOT_READ
+  RED  E: the estimator is not pinned  ->  1 check(s): E:estimator_not_registered->NOT_READ
+  RED  E: any tier accepted  ->  1 check(s): E:tier_not_T1->NOT_READ
+  RED  NOT REPLICATED is not recognised  ->  1 check(s): joint:r0d_O1_r1d_not->NOT_REPLICATED
+  RED  REPLICATED needs only R0d  ->  1 check(s): joint:r0d_O1_r1d_not->NOT_REPLICATED
+  RED  numbers lose their sha256  ->  3 check(s): L:pass_real_producer_both_seeds_clear_2xF_seed, E:every_number_carries_its_source_and_sha256, record:every_number_names_its_source_file_and_that_files_current_sha256
+  RED  the record hash is not over the record  ->  2 check(s): record:the_record_hash_is_self_consistent_and_inputs_are_listed, e2e:writes_the_record_with_a_self_consistent_hash
+  RED  a wrong prereg file is not noticed  ->  1 check(s): record:a_wrong_prereg_file_is_a_problem
+  RED  the registered prereg sha is wrong  ->  2 check(s): record:a_wrong_prereg_file_is_a_problem, pin:the_prereg_file_is_the_registered_bytes
+  RED  the registered lr is wrong  ->  53 check(s): outcome:o1->O1, outcome:o1_ttc->O1, outcome:o2->O2 ...
+  RED  exit code 0 for a tie  ->  2 check(s): e2e:rc2_for_a_tie, e2e:rc2_for_NOT_READ
+  RED  a duplicate --arm is accepted  ->  1 check(s): e2e:rc3_for_a_duplicate_arm
+  RED  the record file is not written  ->  4 check(s): e2e:writes_the_record_with_a_self_consistent_hash, e2e:rc2_for_a_tie, e2e:navtest_e_file_is_read_end_to_end_ADOPT ...
+ZZTEST_PASS 99  (1 unmutated suite of 142 checks + the CLI end to end, 98 RED mutations)
+ZZEXIT rc=0 seconds=327

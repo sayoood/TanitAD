@@ -1,0 +1,36 @@
+{
+ "n_windows": 881,
+ "n_candidates": 256,
+ "fan_dtype_in_census": "float32",
+ "W2_feasibility_census": {
+  "candidate_infeasible_frac (>5% bad steps)": 1.0,
+  "step_infeasible_frac": 0.9758528455254197,
+  "selected_candidate_infeasible_frac": 1.0,
+  "oracle_candidate_infeasible_frac": 1.0,
+  "fan_accel_mae_all": 252.06654357910156,
+  "_rule": "|a|>4.0 or |yr|>0.33v+0.05; candidate infeasible if >5% steps"
+ },
+ "W1_kinematic_rerank": {
+  "selector_ade": 0.40111324191093445,
+  "oracle_ade_full": 0.1975271999835968,
+  "oracle_ade_top8": 0.24074481427669525,
+  "rerank_ade": 0.43509641289711,
+  "sel_gap_before": 0.20358604192733765,
+  "sel_gap_after": 0.23756921291351318,
+  "gap_closed_frac": -0.1669228971004486,
+  "_gate": "PRE-REGISTERED W1: gap_closed_frac >= 0.30",
+  "_note": "kinematic cost only; top-8 pruning bounds it by oracle_ade_top8"
+ },
+ "W2b_smoother_probe": {
+  "_what": "3-tap [.25 .5 .25] positional smoother, post-hoc, zero-train",
+  "sel_ade_smoothed": 0.39747071266174316,
+  "oracle_ade_smoothed": 0.18785405158996582,
+  "sel_accel_mae_raw": 8.10198974609375,
+  "sel_accel_mae_smoothed": 3.09238600730896,
+  "sel_yawrate_mae_raw_deg_s": 81.90740203857422,
+  "sel_yawrate_mae_smoothed_deg_s": 48.98440170288086,
+  "sel_infeas_frac_smoothed": 0.31955313937511204,
+  "rerank_smoothed_ade": 0.43601617217063904,
+  "gap_closed_frac_smoothed_cost": -0.17144069075584412
+ }
+}

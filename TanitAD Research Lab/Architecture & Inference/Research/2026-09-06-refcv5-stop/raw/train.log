@@ -1,0 +1,159 @@
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (cli-override-legacy-file), horizon_s=None, dt=None, ref_speed_ms=None, kappa_cap=None, alat_v_floor=None, schema=None
+[v3] tensor sharing = file_system (workers=6; /dev/shm 24 GB vs ~34 MB/clip payloads)
+[v3] anchors: loaded (117, 8, 2) from /workspace/experiments/refcv5-ddim-b1-v72-40k/anchors.pt (sha256 51f930dc6f3564ff)
+[v3] anchors: v0-CONDITIONED, controls (117, 2) (accel, lateral accel), units=alat (source: cli-override-legacy-file), rolled per window; withheld rows at 10.0 m/s. straight-ahead control present: True
+[parity] ⚠ NON-PARITY v2 corpus for v3 v2-cache: ['/root/data/train'] reference no registered parity key. Results off it are NOT cross-arm comparable with the parity arms.
+[v2] /root/data/train: 4572 providers (channels 9, 256x640 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 4442 distinct for 4572 clips]
+[v2] 4572 providers, 4572 distinct episode ids
+[v3] 4572 lazy v2 providers from ['/root/data/train'] (lru 24)
+[v3] v7.2 labels: 4572 records, joined 4572/4572 episodes = 100.0 % (release ?)
+[v3] nav_from_v7: follow 2897 / left 811 / right 864, missing 0 (of 4572 clips; md5=0ff902130ce76886b8a925eceed9e3a5)
+[v3] 4572 episodes -> 781635 windows (window 8, max_horizon 20, image_hw (256, 640), tac_vocab v7.0)
+[v2] /root/data/eval: 141 providers (channels 9, 256x640 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 141 distinct for 141 clips]
+[v2] 141 providers, 141 distinct episode ids
+[v3] nav_from_v7: follow 90 / left 13 / right 38, missing 0 (of 141 clips; md5=aa12c948f062181c3297265b51526ec5)
+[v3] held-out eval: 141 episodes -> 24114 windows, 8 fixed batches every 500 steps
+[v3] loader: workers=6 prefetch=1 -> <=6 batches in flight
+[v3] u8_batches=True: frames+future_frames = 0.826 GB per collated batch (uint8), <= 6 in flight -> ~4.95 GB
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[v3:hier] step 50 loss 61.1346 traj 2.3345
+[v3:hier] step 100 loss 57.7430 traj 1.7698
+[v3:hier] step 150 loss 28.1739 traj 2.2763
+[v3:hier] step 200 loss 31.4682 traj 2.5838
+[v3:hier] step 250 loss 34.9348 traj 1.9533
+[v3:hier] step 300 loss 27.7012 traj 2.4143
+[v3:hier] step 350 loss 25.2283 traj 2.7373
+[v3:hier] step 400 loss 25.3300 traj 1.6973
+[v3:hier] step 450 loss 24.6460 traj 1.9123
+[v3:hier] step 500 loss 29.2260 traj 1.4968
+[v3:hier] ckpt step 500 -> ckpt.pt
+[v3:eval] step 500 loss 21.7816 traj 1.2375 lat_tac 1.2599
+[v3:hier] step 550 loss 15.5870 traj 1.2590
+[v3:hier] step 600 loss 19.2162 traj 2.2271
+[v3:hier] step 650 loss 21.5644 traj 1.6442
+[v3:hier] step 700 loss 18.5885 traj 1.7146
+[v3:hier] step 750 loss 23.7069 traj 2.5065
+[v3:hier] step 800 loss 23.1353 traj 1.7373
+[v3:hier] step 850 loss 20.7652 traj 1.8172
+[v3:hier] step 900 loss 23.0035 traj 1.8119
+[v3:hier] step 950 loss 20.6834 traj 2.2179
+[v3:hier] step 1000 loss 19.4256 traj 1.7103
+[v3:hier] ckpt step 1000 -> ckpt.pt
+[v3:eval] step 1000 loss 18.9056 traj 1.0484 lat_tac 1.2848
+[v3:hier] step 1050 loss 17.1829 traj 1.7220
+[v3:hier] step 1100 loss 18.4464 traj 1.6671
+[v3:hier] step 1150 loss 21.0315 traj 2.5147
+[v3:hier] step 1200 loss 19.8490 traj 1.6131
+[v3:hier] step 1250 loss 20.6964 traj 1.4621
+[v3:hier] step 1300 loss 22.6454 traj 1.9495
+[v3:hier] step 1350 loss 24.1054 traj 2.0695
+[v3:hier] step 1400 loss 17.9028 traj 2.0349
+[v3:hier] step 1450 loss 20.4449 traj 2.5491
+[v3:hier] step 1500 loss 16.5294 traj 1.8387
+[v3:hier] ckpt step 1500 -> ckpt.pt
+[v3:eval] step 1500 loss 17.8112 traj 1.4688 lat_tac 1.4144
+[v3:hier] step 1550 loss 17.2147 traj 1.8639
+[v3:hier] step 1600 loss 16.9654 traj 1.5325
+[v3:hier] step 1650 loss 16.1846 traj 1.5478
+[v3:hier] step 1700 loss 14.9849 traj 1.1004
+[v3:hier] step 1750 loss 20.1538 traj 1.3574
+[v3:hier] step 1800 loss 17.2900 traj 1.4821
+[v3:hier] step 1850 loss 16.0394 traj 1.4333
+[v3:hier] step 1900 loss 20.6798 traj 1.7386
+[v3:hier] step 1950 loss 18.6815 traj 1.5350
+[v3:hier] step 2000 loss 20.3254 traj 2.3226
+[v3:hier] ckpt step 2000 -> ckpt.pt
+[v3:eval] step 2000 loss 13.1899 traj 1.3319 lat_tac 1.2792
+[v3:hier] step 2050 loss 17.9067 traj 1.8462
+[v3:hier] step 2100 loss 17.0459 traj 1.4554
+[v3:hier] step 2150 loss 19.6952 traj 1.5231
+[v3:hier] step 2200 loss 18.8038 traj 1.3206
+[v3:hier] step 2250 loss 17.7572 traj 1.3165
+[v3:hier] step 2300 loss 15.7027 traj 1.6097
+[v3:hier] step 2350 loss 17.7010 traj 1.6847
+[v3:hier] step 2400 loss 16.1519 traj 1.2439
+[v3:hier] step 2450 loss 18.1465 traj 1.4657
+[v3:hier] step 2500 loss 18.4163 traj 1.4862
+[v3:hier] ckpt step 2500 -> ckpt.pt
+[v3:eval] step 2500 loss 10.3262 traj 0.9576 lat_tac 1.3510
+[v3:hier] step 2550 loss 15.2824 traj 1.2939
+[v3:hier] step 2600 loss 12.7300 traj 1.5481
+[v3:hier] step 2650 loss 16.6721 traj 1.3228
+[v3:hier] step 2700 loss 14.9600 traj 1.4568
+[v3:hier] step 2750 loss 13.5210 traj 1.1476
+[v3:hier] step 2800 loss 15.6024 traj 1.4992
+[v3:hier] step 2850 loss 11.0087 traj 1.1547
+[v3:hier] step 2900 loss 15.3422 traj 1.0263
+[v3:hier] step 2950 loss 12.8193 traj 1.0315
+[v3:hier] step 3000 loss 17.7014 traj 1.5310
+[v3:hier] ckpt step 3000 -> ckpt.pt
+[v3:eval] step 3000 loss 9.4061 traj 0.7901 lat_tac 1.1439
+[v3:hier] step 3050 loss 19.5949 traj 1.9993
+[v3:hier] step 3100 loss 16.3771 traj 1.3839
+[v3:hier] step 3150 loss 13.0306 traj 1.1316
+[v3:hier] step 3200 loss 16.2978 traj 1.5820
+[v3:hier] step 3250 loss 13.8042 traj 1.4532
+[v3:hier] step 3300 loss 17.0172 traj 1.5524
+[v3:hier] step 3350 loss 15.2286 traj 1.8688
+[v3:hier] step 3400 loss 15.8313 traj 1.1253
+[v3:hier] step 3450 loss 13.7462 traj 1.3324
+[v3:hier] step 3500 loss 13.5003 traj 1.1338
+[v3:hier] ckpt step 3500 -> ckpt.pt
+[v3:eval] step 3500 loss 8.8444 traj 0.7589 lat_tac 1.1052
+[v3:hier] step 3550 loss 16.9022 traj 1.4791
+[v3:hier] step 3600 loss 10.9579 traj 0.8541
+[v3:hier] step 3650 loss 17.3048 traj 1.7652
+[v3:hier] step 3700 loss 17.0523 traj 1.3406
+[v3:hier] step 3750 loss 12.7652 traj 1.1006
+[v3:hier] step 3800 loss 18.0789 traj 1.3804
+[v3:hier] step 3850 loss 13.9842 traj 1.2376
+[v3:hier] step 3900 loss 16.3343 traj 1.5613
+[v3:hier] step 3950 loss 12.4343 traj 1.0337
+[v3:hier] step 4000 loss 12.3530 traj 0.9686
+[v3:hier] ckpt step 4000 -> ckpt.pt
+[v3:eval] step 4000 loss 8.9794 traj 0.9237 lat_tac 1.2583
+[v3:hier] step 4050 loss 11.2764 traj 0.8096
+[v3:hier] step 4100 loss 16.3042 traj 1.6134
+[v3:hier] step 4150 loss 12.1108 traj 1.0904
+[v3:hier] step 4200 loss 12.9257 traj 0.9084
+[v3:hier] step 4250 loss 10.5830 traj 0.7973
+[v3:hier] step 4300 loss 14.9847 traj 1.1482
+[v3:hier] step 4350 loss 12.9722 traj 1.1942
+[v3:hier] step 4400 loss 18.5771 traj 1.5024
+[v3:hier] step 4450 loss 19.4044 traj 1.3297
+[v3:hier] step 4500 loss 16.6580 traj 1.6958
+[v3:hier] ckpt step 4500 -> ckpt.pt
+[v3:eval] step 4500 loss 9.1261 traj 0.8228 lat_tac 1.1551
+[v3:hier] step 4550 loss 11.7242 traj 0.7953
+[v3:hier] step 4600 loss 9.2409 traj 0.8881
+[v3:hier] step 4650 loss 12.2996 traj 1.3928
+[v3:hier] step 4700 loss 13.6066 traj 1.3780
+[v3:hier] step 4750 loss 11.6698 traj 0.9097
+[v3:hier] step 4800 loss 15.0350 traj 1.3645
+[v3:hier] step 4850 loss 11.3150 traj 0.8066
+[v3:hier] step 4900 loss 13.9873 traj 1.2636
+[v3:hier] step 4950 loss 13.2738 traj 1.1629
+[v3:hier] step 5000 loss 11.8492 traj 0.8069
+[v3:hier] ckpt step 5000 -> ckpt.pt
+[v3:eval] step 5000 loss 8.4679 traj 0.7972 lat_tac 1.0929
+[v3:hier] step 5050 loss 9.7707 traj 0.8142
+[v3:hier] step 5100 loss 12.3583 traj 0.9679
+[v3:hier] step 5150 loss 11.1191 traj 1.1526
+[v3:hier] step 5200 loss 14.4148 traj 1.1607
+[v3:hier] step 5250 loss 16.1333 traj 1.0785
+[v3:hier] step 5300 loss 11.0752 traj 0.8572
+[v3:hier] step 5350 loss 15.6418 traj 1.0027
+[v3:hier] step 5400 loss 12.9454 traj 1.1597
+[v3:hier] step 5450 loss 12.1967 traj 0.8247
+[v3:hier] step 5500 loss 15.4466 traj 1.0422
+[v3:hier] ckpt step 5500 -> ckpt.pt
+[v3:eval] step 5500 loss 8.4054 traj 0.7762 lat_tac 1.0158
+[v3:hier] step 5550 loss 10.6292 traj 1.0536
+[v3:hier] step 5600 loss 13.8948 traj 1.1128
+[v3:hier] step 5650 loss 13.5686 traj 0.8688
+[v3:hier] step 5700 loss 11.8902 traj 0.8143
+[v3:hier] step 5750 loss 11.2378 traj 0.8724
+[v3:hier] step 5800 loss 10.0189 traj 0.7691
+[v3:hier] step 5850 loss 14.0155 traj 1.1522
+[v3:hier] step 5900 loss 14.6263 traj 1.0468
+[v3:hier] step 5950 loss 9.1998 traj 0.8852

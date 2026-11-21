@@ -1,0 +1,15 @@
+# rebuild_v7_list.py, run 2026-09-19 against tools/clipid_baseline.json (tip e0c31f2 floor)
+## 1. from the local mirror's mp4 names
+wrote 4719 ids to C:\Users\Admin\AppData\Local\Temp\claude\v7_from_mirror.txt — reproduces 'v7 corpus a48251e89c7a8603 (4,719 clip ids)'
+## 2. from the corpus copy's camera/camera_sha256.json
+wrote 4719 ids to C:\Users\Admin\AppData\Local\Temp\claude\v7_from_shajson.txt — reproduces 'v7 corpus a48251e89c7a8603 (4,719 clip ids)'
+## the two rebuilds are byte-identical: yes
+## 3. the guard with the rebuilt list, on the tip export
+ "total_prefixes": 530,
+ "verdict": "NO-GROWTH"
+## 4. MUT: output path inside the repo (must refuse, write nothing)
+⛔ refusing to write the clip list inside the repository (D:\Projects\TanitAD)
+exists afterwards: no
+## 5. MUT: a source missing ONE clip (must refuse, write nothing)
+⛔ this source does not reproduce the recorded list 'v7 corpus a48251e89c7a8603 (4,719 clip ids)' (want n=4719, sha256 a48251e89c7a8603…; got n=4718, sha256 48880725a0ac57dd…). Nothing written.
+exists afterwards: no

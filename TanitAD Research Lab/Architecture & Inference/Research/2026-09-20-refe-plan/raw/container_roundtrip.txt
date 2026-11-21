@@ -1,0 +1,14 @@
+CONTAINER ROUND-TRIP: does a container written by the fetcher read back, and does it
+actually remove the exFAT 1 MiB-cluster inflation?
+
+  2021.05.12.23.36.44_veh-35_01133_01535_CAM_F0.zip
+    frames           4,020
+    data               0.75 GB
+    container ON DISK  0.75 GB
+    loose WOULD BE     3.93 GB   -> 5.3x saved
+    decoded 5/5 sampled, shapes {(1080, 1920, 3)}
+
+  FrameStore.read through the dataloader path: OK (1080, 1920, 3)
+  FrameStore on a missing frame: refuses (None)
+
+  CONTAINER_ROUNDTRIP_OK

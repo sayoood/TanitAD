@@ -1,0 +1,20 @@
+baseline re-run token == join token on 12999 of 13896 join rows with a v9 row
+join (banked): A 210  B 129  agree 266   total disagree 339
+
+(G) is_turn SPEED GATE (m/s), nav horizon fixed at 6 s:
+    gate    A    B agree  sum | fixed of A-CURVE(156)  fixed of A-total | NEW B (were agree/none) | lat_cls TURN windows (grid)
+       8  210  129   266  339 |    0 of 156               0 of 210      |    0                     | 194
+      10  152  132   324  284 |   57 of 156              58 of 210      |    3                     | 240
+      12  113  134   363  247 |   96 of 156              97 of 210      |    5                     | 275
+      15   66  134   410  200 |  131 of 156             144 of 210      |    5                     | 315
+1000000000   51  135   425  186 |  146 of 156             159 of 210      |    6                     | 319
+
+(H) nav HORIZON nav_h_s (s): D_ann = max(30 m, nav_h_s * v_now), gate fixed at 8 m/s:
+ nav_h_s    A    B agree  sum | fixed of A-HORIZON(16) | fixed of B-HORIZON(50)+BAND_EDGE(4) | NEW A (were agree/B)  NEW B
+     6.0  210  129   266  339 |    0 of 16            |    0 of 54                        | newA 0  newB 0
+     8.0  197  155   279  352 |   11 of 16            |    0 of 54                        | newA 0  newB 26
+    10.0  192  170   284  362 |   13 of 16            |    0 of 54                        | newA 0  newB 41
+    12.0  189  184   287  373 |   14 of 16            |    0 of 54                        | newA 0  newB 55
+
+(G+H) both: gate 1e9 and nav_h_s 8:
+  A 32  B 170  agree 444  sum 202  (remaining A causes: {'CURVE': np.int64(3), 'HORIZON': np.int64(5), 'SUPPRESSED': np.int64(21), 'UNRESOLVED': np.int64(3)};  remaining B causes: {'': np.int64(41), 'BAND_EDGE': np.int64(4), 'BAND_START': np.int64(40), 'HORIZON': np.int64(50), 'LABEL_MASKED': np.int64(13), 'SIGN_THETA': np.int64(1), 'TIMING': np.int64(4), 'UNRESOLVED': np.int64(17)})

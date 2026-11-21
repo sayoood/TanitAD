@@ -1,0 +1,28 @@
+loading the banked checkpoint ...
+  ckpt step=9500 tensors=551
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (cli-override-legacy-file), horizon_s=None, dt=None, ref_speed_ms=None, kappa_cap=None, alat_v_floor=None, schema=None
+
+[OFF (today)]
+  cfg.core.hierarchy    = True   (stays True: BYPASS, not delete)
+  cfg.core.no_strategic = False
+  state_dict keys       = 551
+  parameters            = 107,058,488
+  STRICT LOAD           : missing=0 unexpected=0  -> PASS
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (cli-override-legacy-file), horizon_s=None, dt=None, ref_speed_ms=None, kappa_cap=None, alat_v_floor=None, schema=None
+
+[ON  (--no-strategic)]
+  cfg.core.hierarchy    = True   (stays True: BYPASS, not delete)
+  cfg.core.no_strategic = True
+  state_dict keys       = 551
+  parameters            = 107,058,488
+  STRICT LOAD           : missing=0 unexpected=0  -> PASS
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (cli-override-legacy-file), horizon_s=None, dt=None, ref_speed_ms=None, kappa_cap=None, alat_v_floor=None, schema=None
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (cli-override-legacy-file), horizon_s=None, dt=None, ref_speed_ms=None, kappa_cap=None, alat_v_floor=None, schema=None
+
+state_dict KEY SETS identical ON vs OFF : PASS  (|OFF|=551 |ON|=551 sym-diff=0)
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (cli-override-legacy-file), horizon_s=None, dt=None, ref_speed_ms=None, kappa_cap=None, alat_v_floor=None, schema=None
+
+NEGATIVE CONTROL -- hierarchy=False (the DELETE route) strict-loads?
+  Error(s) in loading state_dict for RefCV3Model: 	Unexpected key(s) in state_dict: "goal_gate", "phi_tac.in_proj.weight", "phi_tac.in_proj.bias", "phi_tac.blocks.0.conv1.weight", "phi_tac.blocks.0.conv1.bias", "phi_tac.bl
+
+P4 STRICT LOAD: PASS

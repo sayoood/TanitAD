@@ -1,0 +1,50 @@
+{
+ "phase": "1",
+ "state": "BLOCKED at K-LABEL (no LH / DER frozen; no eval-side output beyond K-LABEL's boolean)",
+ "K_LABEL_PASS": false,
+ "why": "the FRESH v9 release (F:/l1c/kit_fresh/data/v9, md5 cc06d03a) was built WITHOUT the lead pass (L1C DEVIATIONS D4); without it build_v9_labels.py:932-958 never emits FOLLOW and marks DECELERATE/ACCELERATE/KEEP partial (IGNORE): the fresh split has 584/10,456 LON6-labelled windows, ALL decel-group (BRAKE_TO 351, CREEP 103, HOLD 130), 0 FOLLOW / CRUISE / ACCELERATE -> a 6-class head cannot be fitted and its target is not the battery's function",
+ "evidence": {
+  "A": 4754,
+  "B": 1361,
+  "C": 4754,
+  "D": 4754,
+  "n_eval_windows": 4754,
+  "mutations_k+1_k+7": [
+   4677,
+   4242
+  ],
+  "fresh_dry_5_clips": {
+   "IGNORE": 29,
+   "0 FOLLOW": 29,
+   "1 CRUISE": 65,
+   "3 BRAKE_TO": 16,
+   "7 ACCELERATE": 33
+  }
+ },
+ "blocker": {
+  "what": "obstacle.offline parquets of the fresh clips: 5/300 local (extracted from chunk zips on disk), 295 must be FETCHED",
+  "source": "https://huggingface.co/datasets/nvidia/PhysicalAI-Autonomous-Vehicles labels/obstacle.offline/obstacle.offline.chunk_XXXX.zip (281 chunk zips, HTTP range reads of one STORED member each)",
+  "size_estimate": "~0.64 MB/clip (MEASURED mean STORED member size of a local chunk zip) -> ~190 MB",
+  "unblock": "an explicit go for that download (the LONHEAD agent may not download without it)",
+  "fetch_manifest_now": {
+   "n": 300,
+   "local": 5,
+   "hf": 0,
+   "have": 0,
+   "errors": 0,
+   "n_present": 5
+  }
+ },
+ "after_unblock_commands": [
+  "python code/fetch_fresh_obstacle.py            # ~190 MB",
+  "bash code/chain_label_pipeline.sh fresh          # join -> lead pass -> fresh v9 WITH lead (~3 min CPU)",
+  "LH_REBUILT_*=... python code/lh_klabel.py        # re-assert K-LABEL on the new fresh release (A/C/D unchanged)",
+  "python code/lh_fit.py                            # 5-fold episode CV, freezes LH_FROZEN.pt / DER_FROZEN.pt + LH_FIT_INFO.json (refuses a no-lead release)"
+ ],
+ "mechanics_test_of_fit_code": {
+  "dir": "F:/refcv9_lonhead/mech/_mechanics_only (NOT a deliverable: fitted on the decel-only no-lead labels)",
+  "refreeze_bytes_identical": true,
+  "ran_end_to_end": true
+ },
+ "alternative_needing_a_new_seal": "fit on the PARTIAL labels (allowed sets {X, FOLLOW}) with the trainer's own partial_label_loss -- not the sealed target; an MM amendment"
+}

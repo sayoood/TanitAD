@@ -1,0 +1,36 @@
+ZZSTART pod_train stages=[weights preflight resume batch smoke train] backbone=vits16 epochs=1 eff=256 run=C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/bd7d00af-b98e-42f1-a53c-cb4113059b0f/scratchpad/fakepod/data/refe_runs/vits16_navtrain_aug_tau0.3 2026-09-23T08:53:24Z ZZ
+=== weights ===
+  vits16: sha256 2a1ec16ae28f == pin, 86362376 bytes
+  vits16: sha256 2a1ec16ae28f == pin, 86362376 bytes
+ZZOK weights ZZ
+=== preflight ===
+  targets_rank0.jsonl: 61 rows
+  targets_rank1.jsonl: 58 rows
+  scorer_targets.jsonl: 671 rows
+  scorer_targets_rank1.jsonl: 638 rows
+  [A.none==baked] PASS -- calib=None and the explicit baked rig
+  [A.pos3d] PASS -- the embedding too, through the per-sample path
+  [B.reference_baked] PASS -- max |model - OpenCV/numpy| per camera ['1.26e-05', '1.46e-05', '1.42e-05', '1.69e-05'] m
+  [B.reference_other] PASS -- max |model - OpenCV/numpy| per camera ['1.40e-05', '1.23e-05', '1.58e-05', '1.46e-05'] m
+  [C.other_rig_MOVES] PASS -- max point displacement 1.700 m at <= 60 m (front optical axis alone: 0.214 m predicted)
+  [C2.analytic_yaw] PASS -- yawed rig == Rz(2 deg) @ baked, max |err| 1.68e-05 m over 7,680 patches x 2
+  [D.mixed_batch] PASS -- rows 0/2 == baked, row 1 == other, exactly
+  [E.cache_names_rig] PASS -- 2 cache entries for 2 rigs on one live instance
+  [F.forward_grad] PASS -- traj (2, 64, 20, 3), pos3d_mlp grad |sum| 2.244e+02
+  container RAM limit: unlimited
+ZZOK preflight ZZ
+=== resume: halt + resume must be bit-identical (CPU, ~6 min) ===
+  [U] PASS -- exit 0, final + epoch snapshots
+  [H.halt] PASS -- exit 7, halted at step 3 epoch 1 pos 2 (want 3 / 1 / 2: MID-epoch)
+  [H.resume==U] PASS -- exit 0, identical
+  [M1.pos_lost_DIFFERS] PASS -- exit 0, 228 tensor(s) differ, e.g. ['registers', 'queries']
+  [M2.opt_lost_DIFFERS] PASS -- exit 0, 228 tensor(s) differ, e.g. ['registers', 'queries']
+  [R1.changed_lr_REFUSED] PASS -- exit 4
+  [R2.no_out_REFUSED] PASS -- exit 4
+  [R3.done_is_final] PASS -- exit 0, model_final sha unchanged
+  [P.planner_strict_load] PASS -- 415 tensors, strict; planner's loader reads it as refe-full-v1
+  [S.snapshot_loads] PASS -- refe-partial-v1, 228 partial tensors applied exactly
+  [S.wrong_trunk_REFUSED] PASS -- partial checkpoint refused: frozen-trunk fingerprint 9a3631954881 != recorded 000000000000 -- this partial was trained o
+ZZOK resume ZZ
+=== batch: largest RESIDENT batch, powers of two ===
+ZZFAIL no resident batch ZZ

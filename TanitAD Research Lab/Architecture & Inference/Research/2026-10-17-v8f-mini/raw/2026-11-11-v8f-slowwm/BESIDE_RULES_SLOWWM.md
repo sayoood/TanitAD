@@ -1,0 +1,20 @@
+# SLOWWM beside readings: protocols fixed before any basis, run or read (Master Mind, 2026-11-11 ~17:37)
+
+Card `PREREG_V8F_SLOWWM.md` lines 56-60 name three beside readings, no bar. The card leaves their protocols open. This file fixes them while no SLOWWM basis, checkpoint or number exists (MEASURED 17:35: box 2 is on OBD seed 3; the SLOWWM chain is waiting). The card, `AMEND_SLOWWM_1.md` and the read package are not changed, and nothing here can change the read's outcome. Tier and estimator are stamped on every row: T0 for B1 and B2, T1-kin planner form for B3, with the episode-cluster bootstrap over eval-141 windows (`taniteval.ci`, B 2,000, seed 0), answering only "another draw of episodes".
+
+## B1. Decodability (card line 59)
+* **Latent.** The level-1 `z1` that the arm's own WM rolls out from the c1 context with the LOGGED actions, read at the step that `lr_lib.k_of` gives for 2.0 s (T0: the actions are the true future's). Basis arms take `z1` through `slowwm_hook` / `lp_slowwm.basis_clip_z1`; adapter arms take `lp_lib.prepare_arm`.
+* **Targets.** The measured speed (m/s) and the measured yaw rate (rad/s) at t + 2.0 s, from the logged egomotion. Windows without a heading tangent are masked from the yaw-rate target (`RETR-2026-09-26-YAWMASK`, the mask `four_families` applies).
+* **Probe.** Standardise `z1` with train mean and std. Ridge, alpha from the grid `10**linspace(-3, 3, 13)`, chosen by 5-fold CV grouped by clip on the TRAIN rollouts only, then refit on all train rollouts and scored ONCE on eval-141. Train rollouts: the WMACT train clip set (`theory/wmact/select_train_clips.py`). Report R² and MAE with intervals.
+* **Arms.** R35H s0 / s1, SLOW s0 / s1 / rep, PCA-B s0 / s1, all on one protocol.
+* **Controls (must read known values before any arm row is written).** (i) Permuted targets (shuffled across train clips) score eval R² ≤ 0.02. (ii) A planted target `y = z1 · w + 0.1 ε` (fixed w, seed 0) recovers eval R² within 0.02 of its planted value. (iii) Adapter route identity: an adapter arm's `z1` through the B1 code equals `lp_lib.prepare_arm`'s bit for bit on 64 windows.
+
+## B2. WMACT action-sensitivity audit (card line 58)
+* The `PREREG_V8F_WMACT` statistics and controls (`theory/wmact/wmact_lib.py`, `run_wmact.py`) per arm, unchanged. Only the latent collection is routed through the basis path for basis arms.
+* **Control.** M2b_s0 through the new collection reproduces the banked `theory/wmact/latents.pt` `Z1["M2b_s0"]` bit for bit on 64 windows.
+
+## B3. Planner with the cost restricted to SLOW's top-64 μ directions (card line 60, H-PRH-PLAN)
+* **The mapping, stated because μ lives in the 256-wide basis input `u` and the planner's cost lives in the 128-wide `z1`.** `z1_from_basis` opens with a LayerNorm, so no exact linear pull-back exists. Rule: J̄ = the mean over 4,096 train frames (seed 0) of the Jacobian ∂z1/∂u, taking the columns of the top-64 μ directions (basis columns 0-63; the basis is stored μ-descending, `slow_basis.py:152-160`), a 128 × 64 matrix. S = its column space by SVD (singular values above 1e-6 · s_max). P_S = the orthogonal projector onto S. The level-1 goal cost becomes `mean over last_k of ||P_S (z_pred - goal)||²`; everything else in the FLAT1 level-1 planner is unchanged.
+* **Scoring.** Identical to the deciding read: PLANTEST and PLANTEST2 (with its own TUNE half), c1 and c3, G-TRUE against HOLD and G-RAND, `speed_err` / `heading_err` in trajectory space. Report the margin m beside the same arm's full-width m. SLOW s0, s1 and rep only.
+* **Beside numbers.** rank(S); the share of eval `z1` variance (centred) inside S; the principal angles between S and the top-64 PCA directions of eval `z1`.
+* **Controls.** (i) Identity: P = I₁₂₈ reproduces the full-width planner bit for bit on 64 windows. (ii) Red arm: S built from the bottom-64 μ columns (192-255) gives a different plan on those windows. (iii) Jacobian check: J̄ from autograd equals a central finite difference (step 1e-3) within 1e-3 relative.

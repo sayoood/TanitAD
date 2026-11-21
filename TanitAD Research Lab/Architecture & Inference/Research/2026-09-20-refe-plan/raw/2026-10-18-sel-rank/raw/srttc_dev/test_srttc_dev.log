@@ -1,0 +1,127 @@
+[00:47:13] C1 GREEN: {"n_pairs_in_probe_batch": 891, "update_moved_ttc_row_max_abs": 0.0010000020265579224}
+[00:47:13] config 1/9 lr0.0001_anchor0.03 pooled 0.53919 fold_mean 0.53967
+[00:47:14] config 2/9 lr0.0001_anchor0.1 pooled 0.53951 fold_mean 0.53997
+[00:47:15] config 3/9 lr0.0001_anchor0.3 pooled 0.53951 fold_mean 0.53998
+[00:47:15] config 4/9 lr0.0003_anchor0.03 pooled 0.55468 fold_mean 0.55507
+[00:47:16] config 5/9 lr0.0003_anchor0.1 pooled 0.55515 fold_mean 0.55556
+[00:47:17] config 6/9 lr0.0003_anchor0.3 pooled 0.55563 fold_mean 0.55600
+[00:47:18] config 7/9 lr0.001_anchor0.03 pooled 0.58755 fold_mean 0.58817
+[00:47:18] config 8/9 lr0.001_anchor0.1 pooled 0.58865 fold_mean 0.58925
+[00:47:19] config 9/9 lr0.001_anchor0.3 pooled 0.58944 fold_mean 0.59005
+[00:47:19] c* = lr0.001_anchor0.3 score 0.58944; wrote C:\Users\Admin\AppData\Local\Temp\srttc_devtest_base_os_tksdb\r1run\r1_result.json
+[00:47:19] LC seed 0 p 25 % pooled 0.55468
+[00:47:19] LC seed 0 p 50 % pooled 0.56827
+[00:47:19] LC seed 0 p 100 % pooled 0.59039
+[00:47:20] LC seed 1 p 25 % pooled 0.55468
+[00:47:20] LC seed 1 p 50 % pooled 0.56732
+[00:47:20] LC seed 1 p 100 % pooled 0.58850
+[00:47:20] LC call RISING
+[00:47:20] C2 rows written for seeds [0, 1]: ['45ddb2a7081e', '94884364446b']
+test_a_shuffle_that_moves_no_label_is_refused (__main__.C2Fit.test_a_shuffle_that_moves_no_label_is_refused)
+If the shuffle is the identity the C2 fit would be a real-label fit: C2 must refuse 'moved no label' (and not merely trip the later row-equality check). ... ok
+test_cli_requires_the_gate_stage_acknowledgement (__main__.C2Fit.test_cli_requires_the_gate_stage_acknowledgement) ... REFUSED: pass --no-gate-stage-ack. A C2 fit is a training run and srttc_r1_gate.py has no c2 stage; the Master Mind rules on that before this runs.
+ok
+test_no_file_system_call_outside_the_guarded_functions_in_c2 (__main__.C2Fit.test_no_file_system_call_outside_the_guarded_functions_in_c2) ... ok
+test_run_c2_end_to_end_written_once_and_bound_to_the_r1_run (__main__.C2Fit.test_run_c2_end_to_end_written_once_and_bound_to_the_r1_run) ... ok
+test_run_c2_refuses_a_row_equal_to_the_real_row_before_writing_anything (__main__.C2Fit.test_run_c2_refuses_a_row_equal_to_the_real_row_before_writing_anything) ... [00:47:21] C2 rows written for seeds [0, 1]: ['45ddb2a7081e', '94884364446b']
+[00:47:22] C2 rows written for seeds [0, 1]: ['45ddb2a7081e', '94884364446b']
+ok
+test_run_c2_refuses_without_r1_for_a_changed_bank_and_for_another_fraction (__main__.C2Fit.test_run_c2_refuses_without_r1_for_a_changed_bank_and_for_another_fraction) ... ok
+test_shuffle_preserves_each_sets_multiset_is_independent_per_set_and_deterministic (__main__.C2Fit.test_shuffle_preserves_each_sets_multiset_is_independent_per_set_and_deterministic) ... ok
+test_the_fit_trains_on_the_shuffled_labels_and_a_real_label_fit_differs (__main__.C2Fit.test_the_fit_trains_on_the_shuffled_labels_and_a_real_label_fit_differs) ... ok
+test_load_arm_rows_binds_the_rows_the_gate_applied_and_refuses_a_swap_after_the_gate (__main__.Contract.test_load_arm_rows_binds_the_rows_the_gate_applied_and_refuses_a_swap_after_the_gate) ... [00:47:26] SR-TTC dev gate PASS: gains x100 {'0': 16.076055389718142, '1': 16.432201574121635}, wrote C:\Users\Admin\AppData\Local\Temp\srttc_devtest_iacnvf3n\w1\out1\srttc_dev_result.json sha256 3015a65070ed136d8501fa24cf895b26bc711cd9fec4114e6b2f4f73effe7fc1
+[00:47:26] SR-TTC dev gate PASS: gains x100 {'0': 16.076055389718142, '1': 16.432201574121635}, wrote C:\Users\Admin\AppData\Local\Temp\srttc_devtest_iacnvf3n\w2\out1\srttc_dev_result.json sha256 61cb9f35428de7bea6d1293801bba28db1bb7ccc617535bc83ca03864c755abb
+ok
+test_read_dev_result_accepts_this_output_and_refuses_corrupted_copies (__main__.Contract.test_read_dev_result_accepts_this_output_and_refuses_corrupted_copies) ... [00:47:27] SR-TTC dev gate PASS: gains x100 {'0': 16.076055389718142, '1': 16.432201574121635}, wrote C:\Users\Admin\AppData\Local\Temp\srttc_devtest_u6jn3vmq\w1\out1\srttc_dev_result.json sha256 40266111829d27eab97e0dd2dc976d06f97757a52b4554d5b7dada0e0081d99f
+ok
+test_verdicts_drive_the_confirms_eligibility (__main__.Contract.test_verdicts_drive_the_confirms_eligibility) ... [00:47:28] SR-TTC dev gate PASS: gains x100 {'0': 16.076055389718142, '1': 16.432201574121635}, wrote C:\Users\Admin\AppData\Local\Temp\srttc_devtest_kx5ieem9\w1\out1\srttc_dev_result.json sha256 2416241a80bcbdc4850b2797f02510c38236deb638dadb4ad2a23cd8d5ba17f5
+[00:47:29] SR-TTC dev gate FAIL: gains x100 {'0': -12.082283723625437, '1': -12.272150238850028}, wrote C:\Users\Admin\AppData\Local\Temp\srttc_devtest_kx5ieem9\w2\out1\srttc_dev_result.json sha256 318846efef4e237f17689553968e5a57ae38cf4bb02602ab21c36a68c3e9387a
+[00:47:30] SR-TTC dev gate VOID: gains x100 {'0': 16.076055389718142, '1': 16.432201574121635}, wrote C:\Users\Admin\AppData\Local\Temp\srttc_devtest_kx5ieem9\w3\out1\srttc_dev_result.json sha256 2a7d4b485c8ef750bf917a5f66f0885e66e6e167e7b1f8ff3d0ad1d3c2e7a5c0
+ok
+test_apply_mutation_the_row_must_reach_the_logits (__main__.EndToEnd.test_apply_mutation_the_row_must_reach_the_logits) ... [00:47:31] SR-TTC dev gate PASS: gains x100 {'0': 16.076055389718142, '1': 16.432201574121635}, wrote C:\Users\Admin\AppData\Local\Temp\srttc_devtest_45hpft0y\w1\out1\srttc_dev_result.json sha256 07163d45a37cd88f72909d02151a6059fbfe9df9240fda862e97d0e77c430ac3
+ok
+test_c0_gain_zero_mutation (__main__.EndToEnd.test_c0_gain_zero_mutation)
+C0's outcome half: identical picks score a gain of EXACTLY 0.0.  The instrument defect it exists to catch is a scoring path that reads the NEW pick from the wrong place (SCORE-LOOKUP); ... ok
+test_c2_red_voids_and_the_read_is_consumed (__main__.EndToEnd.test_c2_red_voids_and_the_read_is_consumed) ... [00:47:33] SR-TTC dev gate VOID: gains x100 {'0': 16.076055389718142, '1': 16.432201574121635}, wrote C:\Users\Admin\AppData\Local\Temp\srttc_devtest_9znvfbnh\w1\out1\srttc_dev_result.json sha256 b3cb17feca4abbfc3ceb8418f019a8344631148b355adeaed9f0d03ec0086fc9
+[00:47:34] SR-TTC dev gate VOID: gains x100 {'0': 16.076055389718142, '1': 16.432201574121635}, wrote C:\Users\Admin\AppData\Local\Temp\srttc_devtest_9znvfbnh\w1\out2\srttc_dev_result.json sha256 91ce2b1bb2e0d230d357d0209814348e00f3631132dde20d43496632d9d21d80
+[00:47:34] SR-TTC dev gate PASS: gains x100 {'0': 16.076055389718142, '1': 16.432201574121635}, wrote C:\Users\Admin\AppData\Local\Temp\srttc_devtest_9znvfbnh\w1\out3\srttc_dev_result.json sha256 8688924ca9aa42b1637a4cce09e00afa322e47fe64797a3756fb0c6681c5c2dc
+ok
+test_determinism_two_runs_same_record (__main__.EndToEnd.test_determinism_two_runs_same_record) ... [00:47:35] SR-TTC dev gate PASS: gains x100 {'0': 16.076055389718142, '1': 16.432201574121635}, wrote C:\Users\Admin\AppData\Local\Temp\srttc_devtest_ftjxs528\w1\out1\srttc_dev_result.json sha256 5e5389594731577bd5afdfc8c6a4973cb119938be20edc27186e90ce099a706b
+[00:47:35] SR-TTC dev gate PASS: gains x100 {'0': 16.076055389718142, '1': 16.432201574121635}, wrote C:\Users\Admin\AppData\Local\Temp\srttc_devtest_ftjxs528\w1\out2\srttc_dev_result.json sha256 353f0576663b456ab07e59e8e2f7bbc34a7a2feb8e8ca4bfa5f93dfc7e7f8ee2
+ok
+test_fail_world_and_next_arm (__main__.EndToEnd.test_fail_world_and_next_arm) ... [00:47:37] SR-TTC dev gate FAIL: gains x100 {'0': -12.082283723625437, '1': -12.272150238850028}, wrote C:\Users\Admin\AppData\Local\Temp\srttc_devtest_urloqa9e\w1\out1\srttc_dev_result.json sha256 a5c00772bf05c12ca9b0ddb1b0ec386f3888ff7025dbba566ef3cf5908c5e3fa
+ok
+test_lc_scaleup_rule_end_to_end_for_each_size (__main__.EndToEnd.test_lc_scaleup_rule_end_to_end_for_each_size) ... [00:47:38] SR-TTC dev gate FAIL: gains x100 {'0': -12.082283723625437, '1': -12.272150238850028}, wrote C:\Users\Admin\AppData\Local\Temp\srttc_devtest_x_4sdu30\w4\out1\srttc_dev_result.json sha256 fa734f6450c34471f13c0ad79cc8bc5715e2db772a87ef7b4f41ab7af63f7f39
+[00:47:39] SR-TTC dev gate PASS: gains x100 {'0': 16.076055389718142, '1': 16.432201574121635}, wrote C:\Users\Admin\AppData\Local\Temp\srttc_devtest_x_4sdu30\w5\out1\srttc_dev_result.json sha256 2333491b72324f3524810b3a0c12285208d9e204c88e118c8579eb24a6371a43
+ok
+test_one_seed_c2_red_is_enough_to_void (__main__.EndToEnd.test_one_seed_c2_red_is_enough_to_void) ... [00:47:40] SR-TTC dev gate VOID: gains x100 {'0': 16.076055389718142, '1': 16.432201574121635}, wrote C:\Users\Admin\AppData\Local\Temp\srttc_devtest_tz6i1w1g\w1\out1\srttc_dev_result.json sha256 08963c8c7c00330febc3cf3ffb98523bf8c7ff90803173a60dfe95015651c98f
+ok
+test_one_seed_clearing_is_a_fail_not_a_pass (__main__.EndToEnd.test_one_seed_clearing_is_a_fail_not_a_pass) ... [00:47:41] SR-TTC dev gate FAIL: gains x100 {'0': 16.076055389718142, '1': -12.272150238850028}, wrote C:\Users\Admin\AppData\Local\Temp\srttc_devtest_1h5a8k9j\w1\out1\srttc_dev_result.json sha256 148350eed8171a5154dc32a13f1562a73e1e48a7e8315f299aeb30768fb61e4d
+ok
+test_pass_world (__main__.EndToEnd.test_pass_world) ... [00:47:42] SR-TTC dev gate PASS: gains x100 {'0': 16.076055389718142, '1': 16.432201574121635}, wrote C:\Users\Admin\AppData\Local\Temp\srttc_devtest_4q60ney7\w1\out1\srttc_dev_result.json sha256 1909037a18a528951615ba82e7abd839112ff7c556e607551dcb7e4e8a9c4f4d
+ok
+test_pick_new_mutation_the_pick_is_what_the_new_logits_say (__main__.EndToEnd.test_pick_new_mutation_the_pick_is_what_the_new_logits_say) ... [00:47:42] SR-TTC dev gate PASS: gains x100 {'0': 16.076055389718142, '1': 16.432201574121635}, wrote C:\Users\Admin\AppData\Local\Temp\srttc_devtest_qqfryeb9\w1\out1\srttc_dev_result.json sha256 cb9b819bc265e3a220e1c56dd44da65972d0354e4f33cfe4e31b08296cf720f0
+[00:47:43] SR-TTC dev gate FAIL: gains x100 {'0': 0.0, '1': 0.0}, wrote C:\Users\Admin\AppData\Local\Temp\srttc_devtest_qqfryeb9\w1\out2\srttc_dev_result.json sha256 e79146141c1217bea8460b6de292f76fc1ddba47e75f1b062addf403d927f3dd
+ok
+test_the_real_r1_lc_c2_chain_runs_through_the_gate (__main__.EndToEnd.test_the_real_r1_lc_c2_chain_runs_through_the_gate)
+The rows and records of the LANDED code, unedited (real R1 rows, real LC, real C2): the dev gate accepts the schema and reports a verdict consistent with its own bar. ... [00:47:44] SR-TTC dev gate PASS: gains x100 {'0': 1.67255186942194, '1': 1.2128077788159775}, wrote C:\Users\Admin\AppData\Local\Temp\srttc_devtest_bnl8vgk7\w1\out1\srttc_dev_result.json sha256 eb6e6caa993eaa86782e841595d6fbeb17cb288fbe1eb3b44703524d708992e8
+ok
+test_bar_boundary_and_both_seeds (__main__.HandBuilt.test_bar_boundary_and_both_seeds) ... ok
+test_bar_mutations (__main__.HandBuilt.test_bar_mutations) ... ok
+test_bootstrap_equals_zero_tail_boot (__main__.HandBuilt.test_bootstrap_equals_zero_tail_boot) ... ok
+test_cstar_recomputation_matches_r1_and_breaks_ties_in_grid_order (__main__.HandBuilt.test_cstar_recomputation_matches_r1_and_breaks_ties_in_grid_order) ... ok
+test_gain_is_the_hand_value_and_the_bar_reads_it (__main__.HandBuilt.test_gain_is_the_hand_value_and_the_bar_reads_it) ... ok
+test_gain_sign_mutation (__main__.HandBuilt.test_gain_sign_mutation) ... ok
+test_hmac_equals_the_launch_gates_and_a_tampered_token_fails (__main__.HandBuilt.test_hmac_equals_the_launch_gates_and_a_tampered_token_fails) ... ok
+test_new_pick_and_p2_pick_are_the_hand_picks (__main__.HandBuilt.test_new_pick_and_p2_pick_are_the_hand_picks) ... ok
+test_only_column_3_changes (__main__.HandBuilt.test_only_column_3_changes) ... ok
+test_planner_rule_matches_an_independent_oracle_on_random_logits (__main__.HandBuilt.test_planner_rule_matches_an_independent_oracle_on_random_logits) ... ok
+test_registered_lc_call_equals_srttc_r1s_and_the_both_rule_is_flat (__main__.HandBuilt.test_registered_lc_call_equals_srttc_r1s_and_the_both_rule_is_flat) ... ok
+test_rows_equal_to_p2s_make_c1_reach_red_and_the_gate_refuses_before_any_outcome (__main__.Identity.test_rows_equal_to_p2s_make_c1_reach_red_and_the_gate_refuses_before_any_outcome) ... ok
+test_unchanged_ttc_row_gives_p2s_pick_on_every_token_and_gain_exactly_zero (__main__.Identity.test_unchanged_ttc_row_gives_p2s_pick_on_every_token_and_gain_exactly_zero) ... ok
+test_every_cited_registration_line_says_what_the_code_says_it_does (__main__.Reachability.test_every_cited_registration_line_says_what_the_code_says_it_does)
+Each `file:line` the trace relies on is opened in the registered document and must contain the phrase the code attributes to it.  The documents sit beside the code in the repo ... ok
+test_every_cli_flag_reaches_dev_options (__main__.Reachability.test_every_cli_flag_reaches_dev_options) ... ok
+test_main_returns_2_on_a_refusal_and_prints_it (__main__.Reachability.test_main_returns_2_on_a_refusal_and_prints_it) ... REFUSED: r1_result.json sha256 4bf70aec88a3002d57a2f92ea2a7d7ab1ff353dc4a0ca045775a2200bddb1ec9 != the REGISTERED 0000000000000000000000000000000000000000000000000000000000000000: c* and its sha256 must be written down before the dev gate is read (PREREG_SELRANK_ARM.md:8)
+ok
+test_no_file_system_call_outside_the_io_functions (__main__.Reachability.test_no_file_system_call_outside_the_io_functions) ... ok
+test_the_default_path_names_are_the_real_ones_and_the_registered_constants (__main__.Reachability.test_the_default_path_names_are_the_real_ones_and_the_registered_constants) ... ok
+test_00_the_unmutated_no_outcome_world_gets_as_far_as_opening_the_read (__main__.Refusals.test_00_the_unmutated_no_outcome_world_gets_as_far_as_opening_the_read)
+Sanity: with a table that has NO outcome members the run passes EVERY refusal and every no-outcome control, writes the marker, and only then fails to find `sub_names`. ... ok
+test_a210_four_conditions (__main__.Refusals.test_a210_four_conditions) ... ok
+test_a210_missing_package_is_a_refusal_not_a_skip (__main__.Refusals.test_a210_missing_package_is_a_refusal_not_a_skip) ... ok
+test_c0_red_when_the_banked_pick_is_not_the_rules_pick (__main__.Refusals.test_c0_red_when_the_banked_pick_is_not_the_rules_pick) ... ok
+test_c1_applier_reach_and_leak_arms (__main__.Refusals.test_c1_applier_reach_and_leak_arms) ... ok
+test_c1_positive_control_is_what_proves_the_probe_can_read_a_change (__main__.Refusals.test_c1_positive_control_is_what_proves_the_probe_can_read_a_change)
+If logits -> pick is not wired (a pick function blind to the TTC column), the NEGATED P2 row changes no pick and C1's applier-side reach must read RED. ... ok
+test_c2_files_must_exist_and_belong_to_this_c_star (__main__.Refusals.test_c2_files_must_exist_and_belong_to_this_c_star) ... ok
+test_c2_from_another_bank_or_fraction_is_refused (__main__.Refusals.test_c2_from_another_bank_or_fraction_is_refused) ... ok
+test_c4_red_when_the_dump_proposals_differ_by_one_ulp (__main__.Refusals.test_c4_red_when_the_dump_proposals_differ_by_one_ulp) ... ok
+test_code_sha (__main__.Refusals.test_code_sha) ... ok
+test_cstar_config_sha (__main__.Refusals.test_cstar_config_sha) ... ok
+test_cstar_must_be_on_the_registered_grid (__main__.Refusals.test_cstar_must_be_on_the_registered_grid) ... ok
+test_cstar_must_be_the_argmax_of_its_own_grid (__main__.Refusals.test_cstar_must_be_the_argmax_of_its_own_grid) ... ok
+test_dev_guard_refuses_navtest_and_the_fit_bank (__main__.Refusals.test_dev_guard_refuses_navtest_and_the_fit_bank) ... ok
+test_dev_input_sha_pins (__main__.Refusals.test_dev_input_sha_pins) ... ok
+test_dev_table_shape_and_count_pins (__main__.Refusals.test_dev_table_shape_and_count_pins) ... ok
+test_featcheck_red_when_the_features_are_not_the_input_of_this_head (__main__.Refusals.test_featcheck_red_when_the_features_are_not_the_input_of_this_head) ... ok
+test_fit_set_size_is_the_registered_one (__main__.Refusals.test_fit_set_size_is_the_registered_one) ... ok
+test_lc_recorded_call_must_equal_its_intervals (__main__.Refusals.test_lc_recorded_call_must_equal_its_intervals) ... ok
+test_lc_result_is_required (__main__.Refusals.test_lc_result_is_required) ... ok
+test_non_flat_call_below_f_max_is_not_read_and_flat_or_f_max_is (__main__.Refusals.test_non_flat_call_below_f_max_is_not_read_and_flat_or_f_max_is) ... ok
+test_params_must_be_the_registered_ones (__main__.Refusals.test_params_must_be_the_registered_ones) ... ok
+test_pins_overridden_refused_unless_testing (__main__.Refusals.test_pins_overridden_refused_unless_testing) ... ok
+test_recorded_c1_gradients_are_reevaluated_not_trusted (__main__.Refusals.test_recorded_c1_gradients_are_reevaluated_not_trusted) ... ok
+test_red_control_stops_before_the_marker_is_written (__main__.Refusals.test_red_control_stops_before_the_marker_is_written) ... ok
+test_registered_sha (__main__.Refusals.test_registered_sha) ... ok
+test_rows_must_be_fitted_from_this_p2 (__main__.Refusals.test_rows_must_be_fitted_from_this_p2) ... ok
+test_seeds_must_be_0_1 (__main__.Refusals.test_seeds_must_be_0_1) ... ok
+test_the_read_is_once_and_a_crashed_first_attempt_still_consumed_it (__main__.Refusals.test_the_read_is_once_and_a_crashed_first_attempt_still_consumed_it) ... ok
+test_token_missing_hmac_verdict_profile_code_and_manifest (__main__.Refusals.test_token_missing_hmac_verdict_profile_code_and_manifest) ... ok
+test_token_signed_with_another_key_is_refused_and_a_missing_key_too (__main__.Refusals.test_token_signed_with_another_key_is_refused_and_a_missing_key_too) ... ok
+test_every_marker_in_the_sources_was_mutated_by_a_test_in_this_run (__main__.ZZCoverage.test_every_marker_in_the_sources_was_mutated_by_a_test_in_this_run) ... ok
+
+----------------------------------------------------------------------
+Ran 72 tests in 64.396s
+
+OK

@@ -1,0 +1,32 @@
+[2026-11-12T15:11:51] guards PASS: {"card": "fb038c5e41d9", "k": 43, "pins": 938}
+[2026-11-12T15:11:51] banked rollouts: 5 ok rows; population 5; R0 subset 5; root F:\tanitad_scratch\tfn2_nt\smoke\out
+[2026-11-12T15:11:51] start job 0 (free virt 23225 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe F:\tanitad_scratch\tfn2_nt\run_s2\w\pk\eval\run_p4.py --log F:\tanitad_scratch\tfn2_nt\smoke\out\logs\p4_R0_s0.log --hz 10 --threads 1 --script tfn2_nt_roll.py -- --arm R0 --shard 0/2 --out-dir F:\tanitad_scratch\tfn2_nt\smoke\out\rolls\R0 --tokens 
+[2026-11-12T15:11:53] start job 1 (free virt 22354 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe F:\tanitad_scratch\tfn2_nt\run_s2\w\pk\eval\run_p4.py --log F:\tanitad_scratch\tfn2_nt\smoke\out\logs\p4_R0_s1.log --hz 10 --threads 1 --script tfn2_nt_roll.py -- --arm R0 --shard 1/2 --out-dir F:\tanitad_scratch\tfn2_nt\smoke\out\rolls\R0 --tokens 
+[2026-11-12T15:11:54] job 1 rc 0
+[2026-11-12T15:12:06] job 0 rc 0
+[2026-11-12T15:12:08] STAGE roll_R0 DONE {"rcs": [0, 0], "ok_rows": 5, "error_rows": 0, "missing": 0, "wrong_knob_rows": 0, "seconds": 17, "ok": true}
+[2026-11-12T15:12:08] STAGE ctl_R0 DONE {"n": 5, "max_abs_m": 0.0, "max_abs_heading_rad": 0.0, "n_over_bar": 0}
+[2026-11-12T15:12:08] start job 0 (free virt 23134 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe F:\tanitad_scratch\tfn2_nt\run_s2\w\pk\eval\run_p4.py --log F:\tanitad_scratch\tfn2_nt\smoke\out\logs\p4_RJ5_s0.log --hz 10 --threads 1 --script tfn2_nt_roll.py -- --arm RJ5 --shard 0/2 --out-dir F:\tanitad_scratch\tfn2_nt\smoke\out\rolls\RJ5 --toke
+[2026-11-12T15:12:10] start job 1 (free virt 22370 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe F:\tanitad_scratch\tfn2_nt\run_s2\w\pk\eval\run_p4.py --log F:\tanitad_scratch\tfn2_nt\smoke\out\logs\p4_RJ5_s1.log --hz 10 --threads 1 --script tfn2_nt_roll.py -- --arm RJ5 --shard 1/2 --out-dir F:\tanitad_scratch\tfn2_nt\smoke\out\rolls\RJ5 --toke
+[2026-11-12T15:12:11] job 1 rc 0
+[2026-11-12T15:12:21] job 0 rc 0
+[2026-11-12T15:12:23] STAGE roll_RJ5 DONE {"rcs": [0, 0], "ok_rows": 5, "error_rows": 0, "missing": 0, "wrong_knob_rows": 0, "seconds": 15, "ok": true}
+[2026-11-12T15:12:23] start job 0 (free virt 22177 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe F:\tanitad_scratch\tfn2_nt\run_s2\n2\tfn2_nt_build.py derive --w F:\tanitad_scratch\tfn2_nt\run_s2\w --rolls F:\tanitad_scratch\tfn2_nt\smoke\out\rolls\RJ5\rows_s*of*.jsonl --bank F:/tanitad_scratch/tfn2_nt/smoke/bank/rows_s*.jsonl --db-root E:/Proj
+[2026-11-12T15:12:25] start job 1 (free virt 22790 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe F:\tanitad_scratch\tfn2_nt\run_s2\n2\tfn2_nt_build.py derive --w F:\tanitad_scratch\tfn2_nt\run_s2\w --rolls F:\tanitad_scratch\tfn2_nt\smoke\out\rolls\RJ5\rows_s*of*.jsonl --bank F:/tanitad_scratch/tfn2_nt/smoke/bank/rows_s*.jsonl --db-root E:/Proj
+[2026-11-12T15:12:28] job 0 rc 0
+[2026-11-12T15:12:30] job 1 rc 0
+[2026-11-12T15:12:32] STAGE build DONE {"derive_rcs": [0, 0], "merge_rc": 0, "controls": {"C-BUILD-COV": true, "C-DERIV": true}, "timing": {"n": 5, "t_s_mean": 0.5092000000000001, "t_s_median": 0.439, "cpu_h_sum": 0.0007072222222222223, "note": "per-token derivation (2 x iterate20 + P5-R), excluding the scenario build"}}
+[2026-11-12T15:12:32] start job 0 (free virt 23059 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe F:\tanitad_scratch\tfn2_nt\run_s2\w\pk\eval\instruments\transp_score.py --refe F:\tanitad_scratch\tfn2_nt\run_s2\w\pk\refe --split navtrain --db-root E:/Projects/TanitAD/data/nuplan/nuplan-v1.1/splits --plans N2R=F:\tanitad_scratch\tfn2_nt\smoke\out
+[2026-11-12T15:12:34] start job 1 (free virt 23095 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe F:\tanitad_scratch\tfn2_nt\run_s2\w\pk\eval\instruments\transp_score.py --refe F:\tanitad_scratch\tfn2_nt\run_s2\w\pk\refe --split navtrain --db-root E:/Projects/TanitAD/data/nuplan/nuplan-v1.1/splits --plans N2R=F:\tanitad_scratch\tfn2_nt\smoke\out
+[2026-11-12T15:12:39] job 0 rc 0
+[2026-11-12T15:12:39] job 1 rc 0
+[2026-11-12T15:12:42] start job 0 (free virt 23064 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe F:\tanitad_scratch\tfn2_nt\run_s2\w\pk\eval\instruments\families_run.py --rows F:\tanitad_scratch\tfn2_nt\smoke\out\score\rows_primary.jsonl --arm N2R --label TF-N2 N2R --out F:\tanitad_scratch\tfn2_nt\smoke\out\fam\fam_N2R.json --n-boot 2000 --tani
+[2026-11-12T15:12:43] start job 1 (free virt 23302 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe F:\tanitad_scratch\tfn2_nt\run_s2\w\pk\eval\instruments\families_run.py --rows F:\tanitad_scratch\tfn2_nt\smoke\out\score\rows_primary.jsonl --arm N2C --label TF-N2 N2C --out F:\tanitad_scratch\tfn2_nt\smoke\out\fam\fam_N2C.json --n-boot 2000 --tani
+[2026-11-12T15:12:50] job 0 rc 0
+[2026-11-12T15:12:50] job 1 rc 0
+[2026-11-12T15:12:52] start job 2 (free virt 23143 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe F:\tanitad_scratch\tfn2_nt\run_s2\w\pk\eval\instruments\families_run.py --rows F:\tanitad_scratch\tfn2_nt\smoke\out\score\rows_primary.jsonl --arm N1C --label TF-N2 N1C --out F:\tanitad_scratch\tfn2_nt\smoke\out\fam\fam_N1C.json --n-boot 2000 --tani
+[2026-11-12T15:12:54] start job 3 (free virt 23006 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe F:\tanitad_scratch\tfn2_nt\run_s2\w\pk\eval\instruments\families_run.py --rows F:\tanitad_scratch\tfn2_nt\smoke\out\score\rows_primary.jsonl --arm human --label TF-N2 human --out F:\tanitad_scratch\tfn2_nt\smoke\out\fam\fam_human.json --n-boot 2000 
+[2026-11-12T15:13:01] job 2 rc 0
+[2026-11-12T15:13:03] job 3 rc 0
+[2026-11-12T15:13:09] STAGE families DONE {"fam_rcs": [0, 0, 0, 0], "missing": [], "famread_rc": 0}
+[2026-11-12T15:13:09] ZZN2_CHAIN DONE

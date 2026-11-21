@@ -1,0 +1,310 @@
+{
+ "_what": "H-RL-SELECT-HEADROOM-1: how much of the selection gap is reachable by re-ranking what the model already emits, on the PROJECTED (collision-free) fan",
+ "_evidence_class": "MEASURED (ours; 0 GPU)",
+ "_tier": "T0 selection-quality readout on the EMITTED fan; never a driving claim",
+ "arena": "contact-projected fan (fan_contact = 0.000000 by construction)",
+ "n_features": 18,
+ "features": [
+  "c_collision",
+  "c_comfort",
+  "c_feasibility",
+  "c_headway",
+  "c_progress",
+  "conf",
+  "disp",
+  "heading_max",
+  "heading_total",
+  "lateral_end",
+  "min_clear",
+  "peak_g",
+  "rank",
+  "reach_keep",
+  "sigma",
+  "speed_std",
+  "v_mean_2s",
+  "v_mean_minus_v0"
+ ],
+ "ridge_lambda": 10000.0,
+ "split": {
+  "fit_windows": 137,
+  "heldout_windows": 103,
+  "fit_episodes": 73,
+  "heldout_episodes": 48,
+  "episode_disjoint": true,
+  "fit_rows": 17536
+ },
+ "selection_gap_m": 0.25792880480293445,
+ "arms": {
+  "model_argmax": {
+   "ade_m": 0.4883905242366236,
+   "mean": 0.4884,
+   "lo": 0.4,
+   "hi": 0.5918,
+   "n_windows": 103,
+   "n_episodes": 48,
+   "paired_vs_model": {
+    "delta": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "separated": false
+   },
+   "gap_closed_pct": -4.3043778126037576e-14
+  },
+  "conf_argmax": {
+   "ade_m": 0.4723533444874227,
+   "mean": 0.4724,
+   "lo": 0.3895,
+   "hi": 0.5732,
+   "n_windows": 103,
+   "n_episodes": 48,
+   "paired_vs_model": {
+    "delta": -0.016,
+    "lo": -0.0455,
+    "hi": 0.0074,
+    "separated": false
+   },
+   "gap_closed_pct": 6.2176769133845555
+  },
+  "C_ORACLE_ceiling": {
+   "ade_m": 0.2304617194336891,
+   "mean": 0.2305,
+   "lo": 0.1804,
+   "hi": 0.2988,
+   "n_windows": 103,
+   "n_episodes": 48,
+   "paired_vs_model": {
+    "delta": -0.2579,
+    "lo": -0.3287,
+    "hi": -0.201,
+    "separated": true
+   },
+   "gap_closed_pct": 99.99999999999999
+  },
+  "oracle_in_top32": {
+   "ade_m": 0.2304617194336891,
+   "mean": 0.2305,
+   "lo": 0.1804,
+   "hi": 0.2988,
+   "n_windows": 103,
+   "n_episodes": 48,
+   "paired_vs_model": {
+    "delta": -0.2579,
+    "lo": -0.3287,
+    "hi": -0.201,
+    "separated": true
+   },
+   "gap_closed_pct": 99.99999999999999
+  },
+  "C_CONST_index0": {
+   "ade_m": 5.668781451560108,
+   "mean": 5.6688,
+   "lo": 4.8647,
+   "hi": 6.4346,
+   "n_windows": 103,
+   "n_episodes": 48,
+   "paired_vs_model": {
+    "delta": 5.1804,
+    "lo": 4.3795,
+    "hi": 5.9461,
+    "separated": true
+   },
+   "gap_closed_pct": -2008.4576948594254
+  },
+  "C_RANDOM_20seed": {
+   "ade_m": 4.549167519494946,
+   "mean": 4.5492,
+   "lo": 3.8314,
+   "hi": 5.2935,
+   "n_windows": 103,
+   "n_episodes": 48,
+   "paired_vs_model": {
+    "delta": 4.0608,
+    "lo": 3.3334,
+    "hi": 4.8113,
+    "separated": true
+   },
+   "gap_closed_pct": -1574.3790222890698
+  },
+  "ridge_rerank": {
+   "ade_m": 0.48248677610072116,
+   "mean": 0.4825,
+   "lo": 0.3922,
+   "hi": 0.5838,
+   "n_windows": 103,
+   "n_episodes": 48,
+   "paired_vs_model": {
+    "delta": -0.0059,
+    "lo": -0.0498,
+    "hi": 0.0402,
+    "separated": false
+   },
+   "gap_closed_pct": 2.2889060957782426
+  },
+  "C_SHUFFLE_features": {
+   "ade_m": 4.757018751367501,
+   "mean": 4.757,
+   "lo": 3.8444,
+   "hi": 5.7501,
+   "n_windows": 103,
+   "n_episodes": 48,
+   "paired_vs_model": {
+    "delta": 4.2686,
+    "lo": 3.3604,
+    "hi": 5.2354,
+    "separated": true
+   },
+   "gap_closed_pct": -1654.963752649589
+  },
+  "ridge_rerank_top32": {
+   "ade_m": 0.48248677610072116,
+   "mean": 0.4825,
+   "lo": 0.3922,
+   "hi": 0.5838,
+   "n_windows": 103,
+   "n_episodes": 48,
+   "paired_vs_model": {
+    "delta": -0.0059,
+    "lo": -0.0498,
+    "hi": 0.0402,
+    "separated": false
+   },
+   "gap_closed_pct": 2.2889060957782426
+  },
+  "ridge_rerank_reach_only": {
+   "ade_m": 0.48248677610072116,
+   "mean": 0.4825,
+   "lo": 0.3922,
+   "hi": 0.5838,
+   "n_windows": 103,
+   "n_episodes": 48,
+   "paired_vs_model": {
+    "delta": -0.0059,
+    "lo": -0.0498,
+    "hi": 0.0402,
+    "separated": false
+   },
+   "gap_closed_pct": 2.2889060957782426
+  },
+  "C_ORACLE_reach_only": {
+   "ade_m": 0.2304617194336891,
+   "mean": 0.2305,
+   "lo": 0.1804,
+   "hi": 0.2988,
+   "n_windows": 103,
+   "n_episodes": 48,
+   "paired_vs_model": {
+    "delta": -0.2579,
+    "lo": -0.3287,
+    "hi": -0.201,
+    "separated": true
+   },
+   "gap_closed_pct": 99.99999999999999
+  },
+  "gbdt_rerank": {
+   "ade_m": 0.554852484083205,
+   "mean": 0.5549,
+   "lo": 0.4428,
+   "hi": 0.6813,
+   "n_windows": 103,
+   "n_episodes": 48,
+   "paired_vs_model": {
+    "delta": 0.0665,
+    "lo": -0.0031,
+    "hi": 0.1374,
+    "separated": false
+   },
+   "gap_closed_pct": -25.76756012084826
+  },
+  "gbdt_rerank_reach_only": {
+   "ade_m": 0.554852484083205,
+   "mean": 0.5549,
+   "lo": 0.4428,
+   "hi": 0.6813,
+   "n_windows": 103,
+   "n_episodes": 48,
+   "paired_vs_model": {
+    "delta": 0.0665,
+    "lo": -0.0031,
+    "hi": 0.1374,
+    "separated": false
+   },
+   "gap_closed_pct": -25.76756012084826
+  },
+  "C_SHUFFLE_gbdt": {
+   "ade_m": 4.583768287843882,
+   "mean": 4.5838,
+   "lo": 3.6117,
+   "hi": 5.6522,
+   "n_windows": 103,
+   "n_episodes": 48,
+   "paired_vs_model": {
+    "delta": 4.0954,
+    "lo": 3.1316,
+    "hi": 5.1732,
+    "separated": true
+   },
+   "gap_closed_pct": -1587.793874645468
+  }
+ },
+ "best_of_n_control": {
+  "_what": "min ADE over a RANDOM subset of k candidates, 40 draws, held-out windows",
+  "curve": [
+   {
+    "n": 1,
+    "min_ade_m": 5.121909162327742,
+    "median_ade_m": 3.7782454448108527
+   },
+   {
+    "n": 2,
+    "min_ade_m": 2.760827302592267,
+    "median_ade_m": 1.2537969285755812
+   },
+   {
+    "n": 4,
+    "min_ade_m": 1.558999128376242,
+    "median_ade_m": 3.1592686738983726
+   },
+   {
+    "n": 8,
+    "min_ade_m": 0.9548908518505884,
+    "median_ade_m": 3.1996624940427334
+   },
+   {
+    "n": 16,
+    "min_ade_m": 0.671347675146175,
+    "median_ade_m": 3.785222709970107
+   },
+   {
+    "n": 32,
+    "min_ade_m": 0.44404673399533995,
+    "median_ade_m": 3.827719999084491
+   },
+   {
+    "n": 64,
+    "min_ade_m": 0.30460272004426187,
+    "median_ade_m": 3.8369456081734077
+   },
+   {
+    "n": 128,
+    "min_ade_m": 0.2304617194336891,
+    "median_ade_m": 4.07756659210727
+   }
+  ],
+  "exponent": -0.591548854289374,
+  "r2": 0.9898409397614624,
+  "fit_window": "N = 2..128",
+  "n_points": 7,
+  "still_falling_at_128": true,
+  "random_best_of_128_m": 0.2304617194336891,
+  "model_argmax_m": 0.4883905242366235,
+  "_reading": "a RANDOM best-of-128 that already beats the model's argmax means the 'gap' is substantially a best-of-N statistic and not a selection skill a ranker could acquire; the exponent carries its fit window, R2 and n, per the programme's own rule"
+ },
+ "controls": {
+  "C_CONST_must_be_far_worse_than_model": true,
+  "C_RANDOM_must_be_far_worse_than_model": true,
+  "C_SHUFFLE_gbdt_must_collapse_to_chance": true,
+  "C_SHUFFLE_must_collapse_to_chance": true,
+  "C_ORACLE_is_the_minimum": true,
+  "ALL_PASS": true
+ }
+}

@@ -1,0 +1,10 @@
+       run  switches  d_jerk SELECTED  d_jerk pool mean  % selected slower  % pool slower
+    m-nr-8        24          -0.8978           -0.4863              66.7%          58.3%
+   m-nr-16        32          -0.6578           -0.2553              56.2%          56.2%
+   m-nr-32        57          -0.7980           -0.0079              59.6%          38.6%
+   m-nr-64        62          -1.2692           -0.0114              74.2%          41.9%
+
+d_jerk = selected jerk_long - mode jerk_long, in m/s^3 (action bound [-8, +5]).
+NEGATIVE = the override brakes harder / accelerates less than the policy's own mode.
+The POOL column is the control: it is the mean over the non-selected sampled candidates at
+the SAME steps, so a pool near 0 with a negative selection isolates the SELECTION.

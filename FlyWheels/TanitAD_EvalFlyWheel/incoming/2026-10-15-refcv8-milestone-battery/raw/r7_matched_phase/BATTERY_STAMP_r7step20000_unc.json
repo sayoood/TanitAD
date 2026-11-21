@@ -1,0 +1,151 @@
+{
+ "tool": "r7m_stamp.py",
+ "ceiling_filter_off_per_roll_log": true,
+ "ceiling_filter_off_per_chain_env": "1",
+ "generated": "2026-10-18T06:00:58",
+ "tree": "C:/Users/Admin/refcv8_eval_archive/battery/r7step20000_unc",
+ "tag": "r7step20000_unc",
+ "ckpt": "E:/refcv7_eval_kit/ckpt/ckpt_20000.pt",
+ "ckpt_md5": "4c0a78e7dd687f09eb39e3419ff2ce7c",
+ "step": 20000,
+ "config": "E:/refcv7_eval_kit/ckpt/config.json",
+ "config_md5": "e6512a01b9c70f0e4a4dac581621984a",
+ "started": "2026-10-18T04:10:28",
+ "finished": "2026-10-18T06:00:57",
+ "S2": {
+  "n_clips": 139,
+  "n_windows": 4754,
+  "source": "D:\\Projects\\TanitAD-artifacts\\refcv5cmp\\out\\refcv4b_devbox_dump"
+ },
+ "SMOKE_RESTRICTED_S2": null,
+ "g0": {
+  "G0": "SKIPPED (--no-g0)"
+ },
+ "baselines_used": {
+  "b_refcv4b": "D:\\Projects\\TanitAD-artifacts\\refcv5cmp\\out\\refcv4b_devbox_dump",
+  "b_refcv5v2_s0": "D:\\Projects\\TanitAD-artifacts\\refcv5cmp\\out\\refcv5-v2_dump",
+  "b_refcv5v2_s1": "D:\\Projects\\TanitAD-artifacts\\refcv5cmp\\out\\refcv5-v2-seed1_dump",
+  "b_refcv7_50400_s0": "D:/refcv7_eval_kit/battery/step50400_a6text/dump_s0",
+  "b_refcv7_50400_s1": "D:/refcv7_eval_kit/battery/step50400_a6text/dump_s1"
+ },
+ "baselines_missing": [
+  "b_refcv6_38k_s0",
+  "b_refcv6_38k_s1"
+ ],
+ "inference_seed_replicate": {
+  "max_abs_path_diff_m": 3.7907376885414124,
+  "ade": {
+   "delta": 0.0015,
+   "lo": -0.0015,
+   "hi": 0.0044,
+   "ci95": 0.003,
+   "p_delta_gt0": 0.831,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 4754,
+   "n_episodes": 139,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "n_dropped_nonfinite": 0
+  },
+  "floor_m": 0.0015
+ },
+ "bars": [
+  {
+   "id": "BAR-R7-1",
+   "verdict": "FAILED"
+  },
+  {
+   "id": "BAR-R7-2",
+   "verdict": "PENDING (the refcv6@38k S2 rolls run LAST in the milestone chain; SPEC A4)"
+  },
+  {
+   "id": "BAR-R7-3",
+   "verdict": "PASS (single training seed; training-seed floor unmeasured)"
+  }
+ ],
+ "rolls": {
+  "roll_s0": {
+   "seed": 0,
+   "arm_set": "full (SPEC \u00a73.2)",
+   "wall_s": 4419.0,
+   "n_windows": 4754,
+   "n_episodes": 139,
+   "skipped": 0,
+   "cuda_max_memory_allocated_gib": 2.833
+  },
+  "roll_s1": {
+   "seed": 1,
+   "arm_set": "os + model-free controls (SPEC A3)",
+   "wall_s": 1685.5,
+   "n_windows": 4754,
+   "n_episodes": 139,
+   "skipped": 0,
+   "cuda_max_memory_allocated_gib": 1.222
+  }
+ },
+ "r8": {
+  "wrapper": "run_battery_r8.py",
+  "argv": [
+   "--ckpt",
+   "E:/refcv7_eval_kit/ckpt/ckpt_20000.pt",
+   "--config",
+   "E:/refcv7_eval_kit/ckpt/config.json",
+   "--no-g0",
+   "--tag",
+   "r7step20000_unc",
+   "--infer-seeds",
+   "0,1",
+   "--lock-held",
+   "--skip-roll",
+   "--out-root",
+   "C:/Users/Admin/refcv8_eval_archive/battery",
+   "--yield-log",
+   "E:/refcv8_eval_kit/chain/gpu_yields.jsonl"
+  ],
+  "pose_sync_policy": "OFF (R8_NO_POSE_SYNC): the standalone, refcv7-comparable clock",
+  "wall_s": 6629.2,
+  "no_baselines": false,
+  "os_only_all": false,
+  "remap_overrides": {},
+  "remap_overrides_file": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\code\\refcv7_eval_remap_none.json",
+  "child_rewrites": [
+   {
+    "from": "C:\\lgs\\Lfb47a58376\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-28-refcv7-standard-tests\\battery\\code\\roll_seed_r7.py",
+    "to": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\code\\roll_seed_r8.py",
+    "smoke_cpu": false,
+    "os_only_all": false
+   },
+   {
+    "from": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\code\\roll_seed_r8.py",
+    "to": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\code\\roll_seed_r7m.py",
+    "by": "r7m_patch"
+   },
+   {
+    "from": "C:\\lgs\\Lfb47a58376\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-28-refcv7-standard-tests\\battery\\code\\roll_seed_r7.py",
+    "to": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\code\\roll_seed_r8.py",
+    "smoke_cpu": false,
+    "os_only_all": false
+   },
+   {
+    "from": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\code\\roll_seed_r8.py",
+    "to": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\code\\roll_seed_r7m.py",
+    "by": "r7m_patch"
+   }
+  ],
+  "refcv7_baselines": {
+   "b_refcv7_50400_s0": "D:/refcv7_eval_kit/battery/step50400_a6text/dump_s0",
+   "b_refcv7_50400_s1": "D:/refcv7_eval_kit/battery/step50400_a6text/dump_s1"
+  },
+  "baselines_dropped": {},
+  "seam_telemetry": {
+   "forwards": 0,
+   "rows": 0,
+   "rows_above_clamp": 0,
+   "saturated_forwards": 0,
+   "ratio_mean_sum": 0.0,
+   "ratio_max": 0.0,
+   "fail_loud_suppressed": 0
+  }
+ }
+}

@@ -1,0 +1,164 @@
+{
+ "report": "E:\\Projects\\TanitAD-artifacts\\di\\tree\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-10-17-v8f-mini\\raw\\2026-10-26-dagger-build\\smoke_kb45\\PROVENANCE.json",
+ "bank_sha256": "c23c35b5607360400b1d779584ec613ae70d48ea10ac91ca61fc9ac3ab8b5d13",
+ "controls": {
+  "BANK-FILES:s0": {
+   "PASS": true,
+   "detail": {
+    "bank_sha256": "c23c35b5607360400b1d779584ec613ae70d48ea10ac91ca61fc9ac3ab8b5d13",
+    "n_shards": 1,
+    "n_records": 1608,
+    "n_bank_clips": 12
+   }
+  },
+  "BANK-CONFIG:s0": {
+   "PASS": false,
+   "detail": [
+    "the bank is PARTIAL (partial True, limit_clips 12): a --limit-clips bank is a smoke, never the bank an arm trains on",
+    "common.train n_clips 12 / n_windows 804, registered 4512 / 306566"
+   ]
+  },
+  "K-B0:s0": {
+   "PASS": true,
+   "detail": {
+    "checked": 804,
+    "n_windows": 804,
+    "mismatch": 0,
+    "verified_by_reader": false
+   }
+  },
+  "K-B1:s0": {
+   "PASS": true,
+   "detail": {
+    "chunks": 3,
+    "windows": 96,
+    "required": 4,
+    "mismatch_chunks": 0,
+    "verified_by_reader": false
+   }
+  },
+  "K-B2:s0": {
+   "PASS": true,
+   "detail": {
+    "generator_ckpt_sha256": "601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8",
+    "verified_by_reader": "common.ckpt_sha256 and every shard's inputs.ckpt.sha256 vs the CLI's M2b sha256"
+   }
+  },
+  "K-B3.1:s0": {
+   "PASS": true,
+   "detail": {
+    "n_bank_clips": 12,
+    "n_train_clips": 12,
+    "n_train_clips_without_bank_records": 0,
+    "deliberate_regression": "refused",
+    "verified_by_reader": "clip names from the shard npz headers vs the TRAIN list"
+   }
+  },
+  "K-B3.3:s0": {
+   "PASS": true,
+   "detail": {
+    "n_bank_clips": 12,
+    "n_eval_clips": 141,
+    "overlap": 0,
+    "deliberate_regression": "refused",
+    "verified_by_reader": "ids and stable sids vs the eval-141 list"
+   }
+  },
+  "K-B4:s0": {
+   "PASS": true,
+   "detail": {
+    "cases": [
+     "straight",
+     "stationary_tie",
+     "lateral_cut",
+     "heading_cut",
+     "end_edge",
+     "loop"
+    ],
+    "verified_by_reader": false
+   }
+  },
+  "K-B5:s0": {
+   "PASS": true,
+   "detail": {
+    "max_pose_now_err_m": 0.0,
+    "max_rel_transform_err_m": 1.504511633759493e-05,
+    "verified_by_reader": false
+   }
+  },
+  "BANK-ACCOUNTING:s0": {
+   "PASS": true,
+   "detail": {
+    "n_windows": 804,
+    "n_eligible_windows": 580,
+    "eligible_fraction": 0.7213930348258707,
+    "n_states_before_cuts": 1608,
+    "n_states_kept": 1120,
+    "cuts": {
+     "off_lat": 179,
+     "off_head": 26,
+     "end_edge": 283,
+     "nonfinite": 0
+    },
+    "states_by_tick": {
+     "1": 804,
+     "2": 804
+    }
+   }
+  }
+ },
+ "NOT_RUN": {
+  "K-B3.2:s0": "needs the trainer's summary.json on DAG and DAG-0 (`train_window_list_sha256`, recorded on every run by v8f_mini_train.py)",
+  "TRAIN-LIST:s0": "needs the trainer's summary.json (train_sha256) on DAG and DAG-0",
+  "BANK-DECLARED:DAG_s0": "needs the DAG arm's argv / built record"
+ },
+ "coverage": {
+  "n_windows": 804,
+  "n_eligible_windows": 580,
+  "eligible_fraction": 0.7213930348258707,
+  "n_states_before_cuts": 1608,
+  "n_states_kept": 1120,
+  "cuts": {
+   "off_lat": 179,
+   "off_head": 26,
+   "end_edge": 283,
+   "nonfinite": 0
+  },
+  "states_by_tick": {
+   "1": 804,
+   "2": 804
+  },
+  "stated_fraction": 0.7213930348258707
+ },
+ "COVERAGE": "launches (eligible fraction 0.7214, min 0.5)",
+ "header": {
+  "bank_sha256": "c23c35b5607360400b1d779584ec613ae70d48ea10ac91ca61fc9ac3ab8b5d13",
+  "ckpt_sha256": "601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8",
+  "window_list_sha256": "f3c89c591782187cafdc1bf999431b520bda5a22c8e61bc1ddcdce82acf0d77b",
+  "thresholds_file_sha256": "438366d5e5ce4077564a70323f906c892fa112a804741fc1367b956a8d76504b",
+  "constants_sha256_generator_own": "8f94b3b5e35f4457be51d695842457a340d1228ab48c5862f4db1e5063f3ffaf",
+  "rollout": {
+   "executor": "plan",
+   "limit": "causal",
+   "nav": "deadreckon",
+   "post_map": "none (PLAIN)",
+   "replan_steps": 10,
+   "scene": "logged",
+   "schedule": "periodic"
+  },
+  "hmax": 16,
+  "train": {
+   "exclude": "540:600",
+   "n_clips": 12,
+   "n_excluded": 0,
+   "n_windows": 804,
+   "train_sha256": "5f9d709630d5ebd65b527ef31a27a0320370de80e6bd1113a195bca929598f61"
+  },
+  "partial": true,
+  "limit_clips": 12,
+  "n_shards": 1,
+  "n_bank_clips": 12,
+  "n_records": 1608,
+  "generator_warnings": []
+ }
+}

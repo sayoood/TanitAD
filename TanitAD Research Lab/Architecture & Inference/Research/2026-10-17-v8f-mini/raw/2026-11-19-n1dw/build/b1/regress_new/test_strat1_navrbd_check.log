@@ -1,0 +1,60 @@
+.........................F..F....                                        [100%]
+================================== FAILURES ===================================
+____________ test_mutation_turns_a_check_red[names_d_use_r_files] _____________
+
+mname = 'names_d_use_r_files'
+tmp_path = WindowsPath('F:/TanitAD-scratch/n1dw/build/tmp/reg_new/test_strat1_navrbd_check/bt/test_mutation_turns_a_check_re9')
+
+    @pytest.mark.parametrize("mname", sorted(MUTATIONS))
+    def test_mutation_turns_a_check_red(mname, tmp_path):
+>       m = _mutant(tmp_path, mname, *MUTATIONS[mname])
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_strat1_navrbd_check.py:291: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/n1dw/build/tmp/reg_new/test_strat1_navrbd_check/bt/test_mutation_turns_a_check_re9')
+name = 'names_d_use_r_files'
+old = '    return (RBD_NPZ, RBD_REPORT) if kind in D_KINDS else'
+new = '    return (RBD_NPZ, RBD_REPORT) if False else'
+
+    def _mutant(tmp_path, name, old, new):
+        src = open(os.path.join(SCRIPTS, "strat1_check.py"), "rb").read().decode("utf-8")
+>       assert src.count(old) == 1, (name, src.count(old))
+E       AssertionError: ('names_d_use_r_files', 0)
+E       assert 0 == 1
+E        +  where 0 = <built-in method count of str object at 0x00000209646CD870>('    return (RBD_NPZ, RBD_REPORT) if kind in D_KINDS else')
+E        +    where <built-in method count of str object at 0x00000209646CD870> = '"""PREREG_V8F_STRAT1 study checker (BUILD_SPEC section 8; the pattern of ``obd_check.py``). It maps the seven launch-... "REFUSED: " + "; ".join(bad))\n    return 0 if not bad else 1\n\n\nif __name__ == "__main__":\n    sys.exit(main())\n'.count
+
+tests\test_strat1_navrbd_check.py:255: AssertionError
+___________ test_mutation_turns_a_check_red[post_drop_width_clause] ___________
+
+mname = 'post_drop_width_clause'
+tmp_path = WindowsPath('F:/TanitAD-scratch/n1dw/build/tmp/reg_new/test_strat1_navrbd_check/bt/test_mutation_turns_a_check_re12')
+
+    @pytest.mark.parametrize("mname", sorted(MUTATIONS))
+    def test_mutation_turns_a_check_red(mname, tmp_path):
+>       m = _mutant(tmp_path, mname, *MUTATIONS[mname])
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_strat1_navrbd_check.py:291: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/n1dw/build/tmp/reg_new/test_strat1_navrbd_check/bt/test_mutation_turns_a_check_re12')
+name = 'post_drop_width_clause'
+old = '        if w is not None and kind in D_KINDS and tuple(w.shape)[1:] != (15,):'
+new = '        if False:'
+
+    def _mutant(tmp_path, name, old, new):
+        src = open(os.path.join(SCRIPTS, "strat1_check.py"), "rb").read().decode("utf-8")
+>       assert src.count(old) == 1, (name, src.count(old))
+E       AssertionError: ('post_drop_width_clause', 0)
+E       assert 0 == 1
+E        +  where 0 = <built-in method count of str object at 0x00000209647ED060>('        if w is not None and kind in D_KINDS and tuple(w.shape)[1:] != (15,):')
+E        +    where <built-in method count of str object at 0x00000209647ED060> = '"""PREREG_V8F_STRAT1 study checker (BUILD_SPEC section 8; the pattern of ``obd_check.py``). It maps the seven launch-... "REFUSED: " + "; ".join(bad))\n    return 0 if not bad else 1\n\n\nif __name__ == "__main__":\n    sys.exit(main())\n'.count
+
+tests\test_strat1_navrbd_check.py:255: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_strat1_navrbd_check.py::test_mutation_turns_a_check_red[names_d_use_r_files]
+FAILED tests/test_strat1_navrbd_check.py::test_mutation_turns_a_check_red[post_drop_width_clause]
+2 failed, 31 passed in 18.31s

@@ -1,0 +1,365 @@
+{
+  "curvature": {
+    "reference": "circumradius of 3 path points (analytic)",
+    "rows": [
+      {
+        "kappa_1_per_m": 0.02,
+        "R_expected_m": 50.0,
+        "R_measured_m": 50.00119,
+        "rel_err": 2.4e-05
+      },
+      {
+        "kappa_1_per_m": 0.05,
+        "R_expected_m": 20.0,
+        "R_measured_m": 20.003,
+        "rel_err": 0.00015
+      },
+      {
+        "kappa_1_per_m": 0.1,
+        "R_expected_m": 10.0,
+        "R_measured_m": 10.006,
+        "rel_err": 0.0006
+      }
+    ],
+    "max_rel_err": 0.0006,
+    "kappa_0_lateral_max_abs_m": 0.0,
+    "PASS": true
+  },
+  "a_lat": {
+    "reference": "a_lat = v^2 / R with R from the circumradius",
+    "rows": [
+      {
+        "a_lat_declared": 1.0,
+        "a_lat_measured": 1.0,
+        "rel_err": 3e-06,
+        "g": 0.1019
+      },
+      {
+        "a_lat_declared": 2.0,
+        "a_lat_measured": 1.99998,
+        "rel_err": 1.1e-05,
+        "g": 0.2039
+      },
+      {
+        "a_lat_declared": 3.0,
+        "a_lat_measured": 2.99992,
+        "rel_err": 2.6e-05,
+        "g": 0.3058
+      }
+    ],
+    "max_rel_err": 2.6e-05,
+    "MUTATION_kappa_misread": {
+      "v_ms": 36.0,
+      "control_value": 3.0,
+      "implied_a_lat_m_s2": 556.39,
+      "implied_g": 56.72,
+      "goes_RED": true
+    },
+    "PASS": true
+  },
+  "longitudinal": {
+    "reference": "closed-form constant-acceleration arc length",
+    "rows": [
+      {
+        "a_lon": 0.0,
+        "horizon_ticks": 5,
+        "t_s": 0.5,
+        "x_closed_form_m": 5.0,
+        "x_measured_m": 5.0,
+        "abs_err_m": 0.0
+      },
+      {
+        "a_lon": 0.0,
+        "horizon_ticks": 10,
+        "t_s": 1.0,
+        "x_closed_form_m": 10.0,
+        "x_measured_m": 10.0,
+        "abs_err_m": 0.0
+      },
+      {
+        "a_lon": 0.0,
+        "horizon_ticks": 15,
+        "t_s": 1.5,
+        "x_closed_form_m": 15.0,
+        "x_measured_m": 15.0,
+        "abs_err_m": 0.0
+      },
+      {
+        "a_lon": 0.0,
+        "horizon_ticks": 20,
+        "t_s": 2.0,
+        "x_closed_form_m": 20.0,
+        "x_measured_m": 20.0,
+        "abs_err_m": 0.0
+      },
+      {
+        "a_lon": 1.0,
+        "horizon_ticks": 5,
+        "t_s": 0.5,
+        "x_closed_form_m": 5.125,
+        "x_measured_m": 5.1,
+        "abs_err_m": 0.025
+      },
+      {
+        "a_lon": 1.0,
+        "horizon_ticks": 10,
+        "t_s": 1.0,
+        "x_closed_form_m": 10.5,
+        "x_measured_m": 10.45,
+        "abs_err_m": 0.049998
+      },
+      {
+        "a_lon": 1.0,
+        "horizon_ticks": 15,
+        "t_s": 1.5,
+        "x_closed_form_m": 16.125,
+        "x_measured_m": 16.05,
+        "abs_err_m": 0.074995
+      },
+      {
+        "a_lon": 1.0,
+        "horizon_ticks": 20,
+        "t_s": 2.0,
+        "x_closed_form_m": 22.0,
+        "x_measured_m": 21.90001,
+        "abs_err_m": 0.099995
+      },
+      {
+        "a_lon": -1.0,
+        "horizon_ticks": 5,
+        "t_s": 0.5,
+        "x_closed_form_m": 4.875,
+        "x_measured_m": 4.9,
+        "abs_err_m": 0.025
+      },
+      {
+        "a_lon": -1.0,
+        "horizon_ticks": 10,
+        "t_s": 1.0,
+        "x_closed_form_m": 9.5,
+        "x_measured_m": 9.55,
+        "abs_err_m": 0.049999
+      },
+      {
+        "a_lon": -1.0,
+        "horizon_ticks": 15,
+        "t_s": 1.5,
+        "x_closed_form_m": 13.875,
+        "x_measured_m": 13.95,
+        "abs_err_m": 0.074997
+      },
+      {
+        "a_lon": -1.0,
+        "horizon_ticks": 20,
+        "t_s": 2.0,
+        "x_closed_form_m": 18.0,
+        "x_measured_m": 18.09999,
+        "abs_err_m": 0.099995
+      }
+    ],
+    "max_abs_err_m": 0.099995,
+    "MUTATION_dt_0p2": {
+      "x_at_last_slot_m": 40.0,
+      "x_at_dt_0p1_m": 20.0,
+      "ratio": 2.0
+    },
+    "PASS": true
+  },
+  "tick_ownership": {
+    "decoder.anchor_dt": 0.1,
+    "decoder.anchor_horizons_ticks": [
+      5,
+      10,
+      15,
+      20
+    ],
+    "decoder.anchor_slots": [
+      4,
+      9,
+      14,
+      19
+    ],
+    "slot_dts_default_tick": [
+      0.5,
+      0.5,
+      0.5,
+      0.5
+    ],
+    "SelectionConfig.horizon_s_default": 2.0,
+    "RefCConfig.selection().horizon_s": 2.0,
+    "RefCConfig.trajectory.horizons": [
+      5,
+      10,
+      15,
+      20
+    ],
+    "derived_horizon_s_max_x_0.1": 2.0,
+    "tick_literal_sites": [
+      {
+        "file": "stack/tanitad/refs/refc.py",
+        "line": 1035,
+        "src": "horizon_s=max(self.trajectory.horizons) * 0.1)"
+      },
+      {
+        "file": "stack/tanitad/refs/refc.py",
+        "line": 1688,
+        "src": "self.anchor_dt = 0.1"
+      },
+      {
+        "file": "stack/scripts/refc_v3_train.py",
+        "line": 4637,
+        "src": "art, horizon_s=max(hz) * 0.1, dt=0.1,"
+      },
+      {
+        "file": "stack/tanitad/models/kinematic.py",
+        "line": 689,
+        "src": "def slot_dts(horizons, tick: float = 0.1) -> list[float]:"
+      },
+      {
+        "file": "stack/tanitad/models/kinematic.py",
+        "line": 707,
+        "src": "def uniform_slot_dt(horizons, tick: float = 0.1) -> float:"
+      },
+      {
+        "file": "stack/tanitad/models/kinematic.py",
+        "line": 864,
+        "src": "tick: float = 0.1,"
+      },
+      {
+        "file": "stack/tanitad/refs/refc_sampler.py",
+        "line": 350,
+        "src": "control_units: str = \"kappa\", tick: float = 0.1,"
+      }
+    ],
+    "n_tick_literals": 7
+  },
+  "max_speed_ladder": {
+    "kmh": [
+      30,
+      50,
+      100,
+      120
+    ],
+    "ms": [
+      8.333333333333334,
+      13.88888888888889,
+      27.77777777777778,
+      33.333333333333336
+    ],
+    "exact_division_by_3.6": [
+      8.333333333333334,
+      13.88888888888889,
+      27.77777777777778,
+      33.333333333333336
+    ],
+    "max_abs_ladder_err": 0.0,
+    "is_rounded_to_4dp": false,
+    "PASS": true
+  },
+  "dd_waypoint_box": {
+    "released_source_present": true,
+    "released_norm_x_line": "odo_info_fut_x = 2*(odo_info_fut_x + 1.2)/56.9 -1",
+    "released_norm_y_line": "odo_info_fut_y = 2*(odo_info_fut_y + 20)/46 -1",
+    "ours_x": [
+      1.2,
+      56.9
+    ],
+    "ours_y": [
+      20.0,
+      46.0
+    ],
+    "PASS": true
+  },
+  "bev_grid_map": {
+    "reference": "bev_raster._cell_centers + align_corners=False rule",
+    "rows": [
+      {
+        "cell": [
+          0,
+          0
+        ],
+        "metres": [
+          0.25,
+          -15.75
+        ],
+        "grid": [
+          -0.984375,
+          -0.99166667
+        ],
+        "expected": [
+          -0.984375,
+          -0.99166667
+        ],
+        "err": 8e-09
+      },
+      {
+        "cell": [
+          119,
+          63
+        ],
+        "metres": [
+          59.75,
+          15.75
+        ],
+        "grid": [
+          0.984375,
+          0.99166667
+        ],
+        "expected": [
+          0.984375,
+          0.99166667
+        ],
+        "err": 8e-09
+      },
+      {
+        "cell": [
+          60,
+          32
+        ],
+        "metres": [
+          30.25,
+          0.25
+        ],
+        "grid": [
+          0.015625,
+          0.00833333
+        ],
+        "expected": [
+          0.015625,
+          0.00833333
+        ],
+        "err": 8e-09
+      },
+      {
+        "cell": [
+          3,
+          7
+        ],
+        "metres": [
+          1.75,
+          -12.25
+        ],
+        "grid": [
+          -0.765625,
+          -0.94166666
+        ],
+        "expected": [
+          -0.765625,
+          -0.94166667
+        ],
+        "err": 4e-09
+      }
+    ],
+    "max_err": 8e-09,
+    "MUTATION_swapped_would_differ": 0.5,
+    "PASS": true
+  },
+  "VERDICT": {
+    "curvature": true,
+    "a_lat": true,
+    "longitudinal": true,
+    "max_speed_ladder": true,
+    "dd_waypoint_box": true,
+    "bev_grid_map": true
+  }
+}

@@ -1,0 +1,35 @@
+# argv template (one token per line; '#' lines are comments). DERIVED PROGRAMMATICALLY from DAG-OACC's banked rollout argv
+# E:/Projects/TanitAD-artifacts/v8f-dagoacc-t1/argv/DAGOACC_s0_m10_causal_heads.argv by replacing only the run-specific values with @KEY@ placeholders
+# (python, tree, --ckpt, --tag, --tracks, --eval-cache, --eval-grid, --eval-join, --out-dir, --dump-ticks). The ONLY lane difference is the --limit value.
+@PY@
+@TREE@/stack/scripts/v8f_t1_eval.py
+run
+--ckpt
+@CKPT@
+--tag
+@TAG@
+--tracks
+@TRACKS@
+--eval-cache
+@CACHE@
+--eval-grid
+@GRID@
+--eval-join
+@JOIN@
+--out-dir
+@OUT@
+--replan-steps
+10
+--nav
+deadreckon
+--scene
+logged
+--schedule
+periodic
+--limit
+causal
+--dump-ticks
+@OUT@/ticks
+--dump-heads
+--device
+cpu

@@ -1,0 +1,273 @@
+"""refcv6 SPEC-v2 refusals 2 and 9 — the REPORT-time half of section 12.
+
+Refusals 3, 4 and the split check live in :mod:`tanitad.train.prelaunch_v2` and
+run BEFORE an arm. These two can only run AFTER one, against the panel it emits,
+and saying so is part of the correction ``PREREG_REFCV6_V2.ERRATUM-1.md`` section
+E4 made: section 12 called all ten "the launch checker", and two of them are not
+launch-time checks at all.
+
+**Refusal 2 — a control must read its known value EXACTLY.**
+⛔ ``==``, not a tolerance. The programme's own record contains the reason: an
+all-zero control read ``0.016340208`` against a base rate of ``0.016197554``
+(+0.881 %) and the discrepancy was invisible for weeks because nobody had written
+down what the control was SUPPOSED to read. A control whose expected value is not
+declared is not a control -- it is a second measurement.
+
+**Refusal 9 — no pooled tactical headline, and no headline quoting a token under
+the n = 200 floor.**
+⛔ 10 of the 22 behaviours sit under that floor (``refcv6_tactical.py``), and
+pooling across tokens turns a handful of well-supported classes into an average
+that reads as competence on all 22. Both are REPORTING defects: the numbers are
+individually correct and the sentence they support is false.
+"""
+from __future__ import annotations
+
+#: The negatives policies the trainer accepts, pinned against its OWN
+#: ``--tac-goal-negatives`` choices by
+#: ``test_the_policy_vocabulary_matches_the_trainer_and_is_not_invented``.
+#: ⚠️ There are FOUR, not two — my first version of this module invented a
+#: two-item vocabulary and the pinning test caught it immediately. A checker
+#: carrying its own copy of a vocabulary is a check that shares the defect it
+#: checks for.
+NEGATIVES_POLICIES = ("measured", "geometry", "all", "cot-absence-negative")
+
+#: What a policy actually yields on the v8.1 labels, MEASURED 2026-09-17.
+#: ⛔ The DEFAULT is ``measured``; the PI's absence-as-negative ruling is OPT-IN
+#: behind ``--cot-negative-sidecar``. A tactical figure quoted without its policy
+#: is ambiguous by 4 tokens of trainability and 6 of cap saturation.
+#: ⚠️ ``geometry`` and ``all`` are ACCEPTED BY THE TRAINER AND NOT MEASURED HERE.
+#: They are deliberately absent rather than guessed: a fabricated census would be
+#: checked against itself and pass. A report naming one is accepted, and its
+#: counts are reported as UNVERIFIED rather than silently blessed.
+POLICY_FACTS = {
+    "measured": {"trainable": 17, "on_cap": 3, "under_floor": 10},
+    "cot-absence-negative": {"trainable": 21, "on_cap": 9, "under_floor": 10},
+}
+
+__all__ = [
+    "ControlDidNotReadItsKnownValue", "TacticalReportRefused",
+    "NEGATIVES_POLICIES", "POLICY_FACTS",
+    "refuse_control_not_reading_known_value",
+    "refuse_pooled_or_underpowered_tactical",
+    "refuse_unnamed_negatives_policy",
+    "refuse_capped_weight_without_note",
+    "pos_weight_cap",
+    "N_FLOOR",
+]
+
+#: The per-token support below which a number may be REPORTED but never quoted in
+#: a headline. From `SPEC_REFCV6_V2` section 6 and `refcv6_tactical.py`.
+N_FLOOR = 200
+
+
+class ControlDidNotReadItsKnownValue(RuntimeError):
+    """A control's observed value is not EXACTLY its declared known value."""
+
+
+class TacticalReportRefused(RuntimeError):
+    """A tactical headline pools across tokens, or quotes one under the floor."""
+
+
+def refuse_control_not_reading_known_value(controls) -> dict:
+    """Section 12 refusal 2.
+
+    ``controls`` maps ``name -> {"expected": <value>, "observed": <value>}``.
+
+    ⛔ Three ways to fail, and the second is the one that matters:
+
+    1. **no controls at all** -- a panel without them cannot be checked;
+    2. **a control with no declared ``expected``** -- REFUSED. An undeclared
+       expectation is how a control becomes a second measurement: whatever it
+       reads looks like the answer.
+    3. **observed != expected** -- exactly, with no tolerance.
+    """
+    if not controls:
+        raise ControlDidNotReadItsKnownValue(
+            "the panel declares NO controls. REFUSING rather than reading "
+            "'nothing to check': a panel without a control that reads a known "
+            "value cannot distinguish a working instrument from a broken one.")
+    undeclared, wrong = [], []
+    for name, spec in sorted(controls.items()):
+        if not isinstance(spec, dict) or "expected" not in spec:
+            undeclared.append(name)
+            continue
+        if "observed" not in spec:
+            undeclared.append(name)
+            continue
+        if spec["observed"] != spec["expected"]:
+            wrong.append(f"{name}: observed {spec['observed']!r} != expected "
+                         f"{spec['expected']!r}")
+    if undeclared:
+        raise ControlDidNotReadItsKnownValue(
+            f"these controls do not declare BOTH an expected and an observed "
+            f"value: {sorted(undeclared)}. A control whose expected value is not "
+            f"written down is not a control -- it is a second measurement, and "
+            f"whatever it reads will look like the answer.")
+    if wrong:
+        raise ControlDidNotReadItsKnownValue(
+            f"control(s) did not read their known value EXACTLY: {wrong}. "
+            f"No tolerance is applied here on purpose: an all-zero control once "
+            f"read 0.016340208 against a base rate of 0.016197554 (+0.881 %) and "
+            f"the gap went unnoticed because nothing said what it should read.")
+    return {"n_controls": len(controls), "all_exact": True}
+
+
+def refuse_pooled_or_underpowered_tactical(report, *, n_floor: int = N_FLOOR) -> dict:
+    """Section 12 refusal 9.
+
+    ``report`` carries ``per_token`` (``token -> {"ap": float, "n": int}``) and
+    optionally ``headline`` (a list of token names the report leads with).
+
+    ⛔ A ``pooled`` key anywhere in the report is refused outright: the four metric
+    families are never pooled, and neither are the 22 behaviours.
+    """
+    pooled = [k for k in report if "pool" in k.lower()]
+    if pooled:
+        raise TacticalReportRefused(
+            f"the report carries pooled key(s) {pooled}. Tactical behaviours are "
+            f"reported PER CLASS, never pooled: pooling turns a handful of "
+            f"well-supported classes into an average that reads as competence on "
+            f"all 22.")
+    per_token = report.get("per_token")
+    if not per_token:
+        raise TacticalReportRefused(
+            "the report carries no `per_token` block. REFUSING rather than "
+            "reading 'no tokens were scored': per-class is the only admissible "
+            "form, so its absence is not a degenerate case, it is the defect.")
+    missing_n = sorted(t for t, v in per_token.items()
+                       if not isinstance(v, dict) or "n" not in v)
+    if missing_n:
+        raise TacticalReportRefused(
+            f"these tokens report no `n`: {missing_n}. An AP without its support "
+            f"cannot be placed against the floor, and an unplaceable number is "
+            f"quoted as if it were placed.")
+    headline = report.get("headline") or []
+    under = sorted(t for t in headline
+                   if int(per_token.get(t, {}).get("n", 0)) < n_floor)
+    if under:
+        detail = ", ".join(f"{t} (n={per_token[t]['n']})" for t in under)
+        raise TacticalReportRefused(
+            f"the headline quotes token(s) under the n = {n_floor} floor: "
+            f"{detail}. They may be REPORTED -- they must not lead. 10 of the 22 "
+            f"behaviours sit under this floor, so a headline is free to be built "
+            f"almost entirely from the least-supported classes.")
+    below = sorted(t for t, v in per_token.items() if int(v["n"]) < n_floor)
+    return {"n_tokens": len(per_token), "n_below_floor": len(below),
+            "below_floor": below, "headline_ok": True}
+
+
+def refuse_unnamed_negatives_policy(report) -> dict:
+    """§12 refusal 12 — a tactical report must NAME its negatives policy.
+
+    ⛔ `PREREG_REFCV6_V2.ERRATUM-1.md` §E7: the pre-registration quoted
+    **21/22 trainable, 9 on the cap** — which is the **opt-in**
+    ``cot-absence-negative`` policy — while the trainer DEFAULTS to ``measured``,
+    giving **17/22 and 3**. The same per-token AP means different things under the
+    two, and a figure without its policy is ambiguous by **4 tokens of
+    trainability and 6 of cap saturation**.
+
+    ⭐ Same shape as *never quote an interval without its estimator*: the number is
+    not wrong, it is **unplaceable**.
+
+    Also refuses a report whose ``trainable`` / ``on_cap`` counts CONTRADICT the
+    policy it names — because naming one and reporting the other's numbers is
+    worse than naming none: it reads as checked.
+    """
+    pol = report.get("negatives_policy")
+    if pol is None:
+        raise TacticalReportRefused(
+            f"the report does not name its negatives policy. REFUSING rather "
+            f"than assuming the default: the same per-token AP means different "
+            f"things under {list(NEGATIVES_POLICIES)}, and the two differ by 4 "
+            f"tokens of trainability and 6 of cap saturation. Declare "
+            f"`negatives_policy`.")
+    if pol not in NEGATIVES_POLICIES:
+        raise TacticalReportRefused(
+            f"negatives_policy {pol!r} is not one the trainer knows "
+            f"({list(NEGATIVES_POLICIES)}). A policy name that does not exist "
+            f"cannot be checked against anything.")
+    facts = POLICY_FACTS.get(pol)
+    if facts is None:
+        # ⛔ The trainer accepts it; we have not measured its census. Say so
+        # rather than passing it quietly — "accepted" and "checked" are
+        # different facts and collapsing them is how an unchecked number reads
+        # as a checked one.
+        return {"negatives_policy": pol, "counts_verified": False,
+                "why": (f"{pol!r} is accepted by the trainer but its label "
+                        f"census has not been measured here, so its trainable / "
+                        f"on_cap counts are UNVERIFIED. Measure it before "
+                        f"quoting them.")}
+    mismatched = {k: (report[k], facts[k]) for k in ("trainable", "on_cap")
+                  if k in report and report[k] != facts[k]}
+    if mismatched:
+        raise TacticalReportRefused(
+            f"the report names policy {pol!r} but its counts contradict it: "
+            f"{mismatched} (reported, expected). ⛔ Naming one policy and reporting "
+            f"another's numbers is worse than naming none — it reads as checked.")
+    return {"negatives_policy": pol, "counts_verified": True, **facts}
+
+
+def pos_weight_cap() -> float:
+    """The `goal_pos_weight` cap, READ FROM THE FUNCTION THAT APPLIES IT.
+
+    ⛔ Never a literal. The trainer reads it the same way and says why
+    (`refc_v3_train.py`): *"a literal 50.0 here would be a second copy that goes
+    stale the day the DataFlyWheel moves it — the derived-constant trap this file
+    already carries three scars from."* A checker with its own copy of a constant
+    is the same defect as one with its own copy of a vocabulary, and this module
+    has already been caught doing exactly that once tonight.
+    """
+    import inspect
+
+    from tanitad.data import v7_labels
+
+    return float(inspect.signature(v7_labels.goal_pos_weight)
+                 .parameters["cap"].default)
+
+
+def refuse_capped_weight_without_note(report, *, cap: float | None = None) -> dict:
+    """§12 refusal 10 — a CAPPED `goal_pos_weight` may not be quoted bare.
+
+    ⭐ This is the refusal §E4 said might not be enforceable *"because it is a rule
+    about PROSE"*. It becomes enforceable by moving the obligation off the prose
+    and onto the PANEL: a token whose weight sits on the cap must carry
+    ``capped: true`` and a non-empty ``cap_note``. The report then cannot be
+    written without the sentence, because the sentence is a field.
+
+    ⛔ Why it matters: for a capped token **the CAP, not the data, sets the
+    weight**. Quoting its `pos_weight` as though the label frequency chose it
+    misreads a clamp as a measurement — and on the opt-in negatives policy
+    **9 of 22** tokens sit on the cap.
+    """
+    c = pos_weight_cap() if cap is None else float(cap)
+    per_token = report.get("per_token")
+    if not per_token:
+        raise TacticalReportRefused(
+            "the report carries no `per_token` block; refusal 10 cannot be "
+            "checked and absence is not a pass.")
+    bare, lying = [], []
+    for tok, v in sorted(per_token.items()):
+        if not isinstance(v, dict) or "pos_weight" not in v:
+            continue
+        on_cap = float(v["pos_weight"]) >= c - 1e-6
+        claims = bool(v.get("capped"))
+        note = str(v.get("cap_note") or "").strip()
+        if on_cap and not (claims and note):
+            bare.append(tok)
+        elif claims and not on_cap:
+            lying.append(f"{tok} (pos_weight {v['pos_weight']} < cap {c})")
+    if bare:
+        raise TacticalReportRefused(
+            f"these tokens sit ON the goal_pos_weight cap of {c} and are quoted "
+            f"without it: {bare}. Each needs `capped: true` AND a non-empty "
+            f"`cap_note`. ⛔ For a capped token the CAP, not the data, sets the "
+            f"weight — quoting it bare misreads a clamp as a measurement.")
+    if lying:
+        raise TacticalReportRefused(
+            f"these tokens claim `capped` but are NOT on the cap: {lying}. A "
+            f"false cap note is worse than none: it makes an uncapped weight "
+            f"look like one somebody checked.")
+    n_capped = sum(1 for v in per_token.values()
+                   if isinstance(v, dict) and "pos_weight" in v
+                   and float(v["pos_weight"]) >= c - 1e-6)
+    return {"cap": c, "n_on_cap": n_capped, "n_tokens": len(per_token)}

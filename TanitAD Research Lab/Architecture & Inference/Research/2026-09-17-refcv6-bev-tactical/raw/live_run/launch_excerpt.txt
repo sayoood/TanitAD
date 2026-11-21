@@ -1,0 +1,22 @@
+# Live BEV->tactical arms on the REAL corpus, CPU-only. Two runs, named.
+# ⛔ PROVENANCE PER LINE: a merged excerpt with one header would attribute
+#    the conflict-detector line to a run that had the detector OFF.
+
+## RUN A — 'bevtac': the SHIPPED live.sh defaults (2 steps, batch 2,
+##   --conflict-detector ON). This is the run that proves the detector
+##   now NAMES the tactical term (PI ruling R3's own mitigation).
+##   invocation: bash code/live.sh bevtac
+[v3] conflict detector ON (probe, plan side=traj, every=1): theta_trunk = 112 tensors / 22268480 params in 6 groups (fuse, stage_layer1, stage_layer2, stage_layer3, stage_layer4, stem); aux terms = box3d, map, tac_v6
+[v3] conflict controls OK: cos(g,g)=1.0 cos(g,-g)=-1.0 detached cos=nan conflict=0.0 |g_aux|=0.0
+
+## RUN B — 'bevtac10': the same script with --steps 10 --batch 4
+##   --conflict-detector off, to reach enough batches for a SUPERVISED
+##   tactical step to occur (the detector's ~31 s/step probe makes 10
+##   steps with it on unnecessarily slow, and it measures nothing new).
+##   invocation: bash code/live.sh bevtac10 --steps 10 --batch 4 --conflict-detector off
+##   raw/live_run/{config.json,metrics.jsonl} ARE THIS RUN.
+[v3] GT-supervised detection set loss (WP-6)                                        --w-agent          0        1      1          op    yes    TRAINS                                                                                                                                                                        
+[v3] refcv6 SAM3 BEV map soft-CE (§2)                                               --w-map            0        1      1          op    yes    TRAINS                                                                                                                                                                        
+[v3] refcv6 3-D cuboid set loss (§6)                                                --w-box3d          0        1      1          op    yes    TRAINS                                                                                                                                                                        
+[v3] refcv6 §4 tactical behaviour decoder (22-token BCE + lat/lon CE + confidence)  --w-tac-v6         0        1      1          op    yes    TRAINS                                                                                                                                                                        
+[v3:hier] DONE at 10 — summary.json written

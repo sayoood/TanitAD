@@ -1,0 +1,4446 @@
+{
+  "meta": {
+    "what": "paired single-batch gradient probe on S-W, 0 GPU",
+    "date": "2026-08-16",
+    "stage": "S-W",
+    "estimator": "EXACT by linearity: g(ON) - g(OFF) is the term's own gradient. Uncertainty is ACROSS SEEDS only.",
+    "evidence_class": "MEASURED (ours)",
+    "torch": "2.11.0+cu128",
+    "python": "3.13.5",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "device": "cpu",
+    "seed_pairs": [
+      [
+        0,
+        100
+      ],
+      [
+        1,
+        101
+      ],
+      [
+        2,
+        102
+      ],
+      [
+        3,
+        103
+      ],
+      [
+        4,
+        104
+      ]
+    ],
+    "wall_s": 2.56,
+    "build": "SYNTHETIC CPU build \u2014 NOT the live v6F S-W checkpoint. Readout GRID matches the live run (4x4) because it sets O3's mask geometry; d_readout/d_model/window/plan_steps are the small CPU fixture and do NOT match the live run.",
+    "interpretation": {
+      "cos ~ 0": "term adds an INDEPENDENT signal to the trunk",
+      "cos > 0": "REDUNDANT with the rest of the objective",
+      "cos < 0": "term FIGHTS the rest of the objective",
+      "norm == 0": "a true NULL: the lever never reaches the parameter",
+      "caveat": "|cos| ~ 1/sqrt(D) arises by CHANCE; every cosine is reported against chance_level and as a multiple of it"
+    }
+  },
+  "geometries": {
+    "live_grid4": {
+      "label": "PRIMARY \u2014 live readout geometry (--readout-grid 4)",
+      "readout_grid": 4,
+      "n_cells": 16,
+      "o3_mask_rate": 0.4375,
+      "controls": {
+        "N1_same_arm_twice_seeded": {
+          "grad_delta_l2": 0.0,
+          "expect": "EXACTLY 0",
+          "pass": true,
+          "note": "the harness itself is deterministic; without this every number above could be resample noise"
+        },
+        "N2_structurally_inert_lever_t1_in_SW": {
+          "grad_delta_l2": 0.0,
+          "expect": "EXACTLY 0",
+          "pass": true,
+          "note": "t1_latent is forced to 0 by V6LossWeights.for_stage('S-W'), so moving it 0.0 -> 1.0 changes the LAUNCH LINE and nothing else. The probe must report no effect."
+        },
+        "N3_POSITIVE_same_arm_twice_on_the_INCUMBENT_path": {
+          "grad_delta_l2": 1.6579055339155362,
+          "grad_norm_reference": 18.742084792515286,
+          "grad_delta_l2_TRUNK": 1.6579055339155362,
+          "grad_norm_reference_TRUNK": 18.71710006766571,
+          "relative": 0.08845897093463297,
+          "relative_TRUNK": 0.08857705135527977,
+          "expect": "NON-zero",
+          "pass": true,
+          "note": "sigreg_generator=None is the pre-142ce34 code. This is the NOISE FLOOR every in-process A/B used to sit on, and any lever effect smaller than it was unmeasurable."
+        }
+      },
+      "summary_across_seeds": {
+        "o1": {
+          "cos_term_vs_rest_TRUNK": {
+            "per_seed": [
+              0.10746258222222814,
+              0.29269442894669034,
+              0.4650165959353246,
+              0.34386325536884244,
+              0.400038707603723
+            ],
+            "mean": 0.32181511401536167,
+            "min": 0.10746258222222814,
+            "max": 0.4650165959353246,
+            "chance_level": 0.001968767154688935,
+            "mean_over_chance": 163.46022090469526,
+            "sign_consistent": true
+          },
+          "relative_pull_TRUNK": {
+            "per_seed": [
+              1.504410596531586,
+              1.4967981393957617,
+              1.3976441827773476,
+              1.253260441853671,
+              1.3394169782110599
+            ],
+            "mean": 1.3983060677538852
+          },
+          "norm_term_TRUNK": {
+            "per_seed": [
+              14.858435253402863,
+              13.988061410825699,
+              16.966221024272336,
+              14.248060760145808,
+              17.3687971713362
+            ],
+            "min": 13.988061410825699,
+            "max": 17.3687971713362
+          },
+          "reaches_trunk": true,
+          "vs_pre_fix_noise_floor": {
+            "noise_floor_l2_TRUNK": 1.6579055339155362,
+            "term_norm_TRUNK_mean": 15.485915123996582,
+            "ratio_term_over_noise": 9.340649878538574,
+            "measurable_before_the_fix": true
+          }
+        },
+        "o2": {
+          "cos_term_vs_rest_TRUNK": {
+            "per_seed": [
+              0.32980999502511843,
+              0.45491451669533256,
+              0.6018530321423456,
+              0.5591435418743214,
+              0.5957451148310777
+            ],
+            "mean": 0.5082932401136391,
+            "min": 0.32980999502511843,
+            "max": 0.6018530321423456,
+            "chance_level": 0.001968767154688935,
+            "mean_over_chance": 258.178443755046,
+            "sign_consistent": true
+          },
+          "relative_pull_TRUNK": {
+            "per_seed": [
+              0.37401896016653596,
+              0.37005092182907173,
+              0.35644967134633515,
+              0.41725859818906696,
+              0.4071294245326032
+            ],
+            "mean": 0.3849815152127226
+          },
+          "norm_term_TRUNK": {
+            "per_seed": [
+              5.941078702229411,
+              5.780068354892529,
+              7.153635409923807,
+              6.861384212249922,
+              8.07878310587117
+            ],
+            "min": 5.780068354892529,
+            "max": 8.07878310587117
+          },
+          "reaches_trunk": true,
+          "vs_pre_fix_noise_floor": {
+            "noise_floor_l2_TRUNK": 1.6579055339155362,
+            "term_norm_TRUNK_mean": 6.762989957033367,
+            "ratio_term_over_noise": 4.079237217491498,
+            "measurable_before_the_fix": true
+          }
+        },
+        "o3": {
+          "cos_term_vs_rest_TRUNK": {
+            "per_seed": [
+              0.08449719814529585,
+              -0.2853270394433351,
+              0.3057892231848096,
+              0.10832848216293683,
+              0.04841821553050818
+            ],
+            "mean": 0.052341215916043085,
+            "min": -0.2853270394433351,
+            "max": 0.3057892231848096,
+            "chance_level": 0.001968767154688935,
+            "mean_over_chance": 26.585782778519075,
+            "sign_consistent": false
+          },
+          "relative_pull_TRUNK": {
+            "per_seed": [
+              0.06462914405916184,
+              0.07895019456155204,
+              0.09166210571807556,
+              0.09254841160005188,
+              0.056833200786620394
+            ],
+            "mean": 0.07692461134509235
+          },
+          "norm_term_TRUNK": {
+            "per_seed": [
+              1.199835207229549,
+              1.5269162515828296,
+              2.224204729563978,
+              1.9220552421538633,
+              1.4427148615996985
+            ],
+            "min": 1.199835207229549,
+            "max": 2.224204729563978
+          },
+          "reaches_trunk": true,
+          "vs_pre_fix_noise_floor": {
+            "noise_floor_l2_TRUNK": 1.6579055339155362,
+            "term_norm_TRUNK_mean": 1.6631452584259836,
+            "ratio_term_over_noise": 1.00316044816985,
+            "measurable_before_the_fix": true
+          }
+        },
+        "o5": {
+          "cos_term_vs_rest_TRUNK": {
+            "per_seed": [
+              0.4009792276861434,
+              0.5563033832175857,
+              0.6951889745376647,
+              0.6221269136831513,
+              0.6091274420155239
+            ],
+            "mean": 0.5767451882280138,
+            "min": 0.4009792276861434,
+            "max": 0.6951889745376647,
+            "chance_level": 0.001968767154688935,
+            "mean_over_chance": 292.9473842827998,
+            "sign_consistent": true
+          },
+          "relative_pull_TRUNK": {
+            "per_seed": [
+              0.23937576996884866,
+              0.23724658230385878,
+              0.2225026136261243,
+              0.25230039779873614,
+              0.2324085091806087
+            ],
+            "mean": 0.2367667745756353
+          },
+          "norm_term_TRUNK": {
+            "per_seed": [
+              4.0058932756975985,
+              3.9150430276583266,
+              4.778546825549495,
+              4.527755428144878,
+              5.124236268116132
+            ],
+            "min": 3.9150430276583266,
+            "max": 5.124236268116132
+          },
+          "reaches_trunk": true,
+          "vs_pre_fix_noise_floor": {
+            "noise_floor_l2_TRUNK": 1.6579055339155362,
+            "term_norm_TRUNK_mean": 4.470294965033286,
+            "ratio_term_over_noise": 2.6963508315673614,
+            "measurable_before_the_fix": true
+          }
+        },
+        "o6": {
+          "cos_term_vs_rest_TRUNK": {
+            "per_seed": [
+              -0.02066698308814096,
+              -0.0514360764360233,
+              -0.04339812682970241,
+              -0.011044360403734634,
+              0.06502741396420551
+            ],
+            "mean": -0.012303626558679158,
+            "min": -0.0514360764360233,
+            "max": 0.06502741396420551,
+            "chance_level": 0.001968767154688935,
+            "mean_over_chance": 6.249406655010521,
+            "sign_consistent": false
+          },
+          "relative_pull_TRUNK": {
+            "per_seed": [
+              0.058214656405241594,
+              0.06009277574194994,
+              0.04951380531143254,
+              0.04719926988155416,
+              0.05084742396554127
+            ],
+            "mean": 0.0531735862611439
+          },
+          "norm_term_TRUNK": {
+            "per_seed": [
+              1.0883445967514616,
+              1.1408946933794801,
+              1.2407298625390644,
+              0.9935773959112273,
+              1.2904681665257165
+            ],
+            "min": 0.9935773959112273,
+            "max": 1.2904681665257165
+          },
+          "reaches_trunk": true,
+          "vs_pre_fix_noise_floor": {
+            "noise_floor_l2_TRUNK": 1.6579055339155362,
+            "term_norm_TRUNK_mean": 1.15080294302139,
+            "ratio_term_over_noise": 0.6941305879494211,
+            "measurable_before_the_fix": false
+          }
+        }
+      },
+      "per_seed": [
+        {
+          "build_seed": 0,
+          "batch_seed": 100,
+          "readout_grid": 4,
+          "n_cells": 16,
+          "o3_mask_rate": 0.4375,
+          "o3_n_masked": 14,
+          "loss_full": 4.358788967132568,
+          "n_params_all": 732541,
+          "n_params_trunk": 257995,
+          "n_params_masked_cells": 7112,
+          "n_params_sigreg": 0,
+          "chance_cos_all": 0.0011683797774483262,
+          "chance_cos_trunk": 0.001968767154688935,
+          "levers": {
+            "o1": {
+              "weights_zeroed": [
+                "o1_ctrl",
+                "o1_fact",
+                "o1_scene"
+              ],
+              "incumbent_weight": [
+                1.0,
+                1.0,
+                0.3
+              ],
+              "loss_full": 4.358788967132568,
+              "loss_lever_off": 3.403536081314087,
+              "loss_delta": 0.9552528858184814,
+              "cos_term_vs_rest_TRUNK": 0.10746258222222814,
+              "cos_armON_vs_armOFF_TRUNK": 0.6133964919775691,
+              "cos_term_vs_rest_ALL": 0.09151819067513761,
+              "norm_term_TRUNK": 14.858435253402863,
+              "norm_rest_TRUNK": 9.876582422151865,
+              "norm_full_TRUNK": 18.704554707411944,
+              "relative_pull_TRUNK": 1.504410596531586,
+              "norm_term_masked_cells": 1.3667573741736239,
+              "norm_rest_masked_cells": 1.78770034902765,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 7112,
+                  "norm_term": 1.3667573741736239,
+                  "norm_rest": 1.78770034902765,
+                  "cos_term_vs_rest": -0.8447390605889458
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 12.430892785754507,
+                  "norm_rest": 9.424350820618775,
+                  "cos_term_vs_rest": 0.10695377667910677
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 293773,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 8860,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 170691,
+                  "norm_term": 8.020866318225915,
+                  "norm_rest": 2.745182322602667,
+                  "cos_term_vs_rest": 0.13325765980553142
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 1.38264465203031,
+                  "norm_rest": 1.092000900700382,
+                  "cos_term_vs_rest": 0.20271059221440532
+                }
+              }
+            },
+            "o2": {
+              "weights_zeroed": [
+                "o2_nearfield"
+              ],
+              "incumbent_weight": [
+                1.0
+              ],
+              "loss_full": 4.358788967132568,
+              "loss_lever_off": 3.100767135620117,
+              "loss_delta": 1.2580218315124512,
+              "cos_term_vs_rest_TRUNK": 0.32980999502511843,
+              "cos_armON_vs_armOFF_TRUNK": 0.9539847014191732,
+              "cos_term_vs_rest_ALL": 0.3292000127768798,
+              "norm_term_TRUNK": 5.941078702229411,
+              "norm_rest_TRUNK": 15.884431900415107,
+              "norm_full_TRUNK": 18.704554707411944,
+              "relative_pull_TRUNK": 0.37401896016653596,
+              "norm_term_masked_cells": 0.0,
+              "norm_rest_masked_cells": 0.9674230857393054,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 7112,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.9674230857393054,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 5.666184009035347,
+                  "norm_rest": 13.47311165591725,
+                  "cos_term_vs_rest": 0.35875180791078853
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 293773,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 8860,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 170691,
+                  "norm_term": 1.6684598214105508,
+                  "norm_rest": 8.26821127105687,
+                  "cos_term_vs_rest": 0.23890877607189193
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 0.6379786408450507,
+                  "norm_rest": 1.5579221685556364,
+                  "cos_term_vs_rest": 0.44377711293979444
+                }
+              }
+            },
+            "o3": {
+              "weights_zeroed": [
+                "o3_masked"
+              ],
+              "incumbent_weight": [
+                1.0
+              ],
+              "loss_full": 4.358788967132568,
+              "loss_lever_off": 3.4628753662109375,
+              "loss_delta": 0.8959136009216309,
+              "cos_term_vs_rest_TRUNK": 0.08449719814529585,
+              "cos_armON_vs_armOFF_TRUNK": 0.9979552000680867,
+              "cos_term_vs_rest_ALL": 0.06577870208840876,
+              "norm_term_TRUNK": 1.199835207229549,
+              "norm_rest_TRUNK": 18.564924921970402,
+              "norm_full_TRUNK": 18.704554707411944,
+              "relative_pull_TRUNK": 0.06462914405916184,
+              "norm_term_masked_cells": 0.9674230857393054,
+              "norm_rest_masked_cells": 0.0,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 7112,
+                  "norm_term": 0.9674230857393054,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 1.1480135757255165,
+                  "norm_rest": 16.24909298332373,
+                  "cos_term_vs_rest": 0.08187059830326837
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 293773,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 8860,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 170691,
+                  "norm_term": 0.3265157757315609,
+                  "norm_rest": 8.773546642759186,
+                  "cos_term_vs_rest": 0.11465782917431291
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 0.12270616388716321,
+                  "norm_rest": 1.91005075456635,
+                  "cos_term_vs_rest": 0.11295229469098646
+                }
+              }
+            },
+            "o5": {
+              "weights_zeroed": [
+                "o5_rollout"
+              ],
+              "incumbent_weight": [
+                1.0
+              ],
+              "loss_full": 4.358788967132568,
+              "loss_lever_off": 3.197143793106079,
+              "loss_delta": 1.1616451740264893,
+              "cos_term_vs_rest_TRUNK": 0.4009792276861434,
+              "cos_armON_vs_armOFF_TRUNK": 0.980564822111463,
+              "cos_term_vs_rest_ALL": 0.4003108844848137,
+              "norm_term_TRUNK": 4.0058932756975985,
+              "norm_rest_TRUNK": 16.734748367468054,
+              "norm_full_TRUNK": 18.704554707411944,
+              "relative_pull_TRUNK": 0.23937576996884866,
+              "norm_term_masked_cells": 0.0,
+              "norm_rest_masked_cells": 0.9674230857393054,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 7112,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.9674230857393054,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 3.8275333718053406,
+                  "norm_rest": 14.369876592155125,
+                  "cos_term_vs_rest": 0.42964577047109154
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 293773,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 8860,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 170691,
+                  "norm_term": 1.0901138077728143,
+                  "norm_rest": 8.416288729305057,
+                  "cos_term_vs_rest": 0.31152965318099857
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 0.45696948486596217,
+                  "norm_rest": 1.650616149707849,
+                  "cos_term_vs_rest": 0.5189989362650927
+                }
+              }
+            },
+            "o6": {
+              "weights_zeroed": [
+                "o6_sigreg"
+              ],
+              "incumbent_weight": [
+                0.1
+              ],
+              "loss_full": 4.358788967132568,
+              "loss_lever_off": 4.321349620819092,
+              "loss_delta": 0.03743934631347656,
+              "cos_term_vs_rest_TRUNK": -0.02066698308814096,
+              "cos_armON_vs_armOFF_TRUNK": 0.9983064794536789,
+              "cos_term_vs_rest_ALL": -0.020639368365326847,
+              "norm_term_TRUNK": 1.0883445967514616,
+              "norm_rest_TRUNK": 18.6953709590815,
+              "norm_full_TRUNK": 18.704554707411944,
+              "relative_pull_TRUNK": 0.058214656405241594,
+              "norm_term_masked_cells": 0.0,
+              "norm_rest_masked_cells": 0.9674230857393054,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 7112,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.9674230857393054,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 1.0816054071357086,
+                  "norm_rest": 16.373053057153964,
+                  "cos_term_vs_rest": -0.023753808553863522
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 293773,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 8860,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 170691,
+                  "norm_term": 0.0,
+                  "norm_rest": 8.816952655494555,
+                  "cos_term_vs_rest": null
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 0.1209285100085971,
+                  "norm_rest": 1.923895723798319,
+                  "cos_term_vs_rest": 0.0006417590136293577
+                }
+              }
+            }
+          },
+          "cos_matrix_trunk": {
+            "o1": {
+              "o1": 0.999999999999967,
+              "o2": 0.11472367339146519,
+              "o3": 0.19911146641378225,
+              "o5": 0.1057265453256985,
+              "o6": -0.04325931199548695
+            },
+            "o2": {
+              "o1": 0.11472367339146519,
+              "o2": 0.999999999999971,
+              "o3": -0.10347405306935016,
+              "o5": 0.8548286526575775,
+              "o6": 0.043556269435449366
+            },
+            "o3": {
+              "o1": 0.19911146641378225,
+              "o2": -0.10347405306935016,
+              "o3": 1.0000000000000437,
+              "o5": -0.022942573678195195,
+              "o6": -0.004588756859152286
+            },
+            "o5": {
+              "o1": 0.1057265453256985,
+              "o2": 0.8548286526575775,
+              "o3": -0.022942573678195195,
+              "o5": 1.0000000000000087,
+              "o6": 0.01562887601308901
+            },
+            "o6": {
+              "o1": -0.04325931199548695,
+              "o2": 0.043556269435449366,
+              "o3": -0.004588756859152286,
+              "o5": 0.01562887601308901,
+              "o6": 1.0000000000000595
+            }
+          }
+        },
+        {
+          "build_seed": 1,
+          "batch_seed": 101,
+          "readout_grid": 4,
+          "n_cells": 16,
+          "o3_mask_rate": 0.4375,
+          "o3_n_masked": 14,
+          "loss_full": 4.144655704498291,
+          "n_params_all": 732541,
+          "n_params_trunk": 257995,
+          "n_params_masked_cells": 7112,
+          "n_params_sigreg": 0,
+          "chance_cos_all": 0.0011683797774483262,
+          "chance_cos_trunk": 0.001968767154688935,
+          "levers": {
+            "o1": {
+              "weights_zeroed": [
+                "o1_ctrl",
+                "o1_fact",
+                "o1_scene"
+              ],
+              "incumbent_weight": [
+                1.0,
+                1.0,
+                0.3
+              ],
+              "loss_full": 4.144655704498291,
+              "loss_lever_off": 3.2401633262634277,
+              "loss_delta": 0.9044923782348633,
+              "cos_term_vs_rest_TRUNK": 0.29269442894669034,
+              "cos_armON_vs_armOFF_TRUNK": 0.7087945747440619,
+              "cos_term_vs_rest_ALL": 0.28259017298122496,
+              "norm_term_TRUNK": 13.988061410825699,
+              "norm_rest_TRUNK": 9.345322553963422,
+              "norm_full_TRUNK": 18.961135821273274,
+              "relative_pull_TRUNK": 1.4967981393957617,
+              "norm_term_masked_cells": 1.466710924556354,
+              "norm_rest_masked_cells": 1.0869507226258057,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 7112,
+                  "norm_term": 1.466710924556354,
+                  "norm_rest": 1.0869507226258057,
+                  "cos_term_vs_rest": -0.5444255971740752
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 11.673914404037822,
+                  "norm_rest": 8.887890815787912,
+                  "cos_term_vs_rest": 0.34029663849483294
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 293773,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 8860,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 170691,
+                  "norm_term": 7.590681258420011,
+                  "norm_rest": 2.6763555245416777,
+                  "cos_term_vs_rest": 0.11968962120299993
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 1.3293391415650468,
+                  "norm_rest": 1.0851597073726424,
+                  "cos_term_vs_rest": 0.3621098165096478
+                }
+              }
+            },
+            "o2": {
+              "weights_zeroed": [
+                "o2_nearfield"
+              ],
+              "incumbent_weight": [
+                1.0
+              ],
+              "loss_full": 4.144655704498291,
+              "loss_lever_off": 2.883488893508911,
+              "loss_delta": 1.2611668109893799,
+              "cos_term_vs_rest_TRUNK": 0.45491451669533256,
+              "cos_armON_vs_armOFF_TRUNK": 0.9624472847495996,
+              "cos_term_vs_rest_ALL": 0.45343307492731993,
+              "norm_term_TRUNK": 5.780068354892529,
+              "norm_rest_TRUNK": 15.619656684877466,
+              "norm_full_TRUNK": 18.961135821273274,
+              "relative_pull_TRUNK": 0.37005092182907173,
+              "norm_term_masked_cells": 0.0,
+              "norm_rest_masked_cells": 1.2636494573513337,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 7112,
+                  "norm_term": 0.0,
+                  "norm_rest": 1.2636494573513337,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 5.479745087931071,
+                  "norm_rest": 13.453000083538566,
+                  "cos_term_vs_rest": 0.5078745803913548
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 293773,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 8860,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 170691,
+                  "norm_term": 1.7221425480531933,
+                  "norm_rest": 7.782002482834224,
+                  "cos_term_vs_rest": 0.22829384041473538
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 0.6448325385012271,
+                  "norm_rest": 1.5591347160868894,
+                  "cos_term_vs_rest": 0.5683039020648749
+                }
+              }
+            },
+            "o3": {
+              "weights_zeroed": [
+                "o3_masked"
+              ],
+              "incumbent_weight": [
+                1.0
+              ],
+              "loss_full": 4.144655704498291,
+              "loss_lever_off": 3.373946189880371,
+              "loss_delta": 0.7707095146179199,
+              "cos_term_vs_rest_TRUNK": -0.2853270394433351,
+              "cos_armON_vs_armOFF_TRUNK": 0.9970170844968788,
+              "cos_term_vs_rest_ALL": -0.21981471067199634,
+              "norm_term_TRUNK": 1.5269162515828296,
+              "norm_rest_TRUNK": 19.340246848820595,
+              "norm_full_TRUNK": 18.961135821273274,
+              "relative_pull_TRUNK": 0.07895019456155204,
+              "norm_term_masked_cells": 1.2636494573513337,
+              "norm_rest_masked_cells": 0.0,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 7112,
+                  "norm_term": 1.2636494573513337,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 1.4687531453274014,
+                  "norm_rest": 17.30411396295598,
+                  "cos_term_vs_rest": -0.30884247991822655
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 293773,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 8860,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 170691,
+                  "norm_term": 0.38290006137925175,
+                  "norm_rest": 8.397877186111577,
+                  "cos_term_vs_rest": -0.15962396479209284
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 0.16620764252710357,
+                  "norm_rest": 2.0219908252326237,
+                  "cos_term_vs_rest": -0.18841019605852158
+                }
+              }
+            },
+            "o5": {
+              "weights_zeroed": [
+                "o5_rollout"
+              ],
+              "incumbent_weight": [
+                1.0
+              ],
+              "loss_full": 4.144655704498291,
+              "loss_lever_off": 2.9574737548828125,
+              "loss_delta": 1.1871819496154785,
+              "cos_term_vs_rest_TRUNK": 0.5563033832175857,
+              "cos_armON_vs_armOFF_TRUNK": 0.9851704849264568,
+              "cos_term_vs_rest_ALL": 0.5546794919938781,
+              "norm_term_TRUNK": 3.9150430276583266,
+              "norm_rest_TRUNK": 16.501999690111653,
+              "norm_full_TRUNK": 18.961135821273274,
+              "relative_pull_TRUNK": 0.23724658230385878,
+              "norm_term_masked_cells": 0.0,
+              "norm_rest_masked_cells": 1.2636494573513337,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 7112,
+                  "norm_term": 0.0,
+                  "norm_rest": 1.2636494573513337,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 3.753839809229935,
+                  "norm_rest": 14.35427627052812,
+                  "cos_term_vs_rest": 0.6101505381285869
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 293773,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 8860,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 170691,
+                  "norm_term": 1.0054082317367523,
+                  "norm_rest": 7.968977582628584,
+                  "cos_term_vs_rest": 0.3200760664058997
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 0.4747661346521767,
+                  "norm_rest": 1.6631725134084259,
+                  "cos_term_vs_rest": 0.6318802580149447
+                }
+              }
+            },
+            "o6": {
+              "weights_zeroed": [
+                "o6_sigreg"
+              ],
+              "incumbent_weight": [
+                0.1
+              ],
+              "loss_full": 4.144655704498291,
+              "loss_lever_off": 4.103013515472412,
+              "loss_delta": 0.041642189025878906,
+              "cos_term_vs_rest_TRUNK": -0.0514360764360233,
+              "cos_armON_vs_armOFF_TRUNK": 0.9981929320599467,
+              "cos_term_vs_rest_ALL": -0.051322521910772724,
+              "norm_term_TRUNK": 1.1408946933794801,
+              "norm_rest_TRUNK": 18.985554907277102,
+              "norm_full_TRUNK": 18.961135821273274,
+              "relative_pull_TRUNK": 0.06009277574194994,
+              "norm_term_masked_cells": 0.0,
+              "norm_rest_masked_cells": 1.2636494573513337,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 7112,
+                  "norm_term": 0.0,
+                  "norm_rest": 1.2636494573513337,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 1.1334094215085277,
+                  "norm_rest": 16.93404564708571,
+                  "cos_term_vs_rest": -0.05615730990765924
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 293773,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 8860,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 170691,
+                  "norm_term": 0.0,
+                  "norm_rest": 8.34532184804049,
+                  "cos_term_vs_rest": null
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 0.1304752260667262,
+                  "norm_rest": 2.011217644179902,
+                  "cos_term_vs_rest": -0.13830521768442475
+                }
+              }
+            }
+          },
+          "cos_matrix_trunk": {
+            "o1": {
+              "o1": 0.9999999999999573,
+              "o2": 0.27733315510583584,
+              "o3": -0.20819009754793724,
+              "o5": 0.31342590728965003,
+              "o6": -0.040279348806801805
+            },
+            "o2": {
+              "o1": 0.27733315510583584,
+              "o2": 0.9999999999999617,
+              "o3": -0.12909977339682438,
+              "o5": 0.8449439231331239,
+              "o6": -0.033811328752529325
+            },
+            "o3": {
+              "o1": -0.20819009754793724,
+              "o2": -0.12909977339682438,
+              "o3": 1.0000000000000604,
+              "o5": -0.15952048053565887,
+              "o6": -0.02906004563907747
+            },
+            "o5": {
+              "o1": 0.31342590728965003,
+              "o2": 0.8449439231331239,
+              "o3": -0.15952048053565887,
+              "o5": 1.0000000000000056,
+              "o6": -0.045333770200385114
+            },
+            "o6": {
+              "o1": -0.040279348806801805,
+              "o2": -0.033811328752529325,
+              "o3": -0.02906004563907747,
+              "o5": -0.045333770200385114,
+              "o6": 1.0000000000000593
+            }
+          }
+        },
+        {
+          "build_seed": 2,
+          "batch_seed": 102,
+          "readout_grid": 4,
+          "n_cells": 16,
+          "o3_mask_rate": 0.4375,
+          "o3_n_masked": 14,
+          "loss_full": 4.708766937255859,
+          "n_params_all": 732541,
+          "n_params_trunk": 257995,
+          "n_params_masked_cells": 7112,
+          "n_params_sigreg": 0,
+          "chance_cos_all": 0.0011683797774483262,
+          "chance_cos_trunk": 0.001968767154688935,
+          "levers": {
+            "o1": {
+              "weights_zeroed": [
+                "o1_ctrl",
+                "o1_fact",
+                "o1_scene"
+              ],
+              "incumbent_weight": [
+                1.0,
+                1.0,
+                0.3
+              ],
+              "loss_full": 4.708766937255859,
+              "loss_lever_off": 3.501305103302002,
+              "loss_delta": 1.2074618339538574,
+              "cos_term_vs_rest_TRUNK": 0.4650165959353246,
+              "cos_armON_vs_armOFF_TRUNK": 0.8000252908285121,
+              "cos_term_vs_rest_ALL": 0.4606860178308642,
+              "norm_term_TRUNK": 16.966221024272336,
+              "norm_rest_TRUNK": 12.139156183913476,
+              "norm_full_TRUNK": 25.035121712752492,
+              "relative_pull_TRUNK": 1.3976441827773476,
+              "norm_term_masked_cells": 0.757469774997106,
+              "norm_rest_masked_cells": 1.455039739425609,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 7112,
+                  "norm_term": 0.757469774997106,
+                  "norm_rest": 1.455039739425609,
+                  "cos_term_vs_rest": -0.10666496103117867
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 14.722082317489903,
+                  "norm_rest": 11.585777883078235,
+                  "cos_term_vs_rest": 0.5078016410936826
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 293773,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 8860,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 170691,
+                  "norm_term": 8.243454069946235,
+                  "norm_rest": 3.3227865844515305,
+                  "cos_term_vs_rest": 0.281877701440794
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 1.777192470779689,
+                  "norm_rest": 1.4449750916912467,
+                  "cos_term_vs_rest": 0.5598550878393725
+                }
+              }
+            },
+            "o2": {
+              "weights_zeroed": [
+                "o2_nearfield"
+              ],
+              "incumbent_weight": [
+                1.0
+              ],
+              "loss_full": 4.708766937255859,
+              "loss_lever_off": 3.3973965644836426,
+              "loss_delta": 1.3113703727722168,
+              "cos_term_vs_rest_TRUNK": 0.6018530321423456,
+              "cos_armON_vs_armOFF_TRUNK": 0.9736149547602776,
+              "cos_term_vs_rest_ALL": 0.6000265633651088,
+              "norm_term_TRUNK": 7.153635409923807,
+              "norm_rest_TRUNK": 20.069131731568245,
+              "norm_full_TRUNK": 25.035121712752492,
+              "relative_pull_TRUNK": 0.35644967134633515,
+              "norm_term_masked_cells": 0.0,
+              "norm_rest_masked_cells": 1.567092794775621,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 7112,
+                  "norm_term": 0.0,
+                  "norm_rest": 1.567092794775621,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 6.7987490857434745,
+                  "norm_rest": 17.943069706888483,
+                  "cos_term_vs_rest": 0.6394821142180399
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 293773,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 8860,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 170691,
+                  "norm_term": 2.0641236240332126,
+                  "norm_rest": 8.711288747803659,
+                  "cos_term_vs_rest": 0.39736682797899475
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 0.831206419564846,
+                  "norm_rest": 2.2203032011783845,
+                  "cos_term_vs_rest": 0.6776182761756189
+                }
+              }
+            },
+            "o3": {
+              "weights_zeroed": [
+                "o3_masked"
+              ],
+              "incumbent_weight": [
+                1.0
+              ],
+              "loss_full": 4.708766937255859,
+              "loss_lever_off": 3.8507204055786133,
+              "loss_delta": 0.8580465316772461,
+              "cos_term_vs_rest_TRUNK": 0.3057892231848096,
+              "cos_armON_vs_armOFF_TRUNK": 0.9964160372513068,
+              "cos_term_vs_rest_ALL": 0.24997522996953245,
+              "norm_term_TRUNK": 2.224204729563978,
+              "norm_rest_TRUNK": 24.265258932682034,
+              "norm_full_TRUNK": 25.035121712752492,
+              "relative_pull_TRUNK": 0.09166210571807556,
+              "norm_term_masked_cells": 1.567092794775621,
+              "norm_rest_masked_cells": 0.0,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 7112,
+                  "norm_term": 1.567092794775621,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 2.1264654114740402,
+                  "norm_rest": 22.135882008255344,
+                  "cos_term_vs_rest": 0.3152566188879993
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 293773,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 8860,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 170691,
+                  "norm_term": 0.6010766267874605,
+                  "norm_rest": 9.556772452661555,
+                  "cos_term_vs_rest": 0.23886169873168872
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 0.25286047842451076,
+                  "norm_rest": 2.7337920686741524,
+                  "cos_term_vs_rest": 0.42257346760459996
+                }
+              }
+            },
+            "o5": {
+              "weights_zeroed": [
+                "o5_rollout"
+              ],
+              "incumbent_weight": [
+                1.0
+              ],
+              "loss_full": 4.708766937255859,
+              "loss_lever_off": 3.5073304176330566,
+              "loss_delta": 1.2014365196228027,
+              "cos_term_vs_rest_TRUNK": 0.6951889745376647,
+              "cos_armON_vs_armOFF_TRUNK": 0.9905426473773731,
+              "cos_term_vs_rest_ALL": 0.6933456117771981,
+              "norm_term_TRUNK": 4.778546825549495,
+              "norm_rest_TRUNK": 21.476362671312188,
+              "norm_full_TRUNK": 25.035121712752492,
+              "relative_pull_TRUNK": 0.2225026136261243,
+              "norm_term_masked_cells": 0.0,
+              "norm_rest_masked_cells": 1.567092794775621,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 7112,
+                  "norm_term": 0.0,
+                  "norm_rest": 1.567092794775621,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 4.588866086981097,
+                  "norm_rest": 19.317566346941952,
+                  "cos_term_vs_rest": 0.7330983674574616
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 293773,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 8860,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 170691,
+                  "norm_term": 1.2067627463427726,
+                  "norm_rest": 9.07328333850157,
+                  "cos_term_vs_rest": 0.48663646356037027
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 0.5661638223720369,
+                  "norm_rest": 2.3961038125443213,
+                  "cos_term_vs_rest": 0.7592307397721194
+                }
+              }
+            },
+            "o6": {
+              "weights_zeroed": [
+                "o6_sigreg"
+              ],
+              "incumbent_weight": [
+                0.1
+              ],
+              "loss_full": 4.708766937255859,
+              "loss_lever_off": 4.660279273986816,
+              "loss_delta": 0.04848766326904297,
+              "cos_term_vs_rest_TRUNK": -0.04339812682970241,
+              "cos_armON_vs_armOFF_TRUNK": 0.9987734853046695,
+              "cos_term_vs_rest_ALL": -0.04331350996295615,
+              "norm_term_TRUNK": 1.2407298625390644,
+              "norm_rest_TRUNK": 25.058261120006964,
+              "norm_full_TRUNK": 25.035121712752492,
+              "relative_pull_TRUNK": 0.04951380531143254,
+              "norm_term_masked_cells": 0.0,
+              "norm_rest_masked_cells": 1.567092794775621,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 7112,
+                  "norm_term": 0.0,
+                  "norm_rest": 1.567092794775621,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 1.2323487696141622,
+                  "norm_rest": 22.921406428311,
+                  "cos_term_vs_rest": -0.047994581377821616
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 293773,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 8860,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 170691,
+                  "norm_term": 0.0,
+                  "norm_rest": 9.717890946040477,
+                  "cos_term_vs_rest": null
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 0.1439691002495542,
+                  "norm_rest": 2.843971390062701,
+                  "cos_term_vs_rest": 0.01572880980281465
+                }
+              }
+            }
+          },
+          "cos_matrix_trunk": {
+            "o1": {
+              "o1": 0.99999999999997,
+              "o2": 0.44577786470707953,
+              "o3": 0.36443594136913415,
+              "o5": 0.4859599533612497,
+              "o6": -0.038549578493443114
+            },
+            "o2": {
+              "o1": 0.44577786470707953,
+              "o2": 0.9999999999999799,
+              "o3": 0.22823497754037786,
+              "o5": 0.8641307661965983,
+              "o6": -0.021594970615803514
+            },
+            "o3": {
+              "o1": 0.36443594136913415,
+              "o2": 0.22823497754037786,
+              "o3": 1.0000000000000449,
+              "o5": 0.26404731542238163,
+              "o6": 0.1189599458296813
+            },
+            "o5": {
+              "o1": 0.4859599533612497,
+              "o2": 0.8641307661965983,
+              "o3": 0.26404731542238163,
+              "o5": 0.9999999999999873,
+              "o6": -0.05705423908562658
+            },
+            "o6": {
+              "o1": -0.038549578493443114,
+              "o2": -0.021594970615803514,
+              "o3": 0.1189599458296813,
+              "o5": -0.05705423908562658,
+              "o6": 1.000000000000053
+            }
+          }
+        },
+        {
+          "build_seed": 3,
+          "batch_seed": 103,
+          "readout_grid": 4,
+          "n_cells": 16,
+          "o3_mask_rate": 0.4375,
+          "o3_n_masked": 14,
+          "loss_full": 4.188590049743652,
+          "n_params_all": 732541,
+          "n_params_trunk": 257995,
+          "n_params_masked_cells": 7112,
+          "n_params_sigreg": 0,
+          "chance_cos_all": 0.0011683797774483262,
+          "chance_cos_trunk": 0.001968767154688935,
+          "levers": {
+            "o1": {
+              "weights_zeroed": [
+                "o1_ctrl",
+                "o1_fact",
+                "o1_scene"
+              ],
+              "incumbent_weight": [
+                1.0,
+                1.0,
+                0.3
+              ],
+              "loss_full": 4.188590049743652,
+              "loss_lever_off": 3.3254082202911377,
+              "loss_delta": 0.8631818294525146,
+              "cos_term_vs_rest_TRUNK": 0.34386325536884244,
+              "cos_armON_vs_armOFF_TRUNK": 0.7723520768159409,
+              "cos_term_vs_rest_ALL": 0.343061647433342,
+              "norm_term_TRUNK": 14.248060760145808,
+              "norm_rest_TRUNK": 11.368794772674548,
+              "norm_full_TRUNK": 21.063165125379054,
+              "relative_pull_TRUNK": 1.253260441853671,
+              "norm_term_masked_cells": 1.1542737711650914,
+              "norm_rest_masked_cells": 1.2737679600952396,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 7112,
+                  "norm_term": 1.1542737711650914,
+                  "norm_rest": 1.2737679600952396,
+                  "cos_term_vs_rest": 0.2727727460975885
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 12.628118436821367,
+                  "norm_rest": 10.944174914313258,
+                  "cos_term_vs_rest": 0.3708378284804197
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 293773,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 8860,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 170691,
+                  "norm_term": 6.431781462261519,
+                  "norm_rest": 2.6949485481690556,
+                  "cos_term_vs_rest": 0.20448921153597466
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 1.4731080721133325,
+                  "norm_rest": 1.4872062233696124,
+                  "cos_term_vs_rest": 0.4127341356544935
+                }
+              }
+            },
+            "o2": {
+              "weights_zeroed": [
+                "o2_nearfield"
+              ],
+              "incumbent_weight": [
+                1.0
+              ],
+              "loss_full": 4.188590049743652,
+              "loss_lever_off": 2.8720521926879883,
+              "loss_delta": 1.316537857055664,
+              "cos_term_vs_rest_TRUNK": 0.5591435418743214,
+              "cos_armON_vs_armOFF_TRUNK": 0.9628400946165206,
+              "cos_term_vs_rest_ALL": 0.5552992419981894,
+              "norm_term_TRUNK": 6.861384212249922,
+              "norm_rest_TRUNK": 16.44396123178488,
+              "norm_full_TRUNK": 21.063165125379054,
+              "relative_pull_TRUNK": 0.41725859818906696,
+              "norm_term_masked_cells": 0.0,
+              "norm_rest_masked_cells": 1.9382816337971585,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 7112,
+                  "norm_term": 0.0,
+                  "norm_rest": 1.9382816337971585,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 6.601304133185355,
+                  "norm_rest": 14.893184463270499,
+                  "cos_term_vs_rest": 0.5917898346077807
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 293773,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 8860,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 170691,
+                  "norm_term": 1.657298979132003,
+                  "norm_rest": 6.724847264375423,
+                  "cos_term_vs_rest": 0.3476557376798171
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 0.8687560895154152,
+                  "norm_rest": 1.836667309629685,
+                  "cos_term_vs_rest": 0.6462064213676554
+                }
+              }
+            },
+            "o3": {
+              "weights_zeroed": [
+                "o3_masked"
+              ],
+              "incumbent_weight": [
+                1.0
+              ],
+              "loss_full": 4.188590049743652,
+              "loss_lever_off": 3.388665199279785,
+              "loss_delta": 0.7999248504638672,
+              "cos_term_vs_rest_TRUNK": 0.10832848216293683,
+              "cos_armON_vs_armOFF_TRUNK": 0.9958768977651637,
+              "cos_term_vs_rest_ALL": 0.07627715382094265,
+              "norm_term_TRUNK": 1.9220552421538633,
+              "norm_rest_TRUNK": 20.76810621515611,
+              "norm_full_TRUNK": 21.063165125379054,
+              "relative_pull_TRUNK": 0.09254841160005188,
+              "norm_term_masked_cells": 1.9382816337971585,
+              "norm_rest_masked_cells": 0.0,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 7112,
+                  "norm_term": 1.9382816337971585,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 1.8416399882716712,
+                  "norm_rest": 19.24535501992777,
+                  "cos_term_vs_rest": 0.11245945758805266
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 293773,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 8860,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 170691,
+                  "norm_term": 0.5053974406373947,
+                  "norm_rest": 7.414674237171544,
+                  "cos_term_vs_rest": 0.06493826522213264
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 0.2173290925924686,
+                  "norm_rest": 2.4399081699040828,
+                  "cos_term_vs_rest": 0.17905701842686703
+                }
+              }
+            },
+            "o5": {
+              "weights_zeroed": [
+                "o5_rollout"
+              ],
+              "incumbent_weight": [
+                1.0
+              ],
+              "loss_full": 4.188590049743652,
+              "loss_lever_off": 3.0438334941864014,
+              "loss_delta": 1.144756555557251,
+              "cos_term_vs_rest_TRUNK": 0.6221269136831513,
+              "cos_armON_vs_armOFF_TRUNK": 0.9857364430786084,
+              "cos_term_vs_rest_ALL": 0.618529642551872,
+              "norm_term_TRUNK": 4.527755428144878,
+              "norm_rest_TRUNK": 17.94589096033347,
+              "norm_full_TRUNK": 21.063165125379054,
+              "relative_pull_TRUNK": 0.25230039779873614,
+              "norm_term_masked_cells": 0.0,
+              "norm_rest_masked_cells": 1.9382816337971585,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 7112,
+                  "norm_term": 0.0,
+                  "norm_rest": 1.9382816337971585,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 4.374779572535027,
+                  "norm_rest": 16.397145658705906,
+                  "cos_term_vs_rest": 0.6534013414577657
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 293773,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 8860,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 170691,
+                  "norm_term": 1.0033742626411843,
+                  "norm_rest": 7.00516722003381,
+                  "cos_term_vs_rest": 0.4012337165650956
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 0.5959135825727006,
+                  "norm_rest": 2.028854067378155,
+                  "cos_term_vs_rest": 0.7108708750576205
+                }
+              }
+            },
+            "o6": {
+              "weights_zeroed": [
+                "o6_sigreg"
+              ],
+              "incumbent_weight": [
+                0.1
+              ],
+              "loss_full": 4.188590049743652,
+              "loss_lever_off": 4.146196365356445,
+              "loss_delta": 0.04239368438720703,
+              "cos_term_vs_rest_TRUNK": -0.011044360403734634,
+              "cos_armON_vs_armOFF_TRUNK": 0.9988869493427873,
+              "cos_term_vs_rest_ALL": -0.01099783815962074,
+              "norm_term_TRUNK": 0.9935773959112273,
+              "norm_rest_TRUNK": 21.050694182443806,
+              "norm_full_TRUNK": 21.063165125379054,
+              "relative_pull_TRUNK": 0.04719926988155416,
+              "norm_term_masked_cells": 0.0,
+              "norm_rest_masked_cells": 1.9382816337971585,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 7112,
+                  "norm_term": 0.0,
+                  "norm_rest": 1.9382816337971585,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 0.9842876808687584,
+                  "norm_rest": 19.52448930906899,
+                  "cos_term_vs_rest": -0.011119240047875624
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 293773,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 8860,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 170691,
+                  "norm_term": 0.0,
+                  "norm_rest": 7.464550515032318,
+                  "cos_term_vs_rest": null
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 0.13555000168106662,
+                  "norm_rest": 2.4912905072165814,
+                  "cos_term_vs_rest": -0.051264908688802686
+                }
+              }
+            }
+          },
+          "cos_matrix_trunk": {
+            "o1": {
+              "o1": 0.9999999999999614,
+              "o2": 0.3516828111152441,
+              "o3": 0.15799374655811277,
+              "o5": 0.3415585891569633,
+              "o6": -0.0010696524621367479
+            },
+            "o2": {
+              "o1": 0.3516828111152441,
+              "o2": 0.9999999999999684,
+              "o3": 0.09803714447413753,
+              "o5": 0.9038148507119345,
+              "o6": -0.009802578351348684
+            },
+            "o3": {
+              "o1": 0.15799374655811277,
+              "o2": 0.09803714447413753,
+              "o3": 1.0000000000000826,
+              "o5": 0.08062089320462577,
+              "o6": 0.055215671914481984
+            },
+            "o5": {
+              "o1": 0.3415585891569633,
+              "o2": 0.9038148507119345,
+              "o3": 0.08062089320462577,
+              "o5": 0.9999999999999789,
+              "o6": -0.028781049719075587
+            },
+            "o6": {
+              "o1": -0.0010696524621367479,
+              "o2": -0.009802578351348684,
+              "o3": 0.055215671914481984,
+              "o5": -0.028781049719075587,
+              "o6": 1.000000000000087
+            }
+          }
+        },
+        {
+          "build_seed": 4,
+          "batch_seed": 104,
+          "readout_grid": 4,
+          "n_cells": 16,
+          "o3_mask_rate": 0.4375,
+          "o3_n_masked": 14,
+          "loss_full": 4.16122579574585,
+          "n_params_all": 732541,
+          "n_params_trunk": 257995,
+          "n_params_masked_cells": 7112,
+          "n_params_sigreg": 0,
+          "chance_cos_all": 0.0011683797774483262,
+          "chance_cos_trunk": 0.001968767154688935,
+          "levers": {
+            "o1": {
+              "weights_zeroed": [
+                "o1_ctrl",
+                "o1_fact",
+                "o1_scene"
+              ],
+              "incumbent_weight": [
+                1.0,
+                1.0,
+                0.3
+              ],
+              "loss_full": 4.16122579574585,
+              "loss_lever_off": 3.1694493293762207,
+              "loss_delta": 0.9917764663696289,
+              "cos_term_vs_rest_TRUNK": 0.400038707603723,
+              "cos_armON_vs_armOFF_TRUNK": 0.7811370865542969,
+              "cos_term_vs_rest_ALL": 0.3959029579405306,
+              "norm_term_TRUNK": 17.3687971713362,
+              "norm_rest_TRUNK": 12.967430944868385,
+              "norm_full_TRUNK": 25.49568118286728,
+              "relative_pull_TRUNK": 1.3394169782110599,
+              "norm_term_masked_cells": 1.480678075471043,
+              "norm_rest_masked_cells": 0.8025951361093229,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 7112,
+                  "norm_term": 1.480678075471043,
+                  "norm_rest": 0.8025951361093229,
+                  "cos_term_vs_rest": -0.3675693999169582
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 15.703373053106489,
+                  "norm_rest": 12.47160492667592,
+                  "cos_term_vs_rest": 0.4315501977454434
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 293773,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 8860,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 170691,
+                  "norm_term": 7.246339406263482,
+                  "norm_rest": 3.2849696193720646,
+                  "cos_term_vs_rest": 0.20353781405374366
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 1.6030455836348558,
+                  "norm_rest": 1.3499297991543935,
+                  "cos_term_vs_rest": 0.34088733427977086
+                }
+              }
+            },
+            "o2": {
+              "weights_zeroed": [
+                "o2_nearfield"
+              ],
+              "incumbent_weight": [
+                1.0
+              ],
+              "loss_full": 4.16122579574585,
+              "loss_lever_off": 2.9109063148498535,
+              "loss_delta": 1.250319480895996,
+              "cos_term_vs_rest_TRUNK": 0.5957451148310777,
+              "cos_armON_vs_armOFF_TRUNK": 0.9670726285525066,
+              "cos_term_vs_rest_ALL": 0.5942656991802241,
+              "norm_term_TRUNK": 8.07878310587117,
+              "norm_rest_TRUNK": 19.84327984926625,
+              "norm_full_TRUNK": 25.49568118286728,
+              "relative_pull_TRUNK": 0.4071294245326032,
+              "norm_term_masked_cells": 0.0,
+              "norm_rest_masked_cells": 1.4010490888745728,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 7112,
+                  "norm_term": 0.0,
+                  "norm_rest": 1.4010490888745728,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 7.749987811086732,
+                  "norm_rest": 18.257041363280386,
+                  "cos_term_vs_rest": 0.6282693149187122
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 293773,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 8860,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 170691,
+                  "norm_term": 2.125053163055847,
+                  "norm_rest": 7.552819098605923,
+                  "cos_term_vs_rest": 0.35605800341209387
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 0.829803864718779,
+                  "norm_rest": 1.8414992531876084,
+                  "cos_term_vs_rest": 0.584958776413042
+                }
+              }
+            },
+            "o3": {
+              "weights_zeroed": [
+                "o3_masked"
+              ],
+              "incumbent_weight": [
+                1.0
+              ],
+              "loss_full": 4.16122579574585,
+              "loss_lever_off": 3.3526878356933594,
+              "loss_delta": 0.8085379600524902,
+              "cos_term_vs_rest_TRUNK": 0.04841821553050818,
+              "cos_armON_vs_armOFF_TRUNK": 0.998401451884187,
+              "cos_term_vs_rest_ALL": 0.034734746060032844,
+              "norm_term_TRUNK": 1.4427148615996985,
+              "norm_rest_TRUNK": 25.38507143063005,
+              "norm_full_TRUNK": 25.49568118286728,
+              "relative_pull_TRUNK": 0.056833200786620394,
+              "norm_term_masked_cells": 1.4010490888745728,
+              "norm_rest_masked_cells": 0.0,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 7112,
+                  "norm_term": 1.4010490888745728,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 1.3728970873924717,
+                  "norm_rest": 23.78980242513277,
+                  "cos_term_vs_rest": 0.051013479243443384
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 293773,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 8860,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 170691,
+                  "norm_term": 0.40746988922811,
+                  "norm_rest": 8.528713901021309,
+                  "cos_term_vs_rest": 0.012301166466635694
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 0.17478000080775966,
+                  "norm_rest": 2.389182141625102,
+                  "cos_term_vs_rest": 0.15408492007186075
+                }
+              }
+            },
+            "o5": {
+              "weights_zeroed": [
+                "o5_rollout"
+              ],
+              "incumbent_weight": [
+                1.0
+              ],
+              "loss_full": 4.16122579574585,
+              "loss_lever_off": 2.986834764480591,
+              "loss_delta": 1.1743910312652588,
+              "cos_term_vs_rest_TRUNK": 0.6091274420155239,
+              "cos_armON_vs_armOFF_TRUNK": 0.9872148493134099,
+              "cos_term_vs_rest_ALL": 0.6079013647472876,
+              "norm_term_TRUNK": 5.124236268116132,
+              "norm_rest_TRUNK": 22.048402126851553,
+              "norm_full_TRUNK": 25.49568118286728,
+              "relative_pull_TRUNK": 0.2324085091806087,
+              "norm_term_masked_cells": 0.0,
+              "norm_rest_masked_cells": 1.4010490888745728,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 7112,
+                  "norm_term": 0.0,
+                  "norm_rest": 1.4010490888745728,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 4.942866010808944,
+                  "norm_rest": 20.457433842520288,
+                  "cos_term_vs_rest": 0.634075387240224
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 293773,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 8860,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 170691,
+                  "norm_term": 1.2334639310039568,
+                  "norm_rest": 7.9605570825473855,
+                  "cos_term_vs_rest": 0.4123912084251375
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 0.5517605110719943,
+                  "norm_rest": 2.0627573443705725,
+                  "cos_term_vs_rest": 0.5746254994205409
+                }
+              }
+            },
+            "o6": {
+              "weights_zeroed": [
+                "o6_sigreg"
+              ],
+              "incumbent_weight": [
+                0.1
+              ],
+              "loss_full": 4.16122579574585,
+              "loss_lever_off": 4.11971378326416,
+              "loss_delta": 0.04151201248168945,
+              "cos_term_vs_rest_TRUNK": 0.06502741396420551,
+              "cos_armON_vs_armOFF_TRUNK": 0.9987236544640178,
+              "cos_term_vs_rest_ALL": 0.06492855290795228,
+              "norm_term_TRUNK": 1.2904681665257165,
+              "norm_rest_TRUNK": 25.37922407633182,
+              "norm_full_TRUNK": 25.49568118286728,
+              "relative_pull_TRUNK": 0.05084742396554127,
+              "norm_term_masked_cells": 0.0,
+              "norm_rest_masked_cells": 1.4010490888745728,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 7112,
+                  "norm_term": 0.0,
+                  "norm_rest": 1.4010490888745728,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 1.2820787635928428,
+                  "norm_rest": 23.776866596238047,
+                  "cos_term_vs_rest": 0.06870419737173308
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 293773,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 8860,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 170691,
+                  "norm_term": 0.0,
+                  "norm_rest": 8.543447219860843,
+                  "cos_term_vs_rest": null
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 0.14690858640832338,
+                  "norm_rest": 2.403151926701548,
+                  "cos_term_vs_rest": 0.10013490911442086
+                }
+              }
+            }
+          },
+          "cos_matrix_trunk": {
+            "o1": {
+              "o1": 0.9999999999999551,
+              "o2": 0.41598023908256476,
+              "o3": 0.12025489229700978,
+              "o5": 0.3622269127821386,
+              "o6": 0.06846279257221281
+            },
+            "o2": {
+              "o1": 0.41598023908256476,
+              "o2": 0.99999999999998,
+              "o3": 0.044645679411620356,
+              "o5": 0.8823178651337367,
+              "o6": 0.04558741213762709
+            },
+            "o3": {
+              "o1": 0.12025489229700978,
+              "o2": 0.044645679411620356,
+              "o3": 1.0000000000000475,
+              "o5": -0.00842040667298172,
+              "o6": 0.0715468261767698
+            },
+            "o5": {
+              "o1": 0.3622269127821386,
+              "o2": 0.8823178651337367,
+              "o3": -0.00842040667298172,
+              "o5": 0.9999999999999812,
+              "o6": 0.020844131966369993
+            },
+            "o6": {
+              "o1": 0.06846279257221281,
+              "o2": 0.04558741213762709,
+              "o3": 0.0715468261767698,
+              "o5": 0.020844131966369993,
+              "o6": 1.0000000000000417
+            }
+          }
+        }
+      ]
+    },
+    "degenerate_grid2": {
+      "label": "CONTROL \u2014 DEGENERATE grid 2x2: the 2x2 block IS the whole grid, mask_rate 1.0",
+      "readout_grid": 2,
+      "n_cells": 4,
+      "o3_mask_rate": 1.0,
+      "controls": {
+        "N1_same_arm_twice_seeded": {
+          "grad_delta_l2": 0.0,
+          "expect": "EXACTLY 0",
+          "pass": true,
+          "note": "the harness itself is deterministic; without this every number above could be resample noise"
+        },
+        "N2_structurally_inert_lever_t1_in_SW": {
+          "grad_delta_l2": 0.0,
+          "expect": "EXACTLY 0",
+          "pass": true,
+          "note": "t1_latent is forced to 0 by V6LossWeights.for_stage('S-W'), so moving it 0.0 -> 1.0 changes the LAUNCH LINE and nothing else. The probe must report no effect."
+        },
+        "N3_POSITIVE_same_arm_twice_on_the_INCUMBENT_path": {
+          "grad_delta_l2": 0.6946143338245186,
+          "grad_norm_reference": 24.77976747343693,
+          "grad_delta_l2_TRUNK": 0.6946143338245186,
+          "grad_norm_reference_TRUNK": 24.39695990714656,
+          "relative": 0.028031511375928835,
+          "relative_TRUNK": 0.028471347924830852,
+          "expect": "NON-zero",
+          "pass": true,
+          "note": "sigreg_generator=None is the pre-142ce34 code. This is the NOISE FLOOR every in-process A/B used to sit on, and any lever effect smaller than it was unmeasurable."
+        }
+      },
+      "summary_across_seeds": {
+        "o1": {
+          "cos_term_vs_rest_TRUNK": {
+            "per_seed": [
+              0.5049904982454684,
+              0.5693228388861279,
+              0.3329304961167368,
+              0.49983817114967183,
+              0.5770483634891003
+            ],
+            "mean": 0.49682607357742103,
+            "min": 0.3329304961167368,
+            "max": 0.5770483634891003,
+            "chance_level": 0.0026383571231733093,
+            "mean_over_chance": 188.30887949689642,
+            "sign_consistent": true
+          },
+          "relative_pull_TRUNK": {
+            "per_seed": [
+              0.9378452178721939,
+              0.9611140528729027,
+              1.2904439363462148,
+              1.4044883951951106,
+              0.9690724654817298
+            ],
+            "mean": 1.1125928135536305
+          },
+          "norm_term_TRUNK": {
+            "per_seed": [
+              13.57178681156881,
+              15.905403149280625,
+              15.640600246510926,
+              14.746741719686653,
+              15.209824952940131
+            ],
+            "min": 13.57178681156881,
+            "max": 15.905403149280625
+          },
+          "reaches_trunk": true,
+          "vs_pre_fix_noise_floor": {
+            "noise_floor_l2_TRUNK": 0.6946143338245186,
+            "term_norm_TRUNK_mean": 15.01487137599743,
+            "ratio_term_over_noise": 21.61612659693639,
+            "measurable_before_the_fix": true
+          }
+        },
+        "o2": {
+          "cos_term_vs_rest_TRUNK": {
+            "per_seed": [
+              0.7098222248954639,
+              0.7206201201559538,
+              0.5203822292958888,
+              0.5978450536882763,
+              0.7448223262749993
+            ],
+            "mean": 0.6586983908621165,
+            "min": 0.5203822292958888,
+            "max": 0.7448223262749993,
+            "chance_level": 0.0026383571231733093,
+            "mean_over_chance": 249.66233156103624,
+            "sign_consistent": true
+          },
+          "relative_pull_TRUNK": {
+            "per_seed": [
+              0.5466117817875242,
+              0.46907759531678156,
+              0.39883708467897344,
+              0.3793911186224648,
+              0.4912271905451998
+            ],
+            "mean": 0.45702895419018874
+          },
+          "norm_term_TRUNK": {
+            "per_seed": [
+              9.2330114929818,
+              9.793833361023442,
+              7.233247870912907,
+              6.593323358303924,
+              9.597629832472688
+            ],
+            "min": 6.593323358303924,
+            "max": 9.793833361023442
+          },
+          "reaches_trunk": true,
+          "vs_pre_fix_noise_floor": {
+            "noise_floor_l2_TRUNK": 0.6946143338245186,
+            "term_norm_TRUNK_mean": 8.490209183138953,
+            "ratio_term_over_noise": 12.222911002127184,
+            "measurable_before_the_fix": true
+          }
+        },
+        "o3": {
+          "cos_term_vs_rest_TRUNK": {
+            "per_seed": [
+              null,
+              null,
+              null,
+              null,
+              null
+            ],
+            "mean": null,
+            "min": null,
+            "max": null,
+            "chance_level": 0.0026383571231733093,
+            "mean_over_chance": null,
+            "sign_consistent": null
+          },
+          "relative_pull_TRUNK": {
+            "per_seed": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "mean": 0.0
+          },
+          "norm_term_TRUNK": {
+            "per_seed": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "min": 0.0,
+            "max": 0.0
+          },
+          "reaches_trunk": false,
+          "vs_pre_fix_noise_floor": {
+            "noise_floor_l2_TRUNK": 0.6946143338245186,
+            "term_norm_TRUNK_mean": 0.0,
+            "ratio_term_over_noise": 0.0,
+            "measurable_before_the_fix": false
+          }
+        },
+        "o5": {
+          "cos_term_vs_rest_TRUNK": {
+            "per_seed": [
+              0.7381600401444676,
+              0.8009559771129221,
+              0.5701233741720606,
+              0.7139949508083451,
+              0.7664858912380865
+            ],
+            "mean": 0.7179440466951764,
+            "min": 0.5701233741720606,
+            "max": 0.8009559771129221,
+            "chance_level": 0.0026383571231733093,
+            "mean_over_chance": 272.11784196661836,
+            "sign_consistent": true
+          },
+          "relative_pull_TRUNK": {
+            "per_seed": [
+              0.28459362633532165,
+              0.314949786644258,
+              0.2739234256878854,
+              0.2219614922514203,
+              0.28972137645732854
+            ],
+            "mean": 0.27702994147524274
+          },
+          "norm_term_TRUNK": {
+            "per_seed": [
+              5.6515056348128,
+              7.150145521954622,
+              5.291703363181346,
+              4.171227020087263,
+              6.432206823366732
+            ],
+            "min": 4.171227020087263,
+            "max": 7.150145521954622
+          },
+          "reaches_trunk": true,
+          "vs_pre_fix_noise_floor": {
+            "noise_floor_l2_TRUNK": 0.6946143338245186,
+            "term_norm_TRUNK_mean": 5.739357672680553,
+            "ratio_term_over_noise": 8.262653667222615,
+            "measurable_before_the_fix": true
+          }
+        },
+        "o6": {
+          "cos_term_vs_rest_TRUNK": {
+            "per_seed": [
+              -0.16367508041696785,
+              -0.061963890835988834,
+              0.15102743616023243,
+              0.2293420835262761,
+              0.06188880390005821
+            ],
+            "mean": 0.043323870466722016,
+            "min": -0.16367508041696785,
+            "max": 0.2293420835262761,
+            "chance_level": 0.0026383571231733093,
+            "mean_over_chance": 16.420775673694173,
+            "sign_consistent": false
+          },
+          "relative_pull_TRUNK": {
+            "per_seed": [
+              0.026000191297386812,
+              0.019891452604326294,
+              0.033344331310162956,
+              0.019303247758664974,
+              0.023195558752792073
+            ],
+            "mean": 0.02434695634466662
+          },
+          "norm_term_TRUNK": {
+            "per_seed": [
+              0.6350894777652426,
+              0.5724710395805883,
+              0.7545189223246491,
+              0.42206897462118803,
+              0.6355026289336191
+            ],
+            "min": 0.42206897462118803,
+            "max": 0.7545189223246491
+          },
+          "reaches_trunk": true,
+          "vs_pre_fix_noise_floor": {
+            "noise_floor_l2_TRUNK": 0.6946143338245186,
+            "term_norm_TRUNK_mean": 0.6039302086450574,
+            "ratio_term_over_noise": 0.8694467983691639,
+            "measurable_before_the_fix": false
+          }
+        }
+      },
+      "per_seed": [
+        {
+          "build_seed": 0,
+          "batch_seed": 100,
+          "readout_grid": 2,
+          "n_cells": 4,
+          "o3_mask_rate": 1.0,
+          "o3_n_masked": 8,
+          "loss_full": 3.7989442348480225,
+          "n_params_all": 613405,
+          "n_params_trunk": 143659,
+          "n_params_masked_cells": 6920,
+          "n_params_sigreg": 0,
+          "chance_cos_all": 0.0012768102020688794,
+          "chance_cos_trunk": 0.0026383571231733093,
+          "levers": {
+            "o1": {
+              "weights_zeroed": [
+                "o1_ctrl",
+                "o1_fact",
+                "o1_scene"
+              ],
+              "incumbent_weight": [
+                1.0,
+                1.0,
+                0.3
+              ],
+              "loss_full": 3.7989442348480225,
+              "loss_lever_off": 3.1680009365081787,
+              "loss_delta": 0.6309432983398438,
+              "cos_term_vs_rest_TRUNK": 0.5049904982454684,
+              "cos_armON_vs_armOFF_TRUNK": 0.8764679591644836,
+              "cos_term_vs_rest_ALL": 0.4837167989402518,
+              "norm_term_TRUNK": 13.57178681156881,
+              "norm_rest_TRUNK": 14.471243818207881,
+              "norm_full_TRUNK": 24.330458380591043,
+              "relative_pull_TRUNK": 0.9378452178721939,
+              "norm_term_masked_cells": 0.0,
+              "norm_rest_masked_cells": 4.338804366030623,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 6920,
+                  "norm_term": 0.0,
+                  "norm_rest": 4.338804366030623,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 11.767315896510103,
+                  "norm_rest": 13.845119206629247,
+                  "cos_term_vs_rest": 0.573517035196058
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 290701,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 7324,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 56355,
+                  "norm_term": 6.616813839640522,
+                  "norm_rest": 3.901178711605386,
+                  "cos_term_vs_rest": 0.18556139059006388
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 1.3933586982374033,
+                  "norm_rest": 1.5844167571577403,
+                  "cos_term_vs_rest": 0.43174952665727984
+                }
+              }
+            },
+            "o2": {
+              "weights_zeroed": [
+                "o2_nearfield"
+              ],
+              "incumbent_weight": [
+                1.0
+              ],
+              "loss_full": 3.7989442348480225,
+              "loss_lever_off": 2.596148729324341,
+              "loss_delta": 1.2027955055236816,
+              "cos_term_vs_rest_TRUNK": 0.7098222248954639,
+              "cos_armON_vs_armOFF_TRUNK": 0.9636130746653655,
+              "cos_term_vs_rest_ALL": 0.6875037863734274,
+              "norm_term_TRUNK": 9.2330114929818,
+              "norm_rest_TRUNK": 16.89135104769989,
+              "norm_full_TRUNK": 24.330458380591043,
+              "relative_pull_TRUNK": 0.5466117817875242,
+              "norm_term_masked_cells": 0.0,
+              "norm_rest_masked_cells": 4.338804366030623,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 6920,
+                  "norm_term": 0.0,
+                  "norm_rest": 4.338804366030623,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 8.819372012813263,
+                  "norm_rest": 15.270909025401508,
+                  "cos_term_vs_rest": 0.7649613673820277
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 290701,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 7324,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 56355,
+                  "norm_term": 2.5483735494037094,
+                  "norm_rest": 7.002539204832413,
+                  "cos_term_vs_rest": 0.36569139364324754
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 0.9863928131525913,
+                  "norm_rest": 1.7554265690499862,
+                  "cos_term_vs_rest": 0.6652010854374739
+                }
+              }
+            },
+            "o3": {
+              "weights_zeroed": [
+                "o3_masked"
+              ],
+              "incumbent_weight": [
+                1.0
+              ],
+              "loss_full": 3.7989442348480225,
+              "loss_lever_off": 2.983914852142334,
+              "loss_delta": 0.8150293827056885,
+              "cos_term_vs_rest_TRUNK": null,
+              "cos_armON_vs_armOFF_TRUNK": 0.9999999999999655,
+              "cos_term_vs_rest_ALL": 0.0,
+              "norm_term_TRUNK": 0.0,
+              "norm_rest_TRUNK": 24.330458380591043,
+              "norm_full_TRUNK": 24.330458380591043,
+              "relative_pull_TRUNK": 0.0,
+              "norm_term_masked_cells": 4.338804366030623,
+              "norm_rest_masked_cells": 0.0,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 6920,
+                  "norm_term": 4.338804366030623,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 0.0,
+                  "norm_rest": 22.738331412299637,
+                  "cos_term_vs_rest": null
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 290701,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 7324,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 56355,
+                  "norm_term": 0.0,
+                  "norm_rest": 8.281385850123144,
+                  "cos_term_vs_rest": null
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 0.0,
+                  "norm_rest": 2.5215348491491527,
+                  "cos_term_vs_rest": null
+                }
+              }
+            },
+            "o5": {
+              "weights_zeroed": [
+                "o5_rollout"
+              ],
+              "incumbent_weight": [
+                1.0
+              ],
+              "loss_full": 3.7989442348480225,
+              "loss_lever_off": 2.7116453647613525,
+              "loss_delta": 1.08729887008667,
+              "cos_term_vs_rest_TRUNK": 0.7381600401444676,
+              "cos_armON_vs_armOFF_TRUNK": 0.987645805386877,
+              "cos_term_vs_rest_ALL": 0.7211477133049766,
+              "norm_term_TRUNK": 5.6515056348128,
+              "norm_rest_TRUNK": 19.858159536411858,
+              "norm_full_TRUNK": 24.330458380591043,
+              "relative_pull_TRUNK": 0.28459362633532165,
+              "norm_term_masked_cells": 0.0,
+              "norm_rest_masked_cells": 4.338804366030623,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 6920,
+                  "norm_term": 0.0,
+                  "norm_rest": 4.338804366030623,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 5.425606598787334,
+                  "norm_rest": 18.26508789849036,
+                  "cos_term_vs_rest": 0.7769038567754074
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 290701,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 7324,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 56355,
+                  "norm_term": 1.4425065205551342,
+                  "norm_rest": 7.528868401446011,
+                  "cos_term_vs_rest": 0.45194603245076603
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 0.649217924638535,
+                  "norm_rest": 2.0122636079080025,
+                  "cos_term_vs_rest": 0.7223869853841495
+                }
+              }
+            },
+            "o6": {
+              "weights_zeroed": [
+                "o6_sigreg"
+              ],
+              "incumbent_weight": [
+                0.1
+              ],
+              "loss_full": 3.7989442348480225,
+              "loss_lever_off": 3.736067056655884,
+              "loss_delta": 0.06287717819213867,
+              "cos_term_vs_rest_TRUNK": -0.16367508041696785,
+              "cos_armON_vs_armOFF_TRUNK": 0.9996683973128009,
+              "cos_term_vs_rest_ALL": -0.16115250246126553,
+              "norm_term_TRUNK": 0.6350894777652426,
+              "norm_rest_TRUNK": 24.42633865655724,
+              "norm_full_TRUNK": 24.330458380591043,
+              "relative_pull_TRUNK": 0.026000191297386812,
+              "norm_term_masked_cells": 0.0,
+              "norm_rest_masked_cells": 4.338804366030623,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 6920,
+                  "norm_term": 0.0,
+                  "norm_rest": 4.338804366030623,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 0.6297581056492398,
+                  "norm_rest": 22.839589552670603,
+                  "cos_term_vs_rest": -0.17421906464582024
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 290701,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 7324,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 56355,
+                  "norm_term": 0.0,
+                  "norm_rest": 8.281385850123144,
+                  "cos_term_vs_rest": null
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 0.08211804391977197,
+                  "norm_rest": 2.53334119923388,
+                  "cos_term_vs_rest": -0.15964534899914098
+                }
+              }
+            }
+          },
+          "cos_matrix_trunk": {
+            "o1": {
+              "o1": 0.9999999999999685,
+              "o2": 0.5124938072252744,
+              "o3": null,
+              "o5": 0.46683316458709256,
+              "o6": -0.09814495934122788
+            },
+            "o2": {
+              "o1": 0.5124938072252744,
+              "o2": 0.99999999999997,
+              "o3": null,
+              "o5": 0.9123328693036102,
+              "o6": -0.19155509234998178
+            },
+            "o3": {
+              "o1": null,
+              "o2": null,
+              "o3": null,
+              "o5": null,
+              "o6": null
+            },
+            "o5": {
+              "o1": 0.46683316458709256,
+              "o2": 0.9123328693036102,
+              "o3": null,
+              "o5": 0.99999999999999,
+              "o6": -0.15878065004074726
+            },
+            "o6": {
+              "o1": -0.09814495934122788,
+              "o2": -0.19155509234998178,
+              "o3": null,
+              "o5": -0.15878065004074726,
+              "o6": 1.00000000000003
+            }
+          }
+        },
+        {
+          "build_seed": 1,
+          "batch_seed": 101,
+          "readout_grid": 2,
+          "n_cells": 4,
+          "o3_mask_rate": 1.0,
+          "o3_n_masked": 8,
+          "loss_full": 4.352365970611572,
+          "n_params_all": 613405,
+          "n_params_trunk": 143659,
+          "n_params_masked_cells": 6920,
+          "n_params_sigreg": 0,
+          "chance_cos_all": 0.0012768102020688794,
+          "chance_cos_trunk": 0.0026383571231733093,
+          "levers": {
+            "o1": {
+              "weights_zeroed": [
+                "o1_ctrl",
+                "o1_fact",
+                "o1_scene"
+              ],
+              "incumbent_weight": [
+                1.0,
+                1.0,
+                0.3
+              ],
+              "loss_full": 4.352365970611572,
+              "loss_lever_off": 3.3622426986694336,
+              "loss_delta": 0.9901232719421387,
+              "cos_term_vs_rest_TRUNK": 0.5693228388861279,
+              "cos_armON_vs_armOFF_TRUNK": 0.8905833799024417,
+              "cos_term_vs_rest_ALL": 0.5482461996886324,
+              "norm_term_TRUNK": 15.905403149280625,
+              "norm_rest_TRUNK": 16.548923722150537,
+              "norm_full_TRUNK": 28.749956011282045,
+              "relative_pull_TRUNK": 0.9611140528729027,
+              "norm_term_masked_cells": 0.0,
+              "norm_rest_masked_cells": 4.632676618168467,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 6920,
+                  "norm_term": 0.0,
+                  "norm_rest": 4.632676618168467,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 13.382551076315357,
+                  "norm_rest": 15.50156321530886,
+                  "cos_term_vs_rest": 0.6466568479657476
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 290701,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 7324,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 56355,
+                  "norm_term": 8.439228389880622,
+                  "norm_rest": 5.36878682179671,
+                  "cos_term_vs_rest": 0.29217206366470205
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 1.6335850802414766,
+                  "norm_rest": 2.1781970309045287,
+                  "cos_term_vs_rest": 0.6937379042083979
+                }
+              }
+            },
+            "o2": {
+              "weights_zeroed": [
+                "o2_nearfield"
+              ],
+              "incumbent_weight": [
+                1.0
+              ],
+              "loss_full": 4.352365970611572,
+              "loss_lever_off": 3.090599775314331,
+              "loss_delta": 1.2617661952972412,
+              "cos_term_vs_rest_TRUNK": 0.7206201201559538,
+              "cos_armON_vs_armOFF_TRUNK": 0.9717076743454559,
+              "cos_term_vs_rest_ALL": 0.7035105415876003,
+              "norm_term_TRUNK": 9.793833361023442,
+              "norm_rest_TRUNK": 20.878919519508035,
+              "norm_full_TRUNK": 28.749956011282045,
+              "relative_pull_TRUNK": 0.46907759531678156,
+              "norm_term_masked_cells": 0.0,
+              "norm_rest_masked_cells": 4.632676618168467,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 6920,
+                  "norm_term": 0.0,
+                  "norm_rest": 4.632676618168467,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 9.109069244842324,
+                  "norm_rest": 18.537631573547927,
+                  "cos_term_vs_rest": 0.7730363939068366
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 290701,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 7324,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 56355,
+                  "norm_term": 3.3752395168888425,
+                  "norm_rest": 9.300160921340762,
+                  "cos_term_vs_rest": 0.4561114037441644
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 1.245707670280182,
+                  "norm_rest": 2.4067618874028858,
+                  "cos_term_vs_rest": 0.8348336647063479
+                }
+              }
+            },
+            "o3": {
+              "weights_zeroed": [
+                "o3_masked"
+              ],
+              "incumbent_weight": [
+                1.0
+              ],
+              "loss_full": 4.352365970611572,
+              "loss_lever_off": 3.460750102996826,
+              "loss_delta": 0.8916158676147461,
+              "cos_term_vs_rest_TRUNK": null,
+              "cos_armON_vs_armOFF_TRUNK": 0.9999999999999747,
+              "cos_term_vs_rest_ALL": 0.0,
+              "norm_term_TRUNK": 0.0,
+              "norm_rest_TRUNK": 28.749956011282045,
+              "norm_full_TRUNK": 28.749956011282045,
+              "relative_pull_TRUNK": 0.0,
+              "norm_term_masked_cells": 4.632676618168467,
+              "norm_rest_masked_cells": 0.0,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 6920,
+                  "norm_term": 4.632676618168467,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 0.0,
+                  "norm_rest": 26.22383760114423,
+                  "cos_term_vs_rest": null
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 290701,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 7324,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 56355,
+                  "norm_term": 0.0,
+                  "norm_rest": 11.248117878630433,
+                  "cos_term_vs_rest": null
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 0.0,
+                  "norm_rest": 3.514278917203118,
+                  "cos_term_vs_rest": null
+                }
+              }
+            },
+            "o5": {
+              "weights_zeroed": [
+                "o5_rollout"
+              ],
+              "incumbent_weight": [
+                1.0
+              ],
+              "loss_full": 4.352365970611572,
+              "loss_lever_off": 3.2002644538879395,
+              "loss_delta": 1.1521015167236328,
+              "cos_term_vs_rest_TRUNK": 0.8009559771129221,
+              "cos_armON_vs_armOFF_TRUNK": 0.9888517882259912,
+              "cos_term_vs_rest_ALL": 0.7847832041862333,
+              "norm_term_TRUNK": 7.150145521954622,
+              "norm_rest_TRUNK": 22.702493620136508,
+              "norm_full_TRUNK": 28.749956011282045,
+              "relative_pull_TRUNK": 0.314949786644258,
+              "norm_term_masked_cells": 0.0,
+              "norm_rest_masked_cells": 4.632676618168467,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 6920,
+                  "norm_term": 0.0,
+                  "norm_rest": 4.632676618168467,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 6.769003244357514,
+                  "norm_rest": 20.254205181173774,
+                  "cos_term_vs_rest": 0.8447706318576398
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 290701,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 7324,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 56355,
+                  "norm_term": 2.0947318002305853,
+                  "norm_rest": 9.909793759586899,
+                  "cos_term_vs_rest": 0.576351937212902
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 0.9577446152851715,
+                  "norm_rest": 2.6393894547229255,
+                  "cos_term_vs_rest": 0.8834553797208649
+                }
+              }
+            },
+            "o6": {
+              "weights_zeroed": [
+                "o6_sigreg"
+              ],
+              "incumbent_weight": [
+                0.1
+              ],
+              "loss_full": 4.352365970611572,
+              "loss_lever_off": 4.29560661315918,
+              "loss_delta": 0.05675935745239258,
+              "cos_term_vs_rest_TRUNK": -0.061963890835988834,
+              "cos_armON_vs_armOFF_TRUNK": 0.9998024964646403,
+              "cos_term_vs_rest_ALL": -0.061176378516339225,
+              "norm_term_TRUNK": 0.5724710395805883,
+              "norm_rest_TRUNK": 28.77975032633256,
+              "norm_full_TRUNK": 28.749956011282045,
+              "relative_pull_TRUNK": 0.019891452604326294,
+              "norm_term_masked_cells": 0.0,
+              "norm_rest_masked_cells": 4.632676618168467,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 6920,
+                  "norm_term": 0.0,
+                  "norm_rest": 4.632676618168467,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 0.566927762345874,
+                  "norm_rest": 26.256675364353775,
+                  "cos_term_vs_rest": -0.06868196434079167
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 290701,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 7324,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 56355,
+                  "norm_term": 0.0,
+                  "norm_rest": 11.248117878630433,
+                  "cos_term_vs_rest": null
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 0.07947328758758945,
+                  "norm_rest": 3.512957706179859,
+                  "cos_term_vs_rest": 0.0053162691951809254
+                }
+              }
+            }
+          },
+          "cos_matrix_trunk": {
+            "o1": {
+              "o1": 0.9999999999999704,
+              "o2": 0.5378980564199837,
+              "o3": null,
+              "o5": 0.5829348910913325,
+              "o6": -0.025286519234765256
+            },
+            "o2": {
+              "o1": 0.5378980564199837,
+              "o2": 0.9999999999999699,
+              "o3": null,
+              "o5": 0.9144761032265709,
+              "o6": -0.08446665027037266
+            },
+            "o3": {
+              "o1": null,
+              "o2": null,
+              "o3": null,
+              "o5": null,
+              "o6": null
+            },
+            "o5": {
+              "o1": 0.5829348910913325,
+              "o2": 0.9144761032265709,
+              "o3": null,
+              "o5": 0.9999999999999878,
+              "o6": -0.07746122497505704
+            },
+            "o6": {
+              "o1": -0.025286519234765256,
+              "o2": -0.08446665027037266,
+              "o3": null,
+              "o5": -0.07746122497505704,
+              "o6": 1.0000000000000382
+            }
+          }
+        },
+        {
+          "build_seed": 2,
+          "batch_seed": 102,
+          "readout_grid": 2,
+          "n_cells": 4,
+          "o3_mask_rate": 1.0,
+          "o3_n_masked": 8,
+          "loss_full": 3.6555137634277344,
+          "n_params_all": 613405,
+          "n_params_trunk": 143659,
+          "n_params_masked_cells": 6920,
+          "n_params_sigreg": 0,
+          "chance_cos_all": 0.0012768102020688794,
+          "chance_cos_trunk": 0.0026383571231733093,
+          "levers": {
+            "o1": {
+              "weights_zeroed": [
+                "o1_ctrl",
+                "o1_fact",
+                "o1_scene"
+              ],
+              "incumbent_weight": [
+                1.0,
+                1.0,
+                0.3
+              ],
+              "loss_full": 3.6555137634277344,
+              "loss_lever_off": 3.011448383331299,
+              "loss_delta": 0.6440653800964355,
+              "cos_term_vs_rest_TRUNK": 0.3329304961167368,
+              "cos_armON_vs_armOFF_TRUNK": 0.7615075571154842,
+              "cos_term_vs_rest_ALL": 0.3288578522313649,
+              "norm_term_TRUNK": 15.640600246510926,
+              "norm_rest_TRUNK": 12.120325266354454,
+              "norm_full_TRUNK": 22.754282482685248,
+              "relative_pull_TRUNK": 1.2904439363462148,
+              "norm_term_masked_cells": 0.0,
+              "norm_rest_masked_cells": 1.9133914785936124,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 6920,
+                  "norm_term": 0.0,
+                  "norm_rest": 1.9133914785936124,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 13.694279246373517,
+                  "norm_rest": 11.485473814178357,
+                  "cos_term_vs_rest": 0.3603277890381212
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 290701,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 7324,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 56355,
+                  "norm_term": 7.352768633013748,
+                  "norm_rest": 3.6478542879779887,
+                  "cos_term_vs_rest": 0.22072060290227521
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 1.7412310078991444,
+                  "norm_rest": 1.2958915540020455,
+                  "cos_term_vs_rest": 0.22999252999432288
+                }
+              }
+            },
+            "o2": {
+              "weights_zeroed": [
+                "o2_nearfield"
+              ],
+              "incumbent_weight": [
+                1.0
+              ],
+              "loss_full": 3.6555137634277344,
+              "loss_lever_off": 2.607264995574951,
+              "loss_delta": 1.0482487678527832,
+              "cos_term_vs_rest_TRUNK": 0.5203822292958888,
+              "cos_armON_vs_armOFF_TRUNK": 0.9624517704974724,
+              "cos_term_vs_rest_ALL": 0.5175100120299508,
+              "norm_term_TRUNK": 7.233247870912907,
+              "norm_rest_TRUNK": 18.135845809661845,
+              "norm_full_TRUNK": 22.754282482685248,
+              "relative_pull_TRUNK": 0.39883708467897344,
+              "norm_term_masked_cells": 0.0,
+              "norm_rest_masked_cells": 1.9133914785936124,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 6920,
+                  "norm_term": 0.0,
+                  "norm_rest": 1.9133914785936124,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 6.830939862493506,
+                  "norm_rest": 16.21979707302431,
+                  "cos_term_vs_rest": 0.5553171854853396
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 290701,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 7324,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 56355,
+                  "norm_term": 2.2562886553775914,
+                  "norm_rest": 7.8649246724490895,
+                  "cos_term_vs_rest": 0.3455073524413861
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 0.7531911182944023,
+                  "norm_rest": 1.99249743749922,
+                  "cos_term_vs_rest": 0.40373952316383893
+                }
+              }
+            },
+            "o3": {
+              "weights_zeroed": [
+                "o3_masked"
+              ],
+              "incumbent_weight": [
+                1.0
+              ],
+              "loss_full": 3.6555137634277344,
+              "loss_lever_off": 2.757943630218506,
+              "loss_delta": 0.8975701332092285,
+              "cos_term_vs_rest_TRUNK": null,
+              "cos_armON_vs_armOFF_TRUNK": 0.9999999999999726,
+              "cos_term_vs_rest_ALL": 0.0,
+              "norm_term_TRUNK": 0.0,
+              "norm_rest_TRUNK": 22.754282482685248,
+              "norm_full_TRUNK": 22.754282482685248,
+              "relative_pull_TRUNK": 0.0,
+              "norm_term_masked_cells": 1.9133914785936124,
+              "norm_rest_masked_cells": 0.0,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 6920,
+                  "norm_term": 1.9133914785936124,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 0.0,
+                  "norm_rest": 20.803795600075283,
+                  "cos_term_vs_rest": null
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 290701,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 7324,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 56355,
+                  "norm_term": 0.0,
+                  "norm_rest": 8.900017297324618,
+                  "cos_term_vs_rest": null
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 0.0,
+                  "norm_rest": 2.397738943138818,
+                  "cos_term_vs_rest": null
+                }
+              }
+            },
+            "o5": {
+              "weights_zeroed": [
+                "o5_rollout"
+              ],
+              "incumbent_weight": [
+                1.0
+              ],
+              "loss_full": 3.6555137634277344,
+              "loss_lever_off": 2.646002769470215,
+              "loss_delta": 1.0095109939575195,
+              "cos_term_vs_rest_TRUNK": 0.5701233741720606,
+              "cos_armON_vs_armOFF_TRUNK": 0.9815782418381909,
+              "cos_term_vs_rest_ALL": 0.5673472889065151,
+              "norm_term_TRUNK": 5.291703363181346,
+              "norm_rest_TRUNK": 19.318184817135112,
+              "norm_full_TRUNK": 22.754282482685248,
+              "relative_pull_TRUNK": 0.2739234256878854,
+              "norm_term_masked_cells": 0.0,
+              "norm_rest_masked_cells": 1.9133914785936124,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 6920,
+                  "norm_term": 0.0,
+                  "norm_rest": 1.9133914785936124,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 5.020566701754392,
+                  "norm_rest": 17.41951994804158,
+                  "cos_term_vs_rest": 0.5954554902496068
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 290701,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 7324,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 56355,
+                  "norm_term": 1.5620939273545202,
+                  "norm_rest": 8.101889208812091,
+                  "cos_term_vs_rest": 0.43969813328255075
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 0.5965710680729982,
+                  "norm_rest": 2.027801927433547,
+                  "cos_term_vs_rest": 0.5295712691653607
+                }
+              }
+            },
+            "o6": {
+              "weights_zeroed": [
+                "o6_sigreg"
+              ],
+              "incumbent_weight": [
+                0.1
+              ],
+              "loss_full": 3.6555137634277344,
+              "loss_lever_off": 3.599395275115967,
+              "loss_delta": 0.05611848831176758,
+              "cos_term_vs_rest_TRUNK": 0.15102743616023243,
+              "cos_armON_vs_armOFF_TRUNK": 0.9994626218272585,
+              "cos_term_vs_rest_ALL": 0.15049038464877534,
+              "norm_term_TRUNK": 0.7545189223246491,
+              "norm_rest_TRUNK": 22.62810176957067,
+              "norm_full_TRUNK": 22.754282482685248,
+              "relative_pull_TRUNK": 0.033344331310162956,
+              "norm_term_masked_cells": 0.0,
+              "norm_rest_masked_cells": 1.9133914785936124,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 6920,
+                  "norm_term": 0.0,
+                  "norm_rest": 1.9133914785936124,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 0.7486802787462266,
+                  "norm_rest": 20.66687888227145,
+                  "cos_term_vs_rest": 0.16537014893230934
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 290701,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 7324,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 56355,
+                  "norm_term": 0.0,
+                  "norm_rest": 8.900017297324618,
+                  "cos_term_vs_rest": null
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 0.09368374652213025,
+                  "norm_rest": 2.387634617542866,
+                  "cos_term_vs_rest": 0.08846538783458359
+                }
+              }
+            }
+          },
+          "cos_matrix_trunk": {
+            "o1": {
+              "o1": 0.9999999999999771,
+              "o2": 0.31318853381100953,
+              "o3": null,
+              "o5": 0.3116681967207873,
+              "o6": 0.15983625917390953
+            },
+            "o2": {
+              "o1": 0.31318853381100953,
+              "o2": 0.999999999999981,
+              "o3": null,
+              "o5": 0.844211125628651,
+              "o6": 0.09515985296055322
+            },
+            "o3": {
+              "o1": null,
+              "o2": null,
+              "o3": null,
+              "o5": null,
+              "o6": null
+            },
+            "o5": {
+              "o1": 0.3116681967207873,
+              "o2": 0.844211125628651,
+              "o3": null,
+              "o5": 0.9999999999999769,
+              "o6": 0.04331564417479173
+            },
+            "o6": {
+              "o1": 0.15983625917390953,
+              "o2": 0.09515985296055322,
+              "o3": null,
+              "o5": 0.04331564417479173,
+              "o6": 1.0000000000000648
+            }
+          }
+        },
+        {
+          "build_seed": 3,
+          "batch_seed": 103,
+          "readout_grid": 2,
+          "n_cells": 4,
+          "o3_mask_rate": 1.0,
+          "o3_n_masked": 8,
+          "loss_full": 3.883657932281494,
+          "n_params_all": 613405,
+          "n_params_trunk": 143659,
+          "n_params_masked_cells": 6920,
+          "n_params_sigreg": 0,
+          "chance_cos_all": 0.0012768102020688794,
+          "chance_cos_trunk": 0.0026383571231733093,
+          "levers": {
+            "o1": {
+              "weights_zeroed": [
+                "o1_ctrl",
+                "o1_fact",
+                "o1_scene"
+              ],
+              "incumbent_weight": [
+                1.0,
+                1.0,
+                0.3
+              ],
+              "loss_full": 3.883657932281494,
+              "loss_lever_off": 3.15818452835083,
+              "loss_delta": 0.7254734039306641,
+              "cos_term_vs_rest_TRUNK": 0.49983817114967183,
+              "cos_armON_vs_armOFF_TRUNK": 0.8135689725889933,
+              "cos_term_vs_rest_ALL": 0.42578555331684065,
+              "norm_term_TRUNK": 14.746741719686653,
+              "norm_rest_TRUNK": 10.499724860765436,
+              "norm_full_TRUNK": 21.96581958517855,
+              "relative_pull_TRUNK": 1.4044883951951106,
+              "norm_term_masked_cells": 0.0,
+              "norm_rest_masked_cells": 6.45616235896285,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 6920,
+                  "norm_term": 0.0,
+                  "norm_rest": 6.45616235896285,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 11.827520577595042,
+                  "norm_rest": 9.702314221925096,
+                  "cos_term_vs_rest": 0.600663166132783
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 290701,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 7324,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 56355,
+                  "norm_term": 8.602494007089893,
+                  "norm_rest": 3.79689002603311,
+                  "cos_term_vs_rest": 0.21038327330468945
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 1.8903029364877004,
+                  "norm_rest": 1.3011329759157904,
+                  "cos_term_vs_rest": 0.6476522550451971
+                }
+              }
+            },
+            "o2": {
+              "weights_zeroed": [
+                "o2_nearfield"
+              ],
+              "incumbent_weight": [
+                1.0
+              ],
+              "loss_full": 3.883657932281494,
+              "loss_lever_off": 2.658069372177124,
+              "loss_delta": 1.2255885601043701,
+              "cos_term_vs_rest_TRUNK": 0.5978450536882763,
+              "cos_armON_vs_armOFF_TRUNK": 0.9706208703541429,
+              "cos_term_vs_rest_ALL": 0.5604222440219894,
+              "norm_term_TRUNK": 6.593323358303924,
+              "norm_rest_TRUNK": 17.378697166775257,
+              "norm_full_TRUNK": 21.96581958517855,
+              "relative_pull_TRUNK": 0.3793911186224648,
+              "norm_term_masked_cells": 0.0,
+              "norm_rest_masked_cells": 6.45616235896285,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 6920,
+                  "norm_term": 0.0,
+                  "norm_rest": 6.45616235896285,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 6.060125262219888,
+                  "norm_rest": 14.675419420123129,
+                  "cos_term_vs_rest": 0.673467365503767
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 290701,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 7324,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 56355,
+                  "norm_term": 2.4637468161981437,
+                  "norm_rest": 9.030504204573397,
+                  "cos_term_vs_rest": 0.32681659724708284
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 0.8226459378333691,
+                  "norm_rest": 2.258577842168761,
+                  "cos_term_vs_rest": 0.7196192702605911
+                }
+              }
+            },
+            "o3": {
+              "weights_zeroed": [
+                "o3_masked"
+              ],
+              "incumbent_weight": [
+                1.0
+              ],
+              "loss_full": 3.883657932281494,
+              "loss_lever_off": 3.1452271938323975,
+              "loss_delta": 0.7384307384490967,
+              "cos_term_vs_rest_TRUNK": null,
+              "cos_armON_vs_armOFF_TRUNK": 0.9999999999999694,
+              "cos_term_vs_rest_ALL": 0.0,
+              "norm_term_TRUNK": 0.0,
+              "norm_rest_TRUNK": 21.96581958517855,
+              "norm_full_TRUNK": 21.96581958517855,
+              "relative_pull_TRUNK": 0.0,
+              "norm_term_masked_cells": 6.45616235896285,
+              "norm_rest_masked_cells": 0.0,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 6920,
+                  "norm_term": 6.45616235896285,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 0.0,
+                  "norm_rest": 19.284256064439408,
+                  "cos_term_vs_rest": null
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 290701,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 7324,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 56355,
+                  "norm_term": 0.0,
+                  "norm_rest": 10.107554523514212,
+                  "cos_term_vs_rest": null
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 0.0,
+                  "norm_rest": 2.9072391790028584,
+                  "cos_term_vs_rest": null
+                }
+              }
+            },
+            "o5": {
+              "weights_zeroed": [
+                "o5_rollout"
+              ],
+              "incumbent_weight": [
+                1.0
+              ],
+              "loss_full": 3.883657932281494,
+              "loss_lever_off": 2.7486910820007324,
+              "loss_delta": 1.1349668502807617,
+              "cos_term_vs_rest_TRUNK": 0.7139949508083451,
+              "cos_armON_vs_armOFF_TRUNK": 0.9911219372338568,
+              "cos_term_vs_rest_ALL": 0.6752572432628448,
+              "norm_term_TRUNK": 4.171227020087263,
+              "norm_rest_TRUNK": 18.79257062915413,
+              "norm_full_TRUNK": 21.96581958517855,
+              "relative_pull_TRUNK": 0.2219614922514203,
+              "norm_term_masked_cells": 0.0,
+              "norm_rest_masked_cells": 6.45616235896285,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 6920,
+                  "norm_term": 0.0,
+                  "norm_rest": 6.45616235896285,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 3.8897547691774914,
+                  "norm_rest": 16.082762280842744,
+                  "cos_term_vs_rest": 0.7840491639544861
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 290701,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 7324,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 56355,
+                  "norm_term": 1.415396652138486,
+                  "norm_rest": 9.395348777579523,
+                  "cos_term_vs_rest": 0.44693195656088963
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 0.5153591038122256,
+                  "norm_rest": 2.496575578122987,
+                  "cos_term_vs_rest": 0.7591733978420394
+                }
+              }
+            },
+            "o6": {
+              "weights_zeroed": [
+                "o6_sigreg"
+              ],
+              "incumbent_weight": [
+                0.1
+              ],
+              "loss_full": 3.883657932281494,
+              "loss_lever_off": 3.8244590759277344,
+              "loss_delta": 0.059198856353759766,
+              "cos_term_vs_rest_TRUNK": 0.2293420835262761,
+              "cos_armON_vs_armOFF_TRUNK": 0.999825090090834,
+              "cos_term_vs_rest_ALL": 0.2199540619588559,
+              "norm_term_TRUNK": 0.42206897462118803,
+              "norm_rest_TRUNK": 21.86517936763915,
+              "norm_full_TRUNK": 21.96581958517855,
+              "relative_pull_TRUNK": 0.019303247758664974,
+              "norm_term_masked_cells": 0.0,
+              "norm_rest_masked_cells": 6.45616235896285,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 6920,
+                  "norm_term": 0.0,
+                  "norm_rest": 6.45616235896285,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 0.41935615600634923,
+                  "norm_rest": 19.171032086269957,
+                  "cos_term_vs_rest": 0.25985485105073364
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 290701,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 7324,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 56355,
+                  "norm_term": 0.0,
+                  "norm_rest": 10.107554523514212,
+                  "cos_term_vs_rest": null
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 0.04777691657442526,
+                  "norm_rest": 2.8974021261164813,
+                  "cos_term_vs_rest": 0.19800025154204712
+                }
+              }
+            }
+          },
+          "cos_matrix_trunk": {
+            "o1": {
+              "o1": 0.9999999999999745,
+              "o2": 0.4563603219550916,
+              "o3": null,
+              "o5": 0.5233838827443651,
+              "o6": 0.13286355305127912
+            },
+            "o2": {
+              "o1": 0.4563603219550916,
+              "o2": 0.9999999999999677,
+              "o3": null,
+              "o5": 0.8474926399883091,
+              "o6": 0.29581641257495755
+            },
+            "o3": {
+              "o1": null,
+              "o2": null,
+              "o3": null,
+              "o5": null,
+              "o6": null
+            },
+            "o5": {
+              "o1": 0.5233838827443651,
+              "o2": 0.8474926399883091,
+              "o3": null,
+              "o5": 1.0000000000000093,
+              "o6": 0.2648830315546816
+            },
+            "o6": {
+              "o1": 0.13286355305127912,
+              "o2": 0.29581641257495755,
+              "o3": null,
+              "o5": 0.2648830315546816,
+              "o6": 1.0000000000000688
+            }
+          }
+        },
+        {
+          "build_seed": 4,
+          "batch_seed": 104,
+          "readout_grid": 2,
+          "n_cells": 4,
+          "o3_mask_rate": 1.0,
+          "o3_n_masked": 8,
+          "loss_full": 4.1631669998168945,
+          "n_params_all": 613405,
+          "n_params_trunk": 143659,
+          "n_params_masked_cells": 6920,
+          "n_params_sigreg": 0,
+          "chance_cos_all": 0.0012768102020688794,
+          "chance_cos_trunk": 0.0026383571231733093,
+          "levers": {
+            "o1": {
+              "weights_zeroed": [
+                "o1_ctrl",
+                "o1_fact",
+                "o1_scene"
+              ],
+              "incumbent_weight": [
+                1.0,
+                1.0,
+                0.3
+              ],
+              "loss_full": 4.1631669998168945,
+              "loss_lever_off": 3.298159599304199,
+              "loss_delta": 0.8650074005126953,
+              "cos_term_vs_rest_TRUNK": 0.5770483634891003,
+              "cos_armON_vs_armOFF_TRUNK": 0.8916999044247803,
+              "cos_term_vs_rest_ALL": 0.5631985670403958,
+              "norm_term_TRUNK": 15.209824952940131,
+              "norm_rest_TRUNK": 15.695240030764126,
+              "norm_full_TRUNK": 27.44426068423119,
+              "relative_pull_TRUNK": 0.9690724654817298,
+              "norm_term_masked_cells": 0.0,
+              "norm_rest_masked_cells": 3.502092170053755,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 6920,
+                  "norm_term": 0.0,
+                  "norm_rest": 3.502092170053755,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 13.345472540998486,
+                  "norm_rest": 15.058151711822648,
+                  "cos_term_vs_rest": 0.6270110476382137
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 290701,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 7324,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 56355,
+                  "norm_term": 7.081574736826598,
+                  "norm_rest": 4.020711057759216,
+                  "cos_term_vs_rest": 0.32690735531215964
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 1.7573949480049997,
+                  "norm_rest": 1.851083260430422,
+                  "cos_term_vs_rest": 0.7509957770260713
+                }
+              }
+            },
+            "o2": {
+              "weights_zeroed": [
+                "o2_nearfield"
+              ],
+              "incumbent_weight": [
+                1.0
+              ],
+              "loss_full": 4.1631669998168945,
+              "loss_lever_off": 2.930828094482422,
+              "loss_delta": 1.2323389053344727,
+              "cos_term_vs_rest_TRUNK": 0.7448223262749993,
+              "cos_armON_vs_armOFF_TRUNK": 0.97239260444407,
+              "cos_term_vs_rest_ALL": 0.7331380799490972,
+              "norm_term_TRUNK": 9.597629832472688,
+              "norm_rest_TRUNK": 19.538067145307117,
+              "norm_full_TRUNK": 27.44426068423119,
+              "relative_pull_TRUNK": 0.4912271905451998,
+              "norm_term_masked_cells": 0.0,
+              "norm_rest_masked_cells": 3.502092170053755,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 6920,
+                  "norm_term": 0.0,
+                  "norm_rest": 3.502092170053755,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 9.201944292914206,
+                  "norm_rest": 17.77234912657685,
+                  "cos_term_vs_rest": 0.7836709597759766
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 290701,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 7324,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 56355,
+                  "norm_term": 2.4873380067261963,
+                  "norm_rest": 7.7652513337506734,
+                  "cos_term_vs_rest": 0.4774804535244266
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 1.11886964011361,
+                  "norm_rest": 2.3623179339945723,
+                  "cos_term_vs_rest": 0.8642487166860925
+                }
+              }
+            },
+            "o3": {
+              "weights_zeroed": [
+                "o3_masked"
+              ],
+              "incumbent_weight": [
+                1.0
+              ],
+              "loss_full": 4.1631669998168945,
+              "loss_lever_off": 3.280911922454834,
+              "loss_delta": 0.8822550773620605,
+              "cos_term_vs_rest_TRUNK": null,
+              "cos_armON_vs_armOFF_TRUNK": 0.9999999999999707,
+              "cos_term_vs_rest_ALL": 0.0,
+              "norm_term_TRUNK": 0.0,
+              "norm_rest_TRUNK": 27.44426068423119,
+              "norm_full_TRUNK": 27.44426068423119,
+              "relative_pull_TRUNK": 0.0,
+              "norm_term_masked_cells": 3.502092170053755,
+              "norm_rest_masked_cells": 0.0,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 6920,
+                  "norm_term": 3.502092170053755,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 0.0,
+                  "norm_rest": 25.62919294280381,
+                  "cos_term_vs_rest": null
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 290701,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 7324,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 56355,
+                  "norm_term": 0.0,
+                  "norm_rest": 9.215794166641246,
+                  "cos_term_vs_rest": null
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 0.0,
+                  "norm_rest": 3.3765443107811586,
+                  "cos_term_vs_rest": null
+                }
+              }
+            },
+            "o5": {
+              "weights_zeroed": [
+                "o5_rollout"
+              ],
+              "incumbent_weight": [
+                1.0
+              ],
+              "loss_full": 4.1631669998168945,
+              "loss_lever_off": 3.034956932067871,
+              "loss_delta": 1.1282100677490234,
+              "cos_term_vs_rest_TRUNK": 0.7664858912380865,
+              "cos_armON_vs_armOFF_TRUNK": 0.9886055971421508,
+              "cos_term_vs_rest_ALL": 0.7571241508082854,
+              "norm_term_TRUNK": 6.432206823366732,
+              "norm_rest_TRUNK": 22.201353942255952,
+              "norm_full_TRUNK": 27.44426068423119,
+              "relative_pull_TRUNK": 0.28972137645732854,
+              "norm_term_masked_cells": 0.0,
+              "norm_rest_masked_cells": 3.502092170053755,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 6920,
+                  "norm_term": 0.0,
+                  "norm_rest": 3.502092170053755,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 6.172235680497249,
+                  "norm_rest": 20.446494514647377,
+                  "cos_term_vs_rest": 0.7951623317483801
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 290701,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 7324,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 56355,
+                  "norm_term": 1.6415214938641691,
+                  "norm_rest": 8.215580349782584,
+                  "cos_term_vs_rest": 0.5465094276605013
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 0.7630193366776452,
+                  "norm_rest": 2.7102063478786698,
+                  "cos_term_vs_rest": 0.8398780375149438
+                }
+              }
+            },
+            "o6": {
+              "weights_zeroed": [
+                "o6_sigreg"
+              ],
+              "incumbent_weight": [
+                0.1
+              ],
+              "loss_full": 4.1631669998168945,
+              "loss_lever_off": 4.107810974121094,
+              "loss_delta": 0.05535602569580078,
+              "cos_term_vs_rest_TRUNK": 0.06188880390005821,
+              "cos_armON_vs_armOFF_TRUNK": 0.9997328882436614,
+              "cos_term_vs_rest_ALL": 0.061389310622608266,
+              "norm_term_TRUNK": 0.6355026289336191,
+              "norm_rest_TRUNK": 27.397599501978927,
+              "norm_full_TRUNK": 27.44426068423119,
+              "relative_pull_TRUNK": 0.023195558752792073,
+              "norm_term_masked_cells": 0.0,
+              "norm_rest_masked_cells": 3.502092170053755,
+              "norm_term_sigreg": 0.0,
+              "norm_rest_sigreg": 0.0,
+              "per_group": {
+                "aux": {
+                  "n_params": 6920,
+                  "norm_term": 0.0,
+                  "norm_rest": 3.502092170053755,
+                  "cos_term_vs_rest": null
+                },
+                "encoder": {
+                  "n_params": 87040,
+                  "norm_term": 0.6308901410990054,
+                  "norm_rest": 25.579668150669907,
+                  "cos_term_vs_rest": 0.06624399154131093
+                },
+                "layer_str": {
+                  "n_params": 164801,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "layer_tac": {
+                  "n_params": 290701,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "planner": {
+                  "n_params": 7324,
+                  "norm_term": 0.0,
+                  "norm_rest": 0.0,
+                  "cos_term_vs_rest": null
+                },
+                "predictor_op": {
+                  "n_params": 56355,
+                  "norm_term": 0.0,
+                  "norm_rest": 9.215794166641246,
+                  "cos_term_vs_rest": null
+                },
+                "readout": {
+                  "n_params": 264,
+                  "norm_term": 0.07642788264513206,
+                  "norm_rest": 3.3731548512534872,
+                  "cos_term_vs_rest": 0.03304190679789601
+                }
+              }
+            }
+          },
+          "cos_matrix_trunk": {
+            "o1": {
+              "o1": 0.9999999999999716,
+              "o2": 0.5728158085512597,
+              "o3": null,
+              "o5": 0.5475075655025116,
+              "o6": 0.05910023562685163
+            },
+            "o2": {
+              "o1": 0.5728158085512597,
+              "o2": 0.9999999999999608,
+              "o3": null,
+              "o5": 0.9025534092026042,
+              "o6": 0.05436995682804362
+            },
+            "o3": {
+              "o1": null,
+              "o2": null,
+              "o3": null,
+              "o5": null,
+              "o6": null
+            },
+            "o5": {
+              "o1": 0.5475075655025116,
+              "o2": 0.9025534092026042,
+              "o3": null,
+              "o5": 0.9999999999999831,
+              "o6": 0.04273464836440212
+            },
+            "o6": {
+              "o1": 0.05910023562685163,
+              "o2": 0.05436995682804362,
+              "o3": null,
+              "o5": 0.04273464836440212,
+              "o6": 1.0000000000000275
+            }
+          }
+        }
+      ]
+    }
+  }
+}

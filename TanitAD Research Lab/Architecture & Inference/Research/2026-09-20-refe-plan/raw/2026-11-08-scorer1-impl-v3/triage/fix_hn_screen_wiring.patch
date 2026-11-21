@@ -1,0 +1,22 @@
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_hn_screen_wiring.py
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_hn_screen_wiring.py
+@@ -545,7 +545,9 @@
+         return r2
+ 
+     if "PIN" in groups:
+-        mod = load_mod(SF, "sft_wire_pin_new", SRC_PATH)
++        import scorer1_layer as SL1                       # SCORER1 (v2) sits ON TOP of P6-HN-S: the P6-HN-S pins compare the trainer WITHOUT the --pair-*/--navtest-* edits (peel to the tip blob, test_scorer1_layer)
++        SF_NO_S1 = SL1.peel(SF)
++        mod = load_mod(SF_NO_S1, "sft_wire_pin_new", SRC_PATH)
+         pre_mod = load_mod(PRE, "sft_wire_pin_pre", SRC_PATH)
+         import rls1_checks as RC
+         check(bad, "PIN_peel_equals_tip_blob", lambda: blob_sha1(HL.peel(SF)) == TIP_BLOB == HL.TIP_TRAINER_BLOB)
+@@ -563,7 +565,7 @@
+             def nest(src):
+                 m = next(n for n in ast.parse(src).body if isinstance(n, ast.FunctionDef) and n.name == "main")
+                 return {n.name: ast.dump(n) for n in m.body if isinstance(n, ast.FunctionDef)}
+-            a_, b_ = nest(PRE), nest(SF)
++            a_, b_ = nest(PRE), nest(SF_NO_S1)
+             return set(a_) <= set(b_) and all(a_[k] == b_[k] for k in a_) and len(a_) >= 5
+         check(bad, "PIN_every_nested_function_of_main_is_AST_identical", nested_identical)
+         check(bad, "PIN_loop_rebinding_only_inside_if", lambda: SF.count("\n    def fwd(batch):") == 1 and SF.count("\n        def fwd(batch):") == 1)

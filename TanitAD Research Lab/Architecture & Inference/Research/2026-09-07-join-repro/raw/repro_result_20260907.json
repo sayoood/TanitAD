@@ -1,0 +1,160 @@
+{
+ "_evidence_class": "MEASURED (ours; the build was re-executed end to end and both artifacts were streamed and hashed)",
+ "task": "Does re-running the recorded argv regenerate b1train_agents.jsonl.xz bit for bit?",
+ "date": "2026-09-07",
+ "agent": "Architecture & Inference",
+ "VERDICT": "1 BYTE-IDENTICAL",
+ "verdict_long": "Re-executing the recorded argv on the dev box regenerated the 317 MB B1 TRAIN agent join BIT FOR BIT. The decompressed stream is identical (the claim that matters) AND the .xz container is identical (the digest the receipts quote). No qualification is needed: this is form (1), not form (2).",
+
+ "gpu_touched": false,
+ "hf_pulled": false,
+ "pod_writes": 0,
+ "pod_reads_readonly_ssh_n": 3,
+ "live_artifact_opened_for_writing": false,
+
+ "headline_decompressed_stream": {
+  "_why_this_is_the_headline": ".xz is not deterministic across preset/threads, so a container digest alone can neither prove nor disprove anything about the data. The decompressed stream is the claim a consumer cares about.",
+  "original_sha256": "0283df30bcc9618723d4ae6e96076a80c388535bdd0abc9f205dc66ed55737fc",
+  "rebuild_sha256": "0283df30bcc9618723d4ae6e96076a80c388535bdd0abc9f205dc66ed55737fc",
+  "identical": true,
+  "original_md5": "8a9277a77b132e2631b133f9bea0758e",
+  "rebuild_md5": "8a9277a77b132e2631b133f9bea0758e",
+  "bytes_both": 3031865540,
+  "tie_to_the_versioned_record": "the COMMITTED sidecar's digest_scope.note names 8a9277a77b132e2631b133f9bea0758e as 'the other candidate' it hashed when deciding scope. Both the original AND the rebuild hash to exactly that, so the decompressed axis is pinned to a digest that is IN GIT -- not only to a local file."
+ },
+
+ "container_beside_it": {
+  "original_xz_md5": "1c985e6d6ad34e605c4ebd30cb353558",
+  "rebuild_xz_md5": "1c985e6d6ad34e605c4ebd30cb353558",
+  "identical": true,
+  "bytes_both": 317028572,
+  "measured_by": "GNU md5sum on the file, INDEPENDENT of the builder's own hashlib print (which also said 1c985e6d...)",
+  "xz_fingerprint_both": {
+   "first_32_bytes": "fd377a585a000004e6d6b4460200210116000000742fe5a3e8ff7beffe5d003d",
+   "last_32_bytes": "fc8f28600001b4f1959701c4b1daa50b91827f4714173b30030000000004595a",
+   "decoded": "single stream, single block, filter 0x21 (LZMA2), dict 8 MiB, check CRC64 -- exactly lzma preset=6, single-threaded",
+   "why_recorded": "makes 'the compressor settings changed' a testable claim rather than an escape hatch"
+  }
+ },
+
+ "counts_both_sides": {
+  "n_lines": {"original": 849263, "rebuild": 849263, "equal": true},
+  "n_clips": {"original": 4427, "rebuild": 4427, "equal": true},
+  "n_clips_offered": 4572,
+  "n_agent_boxes": {"original": 28053187, "rebuild": 28053187, "equal": true},
+  "decompressed_bytes": {"original": 3031865540, "rebuild": 3031865540, "equal": true}
+ },
+
+ "structural_digests_both_sides": {
+  "clipset_sha256": {"value": "300ad2d3549c7488f2a38a2b3bd296573356651c9c03afa5b947c8ee510c6a0c", "equal": true,
+                     "meaning": "sha256 over the SORTED clip ids -- clip SET identity"},
+  "key_seq_sha256": {"value": "27aca065f9b444813a83049b8c096818230d5ac6ba3c5dfff2dcf890f4f9e4b0", "equal": true,
+                     "meaning": "sha256 over (clip_id, frame) in FILE ORDER -- would catch a pure re-ordering"},
+  "multiset_sha256": {"value": "a8267ccf34d14f5a90113a42150928cb954e14a844e14bf8e95ffe03f3613620", "equal": true,
+                      "meaning": "sha256 over the SORTED per-line digests -- content identity INDEPENDENT of row order; this is the 'sorted decompressed records' hash"},
+  "clip_id_lists_identical": true,
+  "clips_only_in_original": 0,
+  "clips_only_in_rebuild": 0
+ },
+
+ "controls": {
+  "_why": "a verification that cannot fail proves nothing",
+  "all_digests_full_length": "32 hex for every md5, 64 for every sha256 -- asserted before any comparison was allowed to return 'match'",
+  "no_digest_is_the_empty_digest": "d41d8cd98f00b204e9800998ecf8427e and e3b0c442...b855 both explicitly excluded",
+  "nonzero_n_lines_both": true,
+  "nonzero_n_agent_boxes_both": true,
+  "nonzero_n_clips_both": true,
+  "comparator_not_stuck_on_equal": "sha256('x') != sha256('y') asserted in the same breath",
+  "dep_chain_control": "0 commits touched the 5 relevant modules since the build commit, against 34 commits total on the branch in that window -- the non-zero half proves the log was really read",
+  "eol_comparator_control": "two genuinely different source files hashed unequal, so the CR-stripping comparison is not stuck-on-equal"
+ },
+
+ "build_log_comparison": {
+  "_why": "4,602 lines of per-clip statistics are an independent, per-clip check that the JOIN ITSELF reproduced, not just the final digest",
+  "original_lines": 4603,
+  "rebuild_lines": 4604,
+  "lines_that_differ": 3,
+  "differences": [
+   "the --out / meta PATHS in B1_JOIN_DONE (intended: --out was redirected)",
+   "wall_s 1806.1 -> 1868.9 (a clock, not data)",
+   "the rebuild prints ONE EXTRA line: '[b1join] digest_scope declared: md5(compressed of ...) = 1c985e6d...'. The original build predates that print; its digest_scope was written post-hoc by backfill_digest_scope.py. See sidecar_differences."
+  ],
+  "identical_prefix": "all 4,602 preceding lines are byte-identical, including every per-clip boxes/vis/dt/misjoin statistic, the ALIGNMENT GATE line (true_max=0.1872, misjoin+1 min=0.8193, sep=4.4x, PASS) and the per-clip gate line (EXCLUDED 7 of 4434 probed clips, 0.1579%)"
+ },
+
+ "sidecar_differences": {
+  "_why": "the ARTIFACT is byte-identical; the SIDECAR is not, and saying so is the difference between an honest result and an overclaim",
+  "keys_compared": 12,
+  "keys_identical": ["_evidence_class", "alignment_proof", "builder", "content_assertion", "conventions", "corpus", "key", "per_clip", "task"],
+  "keys_that_differ": {
+   "summary.wall_s": "1806.1 -> 1868.9 (a clock)",
+   "args.out / args.argv[-1]": "the --out path I deliberately redirected",
+   "digest_scope.declared_by": "'backfill-MEASURED' -> 'build_b1_agent_join'; the DIGEST ITSELF is identical (1c985e6d...). The original's digest_scope was backfilled by backfill_digest_scope.py after the build; the current builder emits it natively."
+  },
+  "content_assertion_IDENTICAL_on_both": {
+   "n_lines": 849263, "n_clips": 4427, "n_agent_boxes": 28053187,
+   "n_visible_boxes": 11270675, "visible_frac": 0.4018,
+   "mean_abs_cx_m": 49.7568, "mean_abs_cy_m": 22.1761, "unique_keys": 849263
+  },
+  "on_disk_size_difference_is_LINE_ENDINGS": {
+   "original_on_disk_bytes": 4482188,
+   "rebuild_on_disk_bytes": 4672630,
+   "delta": 190442,
+   "explanation": "Path.write_text() translates \\n to \\r\\n on Windows, so the builder writes CRLF; the original file was rewritten LF by backfill_digest_scope.py. Re-serialised at indent=1 the two are 4,482,188 vs 4,482,109 UTF-8 bytes -- a 79-byte difference that is entirely the digest_scope note above.",
+   "warning": "this is the same core.autocrlf trap that made 174 pod files look like drift; a size delta of one CR per line is NOT a content delta"
+  }
+ },
+
+ "reproduction_recipe_as_executed": {
+  "interpreter": "C:/Users/Admin/venvs/tanitad/Scripts/python.exe (CPython 3.13.5), numpy 2.5.1, pandas 3.0.3",
+  "env": {"CUDA_VISIBLE_DEVICES": "", "PYTHONIOENCODING": "utf-8", "PYTHONHASHSEED": "unset"},
+  "cwd": "a private dir holding b1_train_clips.json (md5 533d5353ffd41ed011878d615781e9f4) -- the argv's --clips is RELATIVE, so cwd is part of the recipe and was not recorded before now",
+  "code_tree": "git -c core.autocrlf=false -c core.eol=lf archive HEAD stack taniteval, extracted to a PRIVATE dir; every module verified at runtime to resolve inside it",
+  "why_not_the_shared_mirror": "C:/Users/Admin/tanitad-wt is re-synced from the repo by siblings mid-run and silently drops edits; a 31-minute build must not read code from a surface another agent rewrites",
+  "wall_s": 1868.9,
+  "out": "C:/Users/Admin/tanitad-caches/join-repro-20260907/out/b1train_agents.jsonl.xz (DELETED after comparison)"
+ },
+
+ "artifact_copies_measured": {
+  "_correction": "the compose receipt says 'exactly two unversioned places'. Measured: the exact bytes are in FOUR places, two of them embedded in the combined launch file.",
+  "1_devbox_cache": {"path": "C:/Users/Admin/tanitad-caches/b1-train-join-20260906/b1train_agents.jsonl.xz", "md5": "1c985e6d6ad34e605c4ebd30cb353558", "reverified": true},
+  "2_pod": {"path": "tanitad-a40:/workspace/TanitAD/data/joins/b1train_agents.jsonl.xz", "md5": "1c985e6d6ad34e605c4ebd30cb353558", "reverified": true},
+  "3_embedded_pod_combined": {"path": "tanitad-a40:/workspace/TanitAD/data/joins/b1_train_plus_eval_agents.jsonl.xz", "bytes_range": "[0, 317028572)"},
+  "4_embedded_devbox_combined": {"path": "devbox session scratchpad b1_train_plus_eval_agents.jsonl.xz", "md5_of_first_317028572_bytes": "1c985e6d6ad34e605c4ebd30cb353558", "measured": true, "warning": "a TEMP directory -- does not count toward durability"}
+ },
+
+ "combined_launch_file": {
+  "_why": "this, not the TRAIN join, is the file --agents head actually reads (LAUNCH_refcv5_v2.sh:64), and its digest was recorded nowhere",
+  "path": "tanitad-a40:/workspace/TanitAD/data/joins/b1_train_plus_eval_agents.jsonl.xz",
+  "md5_FIRST_TIME_RECORDED": "0c31a3a63d7205e9fa50e8ac4204ef46",
+  "bytes": 327041136,
+  "arithmetic": "317028572 + 10012564 = 327041136",
+  "rows": "849263 + 26394 = 875657 (arithmetic; the 875,657 figure is the compose agent's reader measurement)",
+  "proof_it_is_exactly_cat_train_eval": "streaming the two local parts in order through one md5 gives 0c31a3a63d7205e9fa50e8ac4204ef46 at 327,041,136 B -- equal to the pod's file digit for digit",
+  "has_sidecar": false
+ },
+
+ "inputs_the_recipe_depends_on": {
+  "versioned": ["the argv (pod_ship_20260906.json)", "the builder + 4 modules (commit 1c46b23)", "b1_train_clips.json (md5 533d5353ffd41ed011878d615781e9f4)", "pull_b1_train_obstacle.py (the re-pull script for the one non-trivial input dir)"],
+  "not_versioned_but_upstream_recoverable": {
+   "camera timestamp parquets": {"files": 4719, "bytes_mb": 56, "note": "the 58.8 GB in that directory is mp4 the builder NEVER OPENS; quoting the directory size would overstate the input ~1000x"},
+   "egomotion parquets": {"files": 4800, "bytes_mb": 1912},
+   "obstacle.offline parquets": {"files": 4440, "bytes_mb": 2215, "re_pull_script": "IN GIT"}
+  },
+  "total_true_input_footprint_mb": 4183
+ },
+
+ "risks_found": [
+  "b1_train_plus_eval_agents.jsonl.xz -- the file the launch reads -- has NO sidecar and its digest was unrecorded until this file",
+  "CONTROL_b1eval_recon.jsonl.xz (10,012,564 B, md5 3ddb42ecbd3926066795a94587af2aed) has ONE loose copy plus two embedded ones; it is the thin part of the chain, not the 317 MB part",
+  ".gitignore matches NO rule for the 317 MB artifact (git check-ignore exit 1; control: __pycache__/ correctly matches at .gitignore:2). One cp into a raw/ dir plus a routine git add would put 317 MB into history irreversibly. A '*.jsonl.xz' rule with a '!*.meta.json' exception closes it in one line.",
+  "the SHARED git index holds a stale OLDER blob (ddacde6a) for stack/scripts/build_b1_agent_join.py while the worktree equals HEAD exactly; known mm_commit.py side effect; REPORTED, NOT UNSTAGED"
+ ],
+
+ "mount_incidents": [
+  "cp to G: refused with 'File exists' while stat on the same path in the same breath said 'No such file or directory', and the file was genuinely absent. One retry landed it, verified by git hash-object. A failed write on this mount is not evidence of anything.",
+  "reading the 4.48 MB committed sidecar off G: failed 4x (OSError Errno 22 / 'Invalid request code') and cp left a 0-byte local file. The file is intact -- reading it from the git object database returned all 4,482,188 bytes. A failed read on this mount is NOT evidence of absence."
+ ],
+
+ "answer_to_the_question": "YES, it is safe for this artifact to stay out of git. It is now REPRODUCIBLE BY RE-EXECUTION, not merely by construction: the recorded argv, the committed builder and the committed clip list regenerate it bit for bit, and the only unversioned inputs are ~4.1 GB of upstream PhysicalAI parquets whose re-pull script is itself committed. Two durable copies plus a proven recipe is a sound margin; a 317 MB binary in git would not be. The residual risk is not the TRAIN join at all -- it is the UNDOCUMENTED derived file the launch actually reads, and the missing .gitignore guard."
+}

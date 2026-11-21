@@ -1,0 +1,15 @@
+# AMEND_HWMPLAN_2 (Master Mind, 2026-11-14, after phase 1 and before any l1_full window is scored): the G3 stitch arm runs next; the learned decoder does not
+
+**What phase 1 left.** Phase 1 read DECODE-WEAK at both seeds (median relative macro-decode residual 0.916 / 0.917). The card's DECODE-WEAK row commits "a learned macro-action decoder (a head on the frozen model) is built before the 2-6 s band is read again." `VERDICT_HWMPLAN_PHASE1.md` named the discriminating check first.
+
+**The check (an instrument diagnostic, no claim; MEASURED, R35 s0 / s1, CPU, code of record imported unchanged; `phase1_R35/decode_check/`).**
+* In-image targets decode: 3,000 macro-encoder outputs of real TRAIN primitive triples, with the same `decode_macro` from HOLD, give a median residual of 0.163 [q10 0.002, q90 0.885] / 0.117 [0.000, 0.749]. The logged eval actions at the plans' positions give 0.302 / 0.224.
+* The planned macros do not. Re-decoded, the phase-1 plans give 0.916 / 0.918, which reproduces the banked value. At 3,000 iterations they still give 0.917 / 0.917.
+* The planned macros are off the image. Their median nearest-neighbour distance to the TRAIN macro cloud is 7.16 / 7.21, against 1.06 / 1.06 for held-out in-image macros: a median ratio of 6.77 / 6.79, and every planned macro lies beyond the held-out q95. 94 % of planned decodes hit the action bounds, against about 17 % of in-image decodes.
+* The controls read as required: starting the decode at the true primitives gives a median of 0.0, and random macros (the red arm) give 1.08 / 1.05.
+
+**Consequence.** A decoder learned from in-image pairs cannot reproduce macro-actions that no bounded primitive sequence produces. So the DECODE-WEAK row's learned decoder is not run as the next arm: on these plans it is measured to be the wrong instrument. The card's own lever for a decode-free 2-6 s path is **G3, `stitch = l1_full`**. There, level 1 plans all 30 knots against level 2's sub-goals, and no decode runs. Its outcome rows are already committed: L1-FULL-ADDS, NEUTRAL or HURTS, and their triggers.
+
+**Arm (the only change: it runs now, as phase 2's first arm).** HWM-ORACLE with `--stitch l1_full` against the phase-1 HWM-ORACLE (`decode`, control). Same R35 checkpoints, windows (the 994 SCORE windows), priors, solver and other levers at their defaults. Both training seeds, inference seeds 0 and 1. The read and outcomes follow the card: L1-FULL-ADDS if `l1_full` minus `decode` is separated-better in the 2-6 s band, is not separated-worse in 0-2 s, and exceeds the inference-seed replicate. HWM-ORACLE (l1_full) minus HOLD is reported beside, as the PLANNER-LIMITED row read again on the decode-free path. Families, tiers, estimator and STRATEGIC PAUSED are as the card has them. Tier T0, a world-model diagnostic, never driving performance.
+
+**Unchanged.** Every other bar, arm and control. The image constraint at level 2 (planning level 2 in the encoder's image) has no card row. If it is wanted after this read, it gets its own amendment before any of its windows is scored.

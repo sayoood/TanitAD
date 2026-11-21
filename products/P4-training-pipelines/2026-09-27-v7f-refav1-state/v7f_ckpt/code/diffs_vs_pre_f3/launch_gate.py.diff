@@ -1,0 +1,255 @@
+diff --git "a/C:\\Users\\Admin\\v7f_ckpt\\pristine\\launch_gate.py" "b/C:\\Users\\Admin\\v7f_ckpt\\stack\\scripts\\launch_gate.py"
+index e7cb077..c8f74ac 100644
+--- "a/C:\\Users\\Admin\\v7f_ckpt\\pristine\\launch_gate.py"
++++ "b/C:\\Users\\Admin\\v7f_ckpt\\stack\\scripts\\launch_gate.py"
+@@ -72,12 +72,15 @@ was green. The gate therefore checks the THING, never the declaration:
+   own seams (`job_model_v6`, `job_smoke_v6`), the same token. G-DVB reads the registry
+   `tanitad.train.declared_vs_built_v6` (every trainer flag needs an entry) plus the gate's own stage
+   and behaviour probes; G-LIVE holds every `layer_str` parameter BIT-IDENTICAL over the smoke (R6,
+-  decisive) and reports `.grad` population; G-CKPT compares a resume with an UNINTERRUPTED run (the
+-  v6 checkpoint carries no data position). The dev-box stage is a REHEARSAL (tiny geometry, synthetic
++  decisive) and reports `.grad` population; G-CKPT resumes an INTERRUPTED run (launched with the FINAL
++  --steps, killed right after its step-n checkpoint) and compares it with the same argv UNINTERRUPTED --
++  draws, lr, final model AND optimiser state (F3, 2026-09-27: the v6 checkpoint carries `rng_state` /
++  `data_pos` / `loop_state`). The dev-box stage is a REHEARSAL (tiny geometry, synthetic
+   corpus): it runs every instrument on the real trainer code on CPU, and `finalize` never counts its
+   evidence (arms: `v6_undeclared_attribute`, `v6_candidates_not_built`, `missing_dvb_v6_module`,
+   `v6_uncovered_flag`, `v6_nav_not_mapped`, `v6_nav_unbound_wm`, `v6_strategic_leaf_trainable`,
+-  `v6_drop_term`, `v6_resume_drops_opt`, `v6_loader_drops_vocab_version`). The rehearsal keeps
++  `v6_drop_term`, `v6_resume_drops_opt`, `v6_resume_drops_rng`, `v6_resume_lr_compounds`,
++  `v6_ckpt_strips_rng`, `v6_loader_drops_vocab_version`). The rehearsal keeps
+   `--nav-cond`: its data seam serves synthetic nav records to the REAL join / NavEmitter / batch splat
+   (a nav-less smoke cannot judge whether the nav path TRAINS -- MEASURED: it hid F7).
+ 
+@@ -6420,7 +6423,14 @@ def eval_identity_v6(ctx: Ctx, T, stack, args, parser, scratch: Path, *,
+ 
+ 
+ # ---- the smoke (G-LIVE run 1; G-CKPT runs 2 and 3) ------------------------------------------- #
+-def run_smoke_v6(ctx: Ctx, T, argv: list[str], *, run_label: str, arms: bool = True) -> dict:
++class _GateInterrupt(BaseException):
++    """G-CKPT (v6): raised by the gate's `_save_ckpt` wrapper right after the checkpoint of the step it was
++    asked to interrupt at -- the SIGKILL-right-after-a-checkpoint case, in-process. A BaseException, so no
++    `except Exception` in the trainer can swallow it."""
++
++
++def run_smoke_v6(ctx: Ctx, T, argv: list[str], *, run_label: str, arms: bool = True,
++                 interrupt_at: int | None = None) -> dict:
+     """Run the REAL `main(argv)` with OBSERVING hooks only (arms excepted, and only when `arms`):
+       * `build_trunk_optimizer` -- the trainable set, a digest of EVERY parameter at optimizer
+         construction (after --init-from and the freeze), and an `opt.step` wrapper that records, per
+@@ -6432,7 +6442,9 @@ def run_smoke_v6(ctx: Ctx, T, argv: list[str], *, run_label: str, arms: bool = T
+         and no RNG side effect);
+       * `FlagshipWindowDataset.__getitem__` -- the (ep_idx, t_last) of every drawn window: the DATA
+         POSITION, per step;
+-      * `load_resume` -- the post-load digests (G-CKPT)."""
++      * `load_resume` -- the post-load digests (G-CKPT);
++      * `_save_ckpt` (with `interrupt_at`, or the arm `v6_ckpt_strips_rng`) -- the run dies right after
++        the checkpoint of step `interrupt_at` (G-CKPT's interrupted run)."""
+     import inspect
+     import torch
+     import train_flagship4b as TF4
+@@ -6568,6 +6580,36 @@ def run_smoke_v6(ctx: Ctx, T, argv: list[str], *, run_label: str, arms: bool = T
+         pat.set(T, "_NavBoundPredictor", lambda predictor, nav_cond: predictor)
+         rec["arm"] = {"v6_nav_unbound_wm": "train_v6_staged._NavBoundPredictor -> the bare predictor_op "
+                                            "(the pre-fix WM-loss call sites)"}
++    if arms and arm_is(ctx, "v6_resume_drops_rng"):
++        # F3 re-introduced: the resume restores NO stream -- every stream restarts from --seed (the pre-F3
++        # trainer). A trainer without the restore seam needs no patch: it never restored anything.
++        if hasattr(T, "apply_resume_state"):
++            pat.set(T, "apply_resume_state", lambda state, **kw: {
++                "t3_alpha_applied": None, "t3_prog_applied": None, "monitors": {}, "applied": []})
++        rec["arm"] = {"v6_resume_drops_rng": "train_v6_staged.apply_resume_state -> a no-op"}
++    if arms and arm_is(ctx, "v6_resume_lr_compounds"):
++        # F3b re-introduced: the cosine schedule replayed ON TOP of the optimiser's LOADED lr
++        def _replay_on_loaded_lr(opt, sched, n):
++            for _ in range(int(n)):
++                sched.step()
++        if hasattr(T, "replay_lr_schedule"):
++            pat.set(T, "replay_lr_schedule", _replay_on_loaded_lr)
++        rec["arm"] = {"v6_resume_lr_compounds": "train_v6_staged.replay_lr_schedule -> sched.step() x n on "
++                                                 "the LOADED lr (the pre-F3b replay)"}
++    strip_rng = bool(arms and arm_is(ctx, "v6_ckpt_strips_rng"))
++    if strip_rng:
++        rec["arm"] = {"v6_ckpt_strips_rng": "_save_ckpt writes the pre-F3 payload {stack, opt, step, config}"}
++    if interrupt_at is not None or strip_rng:
++        orig_save = T._save_ckpt
++
++        def save_wrap(path, *aa, _o=orig_save, **kk):
++            if strip_rng and "extra" in kk:
++                kk = {k: v for k, v in kk.items() if k != "extra"}     # a PRE-F3 checkpoint
++            _o(path, *aa, **kk)
++            if interrupt_at is not None and int(kk.get("step", -1)) == int(interrupt_at):
++                rec["interrupted_at"] = int(interrupt_at)
++                raise _GateInterrupt(f"G-CKPT: interrupted right after the step-{interrupt_at} checkpoint")
++        pat.set(T, "_save_ckpt", save_wrap)
+     pat.set(T, "apply_stage_freeze", freeze_wrap)
+     pat.set(T, "build_trunk_optimizer", bto_wrap)
+     pat.set(T, "v6_loss_step", loss_wrap)
+@@ -6581,6 +6623,8 @@ def run_smoke_v6(ctx: Ctx, T, argv: list[str], *, run_label: str, arms: bool = T
+         rc = T.main(list(argv))
+         if rc not in (0, None):
+             rec["exit"] = f"main() returned {rc}: " + " | ".join(r[:300] for r in refusals[:4])
++    except _GateInterrupt:
++        pass                                              # asked for: rec["interrupted_at"]
+     except SystemExit as e:
+         rec["exit"] = f"SystemExit: {str(e)[:800]}"
+     except BaseException as e:                            # noqa: BLE001 -- the verdict records it
+@@ -6588,6 +6632,9 @@ def run_smoke_v6(ctx: Ctx, T, argv: list[str], *, run_label: str, arms: bool = T
+     finally:
+         pat.restore()
+     rec["elapsed_s"] = round(time.time() - t0, 1)
++    if interrupt_at is not None and rec.get("interrupted_at") != int(interrupt_at) and not rec["exit"]:
++        rec["exit"] = (f"the run was to die right after its step-{interrupt_at} checkpoint and did not (no "
++                       f"such checkpoint was written)")
+     if state["stack"] is not None:
+         rec["final"] = {"model": state_digests(state["stack"].state_dict()),
+                         "opt": optimizer_digests(state["opt"].state_dict()),
+@@ -6830,8 +6877,16 @@ def judge_live_v6(prof: dict, args, T, run1: dict, *, expect_steps: int, rows: l
+ def judge_ckpt_v6(run1: dict, run2: dict | None, run3: dict | None, *, n: int, extra: int,
+                   ckpt: dict | None, run2_summary: dict | None, run2_config: dict | None
+                   ) -> tuple[list[str], dict]:
+-    """G-CKPT (v6): save == in-memory; post-load == saved; the resumed data stream and final state ==
+-    an UNINTERRUPTED run's (the data position, measured -- the v6 checkpoint carries none)."""
++    """G-CKPT (v6): save == in-memory; post-load == saved (optimiser param_groups INCLUDING lr); the
++    checkpoint carries the streams; the resumed data stream, lr and final model + optimiser state == an
++    UNINTERRUPTED run's.
++
++    ⛔ PROTOCOL (F3, 2026-09-27): `run1` is an INTERRUPTED run launched with the FINAL --steps n+extra and
++    killed right after its step-n checkpoint; `run2` resumes it with the SAME argv; `run3` is that argv
++    uninterrupted. The previous protocol resumed a run that had FINISHED at --steps n with --steps n+extra.
++    MEASURED: that run's first n steps already differ from run3's -- the cosine LR is a function of --steps
++    (S-T rehearsal, step 50: lr 5.0000e-05 at T=100 vs 5.1540e-05 at T=102) -- so it FAILED on the final
++    state even with an EXACT resume: it could not tell a correct trainer from a broken one."""
+     reasons: list[str] = []
+     det: dict[str, Any] = {}
+ 
+@@ -6862,6 +6917,9 @@ def judge_ckpt_v6(run1: dict, run2: dict | None, run3: dict | None, *, n: int, e
+     rng_keys = sorted(k for k in ckpt if "rng" in k.lower() or "data_pos" in k.lower()
+                       or "sampler" in k.lower())
+     det["ckpt_rng_or_data_position_keys"] = rng_keys
++    if not rng_keys:
++        reasons.append("ckpt.pt carries no RNG state / data position (no key naming rng, data_pos or "
++                       "sampler) -- a resume can only restart the stream from --seed")
+     if run2 is None:
+         return reasons + ["the resume run did not happen"], det
+     det["resume_exit"] = run2.get("exit")
+@@ -6879,8 +6937,16 @@ def judge_ckpt_v6(run1: dict, run2: dict | None, run3: dict | None, *, n: int, e
+             cmp("resume_opt_state_vs_saved", fin["opt"]["state"], pl["opt"]["state"])
+             g1 = [{k: v for k, v in g.items() if k != "lr"} for g in fin["opt"]["param_groups"]]
+             g2 = [{k: v for k, v in g.items() if k != "lr"} for g in pl["opt"]["param_groups"]]
++            det["resume_lr"] = {"saved": [g.get("lr") for g in fin["opt"]["param_groups"]],
++                                "after_replay": [g.get("lr") for g in pl["opt"]["param_groups"]]}
+             if g1 != g2:
+                 reasons.append("resume: optimizer param_groups (lr excepted) differ from the saved")
++            elif det["resume_lr"]["saved"] != det["resume_lr"]["after_replay"]:
++                # ⛔ F3b: this comparison used to EXCLUDE lr -- and that exclusion hid a defect in every
++                # v6 resume: the cosine schedule replayed ON TOP of the loaded (already decayed) lr
++                reasons.append(f"resume: the lr after the schedule replay {det['resume_lr']['after_replay']} "
++                               f"!= the saved lr {det['resume_lr']['saved']} -- the resumed run trains on a "
++                               f"different LR schedule (F3b: the cosine replay compounding on the loaded lr)")
+     if not (run2_summary and run2_summary.get("done") is True
+             and int(run2_summary.get("steps", -1)) == n + extra
+             and int(run2_summary.get("resumed_from_step", -1)) == n):
+@@ -6890,6 +6956,11 @@ def judge_ckpt_v6(run1: dict, run2: dict | None, run3: dict | None, *, n: int, e
+     det["resume_config_launch_mode"] = lm
+     if lm != "resume":
+         reasons.append(f"the resume run's config.json launch_mode is {lm!r}, not 'resume'")
++    rr = ((run2_config or {}).get("resume_rng") or {}).get("mode")
++    det["resume_config_resume_rng"] = rr
++    if rr != "restored":
++        reasons.append(f"the resume run's config.json resume_rng.mode is {rr!r}, not 'restored' -- the "
++                       f"trainer itself records that the continuation is not the uninterrupted run's")
+     # ⭐ the data position and the continuation, MEASURED against an uninterrupted run
+     if run3 is None or run3.get("exit"):
+         reasons.append(f"the uninterrupted reference run failed: {(run3 or {}).get('exit')}")
+@@ -6908,12 +6979,20 @@ def judge_ckpt_v6(run1: dict, run2: dict | None, run3: dict | None, *, n: int, e
+                        "run draws at the same steps" + (
+                            " -- they are the uninterrupted run's FIRST batches: the sampler/RNG "
+                            "stream restarts at every launch (train() re-seeds torch, random and the "
+-                           "sampler generator from --seed -- c36b6ddd:6475-6478 -- and _save_ckpt's "
+-                           "payload is {stack, opt, step, config}: no RNG state, no data position)"
++                           "sampler generator from --seed, and nothing restored the checkpoint's "
++                           "streams -- the pre-F3 trainer, whose payload was {stack, opt, step, config})"
+                            if replay else ""))
+     f2, f3 = (run2.get("final") or {}).get("model"), (run3.get("final") or {}).get("model")
+     if f2 and f3:
+         cmp("resumed_final_vs_uninterrupted_final", f3, f2)
++    else:
++        reasons.append("the resumed or the uninterrupted run produced no final state to compare")
++    o2, o3 = (run2.get("final") or {}).get("opt"), (run3.get("final") or {}).get("opt")
++    if o2 and o3:
++        cmp("resumed_final_opt_vs_uninterrupted_final", o3["state"], o2["state"])
++        if o3["param_groups"] != o2["param_groups"]:
++            reasons.append("the resumed run's final optimizer param_groups (incl. lr) differ from the "
++                           "uninterrupted run's")
+     return reasons, det
+ 
+ 
+@@ -6950,11 +7029,13 @@ def job_smoke_v6(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
+                                         "why": "tiny config + synthetic corpus (CPU host)"}
+     corpus: dict = {}
+ 
+-    def one_run(argv_r: list[str], label: str, arms: bool = True) -> dict:
++    def one_run(argv_r: list[str], label: str, arms: bool = True,
++                interrupt_at: int | None = None) -> dict:
+         if reh:
+             with v6_corpus_seam(ctx, corpus):
+-                return run_smoke_v6(ctx, T, argv_r, run_label=label, arms=arms)
+-        return run_smoke_v6(ctx, T, argv_r, run_label=label, arms=arms)
++                return run_smoke_v6(ctx, T, argv_r, run_label=label, arms=arms,
++                                    interrupt_at=interrupt_at)
++        return run_smoke_v6(ctx, T, argv_r, run_label=label, arms=arms, interrupt_at=interrupt_at)
+     argv1 = set_flag(set_flag(base, "--steps", [str(steps)]), "--out", [str(run_dir)])
+     _say(f"G-LIVE smoke (v6): {steps} steps, out {run_dir}")
+     run1 = one_run(argv1, "run1")
+@@ -6984,20 +7065,37 @@ def job_smoke_v6(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
+         finish_evidence(ev, "FAIL" if reasons else "PASS", reasons)
+     if "G-CKPT" in evs:
+         ev = evs["G-CKPT"]
+-        run2 = run3 = summ2 = cfg2 = None
+-        if ckpt is not None and not run1.get("exit"):
+-            (run_dir / "summary.json").unlink(missing_ok=True)   # run 1's marker, read above
+-            argv2 = set_flag(argv1, "--steps", [str(steps + extra)])
+-            run2 = one_run(argv2, "run2-resume")
+-            summ2 = read_json(run_dir / "summary.json") if (run_dir / "summary.json").is_file() \
+-                else None
+-            cfg2 = read_json(run_dir / "config.json") if (run_dir / "config.json").is_file() else None
+-            ref_dir = root / "reference"
+-            argv3 = set_flag(set_flag(base, "--steps", [str(steps + extra)]), "--out", [str(ref_dir)])
+-            run3 = one_run(argv3, "run3-uninterrupted", arms=False)
++        run1i = run2 = run3 = summ2 = cfg2 = ckpt_i = None
++        # ⛔ F3 PROTOCOL: resume an INTERRUPTED run launched with the FINAL --steps -- never a run that
++        # FINISHED at --steps n, whose cosine schedule is a different one (judge_ckpt_v6). The three runs
++        # share ONE argv (`--save-every n`, so the interrupted run checkpoints at n); only --out differs.
++        intr_dir = root / "interrupted"
++        argv_i = set_flag(set_flag(set_flag(base, "--steps", [str(steps + extra)]), "--out",
++                                   [str(intr_dir)]), "--save-every", [str(steps)])
++        protocol = {"argv": argv_i, "interrupt_after_checkpoint_at": steps, "resume_to": steps + extra,
++                    "departures": {"--steps": str(steps + extra), "--save-every": str(steps),
++                                   "why": "the interrupted run must checkpoint at n and share the final "
++                                          "--steps with the resume and the reference"}}
++        if not run1.get("exit"):
++            run1i = one_run(argv_i, "run1-interrupted", interrupt_at=steps)
++            ck_i = intr_dir / "ckpt.pt"
++            ckpt_i = torch.load(ck_i, map_location="cpu", weights_only=False) if ck_i.is_file() else None
++            if ckpt_i is not None and not run1i.get("exit"):
++                run2 = one_run(argv_i, "run2-resume")
++                summ2 = read_json(intr_dir / "summary.json") if (intr_dir / "summary.json").is_file() \
++                    else None
++                cfg2 = read_json(intr_dir / "config.json") if (intr_dir / "config.json").is_file() \
++                    else None
++                run3 = one_run(set_flag(argv_i, "--out", [str(root / "reference")]),
++                               "run3-uninterrupted", arms=False)
+         try:
+-            reasons, det = judge_ckpt_v6(run1, run2, run3, n=steps, extra=extra, ckpt=ckpt,
+-                                         run2_summary=summ2, run2_config=cfg2)
++            if run1i is None:
++                reasons, det = [f"G-LIVE's smoke failed, so the G-CKPT protocol did not run: "
++                                f"{str(run1.get('exit'))[:300]}"], {}
++            else:
++                reasons, det = judge_ckpt_v6(run1i, run2, run3, n=steps, extra=extra, ckpt=ckpt_i,
++                                             run2_summary=summ2, run2_config=cfg2)
++            det["protocol"] = protocol
+         except Exception as e:                            # noqa: BLE001
+             reasons, det = [f"G-CKPT (v6) judge crashed: {type(e).__name__}: {e}"], {
+                 "traceback": traceback.format_exc()[-2500:]}

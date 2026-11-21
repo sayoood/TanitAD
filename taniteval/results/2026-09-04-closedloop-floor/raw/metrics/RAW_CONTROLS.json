@@ -1,0 +1,531 @@
+{
+  "controls": [
+    {
+      "label": "DETERMINISM: cl_ha0 re-run, identical flags",
+      "n_rollouts_a": 9,
+      "n_rollouts_b": 9,
+      "n_steps": 450,
+      "bit_identical_steps": 450,
+      "max_abs_dplan": 0.0,
+      "max_abs_dego": 0.0,
+      "max_abs_dv": 0.0,
+      "max_abs_dsteer": 0.0,
+      "max_abs_daccel": 0.0,
+      "verdict": "BIT-IDENTICAL",
+      "render_a": {
+        "layers": "background,road",
+        "all_dynamic_layers": false,
+        "sky_gain": 0.3,
+        "sky_ramp_deg": [
+          0.0,
+          6.0
+        ],
+        "rolling_shutter": false,
+        "shutter_s": 0.0,
+        "shutter_type": "ROLLING_TOP_TO_BOTTOM",
+        "cull_scale_quantile": 0.95,
+        "cull": {
+          "quantile": 0.95,
+          "scale_thresh_m": 1.4263,
+          "n_dropped": 153506,
+          "n_kept": 2952008
+        }
+      },
+      "render_b": {
+        "layers": "background,road",
+        "all_dynamic_layers": false,
+        "sky_gain": 0.3,
+        "sky_ramp_deg": [
+          0.0,
+          6.0
+        ],
+        "rolling_shutter": false,
+        "shutter_s": 0.0,
+        "shutter_type": "ROLLING_TOP_TO_BOTTOM",
+        "cull_scale_quantile": 0.95,
+        "cull": {
+          "quantile": 0.95,
+          "scale_thresh_m": 1.4263,
+          "n_dropped": 153506,
+          "n_kept": 2952008
+        }
+      }
+    },
+    {
+      "label": "RENDER INDEPENDENCE: cl_ha0 under the MORNING render vs the HQ render",
+      "n_rollouts_a": 9,
+      "n_rollouts_b": 9,
+      "n_steps": 450,
+      "bit_identical_steps": 450,
+      "max_abs_dplan": 0.0,
+      "max_abs_dego": 0.0,
+      "max_abs_dv": 0.0,
+      "max_abs_dsteer": 0.0,
+      "max_abs_daccel": 0.0,
+      "verdict": "BIT-IDENTICAL",
+      "render_a": {
+        "layers": "background,road",
+        "all_dynamic_layers": false,
+        "sky_gain": 0.0,
+        "sky_ramp_deg": [
+          0.0,
+          6.0
+        ],
+        "rolling_shutter": false,
+        "shutter_s": 0.0,
+        "shutter_type": "ROLLING_TOP_TO_BOTTOM",
+        "cull_scale_quantile": null,
+        "cull": null
+      },
+      "render_b": {
+        "layers": "background,road",
+        "all_dynamic_layers": false,
+        "sky_gain": 0.3,
+        "sky_ramp_deg": [
+          0.0,
+          6.0
+        ],
+        "rolling_shutter": false,
+        "shutter_s": 0.0,
+        "shutter_type": "ROLLING_TOP_TO_BOTTOM",
+        "cull_scale_quantile": 0.95,
+        "cull": {
+          "quantile": 0.95,
+          "scale_thresh_m": 1.4263,
+          "n_dropped": 153506,
+          "n_kept": 2952008
+        }
+      }
+    }
+  ],
+  "invariants": [
+    {
+      "label": "cl_ha0",
+      "arm": "cl_ha0",
+      "n_steps": 450,
+      "n_rollouts": 9,
+      "f_eff_is_null": true,
+      "ckpt_is_null": true,
+      "canon_reads_pixels": false,
+      "expected": {
+        "steer": 0.0,
+        "accel": 0.0,
+        "kappa_plan": 0.0,
+        "v_target_minus_v": 0.0,
+        "v_constant_within_rollout": true,
+        "plan_lateral_y": 0.0
+      },
+      "measured": {
+        "max_abs_steer": 0.0,
+        "max_abs_accel": 0.0,
+        "max_abs_kappa_plan": 0.0,
+        "max_abs_v_target_minus_v": 0.0,
+        "v_constant_within_rollout": true,
+        "max_abs_plan_lateral_y": 0.0
+      },
+      "all_controls_exact": true,
+      "t0_per_rollout": {
+        "0": {
+          "f0": 9,
+          "a0_mps2": 0.10442624645534693,
+          "omega0_rads": 0.0020885102426815294,
+          "kappa0_1pm": 0.00010337907760995109,
+          "v_backward_at_t0_ms": 20.202446094184275,
+          "v_backward_at_t0m1_ms": 20.19200346953874,
+          "pose_indices_read": [
+            7,
+            8,
+            9
+          ],
+          "differencing": "backward \u2014 every index used is <= t0, no future pose"
+        },
+        "17": {
+          "f0": 26,
+          "a0_mps2": 2.0150040133228586,
+          "omega0_rads": -0.0051329696300284056,
+          "kappa0_1pm": -0.00025860323911279954,
+          "v_backward_at_t0_ms": 19.848821877244422,
+          "v_backward_at_t0m1_ms": 19.647321475912136,
+          "pose_indices_read": [
+            24,
+            25,
+            26
+          ],
+          "differencing": "backward \u2014 every index used is <= t0, no future pose"
+        },
+        "34": {
+          "f0": 43,
+          "a0_mps2": -1.1450657309646317,
+          "omega0_rads": -0.004056910280634263,
+          "kappa0_1pm": -0.00021631859398353923,
+          "v_backward_at_t0_ms": 18.754329925715833,
+          "v_backward_at_t0m1_ms": 18.868836498812296,
+          "pose_indices_read": [
+            41,
+            42,
+            43
+          ],
+          "differencing": "backward \u2014 every index used is <= t0, no future pose"
+        },
+        "51": {
+          "f0": 60,
+          "a0_mps2": -1.1589107723698078,
+          "omega0_rads": -0.016542041790983397,
+          "kappa0_1pm": -0.0009253744598108846,
+          "v_backward_at_t0_ms": 17.876051814055938,
+          "v_backward_at_t0m1_ms": 17.99194289129292,
+          "pose_indices_read": [
+            58,
+            59,
+            60
+          ],
+          "differencing": "backward \u2014 every index used is <= t0, no future pose"
+        },
+        "68": {
+          "f0": 77,
+          "a0_mps2": -0.3652858456870689,
+          "omega0_rads": -0.06500715331914986,
+          "kappa0_1pm": -0.004145041733497983,
+          "v_backward_at_t0_ms": 15.683111895785569,
+          "v_backward_at_t0m1_ms": 15.719640480354276,
+          "pose_indices_read": [
+            75,
+            76,
+            77
+          ],
+          "differencing": "backward \u2014 every index used is <= t0, no future pose"
+        },
+        "85": {
+          "f0": 94,
+          "a0_mps2": -2.050093734160008,
+          "omega0_rads": -0.0860230838018472,
+          "kappa0_1pm": -0.006422609887498577,
+          "v_backward_at_t0_ms": 13.39378933310096,
+          "v_backward_at_t0m1_ms": 13.59879870651696,
+          "pose_indices_read": [
+            92,
+            93,
+            94
+          ],
+          "differencing": "backward \u2014 every index used is <= t0, no future pose"
+        },
+        "102": {
+          "f0": 111,
+          "a0_mps2": -0.5335971492196911,
+          "omega0_rads": -0.08986294428205088,
+          "kappa0_1pm": -0.00734562866147781,
+          "v_backward_at_t0_ms": 12.233526689596102,
+          "v_backward_at_t0m1_ms": 12.286886404518071,
+          "pose_indices_read": [
+            109,
+            110,
+            111
+          ],
+          "differencing": "backward \u2014 every index used is <= t0, no future pose"
+        },
+        "119": {
+          "f0": 128,
+          "a0_mps2": 0.9934410371894487,
+          "omega0_rads": -0.06463737385719703,
+          "kappa0_1pm": -0.005294266966589606,
+          "v_backward_at_t0_ms": 12.208937377941544,
+          "v_backward_at_t0m1_ms": 12.109593274222599,
+          "pose_indices_read": [
+            126,
+            127,
+            128
+          ],
+          "differencing": "backward \u2014 every index used is <= t0, no future pose"
+        },
+        "136": {
+          "f0": 145,
+          "a0_mps2": 0.6168479036837127,
+          "omega0_rads": -0.05960280960402464,
+          "kappa0_1pm": -0.004696778047686177,
+          "v_backward_at_t0_ms": 12.690148224778772,
+          "v_backward_at_t0m1_ms": 12.628463434410401,
+          "pose_indices_read": [
+            143,
+            144,
+            145
+          ],
+          "differencing": "backward \u2014 every index used is <= t0, no future pose"
+        }
+      }
+    },
+    {
+      "label": "cl_ha",
+      "arm": "cl_ha",
+      "n_steps": 450,
+      "n_rollouts": 9,
+      "f_eff_is_null": true,
+      "ckpt_is_null": true,
+      "canon_reads_pixels": false,
+      "t0_per_rollout": {
+        "0": {
+          "f0": 9,
+          "a0_mps2": 0.10442624645534693,
+          "omega0_rads": 0.0020885102426815294,
+          "kappa0_1pm": 0.00010337907760995109,
+          "v_backward_at_t0_ms": 20.202446094184275,
+          "v_backward_at_t0m1_ms": 20.19200346953874,
+          "pose_indices_read": [
+            7,
+            8,
+            9
+          ],
+          "differencing": "backward \u2014 every index used is <= t0, no future pose"
+        },
+        "17": {
+          "f0": 26,
+          "a0_mps2": 2.0150040133228586,
+          "omega0_rads": -0.0051329696300284056,
+          "kappa0_1pm": -0.00025860323911279954,
+          "v_backward_at_t0_ms": 19.848821877244422,
+          "v_backward_at_t0m1_ms": 19.647321475912136,
+          "pose_indices_read": [
+            24,
+            25,
+            26
+          ],
+          "differencing": "backward \u2014 every index used is <= t0, no future pose"
+        },
+        "34": {
+          "f0": 43,
+          "a0_mps2": -1.1450657309646317,
+          "omega0_rads": -0.004056910280634263,
+          "kappa0_1pm": -0.00021631859398353923,
+          "v_backward_at_t0_ms": 18.754329925715833,
+          "v_backward_at_t0m1_ms": 18.868836498812296,
+          "pose_indices_read": [
+            41,
+            42,
+            43
+          ],
+          "differencing": "backward \u2014 every index used is <= t0, no future pose"
+        },
+        "51": {
+          "f0": 60,
+          "a0_mps2": -1.1589107723698078,
+          "omega0_rads": -0.016542041790983397,
+          "kappa0_1pm": -0.0009253744598108846,
+          "v_backward_at_t0_ms": 17.876051814055938,
+          "v_backward_at_t0m1_ms": 17.99194289129292,
+          "pose_indices_read": [
+            58,
+            59,
+            60
+          ],
+          "differencing": "backward \u2014 every index used is <= t0, no future pose"
+        },
+        "68": {
+          "f0": 77,
+          "a0_mps2": -0.3652858456870689,
+          "omega0_rads": -0.06500715331914986,
+          "kappa0_1pm": -0.004145041733497983,
+          "v_backward_at_t0_ms": 15.683111895785569,
+          "v_backward_at_t0m1_ms": 15.719640480354276,
+          "pose_indices_read": [
+            75,
+            76,
+            77
+          ],
+          "differencing": "backward \u2014 every index used is <= t0, no future pose"
+        },
+        "85": {
+          "f0": 94,
+          "a0_mps2": -2.050093734160008,
+          "omega0_rads": -0.0860230838018472,
+          "kappa0_1pm": -0.006422609887498577,
+          "v_backward_at_t0_ms": 13.39378933310096,
+          "v_backward_at_t0m1_ms": 13.59879870651696,
+          "pose_indices_read": [
+            92,
+            93,
+            94
+          ],
+          "differencing": "backward \u2014 every index used is <= t0, no future pose"
+        },
+        "102": {
+          "f0": 111,
+          "a0_mps2": -0.5335971492196911,
+          "omega0_rads": -0.08986294428205088,
+          "kappa0_1pm": -0.00734562866147781,
+          "v_backward_at_t0_ms": 12.233526689596102,
+          "v_backward_at_t0m1_ms": 12.286886404518071,
+          "pose_indices_read": [
+            109,
+            110,
+            111
+          ],
+          "differencing": "backward \u2014 every index used is <= t0, no future pose"
+        },
+        "119": {
+          "f0": 128,
+          "a0_mps2": 0.9934410371894487,
+          "omega0_rads": -0.06463737385719703,
+          "kappa0_1pm": -0.005294266966589606,
+          "v_backward_at_t0_ms": 12.208937377941544,
+          "v_backward_at_t0m1_ms": 12.109593274222599,
+          "pose_indices_read": [
+            126,
+            127,
+            128
+          ],
+          "differencing": "backward \u2014 every index used is <= t0, no future pose"
+        },
+        "136": {
+          "f0": 145,
+          "a0_mps2": 0.6168479036837127,
+          "omega0_rads": -0.05960280960402464,
+          "kappa0_1pm": -0.004696778047686177,
+          "v_backward_at_t0_ms": 12.690148224778772,
+          "v_backward_at_t0m1_ms": 12.628463434410401,
+          "pose_indices_read": [
+            143,
+            144,
+            145
+          ],
+          "differencing": "backward \u2014 every index used is <= t0, no future pose"
+        }
+      }
+    },
+    {
+      "label": "cl_ha0_ext",
+      "arm": "cl_ha0_ext",
+      "n_steps": 450,
+      "n_rollouts": 9,
+      "f_eff_is_null": true,
+      "ckpt_is_null": true,
+      "canon_reads_pixels": false,
+      "t0_per_rollout": {
+        "0": {
+          "f0": 9,
+          "a0_mps2": 0.10442624645534693,
+          "omega0_rads": 0.0020885102426815294,
+          "kappa0_1pm": 0.00010337907760995109,
+          "v_backward_at_t0_ms": 20.202446094184275,
+          "v_backward_at_t0m1_ms": 20.19200346953874,
+          "pose_indices_read": [
+            7,
+            8,
+            9
+          ],
+          "differencing": "backward \u2014 every index used is <= t0, no future pose"
+        },
+        "17": {
+          "f0": 26,
+          "a0_mps2": 2.0150040133228586,
+          "omega0_rads": -0.0051329696300284056,
+          "kappa0_1pm": -0.00025860323911279954,
+          "v_backward_at_t0_ms": 19.848821877244422,
+          "v_backward_at_t0m1_ms": 19.647321475912136,
+          "pose_indices_read": [
+            24,
+            25,
+            26
+          ],
+          "differencing": "backward \u2014 every index used is <= t0, no future pose"
+        },
+        "34": {
+          "f0": 43,
+          "a0_mps2": -1.1450657309646317,
+          "omega0_rads": -0.004056910280634263,
+          "kappa0_1pm": -0.00021631859398353923,
+          "v_backward_at_t0_ms": 18.754329925715833,
+          "v_backward_at_t0m1_ms": 18.868836498812296,
+          "pose_indices_read": [
+            41,
+            42,
+            43
+          ],
+          "differencing": "backward \u2014 every index used is <= t0, no future pose"
+        },
+        "51": {
+          "f0": 60,
+          "a0_mps2": -1.1589107723698078,
+          "omega0_rads": -0.016542041790983397,
+          "kappa0_1pm": -0.0009253744598108846,
+          "v_backward_at_t0_ms": 17.876051814055938,
+          "v_backward_at_t0m1_ms": 17.99194289129292,
+          "pose_indices_read": [
+            58,
+            59,
+            60
+          ],
+          "differencing": "backward \u2014 every index used is <= t0, no future pose"
+        },
+        "68": {
+          "f0": 77,
+          "a0_mps2": -0.3652858456870689,
+          "omega0_rads": -0.06500715331914986,
+          "kappa0_1pm": -0.004145041733497983,
+          "v_backward_at_t0_ms": 15.683111895785569,
+          "v_backward_at_t0m1_ms": 15.719640480354276,
+          "pose_indices_read": [
+            75,
+            76,
+            77
+          ],
+          "differencing": "backward \u2014 every index used is <= t0, no future pose"
+        },
+        "85": {
+          "f0": 94,
+          "a0_mps2": -2.050093734160008,
+          "omega0_rads": -0.0860230838018472,
+          "kappa0_1pm": -0.006422609887498577,
+          "v_backward_at_t0_ms": 13.39378933310096,
+          "v_backward_at_t0m1_ms": 13.59879870651696,
+          "pose_indices_read": [
+            92,
+            93,
+            94
+          ],
+          "differencing": "backward \u2014 every index used is <= t0, no future pose"
+        },
+        "102": {
+          "f0": 111,
+          "a0_mps2": -0.5335971492196911,
+          "omega0_rads": -0.08986294428205088,
+          "kappa0_1pm": -0.00734562866147781,
+          "v_backward_at_t0_ms": 12.233526689596102,
+          "v_backward_at_t0m1_ms": 12.286886404518071,
+          "pose_indices_read": [
+            109,
+            110,
+            111
+          ],
+          "differencing": "backward \u2014 every index used is <= t0, no future pose"
+        },
+        "119": {
+          "f0": 128,
+          "a0_mps2": 0.9934410371894487,
+          "omega0_rads": -0.06463737385719703,
+          "kappa0_1pm": -0.005294266966589606,
+          "v_backward_at_t0_ms": 12.208937377941544,
+          "v_backward_at_t0m1_ms": 12.109593274222599,
+          "pose_indices_read": [
+            126,
+            127,
+            128
+          ],
+          "differencing": "backward \u2014 every index used is <= t0, no future pose"
+        },
+        "136": {
+          "f0": 145,
+          "a0_mps2": 0.6168479036837127,
+          "omega0_rads": -0.05960280960402464,
+          "kappa0_1pm": -0.004696778047686177,
+          "v_backward_at_t0_ms": 12.690148224778772,
+          "v_backward_at_t0m1_ms": 12.628463434410401,
+          "pose_indices_read": [
+            143,
+            144,
+            145
+          ],
+          "differencing": "backward \u2014 every index used is <= t0, no future pose"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+ONLY refcv7: []
+ONLY refcv8:
+   --refcv8 
+   --init-from /home/nvidia/refcv7_run/runs/refcv7-r101-s0/ckpt.pt
+   --w-r8-cons 0.05
+   --r8-n-alloc 32
+   --r8-alloc-emit 
+   --r8-alloc-emit-start 1000
+   --w-r8-alloc-l1 1.0
+   --w-r8-listwise 0.0
+   --w-r8-sat 0.1
+   --w-r8-subscore 0.5
+   --r8-lat-prior-dropout 0.3
+   --r8-v9-labels /home/nvidia/refcv8_v9labels/release_train4572/v9_labels_train.npz
+   --r8-v9-labels-eval /home/nvidia/refcv8_v9labels/release/v9_labels_eval139.npz
+   --r8-v9-md5 83e30bd3791f0767707eade5f4671759
+   --r8-v9-eval-md5 6b5c7f207cffc3b7eb3cd527fd433599
+   --r8-v9-lat-variant a
+   --r8-nav-from-v9 
+   --r8-no-rc 
+   --r8-nav-args-dropout 0.5
+   --join-defect-masks /home/nvidia/refcv8_run/launch_tree/stack/tanitad/configs/refcv8_join_label_defects_train4572.json
+   --grad-share-every 250
+   --r8-speed-input label
+   --r8-speed-unknown-p 0.45
+   --w-r8-v9-cons 0.05
+   --pose-sync-sidecar /home/nvidia/data/refcv8_pose_sync_sidecar.jsonl
+   --ema-decay 0.9998
+   --b1-guard-ref-ap2m 0.21211
+   --b1-guard-step 1000
+   --grad-share-terms tac_v6,map_hires
+   --grad-share-at 1000,16250,32500,48750
+DIFFERENT VALUE:
+   --v2-cache | r7 = /home/nvidia/data/refcv6-b1-416x1024-train | r8 = /home/nvidia/data/refcv8-b1-416x1024-train-4572
+   --agent-rig-extrinsics | r7 = /home/nvidia/data/refcv6_train_eval139_extrinsics.json | r8 = /home/nvidia/data/refcv8_train4572_eval139_extrinsics.json
+   --vis1-sidecar | r7 = /home/nvidia/data/refcv7/vis1_sidecar_refcv6b1_train4369_eval139.npz | r8 = /home/nvidia/data/refcv8/vis1_sidecar_refcv8b1_train4572_eval139.npz
+   --nav-compliance-tau-rad | r7 = 0.18063741505146028 | r8 = 0.1806411302089691
+   --nav-compliance-tau-file | r7 = /home/nvidia/data/refcv7/nav_compliance_tau_train.json | r8 = /home/nvidia/data/refcv8/nav_compliance_tau_train4572.json
+   --warmup | r7 = 2000 | r8 = 1000
+   --clip-clock-sidecar | r7 = /home/nvidia/data/refcv6_clip_clock_sidecar.jsonl | r8 = /home/nvidia/data/refcv8_clip_clock_sidecar_ts33.jsonl
+   --conflict-every | r7 = 10 | r8 = 50
+   --steps | r7 = 50400 | r8 = 48852
+   --out | r7 = /home/nvidia/refcv7_run/runs/refcv7-r101-s0 | r8 = /home/nvidia/refcv8_run/runs/refcv8-r101-s0
+EFFECTIVE WEIGHTS (nonzero in either):
+   --w-agent r7 = 1.0 r8 = 1.0
+   --w-box3d r7 = 1.0 r8 = 1.0
+   --w-map-hires r7 = 1.0 r8 = 1.0
+   --w-r8-alloc-l1 r7 = None r8 = 1.0
+   --w-r8-cons r7 = None r8 = 0.05
+   --w-r8-sat r7 = None r8 = 0.1
+   --w-r8-subscore r7 = None r8 = 0.5
+   --w-r8-v9-cons r7 = None r8 = 0.05
+   --w-tac-v6 r7 = 1.0 r8 = 1.0
+anchors sha256 r7/r8: 51f930dc6f3564ff 51f930dc6f3564ff
+refcv8 block: {"modulate_base": true, "base_constraints": false, "n_alloc": 32, "alloc_emit": true, "lat_prior_dropout": 0.3, "cond_dropout": 0.15, "tf_start": 1.0, "tf_end": 0.25, "w_cons": 0.05, "w_sat": 0.1, "w_alloc_l1": 1.0, "w_listwise": 0.0, "w_subscore": 0.5, "emit_start": 1000, "no_rc": true, "nav_args_dropout": 0.5}
+init_from: {"path": "/home/nvidia/refcv7_run/runs/refcv7-r101-s0/ckpt.pt", "md5": "d5f104ee54ba6b2861e38030b4f6fcf1", "source_step": 50400, "n_loaded": 1131, "n_new_refcv8_keys": 34, "optimizer": "fresh (not loaded)", "applied": true}
+ema: {"decay": 0.9998, "init": "the weights at step 0"}

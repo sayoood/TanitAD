@@ -1,0 +1,7228 @@
+{
+ "horizon": {
+  "k": 30,
+  "dt_s": 0.2,
+  "seconds": 6.0
+ },
+ "lead_block": {
+  "path": "C:/Users/Admin/AppData/Local/Temp/claude/E--Projects-TanitAD/bfe78918-15e8-439b-8566-593ca3297bd8/scratchpad/hblend/inputs/b1_eval_lead_block_k30.npz",
+  "sha256": "7a879baa2b6f4c140c2b64c9c098a38f84ecb04926da61fa8e96cfffc33073d9",
+  "block_k": 30,
+  "built_utc": "2026-10-22T10:11:12Z",
+  "tool": "taniteval/tools/build_lead_block_b1.py",
+  "n_rows": 29556
+ },
+ "join": {
+  "key": "(clip_id, RAW frame 2t)",
+  "n_windows": 2399,
+  "n_episodes": 141,
+  "window_states": {
+   "LEAD": 743,
+   "NO_LEAD": 552,
+   "NOT_STRAIGHT": 931,
+   "NO_LABEL": 173
+  },
+  "speed_proof_max_mps": 2.6242784824326293e-05,
+  "speed_proof_tol_mps": 0.001
+ },
+ "human_reference": {
+  "n_windows": 2399,
+  "n_lead_windows": 743,
+  "metrics": {
+   "headway_min_m": {
+    "mean": 25.6648,
+    "lo": 21.6332,
+    "hi": 29.7907,
+    "ci95": 4.0787,
+    "se": 2.0808,
+    "reducer": "mean",
+    "n_windows": 725,
+    "n_episodes": 73,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n": 725
+   },
+   "time_gap_min_s": {
+    "mean": 3.9954,
+    "lo": 3.1011,
+    "hi": 5.0788,
+    "ci95": 0.9888,
+    "se": 0.5165,
+    "reducer": "mean",
+    "n_windows": 659,
+    "n_episodes": 72,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n": 659
+   },
+   "min_ttc_s": {
+    "mean": 19.7898,
+    "lo": 17.4084,
+    "hi": 21.9416,
+    "ci95": 2.2666,
+    "se": 1.1528,
+    "reducer": "mean",
+    "n_windows": 725,
+    "n_episodes": 73,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n": 725,
+    "n_closing": 447
+   }
+  },
+  "no_value_reasons": {
+   "headway_min_m": {
+    "NO_LEAD": 552,
+    "NOT_STRAIGHT": 931,
+    "NO_LABEL": 173,
+    "lead_window_but_path_never_in_corridor": 18,
+    "n_with_value": 725,
+    "n_windows": 2399
+   },
+   "time_gap_min_s": {
+    "NO_LEAD": 552,
+    "NOT_STRAIGHT": 931,
+    "NO_LABEL": 173,
+    "lead_window_but_path_never_in_corridor": 18,
+    "standstill_v0_below_0p5_mps": 66,
+    "n_with_value": 659,
+    "n_windows": 2399
+   },
+   "min_ttc_s": {
+    "NO_LEAD": 552,
+    "NOT_STRAIGHT": 931,
+    "NO_LABEL": 173,
+    "lead_window_but_path_never_in_corridor": 18,
+    "n_with_value": 725,
+    "n_windows": 2399
+   }
+  },
+  "kinematic_contract": {
+   "status": "OK",
+   "n_both": 724,
+   "n_block_finite": 724,
+   "n_recomputed_only": 1,
+   "median_abs_headway_diff_m": 0.02218,
+   "p95_abs_headway_diff_m": 0.7448,
+   "max_abs_headway_diff_m": 1.6362,
+   "tol_median_m": 0.25,
+   "median_abs_time_gap_min_s_diff": 0.00257,
+   "median_abs_min_ttc_s_diff": 0.0
+  }
+ },
+ "arms": {
+  "B_s0": {
+   "n_windows": 2399,
+   "n_lead_windows": 743,
+   "window_states": {
+    "LEAD": 743,
+    "NO_LEAD": 552,
+    "NOT_STRAIGHT": 931,
+    "NO_LABEL": 173
+   },
+   "metrics": {
+    "headway_min_m": {
+     "mean": 25.6223,
+     "lo": 21.8386,
+     "hi": 29.7384,
+     "ci95": 3.9499,
+     "se": 2.0262,
+     "reducer": "mean",
+     "n_windows": 722,
+     "n_episodes": 74,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 722
+    },
+    "time_gap_min_s": {
+     "mean": 4.0223,
+     "lo": 3.1043,
+     "hi": 5.269,
+     "ci95": 1.0823,
+     "se": 0.5595,
+     "reducer": "mean",
+     "n_windows": 665,
+     "n_episodes": 74,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 665
+    },
+    "min_ttc_s": {
+     "mean": 19.3964,
+     "lo": 17.3135,
+     "hi": 21.3442,
+     "ci95": 2.0153,
+     "se": 1.048,
+     "reducer": "mean",
+     "n_windows": 722,
+     "n_episodes": 74,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 722,
+     "n_closing": 458,
+     "ttc_cap_s": 30.0,
+     "censoring_note": "264 of 722 windows never close on the lead and are censored at TTC_CAP_S=30.0s. The mean is over censored data \u2014 quote n_closing beside it, never the mean alone.",
+     "n_censored_at_cap": 357
+    }
+   },
+   "no_value_reasons": {
+    "headway_min_m": {
+     "NO_LEAD": 552,
+     "NOT_STRAIGHT": 931,
+     "NO_LABEL": 173,
+     "lead_window_but_path_never_in_corridor": 21,
+     "n_with_value": 722,
+     "n_windows": 2399
+    },
+    "time_gap_min_s": {
+     "NO_LEAD": 552,
+     "NOT_STRAIGHT": 931,
+     "NO_LABEL": 173,
+     "lead_window_but_path_never_in_corridor": 21,
+     "standstill_v0_below_0p5_mps": 57,
+     "n_with_value": 665,
+     "n_windows": 2399
+    },
+    "min_ttc_s": {
+     "NO_LEAD": 552,
+     "NOT_STRAIGHT": 931,
+     "NO_LABEL": 173,
+     "lead_window_but_path_never_in_corridor": 21,
+     "n_with_value": 722,
+     "n_windows": 2399
+    }
+   },
+   "vs_human": {
+    "headway_min_m": {
+     "n_both": 713,
+     "n_arm_only": 9,
+     "n_human_only": 12,
+     "signed_arm_minus_human": {
+      "delta": -0.1694,
+      "lo": -0.7367,
+      "hi": 0.3935,
+      "ci95": 0.5651,
+      "p_delta_gt0": 0.262,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 713,
+      "n_episodes": 72,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "abs_error": {
+      "mean": 1.992,
+      "lo": 1.5128,
+      "hi": 2.5247,
+      "ci95": 0.5059,
+      "se": 0.2588,
+      "reducer": "mean",
+      "n_windows": 713,
+      "n_episodes": 72,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    },
+    "time_gap_min_s": {
+     "n_both": 656,
+     "n_arm_only": 9,
+     "n_human_only": 3,
+     "signed_arm_minus_human": {
+      "delta": 0.0001,
+      "lo": -0.1529,
+      "hi": 0.2258,
+      "ci95": 0.1893,
+      "p_delta_gt0": 0.459,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 656,
+      "n_episodes": 72,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "abs_error": {
+      "mean": 0.3743,
+      "lo": 0.2129,
+      "hi": 0.5961,
+      "ci95": 0.1916,
+      "se": 0.1011,
+      "reducer": "mean",
+      "n_windows": 656,
+      "n_episodes": 72,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    },
+    "min_ttc_s": {
+     "n_both": 713,
+     "n_arm_only": 9,
+     "n_human_only": 12,
+     "signed_arm_minus_human": {
+      "delta": -0.2588,
+      "lo": -1.2301,
+      "hi": 0.7166,
+      "ci95": 0.9734,
+      "p_delta_gt0": 0.3145,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 713,
+      "n_episodes": 72,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "abs_error": {
+      "mean": 3.8693,
+      "lo": 3.0358,
+      "hi": 4.7381,
+      "ci95": 0.8512,
+      "se": 0.4332,
+      "reducer": "mean",
+      "n_windows": 713,
+      "n_episodes": 72,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    }
+   },
+   "lead_viol": {
+    "status": "OK",
+    "definition": "share of lead windows whose plan's minimum time gap is < 1 s while the human's is >= 1 s",
+    "n_lead_windows": 743,
+    "n_viol": 21,
+    "share": 0.028264,
+    "ci": {
+     "mean": 0.0283,
+     "lo": 0.0142,
+     "hi": 0.0455,
+     "ci95": 0.0156,
+     "se": 0.0078,
+     "reducer": "mean",
+     "n_windows": 743,
+     "n_episodes": 77,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+    },
+    "n_at_risk": 595,
+    "share_of_at_risk": 0.035294,
+    "share_of_at_risk_ci": {
+     "mean": 0.0353,
+     "lo": 0.019,
+     "hi": 0.0553,
+     "ci95": 0.0181,
+     "se": 0.0091,
+     "reducer": "mean",
+     "n_windows": 595,
+     "n_episodes": 70,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+    },
+    "n_human_tg_undefined": 84,
+    "n_human_tg_below_thr": 64,
+    "n_plan_lost_lead": 3,
+    "share_incl_lost_lead": 0.032301,
+    "lead_progress_ratio": 0.924328655396417,
+    "lead_progress_ratio_clipped": 0.8627974408896649,
+    "progress": {
+     "status": "OK",
+     "n": 595,
+     "n_at_risk": 595,
+     "lead_progress_ratio": 0.924328655396417,
+     "lead_progress_ratio_clipped": 0.8627974408896649,
+     "meets_min_progress": false,
+     "n_below_min": 227,
+     "n_human_arc_degenerate": 0
+    }
+   },
+   "by_speed": {
+    "_what": "LONGITUDINAL distance-keeping, per speed band. NEVER pool these.",
+    "_binding": "Sayed 2026-08-02 clause 5: where a family cannot be computed, say so PER STRATUM with the reason and the n, rather than silently dropping it.",
+    "bands_mps": [
+     "0-1",
+     "1-3",
+     "3-6",
+     "6-10",
+     "10-15",
+     "15+"
+    ],
+    "min_stratum_n": 30,
+    "estimator": "episode_cluster_bootstrap (taniteval.ci) \u2014 NEVER overlapping_holdout_se",
+    "n_windows_total": 2399,
+    "strata": {
+     "0-1": {
+      "speed_mps": [
+       0.0,
+       1.0
+      ],
+      "n_windows": 136,
+      "window_states": {
+       "LEAD": 81,
+       "NOT_STRAIGHT": 36,
+       "NO_LABEL": 5,
+       "NO_LEAD": 14
+      },
+      "n_with_lead": 72,
+      "lead_rate": 0.5294,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 13.5341,
+       "lo": 9.5585,
+       "hi": 21.0569,
+       "ci95": 5.7492,
+       "se": 2.9789,
+       "reducer": "mean",
+       "n_windows": 72,
+       "n_episodes": 13,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 72,
+       "n_total": 136
+      },
+      "time_gap_min_s": {
+       "mean": 28.4627,
+       "lo": 12.8497,
+       "hi": 50.8358,
+       "ci95": 18.9931,
+       "se": 10.1837,
+       "reducer": "mean",
+       "n_windows": 15,
+       "n_episodes": 9,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 15,
+       "n_total": 136
+      },
+      "min_ttc_s": {
+       "mean": 23.2505,
+       "lo": 17.0806,
+       "hi": 28.1822,
+       "ci95": 5.5508,
+       "se": 2.8473,
+       "reducer": "mean",
+       "n_windows": 72,
+       "n_episodes": 13,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 72,
+       "n_total": 136
+      },
+      "time_gap_caveat": "this band straddles MIN_SPEED_MPS=0.5 m/s; a time gap is UNDEFINED at standstill and is NaN there, so n_time_gap < n_with_lead by construction. Never read the gap here as a following behaviour."
+     },
+     "1-3": {
+      "speed_mps": [
+       1.0,
+       3.0
+      ],
+      "n_windows": 139,
+      "window_states": {
+       "LEAD": 72,
+       "NOT_STRAIGHT": 47,
+       "NO_LABEL": 2,
+       "NO_LEAD": 18
+      },
+      "n_with_lead": 70,
+      "lead_rate": 0.5036,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 15.8903,
+       "lo": 11.6074,
+       "hi": 20.8686,
+       "ci95": 4.6306,
+       "se": 2.4423,
+       "reducer": "mean",
+       "n_windows": 70,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 70,
+       "n_total": 139
+      },
+      "time_gap_min_s": {
+       "mean": 8.4587,
+       "lo": 6.1179,
+       "hi": 11.3379,
+       "ci95": 2.61,
+       "se": 1.4356,
+       "reducer": "mean",
+       "n_windows": 70,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 70,
+       "n_total": 139
+      },
+      "min_ttc_s": {
+       "mean": 19.5422,
+       "lo": 14.2318,
+       "hi": 24.4705,
+       "ci95": 5.1193,
+       "se": 2.6688,
+       "reducer": "mean",
+       "n_windows": 70,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 70,
+       "n_total": 139
+      }
+     },
+     "3-6": {
+      "speed_mps": [
+       3.0,
+       6.0
+      ],
+      "n_windows": 333,
+      "window_states": {
+       "LEAD": 109,
+       "NOT_STRAIGHT": 169,
+       "NO_LABEL": 3,
+       "NO_LEAD": 52
+      },
+      "n_with_lead": 108,
+      "lead_rate": 0.3243,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 19.0361,
+       "lo": 14.6463,
+       "hi": 24.8685,
+       "ci95": 5.1111,
+       "se": 2.5264,
+       "reducer": "mean",
+       "n_windows": 108,
+       "n_episodes": 32,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 108,
+       "n_total": 333
+      },
+      "time_gap_min_s": {
+       "mean": 4.3675,
+       "lo": 3.3482,
+       "hi": 5.7512,
+       "ci95": 1.2015,
+       "se": 0.5915,
+       "reducer": "mean",
+       "n_windows": 108,
+       "n_episodes": 32,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 108,
+       "n_total": 333
+      },
+      "min_ttc_s": {
+       "mean": 16.6217,
+       "lo": 12.6499,
+       "hi": 20.2249,
+       "ci95": 3.7875,
+       "se": 1.9326,
+       "reducer": "mean",
+       "n_windows": 108,
+       "n_episodes": 32,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 108,
+       "n_total": 333
+      }
+     },
+     "6-10": {
+      "speed_mps": [
+       6.0,
+       10.0
+      ],
+      "n_windows": 528,
+      "window_states": {
+       "LEAD": 175,
+       "NOT_STRAIGHT": 284,
+       "NO_LABEL": 11,
+       "NO_LEAD": 58
+      },
+      "n_with_lead": 174,
+      "lead_rate": 0.3295,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 24.6172,
+       "lo": 20.0656,
+       "hi": 29.9618,
+       "ci95": 4.9481,
+       "se": 2.5506,
+       "reducer": "mean",
+       "n_windows": 174,
+       "n_episodes": 41,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 174,
+       "n_total": 528
+      },
+      "time_gap_min_s": {
+       "mean": 3.0617,
+       "lo": 2.5246,
+       "hi": 3.6776,
+       "ci95": 0.5765,
+       "se": 0.2978,
+       "reducer": "mean",
+       "n_windows": 174,
+       "n_episodes": 41,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 174,
+       "n_total": 528
+      },
+      "min_ttc_s": {
+       "mean": 17.9655,
+       "lo": 14.1907,
+       "hi": 21.3615,
+       "ci95": 3.5854,
+       "se": 1.8862,
+       "reducer": "mean",
+       "n_windows": 174,
+       "n_episodes": 41,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 174,
+       "n_total": 528
+      }
+     },
+     "10-15": {
+      "speed_mps": [
+       10.0,
+       15.0
+      ],
+      "n_windows": 648,
+      "window_states": {
+       "LEAD": 139,
+       "NOT_STRAIGHT": 263,
+       "NO_LABEL": 40,
+       "NO_LEAD": 206
+      },
+      "n_with_lead": 136,
+      "lead_rate": 0.2099,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 34.7703,
+       "lo": 25.5606,
+       "hi": 46.2797,
+       "ci95": 10.3596,
+       "se": 5.247,
+       "reducer": "mean",
+       "n_windows": 136,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 136,
+       "n_total": 648
+      },
+      "time_gap_min_s": {
+       "mean": 2.8729,
+       "lo": 2.1242,
+       "hi": 3.8118,
+       "ci95": 0.8438,
+       "se": 0.4189,
+       "reducer": "mean",
+       "n_windows": 136,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 136,
+       "n_total": 648
+      },
+      "min_ttc_s": {
+       "mean": 20.8547,
+       "lo": 15.0004,
+       "hi": 25.6313,
+       "ci95": 5.3154,
+       "se": 2.7808,
+       "reducer": "mean",
+       "n_windows": 136,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 136,
+       "n_total": 648
+      }
+     },
+     "15+": {
+      "speed_mps": [
+       15.0,
+       null
+      ],
+      "n_windows": 615,
+      "window_states": {
+       "LEAD": 167,
+       "NOT_STRAIGHT": 132,
+       "NO_LABEL": 112,
+       "NO_LEAD": 204
+      },
+      "n_with_lead": 162,
+      "lead_rate": 0.2634,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 32.9906,
+       "lo": 25.6794,
+       "hi": 41.553,
+       "ci95": 7.9368,
+       "se": 4.0547,
+       "reducer": "mean",
+       "n_windows": 162,
+       "n_episodes": 15,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 162,
+       "n_total": 615
+      },
+      "time_gap_min_s": {
+       "mean": 1.609,
+       "lo": 1.1941,
+       "hi": 2.1481,
+       "ci95": 0.477,
+       "se": 0.2527,
+       "reducer": "mean",
+       "n_windows": 162,
+       "n_episodes": 15,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 162,
+       "n_total": 615
+      },
+      "min_ttc_s": {
+       "mean": 19.7828,
+       "lo": 16.3041,
+       "hi": 23.6072,
+       "ci95": 3.6516,
+       "se": 1.9303,
+       "reducer": "mean",
+       "n_windows": 162,
+       "n_episodes": 15,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 162,
+       "n_total": 615
+      }
+     }
+    },
+    "window_states_total": {
+     "LEAD": 743,
+     "NOT_STRAIGHT": 931,
+     "NO_LABEL": 173,
+     "NO_LEAD": 552
+    }
+   }
+  },
+  "H_s0": {
+   "n_windows": 2399,
+   "n_lead_windows": 743,
+   "window_states": {
+    "LEAD": 743,
+    "NO_LEAD": 552,
+    "NOT_STRAIGHT": 931,
+    "NO_LABEL": 173
+   },
+   "metrics": {
+    "headway_min_m": {
+     "mean": 25.5529,
+     "lo": 21.5534,
+     "hi": 29.9688,
+     "ci95": 4.2077,
+     "se": 2.1019,
+     "reducer": "mean",
+     "n_windows": 727,
+     "n_episodes": 75,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 727
+    },
+    "time_gap_min_s": {
+     "mean": 3.92,
+     "lo": 3.0443,
+     "hi": 5.0524,
+     "ci95": 1.004,
+     "se": 0.5258,
+     "reducer": "mean",
+     "n_windows": 664,
+     "n_episodes": 74,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 664
+    },
+    "min_ttc_s": {
+     "mean": 20.4968,
+     "lo": 18.3729,
+     "hi": 22.4036,
+     "ci95": 2.0153,
+     "se": 1.0371,
+     "reducer": "mean",
+     "n_windows": 727,
+     "n_episodes": 75,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 727,
+     "n_closing": 419,
+     "ttc_cap_s": 30.0,
+     "censoring_note": "308 of 727 windows never close on the lead and are censored at TTC_CAP_S=30.0s. The mean is over censored data \u2014 quote n_closing beside it, never the mean alone.",
+     "n_censored_at_cap": 404
+    }
+   },
+   "no_value_reasons": {
+    "headway_min_m": {
+     "NO_LEAD": 552,
+     "NOT_STRAIGHT": 931,
+     "NO_LABEL": 173,
+     "lead_window_but_path_never_in_corridor": 16,
+     "n_with_value": 727,
+     "n_windows": 2399
+    },
+    "time_gap_min_s": {
+     "NO_LEAD": 552,
+     "NOT_STRAIGHT": 931,
+     "NO_LABEL": 173,
+     "lead_window_but_path_never_in_corridor": 16,
+     "standstill_v0_below_0p5_mps": 63,
+     "n_with_value": 664,
+     "n_windows": 2399
+    },
+    "min_ttc_s": {
+     "NO_LEAD": 552,
+     "NOT_STRAIGHT": 931,
+     "NO_LABEL": 173,
+     "lead_window_but_path_never_in_corridor": 16,
+     "n_with_value": 727,
+     "n_windows": 2399
+    }
+   },
+   "vs_human": {
+    "headway_min_m": {
+     "n_both": 719,
+     "n_arm_only": 8,
+     "n_human_only": 6,
+     "signed_arm_minus_human": {
+      "delta": -0.2321,
+      "lo": -0.8532,
+      "hi": 0.3709,
+      "ci95": 0.612,
+      "p_delta_gt0": 0.239,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 719,
+      "n_episodes": 73,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "abs_error": {
+      "mean": 2.1183,
+      "lo": 1.5603,
+      "hi": 2.7788,
+      "ci95": 0.6092,
+      "se": 0.3168,
+      "reducer": "mean",
+      "n_windows": 719,
+      "n_episodes": 73,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    },
+    "time_gap_min_s": {
+     "n_both": 656,
+     "n_arm_only": 8,
+     "n_human_only": 3,
+     "signed_arm_minus_human": {
+      "delta": -0.0975,
+      "lo": -0.2381,
+      "hi": 0.0591,
+      "ci95": 0.1486,
+      "p_delta_gt0": 0.092,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 656,
+      "n_episodes": 72,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "abs_error": {
+      "mean": 0.365,
+      "lo": 0.2325,
+      "hi": 0.5213,
+      "ci95": 0.1444,
+      "se": 0.0751,
+      "reducer": "mean",
+      "n_windows": 656,
+      "n_episodes": 72,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    },
+    "min_ttc_s": {
+     "n_both": 719,
+     "n_arm_only": 8,
+     "n_human_only": 6,
+     "signed_arm_minus_human": {
+      "delta": 0.7779,
+      "lo": -0.0008,
+      "hi": 1.5843,
+      "ci95": 0.7925,
+      "p_delta_gt0": 0.9745,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 719,
+      "n_episodes": 73,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "abs_error": {
+      "mean": 3.0301,
+      "lo": 2.2827,
+      "hi": 3.7749,
+      "ci95": 0.7461,
+      "se": 0.3799,
+      "reducer": "mean",
+      "n_windows": 719,
+      "n_episodes": 73,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    }
+   },
+   "lead_viol": {
+    "status": "OK",
+    "definition": "share of lead windows whose plan's minimum time gap is < 1 s while the human's is >= 1 s",
+    "n_lead_windows": 743,
+    "n_viol": 29,
+    "share": 0.039031,
+    "ci": {
+     "mean": 0.039,
+     "lo": 0.023,
+     "hi": 0.0571,
+     "ci95": 0.0171,
+     "se": 0.0087,
+     "reducer": "mean",
+     "n_windows": 743,
+     "n_episodes": 77,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+    },
+    "n_at_risk": 595,
+    "share_of_at_risk": 0.048739,
+    "share_of_at_risk_ci": {
+     "mean": 0.0487,
+     "lo": 0.0294,
+     "hi": 0.0714,
+     "ci95": 0.021,
+     "se": 0.0106,
+     "reducer": "mean",
+     "n_windows": 595,
+     "n_episodes": 70,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+    },
+    "n_human_tg_undefined": 84,
+    "n_human_tg_below_thr": 64,
+    "n_plan_lost_lead": 3,
+    "share_incl_lost_lead": 0.043069,
+    "lead_progress_ratio": 0.9896180571027617,
+    "lead_progress_ratio_clipped": 0.8992139748200813,
+    "progress": {
+     "status": "OK",
+     "n": 595,
+     "n_at_risk": 595,
+     "lead_progress_ratio": 0.9896180571027617,
+     "lead_progress_ratio_clipped": 0.8992139748200813,
+     "meets_min_progress": false,
+     "n_below_min": 185,
+     "n_human_arc_degenerate": 0
+    }
+   },
+   "by_speed": {
+    "_what": "LONGITUDINAL distance-keeping, per speed band. NEVER pool these.",
+    "_binding": "Sayed 2026-08-02 clause 5: where a family cannot be computed, say so PER STRATUM with the reason and the n, rather than silently dropping it.",
+    "bands_mps": [
+     "0-1",
+     "1-3",
+     "3-6",
+     "6-10",
+     "10-15",
+     "15+"
+    ],
+    "min_stratum_n": 30,
+    "estimator": "episode_cluster_bootstrap (taniteval.ci) \u2014 NEVER overlapping_holdout_se",
+    "n_windows_total": 2399,
+    "strata": {
+     "0-1": {
+      "speed_mps": [
+       0.0,
+       1.0
+      ],
+      "n_windows": 136,
+      "window_states": {
+       "LEAD": 81,
+       "NOT_STRAIGHT": 36,
+       "NO_LABEL": 5,
+       "NO_LEAD": 14
+      },
+      "n_with_lead": 78,
+      "lead_rate": 0.5735,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 14.7831,
+       "lo": 8.8479,
+       "hi": 27.1551,
+       "ci95": 9.1536,
+       "se": 4.7314,
+       "reducer": "mean",
+       "n_windows": 78,
+       "n_episodes": 14,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 78,
+       "n_total": 136
+      },
+      "time_gap_min_s": {
+       "mean": 26.0016,
+       "lo": 11.7156,
+       "hi": 45.7486,
+       "ci95": 17.0165,
+       "se": 9.1814,
+       "reducer": "mean",
+       "n_windows": 15,
+       "n_episodes": 9,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 15,
+       "n_total": 136
+      },
+      "min_ttc_s": {
+       "mean": 19.8797,
+       "lo": 14.6107,
+       "hi": 24.6771,
+       "ci95": 5.0332,
+       "se": 2.6364,
+       "reducer": "mean",
+       "n_windows": 78,
+       "n_episodes": 14,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 78,
+       "n_total": 136
+      },
+      "time_gap_caveat": "this band straddles MIN_SPEED_MPS=0.5 m/s; a time gap is UNDEFINED at standstill and is NaN there, so n_time_gap < n_with_lead by construction. Never read the gap here as a following behaviour."
+     },
+     "1-3": {
+      "speed_mps": [
+       1.0,
+       3.0
+      ],
+      "n_windows": 139,
+      "window_states": {
+       "LEAD": 72,
+       "NOT_STRAIGHT": 47,
+       "NO_LABEL": 2,
+       "NO_LEAD": 18
+      },
+      "n_with_lead": 70,
+      "lead_rate": 0.5036,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 15.4529,
+       "lo": 11.1726,
+       "hi": 20.3789,
+       "ci95": 4.6031,
+       "se": 2.386,
+       "reducer": "mean",
+       "n_windows": 70,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 70,
+       "n_total": 139
+      },
+      "time_gap_min_s": {
+       "mean": 8.2103,
+       "lo": 5.9201,
+       "hi": 11.0018,
+       "ci95": 2.5409,
+       "se": 1.3867,
+       "reducer": "mean",
+       "n_windows": 70,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 70,
+       "n_total": 139
+      },
+      "min_ttc_s": {
+       "mean": 19.5213,
+       "lo": 14.2072,
+       "hi": 24.6079,
+       "ci95": 5.2004,
+       "se": 2.7663,
+       "reducer": "mean",
+       "n_windows": 70,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 70,
+       "n_total": 139
+      }
+     },
+     "3-6": {
+      "speed_mps": [
+       3.0,
+       6.0
+      ],
+      "n_windows": 333,
+      "window_states": {
+       "LEAD": 109,
+       "NOT_STRAIGHT": 169,
+       "NO_LABEL": 3,
+       "NO_LEAD": 52
+      },
+      "n_with_lead": 107,
+      "lead_rate": 0.3213,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 18.4277,
+       "lo": 13.9744,
+       "hi": 24.4115,
+       "ci95": 5.2185,
+       "se": 2.5425,
+       "reducer": "mean",
+       "n_windows": 107,
+       "n_episodes": 31,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 107,
+       "n_total": 333
+      },
+      "time_gap_min_s": {
+       "mean": 4.2515,
+       "lo": 3.1922,
+       "hi": 5.6499,
+       "ci95": 1.2289,
+       "se": 0.5968,
+       "reducer": "mean",
+       "n_windows": 107,
+       "n_episodes": 31,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 107,
+       "n_total": 333
+      },
+      "min_ttc_s": {
+       "mean": 18.0994,
+       "lo": 13.4792,
+       "hi": 21.8481,
+       "ci95": 4.1844,
+       "se": 2.1074,
+       "reducer": "mean",
+       "n_windows": 107,
+       "n_episodes": 31,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 107,
+       "n_total": 333
+      }
+     },
+     "6-10": {
+      "speed_mps": [
+       6.0,
+       10.0
+      ],
+      "n_windows": 528,
+      "window_states": {
+       "LEAD": 175,
+       "NOT_STRAIGHT": 284,
+       "NO_LABEL": 11,
+       "NO_LEAD": 58
+      },
+      "n_with_lead": 174,
+      "lead_rate": 0.3295,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 24.5538,
+       "lo": 19.9758,
+       "hi": 29.9649,
+       "ci95": 4.9946,
+       "se": 2.5548,
+       "reducer": "mean",
+       "n_windows": 174,
+       "n_episodes": 41,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 174,
+       "n_total": 528
+      },
+      "time_gap_min_s": {
+       "mean": 3.0501,
+       "lo": 2.5156,
+       "hi": 3.6628,
+       "ci95": 0.5736,
+       "se": 0.298,
+       "reducer": "mean",
+       "n_windows": 174,
+       "n_episodes": 41,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 174,
+       "n_total": 528
+      },
+      "min_ttc_s": {
+       "mean": 20.8563,
+       "lo": 17.2784,
+       "hi": 23.8814,
+       "ci95": 3.3015,
+       "se": 1.7074,
+       "reducer": "mean",
+       "n_windows": 174,
+       "n_episodes": 41,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 174,
+       "n_total": 528
+      }
+     },
+     "10-15": {
+      "speed_mps": [
+       10.0,
+       15.0
+      ],
+      "n_windows": 648,
+      "window_states": {
+       "LEAD": 139,
+       "NOT_STRAIGHT": 263,
+       "NO_LABEL": 40,
+       "NO_LEAD": 206
+      },
+      "n_with_lead": 136,
+      "lead_rate": 0.2099,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 34.7935,
+       "lo": 25.5748,
+       "hi": 46.4099,
+       "ci95": 10.4176,
+       "se": 5.2733,
+       "reducer": "mean",
+       "n_windows": 136,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 136,
+       "n_total": 648
+      },
+      "time_gap_min_s": {
+       "mean": 2.8744,
+       "lo": 2.1195,
+       "hi": 3.8189,
+       "ci95": 0.8497,
+       "se": 0.4215,
+       "reducer": "mean",
+       "n_windows": 136,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 136,
+       "n_total": 648
+      },
+      "min_ttc_s": {
+       "mean": 21.3277,
+       "lo": 15.7672,
+       "hi": 25.8126,
+       "ci95": 5.0227,
+       "se": 2.6406,
+       "reducer": "mean",
+       "n_windows": 136,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 136,
+       "n_total": 648
+      }
+     },
+     "15+": {
+      "speed_mps": [
+       15.0,
+       null
+      ],
+      "n_windows": 615,
+      "window_states": {
+       "LEAD": 167,
+       "NOT_STRAIGHT": 132,
+       "NO_LABEL": 112,
+       "NO_LEAD": 204
+      },
+      "n_with_lead": 162,
+      "lead_rate": 0.2634,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 33.1241,
+       "lo": 25.7697,
+       "hi": 41.7477,
+       "ci95": 7.989,
+       "se": 4.0639,
+       "reducer": "mean",
+       "n_windows": 162,
+       "n_episodes": 15,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 162,
+       "n_total": 615
+      },
+      "time_gap_min_s": {
+       "mean": 1.6148,
+       "lo": 1.2016,
+       "hi": 2.154,
+       "ci95": 0.4762,
+       "se": 0.2528,
+       "reducer": "mean",
+       "n_windows": 162,
+       "n_episodes": 15,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 162,
+       "n_total": 615
+      },
+      "min_ttc_s": {
+       "mean": 21.715,
+       "lo": 18.4499,
+       "hi": 25.2341,
+       "ci95": 3.3921,
+       "se": 1.7444,
+       "reducer": "mean",
+       "n_windows": 162,
+       "n_episodes": 15,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 162,
+       "n_total": 615
+      }
+     }
+    },
+    "window_states_total": {
+     "LEAD": 743,
+     "NOT_STRAIGHT": 931,
+     "NO_LABEL": 173,
+     "NO_LEAD": 552
+    }
+   }
+  },
+  "HP_s0": {
+   "n_windows": 2399,
+   "n_lead_windows": 743,
+   "window_states": {
+    "LEAD": 743,
+    "NO_LEAD": 552,
+    "NOT_STRAIGHT": 931,
+    "NO_LABEL": 173
+   },
+   "metrics": {
+    "headway_min_m": {
+     "mean": 25.84,
+     "lo": 21.7527,
+     "hi": 30.1847,
+     "ci95": 4.216,
+     "se": 2.1154,
+     "reducer": "mean",
+     "n_windows": 726,
+     "n_episodes": 75,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 726
+    },
+    "time_gap_min_s": {
+     "mean": 3.9387,
+     "lo": 3.0642,
+     "hi": 5.0655,
+     "ci95": 1.0006,
+     "se": 0.5253,
+     "reducer": "mean",
+     "n_windows": 663,
+     "n_episodes": 74,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 663
+    },
+    "min_ttc_s": {
+     "mean": 20.9475,
+     "lo": 18.7965,
+     "hi": 22.9103,
+     "ci95": 2.0569,
+     "se": 1.0389,
+     "reducer": "mean",
+     "n_windows": 726,
+     "n_episodes": 75,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 726,
+     "n_closing": 410,
+     "ttc_cap_s": 30.0,
+     "censoring_note": "316 of 726 windows never close on the lead and are censored at TTC_CAP_S=30.0s. The mean is over censored data \u2014 quote n_closing beside it, never the mean alone.",
+     "n_censored_at_cap": 417
+    }
+   },
+   "no_value_reasons": {
+    "headway_min_m": {
+     "NO_LEAD": 552,
+     "NOT_STRAIGHT": 931,
+     "NO_LABEL": 173,
+     "lead_window_but_path_never_in_corridor": 17,
+     "n_with_value": 726,
+     "n_windows": 2399
+    },
+    "time_gap_min_s": {
+     "NO_LEAD": 552,
+     "NOT_STRAIGHT": 931,
+     "NO_LABEL": 173,
+     "lead_window_but_path_never_in_corridor": 17,
+     "standstill_v0_below_0p5_mps": 63,
+     "n_with_value": 663,
+     "n_windows": 2399
+    },
+    "min_ttc_s": {
+     "NO_LEAD": 552,
+     "NOT_STRAIGHT": 931,
+     "NO_LABEL": 173,
+     "lead_window_but_path_never_in_corridor": 17,
+     "n_with_value": 726,
+     "n_windows": 2399
+    }
+   },
+   "vs_human": {
+    "headway_min_m": {
+     "n_both": 718,
+     "n_arm_only": 8,
+     "n_human_only": 7,
+     "signed_arm_minus_human": {
+      "delta": 0.0264,
+      "lo": -0.6827,
+      "hi": 0.7738,
+      "ci95": 0.7283,
+      "p_delta_gt0": 0.515,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 718,
+      "n_episodes": 73,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "abs_error": {
+      "mean": 2.2788,
+      "lo": 1.6302,
+      "hi": 3.0356,
+      "ci95": 0.7027,
+      "se": 0.3561,
+      "reducer": "mean",
+      "n_windows": 718,
+      "n_episodes": 73,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    },
+    "time_gap_min_s": {
+     "n_both": 655,
+     "n_arm_only": 8,
+     "n_human_only": 4,
+     "signed_arm_minus_human": {
+      "delta": -0.0818,
+      "lo": -0.2247,
+      "hi": 0.0753,
+      "ci95": 0.15,
+      "p_delta_gt0": 0.139,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 655,
+      "n_episodes": 72,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "abs_error": {
+      "mean": 0.3734,
+      "lo": 0.2381,
+      "hi": 0.5272,
+      "ci95": 0.1445,
+      "se": 0.0754,
+      "reducer": "mean",
+      "n_windows": 655,
+      "n_episodes": 72,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    },
+    "min_ttc_s": {
+     "n_both": 718,
+     "n_arm_only": 8,
+     "n_human_only": 7,
+     "signed_arm_minus_human": {
+      "delta": 1.248,
+      "lo": 0.2769,
+      "hi": 2.2608,
+      "ci95": 0.9919,
+      "p_delta_gt0": 0.996,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 718,
+      "n_episodes": 73,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "abs_error": {
+      "mean": 3.3613,
+      "lo": 2.4299,
+      "hi": 4.2796,
+      "ci95": 0.9249,
+      "se": 0.4608,
+      "reducer": "mean",
+      "n_windows": 718,
+      "n_episodes": 73,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    }
+   },
+   "lead_viol": {
+    "status": "OK",
+    "definition": "share of lead windows whose plan's minimum time gap is < 1 s while the human's is >= 1 s",
+    "n_lead_windows": 743,
+    "n_viol": 28,
+    "share": 0.037685,
+    "ci": {
+     "mean": 0.0377,
+     "lo": 0.0221,
+     "hi": 0.0549,
+     "ci95": 0.0164,
+     "se": 0.0084,
+     "reducer": "mean",
+     "n_windows": 743,
+     "n_episodes": 77,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+    },
+    "n_at_risk": 595,
+    "share_of_at_risk": 0.047059,
+    "share_of_at_risk_ci": {
+     "mean": 0.0471,
+     "lo": 0.0285,
+     "hi": 0.0695,
+     "ci95": 0.0205,
+     "se": 0.0104,
+     "reducer": "mean",
+     "n_windows": 595,
+     "n_episodes": 70,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+    },
+    "n_human_tg_undefined": 84,
+    "n_human_tg_below_thr": 64,
+    "n_plan_lost_lead": 4,
+    "share_incl_lost_lead": 0.043069,
+    "lead_progress_ratio": 0.9828579318714326,
+    "lead_progress_ratio_clipped": 0.8941950017564171,
+    "progress": {
+     "status": "OK",
+     "n": 595,
+     "n_at_risk": 595,
+     "lead_progress_ratio": 0.9828579318714326,
+     "lead_progress_ratio_clipped": 0.8941950017564171,
+     "meets_min_progress": false,
+     "n_below_min": 194,
+     "n_human_arc_degenerate": 0
+    }
+   },
+   "by_speed": {
+    "_what": "LONGITUDINAL distance-keeping, per speed band. NEVER pool these.",
+    "_binding": "Sayed 2026-08-02 clause 5: where a family cannot be computed, say so PER STRATUM with the reason and the n, rather than silently dropping it.",
+    "bands_mps": [
+     "0-1",
+     "1-3",
+     "3-6",
+     "6-10",
+     "10-15",
+     "15+"
+    ],
+    "min_stratum_n": 30,
+    "estimator": "episode_cluster_bootstrap (taniteval.ci) \u2014 NEVER overlapping_holdout_se",
+    "n_windows_total": 2399,
+    "strata": {
+     "0-1": {
+      "speed_mps": [
+       0.0,
+       1.0
+      ],
+      "n_windows": 136,
+      "window_states": {
+       "LEAD": 81,
+       "NOT_STRAIGHT": 36,
+       "NO_LABEL": 5,
+       "NO_LEAD": 14
+      },
+      "n_with_lead": 78,
+      "lead_rate": 0.5735,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 14.7832,
+       "lo": 8.848,
+       "hi": 27.1551,
+       "ci95": 9.1536,
+       "se": 4.7314,
+       "reducer": "mean",
+       "n_windows": 78,
+       "n_episodes": 14,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 78,
+       "n_total": 136
+      },
+      "time_gap_min_s": {
+       "mean": 26.0027,
+       "lo": 11.7165,
+       "hi": 45.7506,
+       "ci95": 17.017,
+       "se": 9.1811,
+       "reducer": "mean",
+       "n_windows": 15,
+       "n_episodes": 9,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 15,
+       "n_total": 136
+      },
+      "min_ttc_s": {
+       "mean": 19.8793,
+       "lo": 14.6094,
+       "hi": 24.6772,
+       "ci95": 5.0339,
+       "se": 2.6367,
+       "reducer": "mean",
+       "n_windows": 78,
+       "n_episodes": 14,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 78,
+       "n_total": 136
+      },
+      "time_gap_caveat": "this band straddles MIN_SPEED_MPS=0.5 m/s; a time gap is UNDEFINED at standstill and is NaN there, so n_time_gap < n_with_lead by construction. Never read the gap here as a following behaviour."
+     },
+     "1-3": {
+      "speed_mps": [
+       1.0,
+       3.0
+      ],
+      "n_windows": 139,
+      "window_states": {
+       "LEAD": 72,
+       "NOT_STRAIGHT": 47,
+       "NO_LABEL": 2,
+       "NO_LEAD": 18
+      },
+      "n_with_lead": 69,
+      "lead_rate": 0.4964,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 15.6219,
+       "lo": 11.3897,
+       "hi": 20.7498,
+       "ci95": 4.6801,
+       "se": 2.3891,
+       "reducer": "mean",
+       "n_windows": 69,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 69,
+       "n_total": 139
+      },
+      "time_gap_min_s": {
+       "mean": 8.2925,
+       "lo": 6.0128,
+       "hi": 11.2154,
+       "ci95": 2.6013,
+       "se": 1.3931,
+       "reducer": "mean",
+       "n_windows": 69,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 69,
+       "n_total": 139
+      },
+      "min_ttc_s": {
+       "mean": 19.37,
+       "lo": 13.8444,
+       "hi": 24.5605,
+       "ci95": 5.358,
+       "se": 2.836,
+       "reducer": "mean",
+       "n_windows": 69,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 69,
+       "n_total": 139
+      }
+     },
+     "3-6": {
+      "speed_mps": [
+       3.0,
+       6.0
+      ],
+      "n_windows": 333,
+      "window_states": {
+       "LEAD": 109,
+       "NOT_STRAIGHT": 169,
+       "NO_LABEL": 3,
+       "NO_LEAD": 52
+      },
+      "n_with_lead": 107,
+      "lead_rate": 0.3213,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 18.4298,
+       "lo": 13.9752,
+       "hi": 24.4127,
+       "ci95": 5.2187,
+       "se": 2.5424,
+       "reducer": "mean",
+       "n_windows": 107,
+       "n_episodes": 31,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 107,
+       "n_total": 333
+      },
+      "time_gap_min_s": {
+       "mean": 4.252,
+       "lo": 3.1926,
+       "hi": 5.6507,
+       "ci95": 1.229,
+       "se": 0.5968,
+       "reducer": "mean",
+       "n_windows": 107,
+       "n_episodes": 31,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 107,
+       "n_total": 333
+      },
+      "min_ttc_s": {
+       "mean": 18.101,
+       "lo": 13.4813,
+       "hi": 21.8484,
+       "ci95": 4.1836,
+       "se": 2.1071,
+       "reducer": "mean",
+       "n_windows": 107,
+       "n_episodes": 31,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 107,
+       "n_total": 333
+      }
+     },
+     "6-10": {
+      "speed_mps": [
+       6.0,
+       10.0
+      ],
+      "n_windows": 528,
+      "window_states": {
+       "LEAD": 175,
+       "NOT_STRAIGHT": 284,
+       "NO_LABEL": 11,
+       "NO_LEAD": 58
+      },
+      "n_with_lead": 174,
+      "lead_rate": 0.3295,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 24.5883,
+       "lo": 19.992,
+       "hi": 30.0007,
+       "ci95": 5.0044,
+       "se": 2.5536,
+       "reducer": "mean",
+       "n_windows": 174,
+       "n_episodes": 41,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 174,
+       "n_total": 528
+      },
+      "time_gap_min_s": {
+       "mean": 3.054,
+       "lo": 2.5169,
+       "hi": 3.673,
+       "ci95": 0.5781,
+       "se": 0.2978,
+       "reducer": "mean",
+       "n_windows": 174,
+       "n_episodes": 41,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 174,
+       "n_total": 528
+      },
+      "min_ttc_s": {
+       "mean": 20.8977,
+       "lo": 17.3836,
+       "hi": 23.9168,
+       "ci95": 3.2666,
+       "se": 1.6988,
+       "reducer": "mean",
+       "n_windows": 174,
+       "n_episodes": 41,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 174,
+       "n_total": 528
+      }
+     },
+     "10-15": {
+      "speed_mps": [
+       10.0,
+       15.0
+      ],
+      "n_windows": 648,
+      "window_states": {
+       "LEAD": 139,
+       "NOT_STRAIGHT": 263,
+       "NO_LABEL": 40,
+       "NO_LEAD": 206
+      },
+      "n_with_lead": 136,
+      "lead_rate": 0.2099,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 35.6057,
+       "lo": 26.4667,
+       "hi": 46.8187,
+       "ci95": 10.176,
+       "se": 5.2578,
+       "reducer": "mean",
+       "n_windows": 136,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 136,
+       "n_total": 648
+      },
+      "time_gap_min_s": {
+       "mean": 2.9337,
+       "lo": 2.1798,
+       "hi": 3.8661,
+       "ci95": 0.8432,
+       "se": 0.4175,
+       "reducer": "mean",
+       "n_windows": 136,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 136,
+       "n_total": 648
+      },
+      "min_ttc_s": {
+       "mean": 22.4727,
+       "lo": 16.7822,
+       "hi": 26.4499,
+       "ci95": 4.8339,
+       "se": 2.4668,
+       "reducer": "mean",
+       "n_windows": 136,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 136,
+       "n_total": 648
+      }
+     },
+     "15+": {
+      "speed_mps": [
+       15.0,
+       null
+      ],
+      "n_windows": 615,
+      "window_states": {
+       "LEAD": 167,
+       "NOT_STRAIGHT": 132,
+       "NO_LABEL": 112,
+       "NO_LEAD": 204
+      },
+      "n_with_lead": 162,
+      "lead_rate": 0.2634,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 33.5564,
+       "lo": 25.9455,
+       "hi": 41.8818,
+       "ci95": 7.9681,
+       "se": 4.0897,
+       "reducer": "mean",
+       "n_windows": 162,
+       "n_episodes": 15,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 162,
+       "n_total": 615
+      },
+      "time_gap_min_s": {
+       "mean": 1.6286,
+       "lo": 1.2175,
+       "hi": 2.1583,
+       "ci95": 0.4704,
+       "se": 0.2507,
+       "reducer": "mean",
+       "n_windows": 162,
+       "n_episodes": 15,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 162,
+       "n_total": 615
+      },
+      "min_ttc_s": {
+       "mean": 22.7871,
+       "lo": 19.1523,
+       "hi": 26.0243,
+       "ci95": 3.436,
+       "se": 1.7558,
+       "reducer": "mean",
+       "n_windows": 162,
+       "n_episodes": 15,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 162,
+       "n_total": 615
+      }
+     }
+    },
+    "window_states_total": {
+     "LEAD": 743,
+     "NOT_STRAIGHT": 931,
+     "NO_LABEL": 173,
+     "NO_LEAD": 552
+    }
+   }
+  },
+  "Bp_s0": {
+   "n_windows": 2399,
+   "n_lead_windows": 743,
+   "window_states": {
+    "LEAD": 743,
+    "NO_LEAD": 552,
+    "NOT_STRAIGHT": 931,
+    "NO_LABEL": 173
+   },
+   "metrics": {
+    "headway_min_m": {
+     "mean": 25.9737,
+     "lo": 22.1119,
+     "hi": 30.1152,
+     "ci95": 4.0017,
+     "se": 2.0449,
+     "reducer": "mean",
+     "n_windows": 721,
+     "n_episodes": 74,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 721
+    },
+    "time_gap_min_s": {
+     "mean": 4.0468,
+     "lo": 3.1297,
+     "hi": 5.2903,
+     "ci95": 1.0803,
+     "se": 0.5589,
+     "reducer": "mean",
+     "n_windows": 664,
+     "n_episodes": 74,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 664
+    },
+    "min_ttc_s": {
+     "mean": 20.4724,
+     "lo": 18.2931,
+     "hi": 22.4216,
+     "ci95": 2.0643,
+     "se": 1.0553,
+     "reducer": "mean",
+     "n_windows": 721,
+     "n_episodes": 74,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 721,
+     "n_closing": 444,
+     "ttc_cap_s": 30.0,
+     "censoring_note": "277 of 721 windows never close on the lead and are censored at TTC_CAP_S=30.0s. The mean is over censored data \u2014 quote n_closing beside it, never the mean alone.",
+     "n_censored_at_cap": 396
+    }
+   },
+   "no_value_reasons": {
+    "headway_min_m": {
+     "NO_LEAD": 552,
+     "NOT_STRAIGHT": 931,
+     "NO_LABEL": 173,
+     "lead_window_but_path_never_in_corridor": 22,
+     "n_with_value": 721,
+     "n_windows": 2399
+    },
+    "time_gap_min_s": {
+     "NO_LEAD": 552,
+     "NOT_STRAIGHT": 931,
+     "NO_LABEL": 173,
+     "lead_window_but_path_never_in_corridor": 22,
+     "standstill_v0_below_0p5_mps": 57,
+     "n_with_value": 664,
+     "n_windows": 2399
+    },
+    "min_ttc_s": {
+     "NO_LEAD": 552,
+     "NOT_STRAIGHT": 931,
+     "NO_LABEL": 173,
+     "lead_window_but_path_never_in_corridor": 22,
+     "n_with_value": 721,
+     "n_windows": 2399
+    }
+   },
+   "vs_human": {
+    "headway_min_m": {
+     "n_both": 712,
+     "n_arm_only": 9,
+     "n_human_only": 13,
+     "signed_arm_minus_human": {
+      "delta": 0.1501,
+      "lo": -0.55,
+      "hi": 0.8511,
+      "ci95": 0.7005,
+      "p_delta_gt0": 0.656,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 712,
+      "n_episodes": 72,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "abs_error": {
+      "mean": 2.1987,
+      "lo": 1.6335,
+      "hi": 2.8162,
+      "ci95": 0.5914,
+      "se": 0.3043,
+      "reducer": "mean",
+      "n_windows": 712,
+      "n_episodes": 72,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    },
+    "time_gap_min_s": {
+     "n_both": 655,
+     "n_arm_only": 9,
+     "n_human_only": 4,
+     "signed_arm_minus_human": {
+      "delta": 0.0209,
+      "lo": -0.1347,
+      "hi": 0.2515,
+      "ci95": 0.1931,
+      "p_delta_gt0": 0.541,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 655,
+      "n_episodes": 72,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "abs_error": {
+      "mean": 0.3859,
+      "lo": 0.2231,
+      "hi": 0.6084,
+      "ci95": 0.1926,
+      "se": 0.1014,
+      "reducer": "mean",
+      "n_windows": 655,
+      "n_episodes": 72,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    },
+    "min_ttc_s": {
+     "n_both": 712,
+     "n_arm_only": 9,
+     "n_human_only": 13,
+     "signed_arm_minus_human": {
+      "delta": 0.8453,
+      "lo": -0.1256,
+      "hi": 1.8865,
+      "ci95": 1.006,
+      "p_delta_gt0": 0.9515,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 712,
+      "n_episodes": 72,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "abs_error": {
+      "mean": 3.6977,
+      "lo": 2.8166,
+      "hi": 4.6358,
+      "ci95": 0.9096,
+      "se": 0.4675,
+      "reducer": "mean",
+      "n_windows": 712,
+      "n_episodes": 72,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    }
+   },
+   "lead_viol": {
+    "status": "OK",
+    "definition": "share of lead windows whose plan's minimum time gap is < 1 s while the human's is >= 1 s",
+    "n_lead_windows": 743,
+    "n_viol": 20,
+    "share": 0.026918,
+    "ci": {
+     "mean": 0.0269,
+     "lo": 0.0134,
+     "hi": 0.0442,
+     "ci95": 0.0154,
+     "se": 0.0077,
+     "reducer": "mean",
+     "n_windows": 743,
+     "n_episodes": 77,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+    },
+    "n_at_risk": 595,
+    "share_of_at_risk": 0.033613,
+    "share_of_at_risk_ci": {
+     "mean": 0.0336,
+     "lo": 0.0175,
+     "hi": 0.0534,
+     "ci95": 0.0179,
+     "se": 0.009,
+     "reducer": "mean",
+     "n_windows": 595,
+     "n_episodes": 70,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+    },
+    "n_human_tg_undefined": 84,
+    "n_human_tg_below_thr": 64,
+    "n_plan_lost_lead": 4,
+    "share_incl_lost_lead": 0.032301,
+    "lead_progress_ratio": 0.9166163483450308,
+    "lead_progress_ratio_clipped": 0.8561563761118137,
+    "progress": {
+     "status": "OK",
+     "n": 595,
+     "n_at_risk": 595,
+     "lead_progress_ratio": 0.9166163483450308,
+     "lead_progress_ratio_clipped": 0.8561563761118137,
+     "meets_min_progress": false,
+     "n_below_min": 236,
+     "n_human_arc_degenerate": 0
+    }
+   },
+   "by_speed": {
+    "_what": "LONGITUDINAL distance-keeping, per speed band. NEVER pool these.",
+    "_binding": "Sayed 2026-08-02 clause 5: where a family cannot be computed, say so PER STRATUM with the reason and the n, rather than silently dropping it.",
+    "bands_mps": [
+     "0-1",
+     "1-3",
+     "3-6",
+     "6-10",
+     "10-15",
+     "15+"
+    ],
+    "min_stratum_n": 30,
+    "estimator": "episode_cluster_bootstrap (taniteval.ci) \u2014 NEVER overlapping_holdout_se",
+    "n_windows_total": 2399,
+    "strata": {
+     "0-1": {
+      "speed_mps": [
+       0.0,
+       1.0
+      ],
+      "n_windows": 136,
+      "window_states": {
+       "LEAD": 81,
+       "NOT_STRAIGHT": 36,
+       "NO_LABEL": 5,
+       "NO_LEAD": 14
+      },
+      "n_with_lead": 72,
+      "lead_rate": 0.5294,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 13.534,
+       "lo": 9.5586,
+       "hi": 21.0568,
+       "ci95": 5.7491,
+       "se": 2.9789,
+       "reducer": "mean",
+       "n_windows": 72,
+       "n_episodes": 13,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 72,
+       "n_total": 136
+      },
+      "time_gap_min_s": {
+       "mean": 28.463,
+       "lo": 12.8499,
+       "hi": 50.8358,
+       "ci95": 18.9929,
+       "se": 10.1837,
+       "reducer": "mean",
+       "n_windows": 15,
+       "n_episodes": 9,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 15,
+       "n_total": 136
+      },
+      "min_ttc_s": {
+       "mean": 23.2579,
+       "lo": 17.0888,
+       "hi": 28.1806,
+       "ci95": 5.5459,
+       "se": 2.8474,
+       "reducer": "mean",
+       "n_windows": 72,
+       "n_episodes": 13,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 72,
+       "n_total": 136
+      },
+      "time_gap_caveat": "this band straddles MIN_SPEED_MPS=0.5 m/s; a time gap is UNDEFINED at standstill and is NaN there, so n_time_gap < n_with_lead by construction. Never read the gap here as a following behaviour."
+     },
+     "1-3": {
+      "speed_mps": [
+       1.0,
+       3.0
+      ],
+      "n_windows": 139,
+      "window_states": {
+       "LEAD": 72,
+       "NOT_STRAIGHT": 47,
+       "NO_LABEL": 2,
+       "NO_LEAD": 18
+      },
+      "n_with_lead": 69,
+      "lead_rate": 0.4964,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 16.0655,
+       "lo": 11.8015,
+       "hi": 21.5048,
+       "ci95": 4.8517,
+       "se": 2.4424,
+       "reducer": "mean",
+       "n_windows": 69,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 69,
+       "n_total": 139
+      },
+      "time_gap_min_s": {
+       "mean": 8.5445,
+       "lo": 6.2203,
+       "hi": 11.4731,
+       "ci95": 2.6264,
+       "se": 1.4409,
+       "reducer": "mean",
+       "n_windows": 69,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 69,
+       "n_total": 139
+      },
+      "min_ttc_s": {
+       "mean": 19.3907,
+       "lo": 13.9761,
+       "hi": 24.4705,
+       "ci95": 5.2472,
+       "se": 2.7406,
+       "reducer": "mean",
+       "n_windows": 69,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 69,
+       "n_total": 139
+      }
+     },
+     "3-6": {
+      "speed_mps": [
+       3.0,
+       6.0
+      ],
+      "n_windows": 333,
+      "window_states": {
+       "LEAD": 109,
+       "NOT_STRAIGHT": 169,
+       "NO_LABEL": 3,
+       "NO_LEAD": 52
+      },
+      "n_with_lead": 108,
+      "lead_rate": 0.3243,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 19.0734,
+       "lo": 14.6596,
+       "hi": 24.883,
+       "ci95": 5.1117,
+       "se": 2.5276,
+       "reducer": "mean",
+       "n_windows": 108,
+       "n_episodes": 32,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 108,
+       "n_total": 333
+      },
+      "time_gap_min_s": {
+       "mean": 4.3745,
+       "lo": 3.3615,
+       "hi": 5.7526,
+       "ci95": 1.1956,
+       "se": 0.5914,
+       "reducer": "mean",
+       "n_windows": 108,
+       "n_episodes": 32,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 108,
+       "n_total": 333
+      },
+      "min_ttc_s": {
+       "mean": 16.6335,
+       "lo": 12.6507,
+       "hi": 20.2418,
+       "ci95": 3.7955,
+       "se": 1.9333,
+       "reducer": "mean",
+       "n_windows": 108,
+       "n_episodes": 32,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 108,
+       "n_total": 333
+      }
+     },
+     "6-10": {
+      "speed_mps": [
+       6.0,
+       10.0
+      ],
+      "n_windows": 528,
+      "window_states": {
+       "LEAD": 175,
+       "NOT_STRAIGHT": 284,
+       "NO_LABEL": 11,
+       "NO_LEAD": 58
+      },
+      "n_with_lead": 174,
+      "lead_rate": 0.3295,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 24.7589,
+       "lo": 20.2363,
+       "hi": 30.1168,
+       "ci95": 4.9403,
+       "se": 2.5405,
+       "reducer": "mean",
+       "n_windows": 174,
+       "n_episodes": 41,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 174,
+       "n_total": 528
+      },
+      "time_gap_min_s": {
+       "mean": 3.0786,
+       "lo": 2.5387,
+       "hi": 3.6921,
+       "ci95": 0.5767,
+       "se": 0.2965,
+       "reducer": "mean",
+       "n_windows": 174,
+       "n_episodes": 41,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 174,
+       "n_total": 528
+      },
+      "min_ttc_s": {
+       "mean": 19.1348,
+       "lo": 15.0237,
+       "hi": 22.506,
+       "ci95": 3.7412,
+       "se": 1.888,
+       "reducer": "mean",
+       "n_windows": 174,
+       "n_episodes": 41,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 174,
+       "n_total": 528
+      }
+     },
+     "10-15": {
+      "speed_mps": [
+       10.0,
+       15.0
+      ],
+      "n_windows": 648,
+      "window_states": {
+       "LEAD": 139,
+       "NOT_STRAIGHT": 263,
+       "NO_LABEL": 40,
+       "NO_LEAD": 206
+      },
+      "n_with_lead": 136,
+      "lead_rate": 0.2099,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 35.5655,
+       "lo": 26.5716,
+       "hi": 46.8761,
+       "ci95": 10.1522,
+       "se": 5.2228,
+       "reducer": "mean",
+       "n_windows": 136,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 136,
+       "n_total": 648
+      },
+      "time_gap_min_s": {
+       "mean": 2.9318,
+       "lo": 2.1778,
+       "hi": 3.8624,
+       "ci95": 0.8423,
+       "se": 0.4143,
+       "reducer": "mean",
+       "n_windows": 136,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 136,
+       "n_total": 648
+      },
+      "min_ttc_s": {
+       "mean": 22.4493,
+       "lo": 16.8718,
+       "hi": 26.4206,
+       "ci95": 4.7744,
+       "se": 2.4364,
+       "reducer": "mean",
+       "n_windows": 136,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 136,
+       "n_total": 648
+      }
+     },
+     "15+": {
+      "speed_mps": [
+       15.0,
+       null
+      ],
+      "n_windows": 615,
+      "window_states": {
+       "LEAD": 167,
+       "NOT_STRAIGHT": 132,
+       "NO_LABEL": 112,
+       "NO_LEAD": 204
+      },
+      "n_with_lead": 162,
+      "lead_rate": 0.2634,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 33.5751,
+       "lo": 25.853,
+       "hi": 41.8523,
+       "ci95": 7.9996,
+       "se": 4.101,
+       "reducer": "mean",
+       "n_windows": 162,
+       "n_episodes": 15,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 162,
+       "n_total": 615
+      },
+      "time_gap_min_s": {
+       "mean": 1.6281,
+       "lo": 1.2213,
+       "hi": 2.1553,
+       "ci95": 0.467,
+       "se": 0.2501,
+       "reducer": "mean",
+       "n_windows": 162,
+       "n_episodes": 15,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 162,
+       "n_total": 615
+      },
+      "min_ttc_s": {
+       "mean": 22.0313,
+       "lo": 18.0015,
+       "hi": 25.5407,
+       "ci95": 3.7696,
+       "se": 1.9474,
+       "reducer": "mean",
+       "n_windows": 162,
+       "n_episodes": 15,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 162,
+       "n_total": 615
+      }
+     }
+    },
+    "window_states_total": {
+     "LEAD": 743,
+     "NOT_STRAIGHT": 931,
+     "NO_LABEL": 173,
+     "NO_LEAD": 552
+    }
+   }
+  },
+  "B_s1": {
+   "n_windows": 2399,
+   "n_lead_windows": 743,
+   "window_states": {
+    "LEAD": 743,
+    "NO_LEAD": 552,
+    "NOT_STRAIGHT": 931,
+    "NO_LABEL": 173
+   },
+   "metrics": {
+    "headway_min_m": {
+     "mean": 25.5441,
+     "lo": 21.6281,
+     "hi": 29.6496,
+     "ci95": 4.0108,
+     "se": 2.0447,
+     "reducer": "mean",
+     "n_windows": 728,
+     "n_episodes": 74,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 728
+    },
+    "time_gap_min_s": {
+     "mean": 3.9505,
+     "lo": 3.0638,
+     "hi": 5.0253,
+     "ci95": 0.9807,
+     "se": 0.5244,
+     "reducer": "mean",
+     "n_windows": 663,
+     "n_episodes": 73,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 663
+    },
+    "min_ttc_s": {
+     "mean": 19.5236,
+     "lo": 17.4746,
+     "hi": 21.3166,
+     "ci95": 1.921,
+     "se": 0.987,
+     "reducer": "mean",
+     "n_windows": 728,
+     "n_episodes": 74,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 728,
+     "n_closing": 445,
+     "ttc_cap_s": 30.0,
+     "censoring_note": "283 of 728 windows never close on the lead and are censored at TTC_CAP_S=30.0s. The mean is over censored data \u2014 quote n_closing beside it, never the mean alone.",
+     "n_censored_at_cap": 362
+    }
+   },
+   "no_value_reasons": {
+    "headway_min_m": {
+     "NO_LEAD": 552,
+     "NOT_STRAIGHT": 931,
+     "NO_LABEL": 173,
+     "lead_window_but_path_never_in_corridor": 15,
+     "n_with_value": 728,
+     "n_windows": 2399
+    },
+    "time_gap_min_s": {
+     "NO_LEAD": 552,
+     "NOT_STRAIGHT": 931,
+     "NO_LABEL": 173,
+     "lead_window_but_path_never_in_corridor": 15,
+     "standstill_v0_below_0p5_mps": 65,
+     "n_with_value": 663,
+     "n_windows": 2399
+    },
+    "min_ttc_s": {
+     "NO_LEAD": 552,
+     "NOT_STRAIGHT": 931,
+     "NO_LABEL": 173,
+     "lead_window_but_path_never_in_corridor": 15,
+     "n_with_value": 728,
+     "n_windows": 2399
+    }
+   },
+   "vs_human": {
+    "headway_min_m": {
+     "n_both": 720,
+     "n_arm_only": 8,
+     "n_human_only": 5,
+     "signed_arm_minus_human": {
+      "delta": -0.1702,
+      "lo": -0.7521,
+      "hi": 0.4062,
+      "ci95": 0.5791,
+      "p_delta_gt0": 0.297,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 720,
+      "n_episodes": 73,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "abs_error": {
+      "mean": 2.1175,
+      "lo": 1.5477,
+      "hi": 2.7347,
+      "ci95": 0.5935,
+      "se": 0.3056,
+      "reducer": "mean",
+      "n_windows": 720,
+      "n_episodes": 73,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    },
+    "time_gap_min_s": {
+     "n_both": 655,
+     "n_arm_only": 8,
+     "n_human_only": 4,
+     "signed_arm_minus_human": {
+      "delta": -0.0679,
+      "lo": -0.1986,
+      "hi": 0.0798,
+      "ci95": 0.1392,
+      "p_delta_gt0": 0.158,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 655,
+      "n_episodes": 72,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "abs_error": {
+      "mean": 0.3613,
+      "lo": 0.2326,
+      "hi": 0.5148,
+      "ci95": 0.1411,
+      "se": 0.0724,
+      "reducer": "mean",
+      "n_windows": 655,
+      "n_episodes": 72,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    },
+    "min_ttc_s": {
+     "n_both": 720,
+     "n_arm_only": 8,
+     "n_human_only": 5,
+     "signed_arm_minus_human": {
+      "delta": -0.2388,
+      "lo": -1.23,
+      "hi": 0.7806,
+      "ci95": 1.0053,
+      "p_delta_gt0": 0.3315,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 720,
+      "n_episodes": 73,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "abs_error": {
+      "mean": 3.7524,
+      "lo": 2.9583,
+      "hi": 4.5136,
+      "ci95": 0.7776,
+      "se": 0.3964,
+      "reducer": "mean",
+      "n_windows": 720,
+      "n_episodes": 73,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    }
+   },
+   "lead_viol": {
+    "status": "OK",
+    "definition": "share of lead windows whose plan's minimum time gap is < 1 s while the human's is >= 1 s",
+    "n_lead_windows": 743,
+    "n_viol": 36,
+    "share": 0.048452,
+    "ci": {
+     "mean": 0.0485,
+     "lo": 0.0283,
+     "hi": 0.0708,
+     "ci95": 0.0213,
+     "se": 0.0108,
+     "reducer": "mean",
+     "n_windows": 743,
+     "n_episodes": 77,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+    },
+    "n_at_risk": 595,
+    "share_of_at_risk": 0.060504,
+    "share_of_at_risk_ci": {
+     "mean": 0.0605,
+     "lo": 0.0371,
+     "hi": 0.0867,
+     "ci95": 0.0248,
+     "se": 0.0128,
+     "reducer": "mean",
+     "n_windows": 595,
+     "n_episodes": 70,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+    },
+    "n_human_tg_undefined": 84,
+    "n_human_tg_below_thr": 64,
+    "n_plan_lost_lead": 4,
+    "share_incl_lost_lead": 0.053836,
+    "lead_progress_ratio": 1.0062920789389234,
+    "lead_progress_ratio_clipped": 0.9185877502844031,
+    "progress": {
+     "status": "OK",
+     "n": 595,
+     "n_at_risk": 595,
+     "lead_progress_ratio": 1.0062920789389234,
+     "lead_progress_ratio_clipped": 0.9185877502844031,
+     "meets_min_progress": true,
+     "n_below_min": 144,
+     "n_human_arc_degenerate": 0
+    }
+   },
+   "by_speed": {
+    "_what": "LONGITUDINAL distance-keeping, per speed band. NEVER pool these.",
+    "_binding": "Sayed 2026-08-02 clause 5: where a family cannot be computed, say so PER STRATUM with the reason and the n, rather than silently dropping it.",
+    "bands_mps": [
+     "0-1",
+     "1-3",
+     "3-6",
+     "6-10",
+     "10-15",
+     "15+"
+    ],
+    "min_stratum_n": 30,
+    "estimator": "episode_cluster_bootstrap (taniteval.ci) \u2014 NEVER overlapping_holdout_se",
+    "n_windows_total": 2399,
+    "strata": {
+     "0-1": {
+      "speed_mps": [
+       0.0,
+       1.0
+      ],
+      "n_windows": 136,
+      "window_states": {
+       "LEAD": 81,
+       "NOT_STRAIGHT": 36,
+       "NO_LABEL": 5,
+       "NO_LEAD": 14
+      },
+      "n_with_lead": 80,
+      "lead_rate": 0.5882,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 14.1222,
+       "lo": 9.2372,
+       "hi": 24.1564,
+       "ci95": 7.4596,
+       "se": 3.8212,
+       "reducer": "mean",
+       "n_windows": 80,
+       "n_episodes": 14,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 80,
+       "n_total": 136
+      },
+      "time_gap_min_s": {
+       "mean": 26.3119,
+       "lo": 12.4782,
+       "hi": 45.7096,
+       "ci95": 16.6157,
+       "se": 8.9364,
+       "reducer": "mean",
+       "n_windows": 15,
+       "n_episodes": 9,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 15,
+       "n_total": 136
+      },
+      "min_ttc_s": {
+       "mean": 21.2349,
+       "lo": 17.3001,
+       "hi": 24.7323,
+       "ci95": 3.7161,
+       "se": 1.9631,
+       "reducer": "mean",
+       "n_windows": 80,
+       "n_episodes": 14,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 80,
+       "n_total": 136
+      },
+      "time_gap_caveat": "this band straddles MIN_SPEED_MPS=0.5 m/s; a time gap is UNDEFINED at standstill and is NaN there, so n_time_gap < n_with_lead by construction. Never read the gap here as a following behaviour."
+     },
+     "1-3": {
+      "speed_mps": [
+       1.0,
+       3.0
+      ],
+      "n_windows": 139,
+      "window_states": {
+       "LEAD": 72,
+       "NOT_STRAIGHT": 47,
+       "NO_LABEL": 2,
+       "NO_LEAD": 18
+      },
+      "n_with_lead": 70,
+      "lead_rate": 0.5036,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 15.4014,
+       "lo": 11.2695,
+       "hi": 20.1283,
+       "ci95": 4.4294,
+       "se": 2.2851,
+       "reducer": "mean",
+       "n_windows": 70,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 70,
+       "n_total": 139
+      },
+      "time_gap_min_s": {
+       "mean": 8.1869,
+       "lo": 5.9937,
+       "hi": 10.9197,
+       "ci95": 2.463,
+       "se": 1.3547,
+       "reducer": "mean",
+       "n_windows": 70,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 70,
+       "n_total": 139
+      },
+      "min_ttc_s": {
+       "mean": 19.0188,
+       "lo": 13.2559,
+       "hi": 24.2991,
+       "ci95": 5.5216,
+       "se": 2.8227,
+       "reducer": "mean",
+       "n_windows": 70,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 70,
+       "n_total": 139
+      }
+     },
+     "3-6": {
+      "speed_mps": [
+       3.0,
+       6.0
+      ],
+      "n_windows": 333,
+      "window_states": {
+       "LEAD": 109,
+       "NOT_STRAIGHT": 169,
+       "NO_LABEL": 3,
+       "NO_LEAD": 52
+      },
+      "n_with_lead": 108,
+      "lead_rate": 0.3243,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 18.8802,
+       "lo": 14.3339,
+       "hi": 24.981,
+       "ci95": 5.3235,
+       "se": 2.5999,
+       "reducer": "mean",
+       "n_windows": 108,
+       "n_episodes": 31,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 108,
+       "n_total": 333
+      },
+      "time_gap_min_s": {
+       "mean": 4.386,
+       "lo": 3.3182,
+       "hi": 5.8075,
+       "ci95": 1.2446,
+       "se": 0.6081,
+       "reducer": "mean",
+       "n_windows": 108,
+       "n_episodes": 31,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 108,
+       "n_total": 333
+      },
+      "min_ttc_s": {
+       "mean": 17.9802,
+       "lo": 13.7217,
+       "hi": 21.802,
+       "ci95": 4.0401,
+       "se": 2.0637,
+       "reducer": "mean",
+       "n_windows": 108,
+       "n_episodes": 31,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 108,
+       "n_total": 333
+      }
+     },
+     "6-10": {
+      "speed_mps": [
+       6.0,
+       10.0
+      ],
+      "n_windows": 528,
+      "window_states": {
+       "LEAD": 175,
+       "NOT_STRAIGHT": 284,
+       "NO_LABEL": 11,
+       "NO_LEAD": 58
+      },
+      "n_with_lead": 172,
+      "lead_rate": 0.3258,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 24.5506,
+       "lo": 19.898,
+       "hi": 30.0518,
+       "ci95": 5.0769,
+       "se": 2.6155,
+       "reducer": "mean",
+       "n_windows": 172,
+       "n_episodes": 40,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 172,
+       "n_total": 528
+      },
+      "time_gap_min_s": {
+       "mean": 3.0391,
+       "lo": 2.4912,
+       "hi": 3.6953,
+       "ci95": 0.6021,
+       "se": 0.3079,
+       "reducer": "mean",
+       "n_windows": 172,
+       "n_episodes": 40,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 172,
+       "n_total": 528
+      },
+      "min_ttc_s": {
+       "mean": 19.2145,
+       "lo": 15.4923,
+       "hi": 22.5773,
+       "ci95": 3.5425,
+       "se": 1.8184,
+       "reducer": "mean",
+       "n_windows": 172,
+       "n_episodes": 40,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 172,
+       "n_total": 528
+      }
+     },
+     "10-15": {
+      "speed_mps": [
+       10.0,
+       15.0
+      ],
+      "n_windows": 648,
+      "window_states": {
+       "LEAD": 139,
+       "NOT_STRAIGHT": 263,
+       "NO_LABEL": 40,
+       "NO_LEAD": 206
+      },
+      "n_with_lead": 136,
+      "lead_rate": 0.2099,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 34.9813,
+       "lo": 25.6477,
+       "hi": 46.4779,
+       "ci95": 10.4151,
+       "se": 5.2778,
+       "reducer": "mean",
+       "n_windows": 136,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 136,
+       "n_total": 648
+      },
+      "time_gap_min_s": {
+       "mean": 2.8883,
+       "lo": 2.1377,
+       "hi": 3.8289,
+       "ci95": 0.8456,
+       "se": 0.4208,
+       "reducer": "mean",
+       "n_windows": 136,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 136,
+       "n_total": 648
+      },
+      "min_ttc_s": {
+       "mean": 20.6525,
+       "lo": 14.7538,
+       "hi": 25.553,
+       "ci95": 5.3996,
+       "se": 2.8475,
+       "reducer": "mean",
+       "n_windows": 136,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 136,
+       "n_total": 648
+      }
+     },
+     "15+": {
+      "speed_mps": [
+       15.0,
+       null
+      ],
+      "n_windows": 615,
+      "window_states": {
+       "LEAD": 167,
+       "NOT_STRAIGHT": 132,
+       "NO_LABEL": 112,
+       "NO_LEAD": 204
+      },
+      "n_with_lead": 162,
+      "lead_rate": 0.2634,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 33.1422,
+       "lo": 25.6772,
+       "hi": 41.6351,
+       "ci95": 7.979,
+       "se": 4.0956,
+       "reducer": "mean",
+       "n_windows": 162,
+       "n_episodes": 15,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 162,
+       "n_total": 615
+      },
+      "time_gap_min_s": {
+       "mean": 1.6186,
+       "lo": 1.2023,
+       "hi": 2.1596,
+       "ci95": 0.4786,
+       "se": 0.2562,
+       "reducer": "mean",
+       "n_windows": 162,
+       "n_episodes": 15,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 162,
+       "n_total": 615
+      },
+      "min_ttc_s": {
+       "mean": 19.306,
+       "lo": 16.3408,
+       "hi": 22.6559,
+       "ci95": 3.1576,
+       "se": 1.6819,
+       "reducer": "mean",
+       "n_windows": 162,
+       "n_episodes": 15,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 162,
+       "n_total": 615
+      }
+     }
+    },
+    "window_states_total": {
+     "LEAD": 743,
+     "NOT_STRAIGHT": 931,
+     "NO_LABEL": 173,
+     "NO_LEAD": 552
+    }
+   }
+  },
+  "H_s1": {
+   "n_windows": 2399,
+   "n_lead_windows": 743,
+   "window_states": {
+    "LEAD": 743,
+    "NO_LEAD": 552,
+    "NOT_STRAIGHT": 931,
+    "NO_LABEL": 173
+   },
+   "metrics": {
+    "headway_min_m": {
+     "mean": 25.6057,
+     "lo": 21.5223,
+     "hi": 29.9762,
+     "ci95": 4.227,
+     "se": 2.1027,
+     "reducer": "mean",
+     "n_windows": 726,
+     "n_episodes": 75,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 726
+    },
+    "time_gap_min_s": {
+     "mean": 3.9498,
+     "lo": 3.0703,
+     "hi": 5.1238,
+     "ci95": 1.0268,
+     "se": 0.5319,
+     "reducer": "mean",
+     "n_windows": 663,
+     "n_episodes": 74,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 663
+    },
+    "min_ttc_s": {
+     "mean": 20.4379,
+     "lo": 18.3239,
+     "hi": 22.2959,
+     "ci95": 1.986,
+     "se": 1.0205,
+     "reducer": "mean",
+     "n_windows": 726,
+     "n_episodes": 75,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 726,
+     "n_closing": 417,
+     "ttc_cap_s": 30.0,
+     "censoring_note": "309 of 726 windows never close on the lead and are censored at TTC_CAP_S=30.0s. The mean is over censored data \u2014 quote n_closing beside it, never the mean alone.",
+     "n_censored_at_cap": 400
+    }
+   },
+   "no_value_reasons": {
+    "headway_min_m": {
+     "NO_LEAD": 552,
+     "NOT_STRAIGHT": 931,
+     "NO_LABEL": 173,
+     "lead_window_but_path_never_in_corridor": 17,
+     "n_with_value": 726,
+     "n_windows": 2399
+    },
+    "time_gap_min_s": {
+     "NO_LEAD": 552,
+     "NOT_STRAIGHT": 931,
+     "NO_LABEL": 173,
+     "lead_window_but_path_never_in_corridor": 17,
+     "standstill_v0_below_0p5_mps": 63,
+     "n_with_value": 663,
+     "n_windows": 2399
+    },
+    "min_ttc_s": {
+     "NO_LEAD": 552,
+     "NOT_STRAIGHT": 931,
+     "NO_LABEL": 173,
+     "lead_window_but_path_never_in_corridor": 17,
+     "n_with_value": 726,
+     "n_windows": 2399
+    }
+   },
+   "vs_human": {
+    "headway_min_m": {
+     "n_both": 718,
+     "n_arm_only": 8,
+     "n_human_only": 7,
+     "signed_arm_minus_human": {
+      "delta": -0.1902,
+      "lo": -0.7386,
+      "hi": 0.3533,
+      "ci95": 0.5459,
+      "p_delta_gt0": 0.269,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 718,
+      "n_episodes": 73,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "abs_error": {
+      "mean": 2.0575,
+      "lo": 1.509,
+      "hi": 2.6552,
+      "ci95": 0.5731,
+      "se": 0.2943,
+      "reducer": "mean",
+      "n_windows": 718,
+      "n_episodes": 73,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    },
+    "time_gap_min_s": {
+     "n_both": 655,
+     "n_arm_only": 8,
+     "n_human_only": 4,
+     "signed_arm_minus_human": {
+      "delta": -0.0659,
+      "lo": -0.21,
+      "hi": 0.1066,
+      "ci95": 0.1583,
+      "p_delta_gt0": 0.1945,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 655,
+      "n_episodes": 72,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "abs_error": {
+      "mean": 0.3724,
+      "lo": 0.2306,
+      "hi": 0.5411,
+      "ci95": 0.1553,
+      "se": 0.0804,
+      "reducer": "mean",
+      "n_windows": 655,
+      "n_episodes": 72,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    },
+    "min_ttc_s": {
+     "n_both": 718,
+     "n_arm_only": 8,
+     "n_human_only": 7,
+     "signed_arm_minus_human": {
+      "delta": 0.7134,
+      "lo": -0.1054,
+      "hi": 1.5786,
+      "ci95": 0.842,
+      "p_delta_gt0": 0.9595,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 718,
+      "n_episodes": 73,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "abs_error": {
+      "mean": 3.0914,
+      "lo": 2.3686,
+      "hi": 3.8229,
+      "ci95": 0.7271,
+      "se": 0.3752,
+      "reducer": "mean",
+      "n_windows": 718,
+      "n_episodes": 73,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    }
+   },
+   "lead_viol": {
+    "status": "OK",
+    "definition": "share of lead windows whose plan's minimum time gap is < 1 s while the human's is >= 1 s",
+    "n_lead_windows": 743,
+    "n_viol": 35,
+    "share": 0.047106,
+    "ci": {
+     "mean": 0.0471,
+     "lo": 0.0267,
+     "hi": 0.0714,
+     "ci95": 0.0223,
+     "se": 0.0111,
+     "reducer": "mean",
+     "n_windows": 743,
+     "n_episodes": 77,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+    },
+    "n_at_risk": 595,
+    "share_of_at_risk": 0.058824,
+    "share_of_at_risk_ci": {
+     "mean": 0.0588,
+     "lo": 0.0343,
+     "hi": 0.0868,
+     "ci95": 0.0263,
+     "se": 0.0133,
+     "reducer": "mean",
+     "n_windows": 595,
+     "n_episodes": 70,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+    },
+    "n_human_tg_undefined": 84,
+    "n_human_tg_below_thr": 64,
+    "n_plan_lost_lead": 4,
+    "share_incl_lost_lead": 0.05249,
+    "lead_progress_ratio": 1.0210136947093058,
+    "lead_progress_ratio_clipped": 0.923807195702094,
+    "progress": {
+     "status": "OK",
+     "n": 595,
+     "n_at_risk": 595,
+     "lead_progress_ratio": 1.0210136947093058,
+     "lead_progress_ratio_clipped": 0.923807195702094,
+     "meets_min_progress": true,
+     "n_below_min": 136,
+     "n_human_arc_degenerate": 0
+    }
+   },
+   "by_speed": {
+    "_what": "LONGITUDINAL distance-keeping, per speed band. NEVER pool these.",
+    "_binding": "Sayed 2026-08-02 clause 5: where a family cannot be computed, say so PER STRATUM with the reason and the n, rather than silently dropping it.",
+    "bands_mps": [
+     "0-1",
+     "1-3",
+     "3-6",
+     "6-10",
+     "10-15",
+     "15+"
+    ],
+    "min_stratum_n": 30,
+    "estimator": "episode_cluster_bootstrap (taniteval.ci) \u2014 NEVER overlapping_holdout_se",
+    "n_windows_total": 2399,
+    "strata": {
+     "0-1": {
+      "speed_mps": [
+       0.0,
+       1.0
+      ],
+      "n_windows": 136,
+      "window_states": {
+       "LEAD": 81,
+       "NOT_STRAIGHT": 36,
+       "NO_LABEL": 5,
+       "NO_LEAD": 14
+      },
+      "n_with_lead": 78,
+      "lead_rate": 0.5735,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 13.8097,
+       "lo": 8.89,
+       "hi": 23.7605,
+       "ci95": 7.4353,
+       "se": 3.8577,
+       "reducer": "mean",
+       "n_windows": 78,
+       "n_episodes": 14,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 78,
+       "n_total": 136
+      },
+      "time_gap_min_s": {
+       "mean": 26.133,
+       "lo": 12.1079,
+       "hi": 45.7761,
+       "ci95": 16.8341,
+       "se": 9.0449,
+       "reducer": "mean",
+       "n_windows": 15,
+       "n_episodes": 9,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 15,
+       "n_total": 136
+      },
+      "min_ttc_s": {
+       "mean": 20.7016,
+       "lo": 16.5099,
+       "hi": 24.4801,
+       "ci95": 3.9851,
+       "se": 2.1103,
+       "reducer": "mean",
+       "n_windows": 78,
+       "n_episodes": 14,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 78,
+       "n_total": 136
+      },
+      "time_gap_caveat": "this band straddles MIN_SPEED_MPS=0.5 m/s; a time gap is UNDEFINED at standstill and is NaN there, so n_time_gap < n_with_lead by construction. Never read the gap here as a following behaviour."
+     },
+     "1-3": {
+      "speed_mps": [
+       1.0,
+       3.0
+      ],
+      "n_windows": 139,
+      "window_states": {
+       "LEAD": 72,
+       "NOT_STRAIGHT": 47,
+       "NO_LABEL": 2,
+       "NO_LEAD": 18
+      },
+      "n_with_lead": 70,
+      "lead_rate": 0.5036,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 15.4719,
+       "lo": 11.2151,
+       "hi": 20.5441,
+       "ci95": 4.6645,
+       "se": 2.3896,
+       "reducer": "mean",
+       "n_windows": 70,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 70,
+       "n_total": 139
+      },
+      "time_gap_min_s": {
+       "mean": 8.2495,
+       "lo": 5.9296,
+       "hi": 11.1702,
+       "ci95": 2.6203,
+       "se": 1.4353,
+       "reducer": "mean",
+       "n_windows": 70,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 70,
+       "n_total": 139
+      },
+      "min_ttc_s": {
+       "mean": 19.3515,
+       "lo": 13.8883,
+       "hi": 24.566,
+       "ci95": 5.3389,
+       "se": 2.8141,
+       "reducer": "mean",
+       "n_windows": 70,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 70,
+       "n_total": 139
+      }
+     },
+     "3-6": {
+      "speed_mps": [
+       3.0,
+       6.0
+      ],
+      "n_windows": 333,
+      "window_states": {
+       "LEAD": 109,
+       "NOT_STRAIGHT": 169,
+       "NO_LABEL": 3,
+       "NO_LEAD": 52
+      },
+      "n_with_lead": 107,
+      "lead_rate": 0.3213,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 18.5427,
+       "lo": 13.9282,
+       "hi": 24.7328,
+       "ci95": 5.4023,
+       "se": 2.6327,
+       "reducer": "mean",
+       "n_windows": 107,
+       "n_episodes": 31,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 107,
+       "n_total": 333
+      },
+      "time_gap_min_s": {
+       "mean": 4.3044,
+       "lo": 3.215,
+       "hi": 5.7425,
+       "ci95": 1.2637,
+       "se": 0.6153,
+       "reducer": "mean",
+       "n_windows": 107,
+       "n_episodes": 31,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 107,
+       "n_total": 333
+      },
+      "min_ttc_s": {
+       "mean": 18.1737,
+       "lo": 13.7204,
+       "hi": 22.0199,
+       "ci95": 4.1497,
+       "se": 2.105,
+       "reducer": "mean",
+       "n_windows": 107,
+       "n_episodes": 31,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 107,
+       "n_total": 333
+      }
+     },
+     "6-10": {
+      "speed_mps": [
+       6.0,
+       10.0
+      ],
+      "n_windows": 528,
+      "window_states": {
+       "LEAD": 175,
+       "NOT_STRAIGHT": 284,
+       "NO_LABEL": 11,
+       "NO_LEAD": 58
+      },
+      "n_with_lead": 173,
+      "lead_rate": 0.3277,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 24.8174,
+       "lo": 20.0373,
+       "hi": 30.2162,
+       "ci95": 5.0895,
+       "se": 2.6356,
+       "reducer": "mean",
+       "n_windows": 173,
+       "n_episodes": 41,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 173,
+       "n_total": 528
+      },
+      "time_gap_min_s": {
+       "mean": 3.0749,
+       "lo": 2.5252,
+       "hi": 3.7063,
+       "ci95": 0.5905,
+       "se": 0.3093,
+       "reducer": "mean",
+       "n_windows": 173,
+       "n_episodes": 41,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 173,
+       "n_total": 528
+      },
+      "min_ttc_s": {
+       "mean": 20.8763,
+       "lo": 17.3657,
+       "hi": 23.9241,
+       "ci95": 3.2792,
+       "se": 1.7211,
+       "reducer": "mean",
+       "n_windows": 173,
+       "n_episodes": 41,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 173,
+       "n_total": 528
+      }
+     },
+     "10-15": {
+      "speed_mps": [
+       10.0,
+       15.0
+      ],
+      "n_windows": 648,
+      "window_states": {
+       "LEAD": 139,
+       "NOT_STRAIGHT": 263,
+       "NO_LABEL": 40,
+       "NO_LEAD": 206
+      },
+      "n_with_lead": 136,
+      "lead_rate": 0.2099,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 35.1144,
+       "lo": 25.8183,
+       "hi": 46.6361,
+       "ci95": 10.4089,
+       "se": 5.2717,
+       "reducer": "mean",
+       "n_windows": 136,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 136,
+       "n_total": 648
+      },
+      "time_gap_min_s": {
+       "mean": 2.8986,
+       "lo": 2.1536,
+       "hi": 3.8397,
+       "ci95": 0.8431,
+       "se": 0.4202,
+       "reducer": "mean",
+       "n_windows": 136,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 136,
+       "n_total": 648
+      },
+      "min_ttc_s": {
+       "mean": 21.2735,
+       "lo": 15.5185,
+       "hi": 25.7942,
+       "ci95": 5.1379,
+       "se": 2.6628,
+       "reducer": "mean",
+       "n_windows": 136,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 136,
+       "n_total": 648
+      }
+     },
+     "15+": {
+      "speed_mps": [
+       15.0,
+       null
+      ],
+      "n_windows": 615,
+      "window_states": {
+       "LEAD": 167,
+       "NOT_STRAIGHT": 132,
+       "NO_LABEL": 112,
+       "NO_LEAD": 204
+      },
+      "n_with_lead": 162,
+      "lead_rate": 0.2634,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 33.1885,
+       "lo": 25.7674,
+       "hi": 41.7485,
+       "ci95": 7.9906,
+       "se": 4.1052,
+       "reducer": "mean",
+       "n_windows": 162,
+       "n_episodes": 15,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 162,
+       "n_total": 615
+      },
+      "time_gap_min_s": {
+       "mean": 1.6204,
+       "lo": 1.2057,
+       "hi": 2.1628,
+       "ci95": 0.4786,
+       "se": 0.256,
+       "reducer": "mean",
+       "n_windows": 162,
+       "n_episodes": 15,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 162,
+       "n_total": 615
+      },
+      "min_ttc_s": {
+       "mean": 21.1062,
+       "lo": 17.6521,
+       "hi": 24.7633,
+       "ci95": 3.5556,
+       "se": 1.8581,
+       "reducer": "mean",
+       "n_windows": 162,
+       "n_episodes": 15,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 162,
+       "n_total": 615
+      }
+     }
+    },
+    "window_states_total": {
+     "LEAD": 743,
+     "NOT_STRAIGHT": 931,
+     "NO_LABEL": 173,
+     "NO_LEAD": 552
+    }
+   }
+  },
+  "HP_s1": {
+   "n_windows": 2399,
+   "n_lead_windows": 743,
+   "window_states": {
+    "LEAD": 743,
+    "NO_LEAD": 552,
+    "NOT_STRAIGHT": 931,
+    "NO_LABEL": 173
+   },
+   "metrics": {
+    "headway_min_m": {
+     "mean": 25.8442,
+     "lo": 21.7418,
+     "hi": 30.2464,
+     "ci95": 4.2523,
+     "se": 2.116,
+     "reducer": "mean",
+     "n_windows": 726,
+     "n_episodes": 75,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 726
+    },
+    "time_gap_min_s": {
+     "mean": 3.964,
+     "lo": 3.0891,
+     "hi": 5.1316,
+     "ci95": 1.0212,
+     "se": 0.5305,
+     "reducer": "mean",
+     "n_windows": 663,
+     "n_episodes": 74,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 663
+    },
+    "min_ttc_s": {
+     "mean": 20.9779,
+     "lo": 18.9086,
+     "hi": 22.8686,
+     "ci95": 1.98,
+     "se": 1.021,
+     "reducer": "mean",
+     "n_windows": 726,
+     "n_episodes": 75,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 726,
+     "n_closing": 406,
+     "ttc_cap_s": 30.0,
+     "censoring_note": "320 of 726 windows never close on the lead and are censored at TTC_CAP_S=30.0s. The mean is over censored data \u2014 quote n_closing beside it, never the mean alone.",
+     "n_censored_at_cap": 418
+    }
+   },
+   "no_value_reasons": {
+    "headway_min_m": {
+     "NO_LEAD": 552,
+     "NOT_STRAIGHT": 931,
+     "NO_LABEL": 173,
+     "lead_window_but_path_never_in_corridor": 17,
+     "n_with_value": 726,
+     "n_windows": 2399
+    },
+    "time_gap_min_s": {
+     "NO_LEAD": 552,
+     "NOT_STRAIGHT": 931,
+     "NO_LABEL": 173,
+     "lead_window_but_path_never_in_corridor": 17,
+     "standstill_v0_below_0p5_mps": 63,
+     "n_with_value": 663,
+     "n_windows": 2399
+    },
+    "min_ttc_s": {
+     "NO_LEAD": 552,
+     "NOT_STRAIGHT": 931,
+     "NO_LABEL": 173,
+     "lead_window_but_path_never_in_corridor": 17,
+     "n_with_value": 726,
+     "n_windows": 2399
+    }
+   },
+   "vs_human": {
+    "headway_min_m": {
+     "n_both": 718,
+     "n_arm_only": 8,
+     "n_human_only": 7,
+     "signed_arm_minus_human": {
+      "delta": 0.0508,
+      "lo": -0.6093,
+      "hi": 0.7277,
+      "ci95": 0.6685,
+      "p_delta_gt0": 0.555,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 718,
+      "n_episodes": 73,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "abs_error": {
+      "mean": 2.2271,
+      "lo": 1.5991,
+      "hi": 2.905,
+      "ci95": 0.6529,
+      "se": 0.3345,
+      "reducer": "mean",
+      "n_windows": 718,
+      "n_episodes": 73,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    },
+    "time_gap_min_s": {
+     "n_both": 655,
+     "n_arm_only": 8,
+     "n_human_only": 4,
+     "signed_arm_minus_human": {
+      "delta": -0.0514,
+      "lo": -0.1996,
+      "hi": 0.1208,
+      "ci95": 0.1602,
+      "p_delta_gt0": 0.2545,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 655,
+      "n_episodes": 72,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "abs_error": {
+      "mean": 0.3829,
+      "lo": 0.2411,
+      "hi": 0.5502,
+      "ci95": 0.1545,
+      "se": 0.0807,
+      "reducer": "mean",
+      "n_windows": 655,
+      "n_episodes": 72,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    },
+    "min_ttc_s": {
+     "n_both": 718,
+     "n_arm_only": 8,
+     "n_human_only": 7,
+     "signed_arm_minus_human": {
+      "delta": 1.2594,
+      "lo": 0.297,
+      "hi": 2.3325,
+      "ci95": 1.0178,
+      "p_delta_gt0": 0.994,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 718,
+      "n_episodes": 73,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "abs_error": {
+      "mean": 3.4846,
+      "lo": 2.6203,
+      "hi": 4.4158,
+      "ci95": 0.8977,
+      "se": 0.456,
+      "reducer": "mean",
+      "n_windows": 718,
+      "n_episodes": 73,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    }
+   },
+   "lead_viol": {
+    "status": "OK",
+    "definition": "share of lead windows whose plan's minimum time gap is < 1 s while the human's is >= 1 s",
+    "n_lead_windows": 743,
+    "n_viol": 31,
+    "share": 0.041723,
+    "ci": {
+     "mean": 0.0417,
+     "lo": 0.0232,
+     "hi": 0.0631,
+     "ci95": 0.0199,
+     "se": 0.01,
+     "reducer": "mean",
+     "n_windows": 743,
+     "n_episodes": 77,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+    },
+    "n_at_risk": 595,
+    "share_of_at_risk": 0.052101,
+    "share_of_at_risk_ci": {
+     "mean": 0.0521,
+     "lo": 0.03,
+     "hi": 0.0777,
+     "ci95": 0.0239,
+     "se": 0.0122,
+     "reducer": "mean",
+     "n_windows": 595,
+     "n_episodes": 70,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+    },
+    "n_human_tg_undefined": 84,
+    "n_human_tg_below_thr": 64,
+    "n_plan_lost_lead": 4,
+    "share_incl_lost_lead": 0.047106,
+    "lead_progress_ratio": 1.0140932074462161,
+    "lead_progress_ratio_clipped": 0.9190698939446661,
+    "progress": {
+     "status": "OK",
+     "n": 595,
+     "n_at_risk": 595,
+     "lead_progress_ratio": 1.0140932074462161,
+     "lead_progress_ratio_clipped": 0.9190698939446661,
+     "meets_min_progress": true,
+     "n_below_min": 146,
+     "n_human_arc_degenerate": 0
+    }
+   },
+   "by_speed": {
+    "_what": "LONGITUDINAL distance-keeping, per speed band. NEVER pool these.",
+    "_binding": "Sayed 2026-08-02 clause 5: where a family cannot be computed, say so PER STRATUM with the reason and the n, rather than silently dropping it.",
+    "bands_mps": [
+     "0-1",
+     "1-3",
+     "3-6",
+     "6-10",
+     "10-15",
+     "15+"
+    ],
+    "min_stratum_n": 30,
+    "estimator": "episode_cluster_bootstrap (taniteval.ci) \u2014 NEVER overlapping_holdout_se",
+    "n_windows_total": 2399,
+    "strata": {
+     "0-1": {
+      "speed_mps": [
+       0.0,
+       1.0
+      ],
+      "n_windows": 136,
+      "window_states": {
+       "LEAD": 81,
+       "NOT_STRAIGHT": 36,
+       "NO_LABEL": 5,
+       "NO_LEAD": 14
+      },
+      "n_with_lead": 78,
+      "lead_rate": 0.5735,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 13.8097,
+       "lo": 8.8901,
+       "hi": 23.7607,
+       "ci95": 7.4353,
+       "se": 3.8577,
+       "reducer": "mean",
+       "n_windows": 78,
+       "n_episodes": 14,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 78,
+       "n_total": 136
+      },
+      "time_gap_min_s": {
+       "mean": 26.1334,
+       "lo": 12.1079,
+       "hi": 45.7764,
+       "ci95": 16.8343,
+       "se": 9.0449,
+       "reducer": "mean",
+       "n_windows": 15,
+       "n_episodes": 9,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 15,
+       "n_total": 136
+      },
+      "min_ttc_s": {
+       "mean": 20.7016,
+       "lo": 16.51,
+       "hi": 24.4802,
+       "ci95": 3.9851,
+       "se": 2.1103,
+       "reducer": "mean",
+       "n_windows": 78,
+       "n_episodes": 14,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 78,
+       "n_total": 136
+      },
+      "time_gap_caveat": "this band straddles MIN_SPEED_MPS=0.5 m/s; a time gap is UNDEFINED at standstill and is NaN there, so n_time_gap < n_with_lead by construction. Never read the gap here as a following behaviour."
+     },
+     "1-3": {
+      "speed_mps": [
+       1.0,
+       3.0
+      ],
+      "n_windows": 139,
+      "window_states": {
+       "LEAD": 72,
+       "NOT_STRAIGHT": 47,
+       "NO_LABEL": 2,
+       "NO_LEAD": 18
+      },
+      "n_with_lead": 70,
+      "lead_rate": 0.5036,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 15.4718,
+       "lo": 11.2144,
+       "hi": 20.5442,
+       "ci95": 4.6649,
+       "se": 2.3897,
+       "reducer": "mean",
+       "n_windows": 70,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 70,
+       "n_total": 139
+      },
+      "time_gap_min_s": {
+       "mean": 8.2493,
+       "lo": 5.9296,
+       "hi": 11.17,
+       "ci95": 2.6202,
+       "se": 1.4354,
+       "reducer": "mean",
+       "n_windows": 70,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 70,
+       "n_total": 139
+      },
+      "min_ttc_s": {
+       "mean": 19.6124,
+       "lo": 14.2179,
+       "hi": 24.73,
+       "ci95": 5.2561,
+       "se": 2.7615,
+       "reducer": "mean",
+       "n_windows": 70,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 70,
+       "n_total": 139
+      }
+     },
+     "3-6": {
+      "speed_mps": [
+       3.0,
+       6.0
+      ],
+      "n_windows": 333,
+      "window_states": {
+       "LEAD": 109,
+       "NOT_STRAIGHT": 169,
+       "NO_LABEL": 3,
+       "NO_LEAD": 52
+      },
+      "n_with_lead": 107,
+      "lead_rate": 0.3213,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 18.5483,
+       "lo": 13.9335,
+       "hi": 24.7371,
+       "ci95": 5.4018,
+       "se": 2.632,
+       "reducer": "mean",
+       "n_windows": 107,
+       "n_episodes": 31,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 107,
+       "n_total": 333
+      },
+      "time_gap_min_s": {
+       "mean": 4.3055,
+       "lo": 3.2158,
+       "hi": 5.7426,
+       "ci95": 1.2634,
+       "se": 0.6151,
+       "reducer": "mean",
+       "n_windows": 107,
+       "n_episodes": 31,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 107,
+       "n_total": 333
+      },
+      "min_ttc_s": {
+       "mean": 18.1774,
+       "lo": 13.7292,
+       "hi": 22.0203,
+       "ci95": 4.1456,
+       "se": 2.1042,
+       "reducer": "mean",
+       "n_windows": 107,
+       "n_episodes": 31,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 107,
+       "n_total": 333
+      }
+     },
+     "6-10": {
+      "speed_mps": [
+       6.0,
+       10.0
+      ],
+      "n_windows": 528,
+      "window_states": {
+       "LEAD": 175,
+       "NOT_STRAIGHT": 284,
+       "NO_LABEL": 11,
+       "NO_LEAD": 58
+      },
+      "n_with_lead": 173,
+      "lead_rate": 0.3277,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 24.828,
+       "lo": 20.0636,
+       "hi": 30.2393,
+       "ci95": 5.0878,
+       "se": 2.6356,
+       "reducer": "mean",
+       "n_windows": 173,
+       "n_episodes": 41,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 173,
+       "n_total": 528
+      },
+      "time_gap_min_s": {
+       "mean": 3.076,
+       "lo": 2.526,
+       "hi": 3.7079,
+       "ci95": 0.5909,
+       "se": 0.3093,
+       "reducer": "mean",
+       "n_windows": 173,
+       "n_episodes": 41,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 173,
+       "n_total": 528
+      },
+      "min_ttc_s": {
+       "mean": 20.9059,
+       "lo": 17.3886,
+       "hi": 23.9419,
+       "ci95": 3.2767,
+       "se": 1.7155,
+       "reducer": "mean",
+       "n_windows": 173,
+       "n_episodes": 41,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 173,
+       "n_total": 528
+      }
+     },
+     "10-15": {
+      "speed_mps": [
+       10.0,
+       15.0
+      ],
+      "n_windows": 648,
+      "window_states": {
+       "LEAD": 139,
+       "NOT_STRAIGHT": 263,
+       "NO_LABEL": 40,
+       "NO_LEAD": 206
+      },
+      "n_with_lead": 136,
+      "lead_rate": 0.2099,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 35.7869,
+       "lo": 26.5809,
+       "hi": 46.8625,
+       "ci95": 10.1408,
+       "se": 5.2661,
+       "reducer": "mean",
+       "n_windows": 136,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 136,
+       "n_total": 648
+      },
+      "time_gap_min_s": {
+       "mean": 2.9473,
+       "lo": 2.2002,
+       "hi": 3.8748,
+       "ci95": 0.8373,
+       "se": 0.4173,
+       "reducer": "mean",
+       "n_windows": 136,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 136,
+       "n_total": 648
+      },
+      "min_ttc_s": {
+       "mean": 22.8054,
+       "lo": 17.3351,
+       "hi": 26.7628,
+       "ci95": 4.7139,
+       "se": 2.4382,
+       "reducer": "mean",
+       "n_windows": 136,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 136,
+       "n_total": 648
+      }
+     },
+     "15+": {
+      "speed_mps": [
+       15.0,
+       null
+      ],
+      "n_windows": 615,
+      "window_states": {
+       "LEAD": 167,
+       "NOT_STRAIGHT": 132,
+       "NO_LABEL": 112,
+       "NO_LEAD": 204
+      },
+      "n_with_lead": 162,
+      "lead_rate": 0.2634,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 33.6774,
+       "lo": 25.9816,
+       "hi": 42.0724,
+       "ci95": 8.0454,
+       "se": 4.129,
+       "reducer": "mean",
+       "n_windows": 162,
+       "n_episodes": 15,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 162,
+       "n_total": 615
+      },
+      "time_gap_min_s": {
+       "mean": 1.6358,
+       "lo": 1.2186,
+       "hi": 2.1731,
+       "ci95": 0.4772,
+       "se": 0.2535,
+       "reducer": "mean",
+       "n_windows": 162,
+       "n_episodes": 15,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 162,
+       "n_total": 615
+      },
+      "min_ttc_s": {
+       "mean": 22.0932,
+       "lo": 18.1348,
+       "hi": 25.4678,
+       "ci95": 3.6665,
+       "se": 1.9356,
+       "reducer": "mean",
+       "n_windows": 162,
+       "n_episodes": 15,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 162,
+       "n_total": 615
+      }
+     }
+    },
+    "window_states_total": {
+     "LEAD": 743,
+     "NOT_STRAIGHT": 931,
+     "NO_LABEL": 173,
+     "NO_LEAD": 552
+    }
+   }
+  },
+  "Bp_s1": {
+   "n_windows": 2399,
+   "n_lead_windows": 743,
+   "window_states": {
+    "LEAD": 743,
+    "NO_LEAD": 552,
+    "NOT_STRAIGHT": 931,
+    "NO_LABEL": 173
+   },
+   "metrics": {
+    "headway_min_m": {
+     "mean": 25.8706,
+     "lo": 21.8979,
+     "hi": 30.0126,
+     "ci95": 4.0573,
+     "se": 2.0707,
+     "reducer": "mean",
+     "n_windows": 727,
+     "n_episodes": 74,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 727
+    },
+    "time_gap_min_s": {
+     "mean": 3.9727,
+     "lo": 3.089,
+     "hi": 5.0625,
+     "ci95": 0.9867,
+     "se": 0.5244,
+     "reducer": "mean",
+     "n_windows": 662,
+     "n_episodes": 73,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 662
+    },
+    "min_ttc_s": {
+     "mean": 20.4933,
+     "lo": 18.4533,
+     "hi": 22.3512,
+     "ci95": 1.9489,
+     "se": 0.9935,
+     "reducer": "mean",
+     "n_windows": 727,
+     "n_episodes": 74,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 727,
+     "n_closing": 432,
+     "ttc_cap_s": 30.0,
+     "censoring_note": "295 of 727 windows never close on the lead and are censored at TTC_CAP_S=30.0s. The mean is over censored data \u2014 quote n_closing beside it, never the mean alone.",
+     "n_censored_at_cap": 396
+    }
+   },
+   "no_value_reasons": {
+    "headway_min_m": {
+     "NO_LEAD": 552,
+     "NOT_STRAIGHT": 931,
+     "NO_LABEL": 173,
+     "lead_window_but_path_never_in_corridor": 16,
+     "n_with_value": 727,
+     "n_windows": 2399
+    },
+    "time_gap_min_s": {
+     "NO_LEAD": 552,
+     "NOT_STRAIGHT": 931,
+     "NO_LABEL": 173,
+     "lead_window_but_path_never_in_corridor": 16,
+     "standstill_v0_below_0p5_mps": 65,
+     "n_with_value": 662,
+     "n_windows": 2399
+    },
+    "min_ttc_s": {
+     "NO_LEAD": 552,
+     "NOT_STRAIGHT": 931,
+     "NO_LABEL": 173,
+     "lead_window_but_path_never_in_corridor": 16,
+     "n_with_value": 727,
+     "n_windows": 2399
+    }
+   },
+   "vs_human": {
+    "headway_min_m": {
+     "n_both": 719,
+     "n_arm_only": 8,
+     "n_human_only": 6,
+     "signed_arm_minus_human": {
+      "delta": 0.1282,
+      "lo": -0.5576,
+      "hi": 0.8664,
+      "ci95": 0.712,
+      "p_delta_gt0": 0.6305,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 719,
+      "n_episodes": 73,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "abs_error": {
+      "mean": 2.3037,
+      "lo": 1.6439,
+      "hi": 2.9954,
+      "ci95": 0.6757,
+      "se": 0.3496,
+      "reducer": "mean",
+      "n_windows": 719,
+      "n_episodes": 73,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    },
+    "time_gap_min_s": {
+     "n_both": 654,
+     "n_arm_only": 8,
+     "n_human_only": 5,
+     "signed_arm_minus_human": {
+      "delta": -0.0486,
+      "lo": -0.1862,
+      "hi": 0.1011,
+      "ci95": 0.1437,
+      "p_delta_gt0": 0.2345,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 654,
+      "n_episodes": 72,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "abs_error": {
+      "mean": 0.3741,
+      "lo": 0.2439,
+      "hi": 0.5279,
+      "ci95": 0.142,
+      "se": 0.0731,
+      "reducer": "mean",
+      "n_windows": 654,
+      "n_episodes": 72,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    },
+    "min_ttc_s": {
+     "n_both": 719,
+     "n_arm_only": 8,
+     "n_human_only": 6,
+     "signed_arm_minus_human": {
+      "delta": 0.756,
+      "lo": -0.2409,
+      "hi": 1.8525,
+      "ci95": 1.0467,
+      "p_delta_gt0": 0.93,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 719,
+      "n_episodes": 73,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "abs_error": {
+      "mean": 3.7131,
+      "lo": 2.8344,
+      "hi": 4.6511,
+      "ci95": 0.9083,
+      "se": 0.4559,
+      "reducer": "mean",
+      "n_windows": 719,
+      "n_episodes": 73,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    }
+   },
+   "lead_viol": {
+    "status": "OK",
+    "definition": "share of lead windows whose plan's minimum time gap is < 1 s while the human's is >= 1 s",
+    "n_lead_windows": 743,
+    "n_viol": 33,
+    "share": 0.044415,
+    "ci": {
+     "mean": 0.0444,
+     "lo": 0.0256,
+     "hi": 0.0668,
+     "ci95": 0.0206,
+     "se": 0.0103,
+     "reducer": "mean",
+     "n_windows": 743,
+     "n_episodes": 77,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+    },
+    "n_at_risk": 595,
+    "share_of_at_risk": 0.055462,
+    "share_of_at_risk_ci": {
+     "mean": 0.0555,
+     "lo": 0.0329,
+     "hi": 0.0816,
+     "ci95": 0.0243,
+     "se": 0.0125,
+     "reducer": "mean",
+     "n_windows": 595,
+     "n_episodes": 70,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+    },
+    "n_human_tg_undefined": 84,
+    "n_human_tg_below_thr": 64,
+    "n_plan_lost_lead": 5,
+    "share_incl_lost_lead": 0.051144,
+    "lead_progress_ratio": 0.9987182044120242,
+    "lead_progress_ratio_clipped": 0.913273309749567,
+    "progress": {
+     "status": "OK",
+     "n": 595,
+     "n_at_risk": 595,
+     "lead_progress_ratio": 0.9987182044120242,
+     "lead_progress_ratio_clipped": 0.913273309749567,
+     "meets_min_progress": true,
+     "n_below_min": 154,
+     "n_human_arc_degenerate": 0
+    }
+   },
+   "by_speed": {
+    "_what": "LONGITUDINAL distance-keeping, per speed band. NEVER pool these.",
+    "_binding": "Sayed 2026-08-02 clause 5: where a family cannot be computed, say so PER STRATUM with the reason and the n, rather than silently dropping it.",
+    "bands_mps": [
+     "0-1",
+     "1-3",
+     "3-6",
+     "6-10",
+     "10-15",
+     "15+"
+    ],
+    "min_stratum_n": 30,
+    "estimator": "episode_cluster_bootstrap (taniteval.ci) \u2014 NEVER overlapping_holdout_se",
+    "n_windows_total": 2399,
+    "strata": {
+     "0-1": {
+      "speed_mps": [
+       0.0,
+       1.0
+      ],
+      "n_windows": 136,
+      "window_states": {
+       "LEAD": 81,
+       "NOT_STRAIGHT": 36,
+       "NO_LABEL": 5,
+       "NO_LEAD": 14
+      },
+      "n_with_lead": 80,
+      "lead_rate": 0.5882,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 14.1222,
+       "lo": 9.2372,
+       "hi": 24.1564,
+       "ci95": 7.4596,
+       "se": 3.8212,
+       "reducer": "mean",
+       "n_windows": 80,
+       "n_episodes": 14,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 80,
+       "n_total": 136
+      },
+      "time_gap_min_s": {
+       "mean": 26.3119,
+       "lo": 12.4782,
+       "hi": 45.7096,
+       "ci95": 16.6157,
+       "se": 8.9364,
+       "reducer": "mean",
+       "n_windows": 15,
+       "n_episodes": 9,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 15,
+       "n_total": 136
+      },
+      "min_ttc_s": {
+       "mean": 21.2349,
+       "lo": 17.3001,
+       "hi": 24.7323,
+       "ci95": 3.7161,
+       "se": 1.9631,
+       "reducer": "mean",
+       "n_windows": 80,
+       "n_episodes": 14,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 80,
+       "n_total": 136
+      },
+      "time_gap_caveat": "this band straddles MIN_SPEED_MPS=0.5 m/s; a time gap is UNDEFINED at standstill and is NaN there, so n_time_gap < n_with_lead by construction. Never read the gap here as a following behaviour."
+     },
+     "1-3": {
+      "speed_mps": [
+       1.0,
+       3.0
+      ],
+      "n_windows": 139,
+      "window_states": {
+       "LEAD": 72,
+       "NOT_STRAIGHT": 47,
+       "NO_LABEL": 2,
+       "NO_LEAD": 18
+      },
+      "n_with_lead": 69,
+      "lead_rate": 0.4964,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 15.5812,
+       "lo": 11.5039,
+       "hi": 20.3537,
+       "ci95": 4.4249,
+       "se": 2.2742,
+       "reducer": "mean",
+       "n_windows": 69,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 69,
+       "n_total": 139
+      },
+      "time_gap_min_s": {
+       "mean": 8.2766,
+       "lo": 6.0317,
+       "hi": 11.106,
+       "ci95": 2.5372,
+       "se": 1.3546,
+       "reducer": "mean",
+       "n_windows": 69,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 69,
+       "n_total": 139
+      },
+      "min_ttc_s": {
+       "mean": 19.2276,
+       "lo": 13.4613,
+       "hi": 24.4314,
+       "ci95": 5.485,
+       "se": 2.8132,
+       "reducer": "mean",
+       "n_windows": 69,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 69,
+       "n_total": 139
+      }
+     },
+     "3-6": {
+      "speed_mps": [
+       3.0,
+       6.0
+      ],
+      "n_windows": 333,
+      "window_states": {
+       "LEAD": 109,
+       "NOT_STRAIGHT": 169,
+       "NO_LABEL": 3,
+       "NO_LEAD": 52
+      },
+      "n_with_lead": 108,
+      "lead_rate": 0.3243,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 18.8883,
+       "lo": 14.3441,
+       "hi": 24.9891,
+       "ci95": 5.3225,
+       "se": 2.6005,
+       "reducer": "mean",
+       "n_windows": 108,
+       "n_episodes": 31,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 108,
+       "n_total": 333
+      },
+      "time_gap_min_s": {
+       "mean": 4.3875,
+       "lo": 3.3204,
+       "hi": 5.8084,
+       "ci95": 1.244,
+       "se": 0.6081,
+       "reducer": "mean",
+       "n_windows": 108,
+       "n_episodes": 31,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 108,
+       "n_total": 333
+      },
+      "min_ttc_s": {
+       "mean": 17.9904,
+       "lo": 13.7253,
+       "hi": 21.8169,
+       "ci95": 4.0458,
+       "se": 2.0638,
+       "reducer": "mean",
+       "n_windows": 108,
+       "n_episodes": 31,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 108,
+       "n_total": 333
+      }
+     },
+     "6-10": {
+      "speed_mps": [
+       6.0,
+       10.0
+      ],
+      "n_windows": 528,
+      "window_states": {
+       "LEAD": 175,
+       "NOT_STRAIGHT": 284,
+       "NO_LABEL": 11,
+       "NO_LEAD": 58
+      },
+      "n_with_lead": 172,
+      "lead_rate": 0.3258,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 24.6597,
+       "lo": 19.985,
+       "hi": 30.1818,
+       "ci95": 5.0984,
+       "se": 2.613,
+       "reducer": "mean",
+       "n_windows": 172,
+       "n_episodes": 40,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 172,
+       "n_total": 528
+      },
+      "time_gap_min_s": {
+       "mean": 3.0516,
+       "lo": 2.5023,
+       "hi": 3.7131,
+       "ci95": 0.6054,
+       "se": 0.3076,
+       "reducer": "mean",
+       "n_windows": 172,
+       "n_episodes": 40,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 172,
+       "n_total": 528
+      },
+      "min_ttc_s": {
+       "mean": 19.8124,
+       "lo": 16.1387,
+       "hi": 23.1176,
+       "ci95": 3.4894,
+       "se": 1.8204,
+       "reducer": "mean",
+       "n_windows": 172,
+       "n_episodes": 40,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 172,
+       "n_total": 528
+      }
+     },
+     "10-15": {
+      "speed_mps": [
+       10.0,
+       15.0
+      ],
+      "n_windows": 648,
+      "window_states": {
+       "LEAD": 139,
+       "NOT_STRAIGHT": 263,
+       "NO_LABEL": 40,
+       "NO_LEAD": 206
+      },
+      "n_with_lead": 136,
+      "lead_rate": 0.2099,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 35.7277,
+       "lo": 26.5395,
+       "hi": 46.8239,
+       "ci95": 10.1422,
+       "se": 5.2627,
+       "reducer": "mean",
+       "n_windows": 136,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 136,
+       "n_total": 648
+      },
+      "time_gap_min_s": {
+       "mean": 2.9427,
+       "lo": 2.1931,
+       "hi": 3.8696,
+       "ci95": 0.8382,
+       "se": 0.4169,
+       "reducer": "mean",
+       "n_windows": 136,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 136,
+       "n_total": 648
+      },
+      "min_ttc_s": {
+       "mean": 22.3961,
+       "lo": 16.6806,
+       "hi": 26.4114,
+       "ci95": 4.8654,
+       "se": 2.4842,
+       "reducer": "mean",
+       "n_windows": 136,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 136,
+       "n_total": 648
+      }
+     },
+     "15+": {
+      "speed_mps": [
+       15.0,
+       null
+      ],
+      "n_windows": 615,
+      "window_states": {
+       "LEAD": 167,
+       "NOT_STRAIGHT": 132,
+       "NO_LABEL": 112,
+       "NO_LEAD": 204
+      },
+      "n_with_lead": 162,
+      "lead_rate": 0.2634,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 33.7203,
+       "lo": 26.0325,
+       "hi": 42.0989,
+       "ci95": 8.0332,
+       "se": 4.1388,
+       "reducer": "mean",
+       "n_windows": 162,
+       "n_episodes": 15,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 162,
+       "n_total": 615
+      },
+      "time_gap_min_s": {
+       "mean": 1.6374,
+       "lo": 1.2193,
+       "hi": 2.1747,
+       "ci95": 0.4777,
+       "se": 0.2537,
+       "reducer": "mean",
+       "n_windows": 162,
+       "n_episodes": 15,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 162,
+       "n_total": 615
+      },
+      "min_ttc_s": {
+       "mean": 21.4604,
+       "lo": 17.5217,
+       "hi": 24.9464,
+       "ci95": 3.7124,
+       "se": 1.9616,
+       "reducer": "mean",
+       "n_windows": 162,
+       "n_episodes": 15,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 162,
+       "n_total": 615
+      }
+     }
+    },
+    "window_states_total": {
+     "LEAD": 743,
+     "NOT_STRAIGHT": 931,
+     "NO_LABEL": 173,
+     "NO_LEAD": 552
+    }
+   }
+  },
+  "P10": {
+   "n_windows": 2399,
+   "n_lead_windows": 743,
+   "window_states": {
+    "LEAD": 743,
+    "NO_LEAD": 552,
+    "NOT_STRAIGHT": 931,
+    "NO_LABEL": 173
+   },
+   "metrics": {
+    "headway_min_m": {
+     "mean": 25.1162,
+     "lo": 21.2126,
+     "hi": 29.5019,
+     "ci95": 4.1446,
+     "se": 2.0884,
+     "reducer": "mean",
+     "n_windows": 728,
+     "n_episodes": 75,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 728
+    },
+    "time_gap_min_s": {
+     "mean": 3.8316,
+     "lo": 2.9634,
+     "hi": 4.9659,
+     "ci95": 1.0012,
+     "se": 0.524,
+     "reducer": "mean",
+     "n_windows": 663,
+     "n_episodes": 74,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 663
+    },
+    "min_ttc_s": {
+     "mean": 19.9473,
+     "lo": 17.7066,
+     "hi": 22.0248,
+     "ci95": 2.1591,
+     "se": 1.086,
+     "reducer": "mean",
+     "n_windows": 728,
+     "n_episodes": 75,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 728,
+     "n_closing": 411,
+     "ttc_cap_s": 30.0,
+     "censoring_note": "317 of 728 windows never close on the lead and are censored at TTC_CAP_S=30.0s. The mean is over censored data \u2014 quote n_closing beside it, never the mean alone.",
+     "n_censored_at_cap": 400
+    }
+   },
+   "no_value_reasons": {
+    "headway_min_m": {
+     "NO_LEAD": 552,
+     "NOT_STRAIGHT": 931,
+     "NO_LABEL": 173,
+     "lead_window_but_path_never_in_corridor": 15,
+     "n_with_value": 728,
+     "n_windows": 2399
+    },
+    "time_gap_min_s": {
+     "NO_LEAD": 552,
+     "NOT_STRAIGHT": 931,
+     "NO_LABEL": 173,
+     "lead_window_but_path_never_in_corridor": 15,
+     "standstill_v0_below_0p5_mps": 65,
+     "n_with_value": 663,
+     "n_windows": 2399
+    },
+    "min_ttc_s": {
+     "NO_LEAD": 552,
+     "NOT_STRAIGHT": 931,
+     "NO_LABEL": 173,
+     "lead_window_but_path_never_in_corridor": 15,
+     "n_with_value": 728,
+     "n_windows": 2399
+    }
+   },
+   "vs_human": {
+    "headway_min_m": {
+     "n_both": 720,
+     "n_arm_only": 8,
+     "n_human_only": 5,
+     "signed_arm_minus_human": {
+      "delta": -0.6146,
+      "lo": -1.3008,
+      "hi": 0.0154,
+      "ci95": 0.6581,
+      "p_delta_gt0": 0.028,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 720,
+      "n_episodes": 73,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "abs_error": {
+      "mean": 2.4893,
+      "lo": 1.8918,
+      "hi": 3.2231,
+      "ci95": 0.6656,
+      "se": 0.3443,
+      "reducer": "mean",
+      "n_windows": 720,
+      "n_episodes": 73,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    },
+    "time_gap_min_s": {
+     "n_both": 655,
+     "n_arm_only": 8,
+     "n_human_only": 4,
+     "signed_arm_minus_human": {
+      "delta": -0.1951,
+      "lo": -0.4133,
+      "hi": -0.0062,
+      "ci95": 0.2035,
+      "p_delta_gt0": 0.022,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 655,
+      "n_episodes": 72,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "abs_error": {
+      "mean": 0.4965,
+      "lo": 0.3148,
+      "hi": 0.7175,
+      "ci95": 0.2014,
+      "se": 0.1033,
+      "reducer": "mean",
+      "n_windows": 655,
+      "n_episodes": 72,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    },
+    "min_ttc_s": {
+     "n_both": 720,
+     "n_arm_only": 8,
+     "n_human_only": 5,
+     "signed_arm_minus_human": {
+      "delta": 0.1772,
+      "lo": -0.747,
+      "hi": 1.0891,
+      "ci95": 0.918,
+      "p_delta_gt0": 0.6545,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 720,
+      "n_episodes": 73,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "abs_error": {
+      "mean": 3.4641,
+      "lo": 2.665,
+      "hi": 4.2733,
+      "ci95": 0.8042,
+      "se": 0.4144,
+      "reducer": "mean",
+      "n_windows": 720,
+      "n_episodes": 73,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    }
+   },
+   "lead_viol": {
+    "status": "OK",
+    "definition": "share of lead windows whose plan's minimum time gap is < 1 s while the human's is >= 1 s",
+    "n_lead_windows": 743,
+    "n_viol": 48,
+    "share": 0.064603,
+    "ci": {
+     "mean": 0.0646,
+     "lo": 0.0398,
+     "hi": 0.0924,
+     "ci95": 0.0263,
+     "se": 0.0135,
+     "reducer": "mean",
+     "n_windows": 743,
+     "n_episodes": 77,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+    },
+    "n_at_risk": 595,
+    "share_of_at_risk": 0.080672,
+    "share_of_at_risk_ci": {
+     "mean": 0.0807,
+     "lo": 0.0504,
+     "hi": 0.1147,
+     "ci95": 0.0321,
+     "se": 0.0167,
+     "reducer": "mean",
+     "n_windows": 595,
+     "n_episodes": 70,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+    },
+    "n_human_tg_undefined": 84,
+    "n_human_tg_below_thr": 64,
+    "n_plan_lost_lead": 4,
+    "share_incl_lost_lead": 0.069987,
+    "lead_progress_ratio": 1.13354098217771,
+    "lead_progress_ratio_clipped": 0.9384594986090986,
+    "progress": {
+     "status": "OK",
+     "n": 595,
+     "n_at_risk": 595,
+     "lead_progress_ratio": 1.13354098217771,
+     "lead_progress_ratio_clipped": 0.9384594986090986,
+     "meets_min_progress": true,
+     "n_below_min": 126,
+     "n_human_arc_degenerate": 0
+    }
+   },
+   "by_speed": {
+    "_what": "LONGITUDINAL distance-keeping, per speed band. NEVER pool these.",
+    "_binding": "Sayed 2026-08-02 clause 5: where a family cannot be computed, say so PER STRATUM with the reason and the n, rather than silently dropping it.",
+    "bands_mps": [
+     "0-1",
+     "1-3",
+     "3-6",
+     "6-10",
+     "10-15",
+     "15+"
+    ],
+    "min_stratum_n": 30,
+    "estimator": "episode_cluster_bootstrap (taniteval.ci) \u2014 NEVER overlapping_holdout_se",
+    "n_windows_total": 2399,
+    "strata": {
+     "0-1": {
+      "speed_mps": [
+       0.0,
+       1.0
+      ],
+      "n_windows": 136,
+      "window_states": {
+       "LEAD": 81,
+       "NOT_STRAIGHT": 36,
+       "NO_LABEL": 5,
+       "NO_LEAD": 14
+      },
+      "n_with_lead": 80,
+      "lead_rate": 0.5882,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 12.638,
+       "lo": 8.2722,
+       "hi": 21.3687,
+       "ci95": 6.5482,
+       "se": 3.3973,
+       "reducer": "mean",
+       "n_windows": 80,
+       "n_episodes": 14,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 80,
+       "n_total": 136
+      },
+      "time_gap_min_s": {
+       "mean": 24.4792,
+       "lo": 9.7355,
+       "hi": 44.3647,
+       "ci95": 17.3146,
+       "se": 9.2906,
+       "reducer": "mean",
+       "n_windows": 15,
+       "n_episodes": 9,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 15,
+       "n_total": 136
+      },
+      "min_ttc_s": {
+       "mean": 16.4694,
+       "lo": 11.7531,
+       "hi": 21.6225,
+       "ci95": 4.9347,
+       "se": 2.5421,
+       "reducer": "mean",
+       "n_windows": 80,
+       "n_episodes": 14,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 80,
+       "n_total": 136
+      },
+      "time_gap_caveat": "this band straddles MIN_SPEED_MPS=0.5 m/s; a time gap is UNDEFINED at standstill and is NaN there, so n_time_gap < n_with_lead by construction. Never read the gap here as a following behaviour."
+     },
+     "1-3": {
+      "speed_mps": [
+       1.0,
+       3.0
+      ],
+      "n_windows": 139,
+      "window_states": {
+       "LEAD": 72,
+       "NOT_STRAIGHT": 47,
+       "NO_LABEL": 2,
+       "NO_LEAD": 18
+      },
+      "n_with_lead": 70,
+      "lead_rate": 0.5036,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 14.9973,
+       "lo": 10.2692,
+       "hi": 20.3049,
+       "ci95": 5.0178,
+       "se": 2.6059,
+       "reducer": "mean",
+       "n_windows": 70,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 70,
+       "n_total": 139
+      },
+      "time_gap_min_s": {
+       "mean": 7.9133,
+       "lo": 5.2715,
+       "hi": 10.9376,
+       "ci95": 2.8331,
+       "se": 1.4879,
+       "reducer": "mean",
+       "n_windows": 70,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 70,
+       "n_total": 139
+      },
+      "min_ttc_s": {
+       "mean": 18.7862,
+       "lo": 12.891,
+       "hi": 24.1855,
+       "ci95": 5.6473,
+       "se": 2.9768,
+       "reducer": "mean",
+       "n_windows": 70,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 70,
+       "n_total": 139
+      }
+     },
+     "3-6": {
+      "speed_mps": [
+       3.0,
+       6.0
+      ],
+      "n_windows": 333,
+      "window_states": {
+       "LEAD": 109,
+       "NOT_STRAIGHT": 169,
+       "NO_LABEL": 3,
+       "NO_LEAD": 52
+      },
+      "n_with_lead": 107,
+      "lead_rate": 0.3213,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 17.7601,
+       "lo": 13.1334,
+       "hi": 23.9067,
+       "ci95": 5.3867,
+       "se": 2.5775,
+       "reducer": "mean",
+       "n_windows": 107,
+       "n_episodes": 31,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 107,
+       "n_total": 333
+      },
+      "time_gap_min_s": {
+       "mean": 4.1201,
+       "lo": 3.0441,
+       "hi": 5.5572,
+       "ci95": 1.2565,
+       "se": 0.608,
+       "reducer": "mean",
+       "n_windows": 107,
+       "n_episodes": 31,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 107,
+       "n_total": 333
+      },
+      "min_ttc_s": {
+       "mean": 17.7621,
+       "lo": 13.202,
+       "hi": 21.7968,
+       "ci95": 4.2974,
+       "se": 2.2229,
+       "reducer": "mean",
+       "n_windows": 107,
+       "n_episodes": 31,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 107,
+       "n_total": 333
+      }
+     },
+     "6-10": {
+      "speed_mps": [
+       6.0,
+       10.0
+      ],
+      "n_windows": 528,
+      "window_states": {
+       "LEAD": 175,
+       "NOT_STRAIGHT": 284,
+       "NO_LABEL": 11,
+       "NO_LEAD": 58
+      },
+      "n_with_lead": 173,
+      "lead_rate": 0.3277,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 24.6012,
+       "lo": 20.2945,
+       "hi": 29.5508,
+       "ci95": 4.6282,
+       "se": 2.4056,
+       "reducer": "mean",
+       "n_windows": 173,
+       "n_episodes": 40,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 173,
+       "n_total": 528
+      },
+      "time_gap_min_s": {
+       "mean": 3.037,
+       "lo": 2.5474,
+       "hi": 3.6333,
+       "ci95": 0.5429,
+       "se": 0.2737,
+       "reducer": "mean",
+       "n_windows": 173,
+       "n_episodes": 40,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 173,
+       "n_total": 528
+      },
+      "min_ttc_s": {
+       "mean": 20.5237,
+       "lo": 17.0273,
+       "hi": 23.6245,
+       "ci95": 3.2986,
+       "se": 1.7872,
+       "reducer": "mean",
+       "n_windows": 173,
+       "n_episodes": 40,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 173,
+       "n_total": 528
+      }
+     },
+     "10-15": {
+      "speed_mps": [
+       10.0,
+       15.0
+      ],
+      "n_windows": 648,
+      "window_states": {
+       "LEAD": 139,
+       "NOT_STRAIGHT": 263,
+       "NO_LABEL": 40,
+       "NO_LEAD": 206
+      },
+      "n_with_lead": 136,
+      "lead_rate": 0.2099,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 34.8158,
+       "lo": 25.429,
+       "hi": 46.5352,
+       "ci95": 10.5531,
+       "se": 5.3111,
+       "reducer": "mean",
+       "n_windows": 136,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 136,
+       "n_total": 648
+      },
+      "time_gap_min_s": {
+       "mean": 2.8828,
+       "lo": 2.1241,
+       "hi": 3.8399,
+       "ci95": 0.8579,
+       "se": 0.4267,
+       "reducer": "mean",
+       "n_windows": 136,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 136,
+       "n_total": 648
+      },
+      "min_ttc_s": {
+       "mean": 21.2241,
+       "lo": 15.4678,
+       "hi": 25.8482,
+       "ci95": 5.1902,
+       "se": 2.703,
+       "reducer": "mean",
+       "n_windows": 136,
+       "n_episodes": 22,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 136,
+       "n_total": 648
+      }
+     },
+     "15+": {
+      "speed_mps": [
+       15.0,
+       null
+      ],
+      "n_windows": 615,
+      "window_states": {
+       "LEAD": 167,
+       "NOT_STRAIGHT": 132,
+       "NO_LABEL": 112,
+       "NO_LEAD": 204
+      },
+      "n_with_lead": 162,
+      "lead_rate": 0.2634,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 32.9162,
+       "lo": 25.5643,
+       "hi": 41.5275,
+       "ci95": 7.9816,
+       "se": 4.093,
+       "reducer": "mean",
+       "n_windows": 162,
+       "n_episodes": 15,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 162,
+       "n_total": 615
+      },
+      "time_gap_min_s": {
+       "mean": 1.6108,
+       "lo": 1.1935,
+       "hi": 2.1587,
+       "ci95": 0.4826,
+       "se": 0.2566,
+       "reducer": "mean",
+       "n_windows": 162,
+       "n_episodes": 15,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 162,
+       "n_total": 615
+      },
+      "min_ttc_s": {
+       "mean": 21.9221,
+       "lo": 18.7004,
+       "hi": 25.3724,
+       "ci95": 3.336,
+       "se": 1.704,
+       "reducer": "mean",
+       "n_windows": 162,
+       "n_episodes": 15,
+       "n_boot": 1000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 162,
+       "n_total": 615
+      }
+     }
+    },
+    "window_states_total": {
+     "LEAD": 743,
+     "NOT_STRAIGHT": 931,
+     "NO_LABEL": 173,
+     "NO_LEAD": 552
+    }
+   }
+  }
+ },
+ "seed_floor_F": {},
+ "pairs": {
+  "HP_s0__minus__B_s0": {
+   "a_minus_b": "HP_s0 - B_s0",
+   "dk": {
+    "headway_min_m": {
+     "n_used": 718,
+     "n_windows": 718,
+     "n_a_only": 8,
+     "n_b_only": 4,
+     "delta": 0.0527,
+     "lo": -0.2854,
+     "hi": 0.4783,
+     "ci95": 0.3818,
+     "p_delta_gt0": 0.578,
+     "separated": false,
+     "reducer": "mean",
+     "n_episodes": 74,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    },
+    "time_gap_min_s": {
+     "n_used": 663,
+     "n_windows": 663,
+     "n_a_only": 0,
+     "n_b_only": 2,
+     "delta": -0.079,
+     "lo": -0.1898,
+     "hi": 0.0029,
+     "ci95": 0.0963,
+     "p_delta_gt0": 0.0315,
+     "separated": false,
+     "reducer": "mean",
+     "n_episodes": 74,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    },
+    "min_ttc_s": {
+     "n_used": 718,
+     "n_windows": 718,
+     "n_a_only": 8,
+     "n_b_only": 4,
+     "delta": 1.5094,
+     "lo": 0.3929,
+     "hi": 2.8212,
+     "ci95": 1.2142,
+     "p_delta_gt0": 0.997,
+     "separated": true,
+     "reducer": "mean",
+     "n_episodes": 74,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    }
+   },
+   "abs_error_vs_human": {
+    "headway_min_m": {
+     "n_used": 710,
+     "delta": 0.1537,
+     "lo": -0.1202,
+     "hi": 0.5039,
+     "ci95": 0.3121,
+     "p_delta_gt0": 0.8315,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 710,
+     "n_episodes": 72,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "reading": "positive = the first arm sits FARTHER from the human's own value than the second"
+    },
+    "time_gap_min_s": {
+     "n_used": 655,
+     "delta": -0.0005,
+     "lo": -0.114,
+     "hi": 0.0837,
+     "ci95": 0.0988,
+     "p_delta_gt0": 0.541,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 655,
+     "n_episodes": 72,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "reading": "positive = the first arm sits FARTHER from the human's own value than the second"
+    },
+    "min_ttc_s": {
+     "n_used": 710,
+     "delta": -0.4864,
+     "lo": -1.2168,
+     "hi": 0.226,
+     "ci95": 0.7214,
+     "p_delta_gt0": 0.0855,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 710,
+     "n_episodes": 72,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "reading": "positive = the first arm sits FARTHER from the human's own value than the second"
+    }
+   },
+   "lead_viol": {
+    "all_lead_windows": {
+     "n_lead_windows": 743,
+     "n_viol_a": 28,
+     "n_viol_b": 21,
+     "delta": 0.0094,
+     "lo": 0.0014,
+     "hi": 0.018,
+     "separated": true,
+     "n_windows": 743,
+     "n_episodes": 77,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "at_risk": {
+     "n_at_risk": 595,
+     "denominator": "lead windows where the human keeps a time gap >= the threshold (PI ruling 2026-10-11)",
+     "n_viol_a": 28,
+     "n_viol_b": 21,
+     "delta": 0.0118,
+     "lo": 0.0017,
+     "hi": 0.0229,
+     "ci95": 0.0106,
+     "p_delta_gt0": 0.986,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 595,
+     "n_episodes": 70,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK",
+     "x7_direction_met_at_risk": false
+    },
+    "progress": {
+     "n_used": 595,
+     "n_a_only": 0,
+     "n_b_only": 0,
+     "lead_progress_ratio_a": 0.9828579318714326,
+     "lead_progress_ratio_b": 0.924328655396417,
+     "delta": 0.0585,
+     "lo": 0.0326,
+     "hi": 0.0881,
+     "ci95": 0.0277,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 595,
+     "n_episodes": 70,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    }
+   },
+   "seed_floor_F_of_arms_in_pair": {}
+  },
+  "HP_s0__minus__H_s0": {
+   "a_minus_b": "HP_s0 - H_s0",
+   "dk": {
+    "headway_min_m": {
+     "n_used": 726,
+     "n_windows": 726,
+     "n_a_only": 0,
+     "n_b_only": 1,
+     "delta": 0.2572,
+     "lo": 0.022,
+     "hi": 0.5987,
+     "ci95": 0.2883,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_episodes": 75,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    },
+    "time_gap_min_s": {
+     "n_used": 663,
+     "n_windows": 663,
+     "n_a_only": 0,
+     "n_b_only": 1,
+     "delta": 0.0166,
+     "lo": 0.0022,
+     "hi": 0.04,
+     "ci95": 0.0189,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_episodes": 74,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    },
+    "min_ttc_s": {
+     "n_used": 726,
+     "n_windows": 726,
+     "n_a_only": 0,
+     "n_b_only": 1,
+     "delta": 0.4639,
+     "lo": -0.0513,
+     "hi": 1.2113,
+     "ci95": 0.6313,
+     "p_delta_gt0": 0.9245,
+     "separated": false,
+     "reducer": "mean",
+     "n_episodes": 75,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    }
+   },
+   "abs_error_vs_human": {
+    "headway_min_m": {
+     "n_used": 718,
+     "delta": 0.1589,
+     "lo": -0.0366,
+     "hi": 0.4508,
+     "ci95": 0.2437,
+     "p_delta_gt0": 0.8675,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 718,
+     "n_episodes": 73,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "reading": "positive = the first arm sits FARTHER from the human's own value than the second"
+    },
+    "time_gap_min_s": {
+     "n_used": 655,
+     "delta": 0.0088,
+     "lo": -0.0033,
+     "hi": 0.0282,
+     "ci95": 0.0157,
+     "p_delta_gt0": 0.853,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 655,
+     "n_episodes": 72,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "reading": "positive = the first arm sits FARTHER from the human's own value than the second"
+    },
+    "min_ttc_s": {
+     "n_used": 718,
+     "delta": 0.327,
+     "lo": -0.0714,
+     "hi": 0.9159,
+     "ci95": 0.4936,
+     "p_delta_gt0": 0.8805,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 718,
+     "n_episodes": 73,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "reading": "positive = the first arm sits FARTHER from the human's own value than the second"
+    }
+   },
+   "lead_viol": {
+    "all_lead_windows": {
+     "n_lead_windows": 743,
+     "n_viol_a": 28,
+     "n_viol_b": 29,
+     "delta": -0.0013,
+     "lo": -0.0044,
+     "hi": 0.0,
+     "separated": false,
+     "n_windows": 743,
+     "n_episodes": 77,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "at_risk": {
+     "n_at_risk": 595,
+     "denominator": "lead windows where the human keeps a time gap >= the threshold (PI ruling 2026-10-11)",
+     "n_viol_a": 28,
+     "n_viol_b": 29,
+     "delta": -0.0017,
+     "lo": -0.0053,
+     "hi": 0.0,
+     "ci95": 0.0027,
+     "p_delta_gt0": 0.0,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 595,
+     "n_episodes": 70,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK",
+     "x7_direction_met_at_risk": false
+    },
+    "progress": {
+     "n_used": 595,
+     "n_a_only": 0,
+     "n_b_only": 0,
+     "lead_progress_ratio_a": 0.9828579318714326,
+     "lead_progress_ratio_b": 0.9896180571027617,
+     "delta": -0.0068,
+     "lo": -0.0168,
+     "hi": -0.0012,
+     "ci95": 0.0078,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 595,
+     "n_episodes": 70,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    }
+   },
+   "seed_floor_F_of_arms_in_pair": {}
+  },
+  "HP_s0__minus__Bp_s0": {
+   "a_minus_b": "HP_s0 - Bp_s0",
+   "dk": {
+    "headway_min_m": {
+     "n_used": 718,
+     "n_windows": 718,
+     "n_a_only": 8,
+     "n_b_only": 3,
+     "delta": -0.2657,
+     "lo": -0.4461,
+     "hi": -0.0862,
+     "ci95": 0.1799,
+     "p_delta_gt0": 0.0015,
+     "separated": true,
+     "reducer": "mean",
+     "n_episodes": 74,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    },
+    "time_gap_min_s": {
+     "n_used": 663,
+     "n_windows": 663,
+     "n_a_only": 0,
+     "n_b_only": 1,
+     "delta": -0.1005,
+     "lo": -0.2086,
+     "hi": -0.0226,
+     "ci95": 0.093,
+     "p_delta_gt0": 0.0015,
+     "separated": true,
+     "reducer": "mean",
+     "n_episodes": 74,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    },
+    "min_ttc_s": {
+     "n_used": 718,
+     "n_windows": 718,
+     "n_a_only": 8,
+     "n_b_only": 3,
+     "delta": 0.4141,
+     "lo": -0.2027,
+     "hi": 1.0862,
+     "ci95": 0.6445,
+     "p_delta_gt0": 0.903,
+     "separated": false,
+     "reducer": "mean",
+     "n_episodes": 74,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    }
+   },
+   "abs_error_vs_human": {
+    "headway_min_m": {
+     "n_used": 710,
+     "delta": -0.0521,
+     "lo": -0.196,
+     "hi": 0.0965,
+     "ci95": 0.1462,
+     "p_delta_gt0": 0.254,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 710,
+     "n_episodes": 72,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "reading": "positive = the first arm sits FARTHER from the human's own value than the second"
+    },
+    "time_gap_min_s": {
+     "n_used": 655,
+     "delta": -0.0124,
+     "lo": -0.1207,
+     "hi": 0.0699,
+     "ci95": 0.0953,
+     "p_delta_gt0": 0.4485,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 655,
+     "n_episodes": 72,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "reading": "positive = the first arm sits FARTHER from the human's own value than the second"
+    },
+    "min_ttc_s": {
+     "n_used": 710,
+     "delta": -0.3089,
+     "lo": -0.7676,
+     "hi": 0.1189,
+     "ci95": 0.4432,
+     "p_delta_gt0": 0.083,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 710,
+     "n_episodes": 72,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "reading": "positive = the first arm sits FARTHER from the human's own value than the second"
+    }
+   },
+   "lead_viol": {
+    "all_lead_windows": {
+     "n_lead_windows": 743,
+     "n_viol_a": 28,
+     "n_viol_b": 20,
+     "delta": 0.0108,
+     "lo": 0.0026,
+     "hi": 0.0196,
+     "separated": true,
+     "n_windows": 743,
+     "n_episodes": 77,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "at_risk": {
+     "n_at_risk": 595,
+     "denominator": "lead windows where the human keeps a time gap >= the threshold (PI ruling 2026-10-11)",
+     "n_viol_a": 28,
+     "n_viol_b": 20,
+     "delta": 0.0134,
+     "lo": 0.0032,
+     "hi": 0.0246,
+     "ci95": 0.0107,
+     "p_delta_gt0": 0.993,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 595,
+     "n_episodes": 70,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK",
+     "x7_direction_met_at_risk": false
+    },
+    "progress": {
+     "n_used": 595,
+     "n_a_only": 0,
+     "n_b_only": 0,
+     "lead_progress_ratio_a": 0.9828579318714326,
+     "lead_progress_ratio_b": 0.9166163483450308,
+     "delta": 0.0662,
+     "lo": 0.0401,
+     "hi": 0.0965,
+     "ci95": 0.0282,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 595,
+     "n_episodes": 70,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    }
+   },
+   "seed_floor_F_of_arms_in_pair": {}
+  },
+  "HP_s0__minus__P10": {
+   "a_minus_b": "HP_s0 - P10",
+   "dk": {
+    "headway_min_m": {
+     "n_used": 723,
+     "n_windows": 723,
+     "n_a_only": 3,
+     "n_b_only": 5,
+     "delta": 0.5407,
+     "lo": 0.0239,
+     "hi": 1.1189,
+     "ci95": 0.5475,
+     "p_delta_gt0": 0.983,
+     "separated": true,
+     "reducer": "mean",
+     "n_episodes": 75,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    },
+    "time_gap_min_s": {
+     "n_used": 661,
+     "n_windows": 661,
+     "n_a_only": 2,
+     "n_b_only": 2,
+     "delta": 0.1071,
+     "lo": 0.0181,
+     "hi": 0.2086,
+     "ci95": 0.0952,
+     "p_delta_gt0": 0.9885,
+     "separated": true,
+     "reducer": "mean",
+     "n_episodes": 74,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    },
+    "min_ttc_s": {
+     "n_used": 723,
+     "n_windows": 723,
+     "n_a_only": 3,
+     "n_b_only": 5,
+     "delta": 1.014,
+     "lo": 0.2549,
+     "hi": 1.9056,
+     "ci95": 0.8253,
+     "p_delta_gt0": 0.9955,
+     "separated": true,
+     "reducer": "mean",
+     "n_episodes": 75,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    }
+   },
+   "abs_error_vs_human": {
+    "headway_min_m": {
+     "n_used": 716,
+     "delta": -0.294,
+     "lo": -0.6964,
+     "hi": 0.1129,
+     "ci95": 0.4046,
+     "p_delta_gt0": 0.079,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 716,
+     "n_episodes": 73,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "reading": "positive = the first arm sits FARTHER from the human's own value than the second"
+    },
+    "time_gap_min_s": {
+     "n_used": 654,
+     "delta": -0.1225,
+     "lo": -0.2286,
+     "hi": -0.0367,
+     "ci95": 0.096,
+     "p_delta_gt0": 0.0015,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 654,
+     "n_episodes": 72,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "reading": "positive = the first arm sits FARTHER from the human's own value than the second"
+    },
+    "min_ttc_s": {
+     "n_used": 716,
+     "delta": -0.0944,
+     "lo": -0.7098,
+     "hi": 0.6469,
+     "ci95": 0.6784,
+     "p_delta_gt0": 0.359,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 716,
+     "n_episodes": 73,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "reading": "positive = the first arm sits FARTHER from the human's own value than the second"
+    }
+   },
+   "lead_viol": {
+    "all_lead_windows": {
+     "n_lead_windows": 743,
+     "n_viol_a": 28,
+     "n_viol_b": 48,
+     "delta": -0.0269,
+     "lo": -0.0498,
+     "hi": -0.0065,
+     "separated": true,
+     "n_windows": 743,
+     "n_episodes": 77,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "at_risk": {
+     "n_at_risk": 595,
+     "denominator": "lead windows where the human keeps a time gap >= the threshold (PI ruling 2026-10-11)",
+     "n_viol_a": 28,
+     "n_viol_b": 48,
+     "delta": -0.0336,
+     "lo": -0.0625,
+     "hi": -0.0091,
+     "ci95": 0.0267,
+     "p_delta_gt0": 0.001,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 595,
+     "n_episodes": 70,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK",
+     "x7_direction_met_at_risk": true
+    },
+    "progress": {
+     "n_used": 595,
+     "n_a_only": 0,
+     "n_b_only": 0,
+     "lead_progress_ratio_a": 0.9828579318714326,
+     "lead_progress_ratio_b": 1.13354098217771,
+     "delta": -0.1507,
+     "lo": -0.2214,
+     "hi": -0.0905,
+     "ci95": 0.0655,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 595,
+     "n_episodes": 70,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    }
+   },
+   "seed_floor_F_of_arms_in_pair": {}
+  },
+  "H_s0__minus__B_s0": {
+   "a_minus_b": "H_s0 - B_s0",
+   "dk": {
+    "headway_min_m": {
+     "n_used": 719,
+     "n_windows": 719,
+     "n_a_only": 8,
+     "n_b_only": 3,
+     "delta": -0.2071,
+     "lo": -0.4002,
+     "hi": -0.0358,
+     "ci95": 0.1822,
+     "p_delta_gt0": 0.0095,
+     "separated": true,
+     "reducer": "mean",
+     "n_episodes": 74,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    },
+    "time_gap_min_s": {
+     "n_used": 664,
+     "n_windows": 664,
+     "n_a_only": 0,
+     "n_b_only": 1,
+     "delta": -0.0954,
+     "lo": -0.2029,
+     "hi": -0.018,
+     "ci95": 0.0924,
+     "p_delta_gt0": 0.003,
+     "separated": true,
+     "reducer": "mean",
+     "n_episodes": 74,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    },
+    "min_ttc_s": {
+     "n_used": 719,
+     "n_windows": 719,
+     "n_a_only": 8,
+     "n_b_only": 3,
+     "delta": 1.0389,
+     "lo": 0.2576,
+     "hi": 1.8707,
+     "ci95": 0.8065,
+     "p_delta_gt0": 0.995,
+     "separated": true,
+     "reducer": "mean",
+     "n_episodes": 74,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    }
+   },
+   "abs_error_vs_human": {
+    "headway_min_m": {
+     "n_used": 711,
+     "delta": -0.007,
+     "lo": -0.1513,
+     "hi": 0.1326,
+     "ci95": 0.142,
+     "p_delta_gt0": 0.4725,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 711,
+     "n_episodes": 72,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "reading": "positive = the first arm sits FARTHER from the human's own value than the second"
+    },
+    "time_gap_min_s": {
+     "n_used": 656,
+     "delta": -0.0093,
+     "lo": -0.1171,
+     "hi": 0.0717,
+     "ci95": 0.0944,
+     "p_delta_gt0": 0.4775,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 656,
+     "n_episodes": 72,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "reading": "positive = the first arm sits FARTHER from the human's own value than the second"
+    },
+    "min_ttc_s": {
+     "n_used": 711,
+     "delta": -0.816,
+     "lo": -1.5057,
+     "hi": -0.1875,
+     "ci95": 0.6591,
+     "p_delta_gt0": 0.0025,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 711,
+     "n_episodes": 72,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "reading": "positive = the first arm sits FARTHER from the human's own value than the second"
+    }
+   },
+   "lead_viol": {
+    "all_lead_windows": {
+     "n_lead_windows": 743,
+     "n_viol_a": 29,
+     "n_viol_b": 21,
+     "delta": 0.0108,
+     "lo": 0.0026,
+     "hi": 0.0196,
+     "separated": true,
+     "n_windows": 743,
+     "n_episodes": 77,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "at_risk": {
+     "n_at_risk": 595,
+     "denominator": "lead windows where the human keeps a time gap >= the threshold (PI ruling 2026-10-11)",
+     "n_viol_a": 29,
+     "n_viol_b": 21,
+     "delta": 0.0134,
+     "lo": 0.0032,
+     "hi": 0.0246,
+     "ci95": 0.0107,
+     "p_delta_gt0": 0.993,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 595,
+     "n_episodes": 70,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK",
+     "x7_direction_met_at_risk": false
+    },
+    "progress": {
+     "n_used": 595,
+     "n_a_only": 0,
+     "n_b_only": 0,
+     "lead_progress_ratio_a": 0.9896180571027617,
+     "lead_progress_ratio_b": 0.924328655396417,
+     "delta": 0.0653,
+     "lo": 0.0395,
+     "hi": 0.0955,
+     "ci95": 0.028,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 595,
+     "n_episodes": 70,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    }
+   },
+   "seed_floor_F_of_arms_in_pair": {}
+  },
+  "HP_s1__minus__B_s1": {
+   "a_minus_b": "HP_s1 - B_s1",
+   "dk": {
+    "headway_min_m": {
+     "n_used": 724,
+     "n_windows": 724,
+     "n_a_only": 2,
+     "n_b_only": 4,
+     "delta": 0.2353,
+     "lo": -0.0472,
+     "hi": 0.611,
+     "ci95": 0.3291,
+     "p_delta_gt0": 0.93,
+     "separated": false,
+     "reducer": "mean",
+     "n_episodes": 74,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    },
+    "time_gap_min_s": {
+     "n_used": 662,
+     "n_windows": 662,
+     "n_a_only": 1,
+     "n_b_only": 1,
+     "delta": 0.0168,
+     "lo": -0.0147,
+     "hi": 0.0517,
+     "ci95": 0.0332,
+     "p_delta_gt0": 0.8405,
+     "separated": false,
+     "reducer": "mean",
+     "n_episodes": 73,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    },
+    "min_ttc_s": {
+     "n_used": 724,
+     "n_windows": 724,
+     "n_a_only": 2,
+     "n_b_only": 4,
+     "delta": 1.4873,
+     "lo": 0.6203,
+     "hi": 2.4904,
+     "ci95": 0.9351,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_episodes": 74,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    }
+   },
+   "abs_error_vs_human": {
+    "headway_min_m": {
+     "n_used": 717,
+     "delta": 0.1171,
+     "lo": -0.1074,
+     "hi": 0.4052,
+     "ci95": 0.2563,
+     "p_delta_gt0": 0.8005,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 717,
+     "n_episodes": 73,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "reading": "positive = the first arm sits FARTHER from the human's own value than the second"
+    },
+    "time_gap_min_s": {
+     "n_used": 655,
+     "delta": 0.0216,
+     "lo": -0.0067,
+     "hi": 0.0541,
+     "ci95": 0.0304,
+     "p_delta_gt0": 0.9175,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 655,
+     "n_episodes": 72,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "reading": "positive = the first arm sits FARTHER from the human's own value than the second"
+    },
+    "min_ttc_s": {
+     "n_used": 717,
+     "delta": -0.2787,
+     "lo": -0.9239,
+     "hi": 0.3467,
+     "ci95": 0.6353,
+     "p_delta_gt0": 0.186,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 717,
+     "n_episodes": 73,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "reading": "positive = the first arm sits FARTHER from the human's own value than the second"
+    }
+   },
+   "lead_viol": {
+    "all_lead_windows": {
+     "n_lead_windows": 743,
+     "n_viol_a": 31,
+     "n_viol_b": 36,
+     "delta": -0.0067,
+     "lo": -0.0162,
+     "hi": 0.0,
+     "separated": false,
+     "n_windows": 743,
+     "n_episodes": 77,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "at_risk": {
+     "n_at_risk": 595,
+     "denominator": "lead windows where the human keeps a time gap >= the threshold (PI ruling 2026-10-11)",
+     "n_viol_a": 31,
+     "n_viol_b": 36,
+     "delta": -0.0084,
+     "lo": -0.0206,
+     "hi": 0.0,
+     "ci95": 0.0103,
+     "p_delta_gt0": 0.0,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 595,
+     "n_episodes": 70,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK",
+     "x7_direction_met_at_risk": false
+    },
+    "progress": {
+     "n_used": 595,
+     "n_a_only": 0,
+     "n_b_only": 0,
+     "lead_progress_ratio_a": 1.0140932074462161,
+     "lead_progress_ratio_b": 1.0062920789389234,
+     "delta": 0.0078,
+     "lo": -0.0045,
+     "hi": 0.0199,
+     "ci95": 0.0122,
+     "p_delta_gt0": 0.8985,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 595,
+     "n_episodes": 70,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    }
+   },
+   "seed_floor_F_of_arms_in_pair": {}
+  },
+  "HP_s1__minus__H_s1": {
+   "a_minus_b": "HP_s1 - H_s1",
+   "dk": {
+    "headway_min_m": {
+     "n_used": 726,
+     "n_windows": 726,
+     "n_a_only": 0,
+     "n_b_only": 0,
+     "delta": 0.2384,
+     "lo": 0.0112,
+     "hi": 0.5727,
+     "ci95": 0.2808,
+     "p_delta_gt0": 0.9975,
+     "separated": true,
+     "reducer": "mean",
+     "n_episodes": 75,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    },
+    "time_gap_min_s": {
+     "n_used": 663,
+     "n_windows": 663,
+     "n_a_only": 0,
+     "n_b_only": 0,
+     "delta": 0.0142,
+     "lo": 0.001,
+     "hi": 0.0349,
+     "ci95": 0.0169,
+     "p_delta_gt0": 0.996,
+     "separated": true,
+     "reducer": "mean",
+     "n_episodes": 74,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    },
+    "min_ttc_s": {
+     "n_used": 726,
+     "n_windows": 726,
+     "n_a_only": 0,
+     "n_b_only": 0,
+     "delta": 0.54,
+     "lo": 0.0445,
+     "hi": 1.2557,
+     "ci95": 0.6056,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_episodes": 75,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    }
+   },
+   "abs_error_vs_human": {
+    "headway_min_m": {
+     "n_used": 718,
+     "delta": 0.1696,
+     "lo": 0.0019,
+     "hi": 0.4307,
+     "ci95": 0.2144,
+     "p_delta_gt0": 0.987,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 718,
+     "n_episodes": 73,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "reading": "positive = the first arm sits FARTHER from the human's own value than the second"
+    },
+    "time_gap_min_s": {
+     "n_used": 655,
+     "delta": 0.0105,
+     "lo": 0.0001,
+     "hi": 0.0293,
+     "ci95": 0.0146,
+     "p_delta_gt0": 0.982,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 655,
+     "n_episodes": 72,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "reading": "positive = the first arm sits FARTHER from the human's own value than the second"
+    },
+    "min_ttc_s": {
+     "n_used": 718,
+     "delta": 0.3932,
+     "lo": -0.0267,
+     "hi": 1.0217,
+     "ci95": 0.5242,
+     "p_delta_gt0": 0.9425,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 718,
+     "n_episodes": 73,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "reading": "positive = the first arm sits FARTHER from the human's own value than the second"
+    }
+   },
+   "lead_viol": {
+    "all_lead_windows": {
+     "n_lead_windows": 743,
+     "n_viol_a": 31,
+     "n_viol_b": 35,
+     "delta": -0.0054,
+     "lo": -0.0149,
+     "hi": 0.0,
+     "separated": false,
+     "n_windows": 743,
+     "n_episodes": 77,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "at_risk": {
+     "n_at_risk": 595,
+     "denominator": "lead windows where the human keeps a time gap >= the threshold (PI ruling 2026-10-11)",
+     "n_viol_a": 31,
+     "n_viol_b": 35,
+     "delta": -0.0067,
+     "lo": -0.0183,
+     "hi": 0.0,
+     "ci95": 0.0091,
+     "p_delta_gt0": 0.0,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 595,
+     "n_episodes": 70,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK",
+     "x7_direction_met_at_risk": false
+    },
+    "progress": {
+     "n_used": 595,
+     "n_a_only": 0,
+     "n_b_only": 0,
+     "lead_progress_ratio_a": 1.0140932074462161,
+     "lead_progress_ratio_b": 1.0210136947093058,
+     "delta": -0.0069,
+     "lo": -0.0168,
+     "hi": -0.0014,
+     "ci95": 0.0077,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 595,
+     "n_episodes": 70,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    }
+   },
+   "seed_floor_F_of_arms_in_pair": {}
+  },
+  "HP_s1__minus__Bp_s1": {
+   "a_minus_b": "HP_s1 - Bp_s1",
+   "dk": {
+    "headway_min_m": {
+     "n_used": 723,
+     "n_windows": 723,
+     "n_a_only": 3,
+     "n_b_only": 4,
+     "delta": -0.0621,
+     "lo": -0.1681,
+     "hi": 0.0341,
+     "ci95": 0.1011,
+     "p_delta_gt0": 0.118,
+     "separated": false,
+     "reducer": "mean",
+     "n_episodes": 74,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    },
+    "time_gap_min_s": {
+     "n_used": 661,
+     "n_windows": 661,
+     "n_a_only": 2,
+     "n_b_only": 1,
+     "delta": -0.0029,
+     "lo": -0.0298,
+     "hi": 0.0249,
+     "ci95": 0.0274,
+     "p_delta_gt0": 0.4095,
+     "separated": false,
+     "reducer": "mean",
+     "n_episodes": 73,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    },
+    "min_ttc_s": {
+     "n_used": 723,
+     "n_windows": 723,
+     "n_a_only": 3,
+     "n_b_only": 4,
+     "delta": 0.4997,
+     "lo": 0.1488,
+     "hi": 0.8388,
+     "ci95": 0.345,
+     "p_delta_gt0": 0.999,
+     "separated": true,
+     "reducer": "mean",
+     "n_episodes": 74,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    }
+   },
+   "abs_error_vs_human": {
+    "headway_min_m": {
+     "n_used": 716,
+     "delta": -0.0675,
+     "lo": -0.1749,
+     "hi": 0.0201,
+     "ci95": 0.0975,
+     "p_delta_gt0": 0.0785,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 716,
+     "n_episodes": 73,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "reading": "positive = the first arm sits FARTHER from the human's own value than the second"
+    },
+    "time_gap_min_s": {
+     "n_used": 654,
+     "delta": 0.0088,
+     "lo": -0.0138,
+     "hi": 0.0377,
+     "ci95": 0.0258,
+     "p_delta_gt0": 0.7205,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 654,
+     "n_episodes": 72,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "reading": "positive = the first arm sits FARTHER from the human's own value than the second"
+    },
+    "min_ttc_s": {
+     "n_used": 716,
+     "delta": -0.2343,
+     "lo": -0.48,
+     "hi": 0.0304,
+     "ci95": 0.2552,
+     "p_delta_gt0": 0.04,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 716,
+     "n_episodes": 73,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "reading": "positive = the first arm sits FARTHER from the human's own value than the second"
+    }
+   },
+   "lead_viol": {
+    "all_lead_windows": {
+     "n_lead_windows": 743,
+     "n_viol_a": 31,
+     "n_viol_b": 33,
+     "delta": -0.0027,
+     "lo": -0.007,
+     "hi": 0.0,
+     "separated": false,
+     "n_windows": 743,
+     "n_episodes": 77,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "at_risk": {
+     "n_at_risk": 595,
+     "denominator": "lead windows where the human keeps a time gap >= the threshold (PI ruling 2026-10-11)",
+     "n_viol_a": 31,
+     "n_viol_b": 33,
+     "delta": -0.0034,
+     "lo": -0.0087,
+     "hi": 0.0,
+     "ci95": 0.0044,
+     "p_delta_gt0": 0.0,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 595,
+     "n_episodes": 70,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK",
+     "x7_direction_met_at_risk": false
+    },
+    "progress": {
+     "n_used": 595,
+     "n_a_only": 0,
+     "n_b_only": 0,
+     "lead_progress_ratio_a": 1.0140932074462161,
+     "lead_progress_ratio_b": 0.9987182044120242,
+     "delta": 0.0154,
+     "lo": 0.0067,
+     "hi": 0.0258,
+     "ci95": 0.0096,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 595,
+     "n_episodes": 70,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    }
+   },
+   "seed_floor_F_of_arms_in_pair": {}
+  },
+  "HP_s1__minus__P10": {
+   "a_minus_b": "HP_s1 - P10",
+   "dk": {
+    "headway_min_m": {
+     "n_used": 724,
+     "n_windows": 724,
+     "n_a_only": 2,
+     "n_b_only": 4,
+     "delta": 0.6198,
+     "lo": 0.0517,
+     "hi": 1.2429,
+     "ci95": 0.5956,
+     "p_delta_gt0": 0.9875,
+     "separated": true,
+     "reducer": "mean",
+     "n_episodes": 75,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    },
+    "time_gap_min_s": {
+     "n_used": 662,
+     "n_windows": 662,
+     "n_a_only": 1,
+     "n_b_only": 1,
+     "delta": 0.1333,
+     "lo": 0.0202,
+     "hi": 0.2594,
+     "ci95": 0.1196,
+     "p_delta_gt0": 0.99,
+     "separated": true,
+     "reducer": "mean",
+     "n_episodes": 74,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    },
+    "min_ttc_s": {
+     "n_used": 724,
+     "n_windows": 724,
+     "n_a_only": 2,
+     "n_b_only": 4,
+     "delta": 1.0612,
+     "lo": 0.1914,
+     "hi": 2.0682,
+     "ci95": 0.9384,
+     "p_delta_gt0": 0.992,
+     "separated": true,
+     "reducer": "mean",
+     "n_episodes": 75,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    }
+   },
+   "abs_error_vs_human": {
+    "headway_min_m": {
+     "n_used": 717,
+     "delta": -0.2911,
+     "lo": -0.7243,
+     "hi": 0.128,
+     "ci95": 0.4262,
+     "p_delta_gt0": 0.085,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 717,
+     "n_episodes": 73,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "reading": "positive = the first arm sits FARTHER from the human's own value than the second"
+    },
+    "time_gap_min_s": {
+     "n_used": 655,
+     "delta": -0.1135,
+     "lo": -0.2364,
+     "hi": -0.0135,
+     "ci95": 0.1114,
+     "p_delta_gt0": 0.0105,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 655,
+     "n_episodes": 72,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "reading": "positive = the first arm sits FARTHER from the human's own value than the second"
+    },
+    "min_ttc_s": {
+     "n_used": 717,
+     "delta": 0.0108,
+     "lo": -0.6412,
+     "hi": 0.8124,
+     "ci95": 0.7268,
+     "p_delta_gt0": 0.4975,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 717,
+     "n_episodes": 73,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "reading": "positive = the first arm sits FARTHER from the human's own value than the second"
+    }
+   },
+   "lead_viol": {
+    "all_lead_windows": {
+     "n_lead_windows": 743,
+     "n_viol_a": 31,
+     "n_viol_b": 48,
+     "delta": -0.0229,
+     "lo": -0.047,
+     "hi": -0.0027,
+     "separated": true,
+     "n_windows": 743,
+     "n_episodes": 77,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "at_risk": {
+     "n_at_risk": 595,
+     "denominator": "lead windows where the human keeps a time gap >= the threshold (PI ruling 2026-10-11)",
+     "n_viol_a": 31,
+     "n_viol_b": 48,
+     "delta": -0.0286,
+     "lo": -0.0576,
+     "hi": -0.0036,
+     "ci95": 0.027,
+     "p_delta_gt0": 0.008,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 595,
+     "n_episodes": 70,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK",
+     "x7_direction_met_at_risk": true
+    },
+    "progress": {
+     "n_used": 595,
+     "n_a_only": 0,
+     "n_b_only": 0,
+     "lead_progress_ratio_a": 1.0140932074462161,
+     "lead_progress_ratio_b": 1.13354098217771,
+     "delta": -0.1194,
+     "lo": -0.1981,
+     "hi": -0.0538,
+     "ci95": 0.0721,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 595,
+     "n_episodes": 70,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    }
+   },
+   "seed_floor_F_of_arms_in_pair": {}
+  },
+  "H_s1__minus__B_s1": {
+   "a_minus_b": "H_s1 - B_s1",
+   "dk": {
+    "headway_min_m": {
+     "n_used": 724,
+     "n_windows": 724,
+     "n_a_only": 2,
+     "n_b_only": 4,
+     "delta": -0.0038,
+     "lo": -0.1128,
+     "hi": 0.0963,
+     "ci95": 0.1046,
+     "p_delta_gt0": 0.474,
+     "separated": false,
+     "reducer": "mean",
+     "n_episodes": 74,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    },
+    "time_gap_min_s": {
+     "n_used": 662,
+     "n_windows": 662,
+     "n_a_only": 1,
+     "n_b_only": 1,
+     "delta": 0.0026,
+     "lo": -0.025,
+     "hi": 0.0311,
+     "ci95": 0.0281,
+     "p_delta_gt0": 0.5765,
+     "separated": false,
+     "reducer": "mean",
+     "n_episodes": 73,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    },
+    "min_ttc_s": {
+     "n_used": 724,
+     "n_windows": 724,
+     "n_a_only": 2,
+     "n_b_only": 4,
+     "delta": 0.9458,
+     "lo": 0.4405,
+     "hi": 1.4731,
+     "ci95": 0.5163,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_episodes": 74,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    }
+   },
+   "abs_error_vs_human": {
+    "headway_min_m": {
+     "n_used": 717,
+     "delta": -0.0527,
+     "lo": -0.1589,
+     "hi": 0.0294,
+     "ci95": 0.0941,
+     "p_delta_gt0": 0.1385,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 717,
+     "n_episodes": 73,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "reading": "positive = the first arm sits FARTHER from the human's own value than the second"
+    },
+    "time_gap_min_s": {
+     "n_used": 655,
+     "delta": 0.0111,
+     "lo": -0.0123,
+     "hi": 0.04,
+     "ci95": 0.0261,
+     "p_delta_gt0": 0.777,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 655,
+     "n_episodes": 72,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "reading": "positive = the first arm sits FARTHER from the human's own value than the second"
+    },
+    "min_ttc_s": {
+     "n_used": 717,
+     "delta": -0.6724,
+     "lo": -1.1766,
+     "hi": -0.2368,
+     "ci95": 0.4699,
+     "p_delta_gt0": 0.001,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 717,
+     "n_episodes": 73,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "reading": "positive = the first arm sits FARTHER from the human's own value than the second"
+    }
+   },
+   "lead_viol": {
+    "all_lead_windows": {
+     "n_lead_windows": 743,
+     "n_viol_a": 35,
+     "n_viol_b": 36,
+     "delta": -0.0013,
+     "lo": -0.0063,
+     "hi": 0.003,
+     "separated": false,
+     "n_windows": 743,
+     "n_episodes": 77,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "at_risk": {
+     "n_at_risk": 595,
+     "denominator": "lead windows where the human keeps a time gap >= the threshold (PI ruling 2026-10-11)",
+     "n_viol_a": 35,
+     "n_viol_b": 36,
+     "delta": -0.0017,
+     "lo": -0.0081,
+     "hi": 0.0036,
+     "ci95": 0.0059,
+     "p_delta_gt0": 0.178,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 595,
+     "n_episodes": 70,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK",
+     "x7_direction_met_at_risk": false
+    },
+    "progress": {
+     "n_used": 595,
+     "n_a_only": 0,
+     "n_b_only": 0,
+     "lead_progress_ratio_a": 1.0210136947093058,
+     "lead_progress_ratio_b": 1.0062920789389234,
+     "delta": 0.0147,
+     "lo": 0.0061,
+     "hi": 0.0252,
+     "ci95": 0.0095,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 595,
+     "n_episodes": 70,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    }
+   },
+   "seed_floor_F_of_arms_in_pair": {}
+  }
+ },
+ "identity_control": {
+  "arm": "B_s0",
+  "headway_min_m": {
+   "delta": 0.0,
+   "lo": 0.0,
+   "hi": 0.0,
+   "n_used": 722
+  },
+  "time_gap_min_s": {
+   "delta": 0.0,
+   "lo": 0.0,
+   "hi": 0.0,
+   "n_used": 665
+  },
+  "min_ttc_s": {
+   "delta": 0.0,
+   "lo": 0.0,
+   "hi": 0.0,
+   "n_used": 722
+  },
+  "lead_viol": {
+   "delta": 0.0,
+   "lo": 0.0,
+   "hi": 0.0
+  }
+ },
+ "ttc_stride2_sensitivity": {
+  "_what": "min-TTC on every other waypoint (0.4 s spacing, dt=0.4); headway / time-gap are NOT re-read here",
+  "dt_s": 0.4,
+  "arms": {
+   "B_s0": {
+    "mean": 20.6309,
+    "lo": 18.5748,
+    "hi": 22.5767,
+    "ci95": 2.0009,
+    "se": 1.0262,
+    "reducer": "mean",
+    "n_windows": 694,
+    "n_episodes": 72,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n": 694,
+    "n_closing": 407
+   },
+   "H_s0": {
+    "mean": 21.0274,
+    "lo": 19.0069,
+    "hi": 22.8012,
+    "ci95": 1.8971,
+    "se": 0.9658,
+    "reducer": "mean",
+    "n_windows": 707,
+    "n_episodes": 72,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n": 707,
+    "n_closing": 386
+   },
+   "HP_s0": {
+    "mean": 21.5689,
+    "lo": 19.4797,
+    "hi": 23.4079,
+    "ci95": 1.9641,
+    "se": 0.9971,
+    "reducer": "mean",
+    "n_windows": 708,
+    "n_episodes": 72,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n": 708,
+    "n_closing": 377
+   },
+   "Bp_s0": {
+    "mean": 21.6736,
+    "lo": 19.5035,
+    "hi": 23.5864,
+    "ci95": 2.0414,
+    "se": 1.0449,
+    "reducer": "mean",
+    "n_windows": 697,
+    "n_episodes": 72,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n": 697,
+    "n_closing": 388
+   },
+   "B_s1": {
+    "mean": 20.8209,
+    "lo": 18.8884,
+    "hi": 22.6273,
+    "ci95": 1.8695,
+    "se": 0.9604,
+    "reducer": "mean",
+    "n_windows": 704,
+    "n_episodes": 72,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n": 704,
+    "n_closing": 394
+   },
+   "H_s1": {
+    "mean": 21.1855,
+    "lo": 19.1931,
+    "hi": 22.9507,
+    "ci95": 1.8788,
+    "se": 0.9545,
+    "reducer": "mean",
+    "n_windows": 705,
+    "n_episodes": 72,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n": 705,
+    "n_closing": 386
+   },
+   "HP_s1": {
+    "mean": 21.7285,
+    "lo": 19.6873,
+    "hi": 23.5148,
+    "ci95": 1.9137,
+    "se": 0.9847,
+    "reducer": "mean",
+    "n_windows": 705,
+    "n_episodes": 72,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n": 705,
+    "n_closing": 377
+   },
+   "Bp_s1": {
+    "mean": 21.6682,
+    "lo": 19.5617,
+    "hi": 23.4712,
+    "ci95": 1.9548,
+    "se": 0.999,
+    "reducer": "mean",
+    "n_windows": 705,
+    "n_episodes": 72,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n": 705,
+    "n_closing": 381
+   },
+   "P10": {
+    "mean": 20.7659,
+    "lo": 18.6141,
+    "hi": 22.7367,
+    "ci95": 2.0613,
+    "se": 1.0654,
+    "reducer": "mean",
+    "n_windows": 702,
+    "n_episodes": 72,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n": 702,
+    "n_closing": 369
+   },
+   "human": {
+    "mean": 21.0122,
+    "lo": 18.7522,
+    "hi": 23.1471,
+    "ci95": 2.1975,
+    "se": 1.13,
+    "reducer": "mean",
+    "n_windows": 708,
+    "n_episodes": 71,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n": 708,
+    "n_closing": 408
+   }
+  },
+  "pairs": {}
+ },
+ "code": {
+  "lead_metrics": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hblend\\deps\\taniteval\\lead_metrics.py",
+  "ci": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hblend\\deps\\taniteval\\ci.py"
+ }
+}

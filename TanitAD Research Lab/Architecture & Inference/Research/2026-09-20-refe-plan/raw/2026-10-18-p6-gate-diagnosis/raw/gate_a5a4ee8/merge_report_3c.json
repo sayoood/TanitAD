@@ -1,0 +1,87 @@
+{
+ "prereg_sha256": "e8365f34fd5f11a23a1b5e0fceda14dc14426277ae09db3e5335526c1bd6cde3",
+ "input": {
+  "path": "/workspace/data/refe_navtrain/train_grow_cmd/targets_rank1.jsonl",
+  "sha256": "2f3e461391d7bbc6c92a4153ef1837943c458d9635aad13fdb27b74a46035898",
+  "lines": 86851,
+  "lane_rank_rows": 44409,
+  "other_rows": 42442
+ },
+ "output": {
+  "lines": 64263,
+  "dropped_twins": 22588,
+  "kept_twins": 21821,
+  "sha256": "2a63acc2f63404818939b21d45cfa27efb5412cbefdf38e14aeb8673598cf409"
+ },
+ "by_rank": {
+  "1": {
+   "in": 32929,
+   "evaluated": 32376,
+   "committed": 18489,
+   "kept": 18489,
+   "dropped_by_reason": {
+    "not_committed": 13887,
+    "scenario_too_short_10s": 553
+   },
+   "committed_but_dropped": 0,
+   "f10_round_vs_raw_disagree": 4,
+   "keep_share_all": 0.5615,
+   "keep_share_evaluated": 0.5711
+  },
+  "2": {
+   "in": 8090,
+   "evaluated": 7952,
+   "committed": 2781,
+   "kept": 2781,
+   "dropped_by_reason": {
+    "not_committed": 5171,
+    "scenario_too_short_10s": 138
+   },
+   "committed_but_dropped": 0,
+   "f10_round_vs_raw_disagree": 1,
+   "keep_share_all": 0.3438,
+   "keep_share_evaluated": 0.3497
+  },
+  "3": {
+   "in": 3390,
+   "evaluated": 3346,
+   "committed": 551,
+   "kept": 551,
+   "dropped_by_reason": {
+    "not_committed": 2795,
+    "scenario_too_short_10s": 44
+   },
+   "committed_but_dropped": 0,
+   "f10_round_vs_raw_disagree": 0,
+   "keep_share_all": 0.1625,
+   "keep_share_evaluated": 0.1647
+  }
+ },
+ "yield_guard": {
+  "rule": "K=1 keep share (evaluated basis) < 0.2 => STOP (PREREG_3C); needs K=1 evaluated n >= 30",
+  "k1_evaluated": 32376,
+  "k1_share_evaluated": 0.5711,
+  "k1_share_all": 0.5615,
+  "status": "HOLDS"
+ },
+ "shards": 720,
+ "code": {
+  "route_lane_rank_patch": "a87dc994811d527a",
+  "build_teacher_rollouts": "cf1ea8e1cf1af3b7",
+  "reroll_bank_3c": "6109ff3d4fcad405"
+ },
+ "rollout_s": {
+  "n": 44409,
+  "sum": 356604.3,
+  "mean": 8.03,
+  "median": 5.36,
+  "p90": 17.62,
+  "max": 71.28
+ },
+ "copied_unchanged": {
+  "targets_rank0.jsonl": {
+   "sha256_src": "daa23b962e9513673347694e097fb714a53b646c4d402802d6d7b96354c0bc5e",
+   "sha256_dst": "daa23b962e9513673347694e097fb714a53b646c4d402802d6d7b96354c0bc5e"
+  }
+ }
+}

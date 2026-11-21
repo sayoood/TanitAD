@@ -1,0 +1,70 @@
+[2026-11-07T01:07:03] stage pins: start
+[2026-11-07T01:07:03] stage pins: done in 0.0 s
+[2026-11-07T01:07:03] stage gates_real: start
+[2026-11-07T01:10:36] stage gates_real: done in 211.2 s
+[2026-11-07T01:10:37] stage cpu_R1_B_s0: start
+[2026-11-07T01:16:14] stage cpu_R1_B_s0: done in 336.1 s
+[2026-11-07T01:16:14] stage cpu_R1_B_s1: start
+[2026-11-07T01:21:08] stage cpu_R1_B_s1: done in 293.2 s
+[2026-11-07T01:21:09] stage cpu_R1_C_s0: start
+[2026-11-07T01:32:38] FAILED: le "E:\Projects\TanitAD-artifacts\yawrate_wp\YF3\yf3_pipeline.py", line 355, in main
+    p.run()
+  File "E:\Projects\TanitAD-artifacts\yawrate_wp\YF3\yf3_pipeline.py", line 311, in run
+    v = self.run_rung(rung)
+        ^^^^^^^^^^^^^^^^^^^
+  File "E:\Projects\TanitAD-artifacts\yawrate_wp\YF3\yf3_pipeline.py", line 272, in run_rung
+    raise RuntimeError("; ".join(f"{w}: {m[-1800:]}" for w, m in errs))
+RuntimeError: cpu: Traceback (most recent call last):
+  File "E:\Projects\TanitAD-artifacts\yawrate_wp\YF3\yf3_pipeline.py", line 244, in cpu_thread
+    self.cpu_arm(rung, a, s)
+  File "E:\Projects\TanitAD-artifacts\yawrate_wp\YF3\yf3_pipeline.py", line 180, in cpu_arm
+    self.stage(f"cpu_{name}", go)
+  File "E:\Projects\TanitAD-artifacts\yawrate_wp\YF3\yf3_pipeline.py", line 72, in stage
+    res = fn() or {}
+          ^^^^
+  File "E:\Projects\TanitAD-artifacts\yawrate_wp\YF3\yf3_pipeline.py", line 172, in go
+    ck = self.build_ckpt(name)
+         ^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Projects\TanitAD-artifacts\yawrate_wp\YF3\yf3_pipeline.py", line 161, in build_ckpt
+    self.sh(f"ckpt_{name}", [C.PY_D, C.Y2 / "build_yaw_ckpt.py", "--final", self.root / "arms" / name / "final.pt", "--out", ck], token="ZZYAWCKPT_OK", env=CPU_ENV)
+  File "E:\Projects\TanitAD-artifacts\yawrate_wp\YF3\yf3_pipeline.py", line 90, in sh
+    raise RuntimeError(f"{name}: rc={rc} token {token!r} {'present' if token and token in txt else 'ABSENT'}; tail: {txt[-1500:]}")
+RuntimeError: ckpt_R1_C_s0: rc=3 token 'ZZYAWCKPT_OK' ABSENT; tail: gates {'K1_untouched_equal': True, 'changed_tensors': [], 'K2_only_col4_changed': True, 'K3_C_equals_A0': True, 'K4_col4_equal_final': False}
+ZZYAWCKPT_GATE_RED
+
+; gpu:  or name} OK")
+  File "E:\Projects\TanitAD-artifacts\yawrate_wp\YF3\yf3_pipeline.py", line 90, in sh
+    raise RuntimeError(f"{name}: rc={rc} token {token!r} {'present' if token and token in txt else 'ABSENT'}; tail: {txt[-1500:]}")
+RuntimeError: eval_A0: rc=1 token 'ZZYF3EVAL A0 OK' ABSENT; tail:     heading=gt_head, tol=tol)
+
+  File "E:/Projects/TanitAD/taniteval/adapters/navsim.py", line 507, in verify_frame
+
+    sign = assert_lateral_sign_convention(gt_xy, heading)
+
+  File "E:/Projects/TanitAD/taniteval/adapters/navsim.py", line 483, in assert_lateral_sign_convention
+
+    raise FrameConventionError(
+
+    ...<5 lines>...
+
+        f"or a mismatched heading channel.")
+
+navsim_adapter6.FrameConventionError: \u26d4 LATERAL SIGN CONVENTION VIOLATED: net yaw change and net lateral displacement agree in sign on only 87.5% of 8 turning windows (need 90%). Our frame is y-LEFT with CCW-positive yaw, so a LEFT turn must give +y. A near-0 % agreement is a y-sign flip (right-handed frame); ~50 % is noise or a mismatched heading channel.
+
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "E:\Projects\TanitAD-artifacts\yawrate_wp\YF3\yf3_eval_arm.py", line 157, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "E:\Projects\TanitAD-artifacts\yawrate_wp\YF3\yf3_eval_arm.py", line 150, in main
+    print(f"ZZYF3EVAL {a.name} FAILED {why}")
+  File "C:\Users\Admin\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u26d4' in position 1214: character maps to <undefined>
+
+
+

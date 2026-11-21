@@ -1,0 +1,32 @@
+C:\Users\Admin\wpa-readout\code\s2_probe.py:82: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\utils\tensor_numpy.cpp:219.)
+  Yt = torch.from_numpy(np.asarray(Y)).to(torch.float32)   # [N, 7680] on CPU
+[bank] N=13223 tokens 16x40x128 target 120x64 (7680 cells)
+[split] clips fit 84 / val 25 / test 30  rows fit 7842 / val 2407 / test 2974
+[occupancy] test base rate 0.016243  ->  ALL-ZERO accuracy 98.3757 %   (fit 0.018145)
+[fov] in-field cells 7680/7680 (100.00 %)
+[occupancy] test base rate IN-FOV 0.016243
+[tok_16x40 ] d= 81920 lam=100000  AP_fov=0.0305 AP_all=0.0305 F1=0.0688 IoU=0.0356 latMAE@15-30=4.884 m (13s)
+[tok_8x20  ] d= 20480 lam=1000    AP_fov=0.0323 AP_all=0.0323 F1=0.0722 IoU=0.0375 latMAE@15-30=4.973 m (6s)
+[tok_4x8   ] d=  4096 lam=100     AP_fov=0.0376 AP_all=0.0376 F1=0.0804 IoU=0.0419 latMAE@15-30=4.994 m (5s)
+[tok_4x4   ] d=  2048 lam=10      AP_fov=0.0392 AP_all=0.0392 F1=0.0871 IoU=0.0455 latMAE@15-30=4.979 m (4s)
+[tok_2x4   ] d=  1024 lam=10      AP_fov=0.0397 AP_all=0.0397 F1=0.0905 IoU=0.0474 latMAE@15-30=5.072 m (4s)
+[tok_1x1   ] d=   128 lam=1       AP_fov=0.0346 AP_all=0.0346 F1=0.0793 IoU=0.0413 latMAE@15-30=4.803 m (5s)
+[pix_16x40 ] d=  5760 lam=1000    AP_fov=0.0322 AP_all=0.0322 F1=0.0728 IoU=0.0378 latMAE@15-30=4.941 m (3s)
+[pix_4x4   ] d=   144 lam=10000   AP_fov=0.0379 AP_all=0.0379 F1=0.0783 IoU=0.0408 latMAE@15-30=4.509 m (3s)
+[controls] {
+ "constant": {
+  "ap_test_infov": 0.03402058035135269,
+  "ap_test_all": 0.03402058035135269
+ },
+ "allzero": {
+  "ap_test_infov": 0.016686152666807175,
+  "accuracy_all": 0.9837564826011658,
+  "accuracy_infov": 0.9837564826011658,
+  "iou": 0.0,
+  "f1": 0.0
+ },
+ "shuffled_tok_16x40": {
+  "ap_test_infov": 0.023403558880090714
+ }
+}
+WROTE C:\Users\Admin\wpa-readout\raw\panel_k8.json total 53s

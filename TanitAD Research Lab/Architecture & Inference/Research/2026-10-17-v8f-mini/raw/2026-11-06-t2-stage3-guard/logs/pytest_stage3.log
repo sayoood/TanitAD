@@ -1,0 +1,60 @@
+...........F.....F                                                       [100%]
+================================== FAILURES ===================================
+_______________________________ test_two_roots ________________________________
+
+    def test_two_roots():
+>       check_two_roots()
+
+tests\test_t2v8f_stage3.py:592: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+mut = None
+
+    def check_two_roots(mut=None):
+        """The scenes root and the pull root are two roots. (A) the PULL reports 9 GiB free (floor 10) while the scenes drive reports 500: REFUSED `DISK_WILL_RUN_LOW`, before any scene hash.
+        (B) the pull reports 500 while the scenes drive reports 1: PASS, every scene file read under the scenes root, floor decided on the pull. RED: a driver that probes the scenes drive passes (A)."""
+        a, probes, s3, pull = two_root_run(9.0, 500.0, mutated_driver=(mut == "wrong_drive"))
+>       assert a["verdict"] == "REFUSED" and a["failures"] and a["failures"][0].startswith("DISK_WILL_RUN_LOW"), f"(A) the pull drive is below the floor: {a['verdict']} {a['failures'][:2]}"
+E       AssertionError: (A) the pull drive is below the floor: REFUSED ['DISK_LOW pull C:/Users/Admin/t2a_scratch/stage2_rehearsal/fx_20261106_165639/s3/pull3_two_165849: 9.0 GiB free < 10.0', 'DISK_WILL_RUN_LOW pass deciding needs 0.21 GiB, free 9.00 GiB, floor 10.0']
+E       assert ('REFUSED' == 'REFUSED'
+E         
+E           REFUSED and ['DISK_LOW pull C:/Users/Admin/t2a_scratch/stage2_rehearsal/fx_20261106_165639/s3/pull3_two_165849: 9.0 GiB free < 10.0', 'DISK_WILL_RUN_LOW pass deciding needs 0.21 GiB, free 9.00 GiB, floor 10.0'] and False)
+E        +  where False = <built-in method startswith of str object at 0x0000029DA7A79250>('DISK_WILL_RUN_LOW')
+E        +    where <built-in method startswith of str object at 0x0000029DA7A79250> = 'DISK_LOW pull C:/Users/Admin/t2a_scratch/stage2_rehearsal/fx_20261106_165639/s3/pull3_two_165849: 9.0 GiB free < 10.0'.startswith
+
+tests\test_t2v8f_stage3.py:411: AssertionError
+____________________________ test_score_end_to_end ____________________________
+
+    def test_score_end_to_end():
+>       check_score_end_to_end()
+
+tests\test_t2v8f_stage3.py:616: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+mut = None
+
+    def check_score_end_to_end(mut=None):
+        """`t2v8f_stage3_score.py` as a process: stage-1's MEASURED pull (idx 0/1, one moving + one launch start) as the 'stage-2' root and the rehearsal's records (idx 42..44) as the 'stage-3' root: both
+        products are written, both start classes appear in the pooled families, the v0 cross-check holds."""
+        f3 = fixture3()
+        pull, _, rc, _, _ = positive()
+        assert rc == 0
+        out = f"{TR.scratch('score3')}/score"
+        src3 = f"{f3['root']}/out3/SCENE_SOURCES3_fx3.json"
+        p = subprocess.run([PY, "-I", f"{CODE}/t2v8f_stage3_score.py", "--root2", f"{T2}/stage1/pull_box2/pull/plumbing", "--root3", f"{pull}/rollouts", "--sources3", src3, "--out-dir", out],
+                           env=T1.clean_env(), capture_output=True, text=True, timeout=1500)
+>       assert p.returncode == 0, p.stdout[-600:] + p.stderr[-1500:]
+E       AssertionError: usage: t2v8f_stage3_score.py [-h] --root2 ROOT2 --root3 ROOT3
+E                                      --sources2 SOURCES2 --sources3 SOURCES3
+E                                      --out-dir OUT_DIR [--pool-dir POOL_DIR]
+E         t2v8f_stage3_score.py: error: the following arguments are required: --sources2
+E         
+E       assert 2 == 0
+E        +  where 2 = CompletedProcess(args=['C:/Users/Admin/venvs/tanitad/Scripts/python.exe', '-I', 'E:/Projects/TanitAD-artifacts/dagland...t-dir OUT_DIR [--pool-dir POOL_DIR]\nt2v8f_stage3_score.py: error: the following arguments are required: --sources2\n').returncode
+
+tests\test_t2v8f_stage3.py:537: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_t2v8f_stage3.py::test_two_roots - AssertionError: (A) the p...
+FAILED tests/test_t2v8f_stage3.py::test_score_end_to_end - AssertionError: us...
+2 failed, 16 passed in 151.14s (0:02:31)
+rc=1

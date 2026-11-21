@@ -1,0 +1,1335 @@
+{
+ "card": "PREREG_V8F_PROOF_ADD79",
+ "tier": "TIER: T1-kin (kinematic rollout on the model's own actions; logged camera frames; the lead does not react); never driving performance; heading bound 0.2 1/m",
+ "controls": {
+  "g_AGE": {
+   "PASS": true,
+   "detail": {
+    "same_windows_every_dump": true,
+    "headway_h1_h6": {
+     "h5_counts": {
+      "PASS": true,
+      "n_lead_windows": 325,
+      "n_episodes_with_lead": 46,
+      "enough": true,
+      "min_windows": 200,
+      "min_episodes": 20
+     },
+     "h4_alignment": {
+      "PASS": true,
+      "n_checked": 325,
+      "n_unchecked": 0,
+      "n_over_tol": 0,
+      "max_abs_diff_mps": 0.0,
+      "tol_mps": 0.05,
+      "shift5_check": {
+       "PASS_expected": false,
+       "n_over_tol": 220,
+       "max_abs_diff_mps": 2.872589588165283,
+       "n_unchecked": 72,
+       "check_fails_as_required": true
+      }
+     },
+     "h6_same_windows": {
+      "PASS": true,
+      "n_dumps": 16,
+      "n_differing": 0,
+      "regression_form_fails": true
+     },
+     "h1_identity": {
+      "PASS": true,
+      "max_abs_gap_diff_m": 2.842170943040401e-14,
+      "n_defined_U": 280,
+      "U_mean": 0.0,
+      "max_abs_bias_m": [
+       1.4210854715202004e-14,
+       1.4210854715202004e-14,
+       2.842170943040401e-14
+      ],
+      "regression_form_advance_0.1mps_max_abs_gap_diff_m": 0.6000000000000227,
+      "regression_form_fails": true
+     },
+     "h2_planted_regression": {
+      "PASS": true,
+      "mps": 0.5,
+      "max_dev_bias_2s_from_-1.0": 7.105427357601002e-15,
+      "max_dev_bias_6s_from_-3.0": 2.842170943040401e-14,
+      "mean_bias_2s": -1.0,
+      "mean_bias_6s": -3.0,
+      "n_2s": 325,
+      "n_6s": 210,
+      "planted_vs_logged_U": {
+       "D": 0.18571428571428572,
+       "A_lo": 0.11981932390767518,
+       "A_hi": 0.2557355282877482,
+       "spread_max": 0.05357142857142856,
+       "verdict": "WORSE"
+      },
+      "named_worse_on_U": true,
+      "regression_form_zero_advance_dev_from_-1.0": 1.0000000000000142,
+      "regression_form_fails": true
+     },
+     "h3_swap_self": {
+      "PASS": true,
+      "pairs": [
+       {
+        "PASS": true,
+        "max_abs_self_D": 0.0,
+        "max_abs_swap_dev": 0.0,
+        "regression_form_fails": true,
+        "pair": "RQ50eN10KF5P30Hb20:RQ50KF5P30Hb20",
+        "seeds": [
+         0,
+         1
+        ]
+       }
+      ]
+     },
+     "ALL_PASS": true
+    },
+    "family_q2_q3_q4": {
+     "q2_self_is_zero": {
+      "PASS": true,
+      "max_abs_D": 0.0
+     },
+     "q3_swap_is_minus": {
+      "PASS": true,
+      "max_abs_dev": 0.0
+     },
+     "q4_planted_regression": {
+      "PASS": true,
+      "planted_mps": 0.2903240426345399,
+      "D_read": 0.2903240426345399,
+      "verdict": "WORSE"
+     }
+    },
+    "ALL_PASS": true
+   },
+   "missing_or_incomplete": []
+  },
+  "a1_AGE": {
+   "PASS": true,
+   "largest_difference": 0.0,
+   "runs_compared": 5,
+   "tolerance": 1e-09
+  },
+  "s_AGE": {
+   "PASS": true,
+   "detail": {
+    "s4": {
+     "pass": true,
+     "checks": [
+      {
+       "name": "line: labels at the first logged steps reaching 30/50/80 m",
+       "ok": true
+      },
+      {
+       "name": "line: checkpoint on the label -> pos 0, lat 0, head 0",
+       "ok": true
+      },
+      {
+       "name": "line: checkpoint 1.5 m sideways -> lat 1.5, pos 1.5, along unchanged",
+       "ok": true
+      },
+      {
+       "name": "line: checkpoint 4 m along the track -> along +4, lat 0",
+       "ok": true
+      },
+      {
+       "name": "line: checkpoint on the label -> along = label arc minus A (30/50/80 are multiples of the 2 m step: 0)",
+       "ok": true
+      },
+      {
+       "name": "circle R=100: label positions equal the analytic ones to the step",
+       "ok": true
+      },
+      {
+       "name": "short track: 30 and 50 valid, 80 invalid",
+       "ok": true
+      },
+      {
+       "name": "join label: known pose and label -> analytic world position and heading",
+       "ok": true
+      },
+      {
+       "name": "join label: validity passes through (third arc invalid), a step outside the clip's label rows reads invalid",
+       "ok": true
+      },
+      {
+       "name": "join label: checkpoint on its label -> pos 0, head 0, along 0; invalid arc reads NaN",
+       "ok": true
+      },
+      {
+       "name": "join label: checkpoint 4 m farther along the straight track -> along 4, pos 4, lat 0",
+       "ok": true
+      }
+     ],
+     "all_checks_hold": true,
+     "planted_fault_fails": true,
+     "planted_fault_checks_failed": [
+      "line: labels at the first logged steps reaching 30/50/80 m",
+      "line: checkpoint on the label -> along = label arc minus A (30/50/80 are multiples of the 2 m step: 0)",
+      "circle R=100: label positions equal the analytic ones to the step",
+      "short track: 30 and 50 valid, 80 invalid"
+     ],
+     "planted_fault_2_checks_failed": [
+      "join label: known pose and label -> analytic world position and heading",
+      "join label: checkpoint 4 m farther along the straight track -> along 4, pos 4, lat 0"
+     ]
+    },
+    "s1": {
+     "max_dxy_m": 6.267449371932798e-05,
+     "max_dpsi_rad": 6.74965782820891e-07,
+     "per_file": {
+      "R0_s0": [
+       5.3405761732960855e-05,
+       6.74965782820891e-07
+      ],
+      "R0_s1": [
+       6.267449371932798e-05,
+       5.175722677108752e-07
+      ],
+      "R0KP30Hb20_s0": [
+       6.186110678640944e-05,
+       3.8743019104003906e-07
+      ],
+      "R0KP30Hb20_s1": [
+       5.939363046536528e-05,
+       4.246830940246582e-07
+      ],
+      "RLcKF5P30Hb20_s0": [
+       6.186110678640944e-05,
+       3.8743019104003906e-07
+      ],
+      "RLcKF5P30Hb20_s1": [
+       5.939363046536528e-05,
+       4.246830940246582e-07
+      ],
+      "RQ50KF5P30Hb20_s0": [
+       6.186110678640944e-05,
+       4.172325134277344e-07
+      ],
+      "RQ50KF5P30Hb20_s1": [
+       5.939363046536528e-05,
+       4.246830940246582e-07
+      ],
+      "RQ50cKF5P30Hb20_s0": [
+       6.186110678640944e-05,
+       3.8743019104003906e-07
+      ],
+      "RQ50cKF5P30Hb20_s1": [
+       5.939363046536528e-05,
+       4.246830940246582e-07
+      ],
+      "RQ50eL25KF5P30Hb20_s0": [
+       6.186110678640944e-05,
+       3.8743019104003906e-07
+      ],
+      "RQ50eL25KF5P30Hb20_s1": [
+       5.939363046536528e-05,
+       4.6541820353240837e-07
+      ],
+      "RQ50eN10KF5P30Hb20_s0": [
+       6.186110678640944e-05,
+       3.8743019104003906e-07
+      ],
+      "RQ50eN10KF5P30Hb20_s1": [
+       5.939363046536528e-05,
+       4.246830940246582e-07
+      ],
+      "RQ50hKF5P30Hb20_s0": [
+       6.186110678640944e-05,
+       4.172325134277344e-07
+      ],
+      "RQ50hKF5P30Hb20_s1": [
+       5.939363046536528e-05,
+       4.246830940246582e-07
+      ]
+     },
+     "pass": true
+    },
+    "s2": {
+     "max_first_tick_anchor_dist_m": 0.0,
+     "n_rows_anchor_not_t0": 0,
+     "files": [
+      "R0_s0",
+      "R0_s1"
+     ],
+     "pass": true
+    },
+    "s6": {
+     "per_file": {
+      "R0_s0": true,
+      "R0_s1": true,
+      "R0KP30Hb20_s0": true,
+      "R0KP30Hb20_s1": true,
+      "RLcKF5P30Hb20_s0": true,
+      "RLcKF5P30Hb20_s1": true,
+      "RQ50KF5P30Hb20_s0": true,
+      "RQ50KF5P30Hb20_s1": true,
+      "RQ50cKF5P30Hb20_s0": true,
+      "RQ50cKF5P30Hb20_s1": true,
+      "RQ50eL25KF5P30Hb20_s0": true,
+      "RQ50eL25KF5P30Hb20_s1": true,
+      "RQ50eN10KF5P30Hb20_s0": true,
+      "RQ50eN10KF5P30Hb20_s1": true,
+      "RQ50hKF5P30Hb20_s0": true,
+      "RQ50hKF5P30Hb20_s1": true
+     },
+     "pass": true
+    },
+    "s9": {
+     "pass": true,
+     "n_files": 16,
+     "missing": []
+    },
+    "s5": {
+     "pass": true,
+     "largest_difference": 0.0,
+     "note": "first-tick cells of every run with no pre-roll equal those of R0 at the same model seed (pre-rolled runs excluded by construction)"
+    },
+    "s3": true
+   }
+  },
+  "r1_AGE": {
+   "PASS": true,
+   "runs": {
+    "RRe_N10:seed0": {
+     "ok": true,
+     "parsed": {
+      "form": "RRe",
+      "replan_steps": 10,
+      "rule_every": 5,
+      "readout": "causal_g",
+      "kappa": "0.2",
+      "preroll": 30,
+      "wrapper": "a747abeb51ef041f",
+      "rc0": true
+     },
+     "dump_files": 141,
+     "clips_of_the_grid": 141
+    },
+    "RRe_N10:seed1": {
+     "ok": true,
+     "parsed": {
+      "form": "RRe",
+      "replan_steps": 10,
+      "rule_every": 5,
+      "readout": "causal_g",
+      "kappa": "0.2",
+      "preroll": 30,
+      "wrapper": "a747abeb51ef041f",
+      "rc0": true
+     },
+     "dump_files": 141,
+     "clips_of_the_grid": 141
+    },
+    "RRe_L25:seed0": {
+     "ok": true,
+     "parsed": {
+      "form": "RRe",
+      "replan_steps": 10,
+      "rule_every": 5,
+      "readout": "causal_g",
+      "kappa": "0.2",
+      "preroll": 30,
+      "wrapper": "a747abeb51ef041f",
+      "rc0": true
+     },
+     "dump_files": 141,
+     "clips_of_the_grid": 141
+    },
+    "RRe_L25:seed1": {
+     "ok": true,
+     "parsed": {
+      "form": "RRe",
+      "replan_steps": 10,
+      "rule_every": 5,
+      "readout": "causal_g",
+      "kappa": "0.2",
+      "preroll": 30,
+      "wrapper": "a747abeb51ef041f",
+      "rc0": true
+     },
+     "dump_files": 141,
+     "clips_of_the_grid": 141
+    }
+   }
+  },
+  "x1_AGE": {
+   "PASS": true,
+   "runs": {
+    "RRe_N10:seed0": {
+     "rule_log": {
+      "rows": 3813,
+      "present": 1518,
+      "max_abs_closing": 4.568301359812419,
+      "present_nonzero": 1518,
+      "closing_finite_where_present": true,
+      "form": "RRe",
+      "c_read_diff_present": null,
+      "est_ok_present": 1518,
+      "fallback_rows": 0,
+      "fallback_closing_exactly_zero": true,
+      "c_src_vs_c_est_present_reported": 0.0,
+      "ok": true
+     },
+     "mid_log": {
+      "rows": 3813,
+      "present": 1539,
+      "max_abs_closing": 4.556964715321858,
+      "present_nonzero": 1539,
+      "closing_finite_where_present": true,
+      "form": "RRe",
+      "c_read_diff_present": 8.950586795806885,
+      "est_ok_present": 1539,
+      "fallback_rows": 0,
+      "fallback_closing_exactly_zero": true,
+      "c_src_vs_c_est_present_reported": 0.0,
+      "ok": true
+     },
+     "ok": true
+    },
+    "RRe_N10:seed1": {
+     "rule_log": {
+      "rows": 3813,
+      "present": 1628,
+      "max_abs_closing": 4.975294431050618,
+      "present_nonzero": 1628,
+      "closing_finite_where_present": true,
+      "form": "RRe",
+      "c_read_diff_present": null,
+      "est_ok_present": 1628,
+      "fallback_rows": 0,
+      "fallback_closing_exactly_zero": true,
+      "c_src_vs_c_est_present_reported": 0.0,
+      "ok": true
+     },
+     "mid_log": {
+      "rows": 3813,
+      "present": 1644,
+      "max_abs_closing": 5.148068428039551,
+      "present_nonzero": 1644,
+      "closing_finite_where_present": true,
+      "form": "RRe",
+      "c_read_diff_present": 9.379504203796387,
+      "est_ok_present": 1644,
+      "fallback_rows": 0,
+      "fallback_closing_exactly_zero": true,
+      "c_src_vs_c_est_present_reported": 0.0,
+      "ok": true
+     },
+     "ok": true
+    },
+    "RRe_L25:seed0": {
+     "rule_log": {
+      "rows": 3813,
+      "present": 1518,
+      "max_abs_closing": 5.474680926855576,
+      "present_nonzero": 1518,
+      "closing_finite_where_present": true,
+      "form": "RRe",
+      "c_read_diff_present": null,
+      "est_ok_present": 1518,
+      "fallback_rows": 0,
+      "fallback_closing_exactly_zero": true,
+      "c_src_vs_c_est_present_reported": 0.0,
+      "ok": true
+     },
+     "mid_log": {
+      "rows": 3813,
+      "present": 1539,
+      "max_abs_closing": 5.047154142342978,
+      "present_nonzero": 1539,
+      "closing_finite_where_present": true,
+      "form": "RRe",
+      "c_read_diff_present": 7.118400865333171,
+      "est_ok_present": 1539,
+      "fallback_rows": 0,
+      "fallback_closing_exactly_zero": true,
+      "c_src_vs_c_est_present_reported": 0.0,
+      "ok": true
+     },
+     "ok": true
+    },
+    "RRe_L25:seed1": {
+     "rule_log": {
+      "rows": 3813,
+      "present": 1628,
+      "max_abs_closing": 6.331766727266242,
+      "present_nonzero": 1628,
+      "closing_finite_where_present": true,
+      "form": "RRe",
+      "c_read_diff_present": null,
+      "est_ok_present": 1628,
+      "fallback_rows": 0,
+      "fallback_closing_exactly_zero": true,
+      "c_src_vs_c_est_present_reported": 0.0,
+      "ok": true
+     },
+     "mid_log": {
+      "rows": 3813,
+      "present": 1644,
+      "max_abs_closing": 6.186693484548611,
+      "present_nonzero": 1644,
+      "closing_finite_where_present": true,
+      "form": "RRe",
+      "c_read_diff_present": 8.205886187236606,
+      "est_ok_present": 1644,
+      "fallback_rows": 0,
+      "fallback_closing_exactly_zero": true,
+      "c_src_vs_c_est_present_reported": 0.0,
+      "ok": true
+     },
+     "ok": true
+    },
+    "RR:seed0": {
+     "rule_log": {
+      "rows": 3813,
+      "present": 1518,
+      "max_abs_closing": 0.0,
+      "present_nonzero": 0,
+      "closing_finite_where_present": true,
+      "form": "RR",
+      "c_read_diff_present": null,
+      "est_ok_present": null,
+      "ok": true
+     },
+     "mid_log": {
+      "rows": 3813,
+      "present": 1539,
+      "max_abs_closing": 0.0,
+      "present_nonzero": 0,
+      "closing_finite_where_present": true,
+      "form": "RR",
+      "c_read_diff_present": null,
+      "est_ok_present": null,
+      "ok": true
+     },
+     "ok": true
+    },
+    "RR:seed1": {
+     "rule_log": {
+      "rows": 3813,
+      "present": 1628,
+      "max_abs_closing": 0.0,
+      "present_nonzero": 0,
+      "closing_finite_where_present": true,
+      "form": "RR",
+      "c_read_diff_present": null,
+      "est_ok_present": null,
+      "ok": true
+     },
+     "mid_log": {
+      "rows": 3813,
+      "present": 1644,
+      "max_abs_closing": 0.0,
+      "present_nonzero": 0,
+      "closing_finite_where_present": true,
+      "form": "RR",
+      "c_read_diff_present": null,
+      "est_ok_present": null,
+      "ok": true
+     },
+     "ok": true
+    }
+   }
+  },
+  "m1_AGE": {
+   "PASS": true,
+   "runs": {
+    "RRe_N10:seed0": {
+     "ok": true,
+     "rows": 3813,
+     "rows_banked_RR": 3813
+    },
+    "RRe_L25:seed0": {
+     "ok": true,
+     "rows": 3813,
+     "rows_banked_RR": 3813
+    },
+    "RRe_N10:seed1": {
+     "ok": true,
+     "rows": 3813,
+     "rows_banked_RR": 3813
+    },
+    "RRe_L25:seed1": {
+     "ok": true,
+     "rows": 3813,
+     "rows_banked_RR": 3813
+    }
+   }
+  },
+  "e3_AGE": {
+   "PASS": true,
+   "per_estimator": {
+    "N10": {
+     "complete": true,
+     "share_full_history_logged_looks": 1.0,
+     "share_full_history_scored_window_run_text": 1.0,
+     "share_full_history_preroll_run_text": 0.9445318646734855,
+     "looks_logged": 15252,
+     "scored_full": 15252,
+     "scored_short": 0,
+     "preroll_full": 14406,
+     "preroll_short": 846
+    },
+    "L25": {
+     "complete": true,
+     "share_full_history_logged_looks": 1.0,
+     "share_full_history_scored_window_run_text": 1.0,
+     "share_full_history_preroll_run_text": 0.6671911880409127,
+     "looks_logged": 15252,
+     "scored_full": 15252,
+     "scored_short": 0,
+     "preroll_full": 10176,
+     "preroll_short": 5076
+    }
+   },
+   "gate_scored_share_at_least_0.90": {
+    "N10": true,
+    "L25": true
+   },
+   "setting": "AGE"
+  },
+  "i1_AGE": {
+   "PASS": true,
+   "largest_abs_dev": 5.204170427930421e-18,
+   "n_triples": 3,
+   "tolerance": 1e-12,
+   "largest_abs_dev_levels_vs_grid_read": 0.0,
+   "pair_route_reported_not_judged": {
+    "N10": 1.3877787807814457e-17,
+    "L25": 0.0
+   }
+  },
+  "g_FRESH": {
+   "PASS": true,
+   "detail": {
+    "same_windows_every_dump": true,
+    "headway_h1_h6": {
+     "h5_counts": {
+      "PASS": true,
+      "n_lead_windows": 642,
+      "n_episodes_with_lead": 56,
+      "enough": true,
+      "min_windows": 200,
+      "min_episodes": 20
+     },
+     "h4_alignment": {
+      "PASS": true,
+      "n_checked": 642,
+      "n_unchecked": 0,
+      "n_over_tol": 0,
+      "max_abs_diff_mps": 0.0,
+      "tol_mps": 0.05,
+      "shift5_check": {
+       "PASS_expected": false,
+       "n_over_tol": 470,
+       "max_abs_diff_mps": 2.872589588165283,
+       "n_unchecked": 72,
+       "check_fails_as_required": true
+      }
+     },
+     "h6_same_windows": {
+      "PASS": true,
+      "n_dumps": 16,
+      "n_differing": 0,
+      "regression_form_fails": true
+     },
+     "h1_identity": {
+      "PASS": true,
+      "max_abs_gap_diff_m": 2.2737367544323206e-13,
+      "n_defined_U": 562,
+      "U_mean": 0.0,
+      "max_abs_bias_m": [
+       1.1368683772161603e-13,
+       1.1368683772161603e-13,
+       2.842170943040401e-14
+      ],
+      "regression_form_advance_0.1mps_max_abs_gap_diff_m": 0.6000000000000227,
+      "regression_form_fails": true
+     },
+     "h2_planted_regression": {
+      "PASS": true,
+      "mps": 0.5,
+      "max_dev_bias_2s_from_-1.0": 7.105427357601002e-15,
+      "max_dev_bias_6s_from_-3.0": 2.842170943040401e-14,
+      "mean_bias_2s": -1.0,
+      "mean_bias_6s": -3.0,
+      "n_2s": 642,
+      "n_6s": 446,
+      "planted_vs_logged_U": {
+       "D": 0.1298932384341637,
+       "A_lo": 0.09283080641493707,
+       "A_hi": 0.1654724818442084,
+       "spread_max": 0.040925266903914584,
+       "verdict": "WORSE"
+      },
+      "named_worse_on_U": true,
+      "regression_form_zero_advance_dev_from_-1.0": 1.0000000000001137,
+      "regression_form_fails": true
+     },
+     "h3_swap_self": {
+      "PASS": true,
+      "pairs": [
+       {
+        "PASS": true,
+        "max_abs_self_D": 0.0,
+        "max_abs_swap_dev": 0.0,
+        "regression_form_fails": true,
+        "pair": "RQ50eN10KF5Hb20:RQ50KF5Hb20",
+        "seeds": [
+         0,
+         1
+        ]
+       }
+      ]
+     },
+     "ALL_PASS": true
+    },
+    "family_q2_q3_q4": {
+     "q2_self_is_zero": {
+      "PASS": true,
+      "max_abs_D": 0.0
+     },
+     "q3_swap_is_minus": {
+      "PASS": true,
+      "max_abs_dev": 0.0
+     },
+     "q4_planted_regression": {
+      "PASS": true,
+      "planted_mps": 0.12828317753694396,
+      "D_read": 0.12828317753694393,
+      "verdict": "WORSE"
+     }
+    },
+    "ALL_PASS": true
+   },
+   "missing_or_incomplete": []
+  },
+  "a1_FRESH": {
+   "PASS": true,
+   "largest_difference": 0.0,
+   "runs_compared": 5,
+   "tolerance": 1e-09
+  },
+  "s_FRESH": {
+   "PASS": true,
+   "detail": {
+    "s4": {
+     "pass": true,
+     "checks": [
+      {
+       "name": "line: labels at the first logged steps reaching 30/50/80 m",
+       "ok": true
+      },
+      {
+       "name": "line: checkpoint on the label -> pos 0, lat 0, head 0",
+       "ok": true
+      },
+      {
+       "name": "line: checkpoint 1.5 m sideways -> lat 1.5, pos 1.5, along unchanged",
+       "ok": true
+      },
+      {
+       "name": "line: checkpoint 4 m along the track -> along +4, lat 0",
+       "ok": true
+      },
+      {
+       "name": "line: checkpoint on the label -> along = label arc minus A (30/50/80 are multiples of the 2 m step: 0)",
+       "ok": true
+      },
+      {
+       "name": "circle R=100: label positions equal the analytic ones to the step",
+       "ok": true
+      },
+      {
+       "name": "short track: 30 and 50 valid, 80 invalid",
+       "ok": true
+      },
+      {
+       "name": "join label: known pose and label -> analytic world position and heading",
+       "ok": true
+      },
+      {
+       "name": "join label: validity passes through (third arc invalid), a step outside the clip's label rows reads invalid",
+       "ok": true
+      },
+      {
+       "name": "join label: checkpoint on its label -> pos 0, head 0, along 0; invalid arc reads NaN",
+       "ok": true
+      },
+      {
+       "name": "join label: checkpoint 4 m farther along the straight track -> along 4, pos 4, lat 0",
+       "ok": true
+      }
+     ],
+     "all_checks_hold": true,
+     "planted_fault_fails": true,
+     "planted_fault_checks_failed": [
+      "line: labels at the first logged steps reaching 30/50/80 m",
+      "line: checkpoint on the label -> along = label arc minus A (30/50/80 are multiples of the 2 m step: 0)",
+      "circle R=100: label positions equal the analytic ones to the step",
+      "short track: 30 and 50 valid, 80 invalid"
+     ],
+     "planted_fault_2_checks_failed": [
+      "join label: known pose and label -> analytic world position and heading",
+      "join label: checkpoint 4 m farther along the straight track -> along 4, pos 4, lat 0"
+     ]
+    },
+    "s1": {
+     "max_dxy_m": 6.815015700567528e-05,
+     "max_dpsi_rad": 6.74965782820891e-07,
+     "per_file": {
+      "R0_s0": [
+       5.3405761732960855e-05,
+       6.74965782820891e-07
+      ],
+      "R0_s1": [
+       6.267449371932798e-05,
+       5.329273093934717e-07
+      ],
+      "R0KHb20_s0": [
+       6.278738692344632e-05,
+       4.172325134277344e-07
+      ],
+      "R0KHb20_s1": [
+       5.85363898437663e-05,
+       4.544854164123535e-07
+      ],
+      "RLcKF5Hb20_s0": [
+       6.278738692344632e-05,
+       4.172325134277344e-07
+      ],
+      "RLcKF5Hb20_s1": [
+       5.85363898437663e-05,
+       4.544854164123535e-07
+      ],
+      "RQ50KF5Hb20_s0": [
+       6.278738692344632e-05,
+       4.172325134277344e-07
+      ],
+      "RQ50KF5Hb20_s1": [
+       5.85363898437663e-05,
+       4.544854164123535e-07
+      ],
+      "RQ50cKF5Hb20_s0": [
+       6.278738692344632e-05,
+       4.172325134277344e-07
+      ],
+      "RQ50cKF5Hb20_s1": [
+       5.85363898437663e-05,
+       4.544854164123535e-07
+      ],
+      "RQ50eL25KF5Hb20_s0": [
+       6.278738692344632e-05,
+       4.172325134277344e-07
+      ],
+      "RQ50eL25KF5Hb20_s1": [
+       6.69623941860209e-05,
+       4.544854164123535e-07
+      ],
+      "RQ50eN10KF5Hb20_s0": [
+       6.278738692344632e-05,
+       4.172325134277344e-07
+      ],
+      "RQ50eN10KF5Hb20_s1": [
+       6.815015700567528e-05,
+       4.544854164123535e-07
+      ],
+      "RQ50hKF5Hb20_s0": [
+       6.278738692344632e-05,
+       4.172325134277344e-07
+      ],
+      "RQ50hKF5Hb20_s1": [
+       5.85363898437663e-05,
+       4.544854164123535e-07
+      ]
+     },
+     "pass": true
+    },
+    "s2": {
+     "max_first_tick_anchor_dist_m": 0.0,
+     "n_rows_anchor_not_t0": 0,
+     "files": [
+      "R0_s0",
+      "R0_s1",
+      "R0KHb20_s0",
+      "R0KHb20_s1",
+      "RLcKF5Hb20_s0",
+      "RLcKF5Hb20_s1",
+      "RQ50KF5Hb20_s0",
+      "RQ50KF5Hb20_s1",
+      "RQ50cKF5Hb20_s0",
+      "RQ50cKF5Hb20_s1",
+      "RQ50eL25KF5Hb20_s0",
+      "RQ50eL25KF5Hb20_s1",
+      "RQ50eN10KF5Hb20_s0",
+      "RQ50eN10KF5Hb20_s1",
+      "RQ50hKF5Hb20_s0",
+      "RQ50hKF5Hb20_s1"
+     ],
+     "pass": true
+    },
+    "s6": {
+     "per_file": {
+      "R0_s0": true,
+      "R0_s1": true,
+      "R0KHb20_s0": true,
+      "R0KHb20_s1": true,
+      "RLcKF5Hb20_s0": true,
+      "RLcKF5Hb20_s1": true,
+      "RQ50KF5Hb20_s0": true,
+      "RQ50KF5Hb20_s1": true,
+      "RQ50cKF5Hb20_s0": true,
+      "RQ50cKF5Hb20_s1": true,
+      "RQ50eL25KF5Hb20_s0": true,
+      "RQ50eL25KF5Hb20_s1": true,
+      "RQ50eN10KF5Hb20_s0": true,
+      "RQ50eN10KF5Hb20_s1": true,
+      "RQ50hKF5Hb20_s0": true,
+      "RQ50hKF5Hb20_s1": true
+     },
+     "pass": true
+    },
+    "s9": {
+     "pass": true,
+     "n_files": 16,
+     "missing": []
+    },
+    "s5": {
+     "pass": true,
+     "largest_difference": 0.0,
+     "note": "first-tick cells of every run with no pre-roll equal those of R0 at the same model seed (pre-rolled runs excluded by construction)"
+    },
+    "s3": true
+   }
+  },
+  "r1_FRESH": {
+   "PASS": true,
+   "runs": {
+    "RRe_N10:seed0": {
+     "ok": true,
+     "parsed": {
+      "form": "RRe",
+      "replan_steps": 10,
+      "rule_every": 5,
+      "readout": "causal_g",
+      "kappa": "0.2",
+      "preroll": 0,
+      "wrapper": "a747abeb51ef041f",
+      "rc0": true
+     },
+     "dump_files": 141,
+     "clips_of_the_grid": 141
+    },
+    "RRe_N10:seed1": {
+     "ok": true,
+     "parsed": {
+      "form": "RRe",
+      "replan_steps": 10,
+      "rule_every": 5,
+      "readout": "causal_g",
+      "kappa": "0.2",
+      "preroll": 0,
+      "wrapper": "a747abeb51ef041f",
+      "rc0": true
+     },
+     "dump_files": 141,
+     "clips_of_the_grid": 141
+    },
+    "RRe_L25:seed0": {
+     "ok": true,
+     "parsed": {
+      "form": "RRe",
+      "replan_steps": 10,
+      "rule_every": 5,
+      "readout": "causal_g",
+      "kappa": "0.2",
+      "preroll": 0,
+      "wrapper": "a747abeb51ef041f",
+      "rc0": true
+     },
+     "dump_files": 141,
+     "clips_of_the_grid": 141
+    },
+    "RRe_L25:seed1": {
+     "ok": true,
+     "parsed": {
+      "form": "RRe",
+      "replan_steps": 10,
+      "rule_every": 5,
+      "readout": "causal_g",
+      "kappa": "0.2",
+      "preroll": 0,
+      "wrapper": "a747abeb51ef041f",
+      "rc0": true
+     },
+     "dump_files": 141,
+     "clips_of_the_grid": 141
+    }
+   }
+  },
+  "x1_FRESH": {
+   "PASS": true,
+   "runs": {
+    "RRe_N10:seed0": {
+     "rule_log": {
+      "rows": 7197,
+      "present": 2816,
+      "max_abs_closing": 4.661084493001302,
+      "present_nonzero": 2703,
+      "closing_finite_where_present": true,
+      "form": "RRe",
+      "c_read_diff_present": null,
+      "est_ok_present": 2703,
+      "fallback_rows": 113,
+      "fallback_closing_exactly_zero": true,
+      "c_src_vs_c_est_present_reported": 0.0,
+      "ok": true
+     },
+     "mid_log": {
+      "rows": 7197,
+      "present": 2879,
+      "max_abs_closing": 4.646138509114583,
+      "present_nonzero": 2766,
+      "closing_finite_where_present": true,
+      "form": "RRe",
+      "c_read_diff_present": 8.950585921605429,
+      "est_ok_present": 2766,
+      "fallback_rows": 113,
+      "fallback_closing_exactly_zero": true,
+      "c_src_vs_c_est_present_reported": 0.0,
+      "ok": true
+     },
+     "ok": true
+    },
+    "RRe_N10:seed1": {
+     "rule_log": {
+      "rows": 7197,
+      "present": 3062,
+      "max_abs_closing": 5.266918182373047,
+      "present_nonzero": 2941,
+      "closing_finite_where_present": true,
+      "form": "RRe",
+      "c_read_diff_present": null,
+      "est_ok_present": 2941,
+      "fallback_rows": 121,
+      "fallback_closing_exactly_zero": true,
+      "c_src_vs_c_est_present_reported": 0.0,
+      "ok": true
+     },
+     "mid_log": {
+      "rows": 7197,
+      "present": 3132,
+      "max_abs_closing": 5.2523854573567705,
+      "present_nonzero": 3012,
+      "closing_finite_where_present": true,
+      "form": "RRe",
+      "c_read_diff_present": 9.379504203796387,
+      "est_ok_present": 3012,
+      "fallback_rows": 120,
+      "fallback_closing_exactly_zero": true,
+      "c_src_vs_c_est_present_reported": 0.0,
+      "ok": true
+     },
+     "ok": true
+    },
+    "RRe_L25:seed0": {
+     "rule_log": {
+      "rows": 7197,
+      "present": 2816,
+      "max_abs_closing": 5.474681136435793,
+      "present_nonzero": 2129,
+      "closing_finite_where_present": true,
+      "form": "RRe",
+      "c_read_diff_present": null,
+      "est_ok_present": 2129,
+      "fallback_rows": 687,
+      "fallback_closing_exactly_zero": true,
+      "c_src_vs_c_est_present_reported": 0.0,
+      "ok": true
+     },
+     "mid_log": {
+      "rows": 7197,
+      "present": 2879,
+      "max_abs_closing": 5.047154121397594,
+      "present_nonzero": 2426,
+      "closing_finite_where_present": true,
+      "form": "RRe",
+      "c_read_diff_present": 7.888614287580316,
+      "est_ok_present": 2426,
+      "fallback_rows": 453,
+      "fallback_closing_exactly_zero": true,
+      "c_src_vs_c_est_present_reported": 0.0,
+      "ok": true
+     },
+     "ok": true
+    },
+    "RRe_L25:seed1": {
+     "rule_log": {
+      "rows": 7197,
+      "present": 3062,
+      "max_abs_closing": 6.331767104457227,
+      "present_nonzero": 2323,
+      "closing_finite_where_present": true,
+      "form": "RRe",
+      "c_read_diff_present": null,
+      "est_ok_present": 2323,
+      "fallback_rows": 739,
+      "fallback_closing_exactly_zero": true,
+      "c_src_vs_c_est_present_reported": 0.0,
+      "ok": true
+     },
+     "mid_log": {
+      "rows": 7197,
+      "present": 3132,
+      "max_abs_closing": 6.186693605146054,
+      "present_nonzero": 2643,
+      "closing_finite_where_present": true,
+      "form": "RRe",
+      "c_read_diff_present": 8.2058858221866,
+      "est_ok_present": 2643,
+      "fallback_rows": 489,
+      "fallback_closing_exactly_zero": true,
+      "c_src_vs_c_est_present_reported": 0.0,
+      "ok": true
+     },
+     "ok": true
+    },
+    "RR:seed0": {
+     "rule_log": {
+      "rows": 7197,
+      "present": 2816,
+      "max_abs_closing": 0.0,
+      "present_nonzero": 0,
+      "closing_finite_where_present": true,
+      "form": "RR",
+      "c_read_diff_present": null,
+      "est_ok_present": null,
+      "ok": true
+     },
+     "mid_log": {
+      "rows": 7197,
+      "present": 2879,
+      "max_abs_closing": 0.0,
+      "present_nonzero": 0,
+      "closing_finite_where_present": true,
+      "form": "RR",
+      "c_read_diff_present": null,
+      "est_ok_present": null,
+      "ok": true
+     },
+     "ok": true
+    },
+    "RR:seed1": {
+     "rule_log": {
+      "rows": 7197,
+      "present": 3062,
+      "max_abs_closing": 0.0,
+      "present_nonzero": 0,
+      "closing_finite_where_present": true,
+      "form": "RR",
+      "c_read_diff_present": null,
+      "est_ok_present": null,
+      "ok": true
+     },
+     "mid_log": {
+      "rows": 7197,
+      "present": 3132,
+      "max_abs_closing": 0.0,
+      "present_nonzero": 0,
+      "closing_finite_where_present": true,
+      "form": "RR",
+      "c_read_diff_present": null,
+      "est_ok_present": null,
+      "ok": true
+     },
+     "ok": true
+    }
+   }
+  },
+  "m1_FRESH": {
+   "PASS": true,
+   "runs": {
+    "RRe_N10:seed0": {
+     "ok": true,
+     "rows": 7197,
+     "rows_banked_RR": 7197
+    },
+    "RRe_L25:seed0": {
+     "ok": true,
+     "rows": 7197,
+     "rows_banked_RR": 7197
+    },
+    "RRe_N10:seed1": {
+     "ok": true,
+     "rows": 7197,
+     "rows_banked_RR": 7197
+    },
+    "RRe_L25:seed1": {
+     "ok": true,
+     "rows": 7197,
+     "rows_banked_RR": 7197
+    }
+   }
+  },
+  "e3_FRESH": {
+   "PASS": true,
+   "per_estimator": {
+    "N10": {
+     "complete": true,
+     "share_full_history_logged_looks": 0.9510212588578575,
+     "share_full_history_scored_window_run_text": 0.9510212588578575,
+     "share_full_history_preroll_run_text": null,
+     "looks_logged": 28788,
+     "scored_full": 27378,
+     "scored_short": 1410,
+     "preroll_full": 0,
+     "preroll_short": 0
+    },
+    "L25": {
+     "complete": true,
+     "share_full_history_logged_looks": 0.7942892872030013,
+     "share_full_history_scored_window_run_text": 0.7942892872030013,
+     "share_full_history_preroll_run_text": null,
+     "looks_logged": 28788,
+     "scored_full": 22866,
+     "scored_short": 5922,
+     "preroll_full": 0,
+     "preroll_short": 0
+    }
+   },
+   "gate_scored_share_at_least_0.90": {
+    "N10": true,
+    "L25": false
+   },
+   "setting": "FRESH"
+  },
+  "e2_FRESH": {
+   "PASS": false,
+   "largest_difference_overall": 1.5018185987258903e-05,
+   "runs": {
+    "N10:seed0:rule_log": {
+     "ok": true,
+     "rows_compared": 6774,
+     "rows_first_tick_compared": 1976,
+     "rows_failing": 0,
+     "rows_failing_first_tick": 0,
+     "nan_where_not_ok": true,
+     "largest_difference": 7.477899392444726e-06,
+     "tolerance": 0.001
+    },
+    "N10:seed0:mid_log": {
+     "ok": false,
+     "rows_compared": 6915,
+     "rows_first_tick_compared": 0,
+     "rows_failing": 0,
+     "rows_failing_first_tick": 0,
+     "nan_where_not_ok": true,
+     "largest_difference": 9.646018346132212e-06,
+     "tolerance": 0.001
+    },
+    "N10:seed1:rule_log": {
+     "ok": true,
+     "rows_compared": 6774,
+     "rows_first_tick_compared": 1976,
+     "rows_failing": 0,
+     "rows_failing_first_tick": 0,
+     "nan_where_not_ok": true,
+     "largest_difference": 6.119410196958608e-06,
+     "tolerance": 0.001
+    },
+    "N10:seed1:mid_log": {
+     "ok": false,
+     "rows_compared": 6915,
+     "rows_first_tick_compared": 0,
+     "rows_failing": 0,
+     "rows_failing_first_tick": 0,
+     "nan_where_not_ok": true,
+     "largest_difference": 5.801518758119517e-06,
+     "tolerance": 0.001
+    },
+    "L25:seed0:rule_log": {
+     "ok": true,
+     "rows_compared": 5364,
+     "rows_first_tick_compared": 1412,
+     "rows_failing": 0,
+     "rows_failing_first_tick": 0,
+     "nan_where_not_ok": true,
+     "largest_difference": 1.007817344955697e-05,
+     "tolerance": 0.001
+    },
+    "L25:seed0:mid_log": {
+     "ok": false,
+     "rows_compared": 6069,
+     "rows_first_tick_compared": 0,
+     "rows_failing": 0,
+     "rows_failing_first_tick": 0,
+     "nan_where_not_ok": true,
+     "largest_difference": 1.5018185987258903e-05,
+     "tolerance": 0.001
+    },
+    "L25:seed1:rule_log": {
+     "ok": true,
+     "rows_compared": 5364,
+     "rows_first_tick_compared": 1412,
+     "rows_failing": 0,
+     "rows_failing_first_tick": 0,
+     "nan_where_not_ok": true,
+     "largest_difference": 1.0988016014623625e-05,
+     "tolerance": 0.001
+    },
+    "L25:seed1:mid_log": {
+     "ok": false,
+     "rows_compared": 6069,
+     "rows_first_tick_compared": 0,
+     "rows_failing": 0,
+     "rows_failing_first_tick": 0,
+     "nan_where_not_ok": true,
+     "largest_difference": 1.139053137988455e-05,
+     "tolerance": 0.001
+    }
+   }
+  },
+  "i1_FRESH": {
+   "PASS": true,
+   "largest_abs_dev": 1.734723475976807e-18,
+   "n_triples": 3,
+   "tolerance": 1e-12,
+   "largest_abs_dev_levels_vs_grid_read": 0.0,
+   "pair_route_reported_not_judged": {
+    "N10": 1.734723475976807e-18,
+    "L25": 3.469446951953614e-18
+   }
+  },
+  "h1_planted_name_rule": {
+   "lower": {
+    "want": "LOWER",
+    "got": "LOWER",
+    "name": "ESTCLOSE10K-EST-CLOSING-N10-AGE-C-LOWER"
+   },
+   "higher": {
+    "want": "HIGHER",
+    "got": "HIGHER",
+    "name": "ESTCLOSE10K-EST-CLOSING-N10-AGE-C-HIGHER"
+   },
+   "opposite_seeds": {
+    "want": "NOT-SEPARATED",
+    "got": "NOT-SEPARATED",
+    "name": "ESTCLOSE10K-EST-CLOSING-N10-AGE-C-NOT-SEPARATED"
+   },
+   "no_effect": {
+    "want": "NOT-SEPARATED",
+    "got": "NOT-SEPARATED",
+    "name": "ESTCLOSE10K-EST-CLOSING-N10-AGE-C-NOT-SEPARATED"
+   },
+   "PASS": true
+  }
+ },
+ "controls_all_pass": false,
+ "names": null,
+ "why_not_written": null,
+ "settings": null
+}

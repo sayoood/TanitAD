@@ -1,0 +1,77 @@
+{
+ "audit_counts": {
+  "examined": {
+   "bank": 150603,
+   "label_store": 2152
+  },
+  "inputs_audited": [
+   "bank",
+   "label_store"
+  ],
+  "leak_totals": {
+   "bank": 0,
+   "label_store": 0
+  }
+ },
+ "bank": {
+  "dir_name": "train_grow_cmd_3c_p7",
+  "files": [
+   "targets_rank0.jsonl",
+   "targets_rank1.jsonl"
+  ],
+  "filter_report": {
+   "by_rank_excluded": {
+    "0": 10141,
+    "1": 6556
+   },
+   "by_rank_in": {
+    "0": 103037,
+    "1": 64263
+   },
+   "n_excluded": 16697,
+   "n_in": 167300,
+   "n_out": 150603,
+   "source_targets_sha256": "8775e73ee948588c6db6b18e3f5a65f6686b313405d6b28e439f85114d5f87a4",
+   "token_log_checked": true
+  },
+  "n_tuples": 150603,
+  "rows_by_rank": {
+   "0": 92896,
+   "1": 57707
+  },
+  "scenes": 92896,
+  "targets_sha256": "92af8d663ecdd04a1fe7a2ed5ec0995499ca87d48a01052da4868503a92d385f"
+ },
+ "registration": {
+  "P7_AUX_STORE_PINS": {
+   "keys": 92993,
+   "sha256": "df2ddd1ba2aa16a27ecea4251178038ffadaa65693be4adbe1796d74cf78e997"
+  },
+  "P7_BANK_TUPLES": {
+   "train_grow_cmd_3c_p7": 150603
+  },
+  "P7_TARGETS_SHA256": {
+   "train_grow_cmd_3c_p7": "92af8d663ecdd04a1fe7a2ed5ec0995499ca87d48a01052da4868503a92d385f"
+  }
+ },
+ "reserve_sessions": 16,
+ "store": {
+  "coverage_of_bank_rows": {
+   "fraction": 1.0,
+   "note": "G-DVB requires >= AUX_MIN_COVERAGE of the trainer's own count; reported, not enforced here",
+   "rows": 150603,
+   "rows_labelled": 150603
+  },
+  "keys": 92993,
+  "logs": 1076,
+  "sha256": "df2ddd1ba2aa16a27ecea4251178038ffadaa65693be4adbe1796d74cf78e997",
+  "shards_verified": 1076,
+  "store": "label_store_p7"
+ }
+}
+
+# paste into refe/launch_gate.py (P7 section), then regenerate SHIP_MANIFEST; the pod's own reserve stage must reproduce these byte for byte (diff p7_pins.py's output on the pod):
+P7_BANK_TUPLES: dict = {"train_grow_cmd_3c_p7": 150603}
+P7_TARGETS_SHA256: dict = {"train_grow_cmd_3c_p7": "92af8d663ecdd04a1fe7a2ed5ec0995499ca87d48a01052da4868503a92d385f"}
+P7_AUX_STORE_PINS = {"sha256": "df2ddd1ba2aa16a27ecea4251178038ffadaa65693be4adbe1796d74cf78e997", "keys": 92993}
+ZZP7PINS_OK tuples=150603 scenes=92896 store_keys=92993 store_sha256=df2ddd1ba2aa16a2 targets_sha256=92af8d663ecdd04a

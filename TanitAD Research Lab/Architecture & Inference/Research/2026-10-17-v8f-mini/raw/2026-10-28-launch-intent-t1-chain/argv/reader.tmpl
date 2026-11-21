@@ -1,0 +1,15 @@
+# argv template (one token per line; '#' lines are comments): the PRE-REGISTERED reader in its real-run mode.  Its path (@READER@) is a PARAMETER of the chain (LIT1_READER); its sha256 must equal the reader_sha256 every
+# launch-gate token binds.  --prereg-sha is the token-bound PREREG sha256; --orc-dir is the DAG-ORC reader directory whose Rig the reader imports unchanged.
+@PY@
+-I
+@READER@
+--manifest
+@OUT@/runs.json
+--out
+@OUT@/read/LAUNCH_INTENT_READ.json
+--prereg
+@PREREG@
+--prereg-sha
+@PREREG_SHA@
+--orc-dir
+@ORCDIR@

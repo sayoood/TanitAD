@@ -14,6 +14,19 @@ prints, side by side:
 then runs the PAIRED episode-clustered tests for the head-to-head claims, which
 are the comparisons the registry leaderboard actually asserts.
 
+⭐ WHY THIS FILE IS ALLOWED TO CALL THE BANNED ESTIMATOR (2026-08-28)
+---------------------------------------------------------------------
+It is the instrument that MEASURES the defect, so refusing to compute the
+BEFORE column would destroy the only evidence that the AFTER column is needed.
+Until today it sat OUTSIDE ``ENFORCED_ROOTS`` — which covered
+``taniteval/taniteval`` and ``taniteval/tools`` but not the ``taniteval/`` top
+level, where ~35 standalone scripts live. It was therefore unguarded by
+accident, not by decision. The top level is now in scope
+(``tests/test_no_jack_in_gates.py``, non-recursive), which cost **zero** new
+violations, and this file's legality is now explicit: it names its estimator in
+the function name (:func:`reproduce_overlapping_holdout_published`), it emits
+no verdict key, and every printed BEFORE value sits beside its AFTER.
+
 CPU only. No checkpoint, no GPU, no pod.
 
 Usage:
@@ -34,6 +47,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, "/root/taniteval")
 
 from taniteval import ci as C  # noqa: E402
+from taniteval import dump_census  # noqa: E402
 
 # key -> (label, registry citation for the published number)
 ARMS = [
@@ -68,12 +82,27 @@ def ade_0_2s_per_window(pred, gt):
     return de.mean(axis=1)
 
 
-def naive_published(win, val_frac=0.2, n_splits=8, seed=0):
+def reproduce_overlapping_holdout_published(win, val_frac=0.2, n_splits=8,
+                                            seed=0):
     """Reproduce the DEPRECATED published interval from the raw artifact.
 
     Uses the program's own ``split_by_episode`` so the reproduction is the real
     protocol, not a lookalike. Returns (mean, ci95) or None if the split
     primitive is unavailable (pod-path import).
+
+    ⭐ **The name is the exemption.** This module is inside ``ENFORCED_ROOTS``
+    (2026-08-28: the ``taniteval/`` top level was added, closing the gap that
+    left every standalone script here unguarded). ``gate_guard`` permits a
+    function that ANNOUNCES itself as the banned family —
+    :func:`gate_guard.is_declared_estimator_name` matches
+    ``overlapping_holdout`` — precisely so a quarantined reproduction is legal
+    and a silent one is not. The old name ``naive_published`` announced
+    nothing, which is the same defect as ``driving_diagnostic.mean_ci``: the
+    right arithmetic under a name no rule can see.
+
+    ⚠️ Its output is BEFORE-column evidence for the closeout ledger and is
+    never a decision. The AFTER column is
+    :func:`ci.episode_cluster_bootstrap`.
     """
     try:
         from tanitad.eval.gates import split_by_episode
@@ -99,8 +128,20 @@ def main():
     a = ap.parse_args()
     R = Path(a.results)
 
+    # C126: state the exclusion-aware census out loud (this tool's output gets
+    # quoted), and refuse to treat a known duplicate bank as its own arm
+    # should one ever be added to ARMS. `dump_exclusions.json` beside the
+    # dumps is the machine-readable list; today ARMS contains no excluded key,
+    # so the guard is dormant by construction, not by luck.
+    census = dump_census.list_dumps(R)
+    print(f"[census] {census.summary()}")
+
     rows, loaded = [], {}
     for key, label, cite in ARMS:
+        if key in census.excluded_arm_keys:
+            print(f"[skip] {key}: EXCLUDED same-model duplicate of "
+                  f"{census.pairs_by_key.get(key)} (dump_exclusions.json)")
+            continue
         wp = R / f"windows_{key}.pt"
         if not wp.exists():
             print(f"[skip] {key}: no {wp.name}")
@@ -110,13 +151,22 @@ def main():
         eid = win["eid"]
         v = ade_0_2s_per_window(win["pred"], win["gt"])
 
+        # ⛔ 2026-08-28: `heldout` is a TOMBSTONE in artifacts written after the
+        # closeout (estimator label, no `mean`). The published value, when it
+        # exists at all, is now under `legacy_overlapping_holdout_se`. Read
+        # BOTH shapes: this tool's whole job is the BEFORE column, and it must
+        # keep reproducing history from artifacts of either vintage rather than
+        # reporting "no published value" for a file that plainly has one.
         pub = None
         jp = R / f"{key}.json"
         if jp.exists():
             d = json.loads(jp.read_text())
-            pub = d["heldout"]["model"]["ade_0_2s"]
+            node = ((d.get("legacy_overlapping_holdout_se") or {})
+                    .get("model", {}).get("ade_0_2s")
+                    or d.get("heldout", {}).get("model", {}).get("ade_0_2s"))
+            pub = node if isinstance(node, dict) and "mean" in node else None
 
-        rep = naive_published(win)
+        rep = reproduce_overlapping_holdout_published(win)
         boot = C.episode_cluster_bootstrap(v, eid, n_boot=a.n_boot, seed=0)
 
         row = {"key": key, "label": label, "cite": cite,

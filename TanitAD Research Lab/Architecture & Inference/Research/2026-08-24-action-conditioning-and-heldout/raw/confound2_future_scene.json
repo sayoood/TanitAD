@@ -1,0 +1,151 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "split": "HELD-OUT, LEAD-MATCHED",
+ "arm": "rdw8p30k",
+ "step": 30000,
+ "k": 4,
+ "readable": "(scene+action) MINUS scene, on a target the scene predicts",
+ "targets": {
+  "n_agents": {
+   "n_clips": 20,
+   "columns": {
+    "scene_t (POSITIVE CONTROL)": {
+     "r": 0.7089,
+     "shuffled": -0.0229,
+     "true_minus_shuffled": 0.7318,
+     "t": 12.58
+    },
+    "action_t": {
+     "r": 0.0755,
+     "shuffled": -0.0029,
+     "true_minus_shuffled": 0.0784,
+     "t": 0.64
+    },
+    "scene_t + action_t": {
+     "r": 0.5411,
+     "shuffled": 0.0118,
+     "true_minus_shuffled": 0.5293,
+     "t": 5.37
+    },
+    "constant (control)": {
+     "r": 0.0,
+     "shuffled": 0.0,
+     "true_minus_shuffled": -0.0,
+     "t": -0.0
+    }
+   },
+   "positive_control_t": 11.73,
+   "action_marginal_given_scene": {
+    "delta": -0.1678,
+    "t": -3.5
+   },
+   "verdict": "ACTION IS REDUNDANT WITH THE SCENE for this target - confounded; no loss can exploit what adds nothing"
+  },
+  "occ_center": {
+   "n_clips": 20,
+   "columns": {
+    "scene_t (POSITIVE CONTROL)": {
+     "r": 0.6588,
+     "shuffled": 0.0311,
+     "true_minus_shuffled": 0.6277,
+     "t": 8.52
+    },
+    "action_t": {
+     "r": -0.0179,
+     "shuffled": -0.0329,
+     "true_minus_shuffled": 0.0149,
+     "t": 0.14
+    },
+    "scene_t + action_t": {
+     "r": 0.6805,
+     "shuffled": 0.0166,
+     "true_minus_shuffled": 0.6639,
+     "t": 8.69
+    },
+    "constant (control)": {
+     "r": 0.0,
+     "shuffled": 0.0,
+     "true_minus_shuffled": 0.0,
+     "t": 0.0
+    }
+   },
+   "positive_control_t": 9.88,
+   "action_marginal_given_scene": {
+    "delta": 0.0217,
+    "t": 0.4
+   },
+   "verdict": "ACTION IS REDUNDANT WITH THE SCENE for this target - confounded; no loss can exploit what adds nothing"
+  },
+  "n_free_cols": {
+   "n_clips": 20,
+   "columns": {
+    "scene_t (POSITIVE CONTROL)": {
+     "r": 0.6324,
+     "shuffled": 0.0022,
+     "true_minus_shuffled": 0.6302,
+     "t": 14.34
+    },
+    "action_t": {
+     "r": 0.1083,
+     "shuffled": -0.0126,
+     "true_minus_shuffled": 0.1209,
+     "t": 1.43
+    },
+    "scene_t + action_t": {
+     "r": 0.4986,
+     "shuffled": 0.0225,
+     "true_minus_shuffled": 0.4761,
+     "t": 6.44
+    },
+    "constant (control)": {
+     "r": 0.0,
+     "shuffled": 0.0,
+     "true_minus_shuffled": 0.0,
+     "t": 0.0
+    }
+   },
+   "positive_control_t": 14.02,
+   "action_marginal_given_scene": {
+    "delta": -0.1337,
+    "t": -1.83
+   },
+   "verdict": "ACTION IS REDUNDANT WITH THE SCENE for this target - confounded; no loss can exploit what adds nothing"
+  },
+  "lead_closing": {
+   "n_clips": 20,
+   "columns": {
+    "scene_t (POSITIVE CONTROL)": {
+     "r": 0.0988,
+     "shuffled": -0.0377,
+     "true_minus_shuffled": 0.1365,
+     "t": 1.83
+    },
+    "action_t": {
+     "r": 0.0965,
+     "shuffled": -0.0107,
+     "true_minus_shuffled": 0.1072,
+     "t": 0.97
+    },
+    "scene_t + action_t": {
+     "r": 0.0629,
+     "shuffled": 0.0032,
+     "true_minus_shuffled": 0.0597,
+     "t": 0.63
+    },
+    "constant (control)": {
+     "r": 0.0,
+     "shuffled": 0.0,
+     "true_minus_shuffled": 0.0,
+     "t": 0.0
+    }
+   },
+   "positive_control_t": 1.44,
+   "action_marginal_given_scene": {
+    "delta": -0.0358,
+    "t": -0.4
+   },
+   "verdict": "NO VERDICT - the positive control (scene_t) reads t +1.44; this panel cannot answer for lead_closing"
+  }
+ }
+}

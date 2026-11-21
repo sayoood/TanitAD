@@ -1,0 +1,206 @@
+{
+ "schema": "taniteval.bench.bench_run/1",
+ "run_id": "20260920T073353Z-internal_t1-none-04264a",
+ "utc": "2026-09-20T07:33:54Z",
+ "utc_end": "2026-09-20T07:34:02Z",
+ "benchmark": "internal_t1",
+ "arms": [
+  {
+   "name": "os",
+   "kind": "model",
+   "declared_inputs": [
+    "frames (window)",
+    "nav_cmd (v7.2 token, per --nav-source)",
+    "v0[t0] (measured)"
+   ],
+   "status": "OK",
+   "tier": "T1"
+  },
+  {
+   "name": "ha",
+   "kind": "reference",
+   "declared_inputs": [
+    "frames <= t0 (the closing action)",
+    "v0[t0]"
+   ],
+   "status": "OK",
+   "tier": "T1"
+  },
+  {
+   "name": "ha0",
+   "kind": "floor",
+   "declared_inputs": [
+    "v0[t0] (measured)"
+   ],
+   "status": "OK",
+   "tier": "T1"
+  },
+  {
+   "name": "ha0_ext",
+   "kind": "floor",
+   "declared_inputs": [
+    "v0[t0]",
+    "a0[t0]",
+    "kappa0[t0]"
+   ],
+   "status": "OK",
+   "tier": "T1"
+  }
+ ],
+ "status": "COMPLETE",
+ "report": {
+  "status": "RENDERED",
+  "rc": 3,
+  "index": "report/index.html",
+  "index_exists": true,
+  "log": "raw/benchreport.log",
+  "wall_s": 0.5,
+  "warning": "taniteval.benchreport exited 3 but wrote a non-empty page \u2014 read raw/benchreport.log and report/verify.json for what it could not do",
+  "verify": {
+   "status": "PASS",
+   "n_numbers_checked": 64,
+   "n_refusals_checked": 15,
+   "n_errors": 0,
+   "errors": [],
+   "coverage_missing": [],
+   "summary_sha_note": "summary.json read directly; renderer code not imported",
+   "published_file": "D:\\Projects\\TanitAD\\products\\P7-TanitEval\\benchmarks\\published_results.json",
+   "gallery": {
+    "status": "UNAVAILABLE",
+    "reason": "scenes.json is absent from the run directory \u2014 the gallery needs token -> scene pickle / frame bank / map"
+   }
+  },
+  "re_rendered_after_ckpt_provenance": "2026-09-20 -- summary.provenance.ckpt was added; page kept in step",
+  "re_rendered_after_ckpt_display": "2026-09-20 -- registry_key_display added; page kept in step"
+ },
+ "command": [
+  "C:\\Users\\Admin\\venvs\\tanitad\\Scripts\\python.exe",
+  "D:\\Projects\\TanitAD\\taniteval\\taniteval\\bench\\__main__.py",
+  "internal_t1",
+  "--ckpt",
+  "none",
+  "--split",
+  "v2ep-eval124clean-416x1024cyl-halfB",
+  "--analyze-only",
+  "C:/Users/Admin/AppData/Local/Temp/claude/D--Projects-TanitAD/bbcd6d8b-6831-4ca4-8774-3051e3caa1c6/scratchpad/e9_refcv3arm_dump",
+  "--labels",
+  "C:/Users/Admin/tanitad-wt/_s2build/release/v8/s2_labels_v8_eval.jsonl.gz",
+  "--n-boot",
+  "50",
+  "--no-report"
+ ],
+ "git_head": "37645fcc61b158a327e6597e64e0abb64dcbc46d",
+ "git": {
+  "sha": "37645fcc61b158a327e6597e64e0abb64dcbc46d",
+  "branch": "agent/arch-inf-20260803",
+  "suite_code_blobs": {
+   "taniteval/taniteval/bench/__init__.py": "b20b83f09ffebcca3b36d1cc1ead9ae199b0df6f",
+   "taniteval/taniteval/bench/__main__.py": "f15d4c6ac42eac1be4c2e3d47e2e37004719a2ea",
+   "taniteval/taniteval/bench/_legacy.py": "3e263ebba1229b2df9261d608f5e54d0a6a0e6b7",
+   "taniteval/taniteval/bench/cli.py": "2def83cc2d1b40667d55d61c679533fc604d3095",
+   "taniteval/taniteval/bench/contract.py": "832e2de012cf1a5f0cb9430ab7ffd4cf46d351aa",
+   "taniteval/taniteval/bench/gpu_gap.py": "0a9281063ab7ff480ddc2e8ffbd25c95e9c06425",
+   "taniteval/taniteval/bench/internal_t1.py": "5b7d68f1b190105f9063690fa9e8ebed1120f4ed",
+   "taniteval/taniteval/bench/navsim/__init__.py": "a684bc2b39d3a3b59cb2244a6e56d56481f346e8",
+   "taniteval/taniteval/bench/navsim/artifacts.py": "26010543285d379eb9d34923a29af42095b6017a",
+   "taniteval/taniteval/bench/navsim/benchmark.py": "a41cdeb4db7d7639742f5b1410009d7ad787ea77",
+   "taniteval/taniteval/bench/navsim/bridge.py": "f5f2d82cf867f2911ea9ebc8c62f4d75949dfbb4",
+   "taniteval/taniteval/bench/navsim/devkit_side/export_agent_inputs.py": "6659b6fe9cf389294982902b3faa0dfac675df90",
+   "taniteval/taniteval/bench/navsim/devkit_side/navsim_win.py": "64186cceb3b032bf5002b824f452695e4107cd28",
+   "taniteval/taniteval/bench/navsim/devkit_side/reaggregate.py": "78b004f9869c291445ecae4de056bae529cfab5b",
+   "taniteval/taniteval/bench/navsim/devkit_side/tanitad_seam_agent.py": "d9561bc67639f20ecd148a3b7ab81a1ec42ee8de",
+   "taniteval/taniteval/bench/navsim/export.py": "5a762ed901a38ec00835b101b851919f96a96f2b",
+   "taniteval/taniteval/bench/navsim/model_arms.py": "411c966e885353805d533956680e31c284592d0b",
+   "taniteval/taniteval/bench/navsim/profiles.py": "ad2074cf2eac29fb3ee8117519ee8fd027dba630",
+   "taniteval/taniteval/bench/navsim/scoring.py": "ace62f8aad1b4513e98dda841e996f11d512b211",
+   "taniteval/taniteval/bench/navsim/seams.py": "fc4e270c5a3356d4ec60fd87bb9da8edecd03a4c",
+   "taniteval/taniteval/bench/navsim/summarize.py": "ff999d4d31283c53dbd4af467600a30703b54745",
+   "taniteval/taniteval/bench/plugins/__init__.py": "be8e23d52a914757ae2822c25a554ecbc1d0d36f",
+   "taniteval/taniteval/bench/plugins/navsim_v1.py": "32996ed58ad2d1e08d89a66a26671232a42bc026",
+   "taniteval/taniteval/bench/plugins/nuscenes_ol.py": "d123d005fdc9b1fd47daa9bcc0b07fb6e59fb47f",
+   "taniteval/taniteval/bench/report_hook.py": "6cf27aceafd22a3f2cda25a36e2174f2b32d1bd2",
+   "taniteval/taniteval/bench/schema_check.py": "81c6e306246faac2777411e83410edb2ba1f8e32",
+   "taniteval/taniteval/bench/submission.py": "5babcd1c29d35c519da6466cb46584eb3f2f66bf"
+  }
+ },
+ "ckpt": {
+  "path": "C:/Users/Admin/tanitad-caches/a3-heldout-20260919/run/ckpt.pt",
+  "sha256": "54320ec2d72a0b6fd9f2413bfbfd8c999eebd9ed01a7bb7c0e631739313d07ef",
+  "registry_key": null,
+  "note": "--ckpt none: floors / references only",
+  "source": "refcv3.manifest.model.ckpt (the checkpoint the tool loaded)",
+  "config_json": "C:/Users/Admin/tanitad-caches/a3-heldout-20260919/run/config.json",
+  "registry_key_status": "NOT NAMED by the operator (--registry-key) \u2014 a leaderboard row needs it; the checkpoint is still uniquely identified by its sha256",
+  "_backfilled": "2026-09-20: this run published a MODEL arm ('os') with a null checkpoint -- an anonymous row -- while the path sat in raw/refcv3_arm.json at refcv3.manifest.model.ckpt. The sha256 was computed from that file now; it is the same file the run loaded (the path is recorded in the run's own artifact). Found by the new structural check, not by inspection.",
+  "registry_key_display": "sha256:54320ec2d72a"
+ },
+ "suite_version": "1.0.0",
+ "protocol": "TanitAD_T1_refc_physicalai",
+ "devkit": {
+  "repo": "TanitAD taniteval/tools/refcv3_arm.py",
+  "sha": "NOT_APPLICABLE",
+  "patches": [
+   {
+    "name": "none \u2014 the tool runs unmodified at the repo's git_head",
+    "kind": "none",
+    "tool_blob": {
+     "taniteval/tools/refcv3_arm.py": "92a61fb09f0dec1d525dd7de33eceaa0fbf86f1c"
+    }
+   }
+  ]
+ },
+ "stamps": {
+  "tier": "T1*",
+  "loop": {
+   "os": "one-shot, no action input (T1* ruling OPEN)",
+   "ha/ha0": "T1"
+  },
+  "evidence_class": "MEASURED",
+  "closed_loop": false
+ },
+ "claim_bearing": true,
+ "split": {
+  "name": "v2ep-eval124clean-416x1024cyl-halfB",
+  "n_scenes": 9,
+  "n_logs": null,
+  "n_episodes": 2,
+  "unit": "windows (n_scenes) over PhysicalAI episodes; n_logs not applicable"
+ },
+ "device": {
+  "requested": "auto",
+  "used": "none",
+  "scoring": "cpu",
+  "gpu_gap": {
+   "status": "NOT_INVOKED",
+   "reason": "no model inference in this run"
+  }
+ },
+ "wall_s": 8.4,
+ "files": {
+  "raw/bench.log": {
+   "bytes": 233,
+   "sha256": "c507279a30471248dc90eb0d0a0c35d5741b784c88b77f0cb01b740998b922d0",
+   "location": "repo"
+  },
+  "raw/refcv3_arm.json": {
+   "bytes": 301640,
+   "sha256": "80407dc348b4806ca7f8c267d2efba2578ab4012580ddd1d5ed098a513647ed8",
+   "location": "repo"
+  },
+  "raw/refcv3_arm.log": {
+   "bytes": 3033,
+   "sha256": "5ff9632104ec2c0f17d561196ba8ae73713164ac5ac165262ae847d22fb9c63f",
+   "location": "repo"
+  },
+  "raw/refcv3_arm.run.json": {
+   "bytes": 228,
+   "sha256": "5e165ddcda34da27760478df52b6d3d2914e20e2960822973830f301387012ed",
+   "location": "repo"
+  },
+  "summary.json": {
+   "bytes": 19980,
+   "sha256": "c5bb555bc8ed68b9fbb8ab7fc4644be891f26ab31f3966e4ce9ce008535e0947",
+   "location": "repo"
+  }
+ }
+}

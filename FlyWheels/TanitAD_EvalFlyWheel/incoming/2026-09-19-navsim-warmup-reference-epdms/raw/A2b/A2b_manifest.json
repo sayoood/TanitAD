@@ -1,0 +1,128 @@
+{
+ "label": "A2b",
+ "script": "pdm_score_one_stage",
+ "module": "navsim.planning.script.run_pdm_score_one_stage",
+ "overrides": [
+  "train_test_split=warmup_two_stage",
+  "metric_cache_path=C:/Users/Admin/navsim/exp/metric_cache_warmup_two_stage",
+  "train_test_split.scene_filter.include_synthetic_scenes=false",
+  "traffic_agents=reactive",
+  "worker=sequential",
+  "agent=human_agent",
+  "experiment_name=e1_A2b_human_one_stage",
+  "output_dir=C:/Users/Admin/navsim/exp/e1/A2b_human_one_stage"
+ ],
+ "argv": [
+  "D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-warmup-reference-epdms/code/navsim_win.py",
+  "--script",
+  "pdm_score_one_stage",
+  "--label",
+  "A2b",
+  "--out-dir",
+  "D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-warmup-reference-epdms/raw/A2b",
+  "--patch-loader",
+  "--",
+  "train_test_split=warmup_two_stage",
+  "metric_cache_path=C:/Users/Admin/navsim/exp/metric_cache_warmup_two_stage",
+  "train_test_split.scene_filter.include_synthetic_scenes=false",
+  "traffic_agents=reactive",
+  "worker=sequential",
+  "agent=human_agent",
+  "experiment_name=e1_A2b_human_one_stage",
+  "output_dir=C:/Users/Admin/navsim/exp/e1/A2b_human_one_stage"
+ ],
+ "python": "3.9.25 (main, Oct 31 2025, 22:56:13) [MSC v.1929 64 bit (AMD64)]",
+ "cwd": "D:\\Projects\\TanitAD",
+ "PYTHONHASHSEED": "1",
+ "hash_randomization_flag": 1,
+ "env": {
+  "NUPLAN_MAP_VERSION": "nuplan-maps-v1.0",
+  "NUPLAN_MAPS_ROOT": "C:/Users/Admin/navsim-crun/data/maps",
+  "NAVSIM_EXP_ROOT": "C:/Users/Admin/navsim/exp",
+  "NAVSIM_DEVKIT_ROOT": "C:/Users/Admin/navsim-crun/devkit",
+  "OPENSCENE_DATA_ROOT": "C:/Users/Admin/navsim-crun/data/openscene"
+ },
+ "env_defaults_applied_by_wrapper": {},
+ "navsim_devkit_root_used": "C:/Users/Admin/navsim-crun/devkit",
+ "navsim_devkit_sha": "0a380a9063d7162ec93d0f51e9990ebac585f720",
+ "nuplan_devkit_sha": "ce3c323af01c0d7ec5672f7832ef53f9c679aab0",
+ "imported_from": {
+  "navsim": "C:\\Users\\Admin\\navsim-crun\\devkit\\navsim\\__init__.py",
+  "nuplan": "C:\\Users\\Admin\\navsim-crun\\nuplan-devkit\\nuplan\\__init__.py",
+  "script": "C:\\Users\\Admin\\navsim-crun\\devkit\\navsim\\planning\\script\\run_pdm_score_one_stage.py",
+  "fcntl": "C:\\Users\\Admin\\navsim-crun\\venv\\lib\\site-packages\\fcntl.py"
+ },
+ "patches": [
+  {
+   "name": "MetricCacheLoader._load_metric_cache_paths: token = re.split(r'[\\\\/]', p)[-2]",
+   "target": "navsim/common/dataloader.py:306-317",
+   "original_source_sha16": "9dd27c9e1cfdee0a",
+   "patched_source_sha16": "e6f60f85ea15ed16",
+   "why": "save_cache_metadata writes str(WindowsPath) (backslashes); the original split('/')[-2] raises IndexError on Windows"
+  }
+ ],
+ "hooks": [
+  "navsim.planning.script.run_pdm_score_one_stage.pdm_score (observation only)"
+ ],
+ "started_local": "2026-09-19 12:56:02",
+ "status": "OK",
+ "ended_local": "2026-09-19 12:59:01",
+ "resources": {
+  "wall_s": 179.15,
+  "peak_rss_mb": 501.0,
+  "peak_process_tree_rss_mb": 501.0,
+  "min_system_available_mb": 5100.0,
+  "n_samples": 89,
+  "n_samples_below_floor": 0,
+  "sample_interval_s": 2.0,
+  "ram_floor_mb": 3000.0,
+  "abort_policy": "available<3000MB for 3 consecutive samples, or <2000MB once",
+  "trace_every_10th_sample__t_rss_avail": [
+   [
+    0.0,
+    23.6,
+    6281.1
+   ],
+   [
+    20.2,
+    174.9,
+    5937.1
+   ],
+   [
+    40.4,
+    278.0,
+    6747.0
+   ],
+   [
+    60.6,
+    376.4,
+    6693.2
+   ],
+   [
+    80.8,
+    379.9,
+    5417.6
+   ],
+   [
+    100.9,
+    379.8,
+    6663.5
+   ],
+   [
+    121.2,
+    427.9,
+    6120.2
+   ],
+   [
+    141.5,
+    490.9,
+    5868.3
+   ],
+   [
+    161.6,
+    500.9,
+    5322.4
+   ]
+  ]
+ }
+}

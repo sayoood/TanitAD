@@ -1,0 +1,75 @@
+{
+ "_what": "the alignment spectrum, measured on the head that is ACTUALLY SCORED",
+ "_evidence_class": "MEASURED (ours), CPU, forward hook, A8 ckpt_5000",
+ "_correction_of": "148ceb9 / presence_alignment.py",
+ "_wrong_module": [
+  "core.agent_head.head"
+ ],
+ "_right_module": "_perception.box_dec.head",
+ "_guard": "the hooked slot count is asserted EQUAL to the emitted box_slots count",
+ "slots_per_window": [
+  100
+ ],
+ "windows_used": 12,
+ "alignment_by_field_CORRECTED": {
+  "occluded": 92.21126,
+  "cy": 74.25487,
+  "cx": 48.74788,
+  "yaw_cos": 26.55927,
+  "yaw_sin": 2.12932,
+  "presence": 1.90992,
+  "cls": 1.61041,
+  "v_rel_x": 1.52587,
+  "cz": 0.35016,
+  "v_rel_y": 0.20805,
+  "l": 0.1964,
+  "w": 0.04704,
+  "h": 0.03523,
+  "yaw_rate_rel": 0.02481
+ },
+ "vs_landed": {
+  "cy": {
+   "CORRECTED_box_dec": 74.25487,
+   "LANDED_wrong_head": 56.7131,
+   "ratio": 1.309
+  },
+  "cx": {
+   "CORRECTED_box_dec": 48.74788,
+   "LANDED_wrong_head": 24.77866,
+   "ratio": 1.967
+  },
+  "v_rel_x": {
+   "CORRECTED_box_dec": 1.52587,
+   "LANDED_wrong_head": 7.258,
+   "ratio": 0.21
+  },
+  "l": {
+   "CORRECTED_box_dec": 0.1964,
+   "LANDED_wrong_head": 1.38458,
+   "ratio": 0.142
+  },
+  "w": {
+   "CORRECTED_box_dec": 0.04704,
+   "LANDED_wrong_head": 0.2462,
+   "ratio": 0.191
+  },
+  "occluded": {
+   "CORRECTED_box_dec": 92.21126,
+   "LANDED_wrong_head": 0.284,
+   "ratio": 324.688
+  },
+  "v_rel_y": {
+   "CORRECTED_box_dec": 0.20805,
+   "LANDED_wrong_head": 0.08807,
+   "ratio": 2.362
+  },
+  "yaw_rate_rel": {
+   "CORRECTED_box_dec": 0.02481,
+   "LANDED_wrong_head": 0.02459,
+   "ratio": 1.009
+  }
+ },
+ "presence_alignment": 1.90992,
+ "median_other_alignment": 1.52587,
+ "ratio_presence_to_median": 1.2517
+}

@@ -1,0 +1,20 @@
+paired on 8 identical tokens; 1,193 TTS steps per arm (same states, same critic, only N differs)
+
+scenario type                                   N=1     N=8    N=16    N=32 |     d32
+accelerating_at_traffic_light_without_lead    99.74   99.97  100.00  100.00 |   +0.26
+changing_lane_to_left                         87.46   87.79   87.54   87.40 |   -0.06   <-- STALL
+following_lane_with_lead                      99.96   99.96   99.96   99.96 |   +0.00
+near_multiple_vehicles                        99.92  100.00  100.00   99.98 |   +0.05
+starting_left_turn                            96.61   96.81   96.93   95.79 |   -0.82
+starting_protected_noncross_turn              99.23   99.23   99.23   99.23 |   +0.00
+starting_unprotected_cross_turn               94.61   94.61   94.61   94.61 |   +0.00
+stopping_at_stop_sign_with_lead              100.00  100.00  100.00  100.00 |   +0.00
+suite                                         97.19   97.30   97.28   97.12
+mean paired delta vs N=1                              +0.105  +0.091  -0.071
+scenarios WORSE than N=1                                   0       0       2
+
+arm   steps  switch%  mean adv  mean adv WHEN SWITCHED   max adv | stall-token switches
+N=8    1193    2.01%   0.00510                 0.05862   0.31146 | 0/52  max adv there 0.01762
+N=16   1193    2.68%   0.00633                 0.05488   0.40630 | 0/54  max adv there 0.01538
+N=32   1193    4.78%   0.01022                 0.10237   1.93402 | 1/53  max adv there 1.93402
+(switch margin 0.03 throughout)

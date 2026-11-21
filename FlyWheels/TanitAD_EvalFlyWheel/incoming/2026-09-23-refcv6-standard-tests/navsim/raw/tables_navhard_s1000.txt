@@ -1,0 +1,36 @@
+*PIPELINE-VALIDATION · navhard_two_stage · `C:/Users/Admin/ev6/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/raw/summary_navhard_s1000.json`*
+
+| arm | device | S2-EPDMS-u | official two-stage EPDMS | stop frac | NC | DAC | DDC | TLC | EP | TTC | LK | HC | EC |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| R6_A1 | cpu fp32 | 0.3003 | 0.0752 [0.0567, 0.0937] | 0.016 | 0.797 | 0.537 | 0.699 | 0.983 | 0.829 | 0.767 | 0.460 | 0.957 | 0.633 |
+| CV_official | model-free (devkit scorer, CPU) | 0.3389 | 0.1148 [0.0825, 0.145] | — | 0.834 | 0.569 | 0.735 | 0.986 | 0.701 | 0.815 | 0.434 | 0.963 | 0.591 |
+| STOP_zero | model-free (devkit scorer, CPU) | 0.4828 | 0.2985 [0.2737, 0.3253] | 1.000 | 0.956 | 0.863 | 0.951 | 0.995 | 0.384 | 0.944 | 0.496 | 0.643 | 0.248 |
+| ECHO_ha0_ext | model-free (devkit scorer, CPU) | 0.3413 | 0.1429 [0.1168, 0.1698] | — | 0.818 | 0.534 | 0.679 | 0.987 | 0.646 | 0.791 | 0.434 | 0.970 | 0.806 |
+
+| pair | ΔS2-EPDMS-u | Δ official | W/T/L | > seed floor | paired interval (logs) |
+|---|---|---|---|---|---|
+| R6_A1__minus__CV_official | -0.0386 | -0.0396 | 1634/2854/974 | — | [-0.0643, -0.015] |
+| R6_A1__minus__STOP_zero | -0.1825 | -0.2233 | 1746/1044/2672 | — | [-0.2563, -0.194] |
+| R6_A1__minus__ECHO_ha0_ext | -0.0409 | -0.0677 | 1612/2611/1239 | — | [-0.0936, -0.0435] |
+| STOP_zero__minus__CV_official | 0.1439 | 0.1837 | 2381/1392/1689 | — | [0.154, 0.2161] |
+
+*SPEC §5 ladder · navhard_two_stage · R6_A1 · `C:/Users/Admin/ev6/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/raw/decomposition_navhard_s1000.json`*
+
+* stage_1: 294/450 scenes score 0 — unique/co-occurring zeros per multiplier: NC 47/60, DAC 153/238, DDC 7/83, TLC 1/2
+* stage_2: 3304/5462 scenes score 0 — unique/co-occurring zeros per multiplier: NC 437/1011, DAC 1276/2527, DDC 203/1238, TLC 36/92
+* stage_1 single-term ceilings (scene mean 0.300232): DAC +0.2271; NC +0.0653; DDC +0.0221
+* stage_2 single-term ceilings (scene mean 0.302748): DAC +0.1493; DDC +0.0464; NC +0.0463
+
+| stage_1 command | n | arm | STOP | Δ vs STOP | W/T/L vs STOP | NC0 | DAC0 |
+|---|---|---|---|---|---|---|---|
+| LEFT | 123 | 0.2297 | 0.5157 | -0.2860 | 29/16/78 | 0.130 | 0.585 |
+| RIGHT | 99 | 0.3585 | 0.5659 | -0.2074 | 38/10/51 | 0.040 | 0.515 |
+| STRAIGHT | 228 | 0.3130 | 0.5876 | -0.2746 | 71/9/148 | 0.175 | 0.504 |
+
+| stage_2 command | n | arm | STOP | Δ vs STOP | W/T/L vs STOP | NC0 | DAC0 |
+|---|---|---|---|---|---|---|---|
+| LEFT | 935 | 0.3010 | 0.5090 | -0.2080 | 291/187/457 | 0.151 | 0.510 |
+| RIGHT | 1155 | 0.2550 | 0.4844 | -0.2294 | 302/265/588 | 0.120 | 0.608 |
+| STRAIGHT | 3358 | 0.3192 | 0.4544 | -0.1352 | 1147/591/1620 | 0.218 | 0.400 |
+| UNKNOWN | 14 | 0.4018 | 0.5113 | -0.1095 | 6/1/7 | 0.000 | 0.286 |
+

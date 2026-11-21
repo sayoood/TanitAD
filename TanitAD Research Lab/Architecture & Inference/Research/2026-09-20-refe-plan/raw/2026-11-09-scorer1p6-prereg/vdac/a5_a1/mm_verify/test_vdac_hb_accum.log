@@ -1,0 +1,12 @@
+F:\tanitad_scratch\mm_hbfix\tip\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_vdac_hb.py:126: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+  return float(bce), float(hub)
+mutation / check                                                         result  how
+argv: every arm's (batch, accum): parser + recipe + schedule + pod scrip OK      HB 4x2, the rest 8x1
+divisor dropped (div 1 at accum 2)                                       RED     accumulated grad is 2x the 1 x 8 grad
+optimiser stepped on every micro-batch                                   RED     two steps, params differ from the 1 x 8 update
+accum 1 at batch 4 (a 4-row update, not the 8-row one)                   RED     gradient of 4 rows != gradient of 8 rows
+trainer: the aux backward divisor deleted                                RED     text check
+trainer: the accum `continue` deleted (step every micro-batch)           RED     text check
+trainer: HB.lora_step deleted                                            RED     text check
+ZZTEST_PASS 40

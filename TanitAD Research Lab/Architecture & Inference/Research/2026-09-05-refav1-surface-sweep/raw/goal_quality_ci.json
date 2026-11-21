@@ -1,0 +1,60 @@
+{
+ "note": "goal quality with episode-cluster bootstrap CIs; NO weights involved",
+ "definitions": {
+  "GT_turning": "|mean yaw-rate / mean speed| > 1e-3",
+  "goal_turns": "the decoded goal's canonical control has |kappa_mean| > 0"
+ },
+ "goal_turns_when_GT_turns": {
+  "mean": 0.2045,
+  "lo": 0.128,
+  "hi": 0.2932,
+  "ci95": 0.0826,
+  "se": 0.0409,
+  "reducer": "mean",
+  "n_windows": 132,
+  "n_episodes": 92,
+  "n_boot": 2000,
+  "estimator": "episode_cluster_bootstrap",
+  "n_clusters": 92
+ },
+ "goal_turns_when_GT_straight": {
+  "mean": 0.0733,
+  "lo": 0.0347,
+  "hi": 0.1169,
+  "ci95": 0.0411,
+  "se": 0.0215,
+  "reducer": "mean",
+  "n_windows": 150,
+  "n_episodes": 101,
+  "n_boot": 2000,
+  "estimator": "episode_cluster_bootstrap",
+  "n_clusters": 101
+ },
+ "goal_sign_correct_given_both_turn": {
+  "mean": 0.7778,
+  "lo": 0.6249,
+  "hi": 0.9231,
+  "ci95": 0.1491,
+  "se": 0.0781,
+  "reducer": "mean",
+  "n_windows": 27,
+  "n_episodes": 21,
+  "n_boot": 2000,
+  "estimator": "episode_cluster_bootstrap",
+  "n_clusters": 21
+ },
+ "GT_turning_rate": {
+  "mean": 0.4681,
+  "lo": 0.4043,
+  "hi": 0.5355,
+  "ci95": 0.0656,
+  "se": 0.0333,
+  "reducer": "mean",
+  "n_windows": 282,
+  "n_episodes": 141,
+  "n_boot": 2000,
+  "estimator": "episode_cluster_bootstrap",
+  "n_clusters": 141
+ },
+ "chance_for_sign": 0.5
+}

@@ -1,0 +1,2460 @@
+{
+ "read": "N0 (PREREG_V8F_DAG_ORC section 8 @ 85d0b125)",
+ "claim_row": "H-V8F-DAG-ORC-1 (precondition 3)",
+ "tier": "T1-kin: self-action OPEN loop, plain (no post-map), m=10 periodic, causal speed bucket, logged scene; nav = LOGGED for N0 (an OPEN channel: route countdown from the logged human position), DEAD-RECKONED for the reference. Never closed loop.",
+ "estimator": "taniteval.ci.paired_episode_cluster_bootstrap, B=2000, seed 0, 141 episodes / 2,399 windows, per seed, paired; same checkpoint, deterministic planner => no training-run and no inference-run term; it answers 'would another draw of EPISODES say this?' only.",
+ "sign": "X = DAG nav-logged, Y = DAG nav-deadreckon (same checkpoint); delta = X - Y; negative = nav-logged lower error; separated_better = separated AND delta on the better side of the row's direction",
+ "controls": {
+  "K-PINS(reader sources, dag_read, banked READ_A / DAG_READ / T1KF, lead block)": {
+   "PASS": true,
+   "detail": "15 pinned inputs re-hashed"
+  },
+  "K-ARGV:s0": {
+   "PASS": true,
+   "detail": {
+    "differing_flags": {
+     "--tag": [
+      "DAG_s0_m10_causal_heads",
+      "N0DAG_s0_m10_causal_heads_navlogged"
+     ],
+     "--out-dir": [
+      "E:/Projects/TanitAD-artifacts/v8f-dagger-t1",
+      "E:/Projects/TanitAD-artifacts/dag-orc-n0"
+     ],
+     "--nav": [
+      "deadreckon",
+      "logged"
+     ],
+     "--dump-ticks": [
+      "E:/Projects/TanitAD-artifacts/v8f-dagger-t1/ticks",
+      "E:/Projects/TanitAD-artifacts/dag-orc-n0/ticks"
+     ]
+    },
+    "disallowed": [],
+    "n_tokens": 32
+   }
+  },
+  "K-ARGV:s1": {
+   "PASS": true,
+   "detail": {
+    "differing_flags": {
+     "--tag": [
+      "DAG_s1_m10_causal_heads",
+      "N0DAG_s1_m10_causal_heads_navlogged"
+     ],
+     "--out-dir": [
+      "E:/Projects/TanitAD-artifacts/v8f-dagger-t1",
+      "E:/Projects/TanitAD-artifacts/dag-orc-n0"
+     ],
+     "--nav": [
+      "deadreckon",
+      "logged"
+     ],
+     "--dump-ticks": [
+      "E:/Projects/TanitAD-artifacts/v8f-dagger-t1/ticks",
+      "E:/Projects/TanitAD-artifacts/dag-orc-n0/ticks"
+     ]
+    },
+    "disallowed": [],
+    "n_tokens": 32
+   }
+  },
+  "K-HDR:s0": {
+   "PASS": true,
+   "detail": {
+    "same": {
+     "ckpt": true,
+     "kin_mode": true,
+     "tier": true,
+     "replan_steps": true,
+     "replan_hz": true,
+     "schedule": true,
+     "scene": true,
+     "limit": true,
+     "n_windows": true,
+     "model_keys_read": true,
+     "envelope_ms": true,
+     "strict.kinematics/camera/speed_bucket": true
+    },
+    "differ_by_design_or_result": {
+     "nav": [
+      "deadreckon",
+      "logged"
+     ],
+     "strict.route": [
+      true,
+      false
+     ],
+     "open_channels": [
+      [
+       "camera stream (logged frames after t0 carry the human's ego-motion)"
+      ],
+      [
+       "camera stream (logged frames after t0 carry the human's ego-motion)",
+       "route countdown from the logged human position"
+      ]
+     ],
+     "windows_with_envelope_clip": [
+      {
+       "cl": 12,
+       "fl": 178
+      },
+      {
+       "cl": 12,
+       "fl": 178
+      }
+     ]
+    }
+   }
+  },
+  "K-HDR:s1": {
+   "PASS": true,
+   "detail": {
+    "same": {
+     "ckpt": true,
+     "kin_mode": true,
+     "tier": true,
+     "replan_steps": true,
+     "replan_hz": true,
+     "schedule": true,
+     "scene": true,
+     "limit": true,
+     "n_windows": true,
+     "model_keys_read": true,
+     "envelope_ms": true,
+     "strict.kinematics/camera/speed_bucket": true
+    },
+    "differ_by_design_or_result": {
+     "nav": [
+      "deadreckon",
+      "logged"
+     ],
+     "strict.route": [
+      true,
+      false
+     ],
+     "open_channels": [
+      [
+       "camera stream (logged frames after t0 carry the human's ego-motion)"
+      ],
+      [
+       "camera stream (logged frames after t0 carry the human's ego-motion)",
+       "route countdown from the logged human position"
+      ]
+     ],
+     "windows_with_envelope_clip": [
+      {
+       "cl": 47,
+       "fl": 178
+      },
+      {
+       "cl": 47,
+       "fl": 178
+      }
+     ]
+    }
+   }
+  },
+  "K-WIN:s0": {
+   "PASS": true,
+   "detail": {
+    "n_windows_N0": 2399,
+    "n_episodes_N0": 141,
+    "n_windows_banked": 2399,
+    "n_episodes_banked": 141,
+    "note": "clip_index, ws, eid, g, v0 bit-equal between the new nav-logged dump and DAG's banked deadreckon dump"
+   }
+  },
+  "K-FLOOR:s0(info)": {
+   "PASS": true,
+   "detail": "P10's floor tracks (fl) bit-equal between the two runs (informational: not a PREREG-named control)"
+  },
+  "K-REACH:s0(info)": {
+   "PASS": true,
+   "detail": {
+    "windows_with_changed_cl_track": 1379,
+    "of": 2399,
+    "max_abs_cl_diff_m": 23.222677256655935
+   }
+  },
+  "K-WIN:s1": {
+   "PASS": true,
+   "detail": {
+    "n_windows_N0": 2399,
+    "n_episodes_N0": 141,
+    "n_windows_banked": 2399,
+    "n_episodes_banked": 141,
+    "note": "clip_index, ws, eid, g, v0 bit-equal between the new nav-logged dump and DAG's banked deadreckon dump"
+   }
+  },
+  "K-FLOOR:s1(info)": {
+   "PASS": true,
+   "detail": "P10's floor tracks (fl) bit-equal between the two runs (informational: not a PREREG-named control)"
+  },
+  "K-REACH:s1(info)": {
+   "PASS": true,
+   "detail": {
+    "windows_with_changed_cl_track": 1379,
+    "of": 2399,
+    "max_abs_cl_diff_m": 16.70207083625825
+   }
+  },
+  "K-IDENT:s0": {
+   "PASS": true,
+   "detail": {
+    "table_rows_exactly_zero": 16,
+    "table_rows": 16,
+    "not_zero": [],
+    "comps_ident_rows": 13,
+    "tac_dk_ident_rows": 5,
+    "STRATEGIC": "the 3 S-POS rows are NOT COMPUTED in a paired table (unpaired within-run vs CTRV), so they are outside the pair identity"
+   }
+  },
+  "K-IDENT:s1": {
+   "PASS": true,
+   "detail": {
+    "table_rows_exactly_zero": 16,
+    "table_rows": 16,
+    "not_zero": [],
+    "comps_ident_rows": 13,
+    "tac_dk_ident_rows": 5,
+    "STRATEGIC": "the 3 S-POS rows are NOT COMPUTED in a paired table (unpaired within-run vs CTRV), so they are outside the pair identity"
+   }
+  },
+  "K-RC:s0": {
+   "PASS": true,
+   "detail": {
+    "rows_compared": 19,
+    "tolerance": 0.0001,
+    "differences": [],
+    "max_abs_diff_over_delta_lo_hi": 0.0
+   }
+  },
+  "K-RC:s1": {
+   "PASS": true,
+   "detail": {
+    "rows_compared": 19,
+    "tolerance": 0.0001,
+    "differences": [],
+    "max_abs_diff_over_delta_lo_hi": 0.0
+   }
+  },
+  "C-SET:s0(info)": {
+   "PASS": true,
+   "detail": {
+    "derived_from_banked_READ_A": [
+     "L2 curvature MAE (GT>=5.2)",
+     "M1 crawl share",
+     "curvature MAE"
+    ],
+    "PREREG_C": [
+     "L2 curvature MAE (GT>=5.2)",
+     "M1 crawl share",
+     "curvature MAE"
+    ]
+   }
+  },
+  "C-SET:s1(info)": {
+   "PASS": true,
+   "detail": {
+    "derived_from_banked_READ_A": [
+     "L2 curvature MAE (GT>=5.2)",
+     "M1 crawl share",
+     "curvature MAE",
+     "yaw-rate MAE"
+    ],
+    "PREREG_C": [
+     "L2 curvature MAE (GT>=5.2)",
+     "M1 crawl share",
+     "curvature MAE",
+     "yaw-rate MAE"
+    ]
+   }
+  }
+ },
+ "named_controls_failed": [],
+ "other_controls_failed": [],
+ "decisive": {
+  "s0": {
+   "C_s": [
+    "curvature MAE",
+    "L2 curvature MAE (GT>=5.2)",
+    "M1 crawl share"
+   ],
+   "rows": {
+    "curvature MAE": {
+     "delta": -0.0001,
+     "lo": -0.0011,
+     "hi": 0.0008,
+     "separated": false,
+     "separated_better": false,
+     "separated_worse": false,
+     "n": "2365/141",
+     "mean_arm": 0.1335553763415142,
+     "mean_ref": 0.13361942933957185,
+     "family": "LATERAL",
+     "direction": "lower",
+     "sep_better_check": false
+    },
+    "L2 curvature MAE (GT>=5.2)": {
+     "delta": 0.0004,
+     "lo": -0.0001,
+     "hi": 0.0012,
+     "separated": false,
+     "separated_better": false,
+     "separated_worse": false,
+     "n": "2106/135",
+     "mean_arm": 0.04577237248287996,
+     "mean_ref": 0.04537565441314313,
+     "family": "LATERAL",
+     "direction": "lower",
+     "sep_better_check": false
+    },
+    "M1 crawl share": {
+     "delta": 0.0001,
+     "lo": -0.0004,
+     "hi": 0.0007,
+     "separated": false,
+     "separated_better": false,
+     "separated_worse": false,
+     "n": "2106/135",
+     "mean_arm": 0.07006961120725605,
+     "mean_ref": 0.06998956345060632,
+     "family": "crawl",
+     "direction": "lower",
+     "sep_better_check": false
+    }
+   },
+   "all_C_separated_better": false
+  },
+  "s1": {
+   "C_s": [
+    "curvature MAE",
+    "L2 curvature MAE (GT>=5.2)",
+    "M1 crawl share",
+    "yaw-rate MAE"
+   ],
+   "rows": {
+    "curvature MAE": {
+     "delta": -0.0004,
+     "lo": -0.0021,
+     "hi": 0.0008,
+     "separated": false,
+     "separated_better": false,
+     "separated_worse": false,
+     "n": "2365/141",
+     "mean_arm": 0.1853634938219795,
+     "mean_ref": 0.18574795784707754,
+     "family": "LATERAL",
+     "direction": "lower",
+     "sep_better_check": false
+    },
+    "L2 curvature MAE (GT>=5.2)": {
+     "delta": -0.00068,
+     "lo": -0.00183,
+     "hi": -1e-05,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2106/135",
+     "mean_arm": 0.07626535161717,
+     "mean_ref": 0.07694946521792227,
+     "family": "LATERAL",
+     "direction": "lower",
+     "sep_better_check": true
+    },
+    "M1 crawl share": {
+     "delta": -0.0004,
+     "lo": -0.001,
+     "hi": 0.0001,
+     "separated": false,
+     "separated_better": false,
+     "separated_worse": false,
+     "n": "2106/135",
+     "mean_arm": 0.08397133802402396,
+     "mean_ref": 0.08438504253968931,
+     "family": "crawl",
+     "direction": "lower",
+     "sep_better_check": false
+    },
+    "yaw-rate MAE": {
+     "delta": -0.1073,
+     "lo": -0.2284,
+     "hi": -0.0186,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2365/141",
+     "mean_arm": 28.425555138553932,
+     "mean_ref": 28.532849651288974,
+     "family": "LATERAL",
+     "direction": "lower",
+     "sep_better_check": true
+    }
+   },
+   "all_C_separated_better": false
+  }
+ },
+ "yaw_rate_at_s0_beside": {
+  "delta": 0.0229,
+  "lo": -0.0307,
+  "hi": 0.0931,
+  "separated": false,
+  "separated_better": false,
+  "separated_worse": false,
+  "n": "2365/141",
+  "mean_arm": 19.855637611594695,
+  "mean_ref": 19.83271251175112,
+  "family": "LATERAL",
+  "direction": "lower"
+ },
+ "NAVMOVE": false,
+ "OUTCOME": "NOT NAVMOVE",
+ "beside": {
+  "read_a_N0_minus_DAGdr": {
+   "s0": {
+    "ADE6": {
+     "delta": -0.0037,
+     "lo": -0.0126,
+     "hi": 0.0041,
+     "separated": false,
+     "separated_better": false,
+     "separated_worse": false,
+     "n": "2399/141",
+     "mean_arm": 2.273958281927911,
+     "mean_ref": 2.2777030508105325,
+     "family": "PRIMARY",
+     "direction": "lower"
+    },
+    "speed MAE": {
+     "delta": -0.0022,
+     "lo": -0.0074,
+     "hi": 0.0031,
+     "separated": false,
+     "separated_better": false,
+     "separated_worse": false,
+     "n": "2399/141",
+     "mean_arm": 1.309290324565799,
+     "mean_ref": 1.311523982510053,
+     "family": "LONGITUDINAL",
+     "direction": "lower"
+    },
+    "along-track MAE": {
+     "delta": -0.004,
+     "lo": -0.0135,
+     "hi": 0.0044,
+     "separated": false,
+     "separated_better": false,
+     "separated_worse": false,
+     "n": "2399/141",
+     "mean_arm": 1.8259293363677507,
+     "mean_ref": 1.8299365241288863,
+     "family": "LONGITUDINAL",
+     "direction": "lower"
+    },
+    "accel MAE": {
+     "delta": 0.0056,
+     "lo": -0.0154,
+     "hi": 0.0255,
+     "separated": false,
+     "separated_better": false,
+     "separated_worse": false,
+     "n": "2399/141",
+     "mean_arm": 2.9026397674873237,
+     "mean_ref": 2.897011499735018,
+     "family": "LONGITUDINAL",
+     "direction": "lower"
+    },
+    "DK-VIOL": {
+     "delta": -0.005,
+     "lo": -0.0132,
+     "hi": 0.0,
+     "separated": false,
+     "separated_better": false,
+     "separated_worse": false,
+     "n": "595/70",
+     "mean_arm": null,
+     "mean_ref": null,
+     "family": "LONGITUDINAL",
+     "direction": "lower"
+    },
+    "DK-HW": {
+     "delta": -0.0143,
+     "lo": -0.0291,
+     "hi": -0.0029,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "716/72",
+     "mean_arm": null,
+     "mean_ref": null,
+     "family": "LONGITUDINAL",
+     "direction": "lower"
+    },
+    "DK-TG": {
+     "delta": -0.0017,
+     "lo": -0.0034,
+     "hi": -0.0004,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "655/72",
+     "mean_arm": null,
+     "mean_ref": null,
+     "family": "LONGITUDINAL",
+     "direction": "lower"
+    },
+    "heading MAE": {
+     "delta": -0.062,
+     "lo": -0.1116,
+     "hi": -0.0224,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2373/141",
+     "mean_arm": 6.131166503512948,
+     "mean_ref": 6.193169414581398,
+     "family": "LATERAL",
+     "direction": "lower"
+    },
+    "yaw-rate MAE": {
+     "delta": 0.0229,
+     "lo": -0.0307,
+     "hi": 0.0931,
+     "separated": false,
+     "separated_better": false,
+     "separated_worse": false,
+     "n": "2365/141",
+     "mean_arm": 19.855637611594695,
+     "mean_ref": 19.83271251175112,
+     "family": "LATERAL",
+     "direction": "lower"
+    },
+    "curvature MAE": {
+     "delta": -0.0001,
+     "lo": -0.0011,
+     "hi": 0.0008,
+     "separated": false,
+     "separated_better": false,
+     "separated_worse": false,
+     "n": "2365/141",
+     "mean_arm": 0.1335553763415142,
+     "mean_ref": 0.13361942933957185,
+     "family": "LATERAL",
+     "direction": "lower"
+    },
+    "cross-track MAE": {
+     "delta": -0.0038,
+     "lo": -0.0089,
+     "hi": 0.0006,
+     "separated": false,
+     "separated_better": false,
+     "separated_worse": false,
+     "n": "2399/141",
+     "mean_arm": 0.936428420583988,
+     "mean_ref": 0.9402388222076353,
+     "family": "LATERAL",
+     "direction": "lower"
+    },
+    "L1 lateral-accel MAE": {
+     "delta": -0.0012,
+     "lo": -0.0074,
+     "hi": 0.0051,
+     "separated": false,
+     "separated_better": false,
+     "separated_worse": false,
+     "n": "2365/141",
+     "mean_arm": 1.973681927712129,
+     "mean_ref": 1.974889360857623,
+     "family": "LATERAL",
+     "direction": "lower"
+    },
+    "L2 curvature MAE (GT>=5.2)": {
+     "delta": 0.0004,
+     "lo": -0.0001,
+     "hi": 0.0012,
+     "separated": false,
+     "separated_better": false,
+     "separated_worse": false,
+     "n": "2106/135",
+     "mean_arm": 0.04577237248287996,
+     "mean_ref": 0.04537565441314313,
+     "family": "LATERAL",
+     "direction": "lower"
+    },
+    "TAC-LAT": {
+     "delta": 0.0008,
+     "lo": -0.005,
+     "hi": 0.0062,
+     "separated": false,
+     "separated_better": false,
+     "separated_worse": false,
+     "n": "2399/141",
+     "mean_arm": null,
+     "mean_ref": null,
+     "family": "TACTICAL",
+     "direction": "higher"
+    },
+    "TAC-LON": {
+     "delta": 0.0063,
+     "lo": 0.0,
+     "hi": 0.0133,
+     "separated": false,
+     "separated_better": false,
+     "separated_worse": false,
+     "n": "2399/141",
+     "mean_arm": null,
+     "mean_ref": null,
+     "family": "TACTICAL",
+     "direction": "higher"
+    },
+    "S-POS@30": {
+     "family": "STRATEGIC",
+     "status": "NOT COMPUTED"
+    },
+    "S-POS@50": {
+     "family": "STRATEGIC",
+     "status": "NOT COMPUTED"
+    },
+    "S-POS@80": {
+     "family": "STRATEGIC",
+     "status": "NOT COMPUTED"
+    },
+    "M1 crawl share": {
+     "delta": 0.0001,
+     "lo": -0.0004,
+     "hi": 0.0007,
+     "separated": false,
+     "separated_better": false,
+     "separated_worse": false,
+     "n": "2106/135",
+     "mean_arm": 0.07006961120725605,
+     "mean_ref": 0.06998956345060632,
+     "family": "crawl",
+     "direction": "lower"
+    }
+   },
+   "s1": {
+    "ADE6": {
+     "delta": -0.0071,
+     "lo": -0.0151,
+     "hi": -0.0001,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2399/141",
+     "mean_arm": 2.4493360477644393,
+     "mean_ref": 2.456459174682651,
+     "family": "PRIMARY",
+     "direction": "lower"
+    },
+    "speed MAE": {
+     "delta": -0.005,
+     "lo": -0.0095,
+     "hi": -0.0012,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2399/141",
+     "mean_arm": 1.5809948161362712,
+     "mean_ref": 1.5860390189619107,
+     "family": "LONGITUDINAL",
+     "direction": "lower"
+    },
+    "along-track MAE": {
+     "delta": -0.008,
+     "lo": -0.0182,
+     "hi": -0.0001,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2399/141",
+     "mean_arm": 1.993011766600056,
+     "mean_ref": 2.001029566929773,
+     "family": "LONGITUDINAL",
+     "direction": "lower"
+    },
+    "accel MAE": {
+     "delta": -0.0135,
+     "lo": -0.0253,
+     "hi": -0.0032,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2399/141",
+     "mean_arm": 3.5200344268029924,
+     "mean_ref": 3.533495271194947,
+     "family": "LONGITUDINAL",
+     "direction": "lower"
+    },
+    "DK-VIOL": {
+     "delta": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "separated": false,
+     "separated_better": false,
+     "separated_worse": false,
+     "n": "595/70",
+     "mean_arm": null,
+     "mean_ref": null,
+     "family": "LONGITUDINAL",
+     "direction": "lower"
+    },
+    "DK-HW": {
+     "delta": 0.0004,
+     "lo": -0.0039,
+     "hi": 0.0053,
+     "separated": false,
+     "separated_better": false,
+     "separated_worse": false,
+     "n": "715/72",
+     "mean_arm": null,
+     "mean_ref": null,
+     "family": "LONGITUDINAL",
+     "direction": "lower"
+    },
+    "DK-TG": {
+     "delta": 0.0002,
+     "lo": -0.0002,
+     "hi": 0.0009,
+     "separated": false,
+     "separated_better": false,
+     "separated_worse": false,
+     "n": "655/72",
+     "mean_arm": null,
+     "mean_ref": null,
+     "family": "LONGITUDINAL",
+     "direction": "lower"
+    },
+    "heading MAE": {
+     "delta": -0.057,
+     "lo": -0.1131,
+     "hi": -0.0139,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2373/141",
+     "mean_arm": 7.8963783251531146,
+     "mean_ref": 7.953428162692371,
+     "family": "LATERAL",
+     "direction": "lower"
+    },
+    "yaw-rate MAE": {
+     "delta": -0.1073,
+     "lo": -0.2284,
+     "hi": -0.0186,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2365/141",
+     "mean_arm": 28.425555138553932,
+     "mean_ref": 28.532849651288974,
+     "family": "LATERAL",
+     "direction": "lower"
+    },
+    "curvature MAE": {
+     "delta": -0.0004,
+     "lo": -0.0021,
+     "hi": 0.0008,
+     "separated": false,
+     "separated_better": false,
+     "separated_worse": false,
+     "n": "2365/141",
+     "mean_arm": 0.1853634938219795,
+     "mean_ref": 0.18574795784707754,
+     "family": "LATERAL",
+     "direction": "lower"
+    },
+    "cross-track MAE": {
+     "delta": -0.0014,
+     "lo": -0.0056,
+     "hi": 0.0024,
+     "separated": false,
+     "separated_better": false,
+     "separated_worse": false,
+     "n": "2399/141",
+     "mean_arm": 0.9912366126335236,
+     "mean_ref": 0.9926700077031709,
+     "family": "LATERAL",
+     "direction": "lower"
+    },
+    "L1 lateral-accel MAE": {
+     "delta": -0.0155,
+     "lo": -0.0329,
+     "hi": -0.0036,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2365/141",
+     "mean_arm": 3.2555382949737073,
+     "mean_ref": 3.2710781791042094,
+     "family": "LATERAL",
+     "direction": "lower"
+    },
+    "L2 curvature MAE (GT>=5.2)": {
+     "delta": -0.00068,
+     "lo": -0.00183,
+     "hi": -1e-05,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2106/135",
+     "mean_arm": 0.07626535161717,
+     "mean_ref": 0.07694946521792227,
+     "family": "LATERAL",
+     "direction": "lower"
+    },
+    "TAC-LAT": {
+     "delta": -0.0008,
+     "lo": -0.0046,
+     "hi": 0.0029,
+     "separated": false,
+     "separated_better": false,
+     "separated_worse": false,
+     "n": "2399/141",
+     "mean_arm": null,
+     "mean_ref": null,
+     "family": "TACTICAL",
+     "direction": "higher"
+    },
+    "TAC-LON": {
+     "delta": 0.0054,
+     "lo": 0.0,
+     "hi": 0.0117,
+     "separated": false,
+     "separated_better": false,
+     "separated_worse": false,
+     "n": "2399/141",
+     "mean_arm": null,
+     "mean_ref": null,
+     "family": "TACTICAL",
+     "direction": "higher"
+    },
+    "S-POS@30": {
+     "family": "STRATEGIC",
+     "status": "NOT COMPUTED"
+    },
+    "S-POS@50": {
+     "family": "STRATEGIC",
+     "status": "NOT COMPUTED"
+    },
+    "S-POS@80": {
+     "family": "STRATEGIC",
+     "status": "NOT COMPUTED"
+    },
+    "M1 crawl share": {
+     "delta": -0.0004,
+     "lo": -0.001,
+     "hi": 0.0001,
+     "separated": false,
+     "separated_better": false,
+     "separated_worse": false,
+     "n": "2106/135",
+     "mean_arm": 0.08397133802402396,
+     "mean_ref": 0.08438504253968931,
+     "family": "crawl",
+     "direction": "lower"
+    }
+   }
+  },
+  "read_a_N0_minus_P10": {
+   "s0": {
+    "ADE6": {
+     "delta": -1.1693,
+     "lo": -1.3472,
+     "hi": -0.9991,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2399/141",
+     "mean_arm": 2.273958281927911,
+     "mean_ref": 3.443279013457244,
+     "family": "PRIMARY",
+     "direction": "lower"
+    },
+    "speed MAE": {
+     "delta": -0.5787,
+     "lo": -0.7777,
+     "hi": -0.4049,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2399/141",
+     "mean_arm": 1.309290324565799,
+     "mean_ref": 1.8880307728496237,
+     "family": "LONGITUDINAL",
+     "direction": "lower"
+    },
+    "along-track MAE": {
+     "delta": -0.6322,
+     "lo": -0.7715,
+     "hi": -0.4951,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2399/141",
+     "mean_arm": 1.8259293363677507,
+     "mean_ref": 2.4581475137665323,
+     "family": "LONGITUDINAL",
+     "direction": "lower"
+    },
+    "accel MAE": {
+     "delta": 0.8128,
+     "lo": 0.3275,
+     "hi": 1.2909,
+     "separated": true,
+     "separated_better": false,
+     "separated_worse": true,
+     "n": "2399/141",
+     "mean_arm": 2.9026397674873237,
+     "mean_ref": 2.0898610243415527,
+     "family": "LONGITUDINAL",
+     "direction": "lower"
+    },
+    "DK-VIOL": {
+     "delta": 0.0303,
+     "lo": 0.0,
+     "hi": 0.0674,
+     "separated": false,
+     "separated_better": false,
+     "separated_worse": false,
+     "n": "595/70",
+     "mean_arm": null,
+     "mean_ref": null,
+     "family": "LONGITUDINAL",
+     "direction": "lower"
+    },
+    "DK-HW": {
+     "delta": -0.0634,
+     "lo": -0.4636,
+     "hi": 0.2846,
+     "separated": false,
+     "separated_better": false,
+     "separated_worse": false,
+     "n": "713/72",
+     "mean_arm": null,
+     "mean_ref": null,
+     "family": "LONGITUDINAL",
+     "direction": "lower"
+    },
+    "DK-TG": {
+     "delta": -0.0052,
+     "lo": -0.0703,
+     "hi": 0.0587,
+     "separated": false,
+     "separated_better": false,
+     "separated_worse": false,
+     "n": "653/72",
+     "mean_arm": null,
+     "mean_ref": null,
+     "family": "LONGITUDINAL",
+     "direction": "lower"
+    },
+    "heading MAE": {
+     "delta": -3.4213,
+     "lo": -4.1752,
+     "hi": -2.7675,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2373/141",
+     "mean_arm": 6.131166503512948,
+     "mean_ref": 9.552514477304545,
+     "family": "LATERAL",
+     "direction": "lower"
+    },
+    "yaw-rate MAE": {
+     "delta": -0.0171,
+     "lo": -2.3452,
+     "hi": 2.2203,
+     "separated": false,
+     "separated_better": false,
+     "separated_worse": false,
+     "n": "2365/141",
+     "mean_arm": 19.855637611594695,
+     "mean_ref": 19.872715124493325,
+     "family": "LATERAL",
+     "direction": "lower"
+    },
+    "curvature MAE": {
+     "delta": 0.0612,
+     "lo": 0.0419,
+     "hi": 0.0838,
+     "separated": true,
+     "separated_better": false,
+     "separated_worse": true,
+     "n": "2365/141",
+     "mean_arm": 0.1335553763415142,
+     "mean_ref": 0.072372415358591,
+     "family": "LATERAL",
+     "direction": "lower"
+    },
+    "cross-track MAE": {
+     "delta": -0.9831,
+     "lo": -1.1257,
+     "hi": -0.8485,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2399/141",
+     "mean_arm": 0.936428420583988,
+     "mean_ref": 1.9195239231042973,
+     "family": "LATERAL",
+     "direction": "lower"
+    },
+    "L1 lateral-accel MAE": {
+     "delta": -2.4334,
+     "lo": -3.829,
+     "hi": -1.2747,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2365/141",
+     "mean_arm": 1.973681927712129,
+     "mean_ref": 4.407071306037995,
+     "family": "LATERAL",
+     "direction": "lower"
+    },
+    "L2 curvature MAE (GT>=5.2)": {
+     "delta": 0.0292,
+     "lo": 0.0168,
+     "hi": 0.0436,
+     "separated": true,
+     "separated_better": false,
+     "separated_worse": true,
+     "n": "2106/135",
+     "mean_arm": 0.04577237248287996,
+     "mean_ref": 0.016540340744098478,
+     "family": "LATERAL",
+     "direction": "lower"
+    },
+    "TAC-LAT": {
+     "delta": 0.1934,
+     "lo": 0.1533,
+     "hi": 0.233,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2399/141",
+     "mean_arm": null,
+     "mean_ref": null,
+     "family": "TACTICAL",
+     "direction": "higher"
+    },
+    "TAC-LON": {
+     "delta": 0.1351,
+     "lo": 0.073,
+     "hi": 0.196,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2399/141",
+     "mean_arm": null,
+     "mean_ref": null,
+     "family": "TACTICAL",
+     "direction": "higher"
+    },
+    "S-POS@30": {
+     "family": "STRATEGIC",
+     "status": "NOT COMPUTED"
+    },
+    "S-POS@50": {
+     "family": "STRATEGIC",
+     "status": "NOT COMPUTED"
+    },
+    "S-POS@80": {
+     "family": "STRATEGIC",
+     "status": "NOT COMPUTED"
+    },
+    "M1 crawl share": {
+     "delta": 0.0471,
+     "lo": 0.0297,
+     "hi": 0.0673,
+     "separated": true,
+     "separated_better": false,
+     "separated_worse": true,
+     "n": "2106/135",
+     "mean_arm": 0.07006961120725605,
+     "mean_ref": 0.02295177580131704,
+     "family": "crawl",
+     "direction": "lower"
+    }
+   },
+   "s1": {
+    "ADE6": {
+     "delta": -0.9939,
+     "lo": -1.1844,
+     "hi": -0.8142,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2399/141",
+     "mean_arm": 2.4493360477644393,
+     "mean_ref": 3.443279013457244,
+     "family": "PRIMARY",
+     "direction": "lower"
+    },
+    "speed MAE": {
+     "delta": -0.307,
+     "lo": -0.4844,
+     "hi": -0.1374,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2399/141",
+     "mean_arm": 1.5809948161362712,
+     "mean_ref": 1.8880307728496237,
+     "family": "LONGITUDINAL",
+     "direction": "lower"
+    },
+    "along-track MAE": {
+     "delta": -0.4651,
+     "lo": -0.6332,
+     "hi": -0.2941,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2399/141",
+     "mean_arm": 1.993011766600056,
+     "mean_ref": 2.4581475137665323,
+     "family": "LONGITUDINAL",
+     "direction": "lower"
+    },
+    "accel MAE": {
+     "delta": 1.4302,
+     "lo": 0.9321,
+     "hi": 1.9521,
+     "separated": true,
+     "separated_better": false,
+     "separated_worse": true,
+     "n": "2399/141",
+     "mean_arm": 3.5200344268029924,
+     "mean_ref": 2.0898610243415527,
+     "family": "LONGITUDINAL",
+     "direction": "lower"
+    },
+    "DK-VIOL": {
+     "delta": 0.005,
+     "lo": -0.0196,
+     "hi": 0.0345,
+     "separated": false,
+     "separated_better": false,
+     "separated_worse": false,
+     "n": "595/70",
+     "mean_arm": null,
+     "mean_ref": null,
+     "family": "LONGITUDINAL",
+     "direction": "lower"
+    },
+    "DK-HW": {
+     "delta": -0.2061,
+     "lo": -0.6433,
+     "hi": 0.1428,
+     "separated": false,
+     "separated_better": false,
+     "separated_worse": false,
+     "n": "712/72",
+     "mean_arm": null,
+     "mean_ref": null,
+     "family": "LONGITUDINAL",
+     "direction": "lower"
+    },
+    "DK-TG": {
+     "delta": -0.0932,
+     "lo": -0.1578,
+     "hi": -0.04,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "654/72",
+     "mean_arm": null,
+     "mean_ref": null,
+     "family": "LONGITUDINAL",
+     "direction": "lower"
+    },
+    "heading MAE": {
+     "delta": -1.6561,
+     "lo": -2.3897,
+     "hi": -0.886,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2373/141",
+     "mean_arm": 7.8963783251531146,
+     "mean_ref": 9.552514477304545,
+     "family": "LATERAL",
+     "direction": "lower"
+    },
+    "yaw-rate MAE": {
+     "delta": 8.5528,
+     "lo": 5.6852,
+     "hi": 11.7097,
+     "separated": true,
+     "separated_better": false,
+     "separated_worse": true,
+     "n": "2365/141",
+     "mean_arm": 28.425555138553932,
+     "mean_ref": 19.872715124493325,
+     "family": "LATERAL",
+     "direction": "lower"
+    },
+    "curvature MAE": {
+     "delta": 0.113,
+     "lo": 0.0788,
+     "hi": 0.1519,
+     "separated": true,
+     "separated_better": false,
+     "separated_worse": true,
+     "n": "2365/141",
+     "mean_arm": 0.1853634938219795,
+     "mean_ref": 0.072372415358591,
+     "family": "LATERAL",
+     "direction": "lower"
+    },
+    "cross-track MAE": {
+     "delta": -0.9283,
+     "lo": -1.0755,
+     "hi": -0.7954,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2399/141",
+     "mean_arm": 0.9912366126335236,
+     "mean_ref": 1.9195239231042973,
+     "family": "LATERAL",
+     "direction": "lower"
+    },
+    "L1 lateral-accel MAE": {
+     "delta": -1.1515,
+     "lo": -2.1511,
+     "hi": -0.2939,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2365/141",
+     "mean_arm": 3.2555382949737073,
+     "mean_ref": 4.407071306037995,
+     "family": "LATERAL",
+     "direction": "lower"
+    },
+    "L2 curvature MAE (GT>=5.2)": {
+     "delta": 0.0597,
+     "lo": 0.0352,
+     "hi": 0.0924,
+     "separated": true,
+     "separated_better": false,
+     "separated_worse": true,
+     "n": "2106/135",
+     "mean_arm": 0.07626535161717,
+     "mean_ref": 0.016540340744098478,
+     "family": "LATERAL",
+     "direction": "lower"
+    },
+    "TAC-LAT": {
+     "delta": 0.1842,
+     "lo": 0.1455,
+     "hi": 0.2247,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2399/141",
+     "mean_arm": null,
+     "mean_ref": null,
+     "family": "TACTICAL",
+     "direction": "higher"
+    },
+    "TAC-LON": {
+     "delta": 0.1196,
+     "lo": 0.05,
+     "hi": 0.1853,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2399/141",
+     "mean_arm": null,
+     "mean_ref": null,
+     "family": "TACTICAL",
+     "direction": "higher"
+    },
+    "S-POS@30": {
+     "family": "STRATEGIC",
+     "status": "NOT COMPUTED"
+    },
+    "S-POS@50": {
+     "family": "STRATEGIC",
+     "status": "NOT COMPUTED"
+    },
+    "S-POS@80": {
+     "family": "STRATEGIC",
+     "status": "NOT COMPUTED"
+    },
+    "M1 crawl share": {
+     "delta": 0.061,
+     "lo": 0.0404,
+     "hi": 0.0854,
+     "separated": true,
+     "separated_better": false,
+     "separated_worse": true,
+     "n": "2106/135",
+     "mean_arm": 0.08397133802402396,
+     "mean_ref": 0.02295177580131704,
+     "family": "crawl",
+     "direction": "lower"
+    }
+   }
+  },
+  "read_a_DAGdr_minus_P10_recomputed": {
+   "s0": {
+    "ADE6": {
+     "delta": -1.1656,
+     "lo": -1.3437,
+     "hi": -0.9963,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2399/141",
+     "mean_arm": 2.2777030508105325,
+     "mean_ref": 3.443279013457244,
+     "family": "PRIMARY",
+     "direction": "lower"
+    },
+    "speed MAE": {
+     "delta": -0.5765,
+     "lo": -0.7791,
+     "hi": -0.404,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2399/141",
+     "mean_arm": 1.311523982510053,
+     "mean_ref": 1.8880307728496237,
+     "family": "LONGITUDINAL",
+     "direction": "lower"
+    },
+    "along-track MAE": {
+     "delta": -0.6282,
+     "lo": -0.7671,
+     "hi": -0.4916,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2399/141",
+     "mean_arm": 1.8299365241288863,
+     "mean_ref": 2.4581475137665323,
+     "family": "LONGITUDINAL",
+     "direction": "lower"
+    },
+    "accel MAE": {
+     "delta": 0.8072,
+     "lo": 0.3253,
+     "hi": 1.2728,
+     "separated": true,
+     "separated_better": false,
+     "separated_worse": true,
+     "n": "2399/141",
+     "mean_arm": 2.897011499735018,
+     "mean_ref": 2.0898610243415527,
+     "family": "LONGITUDINAL",
+     "direction": "lower"
+    },
+    "DK-VIOL": {
+     "delta": 0.0353,
+     "lo": 0.0046,
+     "hi": 0.0726,
+     "separated": true,
+     "separated_better": false,
+     "separated_worse": true,
+     "n": "595/70",
+     "mean_arm": null,
+     "mean_ref": null,
+     "family": "LONGITUDINAL",
+     "direction": "lower"
+    },
+    "DK-HW": {
+     "delta": -0.0491,
+     "lo": -0.4481,
+     "hi": 0.298,
+     "separated": false,
+     "separated_better": false,
+     "separated_worse": false,
+     "n": "713/72",
+     "mean_arm": null,
+     "mean_ref": null,
+     "family": "LONGITUDINAL",
+     "direction": "lower"
+    },
+    "DK-TG": {
+     "delta": -0.0035,
+     "lo": -0.0682,
+     "hi": 0.0611,
+     "separated": false,
+     "separated_better": false,
+     "separated_worse": false,
+     "n": "653/72",
+     "mean_arm": null,
+     "mean_ref": null,
+     "family": "LONGITUDINAL",
+     "direction": "lower"
+    },
+    "heading MAE": {
+     "delta": -3.3593,
+     "lo": -4.1043,
+     "hi": -2.7104,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2373/141",
+     "mean_arm": 6.193169414581398,
+     "mean_ref": 9.552514477304545,
+     "family": "LATERAL",
+     "direction": "lower"
+    },
+    "yaw-rate MAE": {
+     "delta": -0.04,
+     "lo": -2.3623,
+     "hi": 2.1885,
+     "separated": false,
+     "separated_better": false,
+     "separated_worse": false,
+     "n": "2365/141",
+     "mean_arm": 19.83271251175112,
+     "mean_ref": 19.872715124493325,
+     "family": "LATERAL",
+     "direction": "lower"
+    },
+    "curvature MAE": {
+     "delta": 0.0612,
+     "lo": 0.0415,
+     "hi": 0.0839,
+     "separated": true,
+     "separated_better": false,
+     "separated_worse": true,
+     "n": "2365/141",
+     "mean_arm": 0.13361942933957185,
+     "mean_ref": 0.072372415358591,
+     "family": "LATERAL",
+     "direction": "lower"
+    },
+    "cross-track MAE": {
+     "delta": -0.9793,
+     "lo": -1.1231,
+     "hi": -0.846,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2399/141",
+     "mean_arm": 0.9402388222076353,
+     "mean_ref": 1.9195239231042973,
+     "family": "LATERAL",
+     "direction": "lower"
+    },
+    "L1 lateral-accel MAE": {
+     "delta": -2.4322,
+     "lo": -3.8282,
+     "hi": -1.2766,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2365/141",
+     "mean_arm": 1.974889360857623,
+     "mean_ref": 4.407071306037995,
+     "family": "LATERAL",
+     "direction": "lower"
+    },
+    "L2 curvature MAE (GT>=5.2)": {
+     "delta": 0.0288,
+     "lo": 0.0165,
+     "hi": 0.0433,
+     "separated": true,
+     "separated_better": false,
+     "separated_worse": true,
+     "n": "2106/135",
+     "mean_arm": 0.04537565441314313,
+     "mean_ref": 0.016540340744098478,
+     "family": "LATERAL",
+     "direction": "lower"
+    },
+    "TAC-LAT": {
+     "delta": 0.1926,
+     "lo": 0.1546,
+     "hi": 0.2323,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2399/141",
+     "mean_arm": null,
+     "mean_ref": null,
+     "family": "TACTICAL",
+     "direction": "higher"
+    },
+    "TAC-LON": {
+     "delta": 0.1288,
+     "lo": 0.0651,
+     "hi": 0.1917,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2399/141",
+     "mean_arm": null,
+     "mean_ref": null,
+     "family": "TACTICAL",
+     "direction": "higher"
+    },
+    "S-POS@30": {
+     "delta": -1.7175,
+     "lo": -2.2707,
+     "hi": -1.2803,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "ticks>=1, unpaired vs CTRV (DAG_READ.json)",
+     "mean_arm": null,
+     "mean_ref": null,
+     "family": "STRATEGIC",
+     "direction": "lower"
+    },
+    "S-POS@50": {
+     "delta": -4.4832,
+     "lo": -5.6271,
+     "hi": -3.4998,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "ticks>=1, unpaired vs CTRV (DAG_READ.json)",
+     "mean_arm": null,
+     "mean_ref": null,
+     "family": "STRATEGIC",
+     "direction": "lower"
+    },
+    "S-POS@80": {
+     "delta": -9.6871,
+     "lo": -11.8435,
+     "hi": -7.5669,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "ticks>=1, unpaired vs CTRV (DAG_READ.json)",
+     "mean_arm": null,
+     "mean_ref": null,
+     "family": "STRATEGIC",
+     "direction": "lower"
+    },
+    "M1 crawl share": {
+     "delta": 0.047,
+     "lo": 0.0296,
+     "hi": 0.0673,
+     "separated": true,
+     "separated_better": false,
+     "separated_worse": true,
+     "n": "2106/135",
+     "mean_arm": 0.06998956345060632,
+     "mean_ref": 0.02295177580131704,
+     "family": "crawl",
+     "direction": "lower"
+    }
+   },
+   "s1": {
+    "ADE6": {
+     "delta": -0.9868,
+     "lo": -1.1778,
+     "hi": -0.806,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2399/141",
+     "mean_arm": 2.456459174682651,
+     "mean_ref": 3.443279013457244,
+     "family": "PRIMARY",
+     "direction": "lower"
+    },
+    "speed MAE": {
+     "delta": -0.302,
+     "lo": -0.4813,
+     "hi": -0.1312,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2399/141",
+     "mean_arm": 1.5860390189619107,
+     "mean_ref": 1.8880307728496237,
+     "family": "LONGITUDINAL",
+     "direction": "lower"
+    },
+    "along-track MAE": {
+     "delta": -0.4571,
+     "lo": -0.6243,
+     "hi": -0.288,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2399/141",
+     "mean_arm": 2.001029566929773,
+     "mean_ref": 2.4581475137665323,
+     "family": "LONGITUDINAL",
+     "direction": "lower"
+    },
+    "accel MAE": {
+     "delta": 1.4436,
+     "lo": 0.9463,
+     "hi": 1.9592,
+     "separated": true,
+     "separated_better": false,
+     "separated_worse": true,
+     "n": "2399/141",
+     "mean_arm": 3.533495271194947,
+     "mean_ref": 2.0898610243415527,
+     "family": "LONGITUDINAL",
+     "direction": "lower"
+    },
+    "DK-VIOL": {
+     "delta": 0.005,
+     "lo": -0.0196,
+     "hi": 0.0345,
+     "separated": false,
+     "separated_better": false,
+     "separated_worse": false,
+     "n": "595/70",
+     "mean_arm": null,
+     "mean_ref": null,
+     "family": "LONGITUDINAL",
+     "direction": "lower"
+    },
+    "DK-HW": {
+     "delta": -0.2065,
+     "lo": -0.6444,
+     "hi": 0.1422,
+     "separated": false,
+     "separated_better": false,
+     "separated_worse": false,
+     "n": "712/72",
+     "mean_arm": null,
+     "mean_ref": null,
+     "family": "LONGITUDINAL",
+     "direction": "lower"
+    },
+    "DK-TG": {
+     "delta": -0.0934,
+     "lo": -0.1585,
+     "hi": -0.0402,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "654/72",
+     "mean_arm": null,
+     "mean_ref": null,
+     "family": "LONGITUDINAL",
+     "direction": "lower"
+    },
+    "heading MAE": {
+     "delta": -1.5991,
+     "lo": -2.3295,
+     "hi": -0.8482,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2373/141",
+     "mean_arm": 7.953428162692371,
+     "mean_ref": 9.552514477304545,
+     "family": "LATERAL",
+     "direction": "lower"
+    },
+    "yaw-rate MAE": {
+     "delta": 8.6601,
+     "lo": 5.7957,
+     "hi": 11.8486,
+     "separated": true,
+     "separated_better": false,
+     "separated_worse": true,
+     "n": "2365/141",
+     "mean_arm": 28.532849651288974,
+     "mean_ref": 19.872715124493325,
+     "family": "LATERAL",
+     "direction": "lower"
+    },
+    "curvature MAE": {
+     "delta": 0.1134,
+     "lo": 0.0787,
+     "hi": 0.1525,
+     "separated": true,
+     "separated_better": false,
+     "separated_worse": true,
+     "n": "2365/141",
+     "mean_arm": 0.18574795784707754,
+     "mean_ref": 0.072372415358591,
+     "family": "LATERAL",
+     "direction": "lower"
+    },
+    "cross-track MAE": {
+     "delta": -0.9269,
+     "lo": -1.0757,
+     "hi": -0.7954,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2399/141",
+     "mean_arm": 0.9926700077031709,
+     "mean_ref": 1.9195239231042973,
+     "family": "LATERAL",
+     "direction": "lower"
+    },
+    "L1 lateral-accel MAE": {
+     "delta": -1.136,
+     "lo": -2.132,
+     "hi": -0.2847,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2365/141",
+     "mean_arm": 3.2710781791042094,
+     "mean_ref": 4.407071306037995,
+     "family": "LATERAL",
+     "direction": "lower"
+    },
+    "L2 curvature MAE (GT>=5.2)": {
+     "delta": 0.0604,
+     "lo": 0.0356,
+     "hi": 0.093,
+     "separated": true,
+     "separated_better": false,
+     "separated_worse": true,
+     "n": "2106/135",
+     "mean_arm": 0.07694946521792227,
+     "mean_ref": 0.016540340744098478,
+     "family": "LATERAL",
+     "direction": "lower"
+    },
+    "TAC-LAT": {
+     "delta": 0.1851,
+     "lo": 0.1461,
+     "hi": 0.2255,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2399/141",
+     "mean_arm": null,
+     "mean_ref": null,
+     "family": "TACTICAL",
+     "direction": "higher"
+    },
+    "TAC-LON": {
+     "delta": 0.1142,
+     "lo": 0.0442,
+     "hi": 0.1792,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "2399/141",
+     "mean_arm": null,
+     "mean_ref": null,
+     "family": "TACTICAL",
+     "direction": "higher"
+    },
+    "S-POS@30": {
+     "delta": -1.8734,
+     "lo": -2.364,
+     "hi": -1.4387,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "ticks>=1, unpaired vs CTRV (DAG_READ.json)",
+     "mean_arm": null,
+     "mean_ref": null,
+     "family": "STRATEGIC",
+     "direction": "lower"
+    },
+    "S-POS@50": {
+     "delta": -4.9034,
+     "lo": -5.9596,
+     "hi": -3.9235,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "ticks>=1, unpaired vs CTRV (DAG_READ.json)",
+     "mean_arm": null,
+     "mean_ref": null,
+     "family": "STRATEGIC",
+     "direction": "lower"
+    },
+    "S-POS@80": {
+     "delta": -10.3254,
+     "lo": -12.4401,
+     "hi": -8.3492,
+     "separated": true,
+     "separated_better": true,
+     "separated_worse": false,
+     "n": "ticks>=1, unpaired vs CTRV (DAG_READ.json)",
+     "mean_arm": null,
+     "mean_ref": null,
+     "family": "STRATEGIC",
+     "direction": "lower"
+    },
+    "M1 crawl share": {
+     "delta": 0.0614,
+     "lo": 0.0409,
+     "hi": 0.0859,
+     "separated": true,
+     "separated_better": false,
+     "separated_worse": true,
+     "n": "2106/135",
+     "mean_arm": 0.08438504253968931,
+     "mean_ref": 0.02295177580131704,
+     "family": "crawl",
+     "direction": "lower"
+    }
+   }
+  },
+  "reach": {
+   "0": {
+    "windows_with_changed_cl_track": 1379,
+    "of": 2399,
+    "max_abs_cl_diff_m": 23.222677256655935
+   },
+   "1": {
+    "windows_with_changed_cl_track": 1379,
+    "of": 2399,
+    "max_abs_cl_diff_m": 16.70207083625825
+   }
+  },
+  "M2_and_pooled_M1": {
+   "s0": {
+    "N0_minus_DAG": {
+     "pooled_M1_arm": 0.044186941933591246,
+     "pooled_M1_P10": 0.044149462799310625,
+     "M2": 0.0004382012927765522
+    }
+   },
+   "s1": {
+    "N0_minus_DAG": {
+     "pooled_M1_arm": 0.05909124275122954,
+     "pooled_M1_P10": 0.05943991778609704,
+     "M2": -0.0005009087483783328
+    }
+   }
+  },
+  "tick_level": {
+   "note": "BESIDE rows; S-POS is read against CTRV WITHIN a run (unpaired), the T-head rows are paired matched-cell macro-F1 at ticks >= 1; none of this decides NAVMOVE",
+   "seeds": {
+    "s0": {
+     "controls_N0": {
+      "K1": {
+       "PASS": true,
+       "detail": null
+      },
+      "K2": {
+       "PASS": true,
+       "detail": null
+      },
+      "K3": {
+       "PASS": true,
+       "detail": null
+      },
+      "K5": {
+       "PASS": true,
+       "detail": null
+      },
+      "K6": {
+       "PASS": true,
+       "detail": null
+      },
+      "K7": {
+       "PASS": true,
+       "detail": {
+        "mode": "x1 (no banked / flags-off reference for a plain fine-tuned arm): rebuilt executed track == dumped cl",
+        "x1": {
+         "max_cl_m": 0.0,
+         "max_pose_tick_f64": 0.0,
+         "max_s_pose_vs_rebuilt_m_f32_tol": 2.9877096835662087e-05,
+         "max_t_pose_vs_rebuilt_m_f32_tol": 2.9877096835662087e-05
+        }
+       }
+      },
+      "GRID": {
+       "PASS": true,
+       "detail": {
+        "n": 2399,
+        "grid_n": 2399
+       }
+      }
+     },
+     "controls_DAGdr": {
+      "K1": {
+       "PASS": true,
+       "detail": null
+      },
+      "K2": {
+       "PASS": true,
+       "detail": null
+      },
+      "K3": {
+       "PASS": true,
+       "detail": null
+      },
+      "K5": {
+       "PASS": true,
+       "detail": null
+      },
+      "K6": {
+       "PASS": true,
+       "detail": null
+      },
+      "K7": {
+       "PASS": true,
+       "detail": {
+        "mode": "x1 (no banked / flags-off reference for a plain fine-tuned arm): rebuilt executed track == dumped cl",
+        "x1": {
+         "max_cl_m": 0.0,
+         "max_pose_tick_f64": 0.0,
+         "max_s_pose_vs_rebuilt_m_f32_tol": 2.9877096835662087e-05,
+         "max_t_pose_vs_rebuilt_m_f32_tol": 2.9877096835662087e-05
+        }
+       }
+      },
+      "GRID": {
+       "PASS": true,
+       "detail": {
+        "n": 2399,
+        "grid_n": 2399
+       }
+      }
+     },
+     "S-POS_vs_CTRV_within_run": {
+      "N0_nav_logged": {
+       "S-POS@30": {
+        "delta": -1.8114,
+        "lo": -2.3607,
+        "hi": -1.3649,
+        "separated": true
+       },
+       "S-POS@50": {
+        "delta": -4.8108,
+        "lo": -6.0203,
+        "hi": -3.7685,
+        "separated": true
+       },
+       "S-POS@80": {
+        "delta": -10.5486,
+        "lo": -12.8455,
+        "hi": -8.388,
+        "separated": true
+       }
+      },
+      "DAG_nav_deadreckon_rederived": {
+       "S-POS@30": {
+        "delta": -1.7175,
+        "lo": -2.2707,
+        "hi": -1.2803,
+        "separated": true
+       },
+       "S-POS@50": {
+        "delta": -4.4832,
+        "lo": -5.6271,
+        "hi": -3.4998,
+        "separated": true
+       },
+       "S-POS@80": {
+        "delta": -9.6871,
+        "lo": -11.8435,
+        "hi": -7.5669,
+        "separated": true
+       }
+      },
+      "DAG_banked_DAG_READ": {
+       "S-POS@30": {
+        "delta": -1.7175,
+        "lo": -2.2707,
+        "hi": -1.2803,
+        "separated": true
+       },
+       "S-POS@50": {
+        "delta": -4.4832,
+        "lo": -5.6271,
+        "hi": -3.4998,
+        "separated": true
+       },
+       "S-POS@80": {
+        "delta": -9.6871,
+        "lo": -11.8435,
+        "hi": -7.5669,
+        "separated": true
+       }
+      },
+      "rederived_vs_banked_max_abs_diff": 0.0,
+      "note": "delta = arm minus CTRV position error (negative = arm closer to the logged path than CTRV), unpaired between runs; the paired N0 - DAG S-POS contrast is NOT computed (PREREG section 5)"
+     },
+     "crawl_fraction_ticks_ge1": {
+      "N0": {
+       "lat": 0.08566069195498124,
+       "lon": 0.08566069195498124
+      },
+      "DAGdr": {
+       "lat": 0.08691121300541893,
+       "lon": 0.08691121300541893
+      }
+     },
+     "off_route": {
+      "N0": {
+       "S": {
+        "tick0": 0,
+        "tick1": 0,
+        "tick2": 178
+       },
+       "T": {
+        "tick0": 0,
+        "tick1": 9,
+        "tick2": 178
+       },
+       "n_windows": 2399
+      },
+      "DAGdr": {
+       "S": {
+        "tick0": 0,
+        "tick1": 0,
+        "tick2": 180
+       },
+       "T": {
+        "tick0": 0,
+        "tick1": 9,
+        "tick2": 180
+       },
+       "n_windows": 2399
+      }
+     },
+     "goal_macroF1": {
+      "N0": {
+       "f1_ge1": 0.19023525643480052,
+       "f1_tick0": 0.2434581910714846
+      },
+      "DAGdr": {
+       "f1_ge1": 0.18735780428962756,
+       "f1_tick0": 0.24339233986229178
+      }
+     },
+     "T_head_macroF1_N0_minus_DAGdr": {
+      "lat_matched": {
+       "delta": 0.0231,
+       "lo": 0.0088,
+       "hi": 0.0408,
+       "separated": true,
+       "better": true,
+       "f1_a": 0.625298455086533,
+       "f1_b": 0.602219943545577,
+       "n_cells_a": 3913,
+       "n_cells_b": 3913,
+       "n_cells_matched_pairs": 3913
+      },
+      "lat_own": {
+       "delta": 0.0227,
+       "lo": 0.0084,
+       "hi": 0.0407,
+       "separated": true,
+       "better": true,
+       "f1_a": 0.6245910470446204,
+       "f1_b": 0.6018891064060482,
+       "n_cells_a": 3917,
+       "n_cells_b": 3915,
+       "n_cells_matched_pairs": 3913
+      },
+      "lon_matched": {
+       "delta": -0.0012,
+       "lo": -0.0062,
+       "hi": 0.0034,
+       "separated": false,
+       "better": false,
+       "f1_a": 0.3204801552010686,
+       "f1_b": 0.3216541114774785,
+       "n_cells_a": 3810,
+       "n_cells_b": 3810,
+       "n_cells_matched_pairs": 3810
+      },
+      "lon_own": {
+       "delta": -0.0009,
+       "lo": -0.0059,
+       "hi": 0.0037,
+       "separated": false,
+       "better": false,
+       "f1_a": 0.3207214131060138,
+       "f1_b": 0.3215789929869142,
+       "n_cells_a": 3813,
+       "n_cells_b": 3811,
+       "n_cells_matched_pairs": 3810
+      }
+     }
+    },
+    "s1": {
+     "controls_N0": {
+      "K1": {
+       "PASS": true,
+       "detail": null
+      },
+      "K2": {
+       "PASS": true,
+       "detail": null
+      },
+      "K3": {
+       "PASS": true,
+       "detail": null
+      },
+      "K5": {
+       "PASS": true,
+       "detail": null
+      },
+      "K6": {
+       "PASS": true,
+       "detail": null
+      },
+      "K7": {
+       "PASS": true,
+       "detail": {
+        "mode": "x1 (no banked / flags-off reference for a plain fine-tuned arm): rebuilt executed track == dumped cl",
+        "x1": {
+         "max_cl_m": 0.0,
+         "max_pose_tick_f64": 0.0,
+         "max_s_pose_vs_rebuilt_m_f32_tol": 3.0116526431811508e-05,
+         "max_t_pose_vs_rebuilt_m_f32_tol": 3.0116526431811508e-05
+        }
+       }
+      },
+      "GRID": {
+       "PASS": true,
+       "detail": {
+        "n": 2399,
+        "grid_n": 2399
+       }
+      }
+     },
+     "controls_DAGdr": {
+      "K1": {
+       "PASS": true,
+       "detail": null
+      },
+      "K2": {
+       "PASS": true,
+       "detail": null
+      },
+      "K3": {
+       "PASS": true,
+       "detail": null
+      },
+      "K5": {
+       "PASS": true,
+       "detail": null
+      },
+      "K6": {
+       "PASS": true,
+       "detail": null
+      },
+      "K7": {
+       "PASS": true,
+       "detail": {
+        "mode": "x1 (no banked / flags-off reference for a plain fine-tuned arm): rebuilt executed track == dumped cl",
+        "x1": {
+         "max_cl_m": 0.0,
+         "max_pose_tick_f64": 0.0,
+         "max_s_pose_vs_rebuilt_m_f32_tol": 3.0116526431811508e-05,
+         "max_t_pose_vs_rebuilt_m_f32_tol": 3.0116526431811508e-05
+        }
+       }
+      },
+      "GRID": {
+       "PASS": true,
+       "detail": {
+        "n": 2399,
+        "grid_n": 2399
+       }
+      }
+     },
+     "S-POS_vs_CTRV_within_run": {
+      "N0_nav_logged": {
+       "S-POS@30": {
+        "delta": -1.9412,
+        "lo": -2.4453,
+        "hi": -1.4909,
+        "separated": true
+       },
+       "S-POS@50": {
+        "delta": -5.1471,
+        "lo": -6.2533,
+        "hi": -4.128,
+        "separated": true
+       },
+       "S-POS@80": {
+        "delta": -10.8794,
+        "lo": -13.0819,
+        "hi": -8.7538,
+        "separated": true
+       }
+      },
+      "DAG_nav_deadreckon_rederived": {
+       "S-POS@30": {
+        "delta": -1.8734,
+        "lo": -2.364,
+        "hi": -1.4387,
+        "separated": true
+       },
+       "S-POS@50": {
+        "delta": -4.9034,
+        "lo": -5.9596,
+        "hi": -3.9235,
+        "separated": true
+       },
+       "S-POS@80": {
+        "delta": -10.3254,
+        "lo": -12.4401,
+        "hi": -8.3492,
+        "separated": true
+       }
+      },
+      "DAG_banked_DAG_READ": {
+       "S-POS@30": {
+        "delta": -1.8734,
+        "lo": -2.364,
+        "hi": -1.4387,
+        "separated": true
+       },
+       "S-POS@50": {
+        "delta": -4.9034,
+        "lo": -5.9596,
+        "hi": -3.9235,
+        "separated": true
+       },
+       "S-POS@80": {
+        "delta": -10.3254,
+        "lo": -12.4401,
+        "hi": -8.3492,
+        "separated": true
+       }
+      },
+      "rederived_vs_banked_max_abs_diff": 0.0,
+      "note": "delta = arm minus CTRV position error (negative = arm closer to the logged path than CTRV), unpaired between runs; the paired N0 - DAG S-POS contrast is NOT computed (PREREG section 5)"
+     },
+     "crawl_fraction_ticks_ge1": {
+      "N0": {
+       "lat": 0.13859941642350979,
+       "lon": 0.13859941642350979
+      },
+      "DAGdr": {
+       "lat": 0.13964151729887453,
+       "lon": 0.13964151729887453
+      }
+     },
+     "off_route": {
+      "N0": {
+       "S": {
+        "tick0": 0,
+        "tick1": 0,
+        "tick2": 180
+       },
+       "T": {
+        "tick0": 0,
+        "tick1": 8,
+        "tick2": 180
+       },
+       "n_windows": 2399
+      },
+      "DAGdr": {
+       "S": {
+        "tick0": 0,
+        "tick1": 0,
+        "tick2": 181
+       },
+       "T": {
+        "tick0": 0,
+        "tick1": 8,
+        "tick2": 181
+       },
+       "n_windows": 2399
+      }
+     },
+     "goal_macroF1": {
+      "N0": {
+       "f1_ge1": 0.21211081752102812,
+       "f1_tick0": 0.2641227757007919
+      },
+      "DAGdr": {
+       "f1_ge1": 0.20710900693603848,
+       "f1_tick0": 0.2641227757007919
+      }
+     },
+     "T_head_macroF1_N0_minus_DAGdr": {
+      "lat_matched": {
+       "delta": 0.0292,
+       "lo": 0.0114,
+       "hi": 0.0477,
+       "separated": true,
+       "better": true,
+       "f1_a": 0.6652534282619883,
+       "f1_b": 0.6360714115979363,
+       "n_cells_a": 3926,
+       "n_cells_b": 3926,
+       "n_cells_matched_pairs": 3926
+      },
+      "lat_own": {
+       "delta": 0.0288,
+       "lo": 0.0112,
+       "hi": 0.0473,
+       "separated": true,
+       "better": true,
+       "f1_a": 0.664860674690844,
+       "f1_b": 0.6360714115979363,
+       "n_cells_a": 3927,
+       "n_cells_b": 3926,
+       "n_cells_matched_pairs": 3926
+      },
+      "lon_matched": {
+       "delta": -0.0028,
+       "lo": -0.0079,
+       "hi": 0.0014,
+       "separated": false,
+       "better": false,
+       "f1_a": 0.32873154778784747,
+       "f1_b": 0.3315226213164109,
+       "n_cells_a": 3813,
+       "n_cells_b": 3813,
+       "n_cells_matched_pairs": 3813
+      },
+      "lon_own": {
+       "delta": -0.0029,
+       "lo": -0.008,
+       "hi": 0.0013,
+       "separated": false,
+       "better": false,
+       "f1_a": 0.3286234543052907,
+       "f1_b": 0.3315226213164109,
+       "n_cells_a": 3814,
+       "n_cells_b": 3813,
+       "n_cells_matched_pairs": 3813
+      }
+     }
+    }
+   },
+   "wall_s": 212.8201355934143
+  },
+  "repro_cross_check": {
+   "tool": "dag2t1/dag2_read.py --repro-only (the same invocation dag2t1/repro/ used), run again today",
+   "file": "E:/Projects/TanitAD-artifacts/dag-orc-n0/controls/RC_repro_dag2read.json",
+   "sha256": "699f2e1f76d20a7cd897cd62823753d18ed7482ce5f74930ab9ae3a5c4a9f2f3",
+   "RC-DAG": {
+    "s0": {
+     "differences": [],
+     "n_rows": 19
+    },
+    "s1": {
+     "differences": [],
+     "n_rows": 19
+    }
+   },
+   "controls_failed": []
+  }
+ },
+ "provenance": {
+  "reader": "E:\\Projects\\TanitAD-artifacts\\dag-orc-n0\\n0_read.py",
+  "reader_sha256": "ff70fcdf3d9578d4550178450d5180343d8907dd7b221afb85354427dcb43dfc",
+  "dag2_read_sha256": "1425e8a3895c442b9841f3bcd6fd0893021d583e06485fde171b04bfa73fbc20",
+  "prereg_blob_sha256": "38bc688b173cdb8c94b8a4ce37a29876cb7b9b1cf8170043afc22290aca0c4ee",
+  "wall_s": 84.1643545627594,
+  "evidence_class": "MEASURED (ours; dumps under dag-orc-n0/ and v8f-dagger-t1/)",
+  "core_json": {
+   "file": "E:/Projects/TanitAD-artifacts/dag-orc-n0/N0_READ_core.json",
+   "sha256": "103490aa668144bf6b69bee1f6863b35905ab2336ccfbea1b192b8048a58f240"
+  },
+  "ticks_json_sha256": "7a33a03c4e8e4344f4d4224ba43a3254d9b9d53e2fdb8c2a0df01c2b7f950040",
+  "finalizer_sha256": "902dc9df5462d0f957427e38d617fe4fde8101588a32ee59aa9f644d666b3ffd"
+ },
+ "OUTCOME_FULL": {
+  "verdict": "NOT NAVMOVE",
+  "NAVMOVE": false,
+  "definition": "NAVMOVE = every row of C_s separated-better (N0 - DAG deadreckon, same checkpoint, paired, B = 2000) at BOTH seeds; C_0 = {curvature MAE, L2 curvature MAE (GT>=5.2), M1 crawl share}, C_1 = C_0 + {yaw-rate MAE}",
+  "per_seed": {
+   "s0": {
+    "C_s": [
+     "curvature MAE",
+     "L2 curvature MAE (GT>=5.2)",
+     "M1 crawl share"
+    ],
+    "separated_better_rows": [],
+    "not_separated_better_rows": [
+     "curvature MAE",
+     "L2 curvature MAE (GT>=5.2)",
+     "M1 crawl share"
+    ]
+   },
+   "s1": {
+    "C_s": [
+     "curvature MAE",
+     "L2 curvature MAE (GT>=5.2)",
+     "M1 crawl share",
+     "yaw-rate MAE"
+    ],
+    "separated_better_rows": [
+     "L2 curvature MAE (GT>=5.2)",
+     "yaw-rate MAE"
+    ],
+    "not_separated_better_rows": [
+     "curvature MAE",
+     "M1 crawl share"
+    ]
+   }
+  }
+ },
+ "routing": {
+  "PREREG_section_8_cell": {
+   "N0": "NOT NAVMOVE",
+   "DAG-OACC read": "not yet read (no such read exists)",
+   "table_row": "not NAVMOVE | not, or not yet read",
+   "conditional": "If DAG-OACC's read later shows DAG-OACC - DAG separated-better at both seeds on every row of C, the same N0 outcome maps to COMPOSE instead (second not-NAVMOVE row)."
+  },
+  "committed_next": "LAUNCH-INTENT",
+  "committed_next_text": "O's along-track loss over the executed horizon (knots 1-12 at m = 10), up-weighted on GT-launch TRAIN samples (v0 < 6 m/s and GT v(6 s) >= v0 + 1 m/s). One flag with its G-DVB entry, DAG init, 3,000 steps, under its own PREREG. DAG-ORC is NOT held (precondition 3: it launches as written once its other preconditions and the PI's box-2 go are met).",
+  "DAG_OACC_read": {
+   "exists": false,
+   "evidence": "E:/Projects/TanitAD-artifacts/v8f-dagoacc/ holds only M2b_s0_dagoacc/gate/ and wacc/ (offline w_acc probes); no checkpoint, no rollout, no read; none on the mirror's Project Steering tree either",
+   "separated_better_at_both_seeds_on_C": null
+  },
+  "DAG_ORC_launch": "NOT HELD by N0 (precondition 3: held only if N0 reads NAVMOVE). Still gated on P-0 (RF0 frozen), the reader with K-RC + mutation proof, and the PI's go for box-2 time (PREREG section 10)."
+ },
+ "context_share_of_DAG_excess_over_P10_moved_by_nav_logged": {
+  "note": "DAG - P10 recomputed here from DAG's banked dumps (K-RC green, 0 differences vs banked READ_A.json); N0 - DAG from this read. Context only; decides nothing.",
+  "rows": {
+   "s0": {
+    "curvature MAE": {
+     "DAG_minus_P10": 0.0612,
+     "N0_minus_DAGdr": -0.0001,
+     "share_of_excess_moved_pct": -0.16339869281045752
+    },
+    "L2 curvature MAE (GT>=5.2)": {
+     "DAG_minus_P10": 0.0288,
+     "N0_minus_DAGdr": 0.0004,
+     "share_of_excess_moved_pct": 1.388888888888889
+    },
+    "M1 crawl share": {
+     "DAG_minus_P10": 0.047,
+     "N0_minus_DAGdr": 0.0001,
+     "share_of_excess_moved_pct": 0.2127659574468085
+    }
+   },
+   "s1": {
+    "curvature MAE": {
+     "DAG_minus_P10": 0.1134,
+     "N0_minus_DAGdr": -0.0004,
+     "share_of_excess_moved_pct": -0.3527336860670194
+    },
+    "L2 curvature MAE (GT>=5.2)": {
+     "DAG_minus_P10": 0.0604,
+     "N0_minus_DAGdr": -0.00068,
+     "share_of_excess_moved_pct": -1.1258278145695364
+    },
+    "M1 crawl share": {
+     "DAG_minus_P10": 0.0614,
+     "N0_minus_DAGdr": -0.0004,
+     "share_of_excess_moved_pct": -0.6514657980456026
+    },
+    "yaw-rate MAE": {
+     "DAG_minus_P10": 8.6601,
+     "N0_minus_DAGdr": -0.1073,
+     "share_of_excess_moved_pct": -1.2390157157538597
+    }
+   }
+  }
+ },
+ "evidence_class": "MEASURED (ours; artifact paths under dag-orc-n0/ and v8f-dagger-t1/). Tier T1-kin with nav = LOGGED as an OPEN channel (PREREG section 8 warning). Not closed loop."
+}

@@ -1,0 +1,321 @@
+{
+ "units": "m_s",
+ "n_clips": 4572,
+ "source": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\\7c618562-39eb-4a61-af81-755048086a13\\scratchpad\\out\\vhi_v0_train.json",
+ "pinned_steps_kmh": [
+  20,
+  30,
+  50,
+  70,
+  80,
+  100,
+  120,
+  130
+ ],
+ "ladder_selection": {
+  "L4_PI_start": {
+   "steps_kmh": [
+    30,
+    50,
+    70,
+    100
+   ],
+   "k": 4,
+   "entropy_bits": 1.8412441976064484,
+   "max_bin_share": 0.38079615048118987,
+   "n_bins_used": 4,
+   "slack_p50_kmh": 10.40629189200756,
+   "slack_p95_kmh": 25.348418205577744,
+   "over_ceiling_frac": 0.048993875765529306,
+   "insample_r2_vhi_from_q_v0": 0.9293070796241693,
+   "insample_rmse_ms": 1.9757861243757606
+  },
+  "L5_PI_plus_130": {
+   "steps_kmh": [
+    30,
+    50,
+    70,
+    100,
+    130
+   ],
+   "k": 5,
+   "entropy_bits": 1.9689406612630949,
+   "max_bin_share": 0.38079615048118987,
+   "n_bins_used": 5,
+   "slack_p50_kmh": 11.10503969066277,
+   "slack_p95_kmh": 26.277485990089694,
+   "over_ceiling_frac": 0.006124234470691163,
+   "insample_r2_vhi_from_q_v0": 0.9435791113770309,
+   "insample_rmse_ms": 1.7651106307462163
+  },
+  "L8_PINNED": {
+   "steps_kmh": [
+    20,
+    30,
+    50,
+    70,
+    80,
+    100,
+    120,
+    130
+   ],
+   "k": 8,
+   "entropy_bits": 2.4799656673543273,
+   "max_bin_share": 0.34864391951006124,
+   "n_bins_used": 8,
+   "slack_p50_kmh": 8.05381192732952,
+   "slack_p95_kmh": 19.34709023445777,
+   "over_ceiling_frac": 0.006124234470691163,
+   "insample_r2_vhi_from_q_v0": 0.9631430705345662,
+   "insample_rmse_ms": 1.426630633923374
+  },
+  "L10_plus_90_110": {
+   "steps_kmh": [
+    20,
+    30,
+    50,
+    70,
+    80,
+    90,
+    100,
+    110,
+    120,
+    130
+   ],
+   "k": 10,
+   "entropy_bits": 2.5588305972537935,
+   "max_bin_share": 0.34864391951006124,
+   "n_bins_used": 10,
+   "slack_p50_kmh": 7.4740166288656615,
+   "slack_p95_kmh": 19.226843379520556,
+   "over_ceiling_frac": 0.006124234470691163,
+   "insample_r2_vhi_from_q_v0": 0.9640309818816035,
+   "insample_rmse_ms": 1.4093415661811675
+  },
+  "L13_every_10": {
+   "steps_kmh": [
+    10,
+    20,
+    30,
+    40,
+    50,
+    60,
+    70,
+    80,
+    90,
+    100,
+    110,
+    120,
+    130
+   ],
+   "k": 13,
+   "entropy_bits": 3.2033666192217427,
+   "max_bin_share": 0.20384951881014873,
+   "n_bins_used": 13,
+   "slack_p50_kmh": 4.939287900292388,
+   "slack_p95_kmh": 9.67455943081154,
+   "over_ceiling_frac": 0.006124234470691163,
+   "insample_r2_vhi_from_q_v0": 0.9883748738343541,
+   "insample_rmse_ms": 0.8012182021183353
+  }
+ },
+ "quantized_over_ceiling": {
+  "n": 28,
+  "frac": 0.006124234470691163,
+  "note": "clips whose realised v_hi EXCEEDS the top posted limit (130 km/h). The raw ego-derived ceiling is violated on 0 clips BY CONSTRUCTION; this is the property a real limit has."
+ },
+ "i_ego_coupling": {
+  "raw": {
+   "tag": "v_hi RAW",
+   "n": 4572,
+   "corr_with_v0": 0.9375082686350314,
+   "minus_v0_mean_ms": 1.1346074447685872,
+   "minus_v0_median_ms": 0.4009188406492954,
+   "minus_v0_p95_ms": 6.44323246707765,
+   "frac_differs_gt_1ms": 0.5271216097987752,
+   "frac_below_v0": 0.3484251968503937
+  },
+  "quantized": {
+   "tag": "quantize_up(v_hi)",
+   "n": 4572,
+   "corr_with_v0": 0.9167112054987941,
+   "minus_v0_mean_ms": 3.598411337348411,
+   "minus_v0_median_ms": 3.160018647642339,
+   "minus_v0_p95_ms": 9.259029057966936,
+   "frac_differs_gt_1ms": 0.8372703412073491,
+   "frac_below_v0": 0.08442694663167104
+  }
+ },
+ "ii_recoverability": {
+  "CONTROL_vhi_from_vhi_must_be_1": {
+   "oof": {
+    "r2": 1.0,
+    "rmse_ms": 9.11120114715434e-15,
+    "mae_ms": 6.411448896536665e-15
+   },
+   "insample": {
+    "r2": 1.0,
+    "rmse_ms": 2.2482512321525422e-15,
+    "mae_ms": 1.8416027719975012e-15
+   }
+  },
+  "CONTROL_vhi_from_v0_alone": {
+   "oof": {
+    "r2": 0.8788772570655305,
+    "rmse_ms": 2.586216143064073,
+    "mae_ms": 1.9290193844934584
+   },
+   "insample": {
+    "r2": 0.8789217537590546,
+    "rmse_ms": 2.5857410521138697,
+    "mae_ms": 1.9283814128795445
+   }
+  },
+  "CONTROL_vhi_from_shuffled_q_and_v0": {
+   "oof": {
+    "r2": 0.8788602517000874,
+    "rmse_ms": 2.586397686207883,
+    "mae_ms": 1.9292388527922966
+   },
+   "insample": {
+    "r2": 0.8789414102215566,
+    "rmse_ms": 2.5855311523728517,
+    "mae_ms": 1.928217456681667
+   }
+  },
+  "vhi_from_q_alone": {
+   "oof": {
+    "r2": 0.9512838481106142,
+    "rmse_ms": 1.64016846475479,
+    "mae_ms": 1.3896105732210322
+   },
+   "insample": {
+    "r2": 0.9513612860634255,
+    "rmse_ms": 1.638864361322148,
+    "mae_ms": 1.3885180012627472
+   }
+  },
+  "vhi_from_q_and_v0_linear": {
+   "oof": {
+    "r2": 0.9630795794156998,
+    "rmse_ms": 1.4278588887130734,
+    "mae_ms": 1.1713845500090732
+   },
+   "insample": {
+    "r2": 0.9631430705345662,
+    "rmse_ms": 1.426630633923374,
+    "mae_ms": 1.1705024479435404
+   }
+  },
+  "vhi_from_q_and_v0_PERBIN": {
+   "oof": {
+    "r2": 0.9702226291783875,
+    "rmse_ms": 1.2823162452709955,
+    "mae_ms": 1.0434931645281178
+   },
+   "insample": {
+    "r2": 0.9705662060869328,
+    "rmse_ms": 1.2748969788735682,
+    "mae_ms": 1.0386311367403338
+   }
+  },
+  "REFERENCE_vhi_from_RAW_and_v0": {
+   "oof": {
+    "r2": 1.0,
+    "rmse_ms": 8.626242768129213e-15,
+    "mae_ms": 6.436530487908825e-15
+   },
+   "insample": {
+    "r2": 1.0,
+    "rmse_ms": 2.4558637470212894e-15,
+    "mae_ms": 2.018027136918382e-15
+   }
+  }
+ },
+ "ii_headline": {
+  "r2_v0_alone": 0.8788772570655305,
+  "rmse_v0_alone_ms": 2.586216143064073,
+  "r2_bin_plus_v0_best": 0.9702226291783875,
+  "rmse_bin_plus_v0_best_ms": 1.2823162452709955,
+  "delta_r2_the_future_info_the_bin_adds": 0.09134537211285698,
+  "rmse_reduction_ms": 1.3038998977930774,
+  "unrecovered_variance_share": 0.02977737082161247,
+  "reading": "1 - r2_bin_plus_v0 is the share of the RAW future value the bin + ego does NOT reveal (quantization NOT cosmetic if it is materially above 0). delta_r2 is the FUTURE information the bin adds beyond the ego present -- the residual leak."
+ },
+ "ii_bin_from_v0": {
+  "oof_accuracy": 0.583989501312336,
+  "majority_class_baseline": 0.34864391951006124,
+  "note": "if the bin is readable off the ego's own v0, the channel tells the model nothing it does not already have."
+ },
+ "iii_occupancy": {
+  "bins_ms": [
+   5.5556,
+   8.3333,
+   13.8889,
+   19.4444,
+   22.2222,
+   27.7778,
+   33.3333,
+   36.1111
+  ],
+  "bins_kmh": [
+   20,
+   30,
+   50,
+   70,
+   80,
+   100,
+   120,
+   130
+  ],
+  "counts": [
+   809,
+   932,
+   1594,
+   619,
+   165,
+   229,
+   138,
+   86
+  ],
+  "shares": [
+   0.17695,
+   0.20385,
+   0.34864,
+   0.13539,
+   0.03609,
+   0.05009,
+   0.03018,
+   0.01881
+  ],
+  "entropy_bits": 2.4799656673543273,
+  "max_entropy_bits": 3.0,
+  "max_bin_share": 0.34864391951006124,
+  "max_bin_kmh": 50,
+  "n_bins_used": 8,
+  "n_bins_available": 8
+ },
+ "low_speed_distortion": {
+  "frac_clips_ceiling_le_30kmh": 0.38079615048118987,
+  "frac_clips_with_a_stop_in_band": 0.07961504811898512,
+  "of_those_frac_ceiling_le_30kmh": 0.9807692307692307,
+  "by_road_class": {
+   "highway": {
+    "n": 746,
+    "frac_ceiling_le_30kmh": 0.02680965147453083,
+    "median_ceiling_kmh": 100.0
+   },
+   "intersection": {
+    "n": 861,
+    "frac_ceiling_le_30kmh": 0.7502903600464577,
+    "median_ceiling_kmh": 30.000000000000004
+   },
+   "urban": {
+    "n": 2965,
+    "frac_ceiling_le_30kmh": 0.3625632377740304,
+    "median_ceiling_kmh": 50.0
+   }
+  },
+  "note": "snapping UP from a STOPPED or crawling ego reports the LOWEST posted limit, which is a property of the traffic, not of the road. A deployed map service would return 50 km/h for an urban clip whose ego never exceeded 5 km/h. This is a train/deploy mismatch in the OPPOSITE direction to the optimism the quantization fixes, and it is the largest single caveat on this channel."
+ }
+}

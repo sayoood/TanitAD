@@ -1,0 +1,33 @@
+# stack/tests/test_v6_stage_init_introduction.py -- vs origin tip c36b6ddd (LF blobs) -- R1/R4 2026-09-27; apply from the repo root with: git apply <this file>
+--- a/stack/tests/test_v6_stage_init_introduction.py
++++ b/stack/tests/test_v6_stage_init_introduction.py
+@@ -100,10 +100,18 @@
+     so this entry means the ordinary thing. F-8 (T5 temporal consistency)
+     deliberately has NO entry: it holds no parameters and no buffers, so like
+     ``MpcRefiner`` it changes no state_dict key and there is nothing to
+-    adjudicate."""
++    adjudicate.
++
++    ⭐ EXTENDED 2026-09-27 (PI directive R1/R4 for v7F): ``tac_op_port.`` --
++    the tactical-behaviour -> operative-plan port (--tac-op-cond, group
++    ``planner``, zero-init Linear(2*d_goal_embed -> d_goal_embed), +32,896
++    params at d_goal_embed 128) -- and ``vmax_tac.`` -- the max-speed INPUT
++    port (--max-speed-input-v6, group ``layer_tac``, zero-init Linear(4 ->
++    d_tac), +2,560 params at d_tac 512). Both are introduced AND TRAINED by
++    S-T, so the entries mean the ordinary thing (tests/test_v7f_r1r4.py)."""
+     assert STAGE_MAY_INTRODUCE["S-T"] == (
+         "cand_score.", "cond_tac_dyn.", "prop_diffusion.", "fallback.",
+-        "agent_slots.", "t2_head.")
++        "agent_slots.", "t2_head.", "tac_op_port.", "vmax_tac.")
+     # S-W introduces the PI-approved AUX module sets (O14 R2 future-obs head,
+     # E-DEC-67; O5-EMA teacher copies, MM-E1; O5-FROZEN teacher copies, MM-E4
+     # L2) — declared, test-pinned in test_o14_future_obs / test_o5_ema_teacher
+@@ -128,7 +136,7 @@
+     assert all(k.startswith("cand_score.") for k in rep["introduced_keys"])
+     assert rep["introduced_allowance"] == [
+         "cand_score.", "cond_tac_dyn.", "prop_diffusion.", "fallback.",
+-        "agent_slots.", "t2_head."]
++        "agent_slots.", "t2_head.", "tac_op_port.", "vmax_tac."]
+     assert rep["init_step"] == 30000
+ 
+ 

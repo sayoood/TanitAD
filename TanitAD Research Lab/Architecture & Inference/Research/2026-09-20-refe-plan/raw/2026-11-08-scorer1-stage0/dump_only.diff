@@ -1,0 +1,18 @@
+--- a/scorer_finetune.py
++++ b/scorer_finetune.py
+@@ -1313,2 +1313,3 @@
+     ap.add_argument("--epo-carve-micro", type=int, default=EPO_CARVE_MICRO_DEFAULT, help="B8: carve micro-batches (--batch sets each) scored per optimiser update; only with --epo-con-feed carve")
++    ap.add_argument("--dump-step0-only", action="store_true", help="eval-only: write the step-0 --dump-scores files and exit before any optimizer step (needs --lr 0)")
+     ap.add_argument("--dump-scores", default="", help="RL-S1: DIR; after every held-out evaluation write the base / A / B scorers' per-proposal logits as "
+@@ -1361,3 +1362,5 @@
+ 
+-    if not a.preflight and not os.path.exists(os.path.join(a.out, "PREFLIGHT_PASS.json")):
++    if a.dump_step0_only and (a.preflight or a.lr != 0 or not a.dump_scores):
++        print("REFUSED: --dump-step0-only needs --lr 0 and --dump-scores, and not --preflight"); return 4
++    if not a.preflight and not a.dump_step0_only and not os.path.exists(os.path.join(a.out, "PREFLIGHT_PASS.json")):
+         print("REFUSED: no PREFLIGHT_PASS.json in --out -- run --preflight first (the launch gate)"); return 4
+@@ -2403,2 +2406,4 @@
+     run_evaluate("step0")
++    if a.dump_step0_only:
++        log({"event": "dump_step0_only_exit"}); return 0
+     upd, micro, t0 = 0, 0, time.time()

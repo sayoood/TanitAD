@@ -1,0 +1,52 @@
+== S-W
+mkdir -p /home/nvidia/experiments/v7f-SW-30k && cd /home/nvidia/TanitAD/stack && PYTHONPATH=/home/nvidia/TanitAD/stack:/home/nvidia/TanitAD/taniteval OMP_NUM_THREADS=6 PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True setsid nohup python3 -u scripts/train_v6_staged.py --stage S-W --out /home/nvidia/experiments/v7f-SW-30k --steps 30000 --batch 8 --lr 0.0001 --n-candidates 1 --nav-cond --nav-labels /home/nvidia/data/v72/nav.jsonl.gz --strategic-off --goal-multilabel --newest-frame-only --in-channels 3 --enc-dim 768 --enc-depth 12 --enc-heads 12 --frame-h 256 --frame-w 640 --horizons 1 --v2-cache /home/nvidia/data/physicalai-train-e438721ae894-w120-256x640cyl --v2-val-cache /home/nvidia/data/physicalai-val-0c5f7dac3b11-w120-256x640cyl --v2-lru 6 --save-every 250 --frame-hfov 120 --projection cylindrical --require-parity > /home/nvidia/experiments/v7f-SW-30k/train.out 2>&1 < /dev/null &
+
+gate refusals=[] pi_pending=[] chain_refusals=[]
+   PASS         R6       stage_allowed                  --stage
+   PASS         R2       required_on (every stage)      --nav-cond
+   PASS         R6       required_on (every stage)      --strategic-off
+   PASS         R2       forbidden_flag                 --i-know-this-arm-predates-nav
+   PASS         the isolation CONTROL arm is not v7F forbidden_flag                 --i-know-this-is-the-control-arm
+   PASS         the X3 mis-wired control is not v7F forbidden_flag                 --no-isolate-planner
+   PASS         the X3 mis-wired control is not v7F forbidden_flag                 --no-isolate-uplink
+   PASS         the X3 mis-wired control is not v7F forbidden_flag                 --no-isolate-interp
+   PASS         R6       forbidden_flag                 --tac-goal-cond
+   PASS         R3       forbidden_flag                 --goal-factored
+   PASS         SEL-1    forbidden_values               --selector
+   PASS         R4:      forbidden_values               --tac-op-cond
+   PASS         R6       forbidden_positive             --w-s1-multi
+   PASS         R6       forbidden_positive             --w-s2-goal
+   n/a (flag absent) R4 / D1  pi_pending_values              --tac-op-cond
+   only_in_chain: ['--frame-hfov', '--n-candidates', '--projection', '--v2-lru', '--v2-val-cache']
+   only_in_gate_argv: {'--log-every': ['2']}
+   value_differs: {'--out': {'chain': ['/home/nvidia/experiments/v7f-SW-30k'], 'gate': ['/home/nvidia/experiments/v7f-st']}, '--steps': {'chain': ['30000'], 'gate': ['10000']}}
+   trainer preflight refusals: 0
+== S-T
+mkdir -p /home/nvidia/experiments/v7f-ST-10k/seam && cd /home/nvidia/TanitAD/stack && PYTHONPATH=/home/nvidia/TanitAD/stack:/home/nvidia/TanitAD/taniteval OMP_NUM_THREADS=6 PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True setsid nohup python3 -u scripts/train_v6_staged.py --stage S-T --out /home/nvidia/experiments/v7f-ST-10k --steps 10000 --batch 8 --lr 0.0001 --n-candidates 1 --a-max 4.0 --adapter-hidden 512 --anchor-goal none --d-goal-embed 128 --d-str 256 --d-t2-hidden 256 --d-t2-proj 128 --d-tac 512 --diffusion-hidden 256 --diffusion-noise-rho 0.9 --diffusion-sigma-a 2.0 --diffusion-sigma-k 0.1 --diffusion-steps 4 --dt 0.1 --ema-decay 0.996 --ema-decay-ramp off --ema-decay-start 0.99 --enc-depth 12 --enc-dim 768 --enc-grad-checkpoint auto --enc-heads 12 --f-blocks 3 --f-hidden-str 512 --f-hidden-tac 512 --fallback-roll-k 10 --frame-h 256 --frame-w 640 --horizons 1 --in-channels 3 --kappa-max 0.2 --mpc-lr 0.05 --mpc-roll-k 0 --mpc-steps 3 --mpc-topk 2 --mpc-w-consist 0.0 --mpc-w-goal 1.0 --mpc-w-kin 0.1 --n-agent-slots 8 --n-anchors 256 --n-lat-bins 16 --n-registers 4 --n-slot-queries 100 --newest-frame-only --o5-target live --o5-target-crop 0.0 --param-budget 300000000 --patch 16 --plan-steps 60 --plan-wta-eps 0.0 --pred-depth 6 --pred-dim 768 --pred-heads 12 --readout-dim 128 --readout-grid 4 --selector-mlp-hidden 256 --selector-tau-m 1.0 --sigreg-free-dims 0 --sigreg-slices 512 --sigreg-subspaces 1 --slot-depth 3 --slot-heads 8 --slot-hidden 256 --slot-src cells --t2-tau 0.1 --tac-vocab-version v7.0 --uplink stopgrad --w-o14 0.0 --window 6 --init-from /home/nvidia/experiments/v7f-SW-30k/ckpt.pt --prev-gate /home/nvidia/experiments/v7f-SW-30k/stage_gate.json --max-horizon 60 --proposals query --selector none --w-t1 1.0 --nav-cond --nav-labels /home/nvidia/data/v72/nav.jsonl.gz --strategic-off --max-speed-input-v6 --plan-vmax-cap --speed-max-sidecar-v6 /home/nvidia/data/refcv6_speed_max_v8_train.jsonl --w-tac-label-all 1.0 --goal-multilabel --s2-labels /home/nvidia/data/v72/labels/s2_labels_v7.2_train.jsonl.gz --tac-op-cond detached --v2-cache /home/nvidia/data/physicalai-train-e438721ae894-w120-256x640cyl --v2-val-cache /home/nvidia/data/physicalai-val-0c5f7dac3b11-w120-256x640cyl --v2-lru 6 --save-every 250 --frame-hfov 120 --projection cylindrical --require-parity --dump-seam-plan /home/nvidia/experiments/v7f-ST-10k/seam > /home/nvidia/experiments/v7f-ST-10k/train.out 2>&1 < /dev/null &
+
+gate refusals=[] pi_pending=['--tac-op-cond detached'] chain_refusals=[]
+   PASS         R6       stage_allowed                  --stage
+   PASS         R2       required_on (every stage)      --nav-cond
+   PASS         R6       required_on (every stage)      --strategic-off
+   PASS         R1a      required_on (S-T)              --max-speed-input-v6
+   PASS         R1b      required_on (S-T)              --plan-vmax-cap
+   PASS         R1:      required_on (S-T)              --speed-max-sidecar-v6
+   PASS         R3:      required_on (S-T)              --goal-multilabel
+   PASS         R4       required_on (S-T)              --tac-op-cond
+   PASS         R3       required_positive (S-T)        --w-tac-label-all
+   PASS         R2       forbidden_flag                 --i-know-this-arm-predates-nav
+   PASS         the isolation CONTROL arm is not v7F forbidden_flag                 --i-know-this-is-the-control-arm
+   PASS         the X3 mis-wired control is not v7F forbidden_flag                 --no-isolate-planner
+   PASS         the X3 mis-wired control is not v7F forbidden_flag                 --no-isolate-uplink
+   PASS         the X3 mis-wired control is not v7F forbidden_flag                 --no-isolate-interp
+   PASS         R6       forbidden_flag                 --tac-goal-cond
+   PASS         R3       forbidden_flag                 --goal-factored
+   PASS         SEL-1    forbidden_values               --selector
+   PASS         R4:      forbidden_values               --tac-op-cond
+   PASS         R6       forbidden_positive             --w-s1-multi
+   PASS         R6       forbidden_positive             --w-s2-goal
+   PI-DECISION  R4 / D1  pi_pending_values              --tac-op-cond
+   only_in_chain: ['--a-max', '--adapter-hidden', '--anchor-goal', '--d-goal-embed', '--d-str', '--d-t2-hidden', '--d-t2-proj', '--d-tac', '--diffusion-hidden', '--diffusion-noise-rho', '--diffusion-sigma-a', '--diffusion-sigma-k', '--diffusion-steps', '--dt', '--dump-seam-plan', '--ema-decay', '--ema-decay-ramp', '--ema-decay-start', '--enc-grad-checkpoint', '--f-blocks', '--f-hidden-str', '--f-hidden-tac', '--fallback-roll-k', '--frame-hfov', '--kappa-max', '--max-horizon', '--mpc-lr', '--mpc-roll-k', '--mpc-steps', '--mpc-topk', '--mpc-w-consist', '--mpc-w-goal', '--mpc-w-kin', '--n-agent-slots', '--n-anchors', '--n-lat-bins', '--n-registers', '--n-slot-queries', '--o5-target', '--o5-target-crop', '--param-budget', '--patch', '--plan-steps', '--plan-wta-eps', '--pred-depth', '--pred-dim', '--pred-heads', '--projection', '--readout-dim', '--readout-grid', '--selector-mlp-hidden', '--selector-tau-m', '--sigreg-free-dims', '--sigreg-slices', '--sigreg-subspaces', '--slot-depth', '--slot-heads', '--slot-hidden', '--slot-src', '--t2-tau', '--tac-vocab-version', '--uplink', '--v2-lru', '--v2-val-cache', '--w-o14', '--w-t1', '--window']
+   only_in_gate_argv: {'--log-every': ['2']}
+   value_differs: {'--out': {'chain': ['/home/nvidia/experiments/v7f-ST-10k'], 'gate': ['/home/nvidia/experiments/v7f-st']}, '--init-from': {'chain': ['/home/nvidia/experiments/v7f-SW-30k/ckpt.pt'], 'gate': ['/home/nvidia/experiments/v7f-sw/ckpt.pt']}, '--prev-gate': {'chain': ['/home/nvidia/experiments/v7f-SW-30k/stage_gate.json'], 'gate': ['/home/nvidia/experiments/v7f-sw/stage_gate.json']}}
+   trainer preflight refusals: 0

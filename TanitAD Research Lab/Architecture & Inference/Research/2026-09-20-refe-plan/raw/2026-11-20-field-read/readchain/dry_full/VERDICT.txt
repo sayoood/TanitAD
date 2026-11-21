@@ -1,0 +1,34 @@
+DRY RUN — NOT A FIELD VERDICT
+(C1 vs C0 as stand-ins for F vs C)
+
+VERDICT: DRY RUN:NOT PROVEN | NOT PROVEN
+tier: T1 (NAVSIM v1 PDMS, open-loop pseudo-simulation of the executed LQR-tracked plan; not closed loop, not T0)
+estimator: paired log-cluster bootstrap, 10000 draws, seed 20260927; answers: another draw of LOGS only; another TRAINING run = the replicate pair (Fs - Cs floor, Fs - Cs sign reproduction; H-ESTIM-SEED-1); another INFERENCE run = none (deterministic planner, asserted by the P5-C determinism control)
+n tokens 12146, logs 136; arms {'F': 'C1', 'C': 'C0', 'Fs': None, 'Cs': None}
+controls: CTRL-SET=PASS, CTRL-CSV=PASS, CTRL-CSV=PASS, CTRL-SEAM=PASS, CTRL-ID=PASS, CTRL-ID=PASS  (all pass: True)
+E1 PDMS F-C (tracked, decision): 1.1702 [0.6730, 1.6450]
+E2 DAC F-C: 0.1976 [-0.0999, 0.4638] | DAC-zero share F-C pp: -0.1976 [-0.4638, 0.0999]
+E3 zeroed-token share F-C pp: -0.1235 [-0.4508, 0.2421]
+  sub nc: tracked -0.0494 [-0.2046, 0.0929] | transparent (no tracker in this number) -0.1029 [-0.2841, 0.0754]
+  sub dac: tracked 0.1976 [-0.0999, 0.4638] | transparent (no tracker in this number) -0.5352 [-0.8937, -0.1773]
+  sub ddc: tracked -0.3129 [-0.6209, -0.0049] | transparent (no tracker in this number) -1.1650 [-1.6096, -0.7400]
+  sub ttc: tracked 0.0988 [-0.2279, 0.4176] | transparent (no tracker in this number) -0.6834 [-1.0240, -0.3633]
+  sub ep: tracked 2.4934 [1.6898, 3.3196] | transparent (no tracker in this number) 1.5616 [0.8456, 2.2877]
+  sub c: tracked -0.0165 [-0.0445, 0.0000] | transparent (no tracker in this number) -15.2314 [-16.7594, -13.6423]
+A1 EP delta F - C (x100), tracked: 2.4934 [1.6898, 3.3196] bar hi < 0 AND point <= -1.0 -> clear
+A2 picked plan 4 s along-track, mean F / mean C: 1.0403 [1.0311, 1.0497] bar hi < 0.97 -> clear
+A3 fan spread (mean pairwise 4 s endpoint distance over 64 proposals), mean F / mean C: 1.2507 [1.2296, 1.2730] bar hi < 0.9 -> clear
+K4: not fired
+M1: C3 tokens, n = 1058, logs = 123: failure-enriched, so these are NOT rates; DAC-compliant share of 64, F-C pp: tracked 0.9791 [-0.2903, 2.1453]
+  raw, navsim_dac_violation(mode='raw') [the card's form]: -4.4837 [-5.4232, -3.5140]; mode='simulated': 0.9791 [-0.2903, 2.1453]
+  raw, transparent NAVSIM scorer, dt 0.5 [second column]: -4.4911 [-5.4270, -3.5251]
+  M2 cross-check, C3 subset, dDAC of the PICK (x100): raw_navsim_dac -1.3233 [-2.7422, 0.0837], simulated 4.4423 [2.5862, 6.1637], tracked table 4.4423 [2.5862, 6.1637], raw_transparent -1.5123 [-2.9054, -0.1797]
+  rawdac CTRL-SIM F: n=1058 tokens, per-proposal 100.00 %, per-token 100.00 %; CTRL-PICK F: 0 mismatches
+  rawdac CTRL-SIM C: n=1058 tokens, per-proposal 100.00 %, per-token 100.00 %; CTRL-PICK C: 0 mismatches
+M2: dDAC tracked 0.1976 [-0.0999, 0.4638], raw -0.5352 [-0.8937, -0.1773] -> no raw-vs-tracked split (raw improves and tracked does not: false)
+families (each stands alone, never pooled):
+  LONGITUDINAL: 22 components, separated adverse (F vs C, tracked frame): ['min_ttc_s', 'speed_mae_mps', 'speed_bias_mps', 'speed_rmse_mps', 'target_speed_acc.within_0.5_mps', 'target_speed_acc.within_1.0_mps', 'target_speed_acc.within_2.0_mps', 'along_mae_m', 'along_bias_m', 'along_final_bias_m', 'accel_mae_mps2', 'ego_progress.progress_ratio_mean', 'ego_progress.progress_error_mean']
+  LATERAL: 8 components, separated adverse (F vs C, tracked frame): ['cross_mae_m', 'cross_final_mae_m']
+  TACTICAL: command adherence COMPUTED; selection quality actual F-C 1.1702 [0.6730, 1.6450], random F-C 0.4012 [-0.1895, 0.9525]
+  STRATEGIC: REPORTED IN FULL (not gating; PI ruling 2026-11-16)
+  guard (longitudinal/lateral separated adverse): FAIL

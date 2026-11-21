@@ -1,0 +1,25 @@
+{
+ "_what": "SECOND, MECHANISTICALLY DIFFERENT probe for the stage-1 camera frames: match by FILE BASENAME over a full walk of the sensor tree, ignoring the directory layout entirely. CLAUDE.md: 'a second PROBE means a different mechanism, not the same command run again' -- the first census resolved exact relative paths, this one cannot be fooled by a re-organised directory, a renamed split folder or a case difference.",
+ "utc": "2026-09-20T14:56:34Z",
+ "tree_walked": "C:/Users/Admin/navsim-crun/data/openscene/navhard_two_stage/sensor_blobs",
+ "n_jpg_on_disk": 41145,
+ "stage_1": {
+  "distinct_basenames": 3375,
+  "found_on_disk": 0
+ },
+ "stage_2": {
+  "distinct_basenames": 40965,
+  "found_on_disk": 40965,
+  "role": "SAME-BREATH CONTROL: must read non-zero or the probe proves nothing"
+ },
+ "stage1_stage2_basename_overlap": 0,
+ "verdict": "STAGE_1_CAMERA_FRAMES_ABSENT, CONFIRMED BY A SECOND MECHANISM: 0/3375 stage-1 basenames vs 40965/40965 stage-2 basenames in the SAME walk; the two sets are DISJOINT (overlap 0), so the stage-1 frames are different FILES, not the same files under other names",
+ "what_would_unblock_it": {
+  "source": "the FULL OpenScene v1.1 TEST-split camera archives",
+  "files": "openscene_sensor_test_camera_{0..31}.tgz (32 shards) via devkit/download/download_test.sh",
+  "why_navhard's_own_archives_do_not_contain_them": "navhard ships navsim_v2.2_navhard_two_stage_{curr,hist}_sensors.tar.gz = the SYNTHETIC scenes' current + history frames only. BOTH were extracted here (EXTRACT_DONE.json: CAM_F0/L0/R0 13,715 each, 76 log dirs, 0 zero-byte files, ok true) and stage 1 is STILL empty -- so this is not a partial extraction, it is a different corpus.",
+  "needed_subset": "5,400 jpgs = 450 tokens x 4 history frames x 3 cameras, over the same 76 logs",
+  "decision": "a PI call: the shards are whole-tarball downloads and cover the entire test split",
+  "then": "code/build_frames.py --stage 1 --inputs <export> --orig-sensors <test sensor_blobs>"
+ }
+}

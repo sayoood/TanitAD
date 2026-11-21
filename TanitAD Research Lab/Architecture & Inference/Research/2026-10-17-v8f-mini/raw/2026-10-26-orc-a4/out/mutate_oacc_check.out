@@ -1,0 +1,4 @@
+ANCHOR FOUND 2x (need exactly 1): [v8f_mini_box2_queue.cmd] evaloacc does not refuse an unfinished run
+    '(echo %E0% & exit /b 0)\r\nif not exist "%OUT%\\summary.json" (echo REFUSED: %TG% has not finished training & exit /b 2)'
+ANCHOR FOUND 2x (need exactly 1): [v8f_mini_box2_queue.cmd] evaloacc does not skip a finished eval
+    '(echo %E0% & exit /b 0)\r\nif not exist "%OUT%\\summary.json" (echo REFUSED: %TG% has not finished training & exit /b 2)\r\nif exist "%EV%\\eval_%TG%.npz" (echo [skip] eval %TG% & exit /b 0)'

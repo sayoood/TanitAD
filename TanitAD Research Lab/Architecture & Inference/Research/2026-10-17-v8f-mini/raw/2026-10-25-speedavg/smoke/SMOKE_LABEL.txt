@@ -1,0 +1,21 @@
+SMOKE -- NOT A RESULT.  PREREG_V8F_SPEEDAVG instruments, plumbing check on real data.
+
+What ran: the driver (stack/scripts/v8f_mini_eval_speedavg.py, modes own / self / gt / avg, both seeds) on the FIRST 300 windows of eval-141 (18 episodes;
+SMOKE48_* = the first 48 windows), CPU only, then the reader's controls (v8f_speedavg_read.py --smoke-first-n N).
+
+Checkpoints: STAND-INS, NOT THE PREREG'S ARM. "seed 0" = the B-family checkpoint with sha256 601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8,
+"seed 1" = the one with sha256 6104fb15dc21d524b6ed53be632b8d53ec5413526ac587734c22684c7e50c2e6. X_s0 (M2b-mixo_s0, sha256 c6a62876...) and X_s1 were NOT touched.
+Box 2 was not touched.
+
+What it shows (SMOKE300_READ_controls.json; the json files in eval/ are the drivers' per-mode eval outputs, the npz are not banked):
+  control 1  self-average == own, ADE6 max |dev| = 0.0 exactly, plan bit-equal, paired delta [0.0, 0.0, 0.0]                      both seeds
+  control 2  gt == KINDX's speed-only oracle, ADE6 max |dev| = 4.97e-06 m (bar 1e-04), driver code vs the eval's oracle code 0.0   seed "0" only
+             seed "1": NOT RUN (no banked speed-only oracle eval for that stand-in on this machine); only the driver's own code-level 0.0 check ran
+  control 3  own == banked, max |dev| = 6.34e-06 m vs KINDX's own eval, 2.01e-06 m vs the standard banked eval (bar 1e-04)             both seeds
+  guards     non-speed cells untouched; tactical and strategic equal to the seed's own; averaged cells = the mean of the two seeds' cells;
+             the gt arm falls back to T's own code on the 17 windows with no v9 row; the average moves the plan; cross-seed: both avg arms averaged the same pair
+
+What it does NOT show: no outcome-table row, no PRIMARY, no CAPTURE and no SECONDARY was read; no bar of the PREREG applies to these checkpoints; the numbers are
+plumbing agreement, nothing about speed averaging. Tier stamp of the driver's output: T1-class open loop (own held outputs; no recorded future action).
+
+MM, 2026-10-25, at banking: the per-mode eval JSONs are under `eval_STANDIN_B_checkpoints_NOT_X/` (renamed from `eval/`). Their file names and tags say `M2b-mixo_s0/s1` because the driver names outputs after the arm it will run; the checkpoints inside are B's (each JSON's `ckpt` field names `.../M2b_s0|s1/ckpt_last.pt`). X_s1 did not exist when this smoke ran.

@@ -1,0 +1,132 @@
+[18:55:25Z] queue DONE on the pod; the pod read starts
+[18:55:27Z] container free 45 GB
+[18:55:40Z] e1 headway rc 0
+[18:55:47Z] e1 families rc 0
+e1 hw/RESULT_HEADWAY.json     PASS leaves 1836 / 1836 differing 0 only-bank 0 only-got 0 max abs diff 0
+e1 q3/RESULT_Q3.json          PASS leaves 1897 / 1897 differing 0 only-bank 0 only-got 0 max abs diff 1.44e-15
+ZZ ENV-E1 PASS
+[18:55:58Z] headway rc 0
+[18:56:05Z] families rc 0
+[18:56:06Z] read rc 0
+TIER: T1-kin (kinematic rollout on the model's own actions; no lead rule in this card); never driving performance
+== controls (h1 to h9)
+   h1_rerun_equals_banked PASS {"line": "CMP files=141 differing=0", "PASS": true}
+   h2_parameters_applied PASS {"per_run": {"I10R0HID_s0": {"readout": "pinned", "log_steps": 10, "calls": 14394, "result_file_steps": 10, "PASS": true}, "I10R0C5_s0": {"readout": "causal", "log_steps": 5, "calls": 28788, "result_file_steps": 5, "PASS": true}, "I10R0C5_s1": {"readout": "causal", "log_steps": 5, "calls": 28788, "result_file_steps": 5, "PASS": true}, "I10R0B5_s0": {"readout": "backward", "log_steps": 5, "calls": 
+   h3_readout_holds PASS {"per_run": {"I10R0HID_s0": {"reported": true, "PASS": true}, "I10R0C5_s0": {"max_speed_diff": 0.0, "max_acceleration_diff": 5.684341886080802e-14, "PASS": true}, "I10R0C5_s1": {"max_speed_diff": 0.0, "max_acceleration_diff": 5.684341886080802e-14, "PASS": true}, "I10R0B5_s0": {"max_speed_diff": 7.105427357601002e-15, "max_acceleration_diff_reported": 166.15412149298413, "PASS": true}, "I10R0B5_s1": {"
+   h4_first_block_equal PASS {"per_run": {"I10R0HID_s0": {"banked": "I10R0", "first_block_max_abs_diff": 0.0, "PASS": true}, "I10R0C5_s0": {"banked": "I10R0M5", "first_block_max_abs_diff": 0.0, "PASS": true}, "I10R0C5_s1": {"banked": "I10R0M5", "first_block_max_abs_diff": 0.0, "PASS": true}, "I10R0B5_s0": {"banked": "I10R0M5", "first_block_max_abs_diff": 0.0, "PASS": true}, "I10R0B5_s1": {"banked": "I10R0M5", "first_block_max_
+   h5_counts PASS {"dump_files": {"I10R0HID_s0": 141, "I10R0C5_s0": 141, "I10R0C5_s1": 141, "I10R0B5_s0": 141, "I10R0B5_s1": 141, "I10R0C10_s0": 141, "I10R0C10_s1": 141}, "n_windows_total": 2399, "n_lead_windows": 642, "PASS": true}
+   h6_reused_and_known_values PASS {"n_files": 4, "differing": [], "known_values": {"I10R0": {"got": [0.0884, 0.0863], "card": [0.0884, 0.0863], "prior_rs_ade6": [[0.3014, 3.443], [0.3014, 3.443]], "prior_card": [0.3014, 3.443], "PASS": true}, "I10R0M5": {"got": [0.9075, 0.9825], "card": [0.9075, 0.9825], "prior_rs_ade6": [[0.4185, 5.407], [0.4185, 5.407]], "prior_card": [0.4185, 5.407], "PASS": true}}, "PASS": true}
+   h7_reader_controls PASS {"headway": true, "family": true, "PASS": true}
+   h8_model PASS {"per_run": {"I10R0HID_s0": true, "I10R0C5_s0": true, "I10R0C5_s1": true, "I10R0B5_s0": true, "I10R0B5_s1": true, "I10R0C10_s0": true, "I10R0C10_s1": true}, "PASS": true}
+   h9_tool_check PASS {"wrapper_sha256": "4a96e1c941d8275c", "test_wrapper_sha256": "4a96e1c941d8275c", "check_line": "ZZ CHECK-TICK-READOUT formula holds: True", "PASS": true}
+== reported, no bar
+   pinned_readout_against_executed {"I10R0HID_s0": {"max_speed_diff": 22.54036131965139, "max_acceleration_diff": 461.504536350879, "mean_speed_diff": 0.19891106691347515, "mean_acceleration_diff": 2.7945573063699682}}
+== names
+   model_CAUSAL     HANDOVER10K-MODEL-CAUSAL-SLOWS-CLIMB
+   prior_CAUSAL     HANDOVER10K-PRIOR-CAUSAL-CLIMB-STAYS
+   model_BACKWARD   HANDOVER10K-MODEL-BACKWARD-STABILISES-1S
+   prior_BACKWARD   HANDOVER10K-PRIOR-BACKWARD-REDUCES-CLIMB
+   cycle_2s         HANDOVER10K-CAUSAL-COSTS-AT-2S
+== levels of the model alone (per model seed)
+   I10R0      U [0.1459, 0.1139]  C [0.0763, 0.0421]  F [0.095, 0.1854]
+   I10R0M5    U [0.8505, 0.8968]  C [0.6495, 0.7321]  F [0.0701, 0.0607]
+   I10R0C5    U [0.8132, 0.8754]  C [0.5654, 0.6947]  F [0.0779, 0.0561]
+   I10R0B5    U [0.153, 0.1512]  C [0.0857, 0.0857]  F [0.0888, 0.0981]
+   I10R0C10   U [0.153, 0.1548]  C [0.0654, 0.0841]  F [0.3069, 0.3972]
+== RS: share of windows with last-step speed more than 5 m/s above logged (model rollout / prior alone), per model seed; ADE6 of the model (m)
+   I10R0B5_s0    model 0.1180  prior 0.1267  model ADE6 3.119
+   I10R0B5_s1    model 0.1017  prior 0.1267  model ADE6 3.099
+   I10R0C10_s0   model 0.1546  prior 0.1434  model ADE6 3.672
+   I10R0C10_s1   model 0.1517  prior 0.1434  model ADE6 3.821
+   I10R0C5_s0    model 0.8741  prior 0.4694  model ADE6 12.667
+   I10R0C5_s1    model 0.9754  prior 0.4694  model ADE6 17.253
+   I10R0HID_s0   model 0.0884  prior 0.3014  model ADE6 
+   I10R0M5_s0    model 0.9075  prior 0.4185  model ADE6 15.675
+   I10R0M5_s1    model 0.9825  prior 0.4185  model ADE6 18.764
+   I10R0_s0      model 0.0884  prior 0.3014  model ADE6 2.735
+   I10R0_s1      model 0.0863  prior 0.3014  model ADE6 2.691
+== SP: the readout at 1.0 s against the pinned readout at 1.0 s (model)
+   CAUSAL   speed error -1.4031 [-2.0141, -0.7702] [-1.8049, -1.0013] BETTER | RS [0.8741, 0.9754] bar [0.1768, 0.1726] | U -0.0294 [-0.0588, -0.0052] [-0.0374, -0.0214]  C -0.0607 [-0.1066, -0.0220] [-0.0841, -0.0374]  F +0.0016 [-0.0177, +0.0222] [0.0078, -0.0047]
+   BACKWARD speed error -11.2963 [-12.5971, -9.9236] [-10.3287, -12.2638] BETTER | RS [0.118, 0.1017] bar [0.1768, 0.1726] | U -0.7215 [-0.7808, -0.6589] [-0.6975, -0.7456]  C -0.6051 [-0.6805, -0.5275] [-0.5639, -0.6464]  F +0.0280 [-0.0020, +0.0579] [0.0187, 0.0374]
+== the prior alone at 5 steps under each readout (pinned: RS 0.4185, ADE6 5.407 m; at 10 steps 0.3014, 3.443 m)
+   CAUSAL           {"RS": 0.4694, "ADE6_m": 5.556, "ADE6_minus_pinned_5_steps": 0.1489, "interval": [-0.1759, 0.4807], "speed_error_mps": 4.548, "equal_between_model_seeds_max_abs_diff": 0.0}
+   BACKWARD         {"RS": 0.1267, "ADE6_m": 3.461, "ADE6_minus_pinned_5_steps": -1.9467, "interval": [-2.3418, -1.5646], "speed_error_mps": 1.538, "equal_between_model_seeds_max_abs_diff": 0.0}
+   CAUSAL_10_steps  {"RS": 0.1434, "ADE6_m": 3.173}
+== GC: the readout at 1.0 s against the banked 2.0 s run
+   CAUSAL   U +0.7144 [+0.6338, +0.7998] [0.6673, 0.7616]  C +0.5709 [+0.4432, +0.6852] [0.4891, 0.6526]  F -0.0732 [-0.1617, +0.0107] [-0.0171, -0.1293]
+   BACKWARD U +0.0222 [-0.0127, +0.0648] [0.0071, 0.0374]  C +0.0265 [-0.0139, +0.0656] [0.0093, 0.0436]  F -0.0467 [-0.1224, +0.0215] [-0.0062, -0.0872]
+== PR: the causal readout at the programme's cycle (R0C10 minus R0)
+   U +0.0240 [-0.0319, +0.0816] [0.0071, 0.0409]  C +0.0156 [-0.0286, +0.0599] [-0.0109, 0.0421]  F +0.2118 [+0.1582, +0.2686] [0.2118, 0.2118]
+== beside: causal minus backward at 1.0 s
+   U +0.6922 [+0.6225, +0.7637] [0.6601, 0.7242]  C +0.5444 [+0.4356, +0.6436] [0.4798, 0.609]  F -0.0265 [-0.0624, +0.0097] [-0.0109, -0.0421]
+== families
+   SP_CAUSAL              LONGITUDINAL:speed_mae_mps         D  -1.4031 [-2.0141, -0.7702] [-1.8049, -1.0013] BETTER
+   SP_CAUSAL              LONGITUDINAL:along_mae_m           D  -2.2905 [-3.4344, -1.1995] [-3.1681, -1.4129] BETTER
+   SP_CAUSAL              LATERAL:cross_mae_m                D  -0.3380 [-0.5995, -0.0475] [-0.3956, -0.2803] BETTER
+   SP_CAUSAL              LATERAL:heading_mae_deg            D  +0.8347 [-0.1184, +1.7641] [0.1879, 1.4815] OPEN
+   SP_CAUSAL              LATERAL:curvature_mae_1pm          D  +0.0202 [+0.0069, +0.0359] [0.0181, 0.0223] INSIDE-SPREAD
+   SP_CAUSAL              LATERAL:yaw_rate_mae_degps         D  +1.6929 [-0.8287, +4.6933] [0.4723, 2.9136] OPEN
+   SP_CAUSAL              TACTICAL:lon_err_rate              D  -0.0063 [-0.0223, +0.0033] [-0.0138, 0.0013] OPEN
+   SP_CAUSAL              TACTICAL:lat_err_rate              D  +0.0248 [-0.0236, +0.0709] [-0.01, 0.0596] OPEN
+   SP_CAUSAL              TACTICAL:joint_err_rate            D  -0.0027 [-0.0208, +0.0108] [-0.0121, 0.0067] OPEN
+   SP_CAUSAL              TACTICAL:ade_tac_m                 D  -3.3662 [-4.9080, -1.8005] [-4.4879, -2.2444] BETTER
+   SP_BACKWARD            LONGITUDINAL:speed_mae_mps         D -11.2963 [-12.5971, -9.9236] [-10.3287, -12.2638] BETTER
+   SP_BACKWARD            LONGITUDINAL:along_mae_m           D -12.9837 [-14.8646, -11.0420] [-11.48, -14.4875] BETTER
+   SP_BACKWARD            LATERAL:cross_mae_m                D  -3.8951 [-4.4887, -3.3417] [-3.7085, -4.0818] BETTER
+   SP_BACKWARD            LATERAL:heading_mae_deg            D  -4.1862 [-4.9515, -3.4797] [-4.3032, -4.0691] BETTER
+   SP_BACKWARD            LATERAL:curvature_mae_1pm          D  +0.1240 [+0.0827, +0.1746] [0.1271, 0.1209] WORSE
+   SP_BACKWARD            LATERAL:yaw_rate_mae_degps         D -10.8100 [-14.6130, -6.7261] [-12.9525, -8.6674] BETTER
+   SP_BACKWARD            TACTICAL:lon_err_rate              D  -0.4077 [-0.4648, -0.3507] [-0.3981, -0.4173] BETTER
+   SP_BACKWARD            TACTICAL:lat_err_rate              D  -0.3451 [-0.4398, -0.2503] [-0.2772, -0.4131] BETTER
+   SP_BACKWARD            TACTICAL:joint_err_rate            D  -0.4083 [-0.4627, -0.3556] [-0.3906, -0.426] BETTER
+   SP_BACKWARD            TACTICAL:ade_tac_m                 D -21.0837 [-24.1006, -17.9283] [-18.7587, -23.4087] BETTER
+   GC_CAUSAL              LONGITUDINAL:speed_mae_mps         D  +9.6092 [+7.8963, +11.2888] [8.2653, 10.953] WORSE
+   GC_CAUSAL              LONGITUDINAL:along_mae_m           D +10.8898 [+8.2217, +13.5643] [8.5255, 13.2542] WORSE
+   GC_CAUSAL              LATERAL:cross_mae_m                D  +3.7195 [+3.1328, +4.3153] [3.4297, 4.0093] WORSE
+   GC_CAUSAL              LATERAL:heading_mae_deg            D  +5.7462 [+4.8628, +6.6454] [5.6608, 5.8316] WORSE
+   GC_CAUSAL              LATERAL:curvature_mae_1pm          D  -0.0624 [-0.0878, -0.0419] [-0.0508, -0.074] BETTER
+   GC_CAUSAL              LATERAL:yaw_rate_mae_degps         D +18.2703 [+14.0661, +22.7003] [20.6062, 15.9344] WORSE
+   GC_CAUSAL              TACTICAL:lon_err_rate              D  +0.2574 [+0.2116, +0.3034] [0.2618, 0.253] WORSE
+   GC_CAUSAL              TACTICAL:lat_err_rate              D  +0.2718 [+0.1270, +0.4173] [0.1471, 0.3964] WORSE
+   GC_CAUSAL              TACTICAL:joint_err_rate            D  +0.2616 [+0.2234, +0.2982] [0.253, 0.2701] WORSE
+   GC_CAUSAL              TACTICAL:ade_tac_m                 D +18.3125 [+14.2158, +22.3279] [14.8471, 21.778] WORSE
+   GC_BACKWARD            LONGITUDINAL:speed_mae_mps         D  -0.2841 [-0.3931, -0.1832] [-0.2585, -0.3096] BETTER
+   GC_BACKWARD            LONGITUDINAL:along_mae_m           D  +0.1966 [+0.0519, +0.3386] [0.2136, 0.1795] WORSE
+   GC_BACKWARD            LATERAL:cross_mae_m                D  +0.1623 [-0.0161, +0.3575] [0.1168, 0.2078] OPEN
+   GC_BACKWARD            LATERAL:heading_mae_deg            D  +0.7255 [-0.2611, +1.7209] [1.17, 0.281] OPEN
+   GC_BACKWARD            LATERAL:curvature_mae_1pm          D  +0.0435 [+0.0008, +0.0941] [0.0622, 0.0248] WORSE
+   GC_BACKWARD            LATERAL:yaw_rate_mae_degps         D  +5.8141 [+1.4058, +10.6702] [7.2746, 4.3536] WORSE
+   GC_BACKWARD            TACTICAL:lon_err_rate              D  -0.1440 [-0.1973, -0.0932] [-0.1226, -0.1655] BETTER
+   GC_BACKWARD            TACTICAL:lat_err_rate              D  -0.0982 [-0.1451, -0.0544] [-0.1201, -0.0763] BETTER
+   GC_BACKWARD            TACTICAL:joint_err_rate            D  -0.1440 [-0.1933, -0.0969] [-0.1255, -0.1626] BETTER
+   GC_BACKWARD            TACTICAL:ade_tac_m                 D  +0.5950 [+0.3067, +0.8946] [0.5763, 0.6137] WORSE
+   PR                     LONGITUDINAL:speed_mae_mps         D  +1.3089 [+0.9861, +1.6691] [1.0764, 1.5413] WORSE
+   PR                     LONGITUDINAL:along_mae_m           D  +1.0890 [+0.8433, +1.3594] [0.943, 1.2349] WORSE
+   PR                     LATERAL:cross_mae_m                D  +0.0808 [-0.0308, +0.1842] [0.1549, 0.0066] OPEN
+   PR                     LATERAL:heading_mae_deg            D  +4.9966 [+4.1467, +5.8621] [5.4758, 4.5174] WORSE
+   PR                     LATERAL:curvature_mae_1pm          D  +0.2157 [+0.1798, +0.2631] [0.1983, 0.233] WORSE
+   PR                     LATERAL:yaw_rate_mae_degps         D +42.6871 [+36.9256, +49.3225] [40.2308, 45.1434] WORSE
+   PR                     TACTICAL:lon_err_rate              D  +0.1382 [+0.0927, +0.1869] [0.1109, 0.1655] WORSE
+   PR                     TACTICAL:lat_err_rate              D  +0.1284 [+0.0761, +0.1800] [0.1634, 0.0934] WORSE
+   PR                     TACTICAL:joint_err_rate            D  +0.1586 [+0.1209, +0.1983] [0.138, 0.1792] WORSE
+   PR                     TACTICAL:ade_tac_m                 D  +1.5511 [+1.2644, +1.8573] [1.4062, 1.696] WORSE
+   causal_minus_backward  LONGITUDINAL:speed_mae_mps         D  +9.8932 [+8.1399, +11.6003] [8.5238, 11.2626] WORSE
+   causal_minus_backward  LONGITUDINAL:along_mae_m           D +10.6932 [+8.0006, +13.3926] [8.3118, 13.0746] WORSE
+   causal_minus_backward  LATERAL:cross_mae_m                D  +3.5572 [+2.9536, +4.1694] [3.3129, 3.8015] WORSE
+   causal_minus_backward  LATERAL:heading_mae_deg            D  +5.0140 [+3.9395, +6.0624] [4.4774, 5.5506] WORSE
+   causal_minus_backward  LATERAL:curvature_mae_1pm          D  -0.1038 [-0.1525, -0.0632] [-0.1089, -0.0987] BETTER
+   causal_minus_backward  LATERAL:yaw_rate_mae_degps         D +12.5054 [+9.3350, +15.3880] [13.4297, 11.581] WORSE
+   causal_minus_backward  TACTICAL:lon_err_rate              D  +0.4014 [+0.3413, +0.4612] [0.3843, 0.4185] WORSE
+   causal_minus_backward  TACTICAL:lat_err_rate              D  +0.3699 [+0.2412, +0.4992] [0.2672, 0.4727] WORSE
+   causal_minus_backward  TACTICAL:joint_err_rate            D  +0.4056 [+0.3484, +0.4657] [0.3785, 0.4327] WORSE
+   causal_minus_backward  TACTICAL:ade_tac_m                 D +17.7176 [+13.5609, +21.7758] [14.2708, 21.1643] WORSE
+STRATEGIC: as note N1 of card ADD46 (T0 first tick: the banked read of the two models without the rule; along the rollout NOT COMPUTED, n = 0, no instrument)
+ZZ PODREAD-HANDOVER DONE 18:56:06Z
+[18:56:09Z] pulled READ_HANDOVER10K.json sha256 3f927996bb69beba
+[18:56:13Z] pulled ENV_E1.json sha256 9d46f9baade8d3c8
+[18:56:16Z] pulled RESULT_HEADWAY.json sha256 08814ff742f667bb
+[18:56:20Z] pulled RESULT_Q3.json sha256 4cd145a1aefba3c9
+[18:56:23Z] pulled VERDICT_HEADWAY.md sha256 ef41316171c3abb0
+[18:56:26Z] pulled VERDICT_Q3.md sha256 7819b5eacdcbbe98
+[18:56:30Z] pulled podread_handover.out sha256 5575fdb2eeb98dbc
+ZZ WAIT-PODREAD-HANDOVER DONE 18:56:30Z

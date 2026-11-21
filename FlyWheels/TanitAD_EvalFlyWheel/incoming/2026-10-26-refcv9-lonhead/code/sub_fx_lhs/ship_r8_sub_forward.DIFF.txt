@@ -1,0 +1,12 @@
+51c51
+< SS_BANK = Path("F:/refcv9_selfsharp")
+---
+> SS_BANK = Path("F:/refcv9_lonhead/rolls")   # LONHEAD phase 2: the LHS oracle-label rolls (the only change: the trace source)
+118c118
+<     tp = SS_BANK / f"trace_selfsharp_s{seed}.npz"
+---
+>     tp = SS_BANK / f"trace_LHS_s{seed}.npz"
+151c151
+<         rolls["selfsharp"] = (SS_BANK / f"dump_selfsharp_s{seed}" / "manifest.json", SS_BANK / f"roll_selfsharp_s{seed}.json")
+---
+>         rolls["selfsharp"] = (SS_BANK / f"dump_LHS_s{seed}" / "manifest.json", SS_BANK / f"roll_LHS_s{seed}.json")

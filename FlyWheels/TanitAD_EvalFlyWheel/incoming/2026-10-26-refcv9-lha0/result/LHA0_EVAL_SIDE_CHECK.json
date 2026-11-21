@@ -1,0 +1,89 @@
+{
+ "tool": "lha0_evalside.py",
+ "status": "metadata only (eval dump decisions ep_poses + clip-clock sidecar); no frames; Thor not touched",
+ "eval139_episode_caches_on_dev_box": "NO: E:/refcv8_eval_kit carries sidecars / manifests' md5 / windows / v9 labels / ckpt only; the *.v2ep.pt live at /home/nvidia/data/refcv6-b1-416x1024-eval139 on Thor (ckpt config argv). The same (x, y, yaw, v) fields ARE on the dev box as the eval dump's decisions/ep*.npz ep_poses [199, 4] (== _scan_meta poses[n_stack-1:], proven exact for the 300 fresh episodes).",
+ "n_eval_clips": 139,
+ "ep_poses_files": 139,
+ "ep_poses_shape_set": [
+  [
+   197,
+   4
+  ],
+  [
+   198,
+   4
+  ],
+  [
+   199,
+   4
+  ],
+  [
+   200,
+   4
+  ],
+  [
+   205,
+   4
+  ]
+ ],
+ "clock_sidecar_coverage": {
+  "clips_with_dt": 136,
+  "clips_without_dt": 3,
+  "windows_without_dt": 102
+ },
+ "dt_s_min_med_max": [
+  0.100498,
+  0.100667,
+  0.101005
+ ],
+ "anchor_rule_on_eval139": {
+  "k=ws-1": {
+   "max_abs_diff": 0.44451427459716797
+  },
+  "k=ws+0": {
+   "max_abs_diff": 0.0
+  },
+  "k=ws+1": {
+   "max_abs_diff": 0.4974544048309326
+  }
+ },
+ "n_windows": 4754,
+ "min_ws": 7,
+ "rows_with_finite_a0_psi": 4652,
+ "rows_dropped": 102,
+ "mutation_fwd_neq_bwd_frac": 0.9716251074806534,
+ "eval_summary": {
+  "a0": {
+   "mean": -0.0337,
+   "sd": 0.7495,
+   "min": -3.462,
+   "max": 4.423
+  },
+  "psi_dot0": {
+   "mean": -0.0087,
+   "sd": 0.0861,
+   "min": -0.537,
+   "max": 0.549
+  },
+  "a0_05": {
+   "mean": -0.0372,
+   "sd": 0.7294,
+   "min": -3.563,
+   "max": 3.281
+  }
+ },
+ "fresh_summary_for_comparison": {
+  "a0": {
+   "mean": 0.0033926304268487696,
+   "sd": 0.8178685652282249,
+   "min": -5.109833169102985,
+   "max": 4.269795151925557
+  },
+  "psi_dot0": {
+   "mean": -0.0006105792560889532,
+   "sd": 0.10017253343640309,
+   "min": -0.77690847229763,
+   "max": 0.7940343000793831
+  }
+ }
+}

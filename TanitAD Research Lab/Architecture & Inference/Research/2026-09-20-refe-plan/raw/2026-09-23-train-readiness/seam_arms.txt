@@ -1,0 +1,19 @@
+=== REAL (pod layout, all frames)            expect: 61/61, TRAIN_DONE
+  scorer bank: NONE -- the scorer falls back to the zero PLACEHOLDER and proposal selection stays arbitrary
+  images: 61/61 tuples resolve ALL cameras under <PIX>  (244 loose frames indexed, 0 containers, 0.0 s)
+  bank: 61 tuples   batch 1   training
+TRAIN_DONE
+=== M1a one frame missing, default 0.1 %     expect: REFUSED
+  scorer bank: NONE -- the scorer falls back to the zero PLACEHOLDER and proposal selection stays arbitrary
+  images: 60/61 tuples resolve ALL cameras under <PIX_M1>  (243 loose frames indexed, 0 containers, 0.0 s)
+TargetBank: 1 of 61 tuples (1.64 %) name a frame that does not resolve under <PIX_M1> -- above the 0.10 % limit, so this is a broken JOIN, not a few absent frames. e.g. ['2021.06.14.16.48.02_veh-12_04978_05337/CAM_L0/04f34718a2cf5de8.jpg']
+=== M1b one frame missing, limit 5 %         expect: DROPPED 1 (named), TRAIN_DONE
+  scorer bank: NONE -- the scorer falls back to the zero PLACEHOLDER and proposal selection stays arbitrary
+  images: 60/61 tuples resolve ALL cameras under <PIX_M1>  (243 loose frames indexed, 0 containers, 0.0 s)
+  *** DROPPED 1 tuples (1.639 %) with an unresolvable frame, e.g. ['2021.06.14.16.48.02_veh-12_04978_05337/CAM_L0/04f34718a2cf5de8.jpg']
+  bank: 60 tuples   batch 1   training
+TRAIN_DONE
+=== M2  a whole camera missing               expect: REFUSED, 0/61
+  scorer bank: NONE -- the scorer falls back to the zero PLACEHOLDER and proposal selection stays arbitrary
+  images: 0/61 tuples resolve ALL cameras under <PIX_M2>  (183 loose frames indexed, 0 containers, 0.0 s)
+TargetBank: 61 of 61 tuples (100.00 %) name a frame that does not resolve under <PIX_M2> -- above the 0.10 % limit, so this is a broken JOIN, not a few absent frames. e.g. ['2021.06.14.16.48.02_veh-12_04978_05337/CAM_B0/1a1e56b6ffbf5e15.jpg', '2021.06.14.16.48.02_veh-12_04978_05337/CAM_B0/5df2615802345e62.jpg', '2021.06.14.16.48.02_veh-12_04978_05337/CAM_B0/f9c3faee415a5882.jpg']

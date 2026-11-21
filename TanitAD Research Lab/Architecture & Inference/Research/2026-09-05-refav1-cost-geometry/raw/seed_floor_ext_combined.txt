@@ -1,0 +1,45 @@
+============================================================================================
+SEED-FLOOR PAIR: combined (seed 0) vs combined_seed1 (seed 1) -- cap + ladder
+A = refav1-21109-p4-combined   W_KAPPA=0.0  kamm_mu=0.7  ladder=[0.002, 0.005, 0.01, 0.02, 0.04]
+B = refav1-21109-p4-combined_seed1   W_KAPPA=0.0  kamm_mu=0.7  ladder=[0.002, 0.005, 0.01, 0.02, 0.04]
+plan seed A=0  B=1
+
+CONTROL - the non-planner floors MUST be identical (same window grid):
+   ha       ADE 0.8888 vs 0.8888  identical=True
+   ha0      ADE 0.9251 vs 0.9251  identical=True
+   ha0_ext  ADE 0.8772 vs 0.8772  identical=True
+   ol       ADE 0.8052 vs 0.8052  identical=True
+   CONTROL PASSED
+
+SEED FLOOR on `cl` (the arm that MUST differ):
+   metric                     seed A     seed B   abs diff     rel %
+   ADE_m                     1.05040    1.15390    0.10350      9.85
+   FDE_m                     2.47530    2.67010    0.19480      7.87
+   LON speed_MAE             0.73270    0.73150    0.00120      0.16
+   LON speed_bias            0.02180    0.01830    0.00350     16.06
+   LON along_MAE             0.68600    0.68780    0.00180      0.26
+   LON accel_MAE             0.79180    0.79010    0.00170      0.21
+   LAT heading_MAE          21.38870   21.91110    0.52240      2.44
+   LAT yawrate_MAE          11.81610   13.54060    1.72450     14.59
+   LAT curv_MAE              0.04686    0.04886    0.00200      4.27
+   LAT cross_MAE             0.57630    0.68740    0.11110     19.28
+   TAC lat_acc               0.65000    0.60000    0.05000      7.69
+   TAC lat_kappa             0.41480    0.35550    0.05930     14.30
+   TAC lon_acc               0.42500    0.42500    0.00000      0.00
+   TAC m5_acc                0.45000    0.40000    0.05000     11.11
+   TAC goalFDE_m             2.47530    2.67010    0.19480      7.87
+   TAC goalbear_deg         25.66590   26.04600    0.38010      1.48
+   TACpc lane_keep_rec       0.76190    0.66670    0.09520     12.50
+   TACpc turn_left_rec       0.36360    0.36360    0.00000      0.00
+   TACpc turn_right_rec      0.75000    0.75000    0.00000      0.00
+   TACpc lane_keep_pre       0.69570    0.70000    0.00430      0.62
+   TACpc turn_left_pre       0.50000    0.44440    0.05560     11.12
+   TACpc turn_right_pre      0.66670    0.54550    0.12120     18.18
+   -- re-derived from the dumps (assert_feasible, v0 >= 2.0, nA=27 nB=27) --
+   FEAS kamm_over            0.00000    0.07407    0.07407 7407407407407.41
+   FEAS envelope             0.00000    0.00000    0.00000      0.00
+   FEAS peak_g_max           0.61833    0.70209    0.08377     13.55
+   FEAS max|kappa|           0.15048    0.16717    0.01669     11.09
+   FEAS max|a|               1.16482    1.07151    0.09331      8.01
+   CONTROL g (GT) kamm_over  A=0.0000  B=0.0000  (must both be 0.0000)
+

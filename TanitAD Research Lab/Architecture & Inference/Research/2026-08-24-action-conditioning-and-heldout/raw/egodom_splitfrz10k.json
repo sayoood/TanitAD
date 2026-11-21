@@ -1,0 +1,73 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "split": "HELD-OUT, LEAD-MATCHED",
+ "k": 4,
+ "function_class": "RFF+ridge (NONLINEAR, convex), clip-disjoint lambda",
+ "arms": {
+  "splitfrz10k": {
+   "step": 10000,
+   "n_rows": 1920,
+   "z_t": {
+    "ego [v0,steer,accel]": {
+     "mean_r": -0.0294,
+     "shuffled": -0.0117,
+     "true_minus_shuffled": -0.0178,
+     "t": -0.45,
+     "n_scores": 160
+    },
+    "scene [n_ag,occ,free]": {
+     "mean_r": 0.0754,
+     "shuffled": -0.0024,
+     "true_minus_shuffled": 0.0778,
+     "t": 2.03,
+     "n_scores": 160
+    },
+    "RAW PIXELS 8x8": {
+     "mean_r": 0.2379,
+     "shuffled": -0.0133,
+     "true_minus_shuffled": 0.2513,
+     "t": 6.99,
+     "n_scores": 160
+    },
+    "both ego+scene": {
+     "mean_r": 0.0023,
+     "shuffled": -0.0065,
+     "true_minus_shuffled": 0.0088,
+     "t": 0.23,
+     "n_scores": 160
+    },
+    "constant (control)": {
+     "mean_r": 0.0,
+     "shuffled": 0.0,
+     "true_minus_shuffled": 0.0,
+     "t": 0.0,
+     "n_scores": 160
+    }
+   },
+   "residual": {
+    "action [steer,accel,v0]": {
+     "mean_r": -0.0527,
+     "shuffled": 0.005,
+     "true_minus_shuffled": -0.0578,
+     "t": -2.17,
+     "n_scores": 160
+    },
+    "scene delta": {
+     "mean_r": 0.0237,
+     "shuffled": -0.0141,
+     "true_minus_shuffled": 0.0378,
+     "t": 2.34,
+     "n_scores": 160
+    },
+    "constant (control)": {
+     "mean_r": 0.0,
+     "shuffled": 0.0,
+     "true_minus_shuffled": 0.0,
+     "t": 0.0,
+     "n_scores": 160
+    }
+   }
+  }
+ }
+}

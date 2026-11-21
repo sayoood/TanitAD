@@ -1,0 +1,96 @@
+FFF.......                                                               [100%]
+================================== FAILURES ===================================
+_ test_equal_seeds_every_sample_eligible_for_both_the_perturbed_share_of_the_not_swapped_is_its_own_p[0.5-0.5-0-30] _
+
+pack = <test_v8f_dagger_train.Pack object at 0x0000018FF66E4EC0>, p_dag = 0.5
+p_ego = 0.5, seed = 0, steps = 30
+
+    @pytest.mark.parametrize("p_dag, p_ego, seed, steps", [(0.5, 0.5, 0, 30), (0.1, 0.3, 0, 80), (0.1, 0.3, 3, 80)])
+    def test_equal_seeds_every_sample_eligible_for_both_the_perturbed_share_of_the_not_swapped_is_its_own_p(pack, p_dag, p_ego, seed, steps):
+        """The defect, stated as the probability it broke. EQUAL seeds, every swap-eligible sample also perturbation-eligible (vmax lifted): P(perturbed | not swapped) must be p_ego within a binomial tolerance.
+        Shared stream: max(p_ego - p_dag, 0) / (1 - p_dag) -- 0.0 at 0.5 / 0.5 and 0.222 at the registered 0.1 / 0.3. The test asserts its own POWER: the shared-stream value is outside the tolerance."""
+        batch, bank, _ = world_batch(pack)
+        comp = make_stage(bank, p_dag=p_dag, p_ego=p_ego, dseed=seed, eseed=seed, vmax=1e6)
+        ego, dag = comp.ego, comp.dag
+        both = dag.eligible(batch) & ego.eligible(batch)
+        assert int(both.sum()) >= 100 and bool(both.equal(dag.eligible(batch))), "every swap-eligible sample is also perturbation-eligible, and there are enough of them"
+        n = k = n_el = k_sw = 0
+        for step in range(steps):
+            comp.apply(batch, step)
+            sw, pe = dag.last["sel"], ego.last["sel"]
+            free = both & ~sw
+>           assert comp.overlap == 0 and bool((pe <= free).all())
+E           assert (0 == 0 and False)
+E            +  where 0 = <v8f_mini_train.EgoDaggerCompose object at 0x0000018FB30EF9D0>.overlap
+E            +  and   False = bool(tensor(False))
+E            +    where tensor(False) = <built-in method all of Tensor object at 0x0000018FF3117F70>()
+E            +      where <built-in method all of Tensor object at 0x0000018FF3117F70> = tensor([False,  True, False, False, False, False, False, False,  True, False,\n        False, False, False, False, Fals...lse, False, False,\n        False,  True, False, False,  True,  True, False,  True, False, False,\n        False,  True]) <= tensor([False, False, False, False, False, False, False, False, False, False,\n        False, False, False,  True, Fals...rue,  True, False,\n        False, False, False, False,  True, False, False,  True, False,  True,\n         True, False]).all
+
+stack\tests\test_v8f_ego_dagger_compose.py:443: AssertionError
+---------------------------- Captured stdout setup ----------------------------
+[1/2] ade 7.258 total 80.931 p_gt 1.00
+[2/2] ade 4.967 total 70.105 p_gt 0.60
+DONE {"steps": 2, "arm": "M2b", "seed": 5, "seconds": 0.5260295867919922}
+[200/342 windows] 5s
+[342/342 windows] 10s
+wrote F:\TanitAD-scratch\compose_fix\tmp\bt_new_green\run\dagt0\bank\shard_000of001.npz  records 684  coverage 0.6462  K-B0 {'checked': 342, 'mismatch': 0}  K-B1 {'chunks': 5, 'windows': 40, 'mismatch_chunks': 0}
+wrote F:\TanitAD-scratch\compose_fix\tmp\bt_new_green\run\dagt0\bank\bank.json  bank sha256 48508a329c5945515cb3f6abd83fd2fd03fe57643c778cd6f42230ecb95d4709  records 684  coverage 0.6462  K-B4 True  K-B5 True
+_ test_equal_seeds_every_sample_eligible_for_both_the_perturbed_share_of_the_not_swapped_is_its_own_p[0.1-0.3-0-80] _
+
+pack = <test_v8f_dagger_train.Pack object at 0x0000018FF66E4EC0>, p_dag = 0.1
+p_ego = 0.3, seed = 0, steps = 80
+
+    @pytest.mark.parametrize("p_dag, p_ego, seed, steps", [(0.5, 0.5, 0, 30), (0.1, 0.3, 0, 80), (0.1, 0.3, 3, 80)])
+    def test_equal_seeds_every_sample_eligible_for_both_the_perturbed_share_of_the_not_swapped_is_its_own_p(pack, p_dag, p_ego, seed, steps):
+        """The defect, stated as the probability it broke. EQUAL seeds, every swap-eligible sample also perturbation-eligible (vmax lifted): P(perturbed | not swapped) must be p_ego within a binomial tolerance.
+        Shared stream: max(p_ego - p_dag, 0) / (1 - p_dag) -- 0.0 at 0.5 / 0.5 and 0.222 at the registered 0.1 / 0.3. The test asserts its own POWER: the shared-stream value is outside the tolerance."""
+        batch, bank, _ = world_batch(pack)
+        comp = make_stage(bank, p_dag=p_dag, p_ego=p_ego, dseed=seed, eseed=seed, vmax=1e6)
+        ego, dag = comp.ego, comp.dag
+        both = dag.eligible(batch) & ego.eligible(batch)
+        assert int(both.sum()) >= 100 and bool(both.equal(dag.eligible(batch))), "every swap-eligible sample is also perturbation-eligible, and there are enough of them"
+        n = k = n_el = k_sw = 0
+        for step in range(steps):
+            comp.apply(batch, step)
+            sw, pe = dag.last["sel"], ego.last["sel"]
+            free = both & ~sw
+>           assert comp.overlap == 0 and bool((pe <= free).all())
+E           assert (0 == 0 and False)
+E            +  where 0 = <v8f_mini_train.EgoDaggerCompose object at 0x0000018FB30EFD90>.overlap
+E            +  and   False = bool(tensor(False))
+E            +    where tensor(False) = <built-in method all of Tensor object at 0x0000018FB725A4E0>()
+E            +      where <built-in method all of Tensor object at 0x0000018FB725A4E0> = tensor([False, False, False, False, False, False, False, False, False, False,\n         True, False,  True, False, Fals...lse, False, False,\n        False, False, False, False, False, False,  True,  True,  True, False,\n        False,  True]) <= tensor([False, False, False, False, False, False, False, False, False, False,\n         True, False,  True,  True,  Tru...rue,  True, False,\n        False, False,  True,  True,  True, False,  True,  True,  True,  True,\n         True, False]).all
+
+stack\tests\test_v8f_ego_dagger_compose.py:443: AssertionError
+_ test_equal_seeds_every_sample_eligible_for_both_the_perturbed_share_of_the_not_swapped_is_its_own_p[0.1-0.3-3-80] _
+
+pack = <test_v8f_dagger_train.Pack object at 0x0000018FF66E4EC0>, p_dag = 0.1
+p_ego = 0.3, seed = 3, steps = 80
+
+    @pytest.mark.parametrize("p_dag, p_ego, seed, steps", [(0.5, 0.5, 0, 30), (0.1, 0.3, 0, 80), (0.1, 0.3, 3, 80)])
+    def test_equal_seeds_every_sample_eligible_for_both_the_perturbed_share_of_the_not_swapped_is_its_own_p(pack, p_dag, p_ego, seed, steps):
+        """The defect, stated as the probability it broke. EQUAL seeds, every swap-eligible sample also perturbation-eligible (vmax lifted): P(perturbed | not swapped) must be p_ego within a binomial tolerance.
+        Shared stream: max(p_ego - p_dag, 0) / (1 - p_dag) -- 0.0 at 0.5 / 0.5 and 0.222 at the registered 0.1 / 0.3. The test asserts its own POWER: the shared-stream value is outside the tolerance."""
+        batch, bank, _ = world_batch(pack)
+        comp = make_stage(bank, p_dag=p_dag, p_ego=p_ego, dseed=seed, eseed=seed, vmax=1e6)
+        ego, dag = comp.ego, comp.dag
+        both = dag.eligible(batch) & ego.eligible(batch)
+        assert int(both.sum()) >= 100 and bool(both.equal(dag.eligible(batch))), "every swap-eligible sample is also perturbation-eligible, and there are enough of them"
+        n = k = n_el = k_sw = 0
+        for step in range(steps):
+            comp.apply(batch, step)
+            sw, pe = dag.last["sel"], ego.last["sel"]
+            free = both & ~sw
+>           assert comp.overlap == 0 and bool((pe <= free).all())
+E           assert (0 == 0 and False)
+E            +  where 0 = <v8f_mini_train.EgoDaggerCompose object at 0x0000018FB30D5810>.overlap
+E            +  and   False = bool(tensor(False))
+E            +    where tensor(False) = <built-in method all of Tensor object at 0x0000018FB3CC0370>()
+E            +      where <built-in method all of Tensor object at 0x0000018FB3CC0370> = tensor([False, False, False,  True, False, False,  True, False, False, False,\n        False, False, False,  True, Fals...lse, False, False,\n        False,  True, False,  True, False, False, False, False, False,  True,\n        False, False]) <= tensor([False, False, False, False, False, False, False, False, False, False,\n        False, False,  True,  True,  Tru...lse,  True, False,\n        False, False,  True,  True,  True, False,  True,  True,  True,  True,\n         True, False]).all
+
+stack\tests\test_v8f_ego_dagger_compose.py:443: AssertionError
+=========================== short test summary info ===========================
+FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_equal_seeds_every_sample_eligible_for_both_the_perturbed_share_of_the_not_swapped_is_its_own_p[0.5-0.5-0-30]
+FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_equal_seeds_every_sample_eligible_for_both_the_perturbed_share_of_the_not_swapped_is_its_own_p[0.1-0.3-0-80]
+FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_equal_seeds_every_sample_eligible_for_both_the_perturbed_share_of_the_not_swapped_is_its_own_p[0.1-0.3-3-80]
+3 failed, 7 passed, 26 deselected in 181.05s (0:03:01)

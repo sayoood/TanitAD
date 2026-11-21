@@ -1,0 +1,107 @@
+tool md5 before: bad4dde725200c26c49770a1d719defe
+
+CONTROL (unmutated)       rc=0  93 passed in 5.41s
+
+M1_later_closure_off               rc=1  RED (killed)
+  mutation : CLOSED-LATER detection disabled entirely (later_closure always None)
+  result   : 27 failed, 66 passed in 4.05s
+    RED  test_CONTROL_UPDATE_with_a_closure_word_DOES_fire
+    RED  test_RESOLVED_closes_a_BLOCKER_row_and_nothing_else
+    RED  test_a_QUALIFIED_done_closes_only_as_the_rows_LAST_emphasised_span
+    RED  test_every_closure_word_the_MM_named_fires_when_dated[CANCELLED]
+    RED  test_every_closure_word_the_MM_named_fires_when_dated[CLOSED]
+    RED  test_every_closure_word_the_MM_named_fires_when_dated[DISCHARGED]
+    RED  test_every_closure_word_the_MM_named_fires_when_dated[DONE]
+    RED  test_every_closure_word_the_MM_named_fires_when_dated[STRUCK]
+    RED  test_every_closure_word_the_MM_named_fires_when_dated[SUPERSEDED]
+    RED  test_every_closure_word_the_MM_named_fires_when_dated[WITHDRAWN]
+    RED  test_every_row_the_MM_LISTED_fires_as_CLOSED_LATER[EP-ADMISSION-R1-dated]
+    RED  test_every_row_the_MM_LISTED_fires_as_CLOSED_LATER[EP-ADMISSION-R2-CONFIRM-dated]
+    ... and 15 more
+
+M2_named_family_unread             rc=1  RED (killed)
+  mutation : the named-id table family is not parsed (back to the pre-2026-10-22 tool)
+  result   : 10 failed, 46 passed, 37 errors in 4.77s
+    RED  test_CONTROL_UPDATE_with_no_closure_word_is_progress_not_closure
+    RED  test_CONTROL_a_NEXT_row_that_mentions_done_in_PROSE_does_not_fire
+    RED  test_a_STRUCK_id_with_a_later_closure_is_CLOSED_and_quiet
+    RED  test_a_dated_closure_under_a_NON_open_lead_is_not_CLOSED_LATER
+    RED  test_an_UNDATED_closure_word_is_not_CLOSED_LATER
+    RED  test_an_UNREADABLE_row_in_an_ITEM_table_is_REPORTED_not_swallowed
+    RED  test_the_NAMED_ID_family_is_PARSED_not_just_classified
+    RED  test_the_gate_prints_the_CLOSED_LATER_advice_and_fails_on_the_FIXTURE
+    RED  test_the_live_backlog_reads_the_NAMED_ID_family_and_the_gate_runs
+    RED  test_the_verdict_splits_on_the_LEAD_not_on_the_closure
+
+M3_date_requirement_dropped        rc=1  RED (killed)
+  mutation : a closure word closes WITHOUT a date
+  result   : 2 failed, 91 passed in 6.67s
+    RED  test_an_UNDATED_closure_word_is_not_CLOSED_LATER
+    RED  test_the_LABEL_stays_DONE_BUT_OPEN_when_the_lead_is_not_open_type[SEARCH-STALE-T1]
+
+M4_compound_guard_dropped          rc=1  RED (killed)
+  mutation : `DONE-marker ... <date>` reads as a closure (compound lock removed)
+  result   : 1 failed, 92 passed in 6.21s
+    RED  test_CONTROL_a_BOLD_compound_is_not_a_dated_closure
+
+M5_qualified_not_last_only         rc=1  RED (killed)
+  mutation : a qualified DONE closes even when something follows it
+  result   : 1 failed, 92 passed in 10.05s
+    RED  test_a_QUALIFIED_done_closes_only_as_the_rows_LAST_emphasised_span
+
+M6_update_branch_off               rc=1  RED (killed)
+  mutation : `UPDATE <date>: superseded` is not read
+  result   : 2 failed, 91 passed in 7.75s
+    RED  test_CONTROL_UPDATE_with_a_closure_word_DOES_fire
+    RED  test_every_row_the_MM_LISTED_fires_as_CLOSED_LATER[PRIVGEOM-DAC-update]
+
+M7_resolved_for_any_lead           rc=1  RED (killed)
+  mutation : `RESOLVED` closes a row under ANY lead, not only BLOCKER
+  result   : 1 failed, 92 passed in 7.77s
+    RED  test_RESOLVED_closes_a_BLOCKER_row_and_nothing_else
+
+M8_item_table_gate_off             rc=1  RED (killed)
+  mutation : named ids are read in ANY table (G-LIVE / G-SUITE become backlog rows)
+  result   : 2 failed, 91 passed in 6.43s
+    RED  test_a_NON_item_table_is_not_read_as_backlog_rows[|
+
+M9_unparsed_table_rows_swallowed   rc=1  RED (killed)
+  mutation : an item-table row no regex reads is NOT reported
+  result   : 2 failed, 91 passed in 6.08s
+    RED  test_an_UNREADABLE_row_in_an_ITEM_table_is_REPORTED_not_swallowed
+    RED  test_the_gate_PRINTS_unparsed_item_table_rows
+
+M10_classify_ignores_closed_later  rc=1  RED (killed)
+  mutation : classify never emits CLOSED-LATER (rows fall back to DONE-BUT-OPEN)
+  result   : 15 failed, 78 passed in 6.34s
+    RED  test_every_row_the_MM_LISTED_fires_as_CLOSED_LATER[EP-ADMISSION-R1-dated]
+    RED  test_every_row_the_MM_LISTED_fires_as_CLOSED_LATER[EP-ADMISSION-R2-CONFIRM-dated]
+    RED  test_every_row_the_MM_LISTED_fires_as_CLOSED_LATER[EP-R1UB-dated]
+    RED  test_every_row_the_MM_LISTED_fires_as_CLOSED_LATER[EP-RELIAB-PICKS-dated]
+    RED  test_every_row_the_MM_LISTED_fires_as_CLOSED_LATER[EPADM-SEARCHBANK-S0-dated]
+    RED  test_every_row_the_MM_LISTED_fires_as_CLOSED_LATER[HEADROW-PROBE-dated]
+    RED  test_every_row_the_MM_LISTED_fires_as_CLOSED_LATER[L2-FRESH-STEPA-qualified]
+    RED  test_every_row_the_MM_LISTED_fires_as_CLOSED_LATER[NC-FASTCAL-dated]
+    RED  test_every_row_the_MM_LISTED_fires_as_CLOSED_LATER[PICKRULE-AUDIT-NC-dated]
+    RED  test_every_row_the_MM_LISTED_fires_as_CLOSED_LATER[PRIVGEOM-DAC-update]
+    RED  test_every_row_the_MM_LISTED_fires_as_CLOSED_LATER[PRIVGEOM-SAFE-dated]
+    RED  test_every_row_the_MM_LISTED_fires_as_CLOSED_LATER[SEARCH-DOSE-dated]
+    ... and 3 more
+
+M11_lead_gate_removed              rc=1  RED (killed)
+  mutation : any lead may make a row CLOSED-LATER (the open-type lead gate removed)
+  result   : 6 failed, 87 passed in 5.46s
+    RED  test_a_dated_closure_under_a_NON_open_lead_is_not_CLOSED_LATER
+    RED  test_the_LABEL_stays_DONE_BUT_OPEN_when_the_lead_is_not_open_type[UNSEEN-STRATUM-DATA]
+    RED  test_the_OLD_DONE_BUT_OPEN_shapes_still_fire_on_verbatim_rows[A11]
+    RED  test_the_OLD_DONE_BUT_OPEN_shapes_still_fire_on_verbatim_rows[A13]
+    RED  test_the_OLD_DONE_BUT_OPEN_shapes_still_fire_on_verbatim_rows[B4]
+    RED  test_the_OLD_DONE_BUT_OPEN_shapes_still_fire_on_verbatim_rows[C3]
+
+M12_cancelled_not_a_closure_word   rc=1  RED (killed)
+  mutation : `CANCELLED` is no longer a closure word
+  result   : 1 failed, 92 passed in 5.99s
+    RED  test_every_closure_word_the_MM_named_fires_when_dated[CANCELLED]
+
+tool md5 after : bad4dde725200c26c49770a1d719defe  (UNCHANGED)
+survivors: 0 of 12

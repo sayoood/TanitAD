@@ -1,0 +1,46 @@
+--- D5: does the benchmark rule zero a violation, and does it differ from a sum? ---
+  candidate A (collision, perfect otherwise): pdm 0.0000  logit-sum +48.00
+  candidate B (mediocre everywhere)         : pdm 0.1285  logit-sum +2.40
+  the OLD rule picks #0, the PDM rule picks #1
+C:\Users\Admin\dz\DriveZero\DriveRL\nuplan-devkit\nuplan\common\maps\nuplan_map\utils.py:413: RuntimeWarning: invalid value encountered in cast
+  return elements.iloc[np.where(elements[column_label].to_numpy().astype(int) == int(desired_value))]
+C:\Users\Admin\dz\DriveZero\DriveRL\nuplan-devkit\nuplan\common\maps\nuplan_map\utils.py:413: RuntimeWarning: invalid value encountered in cast
+  return elements.iloc[np.where(elements[column_label].to_numpy().astype(int) == int(desired_value))]
+
+--- D3 / D4 on one real frame (teacher advance 24.79 m) ---
+  candidate     comfort  advance m      EP  DDC viol
+  teacher        1.0000      24.79   1.000       0.0
+  lat-4          1.0000      24.93   1.000       0.0
+  lat-2          1.0000      24.86   1.000       0.0
+  lat+2          1.0000      24.71   0.997       0.0
+  lat+4          1.0000      24.64   0.994       0.0
+  lon x0.5       1.0000      12.39   0.500       0.0
+  lon x1.5       0.3750      37.18   1.000       0.0
+  stopped        1.0000       0.00   0.000       0.0
+  jerky          0.3750      24.84   1.000       1.0
+  reverse        0.3750      -8.68   0.000       1.0
+  over-curb      0.3750      -4.12   0.000       0.0
+
+--- dt guard: derived FIRST-STEP 2.884 m/s vs the LOG's speed at t0 2.816 m/s   (horizon mean 6.197, higher because the ego accelerates) [TRAJ_DT=0.2] ---
+
+  [PASS] D5 a collision drives the aggregate to ~0
+  [PASS] D5 the collision candidate is far below the mediocre one
+  [PASS] D5 the safe-but-mediocre candidate wins
+  [PASS] D5 CONTROL the OLD logit sum picked the colliding one
+  [PASS] D5 CONTROL aggregate stays in [0, 1]
+  [PASS] STRUCT inject_proposal clears the polygon cache
+  [PASS] STRUCT inject_proposal updates nearest neighbours
+  [PASS] STRUCT inject_proposal derives the ego kinematics
+  [PASS] STRUCT no dead code after a return in inject_proposal
+  [PASS] D3 comfort now VARIES across candidates
+  [PASS] D4 progress.ep exists for every candidate
+  [PASS] D4 EP is bounded in [0, 1]
+  [PASS] D4 the RAW advance for lon x1.5 really exceeds the teacher's (the clamp does work)
+  [PASS] D4 and the CLAMPED value stops at exactly 1.0, not above
+  [PASS] D4 a stopped ego makes no progress
+  [PASS] D4 ddc.violation is emitted
+  [PASS] D4 progress spans the REAL horizon, not a 2-point segment
+  [PASS] D4 DDC FIRES on a reverse candidate (it was structurally zero)
+  [PASS] D3 derived speed matches the LOG's speed (a wrong dt would double it)
+
+SCORER_COMPONENTS_CONFORM

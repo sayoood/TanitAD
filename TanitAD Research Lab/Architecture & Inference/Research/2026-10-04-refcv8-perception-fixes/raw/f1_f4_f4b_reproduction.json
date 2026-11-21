@@ -1,0 +1,215 @@
+{
+ "F1_map_thresholds": {
+  "loaded_sha256": "ab022a74dd8382e34e8aef4f2f2e030dc9bd1b238f01974c723fa779ef44cf5c",
+  "classes": {
+   "nocls": {
+    "tau_logit": -0.41,
+    "eval_iou_reproduced": 0.6082,
+    "pred_over_gt": 1.1896,
+    "diagnostics_M_c_thr_phat_iou": 0.6082,
+    "diagnostics_pred_over_gt": 1.1896,
+    "iou_abs_diff": 0.0
+   },
+   "drivable": {
+    "tau_logit": -0.52,
+    "eval_iou_reproduced": 0.5764,
+    "pred_over_gt": 1.0152,
+    "diagnostics_M_c_thr_phat_iou": 0.5764,
+    "diagnostics_pred_over_gt": 1.0152,
+    "iou_abs_diff": 0.0
+   },
+   "lane": {
+    "tau_logit": -1.9,
+    "eval_iou_reproduced": 0.1643,
+    "pred_over_gt": 1.0613,
+    "diagnostics_M_c_thr_phat_iou": 0.1643,
+    "diagnostics_pred_over_gt": 1.0613,
+    "iou_abs_diff": 0.0
+   },
+   "crosswalk": {
+    "tau_logit": -2.13,
+    "eval_iou_reproduced": 0.1052,
+    "pred_over_gt": 0.6541,
+    "diagnostics_M_c_thr_phat_iou": 0.1052,
+    "diagnostics_pred_over_gt": 0.6541,
+    "iou_abs_diff": 0.0
+   },
+   "arrow": {
+    "tau_logit": -2.86,
+    "eval_iou_reproduced": 0.0588,
+    "pred_over_gt": 0.6231,
+    "diagnostics_M_c_thr_phat_iou": 0.0588,
+    "diagnostics_pred_over_gt": 0.6231,
+    "iou_abs_diff": 0.0
+   },
+   "edge": {
+    "tau_logit": -3.14,
+    "eval_iou_reproduced": 0.0421,
+    "pred_over_gt": 1.6666,
+    "diagnostics_M_c_thr_phat_iou": 0.0421,
+    "diagnostics_pred_over_gt": 1.6666,
+    "iou_abs_diff": 0.0
+   },
+   "hatched": {
+    "tau_logit": -3.09,
+    "eval_iou_reproduced": 0.0616,
+    "pred_over_gt": 1.3187,
+    "diagnostics_M_c_thr_phat_iou": 0.0616,
+    "diagnostics_pred_over_gt": 1.3187,
+    "iou_abs_diff": 0.0
+   },
+   "sidewalk": {
+    "tau_logit": -0.81,
+    "eval_iou_reproduced": 0.5001,
+    "pred_over_gt": 1.3249,
+    "diagnostics_M_c_thr_phat_iou": 0.5001,
+    "diagnostics_pred_over_gt": 1.3249,
+    "iou_abs_diff": 0.0
+   }
+  }
+ },
+ "F4_presence_gates": {
+  "loaded_sha256": "d3f4d2d5354f4a8ed06d4adb414905632e3e812e65c3c80e0918f11bc29c2011",
+  "heads": {
+   "box3d": {
+    "gate": 0.2567453384399414,
+    "declared_0p5": {
+     "n_conf": 28.0,
+     "conf_ratio": 0.00826
+    },
+    "at_gate": {
+     "gate": 0.25675,
+     "n_conf": 3299.0,
+     "tp": 1014.0,
+     "n_pos": 3390.0,
+     "prec": 0.30737,
+     "rec": 0.29912,
+     "f1": 0.30318,
+     "conf_ratio": 0.97316,
+     "conf_ratio_alarm": 0.0
+    }
+   },
+   "agent": {
+    "gate": 0.23066936433315277,
+    "declared_0p5": {
+     "n_conf": 0.0,
+     "conf_ratio": 0.0
+    },
+    "at_gate": {
+     "gate": 0.23067,
+     "n_conf": 3373.0,
+     "tp": 699.0,
+     "n_pos": 3390.0,
+     "prec": 0.20723,
+     "rec": 0.20619,
+     "f1": 0.20671,
+     "conf_ratio": 0.99499,
+     "conf_ratio_alarm": 0.0
+    }
+   }
+  },
+  "diagnostics_B_box_eval_T3": {
+   "box3d": {
+    "n_conf": 3299,
+    "tp": 1014,
+    "conf_ratio": 0.9731563421828908,
+    "f1": 0.3031843324861713
+   },
+   "agent": {
+    "n_conf": 3373,
+    "tp": 699,
+    "conf_ratio": 0.9949852507374631,
+    "f1": 0.20671299719059588
+   }
+  }
+ },
+ "F4b_nms": {
+  "loaded_sha256": "e22fa1333cb80df8bf741db7bfdcf427d5ed96e095cf2499871716638616185a",
+  "reproduced": {
+   "route_eval_pass": {
+    "box3d": {
+     "n_windows": 1061,
+     "radius_m": 2.5,
+     "gate": 0.214477,
+     "ap2m_no_nms": 0.2483,
+     "ap2m_nms": 0.3494,
+     "n_conf": 3373.0,
+     "tp": 1326.0,
+     "f1": 0.3921,
+     "conf_ratio": 0.995,
+     "conf_ratio_alarm": 0.0,
+     "boxes_per_object_at_0p2589": [
+      2.1198,
+      1.0673
+     ],
+     "conf_ratio_at_old_gate_0p2589": 0.4304
+    },
+    "agent": {
+     "n_windows": 1061,
+     "radius_m": 3.0,
+     "gate": 0.180872,
+     "ap2m_no_nms": 0.1314,
+     "ap2m_nms": 0.2996,
+     "n_conf": 3621.0,
+     "tp": 1289.0,
+     "f1": 0.3677,
+     "conf_ratio": 1.0681,
+     "conf_ratio_alarm": 0.0,
+     "boxes_per_object_at_0p2589": [
+      2.596,
+      1.0123
+     ],
+     "conf_ratio_at_old_gate_0p2589": 0.0873
+    }
+   },
+   "diagnostics_eval_pass": {
+    "box3d": {
+     "n_windows": 1061,
+     "radius_m": 2.5,
+     "gate": 0.214477,
+     "ap2m_no_nms": 0.2483,
+     "ap2m_nms": 0.3494,
+     "n_conf": 3373.0,
+     "tp": 1326.0,
+     "f1": 0.3921,
+     "conf_ratio": 0.995,
+     "conf_ratio_alarm": 0.0,
+     "boxes_per_object_at_0p2589": [
+      2.1198,
+      1.0673
+     ],
+     "conf_ratio_at_old_gate_0p2589": 0.4304
+    },
+    "agent": {
+     "n_windows": 1061,
+     "radius_m": 3.0,
+     "gate": 0.180872,
+     "ap2m_no_nms": 0.1314,
+     "ap2m_nms": 0.2996,
+     "n_conf": 3621.0,
+     "tp": 1289.0,
+     "f1": 0.3677,
+     "conf_ratio": 1.0681,
+     "conf_ratio_alarm": 0.0,
+     "boxes_per_object_at_0p2589": [
+      2.596,
+      1.0123
+     ],
+     "conf_ratio_at_old_gate_0p2589": 0.0873
+    }
+   }
+  },
+  "route_box_nms_json": {
+   "box3d": {
+    "AP2m_no_nms": 0.2483,
+    "AP2m_nms": 0.3494,
+    "gate_fit": 0.2145
+   },
+   "agent": {
+    "AP2m_no_nms": 0.1314,
+    "AP2m_nms": 0.2996,
+    "gate_fit": 0.1809
+   }
+  }
+ }
+}

@@ -1,0 +1,267 @@
+{
+ "base": "cdbff971fa6dad4d20b937fe8abda6cb9f622adb",
+ "patch": "rollhist_cdb.patch",
+ "patch_sha256": "ec900ac3df0a005f1300c299b85eda9fdc8d6c4e4d336b7e4372f08f6686e520",
+ "files_sha256": [
+  "022a40e799f0c444c5c9804cffa0639ba877527dd4259d48e02db2afd876090f  stack/scripts/v8f_mini_train.py",
+  "2b35d32a5fff1ec69d9227299505c222902b3ee78c9a0021bb61b967652e97ff  stack/scripts/v8f_dagger_bank.py",
+  "796e3e7dd78b4e3bd6e0c3d0f47ff629faad360a4949755ae829221b72a73fd1  stack/tanitad/data/v8f_dagger.py",
+  "0dc30d9ef773be761a9b36a07d0fd73ef770e87d3384826230ba798db560869f  stack/scripts/rollhist_pair_check.py",
+  "36025248e6afca56be5f20bf1f5a12e7c39ec1c711a77c2f09a3b299ac640c9e  stack/scripts/v8f_t1_readout.py",
+  "74fd8445e377e763d17b1fa4c60753f23b8240eb94d0bdf7f4633a9e3ef80608  stack/scripts/v8f_t1_eval_hb.py",
+  "5ca3b04ec4597f0363476583bdd56a9ba362f3aad35f3bd7a1940b01a06b1c8a  stack/tests/test_rollhist_pair_check.py",
+  "75352459341362446cd1fa1d4fb31d52ca69895bcb65824cd4581cff9afd1921  stack/tests/test_v8f_rollhist.py",
+  "252a788f51765cb905cc5c44e265c4eaa23ea4d22a04ee8c86f35a7ce181c0a6  stack/tests/test_v8f_t1_readout.py",
+  "b1f353053478cdaffc51528fc0ff8d2c42ae5bd1e6aede2976673737cdfc5ea0  stack/tests/test_v8f_t1_eval_hb.py",
+  ""
+ ],
+ "tests_new_tree": {
+  "test_v8f_rollhist": "25 passed, 1 warning in 275.03s (0:04:35)",
+  "test_rollhist_pair_check": "13 passed in 3.77s",
+  "test_v8f_t1_readout": "14 passed in 4.06s",
+  "test_v8f_t1_eval_hb": "7 passed in 4.46s"
+ },
+ "D1_bank_default_byte_identical_to_cdbff971_generator": "test_n2_a_default_bank_is_byte_identical_to_the_unpatched_generators_files ran inside test_v8f_rollhist with ROLLHIST_ORIG_STACK=cdbff971 export: 25 passed, 1 warning in 275.03s (0:04:35)",
+ "kit_tests": "37 passed in 25.23s",
+ "kit_mutant_NOGENCMP": "2 failed, 35 passed in 27.55s",
+ "D0": {
+  "train": {
+   "rc_new": 0,
+   "rc_cdb": 0,
+   "n_tensors": 276,
+   "state_dict_diffs": [],
+   "n_log_records": 4,
+   "log_diffs": [],
+   "selfcheck_diffs": [
+    "/argv_sha: ac568a79ccfce73a != eb2af046e124504c",
+    "/levers/dagger/dagger_bank_kappa: only in A",
+    "/levers/dagger/dagger_bank_readout: only in A"
+   ],
+   "n_selfcheck_diffs": 3,
+   "levers_diffs": [],
+   "replicate_new_vs_new_diffs": []
+  },
+  "selfcheck": {
+   "rc_new": 0,
+   "rc_cdb": 0,
+   "n_tensors": null,
+   "state_dict_diffs": [],
+   "n_log_records": 0,
+   "log_diffs": [],
+   "selfcheck_diffs": [
+    "/argv_sha: 03412b030cbf9ced != 09adc6d17127d550",
+    "/levers/dagger/dagger_bank_kappa: only in A",
+    "/levers/dagger/dagger_bank_readout: only in A"
+   ],
+   "n_selfcheck_diffs": 3,
+   "levers_diffs": [],
+   "replicate_new_vs_new_diffs": []
+  }
+ },
+ "mutation_table": {
+  "M1_no_readout_install": "RED",
+  "M2_no_heading_bound": "RED",
+  "M3_no_restore": "RED",
+  "M4_default_installs_the_bound": "RED",
+  "M5_nondefault_header_without_generator": "RED",
+  "M6_inert_param_accepted": "RED",
+  "M7_built_levers_ignore_header": "RED",
+  "M8_no_declared_vs_header_clause": "RED",
+  "M9_no_p0_clause": "RED",
+  "M10_no_flag_check_entry": "RED",
+  "M11_readout_arithmetic": "RED",
+  "M12_gain1_not_routed_through_causal": "RED",
+  "M13_pair_check_drops_declaration": "RED",
+  "M14_compare_readout_base_name_only": "RED"
+ },
+ "regression": [
+  {
+   "file": "test_v8f_orc_chain",
+   "summary": "37.)\n    \"sec\": time.time() - t0, **{k: float(v) for k, v in T.items()}}\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n13 passed, 32 skipped, 1 warning in 107.05s (0:01:47)\n",
+   "failed_n": 0,
+   "identical_on_cdbff971": null
+  },
+  {
+   "file": "test_v8f_ego_perturb",
+   "summary": "837.)\n    \"sec\": time.time() - t0, **{k: float(v) for k, v in T.items()}}\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n80 passed, 2 skipped, 1 warning in 209.81s (0:03:29)\n",
+   "failed_n": 0,
+   "identical_on_cdbff971": null
+  },
+  {
+   "file": "test_v8f_t1_eval_hb",
+   "summary": ".......                                                                  [100%]\n7 passed in 2.89s\n",
+   "failed_n": 0,
+   "identical_on_cdbff971": null
+  },
+  {
+   "file": "test_v8f_dagger",
+   "summary": ".........................................................                [100%]\n57 passed in 91.69s (0:01:31)\n",
+   "failed_n": 0,
+   "identical_on_cdbff971": null
+  },
+  {
+   "file": "test_v8f_dagger_train",
+   "summary": "837.)\n    \"sec\": time.time() - t0, **{k: float(v) for k, v in T.items()}}\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n95 passed, 2 skipped, 1 warning in 306.69s (0:05:06)\n",
+   "failed_n": 0,
+   "identical_on_cdbff971": null
+  },
+  {
+   "file": "test_v8f_ego_dagger_compose",
+   "summary": " test summary info ===========================\nFAILED tests/test_v8f_ego_dagger_compose.py::test_flag_off_reproduces_the_unmodified_tip_bit_for_bit\n1 failed, 35 passed, 1 warning in 583.91s (0:09:43)\n",
+   "failed_n": 1,
+   "identical_on_cdbff971": true
+  },
+  {
+   "file": "test_v8f_launch_intent",
+   "summary": "short test summary info ===========================\nFAILED tests/test_v8f_launch_intent.py::test_flag_off_reproduces_the_unmodified_tip_bit_for_bit\n1 failed, 35 passed, 1 warning in 142.13s (0:02:22)\n",
+   "failed_n": 1,
+   "identical_on_cdbff971": true
+  },
+  {
+   "file": "test_v8f_recover_wiring",
+   "summary": "ethods.cpp:837.)\n    \"sec\": time.time() - t0, **{k: float(v) for k, v in T.items()}}\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n53 passed, 1 warning in 205.35s (0:03:25)\n",
+   "failed_n": 0,
+   "identical_on_cdbff971": null
+  },
+  {
+   "file": "test_v8f_mini",
+   "summary": "SPEED\"][0]) == pytest.approx(0.5, abs=1e-6)             # 5 - 4 - tol 0.5 = 0.5 over\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n28 passed, 1 skipped, 1 warning in 36.65s\n",
+   "failed_n": 0,
+   "identical_on_cdbff971": null
+  },
+  {
+   "file": "test_v8f_mini_full",
+   "summary": "ssss                                                                     [100%]\n4 skipped in 0.29s\n",
+   "failed_n": 0,
+   "identical_on_cdbff971": null
+  },
+  {
+   "file": "test_v8f_dscale",
+   "summary": "thods.cpp:837.)\n    \"sec\": time.time() - t0, **{k: float(v) for k, v in T.items()}}\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n6 passed, 105 skipped, 1 warning in 55.57s\n",
+   "failed_n": 0,
+   "identical_on_cdbff971": null
+  },
+  {
+   "file": "test_v8f_window_start",
+   "summary": "837.)\n    \"sec\": time.time() - t0, **{k: float(v) for k, v in T.items()}}\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n66 passed, 11 skipped, 1 warning in 86.11s (0:01:26)\n",
+   "failed_n": 0,
+   "identical_on_cdbff971": null
+  },
+  {
+   "file": "test_v8f_oacc",
+   "summary": "_not_log_the_term_fails_g_live\nFAILED tests/test_v8f_oacc.py::test_the_hx_fit_is_hblends_own_closed_form_on_the_checkpoints_held_outputs\n2 failed, 37 passed, 94 skipped, 1 warning in 61.42s (0:01:01)\n",
+   "failed_n": 2,
+   "identical_on_cdbff971": true
+  },
+  {
+   "file": "test_v8f_flat",
+   "summary": "===========================\nFAILED tests/test_v8f_flat.py::test_a_seed_state_needs_the_librarys_separated_flag_on_top_of_the_side_of_the_interval\n1 failed, 40 passed, 222 skipped, 1 warning in 36.38s\n",
+   "failed_n": 1,
+   "identical_on_cdbff971": true
+  },
+  {
+   "file": "test_v8f_mixo",
+   "summary": "=========== short test summary info ===========================\nFAILED tests/test_v8f_mixo.py::test_the_trainer_source_has_every_hop_of_the_trace\n1 failed, 32 passed, 133 skipped, 1 warning in 31.85s\n",
+   "failed_n": 1,
+   "identical_on_cdbff971": true
+  },
+  {
+   "file": "test_v8f_cz",
+   "summary": "========================== short test summary info ===========================\nFAILED tests/test_v8f_cz.py::test_queue_cz_stages - AssertionError: []\n1 failed, 3 passed, 2 skipped, 1 warning in 7.30s\n",
+   "failed_n": 1,
+   "identical_on_cdbff971": true
+  },
+  {
+   "file": "test_v8f_hist",
+   "summary": "hods.cpp:837.)\n    \"sec\": time.time() - t0, **{k: float(v) for k, v in T.items()}}\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n20 passed, 114 skipped, 1 warning in 21.72s\n",
+   "failed_n": 0,
+   "identical_on_cdbff971": null
+  },
+  {
+   "file": "test_v8f_pgt",
+   "summary": "ethods.cpp:837.)\n    \"sec\": time.time() - t0, **{k: float(v) for k, v in T.items()}}\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n7 passed, 22 skipped, 1 warning in 10.83s\n",
+   "failed_n": 0,
+   "identical_on_cdbff971": null
+  },
+  {
+   "file": "test_v8f_wc",
+   "summary": "h.equal(t05[\"cons\"], t4[\"cons\"]), \"same weights, same batch: the same constraint term\"\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n2 passed, 6 skipped, 1 warning in 4.27s\n",
+   "failed_n": 0,
+   "identical_on_cdbff971": null
+  },
+  {
+   "file": "test_v8f_kscore",
+   "summary": "es_the_table_and_controls_pass\nFAILED tests/test_v8f_kscore.py::test_read_refuses_with_rc2_on_a_stop_control_a_missing_block_and_an_unmapped_state\n4 failed, 116 passed, 3 skipped in 140.67s (0:02:20)\n",
+   "failed_n": 4,
+   "identical_on_cdbff971": true
+  },
+  {
+   "file": "test_v8f_level_head",
+   "summary": "x(0.0, abs=1e-4 * max(1.0, float(oa[\"terms\"][\"total\"]))), \"total = off total + w_level x level\"\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n27 passed, 1 warning in 37.57s\n",
+   "failed_n": 0,
+   "identical_on_cdbff971": null
+  },
+  {
+   "file": "test_v8f_lead_head",
+   "summary": "ethods.cpp:837.)\n    \"sec\": time.time() - t0, **{k: float(v) for k, v in T.items()}}\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n45 passed, 1 warning in 100.59s (0:01:40)\n",
+   "failed_n": 0,
+   "identical_on_cdbff971": null
+  },
+  {
+   "file": "test_v8f_grid",
+   "summary": "hods.cpp:837.)\n    \"sec\": time.time() - t0, **{k: float(v) for k, v in T.items()}}\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n16 passed, 121 skipped, 1 warning in 39.88s\n",
+   "failed_n": 0,
+   "identical_on_cdbff971": null
+  },
+  {
+   "file": "test_v8f_fast_table",
+   "summary": "ethods.cpp:837.)\n    \"sec\": time.time() - t0, **{k: float(v) for k, v in T.items()}}\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n21 passed, 1 skipped, 1 warning in 51.36s\n",
+   "failed_n": 0,
+   "identical_on_cdbff971": null
+  },
+  {
+   "file": "test_v8f_init_ckpt_o_interface",
+   "summary": "n_variable_methods.cpp:837.)\n    \"sec\": time.time() - t0, **{k: float(v) for k, v in T.items()}}\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n7 passed, 1 warning in 29.07s\n",
+   "failed_n": 0,
+   "identical_on_cdbff971": null
+  },
+  {
+   "file": "test_v8f_kindx_s1",
+   "summary": "ing_lines_in_the_right_order\nFAILED tests/test_v8f_kindx_s1.py::test_chain_pins_agree_with_the_reader_the_manifest_the_prereg_and_the_mixo_chain\n149 failed, 10 passed, 29 skipped, 1 warning in 31.25s\n",
+   "failed_n": 130,
+   "identical_on_cdbff971": false
+  },
+  {
+   "file": "test_v8f_lora",
+   "summary": "ent_accumulation_is_exact_end_to_end_including_the_wm_sigreg_term\nFAILED tests/test_v8f_lora.py::test_lora_run_resumes_as_the_same_run - ValueE...\n14 failed, 18 passed, 8 skipped, 1 warning in 43.04s\n",
+   "failed_n": 14,
+   "identical_on_cdbff971": true
+  },
+  {
+   "file": "test_v8f_lora_ar2",
+   "summary": "ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss         [100%]\n64 skipped in 14.45s\n",
+   "failed_n": 0,
+   "identical_on_cdbff971": null
+  },
+  {
+   "file": "test_v8f_recover_pertick",
+   "summary": "methods.cpp:837.)\n    \"sec\": time.time() - t0, **{k: float(v) for k, v in T.items()}}\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n32 passed, 1 warning in 95.93s (0:01:35)\n",
+   "failed_n": 0,
+   "identical_on_cdbff971": null
+  },
+  {
+   "file": "test_launch_gate_v8f",
+   "summary": "........................................................                 [100%]\n56 passed in 29.50s\n",
+   "failed_n": 0,
+   "identical_on_cdbff971": null
+  }
+ ],
+ "regression_new_failures": [
+  "test_v8f_kindx_s1"
+ ],
+ "done_markers": {
+  "b1": true,
+  "kit": true,
+  "post": true
+ }
+}

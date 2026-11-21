@@ -1,0 +1,22 @@
+## 2026-09-27 NEW-2 A19 (SPEC_REFCV7 §24, the PI's "Binding = MAIN only, both"): the launch gate accepts a BINDING overfit record whose must-fail arms were NOT RUN (the profile's `overfit_main_only` policy: its SPEC source and the must-fail evidence it INHERITS, carried in the PASS text); MAIN is re-judged from its OWN literals (map: 8 bars on the declared rule, >= 1,000 cells, the CE ratio and the finite loss from the record's own numbers, C1-C3, the 1 ms guard, the A18 or A19 MAIN-only spec; box: the six criteria at step 2,000, 113/77, the A17 schedule), never from the harness's overall verdict; a must-fail arm that RAN and PASSED is still a VOID. Plus the refcv7 PROFILE's eval_loader default (the loader agent's integration diff). launch_gate.py + its tests only.
+# STACKED ON the MAPLIFT candidate (LANDING_READY_MAPLIFT.txt md5 0eea903d561b836295431b8b99e04df1): the base blobs below are MAPLIFT's NEW blobs -- apply MAPLIFT first. Full files under code/fix_a19/; the unified diff (code/fix_a19/NEW2_A19_edits.diff) re-applies to the MAPLIFT blobs byte for byte (git apply, core.autocrlf=false).
+# The eval loader itself (stack/tanitad/eval/refcv7_loader.py + its test) lands from its own package (…/2026-09-27-refcv7-eval-loader/); the profile default resolves in the launch tree once both land.
+# <package path>  ->  <repo path>     (comment above each: MAPLIFT base blob | new blob = git hash-object --no-filters | EOL)
+# stack/scripts/launch_gate.py: base ea55acc6268a3062c9c04617c298823598f40ad3 | new e6d217f022cb427d02e9f28cedf170b9abf5f585 | LF
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix_a19/stack/scripts/launch_gate.py  ->  stack/scripts/launch_gate.py
+# stack/tests/test_launch_gate.py: base 675cea50b45831a5b6beb86ff9550928ddd74ca7 | new 6a2687e1510dab636c78c462c4ac11d7b17f00a9 | LF
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix_a19/stack/tests/test_launch_gate.py  ->  stack/tests/test_launch_gate.py
+# package files NEW or CHANGED (all LF except the diff):
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/BUILD.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/LANDING_READY_A19.txt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/raw/gmo_spec_A19_MAP_MAIN.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/make_a19_map_spec.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/a19_spec_accept_check.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/a19_real_shape_check.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/a19_prejudge_binding.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/binding/run_gmo_binding_a19.sh
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/make_a19_bundle.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/write_landing_ready_a19.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix_a19/NEW2_A19_edits.diff
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix_a19/BASE_BLOBS.txt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/code/fix_a19/LANDING_BLOCKS.txt

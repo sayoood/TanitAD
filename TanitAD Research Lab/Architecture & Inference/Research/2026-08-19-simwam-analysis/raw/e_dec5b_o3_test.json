@@ -1,0 +1,167 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "arms": {
+  "rdw8": {
+   "d_op": 2048
+  },
+  "rdw8o3": {
+   "d_op": 2048
+  }
+ },
+ "blocks": {
+  "EGO (held-out val)": {
+   "speed": {
+    "z_op rdw8": {
+     "r2": 0.283,
+     "delta_vs_lewm": 0.0,
+     "t": 0.0,
+     "n_favouring": 0,
+     "n": 12
+    },
+    "z_op rdw8o3": {
+     "r2": -0.1566,
+     "delta_vs_lewm": -0.4396,
+     "t": -9.6,
+     "n_favouring": 0,
+     "n": 12
+    },
+    "pixel (floor)": {
+     "r2": 0.1156,
+     "delta_vs_lewm": -0.1673,
+     "t": -2.37,
+     "n_favouring": 2,
+     "n": 12
+    },
+    "frozen DINOv3": {
+     "r2": 0.4081,
+     "delta_vs_lewm": 0.1251,
+     "t": 2.72,
+     "n_favouring": 11,
+     "n": 12
+    },
+    "constant (control)": {
+     "r2": 0.0,
+     "delta_vs_lewm": -0.283,
+     "t": -9.36,
+     "n_favouring": 0,
+     "n": 12
+    }
+   },
+   "d_ego": {
+    "z_op rdw8": {
+     "r2": 0.3601,
+     "delta_vs_lewm": 0.0,
+     "t": 0.0,
+     "n_favouring": 0,
+     "n": 12
+    },
+    "z_op rdw8o3": {
+     "r2": -0.1676,
+     "delta_vs_lewm": -0.5277,
+     "t": -11.57,
+     "n_favouring": 0,
+     "n": 12
+    },
+    "pixel (floor)": {
+     "r2": -0.0781,
+     "delta_vs_lewm": -0.4382,
+     "t": -5.26,
+     "n_favouring": 0,
+     "n": 12
+    },
+    "frozen DINOv3": {
+     "r2": 0.3238,
+     "delta_vs_lewm": -0.0363,
+     "t": -0.64,
+     "n_favouring": 4,
+     "n": 12
+    },
+    "constant (control)": {
+     "r2": 0.0,
+     "delta_vs_lewm": -0.3601,
+     "t": -8.92,
+     "n_favouring": 0,
+     "n": 12
+    }
+   }
+  },
+  "ENV (train corpus, in-sample)": {
+   "lead_gap_m": {
+    "z_op rdw8": {
+     "r2": -0.329,
+     "delta_vs_lewm": 0.0,
+     "t": 0.0,
+     "n_favouring": 0,
+     "n": 24
+    },
+    "z_op rdw8o3": {
+     "r2": -1.1724,
+     "delta_vs_lewm": -0.8434,
+     "t": -4.56,
+     "n_favouring": 5,
+     "n": 24
+    },
+    "pixel (floor)": {
+     "r2": 0.0064,
+     "delta_vs_lewm": 0.3354,
+     "t": 5.71,
+     "n_favouring": 17,
+     "n": 24
+    },
+    "frozen DINOv3": {
+     "r2": 0.0294,
+     "delta_vs_lewm": 0.3584,
+     "t": 6.62,
+     "n_favouring": 20,
+     "n": 24
+    },
+    "constant (control)": {
+     "r2": 0.0,
+     "delta_vs_lewm": 0.329,
+     "t": 5.61,
+     "n_favouring": 17,
+     "n": 24
+    }
+   },
+   "n_agents": {
+    "z_op rdw8": {
+     "r2": -1.0407,
+     "delta_vs_lewm": 0.0,
+     "t": 0.0,
+     "n_favouring": 0,
+     "n": 24
+    },
+    "z_op rdw8o3": {
+     "r2": -0.8129,
+     "delta_vs_lewm": 0.2278,
+     "t": 1.0,
+     "n_favouring": 18,
+     "n": 24
+    },
+    "pixel (floor)": {
+     "r2": -0.2156,
+     "delta_vs_lewm": 0.825,
+     "t": 8.11,
+     "n_favouring": 24,
+     "n": 24
+    },
+    "frozen DINOv3": {
+     "r2": 0.2754,
+     "delta_vs_lewm": 1.3161,
+     "t": 12.58,
+     "n_favouring": 24,
+     "n": 24
+    },
+    "constant (control)": {
+     "r2": 0.0,
+     "delta_vs_lewm": 1.0407,
+     "t": 9.65,
+     "n_favouring": 24,
+     "n": 24
+    }
+   }
+  }
+ },
+ "verdict": "rdw8o3: ego wins 0/2, env REGRESSIONS 1/2 [ego ['-0.4396', '-0.5277'], env ['-0.8434', '+0.2278']]  \u21d2 a wider readout may only be shipped if it wins ego WITHOUT regressing environment (E-DEC-3b: the frozen-encoder curve reversed on lead_gap and bearing)."
+}

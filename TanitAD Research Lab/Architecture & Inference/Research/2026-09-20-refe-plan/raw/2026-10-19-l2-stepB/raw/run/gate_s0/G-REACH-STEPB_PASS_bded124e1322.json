@@ -1,0 +1,275 @@
+{
+ "schema": "tanitad.g_reach_stepb/1",
+ "verdict": "PASS",
+ "arm": "L2",
+ "head_sha256": "bded124e1322b56d9bfd749f73b22c86430ef41f6829856927e5a08831320df4",
+ "head_path": "D:/Projects/TanitAD-artifacts/l2_fresh_stepA/heads/final_head_s0.npz",
+ "ckpt_sha256": "ea31db2296210b6a35dbf32ad95f1813edfa259ab330002b3ca7564aac727e51",
+ "config_sha256": "299c6e63dd3016100149f88b6ca498529d79f8a5fbcfc6845753c8121d62c441",
+ "bundle_sha256": "580b6cc395aa9074c75eb7a62fe99e8b493abd9ea5671be1a5765d8ae4fd673f",
+ "data_clause": {
+  "carve_sha256": "0629811ff5d05879eb62abc5726005ccc4924f03539423003503a099ba29577c",
+  "bundle_tokens_sha256": "0629811ff5d05879eb62abc5726005ccc4924f03539423003503a099ba29577c",
+  "n_tokens": 400,
+  "sealed_default": true
+ },
+ "code_sha256": {
+  "stepB.py": "74e60d3de6f16aa1bcb3a9503cba54d81bc6e79fa55e4fe6ecb9efc60e390ea8",
+  "l2_scorer.py": "8584bb1e91a04f247e79552910651330d2e4dff1f3c7248bf8c8a0fdb97be286",
+  "g_reach_stepb.py": "e3cf8eaf892635177d86ce2b838a715be7a3516dd73af007027e30dc3199d47b"
+ },
+ "l1_pins": {
+  "stepA.py": "05d182c7cf1b9e44665b5f9928a35dfa2dd218e89bf7846bdee8a230456313f8",
+  "tts_cem.py": "9dea96038d18ae0b7f7a5d522939cb50c5424b372a6de4282ab49c02977bbedb",
+  "real_scorer.py": "05c4b4fb771ac924cbbf291b4e019f854411c318dc57e80ae09b02f3312ffbfa",
+  "label_perturbations.py": "9e2caca122d1230ff920a3d4722bbb9591d39426134d03af01684fc130c471e5"
+ },
+ "token_index": 1,
+ "token": "034ecf5e877c5f77",
+ "search_seed": 20260927,
+ "checks": [
+  {
+   "name": "a_cid_identity_head_equals_p2",
+   "ok": true,
+   "output_bit_identical": true,
+   "all_scored_sets_and_logits_bit_identical": true,
+   "n_scorings": 16,
+   "max_abs_logit_diff": 0.0,
+   "search_moved_the_pick_on_this_token (non-vacuous)": true
+  },
+  {
+   "name": "d_logit_diff_identical",
+   "token_index": 1,
+   "max_abs_ep_logit_diff": 0.0,
+   "max_abs_other_logit_diff": 0.0,
+   "expect": "identical",
+   "ok": true
+  },
+  {
+   "name": "b_inverted_head_negates_ep_logits_the_search_sees",
+   "ok": true,
+   "n_identical_sets": 7,
+   "ep_exactly_negated_on_all": true,
+   "other_columns_identical_on_all": true,
+   "sign_flipped_everywhere": true
+  },
+  {
+   "name": "d_logit_diff_differs",
+   "token_index": 1,
+   "max_abs_ep_logit_diff": 0.3587057888507843,
+   "max_abs_other_logit_diff": 0.0,
+   "expect": "differs",
+   "ok": true
+  },
+  {
+   "name": "e_c8_sigma0_and_clips_reach_the_search",
+   "ok": true,
+   "first_population_bit_exact_all_seeds": true,
+   "never_exceeds_clip": true,
+   "clip_attained_exactly": {
+    "u_hi": true,
+    "u_lo": true,
+    "d_hi": true,
+    "d_lo": true
+   },
+   "sigma0": [
+    0.08125946474888747,
+    0.15
+   ],
+   "clips_u": [
+    -0.16251892949777494,
+    0.13976194237515863
+   ],
+   "clips_d": [
+    -0.3,
+    0.3
+   ]
+  },
+  {
+   "name": "f_end_to_end_launch_shard_shows_the_head",
+   "ok": true,
+   "recorded_ep_logit_minus_p2": 0.12096035480499268,
+   "other_columns_equal_p2": true,
+   "shard_head_sha256_matches": true,
+   "installed_ep_row_differs_from_p2": true,
+   "preflight_ok": true
+  }
+ ],
+ "mutations": [
+  {
+   "mutation": "M1 delete the @INSTALL lines (read-back must raise)",
+   "must_be_red_by": "the install read-back raising",
+   "check": "raised",
+   "red": true,
+   "detail": {
+    "exception": "HeadRefused",
+    "message": "install read-back failed: the scorer's EP row is not the head file's"
+   }
+  },
+  {
+   "mutation": "M2 delete @INSTALL and @READBACK (only the caller-level observation can see it)",
+   "must_be_red_by": "check (b) ALONE",
+   "check": "b_inverted_head_negates_ep_logits_the_search_sees",
+   "red": true,
+   "detail": {
+    "ok": false,
+    "n_identical_sets": 16,
+    "ep_exactly_negated_on_all": false,
+    "other_columns_identical_on_all": true,
+    "sign_flipped_everywhere": false
+   }
+  },
+  {
+   "mutation": "M2d same mutation under check (d)",
+   "must_be_red_by": "check (d)",
+   "check": "d_logit_diff_differs",
+   "red": true,
+   "detail": {
+    "token_index": 1,
+    "max_abs_ep_logit_diff": 0.0,
+    "max_abs_other_logit_diff": 0.0,
+    "expect": "differs",
+    "ok": false
+   }
+  },
+  {
+   "mutation": "M3 caller wiring: build_scorer ignores the head (@WIRE) under (b)",
+   "must_be_red_by": "check (b)",
+   "check": "b_inverted_head_negates_ep_logits_the_search_sees",
+   "red": true,
+   "detail": {
+    "ok": false,
+    "n_identical_sets": 16,
+    "ep_exactly_negated_on_all": false,
+    "other_columns_identical_on_all": true,
+    "sign_flipped_everywhere": false
+   }
+  },
+  {
+   "mutation": "M3d same mutation under (d)",
+   "must_be_red_by": "check (d)",
+   "check": "d_logit_diff_differs",
+   "red": true,
+   "detail": {
+    "token_index": 1,
+    "max_abs_ep_logit_diff": 0.0,
+    "max_abs_other_logit_diff": 0.0,
+    "expect": "differs",
+    "ok": false
+   }
+  },
+  {
+   "mutation": "M4 the C8 clip lines deleted (@CLIPS)",
+   "must_be_red_by": "check (e)",
+   "check": "e_c8_sigma0_and_clips_reach_the_search",
+   "red": true,
+   "detail": {
+    "ok": false,
+    "first_population_bit_exact_all_seeds": false,
+    "never_exceeds_clip": false,
+    "clip_attained_exactly": {
+     "u_hi": false,
+     "u_lo": false,
+     "d_hi": false,
+     "d_lo": false
+    },
+    "sigma0": [
+     0.08125946474888747,
+     0.15
+    ],
+    "clips_u": [
+     -0.16251892949777494,
+     0.13976194237515863
+    ],
+    "clips_d": [
+     -0.3,
+     0.3
+    ]
+   }
+  },
+  {
+   "mutation": "M5 the sigma0 kwarg deleted (@SIGMA)",
+   "must_be_red_by": "check (e)",
+   "check": "e_c8_sigma0_and_clips_reach_the_search",
+   "red": true,
+   "detail": {
+    "ok": false,
+    "first_population_bit_exact_all_seeds": false,
+    "never_exceeds_clip": true,
+    "clip_attained_exactly": {
+     "u_hi": true,
+     "u_lo": true,
+     "d_hi": true,
+     "d_lo": true
+    },
+    "sigma0": [
+     0.08125946474888747,
+     0.15
+    ],
+    "clips_u": [
+     -0.16251892949777494,
+     0.13976194237515863
+    ],
+    "clips_d": [
+     -0.3,
+     0.3
+    ]
+   }
+  },
+  {
+   "mutation": "M6 the launch builds a P2 scorer instead of the head scorer (@CLIFN)",
+   "must_be_red_by": "the launch's own preflight refusing, or check (f)",
+   "check": "raised",
+   "red": true,
+   "detail": {
+    "exception": "SystemExit",
+    "message": "PREFLIGHT REACH FAILED (the L2 head did not reach the logits the search sees): {'token_index': 1, 'max_abs_ep_logit_diff': 0.0, 'max_abs_other_logit_diff': 0.0, 'expect': 'differs', 'ok': False}"
+   }
+  }
+ ],
+ "controls_unmutated": [
+  {
+   "name": "b_inverted_head_negates_ep_logits_the_search_sees",
+   "ok": true,
+   "n_identical_sets": 7,
+   "ep_exactly_negated_on_all": true,
+   "other_columns_identical_on_all": true,
+   "sign_flipped_everywhere": true
+  },
+  {
+   "name": "e_c8_sigma0_and_clips_reach_the_search",
+   "ok": true,
+   "first_population_bit_exact_all_seeds": true,
+   "never_exceeds_clip": true,
+   "clip_attained_exactly": {
+    "u_hi": true,
+    "u_lo": true,
+    "d_hi": true,
+    "d_lo": true
+   },
+   "sigma0": [
+    0.08125946474888747,
+    0.15
+   ],
+   "clips_u": [
+    -0.16251892949777494,
+    0.13976194237515863
+   ],
+   "clips_d": [
+    -0.3,
+    0.3
+   ]
+  },
+  {
+   "name": "f_end_to_end_launch_shard_shows_the_head",
+   "ok": true,
+   "recorded_ep_logit_minus_p2": 0.12096035480499268,
+   "other_columns_equal_p2": true,
+   "shard_head_sha256_matches": true,
+   "installed_ep_row_differs_from_p2": true,
+   "preflight_ok": true
+  }
+ ],
+ "seconds": 35.3,
+ "evidence": "MEASURED (ours): CPU, the real P2 scorer, one real set; mechanics only, no outcome read"
+}

@@ -1,0 +1,22 @@
+[07:50:15Z] poll 1: MARK 
+[08:20:33Z] poll 11: MARK 
+[08:50:51Z] poll 21: TRAINED0 MARK 
+[08:59:56Z] both fine-tunes of RLVd have finished training
+RLVd_s0 n 534 with history 534 | c2b trainer units: logit 1.431e-06 gap 1.526e-07 closing 1.669e-07 -> PASS | same ckpt True same states True
+   c1 0.0 | c2a True roll 0.000e+00 head 1.431e-06 | c4 zero model 0.0 real model 8.2677 | facts ok {'wm_acc_scale': True, 'scale_actions_acc': True, 'lead_head': True, 'rollout': True, 'act_embed': True, 'roll_pairs': True} | cfg {'wm_state': 'grid', 'wm_l1_residual': 'on', 'wm_l1_roll_k': '10', 'w
+[09:00:18Z] pulled DUMP_RLVd_s0.npz
+[09:00:20Z] pulled DUMP_RLVd_s0.npz.json
+RLVd_s1 n 534 with history 534 | c2b trainer units: logit 1.907e-06 gap 1.526e-07 closing 1.550e-07 -> PASS | same ckpt True same states True
+   c1 0.0 | c2a True roll 0.000e+00 head 1.431e-06 | c4 zero model 0.0 real model 10.4750 | facts ok {'wm_acc_scale': True, 'scale_actions_acc': True, 'lead_head': True, 'rollout': True, 'act_embed': True, 'roll_pairs': True} | cfg {'wm_state': 'grid', 'wm_l1_residual': 'on', 'wm_l1_roll_k': '10', '
+[09:00:41Z] pulled DUMP_RLVd_s1.npz
+[09:00:43Z] pulled DUMP_RLVd_s1.npz.json
+[09:00:45Z] read RLVd rc 0 : ZZ IMAG DONE RLVd controls PASS names {'H1': 'IMAG-HEAD-FLAT', 'H2': 'IMAG-RESPONDS-WEAKLY', 'H2_overshoot_seeds': []}
+[09:00:46Z] pair RLVd minus RLFT rc 0 : ["RL-RESPONDS-BETTER"]
+[09:00:48Z] pair RLVd minus RLAm rc 0 : "nothing is named for the pair"
+[09:00:49Z] pair RLVd minus RLA3 rc 0 : "nothing is named for the pair"
+== RLVd (level, weight 0.004): NAME LEVEL-TERM-LOSES-RESPONSE-0.004
+   controls PASS {"c1": true, "c2": true, "c4": true, "c3": true, "c5": true}
+   slope 2.0 s: pooled 0.3454 interval [0.2327, 0.4353] per base [0.3947, 0.296] | IMAG-RESPONDS-WEAKLY | slope 1.0 s per base [0.6867, 0.5459]
+   rollout MAE m: arm [5.8462, 6.0459] RLFT [5.4751, 5.4917] ratio [1.0678, 1.1009] (bar 1.15) | H1 minus RLFT -0.0182 [-0.076, 0.0553] | keeps the level True {"ratio_at_most_1.15_per_base": [true, true], "H1_difference_not_below_0": true}
+   pair against RLAm: names nothing is named for the pair, distance from 1 minus RLAm 0.4656 [0.3758, 0.5741] | pair against RLFT names ['RL-RESPONDS-BETTER'] | beside RLA3 MAE [9.3617, 6.8752]
+ZZ EARLY-READ RLVd DONE 09:00:50Z

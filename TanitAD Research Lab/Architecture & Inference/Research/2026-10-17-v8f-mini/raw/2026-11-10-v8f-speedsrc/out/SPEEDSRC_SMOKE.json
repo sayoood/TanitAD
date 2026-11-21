@@ -1,0 +1,433 @@
+{
+ "tool": "speedsrc_read.py",
+ "card": "theory/speedsrc/PREREAD_V8F_SPEEDSRC.md",
+ "tier": "T1-kin first tick, oracle diagnostic, never driving performance; STRATEGIC: PAUSED (PI item 25)",
+ "estimator": "episode-cluster bootstrap (taniteval.ci.stat_cluster_bootstrap), B=2000, seed 0, on windows with lab_t.has and >= 1 present speed cell; answers 'another draw of episodes' only",
+ "speed_cells": [
+  "lon_v_target_ms",
+  "v_a_ms",
+  "v_end_ms",
+  "v_lo_ms",
+  "v_hi_ms"
+ ],
+ "thresholds": {
+  "V_STOP_END": 0.5,
+  "DV": [
+   -1.0,
+   1.0
+  ],
+  "LEAD_BINS": [
+   15.0,
+   40.0
+  ],
+  "CURV_BINS": [
+   0.005,
+   0.02
+  ],
+  "V0_BINS": [
+   4.0,
+   12.0
+  ],
+  "MIN_STRATUM_WINDOWS": 50,
+  "MASS_SHARE_MIN": 0.3,
+  "RATIO_MIN": 2.0
+ },
+ "tree": "F:/TanitAD-scratch/otband_read/tree",
+ "smoke": 64,
+ "controls": {
+  "PARITY_DAGOACC_s0": {
+   "ckpt_sha256": "67265ec1666fae3a6d51e924ee06dfb68b2cd0630afc62e42f3a46182b8bc45f",
+   "manifest_ok": null,
+   "smoke": 64,
+   "top1_vs_dump_ol_max_abs_m": null,
+   "g_vs_dump_max_abs_m": null,
+   "v0_vs_dump_max_abs_mps": null,
+   "ident_vs_top1_max_abs_m": 0.0,
+   "own_all_vs_ident_max_abs_m": 0.0,
+   "n_windows": 64,
+   "n_has": 63,
+   "n_present_speed_cells": 310,
+   "strata_level_counts_has": {
+    "regime": {
+     "STOP": 3,
+     "DECEL": 10,
+     "ACCEL": 18,
+     "CRUISE": 32
+    },
+    "lead": {
+     "LEAD_NONE": 37,
+     "LEAD_LT15": 6,
+     "LEAD_15_40": 8,
+     "LEAD_GE40": 12
+    },
+    "tlstop": {
+     "TL": 6,
+     "STOP_POINT": 1,
+     "NO_TL_STOP": 56
+    },
+    "curv": {
+     "CURV_LO": 41,
+     "CURV_MID": 15,
+     "CURV_HI": 7
+    },
+    "v0": {
+     "V0_LO": 7,
+     "V0_MID": 25,
+     "V0_HI": 31
+    }
+   }
+  }
+ },
+ "arms": {
+  "PARITY_DAGOACC_s0": {
+   "n_windows_read": 62,
+   "n_episodes": 62,
+   "total_mass_mps2": 1943.231918582914,
+   "mean_mse_all_mps2": 6.2684900599448845,
+   "n_has": 63,
+   "strata": {
+    "STOP": {
+     "var": "regime",
+     "n_windows": 2,
+     "window_share": 0.03225806451612903,
+     "mass_share": 0.030033412273631665,
+     "mass_over_window_share": 0.9310357804825816,
+     "mean_mse_in": 5.836188535408089,
+     "diff_in_minus_complement_mps2": {
+      "point": -0.446711575354688,
+      "lo": -3.5167033345307788,
+      "hi": 2.2917741836074255
+     },
+     "gt_speed_only_tactical_ade_gain_m": {
+      "point": -0.5733175967663493,
+      "lo": -1.2141472995938882,
+      "hi": 0.06751210606118951
+     },
+     "qualifies": false
+    },
+    "DECEL": {
+     "var": "regime",
+     "n_windows": 10,
+     "window_share": 0.16129032258064516,
+     "mass_share": 0.36279388996254097,
+     "mass_over_window_share": 2.249322117767754,
+     "mean_mse_in": 14.09985333684134,
+     "diff_in_minus_complement_mps2": {
+      "point": 9.33739467629962,
+      "lo": 0.2517550490000662,
+      "hi": 23.405848388310254
+     },
+     "gt_speed_only_tactical_ade_gain_m": {
+      "point": -0.017608377798574847,
+      "lo": -0.3218162179973307,
+      "hi": 0.3129587830450668
+     },
+     "qualifies": false
+    },
+    "ACCEL": {
+     "var": "regime",
+     "n_windows": 18,
+     "window_share": 0.2903225806451613,
+     "mass_share": 0.28834978069306355,
+     "mass_over_window_share": 0.9932048001649966,
+     "mean_mse_in": 6.2258944173238255,
+     "diff_in_minus_complement_mps2": {
+      "point": -0.06002113278422083,
+      "lo": -4.252960356420291,
+      "hi": 3.835063691474663
+     },
+     "gt_speed_only_tactical_ade_gain_m": {
+      "point": -0.3958147066673167,
+      "lo": -0.6312623990659578,
+      "hi": -0.20118430264964487
+     },
+     "qualifies": false
+    },
+    "CRUISE": {
+     "var": "regime",
+     "n_windows": 32,
+     "window_share": 0.5161290322580645,
+     "mass_share": 0.3188229170707638,
+     "mass_over_window_share": 0.6177194018246049,
+     "mean_mse_in": 3.8721679301726355,
+     "diff_in_minus_complement_mps2": {
+      "point": -4.952399068195984,
+      "lo": -10.05062670784974,
+      "hi": -1.0354070189576698
+     },
+     "gt_speed_only_tactical_ade_gain_m": {
+      "point": -0.28503164821343874,
+      "lo": -0.47175748190864375,
+      "hi": -0.11746570937387707
+     },
+     "qualifies": false
+    },
+    "LEAD_NONE": {
+     "var": "lead",
+     "n_windows": 36,
+     "window_share": 0.5806451612903226,
+     "mass_share": 0.695302040802345,
+     "mass_over_window_share": 1.197464625826261,
+     "mean_mse_in": 7.506295104127536,
+     "diff_in_minus_complement_mps2": {
+      "point": 2.9516889515124793,
+      "lo": -0.5323627547419654,
+      "hi": 7.452824326995278
+     },
+     "gt_speed_only_tactical_ade_gain_m": {
+      "point": -0.3621521540001151,
+      "lo": -0.540658848628305,
+      "hi": -0.17859073484475582
+     },
+     "qualifies": false
+    },
+    "LEAD_LT15": {
+     "var": "lead",
+     "n_windows": 6,
+     "window_share": 0.0967741935483871,
+     "mass_share": 0.09325775016444035,
+     "mass_over_window_share": 0.9636634183658837,
+     "mean_mse_in": 6.04071455915905,
+     "diff_in_minus_complement_mps2": {
+      "point": -0.25218001872717455,
+      "lo": -5.360013038775857,
+      "hi": 5.277721986852843
+     },
+     "gt_speed_only_tactical_ade_gain_m": {
+      "point": -0.2376624213827098,
+      "lo": -0.9383476078640188,
+      "hi": 0.1415260693314181
+     },
+     "qualifies": false
+    },
+    "LEAD_15_40": {
+     "var": "lead",
+     "n_windows": 8,
+     "window_share": 0.12903225806451613,
+     "mass_share": 0.12236831702465142,
+     "mass_over_window_share": 0.9483544569410486,
+     "mean_mse_in": 5.94475048663939,
+     "diff_in_minus_complement_mps2": {
+      "point": -0.37170099157297454,
+      "lo": -4.715812343806263,
+      "hi": 3.7184051240376927
+     },
+     "gt_speed_only_tactical_ade_gain_m": {
+      "point": -0.3952923654495873,
+      "lo": -0.6511633368486837,
+      "hi": -0.1272719191434985
+     },
+     "qualifies": false
+    },
+    "LEAD_GE40": {
+     "var": "lead",
+     "n_windows": 12,
+     "window_share": 0.1935483870967742,
+     "mass_share": 0.0890718920085633,
+     "mass_over_window_share": 0.4602047753775771,
+     "mean_mse_in": 2.8847890599935098,
+     "diff_in_minus_complement_mps2": {
+      "point": -4.195789239939705,
+      "lo": -7.800375604574079,
+      "hi": -1.255223341330152
+     },
+     "gt_speed_only_tactical_ade_gain_m": {
+      "point": 0.004782880128076168,
+      "lo": -0.10732331819118346,
+      "hi": 0.107759282252347
+     },
+     "qualifies": false
+    },
+    "TL": {
+     "var": "tlstop",
+     "n_windows": 6,
+     "window_share": 0.0967741935483871,
+     "mass_share": 0.24431880995242683,
+     "mass_over_window_share": 2.524627702841744,
+     "mean_mse_in": 15.825603660324958,
+     "diff_in_minus_complement_mps2": {
+      "point": 10.581090057563653,
+      "lo": -2.406078743797476,
+      "hi": 32.82442300778806
+     },
+     "gt_speed_only_tactical_ade_gain_m": {
+      "point": -0.2488039439835331,
+      "lo": -0.7053477881139514,
+      "hi": 0.13861710686167403
+     },
+     "qualifies": false
+    },
+    "STOP_POINT": {
+     "var": "tlstop",
+     "n_windows": 1,
+     "window_share": 0.016129032258064516,
+     "mass_share": 0.05349991953123657,
+     "mass_over_window_share": 3.3169950109366675,
+     "mean_mse_in": 20.792550254943272,
+     "diff_in_minus_complement_mps2": {
+      "point": 14.762159542457379,
+      "lo": 12.220148406343597,
+      "hi": 16.732832655956564
+     },
+     "gt_speed_only_tactical_ade_gain_m": {
+      "point": -0.30707293325182794,
+      "lo": -0.30707293325182794,
+      "hi": -0.30707293325182794
+     },
+     "qualifies": false
+    },
+    "NO_TL_STOP": {
+     "var": "tlstop",
+     "n_windows": 55,
+     "window_share": 0.8870967741935484,
+     "mass_share": 0.7021812705163366,
+     "mass_over_window_share": 0.7915497958547795,
+     "mean_mse_in": 4.961822027267088,
+     "diff_in_minus_complement_mps2": {
+      "point": -11.573345432289056,
+      "lo": -31.179422410274462,
+      "hi": 0.784429595281719
+     },
+     "gt_speed_only_tactical_ade_gain_m": {
+      "point": -0.2866999970401302,
+      "lo": -0.42455831037196706,
+      "hi": -0.14448488108143914
+     },
+     "qualifies": false
+    },
+    "CURV_LO": {
+     "var": "curv",
+     "n_windows": 40,
+     "window_share": 0.6451612903225806,
+     "mass_share": 0.6710284905857239,
+     "mass_over_window_share": 1.0400941604078722,
+     "mean_mse_in": 6.519819905923465,
+     "diff_in_minus_complement_mps2": {
+      "point": 0.7082932023032749,
+      "lo": -2.8348883904140796,
+      "hi": 5.094607816169238
+     },
+     "gt_speed_only_tactical_ade_gain_m": {
+      "point": -0.2856370368163543,
+      "lo": -0.45416609748157466,
+      "hi": -0.11237075050604278
+     },
+     "qualifies": false
+    },
+    "CURV_MID": {
+     "var": "curv",
+     "n_windows": 15,
+     "window_share": 0.24193548387096775,
+     "mass_share": 0.21462064271860123,
+     "mass_over_window_share": 0.8870986565702184,
+     "mean_mse_in": 5.560769110900874,
+     "diff_in_minus_complement_mps2": {
+      "point": -0.9335893370367803,
+      "lo": -4.845260232440473,
+      "hi": 2.6020713896125587
+     },
+     "gt_speed_only_tactical_ade_gain_m": {
+      "point": -0.21899781011251102,
+      "lo": -0.3954139296801741,
+      "hi": -0.0701563743229847
+     },
+     "qualifies": false
+    },
+    "CURV_HI": {
+     "var": "curv",
+     "n_windows": 7,
+     "window_share": 0.11290322580645161,
+     "mass_share": 0.1143508666956749,
+     "mass_over_window_share": 1.012821962161692,
+     "mean_mse_in": 6.3488644023044385,
+     "diff_in_minus_complement_mps2": {
+      "point": 0.09060380411440683,
+      "lo": -4.968908929504636,
+      "hi": 4.9862735154273965
+     },
+     "gt_speed_only_tactical_ade_gain_m": {
+      "point": -0.4082782585740499,
+      "lo": -0.9339414570177305,
+      "hi": 0.008587718478686845
+     },
+     "qualifies": false
+    },
+    "V0_LO": {
+     "var": "v0",
+     "n_windows": 6,
+     "window_share": 0.0967741935483871,
+     "mass_share": 0.08648657916381801,
+     "mass_over_window_share": 0.8936946513594528,
+     "mean_mse_in": 5.602116038672638,
+     "diff_in_minus_complement_mps2": {
+      "point": -0.7377712378371282,
+      "lo": -3.8222255768708866,
+      "hi": 1.8200838858635868
+     },
+     "gt_speed_only_tactical_ade_gain_m": {
+      "point": -0.39564138641225827,
+      "lo": -0.8105323776110072,
+      "hi": -0.06324392543867788
+     },
+     "qualifies": false
+    },
+    "V0_MID": {
+     "var": "v0",
+     "n_windows": 25,
+     "window_share": 0.4032258064516129,
+     "mass_share": 0.39341304965418605,
+     "mass_over_window_share": 0.9756643631423815,
+     "mean_mse_in": 6.115942362200474,
+     "diff_in_minus_complement_mps2": {
+      "point": -0.25562046649063586,
+      "lo": -4.775864249108419,
+      "hi": 3.636574178560509
+     },
+     "gt_speed_only_tactical_ade_gain_m": {
+      "point": -0.27648930516326686,
+      "lo": -0.4811352202662008,
+      "hi": -0.0732902795108545
+     },
+     "qualifies": false
+    },
+    "V0_HI": {
+     "var": "v0",
+     "n_windows": 31,
+     "window_share": 0.5,
+     "mass_share": 0.5201003711819959,
+     "mass_over_window_share": 1.0402007423639918,
+     "mean_mse_in": 6.520488013855973,
+     "diff_in_minus_complement_mps2": {
+      "point": 0.5039959078221763,
+      "lo": -3.688323261704727,
+      "hi": 5.704100951949971
+     },
+     "gt_speed_only_tactical_ade_gain_m": {
+      "point": -0.26717146731628927,
+      "lo": -0.4539757850369898,
+      "hi": -0.09920221425059325
+     },
+     "qualifies": false
+    }
+   },
+   "qualifying": [],
+   "per_cell_mse_mps2": {
+    "lon_v_target_ms": 8.547111872472613,
+    "v_a_ms": 2.7804412682281496,
+    "v_end_ms": 8.16696728467938,
+    "v_lo_ms": 6.085575937376183,
+    "v_hi_ms": 5.762353936968098
+   },
+   "per_cell_n_present": {
+    "lon_v_target_ms": 62,
+    "v_a_ms": 62,
+    "v_end_ms": 62,
+    "v_lo_ms": 62,
+    "v_hi_ms": 62
+   }
+  }
+ },
+ "verdict": {
+  "status": "SMOKE: code check only, never a result"
+ }
+}

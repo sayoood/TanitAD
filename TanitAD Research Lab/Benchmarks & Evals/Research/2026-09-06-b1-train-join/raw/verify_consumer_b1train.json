@@ -1,0 +1,79 @@
+{
+ "join": "b1train_agents.jsonl.xz",
+ "reader": {
+  "class": "train_p8_occupancy.JoinFileReader",
+  "n_records": 849263,
+  "n_clips": 4427,
+  "max_agents_per_frame": 397,
+  "has_classes": true,
+  "has_occlusion_flags": true
+ },
+ "lookup": {
+  "probe_clip": "002646e7-0fdc-4727-8bea-d721a5e00c4d",
+  "lookup(uid, 10)": "HIT: 19 agents, array (19, 6)",
+  "lookup(uid, 100000) MUST-MISS control": "None",
+  "must_miss_is_None": true
+ },
+ "v_rel": {
+  "present": true,
+  "computed_by": "train_p8_occupancy.JoinFileReader(with_rates=True) -> tanitad.models.agent_slots.track_rates_from_join",
+  "definition": "v_rel_x = d(cx)/dt with cx the agent's along-track coordinate in the per-frame EGO frame (+x forward) and dt READ from the records' own t_s (grid ~0.1007 s, never assumed 0.1); central difference when both neighbours carry the track_id, one-sided when one does, MASKED when neither (zero is a legitimate value -- a stationary car -- so a missing rate is never zero-filled)",
+  "units": {
+   "v_rel_x": "m/s",
+   "v_rel_y": "m/s",
+   "yaw_rate_rel": "rad/s"
+  },
+  "sample": {
+   "n_clips": 400,
+   "n_frames_with_labels": 72360,
+   "n_boxes": 2530548,
+   "n_boxes_with_rate": 2527336,
+   "coverage_frac": 0.9987
+  },
+  "v_rel_x": {
+   "n": 2527336,
+   "unit": "m/s",
+   "mean": -6.558313846588135,
+   "std": 10.695426940917969,
+   "min": -4990.677734375,
+   "max": 2589.580810546875,
+   "p01": -38.9279670715332,
+   "p05": -19.588176727294922,
+   "median": -5.914058685302734,
+   "p95": 3.295081853866577,
+   "p99": 15.076329231262207,
+   "frac_exactly_zero": 0.000333552800260828,
+   "frac_nonfinite": 0.0
+  },
+  "v_rel_y": {
+   "n": 2527336,
+   "unit": "m/s",
+   "mean": -0.06362248957157135,
+   "std": 6.419941425323486,
+   "min": -2035.261474609375,
+   "max": 1401.3465576171875,
+   "p01": -21.554229736328125,
+   "p05": -6.005464553833008,
+   "median": 0.00298062595538795,
+   "p95": 5.74068546295166,
+   "p99": 19.058271408081055,
+   "frac_exactly_zero": 0.0009666304757262193,
+   "frac_nonfinite": 0.0
+  },
+  "yaw_rate_rel": {
+   "n": 2527336,
+   "unit": "rad/s",
+   "mean": -0.0006331978365778923,
+   "std": 0.15923252701759338,
+   "min": -15.392971992492676,
+   "max": 28.014596939086914,
+   "p01": -0.4785464107990265,
+   "p05": -0.22074837982654572,
+   "median": 9.930486703524366e-05,
+   "p95": 0.2120959609746933,
+   "p99": 0.4510447680950165,
+   "frac_exactly_zero": 0.001140331162932036,
+   "frac_nonfinite": 0.0
+  }
+ }
+}

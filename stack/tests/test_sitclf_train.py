@@ -47,7 +47,7 @@ def _substrate(tmp_path: Path, n_clips: int = 8, per_clip: int = 40, dim: int = 
 def _run(*argv: str) -> subprocess.CompletedProcess:
     return subprocess.run(
         [sys.executable, str(TRAINER), *argv],
-        capture_output=True, text=True, cwd=str(REPO),
+        capture_output=True, text=True, encoding="utf-8", cwd=str(REPO),
         env={**__import__("os").environ, "PYTHONPATH": str(REPO)},
     )
 

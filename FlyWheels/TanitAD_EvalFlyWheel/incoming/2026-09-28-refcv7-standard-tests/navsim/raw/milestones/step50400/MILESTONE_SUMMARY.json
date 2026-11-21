@@ -1,0 +1,100 @@
+{
+ "ckpt": "D:/refcv7_eval_kit/ckpt/ckpt_50400.pt",
+ "md5": "b418d0fc4a92a6848c246a6a7c50207b",
+ "step": 50400,
+ "label": "RESULT",
+ "config_md5": "e6512a01b9c70f0e4a4dac581621984a",
+ "splits": {
+  "navtest": {
+   "device": "cuda",
+   "gpu_lock_token": "refcv7-navsim-navtest:31600:cb5b76434e66",
+   "cuda_controls": {
+    "pytest_rc": 1,
+    "K0_pass": true,
+    "KD_pass": false,
+    "KD": {
+     "n": 4,
+     "max_abs_traj_diff_m": 0.027738571166992188,
+     "sel_identical": 4,
+     "device": "cuda",
+     "ckpt": "D:/refcv7_eval_kit/ckpt/ckpt_50400.pt"
+    }
+   },
+   "exact_dedup": false,
+   "seams": {
+    "main": {
+     "R7_A1": "OK",
+     "R7_A1_s1": "OK",
+     "R7_CEILDECL_d": "OK",
+     "PRIOR_ha0p": "OK"
+    },
+    "sub200": {
+     "R7_VMAXOFF": "OK",
+     "R7_FILTOFF": "OK",
+     "R7_VMAXORACLE": "OK"
+    }
+   },
+   "summary": "D:\\Projects\\TanitAD\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-28-refcv7-standard-tests\\navsim\\raw\\milestones\\step50400\\summary_navtest.json",
+   "decomposition": "D:\\Projects\\TanitAD\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-28-refcv7-standard-tests\\navsim\\raw\\milestones\\step50400\\decomposition_navtest.json"
+  },
+  "navhard": {
+   "device": "cuda",
+   "gpu_lock_token": "refcv7-navsim-navhard:31600:7a582f98f06b",
+   "cuda_controls": {
+    "pytest_rc": 1,
+    "K0_pass": true,
+    "KD_pass": false,
+    "KD": {
+     "n": 4,
+     "max_abs_traj_diff_m": 0.027738571166992188,
+     "sel_identical": 4,
+     "device": "cuda",
+     "ckpt": "D:/refcv7_eval_kit/ckpt/ckpt_50400.pt"
+    }
+   },
+   "exact_dedup": false,
+   "seams": {
+    "main": {
+     "R7_A1": "OK",
+     "R7_A1_s1": "OK",
+     "R7_CEILDECL_d": "OK",
+     "PRIOR_ha0p": "OK"
+    }
+   },
+   "summary": "D:\\Projects\\TanitAD\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-28-refcv7-standard-tests\\navsim\\raw\\milestones\\step50400\\summary_navhard.json",
+   "decomposition": "D:\\Projects\\TanitAD\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-28-refcv7-standard-tests\\navsim\\raw\\milestones\\step50400\\decomposition_navhard.json"
+  },
+  "warmup": {
+   "device": "cpu",
+   "precision": [
+    "fp32"
+   ],
+   "gpu_lock_token": null,
+   "exact_dedup": true,
+   "reconstructed_from": [
+    "raw\\milestones\\step50400\\bridge_warmup\\seam_R7_A1.manifest.json"
+   ],
+   "seams": {
+    "main": {
+     "R7_A1": "OK",
+     "R7_A1_s1": "OK",
+     "R7_FILTOFF": "OK",
+     "R7_BLIND": "OK",
+     "R7_VMAXOFF": "OK",
+     "R7_A1NT": "OK",
+     "R7_NAVOFF": "OK",
+     "R7_CEILDECL_d": "OK",
+     "PRIOR_ha0p": "OK"
+    }
+   },
+   "summary": "D:\\Projects\\TanitAD\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-28-refcv7-standard-tests\\navsim\\raw\\milestones\\step50400\\summary_warmup.json",
+   "decomposition": "D:\\Projects\\TanitAD\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-28-refcv7-standard-tests\\navsim\\raw\\milestones\\step50400\\decomposition_warmup.json"
+  }
+ },
+ "completed_by": {
+  "script": "code/finish_step50400_7.py",
+  "utc": "2026-10-05T03:43:07Z",
+  "why": "the runner was launched with --splits navtest,navhard (its first incarnation died on ENOSPC before warmup was scored): warmup was scored by score_queue_gov7.py and every split re-parsed with the runner's own post-drain steps",
+  "not_pass_after": {}
+ }
+}

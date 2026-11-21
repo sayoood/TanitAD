@@ -1,0 +1,220 @@
+{
+ "tag": "R35_s0",
+ "tier": "T0 world-model diagnostic; TRAIN, in-sample for R35 and for RA; feasibility record, never a result",
+ "inputs": {
+  "ckpt": {
+   "path": "C:/Users/Admin/t2v8f_pulls/ladder_R35_s0/ckpt_last.pt",
+   "sha256": "d920d62c6c391a61291b966a6af1783156b4351d25c7408913e4191daa0215cf"
+  },
+  "latents_train": {
+   "path": "F:/TanitAD-scratch/hwm_plan/latents_train_R35_s0.pt",
+   "sha256": "76a2d4f5482bd98670bab40ebbf4b3c85fde8ebf222596947fa16f0c7e82754c"
+  },
+  "selection_windows": {
+   "path": "F:/TanitAD-scratch/actrsp/lonplan/sel_s0/selection_windows.npz",
+   "sha256": "69ec3b9fe783a61b2dd5b3bc5ff5679b2461e4e307727d21817def6cfb006fd2"
+  },
+  "readout": {
+   "path": "C:/Users/Admin/AppData/Local/Temp/claude/4ac3a056b343bb35/bfe78918-15e8-439b-8566-593ca3297bd8/scratchpad/ra/readout_K10_R35_s0.pt",
+   "sha256": "edab7dce7b57f9ae21d90e5cc317c914aed432751fde7a7d4e6cf6af0748a6cf"
+  },
+  "score_windows_s1_eid_only": {
+   "path": "F:/TanitAD-scratch/actrsp/lonplan/score_windows_s1/windows.npz",
+   "sha256": "8833e2923c1781d7678f8483775487db476117e3ddd563a444d2d122334061f0"
+  },
+  "script": {
+   "path": "F:\\TanitAD-scratch\\actrsp\\lonplan\\amend5\\ra5_reg.py",
+   "sha256": "302c816c7b8c75eaea96c0b3b46a6aeb3a8c24e06b5e41dd1fd3d0e14ce75db5"
+  }
+ },
+ "C_RA_FIT": {
+  "n_pairs": 8306,
+  "n_clips": 141,
+  "n_pairs_record": 8306,
+  "lambda": 1.0,
+  "max_abs_dW": 2.4181373830395314e-10,
+  "max_abs_W": 0.015939018643451118,
+  "max_abs_dmu": 3.6727029794139665e-10,
+  "max_abs_dsd": 7.6422262962339e-10,
+  "abs_dym": 0.0,
+  "train_clips_in_score_episodes": 0,
+  "n_score_episodes": 71,
+  "n_score_windows": 994,
+  "s_cal_swap_heldout_frozen": [
+   0.20075513255151825,
+   0.037807883922187514
+  ]
+ },
+ "rows": {
+  "ORACLE_0.003": {
+   "acc_mae_0_2s": 0.722,
+   "minus_HOLD": [
+    0.4255,
+    [
+     0.3711,
+     0.4803
+    ]
+   ],
+   "D_priorstd": 0.8199,
+   "r_departure_vs_logged": 0.2972
+  },
+  "ORACLE_0.01": {
+   "acc_mae_0_2s": 0.6088,
+   "minus_HOLD": [
+    0.3122,
+    [
+     0.2684,
+     0.3574
+    ]
+   ],
+   "D_priorstd": 0.6681,
+   "r_departure_vs_logged": 0.3179
+  },
+  "ORACLE_0.03": {
+   "acc_mae_0_2s": 0.4662,
+   "minus_HOLD": [
+    0.1697,
+    [
+     0.1396,
+     0.2001
+    ]
+   ],
+   "D_priorstd": 0.4568,
+   "r_departure_vs_logged": 0.3338
+  },
+  "ORACLE_0.1": {
+   "acc_mae_0_2s": 0.3524,
+   "minus_HOLD": [
+    0.0558,
+    [
+     0.0394,
+     0.0739
+    ]
+   ],
+   "D_priorstd": 0.2516,
+   "r_departure_vs_logged": 0.3563
+  },
+  "ORACLE_0.3": {
+   "acc_mae_0_2s": 0.3097,
+   "minus_HOLD": [
+    0.0132,
+    [
+     0.004,
+     0.0226
+    ]
+   ],
+   "D_priorstd": 0.1311,
+   "r_departure_vs_logged": 0.3481
+  },
+  "SHUF_0.003": {
+   "acc_mae_0_2s": 0.4377,
+   "minus_HOLD": [
+    0.1411,
+    [
+     0.12,
+     0.1632
+    ]
+   ],
+   "D_priorstd": 0.3342,
+   "r_departure_vs_logged": 0.19,
+   "minus_ORACLE": [
+    -0.2843,
+    [
+     -0.3403,
+     -0.2294
+    ]
+   ]
+  },
+  "SHUF_0.01": {
+   "acc_mae_0_2s": 0.3303,
+   "minus_HOLD": [
+    0.0337,
+    [
+     0.0251,
+     0.0431
+    ]
+   ],
+   "D_priorstd": 0.1423,
+   "r_departure_vs_logged": 0.2582,
+   "minus_ORACLE": [
+    -0.2785,
+    [
+     -0.3249,
+     -0.2344
+    ]
+   ]
+  },
+  "SHUF_0.03": {
+   "acc_mae_0_2s": 0.3044,
+   "minus_HOLD": [
+    0.0079,
+    [
+     0.0022,
+     0.0139
+    ]
+   ],
+   "D_priorstd": 0.073,
+   "r_departure_vs_logged": 0.2764,
+   "minus_ORACLE": [
+    -0.1618,
+    [
+     -0.192,
+     -0.1319
+    ]
+   ]
+  },
+  "SHUF_0.1": {
+   "acc_mae_0_2s": 0.2981,
+   "minus_HOLD": [
+    0.0015,
+    [
+     -0.0038,
+     0.0074
+    ]
+   ],
+   "D_priorstd": 0.0467,
+   "r_departure_vs_logged": 0.273,
+   "minus_ORACLE": [
+    -0.0543,
+    [
+     -0.0708,
+     -0.0385
+    ]
+   ]
+  },
+  "SHUF_0.3": {
+   "acc_mae_0_2s": 0.2967,
+   "minus_HOLD": [
+    0.0001,
+    [
+     -0.0054,
+     0.0061
+    ]
+   ],
+   "D_priorstd": 0.0369,
+   "r_departure_vs_logged": 0.2685,
+   "minus_ORACLE": [
+    -0.013,
+    [
+     -0.0207,
+     -0.0059
+    ]
+   ]
+  },
+  "HOLD": {
+   "acc_mae_0_2s": 0.2965,
+   "minus_HOLD": [
+    0.0,
+    [
+     0.0,
+     0.0
+    ]
+   ],
+   "D_priorstd": 0.0,
+   "r_departure_vs_logged": null
+  }
+ },
+ "note": "D_priorstd = mean |plan acc - a0| over knots 1-10 in TRAIN prior std (raw = 2.0 x scaled prior std); LON-PLAN's D uses HOLD_c, a0 differs from HOLD_c only on clipped windows",
+ "estimator": "clip-cluster percentile bootstrap, B 2000, seed 0, over the TRAIN clips; in-sample for RA and R35",
+ "wall_s": 172.7
+}

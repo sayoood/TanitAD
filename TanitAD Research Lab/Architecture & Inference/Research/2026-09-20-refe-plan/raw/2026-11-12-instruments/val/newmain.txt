@@ -1,0 +1,121 @@
+def score_one_arm(parts, ego, s0, p, a7: bool, shift_lat: float, controls: bool, want_fam: bool) -> dict:
+    """One arm's plan on one token -> {"tracked","transparent",[controls],[fam]}. Two scorer calls at most per arm; PDM-Closed and the
+    metric-cache parts (the expensive part, ~1-2 s/token) are shared across arms by the caller."""
+    tr8, (trel, tdt) = plan_views(p, a7, shift_lat)
+    tstates = transparent_states(trel, ego, s0, tdt)
+    res, sim_tr = score_arms(parts, [tr8], [tstates])
+    out = {"tracked": res[0], "transparent": res[1]}
+    if controls:
+        # (iii-a) the LQR-simulated states fed into the executed slot must reproduce the tracked score;
+        # (iii-b) the plan shifted 0.5 m left must change the scores (DAC on >= 1 token over the run).
+        sh_p = dict(p)
+        for k in ("plan20", "plan8"):
+            if p[k] is not None:
+                q = p[k].copy()
+                q[:, 1] += 0.5
+                sh_p[k] = q
+        tr8s, (trels, tdts) = plan_views(sh_p, a7, shift_lat)
+        cres, _ = score_arms(parts, [tr8s], [sim_tr[0], transparent_states(trels, ego, s0, tdts)])
+        out["ctl_sim_as_executed"], out["ctl_shift05_tracked"], out["ctl_shift05_transparent"] = cres[1], cres[0], cres[2]
+    if want_fam:
+        out["fam"] = {"reference8": np.asarray(tr8, np.float64).tolist(),
+                      "exec_tracked8": world_to_ego8(sim_tr[0], ego).tolist(),
+                      "exec_transparent8": world_to_ego8(tstates, ego).tolist()}
+    return out
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--refe", required=True, help="dir with navsim_dac.py, navtrain_scenarios.py, navsim_pdm_targets.py, navsim_pdm/")
+    ap.add_argument("--plans", nargs="+", required=True,
+                    help="one or more plan files, optionally name=path. EVERY arm is scored in the same pass over a token, so the "
+                         "PDM-Closed / metric-cache work (~1-2 s/token, the dominant cost) is paid once for all arms. "
+                         "All files must carry the same tokens (an arm missing a token is an error).")
+    ap.add_argument("--out", required=True)
+    ap.add_argument("--shard", default="0/1")
+    ap.add_argument("--split", choices=sorted(SPLIT_ROWS), default="navtrain")
+    ap.add_argument("--token-log", default=None, help="token->log json(.gz) (navtest_inputs.json.gz) when the plans carry no logs")
+    ap.add_argument("--db-root", default=DB_ROOT)
+    ap.add_argument("--a7", type=int, default=0)
+    ap.add_argument("--shift-lat", type=float, default=0.0, help="RED control: shift every plan pose by this many m to the left")
+    ap.add_argument("--controls", action="store_true", help="also score the control arms per arm (sim_as_executed, shifted 0.5 m)")
+    ap.add_argument("--human-arm", action="store_true",
+                    help="add an arm named 'human': plan20 = logged future at 0.2 s, plan8 = the 8 logged poses (NAVSIM's standard human "
+                         "row for the tracked arm, E2's builder for the transparent arm). Then reference8 == human8 exactly.")
+    ap.add_argument("--no-fam", action="store_true", help="skip the family payload (human future, lead track)")
+    ap.add_argument("--limit", type=int, default=0)
+    a = ap.parse_args()
+    sys.path.insert(0, a.refe)
+    import navtrain_scenarios as NS
+    import navsim_pdm_targets as PT
+    from navsim_pdm.pdm_array_representation import ego_state_to_state_array
+    si, sn = (int(x) for x in a.shard.split("/"))
+    arms: dict = {}
+    for spec in a.plans:
+        if "=" in spec:
+            nm, fp = spec.split("=", 1)
+        else:
+            nm, fp = os.path.splitext(os.path.basename(spec))[0], spec
+        arms[nm] = load_plans(fp)
+    names = list(arms)
+    base = arms[names[0]]
+    for nm in names[1:]:
+        if set(arms[nm]) != set(base):
+            raise SystemExit(f"arm {nm} does not carry the same tokens as arm {names[0]}")
+    tlog = load_token_log(a.token_log) if a.token_log else {}
+    for t, p in base.items():
+        p["log"] = p["log"] or tlog.get(t)
+        if p["log"] is None:
+            raise SystemExit(f"no log for token {t}: give logs in the plans file or --token-log")
+    done = done_tokens(a.out)
+    # shard over SAMPLES by a STABLE token hash, so a resume (or a different pending set) never moves a token between shards
+    todo = [t for t in sorted(base) if t not in done and int(hashlib.sha1(t.encode()).hexdigest(), 16) % sn == si]
+    by: dict = {}
+    for t in todo:
+        by.setdefault(base[t]["log"], []).append(t)
+    dbs = NS.index_dbs(db_root=a.db_root)
+    hr, fr = SPLIT_ROWS[a.split]
+    kw = {} if hr is None else {"history_rows": hr, "future_rows": fr}
+    n_done, t0 = 0, time.time()
+    with open(a.out, "a", encoding="utf-8") as fo:
+        for lg in sorted(by):
+            if not os.path.exists(dbs.get(lg, "")):
+                for t in by[lg]:
+                    fo.write(json.dumps({"log": lg, "token": t, "error": "no local DB"}) + "\n")
+                continue
+            for sc in NS.build_scenarios_for_log(dbs[lg], by[lg], **kw):
+                tok = sc._initial_lidar_token
+                rec = {"log": lg, "token": tok, "arms": {}}
+                ts = time.time()
+                try:
+                    parts = PT.metric_cache_parts(sc)
+                    ego = parts[1]
+                    s0 = ego_state_to_state_array(ego)
+                    hum = human_rel(sc, ego) if ((not a.no_fam) or a.human_arm) else None
+                    todo_arms = [(nm, arms[nm][tok]) for nm in names]
+                    if a.human_arm:
+                        todo_arms.append(("human", {"log": lg, "plan20": hum[1::2][:20].copy(), "plan8": hum[4::5][:8].copy()}))
+                    for nm, p in todo_arms:
+                        # the human arm is never A7-repaired or shifted: it is the reference, not a submission
+                        isH = a.human_arm and nm == "human"
+                        rec["arms"][nm] = score_one_arm(parts, ego, s0, p, False if isH else bool(a.a7),
+                                                        0.0 if isH else a.shift_lat, a.controls and not isH, not a.no_fam)
+                    if not a.no_fam:
+                        v0 = ego.dynamic_car_state.rear_axle_velocity_2d
+                        rec["shared"] = {"v0": float(math.hypot(v0.x, v0.y)), "human8": hum[4::5][:8].tolist(),
+                                         "lead": lead_track(sc, ego)}
+                    rec["t_s"] = round(time.time() - ts, 3)
+                except Exception as e:                                    # noqa: BLE001
+                    rec = {"log": lg, "token": tok, "error": f"{type(e).__name__}: {str(e)[:200]}"}
+                fo.write(json.dumps(rec) + "\n")
+                fo.flush()
+                n_done += 1
+                if a.limit and n_done >= a.limit:
+                    print("ZZTRANSP_SHARD_DONE", a.shard, n_done, round(time.time() - t0, 1))
+                    return 0
+    print("ZZTRANSP_SHARD_DONE", a.shard, n_done, round(time.time() - t0, 1))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

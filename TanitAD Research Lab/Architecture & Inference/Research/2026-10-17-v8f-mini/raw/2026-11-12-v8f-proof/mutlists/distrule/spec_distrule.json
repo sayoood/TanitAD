@@ -1,0 +1,404 @@
+{
+ "pristine": "/workspace/v8proof/mutlists/distrule/tree_pristine",
+ "work": "/workspace/v8proof/mutlists/distrule/tree_work",
+ "env": {
+  "DISTRULE_TREE": "/workspace/v8proof/tree_leadsup",
+  "DISTRULE_SRC": "/workspace/v8proof/mutlists/distrule/tree_work/src"
+ },
+ "test_files": [
+  "src/test_dist_rule.py",
+  "src/test_margin_qcal.py"
+ ],
+ "ignore_failed": [
+  "test_dist_rule.py::test_geometry_copy_equals_headway_read",
+  "test_dist_rule.py::test_pod_script_refusals_layout_and_one_rollout"
+ ],
+ "ignore_reason": "environment-bound on the pod: the first imports headway_read (a dev-box file), the second drives the pod script with a fake python and fake cgroup files",
+ "mutations": [
+  {
+   "id": "d1_cap_ignores_the_lead_motion",
+   "file": "src/dist_rule.py",
+   "old": "a_c = (g0 + v_L * dt * i - np.maximum(D, tau * v_prev)) if use_cap",
+   "new": "a_c = (g0 - np.maximum(D, tau * v_prev)) if use_cap",
+   "expect": [
+    "test_dist_rule.py::test_r5_stopped_lead_10m_gives_the_braking_limited_profile_and_counts_saturated_steps"
+   ],
+   "test_files": [
+    "src/test_dist_rule.py"
+   ]
+  },
+  {
+   "id": "d2_margin_takes_the_smaller_of_D_and_tau_v",
+   "file": "src/dist_rule.py",
+   "old": "np.maximum(D, tau * v_prev)) if use_cap",
+   "new": "np.minimum(D, tau * v_prev)) if use_cap",
+   "expect": [
+    "test_dist_rule.py::test_r5_progress_never_decreases_the_floor_holds_and_the_lag_form_equals_the_card_recursion"
+   ],
+   "test_files": [
+    "src/test_dist_rule.py"
+   ]
+  },
+  {
+   "id": "d3_braking_floor_sign_flipped",
+   "file": "src/dist_rule.py",
+   "old": "np.maximum(0.0, v_prev - b_max * dt) * dt) if use_floor",
+   "new": "np.maximum(0.0, v_prev + b_max * dt) * dt) if use_floor",
+   "expect": [
+    "test_dist_rule.py::test_r5_progress_never_decreases_the_floor_holds_and_the_lag_form_equals_the_card_recursion"
+   ],
+   "test_files": [
+    "src/test_dist_rule.py"
+   ]
+  },
+  {
+   "id": "d4_floor_takes_the_minimum",
+   "file": "src/dist_rule.py",
+   "old": "a_i = np.maximum(a_f, np.minimum(a_w, a_c)) if floor_lifts",
+   "new": "a_i = np.minimum(a_f, np.minimum(a_w, a_c)) if floor_lifts",
+   "expect": [
+    "test_dist_rule.py::test_r5_progress_never_decreases_the_floor_holds_and_the_lag_form_equals_the_card_recursion"
+   ],
+   "test_files": [
+    "src/test_dist_rule.py"
+   ]
+  },
+  {
+   "id": "d5_activation_gap_threshold_60_to_600",
+   "file": "src/dist_rule.py",
+   "old": "G_MAX_M = 60.0 ",
+   "new": "G_MAX_M = 600.0 ",
+   "expect": [
+    "test_dist_rule.py::test_r5_cap_binds_only_where_it_should_a_lead_far_enough_ahead_changes_nothing"
+   ],
+   "test_files": [
+    "src/test_dist_rule.py"
+   ]
+  },
+  {
+   "id": "d6_lag_not_carried",
+   "file": "src/dist_rule.py",
+   "old": "lag = aP[:, i] - a_i",
+   "new": "lag = np.zeros(B)",
+   "expect": [
+    "test_dist_rule.py::test_r5_progress_never_decreases_the_floor_holds_and_the_lag_form_equals_the_card_recursion"
+   ],
+   "test_files": [
+    "src/test_dist_rule.py"
+   ]
+  },
+  {
+   "id": "d7_speed_not_updated_from_the_new_arc",
+   "file": "src/dist_rule.py",
+   "old": "v_prev = (a_i - a_prev) / dt",
+   "new": "v_prev = v0.copy()",
+   "expect": [
+    "test_dist_rule.py::test_r5_progress_never_decreases_the_floor_holds_and_the_lag_form_equals_the_card_recursion"
+   ],
+   "test_files": [
+    "src/test_dist_rule.py"
+   ]
+  },
+  {
+   "id": "d8_unchanged_steps_not_kept_bit_for_bit",
+   "file": "src/dist_rule.py",
+   "old": "pts[keep] = p64[b][keep]",
+   "new": "pts[keep] = pts[keep]",
+   "expect": [
+    "test_dist_rule.py::test_r5_a_faster_lead_leaves_the_plan_unchanged_bit_for_bit"
+   ],
+   "test_files": [
+    "src/test_dist_rule.py"
+   ]
+  },
+  {
+   "id": "d9_tau_constant_zero",
+   "file": "src/dist_rule.py",
+   "old": "TAU_S = 1.2\n",
+   "new": "TAU_S = 0.0\n",
+   "expect": [
+    "test_dist_rule.py::test_r5_progress_never_decreases_the_floor_holds_and_the_lag_form_equals_the_card_recursion"
+   ],
+   "test_files": [
+    "src/test_dist_rule.py"
+   ]
+  },
+  {
+   "id": "w1_progress_offset_dropped_from_the_source_gap",
+   "file": "src/v8f_t1_eval_rule.py",
+   "old": "g0 = g_src + a_l - a_m",
+   "new": "g0 = g_src",
+   "expect": [
+    "test_dist_rule.py::test_e2e_label_with_a_stopped_lead_reduces_progress_push_increases_it_plumb_and_a_far_lead_change_nothing"
+   ],
+   "test_files": [
+    "src/test_dist_rule.py"
+   ]
+  },
+  {
+   "id": "w2_closing_speed_dropped_from_the_lead_speed",
+   "file": "src/v8f_t1_eval_rule.py",
+   "old": "v_L = np.maximum(0.0, v_l + c_src)",
+   "new": "v_L = np.maximum(0.0, v_l)",
+   "expect": [
+    "test_dist_rule.py::test_e2e_label_with_a_stopped_lead_reduces_progress_push_increases_it_plumb_and_a_far_lead_change_nothing"
+   ],
+   "test_files": [
+    "src/test_dist_rule.py"
+   ]
+  },
+  {
+   "id": "w3_rule_computed_but_plan_not_returned",
+   "file": "src/v8f_t1_eval_rule.py",
+   "old": "        return out.plan",
+   "new": "        return plan",
+   "expect": [
+    "test_dist_rule.py::test_e2e_label_with_a_stopped_lead_reduces_progress_push_increases_it_plumb_and_a_far_lead_change_nothing",
+    "test_dist_rule.py::test_mutation_the_line_that_applies_the_rule_removed_turns_the_reduction_check_red"
+   ],
+   "test_files": [
+    "src/test_dist_rule.py"
+   ]
+  },
+  {
+   "id": "w4_rule_never_active",
+   "file": "src/v8f_t1_eval_rule.py",
+   "old": "out = R.distance_rule(plan, v0, present, g_src, g0, v_L, m=self.m, **self.kw)",
+   "new": "out = R.distance_rule(plan, v0, np.zeros_like(present), g_src, g0, v_L, m=self.m, **self.kw)",
+   "expect": [
+    "test_dist_rule.py::test_e2e_label_with_a_stopped_lead_reduces_progress_push_increases_it_plumb_and_a_far_lead_change_nothing"
+   ],
+   "test_files": [
+    "src/test_dist_rule.py"
+   ]
+  },
+  {
+   "id": "w5_head_presence_threshold_0_5_to_0_0",
+   "file": "src/v8f_t1_eval_rule.py",
+   "old": "present = (p >= HEAD_P_MIN) & ok",
+   "new": "present = (p >= 0.0) & ok",
+   "expect": [
+    "test_dist_rule.py::test_r6_head_source_equals_lead_dump_on_the_same_frames_and_r4_no_token_after_the_tick"
+   ],
+   "test_files": [
+    "src/test_dist_rule.py"
+   ]
+  },
+  {
+   "id": "w6_label_gap_upper_bound_removed",
+   "file": "src/v8f_t1_eval_rule.py",
+   "old": "return bool(self.valid[r] == 1 and np.isfinite(g) and 0.0 <= g <= GAP_MAX_M)",
+   "new": "return bool(self.valid[r] == 1 and np.isfinite(g) and 0.0 <= g)",
+   "expect": [
+    "test_dist_rule.py::test_label_source_equals_the_training_label_arrays_row_for_row"
+   ],
+   "test_files": [
+    "src/test_dist_rule.py"
+   ]
+  },
+  {
+   "id": "w7_closing_run_step_break_removed",
+   "file": "src/v8f_t1_eval_rule.py",
+   "old": "abs(self.gap[f + 1] - self.gap[f]) <= STEP_MAX_M:",
+   "new": "abs(self.gap[f + 1] - self.gap[f]) <= 1e9:",
+   "expect": [
+    "test_dist_rule.py::test_label_source_equals_the_training_label_arrays_row_for_row"
+   ],
+   "test_files": [
+    "src/test_dist_rule.py"
+   ]
+  },
+  {
+   "id": "w8_source_bad_ticks_stay_present",
+   "file": "src/v8f_t1_eval_rule.py",
+   "old": "present = present & ~src_bad",
+   "new": "present = present",
+   "expect": [
+    "test_dist_rule.py::test_e2e_inactive_wrapper_equals_the_unwrapped_rollout_exactly_for_every_mode"
+   ],
+   "test_files": [
+    "src/test_dist_rule.py"
+   ]
+  },
+  {
+   "id": "w9_rule_flag_accepted_for_a_non_run_mode",
+   "file": "src/v8f_t1_eval_rule.py",
+   "old": "if mine.dist_rule != \"off\":",
+   "new": "if False:",
+   "expect": [
+    "test_dist_rule.py::test_cli_refusals"
+   ],
+   "test_files": [
+    "src/test_dist_rule.py"
+   ]
+  },
+  {
+   "id": "q1_map_above_last_knot_not_shifted",
+   "file": "src/qcal_map.py",
+   "old": "q[hi] = gg[hi] - (xs[-1] - ys[-1])",
+   "new": "q[hi] = gg[hi]",
+   "expect": [
+    "test_margin_qcal.py::test_qmap_below_between_above_and_min_with_the_head_gap"
+   ],
+   "test_files": [
+    "src/test_margin_qcal.py"
+   ]
+  },
+  {
+   "id": "q2_map_not_capped_at_the_head_gap",
+   "file": "src/qcal_map.py",
+   "old": "out[fin] = np.minimum(gg, q)",
+   "new": "out[fin] = q",
+   "expect": [
+    "test_margin_qcal.py::test_qmap_below_between_above_and_min_with_the_head_gap"
+   ],
+   "test_files": [
+    "src/test_margin_qcal.py"
+   ]
+  },
+  {
+   "id": "q3_map_below_first_knot_constant",
+   "file": "src/qcal_map.py",
+   "old": "q[lo] = ys[0] * gg[lo] / xs[0]",
+   "new": "q[lo] = ys[0]",
+   "expect": [
+    "test_margin_qcal.py::test_qmap_below_between_above_and_min_with_the_head_gap"
+   ],
+   "test_files": [
+    "src/test_margin_qcal.py"
+   ]
+  },
+  {
+   "id": "q4_fit_level_20_to_50",
+   "file": "src/qcal_fit.py",
+   "old": "Q_LEVEL = 20.0",
+   "new": "Q_LEVEL = 50.0",
+   "expect": [
+    "test_margin_qcal.py::test_fit_arm_gives_the_20th_percentile_map_monotone_below_the_diagonal"
+   ],
+   "test_files": [
+    "src/test_margin_qcal.py"
+   ]
+  },
+  {
+   "id": "q5_fit_pav_removed",
+   "file": "src/qcal_fit.py",
+   "old": "ys = np.minimum(pav(q, n), xs)",
+   "new": "ys = np.minimum(q, xs)",
+   "expect": [
+    "test_margin_qcal.py::test_fit_arm_gives_the_20th_percentile_map_monotone_below_the_diagonal"
+   ],
+   "test_files": [
+    "src/test_margin_qcal.py"
+   ]
+  },
+  {
+   "id": "q6_fit_eval_file_refusal_removed",
+   "file": "src/qcal_fit.py",
+   "old": "if \"_eval\" in os.path.basename(p):",
+   "new": "if False:",
+   "expect": [
+    "test_margin_qcal.py::test_fit_arm_refuses_an_evaluation_file"
+   ],
+   "test_files": [
+    "src/test_margin_qcal.py"
+   ]
+  },
+  {
+   "id": "q7_calib_round_up_becomes_round_down",
+   "file": "src/margin_calib.py",
+   "old": "return float(math.ceil(max(0.0, float(x)) * 2.0 - 1e-9) / 2.0)",
+   "new": "return float(math.floor(max(0.0, float(x)) * 2.0 - 1e-9) / 2.0)",
+   "expect": [
+    "test_margin_qcal.py::test_up_half_rounds_up_to_half_metres_and_not_below_zero"
+   ],
+   "test_files": [
+    "src/test_margin_qcal.py"
+   ]
+  },
+  {
+   "id": "q8_calib_percentile_95_to_90",
+   "file": "src/margin_calib.py",
+   "old": "(50, 80, 95))",
+   "new": "(50, 80, 90))",
+   "expect": [
+    "test_margin_qcal.py::test_calib_arm_over_read_percentiles_and_recall_on_the_near_rows"
+   ],
+   "test_files": [
+    "src/test_margin_qcal.py"
+   ]
+  },
+  {
+   "id": "q9_calib_near_range_40_to_400",
+   "file": "src/margin_calib.py",
+   "old": "NEAR_M = 40.0",
+   "new": "NEAR_M = 400.0",
+   "expect": [
+    "test_margin_qcal.py::test_calib_arm_over_read_percentiles_and_recall_on_the_near_rows"
+   ],
+   "test_files": [
+    "src/test_margin_qcal.py"
+   ]
+  },
+  {
+   "id": "q10_margin_added_instead_of_subtracted",
+   "file": "src/v8f_t1_eval_rule_margin.py",
+   "old": "np.maximum(g - m, 0.0)",
+   "new": "np.maximum(g + m, 0.0)",
+   "expect": [
+    "test_margin_qcal.py::test_margin_lowers_only_finite_head_gaps_never_below_zero_and_zero_margin_is_identity"
+   ],
+   "test_files": [
+    "src/test_margin_qcal.py"
+   ]
+  },
+  {
+   "id": "q11_margin_range_refusal_removed",
+   "file": "src/v8f_t1_eval_rule_margin.py",
+   "old": "if not (0.0 <= mine.gap_margin_m <= 30.0):",
+   "new": "if False:",
+   "expect": [
+    "test_margin_qcal.py::test_margin_main_refusals_and_it_installs_the_constants_and_the_head_read"
+   ],
+   "test_files": [
+    "src/test_margin_qcal.py"
+   ]
+  },
+  {
+   "id": "q12_margin_head_read_not_installed",
+   "file": "src/v8f_t1_eval_rule_margin.py",
+   "old": "W.head_values = head_values_margin ",
+   "new": "W.head_values = W.head_values ",
+   "expect": [
+    "test_margin_qcal.py::test_margin_main_refusals_and_it_installs_the_constants_and_the_head_read"
+   ],
+   "test_files": [
+    "src/test_margin_qcal.py"
+   ]
+  },
+  {
+   "id": "q13_qcal_map_not_applied",
+   "file": "src/v8f_t1_eval_rule_qcal.py",
+   "old": "return p, QM.apply_map(g, MAP[\"xs\"], MAP[\"ys\"]).astype(g.dtype), c, ok",
+   "new": "return p, g, c, ok",
+   "expect": [
+    "test_margin_qcal.py::test_qcal_wrapper_applies_the_map_to_finite_head_gaps_only"
+   ],
+   "test_files": [
+    "src/test_margin_qcal.py"
+   ]
+  },
+  {
+   "id": "q14_qcal_head_read_not_installed",
+   "file": "src/v8f_t1_eval_rule_qcal.py",
+   "old": "W.head_values = head_values_qcal ",
+   "new": "W.head_values = W.head_values ",
+   "expect": [
+    "test_margin_qcal.py::test_qcal_main_refuses_bad_p_min_and_a_map_that_fails_and_installs_the_map_and_the_head_read"
+   ],
+   "test_files": [
+    "src/test_margin_qcal.py"
+   ]
+  }
+ ]
+}

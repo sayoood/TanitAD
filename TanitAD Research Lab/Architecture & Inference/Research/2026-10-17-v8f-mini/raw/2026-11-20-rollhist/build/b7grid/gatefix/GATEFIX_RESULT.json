@@ -1,0 +1,25 @@
+{
+ "kind": "rollhist-amendment5-fixture-fix",
+ "evidence": "MEASURED (dev box, CPU)",
+ "test_file": {
+  "path": "test_dscale10k_check_rh.py",
+  "sha256": "518e0c6125f203c8fd50ba77d5d6d9ba007ff08285146a5b1c81eb78db5e9bb5",
+  "from": "build/b5pod/test_dscale10k_check_rh.py (0e1b22f1)",
+  "change": "make_bank writes the generator record only in bank.json['common'] (the merge's shape) + optional planted top-level record; 3 new tests"
+ },
+ "fixed_check": {
+  "path": "dscale10k_check_rh.py",
+  "sha256": "69ff1a0f962123fd74c66cf6a1f3cb0e016799146ca75665c58fcb3e71e8cfc6",
+  "result": "40 passed, rc 0",
+  "log": "pytest_log_fixed.txt",
+  "log_sha256": "8422cafd06277e25937c819bec8b232224fe03de2468f70a2d60cefb263773df"
+ },
+ "old_check_mutation_arm": {
+  "path": "old_dscale10k_check_rh_94e6e147.py",
+  "sha256": "94e6e1473aa5d3e0867b816a9b1d602ecacf3785d6d5e2345c63e53374e6fc8f",
+  "result": "8 failed, 32 passed, rc 1 (required: >= 1 failure)",
+  "log": "pytest_log_mutant_old_check.txt",
+  "log_sha256": "9e101528d8a39d06e04fbcda93cc09fcb7268de8e2928515cb84a80afce51307"
+ },
+ "PASS": true
+}

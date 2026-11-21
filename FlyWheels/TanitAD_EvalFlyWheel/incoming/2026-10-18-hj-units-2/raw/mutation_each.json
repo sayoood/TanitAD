@@ -1,0 +1,125 @@
+[
+ {
+  "name": "CLEAN_control",
+  "mutation": null,
+  "rc_units": 0,
+  "rc_pinned": 0,
+  "summary_units": [
+   "17 passed, 104 deselected in 4.24s"
+  ],
+  "summary_pinned": [
+   "38 passed in 27.36s"
+  ],
+  "n_red": 0,
+  "red_tests": []
+ },
+ {
+  "name": "cli_action_units",
+  "mutation": "taniteval/tools/refav1_arm.py",
+  "rc_units": 1,
+  "rc_pinned": 1,
+  "summary_units": [
+   "1 failed, 16 passed, 104 deselected in 4.70s"
+  ],
+  "summary_pinned": [
+   "1 failed, 37 passed in 8.42s"
+  ],
+  "n_red": 2,
+  "red_tests": [
+   "tests/test_refav1_units_required.py::test_h_cli_rollout_without_units_is_refused_naming_both_legal_values",
+   "tests/test_steer_curvature_interface.py::test_B4_the_arm_CLI_has_NO_default_unit_and_a_rollout_without_it_is_refused"
+  ]
+ },
+ {
+  "name": "unicycle_paths",
+  "mutation": "stack/tanitad/refs/refa_v1_plan.py",
+  "rc_units": 1,
+  "rc_pinned": 1,
+  "summary_units": [
+   "2 failed, 15 passed, 104 deselected in 4.17s"
+  ],
+  "summary_pinned": [
+   "1 failed, 37 passed in 6.86s"
+  ],
+  "n_red": 3,
+  "red_tests": [
+   "tests/test_refav1_units_required.py::test_g2_unit_parameter_is_keyword_only_with_no_default[refa_v1_plan.unicycle_paths]",
+   "tests/test_refav1_units_required.py::test_g_omitted_units_raises_TypeError[refa_v1_plan.unicycle_paths]",
+   "tests/test_steer_curvature_interface.py::test_B2_unicycle_paths_REQUIRES_action_units_and_stated_kappa_is_bit_identical_to_the_old_call"
+  ]
+ },
+ {
+  "name": "plan_model_action_units",
+  "mutation": "stack/tanitad/refs/refa_v1.py",
+  "rc_units": 1,
+  "rc_pinned": 1,
+  "summary_units": [
+   "2 failed, 15 passed, 104 deselected in 4.77s"
+  ],
+  "summary_pinned": [
+   "2 failed, 36 passed in 8.02s"
+  ],
+  "n_red": 4,
+  "red_tests": [
+   "tests/test_refav1_units_required.py::test_g2_unit_parameter_is_keyword_only_with_no_default[RefAV1.plan]",
+   "tests/test_refav1_units_required.py::test_g_omitted_units_raises_TypeError[RefAV1.plan]",
+   "tests/test_steer_conversion_complete.py::test_A1_legacy_OFF_is_byte_identical_on_a_real_rollout",
+   "tests/test_steer_curvature_interface.py::test_D1_plan_REQUIRES_model_action_units_and_stated_kappa_is_the_legacy_call"
+  ]
+ },
+ {
+  "name": "imagined_goal_model_action_units",
+  "mutation": "stack/tanitad/refs/refa_v1.py",
+  "rc_units": 1,
+  "rc_pinned": 1,
+  "summary_units": [
+   "2 failed, 15 passed, 104 deselected in 4.85s"
+  ],
+  "summary_pinned": [
+   "2 failed, 36 passed in 7.30s"
+  ],
+  "n_red": 4,
+  "red_tests": [
+   "tests/test_refav1_units_required.py::test_g2_unit_parameter_is_keyword_only_with_no_default[RefAV1.imagined_goal]",
+   "tests/test_refav1_units_required.py::test_g_omitted_units_raises_TypeError[RefAV1.imagined_goal]",
+   "tests/test_steer_conversion_complete.py::test_A6_the_units_flag_is_still_refused_loudly_and_reaches_imagined_goal",
+   "tests/test_steer_curvature_interface.py::test_D1_plan_REQUIRES_model_action_units_and_stated_kappa_is_the_legacy_call"
+  ]
+ },
+ {
+  "name": "imagine_tactical_goal_units",
+  "mutation": "stack/tanitad/refs/refa_v1.py",
+  "rc_units": 1,
+  "rc_pinned": 1,
+  "summary_units": [
+   "2 failed, 15 passed, 104 deselected in 5.45s"
+  ],
+  "summary_pinned": [
+   "2 failed, 36 passed in 8.40s"
+  ],
+  "n_red": 4,
+  "red_tests": [
+   "tests/test_refav1_units_required.py::test_g2_unit_parameter_is_keyword_only_with_no_default[RefAV1._imagine_tactical_goal]",
+   "tests/test_refav1_units_required.py::test_g_omitted_units_raises_TypeError[RefAV1._imagine_tactical_goal]",
+   "tests/test_steer_conversion_complete.py::test_A2_the_default_goal_equals_the_LEGACY_expression_verbatim",
+   "tests/test_steer_curvature_interface.py::test_D1_plan_REQUIRES_model_action_units_and_stated_kappa_is_the_legacy_call"
+  ]
+ },
+ {
+  "name": "probe_score_units",
+  "mutation": "taniteval/tools/cost_surface_probe.py",
+  "rc_units": 1,
+  "rc_pinned": 0,
+  "summary_units": [
+   "2 failed, 15 passed, 104 deselected in 5.83s"
+  ],
+  "summary_pinned": [
+   "38 passed in 10.10s"
+  ],
+  "n_red": 2,
+  "red_tests": [
+   "tests/test_refav1_units_required.py::test_g2_unit_parameter_is_keyword_only_with_no_default[cost_surface_probe.WindowContext.score]",
+   "tests/test_refav1_units_required.py::test_g_omitted_units_raises_TypeError[cost_surface_probe.WindowContext.score]"
+  ]
+ }
+]

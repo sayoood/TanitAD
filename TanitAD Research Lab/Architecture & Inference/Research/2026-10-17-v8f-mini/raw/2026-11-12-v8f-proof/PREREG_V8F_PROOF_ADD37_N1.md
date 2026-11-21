@@ -1,0 +1,26 @@
+# PREREG_V8F_PROOF_ADD37_N1 : IMAGACT, what the build of the lever fixed, before any arm
+
+Note to card `PREREG_V8F_PROOF_ADD37.md`. Frozen after the lever `--w-act-cons` was built and checked on the dev box (CPU, tiny models) and before any arm of it has passed a gate or trained: no LA or LA01 checkpoint exists. Of the control arms, the dump of LFT_s0 exists on the pod (made 14:37Z with its dump-time controls); no response value of any fine-tune has been read. The card, its names and its controls stay as written.
+
+## 1. The build (MEASURED on the dev box, folder `actcons/`)
+
+* Base: the tree of card ADD35 (trainer sha256 85035ca4a3e9545659e1e6ccaa24c74d3386b9b83a889bb7df490373b721d519, all 12 pinned files verified). Patched trainer `v8f_mini_train.py` sha256 529e6a0d57d3e7d4036ac259d21d8f5025839ac8d9a71367c0e3ef3144e10a80; new `tanitad/models/act_cons.py` sha256 ad537369e02a82e41ccc0f76753437f02af5bc66dc130f863470558399e69797; new test `tests/test_v8f_act_cons.py` sha256 356e84ba694c450e0d9ba4d7024889682f532d4758d3e676de6d452f4dce4357; the model file and every other pinned file are unchanged (`actcons/PINS.txt`).
+* a1 PASS: with the flag at its default the patched tree equals the base tree on four argv shapes (base arm, lead-head arm, the fine-tune shape of LFT with a start checkpoint, the fine-tune with the own-plan term): max abs difference 0.0 over every logged field and the final weights after 100 steps.
+* a2 PASS: the term equals the hand value (0.8209, difference 3.6e-5 in float32); samples without a label lead or below the speed bound give exactly 0.0 term and gradient; the gradient is non-zero on the predictor and its action input and exactly 0.0 on the lead head, on the start state and on every other parameter; the total moves by the weight times the term.
+* a3 PASS: on a planted predictor that follows the kinematics the term is 2.2e-7; four regressions of the term (flipped sign of the kinematic target, offset not applied, wrong units of the offset, wrong horizon) and two of the gradient rule (head not detached, start state not detached) each make the check fail.
+* A fine-tune of 20 steps from a tiny checkpoint with a lead head: finite log values, checkpoint config and state keys equal to the base, strict load; 173 tests pass (14 new).
+* The term was read by the lead line by line against section 2 of the card (`act_cons.py`): rollouts by the stack's own rollout core, offset d / 2.0 on the scaled acceleration channel, head reads at steps 1 to 5 and 6 to 10, residual gap(offset) - gap(reference) + 0.5 d T^2 in metres.
+
+## 2. Points made precise
+
+* **Where the term sits.** It is a training-only term added by the trainer after the model's loss, like the own-plan term of card ADD34: no module, no parameter, no config field and no state-dict key is added, so an arm with the term has the checkpoint format of its base. The live step of the gate therefore does not contain it. Control a4 reads it from the selfcheck: the lever strings `levers.w_act_cons` and `levers.act_cons_max` (declared equals built), the probe `act_cons_probe` on real data (term finite, count of valid samples, gradient non-zero on the predictor and its action input, exactly 0.0 on the lead head and before the predictor, an all-invalid control exactly 0.0), and the keys `act_cons` and `act_cons_n` in the train log.
+* **Valid samples.** As the card, and in addition the start frame must be a real frame (not padding); the gap range 0 to 60 m includes its ends.
+* **Offsets.** One offset per sample and step of training, shared by the start frames of that sample (frames 0, 2 and 4 of the 16-frame window), drawn from a generator of its own that is seeded from the run seed and the step; no other random draw of the trainer changes.
+* **Numerics.** The term is computed in float32 with mixed precision off.
+* **Refusals added by the build** (none applies to the arms of the card): a lead-head history other than 5 frames, the speed form of the level-1 action, a window shorter than 11 frames, dropout in the predictor, and the options that rewrite the logged actions.
+* **Comparison across trees.** LFT and LFTb were trained with the trainer of card ADD35 and LA, LA01 are trained with the patched trainer; that the two give the same run with the flag at its default is control a1.
+* **Pod memory.** MEASURED 14:36Z: the rollout-loss arm on the flat predictor holds 7.2 GB, a fine-tune about 5 GB, three jobs 17.1 GB of the 50 GB limit. The arms of this card are started on a free GPU slot (never a fourth GPU job) with at least 28 GB of the limit free, beside chain `motion_e`; the sentence of the card "one arm with rollouts at a time, behind chain `motion_e`" is replaced by this measured rule.
+
+## 3. Read of the arms
+
+Per arm on the pod CPU: the eval state file, the head outputs on it (the banked reference of control c2 (b) of note ADD36_N1), the dump of `imag_dump.py` (sha256 f9fa166c24a3d793df06ccf84d3dc43505575a90cada4faaa58ad4452b1d20e9, unchanged); on the dev box `imag_read.py` (sha256 cc9b12ae0c680cb110dd690969905000e141393ea32d168df6c0f432e5fa0198, unchanged) per arm and in pairs (LA against LFT, LFTb against LFT, LA01 against LFT). The family read from the T1-kin dump the chain writes.

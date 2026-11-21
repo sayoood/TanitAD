@@ -1,0 +1,95 @@
+PREREG_N1D_TCODE  FULL RUN   card: PREREG_N1D_TCODE.md (sha256 4cec3917...)
+tier: T0 decodability of frozen features, never driving performance   evidence: MEASURED (ours; banked N1D checkpoints, D1-HO grid, CPU, zero training)
+estimator: taniteval.ci.paired_episode_cluster_bootstrap, B 2000, seed 0, over the held-out episodes; answers another draw of EPISODES only (training variance: the two N1D seeds)
+windows 5736 / episodes 497; class counts [1934, 1862, 1940]; majority share 0.338215 (card 0.338215); bar 0.0383; probe seed 0 (probe seed 1 omitted: the parent measured identical predictions between probe seeds 0 and 1 (TREE-SEED-IDENTITY); units are the two N1D seeds)
+feature dims {'F_TEXT': [15], 'F_PLAN': [1024], 'F_CODE': [60], 'F_TTRUNK': [256], 'F_CODE_LAT': [14]}; F-CODE-LAT columns ['lat_softmax_0', 'lat_softmax_1', 'lat_softmax_2', 'lat_softmax_3', 'lat_softmax_4', 'turn_t_start_s', 'turn_t_end_s', 'turn_d_start_m', 'turn_len_m', 'turn_dyaw_deg', 'turn_r_arc_m', 'turn_exit_x_m', 'turn_exit_y_m', 'turn_exit_psi_deg']
+
+== accuracy (point [95% episode-cluster CI]) ==
+N1D_s0 tree: F-CODE=0.6702[0.651,0.689]  F-CODE-LAT=0.6531[0.634,0.671]  F-CODE-ZERO=0.3040[0.277,0.331]  F-PLAN=0.7028[0.685,0.719]  F-TEXT=0.6044[0.579,0.627]  F-TTRUNK=0.6757[0.656,0.695]  SHUF:F-CODE=0.3255[0.310,0.341]  SHUF:F-PLAN=0.3400[0.324,0.356]  SHUF:F-TEXT=0.3440[0.329,0.358]  SHUF:F-TTRUNK=0.3278[0.313,0.343]
+N1D_s0 logit: F-CODE=0.6691[0.650,0.688]  F-CODE-LAT=0.6614[0.641,0.681]  F-PLAN=0.6843[0.665,0.703]  F-TEXT=0.5159[0.491,0.541]  F-TTRUNK=0.6552[0.635,0.674]
+N1D_s1 tree: F-CODE=0.6783[0.658,0.697]  F-CODE-LAT=0.6642[0.645,0.681]  F-CODE-ZERO=0.3040[0.277,0.331]  F-PLAN=0.6937[0.675,0.711]  F-TEXT=0.6044[0.579,0.627]  F-TTRUNK=0.6935[0.674,0.711]  SHUF:F-CODE=0.3241[0.309,0.340]  SHUF:F-PLAN=0.3283[0.312,0.344]  SHUF:F-TEXT=0.3440[0.329,0.358]  SHUF:F-TTRUNK=0.3135[0.299,0.328]
+N1D_s1 logit: F-CODE=0.6817[0.662,0.700]  F-CODE-LAT=0.6813[0.662,0.700]  F-PLAN=0.6850[0.667,0.702]  F-TEXT=0.5159[0.491,0.541]  F-TTRUNK=0.6693[0.650,0.688]
+
+== contrasts A-B, same windows (paired episode-cluster bootstrap, B 2000 seed 0) ==
+-- N1D_s0|tree
+   CODE-TEXT     +0.0657 [+0.0402, +0.0901] separated (n 5736/497 ep)
+   TTRUNK-TEXT   +0.0713 [+0.0467, +0.0954] separated (n 5736/497 ep)
+   PLAN-TEXT     +0.0983 [+0.0725, +0.1241] separated (n 5736/497 ep)
+   PLAN-CODE     +0.0326 [+0.0173, +0.0478] separated (n 5736/497 ep)
+   PLAN-TTRUNK   +0.0270 [+0.0123, +0.0415] separated (n 5736/497 ep)
+   CODE-TTRUNK   -0.0056 [-0.0173, +0.0060] not separated (n 5736/497 ep)
+   CODELAT-TEXT  +0.0486 [+0.0231, +0.0739] separated (n 5736/497 ep)
+   CODELAT-CODE  -0.0171 [-0.0287, -0.0052] separated (n 5736/497 ep)
+-- N1D_s0|logit
+   CODE-TEXT     +0.1532 [+0.1299, +0.1793] separated (n 5736/497 ep)
+   TTRUNK-TEXT   +0.1393 [+0.1140, +0.1656] separated (n 5736/497 ep)
+   PLAN-TEXT     +0.1684 [+0.1436, +0.1942] separated (n 5736/497 ep)
+   PLAN-CODE     +0.0152 [-0.0007, +0.0297] not separated (n 5736/497 ep)
+   PLAN-TTRUNK   +0.0291 [+0.0122, +0.0461] separated (n 5736/497 ep)
+   CODE-TTRUNK   +0.0139 [+0.0007, +0.0277] separated (n 5736/497 ep)
+   CODELAT-TEXT  +0.1456 [+0.1217, +0.1700] separated (n 5736/497 ep)
+   CODELAT-CODE  -0.0077 [-0.0202, +0.0037] not separated (n 5736/497 ep)
+-- N1D_s1|tree
+   CODE-TEXT     +0.0739 [+0.0469, +0.1001] separated (n 5736/497 ep)
+   TTRUNK-TEXT   +0.0891 [+0.0640, +0.1144] separated (n 5736/497 ep)
+   PLAN-TEXT     +0.0893 [+0.0634, +0.1143] separated (n 5736/497 ep)
+   PLAN-CODE     +0.0153 [-0.0005, +0.0308] not separated (n 5736/497 ep)
+   PLAN-TTRUNK   +0.0002 [-0.0139, +0.0148] not separated (n 5736/497 ep)
+   CODE-TTRUNK   -0.0152 [-0.0262, -0.0035] separated (n 5736/497 ep)
+   CODELAT-TEXT  +0.0598 [+0.0343, +0.0845] separated (n 5736/497 ep)
+   CODELAT-CODE  -0.0141 [-0.0255, -0.0028] separated (n 5736/497 ep)
+-- N1D_s1|logit
+   CODE-TEXT     +0.1658 [+0.1423, +0.1904] separated (n 5736/497 ep)
+   TTRUNK-TEXT   +0.1534 [+0.1267, +0.1795] separated (n 5736/497 ep)
+   PLAN-TEXT     +0.1691 [+0.1451, +0.1934] separated (n 5736/497 ep)
+   PLAN-CODE     +0.0033 [-0.0106, +0.0176] not separated (n 5736/497 ep)
+   PLAN-TTRUNK   +0.0157 [+0.0007, +0.0315] separated (n 5736/497 ep)
+   CODE-TTRUNK   +0.0124 [-0.0016, +0.0271] not separated (n 5736/497 ep)
+   CODELAT-TEXT  +0.1654 [+0.1408, +0.1916] separated (n 5736/497 ep)
+   CODELAT-CODE  -0.0003 [-0.0111, +0.0108] not separated (n 5736/497 ep)
+
+== OUTCOME, tree probe (DECIDES) ==
+   N1D_s0|tree: CODE-CARRIES
+   N1D_s1|tree: CODE-CARRIES
+   CODE-CARRIES       HOLDS
+   T-HAS-CODE-LACKS   NOT-HELD
+   T-LACKS            NOT-HELD
+   HEADLINE: CODE-CARRIES   (holds ['CODE-CARRIES']; one-seed none)
+   next lever (needs its own card and a PI go): T hands O the decision and O's decoder does not turn it into the track. The lever is O-side: N1DW (in build); beyond it, a direct code-to-decoder path (the code conditioning head_o, zero-init)
+
+== OUTCOME, logit probe (beside; a linear negative is not a negative about learnability) ==
+   N1D_s0|logit: CODE-CARRIES
+   N1D_s1|logit: CODE-CARRIES
+   CODE-CARRIES       HOLDS
+   T-HAS-CODE-LACKS   NOT-HELD
+   T-LACKS            NOT-HELD
+   HEADLINE: CODE-CARRIES   (holds ['CODE-CARRIES']; one-seed none)
+
+== printed beside: F-PLAN - F-CODE and F-PLAN - F-TTRUNK ==
+   N1D_s0|tree: PLAN-CODE +0.0326 [+0.0173, +0.0478] separated (n 5736/497 ep)
+   N1D_s0|tree: PLAN-TTRUNK +0.0270 [+0.0123, +0.0415] separated (n 5736/497 ep)
+   N1D_s0|logit: PLAN-CODE +0.0152 [-0.0007, +0.0297] not separated (n 5736/497 ep)
+   N1D_s0|logit: PLAN-TTRUNK +0.0291 [+0.0122, +0.0461] separated (n 5736/497 ep)
+   N1D_s1|tree: PLAN-CODE +0.0153 [-0.0005, +0.0308] not separated (n 5736/497 ep)
+   N1D_s1|tree: PLAN-TTRUNK +0.0002 [-0.0139, +0.0148] not separated (n 5736/497 ep)
+   N1D_s1|logit: PLAN-CODE +0.0033 [-0.0106, +0.0176] not separated (n 5736/497 ep)
+   N1D_s1|logit: PLAN-TTRUNK +0.0157 [+0.0007, +0.0315] separated (n 5736/497 ep)
+
+== controls ==
+K-CONST: live 0.338215 vs card 0.338215; pass True
+K-DET (n 5736 windows, second extraction /root/strat1/n1dwtcode/out_full/feat2): pass True  {"N1D_s0": {"F_TEXT": true, "F_NAV": true, "F_PLAN": true, "F_VIS": true, "F_CODE": true, "F_TTRUNK": true, "F_CODE_LAT": true, "plan0": true, "g": true, "ci": true, "t0": true}, "N1D_s1": {"F_TEXT": true, "F_NAV": true, "F_PLAN": true, "F_VIS": true, "F_CODE": true, "F_TTRUNK": true, "F_CODE_LAT": true, "plan0": true, "g": true, "ci": true, "t0": true}}
+K-PARITY (re-extracted F-TEXT, F-PLAN vs banked /root/strat1/n1dwprobe/out/feat1): pass True  {"N1D_s0": {"windows_matched": 5736, "windows_mine": 5736, "F_TEXT_max_abs_diff": 0.0, "F_TEXT_equal": true, "F_PLAN_max_abs_diff": 0.0, "F_PLAN_equal": true}, "N1D_s1": {"windows_matched": 5736, "windows_mine": 5736, "F_TEXT_max_abs_diff": 0.0, "F_TEXT_equal": true, "F_PLAN_max_abs_diff": 0.0, "F_PLAN_equal": true}}
+REGRESSION-ARM (F-CODE with all 60 columns zeroed (tree) must read separated below F-CODE, or below F-TEXT where F-CODE does not clear F-TEXT (clear = separated above 0 by >= bar)): pass True
+   N1D_s0: F-CODE clears F-TEXT: True; reference F-CODE; ZERO-F-CODE -0.3661 [-0.3994, -0.3320] separated (n 5736/497 ep); ZERO-F-TEXT -0.3004 [-0.3379, -0.2621] separated (n 5736/497 ep)
+   N1D_s1: F-CODE clears F-TEXT: True; reference F-CODE; ZERO-F-CODE -0.3743 [-0.4058, -0.3417] separated (n 5736/497 ep); ZERO-F-TEXT -0.3004 [-0.3379, -0.2621] separated (n 5736/497 ep)
+SHUF (beside): max |acc - 0.338215| = 0.0248; parent band 0.02 FAILED there (reported in PROBE-N1D-FEAT); no SHUF-null run exists here
+   N1D_s0|F-TEXT: 0.3440
+   N1D_s0|F-CODE: 0.3255
+   N1D_s0|F-TTRUNK: 0.3278
+   N1D_s0|F-PLAN: 0.3400
+   N1D_s1|F-TEXT: 0.3440
+   N1D_s1|F-CODE: 0.3241
+   N1D_s1|F-TTRUNK: 0.3135  (outside 0.02 band)
+   N1D_s1|F-PLAN: 0.3283
+
+CONTROL STATUS: ALL CARD CONTROLS READ

@@ -1,0 +1,43 @@
+{
+ "tool": "r10_pitch_table.py",
+ "n_clips": 136,
+ "clips_without_clock_sidecar_row_sha12": [
+  "081b986f8888",
+  "3db625a5f941",
+  "2aa810802777"
+ ],
+ "k_off": 2,
+ "n_frames": 210,
+ "H_abs_deg_p50_p95_p99": [
+  0.10003581643104553,
+  0.5790136456489563,
+  1.2804958820343018
+ ],
+ "C_abs_deg_p50_p95_p99": [
+  0.35099512338638306,
+  1.9796112775802612,
+  3.228973627090454
+ ],
+ "sign_read": {
+  "H_on_ax_hp": {
+   "slope_deg_per_mps2": -0.0001437173430032544,
+   "corr": -0.00011490138236996305,
+   "ci95": [
+    -0.051556646585868775,
+    0.05203542817274726
+   ],
+   "n_clips": 136,
+   "n_samples": 40979,
+   "estimator": "clip-cluster bootstrap B 2000 seed 0, 10 Hz thinned",
+   "expected_if_nose_down_positive": "NEGATIVE (braking ax < 0 dives the nose => H > 0)"
+  },
+  "lowpass_pitch_on_grade_deg": {
+   "slope": -1.0326086704934399,
+   "corr": -0.9916887287620932,
+   "n_samples": 35340,
+   "note": "uphill (z rises) is nose-UP; slope ~ -1 would confirm positive = nose down with z up AND that the quaternion carries the road grade"
+  }
+ },
+ "clock": "t = grid_start_s + (i + 2) * dt_s (clip-clock sidecar), pose-sync OFF",
+ "script_sha256": "0c754f950095d90a54d48f5a8adae9957a249b4499317ad530b0eb8d45776468"
+}

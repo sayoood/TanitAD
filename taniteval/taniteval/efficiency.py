@@ -1709,17 +1709,36 @@ def run_and_save(key, device="cuda", precisions=("fp32",), batch=1, iters=200,
     if acc.exists():
         try:
             d = json.loads(acc.read_text())
-            hm = d["heldout"]["model"]["ade_0_2s"]
+            # ⛔ CLOSED 2026-08-28 (PI ruling, ESTIMATOR_CLOSEOUT.md): this used
+            # to read `d["heldout"]["model"]["ade_0_2s"]` — the mean over 8
+            # OVERLAPPING random holdouts — and publish it as this arm's ADE
+            # beside its latency. The cost-per-accuracy read is a comparison
+            # across arms, and that estimator shifts the point estimate
+            # bidirectionally (-6.67 % … +11.69 %), so the trade-off ordering
+            # was partly an estimator artifact. Primary only; no fallback.
+            cb = (d.get("cluster_bootstrap") or {}).get("model") or {}
+            hm = cb.get("ade_0_2s")
+            if not isinstance(hm, dict) or \
+                    hm.get("estimator") != "episode_cluster_bootstrap":
+                raise ValueError(
+                    f"{acc.name}: no episode_cluster_bootstrap block. The "
+                    f"DEPRECATED overlapping_holdout_se ('heldout') value is "
+                    f"NOT an admissible substitute for a cross-arm "
+                    f"cost-per-accuracy read — re-run the arm.")
             fs = d.get("full_set", {}).get("model", {}).get("ade_0_2s")
             ms = out[precisions[0]]["plan_step"]["p50_ms"]
             out["cost_per_accuracy"] = {
-                "ade_0_2s_heldout": hm["mean"], "ade_ci95": hm.get("ci95"),
+                "ade_0_2s": hm["mean"], "ade_ci95": hm.get("ci95"),
+                "ade_ci_lo": hm.get("lo"), "ade_ci_hi": hm.get("hi"),
+                "estimator": hm["estimator"],
                 "ade_0_2s_full_set": fs if not isinstance(fs, dict)
                 else fs.get("mean"),
                 "plan_step_p50_ms": ms,
                 "ms_per_metre_of_ade_beaten_vs_cv": None,
                 "note": "latency and ADE side by side — the deployment "
-                        "trade-off read; ADE from this arm's own results JSON"}
+                        "trade-off read; ADE from this arm's own results JSON, "
+                        "episode-cluster bootstrap (the full-set point "
+                        "estimate), never the deprecated heldout block"}
         except Exception as ex:
             out["cost_per_accuracy"] = {"error": str(ex)[:120]}
     res_dir.mkdir(parents=True, exist_ok=True)
@@ -2031,7 +2050,15 @@ def panel_rows(res_dir=RES) -> str:
         tf = (e.get("compute_efficiency") or {}).get("achieved_tflops")
         if tf:
             mix.append(f"— {tf} TFLOP/s achieved")
-        ade = acc.get("ade_0_2s_heldout")
+        # ⛔ 2026-08-28: `ade_0_2s` is the episode-cluster-bootstrap (full-set)
+        # point estimate. `ade_0_2s_heldout` is what artifacts written BEFORE
+        # the closeout carry — the deprecated mean-of-split-means. Historical
+        # rows still render, but they render MARKED, because pasting the two
+        # into one column is exactly how a -6.67 %…+11.69 % estimator gap gets
+        # read as a model difference.
+        ade, ade_dep = acc.get("ade_0_2s"), False
+        if ade is None:
+            ade, ade_dep = acc.get("ade_0_2s_heldout"), True
         # A latency row measured on a SHARED GPU is not a result. Say so in the
         # table rather than letting it pass as clean.
         dirty = e.get("contamination_check", {}).get("valid") is False
@@ -2049,7 +2076,8 @@ def panel_rows(res_dir=RES) -> str:
             f"<td class='r mono'>{fl.get('gflops', '—')}</td>"
             f"<td class='r mono'>{e['memory']['peak_alloc_mb']:.0f} MB</td>"
             f"<td class='r mono'>{e['params']['total_params_m']:.1f} M</td>"
-            f"<td class='r mono'>{ade if ade is None else f'{ade:.4f}'}</td>"
+            f"<td class='r mono'>{ade if ade is None else f'{ade:.4f}'}"
+            f"{'<span class=\"pill crit\">DEPRECATED est.</span>' if (ade is not None and ade_dep) else ''}</td>"
             f"<td class='r'><span class='pill {cls}'>"
             f"{rt['budget_used_pct_p99']:.0f}% of 100 ms</span></td>"
             f"<td class='r mono'>{prec}</td></tr>")

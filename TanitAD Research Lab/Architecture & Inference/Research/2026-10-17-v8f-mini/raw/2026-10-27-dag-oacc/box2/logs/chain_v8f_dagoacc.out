@@ -1,0 +1,20 @@
+10-27 15:25 waiting for the predecessor chain (/c/Users/Admin/box2_ship/logs/chain_v8f_dag2.out: end markers ^ZZV8FMINI-DONE / ^ZZV8FMINI-STOP; log present: yes)
+10-27 15:25 predecessor verdict: GO ZZV8FMINI-DONE 10-27 14:58 tip 1d4f4fbb11922f4dd62b51871d898c03e0c88635: PREREG_V8F_DAGGER2: banks s0/s1 of DAG (COVERAGE >= 0.5; PROVENANCE.json, bank.json, shard provenance and shard npz published),
+10-27 15:25 boot0=2026-10-17 18:43:26
+10-27 15:25 code archive /c/Users/Admin/box2_ship/repo_v8fdagoacc_tip.tar: 4106240 bytes, 65 paths
+10-27 15:25 launched pid=21644 rc=0 log=D:\tanitad\logs\v8fdagoacc10271525_refresh.log
+===== ZZJOB-END 27.10.2026 15:25:42,53 rc=0
+10-27 15:26 v8fdagoacc10271525_refresh rc=0
+10-27 15:26 box 2 code = tip 3101dbf1dab6399252dbcec7f2f1ada7325a8317 (1268 chars of key-file sha256; both v9 releases md5-checked)
+10-27 15:26 before the w_acc stage: DAG_s0/s1 (checkpoint, argv.json, summary.json), M2b_s0/s1 (the init) and the iteration-1 banks are the banked ones (sha256 asserted)
+10-27 15:26 launched pid=21604 rc=0 log=D:\tanitad\logs\telemetry_long.log
+10-27 15:28 launched pid=22460 rc=0 log=D:\tanitad\logs\v8fdagoacc10271525_wacc.log
+===== ZZJOB-END 27.10.2026 15:30:15,68 rc=0
+10-27 15:30 v8fdagoacc10271525_wacc rc=0
+ZZDAGOACC-CO3 {"L_acc": {"box": 0.011490271426737309, "offline": 0.011490271426737309, "rel": 0.0}, "L_ade": {"box": 1.991829514503479, "offline": 1.991829514503479, "rel": 0.0}, "L_fde": {"box": 5.737419605255127, "offline": 5.737419128417969, "rel": 8.311004434751967e-08}, "L_traj": {"box": 1.142061471939087, "offline": 1.142061432202657, "rel": 3.479360111796868e-08}, "bad": [], "outcome": "PASS", "rtol": 0.0001, "w_acc": {"box": 49.6969, "offline": 49.6969, "rel": 0.0}}
+10-27 15:30 C-O3 PASS: box-2 w_acc 49.6969 == the offline value (1e-4 relative)
+10-27 15:30 launched pid=14040 rc=0 log=D:\tanitad\logs\v8fdagoacc10271525_gate_M2b_s0_dagoacc.log
+===== ZZJOB-END 27.10.2026 15:31:54,35 rc=0
+10-27 15:32 v8fdagoacc10271525_gate_M2b_s0_dagoacc rc=0
+OAF gate: ['acc_probe control read_o_grad_diff = 864.7907104492188 (must be exactly 0.0)'] | dagoacc s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 601cb4352673 | probe grad diff 14264.365234375 | params 7214495 | lru 174
+ZZV8FMINI-STOP gate DAG-OACC assertions M2b_s0_dagoacc

@@ -1,0 +1,31 @@
+==============================================================================
+ARM ON  (--max-speed-input)   C:\Users\Admin\AppData\Local\Temp\claude\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\7c618562-39eb-4a61-af81-755048086a13\scratchpad\msi_on
+==============================================================================
+  record: param_breakdown has 10 lines, max_speed_inject=True
+  record: max_speed_input flag = True, mode = quantized
+  PASS  ON  (--max-speed-input): recorded ledger names max_speed_inject
+  PASS  ON  (--max-speed-input): REAL refcv3_arm.cross_check_config PASS on 6 facts (['arm', 'goal_tau_steps', 'horizons', 'image_hw', 'param_breakdown', 'tac_vocab_version']); conflicts=[]
+  PASS  ON  (--max-speed-input): strict load 0 missing / 0 unexpected (missing=[], unexpected=[], tolerated_inert=[])
+  PASS  ON  (--max-speed-input): model.load_state_dict(..., strict=True) -> OK
+  PASS  ON  (--max-speed-input): recorded ledger == rebuilt ledger (only-in-rebuilt=[], only-in-record=[])
+  PASS  ON  (--max-speed-input): ledger lines sum to total (63183997 == 63183997)
+  PASS  ON  (--max-speed-input): checkpoint carries max_speed weights -> ['max_speed_cond.proj.bias', 'max_speed_cond.proj.weight', 'max_speed_cond.to_str.bias', 'max_speed_cond.to_str.weight', 'max_speed_cond.to_tac.bias', 'max_speed_cond.to_tac.weight']
+  PASS  ON  (--max-speed-input): max_speed_inject line 25472 == measured module params 25472
+  PASS  ON  (--max-speed-input): the ROLLED config carries the flag (max_speed_input=True, mode=quantized)
+==============================================================================
+ARM OFF (control)   C:\Users\Admin\AppData\Local\Temp\claude\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\7c618562-39eb-4a61-af81-755048086a13\scratchpad\msi_off
+==============================================================================
+  record: param_breakdown has 9 lines, max_speed_inject=False
+  record: max_speed_input flag = False, mode = None
+  PASS  OFF (control): recorded ledger does NOT name max_speed_inject
+  PASS  OFF (control): REAL refcv3_arm.cross_check_config PASS on 6 facts (['arm', 'goal_tau_steps', 'horizons', 'image_hw', 'param_breakdown', 'tac_vocab_version']); conflicts=[]
+  PASS  OFF (control): strict load 0 missing / 0 unexpected (missing=[], unexpected=[], tolerated_inert=[])
+  PASS  OFF (control): model.load_state_dict(..., strict=True) -> OK
+  PASS  OFF (control): recorded ledger == rebuilt ledger (only-in-rebuilt=[], only-in-record=[])
+  PASS  OFF (control): ledger lines sum to total (63158525 == 63158525)
+  PASS  OFF (control): checkpoint carries NO max_speed weights -> []
+  PASS  OFF (control): rebuilt model has no conditioner
+==============================================================================
+  PASS  CROSS-ARM: ON total - OFF total = 25472 == the max_speed_inject line 25472 -- the opt-in costs EXACTLY the conditioner and nothing else
+==============================================================================
+BATTERY RESULT: PASS

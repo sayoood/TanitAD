@@ -1,0 +1,27 @@
+LANDING_READY_A5 -- SPEC_ADDENDUM_A5 time-localised nav (nav_tl): arms T2 / T3 / T4 / T2c / T2h8 (Architecture & Inference, 2026-10-04)
+Hand-over: NOTHING staged or committed by this agent (no git add / commit / push). The Master Mind lands these paths, BY PATH.
+Prefix every path below with:  TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv7-route-following/
+Verified at hand-over: the package directory is untracked (`??`) as a whole; md5 below are of the files as they sit on disk.
+
+## A5-NAVTL
+RESULT_A5.md                          90aba1ca9d48a735efd16972f3221e20  the result (controls first, token tally + window counts, bar table, four families, reading rule, post-hoc attribution, Rule Zero, register rows). RESULT.md NOT edited.
+code/nav_tl_a5.py                     f403b17d998230a5761a42d1025c4d64  nav_tl + arms + controls + post-hoc; CPU only; run: PYTHONPATH="C:/Users/Admin/ev7/stack;C:/Users/Admin/ev7/taniteval" python nav_tl_a5.py --stage all   (~40 s; deterministic: two runs bit-identical)
+code/test_nav_tl_a5.py                3318abd1dac602f57ec018f7815582a6  17 literal known-value tests incl. the brief's 3.0/6.0 record and the H=1e9 mutation (24/24 pass with test_route_metrics.py)
+code/make_tables_a5.py                7dbadc77e4bc66f08be89e2a38cc2db1  tables from raw/a5_nav_tl.json -> raw/TABLES_a5_generated.md (nothing typed by hand)
+code/verify_fallback_clock_a5.py      173b74f55255e372dfac3de5a20b4d16  re-derives from cached poses that the 3 uncovered eval clips take the nominal (0.0, 0.1) clock; prints sha12 only
+raw/a5_nav_tl.json                    1ef4986b5d81856ee28e77eb769f1338  every arm on eval_s0g + eval_s1 (SPEC sec.5 columns, deltas + CIs, bar per arm, four families), controls, tally, window counts, T2 fraction of B1t, reading rule, POSTHOC blocks (389 KB)
+raw/TABLES_a5_generated.md            62488a7c82248c4df22dba77b1d488fd  the tables RESULT_A5.md quotes
+raw/a5_fallback_clock_check.txt       3d29a245ff6795ca7e7aa3a8f2003496  output of verify_fallback_clock_a5.py (3 of 3 clips: nominal fallback)
+raw/a5_k1_bank_cols.tsv               a92a49de6d6eb497997199530e7547d7  K1 input: 4 columns (clip_sha12, t_start_row, now_row, t_label_s) of the Thor replay bank rows.jsonl, 2,059 rows, sha12 only (56 KB); makes K1 reproducible without Thor
+SPEC_ADDENDUM_A5.md                   e101904f1f8bb712e72ce1a974136cc0  the Master Mind's pre-registration (sha256 5f102584...), NOT authored or changed by this agent; land it with this set (it is not in the earlier LANDING_READY.txt)
+LANDING_READY_A5.txt                  (this file)
+
+raw/MD5SUMS.txt and raw/SPEC_SHA256.txt were NOT edited (the Master Mind owns them); add the md5 above to MD5SUMS when landing.
+GOALS_AND_CLAIMS.md / RETRACTION_LOG.md were NOT touched; proposed register rows are in RESULT_A5.md section 9.
+
+## NOT-for-git (no large binary evidence was created)
+Scratch only, session scratchpad on the dev box (C:/Users/Admin/AppData/Local/Temp/claude/.../scratchpad/): a5_run1..6.log (run logs, text, < 10 KB each), a5_k1_cols.tsv (== raw/a5_k1_bank_cols.tsv, md5 a92a49de...), a5_nav_tl_prev.json (a previous identical run), two one-off patch scripts. Safe to delete.
+Inputs used (read only, not copied): D:/refcv7_route_bin/2026-10-04/{eval_s0g,eval_s1,train_s0,reel_s0}.npz (md5 verified against MD5SUMS.txt before use), D:/refcv6_eval_kit/data/{a6/s2_labels_v8_train.jsonl.gz (md5 b45377a1), v8labels/labels/s2_labels_v8_eval.jsonl.gz (md5 eefc38d1), refcv6_clip_clock_sidecar.jsonl}, D:/refcv7_eval_kit/ckpt/config.json, D:/refcv6_eval_kit/data/refcv6-b1-416x1024-eval139/ (3 files, poses only). Nothing on G: was read or written.
+
+## Thor-only state
+None remains. The only Thor work was a ~5 s CPU python one-off extracting 4 columns from /home/nvidia/refcv7_post/replay/bank/final/rows.jsonl (read only) to /tmp/a5_k1_cols.tsv; copied to the dev box (md5 a92a49de... on both sides) and the /tmp file removed. The call returned only after it exited (exact end time not logged; before the check below); at 10:22:24 UTC `ps` on Thor showed no python process of this agent (the python processes then alive belong to the D3 audit stream under cpu.lock).

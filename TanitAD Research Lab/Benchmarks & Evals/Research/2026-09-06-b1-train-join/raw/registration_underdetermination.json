@@ -1,0 +1,166 @@
+{
+ "_evidence_class": "MEASURED (ours; this file)",
+ "date": "2026-09-06",
+ "claim": "register_poses_to_time is UNDER-DETERMINED on near-stationary clips: the frame error is monotone in the probe count, and the two groups do not overlap on either axis.",
+ "mechanism": "probes are restricted to poses whose CENTRAL-difference neighbour distance exceeds MIN_PROBE_MOVE_M=0.30 m; the floor to attempt a fit is MIN_MOVING_PROBES=8 and the cap is n_probe=96. A clip with 9 moving poses therefore fits t = a + b*i from a 9-point lever arm and EXTRAPOLATES the intercept across ~200 frames.",
+ "cliff_edge": "065482b3 has 9 moving poses -- ONE above the MIN_MOVING_PROBES floor of 8 -- so it did NOT raise RegistrationError; it returned a confident fit that is 1.0506 frames wrong. A guard that refuses at 8 returns a wrong answer at 9.",
+ "separation": {
+  "offender_n_probe_range": [
+   9,
+   22
+  ],
+  "control_n_probe": 96,
+  "offender_frame_err_range": [
+   0.2506,
+   1.0506
+  ],
+  "control_frame_err_range": [
+   0.002,
+   0.0075
+  ],
+  "overlap": "none on either axis"
+ },
+ "consequence": "the CAMERA TIMESTAMP GRID is the correct time source for these clips -- physicalai.build_episode DEFINES frame time as linspace(t_cam[0], t_cam[-1], n_target), so the grid is constitutive while the registration only RECOVERS it. Named lever: fall back to the grid when n_probe < 32 (a third of the 96 cap, 1.5x the worst offender). Supply: ~7 of 4,434 clips = 0.16%, all with mean speed < 0.53 m/s, so their contribution to a CLOSING-RATE representation is near zero. Not run here: it costs a full ~40 min rebuild for 0.16% of near-stationary clips.",
+ "columns": [
+  "group",
+  "clip_prefix",
+  "n_moving_poses",
+  "n_poses",
+  "n_probe",
+  "n_inlier",
+  "mean_speed_ms",
+  "frame_err_frames"
+ ],
+ "rows": [
+  {
+   "group": "OFFENDER",
+   "clip_prefix": "065482b3",
+   "n_moving_poses": 9,
+   "n_poses": 200,
+   "n_probe": 9,
+   "n_inlier": 9,
+   "mean_speed_ms": 0.148,
+   "frame_err_frames": 1.0506
+  },
+  {
+   "group": "OFFENDER",
+   "clip_prefix": "e3639a77",
+   "n_moving_poses": 13,
+   "n_poses": 201,
+   "n_probe": 13,
+   "n_inlier": 13,
+   "mean_speed_ms": 0.201,
+   "frame_err_frames": 0.9381
+  },
+  {
+   "group": "OFFENDER",
+   "clip_prefix": "27173eb8",
+   "n_moving_poses": 17,
+   "n_poses": 201,
+   "n_probe": 17,
+   "n_inlier": 17,
+   "mean_speed_ms": 0.306,
+   "frame_err_frames": 0.7404
+  },
+  {
+   "group": "OFFENDER",
+   "clip_prefix": "e8047d08",
+   "n_moving_poses": 22,
+   "n_poses": 201,
+   "n_probe": 22,
+   "n_inlier": 22,
+   "mean_speed_ms": 0.373,
+   "frame_err_frames": 0.7125
+  },
+  {
+   "group": "OFFENDER",
+   "clip_prefix": "66a2f11a",
+   "n_moving_poses": 16,
+   "n_poses": 200,
+   "n_probe": 16,
+   "n_inlier": 16,
+   "mean_speed_ms": 0.292,
+   "frame_err_frames": 0.5765
+  },
+  {
+   "group": "OFFENDER",
+   "clip_prefix": "c6b6eb9b",
+   "n_moving_poses": 13,
+   "n_poses": 199,
+   "n_probe": 13,
+   "n_inlier": 13,
+   "mean_speed_ms": 0.267,
+   "frame_err_frames": 0.4964
+  },
+  {
+   "group": "OFFENDER",
+   "clip_prefix": "4d09c5c1",
+   "n_moving_poses": 17,
+   "n_poses": 200,
+   "n_probe": 17,
+   "n_inlier": 17,
+   "mean_speed_ms": 0.524,
+   "frame_err_frames": 0.2506
+  },
+  {
+   "group": "CONTROL",
+   "clip_prefix": "002646e7",
+   "n_moving_poses": 201,
+   "n_poses": 201,
+   "n_probe": 96,
+   "n_inlier": 96,
+   "mean_speed_ms": 8.227,
+   "frame_err_frames": 0.002
+  },
+  {
+   "group": "CONTROL",
+   "clip_prefix": "004bfe84",
+   "n_moving_poses": 152,
+   "n_poses": 201,
+   "n_probe": 96,
+   "n_inlier": 96,
+   "mean_speed_ms": 2.524,
+   "frame_err_frames": 0.0055
+  },
+  {
+   "group": "CONTROL",
+   "clip_prefix": "0051142e",
+   "n_moving_poses": 201,
+   "n_poses": 201,
+   "n_probe": 96,
+   "n_inlier": 96,
+   "mean_speed_ms": 9.263,
+   "frame_err_frames": 0.0021
+  },
+  {
+   "group": "CONTROL",
+   "clip_prefix": "006a389c",
+   "n_moving_poses": 201,
+   "n_poses": 201,
+   "n_probe": 96,
+   "n_inlier": 96,
+   "mean_speed_ms": 29.044,
+   "frame_err_frames": 0.0068
+  },
+  {
+   "group": "CONTROL",
+   "clip_prefix": "006ffa2a",
+   "n_moving_poses": 201,
+   "n_poses": 201,
+   "n_probe": 96,
+   "n_inlier": 96,
+   "mean_speed_ms": 25.47,
+   "frame_err_frames": 0.0063
+  },
+  {
+   "group": "CONTROL",
+   "clip_prefix": "00759fe8",
+   "n_moving_poses": 190,
+   "n_poses": 201,
+   "n_probe": 96,
+   "n_inlier": 96,
+   "mean_speed_ms": 5.054,
+   "frame_err_frames": 0.0075
+  }
+ ]
+}

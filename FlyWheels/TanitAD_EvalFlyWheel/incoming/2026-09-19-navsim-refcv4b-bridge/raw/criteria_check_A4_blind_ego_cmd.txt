@@ -1,0 +1,65 @@
+rc=0
+=== artifact_A4_blind_ego_cmd.json ===
+tier: T1  (driving-performance tier)
+
+LONGITUDINAL  [0/4 present]
+   [ WORK ] target-speed accuracy
+            -> four_families.longitudinal.speed_mae_mps: no warmup scene carries BOTH the model's camera input and a logged future: the 204 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), the 16 stage-1 scenes have a fu (n=0)
+   [ WORK ] along-track displacement error
+            -> four_families.longitudinal.along_mae_m: no warmup scene carries BOTH the model's camera input and a logged future: the 204 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), the 16 stage-1 scenes have a fu (n=0)
+   [ WORK ] ego progress
+            -> four_families.longitudinal.ego_progress: no warmup scene carries BOTH the model's camera input and a logged future: the 204 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), the 16 stage-1 scenes have a fu (n=0)
+   [ WORK ] distance-keeping (headway / time-gap / TTC to the lead agent)
+            -> longitudinal.distance_keeping: no warmup scene carries BOTH the model's camera input and a logged future: the 204 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), the 16 stage-1 scenes have a fu (n=0)
+
+LATERAL  [0/4 present]
+   [ WORK ] cross-track error
+            -> four_families.lateral.cross_mae_m: no warmup scene carries BOTH the model's camera input and a logged future: the 204 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), the 16 stage-1 scenes have a fu (n=0)
+   [ WORK ] heading error
+            -> four_families.lateral.heading_mae_deg: no warmup scene carries BOTH the model's camera input and a logged future: the 204 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), the 16 stage-1 scenes have a fu (n=0)
+   [ WORK ] curvature error
+            -> four_families.lateral.curvature_mae_1pm: no warmup scene carries BOTH the model's camera input and a logged future: the 204 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), the 16 stage-1 scenes have a fu (n=0)
+   [ WORK ] yaw-rate error
+            -> four_families.lateral.yaw_rate_mae_degps: no warmup scene carries BOTH the model's camera input and a logged future: the 204 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), the 16 stage-1 scenes have a fu (n=0)
+
+TACTICAL  [0/3 present]
+   [ WORK ] manoeuvre-decision quality (selected vs executed)
+            -> four_families.tactical.lateral_decision: no warmup scene carries BOTH the model's camera input and a logged future: the 204 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), the 16 stage-1 scenes have a fu (n=0)
+   [ WORK ] confusion over the manoeuvre classes
+            -> four_families.tactical.lateral_decision.confusion_gt_rows_pred_cols: no warmup scene carries BOTH the model's camera input and a logged future: the 204 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), the 16 stage-1 scenes have a fu (n=0)
+   [ WORK ] tactical goal / anchor selection quality
+            -> four_families.tactical.goal_setting: no warmup scene carries BOTH the model's camera input and a logged future: the 204 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), the 16 stage-1 scenes have a fu (n=0)
+
+STRATEGIC  [0/5 present]
+   [ WORK ] strategic decision quality
+            -> four_families.strategic: no human/expert future trajectory supplied, so no geometry family can be computed at all. NavSim's Scene object carries it but is TRAINING-ONLY for the agent (NAVSIM_PROTOCOL.md:470-474) — it must be  (n=220)
+   [ WORK ] strategic route / goal-setting quality
+            -> four_families.strategic: no human/expert future trajectory supplied, so no geometry family can be computed at all. NavSim's Scene object carries it but is TRAINING-ONLY for the agent (NAVSIM_PROTOCOL.md:470-474) — it must be  (n=220)
+   [ WORK ] nav-COMPLIANCE — the emitted BEHAVIOUR follows the route command (imminent windows)
+            -> four_families.strategic.nav_compliance.readouts.plan.conditionings.nav_true.compliance_with_TRUE_command: no nav-withheld partner arm with the SAME frames construction was run (n=0)
+   [ WORK ] nav-compliance CONTROL: paired drop under nav-SHUFFLE (token permuted across windows)
+            -> four_families.strategic.nav_compliance.readouts.plan.paired_true_minus_shuffled: nav-shuffle arm not run in this stream (budget); nav-zero is the paired control reported (n=0)
+   [ WORK ] nav-compliance CONTROL: paired drop under nav-ZERO (nav withheld, E13 skipped)
+            -> four_families.strategic.nav_compliance.readouts.plan.paired_true_minus_zero: no nav-withheld partner arm with the SAME frames construction was run (n=0)
+
+ARTIFACT HYGIENE
+   [  ok  ] tier stamp present
+   [ WORK ] estimator named
+            -> estimator.interval: cluster unit unsettled — NavSim's resampling unit is a SCENE TOKEN, not an episode. taniteval.ci.episode_cluster_bootstrap resamples EPISODES, and the two are not interchangeable here: docs/splits.md  (n=220)
+   [  ok  ] n printed (windows and episodes)
+   [  ok  ] overlapping_holdout_se not used as a decision-grade interval
+   [  ok  ] corpus identity recorded (parity key + skip-hash)
+   [  ok  ] headline metrics reported against their trivial control(s)
+   [  ok  ] stochastic planner: inference-seed replicate + the seed floor
+
+LEAK GUARDS
+   [  ok  ] Inference uses VISION ONLY. Labels may use ego/privileged data (PI, 2026-08-03, binding).
+   [  ok  ] The goal path and the situation path stay information-disjoint at inference; a goal input must not carry the situation classifier's output in any form (PI, 2026-08-03, binding).
+   [ WORK ] A route/goal head scoring near 1.0 must publish its echo test against its own input.
+            -> strategic.echo_test: no route/goal head is SCORED in this NavSim eval (refcv4b's route_logits are not read); the only route-conditioned readout is the plan's nav-compliance, reported with its nav-zero pair (n=0)
+
+VIOLATIONS (silently absent, required): 0
+WORK ITEMS (refused with a reason, or partial): 18
+
+wrote D:\Projects\TanitAD\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-19-navsim-refcv4b-bridge\raw\criteria_check_A4_blind_ego_cmd.json
+

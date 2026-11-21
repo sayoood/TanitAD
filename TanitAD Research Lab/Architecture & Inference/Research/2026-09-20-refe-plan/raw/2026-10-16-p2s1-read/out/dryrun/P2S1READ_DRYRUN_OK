@@ -1,0 +1,70 @@
+{
+ "marker": "P2S1READ_DRYRUN_OK",
+ "when_utc": "2026-10-15T22:05:30Z",
+ "repo": "Sayood/tanitad-refe-p2-joint-pdm-s1",
+ "name": "p2s1_full",
+ "plan": {
+  "idle_gate": [
+   "C:/Users/Admin/venvs/tanitad/Scripts/python.exe",
+   "D:/Projects/TanitAD-artifacts/_rlfan_work/wait_idle.py"
+  ],
+  "stage2_attempt1": [
+   "C:/Users/Admin/venvs/tanitad/Scripts/python.exe",
+   "E:\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\eval\\stage2_sft.py",
+   "--ckpt",
+   "C:/Users/Admin/AppData/Local/Temp/p2s1r/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-16-p2s1-read/out/dryrun/ck/model_final.pt",
+   "--name",
+   "p2s1_full",
+   "--rule",
+   "navsim_v1",
+   "--tokens",
+   "E:/Projects/TanitAD/data/refe_navtest/navtest_full_tokens.json"
+  ],
+  "stage2_attempt2": [
+   "C:/Users/Admin/venvs/tanitad/Scripts/python.exe",
+   "E:\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\eval\\stage2_sft.py",
+   "--ckpt",
+   "C:/Users/Admin/AppData/Local/Temp/p2s1r/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-16-p2s1-read/out/dryrun/ck/model_final.pt",
+   "--name",
+   "p2s1_full",
+   "--rule",
+   "navsim_v1",
+   "--tokens",
+   "E:/Projects/TanitAD/data/refe_navtest/navtest_full_tokens.json"
+  ],
+  "stage3": [
+   "C:/Users/Admin/venvs/tanitad/Scripts/python.exe",
+   "E:\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\eval\\stage3_full.py",
+   "--name",
+   "p2s1_full",
+   "--ckpt",
+   "C:/Users/Admin/AppData/Local/Temp/p2s1r/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-16-p2s1-read/out/dryrun/ck/model_final.pt",
+   "--expect-ckpt-sha256",
+   "48d743a5215e4cb2deedd07b0f82cd5db3de680eab407aadf74aa57d8fca0e1f"
+  ],
+  "read": [
+   "C:/Users/Admin/venvs/tanitad/Scripts/python.exe",
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\p2s1r\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\raw\\2026-10-16-p2s1-read\\p2rep_read.py",
+   "--name",
+   "p2s1_full",
+   "--r2-result",
+   "E:\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\raw\\p2_readout\\p2s1_full\\r2_result.json",
+   "--out-dir",
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\p2s1r\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\raw\\2026-10-16-p2s1-read\\out\\dryrun\\read"
+  ],
+  "seam_npz": "E:/Projects/TanitAD/data/refe_navtest/seams/stage2_p2s1_full.npz",
+  "seam_report": "E:/Projects/TanitAD/data/refe_navtest/seams/stage2_p2s1_full.report.json",
+  "r2_result": "E:\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\raw\\p2_readout\\p2s1_full\\r2_result.json"
+ },
+ "final": {
+  "status": "final",
+  "why": "summary done=true + model_final.pt listed + LFS sha256 equal + chain FINAL_OK equal",
+  "sha256": "48d743a5215e4cb2deedd07b0f82cd5db3de680eab407aadf74aa57d8fca0e1f",
+  "size": 4223,
+  "steps": 1209,
+  "server_hash_verified": true,
+  "chain_final_ok": true,
+  "chain_final_failed": false,
+  "size_equals_p2_s0": false
+ }
+}

@@ -1,0 +1,55 @@
+{
+ "all_red": true,
+ "results": {
+  "unmutated (B 200)": {
+   "failing_checks": [
+    "K-RE pass",
+    "no problems",
+    "rc 0"
+   ],
+   "n_checks": 18
+  },
+  "s0: stage B is labelled against the stage-A floor in main": {
+   "failing_checks": [
+    "K-RE pass",
+    "label from the real delta",
+    "no problems",
+    "rc 0"
+   ],
+   "differs_from_unmutated": true,
+   "rc": 1
+  },
+  "s1: the label is read from X - U_s0": {
+   "failing_checks": [
+    "K-RE pass",
+    "boundary Delta == -F reached on real data (stage A)",
+    "label from the real delta",
+    "no problems",
+    "rc 0",
+    "the printed deltas are X - B_s0's, per stage"
+   ],
+   "differs_from_unmutated": true,
+   "rc": 1
+  },
+  "s2: K-VLM-ZERO takes the GEO floor": {
+   "failing_checks": [
+    "K-RE pass",
+    "K-VLM-ZERO numbers: X 0.0 (VLM zeroed), B_s0 0.12574 and the block-1 floor 0.02737 at stage A",
+    "no problems",
+    "rc 0"
+   ],
+   "differs_from_unmutated": true,
+   "rc": 1
+  },
+  "s3: K-VLM-ZERO is read at stage B": {
+   "failing_checks": [
+    "K-RE pass",
+    "K-VLM-ZERO numbers: X 0.0 (VLM zeroed), B_s0 0.12574 and the block-1 floor 0.02737 at stage A",
+    "no problems",
+    "rc 0"
+   ],
+   "differs_from_unmutated": true,
+   "rc": 1
+  }
+ }
+}

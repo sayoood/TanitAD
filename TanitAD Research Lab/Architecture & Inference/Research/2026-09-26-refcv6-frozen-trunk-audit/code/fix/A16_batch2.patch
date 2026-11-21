@@ -1,0 +1,817 @@
+diff --git a/stack/tanitad/refs/refc.py b/stack/tanitad/refs/refc.py
+index 47e9a95..8be8736 100644
+--- a/stack/tanitad/refs/refc.py
++++ b/stack/tanitad/refs/refc.py
+@@ -4524,7 +4524,12 @@ class RefCModel(nn.Module):
+             out["u0_hat"] = dec["u0_hat"]        # refcv5 WP-4's x0 loss target
+         if "cons_score" in dec:
+             out["cons_score"] = dec["cons_score"]
+-        for _k in ("prefinal_logits", "reach_keep"):
++        # ⛔⛔ A16 2026-09-26: refcv6 F3's per-stage outputs MUST pass through. The trainer's
++        # per-stage loss reads `layer_u0_hat` / `layer_logits` from THIS dict; the whitelist that
++        # omitted them skipped F3's loss for the whole of refcv6-r101-s0 (0 of 668 training rows
++        # carried `cascade`; stage-0..2 heads bit-identical across 29,000 steps). Pinned by
++        # tests/test_refcv6_f3_cascade_reaches_loss.py on the REAL train().
++        for _k in ("prefinal_logits", "reach_keep", "layer_u0_hat", "layer_logits"):
+             # S1b's in-forward control and S1c's CE support, passed through
+             # VERBATIM: `compute_losses` reads `reach_keep` and the probes read
+             # both. Re-deriving either outside the decoder is how two
+diff --git a/stack/scripts/refc_v3_train.py b/stack/scripts/refc_v3_train.py
+index 94c58a7..a8466e2 100644
+--- a/stack/scripts/refc_v3_train.py
++++ b/stack/scripts/refc_v3_train.py
+@@ -2970,6 +2970,93 @@ class V3Dataset(RouteV21Dataset):
+             "n_clips": int(getattr(join3d, "n_clips", 0))}
+         return self.join3d_stats
+ 
++    # ======================================================================= #
++    # ⭐⭐ A16 2026-09-26 -- THE LABEL CLOCK (`tanitad/data/clip_clock.py`).     #
++    # ======================================================================= #
++    #: ``sid -> (grid_start_s, dt_s, source)``: the true RAW-timeline clock of each clip. Filled
++    #: by :meth:`enable_clip_clock`; a clip it does not hold is clocked on first use from its OWN
++    #: poses (``clip_clock.pose_dt``) with ``grid_start_s = 0.0``.
++    _label_clock: dict | None = None
++    label_clock_report: dict | None = None
++    #: ⛔ THE DELIBERATE-REGRESSION SWITCH, for tests ONLY: True restores the historical
++    #: ``(t + w - 1) * v7_dt`` so a guard can prove it goes RED on the defect it exists for.
++    legacy_label_clock: bool = False
++
++    @staticmethod
++    def _raw_offset(ep) -> int:
++        """PROVIDER row -> RAW clip row: the provider drops the first ``n_stack - 1`` frames
++        (``v2_dataset.py:36``) and the labels live on the RAW timeline -- the conversion
++        ``s2_labels.py:738-740`` already applies."""
++        return max(int(ep.frames.shape[1]) // 3 - 1, 0)
++
++    def _clock_for(self, ep) -> tuple:
++        from tanitad.data import clip_clock as _cc
++        if self._label_clock is None:
++            self._label_clock = {}
++        sid = int(ep.episode_id)
++        clk = self._label_clock.get(sid)
++        if clk is None:
++            dt = _cc.pose_dt(ep.poses)
++            clk = ((0.0, float(dt), "pose_dt") if dt is not None
++                   else (0.0, float(_cc.NOMINAL_DT_S), "nominal_dt"))
++            self._label_clock[sid] = clk
++        return clk
++
++    def _now_s(self, ep, t: int) -> float:
++        """The window NOW (row ``t + w - 1``) on the label's RAW timeline, in seconds."""
++        r = int(t) + int(self.window) - 1
++        if self.legacy_label_clock:              # the historical defect, tests only
++            return r * float(self.v7_dt)
++        g0, dt, _src = self._clock_for(ep)
++        return float(g0) + (r + self._raw_offset(ep)) * float(dt)
++
++    def enable_clip_clock(self, sidecar_path: str | None = None) -> dict:
++        """Resolve every episode's clock ONCE and return the census config.json stamps.
++
++        ``sidecar_path`` (``--clip-clock-sidecar``): the clock MEASURED from each clip's 100 Hz
++        egomotion log (``scripts/build_clip_clock_sidecar.py``). Without it -- or for a clip it
++        does not cover -- ``dt`` comes from the clip's own poses and ``grid_start_s`` is 0.0, and
++        the census COUNTS it: the measured corpus median is +0.113 s, so that residual is stated,
++        never hidden. ⛔ A sidecar that covers NONE of this split's clips REFUSES: that is a
++        sidecar for another corpus, not a partial one."""
++        from tanitad.data import clip_clock as _cc
++        side = _cc.read_clip_clock_sidecar(str(sidecar_path)) if sidecar_path else None
++        self._label_clock = {}
++        n_side = n_pose = n_nom = 0
++        dts, offs = [], set()
++        for ep in self.episodes:
++            sid = int(ep.episode_id)
++            if sid in self._label_clock:
++                continue
++            if side is not None and sid in side.table:
++                g0, dt = side.table[sid]
++                self._label_clock[sid] = (float(g0), float(dt), "sidecar")
++                n_side += 1
++            else:
++                clk = self._clock_for(ep)
++                n_pose += int(clk[2] == "pose_dt")
++                n_nom += int(clk[2] == "nominal_dt")
++            dts.append(self._label_clock[sid][1])
++            offs.add(self._raw_offset(ep))
++        if side is not None and n_side == 0:
++            raise SystemExit(
++                f"[v3] ⛔ --clip-clock-sidecar {sidecar_path}: it covers NONE of this split's "
++                f"{len(self._label_clock)} clips -- a sidecar for another corpus. Refusing rather "
++                f"than clocking every clip on the fallback while config.json names the sidecar.")
++        dts_s = sorted(dts)
++        self.label_clock_report = {
++            "rule": "t_now = grid_start_s + (t + w - 1 + n_stack - 1) * dt_s "
++                    "(tanitad/data/clip_clock.py; A16 2026-09-26)",
++            "sidecar": None if side is None else side.path,
++            "sidecar_rows": None if side is None else side.n_rows,
++            "n_clips": len(self._label_clock), "n_from_sidecar": n_side,
++            "n_pose_dt_grid_start_0": n_pose, "n_nominal_dt_grid_start_0": n_nom,
++            "raw_offsets": sorted(offs),
++            "dt_s_median": dts_s[len(dts_s) // 2] if dts_s else None,
++            "dt_s_min": dts_s[0] if dts_s else None,
++            "dt_s_max": dts_s[-1] if dts_s else None}
++        return self.label_clock_report
++
+     def __getitem__(self, i: int):
+         item = super().__getitem__(i)
+         e_i, t = self.index[i]
+@@ -3007,7 +3094,7 @@ class V3Dataset(RouteV21Dataset):
+                 lat_v7 = lon_v7 = v7l.IGNORE_ID       # clip has no record
+             else:
+                 lat_v7, lon_v7 = v7l.tactical_class_ids(
+-                    lab, (t + w - 1) * self.v7_dt)
++                    lab, self._now_s(ep, t))
+             item["lat_v7"] = torch.tensor(lat_v7, dtype=torch.long)
+             item["lon_v7"] = torch.tensor(lon_v7, dtype=torch.long)
+             # ---- --w-tac-goal: the 22-token goal SET target ---------------
+@@ -3027,7 +3114,7 @@ class V3Dataset(RouteV21Dataset):
+                     _tg_w = (v7l.IGNORE_W,) * _n_tg
+                 else:
+                     _tg_y, _tg_w = v7l.tactical_goal_targets(
+-                        lab, (t + w - 1) * self.v7_dt,
++                        lab, self._now_s(ep, t),
+                         negatives=self.tac_goal_negatives,
+                         sidecar=self.cot_negative_sidecar)
+                 item["tac_goal_y"] = torch.tensor(_tg_y, dtype=torch.float32)
+@@ -3961,6 +4048,14 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
+     # supervised by `loss_traj` + `loss_cls` above; adding it again would
+     # double-weight it and the "per-layer loss" arm would be partly a
+     # loss-weight arm. Only stages 0..L-2 are new terms.
++    # ⛔⛔ A16 2026-09-26: REFUSE, DO NOT SKIP. This block used to read `if f3 and "layer_u0_hat"
++    # in out:` -- a silent skip -- and `RefCModel.forward` never passed the key through, so the
++    # live refcv6 run trained with F3 STAMPED and F3's loss ABSENT (0/668 rows carried `cascade`).
++    if _rv6f.f3_per_layer and "layer_u0_hat" not in out:
++        raise SystemExit(
++            "[v3] ⛔ this build is --f3-per-layer but the forward carries no `layer_u0_hat`: the "
++            "per-stage (cascade) loss would be SILENTLY SKIPPED while config.json stamps F3. "
++            "RefCModel.forward must pass the decoder's per-stage outputs through.")
+     if _rv6f.f3_per_layer and "layer_u0_hat" in out:
+         stages = out["layer_u0_hat"][:-1]
+         stage_logits = out["layer_logits"][:-1]
+@@ -7107,6 +7202,7 @@ def train(args) -> dict:
+     nav_args_stats = eval_nav_args_stats = None
+     max_speed_stats = eval_max_speed_stats = None
+     max_speed_v6_stats = eval_max_speed_v6_stats = None
++    clip_clock_stats = eval_clip_clock_stats = None       # A16 label clock
+     tac_v6_stats = None
+     # ---- v7.2 label join (PI 2026-09-02: MANDATORY for this launch) --------
+     if args.v7_labels:
+@@ -7116,6 +7212,8 @@ def train(args) -> dict:
+         by_sid = {stable_episode_id(l.clip_id): l for l in labels}
+         ds.v7_by_sid = by_sid
+         ds.v7_dt = 0.1
++        # ⭐⭐ A16 2026-09-26: the label clock (tanitad/data/clip_clock.py), resolved ONCE.
++        clip_clock_stats = ds.enable_clip_clock(getattr(args, "clip_clock_sidecar", None))
+         # ---- ⭐ PI 2026-09-16: the absence-is-negative sidecar ------------
+         # ⛔ Loaded HERE, before the manifest is stamped into the run record,
+         # so a run that used the ruling cannot produce a config.json that does
+@@ -7413,6 +7511,8 @@ def train(args) -> dict:
+                                               allow_oracle_nav=True)
+             e_ds.v7_by_sid = {stable_episode_id(l.clip_id): l for l in e_lab}
+             e_ds.v7_dt = 0.1
++            eval_clip_clock_stats = e_ds.enable_clip_clock(
++                getattr(args, "clip_clock_sidecar", None))
+             # the in-training eval sees the SAME nav source as training
+             # (refused above when --eval-labels is missing)
+             if nav_on:
+@@ -7908,6 +8008,9 @@ def train(args) -> dict:
+         # once hard-coded AGENT-ONLY and would have mislabelled every R2 arm.
+         "refcv6_tactical": _refcv6_tactical_block(args, model, tac_goal_stats),
+         # ⭐⭐ refcv6 §5 — the 4-way one-hot set-speed census.
++        # ⭐⭐ A16 2026-09-26: WHICH clock read the labels, and how many clips fell back.
++        "label_clock": ({"train": clip_clock_stats, "eval": eval_clip_clock_stats}
++                        if clip_clock_stats is not None else None),
+         "refcv6_max_speed": ({"train": max_speed_v6_stats,
+                               "eval": eval_max_speed_v6_stats}
+                              if max_speed_v6_stats is not None else None),
+@@ -8433,6 +8536,12 @@ def build_parser() -> argparse.ArgumentParser:
+                     help="FIXED number of eval batches — the same windows "
+                          "every time, so step-to-step deltas are the model "
+                          "moving and not the sample moving")
++    ap.add_argument("--clip-clock-sidecar", default=None,
++                    help="A16 2026-09-26: JSON-lines {sid, grid_start_s, dt_s} built by "
++                         "`scripts/build_clip_clock_sidecar.py` from each clip's 100 Hz "
++                         "egomotion log -- the TRUE clock the v7/v8 labels are read on. "
++                         "Without it dt comes from the clip's own poses and grid_start is "
++                         "0.0 (counted in config.json `label_clock`).")
+     ap.add_argument("--v7-labels", default=None,
+                     help="s2_labels_v7.2_*.jsonl.gz — the RELEASED tactical "
+                          "vocabulary (8x8). Joined per window on "
+diff --git a/stack/tanitad/data/clip_clock.py b/stack/tanitad/data/clip_clock.py
+new file mode 100644
+index 0000000..7de8741
+--- /dev/null
++++ b/stack/tanitad/data/clip_clock.py
+@@ -0,0 +1,138 @@
++"""THE LABEL CLOCK — the true time of a cache row on the v7/v8 label timeline.
++
++⛔⛔ WHY THIS MODULE EXISTS (A16, 2026-09-26, MEASURED on the live refcv6 run).
++``V3Dataset`` read every v7/v8 label at ``t_now = (t + w - 1) * 0.1`` — a PROVIDER row times a
++literal. Both halves were wrong:
++
++1. **The row is a PROVIDER row.** ``v2_dataset.py:36`` drops the first ``n_stack - 1`` raw frames
++   (``poses[n_stack-1:]``); the labels live on the RAW clip timeline
++   (``egomotion_source.py:56-57``). ``s2_labels.py:738-740`` adds the ``n_stack - 1`` offset; the
++   refcv6 dataset did not (0.20 s).
++2. **A row is not 0.1 s.** The cache grid is ``linspace(t0, tN, int(span * 10))``
++   (``v2_compressed.py:119-120``), whose step is ``span / (n - 1)``: MEASURED median
++   **0.1006666 s** over 4,357 train clips (row times recovered from the 100 Hz egomotion log), and
++   the first camera row sits **+0.113 s** (median) after the log's origin, which IS the label
++   timeline's zero.
++
++Together the trainer read labels **0.369 s early** at the 8.0 s anchor (median); **19,044 of
++179,129** tactical-supervised training windows (10.6 %) sat outside the true ±2 s band
++(``…/2026-09-26-refcv6-frozen-trunk-audit/raw/q4d_label_offset_true_clock.json``).
++
++⇒ the true time of provider row ``r`` is ``grid_start_s + (r + n_stack - 1) * dt_s``.
++
++* ``dt_s`` is recoverable from the cache ITSELF: rows carry ``(x, y)`` and the log's own speed
++  ``v = hypot(vx, vy)``, both interpolated at the same query times, so over moving rows
++  ``dt = Σ|Δxy| / Σ v̄`` — an identity against a quantity that knows nothing about our cadence.
++  :func:`pose_dt` implements it (MEASURED agreement with the log inversion: median 0.100667 vs
++  0.1006666 s).
++* ``grid_start_s`` is NOT recoverable from the cache: it is the camera grid's first timestamp
++  relative to the egomotion log's first sample. It comes from a CLOCK SIDECAR built from the log
++  (``scripts/build_clip_clock_sidecar.py``), keyed on ``sid = stable_episode_id(clip_id)``.
++  Without one the dataset uses ``0.0`` and COUNTS every clip it had to (the corpus median is
++  +0.113 s, so the residual is stated, not hidden).
++"""
++from __future__ import annotations
++
++import json
++import math
++import os
++from dataclasses import dataclass
++
++import torch
++
++#: the literal every consumer assumed; used ONLY where a clip carries too little motion for the
++#: identity (a stationary clip has no displacement to divide).
++NOMINAL_DT_S: float = 0.1
++#: rows slower than this are excluded from the identity (GNSS/odometry noise dominates).
++POSE_DT_V_MIN_MS: float = 2.0
++#: fewer moving steps than this and the identity is not attempted.
++POSE_DT_MIN_STEPS: int = 10
++#: the physically possible band for this corpus's grid: n = int(span*10) samples over span s gives
++#: dt in [0.1, 0.1 * (1 + 1/(n-1)) + 0.1/(n-1)); anything outside is a broken track, not a clock.
++POSE_DT_BAND_S: tuple[float, float] = (0.098, 0.104)
++SIDECAR_SCHEMA = "tanitad.clip_clock/1"
++
++
++class ClipClockError(ValueError):
++    """A clock sidecar that cannot be trusted is refused, never guessed around."""
++
++
++def pose_dt(poses: torch.Tensor, *, v_min: float = POSE_DT_V_MIN_MS,
++            min_steps: int = POSE_DT_MIN_STEPS) -> float | None:
++    """``[T, >=4]`` provider poses ``(x, y, yaw, v)`` -> the row step in seconds, or ``None``.
++
++    ``Σ|Δxy| / Σ ½(v_i + v_{i+1})`` over steps whose BOTH ends move faster than ``v_min``.
++    ``None`` when fewer than ``min_steps`` steps qualify or the result leaves
++    :data:`POSE_DT_BAND_S` — the caller then falls back to :data:`NOMINAL_DT_S` and counts it.
++    """
++    p = poses.detach().to(torch.float64)
++    if p.ndim != 2 or p.shape[0] < 2 or p.shape[1] < 4:
++        return None
++    d = torch.hypot(p[1:, 0] - p[:-1, 0], p[1:, 1] - p[:-1, 1])
++    vb = 0.5 * (p[1:, 3] + p[:-1, 3])
++    m = (p[1:, 3] > v_min) & (p[:-1, 3] > v_min)
++    if int(m.sum()) < int(min_steps):
++        return None
++    dt = float(d[m].sum() / vb[m].sum())
++    lo, hi = POSE_DT_BAND_S
++    if not (math.isfinite(dt) and lo <= dt <= hi):
++        return None
++    return dt
++
++
++@dataclass(frozen=True)
++class ClockSidecar:
++    table: dict          # sid -> (grid_start_s, dt_s)
++    meta: dict
++    path: str
++    n_rows: int
++
++
++def read_clip_clock_sidecar(path: str) -> ClockSidecar:
++    """JSON-lines ``{"sid", "grid_start_s", "dt_s", ...}`` -> :class:`ClockSidecar`.
++
++    ⛔ REFUSES: a missing file; a row without ``sid`` / ``grid_start_s`` / ``dt_s``; a ``dt_s``
++    outside :data:`POSE_DT_BAND_S`; a ``|grid_start_s|`` above 1 s (the corpus's measured range is
++    -0.27 … +0.24 s — a larger value is a unit error, e.g. microseconds read as seconds); a
++    duplicated ``sid`` with different values; zero rows.
++    """
++    if not os.path.isfile(path):
++        raise ClipClockError(f"[clip-clock] ⛔ {path!r} does not exist")
++    meta: dict = {}
++    mp = path + ".meta.json"
++    if os.path.isfile(mp):
++        with open(mp, "r", encoding="utf-8") as fh:
++            meta = json.load(fh)
++        if meta.get("schema") not in (None, SIDECAR_SCHEMA):
++            raise ClipClockError(f"[clip-clock] ⛔ {mp}: schema {meta.get('schema')!r} is not "
++                                 f"{SIDECAR_SCHEMA!r}")
++    table: dict = {}
++    n = 0
++    lo, hi = POSE_DT_BAND_S
++    with open(path, "r", encoding="utf-8") as fh:
++        for i, line in enumerate(fh):
++            line = line.strip()
++            if not line:
++                continue
++            r = json.loads(line)
++            n += 1
++            try:
++                sid = int(r["sid"])
++                g0 = float(r["grid_start_s"])
++                dt = float(r["dt_s"])
++            except (KeyError, TypeError, ValueError) as e:
++                raise ClipClockError(f"[clip-clock] ⛔ {path}:{i + 1}: needs sid / grid_start_s / "
++                                     f"dt_s ({type(e).__name__}: {e})") from e
++            if not (lo <= dt <= hi):
++                raise ClipClockError(f"[clip-clock] ⛔ {path}:{i + 1}: dt_s {dt} outside "
++                                     f"{POSE_DT_BAND_S} -- not a row step of this corpus")
++            if not (abs(g0) <= 1.0):
++                raise ClipClockError(f"[clip-clock] ⛔ {path}:{i + 1}: |grid_start_s| {g0} > 1 s "
++                                     f"-- a unit error, not a clock offset")
++            if sid in table and table[sid] != (g0, dt):
++                raise ClipClockError(f"[clip-clock] ⛔ {path}: sid {sid} appears twice with "
++                                     f"different clocks")
++            table[sid] = (g0, dt)
++    if n == 0:
++        raise ClipClockError(f"[clip-clock] ⛔ {path!r} has ZERO rows")
++    return ClockSidecar(table=table, meta=meta, path=str(path), n_rows=n)
+diff --git a/stack/scripts/build_clip_clock_sidecar.py b/stack/scripts/build_clip_clock_sidecar.py
+new file mode 100644
+index 0000000..f50dcd9
+--- /dev/null
++++ b/stack/scripts/build_clip_clock_sidecar.py
+@@ -0,0 +1,178 @@
++"""Build the CLIP CLOCK sidecar: each cache clip's true row clock on the v7/v8 label timeline.
++
++    python stack/scripts/build_clip_clock_sidecar.py --cache <v2 cache dir> [--cache <dir> ...] \
++        [--manifest <_v2manifest.pt> ...] --out <clip_clock.jsonl>
++
++`--manifest` reads a copied `_v2manifest.pt` directly (poses + clip ids are all it needs), so a
++sidecar can be built where the frames are not.
++
++WHAT IT MEASURES (A16 2026-09-26; `tanitad/data/clip_clock.py` states why it matters). The cache
++stores each row's (x, y) as `np.interp(t_query, t_log, x_log)` (`physicalai.signals_at`). This
++inverts that map: every row's (x, y) is projected onto the clip's OWN 100 Hz egomotion polyline and
++the log's clock is read at the projection -- no cadence, stride or n_stack is assumed. A straight
++line through (raw row index, recovered time) then gives
++
++    dt_s          the true row step                         (MEASURED median 0.1006666 s)
++    grid_start_s  the first camera row after the log origin  (MEASURED median +0.113 s)
++
++and the label timeline IS the log's clock from its first sample (`egomotion_source.load`,
++`ts - ts[0]`), so a row's label time is `grid_start_s + (row + n_stack - 1) * dt_s`.
++
++CONTROLS, and the row is REFUSED (counted, never guessed) when any fails:
++  K1  the line fit's max residual must be < 5 ms (the grid IS a linspace: MEASURED 0.0008 ms median)
++  K3  the recovered times must reproduce the row's logged speed to < 1e-3 m/s
++  and before any clip, a SYNTHETIC linspace at a KNOWN dt 0.1 / start 0.037 s must be recovered
++  to < 1e-6 relative / < 0.01 ms (the inversion itself works) -- or the build aborts.
++
++Rows are keyed on `sid = stable_episode_id(clip_id)` and carry NO clip id (the clip-id rule).
++"""
++from __future__ import annotations
++
++import argparse
++import hashlib
++import io
++import json
++import os
++import sys
++import zipfile
++from pathlib import Path
++
++import numpy as np
++
++sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
++from tanitad.data import clip_clock as cc  # noqa: E402
++from tanitad.data import egomotion_source as ES  # noqa: E402
++from tanitad.data.v2_dataset import load_or_build_manifest, stable_episode_id  # noqa: E402
++
++V_MIN = 2.0
++K1_MAX_MS = 5.0
++K3_MAX_MS = 1e-3
++
++
++def _log(clip_id: str):
++    idx = ES._index()
++    if clip_id not in idx:
++        return None
++    path, member = idx[clip_id]
++    import pandas as pd
++    if member:
++        with zipfile.ZipFile(path) as z:
++            df = pd.read_parquet(io.BytesIO(z.read(member)))
++    else:
++        df = pd.read_parquet(path)
++    t = df["timestamp"].to_numpy(np.float64)
++    o = np.argsort(t)
++    return (t[o] / 1e6, df["x"].to_numpy(np.float64)[o], df["y"].to_numpy(np.float64)[o],
++            np.hypot(df["vx"].to_numpy(np.float64)[o], df["vy"].to_numpy(np.float64)[o]))
++
++
++def _invert(xy: np.ndarray, t, x, y):
++    ax, ay, dx, dy = x[:-1], y[:-1], np.diff(x), np.diff(y)
++    L2 = dx * dx + dy * dy
++    out = np.full(len(xy), np.nan)
++    k_prev = 0
++    for i, (px, py) in enumerate(xy):
++        lo, hi = max(k_prev - 50, 0), min(k_prev + 3000, len(ax))
++        u = np.where(L2[lo:hi] > 0, ((px - ax[lo:hi]) * dx[lo:hi] + (py - ay[lo:hi]) * dy[lo:hi])
++                     / np.where(L2[lo:hi] > 0, L2[lo:hi], 1), 0.0).clip(0.0, 1.0)
++        d = np.hypot(ax[lo:hi] + u * dx[lo:hi] - px, ay[lo:hi] + u * dy[lo:hi] - py)
++        k = int(np.argmin(d))
++        kk = lo + k
++        out[i] = t[kk] + u[k] * (t[kk + 1] - t[kk])
++        k_prev = kk
++    return out
++
++
++def fit_clock(poses: np.ndarray, n_stack: int, log) -> dict:
++    """provider poses [T, 4] + the 100 Hz log -> {grid_start_s, dt_s, ...} or {"refused": why}."""
++    t, x, y, v = log
++    mv = poses[:, 3] > V_MIN
++    if int(mv.sum()) < 20:
++        return {"refused": "fewer than 20 moving rows"}
++    tr = _invert(poses[:, :2], t, x, y)
++    j = np.arange(len(poses)) + (n_stack - 1)
++    A = np.stack([np.ones(int(mv.sum())), j[mv]], 1)
++    (a, b), *_ = np.linalg.lstsq(A, tr[mv], rcond=None)
++    res = tr[mv] - (a + b * j[mv])
++    k1 = float(np.max(np.abs(res))) * 1e3
++    k3 = float(np.max(np.abs(np.interp(a + b * j, t, v)[mv] - poses[mv, 3])))
++    out = {"grid_start_s": float(a - t[0]), "dt_s": float(b), "fit_resid_max_ms": round(k1, 6),
++           "k3_speed_maxabs_ms": k3, "n_moving_rows": int(mv.sum())}
++    if k1 >= K1_MAX_MS:
++        out["refused"] = f"K1 fit residual {k1:.3f} ms >= {K1_MAX_MS}"
++    elif k3 >= K3_MAX_MS:
++        out["refused"] = f"K3 speed residual {k3:.2e} m/s >= {K3_MAX_MS}"
++    else:
++        lo, hi = cc.POSE_DT_BAND_S
++        if not (lo <= b <= hi) or abs(a - t[0]) > 1.0:
++            out["refused"] = f"clock outside the physical band (dt {b}, start {a - t[0]})"
++    return out
++
++
++def self_test() -> dict:
++    """K2: a synthetic linspace at a KNOWN clock must come back exactly."""
++    t = np.arange(0.0, 30.0, 0.01)
++    x, y = 12.0 * t, 0.3 * np.sin(0.2 * t)
++    v = np.hypot(np.full_like(t, 12.0), 0.06 * np.cos(0.2 * t))
++    tq = 0.037 + 0.1 * np.arange(190)
++    poses = np.stack([np.interp(tq, t, x), np.interp(tq, t, y), np.zeros_like(tq),
++                      np.interp(tq, t, v)], 1).astype(np.float32).astype(np.float64)
++    f = fit_clock(poses, 1, (t, x, y, v))
++    ok = (abs(f["dt_s"] / 0.1 - 1) < 1e-6 and abs(f["grid_start_s"] - 0.037) * 1e3 < 0.01
++          and "refused" not in f)
++    return {"ok": bool(ok), **f}
++
++
++def main(argv=None) -> int:
++    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
++    ap.add_argument("--cache", action="append", default=[])
++    ap.add_argument("--manifest", action="append", default=[])
++    ap.add_argument("--out", required=True)
++    a = ap.parse_args(argv)
++    k2 = self_test()
++    if not k2["ok"]:
++        raise SystemExit(f"[clip-clock] ⛔ K2 self-test FAILED, nothing written: {k2}")
++    if not (a.cache or a.manifest):
++        raise SystemExit("[clip-clock] ⛔ give --cache and/or --manifest")
++    import torch
++    mans = ([load_or_build_manifest(cd, rebuild=False, verbose=False) for cd in a.cache]
++            + [torch.load(m, map_location="cpu", weights_only=False) for m in a.manifest])
++    rows, refused, no_log = [], {}, 0
++    for man in mans:
++        for i, cid in enumerate(man["clip_id"]):
++            log = _log(cid)
++            sid = stable_episode_id(cid)
++            if log is None:
++                no_log += 1
++                continue
++            f = fit_clock(man["poses"][i].double().numpy(), int(man["n_stack"][i]), log)
++            if "refused" in f:
++                refused[str(sid)] = f["refused"]
++                continue
++            rows.append({"sid": sid, **f})
++    if not rows:
++        raise SystemExit("[clip-clock] ⛔ ZERO clips clocked -- nothing written")
++    with open(a.out, "w", encoding="utf-8") as fh:
++        for r in rows:
++            fh.write(json.dumps(r) + "\n")
++    dts = sorted(r["dt_s"] for r in rows)
++    g0s = sorted(r["grid_start_s"] for r in rows)
++    here = Path(__file__).resolve()
++    meta = {"schema": cc.SIDECAR_SCHEMA, "built_by": "stack/scripts/build_clip_clock_sidecar.py",
++            "builder_sha256": hashlib.sha256(here.read_bytes()).hexdigest(),
++            "caches": [str(c) for c in a.cache],
++            "manifests_md5": [hashlib.md5(Path(m).read_bytes()).hexdigest() for m in a.manifest],
++            "n_rows": len(rows),
++            "n_refused": len(refused), "refused_by_sid": refused, "n_without_log": no_log,
++            "dt_s_median": dts[len(dts) // 2], "grid_start_s_median": g0s[len(g0s) // 2],
++            "K2_self_test": k2, "controls": {"K1_max_ms": K1_MAX_MS, "K3_max_ms": K3_MAX_MS}}
++    with open(a.out + ".meta.json", "w", encoding="utf-8") as fh:
++        json.dump(meta, fh, indent=1)
++    print(f"[clip-clock] {len(rows)} clips clocked, {len(refused)} refused, {no_log} without a "
++          f"log; dt median {meta['dt_s_median']:.7f} s, grid start median "
++          f"{meta['grid_start_s_median']:+.4f} s -> {a.out}")
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+diff --git a/stack/tests/test_refcv6_f3_cascade_reaches_loss.py b/stack/tests/test_refcv6_f3_cascade_reaches_loss.py
+new file mode 100644
+index 0000000..5fb210b
+--- /dev/null
++++ b/stack/tests/test_refcv6_f3_cascade_reaches_loss.py
+@@ -0,0 +1,111 @@
++"""⛔ refcv6 F3: the per-stage (cascade) loss must REACH the trainer on the REAL `train()`.
++
++MEASURED 2026-09-26 on the live run `refcv6-r101-s0` (A16 audit,
++`TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv6-frozen-trunk-audit/`):
++**0 of 668** training rows and **0 of 66** in-run eval rows carried `cascade`, and the stage-0..2
++cascade heads and AdaLN modulations were bit-identical at steps 1,000 / 5,000 / 30,000.
++`AnchoredDiffusionDecoder` exported `layer_u0_hat` / `layer_logits` (`refc.py`, "refcv6 F3: the
++per-stage predictions the cascade loss needs"), but `RefCModel.forward` copied decoder outputs
++through a WHITELIST that omitted them, so `compute_losses_v3`'s F3 block was skipped every step.
++
++Why nothing caught it: every F3 test (`test_refcv6_diffusion.py`) calls the DECODER directly, and
++`test_built_heads_receive_gradient.py` classifies TOP-LEVEL children, where `core` reads
++GRADIENT_REACHES whatever its sub-modules do. This file asserts on the CONSUMER -- the rows the
++real `train()` writes and the checkpoint it saves -- at LEAF level.
++
++Expected values are LITERALS. The deliberate-regression arm re-introduces the historical defect
++exactly (the two keys absent from the production forward's output) and must go RED.
++"""
++from __future__ import annotations
++
++import json
++import math
++import sys
++from pathlib import Path
++
++import pytest
++import torch
++
++ROOT = Path(__file__).resolve().parents[1]
++sys.path.insert(0, str(ROOT))
++sys.path.insert(0, str(ROOT / "scripts"))
++
++import refc_v3_train as T  # noqa: E402
++from tanitad.refs import anchor_meta as am  # noqa: E402
++from tanitad.refs import refc  # noqa: E402
++from tanitad.refs import refc_sampler as rs  # noqa: E402
++from tanitad.refs.refc_v3 import V3_HORIZONS  # noqa: E402
++
++#: the live run's diffusion flags (its config.json `argv`), F7-F9 excepted: F7/F8 were off there
++#: and F9 asserts the 117-anchor production vocabulary, which a CPU rig does not carry.
++F1_F6 = ["--f1-random-t", "--f2-dd-step", "--f3-per-layer", "--f4-adaln", "--f5-focal",
++         "--f5-emitting-conf", "--f6-w-u0-zero"]
++STEPS = 3
++#: stage 0 of the SMOKE decoder (2 layers; stage 1 is the emitted fan): it is reached by the
++#: per-stage loss and by NOTHING else, and it is ZERO-INIT (`test_refcv6_diffusion.py::
++#: test_F3_cascade_heads_are_ZERO_INIT`) -- so a non-zero value after training is a non-zero
++#: gradient, with no reference run needed.
++STAGE0_CONTROL = "core.decoder.cascade.control_heads.0.weight"
++
++
++def _anchor_file(tmp: Path) -> Path:
++    """A 20-anchor v0-conditioned alat vocabulary on the V3 horizons, INCLUDING straight-ahead."""
++    a_lon = torch.tensor([-2.0, -1.0, 0.0, 1.0, 2.0])
++    a_lat = torch.tensor([-1.5, -0.5, 0.0, 0.5])
++    ctrl = torch.cartesian_prod(a_lon, a_lat)                         # [20, 2]
++    n, s = ctrl.shape[0], len(V3_HORIZONS)
++    u = ctrl[None, :, None, :].expand(1, n, s, 2).contiguous()
++    anchors = rs.roll_controls(u, torch.tensor([10.0]), tuple(V3_HORIZONS),
++                               control_units="alat")[0]
++    art = am.build_anchor_artifact(anchors, ctrl, control_units="alat", horizons=V3_HORIZONS,
++                                   dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0,
++                                   builder=None)
++    p = tmp / "anchors_v0cond_alat_20.pt"
++    torch.save(art, p)
++    return p
++
++
++def _train(tmp: Path) -> tuple[list, dict]:
++    out = tmp / "run"
++    argv = ["--arm", "hier", "--out", str(out), "--smoke", "--synth-episodes", "2",
++            "--steps", str(STEPS), "--batch", "2", "--device", "cpu", "--save-every", "100",
++            "--log-every", "1", "--sampler", "ddim", "--anchors", str(_anchor_file(tmp)),
++            "--anchor-v0-conditioned", "--n-anchors", "20"] + F1_F6
++    T.train(T.build_parser().parse_args(argv))
++    rows = [json.loads(x) for x in (out / "metrics.jsonl").read_text(encoding="utf-8").splitlines()
++            if x.strip()]
++    ck = torch.load(out / "ckpt.pt", map_location="cpu", weights_only=False)["model"]
++    return [r for r in rows if "loss" in r], ck
++
++
++def _assert_f3_live(tmp: Path) -> None:
++    rows, ck = _train(tmp)
++    assert len(rows) == STEPS, f"expected {STEPS} logged training rows, got {len(rows)}"
++    missing = [r["step"] for r in rows if "cascade" not in r]
++    assert not missing, (f"F3 is built but training rows {missing} carry no `cascade`: the "
++                         f"per-stage loss was skipped (the refcv6-r101-s0 defect)")
++    for r in rows:
++        assert math.isfinite(r["cascade"]) and r["cascade"] > 0.0, r
++    w0 = float(ck[STAGE0_CONTROL].abs().max())
++    assert w0 > 0.0, (f"{STAGE0_CONTROL} is still exactly 0.0 after {STEPS} steps: stage 0 "
++                      f"received NO gradient (zero-init, so any gradient would have moved it)")
++
++
++def test_F3_cascade_is_LOGGED_and_stage0_RECEIVES_gradient(tmp_path) -> None:
++    _assert_f3_live(tmp_path)
++
++
++def test_DELIBERATE_REGRESSION_the_as_shipped_whitelist_goes_RED(tmp_path, monkeypatch) -> None:
++    """The historical defect, re-introduced exactly: the production forward's output carries
++    neither per-stage key. With the fix the trainer REFUSES (SystemExit); without the refusal the
++    row / gradient assertions fail. Either way the guard above must not pass."""
++    orig = refc.RefCModel.forward
++
++    def as_shipped(self, *a, **k):
++        o = orig(self, *a, **k)
++        o.pop("layer_u0_hat", None)
++        o.pop("layer_logits", None)
++        return o
++    monkeypatch.setattr(refc.RefCModel, "forward", as_shipped)
++    with pytest.raises((SystemExit, AssertionError)):
++        _assert_f3_live(tmp_path)
+diff --git a/stack/tests/test_refcv6_label_clock.py b/stack/tests/test_refcv6_label_clock.py
+new file mode 100644
+index 0000000..269f64d
+--- /dev/null
++++ b/stack/tests/test_refcv6_label_clock.py
+@@ -0,0 +1,168 @@
++"""⛔ The v7/v8 LABEL CLOCK: a window's NOW must be read on the label's RAW timeline.
++
++MEASURED 2026-09-26 on the live refcv6 run (A16 audit,
++`TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv6-frozen-trunk-audit/`):
++`V3Dataset` read labels at `(t + w - 1) * 0.1` on a PROVIDER row. The provider drops the first
++`n_stack - 1` raw frames, a cache row is 0.1006666 s (median of 4,357 clips, recovered from the
++100 Hz egomotion log), and the camera grid starts +0.113 s after the log's origin -- so the "8.0 s"
++row was truly at 8.369 s and 10.6 % of the tactical-supervised windows sat outside the ±2 s band.
++The fix: `t_now = grid_start_s + (t + w - 1 + n_stack - 1) * dt_s` (`tanitad/data/clip_clock.py`).
++
++KNOWN-VALUE CLIPS. Each synthetic clip has an exact clock: a constant-speed track sampled at
++`DT` per row, a 9-channel (n_stack 3) frame stack, and a label anchored at `t0_s` with the
++shipped tactical band (2, 6) s -> admission |t_now - t0| <= 2 s. Every admitted-row set below is a
++LITERAL worked by hand from those numbers (the arithmetic is in each comment), never from the code
++under test. The DELIBERATE-REGRESSION arm flips the dataset's own `legacy_label_clock` switch --
++the real function with a flag, not a restatement -- and must go RED.
++"""
++from __future__ import annotations
++
++import json
++import sys
++from pathlib import Path
++from types import SimpleNamespace
++
++import pytest
++import torch
++
++ROOT = Path(__file__).resolve().parents[1]
++sys.path.insert(0, str(ROOT))
++sys.path.insert(0, str(ROOT / "scripts"))
++
++import refc_v3_train as T  # noqa: E402
++from tanitad.data import clip_clock as cc  # noqa: E402
++from tanitad.data import v7_labels as v7l  # noqa: E402
++from tanitad.data.v2_dataset import stable_episode_id  # noqa: E402
++
++DT = 0.100667          # s per row (the corpus median, MEASURED)
++G0 = 0.113             # s, camera grid start after the log origin (the corpus median, MEASURED)
++ROWS = 130
++W = 8                  # refcv6's window (config.json `ego_history.steps`)
++
++
++def _episode(clip: str, *, dt: float = DT, v: float = 10.0, n_ch: int = 9):
++    r = torch.arange(ROWS, dtype=torch.float64)
++    x = v * dt * r
++    poses = torch.stack([x, torch.zeros_like(x), torch.zeros_like(x),
++                         torch.full_like(x, v)], dim=1).to(torch.float32)
++    return SimpleNamespace(frames=torch.zeros(ROWS, n_ch, 8, 8, dtype=torch.uint8),
++                           actions=torch.zeros(ROWS, 2), poses=poses,
++                           episode_id=stable_episode_id(clip))
++
++
++def _label(clip: str, t0: float = 8.0):
++    return v7l.V7Label(clip_id=clip, tac_lat="LANE_KEEP", tac_lon="CRUISE",
++                       str_action="HOLD_MAIN_ROAD", str_goal="FOLLOW_ROUTE", tac_anchor=None,
++                       bands={"operative_s": [0.0, 2.0], "tactical_s": [2.0, 6.0],
++                              "strategic_s": [8.0, 30.0]},
++                       t0_s=t0, horizon={})
++
++
++def _dataset(ep, lab):
++    ds = T.V3Dataset([ep], window=W, max_horizon=20, channels=int(ep.frames.shape[1]))
++    ds.v7_by_sid = {int(ep.episode_id): lab}
++    ds.v7_dt = 0.1
++    return ds
++
++
++def _admitted(ds) -> list[int]:
++    """NOW rows whose `lat_v7` is a real class -- read through the dataset's own __getitem__."""
++    out = []
++    for i in range(len(ds)):
++        _e, t = ds.index[i]
++        if int(ds[i]["lat_v7"]) != v7l.IGNORE_ID:
++            out.append(t + W - 1)
++    return out
++
++
++def _sidecar(tmp: Path, ep, g0=G0, dt=DT) -> Path:
++    p = tmp / "clock.jsonl"
++    p.write_text(json.dumps({"sid": int(ep.episode_id), "grid_start_s": g0, "dt_s": dt}) + "\n",
++                 encoding="utf-8")
++    return p
++
++
++#: sidecar clock: |0.113 + (r + 2) * 0.100667 - 8| <= 2  <=>  r + 2 in [58.48, 98.21]
++#: <=> r in [57, 96]   (r = 56 -> 5.9517 s out; r = 97 -> 10.0790 s out)
++TRUE_BAND_SIDECAR = list(range(57, 97))
++#: no sidecar: dt from the poses (== DT exactly on this track), grid_start 0.0:
++#: (r + 2) * 0.100667 in [6, 10]  <=>  r + 2 in [59.60, 99.34]  <=>  r in [58, 97]
++TRUE_BAND_POSE_DT = list(range(58, 98))
++
++
++def _assert_true_band(ds, expected) -> None:
++    got = _admitted(ds)
++    assert got == expected, (f"the 8.0 s label admitted NOW rows {got[:3]}..{got[-3:]} "
++                             f"(n={len(got)}), expected {expected[0]}..{expected[-1]} "
++                             f"(n={len(expected)})")
++
++
++def test_the_8s_label_lands_on_the_TRUE_band_with_a_clock_sidecar(tmp_path) -> None:
++    ep = _episode("clip-known-clock")
++    ds = _dataset(ep, _label("clip-known-clock"))
++    rep = ds.enable_clip_clock(str(_sidecar(tmp_path, ep)))
++    assert rep["n_from_sidecar"] == 1 and rep["raw_offsets"] == [2]
++    _assert_true_band(ds, TRUE_BAND_SIDECAR)
++
++
++def test_without_a_sidecar_dt_comes_from_the_POSES_and_the_fallback_is_COUNTED() -> None:
++    ep = _episode("clip-pose-clock")
++    ds = _dataset(ep, _label("clip-pose-clock"))
++    rep = ds.enable_clip_clock(None)
++    assert rep["n_pose_dt_grid_start_0"] == 1 and rep["n_from_sidecar"] == 0
++    assert abs(rep["dt_s_median"] - DT) < 1e-6
++    _assert_true_band(ds, TRUE_BAND_POSE_DT)
++
++
++def test_a_STATIONARY_clip_falls_back_to_the_nominal_step_and_says_so() -> None:
++    """v = 0: no displacement, no identity -> 0.1 s, counted. t0 8.05 keeps every boundary off an
++    exact float: (r + 2) * 0.1 in [6.05, 10.05]  <=>  r in [59, 98]."""
++    ep = _episode("clip-stationary", v=0.0)
++    ds = _dataset(ep, _label("clip-stationary", t0=8.05))
++    rep = ds.enable_clip_clock(None)
++    assert rep["n_nominal_dt_grid_start_0"] == 1
++    _assert_true_band(ds, list(range(59, 99)))
++
++
++def test_DELIBERATE_REGRESSION_the_old_formula_goes_RED(tmp_path) -> None:
++    """`legacy_label_clock` restores `(t + w - 1) * 0.1` in the REAL `_now_s`. Row 57 (truly
++    6.052 s, IN band) reads 5.7 s and is dropped; row 99 (truly 10.280 s, OUT) reads 9.9 s and is
++    admitted -- so the true-band assertion must fail."""
++    ep = _episode("clip-regression")
++    ds = _dataset(ep, _label("clip-regression"))
++    ds.enable_clip_clock(str(_sidecar(tmp_path, ep)))
++    ds.legacy_label_clock = True
++    got = _admitted(ds)
++    assert 57 not in got and 99 in got
++    with pytest.raises(AssertionError):
++        _assert_true_band(ds, TRUE_BAND_SIDECAR)
++
++
++def test_pose_dt_is_an_IDENTITY_and_refuses_a_doubled_cadence() -> None:
++    """Analytic target: a constant-speed track sampled at a KNOWN step returns it; the same track
++    at stride 2 (the advisory's class-D row 2: a 0.2 s displacement divided as 0.1 s) leaves the
++    physical band and is refused (None), never returned as a clock."""
++    for dt in (0.1, 0.100667, 0.1005):
++        got = cc.pose_dt(_episode("a", dt=dt).poses)
++        assert got is not None and abs(got - dt) < 1e-6, (dt, got)
++    assert cc.pose_dt(_episode("b").poses[::2]) is None
++
++
++def test_the_sidecar_reader_REFUSES_what_it_cannot_trust(tmp_path) -> None:
++    def w(name, rows):
++        p = tmp_path / name
++        p.write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
++        return str(p)
++    for bad in (w("zero.jsonl", []),
++                w("dt.jsonl", [{"sid": 1, "grid_start_s": 0.1, "dt_s": 0.2}]),
++                w("us.jsonl", [{"sid": 1, "grid_start_s": 113000.0, "dt_s": 0.1}]),
++                w("dup.jsonl", [{"sid": 1, "grid_start_s": 0.1, "dt_s": 0.1},
++                                {"sid": 1, "grid_start_s": 0.2, "dt_s": 0.1}]),
++                w("nosid.jsonl", [{"grid_start_s": 0.1, "dt_s": 0.1}])):
++        with pytest.raises(cc.ClipClockError):
++            cc.read_clip_clock_sidecar(bad)
++    ep = _episode("clip-covered-by-nothing")
++    ds = _dataset(ep, _label("clip-covered-by-nothing"))
++    other = w("other.jsonl", [{"sid": 12345, "grid_start_s": 0.1, "dt_s": 0.1}])
++    with pytest.raises(SystemExit):
++        ds.enable_clip_clock(other)

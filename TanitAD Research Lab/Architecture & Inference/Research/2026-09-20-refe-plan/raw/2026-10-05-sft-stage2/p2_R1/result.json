@@ -1,0 +1,109 @@
+{
+ "name": "p2_R1",
+ "ckpt": "E:/Projects/TanitAD/data/refe_runs_eval/p2/model_final.pt",
+ "rule": "navsim_v1",
+ "tokens": "E:\\Projects\\TanitAD\\data\\refe_navtest\\a5_confirm_tokens.json",
+ "n_tokens": 923,
+ "exploratory": false,
+ "deployed_seam": "E:\\Projects\\TanitAD\\data\\refe_navtest\\seams\\refe_navtest_final_routefix.npz",
+ "deployed_csv": "E:\\Projects\\TanitAD\\data\\refe_navtest\\score\\refe_navtest_final_routefix\\refe_navtest_final_routefix.csv",
+ "estimator": "paired log-cluster bootstrap over the confirmation logs, 10,000 resamples, 95 %, seed 20260927",
+ "tier": "NAVSIM v1.1 PDMS = ego pseudo-simulation of an open-loop plan against logged agents",
+ "seam": {
+  "rc": 0,
+  "seconds": 1249
+ },
+ "scored_as": "a --tokens subset",
+ "harness_status": {
+  "label": "refe_stage2_p2_R1",
+  "status": "PASS",
+  "log_successful": 923,
+  "log_failed": 0,
+  "csv_valid_rows": 923,
+  "C1_max_abs_delta": 0.0,
+  "summary_x100_4dp": {
+   "NC": 98.6999,
+   "DAC": 97.5081,
+   "EP": 82.9933,
+   "TTC": 95.6663,
+   "C": 99.8917,
+   "DDC": 97.0748,
+   "PDMS": 89.5733
+  },
+  "wall_s": 98.8,
+  "failures": []
+ },
+ "gates": {
+  "rows": {
+   "ok": true,
+   "scored": 923,
+   "asked": 923,
+   "seam_misses": 0
+  },
+  "consistency": {
+   "ok": true,
+   "same_pose_tokens": 0,
+   "same_pose_different_score": 0
+  },
+  "frame_control_reported": {
+   "n": 923,
+   "max_m": 7.32410687763558e-15,
+   "median_m": 9.012017851447574e-16,
+   "bar_m": 0.001,
+   "what": "log future on NAVSIM's 0.5 s grid vs W3 human_future_poses"
+  }
+ },
+ "primary": {
+  "mean": 3.9678643567317042,
+  "ci95": [
+   2.2221909711558463,
+   5.669906912142747
+  ],
+  "pdms_deployed": 85.60547217918212,
+  "pdms_arm": 89.57333653591384,
+  "better": 400,
+  "worse": 260,
+  "tied": 263,
+  "zero_deployed": 56,
+  "zero_arm": 34,
+  "n_logs": 43
+ },
+ "families_adverse_arm_vs_deployed": {
+  "adverse": [],
+  "components_compared": 21,
+  "tactical_no_interval": {
+   "lateral_decision": {
+    "W": {
+     "accuracy": 0.9447,
+     "kappa": 0.8482
+    },
+    "P": {
+     "accuracy": 0.9523,
+     "kappa": 0.8678
+    }
+   },
+   "longitudinal_decision": {
+    "W": {
+     "accuracy": 0.6977,
+     "kappa": 0.5129
+    },
+    "P": {
+     "accuracy": 0.7237,
+     "kappa": 0.5556
+    }
+   },
+   "maneuver_5way_collapsed": {
+    "W": {
+     "accuracy": 0.7746,
+     "kappa": 0.6876
+    },
+    "P": {
+     "accuracy": 0.7855,
+     "kappa": 0.7032
+    }
+   }
+  },
+  "strategic": "UNAVAILABLE in NAVSIM (no strategic decision scored; the arm has no strategic layer)"
+ },
+ "verdict": "ADOPT"
+}
