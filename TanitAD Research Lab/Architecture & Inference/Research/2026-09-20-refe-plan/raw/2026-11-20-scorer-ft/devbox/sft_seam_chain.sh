@@ -8,6 +8,7 @@
 # Resumable: marker per stage in $W/markers_<arm>/. Harness = the P5-C read's export F:/TanitAD_p5cread_tip (751f3ae7): the same harness as
 # C1's own read (SCORER-FT adds a loss term and no parameter: MEASURED from the source diff, RankLoss is a plain class and train.py adds no
 # model attribute; so the harness model loads the checkpoint as it loads C1's, and a key mismatch would fail the seam loudly).
+# v2 2026-11-21: + CTRL-DET (the full-seam `rep`) for SFTT / SFTTs after the proptable.
 # usage: sft_seam_chain.sh <ARM: SFTC|SFTT|SFTCs|SFTTs> <HF prefix, e.g. scorerft/c> <seam name, e.g. scorerft_c>. Launch: run_sft_seam.cmd.
 set -u
 A="${1:?arm}"; PFX="${2:?hf prefix}"; NAME="${3:?seam name}"; a=$(echo "$A" | tr 'A-Z' 'a-z')
@@ -74,5 +75,15 @@ if [ ! -f "$M/proptable.DONE" ]; then
   [ "$rc" = 0 ] && [ "$n" -ge 12146 ] || fail proptable "$rc"
   printf '%s rc=0 rows=%s\n' "$(ts)" "$n" > "$M/proptable.DONE"
 fi
-say "ZZSFTSEAM_DONE $A seam $DATA/seams/stage2_$NAME.npz table $W/propscore/full_${A}_s*of2.jsonl model (re-creatable copy) $ARMD"
+# v2 (MM 2026-11-21): CTRL-DET (RUNBOOK_SCORERFT_READ section 4) for the T arms: p7_read_chain.py's own `rep` step re-runs T's FULL seam (12,146 tokens,
+# no dump; the same batch layout as seam1) and raises unless tokens are equal and every pose is bit-identical. The read takes it as --det-seam-t.
+DET=""
+case "$A" in SFTT|SFTTs)
+  run det env -u CUDA_VISIBLE_DEVICES "$PY_T" "$EV/p7_read_chain.py" --ckpt "$ARMD/model_final.pt" --name "$NAME" --expect-ckpt-sha256 "$SHA"       --base p6 --also p2 --ego-yaw-table "$YAW" --work "$W/s2_$a" --only rep
+  release_lock
+  DET="$DATA/seams/stage2_${NAME}_rep.npz"; [ -s "$DET" ] || fail det_missing 5
+  grep -q "poses_bit_identical" "$L/det.log" 2>/dev/null || say "  det: rep.log carries no poses_bit_identical line (the step's own rc 0 is the check; the read re-checks)"
+  DET=" det $DET" ;;
+esac
+say "ZZSFTSEAM_DONE $A seam $DATA/seams/stage2_$NAME.npz table $W/propscore/full_${A}_s*of2.jsonl$DET model (re-creatable copy) $ARMD"
 printf '%s\n' "$(ts)" > "$M/chain.DONE"

@@ -48,7 +48,7 @@ FP_PINS = {"refe_p2": "627341286aea3506", "refe_p6": "80fa4d7ec757ad46", "refe_f
            "refe_field_p7_s1": "b502f0275a4862d8", "refe_p2rep": "44ca107f53aceee8", "refe_sft4r": "8972e3c348206b94", "refe_scorer1": "88d02fb7b34d4fd8", "refe_scorer1p6": "e74d64617f514d35",
            "refe_s1z_p6": "5c3bff457aa3bf1e", "refe_s1zsm_p6": "86380fbb786daa75", "refe_rep_p6": "dd348f44c9638f1a", "refe_rep_s1z_p6": "2356afd4efeeb52a", "refe_rep_s1zsm_p6": "27fe236a2fd68ca4",
            "refe_dose_s1z_p6": "9085f9e5cf59c016", "refe_div_p6": "e51f9374a8f29816", "refe_rls1b": "5d6bfbc10152ae96", "refe_rls1c": "26214cf954099d51", "refe_rls1d": "fcc2585f2a5d9b94",
-           "refe_rls1e": "54d96289b19c3cd6", "refe_hnscreen": "d30126bbb5a32957", "refe_aux_s1c": "dcdf2dbd2a674f1c", "refe_vdac_p6": "d4e05641baf8a48e"}
+           "refe_rls1e": "54d96289b19c3cd6", "refe_hnscreen": "d30126bbb5a32957", "refe_aux_s1c": "dcdf2dbd2a674f1c", "refe_vdac_p6": "d4e05641baf8a48e", "refe_p5c_c1r": "4a76a09574fbc144"}          # + refe_p5c_c1r (C1's seed-1 replicate, PI go 2026-11-20): pinned by value too
 
 
 def ok(cond, msg=""):
@@ -224,7 +224,7 @@ def chk_fresh_out():
 def chk_live_wiring():
     src = (HERE / "gate_checks.py").read_text(encoding="utf-8")
     ok('if profile.get("scorerft_rules"):' in src and "rank_live_rows(cap, profile, arm)" in src and "p5c_live_rows(cap, build_cap, profile)" in src, "check_live routes scorerft_rules")
-    ok('profile["traj_label_required"] if "traj_label_required" in profile else profile.get("p5c_arm") == "C1"' in src, "(h) keys on the profile")
+    ok('profile["traj_label_required"] if "traj_label_required" in profile else profile.get("p5c_arm") in ("C1", "C1r")' in src, "(h) keys on the profile")
     ok('profile.get("scorerft_rules")))' in src, "G-CLOCK requires the bank content pin")
     lg = (HERE / "launch_gate.py").read_text(encoding="utf-8")
     ok('if prof.get("scorerft_rules"):\n        out += scorerft_refusals(prof, argv)' in lg, "profile_refusals routes scorerft_rules")
@@ -585,7 +585,7 @@ MUTATIONS = [
     ("launch_gate.py", "    a[a.index(\"--seed\") + 1] = str(SCORERFT_ARM_SEED[arm])\n", "", "argv_delta"),                                                          # the replicates no longer differ by the seed
     ("launch_gate.py", "        rk = [\"--rank-w\", \"0.0\"]\n", "        rk = []\n", "argv_delta"),                                                                   # C no longer NAMES --rank-w 0.0
     ("gate_checks.py", "    if profile.get(\"scorerft_rules\"):                                   # SCORER-FT arms", "    if False:                                   # SCORER-FT arms", "live_wiring"),   # the scorerft arms are not routed to the live rows
-    ("gate_checks.py", "    needs_table = profile[\"traj_label_required\"] if \"traj_label_required\" in profile else profile.get(\"p5c_arm\") == \"C1\"", "    needs_table = profile.get(\"p5c_arm\") == \"C1\"", "h_generalised"),
+    ("gate_checks.py", "    needs_table = profile[\"traj_label_required\"] if \"traj_label_required\" in profile else profile.get(\"p5c_arm\") in (\"C1\", \"C1r\")", "    needs_table = profile.get(\"p5c_arm\") in (\"C1\", \"C1r\")", "h_generalised"),
     ("gate_checks.py", "        ok=bool(calls) and len(mult) == len(calls) and all(math.isclose(m_, w, rel_tol=1e-5) for m_ in mult))", "        ok=True)", "dvb_rows"),      # the hook row no longer judges the multiplier
     ("gate_checks.py", "        elif not math.isclose(v, ref[\"L\"], rel_tol=RANK_REL_TOL, abs_tol=1e-12):", "        elif False:", "audit"),                                       # the L4 value comparison is gone
     ("gate_checks.py", "        if x is not None and x[\"abs_sum\"] != 0.0:\n            out.append(f\"L3 rank-only backward reaches the trajectory side", "        if False:\n            out.append(f\"L3 rank-only backward reaches the trajectory side", "reach_and_regressions"),

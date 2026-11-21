@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""P5-C launch-gate PROFILES (PREREG_P5C 10.1; PREREG_P5C_A1 Point 5): `refe_p5c` (C1), `refe_p5c_c0` (C0), `refe_p5c_c0r` (C0r, the conditional seed replicate).
+"""P5-C launch-gate PROFILES (PREREG_P5C 10.1; PREREG_P5C_A1 Point 5): `refe_p5c` (C1), `refe_p5c_c0` (C0), `refe_p5c_c0r` (C0r, the conditional seed replicate), `refe_p5c_c1r` (C1r, C1's seed-1 replicate, PI go 2026-11-20).
 
   python test_p5c_profile.py            everything, incl. the source-mutation harness
   python test_p5c_profile.py --fast     no mutation harness
@@ -29,7 +29,7 @@ import launch_gate as L  # noqa: E402
 
 N = 0
 HEX_BASE, HEX_TABLE = "ab" * 32, "cd" * 32
-NAMES = {"C1": "refe_p5c", "C0": "refe_p5c_c0", "C0r": "refe_p5c_c0r"}
+NAMES = {"C1": "refe_p5c", "C0": "refe_p5c_c0", "C0r": "refe_p5c_c0r", "C1r": "refe_p5c_c1r"}
 
 
 def ok(cond, msg=""):
@@ -42,7 +42,7 @@ def filled(arm: str, base: str = "p7") -> dict:
     """the profile with every MM-filled pin given a (fixture) value: what the gate sees once the real objects exist."""
     p = L.p5c_profile(arm, base)
     p["init_from_sha256"] = HEX_BASE
-    if arm == "C1":
+    if arm in L.P5C_TABLE_ARMS:
         p["traj_label_sha256"], p["traj_label_rank_policy"] = HEX_TABLE, "rank0"
     return p
 
@@ -51,7 +51,7 @@ def unfilled(arm: str) -> dict:
     """the profile with every MM-filled pin set to None, whatever the source holds now (this test must stay green after the MM fills them)."""
     p = L.p5c_profile(arm)
     p["init_from_sha256"] = None
-    if arm == "C1":
+    if arm in L.P5C_TABLE_ARMS:
         p["traj_label_sha256"] = p["traj_label_rank_policy"] = None
     return p
 
@@ -94,6 +94,11 @@ def chk_registry():
     ok("--traj-label-table" in L.PROFILES["refe_p5c"]["required_flags"] and "--traj-label-table" not in L.PROFILES["refe_p5c_c0"]["required_flags"], "C1 REQUIRES the table flag")
     ok(("--traj-label-table" in L.PROFILES["refe_p5c"]["data_flags"]) and "--traj-label-table" not in L.PROFILES["refe_p5c_c0"]["data_flags"])
     ok("--traj-label-table" in L.PROFILES["refe_p5c_c0"]["forbidden_flags"] and "--traj-label-table" in L.PROFILES["refe_p5c_c0r"]["forbidden_flags"] and "--traj-label-table" not in L.PROFILES["refe_p5c"]["forbidden_flags"])
+    # C1r (C1's seed-1 replicate) is a TABLE arm exactly like C1: required + data flag, never forbidden, the pins registered; and only its seed / name / arm differ from C1's profile
+    c1, c1r = L.PROFILES["refe_p5c"], L.PROFILES["refe_p5c_c1r"]
+    ok("--traj-label-table" in c1r["required_flags"] and "--traj-label-table" in c1r["data_flags"] and "--traj-label-table" not in c1r["forbidden_flags"], "C1r requires the table flag")
+    ok(L.P5C_TABLE_ARMS == {"C1", "C1r"} and L.P5C_ARM_SEED["C1r"] == 1 and L.P5C_ARM_SEED["C1"] == 0 and c1r["traj_label_sha256"] == c1["traj_label_sha256"] and c1r["traj_label_rank_policy"] == c1["traj_label_rank_policy"])
+    ok({k for k in set(c1) | set(c1r) if c1.get(k) != c1r.get(k)} == {"name", "p5c_arm", "required_flags"} and {k for k in c1["required_flags"] if c1["required_flags"][k] != c1r["required_flags"][k]} == {"--seed"}, "C1r differs from C1 by name, arm and --seed alone")
     # every suite script the profiles name exists beside this file
     for nm in NAMES.values():
         for e in L.PROFILES[nm]["suite"]:
@@ -106,7 +111,7 @@ def chk_registry():
 
 
 def chk_argv_delta():
-    a1, a0, a0r = (L.p5c_argv(x) for x in ("C1", "C0", "C0r"))
+    a1, a0, a0r, a1r = (L.p5c_argv(x) for x in ("C1", "C0", "C0r", "C1r"))
     f = lambda a: {k: tuple(v) for k, v in GT.flag_pairs(a)}          # noqa: E731
     d10 = {k for k in set(f(a1)) | set(f(a0)) if f(a1).get(k) != f(a0).get(k)}
     ok(d10 == {"--traj-label-table", "--out"}, d10)
@@ -114,7 +119,10 @@ def chk_argv_delta():
     d0r = {k for k in set(f(a0r)) | set(f(a0)) if f(a0r).get(k) != f(a0).get(k)}
     ok(d0r == {"--seed", "--out"} and f(a0r)["--seed"] == ("1",) and f(a0)["--seed"] == ("0",), d0r)
     ok(f(a1)["--seed"] == ("0",) == f(a0)["--seed"], "C1 and C0 share the seed (common random numbers)")
-    ok(len({f(a)["--out"] for a in (a1, a0, a0r)}) == 3, "three distinct out dirs")
+    d1r = {k for k in set(f(a1r)) | set(f(a1)) if f(a1r).get(k) != f(a1).get(k)}
+    ok(d1r == {"--seed", "--out"} and f(a1r)["--seed"] == ("1",) and f(a1)["--seed"] == ("0",), d1r)          # argv(C1r) - argv(C1) = {--seed, --out}
+    ok(f(a1r)["--traj-label-table"] == f(a1)["--traj-label-table"] and f(a1r)["--out"][0].endswith("/p5c_c1r"), "C1r carries C1's table and its own --out")
+    ok(len({f(a)["--out"] for a in (a1, a0, a0r, a1r)}) == 4, "four distinct out dirs")
     # the recipe tokens (card 3): lr 5e-5, 2,000 steps, epochs 0, batch 4 x accum 64, wd 0.01, bf16 + tf32, no head, label chunks 2, score-w 0.1, scorer sees trunk, nav command, yaw wrap off
     r = f(a1)
     ok(r["--lr"] == ("5e-5",) and r["--steps"] == ("2000",) and r["--epochs"] == ("0",) and r["--batch"] == ("4",) and r["--accum"] == ("64",) and r["--weight-decay"] == ("0.01",))
@@ -139,7 +147,7 @@ def chk_pins_refuse():
     for arm, nm in NAMES.items():
         rs = refusals(unfilled(arm), L.p5c_argv(arm))
         ok("init_from_sha256" in rs and "not REGISTERED" in rs, (nm, rs))
-        if arm == "C1":
+        if arm in L.P5C_TABLE_ARMS:
             ok("traj_label_sha256" in rs and "traj_label_rank_policy" in rs, rs)
         else:
             ok("traj_label_sha256" not in rs, rs)
@@ -167,7 +175,7 @@ def chk_pins_refuse():
 
 def chk_levers():
     """every card lever, moved one at a time, is refused by NAME (and the control arm reads clean)."""
-    for arm in ("C1", "C0", "C0r"):
+    for arm in ("C1", "C0", "C0r", "C1r"):
         pr, a = filled(arm), L.p5c_argv(arm)
         ok(refusals(pr, a) == "")
         for what, mut, needle in (
@@ -199,12 +207,26 @@ def chk_levers():
     ok("FORBIDS" in refusals(filled("C0"), L.p5c_argv("C1")) and "FORBIDS" in refusals(filled("C0r"), L.p5c_argv("C1")))
     ok(refusals(filled("C0"), L.p5c_argv("C0r")) != "" and refusals(filled("C0r"), L.p5c_argv("C0")) != "", "C0 and C0r differ by the seed: each refuses the other's argv")
     ok(refusals(filled("C1"), L.p5c_argv("C0")) != "", "C1 refuses C0's argv")
+    # C1r (the seed-1 replicate of C1): its real argv PASSES; each deliberate regression is REFUSED, by name
+    r1, a1r = filled("C1r"), L.p5c_argv("C1r")
+    ok(refusals(r1, a1r) == "" and L.p5c_refusals(r1, a1r) == [], refusals(r1, a1r))
+    rs = refusals(r1, swap(a1r, "--seed", "0"))
+    ok("--seed" in rs, ("C1r with --seed 0", rs))
+    rs = refusals(r1, drop(a1r, "--traj-label-table"))
+    ok("--traj-label-table" in rs, ("C1r with no table", rs))
+    rs = refusals(r1, a1r + ["--ckpt-every-steps", "100"])
+    ok("--ckpt-every-steps" in rs, ("C1r with one extra lever", rs))
+    rs = refusals(r1, L.p5c_argv("C1"))
+    ok("--seed" in rs, ("C1's argv under the C1r profile", rs))
+    rs = refusals(filled("C1"), a1r)
+    ok("--seed" in rs, ("C1r's argv under C1's profile", rs))
+    ok("FORBIDS" in refusals(filled("C0r"), a1r) and "FORBIDS" in refusals(filled("C0"), a1r), "C1r's table argv under a control profile")
 
 
 def chk_fresh_out():
     td = Path(tempfile.mkdtemp(prefix="p5c_out_"))
     try:
-        for arm in ("C1", "C0"):
+        for arm in ("C1", "C0", "C1r"):
             pr = filled(arm)
             a = swap(L.p5c_argv(arm), "--out", str(td / arm))
             ok(refusals(pr, a) == "", "no out dir yet")
@@ -261,10 +283,12 @@ MUTATIONS = [
     ("launch_gate.py", "    if not _p5c_hex64(prof.get(\"init_from_sha256\")):\n        out.append(f\"{name}: the base checkpoint's sha256 is not REGISTERED (init_from_sha256 = {prof.get('init_from_sha256')!r}; P5C_BASE_SHA256): the MM fills it from the sealed P7 final model_final.pt; an unpinned base is never launched from\")", "    if False:\n        out.append(f\"{name}: the base checkpoint's sha256 is not REGISTERED (init_from_sha256 = {prof.get('init_from_sha256')!r}; P5C_BASE_SHA256): the MM fills it from the sealed P7 final model_final.pt; an unpinned base is never launched from\")", "pins_refuse"),                              # an unfilled base pin no longer refuses
     ("launch_gate.py", "        if not _p5c_hex64(prof.get(\"traj_label_sha256\")):\n", "        if False:\n", "pins_refuse"),                      # an unfilled table pin no longer refuses
     ("launch_gate.py", "        if prof.get(\"traj_label_rank_policy\") not in (\"all\", \"rank0\"):\n", "        if False:\n", "pins_refuse"),               # an unfilled rank-policy pin no longer refuses
-    ("launch_gate.py", "    if arm != \"C1\":\n        forb += (\"--traj-label-table\",)\n", "", "levers"),                                           # the controls accept the table flag
-    ("launch_gate.py", " + AUX_HEAD_FLAGS\n    if arm != \"C1\":", "\n    if arm != \"C1\":", "registry"),                                                     # the head is no longer forbidden
-    ("launch_gate.py", "    if arm == \"C1\":\n        req[\"--traj-label-table\"] = None\n", "", "registry"),                                     # C1 may drop the table and read as C0
-    ("launch_gate.py", "P5C_ARM_SEED = {\"C1\": 0, \"C0\": 0, \"C0r\": 1}", "P5C_ARM_SEED = {\"C1\": 0, \"C0\": 0, \"C0r\": 0}", "argv_delta"),             # C0r no longer differs by the seed
+    ("launch_gate.py", "    if arm not in P5C_TABLE_ARMS:\n        forb += (\"--traj-label-table\",)\n", "", "levers"),                                           # the controls accept the table flag
+    ("launch_gate.py", " + AUX_HEAD_FLAGS\n    if arm not in P5C_TABLE_ARMS:", "\n    if arm not in P5C_TABLE_ARMS:", "registry"),                                                     # the head is no longer forbidden
+    ("launch_gate.py", "    if arm in P5C_TABLE_ARMS:\n        req[\"--traj-label-table\"] = None\n", "", "registry"),                                     # C1 may drop the table and read as C0
+    ("launch_gate.py", "P5C_ARM_SEED = {\"C1\": 0, \"C0\": 0, \"C0r\": 1, \"C1r\": 1}", "P5C_ARM_SEED = {\"C1\": 0, \"C0\": 0, \"C0r\": 0, \"C1r\": 1}", "argv_delta"),
+    ("launch_gate.py", "P5C_ARM_SEED = {\"C1\": 0, \"C0\": 0, \"C0r\": 1, \"C1r\": 1}", "P5C_ARM_SEED = {\"C1\": 0, \"C0\": 0, \"C0r\": 1, \"C1r\": 0}", "argv_delta"),          # C1r no longer differs by the seed (the C1r seed check)
+    ("launch_gate.py", "P5C_TABLE_ARMS = frozenset({\"C1\", \"C1r\"})", "P5C_TABLE_ARMS = frozenset({\"C1\"})", "registry"),          # C1r is no longer a table arm             # C0r no longer differs by the seed
     ("launch_gate.py", "\"--lr\": \"5e-5\", \"--init-from\": None", "\"--lr\": \"2e-4\", \"--init-from\": None", "registry"),                           # the profile registers P7's lr, not the card's
     ("launch_gate.py", "    if ow and (Path(str(ow)) / \"ckpt_last.pt\").exists():\n        out.append(f\"{name}: --out {ow} already holds ckpt_last.pt: a P5-C arm starts FRESH (fresh AdamW; a seeded checkpoint would resume an old optimiser; card 10.1 `resume`)\")", "    if False:\n        out.append(f\"{name}: --out {ow} already holds ckpt_last.pt: a P5-C arm starts FRESH (fresh AdamW; a seeded checkpoint would resume an old optimiser; card 10.1 `resume`)\")", "fresh_out"),                                   # a seeded checkpoint is accepted
     ("launch_gate.py", "    for f in sorted(set(got) - set(want) - {\"--resume\"}):\n        out.append(f\"{name}: the argv carries {f} {' '.join(got[f][0])}, which arm {arm}'s argv does not (the arm differs from its pair by the card's lever alone)\")", "    for f in []:\n        out.append(f\"{name}: the argv carries {f} {' '.join(got[f][0])}, which arm {arm}'s argv does not (the arm differs from its pair by the card's lever alone)\")", "levers"),                                  # an extra, unlisted lever is accepted

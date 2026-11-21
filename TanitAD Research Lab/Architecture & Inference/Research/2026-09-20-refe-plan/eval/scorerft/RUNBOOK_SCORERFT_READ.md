@@ -47,8 +47,10 @@ reported IN FULL from `strategic_family_T_C.json` (PI unpaused 2026-11-16); the 
 * **CTRL-ARGV:** copy each arm's launched argv to `$O/argv_<arm>.json` (a JSON list, `{"argv": [...]}`, or whitespace text). The rule is the card's section 3 exactly: argv(T) - argv(C) = {`--rank-w`, `--rank-heads ep,gate`,
   `--rank-ep-gap 0.02`, `--rank-gate-topk 8`, `--out`}; C names `--rank-w 0.0`; Xs - X = {`--seed 1`, `--out`}; every arm has one `--init-from` and `--steps 1000`. One extra flag anywhere FAILS it.
 * **CTRL-W0:** `--w0-digest-c` (the file with C's step-0 digest; the first 64-hex string in it is read, card question Q-S2) and `--w0-ref` (C1's sha256). Not equal = FAIL.
-* **CTRL-DET:** re-run T's seam on >= 200 tokens into `$O/det_t.npz` (the `seam1` command of `p7_read_chain.py` with a 200-token `--tokens` list, name `scorerft_t_det`; if the chain does not accept a subset,
-  re-run the full seam as P5-C did and the read compares on the token intersection). Poses must be bit-identical. ⚠️ UNVERIFIED: no ready 200-token re-run tool exists in the repo; the control function itself is tested (`dry_ctrl_det_p7_full.json`).
+* **CTRL-DET (wired 2026-11-21):** T's seam chain (`raw/2026-11-20-scorer-ft/devbox/sft_seam_chain.sh` v2, arms SFTT / SFTTs) runs `p7_read_chain.py --only rep` after the proptable:
+  the FULL seam again (12,146 tokens, no dump, the same batch layout as `seam1`), and that step raises unless the tokens are equal and every pose is bit-identical. Pass its output
+  `$DATA/seams/stage2_<T name>_rep.npz` as `--det-seam-t` (compared with `--seam-t`). A 200-token subset is NOT used: it changes the batch composition, so a bit-identity failure there
+  could come from batching rather than from non-determinism. Cost: one more seam on the dev box (~5 h; C's `s2` took 21,175 s). The control function is tested (`dry_ctrl_det_p7_full.json`).
 A real read REFUSES (exit 2, names each missing flag) without any of these; it never skips a control.
 
 ## 5. The read (Stage 1: C and T only)

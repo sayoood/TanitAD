@@ -2602,7 +2602,7 @@ def p5c_live_rows(cap, build_cap, profile) -> tuple:
     if not banks:
         return reasons + ["(h) the smoke run built no train bank to probe"], det
     ds = banks[0]
-    needs_table = profile["traj_label_required"] if "traj_label_required" in profile else profile.get("p5c_arm") == "C1"       # SCORER-FT: all four arms carry C1's table, so (h) keys on the PROFILE, not the arm's name
+    needs_table = profile["traj_label_required"] if "traj_label_required" in profile else profile.get("p5c_arm") in ("C1", "C1r")       # SCORER-FT: all four arms carry C1's table, so (h) keys on the PROFILE, not the arm's name; C1r (C1's seed-1 replicate) carries it too (= launch_gate.P5C_TABLE_ARMS)
     if not needs_table:
         if ds.traj_label is not None:
             reasons.append(f"(h) arm {profile.get('p5c_arm') or profile.get('p7field_arm')} must not carry a label table, but the live train bank holds one ({ds.traj_label_sha256})")

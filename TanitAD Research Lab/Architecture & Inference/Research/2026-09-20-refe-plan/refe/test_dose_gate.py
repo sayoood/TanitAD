@@ -172,7 +172,7 @@ TIP_FP = {"refe_p2": "627341286aea3506", "refe_p6": "80fa4d7ec757ad46", "refe_fi
           "refe_aux_s1c": "dcdf2dbd2a674f1c", "refe_s1zsm_p6": "86380fbb786daa75", "refe_rep_s1zsm_p6": "27fe236a2fd68ca4"}          # MEASURED at the tip e5437f6c (the 23 profiles that exist before the dose)
 moved = [n for n, want in TIP_FP.items() if not fp(n).startswith(want)]
 assert not moved, f"existing profile fingerprints moved: {moved}"
-assert set(L.PROFILES) - set(TIP_FP) == {"refe_dose_s1z_p6", "refe_div_p6", "refe_vdac_p6", "refe_p5c", "refe_p5c_c0", "refe_p5c_c0r", "refe_field_p7", "refe_field_p7_ctrl", "refe_field_p7_ctrl_s1", "refe_field_p7_s1", "refe_scorerft_t", "refe_scorerft_c", "refe_scorerft_t_s1", "refe_scorerft_c_s1"} and len(L.PROFILES) == 37          # + refe_div_p6 (PREREG_DIV_P6); + the P7 field arms F/C (PI 2026-11-17)  # + the 4 SCORER-FT profiles (PREREG_SCORER_FT, PI 2026-11-20)
+assert set(L.PROFILES) - set(TIP_FP) == {"refe_dose_s1z_p6", "refe_div_p6", "refe_vdac_p6", "refe_p5c", "refe_p5c_c0", "refe_p5c_c0r", "refe_field_p7", "refe_field_p7_ctrl", "refe_field_p7_ctrl_s1", "refe_field_p7_s1", "refe_scorerft_t", "refe_scorerft_c", "refe_scorerft_t_s1", "refe_scorerft_c_s1", "refe_p5c_c1r"} and len(L.PROFILES) == 38          # + refe_div_p6 (PREREG_DIV_P6); + the P7 field arms F/C (PI 2026-11-17)  # + the 4 SCORER-FT profiles (PREREG_SCORER_FT, PI 2026-11-20)  # + refe_p5c_c1r (C1's seed-1 replicate, PI go 2026-11-20)
 r = repr(sorted(PD.items()))
 assert fp("refe_dose_s1z_p6") == fp("refe_dose_s1z_p6") and "function" not in r and "0x" not in r, "the new digest must be stable"
 assert fp("refe_dose_s1z_p6") != fp("refe_s1z_p6")

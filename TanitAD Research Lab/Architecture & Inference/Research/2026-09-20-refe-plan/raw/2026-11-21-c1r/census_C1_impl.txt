@@ -1,0 +1,36 @@
+gate_checks.py:2605:    needs_table = profile["traj_label_required"] if "traj_label_required" in profile else profile.get("p5c_arm") in ("C1", "C1r")       # SCORER-FT: all four arms carry C1's table, so (h) keys on the PROFILE, not the arm's name; C1r (C1's seed-1 replicate) carries it too (= launch_gate.P5C_TABLE_ARMS)
+gate_checks.py:2608:            reasons.append(f"(h) arm {profile.get('p5c_arm') or profile.get('p7field_arm')} must not carry a label table, but the live train bank holds one ({ds.traj_label_sha256})")
+launch_gate.py:63:RLS1_ARM_SEEDS = {"C0": 0, "C1": 1, "R0": 0, "R1": 1, "R2": 0}                       # arm -> its registered seed (naming an arm asserts the seed)
+launch_gate.py:64:RLS1_ARM_CLASS = {"C0": "C", "C1": "C", "R0": "R", "R1": "R", "R2": "R2"}            # C: BCE-only control; R: BCE + EPO, core reward; R2: R + K + L (D3, PI 2026-10-12)
+launch_gate.py:86:RLS1B_ARM_SEEDS = {"C1": 1, "R0b": 0, "R1b": 1}
+launch_gate.py:87:RLS1B_ARM_CLASS = {"C1": "C", "R0b": "R", "R1b": "R"}
+launch_gate.py:432:# THREE profiles, one per ARM, cloned from refe_p6 / refe_p7 (neither is edited): `refe_p5c` = C1 (the label table), `refe_p5c_c0` = C0 (the matched raw-label fine-tune: the table FORBIDDEN),
+launch_gate.py:433:# `refe_p5c_c0r` = C0r (C0 with --seed 1: the card's CONDITIONAL replicate, PI approval needed before it is minted), and `refe_p5c_c1r` = C1r (C1 with --seed 1: the C1 seed replicate, PI go 2026-11-20 "Follow your recommendations":
+launch_gate.py:434:# P5-C's C1-vs-C0 delta is one training seed and the episode bootstrap cannot see training variance, H-ESTIM-SEED-1; C1r carries C1's table, so P5C_TABLE_ARMS = {C1, C1r} is the one set every table special case tests).  The arm is the PROFILE, so an arm cannot be launched as another by omitting a flag
+launch_gate.py:449:P5C_ARM_SEED = {"C1": 0, "C0": 0, "C0r": 1, "C1r": 1}
+launch_gate.py:450:P5C_PROFILE_NAME = {"C1": "refe_p5c", "C0": "refe_p5c_c0", "C0r": "refe_p5c_c0r", "C1r": "refe_p5c_c1r"}
+launch_gate.py:451:P5C_TABLE_ARMS = frozenset({"C1", "C1r"})          # the arms that carry the label table (C1 and its seed-1 replicate C1r): every C1 special case below tests membership here, never `== "C1"`
+launch_gate.py:471:    if arm in P5C_TABLE_ARMS:
+launch_gate.py:484:    if arm in P5C_TABLE_ARMS:
+launch_gate.py:487:    if arm not in P5C_TABLE_ARMS:
+launch_gate.py:491:    data = ("--targets", "--images", "--calib", "--metric-cache", "--init-from") + (("--ego-yaw-table",) if base == "p7" else ()) + (("--traj-label-table",) if arm in P5C_TABLE_ARMS else ())
+launch_gate.py:499:    prof = {**p6, "name": P5C_PROFILE_NAME[arm] + ("" if base == "p7" else "_b6"), "p5c_rules": True, "p5c_arm": arm, "p5c_base": base, "data_flags": data, "suite": suite,
+launch_gate.py:503:    if arm in P5C_TABLE_ARMS:
+launch_gate.py:509:for _arm in ("C1", "C0", "C0r", "C1r"):
+launch_gate.py:510:    PROFILES[P5C_PROFILE_NAME[_arm]] = p5c_profile(_arm)
+launch_gate.py:519:    out, name, arm, base = [], prof["name"], prof.get("p5c_arm"), prof.get("p5c_base", "p7")
+launch_gate.py:524:    if arm in P5C_TABLE_ARMS:
+launch_gate.py:559:    if arm in P5C_TABLE_ARMS:
+launch_gate.py:570:# TWO profiles, cloned from `refe_p5c_c0` (the P5-C machinery; no profile above is edited): `refe_field_p7` = F (`--w-field` EXACTLY FIELD_P7_W) and `refe_field_p7_ctrl` = C (`--w-field` EXACTLY 0.0), the P7 graft
+launch_gate.py:611:    """The arm's profile (see the block comment): `refe_p5c_c0` with the table-free P5-C recipe, plus the field term."""
+launch_gate.py:612:    c0 = PROFILES["refe_p5c_c0"]
+launch_gate.py:617:    prof = {k: v for k, v in c0.items() if k not in ("p5c_rules", "p5c_arm", "p5c_base")}
+launch_gate.py:700:# FOUR profiles, built by `scorerft_profile(arm)` from `refe_p5c` (C1) WITHOUT editing any existing profile dict: `refe_scorerft_t` (T: the within-token ranking term L_rank on heads ep+gate), `refe_scorerft_c` (C: its own control,
+launch_gate.py:705:# `traj_label_required: True` makes G-LIVE (h) key on the PROFILE (all four arms carry C1's table) and not on the arm name "C1".  `live_terms` carries `rank_L` on T / Ts ONLY (a control that declared its term FAILED
+launch_gate.py:724:    """The arm's launch argv TEMPLATE: `p5c_argv("C1")` (C1's recipe, ITS label table) with `--init-from` = C1's final checkpoint, `--steps` SCORERFT_STEPS, the arm's `--seed`, its own `--out`, and the rank flags after
+launch_gate.py:730:    a = p5c_argv("C1", paths=P)
+launch_gate.py:747:    """The arm's profile (see the block comment): `refe_p5c` (C1) with the steps, seed and rank levers of the arm, and the SCORER-FT rules."""
+launch_gate.py:750:    c1 = PROFILES["refe_p5c"]
+launch_gate.py:757:    prof = {k: v for k, v in c1.items() if k not in ("p5c_rules", "p5c_arm", "p5c_base")}
+p5c_pod.sh:30:ROOT=$DATA/refe_p5c
+p5c_pod.sh:109:arm_profile() { case "$1" in C1) echo refe_p5c ;; C0) echo refe_p5c_c0 ;; C0r) echo refe_p5c_c0r ;; *) refuse "unknown arm $1" ;; esac; }
