@@ -1,0 +1,214 @@
+ADD99_FITS = "/workspace/v8proof/cropread/run1/fits"
+FIT_CARD, FIT_ARM, FIT_HEAD, FIT_RECORD = "PREREG_V8F_PROOF_ADD99", "D", "H5", "FIT_RECORD.json"
+OLD_SEEDS = (0, 1)                          # the two fits of card ADD99 on record (cropread/run1/fits/D_H5_s0, D_H5_s1)
+N_TRAIN = 500                               # card ADD104 section 4 x0: the 500 train clips (fit 450 and sel 50 of card ADD99, section 2 of the card)
+CARD_HPARAMS = {"lr": 1e-3, "weight_decay": 0.05, "batch": 256, "epochs": 40, "warmup_epochs": 1, "beta_m": 1.0, "token_drop": 0.1, "d_model": 256, "n_heads": 4}      # cropread/fit/crop_fit.py:32
+
+
+def fit_dir_name(s):
+    """cropread/fit/crop_fit.py:48 fit_name(arm, head, seed): D_H5_s<seed>"""
+    return "%s_%s_s%d" % (FIT_ARM, FIT_HEAD, s)
+
+
+def read_ids(p):
+    with open(p, encoding="utf-8") as fh:
+        return [ln.strip() for ln in fh if ln.strip()]
+
+
+def fit_facts(fits_dir, s):
+    """facts of one fit from its FIT_RECORD.json (keys of cropread/fit/crop_fit.py:300-304) and the sha256 of its head.pt on disk. Unreadable -> {"error": ...}."""
+    d = os.path.join(fits_dir, fit_dir_name(s))
+    rp, hp = os.path.join(d, FIT_RECORD), os.path.join(d, "head.pt")
+    try:
+        with open(rp, encoding="utf-8") as fh:
+            r = json.load(fh)
+        cr = r.get("clips_read") or {}
+        return {"dir": d, "seed": r.get("seed"), "card": r.get("card"), "arm": r.get("arm"), "head": r.get("head"), "permute_labels": r.get("permute_labels"), "argv": r.get("argv"),
+                "hparams": r.get("hparams"), "hparams_equal_card": r.get("hparams_equal_card"), "train_list_sha256": r.get("train_list_sha256"), "eval_list_sha256": r.get("eval_list_sha256"),
+                "fit_clips": cr.get("fit"), "sel_clips": cr.get("sel"), "head_pt_sha256_record": r.get("head_pt_sha256"), "head_disk_sha256": sha_file(hp) if os.path.isfile(hp) else None,
+                "tool_sha256": r.get("tool_sha256"), "kept_epoch": r.get("kept_epoch"), "kept_sel_loss": r.get("kept_sel_loss"), "record_sha256": sha_file(rp)}
+    except (OSError, ValueError, AttributeError) as ex:
+        return {"dir": d, "error": "%s: %s" % (type(ex).__name__, ex)}
+
+
+def collect(fit_root, add99_fits, eval_list, dump_root):
+    """-> (fits, meta): the facts of the three new fits and of the two fits on record, the evaluation list, and per fit seed the dump file, its folder name and its meta file (crop_dump.py:103-106)."""
+    have = os.path.isfile(eval_list)
+    fits = {"new": {"s%d" % s: fit_facts(os.path.join(fit_root, "fits"), s) for s in SEEDS}, "old": {"s%d" % s: fit_facts(add99_fits, s) for s in OLD_SEEDS},
+            "eval_list": eval_list, "eval_list_sha256": sha_file(eval_list) if have else None, "eval_ids": read_ids(eval_list) if have else []}
+    meta = {}
+    for s in SEEDS:
+        mp = os.path.join(dump_root, DUMP_DIR, "reader_s%d_meta.json" % s)
+        dm = None
+        if os.path.isfile(mp):
+            try:
+                with open(mp, encoding="utf-8") as fh:
+                    dm = json.load(fh)
+            except ValueError:
+                dm = None
+        meta[s] = {"dump_file": os.path.join(dump_root, DUMP_DIR, "reader_s%d_score.npz" % s), "dump_dir_name": DUMP_DIR, "dump_meta": dm}
+    return fits, meta
+
+
+def _flag(argv, flag):
+    return argv[argv.index(flag) + 1] if (flag in argv and argv.index(flag) + 1 < len(argv)) else None
+
+
+def x0_check(fits):
+    """control x0 of the card (section 4), from the facts of collect(): each new fit record names its seed (2, 3, 4), head H5 on arm D, the settings of card ADD99, the 500 train clips and no evaluation clip; the train
+    list hash equals that of the fits of card ADD99; the head files differ from one another and from those of seeds 0 and 1. Additions that only make the card's words checkable: the record's own head hash equals the
+    file on disk, the clips are those of the two fits on record, the evaluation list hash equals theirs, the arguments of the call name the seed."""
+    bad = []
+    try:
+        new = [(s, fits["new"]["s%d" % s]) for s in SEEDS]
+        old = [(s, fits["old"]["s%d" % s]) for s in OLD_SEEDS]
+        for s, f in new + old:
+            if "error" in f:
+                bad.append("seed %d: fit record unreadable: %s" % (s, f["error"]))
+        if bad:
+            return {"PASS": False, "failures": bad}
+        ref = fits["old"]["s0"]
+        eval_ids = set(fits["eval_ids"])
+        if not eval_ids or not (isinstance(fits.get("eval_list_sha256"), str) and len(fits["eval_list_sha256"]) == 64):
+            bad.append("no evaluation list")
+        heads = {}
+        for s, f in new + old:
+            nm = "seed %d" % s
+            if f["arm"] != FIT_ARM or f["head"] != FIT_HEAD:
+                bad.append("%s: arm %s head %s" % (nm, f["arm"], f["head"]))
+            if f["seed"] != s or isinstance(f["seed"], bool):
+                bad.append("%s: the record names seed %s" % (nm, f["seed"]))
+            if (s in SEEDS) and (f["card"] != FIT_CARD or f["permute_labels"] is not False):
+                bad.append("%s: card %s permute_labels %s" % (nm, f["card"], f["permute_labels"]))
+            if s in SEEDS:
+                av = f.get("argv") or []
+                if not (_flag(av, "--arm") == FIT_ARM and _flag(av, "--head") == FIT_HEAD and _flag(av, "--seed") == str(s) and "--permute-labels" not in av):
+                    bad.append("%s: the arguments of the call do not name arm D, head H5, seed %d" % (nm, s))
+                if f["hparams_equal_card"] is not True or f["hparams"] != CARD_HPARAMS:
+                    bad.append("%s: the settings are not those of card ADD99" % nm)
+            if f["hparams"] != ref["hparams"]:
+                bad.append("%s: the settings differ from those of seed 0" % nm)
+            clips = list(f["fit_clips"] or []) + list(f["sel_clips"] or [])
+            if len(clips) != N_TRAIN or len(set(clips)) != len(clips):
+                bad.append("%s: %d train clips read (%d distinct), expected %d" % (nm, len(clips), len(set(clips)), N_TRAIN))
+            if set(clips) & eval_ids:
+                bad.append("%s: %d evaluation clips among the clips read" % (nm, len(set(clips) & eval_ids)))
+            if f["fit_clips"] != ref["fit_clips"] or f["sel_clips"] != ref["sel_clips"]:
+                bad.append("%s: the clips read are not those of seed 0" % nm)
+            for k in ("train_list_sha256", "eval_list_sha256"):
+                if not (isinstance(f[k], str) and len(f[k]) == 64) or f[k] != ref[k]:
+                    bad.append("%s: %s is not the one of seed 0" % (nm, k))
+            if f["eval_list_sha256"] != fits.get("eval_list_sha256"):
+                bad.append("%s: eval_list_sha256 is not the sha256 of the evaluation list on disk" % nm)
+            rec_h, disk_h = f["head_pt_sha256_record"], f["head_disk_sha256"]
+            if not (isinstance(rec_h, str) and len(rec_h) == 64):
+                bad.append("%s: the record has no head sha256" % nm)
+                continue
+            if (s in SEEDS and disk_h is None) or (disk_h is not None and disk_h != rec_h):
+                bad.append("%s: the head file on disk is %s, the record says %s" % (nm, (disk_h or "missing")[:16], rec_h[:16]))
+            heads.setdefault(rec_h, []).append(s)
+        dup = {h[:16]: v for h, v in heads.items() if len(v) > 1}
+        if dup:
+            bad.append("head files that are the same file: %s" % dup)
+    except (KeyError, TypeError, AttributeError) as ex:
+        bad.append("facts incomplete: %s: %s" % (type(ex).__name__, ex))
+    return {"PASS": not bad, "failures": bad}
+
+
+def meta_check(rec):
+    """control x1, third clause: each dump's meta file (crop_dump.py:103-106) names the sha256 of the head file of its fit (the file on disk), its fit seed, arm D, head H5, and the sha256 of the dump file."""
+    bad = []
+    try:
+        for s in SEEDS:
+            nm = "VGAPF_s%d" % s
+            dm = rec["dumps"][nm].get("dump_meta")
+            f = rec["fits"]["new"]["s%d" % s]
+            if not isinstance(dm, dict):
+                bad.append("%s: no dump meta file" % nm)
+                continue
+            h = dm.get("head_pt_sha256")
+            if not (isinstance(h, str) and len(h) == 64) or h != f.get("head_disk_sha256"):
+                bad.append("%s: the dump meta names head %s, the file of the fit is %s" % (nm, str(h)[:16], str(f.get("head_disk_sha256"))[:16]))
+            if dm.get("seed") != s or dm.get("arm") != FIT_ARM or dm.get("head") != FIT_HEAD or dm.get("permute_labels") is not False or dm.get("card") != FIT_CARD:
+                bad.append("%s: the dump meta is for seed %s arm %s head %s" % (nm, dm.get("seed"), dm.get("arm"), dm.get("head")))
+            if dm.get("dump_sha256") != rec["files"][nm]["dump_sha256"]:
+                bad.append("%s: the dump meta names another dump file than the one read" % nm)
+    except (KeyError, TypeError, AttributeError) as ex:
+        bad.append("record incomplete: %s: %s" % (type(ex).__name__, ex))
+    return {"PASS": not bad, "failures": bad}
+
+
+def synthetic_fit_world(root, J, dumps):
+    """a tiny fit root (new fits, dumps with meta files, evaluation list) and a folder of the two fits on record -> (fits, meta, fit_root, old_root). Synthetic."""
+    fit_root, old_root = os.path.join(root, "fitroot"), os.path.join(root, "old_fits")
+    os.makedirs(os.path.join(fit_root, "lists"))
+    ev = os.path.join(fit_root, "lists", "eval141.txt")
+    with open(ev, "w", encoding="utf-8", newline="\n") as fh:
+        fh.write("".join("ev%03d\n" % i for i in range(7)))
+    train = ["tr%03d" % i for i in range(N_TRAIN)]
+    dump_root = os.path.join(fit_root, "dump")
+    synthetic_meta(dumps, dump_root)
+    for s in OLD_SEEDS + SEEDS:
+        d = os.path.join(old_root if s in OLD_SEEDS else os.path.join(fit_root, "fits"), fit_dir_name(s))
+        os.makedirs(d)
+        hp = os.path.join(d, "head.pt")
+        with open(hp, "wb") as fh:
+            fh.write(("head of fit seed %d " % s).encode("ascii") * 20)
+        r = {"card": FIT_CARD, "tier": "T0", "arm": FIT_ARM, "head": FIT_HEAD, "seed": s, "permute_labels": False,
+             "argv": ["crop_fit.py", "--arm", FIT_ARM, "--head", FIT_HEAD, "--seed", str(s), "--root", "r", "--join-train", "j", "--device", "cuda"], "tool_sha256": "a" * 64,
+             "train_list_sha256": "b" * 64, "eval_list_sha256": sha_file(ev), "clips_read": {"fit": train[:450], "sel": train[450:]}, "hparams": dict(CARD_HPARAMS), "hparams_equal_card": True,
+             "kept_epoch": 30 + s, "kept_sel_loss": 1.0 + 0.1 * s, "head_pt_sha256": sha_file(hp)}
+        with open(os.path.join(d, FIT_RECORD), "w", encoding="utf-8", newline="\n") as fh:
+            json.dump(r, fh)
+        if s in SEEDS:
+            dm = {"card": FIT_CARD, "arm": FIT_ARM, "head": FIT_HEAD, "seed": s, "permute_labels": False, "head_pt_sha256": sha_file(hp),
+                  "dump_sha256": sha_file(os.path.join(dump_root, DUMP_DIR, "reader_s%d_score.npz" % s))}
+            with open(os.path.join(dump_root, DUMP_DIR, "reader_s%d_meta.json" % s), "w", encoding="utf-8", newline="\n") as fh:
+                json.dump(dm, fh)
+    fits, meta = collect(fit_root, old_root, ev, dump_root)
+    return fits, meta, fit_root, old_root
+
+
+def x_faults(base, J, dumps):
+    """x0 and the meta clause of x1 on planted faults: the clean world passes, each fault turns its check red -> dict name -> bool (True = as it must)"""
+    import copy
+    fits, meta, fit_root, old_root = synthetic_fit_world(os.path.join(base, "xworld"), J, dumps)
+    rec = build(J, dumps, os.path.join(base, "xbuild"), meta=meta, expect_clips=len(J["clip"]), fits=fits)
+    out = {"clean_x0_and_x1_pass": bool(rec["x0"]["PASS"] and rec["x1"]["PASS"] and rec["meta"]["PASS"])}
+
+    def red0(mut):
+        f = copy.deepcopy(fits)
+        mut(f)
+        return not x0_check(f)["PASS"]
+    n = lambda f, s: f["new"]["s%d" % s]                                                      # noqa: E731
+    out["seed_in_record"] = red0(lambda f: n(f, 3).update(seed=2))
+    out["arm_b"] = red0(lambda f: n(f, 3).update(arm="B"))
+    out["head_h1"] = red0(lambda f: n(f, 3).update(head="H1"))
+    out["permuted"] = red0(lambda f: n(f, 3).update(permute_labels=True))
+    out["argv_seed"] = red0(lambda f: n(f, 3).update(argv=["crop_fit.py", "--arm", "D", "--head", "H5", "--seed", "4"]))
+    out["card_name"] = red0(lambda f: n(f, 2).update(card="PREREG_V8F_PROOF_ADD100"))
+    out["hparams_not_card"] = red0(lambda f: n(f, 2).update(hparams_equal_card=False))
+    out["hparams_other_lr"] = red0(lambda f: n(f, 4).update(hparams=dict(CARD_HPARAMS, lr=0.01)))
+    out["train_list_hash"] = red0(lambda f: n(f, 4).update(train_list_sha256="c" * 64))
+    out["eval_list_hash_in_record"] = red0(lambda f: n(f, 4).update(eval_list_sha256="d" * 64))
+    out["eval_clip_in_train"] = red0(lambda f: (n(f, 2)["fit_clips"].__setitem__(0, "ev001")))
+    out["499_clips"] = red0(lambda f: n(f, 2).update(sel_clips=n(f, 2)["sel_clips"][:-1]))
+    out["other_clip_order"] = red0(lambda f: n(f, 3).update(fit_clips=list(reversed(n(f, 3)["fit_clips"]))))
+    out["head_is_the_one_of_seed_0"] = red0(lambda f: n(f, 2).update(head_pt_sha256_record=f["old"]["s0"]["head_pt_sha256_record"], head_disk_sha256=f["old"]["s0"]["head_pt_sha256_record"]))
+    out["two_new_heads_equal"] = red0(lambda f: n(f, 4).update(head_pt_sha256_record=n(f, 3)["head_pt_sha256_record"], head_disk_sha256=n(f, 3)["head_disk_sha256"]))
+    out["head_disk_not_record"] = red0(lambda f: n(f, 3).update(head_disk_sha256="e" * 64))
+    out["head_file_missing"] = red0(lambda f: n(f, 3).update(head_disk_sha256=None))
+    out["old_record_unreadable"] = red0(lambda f: f["old"].update(s1={"dir": "x", "error": "OSError: no file"}))
+    out["no_evaluation_list"] = red0(lambda f: f.update(eval_ids=[], eval_list_sha256=None))
+
+    def redm(mut):
+        r = copy.deepcopy(rec)
+        mut(r)
+        return (not meta_check(r)["PASS"])
+    out["meta_head_sha"] = redm(lambda r: r["dumps"]["VGAPF_s3"]["dump_meta"].update(head_pt_sha256="0" * 64))
+    out["meta_seed"] = redm(lambda r: r["dumps"]["VGAPF_s2"]["dump_meta"].update(seed=3))
+    out["meta_missing"] = redm(lambda r: r["dumps"]["VGAPF_s4"].update(dump_meta=None))
+    out["meta_dump_sha"] = redm(lambda r: r["dumps"]["VGAPF_s2"]["dump_meta"].update(dump_sha256="1" * 64))
+    return out
+
+
