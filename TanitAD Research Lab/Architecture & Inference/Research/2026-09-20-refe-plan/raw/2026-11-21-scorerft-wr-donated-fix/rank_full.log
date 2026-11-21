@@ -1,0 +1,48 @@
+ok   analytic
+ok   reference_audit
+ok   analytic_identities
+ok   accum_identity
+ok   boundary_semantics
+ok   gradient_rows
+ok   model_reach
+ok   refusals
+ok   identity_args
+ok   weight_rule_decide
+ok   trainer_reach
+ok   trainer_mutation_arms
+ok   trainer_row_fields
+ok   off_path_identity
+ok   weight_rule_smoke
+RED  train: delete the line that ADDS the term                              -> trainer_reach
+RED  train: the weight never reaches the loss (constant 1)                  -> trainer_reach
+RED  train: the term is never built (rank = None)                           -> trainer_row_fields
+RED  train: --rank-heads not passed to the built term                       -> trainer_row_fields
+RED  train: --rank-gate-topk not passed to the built term                   -> trainer_row_fields
+RED  train: --rank-ep-gap not passed to the built term                      -> trainer_row_fields
+RED  train: the term scores the DETACHED logits                             -> trainer_reach
+RED  train: the refusals are not called                                     -> refusals
+RED  train: rank keys dropped from the resume identity                      -> identity_args
+RED  train: the OFF path builds the term anyway                             -> off_path_identity
+RED  rank_loss: EP pairs lose the safe condition                            -> reference_audit
+RED  rank_loss: gate pairs lose the top-k restriction                       -> reference_audit
+RED  rank_loss: gate weight = 1 instead of the PDMS gap                     -> analytic
+RED  rank_loss: the logits are detached                                     -> gradient_rows
+RED  rank_loss: per-set own-count denominator instead of the constant batch -> accum_identity
+RED  rank_loss: the labelled-set mask is dropped                            -> analytic
+RED  rank_loss: EP gap exclusive                                            -> boundary_semantics
+RED  rank_loss: safe uses >= 0.5                                            -> boundary_semantics
+RED  rank_loss: the gate reads the EP logit                                 -> gradient_rows
+RED  rank_loss: C joins the EP term's logit                                 -> gradient_rows
+RED  weight rule: the K2 threshold is 0                                     -> weight_rule_decide
+RED  weight rule: the smallest-w scan starts from the largest               -> weight_rule_decide
+RED  weight rule: the L_rank gradient is taken on detached logits           -> weight_rule_smoke
+RED  weight rule: labels never collected from the arm's labeller (all-ones) -> weight_rule_smoke
+RED  weight rule: donated buffers left on (retain_graph on a compiled graph) -> weight_rule_smoke
+RED  rank_loss: the loss is a sum, not a weighted mean                      -> analytic
+RED  REFE_RANK_MUTATE=drop                                                  -> trainer_mutation_arms
+RED  REFE_RANK_MUTATE=unsafe_ep                                             -> reference_audit
+RED  REFE_RANK_MUTATE=shuffle                                               -> reference_audit
+RED  REFE_RANK_MUTATE=head_swap                                             -> reference_audit
+RED  REFE_RANK_MUTATE=traj_leak                                             -> trainer_mutation_arms
+RED  REFE_RANK_MUTATE=<typo>                                                -> trainer_mutation_arms
+ZZRANK_PASS 145  (15 checks green + 32 RED mutations: 26 source lines, 6 REFE_RANK_MUTATE arms)

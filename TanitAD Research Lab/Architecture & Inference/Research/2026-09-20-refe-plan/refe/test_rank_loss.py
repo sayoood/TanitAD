@@ -521,6 +521,7 @@ def chk_weight_rule_smoke():
         OL.synthetic_labels = real
     res = json.loads((td / "wr.json").read_text(encoding="utf-8"))
     ok(rc in (0, 5) and res["NOT_A_DECISION"] is True and res["label_backend"] == "synthetic" and res["heads"] == ["ep", "gate"], (rc, buf.getvalue()[-400:]))
+    ok(res["donated_buffer"] is False, "the measurement must run with donated buffers OFF: three retain_graph grads on one --compile graph (pod 2026-11-21 16:43Z)")
     ok(res["pairs_by_head"]["ep"] > 0 and res["pairs_by_head"]["gate"] > 0 and res["dead_heads"] == [], res["pairs_by_head"])
     ok(res["labelled_sets"] == 8 and res["scorer_tensors"] > 0 and res["trunk_tensors"] > 0, res)
     p = res["pooled"]
@@ -563,6 +564,7 @@ LINE_MUTATIONS = [
     ("weight rule: the smallest-w scan starts from the largest", "weight_rule_rank.py", "w = next(w for w in ws if r_by_w[w] >= R_TARGET)", "w = next(w for w in reversed(ws) if r_by_w[w] >= R_TARGET)", "weight_rule_decide"),
     ("weight rule: the L_rank gradient is taken on detached logits", "weight_rule_rank.py", "        traj, score = traj.float(), score.float()", "        traj, score = traj.float(), score.float().detach()", "weight_rule_smoke"),
     ("weight rule: labels never collected from the arm's labeller (all-ones)", "weight_rule_rank.py", "lab_t, msk = torch.from_numpy(labels_np).to(dev), torch.from_numpy(mask_np).to(dev)", "lab_t, msk = torch.ones(1, cfg.n_proposals, 6).to(dev), torch.ones(1).to(dev)", "weight_rule_smoke"),
+    ("weight rule: donated buffers left on (retain_graph on a compiled graph)", "weight_rule_rank.py", "    FC.donated_buffer = False", "    pass", "weight_rule_smoke"),
     ("rank_loss: the loss is a sum, not a weighted mean", "rank_loss.py", "num / torch.where(den > 0, den, torch.ones_like(den))", "num", "analytic"),
 ]
 # (name, env, the check that must go RED).  REFE_RANK_MUTATE arms: the env is set for the child; the named check must exit != 0.

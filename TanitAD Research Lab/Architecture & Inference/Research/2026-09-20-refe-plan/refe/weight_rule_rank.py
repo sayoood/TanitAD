@@ -69,6 +69,11 @@ def build_instrumented(refe: Path, argv: list):
     """Run the real train.run(a) until the optimiser is built; return (T, a, model, ds, lab, dev, rank)."""
     sys.path.insert(0, str(refe))
     import torch
+    import torch._functorch.config as FC
+    FC.donated_buffer = False          # MM 2026-11-21: measure() takes THREE torch.autograd.grad(..., retain_graph=True) on ONE graph. Under the arm's --compile the backbone's
+    # compiled backward donates saved buffers and then refuses retain_graph (pod 2026-11-21 16:43:52Z, torch 2.7.1: "This backward function was compiled with non-empty donated
+    # buffers which requires create_graph=False and retain_graph=False"; the check is gated on this flag, runtime_wrappers.py:2200-2203, and so is the donation itself,
+    # jit_compile_runtime_wrappers.py:878). Donation only reuses saved-activation memory: no gradient value changes. Set BEFORE train.run builds and compiles the model.
     import train as T
     import online_labeller as OLm
     ap = T.build_parser()
@@ -225,7 +230,8 @@ def main(argv=None) -> int:
         lab.close()
     rule = decide({w: res["r_by_w"][repr(w)] for w in CANDIDATES}, {w: res["rho_by_w"][repr(w)] for w in CANDIDATES})
     synthetic = ns.label_backend == "synthetic"
-    res.update({"rule": rule, "argv_sha256": hashlib.sha256("\x00".join(targv).encode()).hexdigest(), "init_from": ns.init_from, "heads": list(rank.heads), "ep_gap": rank.ep_gap,
+    import torch._functorch.config as FC
+    res.update({"donated_buffer": bool(FC.donated_buffer), "rule": rule, "argv_sha256": hashlib.sha256("\x00".join(targv).encode()).hexdigest(), "init_from": ns.init_from, "heads": list(rank.heads), "ep_gap": rank.ep_gap,
                 "gate_topk": rank.gate_topk, "label_backend": ns.label_backend, "device": str(dev), "NOT_A_DECISION": synthetic, "ignored_resume": bool(ns.resume)})
     if a.out:
         Path(a.out).write_text(json.dumps(res, indent=1), encoding="utf-8")

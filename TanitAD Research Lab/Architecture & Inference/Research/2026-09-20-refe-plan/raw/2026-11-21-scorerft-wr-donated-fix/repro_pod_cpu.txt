@@ -1,0 +1,4 @@
+pod (torch 2.7.1+cu128, CPU only, nice 19, OMP 2), repro_donated.py sha256 8dc98d3a8a488699...
+ZZREPRO_OK red inductor torch 2.7.1+cu128 max |grad_compiled - grad_eager| 1.862645149230957e-09   rc=2 (no donation on this graph: the red arm did NOT reproduce)
+ZZREPRO_OK green inductor torch 2.7.1+cu128 max |grad_compiled - grad_eager| 1.862645149230957e-09   rc=0
+dev box (torch 2.11.0+cu128): aot_eager red rc=2 / green rc=0 (diff 0.0); inductor: RuntimeError Compiler: cl is not found (both modes)
