@@ -1,0 +1,34 @@
+.............F..............F........                                    [100%]
+================================== FAILURES ===================================
+______________ test_k_the_rh_bank_under_the_rhk_name_is_refused _______________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rollhist/build/b9rhk/tmp/bt_mut_nopath/test_k_the_rh_bank_under_the_r0')
+
+    def test_k_the_rh_bank_under_the_rhk_name_is_refused(tmp_path):            # mutation arm: the RH bank (causal_g1x, under bank/) behind the RHK name
+        r = Rig(tmp_path / "kr")                                               # a real RH world: bank under .../bank/s0, generator causal_g1x
+        t = r.setf(list(r.rh_toks), "--out", os.path.join(r.tmp, "runs", "RHK_s0", "train"))
+        pr, _ = mint_k(r, t, token="causal_g1x")                               # RH's own token: not in RHK's token set, and the path is not bank_k
+        assert pr and refused_by(pr, "C-ARGV"), pr
+        pr, _ = mint_k(r, r.setf(t, "--dagger-bank-readout", K), token=K, tag="b")      # declares K over the RH bank: the generator record reads causal_g1x, and the path is bank/
+>       assert pr and refused_by(pr, "C-ARGV", "C-RH-BANKGEN"), pr
+E       AssertionError: ['check G-DAGGER did not pass: {"pass": false, "problems": ["the built levers do not carry dagger_bank_readout \'causa...cord reads readout \'causal_g1x\', the argv declares \'causal_g0x\'"], "readout_token": "causal_g0x", "kappa": "0.2"}']
+E       assert (['check G-DAGGER did not pass: {"pass": false, "problems": ["the built levers do not carry dagger_bank_readout \'causa...cord reads readout \'causal_g1x\', the argv declares \'causal_g0x\'"], "readout_token": "causal_g0x", "kappa": "0.2"}'] and False)
+E        +  where False = refused_by(['check G-DAGGER did not pass: {"pass": false, "problems": ["the built levers do not carry dagger_bank_readout \'causa...cord reads readout \'causal_g1x\', the argv declares \'causal_g0x\'"], "readout_token": "causal_g0x", "kappa": "0.2"}'], 'C-ARGV', 'C-RH-BANKGEN')
+
+test_dscale10k_check_rhk.py:746: AssertionError
+____________________ test_k_the_bank_must_be_under_bank_k _____________________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rollhist/build/b9rhk/tmp/bt_mut_nopath/test_k_the_bank_must_be_under_0')
+
+    def test_k_the_bank_must_be_under_bank_k(tmp_path):
+        r = krig(tmp_path / "kb", bank_sub="bank")                             # a valid K bank, but at .../bank/s0: the arm must name bank_k
+        pr, _ = mint_k(r)
+>       assert pr and refused_by(pr, "C-ARGV") and "bank_k" in "\n".join(pr), pr
+E       AssertionError: []
+E       assert ([])
+
+test_dscale10k_check_rhk.py:773: AssertionError
+=========================== short test summary info ===========================
+FAILED test_dscale10k_check_rhk.py::test_k_the_rh_bank_under_the_rhk_name_is_refused
+FAILED test_dscale10k_check_rhk.py::test_k_the_bank_must_be_under_bank_k - As...
+2 failed, 35 passed, 73 deselected in 96.25s (0:01:36)

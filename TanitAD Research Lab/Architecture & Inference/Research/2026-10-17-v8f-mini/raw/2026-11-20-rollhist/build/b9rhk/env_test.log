@@ -1,0 +1,14 @@
+--- K
+--readout causal_g --acc-gain 0 --path-exec --kappa-max 0.2 | causal_g0x
+chosen files: RHK_READOUT.chosen
+RHK=causal_g0x
+--- C* refused
+ZZ ROLLHIST-K FAIL ZZ RH_READOUT must be causal_g0x (got 'causal_g1x'): this chain generates the readout-K bank
+rc=1
+--- unset refused
+ZZ ROLLHIST-K FAIL ZZ RH_READOUT must be causal_g0x (got ''): this chain generates the readout-K bank
+rc=1
+--- the RH function still works from rh_env.sh alone
+--readout causal_g --acc-gain 1 --path-exec --kappa-max 0.2 | causal_g1x
+chosen files: RHK_READOUT.chosen
+RH_READOUT.chosen

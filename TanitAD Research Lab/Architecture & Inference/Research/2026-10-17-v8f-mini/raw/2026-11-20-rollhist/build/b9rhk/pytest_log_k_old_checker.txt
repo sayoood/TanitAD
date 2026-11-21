@@ -1,0 +1,1130 @@
+FFF.FFFFFFFFFFFFFFFFFFFFFFFFF.FFFFFFF                                    [100%]
+================================== FAILURES ===================================
+_________ test_k_the_arms_exist_and_the_original_kinds_are_unchanged __________
+
+    def test_k_the_arms_exist_and_the_original_kinds_are_unchanged():
+>       assert NEW.RH_ARMS["RHK_s0"] == ("RHK", 0) and NEW.RH_ARMS["RHK_s1"] == ("RHK", 1)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'RHK_s0'
+
+test_dscale10k_check_rhk.py:697: KeyError
+________________ test_k_rhk_mints_pass_and_binds_the_k_bank[0] ________________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rollhist/build/b9rhk/tmp/bt_old/test_k_rhk_mints_pass_and_bind0')
+seed = 0
+
+    @pytest.mark.parametrize("seed", [0, 1])
+    def test_k_rhk_mints_pass_and_binds_the_k_bank(tmp_path, seed):
+        r = krig(tmp_path / f"ks{seed}", seed=seed)
+        toks = k_toks(r)
+        a, b = NEW.parse_argv(toks), NEW.parse_argv(r.rh_toks)
+        assert {k for k in set(a) | set(b) if a.get(k) != b.get(k)} == {"--out"}      # in this rig the bank path and sha are already the K bank's; against the real RH argv the bank flags move too
+        assert a["--dagger-p"] == ["0.1"] and a["--dagger-bank-readout"] == [K]
+>       pr, gd = mint_k(r, toks)
+                 ^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhk.py:711: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhk.py:693: in mint_k
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHK_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b9rhk\\tmp\\bt_old\\test_k_rhk_mints_pa...-scratch\\rollhist\\build\\b9rhk\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g0x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHK_s0'
+
+..\base_dscale10k_check_rhp3.py:1119: KeyError
+________________ test_k_rhk_mints_pass_and_binds_the_k_bank[1] ________________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rollhist/build/b9rhk/tmp/bt_old/test_k_rhk_mints_pass_and_bind1')
+seed = 1
+
+    @pytest.mark.parametrize("seed", [0, 1])
+    def test_k_rhk_mints_pass_and_binds_the_k_bank(tmp_path, seed):
+        r = krig(tmp_path / f"ks{seed}", seed=seed)
+        toks = k_toks(r)
+        a, b = NEW.parse_argv(toks), NEW.parse_argv(r.rh_toks)
+        assert {k for k in set(a) | set(b) if a.get(k) != b.get(k)} == {"--out"}      # in this rig the bank path and sha are already the K bank's; against the real RH argv the bank flags move too
+        assert a["--dagger-p"] == ["0.1"] and a["--dagger-bank-readout"] == [K]
+>       pr, gd = mint_k(r, toks)
+                 ^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhk.py:711: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhk.py:693: in mint_k
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHK_s1', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b9rhk\\tmp\\bt_old\\test_k_rhk_mints_pa...-scratch\\rollhist\\build\\b9rhk\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g0x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHK_s1'
+
+..\base_dscale10k_check_rhp3.py:1119: KeyError
+___________________ test_k_any_dose_but_0_1_is_refused[0.3] ___________________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rollhist/build/b9rhk/tmp/bt_old/test_k_any_dose_but_0_1_is_ref0')
+p = '0.3'
+
+    @pytest.mark.parametrize("p", ["0.3", "0.5", "0.25", "1.0", "0.10", "0", "0.0", "-0.1", "abc"])
+    def test_k_any_dose_but_0_1_is_refused(tmp_path, p):                       # mutation arm: a dose other than the literal 0.1
+        r = krig(tmp_path / "kp")
+>       pr, _ = mint_k(r, k_toks(r, p=p))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhk.py:736: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhk.py:693: in mint_k
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHK_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b9rhk\\tmp\\bt_old\\test_k_any_dose_but...-scratch\\rollhist\\build\\b9rhk\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g0x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHK_s0'
+
+..\base_dscale10k_check_rhp3.py:1119: KeyError
+___________________ test_k_any_dose_but_0_1_is_refused[0.5] ___________________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rollhist/build/b9rhk/tmp/bt_old/test_k_any_dose_but_0_1_is_ref1')
+p = '0.5'
+
+    @pytest.mark.parametrize("p", ["0.3", "0.5", "0.25", "1.0", "0.10", "0", "0.0", "-0.1", "abc"])
+    def test_k_any_dose_but_0_1_is_refused(tmp_path, p):                       # mutation arm: a dose other than the literal 0.1
+        r = krig(tmp_path / "kp")
+>       pr, _ = mint_k(r, k_toks(r, p=p))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhk.py:736: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhk.py:693: in mint_k
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHK_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b9rhk\\tmp\\bt_old\\test_k_any_dose_but...-scratch\\rollhist\\build\\b9rhk\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g0x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHK_s0'
+
+..\base_dscale10k_check_rhp3.py:1119: KeyError
+__________________ test_k_any_dose_but_0_1_is_refused[0.25] ___________________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rollhist/build/b9rhk/tmp/bt_old/test_k_any_dose_but_0_1_is_ref2')
+p = '0.25'
+
+    @pytest.mark.parametrize("p", ["0.3", "0.5", "0.25", "1.0", "0.10", "0", "0.0", "-0.1", "abc"])
+    def test_k_any_dose_but_0_1_is_refused(tmp_path, p):                       # mutation arm: a dose other than the literal 0.1
+        r = krig(tmp_path / "kp")
+>       pr, _ = mint_k(r, k_toks(r, p=p))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhk.py:736: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhk.py:693: in mint_k
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHK_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b9rhk\\tmp\\bt_old\\test_k_any_dose_but...-scratch\\rollhist\\build\\b9rhk\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g0x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHK_s0'
+
+..\base_dscale10k_check_rhp3.py:1119: KeyError
+___________________ test_k_any_dose_but_0_1_is_refused[1.0] ___________________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rollhist/build/b9rhk/tmp/bt_old/test_k_any_dose_but_0_1_is_ref3')
+p = '1.0'
+
+    @pytest.mark.parametrize("p", ["0.3", "0.5", "0.25", "1.0", "0.10", "0", "0.0", "-0.1", "abc"])
+    def test_k_any_dose_but_0_1_is_refused(tmp_path, p):                       # mutation arm: a dose other than the literal 0.1
+        r = krig(tmp_path / "kp")
+>       pr, _ = mint_k(r, k_toks(r, p=p))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhk.py:736: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhk.py:693: in mint_k
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHK_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b9rhk\\tmp\\bt_old\\test_k_any_dose_but...-scratch\\rollhist\\build\\b9rhk\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g0x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHK_s0'
+
+..\base_dscale10k_check_rhp3.py:1119: KeyError
+__________________ test_k_any_dose_but_0_1_is_refused[0.10] ___________________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rollhist/build/b9rhk/tmp/bt_old/test_k_any_dose_but_0_1_is_ref4')
+p = '0.10'
+
+    @pytest.mark.parametrize("p", ["0.3", "0.5", "0.25", "1.0", "0.10", "0", "0.0", "-0.1", "abc"])
+    def test_k_any_dose_but_0_1_is_refused(tmp_path, p):                       # mutation arm: a dose other than the literal 0.1
+        r = krig(tmp_path / "kp")
+>       pr, _ = mint_k(r, k_toks(r, p=p))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhk.py:736: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhk.py:693: in mint_k
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHK_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b9rhk\\tmp\\bt_old\\test_k_any_dose_but...-scratch\\rollhist\\build\\b9rhk\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g0x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHK_s0'
+
+..\base_dscale10k_check_rhp3.py:1119: KeyError
+____________________ test_k_any_dose_but_0_1_is_refused[0] ____________________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rollhist/build/b9rhk/tmp/bt_old/test_k_any_dose_but_0_1_is_ref5')
+p = '0'
+
+    @pytest.mark.parametrize("p", ["0.3", "0.5", "0.25", "1.0", "0.10", "0", "0.0", "-0.1", "abc"])
+    def test_k_any_dose_but_0_1_is_refused(tmp_path, p):                       # mutation arm: a dose other than the literal 0.1
+        r = krig(tmp_path / "kp")
+>       pr, _ = mint_k(r, k_toks(r, p=p))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhk.py:736: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhk.py:693: in mint_k
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHK_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b9rhk\\tmp\\bt_old\\test_k_any_dose_but...-scratch\\rollhist\\build\\b9rhk\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g0x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHK_s0'
+
+..\base_dscale10k_check_rhp3.py:1119: KeyError
+___________________ test_k_any_dose_but_0_1_is_refused[0.0] ___________________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rollhist/build/b9rhk/tmp/bt_old/test_k_any_dose_but_0_1_is_ref6')
+p = '0.0'
+
+    @pytest.mark.parametrize("p", ["0.3", "0.5", "0.25", "1.0", "0.10", "0", "0.0", "-0.1", "abc"])
+    def test_k_any_dose_but_0_1_is_refused(tmp_path, p):                       # mutation arm: a dose other than the literal 0.1
+        r = krig(tmp_path / "kp")
+>       pr, _ = mint_k(r, k_toks(r, p=p))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhk.py:736: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhk.py:693: in mint_k
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHK_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b9rhk\\tmp\\bt_old\\test_k_any_dose_but...-scratch\\rollhist\\build\\b9rhk\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g0x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHK_s0'
+
+..\base_dscale10k_check_rhp3.py:1119: KeyError
+__________________ test_k_any_dose_but_0_1_is_refused[-0.1] ___________________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rollhist/build/b9rhk/tmp/bt_old/test_k_any_dose_but_0_1_is_ref7')
+p = '-0.1'
+
+    @pytest.mark.parametrize("p", ["0.3", "0.5", "0.25", "1.0", "0.10", "0", "0.0", "-0.1", "abc"])
+    def test_k_any_dose_but_0_1_is_refused(tmp_path, p):                       # mutation arm: a dose other than the literal 0.1
+        r = krig(tmp_path / "kp")
+>       pr, _ = mint_k(r, k_toks(r, p=p))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhk.py:736: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhk.py:693: in mint_k
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHK_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b9rhk\\tmp\\bt_old\\test_k_any_dose_but...-scratch\\rollhist\\build\\b9rhk\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g0x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHK_s0'
+
+..\base_dscale10k_check_rhp3.py:1119: KeyError
+___________________ test_k_any_dose_but_0_1_is_refused[abc] ___________________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rollhist/build/b9rhk/tmp/bt_old/test_k_any_dose_but_0_1_is_ref8')
+p = 'abc'
+
+    @pytest.mark.parametrize("p", ["0.3", "0.5", "0.25", "1.0", "0.10", "0", "0.0", "-0.1", "abc"])
+    def test_k_any_dose_but_0_1_is_refused(tmp_path, p):                       # mutation arm: a dose other than the literal 0.1
+        r = krig(tmp_path / "kp")
+>       pr, _ = mint_k(r, k_toks(r, p=p))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhk.py:736: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhk.py:693: in mint_k
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHK_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b9rhk\\tmp\\bt_old\\test_k_any_dose_but...-scratch\\rollhist\\build\\b9rhk\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g0x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHK_s0'
+
+..\base_dscale10k_check_rhp3.py:1119: KeyError
+______________ test_k_the_rh_bank_under_the_rhk_name_is_refused _______________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rollhist/build/b9rhk/tmp/bt_old/test_k_the_rh_bank_under_the_r0')
+
+    def test_k_the_rh_bank_under_the_rhk_name_is_refused(tmp_path):            # mutation arm: the RH bank (causal_g1x, under bank/) behind the RHK name
+        r = Rig(tmp_path / "kr")                                               # a real RH world: bank under .../bank/s0, generator causal_g1x
+        t = r.setf(list(r.rh_toks), "--out", os.path.join(r.tmp, "runs", "RHK_s0", "train"))
+>       pr, _ = mint_k(r, t, token="causal_g1x")                               # RH's own token: not in RHK's token set, and the path is not bank_k
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhk.py:743: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhk.py:693: in mint_k
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHK_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b9rhk\\tmp\\bt_old\\test_k_the_rh_bank_...-scratch\\rollhist\\build\\b9rhk\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g1x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHK_s0'
+
+..\base_dscale10k_check_rhp3.py:1119: KeyError
+______________ test_k_a_cstar_bank_under_the_rhk_name_is_refused ______________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rollhist/build/b9rhk/tmp/bt_old/test_k_a_cstar_bank_under_the_0')
+
+    def test_k_a_cstar_bank_under_the_rhk_name_is_refused(tmp_path):           # mutation arm: a C* bank placed AT bank_k/ and named RHK
+        r = krig(tmp_path / "kc", gen="causal_g1x")                            # generator causal_g1x under bank_k/s0
+>       pr, _ = mint_k(r, k_toks(r), token=K)                                  # the argv declares K: the bank header says C*
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhk.py:752: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhk.py:693: in mint_k
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHK_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b9rhk\\tmp\\bt_old\\test_k_a_cstar_bank...-scratch\\rollhist\\build\\b9rhk\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g0x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHK_s0'
+
+..\base_dscale10k_check_rhp3.py:1119: KeyError
+_________________ test_k_a_second_changed_flag_is_refused[lr] _________________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rollhist/build/b9rhk/tmp/bt_old/test_k_a_second_changed_flag_i0')
+how = 'lr'
+
+    @pytest.mark.parametrize("how", ["lr", "steps", "added", "removed", "batch", "data_path", "kin", "seed", "wacc", "dagger_seed", "p_gt", "ego_perturb", "init"])
+    def test_k_a_second_changed_flag_is_refused(tmp_path, how):                # mutation arm: the K bank flags plus ONE more changed flag
+        r = krig(tmp_path / "ks2")
+        t = k_toks(r)
+        t = {"lr": lambda: r.setf(t, "--lr", "2e-4"), "steps": lambda: r.setf(t, "--steps", "3001"), "added": lambda: t + ["--foo", "1"], "removed": lambda: r.dropf(t, "--detach-upper"),
+             "batch": lambda: r.setf(t, "--batch", "32"), "data_path": lambda: r.setf(t, "--tracks", r.files["lead"]), "kin": lambda: r.setf(t, "--kin-mode", "xy"),
+             "seed": lambda: r.setf(t, "--seed", "7"), "wacc": lambda: r.setf(t, "--w-acc", "10"), "dagger_seed": lambda: r.setf(t, "--dagger-seed", "5"),
+             "p_gt": lambda: r.setf(t, "--p-gt-end", "0.5"), "ego_perturb": lambda: r.setf(t, "--ego-perturb-p", "0.1"), "init": lambda: r.setf(t, "--init-ckpt", r.files["ckpt1"])}[how]()
+>       pr, _ = mint_k(r, t)
+                ^^^^^^^^^^^^
+
+test_dscale10k_check_rhk.py:766: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhk.py:693: in mint_k
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHK_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b9rhk\\tmp\\bt_old\\test_k_a_second_cha...-scratch\\rollhist\\build\\b9rhk\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g0x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHK_s0'
+
+..\base_dscale10k_check_rhp3.py:1119: KeyError
+_______________ test_k_a_second_changed_flag_is_refused[steps] ________________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rollhist/build/b9rhk/tmp/bt_old/test_k_a_second_changed_flag_i1')
+how = 'steps'
+
+    @pytest.mark.parametrize("how", ["lr", "steps", "added", "removed", "batch", "data_path", "kin", "seed", "wacc", "dagger_seed", "p_gt", "ego_perturb", "init"])
+    def test_k_a_second_changed_flag_is_refused(tmp_path, how):                # mutation arm: the K bank flags plus ONE more changed flag
+        r = krig(tmp_path / "ks2")
+        t = k_toks(r)
+        t = {"lr": lambda: r.setf(t, "--lr", "2e-4"), "steps": lambda: r.setf(t, "--steps", "3001"), "added": lambda: t + ["--foo", "1"], "removed": lambda: r.dropf(t, "--detach-upper"),
+             "batch": lambda: r.setf(t, "--batch", "32"), "data_path": lambda: r.setf(t, "--tracks", r.files["lead"]), "kin": lambda: r.setf(t, "--kin-mode", "xy"),
+             "seed": lambda: r.setf(t, "--seed", "7"), "wacc": lambda: r.setf(t, "--w-acc", "10"), "dagger_seed": lambda: r.setf(t, "--dagger-seed", "5"),
+             "p_gt": lambda: r.setf(t, "--p-gt-end", "0.5"), "ego_perturb": lambda: r.setf(t, "--ego-perturb-p", "0.1"), "init": lambda: r.setf(t, "--init-ckpt", r.files["ckpt1"])}[how]()
+>       pr, _ = mint_k(r, t)
+                ^^^^^^^^^^^^
+
+test_dscale10k_check_rhk.py:766: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhk.py:693: in mint_k
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHK_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b9rhk\\tmp\\bt_old\\test_k_a_second_cha...-scratch\\rollhist\\build\\b9rhk\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g0x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHK_s0'
+
+..\base_dscale10k_check_rhp3.py:1119: KeyError
+_______________ test_k_a_second_changed_flag_is_refused[added] ________________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rollhist/build/b9rhk/tmp/bt_old/test_k_a_second_changed_flag_i2')
+how = 'added'
+
+    @pytest.mark.parametrize("how", ["lr", "steps", "added", "removed", "batch", "data_path", "kin", "seed", "wacc", "dagger_seed", "p_gt", "ego_perturb", "init"])
+    def test_k_a_second_changed_flag_is_refused(tmp_path, how):                # mutation arm: the K bank flags plus ONE more changed flag
+        r = krig(tmp_path / "ks2")
+        t = k_toks(r)
+        t = {"lr": lambda: r.setf(t, "--lr", "2e-4"), "steps": lambda: r.setf(t, "--steps", "3001"), "added": lambda: t + ["--foo", "1"], "removed": lambda: r.dropf(t, "--detach-upper"),
+             "batch": lambda: r.setf(t, "--batch", "32"), "data_path": lambda: r.setf(t, "--tracks", r.files["lead"]), "kin": lambda: r.setf(t, "--kin-mode", "xy"),
+             "seed": lambda: r.setf(t, "--seed", "7"), "wacc": lambda: r.setf(t, "--w-acc", "10"), "dagger_seed": lambda: r.setf(t, "--dagger-seed", "5"),
+             "p_gt": lambda: r.setf(t, "--p-gt-end", "0.5"), "ego_perturb": lambda: r.setf(t, "--ego-perturb-p", "0.1"), "init": lambda: r.setf(t, "--init-ckpt", r.files["ckpt1"])}[how]()
+>       pr, _ = mint_k(r, t)
+                ^^^^^^^^^^^^
+
+test_dscale10k_check_rhk.py:766: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhk.py:693: in mint_k
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHK_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b9rhk\\tmp\\bt_old\\test_k_a_second_cha...-scratch\\rollhist\\build\\b9rhk\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g0x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHK_s0'
+
+..\base_dscale10k_check_rhp3.py:1119: KeyError
+______________ test_k_a_second_changed_flag_is_refused[removed] _______________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rollhist/build/b9rhk/tmp/bt_old/test_k_a_second_changed_flag_i3')
+how = 'removed'
+
+    @pytest.mark.parametrize("how", ["lr", "steps", "added", "removed", "batch", "data_path", "kin", "seed", "wacc", "dagger_seed", "p_gt", "ego_perturb", "init"])
+    def test_k_a_second_changed_flag_is_refused(tmp_path, how):                # mutation arm: the K bank flags plus ONE more changed flag
+        r = krig(tmp_path / "ks2")
+        t = k_toks(r)
+        t = {"lr": lambda: r.setf(t, "--lr", "2e-4"), "steps": lambda: r.setf(t, "--steps", "3001"), "added": lambda: t + ["--foo", "1"], "removed": lambda: r.dropf(t, "--detach-upper"),
+             "batch": lambda: r.setf(t, "--batch", "32"), "data_path": lambda: r.setf(t, "--tracks", r.files["lead"]), "kin": lambda: r.setf(t, "--kin-mode", "xy"),
+             "seed": lambda: r.setf(t, "--seed", "7"), "wacc": lambda: r.setf(t, "--w-acc", "10"), "dagger_seed": lambda: r.setf(t, "--dagger-seed", "5"),
+             "p_gt": lambda: r.setf(t, "--p-gt-end", "0.5"), "ego_perturb": lambda: r.setf(t, "--ego-perturb-p", "0.1"), "init": lambda: r.setf(t, "--init-ckpt", r.files["ckpt1"])}[how]()
+>       pr, _ = mint_k(r, t)
+                ^^^^^^^^^^^^
+
+test_dscale10k_check_rhk.py:766: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhk.py:693: in mint_k
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHK_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b9rhk\\tmp\\bt_old\\test_k_a_second_cha...-scratch\\rollhist\\build\\b9rhk\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g0x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHK_s0'
+
+..\base_dscale10k_check_rhp3.py:1119: KeyError
+_______________ test_k_a_second_changed_flag_is_refused[batch] ________________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rollhist/build/b9rhk/tmp/bt_old/test_k_a_second_changed_flag_i4')
+how = 'batch'
+
+    @pytest.mark.parametrize("how", ["lr", "steps", "added", "removed", "batch", "data_path", "kin", "seed", "wacc", "dagger_seed", "p_gt", "ego_perturb", "init"])
+    def test_k_a_second_changed_flag_is_refused(tmp_path, how):                # mutation arm: the K bank flags plus ONE more changed flag
+        r = krig(tmp_path / "ks2")
+        t = k_toks(r)
+        t = {"lr": lambda: r.setf(t, "--lr", "2e-4"), "steps": lambda: r.setf(t, "--steps", "3001"), "added": lambda: t + ["--foo", "1"], "removed": lambda: r.dropf(t, "--detach-upper"),
+             "batch": lambda: r.setf(t, "--batch", "32"), "data_path": lambda: r.setf(t, "--tracks", r.files["lead"]), "kin": lambda: r.setf(t, "--kin-mode", "xy"),
+             "seed": lambda: r.setf(t, "--seed", "7"), "wacc": lambda: r.setf(t, "--w-acc", "10"), "dagger_seed": lambda: r.setf(t, "--dagger-seed", "5"),
+             "p_gt": lambda: r.setf(t, "--p-gt-end", "0.5"), "ego_perturb": lambda: r.setf(t, "--ego-perturb-p", "0.1"), "init": lambda: r.setf(t, "--init-ckpt", r.files["ckpt1"])}[how]()
+>       pr, _ = mint_k(r, t)
+                ^^^^^^^^^^^^
+
+test_dscale10k_check_rhk.py:766: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhk.py:693: in mint_k
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHK_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b9rhk\\tmp\\bt_old\\test_k_a_second_cha...-scratch\\rollhist\\build\\b9rhk\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g0x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHK_s0'
+
+..\base_dscale10k_check_rhp3.py:1119: KeyError
+_____________ test_k_a_second_changed_flag_is_refused[data_path] ______________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rollhist/build/b9rhk/tmp/bt_old/test_k_a_second_changed_flag_i5')
+how = 'data_path'
+
+    @pytest.mark.parametrize("how", ["lr", "steps", "added", "removed", "batch", "data_path", "kin", "seed", "wacc", "dagger_seed", "p_gt", "ego_perturb", "init"])
+    def test_k_a_second_changed_flag_is_refused(tmp_path, how):                # mutation arm: the K bank flags plus ONE more changed flag
+        r = krig(tmp_path / "ks2")
+        t = k_toks(r)
+        t = {"lr": lambda: r.setf(t, "--lr", "2e-4"), "steps": lambda: r.setf(t, "--steps", "3001"), "added": lambda: t + ["--foo", "1"], "removed": lambda: r.dropf(t, "--detach-upper"),
+             "batch": lambda: r.setf(t, "--batch", "32"), "data_path": lambda: r.setf(t, "--tracks", r.files["lead"]), "kin": lambda: r.setf(t, "--kin-mode", "xy"),
+             "seed": lambda: r.setf(t, "--seed", "7"), "wacc": lambda: r.setf(t, "--w-acc", "10"), "dagger_seed": lambda: r.setf(t, "--dagger-seed", "5"),
+             "p_gt": lambda: r.setf(t, "--p-gt-end", "0.5"), "ego_perturb": lambda: r.setf(t, "--ego-perturb-p", "0.1"), "init": lambda: r.setf(t, "--init-ckpt", r.files["ckpt1"])}[how]()
+>       pr, _ = mint_k(r, t)
+                ^^^^^^^^^^^^
+
+test_dscale10k_check_rhk.py:766: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhk.py:693: in mint_k
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHK_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b9rhk\\tmp\\bt_old\\test_k_a_second_cha...-scratch\\rollhist\\build\\b9rhk\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g0x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHK_s0'
+
+..\base_dscale10k_check_rhp3.py:1119: KeyError
+________________ test_k_a_second_changed_flag_is_refused[kin] _________________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rollhist/build/b9rhk/tmp/bt_old/test_k_a_second_changed_flag_i6')
+how = 'kin'
+
+    @pytest.mark.parametrize("how", ["lr", "steps", "added", "removed", "batch", "data_path", "kin", "seed", "wacc", "dagger_seed", "p_gt", "ego_perturb", "init"])
+    def test_k_a_second_changed_flag_is_refused(tmp_path, how):                # mutation arm: the K bank flags plus ONE more changed flag
+        r = krig(tmp_path / "ks2")
+        t = k_toks(r)
+        t = {"lr": lambda: r.setf(t, "--lr", "2e-4"), "steps": lambda: r.setf(t, "--steps", "3001"), "added": lambda: t + ["--foo", "1"], "removed": lambda: r.dropf(t, "--detach-upper"),
+             "batch": lambda: r.setf(t, "--batch", "32"), "data_path": lambda: r.setf(t, "--tracks", r.files["lead"]), "kin": lambda: r.setf(t, "--kin-mode", "xy"),
+             "seed": lambda: r.setf(t, "--seed", "7"), "wacc": lambda: r.setf(t, "--w-acc", "10"), "dagger_seed": lambda: r.setf(t, "--dagger-seed", "5"),
+             "p_gt": lambda: r.setf(t, "--p-gt-end", "0.5"), "ego_perturb": lambda: r.setf(t, "--ego-perturb-p", "0.1"), "init": lambda: r.setf(t, "--init-ckpt", r.files["ckpt1"])}[how]()
+>       pr, _ = mint_k(r, t)
+                ^^^^^^^^^^^^
+
+test_dscale10k_check_rhk.py:766: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhk.py:693: in mint_k
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHK_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b9rhk\\tmp\\bt_old\\test_k_a_second_cha...-scratch\\rollhist\\build\\b9rhk\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g0x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHK_s0'
+
+..\base_dscale10k_check_rhp3.py:1119: KeyError
+________________ test_k_a_second_changed_flag_is_refused[seed] ________________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rollhist/build/b9rhk/tmp/bt_old/test_k_a_second_changed_flag_i7')
+how = 'seed'
+
+    @pytest.mark.parametrize("how", ["lr", "steps", "added", "removed", "batch", "data_path", "kin", "seed", "wacc", "dagger_seed", "p_gt", "ego_perturb", "init"])
+    def test_k_a_second_changed_flag_is_refused(tmp_path, how):                # mutation arm: the K bank flags plus ONE more changed flag
+        r = krig(tmp_path / "ks2")
+        t = k_toks(r)
+        t = {"lr": lambda: r.setf(t, "--lr", "2e-4"), "steps": lambda: r.setf(t, "--steps", "3001"), "added": lambda: t + ["--foo", "1"], "removed": lambda: r.dropf(t, "--detach-upper"),
+             "batch": lambda: r.setf(t, "--batch", "32"), "data_path": lambda: r.setf(t, "--tracks", r.files["lead"]), "kin": lambda: r.setf(t, "--kin-mode", "xy"),
+             "seed": lambda: r.setf(t, "--seed", "7"), "wacc": lambda: r.setf(t, "--w-acc", "10"), "dagger_seed": lambda: r.setf(t, "--dagger-seed", "5"),
+             "p_gt": lambda: r.setf(t, "--p-gt-end", "0.5"), "ego_perturb": lambda: r.setf(t, "--ego-perturb-p", "0.1"), "init": lambda: r.setf(t, "--init-ckpt", r.files["ckpt1"])}[how]()
+>       pr, _ = mint_k(r, t)
+                ^^^^^^^^^^^^
+
+test_dscale10k_check_rhk.py:766: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhk.py:693: in mint_k
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHK_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b9rhk\\tmp\\bt_old\\test_k_a_second_cha...-scratch\\rollhist\\build\\b9rhk\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g0x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHK_s0'
+
+..\base_dscale10k_check_rhp3.py:1119: KeyError
+________________ test_k_a_second_changed_flag_is_refused[wacc] ________________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rollhist/build/b9rhk/tmp/bt_old/test_k_a_second_changed_flag_i8')
+how = 'wacc'
+
+    @pytest.mark.parametrize("how", ["lr", "steps", "added", "removed", "batch", "data_path", "kin", "seed", "wacc", "dagger_seed", "p_gt", "ego_perturb", "init"])
+    def test_k_a_second_changed_flag_is_refused(tmp_path, how):                # mutation arm: the K bank flags plus ONE more changed flag
+        r = krig(tmp_path / "ks2")
+        t = k_toks(r)
+        t = {"lr": lambda: r.setf(t, "--lr", "2e-4"), "steps": lambda: r.setf(t, "--steps", "3001"), "added": lambda: t + ["--foo", "1"], "removed": lambda: r.dropf(t, "--detach-upper"),
+             "batch": lambda: r.setf(t, "--batch", "32"), "data_path": lambda: r.setf(t, "--tracks", r.files["lead"]), "kin": lambda: r.setf(t, "--kin-mode", "xy"),
+             "seed": lambda: r.setf(t, "--seed", "7"), "wacc": lambda: r.setf(t, "--w-acc", "10"), "dagger_seed": lambda: r.setf(t, "--dagger-seed", "5"),
+             "p_gt": lambda: r.setf(t, "--p-gt-end", "0.5"), "ego_perturb": lambda: r.setf(t, "--ego-perturb-p", "0.1"), "init": lambda: r.setf(t, "--init-ckpt", r.files["ckpt1"])}[how]()
+>       pr, _ = mint_k(r, t)
+                ^^^^^^^^^^^^
+
+test_dscale10k_check_rhk.py:766: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhk.py:693: in mint_k
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHK_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b9rhk\\tmp\\bt_old\\test_k_a_second_cha...-scratch\\rollhist\\build\\b9rhk\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g0x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHK_s0'
+
+..\base_dscale10k_check_rhp3.py:1119: KeyError
+____________ test_k_a_second_changed_flag_is_refused[dagger_seed] _____________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rollhist/build/b9rhk/tmp/bt_old/test_k_a_second_changed_flag_i9')
+how = 'dagger_seed'
+
+    @pytest.mark.parametrize("how", ["lr", "steps", "added", "removed", "batch", "data_path", "kin", "seed", "wacc", "dagger_seed", "p_gt", "ego_perturb", "init"])
+    def test_k_a_second_changed_flag_is_refused(tmp_path, how):                # mutation arm: the K bank flags plus ONE more changed flag
+        r = krig(tmp_path / "ks2")
+        t = k_toks(r)
+        t = {"lr": lambda: r.setf(t, "--lr", "2e-4"), "steps": lambda: r.setf(t, "--steps", "3001"), "added": lambda: t + ["--foo", "1"], "removed": lambda: r.dropf(t, "--detach-upper"),
+             "batch": lambda: r.setf(t, "--batch", "32"), "data_path": lambda: r.setf(t, "--tracks", r.files["lead"]), "kin": lambda: r.setf(t, "--kin-mode", "xy"),
+             "seed": lambda: r.setf(t, "--seed", "7"), "wacc": lambda: r.setf(t, "--w-acc", "10"), "dagger_seed": lambda: r.setf(t, "--dagger-seed", "5"),
+             "p_gt": lambda: r.setf(t, "--p-gt-end", "0.5"), "ego_perturb": lambda: r.setf(t, "--ego-perturb-p", "0.1"), "init": lambda: r.setf(t, "--init-ckpt", r.files["ckpt1"])}[how]()
+>       pr, _ = mint_k(r, t)
+                ^^^^^^^^^^^^
+
+test_dscale10k_check_rhk.py:766: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhk.py:693: in mint_k
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHK_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b9rhk\\tmp\\bt_old\\test_k_a_second_cha...-scratch\\rollhist\\build\\b9rhk\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g0x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHK_s0'
+
+..\base_dscale10k_check_rhp3.py:1119: KeyError
+________________ test_k_a_second_changed_flag_is_refused[p_gt] ________________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rollhist/build/b9rhk/tmp/bt_old/test_k_a_second_changed_flag_i10')
+how = 'p_gt'
+
+    @pytest.mark.parametrize("how", ["lr", "steps", "added", "removed", "batch", "data_path", "kin", "seed", "wacc", "dagger_seed", "p_gt", "ego_perturb", "init"])
+    def test_k_a_second_changed_flag_is_refused(tmp_path, how):                # mutation arm: the K bank flags plus ONE more changed flag
+        r = krig(tmp_path / "ks2")
+        t = k_toks(r)
+        t = {"lr": lambda: r.setf(t, "--lr", "2e-4"), "steps": lambda: r.setf(t, "--steps", "3001"), "added": lambda: t + ["--foo", "1"], "removed": lambda: r.dropf(t, "--detach-upper"),
+             "batch": lambda: r.setf(t, "--batch", "32"), "data_path": lambda: r.setf(t, "--tracks", r.files["lead"]), "kin": lambda: r.setf(t, "--kin-mode", "xy"),
+             "seed": lambda: r.setf(t, "--seed", "7"), "wacc": lambda: r.setf(t, "--w-acc", "10"), "dagger_seed": lambda: r.setf(t, "--dagger-seed", "5"),
+             "p_gt": lambda: r.setf(t, "--p-gt-end", "0.5"), "ego_perturb": lambda: r.setf(t, "--ego-perturb-p", "0.1"), "init": lambda: r.setf(t, "--init-ckpt", r.files["ckpt1"])}[how]()
+>       pr, _ = mint_k(r, t)
+                ^^^^^^^^^^^^
+
+test_dscale10k_check_rhk.py:766: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhk.py:693: in mint_k
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHK_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b9rhk\\tmp\\bt_old\\test_k_a_second_cha...-scratch\\rollhist\\build\\b9rhk\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g0x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHK_s0'
+
+..\base_dscale10k_check_rhp3.py:1119: KeyError
+____________ test_k_a_second_changed_flag_is_refused[ego_perturb] _____________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rollhist/build/b9rhk/tmp/bt_old/test_k_a_second_changed_flag_i11')
+how = 'ego_perturb'
+
+    @pytest.mark.parametrize("how", ["lr", "steps", "added", "removed", "batch", "data_path", "kin", "seed", "wacc", "dagger_seed", "p_gt", "ego_perturb", "init"])
+    def test_k_a_second_changed_flag_is_refused(tmp_path, how):                # mutation arm: the K bank flags plus ONE more changed flag
+        r = krig(tmp_path / "ks2")
+        t = k_toks(r)
+        t = {"lr": lambda: r.setf(t, "--lr", "2e-4"), "steps": lambda: r.setf(t, "--steps", "3001"), "added": lambda: t + ["--foo", "1"], "removed": lambda: r.dropf(t, "--detach-upper"),
+             "batch": lambda: r.setf(t, "--batch", "32"), "data_path": lambda: r.setf(t, "--tracks", r.files["lead"]), "kin": lambda: r.setf(t, "--kin-mode", "xy"),
+             "seed": lambda: r.setf(t, "--seed", "7"), "wacc": lambda: r.setf(t, "--w-acc", "10"), "dagger_seed": lambda: r.setf(t, "--dagger-seed", "5"),
+             "p_gt": lambda: r.setf(t, "--p-gt-end", "0.5"), "ego_perturb": lambda: r.setf(t, "--ego-perturb-p", "0.1"), "init": lambda: r.setf(t, "--init-ckpt", r.files["ckpt1"])}[how]()
+>       pr, _ = mint_k(r, t)
+                ^^^^^^^^^^^^
+
+test_dscale10k_check_rhk.py:766: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhk.py:693: in mint_k
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHK_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b9rhk\\tmp\\bt_old\\test_k_a_second_cha...-scratch\\rollhist\\build\\b9rhk\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g0x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHK_s0'
+
+..\base_dscale10k_check_rhp3.py:1119: KeyError
+________________ test_k_a_second_changed_flag_is_refused[init] ________________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rollhist/build/b9rhk/tmp/bt_old/test_k_a_second_changed_flag_i12')
+how = 'init'
+
+    @pytest.mark.parametrize("how", ["lr", "steps", "added", "removed", "batch", "data_path", "kin", "seed", "wacc", "dagger_seed", "p_gt", "ego_perturb", "init"])
+    def test_k_a_second_changed_flag_is_refused(tmp_path, how):                # mutation arm: the K bank flags plus ONE more changed flag
+        r = krig(tmp_path / "ks2")
+        t = k_toks(r)
+        t = {"lr": lambda: r.setf(t, "--lr", "2e-4"), "steps": lambda: r.setf(t, "--steps", "3001"), "added": lambda: t + ["--foo", "1"], "removed": lambda: r.dropf(t, "--detach-upper"),
+             "batch": lambda: r.setf(t, "--batch", "32"), "data_path": lambda: r.setf(t, "--tracks", r.files["lead"]), "kin": lambda: r.setf(t, "--kin-mode", "xy"),
+             "seed": lambda: r.setf(t, "--seed", "7"), "wacc": lambda: r.setf(t, "--w-acc", "10"), "dagger_seed": lambda: r.setf(t, "--dagger-seed", "5"),
+             "p_gt": lambda: r.setf(t, "--p-gt-end", "0.5"), "ego_perturb": lambda: r.setf(t, "--ego-perturb-p", "0.1"), "init": lambda: r.setf(t, "--init-ckpt", r.files["ckpt1"])}[how]()
+>       pr, _ = mint_k(r, t)
+                ^^^^^^^^^^^^
+
+test_dscale10k_check_rhk.py:766: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhk.py:693: in mint_k
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHK_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b9rhk\\tmp\\bt_old\\test_k_a_second_cha...-scratch\\rollhist\\build\\b9rhk\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g0x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHK_s0'
+
+..\base_dscale10k_check_rhp3.py:1119: KeyError
+____________________ test_k_the_bank_must_be_under_bank_k _____________________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rollhist/build/b9rhk/tmp/bt_old/test_k_the_bank_must_be_under_0')
+
+    def test_k_the_bank_must_be_under_bank_k(tmp_path):
+        r = krig(tmp_path / "kb", bank_sub="bank")                             # a valid K bank, but at .../bank/s0: the arm must name bank_k
+>       pr, _ = mint_k(r)
+                ^^^^^^^^^
+
+test_dscale10k_check_rhk.py:772: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhk.py:693: in mint_k
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHK_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b9rhk\\tmp\\bt_old\\test_k_the_bank_mus...-scratch\\rollhist\\build\\b9rhk\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g0x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHK_s0'
+
+..\base_dscale10k_check_rhp3.py:1119: KeyError
+________ test_k_the_pair_is_the_existing_b0_and_a_moved_b0_is_refused _________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rollhist/build/b9rhk/tmp/bt_old/test_k_the_pair_is_the_existin0')
+
+    def test_k_the_pair_is_the_existing_b0_and_a_moved_b0_is_refused(tmp_path):
+        r = krig(tmp_path / "kpair")
+>       pr, _ = mint_k(r, pair_toks=r.setf(r.b0_toks, "--lr", "2e-4"))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhk.py:792: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhk.py:693: in mint_k
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHK_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b9rhk\\tmp\\bt_old\\test_k_the_pair_is_...-scratch\\rollhist\\build\\b9rhk\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g0x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHK_s0'
+
+..\base_dscale10k_check_rhp3.py:1119: KeyError
+____________ test_k_needs_the_declaration_token_and_the_right_one _____________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rollhist/build/b9rhk/tmp/bt_old/test_k_needs_the_declaration_t0')
+
+    def test_k_needs_the_declaration_token_and_the_right_one(tmp_path):
+        r = krig(tmp_path / "kd")
+>       pr, _ = mint_k(r, token="")
+                ^^^^^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhk.py:800: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhk.py:693: in mint_k
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHK_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b9rhk\\tmp\\bt_old\\test_k_needs_the_de...:\\TanitAD-scratch\\rollhist\\build\\b9rhk\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHK_s0'
+
+..\base_dscale10k_check_rhp3.py:1119: KeyError
+________ test_k_the_swap_for_the_stock_pair_check_is_exactly_one_token ________
+
+    def test_k_the_swap_for_the_stock_pair_check_is_exactly_one_token():
+        toks = ["--dagger-p", "0.1", "--dagger-bank-readout", K, "--dagger-bank-kappa", "0.2"]
+>       assert NEW.rh_pair_problems(toks, [], "causal_g1x", None, PAIR_CHECK, True) == ["RHK readout token 'causal_g1x' is not one of ('causal_g0x',)"]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: rh_pair_problems() takes 5 positional arguments but 6 were given
+
+test_dscale10k_check_rhk.py:812: TypeError
+____ test_k_the_selfcheck_must_carry_the_k_declaration_and_pass_the_probe _____
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rollhist/build/b9rhk/tmp/bt_old/test_k_the_selfcheck_must_carr0')
+
+    def test_k_the_selfcheck_must_carry_the_k_declaration_and_pass_the_probe(tmp_path):
+        r = krig(tmp_path / "ksc")
+        sc = json.load(open(r.sc_rh))
+        sc["levers"]["dagger"]["dagger_bank_readout"] = "causal_g1x"
+>       pr, _ = mint_k(r, sc=put_json(os.path.join(r.tmp, "sck_bad.json"), sc))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhk.py:821: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhk.py:693: in mint_k
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHK_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b9rhk\\tmp\\bt_old\\test_k_the_selfchec...-scratch\\rollhist\\build\\b9rhk\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g0x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHK_s0'
+
+..\base_dscale10k_check_rhp3.py:1119: KeyError
+__________________ test_k_bank_checks_apply_to_the_new_kind ___________________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rollhist/build/b9rhk/tmp/bt_old/test_k_bank_checks_apply_to_th0')
+
+    def test_k_bank_checks_apply_to_the_new_kind(tmp_path):
+        r = krig(tmp_path / "kbc")
+>       pr, _ = mint_k(r, r.setf(k_toks(r), "--dagger-bank-sha256", "0" * 64))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhk.py:831: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhk.py:693: in mint_k
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHK_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b9rhk\\tmp\\bt_old\\test_k_bank_checks_...-scratch\\rollhist\\build\\b9rhk\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g0x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHK_s0'
+
+..\base_dscale10k_check_rhp3.py:1119: KeyError
+_____________ test_k_out_must_name_the_arm_and_stage_a_is_refused _____________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rollhist/build/b9rhk/tmp/bt_old/test_k_out_must_name_the_arm_a0')
+
+    def test_k_out_must_name_the_arm_and_stage_a_is_refused(tmp_path):
+        r = krig(tmp_path / "ko")
+>       pr, _ = mint_k(r, r.setf(k_toks(r), "--out", os.path.join(r.tmp, "runs", "RH_s0", "train")))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhk.py:840: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_dscale10k_check_rhk.py:693: in mint_k
+    return mod.mint(a), a.gate_dir
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(arm='RHK_s0', stage='B', argv='F:\\TanitAD-scratch\\rollhist\\build\\b9rhk\\tmp\\bt_old\\test_k_out_must_nam...-scratch\\rollhist\\build\\b9rhk\\test\\ref\\tree\\stack\\scripts\\rollhist_pair_check.py', readout_token='causal_g0x')
+
+    def mint(a) -> list:
+        """Compute every check from the evidence on disk and write the token iff all required ones pass. Returns the problems (empty = token written)."""
+>       arm, stage, spec = a.arm, a.stage, ARMS[a.arm]
+                                           ^^^^^^^^^^^
+E       KeyError: 'RHK_s0'
+
+..\base_dscale10k_check_rhp3.py:1119: KeyError
+_________________ test_k_cli_mint_then_run_only_on_the_token __________________
+
+self = ArgumentParser(prog='__main__.py mint', usage=None, description=None, formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)
+args = ['--arm', 'RHK_s0', '--stage', 'B', '--argv', 'F:\\TanitAD-scratch\\rollhist\\build\\b9rhk\\tmp\\bt_old\\test_k_cli_mint_then_run_only_0\\kcli\\RHK_cli.argv.json', ...]
+namespace = Namespace(arm=None, stage='A', argv=None, root=None, commit=None, gate_dir=None, py='C:\\Users\\Admin\\venvs\\tanitad\...argv='', b_dry='', template='', pair_argv='', pair_check='', readout_token='', holdout_manifest='', holdout=(540, 600))
+intermixed = False
+
+    def _parse_known_args2(self, args, namespace, intermixed):
+        if args is None:
+            # args default to the system args
+            args = _sys.argv[1:]
+        else:
+            # make sure that args are mutable
+            args = list(args)
+    
+        # default Namespace built from parser defaults
+        if namespace is None:
+            namespace = Namespace()
+    
+        # add any action defaults that aren't present
+        for action in self._actions:
+            if action.dest is not SUPPRESS:
+                if not hasattr(namespace, action.dest):
+                    if action.default is not SUPPRESS:
+                        setattr(namespace, action.dest, action.default)
+    
+        # add any parser defaults that aren't present
+        for dest in self._defaults:
+            if not hasattr(namespace, dest):
+                setattr(namespace, dest, self._defaults[dest])
+    
+        # parse the arguments and exit if there are any errors
+        if self.exit_on_error:
+            try:
+>               namespace, args = self._parse_known_args(args, namespace, intermixed)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:1937: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:2188: in _parse_known_args
+    start_index = consume_optional(start_index)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:2112: in consume_optional
+    take_action(action, args, option_string)
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:1998: in take_action
+    argument_values = self._get_values(action, argument_strings)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:2519: in _get_values
+    self._check_value(action, value)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = ArgumentParser(prog='__main__.py mint', usage=None, description=None, formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)
+action = _StoreAction(option_strings=['--arm'], dest='arm', nargs=None, const=None, default=None, type=None, choices=['B0_s0', ...', 'UM_s0', 'UM_s1', 'U_s0', 'U_s1', 'U_s3', 'U_s4', 'X_s0'], required=True, help=None, metavar=None, deprecated=False)
+value = 'RHK_s0'
+
+    def _check_value(self, action, value):
+        # converted value must be one of the choices (if specified)
+        choices = action.choices
+        if choices is not None:
+            if isinstance(choices, str):
+                choices = iter(choices)
+            if value not in choices:
+                args = {'value': str(value),
+                        'choices': ', '.join(map(str, action.choices))}
+                msg = _('invalid choice: %(value)r (choose from %(choices)s)')
+>               raise ArgumentError(action, msg % args)
+E               argparse.ArgumentError: argument --arm: invalid choice: 'RHK_s0' (choose from B0_s0, B0_s1, BL_s0, B_rep, B_s0, B_s1, B_s3, B_s4, RH_s0, RH_s1, RHp3_s0, RHp3_s1, R_s0, UE_s0, UE_s1, UM_s0, UM_s1, U_s0, U_s1, U_s3, U_s4, X_s0)
+
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:2578: ArgumentError
+
+During handling of the above exception, another exception occurred:
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rollhist/build/b9rhk/tmp/bt_old/test_k_cli_mint_then_run_only_0')
+capsys = <_pytest.capture.CaptureFixture object at 0x0000025AE93C7A10>
+
+    def test_k_cli_mint_then_run_only_on_the_token(tmp_path, capsys):
+        rig = krig(tmp_path / "kcli")
+        rig.patch_heavy(NEW)
+        open(os.path.join(rig.root, "stack", "scripts", "v8f_mini_train.py"), "w").write("import sys, os\nopen(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'STARTED'), 'w').write(' '.join(sys.argv[1:4]))\n")
+        toks = k_toks(rig)
+        rp, bp = rig.argv_file("RHK_cli", toks), rig.argv_file("B0_clik", rig.b0_toks)
+        gate = os.path.join(rig.tmp, "gate", "RHK_cli")
+        started = os.path.join(rig.root, "stack", "scripts", "STARTED")
+>       assert NEW.main(_cli(rig, "mint", "RHK_s0", rp, bp, gate, K, rig.sc_rh)) == 0
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_dscale10k_check_rhk.py:855: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\base_dscale10k_check_rhp3.py:1317: in main
+    a = ap.parse_args(argv)
+        ^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:1898: in parse_args
+    args, argv = self.parse_known_args(args, namespace)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:1908: in parse_known_args
+    return self._parse_known_args2(args, namespace, intermixed=False)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:1937: in _parse_known_args2
+    namespace, args = self._parse_known_args(args, namespace, intermixed)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:2169: in _parse_known_args
+    positionals_end_index = consume_positionals(start_index)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:2144: in consume_positionals
+    take_action(action, args)
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:2013: in take_action
+    action(self, namespace, argument_values, option_string)
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:1258: in __call__
+    subnamespace, arg_strings = subparser.parse_known_args(arg_strings, None)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:1908: in parse_known_args
+    return self._parse_known_args2(args, namespace, intermixed=False)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:1939: in _parse_known_args2
+    self.error(str(err))
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:2658: in error
+    self.exit(2, _('%(prog)s: error: %(message)s\n') % args)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = ArgumentParser(prog='__main__.py mint', usage=None, description=None, formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)
+status = 2
+message = "__main__.py mint: error: argument --arm: invalid choice: 'RHK_s0' (choose from B0_s0, B0_s1, BL_s0, B_rep, B_s0, B_s1, B_s3, B_s4, RH_s0, RH_s1, RHp3_s0, RHp3_s1, R_s0, UE_s0, UE_s1, UM_s0, UM_s1, U_s0, U_s1, U_s3, U_s4, X_s0)\n"
+
+    def exit(self, status=0, message=None):
+        if message:
+            self._print_message(message, _sys.stderr)
+>       _sys.exit(status)
+E       SystemExit: 2
+
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:2645: SystemExit
+---------------------------- Captured stderr call -----------------------------
+usage: __main__.py mint [-h]
+                        --arm {B0_s0,B0_s1,BL_s0,B_rep,B_s0,B_s1,B_s3,B_s4,RH_s0,RH_s1,RHp3_s0,RHp3_s1,R_s0,UE_s0,UE_s1,UM_s0,UM_s1,U_s0,U_s1,U_s3,U_s4,X_s0}
+                        [--stage {A,B}] --argv ARGV --root ROOT
+                        --commit COMMIT --gate-dir GATE_DIR [--py PY]
+                        [--gpu GPU] --base-argv BASE_ARGV
+                        [--evidence EVIDENCE] [--dry DRY]
+                        [--merge-record MERGE_RECORD]
+                        [--union-release UNION_RELEASE] [--tenk-v9 TENK_V9]
+                        [--r-release R_RELEASE] [--corpus-join CORPUS_JOIN]
+                        [--union-join UNION_JOIN] [--eval-ids EVAL_IDS]
+                        [--digest-json [DIGEST_JSON ...]] [--ue-dry UE_DRY]
+                        [--selfcheck SELFCHECK] [--tacsrc-list TACSRC_LIST]
+                        [--ue-argv UE_ARGV] [--b-dry B_DRY]
+                        [--template TEMPLATE] [--pair-argv PAIR_ARGV]
+                        [--pair-check PAIR_CHECK]
+                        [--readout-token READOUT_TOKEN]
+                        [--holdout-manifest HOLDOUT_MANIFEST]
+                        [--holdout HOLDOUT]
+__main__.py mint: error: argument --arm: invalid choice: 'RHK_s0' (choose from B0_s0, B0_s1, BL_s0, B_rep, B_s0, B_s1, B_s3, B_s4, RH_s0, RH_s1, RHp3_s0, RHp3_s1, R_s0, UE_s0, UE_s1, UM_s0, UM_s1, U_s0, U_s1, U_s3, U_s4, X_s0)
+=========================== short test summary info ===========================
+FAILED test_dscale10k_check_rhk.py::test_k_the_arms_exist_and_the_original_kinds_are_unchanged
+FAILED test_dscale10k_check_rhk.py::test_k_rhk_mints_pass_and_binds_the_k_bank[0]
+FAILED test_dscale10k_check_rhk.py::test_k_rhk_mints_pass_and_binds_the_k_bank[1]
+FAILED test_dscale10k_check_rhk.py::test_k_any_dose_but_0_1_is_refused[0.3]
+FAILED test_dscale10k_check_rhk.py::test_k_any_dose_but_0_1_is_refused[0.5]
+FAILED test_dscale10k_check_rhk.py::test_k_any_dose_but_0_1_is_refused[0.25]
+FAILED test_dscale10k_check_rhk.py::test_k_any_dose_but_0_1_is_refused[1.0]
+FAILED test_dscale10k_check_rhk.py::test_k_any_dose_but_0_1_is_refused[0.10]
+FAILED test_dscale10k_check_rhk.py::test_k_any_dose_but_0_1_is_refused[0] - K...
+FAILED test_dscale10k_check_rhk.py::test_k_any_dose_but_0_1_is_refused[0.0]
+FAILED test_dscale10k_check_rhk.py::test_k_any_dose_but_0_1_is_refused[-0.1]
+FAILED test_dscale10k_check_rhk.py::test_k_any_dose_but_0_1_is_refused[abc]
+FAILED test_dscale10k_check_rhk.py::test_k_the_rh_bank_under_the_rhk_name_is_refused
+FAILED test_dscale10k_check_rhk.py::test_k_a_cstar_bank_under_the_rhk_name_is_refused
+FAILED test_dscale10k_check_rhk.py::test_k_a_second_changed_flag_is_refused[lr]
+FAILED test_dscale10k_check_rhk.py::test_k_a_second_changed_flag_is_refused[steps]
+FAILED test_dscale10k_check_rhk.py::test_k_a_second_changed_flag_is_refused[added]
+FAILED test_dscale10k_check_rhk.py::test_k_a_second_changed_flag_is_refused[removed]
+FAILED test_dscale10k_check_rhk.py::test_k_a_second_changed_flag_is_refused[batch]
+FAILED test_dscale10k_check_rhk.py::test_k_a_second_changed_flag_is_refused[data_path]
+FAILED test_dscale10k_check_rhk.py::test_k_a_second_changed_flag_is_refused[kin]
+FAILED test_dscale10k_check_rhk.py::test_k_a_second_changed_flag_is_refused[seed]
+FAILED test_dscale10k_check_rhk.py::test_k_a_second_changed_flag_is_refused[wacc]
+FAILED test_dscale10k_check_rhk.py::test_k_a_second_changed_flag_is_refused[dagger_seed]
+FAILED test_dscale10k_check_rhk.py::test_k_a_second_changed_flag_is_refused[p_gt]
+FAILED test_dscale10k_check_rhk.py::test_k_a_second_changed_flag_is_refused[ego_perturb]
+FAILED test_dscale10k_check_rhk.py::test_k_a_second_changed_flag_is_refused[init]
+FAILED test_dscale10k_check_rhk.py::test_k_the_bank_must_be_under_bank_k - Ke...
+FAILED test_dscale10k_check_rhk.py::test_k_the_pair_is_the_existing_b0_and_a_moved_b0_is_refused
+FAILED test_dscale10k_check_rhk.py::test_k_needs_the_declaration_token_and_the_right_one
+FAILED test_dscale10k_check_rhk.py::test_k_the_swap_for_the_stock_pair_check_is_exactly_one_token
+FAILED test_dscale10k_check_rhk.py::test_k_the_selfcheck_must_carry_the_k_declaration_and_pass_the_probe
+FAILED test_dscale10k_check_rhk.py::test_k_bank_checks_apply_to_the_new_kind
+FAILED test_dscale10k_check_rhk.py::test_k_out_must_name_the_arm_and_stage_a_is_refused
+FAILED test_dscale10k_check_rhk.py::test_k_cli_mint_then_run_only_on_the_token
+35 failed, 2 passed, 73 deselected in 21.30s
