@@ -461,7 +461,7 @@ def test_resume_refuses_a_checkpoint_whose_cfg_skip_differs_from_the_argv(world)
 
 # ------------------------------------------------------------------------------------------------ the loaders: round trip
 LOADERS = ("v8f_mini_eval.py", "v8f_mini_eval_oacc.py", "v8f_mini_eval_rb.py", "v8f_mini_eval_rbd.py", "v8f_mini_eval_speedavg.py", "v8f_mini_eval_speedcal.py", "v8f_t1_eval.py", "v8f_t1_eval_rb.py",
-           "v8f_t1_eval_rbd.py", "v8f_dagger_bank.py", "v8f_kscore.py")
+           "v8f_t1_eval_rbd.py", "v8f_dagger_bank.py", "v8f_kscore.py", "n1dh_klim.py")  # n1dh_klim.py (N1DH, f2e91e33): the K-LIM probe builds the v8f config from a checkpoint too
 CFG_CALL = re.compile(r"V8FMiniConfig\(\*\*((?:[^()]|\([^()]*\))*)\)")
 
 
