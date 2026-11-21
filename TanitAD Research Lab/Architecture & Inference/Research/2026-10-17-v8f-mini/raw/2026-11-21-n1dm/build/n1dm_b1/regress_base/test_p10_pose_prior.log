@@ -1,0 +1,62 @@
+...FF..................                                                  [100%]
+================================== FAILURES ===================================
+_ test_a_the_package_copy_and_the_shipped_copy_are_the_same_bytes_and_the_fit_record_says_what_it_fit _
+
+    def test_a_the_package_copy_and_the_shipped_copy_are_the_same_bytes_and_the_fit_record_says_what_it_fit() -> None:
+        pk = PKG / "raw" / "p10_pose" / "p10_pose_prior.pt"
+>       assert pk.is_file() and P10.file_sha256(pk) == POSE_SHA256
+E       AssertionError: assert (False)
+E        +  where False = is_file()
+E        +    where is_file = WindowsPath('C:/Users/Admin/n1dmbase/tree/TanitAD Research Lab/Architecture & Inference/Research/2026-10-20-v8f-rung-alpha/raw/p10_pose/p10_pose_prior.pt').is_file
+
+tests\test_p10_pose_prior.py:108: AssertionError
+_ test_a_fit_clips_are_TRAIN_clips_only_and_disjoint_from_eval139_and_eval141 _
+
+fxp = {'poses': array([[[ 2.88953209e+01,  5.48414111e-01,  4.11419459e-02,
+          8.16403198e+00],
+        [ 2.97148037e...7, 15, 31, 47,
+       63, 11, 27, 43, 59,  7, 23, 39, 55, 19, 35, 51, 67, 15, 31, 47, 63,
+       11, 27, 43, 59]), ...}
+
+    def test_a_fit_clips_are_TRAIN_clips_only_and_disjoint_from_eval139_and_eval141(fxp) -> None:
+        fit = [str(c) for c in fxp["fit_clip_ids"]]
+        assert len(fit) == 4572 and len(set(fit)) == 4572
+        e141 = [str(c) for c in fxp["eval141_clip_ids"]]
+        e139 = [str(c) for c in fxp["eval139_clip_ids"]]
+        assert (len(e141), len(e139)) == (141, 139)
+        assert P10.assert_fit_disjoint(fit, e141)["overlap"] == P10.assert_fit_disjoint(fit, e139)["overlap"] == 0
+        with pytest.raises(P10.P10Error, match="overlap"):                        # the control: the check can SEE an overlap
+            P10.assert_fit_disjoint(fit, e139[:5] + fit[:1])
+>       ids = (PKG / "raw" / "p10_pose" / "fit_clip_ids.txt").read_text(encoding="utf-8").split()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_p10_pose_prior.py:128: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/Admin/n1dmbase/tree/TanitAD Research Lab/Architecture & Inference/Research/2026-10-20-v8f-rung-alpha/raw/p10_pose/fit_clip_ids.txt')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\n1dmbase\\tree\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-10-20-v8f-rung-alpha\\raw\\p10_pose\\fit_clip_ids.txt'
+
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+=========================== short test summary info ===========================
+FAILED tests/test_p10_pose_prior.py::test_a_the_package_copy_and_the_shipped_copy_are_the_same_bytes_and_the_fit_record_says_what_it_fit
+FAILED tests/test_p10_pose_prior.py::test_a_fit_clips_are_TRAIN_clips_only_and_disjoint_from_eval139_and_eval141
+2 failed, 21 passed in 5.16s

@@ -1,0 +1,679 @@
+[
+ {
+  "mutant": "a_delete_the_branch_add",
+  "files": [
+   "stack/tanitad/models/v8f_mini.py"
+  ],
+  "edits": 1,
+  "tests": [
+   {
+    "test": "test_reach_every_branch_gets_a_nonzero_gradient_and_the_controls_read_exactly_zero",
+    "rc": 1,
+    "red": true,
+    "red_by_a_failed_test_not_a_collection_error": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dm.py::test_reach_every_branch_gets_a_nonzero_gradient_and_the_controls_read_exactly_zero",
+     "1 failed in 3.48s"
+    ]
+   },
+   {
+    "test": "test_formula_the_plan_is_head_o_plus_the_p_weighted_branches_recomputed_from_hooks",
+    "rc": 1,
+    "red": true,
+    "red_by_a_failed_test_not_a_collection_error": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dm.py::test_formula_the_plan_is_head_o_plus_the_p_weighted_branches_recomputed_from_hooks[train]",
+     "1 failed in 3.35s"
+    ]
+   },
+   {
+    "test": "test_end_to_end_n1dm_arm_probe_levers_group_class_record_checkpoint_and_the_checker_reads_the_real_selfcheck",
+    "rc": 1,
+    "red": true,
+    "red_by_a_failed_test_not_a_collection_error": true,
+    "tail": [
+     "E           AssertionError: G-LIVE failed: {\"terms\": {\"ckpt\": 0.7755283117294312, \"goal\": 0.7040849328041077, \"lat\": 1.732839822769165, \"lon\": 1.9289941787719727, \"cons\": 0.2250804752111435, \"ade\": 6.216488838195801, \"fde\": 14.772931098937988, \"acc\": 28.39295196533203, \"pen_SPEED\": 23.420574188232422, \"pens_SPEED\": 23.51784896850586, \"pen_STOP\": 0.0, \"pens_STOP\": 117.48583221435547, \"pen_TURN\": 4.272591590881348, \"pens_TURN\": 21.177656173706055, \"pen_LEAD\": 0.0, \"pens_LEAD\": 0.0, \"wm\": 209.20904541015625, \"route\": 0.804588794708252, \"total\": 82.4414291381836}, \"missing_terms\": [], \"unexpected_terms\": [], \"dead_params\": [\"route_br.0.weight\", \"route_br.1.weight\", \"route_br.2.weight\"], \"declared_dead\": [], \"unexpected_dead\": [\"route_br.0.weight\", \"route_br.1.weight\", \"route_br.2.weight\"], \"declared_dead_but_alive\": [], \"control_prior_grad_sum\": 0.0, \"head_o_grad_step0\": 335.57329177856445, \"n_trainable\": 258, \"pass\": false}",
+     "FAILED tests/test_v8f_n1dm.py::test_end_to_end_n1dm_arm_probe_levers_group_class_record_checkpoint_and_the_checker_reads_the_real_selfcheck",
+     "1 failed in 5.28s"
+    ]
+   }
+  ],
+  "named_test_red": true,
+  "any_named_test_red": true,
+  "all_red_by_failed_tests": true,
+  "file_restored": true,
+  "sha256_after": {
+   "stack/tanitad/models/v8f_mini.py": "bf285b10d8f331c6ca2c4084ca2fda351c434bc9d095c11b4dcbc940ff3d0781"
+  }
+ },
+ {
+  "mutant": "b_permute_p_across_rows",
+  "files": [
+   "stack/tanitad/models/v8f_mini.py"
+  ],
+  "edits": 1,
+  "tests": [
+   {
+    "test": "test_formula_the_plan_is_head_o_plus_the_p_weighted_branches_recomputed_from_hooks",
+    "rc": 1,
+    "red": true,
+    "red_by_a_failed_test_not_a_collection_error": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dm.py::test_formula_the_plan_is_head_o_plus_the_p_weighted_branches_recomputed_from_hooks[train]",
+     "1 failed in 3.23s"
+    ]
+   },
+   {
+    "test": "test_formula_p_permuted_across_rows_changes_the_plan_to_the_formula_with_the_permuted_p",
+    "rc": 1,
+    "red": true,
+    "red_by_a_failed_test_not_a_collection_error": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dm.py::test_formula_p_permuted_across_rows_changes_the_plan_to_the_formula_with_the_permuted_p",
+     "1 failed in 3.30s"
+    ]
+   }
+  ],
+  "named_test_red": true,
+  "any_named_test_red": true,
+  "all_red_by_failed_tests": true,
+  "file_restored": true,
+  "sha256_after": {
+   "stack/tanitad/models/v8f_mini.py": "bf285b10d8f331c6ca2c4084ca2fda351c434bc9d095c11b4dcbc940ff3d0781"
+  }
+ },
+ {
+  "mutant": "c_no_detach_on_p",
+  "files": [
+   "stack/tanitad/models/v8f_mini.py"
+  ],
+  "edits": 1,
+  "tests": [
+   {
+    "test": "test_reach_every_branch_gets_a_nonzero_gradient_and_the_controls_read_exactly_zero",
+    "rc": 1,
+    "red": true,
+    "red_by_a_failed_test_not_a_collection_error": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dm.py::test_reach_every_branch_gets_a_nonzero_gradient_and_the_controls_read_exactly_zero",
+     "1 failed in 3.48s"
+    ]
+   },
+   {
+    "test": "test_the_posterior_is_detached_decoder_gradient_on_route_head_is_exactly_zero_after_training_steps",
+    "rc": 1,
+    "red": true,
+    "red_by_a_failed_test_not_a_collection_error": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dm.py::test_the_posterior_is_detached_decoder_gradient_on_route_head_is_exactly_zero_after_training_steps",
+     "1 failed, 1 warning in 3.94s"
+    ]
+   },
+   {
+    "test": "test_probe_modes_reads_every_branch_the_permutation_the_identity_and_the_exact_zero_controls",
+    "rc": 1,
+    "red": true,
+    "red_by_a_failed_test_not_a_collection_error": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dm.py::test_probe_modes_reads_every_branch_the_permutation_the_identity_and_the_exact_zero_controls",
+     "1 failed, 1 warning in 4.21s"
+    ]
+   }
+  ],
+  "named_test_red": true,
+  "any_named_test_red": true,
+  "all_red_by_failed_tests": true,
+  "file_restored": true,
+  "sha256_after": {
+   "stack/tanitad/models/v8f_mini.py": "bf285b10d8f331c6ca2c4084ca2fda351c434bc9d095c11b4dcbc940ff3d0781"
+  }
+ },
+ {
+  "mutant": "d_hard_argmax_selection",
+  "files": [
+   "stack/tanitad/models/v8f_mini.py"
+  ],
+  "edits": 1,
+  "tests": [
+   {
+    "test": "test_formula_the_plan_is_head_o_plus_the_p_weighted_branches_recomputed_from_hooks",
+    "rc": 1,
+    "red": true,
+    "red_by_a_failed_test_not_a_collection_error": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dm.py::test_formula_the_plan_is_head_o_plus_the_p_weighted_branches_recomputed_from_hooks[train]",
+     "1 failed in 3.26s"
+    ]
+   },
+   {
+    "test": "test_formula_the_selection_is_one_deterministic_soft_form_no_argmax_no_sampling",
+    "rc": 1,
+    "red": true,
+    "red_by_a_failed_test_not_a_collection_error": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dm.py::test_formula_the_selection_is_one_deterministic_soft_form_no_argmax_no_sampling",
+     "1 failed in 2.09s"
+    ]
+   }
+  ],
+  "named_test_red": true,
+  "any_named_test_red": true,
+  "all_red_by_failed_tests": true,
+  "file_restored": true,
+  "sha256_after": {
+   "stack/tanitad/models/v8f_mini.py": "bf285b10d8f331c6ca2c4084ca2fda351c434bc9d095c11b4dcbc940ff3d0781"
+  }
+ },
+ {
+  "mutant": "e_branch_default_nonzero_init",
+  "files": [
+   "stack/tanitad/models/v8f_mini.py"
+  ],
+  "edits": 1,
+  "tests": [
+   {
+    "test": "test_z1_modes_at_step_0_equals_off_bit_for_bit_except_the_route_term",
+    "rc": 1,
+    "red": true,
+    "red_by_a_failed_test_not_a_collection_error": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dm.py::test_z1_modes_at_step_0_equals_off_bit_for_bit_except_the_route_term",
+     "1 failed, 1 warning in 2.75s"
+    ]
+   },
+   {
+    "test": "test_gdvb_refuses_a_nonzero_start_wrong_shape_bias_a_wrong_count_and_a_missing_optimiser_entry",
+    "rc": 0,
+    "red": false,
+    "red_by_a_failed_test_not_a_collection_error": false,
+    "tail": [
+     "1 passed in 6.82s"
+    ]
+   }
+  ],
+  "named_test_red": false,
+  "any_named_test_red": true,
+  "all_red_by_failed_tests": false,
+  "file_restored": true,
+  "sha256_after": {
+   "stack/tanitad/models/v8f_mini.py": "bf285b10d8f331c6ca2c4084ca2fda351c434bc9d095c11b4dcbc940ff3d0781"
+  }
+ },
+ {
+  "mutant": "f_delete_the_ce_loss_line",
+  "files": [
+   "stack/tanitad/models/v8f_mini.py"
+  ],
+  "edits": 1,
+  "tests": [
+   {
+    "test": "test_reach_every_branch_gets_a_nonzero_gradient_and_the_controls_read_exactly_zero",
+    "rc": 1,
+    "red": true,
+    "red_by_a_failed_test_not_a_collection_error": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dm.py::test_reach_every_branch_gets_a_nonzero_gradient_and_the_controls_read_exactly_zero",
+     "1 failed in 3.24s"
+    ]
+   },
+   {
+    "test": "test_end_to_end_n1dm_arm_probe_levers_group_class_record_checkpoint_and_the_checker_reads_the_real_selfcheck",
+    "rc": 1,
+    "red": true,
+    "red_by_a_failed_test_not_a_collection_error": true,
+    "tail": [
+     "E           AssertionError: G-LIVE failed: {\"terms\": {\"ckpt\": 0.7731657028198242, \"goal\": 0.7040688991546631, \"lat\": 1.7332104444503784, \"lon\": 1.9283884763717651, \"cons\": 0.225113645195961, \"ade\": 6.220710754394531, \"fde\": 14.810052871704102, \"acc\": 28.35792350769043, \"pen_SPEED\": 21.465383529663086, \"pens_SPEED\": 21.5633487701416, \"pen_STOP\": 0.0, \"pens_STOP\": 117.04785919189453, \"pen_TURN\": 1.6168930530548096, \"pens_TURN\": 9.281290054321289, \"pen_LEAD\": 0.0, \"pens_LEAD\": 0.0, \"wm\": 209.21414184570312, \"route\": 1.1754696369171143, \"total\": 76.16400909423828}, \"missing_terms\": [], \"unexpected_terms\": [], \"dead_params\": [\"route_head.bias\", \"route_head.weight\"], \"declared_dead\": [], \"unexpected_dead\": [\"route_head.bias\", \"route_head.weight\"], \"declared_dead_but_alive\": [], \"control_prior_grad_sum\": 0.0, \"head_o_grad_step0\": 335.57329177856445, \"n_trainable\": 258, \"pass\": false}",
+     "FAILED tests/test_v8f_n1dm.py::test_end_to_end_n1dm_arm_probe_levers_group_class_record_checkpoint_and_the_checker_reads_the_real_selfcheck",
+     "1 failed in 5.10s"
+    ]
+   }
+  ],
+  "named_test_red": true,
+  "any_named_test_red": true,
+  "all_red_by_failed_tests": true,
+  "file_restored": true,
+  "sha256_after": {
+   "stack/tanitad/models/v8f_mini.py": "bf285b10d8f331c6ca2c4084ca2fda351c434bc9d095c11b4dcbc940ff3d0781"
+  }
+ },
+ {
+  "mutant": "g_remove_the_own_code_mask",
+  "files": [
+   "stack/tanitad/models/v8f_mini.py"
+  ],
+  "edits": 1,
+  "tests": [
+   {
+    "test": "test_reach_a_batch_with_no_own_code_row_gives_exactly_zero_ce_and_the_branches_still_train",
+    "rc": 1,
+    "red": true,
+    "red_by_a_failed_test_not_a_collection_error": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dm.py::test_reach_a_batch_with_no_own_code_row_gives_exactly_zero_ce_and_the_branches_still_train",
+     "1 failed, 1 warning in 3.23s"
+    ]
+   }
+  ],
+  "named_test_red": true,
+  "any_named_test_red": true,
+  "all_red_by_failed_tests": true,
+  "file_restored": true,
+  "sha256_after": {
+   "stack/tanitad/models/v8f_mini.py": "bf285b10d8f331c6ca2c4084ca2fda351c434bc9d095c11b4dcbc940ff3d0781"
+  }
+ },
+ {
+  "mutant": "h_branches_not_in_the_route_group",
+  "files": [
+   "stack/tanitad/models/v8f_mini.py"
+  ],
+  "edits": 1,
+  "tests": [
+   {
+    "test": "test_z1_modes_at_step_0_equals_off_bit_for_bit_except_the_route_term",
+    "rc": 1,
+    "red": true,
+    "red_by_a_failed_test_not_a_collection_error": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dm.py::test_z1_modes_at_step_0_equals_off_bit_for_bit_except_the_route_term",
+     "1 failed, 1 warning in 2.88s"
+    ]
+   }
+  ],
+  "named_test_red": true,
+  "any_named_test_red": true,
+  "all_red_by_failed_tests": true,
+  "file_restored": true,
+  "sha256_after": {
+   "stack/tanitad/models/v8f_mini.py": "bf285b10d8f331c6ca2c4084ca2fda351c434bc9d095c11b4dcbc940ff3d0781"
+  }
+ },
+ {
+  "mutant": "i_modules_not_built_under_a_forked_rng",
+  "files": [
+   "stack/tanitad/models/v8f_mini.py"
+  ],
+  "edits": 1,
+  "tests": [
+   {
+    "test": "test_z0c_the_modes_build_draws_nothing_from_the_global_rng",
+    "rc": 1,
+    "red": true,
+    "red_by_a_failed_test_not_a_collection_error": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dm.py::test_z0c_the_modes_build_draws_nothing_from_the_global_rng",
+     "1 failed in 2.69s"
+    ]
+   },
+   {
+    "test": "test_z1_modes_at_step_0_equals_off_bit_for_bit_except_the_route_term",
+    "rc": 1,
+    "red": true,
+    "red_by_a_failed_test_not_a_collection_error": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dm.py::test_z1_modes_at_step_0_equals_off_bit_for_bit_except_the_route_term",
+     "1 failed, 1 warning in 2.85s"
+    ]
+   }
+  ],
+  "named_test_red": true,
+  "any_named_test_red": true,
+  "all_red_by_failed_tests": true,
+  "file_restored": true,
+  "sha256_after": {
+   "stack/tanitad/models/v8f_mini.py": "bf285b10d8f331c6ca2c4084ca2fda351c434bc9d095c11b4dcbc940ff3d0781"
+  }
+ },
+ {
+  "mutant": "j_branches_with_a_bias",
+  "files": [
+   "stack/tanitad/models/v8f_mini.py"
+  ],
+  "edits": 1,
+  "tests": [
+   {
+    "test": "test_z1_modes_at_step_0_equals_off_bit_for_bit_except_the_route_term",
+    "rc": 1,
+    "red": true,
+    "red_by_a_failed_test_not_a_collection_error": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dm.py::test_z1_modes_at_step_0_equals_off_bit_for_bit_except_the_route_term",
+     "1 failed, 1 warning in 2.81s"
+    ]
+   },
+   {
+    "test": "test_gdvb_refuses_a_nonzero_start_wrong_shape_bias_a_wrong_count_and_a_missing_optimiser_entry",
+    "rc": 0,
+    "red": false,
+    "red_by_a_failed_test_not_a_collection_error": false,
+    "tail": [
+     "1 passed in 7.46s"
+    ]
+   }
+  ],
+  "named_test_red": false,
+  "any_named_test_red": true,
+  "all_red_by_failed_tests": false,
+  "file_restored": true,
+  "sha256_after": {
+   "stack/tanitad/models/v8f_mini.py": "bf285b10d8f331c6ca2c4084ca2fda351c434bc9d095c11b4dcbc940ff3d0781"
+  }
+ },
+ {
+  "mutant": "k_branch_prefix_not_admitted_by_the_init_ckpt_gate",
+  "files": [
+   "stack/tanitad/models/v8f_mini.py"
+  ],
+  "edits": 1,
+  "tests": [
+   {
+    "test": "test_the_snapshot_is_the_1f217bf0_model_and_the_modes_constants",
+    "rc": 1,
+    "red": true,
+    "red_by_a_failed_test_not_a_collection_error": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dm.py::test_the_snapshot_is_the_1f217bf0_model_and_the_modes_constants",
+     "1 failed in 2.20s"
+    ]
+   },
+   {
+    "test": "test_init_ckpt_fresh_keys_and_resume_refusal",
+    "rc": 1,
+    "red": true,
+    "red_by_a_failed_test_not_a_collection_error": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dm.py::test_init_ckpt_fresh_keys_and_resume_refusal",
+     "1 failed, 1 warning in 7.28s"
+    ]
+   }
+  ],
+  "named_test_red": true,
+  "any_named_test_red": true,
+  "all_red_by_failed_tests": true,
+  "file_restored": true,
+  "sha256_after": {
+   "stack/tanitad/models/v8f_mini.py": "bf285b10d8f331c6ca2c4084ca2fda351c434bc9d095c11b4dcbc940ff3d0781"
+  }
+ },
+ {
+  "mutant": "l_gdvb_modes_clause_dropped",
+  "files": [
+   "stack/scripts/v8f_mini_train.py"
+  ],
+  "edits": 1,
+  "tests": [
+   {
+    "test": "test_gdvb_refuses_a_nonzero_start_wrong_shape_bias_a_wrong_count_and_a_missing_optimiser_entry",
+    "rc": 1,
+    "red": true,
+    "red_by_a_failed_test_not_a_collection_error": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dm.py::test_gdvb_refuses_a_nonzero_start_wrong_shape_bias_a_wrong_count_and_a_missing_optimiser_entry",
+     "1 failed in 4.20s"
+    ]
+   }
+  ],
+  "named_test_red": true,
+  "any_named_test_red": true,
+  "all_red_by_failed_tests": true,
+  "file_restored": true,
+  "sha256_after": {
+   "stack/scripts/v8f_mini_train.py": "4f9ef88b33cd97b24d54a52b1fd6fab47931e1c31e4298cc48f2a386062ab781"
+  }
+ },
+ {
+  "mutant": "m_probe_permutation_hook_is_a_noop",
+  "files": [
+   "stack/scripts/v8f_mini_train.py"
+  ],
+  "edits": 1,
+  "tests": [
+   {
+    "test": "test_probe_modes_reads_every_branch_the_permutation_the_identity_and_the_exact_zero_controls",
+    "rc": 1,
+    "red": true,
+    "red_by_a_failed_test_not_a_collection_error": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dm.py::test_probe_modes_reads_every_branch_the_permutation_the_identity_and_the_exact_zero_controls",
+     "1 failed, 1 warning in 4.14s"
+    ]
+   },
+   {
+    "test": "test_end_to_end_n1dm_arm_probe_levers_group_class_record_checkpoint_and_the_checker_reads_the_real_selfcheck",
+    "rc": 1,
+    "red": true,
+    "red_by_a_failed_test_not_a_collection_error": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dm.py::test_end_to_end_n1dm_arm_probe_levers_group_class_record_checkpoint_and_the_checker_reads_the_real_selfcheck",
+     "1 failed, 1 warning in 6.82s"
+    ]
+   }
+  ],
+  "named_test_red": true,
+  "any_named_test_red": true,
+  "all_red_by_failed_tests": true,
+  "file_restored": true,
+  "sha256_after": {
+   "stack/scripts/v8f_mini_train.py": "4f9ef88b33cd97b24d54a52b1fd6fab47931e1c31e4298cc48f2a386062ab781"
+  }
+ },
+ {
+  "mutant": "n_probe_not_wired_into_the_selfcheck",
+  "files": [
+   "stack/scripts/v8f_mini_train.py"
+  ],
+  "edits": 1,
+  "tests": [
+   {
+    "test": "test_end_to_end_n1dm_arm_probe_levers_group_class_record_checkpoint_and_the_checker_reads_the_real_selfcheck",
+    "rc": 1,
+    "red": true,
+    "red_by_a_failed_test_not_a_collection_error": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dm.py::test_end_to_end_n1dm_arm_probe_levers_group_class_record_checkpoint_and_the_checker_reads_the_real_selfcheck",
+     "1 failed, 1 warning in 8.21s"
+    ]
+   }
+  ],
+  "named_test_red": true,
+  "any_named_test_red": true,
+  "all_red_by_failed_tests": true,
+  "file_restored": true,
+  "sha256_after": {
+   "stack/scripts/v8f_mini_train.py": "4f9ef88b33cd97b24d54a52b1fd6fab47931e1c31e4298cc48f2a386062ab781"
+  }
+ },
+ {
+  "mutant": "o_checker_drops_the_m_gate_read",
+  "files": [
+   "stack/scripts/strat1_check.py"
+  ],
+  "edits": 1,
+  "tests": [
+   {
+    "test": "test_n1dm_checks_pass_on_the_real_checker[gate]",
+    "rc": 1,
+    "red": true,
+    "red_by_a_failed_test_not_a_collection_error": true,
+    "tail": [
+     "FAILED tests/test_strat1_n1dm_check.py::test_n1dm_checks_pass_on_the_real_checker[gate]",
+     "1 failed in 0.35s"
+    ]
+   }
+  ],
+  "named_test_red": true,
+  "any_named_test_red": true,
+  "all_red_by_failed_tests": true,
+  "file_restored": true,
+  "sha256_after": {
+   "stack/scripts/strat1_check.py": "dc6efb173c32a985157cb0a95b1deedad4fc469931afb1f429e6b60ec5162c1a"
+  }
+ },
+ {
+  "mutant": "p_one_eval_loader_drops_the_route_keys_v8f_t1_eval_rbd",
+  "files": [
+   "stack/scripts/v8f_t1_eval_rbd.py"
+  ],
+  "edits": 1,
+  "tests": [
+   {
+    "test": "test_roundtrip_each_loader_builds_the_branches_from_the_checkpoint_cfg_strict_and_equal[v8f_t1_eval_rbd.py]",
+    "rc": 1,
+    "red": true,
+    "red_by_a_failed_test_not_a_collection_error": true,
+    "tail": [
+     "                error_msgs.insert(",
+     "FAILED tests/test_v8f_n1dm.py::test_roundtrip_each_loader_builds_the_branches_from_the_checkpoint_cfg_strict_and_equal[v8f_t1_eval_rbd.py]",
+     "1 failed in 2.94s"
+    ]
+   }
+  ],
+  "named_test_red": true,
+  "any_named_test_red": true,
+  "all_red_by_failed_tests": true,
+  "file_restored": true,
+  "sha256_after": {
+   "stack/scripts/v8f_t1_eval_rbd.py": "4a373316143208c7de2574ee1fa4c8467e0d30b83d4b2423ab7c688653863a72"
+  }
+ },
+ {
+  "mutant": "q_ce_weight_ignored_in_the_total",
+  "files": [
+   "stack/tanitad/models/v8f_mini.py"
+  ],
+  "edits": 1,
+  "tests": [
+   {
+    "test": "test_reach_every_branch_gets_a_nonzero_gradient_and_the_controls_read_exactly_zero",
+    "rc": 1,
+    "red": true,
+    "red_by_a_failed_test_not_a_collection_error": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dm.py::test_reach_every_branch_gets_a_nonzero_gradient_and_the_controls_read_exactly_zero",
+     "1 failed in 3.31s"
+    ]
+   }
+  ],
+  "named_test_red": true,
+  "any_named_test_red": true,
+  "all_red_by_failed_tests": true,
+  "file_restored": true,
+  "sha256_after": {
+   "stack/tanitad/models/v8f_mini.py": "bf285b10d8f331c6ca2c4084ca2fda351c434bc9d095c11b4dcbc940ff3d0781"
+  }
+ },
+ {
+  "mutant": "r_every_branch_reads_p_column_0",
+  "files": [
+   "stack/tanitad/models/v8f_mini.py"
+  ],
+  "edits": 1,
+  "tests": [
+   {
+    "test": "test_formula_the_plan_is_head_o_plus_the_p_weighted_branches_recomputed_from_hooks",
+    "rc": 1,
+    "red": true,
+    "red_by_a_failed_test_not_a_collection_error": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dm.py::test_formula_the_plan_is_head_o_plus_the_p_weighted_branches_recomputed_from_hooks[train]",
+     "1 failed in 3.25s"
+    ]
+   }
+  ],
+  "named_test_red": true,
+  "any_named_test_red": true,
+  "all_red_by_failed_tests": true,
+  "file_restored": true,
+  "sha256_after": {
+   "stack/tanitad/models/v8f_mini.py": "bf285b10d8f331c6ca2c4084ca2fda351c434bc9d095c11b4dcbc940ff3d0781"
+  }
+ },
+ {
+  "mutant": "s_p_is_the_constant_one_third_not_the_route_head",
+  "files": [
+   "stack/tanitad/models/v8f_mini.py"
+  ],
+  "edits": 1,
+  "tests": [
+   {
+    "test": "test_formula_the_plan_is_head_o_plus_the_p_weighted_branches_recomputed_from_hooks",
+    "rc": 1,
+    "red": true,
+    "red_by_a_failed_test_not_a_collection_error": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dm.py::test_formula_the_plan_is_head_o_plus_the_p_weighted_branches_recomputed_from_hooks[train]",
+     "1 failed in 3.40s"
+    ]
+   },
+   {
+    "test": "test_formula_p_permuted_across_rows_changes_the_plan_to_the_formula_with_the_permuted_p",
+    "rc": 1,
+    "red": true,
+    "red_by_a_failed_test_not_a_collection_error": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dm.py::test_formula_p_permuted_across_rows_changes_the_plan_to_the_formula_with_the_permuted_p",
+     "1 failed in 3.24s"
+    ]
+   }
+  ],
+  "named_test_red": true,
+  "any_named_test_red": true,
+  "all_red_by_failed_tests": true,
+  "file_restored": true,
+  "sha256_after": {
+   "stack/tanitad/models/v8f_mini.py": "bf285b10d8f331c6ca2c4084ca2fda351c434bc9d095c11b4dcbc940ff3d0781"
+  }
+ },
+ {
+  "mutant": "t_label_permuted_within_the_batch_n1dh_mutation_c",
+  "files": [
+   "stack/scripts/v8f_mini_train.py"
+  ],
+  "edits": 1,
+  "tests": [
+   {
+    "test": "test_klabel_route_stage_equals_the_label_source_called_directly_on_analytic_arcs",
+    "rc": 1,
+    "red": true,
+    "red_by_a_failed_test_not_a_collection_error": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dh.py::test_klabel_route_stage_equals_the_label_source_called_directly_on_analytic_arcs",
+     "1 failed in 2.18s"
+    ]
+   }
+  ],
+  "named_test_red": true,
+  "any_named_test_red": true,
+  "all_red_by_failed_tests": true,
+  "file_restored": true,
+  "sha256_after": {
+   "stack/scripts/v8f_mini_train.py": "4f9ef88b33cd97b24d54a52b1fd6fab47931e1c31e4298cc48f2a386062ab781"
+  }
+ },
+ {
+  "mutant": "u_route_emb_present_beside_the_branches_gdvb",
+  "files": [
+   "stack/scripts/v8f_mini_train.py"
+  ],
+  "edits": 1,
+  "tests": [
+   {
+    "test": "test_gdvb_refuses_declared_modes_built_without_or_with_the_wrong_modules",
+    "rc": 1,
+    "red": true,
+    "red_by_a_failed_test_not_a_collection_error": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dm.py::test_gdvb_refuses_declared_modes_built_without_or_with_the_wrong_modules",
+     "1 failed in 5.74s"
+    ]
+   }
+  ],
+  "named_test_red": true,
+  "any_named_test_red": true,
+  "all_red_by_failed_tests": true,
+  "file_restored": true,
+  "sha256_after": {
+   "stack/scripts/v8f_mini_train.py": "4f9ef88b33cd97b24d54a52b1fd6fab47931e1c31e4298cc48f2a386062ab781"
+  }
+ }
+]

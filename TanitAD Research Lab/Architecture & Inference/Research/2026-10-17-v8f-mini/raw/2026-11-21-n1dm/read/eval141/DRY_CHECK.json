@@ -1,0 +1,65 @@
+{
+ "checks": [
+  {
+   "check": "T1 dump argv routing, kappa 0.2 (8 tags, hb wrapper, inner v8f_t1_eval_rbd, inputs exist, ckpt sha refusals none)",
+   "ok": true,
+   "detail": "['{\"tags\": 8, \"out\": \"F:\\\\\\\\TanitAD-scratch\\\\\\\\n1dc\\\\\\\\read_n1dm\\\\\\\\eval141/dry_scratch/dumps_unused\", \"kappa\": \"0.2\"}']"
+  },
+  {
+   "check": "T1 dump argv routing, kappa none (8 tags, hb wrapper, inner v8f_t1_eval_rbd, inputs exist, ckpt sha refusals none)",
+   "ok": true,
+   "detail": "['{\"tags\": 8, \"out\": \"F:\\\\\\\\TanitAD-scratch\\\\\\\\n1dc\\\\\\\\read_n1dm\\\\\\\\eval141/dry_scratch/dumps_unused\", \"kappa\": \"none\"}']"
+  },
+  {
+   "check": "T0 argv render + inputs exist (2 arms x 3 variants)",
+   "ok": true,
+   "detail": "['6 T0 argvs']"
+  },
+  {
+   "check": "STRATEGIC view plans (banked sources present, chain-made ones named)",
+   "ok": true,
+   "detail": "['8 N1-slot sources made by the chain; 20 N1D-reference S1 sources present; 8 N1DM S1 sources made by the chain']"
+  },
+  {
+   "check": "strategic / read scripts parse and import their frozen readers",
+   "ok": true,
+   "detail": "['[taniteval] tanitad OVERRIDE -> F:/TanitAD-scratch/strat1/read/tree/stack (F:\\\\TanitAD-scratch/strat1/read/tree/stack\\\\tanitad\\\\__init__.py)']"
+  },
+  {
+   "check": "chain-script external files exist",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "check": "run_n1dm141.sh bash -n",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "banked N1D inputs present",
+   "ok": true,
+   "detail": "banked N1D inputs: OK"
+  },
+  {
+   "check": "N1D checkpoint sha256 equals the pod's (N1D_s0/s1 + the N1DH lines in the same file)",
+   "ok": true,
+   "detail": "N1DC_s0/ckpt_last.pt: OK N1DC_s1/ckpt_last.pt: OK N1D_s0/ckpt_last.pt: OK N1D_s1/ckpt_last.pt: OK "
+  },
+  {
+   "check": "N1DM checkpoints: NOT PULLED YET (arms still to train); chain step ckpt_sha refuses until ckpts/N1DM_s{0,1}/ckpt_last.pt + SHA256_PODS.txt exist",
+   "ok": true,
+   "detail": "stand-in empty files used for the argv render only"
+  },
+  {
+   "check": "every script the chain names exists in eval141/ (8: check_banked_n1d.py, k_hb0_141.py, n1dm_dumps.py, n1dm_read141.py, n1dm_strategic.py, n1dm_t0.py, n1dm_view.py, n1dw_view_s1slot.py)",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "check": "chain steps listed (14), gate() before every step()",
+   "ok": true,
+   "detail": "['ckpt_sha', 'ckpt_sha_n1d', 'banked_n1d', 'khb0', 'hb_dump_$A', 'hb_dump_${A}Z']"
+  }
+ ],
+ "all_ok": true
+}
