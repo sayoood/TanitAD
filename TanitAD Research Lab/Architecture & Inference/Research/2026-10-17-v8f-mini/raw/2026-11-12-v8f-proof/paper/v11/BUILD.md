@@ -82,3 +82,9 @@ Fragment added: `frag_row153.tex` (card ADD92, what kind of gap error a closing 
 ## Update after row 154 (2026-11-20)
 
 Fragment added: `frag_row154.tex` (card ADD93, the reader gap error split by clip, in the terms of the bar of row 153), appended to `frag_row127.tex`; the item of this fork in `frag_status_run.tex` changed (card ADD87 running, cards ADD92 and ADD93 read). `patch_tex_v11.py`: `ok edits 11`; row 154 once in the TeX; Tectonic rc 0, xdv 46 pages, 2667600 bytes; `check_numbers_v11.py` over rows 100 to 154: 2435 tokens, 0 not found. PDF `tanitad_4b_paper_r154.pdf` c560a8314e0c2722 (431368 bytes). The PDF of row 153 (`tanitad_4b_paper_r153.pdf`) was built and is not landed; this one takes its place in the hold.
+
+## Update after rows 155 to 158 (2026-11-21)
+
+Fragments added: `frag_row157.tex` (rows 155 to 157: card ADD87, the token head on the finer token grid; card ADD94, failed at a control before any rollout; card ADD95, the gap bar inside the lead rule) and `frag_row158.tex` (card ADD96, the cut of the reader gap error that the rule needs), both appended to `frag_row127.tex`; the item of this fork in `frag_status_run.tex` changed (cards ADD87 and ADD94 to ADD96 read, card ADD97 frozen). `patch_tex_v11.py`: ok edits 11. Build with Tectonic 0.17.0: 47 pages. `check_numbers_v11.py` on rows 100 to 158: 2595 tokens checked, 0 not found. PDF: `tanitad_4b_paper_r158.pdf` e95a9193db4ad564.
+
+Rebuilt on 2026-11-21 after the other session read row 157: one scope sentence on the arm with a scale error of 20 percent was added to the paragraph of rows 155 to 157 (the rule's largest gap of 60 m truncates the planted error on 118 of 3,986 frames). `tanitad_4b_paper_r158.pdf` is now 576cb058eef0f217; the build before it, e95a9193db4ad564, was not landed. Numbers check: 2607 tokens, 0 not found.

@@ -1,0 +1,23 @@
+Traceback (most recent call last):
+  File "/workspace/v8proof/gaprule10kb/kit/read_gaprule10kb.py", line 268, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/workspace/v8proof/gaprule10kb/kit/read_gaprule10kb.py", line 232, in main
+    res = run_controls(a)
+          ^^^^^^^^^^^^^^^
+  File "/workspace/v8proof/gaprule10kb/kit/read_gaprule10kb.py", line 189, in run_controls
+    cells, lv, lv_seed, pairs, fams, g_ok = measure(a, E, log)
+                                            ^^^^^^^^^^^^^^^^^^
+  File "/workspace/v8proof/gaprule10kb/kit/read_gaprule10kb.py", line 170, in measure
+    G = R.read_grid(a, E, "30", keys, run_list, spread, pairs_def, {}, log)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/v8proof/podread/root/integ10k/read_longroll10k_n4.py", line 259, in read_grid_n4
+    return _prev_read_grid(*args, **kw)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/v8proof/podread/root/integ10k/read_longroll10k_n3.py", line 89, in read_grid_n3
+    G = _orig_read_grid(a, E, grid_name, keys, runs, spread_run, pairs, dod_defs, log)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/v8proof/podread/root/integ10k/read_longroll10k.py", line 541, in read_grid
+    hctrl = H.run_controls(ref, L, J, H.bank_speeds(), W, inv, n_ep, hw_spread["U"], list(SEEDS), a.n_boot_control, [(pr0[0], pr0[1])], sb, hw_spread)
+                                                                                                  ^^^^^^^^^^^^^^^^
+AttributeError: 'Namespace' object has no attribute 'n_boot_control'

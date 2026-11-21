@@ -1,0 +1,15 @@
+wrapper /workspace/v8proof/integ10k/build/v8f_t1_eval_reader_rule_rzgfhqetj.py cbf7063d867c9f4e
+PASS A1 flag --rule-join exists
+PASS A2 the rule label source is built from the rule join
+PASS A3 the namespace of the pinned tool keeps --eval-join (no assignment to a.eval_join)
+PASS A4 install gets no join (the label of the install is not built)
+PASS A5 the run record has rule_join and rule_join_sha256
+PASS A6 none of the banned words in the text
+RUN jr_old rc=0
+RUN jr_new rc=0
+RUN jr_g0 rc=0
+PASS J2A jr_new equals jr_old: largest difference 0 over 14 files
+PASS J2A2 the rule log of jr_new records an empty rule_join
+PASS J2B jr_g0 equals jr_old: largest difference 0 over 14 files
+PASS J2C a missing --rule-join file is refused
+ZZ CHECK-WRAPPER-J PASS
