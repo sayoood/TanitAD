@@ -3,7 +3,9 @@
 CPU, fp32 torch not involved (numpy float64), one thread. What is pinned:
 
 * ADD63's identity controls, array for array: gain 1.0 equals ``causal``, gain 0.0 equals ``causal_z``; the general formula agrees with both to <= 1e-12;
-* the promoted functions equal the STUDY file's own functions bit for bit: ``GOLDEN_SHA256`` is the digest of the study functions' outputs on the seeded cases below
+* the promoted functions equal the STUDY file's own functions bit for bit: ``GOLDEN_SHA256`` holds the digest of the study functions' outputs on the seeded cases below,
+  one per platform, because float64 cos/sin and SIMD paths differ in the last bit across libm/numpy builds (ROLLHIST Amendment 3): the dev box (Windows, numpy 2.5.1)
+  and the LoRA pod (Linux, numpy 2.5.4, where ``b1/study_vs_promoted.py`` read the study and promoted functions bit-identical on 2,880 arrays, 2026-11-21);
   (computed by exec'ing ``integ10k/v8f_t1_eval_reader_rule_rzg.py`` at the tip 7b26a8ac, ``b1/study_vs_promoted.py``); a changed digit anywhere in the arithmetic changes it;
 * control a3 (ported): the one-frame acceleration read at the last executed knot is ``gain`` x the executed one, to <= 1e-6;
 * ``--path-exec``: positions and headings equal ``backward_frames`` bit for bit, the speed column equals that of the same gain without it;
@@ -27,7 +29,10 @@ for p in (REPO / "stack", REPO / "taniteval", REPO / "stack" / "scripts"):
 import v8f_t1_eval as T1  # noqa: E402
 import v8f_t1_readout as RO  # noqa: E402
 
-GOLDEN_SHA256 = "1c42d85fdbe040c9e10c3967c4df34fa405fe39a0ad45c91a5f5a9cf0cd4a8e9"
+GOLDEN_SHA256 = {
+    "1c42d85fdbe040c9e10c3967c4df34fa405fe39a0ad45c91a5f5a9cf0cd4a8e9",  # study functions, dev box (Windows, numpy 2.5.1)
+    "6b93f03a9642298870f0ac168da40d4fe3222d3ee2a397c8b872f31208ebae87",  # study functions, LoRA pod (Linux, numpy 2.5.4)
+}
 DT = 0.2
 
 
@@ -54,7 +59,7 @@ def test_promoted_functions_equal_the_study_functions_bit_for_bit_golden_digest(
         for o in outs:
             for w in o:
                 h.update(np.ascontiguousarray(w, np.float64).tobytes())
-    assert h.hexdigest() == GOLDEN_SHA256
+    assert h.hexdigest() in GOLDEN_SHA256
 
 
 def test_gain_one_is_causal_and_gain_zero_is_causal_z_array_for_array():
