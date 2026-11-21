@@ -84,7 +84,7 @@ def _queue_pycode():
 def _run_guard(code, argv_tokens, tmp_path):
     f = tmp_path / "a.json"
     f.write_text(json.dumps({"argv": argv_tokens}), encoding="utf-8")
-    return subprocess.run([sys.executable, "-c", code, str(f)], capture_output=True, text=True).returncode
+    return subprocess.run([sys.executable, "-c", code, str(f)], capture_output=True, text=True, encoding="utf-8").returncode
 
 
 def test_queue_arm_guard_accepts_the_arm_and_refuses_k2dc02(tmp_path):
