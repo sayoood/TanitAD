@@ -38,7 +38,11 @@ import gate_checks as GC  # noqa: E402
 
 N = 0
 HEX_BASE = "ab" * 32
-W_FIX = 0.25                                                       # a fixture rank_w (the MM's real one is the weight rule's output)
+W_FIX = 0.25                                                       # a fixture rank_w for the numeric gradient captures below (the MM's real one is the weight rule's output)
+# the weight the TEMPLATE argv and the filled profile carry: the registered SCORERFT_RANK_W once the MM fills it (the profile then REQUIRES that exact --rank-w,
+# so a fixture value would be refused), else the fixture. MM 2026-11-21: with W_FIX here this file went RED as soon as the pin was filled, and it is in
+# SCORERFT_SUITE_EXTRA, so T's G-SUITE would have refused T (MEASURED on a scratch copy with SCORERFT_RANK_W = 0.5).
+W_ARGV = float(L.SCORERFT_RANK_W) if L.SCORERFT_RANK_W is not None else W_FIX
 ARMS = ("T", "C", "Ts", "Cs")
 NAMES = {"T": "refe_scorerft_t", "C": "refe_scorerft_c", "Ts": "refe_scorerft_t_s1", "Cs": "refe_scorerft_c_s1"}
 # whole-profile fingerprints sha256(repr(sorted(items)))[:16] of EVERY profile that existed at 36b92a2b (the 2026-11-07 trap: a launch_gate.py edit can move them, and other tests pin them BY VALUE)
@@ -62,12 +66,12 @@ def filled(arm: str) -> dict:
     p = L.scorerft_profile(arm)
     p["init_from_sha256"] = HEX_BASE
     if L.SCORERFT_ARM_RANK[arm]:
-        p["rank_w"] = W_FIX
+        p["rank_w"] = W_ARGV
     return p
 
 
 def targv(arm: str) -> list:
-    return L.scorerft_argv(arm, rank_w=W_FIX if L.SCORERFT_ARM_RANK[arm] else None)
+    return L.scorerft_argv(arm, rank_w=W_ARGV if L.SCORERFT_ARM_RANK[arm] else None)
 
 
 def refusals(prof: dict, argv: list) -> str:
@@ -121,7 +125,7 @@ def chk_argv_delta():
     ok(delta(Ts, T) == {"--seed", "--out"}, delta(Ts, T))
     ok(delta(Cs, C) == {"--seed", "--out"}, delta(Cs, C))
     ok(flagset(C)["--rank-w"] == ["0.0"] and "--rank-heads" not in flagset(C), "C names --rank-w 0.0 explicitly and no head")
-    ok(flagset(T)["--rank-heads"] == ["ep,gate"] and float(flagset(T)["--rank-w"][0]) == W_FIX and flagset(T)["--rank-gate-topk"] == ["8"], "T rule")
+    ok(flagset(T)["--rank-heads"] == ["ep,gate"] and float(flagset(T)["--rank-w"][0]) == W_ARGV and flagset(T)["--rank-gate-topk"] == ["8"], "T rule")
     c1 = flagset(L.p5c_argv("C1"))
     for a_, v_ in zip(ARMS, (T, C, Ts, Cs)):
         d = delta(v_, L.p5c_argv("C1"))
@@ -185,7 +189,7 @@ def drop(argv: list, flag: str) -> list:
 def chk_levers():
     pT, pC = filled("T"), filled("C")
     T, C = targv("T"), targv("C")
-    for nm, bad in (("steps", mv(T, "--steps", "2000")), ("seed", mv(T, "--seed", "1")), ("rank-w", mv(T, "--rank-w", "0.5")), ("heads", mv(T, "--rank-heads", "ep")),
+    for nm, bad in (("steps", mv(T, "--steps", "2000")), ("seed", mv(T, "--seed", "1")), ("rank-w", mv(T, "--rank-w", repr(W_ARGV + 0.5))), ("heads", mv(T, "--rank-heads", "ep")),
                     ("gap", mv(T, "--rank-ep-gap", "0.05")), ("topk", mv(T, "--rank-gate-topk", "16")), ("lr", mv(T, "--lr", "1e-4")), ("score-w", mv(T, "--score-w", "0.2")),
                     ("batch", mv(T, "--batch", "2")), ("nav", mv(T, "--nav-mode", "goal")), ("no rank-w (R-CTRL)", drop(T, "--rank-w")), ("no heads", drop(T, "--rank-heads")),
                     ("no table", drop(T, "--traj-label-table")), ("no init", drop(T, "--init-from")), ("extra flag", T + ["--field-labels", "/x"]), ("w-field", mv(T, "--w-field", "2.0"))):
