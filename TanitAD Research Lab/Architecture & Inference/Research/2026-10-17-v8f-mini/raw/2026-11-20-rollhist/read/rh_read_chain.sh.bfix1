@@ -1,0 +1,88 @@
+#!/bin/bash
+# rh_read_chain.sh -- STAGED, NOT STARTED.  ONE detached dev-box chain: the ROLLHIST read (card PREREG_V8F_ROLLHIST.md sha256 781eea87, Amendment 1 sha256 87928487; code of record 43319227).
+# CPU only, 2 threads, ONE process at a time, every step gated on dev-box free commit >= 5.5 GB (wait_commit.py) and F: free >= 6 GB.  Resumable: out/steps/<name>.ok.
+#   0  gates: C_EXEC.json pass (else the stage-A reference must be re-run under the tier of record: see HANDOFF_READ.md), the tree blobcheck file, the unit/self tests of the reader
+#   1  pull the 4 checkpoints from the pod (the pod's own sha256sum, pod path /root/rollhist/runs/<arm>/train/ckpt_last.pt), check each against it  -> ckpts/<arm>/ckpt_last.pt, ckpts/SHA256_PODS.txt
+#   2  24 rollouts: for seed 0,1; for RH,B0; the six forms (rh_roll.py: tier of record v8f_t1_eval_hb.py --kappa-max 0.2 --inner v8f_t1_eval_reader_rule_rzg)
+#   3  K-REPLAY: one 64-window chunk of RH_R0C10XHb20_s0 rolled twice, bit-identical
+#   4  G-T0: the T0 E0 eval of the 4 checkpoints (rh_t0.py run), then the guard
+#   5  readers: headway (U, C, F), families (q3), STRATEGIC (rh_strat.py over the frozen ADD66 reader)
+#   0b refuse to start unless the stage-A references finished (out/rh_refs_chain.log last line ZZ ROLLHIST-REFS DONE ZZ) or RH_REFS_SKIP=1 (Amendment 2 item 5)
+#   5b stage-A reference readers over out/refs dumps (F_U,c and the UE.A reference of P2; ADD68's JSON printed beside)
+#   6  rh_read.py -> out/read/RESULT_ROLLHIST.json  (one committed outcome name, PROVISIONAL on one seed)
+# Env: RH_SEEDS (default "0,1"; "0" or "1" = a one-seed PROVISIONAL read: only that seed's checkpoints are pulled and rolled).
+# Last line of the log: "ZZ ROLLHIST-READ DONE ZZ" or "ZZ ROLLHIST-READ FAIL ZZ <why>".  Never `| tee`; every line goes to the log with >> "$LOG".
+export PATH="/usr/bin:/bin:$PATH"
+export OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 CUDA_VISIBLE_DEVICES=-1 PYTHONDONTWRITEBYTECODE=1 PYTHONIOENCODING=utf-8
+E=F:/TanitAD-scratch/rollhist/read
+PY=${RH_PY:-C:/Users/Admin/venvs/tanitad/Scripts/python.exe}
+O=$E/out; STEPS=$O/steps; LOG=$O/rh_read_chain.log
+SEEDS=${RH_SEEDS:-0,1}
+export TMP=$E/tmp TEMP=$E/tmp
+WC=F:/TanitAD-scratch/strat1/read/seeds/wait_commit.py
+V=F:/TanitAD-scratch/v8proof
+P=/c/Users/Admin/lorapod/pssh_cmd.sh; PC=/c/Users/Admin/lorapod/pcat.sh   # READ FIX 1 (MM 2026-11-21): the RH/B0 checkpoints are on the LoRA pod; the v8pod helpers reach the v8proof pod
+DEL=F:/TanitAD-scratch/rollhist/DELETIONS.log
+cd "$E" || exit 1
+mkdir -p "$O" "$STEPS" "$E/tmp" "$O/read" "$E/ckpts"
+fail() { echo "ZZ ROLLHIST-READ FAIL ZZ $1" >> "$LOG"; echo "FAIL $1" > "$O/ROLLHIST_READ.done"; exit 1; }
+gate() { $PY $WC 5.5 60 >> "$LOG" 2>&1 || fail "commit headroom stayed below 5.5 GB for 60 min before: $1"
+         fk=$(df -k /f | awk 'NR==2{print int($4/1048576)}'); [ "${fk:-0}" -ge 6 ] || fail "F: free ${fk} GB < 6 GB before: $1"; }
+step() { local n=$1 d=$2; shift 2; if [ -f "$STEPS/$n.ok" ]; then echo "[skip] $n" >> "$LOG"; return 0; fi
+  echo "[step] $n: $d $(date)" >> "$LOG"; gate "$n"; "$@" >> "$LOG" 2>&1 || fail "$n ($d): see the log above"; echo ok > "$STEPS/$n.ok"; }
+echo "[rollhist read chain] start $(date) seeds $SEEDS tree $E/tree (43319227)" >> "$LOG"
+IFS=, read -ra SL <<< "$SEEDS"
+# ---- 0 gates
+if [ "${RH_REFS_SKIP:-0}" != "1" ]; then
+  [ "$(tail -n 1 "$O/rh_refs_chain.log" 2>/dev/null | tr -d '\r' | sed 's/[[:space:]]*$//')" = "ZZ ROLLHIST-REFS DONE ZZ" ] || fail "gate0: the stage-A references are not done (out/rh_refs_chain.log must end with ZZ ROLLHIST-REFS DONE ZZ; or set RH_REFS_SKIP=1)"
+fi
+$PY -c "import json,sys; d=json.load(open('$E/C_EXEC.json')); sys.exit(0 if d.get('PASS') is True and not d.get('smoke_windows') else 1)" >> "$LOG" 2>&1 || fail "gate0: C_EXEC.json missing or not PASS (the stage-A reference must be rerun under the tier-of-record form first)"
+step blobcheck "tree blobs equal the commit" bash -c "$PY $E/blobcheck.py $E/tree 43319227 | head -1 | grep -q 'bad 0 '"
+step readertests "rh_read.py selftest (K-SELF, K-PLANT, floor, seeds, harms, mutation)" $PY -u $E/rh_read.py --selftest
+# ---- 1 checkpoints from the pod
+pull_arm() { # ARM
+  local arm=$1 rp=/root/rollhist/runs/$1/train/ckpt_last.pt a b
+  mkdir -p "$E/ckpts/$arm"
+  a=$(timeout 300 bash $P "sha256sum $rp | cut -d' ' -f1" 2>/dev/null | tr -cd 'a-f0-9')
+  [ ${#a} = 64 ] || { echo "no pod sha256 for $arm (checkpoint not there yet?)"; return 1; }
+  timeout 900 bash $PC "$rp" "$E/ckpts/$arm/ckpt_last.pt" < /dev/null > /dev/null 2>&1
+  b=$(sha256sum "$E/ckpts/$arm/ckpt_last.pt" | cut -d' ' -f1)
+  [ "$a" = "$b" ] || { echo "PULL-MISMATCH $arm pod ${a:0:12} local ${b:0:12}"; return 1; }
+  grep -v " $arm/ckpt_last.pt\$" "$E/ckpts/SHA256_PODS.txt" 2>/dev/null > "$E/ckpts/SHA256_PODS.tmp"; echo "$a  $arm/ckpt_last.pt" >> "$E/ckpts/SHA256_PODS.tmp"; mv "$E/ckpts/SHA256_PODS.tmp" "$E/ckpts/SHA256_PODS.txt"
+  echo "pulled $arm sha256 ${a:0:16}"
+}
+for s in "${SL[@]}"; do for k in RH B0; do step "pull_${k}_s$s" "pull and check ${k}_s$s" pull_arm ${k}_s$s; done; done
+# ---- 2 rollouts
+for s in "${SL[@]}"; do for k in RH B0; do for f in R0Hb20 R0C10Hb20 R0G50Hb20 R0G0Hb20 R0KHb20 R0C10XHb20; do
+  step "ro_${k}_${f}_s$s" "rollout $k $f seed $s" $PY -u $E/rh_roll.py $k $f $s
+done; done; done
+# ---- 3 K-REPLAY
+step kreplay "K-REPLAY one chunk rolled twice" $PY -u $E/rh_replay.py
+# ---- 4 G-T0
+arms=(); for s in "${SL[@]}"; do arms+=(RH_s$s B0_s$s); done
+step t0evals "G-T0 T0 evals ${arms[*]}" $PY -u $E/rh_t0.py run "${arms[@]}"
+step gt0 "G-T0 guard" $PY -u $E/rh_t0.py read --seeds "$SEEDS" --out $O/read/GT0_ROLLHIST.json
+# ---- 5 readers (frozen: headway_read_r2.py, q3_read_r3.py; the stage-A references are MEASURED (our rollouts, out/refs readers); ADD68's pod read is printed beside, INHERITED)
+PAIRS=$($PY -c "import sys; sys.path.insert(0,'$E'); import rh_common as C; print(','.join('I10%s:I10%s'%(a,b) for a,b in C.PAIRS.values()))")
+export HEADWAY_Q3DIR=$E/code/q3 HIERREP_STAGEB=$V/pod/stageB TANITEVAL_ROOT=$E/tree/taniteval HEADWAY_JOIN=F:/TanitAD-scratch/strat1/read/inputs/join_eval141.npz HEADWAY_BANK=$V/res/cache/frames.npz
+SP=I10RH_R0Hb20
+# ---- 5b stage-A references (UE.A under the form of record): c-EXEC's UE_s0.A x R0C10XHb20 dump is adopted under the standard layout; R0KHb20 is ADD67's dump (study wrapper = this form, c-EXEC)
+adopt_cexec() {
+  local d=$O/t1/I10UEA_R0C10XHb20_s0 t=I10UEA_R0C10XHb20_s0_m10_causal_heads
+  [ -d "$d/dump_$t" ] && [ "$(ls "$d/dump_$t" | wc -l)" = 141 ] && { echo "c-EXEC dump already adopted"; return 0; }
+  mkdir -p "$d" && cp -r "$O/cexec/B_record_hb_rzg/dump_cexec_UE_s0A_R0C10XHb20_m10_causal_heads" "$d/dump_$t" && [ "$(ls "$d/dump_$t" | wc -l)" = 141 ] && echo "adopted c-EXEC dump (141 files)"
+}
+step adopt_cexec "adopt c-EXEC's UE_s0.A x R0C10XHb20 dump as stage-A reference" adopt_cexec
+RP="I10UEA_R0G50Hb20:I10UEA_R0G0Hb20,I10UEA_R0C10Hb20:I10UEA_R0G50Hb20,I10UEA_R0C10XHb20:I10R0KHb20"
+RR="$O/t1,$V/integ10k/pull"
+step refs_hw "stage-A references: headway reader (UE.A under the form of record)" bash -c "cd $E/code/headway && $PY -u headway_read_r2.py read --t1-root $RR --pairs '$RP' --seeds 0,1 --spread-arm I10UEA_R0C10XHb20 --spread-seeds 0,1 --out-dir $O/read/refs_hw"
+step refs_q3 "stage-A references: family reader (UE.A under the form of record)" bash -c "cd $E/code/q3 && $PY -u q3_read_r3.py read --t1-root $RR --pairs '$RP' --seeds 0,1 --spread-arm I10UEA_R0C10XHb20 --spread-seeds 0,1 --same-sign --out-dir $O/read/refs_q3"
+step headway "headway reader U C F" bash -c "cd $E/code/headway && $PY -u headway_read_r2.py read --t1-root $O/t1 --pairs '$PAIRS' --seeds $SEEDS --spread-arm $SP --spread-seeds $SEEDS --out-dir $O/read/hw"
+step q3 "family reader (LONGITUDINAL / LATERAL / TACTICAL cells)" bash -c "cd $E/code/q3 && $PY -u q3_read_r3.py read --t1-root $O/t1 --pairs '$PAIRS' --seeds $SEEDS --spread-arm $SP --spread-seeds $SEEDS --same-sign --out-dir $O/read/q3"
+step strat "STRATEGIC family (frozen ADD66 reader, per-seed mode)" $PY -u $E/rh_strat.py --out $O/read --seeds "$SEEDS"
+step strat_floor "one-seed STRATEGIC floor F_U,c (UE_s0.A, UE_s1.A x R0C10XHb20; frozen ADD66 cells)" $PY -u $E/rh_strat_floor.py --out $O/read/STRAT_FLOOR_UEA.json
+# ---- 6 the read
+BR=F:/TanitAD-scratch/v8proof/integ10k/read_boundtier/pod
+step read "rh_read.py (the outcome)" $PY -u $E/rh_read.py --q3 $O/read/q3/RESULT_Q3.json --hw $O/read/hw/RESULT_HEADWAY.json --strat $O/read/READ_STRAT_ROLLHIST.json --gt0 $O/read/GT0_ROLLHIST.json --strat-floor $O/read/STRAT_FLOOR_UEA.json --refs-q3 $O/read/refs_q3/RESULT_Q3.json --refs-hw $O/read/refs_hw/RESULT_HEADWAY.json --add68-q3 $BR/RESULT_Q3.json --add68-hw $BR/RESULT_HEADWAY.json --seeds "$SEEDS" --out $O/read/RESULT_ROLLHIST.json
+echo "DONE" > "$O/ROLLHIST_READ.done"
+echo "ZZ ROLLHIST-READ DONE ZZ" >> "$LOG"

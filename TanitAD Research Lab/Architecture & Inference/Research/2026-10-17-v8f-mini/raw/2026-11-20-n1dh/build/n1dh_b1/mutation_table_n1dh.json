@@ -1,0 +1,527 @@
+[
+ {
+  "mutant": "a_delete_the_conditioning_line",
+  "files": [
+   "stack/tanitad/models/v8f_mini.py"
+  ],
+  "edits": 1,
+  "tests": [
+   {
+    "test": "test_reach_nonzero_gradients_on_both_modules_and_the_controls_read_exactly_zero",
+    "rc": 1,
+    "red": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dh.py::test_reach_nonzero_gradients_on_both_modules_and_the_controls_read_exactly_zero",
+     "1 failed in 7.59s"
+    ]
+   },
+   {
+    "test": "test_probe_refuses_a_model_whose_conditioning_line_is_deleted",
+    "rc": 1,
+    "red": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dh.py::test_probe_refuses_a_model_whose_conditioning_line_is_deleted",
+     "1 failed in 8.88s"
+    ]
+   }
+  ],
+  "named_test_red": true,
+  "any_named_test_red": true,
+  "file_restored": true,
+  "sha256_after": {
+   "stack/tanitad/models/v8f_mini.py": "ed1c75fa6f52c21afe78aba27e88476c3490c21f952b21c91f5f188564b6b6e1"
+  }
+ },
+ {
+  "mutant": "b_delete_the_ce_loss_line",
+  "files": [
+   "stack/tanitad/models/v8f_mini.py"
+  ],
+  "edits": 1,
+  "tests": [
+   {
+    "test": "test_reach_nonzero_gradients_on_both_modules_and_the_controls_read_exactly_zero",
+    "rc": 1,
+    "red": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dh.py::test_reach_nonzero_gradients_on_both_modules_and_the_controls_read_exactly_zero",
+     "1 failed in 8.88s"
+    ]
+   },
+   {
+    "test": "test_probe_refuses_a_model_whose_ce_term_is_deleted_from_the_total",
+    "rc": 1,
+    "red": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dh.py::test_probe_refuses_a_model_whose_ce_term_is_deleted_from_the_total",
+     "1 failed in 11.31s"
+    ]
+   }
+  ],
+  "named_test_red": true,
+  "any_named_test_red": true,
+  "file_restored": true,
+  "sha256_after": {
+   "stack/tanitad/models/v8f_mini.py": "ed1c75fa6f52c21afe78aba27e88476c3490c21f952b21c91f5f188564b6b6e1"
+  }
+ },
+ {
+  "mutant": "c_remove_the_own_code_mask",
+  "files": [
+   "stack/tanitad/models/v8f_mini.py"
+  ],
+  "edits": 1,
+  "tests": [
+   {
+    "test": "test_own_the_ce_rows_are_exactly_the_rows_where_o_read_t_own_code",
+    "rc": 1,
+    "red": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dh.py::test_own_the_ce_rows_are_exactly_the_rows_where_o_read_t_own_code",
+     "1 failed in 8.13s"
+    ]
+   },
+   {
+    "test": "test_reach_a_batch_with_no_own_code_row_gives_exactly_zero_ce_value_and_gradient",
+    "rc": 1,
+    "red": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dh.py::test_reach_a_batch_with_no_own_code_row_gives_exactly_zero_ce_value_and_gradient",
+     "1 failed, 1 warning in 9.42s"
+    ]
+   },
+   {
+    "test": "test_probe_refuses_a_model_without_the_own_code_mask",
+    "rc": 1,
+    "red": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dh.py::test_probe_refuses_a_model_without_the_own_code_mask",
+     "1 failed in 12.01s"
+    ]
+   }
+  ],
+  "named_test_red": true,
+  "any_named_test_red": true,
+  "file_restored": true,
+  "sha256_after": {
+   "stack/tanitad/models/v8f_mini.py": "ed1c75fa6f52c21afe78aba27e88476c3490c21f952b21c91f5f188564b6b6e1"
+  }
+ },
+ {
+  "mutant": "d_no_detach_on_the_posterior",
+  "files": [
+   "stack/tanitad/models/v8f_mini.py"
+  ],
+  "edits": 1,
+  "tests": [
+   {
+    "test": "test_reach_nonzero_gradients_on_both_modules_and_the_controls_read_exactly_zero",
+    "rc": 1,
+    "red": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dh.py::test_reach_nonzero_gradients_on_both_modules_and_the_controls_read_exactly_zero",
+     "1 failed in 9.14s"
+    ]
+   },
+   {
+    "test": "test_probe_refuses_a_model_whose_posterior_is_not_detached",
+    "rc": 1,
+    "red": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dh.py::test_probe_refuses_a_model_whose_posterior_is_not_detached",
+     "1 failed in 9.16s"
+    ]
+   }
+  ],
+  "named_test_red": true,
+  "any_named_test_red": true,
+  "file_restored": true,
+  "sha256_after": {
+   "stack/tanitad/models/v8f_mini.py": "ed1c75fa6f52c21afe78aba27e88476c3490c21f952b21c91f5f188564b6b6e1"
+  }
+ },
+ {
+  "mutant": "e_route_emb_default_nonzero_init",
+  "files": [
+   "stack/tanitad/models/v8f_mini.py"
+  ],
+  "edits": 1,
+  "tests": [
+   {
+    "test": "test_z1_cond_at_step_0_equals_off_bit_for_bit_except_the_route_term_and_the_rng_streams_are_the_off_models",
+    "rc": 1,
+    "red": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dh.py::test_z1_cond_at_step_0_equals_off_bit_for_bit_except_the_route_term_and_the_rng_streams_are_the_off_models",
+     "1 failed, 1 warning in 9.32s"
+    ]
+   }
+  ],
+  "named_test_red": true,
+  "any_named_test_red": true,
+  "file_restored": true,
+  "sha256_after": {
+   "stack/tanitad/models/v8f_mini.py": "ed1c75fa6f52c21afe78aba27e88476c3490c21f952b21c91f5f188564b6b6e1"
+  }
+ },
+ {
+  "mutant": "f_route_modules_not_built_under_a_forked_rng",
+  "files": [
+   "stack/tanitad/models/v8f_mini.py"
+  ],
+  "edits": 1,
+  "tests": [
+   {
+    "test": "test_z1_cond_at_step_0_equals_off_bit_for_bit_except_the_route_term_and_the_rng_streams_are_the_off_models",
+    "rc": 1,
+    "red": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dh.py::test_z1_cond_at_step_0_equals_off_bit_for_bit_except_the_route_term_and_the_rng_streams_are_the_off_models",
+     "1 failed, 1 warning in 8.04s"
+    ]
+   }
+  ],
+  "named_test_red": true,
+  "any_named_test_red": true,
+  "file_restored": true,
+  "sha256_after": {
+   "stack/tanitad/models/v8f_mini.py": "ed1c75fa6f52c21afe78aba27e88476c3490c21f952b21c91f5f188564b6b6e1"
+  }
+ },
+ {
+  "mutant": "g_own_mask_inverted",
+  "files": [
+   "stack/tanitad/models/v8f_mini.py"
+  ],
+  "edits": 1,
+  "tests": [
+   {
+    "test": "test_own_the_ce_rows_are_exactly_the_rows_where_o_read_t_own_code",
+    "rc": 1,
+    "red": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dh.py::test_own_the_ce_rows_are_exactly_the_rows_where_o_read_t_own_code",
+     "1 failed in 9.90s"
+    ]
+   },
+   {
+    "test": "test_reach_a_batch_with_no_own_code_row_gives_exactly_zero_ce_value_and_gradient",
+    "rc": 1,
+    "red": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dh.py::test_reach_a_batch_with_no_own_code_row_gives_exactly_zero_ce_value_and_gradient",
+     "1 failed in 11.79s"
+    ]
+   }
+  ],
+  "named_test_red": true,
+  "any_named_test_red": true,
+  "file_restored": true,
+  "sha256_after": {
+   "stack/tanitad/models/v8f_mini.py": "ed1c75fa6f52c21afe78aba27e88476c3490c21f952b21c91f5f188564b6b6e1"
+  }
+ },
+ {
+  "mutant": "h_label_permuted_within_the_batch_card_mutation_c",
+  "files": [
+   "stack/scripts/v8f_mini_train.py"
+  ],
+  "edits": 1,
+  "tests": [
+   {
+    "test": "test_klabel_route_stage_equals_the_label_source_called_directly_on_analytic_arcs",
+    "rc": 1,
+    "red": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dh.py::test_klabel_route_stage_equals_the_label_source_called_directly_on_analytic_arcs",
+     "1 failed in 2.23s"
+    ]
+   },
+   {
+    "test": "test_klabel_real_d1ho_sample_class_counts_equal_the_label_source_called_directly",
+    "rc": 1,
+    "red": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dh.py::test_klabel_real_d1ho_sample_class_counts_equal_the_label_source_called_directly",
+     "1 failed in 2.21s"
+    ]
+   }
+  ],
+  "named_test_red": true,
+  "any_named_test_red": true,
+  "file_restored": true,
+  "sha256_after": {
+   "stack/scripts/v8f_mini_train.py": "693fb4e888755806ad6f01f0ea84ffc8801e36e0369e7704508e59274655ccb2"
+  }
+ },
+ {
+  "mutant": "i_remove_the_gdvb_entries",
+  "files": [
+   "stack/scripts/v8f_mini_train.py"
+  ],
+  "edits": 1,
+  "tests": [
+   {
+    "test": "test_flags_default_off_have_flag_checks_a_choice_check_and_a_wm_only_default",
+    "rc": 1,
+    "red": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dh.py::test_flags_default_off_have_flag_checks_a_choice_check_and_a_wm_only_default",
+     "1 failed in 2.13s"
+    ]
+   },
+   {
+    "test": "test_gdvb_passes_an_honoured_argv_and_names_the_levers_in_built_levers",
+    "rc": 1,
+    "red": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dh.py::test_gdvb_passes_an_honoured_argv_and_names_the_levers_in_built_levers",
+     "1 failed in 16.20s"
+    ]
+   },
+   {
+    "test": "test_end_to_end_n1dh_arm_probe_levers_group_class_record_and_checkpoint",
+    "rc": 1,
+    "red": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dh.py::test_end_to_end_n1dh_arm_probe_levers_group_class_record_and_checkpoint",
+     "1 failed in 20.72s"
+    ]
+   }
+  ],
+  "named_test_red": true,
+  "any_named_test_red": true,
+  "file_restored": true,
+  "sha256_after": {
+   "stack/scripts/v8f_mini_train.py": "693fb4e888755806ad6f01f0ea84ffc8801e36e0369e7704508e59274655ccb2"
+  }
+ },
+ {
+  "mutant": "j_flags_not_applied_in_make_config",
+  "files": [
+   "stack/scripts/v8f_mini_train.py"
+  ],
+  "edits": 1,
+  "tests": [
+   {
+    "test": "test_flags_default_off_have_flag_checks_a_choice_check_and_a_wm_only_default",
+    "rc": 1,
+    "red": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dh.py::test_flags_default_off_have_flag_checks_a_choice_check_and_a_wm_only_default",
+     "1 failed in 2.30s"
+    ]
+   },
+   {
+    "test": "test_gdvb_passes_an_honoured_argv_and_names_the_levers_in_built_levers",
+    "rc": 1,
+    "red": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dh.py::test_gdvb_passes_an_honoured_argv_and_names_the_levers_in_built_levers",
+     "1 failed in 15.49s"
+    ]
+   }
+  ],
+  "named_test_red": true,
+  "any_named_test_red": true,
+  "file_restored": true,
+  "sha256_after": {
+   "stack/scripts/v8f_mini_train.py": "693fb4e888755806ad6f01f0ea84ffc8801e36e0369e7704508e59274655ccb2"
+  }
+ },
+ {
+  "mutant": "k_declared_vs_built_clause_not_called",
+  "files": [
+   "stack/scripts/v8f_mini_train.py"
+  ],
+  "edits": 1,
+  "tests": [
+   {
+    "test": "test_gdvb_refuses_declared_cond_but_built_without_the_modules",
+    "rc": 1,
+    "red": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dh.py::test_gdvb_refuses_declared_cond_but_built_without_the_modules",
+     "1 failed in 15.96s"
+    ]
+   },
+   {
+    "test": "test_gdvb_refuses_a_zero_weight_with_cond_and_a_weight_with_off",
+    "rc": 1,
+    "red": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dh.py::test_gdvb_refuses_a_zero_weight_with_cond_and_a_weight_with_off",
+     "1 failed in 17.04s"
+    ]
+   }
+  ],
+  "named_test_red": true,
+  "any_named_test_red": true,
+  "file_restored": true,
+  "sha256_after": {
+   "stack/scripts/v8f_mini_train.py": "693fb4e888755806ad6f01f0ea84ffc8801e36e0369e7704508e59274655ccb2"
+  }
+ },
+ {
+  "mutant": "l_probe_not_wired_into_the_selfcheck",
+  "files": [
+   "stack/scripts/v8f_mini_train.py"
+  ],
+  "edits": 1,
+  "tests": [
+   {
+    "test": "test_end_to_end_n1dh_arm_probe_levers_group_class_record_and_checkpoint",
+    "rc": 1,
+    "red": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dh.py::test_end_to_end_n1dh_arm_probe_levers_group_class_record_and_checkpoint",
+     "1 failed, 1 warning in 30.75s"
+    ]
+   }
+  ],
+  "named_test_red": true,
+  "any_named_test_red": true,
+  "file_restored": true,
+  "sha256_after": {
+   "stack/scripts/v8f_mini_train.py": "693fb4e888755806ad6f01f0ea84ffc8801e36e0369e7704508e59274655ccb2"
+  }
+ },
+ {
+  "mutant": "m_new_key_prefixes_not_admitted_by_the_init_ckpt_gate",
+  "files": [
+   "stack/tanitad/models/v8f_mini.py"
+  ],
+  "edits": 1,
+  "tests": [
+   {
+    "test": "test_flags_default_off_have_flag_checks_a_choice_check_and_a_wm_only_default",
+    "rc": 1,
+    "red": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dh.py::test_flags_default_off_have_flag_checks_a_choice_check_and_a_wm_only_default",
+     "1 failed in 2.31s"
+    ]
+   },
+   {
+    "test": "test_fine_tune_from_a_checkpoint_without_the_route_keys_passes_the_init_ckpt_gate_and_only_with_the_flag",
+    "rc": 1,
+    "red": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dh.py::test_fine_tune_from_a_checkpoint_without_the_route_keys_passes_the_init_ckpt_gate_and_only_with_the_flag",
+     "1 failed, 1 warning in 25.34s"
+    ]
+   }
+  ],
+  "named_test_red": true,
+  "any_named_test_red": true,
+  "file_restored": true,
+  "sha256_after": {
+   "stack/tanitad/models/v8f_mini.py": "ed1c75fa6f52c21afe78aba27e88476c3490c21f952b21c91f5f188564b6b6e1"
+  }
+ },
+ {
+  "mutant": "n_drop_the_route_keys_from_one_eval_loader_v8f_t1_eval_rbd",
+  "files": [
+   "stack/scripts/v8f_t1_eval_rbd.py"
+  ],
+  "edits": 1,
+  "tests": [
+   {
+    "test": "test_roundtrip_each_loader_builds_the_route_modules_from_the_checkpoint_cfg_strict_and_equal[v8f_t1_eval_rbd.py]",
+    "rc": 1,
+    "red": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dh.py::test_roundtrip_each_loader_builds_the_route_modules_from_the_checkpoint_cfg_strict_and_equal[v8f_t1_eval_rbd.py]",
+     "1 failed in 6.28s"
+    ]
+   }
+  ],
+  "named_test_red": true,
+  "any_named_test_red": true,
+  "file_restored": true,
+  "sha256_after": {
+   "stack/scripts/v8f_t1_eval_rbd.py": "4a373316143208c7de2574ee1fa4c8467e0d30b83d4b2423ab7c688653863a72"
+  }
+ },
+ {
+  "mutant": "o_loop_never_calls_route_stage",
+  "files": [
+   "stack/scripts/v8f_mini_train.py"
+  ],
+  "edits": 1,
+  "tests": [
+   {
+    "test": "test_end_to_end_n1dh_arm_probe_levers_group_class_record_and_checkpoint",
+    "rc": 1,
+    "red": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dh.py::test_end_to_end_n1dh_arm_probe_levers_group_class_record_and_checkpoint",
+     "1 failed, 1 warning in 12.51s"
+    ]
+   }
+  ],
+  "named_test_red": true,
+  "any_named_test_red": true,
+  "file_restored": true,
+  "sha256_after": {
+   "stack/scripts/v8f_mini_train.py": "693fb4e888755806ad6f01f0ea84ffc8801e36e0369e7704508e59274655ccb2"
+  }
+ },
+ {
+  "mutant": "p_checker_drops_the_h_gate_read",
+  "files": [
+   "stack/scripts/strat1_check.py"
+  ],
+  "edits": 1,
+  "tests": [
+   {
+    "test": "test_n1dh_checks_pass_on_the_real_checker[gate]",
+    "rc": 1,
+    "red": true,
+    "tail": [
+     "FAILED tests/test_strat1_n1dh_check.py::test_n1dh_checks_pass_on_the_real_checker[gate]",
+     "1 failed in 0.75s"
+    ]
+   }
+  ],
+  "named_test_red": true,
+  "any_named_test_red": true,
+  "file_restored": true,
+  "sha256_after": {
+   "stack/scripts/strat1_check.py": "90bfdd968dcd5ecba0f43aa31a71f71baf4f2097f5b7b95c69c4cff169d2d46d"
+  }
+ },
+ {
+  "mutant": "q_ce_weight_ignored_in_the_total",
+  "files": [
+   "stack/tanitad/models/v8f_mini.py"
+  ],
+  "edits": 1,
+  "tests": [
+   {
+    "test": "test_reach_nonzero_gradients_on_both_modules_and_the_controls_read_exactly_zero",
+    "rc": 1,
+    "red": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dh.py::test_reach_nonzero_gradients_on_both_modules_and_the_controls_read_exactly_zero",
+     "1 failed in 5.38s"
+    ]
+   },
+   {
+    "test": "test_probe_refuses_a_model_whose_ce_term_is_deleted_from_the_total",
+    "rc": 1,
+    "red": true,
+    "tail": [
+     "FAILED tests/test_v8f_n1dh.py::test_probe_refuses_a_model_whose_ce_term_is_deleted_from_the_total",
+     "1 failed in 4.99s"
+    ]
+   }
+  ],
+  "named_test_red": true,
+  "any_named_test_red": true,
+  "file_restored": true,
+  "sha256_after": {
+   "stack/tanitad/models/v8f_mini.py": "ed1c75fa6f52c21afe78aba27e88476c3490c21f952b21c91f5f188564b6b6e1"
+  }
+ }
+]

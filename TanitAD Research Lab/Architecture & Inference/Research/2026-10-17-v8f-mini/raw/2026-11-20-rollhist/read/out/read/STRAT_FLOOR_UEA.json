@@ -1,0 +1,100 @@
+{
+ "card": "PREREG_V8F_ROLLHIST Amendment 2 items 5, 6",
+ "evidence_class": "MEASURED (ours; UE_s0.A and UE_s1.A x R0C10XHb20 tick files, frozen ADD66 cell functions)",
+ "form": "R0C10XHb20",
+ "inputs_sha256": {
+  "ticks_cexec_UE_s0A_R0C10XHb20_m10_causal_heads.npz": "754cfc9fc708cea711db51855091360e65420c24073af55dd3fd50ce5545217a",
+  "ticks_I10UEA_R0C10XHb20_s1_m10_causal_heads.npz": "4da2f0bbf69c2e149ab9a309d6d9aad92196f11f0aa7e7cb3c4761763ce39144"
+ },
+ "same_window_count": true,
+ "floor_definition": "F_U,c = abs(level_UE_s1.A - level_UE_s0.A), level = nanmean over windows of the tick-2 `pos` cell at 30/50/80 m",
+ "floor": {
+  "pos30": 0.31800668898427986,
+  "pos50": 1.5542225615508123,
+  "pos80": 1.3595538280978694
+ },
+ "level_s0": [
+  9.03597392427568,
+  17.82179745226522,
+  29.596694122175993
+ ],
+ "level_s1": [
+  8.7179672352914,
+  16.267574890714407,
+  28.237140294078124
+ ],
+ "beside_all_cells_floor": {
+  "tick1_pos": [
+   0.004786868411444933,
+   0.11939964343593168,
+   0.4723017428388445
+  ],
+  "tick1_lat": [
+   0.04970932501041947,
+   0.03701169797436421,
+   0.09302466496983008
+  ],
+  "tick1_along": [
+   0.003557614234824518,
+   0.04808367792743973,
+   0.023577993962193622
+  ],
+  "tick1_head": [
+   0.3984869527603587,
+   0.5391187913331823,
+   0.8036235880975795
+  ],
+  "tick2_pos": [
+   0.31800668898427986,
+   1.5542225615508123,
+   1.3595538280978694
+  ],
+  "tick2_lat": [
+   0.7447689249864204,
+   0.5372476016140748,
+   1.2115595523016331
+  ],
+  "tick2_along": [
+   0.5678395010234274,
+   0.47480181970614943,
+   2.5214896415640062
+  ],
+  "tick2_head": [
+   4.460030173358465,
+   5.974744966594642,
+   2.0120471932772226
+  ]
+ },
+ "controls": {
+  "K-SELF": {
+   "pass": true,
+   "must_read": "s0 against itself: 0.0 exactly on every cell",
+   "floor": {
+    "pos30": 0.0,
+    "pos50": 0.0,
+    "pos80": 0.0
+   }
+  },
+  "K-PLANT": {
+   "pass": true,
+   "must_read": "+0.37 m planted on tick-2 pos 50 m of one copy: that cell moves by 0.37, no other cell moves",
+   "pos_floor": {
+    "pos30": 0.0,
+    "pos50": 0.3699999999999939,
+    "pos80": 0.0
+   },
+   "cells_moved": {
+    "tick2_pos": [
+     0.0,
+     0.37,
+     0.0
+    ]
+   }
+  },
+  "MUTATION": {
+   "pass": true,
+   "must_read": "RH/B0 run names refused"
+  }
+ },
+ "controls_all_pass": true
+}
