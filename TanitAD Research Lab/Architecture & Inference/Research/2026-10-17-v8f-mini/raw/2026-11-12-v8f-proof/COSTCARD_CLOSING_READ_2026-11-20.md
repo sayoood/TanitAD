@@ -85,3 +85,16 @@ Limits of this section: T0 only; the range bins use the label gap; the run bound
 ## 7. What this card does not claim
 
 No statement on driving in a re-perception tier (T2 is not provisioned). LATERAL, TACTICAL and STRATEGIC are not touched by the closing read; the numbers of section 1 are LONGITUDINAL (distance-keeping) at T1-kin/hb0.2. Two model seeds of one line. Row 157 shows the T0 bar to hold inside the rule for error planted on the label gap; for a real read of the lead the rule test of section 6 still decides, and T1-kin has no re-perception: the lead moves as logged whatever the ego does.
+
+## 8. Addendum: where the crop comes from (2026-11-21, added before the card was sent)
+
+* Binding rule of the programme: labels may use ego and other agents, inference is vision only. So in sections 0 and 6 a crop that follows the lead means a crop whose position at inference comes from the camera image alone: a fixed crop on the road ahead, or one steered by the coarse read of the present reader (its presence and gap from the pooled tokens).
+* A crop placed from the agent tracks of the label is admissible as a bound arm and for training targets only. As a bound it answers the cheaper question first (is the gap readable from a crop on the lead at all), and the arm with the position from the image then says what is deliverable.
+* The pilot therefore has two arms on the same clips: crop from the label tracks (bound) and crop from the image (deliverable); PASS and FAIL of section 6 are read on the deliverable arm. This doubles the encode time of the table in section 6 and not the frame build.
+
+## 9. Result of the pilot (row 161, card ADD99, 2026-11-21)
+
+* The PI gave the go on 2026-11-21 ("Follow your recommendation"). The pilot ran on the fork pod on the 141 evaluation clips and 500 train clips, two arms as in section 8, about 1 GPU-h, 33 GB of tokens. Tier T0 (a probe of a reader on logged frames). 8 of 8 controls passed at the first read.
+* By the criterion of section 6 the pilot FAILS: on the deliverable arm (fixed windows on the road ahead) the slope of the read's own gap reads the label closing speed at r +0.564 [+0.419, +0.675], against +0.261 [+0.152, +0.362] for the present reader; the upper end is below 0.9. Its gap error is 6.91 m [4.98, 8.98] against 8.64 m [7.37, 9.91], a ratio of 0.800 [0.622, 0.952]. By section 6 the candidate keeps option A.
+* The bound arm (windows centred on the lead from the label): gap error 2.91 m [2.14, 3.92], 1.14 m [0.92, 1.33] below 20 m, a ratio of 0.337 [0.251, 0.440] to the present reader's, past the cut by 2 of row 158; r +0.694 [+0.568, +0.776], also below 0.9. So the gap is readable from a crop on the lead with a head fit on 500 clips; what is missing is finding the lead in the image. A part of the bound's cut can come from the label-exact centring of its windows.
+* Next, frozen before any tool and inside the pilot's go (same clips, same staged video, the fork pod): card ADD100, the windows steered by a localiser that reads the fixed windows (T0), and card ADD101, the rule reading the pilot's gaps on the frames the label marks (T1-kin/hb0.2, pre-roll of 30 steps (6 s)). A larger train subset stays the PI's call.

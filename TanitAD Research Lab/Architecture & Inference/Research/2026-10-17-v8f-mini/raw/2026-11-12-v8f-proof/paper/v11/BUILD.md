@@ -92,3 +92,7 @@ Rebuilt on 2026-11-21 after the other session read row 157: one scope sentence o
 ## Update after rows 159 and 160 (2026-11-21)
 
 Fragments added: `frag_row159.tex` (card ADD97: the mean of the reader seeds and a causal smoothing do not deliver the cut of the reader gap error) and `frag_row160.tex` (card ADD98: the part of the reader gap error that moves within a clip carries the contact), both appended to `frag_row127.tex`; the item of this fork in `frag_status_run.tex` changed. Build: `patch_tex_v11.py` (ok edits 11), Tectonic 0.17.0, `check_numbers_v11.py` over the rows 100 to 160 (2733 tokens, 0 not found). `tanitad_4b_paper_r160.pdf` 50764daae62c8953, 47 pages; the paragraph of row 160 is on page 46.
+
+## Update after row 161 (2026-11-21)
+
+Fragment added: `frag_row161.tex` (card ADD99: the pilot of a new read of the lead from camera-frame crops fails its bar on the fixed windows; the bound with the windows on the lead reaches the cut of the gap error), appended to `frag_row127.tex`; the status sentence of the fork in `frag_status_run.tex` now ends at row 161 with cards ADD100 and ADD101 frozen. Build: `patch_tex_v11.py` (ok edits 11), Tectonic 0.17.0, `check_numbers_v11.py` over rows 100 to 161 (ZZ NUMBERS-V11 DONE 0). `tanitad_4b_paper_r161.pdf` b6b0e7f4fb8e1752, 47 pages; the paragraph of row 161 is on page 46.
