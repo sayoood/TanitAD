@@ -18,6 +18,8 @@
 #       literal source: stack/ops/runs.d/r9e2_K2SG.argv.json:230-231 ("--map-hires-trunk-grad-scale", "0.0"; the file has no --map-hires-share-target token);
 #   (c) the read-tree guard e2read_launch_k2dc02.sh:63 (`controller_for` in the eval loader) becomes the K2SG replay: `_mgs.attach` in stack/tanitad/eval/refcv7_loader.py (tip :433 `tr._mgs.attach(model, args)`) and stack/tanitad/train/map_trunk_gs.py present;
 #       without them G-DVB would refuse every K2SG argv. The "no overlay" ancestor list of :58 is unchanged (the K2DC controller commit b25de778 is still an ancestor); the tree name stays read_tree_${C}_k2dc (:27, a path, unchanged).
+#   (d) MM 4a3d05, 2026-11-22: the trunk-grad-scale guard counts INSIDE the `argv` array (and inside `argv_effective` when that key exists), not over the whole
+#       file: the 1f14f8d8 trainer writes the argv twice, and the same whole-file form REFUSED the valid K2DC02s1 read that day (fixed there in 8b581767).
 #   Every other line is unchanged. (MM 2026-11-19: the roll re-pin to 38161299 and the R9E2_CKPT_NAME guard of c69b51a9 are carried over from e2read_launch_k2dc02.sh unchanged.)
 set -u
 C=${1:?train commit (12 chars)}; ENV_BLOB=${2:?landed env blob sha1}
@@ -37,7 +39,7 @@ for d in $K0 $K2; do [ -s $d/model_ema.pt ] && [ -s $d/config.json ] || die "$d 
 [ ! -e $K2/ZEROGRAD_FAIL.json ] || die "K2SG has ZEROGRAD_FAIL.json"
 grep -q -- '"--map-hires-share-target"' $K2/config.json && die "K2SG config.json carries --map-hires-share-target: that is a controller-arm argv, K2SG has no controller"
 CFG1=$(tr -d '[:space:]' < $K2/config.json)
-NF=$(( $(printf '%s' "$CFG1" | grep -o '"--map-hires-trunk-grad-scale"' | wc -l) )); NP=$(( $(printf '%s' "$CFG1" | grep -o '"--map-hires-trunk-grad-scale","0.0"' | wc -l) )); [ "$NF" = 1 ] && [ "$NP" = 1 ] || die "K2SG config.json must carry --map-hires-trunk-grad-scale 0.0 exactly once (flag x$NF, pair x$NP)"
+NF=$(( $(printf '%s' "$CFG1" | grep -o '"argv":\[[^]]*\]' | grep -o '"--map-hires-trunk-grad-scale"' | wc -l) )); NP=$(( $(printf '%s' "$CFG1" | grep -o '"argv":\[[^]]*\]' | grep -o '"--map-hires-trunk-grad-scale","0.0"' | wc -l) )); NEK=$(( $(printf '%s' "$CFG1" | grep -o '"argv_effective":' | wc -l) )); NEF=$(( $(printf '%s' "$CFG1" | grep -o '"argv_effective":\[[^]]*\]' | grep -o '"--map-hires-trunk-grad-scale"' | wc -l) )); NEP=$(( $(printf '%s' "$CFG1" | grep -o '"argv_effective":\[[^]]*\]' | grep -o '"--map-hires-trunk-grad-scale","0.0"' | wc -l) )); [ "$NF" = 1 ] && [ "$NP" = 1 ] && [ "$NEK" -le 1 ] && [ "$NEF" = "$NEK" ] && [ "$NEP" = "$NEK" ] || die "K2SG config.json must carry --map-hires-trunk-grad-scale 0.0 exactly once in argv, and once in argv_effective when that key exists (argv: flag x$NF, pair x$NP; argv_effective: key x$NEK, flag x$NEF, pair x$NEP)"
 p=$(cat $K2/train.pid 2>/dev/null); [ -n "$p" ] && kill -0 "$p" 2>/dev/null && die "K2SG trainer pid $p is still alive"
 [ "$(b $ENVF)" = "$ENV_BLOB" ] || die "env $ENVF blob != $ENV_BLOB"
 grep -q '^export R9E2_LEAD_BLOCK="$R/inputs/b1_eval_lead_block_k4_dt0p5_psync.npz"' $ENVF || die "env does not name the pose-synced lead block"

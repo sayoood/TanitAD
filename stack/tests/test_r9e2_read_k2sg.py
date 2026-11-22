@@ -6,6 +6,9 @@
     the flag twice, the value 0.25 and a missing K0 seed directory are refused;
   * DELIBERATE REGRESSION: a copy of the launcher without the trunk-grad-scale guard lets a K2M1N20 config through, so the refusal check goes RED on it;
   * the launcher's literals equal the tokens of stack/ops/runs.d/r9e2_K2SG.argv.json (the single source).
+  * THE TRAINER'S REAL LAYOUT (MM 4a3d05, 2026-11-22): the 1f14f8d8 trainer writes the argv TWICE in config.json (`argv` and `argv_effective`); the same
+    whole-file count refused the valid K2DC02s1 read that day (fixed there in 8b581767). The guard here counts inside each array: the two-key layout
+    passes, a disagreeing / flagless / doubled `argv_effective` is refused, and the old whole-file line must refuse the real layout.
 """
 import difflib
 import json
@@ -97,10 +100,11 @@ def _guard_lines(text):
     return keep
 
 
-def _run_guards(text, tmp_path, cfg_tokens, make_seed=True, lines=None):
+def _run_guards(text, tmp_path, cfg_tokens, make_seed=True, lines=None, effective=None):
     k2 = tmp_path / "k2"
     k2.mkdir(exist_ok=True)
-    (k2 / "config.json").write_text(json.dumps({"argv": cfg_tokens}, indent=1), encoding="utf-8")
+    cfg = {"argv": cfg_tokens} if effective is None else {"arm": "K2SG", "seed": 0, "argv": cfg_tokens, "argv_effective": effective}
+    (k2 / "config.json").write_text(json.dumps(cfg, indent=1), encoding="utf-8")
     old = tmp_path / "seed_src"
     if make_seed:
         for d in ("E2_K0_pf", "E2_K0_mapsel", "read/dump_K0"):
@@ -156,3 +160,34 @@ def test_deliberate_regression_without_the_trunk_grad_scale_guard_is_caught(tmp_
     assert rc == 0 and "GUARDS-PASSED" in out, out            # the mutant is blind to a flagless config; the pristine guard refuses it (previous test)
     rc, out = _run_guards(t, _case(tmp_path, "p"), K2M1N20_CFG)
     assert rc == 3, out
+
+
+# the guard line as landed before 2026-11-22 (whole-file count): kept verbatim so the regression class stays on record
+OLD_FLAG_GUARD = ("NF=$(( $(printf '%s' \"$CFG1\" | grep -o '\"--map-hires-trunk-grad-scale\"' | wc -l) )); "
+                  "NP=$(( $(printf '%s' \"$CFG1\" | grep -o '\"--map-hires-trunk-grad-scale\",\"0.0\"' | wc -l) )); "
+                  "[ \"$NF\" = 1 ] && [ \"$NP\" = 1 ] || die \"K2SG config.json must carry --map-hires-trunk-grad-scale 0.0 exactly once (flag x$NF, pair x$NP)\"")
+
+
+def test_guards_read_the_trainers_real_layout_argv_and_argv_effective(tmp_path):
+    t = _text(NEW)
+    rc, out = _run_guards(t, _case(tmp_path, "r1"), K2SG_CFG, effective=list(K2SG_CFG))              # the real 1f14f8d8 layout
+    assert rc == 0 and "GUARDS-PASSED" in out, out
+    rc, out = _run_guards(t, _case(tmp_path, "r2"), K2SG_CFG, effective=K2SG_CFG[:-1] + ["0.25"])    # argv_effective disagrees on the value
+    assert rc == 3 and "exactly once" in out and "argv_effective" in out, out
+    rc, out = _run_guards(t, _case(tmp_path, "r3"), K2SG_CFG, effective=list(K2M1N20_CFG))           # argv_effective without the flag
+    assert rc == 3 and "exactly once" in out, out
+    rc, out = _run_guards(t, _case(tmp_path, "r4"), K2SG_CFG, effective=K2SG_CFG + [FLAG, VAL])      # argv_effective with the flag twice
+    assert rc == 3 and "exactly once" in out, out
+    rc, out = _run_guards(t, _case(tmp_path, "r5"), K2M1N20_CFG, effective=list(K2SG_CFG))           # argv without the flag, argv_effective with it
+    assert rc == 3 and "exactly once" in out, out
+
+
+def test_the_old_whole_file_flag_guard_refuses_the_real_layout(tmp_path):
+    t = _text(NEW)
+    assert OLD_FLAG_GUARD not in t
+    keep = [OLD_FLAG_GUARD if ln.startswith("NF=") else ln for ln in _guard_lines(t)]
+    assert keep != _guard_lines(t)
+    rc, out = _run_guards(t, _case(tmp_path, "o1"), K2SG_CFG, lines=keep)                            # one array: the old line passed (why the fixture missed it)
+    assert rc == 0 and "GUARDS-PASSED" in out, out
+    rc, out = _run_guards(t, _case(tmp_path, "o2"), K2SG_CFG, lines=keep, effective=list(K2SG_CFG))  # the real layout: the old line REFUSES a valid read
+    assert rc == 3 and "flag x2, pair x2" in out, out
