@@ -1,0 +1,87 @@
+{
+ "n_records_all_shards": 1970096,
+ "reason_counts": {
+  "ok": 1490036,
+  "off_lat": 76963,
+  "off_head": 13290,
+  "end_edge": 389807,
+  "nonfinite": 0
+ },
+ "n_clips_join": 14512,
+ "window_list_trials": [
+  {
+   "first_t": 3,
+   "clips": "all join clips",
+   "n_windows": 985048,
+   "n_eligible": 784954,
+   "matches_BANK_CHECK": true
+  },
+  {
+   "first_t": 3,
+   "clips": "clips with a bank record",
+   "n_windows": 985048,
+   "n_eligible": 784954,
+   "matches_BANK_CHECK": true
+  },
+  {
+   "first_t": 9,
+   "clips": "all join clips",
+   "n_windows": 897976,
+   "n_eligible": 784471,
+   "matches_BANK_CHECK": false
+  },
+  {
+   "first_t": 9,
+   "clips": "clips with a bank record",
+   "n_windows": 897976,
+   "n_eligible": 784471,
+   "matches_BANK_CHECK": false
+  }
+ ],
+ "window_list": {
+  "reproduces_BANK_CHECK_coverage": true,
+  "first_t": 3,
+  "clips": "all join clips"
+ },
+ "coverage_fraction": 0.7968687820288961,
+ "appended_per_step": {
+  "B": 64,
+  "p": 0.1,
+  "steps": 3000,
+  "N_mean": 5.155666666666667,
+  "N_p50": 5.0,
+  "N_p95": 9.0,
+  "N_max": 18,
+  "N_min": 0,
+  "steps_with_N0": 10,
+  "rows_out_p50": 69.0,
+  "rows_out_p95": 73.0,
+  "rows_out_mean": 69.15566666666666,
+  "extra_rows_share_mean": 0.08055729166666667,
+  "cross_check": "RL train logs: 15,411 of 192,000 rows (8.03 %) swapped at s0 = 5.14 per step of 64; this census mean is the line above"
+ },
+ "timing_bank": {
+  "records": 20000,
+  "ok": 14969,
+  "note": "the first 20,000 REAL records of shard 0 (gather + swap_rows are the real code); the logged batch tensors are fabricated with the real shapes"
+ },
+ "cpu_wall_per_step_apply": {
+  "N=5": {
+   "swap": {
+    "error": "RuntimeError: shape mismatch: value tensor of shape [5, 30, 2] cannot be broadcast to indexing result of shape [5, 3]"
+   },
+   "add": {
+    "error": "RuntimeError: shape mismatch: value tensor of shape [5, 30, 2] cannot be broadcast to indexing result of shape [5, 3]"
+   }
+  },
+  "N=9": {
+   "swap": {
+    "error": "RuntimeError: shape mismatch: value tensor of shape [9, 30, 2] cannot be broadcast to indexing result of shape [9, 3]"
+   },
+   "add": {
+    "error": "RuntimeError: shape mismatch: value tensor of shape [9, 30, 2] cannot be broadcast to indexing result of shape [9, 3]"
+   }
+  }
+ },
+ "total_wall_s": 6.5
+}

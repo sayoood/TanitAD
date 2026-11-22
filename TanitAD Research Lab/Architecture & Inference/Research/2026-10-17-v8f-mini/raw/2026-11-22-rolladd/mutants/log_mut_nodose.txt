@@ -1,0 +1,31 @@
+........F
+================================== FAILURES ===================================
+______________ test_ra_mutant_e_any_dose_but_0_1_is_refused[0.3] ______________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rolladd/tmp/ptpod/bt_mut_nodose/test_ra_mutant_e_any_dose_but_0')
+p = '0.3'
+
+    @pytest.mark.parametrize("p", ["0.3", "0.5", "0.25", "1.0", "0.10", "0"])
+    def test_ra_mutant_e_any_dose_but_0_1_is_refused(tmp_path, p):
+        r = Rig(tmp_path / "me")
+>       pr = _refused(r, ra_toks(r, p=p))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test\test_ra_checker.py:114: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+r = <test_dscale10k_check_rhk.Rig object at 0x000002795054EE50>
+toks = ['--arm', 'M2b', '--seed', '0', '--grid', 'pool4x10', ...], token = None
+tag = 'm'
+
+    def _refused(r, toks, token=None, tag="m"):
+        pr, _ = mint_ra(r, toks, token=token, tag=tag)
+>       assert pr, "the mutant was MINTED (the checker accepted it)"
+E       AssertionError: the mutant was MINTED (the checker accepted it)
+E       assert []
+
+test\test_ra_checker.py:74: AssertionError
+=========================== short test summary info ===========================
+FAILED test/test_ra_checker.py::test_ra_mutant_e_any_dose_but_0_1_is_refused[0.3]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 8 passed in 9.74s

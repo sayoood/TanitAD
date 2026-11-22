@@ -1,0 +1,24 @@
+.F
+================================== FAILURES ===================================
+__________ test_ra_mints_pass_and_binds_the_mode_and_the_rh_bank[0] ___________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rolladd/tmp/ptpod/bt_mut_modenotadmitted/test_ra_mints_pass_and_binds_t0')
+seed = 0
+
+    @pytest.mark.parametrize("seed", [0, 1])
+    def test_ra_mints_pass_and_binds_the_mode_and_the_rh_bank(tmp_path, seed):
+        r = Rig(tmp_path / f"rl{seed}", seed=seed)
+        toks = ra_toks(r)
+        a, b = NEW.parse_argv(toks), NEW.parse_argv(r.rh_toks)
+        assert sorted(k for k in set(a) | set(b) if a.get(k) != b.get(k)) == ["--dagger-mode", "--out"] and a["--dagger-mode"] == [MODE] and len(toks) == len(r.rh_toks) + 2
+>       assert NEW.rh_argv_problems(json.load(open(r.base))["argv"], r.tmpl_toks, toks, f"RA_s{seed}", r.gen) == []
+E       assert ['flag --dagg...ition for RA'] == []
+E         
+E         Left contains one more item: "flag --dagger-mode ['add'] is not in the template and is not an allowed addition for RA"
+E         Use -v to get more diff
+
+test\test_ra_checker.py:56: AssertionError
+=========================== short test summary info ===========================
+FAILED test/test_ra_checker.py::test_ra_mints_pass_and_binds_the_mode_and_the_rh_bank[0]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 1 passed in 0.67s

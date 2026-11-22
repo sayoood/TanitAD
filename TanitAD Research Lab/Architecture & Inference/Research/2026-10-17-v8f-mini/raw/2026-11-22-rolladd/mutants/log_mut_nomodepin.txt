@@ -1,0 +1,29 @@
+......F
+================================== FAILURES ===================================
+_____________ test_ra_mutant_c_swap_under_the_rl_name_is_refused ______________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rolladd/tmp/ptpod/bt_mut_nomodepin/test_ra_mutant_c_swap_under_th0')
+
+    def test_ra_mutant_c_swap_under_the_rl_name_is_refused(tmp_path):
+        r = Rig(tmp_path / "mc")
+>       pr = _refused(r, ra_toks(r, mode="swap"))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test\test_ra_checker.py:101: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+r = <test_dscale10k_check_rhk.Rig object at 0x000001EEFF518D10>
+toks = ['--arm', 'M2b', '--seed', '0', '--grid', 'pool4x10', ...], token = None
+tag = 'm'
+
+    def _refused(r, toks, token=None, tag="m"):
+        pr, _ = mint_ra(r, toks, token=token, tag=tag)
+>       assert pr, "the mutant was MINTED (the checker accepted it)"
+E       AssertionError: the mutant was MINTED (the checker accepted it)
+E       assert []
+
+test\test_ra_checker.py:74: AssertionError
+=========================== short test summary info ===========================
+FAILED test/test_ra_checker.py::test_ra_mutant_c_swap_under_the_rl_name_is_refused
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 6 passed in 5.54s
