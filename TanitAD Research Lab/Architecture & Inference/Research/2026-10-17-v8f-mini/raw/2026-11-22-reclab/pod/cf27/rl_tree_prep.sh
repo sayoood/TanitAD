@@ -10,8 +10,8 @@ R=/root/rollhist
 OLD=$R/tree_cdb; NEW=$TREE
 [ "$NEW" = "$R/tree_cf27" ] || { echo "rl_env.sh TREE is $NEW, not $R/tree_cf27"; exit 1; }
 [ ! -e "$NEW" ] && [ ! -e "$NEW.part" ] || { echo "$NEW or $NEW.part exists; refusing"; exit 1; }
-[ "$(sha256sum $R/all_blobs_97fe0a56.txt | cut -c1-16)" = "95d6bbb6eead3fcb" ] || { echo "all_blobs_97fe0a56.txt sha"; exit 1; }
-[ "$(sha256sum $BLOBS | cut -c1-16)" = "a2dbe09f3b843b6a" ] || { echo "all_blobs_cf27dbb7.txt sha"; exit 1; }
+[ "$(sha256sum $R/all_blobs_97fe0a56.txt | cut -c1-16)" = "53e0333783446b75" ] || { echo "all_blobs_97fe0a56.txt sha"; exit 1; }
+[ "$(sha256sum $BLOBS | cut -c1-16)" = "3fca0151af391e17" ] || { echo "all_blobs_cf27dbb7.txt sha"; exit 1; }
 [ "$(sha256sum $R/rl_delta_cf27.tar | cut -c1-16)" = "9418e753a6465d36" ] || { echo "rl_delta_cf27.tar sha"; exit 1; }
 $PY $R/blobcheck.py $OLD $R/all_blobs_97fe0a56.txt | tail -n 1
 [ "$(find $OLD -type f -not -path '*/__pycache__/*' | wc -l)" = "$(wc -l < $R/all_blobs_97fe0a56.txt)" ] || { echo "tree_cdb file count"; exit 1; }
