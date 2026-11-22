@@ -5653,6 +5653,22 @@ Every row is MEASURED from the harness CSV on the dev box, under `E:/Projects/Ta
 | verdict | card rule as written: **NOT PROVEN**; K4 not fired; replicates C-seed / F-seed run (adopt_cs). GAC `D-REFE-FIELD-P7-6` |
 | caveats | one training seed each; training variance unmeasured until the replicate pair reads (`H-ESTIM-SEED-1`); deterministic planner; not closed loop |
 
+### 14.6 `p5c_c1` / `p5c_c0` (C1 / C0): P7 + 2,000 steps on optimized-driver labels / raw labels [FULL NAVTEST, T1-class, ONE SEED] (added 2026-11-22, Master Mind; the registry had no row for the programme's best REFe)
+
+| field | value (MEASURED unless stated) |
+|---|---|
+| identity | **C1** `model_final.pt` sha256 `f09949e2a5f2f9661ad47457e77ddfd10f49117d64e095487809c1d04f7a34a4`, 1,288,515,000 B · **C0** sha256 `58fe4aa309ceeb415de9716416a375cdd218eb452f51a5854703bb309ac88ea2`, 1,288,514,552 B. 2,000 steps each, `done` true (the pod runs' own `summary.json`, `refe_runs/p5c_c1`, `refe_runs/p5c_c0`, read 2026-11-22) |
+| recipe | P7 (14.4) as init, 2,000 steps, seed 0. **C1** trains on the optimized privileged driver's labels, RJ5 -> Tc20s -> P5-R (`p5r-rj5`, rank 0, table `3b198314`; PI ruling 2026-11-14, GAC `D-REFE-PI-2026-11-15-1`, `D-REFE-P5C-LABEL-1`); **C0** on the raw bank labels. Card `PK/raw/2026-11-11-p5c-readiness/PREREG_P5C.md` + amendments A1-A3.3 |
+| where | HF `Sayood/tanitad-refe-p5c` `p5c/c1/model_final.pt`, `p5c/c0/model_final.pt` (LFS sha256 equal to the identity row, checked 2026-11-22) |
+| result, full navtest, T1-class (NAVSIM v1.1 PDMS, 12,146 tokens, 136 logs, LQR-tracked, open loop against logged agents) | **C1 92.5548 [91.7982, 93.2579]** · **C0 91.3845 [90.5231, 92.2330]** (marginal log-cluster bootstrap, 136 logs; `PK/raw/2026-11-20-p5c-read/read.json` `levels`; CSVs `refe_stage2_p5c_c1.csv` sha256 `7ae39f85…`, `refe_stage2_p5c_c0.csv` `0071900c…`, identity controls `identity_C1.json` / `identity_C0.json` PASS) |
+| sub-scores (tracked, x100, C1 / C0) | NC 98.8021 / 98.8515 · DAC 98.2216 / 98.0240 · DDC 96.1798 / 96.4927 · TTC 95.3318 / 95.2330 · EP 89.7211 / 87.2277 · C 99.9753 / 99.9918 |
+| C1 minus C0 (paired log-cluster bootstrap, 10,000 draws, seed 20260927) | tracked **+1.17 [+0.67, +1.65]** (EP +2.49 [+1.69, +3.32]); transparent (no tracker) **-2.31 [-2.82, -1.79]** |
+| four families | per GAC `D-REFE-P5C-READ-1`: LONGITUDINAL adverse (speed bias +0.218 m/s [0.168, 0.268], accel MAE +0.070 [0.050, 0.094]); LATERAL cross-track MAE +0.024 m [0.003, 0.047] (heading, curvature, yaw rate not separated adverse); TACTICAL command accuracy not separated; STRATEGIC reported in full |
+| against the goal | **BELOW GOAL**: 94.55 (DriveZero A13, PUBLISHED; the logged human scores 94.55 [93.78, 95.23] on our harness). C1 is the best REFe; gap 2.00 |
+| verdict | card rule: **GUARD-FAIL, qualifier TM+C, NOT ADOPTED** (`PK/raw/2026-11-20-p5c-read/VERDICT.txt`); C1 is the base of SCORER-FT (`H-SCORERFT-1`) and of the seed-1 replicate C1r |
+| determinism | C1 seam re-run identical (12,145 common tokens, max abs dpose 0.0, pick agreement 1.0; `seam_determinism_c1.json`) |
+| caveats | one training seed each (C1r pending, `H-ESTIM-SEED-1`); deterministic planner; not closed loop. Detail `PK/raw/2026-11-20-p5c-read/report.md` |
+
 ## 15. refcv7-r101-s0 — refcv6 + FIX-1..5 + NEW-1/NEW-2 + A9 box head [NON-PARITY · NavSim zero-shot · ONE SEED]
 
 ⚠️ **Not the DrivoR planning heads.** That scope was renamed DrivoR-T on 2026-09-26 (`SPEC_DRIVORT.md`); this
