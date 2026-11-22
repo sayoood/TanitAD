@@ -28,4 +28,19 @@ F is the same within 0.2 points on every term.
 - The 94.55 target needs +3.3 points over C1 (92.55, `MODEL_REGISTRY.md` 14.6). This decomposition is on the P7 field fans, not on C1: C1's banked read keeps only the picked proposal.
 - A lever that fixes (a) alone, or (b) alone, recovers at most about 2.8 or 3.7 points on these fans.
 
+**Gate scenes split by plan vs tracked execution** (same tables; `tp` = tracker-transparent, i.e. the plan scored as drawn).
+In a gate scene, the picked plan may be safe as drawn and fail only once the LQR tracks it, or it may already fail as a plan:
+
+| arm | gate scenes | plan safe, tracked fails | plan already fails |
+|---|---|---|---|
+| F | 360 | 165 scenes, 1.28 points | 195 scenes, 1.52 points |
+| C | 356 | 130 scenes, 1.03 points | 226 scenes, 1.79 points |
+
+The pick's multiplier is the same tracked and transparent in 96.2 % (F) and 97.3 % (C) of scenes.
+
+- About 1.0 to 1.3 points of the hard misses are **tracker-induced**. F and C train on P7's own bank (`train_grow_cmd_3c_p7`, `targets_sha256 92af8d66`; recipe line of `eval/PREREG_AUX_FIELD_LOSS_P7.md`), not on P5-C's tracker-aware Tc20s labels.
+- That is the size of C1's measured gain over C0: +1.17 [+0.67, +1.65] tracked (`MODEL_REGISTRY.md` 14.6). C1 is P5-C, trained on tracker-aware Tc20s labels.
+- That match in size is a HYPOTHESIS, not an attribution. C1 has no 64-proposal table, so its own gate split cannot be read.
+- The remaining ~1.5 to 1.8 points are plan-level misranks, which is the scorer's job. SCORER-FT runs on the C1 base.
+
 Input for the card that follows the SCORER-FT read. It does not change SCORER-FT's pre-registered read.
